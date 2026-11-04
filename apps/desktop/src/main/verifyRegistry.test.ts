@@ -325,6 +325,49 @@ describe('verify registry', () => {
       })
     })
 
+    describe('in Traktor', () => {
+      const p: NmlPatch = { volume: 'HD', dir: '/:M/:', file: 'a.aiff', newFile: 'a.wav' }
+      const traktorEntry = (trackId: string) =>
+        entry(trackId, {
+          places: new Set(['file', 'traktor']),
+          rekordbox: undefined,
+          traktorPatch: p,
+          playlists: { traktor: house },
+        })
+      // The write read the collection and found no entry for the track.
+      const noEntry = {
+        ...written,
+        traktor: { before: new Map([[traktorPatchKey(p), null]]) },
+      }
+
+      // The write's facts are taken at the flush: read only after the apply, the check
+      // still knows Traktor had no entry, and holds the new one to the playlists.
+      it('a track Traktor never had waits for the track ops, and keeps what the write found', async () => {
+        const { deps, registry } = setup()
+        registry.register(traktorEntry('a'))
+
+        await registry.afterFlush(noEntry)
+        expect(deps.readTraktor).not.toHaveBeenCalled()
+        expect(stateOf(registry.get('a'), 'traktor')).toBe('checking')
+
+        await registry.afterTrackOps('traktor')
+        expect(deps.readTraktor.mock.calls[0][0]).toEqual([
+          expect.objectContaining({ before: null, to: '/Music/a.wav', playlists: house }),
+        ])
+        expect(registry.get('a')?.status).toBe('ok')
+      })
+
+      it('waits for Traktor to close when the flush found it open', async () => {
+        const { deps, registry } = setup()
+        registry.register(traktorEntry('a'))
+
+        await registry.afterFlush({ ...written, traktor: 'queued' })
+
+        expect(deps.readTraktor).not.toHaveBeenCalled()
+        expect(stateOf(registry.get('a'), 'traktor')).toBe('pending')
+      })
+    })
+
     it('a track with no playlists is not re-read by the track ops', async () => {
       const { deps, registry } = setup()
       registry.register(entry('moved'))

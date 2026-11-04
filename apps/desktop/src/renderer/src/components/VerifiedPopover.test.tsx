@@ -115,6 +115,17 @@ describe('VerifiedPopover', () => {
     expect(engine).toHaveTextContent('Apunta al WAV · en House y Peak time')
   })
 
+  it('names the Traktor playlists the same way', () => {
+    const [traktor] = open([
+      {
+        place: 'traktor',
+        state: 'ok',
+        detail: { key: 'traktorOk', params: { format: 'WAV', playlists: ['House'] } },
+      },
+    ])
+    expect(traktor).toHaveTextContent('Apunta al WAV · en House')
+  })
+
   it('says only the single entry when the track is in no playlist', () => {
     const [music] = open([
       { place: 'appleMusic', state: 'ok', detail: { key: 'musicOneNoPlaylists' } },

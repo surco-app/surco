@@ -37,7 +37,7 @@ export function detailText(
     const names = Array.isArray(params.playlists) ? params.playlists : []
     return tr('verify.detail.musicOne', { playlists: spoken(names) })
   }
-  if (key === 'rekordboxOk' || key === 'engineOk') {
+  if (key === 'rekordboxOk' || key === 'engineOk' || key === 'traktorOk') {
     const counted = key === 'rekordboxOk' ? { ...params, count: params.cues } : params
     return Array.isArray(params.playlists)
       ? tr(`verify.detail.${key}Playlists`, { ...counted, playlists: spoken(params.playlists) })

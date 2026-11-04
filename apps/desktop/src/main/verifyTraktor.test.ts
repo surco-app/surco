@@ -5,6 +5,7 @@ vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 
 import { beginNmlBatch, endNmlBatch, recordNmlPatch, redirectNmlPatch } from './nmlBatch'
 import { applyPatches, matchedEntryFacts, type NmlPatch } from './traktorNml'
+import { readTraktorTree } from './traktorPlaylists'
 import { checkTraktor, type TraktorExpect } from './verifyTraktor'
 
 const BOOT = 'Macintosh HD'
@@ -275,6 +276,80 @@ describe('checkTraktor', () => {
 
   // A patch is recorded for every conversion while the sync is on; a track Traktor never
   // had was not touched there.
+  describe('the playlists the conversion asked for', () => {
+    const TO = '/Volumes/Public/Musica/Artist/Title.wav'
+    const KEY = 'Public/:Musica/:Artist/:Title.wav'
+    const list = (name: string, uuid: string, keys: string[]) =>
+      `<NODE TYPE="PLAYLIST" NAME="${name}"><PLAYLIST ENTRIES="${keys.length}" TYPE="LIST" UUID="${uuid}">${keys
+        .map((k) => `<ENTRY><PRIMARYKEY TYPE="TRACK" KEY="${k}"></PRIMARYKEY></ENTRY>`)
+        .join('')}</PLAYLIST></NODE>`
+    const withLists = (entries: string[], house: string[], peak: string[]) =>
+      nml(...entries).replace(
+        '</NML>',
+        `<PLAYLISTS><NODE TYPE="FOLDER" NAME="$ROOT"><SUBNODES COUNT="2">${list('House', 'u1', house)}${list('Peak time', 'u2', peak)}</SUBNODES></NODE></PLAYLISTS>
+</NML>`,
+      )
+    const idOf = (doc: string, name: string) =>
+      readTraktorTree(doc).find((n) => n.name === name)?.id ?? ''
+    const asked = (doc: string) => [
+      { id: idOf(doc, 'House'), name: 'House' },
+      { id: idOf(doc, 'Peak time'), name: 'Peak time' },
+    ]
+    const added = (playlists: TraktorExpect['playlists']): TraktorExpect => ({
+      patch: patch(),
+      before: null,
+      to: TO,
+      playlists,
+    })
+
+    // Traktor never had the track: the queue apply wrote its entry and filed it in the lists
+    // the DJ picked. The shield says so by name, as Apple Music's line does.
+    it('a new entry in both playlists asked for is ok and names them', () => {
+      const doc = withLists([entry('Title.wav')], [KEY], [KEY])
+      expect(checkTraktor(doc, [added(asked(doc))], BOOT)).toEqual([
+        {
+          place: 'traktor',
+          state: 'ok',
+          detail: {
+            key: 'traktorOk',
+            params: { format: 'WAV', playlists: ['House', 'Peak time'] },
+          },
+        },
+      ])
+    })
+
+    it('an entry missing from one playlist asked for is a mismatch naming that playlist', () => {
+      const doc = withLists([entry('Title.wav')], [KEY], [])
+      expect(checkTraktor(doc, [added(asked(doc))], BOOT)[0]?.detail).toEqual({
+        key: 'traktorPlaylistMissing',
+        params: { playlist: 'Peak time' },
+      })
+    })
+
+    it('a new entry the apply never wrote is traktorMissing', () => {
+      const doc = withLists([entry('Other.wav')], [], [])
+      expect(checkTraktor(doc, [added(asked(doc))], BOOT)[0]?.detail).toEqual({
+        key: 'traktorMissing',
+      })
+    })
+
+    // A playlist typed in the picker has no id until the write creates it at the top.
+    it('a playlist asked for by name is found by its name at the top', () => {
+      const doc = withLists([entry('Title.wav')], [], [KEY])
+      expect(checkTraktor(doc, [added([{ name: 'Peak time' }])], BOOT)[0]?.state).toBe('ok')
+    })
+
+    it('a renamed entry is checked for the playlists too', () => {
+      const { list: expects } = flush(nml(entry('Title.aiff')), [patch()])
+      const doc = withLists([entry('Title.wav')], [KEY], [])
+      const withPlaylists = expects.map((e) => ({ ...e, to: TO, playlists: asked(doc) }))
+      expect(checkTraktor(doc, withPlaylists, BOOT)[0]?.detail).toEqual({
+        key: 'traktorPlaylistMissing',
+        params: { playlist: 'Peak time' },
+      })
+    })
+  })
+
   it('a track the collection did not have produces no check', () => {
     const { list, written } = flush(nml(entry('Other.aiff')), [patch()])
     expect(list[0].before).toBeNull()

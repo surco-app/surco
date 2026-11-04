@@ -261,20 +261,25 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
     })
   }
 
+  // A failed write changed nothing: what the last one matched still holds.
+  function recordTraktor(e: VerifyEntry, result: QueueApplied | null) {
+    const patch = e.traktorPatch
+    if (result === 'written' || !patch) traktorBefore.delete(e.trackId)
+    else if (result && result !== 'failed') {
+      const key = traktorPatchKey(patch)
+      if (result.before.has(key)) traktorBefore.set(e.trackId, result.before.get(key) ?? null)
+      else traktorBefore.delete(e.trackId)
+      const cues = result.cues?.get(key)
+      if (cues === undefined) traktorCues.delete(e.trackId)
+      else traktorCues.set(e.trackId, cues)
+    }
+  }
+
   async function checkTraktor(list: VerifyEntry[], result: QueueApplied | null) {
     const expects: { e: VerifyEntry; expect: TraktorExpect }[] = []
     for (const e of list) {
       const patch = e.traktorPatch
-      // A failed write changed nothing: what the last one matched still holds.
-      if (result === 'written' || !patch) traktorBefore.delete(e.trackId)
-      else if (result && result !== 'failed') {
-        const key = traktorPatchKey(patch)
-        if (result.before.has(key)) traktorBefore.set(e.trackId, result.before.get(key) ?? null)
-        else traktorBefore.delete(e.trackId)
-        const cues = result.cues?.get(key)
-        if (cues === undefined) traktorCues.delete(e.trackId)
-        else traktorCues.set(e.trackId, cues)
-      }
+      recordTraktor(e, result)
       const before = traktorBefore.get(e.trackId)
       if (result === 'failed' || !patch || before === undefined)
         replace(e, unreadable('traktor'), 'traktor')
@@ -286,6 +291,7 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
             before,
             cues: traktorCues.get(e.trackId),
             ...(e.names ? { names: e.names } : {}),
+            ...(e.playlists?.traktor ? { to: e.to, playlists: e.playlists.traktor } : {}),
           },
         })
     }
@@ -364,13 +370,15 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
               if (!touched.includes(e) || (result === 'off' && byFlush.includes(e)))
                 replace(e, null, place)
             if (result === 'queued') for (const e of byFlush) hold(place, e)
+            const wrote = result === 'written' || typeof result === 'object'
             const byOps =
-              result === 'written' || result === 'queued'
-                ? touched.filter((e) => inPlaylists(e, place))
-                : []
+              wrote || result === 'queued' ? touched.filter((e) => inPlaylists(e, place)) : []
             for (const e of byOps)
               if (result === 'queued') hold(place, e)
-              else awaiting[place].add(e)
+              else {
+                if (typeof result === 'object') recordTraktor(e, result)
+                awaiting[place].add(e)
+              }
             await Promise.all([
               check(
                 place,
@@ -411,7 +419,7 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
       const held = [...awaiting[place]].filter((e) => inPlaylists(e, place))
       if (held.length === 0) return
       await during(held, async () => {
-        await check(place, held, 'written')
+        await check(place, held, null)
         for (const e of held) emit(e)
       })
     },

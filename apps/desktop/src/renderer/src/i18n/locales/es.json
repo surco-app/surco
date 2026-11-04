@@ -3161,6 +3161,7 @@
       "engineOk": "Apunta al {{format}}",
       "engineOkPlaylists": "Apunta al {{format}} · en {{playlists}}",
       "traktorOk": "Apunta al {{format}}",
+      "traktorOkPlaylists": "Apunta al {{format}} · en {{playlists}}",
       "checking": "Comprobando…",
       "fileMissing": "El fichero no está donde se escribió",
       "fileWrongFormat": "El fichero es {{actual}}, no {{expected}}",
@@ -3217,6 +3218,7 @@
       "traktorAmbiguous": "Traktor tiene {{count}} entradas de esta pista",
       "traktorCuesChanged": "Los cues cambiaron en Traktor",
       "traktorNameStale": "Traktor sigue mostrando «{{value}}»",
+      "traktorPlaylistMissing": "La pista no está en la playlist {{playlist}} de Traktor",
       "traktorUnreadable": "No se pudo comprobar Traktor"
     },
     "retry": "Reintentar",

@@ -3161,6 +3161,7 @@
       "engineOk": "{{format}}を参照",
       "engineOkPlaylists": "{{format}}を参照 · {{playlists}}に収録",
       "traktorOk": "{{format}}を参照",
+      "traktorOkPlaylists": "{{format}}を参照 · {{playlists}}に収録",
       "checking": "確認中…",
       "fileMissing": "ファイルが書き込んだ場所にありません",
       "fileWrongFormat": "ファイルが{{expected}}ではなく{{actual}}です",
@@ -3217,6 +3218,7 @@
       "traktorAmbiguous": "Traktorにこのトラックが{{count}}件あります",
       "traktorCuesChanged": "Traktorのキューが変わりました",
       "traktorNameStale": "Traktorにはまだ「{{value}}」と表示されています",
+      "traktorPlaylistMissing": "トラックがTraktorのプレイリスト{{playlist}}にありません",
       "traktorUnreadable": "Traktorを確認できませんでした"
     },
     "retry": "再試行",

@@ -3801,6 +3801,19 @@ describe('runProcessTrack — checking what it wrote', () => {
     expect([...entry.places]).toContain('engine')
   })
 
+  it('hands the check the Traktor playlists the job asked for', async () => {
+    const registerVerification = vi.fn<NonNullable<ProcessTrackDeps['registerVerification']>>()
+    const deps = makeDeps({
+      settings: settings({ syncTraktor: true, traktorNmlPath: '/t/collection.nml' }),
+      registerVerification,
+    })
+    const wanted = [{ id: 'u1', name: 'House' }]
+
+    await runProcessTrack(job({ traktorPlaylists: wanted }), deps)
+
+    expect(registerVerification.mock.calls[0][0].playlists).toEqual({ traktor: wanted })
+  })
+
   // The renderer keeps an update only for the conversion it holds and only when newer than
   // the result: converting the same track again must not inherit the last one's count.
   it('each conversion names its own job and starts its count at 0', async () => {

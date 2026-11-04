@@ -15,6 +15,7 @@ import { openRekordboxDb } from '../main/rekordboxDb'
 import { isRekordboxRunning } from '../main/rekordboxProcess'
 import { findEntries } from '../main/traktorNml'
 import { bootVolumeName } from '../main/traktorNmlLibrary'
+import { readTraktorTree } from '../main/traktorPlaylists'
 import { isTraktorRunning } from '../main/traktorProcess'
 import { makeTrack, scenarioDir } from './fixtures'
 import { openSurco, type Sabotage } from './harness'
@@ -347,5 +348,69 @@ describe('The self-check reads back the Engine DJ playlists the DJ asked for', (
       detail: { key: 'engineOk', params: { format: 'AIFF', playlists: ['House', 'Peak time'] } },
     })
     expect(surco.verification('x.flac')?.status).toBe('ok')
+  }, 60_000)
+})
+
+describe('The self-check reads back the Traktor playlists the DJ asked for', () => {
+  async function convertIntoTraktorPlaylists(name: string) {
+    const root = scenarioDir(name)
+    makeTrack(join(root, 'Downloads', 'x.flac'), { title: 'Plastic Dreams', artist: 'Jaydee' })
+    const nml = join(root, 'Traktor', 'collection.nml')
+    mkdirSync(join(root, 'Traktor'), { recursive: true })
+    const elsewhere = toNmlLocation(
+      makeTrack(join(root, 'Elsewhere', 'Show Me Love.flac'), {
+        title: 'Show Me Love',
+        artist: 'Robin S',
+      }),
+    )
+    const volume = elsewhere.volume || bootVolumeName()
+    const list = (title: string, uuid: string) =>
+      `<NODE TYPE="PLAYLIST" NAME="${title}"><PLAYLIST ENTRIES="0" TYPE="LIST" UUID="${uuid}"></PLAYLIST></NODE>`
+    writeFileSync(
+      nml,
+      `<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<NML VERSION="19"><HEAD COMPANY="www.native-instruments.com" PROGRAM="Traktor"></HEAD>
+<COLLECTION ENTRIES="1">
+<ENTRY TITLE="Show Me Love" ARTIST="Robin S"><LOCATION DIR="${elsewhere.dir}" FILE="${elsewhere.file}" VOLUME="${volume}" VOLUMEID="${volume}"></LOCATION></ENTRY>
+</COLLECTION>
+<PLAYLISTS><NODE TYPE="FOLDER" NAME="$ROOT"><SUBNODES COUNT="2">${list('House', 'u1')}${list('Peak time', 'u2')}</SUBNODES></NODE></PLAYLISTS>
+</NML>
+`,
+    )
+    const tree = readTraktorTree(readFileSync(nml, 'utf8'))
+    const surco = await openSurco({
+      verify: true,
+      settings: { outputFormat: 'aiff', syncTraktor: true, traktorNmlPath: nml },
+      destination: 'beside',
+    })
+    await surco.drop(join(root, 'Downloads'))
+    surco.patchTrack('x.flac', {
+      traktorPlaylists: tree.map((n) => ({ id: n.id, name: n.name })),
+    })
+    await surco.convertAll()
+    await surco.settled()
+    return surco
+  }
+
+  it('lists Traktor and says the new track is in both playlists', async () => {
+    const surco = await convertIntoTraktorPlaylists('verify-traktor-playlists')
+    expect(surco.verification('x.flac')?.checks.find((c) => c.place === 'traktor')).toEqual({
+      place: 'traktor',
+      state: 'ok',
+      detail: { key: 'traktorOk', params: { format: 'AIFF', playlists: ['House', 'Peak time'] } },
+    })
+    expect(surco.verification('x.flac')?.status).toBe('ok')
+  }, 60_000)
+  it('says it waits for Traktor to close, and ok once it lands', async () => {
+    vi.mocked(isTraktorRunning).mockResolvedValue(true)
+    const surco = await convertIntoTraktorPlaylists('verify-traktor-playlists-open')
+    const traktorLine = () =>
+      surco.verification('x.flac')?.checks.find((c) => c.place === 'traktor')
+    expect(traktorLine()?.state).toBe('pending')
+    vi.mocked(isTraktorRunning).mockResolvedValue(false)
+    await surco.traktorClosed()
+    await surco.settled()
+    expect(traktorLine()?.state).toBe('ok')
+    expect(surco.statuses('x.flac')).not.toContain('mismatch')
   }, 60_000)
 })

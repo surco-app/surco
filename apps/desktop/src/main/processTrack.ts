@@ -7,6 +7,7 @@ import {
   type DjProgram,
   LIBRARY_PROGRAMS,
   type LibraryProgram,
+  WRITABLE_PROGRAMS,
   type WritableProgram,
 } from '../shared/djProgram'
 import {
@@ -1215,7 +1216,7 @@ export async function runProcessTrack(
     }
     const traktor = settings.syncTraktor && !!settings.traktorNmlPath
     const playlists: VerifyEntry['playlists'] = {}
-    for (const program of ['rekordbox', 'engine'] as const) {
+    for (const program of WRITABLE_PROGRAMS) {
       const wanted = JOB_PLAYLISTS[program](job)?.wanted
       if (wanted?.length) playlists[program] = wanted
     }

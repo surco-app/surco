@@ -101,12 +101,13 @@ const SENT: Record<VerifyDetailKey, CheckDetail['params'][]> = {
   engineNameStale: [{ value: 'Old Title' }],
   enginePlaylistMissing: [{ playlist: 'Peak time' }],
   engineUnreadable: [undefined],
-  traktorOk: [{ format: 'WAV' }],
+  traktorOk: [{ format: 'WAV' }, { format: 'WAV', playlists: ['House', 'Peak time'] }],
   traktorStillOld: [{ format: 'AIFF' }],
   traktorMissing: [undefined],
   traktorAmbiguous: [{ count: 2 }],
   traktorCuesChanged: [undefined],
   traktorNameStale: [{ value: 'Old Title' }],
+  traktorPlaylistMissing: [{ playlist: 'Peak time' }],
   traktorUnreadable: [undefined],
 }
 
