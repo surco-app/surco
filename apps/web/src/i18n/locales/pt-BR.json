@@ -578,9 +578,32 @@
     "shotPlaceholder": "Captura de tela em breve",
     "outroTitle": "Pronto para experimentar",
     "outroLede": "Baixe o Surco e deixe suas primeiras faixas prontas em poucos minutos.",
+    "groups": [
+      {
+        "id": "start",
+        "title": "Começar"
+      },
+      {
+        "id": "tag",
+        "title": "Etiquetar"
+      },
+      {
+        "id": "sound",
+        "title": "Som"
+      },
+      {
+        "id": "out",
+        "title": "Levar as faixas"
+      },
+      {
+        "id": "keep",
+        "title": "Manter"
+      }
+    ],
     "sections": [
       {
         "id": "instalar",
+        "group": "start",
         "title": "Instale e abra o Surco",
         "s": "Baixe, abra e em um minuto o assistente deixa tudo do seu jeito.",
         "body": [
@@ -609,6 +632,7 @@
       },
       {
         "id": "importar",
+        "group": "start",
         "title": "Adicione as suas faixas",
         "s": "Arraste arquivos ou pastas inteiras e o Surco lê tudo na hora.",
         "body": [
@@ -634,6 +658,7 @@
       },
       {
         "id": "lista",
+        "group": "start",
         "title": "Conheça a lista de faixas",
         "s": "O que cada linha da lista diz, de relance.",
         "body": [
@@ -663,6 +688,7 @@
       },
       {
         "id": "editor",
+        "group": "tag",
         "title": "Edite os metadados",
         "s": "Todos os campos da faixa, sem os restos que outros programas deixaram.",
         "body": [
@@ -692,6 +718,7 @@
       },
       {
         "id": "discogs",
+        "group": "tag",
         "title": "Encontre o disco nas suas fontes",
         "s": "Discogs, Bandcamp, Deezer, Beatport e MusicBrainz, com dados e capa em um clique.",
         "body": [
@@ -722,6 +749,7 @@
       },
       {
         "id": "automatch",
+        "group": "tag",
         "title": "Deixe o Surco etiquetar sozinho",
         "s": "Cada faixa que você solta é buscada e etiquetada sozinha quando a correspondência é confiável.",
         "body": [
@@ -751,6 +779,7 @@
       },
       {
         "id": "album",
+        "group": "tag",
         "title": "Associe um release inteiro",
         "s": "Aplique um release inteiro a todas as faixas dele de uma vez.",
         "body": ["Serve para um álbum ou EP que você importou inteiro."],
@@ -778,6 +807,7 @@
       },
       {
         "id": "calidad",
+        "group": "sound",
         "title": "Confira a qualidade real",
         "s": "Veja no espectro se um arquivo sem perdas é mesmo sem perdas.",
         "body": [
@@ -807,6 +837,7 @@
       },
       {
         "id": "declick",
+        "group": "sound",
         "title": "Limpe seus rips de vinil",
         "s": "Tire cliques, ruído de fundo e o silêncio da agulha no começo e no fim.",
         "body": [
@@ -840,6 +871,7 @@
       },
       {
         "id": "convertir",
+        "group": "out",
         "title": "Converta suas faixas",
         "s": "Uma faixa ou a fila toda, no formato que você escolher ou no dela.",
         "body": [
@@ -869,6 +901,7 @@
       },
       {
         "id": "nombres",
+        "group": "out",
         "title": "Nomeie e organize os arquivos",
         "s": "Arquivos e pastas com o nome que você quiser.",
         "body": ["Por padrão o Surco mantém o nome original e você decide quando renomear."],
@@ -895,6 +928,7 @@
       },
       {
         "id": "exportar",
+        "group": "out",
         "title": "Leve suas faixas para o seu software de DJ",
         "s": "Apple Music, rekordbox, Engine DJ, Traktor e Serato, ao converter ou pelas playlists deles.",
         "body": [
@@ -925,6 +959,7 @@
       },
       {
         "id": "rekordbox",
+        "group": "out",
         "title": "Marque seus cues",
         "s": "Hot cues na forma de onda do rekordbox, Engine DJ ou Traktor, com o seu fluxo.",
         "body": [
@@ -955,6 +990,7 @@
       },
       {
         "id": "usb",
+        "group": "out",
         "title": "Leve suas playlists para um USB",
         "s": "Exporte suas playlists para um USB pronto para os players.",
         "body": [
@@ -984,6 +1020,7 @@
       },
       {
         "id": "revisar",
+        "group": "keep",
         "title": "Revise sua biblioteca",
         "s": "Erros de digitação, grafias e duplicados da sua biblioteca, num só lugar.",
         "body": [
@@ -1014,6 +1051,7 @@
       },
       {
         "id": "atajos",
+        "group": "keep",
         "title": "Atalhos e ajustes",
         "s": "Quase tudo tem atalho, o ⌘K encontra e os Ajustes guardam o resto.",
         "body": ["O Surco foi feito para trabalhar sem mouse."],

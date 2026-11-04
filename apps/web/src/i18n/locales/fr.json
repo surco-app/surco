@@ -578,9 +578,32 @@
     "shotPlaceholder": "Capture bientôt disponible",
     "outroTitle": "Prêt à l'essayer",
     "outroLede": "Télécharge Surco et prépare tes premiers morceaux en deux minutes.",
+    "groups": [
+      {
+        "id": "start",
+        "title": "Démarrer"
+      },
+      {
+        "id": "tag",
+        "title": "Taguer"
+      },
+      {
+        "id": "sound",
+        "title": "Son"
+      },
+      {
+        "id": "out",
+        "title": "Sortir tes morceaux"
+      },
+      {
+        "id": "keep",
+        "title": "Entretenir"
+      }
+    ],
     "sections": [
       {
         "id": "instalar",
+        "group": "start",
         "title": "Installer et ouvrir Surco",
         "s": "Télécharge-le, ouvre-le et en une minute l'assistant le règle à ton goût.",
         "body": [
@@ -609,6 +632,7 @@
       },
       {
         "id": "importar",
+        "group": "start",
         "title": "Ajouter tes morceaux",
         "s": "Glisse des fichiers ou des dossiers entiers et Surco lit tout à la volée.",
         "body": [
@@ -634,6 +658,7 @@
       },
       {
         "id": "lista",
+        "group": "start",
         "title": "Découvrir la liste des morceaux",
         "s": "Ce que te dit chaque ligne de la liste, en un coup d'œil.",
         "body": [
@@ -663,6 +688,7 @@
       },
       {
         "id": "editor",
+        "group": "tag",
         "title": "Modifier les métadonnées",
         "s": "Tous les champs du morceau, sans les restes laissés par d'autres logiciels.",
         "body": [
@@ -692,6 +718,7 @@
       },
       {
         "id": "discogs",
+        "group": "tag",
         "title": "Trouve la sortie dans tes sources",
         "s": "Discogs, Bandcamp, Deezer, Beatport et MusicBrainz, infos et pochette en un clic.",
         "body": [
@@ -722,6 +749,7 @@
       },
       {
         "id": "automatch",
+        "group": "tag",
         "title": "Laisse Surco taguer tout seul",
         "s": "Chaque morceau déposé est cherché et tagué tout seul quand la correspondance est fiable.",
         "body": [
@@ -751,6 +779,7 @@
       },
       {
         "id": "album",
+        "group": "tag",
         "title": "Associer une release entière",
         "s": "Applique une release entière à tous ses morceaux d'un coup.",
         "body": ["C'est pour un album ou un EP importé en entier."],
@@ -778,6 +807,7 @@
       },
       {
         "id": "calidad",
+        "group": "sound",
         "title": "Vérifier la vraie qualité",
         "s": "Vois dans le spectre si un fichier sans perte l'est vraiment.",
         "body": [
@@ -807,6 +837,7 @@
       },
       {
         "id": "declick",
+        "group": "sound",
         "title": "Nettoie tes rips vinyle",
         "s": "Retire clics, bruit de fond et le silence de l'aiguille au début et à la fin.",
         "body": [
@@ -840,6 +871,7 @@
       },
       {
         "id": "convertir",
+        "group": "out",
         "title": "Convertis tes morceaux",
         "s": "Un morceau ou toute la file, dans le format choisi ou dans le sien.",
         "body": [
@@ -869,6 +901,7 @@
       },
       {
         "id": "nombres",
+        "group": "out",
         "title": "Nommer et ranger les fichiers",
         "s": "Des fichiers et des dossiers nommés comme tu veux.",
         "body": [
@@ -897,6 +930,7 @@
       },
       {
         "id": "exportar",
+        "group": "out",
         "title": "Envoie tes morceaux vers ton logiciel DJ",
         "s": "Apple Music, rekordbox, Engine DJ, Traktor et Serato, en convertissant ou depuis leurs playlists.",
         "body": [
@@ -927,6 +961,7 @@
       },
       {
         "id": "rekordbox",
+        "group": "out",
         "title": "Pose tes cues",
         "s": "Des hot cues sur la forme d'onde de rekordbox, Engine DJ ou Traktor, avec ton flux.",
         "body": [
@@ -957,6 +992,7 @@
       },
       {
         "id": "usb",
+        "group": "out",
         "title": "Emporte tes playlists sur une clé USB",
         "s": "Exporte tes playlists vers une clé USB prête pour les lecteurs.",
         "body": [
@@ -986,6 +1022,7 @@
       },
       {
         "id": "revisar",
+        "group": "keep",
         "title": "Vérifie ta bibliothèque",
         "s": "Fautes, orthographes et doublons de ta bibliothèque, au même endroit.",
         "body": [
@@ -1016,6 +1053,7 @@
       },
       {
         "id": "atajos",
+        "group": "keep",
         "title": "Raccourcis et réglages",
         "s": "Presque tout a un raccourci, ⌘K le trouve et les Réglages gardent le reste.",
         "body": ["Surco est conçu pour travailler sans souris."],
