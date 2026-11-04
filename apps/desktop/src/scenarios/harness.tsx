@@ -41,17 +41,12 @@ import { registerListReviewIpc } from '../main/listReviewIpc'
 import { listReviewDeps } from '../main/listReviewWiring'
 import { createMediaAccess } from '../main/mediaAccess'
 import { musicReviewLog } from '../main/musicReviewLog'
-import { beginNmlBatch, recordedNmlPatch, redirectNmlPatch } from '../main/nmlBatch'
+import { beginNmlBatch, redirectNmlPatch } from '../main/nmlBatch'
 import { configureBackupStore } from '../main/originalKeeper'
 import { createOutputReservations } from '../main/outputReservations'
 import { runProcessTrack } from '../main/processTrack'
 import { trashRecoverably } from '../main/recoverableTrash'
-import {
-  beginRekordboxBatch,
-  recordedRekordboxRepoint,
-  redirectRekordboxRepoint,
-  stackRepoint,
-} from '../main/rekordboxBatch'
+import { beginRekordboxBatch, redirectRekordboxRepoint, stackRepoint } from '../main/rekordboxBatch'
 import { readNodeStamps } from '../main/rekordboxMasterXml'
 import { applyRekordboxBatch } from '../main/rekordboxPlaylistWrite'
 import { isRekordboxRunning } from '../main/rekordboxProcess'
@@ -76,6 +71,7 @@ import {
   musicReaders,
 } from '../main/verifyMusic'
 import type { FlushOutcome, TraktorWrite } from '../main/verifyRegistry'
+import { withRecordedRun } from '../main/verifyRun'
 import { onWatchedFilesChanged } from '../main/watchedFiles'
 import { dirRoots, FolderWatcher } from '../main/watcher'
 import type { Api } from '../preload/api'
@@ -370,12 +366,7 @@ function processTrackInMain(
           (p) => realpathSync(p),
         )
       },
-      registerVerification: (entry) =>
-        verify.registry.register({
-          ...entry,
-          traktorPatch: recordedNmlPatch(entry.source),
-          cueShiftMs: recordedRekordboxRepoint(entry.to)?.audio?.cueShiftMs,
-        }),
+      registerVerification: (entry) => verify.registry.register(withRecordedRun(entry)),
       realPath: (p: string) => realpathSync(p),
     }),
   })

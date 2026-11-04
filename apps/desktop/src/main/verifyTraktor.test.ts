@@ -61,6 +61,45 @@ const stillOld = (format: string) => ({
 })
 
 describe('checkTraktor', () => {
+  const retitle = { title: { from: 'Title', to: 'New Title' } }
+  const staleTitle = {
+    place: 'traktor',
+    state: 'mismatch',
+    detail: { key: 'traktorNameStale', params: { value: 'Title' } },
+  }
+
+  it('an entry renamed but still showing the title the conversion changed is a mismatch', () => {
+    const p = patch({ tags: retitle })
+    const { list } = flush(nml(entry('Title.aiff')), [p])
+    expect(checkTraktor(nml(entry('Title.wav')), list, BOOT)).toEqual([staleTitle])
+  })
+
+  it('holds the entry to the names the conversion recorded even when the patch lost them', () => {
+    const { list } = flush(nml(entry('Title.aiff')), [patch()])
+    const recorded = list.map((e) => ({ ...e, names: retitle }))
+    expect(checkTraktor(nml(entry('Title.wav')), recorded, BOOT)).toEqual([staleTitle])
+  })
+
+  it('an entry renamed and retitled by the write is traktorOk', () => {
+    const { list, written } = flush(nml(entry('Title.aiff')), [patch({ tags: retitle })])
+    expect(checkTraktor(written, list, BOOT)[0]?.state).toBe('ok')
+  })
+
+  // A rewrite in place under the same name has no rename to check, but its new title still
+  // has to reach the entry.
+  it('an entry rewritten in place under its own name is judged by its title', () => {
+    const inPlace = patch({
+      newFile: undefined,
+      outputVolume: 'Public',
+      outputDir: '/:Musica/:Artist/:',
+      outputFile: 'Title.aiff',
+      tags: retitle,
+    })
+    const { list, written } = flush(nml(entry('Title.aiff')), [inPlace])
+    expect(checkTraktor(nml(entry('Title.aiff')), list, BOOT)).toEqual([staleTitle])
+    expect(checkTraktor(written, list, BOOT)[0]?.state).toBe('ok')
+  })
+
   // The rename is the whole point of the patch: the entry, its cues and its playlists now
   // name the file that exists.
   it('an entry renamed to the WAV is traktorOk', () => {

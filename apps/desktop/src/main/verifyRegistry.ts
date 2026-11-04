@@ -11,7 +11,7 @@ import {
 import type { EngineShift } from './engineRepoint'
 import { settleHeldOriginal } from './originalKeeper'
 import type { NmlPatch } from './traktorNml'
-import type { EngineBefore } from './verifyEngine'
+import type { EngineBefore, EngineExpect } from './verifyEngine'
 import type { FileExpect } from './verifyFile'
 import type { MusicExpect } from './verifyMusic'
 import type { RekordboxBefore } from './verifyRekordbox'
@@ -44,6 +44,7 @@ export interface VerifyEntry {
   engineShift?: EngineShift
   // The source's size before a rewrite in place, handed again with the repoint.
   fromBytes?: number
+  names?: EngineExpect['names']
   // The original held under «Nunca» for this verdict (claimHeldOriginal).
   heldOriginal?: string
   verification: Verification
@@ -275,6 +276,7 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
             patch,
             before,
             cues: traktorCues.get(e.trackId),
+            ...(e.names ? { names: e.names } : {}),
           },
         })
     }

@@ -248,9 +248,11 @@ describe('library readers', () => {
       },
     )
 
-    await readers.readEngine([entry({ fromBytes: 100 }), entry()])
+    const names = { title: { from: 'Old', to: 'New' } }
+    await readers.readEngine([entry({ fromBytes: 100, names }), entry()])
 
     expect(seen.map((e) => (e as { fromBytes?: number }).fromBytes)).toEqual([100, undefined])
+    expect(seen.map((e) => (e as { names?: unknown }).names)).toEqual([names, undefined])
   })
 })
 

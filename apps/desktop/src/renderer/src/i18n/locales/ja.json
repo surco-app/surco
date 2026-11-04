@@ -3122,11 +3122,13 @@
       "engineCuesMisplaced_quickCues": "Engine DJのキューが音声に合わせて動いていません",
       "engineCuesMisplaced_beatData": "Engine DJのグリッドが音声に合わせて動いていません",
       "engineCuesMisplaced_loops": "Engine DJのループが音声に合わせて動いていません",
+      "engineNameStale": "Engine DJにはまだ「{{value}}」と表示されています",
       "engineUnreadable": "Engine DJを確認できませんでした",
       "traktorStillOld": "Traktorはまだ{{format}}を参照しています",
       "traktorMissing": "トラックがTraktorにありません",
       "traktorAmbiguous": "Traktorにこのトラックが{{count}}件あります",
       "traktorCuesChanged": "Traktorのキューが変わりました",
+      "traktorNameStale": "Traktorにはまだ「{{value}}」と表示されています",
       "traktorUnreadable": "Traktorを確認できませんでした"
     },
     "retry": "再試行",
