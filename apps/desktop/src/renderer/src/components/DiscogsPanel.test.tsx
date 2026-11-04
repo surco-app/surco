@@ -60,6 +60,7 @@ function panel(b: DiscogsBrowser, fileDurationSec?: number) {
       width={315}
       onResizeStart={vi.fn()}
       onFit={vi.fn()}
+      onFold={vi.fn()}
     />
   )
 }
@@ -87,6 +88,7 @@ describe('DiscogsPanel column width', () => {
         width={377}
         onResizeStart={onResizeStart}
         onFit={onFit}
+        onFold={vi.fn()}
       />,
     )
     return { onResizeStart, onFit }
@@ -302,6 +304,7 @@ describe('DiscogsPanel suggestion marks', () => {
         width={315}
         onResizeStart={vi.fn()}
         onFit={vi.fn()}
+        onFold={vi.fn()}
       />,
     )
   }

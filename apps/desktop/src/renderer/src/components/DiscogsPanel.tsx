@@ -1,4 +1,11 @@
-import { ChevronRight, ListFilter, SearchX, Sparkles, TriangleAlert } from 'lucide-react'
+import {
+  ChevronRight,
+  ListFilter,
+  PanelLeftClose,
+  SearchX,
+  Sparkles,
+  TriangleAlert,
+} from 'lucide-react'
 import type React from 'react'
 import {
   Fragment,
@@ -73,6 +80,7 @@ interface Props {
   width: number
   onResizeStart: (e: React.PointerEvent) => void
   onFit: (deficit: number) => void
+  onFold: () => void
 }
 
 // The Discogs column: the search box, its results, and the expanded release's
@@ -99,6 +107,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
   width,
   onResizeStart,
   onFit,
+  onFold,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const onOpenSettings = useOpenSettings()
@@ -571,6 +580,16 @@ export const DiscogsPanel = memo(function DiscogsPanel({
               placeholder={tr('editor.searchPlaceholder')}
               clearLabel={tr('editor.searchClear')}
             />
+            <button
+              type="button"
+              data-testid="results-fold"
+              onClick={onFold}
+              aria-label={tr('editor.resultsFold')}
+              className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-fg"
+            >
+              <PanelLeftClose className="h-3.5 w-3.5" aria-hidden="true" />
+              <Tooltip label={tr('editor.resultsFold')} />
+            </button>
           </div>
           {showTokenTip && (
             <p data-testid="discogs-token-tip" className="px-1.5 pt-2 text-xs text-fg-muted">

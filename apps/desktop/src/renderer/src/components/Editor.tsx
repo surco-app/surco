@@ -5,8 +5,10 @@ import {
   Eraser,
   Globe,
   Music,
+  PanelLeftOpen,
   RefreshCw,
   Scissors,
+  Search,
   Tag,
   TriangleAlert,
   Type,
@@ -202,6 +204,8 @@ interface Props {
   // lives in App, so the link just signals intent with what it would clean up.
   onCleanUp?: (offer: CleanupOffer) => void
   resultsWidth: number
+  resultsFolded: boolean
+  onFoldResults: (folded: boolean) => void
   onResultsResizeStart: (e: React.PointerEvent) => void
   onResultsFit: (deficit: number) => void
   // Opens the loudness-pills explainer. App owns the modal so it gates the global
@@ -295,6 +299,8 @@ export const Editor = memo(function Editor({
   onAddToAppleMusic,
   onCleanUp,
   resultsWidth,
+  resultsFolded,
+  onFoldResults,
   onResultsResizeStart,
   onResultsFit,
   onShowLoudnessHelp,
@@ -408,6 +414,7 @@ export const Editor = memo(function Editor({
     matchCleanup,
     searchByAlbumFirst,
     discogsFormats,
+    !resultsFolded,
   )
   const { release } = browser
   // Section fold state lives in a module-level store (not per-track useState), so folding
@@ -1441,23 +1448,61 @@ export const Editor = memo(function Editor({
 
   return (
     <div className="flex h-full min-h-0">
-      <DiscogsPanel
-        browser={browser}
-        matchedTrack={matchedTrack}
-        matchTier={matchTier}
-        appliedTrack={appliedTrack}
-        fileDurationSec={item.duration}
-        showTokenTip={showTokenTip}
-        isMulti={isMulti}
-        selectedTracks={selectedTracks}
-        onApplyMatches={onApplyMatches}
-        selectTrack={selectTrack}
-        searchInputRef={searchInputRef}
-        formatFilter={discogsFormats}
-        width={resultsWidth}
-        onResizeStart={onResultsResizeStart}
-        onFit={onResultsFit}
-      />
+      {resultsFolded ? (
+        <div
+          data-testid="results-strip"
+          className="flex w-11 shrink-0 flex-col items-center gap-1 border-r border-[var(--color-line)] pt-2"
+        >
+          <button
+            type="button"
+            data-testid="results-unfold"
+            onClick={() => onFoldResults(false)}
+            aria-label={tr('editor.resultsUnfold')}
+            className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-fg"
+          >
+            <PanelLeftOpen className="h-3.5 w-3.5" aria-hidden="true" />
+            <Tooltip label={tr('editor.resultsUnfold')} />
+          </button>
+          <button
+            type="button"
+            data-testid="results-unfold-search"
+            onClick={() => {
+              onFoldResults(false)
+              setTimeout(() => searchInputRef.current?.focus(), 0)
+            }}
+            aria-label={tr('editor.resultsUnfoldSearch')}
+            className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-fg"
+          >
+            <Search className="h-3.5 w-3.5" aria-hidden="true" />
+            <Tooltip label={tr('editor.resultsUnfoldSearch')} />
+          </button>
+          <span
+            aria-hidden="true"
+            className="mt-2 rotate-180 text-xs text-fg-faint [writing-mode:vertical-rl]"
+          >
+            {tr('editor.resultsColumn')}
+          </span>
+        </div>
+      ) : (
+        <DiscogsPanel
+          browser={browser}
+          matchedTrack={matchedTrack}
+          matchTier={matchTier}
+          appliedTrack={appliedTrack}
+          fileDurationSec={item.duration}
+          showTokenTip={showTokenTip}
+          isMulti={isMulti}
+          selectedTracks={selectedTracks}
+          onApplyMatches={onApplyMatches}
+          selectTrack={selectTrack}
+          searchInputRef={searchInputRef}
+          formatFilter={discogsFormats}
+          width={resultsWidth}
+          onResizeStart={onResultsResizeStart}
+          onFit={onResultsFit}
+          onFold={() => onFoldResults(true)}
+        />
+      )}
 
       <div data-shortcut-scope="editor" className="flex min-w-0 flex-1 flex-col">
         <div

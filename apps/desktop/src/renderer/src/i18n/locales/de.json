@@ -529,6 +529,10 @@
   "editor": {
     "searchPlaceholder": "Deine Quellen durchsuchen oder eine Discogs-Release-ID einfügen…",
     "searchClear": "Suche leeren",
+    "resultsFold": "Ergebnisse ausblenden",
+    "resultsUnfold": "Ergebnisse einblenden",
+    "resultsUnfoldSearch": "Suchen",
+    "resultsColumn": "Ergebnisse",
     "tokenTip": "Die Suche funktioniert ohne Einrichtung. Füg in den <0>Einstellungen</0> deinen eigenen Discogs-Token hinzu, um ein höheres, privates Limit zu bekommen.",
     "matchSuggested": "Vorgeschlagen",
     "lengthMismatch": "Die Länge weicht von deiner Datei ab ({{length}})",

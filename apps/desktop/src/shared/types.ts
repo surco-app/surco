@@ -336,6 +336,7 @@ export interface Settings {
   // replaced it. Kept so settings files that carry it stay valid.
   resultsWidth: number | null
   columnShares?: ColumnShares
+  foldedResults?: Partial<Record<PlaylistSource | 'tracks', boolean>>
   // When on, every imported track queues its quality analysis in the background (low
   // priority, same shared cache as the sweep), so suspect rips surface on their own
   // without pressing Analyze. Off by default: it spends an ffmpeg decode per drop.

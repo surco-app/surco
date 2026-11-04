@@ -1059,6 +1059,84 @@ describe('App column widths', () => {
   })
 })
 
+describe('App results column fold', () => {
+  function withEngine(over: Partial<Api> = {}): ReturnType<typeof vi.fn> {
+    const saveSettings = vi.fn((patch: Partial<Settings>) =>
+      Promise.resolve({ ...settings(), ...patch }),
+    )
+    setApi({
+      saveSettings,
+      engineAvailable: vi.fn<Api['engineAvailable']>().mockResolvedValue(true),
+      loadEngineTree: vi
+        .fn<Api['loadEngineTree']>()
+        .mockResolvedValue([{ id: '7', name: 'Friday', kind: 'playlist', count: 2 }]),
+      engineRecentCount: vi.fn<Api['engineRecentCount']>().mockResolvedValue(0),
+      loadEnginePlaylist: vi.fn<Api['loadEnginePlaylist']>().mockResolvedValue([
+        { path: '/m/a.wav', separator: false, meta: {}, contentId: 'engine:11' },
+        { path: '/m/b.wav', separator: false, meta: {}, contentId: 'engine:12' },
+      ]),
+      ...over,
+    })
+    return saveSettings
+  }
+
+  async function openFridayRow(): Promise<void> {
+    fireEvent.click(await screen.findByTestId('source-rail-engine'))
+    fireEvent.click(await screen.findByTestId('source-node-7'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    fireEvent.click(screen.getAllByTestId('track-row')[0])
+  }
+
+  // The DJ who never tags from a DJ tab folds the column there once; the user who fills
+  // missing metadata from Tracks must still find it open. So the fold belongs to the tab.
+  it('remembers the fold per tab, leaving the Tracks tab with its results column', async () => {
+    const saveSettings = withEngine()
+    await renderApp()
+    await addTwoTracks()
+    await openFridayRow()
+    fireEvent.click(await screen.findByTestId('results-fold'))
+    expect(saveSettings).toHaveBeenCalledWith({ foldedResults: { engine: true } })
+    expect(screen.queryByTestId('matches-column')).toBeNull()
+    expect(screen.getByTestId('results-strip')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByTestId('source-rail-tracks'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    fireEvent.click(screen.getAllByTestId('track-row')[0])
+    expect(await screen.findByTestId('matches-column')).toBeInTheDocument()
+  })
+
+  // ⌘2 jumps to the results column; folded, the jump would land nowhere, so it opens it.
+  it('unfolds the column when the jump-to-results shortcut aims at it', async () => {
+    const saveSettings = withEngine({
+      getSettings: vi
+        .fn<Api['getSettings']>()
+        .mockResolvedValue(settings({ foldedResults: { engine: true } })),
+    })
+    await renderApp()
+    await addTwoTracks()
+    await openFridayRow()
+    expect(await screen.findByTestId('results-strip')).toBeInTheDocument()
+    fireEvent.keyDown(document.body, { key: '2', ctrlKey: true })
+    expect(saveSettings).toHaveBeenCalledWith({ foldedResults: { engine: false } })
+    expect(await screen.findByTestId('matches-column')).toBeInTheDocument()
+  })
+  // "Search Discogs" from a row's menu promises a search box with the cursor in it.
+  it('unfolds the column for a row menu search and puts the cursor in its box', async () => {
+    const saveSettings = withEngine({
+      getSettings: vi
+        .fn<Api['getSettings']>()
+        .mockResolvedValue(settings({ foldedResults: { engine: true } })),
+    })
+    await renderApp()
+    await addTwoTracks()
+    await openFridayRow()
+    fireEvent.contextMenu(screen.getAllByTestId('track-row')[1])
+    fireEvent.click(await screen.findByTestId('track-menu-search'))
+    expect(saveSettings).toHaveBeenCalledWith({ foldedResults: { engine: false } })
+    await waitFor(() => expect(screen.getByTestId('discogs-query')).toHaveFocus())
+  })
+})
+
 describe('App quality triage', () => {
   // The "analyze quality" sweep exists to triage a whole dropped crate for fake-lossless
   // rips at once: every track gets measured and flagged with a verdict dot, so the user

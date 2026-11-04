@@ -254,6 +254,62 @@ describe('useDiscogsBrowser', () => {
     expect(result.current.results[0].id).toBe(1)
   })
 
+  // A DJ who folds the results column away is browsing a crate for cues and waveforms, not
+  // tagging: every track switch would otherwise spend a catalog request (and rate-limit
+  // budget) on a list nobody sees. Unfolding has to search the track on screen right away.
+  it('searches nothing while the results column is folded and catches up when it unfolds', async () => {
+    setApi()
+    const { result, rerender } = renderHook(
+      ({ active }) =>
+        useDiscogsBrowser(
+          item({ query: 'some album' }),
+          tr,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          active,
+        ),
+      { wrapper: wrapper(), initialProps: { active: false } },
+    )
+    act(() => result.current.doSearch())
+    await new Promise((r) => setTimeout(r, 20))
+    expect(window.api.search).not.toHaveBeenCalled()
+
+    rerender({ active: true })
+    await waitFor(() => expect(result.current.results).toHaveLength(1))
+    expect(window.api.search).toHaveBeenCalledWith(
+      'some album',
+      'discogs',
+      'high',
+      expect.anything(),
+    )
+  })
+
+  // A track already matched opens its release by id; folded, even that request waits.
+  it('leaves a stored release id unloaded while the results column is folded', async () => {
+    setApi()
+    renderHook(
+      () =>
+        useDiscogsBrowser(
+          item({ discogsReleaseId: '1' }),
+          tr,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          false,
+        ),
+      { wrapper: wrapper() },
+    )
+    await new Promise((r) => setTimeout(r, 20))
+    expect(window.api.getRelease).not.toHaveBeenCalled()
+  })
+
   // A click expands a result; clicking the open one collapses it. This is the toggle
   // the results list relies on, and browsing must never apply anything on its own.
   it('opens a release on preview and closes it when previewed again', async () => {

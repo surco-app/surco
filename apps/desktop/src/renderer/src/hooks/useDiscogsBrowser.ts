@@ -132,6 +132,7 @@ export function useDiscogsBrowser(
   // The release-format filter, from Settings. Like album-first, the main process applies
   // it; only its place in the search key lives here.
   formats: string[] = [],
+  active = true,
 ): DiscogsBrowser {
   const queryClient = useQueryClient()
   const [query, setQuery] = useState(item.query)
@@ -273,7 +274,7 @@ export function useDiscogsBrowser(
         const hints = searchHintsFor(item, cleanup, typed ? searchTerm : undefined)
         return window.api.search(searchTerm, source, 'high', hints)
       },
-      enabled: searchTerm.trim() !== '',
+      enabled: active && searchTerm.trim() !== '',
     })),
     combine: combineSearches,
   })

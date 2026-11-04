@@ -817,6 +817,11 @@ export default function App(): React.JSX.Element {
   // Traktor's tree is organised like rekordbox's once its collection is confirmed in
   // Settings, the only one Surco writes to.
   const sourceProgram = browser.source === 'appleMusic' ? null : browser.source
+  const resultsTab = browser.source ?? 'tracks'
+  const resultsFolded = settings?.foldedResults?.[resultsTab] ?? false
+  const foldResults = useStableCallback((folded: boolean): void =>
+    saveSettings({ foldedResults: { ...settings?.foldedResults, [resultsTab]: folded } }),
+  )
   const sourceEdit = sourceProgram && SOURCE_PROGRAMS[sourceProgram].edit
   const traktorCanSave =
     useQuery({
@@ -1428,9 +1433,10 @@ export default function App(): React.JSX.Element {
   const onSearchTrack = useCallback(
     (id: string): void => {
       onSelectTrack(id, {})
+      if (resultsFolded) foldResults(false)
       setTimeout(() => searchInputRef.current?.focus(), 0)
     },
-    [onSelectTrack],
+    [onSelectTrack, resultsFolded, foldResults],
   )
 
   // The right-click menu keeps a multi-selection intact (TrackList only re-selects an
@@ -2846,11 +2852,17 @@ export default function App(): React.JSX.Element {
   // stop, matches = the first Discogs result (or its search box), editor = the title field.
   const focusList = (): void =>
     document.querySelector<HTMLElement>('[data-testid="track-row"][tabindex="0"]')?.focus()
-  const focusMatches = (): void =>
-    (
+  const focusMatches = (): void => {
+    if (resultsFolded) {
+      foldResults(false)
+      setTimeout(() => searchInputRef.current?.focus(), 0)
+      return
+    }
+    ;(
       document.querySelector<HTMLElement>('[data-testid="discogs-result"]') ??
       document.querySelector<HTMLElement>('[data-testid="discogs-query"]')
     )?.focus()
+  }
   const focusEditor = (): void =>
     document.querySelector<HTMLElement>('[data-testid="field-title"]')?.focus()
   const stepTrackInField = (delta: 1 | -1): void => {
@@ -3637,6 +3649,8 @@ export default function App(): React.JSX.Element {
                             onAddToAppleMusic={onAddSelectedToAppleMusic}
                             onCleanUp={onCleanUp}
                             resultsWidth={columns.widths.results}
+                            resultsFolded={resultsFolded}
+                            onFoldResults={foldResults}
                             onResultsResizeStart={onResultsResizeStart}
                             onResultsFit={onResultsFit}
                             onShowLoudnessHelp={onShowLoudnessHelp}

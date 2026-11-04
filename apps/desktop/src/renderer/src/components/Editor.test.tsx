@@ -193,6 +193,7 @@ function renderEditor(
     autoMatch?: boolean
     rekordboxCue?: React.ComponentProps<typeof Editor>['rekordboxCue']
     readFullTrack?: React.ComponentProps<typeof Editor>['readFullTrack']
+    resultsFolded?: boolean
   } = {},
 ): {
   onProcess: ReturnType<typeof vi.fn>
@@ -210,9 +211,11 @@ function renderEditor(
   onSearchWeb: ReturnType<typeof vi.fn>
   onExportCollection: ReturnType<typeof vi.fn>
   onRecordUndo: ReturnType<typeof vi.fn>
+  onFoldResults: ReturnType<typeof vi.fn>
   changeSettings: (next: Partial<Settings>) => void
 } {
   const onProcess = vi.fn()
+  const onFoldResults = vi.fn()
   const onRecordUndo = vi.fn()
   const onChange = vi.fn()
   const onDeriveTags = vi.fn()
@@ -246,6 +249,8 @@ function renderEditor(
         onAddToAppleMusic={vi.fn()}
         onCleanUp={onCleanUp}
         resultsWidth={480}
+        resultsFolded={props.resultsFolded ?? false}
+        onFoldResults={onFoldResults}
         onResultsResizeStart={vi.fn()}
         onResultsFit={vi.fn()}
         onShowLoudnessHelp={onShowLoudnessHelp}
@@ -313,6 +318,7 @@ function renderEditor(
     onCopyFilename,
     onSearchWeb,
     onRecordUndo,
+    onFoldResults,
     changeSettings,
   }
 }
@@ -1351,6 +1357,8 @@ function MultiHarness() {
         onExportCollection={vi.fn()}
         readFullTrack={async () => undefined}
         resultsWidth={480}
+        resultsFolded={false}
+        onFoldResults={vi.fn()}
         onResultsResizeStart={vi.fn()}
         onResultsFit={vi.fn()}
         selectedTracks={selectedTracks}
@@ -1722,6 +1730,8 @@ describe('Editor multi-select', () => {
         onExportCollection={vi.fn()}
         readFullTrack={async () => undefined}
         resultsWidth={480}
+        resultsFolded={false}
+        onFoldResults={vi.fn()}
         onResultsResizeStart={vi.fn()}
         onResultsFit={vi.fn()}
         selectedTracks={[a, b]}
@@ -3134,6 +3144,36 @@ describe('Editor Discogs apply', () => {
     expect(getRelease).not.toHaveBeenCalled()
   })
 
+  // In a DJ tab the results column is dead weight for someone placing cues: folding it hands
+  // the width to the editor, and the strip left behind is the way back.
+  it('folds the results column into a strip that unfolds it again', async () => {
+    withDiscogs()
+    const { onFoldResults } = renderEditor({ id: 'a' })
+    fireEvent.click(screen.getByTestId('results-fold'))
+    expect(onFoldResults).toHaveBeenCalledWith(true)
+  })
+
+  it('shows only the strip while folded, and searches nothing behind it', async () => {
+    withDiscogs()
+    const { onFoldResults } = renderEditor({ id: 'a', query: 'some album' }, 'wav', {
+      resultsFolded: true,
+    })
+    expect(screen.queryByTestId('matches-column')).toBeNull()
+    await new Promise((r) => setTimeout(r, 600))
+    expect(window.api.search).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByTestId('results-unfold'))
+    expect(onFoldResults).toHaveBeenCalledWith(false)
+  })
+
+  // The magnifier on the strip means "I want to search": it must open the column too, or
+  // the click would do nothing visible.
+  it('unfolds from the strip magnifier as well', () => {
+    withDiscogs()
+    const { onFoldResults } = renderEditor({ id: 'a' }, 'wav', { resultsFolded: true })
+    fireEvent.click(screen.getByTestId('results-unfold-search'))
+    expect(onFoldResults).toHaveBeenCalledWith(false)
+  })
+
   // The search field has only a placeholder, which screen readers don't treat as a
   // label, so it needs an explicit accessible name.
   it('gives the Discogs search field an accessible name', () => {
@@ -3520,6 +3560,8 @@ describe('Editor Discogs apply', () => {
         onProcess={vi.fn()}
         onAddToAppleMusic={vi.fn()}
         resultsWidth={480}
+        resultsFolded={false}
+        onFoldResults={vi.fn()}
         onResultsResizeStart={vi.fn()}
         onResultsFit={vi.fn()}
         onShowLoudnessHelp={vi.fn()}

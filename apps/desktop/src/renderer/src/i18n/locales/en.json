@@ -529,6 +529,10 @@
   "editor": {
     "searchPlaceholder": "Search your sources or paste a Discogs release id…",
     "searchClear": "Clear search",
+    "resultsFold": "Hide results",
+    "resultsUnfold": "Show results",
+    "resultsUnfoldSearch": "Search",
+    "resultsColumn": "Results",
     "tokenTip": "Search works out of the box. Add your own Discogs token in <0>Settings</0> for a higher, private rate limit.",
     "matchSuggested": "Suggested",
     "lengthMismatch": "Length differs from your file ({{length}})",
