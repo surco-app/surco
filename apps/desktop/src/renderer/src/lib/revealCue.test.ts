@@ -178,4 +178,13 @@ describe('revealableIn', () => {
       }),
     ).toEqual(['traktor'])
   })
+
+  it('offers Serato by its own crates field once the converted file is among its recently added', () => {
+    const picked = [{ id: 'A', name: 'A' }]
+    const recent = { serato: [entry('/out/Love Ya.aiff')] }
+    expect(
+      revealableIn(track({ rekordboxPlaylists: undefined, seratoPlaylists: picked }), recent),
+    ).toEqual(['serato'])
+    expect(revealableIn(track({ rekordboxPlaylists: undefined }), recent)).toEqual([])
+  })
 })

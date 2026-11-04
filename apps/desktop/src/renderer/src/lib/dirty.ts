@@ -1,5 +1,5 @@
 import { sameDeclick } from '../../../shared/declick'
-import { WRITABLE_PROGRAMS } from '../../../shared/djProgram'
+import { LIBRARY_PROGRAMS } from '../../../shared/djProgram'
 import type { DeclickConfig, NormalizeConfig } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { TRACK_PROGRAMS, type TrackProgram } from './trackPrograms'
@@ -42,7 +42,7 @@ export function trackSignature(track: SignatureFields): string {
     // Same normalization: an absent foreignRemoved and an empty array must read
     // identically, like the trim above.
     track.foreignRemoved ?? [],
-    ...WRITABLE_PROGRAMS.flatMap((program) => {
+    ...LIBRARY_PROGRAMS.flatMap((program) => {
       const { playlists, signatureTag } = TRACK_PROGRAMS[program]
       const wanted = track[playlists]
       if (!wanted) return []

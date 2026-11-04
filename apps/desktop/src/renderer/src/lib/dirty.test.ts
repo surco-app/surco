@@ -261,6 +261,15 @@ describe('trackSignature with rekordbox playlists', () => {
   })
 })
 
+describe('trackSignature with Serato crates', () => {
+  it('changes when a crate is picked, so a converted track goes stale and Update comes back', () => {
+    const t = converted({})
+    expect(trackSignature({ ...t, seratoPlaylists: [{ id: 'A', name: 'A' }] })).not.toBe(
+      trackSignature(t),
+    )
+  })
+})
+
 describe('withSignatureCover', () => {
   it('changes only the cover of a snapshot, so art read from the file is not an edit while a typed tag still is', () => {
     const meta = { title: 'A' } as TrackItem['meta']
