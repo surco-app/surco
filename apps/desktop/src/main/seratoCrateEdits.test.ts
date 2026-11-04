@@ -710,6 +710,20 @@ describe('a converted track in Serato', () => {
     expect(outcome).toEqual({ id: outcome.id, applied: true, notices: [] })
   })
 
+  it('raises nothing for an add when Serato picked the file up into its crates before the queue applied', () => {
+    const { roots, draft } = seratoWith(['Users/dj/new.mp3'], {
+      internal: [['Old', ['Users/dj/new.mp3']]],
+    })
+    const outcome = applySeratoTrack(
+      draft,
+      trackOp({ path: '/Users/dj/new.mp3', add: true, meta: META }),
+      roots,
+      NOW,
+    )
+    expect(outcome).toEqual({ id: outcome.id, applied: true, notices: [] })
+    expect(draft.changes().writes).toEqual([])
+  })
+
   it('says a chosen crate changed in Serato when Surco cannot read it back', () => {
     const { roots, draft } = seratoWith(['Users/dj/a.mp3'], { internal: ['A'], truncated: ['A'] })
     expect(
@@ -745,6 +759,24 @@ describe('a converted track in Serato', () => {
         NOW,
       ).notices,
     ).toEqual([{ code: 'playlist-gone', track: 'a.mp3', playlist: 'Gone' }])
+  })
+
+  it('says a file on a drive with no Serato library cannot go in the chosen crates, rather than only that it was not added', () => {
+    const { roots, draft } = seratoWith(['Users/dj/a.mp3'])
+    const outcome = applySeratoTrack(
+      draft,
+      trackOp({ path: '/Volumes/Other/a.mp3', wanted: [{ id: 'A', name: 'A' }, { name: 'New' }] }),
+      roots,
+      NOW,
+    )
+    expect(outcome).toMatchObject({
+      applied: false,
+      notices: [
+        { code: 'other-volume', track: 'a.mp3', playlist: 'A' },
+        { code: 'other-volume', track: 'a.mp3', playlist: 'New' },
+      ],
+    })
+    expect(draft.changes().writes).toEqual([])
   })
 
   it('skips a format Serato does not take', () => {

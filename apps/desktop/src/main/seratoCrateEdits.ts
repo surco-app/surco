@@ -469,6 +469,16 @@ export function applySeratoTrack(
     notices: [{ code: 'not-added', track: op.label }],
   }
   const root = seratoRootOf(op.path, roots)
+  if (!root && !op.add && op.wanted.length > 0)
+    return {
+      id: op.id,
+      applied: false,
+      notices: op.wanted.map((target) => ({
+        code: 'other-volume',
+        track: op.label,
+        playlist: target.name,
+      })),
+    }
   const database = root && join(root.dir, DATABASE)
   const bytes = database && draft.read(database)
   if (!root || !database || !bytes) return notAdded
@@ -513,8 +523,9 @@ export function applySeratoTrack(
       })
     if (!added) return notAdded
     draft.write(database, added)
-    if (op.wanted.length === 0) return { id: op.id, applied: true, notices: [] }
   }
+  if (op.wanted.length === 0 && op.known.length === 0)
+    return { id: op.id, applied: true, notices: [] }
   return { id: op.id, applied: true, notices: fileInCrates(draft, op, root, roots, path) }
 }
 
