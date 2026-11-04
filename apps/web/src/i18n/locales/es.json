@@ -2450,7 +2450,7 @@
           {
             "tab": "Procesado",
             "section": "Reparación de vinilo",
-            "setting": "Clicks",
+            "setting": "Clics",
             "value": "Estándar",
             "note": "Quita los clics cortos de la aguja al convertir."
           },
