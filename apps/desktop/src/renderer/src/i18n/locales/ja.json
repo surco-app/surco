@@ -132,7 +132,17 @@
       "current": "フィルター: {{filter}} {{count}}",
       "reviewIncomplete": "「メタデータを確認」で入力する",
       "badGrid": "グリッド不良",
-      "gridMeasuring": "測定中 {{done}} / {{total}}"
+      "gridMeasuring": "測定中 {{done}} / {{total}}",
+      "section": {
+        "status": "ステータス",
+        "quality": "品質",
+        "tags": "タグ",
+        "match": "マッチ済み",
+        "attention": "オーディオとキュー",
+        "library": "Apple Music",
+        "libraryEngine": "Engine DJ",
+        "format": "フォーマット"
+      }
     },
     "search": {
       "placeholder": "トラックを検索",

@@ -38,7 +38,7 @@ import { Fragment } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { LibrarySource } from '../lib/librarySource'
 import { EMPTY_FILTER, type FilterSelection, type qualityCounts } from '../lib/triage'
-import { FilterBar, FilterDivider, FilterOption } from './FilterBar'
+import { FilterBar, FilterDivider, FilterHeading, FilterOption } from './FilterBar'
 import { Tooltip } from './Tooltip'
 
 // The selectable bucket modes, one row each, grouped by the dimension they belong to.
@@ -262,27 +262,38 @@ export function QualityFilterBar({
   // The remaining buckets that follow the format axis, in logical groups rendered with a
   // thin divider between them so the menu reads by dimension. Empty groups drop out, so the
   // dividers only ever separate groups that actually have something to show.
-  const primarySections: Mode[][] = [
+  const primarySections: { key: string; modes: Mode[] }[] = [
     // The quality verdict.
-    QUALITY_MODES,
+    { key: 'quality', modes: QUALITY_MODES },
     // The tag work matching a release fixes, on its own axis so it stacks with the retouch
     // buckets: artwork missing or too soft, no tempo, no key. Listed per bucket like those.
-    ...(TAGS_MODES.some((m) => tally[m] > 0) ? [TAGS_MODES.filter((m) => tally[m] > 0)] : []),
+    ...(TAGS_MODES.some((m) => tally[m] > 0)
+      ? [{ key: 'tags', modes: TAGS_MODES.filter((m) => tally[m] > 0) }]
+      : []),
     // Where the tags came from, apart from how far the conversion got, though both filter
     // on the conversion axis.
-    ...(matchSection.length > 0 ? [matchSection] : []),
+    ...(matchSection.length > 0 ? [{ key: 'match', modes: matchSection }] : []),
     // The retouch buckets (silence left to trim, true clipping, cues left to mark), each
     // listed only once some track is actually in it — permanently-empty rows would just
     // pad the menu, and the facts only exist once waves are decoded or a library is read.
-    ...(ATTENTION_MODES.some(shownAttention) ? [ATTENTION_MODES.filter(shownAttention)] : []),
+    ...(ATTENTION_MODES.some(shownAttention)
+      ? [{ key: 'attention', modes: ATTENTION_MODES.filter(shownAttention) }]
+      : []),
     // Apple Music library buckets, listed only once the snapshot has resolved a verdict
     // for at least one track — which also keeps them off Windows, where there is no
     // library to read. "Not in library" leads: it's the actionable bucket.
-    ...(tally.inLibrary + tally.notInLibrary > 0 ? [LIBRARY_MODES] : []),
+    ...(tally.inLibrary + tally.notInLibrary > 0 ? [{ key: 'library', modes: LIBRARY_MODES }] : []),
   ]
   // Only once the crate actually holds the same song twice — a permanently-empty
   // duplicates bucket would just pad the menu.
   const duplicatesSection: Mode[] = tally.duplicates > 0 ? DUPLICATES_MODES : []
+  const sectionLabel = (key: string): string =>
+    key === 'library' && librarySource === 'engineDj'
+      ? tr('sidebar.filter.section.libraryEngine')
+      : tr(`sidebar.filter.section.${key}`)
+  const heading = (key: string): React.JSX.Element => (
+    <FilterHeading testid={`quality-filter-section-${key}`} label={sectionLabel(key)} />
+  )
   const countOf = (mode: Mode): number => facets.tally[mode as keyof Tally]
   const isActive = (mode: Mode): boolean => value[axisOf(mode)] === mode
   // "All" reads as selected only when nothing is filtered on any axis, so picking a bucket
@@ -438,17 +449,20 @@ export function QualityFilterBar({
           {renderPrimary('all', close)}
           <Fragment key="conversion">
             <FilterDivider testid="quality-filter-separator" />
+            {heading('status')}
             {conversionSection.map((m) => renderPrimary(m, close))}
           </Fragment>
           {primarySections.map((group) => (
-            <Fragment key={group[0]}>
+            <Fragment key={group.key}>
               <FilterDivider testid="quality-filter-separator" />
-              {group.map((m) => renderPrimary(m, close))}
+              {heading(group.key)}
+              {group.modes.map((m) => renderPrimary(m, close))}
             </Fragment>
           ))}
           {formats.length > 0 && (
             <Fragment key="formats">
               <FilterDivider testid="quality-filter-separator" />
+              {heading('format')}
               {formats.map((f) => renderFormat(f, close))}
             </Fragment>
           )}

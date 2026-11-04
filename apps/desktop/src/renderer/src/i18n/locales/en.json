@@ -132,7 +132,17 @@
       "current": "Filter: {{filter}} {{count}}",
       "reviewIncomplete": "Fill them in Review metadata",
       "badGrid": "Bad grid",
-      "gridMeasuring": "Measuring {{done}} of {{total}}"
+      "gridMeasuring": "Measuring {{done}} of {{total}}",
+      "section": {
+        "status": "Status",
+        "quality": "Quality",
+        "tags": "Tags",
+        "match": "Matched",
+        "attention": "Audio and cues",
+        "library": "Apple Music",
+        "libraryEngine": "Engine DJ",
+        "format": "Format"
+      }
     },
     "search": {
       "placeholder": "Search tracks",

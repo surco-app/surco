@@ -132,7 +132,17 @@
       "current": "Filtro: {{filter}} {{count}}",
       "reviewIncomplete": "Completarlas en Revisar metadatos",
       "badGrid": "Rejilla mal",
-      "gridMeasuring": "Midiendo {{done}} de {{total}}"
+      "gridMeasuring": "Midiendo {{done}} de {{total}}",
+      "section": {
+        "status": "Estado",
+        "quality": "Calidad",
+        "tags": "Etiquetas",
+        "match": "Emparejadas",
+        "attention": "Audio y cues",
+        "library": "Apple Music",
+        "libraryEngine": "Engine DJ",
+        "format": "Formato"
+      }
     },
     "search": {
       "placeholder": "Buscar pistas",

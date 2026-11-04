@@ -132,7 +132,17 @@
       "current": "Filtre : {{filter}} {{count}}",
       "reviewIncomplete": "Les compléter dans Vérifier les métadonnées",
       "badGrid": "Grille fausse",
-      "gridMeasuring": "Mesure {{done}} sur {{total}}"
+      "gridMeasuring": "Mesure {{done}} sur {{total}}",
+      "section": {
+        "status": "État",
+        "quality": "Qualité",
+        "tags": "Tags",
+        "match": "Associés",
+        "attention": "Audio et cues",
+        "library": "Apple Music",
+        "libraryEngine": "Engine DJ",
+        "format": "Format"
+      }
     },
     "search": {
       "placeholder": "Rechercher des morceaux",

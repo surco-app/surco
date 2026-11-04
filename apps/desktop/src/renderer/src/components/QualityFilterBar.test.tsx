@@ -585,6 +585,49 @@ describe('QualityFilterBar', () => {
     expect(screen.getAllByTestId('quality-filter-separator')).toHaveLength(4)
   })
 
+  it('names each section above its first bucket, so it reads that one pick per section combines', () => {
+    renderBar({
+      tally: tally({ noBpm: 3, automatched: 1, silence: 1, notInLibrary: 6, inLibrary: 4 }),
+      formats: [
+        { format: 'FLAC', count: 5 },
+        { format: 'WAV', count: 5 },
+      ],
+    })
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    const sections = [
+      ['status', 'unsaved', 'unconverted'],
+      ['quality', 'unanalyzed'],
+      ['tags', 'noBpm'],
+      ['match', 'automatched'],
+      ['attention', 'silence'],
+      ['library', 'notInLibrary'],
+      ['format', 'ext:FLAC'],
+    ]
+    for (const [key, ...firsts] of sections) {
+      const heading = screen.getByTestId(`quality-filter-section-${key}`)
+      expect(heading).toHaveTextContent(i18n.t(`sidebar.filter.section.${key}`))
+      expect(heading).toHaveAttribute('aria-hidden', 'true')
+      const first = firsts.map((id) => screen.queryByTestId(`quality-filter-${id}`)).find(Boolean)
+      expect(
+        heading.compareDocumentPosition(first as Element) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy()
+    }
+    expect(screen.getByTestId('quality-filter-section-library')).toHaveTextContent('Apple Music')
+  })
+
+  it('names the library section after the library the buckets read', () => {
+    renderBar({ librarySource: 'engineDj', tally: tally({ notInLibrary: 6, inLibrary: 4 }) })
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    expect(screen.getByTestId('quality-filter-section-library')).toHaveTextContent('Engine DJ')
+  })
+
+  it('gives the lone duplicates bucket no heading that would only repeat its name', () => {
+    renderBar({ tally: tally({ duplicates: 2 }) })
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    expect(screen.getByTestId('quality-filter-duplicates')).toBeInTheDocument()
+    expect(screen.queryByTestId('quality-filter-section-duplicates')).toBeNull()
+  })
+
   // The trigger shows the active filter ("Unconverted 12") but its name was a fixed
   // "Filter", so a screen reader never heard which view the list was in, and voice
   // control could not target it by the words on screen.

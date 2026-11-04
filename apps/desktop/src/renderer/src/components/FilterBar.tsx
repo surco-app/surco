@@ -75,6 +75,24 @@ export function FilterDivider({ testid }: { testid: string }): React.JSX.Element
   )
 }
 
+export function FilterHeading({
+  testid,
+  label,
+}: {
+  testid: string
+  label: string
+}): React.JSX.Element {
+  return (
+    <div
+      aria-hidden="true"
+      data-testid={testid}
+      className="px-2 pt-1.5 pb-1 text-[11px] font-semibold text-fg-faint"
+    >
+      {label}
+    </div>
+  )
+}
+
 interface Props {
   testid: string
   filterRef?: React.RefObject<HTMLDivElement | null>
