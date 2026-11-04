@@ -88,6 +88,18 @@ describe('useRekordboxQueue', () => {
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['rekordbox-queued-cues'] })
   })
 
+  it('re-reads the crates of every DJ library when a queue lands, so a crate field never shows the membership from before the write', () => {
+    const { invalidate, applied } = setup()
+    act(() => applied({ tracks: 1, changes: 0, notices: [], written: [] }))
+    for (const key of [
+      'rekordbox-membership',
+      'traktor-membership',
+      'engine-membership',
+      'serato-membership',
+    ])
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: [key] })
+  })
+
   it('hands the notice the cue rekordbox left off its grid, so the DJ can go straight to it', async () => {
     const { notify, applied } = setup()
     const unfit = { code: 'cues-unfit' as const, track: 'Pray', count: 1, contentId: '7', ms: 1000 }

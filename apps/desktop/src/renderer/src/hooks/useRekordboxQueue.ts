@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { CueProgram } from '../../../shared/djProgram'
+import { type CueProgram, DJ_PROGRAMS } from '../../../shared/djProgram'
 import type {
   RekordboxQueueApplied,
   RekordboxQueueState,
@@ -16,6 +16,7 @@ import {
   SERATO_QUEUE_WORDS,
   TRAKTOR_QUEUE_WORDS,
 } from '../lib/rekordboxQueueText'
+import { SOURCE_PROGRAMS } from '../lib/sourcePrograms'
 
 const NOTHING: RekordboxQueueState = { tracks: 0, changes: 0, items: [] }
 
@@ -117,9 +118,9 @@ export function useRekordboxQueue(
   const reread = useCallback(
     () =>
       Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['rekordbox-membership'] }),
-        queryClient.invalidateQueries({ queryKey: ['traktor-membership'] }),
-        queryClient.invalidateQueries({ queryKey: ['engine-membership'] }),
+        ...DJ_PROGRAMS.map((p) =>
+          queryClient.invalidateQueries({ queryKey: [SOURCE_PROGRAMS[p].membershipKey] }),
+        ),
         queryClient.invalidateQueries({ queryKey: ['source-tree'] }),
         queryClient.invalidateQueries({ queryKey: ['source-playlist'] }),
         queryClient.invalidateQueries({ queryKey: ['rekordbox-track-cues'] }),
