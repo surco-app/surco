@@ -85,7 +85,32 @@ describe('seratoLeadOfFile', () => {
     expect(head && rekordboxShiftMs('.mp3', head, 44100)).toBeCloseTo((1152 / 44100) * 1000, 3)
   })
 
-  it('is zero for a missing MP3 and fixed for an M4A without reading it', async () => {
+  function m4a(name: string, codec: string): string {
+    const file = join(dir, name)
+    execFileSync(ffmpegStatic as unknown as string, [
+      '-y',
+      '-loglevel',
+      'error',
+      '-f',
+      'lavfi',
+      '-i',
+      'sine=frequency=440:duration=2',
+      '-c:a',
+      codec,
+      file,
+    ])
+    return file
+  }
+
+  it('gives an ALAC M4A no lead, because Serato only skips the priming an AAC encoder adds and ALAC has none', async () => {
+    expect(await seratoLeadOfFile(m4a('lossless.m4a', 'alac'), 44100)).toBe(0)
+  })
+
+  it('keeps the 1024-sample lead on an AAC M4A read from disk', async () => {
+    expect(await seratoLeadOfFile(m4a('lossy.m4a', 'aac'), 44100)).toBeCloseTo(-23.22, 2)
+  })
+
+  it('is zero for a missing MP3 and fixed for an M4A it cannot read', async () => {
     expect(await seratoLeadOfFile(join(dir, 'gone.mp3'), 44100)).toBe(0)
     expect(await seratoLeadOfFile(join(dir, 'gone.m4a'), 44100)).toBeCloseTo(-23.22, 2)
   })

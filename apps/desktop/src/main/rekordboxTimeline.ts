@@ -144,12 +144,21 @@ function mediaTimescale(buf: Buffer, trak: Mp4Box): number | undefined {
   return at + 4 <= mdhd.end ? buf.readUInt32BE(at) || undefined : undefined
 }
 
+function isAlac(moov: Buffer, trak: Mp4Box | undefined): boolean {
+  const stsd = trak && mp4Child(moov, ['mdia', 'minf', 'stbl', 'stsd'], trak.body, trak.end)
+  return !!stsd && moov.toString('latin1', stsd.body + 12, stsd.body + 16) === 'alac'
+}
+
+export function m4aIsAlac(moov: Buffer): boolean {
+  const root = mp4Child(moov, ['moov'])
+  return !!root && isAlac(moov, soundTrack(moov, root))
+}
+
 export function m4aPrimingMs(moov: Buffer, sampleRate: number): number {
   const root = mp4Child(moov, ['moov'])
   if (!root) return (APPLE_AAC_PRIMING / sampleRate) * 1000
   const trak = soundTrack(moov, root)
-  const stsd = trak && mp4Child(moov, ['mdia', 'minf', 'stbl', 'stsd'], trak.body, trak.end)
-  if (stsd && moov.toString('latin1', stsd.body + 12, stsd.body + 16) === 'alac') return 0
+  if (isAlac(moov, trak)) return 0
   const elst = trak && mp4Child(moov, ['edts', 'elst'], trak.body, trak.end)
   const edit = elst && editListStart(moov, elst)
   if (trak && edit !== undefined) return (edit / (mediaTimescale(moov, trak) ?? sampleRate)) * 1000
@@ -196,7 +205,7 @@ export async function rekordboxLeadOfFile(file: string): Promise<number> {
   return head ? rekordboxLeadMs(head) : 0
 }
 
-async function m4aMoov(file: string): Promise<Buffer> {
+export async function m4aMoov(file: string): Promise<Buffer> {
   let fh: Awaited<ReturnType<typeof open>>
   try {
     fh = await open(file, 'r')
