@@ -189,7 +189,7 @@ export function stubApi(over: Partial<Api> = {}): Api {
     cancelMusicFixes: async () => {},
     syncLibraryTags: async () => {
       const nothing = { outcome: 'nothing' as const }
-      return { rekordbox: nothing, engine: nothing, traktor: nothing }
+      return { rekordbox: nothing, engine: nothing, traktor: nothing, serato: nothing }
     },
     replaceDuplicatesInLibraries: async () => [],
     libraryStatus: async () => {

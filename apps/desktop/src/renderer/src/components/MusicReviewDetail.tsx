@@ -1,7 +1,7 @@
 import { Check, ChevronDown, Copy } from 'lucide-react'
 import { useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { WritableProgram } from '../../../shared/djProgram'
+import type { LibraryProgram } from '../../../shared/djProgram'
 import type { LibraryCopyInfo, LibraryStatus, ReviewEntry } from '../../../shared/types'
 import {
   type DuplicateCard,
@@ -15,7 +15,7 @@ import { damageKey } from '../lib/damageReview'
 import { INVISIBLE } from '../lib/musicSpelling'
 import { formatFileSize } from '../lib/properties'
 import { formatKHz, type Verdict } from '../lib/quality'
-import { REVIEW_LIBRARIES } from '../lib/reviewLibraries'
+import { REVIEW_LIBRARIES, TAG_LIBRARIES } from '../lib/reviewLibraries'
 import { REVIEW_COPY } from '../lib/reviewSource'
 import type { TrackItem } from '../types'
 import { DIALOG_CANCEL } from './ConfirmDialog'
@@ -38,7 +38,7 @@ import {
   useSplitMenu,
 } from './SplitButton'
 
-export type ReviewSync = Record<WritableProgram, boolean>
+export type ReviewSync = Record<LibraryProgram, boolean>
 
 type Sections = Record<'options' | 'affected' | 'copies', boolean>
 interface Folding {
@@ -282,7 +282,7 @@ function Where({
       name: id === 'music' ? musicLabel : t('musicReview.where.file'),
       missing: false,
     })),
-    ...REVIEW_LIBRARIES.filter(([library]) => sync[library]).map(([library, name]) => ({
+    ...TAG_LIBRARIES.filter(([library]) => sync[library]).map(([library, name]) => ({
       id: library,
       name,
       missing: libraries?.[library].found === false,

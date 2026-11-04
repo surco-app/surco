@@ -7,7 +7,7 @@ import type {
   RekordboxPlaylistEdit,
   RekordboxQueueNotice,
 } from '../shared/types'
-import type { CrateStamp, EditOp, OpOutcome, TrackOp } from './rekordboxQueueOps'
+import type { CrateStamp, EditOp, OpOutcome, TagsOp, TrackOp } from './rekordboxQueueOps'
 import {
   type CrateTrack,
   crateFamily,
@@ -21,7 +21,12 @@ import {
   validCrateName,
   withCrateTracks,
 } from './seratoCrateFile'
-import { seratoDatabaseHas, seratoFileType, withSeratoTrackAdded } from './seratoDatabaseWrite'
+import {
+  seratoDatabaseHas,
+  seratoFileType,
+  withSeratoTrackAdded,
+  withSeratoTrackFields,
+} from './seratoDatabaseWrite'
 import type { SeratoLibraryRoot } from './seratoLibrary'
 import { createSeratoDraft, type SeratoDraft } from './seratoLibraryWrite'
 
@@ -509,4 +514,20 @@ export function applySeratoTrack(
     if (op.wanted.length === 0) return { id: op.id, applied: true, notices: [] }
   }
   return { id: op.id, applied: true, notices: fileInCrates(draft, op, root, roots, path) }
+}
+
+export function applySeratoTags(
+  draft: SeratoDraft,
+  op: TagsOp,
+  roots: SeratoLibraryRoot[],
+): OpOutcome {
+  const root = seratoRootOf(op.path, roots)
+  const database = root && join(root.dir, DATABASE)
+  const bytes = database && draft.read(database)
+  const tagged =
+    root && bytes && withSeratoTrackFields(bytes, seratoPathOn(op.path, root), op.fields)
+  if (!database || !tagged)
+    return { id: op.id, applied: false, notices: [{ code: 'not-in-library', track: op.label }] }
+  draft.write(database, tagged)
+  return { id: op.id, applied: true, notices: [] }
 }

@@ -1,4 +1,4 @@
-import { type DjProgram, writableInOrder } from '../../../shared/djProgram'
+import { type DjProgram, programsInOrder, writableInOrder } from '../../../shared/djProgram'
 
 export const LIBRARY_NAME: Record<DjProgram, string> = {
   rekordbox: 'rekordbox',
@@ -8,5 +8,9 @@ export const LIBRARY_NAME: Record<DjProgram, string> = {
 }
 
 export const REVIEW_LIBRARIES = writableInOrder(['rekordbox', 'engine', 'traktor']).map(
+  (library) => [library, LIBRARY_NAME[library]] as const,
+)
+
+export const TAG_LIBRARIES = programsInOrder(['rekordbox', 'engine', 'traktor', 'serato']).map(
   (library) => [library, LIBRARY_NAME[library]] as const,
 )

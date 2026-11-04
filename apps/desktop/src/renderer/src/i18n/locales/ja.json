@@ -2511,7 +2511,8 @@
         "updated_one": "{{count}} トラックが更新されました",
         "updated_other": "{{count}} トラックが更新されました",
         "open": "未変更、開いていました",
-        "noMatch": "これらのトラックはありませんでした"
+        "noMatch": "これらのトラックはありませんでした",
+        "queued": "Serato を閉じると保存されます"
       },
       "undoTitle": "変更を取り消しました",
       "undoTitleWarnings_one": "{{count}} の警告とともに取り消しました",
@@ -2859,7 +2860,8 @@
         "remove": "トラックを削除",
         "insertSeparator": "区切りを追加"
       },
-      "cues": "キュー"
+      "cues": "キュー",
+      "tags": "タグ"
     },
     "applyNow": "今すぐ適用",
     "discard": "破棄",

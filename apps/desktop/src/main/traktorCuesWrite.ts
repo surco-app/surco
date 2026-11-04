@@ -4,7 +4,7 @@ import { HOT_KINDS, validWantedSet, type WantedCue } from '../shared/cueRules'
 import { type EditableGrid, GRID_BPM_MAX, GRID_BPM_MIN } from '../shared/gridEdit'
 import { TRAKTOR_HOT_OFFSET, traktorKey } from '../shared/traktorContent'
 import type { RekordboxEditRefusal, RekordboxQueueNotice } from '../shared/types'
-import type { BatchResult, CuesOp, OpOutcome, QueueOp } from './rekordboxQueueOps'
+import type { BatchResult, CuesOp, OpOutcome, QueueOp, TagsOp } from './rekordboxQueueOps'
 import type { SessionBackup } from './rekordboxSessionBackup'
 import {
   readTraktorTrackCues,
@@ -121,7 +121,9 @@ function planBatch(
 ): { nml: string; outcomes: OpOutcome[]; added: string[] } {
   const edits = applyTraktorEdits(
     text,
-    ops.filter((op): op is Exclude<QueueOp, CuesOp> => op.kind !== 'cues'),
+    ops.filter(
+      (op): op is Exclude<QueueOp, CuesOp | TagsOp> => op.kind !== 'cues' && op.kind !== 'tags',
+    ),
     bootVolume,
   )
   let nml = edits.nml

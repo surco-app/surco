@@ -338,6 +338,8 @@ function planOp(
 ): Plan {
   if (op.kind === 'track') return planTrack(probe, xml, op, find)
   if (op.kind === 'cues') return planCuesOp(probe, op, shareDir)
+  if (op.kind === 'tags')
+    return { outcome: { id: op.id, applied: false, reason: 'write-failed', notices: [] } }
   return planEdit(probe, xml, op, find)
 }
 
@@ -454,7 +456,7 @@ function writeOp(db: Db, draft: XmlDraft, planned: Planned, now: Date): OpOutcom
 }
 
 function needsNode(planned: Planned): boolean {
-  if (planned.op.kind === 'cues') return false
+  if (planned.op.kind === 'cues' || planned.op.kind === 'tags') return false
   if (planned.op.kind === 'track') return (planned.track?.names.length ?? 0) > 0
   return planned.op.edit.kind === 'create'
 }

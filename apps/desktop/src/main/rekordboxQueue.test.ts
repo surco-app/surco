@@ -4,7 +4,7 @@ import type { RekordboxQueueState } from '../shared/types'
 import type { LibraryRepointResult } from './libraryRepointFlush'
 import { type RekordboxRepoint, stackRepoint } from './rekordboxBatch'
 import { createRekordboxQueue, type QueueDeps, type QueueStore } from './rekordboxQueue'
-import type { BatchResult, CuesOp, QueueOp, TrackOp } from './rekordboxQueueOps'
+import type { BatchResult, CuesOp, QueueOp, TagsOp, TrackOp } from './rekordboxQueueOps'
 
 vi.mock('electron-log/main', () => ({ default: { warn: vi.fn(), info: vi.fn(), error: vi.fn() } }))
 
@@ -944,6 +944,46 @@ describe('cues in the queue', () => {
         },
       ],
     })
+  })
+
+  const tags = (id: string, fields: TagsOp['fields']): TagsOp => ({
+    id,
+    kind: 'tags',
+    path: '/m/a.wav',
+    label: 'a.wav',
+    fields,
+  })
+
+  it('keeps two syncs of the same track queued apart so neither field is lost', () => {
+    const store = memoryStore()
+    const queue = createRekordboxQueue(deps({ store }))
+    queue.enqueue([tags('a', { tsng: 'T' })])
+    queue.enqueue([tags('b', { tart: 'A' })])
+    expect(savedQueue<QueueOp>(store).ops).toEqual([
+      tags('a', { tsng: 'T' }),
+      tags('b', { tart: 'A' }),
+    ])
+    expect(queue.state().items).toEqual([
+      { key: 'track:/m/a.wav', label: 'a.wav', parts: [{ kind: 'tags' }, { kind: 'tags' }] },
+    ])
+  })
+
+  it('moves no stamp for queued tags after a batch wrote, since tags carry none', async () => {
+    const store = memoryStore()
+    const nodeStamps = vi
+      .fn<QueueDeps['nodeStamps']>()
+      .mockResolvedValueOnce({ '3000': 100 })
+      .mockResolvedValueOnce({ '3000': 200 })
+    const d = deps({ store, nodeStamps })
+    const q = createRekordboxQueue(d)
+    q.enqueue([track('a', '/m/a.wav')])
+    d.applyBatch.mockImplementationOnce(async (_c, ops, ensureClosed) => {
+      await ensureClosed()
+      q.enqueue([tags('t', { tsng: 'T' })])
+      return applied(ops)
+    })
+    expect(await q.apply(closed)).toMatchObject({ status: 'applied', tracks: 1 })
+    expect(savedQueue<QueueOp>(store).ops).toEqual([tags('t', { tsng: 'T' })])
   })
 
   it('counts the tracks a batch of cues alone wrote so "Listo en rekordbox" appears, and leaves them out of the written playlists', async () => {

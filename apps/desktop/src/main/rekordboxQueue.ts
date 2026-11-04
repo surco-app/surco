@@ -117,6 +117,7 @@ export const COLLECTION_WIDE: ReadonlySet<string> = new Set([
 export function keyOf(op: QueueOp): string {
   if (op.kind === 'track') return `track:${op.path}`
   if (op.kind === 'cues') return `cues:${op.contentId}`
+  if (op.kind === 'tags') return `tags:${op.id}`
   return `edit:${op.id}`
 }
 
@@ -168,8 +169,8 @@ function stateOf(
       continue
     }
     const it = item(`track:${op.path}`, op.label)
-    if (op.kind === 'cues') {
-      it.parts.push({ kind: 'cues' })
+    if (op.kind === 'cues' || op.kind === 'tags') {
+      it.parts.push({ kind: op.kind })
       continue
     }
     it.label = op.label
@@ -356,7 +357,7 @@ export function createRekordboxQueue<R extends QueuedRepoint = RekordboxRepoint>
       try {
         const after = await deps.nodeStamps(collectionPath)
         for (const op of q.ops) {
-          if (op.kind === 'cues') continue
+          if (op.kind === 'cues' || op.kind === 'tags') continue
           for (const [id, stamp] of Object.entries(op.stamps))
             if (stamp === before[id] && after[id] !== undefined) op.stamps[id] = after[id]
         }

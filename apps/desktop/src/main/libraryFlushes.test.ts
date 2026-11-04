@@ -24,6 +24,7 @@ const SETTINGS = vi.hoisted(() => ({
   addToTraktor: false,
   addToEngineDj: false,
   addToSerato: false,
+  syncSerato: false,
 }))
 const REPOINTS = vi.hoisted(() => [
   { from: '/m/a.mp3', to: '/m/a.flac', playlists: [{ name: 'House' }] },
@@ -444,6 +445,30 @@ describe('rekordbox writes while the queue is held after a write left the collec
     WRITERS.updateRekordboxTags.mockClear()
     await syncTagsInLibraries([{ path: '/m/a.flac', fields: {} }], held(), sessions, vi.fn())
     expect(WRITERS.updateRekordboxTags).not.toHaveBeenCalled()
+  })
+
+  it('hands Serato the review only when its sync is on, and reports nothing for it without a Serato queue', async () => {
+    const update = [{ path: '/m/a.flac', fields: { title: { from: 'a', to: 'b' } } }]
+    const serato = {
+      roots: () => [],
+      queue: { enqueue: vi.fn(), apply: vi.fn(), drop: vi.fn() },
+      isRunning: async () => false,
+      onWaiting: vi.fn(),
+    }
+    expect((await syncTagsInLibraries(update, held(), sessions, vi.fn())).serato).toEqual({
+      outcome: 'nothing',
+    })
+    expect((await syncTagsInLibraries(update, held(), sessions, vi.fn(), serato)).serato).toEqual({
+      outcome: 'nothing',
+    })
+    Object.assign(SETTINGS, { syncSerato: true })
+    try {
+      expect((await syncTagsInLibraries(update, held(), sessions, vi.fn(), serato)).serato).toEqual(
+        { outcome: 'missing' },
+      )
+    } finally {
+      Object.assign(SETTINGS, { syncSerato: false })
+    }
   })
 
   it('a review with nothing to sync begins no momento, so it cannot end the one in progress', async () => {

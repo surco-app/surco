@@ -15,6 +15,7 @@ import {
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { isWritable, type LibraryProgram } from '../../../shared/djProgram'
 import { KEEPS_REPLACED } from '../../../shared/keepsReplaced'
 import type { DamageFinding, DamageOutcome, ListMusicStep } from '../../../shared/types'
 import {
@@ -30,7 +31,7 @@ import { damageKey } from '../lib/damageReview'
 import { errorKeyOf } from '../lib/ipcError'
 import { isTypingTarget } from '../lib/keymap'
 import { INVISIBLE } from '../lib/musicSpelling'
-import { LIBRARY_NAME, REVIEW_LIBRARIES } from '../lib/reviewLibraries'
+import { LIBRARY_NAME, TAG_LIBRARIES } from '../lib/reviewLibraries'
 import { REVIEW_COPY } from '../lib/reviewSource'
 import { DIALOG_BUTTON, DIALOG_CANCEL, DIALOG_OK, DIALOG_PANEL } from './ConfirmDialog'
 import { DamageCertainty, damageKindLabel, damageTitle } from './DamageDetail'
@@ -217,7 +218,7 @@ function Confirm({
 }
 
 const missingLibraries = (review: Review) =>
-  REVIEW_LIBRARIES.filter(([library]) => {
+  TAG_LIBRARIES.filter(([library]) => {
     const status = review.libraries?.[library]
     return status?.enabled && !status.found
   }).map(([, name]) => name)
@@ -318,6 +319,8 @@ function Done({
   const musicUnchecked = keptBy(['unchecked'])
   const heldForEntry = run.replaced.filter((r) => r.musicEntryRemoved).length
   const leftMusic = run.replaced.filter((r) => r.music === 'removed' || r.musicEntryRemoved).length
+  const replacedIn = (library: LibraryProgram) =>
+    isWritable(library) ? run.replaced.map((r) => r[library]) : []
   const musicPlaylists = run.replaced.reduce((n, r) => n + (r.musicPlaylists ?? 0), 0)
   const trashFailed = run.replaced.filter((r) => r.trashFailed).length
   const keptShared = run.replaced.filter((r) => r.keptShared).length
@@ -325,14 +328,14 @@ function Done({
   const missing = [
     ...new Set([
       ...missingLibraries(review),
-      ...REVIEW_LIBRARIES.filter(([library]) => run.tagSync?.[library].outcome === 'missing').map(
+      ...TAG_LIBRARIES.filter(([library]) => run.tagSync?.[library].outcome === 'missing').map(
         ([, name]) => name,
       ),
     ]),
   ]
   const reachedLibraries = run.librarySync !== 'none' || run.replaced.length > 0
-  const libraryWarnings = REVIEW_LIBRARIES.flatMap(([library, name]) => {
-    const count = (o: string) => run.replaced.filter((r) => r[library] === o).length
+  const libraryWarnings = TAG_LIBRARIES.flatMap(([library, name]) => {
+    const count = (o: string) => replacedIn(library).filter((x) => x === o).length
     const tags = run.tagSync?.[library].outcome
     const open = undone ? 'musicReview.done.undoLibraryOpen' : 'musicReview.done.libraryTagsOpen'
     const tagsFailed = undone
@@ -347,7 +350,7 @@ function Done({
       ...(tags === 'failed' ? [t(tagsFailed, { library: name })] : []),
     ]
   })
-  const libraryLeft = REVIEW_LIBRARIES.some(([library]) => {
+  const libraryLeft = TAG_LIBRARIES.some(([library]) => {
     const tags = run.tagSync?.[library].outcome
     return tags === 'open' || tags === 'failed'
   })
@@ -413,8 +416,8 @@ function Done({
   // Every library with its sync on gets a row: a library left out read as one that got
   // the change, which is what hid a rekordbox that got nothing.
   const libraryRow = (
-    library: (typeof REVIEW_LIBRARIES)[number][0],
-    name: (typeof REVIEW_LIBRARIES)[number][1],
+    library: (typeof TAG_LIBRARIES)[number][0],
+    name: (typeof TAG_LIBRARIES)[number][1],
   ): Destination | null => {
     const status = review.libraries?.[library]
     const row = (state: DestinationState, detail: string) => ({
@@ -425,7 +428,7 @@ function Done({
     })
     if (status && !status.enabled) return row('off', t('musicReview.done.where.off'))
     if (missing.includes(name)) return row('warn', t('musicReview.done.where.missing'))
-    const outcomes = run.replaced.map((r) => r[library]).filter((o) => o !== undefined)
+    const outcomes = replacedIn(library).filter((o) => o !== undefined)
     const count = (o: string) => outcomes.filter((x) => x === o).length
     const tags = run.tagSync?.[library]
     if (count('skipped')) return row('warn', t('musicReview.done.where.skipped'))
@@ -436,8 +439,9 @@ function Done({
     if (status && run.librarySync === 'failed')
       return row('warn', t('musicReview.done.where.unconfirmed'))
     if (!status && !outcomes.length && !tags) return null
+    if (tags?.outcome === 'queued') return row('ok', t('musicReview.done.where.queued'))
     const moved = count('replaced') + count('repointed')
-    const held = KEEPS_REPLACED[library] ? count('replaced') : 0
+    const held = isWritable(library) && KEEPS_REPLACED[library] ? count('replaced') : 0
     const updated = tags?.outcome === 'updated' ? tags.count : 0
     if (tags?.outcome === 'nothing' && !outcomes.length)
       return row('off', t('musicReview.done.where.noMatch'))
@@ -513,7 +517,7 @@ function Done({
               } as const,
             ]
           : []),
-        ...REVIEW_LIBRARIES.flatMap(([library, name]) => libraryRow(library, name) ?? []),
+        ...TAG_LIBRARIES.flatMap(([library, name]) => libraryRow(library, name) ?? []),
         ...(inTrash || keptForLibrary || keptForMusic || heldForEntry
           ? [
               {
@@ -544,14 +548,14 @@ function Done({
       ]
   const warned = warnings.length > 0
   const librariesShort = destinations.some(
-    (d) => d.state === 'warn' && REVIEW_LIBRARIES.some(([library]) => library === d.id),
+    (d) => d.state === 'warn' && TAG_LIBRARIES.some(([library]) => library === d.id),
   )
   // "Libraries" only when a DJ library really took something; Music is named on its own.
-  const djReceived = REVIEW_LIBRARIES.some(([library]) => {
+  const djReceived = TAG_LIBRARIES.some(([library]) => {
     const tags = run.tagSync?.[library]
     return (
       (tags?.outcome === 'updated' && tags.count > 0) ||
-      run.replaced.some((r) => r[library] === 'replaced' || r[library] === 'repointed')
+      replacedIn(library).some((o) => o === 'replaced' || o === 'repointed')
     )
   })
   const musicReceived = musicSet > 0 || leftMusic > 0 || (!list && removed > 0)

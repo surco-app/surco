@@ -117,7 +117,7 @@ const status = (over: Partial<Record<'rekordbox' | 'engine' | 'traktor', boolean
   }
 }
 
-const NO_SYNC: ReviewSync = { rekordbox: false, engine: false, traktor: false }
+const NO_SYNC: ReviewSync = { rekordbox: false, engine: false, traktor: false, serato: false }
 
 function Panes({
   review: base,
@@ -833,6 +833,7 @@ describe('MusicReview', () => {
       rekordbox: { outcome: 'updated', count: 1 },
       engine: { outcome: 'updated', count: 1 },
       traktor: { outcome: 'updated', count: 1 },
+      serato: { outcome: 'nothing' },
       ...over,
     })
     const musicOnly = {
@@ -866,6 +867,65 @@ describe('MusicReview', () => {
       expect(iconOf('engine')).toBe('–')
       expect(detailOf('engine')).toBe("didn't have these tracks")
       expect(detailOf('traktor')).toBe('not synced')
+    })
+
+    it('shows Serato in the done sheet when its sync is on', () => {
+      render(
+        <Panes
+          review={{
+            ...done(
+              run({
+                outcomes: [written],
+                librarySync: 'ok',
+                tagSync: synced({ serato: { outcome: 'queued' } }),
+              }),
+            ),
+            libraries: { ...status(), serato: { enabled: true, found: true } },
+          }}
+        />,
+      )
+      expect(dest('serato')).toHaveAttribute('data-state', 'ok')
+      expect(detailOf('serato')).toBe('will save when Serato closes')
+      expect(screen.getByTestId('music-review-done-subtitle')).toHaveTextContent(
+        'The changes are already in your files and libraries.',
+      )
+    })
+
+    it('marks Serato and warns when Serato could not be updated', () => {
+      render(
+        <Panes
+          review={{
+            ...done(
+              run({
+                outcomes: [written],
+                librarySync: 'ok',
+                tagSync: synced({ serato: { outcome: 'failed' } }),
+              }),
+            ),
+            libraries: { ...status(), serato: { enabled: true, found: true } },
+          }}
+        />,
+      )
+      expect(dest('serato')).toHaveAttribute('data-state', 'warn')
+      expect(warnings()).toEqual(["Serato couldn't be updated. Check Activity."])
+    })
+
+    it('says Serato is missing when its sync is on and no Serato library is there', () => {
+      render(
+        <Panes
+          review={{
+            ...done(
+              run({
+                outcomes: [written],
+                librarySync: 'ok',
+                tagSync: synced({ serato: { outcome: 'missing' } }),
+              }),
+            ),
+            libraries: { ...status(), serato: { enabled: true, found: false } },
+          }}
+        />,
+      )
+      expect(detailOf('serato')).toBe('collection not found')
     })
 
     it('still gives a synced library a row when nothing was sent to it', () => {
@@ -1298,28 +1358,37 @@ describe('MusicReview', () => {
       })
 
     it('shows its chip struck and explained instead of promising the sync', () => {
-      render(<Panes review={staged()} sync={{ rekordbox: true, engine: true, traktor: false }} />)
+      render(
+        <Panes
+          review={staged()}
+          sync={{ rekordbox: true, engine: true, traktor: false, serato: false }}
+        />,
+      )
       const chip = screen.getByTestId('music-review-where-missing')
       expect(chip).toHaveTextContent('rekordbox')
       expect(chip).toHaveAttribute('title', 'Collection not found')
       expect(screen.getByTestId('music-review-affected')).toHaveTextContent('Engine DJ')
     })
 
-    it('names every synced library where the change lands, always as rekordbox, Engine DJ and Traktor in that order', () => {
+    it('names every synced library where the change lands, always as rekordbox, Engine DJ, Traktor and Serato in that order', () => {
       render(
         <Panes
-          review={{ ...staged(), libraries: status() }}
-          sync={{ rekordbox: true, engine: true, traktor: true }}
+          review={{
+            ...staged(),
+            libraries: { ...status(), serato: { enabled: true, found: true } },
+          }}
+          sync={{ rekordbox: true, engine: true, traktor: true, serato: true }}
         />,
       )
       expect(
         screen
-          .getAllByTestId(/^music-review-where-(rekordbox|engine|traktor)$/)
+          .getAllByTestId(/^music-review-where-(rekordbox|engine|traktor|serato)$/)
           .map((chip) => [chip.dataset.testid, chip.textContent]),
       ).toEqual([
         ['music-review-where-rekordbox', 'rekordbox'],
         ['music-review-where-engine', 'Engine DJ'],
         ['music-review-where-traktor', 'Traktor'],
+        ['music-review-where-serato', 'Serato'],
       ])
     })
 
@@ -1445,6 +1514,7 @@ describe('MusicReview', () => {
               rekordbox: { outcome: 'updated', count: 1 },
               engine: { outcome: 'open' },
               traktor: { outcome: 'nothing' },
+              serato: { outcome: 'nothing' },
             },
             libraryUndo,
           }),
@@ -1780,7 +1850,7 @@ describe('MusicReview', () => {
       render(
         <Panes
           review={review({ affected })}
-          sync={{ rekordbox: true, engine: false, traktor: true }}
+          sync={{ rekordbox: true, engine: false, traktor: true, serato: false }}
         />,
       )
       expect(affected).toHaveBeenCalledWith(group.key)
@@ -1809,7 +1879,7 @@ describe('MusicReview', () => {
       render(
         <Panes
           review={review({ affected })}
-          sync={{ rekordbox: false, engine: false, traktor: false }}
+          sync={{ rekordbox: false, engine: false, traktor: false, serato: false }}
         />,
       )
       const [first, second] = screen.getAllByTestId('music-review-affected')
@@ -1832,7 +1902,7 @@ describe('MusicReview', () => {
       render(
         <Panes
           review={review({ affected })}
-          sync={{ rekordbox: false, engine: false, traktor: false }}
+          sync={{ rekordbox: false, engine: false, traktor: false, serato: false }}
         />,
       )
       expect(screen.getByTestId('music-review-diff-from')).toHaveTextContent(/^j$/)
@@ -1855,7 +1925,7 @@ describe('MusicReview', () => {
       render(
         <Panes
           review={review({ affected })}
-          sync={{ rekordbox: false, engine: false, traktor: false }}
+          sync={{ rekordbox: false, engine: false, traktor: false, serato: false }}
         />,
       )
       expect(screen.getByTestId('music-review-diff-from')).toHaveTextContent(/^e\u0301$/)
@@ -2648,6 +2718,7 @@ describe('list review', () => {
             rekordbox: { outcome: 'updated', count: 1 },
             engine: { outcome: 'nothing' },
             traktor: { outcome: 'open' },
+            serato: { outcome: 'nothing' },
           },
         }),
       )
@@ -2669,6 +2740,7 @@ describe('list review', () => {
             rekordbox: { outcome: 'updated', count: 1 },
             engine: { outcome: 'updated', count: 1 },
             traktor: { outcome: 'updated', count: 1 },
+            serato: { outcome: 'nothing' },
           },
         }),
       )
@@ -2722,6 +2794,7 @@ describe('list review', () => {
             rekordbox: { outcome: 'updated', count: 1 },
             engine: { outcome: 'updated', count: 1 },
             traktor: { outcome: 'updated', count: 1 },
+            serato: { outcome: 'nothing' },
           },
         }),
       )

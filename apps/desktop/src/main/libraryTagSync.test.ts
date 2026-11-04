@@ -23,19 +23,21 @@ describe('syncLibraryTags', () => {
           engine()
           return { outcome: 'open' }
         },
+        serato: async () => ({ outcome: 'queued' }),
         warn,
       }),
     ).resolves.toEqual({
       traktor: { outcome: 'failed' },
       rekordbox: { outcome: 'updated', count: 2 },
       engine: { outcome: 'open' },
+      serato: { outcome: 'queued' },
     })
     expect(rekordbox).toHaveBeenCalled()
     expect(engine).toHaveBeenCalled()
     expect(warn).toHaveBeenCalledWith('traktor', expect.any(Error))
   })
 
-  it('syncs traktor, then rekordbox, then engine, and a failure in the middle stops none', async () => {
+  it('syncs traktor, then rekordbox, then engine, then serato, and a failure in the middle stops none', async () => {
     const calls: string[] = []
     const flusher =
       (library: string, fail = false) =>
@@ -48,10 +50,11 @@ describe('syncLibraryTags', () => {
       traktor: flusher('traktor'),
       rekordbox: flusher('rekordbox', true),
       engine: flusher('engine'),
+      serato: flusher('serato'),
       warn: vi.fn(),
     })
-    expect(calls).toEqual(['traktor', 'rekordbox', 'engine'])
-    expect(Object.keys(report)).toEqual(['traktor', 'rekordbox', 'engine'])
+    expect(calls).toEqual(['traktor', 'rekordbox', 'engine', 'serato'])
+    expect(Object.keys(report)).toEqual(['traktor', 'rekordbox', 'engine', 'serato'])
     expect(report.rekordbox).toEqual({ outcome: 'failed' })
   })
 
@@ -65,6 +68,7 @@ describe('syncLibraryTags', () => {
       traktor,
       rekordbox: async () => NOTHING,
       engine: async () => NOTHING,
+      serato: async () => NOTHING,
       warn: vi.fn(),
     })
     await new Promise((r) => setTimeout(r, 0))
@@ -82,6 +86,7 @@ describe('syncLibraryTags', () => {
       traktor: async () => NOTHING,
       rekordbox: async () => NOTHING,
       engine: async () => NOTHING,
+      serato: async () => NOTHING,
       warn: vi.fn(),
       begin,
     })

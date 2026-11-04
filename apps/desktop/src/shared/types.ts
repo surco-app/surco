@@ -1663,9 +1663,9 @@ export type LibraryStatus = Record<LibraryProgram, { enabled: boolean; found: bo
 // library instead of claiming every change landed: how many tracks it updated, or why none.
 export type LibraryTagSync =
   | { outcome: 'updated'; count: number }
-  | { outcome: 'nothing' | 'open' | 'missing' | 'failed' }
+  | { outcome: 'nothing' | 'open' | 'missing' | 'failed' | 'queued' }
 
-export type LibraryTagSyncReport = Record<WritableProgram, LibraryTagSync>
+export type LibraryTagSyncReport = Record<LibraryProgram, LibraryTagSync>
 
 // The USB export (docs/superpowers/specs/2026-10-16-export-usb-design.md). A stick is
 // always named by a stable volume identifier (macOS VolumeUUID, Windows volume GUID), never
@@ -1844,6 +1844,7 @@ export type RekordboxQueuePart =
   | { kind: 'playlists'; names: string[] }
   | { kind: 'tree'; edit: RekordboxPlaylistEdit['kind'] }
   | { kind: 'cues' }
+  | { kind: 'tags' }
 
 export interface RekordboxQueueItem {
   key: string

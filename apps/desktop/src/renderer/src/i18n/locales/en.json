@@ -2511,7 +2511,8 @@
         "updated_one": "{{count}} track updated",
         "updated_other": "{{count}} tracks updated",
         "open": "untouched, it was open",
-        "noMatch": "didn't have these tracks"
+        "noMatch": "didn't have these tracks",
+        "queued": "will save when Serato closes"
       },
       "undoTitle": "Changes undone",
       "undoTitleWarnings_one": "Undone, with {{count}} warning",
@@ -2859,7 +2860,8 @@
         "remove": "remove tracks",
         "insertSeparator": "add separator"
       },
-      "cues": "cues"
+      "cues": "cues",
+      "tags": "tags"
     },
     "applyNow": "Apply now",
     "discard": "Discard",

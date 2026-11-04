@@ -34,6 +34,7 @@ const SYNCED = {
   rekordbox: { outcome: 'updated' as const, count: 1 },
   engine: { outcome: 'nothing' as const },
   traktor: { outcome: 'missing' as const },
+  serato: { outcome: 'nothing' as const },
 }
 const LIB = [e('A', 'DJ Lara'), e('B', 'DJ Lara'), e('C', 'Dj Lara')]
 

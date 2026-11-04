@@ -169,7 +169,9 @@ describe('applySeratoBatch', () => {
       addsTracks: false,
     }
     const queue = createRekordboxQueue({ ...SERATO_QUEUE_DEPS, store: memoryStore(PHASE_B_FILE) })
-    expect(queue.state().items).toHaveLength(1)
+    expect(queue.state().items).toEqual([
+      { key: 'track:/Users/dj/Music/a.mp3', label: 'a.mp3', parts: [{ kind: 'cues' }] },
+    ])
     expect(await queue.apply(async () => true)).toMatchObject({ status: 'applied', tracks: 1 })
     expect(cueWriter).toHaveBeenCalledWith([PHASE_B_CUES_OP], expect.anything())
     expect(queue.isEmpty()).toBe(true)

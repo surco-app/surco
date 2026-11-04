@@ -1580,6 +1580,12 @@ function registerIpc(): void {
       hostFor(BrowserWindow.fromWebContents(e.sender), e.sender),
       sessions,
       () => moments.begin('review'),
+      {
+        roots: seratoRoots,
+        queue: seratoCueQueue,
+        isRunning: DJ_PROCESSES.serato.isRunning,
+        onWaiting: seratoCueQueueWatch.poke,
+      },
     ),
   )
 

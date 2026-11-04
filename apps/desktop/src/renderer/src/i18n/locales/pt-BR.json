@@ -2511,7 +2511,8 @@
         "updated_one": "{{count}} faixa atualizada",
         "updated_other": "{{count}} faixas atualizadas",
         "open": "intocado, estava aberto",
-        "noMatch": "não tinha estas faixas"
+        "noMatch": "não tinha estas faixas",
+        "queued": "será salvo ao fechar o Serato"
       },
       "undoTitle": "Alterações desfeitas",
       "undoTitleWarnings_one": "Desfeito, com {{count}} aviso",
@@ -2859,7 +2860,8 @@
         "remove": "tirar faixas",
         "insertSeparator": "inserir separador"
       },
-      "cues": "cues"
+      "cues": "cues",
+      "tags": "tags"
     },
     "applyNow": "Aplicar agora",
     "discard": "Descartar",

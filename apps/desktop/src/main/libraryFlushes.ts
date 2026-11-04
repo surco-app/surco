@@ -40,6 +40,7 @@ import type { createSessionBackup } from './rekordboxSessionBackup'
 import { updateRekordboxTags } from './rekordboxTags'
 import { seratoLibraryHas } from './seratoCrateEdits'
 import type { SeratoLibraryRoot } from './seratoLibrary'
+import { syncSeratoTags } from './seratoTagSync'
 import { getSettings } from './settings'
 import { readEmbeddedCover } from './tags'
 import type { NmlPatch } from './traktorNml'
@@ -674,6 +675,7 @@ export function syncTagsInLibraries(
   host: LibraryHost,
   sessions: Sessions,
   beginMoment: () => void,
+  serato?: Omit<Parameters<typeof syncSeratoTags>[1], 'enabled'>,
 ) {
   const withRealPath = updates.map((u) => ({ ...u, realPath: (p: string) => realpathSync(p) }))
   return syncLibraryTags({
@@ -715,6 +717,10 @@ export function syncTagsInLibraries(
       logLibraryFlush('Engine DJ tags', result)
       return tagSyncOf(result, ENGINE_KEYS.runningReason)
     },
+    serato: async () =>
+      serato
+        ? syncSeratoTags(updates, { ...serato, enabled: getSettings().syncSerato })
+        : { outcome: 'nothing' },
     warn: (library, error) => log.warn(`library:syncTags ${library} failed`, error),
     ...(updates.length > 0 && { begin: beginMoment }),
   })

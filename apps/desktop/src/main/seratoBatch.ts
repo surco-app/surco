@@ -1,5 +1,5 @@
 import { type BatchResult, type OpOutcome, opRank, type QueueOp } from './rekordboxQueueOps'
-import { applySeratoEdit, applySeratoTrack } from './seratoCrateEdits'
+import { applySeratoEdit, applySeratoTags, applySeratoTrack } from './seratoCrateEdits'
 import { applySeratoCuesBatch } from './seratoCuesWrite'
 import { commitSeratoDraft, createSeratoDraft, type SeratoCommitDeps } from './seratoLibraryWrite'
 
@@ -21,6 +21,7 @@ export async function applySeratoLibraryOps(
       outcomes.set(op.id, { id: op.id, applied: false, reason: 'cancelled', notices: [] })
     else if (op.kind === 'edit') outcomes.set(op.id, applySeratoEdit(draft, op, roots))
     else if (op.kind === 'track') outcomes.set(op.id, applySeratoTrack(draft, op, roots, now))
+    else if (op.kind === 'tags') outcomes.set(op.id, applySeratoTags(draft, op, roots))
     else outcomes.set(op.id, { id: op.id, applied: false, reason: 'write-failed', notices: [] })
   }
   const written = await commitSeratoDraft(draft, deps)

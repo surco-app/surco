@@ -11,6 +11,7 @@ import type {
 import type { ContentFacts } from './rekordboxContentAdd'
 import { withNodeTimestamp } from './rekordboxMasterXml'
 import type { RekordboxMeta } from './rekordboxMetadata'
+import type { SeratoTagField } from './seratoDatabaseWrite'
 
 export interface FileStamp {
   mtimeMs: number
@@ -54,7 +55,15 @@ export interface CuesOp extends Omit<SaveCuesRequest, 'wanted'> {
   notices?: RekordboxQueueNotice[]
 }
 
-export type QueueOp = EditOp | TrackOp | CuesOp
+export interface TagsOp {
+  id: string
+  kind: 'tags'
+  path: string
+  label: string
+  fields: Partial<Record<SeratoTagField, string>>
+}
+
+export type QueueOp = EditOp | TrackOp | CuesOp | TagsOp
 
 export interface OpOutcome {
   id: string
@@ -83,6 +92,7 @@ const EDIT_RANK: Record<RekordboxPlaylistEdit['kind'], number> = {
 
 export function opRank(op: QueueOp): number {
   if (op.kind === 'track') return 0
+  if (op.kind === 'tags') return 1
   if (op.kind === 'cues') return 4
   return EDIT_RANK[op.edit.kind]
 }

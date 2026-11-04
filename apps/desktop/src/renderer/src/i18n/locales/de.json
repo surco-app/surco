@@ -2511,7 +2511,8 @@
         "updated_one": "{{count}} Titel aktualisiert",
         "updated_other": "{{count}} Titel aktualisiert",
         "open": "nicht angefasst, war geöffnet",
-        "noMatch": "hatte diese Titel nicht"
+        "noMatch": "hatte diese Titel nicht",
+        "queued": "wird beim Schließen von Serato gespeichert"
       },
       "undoTitle": "Änderungen rückgängig gemacht",
       "undoTitleWarnings_one": "Rückgängig gemacht, mit {{count}} Hinweis",
@@ -2859,7 +2860,8 @@
         "remove": "Titel entfernen",
         "insertSeparator": "Trenner einfügen"
       },
-      "cues": "Cues"
+      "cues": "Cues",
+      "tags": "Tags"
     },
     "applyNow": "Jetzt anwenden",
     "discard": "Verwerfen",

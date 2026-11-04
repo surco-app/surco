@@ -5,9 +5,9 @@ import { describe, expect, it, vi } from 'vitest'
 vi.mock('./seratoCuesWrite', () => ({ applySeratoCuesBatch: vi.fn() }))
 
 import type { RekordboxMeta } from './rekordboxMetadata'
-import type { TrackOp } from './rekordboxQueueOps'
+import type { TagsOp, TrackOp } from './rekordboxQueueOps'
 import { applySeratoLibraryOps } from './seratoBatch'
-import { applySeratoTrack, seratoEditFiles } from './seratoCrateEdits'
+import { applySeratoTags, applySeratoTrack, seratoEditFiles } from './seratoCrateEdits'
 import { crateFileOf, crateTrackPaths, seratoLinkId } from './seratoCrateFile'
 import { parseSeratoDatabase } from './seratoDatabase'
 import { concat, frame, track, utf16be } from './seratoDatabaseFixture'
@@ -856,5 +856,82 @@ describe('a converted track in Serato', () => {
     expect(crateTrackPaths(readFileSync(crateFileOf(roots[0], 'Fresh')))).toEqual([
       'Users/dj/a.mp3',
     ])
+  })
+})
+
+describe('review tags in Serato', () => {
+  const PRAY = '/Users/vicent/Music/Serato Pruebas/Pray.aiff'
+  const PRAY_PFIL = 'Users/vicent/Music/Serato Pruebas/Pray.aiff'
+  const tagsOp = (path: string, fields: TagsOp['fields']): TagsOp => ({
+    id: 't',
+    kind: 'tags',
+    path,
+    label: basename(path),
+    fields,
+  })
+
+  function prayInSerato() {
+    const { roots, draft } = seratoWith([])
+    const other = track({ ttyp: 'mp3', pfil: 'Users/dj/a.mp3', tsng: 'A' })
+    writeFileSync(
+      dbOf(roots[0]),
+      concat([
+        VRSN,
+        track({ ttyp: 'aiff', pfil: PRAY_PFIL, tsng: 'Pray (old)', tbpm: '128', tcom: 'kept' }),
+        other,
+      ]),
+    )
+    return { roots, draft, other }
+  }
+
+  it('changes title, artist, album and genre of the track Serato has at that path, and nothing else', () => {
+    const { roots, draft, other } = prayInSerato()
+    const op = tagsOp(PRAY, { tsng: 'Pray', tart: 'Tina', talb: 'P', tgen: 'House' })
+    expect(applySeratoTags(draft, op, roots).applied).toBe(true)
+    const tracks = parseSeratoDatabase(draft.read(dbOf(roots[0])) ?? new Uint8Array())
+    expect(tracks[0]).toMatchObject({
+      title: 'Pray',
+      artist: 'Tina',
+      album: 'P',
+      genre: 'House',
+      bpm: '128',
+      path: PRAY_PFIL,
+    })
+    const bytes = Buffer.from(draft.read(dbOf(roots[0])) ?? [])
+    expect(bytes.includes(Buffer.from(frame('tcom', utf16be('kept'))))).toBe(true)
+    expect(bytes.subarray(bytes.length - other.length)).toEqual(Buffer.from(other))
+  })
+
+  it('says Serato does not have a track it cannot find, and writes nothing', () => {
+    const { roots, draft } = prayInSerato()
+    expect(applySeratoTags(draft, tagsOp('/Users/dj/x.mp3', { tsng: 'X' }), roots)).toEqual({
+      id: 't',
+      applied: false,
+      notices: [{ code: 'not-in-library', track: 'x.mp3' }],
+    })
+    expect(draft.changes().writes).toEqual([])
+  })
+
+  it('says Serato does not have a track outside every Serato library', () => {
+    const { draft } = prayInSerato()
+    expect(applySeratoTags(draft, tagsOp(PRAY, { tsng: 'X' }), []).notices).toEqual([
+      { code: 'not-in-library', track: 'Pray.aiff' },
+    ])
+  })
+
+  it('tags a track through the queue after the converted track of the same batch was added', async () => {
+    const { roots, deps } = seratoWith([], { internal: [] })
+    const result = await applySeratoLibraryOps(
+      [
+        tagsOp('/Users/dj/new.aiff', { tgen: 'House' }),
+        trackOp({ path: '/Users/dj/new.aiff', add: true, meta: META }),
+      ],
+      { ...deps, ensureClosed: async () => true },
+    )
+    expect(result).toMatchObject({ ok: true, outcomes: [{ applied: true }, { applied: true }] })
+    expect(parseSeratoDatabase(readFileSync(dbOf(roots[0])))[0]).toMatchObject({
+      path: 'Users/dj/new.aiff',
+      genre: 'House',
+    })
   })
 })

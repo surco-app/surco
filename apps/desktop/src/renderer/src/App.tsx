@@ -3572,6 +3572,7 @@ export default function App(): React.JSX.Element {
                           rekordbox: settings?.syncRekordbox ?? false,
                           engine: settings?.syncEngineDj ?? false,
                           traktor: settings?.syncTraktor ?? false,
+                          serato: settings?.syncSerato ?? false,
                         }}
                         onClose={() => setReview(null)}
                         onOpenTrack={(rowId) => {
