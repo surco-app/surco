@@ -182,4 +182,13 @@ describe('traktorExportDelta', () => {
     expect(await traktorExportDelta('/m/a.m4a')).toBeNull()
     expect(await traktorExportDelta('/nowhere/a.mp3')).toBeNull()
   })
+
+  it('exports an M4A with no cues or grid and names it, since the collection keeps no rate to place its priming with', async () => {
+    const A: Track = { ...M, file: 'a.m4a', title: 'Aac' }
+    const sel = await readTraktorExportSelection(nml([A], [playlist('Fri', 'p9', [A])]), ['p9'], {
+      ...deps,
+      deltaOf: traktorExportDelta,
+    })
+    expect(sel.tracks[0]).toMatchObject({ cues: [], grid: [], cuesLeftOut: true })
+  })
 })

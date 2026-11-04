@@ -21,11 +21,12 @@ const GRID_TYPE = 4
 const LOOP_TYPE = 5
 const EMPTY_NAME = 'n.n.'
 const RATING_STEP = 51
+const UNSTORED_SAMPLE_RATE = 44100
 
 export async function traktorExportDelta(file: string): Promise<number | null> {
   const lead = await traktorLeadOfFile(file)
   if (lead === null) return null
-  return (await rekordboxShiftOfFile(file, 44100)) - lead
+  return (await rekordboxShiftOfFile(file, UNSTORED_SAMPLE_RATE)) - lead
 }
 
 function cuesOf(block: string): ForeignCue[] {
