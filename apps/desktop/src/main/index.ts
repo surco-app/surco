@@ -193,6 +193,7 @@ import { registerRowWavesIpc } from './rowWavesIpc'
 import { applySeratoBatch } from './seratoBatch'
 import { registerSeratoCueQueueIpc } from './seratoCueQueueIpc'
 import { seratoLibraryRoots } from './seratoLibrary'
+import { recoverSeratoTemps } from './seratoLibraryWrite'
 import { registerSeratoPlaylistsIpc } from './seratoPlaylistsIpc'
 import { loadLastSession, saveLastSession } from './session'
 import {
@@ -2262,6 +2263,7 @@ app.whenReady().then(() => {
   // folders, and a stale NAS mount there used to hold the launch on a black screen.
   createWindow().once('show', () => {
     tmpManifest.sweepOrphans().catch((err) => log.warn('tmp manifest sweep failed', String(err)))
+    recoverSeratoTemps(seratoRoots())
   })
 
   // Downloads a newer version in the background, then tells the renderer so it can

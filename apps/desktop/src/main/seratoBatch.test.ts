@@ -74,22 +74,27 @@ describe('applySeratoLibraryOps', () => {
     expect(listCrates(roots[0])).toEqual(['A.crate'])
   })
 
-  it('applies the ops in rank order, so a crate created in the batch can be renamed in it', async () => {
-    const { roots, deps } = depsWith()
-    const ops = [
-      editOp({ kind: 'rename', playlistId: 'A%%Sub', name: 'Renamed' }),
-      editOp(create('A', 'Sub')),
-    ]
-    const result = await applySeratoLibraryOps(ops, deps)
+  it('deletes Techno and creates Techno again in one batch, in the order the user did it', async () => {
+    const { roots, deps } = twoRoots({ internal: ['Techno'] })
+    const ops = [editOp(del('Techno')), editOp(create('root', 'Techno'))]
+    const result = await applySeratoLibraryOps(ops, { ...deps, ensureClosed: async () => true })
     expect(result).toMatchObject({
       ok: true,
-      wrote: true,
-      outcomes: [
-        { id: ops[0].id, applied: true },
-        { id: ops[1].id, applied: true },
-      ],
+      outcomes: [{ applied: true }, { applied: true, createdId: 'Techno' }],
     })
-    expect(listCrates(roots[0])).toEqual(['A%%Renamed.crate', 'A.crate'])
+    expect(listCrates(roots[0])).toEqual(['Techno.crate'])
+  })
+
+  it('renames A to X and creates a new A in one batch', async () => {
+    const { roots, deps, bytes: before } = twoRoots({ internal: ['A'] })
+    const ops = [
+      editOp({ kind: 'rename', playlistId: 'A', name: 'X' }),
+      editOp(create('root', 'A')),
+    ]
+    const result = await applySeratoLibraryOps(ops, { ...deps, ensureClosed: async () => true })
+    expect(result).toMatchObject({ ok: true, outcomes: [{ applied: true }, { applied: true }] })
+    expect(listCrates(roots[0])).toEqual(['A.crate', 'X.crate'])
+    expect(readFileSync(crateFileOf(roots[0], 'X'))).toEqual(before.internal.A)
   })
 
   it('skips an op undone while the batch waited', async () => {
@@ -117,18 +122,27 @@ describe('applySeratoBatch', () => {
     expect(cueWriter).toHaveBeenCalledWith([PHASE_B_CUES_OP], expect.anything())
     expect(result).toMatchObject({
       ok: true,
-      outcomes: [{ applied: true }, { id: 'c', applied: true }],
+      outcomes: [{ id: 'c', applied: true }, { applied: true }],
     })
   })
 
-  it('leaves the cues for the next time when the library part could not be written', async () => {
-    const { deps } = depsWith()
-    const result = await applySeratoBatch([PHASE_B_CUES_OP, editOp(del('A'))], {
+  it('writes the cues before the library, so a library refusal only reruns cues that are already there', async () => {
+    const { roots, deps } = depsWith()
+    const result = await applySeratoBatch([editOp(del('A')), PHASE_B_CUES_OP], {
       ...deps,
       seratoOpen: async () => true,
     })
+    expect(cueWriter).toHaveBeenCalledWith([PHASE_B_CUES_OP], expect.anything())
     expect(result).toEqual({ ok: false, reason: 'cancelled' })
-    expect(cueWriter).not.toHaveBeenCalled()
+    expect(listCrates(roots[0])).toEqual(['A.crate'])
+  })
+
+  it('leaves the library untouched when the cue part could not be written', async () => {
+    const { roots, deps } = depsWith()
+    cueWriter.mockResolvedValue({ ok: false, reason: 'cancelled' })
+    const result = await applySeratoBatch([PHASE_B_CUES_OP, editOp(del('A'))], deps)
+    expect(result).toEqual({ ok: false, reason: 'cancelled' })
+    expect(listCrates(roots[0])).toEqual(['A.crate'])
   })
 
   it('hands a batch of cues alone to the cue writer as phase (b) did', async () => {

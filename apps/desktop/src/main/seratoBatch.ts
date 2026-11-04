@@ -14,7 +14,8 @@ export async function applySeratoLibraryOps(
   const draft = createSeratoDraft()
   const roots = deps.roots()
   const outcomes = new Map<string, OpOutcome>()
-  for (const op of [...ops].sort((a, b) => opRank(a) - opRank(b))) {
+  const rank = (op: QueueOp): number => (op.kind === 'edit' ? -1 : opRank(op))
+  for (const op of [...ops].sort((a, b) => rank(a) - rank(b))) {
     if (deps.stillQueued && !deps.stillQueued(op.id))
       outcomes.set(op.id, { id: op.id, applied: false, reason: 'cancelled', notices: [] })
     else if (op.kind === 'edit') outcomes.set(op.id, applySeratoEdit(draft, op, roots))
@@ -36,9 +37,9 @@ export async function applySeratoBatch(
   const library = ops.filter((op) => op.kind !== 'cues')
   const cues = ops.filter((op) => op.kind === 'cues')
   let first: BatchResult = { ok: true, wrote: false, outcomes: [] }
-  if (library.length > 0) first = await applySeratoLibraryOps(library, deps)
-  if (!first.ok || cues.length === 0) return first
-  const second = await applySeratoCuesBatch(cues, deps)
+  if (cues.length > 0) first = await applySeratoCuesBatch(cues, deps)
+  if (!first.ok || library.length === 0) return first
+  const second = await applySeratoLibraryOps(library, deps)
   if (!second.ok) return second
   return {
     ok: true,

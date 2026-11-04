@@ -1,4 +1,12 @@
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 
@@ -9,12 +17,18 @@ import {
   apply,
   crateBytes,
   create,
+  del,
   onlyBackupOf,
   tempsUnder,
   touch,
   twoRoots,
 } from './seratoLibraryFixture'
-import { backupFolderName, commitSeratoDraft, createSeratoDraft } from './seratoLibraryWrite'
+import {
+  backupFolderName,
+  commitSeratoDraft,
+  createSeratoDraft,
+  recoverSeratoTemps,
+} from './seratoLibraryWrite'
 
 const T0 = Date.UTC(2026, 10, 4, 9, 0, 0)
 
@@ -154,11 +168,46 @@ describe('commitSeratoDraft', () => {
   })
 
   it('keeps only the newest 20 backup folders', async () => {
-    const { roots, deps } = twoRoots({ internal: [] })
-    for (let i = 0; i < 21; i++)
-      await apply(roots, { ...deps, now: () => new Date(T0 + i * 1000) }, create('root', `C${i}`))
+    const ids = Array.from({ length: 21 }, (_, i) => `C${i}`)
+    const { roots, deps } = twoRoots({ internal: ids })
+    for (const [i, id] of ids.entries())
+      await apply(roots, { ...deps, now: () => new Date(T0 + i * 1000) }, del(id))
     expect(readdirSync(deps.backupDir).sort()[0]).toBe(backupFolderName(new Date(T0 + 1000)))
     expect(readdirSync(deps.backupDir)).toHaveLength(20)
+  })
+
+  it('never prunes the backup it just took, even when the clock went back', async () => {
+    const ids = Array.from({ length: 21 }, (_, i) => `C${i}`)
+    const { roots, deps, bytes } = twoRoots({ internal: ids })
+    for (const [i, id] of ids.slice(0, 20).entries())
+      await apply(roots, { ...deps, now: () => new Date(T0 + i * 1000) }, del(id))
+    const earlier = new Date(T0 - 60_000)
+    await apply(roots, { ...deps, now: () => earlier }, del('C20'))
+    expect(
+      readFileSync(join(deps.backupDir, backupFolderName(earlier), 'Music/Subcrates/C20.crate')),
+    ).toEqual(bytes.internal.C20)
+    expect(readdirSync(deps.backupDir)).toHaveLength(20)
+  })
+
+  it('takes no backup when the batch only creates crates, so it evicts no real one', async () => {
+    const { roots, deps } = twoRoots({ internal: [] })
+    await apply(roots, deps, create('root', 'New'))
+    expect(existsSync(deps.backupDir)).toBe(false)
+  })
+
+  it('gives a second write in the same millisecond its own backup folder', async () => {
+    const { roots, deps, bytes } = twoRoots({ internal: ['A', 'B'] })
+    const now = () => new Date(T0)
+    await apply(roots, { ...deps, now }, del('A'))
+    await apply(roots, { ...deps, now }, del('B'))
+    const folders = readdirSync(deps.backupDir).sort()
+    expect(folders).toHaveLength(2)
+    expect(readFileSync(join(deps.backupDir, folders[0], 'Music/Subcrates/A.crate'))).toEqual(
+      bytes.internal.A,
+    )
+    expect(readFileSync(join(deps.backupDir, folders[1], 'Music/Subcrates/B.crate'))).toEqual(
+      bytes.internal.B,
+    )
   })
 
   it('asks whether Serato is open once more before each rename', async () => {
@@ -168,5 +217,28 @@ describe('commitSeratoDraft', () => {
     draft.rename(crateFileOf(roots[0], 'A'), crateFileOf(roots[0], 'X'))
     expect(await commitSeratoDraft(draft, { ...deps, seratoOpen })).toBe('written')
     expect(seratoOpen).toHaveBeenCalledTimes(3)
+  })
+})
+
+describe('recoverSeratoTemps', () => {
+  it('puts back a crate a crash left halfway through a rename, so Serato sees it again', () => {
+    const { roots, bytes } = twoRoots({ internal: ['A'] })
+    const a = crateFileOf(roots[0], 'A')
+    renameSync(a, `${a}.surco-tmp`)
+    recoverSeratoTemps(roots)
+    expect(readFileSync(a)).toEqual(bytes.internal.A)
+    expect(tempsUnder(roots[0].dir)).toEqual([])
+  })
+
+  it('drops a temp a crash left before it replaced the crate, keeping the crate as it was', () => {
+    const { roots, bytes } = twoRoots({ gig: ['A'] })
+    const a = crateFileOf(roots[1], 'A')
+    writeFileSync(`${a}.surco-tmp`, crateBytes(['Users/dj/half.mp3']))
+    writeFileSync(join(roots[1].dir, 'database V2'), 'db')
+    writeFileSync(join(roots[1].dir, 'database V2.surco-tmp'), 'half')
+    recoverSeratoTemps(roots)
+    expect(readFileSync(a)).toEqual(bytes.gig.A)
+    expect(readFileSync(join(roots[1].dir, 'database V2'), 'utf8')).toBe('db')
+    expect(tempsUnder(roots[1].dir)).toEqual([])
   })
 })

@@ -29,7 +29,7 @@ interface Entry {
 }
 
 export interface DraftChanges {
-  writes: { file: string; bytes: Uint8Array }[]
+  writes: { file: string; bytes: Uint8Array; fresh: boolean }[]
   renames: { from: string; to: string }[]
   removals: string[]
 }
@@ -97,7 +97,11 @@ export function createSeratoDraft(): SeratoDraft {
       return {
         writes: live
           .filter(([, e]) => e.written)
-          .map(([file, e]) => ({ file: e.origin ?? file, bytes: e.bytes })),
+          .map(([file, e]) => ({
+            file: e.origin ?? file,
+            bytes: e.bytes,
+            fresh: e.origin === null,
+          })),
         renames: live
           .filter(([file, e]) => e.origin !== null && e.origin !== file)
           .map(([file, e]) => ({ from: e.origin as string, to: file })),
@@ -132,6 +136,13 @@ export function backupFolderName(now: Date): string {
   return now.toISOString().replace(/[:.]/g, '-')
 }
 
+function freshFolder(backupDir: string, now: Date): string {
+  const name = backupFolderName(now)
+  let folder = join(backupDir, name)
+  for (let n = 1; existsSync(folder); n++) folder = join(backupDir, `${name}-${n}`)
+  return folder
+}
+
 function backupPathOf(file: string, roots: SeratoLibraryRoot[]): string {
   const root = roots.find((r) => file.startsWith(`${r.dir}/`))
   if (!root) throw new Error(`${file} is in no Serato library`)
@@ -139,7 +150,8 @@ function backupPathOf(file: string, roots: SeratoLibraryRoot[]): string {
 }
 
 function takeBackups(files: string[], deps: SeratoCommitDeps): Map<string, string> {
-  const folder = join(deps.backupDir, backupFolderName(deps.now?.() ?? new Date()))
+  if (files.length === 0) return new Map()
+  const folder = freshFolder(deps.backupDir, deps.now?.() ?? new Date())
   mkdirSync(folder, { recursive: true })
   const roots = deps.roots()
   const copies = new Map<string, string>()
@@ -149,13 +161,36 @@ function takeBackups(files: string[], deps: SeratoCommitDeps): Map<string, strin
     copyFileSync(file, copy)
     copies.set(file, copy)
   }
-  const folders = readdirSync(deps.backupDir).sort()
-  for (const old of folders.slice(0, Math.max(0, folders.length - KEPT_BACKUPS)))
+  const older = readdirSync(deps.backupDir)
+    .filter((name) => name !== basename(folder))
+    .sort()
+  for (const old of older.slice(0, Math.max(0, older.length + 1 - KEPT_BACKUPS)))
     rmSync(join(deps.backupDir, old), { recursive: true, force: true })
   return copies
 }
 
 type Undo = { restore: string } | { unlink: string }
+
+export function recoverSeratoTemps(roots: SeratoLibraryRoot[]): void {
+  for (const dir of roots.flatMap((r) => [r.dir, join(r.dir, 'Subcrates')])) {
+    let names: string[]
+    try {
+      names = readdirSync(dir)
+    } catch {
+      continue
+    }
+    for (const name of names.filter((n) => n.endsWith(TMP))) {
+      const tmp = join(dir, name)
+      const file = tmp.slice(0, -TMP.length)
+      try {
+        if (existsSync(file)) rmSync(tmp, { force: true })
+        else renameSync(tmp, file)
+      } catch (e) {
+        log.warn(`Serato temp ${tmp} not recovered`, e)
+      }
+    }
+  }
+}
 
 export async function commitSeratoDraft(
   draft: SeratoDraft,
@@ -210,20 +245,22 @@ export async function commitSeratoDraft(
   const undoOf = (file: string): Undo => (existed(file) ? { restore: file } : { unlink: file })
 
   try {
-    for (const { file, bytes } of writes) {
-      mkdirSync(dirname(file), { recursive: true })
-      temps.add(`${file}${TMP}`)
-      writeFileSync(`${file}${TMP}`, bytes)
-    }
+    const written = (fresh: boolean) =>
+      writes
+        .filter((w) => w.fresh === fresh)
+        .map(({ file, bytes }): [() => void, Undo, string[]] => [
+          () => {
+            mkdirSync(dirname(file), { recursive: true })
+            temps.add(`${file}${TMP}`)
+            writeFileSync(`${file}${TMP}`, bytes)
+            renameSync(`${file}${TMP}`, file)
+            temps.delete(`${file}${TMP}`)
+          },
+          undoOf(file),
+          [file],
+        ])
     const steps: [() => void, Undo, string[]][] = [
-      ...writes.map(({ file }): [() => void, Undo, string[]] => [
-        () => {
-          renameSync(`${file}${TMP}`, file)
-          temps.delete(`${file}${TMP}`)
-        },
-        undoOf(file),
-        [file],
-      ]),
+      ...written(false),
       ...renames.map(({ from }): [() => void, Undo, string[]] => [
         () => {
           renameSync(from, `${from}${TMP}`)
@@ -240,6 +277,7 @@ export async function commitSeratoDraft(
         { unlink: to },
         [to],
       ]),
+      ...written(true),
       ...removals.map((file): [() => void, Undo, string[]] => [
         () => rmSync(file),
         { restore: file },
