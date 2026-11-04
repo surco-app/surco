@@ -395,7 +395,7 @@ describe('Field with a bounded width', () => {
     expect(column).toContainElement(screen.getByTestId('field-bpm'))
     expect(column).toContainElement(screen.getByTestId('chip-128'))
     expect(column).not.toContainElement(screen.getByTestId('field-key'))
-    expect(column.className).toContain('w-[4.5rem]')
+    expect(screen.getByTestId('field-bpm').parentElement?.className).toContain('w-[4.5rem]')
     // When the row wraps onto a second line the grid cell grows, and a stretched label
     // centred itself between the two lines instead of beside its own box.
     expect(screen.getByText('BPM').className).toContain('@[24rem]:self-start')
@@ -475,6 +475,23 @@ describe('Field previous value', () => {
     )
     fireEvent.click(screen.getByTestId('field-previous-restore-title'))
     expect(onRestore).toHaveBeenCalledTimes(1)
+  })
+
+  // A short box is only as wide as a year, and the replaced value split under it into
+  // "Before: 2000" and a stray "· Restore" that no longer read as one undo.
+  it('keeps the replaced value and its restore on one line under a short box', () => {
+    render(
+      <Field
+        name="year"
+        label="Year"
+        value="1999"
+        onChange={vi.fn()}
+        width="short"
+        previous={{ value: '2000', onRestore: vi.fn() }}
+      />,
+    )
+    expect(screen.getByTestId('field-year-previous').className).toContain('whitespace-nowrap')
+    expect(screen.getByTestId('field-column-year').className).not.toContain('w-[4.5rem]')
   })
 })
 

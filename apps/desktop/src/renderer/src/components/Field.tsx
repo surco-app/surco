@@ -208,7 +208,10 @@ export const Field = memo(function Field({
   )
   const control = (
     <>
-      <span ref={valuesRef} className={`relative block ${width ? '' : '@[24rem]:col-start-2'}`}>
+      <span
+        ref={valuesRef}
+        className={`relative block ${width ? WIDTH_CLASS[width] : '@[24rem]:col-start-2'}`}
+      >
         <input
           ref={inputRef}
           id={inputId}
@@ -364,7 +367,7 @@ export const Field = memo(function Field({
       {previous && (
         <span
           data-testid={`field-${name}-previous`}
-          className={`mt-1 block text-[11.5px] text-fg-faint ${width ? '' : '@[24rem]:col-start-2 @[24rem]:-mt-1'}`}
+          className={`mt-1 block text-[11.5px] text-fg-faint ${width ? 'whitespace-nowrap' : '@[24rem]:col-start-2 @[24rem]:-mt-1'}`}
         >
           {`${tr('editor.previous.label')} `}
           <span className="line-through">{previous.value}</span>
@@ -397,10 +400,7 @@ export const Field = memo(function Field({
   // A bounded field keeps its box and chips in one column of its own width, so a detected
   // BPM chip stays under the BPM box when other short fields follow it on the row.
   const column = (
-    <div
-      data-testid={`field-column-${name}`}
-      className={`relative flex shrink-0 flex-col ${WIDTH_CLASS[width]}`}
-    >
+    <div data-testid={`field-column-${name}`} className="relative flex w-min shrink-0 flex-col">
       {control}
     </div>
   )
