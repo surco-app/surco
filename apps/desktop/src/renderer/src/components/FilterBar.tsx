@@ -8,7 +8,7 @@ import { showOption } from './Select'
 import { Tooltip } from './Tooltip'
 
 const ROW_CLASS =
-  'flex w-full items-center gap-2 whitespace-nowrap rounded-md px-2 py-1.5 text-left text-xs text-fg transition-colors hover:bg-[var(--color-hover)]'
+  'flex w-full items-center gap-2 whitespace-nowrap rounded-md px-2 py-1.5 text-left text-xs text-fg transition-colors hover:bg-[var(--color-hover)] group data-[empty]:text-fg-faint'
 
 export function FilterOption({
   testid,
@@ -35,10 +35,11 @@ export function FilterOption({
       role="option"
       aria-selected={selected}
       data-testid={testid}
+      data-empty={count === 0 && !selected ? '' : undefined}
       onClick={onClick}
       className={ROW_CLASS}
     >
-      <span className="relative">
+      <span className="relative group-data-[empty]:opacity-50">
         <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
         {dot && (
           <span
@@ -57,7 +58,7 @@ export function FilterOption({
           {progress.text}
         </span>
       )}
-      <span className="tabular-nums text-fg-dim">{count}</span>
+      <span className="tabular-nums text-fg-dim group-data-[empty]:text-fg-faint">{count}</span>
       <Check aria-hidden="true" className={`size-3 shrink-0 ${selected ? '' : 'invisible'}`} />
     </button>
   )

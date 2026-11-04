@@ -626,6 +626,18 @@ describe('QualityFilterBar', () => {
     }
   })
 
+  it('marks a bucket the picked sections leave empty, but never the one that is picked', () => {
+    renderBar({
+      value: sel({ quality: 'good', tags: 'noBpm' }),
+      tally: tally({ good: 15, noBpm: 5, noKey: 4 }),
+      facets: { tally: tally({ good: 0, noBpm: 0, noKey: 0, unconverted: 3 }), formats: {} },
+    })
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    expect(screen.getByTestId('quality-filter-noKey')).toHaveAttribute('data-empty')
+    expect(screen.getByTestId('quality-filter-noBpm')).not.toHaveAttribute('data-empty')
+    expect(screen.getByTestId('quality-filter-unconverted')).not.toHaveAttribute('data-empty')
+  })
+
   it('names the library section after the library the buckets read', () => {
     renderBar({ librarySource: 'engineDj', tally: tally({ notInLibrary: 6, inLibrary: 4 }) })
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
