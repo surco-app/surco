@@ -434,6 +434,24 @@ describe('pruneAnalysisCache', () => {
     expect(await peekAnalysis('demo', unused)).toBeNull()
   })
 
+  // A library bigger than the budget evicts its heavy entries every day. The list's verdict
+  // is a few hundred bytes and is what marks a track analysed: losing it with the image sent
+  // the sweep back over tracks it had already measured, so the analysis never added up.
+  it('keeps every verdict and leaves them out of the byte budget', async () => {
+    const [old, recent] = await Promise.all([makeFile(), makeFile()])
+    const oldEntry = await entryAged(old, 100)
+    await peekVerdict('demo', old, (e: { v: number }) => e.v)
+    const longAgo = (Date.now() - 100_000) / 1000
+    await utimes(oldEntry, longAgo, longAgo)
+    const recentEntry = await entryAged(recent, 50)
+
+    await pruneAnalysisCache((await stat(recentEntry)).size)
+
+    expect(await peekAnalysis('demo', old)).toBeNull()
+    expect(await peekAnalysis('demo', recent)).toEqual({ v: 1 })
+    expect(await peekVerdict('demo', old, () => 'recomputed')).toBe(1)
+  })
+
   // A 0.70.0 spectrogram entry could persist a decode error carrying the child's
   // whole stdout — a 237 MB JSON that froze the main process on every re-parse.
   // Legit entries top out around 0.5 MB, so anything enormous is poison, not data,
