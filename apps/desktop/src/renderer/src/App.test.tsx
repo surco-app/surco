@@ -3349,6 +3349,53 @@ describe('App source playlists', () => {
         return screen.getAllByTestId('track-row')
       }
 
+      // A list paints its rows top to bottom and the eye follows: each row reported on screen
+      // used to jump the queue on its own, so the last one reported read first and the top
+      // row the user was looking at filled in last.
+      it('reads the rows that come into view top to bottom', async () => {
+        const many = Array.from({ length: 10 }, (_, i) => ({
+          path: `/m/t${i}.wav`,
+          separator: false,
+          meta: {},
+          linkId: `m${i}`,
+          contentId: `m${i}`,
+        }))
+        let release: () => void = () => {}
+        const gate = new Promise<void>((r) => {
+          release = r
+        })
+        const started: string[] = []
+        const read = vi.fn(async (path: string) => {
+          started.push(path)
+          await gate
+          return {
+            tags: { title: 'Song', artist: 'DJ' },
+            duration: null,
+            cover: null,
+            foreignTags: [],
+          }
+        })
+        setApi({
+          ...collection,
+          rekordboxTrackCount: vi.fn<Api['rekordboxTrackCount']>().mockResolvedValue(10),
+          loadRekordboxPlaylist: vi.fn<Api['loadRekordboxPlaylist']>().mockResolvedValue(many),
+          readMeta: read as unknown as Api['readMeta'],
+          readMetaLight: read as unknown as Api['readMetaLight'],
+        })
+        await renderApp()
+        fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+        fireEvent.click(await screen.findByTestId(`source-node-${ALL_TRACKS_ID}`))
+        await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(10))
+        await waitFor(() => expect(started).toHaveLength(6))
+        const rows = screen.getAllByTestId('track-row')
+
+        scrollPast([rows[7], rows[8], rows[9]])
+        release()
+
+        await waitFor(() => expect(started).toHaveLength(10))
+        expect(started.slice(6, 9)).toEqual(['/m/t7.wav', '/m/t8.wav', '/m/t9.wav'])
+      })
+
       it('analyzes only the rows scrolled past, with auto-analyze on', async () => {
         const analyzed: string[] = []
         setApi({

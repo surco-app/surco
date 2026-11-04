@@ -1762,12 +1762,14 @@ export default function App(): React.JSX.Element {
   const seenSettle = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [seenInAll, setSeenInAll] = useState<ReadonlySet<string>>(() => new Set())
   const rowsOnScreen = useRef(new Set<string>())
+  const cameIntoView = useRef<string[]>([])
   const onListRowVisible = useStableCallback((id: string, visible: boolean): void => {
     if (visible) rowsOnScreen.current.add(id)
     else rowsOnScreen.current.delete(id)
     onTrackVisible(id, visible)
     onDuplicateRowVisible(id, visible)
-    if (visible) prioritizeReads([id])
+    if (visible && cameIntoView.current.push(id) === 1)
+      queueMicrotask(() => prioritizeReads(cameIntoView.current.splice(0)))
     if (visible && browser.playlist?.id === ALL_TRACKS_ID && !seenInAllRef.current.has(id)) {
       seenInAllRef.current.add(id)
       seenSettle.current ??= setTimeout(() => {
