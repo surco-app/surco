@@ -1,7 +1,6 @@
 import { isCancelledError, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { analysisOptions } from '../lib/analysisQueries'
-import { mapWithConcurrency } from '../lib/concurrency'
 import { createFocusGate } from '../lib/focusGate'
 import type { TrackItem } from '../types'
 import { spectrogramOptions } from './useSpectrogram'
@@ -41,8 +40,8 @@ interface QualityAnalysis {
   // else retires it — see the pendingRef note below.
   forgetTracks: (ids: string[]) => void
   cancelAnalysis: () => void
-  // Narrows the sweep to the open playlist (null: the whole working list), mirroring
-  // useAutoMatch's scopeTo: what has not started outside it is set aside until it is back.
+  // Puts the open playlist first in the sweep (null: no preference). Nothing outside it is
+  // dropped: it runs once the open playlist's tracks are done.
   scopeTo: (inScope: ((t: TrackItem) => boolean) | null) => void
 }
 
@@ -94,13 +93,9 @@ export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params)
   // refused re-entry until it is genuinely imported again (which clears it, below).
   const forgottenRef = useRef<Set<string>>(new Set())
 
-  // The open playlist. Every playlist opened adds its files to the working list, and a sweep
-  // over all of them kept decoding sets the user had already left. Its tracks that have not
-  // started wait in pendingRef, which sweepCandidates reads through this, so opening their
-  // playlist again is what brings them back.
+  // The open playlist. Its tracks are the next the pass starts; the rest wait their turn.
   const scopeRef = useRef<((t: TrackItem) => boolean) | null>(null)
-  // The running pass's tracks the progress still counts and that have not finished. One the
-  // scope sets aside leaves here before its turn, and the pass then skips it.
+  // The running pass's tracks that have not finished, which the progress counts.
   const runRef = useRef<Map<string, TrackItem>>(new Map())
 
   // App calls this from its track-removal callbacks, alongside the other per-track caches it
@@ -132,15 +127,16 @@ export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params)
 
   // targetsRef.current plus whatever pendingRef still holds that targetsRef doesn't carry
   // yet — pendingRef entries are retired (see the per-track finally below) once the sweep has
-  // run them, so this never re-adds a track the sweep already finished. What pendingRef holds for another playlist stays there either way;
-  // the rows shown are held to the playlist only for a background sweep.
+  // run them, so this never re-adds a track the sweep already finished. What pendingRef holds
+  // for another playlist joins too; the rows shown are held to the playlist only for a
+  // background sweep.
   const sweepCandidates = useCallback(
     (background: boolean): TrackItem[] => {
       const inScope = (t: TrackItem): boolean => !scopeRef.current || scopeRef.current(t)
       return [
         ...(background ? targetsRef.current.filter(inScope) : targetsRef.current),
         ...Array.from(pendingRef.current.values()).filter(
-          (t) => inScope(t) && !targetsRef.current.some((existing) => existing.id === t.id),
+          (t) => !targetsRef.current.some((existing) => existing.id === t.id),
         ),
       ]
     },
@@ -184,14 +180,38 @@ export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params)
       analyzeCancel.current = false
       runRef.current = new Map(targets.map((t) => [t.id, t]))
       let done = 0
+      let total = targets.length
       const failed: string[] = []
-      setAnalysis({ done: 0, total: targets.length })
-      void mapWithConcurrency(targets, 3, async (t) => {
-        if (analyzeCancel.current) return
-        // Hold here while the window is in the background so the sweep doesn't spawn
-        // ffmpeg off-screen; it resumes the moment the app is focused again.
-        await focusGate.current.wait()
-        if (analyzeCancel.current || !runRef.current.has(t.id)) return
+      setAnalysis({ done: 0, total })
+      const waiting = new Map(runRef.current)
+      const joinsFromOpenPlaylist = (inScope: (t: TrackItem) => boolean): TrackItem | undefined => {
+        for (const t of pendingRef.current.values()) {
+          if (runRef.current.has(t.id) || measuredRef.current.has(t.id)) continue
+          if (forgottenRef.current.has(t.id) || !inScope(t)) continue
+          runRef.current.set(t.id, t)
+          total += 1
+          if (mountedRef.current) setAnalysis((a) => (a ? { ...a, total } : a))
+          return t
+        }
+        return undefined
+      }
+      const nextTrack = (): TrackItem | undefined => {
+        const inScope = scopeRef.current
+        let picked: TrackItem | undefined
+        for (const t of waiting.values()) {
+          if (!inScope || inScope(t)) {
+            waiting.delete(t.id)
+            return t
+          }
+          picked ??= t
+        }
+        const joined = inScope && joinsFromOpenPlaylist(inScope)
+        if (joined) return joined
+        if (picked) waiting.delete(picked.id)
+        return picked
+      }
+      const measure = async (t: TrackItem): Promise<void> => {
+        if (!runRef.current.has(t.id)) return
         // Read at the track's turn, not when it was queued: an in-place conversion that
         // renames the file meanwhile leaves the queued row on a path that no longer exists,
         // and the probe then reports a file the user can see right there as missing.
@@ -254,7 +274,18 @@ export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params)
           pendingRef.current.delete(t.id)
           if (mountedRef.current) setAnalysis((a) => (a ? { ...a, done } : a))
         }
-      }).finally(() => {
+      }
+      const worker = async (): Promise<void> => {
+        while (!analyzeCancel.current) {
+          // Hold here while the window is in the background so the sweep doesn't spawn
+          // ffmpeg off-screen; it resumes the moment the app is focused again.
+          await focusGate.current.wait()
+          const t = nextTrack()
+          if (analyzeCancel.current || !t) return
+          await measure(t)
+        }
+      }
+      void Promise.all([worker(), worker(), worker()]).finally(() => {
         runningRef.current = false
         if (!mountedRef.current) return
         if (failed.length > 0) onErrorsRef.current?.(failed)
@@ -284,29 +315,12 @@ export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params)
     measuredRef.current = new Set()
   }, [])
 
-  // A track already decoding finishes (the work is half done) but leaves the progress, which
-  // counts only the open playlist's work; one not started yet goes back to pendingRef. Its
-  // playlist opened again starts the sweep over what waits there, as an import would. A row
-  // removed from the list is no playlist's work: it leaves the pass without waiting anywhere.
+  // Opening another playlist reorders the pass and never shortens it: its tracks start next,
+  // and the ones left behind still run once they are done.
   const scopeTo = useCallback(
     (inScope: ((t: TrackItem) => boolean) | null): void => {
       scopeRef.current = inScope
-      let dropped = 0
-      for (const [id, t] of runRef.current) {
-        if (!inScope || inScope(t)) continue
-        runRef.current.delete(id)
-        if (!forgottenRef.current.has(id)) pendingRef.current.set(id, t)
-        dropped += 1
-      }
-      if (dropped > 0) {
-        setAnalysis((a) => (a && a.total - dropped > 0 ? { ...a, total: a.total - dropped } : null))
-      }
-      if (
-        !runningRef.current &&
-        Array.from(pendingRef.current.values()).some((t) => !inScope || inScope(t))
-      ) {
-        analyzeAllQuality(undefined, true)
-      }
+      if (!runningRef.current && pendingRef.current.size > 0) analyzeAllQuality(undefined, true)
     },
     [analyzeAllQuality],
   )

@@ -513,29 +513,35 @@ describe('useQualityAnalysis after unmount', () => {
     expect(rejections).toEqual([])
   })
 
-  // The progress sits beside the open playlist and is read against it: tracks of a playlist
-  // the user left, decoding or not, are not its work, and one still waiting is not started.
-  it('counts only the open playlist once the scope narrows, and skips what has not started', async () => {
+  // A DJ starts the sweep, browses other folders and leaves it running expecting the whole
+  // library done. The folder in front of them goes first, but leaving one must never stop
+  // the rest: setting it aside left most of a big library unanalysed for good.
+  it('measures the open playlist first and still finishes the ones left behind', async () => {
     let release: (v: SpectrumResult) => void = () => {}
     const gate = new Promise<SpectrumResult>((r) => {
       release = r
     })
-    const spectrogram = vi.fn((): Promise<SpectrumResult> => gate)
+    const order: string[] = []
+    const spectrogram = vi.fn((path: string): Promise<SpectrumResult> => {
+      order.push(path)
+      return order.length <= 3 ? gate : Promise.resolve(spectrum)
+    })
     setApi({ spectrogram })
-    const targetsRef = { current: [track('a'), track('b'), track('c'), track('d')] }
+    const ids = ['a', 'b', 'c', 'd', 'e', 'f']
+    const targetsRef = { current: ids.map((id) => track(id)) }
     const { result } = renderHook(() => useQualityAnalysis({ targetsRef }), {
       wrapper: wrapper(),
     })
 
     act(() => result.current.analyzeAllQuality())
     await waitFor(() => expect(spectrogram).toHaveBeenCalledTimes(3))
-    targetsRef.current = [track('a')]
-    act(() => result.current.scopeTo((t) => t.id === 'a'))
+    targetsRef.current = [track('e'), track('f')]
+    act(() => result.current.scopeTo((t) => t.id === 'e' || t.id === 'f'))
 
-    expect(result.current.analysis).toEqual({ done: 0, total: 1 })
+    expect(result.current.analysis).toEqual({ done: 0, total: 6 })
     release(spectrum)
     await waitFor(() => expect(result.current.analysis).toBeNull())
-    expect(spectrogram).not.toHaveBeenCalledWith('/music/d.wav', expect.anything())
+    expect(order.slice(3)).toEqual(['/music/e.wav', '/music/f.wav', '/music/d.wav'])
   })
 
   // A row removed from the list is out of every playlist for good: setting it aside on a

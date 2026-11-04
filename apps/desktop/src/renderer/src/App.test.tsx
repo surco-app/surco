@@ -2630,8 +2630,8 @@ describe('App source playlists', () => {
     expect(screen.getByTestId('analyze-quality')).toBeDisabled()
   })
 
-  // The analysis sweep is ffmpeg passes per track: the same rule holds, or a playlist the
-  // user only passed through keeps the CPU busy behind the one now open.
+  // The analysis sweep starts the open playlist's tracks next, and the playlist left behind
+  // still finishes after it.
   describe('background analysis', () => {
     const entry = (path: string) => ({ path, separator: false, meta: {} })
     const playlists: Record<string, ReturnType<typeof entry>[]> = {
@@ -2662,41 +2662,41 @@ describe('App source playlists', () => {
       return { analyzed, release: () => release() }
     }
 
-    it('never analyzes the left playlist’s waiting tracks behind the open one', async () => {
-      const { analyzed, release } = setupPlaylists()
+    async function leaveForPeak(): Promise<void> {
       await renderApp()
       fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
       fireEvent.click(await screen.findByTestId('source-node-a'))
       await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(5))
-      await waitFor(() => expect(analyzed.length).toBeGreaterThan(0))
+      fireEvent.click(screen.getByTestId('source-node-b'))
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+      await waitFor(() =>
+        expect(within(screen.getByTestId('track-row')).getByText('My Song')).toBeInTheDocument(),
+      )
+    }
+
+    it('analyzes the open playlist before what is left of the one behind', async () => {
+      const { analyzed, release } = setupPlaylists()
+      await leaveForPeak()
       const startedInA = analyzed.length
 
-      fireEvent.click(screen.getByTestId('source-node-b'))
-      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
       release()
       await waitFor(() => expect(analyzed).toContain('/m/b1.wav'), { timeout: 4000 })
-      await waitFor(() => expect(screen.queryByTestId('analyze-progress')).toBeNull())
 
-      expect(analyzed.filter((p) => p.startsWith('/m/a'))).toHaveLength(startedInA)
+      expect(analyzed.indexOf('/m/b1.wav')).toBe(startedInA)
     })
 
-    it('analyzes the left playlist’s waiting tracks once it is opened again', async () => {
+    // A DJ leaves the sweep running while browsing; the playlist left behind still finishes.
+    it('finishes the playlist left behind without opening it again', async () => {
       const { analyzed, release } = setupPlaylists()
-      await renderApp()
-      fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
-      fireEvent.click(await screen.findByTestId('source-node-a'))
-      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(5))
-      await waitFor(() => expect(analyzed.length).toBeGreaterThan(0))
-      fireEvent.click(screen.getByTestId('source-node-b'))
-      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+      await leaveForPeak()
+
       release()
-      await waitFor(() => expect(analyzed).toContain('/m/b1.wav'), { timeout: 4000 })
 
-      fireEvent.click(screen.getByTestId('source-node-a'))
-
-      await waitFor(() =>
-        expect(analyzed).toEqual(expect.arrayContaining(playlists.a.map((e) => e.path))),
+      await waitFor(
+        () => expect(analyzed).toEqual(expect.arrayContaining(playlists.a.map((e) => e.path))),
+        { timeout: 4000 },
       )
+      await waitFor(() => expect(screen.queryByTestId('analyze-progress')).toBeNull())
     })
   })
 
