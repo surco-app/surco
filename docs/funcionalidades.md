@@ -6,7 +6,7 @@ evidencia en `fichero:línea`. Lo que aquí no está, no se puede prometer en la
 Documento de referencia: sirve para redactar la home, llenar `/funciones` y
 saber qué NO decir.
 
-**Última revisión: 4 de noviembre de 2026** (v1.23.0, cues de Serato escritos en el fichero con Serato cerrado, editor y flujos de cues en Serato, cues de Serato conservados al convertir, rejilla de Serato leída, Music relee una pista reescrita en su sitio, original renombrado que se queda si otro programa lo usa, título, artista, álbum y género cambiados al convertir que llegan a Traktor y Engine DJ, cambios de biblioteca que sobreviven a una recarga; antes v1.22.0, ajuste de la rejilla en el editor de cues maximizado con guardado en rekordbox, Traktor y Engine DJ, filtro «Rejilla mal», cues fuera del golpe señalados y «Al golpe», pestaña de Serato de solo lectura, MP3 de iTunes a tiempo en Traktor; antes v1.21.0, filtro «Cues fuera de la rejilla» en rekordbox, Traktor y Engine DJ con su tolerancia en Ajustes › Cues; antes v1.20.0, espectros de las dos copias en la comparación con la biblioteca, editor de cues sin vista previa en reposo, barra de propuestas de Auto marcar, un solo Guardar en el editor plegado, reproductor que se cierra al cambiar de pestaña; antes v1.19.0, filtro Incompletas en la revisión, valores de un campo mezclado, deshacer «Borrar metadatos», 32 bits a 24 bajo «Corregido», fechas y auto-match recordados; antes filtro Daños en «Revisar metadatos de la lista…»; antes v1.18.0, autocomprobación tras convertir, sustituir al cambiar de formato, pantalla Copias, carpeta Artista/Álbum en Music, grouping y totales; antes v1.17.0, elección por programa de DJ, cola de Engine DJ abierto, búsqueda en Ajustes, deshacer y rehacer, «Antes:» por campo, archivos dañados, orden por BPM/tonalidad/año/calidad). Levantado por primera vez el
+**Última revisión: 4 de noviembre de 2026** (v1.24.0, USB de Pioneer desde Serato y Traktor, crates de Serato editables, ajuste «Biblioteca de Serato» con Actualizar y Actualizar y añadir, crates de Serato elegidos en el editor, «Auto» de la rejilla que lleva los cues al golpe, Auto marcar en pistas que rekordbox no ha analizado; antes v1.23.0, cues de Serato escritos en el fichero con Serato cerrado, editor y flujos de cues en Serato, cues de Serato conservados al convertir, rejilla de Serato leída, Music relee una pista reescrita en su sitio, original renombrado que se queda si otro programa lo usa, título, artista, álbum y género cambiados al convertir que llegan a Traktor y Engine DJ, cambios de biblioteca que sobreviven a una recarga; antes v1.22.0, ajuste de la rejilla en el editor de cues maximizado con guardado en rekordbox, Traktor y Engine DJ, filtro «Rejilla mal», cues fuera del golpe señalados y «Al golpe», pestaña de Serato de solo lectura, MP3 de iTunes a tiempo en Traktor; antes v1.21.0, filtro «Cues fuera de la rejilla» en rekordbox, Traktor y Engine DJ con su tolerancia en Ajustes › Cues; antes v1.20.0, espectros de las dos copias en la comparación con la biblioteca, editor de cues sin vista previa en reposo, barra de propuestas de Auto marcar, un solo Guardar en el editor plegado, reproductor que se cierra al cambiar de pestaña; antes v1.19.0, filtro Incompletas en la revisión, valores de un campo mezclado, deshacer «Borrar metadatos», 32 bits a 24 bajo «Corregido», fechas y auto-match recordados; antes filtro Daños en «Revisar metadatos de la lista…»; antes v1.18.0, autocomprobación tras convertir, sustituir al cambiar de formato, pantalla Copias, carpeta Artista/Álbum en Music, grouping y totales; antes v1.17.0, elección por programa de DJ, cola de Engine DJ abierto, búsqueda en Ajustes, deshacer y rehacer, «Antes:» por campo, archivos dañados, orden por BPM/tonalidad/año/calidad). Levantado por primera vez el
 2026-07-30 y revisado contra el código el 2026-09-02, cuando cinco releases lo
 habían dejado atrás: daba por perdidos cues que hoy se conservan y publicaba
 umbrales del espectro que el código había recalibrado.
@@ -1288,6 +1288,30 @@ la pista cambió en Serato mientras esperaba, el guardado se descarta
 vez el mismo fichero. La conversión espera a que acabe la escritura (`processTrack.ts:561`) y
 un fichero que se está convirtiendo cancela la tanda de Serato (`seratoCuesWrite.ts:169`).
 
+**Los crates se editan desde su pestaña** (v1.24.0). Crear un crate en la raíz o dentro de otro,
+renombrar, borrar, añadir pistas arrastrando o desde otra pestaña, quitarlas y reordenarlas,
+como en rekordbox y Traktor, sin separadores, que Serato no tiene (`applySeratoEdit`,
+`seratoCrateEdits.ts:306`). Un nombre con `%%` o que ya existe, sin distinguir mayúsculas, se
+rechaza (`validCrateName`, `seratoCrateFile.ts:45`; `seratoNameTaken`,
+`seratoCrateEdits.ts:73`). Borrar un crate no quita sus pistas de Serato. Va por la misma cola:
+con Serato abierto espera a que se cierre, guarda antes una copia y escribe sobre un temporal
+que nunca sustituye a un crate a medio escribir (`commitSeratoDraft`,
+`seratoLibraryWrite.ts:202`; `recoverSeratoTemps`, `:181`). Una pista de otro disco no puede
+entrar en un crate de este (`seratoQueue.notice.otherVolume`). Probado a mano en Serato DJ Pro
+5.0 el 4 de noviembre de 2026. Un crate nuevo no cae por orden alfabético en el panel de
+Serato, porque `neworder.pref` no se toca. Los smart crates no se editan.
+
+**Ajuste «Biblioteca de Serato»** (v1.24.0, Ajustes, apagado por defecto). Con «Actualizar», el
+título, el artista, el álbum y el género que se corrigen en la revisión de metadatos se
+escriben en `database V2` sobre la misma pista, sin cambiar su ruta, así que Serato conserva
+la valoración (`syncSeratoTags`, `seratoTagSync.ts:48`; `withSeratoTrackFields`,
+`seratoDatabaseWrite.ts:55`). Un campo que se cambió en Serato desde la revisión no se pisa.
+Con «Actualizar y añadir», un fichero convertido que Serato no tiene entra en su biblioteca
+(`withSeratoTrackAdded`, `seratoDatabaseWrite.ts:85`) y en los crates elegidos para esa pista en
+el editor. Elegir crates deja la pista pendiente de convertir. Solo se añade en MP3, WAV,
+AIFF, FLAC y M4A (`seratoFileType`, `seratoDatabaseWrite.ts:27`). Añadir al convertir solo está
+cubierto por tests, no probado a mano.
+
 **Al reloj de Serato.** Serato coloca los milisegundos de un M4A 1024 muestras antes y los de
 un MP3 MPEG-1 detrás de la trama de cabecera, más el retardo del encoder si la cabecera lleva
 firma LAME, Lavc o Lavf; WAV, AIFF y FLAC no se mueven (`seratoLeadMs`, `seratoClock.ts:20`).
@@ -1920,7 +1944,7 @@ y no se guarda hasta «Guardar».
 **Auto** mide los golpes del audio por tramos de 32 golpes y toma la mediana de los tramos
 cercanos al cabezal; un tramo suelto mal medido no decide. El BPM se corrige con la pendiente
 mediana de esos tramos a lo largo de la pista (`fitGrid`, `shared/gridEdit.ts:249`). Si el BPM
-del detector es el doble o la mitad, conserva el del DJ y solo corrige la fase. Auto lleva
+del detector es el doble o la mitad, conserva el del DJ y solo corrige la fase. Desde v1.24.0, Auto lleva
 además cada cue a su golpe más cercano de la rejilla nueva, salvo los loops bloqueados; mover
 la rejilla a mano deja los cues donde están. Rejilla y cues se deshacen juntos con un ⌘Z
 (`fit-grid`, `lib/cueDraft.ts`).
@@ -1972,7 +1996,7 @@ colección real: la BPM coincide a ±0,02 en el 93 % y el golpe cae a 10 ms o me
 apagado (`CuesSection.tsx:1276`). La cuenta atrás de los flujos funciona porque solo cuenta
 golpes. La onda es la de Surco en el formato de rekordbox (`rekordbox:surcoGrid`, `rekordboxCuesIpc.ts:105`).
 
-**Auto marcar deduce el compás** (desde el 4 de noviembre de 2026). Solo para proponer, Surco
+**Auto marcar deduce el compás** (v1.24.0). Solo para proponer, Surco
 numera los golpes buscando dónde cambia el bajo: compara la energía grave de los 8 golpes
 siguientes con la de los 8 anteriores y elige, de los cuatro golpes posibles, el que suma los
 cambios más grandes (`withBars`, `shared/barPhase.ts`). Medido en 281 pistas de una colección
@@ -2135,6 +2159,19 @@ escribió Surco, aprovecha sus copias y sustituye las playlists del mismo nombre
 biblioteca la hizo otro programa, o es de otra versión de Engine, no toca nada
 (`engineUsbExport.ts:201-210`). Exige Engine DJ cerrado y nunca va a la vez que un export de
 rekordbox. Sin las opciones propias de rekordbox (My Settings, sincronización).
+
+**USB de Pioneer desde Serato y Traktor** (v1.24.0). «Exportar a USB» en el árbol de Serato
+(crates y subcrates) y de Traktor (playlists y carpetas) escribe el mismo USB de Pioneer, sin
+pasar por rekordbox (`readSeratoExportSelection`, `usbExportSerato.ts:81`;
+`readTraktorExportSelection`, `usbExportTraktor.ts:90`). Lleva título, artista, álbum, género,
+tonalidad y BPM, los cues, los bucles y la rejilla pasados al reloj de rekordbox, y de Traktor
+además la valoración. La onda la calcula baken del audio. Sin identidad de rekordbox, sin
+ficheros de sincronización y sin My Settings, así que el reproductor conserva sus ajustes
+(`bakenRun.ts:134`). Una pista cuyo desfase no se conoce, por ejemplo un M4A desde Traktor, va
+sin cues ni rejilla y el plan lo avisa (`usbExport.warnings.cuesLeftOut`). Si el USB lo exportó
+Surco desde otra pestaña, el plan lo dice antes de rehacerlo. Probado el 4 de noviembre de 2026
+contra una imagen FAT32 (cues y rejilla en su sitio en los cinco formatos), **no en un CDJ ni
+abierto en rekordbox**.
 
 ### Tu propia copia de rekordbox
 
@@ -2582,17 +2619,20 @@ Recopilado de los cinco informes. Cada punto está verificado.
    Engine DJ (solo hot cues) y en la colección de Traktor (`collection.nml`, solo hot cues,
    siete botones, en azul), nunca en el fichero de esos programas.
    **Serato** (v1.23.0) es el único cuyos cues se escriben en el fichero, y solo hot cues de la A
-   a la H, solo con Serato cerrado y con copia del original antes. No escribe crates ni
+   a la H, solo con Serato cerrado y con copia del original antes. Desde v1.24.0 edita crates
+   y, con su ajuste encendido, escribe etiquetas y añade pistas a la biblioteca; no escribe
    rejilla, no muestra sus bucles en el editor y no convierte sus pistas. El reloj de Serato no
    está medido en AAC de Apple ni en MP3 MPEG-2. Conservar sus cues al convertir y los flujos
    hacia Serato solo están probados en tests, no en un Serato real.
    **La biblioteca de Serato no se repunta.** Una conversión que renombra o cambia de formato
    no mueve la pista en Serato, así que el original se queda en su carpeta mientras Serato lo
-   use (`librariesKeepingOriginal`, `libraryFlushes.ts:101`). Surco solo lee `database V2`
-   (`seratoLibrary.ts:49`) y no escribe ningún fichero de la biblioteca de Serato. Se intentó y
-   se retiró (`99597884a`), porque reescribir `database V2` hacía que Serato 5 perdiera la pista
-   y su valoración (medido el 4 de noviembre de 2026 en Serato 5, que guarda la biblioteca en
-   `master.sqlite`).
+   use (`librariesKeepingOriginal`, `libraryFlushes.ts:101`). Nunca cambia la ruta de una pista
+   que Serato ya tiene: se intentó y se retiró (`99597884a`), porque cambiarla hacía que Serato 5
+   perdiera la pista y su valoración (medido el 4 de noviembre de 2026 en Serato 5, que guarda
+   la valoración en `master.sqlite`). Lo que sí escribe en `database V2` desde v1.24.0 (editar
+   campos de una pista sin tocar su ruta y añadir pistas al final) se midió en Serato 5 sin esa
+   pérdida. Nunca escribe en `master.sqlite`.
+   **El USB desde Serato y Traktor** (v1.24.0) no se ha abierto en un CDJ ni en rekordbox.
 2. **Apple Music:** solo macOS, nunca FLAC. Clave, sello, catálogo y remixer no
    llegan a la biblioteca, ni los campos propios. Al añadir no se transfiere rating
    ni se crean playlists. Al sustituir sí pasan de la entrada vieja a la nueva (punto 6).
