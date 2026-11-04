@@ -226,27 +226,35 @@ describe('pcmTimeoutMs', () => {
 
   // A long compressed file is small for its length, so its header duration has to scale
   // the timeout where the size term would stay at the floor.
-  it('scales a long MP3 by its header duration', async () => {
-    const size = statSync(at('hour.mp3')).size
-    expect(pcmTimeoutMs(size)).toBe(ANALYSIS_TIMEOUT_MS)
-    spawned.length = 0
-    await pcmDigest(at('hour.mp3'))
-    const timeout = digests()[0]?.timeout ?? 0
-    expect(timeout).toBeGreaterThanOrEqual(360_000)
-    expect(timeout).toBeLessThan(362_000)
-  }, LONG_FIXTURE_DECODE_MS)
+  it(
+    'scales a long MP3 by its header duration',
+    async () => {
+      const size = statSync(at('hour.mp3')).size
+      expect(pcmTimeoutMs(size)).toBe(ANALYSIS_TIMEOUT_MS)
+      spawned.length = 0
+      await pcmDigest(at('hour.mp3'))
+      const timeout = digests()[0]?.timeout ?? 0
+      expect(timeout).toBeGreaterThanOrEqual(360_000)
+      expect(timeout).toBeLessThan(362_000)
+    },
+    LONG_FIXTURE_DECODE_MS,
+  )
 
   // Asking for the duration of a file without one decodes it a second time under the
   // very timeout that is too short, so the size alone must carry the scaling.
-  it('scales by size and never decodes a second time to learn the duration', async () => {
-    const size = statSync(at('big.wav')).size
-    spawned.length = 0
-    await pcmDigest(at('big.wav'))
-    const bySize = Math.ceil((size / 2_000_000) * 1000)
-    expect(digests().map((o) => o.timeout)).toEqual([bySize])
-    expect(bySize).toBeGreaterThan(ANALYSIS_TIMEOUT_MS)
-    expect(bySize).toBeGreaterThan(450 * 100)
-    expect(spawned.filter((o) => o.args.includes('format=duration'))).toHaveLength(0)
-    expect(digests()).toHaveLength(1)
-  }, LONG_FIXTURE_DECODE_MS)
+  it(
+    'scales by size and never decodes a second time to learn the duration',
+    async () => {
+      const size = statSync(at('big.wav')).size
+      spawned.length = 0
+      await pcmDigest(at('big.wav'))
+      const bySize = Math.ceil((size / 2_000_000) * 1000)
+      expect(digests().map((o) => o.timeout)).toEqual([bySize])
+      expect(bySize).toBeGreaterThan(ANALYSIS_TIMEOUT_MS)
+      expect(bySize).toBeGreaterThan(450 * 100)
+      expect(spawned.filter((o) => o.args.includes('format=duration'))).toHaveLength(0)
+      expect(digests()).toHaveLength(1)
+    },
+    LONG_FIXTURE_DECODE_MS,
+  )
 })
