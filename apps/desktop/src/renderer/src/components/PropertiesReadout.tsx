@@ -45,7 +45,9 @@ export function PropertiesReadout({
   const fmtDate = (ms: number | null): string =>
     ms === null
       ? ''
-      : new Date(ms).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+      : new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium', timeStyle: 'short' }).format(
+          ms,
+        )
   const row = (
     id: string,
     label: string,
