@@ -834,32 +834,42 @@ describe('DiscogsPanel last applied album', () => {
 
   // Tagging an album means the same release track after track, and the next track's search
   // rarely put it first: finding it again was a scroll through near-identical pressings.
-  it('pins the album applied on the last track at the top of the next one', () => {
+  it('lifts the album applied on the last track to the top when the next search finds it too', () => {
     applyFromHardHouse()
     const b = browser({
       query: 'y',
-      results: [
-        { provider: 'discogs', id: 2, title: 'Other' },
-        { provider: 'discogs', id: 3, title: 'Another' },
-      ],
+      results: [{ provider: 'discogs', id: 2, title: 'Other' }, hardHouse],
     })
     renderPanel(b)
-    expect(shownKeys()).toEqual(['discogs:1', 'discogs:2', 'discogs:3'])
+    expect(shownKeys()).toEqual(['discogs:1', 'discogs:2'])
     expect(screen.getByTestId('last-applied-label')).toBeInTheDocument()
     expect(b.previewRelease).not.toHaveBeenCalled()
     fireEvent.click(screen.getAllByTestId('discogs-result')[0])
     expect(b.previewRelease).toHaveBeenCalledWith(hardHouse)
   })
 
-  it('shows the pinned album once when the search also found it', () => {
+  it('lifts it even when it is the only result', () => {
+    applyFromHardHouse()
+    renderPanel(browser({ query: 'y', results: [hardHouse] }))
+    expect(shownKeys()).toEqual(['discogs:1'])
+    expect(screen.getByTestId('last-applied-label')).toBeInTheDocument()
+  })
+
+  // Moving on to another record, the old album sat above the real matches and read as the
+  // answer for a track it had nothing to do with.
+  it('leaves the last album out when the search for this track does not find it', () => {
     applyFromHardHouse()
     renderPanel(
       browser({
         query: 'y',
-        results: [{ provider: 'discogs', id: 2, title: 'Other' }, hardHouse],
+        results: [
+          { provider: 'discogs', id: 2, title: 'Other' },
+          { provider: 'discogs', id: 3, title: 'Another' },
+        ],
       }),
     )
-    expect(shownKeys()).toEqual(['discogs:1', 'discogs:2'])
+    expect(shownKeys()).toEqual(['discogs:2', 'discogs:3'])
+    expect(screen.queryByTestId('last-applied-label')).not.toBeInTheDocument()
   })
 
   // The source filter row lands above the list with the first results; a pinned card drawn
