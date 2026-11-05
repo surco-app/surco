@@ -1150,6 +1150,48 @@ describe('runProcessTrack — Engine DJ open before the write', () => {
   })
 })
 
+describe('runProcessTrack — a new track already in the output format', () => {
+  // A download that was already AIFF was edited where it sat, so with "Output folder" half
+  // a batch stayed in Downloads and Traktor pointed there; the DJ who clears Downloads lost
+  // them. A track no library holds goes to the output folder like the rest. One a library
+  // holds keeps being edited where it is, which is what Update promises for a collection.
+  it('writes a track no library holds to the output folder', async () => {
+    const holdsInLibrary = vi.fn(async () => false)
+    const deps = makeDeps({ holdsInLibrary })
+    const result = await runProcessTrack(job({ inputPath: '/in/song.aiff' }), deps)
+
+    expect(holdsInLibrary).toHaveBeenCalledWith('/in/song.aiff', expect.any(Array))
+    expect(result).toMatchObject({ outputPath: '/out/Artist - Title.aiff', inPlace: false })
+  })
+
+  it('keeps editing in place a track a library holds', async () => {
+    const deps = makeDeps({ holdsInLibrary: vi.fn(async () => true) })
+    const result = await runProcessTrack(job({ inputPath: '/in/song.aiff' }), deps)
+
+    expect(result).toMatchObject({ outputPath: '/in/Artist - Title.aiff', inPlace: true })
+  })
+
+  it('keeps it in place when the libraries cannot say', async () => {
+    const deps = makeDeps({
+      holdsInLibrary: vi.fn(async () => {
+        throw new Error('rekordbox collection could not be opened')
+      }),
+    })
+    const result = await runProcessTrack(job({ inputPath: '/in/song.aiff' }), deps)
+
+    expect(result).toMatchObject({ outputPath: '/in/Artist - Title.aiff', inPlace: true })
+  })
+
+  it('leaves the Apple Music destination as it was', async () => {
+    const holdsInLibrary = vi.fn(async () => false)
+    const deps = makeDeps({ settings: settings({ addToAppleMusic: true }), holdsInLibrary })
+    const result = await runProcessTrack(job({ inputPath: '/in/song.aiff' }), deps)
+
+    expect(holdsInLibrary).not.toHaveBeenCalled()
+    expect(result.inPlace).toBe(true)
+  })
+})
+
 describe('runProcessTrack — in-place rewrite', () => {
   // Retiring the old-format original is the last, cheapest step, and on Windows it can
   // fail after the new file has landed (an EBUSY on the unlink that ends a copy into the

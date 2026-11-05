@@ -393,6 +393,15 @@ const traktorReadPath = (): string =>
     }),
     existsSync,
   )
+const holdsInAnyLibrary = (path: string, titles: string[]): Promise<boolean> =>
+  usedByAnyLibrary(path, titles, {
+    traktorRead: traktorReadPath,
+    seratoRoots,
+    ...(process.platform === 'darwin' && { musicEntries: musicReaders.entriesForFile }),
+    fileTitle: async (file) => (await readTags(file)).title,
+    fileLike: fileLikeForMusic,
+    ...(process.platform === 'darwin' && { musicHolds: musicHoldsFile }),
+  })
 const traktorWritePath = (): string => {
   const path = getSettings().traktorNmlPath
   return path && existsSync(path) ? path : ''
@@ -1928,6 +1937,7 @@ function registerIpc(): void {
         return redirectNmlPatch(to, landed, toNmlLocation(landed))
       },
       verifyFile: (expect, signal) => checkFile(expect, fileReaders, { signal }),
+      holdsInLibrary: holdsInAnyLibrary,
       // Read only in the libraries that will follow the file.
       snapshotLibraries: (from) => {
         const s = getSettings()
@@ -2092,16 +2102,10 @@ function registerIpc(): void {
   ipcMain.handle('clipboard:hasImage', () => clipboardHasImage())
 
   ipcMain.handle('djApps:running', () => anyDjProgramRunning())
-  registerShellIpc(mediaAccess, (path, titles) =>
-    usedByAnyLibrary(path, titles, {
-      traktorRead: traktorReadPath,
-      seratoRoots,
-      ...(process.platform === 'darwin' && { musicEntries: musicReaders.entriesForFile }),
-      fileTitle: async (file) => (await readTags(file)).title,
-      fileLike: fileLikeForMusic,
-      ...(process.platform === 'darwin' && { musicHolds: musicHoldsFile }),
-    }),
+  ipcMain.handle('library:holdsFile', (_e, path: string, titles: string[]) =>
+    holdsInAnyLibrary(path, titles).catch(() => true),
   )
+  registerShellIpc(mediaAccess, holdsInAnyLibrary)
   registerCopiesIpc(
     {
       rekordbox: {

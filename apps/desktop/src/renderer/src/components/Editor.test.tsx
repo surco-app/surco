@@ -99,6 +99,7 @@ beforeEach(() => {
     onDeclickPreviewProgress: vi.fn().mockReturnValue(() => {}),
     cancelDeclickPreview: vi.fn().mockResolvedValue(undefined),
     reveal: vi.fn(),
+    holdsInLibrary: vi.fn().mockResolvedValue(true),
     recordStat: vi.fn(),
     // The library verdict reads where an offered replacement's file lives the moment the
     // copy is offered, so this effect mounts wherever a library index is handed in.
@@ -3933,6 +3934,16 @@ describe('Editor in-place hint', () => {
 
   // The default case needs no caption — users already know the pattern lives in
   // Settings — so the slot stays empty and the rare in-place warning stands out more.
+  // A new download already in the format goes to the output folder with the rest of the
+  // batch, so the in-place warning would promise what the conversion no longer does.
+  it('drops the in-place warning for a track no library holds', async () => {
+    const holdsInLibrary = vi.fn<Api['holdsInLibrary']>().mockResolvedValue(false)
+    Object.assign(window.api, { holdsInLibrary })
+    renderEditor({ id: 'a', inputPath: '/music/a.wav', meta: { title: 'A' } }, 'wav')
+    await waitFor(() => expect(holdsInLibrary).toHaveBeenCalledWith('/music/a.wav', ['A']))
+    await waitFor(() => expect(screen.queryByTestId('output-name-hint')).toBeNull())
+  })
+
   it('shows no hint when the export converts to a different format', () => {
     renderEditor({ id: 'a', inputPath: '/music/a.wav' }, 'mp3')
     expect(screen.queryByTestId('output-name-hint')).toBeNull()

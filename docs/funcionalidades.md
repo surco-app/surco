@@ -82,6 +82,15 @@ como «Where's Your Head At-.mp3», el original iba a las copias y rekordbox o T
 sincronizar perdían la pista. En la carpeta de salida, que puede estar en otro disco, se
 siguen aplicando las reglas de nombre.
 
+### Una pista nueva en el formato va a la carpeta de salida
+
+Con destino carpeta de salida, una pista que ya está en el formato elegido y que ninguna
+colección tiene (rekordbox, Engine DJ, Traktor, Serato o Apple Music, con su sincronización
+activa o no) se escribe en la carpeta de salida como el resto de la tanda, y el original se
+queda donde estaba (`processTrack.ts`, `newToCollections`; `usedByAnyLibrary`,
+`libraryFlushes.ts:151`). Si alguna la tiene, o no se puede saber, se sigue editando en su
+sitio. Con destino Apple Music, junto al original o editando el original no cambia nada.
+
 ### ALAC solo sobrescribe un `.m4a`
 
 Un `.m4a` con destino ALAC se edita en su sitio, como un MP3 a MP3: es su propio

@@ -235,6 +235,7 @@ export function stubApi(over: Partial<Api> = {}): Api {
     loadSeratoPlaylist: async () => [],
     seratoRunning: async () => false,
     djAppRunning: async () => false,
+    holdsInLibrary: async () => true,
     editRekordboxPlaylist: async () => ({ applied: false, reason: 'unreadable' }),
     rekordboxQueue: async () => ({ tracks: 0, changes: 0, items: [] }),
     applyRekordboxQueue: async () => null,

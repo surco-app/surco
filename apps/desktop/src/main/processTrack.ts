@@ -71,6 +71,7 @@ import type { RekordboxBefore } from './verifyRekordbox'
 export interface ProcessTrackDeps {
   settings: Settings
   platform: NodeJS.Platform
+  holdsInLibrary?: (path: string, titles: string[]) => Promise<boolean>
   // Emits a progress stage to the renderer for this job.
   sendProgress: (stage: ProcessStage) => void
   hasCoverSource: (job: CoverSource) => boolean
@@ -607,7 +608,17 @@ export async function runProcessTrack(
     // disk the plain spelling is for. Its accents are kept only when the file itself keeps
     // the name (in place); a new file beside it is spelled the way the setting asks.
     const overwriteOriginal = job.overwriteOriginal ?? settings.overwriteOriginal
-    const inPlaceWrite = !besideOriginal && editsInPlace(format, job.inputPath, overwriteOriginal)
+    const newToCollections =
+      !besideOriginal &&
+      !overwriteOriginal &&
+      !addToAppleMusic &&
+      deps.holdsInLibrary !== undefined &&
+      formatMatchesInput(format, job.inputPath) &&
+      !(await deps
+        .holdsInLibrary(job.inputPath, job.meta.title ? [job.meta.title] : [])
+        .catch(() => true))
+    const inPlaceWrite =
+      !besideOriginal && !newToCollections && editsInPlace(format, job.inputPath, overwriteOriginal)
     const tagsOnly =
       inPlaceWrite &&
       tagsOnlyExport(formatMatchesInput(format, job.inputPath), {
@@ -631,6 +642,7 @@ export async function runProcessTrack(
       settings.outputDir,
       overwriteOriginal,
       besideOriginal,
+      newToCollections,
     )
     const outputPath = resolved.outputPath
     let inPlace = resolved.inPlace
