@@ -155,3 +155,34 @@ describe('CueRuleRow room sentence', () => {
     )
   })
 })
+
+describe('CueRuleRow condition line', () => {
+  it('says under the sentence what the chosen condition does, the same words the list gives it', () => {
+    setup({ ...RULE, when: 'previous' })
+    const line = screen.getByTestId('cue-rule-0-when-line').textContent
+    fireEvent.click(screen.getByTestId('cue-rule-0-when'))
+    expect(line).toBe(screen.getByTestId('cue-rule-0-when-option-previous-hint').textContent)
+    expect(line).not.toBe('')
+  })
+
+  it('follows the condition when the rule changes, so the line never describes the old one', () => {
+    const { rerender } = render(
+      <CueRuleRow
+        rule={{ ...RULE, when: 'fits' }}
+        index={1}
+        onChange={vi.fn()}
+        onRemove={vi.fn()}
+      />,
+    )
+    const before = screen.getByTestId('cue-rule-1-when-line').textContent
+    rerender(
+      <CueRuleRow
+        rule={{ ...RULE, when: 'clear' }}
+        index={1}
+        onChange={vi.fn()}
+        onRemove={vi.fn()}
+      />,
+    )
+    expect(screen.getByTestId('cue-rule-1-when-line').textContent).not.toBe(before)
+  })
+})

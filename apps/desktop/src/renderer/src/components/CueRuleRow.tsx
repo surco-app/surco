@@ -365,6 +365,9 @@ export function CueRuleRow({
       >
         <Minus size={14} />
       </button>
+      <p data-testid={`${id}-when-line`} className="text-xs leading-normal text-fg-faint">
+        {tr(`settings.cueFlows.whenHint.${rule.when}`)}
+      </p>
       {rule.place === 'call' && (
         <p data-testid={`${id}-loose-call`} className="text-[11px] leading-normal text-fg-dim">
           {tr('settings.cueFlows.looseCall')}
