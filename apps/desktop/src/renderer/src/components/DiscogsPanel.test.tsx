@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
 import type { DiscogsBrowser } from '../hooks/useDiscogsBrowser'
 import { resetEditorPlace } from '../lib/editorPlace'
+import { hoverTooltip } from '../test/tooltip'
 import { DiscogsPanel } from './DiscogsPanel'
 
 afterEach(() => {
@@ -838,7 +839,9 @@ describe('DiscogsPanel compilation tracklist', () => {
     )
     const [first, second] = screen.getAllByTestId('discogs-track')
     expect(first).toHaveTextContent('DJ Lara')
-    expect(within(first).getByTitle('DJ Lara - Snap (Extended Mix)')).toBeInTheDocument()
+    expect(hoverTooltip(within(first).getByText('Snap (Extended Mix)'))).toBe(
+      'DJ Lara - Snap (Extended Mix)',
+    )
     expect(second).not.toHaveTextContent('Various')
   })
 })

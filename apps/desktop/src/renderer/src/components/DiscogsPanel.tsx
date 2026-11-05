@@ -464,11 +464,8 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                         <span className="w-8 shrink-0 text-xs tabular-nums text-fg-dim">
                           {t.position}
                         </span>
-                        <span
-                          data-fit
-                          title={fullTitle}
-                          className="min-w-0 flex-1 truncate text-sm text-fg"
-                        >
+                        <span data-fit className="min-w-0 flex-1 truncate text-sm text-fg">
+                          <Tooltip label={fullTitle} />
                           {trackDisplayTitle(t)}
                           {ownArtist && (
                             <span className="block truncate text-xs text-fg-dim">{ownArtist}</span>

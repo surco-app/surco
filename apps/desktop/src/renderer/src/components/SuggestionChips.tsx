@@ -2,6 +2,7 @@ import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useChipOverflow } from '../hooks/useChipOverflow'
+import { Tooltip } from './Tooltip'
 
 interface SuggestionChipsProps {
   suggestions: string[]
@@ -79,7 +80,6 @@ export function SuggestionChips({
             data-state={state}
             aria-pressed={state === 'on' ? true : state === 'some' ? 'mixed' : false}
             aria-label={audioDerived ? tr('fields.suggestionDetected', { value: s }) : undefined}
-            title={audioDerived ? tr('fields.suggestionDetected', { value: s }) : undefined}
             onClick={() => onPick(s)}
             // Colapsado, el chip puede encoger y truncar con elipsis — solo pasa en el caso
             // mínimo-1 (ni un chip cabe entero); si el corte dice que cabe, no encoge nada.
@@ -101,6 +101,7 @@ export function SuggestionChips({
                         : 'border-[var(--color-line-strong)] text-fg-muted hover:bg-[var(--color-hover)]'
             }`}
           >
+            {audioDerived && <Tooltip label={tr('fields.suggestionDetected', { value: s })} />}
             {content(s)}
           </button>
         )

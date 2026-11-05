@@ -3,6 +3,7 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
+import { hoverTooltip } from '../test/tooltip'
 import { ForeignTagsInspector } from './ForeignTagsInspector'
 
 afterEach(cleanup)
@@ -81,7 +82,7 @@ describe('ForeignTagsInspector', () => {
         onToggle={vi.fn()}
       />,
     )
-    expect(screen.getByTitle(value)).toBeInTheDocument()
+    expect(hoverTooltip(screen.getByText(value))).toBe(value)
   })
 
   it('un tag sin marcar tiene el botón "borrar"', () => {

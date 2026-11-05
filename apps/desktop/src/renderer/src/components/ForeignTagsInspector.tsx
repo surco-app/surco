@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import type { ForeignTag } from '../../../shared/types'
 import { SectionBody } from './SectionBody'
 import { SectionHeader } from './SectionHeader'
+import { Tooltip } from './Tooltip'
 
 interface ForeignTagsInspectorProps {
   foreignTags: ForeignTag[]
@@ -74,9 +75,9 @@ export function ForeignTagsInspector({
                     {tag.name}
                   </span>
                   <span
-                    title={tag.value}
                     className={`truncate font-mono text-[11px] ${removed ? 'text-fg-muted line-through opacity-60' : 'text-fg-muted'}`}
                   >
+                    <Tooltip label={tag.value} />
                     {tag.value}
                   </span>
                 </div>

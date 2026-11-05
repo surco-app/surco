@@ -14,6 +14,7 @@ import {
 import { SOURCE_PROGRAMS } from '../lib/sourcePrograms'
 import { foldersHolding, playlistIdsUnder } from './CheckTree'
 import { LIBRARY_ICON } from './SourceIcons'
+import { Tooltip } from './Tooltip'
 
 const fieldTestId = (library: PlaylistLibrary, testId: string): string =>
   `${SOURCE_PROGRAMS[library].fieldTestIdPrefix}${testId}`
@@ -271,16 +272,12 @@ function TreePopover({
       <label
         key={targetKey(row.target)}
         data-testid={`playlists-row-${targetKey(row.target)}`}
-        title={
-          pending
-            ? tr('editor.playlists.pending')
-            : state === 'some'
-              ? tr('editor.playlists.some')
-              : undefined
-        }
         style={{ paddingLeft: 8 + row.depth * 18 }}
         className={`${ROW} cursor-pointer focus-within:bg-[var(--color-hover)] ${state === 'none' ? 'text-fg-muted' : 'text-fg'}`}
       >
+        {(pending || state === 'some') && (
+          <Tooltip label={pending ? tr('editor.playlists.pending') : tr('editor.playlists.some')} />
+        )}
         <span className="w-3 shrink-0" />
         <input
           ref={(el) => {
@@ -451,9 +448,9 @@ function TreeField({
                       <span
                         data-testid={`playlists-pending-${p.text}`}
                         data-pending="true"
-                        title={tr('editor.playlists.pending')}
                         className="text-[var(--color-accent)]"
                       >
+                        <Tooltip label={tr('editor.playlists.pending')} />
                         {p.text}
                       </span>
                     ) : (
