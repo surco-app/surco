@@ -28,7 +28,7 @@ import { AdvancedTab } from './settings/AdvancedTab'
 import { ArtworkTab } from './settings/ArtworkTab'
 import { ConversionTab } from './settings/ConversionTab'
 import { CuesTab } from './settings/CuesTab'
-import { DestinationTab } from './settings/DestinationTab'
+import { DestinationTab, ProgramsTab } from './settings/DestinationTab'
 import { EditorTab } from './settings/EditorTab'
 import { GeneralTab } from './settings/GeneralTab'
 import { LayoutTab } from './settings/LayoutTab'
@@ -510,6 +510,20 @@ export function SettingsModal({
             {tab === 'processing' && <ProcessingTab synced={synced} patch={patch} />}
             {tab === 'destination' && (
               <DestinationTab
+                synced={synced}
+                local={local}
+                patch={patch}
+                onOutputDirChange={(dir) => patchLocal('outputDir', dir)}
+                onChangeEngineDir={(dir) => patchLocal('engineLibraryDir', dir)}
+                onChangeTraktorNmlPath={changeTraktorNmlPath}
+                rekordboxCollection={rekordboxCollection}
+                onChangeRekordboxDbPath={() => void changeRekordboxDbPath()}
+                detectedNmlPath={detectedNmlPath}
+                onAcceptDetectedNmlPath={acceptDetectedNmlPath}
+              />
+            )}
+            {tab === 'programs' && (
+              <ProgramsTab
                 synced={synced}
                 local={local}
                 patch={patch}

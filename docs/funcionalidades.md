@@ -1429,7 +1429,7 @@ una tanda, los cambios de biblioteca que llevaba se escriben en vez de tirarse
 (`foldRekordboxBatch`, `rekordboxBatch.ts:115`; `foldNmlBatch`, `nmlBatch.ts:70`;
 `did-start-loading`, `index.ts:914`).
 
-**Un control por programa** (nuevo tras v1.16.0). En Ajustes › Destino, rekordbox, Engine DJ
+**Un control por programa** (nuevo tras v1.16.0). En Ajustes › Programas de DJ (desde v1.26; antes en Destino), rekordbox, Engine DJ
 y Traktor tienen cada uno un control de tres estados (`DjReachRow`,
 `DestinationTab.tsx:539`; `settings.djReach.*`), y se pueden activar varios a la vez:
 
@@ -1655,7 +1655,7 @@ el recorrido consumiera el buffer exacto hacía que todos leyeran «sin cues»
 ### Sync del `.nml` de Traktor
 
 **Aviso si Traktor lee otra colección** (nuevo en v1.13.0). Si la colección configurada no es
-la que usa Traktor, Ajustes → Destino lo avisa y ofrece «Usar la de Traktor»
+la que usa Traktor, Ajustes → Programas de DJ lo avisa y ofrece «Usar la de Traktor»
 (`DestinationTab.tsx:321`, `collectionTraktorUses`, `traktorNmlPath.ts:65`), y el editor de
 cues de una pista de Traktor dice que lo que se guarde no le llegará
 (`editor.cues.traktor.otherCollection`, `CuesSection.tsx:1486`).
@@ -1666,7 +1666,7 @@ Traktor nombra cada pista de una playlist por volumen, carpeta y fichero, así q
 pista se quedaba fuera de ellas (`rewritePlaylists`, `traktorNml.ts:576`).
 
 Apagado por defecto (`syncTraktor: false`, `settings.ts:80`). Con el control de Traktor en
-Ajustes › Destino en «Actualizar» o «Actualizar y añadir» y la ruta de la colección
+Ajustes › Programas de DJ en «Actualizar» o «Actualizar y añadir» y la ruta de la colección
 configurada, actualiza el `.nml` real: repunta la ruta si cambió la extensión, reescribe las miniaturas que
 Traktor tiene cacheadas para que redibuje la carátula, y escribe los `CUE_V2`
 del fichero convertido. Desde v1.23.0 también el título, artista, álbum y género que la
