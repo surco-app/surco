@@ -1743,6 +1743,18 @@
       "noRules": "Sin reglas. El flujo solo pone un CALL donde marcas.",
       "preview": "Vista previa",
       "previewHint": "Pista de ejemplo a 128 BPM, marcada en el compás {{bar}}",
+      "leftOut": {
+        "back_one": "Regla {{rule}}, {{count}} compás atrás",
+        "back_other": "Regla {{rule}}, {{count}} compases atrás",
+        "forward_one": "Regla {{rule}}, {{count}} compás adelante",
+        "forward_other": "Regla {{rule}}, {{count}} compases adelante",
+        "reason": {
+          "strong": "Dentro de un estribillo",
+          "point": "Pasa de otra marca",
+          "start": "Antes de que empiece la pista",
+          "end": "Después de que acabe la pista"
+        }
+      },
       "tooMany": "Este flujo pide {{count}} hot cues y rekordbox admite 8",
       "looseCall": "Un CALL suelto se tomará como marca la próxima vez",
       "block": {

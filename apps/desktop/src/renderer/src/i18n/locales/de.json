@@ -1743,6 +1743,18 @@
       "noRules": "Keine Regeln. Der Ablauf setzt nur einen CALL an deine Markierung.",
       "preview": "Vorschau",
       "previewHint": "Beispieltitel mit 128 BPM, markiert in Takt {{bar}}",
+      "leftOut": {
+        "back_one": "Regel {{rule}}, {{count}} Takt zurück",
+        "back_other": "Regel {{rule}}, {{count}} Takte zurück",
+        "forward_one": "Regel {{rule}}, {{count}} Takt voraus",
+        "forward_other": "Regel {{rule}}, {{count}} Takte voraus",
+        "reason": {
+          "strong": "Mitten in einem Refrain",
+          "point": "Hinter einer anderen Markierung",
+          "start": "Vor dem Anfang des Tracks",
+          "end": "Nach dem Ende des Tracks"
+        }
+      },
       "tooMany": "Dieser Ablauf verlangt {{count}} Hot Cues und rekordbox erlaubt 8",
       "looseCall": "Ein einzelner CALL gilt beim nächsten Mal als Markierung",
       "block": {

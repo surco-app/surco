@@ -57,4 +57,19 @@ describe('CueFlowPreview', () => {
     render(<CueFlowPreview flow={nine} />)
     expect(screen.getByTestId('cue-preview-too-many')).toBeInTheDocument()
   })
+
+  it('draws the cues a rule leaves out and says why, so the DJ sees what the condition cost', () => {
+    const one = ONE_AT_32.rules[0]
+    const intoChorus = { ...ONE_AT_32, rules: [{ ...one, from: 'down' as const, bars: 16 }] }
+    render(<CueFlowPreview flow={intoChorus} />)
+    expect(screen.getAllByTestId(/^cue-wave-ghost-dropped-/)).toHaveLength(1)
+    expect(screen.getByTestId('cue-preview-left-out')).toHaveTextContent(
+      'Rule 1, 16 bars back. Inside a chorus',
+    )
+  })
+
+  it('says nothing about left out cues when the flow places every one', () => {
+    render(<CueFlowPreview flow={ONE_AT_32} />)
+    expect(screen.queryByTestId('cue-preview-left-out')).toBeNull()
+  })
 })

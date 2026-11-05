@@ -1,5 +1,10 @@
 import type { CueFlow, FlowPhrase, PhraseKind } from '../../../shared/cueFlows'
-import { type FlowOutcome, flowOutcome, type StrongPart } from '../../../shared/cueRules'
+import {
+  type FlowOutcome,
+  type FlowTrack,
+  flowOutcome,
+  type StrongPart,
+} from '../../../shared/cueRules'
 import type { CueWaveColumn } from '../../../shared/types'
 
 const BEAT_MS = 60000 / 128
@@ -48,6 +53,13 @@ export const EXAMPLE_WAVE: CueWaveColumn[] = Array.from({ length: BARS }, (_, ba
   const level = [...WAVE_LEVELS].reverse().find(([start]) => start <= bar + 1)?.[1] ?? 0.35
   return { h: level * (bar % 4 === 0 ? 1 : 0.85), rgb: null }
 })
+
+export const EXAMPLE_TRACK: FlowTrack = {
+  beats: EXAMPLE_GRID.map((b) => b.ms),
+  drops: [EXAMPLE_DROP],
+  strong: EXAMPLE_STRONG,
+  phrases: EXAMPLE_PHRASES,
+}
 
 export function examplePlan(flow: CueFlow): FlowOutcome {
   return flowOutcome({

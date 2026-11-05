@@ -1743,6 +1743,18 @@
       "noRules": "Aucune règle. Le flux ne met qu’un CALL là où tu marques.",
       "preview": "Aperçu",
       "previewHint": "Morceau d’exemple à 128 BPM, marqué à la mesure {{bar}}",
+      "leftOut": {
+        "back_one": "Règle {{rule}}, {{count}} mesure en arrière",
+        "back_other": "Règle {{rule}}, {{count}} mesures en arrière",
+        "forward_one": "Règle {{rule}}, {{count}} mesure en avant",
+        "forward_other": "Règle {{rule}}, {{count}} mesures en avant",
+        "reason": {
+          "strong": "Dans un refrain",
+          "point": "Au-delà d’une autre marque",
+          "start": "Avant le début du morceau",
+          "end": "Après la fin du morceau"
+        }
+      },
       "tooMany": "Ce flux demande {{count}} hot cues et rekordbox en accepte 8",
       "looseCall": "Un CALL seul sera pris pour une marque la fois suivante",
       "block": {

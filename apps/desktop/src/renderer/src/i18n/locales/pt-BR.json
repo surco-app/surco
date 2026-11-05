@@ -1743,6 +1743,18 @@
       "noRules": "Sem regras. O fluxo só põe um CALL onde você marca.",
       "preview": "Prévia",
       "previewHint": "Faixa de exemplo a 128 BPM, marcada no compasso {{bar}}",
+      "leftOut": {
+        "back_one": "Regra {{rule}}, {{count}} compasso para trás",
+        "back_other": "Regra {{rule}}, {{count}} compassos para trás",
+        "forward_one": "Regra {{rule}}, {{count}} compasso à frente",
+        "forward_other": "Regra {{rule}}, {{count}} compassos à frente",
+        "reason": {
+          "strong": "Dentro de um refrão",
+          "point": "Passa de outra marca",
+          "start": "Antes do início da faixa",
+          "end": "Depois do fim da faixa"
+        }
+      },
       "tooMany": "Este fluxo pede {{count}} hot cues e o rekordbox aceita 8",
       "looseCall": "Um CALL solto será tomado como marca na próxima vez",
       "block": {

@@ -1743,6 +1743,18 @@
       "noRules": "No rules. The flow only puts a CALL where you mark.",
       "preview": "Preview",
       "previewHint": "Example track at 128 BPM, marked at bar {{bar}}",
+      "leftOut": {
+        "back_one": "Rule {{rule}}, {{count}} bar back",
+        "back_other": "Rule {{rule}}, {{count}} bars back",
+        "forward_one": "Rule {{rule}}, {{count}} bar ahead",
+        "forward_other": "Rule {{rule}}, {{count}} bars ahead",
+        "reason": {
+          "strong": "Inside a chorus",
+          "point": "Past another mark",
+          "start": "Before the track starts",
+          "end": "After the track ends"
+        }
+      },
       "tooMany": "This flow asks for {{count}} hot cues and rekordbox allows 8",
       "looseCall": "A loose CALL will be taken as a mark next time",
       "block": {
