@@ -534,6 +534,7 @@ export function SettingsModal({
                 onChangeRekordboxDbPath={() => void changeRekordboxDbPath()}
                 detectedNmlPath={detectedNmlPath}
                 onAcceptDetectedNmlPath={acceptDetectedNmlPath}
+                searchAnchor={selectedTab === 'programs' ? selectedAnchor : undefined}
               />
             )}
             {tab === 'naming' && <NamingTab synced={synced} patch={patch} />}

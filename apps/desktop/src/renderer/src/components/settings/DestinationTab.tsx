@@ -3,10 +3,11 @@ import type React from 'react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { BACKUP_POLICIES, type BackupPolicy } from '../../../../shared/backupPolicy'
-import type { LibraryProgram } from '../../../../shared/djProgram'
+import { type DjProgram, type LibraryProgram, programsInOrder } from '../../../../shared/djProgram'
 import { DESTINATIONS, fromDestination, toDestination } from '../../lib/destination'
 import { DJ_REACH_SETTINGS, type DjReach, fromDjReach, toDjReach } from '../../lib/djReach'
 import { isMacOS } from '../../lib/platform'
+import { LIBRARY_NAME } from '../../lib/reviewLibraries'
 import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
 import { DestinationPicker } from '../DestinationPicker'
@@ -78,6 +79,7 @@ interface Props {
   // Never applied on its own; the user accepts it explicitly via onAcceptDetectedNmlPath.
   detectedNmlPath: string | null
   onAcceptDetectedNmlPath: () => void
+  searchAnchor?: string
   // Where rekordbox keeps its collection on this machine, or '' when none was found.
   // Detected rather than chosen, but still changeable: a DJ whose collection lives
   // somewhere else had no way to say so.
@@ -109,8 +111,28 @@ function OutputSettings({
   onAcceptDetectedNmlPath,
   rekordboxCollection,
   onChangeRekordboxDbPath,
+  searchAnchor,
 }: Props & { part: 'output' | 'programs' }): React.JSX.Element {
   const { t: tr } = useTranslation()
+  const [program, setProgram] = useState<DjProgram>(
+    () =>
+      ((searchAnchor && PROGRAM_OF_ANCHOR[searchAnchor]) ||
+        PROGRAM_TABS.find((p) => {
+          const keys = DJ_REACH_SETTINGS[p]
+          return synced[keys.sync] || synced[keys.add]
+        })) ??
+      PROGRAM_TABS[0],
+  )
+  const [seenAnchor, setSeenAnchor] = useState(searchAnchor)
+  if (searchAnchor !== seenAnchor) {
+    setSeenAnchor(searchAnchor)
+    const found = searchAnchor && PROGRAM_OF_ANCHOR[searchAnchor]
+    if (found) setProgram(found)
+  }
+  const panel = (p: DjProgram) => ({
+    'data-testid': `settings-program-${p}`,
+    hidden: program !== p,
+  })
   const [completeCount, setCompleteCount] = useState<number | null>(null)
   const [completeCountFailed, setCompleteCountFailed] = useState(false)
   // One signed number still drives the whole section, clamped so a value from an older
@@ -175,83 +197,96 @@ function OutputSettings({
           into collection.nml as a side effect of conversion, wherever the file ends up —
           it isn't itself a place the converted file goes. Empty path means the feature
           is off (see settings.ts), so this is the only control that turns it on. */}
-          <SettingsSection eyebrow={tr('settings.traktorSync')} searchId="traktorSync" first>
-            {/* One three-state control per program, and the only thing that turns it on or
+          <SegmentedControl
+            options={PROGRAM_TABS}
+            value={program}
+            onChange={setProgram}
+            testidPrefix="settings-programs"
+            labelFor={(p) => LIBRARY_NAME[p]}
+            label={tr('settings.tabs.programs')}
+            className="mb-5"
+            fill
+          />
+          <div {...panel('traktor')}>
+            <SettingsSection eyebrow={tr('settings.traktorSync')} searchId="traktorSync" first>
+              {/* One three-state control per program, and the only thing that turns it on or
             off: leave the collection alone, update it, or update it and add new tracks.
             Emptying the path used to be what turned the sync off — an invisible side
             effect nobody guesses, and the opposite of how the rest of this screen works.
             Disabled rather than hidden while no collection is set, so the feature never
             looks like it does not exist; the hint below says what is missing. */}
-            <DjReachRow
-              program="traktor"
-              label={tr('settings.syncTraktor')}
-              synced={synced}
-              patch={patch}
-              disabled={!local.traktorNmlPath}
-            />
-            <SettingsHint className="mt-2 mb-4">
-              {local.traktorNmlPath
-                ? tr('settings.syncTraktorHint')
-                : tr('settings.syncTraktorIdle')}
-            </SettingsHint>
-            {/* No htmlFor: the value below is a read-only display, not a form control, so
-            there is nothing for a label to focus. */}
-            <SettingsLabel searchId="traktorNmlPath">{tr('settings.traktorNmlPath')}</SettingsLabel>
-            <div className="mt-2">
-              <PathField
-                value={local.traktorNmlPath}
-                onChange={onChangeTraktorNmlPath}
-                testid="settings-traktor-nml"
-                emptyLabel={tr('settings.traktorNmlPathEmpty')}
+              <DjReachRow
+                program="traktor"
+                label={tr('settings.syncTraktor')}
+                synced={synced}
+                patch={patch}
+                disabled={!local.traktorNmlPath}
               />
-            </div>
-            <SettingsHint className="mt-2">{tr('settings.traktorNmlPathHint')}</SettingsHint>
-            {/* Never applied without this explicit click — autodetection only proposes,
-            it must never silently pick a version folder or write to it. */}
-            {!local.traktorNmlPath && detectedNmlPath && (
-              <div
-                data-testid="settings-traktor-nml-detected"
-                className="mt-3 flex items-center justify-between gap-2 rounded-lg border border-[var(--color-line)] bg-[var(--color-panel-2)] px-3 py-2"
-              >
-                <div className="min-w-0">
-                  <p className="truncate text-sm">{detectedNmlPath}</p>
-                  <SettingsHint>{tr('settings.traktorNmlPathDetectedHint')}</SettingsHint>
-                </div>
-                <button
-                  type="button"
-                  data-testid="settings-traktor-nml-use-detected"
-                  onClick={onAcceptDetectedNmlPath}
-                  className="press shrink-0 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)]"
-                >
-                  {tr('settings.traktorNmlPathUseDetected')}
-                </button>
+              <SettingsHint className="mt-2 mb-4">
+                {local.traktorNmlPath
+                  ? tr('settings.syncTraktorHint')
+                  : tr('settings.syncTraktorIdle')}
+              </SettingsHint>
+              {/* No htmlFor: the value below is a read-only display, not a form control, so
+            there is nothing for a label to focus. */}
+              <SettingsLabel searchId="traktorNmlPath">
+                {tr('settings.traktorNmlPath')}
+              </SettingsLabel>
+              <div className="mt-2">
+                <PathField
+                  value={local.traktorNmlPath}
+                  onChange={onChangeTraktorNmlPath}
+                  testid="settings-traktor-nml"
+                  emptyLabel={tr('settings.traktorNmlPathEmpty')}
+                />
               </div>
-            )}
-            {local.traktorNmlPath &&
-              detectedNmlPath &&
-              detectedNmlPath !== local.traktorNmlPath && (
+              <SettingsHint className="mt-2">{tr('settings.traktorNmlPathHint')}</SettingsHint>
+              {/* Never applied without this explicit click — autodetection only proposes,
+            it must never silently pick a version folder or write to it. */}
+              {!local.traktorNmlPath && detectedNmlPath && (
                 <div
-                  data-testid="settings-traktor-nml-mismatch"
+                  data-testid="settings-traktor-nml-detected"
                   className="mt-3 flex items-center justify-between gap-2 rounded-lg border border-[var(--color-line)] bg-[var(--color-panel-2)] px-3 py-2"
                 >
                   <div className="min-w-0">
-                    <p className="flex items-center gap-1.5 text-sm text-warn">
-                      <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                      {tr('settings.traktorNmlPathOther')}
-                    </p>
                     <p className="truncate text-sm">{detectedNmlPath}</p>
+                    <SettingsHint>{tr('settings.traktorNmlPathDetectedHint')}</SettingsHint>
                   </div>
                   <button
                     type="button"
-                    data-testid="settings-traktor-nml-use-traktor"
+                    data-testid="settings-traktor-nml-use-detected"
                     onClick={onAcceptDetectedNmlPath}
                     className="press shrink-0 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)]"
                   >
-                    {tr('settings.traktorNmlPathUseTraktor')}
+                    {tr('settings.traktorNmlPathUseDetected')}
                   </button>
                 </div>
               )}
-            {/* One signed row, not a question plus a size. Splitting the sign from the
+              {local.traktorNmlPath &&
+                detectedNmlPath &&
+                detectedNmlPath !== local.traktorNmlPath && (
+                  <div
+                    data-testid="settings-traktor-nml-mismatch"
+                    className="mt-3 flex items-center justify-between gap-2 rounded-lg border border-[var(--color-line)] bg-[var(--color-panel-2)] px-3 py-2"
+                  >
+                    <div className="min-w-0">
+                      <p className="flex items-center gap-1.5 text-sm text-warn">
+                        <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                        {tr('settings.traktorNmlPathOther')}
+                      </p>
+                      <p className="truncate text-sm">{detectedNmlPath}</p>
+                    </div>
+                    <button
+                      type="button"
+                      data-testid="settings-traktor-nml-use-traktor"
+                      onClick={onAcceptDetectedNmlPath}
+                      className="press shrink-0 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)]"
+                    >
+                      {tr('settings.traktorNmlPathUseTraktor')}
+                    </button>
+                  </div>
+                )}
+              {/* One signed row, not a question plus a size. Splitting the sign from the
             magnitude cost four controls for one number — a question to pick the
             direction, an unsigned row to pick the size, a slider, and a sentence to read
             the result back — and made the least-used setting in Output the largest. A
@@ -261,208 +296,215 @@ function OutputSettings({
             Always rendered, never conditionally mounted: a control that appears and
             disappears leaves the user unable to tell whether the setting exists at all.
             Without a collection it is disabled and the hint says what is missing. */}
-            <div className="mt-6">
-              <SettingsLabel searchId="traktorCueOffset">
-                {tr('settings.traktorCueOffset')}
-              </SettingsLabel>
-              <p className="mt-1 text-sm text-fg-muted">{tr('settings.traktorCueQuestion')}</p>
+              <div className="mt-6">
+                <SettingsLabel searchId="traktorCueOffset">
+                  {tr('settings.traktorCueOffset')}
+                </SettingsLabel>
+                <p className="mt-1 text-sm text-fg-muted">{tr('settings.traktorCueQuestion')}</p>
 
-              {/* Radios, not a row of signed buttons: the DJ answers what he HEARS and Surco
+                {/* Radios, not a row of signed buttons: the DJ answers what he HEARS and Surco
               derives the sign. The previous row asked him to know which way a negative
               number moves a cue, and he guessed wrong. */}
-              <div className="mt-3 flex flex-col gap-0.5">
-                {CUE_CHOICES.map(({ id, labelKey, noteKey }) => {
-                  const chosen = direction === id
-                  return (
-                    // A real radio input rather than a button wearing the role: it brings
-                    // arrow-key navigation and the group semantics for free, and the visible
-                    // dot is drawn beside it with the input itself kept off-screen but
-                    // focusable, so the ring still follows the keyboard.
-                    <label
-                      key={id}
-                      className="flex cursor-pointer items-center gap-2.5 rounded-lg px-1 py-1.5 hover:bg-[var(--color-hover)]/30 has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-[var(--color-accent)]"
-                    >
-                      <input
-                        type="radio"
-                        name="settings-cue-direction"
-                        data-testid={`settings-cue-dir-${id}`}
-                        checked={chosen}
-                        onChange={() =>
-                          patch(
-                            'traktorCueOffsetMs',
-                            id === 'none'
-                              ? '0'
-                              : String(CUE_SIGN[id] * (magnitude || CUE_DEFAULT_MS)),
-                          )
-                        }
-                        className="peer sr-only"
-                      />
-                      <span
-                        aria-hidden="true"
-                        className={`size-[15px] shrink-0 rounded-full border ${
-                          chosen
-                            ? 'border-[5px] border-[var(--color-accent)]'
-                            : 'border-[1.5px] border-[var(--color-line-strong)]'
-                        }`}
-                      />
-                      <span className="text-sm text-fg">
-                        {tr(labelKey)}
-                        <span className="text-fg-muted"> · {tr(noteKey)}</span>
-                      </span>
-                    </label>
-                  )
-                })}
-              </div>
+                <div className="mt-3 flex flex-col gap-0.5">
+                  {CUE_CHOICES.map(({ id, labelKey, noteKey }) => {
+                    const chosen = direction === id
+                    return (
+                      // A real radio input rather than a button wearing the role: it brings
+                      // arrow-key navigation and the group semantics for free, and the visible
+                      // dot is drawn beside it with the input itself kept off-screen but
+                      // focusable, so the ring still follows the keyboard.
+                      <label
+                        key={id}
+                        className="flex cursor-pointer items-center gap-2.5 rounded-lg px-1 py-1.5 hover:bg-[var(--color-hover)]/30 has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-[var(--color-accent)]"
+                      >
+                        <input
+                          type="radio"
+                          name="settings-cue-direction"
+                          data-testid={`settings-cue-dir-${id}`}
+                          checked={chosen}
+                          onChange={() =>
+                            patch(
+                              'traktorCueOffsetMs',
+                              id === 'none'
+                                ? '0'
+                                : String(CUE_SIGN[id] * (magnitude || CUE_DEFAULT_MS)),
+                            )
+                          }
+                          className="peer sr-only"
+                        />
+                        <span
+                          aria-hidden="true"
+                          className={`size-[15px] shrink-0 rounded-full border ${
+                            chosen
+                              ? 'border-[5px] border-[var(--color-accent)]'
+                              : 'border-[1.5px] border-[var(--color-line-strong)]'
+                          }`}
+                        />
+                        <span className="text-sm text-fg">
+                          {tr(labelKey)}
+                          <span className="text-fg-muted"> · {tr(noteKey)}</span>
+                        </span>
+                      </label>
+                    )
+                  })}
+                </div>
 
-              {/* Always the magnitude, never the stored sign: a "-51" beside a choice that
+                {/* Always the magnitude, never the stored sign: a "-51" beside a choice that
               already says "early" is the double negative this redesign removes. Stepping
               keeps the chosen direction, so the amount can never cross zero and flip it
               under a DJ who was only making the correction smaller. */}
-              <div className="mt-3 flex items-center gap-2 border-t border-[var(--color-line)] pt-3">
-                <span className="flex-1 text-sm text-fg-muted">
-                  {tr('settings.traktorCueAmount')}
-                </span>
-                <button
-                  type="button"
-                  data-testid="settings-cue-amount-down"
-                  aria-label={tr('settings.traktorCueAmountDown')}
-                  disabled={direction === 'none' || magnitude <= 1}
-                  onClick={() => patch('traktorCueOffsetMs', String(stored - Math.sign(stored)))}
-                  className="press rounded-md border border-[var(--color-line-strong)] px-2.5 py-1 text-sm text-fg-muted enabled:hover:bg-[var(--color-hover)]/40 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  −
-                </button>
-                <span
-                  data-testid="settings-cue-amount"
-                  className="min-w-14 text-center text-sm tabular-nums text-fg"
-                >
-                  {magnitude} ms
-                </span>
-                <button
-                  type="button"
-                  data-testid="settings-cue-amount-up"
-                  aria-label={tr('settings.traktorCueAmountUp')}
-                  disabled={direction === 'none' || magnitude >= CUE_MAX_MS}
-                  onClick={() => patch('traktorCueOffsetMs', String(stored + Math.sign(stored)))}
-                  className="press rounded-md border border-[var(--color-line-strong)] px-2.5 py-1 text-sm text-fg-muted enabled:hover:bg-[var(--color-hover)]/40 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  +
-                </button>
-              </div>
-
-              <SettingsHint className="mt-2">{tr('settings.traktorCueOffsetHint')}</SettingsHint>
-            </div>
-          </SettingsSection>
-          {/* rekordbox keeps its collection in one fixed place per platform, so there is
-          nothing to point at and the three-state control is the whole setup — the path
-          below is shown only so the user can see which collection is being written to. */}
-          <SettingsSection eyebrow={tr('settings.rekordboxSync')} searchId="rekordboxSync">
-            <DjReachRow
-              program="rekordbox"
-              label={tr('settings.syncRekordbox')}
-              synced={synced}
-              patch={patch}
-              disabled={!rekordboxCollection}
-            />
-            <SettingsHint className="mt-2">
-              {rekordboxCollection
-                ? tr('settings.syncRekordboxHint')
-                : tr('settings.syncRekordboxIdle')}
-            </SettingsHint>
-            <SettingsLabel className="mt-4" searchId="rekordboxDbPath">
-              {tr('settings.rekordboxDbPath')}
-            </SettingsLabel>
-            <div className="mt-2">
-              <PathField
-                value={rekordboxCollection}
-                onChange={onChangeRekordboxDbPath}
-                testid="settings-rekordbox-db"
-                emptyLabel={tr('settings.traktorNmlPathEmpty')}
-              />
-            </div>
-            <SettingsHint className="mt-2">{tr('settings.rekordboxDbPathHint')}</SettingsHint>
-            <CheckboxRow
-              testid="settings-complete-cues"
-              className="mt-4"
-              checked={synced.completeCuesOnClose}
-              disabled={!rekordboxCollection && !synced.completeCuesOnClose}
-              onChange={(v) => {
-                setCompleteCountFailed(false)
-                if (!v) {
-                  setCompleteCount(null)
-                  patch('completeCuesOnClose', false)
-                  return
-                }
-                void window.api
-                  .rekordboxCountCompletable()
-                  .then(setCompleteCount)
-                  .catch((e: unknown) => {
-                    window.api.logError(
-                      `rekordbox cues: completable count failed (${e instanceof Error ? e.message : String(e)})`,
-                    )
-                    setCompleteCountFailed(true)
-                  })
-              }}
-              label={tr('settings.completeCues')}
-            />
-            {completeCountFailed && (
-              <p data-testid="settings-complete-cues-failed" className="mt-2 text-xs text-warn">
-                {tr('settings.completeCuesFailed')}
-              </p>
-            )}
-            {completeCount !== null && (
-              <div
-                data-testid="settings-complete-cues-confirm"
-                className="mt-2 rounded-lg border border-[var(--color-line-strong)] p-3 text-xs"
-              >
-                <p className="text-fg">
-                  {tr('settings.completeCuesCount', { count: completeCount })}
-                </p>
-                <div className="mt-2 flex justify-end gap-2">
+                <div className="mt-3 flex items-center gap-2 border-t border-[var(--color-line)] pt-3">
+                  <span className="flex-1 text-sm text-fg-muted">
+                    {tr('settings.traktorCueAmount')}
+                  </span>
                   <button
                     type="button"
-                    data-testid="settings-complete-cues-no"
-                    onClick={() => setCompleteCount(null)}
-                    className="rounded px-2 py-1 text-fg-muted hover:bg-[var(--color-hover)]"
+                    data-testid="settings-cue-amount-down"
+                    aria-label={tr('settings.traktorCueAmountDown')}
+                    disabled={direction === 'none' || magnitude <= 1}
+                    onClick={() => patch('traktorCueOffsetMs', String(stored - Math.sign(stored)))}
+                    className="press rounded-md border border-[var(--color-line-strong)] px-2.5 py-1 text-sm text-fg-muted enabled:hover:bg-[var(--color-hover)]/40 disabled:cursor-not-allowed disabled:opacity-40"
                   >
-                    {tr('settings.completeCuesNo')}
+                    −
                   </button>
+                  <span
+                    data-testid="settings-cue-amount"
+                    className="min-w-14 text-center text-sm tabular-nums text-fg"
+                  >
+                    {magnitude} ms
+                  </span>
                   <button
                     type="button"
-                    data-testid="settings-complete-cues-yes"
-                    onClick={() => {
-                      patch('completeCuesOnClose', true)
-                      setCompleteCount(null)
-                    }}
-                    className="rounded bg-[var(--color-accent-soft)] px-2 py-1 text-fg hover:bg-[var(--color-hover)]"
+                    data-testid="settings-cue-amount-up"
+                    aria-label={tr('settings.traktorCueAmountUp')}
+                    disabled={direction === 'none' || magnitude >= CUE_MAX_MS}
+                    onClick={() => patch('traktorCueOffsetMs', String(stored + Math.sign(stored)))}
+                    className="press rounded-md border border-[var(--color-line-strong)] px-2.5 py-1 text-sm text-fg-muted enabled:hover:bg-[var(--color-hover)]/40 disabled:cursor-not-allowed disabled:opacity-40"
                   >
-                    {tr('settings.completeCuesYes')}
+                    +
                   </button>
                 </div>
+
+                <SettingsHint className="mt-2">{tr('settings.traktorCueOffsetHint')}</SettingsHint>
               </div>
-            )}
-            <SettingsHint className="mt-2">{tr('settings.completeCuesHint')}</SettingsHint>
-          </SettingsSection>
-          {/* The library folder says which Engine database Surco reads and
+            </SettingsSection>
+            {/* rekordbox keeps its collection in one fixed place per platform, so there is
+          nothing to point at and the three-state control is the whole setup — the path
+          below is shown only so the user can see which collection is being written to. */}
+          </div>
+          <div {...panel('rekordbox')}>
+            <SettingsSection eyebrow={tr('settings.rekordboxSync')} searchId="rekordboxSync" first>
+              <DjReachRow
+                program="rekordbox"
+                label={tr('settings.syncRekordbox')}
+                synced={synced}
+                patch={patch}
+                disabled={!rekordboxCollection}
+              />
+              <SettingsHint className="mt-2">
+                {rekordboxCollection
+                  ? tr('settings.syncRekordboxHint')
+                  : tr('settings.syncRekordboxIdle')}
+              </SettingsHint>
+              <SettingsLabel className="mt-4" searchId="rekordboxDbPath">
+                {tr('settings.rekordboxDbPath')}
+              </SettingsLabel>
+              <div className="mt-2">
+                <PathField
+                  value={rekordboxCollection}
+                  onChange={onChangeRekordboxDbPath}
+                  testid="settings-rekordbox-db"
+                  emptyLabel={tr('settings.traktorNmlPathEmpty')}
+                />
+              </div>
+              <SettingsHint className="mt-2">{tr('settings.rekordboxDbPathHint')}</SettingsHint>
+              <CheckboxRow
+                testid="settings-complete-cues"
+                className="mt-4"
+                checked={synced.completeCuesOnClose}
+                disabled={!rekordboxCollection && !synced.completeCuesOnClose}
+                onChange={(v) => {
+                  setCompleteCountFailed(false)
+                  if (!v) {
+                    setCompleteCount(null)
+                    patch('completeCuesOnClose', false)
+                    return
+                  }
+                  void window.api
+                    .rekordboxCountCompletable()
+                    .then(setCompleteCount)
+                    .catch((e: unknown) => {
+                      window.api.logError(
+                        `rekordbox cues: completable count failed (${e instanceof Error ? e.message : String(e)})`,
+                      )
+                      setCompleteCountFailed(true)
+                    })
+                }}
+                label={tr('settings.completeCues')}
+              />
+              {completeCountFailed && (
+                <p data-testid="settings-complete-cues-failed" className="mt-2 text-xs text-warn">
+                  {tr('settings.completeCuesFailed')}
+                </p>
+              )}
+              {completeCount !== null && (
+                <div
+                  data-testid="settings-complete-cues-confirm"
+                  className="mt-2 rounded-lg border border-[var(--color-line-strong)] p-3 text-xs"
+                >
+                  <p className="text-fg">
+                    {tr('settings.completeCuesCount', { count: completeCount })}
+                  </p>
+                  <div className="mt-2 flex justify-end gap-2">
+                    <button
+                      type="button"
+                      data-testid="settings-complete-cues-no"
+                      onClick={() => setCompleteCount(null)}
+                      className="rounded px-2 py-1 text-fg-muted hover:bg-[var(--color-hover)]"
+                    >
+                      {tr('settings.completeCuesNo')}
+                    </button>
+                    <button
+                      type="button"
+                      data-testid="settings-complete-cues-yes"
+                      onClick={() => {
+                        patch('completeCuesOnClose', true)
+                        setCompleteCount(null)
+                      }}
+                      className="rounded bg-[var(--color-accent-soft)] px-2 py-1 text-fg hover:bg-[var(--color-hover)]"
+                    >
+                      {tr('settings.completeCuesYes')}
+                    </button>
+                  </div>
+                </div>
+              )}
+              <SettingsHint className="mt-2">{tr('settings.completeCuesHint')}</SettingsHint>
+            </SettingsSection>
+            {/* The library folder says which Engine database Surco reads and
           writes; the three-state control decides whether rows that point at a converted
           file's original move onto the new file, and whether new tracks are added too. */}
-          <SettingsSection eyebrow={tr('settings.engineSync')} searchId="engineSync">
-            <div className="mb-4">
-              <EngineLibraryFields
-                libraryDir={local.engineLibraryDir}
-                onLibraryDirChange={onChangeEngineDir}
-                testidPrefix="settings-engine"
+          </div>
+          <div {...panel('engine')}>
+            <SettingsSection eyebrow={tr('settings.engineSync')} searchId="engineSync" first>
+              <div className="mb-4">
+                <EngineLibraryFields
+                  libraryDir={local.engineLibraryDir}
+                  onLibraryDirChange={onChangeEngineDir}
+                  testidPrefix="settings-engine"
+                />
+              </div>
+              <DjReachRow
+                program="engine"
+                label={tr('settings.syncEngineDj')}
+                synced={synced}
+                patch={patch}
               />
-            </div>
-            <DjReachRow
-              program="engine"
-              label={tr('settings.syncEngineDj')}
-              synced={synced}
-              patch={patch}
-            />
-            <SettingsHint className="mt-2">{tr('settings.syncEngineDjHint')}</SettingsHint>
-          </SettingsSection>
-          <SeratoSection synced={synced} patch={patch} />
+              <SettingsHint className="mt-2">{tr('settings.syncEngineDjHint')}</SettingsHint>
+            </SettingsSection>
+          </div>
+          <div {...panel('serato')}>
+            <SeratoSection synced={synced} patch={patch} />
+          </div>
         </>
       )}
       {part === 'output' && (
@@ -581,7 +623,7 @@ function SeratoSection({
     void window.api.seratoAvailable().then(setFound, () => {})
   }, [])
   return (
-    <SettingsSection eyebrow={tr('settings.seratoSync')} searchId="seratoSync">
+    <SettingsSection eyebrow={tr('settings.seratoSync')} searchId="seratoSync" first>
       <DjReachRow
         program="serato"
         label={tr('settings.syncSerato')}
@@ -597,6 +639,19 @@ function SeratoSection({
 }
 
 const DJ_REACHES: readonly DjReach[] = ['off', 'update', 'add']
+
+const PROGRAM_TABS = programsInOrder(['traktor', 'rekordbox', 'engine', 'serato'])
+
+const PROGRAM_OF_ANCHOR: Record<string, DjProgram> = {
+  traktorSync: 'traktor',
+  traktorNmlPath: 'traktor',
+  traktorCueOffset: 'traktor',
+  rekordboxSync: 'rekordbox',
+  rekordboxDbPath: 'rekordbox',
+  completeCues: 'rekordbox',
+  engineSync: 'engine',
+  seratoSync: 'serato',
+}
 
 function DjReachRow({
   program,

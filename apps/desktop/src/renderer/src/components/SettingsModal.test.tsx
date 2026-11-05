@@ -1574,6 +1574,18 @@ describe('settings search', () => {
     expect(Element.prototype.scrollIntoView).toHaveBeenCalled()
   })
 
+  it('opens the program of a DJ software result, so the setting it marks is on screen and not behind another program', async () => {
+    open()
+    search('serato')
+    await waitFor(() =>
+      expect(
+        screen.getByRole('tabpanel').querySelector('[data-search-id="seratoSync"]'),
+      ).toHaveAttribute('data-search-hit', 'true'),
+    )
+    expect(screen.getByTestId('settings-program-serato')).toBeVisible()
+    expect(screen.getByTestId('settings-program-traktor')).not.toBeVisible()
+  })
+
   it('moves through results with the arrow keys without leaving the field', () => {
     open()
     const field = screen.getByTestId('settings-search')

@@ -1038,10 +1038,53 @@ describe('DestinationTab Serato', () => {
 describe('ProgramsTab layout', () => {
   // Moved out of Output, the first program still drew the rule meant for a section that
   // follows another one, so the tab opened on an empty band and a line.
-  it('opens on its first program without a rule above it', () => {
+  it('opens every program without a rule above it, since each one shows on its own under the bar', () => {
     renderPrograms()
-    const [first, second] = screen.getAllByTestId('settings-section')
-    expect(first.className).not.toMatch(/border-t/)
-    expect(second.className).toMatch(/border-t/)
+    for (const section of screen.getAllByTestId('settings-section')) {
+      expect(section.className).not.toMatch(/border-t/)
+    }
+  })
+})
+
+describe('DJ software one program at a time', () => {
+  const shown = (program: string) => screen.getByTestId(`settings-program-${program}`)
+
+  it('shows only the program picked in the bar, so each one reads as its own', () => {
+    renderPrograms()
+    expect(shown('traktor')).toBeVisible()
+    expect(shown('rekordbox')).not.toBeVisible()
+    fireEvent.click(screen.getByTestId('settings-programs-rekordbox'))
+    expect(shown('rekordbox')).toBeVisible()
+    expect(shown('traktor')).not.toBeVisible()
+    expect(shown('engine')).not.toBeVisible()
+    expect(shown('serato')).not.toBeVisible()
+  })
+
+  it('opens on the first program the DJ already sends conversions to', () => {
+    renderPrograms({ syncRekordbox: true })
+    expect(shown('rekordbox')).toBeVisible()
+    expect(shown('traktor')).not.toBeVisible()
+  })
+
+  it('opens the program a search lands on, so the setting found is on screen', () => {
+    const { rerender } = render(<div />)
+    const props = {
+      synced,
+      local,
+      patch: vi.fn(),
+      onOutputDirChange: vi.fn(),
+      onChangeEngineDir: vi.fn(),
+      onChangeTraktorNmlPath: vi.fn(),
+      detectedNmlPath: null,
+      onAcceptDetectedNmlPath: vi.fn(),
+      rekordboxCollection: '',
+      onChangeRekordboxDbPath: vi.fn(),
+    }
+    rerender(<ProgramsTab {...props} searchAnchor="seratoSync" />)
+    expect(shown('serato')).toBeVisible()
+    rerender(<ProgramsTab {...props} searchAnchor="rekordboxDbPath" />)
+    expect(shown('rekordbox')).toBeVisible()
+    rerender(<ProgramsTab {...props} searchAnchor="engineSync" />)
+    expect(shown('engine')).toBeVisible()
   })
 })
