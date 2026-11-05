@@ -1751,6 +1751,7 @@
         "bars": "Distance",
         "repeat": "Repeat",
         "when": "Condition",
+        "gap": "Bars ahead",
         "place": "Place",
         "colorMode": "Colour",
         "color": "Colour {{n}}"
@@ -1778,8 +1779,18 @@
       "when": {
         "always": "always",
         "fits": "if it fits",
+        "previous": "until the previous mark",
+        "room": "if no other cue comes in the next",
         "clear": "if there is no other cue in that bar",
         "first": "if there is none before where you mark"
+      },
+      "whenHint": {
+        "always": "Every repeat, even over another mark",
+        "fits": "Stops at the previous mark and at any chorus",
+        "previous": "Crosses choruses with no mark in them and stops at the previous mark",
+        "room": "Leaves it out when another cue comes right after",
+        "clear": "Leaves it out when another cue falls in the same bar",
+        "first": "Only before the first mark, if nothing is there yet"
       },
       "place": {
         "hot": "hot cue",

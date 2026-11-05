@@ -4,13 +4,14 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   type CueRule,
-  FLOW_CONDITIONS,
   FLOW_ORIGINS,
   FLOW_PLACES,
   type FlowColor,
+  type FlowCondition,
   type FlowDirection,
   type FlowRepeat,
   MAX_RULE_REPEAT,
+  ROOM_GAP,
   RULE_BARS,
 } from '../../../shared/cueFlows'
 import { hotCueColor } from '../../../shared/rekordboxCueColors'
@@ -20,7 +21,7 @@ const REPEATS = [1, 2, 3, 4, 5, 6, 7, 8]
 const DIRECTIONS: FlowDirection[] = ['back', 'forward']
 const COLOR_MODES = ['fixed', 'each'] as const
 
-type Block = 'from' | 'direction' | 'bars' | 'repeat' | 'when' | 'place' | 'color-mode'
+type Block = 'from' | 'direction' | 'bars' | 'repeat' | 'when' | 'gap' | 'place' | 'color-mode'
 
 const BLOCK_LABEL: Record<Block, string> = {
   from: 'from',
@@ -28,6 +29,7 @@ const BLOCK_LABEL: Record<Block, string> = {
   bars: 'bars',
   repeat: 'repeat',
   when: 'when',
+  gap: 'gap',
   place: 'place',
   'color-mode': 'colorMode',
 }
@@ -35,9 +37,24 @@ const BLOCK_LABEL: Record<Block, string> = {
 const TOKEN_CLASS =
   'press rounded-[3px] leading-6 text-[var(--color-accent)] underline decoration-[var(--color-accent)]/50 decoration-dotted underline-offset-4 hover:decoration-solid aria-expanded:decoration-solid'
 const MENU_CLASS =
-  'absolute left-0 top-full z-20 mt-1 max-h-64 overflow-y-auto rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel)] py-1 text-xs leading-normal shadow-[var(--shadow-float)]'
+  'absolute top-full z-20 mt-1 overflow-y-auto rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel)] py-1 text-xs leading-normal shadow-[var(--shadow-float)]'
 const ITEM_CLASS =
   'block w-full whitespace-nowrap px-3 py-1 text-left hover:bg-[var(--color-hover)] aria-checked:font-semibold aria-checked:text-fg'
+
+function conditionsFor(rule: CueRule): FlowCondition[] {
+  const offered: FlowCondition[] =
+    rule.bars === 0
+      ? ['always', 'room', 'clear', 'first']
+      : rule.from === 'drop' && rule.direction === 'back'
+        ? ['fits', 'previous', 'always', 'room', 'clear']
+        : ['fits', 'always', 'room', 'clear']
+  return offered.includes(rule.when) ? offered : [...offered, rule.when]
+}
+
+function withCondition(rule: CueRule, when: FlowCondition): CueRule {
+  const { gap, ...rest } = rule
+  return when === 'room' ? { ...rest, when, gap: gap ?? ROOM_GAP } : { ...rest, when }
+}
 
 function slotCount(rule: CueRule): number {
   if ('fixed' in rule.color) return 1
@@ -131,7 +148,7 @@ export function CueRuleRow({
 
   const token = <T extends string | number>(
     block: Block,
-    options: { value: T; label: string }[],
+    options: { value: T; label: string; hint?: string }[],
     current: T,
     label: string,
     pick: (value: T) => void,
@@ -149,7 +166,13 @@ export function CueRuleRow({
         {label}
       </button>
       {open === block && (
-        <div role="menu" data-testid={`${id}-${block}-menu`} className={MENU_CLASS}>
+        <div
+          ref={paletteRef}
+          role="menu"
+          data-testid={`${id}-${block}-menu`}
+          data-align={paletteRight ? 'right' : 'left'}
+          className={`${MENU_CLASS} ${paletteRight ? 'right-0' : 'left-0'} ${options.some((o) => o.hint) ? 'max-h-96 w-72' : 'max-h-64'}`}
+        >
           {options.map((o) => (
             <button
               key={o.value}
@@ -164,6 +187,14 @@ export function CueRuleRow({
               className={ITEM_CLASS}
             >
               {o.label}
+              {o.hint && (
+                <span
+                  data-testid={`${id}-${block}-option-${o.value}-hint`}
+                  className="block whitespace-normal font-normal text-[11px] text-fg-dim"
+                >
+                  {o.hint}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -228,10 +259,26 @@ export function CueRuleRow({
       {', '}
       {token(
         'when',
-        FLOW_CONDITIONS.map((w) => ({ value: w, label: tr(`settings.cueFlows.when.${w}`) })),
+        conditionsFor(rule).map((w) => ({
+          value: w,
+          label: tr(`settings.cueFlows.when.${w}`),
+          hint: tr(`settings.cueFlows.whenHint.${w}`),
+        })),
         rule.when,
         tr(`settings.cueFlows.when.${rule.when}`),
-        (when) => onChange({ ...rule, when }),
+        (when) => onChange(withCondition(rule, when)),
+      )}
+      {rule.when === 'room' && (
+        <>
+          {' '}
+          {token(
+            'gap',
+            RULE_BARS.filter((b) => b > 0).map((b) => ({ value: b, label: barsLabel(b) })),
+            rule.gap ?? ROOM_GAP,
+            barsLabel(rule.gap ?? ROOM_GAP),
+            (gap) => onChange({ ...rule, gap }),
+          )}
+        </>
       )}
       {`, ${tr('settings.cueFlows.sentence.put')} `}
       {token(

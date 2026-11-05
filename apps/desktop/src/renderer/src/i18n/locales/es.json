@@ -1751,6 +1751,7 @@
         "bars": "Distancia",
         "repeat": "Repetir",
         "when": "Condición",
+        "gap": "Compases por delante",
         "place": "Pon",
         "colorMode": "Color",
         "color": "Color {{n}}"
@@ -1778,8 +1779,18 @@
       "when": {
         "always": "siempre",
         "fits": "si cabe",
+        "previous": "hasta la marca anterior",
+        "room": "si no viene otro cue en los siguientes",
         "clear": "si no hay otro cue en ese compás",
         "first": "si no hay otra antes de donde marcas"
+      },
+      "whenHint": {
+        "always": "Cada repetición, aunque pase por encima de otra marca",
+        "fits": "Se para en la marca anterior y en cualquier estribillo",
+        "previous": "Cruza los estribillos sin marca y se para en la marca anterior",
+        "room": "Lo deja fuera si otro cue llega justo después",
+        "clear": "Lo deja fuera si otro cue cae en el mismo compás",
+        "first": "Solo antes de la primera marca, si allí no hay nada"
       },
       "place": {
         "hot": "hot cue",

@@ -79,3 +79,51 @@ describe('CueRuleRow colour swatches', () => {
     expect(screen.queryByTestId('cue-rule-0-color-0-distance')).toBeNull()
   })
 })
+
+const options = (block: string) =>
+  screen
+    .getAllByRole('menuitemradio')
+    .map((el) => el.getAttribute('data-testid')?.replace(`cue-rule-0-${block}-option-`, ''))
+
+describe('CueRuleRow condition menu', () => {
+  it('offers until the previous mark on a countdown from the mark, each option with a line saying what it does', () => {
+    setup({ ...RULE, when: 'fits' })
+    fireEvent.click(screen.getByTestId('cue-rule-0-when'))
+    expect(options('when')).toEqual(['fits', 'previous', 'always', 'room', 'clear'])
+    expect(screen.getByTestId('cue-rule-0-when-option-previous-hint')).not.toBeEmptyDOMElement()
+  })
+
+  it('leaves out the conditions that change nothing on a cue placed on the same beat', () => {
+    setup({ ...RULE, from: 'first-beat', bars: 0, repeat: 1, when: 'always' })
+    fireEvent.click(screen.getByTestId('cue-rule-0-when'))
+    expect(options('when')).toEqual(['always', 'room', 'clear', 'first'])
+  })
+
+  it('still lists the condition a rule already has, so a saved flow never shows a choice it cannot keep', () => {
+    setup({ ...RULE, from: 'first-beat', bars: 0, repeat: 1, when: 'fits' })
+    fireEvent.click(screen.getByTestId('cue-rule-0-when'))
+    expect(options('when')).toContain('fits')
+  })
+
+  it('looks 8 bars ahead when room is picked, and the bars are a token of their own', () => {
+    const { onChange } = setup({ ...RULE, from: 'first-beat', bars: 0, repeat: 1 })
+    fireEvent.click(screen.getByTestId('cue-rule-0-when'))
+    fireEvent.click(screen.getByTestId('cue-rule-0-when-option-room'))
+    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ when: 'room', gap: 8 }))
+  })
+
+  it('writes the bars a room rule looks ahead from its own token', () => {
+    const { onChange } = setup({ ...RULE, bars: 0, repeat: 1, when: 'room', gap: 8 })
+    expect(screen.getByTestId('cue-rule-0-gap')).toHaveTextContent('8')
+    fireEvent.click(screen.getByTestId('cue-rule-0-gap'))
+    fireEvent.click(screen.getByTestId('cue-rule-0-gap-option-16'))
+    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ when: 'room', gap: 16 }))
+  })
+
+  it('drops the bars ahead when the rule leaves room, so no stray field reaches the saved flow', () => {
+    const { onChange } = setup({ ...RULE, bars: 0, repeat: 1, when: 'room', gap: 12 })
+    fireEvent.click(screen.getByTestId('cue-rule-0-when'))
+    fireEvent.click(screen.getByTestId('cue-rule-0-when-option-always'))
+    expect(onChange.mock.calls[0][0]).not.toHaveProperty('gap')
+  })
+})

@@ -292,6 +292,36 @@ describe('CuesTab', () => {
     expect(screen.getByTestId('cue-rule-1-color-0-palette')).toHaveAttribute('data-align', 'left')
   })
 
+  it('opens the condition list towards the left when Settings would cut its right side, so every explanation can be read', () => {
+    const rect = (left: number, width: number) =>
+      ({
+        left,
+        right: left + width,
+        width,
+        top: 0,
+        bottom: 0,
+        height: 0,
+        x: left,
+        y: 0,
+        toJSON: () => ({}),
+      }) as DOMRect
+    const spy = vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: Element,
+    ) {
+      if (this.getAttribute('data-testid') === 'scroller') return rect(0, 1093)
+      if (this.getAttribute('data-testid') === 'cue-rule-0-when-menu') return rect(0, 288)
+      return rect(900, 40)
+    })
+    afterTest = () => spy.mockRestore()
+    render(
+      <div data-testid="scroller" style={{ overflowY: 'auto', overflowX: 'hidden' }}>
+        <Harness />
+      </div>,
+    )
+    fireEvent.click(screen.getByTestId('cue-rule-0-when'))
+    expect(screen.getByTestId('cue-rule-0-when-menu')).toHaveAttribute('data-align', 'right')
+  })
+
   it('gives the focus back to the token when its list closes, so Escape closes the list first and Settings only after', () => {
     const settingsEscape = vi.fn<(e: KeyboardEvent) => void>()
     window.addEventListener('keydown', settingsEscape)
