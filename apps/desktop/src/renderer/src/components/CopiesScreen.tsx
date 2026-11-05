@@ -26,6 +26,7 @@ import {
 import { ConfirmDialog } from './ConfirmDialog'
 import { ModalExit } from './ModalShell'
 import { SOURCE_ICON } from './SourceRail'
+import { Tooltip } from './Tooltip'
 
 export interface MusicFilesProps {
   entries: TrashEntry[]
@@ -399,7 +400,8 @@ function MusicFiles({
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline gap-1.5">
-                      <span title={entry.name} className="truncate text-[13px] text-fg">
+                      <span className="truncate text-[13px] text-fg">
+                        <Tooltip label={entry.name} />
                         {entry.name}
                       </span>
                       <span className="shrink-0 text-[12.5px] text-fg-faint tabular-nums">
@@ -419,10 +421,8 @@ function MusicFiles({
                           ? tr('copies.music.replacedBy', { name: replacement })
                           : tr(`trash.reason.${entry.reason}`)}
                     </div>
-                    <div
-                      title={folderOf(entry.originalPath)}
-                      className="truncate text-[11.5px] text-fg-faint"
-                    >
+                    <div className="truncate text-[11.5px] text-fg-faint">
+                      <Tooltip label={folderOf(entry.originalPath)} />
                       {folderOf(entry.originalPath)}
                     </div>
                   </div>
@@ -471,9 +471,9 @@ function MusicFiles({
                       onClick={() => setConfirmRemove(entry.id)}
                       data-testid="trash-remove"
                       aria-label={tr('trash.remove')}
-                      title={tr('trash.remove')}
                       className="press flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-fg-faint hover:bg-[var(--color-hover)] hover:text-[var(--color-danger)]"
                     >
+                      <Tooltip label={tr('trash.remove')} />
                       <X className="h-4 w-4" aria-hidden="true" />
                     </button>
                   )}

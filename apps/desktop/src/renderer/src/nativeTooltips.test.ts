@@ -4,7 +4,6 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 
 const STILL_NATIVE = new Set<string>([
-  'components/CopiesScreen.tsx',
   'components/DiscogsPanel.tsx',
   'components/ForeignTagsInspector.tsx',
   'components/PlaylistsField.tsx',

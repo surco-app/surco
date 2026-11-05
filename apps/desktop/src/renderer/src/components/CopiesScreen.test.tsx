@@ -13,6 +13,7 @@ import i18n from '../i18n'
 import es from '../i18n/locales/es.json'
 import { OpenSettingsProvider } from '../lib/openSettingsContext'
 import { installApi } from '../test/api'
+import { hoverTooltip } from '../test/tooltip'
 import { CopiesScreen, formatBytes } from './CopiesScreen'
 
 const NOW = new Date(2026, 10, 20, 12, 0)
@@ -561,8 +562,10 @@ describe('CopiesScreen music files', () => {
   // restoring the wrong one is the mistake this section exists to undo. Hovering shows it all.
   it('shows the full name and folder of a cut row on hover', () => {
     renderMusic([entry({ name: 'Track (Extended Mix).aiff' })])
-    expect(screen.getByTitle('Track (Extended Mix).aiff')).toBeInTheDocument()
-    expect(screen.getByTitle('/Music/Crate')).toBeInTheDocument()
+    expect(hoverTooltip(screen.getByText('Track (Extended Mix).aiff'))).toBe(
+      'Track (Extended Mix).aiff',
+    )
+    expect(hoverTooltip(screen.getByText('/Music/Crate'))).toBe('/Music/Crate')
   })
 
   it('falls back to the bare reason when nothing replaced the original', () => {
