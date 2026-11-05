@@ -803,6 +803,7 @@
     "copyFilenameHint": "Kopiert den Dateinamen in die Zwischenablage",
     "searchWeb": "Auf Google suchen",
     "searchWebHint": "Sucht den Dateinamen auf Google",
+    "pasteMetaFrom": "Metadaten von „{{title}}“ einfügen",
     "sectionMaximize": "Abschnitt maximieren",
     "sectionRestore": "Abschnitt wiederherstellen",
     "otherTagsTitle": "Weitere Metadaten",

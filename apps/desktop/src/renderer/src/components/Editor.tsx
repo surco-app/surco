@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import {
   ChevronRight,
+  ClipboardCopy,
+  ClipboardPaste,
   Copy,
   Eraser,
   Folder,
@@ -239,6 +241,10 @@ interface Props {
   // Opens a Google search for the same name in the default browser — the one-click twin of
   // copy-then-paste. App owns the pattern and the hand-off, so the editor just signals intent.
   onSearchWeb: () => void
+  onCopyMeta: () => void
+  onPasteMeta: () => void
+  // The title of the track whose tags sit in App's clipboard: null while nothing is copied.
+  copiedMetaTitle: string | null
   // Opens the DJ-app collection export (rekordbox/Traktor/Serato/M3U8/Engine USB) — the
   // post-conversion step that used to live on the toolbar. App owns the modal.
   onExportCollection: () => void
@@ -321,6 +327,9 @@ export const Editor = memo(function Editor({
   onTrimDetectedAll,
   onCopyFilename,
   onSearchWeb,
+  onCopyMeta,
+  onPasteMeta,
+  copiedMetaTitle,
   onExportCollection,
   readFullTrack,
   librarySources = [],
@@ -1316,6 +1325,36 @@ export const Editor = memo(function Editor({
     </button>
   )
 
+  const copyMetaButton = (
+    <button
+      type="button"
+      data-testid="copy-meta-btn"
+      aria-label={tr('trackList.context.copyMeta')}
+      onClick={onCopyMeta}
+      className="press group relative flex h-7 w-7 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg"
+    >
+      <ClipboardCopy className="h-3.5 w-3.5" aria-hidden="true" />
+      <Tooltip label={tr('trackList.context.copyMeta')} align="end" />
+    </button>
+  )
+
+  const pasteMetaLabel = copiedMetaTitle
+    ? tr('editor.pasteMetaFrom', { title: copiedMetaTitle })
+    : tr('trackList.context.pasteMeta')
+  const pasteMetaButton = (
+    <button
+      type="button"
+      data-testid="paste-meta-btn"
+      aria-label={pasteMetaLabel}
+      onClick={onPasteMeta}
+      disabled={copiedMetaTitle === null}
+      className="press group relative flex h-7 w-7 items-center justify-center rounded-md text-fg-dim enabled:hover:bg-[var(--color-hover)] enabled:hover:text-fg disabled:opacity-40"
+    >
+      <ClipboardPaste className="h-3.5 w-3.5" aria-hidden="true" />
+      <Tooltip label={pasteMetaLabel} align="end" />
+    </button>
+  )
+
   // The copy button's one-click twin: opens the search directly instead of leaving the
   // paste to the user. Icon-only like its neighbours.
   const searchWebButton = (
@@ -1634,6 +1673,8 @@ export const Editor = memo(function Editor({
                   <div className="flex items-center gap-0.5">
                     {deriveButton}
                     {titleFormatButton}
+                    {!isMulti && copyMetaButton}
+                    {!isMulti && pasteMetaButton}
                   </div>
                 )}
                 {formOpen && (

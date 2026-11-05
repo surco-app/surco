@@ -194,6 +194,7 @@ function renderEditor(
     rekordboxCue?: React.ComponentProps<typeof Editor>['rekordboxCue']
     readFullTrack?: React.ComponentProps<typeof Editor>['readFullTrack']
     resultsFolded?: boolean
+    copiedMetaTitle?: string | null
   } = {},
 ): {
   onProcess: ReturnType<typeof vi.fn>
@@ -209,6 +210,8 @@ function renderEditor(
   onRegenerateName: ReturnType<typeof vi.fn>
   onCopyFilename: ReturnType<typeof vi.fn>
   onSearchWeb: ReturnType<typeof vi.fn>
+  onCopyMeta: ReturnType<typeof vi.fn>
+  onPasteMeta: ReturnType<typeof vi.fn>
   onExportCollection: ReturnType<typeof vi.fn>
   onRecordUndo: ReturnType<typeof vi.fn>
   onFoldResults: ReturnType<typeof vi.fn>
@@ -229,6 +232,8 @@ function renderEditor(
   const onRegenerateName = vi.fn()
   const onCopyFilename = vi.fn()
   const onSearchWeb = vi.fn()
+  const onCopyMeta = vi.fn()
+  const onPasteMeta = vi.fn()
   const onExportCollection = vi.fn()
   const { changeSettings } = renderWithQuery(
     // The panel reads "open Settings" from context now, so the spy rides a provider
@@ -260,6 +265,9 @@ function renderEditor(
         onTrimDetectedAll={vi.fn()}
         onCopyFilename={onCopyFilename}
         onSearchWeb={onSearchWeb}
+        onCopyMeta={onCopyMeta}
+        onPasteMeta={onPasteMeta}
+        copiedMetaTitle={props.copiedMetaTitle ?? null}
         onExportCollection={onExportCollection}
         onRecordUndo={onRecordUndo}
         readFullTrack={props.readFullTrack ?? (async () => undefined)}
@@ -317,6 +325,8 @@ function renderEditor(
     onRegenerateName,
     onCopyFilename,
     onSearchWeb,
+    onCopyMeta,
+    onPasteMeta,
     onRecordUndo,
     onFoldResults,
     changeSettings,
@@ -635,6 +645,41 @@ describe('Editor reveal file', () => {
   it('names the file manager of the platform', () => {
     renderEditor({ id: 'a' })
     expect(screen.getByTestId('reveal-file-btn')).toHaveAccessibleName('Show in File Explorer')
+  })
+})
+
+describe('Editor copy and paste metadata', () => {
+  // Stamping one track's tags onto the next is how a release gets fixed, and the pair lived
+  // only behind a right click on the list. App owns the clipboard, so the buttons signal.
+  it('copies the edited track metadata in one click', () => {
+    const { onCopyMeta } = renderEditor({ id: 'a' })
+    fireEvent.click(screen.getByTestId('copy-meta-btn'))
+    expect(onCopyMeta).toHaveBeenCalledTimes(1)
+  })
+
+  // The button stays put while there is nothing to paste, so the row never changes width
+  // under the pointer the moment something is copied.
+  it('keeps paste in place but off until something is copied', () => {
+    const { onPasteMeta } = renderEditor({ id: 'a' }, 'wav', { copiedMetaTitle: null })
+    const paste = screen.getByTestId('paste-meta-btn')
+    expect(paste).toBeDisabled()
+    fireEvent.click(paste)
+    expect(onPasteMeta).not.toHaveBeenCalled()
+  })
+
+  // Pasting overwrites every field, so the button says which track the tags come from
+  // before the click, not only in the toast after it.
+  it('pastes in one click and names the track the tags come from', () => {
+    const { onPasteMeta } = renderEditor({ id: 'a' }, 'wav', { copiedMetaTitle: 'Rave Party' })
+    const paste = screen.getByTestId('paste-meta-btn')
+    expect(paste).toHaveAccessibleName('Paste the metadata of “Rave Party”')
+    fireEvent.click(paste)
+    expect(onPasteMeta).toHaveBeenCalledTimes(1)
+  })
+
+  it('says plainly what it pastes when the copied track has no title', () => {
+    renderEditor({ id: 'a' }, 'wav', { copiedMetaTitle: '' })
+    expect(screen.getByTestId('paste-meta-btn')).toHaveAccessibleName('Paste metadata')
   })
 })
 
@@ -1395,6 +1440,9 @@ function MultiHarness() {
         onTrimDetectedAll={vi.fn()}
         onCopyFilename={vi.fn()}
         onSearchWeb={vi.fn()}
+        onCopyMeta={vi.fn()}
+        onPasteMeta={vi.fn()}
+        copiedMetaTitle={null}
       />
       <div data-testid="dump">
         {tracks.map((t) => `${t.id}:${t.meta.year || '-'},${t.meta.genre || '-'}`).join('|')}
@@ -1771,6 +1819,9 @@ describe('Editor multi-select', () => {
         onTrimDetectedAll={vi.fn()}
         onCopyFilename={vi.fn()}
         onSearchWeb={vi.fn()}
+        onCopyMeta={vi.fn()}
+        onPasteMeta={vi.fn()}
+        copiedMetaTitle={null}
       />,
       {
         addToAppleMusic: opts.music ?? false,
@@ -1805,6 +1856,14 @@ describe('Editor multi-select', () => {
   it('offers no reveal over several tracks', () => {
     renderMulti()
     expect(screen.queryByTestId('reveal-file-btn')).toBeNull()
+  })
+
+  // One tag set copied from several tracks, or pasted over all of them, is a bulk edit the
+  // header pair was never meant to be; the multi form keeps its own field-by-field tools.
+  it('offers no metadata copy or paste over several tracks', () => {
+    renderMulti()
+    expect(screen.queryByTestId('copy-meta-btn')).toBeNull()
+    expect(screen.queryByTestId('paste-meta-btn')).toBeNull()
   })
 
   it('completes a playlist only some of the tracks hold into per-track patches for all of them', async () => {
@@ -3596,6 +3655,9 @@ describe('Editor Discogs apply', () => {
         onTrimDetectedAll={vi.fn()}
         onCopyFilename={vi.fn()}
         onSearchWeb={vi.fn()}
+        onCopyMeta={vi.fn()}
+        onPasteMeta={vi.fn()}
+        copiedMetaTitle={null}
         onExportCollection={vi.fn()}
         readFullTrack={async () => undefined}
       />

@@ -803,6 +803,7 @@
     "copyFilenameHint": "ファイル名をクリップボードにコピー",
     "searchWeb": "Googleで検索",
     "searchWebHint": "ファイル名で Google 検索",
+    "pasteMetaFrom": "「{{title}}」のメタデータを貼り付け",
     "sectionMaximize": "セクションを最大化",
     "sectionRestore": "セクションを復元",
     "otherTagsTitle": "その他のメタデータ",
