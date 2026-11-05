@@ -95,6 +95,14 @@ describe('CueProfileCard', () => {
     expect(screen.getByTestId('cue-profile-countdown')).toBeInTheDocument()
   })
 
+  it('learns again from an icon on the heading line, named Learn again for the tooltip and screen readers', async () => {
+    setup(read({ profile: PROFILE }))
+    const button = await screen.findByTestId('cue-profile-learn')
+    expect(button).toHaveAccessibleName('Learn again')
+    expect(button).toHaveAttribute('title', 'Learn again')
+    expect(button).toHaveTextContent('')
+  })
+
   it('names where it learned from inside the summary line instead of a row of chips', async () => {
     setup(read({ profile: PROFILE }))
     const summary = await screen.findByTestId('cue-profile-summary')

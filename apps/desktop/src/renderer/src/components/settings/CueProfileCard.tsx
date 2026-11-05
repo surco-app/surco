@@ -1,4 +1,4 @@
-import { ChevronRight, Loader2 } from 'lucide-react'
+import { ChevronRight, Loader2, RefreshCw } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -48,7 +48,8 @@ export function useCueProfileRead(): [CueProfileRead | null, (profile: CueProfil
 const BUTTON =
   'press inline-flex shrink-0 items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50'
 const PRIMARY = `${BUTTON} border-transparent bg-[var(--color-accent)] text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]`
-const SECONDARY = `${BUTTON} border-[var(--color-line-strong)] bg-[var(--color-panel-2)] text-fg hover:bg-[var(--color-hover)]`
+const ICON_BUTTON =
+  'press flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] text-fg hover:bg-[var(--color-line-strong)] disabled:cursor-not-allowed disabled:opacity-50'
 
 const tenths = (share: number): number => Math.round(share * 10)
 
@@ -138,20 +139,32 @@ export function CueProfileCard({ read, onLearned, synced, patch }: Props): React
   ].filter(Boolean)
   const sources = sourceParts.flatMap((part, i) => (i === 0 ? [part] : [', ', part]))
   const nothing = read.marked === 0 && read.edits.count === 0
-  const button = (
+  const button = profile ? (
     <button
       type="button"
       data-testid="cue-profile-learn"
       disabled={learning || nothing}
       onClick={learn}
-      className={profile ? SECONDARY : PRIMARY}
+      aria-label={learning ? tr('settings.cueProfile.learning') : tr('settings.cueProfile.relearn')}
+      title={learning ? tr('settings.cueProfile.learning') : tr('settings.cueProfile.relearn')}
+      className={ICON_BUTTON}
+    >
+      {learning ? (
+        <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+      ) : (
+        <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+      )}
+    </button>
+  ) : (
+    <button
+      type="button"
+      data-testid="cue-profile-learn"
+      disabled={learning || nothing}
+      onClick={learn}
+      className={PRIMARY}
     >
       {learning && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />}
-      {learning
-        ? tr('settings.cueProfile.learning')
-        : profile
-          ? tr('settings.cueProfile.relearn')
-          : tr('settings.cueProfile.learn')}
+      {learning ? tr('settings.cueProfile.learning') : tr('settings.cueProfile.learn')}
     </button>
   )
   const countdown = countdownOf(profile?.flow ?? null)
@@ -178,7 +191,7 @@ export function CueProfileCard({ read, onLearned, synced, patch }: Props): React
           : 'rounded-xl border border-dashed border-[var(--color-line-strong)] p-4'
       }`}
     >
-      <div className={`flex flex-wrap gap-3 ${profile ? 'items-start' : 'items-center'}`}>
+      <div className="flex flex-wrap items-center gap-3">
         <div className="min-w-0 flex-1">
           <h3 className="text-[13px] font-semibold text-fg-muted">
             {profile ? tr('settings.cueProfile.title') : tr('settings.cueProfile.firstTitle')}
