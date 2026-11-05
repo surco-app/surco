@@ -81,7 +81,7 @@ const ZERO_PADDED = /^0\d+$/
 // own, so a normal "Artist - Title" — or a title with an internal underscore — is left
 // alone. A lone "-" or single "_" is deliberately not split: it can't be told apart
 // from a hyphenated word.
-function normalizeSeparators(name: string): string {
+export function normalizeSeparators(name: string): string {
   let s = name.replace(/\s*_\s*-\s*_\s*/g, ' - ').replace(/\s*[–—]\s*/g, ' - ')
   if (s.includes('_') && !name.includes(' ')) s = s.replace(/_/g, ' ')
   return s

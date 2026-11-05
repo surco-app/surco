@@ -2470,7 +2470,7 @@
       "version": "別バージョン"
     },
     "tie": "結びついています。保持するものを選んでください。",
-    "staged": "ステージ解除",
+    "staged": "バッチから外す",
     "ignore": "無視",
     "ignored": "確認から非表示",
     "notSame": "同じではありません",
@@ -2654,8 +2654,8 @@
         "typed": "手入力",
         "editor": "エディタで"
       },
-      "stageAll_one": "{{count}}件の提案をステージ",
-      "stageAll_other": "{{count}}件の提案をステージ",
+      "stageAll_one": "{{count}}件の提案をバッチに追加",
+      "stageAll_other": "{{count}}件の提案をバッチに追加",
       "stage": "入力する",
       "empty": "空",
       "useForOthers_one": "ほかの{{count}}件にも使う",

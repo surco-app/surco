@@ -28,6 +28,20 @@ describe('parseFileName', () => {
   // The common DJ-rip namings carry a leading track number; importing it as part of
   // the artist ("104. Artist") poisons the field and the Discogs query. Import uses
   // the same auto-detection as the fill-from-filename button, so the two can't drift.
+  // A pool or scene download named with underscores and no artist dash showed up as
+  // "Geri_Halliwell_It's_Raining_Men…" in the list, and the review offered that very text
+  // as the title. Its words read apart the way fill-from-filename already reads them.
+  it('spaces out an underscored name that has no separator', () => {
+    const parsed = parseFileName("/dl/Geri_Halliwell_It's_Raining_Men_Vocal.wav")
+    expect(parsed.title).toBe("Geri Halliwell It's Raining Men Vocal")
+    expect(parsed.query).toBe("Geri Halliwell It's Raining Men Vocal")
+    expect(parsed.fileName).toBe("Geri_Halliwell_It's_Raining_Men_Vocal")
+  })
+
+  it('leaves an underscore inside a name that already has spaces', () => {
+    expect(parseFileName('/dl/Intro_2 Edit.wav').title).toBe('Intro_2 Edit')
+  })
+
   it('strips a leading track number from the artist, like fill-from-filename does', () => {
     const r = parseFileName('/m/104. Artist - Title.aiff')
     expect(r.artist).toBe('Artist')

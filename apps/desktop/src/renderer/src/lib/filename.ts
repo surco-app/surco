@@ -1,4 +1,4 @@
-import { smartDeriveTags } from './deriveTags'
+import { normalizeSeparators, smartDeriveTags } from './deriveTags'
 
 export interface ParsedName {
   fileName: string
@@ -32,5 +32,6 @@ export function parseFileName(path: string): ParsedName {
       query: `${tags.artist} ${tags.title}`,
     }
   }
-  return { fileName, artist: '', title: fileName, query: fileName }
+  const readable = normalizeSeparators(fileName)
+  return { fileName, artist: '', title: readable, query: readable }
 }
