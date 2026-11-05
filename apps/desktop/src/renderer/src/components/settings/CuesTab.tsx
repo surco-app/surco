@@ -244,13 +244,13 @@ export function CuesTab({
               data-testid="cue-flow-add"
               ref={add.toggleRef}
               aria-label={tr('settings.cueFlows.newFlow')}
-              title={tr('settings.cueFlows.newFlow')}
               aria-haspopup={offered ? 'menu' : undefined}
               aria-expanded={offered ? add.open : undefined}
               onClick={() => (offered ? add.setOpen((v) => !v) : create())}
               className={ICON_BUTTON}
             >
               <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+              <Tooltip label={tr('settings.cueFlows.newFlow')} />
             </button>
             {offered && add.open && (
               <div

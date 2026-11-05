@@ -9,6 +9,7 @@ import { hotCueColor } from '../../../../shared/rekordboxCueColors'
 import type { SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
 import { formatCount } from '../../lib/stats'
+import { Tooltip } from '../Tooltip'
 import { CheckboxRow } from './CheckboxRow'
 import { SettingsHint } from './SettingsPrimitives'
 
@@ -146,7 +147,6 @@ export function CueProfileCard({ read, onLearned, synced, patch }: Props): React
       disabled={learning || nothing}
       onClick={learn}
       aria-label={learning ? tr('settings.cueProfile.learning') : tr('settings.cueProfile.relearn')}
-      title={learning ? tr('settings.cueProfile.learning') : tr('settings.cueProfile.relearn')}
       className={ICON_BUTTON}
     >
       {learning ? (
@@ -154,6 +154,9 @@ export function CueProfileCard({ read, onLearned, synced, patch }: Props): React
       ) : (
         <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
       )}
+      <Tooltip
+        label={learning ? tr('settings.cueProfile.learning') : tr('settings.cueProfile.relearn')}
+      />
     </button>
   ) : (
     <button

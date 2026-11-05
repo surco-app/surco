@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../../preload/api'
@@ -644,6 +644,15 @@ describe('CuesTab', () => {
     const card = await screen.findByTestId('cue-profile')
     const rules = screen.getByTestId('cue-rule-add')
     expect(rules.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('names + in Surco’s own tooltip, not the native one', async () => {
+    installApi()
+    render(<Harness />)
+    const add = screen.getByTestId('cue-flow-add')
+    expect(add).not.toHaveAttribute('title')
+    act(() => add.focus())
+    expect(await screen.findByRole('tooltip')).toHaveTextContent('New flow')
   })
 
   it('selects the flow made from what was learned, so the DJ sees it right away', async () => {
