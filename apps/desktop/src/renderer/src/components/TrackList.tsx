@@ -764,9 +764,9 @@ const TrackRow = memo(function TrackRow({
                 {note && (
                   <span
                     data-testid="track-note"
-                    title={note.title}
                     className="ml-auto shrink-0 tabular-nums text-xs text-warn"
                   >
+                    <Tooltip label={note.title} />
                     {note.text}
                   </span>
                 )}

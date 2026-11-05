@@ -50,11 +50,8 @@ export function FilterOption({
       </span>
       <span className="flex-1">{label}</span>
       {progress && (
-        <span
-          data-testid={`${testid}-progress`}
-          title={progress.title}
-          className="tabular-nums text-[11px] text-fg-faint"
-        >
+        <span data-testid={`${testid}-progress`} className="tabular-nums text-[11px] text-fg-faint">
+          <Tooltip label={progress.title} />
           {progress.text}
         </span>
       )}

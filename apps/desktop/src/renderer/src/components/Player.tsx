@@ -304,7 +304,8 @@ export function Player({
             data-testid="player-identity"
             className="flex min-w-0 items-baseline gap-2 text-fg-dim text-xs leading-tight"
           >
-            <span title={track.meta.artist} className="min-w-0 flex-1 truncate">
+            <span className="min-w-0 flex-1 truncate">
+              <Tooltip label={track.meta.artist} />
               {track.meta.artist}
             </span>
             <span data-testid="player-time" className="shrink-0 text-[11px] tabular-nums">

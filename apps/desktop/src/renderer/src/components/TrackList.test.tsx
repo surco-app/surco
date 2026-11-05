@@ -31,6 +31,7 @@ import { clearDraggedRows, draggedRows } from '../lib/reorderDrag'
 import { resetRowWaves } from '../lib/rowWaves'
 import * as triage from '../lib/triage'
 import { fakeDataTransfer, installDragEvent } from '../test/drag'
+import { hoverTooltip } from '../test/tooltip'
 import type { TrackItem } from '../types'
 import { TrackContextMenu } from './TrackContextMenu'
 import { TrackList } from './TrackList'
@@ -2342,7 +2343,7 @@ describe('TrackList row notes', () => {
     const [first, second] = screen.getAllByTestId('track-row')
     const note = within(first).getByTestId('track-note')
     expect(note).toHaveTextContent('−92 ms')
-    expect(note).toHaveAttribute('title', 'Rejilla 92 ms adelantada')
+    expect(hoverTooltip(note)).toEqual('Rejilla 92 ms adelantada')
     expect(within(first).getByTestId('track-artist')).toBeInTheDocument()
     expect(within(second).queryByTestId('track-note')).toBeNull()
   })

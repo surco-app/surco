@@ -12,6 +12,7 @@ import {
 import i18n from '../i18n'
 import type { Destination } from '../lib/destination'
 import type { BatchVerification, SelectionStatus } from '../lib/selectionStatus'
+import { hoverTooltip } from '../test/tooltip'
 import type { TrackItem } from '../types'
 import { ConvertFooter } from './ConvertFooter'
 
@@ -152,7 +153,7 @@ describe('ConvertFooter announcements', () => {
         item={{ id: 't1', status: 'error', error, inputPath: '/a.wav', meta: {} } as TrackItem}
       />,
     )
-    expect(screen.getByRole('alert')).toHaveAttribute('title', error)
+    expect(hoverTooltip(screen.getByRole('alert'))).toEqual(error)
   })
 
   it('announces a failed Apple Music add as an alert', () => {

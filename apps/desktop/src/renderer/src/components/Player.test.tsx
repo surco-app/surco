@@ -10,6 +10,7 @@ import { createQueryClient } from '../lib/queryClient'
 import type { TrackItem } from '../types'
 import { LivePlayer, Player } from './Player'
 import '../i18n'
+import { hoverTooltip } from '../test/tooltip'
 
 const wave: WaveformResult = {
   peaks: [0.2, 0.8, 0.5, 1],
@@ -402,7 +403,7 @@ describe('Player', () => {
   // The artist gives way to the clock, so a long credit list is cut; hovering shows it all.
   it('shows the whole artist on hover when the line cuts it', () => {
     renderUI(<Player {...props()} />)
-    expect(screen.getByTitle('DJ Carlos')).toBeInTheDocument()
+    expect(hoverTooltip(screen.getByText('DJ Carlos'))).toBe('DJ Carlos')
   })
 
   it('shows the clock on the artist line while the waveform is hidden', () => {

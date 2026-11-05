@@ -4,6 +4,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
 import type { Release, TrackMetadata } from '../../../shared/types'
+import { hoverTooltip } from '../test/tooltip'
 import type { TrackItem } from '../types'
 import { AlbumMatchRows } from './AlbumMatchRows'
 
@@ -148,7 +149,9 @@ describe('AlbumMatchRows', () => {
   it('shows each file full name on hover', async () => {
     renderRows([track('a', 'Track Name (Some Remixer Extended Vocal Mix)', 181)])
     await screen.findAllByTestId('match-row')
-    expect(screen.getByTitle('Track Name (Some Remixer Extended Vocal Mix)')).toBeInTheDocument()
+    expect(hoverTooltip(screen.getByText('Track Name (Some Remixer Extended Vocal Mix)'))).toBe(
+      'Track Name (Some Remixer Extended Vocal Mix)',
+    )
   })
 
   it('applies the matched track title to each file when confirmed', async () => {

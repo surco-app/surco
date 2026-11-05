@@ -5,6 +5,7 @@ import { createRef } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../i18n'
 import { EMPTY_FILTER, type FilterSelection, type qualityCounts } from '../lib/triage'
+import { hoverTooltip } from '../test/tooltip'
 import { ModalShell } from './ModalShell'
 import { QualityFilterBar } from './QualityFilterBar'
 
@@ -229,8 +230,7 @@ describe('QualityFilterBar', () => {
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
     const option = screen.getByTestId('quality-filter-badGrid')
     expect(option).toHaveTextContent(/^Bad grid16 %3$/)
-    expect(screen.getByTestId('quality-filter-badGrid-progress')).toHaveAttribute(
-      'title',
+    expect(hoverTooltip(screen.getByTestId('quality-filter-badGrid-progress'))).toEqual(
       'Measuring 344 of 2077',
     )
     expect(screen.getByTestId('quality-filter-badGrid-dot')).toBeInTheDocument()
