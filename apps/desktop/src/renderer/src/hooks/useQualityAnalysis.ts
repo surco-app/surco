@@ -47,6 +47,8 @@ interface QualityAnalysis {
 
 // Batch quality triage: measures every not-yet-analyzed track's spectrum so a whole
 // dropped folder is checked for fake-lossless rips without opening each row.
+const DJ_APP_POLL_MS = 10_000
+
 export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params): QualityAnalysis {
   const queryClient = useQueryClient()
   // Bridged through a ref so analyzeAllQuality keeps a stable identity (the command
@@ -108,10 +110,30 @@ export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params)
   }, [])
 
   const [focused, setFocused] = useState(true)
-  useWindowFocus((next) => {
-    focusGate.current.set(next)
-    setFocused(next)
-  })
+  const [djAppOpen, setDjAppOpen] = useState(false)
+  useWindowFocus(setFocused)
+  useEffect(() => {
+    if (focused) {
+      setDjAppOpen(false)
+      return
+    }
+    let cancelled = false
+    const ask = (): void => {
+      void window.api.djAppRunning().then((open) => {
+        if (!cancelled) setDjAppOpen(open)
+      })
+    }
+    ask()
+    const timer = setInterval(ask, DJ_APP_POLL_MS)
+    return () => {
+      cancelled = true
+      clearInterval(timer)
+    }
+  }, [focused])
+  const sweepOpen = focused || !djAppOpen
+  useEffect(() => {
+    focusGate.current.set(sweepOpen)
+  }, [sweepOpen])
 
   // A probe can land after the owner unmounted (the window closing, a test tearing down its
   // DOM): the sweep then starts no further track and leaves React state alone, since a
@@ -327,7 +349,7 @@ export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params)
 
   return {
     analysis,
-    paused: analysis !== null && !focused,
+    paused: analysis !== null && !sweepOpen,
     analyzeAllQuality,
     cancelAnalysis,
     forgetTracks,

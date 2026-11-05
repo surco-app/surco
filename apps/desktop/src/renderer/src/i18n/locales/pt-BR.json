@@ -50,7 +50,7 @@
     "reviewLabel": "Revisar",
     "allAnalyzed": "Tudo já analisado",
     "analyzingCount": "Analisando qualidade… {{done}}/{{total}}",
-    "analyzingPaused": "Pausado enquanto o Surco está em segundo plano · {{done}}/{{total}}",
+    "analyzingPaused": "Em pausa enquanto um programa de DJ está aberto · {{done}}/{{total}}",
     "convertingCount": "Convertendo… {{done}}/{{total}}",
     "convertAll_one": "Converter {{count}} faixa",
     "convertAll_other": "Converter {{count}} faixas",

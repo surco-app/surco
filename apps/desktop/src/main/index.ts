@@ -111,7 +111,12 @@ import { registerCueTasteIpc } from './cueTasteIpc'
 import { cachedCueWaveWords } from './cueWaveWordsCache'
 import { registerDamageIpc } from './damageIpc'
 import { damageDeps } from './damageWiring'
-import { createEnsureClosed, DJ_PROCESSES, reasonOfDetail } from './djProcesses'
+import {
+  anyDjProgramRunning,
+  createEnsureClosed,
+  DJ_PROCESSES,
+  reasonOfDetail,
+} from './djProcesses'
 import { parseDockFrames } from './dockFrames'
 import { type ReplacePair, replaceDuplicates } from './duplicateReplace'
 import { registerEngineCueQueueIpc } from './engineCueQueueIpc'
@@ -2086,6 +2091,7 @@ function registerIpc(): void {
   // Lets the cover well show its paste affordance only when there's an image to paste.
   ipcMain.handle('clipboard:hasImage', () => clipboardHasImage())
 
+  ipcMain.handle('djApps:running', () => anyDjProgramRunning())
   registerShellIpc(mediaAccess, (path, titles) =>
     usedByAnyLibrary(path, titles, {
       traktorRead: traktorReadPath,
