@@ -1,4 +1,4 @@
-import { Check, Disc3, Ellipsis, FolderOpen, RotateCw } from 'lucide-react'
+import { Check, Disc3, Ellipsis, FolderOpen, Music, RotateCw } from 'lucide-react'
 import type React from 'react'
 import { useId } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -21,6 +21,7 @@ interface DoneMenuProps {
   destination: Destination
   destinations: readonly Destination[]
   revealPath?: string | null
+  music?: { label: string; busy: boolean; onAdd: () => void }
   onProcess: (format: FormatSetting) => void
   onSelectFormat: (format: FormatSetting) => void
   onSelectDestination: (destination: Destination) => void
@@ -44,6 +45,7 @@ export function DoneMenu({
   destination,
   destinations,
   revealPath,
+  music,
   onProcess,
   onSelectFormat,
   onSelectDestination,
@@ -183,6 +185,19 @@ export function DoneMenu({
               >
                 <FolderOpen className={ITEM_ICON} aria-hidden="true" />
                 {tr('editor.showFile')}
+              </button>
+            )}
+            {music && (
+              <button
+                type="button"
+                data-testid="menu-add-apple-music"
+                role="menuitem"
+                disabled={music.busy}
+                onClick={() => run(music.onAdd)}
+                className={`${SPLIT_ITEM} justify-start gap-2`}
+              >
+                <Music className={ITEM_ICON} aria-hidden="true" />
+                {music.label}
               </button>
             )}
           </div>

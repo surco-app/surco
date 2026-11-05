@@ -428,11 +428,24 @@ describe('ConvertFooter done layout', () => {
     )
   }
 
-  it('offers Apple Music only as a secondary step after converting to a folder', () => {
-    render(convertedTo('folder'))
-    expect(
-      within(screen.getByTestId('done-actions')).getByTestId('add-apple-music'),
-    ).toHaveAttribute('data-variant', 'secondary')
+  // A DJ who converts to a folder for rekordbox or Traktor still had a Music button in the
+  // footer after every track. The add stays one click away in the more-actions menu, beside
+  // Show file, and the footer keeps only what this destination is about.
+  it('moves the Apple Music add into the menu after converting to a folder', () => {
+    const onAddToAppleMusic = vi.fn()
+    render(
+      <ConvertFooter
+        {...footer(true).props}
+        musicExt="aiff"
+        destination="folder"
+        onAddToAppleMusic={onAddToAppleMusic}
+        status={{ ...status(true), canDeleteOriginal: false }}
+      />,
+    )
+    expect(within(screen.getByTestId('done-actions')).queryByTestId('add-apple-music')).toBeNull()
+    fireEvent.click(screen.getByTestId('done-more'))
+    fireEvent.click(screen.getByTestId('menu-add-apple-music'))
+    expect(onAddToAppleMusic).toHaveBeenCalledOnce()
   })
 
   it('keeps the Apple Music add the main action when Apple Music is the destination', () => {
