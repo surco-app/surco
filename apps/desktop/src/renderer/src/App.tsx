@@ -549,6 +549,10 @@ export default function App(): React.JSX.Element {
   // the player streams must drop that handle first (see usePlayer's releaseFile).
   const releaseFileRef = useRef<(path: string) => Promise<void>>(async () => {})
   const reclaimFileRef = useRef<(path: string) => void>(() => {})
+  // The same for the session, declared above the player: it saves where the playing track
+  // is and hands a reopened spot back.
+  const playbackPositionRef = useRef<() => { path: string; time: number } | null>(() => null)
+  const resumeAtRef = useRef<(path: string, time: number) => void>(() => {})
   // The rows pinned into the current filter view, so a verdict that flips while the user
   // works the list (an accepted suggestion, a finished analysis, a background auto-match)
   // can't drop a row out from under them (see filterWithSticky). Tied to the filter it was built for: switching filter (or
@@ -1156,6 +1160,8 @@ export default function App(): React.JSX.Element {
     withdrawOffer: review !== null,
     selectedPath: selectedSourcePath,
     selectRestored,
+    playbackPosition: () => playbackPositionRef.current(),
+    resumePlayback: (path, time) => resumeAtRef.current(path, time),
   })
 
   // The watcher's "N new tracks" prompt rides the same queue as every other toast: keyed so a
@@ -1738,6 +1744,8 @@ export default function App(): React.JSX.Element {
     closePlayer,
     releaseFile,
     reclaimFile,
+    resumeAt,
+    playbackPosition,
   } = usePlayer({
     tracks,
     selected,
@@ -1745,6 +1753,8 @@ export default function App(): React.JSX.Element {
   })
   releaseFileRef.current = releaseFile
   reclaimFileRef.current = reclaimFile
+  playbackPositionRef.current = playbackPosition
+  resumeAtRef.current = resumeAt
   const player = useExitPresence(playerVisible && !!playerTrack, PLAYER_LEAVE_MS)
   const shownPlayerTrack = useRef(playerTrack)
   if (playerTrack) shownPlayerTrack.current = playerTrack

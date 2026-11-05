@@ -10,6 +10,7 @@ import {
   waitFor,
 } from '@testing-library/react'
 import type React from 'react'
+import { useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { isRecoveryUrl, mediaPathFromUrl, mediaUrl } from '../../../shared/media'
 import type { TrackMetadata } from '../../../shared/types'
@@ -522,5 +523,79 @@ describe('usePlayer keeps the player visible while a track sounds', () => {
     expect(audio.src).toContain('a-final.aiff')
     // biome-ignore lint/style/noNonNullAssertion: player is set after render
     expectInvariant(api.player!)
+  })
+
+  function ResumeHarness({ tracks }: { tracks: TrackItem[] }): React.JSX.Element {
+    const [selectedIndex, setSelectedIndex] = useState(0)
+    const selected = tracks[selectedIndex] ?? null
+    const { audioRef, togglePlay, closePlayer, resumeAt, playbackPosition } = usePlayer({
+      tracks,
+      selected,
+      selectedId: selected?.id ?? null,
+    })
+    const [position, setPosition] = useState('')
+    return (
+      <>
+        {/* biome-ignore lint/a11y/useMediaCaption: silent test fixture */}
+        <audio ref={audioRef} data-testid="audio" />
+        <button type="button" data-testid="toggle" onClick={togglePlay} />
+        <button type="button" data-testid="close" onClick={closePlayer} />
+        <button type="button" data-testid="next" onClick={() => setSelectedIndex(1)} />
+        <button type="button" data-testid="resume" onClick={() => resumeAt('/m/a.wav', 199)} />
+        <button
+          type="button"
+          data-testid="read-position"
+          onClick={() => setPosition(JSON.stringify(playbackPosition()))}
+        />
+        <output data-testid="position">{position}</output>
+      </>
+    )
+  }
+
+  function mockMedia(audio: HTMLAudioElement): void {
+    audio.play = vi.fn().mockResolvedValue(undefined)
+    audio.pause = vi.fn()
+    audio.load = vi.fn()
+  }
+
+  // Closing Surco at 3:19 of a seven-minute track and pressing play the next morning: the
+  // track picks up at 3:19 instead of making the user scrub back to where they were.
+  it('starts a reopened track where it was left, once', () => {
+    render(<ResumeHarness tracks={[track('a', '/m/a.wav'), track('b', '/m/b.wav')]} />)
+    const audio = screen.getByTestId('audio') as HTMLAudioElement
+    mockMedia(audio)
+    fireEvent.click(screen.getByTestId('resume'))
+    fireEvent.click(screen.getByTestId('toggle'))
+    expect(audio.currentTime).toBe(199)
+
+    fireEvent.click(screen.getByTestId('close'))
+    fireEvent.click(screen.getByTestId('toggle'))
+    expect(audio.currentTime).toBe(0)
+  })
+
+  // The saved spot belongs to that one track: listening to another first makes it stale.
+  it('forgets the saved spot once another track has played', () => {
+    render(<ResumeHarness tracks={[track('b', '/m/b.wav'), track('a', '/m/a.wav')]} />)
+    const audio = screen.getByTestId('audio') as HTMLAudioElement
+    mockMedia(audio)
+    fireEvent.click(screen.getByTestId('resume'))
+    fireEvent.click(screen.getByTestId('toggle'))
+    fireEvent.click(screen.getByTestId('next'))
+    expect(audio.src).toContain('a.wav')
+    expect(audio.currentTime).toBe(0)
+  })
+
+  it('reports where the playing track is, and nothing once the player is closed', () => {
+    render(<ResumeHarness tracks={[track('a', '/m/a.wav')]} />)
+    const audio = screen.getByTestId('audio') as HTMLAudioElement
+    mockMedia(audio)
+    fireEvent.click(screen.getByTestId('toggle'))
+    audio.currentTime = 42
+    fireEvent.click(screen.getByTestId('read-position'))
+    expect(screen.getByTestId('position')).toHaveTextContent('{"path":"/m/a.wav","time":42}')
+
+    fireEvent.click(screen.getByTestId('close'))
+    fireEvent.click(screen.getByTestId('read-position'))
+    expect(screen.getByTestId('position')).toHaveTextContent('null')
   })
 })

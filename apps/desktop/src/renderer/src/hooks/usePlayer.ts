@@ -38,6 +38,11 @@ export interface Player {
   // Once the conversion no longer holds `path`, reloads the file releaseFile let go of,
   // at the position and play state it had. No-op unless that release silenced the player.
   reclaimFile: (path: string) => void
+  // A reopened session's spot in its track: the next play of that file starts there. Any
+  // other track playing first makes it stale, so it is spent on the next play either way.
+  resumeAt: (path: string, time: number) => void
+  // Where the playing track is, for the session to save. Null with the player closed.
+  playbackPosition: () => { path: string; time: number } | null
 }
 
 // The floating player follows the selection: while it's open, picking another
@@ -61,6 +66,7 @@ export function usePlayer({ tracks, selected, selectedId }: Params): Player {
   const playingPathRef = useRef<string | null>(null)
   // Where releaseFile left the track, so reclaimFile resumes it there.
   const releasedRef = useRef<{ path: string; time: number; paused: boolean } | null>(null)
+  const resumeRef = useRef<{ path: string; time: number } | null>(null)
 
   const startPlayback = useCallback((track: TrackItem): void => {
     const audio = audioRef.current
@@ -71,7 +77,9 @@ export function usePlayer({ tracks, selected, selectedId }: Params): Player {
     // The custom surco:// scheme streams the file from the main process, so the
     // <audio> element seeks through it without buffering the whole track in memory.
     audio.src = mediaUrl(track.inputPath)
-    audio.currentTime = 0
+    const resume = resumeRef.current
+    resumeRef.current = null
+    audio.currentTime = resume?.path === track.inputPath ? resume.time : 0
     playingPathRef.current = track.inputPath
     setPlayingId(track.id)
     // The invariant, enforced at its one source: sound implies a visible card. App renders
@@ -235,6 +243,17 @@ export function usePlayer({ tracks, selected, selectedId }: Params): Player {
 
   // Nudge the playhead by delta seconds (the ←/→ shortcuts). Reads the live element so it
   // stays in step with the clock LivePlayer owns, and clamps to the file's bounds.
+  const resumeAt = useCallback((path: string, time: number): void => {
+    resumeRef.current = { path, time }
+  }, [])
+
+  const playbackPosition = useCallback((): { path: string; time: number } | null => {
+    const audio = audioRef.current
+    const path = playingPathRef.current
+    if (!audio || !path || !playingIdRef.current) return null
+    return { path, time: audio.currentTime }
+  }, [])
+
   const seek = useCallback((delta: number): void => {
     const audio = audioRef.current
     if (!audio || !Number.isFinite(audio.duration)) return
@@ -276,5 +295,7 @@ export function usePlayer({ tracks, selected, selectedId }: Params): Player {
     closePlayer,
     releaseFile,
     reclaimFile,
+    resumeAt,
+    playbackPosition,
   }
 }

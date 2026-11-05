@@ -15,17 +15,28 @@ import type {
 // had reached.
 export interface SessionView {
   selectedPath: string | null
+  playback: SessionPlayback | null
   search: string
   sortBy: TrackSort
   sortDir: SortDir
   filters: FilterSelection
 }
 
+export interface SessionPlayback {
+  path: string
+  time: number
+}
+
 type AppState = ReturnType<AppStore['getState']>
 
-export function sessionViewOf(state: AppState, selectedPath: string | null): SessionView {
+export function sessionViewOf(
+  state: AppState,
+  selectedPath: string | null,
+  playback: SessionPlayback | null,
+): SessionView {
   return {
     selectedPath,
+    playback,
     search: state.search,
     sortBy: state.sortBy,
     sortDir: state.sortDir,
@@ -114,6 +125,13 @@ function known<T extends string>(table: Record<T, true>, value: unknown): T | nu
   return typeof value === 'string' && Object.hasOwn(table, value) ? (value as T) : null
 }
 
+function parsePlayback(raw: unknown): SessionPlayback | null {
+  if (typeof raw !== 'object' || raw === null) return null
+  const { path, time } = raw as Record<string, unknown>
+  if (typeof path !== 'string' || typeof time !== 'number') return null
+  return Number.isFinite(time) && time >= 0 ? { path, time } : null
+}
+
 export function parseSessionView(raw: unknown): SessionView | null {
   if (typeof raw !== 'object' || raw === null) return null
   const view = raw as Record<string, unknown>
@@ -123,6 +141,7 @@ export function parseSessionView(raw: unknown): SessionView | null {
       : {}
   return {
     selectedPath: typeof view.selectedPath === 'string' ? view.selectedPath : null,
+    playback: parsePlayback(view.playback),
     search: typeof view.search === 'string' ? view.search : '',
     sortBy: known(SORTS, view.sortBy) ?? 'import',
     sortDir: view.sortDir === 'desc' ? 'desc' : 'asc',

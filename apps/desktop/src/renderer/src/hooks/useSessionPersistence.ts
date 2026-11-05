@@ -2,7 +2,13 @@ import { useEffect, useRef } from 'react'
 import type { SessionData, SessionEdit } from '../../../shared/types'
 import { type AppStore, useAppStore } from '../lib/appStore'
 import { sessionEdits } from '../lib/sessionEdits'
-import { parseSessionView, type SessionView, sessionViewOf, viewPatch } from '../lib/sessionView'
+import {
+  parseSessionView,
+  type SessionPlayback,
+  type SessionView,
+  sessionViewOf,
+  viewPatch,
+} from '../lib/sessionView'
 import { dismissToast, pushToast } from '../lib/toastQueue'
 import type { TrackItem } from '../types'
 import { useStableCallback } from './useStableCallback'
@@ -22,6 +28,10 @@ interface Params {
   selectedPath: string | null
   // Selects the restored row with that source path, once the reopen has added the rows.
   selectRestored: (path: string) => void
+  // Where the playing track is, read when the session is written.
+  playbackPosition: () => SessionPlayback | null
+  // Hands the reopened session's spot in its track to the player.
+  resumePlayback: (path: string, time: number) => void
 }
 
 // The last session: offered back at launch, and written out as it changes.
@@ -43,6 +53,8 @@ export function useSessionPersistence({
   withdrawOffer,
   selectedPath,
   selectRestored,
+  playbackPosition,
+  resumePlayback,
 }: Params): void {
   // The launch-time "reopen last session" offer. Asked once, and only while Files is
   // still empty — restoring the old list on top of a fresh import would mix two sessions,
@@ -75,6 +87,7 @@ export function useSessionPersistence({
     // retagged but not yet applied when the last session ended.
     await addPaths(await window.api.expandPaths(session.paths), session.edits)
     if (view?.selectedPath) selectRestored(view.selectedPath)
+    if (view?.playback) resumePlayback(view.playback.path, view.playback.time)
   })
   // Stable identity so the ask-once effect below never re-runs, which would cancel the
   // in-flight ask. The offer carries translation keys, not text: it is raised before the
@@ -145,7 +158,7 @@ export function useSessionPersistence({
       if (settled.some((t) => t.loadingMeta)) return
       const paths = settled.map((t) => t.inputPath)
       const edits = sessionEdits(settled)
-      const view = sessionViewOf(store.getState(), selectedPathRef.current)
+      const view = sessionViewOf(store.getState(), selectedPathRef.current, playbackPosition())
       const sig = JSON.stringify({ paths, edits, view })
       if (sig === savedSessionSig.current) return
       savedSessionSig.current = sig
@@ -154,7 +167,7 @@ export function useSessionPersistence({
   )
   const selectedPathRef = useRef(selectedPath)
   selectedPathRef.current = selectedPath
-  const viewSig = `${useAppStore(store, (s) => JSON.stringify(sessionViewOf(s, null)))}|${selectedPath}`
+  const viewSig = `${useAppStore(store, (s) => JSON.stringify(sessionViewOf(s, null, null)))}|${selectedPath}`
   // biome-ignore lint/correctness/useExhaustiveDependencies: viewSig is a trigger only, the view itself is read when the timer fires. tracksRef is read inside the debounced timer, on purpose — the write must snapshot the list as it SETTLES, not as it looked when the burst began. `tracks` stays the trigger; declaring the ref as a dependency would re-run the effect on every mutation, which is the per-render work this indirection exists to shed.
   useEffect(() => {
     // Rows whose metadata read is still in flight would snapshot half-loaded state —
@@ -179,11 +192,13 @@ export function useSessionPersistence({
   }, [tracks, viewSig])
   // A quit or a closed window inside the debounce kills the timer with the page, losing
   // the last second of edits. The page going away writes the pending save at once, and
-  // synchronously: an async IPC sent from a dying page is not sure to reach main.
+  // synchronously: an async IPC sent from a dying page is not sure to reach main. It also
+  // writes with nothing pending, since the spot in the playing track schedules no save,
+  // but never before this run has saved: that would wipe the session the launch offered.
   useEffect(() => {
     const flush = (): void => {
-      if (!sessionSaveTimer.current) return
-      clearTimeout(sessionSaveTimer.current)
+      if (!sessionSaveTimer.current && savedSessionSig.current === null) return
+      if (sessionSaveTimer.current) clearTimeout(sessionSaveTimer.current)
       sessionSaveTimer.current = null
       writeSettled(window.api.saveLastSessionSync)
     }
