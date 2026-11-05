@@ -56,6 +56,8 @@
     "convertAll_other": "Convertir {{count}} pistes",
     "convertNone": "Convertir",
     "convertSome": "Convertir {{ready}} sur {{total}}",
+    "leftOutMissing_one": "{{count}} morceau reste de côté, il lui manque {{fields}}",
+    "leftOutMissing_other": "{{count}} morceaux restent de côté, il leur manque {{fields}}",
     "convertSelected_one": "Convertir {{count}} sélectionnée",
     "convertSelected_other": "Convertir {{count}} sélectionnées",
     "convertSomeSelected": "Convertir {{ready}} sur {{total}} sélectionnées",

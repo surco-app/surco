@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { TrackMetadata } from '../../../shared/types'
 import type { TrackItem, TrackStatus } from '../types'
-import { canProcessTrack, eligibleForBatch, summarizeBatch } from './batch'
+import { canProcessTrack, eligibleForBatch, leftOutForMissing, summarizeBatch } from './batch'
 
 function track(id: string, status: TrackStatus, meta: Partial<TrackMetadata> = {}): TrackItem {
   return {
@@ -61,6 +61,24 @@ describe('eligibleForBatch', () => {
     // flagged in the list) — the same gate the single-track convert button enforces.
     const tracks = [track('a', 'idle', { artist: 'Alex' }), track('b', 'idle')]
     expect(eligibleForBatch(tracks, ['artist'])).toEqual(['a'])
+  })
+})
+
+describe('leftOutForMissing', () => {
+  // "Convert 5 of 6" gave no reason, and the reason sat in the left-out track's own footer.
+  // The count says how many a missing required field keeps out and which fields, in the
+  // order Settings lists them; tracks out for their state are not this note's business.
+  it('counts the tracks a missing required field keeps out and names the fields', () => {
+    const tracks = [
+      track('a', 'idle', { title: 'T', artist: 'A' }),
+      track('b', 'idle', { title: 'T' }),
+      track('c', 'idle'),
+      track('d', 'done'),
+    ]
+    expect(leftOutForMissing(tracks, ['title', 'artist'])).toEqual({
+      count: 2,
+      fields: ['title', 'artist'],
+    })
   })
 })
 

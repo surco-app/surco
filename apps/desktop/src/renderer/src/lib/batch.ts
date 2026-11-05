@@ -39,6 +39,23 @@ export function eligibleForBatch(
   return tracks.filter((t) => canProcessTrack(t, requiredFields, customFields)).map((t) => t.id)
 }
 
+export function leftOutForMissing(
+  tracks: TrackItem[],
+  requiredFields: string[],
+  customFields: readonly CustomField[] = [],
+): { count: number; fields: string[] } {
+  const missing = new Set<string>()
+  let count = 0
+  for (const track of tracks) {
+    if (!isConvertible(track) || track.fromSerato) continue
+    const fields = missingRequiredOf(track, requiredFields, customFields)
+    if (fields.length === 0) continue
+    count += 1
+    for (const field of fields) missing.add(field)
+  }
+  return { count, fields: requiredFields.filter((f) => missing.has(f)) }
+}
+
 // The outcome of converting one track: it wrote a file, the user skipped it past a
 // file conflict, or it errored. Skips are neither success nor failure, so they're
 // counted on their own rather than folded into the failure tally.

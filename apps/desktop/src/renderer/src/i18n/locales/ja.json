@@ -56,6 +56,8 @@
     "convertAll_other": "{{count}} トラックを変換",
     "convertNone": "変換",
     "convertSome": "{{total}} の {{ready}} を変換",
+    "leftOutMissing_one": "{{count}}件は{{fields}}がないため対象外",
+    "leftOutMissing_other": "{{count}}件は{{fields}}がないため対象外",
     "convertSelected_one": "選択した {{count}} 件を変換",
     "convertSelected_other": "選択した {{count}} 件を変換",
     "convertSomeSelected": "選択した {{total}} 件のうち {{ready}} 件を変換",

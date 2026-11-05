@@ -56,6 +56,8 @@
     "convertAll_other": "Convert {{count}} tracks",
     "convertNone": "Convert",
     "convertSome": "Convert {{ready}} of {{total}}",
+    "leftOutMissing_one": "{{count}} track left out, it has no {{fields}}",
+    "leftOutMissing_other": "{{count}} tracks left out, they have no {{fields}}",
     "convertSelected_one": "Convert {{count}} selected",
     "convertSelected_other": "Convert {{count}} selected",
     "convertSomeSelected": "Convert {{ready}} of {{total}} selected",
