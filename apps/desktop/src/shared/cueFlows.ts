@@ -17,11 +17,17 @@ export interface CueRule {
   gap?: number
 }
 
+export interface ForeignRule {
+  at: number
+  rule: Record<string, unknown>
+}
+
 export interface CueFlow {
   id: string
   name: string
   markPoint: boolean
   rules: CueRule[]
+  foreign?: ForeignRule[]
 }
 
 export interface FlowPhrase {
@@ -243,6 +249,45 @@ function ruleOf(value: unknown): CueRule | null {
   }
 }
 
+const WORDS: [string, readonly string[]][] = [
+  ['from', FLOW_ORIGINS],
+  ['direction', DIRECTIONS],
+  ['when', FLOW_CONDITIONS],
+  ['place', FLOW_PLACES],
+]
+
+function isForeign(value: unknown): value is Record<string, unknown> {
+  if (!value || typeof value !== 'object') return false
+  const r = value as Record<string, unknown>
+  const unknown = WORDS.filter(
+    ([key, known]) => typeof r[key] === 'string' && r[key] !== '' && !known.includes(r[key]),
+  )
+  if (unknown.length === 0) return false
+  const stand = Object.fromEntries(unknown.map(([key, known]) => [key, known[0]]))
+  return ruleOf({ ...r, ...stand, gap: undefined }) !== null
+}
+
+function storedRules(f: Record<string, unknown>): unknown[] {
+  const all = [...(f.rules as unknown[])]
+  const aside = Array.isArray(f.foreign) ? f.foreign : []
+  const placed = aside
+    .filter((x): x is ForeignRule => !!x && typeof x === 'object' && Number.isInteger(x.at))
+    .sort((a, b) => a.at - b.at)
+  for (const x of placed) all.splice(Math.max(0, Math.min(x.at, all.length)), 0, x.rule)
+  return all
+}
+
+function rulesOf(f: Record<string, unknown>): Pick<CueFlow, 'rules' | 'foreign'> {
+  const rules: CueRule[] = []
+  const foreign: ForeignRule[] = []
+  for (const raw of storedRules(f)) {
+    const rule = ruleOf(raw)
+    if (rule) rules.push(rule)
+    else if (isForeign(raw)) foreign.push({ at: rules.length + foreign.length, rule: raw })
+  }
+  return foreign.length > 0 ? { rules, foreign } : { rules }
+}
+
 export function normalizeCueFlows(value: unknown): CueFlow[] {
   if (!Array.isArray(value)) return structuredClone(BUNDLED_FLOWS)
   const seen = new Set<string>()
@@ -263,10 +308,7 @@ export function normalizeCueFlows(value: unknown): CueFlow[] {
       id: f.id,
       name: typeof f.name === 'string' ? f.name : '',
       markPoint: typeof f.markPoint === 'boolean' ? f.markPoint : true,
-      rules: f.rules.flatMap((r) => {
-        const rule = ruleOf(r)
-        return rule ? [rule] : []
-      }),
+      ...rulesOf(f),
     })
   }
   const bundled = BUNDLED_FLOWS.map((b) => flows.find((f) => f.id === b.id) ?? structuredClone(b))

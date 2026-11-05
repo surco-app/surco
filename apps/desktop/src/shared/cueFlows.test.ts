@@ -234,6 +234,41 @@ describe('normalizeCueFlows', () => {
     expect(flows[0]).toEqual(MIX_IN)
   })
 
+  it('keeps a rule with a condition from a newer Surco aside instead of dropping it, so saving here never deletes it there', () => {
+    const good = ONE_AT_32.rules[0]
+    const newer = { ...good, when: 'someday', reach: 4 }
+    const [flow] = normalizeCueFlows([{ id: 'x', name: 'Nueva', rules: [newer, good] }]).filter(
+      (f) => f.id === 'x',
+    )
+    expect(flow.rules).toEqual([good])
+    expect(flow.foreign).toEqual([{ at: 0, rule: newer }])
+  })
+
+  it('reads what it set aside the same way again, so a flow goes back and forth between versions unchanged', () => {
+    const good = ONE_AT_32.rules[0]
+    const once = normalizeCueFlows([
+      { id: 'x', name: 'Nueva', rules: [good, { ...good, from: 'bridge' }] },
+    ])
+    expect(normalizeCueFlows(JSON.parse(JSON.stringify(once)))).toEqual(once)
+  })
+
+  it('puts a rule set aside back in its place once this Surco knows its condition', () => {
+    const good = ONE_AT_32.rules[0]
+    const known = { ...good, when: 'always' }
+    const [flow] = normalizeCueFlows([
+      { id: 'x', name: 'Nueva', rules: [good], foreign: [{ at: 0, rule: known }] },
+    ]).filter((f) => f.id === 'x')
+    expect(flow).toEqual({ id: 'x', name: 'Nueva', markPoint: true, rules: [known, good] })
+  })
+
+  it('still drops a rule broken beyond an unknown word, so a hand-edited file never crashes the engine', () => {
+    const good = ONE_AT_32.rules[0]
+    const [flow] = normalizeCueFlows([
+      { id: 'x', name: 'Rota', rules: [{ ...good, when: 'someday', bars: 500 }] },
+    ]).filter((f) => f.id === 'x')
+    expect(flow).toEqual({ id: 'x', name: 'Rota', markPoint: true, rules: [] })
+  })
+
   it('keeps the first of two flows with the same id', () => {
     const flows = normalizeCueFlows([
       MY_FLOW,
