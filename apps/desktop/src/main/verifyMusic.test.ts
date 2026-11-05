@@ -330,6 +330,18 @@ describe('musicEntriesForFile', () => {
   const lookup = (run: Mock<typeof runOsascript>) =>
     musicEntriesForFile({ run, realPath, homeMusicDir: home })
 
+  // Converting a download asks whether Music holds it, and "tell application" opens Music:
+  // a DJ who never uses Music saw it launch for every track. Closed, Music holds nothing
+  // this conversion can break, so the lookup answers without opening it.
+  it('answers without opening Music when it is closed and it may not launch', async () => {
+    const run = vi.fn<typeof runOsascript>().mockResolvedValueOnce('false')
+    const found = await musicEntriesForFile({ run, realPath, launch: false })('/dl/a.aiff', ['A'])
+
+    expect(found).toEqual([])
+    expect(run).toHaveBeenCalledTimes(1)
+    expect(run.mock.calls[0][0]).not.toContain('tell application')
+  })
+
   // The spec counts entries by where the path really lands, not by its spelling: the
   // library references the volume both directly and through the home link.
   it('counts a twin stored through the ~/Music/Music link', async () => {

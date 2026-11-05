@@ -89,7 +89,10 @@ colección tiene (rekordbox, Engine DJ, Traktor, Serato o Apple Music, con su si
 activa o no) se escribe en la carpeta de salida como el resto de la tanda, y el original se
 queda donde estaba (`processTrack.ts`, `newToCollections`; `usedByAnyLibrary`,
 `libraryFlushes.ts:151`). Si alguna la tiene, o no se puede saber, se sigue editando en su
-sitio. Con destino Apple Music, junto al original o editando el original no cambia nada.
+sitio. Apple Music solo se consulta si está abierto, para no abrirlo en cada conversión: cerrado
+no cuenta como colección, y abierto con un archivo sin título deja la pista en su sitio
+(`holdsForConversion`, `musicEntriesIfOpen`). Con destino Apple Music, junto al original o
+editando el original no cambia nada.
 
 ### ALAC solo sobrescribe un `.m4a`
 
