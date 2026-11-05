@@ -20,7 +20,7 @@ import { FLOW_TO } from '../../lib/cueTwins'
 import { LIBRARY_NAME } from '../../lib/reviewLibraries'
 import type { SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
-import { CueFlowPreview } from '../CueFlowPreview'
+import { CueFlowPreview, CueFlowTrackPreview } from '../CueFlowPreview'
 import { CueRuleRow } from '../CueRuleRow'
 import { SegmentedControl } from '../SegmentedControl'
 import { SPLIT_ITEM, useSplitMenu } from '../SplitButton'
@@ -33,6 +33,7 @@ interface Props {
   synced: SyncedDraft
   patch: PatchSynced
   rekordboxCollection: string
+  cueTrack?: { contentId: string; label: string }
 }
 
 const NEW_RULE: CueRule = {
@@ -52,7 +53,12 @@ const DROP_MENU =
   'animate-pop-flat absolute top-full z-50 mt-1 overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-panel-2)] py-1 shadow-[var(--shadow-float)]'
 const GROUP = 'divide-y divide-[var(--color-line)] rounded-lg border border-[var(--color-line)]'
 
-export function CuesTab({ synced, patch, rekordboxCollection }: Props): React.JSX.Element {
+export function CuesTab({
+  synced,
+  patch,
+  rekordboxCollection,
+  cueTrack,
+}: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [current, setCurrent] = useState(synced.activeCueFlow)
   const [removals, setRemovals] = useState(0)
@@ -304,7 +310,11 @@ export function CuesTab({ synced, patch, rekordboxCollection }: Props): React.JS
       </div>
 
       <section aria-label={tr('settings.cueFlows.preview')}>
-        <CueFlowPreview flow={flow} />
+        {cueTrack ? (
+          <CueFlowTrackPreview flow={flow} track={cueTrack} />
+        ) : (
+          <CueFlowPreview flow={flow} />
+        )}
       </section>
       <div className="flex flex-col gap-2">
         <div className="flex items-baseline justify-between gap-3">

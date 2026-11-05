@@ -1,6 +1,13 @@
 import type { CueFlow, FlowPhrase, PhraseKind } from '../../../shared/cueFlows'
-import { type FlowOutcome, flowOutcome, type StrongPart } from '../../../shared/cueRules'
-import type { CueWaveColumn } from '../../../shared/types'
+import {
+  type FlowOutcome,
+  type FlowTrack,
+  findDrops,
+  flowOutcome,
+  SAME_POSITION_MS,
+  type StrongPart,
+} from '../../../shared/cueRules'
+import type { CueWaveColumn, TrackCues } from '../../../shared/types'
 
 const BEAT_MS = 60000 / 128
 const BARS = 192
@@ -49,6 +56,13 @@ export const EXAMPLE_WAVE: CueWaveColumn[] = Array.from({ length: BARS }, (_, ba
   return { h: level * (bar % 4 === 0 ? 1 : 0.85), rgb: null }
 })
 
+export const EXAMPLE_TRACK: FlowTrack = {
+  beats: EXAMPLE_GRID.map((b) => b.ms),
+  drops: [EXAMPLE_DROP],
+  strong: EXAMPLE_STRONG,
+  phrases: EXAMPLE_PHRASES,
+}
+
 export function examplePlan(flow: CueFlow): FlowOutcome {
   return flowOutcome({
     existing: [],
@@ -60,4 +74,37 @@ export function examplePlan(flow: CueFlow): FlowOutcome {
     flow,
     point: EXAMPLE_DROP,
   })
+}
+
+export function trackOfCues(read: TrackCues): FlowTrack {
+  const live = read.cues.filter((c) => !c.loop)
+  return {
+    beats: read.grid.map((b) => b.ms),
+    drops: findDrops(
+      live.filter((c) => c.kind === 0).map((c) => c.ms),
+      live.filter((c) => c.kind !== 0).map((c) => c.ms),
+    ),
+    strong: read.strong,
+    phrases: read.phrases,
+  }
+}
+
+export function trackPlan(flow: CueFlow, track: FlowTrack): FlowOutcome {
+  return flowOutcome({
+    existing: track.drops.map((ms, i) => ({ id: `mark-${i}`, ms, kind: 0, color: null })),
+    drops: track.drops,
+    previousDrops: [],
+    beats: track.beats,
+    strong: track.strong,
+    phrases: track.phrases,
+    flow,
+  })
+}
+
+export function differingHot(planned: number[], existing: number[]): number {
+  const near = (a: number, b: number): boolean => Math.abs(a - b) <= SAME_POSITION_MS
+  return (
+    planned.filter((p) => !existing.some((e) => near(p, e))).length +
+    existing.filter((e) => !planned.some((p) => near(p, e))).length
+  )
 }

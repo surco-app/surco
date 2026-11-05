@@ -2583,6 +2583,14 @@ export default function App(): React.JSX.Element {
     cuesOpen && selected ? playlistScope?.contentOf.get(selected.id) : undefined
   const selectedPath = selected?.inputPath
   const selectedLabel = selected?.listLabel
+  const selectedCueId = selected ? playlistScope?.contentOf.get(selected.id) : undefined
+  const cueTrack = useMemo(
+    () =>
+      selectedCueId && selectedLabel !== undefined
+        ? { contentId: selectedCueId, label: selectedLabel }
+        : undefined,
+    [selectedCueId, selectedLabel],
+  )
   const rekordboxCue = useMemo(
     () =>
       selectedContentId && selectedPath !== undefined && selectedLabel !== undefined
@@ -3797,6 +3805,7 @@ export default function App(): React.JSX.Element {
               updateTrack={updateTrack}
               revealSelection={revealSelection}
               playlistLibraries={playlistLibraries}
+              cueTrack={cueTrack}
             />
 
             <ToastStack toasts={toasts} onExpire={expireToast} onClose={closeToast} />

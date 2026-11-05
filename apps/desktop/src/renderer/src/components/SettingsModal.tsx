@@ -58,6 +58,7 @@ interface Props {
   onSettingsReplaced: (next: Settings) => void
   initialTab?: SettingsTab
   playlistLibraries?: PlaylistLibrary[]
+  cueTrack?: { contentId: string; label: string }
 }
 
 export function SettingsModal({
@@ -68,6 +69,7 @@ export function SettingsModal({
   onSettingsReplaced,
   initialTab,
   playlistLibraries,
+  cueTrack,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [tab, setTab] = useState<SettingsTab>(initialTab ?? 'general')
@@ -525,7 +527,12 @@ export function SettingsModal({
             {tab === 'layout' && <LayoutTab synced={synced} patch={patch} />}
             {tab === 'artwork' && <ArtworkTab synced={synced} patch={patch} />}
             {tab === 'cues' && (
-              <CuesTab synced={synced} patch={patch} rekordboxCollection={rekordboxCollection} />
+              <CuesTab
+                synced={synced}
+                patch={patch}
+                rekordboxCollection={rekordboxCollection}
+                cueTrack={cueTrack}
+              />
             )}
             {tab === 'fields' && (
               <FieldsEditor

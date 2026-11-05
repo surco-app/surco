@@ -1743,6 +1743,23 @@
       "noRules": "ルールがありません。このフローはマークした位置に CALL を置くだけです。",
       "preview": "プレビュー",
       "previewHint": "128 BPM のサンプルトラック、{{bar}} 小節目にマーク",
+      "exampleTrack": "サンプルトラック",
+      "noMark": "{{label}} にはまだマークがないため、プレビューはサンプルトラックを使います",
+      "compareSame": "このトラックの現在のホットキューと同じ",
+      "compareDiffer_one": "{{count}} 個のホットキューがこのトラックの現在と異なります",
+      "compareDiffer_other": "{{count}} 個のホットキューがこのトラックの現在と異なります",
+      "leftOut": {
+        "back_one": "ルール {{rule}}、{{count}} 小節前",
+        "back_other": "ルール {{rule}}、{{count}} 小節前",
+        "forward_one": "ルール {{rule}}、{{count}} 小節後",
+        "forward_other": "ルール {{rule}}、{{count}} 小節後",
+        "reason": {
+          "strong": "コーラスの中",
+          "point": "別のマークを越える",
+          "start": "トラックの開始前",
+          "end": "トラックの終了後"
+        }
+      },
       "tooMany": "このフローは {{count}} 個のホットキューを必要としますが、rekordbox は 8 個までです",
       "looseCall": "単独の CALL は次回マークとして扱われます",
       "block": {
