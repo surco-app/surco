@@ -1,5 +1,48 @@
 [
   {
+    "version": "1.26",
+    "date": "November 5, 2026",
+    "title": "Deine DJ-Software in einem eigenen Tab, und feinere Cue-Abläufe",
+    "items": [
+      {
+        "text": "Zum Start fragt Surco, welche DJ-Software du nutzt, und deine Antwort entscheidet, was du in der Seitenleiste und im Editor siehst. In den Einstellungen bündelt der neue Tab „DJ-Software“ Sammlung und Konvertierung jedes Programms, eines nach dem anderen und über eine Leiste gewählt, und „Ausgabe“ bleibt nur noch, wohin deine Dateien gehen.",
+        "in": "1.26.0"
+      },
+      {
+        "text": "Cue-Abläufe haben zwei neue Bedingungen. „bis zur vorherigen Markierung“ lässt einen Countdown durch Refrains ohne Markierung laufen, und „wenn in den nächsten“ Takten keine andere Cue kommt, wird eine Cue weggelassen, wenn gleich danach eine andere folgt. Jede Regel bietet nur die Bedingungen an, die zu ihr passen, und sagt darunter, was sie tut.",
+        "in": "1.26.0"
+      },
+      {
+        "text": "In Einstellungen › Cues nutzt die Vorschau des Ablaufs den ausgewählten Track, sagt dir, wie viele Hot Cues sich gegenüber den vorhandenen ändern würden, und welche Cues wegfallen und warum.",
+        "in": "1.26.0"
+      },
+      {
+        "text": "Sobald Surco gelernt hat, wie du markierst, öffnet sich der Tab „Cues“ mit deinen Abläufen, und über das + legst du mit „Aus deiner Art zu markieren“ einen an. Das Gelernte passt in eine Zeile, die sagt, aus wie vielen Tracks und woher, und den Rest öffnest du mit „Was Surco gelernt hat“.",
+        "in": "1.26.0"
+      },
+      {
+        "text": "„Auto-Markieren“ schlägt keine zwei Drops mehr vor, die 32 Takte oder weniger auseinanderliegen, und behält den stärkeren, so bekommt ein Build-up den ganzen Countdown statt zwei halber.",
+        "in": "1.26.0"
+      },
+      {
+        "text": "In der Kopfzeile „Metadaten“ des Editors hast du Symbole, um die Metadaten eines Tracks zu kopieren, sie in einen anderen einzufügen und „Im Finder zeigen“.",
+        "in": "1.26.0"
+      },
+      {
+        "text": "„Alle Tracks konvertieren“ sagt dir, wie viele Tracks draußen bleiben, weil ein Pflichtfeld fehlt, und welche Felder.",
+        "in": "1.26.0"
+      },
+      {
+        "text": "Mit „Ausgabeordner“ landet auch ein neuer Track, der schon im Ausgabeformat ist, in diesem Ordner, statt dort zu bleiben, wo du ihn heruntergeladen hast. Tracks, die schon in deiner DJ-Software sind, werden weiter dort aktualisiert, wo sie liegen.",
+        "in": "1.26.0"
+      },
+      {
+        "text": "Die Qualitätsanalyse läuft weiter, während Surco hinter anderen Fenstern liegt, außer ein DJ-Programm ist offen. Und wenn du Apple Music nicht nutzt, öffnet das Konvertieren es nicht mehr.",
+        "in": "1.26.0"
+      }
+    ]
+  },
+  {
     "version": "1.25",
     "date": "November 4, 2026",
     "title": "Ein Qualitätsfeld, und Suchen nach deinen Regeln in den DJ-Tabs",

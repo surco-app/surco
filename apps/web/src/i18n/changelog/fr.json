@@ -1,5 +1,48 @@
 [
   {
+    "version": "1.26",
+    "date": "November 5, 2026",
+    "title": "Tes logiciels DJ dans leur propre onglet, et des flux de cues plus fins",
+    "items": [
+      {
+        "text": "Au démarrage, Surco te demande quels logiciels DJ tu utilises, et ta réponse décide de ce que tu vois dans la barre latérale et dans l’éditeur. Dans les réglages, le nouvel onglet « Logiciels DJ » réunit la collection et la conversion de chaque logiciel, un à la fois et choisi depuis une barre, et « Sortie » ne garde que l’endroit où vont tes fichiers.",
+        "in": "1.26.0"
+      },
+      {
+        "text": "Les flux de cues ont deux nouvelles conditions. « jusqu’à la marque précédente » laisse un compte à rebours traverser les refrains sans marque, et « si aucune autre cue n’arrive dans les » mesures suivantes laisse une cue de côté quand une autre arrive juste après. Chaque règle ne propose que les conditions qui lui conviennent et te dit en dessous ce qu’elle fait.",
+        "in": "1.26.0"
+      },
+      {
+        "text": "Dans Réglages › Cues, l’aperçu du flux utilise le morceau sélectionné, te dit combien de hot cues changeraient par rapport à ceux qu’il a déjà, et quelles cues restent de côté et pourquoi.",
+        "in": "1.26.0"
+      },
+      {
+        "text": "Une fois que Surco a appris ta façon de marquer, l’onglet « Cues » s’ouvre sur tes flux, et depuis le + tu en crées un avec « À partir de ta façon de marquer ». Ce qu’il a appris tient en une ligne qui dit à partir de combien de morceaux et d’où ils viennent, et tu ouvres le reste avec « Ce que Surco a appris ».",
+        "in": "1.26.0"
+      },
+      {
+        "text": "« Marquage auto » ne propose plus deux drops à 32 mesures ou moins l’un de l’autre et garde le plus fort, ainsi un même build-up reçoit le compte à rebours entier au lieu de deux coupés.",
+        "in": "1.26.0"
+      },
+      {
+        "text": "Dans l’en-tête « Métadonnées » de l’éditeur, tu as des icônes pour copier les métadonnées d’un morceau, les coller dans un autre et « Afficher dans le Finder ».",
+        "in": "1.26.0"
+      },
+      {
+        "text": "« Convertir tous les morceaux » te dit combien de morceaux restent de côté parce qu’il leur manque un champ obligatoire, et lesquels.",
+        "in": "1.26.0"
+      },
+      {
+        "text": "Avec « Dossier de sortie », un nouveau morceau déjà au format de sortie va lui aussi dans ce dossier, au lieu de rester là où tu l’as téléchargé. Ceux qui sont déjà dans ton logiciel DJ continuent d’être mis à jour là où ils sont.",
+        "in": "1.26.0"
+      },
+      {
+        "text": "L’analyse de qualité continue quand Surco est derrière d’autres fenêtres, sauf si un logiciel DJ est ouvert. Et si tu n’utilises pas Apple Music, convertir ne l’ouvre plus.",
+        "in": "1.26.0"
+      }
+    ]
+  },
+  {
     "version": "1.25",
     "date": "November 4, 2026",
     "title": "Un champ Qualité, et des recherches à ta façon dans les onglets DJ",

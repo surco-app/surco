@@ -1,5 +1,48 @@
 [
   {
+    "version": "1.26",
+    "date": "November 5, 2026",
+    "title": "Seus programas de DJ numa aba só deles, e fluxos de cues mais finos",
+    "items": [
+      {
+        "text": "Ao começar, o Surco pergunta com quais programas você toca, e o que você escolhe decide o que aparece na barra lateral e no editor. Nos ajustes, a nova aba “Programas de DJ” reúne a coleção e a conversão de cada programa, um de cada vez e escolhido numa barra, e “Saída” fica só com o destino dos arquivos.",
+        "in": "1.26.0"
+      },
+      {
+        "text": "Os fluxos de cues têm duas condições novas. “até a marca anterior” deixa uma contagem regressiva atravessar refrões sem marca, e “se não vier outra cue nos próximos” compassos deixa uma cue de fora quando outra vem logo depois. Cada regra oferece só as condições que servem para ela e diz embaixo o que faz.",
+        "in": "1.26.0"
+      },
+      {
+        "text": "Em Ajustes › Cues, a prévia do fluxo usa a faixa selecionada, diz quantos hot cues mudariam em relação aos que ela já tem e quais cues ficam de fora e por quê.",
+        "in": "1.26.0"
+      },
+      {
+        "text": "Quando o Surco aprende como você marca, a aba “Cues” abre nos seus fluxos, e pelo + você cria um com “A partir de como você marca”. O que ele aprendeu cabe numa linha que diz de quantas faixas e de onde vêm, e o resto você abre com “O que o Surco aprendeu”.",
+        "in": "1.26.0"
+      },
+      {
+        "text": "“Marcar automático” não propõe mais dois drops a 32 compassos ou menos um do outro e fica com o mais forte, assim um mesmo build-up recebe a contagem inteira em vez de duas pela metade.",
+        "in": "1.26.0"
+      },
+      {
+        "text": "No cabeçalho “Metadados” do editor há ícones para copiar os metadados de uma faixa, colá-los em outra e “Mostrar no Finder”.",
+        "in": "1.26.0"
+      },
+      {
+        "text": "“Converter todas as faixas” diz quantas faixas ficam de fora porque falta um campo obrigatório, e quais campos.",
+        "in": "1.26.0"
+      },
+      {
+        "text": "Com “Pasta de saída”, uma faixa nova que já está no formato de saída também vai para essa pasta, em vez de ficar onde você baixou. As que já estão no seu programa de DJ continuam sendo atualizadas onde estão.",
+        "in": "1.26.0"
+      },
+      {
+        "text": "A análise de qualidade continua com o Surco atrás de outras janelas, a não ser que um programa de DJ esteja aberto. E se você não usa o Apple Music, converter não abre mais ele.",
+        "in": "1.26.0"
+      }
+    ]
+  },
+  {
     "version": "1.25",
     "date": "November 4, 2026",
     "title": "Um campo de Qualidade, e buscas do seu jeito nas abas de DJ",

@@ -1,5 +1,48 @@
 [
   {
+    "version": "1.26",
+    "date": "November 5, 2026",
+    "title": "Your DJ software in its own tab, and finer cue flows",
+    "items": [
+      {
+        "text": "When you start, Surco asks which DJ software you use, and your answer decides what you see in the sidebar and in the editor. In the settings, the new “DJ software” tab gathers each program's collection and conversion settings, one at a time and picked from a bar, and “Output” is left with where your files go.",
+        "in": "1.26.0"
+      },
+      {
+        "text": "Cue flows have two new conditions. “until the previous mark” lets a countdown cross choruses with no mark in them, and “if no other cue comes in the next” bars leaves a cue out when another comes right after. Each rule only offers the conditions that suit it and tells you underneath what it does.",
+        "in": "1.26.0"
+      },
+      {
+        "text": "In Settings › Cues, the flow preview uses the track you have selected, tells you how many hot cues would change from the ones it already has, and which cues are left out and why.",
+        "in": "1.26.0"
+      },
+      {
+        "text": "Once Surco has learned how you mark, the “Cues” tab opens on your flows, and from the + you create one with “From how you mark”. What it learned fits in one line that says from how many tracks and where they come from, and you open the rest with “What Surco learned”.",
+        "in": "1.26.0"
+      },
+      {
+        "text": "“Auto mark” no longer proposes two drops 32 bars or less apart and keeps the stronger one, so one build-up gets the full countdown instead of two cut short.",
+        "in": "1.26.0"
+      },
+      {
+        "text": "In the editor's “Metadata” header you have icons to copy a track's metadata, paste it into another, and “Reveal in Finder”.",
+        "in": "1.26.0"
+      },
+      {
+        "text": "“Convert all tracks” tells you how many tracks are left out because a required field is missing, and which fields.",
+        "in": "1.26.0"
+      },
+      {
+        "text": "With “Output folder”, a new track that is already in the output format goes to that folder too, instead of staying where you downloaded it. Tracks already in your DJ software are still updated where they are.",
+        "in": "1.26.0"
+      },
+      {
+        "text": "The quality analysis carries on while Surco sits behind other windows, unless a DJ program is open. And if you don't use Apple Music, converting no longer opens it.",
+        "in": "1.26.0"
+      }
+    ]
+  },
+  {
     "version": "1.25",
     "date": "November 4, 2026",
     "title": "A Quality field, and searching on your terms in the DJ tabs",

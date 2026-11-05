@@ -1,5 +1,48 @@
 [
   {
+    "version": "1.26",
+    "date": "5 de noviembre de 2026",
+    "title": "Tus programas de DJ en su propia pestaña, y flujos de cues más finos",
+    "items": [
+      {
+        "text": "Al empezar, Surco te pregunta con qué programas pinchas, y lo que eliges decide qué ves en la barra lateral y en el editor. En los ajustes, la nueva pestaña «Programas de DJ» reúne la colección y la conversión de cada programa, uno a la vez y elegido desde una barra, y «Destino» se queda solo con adónde van los archivos.",
+        "in": "1.26.0"
+      },
+      {
+        "text": "Los flujos de cues tienen dos condiciones nuevas. «hasta la marca anterior» deja que una cuenta atrás cruce los estribillos sin marca, y «si no viene otro cue en los siguientes» compases deja fuera un cue cuando otro llega justo después. Cada regla te ofrece solo las condiciones que le sirven y te dice debajo qué hace.",
+        "in": "1.26.0"
+      },
+      {
+        "text": "En Ajustes › Cues, la vista previa del flujo usa la pista que tienes seleccionada, te dice cuántos hot cues cambiarían respecto a los que ya tiene y qué cues se quedan fuera y por qué.",
+        "in": "1.26.0"
+      },
+      {
+        "text": "Cuando Surco ha aprendido cómo marcas, la pestaña «Cues» se abre con los flujos, y desde el + creas uno con «Desde cómo marcas». Lo aprendido cabe en una línea que dice de cuántas pistas y de dónde salen, y el resto lo abres con «Lo que aprendió Surco».",
+        "in": "1.26.0"
+      },
+      {
+        "text": "«Auto marcar» ya no propone dos drops a 32 compases o menos el uno del otro y se queda con el más fuerte, así un mismo build-up recibe la cuenta atrás entera en vez de dos a medias.",
+        "in": "1.26.0"
+      },
+      {
+        "text": "En la cabecera de «Metadatos» del editor tienes iconos para copiar los metadatos de una pista, pegarlos en otra y «Mostrar en Finder».",
+        "in": "1.26.0"
+      },
+      {
+        "text": "«Convertir todas las pistas» te dice cuántas pistas se quedan fuera porque les falta un campo obligatorio, y qué campos.",
+        "in": "1.26.0"
+      },
+      {
+        "text": "Con «Carpeta de salida», una pista nueva que ya está en el formato de salida también va a esa carpeta, en vez de quedarse donde la descargaste. Las que ya están en tu programa de DJ se siguen actualizando donde están.",
+        "in": "1.26.0"
+      },
+      {
+        "text": "El análisis de calidad sigue cuando Surco queda detrás de otras ventanas, salvo si tienes abierto un programa de DJ. Y si no usas Apple Music, convertir ya no lo abre.",
+        "in": "1.26.0"
+      }
+    ]
+  },
+  {
     "version": "1.25",
     "date": "4 de noviembre de 2026",
     "title": "Un campo de Calidad, y búsquedas a tu medida en las pestañas de DJ",
