@@ -2,7 +2,7 @@ import { queryOptions, useQueries, useQuery } from '@tanstack/react-query'
 import type { LoudnessResult, PairFacts, SpectrumVerdict } from '../../../shared/types'
 import { analysisOptions, cancellableAnalysisOptions } from '../lib/analysisQueries'
 import type { CopyFacts } from '../lib/bestCopy'
-import { fileExtension } from '../lib/properties'
+import { gradedExt } from '../lib/quality'
 
 // Not an ANALYSIS_QUERY_KEYS family: that eviction matches [family, path], and a pair key
 // carries two paths, so removeAnalysisQueries evicts it on its own when either path goes.
@@ -55,7 +55,7 @@ export function toCopyFacts(
 ): CopyFacts | null {
   if (!spectrum || spectrum.cutoffHz === null || !loud || !fingerprint) return null
   return {
-    ext: fileExtension(path),
+    ext: gradedExt(path, spectrum.codec).toUpperCase(),
     cutoffHz: spectrum.cutoffHz,
     hasKnee: spectrum.hasKnee,
     processed: spectrum.processed,

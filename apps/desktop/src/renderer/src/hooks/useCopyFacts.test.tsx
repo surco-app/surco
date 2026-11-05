@@ -96,6 +96,29 @@ describe('useCopyFacts', () => {
     })
   })
 
+  // Apple Music's own purchases and imports are .m4a, and the extension cannot say AAC or
+  // ALAC; graded as a bare M4A, a FLAC never beat an AAC copy and an ALAC copy never beat
+  // an MP3. The stream's codec is what the comparison must see.
+  it('names an .m4a by the codec it holds, so an AAC copy compares as lossy and an ALAC one as lossless', async () => {
+    const spectrogram = vi.fn(async (path: string) => ({
+      image: '',
+      cutoffHz: 16000,
+      sampleRateHz: 44100,
+      processed: false,
+      hasKnee: true,
+      codec: path.includes('alac') ? 'alac' : 'aac',
+    }))
+    setApi({
+      spectrogram,
+      loudness: vi.fn().mockResolvedValue(loudness),
+      fingerprint: vi.fn().mockResolvedValue('abc'),
+    })
+    const aac = renderHook(() => useCopyFacts('/m/aac.m4a', true), { wrapper: wrapper() })
+    const alac = renderHook(() => useCopyFacts('/m/alac.m4a', true), { wrapper: wrapper() })
+    await waitFor(() => expect(aac.result.current?.ext).toBe('AAC'))
+    await waitFor(() => expect(alac.result.current?.ext).toBe('ALAC'))
+  })
+
   it('has no facts when the spectrum found no cutoff', async () => {
     setApi({
       spectrogram: vi.fn().mockResolvedValue({ image: '', cutoffHz: null }),
