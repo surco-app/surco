@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { FlowPhrase, PhraseKind } from './cueFlows'
 import {
+  DROP_MODEL,
   type DropInput,
   type DropModel,
   detectDrops,
@@ -113,6 +114,14 @@ describe('pickDrops', () => {
     expect(pickDrops(scored, { threshold: -5, spacingBars: 1, maxDrops: 2 })).toEqual([
       64000, 80000,
     ])
+  })
+
+  it('never proposes two marks 16 bars apart with the shipped model, since a 16 bar countdown from the second would land on the first', () => {
+    const pair = [
+      { bar: 100, ms: 200000, score: 2 },
+      { bar: 116, ms: 232000, score: 1 },
+    ]
+    expect(pickDrops(pair, DROP_MODEL.picking)).toEqual([200000])
   })
 
   it('still offers the best guess when nothing clears the bar, because every track breaks somewhere', () => {
