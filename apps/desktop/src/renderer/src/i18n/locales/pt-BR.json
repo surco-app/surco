@@ -1907,6 +1907,35 @@
       "keysMove": "mover",
       "keysOpen": "abrir",
       "keysBack": "voltar às abas"
+    },
+    "formatChoice": {
+      "source": "Cada arquivo mantém seu formato, então um lote misto nunca é recodificado.",
+      "aiff": "Sem perda, com capa e tags que todo programa de DJ lê.",
+      "alac": "Sem perda e comprimido, em um .m4a.",
+      "mp3": "Arquivos menores. Uma origem que já é MP3 nunca é recodificada.",
+      "wav": "Sem perda e sem compressão.",
+      "flac": "Sem perda e comprimido. O Apple Music não aceita."
+    },
+    "mp3Choice": {
+      "320": "320 kbps CBR, o padrão dos pools de DJ.",
+      "256": "256 kbps CBR.",
+      "192": "192 kbps CBR.",
+      "160": "160 kbps CBR.",
+      "128": "128 kbps CBR, o menor.",
+      "v0": "VBR, arquivos menores com qualidade transparente.",
+      "v2": "VBR, menores ainda."
+    },
+    "bitDepthChoice": {
+      "source": "Mantém a profundidade exata de cada arquivo, preenchimento incluído.",
+      "16": "Grava em 16 bits, com dither quando reduz.",
+      "24": "Grava em 24 bits.",
+      "corrected": "Um arquivo que só tem áudio de 16 bits é gravado como 16 bits reais, sem perda. Um de 32 bits é gravado em 24."
+    },
+    "sampleRateChoice": {
+      "source": "Nunca reamostra.",
+      "44100": "Todos os arquivos em 44,1 kHz, para equipamentos que pedem isso.",
+      "48000": "Todos os arquivos em 48 kHz, para equipamentos que pedem isso.",
+      "corrected": "O que foi medido como reamostrado a partir de 44,1 kHz volta para 44,1. O hi-res real mantém sua taxa."
     }
   },
   "errorBoundary": {

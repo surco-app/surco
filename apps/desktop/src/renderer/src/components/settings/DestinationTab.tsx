@@ -175,7 +175,7 @@ function OutputSettings({
           into collection.nml as a side effect of conversion, wherever the file ends up —
           it isn't itself a place the converted file goes. Empty path means the feature
           is off (see settings.ts), so this is the only control that turns it on. */}
-          <SettingsSection eyebrow={tr('settings.traktorSync')} searchId="traktorSync">
+          <SettingsSection eyebrow={tr('settings.traktorSync')} searchId="traktorSync" first>
             {/* One three-state control per program, and the only thing that turns it on or
             off: leave the collection alone, update it, or update it and add new tracks.
             Emptying the path used to be what turned the sync off — an invisible side
