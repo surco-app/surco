@@ -38,7 +38,8 @@ export function ConversionTab({ synced, patch }: Props): React.JSX.Element {
       <div className="flex flex-col gap-5">
         <SettingsField
           label={tr('settings.outputFormat')}
-          hint={tr('settings.outputFormatHint')}
+          hint={tr(`settings.formatChoice.${synced.outputFormat}`)}
+          info={tr('settings.outputFormatHint')}
           searchId="outputFormat"
         >
           <FormatSettingControl
@@ -67,9 +68,10 @@ export function ConversionTab({ synced, patch }: Props): React.JSX.Element {
             <AppliesHint
               testid="settings-mp3-quality-applies"
               applies={tr('settings.mp3QualityApplies')}
-              hint={tr('settings.mp3QualityHint')}
+              hint={tr(`settings.mp3Choice.${synced.mp3Quality}`)}
             />
           }
+          info={tr('settings.mp3QualityHint')}
         >
           <SegmentedControl
             options={['320', '256', '192', '160', '128', 'v0', 'v2'] as const}
@@ -88,9 +90,10 @@ export function ConversionTab({ synced, patch }: Props): React.JSX.Element {
             <AppliesHint
               testid="settings-bit-depth-applies"
               applies={tr('settings.bitDepthApplies')}
-              hint={tr('settings.bitDepthHint')}
+              hint={tr(`settings.bitDepthChoice.${synced.outputBitDepth}`)}
             />
           }
+          info={tr('settings.bitDepthHint')}
         >
           <SegmentedControl
             options={['source', '16', '24', 'corrected'] as const}
@@ -104,7 +107,8 @@ export function ConversionTab({ synced, patch }: Props): React.JSX.Element {
 
         <SettingsField
           label={tr('settings.sampleRate')}
-          hint={tr('settings.sampleRateHint')}
+          hint={tr(`settings.sampleRateChoice.${synced.outputSampleRate}`)}
+          info={tr('settings.sampleRateHint')}
           searchId="sampleRate"
         >
           <SegmentedControl

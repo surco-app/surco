@@ -205,3 +205,40 @@ describe('ConversionTab MP3 quality', () => {
     expect(screen.getByTestId('settings-flac-compression-8')).toBeEnabled()
   })
 })
+
+describe('ConversionTab explanations', () => {
+  // The Format tab read like a manual: every control carried its whole paragraph and what
+  // format to pick competed with how Corrected treats padding. The chosen option says what
+  // it does in one line, and the full text stays one (i) away, word for word.
+  it.each([
+    [
+      'outputFormat',
+      { outputFormat: 'aiff' },
+      'settings.formatChoice.aiff',
+      'settings.outputFormatHint',
+    ],
+    ['mp3Quality', { mp3Quality: 'v0' }, 'settings.mp3Choice.v0', 'settings.mp3QualityHint'],
+    [
+      'bitDepth',
+      { outputBitDepth: 'corrected' },
+      'settings.bitDepthChoice.corrected',
+      'settings.bitDepthHint',
+    ],
+    [
+      'sampleRate',
+      { outputSampleRate: '48000' },
+      'settings.sampleRateChoice.48000',
+      'settings.sampleRateHint',
+    ],
+  ] as const)(
+    'shows the line of the chosen %s and keeps the rest behind (i)',
+    (id, over, line, full) => {
+      renderTab(over)
+      const field = document.querySelector(`[data-search-id="${id}"]`) as HTMLElement
+      expect(field).toHaveTextContent(i18n.t(line))
+      const info = screen.getByTestId(`settings-info-${id}`)
+      expect(info).toHaveTextContent(i18n.t(full))
+      expect(field.textContent?.replace(info.textContent ?? '', '')).not.toContain(i18n.t(full))
+    },
+  )
+})

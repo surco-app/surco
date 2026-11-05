@@ -1,5 +1,7 @@
+import { Info } from 'lucide-react'
 import type React from 'react'
 import { createContext, useContext } from 'react'
+import { Tooltip } from '../Tooltip'
 import { CheckboxRow } from './CheckboxRow'
 
 // The shared building blocks every settings tab draws from, so the panels read as one
@@ -112,18 +114,34 @@ export function SettingsField({
   label,
   htmlFor,
   hint,
+  info,
   children,
   searchId,
 }: {
   label?: string
   htmlFor?: string
   hint?: React.ReactNode
+  info?: string
   children: React.ReactNode
   searchId?: string
 }): React.JSX.Element {
   return (
     <div className="flex flex-col gap-2" data-search-id={searchId}>
-      {label && <SettingsLabel htmlFor={htmlFor}>{label}</SettingsLabel>}
+      {label && !info && <SettingsLabel htmlFor={htmlFor}>{label}</SettingsLabel>}
+      {label && info && (
+        <div className="flex items-center gap-1.5">
+          <SettingsLabel htmlFor={htmlFor}>{label}</SettingsLabel>
+          <button
+            type="button"
+            data-testid={`settings-info-${searchId}`}
+            className="relative inline-flex rounded text-fg-faint hover:text-fg focus-visible:text-fg"
+          >
+            <Info className="h-3.5 w-3.5" aria-hidden="true" />
+            <span className="sr-only">{info}</span>
+            <Tooltip label={info} />
+          </button>
+        </div>
+      )}
       {children}
       {hint && <SettingsHint>{hint}</SettingsHint>}
     </div>
