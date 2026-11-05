@@ -56,6 +56,8 @@
     "convertAll_other": "Converter {{count}} faixas",
     "convertNone": "Converter",
     "convertSome": "Converter {{ready}} de {{total}}",
+    "leftOutMissing_one": "{{count}} faixa fica de fora porque falta {{fields}}",
+    "leftOutMissing_other": "{{count}} faixas ficam de fora porque falta {{fields}}",
     "convertSelected_one": "Converter {{count}} selecionada",
     "convertSelected_other": "Converter {{count}} selecionadas",
     "convertSomeSelected": "Converter {{ready}} de {{total}} selecionadas",

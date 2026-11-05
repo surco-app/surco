@@ -56,6 +56,8 @@
     "convertAll_other": "{{count}} Titel konvertieren",
     "convertNone": "Konvertieren",
     "convertSome": "{{ready}} von {{total}} konvertieren",
+    "leftOutMissing_one": "{{count}} Track bleibt draußen, ihm fehlt {{fields}}",
+    "leftOutMissing_other": "{{count}} Tracks bleiben draußen, ihnen fehlt {{fields}}",
     "convertSelected_one": "{{count}} ausgewählten Titel konvertieren",
     "convertSelected_other": "{{count}} ausgewählte Titel konvertieren",
     "convertSomeSelected": "{{ready}} von {{total}} ausgewählten Titeln konvertieren",

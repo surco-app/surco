@@ -134,7 +134,7 @@ import {
   tracksToAutoMatch,
 } from './lib/autoMatch'
 import { baseName } from './lib/baseName'
-import { canProcessTrack, eligibleForBatch } from './lib/batch'
+import { canProcessTrack, eligibleForBatch, leftOutForMissing } from './lib/batch'
 import {
   buildCommands,
   type Command,
@@ -2045,6 +2045,15 @@ export default function App(): React.JSX.Element {
       ).length,
     [bulkTracks, settings?.requiredFields, settings?.customFields],
   )
+  const leftOut = useMemo(
+    () =>
+      leftOutForMissing(
+        bulkTracks,
+        settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS,
+        settings?.customFields,
+      ),
+    [bulkTracks, settings?.requiredFields, settings?.customFields],
+  )
   // Keyboard / continuous-playback navigation over the visible list (move + scroll paging).
   const {
     moveSelection,
@@ -3307,6 +3316,7 @@ export default function App(): React.JSX.Element {
                   trackCount={listedCount}
                   convertibleCount={eligibleCount}
                   batchSize={bulkTracks.length}
+                  leftOut={leftOut}
                   canConvertAll={canProcessAll}
                   inLibrary={browser.source !== null}
                   multiSelected={selectedTracks.length > 1}

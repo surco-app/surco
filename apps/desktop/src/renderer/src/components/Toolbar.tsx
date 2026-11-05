@@ -33,6 +33,7 @@ interface Props {
   // The tracks the batch covers (the selection, or the visible list), so a count below it
   // reads "1 of 3" and can't be taken for the open track when that one isn't ready.
   batchSize: number
+  leftOut?: { count: number; fields: string[] }
   canConvertAll: boolean
   inLibrary?: boolean
   multiSelected?: boolean
@@ -103,6 +104,7 @@ export const Toolbar = memo(function Toolbar({
   trackCount,
   convertibleCount,
   batchSize,
+  leftOut,
   canConvertAll,
   inLibrary = false,
   multiSelected = false,
@@ -160,6 +162,13 @@ export const Toolbar = memo(function Toolbar({
         : tr(selectionLabel ? 'header.convertSelected' : 'header.convertAll', {
             count: convertibleCount,
           })
+  const leftOutNote =
+    leftOut && leftOut.count > 0 && convertibleCount < batchSize && !libraryReading
+      ? tr('header.leftOutMissing', {
+          count: leftOut.count,
+          fields: leftOut.fields.map((key) => tr(`fields.${key}`)).join(', '),
+        })
+      : null
   return (
     <header
       className="flex h-12 shrink-0 items-center justify-between border-b border-[var(--color-line)] pr-3 pl-20"
@@ -479,6 +488,7 @@ export const Toolbar = memo(function Toolbar({
                 testid="convert-all"
                 Icon={ArrowRightLeft}
                 label={convertLabel}
+                note={leftOutNote}
                 labelWidest={
                   convertibleCount > 0 && convertibleCount < batchSize && !libraryReading
                     ? tr(selectionLabel ? 'header.convertSomeSelected' : 'header.convertSome', {
@@ -552,6 +562,7 @@ export function PrimaryAction({
   ready,
   quiet = false,
   hint,
+  note,
   onRun,
   onCancel,
 }: {
@@ -566,9 +577,11 @@ export function PrimaryAction({
   ready: boolean
   quiet?: boolean
   hint?: string
+  note?: string | null
   onRun: () => void
   onCancel?: () => void
 }): React.JSX.Element {
+  const described = note ? `${label} · ${note}` : label
   return (
     <button
       type="button"
@@ -576,7 +589,7 @@ export function PrimaryAction({
       onClick={running ? onCancel : onRun}
       disabled={running ? !onCancel : !ready}
       data-variant={quiet ? 'secondary' : 'primary'}
-      aria-label={running ? (onCancel ? cancelLabel : undefined) : label}
+      aria-label={running ? (onCancel ? cancelLabel : undefined) : described}
       className={`press group relative flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-medium disabled:opacity-40 ${
         running
           ? 'text-[var(--color-accent)] hover:bg-[var(--color-hover)]'
@@ -607,7 +620,7 @@ export function PrimaryAction({
         </>
       )}
       {(!running || onCancel) && (
-        <Tooltip label={running ? cancelLabel : label} hint={running ? undefined : hint} />
+        <Tooltip label={running ? cancelLabel : described} hint={running ? undefined : hint} />
       )}
     </button>
   )
