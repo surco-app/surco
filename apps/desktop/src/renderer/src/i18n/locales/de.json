@@ -1751,6 +1751,7 @@
         "bars": "Abstand",
         "repeat": "Wiederholen",
         "when": "Bedingung",
+        "gap": "Takte voraus",
         "place": "Setzen",
         "colorMode": "Farbe",
         "color": "Farbe {{n}}"
@@ -1778,8 +1779,18 @@
       "when": {
         "always": "immer",
         "fits": "wenn es passt",
+        "previous": "bis zur vorherigen Markierung",
+        "room": "wenn keine andere Cue folgt innerhalb von",
         "clear": "wenn in diesem Takt keine andere Cue liegt",
         "first": "wenn vor deiner Markierung keins ist"
+      },
+      "whenHint": {
+        "always": "Jede Wiederholung, auch über eine andere Markierung hinweg",
+        "fits": "Stoppt an der vorherigen Markierung und an jedem Refrain",
+        "previous": "Läuft durch Refrains ohne Markierung und stoppt an der vorherigen Markierung",
+        "room": "Lässt sie weg, wenn direkt danach eine andere Cue kommt",
+        "clear": "Lässt sie weg, wenn eine andere Cue im selben Takt liegt",
+        "first": "Nur vor der ersten Markierung, wenn dort noch nichts ist"
       },
       "place": {
         "hot": "Hot Cue",

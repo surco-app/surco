@@ -2,7 +2,7 @@ export type PhraseKind = 'intro' | 'up' | 'down' | 'chorus' | 'outro'
 export type FlowOrigin = 'drop' | 'first-beat' | 'last-beat' | PhraseKind
 export type FlowDirection = 'back' | 'forward'
 export type FlowRepeat = number | 'edge'
-export type FlowCondition = 'always' | 'fits' | 'clear' | 'first'
+export type FlowCondition = 'always' | 'fits' | 'previous' | 'room' | 'clear' | 'first'
 export type FlowPlace = 'hot' | 'call' | 'both'
 export type FlowColor = { fixed: number } | { each: number[] }
 
@@ -14,6 +14,12 @@ export interface CueRule {
   when: FlowCondition
   place: FlowPlace
   color: FlowColor
+  gap?: number
+}
+
+export interface ForeignRule {
+  at: number
+  rule: Record<string, unknown>
 }
 
 export interface CueFlow {
@@ -21,6 +27,7 @@ export interface CueFlow {
   name: string
   markPoint: boolean
   rules: CueRule[]
+  foreign?: ForeignRule[]
 }
 
 export interface FlowPhrase {
@@ -48,7 +55,15 @@ export const FLOW_ORIGINS: FlowOrigin[] = [
   'chorus',
   'outro',
 ]
-export const FLOW_CONDITIONS: FlowCondition[] = ['always', 'fits', 'clear', 'first']
+export const FLOW_CONDITIONS: FlowCondition[] = [
+  'always',
+  'fits',
+  'previous',
+  'room',
+  'clear',
+  'first',
+]
+export const ROOM_GAP = 8
 export const FLOW_PLACES: FlowPlace[] = ['hot', 'call', 'both']
 const DIRECTIONS: FlowDirection[] = ['back', 'forward']
 
@@ -194,11 +209,19 @@ function repeatOf(value: unknown): FlowRepeat | null {
     : null
 }
 
+function gapOf(value: unknown): number | null {
+  if (value === undefined) return ROOM_GAP
+  return typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= 128
+    ? value
+    : null
+}
+
 function ruleOf(value: unknown): CueRule | null {
   if (!value || typeof value !== 'object') return null
   const r = value as Record<string, unknown>
   const color = colorOf(r.color)
   const repeat = repeatOf(r.repeat)
+  const gap = r.when === 'room' ? gapOf(r.gap) : undefined
   const bars = r.bars
   if (
     !FLOW_ORIGINS.includes(r.from as FlowOrigin) ||
@@ -210,7 +233,8 @@ function ruleOf(value: unknown): CueRule | null {
     bars < 0 ||
     bars > 128 ||
     color === null ||
-    repeat === null
+    repeat === null ||
+    gap === null
   )
     return null
   return {
@@ -221,7 +245,47 @@ function ruleOf(value: unknown): CueRule | null {
     when: r.when as FlowCondition,
     place: r.place as FlowPlace,
     color,
+    ...(gap === undefined ? {} : { gap }),
   }
+}
+
+const WORDS: [string, readonly string[]][] = [
+  ['from', FLOW_ORIGINS],
+  ['direction', DIRECTIONS],
+  ['when', FLOW_CONDITIONS],
+  ['place', FLOW_PLACES],
+]
+
+function isForeign(value: unknown): value is Record<string, unknown> {
+  if (!value || typeof value !== 'object') return false
+  const r = value as Record<string, unknown>
+  const unknown = WORDS.filter(
+    ([key, known]) => typeof r[key] === 'string' && r[key] !== '' && !known.includes(r[key]),
+  )
+  if (unknown.length === 0) return false
+  const stand = Object.fromEntries(unknown.map(([key, known]) => [key, known[0]]))
+  return ruleOf({ ...r, ...stand, gap: undefined }) !== null
+}
+
+function storedRules(f: Record<string, unknown>): unknown[] {
+  const all = [...(f.rules as unknown[])]
+  const aside = Array.isArray(f.foreign) ? f.foreign : []
+  const placed = aside
+    .filter((x): x is ForeignRule => !!x && typeof x === 'object' && Number.isInteger(x.at))
+    .sort((a, b) => a.at - b.at)
+  for (const x of placed) all.splice(Math.max(0, Math.min(x.at, all.length)), 0, x.rule)
+  return all
+}
+
+function rulesOf(f: Record<string, unknown>): Pick<CueFlow, 'rules' | 'foreign'> {
+  const rules: CueRule[] = []
+  const foreign: ForeignRule[] = []
+  for (const raw of storedRules(f)) {
+    const rule = ruleOf(raw)
+    if (rule) rules.push(rule)
+    else if (isForeign(raw)) foreign.push({ at: rules.length + foreign.length, rule: raw })
+  }
+  return foreign.length > 0 ? { rules, foreign } : { rules }
 }
 
 export function normalizeCueFlows(value: unknown): CueFlow[] {
@@ -244,10 +308,7 @@ export function normalizeCueFlows(value: unknown): CueFlow[] {
       id: f.id,
       name: typeof f.name === 'string' ? f.name : '',
       markPoint: typeof f.markPoint === 'boolean' ? f.markPoint : true,
-      rules: f.rules.flatMap((r) => {
-        const rule = ruleOf(r)
-        return rule ? [rule] : []
-      }),
+      ...rulesOf(f),
     })
   }
   const bundled = BUNDLED_FLOWS.map((b) => flows.find((f) => f.id === b.id) ?? structuredClone(b))

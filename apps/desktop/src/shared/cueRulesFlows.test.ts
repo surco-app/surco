@@ -15,6 +15,7 @@ import {
   findDrops,
   flowOutcome,
   proposeDrops,
+  rejectedCues,
 } from './cueRules'
 
 const grid = (bars: number): number[] => Array.from({ length: bars * 4 }, (_, i) => i * 500)
@@ -93,6 +94,65 @@ describe('evaluateFlow', () => {
     )
     const out = evaluateFlow(clear, track({ drops: [beat(16) + 1500] }))
     expect(out.cues.map((c) => c.rule)).toEqual([0, 2])
+  })
+
+  it('crosses a chorus with no mark in it until the previous mark, where if it fits stops', () => {
+    const strong = [{ start: beat(16), end: beat(40) }]
+    const at = (when: CueRule['when']) =>
+      evaluateFlow(flow(rule({ repeat: 3, when })), track({ strong })).cues.map((c) => c.ms)
+    expect(at('fits')).toEqual([beat(48)])
+    expect(at('previous')).toEqual([beat(16), beat(32), beat(48)])
+  })
+
+  it('keeps counting back past the start of the chorus the mark sits in, until the previous mark', () => {
+    const strong = [{ start: beat(64), end: beat(100) }]
+    const drops = [beat(80)]
+    const at = (when: CueRule['when']) =>
+      evaluateFlow(flow(rule({ repeat: 3, when })), track({ drops, strong })).cues.map((c) => c.ms)
+    expect(at('fits')).toEqual([beat(64)])
+    expect(at('previous')).toEqual([beat(32), beat(48), beat(64)])
+  })
+
+  it('stops until the previous mark on reaching the chorus that mark sits in', () => {
+    const strong = [{ start: beat(32), end: beat(60) }]
+    const drops = [beat(40), beat(80)]
+    const cues = evaluateFlow(
+      flow(rule({ repeat: 3, when: 'previous' })),
+      track({ drops, strong }),
+    ).cues
+    expect(cues.map((c) => c.ms)).toEqual([beat(8), beat(24), beat(64)])
+  })
+
+  it('says why until the previous mark left each cue out', () => {
+    const strong = [{ start: beat(32), end: beat(60) }]
+    const drops = [beat(40), beat(80)]
+    const out = rejectedCues(flow(rule({ repeat: 3, when: 'previous' })), track({ drops, strong }))
+    expect(out.map((c) => [c.ms, c.reason])).toEqual([
+      [beat(-8), 'start'],
+      [beat(48), 'strong'],
+      [beat(32), 'strong'],
+    ])
+  })
+
+  it('skips the first beat cue when another cue comes within the bars it looks ahead', () => {
+    const first = (drop: number) =>
+      evaluateFlow(
+        flow(rule({ bars: 16 }), rule({ from: 'first-beat', bars: 0, when: 'room', gap: 8 })),
+        track({ drops: [drop] }),
+      ).cues.map((c) => c.rule)
+    expect(first(beat(23))).toEqual([0])
+    expect(first(beat(24))).toEqual([1, 0])
+  })
+
+  it('looks ahead only, so a room cue after an earlier one still goes in', () => {
+    const out = evaluateFlow(
+      flow(
+        rule({ from: 'first-beat', bars: 0, when: 'always' }),
+        rule({ bars: 0, when: 'room', gap: 8 }),
+      ),
+      track({ drops: [beat(2)] }),
+    )
+    expect(out.cues.map((c) => c.rule)).toEqual([0, 1])
   })
 
   it('keeps the earlier rule when two rules land on the same spot', () => {
