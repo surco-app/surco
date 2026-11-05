@@ -619,6 +619,9 @@ describe('useQualityAnalysis in the background', () => {
 
     act(() => setFocused(false))
     await waitFor(() => expect(window.api.djAppRunning).toHaveBeenCalled())
+    await act(async () => {
+      await window.api.djAppRunning()
+    })
     act(() => result.current.analyzeAllQuality())
 
     await waitFor(() => expect(result.current.paused).toBe(true))
