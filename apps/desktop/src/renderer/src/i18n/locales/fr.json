@@ -1952,8 +1952,8 @@
     "next": "Suivant",
     "finish": "Commencer",
     "step": "Étape {{current}} sur {{total}}",
-    "djLibrariesTitle": "Tes collections DJ",
-    "djLibrariesBody": "À la conversion, Surco peut laisser ta collection pointer vers le nouveau fichier, avec ses playlists et ses cue points intacts. Ses playlists apparaissent aussi dans la barre latérale pour que tu les organises et y poses des cues depuis Surco.",
+    "djLibrariesTitle": "Avec quel logiciel DJ mixes-tu ?",
+    "djLibrariesBody": "Surco affiche ses playlists dans la barre latérale et garde chaque morceau à jour quand tu le convertis, avec ses playlists et ses cues. Coche tous ceux que tu utilises.",
     "djLibrariesNote": "Surco sauvegarde la collection avant d'écrire et n'écrit jamais quand le programme est ouvert. Tu peux changer cela plus tard dans les réglages.",
     "djFolder": "Les fichiers sont enregistrés dans {{folder}}",
     "djFolderChange": "Modifier",
@@ -1963,8 +1963,14 @@
       "engine": "Engine DJ",
       "engineBody": "Garder la bibliothèque à jour à la conversion et y ajouter les nouveaux morceaux.",
       "traktor": "Traktor",
-      "traktorBody": "Garder la collection à jour à la conversion, avec ses playlists et ses cues, et y ajouter les nouveaux morceaux."
-    }
+      "traktorBody": "Garder la collection à jour à la conversion, avec ses playlists et ses cues, et y ajouter les nouveaux morceaux.",
+      "serato": "Serato",
+      "seratoBody": "Garder la bibliothèque à jour à la conversion et y ajouter les nouveaux morceaux."
+    },
+    "djLibraryNone": "Aucun, je tague seulement des fichiers",
+    "destinationKeepsCollection": "Les morceaux déjà dans ton logiciel DJ ou dans Apple Music sont mis à jour là où ils sont, et gardent ainsi leur place dans ta collection.",
+    "tokenOffer": "La recherche fonctionne telle quelle. Un token Discogs active « Auto-associer à l'import » et garde les recherches stables aux heures chargées.",
+    "tokenAdd": "Ajouter un token Discogs"
   },
   "help": {
     "title": "Aide et FAQ",

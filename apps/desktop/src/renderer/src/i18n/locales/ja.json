@@ -1952,8 +1952,8 @@
     "next": "次へ",
     "finish": "完了",
     "step": "ステップ {{current}} of {{total}}",
-    "djLibrariesTitle": "あなたのDJコレクション",
-    "djLibrariesBody": "トラックを変換するとき、Surcoは新しいファイルを指すようにコレクションを残すことができ、プレイリストとキューポイントはそのまま保持されます。プレイリストはサイドバーにも表示されるので、Surcoから整理したりキューを設定したりできます。",
+    "djLibrariesTitle": "どのDJソフトを使っていますか？",
+    "djLibrariesBody": "Surcoはそのプレイリストをサイドバーに表示し、変換したトラックをプレイリストやキューごと最新の状態に保ちます。使っているものをすべて選んでください。",
     "djLibrariesNote": "Surcoは書き込み前にコレクションをバックアップし、プログラムが開いている間は書き込みを行いません。設定で後で変更できます。",
     "djFolder": "ファイルの保存先: {{folder}}",
     "djFolderChange": "変更",
@@ -1963,8 +1963,14 @@
       "engine": "Engine DJ",
       "engineBody": "変換時にライブラリを同期させ、新しいトラックも追加する。",
       "traktor": "Traktor",
-      "traktorBody": "変換時にプレイリストとキューを含めてコレクションを同期させ、新しいトラックも追加する。"
-    }
+      "traktorBody": "変換時にプレイリストとキューを含めてコレクションを同期させ、新しいトラックも追加する。",
+      "serato": "Serato",
+      "seratoBody": "変換時にライブラリを同期させ、新しいトラックも追加する。"
+    },
+    "djLibraryNone": "使っていない（ファイルのタグ付けだけ）",
+    "destinationKeepsCollection": "DJソフトやApple Musicにすでにあるトラックはその場で更新され、コレクション内の位置が保たれます。",
+    "tokenOffer": "検索はそのまま使えます。Discogsトークンがあると「インポート時の自動マッチング」が使え、混雑時も検索が安定します。",
+    "tokenAdd": "Discogsトークンを追加"
   },
   "help": {
     "title": "ヘルプ & FAQ",

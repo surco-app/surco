@@ -50,7 +50,7 @@ export const defaults: Settings = {
   outputFormat: 'aiff',
   // Off by default: exports honor the chosen format unless the user opts in.
   keepMp3Sources: true,
-  addToAppleMusic: process.platform === 'darwin',
+  addToAppleMusic: false,
   // Keep a copy in the output folder by default; "Apple Music only" is opt-in.
   keepOutputCopy: true,
   // Off by default: exports produce a copy and never touch the source unless the user

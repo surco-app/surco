@@ -1480,9 +1480,14 @@ llega: su biblioteca no se encuentra y, en Traktor, además falta elegir su `col
 (`reachable`, `Editor.tsx:356`). En lote, «Convertir (3) · AIFF +
 rekordbox».
 
-**El asistente de primer arranque** pregunta por cada programa que encuentra con una casilla
-(`onboarding-sync-*`), y marcarla lo pone en «Actualizar y añadir» (`reachProgram`,
-`OnboardingWizard.tsx:127`). Si el programa ya estaba en «Actualizar», se muestra marcado y se
+**El asistente de primer arranque** pregunta, justo después de la bienvenida y desde v1.26,
+por cada programa que encuentra (rekordbox, Engine DJ, Traktor y Serato) con una casilla
+(`onboarding-sync-*`) y una fila «Ninguno», y marcarla lo pone en «Actualizar y añadir»
+(`reachProgram`). En la primera ejecución vienen marcados rekordbox y Traktor; Engine DJ y
+Serato se ofrecen sin marcar, porque escribir en una biblioteca que el DJ no puede reconstruir
+se elige. Al terminar, lo que no se marcó deja de verse en la barra lateral y sus campos de
+playlists en el editor (`programChoicePatch`, `lib/onboarding.ts`); siguen en Ajustes. Los
+catálogos y el token de Discogs van al final, y el token detrás de un botón. Si el programa ya estaba en «Actualizar», se muestra marcado y se
 queda así hasta que se pulse. Con Engine DJ marcado muestra su biblioteca debajo
 (`OnboardingWizard.tsx:365`). Si hay algún programa marcado y el destino es la carpeta de
 salida, dice «Los archivos se guardan en …» con un botón para cambiarla

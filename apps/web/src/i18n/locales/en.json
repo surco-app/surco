@@ -625,7 +625,7 @@
         ],
         "points": [
           "Out of the box it analyzes everything on import and searches Discogs, Bandcamp, Deezer and MusicBrainz with nothing to set up.",
-          "If Surco finds your rekordbox, Engine DJ or Traktor collection, the wizard adds a fifth step."
+          "If Surco finds rekordbox, Traktor, Engine DJ or Serato, right after the welcome it asks which one you play with, and the ones you leave unticked stop showing in the sidebar."
         ],
         "shot": "instalar-en.webp",
         "shotCaption": "The welcome wizard on first launch."

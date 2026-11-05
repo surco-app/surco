@@ -1,3 +1,4 @@
+import { LIBRARY_PROGRAMS, type LibraryProgram } from '../../../shared/djProgram'
 import {
   DEFAULT_EDITOR_SECTIONS,
   type EditorSectionId,
@@ -5,6 +6,7 @@ import {
   normalizeEditorSections,
 } from '../../../shared/editorSections'
 import type { Settings } from '../../../shared/types'
+import { PLAYLIST_FIELDS } from './fields'
 import { buildSettingsPatch, type LocalDraft, type SyncedDraft } from './settingsDraft'
 
 // What the DJ says they do with a track's audio, asked as plain intent rather than by
@@ -148,5 +150,26 @@ export function buildOnboardingPatch(
       : deriveEditorSections(drafts.audioIntents),
     ...(newcomer ? { autoApplyFilename: true } : {}),
     hasSeenOnboarding: true,
+  }
+}
+
+const PLAYLISTS_FIELD_OFFERED = {
+  rekordbox: 'rekordboxPlaylistsFieldOffered',
+  traktor: 'traktorPlaylistsFieldOffered',
+  engine: 'enginePlaylistsFieldOffered',
+  serato: 'seratoPlaylistsFieldOffered',
+} as const satisfies Record<LibraryProgram, keyof Settings>
+
+export function programChoicePatch(
+  chosen: readonly LibraryProgram[],
+  settings: Pick<Settings, 'hiddenSources' | 'visibleFields'>,
+): Partial<Settings> {
+  const unchosen = LIBRARY_PROGRAMS.filter((p) => !chosen.includes(p))
+  const kept = settings.hiddenSources.filter((s) => !chosen.includes(s as LibraryProgram))
+  const hidden = unchosen.map((p) => PLAYLIST_FIELDS[p])
+  return {
+    hiddenSources: [...kept, ...unchosen.filter((p) => !kept.includes(p))],
+    visibleFields: settings.visibleFields.filter((f) => !hidden.includes(f)),
+    ...Object.fromEntries(unchosen.map((p) => [PLAYLISTS_FIELD_OFFERED[p], true])),
   }
 }

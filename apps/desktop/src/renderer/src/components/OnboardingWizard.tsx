@@ -2,11 +2,18 @@ import { AudioLines } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { LIBRARY_PROGRAMS } from '../../../shared/djProgram'
 import type { Settings } from '../../../shared/types'
-import { DESTINATIONS, fromDestination, toDestination } from '../lib/destination'
+import { useStableCallback } from '../hooks/useStableCallback'
+import { type DESTINATIONS, fromDestination, toDestination } from '../lib/destination'
 import { type DetectedDjLibrary, detectedDjLibraries } from '../lib/djLibraries'
 import { DJ_REACH_SETTINGS, toDjReach } from '../lib/djReach'
-import { type AudioIntent, buildOnboardingPatch, seedAudioIntents } from '../lib/onboarding'
+import {
+  type AudioIntent,
+  buildOnboardingPatch,
+  programChoicePatch,
+  seedAudioIntents,
+} from '../lib/onboarding'
 import { isMacOS } from '../lib/platform'
 import { formatKHz } from '../lib/quality'
 import { type LocalDraft, pickLocal, pickSynced, type SyncedDraft } from '../lib/settingsDraft'
@@ -26,8 +33,10 @@ const AUDIO_INTENTS: AudioIntent[] = ['restore', 'level', 'quality']
 // format + destination) plus the workflow question that tailors the editor to the DJ.
 // Naming, grouping/genre presets and the fields editor are power-user tuning that lives
 // in Settings — every extra question here delays the first drop of files.
-const BASE_STEPS = ['welcome', 'search', 'format', 'audio'] as const
-type Step = (typeof BASE_STEPS)[number] | 'djLibraries'
+const AFTER_PROGRAMS = ['format', 'audio', 'search'] as const
+type Step = 'welcome' | 'djLibraries' | (typeof AFTER_PROGRAMS)[number]
+const PRESELECTED = new Set<DetectedDjLibrary['id']>(['rekordbox', 'traktor'])
+const WIZARD_DESTINATIONS = ['folder', 'beside', 'appleMusic'] as const
 
 interface Props {
   settings: Settings
@@ -60,6 +69,12 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
   // the wizard's length is decided by what was found rather than fixed — a user with no DJ
   // software still finishes at step 4 of 4, with no empty step and no gap in the count.
   const [djLibraries, setDjLibraries] = useState<DetectedDjLibrary[]>([])
+  const [firstPick] = useState(() =>
+    LIBRARY_PROGRAMS.every(
+      (p) => !settings[DJ_REACH_SETTINGS[p].sync] && !settings[DJ_REACH_SETTINGS[p].add],
+    ),
+  )
+  const [tokenOpen, setTokenOpen] = useState(() => settings.discogsToken !== '')
   // A detection landing after the user moved on would grow the wizard under them (the
   // count jumps and Finish turns into Next), so from the second step on the length holds.
   const movedOn = useRef(false)
@@ -69,22 +84,28 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
       window.api.rekordboxCollection(),
       window.api.engineAvailable(),
       window.api.detectTraktorNmlPath(),
+      window.api.seratoAvailable(),
     ])
-      .then(([rekordbox, engine, traktor]) =>
+      .then(([rekordbox, engine, traktor, serato]) =>
         detectedDjLibraries({
           rekordbox,
           engine: engine ? settings.engineLibraryDir : '',
           traktor: traktor ?? '',
+          ...(serato ? { serato: true as const } : {}),
         }),
       )
       // A probe that fails only means there is no collections step to offer.
       .catch((): DetectedDjLibrary[] => [])
       .then((found) => {
-        if (!movedOn.current) setDjLibraries(found)
+        if (movedOn.current) return
+        setDjLibraries(found)
       })
   }, [settings.engineLibraryDir])
-  const STEPS: readonly Step[] =
-    djLibraries.length > 0 ? [...BASE_STEPS, 'djLibraries'] : BASE_STEPS
+  const STEPS: readonly Step[] = [
+    'welcome',
+    ...(djLibraries.length > 0 ? (['djLibraries'] as const) : []),
+    ...AFTER_PROGRAMS,
+  ]
 
   // Each step change lands the focus on the new step's heading: Back unmounts on the first
   // step and the focus fell to body, outside the trap, and a focused heading is also what
@@ -106,7 +127,18 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
     setLocal((p) => ({ ...p, [key]: value }))
   }
   function finish(): void {
-    onFinish(buildOnboardingPatch({ synced, local, audioIntents, seededIntents, settings }))
+    const base = buildOnboardingPatch({ synced, local, audioIntents, seededIntents, settings })
+    onFinish(
+      djLibraries.length > 0
+        ? {
+            ...base,
+            ...programChoicePatch(
+              djLibraries.filter(reaches).map((l) => l.id),
+              settings,
+            ),
+          }
+        : base,
+    )
   }
 
   // FLAC can't go to Apple Music, so the destination pins to the output folder while
@@ -124,12 +156,19 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
     patch('overwriteOriginal', next.overwriteOriginal)
     patch('convertBesideOriginal', next.convertBesideOriginal)
   }
-  function reachProgram(library: DetectedDjLibrary, on: boolean): void {
+  const reachProgram = useStableCallback((library: DetectedDjLibrary, on: boolean): void => {
     patch(DJ_REACH_SETTINGS[library.id].sync, on)
     patch(DJ_REACH_SETTINGS[library.id].add, on)
     if (library.id === 'traktor' && on && !local.traktorNmlPath)
       patchLocal('traktorNmlPath', library.path)
-  }
+  })
+  const preselected = useRef(false)
+  useEffect(() => {
+    if (preselected.current || !firstPick || djLibraries.length === 0) return
+    preselected.current = true
+    for (const library of djLibraries) if (PRESELECTED.has(library.id)) reachProgram(library, true)
+  }, [djLibraries, firstPick, reachProgram])
+
   async function changeOutputDir(): Promise<void> {
     const dir = await window.api.pickOutputDir()
     if (dir) patchLocal('outputDir', dir)
@@ -200,11 +239,25 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
 
                 {discogsOn && (
                   <div className="mt-5 border-t border-[var(--color-line)] pt-4">
-                    <DiscogsTokenField
-                      value={local.token}
-                      onChange={(value) => patchLocal('token', value)}
-                      testid="onboarding-token"
-                    />
+                    {tokenOpen ? (
+                      <DiscogsTokenField
+                        value={local.token}
+                        onChange={(value) => patchLocal('token', value)}
+                        testid="onboarding-token"
+                      />
+                    ) : (
+                      <p className="text-sm text-fg-dim">
+                        {tr('onboarding.tokenOffer')}{' '}
+                        <button
+                          type="button"
+                          data-testid="onboarding-token-add"
+                          onClick={() => setTokenOpen(true)}
+                          className="press text-[var(--color-accent)] hover:underline"
+                        >
+                          {tr('onboarding.tokenAdd')}
+                        </button>
+                      </p>
+                    )}
                   </div>
                 )}
 
@@ -242,9 +295,7 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                     {tr('settings.destination')}
                   </span>
                   <DestinationPicker
-                    destinations={DESTINATIONS.filter(
-                      (d) => d !== 'overwrite' && (isMac || d !== 'appleMusic'),
-                    )}
+                    destinations={WIZARD_DESTINATIONS.filter((d) => isMac || d !== 'appleMusic')}
                     value={destination}
                     onChange={chooseDestination}
                     flacOnly={synced.outputFormat === 'flac'}
@@ -264,6 +315,9 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                       ),
                     }}
                   />
+                  <p data-testid="onboarding-destination-note" className="mt-3 text-xs text-fg-dim">
+                    {tr('onboarding.destinationKeepsCollection')}
+                  </p>
                 </div>
               </>
             )}
@@ -354,12 +408,14 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                           </span>
                           {/* The path it found, so the DJ can see WHICH collection is about
                               to be written to before switching it on. */}
-                          <span
-                            data-testid={`onboarding-djlibrary-${library.id}`}
-                            className="mt-1 block truncate text-xs text-fg-faint"
-                          >
-                            {library.path}
-                          </span>
+                          {library.path && (
+                            <span
+                              data-testid={`onboarding-djlibrary-${library.id}`}
+                              className="mt-1 block truncate text-xs text-fg-faint"
+                            >
+                              {library.path}
+                            </span>
+                          )}
                         </span>
                       </label>
                       {library.id === 'engine' && reaches(library) && (
@@ -373,6 +429,19 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                       )}
                     </div>
                   ))}
+                  <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2.5">
+                    <input
+                      data-testid="onboarding-sync-none"
+                      type="checkbox"
+                      checked={!reachesProgram}
+                      onChange={(e) => {
+                        if (e.target.checked)
+                          for (const library of djLibraries) reachProgram(library, false)
+                      }}
+                      className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--color-accent)]"
+                    />
+                    <span className="text-sm font-medium">{tr('onboarding.djLibraryNone')}</span>
+                  </label>
                 </div>
                 {reachesProgram && destination === 'folder' && (
                   <p className="mt-3 flex min-w-0 items-center gap-2 text-sm text-fg-muted">

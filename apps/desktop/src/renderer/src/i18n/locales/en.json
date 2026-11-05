@@ -1952,8 +1952,8 @@
     "next": "Next",
     "finish": "Finish",
     "step": "Step {{current}} of {{total}}",
-    "djLibrariesTitle": "Your DJ collections",
-    "djLibrariesBody": "When you convert a track, Surco can leave your collection pointing at the new file, with its playlists and cue points intact. Its playlists also show up in the sidebar, so you can organize them and set cues from Surco.",
+    "djLibrariesTitle": "Which DJ software do you use?",
+    "djLibrariesBody": "Surco shows its playlists in the sidebar and keeps each track in step when you convert it, with its playlists and cues. Pick every one you use.",
     "djLibrariesNote": "Surco backs the collection up before writing and never writes while the program is open. You can change this later in Settings.",
     "djFolder": "Files are saved in {{folder}}",
     "djFolderChange": "Change",
@@ -1963,8 +1963,14 @@
       "engine": "Engine DJ",
       "engineBody": "Keep the library in step when converting and add new tracks to it.",
       "traktor": "Traktor",
-      "traktorBody": "Keep the collection in step when converting, with its playlists and cues, and add new tracks to it."
-    }
+      "traktorBody": "Keep the collection in step when converting, with its playlists and cues, and add new tracks to it.",
+      "serato": "Serato",
+      "seratoBody": "Keep the library in step when converting and add new tracks to it."
+    },
+    "djLibraryNone": "None, I only tag files",
+    "destinationKeepsCollection": "Tracks already in your DJ software or in Apple Music are updated where they are, so they keep their place in your collection.",
+    "tokenOffer": "Search works as it is. A Discogs token turns on auto-match on import and keeps searches steady at busy times.",
+    "tokenAdd": "Add a Discogs token"
   },
   "help": {
     "title": "Help & FAQ",
