@@ -47,6 +47,17 @@ let last: Pick<
 
 const KEPT: CueFlow[] = [MIX_IN, MY_FLOW, ONE_AT_32, CALLS_ONLY]
 
+const LEARNED = {
+  learnedAt: '2026-10-28T10:00:00.000Z',
+  sources: { rekordbox: 40, edits: 0 },
+  taste: null,
+  check: null,
+  flow: { id: 'learned', name: '', markPoint: true, rules: ONE_AT_32.rules },
+  coverage: { matching: 30, marked: 40 },
+  paired: 1,
+  start: null,
+}
+
 function Harness({
   active = 'mine',
   collection = '',
@@ -610,7 +621,7 @@ describe('CuesTab', () => {
     expect(card).toHaveTextContent('Cues fuera de la rejilla')
   })
 
-  it('opens with what Surco learned of the DJ’s marking above the flows, and + only makes a new flow', async () => {
+  it('opens with the invitation to teach Surco above the flows, since nothing was learned yet, and + only makes a new flow', async () => {
     installApi()
     render(<Harness collection="/rb/master.db" />)
     const card = await screen.findByTestId('cue-profile')
@@ -619,6 +630,20 @@ describe('CuesTab', () => {
     openAdd()
     expect(screen.queryByRole('menu')).toBeNull()
     expect(screen.getByTestId('cue-flow-name')).toHaveFocus()
+  })
+
+  it('moves what Surco learned under the rules once it learned, so the flow editor opens the tab', async () => {
+    installApi({
+      cueProfile: vi.fn<Api['cueProfile']>(async () => ({
+        profile: LEARNED,
+        edits: { count: 0, sinceLearn: 0 },
+        marked: 40,
+      })),
+    })
+    render(<Harness collection="/rb/master.db" />)
+    const card = await screen.findByTestId('cue-profile')
+    const rules = screen.getByTestId('cue-rule-add')
+    expect(rules.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
   it('selects the flow made from what was learned, so the DJ sees it right away', async () => {
@@ -642,8 +667,45 @@ describe('CuesTab', () => {
     render(<Harness collection="/rb/master.db" flows={[MIX_IN]} active={MIX_IN.id} />)
     await i18n.changeLanguage('es')
     afterTest = () => i18n.changeLanguage('en')
-    fireEvent.click(await screen.findByTestId('cue-profile-use-flow'))
+    await screen.findByTestId('cue-profile')
+    openAdd()
+    fireEvent.click(screen.getByTestId('cue-flow-add-learned'))
     expect(screen.getByTestId('cue-flow-picker')).toHaveTextContent('Aprendido de mi colección')
+    expect(last?.activeCueFlow).not.toBe(MIX_IN.id)
+    expect(last?.cueFlows.at(-1)?.rules).toEqual(ONE_AT_32.rules)
+  })
+
+  it('offers what was learned from + as a second way to make a flow, the plain new flow still first', async () => {
+    installApi({
+      cueProfile: vi.fn<Api['cueProfile']>(async () => ({
+        profile: LEARNED,
+        edits: { count: 0, sinceLearn: 0 },
+        marked: 40,
+      })),
+    })
+    render(<Harness collection="/rb/master.db" flows={[MIX_IN]} active={MIX_IN.id} />)
+    await screen.findByTestId('cue-profile')
+    expect(screen.queryByTestId('cue-profile-use-flow')).toBeNull()
+    openAdd()
+    const items = within(screen.getByRole('menu')).getAllByRole('menuitem')
+    expect(items.map((i) => i.dataset.testid)).toEqual(['cue-flow-add-new', 'cue-flow-add-learned'])
+    fireEvent.click(screen.getByTestId('cue-flow-add-new'))
+    expect(screen.getByTestId('cue-flow-name')).toHaveFocus()
+  })
+
+  it('makes + a plain new flow again once a flow like the learned one exists, since there is nothing left to offer', async () => {
+    installApi({
+      cueProfile: vi.fn<Api['cueProfile']>(async () => ({
+        profile: LEARNED,
+        edits: { count: 0, sinceLearn: 0 },
+        marked: 40,
+      })),
+    })
+    render(<Harness collection="/rb/master.db" flows={[MIX_IN, ONE_AT_32]} active={MIX_IN.id} />)
+    await screen.findByTestId('cue-profile')
+    openAdd()
+    expect(screen.queryByRole('menu')).toBeNull()
+    expect(screen.getByTestId('cue-flow-name')).toHaveFocus()
   })
 
   it('explains once where the flows also go, behind the (i) of the heading', () => {

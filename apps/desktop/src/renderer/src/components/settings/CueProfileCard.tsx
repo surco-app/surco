@@ -1,4 +1,4 @@
-import { Loader2 } from 'lucide-react'
+import { ChevronRight, Loader2 } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -13,17 +13,42 @@ import { CheckboxRow } from './CheckboxRow'
 import { SettingsHint } from './SettingsPrimitives'
 
 interface Props {
-  synced: Pick<SyncedDraft, 'cueFlows' | 'activeCueFlow' | 'cueLearnFromEdits'>
+  read: CueProfileRead
+  onLearned: (profile: CueProfile) => void
+  synced: Pick<SyncedDraft, 'cueLearnFromEdits'>
   patch: PatchSynced
-  onAdopt: (id: string) => void
+}
+
+export function useCueProfileRead(): [CueProfileRead | null, (profile: CueProfile) => void] {
+  const [read, setRead] = useState<CueProfileRead | null>(null)
+  const alive = useRef(true)
+  const load = useCallback(() => {
+    window.api.cueProfile().then(
+      (next) => {
+        if (alive.current) setRead(next)
+      },
+      () => {},
+    )
+  }, [])
+  useEffect(() => {
+    alive.current = true
+    load()
+    const off = window.api.onCueProfileChanged(load)
+    return () => {
+      alive.current = false
+      off()
+    }
+  }, [load])
+  const learned = useCallback((profile: CueProfile) => {
+    if (alive.current) setRead((r) => (r ? { ...r, profile } : r))
+  }, [])
+  return [read, learned]
 }
 
 const BUTTON =
   'press inline-flex shrink-0 items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50'
 const PRIMARY = `${BUTTON} border-transparent bg-[var(--color-accent)] text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]`
 const SECONDARY = `${BUTTON} border-[var(--color-line-strong)] bg-[var(--color-panel-2)] text-fg hover:bg-[var(--color-hover)]`
-const CHIP =
-  'rounded-full border border-[var(--color-line-strong)] bg-[var(--color-field)] px-2.5 py-0.5 text-xs text-fg-dim'
 
 const tenths = (share: number): number => Math.round(share * 10)
 
@@ -35,7 +60,7 @@ function startOf(flow: CueFlow | null): boolean {
   return flow?.rules.some((r) => r.from === 'first-beat') ?? false
 }
 
-function sameRules(a: CueFlow, b: CueFlow): boolean {
+export function sameRules(a: CueFlow, b: CueFlow): boolean {
   return JSON.stringify(a.rules) === JSON.stringify(b.rules)
 }
 
@@ -62,30 +87,18 @@ function Fact({
   )
 }
 
-export function CueProfileCard({ synced, patch, onAdopt }: Props): React.JSX.Element | null {
+export function CueProfileCard({ read, onLearned, synced, patch }: Props): React.JSX.Element {
   const { t: tr, i18n } = useTranslation()
-  const [read, setRead] = useState<CueProfileRead | null>(null)
   const [learning, setLearning] = useState(false)
   const [failed, setFailed] = useState(false)
+  const [details, setDetails] = useState(false)
   const alive = useRef(true)
-  const load = useCallback(() => {
-    window.api.cueProfile().then(
-      (next) => {
-        if (alive.current) setRead(next)
-      },
-      () => {},
-    )
-  }, [])
   useEffect(() => {
     alive.current = true
-    load()
-    const off = window.api.onCueProfileChanged(load)
     return () => {
       alive.current = false
-      off()
     }
-  }, [load])
-  if (!read) return null
+  }, [])
   const count = (n: number) => formatCount(n, i18n.language)
   const profile: CueProfile | null = read.profile
   const learn = () => {
@@ -94,9 +107,7 @@ export function CueProfileCard({ synced, patch, onAdopt }: Props): React.JSX.Ele
     window.api
       .learnCueProfile()
       .then(
-        (learned) => {
-          if (alive.current) setRead((r) => (r ? { ...r, profile: learned } : r))
-        },
+        (learned) => onLearned(learned),
         (e: unknown) => {
           window.api.logError(
             `cue profile: learning failed (${e instanceof Error ? e.message : String(e)})`,
@@ -108,37 +119,24 @@ export function CueProfileCard({ synced, patch, onAdopt }: Props): React.JSX.Ele
         if (alive.current) setLearning(false)
       })
   }
-  const adopt = (flow: CueFlow) => {
-    const made: CueFlow = {
-      ...flow,
-      id: crypto.randomUUID(),
-      name: tr('settings.cueFlows.learnedName'),
-    }
-    patch('cueFlows', [...synced.cueFlows, made])
-    patch('activeCueFlow', made.id)
-    onAdopt(made.id)
-  }
   const tracks = profile ? profile.sources.rekordbox + profile.sources.edits : 0
   const rekordboxTracks = profile ? profile.sources.rekordbox : read.marked
   const savedTracks = profile ? profile.sources.edits : read.edits.count
-  const sources = (
-    <div className="flex flex-wrap gap-2">
-      {rekordboxTracks > 0 && (
-        <span data-testid="cue-profile-source-rekordbox" className={CHIP}>
-          {'rekordbox '}
-          <b className="font-semibold text-fg tabular-nums">{count(rekordboxTracks)}</b>{' '}
-          {tr('settings.cueProfile.tracks', { count: rekordboxTracks })}
-        </span>
-      )}
-      {savedTracks > 0 && (
-        <span data-testid="cue-profile-source-edits" className={CHIP}>
-          {`${tr('settings.cueProfile.saved')} `}
-          <b className="font-semibold text-fg tabular-nums">{count(savedTracks)}</b>{' '}
-          {tr('settings.cueProfile.tracks', { count: savedTracks })}
-        </span>
-      )}
-    </div>
-  )
+  const sourceParts = [
+    rekordboxTracks > 0 && (
+      <span key="rekordbox" data-testid="cue-profile-source-rekordbox">
+        {'rekordbox '}
+        <span className="tabular-nums">{count(rekordboxTracks)}</span>
+      </span>
+    ),
+    savedTracks > 0 && (
+      <span key="edits" data-testid="cue-profile-source-edits">
+        {'Surco '}
+        <span className="tabular-nums">{count(savedTracks)}</span>
+      </span>
+    ),
+  ].filter(Boolean)
+  const sources = sourceParts.flatMap((part, i) => (i === 0 ? [part] : [', ', part]))
   const nothing = read.marked === 0 && read.edits.count === 0
   const button = (
     <button
@@ -170,33 +168,36 @@ export function CueProfileCard({ synced, patch, onAdopt }: Props): React.JSX.Ele
       ).reverse()
     : []
   const learnedFlow = profile?.flow ?? null
-  const offered = learnedFlow && !synced.cueFlows.some((f) => sameRules(f, learnedFlow))
   const check = profile?.check ?? null
   return (
     <section
       data-testid="cue-profile"
-      className={`flex flex-col gap-3 rounded-xl border p-4 ${
+      className={`flex flex-col gap-2.5 ${
         profile
-          ? 'border-[var(--color-accent)]/30 bg-[var(--color-accent)]/[0.06]'
-          : 'border-dashed border-[var(--color-line-strong)]'
+          ? 'border-t border-[var(--color-line)] pt-4'
+          : 'rounded-xl border border-dashed border-[var(--color-line-strong)] p-4'
       }`}
     >
-      <div className="flex flex-wrap items-start gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <div className="min-w-0 flex-1">
-          <h3 className="text-[15px] font-semibold text-fg">
+          <h3 className="text-[13px] font-semibold text-fg-muted">
             {profile ? tr('settings.cueProfile.title') : tr('settings.cueProfile.firstTitle')}
           </h3>
           {profile ? (
             <p data-testid="cue-profile-summary" className="mt-0.5 text-xs text-fg-dim">
               {tr('settings.cueProfile.summary', { count: tracks, tracks: count(tracks) })}
+              {sources.length > 0 && ' · '}
+              {sources}
             </p>
           ) : (
-            <p className="mt-0.5 text-xs text-fg-dim">{tr('settings.cueProfile.firstHint')}</p>
+            <>
+              <p className="mt-0.5 text-xs text-fg-dim">{tr('settings.cueProfile.firstHint')}</p>
+              {sources.length > 0 && <p className="mt-1 text-xs text-fg-dim">{sources}</p>}
+            </>
           )}
         </div>
         {button}
       </div>
-      {sources}
       {nothing && !profile && (
         <SettingsHint data-testid="cue-profile-nothing">
           {tr('settings.cueProfile.nothing')}
@@ -208,6 +209,21 @@ export function CueProfileCard({ synced, patch, onAdopt }: Props): React.JSX.Ele
         </p>
       )}
       {profile && (
+        <button
+          type="button"
+          data-testid="cue-profile-details"
+          aria-expanded={details}
+          onClick={() => setDetails((v) => !v)}
+          className="press inline-flex w-fit items-center gap-1 text-xs text-[var(--color-accent)] hover:text-[var(--color-accent-hover)]"
+        >
+          {tr('settings.cueProfile.details')}
+          <ChevronRight
+            className={`h-3.5 w-3.5 transition-transform ${details ? 'rotate-90' : ''}`}
+            aria-hidden="true"
+          />
+        </button>
+      )}
+      {profile && details && (
         <div className="grid grid-cols-[repeat(auto-fit,minmax(9.5rem,1fr))] gap-px overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-line)]">
           <Fact
             testid="cue-profile-auto"
@@ -268,18 +284,6 @@ export function CueProfileCard({ synced, patch, onAdopt }: Props): React.JSX.Ele
                 : tr('settings.cueProfile.startNo')}
             </Fact>
           )}
-        </div>
-      )}
-      {offered && learnedFlow && (
-        <div>
-          <button
-            type="button"
-            data-testid="cue-profile-use-flow"
-            onClick={() => adopt(learnedFlow)}
-            className={SECONDARY}
-          >
-            {tr('settings.cueProfile.useFlow')}
-          </button>
         </div>
       )}
       <div>

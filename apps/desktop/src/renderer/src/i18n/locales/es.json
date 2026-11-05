@@ -1731,6 +1731,7 @@
     "cueFlows": {
       "flows": "Flujos",
       "newFlow": "Nuevo flujo",
+      "newFromLearned": "Desde cómo marcas",
       "newFlowName": "Flujo {{n}}",
       "addFlow": "Añadir flujo",
       "rename": "Cambiar nombre",
@@ -1864,9 +1865,6 @@
       "learning": "Aprendiendo…",
       "summary_one": "Aprendido de {{tracks}} pista que ya marcaste",
       "summary_other": "Aprendido de {{tracks}} pistas que ya marcaste",
-      "tracks_one": "pista",
-      "tracks_other": "pistas",
-      "saved": "Guardadas en Surco",
       "autoFound": "Encuentra {{found}} de cada 10 sitios donde marcas",
       "autoTuned": "Ajustado a ti. Sin ajustar encontraba {{before}} de cada 10",
       "autoGeneral": "El modelo general ya encaja con tu forma de marcar",
@@ -1880,7 +1878,7 @@
       "startYes": "La sueles poner",
       "startNo": "No la sueles poner",
       "startShare": "{{with}} de {{open}} pistas donde cabría",
-      "useFlow": "Usar como flujo",
+      "details": "Lo que aprendió Surco",
       "fromEdits": "Aprender mientras corriges",
       "fromEditsHint": "Cada pista que guardas en el editor se suma a lo aprendido, y Surco vuelve a aprender cada 10."
     },

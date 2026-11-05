@@ -1731,6 +1731,7 @@
     "cueFlows": {
       "flows": "Flows",
       "newFlow": "New flow",
+      "newFromLearned": "From how you mark",
       "newFlowName": "Flow {{n}}",
       "addFlow": "Add flow",
       "rename": "Rename",
@@ -1864,9 +1865,6 @@
       "learning": "Learning…",
       "summary_one": "Learned from {{tracks}} track you already marked",
       "summary_other": "Learned from {{tracks}} tracks you already marked",
-      "tracks_one": "track",
-      "tracks_other": "tracks",
-      "saved": "Saved in Surco",
       "autoFound": "Finds {{found}} in 10 of the places you mark",
       "autoTuned": "Tuned to you. Untuned it found {{before}} in 10",
       "autoGeneral": "The general model already fits how you mark",
@@ -1880,7 +1878,7 @@
       "startYes": "You usually place it",
       "startNo": "You don't usually place it",
       "startShare": "{{with}} of {{open}} tracks where it would fit",
-      "useFlow": "Use as a flow",
+      "details": "What Surco learned",
       "fromEdits": "Learn while you correct",
       "fromEditsHint": "Every track you save in the editor adds to what Surco learned, and it learns again every 10."
     },
