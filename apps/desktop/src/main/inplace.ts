@@ -87,6 +87,7 @@ export function resolveOutputTarget(
   outputDir: string,
   overwriteOriginal = false,
   besideOriginal = false,
+  toOutputFolder = false,
 ): OutputTarget {
   // The dir comes from the real inputPath (trusted), like the in-place branch below,
   // so the outputDir escape guard doesn't apply here either.
@@ -96,7 +97,7 @@ export function resolveOutputTarget(
       inPlace: false,
     }
   }
-  const inPlace = editsInPlace(format, inputPath, overwriteOriginal)
+  const inPlace = !toOutputFolder && editsInPlace(format, inputPath, overwriteOriginal)
   const dir = inPlace ? dirname(inputPath) : outputDir
   const outputPath = join(dir, `${name}.${formatExtension(format)}`)
   // Defense in depth on top of sanitizeOutputName (the primary guard against a

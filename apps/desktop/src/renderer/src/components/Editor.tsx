@@ -1055,8 +1055,23 @@ export const Editor = memo(function Editor({
   // resolveOutputTarget actually does. Beside-original never edits in place (a
   // same-format export lands as a fresh "(n)" copy next to the source), so its rows
   // must not carry the in-place rename warning.
+  const newTrackCandidate =
+    !isMulti &&
+    !picked.convertBesideOriginal &&
+    !picked.overwriteOriginal &&
+    !picked.addToAppleMusic &&
+    formatMatchesInput(format, item.inputPath)
+  const { data: heldByLibrary } = useQuery({
+    queryKey: ['holdsInLibrary', item.inputPath],
+    queryFn: () =>
+      window.api.holdsInLibrary(item.inputPath, item.meta.title ? [item.meta.title] : []),
+    enabled: newTrackCandidate,
+    staleTime: 30_000,
+  })
   const willEditInPlace =
-    !picked.convertBesideOriginal && editsInPlace(format, item.inputPath, picked.overwriteOriginal)
+    !picked.convertBesideOriginal &&
+    !(newTrackCandidate && heldByLibrary === false) &&
+    editsInPlace(format, item.inputPath, picked.overwriteOriginal)
   // Overwriting a lossless master (WAV/AIFF/FLAC) with MP3 is the one irreversible,
   // quality-losing case worth a sharper warning before the user commits to it.
   const lossyOverwrite =

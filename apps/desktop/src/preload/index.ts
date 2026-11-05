@@ -246,6 +246,8 @@ const api: Api = {
     ipcRenderer.invoke('serato:playlist', id),
   seratoRunning: (): Promise<boolean> => ipcRenderer.invoke('serato:running'),
   djAppRunning: (): Promise<boolean> => ipcRenderer.invoke('djApps:running'),
+  holdsInLibrary: (path: string, titles: string[]): Promise<boolean> =>
+    ipcRenderer.invoke('library:holdsFile', path, titles),
   editRekordboxPlaylist: (
     edit: RekordboxPlaylistEdit,
     label?: string,
