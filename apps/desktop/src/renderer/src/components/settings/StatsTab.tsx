@@ -17,6 +17,7 @@ import { DONATE_URL, PAYPAL_ME_LABEL, PAYPAL_ME_URL } from '../../lib/donate'
 import { formatCount, formatMatchCount, nextMilestone, timeSavedText } from '../../lib/stats'
 import { renderStatsImage, statsImageCells } from '../../lib/statsImage'
 import { useToast } from '../../lib/toastContext'
+import { Tooltip } from '../Tooltip'
 
 interface Props {
   settings: Settings
@@ -82,9 +83,9 @@ function MatchSplit({
             {s.label}
             <span
               data-testid={`stats-${s.key}Matches`}
-              title={s.count >= 1000 ? String(s.count) : undefined}
               className="font-semibold tabular-nums text-fg"
             >
+              {s.count >= 1000 && <Tooltip label={String(s.count)} />}
               {formatMatchCount(s.count, i18n.language)}
             </span>
           </span>

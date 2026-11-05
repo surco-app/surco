@@ -24,6 +24,7 @@ import { EngineLibraryFields } from './EngineLibraryFields'
 import { FormatSettingControl } from './FormatSettingControl'
 import { OutputFolderField } from './OutputFolderField'
 import { SearchProvidersControl } from './SearchProvidersControl'
+import { Tooltip } from './Tooltip'
 import { useFocusTrap } from './useFocusTrap'
 
 // The optional audio intents, in the order they're offered. Correct metadata is the
@@ -445,11 +446,8 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                 </div>
                 {reachesProgram && destination === 'folder' && (
                   <p className="mt-3 flex min-w-0 items-center gap-2 text-sm text-fg-muted">
-                    <span
-                      data-testid="onboarding-dj-folder"
-                      className="min-w-0 truncate"
-                      title={local.outputDir}
-                    >
+                    <span data-testid="onboarding-dj-folder" className="min-w-0 truncate">
+                      <Tooltip label={local.outputDir} />
                       {tr('onboarding.djFolder', { folder: local.outputDir })}
                     </span>
                     <button

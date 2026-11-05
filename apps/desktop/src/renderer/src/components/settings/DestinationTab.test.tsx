@@ -11,6 +11,7 @@ import i18n from '../../i18n'
 // must exist before the module loads — hence the dynamic import below.
 import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
+import { hoverTooltip } from '../../test/tooltip'
 ;(window as unknown as { api: unknown }).api = {
   platform: 'darwin',
   seratoAvailable: async () => false,
@@ -590,7 +591,7 @@ describe('DestinationTab Traktor collection', () => {
     expect(document.activeElement).not.toBe(field)
     // The path still has to be readable, in full, without a caret.
     expect(field).toHaveTextContent('collection.nml')
-    expect(field).toHaveAttribute('title', expect.stringContaining('/Users/dj/Documents'))
+    expect(hoverTooltip(field)).toEqual(expect.stringContaining('/Users/dj/Documents'))
   })
 
   // The signed row asked the DJ to know, in advance, which way a sign moves a cue. He

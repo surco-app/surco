@@ -2,6 +2,7 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { hoverTooltip } from '../test/tooltip'
 import { PathField } from './PathField'
 
 afterEach(cleanup)
@@ -21,7 +22,7 @@ describe('PathField', () => {
   it('carries the whole path for reading even when it is truncated', () => {
     render(<PathField value="/very/long/path/master.db" onChange={vi.fn()} testid="f" />)
 
-    expect(screen.getByTestId('f')).toHaveAttribute('title', '/very/long/path/master.db')
+    expect(hoverTooltip(screen.getByTestId('f'))).toEqual('/very/long/path/master.db')
   })
 
   // An empty box says nothing about what it wants. Reported 14/09 alongside the request to

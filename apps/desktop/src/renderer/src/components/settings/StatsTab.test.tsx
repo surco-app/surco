@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import type { Settings } from '../../../../shared/types'
 import '../../i18n'
 import { PAYPAL_ME_URL } from '../../lib/donate'
+import { hoverTooltip } from '../../test/tooltip'
 import { StatsTab } from './StatsTab'
 
 afterEach(cleanup)
@@ -162,7 +163,7 @@ describe('StatsTab', () => {
     )
     const count = screen.getByTestId('stats-discogsMatches')
     expect(count).toHaveTextContent('1.2K')
-    expect(count).toHaveAttribute('title', '1234')
+    expect(hoverTooltip(count)).toEqual('1234')
   })
 
   // A five-digit lifetime count is the tab's headline; ungrouped it reads as raw output.

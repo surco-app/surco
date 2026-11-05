@@ -1,5 +1,6 @@
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
+import { Tooltip } from './Tooltip'
 
 // A read-only path with its own Change button, joined into one control.
 //
@@ -38,7 +39,6 @@ export function PathField({
       <div
         id={testid}
         data-testid={testid}
-        title={value}
         // A plain <div> takes no accessible name, so the one field with no visible label
         // of its own (the output folder, which hangs under a destination radio) needs a
         // role that does. group is honest here: it is a value, not a control.
@@ -47,6 +47,7 @@ export function PathField({
           value ? 'text-fg-muted' : 'text-fg-faint'
         }`}
       >
+        {value && <Tooltip label={value} />}
         {value || emptyLabel}
       </div>
       <button

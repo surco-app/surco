@@ -3,11 +3,7 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 
-const STILL_NATIVE = new Set<string>([
-  'components/OnboardingWizard.tsx',
-  'components/PathField.tsx',
-  'components/settings/StatsTab.tsx',
-])
+const STILL_NATIVE = new Set<string>([])
 
 function nativeTitles(code: string): number[] {
   const lines: number[] = []
