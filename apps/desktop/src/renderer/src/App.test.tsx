@@ -7204,6 +7204,26 @@ describe('App reopen last session', () => {
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
   })
 
+  // Auditioning a crate of 700 over two evenings: the reopen lands on the track the user
+  // had reached, not on the first one, or they hunt for their place by ear.
+  it('lands on the track that was selected when the session was saved', async () => {
+    setApi({
+      getLastSession: vi.fn<Api['getLastSession']>().mockResolvedValue({
+        paths: ['/music/a.wav', '/music/b.wav', '/music/c.wav'],
+        edits: {},
+        view: { selectedPath: '/music/b.wav' },
+      }),
+    })
+    await renderApp()
+    await screen.findByTestId('last-session')
+    fireEvent.click(screen.getByTestId('last-session-action'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    await waitFor(() =>
+      expect(screen.getAllByTestId('track-row')[1]).toHaveAttribute('aria-selected', 'true'),
+    )
+    expect(screen.getAllByTestId('track-row')[0]).toHaveAttribute('aria-selected', 'false')
+  })
+
   // Accepting must retire the prompt itself: it once stayed up after the click (the
   // toast id ref was cleared before the withdraw effect could use it), so every extra
   // press re-imported the same session and rained "already in the list" notices.

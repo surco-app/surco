@@ -1132,6 +1132,19 @@ export default function App(): React.JSX.Element {
 
   useEffect(() => window.api.onProcessProgress(stageTrack), [stageTrack])
 
+  const selectedSourcePath = useMemo(
+    () => tracks.find((t) => t.id === selectedId)?.inputPath ?? null,
+    [tracks, selectedId],
+  )
+  // The reopened selection is scrolled to once its row shows: under a library filter that
+  // waits for the row's verdict to come in.
+  const pendingRestoredReveal = useRef<string | null>(null)
+  const selectRestored = useStableCallback((path: string) => {
+    const track = tracksRef.current.find((t) => t.inFiles && t.inputPath === path)
+    if (!track) return
+    pendingRestoredReveal.current = track.id
+    setSelection({ ids: [track.id], anchor: track.id })
+  })
   // The last session: offered back at launch, written out as it changes. Self-contained —
   // it hands nothing back.
   useSessionPersistence({
@@ -1141,6 +1154,8 @@ export default function App(): React.JSX.Element {
     seedRestoredEdits,
     store,
     withdrawOffer: review !== null,
+    selectedPath: selectedSourcePath,
+    selectRestored,
   })
 
   // The watcher's "N new tracks" prompt rides the same queue as every other toast: keyed so a
@@ -2083,6 +2098,17 @@ export default function App(): React.JSX.Element {
     qualityFilterRef,
     revealRowRef,
   })
+  useEffect(() => {
+    const id = pendingRestoredReveal.current
+    if (!id) return
+    if (selectedId !== id) {
+      pendingRestoredReveal.current = null
+      return
+    }
+    if (!visibleTracks.some((t) => t.id === id)) return
+    pendingRestoredReveal.current = null
+    scrollToSelected()
+  }, [visibleTracks, selectedId, scrollToSelected])
   // 1-based position of the selected row within the current view, for the "54/200" pill —
   // so a DJ auditioning a crate one by one sees how far along they are. Null when nothing
   // is selected (or the selection was filtered out of view).

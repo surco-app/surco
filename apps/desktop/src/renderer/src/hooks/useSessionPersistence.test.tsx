@@ -27,6 +27,8 @@ async function offer(session: SessionData) {
       seedRestoredEdits: vi.fn(),
       store,
       withdrawOffer: false,
+      selectedPath: null,
+      selectRestored: vi.fn(),
     }),
   )
   await waitFor(() => expect(store.getState().toasts).toHaveLength(1))
@@ -85,6 +87,8 @@ describe('useSessionPersistence', () => {
         seedRestoredEdits: vi.fn(),
         store: createAppStore(),
         withdrawOffer: false,
+        selectedPath: null,
+        selectRestored: vi.fn(),
       }),
     )
     await act(async () => {
@@ -94,7 +98,7 @@ describe('useSessionPersistence', () => {
     expect(saveLastSession).toHaveBeenCalledWith(
       ['/music/files.wav'],
       {},
-      sessionViewOf(createAppStore().getState()),
+      sessionViewOf(createAppStore().getState(), null),
     )
   })
 
@@ -121,6 +125,8 @@ describe('useSessionPersistence', () => {
         seedRestoredEdits: vi.fn(),
         store: createAppStore(),
         withdrawOffer: false,
+        selectedPath: null,
+        selectRestored: vi.fn(),
       }),
     )
 
@@ -133,7 +139,7 @@ describe('useSessionPersistence', () => {
     expect(saveLastSessionSync).toHaveBeenCalledWith(
       ['/music/a.wav'],
       {},
-      sessionViewOf(createAppStore().getState()),
+      sessionViewOf(createAppStore().getState(), null),
     )
     expect(saveLastSession).not.toHaveBeenCalled()
   })
@@ -161,6 +167,8 @@ describe('useSessionPersistence', () => {
           seedRestoredEdits: vi.fn(),
           store,
           withdrawOffer: false,
+          selectedPath: null,
+          selectRestored: vi.fn(),
         }),
       { initialProps: { tracks: [playlistRow] } },
     )
@@ -195,7 +203,9 @@ describe('useSessionPersistence', () => {
   it('leaves the list view untouched when the reopen is not taken', async () => {
     const { store, toast } = await offer({ ...withEdits, view: savedView })
     dismissToastByExpiry(store, toast.id)
-    expect(sessionViewOf(store.getState())).toEqual(sessionViewOf(createAppStore().getState()))
+    expect(sessionViewOf(store.getState(), null)).toEqual(
+      sessionViewOf(createAppStore().getState(), null),
+    )
   })
 
   it('saves the list view when only a filter changes', async () => {
@@ -217,6 +227,8 @@ describe('useSessionPersistence', () => {
         seedRestoredEdits: vi.fn(),
         store,
         withdrawOffer: false,
+        selectedPath: null,
+        selectRestored: vi.fn(),
       }),
     )
     await act(async () => {
@@ -230,10 +242,47 @@ describe('useSessionPersistence', () => {
     expect(saveLastSession).toHaveBeenLastCalledWith(
       ['/music/a.wav'],
       {},
-      sessionViewOf(store.getState()),
+      sessionViewOf(store.getState(), null),
     )
     expect(saveLastSession.mock.lastCall?.[2]).toMatchObject({
       filters: { library: 'notInLibrary' },
     })
+  })
+
+  it('remembers which track was selected, for the reopen to land on', async () => {
+    vi.useFakeTimers()
+    const saveLastSession = vi.fn<Api['saveLastSession']>().mockResolvedValue(undefined)
+    ;(window as unknown as { api: Partial<Api> }).api = {
+      getLastSession: vi.fn<Api['getLastSession']>().mockResolvedValue({ paths: [], edits: {} }),
+      saveLastSession,
+    }
+    const tracks = [
+      { id: 'a', inputPath: '/music/a.wav', inFiles: true, meta: emptyMetadata() } as TrackItem,
+      { id: 'b', inputPath: '/music/b.wav', inFiles: true, meta: emptyMetadata() } as TrackItem,
+    ]
+    const store = createAppStore()
+    const { rerender } = renderHook(
+      ({ selectedPath }) =>
+        useSessionPersistence({
+          tracks,
+          tracksRef: { current: tracks },
+          addPaths: vi.fn(),
+          seedRestoredEdits: vi.fn(),
+          store,
+          withdrawOffer: false,
+          selectedPath,
+          selectRestored: vi.fn(),
+        }),
+      { initialProps: { selectedPath: '/music/a.wav' as string | null } },
+    )
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_000)
+    })
+    rerender({ selectedPath: '/music/b.wav' })
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_000)
+    })
+    vi.useRealTimers()
+    expect(saveLastSession.mock.lastCall?.[2]).toMatchObject({ selectedPath: '/music/b.wav' })
   })
 })

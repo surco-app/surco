@@ -13,8 +13,9 @@ describe('sessionView', () => {
       libraryFilter: 'notInLibrary',
       formatFilter: 'FLAC',
     })
-    const view = JSON.parse(JSON.stringify(sessionViewOf(store.getState())))
+    const view = JSON.parse(JSON.stringify(sessionViewOf(store.getState(), '/music/b.wav')))
     expect(parseSessionView(view)).toEqual({
+      selectedPath: '/music/b.wav',
       search: 'dub',
       sortBy: 'bpm',
       sortDir: 'desc',
@@ -32,8 +33,10 @@ describe('sessionView', () => {
         sortBy: 'mood',
         sortDir: 'sideways',
         filters: { quality: 'retired', library: 'notInLibrary', tags: 42 },
+        selectedPath: 7,
       }),
     ).toEqual({
+      selectedPath: null,
       search: 'dub',
       sortBy: 'import',
       sortDir: 'asc',

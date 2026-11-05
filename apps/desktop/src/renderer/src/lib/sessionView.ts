@@ -11,8 +11,10 @@ import type {
   TrackSort,
 } from './triage'
 
-// The list view a reopened session brings back with its tracks.
+// The list view a reopened session brings back with its tracks, down to the track the user
+// had reached.
 export interface SessionView {
+  selectedPath: string | null
   search: string
   sortBy: TrackSort
   sortDir: SortDir
@@ -21,8 +23,9 @@ export interface SessionView {
 
 type AppState = ReturnType<AppStore['getState']>
 
-export function sessionViewOf(state: AppState): SessionView {
+export function sessionViewOf(state: AppState, selectedPath: string | null): SessionView {
   return {
+    selectedPath,
     search: state.search,
     sortBy: state.sortBy,
     sortDir: state.sortDir,
@@ -119,6 +122,7 @@ export function parseSessionView(raw: unknown): SessionView | null {
       ? (view.filters as Record<string, unknown>)
       : {}
   return {
+    selectedPath: typeof view.selectedPath === 'string' ? view.selectedPath : null,
     search: typeof view.search === 'string' ? view.search : '',
     sortBy: known(SORTS, view.sortBy) ?? 'import',
     sortDir: view.sortDir === 'desc' ? 'desc' : 'asc',

@@ -18,6 +18,10 @@ interface Params {
   seedRestoredEdits: (edits: Record<string, SessionEdit>) => void
   store: AppStore
   withdrawOffer: boolean
+  // The anchor track's source path, saved so the reopen lands where the user left off.
+  selectedPath: string | null
+  // Selects the restored row with that source path, once the reopen has added the rows.
+  selectRestored: (path: string) => void
 }
 
 // The last session: offered back at launch, and written out as it changes.
@@ -37,6 +41,8 @@ export function useSessionPersistence({
   seedRestoredEdits,
   store,
   withdrawOffer,
+  selectedPath,
+  selectRestored,
 }: Params): void {
   // The launch-time "reopen last session" offer. Asked once, and only while Files is
   // still empty — restoring the old list on top of a fresh import would mix two sessions,
@@ -68,6 +74,7 @@ export function useSessionPersistence({
     // The staged edits ride along so each track's read overlays what the user had
     // retagged but not yet applied when the last session ended.
     await addPaths(await window.api.expandPaths(session.paths), session.edits)
+    if (view?.selectedPath) selectRestored(view.selectedPath)
   })
   // Stable identity so the ask-once effect below never re-runs, which would cancel the
   // in-flight ask. The offer carries translation keys, not text: it is raised before the
@@ -138,14 +145,16 @@ export function useSessionPersistence({
       if (settled.some((t) => t.loadingMeta)) return
       const paths = settled.map((t) => t.inputPath)
       const edits = sessionEdits(settled)
-      const view = sessionViewOf(store.getState())
+      const view = sessionViewOf(store.getState(), selectedPathRef.current)
       const sig = JSON.stringify({ paths, edits, view })
       if (sig === savedSessionSig.current) return
       savedSessionSig.current = sig
       save(paths, edits, view)
     },
   )
-  const viewSig = useAppStore(store, (s) => JSON.stringify(sessionViewOf(s)))
+  const selectedPathRef = useRef(selectedPath)
+  selectedPathRef.current = selectedPath
+  const viewSig = `${useAppStore(store, (s) => JSON.stringify(sessionViewOf(s, null)))}|${selectedPath}`
   // biome-ignore lint/correctness/useExhaustiveDependencies: viewSig is a trigger only, the view itself is read when the timer fires. tracksRef is read inside the debounced timer, on purpose — the write must snapshot the list as it SETTLES, not as it looked when the burst began. `tracks` stays the trigger; declaring the ref as a dependency would re-run the effect on every mutation, which is the per-render work this indirection exists to shed.
   useEffect(() => {
     // Rows whose metadata read is still in flight would snapshot half-loaded state —
