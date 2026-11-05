@@ -80,8 +80,9 @@ function api(over: Partial<Api> = {}) {
   return calls
 }
 
-function wrapper(): ({ children }: { children: React.ReactNode }) => React.JSX.Element {
-  const client = createQueryClient()
+function wrapper(
+  client = createQueryClient(),
+): ({ children }: { children: React.ReactNode }) => React.JSX.Element {
   return ({ children }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>
 }
 
@@ -156,6 +157,27 @@ describe('useLibraryCopyVerdicts', () => {
     })
     await waitFor(() => expect(result.current.done).toBe(1))
     expect(result.current.verdictOf(PRAY)).toBeNull()
+  })
+
+  // The editor measures its open track under the same query keys, and React Query cancels
+  // that fetch when the user browses to another row. A pair that joined it must be measured
+  // again, not written off as unmeasurable for the rest of the session.
+  it('measures a pair again when a fetch it joined is cancelled, instead of keeping it without a verdict', async () => {
+    const client = createQueryClient()
+    let first = true
+    const loudness = vi.fn<Api['loudness']>(() => {
+      if (!first) return Promise.resolve(LOUD)
+      first = false
+      return new Promise(() => {})
+    })
+    api({ loudness })
+    const { result } = renderHook(() => useLibraryCopyVerdicts([PRAY], INDEX, true), {
+      wrapper: wrapper(client),
+    })
+    await waitFor(() => expect(loudness).toHaveBeenCalled())
+    await act(() => client.cancelQueries({ queryKey: ['loudness'] }))
+    await waitFor(() => expect(result.current.done).toBe(1))
+    expect(result.current.verdictOf(PRAY)).toMatchObject({ winner: 'a' })
   })
 
   it('keeps what it measured for the session, so turning the filter on again is instant', async () => {

@@ -1,4 +1,4 @@
-import { type QueryClient, useQueryClient } from '@tanstack/react-query'
+import { isCancelledError, type QueryClient, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useRef, useSyncExternalStore } from 'react'
 import { type AppleMusicIndex, replaceCandidate } from '../lib/appleMusicLibrary'
 import { type CopyFacts, type CopyVerdict, compareCopies } from '../lib/bestCopy'
@@ -108,9 +108,11 @@ export function useLibraryCopyVerdicts(
         const entry = next()
         if (entry === undefined) return
         pending.add(entry.key)
-        const verdict = await measure(client, entry).catch(() => null)
+        const verdict = await measure(client, entry).catch((err) =>
+          isCancelledError(err) ? undefined : null,
+        )
         pending.delete(entry.key)
-        known.set(entry.key, verdict)
+        if (verdict !== undefined) known.set(entry.key, verdict)
         notify()
       }
     }
