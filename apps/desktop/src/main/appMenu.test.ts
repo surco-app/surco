@@ -112,7 +112,7 @@ describe('appMenuTemplate', () => {
     const file = menu(template, 'File')
     const selectAll = itemFor(tracks, 'Select all tracks')
     expect(selectAll.accelerator).toBe('accel:select-all')
-    const fill = itemFor(tracks, 'Fill all tags from file name…')
+    const fill = itemFor(tracks, 'Fill from file name, whole list…')
     expect(fill.accelerator).toBe('accel:fill-all')
     for (const item of [
       selectAll,
