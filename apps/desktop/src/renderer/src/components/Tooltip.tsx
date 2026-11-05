@@ -41,7 +41,7 @@ export function Tooltip({
   // The mount effect's own hide, so the document-level Escape below resets the same
   // closure state the trigger's listeners do instead of only clearing the position.
   const hideRef = useRef<() => void>(() => setPos(null))
-  const visible = pos !== null
+  const visible = pos !== null && label !== ''
 
   useEffect(() => {
     const trigger = markerRef.current?.parentElement
@@ -222,7 +222,8 @@ export function Tooltip({
 
   return (
     <span ref={markerRef} className="hidden" aria-hidden="true">
-      {pos &&
+      {visible &&
+        pos &&
         createPortal(
           <span
             id={id}

@@ -70,6 +70,17 @@ describe('Tooltip', () => {
 
   // A hint shown only on hover is invisible to keyboard users; focusing the control
   // must surface the same information (WCAG 1.4.13).
+  it('shows nothing for an empty label, as a native title would, so a value left blank never raises an empty bubble', () => {
+    render(
+      <button type="button" data-testid="trigger">
+        Go
+        <Tooltip label="" />
+      </button>,
+    )
+    act(() => screen.getByTestId('trigger').focus())
+    expect(screen.queryByRole('tooltip')).toBeNull()
+  })
+
   it('appears when the trigger is focused', () => {
     renderTooltip()
     expect(screen.queryByRole('tooltip')).toBeNull()
