@@ -1807,7 +1807,7 @@
         "always": "Every repeat, even over another mark",
         "fits": "Stops at the previous mark and at any chorus",
         "previous": "Crosses choruses with no mark in them and stops at the previous mark",
-        "room": "Leaves it out when another cue comes right after",
+        "room": "Leaves it out when another cue comes within the bars you choose",
         "clear": "Leaves it out when another cue falls in the same bar",
         "first": "Only before the first mark, if nothing is there yet"
       },

@@ -1807,7 +1807,7 @@
         "always": "Jede Wiederholung, auch über eine andere Markierung hinweg",
         "fits": "Stoppt an der vorherigen Markierung und an jedem Refrain",
         "previous": "Läuft durch Refrains ohne Markierung und stoppt an der vorherigen Markierung",
-        "room": "Lässt sie weg, wenn direkt danach eine andere Cue kommt",
+        "room": "Lässt sie weg, wenn in den gewählten Takten eine andere Cue kommt",
         "clear": "Lässt sie weg, wenn eine andere Cue im selben Takt liegt",
         "first": "Nur vor der ersten Markierung, wenn dort noch nichts ist"
       },

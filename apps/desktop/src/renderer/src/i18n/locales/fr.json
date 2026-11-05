@@ -1807,7 +1807,7 @@
         "always": "Chaque répétition, même par-dessus une autre marque",
         "fits": "S’arrête à la marque précédente et à chaque refrain",
         "previous": "Traverse les refrains sans marque et s’arrête à la marque précédente",
-        "room": "La laisse de côté si une autre cue arrive juste après",
+        "room": "La laisse de côté si une autre cue arrive dans les mesures que tu choisis",
         "clear": "La laisse de côté si une autre cue tombe sur la même mesure",
         "first": "Seulement avant la première marque, s’il n’y a encore rien"
       },
