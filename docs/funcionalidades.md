@@ -6,7 +6,7 @@ evidencia en `fichero:línea`. Lo que aquí no está, no se puede prometer en la
 Documento de referencia: sirve para redactar la home, llenar `/funciones` y
 saber qué NO decir.
 
-**Última revisión: 4 de noviembre de 2026** (v1.25.0, campo «Calidad» con el veredicto del análisis, autocomprobación de las playlists de rekordbox, Traktor y Engine DJ, búsqueda solo de lo seleccionado fuera de la pestaña de ficheros y columna de resultados plegable, recuentos de los filtros combinados, la playlist abierta se analiza primero; antes v1.24.0, USB de Pioneer desde Serato y Traktor, crates de Serato editables, ajuste «Biblioteca de Serato» con Actualizar y Actualizar y añadir, crates de Serato elegidos en el editor, «Auto» de la rejilla que lleva los cues al golpe, Auto marcar en pistas que rekordbox no ha analizado; antes v1.23.0, cues de Serato escritos en el fichero con Serato cerrado, editor y flujos de cues en Serato, cues de Serato conservados al convertir, rejilla de Serato leída, Music relee una pista reescrita en su sitio, original renombrado que se queda si otro programa lo usa, título, artista, álbum y género cambiados al convertir que llegan a Traktor y Engine DJ, cambios de biblioteca que sobreviven a una recarga; antes v1.22.0, ajuste de la rejilla en el editor de cues maximizado con guardado en rekordbox, Traktor y Engine DJ, filtro «Rejilla mal», cues fuera del golpe señalados y «Al golpe», pestaña de Serato de solo lectura, MP3 de iTunes a tiempo en Traktor; antes v1.21.0, filtro «Cues fuera de la rejilla» en rekordbox, Traktor y Engine DJ con su tolerancia en Ajustes › Cues; antes v1.20.0, espectros de las dos copias en la comparación con la biblioteca, editor de cues sin vista previa en reposo, barra de propuestas de Auto marcar, un solo Guardar en el editor plegado, reproductor que se cierra al cambiar de pestaña; antes v1.19.0, filtro Incompletas en la revisión, valores de un campo mezclado, deshacer «Borrar metadatos», 32 bits a 24 bajo «Corregido», fechas y auto-match recordados; antes filtro Daños en «Revisar metadatos de la lista…»; antes v1.18.0, autocomprobación tras convertir, sustituir al cambiar de formato, pantalla Copias, carpeta Artista/Álbum en Music, grouping y totales; antes v1.17.0, elección por programa de DJ, cola de Engine DJ abierto, búsqueda en Ajustes, deshacer y rehacer, «Antes:» por campo, archivos dañados, orden por BPM/tonalidad/año/calidad). Levantado por primera vez el
+**Última revisión: 5 de noviembre de 2026** (v1.26.0, pestaña «Programas de DJ» en Ajustes y pregunta por el programa al empezar, condiciones «hasta la marca anterior» y «si no viene otro cue en los siguientes» en los flujos, vista previa del flujo sobre la pista seleccionada con cues que se quedan fuera, flujo aprendido desde el +, Auto marcar a más de 32 compases entre propuestas, copiar y pegar metadatos y Mostrar en Finder desde la cabecera, pistas fuera de «Convertir todas» por campo obligatorio, análisis que solo se pausa con un programa de DJ abierto; antes v1.25.0, campo «Calidad» con el veredicto del análisis, autocomprobación de las playlists de rekordbox, Traktor y Engine DJ, búsqueda solo de lo seleccionado fuera de la pestaña de ficheros y columna de resultados plegable, recuentos de los filtros combinados, la playlist abierta se analiza primero; antes v1.24.0, USB de Pioneer desde Serato y Traktor, crates de Serato editables, ajuste «Biblioteca de Serato» con Actualizar y Actualizar y añadir, crates de Serato elegidos en el editor, «Auto» de la rejilla que lleva los cues al golpe, Auto marcar en pistas que rekordbox no ha analizado; antes v1.23.0, cues de Serato escritos en el fichero con Serato cerrado, editor y flujos de cues en Serato, cues de Serato conservados al convertir, rejilla de Serato leída, Music relee una pista reescrita en su sitio, original renombrado que se queda si otro programa lo usa, título, artista, álbum y género cambiados al convertir que llegan a Traktor y Engine DJ, cambios de biblioteca que sobreviven a una recarga; antes v1.22.0, ajuste de la rejilla en el editor de cues maximizado con guardado en rekordbox, Traktor y Engine DJ, filtro «Rejilla mal», cues fuera del golpe señalados y «Al golpe», pestaña de Serato de solo lectura, MP3 de iTunes a tiempo en Traktor; antes v1.21.0, filtro «Cues fuera de la rejilla» en rekordbox, Traktor y Engine DJ con su tolerancia en Ajustes › Cues; antes v1.20.0, espectros de las dos copias en la comparación con la biblioteca, editor de cues sin vista previa en reposo, barra de propuestas de Auto marcar, un solo Guardar en el editor plegado, reproductor que se cierra al cambiar de pestaña; antes v1.19.0, filtro Incompletas en la revisión, valores de un campo mezclado, deshacer «Borrar metadatos», 32 bits a 24 bajo «Corregido», fechas y auto-match recordados; antes filtro Daños en «Revisar metadatos de la lista…»; antes v1.18.0, autocomprobación tras convertir, sustituir al cambiar de formato, pantalla Copias, carpeta Artista/Álbum en Music, grouping y totales; antes v1.17.0, elección por programa de DJ, cola de Engine DJ abierto, búsqueda en Ajustes, deshacer y rehacer, «Antes:» por campo, archivos dañados, orden por BPM/tonalidad/año/calidad). Levantado por primera vez el
 2026-07-30 y revisado contra el código el 2026-09-02, cuando cinco releases lo
 habían dejado atrás: daba por perdidos cues que hoy se conservan y publicaba
 umbrales del espectro que el código había recalibrado.
@@ -64,6 +64,9 @@ usuario los eligió a mano en el menú del botón. Si no, cada pista resuelve el
 con los ajustes (`resolveJobFormat`, `shared/format.ts:63-89`): antes el formato
 de la pista abierta en el editor se aplicaba al lote entero, y con un MP3 abierto
 los FLAC y WAV de la cola salían en MP3.
+
+Desde v1.26.0, si un campo obligatorio vacío deja pistas fuera del lote, el botón
+dice cuántas y qué campos les faltan (`header.leftOutMissing`, `Toolbar.tsx:165`).
 
 ### Dos salidas con el mismo nombre no se pisan
 
@@ -301,6 +304,11 @@ ajuste (`NormalizePlan.tsx:59-70`).
 ## 4. Análisis de calidad
 
 Tres detectores independientes que se combinan (`buildSpectrum`, `ffmpeg.ts:3033-3094`).
+
+El barrido de la biblioteca sigue con Surco detrás de otras ventanas y solo se pausa
+mientras Surco no está delante y hay un programa de DJ abierto, que se consulta cada
+10 s (`sweepOpen`, `hooks/useQualityAnalysis.ts:133`; `anyDjProgramRunning`,
+`main/djProcesses.ts`; v1.26.0). Antes se pausaba siempre que Surco perdía el foco.
 
 ### 4.1 Transcodificación (fake lossless)
 
@@ -709,6 +717,11 @@ que es exactamente por qué el resultado solo se ofrece como sugerencia»*
 qué nombre se escribe en cada contenedor (`shared/tagFields.ts:52-231`). Un test
 impide que un campo nuevo quede ilegible o inescribible. A esos se suman los
 campos propios del usuario (abajo).
+
+**Copiar, pegar y mostrar desde la cabecera** (v1.26.0). La cabecera «Metadatos» del
+editor de una pista lleva iconos para copiar todos sus metadatos, pegar en ella los de
+la última copiada («Pegar los metadatos de "…"») y «Mostrar en Finder»
+(`copy-meta-btn`, `reveal-file-btn`, `Editor.tsx:1330-1357`).
 
 **El grouping y el género se editan por etiqueta y por pista cuando hay varias
 seleccionadas.** En el editor de varias pistas el resto de campos escriben un valor
@@ -2065,8 +2078,23 @@ estribillo u outro del análisis de frases de rekordbox), el sentido, la distanc
 cuántas veces repite, una condición (siempre, si cabe, si no hay otra cue en ese compás, si no
 hay otra antes del punto), si pone hot cue, CALL o ambos, y el color. Los flujos propios se
 crean en Ajustes → Cues, con una vista previa sobre una pista de ejemplo a 128 BPM. La
-cuenta atrás aprendida de la colección se puede convertir en flujo desde la tarjeta «Tu forma
-de marcar» (abajo).
+cuenta atrás aprendida de la colección se puede convertir en flujo desde el + de la lista de
+flujos, con «Desde cómo marcas» (`cue-flow-add-learned`, `settings/CuesTab.tsx:278`, v1.26.0).
+
+**Dos condiciones más** (v1.26.0). «hasta la marca anterior», solo en reglas que cuentan hacia
+atrás desde el punto, deja que la cuenta atrás cruce los estribillos que no tienen marca y la
+para en la marca anterior (`misfit`, `shared/cueRules.ts:150`). «si no viene otro cue en los
+siguientes» N compases (8 por defecto, `ROOM_GAP`, `shared/cueFlows.ts:66`) deja fuera la cue
+cuando otra cae dentro de esos compases por delante (`allowed`, `shared/cueRules.ts:182`). Cada
+regla solo ofrece las condiciones que le aplican (`conditionsFor`, `CueRuleRow.tsx:44`), y
+debajo dice qué hace la elegida (`settings.cueFlows.whenHint`).
+
+**La vista previa de Ajustes usa la pista seleccionada** (v1.26.0). Si la pista abierta está
+analizada y tiene alguna marca, la vista previa se dibuja sobre ella, con su onda y su rejilla,
+y una barra deja volver a la pista de ejemplo; si no tiene marca, lo dice y usa la de ejemplo.
+Sobre la pista real dice si sus hot cues saldrían iguales o cuántas cambian, y lista las cues
+que el flujo deja fuera con la regla y el motivo: dentro de un estribillo, pasa de otra marca,
+antes del inicio o después del final (`CueFlowPreview.tsx`, `rejectedCues`).
 
 **La cuenta atrás y los estribillos** (v1.16.0). En una regla que cuenta hacia atrás «si
 cabe», la cue que cae donde empieza una racha de estribillos se queda, porque es donde se
@@ -2095,7 +2123,10 @@ onda general (`onDropProposal`, `CueWave.tsx`). Con varias filas seleccionadas d
 (`autoMarkTracks`, `lib/cueAutoMark.ts:56`); «Guardar N pistas en rekordbox» guarda de una
 vez las revisadas. Medido sobre pistas apartadas de una colección real con los drops que
 marcó su DJ: encuentra en torno al 68 % de los drops y en torno al 70 % de sus propuestas son
-drops (`dropDetectMeasure.test.ts`). Necesita el análisis de rekordbox.
+drops (`dropDetectMeasure.test.ts`). Necesita el análisis de rekordbox. Desde v1.26.0 dos
+propuestas no quedan a 32 compases o menos (`picking.spacingBars` 33, `shared/dropModel.json`):
+de dos drops así se queda el más fuerte, y un mismo build-up recibe la cuenta atrás entera en
+vez de dos cortadas.
 
 **Seguras y dudosas** (nuevo en v1.15.0). Cada propuesta es segura o dudosa según la
 puntuación del detector (`SURE_SCORE`, `shared/dropDetect.ts:37`): las seguras se dibujan con
@@ -2113,8 +2144,12 @@ lo que el DJ ha guardado en el editor de cues de Surco. Con eso:
   ajuste si encuentra mejor sus marcas en el 30 % de pistas que aparta para comprobarlo**;
   hacen falta 30 pistas marcadas (`tuneDropTaste`, `shared/dropTaste.ts:128`);
 - enseña cuántos de cada 10 sitios donde marca encuentra Auto en esas pistas apartadas, la
-  cuenta atrás aprendida, cuántas veces lleva su CALL debajo y si suele poner cue de inicio, y
-  ofrece «Usar como flujo».
+  cuenta atrás aprendida, cuántas veces lleva su CALL debajo y si suele poner cue de inicio.
+  Desde v1.26.0 el flujo aprendido se ofrece en el + de la lista de flujos («Desde cómo
+  marcas»), la tarjeta resume en una línea de cuántas pistas aprendió y de dónde (rekordbox,
+  guardadas en Surco) y el detalle se abre con «Lo que aprendió Surco»
+  (`cue-profile-details`, `CueProfileCard.tsx:230`). Hasta aprender, la invitación va arriba
+  de la pestaña; después la pestaña abre con los flujos.
 Traktor y Engine DJ no tienen CALL, así que de ellos solo aprende lo que el DJ guarda en
 Surco. «Aprender mientras corriges» (activado por defecto) suma cada pista guardada
 (`recordCueEdits`, `lib/cueTasteEdits.ts:18`) y vuelve a aprender solo cada 10
