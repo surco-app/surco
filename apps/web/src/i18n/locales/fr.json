@@ -939,7 +939,7 @@
         "steps": [
           {
             "lead": "Choisis ce que fait la conversion.",
-            "text": "Dans Réglages → Sortie, tu décides pour chaque logiciel s'il reste intact, si ses morceaux existants sont mis à jour ou si les nouveaux y sont aussi ajoutés."
+            "text": "Dans Réglages → Logiciels DJ, tu décides pour chaque logiciel s'il reste intact, si ses morceaux existants sont mis à jour ou si les nouveaux y sont aussi ajoutés."
           },
           {
             "lead": "Convertis.",

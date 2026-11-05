@@ -937,7 +937,7 @@
         "steps": [
           {
             "lead": "Choose what converting does.",
-            "text": "In Settings → Output you decide, for each program, whether it's left alone, gets the tracks it already has updated or also gets the new ones added."
+            "text": "In Settings → DJ software you decide, for each program, whether it's left alone, gets the tracks it already has updated or also gets the new ones added."
           },
           {
             "lead": "Convert.",
