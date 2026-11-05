@@ -3,6 +3,7 @@ import {
   AudioLines,
   CircleAlert,
   CircleCheckBig,
+  CircleFadingArrowUp,
   Copy as CopyIcon,
   Disc3,
   Eye,
@@ -53,7 +54,7 @@ type ConversionMode =
   | 'matchReview'
   | 'matchedDiscogs'
   | 'matchedBandcamp'
-type LibraryMode = 'inLibrary' | 'notInLibrary'
+type LibraryMode = 'inLibrary' | 'notInLibrary' | 'betterThanLibrary'
 type DuplicatesMode = 'duplicates'
 type AttentionMode =
   | 'silence'
@@ -110,6 +111,7 @@ const FILTER_ICONS: Record<Mode | 'all', LucideIcon> = {
   matchedBandcamp: Store,
   inLibrary: ListMusic,
   notInLibrary: ListPlus,
+  betterThanLibrary: CircleFadingArrowUp,
   duplicates: CopyIcon,
   silence: Scissors,
   clipping: Zap,
@@ -127,6 +129,12 @@ const FILTER_ICONS: Record<Mode | 'all', LucideIcon> = {
 }
 
 type Tally = ReturnType<typeof qualityCounts>
+
+interface Measure {
+  offered: boolean
+  done: number
+  total: number
+}
 
 // Which selection axis a bucket row toggles. Lets one handler flip the right field and one
 // check read the right field, so a pick from each section can coexist.
@@ -168,7 +176,10 @@ interface Props {
   // Which library the membership buckets read (the conversion destination's), so their
   // labels name the right one — "In Engine DJ" when conversions land there.
   librarySource: LibrarySource
-  gridMeasure?: { offered: boolean; done: number; total: number }
+  gridMeasure?: Measure
+  // The comparison of each file with the copy Apple Music already holds, which the
+  // better-than-the-library bucket reads. Offered only when some track has one.
+  libraryMeasure?: Measure
   // The combined selection — one choice per axis (quality / conversion / library / format),
   // all ANDed. The bar toggles a single axis per click and leaves the menu open, so picking
   // one from each section stacks the filters instead of replacing the previous choice.
@@ -225,6 +236,7 @@ export function QualityFilterBar({
   onTrashSuspects,
   onReviewIncomplete,
   gridMeasure,
+  libraryMeasure,
   children,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
@@ -246,16 +258,23 @@ export function QualityFilterBar({
   const conversionSection = shownConversion.filter((m) => !MATCH_MODES.includes(m))
   const shownAttention = (m: AttentionMode): boolean =>
     tally[m] > 0 || (m === 'badGrid' && gridMeasure?.offered === true)
-  const measuring =
-    gridMeasure && gridMeasure.total > 0 && gridMeasure.done < gridMeasure.total
+  const progressOf = (measure: Measure | undefined) =>
+    measure && measure.total > 0 && measure.done < measure.total
       ? {
-          text: `${Math.floor((gridMeasure.done / gridMeasure.total) * 100)} %`,
+          text: `${Math.floor((measure.done / measure.total) * 100)} %`,
           title: tr('sidebar.filter.gridMeasuring', {
-            done: gridMeasure.done,
-            total: gridMeasure.total,
+            done: measure.done,
+            total: measure.total,
           }),
         }
       : undefined
+  const progress: Partial<Record<Mode, ReturnType<typeof progressOf>>> = {
+    badGrid: progressOf(gridMeasure),
+    betterThanLibrary: progressOf(libraryMeasure),
+  }
+  const libraryModes: Mode[] = libraryMeasure?.offered
+    ? [...LIBRARY_MODES, 'betterThanLibrary']
+    : LIBRARY_MODES
   const matchSection = shownConversion.filter((m) => MATCH_MODES.includes(m))
   // The remaining buckets that follow the format axis, in logical groups rendered with a
   // thin divider between them so the menu reads by dimension. Empty groups drop out, so the
@@ -280,7 +299,7 @@ export function QualityFilterBar({
     // Apple Music library buckets, listed only once the snapshot has resolved a verdict
     // for at least one track — which also keeps them off Windows, where there is no
     // library to read. "Not in library" leads: it's the actionable bucket.
-    ...(tally.inLibrary + tally.notInLibrary > 0 ? [{ key: 'library', modes: LIBRARY_MODES }] : []),
+    ...(tally.inLibrary + tally.notInLibrary > 0 ? [{ key: 'library', modes: libraryModes }] : []),
   ]
   // Only once the crate actually holds the same song twice — a permanently-empty
   // duplicates bucket would just pad the menu.
@@ -405,7 +424,7 @@ export function QualityFilterBar({
       Icon={FILTER_ICONS[mode]}
       dot={mode === 'all' ? null : attentionDot(mode, facets.tally)}
       label={filterLabel(mode)}
-      progress={mode === 'badGrid' ? measuring : undefined}
+      progress={mode === 'all' ? undefined : progress[mode]}
       count={mode === 'all' ? trackCount : countOf(mode)}
       selected={mode === 'all' ? nothingActive : isActive(mode)}
       onClick={mode === 'all' ? () => chooseAll(close) : () => toggle(mode, close)}

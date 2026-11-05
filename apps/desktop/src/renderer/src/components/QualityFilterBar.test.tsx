@@ -40,6 +40,7 @@ const tally = (over: Partial<Tally> = {}): Tally => ({
   mismatch: 0,
   inLibrary: 0,
   notInLibrary: 0,
+  betterThanLibrary: 0,
   duplicates: 0,
   ...over,
 })
@@ -234,6 +235,37 @@ describe('QualityFilterBar', () => {
       'Measuring 344 of 2077',
     )
     expect(screen.getByTestId('quality-filter-badGrid-dot')).toBeInTheDocument()
+  })
+
+  it('offers the better-than-the-library filter among the library buckets once a track has an Apple Music copy to compare with, since picking it is what starts the measuring', () => {
+    renderBar({ tally: tally({ inLibrary: 4 }) })
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    expect(screen.queryByTestId('quality-filter-betterThanLibrary')).toBeNull()
+    cleanup()
+    const { onChange } = renderBar({
+      tally: tally({ inLibrary: 4 }),
+      libraryMeasure: { offered: true, done: 0, total: 4 },
+    })
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    const section = screen.getByTestId('quality-filter-section-library')
+    const option = screen.getByTestId('quality-filter-betterThanLibrary')
+    expect(section.compareDocumentPosition(option) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    fireEvent.click(option)
+    expect(onChange).toHaveBeenCalledWith(sel({ library: 'betterThanLibrary' }))
+  })
+
+  it('says how far the comparison with the library got beside its filter', () => {
+    renderBar({
+      tally: tally({ inLibrary: 40, betterThanLibrary: 3 }),
+      libraryMeasure: { offered: true, done: 10, total: 40 },
+    })
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    expect(screen.getByTestId('quality-filter-betterThanLibrary')).toHaveTextContent(
+      /^Better than Apple Music25 %3$/,
+    )
+    expect(hoverTooltip(screen.getByTestId('quality-filter-betterThanLibrary-progress'))).toEqual(
+      'Measuring 10 of 40',
+    )
   })
 
   it('names the DJ program a track is waiting on in its unanalysed bucket', () => {

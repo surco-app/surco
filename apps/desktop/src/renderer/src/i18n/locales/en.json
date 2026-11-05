@@ -116,6 +116,7 @@
       "notInLibraryEngine": "Not in Engine DJ",
       "inLibrary": "In Apple Music",
       "inLibraryEngine": "In Engine DJ",
+      "betterThanLibrary": "Better than Apple Music",
       "duplicates": "Duplicates",
       "silence": "Silence to trim",
       "clipping": "Clipping",

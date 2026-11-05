@@ -95,6 +95,7 @@ import { useExitPresence } from './hooks/useExitPresence'
 import { useGridVerdicts } from './hooks/useGridVerdicts'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { useLaunchModals } from './hooks/useLaunchModals'
+import { useLibraryCopyVerdicts } from './hooks/useLibraryCopyVerdicts'
 import { useListNavigation } from './hooks/useListNavigation'
 import { useListReviewNotice } from './hooks/useListReviewNotice'
 import { useMetadataClipboard } from './hooks/useMetadataClipboard'
@@ -1903,6 +1904,11 @@ export default function App(): React.JSX.Element {
     )
   }, [playlistScope])
   const gridVerdicts = useGridVerdicts(gridEntries, filterSelection.attention === 'badGrid')
+  const libraryCopyVerdicts = useLibraryCopyVerdicts(
+    scopeTracks,
+    librarySource === 'appleMusic' ? libraryIndex : null,
+    filterSelection.library === 'betterThanLibrary',
+  )
   const gridNoteOf = useMemo(() => {
     if (filterSelection.attention !== 'badGrid') return undefined
     return (t: TrackItem) => {
@@ -1926,9 +1932,11 @@ export default function App(): React.JSX.Element {
       },
       gridTolerance: settings?.cueGridTolerance ?? DEFAULT_CUE_GRID_TOLERANCE,
       gridVerdict: (t) => gridVerdicts.verdictOf(t.id),
+      libraryCopy: libraryCopyVerdicts.verdictOf,
     }),
     [
       gridVerdicts,
+      libraryCopyVerdicts,
       settings?.requiredFields,
       settings?.customFields,
       settings?.cueGridTolerance,
@@ -3496,6 +3504,11 @@ export default function App(): React.JSX.Element {
                               offered: gridEntries.length > 0,
                               done: gridVerdicts.done,
                               total: gridVerdicts.total,
+                            }}
+                            libraryMeasure={{
+                              offered: libraryCopyVerdicts.total > 0,
+                              done: libraryCopyVerdicts.done,
+                              total: libraryCopyVerdicts.total,
                             }}
                             formatTally={formatTally}
                             filterFacets={filterFacets}

@@ -116,6 +116,7 @@
       "notInLibraryEngine": "Engine DJ に未登録",
       "inLibrary": "Apple Music に登録済み",
       "inLibraryEngine": "Engine DJ に登録済み",
+      "betterThanLibrary": "Apple Music より高音質",
       "duplicates": "重複",
       "silence": "トリミングする無音部分",
       "clipping": "クリッピング",

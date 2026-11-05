@@ -3,6 +3,7 @@ import type { GridVerdict } from '../../../shared/gridVerdict'
 import type { SpectrumResult, TrackMetadata } from '../../../shared/types'
 import type { Verification } from '../../../shared/verification'
 import type { TrackItem, TrackStatus } from '../types'
+import type { CopyVerdict } from './bestCopy'
 import * as normalizeText from './normalizeText'
 import {
   EMPTY_FILTER,
@@ -220,6 +221,7 @@ describe('matchesFilter / qualityCounts', () => {
       noCues: 0,
       offGrid: 0,
       badGrid: 0,
+      betterThanLibrary: 0,
       unanalysedRekordbox: 0,
       unanalysedEngine: 0,
       noCover: 5,
@@ -353,6 +355,32 @@ describe('bad grid filter', () => {
   })
 })
 
+describe('better than the library copy filter', () => {
+  const tracks = ['upgrade', 'downgrade', 'same', 'undecided', 'unmeasured'].map(
+    (id) => ({ id, status: 'idle', inLibrary: true }) as TrackItem,
+  )
+  const verdicts: Record<string, CopyVerdict | null> = {
+    upgrade: { winner: 'a', reason: 'lossless' },
+    downgrade: { winner: 'b', reason: 'cutoff' },
+    same: { winner: 'same' },
+    undecided: { winner: 'tie' },
+  }
+  const facts: FilterFacts = { ...NO_FACTS, libraryCopy: (t) => verdicts[t.id] }
+
+  it('keeps only the files the measured comparison calls better than the copy already in the library, the ones worth swapping in', () => {
+    expect(
+      tracks
+        .filter((t) => matchesFilter(t, { ...EMPTY_FILTER, library: 'betterThanLibrary' }, facts))
+        .map((t) => t.id),
+    ).toEqual(['upgrade'])
+    expect(qualityCounts(tracks, facts).betterThanLibrary).toBe(1)
+  })
+
+  it('counts none before anything is measured, so an unmeasured pair is never offered as an upgrade', () => {
+    expect(qualityCounts(tracks).betterThanLibrary).toBe(0)
+  })
+})
+
 describe('unanalysed in a DJ library filter', () => {
   const preview = (extra: object) => ({
     title: '',
@@ -437,6 +465,7 @@ describe('filters that read what App knows about a row', () => {
     unsaved: (t) => t.id !== 'a',
     gridTolerance: 10,
     gridVerdict: () => undefined,
+    libraryCopy: () => undefined,
   }
 
   // Which fields are required is a setting, and unsaved cues live in the cue editor's

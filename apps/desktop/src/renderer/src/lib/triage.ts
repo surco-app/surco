@@ -2,6 +2,7 @@ import { DEFAULT_CUE_GRID_TOLERANCE } from '../../../shared/cueGrid'
 import type { GridVerdict } from '../../../shared/gridVerdict'
 import { MAJOR_CAMELOT, MAJOR_NAMES, MINOR_CAMELOT, MINOR_NAMES } from '../../../shared/keyNames'
 import type { TrackItem } from '../types'
+import type { CopyVerdict } from './bestCopy'
 import { foldText } from './normalizeText'
 import { gradedExt, isLowResCover, isTranscode, qualityVerdict, type Verdict } from './quality'
 
@@ -61,7 +62,9 @@ export type ConversionFilter =
   | 'matchedDiscogs'
   | 'matchedBandcamp'
 // The Apple Music library buckets, gated on a known verdict (see matchesLibrary).
-export type LibraryFilter = 'inLibrary' | 'notInLibrary'
+// 'betterThanLibrary' is the file in hand the measured comparison prefers over the copy
+// the library already holds, asked of App through FilterFacts like 'badGrid'.
+export type LibraryFilter = 'inLibrary' | 'notInLibrary' | 'betterThanLibrary'
 // The same song loaded as two files (see lib/duplicates); a single-value axis so it
 // stacks with the others like any dimension.
 export type DuplicatesFilter = 'duplicates'
@@ -95,6 +98,7 @@ export interface FilterFacts {
   unsaved: (track: TrackItem) => boolean
   gridTolerance: number
   gridVerdict: (track: TrackItem) => GridVerdict | null | undefined
+  libraryCopy: (track: TrackItem) => CopyVerdict | null | undefined
 }
 
 export const NO_FACTS: FilterFacts = {
@@ -102,6 +106,7 @@ export const NO_FACTS: FilterFacts = {
   unsaved: () => false,
   gridTolerance: DEFAULT_CUE_GRID_TOLERANCE,
   gridVerdict: () => undefined,
+  libraryCopy: () => undefined,
 }
 
 // One selection per dimension, all combined with AND. `format` is the source container
@@ -176,8 +181,13 @@ function matchesConversion(
 // The library buckets are gated on a known verdict: a track whose library status hasn't
 // been resolved yet (undefined) belongs to neither, so it never shows under both "owned"
 // and "missing".
-function matchesLibrary(track: TrackItem, filter: LibraryFilter): boolean {
+function matchesLibrary(track: TrackItem, filter: LibraryFilter, facts: FilterFacts): boolean {
+  if (filter === 'betterThanLibrary') return isBetterThanLibrary(track, facts)
   return filter === 'inLibrary' ? track.inLibrary === true : track.inLibrary === false
+}
+
+function isBetterThanLibrary(track: TrackItem, facts: FilterFacts): boolean {
+  return facts.libraryCopy(track)?.winner === 'a'
 }
 
 // True when a track satisfies every active axis. Each null axis is skipped, so an empty
@@ -189,7 +199,7 @@ export function matchesFilter(
 ): boolean {
   if (sel.quality && !matchesQuality(track, sel.quality)) return false
   if (sel.conversion && !matchesConversion(track, sel.conversion, facts)) return false
-  if (sel.library && !matchesLibrary(track, sel.library)) return false
+  if (sel.library && !matchesLibrary(track, sel.library, facts)) return false
   if (sel.duplicates && track.duplicate !== true) return false
   if (sel.attention === 'silence' && track.audioIssues?.silence !== true) return false
   if (sel.attention === 'clipping' && track.audioIssues?.clipping !== true) return false
@@ -473,6 +483,7 @@ export function qualityCounts(
   matchedBandcamp: number
   inLibrary: number
   notInLibrary: number
+  betterThanLibrary: number
   duplicates: number
   silence: number
   clipping: number
@@ -502,6 +513,7 @@ export function qualityCounts(
   let matchedBandcamp = 0
   let inLibrary = 0
   let notInLibrary = 0
+  let betterThanLibrary = 0
   let duplicates = 0
   let silence = 0
   let clipping = 0
@@ -532,6 +544,7 @@ export function qualityCounts(
     else if (t.matchProvider === 'bandcamp') matchedBandcamp += 1
     if (t.inLibrary === true) inLibrary += 1
     else if (t.inLibrary === false) notInLibrary += 1
+    if (isBetterThanLibrary(t, facts)) betterThanLibrary += 1
     if (t.duplicate) duplicates += 1
     if (t.audioIssues?.silence) silence += 1
     if (t.audioIssues?.clipping) clipping += 1
@@ -563,6 +576,7 @@ export function qualityCounts(
     matchedBandcamp,
     inLibrary,
     notInLibrary,
+    betterThanLibrary,
     duplicates,
     silence,
     clipping,
@@ -599,6 +613,7 @@ const TALLY_AXIS: Record<keyof Tally, keyof FilterSelection> = {
   mismatch: 'conversion',
   inLibrary: 'library',
   notInLibrary: 'library',
+  betterThanLibrary: 'library',
   duplicates: 'duplicates',
   silence: 'attention',
   clipping: 'attention',
