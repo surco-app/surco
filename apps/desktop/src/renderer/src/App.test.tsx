@@ -7568,6 +7568,42 @@ describe('App paste metadata feedback', () => {
   })
 })
 
+describe('App copy and paste metadata from the editor', () => {
+  // Fixing a release means stamping one track's tags onto the next, and the pair used to
+  // live only behind a right click on the list. The editor's header pair must reach the
+  // same clipboard: what it copies is what the menu pastes, and the other way round.
+  it('pastes the tags copied in the editor onto the next track', async () => {
+    setApi({
+      readTags: vi.fn((path: string) =>
+        Promise.resolve(
+          path === '/music/a.wav'
+            ? { title: 'Rave Party', artist: 'DJ Roy' }
+            : { title: 'Untitled', artist: 'Nobody' },
+        ),
+      ),
+    })
+    await renderApp()
+    const rows = await addTwoTracks()
+    fireEvent.click(rows[0])
+    await waitFor(() =>
+      expect((screen.getByTestId('field-title') as HTMLInputElement).value).toBe('Rave Party'),
+    )
+    expect(screen.getByTestId('paste-meta-btn')).toBeDisabled()
+    fireEvent.click(screen.getByTestId('copy-meta-btn'))
+    expect(await screen.findByText('Metadata copied')).toBeInTheDocument()
+
+    fireEvent.click(rows[1])
+    await waitFor(() =>
+      expect((screen.getByTestId('field-title') as HTMLInputElement).value).toBe('Untitled'),
+    )
+    fireEvent.click(screen.getByTestId('paste-meta-btn'))
+    await waitFor(() =>
+      expect((screen.getByTestId('field-title') as HTMLInputElement).value).toBe('Rave Party'),
+    )
+    expect((screen.getByTestId('field-artist') as HTMLInputElement).value).toBe('DJ Roy')
+  })
+})
+
 describe('App duplicates filter', () => {
   // The download-folder case this bucket exists for: the same song arriving as two
   // files. The bucket only appears once a real duplicate pair exists, and picking it

@@ -2285,6 +2285,12 @@ export default function App(): React.JSX.Element {
       patchTracks,
       setNotice,
     })
+  const onCopySelectedMeta = useStableCallback(() => {
+    if (selected) onCopyMeta(selected)
+  })
+  const onPasteSelectedMeta = useStableCallback(() => {
+    if (selected) onPasteMeta(selected)
+  })
   // Stable like the other editor props: an inline arrow is a new identity per render,
   // which would re-render the memoized Editor per keystroke.
   const onResultsResizeStart = useStableCallback((e: React.PointerEvent) =>
@@ -3691,6 +3697,9 @@ export default function App(): React.JSX.Element {
                             onTrimDetectedAll={onTrimDetectedAll}
                             onCopyFilename={onCopyFilename}
                             onSearchWeb={onSearchWeb}
+                            onCopyMeta={onCopySelectedMeta}
+                            onPasteMeta={onPasteSelectedMeta}
+                            copiedMetaTitle={copiedMeta ? (copiedMeta.meta.title ?? '') : null}
                             onExportCollection={onOpenExport}
                             readFullTrack={readFullTrack}
                             librarySources={browser.sources}

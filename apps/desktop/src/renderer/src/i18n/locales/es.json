@@ -803,6 +803,7 @@
     "copyFilenameHint": "Copia el nombre del archivo al portapapeles",
     "searchWeb": "Buscar en Google",
     "searchWebHint": "Busca el nombre del archivo en Google",
+    "pasteMetaFrom": "Pegar los metadatos de «{{title}}»",
     "sectionMaximize": "Maximizar la sección",
     "sectionRestore": "Restaurar la sección",
     "otherTagsTitle": "Otros metadatos",
