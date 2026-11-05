@@ -36,6 +36,7 @@ import { repointTracks } from './rekordboxLibrary'
 import { findRekordboxCollection } from './rekordboxPath'
 import type { RekordboxQueue } from './rekordboxQueue'
 import { libraryTrackOps, queueConversionRun, trackOpsFromRun } from './rekordboxQueueFromRun'
+import type { QueueOp } from './rekordboxQueueOps'
 import type { createSessionBackup } from './rekordboxSessionBackup'
 import { updateRekordboxTags } from './rekordboxTags'
 import { seratoLibraryHas } from './seratoCrateEdits'
@@ -307,9 +308,27 @@ export async function flushConversionBatch(
   sessions: Sessions,
   queues: ConversionQueues,
 ): Promise<FlushOutcome> {
+  const added: NonNullable<FlushOutcome['added']> = {}
+  const noting =
+    <A extends unknown[]>(
+      place: 'rekordbox' | 'traktor',
+      enqueue: (ops: QueueOp[], ...rest: A) => void,
+    ) =>
+    (ops: QueueOp[], ...rest: A) => {
+      const paths = ops.flatMap((op) => (op.kind === 'track' && op.add ? [op.path] : []))
+      if (paths.length > 0) added[place] = [...(added[place] ?? []), ...paths]
+      enqueue(ops, ...rest)
+    }
   const flushers: { [P in WritableProgram]: ConversionFlusher<P> } = {
-    traktor: traktorConversionFlusher(host, sessions, queues.traktor),
-    rekordbox: rekordboxConversionFlusher(host, sessions, queues.rekordbox),
+    traktor: traktorConversionFlusher(
+      host,
+      sessions,
+      queues.traktor && { ...queues.traktor, enqueue: noting('traktor', queues.traktor.enqueue) },
+    ),
+    rekordbox: rekordboxConversionFlusher(host, sessions, {
+      ...queues.rekordbox,
+      enqueue: noting('rekordbox', queues.rekordbox.enqueue),
+    }),
     engine: engineConversionFlusher(host, sessions, queues.engine),
   }
   for (const program of FLUSH_ORDER) await flushers[program].before()
@@ -329,7 +348,7 @@ export async function flushConversionBatch(
     } catch (err) {
       log.warn(`serato: queueing the converted tracks failed: ${String(err)}`)
     }
-  return outcome as FlushOutcome
+  return { ...(outcome as FlushOutcome), added }
 }
 
 function queueSeratoRun(queue: NonNullable<ConversionQueues['serato']>, run: ConversionRun): void {

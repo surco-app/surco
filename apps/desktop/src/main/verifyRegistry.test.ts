@@ -412,7 +412,7 @@ describe('verify registry', () => {
   it('Traktor is judged against the entry the write matched, and dropped where it had none', async () => {
     const { deps, registry } = setup({
       readTraktor: vi.fn<VerifyRegistryDeps['readTraktor']>(async (list) =>
-        list.map((e) => (e.before === null ? null : libraryOk('traktor'))),
+        list.map((e) => ('add' in e || e.before === null ? null : libraryOk('traktor'))),
       ),
     })
     const had: NmlPatch = { volume: 'Public', dir: '/:Musica/:', file: 'a.aiff', newFile: 'a.wav' }

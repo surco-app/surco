@@ -17,6 +17,12 @@ import { formatOf } from './verifyFile'
 // before is the FILE of the entry the patch matched in the collection read ahead of the
 // write (matchedEntryFiles), null when Traktor had no entry for the track. cues are that
 // entry's cues as the same read found them (matchedEntryFacts).
+export interface TraktorAddExpect {
+  add: true
+  to: string
+  playlists: RekordboxPlaylistTarget[]
+}
+
 export interface TraktorExpect {
   patch: NmlPatch
   before: string | null
@@ -42,7 +48,7 @@ const check = (
 // internal disk, which Traktor stores by name and a patch leaves empty.
 export function checkTraktor(
   nml: string,
-  list: TraktorExpect[],
+  list: (TraktorExpect | TraktorAddExpect)[],
   bootVolume: string,
 ): (PlaceCheck | null)[] {
   const at = new Map<string, number>()
@@ -63,6 +69,7 @@ export function checkTraktor(
     return e && nml.slice(e.start, e.end)
   }
   return list.map((e) => {
+    if ('add' in e) return inPlaylists(nml, e.to, e.playlists, bootVolume)
     const result = judge(at, atAnyCase, cuesAt, e, bootVolume)
     if (result?.state !== 'ok' && result !== null) return result
     const names = e.names ?? e.patch.tags
@@ -101,7 +108,7 @@ function inPlaylists(
   if (missing) return check('mismatch', 'traktorPlaylistMissing', { playlist: missing.name })
   return check('ok', 'traktorOk', {
     format: formatOf(extname(to)),
-    playlists: wanted.map((t) => t.name),
+    ...(wanted.length > 0 ? { playlists: wanted.map((t) => t.name) } : {}),
   })
 }
 

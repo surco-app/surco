@@ -414,3 +414,103 @@ describe('The self-check reads back the Traktor playlists the DJ asked for', () 
     expect(surco.statuses('x.flac')).not.toContain('mismatch')
   }, 60_000)
 })
+
+describe('The self-check says a track it added reached the library', () => {
+  // With "add new tracks" on and no playlist picked, the track went into rekordbox or
+  // Traktor and the self-check named only the file, so a DJ who searched rekordbox while it
+  // was still open found nothing and took the add for broken. The line names the program,
+  // and waits for it to close like any other change.
+  async function addToRekordbox(name: string) {
+    const root = scenarioDir(name)
+    makeTrack(join(root, 'Downloads', 'x.flac'), { title: 'Plastic Dreams', artist: 'Jaydee' })
+    const db = makeRekordbox(join(root, 'rekordbox'), [
+      {
+        id: '900001',
+        path: join(root, 'Elsewhere', 'Show Me Love.mp3'),
+        title: 'Show Me Love',
+        artist: 'Robin S',
+        fileType: 1,
+      },
+    ])
+    const surco = await openSurco({
+      verify: true,
+      settings: {
+        outputFormat: 'aiff',
+        syncRekordbox: true,
+        addToRekordbox: true,
+        rekordboxDbPath: db,
+      },
+      destination: 'beside',
+    })
+    await surco.drop(join(root, 'Downloads'))
+    await surco.convertAll()
+    await surco.settled()
+    return surco
+  }
+  const line = (surco: Awaited<ReturnType<typeof addToRekordbox>>, place: string) =>
+    surco.verification('x.flac')?.checks.find((c) => c.place === place)
+
+  it('lists rekordbox for a track it added with no playlist', async () => {
+    const surco = await addToRekordbox('verify-rekordbox-add')
+    expect(line(surco, 'rekordbox')).toEqual({
+      place: 'rekordbox',
+      state: 'ok',
+      detail: { key: 'rekordboxOk', params: { format: 'AIFF', cues: 0 } },
+    })
+    expect(surco.verification('x.flac')?.status).toBe('ok')
+  }, 60_000)
+
+  it('says the add waits for rekordbox to close, and ok once it lands', async () => {
+    vi.mocked(isRekordboxRunning).mockResolvedValue(true)
+    const surco = await addToRekordbox('verify-rekordbox-add-open')
+    expect(line(surco, 'rekordbox')?.state).toBe('pending')
+    vi.mocked(isRekordboxRunning).mockResolvedValue(false)
+    await surco.rekordboxClosed()
+    await surco.settled()
+    expect(line(surco, 'rekordbox')?.state).toBe('ok')
+  }, 60_000)
+
+  it('lists Traktor for a track it added with no playlist', async () => {
+    const root = scenarioDir('verify-traktor-add')
+    makeTrack(join(root, 'Downloads', 'x.flac'), { title: 'Plastic Dreams', artist: 'Jaydee' })
+    const nml = join(root, 'Traktor', 'collection.nml')
+    mkdirSync(join(root, 'Traktor'), { recursive: true })
+    const elsewhere = toNmlLocation(
+      makeTrack(join(root, 'Elsewhere', 'Show Me Love.flac'), {
+        title: 'Show Me Love',
+        artist: 'Robin S',
+      }),
+    )
+    const volume = elsewhere.volume || bootVolumeName()
+    writeFileSync(
+      nml,
+      `<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<NML VERSION="19"><HEAD COMPANY="www.native-instruments.com" PROGRAM="Traktor"></HEAD>
+<COLLECTION ENTRIES="1">
+<ENTRY TITLE="Show Me Love" ARTIST="Robin S"><LOCATION DIR="${elsewhere.dir}" FILE="${elsewhere.file}" VOLUME="${volume}" VOLUMEID="5f3a9c2e"></LOCATION></ENTRY>
+</COLLECTION>
+<PLAYLISTS><NODE TYPE="FOLDER" NAME="$ROOT"><SUBNODES COUNT="0"></SUBNODES></NODE></PLAYLISTS>
+</NML>
+`,
+    )
+    const surco = await openSurco({
+      verify: true,
+      settings: {
+        outputFormat: 'aiff',
+        syncTraktor: true,
+        addToTraktor: true,
+        traktorNmlPath: nml,
+      },
+      destination: 'beside',
+    })
+    await surco.drop(join(root, 'Downloads'))
+    await surco.convertAll()
+    await surco.settled()
+    expect(line(surco, 'traktor')).toEqual({
+      place: 'traktor',
+      state: 'ok',
+      detail: { key: 'traktorOk', params: { format: 'AIFF' } },
+    })
+    expect(surco.verification('x.flac')?.status).toBe('ok')
+  }, 60_000)
+})
