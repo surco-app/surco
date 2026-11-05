@@ -1,6 +1,7 @@
 import {
   AudioWaveform,
   ChartColumn,
+  Disc3,
   Flag,
   FolderOutput,
   Globe,
@@ -26,6 +27,7 @@ export type SettingsTab =
   | 'conversion'
   | 'processing'
   | 'destination'
+  | 'programs'
   | 'naming'
   | 'editor'
   | 'layout'
@@ -45,7 +47,7 @@ export type SettingsTab =
 export const SETTINGS_TAB_GROUPS: { heading: string | null; tabs: SettingsTab[] }[] = [
   { heading: null, tabs: ['general', 'search'] },
   { heading: 'editing', tabs: ['editor', 'layout', 'fields', 'artwork', 'cues'] },
-  { heading: 'output', tabs: ['conversion', 'processing', 'naming', 'destination'] },
+  { heading: 'output', tabs: ['conversion', 'processing', 'naming', 'destination', 'programs'] },
   { heading: 'app', tabs: ['shortcuts', 'stats', 'advanced'] },
 ]
 
@@ -59,6 +61,7 @@ export const SETTINGS_TAB_ICONS: Record<SettingsTab, LucideIcon> = {
   conversion: RefreshCw,
   processing: AudioWaveform,
   destination: FolderOutput,
+  programs: Disc3,
   naming: Tag,
   editor: SquarePen,
   layout: LayoutList,

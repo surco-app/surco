@@ -432,7 +432,7 @@ describe('CopiesScreen', () => {
     )
     expect(screen.queryByTestId('copies-settings-rekordbox')).not.toBeInTheDocument()
     fireEvent.click(screen.getByTestId('copies-settings-engine'))
-    expect(open).toHaveBeenCalledWith('destination')
+    expect(open).toHaveBeenCalledWith('programs')
   })
 
   it('keeps a closed list out of reach and gives it back when opened', () => {

@@ -374,7 +374,7 @@ describe('SettingsModal Traktor collection in use', () => {
         onSettingsReplaced={() => {}}
       />,
     )
-    fireEvent.click(await screen.findByTestId('settings-tab-destination'))
+    fireEvent.click(await screen.findByTestId('settings-tab-programs'))
 
     expect(await screen.findByTestId('settings-traktor-nml-mismatch')).toHaveTextContent(inUse)
     expect(asked).toHaveBeenCalledWith(chosen)
@@ -1565,10 +1565,7 @@ describe('settings search', () => {
   it('opens the tab of the selected result and marks the setting so the eye lands on it', async () => {
     open()
     search('traktor')
-    expect(screen.getByRole('tabpanel')).toHaveAttribute(
-      'aria-labelledby',
-      'settings-tab-destination',
-    )
+    expect(screen.getByRole('tabpanel')).toHaveAttribute('aria-labelledby', 'settings-tab-programs')
     await waitFor(() =>
       expect(
         screen.getByRole('tabpanel').querySelector('[data-search-id="traktorSync"]'),
@@ -1687,6 +1684,32 @@ describe('settings search', () => {
     open()
     search('traktor')
     search('')
-    expect(screen.getByTestId('settings-tab-destination')).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByTestId('settings-tab-programs')).toHaveAttribute('aria-selected', 'true')
+  })
+})
+
+describe('the DJ software tab', () => {
+  // Setting Traktor up meant visiting General, Output, Fields and Cues; every program's
+  // collection and what a conversion does to it now sit in one tab, and Output keeps only
+  // where the files go.
+  it('holds each program and leaves Output to where the files go', async () => {
+    render(
+      <SettingsModal
+        settings={settings}
+        onClose={() => {}}
+        onSave={() => {}}
+        onPreviewTheme={() => {}}
+        onSettingsReplaced={() => {}}
+      />,
+    )
+    fireEvent.click(await screen.findByTestId('settings-tab-destination'))
+    const output = screen.getByRole('tabpanel')
+    expect(output.querySelector('[data-search-id="destination"]')).not.toBeNull()
+    expect(output.querySelector('[data-search-id="traktorSync"]')).toBeNull()
+    fireEvent.click(screen.getByTestId('settings-tab-programs'))
+    const programs = screen.getByRole('tabpanel')
+    for (const id of ['traktorSync', 'rekordboxSync', 'engineSync', 'seratoSync'])
+      expect(programs.querySelector(`[data-search-id="${id}"]`)).not.toBeNull()
+    expect(programs.querySelector('[data-search-id="destination"]')).toBeNull()
   })
 })

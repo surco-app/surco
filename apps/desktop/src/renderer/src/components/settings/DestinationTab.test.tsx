@@ -15,7 +15,7 @@ import type { PatchSynced } from '../../lib/settingsTabs'
   platform: 'darwin',
   seratoAvailable: async () => false,
 }
-const { DestinationTab } = await import('./DestinationTab')
+const { DestinationTab, ProgramsTab } = await import('./DestinationTab')
 
 afterEach(cleanup)
 
@@ -106,10 +106,14 @@ const local: LocalDraft = {
   beatportUsername: '',
 }
 
-function renderTab(over: Partial<SyncedDraft> = {}, localOver: Partial<LocalDraft> = {}) {
+function renderTab(
+  over: Partial<SyncedDraft> = {},
+  localOver: Partial<LocalDraft> = {},
+  Tab: typeof DestinationTab = DestinationTab,
+) {
   const patch = vi.fn()
   render(
-    <DestinationTab
+    <Tab
       synced={{ ...synced, ...over }}
       local={{ ...local, ...localOver }}
       patch={patch}
@@ -127,9 +131,13 @@ function renderTab(over: Partial<SyncedDraft> = {}, localOver: Partial<LocalDraf
 
 // The cue offset only does anything with a collection set, so every test of it renders
 // the tab already pointed at one.
+function renderPrograms(over: Partial<SyncedDraft> = {}, localOver: Partial<LocalDraft> = {}) {
+  return renderTab(over, localOver, ProgramsTab)
+}
+
 function renderWithCollection(patch: PatchSynced, offset = '0'): void {
   render(
-    <DestinationTab
+    <ProgramsTab
       synced={{ ...synced, traktorCueOffsetMs: offset }}
       local={{ ...local, traktorNmlPath: '/dj/collection.nml' }}
       patch={patch}
@@ -231,7 +239,7 @@ describe('DestinationTab Engine DJ destination', () => {
   })
 
   it('keeps the Engine library folder settable in the Engine DJ section whatever the destination', () => {
-    renderTab({ convertBesideOriginal: true })
+    renderPrograms({ convertBesideOriginal: true })
     const library = screen.getByTestId('settings-engine-library')
     expect(library).toHaveTextContent('/music/Engine Library')
     expect(library.closest('[inert]')).toBeNull()
@@ -243,7 +251,7 @@ describe('DestinationTab Traktor collection', () => {
   // Traktor cue sync is a side effect of conversion, not a destination the file goes
   // to — it must stay visible whatever radio is selected.
   it('always shows the collection.nml field regardless of the chosen destination', () => {
-    renderTab()
+    renderPrograms()
     expect(screen.getByTestId('settings-traktor-nml').closest('[inert]')).toBeNull()
     // An empty box says nothing about what it wants; with no collection set the field
     // says so in words instead of sitting blank next to a floating button.
@@ -255,7 +263,7 @@ describe('DestinationTab Traktor collection', () => {
   it('opens the file picker when Change is clicked', () => {
     const onChangeTraktorNmlPath = vi.fn()
     render(
-      <DestinationTab
+      <ProgramsTab
         synced={synced}
         local={local}
         patch={vi.fn()}
@@ -275,9 +283,9 @@ describe('DestinationTab Traktor collection', () => {
   // Autodetection only proposes a candidate; it must never appear once a path is
   // already set (staged or saved), so a returning user doesn't see it resurface.
   it('offers a detected path to accept only while no path is set yet', () => {
-    renderTab({}, {})
+    renderPrograms({}, {})
     render(
-      <DestinationTab
+      <ProgramsTab
         synced={synced}
         local={local}
         patch={vi.fn()}
@@ -293,7 +301,7 @@ describe('DestinationTab Traktor collection', () => {
     expect(screen.getByTestId('settings-traktor-nml-detected')).toBeInTheDocument()
     cleanup()
     render(
-      <DestinationTab
+      <ProgramsTab
         synced={synced}
         local={{ ...local, traktorNmlPath: '/already/set/collection.nml' }}
         patch={vi.fn()}
@@ -315,7 +323,7 @@ describe('DestinationTab Traktor collection', () => {
     const onAcceptDetectedNmlPath = vi.fn()
     const traktorUses = '/Users/dj/Documents/Native Instruments/Traktor 4.0.2/collection.nml'
     render(
-      <DestinationTab
+      <ProgramsTab
         synced={synced}
         local={{
           ...local,
@@ -341,7 +349,7 @@ describe('DestinationTab Traktor collection', () => {
   it('stages the detected path only when the user accepts it', () => {
     const onAcceptDetectedNmlPath = vi.fn()
     render(
-      <DestinationTab
+      <ProgramsTab
         synced={synced}
         local={local}
         patch={vi.fn()}
@@ -366,7 +374,7 @@ describe('DestinationTab Traktor collection', () => {
   it('setting Traktor to update syncs without adding', () => {
     const patch = vi.fn()
     render(
-      <DestinationTab
+      <ProgramsTab
         synced={{ ...synced, syncTraktor: false }}
         local={{ ...local, traktorNmlPath: '/dj/collection.nml' }}
         patch={patch}
@@ -390,7 +398,7 @@ describe('DestinationTab Traktor collection', () => {
   // still missing, and the hint below names what.
   it('Traktor stays disabled until a collection is chosen', () => {
     render(
-      <DestinationTab
+      <ProgramsTab
         synced={{ ...synced, syncTraktor: false }}
         local={{ ...local, traktorNmlPath: '' }}
         patch={vi.fn()}
@@ -414,7 +422,7 @@ describe('DestinationTab Traktor collection', () => {
   it('turning rekordbox to add saves both switches', () => {
     const patch = vi.fn()
     render(
-      <DestinationTab
+      <ProgramsTab
         synced={{ ...synced, syncRekordbox: false }}
         local={local}
         patch={patch}
@@ -436,7 +444,7 @@ describe('DestinationTab Traktor collection', () => {
   it('turning a program off clears both switches', () => {
     const patch = vi.fn()
     render(
-      <DestinationTab
+      <ProgramsTab
         synced={{ ...synced, syncEngineDj: true, addToEngineDj: true }}
         local={local}
         patch={patch}
@@ -456,15 +464,15 @@ describe('DestinationTab Traktor collection', () => {
   })
 
   it('a user from the Engine destination sees Engine on add', () => {
-    renderTab({ addToEngineDj: true, syncEngineDj: true })
+    renderPrograms({ addToEngineDj: true, syncEngineDj: true })
     expect(screen.getByTestId('settings-reach-engine-add')).toHaveAttribute('aria-pressed', 'true')
   })
 
   it('explains what adding costs only while a program is set to add', () => {
-    renderTab({ syncTraktor: true, addToTraktor: false })
+    renderPrograms({ syncTraktor: true, addToTraktor: false })
     expect(screen.queryByTestId('settings-reach-traktor-add-hint')).toBeNull()
     cleanup()
-    renderTab({ syncTraktor: true, addToTraktor: true })
+    renderPrograms({ syncTraktor: true, addToTraktor: true })
     expect(screen.getByTestId('settings-reach-traktor-add-hint')).toBeInTheDocument()
     expect(screen.queryByTestId('settings-reach-rekordbox-add-hint')).toBeNull()
     expect(screen.queryByTestId('settings-reach-engine-add-hint')).toBeNull()
@@ -474,7 +482,7 @@ describe('DestinationTab Traktor collection', () => {
   // saying no collection was found — rather than wondering whether Surco supports it.
   it('rekordbox stays disabled when no collection was found', () => {
     render(
-      <DestinationTab
+      <ProgramsTab
         synced={{ ...synced, syncRekordbox: false }}
         local={local}
         patch={vi.fn()}
@@ -496,7 +504,7 @@ describe('DestinationTab Traktor collection', () => {
   it('offers the rekordbox collection picker even when none was found', () => {
     const onChangeRekordboxDbPath = vi.fn()
     render(
-      <DestinationTab
+      <ProgramsTab
         synced={synced}
         local={local}
         patch={vi.fn()}
@@ -519,7 +527,7 @@ describe('DestinationTab Traktor collection', () => {
   // Nothing configured means nothing to clear, and a live button that does nothing reads
   it('keeps the cue offset usable with no collection configured', () => {
     render(
-      <DestinationTab
+      <ProgramsTab
         synced={synced}
         local={local}
         patch={vi.fn()}
@@ -535,7 +543,7 @@ describe('DestinationTab Traktor collection', () => {
     expect(screen.getByTestId('settings-cue-dir-early')).toBeEnabled()
     cleanup()
     render(
-      <DestinationTab
+      <ProgramsTab
         synced={synced}
         local={{ ...local, traktorNmlPath: '/dj/collection.nml' }}
         patch={vi.fn()}
@@ -558,7 +566,7 @@ describe('DestinationTab Traktor collection', () => {
   // box does not take keyboard focus and the text stays where it was rendered.
   it('keeps the collection path from scrolling out of view', () => {
     render(
-      <DestinationTab
+      <ProgramsTab
         synced={synced}
         local={{
           ...local,
@@ -696,7 +704,7 @@ describe('DestinationTab Traktor collection', () => {
   // which is what this offset moves, so the controls stay usable without one.
   it('keeps the choices usable while no collection is configured', () => {
     render(
-      <DestinationTab
+      <ProgramsTab
         synced={synced}
         local={local}
         patch={vi.fn()}
@@ -719,7 +727,7 @@ describe('DestinationTab Traktor collection', () => {
   it('stages a direction picked with no collection set', () => {
     const patch = vi.fn<PatchSynced>()
     render(
-      <DestinationTab
+      <ProgramsTab
         synced={synced}
         local={local}
         patch={patch}
@@ -858,7 +866,7 @@ describe('complete on close', () => {
     }
     const patch = vi.fn()
     render(
-      <DestinationTab
+      <ProgramsTab
         synced={{ ...synced, completeCuesOnClose }}
         local={local}
         patch={patch}
@@ -914,7 +922,7 @@ describe('complete on close', () => {
     }
     const patch = vi.fn()
     render(
-      <DestinationTab
+      <ProgramsTab
         synced={{ ...synced, completeCuesOnClose: false }}
         local={local}
         patch={patch}
@@ -939,7 +947,7 @@ describe('complete on close', () => {
   it('can still be turned off when the collection is gone, since it would write there at the next close', () => {
     const patch = vi.fn()
     render(
-      <DestinationTab
+      <ProgramsTab
         synced={{ ...synced, completeCuesOnClose: true }}
         local={local}
         patch={patch}
@@ -960,7 +968,7 @@ describe('complete on close', () => {
 
   it('cannot be turned on without a collection', () => {
     render(
-      <DestinationTab
+      <ProgramsTab
         synced={{ ...synced, completeCuesOnClose: false }}
         local={local}
         patch={vi.fn()}
@@ -992,7 +1000,7 @@ describe('DestinationTab Serato', () => {
   it('turns Serato to add from Settings', async () => {
     const restore = withSerato(true)
     try {
-      const patch = renderTab()
+      const patch = renderPrograms()
       await waitFor(() => expect(screen.getByTestId('settings-reach-serato')).toBeEnabled())
       fireEvent.click(screen.getByTestId('settings-reach-serato-add'))
       expect(patch).toHaveBeenCalledWith('syncSerato', true)
@@ -1005,7 +1013,7 @@ describe('DestinationTab Serato', () => {
   it('disables the Serato row without a Serato library', async () => {
     const restore = withSerato(false)
     try {
-      renderTab()
+      renderPrograms()
       expect(await screen.findByTestId('settings-reach-serato')).toBeDisabled()
     } finally {
       restore()
@@ -1015,7 +1023,7 @@ describe('DestinationTab Serato', () => {
   it('keeps the Serato row usable while it is on and the library is gone, so it can be switched off', async () => {
     const restore = withSerato(false)
     try {
-      const patch = renderTab({ syncSerato: true, addToSerato: true })
+      const patch = renderPrograms({ syncSerato: true, addToSerato: true })
       await waitFor(() => expect(window.api.seratoAvailable).toBeDefined())
       expect(screen.getByTestId('settings-reach-serato')).toBeEnabled()
       fireEvent.click(screen.getByTestId('settings-reach-serato-off'))

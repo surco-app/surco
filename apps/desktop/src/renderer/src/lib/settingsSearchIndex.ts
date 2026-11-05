@@ -62,10 +62,10 @@ const SETTINGS_IDS: [SettingsTab, string[]][] = [
       'fullReleaseDate',
     ],
   ],
+  ['destination', ['destination', 'originals', 'originalBackup']],
   [
-    'destination',
+    'programs',
     [
-      'destination',
       'traktorSync',
       'traktorNmlPath',
       'traktorCueOffset',
@@ -74,8 +74,6 @@ const SETTINGS_IDS: [SettingsTab, string[]][] = [
       'completeCues',
       'engineSync',
       'seratoSync',
-      'originals',
-      'originalBackup',
     ],
   ],
   ['advanced', ['configDir', 'backup', 'backups', 'cache', 'log']],
