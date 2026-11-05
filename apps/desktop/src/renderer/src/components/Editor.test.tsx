@@ -2149,11 +2149,13 @@ describe('Editor multi-select', () => {
     expect(onChangeAllMeta).not.toHaveBeenCalled()
   })
 
-  // The same post-convert "Add to Apple Music" button is reused for the selection rather
+  // The same post-convert "Add to Apple Music" action is reused for the selection rather
   // than reimplemented, so once every track is converted it adds them all in one click.
-  it('reuses the Apple Music button to add the whole selection once converted', () => {
+  // With a folder destination it sits in the more-actions menu.
+  it('reuses the Apple Music add for the whole selection once converted', () => {
     const { onAddAllToAppleMusic } = renderMulti({ done: true, platform: 'darwin' })
-    fireEvent.click(screen.getByTestId('add-apple-music'))
+    fireEvent.click(screen.getByTestId('done-more'))
+    fireEvent.click(screen.getByTestId('menu-add-apple-music'))
     expect(onAddAllToAppleMusic).toHaveBeenCalled()
   })
 

@@ -292,6 +292,12 @@ export function ConvertFooter({
       .finally(() => setRetrying(false))
   }
   const musicPrimary = destination === 'appleMusic' || hasMusicCopy
+  const musicOffered =
+    isMacOS() &&
+    !showInMusic &&
+    !musicAdded &&
+    (musicExt !== 'flac' || hasMusicCopy) &&
+    (!inMusicLibraryOnly || hasMusicCopy)
   const lossyToLossless =
     !isMulti &&
     isLosslessContainer(format) &&
@@ -616,26 +622,22 @@ export function ConvertFooter({
                 />
               )}
               <div data-testid="done-actions" className="flex shrink-0 items-center gap-2">
-                {isMacOS() &&
-                  !showInMusic &&
-                  !musicAdded &&
-                  (musicExt !== 'flac' || hasMusicCopy) &&
-                  (!inMusicLibraryOnly || hasMusicCopy) && (
-                    <button
-                      type="button"
-                      data-testid="add-apple-music"
-                      data-variant={musicPrimary ? 'primary' : 'secondary'}
-                      onClick={onAddToAppleMusic}
-                      disabled={musicAdding}
-                      className={`press flex h-8 shrink-0 items-center whitespace-nowrap rounded-lg px-3 text-xs font-medium disabled:opacity-60 ${
-                        musicPrimary
-                          ? 'bg-[var(--color-accent)] text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]'
-                          : 'border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] text-fg hover:bg-[var(--color-line-strong)]'
-                      }`}
-                    >
-                      {musicLabel}
-                    </button>
-                  )}
+                {musicOffered && musicPrimary && (
+                  <button
+                    type="button"
+                    data-testid="add-apple-music"
+                    data-variant={musicPrimary ? 'primary' : 'secondary'}
+                    onClick={onAddToAppleMusic}
+                    disabled={musicAdding}
+                    className={`press flex h-8 shrink-0 items-center whitespace-nowrap rounded-lg px-3 text-xs font-medium disabled:opacity-60 ${
+                      musicPrimary
+                        ? 'bg-[var(--color-accent)] text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]'
+                        : 'border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] text-fg hover:bg-[var(--color-line-strong)]'
+                    }`}
+                  >
+                    {musicLabel}
+                  </button>
+                )}
                 <DoneMenu
                   multi={isMulti}
                   outputFormat={format}
@@ -647,6 +649,11 @@ export function ConvertFooter({
                   destination={destination}
                   destinations={destinations}
                   revealPath={addedToMusic ? null : revealPath}
+                  music={
+                    musicOffered && !musicPrimary && onAddToAppleMusic
+                      ? { label: musicLabel, busy: musicAdding, onAdd: onAddToAppleMusic }
+                      : undefined
+                  }
                   onProcess={onProcess}
                   onSelectFormat={onSelectFormat}
                   onSelectDestination={onSelectDestination}
