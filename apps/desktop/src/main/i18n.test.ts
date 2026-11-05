@@ -29,6 +29,15 @@ describe('pickMenuLang', () => {
 })
 
 describe('createMenuT', () => {
+  it('uses the Japanese Windows reveal label on every surface', async () => {
+    const { default: renderer } = await import('../renderer/src/i18n/locales/ja.json')
+    const label = createMenuT('ja')('revealWin')
+    expect(label).toBe('エクスプローラーで表示')
+    expect(renderer.commands.revealWin).toBe(label)
+    expect(renderer.trackList.context.revealWin).toBe(label)
+    expect(renderer.copies.revealWin).toBe(label)
+  })
+
   it('asks to close Engine DJ for cues without promising a conversion that is not running', () => {
     for (const lang of ['es', 'en', 'de', 'fr', 'pt-BR']) {
       const t = createMenuT(lang)
