@@ -8,7 +8,7 @@ import { type CueFlow, MIX_IN, MY_FLOW } from '../../../../shared/cueFlows'
 import type { CueProfile, CueProfileRead } from '../../../../shared/cueProfile'
 import '../../i18n'
 import { installApi } from '../../test/api'
-import { CueProfileCard } from './CueProfileCard'
+import { CueProfileCard, useCueProfileRead } from './CueProfileCard'
 
 afterEach(cleanup)
 
@@ -52,9 +52,13 @@ function Harness({ flows = [MIX_IN] }: { flows?: CueFlow[] }) {
     activeCueFlow: MIX_IN.id,
     cueLearnFromEdits: true,
   })
+  const [read, onLearned] = useCueProfileRead()
   last = draft
+  if (!read) return null
   return (
     <CueProfileCard
+      read={read}
+      onLearned={onLearned}
       synced={draft}
       patch={(key, value) => setDraft((d) => ({ ...d, [key]: value }))}
       onAdopt={vi.fn()}

@@ -13,9 +13,37 @@ import { CheckboxRow } from './CheckboxRow'
 import { SettingsHint } from './SettingsPrimitives'
 
 interface Props {
+  read: CueProfileRead
+  onLearned: (profile: CueProfile) => void
   synced: Pick<SyncedDraft, 'cueFlows' | 'activeCueFlow' | 'cueLearnFromEdits'>
   patch: PatchSynced
   onAdopt: (id: string) => void
+}
+
+export function useCueProfileRead(): [CueProfileRead | null, (profile: CueProfile) => void] {
+  const [read, setRead] = useState<CueProfileRead | null>(null)
+  const alive = useRef(true)
+  const load = useCallback(() => {
+    window.api.cueProfile().then(
+      (next) => {
+        if (alive.current) setRead(next)
+      },
+      () => {},
+    )
+  }, [])
+  useEffect(() => {
+    alive.current = true
+    load()
+    const off = window.api.onCueProfileChanged(load)
+    return () => {
+      alive.current = false
+      off()
+    }
+  }, [load])
+  const learned = useCallback((profile: CueProfile) => {
+    if (alive.current) setRead((r) => (r ? { ...r, profile } : r))
+  }, [])
+  return [read, learned]
 }
 
 const BUTTON =
@@ -62,30 +90,23 @@ function Fact({
   )
 }
 
-export function CueProfileCard({ synced, patch, onAdopt }: Props): React.JSX.Element | null {
+export function CueProfileCard({
+  read,
+  onLearned,
+  synced,
+  patch,
+  onAdopt,
+}: Props): React.JSX.Element {
   const { t: tr, i18n } = useTranslation()
-  const [read, setRead] = useState<CueProfileRead | null>(null)
   const [learning, setLearning] = useState(false)
   const [failed, setFailed] = useState(false)
   const alive = useRef(true)
-  const load = useCallback(() => {
-    window.api.cueProfile().then(
-      (next) => {
-        if (alive.current) setRead(next)
-      },
-      () => {},
-    )
-  }, [])
   useEffect(() => {
     alive.current = true
-    load()
-    const off = window.api.onCueProfileChanged(load)
     return () => {
       alive.current = false
-      off()
     }
-  }, [load])
-  if (!read) return null
+  }, [])
   const count = (n: number) => formatCount(n, i18n.language)
   const profile: CueProfile | null = read.profile
   const learn = () => {
@@ -94,9 +115,7 @@ export function CueProfileCard({ synced, patch, onAdopt }: Props): React.JSX.Ele
     window.api
       .learnCueProfile()
       .then(
-        (learned) => {
-          if (alive.current) setRead((r) => (r ? { ...r, profile: learned } : r))
-        },
+        (learned) => onLearned(learned),
         (e: unknown) => {
           window.api.logError(
             `cue profile: learning failed (${e instanceof Error ? e.message : String(e)})`,

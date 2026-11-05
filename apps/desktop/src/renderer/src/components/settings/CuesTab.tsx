@@ -26,7 +26,7 @@ import { SegmentedControl } from '../SegmentedControl'
 import { SPLIT_ITEM, useSplitMenu } from '../SplitButton'
 import { Tooltip } from '../Tooltip'
 import { CheckboxRow } from './CheckboxRow'
-import { CueProfileCard } from './CueProfileCard'
+import { CueProfileCard, useCueProfileRead } from './CueProfileCard'
 import { SettingsHint } from './SettingsPrimitives'
 
 interface Props {
@@ -66,6 +66,7 @@ export function CuesTab({
   const [renaming, setRenaming] = useState(false)
   const picker = useSplitMenu()
   const more = useSplitMenu()
+  const [read, onLearned] = useCueProfileRead()
   const nameRef = useRef<HTMLInputElement>(null)
   useEffect(() => {
     if (!renaming) return
@@ -135,9 +136,18 @@ export function CuesTab({
   }
 
   const inUse = synced.activeCueFlow === MANUAL_CUE_FLOW ? null : activeCueFlow(synced).id
+  const card = read && (
+    <CueProfileCard
+      read={read}
+      onLearned={onLearned}
+      synced={synced}
+      patch={patch}
+      onAdopt={select}
+    />
+  )
   return (
     <div className="flex flex-col gap-5">
-      <CueProfileCard synced={synced} patch={patch} onAdopt={select} />
+      {read && !read.profile && card}
       <div className="flex flex-col gap-2" data-search-id="cueFlows.flows">
         <h3 className={HEADING}>{tr('settings.cueFlows.flows')}</h3>
         <div className="flex items-center gap-2">
@@ -364,6 +374,8 @@ export function CuesTab({
           </SettingsHint>
         )}
       </div>
+
+      {read?.profile && card}
 
       <div className="flex flex-col gap-2">
         <h3 className={`${HEADING} flex items-center gap-1.5`}>
