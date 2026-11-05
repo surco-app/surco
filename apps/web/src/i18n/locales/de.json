@@ -625,7 +625,7 @@
         ],
         "points": [
           "Ab Werk analysiert Surco alles beim Import und sucht in Discogs, Bandcamp, Deezer und MusicBrainz, ohne dass du etwas einrichtest.",
-          "Findet Surco deine rekordbox-, Engine-DJ- oder Traktor-Sammlung, kommt ein fünfter Schritt dazu."
+          "Findet Surco rekordbox, Traktor, Engine DJ oder Serato, fragt es gleich nach der Begrüßung, womit du auflegst, und was du nicht ankreuzt, verschwindet aus der Seitenleiste."
         ],
         "shot": "instalar-de.webp",
         "shotCaption": "Der Willkommensassistent beim ersten Start."

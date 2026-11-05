@@ -11,6 +11,7 @@ vi.hoisted(() => {
     // The wizard asks both on mount to decide whether the collections step exists at all.
     rekordboxCollection: async () => '',
     detectTraktorNmlPath: async () => null,
+    seratoAvailable: async () => false,
     engineAvailable: async () => false,
   }
 })
@@ -138,9 +139,32 @@ const settings: Settings = {
   lastSeenChangelogVersion: '',
 }
 
+const STEP_MARK = {
+  programs: 'onboarding-sync-none',
+  format: 'onboarding-destination-folder',
+  audio: 'onboarding-audio-intents',
+  search: 'onboarding-search-providers',
+} as const
+
+function next(): void {
+  fireEvent.click(screen.getByTestId('onboarding-next'))
+}
+
+function goTo(step: keyof typeof STEP_MARK): void {
+  for (let i = 0; i < 6 && !screen.queryByTestId(STEP_MARK[step]); i++) next()
+  expect(screen.getByTestId(STEP_MARK[step])).toBeInTheDocument()
+}
+
+function finishWizard(): void {
+  const finish = i18n.t('onboarding.finish')
+  for (let i = 0; i < 6 && screen.getByTestId('onboarding-next').textContent !== finish; i++) next()
+  next()
+}
+
 function openTokenStep(onFinish: (patch: Partial<Settings>) => void = () => {}) {
   render(<OnboardingWizard settings={settings} onFinish={onFinish} />)
-  fireEvent.click(screen.getByTestId('onboarding-next')) // welcome → token step
+  goTo('search')
+  fireEvent.click(screen.getByTestId('onboarding-token-add'))
 }
 
 describe('OnboardingWizard keyboard', () => {
@@ -148,9 +172,9 @@ describe('OnboardingWizard keyboard', () => {
   // advances the step instead of doing nothing.
   it('advances to the next step when the form is submitted with Enter', () => {
     render(<OnboardingWizard settings={settings} onFinish={() => {}} />)
-    expect(screen.queryByTestId('onboarding-token')).toBeNull()
+    expect(screen.queryByTestId('onboarding-destination-folder')).toBeNull()
     fireEvent.submit(screen.getByTestId('onboarding-next').closest('form') as HTMLFormElement)
-    expect(screen.getByTestId('onboarding-token')).toBeInTheDocument()
+    expect(screen.getByTestId('onboarding-destination-folder')).toBeInTheDocument()
   })
 
   it('opens with the focus on Next so Enter starts the setup instead of skipping it', () => {
@@ -163,8 +187,7 @@ describe('OnboardingWizard skip', () => {
   it('keeps the choices already made instead of discarding them when skipping from a later step', () => {
     const onFinish = vi.fn()
     render(<OnboardingWizard settings={settings} onFinish={onFinish} />)
-    fireEvent.click(screen.getByTestId('onboarding-next'))
-    fireEvent.click(screen.getByTestId('onboarding-next'))
+    goTo('format')
     fireEvent.click(screen.getByTestId('onboarding-format-mp3'))
     fireEvent.click(screen.getByTestId('onboarding-skip'))
     expect(onFinish).toHaveBeenCalledWith(
@@ -208,8 +231,7 @@ describe('OnboardingWizard step focus', () => {
 describe('OnboardingWizard destination', () => {
   function openFormatStep(onFinish: (patch: Partial<Settings>) => void = () => {}) {
     render(<OnboardingWizard settings={settings} onFinish={onFinish} />)
-    fireEvent.click(screen.getByTestId('onboarding-next')) // welcome → token
-    fireEvent.click(screen.getByTestId('onboarding-next')) // token → format
+    goTo('format')
   }
 
   // A new macOS user who picks "Apple Music only" in the format step must have it
@@ -218,8 +240,7 @@ describe('OnboardingWizard destination', () => {
     const onFinish = vi.fn()
     openFormatStep(onFinish)
     fireEvent.click(screen.getByTestId('onboarding-destination-appleMusic'))
-    // format → spectrum, then finish.
-    for (let i = 0; i < 2; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
+    finishWizard()
     expect(onFinish).toHaveBeenCalledWith(
       expect.objectContaining({ addToAppleMusic: true, keepOutputCopy: false }),
     )
@@ -233,11 +254,11 @@ describe('OnboardingWizard destination', () => {
         onFinish={onFinish}
       />,
     )
-    for (let i = 0; i < 2; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
+    goTo('format')
     expect(screen.getByTestId('onboarding-destination-appleMusic')).toBeChecked()
     expect(screen.getByText(i18n.t('settings.destinationAppleMusicKeepCopyHint'))).toBeVisible()
     expect(screen.queryByText(i18n.t('settings.destinationAppleMusicHint'))).toBeNull()
-    for (let i = 0; i < 2; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
+    finishWizard()
     expect(onFinish).toHaveBeenCalledWith(
       expect.objectContaining({ addToAppleMusic: true, keepOutputCopy: true }),
     )
@@ -262,7 +283,7 @@ describe('OnboardingWizard destination', () => {
     expect(screen.getByTestId('onboarding-output')).toHaveTextContent('/out')
     fireEvent.click(screen.getByTestId('onboarding-output-change'))
     expect(await screen.findByTestId('onboarding-output')).toHaveTextContent('/dj/converted')
-    for (let i = 0; i < 2; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
+    finishWizard()
     expect(onFinish).toHaveBeenCalledWith(expect.objectContaining({ outputDir: '/dj/converted' }))
   })
 
@@ -303,11 +324,10 @@ describe('OnboardingWizard destination', () => {
   it('keeps a DJ who already sends tracks to Engine DJ doing so whatever destination they pick', () => {
     const onFinish = vi.fn()
     render(<OnboardingWizard settings={{ ...settings, addToEngineDj: true }} onFinish={onFinish} />)
-    fireEvent.click(screen.getByTestId('onboarding-next'))
-    fireEvent.click(screen.getByTestId('onboarding-next'))
+    goTo('format')
     fireEvent.click(screen.getByTestId('onboarding-destination-beside'))
     fireEvent.click(screen.getByTestId('onboarding-destination-folder'))
-    for (let i = 0; i < 2; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
+    finishWizard()
     expect(onFinish).toHaveBeenCalledWith(expect.objectContaining({ addToEngineDj: true }))
   })
 
@@ -355,9 +375,9 @@ describe('OnboardingWizard destination', () => {
   })
 
   // A DJ finished setup without ever hearing that Surco can keep their collection in step
-  // with what it converts — the thing that saves them rebuilding playlists by hand. The
-  // step only appears for a collection actually found, so it costs nothing to anyone else.
-  it('offers the collections it found, off by default', async () => {
+  // with what it converts, and a rekordbox the wizard had found arrived unticked. The step
+  // comes right after the welcome and ticks rekordbox and Traktor on a first run.
+  it('asks for the DJ software right after the welcome, with rekordbox ticked', async () => {
     ;(
       window as unknown as { api: { rekordboxCollection?: () => Promise<string> } }
     ).api.rekordboxCollection = async () => '/Users/dj/Library/Pioneer/rekordbox/master.db'
@@ -369,12 +389,10 @@ describe('OnboardingWizard destination', () => {
       await screen.findByText(i18n.t('onboarding.step', { current: 1, total: 5 })),
     ).toBeInTheDocument()
 
-    for (let i = 0; i < 4; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
-    const toggle = await screen.findByTestId('onboarding-sync-rekordbox')
-    expect(toggle).not.toBeChecked()
-
-    fireEvent.click(toggle)
-    fireEvent.click(screen.getByTestId('onboarding-next'))
+    next()
+    expect(screen.getByText(i18n.t('onboarding.step', { current: 2, total: 5 }))).toBeVisible()
+    expect(await screen.findByTestId('onboarding-sync-rekordbox')).toBeChecked()
+    finishWizard()
     expect(onFinish).toHaveBeenCalledWith(
       expect.objectContaining({ syncRekordbox: true, addToRekordbox: true }),
     )
@@ -400,11 +418,11 @@ describe('OnboardingWizard destination', () => {
       expect(
         await screen.findByText(i18n.t('onboarding.step', { current: 1, total: 5 })),
       ).toBeInTheDocument()
-      for (let i = 0; i < 4; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
+      goTo('programs')
       const toggle = await screen.findByTestId('onboarding-sync-rekordbox')
       expect(toggle).toBeChecked()
       for (let i = 0; i < clicks; i++) fireEvent.click(toggle)
-      fireEvent.click(screen.getByTestId('onboarding-next'))
+      finishWizard()
       expect(onFinish).toHaveBeenCalledWith(expect.objectContaining(expected))
     },
   )
@@ -422,7 +440,7 @@ describe('OnboardingWizard destination', () => {
       expect(
         await screen.findByText(i18n.t('onboarding.step', { current: 1, total: 5 })),
       ).toBeInTheDocument()
-      for (let i = 0; i < 4; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
+      goTo('programs')
       expect(await screen.findByTestId('onboarding-engine-library')).toBeInTheDocument()
       expect(screen.getByTestId('onboarding-dj-folder')).toHaveTextContent('/out')
     } finally {
@@ -444,19 +462,19 @@ describe('OnboardingWizard destination', () => {
     expect(
       await screen.findByText(i18n.t('onboarding.step', { current: 1, total: 5 })),
     ).toBeInTheDocument()
-    for (let i = 0; i < 4; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
+    goTo('programs')
     const toggle = await screen.findByTestId('onboarding-sync-rekordbox')
     expect(toggle).toBeChecked()
     fireEvent.click(toggle)
-    fireEvent.click(screen.getByTestId('onboarding-next'))
+    finishWizard()
     expect(onFinish).toHaveBeenCalledWith(
       expect.objectContaining({ syncRekordbox: false, addToRekordbox: false }),
     )
   })
 
   // Traktor sync writes into the collection.nml it is given and skips entirely without one,
-  // so ticking the collection the wizard found has to save that path along with the toggle.
-  it('saves the Traktor collection it found when the DJ ticks it', async () => {
+  // so the collection the wizard found and ticked is saved along with the toggle.
+  it('saves the Traktor collection it found and ticked', async () => {
     const api = window as unknown as {
       api: {
         rekordboxCollection: () => Promise<string>
@@ -471,9 +489,9 @@ describe('OnboardingWizard destination', () => {
       expect(
         await screen.findByText(i18n.t('onboarding.step', { current: 1, total: 5 })),
       ).toBeInTheDocument()
-      for (let i = 0; i < 4; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
-      fireEvent.click(await screen.findByTestId('onboarding-sync-traktor'))
-      fireEvent.click(screen.getByTestId('onboarding-next'))
+      goTo('programs')
+      expect(await screen.findByTestId('onboarding-sync-traktor')).toBeChecked()
+      finishWizard()
       expect(onFinish).toHaveBeenCalledWith(
         expect.objectContaining({
           syncTraktor: true,
@@ -507,9 +525,9 @@ describe('OnboardingWizard destination', () => {
       expect(
         await screen.findByText(i18n.t('onboarding.step', { current: 1, total: 5 })),
       ).toBeInTheDocument()
-      for (let i = 0; i < 4; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
-      fireEvent.click(await screen.findByTestId('onboarding-sync-traktor'))
-      fireEvent.click(screen.getByTestId('onboarding-next'))
+      goTo('programs')
+      expect(await screen.findByTestId('onboarding-sync-traktor')).toBeChecked()
+      finishWizard()
       expect(onFinish).toHaveBeenCalledWith(
         expect.objectContaining({
           syncTraktor: true,
@@ -536,7 +554,7 @@ describe('OnboardingWizard destination', () => {
       expect(
         await screen.findByText(i18n.t('onboarding.step', { current: 1, total: 5 })),
       ).toBeInTheDocument()
-      for (let i = 0; i < 4; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
+      goTo('programs')
       const toggle = await screen.findByTestId('onboarding-sync-engine')
       expect(toggle).not.toBeChecked()
       expect(screen.getByTestId('onboarding-djlibrary-engine')).toHaveTextContent(
@@ -545,7 +563,7 @@ describe('OnboardingWizard destination', () => {
       expect(screen.queryByTestId('onboarding-sync-rekordbox')).not.toBeInTheDocument()
       expect(screen.queryByTestId('onboarding-sync-traktor')).not.toBeInTheDocument()
       fireEvent.click(toggle)
-      fireEvent.click(screen.getByTestId('onboarding-next'))
+      finishWizard()
       expect(onFinish).toHaveBeenCalledWith(expect.objectContaining({ syncEngineDj: true }))
     } finally {
       api.api.engineAvailable = async () => false
@@ -560,7 +578,7 @@ describe('OnboardingWizard destination', () => {
     expect(
       await screen.findByText(i18n.t('onboarding.step', { current: 1, total: 5 })),
     ).toBeInTheDocument()
-    for (let i = 0; i < 4; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
+    goTo('programs')
   }
 
   it('tells a DJ where the files will live', async () => {
@@ -572,12 +590,10 @@ describe('OnboardingWizard destination', () => {
     try {
       const onFinish = vi.fn()
       await openDjStep(settings, onFinish)
-      expect(screen.queryByTestId('onboarding-dj-folder')).not.toBeInTheDocument()
-      fireEvent.click(await screen.findByTestId('onboarding-sync-rekordbox'))
-      expect(screen.getByTestId('onboarding-dj-folder')).toHaveTextContent('/out')
+      expect(await screen.findByTestId('onboarding-dj-folder')).toHaveTextContent('/out')
       fireEvent.click(screen.getByTestId('onboarding-dj-folder-change'))
       expect(await screen.findByTestId('onboarding-dj-folder')).toHaveTextContent('/dj/converted')
-      fireEvent.click(screen.getByTestId('onboarding-next'))
+      finishWizard()
       expect(onFinish).toHaveBeenCalledWith(expect.objectContaining({ outputDir: '/dj/converted' }))
     } finally {
       api.api.rekordboxCollection = async () => ''
@@ -592,7 +608,7 @@ describe('OnboardingWizard destination', () => {
     api.api.rekordboxCollection = async () => '/Users/dj/Library/Pioneer/rekordbox/master.db'
     try {
       await openDjStep({ ...settings, ...destination })
-      fireEvent.click(await screen.findByTestId('onboarding-sync-rekordbox'))
+      expect(await screen.findByTestId('onboarding-sync-rekordbox')).toBeChecked()
       expect(screen.queryByTestId('onboarding-dj-folder')).not.toBeInTheDocument()
     } finally {
       api.api.rekordboxCollection = async () => ''
@@ -617,7 +633,7 @@ describe('OnboardingWizard destination', () => {
       expect(await screen.findByTestId('onboarding-engine-library')).toHaveTextContent(
         '/Volumes/USB/Engine Library',
       )
-      fireEvent.click(screen.getByTestId('onboarding-next'))
+      finishWizard()
       expect(onFinish).toHaveBeenCalledWith(
         expect.objectContaining({
           syncEngineDj: true,
@@ -668,8 +684,7 @@ describe('OnboardingWizard destination', () => {
           onFinish={() => {}}
         />,
       )
-      fireEvent.click(screen.getByTestId('onboarding-next'))
-      fireEvent.click(screen.getByTestId('onboarding-next'))
+      goTo('format')
       expect(screen.getByTestId('onboarding-destination-folder')).toBeChecked()
     } finally {
       ;(window.api as unknown as { platform: string }).platform = 'darwin'
@@ -680,8 +695,7 @@ describe('OnboardingWizard destination', () => {
 describe('OnboardingWizard audio intents', () => {
   function openAudioStep(onFinish: (patch: Partial<Settings>) => void = () => {}) {
     render(<OnboardingWizard settings={settings} onFinish={onFinish} />)
-    // welcome → token → format → audio
-    for (let i = 0; i < 3; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
+    goTo('audio')
   }
 
   // The spectrum illustration is the payload of the "check quality" intent: it shows the
@@ -703,8 +717,8 @@ describe('OnboardingWizard audio intents', () => {
   it('persists a metadata-only layout when no audio intent is picked', () => {
     const onFinish = vi.fn()
     openAudioStep(onFinish)
-    fireEvent.click(screen.getByTestId('onboarding-intent-quality')) // unpick the seeded one
-    fireEvent.click(screen.getByTestId('onboarding-next')) // finish
+    fireEvent.click(screen.getByTestId('onboarding-intent-quality'))
+    finishWizard()
     const patch = onFinish.mock.calls[0][0] as Partial<Settings>
     expect(patch.showSpectrum).toBe(false)
     const hidden = (patch.editorSections ?? []).filter((s) => s.hidden).map((s) => s.id)
@@ -717,7 +731,7 @@ describe('OnboardingWizard audio intents', () => {
     const onFinish = vi.fn()
     openAudioStep(onFinish)
     fireEvent.click(screen.getByTestId('onboarding-intent-restore'))
-    fireEvent.click(screen.getByTestId('onboarding-next')) // finish
+    finishWizard()
     const patch = onFinish.mock.calls[0][0] as Partial<Settings>
     const shown = (patch.editorSections ?? []).filter((s) => !s.hidden).map((s) => s.id)
     expect(shown).toEqual(expect.arrayContaining(['trim', 'declick']))
@@ -735,7 +749,7 @@ describe('OnboardingWizard audio intents', () => {
       ),
     }
     render(<OnboardingWizard settings={rerun} onFinish={vi.fn()} />)
-    for (let i = 0; i < 3; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
+    goTo('audio')
     expect(screen.getByTestId('onboarding-intent-restore')).not.toBeChecked()
     expect(screen.getByTestId('onboarding-intent-level')).toBeChecked()
     expect(screen.getByTestId('onboarding-intent-quality')).not.toBeChecked()
@@ -745,8 +759,7 @@ describe('OnboardingWizard audio intents', () => {
     const onFinish = vi.fn()
     const rerun: Settings = { ...settings, hasSeenOnboarding: true }
     render(<OnboardingWizard settings={rerun} onFinish={onFinish} />)
-    for (let i = 0; i < 3; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
-    fireEvent.click(screen.getByTestId('onboarding-next'))
+    finishWizard()
     expect(onFinish).toHaveBeenCalledOnce()
     expect(onFinish.mock.calls[0][0].editorSections).toEqual(rerun.editorSections)
   })
@@ -805,8 +818,7 @@ describe('OnboardingWizard format', () => {
     onFinish: (patch: Partial<Settings>) => void = () => {},
   ) {
     render(<OnboardingWizard settings={current} onFinish={onFinish} />)
-    fireEvent.click(screen.getByTestId('onboarding-next')) // welcome → token
-    fireEvent.click(screen.getByTestId('onboarding-next')) // token → format
+    goTo('format')
   }
 
   // The wizard and Settings render the same format choice; when they drift, a value
@@ -840,7 +852,7 @@ describe('OnboardingWizard format', () => {
     const onFinish = vi.fn()
     openFormatStep(settings, onFinish)
     fireEvent.click(screen.getByTestId('onboarding-format-source'))
-    for (let i = 0; i < 2; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
+    finishWizard()
     expect(onFinish).toHaveBeenCalledWith(expect.objectContaining({ outputFormat: 'source' }))
   })
 
@@ -860,5 +872,105 @@ describe('OnboardingWizard length', () => {
     render(<OnboardingWizard settings={settings} onFinish={() => {}} />)
     for (let i = 0; i < 3; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
     expect(screen.getByTestId('onboarding-next')).toHaveTextContent(i18n.t('onboarding.finish'))
+  })
+})
+
+describe('OnboardingWizard DJ software', () => {
+  type DetectionApi = {
+    api: {
+      rekordboxCollection: () => Promise<string>
+      engineAvailable: () => Promise<boolean>
+      seratoAvailable: () => Promise<boolean>
+    }
+  }
+  const api = window as unknown as DetectionApi
+  afterEach(() => {
+    api.api.rekordboxCollection = async () => ''
+    api.api.engineAvailable = async () => false
+    api.api.seratoAvailable = async () => false
+  })
+
+  // Writing into Engine DJ or Serato is opted into, since the DJ cannot rebuild those
+  // libraries: found, they are offered but left for the DJ to tick.
+  it('leaves Engine DJ and Serato unticked on a first run, and shows Serato without a path', async () => {
+    api.api.rekordboxCollection = async () => '/Users/dj/Library/Pioneer/rekordbox/master.db'
+    api.api.engineAvailable = async () => true
+    api.api.seratoAvailable = async () => true
+    render(<OnboardingWizard settings={settings} onFinish={vi.fn()} />)
+    expect(
+      await screen.findByText(i18n.t('onboarding.step', { current: 1, total: 5 })),
+    ).toBeInTheDocument()
+    goTo('programs')
+    expect(screen.getByTestId('onboarding-sync-rekordbox')).toBeChecked()
+    expect(screen.getByTestId('onboarding-sync-engine')).not.toBeChecked()
+    expect(screen.getByTestId('onboarding-sync-serato')).not.toBeChecked()
+    expect(screen.queryByTestId('onboarding-djlibrary-serato')).toBeNull()
+  })
+
+  // The answer decides what the DJ sees: a rekordbox DJ no longer meets three other
+  // programs in the sidebar and their playlist rows on every track.
+  it('hides the programs not picked from the sidebar when it finishes', async () => {
+    api.api.rekordboxCollection = async () => '/Users/dj/Library/Pioneer/rekordbox/master.db'
+    const onFinish = vi.fn()
+    render(<OnboardingWizard settings={settings} onFinish={onFinish} />)
+    expect(
+      await screen.findByText(i18n.t('onboarding.step', { current: 1, total: 5 })),
+    ).toBeInTheDocument()
+    finishWizard()
+    const patch = onFinish.mock.calls[0][0] as Partial<Settings>
+    expect(patch.hiddenSources).toEqual(['traktor', 'engine', 'serato'])
+  })
+
+  it('unticks every program with None', async () => {
+    api.api.rekordboxCollection = async () => '/Users/dj/Library/Pioneer/rekordbox/master.db'
+    render(<OnboardingWizard settings={settings} onFinish={vi.fn()} />)
+    expect(
+      await screen.findByText(i18n.t('onboarding.step', { current: 1, total: 5 })),
+    ).toBeInTheDocument()
+    goTo('programs')
+    expect(screen.getByTestId('onboarding-sync-none')).not.toBeChecked()
+    fireEvent.click(screen.getByTestId('onboarding-sync-none'))
+    expect(screen.getByTestId('onboarding-sync-rekordbox')).not.toBeChecked()
+    expect(screen.getByTestId('onboarding-sync-none')).toBeChecked()
+  })
+})
+
+describe('OnboardingWizard destination order', () => {
+  // A rekordbox DJ clicked through a Mac wizard that put Apple Music first and ticked, and
+  // every conversion landed in a library they never use. The folder leads, Music comes last.
+  it('lists the output folder first and Apple Music last', () => {
+    render(<OnboardingWizard settings={settings} onFinish={vi.fn()} />)
+    goTo('format')
+    const order = screen
+      .getAllByRole('radio')
+      .map((r) => r.getAttribute('data-testid'))
+      .filter((id) => id?.startsWith('onboarding-destination-'))
+    expect(order).toEqual([
+      'onboarding-destination-folder',
+      'onboarding-destination-beside',
+      'onboarding-destination-appleMusic',
+    ])
+  })
+
+  // An AIFF that was already AIFF was edited where it sat with no word about it; the step
+  // says which tracks stay where they are.
+  it('says the tracks already in a collection are updated where they are', () => {
+    render(<OnboardingWizard settings={settings} onFinish={vi.fn()} />)
+    goTo('format')
+    expect(screen.getByTestId('onboarding-destination-note')).toHaveTextContent(
+      i18n.t('onboarding.destinationKeepsCollection'),
+    )
+  })
+})
+
+describe('OnboardingWizard token offer', () => {
+  // The token asked for first, before a DJ knew what Surco does; search works without it,
+  // so the field waits behind a button on the last step.
+  it('keeps the token field behind a button until asked for', () => {
+    render(<OnboardingWizard settings={settings} onFinish={vi.fn()} />)
+    goTo('search')
+    expect(screen.queryByTestId('onboarding-token')).toBeNull()
+    fireEvent.click(screen.getByTestId('onboarding-token-add'))
+    expect(screen.getByTestId('onboarding-token')).toBeInTheDocument()
   })
 })

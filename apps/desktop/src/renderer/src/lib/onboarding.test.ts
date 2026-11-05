@@ -6,6 +6,7 @@ import {
   type AudioIntent,
   buildOnboardingPatch,
   deriveEditorSections,
+  programChoicePatch,
   seedAudioIntents,
   shouldShowOnboarding,
 } from './onboarding'
@@ -548,5 +549,34 @@ describe('the wizard on a second machine with a synced layout', () => {
       drafts({ audioIntents: ['restore'], seededIntents: [], settings: fresh }),
     )
     expect(patch.editorSections).toEqual(deriveEditorSections(['restore']))
+  })
+})
+
+describe('programChoicePatch', () => {
+  // A rekordbox DJ saw Engine DJ, Traktor and Serato in the sidebar and four playlist rows on
+  // every track. The programs the DJ did not pick leave the sidebar and the form; nothing is
+  // removed from the app, Settings shows them again in Sidebar and Fields.
+  it('hides the programs not picked from the sidebar and the editor', () => {
+    const patch = programChoicePatch(['rekordbox'], {
+      hiddenSources: [],
+      visibleFields: ['title', 'rekordboxPlaylists', 'enginePlaylists'],
+    })
+    expect(patch.hiddenSources).toEqual(['traktor', 'engine', 'serato'])
+    expect(patch.visibleFields).toEqual(['title', 'rekordboxPlaylists'])
+    expect(patch).toMatchObject({
+      traktorPlaylistsFieldOffered: true,
+      enginePlaylistsFieldOffered: true,
+      seratoPlaylistsFieldOffered: true,
+    })
+    expect(patch.rekordboxPlaylistsFieldOffered).toBeUndefined()
+  })
+
+  // A program picked on this run comes back to the sidebar even if a first run hid it.
+  it('shows again a program picked now and keeps Apple Music as it was', () => {
+    const patch = programChoicePatch(['traktor'], {
+      hiddenSources: ['appleMusic', 'traktor'],
+      visibleFields: [],
+    })
+    expect(patch.hiddenSources).toEqual(['appleMusic', 'rekordbox', 'engine', 'serato'])
   })
 })

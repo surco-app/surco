@@ -1,5 +1,4 @@
-import type { WritableProgram } from '../../../shared/djProgram'
-import { writableInOrder } from '../../../shared/djProgram'
+import { type LibraryProgram, programsInOrder } from '../../../shared/djProgram'
 
 // Which collection syncs onboarding should offer, given what was found on this machine.
 //
@@ -7,7 +6,7 @@ import { writableInOrder } from '../../../shared/djProgram'
 // disabled row to someone who runs neither would be noise in a wizard that promises to
 // take under a minute; finding nothing simply removes the step.
 
-export type DjLibraryId = WritableProgram
+export type DjLibraryId = LibraryProgram
 
 export interface DetectedDjLibrary {
   id: DjLibraryId
@@ -15,10 +14,13 @@ export interface DetectedDjLibrary {
 }
 
 // Fixed order rather than detection order, so the step reads the same on every machine.
-const ORDER = writableInOrder(['rekordbox', 'engine', 'traktor'])
+const ORDER = programsInOrder(['rekordbox', 'engine', 'traktor', 'serato'])
 
 export function detectedDjLibraries(
-  found: Partial<Record<DjLibraryId, string>>,
+  found: Partial<Record<DjLibraryId, string | true>>,
 ): DetectedDjLibrary[] {
-  return ORDER.filter((id) => found[id]).map((id) => ({ id, path: found[id] as string }))
+  return ORDER.filter((id) => found[id]).map((id) => {
+    const at = found[id]
+    return { id, path: typeof at === 'string' ? at : '' }
+  })
 }

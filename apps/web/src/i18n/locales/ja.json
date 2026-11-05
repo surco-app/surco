@@ -625,7 +625,7 @@
         ],
         "points": [
           "初期状態で、インポート時にすべてを分析し、設定なしでDiscogs、Bandcamp、Deezer、MusicBrainzを検索します。",
-          "rekordbox、Engine DJ、Traktorのコレクションが見つかると、アシスタントに5つ目のステップが加わります。"
+          "rekordbox、Traktor、Engine DJ、Seratoが見つかると、ようこそ画面のすぐ後にどれを使っているかを尋ねます。選ばなかったものはサイドバーに表示されません。"
         ],
         "shot": "instalar-ja.webp",
         "shotCaption": "初回起動時のウェルカムウィザード。"

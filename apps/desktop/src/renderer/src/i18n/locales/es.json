@@ -1952,8 +1952,8 @@
     "next": "Siguiente",
     "finish": "Empezar",
     "step": "Paso {{current}} de {{total}}",
-    "djLibrariesTitle": "Tus colecciones de DJ",
-    "djLibrariesBody": "Al convertir una pista, Surco puede dejar tu colección apuntando al fichero nuevo, con sus playlists y sus cue points intactos. Además, sus playlists salen en la barra lateral para que las organices y les pongas cues desde Surco.",
+    "djLibrariesTitle": "¿Con qué programa pinchas?",
+    "djLibrariesBody": "Surco muestra sus playlists en la barra lateral y mantiene cada pista al día cuando la conviertes, con sus playlists y sus cues. Marca todos los que uses.",
     "djLibrariesNote": "Surco hace una copia de seguridad antes de escribir y nunca escribe con el programa abierto. Puedes cambiarlo luego en Ajustes.",
     "djFolder": "Los archivos se guardan en {{folder}}",
     "djFolderChange": "Cambiar",
@@ -1963,8 +1963,14 @@
       "engine": "Engine DJ",
       "engineBody": "Mantener la biblioteca al día al convertir y añadirle las pistas nuevas.",
       "traktor": "Traktor",
-      "traktorBody": "Mantener la colección al día al convertir, con sus playlists y sus cues, y añadirle las pistas nuevas."
-    }
+      "traktorBody": "Mantener la colección al día al convertir, con sus playlists y sus cues, y añadirle las pistas nuevas.",
+      "serato": "Serato",
+      "seratoBody": "Mantener la biblioteca al día al convertir y añadirle las pistas nuevas."
+    },
+    "djLibraryNone": "Ninguno, solo etiqueto archivos",
+    "destinationKeepsCollection": "Las pistas que ya están en tu programa de DJ o en Apple Music se actualizan donde están, así conservan su sitio en tu colección.",
+    "tokenOffer": "La búsqueda funciona tal cual. Un token de Discogs activa «Auto-emparejar al importar» y mantiene las búsquedas estables en horas punta.",
+    "tokenAdd": "Añadir un token de Discogs"
   },
   "help": {
     "title": "Ayuda y FAQ",

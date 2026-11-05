@@ -1952,8 +1952,8 @@
     "next": "Weiter",
     "finish": "Loslegen",
     "step": "Schritt {{current}} von {{total}}",
-    "djLibrariesTitle": "Deine DJ-Sammlungen",
-    "djLibrariesBody": "Beim Konvertieren kann Surco deine Sammlung auf die neue Datei zeigen lassen, mit Playlists und Cue-Punkten. Außerdem erscheinen ihre Playlists in der Seitenleiste, damit du sie in Surco ordnen und mit Cues versehen kannst.",
+    "djLibrariesTitle": "Mit welcher DJ-Software legst du auf?",
+    "djLibrariesBody": "Surco zeigt ihre Playlists in der Seitenleiste und hält jeden Track beim Konvertieren aktuell, mit Playlists und Cues. Wähle alle, die du nutzt.",
     "djLibrariesNote": "Surco legt vor dem Schreiben eine Sicherung an und schreibt nie, während das Programm geöffnet ist. Du kannst das später in den Einstellungen ändern.",
     "djFolder": "Die Dateien werden in {{folder}} gespeichert",
     "djFolderChange": "Ändern",
@@ -1963,8 +1963,14 @@
       "engine": "Engine DJ",
       "engineBody": "Die Bibliothek beim Konvertieren aktuell halten und neue Titel hinzufügen.",
       "traktor": "Traktor",
-      "traktorBody": "Die Sammlung beim Konvertieren aktuell halten, mit Playlists und Cues, und neue Titel hinzufügen."
-    }
+      "traktorBody": "Die Sammlung beim Konvertieren aktuell halten, mit Playlists und Cues, und neue Titel hinzufügen.",
+      "serato": "Serato",
+      "seratoBody": "Die Bibliothek beim Konvertieren aktuell halten und neue Titel hinzufügen."
+    },
+    "djLibraryNone": "Keine, ich tagge nur Dateien",
+    "destinationKeepsCollection": "Tracks, die schon in deiner DJ-Software oder in Apple Music sind, werden an Ort und Stelle aktualisiert und behalten so ihren Platz in deiner Sammlung.",
+    "tokenOffer": "Die Suche funktioniert auch so. Ein Discogs-Token schaltet „Beim Import automatisch abgleichen“ frei und hält die Suche zu Stoßzeiten stabil.",
+    "tokenAdd": "Discogs-Token hinzufügen"
   },
   "help": {
     "title": "Hilfe & FAQ",

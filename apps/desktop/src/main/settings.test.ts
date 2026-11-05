@@ -116,6 +116,12 @@ describe('defaults for a fresh install', () => {
   // A pool MP3 turned into a lossless file comes out four times bigger with not one sample
   // better: measured on a real download, 17 MB became a 75 MB AIFF. A new DJ downloading
   // MP3s would fill the disk before finding the switch, so lossy sources keep their format.
+  // The wizard opened with Apple Music ticked on a Mac, so a rekordbox DJ who clicked
+  // through had every conversion imported into a library they never asked for.
+  it('sends conversions to the output folder rather than into Apple Music', () => {
+    expect(defaults.addToAppleMusic).toBe(false)
+  })
+
   it('keeps MP3 and M4A sources in their format', () => {
     expect(defaults.keepMp3Sources).toBe(true)
   })

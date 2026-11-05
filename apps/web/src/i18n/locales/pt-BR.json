@@ -625,7 +625,7 @@
         ],
         "points": [
           "De fábrica ele já analisa tudo ao importar e busca no Discogs, Bandcamp, Deezer e MusicBrainz sem configurar nada.",
-          "Se o Surco encontrar sua coleção do rekordbox, Engine DJ ou Traktor, o assistente ganha um quinto passo."
+          "Se o Surco encontrar rekordbox, Traktor, Engine DJ ou Serato, logo depois das boas-vindas ele pergunta com qual você toca, e os que você não marcar deixam de aparecer na barra lateral."
         ],
         "shot": "instalar-pt-BR.webp",
         "shotCaption": "O assistente de boas-vindas na primeira abertura."
