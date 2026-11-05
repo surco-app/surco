@@ -186,3 +186,19 @@ describe('CueRuleRow condition line', () => {
     expect(screen.getByTestId('cue-rule-1-when-line').textContent).not.toBe(before)
   })
 })
+
+describe('CueRuleRow open menu', () => {
+  it('closes on a press anywhere outside the menu, even on the same rule, so it never stays over the text', () => {
+    setup(RULE)
+    fireEvent.click(screen.getByTestId('cue-rule-0-from'))
+    fireEvent.mouseDown(screen.getByTestId('cue-rule-0-when-line'))
+    expect(screen.queryByTestId('cue-rule-0-from-menu')).not.toBeInTheDocument()
+  })
+
+  it('stays open while the press lands inside the menu, so picking an option still works', () => {
+    setup(RULE)
+    fireEvent.click(screen.getByTestId('cue-rule-0-from'))
+    fireEvent.mouseDown(screen.getByTestId('cue-rule-0-from-menu'))
+    expect(screen.getByTestId('cue-rule-0-from-menu')).toBeInTheDocument()
+  })
+})

@@ -102,7 +102,7 @@ export function CueRuleRow({
   useEffect(() => {
     if (open === null) return
     const onDown = (e: MouseEvent) => {
-      if (!rowRef.current?.contains(e.target as Node)) setOpen(null)
+      if (!paletteRef.current?.parentElement?.contains(e.target as Node)) setOpen(null)
     }
     document.addEventListener('mousedown', onDown)
     return () => document.removeEventListener('mousedown', onDown)
