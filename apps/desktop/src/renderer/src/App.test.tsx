@@ -6251,7 +6251,7 @@ describe('App donate nudge', () => {
     })
 
   function eligible(over: Partial<Settings> = {}): Settings {
-    return settings({ conversionCount: 50, ...over })
+    return settings({ conversionCount: 50, firstConversionAt: '2026-01-01T00:00:00.000Z', ...over })
   }
 
   // An eligible profile that just converted a selection: the nudge rides that moment of

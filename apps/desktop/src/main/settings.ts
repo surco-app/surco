@@ -166,6 +166,7 @@ export const defaults: Settings = {
   backupLimitsMigrated: false,
   trackImportFieldsMigrated: false,
   conversionCount: 0,
+  firstConversionAt: '',
   stats: {
     imported: 0,
     listened: 0,
@@ -201,6 +202,7 @@ export const LOCAL_KEYS = [
   'completeCuesOnClose',
   'hasSeenOnboarding',
   'conversionCount',
+  'firstConversionAt',
   'stats',
   'commandUsage',
   // Group keys of this Mac's Music library; another Mac's library has other entries.
@@ -499,6 +501,7 @@ function writeAtomic(path: string, value: unknown): void {
 const INTERNAL_ONLY_KEYS = [
   'stats',
   'conversionCount',
+  'firstConversionAt',
   'beatportUsername',
   'beatportPassword',
 ] as const satisfies readonly (keyof Settings)[]
@@ -580,7 +583,10 @@ export function setConfigDir(dir: string | null): Settings {
 // here so the tally is the one source of truth the Stats tab reads back.
 export function recordConversion(): void {
   const cur = getSettings()
-  saveSettings({ conversionCount: cur.conversionCount + 1 })
+  saveSettings({
+    conversionCount: cur.conversionCount + 1,
+    ...(cur.firstConversionAt ? {} : { firstConversionAt: new Date().toISOString() }),
+  })
 }
 
 // The lifetime tallies next to conversionCount. `by` crosses the IPC boundary from

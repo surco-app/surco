@@ -9,18 +9,26 @@ import type { Settings } from '../../../shared/types'
 // conversion the cooldown expires. The dismissed flag (the modal's "don't show
 // again") wins over everything.
 export const MIN_CONVERSIONS = 5
+export const MIN_DAYS_SINCE_FIRST = 7
 export const MIN_DAYS_BETWEEN = 7
 export const SHOW_CHANCE = 0.25
 
 type NudgeState = Pick<
   Settings,
-  'donateNudgeDismissed' | 'donateNudgeLastShown' | 'conversionCount' | 'hasSeenOnboarding'
+  | 'donateNudgeDismissed'
+  | 'donateNudgeLastShown'
+  | 'conversionCount'
+  | 'hasSeenOnboarding'
+  | 'firstConversionAt'
 >
 
 export function shouldShowDonateNudge(settings: NudgeState, now: Date, random: number): boolean {
   if (settings.donateNudgeDismissed) return false
   if (!settings.hasSeenOnboarding) return false
   if (settings.conversionCount < MIN_CONVERSIONS) return false
+  const first = Date.parse(settings.firstConversionAt ?? '')
+  if (Number.isNaN(first) || now.getTime() - first < MIN_DAYS_SINCE_FIRST * 24 * 3600 * 1000)
+    return false
   if (settings.donateNudgeLastShown) {
     const last = Date.parse(settings.donateNudgeLastShown)
     // Unparseable (or future) timestamps fail closed: skipping a nudge is free,

@@ -14,6 +14,7 @@ function state(over: Partial<Parameters<typeof shouldShowDonateNudge>[0]> = {}) 
     donateNudgeLastShown: '',
     conversionCount: MIN_CONVERSIONS,
     hasSeenOnboarding: true,
+    firstConversionAt: '2026-05-01T12:00:00Z',
     ...over,
   }
 }
@@ -32,6 +33,22 @@ describe('shouldShowDonateNudge', () => {
       false,
     )
     expect(shouldShowDonateNudge(state({ conversionCount: MIN_CONVERSIONS }), now, 0)).toBe(true)
+  })
+
+  // Five conversions is one folder on a DJ's first day, so the count alone let the ask
+  // cover the result of the very first batch. Real usage is a week of it.
+  it('waits a week from the first conversion however many land that day', () => {
+    const sameDay = state({ conversionCount: 40, firstConversionAt: '2026-06-10T09:00:00Z' })
+    expect(shouldShowDonateNudge(sameDay, now, 0)).toBe(false)
+    const sixDays = state({ conversionCount: 40, firstConversionAt: '2026-06-04T13:00:00Z' })
+    expect(shouldShowDonateNudge(sixDays, now, 0)).toBe(false)
+    const aWeek = state({ conversionCount: 40, firstConversionAt: '2026-06-03T12:00:00Z' })
+    expect(shouldShowDonateNudge(aWeek, now, 0)).toBe(true)
+  })
+
+  it('never shows before a first conversion is on record', () => {
+    expect(shouldShowDonateNudge(state({ firstConversionAt: '' }), now, 0)).toBe(false)
+    expect(shouldShowDonateNudge(state({ firstConversionAt: undefined }), now, 0)).toBe(false)
   })
 
   // The nudge must never stack on top of (or race) the first-run wizard.

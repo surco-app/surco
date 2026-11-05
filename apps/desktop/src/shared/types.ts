@@ -385,6 +385,7 @@ export interface Settings {
   trackImportFieldsMigrated: boolean
   mixInBarsMigrated?: boolean
   conversionCount: number
+  firstConversionAt?: string
   // Lifetime activity tally behind the Stats tab, next to conversionCount. Bumped
   // only in the main process (stats:record fire-and-forget), so near-simultaneous
   // events from the renderer can't clobber each other's read-modify-write.
