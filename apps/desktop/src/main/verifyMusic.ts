@@ -6,6 +6,7 @@ import type { TrackMetadata } from '../shared/types'
 import type { PlaceCheck, VerifyDetailKey } from '../shared/verification'
 import {
   appleMusicLimiter,
+  buildMusicRunningScript,
   type FileLike,
   musicFileEntries,
   musicFileLocations,
@@ -53,18 +54,21 @@ export function musicEntriesForFile(options: {
   run: typeof runOsascript
   realPath: (p: string) => string
   homeMusicDir?: string
+  launch?: boolean
 }): MusicReaders['entriesForFile'] {
   const keyOf = comparablePath(options)
+  const launch = options.launch ?? true
   return async (path, titles, like) => {
     const { consulted, entries } = await appleMusicLimiter.run(() =>
       musicFileEntries(
         titles.map((title) => ({ path, title })),
-        true,
+        launch,
         options.run,
         keyOf,
         like && { path, ...like },
       ),
     )
+    if (!consulted && !launch) return []
     if (!consulted) throw new Error('Music could not say which entries play the file')
     return [...new Set((entries[path] ?? []).map((e) => e.persistentId))]
   }
@@ -103,6 +107,16 @@ export function musicFileHolder(options: {
 }
 
 export const musicHoldsFile = musicFileHolder({ run: runOsascript, realPath })
+
+export const musicEntriesIfOpen = musicEntriesForFile({
+  run: runOsascript,
+  realPath,
+  launch: false,
+})
+
+export async function musicIsOpen(run: typeof runOsascript = runOsascript): Promise<boolean> {
+  return (await run(buildMusicRunningScript()).catch(() => 'false')).trim() === 'true'
+}
 
 export const musicReaders: MusicReaders = {
   entry: readMusicEntryFacts,
