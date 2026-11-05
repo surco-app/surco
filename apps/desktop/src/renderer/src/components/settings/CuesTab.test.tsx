@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -93,6 +94,36 @@ const startRename = () => {
 describe('CuesTab', () => {
   // The rules are shared by every library, and two of their parts only fully reach
   // rekordbox: CALLs (only rekordbox has them) and colours (Traktor paints by cue type).
+  it('previews the flow on the track selected in the list, read from its library', async () => {
+    installApi({
+      rekordboxTrackCues: async () => ({
+        contentId: 'rb:1',
+        analysed: true,
+        grid: Array.from({ length: 800 }, (_, i) => ({ ms: i * 500, beat: (i % 4) + 1 })),
+        strong: [],
+        phrases: [],
+        cues: [{ id: 'mark', ms: 128000, kind: 0, color: null }],
+        wave: null,
+        durationMs: 400000,
+        fingerprint: 'f',
+        gridFingerprint: 'g',
+      }),
+    })
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <CuesTab
+          synced={{ cueFlows: KEPT, activeCueFlow: 'mine' } as unknown as SyncedDraft}
+          patch={() => {}}
+          rekordboxCollection=""
+          cueTrack={{ contentId: 'rb:1', label: 'DJ Made, Millenium Stringz' }}
+        />
+      </QueryClientProvider>,
+    )
+    expect(await screen.findByTestId('cue-preview-source-track')).toHaveTextContent(
+      'DJ Made, Millenium Stringz',
+    )
+  })
+
   it('says under the rules what reaches Engine DJ, Traktor and Serato, only where they are installed', async () => {
     installApi({ traktorAvailable: async () => true, engineAvailable: async () => false })
     render(<Harness />)

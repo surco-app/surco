@@ -1743,6 +1743,11 @@
       "noRules": "Aucune règle. Le flux ne met qu’un CALL là où tu marques.",
       "preview": "Aperçu",
       "previewHint": "Morceau d’exemple à 128 BPM, marqué à la mesure {{bar}}",
+      "exampleTrack": "Morceau d’exemple",
+      "noMark": "{{label}} n’a encore aucune marque, l’aperçu utilise donc le morceau d’exemple",
+      "compareSame": "Les mêmes hot cues que ce morceau a déjà",
+      "compareDiffer_one": "{{count}} hot cue diffère de ce que ce morceau a déjà",
+      "compareDiffer_other": "{{count}} hot cues diffèrent de ce que ce morceau a déjà",
       "leftOut": {
         "back_one": "Règle {{rule}}, {{count}} mesure en arrière",
         "back_other": "Règle {{rule}}, {{count}} mesures en arrière",

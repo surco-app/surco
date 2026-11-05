@@ -1743,6 +1743,11 @@
       "noRules": "Sem regras. O fluxo só põe um CALL onde você marca.",
       "preview": "Prévia",
       "previewHint": "Faixa de exemplo a 128 BPM, marcada no compasso {{bar}}",
+      "exampleTrack": "Faixa de exemplo",
+      "noMark": "{{label}} ainda não tem nenhuma marca, então a prévia usa a faixa de exemplo",
+      "compareSame": "Os mesmos hot cues que esta faixa tem agora",
+      "compareDiffer_one": "{{count}} hot cue diferente do que esta faixa tem agora",
+      "compareDiffer_other": "{{count}} hot cues diferentes do que esta faixa tem agora",
       "leftOut": {
         "back_one": "Regra {{rule}}, {{count}} compasso para trás",
         "back_other": "Regra {{rule}}, {{count}} compassos para trás",

@@ -1743,6 +1743,11 @@
       "noRules": "No rules. The flow only puts a CALL where you mark.",
       "preview": "Preview",
       "previewHint": "Example track at 128 BPM, marked at bar {{bar}}",
+      "exampleTrack": "Example track",
+      "noMark": "{{label}} has no mark yet, so the preview uses the example track",
+      "compareSame": "Same hot cues this track has now",
+      "compareDiffer_one": "{{count}} hot cue differs from what this track has now",
+      "compareDiffer_other": "{{count}} hot cues differ from what this track has now",
       "leftOut": {
         "back_one": "Rule {{rule}}, {{count}} bar back",
         "back_other": "Rule {{rule}}, {{count}} bars back",

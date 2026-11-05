@@ -1743,6 +1743,11 @@
       "noRules": "Keine Regeln. Der Ablauf setzt nur einen CALL an deine Markierung.",
       "preview": "Vorschau",
       "previewHint": "Beispieltitel mit 128 BPM, markiert in Takt {{bar}}",
+      "exampleTrack": "Beispieltrack",
+      "noMark": "{{label}} hat noch keine Markierung, daher nutzt die Vorschau den Beispieltrack",
+      "compareSame": "Dieselben Hot Cues, die dieser Track jetzt hat",
+      "compareDiffer_one": "{{count}} Hot Cue weicht von diesem Track ab",
+      "compareDiffer_other": "{{count}} Hot Cues weichen von diesem Track ab",
       "leftOut": {
         "back_one": "Regel {{rule}}, {{count}} Takt zurück",
         "back_other": "Regel {{rule}}, {{count}} Takte zurück",

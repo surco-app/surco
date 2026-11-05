@@ -1743,6 +1743,11 @@
       "noRules": "Sin reglas. El flujo solo pone un CALL donde marcas.",
       "preview": "Vista previa",
       "previewHint": "Pista de ejemplo a 128 BPM, marcada en el compás {{bar}}",
+      "exampleTrack": "Pista de ejemplo",
+      "noMark": "{{label}} aún no tiene ninguna marca, así que la vista previa usa la pista de ejemplo",
+      "compareSame": "Los mismos hot cues que tiene ahora esta pista",
+      "compareDiffer_one": "{{count}} hot cue distinto de los que tiene ahora esta pista",
+      "compareDiffer_other": "{{count}} hot cues distintos de los que tiene ahora esta pista",
       "leftOut": {
         "back_one": "Regla {{rule}}, {{count}} compás atrás",
         "back_other": "Regla {{rule}}, {{count}} compases atrás",

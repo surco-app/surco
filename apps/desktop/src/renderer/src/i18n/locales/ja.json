@@ -1743,6 +1743,11 @@
       "noRules": "ルールがありません。このフローはマークした位置に CALL を置くだけです。",
       "preview": "プレビュー",
       "previewHint": "128 BPM のサンプルトラック、{{bar}} 小節目にマーク",
+      "exampleTrack": "サンプルトラック",
+      "noMark": "{{label}} にはまだマークがないため、プレビューはサンプルトラックを使います",
+      "compareSame": "このトラックの現在のホットキューと同じ",
+      "compareDiffer_one": "{{count}} 個のホットキューがこのトラックの現在と異なります",
+      "compareDiffer_other": "{{count}} 個のホットキューがこのトラックの現在と異なります",
       "leftOut": {
         "back_one": "ルール {{rule}}、{{count}} 小節前",
         "back_other": "ルール {{rule}}、{{count}} 小節前",
