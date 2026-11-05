@@ -124,6 +124,14 @@ describe('pickDrops', () => {
     expect(pickDrops(pair, DROP_MODEL.picking)).toEqual([200000])
   })
 
+  it('keeps only the stronger of two marks 32 bars apart with the shipped model, since they are one build-up and a second mark there cuts the countdown of the real drop short', () => {
+    const buildUp = [
+      { bar: 112, ms: 186669, score: -0.32 },
+      { bar: 144, ms: 240002, score: 0.59 },
+    ]
+    expect(pickDrops(buildUp, DROP_MODEL.picking)).toEqual([240002])
+  })
+
   it('still offers the best guess when nothing clears the bar, because every track breaks somewhere', () => {
     expect(pickDrops(scored, { threshold: 5, spacingBars: 16, maxDrops: 4 })).toEqual([64000])
   })
