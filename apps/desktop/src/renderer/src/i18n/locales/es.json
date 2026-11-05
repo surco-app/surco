@@ -1807,7 +1807,7 @@
         "always": "Cada repetición, aunque pase por encima de otra marca",
         "fits": "Se para en la marca anterior y en cualquier estribillo",
         "previous": "Cruza los estribillos sin marca y se para en la marca anterior",
-        "room": "Lo deja fuera si otro cue llega justo después",
+        "room": "Lo deja fuera si otro cue llega en los compases que elijas",
         "clear": "Lo deja fuera si otro cue cae en el mismo compás",
         "first": "Solo antes de la primera marca, si allí no hay nada"
       },
