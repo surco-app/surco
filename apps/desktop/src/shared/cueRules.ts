@@ -140,6 +140,13 @@ function misfit(
   if (rule.direction === 'forward')
     return next === null || ms < next - SAME_POSITION_MS ? null : 'point'
   if (previous !== null && ms <= previous + SAME_POSITION_MS) return 'point'
+  if (rule.when === 'previous') {
+    const holdsPrevious = (s: StrongPart): boolean =>
+      previous !== null && s.start - SAME_POSITION_MS <= previous && previous < s.end
+    return strong.some((s) => holdsPrevious(s) && s.start - SAME_POSITION_MS <= ms && ms < s.end)
+      ? 'strong'
+      : null
+  }
   const inside = strong.some((s) => s.start - SAME_POSITION_MS <= ms && ms < s.end)
   return inside && !startsStrongRun(strong, ms) ? 'strong' : null
 }
@@ -221,6 +228,7 @@ function walkFlow(
       const start = nearestBeat(beats, origin)
       const hand = rule.from === 'drop' && (track.byHand ?? []).some((p) => near(p, origin))
       const fits = rule.when === 'fits' && !hand
+      const checked = rule.when === 'fits' || rule.when === 'previous'
       if (rule.bars === 0) {
         if (allowed(rule, beats[start], placed, drops, beats)) add(beats[start], 1)
         return
@@ -237,8 +245,7 @@ function walkFlow(
           break
         }
         const ms = beats[at]
-        const reason =
-          rule.when !== 'fits' ? null : misfit(ms, rule, previous, next, hand ? [] : track.strong)
+        const reason = checked ? misfit(ms, rule, previous, next, hand ? [] : track.strong) : null
         if (reason) {
           reject(start, step, k, last ?? k, reason)
           break

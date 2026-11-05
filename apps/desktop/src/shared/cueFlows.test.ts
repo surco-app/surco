@@ -193,6 +193,12 @@ describe('normalizeCueFlows', () => {
     ])
   })
 
+  it('reads until the previous mark back from a saved flow instead of dropping the rule', () => {
+    const rule = { ...ONE_AT_32.rules[0], when: 'previous' }
+    const flows = normalizeCueFlows([{ id: 'x', name: 'Subidón', rules: [rule] }])
+    expect(flows.find((f) => f.id === 'x')?.rules).toEqual([rule])
+  })
+
   it('keeps the first of two flows with the same id', () => {
     const flows = normalizeCueFlows([
       MY_FLOW,

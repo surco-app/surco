@@ -2,7 +2,7 @@ export type PhraseKind = 'intro' | 'up' | 'down' | 'chorus' | 'outro'
 export type FlowOrigin = 'drop' | 'first-beat' | 'last-beat' | PhraseKind
 export type FlowDirection = 'back' | 'forward'
 export type FlowRepeat = number | 'edge'
-export type FlowCondition = 'always' | 'fits' | 'clear' | 'first'
+export type FlowCondition = 'always' | 'fits' | 'previous' | 'clear' | 'first'
 export type FlowPlace = 'hot' | 'call' | 'both'
 export type FlowColor = { fixed: number } | { each: number[] }
 
@@ -48,7 +48,7 @@ export const FLOW_ORIGINS: FlowOrigin[] = [
   'chorus',
   'outro',
 ]
-export const FLOW_CONDITIONS: FlowCondition[] = ['always', 'fits', 'clear', 'first']
+export const FLOW_CONDITIONS: FlowCondition[] = ['always', 'fits', 'previous', 'clear', 'first']
 export const FLOW_PLACES: FlowPlace[] = ['hot', 'call', 'both']
 const DIRECTIONS: FlowDirection[] = ['back', 'forward']
 
