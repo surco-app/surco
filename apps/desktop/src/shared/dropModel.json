@@ -4448,5 +4448,5 @@
       [-0.0334424]
     ]
   ],
-  "picking": { "threshold": -1, "spacingBars": 24, "maxDrops": 4 }
+  "picking": { "threshold": -1, "spacingBars": 33, "maxDrops": 4 }
 }
