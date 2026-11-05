@@ -478,7 +478,7 @@ describe('MusicReview', () => {
   // only takes it back out of the tray.
   it('labels a staged group so it does not read as undoing the run', () => {
     render(<Panes review={review({ staged: new Set([group.key]) })} />)
-    expect(screen.getByTestId('music-review-stage')).toHaveTextContent('Unstage')
+    expect(screen.getByTestId('music-review-stage')).toHaveTextContent('Remove from the batch')
   })
 
   it('tints a safe kind like a good pill and a risky one like a warning', () => {
@@ -1751,7 +1751,7 @@ describe('MusicReview', () => {
       expect(screen.getByTestId('music-review-stage-fill')).toHaveAttribute('data-on')
       fireEvent.click(stage)
       expect(r.ignore).not.toHaveBeenCalled()
-      expect(screen.getByTestId('music-review-stage')).toHaveTextContent('Unstage')
+      expect(screen.getByTestId('music-review-stage')).toHaveTextContent('Remove from the batch')
     })
 
     it('ignores a group from the menu and names it by kind', () => {
@@ -2217,7 +2217,7 @@ describe('MusicReview', () => {
       expect(r.choose).toHaveBeenCalledWith('k#1', '1')
       fireEvent.click(screen.getByTestId('music-review-stage'))
       expect(r.toggleStaged).toHaveBeenCalledWith('k#1')
-      expect(screen.getByTestId('music-review-stage')).toHaveTextContent('Unstage')
+      expect(screen.getByTestId('music-review-stage')).toHaveTextContent('Remove from the batch')
     })
   })
 })
@@ -3049,7 +3049,9 @@ describe('incomplete tracks', () => {
     render(<Panes review={incompleteReview({ stageProposals })} />)
     fireEvent.click(screen.getByTestId('incomplete-stage-all'))
     expect(stageProposals).toHaveBeenCalled()
-    expect(screen.getByTestId('incomplete-stage-all')).toHaveTextContent('Stage 1 proposal')
+    expect(screen.getByTestId('incomplete-stage-all')).toHaveTextContent(
+      'Add 1 proposal to the batch',
+    )
   })
 
   it('offers no bulk staging once every proposal is in the tray', () => {

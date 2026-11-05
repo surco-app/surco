@@ -2470,7 +2470,7 @@
       "version": "another version"
     },
     "tie": "Tied. Pick the one to keep.",
-    "staged": "Unstage",
+    "staged": "Remove from the batch",
     "ignore": "Ignore",
     "ignored": "Hidden from the review",
     "notSame": "Not the same",
@@ -2654,8 +2654,8 @@
         "typed": "Filled in by hand",
         "editor": "In the editor"
       },
-      "stageAll_one": "Stage {{count}} proposal",
-      "stageAll_other": "Stage {{count}} proposals",
+      "stageAll_one": "Add {{count}} proposal to the batch",
+      "stageAll_other": "Add {{count}} proposals to the batch",
       "stage": "Fill in",
       "empty": "Empty",
       "useForOthers_one": "Use on the other one",
