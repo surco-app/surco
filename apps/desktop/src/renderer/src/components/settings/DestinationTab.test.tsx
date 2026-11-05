@@ -1034,3 +1034,14 @@ describe('DestinationTab Serato', () => {
     }
   })
 })
+
+describe('ProgramsTab layout', () => {
+  // Moved out of Output, the first program still drew the rule meant for a section that
+  // follows another one, so the tab opened on an empty band and a line.
+  it('opens on its first program without a rule above it', () => {
+    renderPrograms()
+    const [first, second] = screen.getAllByTestId('settings-section')
+    expect(first.className).not.toMatch(/border-t/)
+    expect(second.className).toMatch(/border-t/)
+  })
+})
