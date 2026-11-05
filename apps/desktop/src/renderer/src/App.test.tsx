@@ -1295,10 +1295,10 @@ describe('App quality triage', () => {
     expect(client.getQueryData(['waveform', '/music/b.wav'])).toEqual(wave)
   })
 
-  // Starting the sweep then switching away must not keep ffmpeg churning in the
-  // background: the sweep parks until the window is focused again, the whole point of
-  // the blur pause (it must still finish once the app comes back).
-  it('parks the analyze sweep while the window is in the background and resumes on focus', async () => {
+  // Starting the sweep then switching to the DJ program must not keep ffmpeg churning
+  // under a set: with one open the sweep parks until Surco is focused again (it must still
+  // finish once the app comes back). Behind any other window it goes on.
+  it('parks the analyze sweep behind a DJ program and resumes on focus', async () => {
     // Both the analyze sweep and the editor's cover well subscribe to window focus, so
     // the mock fans the event out to every listener instead of keeping only the last.
     const focusListeners: ((focused: boolean) => void)[] = []
@@ -1306,8 +1306,10 @@ describe('App quality triage', () => {
       for (const cb of focusListeners) cb(focused)
     }
     const spectrogram = vi.fn().mockResolvedValue(spectrum)
+    const djAppRunning = vi.fn<Api['djAppRunning']>().mockResolvedValue(true)
     setApi({
       spectrogram,
+      djAppRunning,
       onWindowFocus: (cb: (focused: boolean) => void) => {
         focusListeners.push(cb)
         return () => {}
@@ -1318,9 +1320,11 @@ describe('App quality triage', () => {
     // Let the selected track's editor warm its own spectrum first; the sweep is what
     // we're gating, so we measure new ffmpeg calls against that baseline.
     await new Promise((r) => setTimeout(r, 0))
-    const baseline = spectrogram.mock.calls.length
 
     setFocus(false)
+    await waitFor(() => expect(djAppRunning).toHaveBeenCalled())
+    await new Promise((r) => setTimeout(r, 0))
+    const baseline = spectrogram.mock.calls.length
     runMenu('analyze-quality')
     await new Promise((r) => setTimeout(r, 0))
     expect(spectrogram.mock.calls.length).toBe(baseline)

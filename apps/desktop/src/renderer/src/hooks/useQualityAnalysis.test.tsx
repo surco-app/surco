@@ -40,6 +40,7 @@ function setApi(over: Record<string, unknown>): void {
     key: vi.fn().mockResolvedValue(null),
     properties: vi.fn().mockResolvedValue(null),
     onWindowFocus: () => () => {},
+    djAppRunning: vi.fn().mockResolvedValue(false),
     ...over,
   }
 }
@@ -574,11 +575,15 @@ describe('useQualityAnalysis after unmount', () => {
 })
 
 describe('useQualityAnalysis in the background', () => {
-  it('reports the sweep paused while the window is in the background, so a stalled counter is not taken for a hang', async () => {
+  // A DJ who drops 500 tracks and switches to the browser came back to a sweep that had
+  // not started, because it waited for the window. It only has a reason to wait when a
+  // DJ program is open, where ffmpeg could cost the set.
+  it('keeps sweeping behind another window when no DJ program is open', async () => {
     let setFocused: (focused: boolean) => void = () => {}
     const spectrogram = vi.fn().mockResolvedValue(spectrum)
     setApi({
       spectrogram,
+      djAppRunning: vi.fn().mockResolvedValue(false),
       onWindowFocus: (cb: (focused: boolean) => void) => {
         setFocused = cb
         return () => {}
@@ -592,7 +597,31 @@ describe('useQualityAnalysis in the background', () => {
     act(() => setFocused(false))
     act(() => result.current.analyzeAllQuality())
 
-    expect(result.current.paused).toBe(true)
+    await waitFor(() => expect(spectrogram).toHaveBeenCalledTimes(2))
+    expect(result.current.paused).toBe(false)
+  })
+
+  it('pauses behind another window while a DJ program is open, and goes on when Surco comes back', async () => {
+    let setFocused: (focused: boolean) => void = () => {}
+    const spectrogram = vi.fn().mockResolvedValue(spectrum)
+    setApi({
+      spectrogram,
+      djAppRunning: vi.fn().mockResolvedValue(true),
+      onWindowFocus: (cb: (focused: boolean) => void) => {
+        setFocused = cb
+        return () => {}
+      },
+    })
+    const targetsRef = { current: [track('a'), track('b')] }
+    const { result } = renderHook(() => useQualityAnalysis({ targetsRef }), {
+      wrapper: wrapper(),
+    })
+
+    act(() => setFocused(false))
+    await waitFor(() => expect(window.api.djAppRunning).toHaveBeenCalled())
+    act(() => result.current.analyzeAllQuality())
+
+    await waitFor(() => expect(result.current.paused).toBe(true))
     expect(spectrogram).not.toHaveBeenCalled()
 
     act(() => setFocused(true))

@@ -33,6 +33,15 @@ export const DJ_PROCESSES: {
   serato: { isRunning: isSeratoRunning },
 }
 
+export async function anyDjProgramRunning(
+  processes: { [P in DjProgram]: Pick<ProgramProcess, 'isRunning'> } = DJ_PROCESSES,
+): Promise<boolean> {
+  const answers = await Promise.all(
+    Object.values(processes).map((p) => p.isRunning().catch(() => false)),
+  )
+  return answers.some(Boolean)
+}
+
 export interface QuitText<P extends WritableProgram = WritableProgram> {
   message: Extract<MenuKey, `${P}QuitMessage`>
   confirm: Extract<MenuKey, `${P}QuitConfirm`>

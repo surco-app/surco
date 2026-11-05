@@ -2,6 +2,7 @@ import type { BrowserWindow } from 'electron'
 import { describe, expect, it, vi } from 'vitest'
 import type { WritableProgram } from '../shared/djProgram'
 import {
+  anyDjProgramRunning,
   createEnsureClosed,
   type ProgramProcess,
   QUIT_REASONS,
@@ -230,5 +231,33 @@ describe('QUIT_TEXT', () => {
     // @ts-expect-error
     const wrong: (typeof QUIT_TEXT)['engine']['detail']['cues'] = 'traktorQuitDetailCues'
     expect(wrong).toBe('traktorQuitDetailCues')
+  })
+})
+
+describe('anyDjProgramRunning', () => {
+  // The quality sweep keeps going while Surco sits behind another window and stops only
+  // when a DJ program is open, the one moment ffmpeg could steal CPU from a set.
+  const stopped = { isRunning: async () => false }
+  const open = { isRunning: async () => true }
+  it('is true when any of the four programs is open', async () => {
+    expect(
+      await anyDjProgramRunning({
+        rekordbox: stopped,
+        traktor: stopped,
+        engine: stopped,
+        serato: open,
+      }),
+    ).toBe(true)
+  })
+
+  it('is false when none is open', async () => {
+    expect(
+      await anyDjProgramRunning({
+        rekordbox: stopped,
+        traktor: stopped,
+        engine: stopped,
+        serato: stopped,
+      }),
+    ).toBe(false)
   })
 })
