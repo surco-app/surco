@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react'
 import type { SessionData, SessionEdit } from '../../../shared/types'
-import type { AppStore } from '../lib/appStore'
+import { type AppStore, useAppStore } from '../lib/appStore'
 import { sessionEdits } from '../lib/sessionEdits'
+import { parseSessionView, type SessionView, sessionViewOf, viewPatch } from '../lib/sessionView'
 import { dismissToast, pushToast } from '../lib/toastQueue'
 import type { TrackItem } from '../types'
 import { useStableCallback } from './useStableCallback'
@@ -60,6 +61,10 @@ export function useSessionPersistence({
     // Measured in the app, that dropped the edits for every track but one — the covers,
     // the Apple Music identity and the format protection with them.
     seedRestoredEdits(session.edits)
+    // The list view comes back only with the list it was saved with, so it is applied here
+    // and never at launch: a fresh drop starts from the plain list.
+    const view = parseSessionView(session.view)
+    if (view) store.setState(viewPatch(view))
     // The staged edits ride along so each track's read overlays what the user had
     // retagged but not yet applied when the last session ended.
     await addPaths(await window.api.expandPaths(session.paths), session.edits)
@@ -126,18 +131,22 @@ export function useSessionPersistence({
   const savedSessionSig = useRef<string | null>(null)
   const sessionSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const writeSettled = useStableCallback(
-    (save: (paths: string[], edits: Record<string, SessionEdit>) => void): void => {
+    (
+      save: (paths: string[], edits: Record<string, SessionEdit>, view: SessionView) => void,
+    ): void => {
       const settled = tracksRef.current.filter((t) => t.inFiles)
       if (settled.some((t) => t.loadingMeta)) return
       const paths = settled.map((t) => t.inputPath)
       const edits = sessionEdits(settled)
-      const sig = JSON.stringify({ paths, edits })
+      const view = sessionViewOf(store.getState())
+      const sig = JSON.stringify({ paths, edits, view })
       if (sig === savedSessionSig.current) return
       savedSessionSig.current = sig
-      save(paths, edits)
+      save(paths, edits, view)
     },
   )
-  // biome-ignore lint/correctness/useExhaustiveDependencies: tracksRef is read inside the debounced timer, on purpose — the write must snapshot the list as it SETTLES, not as it looked when the burst began. `tracks` stays the trigger; declaring the ref as a dependency would re-run the effect on every mutation, which is the per-render work this indirection exists to shed.
+  const viewSig = useAppStore(store, (s) => JSON.stringify(sessionViewOf(s)))
+  // biome-ignore lint/correctness/useExhaustiveDependencies: viewSig is a trigger only, the view itself is read when the timer fires. tracksRef is read inside the debounced timer, on purpose — the write must snapshot the list as it SETTLES, not as it looked when the burst began. `tracks` stays the trigger; declaring the ref as a dependency would re-run the effect on every mutation, which is the per-render work this indirection exists to shed.
   useEffect(() => {
     // Rows whose metadata read is still in flight would snapshot half-loaded state —
     // and during a session restore that would overwrite the very edits being restored
@@ -156,9 +165,9 @@ export function useSessionPersistence({
     if (sessionSaveTimer.current) clearTimeout(sessionSaveTimer.current)
     sessionSaveTimer.current = setTimeout(() => {
       sessionSaveTimer.current = null
-      writeSettled((paths, edits) => void window.api.saveLastSession(paths, edits))
+      writeSettled((paths, edits, view) => void window.api.saveLastSession(paths, edits, view))
     }, SESSION_SAVE_DEBOUNCE_MS)
-  }, [tracks])
+  }, [tracks, viewSig])
   // A quit or a closed window inside the debounce kills the timer with the page, losing
   // the last second of edits. The page going away writes the pending save at once, and
   // synchronously: an async IPC sent from a dying page is not sure to reach main.

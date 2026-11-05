@@ -1128,18 +1128,23 @@ function registerIpc(): void {
   // edits as they change and asks for them back at launch to offer restoring the
   // previous crate — edits included, so a crash never loses unapplied metadata.
   ipcMain.handle('session:get', () => loadLastSession())
-  ipcMain.handle('session:set', (_e, paths: string[], edits: Record<string, SessionEdit>) =>
-    saveLastSession(paths, edits),
+  ipcMain.handle(
+    'session:set',
+    (_e, paths: string[], edits: Record<string, SessionEdit>, view?: unknown) =>
+      saveLastSession(paths, edits, view),
   )
   // The renderer's last write as its page goes away. The reply is set even when the write
   // throws, or the blocked renderer would never be let go.
-  ipcMain.on('session:set-sync', (e, paths: string[], edits: Record<string, SessionEdit>) => {
-    try {
-      saveLastSession(paths, edits)
-    } finally {
-      e.returnValue = null
-    }
-  })
+  ipcMain.on(
+    'session:set-sync',
+    (e, paths: string[], edits: Record<string, SessionEdit>, view?: unknown) => {
+      try {
+        saveLastSession(paths, edits, view)
+      } finally {
+        e.returnValue = null
+      }
+    },
+  )
 
   ipcMain.handle('settings:getConfigDir', () => getConfigDir())
   ipcMain.handle('settings:defaultConfigDir', () => defaultConfigDir())

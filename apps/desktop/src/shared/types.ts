@@ -647,10 +647,13 @@ export interface SessionEdit {
 }
 
 // What the session store round-trips: the loaded source paths (the reopen offer)
-// plus each track's staged edits.
+// plus each track's staged edits, and the list view they were being worked through.
+// The view is opaque to main: only the renderer knows which filters and sorts exist, so
+// it vets the shape when a reopen applies it.
 export interface SessionData {
   paths: string[]
   edits: Record<string, SessionEdit>
+  view?: unknown
 }
 
 // An auto-match verdict kept per file: the search, title and providers it was reached

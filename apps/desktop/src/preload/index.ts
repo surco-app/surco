@@ -104,10 +104,17 @@ const api: Api = {
   },
   unwatchFolders: (): Promise<void> => ipcRenderer.invoke('folders:unwatch'),
   getLastSession: (): Promise<SessionData> => ipcRenderer.invoke('session:get'),
-  saveLastSession: (paths: string[], edits: Record<string, SessionEdit>): Promise<void> =>
-    ipcRenderer.invoke('session:set', paths, edits),
-  saveLastSessionSync: (paths: string[], edits: Record<string, SessionEdit>): void => {
-    ipcRenderer.sendSync('session:set-sync', paths, edits)
+  saveLastSession: (
+    paths: string[],
+    edits: Record<string, SessionEdit>,
+    view?: unknown,
+  ): Promise<void> => ipcRenderer.invoke('session:set', paths, edits, view),
+  saveLastSessionSync: (
+    paths: string[],
+    edits: Record<string, SessionEdit>,
+    view?: unknown,
+  ): void => {
+    ipcRenderer.sendSync('session:set-sync', paths, edits, view)
   },
   getSettings: () => ipcRenderer.invoke('settings:get'),
   saveSettings: (patch) => ipcRenderer.invoke('settings:set', patch),

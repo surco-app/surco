@@ -113,13 +113,17 @@ export interface Api {
   onFoldersChanged: (cb: (root: string, files: string[]) => void) => () => void
   unwatchFolders: () => Promise<void>
   // The reopen-last-session pair: get returns the paths saved when the app last ran
-  // (already filtered to files that still exist) plus each track's staged edits;
-  // save records the current list and edits.
+  // (already filtered to files that still exist) plus each track's staged edits and the
+  // list view; save records the current list, edits and view.
   getLastSession: () => Promise<SessionData>
-  saveLastSession: (paths: string[], edits: Record<string, SessionEdit>) => Promise<void>
+  saveLastSession: (
+    paths: string[],
+    edits: Record<string, SessionEdit>,
+    view?: unknown,
+  ) => Promise<void>
   // The same write, blocking until main has it on disk: for the page going away, when an
   // async message might never be handled.
-  saveLastSessionSync: (paths: string[], edits: Record<string, SessionEdit>) => void
+  saveLastSessionSync: (paths: string[], edits: Record<string, SessionEdit>, view?: unknown) => void
   getSettings: () => Promise<Settings>
   saveSettings: (patch: Partial<Settings>) => Promise<Settings>
   beatportConnect: (username: string, password: string) => Promise<Settings>

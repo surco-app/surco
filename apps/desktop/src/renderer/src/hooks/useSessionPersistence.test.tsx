@@ -5,6 +5,7 @@ import type { Api } from '../../../preload/api'
 import { emptyMetadata } from '../../../shared/metadata'
 import type { SessionData } from '../../../shared/types'
 import { createAppStore } from '../lib/appStore'
+import { sessionViewOf } from '../lib/sessionView'
 import { dismissToastByExpiry, dismissToastByUser } from '../lib/toastQueue'
 import type { TrackItem } from '../types'
 import { useSessionPersistence } from './useSessionPersistence'
@@ -90,7 +91,11 @@ describe('useSessionPersistence', () => {
       await vi.advanceTimersByTimeAsync(1_000)
     })
     vi.useRealTimers()
-    expect(saveLastSession).toHaveBeenCalledWith(['/music/files.wav'], {})
+    expect(saveLastSession).toHaveBeenCalledWith(
+      ['/music/files.wav'],
+      {},
+      sessionViewOf(createAppStore().getState()),
+    )
   })
 
   // Quitting inside the one-second debounce used to drop the last edits on the floor: the
@@ -125,7 +130,11 @@ describe('useSessionPersistence', () => {
     })
     vi.useRealTimers()
 
-    expect(saveLastSessionSync).toHaveBeenCalledWith(['/music/a.wav'], {})
+    expect(saveLastSessionSync).toHaveBeenCalledWith(
+      ['/music/a.wav'],
+      {},
+      sessionViewOf(createAppStore().getState()),
+    )
     expect(saveLastSession).not.toHaveBeenCalled()
   })
 
@@ -158,5 +167,73 @@ describe('useSessionPersistence', () => {
     await waitFor(() => expect(store.getState().toasts).toHaveLength(1))
     rerender({ tracks: [{ ...playlistRow }] })
     expect(store.getState().toasts).toHaveLength(1)
+  })
+
+  const savedView = {
+    search: 'dub',
+    sortBy: 'bpm',
+    sortDir: 'desc',
+    filters: { library: 'notInLibrary' },
+  }
+
+  // Working through 700 tracks over two evenings: the reopen brings back the list the way it
+  // was being read, not unfiltered and in the drop order.
+  it('applies the saved list view when the reopen is accepted', async () => {
+    const { store, toast } = await offer({ ...withEdits, view: savedView })
+    window.api.expandPaths = vi.fn<Api['expandPaths']>().mockResolvedValue(withEdits.paths)
+    await act(async () => toast.action?.onAction())
+    expect(store.getState()).toMatchObject({
+      search: 'dub',
+      sortBy: 'bpm',
+      sortDir: 'desc',
+      libraryFilter: 'notInLibrary',
+    })
+  })
+
+  // The view belongs to the list it was saved with. Without the reopen the user is starting
+  // something else, and a filter left over from yesterday would hide part of today's drop.
+  it('leaves the list view untouched when the reopen is not taken', async () => {
+    const { store, toast } = await offer({ ...withEdits, view: savedView })
+    dismissToastByExpiry(store, toast.id)
+    expect(sessionViewOf(store.getState())).toEqual(sessionViewOf(createAppStore().getState()))
+  })
+
+  it('saves the list view when only a filter changes', async () => {
+    vi.useFakeTimers()
+    const saveLastSession = vi.fn<Api['saveLastSession']>().mockResolvedValue(undefined)
+    ;(window as unknown as { api: Partial<Api> }).api = {
+      getLastSession: vi.fn<Api['getLastSession']>().mockResolvedValue({ paths: [], edits: {} }),
+      saveLastSession,
+    }
+    const tracks = [
+      { id: 'a', inputPath: '/music/a.wav', inFiles: true, meta: emptyMetadata() } as TrackItem,
+    ]
+    const store = createAppStore()
+    renderHook(() =>
+      useSessionPersistence({
+        tracks,
+        tracksRef: { current: tracks },
+        addPaths: vi.fn(),
+        seedRestoredEdits: vi.fn(),
+        store,
+        withdrawOffer: false,
+      }),
+    )
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_000)
+    })
+    act(() => store.setState({ libraryFilter: 'notInLibrary' }))
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_000)
+    })
+    vi.useRealTimers()
+    expect(saveLastSession).toHaveBeenLastCalledWith(
+      ['/music/a.wav'],
+      {},
+      sessionViewOf(store.getState()),
+    )
+    expect(saveLastSession.mock.lastCall?.[2]).toMatchObject({
+      filters: { library: 'notInLibrary' },
+    })
   })
 })

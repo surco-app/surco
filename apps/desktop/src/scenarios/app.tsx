@@ -59,7 +59,7 @@ function shellApi(errors: string[], openFiles: { current?: (paths: string[]) => 
     getSettings: async () => settingsForRenderer(getSettings()),
     saveSettings: async (patch) => settingsForRenderer(saveSettings(sanitizeSettingsPatch(patch))),
     getLastSession: loadLastSession,
-    saveLastSession: async (paths, edits) => saveLastSession(paths, edits),
+    saveLastSession: async (paths, edits, view) => saveLastSession(paths, edits, view),
     saveLastSessionSync: saveLastSession,
     logError: (message, stack) => errors.push(`renderer: ${message}${stack ? `\n${stack}` : ''}`),
     onOpenFiles: (cb) => {

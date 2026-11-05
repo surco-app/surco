@@ -289,4 +289,18 @@ describe('session store', () => {
     writeFileSync(file, JSON.stringify({ paths: [kept], edits: { [kept]: { meta: 'nope' } } }))
     expect(await loadLastSession()).toEqual({ paths: [kept], edits: {} })
   })
+
+  // Reopening a crate of 700 the next day is worth little if the list comes back unfiltered,
+  // in the drop order and at the first track: the view the user was working through rides
+  // along with the paths, for the renderer to vet and apply only when the reopen is accepted.
+  it('round-trips the list view next to the paths, and a session without one reopens bare', async () => {
+    const dir = app.getPath('userData')
+    const kept = join(dir, 'kept.wav')
+    writeFileSync(kept, 'x')
+    const view = { search: 'dub', sortBy: 'bpm', filters: { library: 'notInLibrary' } }
+    saveLastSession([kept], {}, view)
+    expect((await loadLastSession()).view).toEqual(view)
+    saveLastSession([kept], {})
+    expect((await loadLastSession()).view).toBeUndefined()
+  })
 })

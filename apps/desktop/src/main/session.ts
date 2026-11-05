@@ -145,6 +145,7 @@ export async function loadLastSession(): Promise<SessionData> {
     const raw = JSON.parse(await readFile(sessionPath(), 'utf-8')) as {
       paths?: unknown
       edits?: unknown
+      view?: unknown
     }
     if (!Array.isArray(raw.paths)) return { paths: [], edits: {} }
     // Files deleted or unmounted since last quit would come back as broken rows;
@@ -169,7 +170,8 @@ export async function loadLastSession(): Promise<SessionData> {
         if (edit) edits[path] = edit
       }
     }
-    return { paths, edits }
+    const view = typeof raw.view === 'object' && raw.view !== null ? raw.view : undefined
+    return view ? { paths, edits, view } : { paths, edits }
   } catch {
     return { paths: [], edits: {} }
   }
@@ -177,9 +179,13 @@ export async function loadLastSession(): Promise<SessionData> {
 
 // Write-then-rename like the settings store: a crash mid-write must never truncate
 // the file into unparseable JSON that would silently discard the session.
-export function saveLastSession(paths: string[], edits: Record<string, SessionEdit>): void {
+export function saveLastSession(
+  paths: string[],
+  edits: Record<string, SessionEdit>,
+  view?: unknown,
+): void {
   const path = sessionPath()
   const tmp = `${path}.tmp`
-  writeFileSync(tmp, JSON.stringify({ paths, edits }), 'utf-8')
+  writeFileSync(tmp, JSON.stringify({ paths, edits, view }), 'utf-8')
   renameSync(tmp, path)
 }

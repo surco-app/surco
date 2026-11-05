@@ -7323,6 +7323,7 @@ describe('App reopen last session', () => {
         expect(saveLastSession).toHaveBeenCalledWith(
           ['/music/a.wav', '/music/b.wav'],
           expect.anything(),
+          expect.any(Object),
         ),
       { timeout: 3_000 },
     )
@@ -7381,6 +7382,7 @@ describe('App reopen last session', () => {
       () =>
         expect(saveLastSession).toHaveBeenCalledWith(
           ['/music/a.wav', '/music/b.wav'],
+          expect.any(Object),
           expect.any(Object),
         ),
       { timeout: 3000 },
