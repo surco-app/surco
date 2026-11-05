@@ -119,6 +119,7 @@ import { SectionBody } from './SectionBody'
 import { SectionHeader } from './SectionHeader'
 import { Select } from './Select'
 import { SPLIT_ITEM, SPLIT_MENU, useSplitMenu } from './SplitButton'
+import { Tooltip } from './Tooltip'
 
 interface CueTarget {
   contentId: string
@@ -1057,7 +1058,6 @@ function Editing({
       type="button"
       data-testid="cues-step-back"
       aria-label={tr('editor.cues.undo')}
-      title={`${tr('editor.cues.undo')} ⌘Z`}
       disabled={state.past.length === 0}
       onClick={() => {
         dispatch({ type: 'undo' })
@@ -1067,6 +1067,7 @@ function Editing({
         maximized ? 'h-8 w-8 rounded-lg' : 'h-6 w-6 rounded-md'
       }`}
     >
+      <Tooltip label={tr('editor.cues.undo')} hint="⌘Z" />
       <Undo2 className="h-3.5 w-3.5" aria-hidden="true" />
     </button>
   )
@@ -1131,13 +1132,13 @@ function Editing({
           type="button"
           data-testid="cues-auto-accept"
           aria-label={acceptLabel}
-          title={acceptLabel}
           onClick={() => {
             acceptProposals()
             focusEditor()
           }}
           className="press flex h-6 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md bg-[var(--color-accent)] px-2.5 font-semibold text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]"
         >
+          <Tooltip label={acceptLabel} />
           {tr('editor.cues.auto.acceptOne')}
           <kbd className="rounded border border-[var(--color-on-accent)]/40 px-1 font-sans text-[11px]">
             ↵
@@ -1147,13 +1148,13 @@ function Editing({
           type="button"
           data-testid="cues-auto-discard"
           aria-label={discardLabel}
-          title={discardLabel}
           onClick={() => {
             setProposed(null)
             focusEditor()
           }}
           className="press shrink-0 whitespace-nowrap rounded px-1 text-fg-dim hover:text-fg"
         >
+          <Tooltip label={discardLabel} />
           {tr('editor.cues.auto.drop')}
         </button>
       </span>
@@ -1164,10 +1165,10 @@ function Editing({
       type="button"
       data-testid="cues-auto-mark"
       disabled={blocked ? true : readsAudio ? readingAudio : !words}
-      title={readsAudio || words ? undefined : tr(copy.autoUnanalysed)}
       onClick={autoMark}
       className={`press flex shrink-0 items-center gap-1.5 whitespace-nowrap border border-[var(--color-accent)] text-xs font-semibold text-[var(--color-accent)] hover:bg-[var(--color-hover)] disabled:opacity-40 ${autoHeight}`}
     >
+      {!(readsAudio || words) && <Tooltip label={tr(copy.autoUnanalysed)} />}
       <svg viewBox="0 0 16 16" className="h-3 w-3" aria-hidden="true">
         <path d="M8 1 9.6 6.4 15 8 9.6 9.6 8 15 6.4 9.6 1 8 6.4 6.4Z" fill="currentColor" />
       </svg>
@@ -1334,11 +1335,11 @@ function Editing({
         type="button"
         data-testid="cues-clear-all"
         aria-label={tr('editor.cues.clearAll')}
-        title={tr('editor.cues.clearAll')}
         disabled={!clearable}
         onClick={clearAll}
         className="press flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg disabled:pointer-events-none disabled:opacity-40"
       >
+        <Tooltip label={tr('editor.cues.clearAll')} />
         <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
       </button>
       {undoButton}
@@ -1563,12 +1564,12 @@ function Editing({
           data-testid="cues-more"
           ref={moreMenu.toggleRef}
           aria-label={tr('editor.moreActions')}
-          title={tr('editor.moreActions')}
           aria-haspopup="menu"
           aria-expanded={moreMenu.open}
           onClick={() => moreMenu.setOpen((v) => !v)}
           className="press flex h-8 w-8 items-center justify-center rounded-lg text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg"
         >
+          <Tooltip label={tr('editor.moreActions')} />
           <Ellipsis className="h-4 w-4" aria-hidden="true" />
         </button>
         {moreMenu.open && (

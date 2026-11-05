@@ -12,6 +12,7 @@ import {
   toggleAnchor,
 } from '../../../shared/gridEdit'
 import i18n from '../i18n'
+import { hoverTooltip } from '../test/tooltip'
 import { CueGridControls } from './CueGridControls'
 
 beforeEach(async () => {
@@ -156,7 +157,7 @@ describe('CueGridControls', () => {
     })
     const group = screen.getByTestId('cues-grid')
     expect(group).toHaveAttribute('aria-disabled', 'true')
-    expect(group).toHaveAttribute('title', 'Rejilla con varios tempos')
+    expect(hoverTooltip(group)).toEqual('Rejilla con varios tempos')
     for (const id of ['bpm', 'left', 'right', 'widen', 'narrow', 'downbeat', 'auto']) {
       const button = screen.getByTestId(`cues-grid-${id}`)
       expect(button).toBeDisabled()
@@ -259,7 +260,7 @@ describe('CueGridControls', () => {
     for (const [id, name] of Object.entries(names)) {
       const button = screen.getByTestId(`cues-grid-${id === 'half' ? 'x05' : id}`)
       expect(button).toHaveAccessibleName(name)
-      expect(button).toHaveAttribute('title', name)
+      expect(hoverTooltip(button)).toEqual(name)
       expect(button.querySelector('svg')).not.toBeNull()
       const outside = [...button.childNodes].filter((n) => n.nodeName.toLowerCase() !== 'svg')
       expect(outside.map((n) => n.textContent?.trim()).join('')).toBe('')

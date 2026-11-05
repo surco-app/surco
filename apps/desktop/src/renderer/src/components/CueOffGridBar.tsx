@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { cueClock } from '../lib/cuePlayhead'
 import { cueLetter } from '../lib/rowCues'
+import { Tooltip } from './Tooltip'
 
 export interface OffGridCue {
   kind: number
@@ -84,10 +85,10 @@ export function CueOffGridBar({
       <button
         type="button"
         data-testid={`cues-offgrid-go-${stop.ms}`}
-        title={tr('editor.cues.offGrid.go')}
         onClick={() => onGo(stop.ms)}
         className="press min-w-0 truncate rounded px-1 tabular-nums text-fg hover:bg-[var(--color-hover)]"
       >
+        <Tooltip label={tr('editor.cues.offGrid.go')} />
         <span className="font-semibold">{stop.label}</span> {cueClock(stop.ms)} ·{' '}
         <span className="text-warn">
           {tr(stop.driftMs < 0 ? 'editor.cues.offGrid.before' : 'editor.cues.offGrid.after', {

@@ -27,6 +27,7 @@ import {
 import { SettingsProvider } from '../lib/settingsContext'
 import { installApi } from '../test/api'
 import { saveAllItem } from '../test/cueSaveAll'
+import { hoverTooltip } from '../test/tooltip'
 import { CuesSection } from './CuesSection'
 
 const recordCueEdits = vi.hoisted(() => vi.fn())
@@ -377,7 +378,7 @@ describe('Auto marcar', () => {
     setup({ words: null })
     await ready()
     await waitFor(() => expect(autoButton()).toBeDisabled())
-    expect(autoButton()).toHaveAttribute('title', 'No rekordbox analysis')
+    expect(hoverTooltip(autoButton())).toEqual('No rekordbox analysis')
   })
 
   it('says so when the detector finds nothing, instead of proposing anything', async () => {

@@ -15,6 +15,7 @@ import { resetEditorSections } from '../hooks/useEditorSections'
 import { focusCue, resetCueSession } from '../lib/cueSession'
 import { SettingsProvider } from '../lib/settingsContext'
 import { installApi } from '../test/api'
+import { hoverTooltip } from '../test/tooltip'
 import { CuesSection } from './CuesSection'
 
 afterEach(cleanup)
@@ -1237,8 +1238,7 @@ describe('CuesSection on a track rekordbox has not analysed', () => {
     await ready()
     await openFull()
     expect(screen.getByTestId('cues-grid')).toHaveAttribute('aria-disabled', 'true')
-    expect(screen.getByTestId('cues-grid')).toHaveAttribute(
-      'title',
+    expect(hoverTooltip(screen.getByTestId('cues-grid'))).toEqual(
       expect.stringMatching(/Surco grid/),
     )
   })

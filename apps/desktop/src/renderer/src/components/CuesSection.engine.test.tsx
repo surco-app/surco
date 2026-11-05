@@ -21,6 +21,7 @@ import { autoMarkOf, keepDraft, resetCueSession } from '../lib/cueSession'
 import { SettingsProvider } from '../lib/settingsContext'
 import { installApi } from '../test/api'
 import { saveAllItem } from '../test/cueSaveAll'
+import { hoverTooltip } from '../test/tooltip'
 import { CuesSection } from './CuesSection'
 
 const dropProposals = vi.hoisted(() =>
@@ -298,7 +299,7 @@ describe('CuesSection on an Engine DJ track', () => {
     fireEvent.click(screen.getByTestId('section-maximize'))
     await waitFor(() => expect(screen.getByTestId('cues-grid')).toBeInTheDocument())
     expect(screen.getByTestId('cues-grid')).toHaveAttribute('aria-disabled', 'true')
-    expect(screen.getByTestId('cues-grid')).toHaveAttribute('title', expect.stringMatching(/Surco/))
+    expect(hoverTooltip(screen.getByTestId('cues-grid'))).toEqual(expect.stringMatching(/Surco/))
     expect(getGridFit).not.toHaveBeenCalled()
   })
 
@@ -330,9 +331,6 @@ describe('CuesSection on an Engine DJ track', () => {
     fireEvent.click(screen.getByTestId('section-maximize'))
     await waitFor(() => expect(screen.getByTestId('cues-grid')).toBeInTheDocument())
     expect(screen.getByTestId('cues-grid')).toHaveAttribute('aria-disabled', 'true')
-    expect(screen.getByTestId('cues-grid')).toHaveAttribute(
-      'title',
-      expect.stringMatching(/locked/i),
-    )
+    expect(hoverTooltip(screen.getByTestId('cues-grid'))).toEqual(expect.stringMatching(/locked/i))
   })
 })

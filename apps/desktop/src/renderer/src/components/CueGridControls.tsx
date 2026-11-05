@@ -17,6 +17,7 @@ import {
   zoneAt,
 } from '../../../shared/gridEdit'
 import { formatFixed } from '../lib/numberFormat'
+import { Tooltip } from './Tooltip'
 
 const GROUP = 'flex shrink-0 items-center gap-1'
 const ICON =
@@ -137,12 +138,8 @@ export function CueGridControls({
   }
 
   return (
-    <div
-      data-testid="cues-grid"
-      aria-disabled={off}
-      title={disabledReason ?? undefined}
-      className="flex flex-wrap items-center gap-2"
-    >
+    <div data-testid="cues-grid" aria-disabled={off} className="flex flex-wrap items-center gap-2">
+      {disabledReason && <Tooltip label={disabledReason} />}
       <div ref={menuRoot} className="relative">
         <button
           type="button"
@@ -204,22 +201,22 @@ export function CueGridControls({
           type="button"
           data-testid="cues-grid-left"
           aria-label={tr('editor.cues.grid.left')}
-          title={tr('editor.cues.grid.left')}
           disabled={off}
           onClick={shift(-1)}
           className={ICON}
         >
+          {!disabledReason && <Tooltip label={tr('editor.cues.grid.left')} />}
           <Bars left="in" />
         </button>
         <button
           type="button"
           data-testid="cues-grid-right"
           aria-label={tr('editor.cues.grid.right')}
-          title={tr('editor.cues.grid.right')}
           disabled={off}
           onClick={shift(1)}
           className={ICON}
         >
+          {!disabledReason && <Tooltip label={tr('editor.cues.grid.right')} />}
           <Bars right="out" />
         </button>
       </div>
@@ -228,44 +225,44 @@ export function CueGridControls({
           type="button"
           data-testid="cues-grid-widen"
           aria-label={tr('editor.cues.grid.widen')}
-          title={tr('editor.cues.grid.widen')}
           disabled={off}
           onClick={() => apply(retempo(bpm - STEP_BPM))}
           className={ICON}
         >
+          {!disabledReason && <Tooltip label={tr('editor.cues.grid.widen')} />}
           <Bars left="in" right="out" />
         </button>
         <button
           type="button"
           data-testid="cues-grid-narrow"
           aria-label={tr('editor.cues.grid.narrow')}
-          title={tr('editor.cues.grid.narrow')}
           disabled={off}
           onClick={() => apply(retempo(bpm + STEP_BPM))}
           className={ICON}
         >
+          {!disabledReason && <Tooltip label={tr('editor.cues.grid.narrow')} />}
           <Bars left="out" right="in" />
         </button>
         <button
           type="button"
           data-testid="cues-grid-x2"
           aria-label={tr('editor.cues.grid.double')}
-          title={tr('editor.cues.grid.double')}
           disabled={off || bpm * 2 > GRID_BPM_MAX}
           onClick={() => apply(scale(2))}
           className={ICON}
         >
+          {!disabledReason && <Tooltip label={tr('editor.cues.grid.double')} />}
           <Bars times="×2" />
         </button>
         <button
           type="button"
           data-testid="cues-grid-x05"
           aria-label={tr('editor.cues.grid.half')}
-          title={tr('editor.cues.grid.half')}
           disabled={off || bpm / 2 < GRID_BPM_MIN}
           onClick={() => apply(scale(0.5))}
           className={ICON}
         >
+          {!disabledReason && <Tooltip label={tr('editor.cues.grid.half')} />}
           <Bars times="×½" />
         </button>
       </div>
@@ -274,11 +271,11 @@ export function CueGridControls({
           type="button"
           data-testid="cues-grid-downbeat"
           aria-label={tr('editor.cues.grid.downbeat')}
-          title={tr('editor.cues.grid.downbeat')}
           disabled={off}
           onClick={() => apply(inZone((zone) => downbeatAt(zone, playheadMs)))}
           className={ICON}
         >
+          {!disabledReason && <Tooltip label={tr('editor.cues.grid.downbeat')} />}
           <svg width="18" height="14" viewBox="0 0 18 14" aria-hidden="true">
             <path d="M6.5 0h5L9 3z" fill="currentColor" />
             <path d="M3 5v9M15 5v9" stroke="currentColor" strokeWidth="1.4" />
@@ -289,11 +286,15 @@ export function CueGridControls({
           type="button"
           data-testid="cues-grid-anchor"
           aria-label={tr(atAnchor ? 'editor.cues.grid.anchorRemove' : 'editor.cues.grid.anchorAdd')}
-          title={tr(atAnchor ? 'editor.cues.grid.anchorRemove' : 'editor.cues.grid.anchorAdd')}
           disabled={off || !zones}
           onClick={() => grid && onChange(toggleAnchor(grid, playheadMs))}
           className={ICON}
         >
+          {!disabledReason && (
+            <Tooltip
+              label={tr(atAnchor ? 'editor.cues.grid.anchorRemove' : 'editor.cues.grid.anchorAdd')}
+            />
+          )}
           <svg width="18" height="14" viewBox="0 0 18 14" aria-hidden="true">
             <path d="M3 1v12M15 1v12" stroke="currentColor" strokeWidth="1.4" />
             <path
@@ -309,11 +310,11 @@ export function CueGridControls({
         type="button"
         data-testid="cues-grid-auto"
         data-needs-fix={needsFix && !off ? 'true' : undefined}
-        title={tr('editor.cues.grid.autoHint')}
         disabled={off || fit === null}
         onClick={() => grid && fit && onFit(fitGrid(grid, fit, playheadMs))}
         className="press ml-1 flex h-7 items-center rounded-md border border-[var(--color-line-strong)] px-2 text-xs font-medium text-fg-muted transition-colors hover:bg-[var(--color-hover)] disabled:opacity-40 data-[needs-fix=true]:border-[var(--color-accent)] data-[needs-fix=true]:bg-[var(--color-accent)] data-[needs-fix=true]:font-semibold data-[needs-fix=true]:text-[var(--color-on-accent)]"
       >
+        {!disabledReason && <Tooltip label={tr('editor.cues.grid.autoHint')} />}
         {tr('editor.cues.grid.auto')}
       </button>
     </div>

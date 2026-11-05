@@ -29,6 +29,7 @@ import { barLines, quantizePoints } from '../lib/cueWave'
 import { formatTime } from '../lib/duration'
 import { CueDeleteBadge } from './CueDeleteBadge'
 import type { WaveCue } from './CueWave'
+import { Tooltip } from './Tooltip'
 
 const STAGE_MIN_HEIGHT = '160px'
 const STAGE_MAX_HEIGHT = '360px'
@@ -84,11 +85,11 @@ export function CueZoom({
           type="button"
           data-testid={id}
           aria-label={t(label)}
-          title={t(label)}
           disabled={off}
           onClick={act}
           className={ZOOM_BUTTON}
         >
+          <Tooltip label={t(label)} />
           <Icon className="h-3.5 w-3.5" aria-hidden="true" />
         </button>
       ))}
@@ -631,20 +632,20 @@ export function CueWaveDetail({
                     type="button"
                     data-testid={`cue-proposal-accept-${ms}`}
                     aria-label={t('editor.cues.auto.acceptOne')}
-                    title={t('editor.cues.auto.acceptOne')}
                     onClick={() => onAcceptProposal?.(ms)}
                     className="press relative flex h-4 w-4 items-center justify-center rounded-full bg-[var(--color-accent)] text-[var(--color-on-accent)] after:absolute after:-inset-1 after:content-['']"
                   >
+                    <Tooltip label={t('editor.cues.auto.acceptOne')} />
                     <Check className="h-3 w-3" strokeWidth={3} aria-hidden="true" />
                   </button>
                   <button
                     type="button"
                     data-testid={`cue-proposal-drop-${ms}`}
                     aria-label={t('editor.cues.auto.drop')}
-                    title={t('editor.cues.auto.drop')}
                     onClick={() => onDropProposal?.(ms)}
                     className="press relative flex h-4 w-4 items-center justify-center rounded-full text-fg-dim after:absolute after:-inset-1 after:content-[''] hover:text-fg"
                   >
+                    <Tooltip label={t('editor.cues.auto.drop')} />
                     <X className="h-3 w-3" aria-hidden="true" />
                   </button>
                 </span>

@@ -12,6 +12,7 @@ import '../i18n'
 import { resetCueSession } from '../lib/cueSession'
 import { SettingsProvider } from '../lib/settingsContext'
 import { installApi } from '../test/api'
+import { hoverTooltip } from '../test/tooltip'
 import { CuesSection } from './CuesSection'
 
 afterEach(cleanup)
@@ -167,8 +168,7 @@ describe('CuesSection on a Serato track', () => {
     fireEvent.click(screen.getByTestId('section-maximize'))
     await waitFor(() => expect(screen.getByTestId('cues-grid')).toBeInTheDocument())
     expect(screen.getByTestId('cues-grid')).toHaveAttribute('aria-disabled', 'true')
-    expect(screen.getByTestId('cues-grid')).toHaveAttribute(
-      'title',
+    expect(hoverTooltip(screen.getByTestId('cues-grid'))).toEqual(
       "Serato's beat grid comes from Serato and can't be changed here",
     )
     expect(screen.getByTestId('cues-grid-right')).toBeDisabled()

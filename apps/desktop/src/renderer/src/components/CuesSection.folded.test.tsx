@@ -25,6 +25,7 @@ import { resetCueSession } from '../lib/cueSession'
 import { SettingsProvider } from '../lib/settingsContext'
 import { runKeyClaim } from '../lib/spaceClaim'
 import { installApi } from '../test/api'
+import { hoverTooltip } from '../test/tooltip'
 import { CuesSection } from './CuesSection'
 
 // Passed through untouched, only counted: working out the place ghost runs the whole draft
@@ -328,7 +329,7 @@ describe('CuesSection folded', () => {
     expect(screen.getByTestId('cues-folded-row')).toContainElement(undo)
     expect(undo.nextElementSibling).toContainElement(screen.getByTestId('cues-save'))
     expect(undo).toHaveAccessibleName('Undo')
-    expect(undo).toHaveAttribute('title', 'Undo ⌘Z')
+    expect(hoverTooltip(undo)).toEqual('Undo⌘Z')
     expect(undo).toBeDisabled()
     seekStrip(128)
     placeAtPlayhead()

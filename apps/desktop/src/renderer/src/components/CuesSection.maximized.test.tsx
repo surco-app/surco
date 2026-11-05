@@ -27,6 +27,7 @@ import { autoMarkOf, resetCueSession } from '../lib/cueSession'
 import { SettingsProvider } from '../lib/settingsContext'
 import { claimKeys, runKeyClaim } from '../lib/spaceClaim'
 import { installApi } from '../test/api'
+import { hoverTooltip } from '../test/tooltip'
 import { CuesSection } from './CuesSection'
 
 const KEPT: CueFlow[] = [MY_FLOW, ONE_AT_32, CALLS_ONLY]
@@ -1448,7 +1449,7 @@ describe('CuesSection maximized undo', () => {
     const undo = screen.getByTestId('cues-step-back')
     expect(screen.getByTestId('cues-actions')).toContainElement(undo)
     expect(undo.nextElementSibling).toBe(screen.getByTestId('cues-save'))
-    expect(undo).toHaveAttribute('title', 'Undo ⌘Z')
+    expect(hoverTooltip(undo)).toEqual('Undo⌘Z')
     expect(undo).toBeDisabled()
     seek(128000)
     editor().focus()
@@ -1718,10 +1719,7 @@ describe('CuesSection maximized grid', () => {
     setup(null, { ...READ, grid: drifting })
     await maximize()
     expect(screen.getByTestId('cues-grid')).toHaveAttribute('aria-disabled', 'true')
-    expect(screen.getByTestId('cues-grid')).toHaveAttribute(
-      'title',
-      expect.stringMatching(/tempo/i),
-    )
+    expect(hoverTooltip(screen.getByTestId('cues-grid'))).toEqual(expect.stringMatching(/tempo/i))
   })
 
   it('greys out the grid row on a track rekordbox has not analysed, since there is no grid to write yet', async () => {
@@ -1738,10 +1736,7 @@ describe('CuesSection maximized grid', () => {
     )
     await maximize()
     expect(screen.getByTestId('cues-grid')).toHaveAttribute('aria-disabled', 'true')
-    expect(screen.getByTestId('cues-grid')).toHaveAttribute(
-      'title',
-      expect.stringMatching(/analy/i),
-    )
+    expect(hoverTooltip(screen.getByTestId('cues-grid'))).toEqual(expect.stringMatching(/analy/i))
   })
 
   it('gives each grid offset a fixed width, so a value going from +1 ms to −12 ms never shoves the grid buttons sideways', async () => {

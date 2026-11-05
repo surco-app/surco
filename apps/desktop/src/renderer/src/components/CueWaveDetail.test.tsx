@@ -376,7 +376,7 @@ describe('CueWaveDetail', () => {
   it('draws the zoom reset as a magnifier, never a turning arrow, since Vicent read the arrow as undo', () => {
     render(<CueZoom row bars={8} onZoom={vi.fn()} onReset={vi.fn<() => void>()} />)
     const drawn = (icon: React.ReactElement) => render(icon).container.innerHTML
-    const reset = screen.getByTestId('cue-zoom-reset').innerHTML
+    const reset = screen.getByTestId('cue-zoom-reset').querySelector('svg')?.outerHTML
     expect(reset).toBe(drawn(<Search className="h-3.5 w-3.5" aria-hidden="true" />))
     expect(reset).not.toBe(drawn(<RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />))
   })
