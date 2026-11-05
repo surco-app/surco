@@ -37,7 +37,7 @@ const BLOCK_LABEL: Record<Block, string> = {
 const TOKEN_CLASS =
   'press rounded-[3px] leading-6 text-[var(--color-accent)] underline decoration-[var(--color-accent)]/50 decoration-dotted underline-offset-4 hover:decoration-solid aria-expanded:decoration-solid'
 const MENU_CLASS =
-  'absolute top-full z-20 mt-1 overflow-y-auto rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel)] py-1 text-xs leading-normal shadow-[var(--shadow-float)]'
+  'absolute z-20 overflow-y-auto rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel)] py-1 text-xs leading-normal shadow-[var(--shadow-float)]'
 const ITEM_CLASS =
   'block w-full whitespace-nowrap px-3 py-1 text-left hover:bg-[var(--color-hover)] aria-checked:font-semibold aria-checked:text-fg'
 
@@ -61,13 +61,15 @@ function slotCount(rule: CueRule): number {
   return rule.repeat === 'edge' ? 3 : Math.min(rule.repeat, MAX_RULE_REPEAT, 8)
 }
 
-function clipRight(el: HTMLElement): number {
+function clipBox(el: HTMLElement): { top: number; right: number; bottom: number } {
   for (let node = el.parentElement; node && node !== document.body; node = node.parentElement) {
     const style = getComputedStyle(node)
-    if (/auto|scroll|hidden|clip/.test(`${style.overflowX} ${style.overflowY}`))
-      return node.getBoundingClientRect().right
+    if (/auto|scroll|hidden|clip/.test(`${style.overflowX} ${style.overflowY}`)) {
+      const { top, right, bottom } = node.getBoundingClientRect()
+      return { top, right, bottom }
+    }
   }
-  return window.innerWidth
+  return { top: 0, right: window.innerWidth, bottom: window.innerHeight }
 }
 
 function colorAt(color: FlowColor, slot: number): number {
@@ -91,6 +93,7 @@ export function CueRuleRow({
   const rowRef = useRef<HTMLFieldSetElement>(null)
   const paletteRef = useRef<HTMLDivElement>(null)
   const [paletteRight, setPaletteRight] = useState(false)
+  const [menuUp, setMenuUp] = useState(false)
   const id = `cue-rule-${index}`
   const slots = slotCount(rule)
   const slotNumbers = Array.from({ length: slots }, (_, i) => i)
@@ -109,8 +112,11 @@ export function CueRuleRow({
     const palette = paletteRef.current
     const anchor = palette?.parentElement
     if (!open || !palette || !anchor) return
-    const width = palette.getBoundingClientRect().width
-    setPaletteRight(anchor.getBoundingClientRect().left + width > clipRight(palette))
+    const { width, height } = palette.getBoundingClientRect()
+    const at = anchor.getBoundingClientRect()
+    const clip = clipBox(palette)
+    setPaletteRight(at.left + width > clip.right)
+    setMenuUp(at.bottom + height > clip.bottom && at.top - height >= clip.top)
   }, [open])
 
   const closeToToken = () => {
@@ -171,7 +177,8 @@ export function CueRuleRow({
           role="menu"
           data-testid={`${id}-${block}-menu`}
           data-align={paletteRight ? 'right' : 'left'}
-          className={`${MENU_CLASS} ${paletteRight ? 'right-0' : 'left-0'} ${options.some((o) => o.hint) ? 'max-h-96 w-72' : 'max-h-64'}`}
+          data-side={menuUp ? 'top' : 'bottom'}
+          className={`${MENU_CLASS} ${paletteRight ? 'right-0' : 'left-0'} ${menuUp ? 'bottom-full mb-1' : 'top-full mt-1'} ${options.some((o) => o.hint) ? 'max-h-96 w-72' : 'max-h-64'}`}
         >
           {options.map((o) => (
             <button
