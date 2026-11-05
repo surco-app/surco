@@ -3,6 +3,7 @@ import {
   ChevronRight,
   Copy,
   Eraser,
+  Folder,
   Globe,
   Music,
   PanelLeftOpen,
@@ -83,7 +84,7 @@ import { librarySourceOf } from '../lib/librarySource'
 import { missingSummary } from '../lib/missingSummary'
 import { scrollBehavior } from '../lib/motion'
 import { autoNamesFile, renderOutputName, titleFormatPatches } from '../lib/outputName'
-import { isMacOS } from '../lib/platform'
+import { isMacOS, revealCommandKey } from '../lib/platform'
 import { splitPosition } from '../lib/position'
 import { fileExtension, libraryCopyFormat } from '../lib/properties'
 import { isLowResCover } from '../lib/quality'
@@ -1302,6 +1303,19 @@ export const Editor = memo(function Editor({
     </button>
   )
 
+  const revealFileButton = (
+    <button
+      type="button"
+      data-testid="reveal-file-btn"
+      aria-label={tr(revealCommandKey())}
+      onClick={() => window.api.reveal(item.inputPath)}
+      className="press group relative flex h-7 w-7 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg"
+    >
+      <Folder className="h-3.5 w-3.5" aria-hidden="true" />
+      <Tooltip label={tr(revealCommandKey())} align="end" />
+    </button>
+  )
+
   // The copy button's one-click twin: opens the search directly instead of leaving the
   // paste to the user. Icon-only like its neighbours.
   const searchWebButton = (
@@ -1605,6 +1619,7 @@ export const Editor = memo(function Editor({
               <div className="flex items-center gap-1">
                 {formOpen && !isMulti && (
                   <div className="flex items-center gap-0.5">
+                    {revealFileButton}
                     {copyFilenameButton}
                     {searchWebButton}
                   </div>

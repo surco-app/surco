@@ -622,6 +622,22 @@ describe('Editor search web', () => {
   })
 })
 
+describe('Editor reveal file', () => {
+  // The path sat folded away in Properties and the list's right-click menu: going from the
+  // track you are editing to its folder (to drag it into a player, or check its neighbours)
+  // took a detour. Main checks the path against the files it handed out.
+  it('shows the edited track in the file manager in one click', () => {
+    renderEditor({ id: 'a', inputPath: '/music/Rave Party.aiff' })
+    fireEvent.click(screen.getByTestId('reveal-file-btn'))
+    expect(window.api.reveal).toHaveBeenCalledWith('/music/Rave Party.aiff')
+  })
+
+  it('names the file manager of the platform', () => {
+    renderEditor({ id: 'a' })
+    expect(screen.getByTestId('reveal-file-btn')).toHaveAccessibleName('Show in File Explorer')
+  })
+})
+
 describe('Editor clear metadata', () => {
   // The inverse of the fill controls (filename / Discogs): one click empties every
   // field so the user can retag a badly-labelled file from scratch instead of
@@ -1785,6 +1801,12 @@ describe('Editor multi-select', () => {
     expect(screen.queryByTestId('editor-group-metadata')).toBeNull()
   })
 
+  // Several files have no one folder to open, so the header offers no reveal over them.
+  it('offers no reveal over several tracks', () => {
+    renderMulti()
+    expect(screen.queryByTestId('reveal-file-btn')).toBeNull()
+  })
+
   it('completes a playlist only some of the tracks hold into per-track patches for all of them', async () => {
     rekordboxApiWith(
       vi.fn<Api['rekordboxMembership']>().mockResolvedValue({ '/music/a.wav': ['3000'] }),
@@ -2552,6 +2574,7 @@ describe('Editor export control', () => {
     expect(screen.queryByTestId('derive-btn')).not.toBeInTheDocument()
     expect(screen.queryByTestId('copy-filename-btn')).not.toBeInTheDocument()
     expect(screen.queryByTestId('search-web-btn')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('reveal-file-btn')).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Metadata' }))
     expect(screen.getByTestId('clear-meta-btn')).toBeInTheDocument()
     expect(screen.getByTestId('copy-filename-btn')).toBeInTheDocument()
