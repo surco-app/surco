@@ -48,7 +48,8 @@ export function useCueProfileRead(): [CueProfileRead | null, (profile: CueProfil
 const BUTTON =
   'press inline-flex shrink-0 items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50'
 const PRIMARY = `${BUTTON} border-transparent bg-[var(--color-accent)] text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]`
-const SECONDARY = `${BUTTON} border-[var(--color-line-strong)] bg-[var(--color-panel-2)] text-fg hover:bg-[var(--color-hover)]`
+const LINK =
+  'press inline-flex shrink-0 items-center gap-1.5 text-xs text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] disabled:cursor-not-allowed disabled:opacity-50'
 
 const tenths = (share: number): number => Math.round(share * 10)
 
@@ -144,7 +145,7 @@ export function CueProfileCard({ read, onLearned, synced, patch }: Props): React
       data-testid="cue-profile-learn"
       disabled={learning || nothing}
       onClick={learn}
-      className={profile ? SECONDARY : PRIMARY}
+      className={profile ? LINK : PRIMARY}
     >
       {learning && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />}
       {learning
@@ -178,7 +179,7 @@ export function CueProfileCard({ read, onLearned, synced, patch }: Props): React
           : 'rounded-xl border border-dashed border-[var(--color-line-strong)] p-4'
       }`}
     >
-      <div className="flex flex-wrap items-center gap-3">
+      <div className={`flex flex-wrap gap-3 ${profile ? 'items-baseline' : 'items-center'}`}>
         <div className="min-w-0 flex-1">
           <h3 className="text-[13px] font-semibold text-fg-muted">
             {profile ? tr('settings.cueProfile.title') : tr('settings.cueProfile.firstTitle')}
