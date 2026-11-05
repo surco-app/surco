@@ -1730,6 +1730,7 @@
     "cueFlows": {
       "flows": "フロー",
       "newFlow": "新しいフロー",
+      "newFromLearned": "あなたのマークの仕方から",
       "newFlowName": "フロー {{n}}",
       "addFlow": "フローを追加",
       "rename": "名前を変更",
@@ -1876,7 +1877,6 @@
       "startYes": "よく置いています",
       "startNo": "あまり置いていません",
       "startShare": "置ける {{open}} トラック中 {{with}}",
-      "useFlow": "フローとして使う",
       "details": "Surcoが学んだこと",
       "fromEdits": "修正しながら学習",
       "fromEditsHint": "エディタで保存したトラックは学習内容に加わり、10 件ごとに Surco が学習し直します。"

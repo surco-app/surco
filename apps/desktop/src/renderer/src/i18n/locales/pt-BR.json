@@ -1730,6 +1730,7 @@
     "cueFlows": {
       "flows": "Fluxos",
       "newFlow": "Novo fluxo",
+      "newFromLearned": "A partir de como você marca",
       "newFlowName": "Fluxo {{n}}",
       "addFlow": "Adicionar fluxo",
       "rename": "Renomear",
@@ -1876,7 +1877,6 @@
       "startYes": "Você costuma colocar",
       "startNo": "Você não costuma colocar",
       "startShare": "{{with}} de {{open}} faixas onde caberia",
-      "useFlow": "Usar como fluxo",
       "details": "O que o Surco aprendeu",
       "fromEdits": "Aprender enquanto você corrige",
       "fromEditsHint": "Cada faixa que você salva no editor soma ao que foi aprendido, e o Surco aprende de novo a cada 10."

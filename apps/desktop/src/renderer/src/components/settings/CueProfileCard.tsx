@@ -15,9 +15,8 @@ import { SettingsHint } from './SettingsPrimitives'
 interface Props {
   read: CueProfileRead
   onLearned: (profile: CueProfile) => void
-  synced: Pick<SyncedDraft, 'cueFlows' | 'activeCueFlow' | 'cueLearnFromEdits'>
+  synced: Pick<SyncedDraft, 'cueLearnFromEdits'>
   patch: PatchSynced
-  onAdopt: (id: string) => void
 }
 
 export function useCueProfileRead(): [CueProfileRead | null, (profile: CueProfile) => void] {
@@ -61,7 +60,7 @@ function startOf(flow: CueFlow | null): boolean {
   return flow?.rules.some((r) => r.from === 'first-beat') ?? false
 }
 
-function sameRules(a: CueFlow, b: CueFlow): boolean {
+export function sameRules(a: CueFlow, b: CueFlow): boolean {
   return JSON.stringify(a.rules) === JSON.stringify(b.rules)
 }
 
@@ -88,13 +87,7 @@ function Fact({
   )
 }
 
-export function CueProfileCard({
-  read,
-  onLearned,
-  synced,
-  patch,
-  onAdopt,
-}: Props): React.JSX.Element {
+export function CueProfileCard({ read, onLearned, synced, patch }: Props): React.JSX.Element {
   const { t: tr, i18n } = useTranslation()
   const [learning, setLearning] = useState(false)
   const [failed, setFailed] = useState(false)
@@ -125,16 +118,6 @@ export function CueProfileCard({
       .finally(() => {
         if (alive.current) setLearning(false)
       })
-  }
-  const adopt = (flow: CueFlow) => {
-    const made: CueFlow = {
-      ...flow,
-      id: crypto.randomUUID(),
-      name: tr('settings.cueFlows.learnedName'),
-    }
-    patch('cueFlows', [...synced.cueFlows, made])
-    patch('activeCueFlow', made.id)
-    onAdopt(made.id)
   }
   const tracks = profile ? profile.sources.rekordbox + profile.sources.edits : 0
   const rekordboxTracks = profile ? profile.sources.rekordbox : read.marked
@@ -185,7 +168,6 @@ export function CueProfileCard({
       ).reverse()
     : []
   const learnedFlow = profile?.flow ?? null
-  const offered = learnedFlow && !synced.cueFlows.some((f) => sameRules(f, learnedFlow))
   const check = profile?.check ?? null
   return (
     <section
@@ -302,18 +284,6 @@ export function CueProfileCard({
                 : tr('settings.cueProfile.startNo')}
             </Fact>
           )}
-        </div>
-      )}
-      {offered && learnedFlow && (
-        <div>
-          <button
-            type="button"
-            data-testid="cue-profile-use-flow"
-            onClick={() => adopt(learnedFlow)}
-            className={SECONDARY}
-          >
-            {tr('settings.cueProfile.useFlow')}
-          </button>
         </div>
       )}
       <div>

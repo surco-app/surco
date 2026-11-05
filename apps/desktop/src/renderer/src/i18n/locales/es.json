@@ -1730,6 +1730,7 @@
     "cueFlows": {
       "flows": "Flujos",
       "newFlow": "Nuevo flujo",
+      "newFromLearned": "Desde cómo marcas",
       "newFlowName": "Flujo {{n}}",
       "addFlow": "Añadir flujo",
       "rename": "Cambiar nombre",
@@ -1876,7 +1877,6 @@
       "startYes": "La sueles poner",
       "startNo": "No la sueles poner",
       "startShare": "{{with}} de {{open}} pistas donde cabría",
-      "useFlow": "Usar como flujo",
       "details": "Lo que aprendió Surco",
       "fromEdits": "Aprender mientras corriges",
       "fromEditsHint": "Cada pista que guardas en el editor se suma a lo aprendido, y Surco vuelve a aprender cada 10."

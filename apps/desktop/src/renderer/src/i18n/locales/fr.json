@@ -1730,6 +1730,7 @@
     "cueFlows": {
       "flows": "Flux",
       "newFlow": "Nouveau flux",
+      "newFromLearned": "À partir de ta façon de marquer",
       "newFlowName": "Flux {{n}}",
       "addFlow": "Ajouter un flux",
       "rename": "Renommer",
@@ -1876,7 +1877,6 @@
       "startYes": "Tu le poses en général",
       "startNo": "Tu ne le poses pas en général",
       "startShare": "{{with}} sur {{open}} morceaux où il tiendrait",
-      "useFlow": "Utiliser comme flux",
       "details": "Ce que Surco a appris",
       "fromEdits": "Apprendre pendant que tu corriges",
       "fromEditsHint": "Chaque morceau que tu enregistres dans l’éditeur s’ajoute à ce qui est appris, et Surco réapprend tous les 10."

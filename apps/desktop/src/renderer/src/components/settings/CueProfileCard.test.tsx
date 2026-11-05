@@ -61,7 +61,6 @@ function Harness({ flows = [MIX_IN] }: { flows?: CueFlow[] }) {
       onLearned={onLearned}
       synced={draft}
       patch={(key, value) => setDraft((d) => ({ ...d, [key]: value }))}
-      onAdopt={vi.fn()}
     />
   )
 }
@@ -184,15 +183,6 @@ describe('CueProfileCard', () => {
     expect(countdown).toHaveTextContent('48 · 32 · 16 bars')
     expect(countdown).toHaveTextContent('99.5')
     expect(screen.getByTestId('cue-profile-start')).toHaveTextContent('44 of 322')
-  })
-
-  it('offers the learned countdown as a flow until one like it exists', async () => {
-    setup(read({ profile: PROFILE }))
-    fireEvent.click(await screen.findByTestId('cue-profile-use-flow'))
-    const made = last?.cueFlows.find((f) => f.id !== MIX_IN.id)
-    expect(made?.rules).toEqual([COUNTDOWN])
-    expect(last?.activeCueFlow).toBe(made?.id)
-    expect(screen.queryByTestId('cue-profile-use-flow')).toBeNull()
   })
 
   it('lets the DJ stop Auto from learning from what they save', async () => {

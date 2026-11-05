@@ -1730,6 +1730,7 @@
     "cueFlows": {
       "flows": "Abläufe",
       "newFlow": "Neuer Ablauf",
+      "newFromLearned": "Aus deiner Art zu markieren",
       "newFlowName": "Ablauf {{n}}",
       "addFlow": "Ablauf hinzufügen",
       "rename": "Umbenennen",
@@ -1876,7 +1877,6 @@
       "startYes": "Setzt du meistens",
       "startNo": "Setzt du meistens nicht",
       "startShare": "{{with}} von {{open}} Tracks, in die er passen würde",
-      "useFlow": "Als Ablauf verwenden",
       "details": "Was Surco gelernt hat",
       "fromEdits": "Beim Korrigieren lernen",
       "fromEditsHint": "Jeder Track, den du im Editor speicherst, fließt ins Gelernte ein, und Surco lernt alle 10 neu."

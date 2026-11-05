@@ -26,7 +26,7 @@ import { SegmentedControl } from '../SegmentedControl'
 import { SPLIT_ITEM, useSplitMenu } from '../SplitButton'
 import { Tooltip } from '../Tooltip'
 import { CheckboxRow } from './CheckboxRow'
-import { CueProfileCard, useCueProfileRead } from './CueProfileCard'
+import { CueProfileCard, sameRules, useCueProfileRead } from './CueProfileCard'
 import { SettingsHint } from './SettingsPrimitives'
 
 interface Props {
@@ -66,6 +66,7 @@ export function CuesTab({
   const [renaming, setRenaming] = useState(false)
   const picker = useSplitMenu()
   const more = useSplitMenu()
+  const add = useSplitMenu()
   const [read, onLearned] = useCueProfileRead()
   const nameRef = useRef<HTMLInputElement>(null)
   useEffect(() => {
@@ -111,6 +112,19 @@ export function CuesTab({
     rename(made.name)
   }
 
+  const learnedFlow = read?.profile?.flow ?? null
+  const offered = learnedFlow && !flows.some((f) => sameRules(f, learnedFlow)) ? learnedFlow : null
+  const adopt = (learned: CueFlow) => {
+    const made: CueFlow = {
+      ...learned,
+      id: crypto.randomUUID(),
+      name: tr('settings.cueFlows.learnedName'),
+    }
+    patch('cueFlows', [...flows, made])
+    patch('activeCueFlow', made.id)
+    select(made.id)
+  }
+
   const rename = (name: string) => {
     setTyped(name)
     setRenaming(true)
@@ -137,13 +151,7 @@ export function CuesTab({
 
   const inUse = synced.activeCueFlow === MANUAL_CUE_FLOW ? null : activeCueFlow(synced).id
   const card = read && (
-    <CueProfileCard
-      read={read}
-      onLearned={onLearned}
-      synced={synced}
-      patch={patch}
-      onAdopt={select}
-    />
+    <CueProfileCard read={read} onLearned={onLearned} synced={synced} patch={patch} />
   )
   return (
     <div className="flex flex-col gap-5">
@@ -230,16 +238,55 @@ export function CuesTab({
               )}
             </div>
           )}
-          <button
-            type="button"
-            data-testid="cue-flow-add"
-            aria-label={tr('settings.cueFlows.newFlow')}
-            title={tr('settings.cueFlows.newFlow')}
-            onClick={create}
-            className={ICON_BUTTON}
-          >
-            <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-          </button>
+          <div ref={add.ref} className="relative">
+            <button
+              type="button"
+              data-testid="cue-flow-add"
+              ref={add.toggleRef}
+              aria-label={tr('settings.cueFlows.newFlow')}
+              title={tr('settings.cueFlows.newFlow')}
+              aria-haspopup={offered ? 'menu' : undefined}
+              aria-expanded={offered ? add.open : undefined}
+              onClick={() => (offered ? add.setOpen((v) => !v) : create())}
+              className={ICON_BUTTON}
+            >
+              <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+            </button>
+            {offered && add.open && (
+              <div
+                ref={add.menuRef}
+                role="menu"
+                aria-label={tr('settings.cueFlows.newFlow')}
+                onKeyDown={add.onMenuKeyDown}
+                className={`${DROP_MENU} right-0 w-60`}
+              >
+                <button
+                  type="button"
+                  role="menuitem"
+                  data-testid="cue-flow-add-new"
+                  onClick={() => {
+                    add.setOpen(false)
+                    create()
+                  }}
+                  className={SPLIT_ITEM}
+                >
+                  {tr('settings.cueFlows.newFlow')}
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  data-testid="cue-flow-add-learned"
+                  onClick={() => {
+                    add.setOpen(false)
+                    adopt(offered)
+                  }}
+                  className={SPLIT_ITEM}
+                >
+                  {tr('settings.cueFlows.newFromLearned')}
+                </button>
+              </div>
+            )}
+          </div>
           <div ref={more.ref} className="relative">
             <button
               type="button"

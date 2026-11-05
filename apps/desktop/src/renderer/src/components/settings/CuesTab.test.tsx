@@ -667,8 +667,45 @@ describe('CuesTab', () => {
     render(<Harness collection="/rb/master.db" flows={[MIX_IN]} active={MIX_IN.id} />)
     await i18n.changeLanguage('es')
     afterTest = () => i18n.changeLanguage('en')
-    fireEvent.click(await screen.findByTestId('cue-profile-use-flow'))
+    await screen.findByTestId('cue-profile')
+    openAdd()
+    fireEvent.click(screen.getByTestId('cue-flow-add-learned'))
     expect(screen.getByTestId('cue-flow-picker')).toHaveTextContent('Aprendido de mi colección')
+    expect(last?.activeCueFlow).not.toBe(MIX_IN.id)
+    expect(last?.cueFlows.at(-1)?.rules).toEqual(ONE_AT_32.rules)
+  })
+
+  it('offers what was learned from + as a second way to make a flow, the plain new flow still first', async () => {
+    installApi({
+      cueProfile: vi.fn<Api['cueProfile']>(async () => ({
+        profile: LEARNED,
+        edits: { count: 0, sinceLearn: 0 },
+        marked: 40,
+      })),
+    })
+    render(<Harness collection="/rb/master.db" flows={[MIX_IN]} active={MIX_IN.id} />)
+    await screen.findByTestId('cue-profile')
+    expect(screen.queryByTestId('cue-profile-use-flow')).toBeNull()
+    openAdd()
+    const items = within(screen.getByRole('menu')).getAllByRole('menuitem')
+    expect(items.map((i) => i.dataset.testid)).toEqual(['cue-flow-add-new', 'cue-flow-add-learned'])
+    fireEvent.click(screen.getByTestId('cue-flow-add-new'))
+    expect(screen.getByTestId('cue-flow-name')).toHaveFocus()
+  })
+
+  it('makes + a plain new flow again once a flow like the learned one exists, since there is nothing left to offer', async () => {
+    installApi({
+      cueProfile: vi.fn<Api['cueProfile']>(async () => ({
+        profile: LEARNED,
+        edits: { count: 0, sinceLearn: 0 },
+        marked: 40,
+      })),
+    })
+    render(<Harness collection="/rb/master.db" flows={[MIX_IN, ONE_AT_32]} active={MIX_IN.id} />)
+    await screen.findByTestId('cue-profile')
+    openAdd()
+    expect(screen.queryByRole('menu')).toBeNull()
+    expect(screen.getByTestId('cue-flow-name')).toHaveFocus()
   })
 
   it('explains once where the flows also go, behind the (i) of the heading', () => {
