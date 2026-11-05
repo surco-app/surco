@@ -154,6 +154,18 @@ describe('recordConversion', () => {
     recordConversion()
     expect(getSettings().conversionCount).toBe(2)
   })
+
+  // The donate ask waits a week from the first conversion, so it is stamped once and the
+  // conversions after it never move it.
+  it('stamps the first conversion once and keeps it', () => {
+    saveSettings({ firstConversionAt: '' })
+    recordConversion()
+    const first = getSettings().firstConversionAt ?? ''
+    expect(Number.isNaN(Date.parse(first))).toBe(false)
+    saveSettings({ firstConversionAt: '2026-01-01T00:00:00.000Z' })
+    recordConversion()
+    expect(getSettings().firstConversionAt).toBe('2026-01-01T00:00:00.000Z')
+  })
 })
 
 // getSettings is reached from 27 places in main, several of them per-track: every
