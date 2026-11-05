@@ -1863,9 +1863,6 @@
       "learning": "Aprendendo…",
       "summary_one": "Aprendido de {{tracks}} faixa que você já marcou",
       "summary_other": "Aprendido de {{tracks}} faixas que você já marcou",
-      "tracks_one": "faixa",
-      "tracks_other": "faixas",
-      "saved": "Salvas no Surco",
       "autoFound": "Encontra {{found}} de cada 10 lugares onde você marca",
       "autoTuned": "Ajustado a você. Sem ajuste encontrava {{before}} de cada 10",
       "autoGeneral": "O modelo geral já combina com seu jeito de marcar",
@@ -1880,6 +1877,7 @@
       "startNo": "Você não costuma colocar",
       "startShare": "{{with}} de {{open}} faixas onde caberia",
       "useFlow": "Usar como fluxo",
+      "details": "O que o Surco aprendeu",
       "fromEdits": "Aprender enquanto você corrige",
       "fromEditsHint": "Cada faixa que você salva no editor soma ao que foi aprendido, e o Surco aprende de novo a cada 10."
     },

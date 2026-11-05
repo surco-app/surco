@@ -80,7 +80,30 @@ function setup(first: CueProfileRead, learned: Promise<CueProfile> = Promise.res
   return { api, changed: () => changed() }
 }
 
+async function openDetails(testid: string): Promise<HTMLElement> {
+  fireEvent.click(await screen.findByTestId('cue-profile-details'))
+  return screen.getByTestId(testid)
+}
+
 describe('CueProfileCard', () => {
+  it('keeps what it learned folded under one line, so the flows stay the main thing, and opens it on request', async () => {
+    setup(read({ profile: PROFILE }))
+    const toggle = await screen.findByTestId('cue-profile-details')
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.queryByTestId('cue-profile-countdown')).toBeNull()
+    fireEvent.click(toggle)
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByTestId('cue-profile-countdown')).toBeInTheDocument()
+  })
+
+  it('names where it learned from inside the summary line instead of a row of chips', async () => {
+    setup(read({ profile: PROFILE }))
+    const summary = await screen.findByTestId('cue-profile-summary')
+    expect(summary).toContainElement(screen.getByTestId('cue-profile-source-rekordbox'))
+    expect(summary).toContainElement(screen.getByTestId('cue-profile-source-edits'))
+    expect(summary).toHaveTextContent('Surco 42')
+  })
+
   it('invites the DJ to teach Surco, saying how many marked tracks each source has', async () => {
     setup(read({ edits: { count: 3, sinceLearn: 3 } }))
     const card = await screen.findByTestId('cue-profile')
@@ -127,7 +150,7 @@ describe('CueProfileCard', () => {
 
   it('says how often Auto finds where the DJ marks, and that the general model already fits when nothing was tuned', async () => {
     setup(read({ profile: PROFILE }))
-    const auto = await screen.findByTestId('cue-profile-auto')
+    const auto = await openDetails('cue-profile-auto')
     expect(auto).toHaveTextContent('7 in 10')
     expect(auto).toHaveTextContent('general model already fits')
   })
@@ -144,7 +167,7 @@ describe('CueProfileCard', () => {
       },
     }
     setup(read({ profile: tuned }))
-    const auto = await screen.findByTestId('cue-profile-auto')
+    const auto = await openDetails('cue-profile-auto')
     expect(auto).toHaveTextContent('6 in 10')
     expect(auto).toHaveTextContent('Tuned to you')
     expect(auto).toHaveTextContent('4')
@@ -152,12 +175,12 @@ describe('CueProfileCard', () => {
 
   it('says Auto needs more marked tracks before it can be tuned', async () => {
     setup(read({ profile: { ...PROFILE, check: null } }))
-    expect(await screen.findByTestId('cue-profile-auto')).toHaveTextContent('30')
+    expect(await openDetails('cue-profile-auto')).toHaveTextContent('30')
   })
 
   it('shows the countdown it learned with its distances and how often a CALL goes under, and the start cue', async () => {
     setup(read({ profile: PROFILE }))
-    const countdown = await screen.findByTestId('cue-profile-countdown')
+    const countdown = await openDetails('cue-profile-countdown')
     expect(countdown).toHaveTextContent('48 · 32 · 16 bars')
     expect(countdown).toHaveTextContent('99.5')
     expect(screen.getByTestId('cue-profile-start')).toHaveTextContent('44 of 322')

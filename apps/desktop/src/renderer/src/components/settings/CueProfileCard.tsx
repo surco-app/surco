@@ -1,4 +1,4 @@
-import { Loader2 } from 'lucide-react'
+import { ChevronRight, Loader2 } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -50,8 +50,6 @@ const BUTTON =
   'press inline-flex shrink-0 items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50'
 const PRIMARY = `${BUTTON} border-transparent bg-[var(--color-accent)] text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]`
 const SECONDARY = `${BUTTON} border-[var(--color-line-strong)] bg-[var(--color-panel-2)] text-fg hover:bg-[var(--color-hover)]`
-const CHIP =
-  'rounded-full border border-[var(--color-line-strong)] bg-[var(--color-field)] px-2.5 py-0.5 text-xs text-fg-dim'
 
 const tenths = (share: number): number => Math.round(share * 10)
 
@@ -100,6 +98,7 @@ export function CueProfileCard({
   const { t: tr, i18n } = useTranslation()
   const [learning, setLearning] = useState(false)
   const [failed, setFailed] = useState(false)
+  const [details, setDetails] = useState(false)
   const alive = useRef(true)
   useEffect(() => {
     alive.current = true
@@ -140,24 +139,21 @@ export function CueProfileCard({
   const tracks = profile ? profile.sources.rekordbox + profile.sources.edits : 0
   const rekordboxTracks = profile ? profile.sources.rekordbox : read.marked
   const savedTracks = profile ? profile.sources.edits : read.edits.count
-  const sources = (
-    <div className="flex flex-wrap gap-2">
-      {rekordboxTracks > 0 && (
-        <span data-testid="cue-profile-source-rekordbox" className={CHIP}>
-          {'rekordbox '}
-          <b className="font-semibold text-fg tabular-nums">{count(rekordboxTracks)}</b>{' '}
-          {tr('settings.cueProfile.tracks', { count: rekordboxTracks })}
-        </span>
-      )}
-      {savedTracks > 0 && (
-        <span data-testid="cue-profile-source-edits" className={CHIP}>
-          {`${tr('settings.cueProfile.saved')} `}
-          <b className="font-semibold text-fg tabular-nums">{count(savedTracks)}</b>{' '}
-          {tr('settings.cueProfile.tracks', { count: savedTracks })}
-        </span>
-      )}
-    </div>
-  )
+  const sourceParts = [
+    rekordboxTracks > 0 && (
+      <span key="rekordbox" data-testid="cue-profile-source-rekordbox">
+        {'rekordbox '}
+        <span className="tabular-nums">{count(rekordboxTracks)}</span>
+      </span>
+    ),
+    savedTracks > 0 && (
+      <span key="edits" data-testid="cue-profile-source-edits">
+        {'Surco '}
+        <span className="tabular-nums">{count(savedTracks)}</span>
+      </span>
+    ),
+  ].filter(Boolean)
+  const sources = sourceParts.flatMap((part, i) => (i === 0 ? [part] : [', ', part]))
   const nothing = read.marked === 0 && read.edits.count === 0
   const button = (
     <button
@@ -194,28 +190,32 @@ export function CueProfileCard({
   return (
     <section
       data-testid="cue-profile"
-      className={`flex flex-col gap-3 rounded-xl border p-4 ${
+      className={`flex flex-col gap-2.5 ${
         profile
-          ? 'border-[var(--color-accent)]/30 bg-[var(--color-accent)]/[0.06]'
-          : 'border-dashed border-[var(--color-line-strong)]'
+          ? 'border-t border-[var(--color-line)] pt-4'
+          : 'rounded-xl border border-dashed border-[var(--color-line-strong)] p-4'
       }`}
     >
-      <div className="flex flex-wrap items-start gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <div className="min-w-0 flex-1">
-          <h3 className="text-[15px] font-semibold text-fg">
+          <h3 className="text-[13px] font-semibold text-fg-muted">
             {profile ? tr('settings.cueProfile.title') : tr('settings.cueProfile.firstTitle')}
           </h3>
           {profile ? (
             <p data-testid="cue-profile-summary" className="mt-0.5 text-xs text-fg-dim">
               {tr('settings.cueProfile.summary', { count: tracks, tracks: count(tracks) })}
+              {sources.length > 0 && ' · '}
+              {sources}
             </p>
           ) : (
-            <p className="mt-0.5 text-xs text-fg-dim">{tr('settings.cueProfile.firstHint')}</p>
+            <>
+              <p className="mt-0.5 text-xs text-fg-dim">{tr('settings.cueProfile.firstHint')}</p>
+              {sources.length > 0 && <p className="mt-1 text-xs text-fg-dim">{sources}</p>}
+            </>
           )}
         </div>
         {button}
       </div>
-      {sources}
       {nothing && !profile && (
         <SettingsHint data-testid="cue-profile-nothing">
           {tr('settings.cueProfile.nothing')}
@@ -227,6 +227,21 @@ export function CueProfileCard({
         </p>
       )}
       {profile && (
+        <button
+          type="button"
+          data-testid="cue-profile-details"
+          aria-expanded={details}
+          onClick={() => setDetails((v) => !v)}
+          className="press inline-flex w-fit items-center gap-1 text-xs text-[var(--color-accent)] hover:text-[var(--color-accent-hover)]"
+        >
+          {tr('settings.cueProfile.details')}
+          <ChevronRight
+            className={`h-3.5 w-3.5 transition-transform ${details ? 'rotate-90' : ''}`}
+            aria-hidden="true"
+          />
+        </button>
+      )}
+      {profile && details && (
         <div className="grid grid-cols-[repeat(auto-fit,minmax(9.5rem,1fr))] gap-px overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-line)]">
           <Fact
             testid="cue-profile-auto"

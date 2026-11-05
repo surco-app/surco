@@ -1863,9 +1863,6 @@
       "learning": "Apprentissage…",
       "summary_one": "Appris de {{tracks}} morceau que tu as déjà marqué",
       "summary_other": "Appris de {{tracks}} morceaux que tu as déjà marqués",
-      "tracks_one": "morceau",
-      "tracks_other": "morceaux",
-      "saved": "Enregistrés dans Surco",
       "autoFound": "Trouve {{found}} sur 10 des endroits que tu marques",
       "autoTuned": "Adapté à toi. Avant, il en trouvait {{before}} sur 10",
       "autoGeneral": "Le modèle général correspond déjà à ta façon de marquer",
@@ -1880,6 +1877,7 @@
       "startNo": "Tu ne le poses pas en général",
       "startShare": "{{with}} sur {{open}} morceaux où il tiendrait",
       "useFlow": "Utiliser comme flux",
+      "details": "Ce que Surco a appris",
       "fromEdits": "Apprendre pendant que tu corriges",
       "fromEditsHint": "Chaque morceau que tu enregistres dans l’éditeur s’ajoute à ce qui est appris, et Surco réapprend tous les 10."
     },
