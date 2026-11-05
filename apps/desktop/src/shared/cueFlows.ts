@@ -2,7 +2,7 @@ export type PhraseKind = 'intro' | 'up' | 'down' | 'chorus' | 'outro'
 export type FlowOrigin = 'drop' | 'first-beat' | 'last-beat' | PhraseKind
 export type FlowDirection = 'back' | 'forward'
 export type FlowRepeat = number | 'edge'
-export type FlowCondition = 'always' | 'fits' | 'previous' | 'clear' | 'first'
+export type FlowCondition = 'always' | 'fits' | 'previous' | 'room' | 'clear' | 'first'
 export type FlowPlace = 'hot' | 'call' | 'both'
 export type FlowColor = { fixed: number } | { each: number[] }
 
@@ -14,6 +14,7 @@ export interface CueRule {
   when: FlowCondition
   place: FlowPlace
   color: FlowColor
+  gap?: number
 }
 
 export interface CueFlow {
@@ -48,7 +49,15 @@ export const FLOW_ORIGINS: FlowOrigin[] = [
   'chorus',
   'outro',
 ]
-export const FLOW_CONDITIONS: FlowCondition[] = ['always', 'fits', 'previous', 'clear', 'first']
+export const FLOW_CONDITIONS: FlowCondition[] = [
+  'always',
+  'fits',
+  'previous',
+  'room',
+  'clear',
+  'first',
+]
+export const ROOM_GAP = 8
 export const FLOW_PLACES: FlowPlace[] = ['hot', 'call', 'both']
 const DIRECTIONS: FlowDirection[] = ['back', 'forward']
 
@@ -194,11 +203,19 @@ function repeatOf(value: unknown): FlowRepeat | null {
     : null
 }
 
+function gapOf(value: unknown): number | null {
+  if (value === undefined) return ROOM_GAP
+  return typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= 128
+    ? value
+    : null
+}
+
 function ruleOf(value: unknown): CueRule | null {
   if (!value || typeof value !== 'object') return null
   const r = value as Record<string, unknown>
   const color = colorOf(r.color)
   const repeat = repeatOf(r.repeat)
+  const gap = r.when === 'room' ? gapOf(r.gap) : undefined
   const bars = r.bars
   if (
     !FLOW_ORIGINS.includes(r.from as FlowOrigin) ||
@@ -210,7 +227,8 @@ function ruleOf(value: unknown): CueRule | null {
     bars < 0 ||
     bars > 128 ||
     color === null ||
-    repeat === null
+    repeat === null ||
+    gap === null
   )
     return null
   return {
@@ -221,6 +239,7 @@ function ruleOf(value: unknown): CueRule | null {
     when: r.when as FlowCondition,
     place: r.place as FlowPlace,
     color,
+    ...(gap === undefined ? {} : { gap }),
   }
 }
 

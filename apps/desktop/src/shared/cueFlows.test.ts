@@ -199,6 +199,41 @@ describe('normalizeCueFlows', () => {
     expect(flows.find((f) => f.id === 'x')?.rules).toEqual([rule])
   })
 
+  it('reads the bars a room rule looks ahead back from a saved flow', () => {
+    const base = ONE_AT_32.rules[0]
+    const flows = normalizeCueFlows([
+      {
+        id: 'x',
+        name: 'Subidón',
+        rules: [{ ...base, from: 'first-beat', bars: 0, when: 'room', gap: 12 }],
+      },
+    ])
+    expect(flows.find((f) => f.id === 'x')?.rules).toEqual([
+      { ...base, from: 'first-beat', bars: 0, when: 'room', gap: 12 },
+    ])
+  })
+
+  it('gives a room rule 8 bars when the file has none and drops one with a broken gap', () => {
+    const base = ONE_AT_32.rules[0]
+    const flows = normalizeCueFlows([
+      {
+        id: 'x',
+        name: 'Mixta',
+        rules: [
+          { ...base, when: 'room' },
+          { ...base, when: 'room', gap: 0 },
+          { ...base, when: 'room', gap: 2.5 },
+        ],
+      },
+    ])
+    expect(flows.find((f) => f.id === 'x')?.rules).toEqual([{ ...base, when: 'room', gap: 8 }])
+  })
+
+  it('adds no gap to the rules of other conditions, so flows saved before compare equal to the bundled ones', () => {
+    const flows = normalizeCueFlows([{ ...MIX_IN, rules: [{ ...MIX_IN.rules[0], gap: 8 }] }])
+    expect(flows[0]).toEqual(MIX_IN)
+  })
+
   it('keeps the first of two flows with the same id', () => {
     const flows = normalizeCueFlows([
       MY_FLOW,

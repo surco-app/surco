@@ -134,6 +134,27 @@ describe('evaluateFlow', () => {
     ])
   })
 
+  it('skips the first beat cue when another cue comes within the bars it looks ahead', () => {
+    const first = (drop: number) =>
+      evaluateFlow(
+        flow(rule({ bars: 16 }), rule({ from: 'first-beat', bars: 0, when: 'room', gap: 8 })),
+        track({ drops: [drop] }),
+      ).cues.map((c) => c.rule)
+    expect(first(beat(23))).toEqual([0])
+    expect(first(beat(24))).toEqual([1, 0])
+  })
+
+  it('looks ahead only, so a room cue after an earlier one still goes in', () => {
+    const out = evaluateFlow(
+      flow(
+        rule({ from: 'first-beat', bars: 0, when: 'always' }),
+        rule({ bars: 0, when: 'room', gap: 8 }),
+      ),
+      track({ drops: [beat(2)] }),
+    )
+    expect(out.cues.map((c) => c.rule)).toEqual([0, 1])
+  })
+
   it('keeps the earlier rule when two rules land on the same spot', () => {
     const twice = flow(rule({ color: { fixed: 1 } }), rule({ color: { fixed: 42 } }))
     expect(evaluateFlow(twice, track()).cues.map((c) => c.color)).toEqual([1])

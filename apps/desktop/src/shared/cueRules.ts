@@ -1,4 +1,11 @@
-import { type CueFlow, type CueRule, type FlowPhrase, type FlowPlace, MY_FLOW } from './cueFlows'
+import {
+  type CueFlow,
+  type CueRule,
+  type FlowPhrase,
+  type FlowPlace,
+  MY_FLOW,
+  ROOM_GAP,
+} from './cueFlows'
 
 export const SAME_POSITION_MS = 50
 export const START_MS = 3000
@@ -171,6 +178,14 @@ function allowed(
   if (rule.when === 'clear') {
     const at = nearestBeat(beats, ms)
     return earlier.every((c) => Math.abs(nearestBeat(beats, c.ms) - at) >= BEATS_PER_BAR)
+  }
+  if (rule.when === 'room') {
+    const at = nearestBeat(beats, ms)
+    const ahead = (rule.gap ?? ROOM_GAP) * BEATS_PER_BAR
+    return earlier.every((c) => {
+      const d = nearestBeat(beats, c.ms) - at
+      return d < 0 || d >= ahead
+    })
   }
   return true
 }
