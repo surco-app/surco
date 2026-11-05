@@ -93,7 +93,8 @@ conserva (`shared/format.ts:35-41`; tests `inplace.test.ts:58`, `:95`).
 **«Mantener MP3 y M4A como están»** (Ajustes → Formato) cubre los dos formatos con
 pérdida: con el ajuste activo, un MP3 sigue en MP3 y un `.m4a` en `.m4a` aunque el
 destino por defecto sea sin pérdida, y solo se actualizan sus etiquetas
-(`shared/format.ts:76-77`; test `format.test.ts:113`).
+(`shared/format.ts:76-77`; test `format.test.ts:113`). Viene activado en las instalaciones nuevas
+(`settings.ts:52`); quien ya tenía ajustes guardados conserva su valor.
 
 ---
 

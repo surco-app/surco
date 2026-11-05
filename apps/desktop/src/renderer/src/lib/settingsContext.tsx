@@ -123,7 +123,7 @@ const DEFAULTS: ResolvedSettings = {
   discogsToken: '',
   autoMatch: false,
   outputFormat: 'aiff',
-  keepMp3Sources: false,
+  keepMp3Sources: true,
   outputDir: '',
   outputBitDepth: 'source',
   outputSampleRate: 'source',

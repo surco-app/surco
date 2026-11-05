@@ -53,7 +53,12 @@ describe.skipIf(process.platform !== 'darwin')(
         },
       ])
       surco = await openSurco({
-        settings: { outputFormat: 'aiff', syncRekordbox: true, rekordboxDbPath: db },
+        settings: {
+          outputFormat: 'aiff',
+          keepMp3Sources: false,
+          syncRekordbox: true,
+          rekordboxDbPath: db,
+        },
         destination: 'appleMusic',
       })
       await surco.drop(mp3)
