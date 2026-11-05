@@ -113,6 +113,13 @@ describe('defaults for a fresh install', () => {
     expect(defaults.backupPolicy).toBe('audioChanges')
   })
 
+  // A pool MP3 turned into a lossless file comes out four times bigger with not one sample
+  // better: measured on a real download, 17 MB became a 75 MB AIFF. A new DJ downloading
+  // MP3s would fill the disk before finding the switch, so lossy sources keep their format.
+  it('keeps MP3 and M4A sources in their format', () => {
+    expect(defaults.keepMp3Sources).toBe(true)
+  })
+
   // Both stage edits on every track that loads, so a user who never asked for them must not
   // find their tags changed.
   it('leaves the load-time clean-ups off', () => {

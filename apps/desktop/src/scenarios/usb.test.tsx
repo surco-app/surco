@@ -38,6 +38,7 @@ describe('Get a USB stick ready for the club', () => {
     surco = await openSurco({
       settings: {
         outputFormat: 'aiff',
+        keepMp3Sources: false,
         outputDir: usb,
         autoApplyFilename: true,
         normalize: { mode: 'loudness', targetLufs: -9, truePeakDb: -1, peakDb: -1 },
