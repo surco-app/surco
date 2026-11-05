@@ -16,7 +16,7 @@ import type { EngineBefore, EngineExpect } from './verifyEngine'
 import type { FileExpect } from './verifyFile'
 import type { MusicExpect } from './verifyMusic'
 import type { RekordboxBefore } from './verifyRekordbox'
-import type { TraktorExpect } from './verifyTraktor'
+import type { TraktorAddExpect, TraktorExpect } from './verifyTraktor'
 
 type Library = WritableProgram
 
@@ -41,6 +41,7 @@ export interface VerifyEntry {
   // The playlists the job asked each library to put the track in, written by the queue apply
   // that follows the flush, along with a row for a track the library never had.
   playlists?: Partial<Record<Library, RekordboxPlaylistTarget[]>>
+  adds?: Partial<Record<Library, true>>
   // How the conversion moved the cues in rekordbox's timeline (the repoint's audio), handed
   // again with a repoint the library never applied.
   cueShiftMs?: number
@@ -73,6 +74,7 @@ export interface FlushOutcome {
   rekordbox: 'written' | 'queued' | 'off' | 'failed' | 'later'
   engine: 'written' | 'queued' | 'off' | 'failed' | 'later'
   traktor: TraktorWrite | 'queued' | 'off' | 'later'
+  added?: Partial<Record<'rekordbox' | 'traktor', string[]>>
 }
 
 // How a queue apply went; Traktor's carries its write's facts like the flush.
@@ -84,7 +86,7 @@ export interface VerifyRegistryDeps {
   emit: (trackId: string, v: Verification) => void
   readRekordbox: (list: VerifyEntry[]) => Read<PlaceCheck>
   readEngine: (list: VerifyEntry[]) => Read<PlaceCheck>
-  readTraktor: (list: TraktorExpect[]) => Read<PlaceCheck | null>
+  readTraktor: (list: (TraktorExpect | TraktorAddExpect)[]) => Read<PlaceCheck | null>
   readFile: (e: FileExpect) => Promise<PlaceCheck>
   readMusic: (e: MusicExpect) => Promise<PlaceCheck>
   // True when the library is not there to take the repoint now: it waits in the queue until
@@ -117,7 +119,8 @@ const unreadable = (place: Library): PlaceCheck => ({
   detail: { key: `${place}Unreadable` },
 })
 
-const inPlaylists = (e: VerifyEntry, place: Library) => (e.playlists?.[place]?.length ?? 0) > 0
+const inPlaylists = (e: VerifyEntry, place: Library) =>
+  (e.playlists?.[place]?.length ?? 0) > 0 || e.adds?.[place] === true
 
 // A source with no row in rekordbox or Engine was never touched there: nothing to list.
 const LISTED: Record<
@@ -132,7 +135,10 @@ const LISTED: Record<
     touches: (e) => e.engine !== 'absent' || e.engineStep === true || inPlaylists(e, 'engine'),
     byJob: (e) => e.engineStep === true,
   },
-  traktor: { touches: (e) => e.traktorPatch !== undefined, byJob: () => false },
+  traktor: {
+    touches: (e) => e.traktorPatch !== undefined || inPlaylists(e, 'traktor'),
+    byJob: () => false,
+  },
 }
 
 const without = (v: Verification, place: VerifyPlace): Verification => {
@@ -276,12 +282,17 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
   }
 
   async function checkTraktor(list: VerifyEntry[], result: QueueApplied | null) {
-    const expects: { e: VerifyEntry; expect: TraktorExpect }[] = []
+    const expects: { e: VerifyEntry; expect: TraktorExpect | TraktorAddExpect }[] = []
     for (const e of list) {
       const patch = e.traktorPatch
       recordTraktor(e, result)
       const before = traktorBefore.get(e.trackId)
-      if (result === 'failed' || !patch || before === undefined)
+      if (result !== 'failed' && e.adds?.traktor && (!patch || before == null))
+        expects.push({
+          e,
+          expect: { add: true, to: e.to, playlists: e.playlists?.traktor ?? [] },
+        })
+      else if (result === 'failed' || !patch || before === undefined)
         replace(e, unreadable('traktor'), 'traktor')
       else
         expects.push({
@@ -347,6 +358,12 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
     },
 
     async afterFlush(outcome: FlushOutcome, upTo = registered): Promise<void> {
+      for (const [place, paths] of Object.entries(outcome.added ?? {}) as [
+        'rekordbox' | 'traktor',
+        string[],
+      ][])
+        for (const e of entries.values())
+          if (paths.some((p) => samePath(p, e.to))) e.adds = { ...e.adds, [place]: true }
       const mine = {} as Record<Library, VerifyEntry[]>
       for (const place of PLACE_PROGRAMS) {
         mine[place] =
