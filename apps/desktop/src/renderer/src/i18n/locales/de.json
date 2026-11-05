@@ -1797,7 +1797,7 @@
         "always": "immer",
         "fits": "wenn es passt",
         "previous": "bis zur vorherigen Markierung",
-        "room": "wenn keine andere Cue folgt innerhalb von",
+        "room": "wenn direkt danach keine andere Cue kommt",
         "clear": "wenn in diesem Takt keine andere Cue liegt",
         "first": "wenn vor deiner Markierung keins ist"
       },
@@ -1822,7 +1822,11 @@
       "learnFailed": "Die rekordbox-Sammlung konnte nicht gelesen werden",
       "sentence": {
         "every": "alle",
-        "put": "setze"
+        "put": "setze",
+        "roomLead": "wenn in den nächsten",
+        "roomBars_one": "{{count}} Takt",
+        "roomBars_other": "{{count}} Takten",
+        "roomAfter": " keine andere Cue kommt"
       },
       "manual": {
         "title": "Manueller Editor",

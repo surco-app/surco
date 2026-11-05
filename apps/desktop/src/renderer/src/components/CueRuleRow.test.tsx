@@ -4,7 +4,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { CueRule } from '../../../shared/cueFlows'
 import { hotCueColor } from '../../../shared/rekordboxCueColors'
-import '../i18n'
+import i18n from '../i18n'
 import { CueRuleRow } from './CueRuleRow'
 
 afterEach(cleanup)
@@ -125,5 +125,33 @@ describe('CueRuleRow condition menu', () => {
     fireEvent.click(screen.getByTestId('cue-rule-0-when'))
     fireEvent.click(screen.getByTestId('cue-rule-0-when-option-always'))
     expect(onChange.mock.calls[0][0]).not.toHaveProperty('gap')
+  })
+})
+
+describe('CueRuleRow room sentence', () => {
+  const room: CueRule = { ...RULE, from: 'first-beat', bars: 0, repeat: 1, when: 'room', gap: 8 }
+  const sentence = () => screen.getByTestId('cue-rule-0').textContent?.replace(/\s+/g, ' ') ?? ''
+
+  it('reads with the bars where each language puts them, after the condition in English', () => {
+    setup(room)
+    expect(sentence()).toContain('if no other cue comes in the next 8 bars, place')
+  })
+
+  it('closes the German sentence after the bars, which German needs before its verb', async () => {
+    await i18n.changeLanguage('de')
+    try {
+      setup(room)
+      expect(sentence()).toContain('wenn in den nächsten 8 Takten keine andere Cue kommt,')
+    } finally {
+      await i18n.changeLanguage('en')
+    }
+  })
+
+  it('names the condition in the list without the bars, so it reads whole on its own', () => {
+    setup(room)
+    fireEvent.click(screen.getByTestId('cue-rule-0-when'))
+    expect(screen.getByTestId('cue-rule-0-when-option-room')).toHaveTextContent(
+      'if no other cue comes right after',
+    )
   })
 })

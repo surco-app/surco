@@ -272,7 +272,9 @@ export function CueRuleRow({
           hint: tr(`settings.cueFlows.whenHint.${w}`),
         })),
         rule.when,
-        tr(`settings.cueFlows.when.${rule.when}`),
+        rule.when === 'room'
+          ? tr('settings.cueFlows.sentence.roomLead')
+          : tr(`settings.cueFlows.when.${rule.when}`),
         (when) => onChange(withCondition(rule, when)),
       )}
       {rule.when === 'room' && (
@@ -282,9 +284,10 @@ export function CueRuleRow({
             'gap',
             RULE_BARS.filter((b) => b > 0).map((b) => ({ value: b, label: barsLabel(b) })),
             rule.gap ?? ROOM_GAP,
-            barsLabel(rule.gap ?? ROOM_GAP),
+            tr('settings.cueFlows.sentence.roomBars', { count: rule.gap ?? ROOM_GAP }),
             (gap) => onChange({ ...rule, gap }),
           )}
+          {tr('settings.cueFlows.sentence.roomAfter')}
         </>
       )}
       {`, ${tr('settings.cueFlows.sentence.put')} `}

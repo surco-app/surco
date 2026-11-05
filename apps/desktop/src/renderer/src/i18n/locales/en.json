@@ -1797,7 +1797,7 @@
         "always": "always",
         "fits": "if it fits",
         "previous": "until the previous mark",
-        "room": "if no other cue comes in the next",
+        "room": "if no other cue comes right after",
         "clear": "if there is no other cue in that bar",
         "first": "if there is none before where you mark"
       },
@@ -1822,7 +1822,11 @@
       "learnFailed": "The rekordbox collection could not be read",
       "sentence": {
         "every": "every",
-        "put": "place"
+        "put": "place",
+        "roomLead": "if no other cue comes in the next",
+        "roomBars_one": "{{count}} bar",
+        "roomBars_other": "{{count}} bars",
+        "roomAfter": ""
       },
       "manual": {
         "title": "Manual editor",
