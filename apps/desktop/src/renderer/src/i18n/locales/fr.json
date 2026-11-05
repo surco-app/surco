@@ -1797,7 +1797,7 @@
         "always": "toujours",
         "fits": "si ça rentre",
         "previous": "jusqu’à la marque précédente",
-        "room": "si aucune autre cue n’arrive dans les",
+        "room": "si aucune autre cue n’arrive juste après",
         "clear": "si aucune autre cue ne tombe sur cette mesure",
         "first": "s’il n’y en a pas avant là où tu marques"
       },
@@ -1822,7 +1822,11 @@
       "learnFailed": "Impossible de lire la collection rekordbox",
       "sentence": {
         "every": "toutes les",
-        "put": "placez"
+        "put": "placez",
+        "roomLead": "si aucune autre cue n’arrive dans les",
+        "roomBars_one": "{{count}} mesure",
+        "roomBars_other": "{{count}} mesures",
+        "roomAfter": ""
       },
       "manual": {
         "title": "Éditeur manuel",

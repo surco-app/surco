@@ -1797,7 +1797,7 @@
         "always": "常に",
         "fits": "収まる場合",
         "previous": "前のマークまで",
-        "room": "他のキューが続かない場合、先読み",
+        "room": "直後に他のキューがない場合",
         "clear": "その小節に他のキューがない場合",
         "first": "マークした位置より前にない場合"
       },
@@ -1822,7 +1822,11 @@
       "learnFailed": "rekordbox コレクションを読み込めませんでした",
       "sentence": {
         "every": "毎",
-        "put": "配置"
+        "put": "配置",
+        "roomLead": "次の",
+        "roomBars_one": "{{count}} 小節",
+        "roomBars_other": "{{count}} 小節",
+        "roomAfter": "以内に他のキューがない場合"
       },
       "manual": {
         "title": "手動エディタ",

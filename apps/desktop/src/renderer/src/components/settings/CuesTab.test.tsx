@@ -353,6 +353,41 @@ describe('CuesTab', () => {
     expect(screen.getByTestId('cue-rule-0-when-menu')).toHaveAttribute('data-align', 'right')
   })
 
+  it('opens the condition list upwards when Settings would cut its bottom, so the last options stay reachable', () => {
+    const box = (top: number, height: number, left = 0, width = 300) =>
+      ({
+        left,
+        right: left + width,
+        width,
+        top,
+        bottom: top + height,
+        height,
+        x: left,
+        y: top,
+        toJSON: () => ({}),
+      }) as DOMRect
+    let scrollerBottom = 700
+    const spy = vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: Element,
+    ) {
+      if (this.getAttribute('data-testid') === 'scroller') return box(0, scrollerBottom, 0, 1093)
+      if (this.getAttribute('data-testid') === 'cue-rule-0-when-menu') return box(0, 300)
+      return box(500, 24, 100, 40)
+    })
+    afterTest = () => spy.mockRestore()
+    render(
+      <div data-testid="scroller" style={{ overflowY: 'auto', overflowX: 'hidden' }}>
+        <Harness />
+      </div>,
+    )
+    fireEvent.click(screen.getByTestId('cue-rule-0-when'))
+    expect(screen.getByTestId('cue-rule-0-when-menu')).toHaveAttribute('data-side', 'top')
+    fireEvent.click(screen.getByTestId('cue-rule-0-when'))
+    scrollerBottom = 1200
+    fireEvent.click(screen.getByTestId('cue-rule-0-when'))
+    expect(screen.getByTestId('cue-rule-0-when-menu')).toHaveAttribute('data-side', 'bottom')
+  })
+
   it('gives the focus back to the token when its list closes, so Escape closes the list first and Settings only after', () => {
     const settingsEscape = vi.fn<(e: KeyboardEvent) => void>()
     window.addEventListener('keydown', settingsEscape)

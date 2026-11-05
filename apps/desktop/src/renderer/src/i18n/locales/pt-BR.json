@@ -1797,7 +1797,7 @@
         "always": "sempre",
         "fits": "se couber",
         "previous": "até a marca anterior",
-        "room": "se não vier outra cue nos próximos",
+        "room": "se não vier outra cue logo depois",
         "clear": "se não houver outra cue nesse compasso",
         "first": "se não houver outra antes de onde você marca"
       },
@@ -1822,7 +1822,11 @@
       "learnFailed": "Não foi possível ler a coleção do rekordbox",
       "sentence": {
         "every": "a cada",
-        "put": "coloque"
+        "put": "coloque",
+        "roomLead": "se não vier outra cue nos próximos",
+        "roomBars_one": "{{count}} compasso",
+        "roomBars_other": "{{count}} compassos",
+        "roomAfter": ""
       },
       "manual": {
         "title": "Editor manual",
