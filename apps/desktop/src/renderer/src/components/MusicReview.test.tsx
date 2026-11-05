@@ -16,6 +16,7 @@ import {
 import { damageKey } from '../lib/damageReview'
 import { createQueryClient } from '../lib/queryClient'
 import { stubApi } from '../test/api'
+import { hoverTooltip } from '../test/tooltip'
 import { MODAL_EXIT_MS } from './ModalShell'
 import {
   MusicReview,
@@ -243,7 +244,7 @@ describe('MusicReview', () => {
   it('shows the whole row name on hover', () => {
     render(<Panes review={review()} />)
     const name = within(rows()[0]).getByTestId('music-review-row-name')
-    expect(name).toHaveAttribute('title', name.textContent)
+    expect(hoverTooltip(name)).toEqual(name.textContent)
   })
 
   it('lays a row out like a track row, with the count on the first line and the kind below', () => {
@@ -1384,7 +1385,7 @@ describe('MusicReview', () => {
       )
       const chip = screen.getByTestId('music-review-where-missing')
       expect(chip).toHaveTextContent('rekordbox')
-      expect(chip).toHaveAttribute('title', 'Collection not found')
+      expect(hoverTooltip(chip)).toEqual('Collection not found')
       expect(screen.getByTestId('music-review-affected')).toHaveTextContent('Engine DJ')
     })
 

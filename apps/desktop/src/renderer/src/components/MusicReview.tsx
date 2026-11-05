@@ -51,6 +51,7 @@ import { ModalExit, ModalShell } from './ModalShell'
 import { SearchInput } from './SearchInput'
 import { Select } from './Select'
 import { PrimaryAction } from './Toolbar'
+import { Tooltip } from './Tooltip'
 import { TopProgressBar } from './TopProgressBar'
 
 const OK = `${DIALOG_BUTTON} ${DIALOG_OK}`
@@ -861,7 +862,8 @@ function Row({
       <span data-fit className="relative min-w-0 flex-1">
         <span data-testid="music-review-row-title-line" className="flex items-center gap-2">
           <span className="relative block min-w-0 flex-1 truncate">
-            <span data-testid="music-review-row-name" title={name} className={ROW_TITLE}>
+            <span data-testid="music-review-row-name" className={ROW_TITLE}>
+              <Tooltip label={name} />
               {name}
             </span>
           </span>
@@ -925,7 +927,8 @@ function DamageRow({
       <span data-fit className="relative min-w-0 flex-1">
         <span className="flex items-center gap-2">
           <span className="relative block min-w-0 flex-1 truncate">
-            <span data-testid="music-review-row-name" title={name} className={ROW_TITLE}>
+            <span data-testid="music-review-row-name" className={ROW_TITLE}>
+              <Tooltip label={name} />
               {name}
             </span>
           </span>
@@ -994,7 +997,8 @@ function IncompleteRow({
       <span data-fit className="relative min-w-0 flex-1">
         <span className="flex items-center gap-2">
           <span className="relative block min-w-0 flex-1 truncate">
-            <span data-testid="music-review-row-name" title={card.name} className={ROW_TITLE}>
+            <span data-testid="music-review-row-name" className={ROW_TITLE}>
+              <Tooltip label={card.name} />
               {card.name}
             </span>
           </span>

@@ -37,6 +37,7 @@ import {
   SPLIT_TOGGLE_READY,
   useSplitMenu,
 } from './SplitButton'
+import { Tooltip } from './Tooltip'
 
 export type ReviewSync = Record<LibraryProgram, boolean>
 
@@ -294,9 +295,9 @@ function Where({
         <span
           key={p.name}
           data-testid={p.missing ? 'music-review-where-missing' : `music-review-where-${p.id}`}
-          title={p.missing ? t('musicReview.where.notFound') : undefined}
           className={`rounded bg-[var(--color-panel-2)] px-1.5 text-[11px] whitespace-nowrap text-fg-dim ${p.missing ? 'line-through opacity-60' : ''}`}
         >
+          {p.missing && <Tooltip label={t('musicReview.where.notFound')} />}
           {p.name}
         </span>
       ))}
@@ -730,10 +731,8 @@ function DuplicateDetail({
                         </>
                       )}
                       <dt className="text-fg-faint">{t('musicReview.where.file')}</dt>
-                      <dd
-                        title={path}
-                        className={`truncate ${noFile ? 'text-[var(--color-warn)]' : ''}`}
-                      >
+                      <dd className={`truncate ${noFile ? 'text-[var(--color-warn)]' : ''}`}>
+                        <Tooltip label={path} />
                         {file}
                       </dd>
                     </dl>

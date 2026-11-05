@@ -3,21 +3,19 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 
-const STILL_NATIVE = new Set([
-  'components/AlbumMatchRows.tsx',
-  'components/ConvertFooter.tsx',
+const STILL_NATIVE = new Set<string>([
   'components/CopiesScreen.tsx',
   'components/DiscogsPanel.tsx',
-  'components/FilterBar.tsx',
   'components/ForeignTagsInspector.tsx',
-  'components/MusicReview.tsx',
-  'components/MusicReviewDetail.tsx',
-  'components/OnboardingWizard.tsx',
-  'components/PathField.tsx',
-  'components/Player.tsx',
   'components/PlaylistsField.tsx',
   'components/SuggestionChips.tsx',
+  'components/AlbumMatchRows.tsx',
+  'components/ConvertFooter.tsx',
+  'components/FilterBar.tsx',
+  'components/Player.tsx',
   'components/TrackList.tsx',
+  'components/OnboardingWizard.tsx',
+  'components/PathField.tsx',
   'components/settings/StatsTab.tsx',
 ])
 
