@@ -40,6 +40,7 @@ import type {
 } from '../shared/types'
 import { cachedAnalysis, LOUDNESS_NAMESPACE, peekAnalysis } from './analysisCache'
 import { isAbortError } from './analysisCancel'
+import { currentAnalysisLane } from './analysisLane'
 import type { BeatGridFit } from './beatGrid'
 import { ffmpegPath, ffprobePath } from './binaries'
 import type { FullScan } from './channelScan'
@@ -146,9 +147,14 @@ interface RunOpts {
   [key: string]: unknown
 }
 
+const backgroundThreads = (file: string, args: string[]): string[] =>
+  file === ffmpegPath && currentAnalysisLane() === 'low' && args.includes('-i')
+    ? ['-threads', '1', ...args]
+    : args
+
 const niceDecode = (file: string, args: string[], opts?: RunOpts) => {
   const { onChild, ...execOpts } = opts ?? {}
-  const pending = execFileAsync(file, args, execOpts as never)
+  const pending = execFileAsync(file, backgroundThreads(file, args), execOpts as never)
   const pid = pending.child?.pid
   if (pid !== undefined) {
     try {
@@ -3629,10 +3635,7 @@ export async function measureLoudness(
         signal,
       },
     )
-  const [peakPass, statsPass] = await Promise.all([
-    pass(EBUR128_SUMMARY),
-    pass('astats'),
-  ])
+  const [peakPass, statsPass] = await Promise.all([pass(EBUR128_SUMMARY), pass('astats')])
   const loud = parseLoudness(peakPass.stderr)
   if (!loud) return null
   const stats = parseAstats(statsPass.stderr)
@@ -4010,6 +4013,7 @@ async function scanChannels(input: string): Promise<FullScan & { sampleRateHz: n
     ffmpegPath,
     channels: Math.max(1, channels),
     timeoutMs: ANALYSIS_TIMEOUT_MS,
+    singleThread: currentAnalysisLane() === 'low',
   })) as FullScan
   // ffprobe reports the rate as a string; 0 when it is missing or unparseable, which
   // measureWaveform reads as "no usable duration" rather than dividing into NaN.

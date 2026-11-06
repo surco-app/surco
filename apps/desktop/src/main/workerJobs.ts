@@ -78,7 +78,14 @@ export type WorkerJob =
   // per-block reducer. ffmpegPath and channels ride the job as data because the worker has
   // no `app`/binaries to resolve them; running it here keeps that reduction off the main
   // process's event loop (the one worker job that is async — it awaits the decode).
-  | { type: 'channelScan'; input: string; ffmpegPath: string; channels: number; timeoutMs: number }
+  | {
+      type: 'channelScan'
+      input: string
+      ffmpegPath: string
+      channels: number
+      timeoutMs: number
+      singleThread?: boolean
+    }
   // Stops the scan above for one file: the shared decode's last consumer went away (the
   // user browsed past the track), so the child must stop burning a core rather than run to
   // completion holding a limiter slot. A job rather than a signal because an AbortSignal
@@ -131,7 +138,13 @@ export type WorkerJobResult =
 export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJobResult> {
   switch (job.type) {
     case 'channelScan':
-      return runChannelScan(job.input, job.ffmpegPath, job.channels, job.timeoutMs)
+      return runChannelScan(
+        job.input,
+        job.ffmpegPath,
+        job.channels,
+        job.timeoutMs,
+        job.singleThread ?? false,
+      )
     case 'cueWaveWords':
       return runCueWaveWords(job.input, job.ffmpegPath, job.sampleRate, job.timeoutMs)
     case 'killChannelScan':

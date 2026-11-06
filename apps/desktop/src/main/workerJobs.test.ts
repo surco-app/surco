@@ -156,7 +156,7 @@ describe('runWorkerJob', () => {
       channels: 2,
       timeoutMs: 120000,
     })
-    expect(runChannelScan).toHaveBeenCalledWith('/in.flac', '/bin/ffmpeg', 2, 120000)
+    expect(runChannelScan).toHaveBeenCalledWith('/in.flac', '/bin/ffmpeg', 2, 120000, false)
     expect(out).toEqual({ clipped: [false, true], channels: [] })
   })
 

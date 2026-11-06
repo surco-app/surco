@@ -46,6 +46,7 @@ vi.mock('node:child_process', () => ({
   },
 }))
 
+import { inAnalysisLane } from './analysisLane'
 import { measureLoudness } from './ffmpeg'
 import { EBUR128_SUMMARY } from './normalize'
 
@@ -77,6 +78,24 @@ describe('measureLoudness', () => {
     // through its graph, nor astats drag ebur128 through its own.
     expect(peak).not.toContain('astats')
     expect(stats).not.toContain('ebur128')
+  })
+
+  it('decodes on a single thread in the background lane, so a sweep of seven decodes stays on seven cores', async () => {
+    calls.length = 0
+    clock = 0
+    await inAnalysisLane('low', () => measureLoudness('/in.flac'))
+
+    for (const { args } of calls) {
+      expect(args.slice(0, args.indexOf('-i')).join(' ')).toContain('-threads 1')
+    }
+  })
+
+  it('keeps every decoder thread for the track on screen, where waiting costs more than heat', async () => {
+    calls.length = 0
+    clock = 0
+    await inAnalysisLane('high', () => measureLoudness('/in.flac'))
+
+    for (const { args } of calls) expect(args).not.toContain('-threads')
   })
 
   it('asks astats for the summary alone, since per-frame metadata quadruples its cost on an MP3 and nothing reads it', async () => {

@@ -16,11 +16,13 @@ function fakeChild() {
 }
 
 const spawned: ReturnType<typeof fakeChild>[] = []
+const spawnArgs: string[][] = []
 
 vi.mock('node:child_process', () => ({
-  spawn: () => {
+  spawn: (_file: string, args: string[]) => {
     const child = fakeChild()
     spawned.push(child)
+    spawnArgs.push(args)
     return child
   },
 }))
@@ -35,6 +37,24 @@ import { activeScanCount, killActiveScans, runChannelScan } from './channelScan'
 
 beforeEach(() => {
   spawned.length = 0
+  spawnArgs.length = 0
+})
+
+describe('runChannelScan threading', () => {
+  it('decodes on one thread when asked, so a background sweep keeps to one core per scan', () => {
+    runChannelScan('/in.flac', '/bin/ffmpeg', 2, 120_000, true).catch(() => {})
+    killActiveScans()
+
+    const args = spawnArgs[0]
+    expect(args.slice(0, args.indexOf('-i')).join(' ')).toContain('-threads 1')
+  })
+
+  it('leaves the decoder its threads by default, for the strip the user is waiting on', () => {
+    runChannelScan('/in.flac', '/bin/ffmpeg', 2, 120_000).catch(() => {})
+    killActiveScans()
+
+    expect(spawnArgs[0]).not.toContain('-threads')
+  })
 })
 
 // The scan spawns ffmpeg from inside the DSP worker thread, where the main process's

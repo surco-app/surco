@@ -1,4 +1,5 @@
 import os from 'node:os'
+import { inAnalysisLane } from './analysisLane'
 
 // A concurrency limiter (not a rate limiter like discogsLimiter): it caps how many
 // analysis ffmpeg decodes run at once and serves a three-tier priority queue. Every
@@ -78,4 +79,9 @@ export function createConcurrencyLimiter(max: number): {
 // time. The shared instance every analysis IPC handler routes its decode through.
 const MAX_CONCURRENT_ANALYSES = Math.max(2, Math.floor(os.cpus().length / 2))
 
-export const analysisLimiter = createConcurrencyLimiter(MAX_CONCURRENT_ANALYSES)
+const sharedLimiter = createConcurrencyLimiter(MAX_CONCURRENT_ANALYSES)
+
+export const analysisLimiter = {
+  run: <T>(task: () => Promise<T>, priority: Priority = 'low', signal?: AbortSignal): Promise<T> =>
+    sharedLimiter.run(() => inAnalysisLane(priority, task), priority, signal),
+}

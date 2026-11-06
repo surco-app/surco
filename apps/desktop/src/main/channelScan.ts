@@ -64,12 +64,14 @@ export function runChannelScan(
   ffmpegPath: string,
   channels: number,
   timeoutMs: number,
+  singleThread = false,
 ): Promise<FullScan> {
   const scan = createChannelScan(Math.max(1, channels))
   return new Promise((resolve, reject) => {
     const child = spawn(
       ffmpegPath,
       [
+        ...(singleThread ? ['-threads', '1'] : []),
         '-hide_banner',
         '-loglevel',
         'error',
