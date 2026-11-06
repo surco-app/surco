@@ -428,7 +428,7 @@
     "clearAll": "リストをクリア",
     "info": "トラック情報",
     "reveal": "Finderで表示",
-    "revealWin": "File Explorerで表示",
+    "revealWin": "エクスプローラーで表示",
     "addAppleMusic": "Apple Musicに追加",
     "help": "ヘルプ & FAQ",
     "feedback": "フィードバックを送信",
@@ -573,7 +573,7 @@
       "backup": "バックアップを復元…",
       "info": "情報",
       "reveal": "Finderで表示",
-      "revealWin": "File Explorerで表示",
+      "revealWin": "エクスプローラーで表示",
       "open": "ファイルを開く",
       "copyPath": "ファイルパスをコピー",
       "search": "ソースを検索",
@@ -692,7 +692,7 @@
     "qualityBitsPill": "パディングされた深さ",
     "qualityBitsPadded": "24 ビットと宣言されているが、音声はパディングされた 16 ビットです。",
     "qualityBitsPaddedWhy": "最初の1分間で低バイトをほとんど使用していません。",
-    "qualityBitsPaddedNote": "「Corrected」では 16 ビットとして保存され、可聴損失はありません。",
+    "qualityBitsPaddedNote": "「修正済み」では 16 ビットとして保存され、可聴損失はありません。",
     "qualityBitsFull": "最初の1分間で低バイトは {{pct}}% 使用されています：パディングなし。",
     "qualityBitsUnknown": "24 ビットが本物か確認できませんでした。",
     "qualityConvertHead": "変換時",
@@ -933,7 +933,7 @@
     "bestMatch": "最適一致",
     "lastApplied": "最後に適用されたアルバム",
     "searchProgress": "{{answered}} の {{total}} ソースが回答しました",
-    "heldResults": "{{count}} もっと from {{providers}} · 表示",
+    "heldResults": "{{providers}} からさらに {{count}} 件 · 表示",
     "stillSearching": "まだ検索中{{providers}}…",
     "resultsCount_one": "{{count}} の結果",
     "resultsCount_other": "{{count}} の結果",
@@ -1662,7 +1662,7 @@
     "titleFormatHint": "他のフィールドからタイトルを再構築します。タイトルフィールドのメニューまたはコマンドパレットから要求された場合にのみ適用され、自動的には行われません。",
     "titleFormat": "タイトル形式",
     "autoApplyFilename": "パターンを自動適用",
-    "autoApplyFilenameHint": "エクスポート時にメタデータから名前を生成し、\"Regenerate\" を押さずに作成します。手動編集が常に優先されます。",
+    "autoApplyFilenameHint": "「メタデータからファイル名を再生成」を押さなくても、エクスポート時にメタデータからファイル名を生成します。手動編集が常に優先されます。",
     "filenameFolderHint": "ファイルをフォルダに分けるには \"/\" を使用します。例：",
     "insertToken": "フィールドを挿入：",
     "preview": "プレビュー：",
@@ -1690,13 +1690,13 @@
     "showSpectrum": "オーディオ品質分析",
     "showSpectrumHint": "トラック編集中にスペクトルと品質チェックを表示します。オフの場合は分析が完全にスキップされます。",
     "autoAnalyze": "インポート時にすべて分析",
-    "autoAnalyzeHint": "インポート時に各トラックの分析をバックグラウンドで事前計算し、ライブラリ再開が瞬時に行われ、疑わしいリッピングはAnalyzeを押さずにフラグ付けされます。",
+    "autoAnalyzeHint": "インポート時に各トラックの分析をバックグラウンドで事前計算し、ライブラリをすぐに開き直せるようにします。「分析」を押さなくても、疑わしいリッピングにフラグが付きます。",
     "showLoudness": "ラウドネス（LUFS）表示",
     "showLoudnessHint": "トラック編集中に統合ラウドネス、トゥルーピーク、ラウドネスレンジ（EBU R128）を測定します。オフの場合は測定がスキップされます。",
     "showEditorHints": "インライン説明",
     "showEditorHintsHint": "エディタコントロール下の1行説明: 各モードの機能とピーク上限を示します。覚えたらオフにしてください。",
     "keyNotation": "キー表記",
-    "keyNotationHint": "検出されたキー提案がKeyフィールド下にどのように表示されるか。CamelotはDJソフトがソートする方式です。",
+    "keyNotationHint": "検出されたキーの候補を「キー」フィールドの下にどのように表示するかを選びます。CamelotはDJソフトが並べ替えに使う方式です。",
     "sections": {
       "title": "エディタセクション",
       "hint": "メタデータフォーム下部で、どのセクションを開状態で開始し、その順序を選択します。",
@@ -1708,7 +1708,7 @@
       "cuesOnly": "rekordbox のみ",
       "output": "出力名",
       "trim": "無音トリミング",
-      "declick": "Vinylクリック修復",
+      "declick": "レコードのクリック修復",
       "normalize": "音量正規化",
       "open": "開く",
       "show": "エディタでセクションを表示",
@@ -2073,16 +2073,16 @@
         "a": "いいえ。Surcoは独自のアプリ資格情報で最初からDiscogsを検索できるので、すぐにタグ付けを開始できます。\n\nこれらの共有資格情報はすべてのSurcoユーザーで合計レートリミット（60 リクエスト/分）があるため、混雑時に「rate limit reached」メッセージで検索が失敗することがあります。数秒待って再度お試しください。\n\n大量にタグ付けする場合は、discogs.com/settings/developersで無料の個人トークンを生成し、設定 → 検索に貼り付けてください。トークンは独自のプライベートレートリミットを持つため、Surcoが混雑していても検索は高速に保たれます。"
       },
       "quality": {
-        "q": "トラックが「Doubtful」とフラグ付けされるのはなぜですか？",
-        "a": "Surcoはオーディオスペクトルを分析し、周波数がどこまで達しているかを確認します。本物のロスレスファイル（WAV、FLAC、AIFF）はナイキスト周波数までフルレンジを使用します。それよりかなり低い位置で急激にカットオフされている場合、ロスレスコンテナに再エンコードされたロスMP3の痕跡です。拡張子はロスレスに見えても高周波数は永久に失われています。\n\n「Doubtful」はその痕跡が検出されたことを意味し、聴く価値があります：ファイルは壊れていませんが、元のMP3により品質が制限されている可能性があります（または単に地味なマスターです）。「Good quality」はスペクトルが本物のロスレスファイルがあるべき位置まで達していることを示します。"
+        "q": "トラックが「疑わしい」とフラグ付けされるのはなぜですか？",
+        "a": "Surcoはオーディオスペクトルを分析し、周波数がどこまで達しているかを確認します。本物のロスレスファイル（WAV、FLAC、AIFF）はナイキスト周波数までフルレンジを使用します。それよりかなり低い位置で急激にカットオフされている場合、ロスレスコンテナに再エンコードされたロスMP3の痕跡です。拡張子はロスレスに見えても高周波数は永久に失われています。\n\n「疑わしい」はその痕跡が検出されたことを意味し、聴く価値があります：ファイルは壊れていませんが、元のMP3により品質が制限されている可能性があります（または単に地味なマスターです）。「高音質」はスペクトルが本物のロスレスファイルがあるべき位置まで達していることを示します。"
       },
       "format": {
         "q": "どの出力形式を選択すべきですか？",
         "a": "AIFF と WAV はロスレスです。元の品質を正確に保持し、タグもきれいに保存でき、DJに最適です。AIFF は Apple プラットフォーム上でメタデータとアートワークを最もよく扱います。\n\nMP3（320 kbps）はロッシーですが容量が大幅に少なくて済み、ストレージや USB のサイズが重要なときに便利です。\n\nどの形式を選んでも、既にその形式のファイルは再エンコードせずにコピーされるため、不要な変換で品質が失われることはありません。"
       },
       "appleMusic": {
-        "q": "「Add to Apple Music」とは何ですか？",
-        "a": "有効化すると（macOS のみ）、Surco は変換後の各トラックを自動的に Apple Music ライブラリにインポートします。そのため、タグ付けされたファイルが手動でドラッグせずにライブラリに追加されます。\n\n編集中に、Surco はトラックがすでにライブラリにあるかを確認し、重複作成を防ぐ小さなバッジを表示します。自動追加は Settings → Output でいつでもオフにできます。"
+        "q": "「Apple Musicに追加」とは何ですか？",
+        "a": "有効化すると（macOS のみ）、Surco は変換後の各トラックを自動的に Apple Music ライブラリにインポートします。そのため、タグ付けされたファイルが手動でドラッグせずにライブラリに追加されます。\n\n編集中に、Surco はトラックがすでにライブラリにあるかを確認し、重複作成を防ぐ小さなバッジを表示します。自動追加は 設定 → 出力 でいつでもオフにできます。"
       },
       "windows": {
         "q": "Windows では何か違いがありますか？",
@@ -2211,7 +2211,7 @@
     "trashMessageMixedPermanent_other": "これにより {{count}} ファイルがリストから削除されます。ゴミ箱があるディスク上のものはゴミ箱へ移動し、ないものは元ファイルのコピーが「なし」に設定されているため、永久に削除され、復元できません。",
     "trashConfirmMixedPermanent": "移動と削除",
     "cleanUpMessageMixedPermanent_one": "変換後のファイルはそのままの場所に残ります。以下の項目はディスクにゴミ箱がある場合はゴミ箱へ移動し、ない場合は元ファイルのコピーが「なし」に設定されているため、永久に削除され、復元できません。",
-    "cleanUpMessageMixedPermanent_other": "変換されたファイルはそのままの場所に残ります。ディスク上のゴミ箱にある項目はゴミ箱に移動します。「バックアップ › 音楽ファイル」が Never に設定されているため、残りは完全に削除され、復元できません。",
+    "cleanUpMessageMixedPermanent_other": "変換されたファイルはそのままの場所に残ります。ゴミ箱があるディスク上の項目はゴミ箱に移動します。元ファイルのコピーが「しない」に設定されているため、残りは完全に削除され、復元できません。",
     "removeFromPlaylistTitle_one": "このトラックを「{{name}}」から外しますか？",
     "removeFromPlaylistTitle_other": "{{count}} トラックを「{{name}}」から外しますか？",
     "removeFromPlaylistMessage": "rekordbox のプレイリストから外されます。ファイルとコレクションの他の部分はそのままです。",
@@ -2581,7 +2581,7 @@
     "different": "異なります",
     "keeps": "保持",
     "removes": "削除",
-    "removedNoUndo": "削除されたコピーは Undo で元に戻りません。",
+    "removedNoUndo": "削除されたコピーは「元に戻す」では復元できません。",
     "tracks_one": "{{count}} トラック",
     "tracks_other": "{{count}} トラック",
     "confirm": {
@@ -2606,8 +2606,8 @@
       "librarySkipped": "{{library}} が開いていたか読み取れなかったため更新されませんでした。コピーはすでに Music から外れています。",
       "libraryReplaceFailed": "{{library}} を更新できませんでした。コピーはすでに Music から外れています。",
       "librariesUntouched": "実行を停止したため、rekordbox、Engine DJ、Traktor は変更されませんでした。",
-      "libraryFailed": "rekordbox、Engine DJ、Traktor が更新されませんでした。Activity を確認してください。",
-      "libraryTagsFailed": "{{library}} を更新できませんでした。Activity を確認してください。",
+      "libraryFailed": "rekordbox、Engine DJ、Traktor が更新されませんでした。アクティビティを確認してください。",
+      "libraryTagsFailed": "{{library}} を更新できませんでした。アクティビティを確認してください。",
       "libraryTagsOpen": "{{library}} が開いていたため更新されませんでした。",
       "applyError": "Apple Music に適用できませんでした",
       "undoFailed_one": "{{count}} の変更は元に戻せません",
@@ -2657,7 +2657,7 @@
         "skipped": "未変更、開いていたか読み取れませんでした",
         "replaceFailed": "更新できませんでした",
         "untouched": "未変更、実行を停止しました",
-        "unconfirmed": "未確認、Activity を確認してください",
+        "unconfirmed": "未確認、アクティビティを確認してください",
         "replaced_one": "{{count}} のコピーが保持されたものに置き換えられました",
         "replaced_other": "{{count}} のコピーが保持されたものに置き換えられました",
         "held_one": "{{count}} はコレクションに残っており、プレイリストには含まれていません",
@@ -2680,8 +2680,8 @@
       "undoSubtitle": "すべて元通りです",
       "undoSubtitleFailed": "一部の変更はまだ適用されています",
       "undoSubtitleLibraries": "残りは元通りですが、ライブラリにはまだ変更があります",
-      "undoLibraryOpen": "{{library}} は開いていたため変更が残っています。閉じて再度 Undo を押してください",
-      "undoLibraryFailed": "{{library}} は更新できなかったため変更が残っています。再度 Undo を押すか Activity を確認してください"
+      "undoLibraryOpen": "{{library}} は開いていたため変更が残っています。閉じて再度「元に戻す」を押してください",
+      "undoLibraryFailed": "{{library}} は更新できなかったため変更が残っています。再度「元に戻す」を押すかアクティビティを確認してください"
     },
     "empty": "Apple Music ライブラリが空です",
     "clean": "確認するものがありません",
@@ -2795,7 +2795,7 @@
     "confirm": {
       "removed": "コピーが削除されました",
       "playlists": "それらの rekordbox、Engine DJ、Traktor プレイリストは保持したコピーへ移動し、Apple Music にある場合は Music から離れます",
-      "trash": "それらのファイルは Trash に移動しますが、rekordbox、Engine DJ、Traktor、Apple Music がまだ使用しているものは除かれます",
+      "trash": "それらのファイルはゴミ箱に移動しますが、rekordbox、Engine DJ、Traktor、Apple Music がまだ使用しているものは除かれます",
       "playlistsNoMusic": "それらの rekordbox、Engine DJ、Traktor プレイリストは保持したコピーへ移動します",
       "trashNoMusic": "ファイルはゴミ箱に移動します（rekordbox、Engine DJ、Traktor が使用中のものは除く）",
       "musicCheck": "削除すると Apple Music がチェックされ、ファイルの確認に時間がかかります"
@@ -3225,7 +3225,7 @@
     },
     "footer": "各ソフトにつき、直近5件のバックアップを保存します。音楽ファイルは{{days}}日間です。",
     "reveal": "Finderで表示",
-    "revealWin": "File Explorerで表示",
+    "revealWin": "エクスプローラーで表示",
     "changeInSettings": "設定で変更",
     "today": "今日 {{time}}",
     "yesterday": "昨日 {{time}}",

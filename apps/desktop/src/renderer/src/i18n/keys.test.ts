@@ -184,3 +184,34 @@ describe('settings search index labels', () => {
     expect(SETTINGS_SEARCH_INDEX.map((e) => e.label).filter((k) => !en_.has(k))).toEqual([])
   })
 })
+
+describe('Japanese help names the translated controls', () => {
+  it('uses the labels shown in settings and the editor', () => {
+    expect(ja.editor.qualityBitsPaddedNote).toContain(ja.settings.bitDepths.corrected)
+    expect(ja.settings.autoApplyFilenameHint).toContain(ja.editor.regenerate)
+    expect(ja.settings.autoAnalyzeHint).toContain(ja.header.analyzeQualityLabel)
+    expect(ja.help.items.quality.q).toContain(ja.editor.qualitySuspect)
+    expect(ja.help.items.quality.a).toContain(ja.editor.qualityGood)
+    expect(ja.help.items.appleMusic.q).toContain(ja.commands.addAppleMusic)
+    expect(ja.help.items.appleMusic.a).toContain(ja.settings.tabs.destination)
+    expect(ja.confirm.cleanUpMessageMixedPermanent_other).toContain(
+      ja.settings.originalBackupPolicies.never,
+    )
+  })
+
+  it('names the activity and undo controls in recovery instructions', () => {
+    for (const text of [
+      ja.musicReview.done.libraryFailed,
+      ja.musicReview.done.libraryTagsFailed,
+      ja.musicReview.done.where.unconfirmed,
+      ja.musicReview.done.undoLibraryFailed,
+    ])
+      expect(text).toContain(ja.header.activity)
+    for (const text of [
+      ja.musicReview.removedNoUndo,
+      ja.musicReview.done.undoLibraryOpen,
+      ja.musicReview.done.undoLibraryFailed,
+    ])
+      expect(text).toContain(ja.musicReview.done.undo)
+  })
+})
