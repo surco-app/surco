@@ -550,6 +550,14 @@ describe('QualityFilterBar', () => {
     expect(onChange).toHaveBeenCalledWith(sel({ library: 'betterThanLibrary' }))
   })
 
+  // With no comparison running, as on a DJ program's tab, the filter could only ever say 0.
+  it('leaves Better than Music out where no comparison with the library runs', () => {
+    renderBar({ tally: tally({ inLibrary: 4 }) })
+    openMenu('library')
+    expect(screen.getByTestId('quality-filter-inLibrary')).toBeInTheDocument()
+    expect(screen.queryByTestId('quality-filter-betterThanLibrary')).toBeNull()
+  })
+
   it('says how far the comparison with the library got beside its filter', () => {
     renderBar({
       tally: tally({ inLibrary: 40, betterThanLibrary: 3 }),

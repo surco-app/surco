@@ -1082,6 +1082,8 @@ export default function App(): React.JSX.Element {
       ids: kept?.ids.filter((id) => alive.has(id)) ?? [],
       anchor: kept?.anchor && alive.has(kept.anchor) ? kept.anchor : null,
     })
+    if (next !== null && filterSelection.library === 'betterThanLibrary')
+      setFilterSelection({ ...filterSelection, library: null })
     browser.selectSource(next)
     closePlayer()
   })
@@ -1953,11 +1955,12 @@ export default function App(): React.JSX.Element {
   // their filter still starts them, for a list nobody analysed yet.
   const measureAll = Boolean(settings?.autoAnalyze) || analyzeAsked
   const measuringGrid = filterSelection.attention === 'badGrid' || measureAll
+  const comparesLibraryCopy = browser.source === null && librarySource === 'appleMusic'
   const measuringLibrary = filterSelection.library === 'betterThanLibrary' || measureAll
   const gridVerdicts = useGridVerdicts(gridEntries, measuringGrid)
   const libraryCopyVerdicts = useLibraryCopyVerdicts(
     scopeTracks,
-    librarySource === 'appleMusic' ? libraryIndex : null,
+    comparesLibraryCopy ? libraryIndex : null,
     measuringLibrary,
   )
   const gridNoteOf = useMemo(() => {
@@ -3587,12 +3590,16 @@ export default function App(): React.JSX.Element {
                               done: gridVerdicts.done,
                               total: gridVerdicts.total,
                             }}
-                            libraryMeasure={{
-                              offered: libraryCopyVerdicts.total > 0,
-                              measuring: measuringLibrary,
-                              done: libraryCopyVerdicts.done,
-                              total: libraryCopyVerdicts.total,
-                            }}
+                            libraryMeasure={
+                              comparesLibraryCopy
+                                ? {
+                                    offered: libraryCopyVerdicts.total > 0,
+                                    measuring: measuringLibrary,
+                                    done: libraryCopyVerdicts.done,
+                                    total: libraryCopyVerdicts.total,
+                                  }
+                                : undefined
+                            }
                             formatTally={formatTally}
                             filterFacets={filterFacets}
                             sortBy={sortBy}

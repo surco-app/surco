@@ -450,7 +450,8 @@ export function QualityFilterBar({
   })
   // Every section is always there and lists every one of its filters, an empty one dimmed,
   // so a filter is found where it was last time instead of turning up only once some track
-  // lands in it. The one exception is the library section, which needs a library to read.
+  // lands in it. The exceptions are the library section, which needs a library to read, and
+  // Better than Music, which needs files brought in to weigh against their library copy.
   const sections = (close: () => void): PaneSection[] => {
     const of = (key: SectionKey, modes: Mode[]): PaneSection => ({
       key,
@@ -464,7 +465,14 @@ export function QualityFilterBar({
     // saving and converting. The format is a fact about the file, not a step, so it ends.
     return [
       of('quality', QUALITY_MODES),
-      ...(librarySource ? [of('library', [...LIBRARY_MODES, 'betterThanLibrary'])] : []),
+      ...(librarySource
+        ? [
+            of('library', [
+              ...LIBRARY_MODES,
+              ...(libraryMeasure ? (['betterThanLibrary'] as Mode[]) : []),
+            ]),
+          ]
+        : []),
       // What the user did with the list rather than with the file, together in one section
       // so none of them is a section holding a single filter.
       {

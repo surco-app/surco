@@ -6784,6 +6784,62 @@ describe('App Apple Music library filter', () => {
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
     expect(screen.queryByTestId('quality-filter-section-library')).toBeNull()
   })
+
+  // "Better than Music" weighs a file brought in against the copy Music already holds. A DJ
+  // program's playlist, or Music's own, is the library itself: nothing there was brought in.
+  function withRekordbox(): void {
+    setApi({
+      platform: 'darwin',
+      getSettings: vi.fn().mockResolvedValue(settings({ addToAppleMusic: true })),
+      readTags: vi.fn().mockResolvedValue({ artist: 'deadmau5', title: 'Strobe' }),
+      loadAppleMusicLibrary: vi.fn().mockResolvedValue([{ title: 'Strobe', artist: 'deadmau5' }]),
+      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
+      loadRekordboxTree: vi
+        .fn<Api['loadRekordboxTree']>()
+        .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 2 }]),
+      loadRekordboxPlaylist: vi.fn<Api['loadRekordboxPlaylist']>().mockResolvedValue([
+        { path: '/m/c.wav', separator: false, meta: {}, contentId: '41' },
+        { path: '/m/d.wav', separator: false, meta: {}, contentId: '42' },
+      ]),
+      rekordboxGridVerdict: vi.fn<Api['rekordboxGridVerdict']>().mockResolvedValue(null),
+    })
+  }
+
+  async function openFactory(): Promise<void> {
+    fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+    fireEvent.click(await screen.findByTestId('source-node-f'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+  }
+
+  it('offers Better than Music on the Tracks tab only', async () => {
+    withRekordbox()
+    await renderApp()
+    await addTwoTracks()
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-section-library'))
+    expect(await screen.findByTestId('quality-filter-betterThanLibrary')).toBeInTheDocument()
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' })
+    await openFactory()
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-section-library'))
+    expect(await screen.findByTestId('quality-filter-inLibrary')).toBeInTheDocument()
+    expect(screen.queryByTestId('quality-filter-betterThanLibrary')).toBeNull()
+  })
+
+  // Left on, it would hide every row of the playlist behind a filter its menu no longer lists.
+  it('drops Better than Music on leaving the Tracks tab', async () => {
+    withRekordbox()
+    await renderApp()
+    await addTwoTracks()
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-section-library'))
+    fireEvent.click(await screen.findByTestId('quality-filter-betterThanLibrary'))
+    await waitFor(() =>
+      expect(screen.getByTestId('quality-filter-trigger')).toHaveTextContent(/Better than Music/),
+    )
+    await openFactory()
+    expect(screen.getByTestId('quality-filter-trigger')).not.toHaveTextContent(/Better than Music/)
+  })
 })
 
 describe('App metadata undo', () => {
