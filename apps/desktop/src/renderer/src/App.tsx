@@ -550,6 +550,7 @@ export default function App(): React.JSX.Element {
   // Ref twin of the bulk-action scope (declared early: the analysis sweep reads it
   // before the memo below exists); assigned right after bulkTracks is computed.
   const bulkTracksRef = useRef<TrackItem[]>([])
+  const convertTracksRef = useRef<TrackItem[]>([])
   // The player's file release, reached through a ref because usePlayer is declared
   // below the conversion hook that has to call it — a conversion rewriting the file
   // the player streams must drop that handle first (see usePlayer's releaseFile).
@@ -2104,25 +2105,33 @@ export default function App(): React.JSX.Element {
     [selectedTracks, visibleTracks],
   )
   bulkTracksRef.current = bulkTracks
+  // What convert-all runs on. In Tracks the bulk scope; in a library only the picked rows,
+  // since a collection is not a list dropped to be converted and a count over the whole
+  // playlist read as a warning that it was missing something (06/11).
+  const convertTracks = useMemo(
+    () => (browser.source === null ? bulkTracks : selectedTracks),
+    [browser.source, bulkTracks, selectedTracks],
+  )
+  convertTracksRef.current = convertTracks
   // Counted over the same scope convert-all runs on, so the button's number is the work
   // the click does: over every loaded track it read "81" behind a filter showing 79.
   const eligibleCount = useMemo(
     () =>
       eligibleForBatch(
-        bulkTracks,
+        convertTracks,
         settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS,
         settings?.customFields,
       ).length,
-    [bulkTracks, settings?.requiredFields, settings?.customFields],
+    [convertTracks, settings?.requiredFields, settings?.customFields],
   )
   const leftOut = useMemo(
     () =>
       leftOutForMissing(
-        bulkTracks,
+        convertTracks,
         settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS,
         settings?.customFields,
       ),
-    [bulkTracks, settings?.requiredFields, settings?.customFields],
+    [convertTracks, settings?.requiredFields, settings?.customFields],
   )
   // Keyboard / continuous-playback navigation over the visible list (move + scroll paging).
   const {
@@ -2395,7 +2404,7 @@ export default function App(): React.JSX.Element {
   // uses, so pressing the button and running the command cannot diverge.
   const onConvertAllTracks = useStableCallback(() =>
     askConvertAll(
-      bulkTracksRef.current,
+      convertTracksRef.current,
       editorFormatRef.current ?? undefined,
       editorNormalizeRef.current ?? undefined,
       editorDestinationPickRef.current ?? undefined,
@@ -3085,6 +3094,7 @@ export default function App(): React.JSX.Element {
       reveal: window.api.reveal,
       askClearAll: onClearAll,
       bulkTracks,
+      convertTracks,
       askTrashSuspects: onTrashSuspects,
       askTrashSelected: onTrashSelected,
       openSettings,
@@ -3414,11 +3424,11 @@ export default function App(): React.JSX.Element {
                   hintFor={hintFor}
                   trackCount={listedCount}
                   convertibleCount={eligibleCount}
-                  batchSize={bulkTracks.length}
+                  batchSize={convertTracks.length}
                   leftOut={leftOut}
                   canConvertAll={canProcessAll}
                   inLibrary={browser.source !== null}
-                  multiSelected={selectedTracks.length > 1}
+                  hasSelection={selectedTracks.length > 0}
                   onConvertAll={onConvertAllTracks}
                   importing={importProgress}
                   batchSummary={batchSummary}

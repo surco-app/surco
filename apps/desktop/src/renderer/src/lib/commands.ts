@@ -228,9 +228,11 @@ export interface CommandDeps {
   reveal: (path: string) => void
   askClearAll: () => void
   // The shared bulk-action scope: a deliberate multi-selection (>1) when there is one,
-  // else the visible rows. Convert-all and Auto-match sweep THIS set, matching Find &
-  // Replace and the toolbar buttons, so a selection is never silently ignored.
+  // else the visible rows. Auto-match sweeps THIS set, matching Find & Replace and the
+  // toolbar buttons, so a selection is never silently ignored.
   bulkTracks: TrackItem[]
+  // What Convert-all runs on: the bulk scope in Tracks, only the picked rows in a library.
+  convertTracks: TrackItem[]
   // Sends every flagged (suspect) visible rip to the OS Trash after a confirm — the one-click
   // "clean the fakes" that turns the quality sweep into an action, not just a filter.
   askTrashSuspects: () => void
@@ -300,7 +302,13 @@ export function commandGroups(): Map<string, string> {
       if (key === 'platform') return 'darwin'
       if (key === 'selected' || key === 'settings' || key === 'analysis' || key === 'matching')
         return null
-      if (key === 'tracks' || key === 'visibleTracks' || key === 'bulkTracks' || key === 'sources')
+      if (
+        key === 'tracks' ||
+        key === 'visibleTracks' ||
+        key === 'bulkTracks' ||
+        key === 'convertTracks' ||
+        key === 'sources'
+      )
         return []
       if (String(key).endsWith('Ref')) return { current: null }
       if (key === 'titleFormatSet' || key === 'playerVisible' || key === 'batching') return false
@@ -364,6 +372,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     reveal,
     askClearAll,
     bulkTracks,
+    convertTracks,
     askTrashSuspects,
     askTrashSelected,
     openSettings,
@@ -819,12 +828,13 @@ export function buildCommands(deps: CommandDeps): Command[] {
       hint: hintFor('process-all'),
       enabled: batching ? true : canProcessAll,
       // Convert the bulk scope: the multi-selection when one exists, else the visible
-      // rows — with a format filter on, never the hidden FLAC/WAV rows.
+      // rows — with a format filter on, never the hidden FLAC/WAV rows. In a library
+      // only the picked rows, the same scope the header button counts.
       run: () => {
         if (batching) cancelBatch()
         else
           askConvertAll(
-            bulkTracks,
+            convertTracks,
             editorFormatRef.current ?? undefined,
             editorNormalizeRef.current ?? undefined,
             editorDestinationPickRef.current ?? undefined,

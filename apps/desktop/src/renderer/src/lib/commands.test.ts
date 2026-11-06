@@ -87,6 +87,7 @@ function makeDeps(overrides: Partial<CommandDeps> = {}): CommandDeps {
     askTrashSuspects: () => {},
     askTrashSelected: () => {},
     bulkTracks: [],
+    convertTracks: [],
     openSettings: () => {},
     openFindReplace: () => {},
     openStripNumbering: () => {},
@@ -930,19 +931,21 @@ describe('buildCommands bulk scope', () => {
   // The palette's Convert-all and Auto-match must act on the shared bulk scope (a
   // deliberate multi-selection when there is one, else the visible rows) — the same
   // set the toolbar's own buttons sweep — never unconditionally on the visible list.
-  it('converts the bulk scope, not the visible rows', () => {
+  // Convert reads its own scope, which App narrows to the picked rows in a library.
+  it('converts the convert scope, not the visible rows', () => {
     const askConvertAll = vi.fn()
-    const bulk = [track({ id: 'sel1' }), track({ id: 'sel2' })]
+    const picked = [track({ id: 'sel1' }), track({ id: 'sel2' })]
     commandById(
       makeDeps({
         canProcessAll: true,
         askConvertAll,
-        bulkTracks: bulk,
+        convertTracks: picked,
+        bulkTracks: [track({ id: 'bulk' })],
         visibleTracks: [track({ id: 'other' })],
       }),
       'process-all',
     ).run()
-    expect(askConvertAll).toHaveBeenCalledWith(bulk, undefined, undefined, undefined, undefined)
+    expect(askConvertAll).toHaveBeenCalledWith(picked, undefined, undefined, undefined, undefined)
   })
 
   // A token is only a prerequisite when Discogs is one of the sources; Bandcamp and Deezer

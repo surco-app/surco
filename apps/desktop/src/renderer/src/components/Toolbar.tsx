@@ -36,7 +36,7 @@ interface Props {
   leftOut?: { count: number; fields: string[] }
   canConvertAll: boolean
   inLibrary?: boolean
-  multiSelected?: boolean
+  hasSelection?: boolean
   onConvertAll: () => void
   // Metadata-read progress of an in-flight import (null when idle), shown as a "212/319"
   // counter beside "Add files" so a big drop isn't an opaque wait.
@@ -107,7 +107,7 @@ export const Toolbar = memo(function Toolbar({
   leftOut,
   canConvertAll,
   inLibrary = false,
-  multiSelected = false,
+  hasSelection = false,
   onConvertAll,
   importing,
   batchSummary,
@@ -156,10 +156,10 @@ export const Toolbar = memo(function Toolbar({
         total: analysis.total,
       },
     )
-  const libraryReading = inLibrary && !multiSelected && importing !== null
-  const selectionLabel = inLibrary && multiSelected
+  const libraryIdle = inLibrary && !hasSelection
+  const selectionLabel = inLibrary && hasSelection
   const convertLabel =
-    convertibleCount === 0 || libraryReading
+    convertibleCount === 0 || libraryIdle
       ? tr('header.convertNone')
       : convertibleCount < batchSize
         ? tr(selectionLabel ? 'header.convertSomeSelected' : 'header.convertSome', {
@@ -170,7 +170,7 @@ export const Toolbar = memo(function Toolbar({
             count: convertibleCount,
           })
   const leftOutNote =
-    leftOut && leftOut.count > 0 && convertibleCount < batchSize && !libraryReading
+    leftOut && leftOut.count > 0 && convertibleCount < batchSize && !libraryIdle
       ? tr('header.leftOutMissing', {
           count: leftOut.count,
           fields: leftOut.fields.map((key) => tr(`fields.${key}`)).join(', '),
@@ -497,7 +497,7 @@ export const Toolbar = memo(function Toolbar({
                 label={convertLabel}
                 note={leftOutNote}
                 labelWidest={
-                  convertibleCount > 0 && convertibleCount < batchSize && !libraryReading
+                  convertibleCount > 0 && convertibleCount < batchSize && !libraryIdle
                     ? tr(selectionLabel ? 'header.convertSomeSelected' : 'header.convertSome', {
                         ready: batchSize,
                         total: batchSize,
@@ -520,8 +520,8 @@ export const Toolbar = memo(function Toolbar({
                   </SteadyWidth>
                 }
                 cancelLabel={tr('header.cancelConvert')}
-                ready={canConvertAll && !libraryReading}
-                quiet={(convertibleCount === 1 && batchSize === 1) || (inLibrary && !multiSelected)}
+                ready={canConvertAll && !libraryIdle}
+                quiet={(convertibleCount === 1 && batchSize === 1) || libraryIdle}
                 hint={hintFor('process-all')}
                 onRun={onConvertAll}
                 onCancel={onCancelBatch}

@@ -571,6 +571,30 @@ describe('App Engine DJ cues', () => {
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
   }
 
+  // A library is the DJ's collection, not a list dropped to be converted: over a playlist
+  // with nothing picked the header's Convert has nothing to do, and the count follows the
+  // picked rows only, so "13 of 62" can't read as the playlist missing something (06/11).
+  it('converts only the picked rows of a library playlist, and nothing when none is picked', async () => {
+    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/m/a.aiff', inPlace: false })
+    openEngine({
+      rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>().mockResolvedValue(null),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      processTrack,
+    })
+    await openFriday()
+    const convert = screen.getByTestId('convert-all')
+    expect(convert).toBeDisabled()
+    expect(convert).toHaveAccessibleName('Convert')
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[0])
+    await waitFor(() => expect(convert).toHaveAccessibleName('Convert 1 selected'))
+    expect(convert).toBeEnabled()
+    fireEvent.click(rows[1], { metaKey: true })
+    await waitFor(() => expect(convert).toHaveAccessibleName('Convert 2 selected'))
+    fireEvent.click(convert)
+    await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
+  })
+
   it('runs Auto marcar over the selected rows of an Engine DJ playlist by their Engine track', async () => {
     const dropInput = vi.fn<Api['rekordboxCueDropInput']>().mockResolvedValue(null)
     openEngine({

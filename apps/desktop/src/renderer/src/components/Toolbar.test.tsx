@@ -395,21 +395,38 @@ describe('Toolbar', () => {
     expect(screen.getByTestId('convert-all')).toBeDisabled()
   })
 
-  it('stays quiet over a whole library, where the work at hand is one track and a click would rewrite thousands', () => {
-    renderBar({ inLibrary: true, convertibleCount: 801, batchSize: 2040, trackCount: 2040 })
-    expect(screen.getByTestId('convert-all')).toHaveAttribute('data-variant', 'secondary')
-    expect(screen.getByTestId('convert-all')).toBeEnabled()
+  // A library is the DJ's collection, not a list dropped to be converted: with nothing
+  // picked there is nothing to convert, and a "13 of 62" read as a warning that the
+  // playlist was missing something (06/11). The count follows the selection only.
+  it('has nothing to convert over a library with no track picked, whatever the list holds', () => {
+    renderBar({
+      inLibrary: true,
+      convertibleCount: 801,
+      batchSize: 2040,
+      trackCount: 2040,
+      leftOut: { count: 1239, fields: ['grouping'] },
+    })
+    const button = screen.getByTestId('convert-all')
+    expect(button).toBeDisabled()
+    expect(button).toHaveAccessibleName(i18n.t('header.convertNone'))
+  })
+
+  it('converts the one picked track in a library, named as the selection', () => {
+    renderBar({ inLibrary: true, hasSelection: true, convertibleCount: 1, batchSize: 1 })
+    const button = screen.getByTestId('convert-all')
+    expect(button).toBeEnabled()
+    expect(button).toHaveAccessibleName(i18n.t('header.convertSelected', { count: 1 }))
   })
 
   it('takes the lead in a library once the user picks several tracks, naming them as the selection', () => {
-    renderBar({ inLibrary: true, multiSelected: true, convertibleCount: 12, batchSize: 12 })
+    renderBar({ inLibrary: true, hasSelection: true, convertibleCount: 12, batchSize: 12 })
     const button = screen.getByTestId('convert-all')
     expect(button).toHaveAttribute('data-variant', 'primary')
     expect(button).toHaveAccessibleName(i18n.t('header.convertSelected', { count: 12 }))
   })
 
   it('says how many of the selection are ready when some are not, so the count matches the work', () => {
-    renderBar({ inLibrary: true, multiSelected: true, convertibleCount: 10, batchSize: 12 })
+    renderBar({ inLibrary: true, hasSelection: true, convertibleCount: 10, batchSize: 12 })
     expect(screen.getByTestId('convert-all')).toHaveAccessibleName(
       i18n.t('header.convertSomeSelected', { ready: 10, total: 12 }),
     )
@@ -430,7 +447,7 @@ describe('Toolbar', () => {
   it('still converts a picked selection while the library is being read, since those tracks are already there', () => {
     renderBar({
       inLibrary: true,
-      multiSelected: true,
+      hasSelection: true,
       importing: { done: 827, total: 2047 },
       convertibleCount: 12,
       batchSize: 12,
