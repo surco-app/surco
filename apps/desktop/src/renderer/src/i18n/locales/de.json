@@ -59,6 +59,8 @@
     "convertSome": "{{ready}} von {{total}} konvertieren",
     "leftOutMissing_one": "{{count}} Track bleibt draußen, ihm fehlt {{fields}}",
     "leftOutMissing_other": "{{count}} Tracks bleiben draußen, ihnen fehlt {{fields}}",
+    "leftOutSerato_one": "{{count}} Track bleibt draußen, Serato würde ihn und seine Cues verlieren",
+    "leftOutSerato_other": "{{count}} Tracks bleiben draußen, Serato würde sie und ihre Cues verlieren",
     "convertSelected_one": "{{count}} ausgewählten Titel konvertieren",
     "convertSelected_other": "{{count}} ausgewählte Titel konvertieren",
     "convertSomeSelected": "{{ready}} von {{total}} ausgewählten Titeln konvertieren",

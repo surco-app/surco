@@ -59,6 +59,8 @@
     "convertSome": "Convertir {{ready}} de {{total}}",
     "leftOutMissing_one": "{{count}} pista se queda fuera porque le falta {{fields}}",
     "leftOutMissing_other": "{{count}} pistas se quedan fuera porque les falta {{fields}}",
+    "leftOutSerato_one": "{{count}} pista se queda fuera, Serato la perdería con sus cues",
+    "leftOutSerato_other": "{{count}} pistas se quedan fuera, Serato las perdería con sus cues",
     "convertSelected_one": "Convertir {{count}} seleccionada",
     "convertSelected_other": "Convertir {{count}} seleccionadas",
     "convertSomeSelected": "Convertir {{ready}} de {{total}} seleccionadas",

@@ -1,7 +1,9 @@
 import type { CustomField } from '../../../shared/types'
 import type { TrackItem } from '../types'
+import type { AppleMusicIndex } from './appleMusicLibrary'
 import { isStale } from './dirty'
 import { missingRequiredOf } from './fields'
+import { selectionReplaceMode } from './replaceSelection'
 
 // A track is convertible when it has not been processed yet (idle), a previous attempt
 // failed (error), or it was edited after converting (stale — the file no longer matches the
@@ -54,6 +56,34 @@ export function leftOutForMissing(
     for (const field of fields) missing.add(field)
   }
   return { count, fields: requiredFields.filter((f) => missing.has(f)) }
+}
+
+// What Convert does with a set of tracks, answered once for every entry point: the header
+// button, the editor footer, ⌘⇧↵ / ⌘⏎ and the palette all read this, so no two of them can
+// disagree over one selection (the header converted 10 of 12 while the footer refused
+// all 12, 06/11). `ready` is what a click converts; the rest says why the others stay out.
+// A selection that mixes replacing a library copy with adding has no honest subset, so it
+// holds everything back; a single track is never mixed.
+export interface ConvertGate {
+  ready: TrackItem[]
+  missing: { count: number; fields: string[] }
+  serato: number
+  mixed: boolean
+}
+
+export function convertGate(
+  tracks: TrackItem[],
+  requiredFields: string[],
+  customFields: readonly CustomField[] = [],
+  libraryIndex: AppleMusicIndex | null = null,
+): ConvertGate {
+  const mixed = tracks.length > 1 && selectionReplaceMode(libraryIndex, tracks) === 'mixed'
+  return {
+    ready: mixed ? [] : tracks.filter((t) => canProcessTrack(t, requiredFields, customFields)),
+    missing: leftOutForMissing(tracks, requiredFields, customFields),
+    serato: tracks.filter((t) => isConvertible(t) && t.fromSerato).length,
+    mixed,
+  }
 }
 
 // The outcome of converting one track: it wrote a file, the user skipped it past a

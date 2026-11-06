@@ -59,6 +59,8 @@
     "convertSome": "Convertir {{ready}} sur {{total}}",
     "leftOutMissing_one": "{{count}} morceau reste de côté, il lui manque {{fields}}",
     "leftOutMissing_other": "{{count}} morceaux restent de côté, il leur manque {{fields}}",
+    "leftOutSerato_one": "{{count}} morceau reste de côté, Serato le perdrait avec ses cues",
+    "leftOutSerato_other": "{{count}} morceaux restent de côté, Serato les perdrait avec leurs cues",
     "convertSelected_one": "Convertir {{count}} sélectionnée",
     "convertSelected_other": "Convertir {{count}} sélectionnées",
     "convertSomeSelected": "Convertir {{ready}} sur {{total}} sélectionnées",

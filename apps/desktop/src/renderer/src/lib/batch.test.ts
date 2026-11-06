@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import type { TrackMetadata } from '../../../shared/types'
 import type { TrackItem, TrackStatus } from '../types'
-import { canProcessTrack, eligibleForBatch, leftOutForMissing, summarizeBatch } from './batch'
+import { buildLibraryIndex } from './appleMusicLibrary'
+import {
+  canProcessTrack,
+  convertGate,
+  eligibleForBatch,
+  leftOutForMissing,
+  summarizeBatch,
+} from './batch'
 
 function track(id: string, status: TrackStatus, meta: Partial<TrackMetadata> = {}): TrackItem {
   return {
@@ -79,6 +86,49 @@ describe('leftOutForMissing', () => {
       count: 2,
       fields: ['title', 'artist'],
     })
+  })
+})
+
+describe('convertGate', () => {
+  // The header, the editor footer, ⌘⇧↵ and the palette each had their own answer to "what
+  // does Convert do with this selection": the header converted 10 of 12 and named the two
+  // out for a missing field, the footer refused all 12 for the same two, and only the
+  // footer knew about Serato rows and mixed replace/add selections (06/11). One gate, read
+  // by all of them, so the two buttons can't contradict each other over one selection.
+  it('splits a selection into the rows ready to convert and why the rest stay out', () => {
+    const tracks = [
+      track('a', 'idle', { title: 'T', artist: 'A' }),
+      track('b', 'idle', { title: 'T' }),
+      { ...track('c', 'idle', { title: 'T', artist: 'A' }), fromSerato: true },
+      track('d', 'done', { title: 'T', artist: 'A' }),
+    ]
+    const gate = convertGate(tracks, ['title', 'artist'])
+    expect(gate.ready.map((t) => t.id)).toEqual(['a'])
+    expect(gate.missing).toEqual({ count: 1, fields: ['artist'] })
+    expect(gate.serato).toBe(1)
+    expect(gate.mixed).toBe(false)
+  })
+
+  // A batch that would replace a library copy for some rows and add the others cannot be
+  // honestly done by one click, so nothing is ready and the reason is the mix itself.
+  it('holds the whole selection back when it mixes replacing a library copy with adding', () => {
+    const index = buildLibraryIndex([{ title: 'Sunrise', artist: 'Halo', persistentId: 'PID2' }])
+    const tracks = [
+      track('a', 'idle', { title: 'Sunrise', artist: 'Halo' }),
+      track('b', 'idle', { title: 'Unknown Song', artist: 'Nobody' }),
+    ]
+    const gate = convertGate(tracks, ['title', 'artist'], [], index)
+    expect(gate.ready).toEqual([])
+    expect(gate.mixed).toBe(true)
+  })
+
+  // Replace-vs-add is a question about a batch; a single track is never "mixed", and its
+  // ambiguous match is handled where the single convert decides what to stamp.
+  it('never calls a single track mixed', () => {
+    const index = buildLibraryIndex([{ title: 'Sunrise', artist: 'Halo', persistentId: 'PID2' }])
+    const gate = convertGate([track('a', 'idle', { title: 'Sunrise', artist: 'Halo' })], ['title'], [], index)
+    expect(gate.ready.map((t) => t.id)).toEqual(['a'])
+    expect(gate.mixed).toBe(false)
   })
 })
 

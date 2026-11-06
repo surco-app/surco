@@ -135,7 +135,7 @@ import {
   tracksToAutoMatch,
 } from './lib/autoMatch'
 import { baseName } from './lib/baseName'
-import { canProcessTrack, eligibleForBatch, leftOutForMissing } from './lib/batch'
+import { canProcessTrack, convertGate } from './lib/batch'
 import {
   buildCommands,
   type Command,
@@ -2113,26 +2113,20 @@ export default function App(): React.JSX.Element {
     [browser.source, bulkTracks, selectedTracks],
   )
   convertTracksRef.current = convertTracks
-  // Counted over the same scope convert-all runs on, so the button's number is the work
-  // the click does: over every loaded track it read "81" behind a filter showing 79.
-  const eligibleCount = useMemo(
+  // Gated over the same scope convert-all runs on, so the button's number is the work
+  // the click does: over every loaded track it read "81" behind a filter showing 79. The
+  // editor footer reads this same gate for a multi-selection, so the two buttons agree.
+  const gate = useMemo(
     () =>
-      eligibleForBatch(
+      convertGate(
         convertTracks,
         settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS,
         settings?.customFields,
-      ).length,
-    [convertTracks, settings?.requiredFields, settings?.customFields],
-  )
-  const leftOut = useMemo(
-    () =>
-      leftOutForMissing(
-        convertTracks,
-        settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS,
-        settings?.customFields,
+        libraryIndex,
       ),
-    [convertTracks, settings?.requiredFields, settings?.customFields],
+    [convertTracks, settings?.requiredFields, settings?.customFields, libraryIndex],
   )
+  const eligibleCount = gate.ready.length
   // Keyboard / continuous-playback navigation over the visible list (move + scroll paging).
   const {
     moveSelection,
@@ -3425,7 +3419,7 @@ export default function App(): React.JSX.Element {
                   trackCount={listedCount}
                   convertibleCount={eligibleCount}
                   batchSize={convertTracks.length}
-                  leftOut={leftOut}
+                  leftOut={gate}
                   canConvertAll={canProcessAll}
                   inLibrary={browser.source !== null}
                   hasSelection={selectedTracks.length > 0}

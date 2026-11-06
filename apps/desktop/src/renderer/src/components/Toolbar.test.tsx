@@ -10,6 +10,10 @@ afterEach(cleanup)
 
 type Props = React.ComponentProps<typeof Toolbar>
 
+function leftOut(over: Partial<NonNullable<Props['leftOut']>> = {}): NonNullable<Props['leftOut']> {
+  return { missing: { count: 0, fields: [] }, serato: 0, mixed: false, ...over }
+}
+
 function renderBar(over: Partial<Props> = {}): Props {
   const props: Props = {
     hintFor: () => '',
@@ -57,15 +61,37 @@ describe('Toolbar', () => {
   // The number alone left the DJ guessing which track the batch skips; the button names
   // how many a missing required field keeps out and which fields, where the count is.
   it('says how many tracks the count leaves out and what they lack', () => {
-    renderBar({ convertibleCount: 5, batchSize: 6, leftOut: { count: 1, fields: ['artist'] } })
+    renderBar({ convertibleCount: 5, batchSize: 6, leftOut: leftOut({ missing: { count: 1, fields: ['artist'] } }) })
     expect(screen.getByTestId('convert-all')).toHaveAccessibleName(
       'Convert 5 of 6 · 1 track left out, it has no Artist',
     )
   })
 
   it('adds no note when every track goes', () => {
-    renderBar({ leftOut: { count: 0, fields: [] } })
+    renderBar({ leftOut: leftOut() })
     expect(screen.getByTestId('convert-all')).toHaveAccessibleName('Convert 3 tracks')
+  })
+
+  // Serato rows are kept out so Serato keeps the track, but the header said "10 of 12" and
+  // nothing else, while the footer refused the whole selection for them (06/11). The same
+  // gate feeds both now, and the header names them like it names a missing field.
+  it('names the Serato rows the count leaves out', () => {
+    renderBar({ convertibleCount: 10, batchSize: 12, leftOut: leftOut({ serato: 2 }) })
+    expect(screen.getByTestId('convert-all')).toHaveAccessibleName(
+      'Convert 10 of 12 · 2 tracks left out, Serato would lose them and their cues',
+    )
+  })
+
+  it('holds a selection that mixes replacing and adding back, and says so', () => {
+    renderBar({
+      convertibleCount: 0,
+      batchSize: 2,
+      canConvertAll: false,
+      leftOut: leftOut({ mixed: true }),
+    })
+    const button = screen.getByTestId('convert-all')
+    expect(button).toBeDisabled()
+    expect(button).toHaveAccessibleName(`Convert · ${i18n.t('editor.mixedReplaceSelection')}`)
   })
 
   // The pill subscribes to the export itself; the toolbar only places it, so a byte tick
@@ -404,7 +430,7 @@ describe('Toolbar', () => {
       convertibleCount: 801,
       batchSize: 2040,
       trackCount: 2040,
-      leftOut: { count: 1239, fields: ['grouping'] },
+      leftOut: leftOut({ missing: { count: 1239, fields: ['grouping'] } }),
     })
     const button = screen.getByTestId('convert-all')
     expect(button).toBeDisabled()
