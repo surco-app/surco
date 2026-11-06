@@ -34,16 +34,20 @@ export async function artworkDir(): Promise<string> {
   return dir
 }
 
+const ARTWORK_TIMEOUT_MS = 60_000
+
 // Runs the script and reports which files really landed. A track whose artwork vanished
 // between the listing and the fetch writes nothing, and the caller must not hand on a path
 // that was never created.
 export async function fetchAppleMusicArtwork(
   jobs: { persistentId: string; outPath: string }[],
+  timeoutMs = ARTWORK_TIMEOUT_MS,
 ): Promise<{ path: string; url: string }[]> {
   // The raw data of a few hundred covers can outgrow execFile's 1 MB default; the pictures
   // themselves land in files, but osascript's own output still has to fit.
   await promisify(execFile)('osascript', ['-e', buildArtworkScript(jobs)], {
     maxBuffer: 64 * 1024 * 1024,
+    timeout: timeoutMs,
   })
   return keptArtwork(jobs)
 }
