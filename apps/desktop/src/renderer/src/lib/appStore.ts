@@ -8,6 +8,7 @@ import type {
   LibraryFilter,
   ListenFilter,
   QualityFilter,
+  SelectionFilter,
   SortDir,
   TagsFilter,
   TrackSort,
@@ -44,6 +45,7 @@ interface AppState {
   attentionFilter: AttentionFilter | null
   tagsFilter: TagsFilter | null
   listenFilter: ListenFilter | null
+  selectionFilter: SelectionFilter | null
   formatFilter: string | null
   // The tracks played long enough to count as heard, by path, so the list worked through
   // over several days can show what is still to hear.
@@ -76,6 +78,7 @@ const INITIAL: AppState = {
   attentionFilter: null,
   tagsFilter: null,
   listenFilter: null,
+  selectionFilter: null,
   formatFilter: null,
   playedPaths: new Set(),
   dragging: false,

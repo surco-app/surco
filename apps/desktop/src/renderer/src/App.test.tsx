@@ -4559,6 +4559,24 @@ describe('App multi-select removal', () => {
 })
 
 describe('App row playback', () => {
+  // A few picked out of a long list, to look at on their own before converting them.
+  it('narrows the list to the selected tracks from the filter', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[0])
+    fireEvent.click(rows[2], { metaKey: true })
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-section-selection'))
+    expect(screen.getByTestId('quality-filter-selected')).toHaveTextContent(/2$/)
+    fireEvent.click(screen.getByTestId('quality-filter-selected'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+  })
+
   // 700 tracks gone through over several days: what was heard is marked, and the filter
   // keeps what is still to hear.
   it('marks a track heard once it has played a few seconds, and filters it out of the unplayed', async () => {

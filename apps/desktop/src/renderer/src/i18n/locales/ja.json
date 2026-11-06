@@ -146,7 +146,8 @@
         "library": "Apple Music",
         "libraryEngine": "Engine DJ",
         "format": "フォーマット",
-        "listen": "再生"
+        "listen": "再生",
+        "selection": "選択"
       },
       "clear": "フィルターを解除",
       "shown": "{{total}} 曲中 {{visible}} 曲",
@@ -155,7 +156,8 @@
       "searching": "「{{query}}」を含むフィルター",
       "noMatch": "「{{query}}」に一致するフィルターはありません",
       "unplayed": "未再生",
-      "played": "再生済み"
+      "played": "再生済み",
+      "selected": "選択中"
     },
     "search": {
       "placeholder": "トラックを検索",

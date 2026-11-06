@@ -7,6 +7,7 @@ import type {
   LibraryFilter,
   ListenFilter,
   QualityFilter,
+  SelectionFilter,
   SortDir,
   TagsFilter,
   TrackSort,
@@ -55,6 +56,7 @@ export function sessionViewOf(
       attention: state.attentionFilter,
       tags: state.tagsFilter,
       listen: state.listenFilter,
+      selection: state.selectionFilter,
       format: state.formatFilter,
     },
     played: [...state.playedPaths],
@@ -73,6 +75,7 @@ export function viewPatch(view: SessionView): Partial<AppState> {
     attentionFilter: view.filters.attention,
     tagsFilter: view.filters.tags,
     listenFilter: view.filters.listen,
+    selectionFilter: view.filters.selection,
     formatFilter: view.filters.format,
     playedPaths: new Set(view.played),
   }
@@ -133,6 +136,7 @@ const TAGS: Record<TagsFilter, true> = {
 }
 
 const LISTEN: Record<ListenFilter, true> = { unplayed: true, played: true }
+const SELECTION: Record<SelectionFilter, true> = { selected: true }
 
 function known<T extends string>(table: Record<T, true>, value: unknown): T | null {
   return typeof value === 'string' && Object.hasOwn(table, value) ? (value as T) : null
@@ -171,6 +175,7 @@ export function parseSessionView(raw: unknown): SessionView | null {
       attention: known(ATTENTION, filters.attention),
       tags: known(TAGS, filters.tags),
       listen: known(LISTEN, filters.listen),
+      selection: known(SELECTION, filters.selection),
       format: typeof filters.format === 'string' ? filters.format : null,
     },
     played: parsePaths(view.played),

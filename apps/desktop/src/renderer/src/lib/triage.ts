@@ -93,6 +93,8 @@ export type TagsFilter = 'missingRequired' | 'noCover' | 'smallCover' | 'noBpm' 
 // The tracks played long enough to count as heard, against the ones still to hear: the
 // list worked through over several days, asked of App through FilterFacts like 'unsaved'.
 export type ListenFilter = 'unplayed' | 'played'
+// The tracks selected in the list, to look at on their own before converting them.
+export type SelectionFilter = 'selected'
 
 // What the list knows about a row that the row itself does not carry: which fields
 // Settings require, and the cue drafts the cue editor holds. App answers; the filter asks.
@@ -103,6 +105,7 @@ export interface FilterFacts {
   gridVerdict: (track: TrackItem) => GridVerdict | null | undefined
   libraryCopy: (track: TrackItem) => CopyVerdict | null | undefined
   played: (track: TrackItem) => boolean
+  selected: (track: TrackItem) => boolean
 }
 
 export const NO_FACTS: FilterFacts = {
@@ -112,6 +115,7 @@ export const NO_FACTS: FilterFacts = {
   gridVerdict: () => undefined,
   libraryCopy: () => undefined,
   played: () => false,
+  selected: () => false,
 }
 
 // One selection per dimension, all combined with AND. `format` is the source container
@@ -124,6 +128,7 @@ export interface FilterSelection {
   attention: AttentionFilter | null
   tags: TagsFilter | null
   listen: ListenFilter | null
+  selection: SelectionFilter | null
   format: string | null
 }
 
@@ -135,6 +140,7 @@ export const EMPTY_FILTER: FilterSelection = {
   library: null,
   duplicates: null,
   listen: null,
+  selection: null,
   format: null,
 }
 
@@ -217,6 +223,7 @@ export function matchesFilter(
   if (sel.attention === 'unanalysedEngine' && unanalysedIn(track) !== 'engine') return false
   if (sel.tags && !matchesTags(track, sel.tags, facts)) return false
   if (sel.listen && facts.played(track) !== (sel.listen === 'played')) return false
+  if (sel.selection && !facts.selected(track)) return false
   if (sel.format && sourceFormat(track) !== sel.format) return false
   return true
 }

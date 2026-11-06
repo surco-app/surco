@@ -13,6 +13,7 @@ describe('sessionView', () => {
       libraryFilter: 'notInLibrary',
       formatFilter: 'FLAC',
       listenFilter: 'unplayed',
+      selectionFilter: 'selected',
       playedPaths: new Set(['/music/a.wav']),
     })
     const view = JSON.parse(
@@ -30,7 +31,13 @@ describe('sessionView', () => {
       search: 'dub',
       sortBy: 'bpm',
       sortDir: 'desc',
-      filters: { ...EMPTY_FILTER, library: 'notInLibrary', format: 'FLAC', listen: 'unplayed' },
+      filters: {
+        ...EMPTY_FILTER,
+        library: 'notInLibrary',
+        format: 'FLAC',
+        listen: 'unplayed',
+        selection: 'selected',
+      },
       played: ['/music/a.wav'],
     })
   })

@@ -146,7 +146,8 @@
         "library": "Apple Music",
         "libraryEngine": "Engine DJ",
         "format": "Format",
-        "listen": "Écoute"
+        "listen": "Écoute",
+        "selection": "Sélection"
       },
       "clear": "Effacer les filtres",
       "shown": "{{visible}} sur {{total}} pistes",
@@ -155,7 +156,8 @@
       "searching": "Filtres contenant « {{query}} »",
       "noMatch": "Aucun filtre ne correspond à « {{query}} »",
       "unplayed": "Non écoutées",
-      "played": "Écoutées"
+      "played": "Écoutées",
+      "selected": "Sélectionnées"
     },
     "search": {
       "placeholder": "Rechercher des morceaux",

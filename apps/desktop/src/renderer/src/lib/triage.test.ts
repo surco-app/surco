@@ -469,6 +469,7 @@ describe('filters that read what App knows about a row', () => {
     gridVerdict: () => undefined,
     libraryCopy: () => undefined,
     played: () => false,
+    selected: () => false,
   }
 
   // Which fields are required is a setting, and unsaved cues live in the cue editor's
@@ -1214,5 +1215,19 @@ describe('listened filter', () => {
   it('counts each listen bucket within the other filters but not within its own', () => {
     const { tally } = facetCounts(tracks, { ...EMPTY_FILTER, listen: 'unplayed' }, facts)
     expect(tally).toMatchObject({ unplayed: 1, played: 1 })
+  })
+})
+
+describe('selected filter', () => {
+  const tracks = ['picked', 'other'].map((id) => ({ id, status: 'idle' }) as TrackItem)
+  const facts: FilterFacts = { ...NO_FACTS, selected: (t) => t.id === 'picked' }
+
+  // Two picked out of 718 to look at again before converting.
+  it('keeps only the selected tracks', () => {
+    expect(
+      tracks
+        .filter((t) => matchesFilter(t, { ...EMPTY_FILTER, selection: 'selected' }, facts))
+        .map((t) => t.id),
+    ).toEqual(['picked'])
   })
 })

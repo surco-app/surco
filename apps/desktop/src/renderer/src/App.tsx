@@ -1959,6 +1959,9 @@ export default function App(): React.JSX.Element {
       return verdict ? gridNote(verdict, tr, i18n.language) : undefined
     }
   }, [filterSelection.attention, gridVerdicts, tr, i18n.language])
+  // The selection reaches the filter only while it filters by it: every click or arrow
+  // moves the selection, and rebuilding the facts recounts every filter over the whole list.
+  const filteredSelection = filterSelection.selection ? selectedIdSet : null
   // What the filter asks about a row that the row does not carry: the fields Settings
   // require (the same rule that keeps Convert all off it) and the open playlist's cue drafts.
   const filterFacts = useMemo<FilterFacts>(
@@ -1977,6 +1980,7 @@ export default function App(): React.JSX.Element {
       gridVerdict: (t) => gridVerdicts.verdictOf(t.id),
       libraryCopy: libraryCopyVerdicts.verdictOf,
       played: (t) => playedPaths.has(t.inputPath),
+      selected: (t) => filteredSelection?.has(t.id) ?? false,
     }),
     [
       gridVerdicts,
@@ -1987,6 +1991,7 @@ export default function App(): React.JSX.Element {
       playlistScope,
       unsavedCues,
       playedPaths,
+      filteredSelection,
     ],
   )
   const filterFactsRef = useRef(filterFacts)

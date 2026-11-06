@@ -32,6 +32,7 @@ import {
   SkipForward,
   SlidersHorizontal,
   Sparkles,
+  SquareCheckBig,
   Store,
   Trash2,
   TriangleAlert,
@@ -69,6 +70,7 @@ type AttentionMode =
   | 'unanalysedEngine'
 type TagsMode = 'missingRequired' | 'noCover' | 'smallCover' | 'noBpm' | 'noKey'
 type ListenMode = 'unplayed' | 'played'
+type SelectionMode = 'selected'
 type Mode =
   | QualityMode
   | ConversionMode
@@ -77,6 +79,7 @@ type Mode =
   | AttentionMode
   | TagsMode
   | ListenMode
+  | SelectionMode
 
 const QUALITY_MODES: QualityMode[] = ['unanalyzed', 'suspect', 'damaged', 'good']
 const CONVERSION_MODES: ConversionMode[] = [
@@ -96,6 +99,7 @@ const TAGS_MODES: TagsMode[] = ['missingRequired', 'noCover', 'smallCover', 'noB
 const LIBRARY_MODES: LibraryMode[] = ['notInLibrary', 'inLibrary']
 const DUPLICATES_MODES: DuplicatesMode[] = ['duplicates']
 const LISTEN_MODES: ListenMode[] = ['unplayed', 'played']
+const SELECTION_MODES: SelectionMode[] = ['selected']
 const ATTENTION_MODES: AttentionMode[] = [
   'silence',
   'clipping',
@@ -141,12 +145,14 @@ const FILTER_ICONS: Record<Mode | 'all', LucideIcon> = {
   noKey: KeyRound,
   unplayed: HeadphoneOff,
   played: Headphones,
+  selected: SquareCheckBig,
 }
 
 type Tally = ReturnType<typeof qualityCounts>
 
 type SectionKey =
   | 'status'
+  | 'selection'
   | 'listen'
   | 'quality'
   | 'tags'
@@ -171,6 +177,7 @@ function axisOf(mode: Mode): keyof Omit<FilterSelection, 'format'> {
   if ((ATTENTION_MODES as string[]).includes(mode)) return 'attention'
   if ((TAGS_MODES as string[]).includes(mode)) return 'tags'
   if ((LISTEN_MODES as string[]).includes(mode)) return 'listen'
+  if (mode === 'selected') return 'selection'
   return 'library'
 }
 
@@ -214,6 +221,7 @@ function activeFilters(
 ): { axis: Axis; mode: string; Icon: LucideIcon; label: string }[] {
   const axes: Axis[] = [
     'conversion',
+    'selection',
     'listen',
     'quality',
     'tags',
@@ -365,7 +373,10 @@ export function QualityFilterBar({
       : key === 'duplicates'
         ? tr('sidebar.filter.duplicates')
         : tr(`sidebar.filter.section.${key}`)
-  const countOf = (mode: Mode): number => facets.tally[mode as keyof Tally]
+  // The selection's size is the counter's own number; counting it within the other filters
+  // would recount every filter on each click that moves the selection.
+  const countOf = (mode: Mode): number =>
+    mode === 'selected' ? selectedCount : facets.tally[mode as keyof Tally]
   const isActive = (mode: Mode): boolean => value[axisOf(mode)] === mode
   // Toggle one axis and close, like a native select. The axes are still independent — the
   // reopened menu shows the current ticks — so layering a second axis is one reopen away,
@@ -429,6 +440,7 @@ export function QualityFilterBar({
     })
     return [
       of('status', STATUS_MODES),
+      of('selection', SELECTION_MODES),
       of('listen', LISTEN_MODES),
       of('quality', QUALITY_MODES),
       of('tags', TAGS_MODES),

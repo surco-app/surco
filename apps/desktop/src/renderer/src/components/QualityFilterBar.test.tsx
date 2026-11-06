@@ -153,6 +153,7 @@ describe('QualityFilterBar sections', () => {
       screen.getAllByRole('tab').map((el) => el.getAttribute('data-testid'))
     const expected = [
       'status',
+      'selection',
       'listen',
       'quality',
       'tags',
@@ -309,6 +310,8 @@ describe('QualityFilterBar sections', () => {
     renderBar({ tally: tally({ unplayed: 2, played: 1 }) })
     openMenu()
     fireEvent.keyDown(document.activeElement as Element, { key: 'ArrowDown' })
+    expect(screen.getByTestId('quality-filter-section-selection')).toHaveFocus()
+    fireEvent.keyDown(document.activeElement as Element, { key: 'ArrowDown' })
     const listen = screen.getByTestId('quality-filter-section-listen')
     expect(listen).toHaveFocus()
     expect(listen).toHaveAttribute('aria-selected', 'true')
@@ -462,6 +465,15 @@ describe('QualityFilterBar', () => {
     expect(screen.getByTestId('quality-filter-played')).toHaveTextContent(/^Played306$/)
     fireEvent.click(screen.getByTestId('quality-filter-unplayed'))
     expect(onChange).toHaveBeenCalledWith(sel({ listen: 'unplayed' }))
+  })
+
+  // The count is the selection's own size, the number the counter beside the menu shows.
+  it('filters the selection axis from the selected bucket, counted as the selection', () => {
+    const { onChange } = renderBar({ selectedCount: 2 })
+    openMenu('selection')
+    expect(screen.getByTestId('quality-filter-selected')).toHaveTextContent(/^Selected2$/)
+    fireEvent.click(screen.getByTestId('quality-filter-selected'))
+    expect(onChange).toHaveBeenCalledWith(sel({ selection: 'selected' }))
   })
 
   it('filters the tags axis from a tag bucket', () => {
