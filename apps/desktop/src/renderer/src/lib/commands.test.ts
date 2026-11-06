@@ -536,6 +536,46 @@ describe('buildCommands convert-and-advance', () => {
   })
 })
 
+describe('buildCommands ⌘⏎ over a selection', () => {
+  // With several tracks picked, ⌘⏎ converted only the open one and stepped on, while the
+  // header's button converted the selection: two Converts with different reach over the
+  // same pick. The user chose the selection (06/11).
+  it('converts the whole selection instead of the open track when several are picked', () => {
+    const askConvertAll = vi.fn()
+    const processOne = vi.fn()
+    const picked = [track({ id: 'p1' }), track({ id: 'p2' })]
+    const cmd = commandById(
+      makeDeps({
+        selected: picked[0],
+        selectedTracksCount: 2,
+        canProcessSelected: true,
+        canProcessAll: true,
+        convertTracks: picked,
+        askConvertAll,
+        processOne,
+      }),
+      'process-current',
+    )
+    expect(cmd.enabled).toBe(true)
+    cmd.run()
+    expect(askConvertAll).toHaveBeenCalledWith(picked, undefined, undefined, undefined, undefined)
+    expect(processOne).not.toHaveBeenCalled()
+  })
+
+  it('follows the selection gate, not the open track, when several are picked', () => {
+    const cmd = commandById(
+      makeDeps({
+        selected: track(),
+        selectedTracksCount: 2,
+        canProcessSelected: true,
+        canProcessAll: false,
+      }),
+      'process-current',
+    )
+    expect(cmd.enabled).toBe(false)
+  })
+})
+
 describe('buildCommands process-all toggle', () => {
   // Like the sweep commands, 'process-all' flips meaning mid-run: a misfired Convert
   // all must be cancellable from the same palette entry that started it, instead of

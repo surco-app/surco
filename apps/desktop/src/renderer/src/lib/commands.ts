@@ -784,8 +784,20 @@ export function buildCommands(deps: CommandDeps): Command[] {
       group: 'convert',
       title: tr('commands.processCurrent'),
       hint: hintFor('process-current'),
-      enabled: canProcessSelected,
+      // Over several picked tracks ⌘⏎ converts the selection, the same batch the header
+      // button names, rather than the one open track (the user's call, 06/11).
+      enabled: selectedTracksCount > 1 ? canProcessAll : canProcessSelected,
       run: () => {
+        if (selectedTracksCount > 1) {
+          askConvertAll(
+            convertTracks,
+            editorFormatRef.current ?? undefined,
+            editorNormalizeRef.current ?? undefined,
+            editorDestinationPickRef.current ?? undefined,
+            editorDeclickRef.current ?? undefined,
+          )
+          return
+        }
         if (!selected) return
         // Convert-and-advance: the conversion runs in the background, so move straight to
         // the next track — ⌘⏎ ⌘⏎ … works through the crate without a manual step between.
