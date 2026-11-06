@@ -25,9 +25,15 @@ interface Params {
   onMeasured?: (id: string) => void
 }
 
+interface SweepProgress {
+  done: number
+  total: number
+  stage: 'quality' | 'details'
+}
+
 interface QualityAnalysis {
   // Progress of the "analyze quality" run (null when idle).
-  analysis: { done: number; total: number } | null
+  analysis: SweepProgress | null
   paused: boolean
   // tracks is folded into the sweep's targets alongside targetsRef, for a caller (an
   // import's onMetaLoaded) that fires before targetsRef's render has caught up with the
@@ -59,7 +65,7 @@ export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params)
   onMeasuredRef.current = onMeasured
   // Progress (null when idle), and a cancel flag the in-flight workers poll so
   // cancelling stops new analyses without killing the ones already handed to ffmpeg.
-  const [analysis, setAnalysis] = useState<{ done: number; total: number } | null>(null)
+  const [analysis, setAnalysis] = useState<SweepProgress | null>(null)
   const analyzeCancel = useRef(false)
   // Re-entry guard read synchronously (unlike the analysis state, which lags a render),
   // so a second trigger in the same tick can't start a competing sweep — mirroring the
@@ -204,7 +210,18 @@ export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params)
       let done = 0
       let total = targets.length
       const failed: string[] = []
-      setAnalysis({ done: 0, total })
+      const details: Array<{ id: string; path: string }> = []
+      let detailsDone = 0
+      let detailsTotal = 0
+      const report = (): void => {
+        if (!mountedRef.current) return
+        setAnalysis(
+          done < total
+            ? { done, total, stage: 'quality' }
+            : { done: detailsDone, total: detailsTotal, stage: 'details' },
+        )
+      }
+      setAnalysis({ done: 0, total, stage: 'quality' })
       const waiting = new Map(runRef.current)
       const joinsFromOpenPlaylist = (inScope: (t: TrackItem) => boolean): TrackItem | undefined => {
         for (const t of pendingRef.current.values()) {
@@ -212,7 +229,7 @@ export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params)
           if (forgottenRef.current.has(t.id) || !inScope(t)) continue
           runRef.current.set(t.id, t)
           total += 1
-          if (mountedRef.current) setAnalysis((a) => (a ? { ...a, total } : a))
+          report()
           return t
         }
         return undefined
@@ -250,6 +267,24 @@ export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params)
             queryClient.fetchQuery(waveformOptions(path)),
             queryClient.fetchQuery(waveformScanOptions(path, 'low')),
           ])
+          onMeasuredRef.current?.(t.id)
+          details.push({ id: t.id, path })
+          detailsTotal += 1
+        } catch (err) {
+          // A single file ffmpeg can't read must not abort the whole sweep — remember
+          // WHICH one, so the run can flag those rows at the end instead of reporting a
+          // bare count the user cannot act on.
+          if (isCancelledError(err)) evicted = true
+          else failed.push(t.id)
+        } finally {
+          if (runRef.current.delete(t.id)) done += 1
+          if (!evicted) measuredRef.current.add(t.id)
+          pendingRef.current.delete(t.id)
+          report()
+        }
+      }
+      const measureDetails = async ({ id, path }: { id: string; path: string }): Promise<void> => {
+        if (!forgottenRef.current.has(id)) {
           // Each probe returns a different result type, so the fetchQuery calls are wrapped
           // as thunks: kept in one array they'd unify to a union of option shapes fetchQuery
           // can't accept, whereas each thunk keeps its own probe type monomorphic at its call.
@@ -283,21 +318,9 @@ export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params)
               // of the same track — each fills its own cache entry independently.
             }
           }
-          // Reached only when the spectrum landed: the optional probes above are allowed
-          // to fail without the track counting as unmeasured.
-          onMeasuredRef.current?.(t.id)
-        } catch (err) {
-          // A single file ffmpeg can't read must not abort the whole sweep — remember
-          // WHICH one, so the run can flag those rows at the end instead of reporting a
-          // bare count the user cannot act on.
-          if (isCancelledError(err)) evicted = true
-          else failed.push(t.id)
-        } finally {
-          if (runRef.current.delete(t.id)) done += 1
-          if (!evicted) measuredRef.current.add(t.id)
-          pendingRef.current.delete(t.id)
-          if (mountedRef.current) setAnalysis((a) => (a ? { ...a, done } : a))
         }
+        detailsDone += 1
+        report()
       }
       const worker = async (): Promise<void> => {
         while (!analyzeCancel.current) {
@@ -305,8 +328,14 @@ export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params)
           // ffmpeg off-screen; it resumes the moment the app is focused again.
           await focusGate.current.wait()
           const t = nextTrack()
-          if (analyzeCancel.current || !t) return
-          await measure(t)
+          if (analyzeCancel.current) return
+          if (t) {
+            await measure(t)
+            continue
+          }
+          const next = details.shift()
+          if (!next) return
+          await measureDetails(next)
         }
       }
       void Promise.all([worker(), worker(), worker()]).finally(() => {

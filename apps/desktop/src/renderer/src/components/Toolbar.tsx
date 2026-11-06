@@ -52,7 +52,7 @@ interface Props {
   batchProgress: { done: number; total: number }
   // Progress of the analyze-quality sweep (null when idle) and whether every track is
   // already analyzed (which, when idle, disables the button).
-  analysis: { done: number; total: number } | null
+  analysis: { done: number; total: number; stage?: 'quality' | 'details' } | null
   analysisPaused: boolean
   allAnalyzed: boolean
   // Progress of the auto-match sweep (null when idle), whether its sources can run (see
@@ -145,10 +145,17 @@ export const Toolbar = memo(function Toolbar({
   const { t: tr } = useTranslation()
   const analysisLabel =
     analysis &&
-    tr(analysisPaused ? 'header.analyzingPaused' : 'header.analyzingCount', {
-      done: analysis.done,
-      total: analysis.total,
-    })
+    tr(
+      analysisPaused
+        ? 'header.analyzingPaused'
+        : analysis.stage === 'details'
+          ? 'header.analyzingDetails'
+          : 'header.analyzingCount',
+      {
+        done: analysis.done,
+        total: analysis.total,
+      },
+    )
   const libraryReading = inLibrary && !multiSelected && importing !== null
   const selectionLabel = inLibrary && multiSelected
   const convertLabel =

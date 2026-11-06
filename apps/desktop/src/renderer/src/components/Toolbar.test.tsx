@@ -216,6 +216,14 @@ describe('Toolbar', () => {
     )
   })
 
+  it('tells the details pass apart from the quality pass, since its count starts over', () => {
+    renderBar({ analysis: { done: 1, total: 4, stage: 'details' }, analysisPaused: false })
+    fireEvent.focus(screen.getByTestId('analyze-quality'))
+    expect(screen.getByRole('tooltip')).toHaveTextContent(
+      i18n.t('header.analyzingDetails', { done: 1, total: 4 }),
+    )
+  })
+
   it('says why Match cannot run without a Discogs token and takes the user to add one', () => {
     const props = renderBar({ tokenMissing: true, canAutoMatch: false })
     const button = screen.getByTestId('auto-match')

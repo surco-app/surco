@@ -50,6 +50,7 @@
     "reviewLabel": "Revisar",
     "allAnalyzed": "Tudo já analisado",
     "analyzingCount": "Analisando qualidade… {{done}}/{{total}}",
+    "analyzingDetails": "Medindo volume, BPM e tom… {{done}}/{{total}}",
     "analyzingPaused": "Em pausa enquanto um programa de DJ está aberto · {{done}}/{{total}}",
     "convertingCount": "Convertendo… {{done}}/{{total}}",
     "convertAll_one": "Converter {{count}} faixa",

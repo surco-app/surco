@@ -50,6 +50,7 @@
     "reviewLabel": "Review",
     "allAnalyzed": "Everything is already analyzed",
     "analyzingCount": "Analyzing quality… {{done}}/{{total}}",
+    "analyzingDetails": "Measuring loudness, BPM and key… {{done}}/{{total}}",
     "analyzingPaused": "Paused while a DJ program is open · {{done}}/{{total}}",
     "convertingCount": "Converting… {{done}}/{{total}}",
     "convertAll_one": "Convert {{count}} track",

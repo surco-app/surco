@@ -125,6 +125,53 @@ describe('useQualityAnalysis', () => {
     expect(waveformScan).toHaveBeenCalledWith('/music/a.wav', 'low')
   })
 
+  it('gives every track its quality verdict before measuring any detail, so the list fills first', async () => {
+    const order: string[] = []
+    const spectrogram = vi.fn(async (path: string) => {
+      order.push(`spectrum ${path}`)
+      return spectrum
+    })
+    const loudness = vi.fn(async (path: string) => {
+      order.push(`loudness ${path}`)
+      return null
+    })
+    setApi({ spectrogram, loudness })
+    const ids = ['a', 'b', 'c', 'd', 'e']
+    const targetsRef = { current: ids.map((id) => track(id)) }
+    const { result } = renderHook(() => useQualityAnalysis({ targetsRef }), {
+      wrapper: wrapper(),
+    })
+
+    act(() => result.current.analyzeAllQuality())
+    await waitFor(() => expect(result.current.analysis).toBeNull())
+
+    const lastSpectrum = order.findLastIndex((s) => s.startsWith('spectrum'))
+    const firstLoudness = order.findIndex((s) => s.startsWith('loudness'))
+    expect(loudness).toHaveBeenCalledTimes(ids.length)
+    expect(firstLoudness).toBeGreaterThan(lastSpectrum)
+  })
+
+  it('counts the details pass on its own once every verdict is in', async () => {
+    let release: (v: null) => void = () => {}
+    const loudness = vi.fn().mockReturnValue(
+      new Promise<null>((r) => {
+        release = r
+      }),
+    )
+    setApi({ loudness })
+    const targetsRef = { current: [track('a')] }
+    const { result } = renderHook(() => useQualityAnalysis({ targetsRef }), {
+      wrapper: wrapper(),
+    })
+
+    act(() => result.current.analyzeAllQuality())
+    await waitFor(() =>
+      expect(result.current.analysis).toEqual({ done: 0, total: 1, stage: 'details' }),
+    )
+    await act(async () => release(null))
+    await waitFor(() => expect(result.current.analysis).toBeNull())
+  })
+
   // A second trigger while a sweep is already running must not start a competing pass.
   it('ignores a re-trigger while a sweep is in flight', async () => {
     let release: (v: SpectrumResult) => void = () => {}
@@ -573,7 +620,7 @@ describe('useQualityAnalysis after unmount', () => {
     targetsRef.current = [track('e'), track('f')]
     act(() => result.current.scopeTo((t) => t.id === 'e' || t.id === 'f'))
 
-    expect(result.current.analysis).toEqual({ done: 0, total: 6 })
+    expect(result.current.analysis).toEqual({ done: 0, total: 6, stage: 'quality' })
     release(spectrum)
     await waitFor(() => expect(result.current.analysis).toBeNull())
     expect(order.slice(3)).toEqual(['/music/e.wav', '/music/f.wav', '/music/d.wav'])

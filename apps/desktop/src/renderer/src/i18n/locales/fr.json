@@ -50,6 +50,7 @@
     "reviewLabel": "Vérifier",
     "allAnalyzed": "Tout est déjà analysé",
     "analyzingCount": "Analyse de la qualité… {{done}}/{{total}}",
+    "analyzingDetails": "Mesure du loudness, du BPM et de la tonalité… {{done}}/{{total}}",
     "analyzingPaused": "En pause tant qu’un logiciel DJ est ouvert · {{done}}/{{total}}",
     "convertingCount": "Conversion… {{done}}/{{total}}",
     "convertAll_one": "Convertir {{count}} piste",

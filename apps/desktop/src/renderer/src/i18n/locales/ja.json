@@ -50,6 +50,7 @@
     "reviewLabel": "確認",
     "allAnalyzed": "すべて分析済み",
     "analyzingCount": "品質を分析中… {{done}}/{{total}}",
+    "analyzingDetails": "ラウドネス・BPM・キーを測定中… {{done}}/{{total}}",
     "analyzingPaused": "DJソフトが開いている間は一時停止 · {{done}}/{{total}}",
     "convertingCount": "変換中… {{done}}/{{total}}",
     "convertAll_one": "{{count}} トラックを変換",
