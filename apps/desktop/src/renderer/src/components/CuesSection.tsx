@@ -1179,10 +1179,10 @@ function Editing({
       data-testid="cues-auto-mark"
       disabled={blocked ? true : readsAudio ? readingAudio : !words}
       onClick={autoMark}
-      className={`press flex shrink-0 items-center gap-1.5 whitespace-nowrap border border-[var(--color-accent)] text-xs font-semibold text-[var(--color-accent)] hover:bg-[var(--color-hover)] disabled:opacity-40 ${autoHeight}`}
+      className={`press flex shrink-0 items-center gap-1.5 whitespace-nowrap bg-[var(--color-accent-soft)] text-xs font-semibold text-fg hover:bg-[var(--color-row-selected)] hover:text-[var(--color-on-row-selected)] disabled:opacity-40 ${autoHeight}`}
     >
       {!(readsAudio || words) && <Tooltip label={tr(copy.autoUnanalysed)} />}
-      <svg viewBox="0 0 16 16" className="h-3 w-3" aria-hidden="true">
+      <svg viewBox="0 0 16 16" className="h-3 w-3 text-[var(--color-accent)]" aria-hidden="true">
         <path d="M8 1 9.6 6.4 15 8 9.6 9.6 8 15 6.4 9.6 1 8 6.4 6.4Z" fill="currentColor" />
       </svg>
       {readingAudio ? tr('editor.cues.engine.autoReading') : tr('editor.cues.auto.button')}
@@ -1514,6 +1514,7 @@ function Editing({
       <Select
         testid="cues-flow"
         portal
+        bare
         lead={tr('editor.cues.flow')}
         label={tr('editor.cues.flow')}
         value={manual ? MANUAL_CUE_FLOW : shownFlow}

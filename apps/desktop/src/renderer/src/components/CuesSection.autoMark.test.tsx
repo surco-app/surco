@@ -160,7 +160,7 @@ describe('Auto marcar', () => {
     expect(dropProposals).not.toHaveBeenCalled()
     expect(proposals()).toEqual([])
     expect(autoButton()).toHaveTextContent('Auto mark')
-    expect(autoButton().className).toContain('border-[var(--color-accent)]')
+    expect(autoButton().className).toContain('bg-[var(--color-accent-soft)]')
   })
 
   it('sits in the section header next to the flow menu while folded', async () => {
