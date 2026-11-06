@@ -6,8 +6,9 @@ import type { CueQueue, CueSource } from './cueSource'
 import { shiftedWords } from './cueWords'
 import { keyOf } from './rekordboxPlaylistsIpc'
 import { type BeatGridOf, sameClockFit, sameClockVerdict } from './sameClockGrid'
-import { readTraktorTrackCues, traktorEntryBlock } from './traktorCues'
+import { traktorTrackCuesOf } from './traktorCues'
 import { traktorDropInput } from './traktorDropInput'
+import { findEntries } from './traktorNml'
 import { traktorFileOf } from './traktorPlaylists'
 import { traktorLeadOfFile } from './traktorTimeline'
 
@@ -22,23 +23,39 @@ export function traktorCueSource(
   collection: () => string,
   beatGrid: BeatGridOf,
 ): CueSource {
-  let cached: { path: string; mtimeMs: number; size: number; text: string } | null = null
-  const nmlOf = async (): Promise<string> => {
+  let cached: {
+    path: string
+    mtimeMs: number
+    size: number
+    text: string
+    blocks?: Map<string, string>
+  } | null = null
+  const collectionOf = async () => {
     const path = traktor.nml()
-    if (!path) return ''
+    if (!path) return null
     const { mtimeMs, size } = await stat(path)
-    if (cached?.path === path && cached.mtimeMs === mtimeMs && cached.size === size) {
-      return cached.text
+    if (cached?.path === path && cached.mtimeMs === mtimeMs && cached.size === size) return cached
+    cached = { path, mtimeMs, size, text: await readFile(path, 'utf8') }
+    return cached
+  }
+  const nmlOf = async (): Promise<string> => (await collectionOf())?.text ?? ''
+  const blockOf = async (contentId: string): Promise<string | null> => {
+    const current = await collectionOf()
+    const key = traktorKey(contentId)
+    if (!current || key === null) return null
+    if (!current.blocks) {
+      const blocks = new Map<string, string>()
+      for (const e of findEntries(current.text)) {
+        const entryKey = `${e.volume}${e.dir}${e.file}`
+        if (!blocks.has(entryKey)) blocks.set(entryKey, current.text.slice(e.start, e.end))
+      }
+      current.blocks = blocks
     }
-    const text = await readFile(path, 'utf8')
-    cached = { path, mtimeMs, size, text }
-    return text
+    return current.blocks.get(key) ?? null
   }
-  const traktorFileIn = (nml: string, contentId: string) => {
-    const entry = traktorEntryBlock(nml, traktorKey(contentId) ?? '')
-    return entry ? traktorFileOf(entry.block, traktor.bootVolume()) : null
-  }
-  const traktorFile = async (contentId: string) => traktorFileIn(await nmlOf(), contentId)
+  const fileOfBlock = (block: string | null) =>
+    block ? traktorFileOf(block, traktor.bootVolume()) : null
+  const traktorFile = async (contentId: string) => fileOfBlock(await blockOf(contentId))
   const leadOf = async (file: string | null): Promise<number | null> =>
     file ? traktorLeadOfFile(file) : null
   const shiftedWordsOf = async (file: string): Promise<Uint16Array | null> => {
@@ -48,9 +65,10 @@ export function traktorCueSource(
   }
   return {
     trackCues: async (contentId) => {
-      const nml = await nmlOf()
-      const read = readTraktorTrackCues(nml, contentId)
-      return read && { ...read, clockLeadMs: await leadOf(traktorFileIn(nml, contentId)) }
+      const block = await blockOf(contentId)
+      if (!block) return null
+      const read = traktorTrackCuesOf(block, contentId)
+      return { ...read, clockLeadMs: await leadOf(fileOfBlock(block)) }
     },
     waveDetail: async (contentId) => {
       const file = await traktorFile(contentId)
@@ -74,10 +92,10 @@ export function traktorCueSource(
       return sameClockFit(file, beatGrid, 'high', await leadOf(file))
     },
     gridVerdict: async (contentId) => {
-      const nml = await nmlOf()
-      const file = traktorFileIn(nml, contentId)
+      const block = await blockOf(contentId)
+      const file = fileOfBlock(block)
       return sameClockVerdict(
-        readTraktorTrackCues(nml, contentId)?.grid,
+        block ? traktorTrackCuesOf(block, contentId).grid : undefined,
         await sameClockFit(file, beatGrid, 'low', await leadOf(file)),
       )
     },
