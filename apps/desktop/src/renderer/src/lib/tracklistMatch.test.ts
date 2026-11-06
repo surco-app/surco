@@ -3,7 +3,7 @@ import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import type { CollectionTrack } from '../../../shared/types'
 import fixture from './fixtures/tracklistCollection.json'
-import { baseTitle, matchTracklist, splitArtists } from './tracklistMatch'
+import { baseTitle, chosenTracks, matchTracklist, reviewRows, splitArtists } from './tracklistMatch'
 import { parseTracklist } from './tracklistParse'
 
 const SETS = join(
@@ -196,5 +196,42 @@ describe('matchTracklist against the real collection', () => {
       similar: 4,
       absent: 12,
     })
+  })
+})
+
+describe('reviewRows and chosenTracks', () => {
+  const found = match(line('Solar System, Sergi M', 'Because of You'))
+  const doubtful = match(line('3 Ways', 'Real Love (Extended Remastered)'))
+  const similar = match(line('Dj Dbc', 'Action (Poky Mix)'))
+  const absent = match(line('Rave Allstars', 'Bitte Anschnallen (Charter Mix)'))
+
+  it('keeps found and doubtful in, similar out, and drops absent', () => {
+    const rows = reviewRows([found, doubtful, similar, absent])
+    expect(rows.map((r) => r.match.level)).toEqual(['found', 'doubtful', 'similar'])
+    expect(rows.map((r) => r.included)).toEqual([true, true, false])
+    expect(rows.every((r) => r.picked === 0)).toBe(true)
+  })
+
+  it('adds a track once when two lines land on it, where the first line was', () => {
+    const rows = reviewRows([doubtful, found, doubtful])
+    expect(chosenTracks(rows).map((t) => t.contentId)).toEqual([
+      '3 Ways - Real Love (Extended Version)',
+      'Sergi M, Solar System - Because Of You',
+    ])
+  })
+
+  it('still adds the track when only the second of two lines is included', () => {
+    const rows = reviewRows([doubtful, found, doubtful])
+    rows[0].included = false
+    expect(chosenTracks(rows).map((t) => t.contentId)).toEqual([
+      'Sergi M, Solar System - Because Of You',
+      '3 Ways - Real Love (Extended Version)',
+    ])
+  })
+
+  it('returns the candidate the user picked', () => {
+    const rows = reviewRows([doubtful])
+    rows[0].picked = 1
+    expect(chosenTracks(rows)[0].contentId).toBe('3 Ways - Real Love')
   })
 })

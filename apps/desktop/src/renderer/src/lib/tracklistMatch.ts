@@ -125,3 +125,26 @@ export function matchTracklist(
   const indexed = index(collection)
   return lines.map((line) => matchLine(line, indexed))
 }
+
+export interface ReviewRow {
+  match: TracklistMatch
+  picked: number
+  included: boolean
+}
+
+export function reviewRows(matches: TracklistMatch[]): ReviewRow[] {
+  return matches
+    .filter((match) => match.level !== 'absent')
+    .map((match) => ({ match, picked: 0, included: match.level !== 'similar' }))
+}
+
+export function chosenTracks(rows: ReviewRow[]): CollectionTrack[] {
+  const seen = new Set<string>()
+  return rows.flatMap((row) => {
+    if (!row.included) return []
+    const track = row.match.candidates[row.picked]
+    if (!track || seen.has(track.contentId)) return []
+    seen.add(track.contentId)
+    return [track]
+  })
+}
