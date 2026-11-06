@@ -1,5 +1,20 @@
 [
   {
+    "version": "1.28",
+    "date": "6 de noviembre de 2026",
+    "title": "Pega el tracklist de tu sesión y convierte solo lo que eliges",
+    "items": [
+      {
+        "text": "Pega el tracklist de una sesión y Surco te hace la playlist. En rekordbox, Traktor y Serato, botón derecho sobre una playlist, «Pegar tracklist…», y pegas el texto tal cual, con tiempos o sin ellos, la descripción de YouTube o lo que saca tu identificador de pistas. Surco busca cada línea en tu colección y te enseña qué ha encontrado antes de tocar nada. Las que son otra mezcla del mismo tema entran igual, salvo que las saques; las que solo coinciden en el título esperan a que las aceptes. Las pistas entran en el orden del set, y las que no tienes se quedan fuera sin molestar. Sobre una carpeta, «Nueva playlist desde tracklist…» crea la playlist con el nombre que le pongas. Medido con un set real de 31 pistas, 28 entraron solas y 3 con un clic.",
+        "in": "1.28.0"
+      },
+      {
+        "text": "En las pestañas de rekordbox, Traktor, Engine DJ y Serato, «Convertir» convierte solo las pistas que tienes seleccionadas, y sin ninguna seleccionada no hay nada que convertir. Con varias seleccionadas, ⌘⏎ convierte la selección entera en vez de la pista abierta. El botón te dice lo que se queda fuera y por qué, también en el plan del editor: las pistas de Serato que perderían sus cues, y una selección que mezcla sustituir una copia de tu biblioteca con añadir, que espera a que la separes. Desde el menú de hechas, «Convertir de nuevo» vuelve a tomar las que ya convertiste.",
+        "in": "1.28.0"
+      }
+    ]
+  },
+  {
     "version": "1.27",
     "date": "6 de noviembre de 2026",
     "title": "Filtros por secciones, y un análisis que no calienta el Mac",

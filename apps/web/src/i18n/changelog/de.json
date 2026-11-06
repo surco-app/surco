@@ -1,5 +1,20 @@
 [
   {
+    "version": "1.28",
+    "date": "November 6, 2026",
+    "title": "Füge die Tracklist deines Sets ein, und konvertiere nur, was du auswählst",
+    "items": [
+      {
+        "text": "Füge die Tracklist eines Sets ein und Surco baut dir die Playlist. In rekordbox, Traktor und Serato: Rechtsklick auf eine Playlist, „Tracklist einfügen…“, und du fügst den Text so ein, wie er kommt, mit oder ohne Zeiten, eine YouTube-Beschreibung oder was dein Track-Erkenner ausgibt. Surco sucht jede Zeile in deiner Sammlung und zeigt dir, was es gefunden hat, bevor es etwas anfasst. Zeilen, die ein anderer Mix desselben Tracks sind, kommen trotzdem rein, außer du nimmst sie raus; Zeilen, die nur den Titel teilen, warten darauf, dass du sie nimmst. Die Tracks kommen in der Reihenfolge des Sets rein, und die, die du nicht hast, bleiben draußen, ohne zu stören. Auf einem Ordner legt „Neue Playlist aus Tracklist…“ die Playlist mit dem Namen an, den du ihr gibst. Gemessen an einem echten Set mit 31 Tracks kamen 28 von selbst rein und 3 mit einem Klick.",
+        "in": "1.28.0"
+      },
+      {
+        "text": "In den Tabs rekordbox, Traktor, Engine DJ und Serato konvertiert „Konvertieren“ nur die Tracks, die du ausgewählt hast, und ohne Auswahl gibt es nichts zu konvertieren. Bei mehreren ausgewählten konvertiert ⌘⏎ die ganze Auswahl statt des geöffneten Tracks. Der Button sagt dir, was draußen bleibt und warum, und der Plan im Editor ebenso: Serato-Tracks, die ihre Cues verlieren würden, und eine Auswahl, die das Ersetzen einer Kopie aus deiner Bibliothek mit dem Hinzufügen mischt und darauf wartet, dass du sie trennst. Aus dem Menü der fertigen nimmt „Erneut konvertieren“ die, die du schon konvertiert hast.",
+        "in": "1.28.0"
+      }
+    ]
+  },
+  {
     "version": "1.27",
     "date": "November 6, 2026",
     "title": "Filter in Bereichen, und eine Analyse, die deinen Mac kühl lässt",

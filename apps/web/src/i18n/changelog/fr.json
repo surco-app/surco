@@ -1,5 +1,20 @@
 [
   {
+    "version": "1.28",
+    "date": "November 6, 2026",
+    "title": "Colle la tracklist de ton set, et convertis seulement ce que tu choisis",
+    "items": [
+      {
+        "text": "Colle la tracklist d'un set et Surco te fait la playlist. Dans rekordbox, Traktor et Serato, clic droit sur une playlist, « Coller une tracklist… », et tu colles le texte tel quel, avec ou sans temps, une description YouTube ou ce que sort ton identificateur de morceaux. Surco cherche chaque ligne dans ta collection et te montre ce qu'il a trouvé avant de toucher à quoi que ce soit. Les lignes qui sont un autre mix du même morceau entrent quand même, sauf si tu les retires ; celles qui n'ont que le titre en commun attendent que tu les prennes. Les morceaux entrent dans l'ordre du set, et ceux que tu n'as pas restent dehors sans gêner. Sur un dossier, « Nouvelle playlist depuis une tracklist… » crée la playlist avec le nom que tu lui donnes. Mesuré sur un vrai set de 31 morceaux, 28 sont entrés tout seuls et 3 avec un clic.",
+        "in": "1.28.0"
+      },
+      {
+        "text": "Dans les onglets rekordbox, Traktor, Engine DJ et Serato, « Convertir » ne convertit que les morceaux que tu as sélectionnés, et sans sélection il n'y a rien à convertir. Avec plusieurs sélectionnés, ⌘⏎ convertit toute la sélection au lieu du morceau ouvert. Le bouton te dit ce qui reste dehors et pourquoi, et le plan de l'éditeur aussi : les morceaux Serato qui perdraient leurs cues, et une sélection qui mélange remplacer une copie de ta bibliothèque et ajouter, qui attend que tu la sépares. Depuis le menu des terminés, « Convertir à nouveau » reprend ceux que tu as déjà convertis.",
+        "in": "1.28.0"
+      }
+    ]
+  },
+  {
     "version": "1.27",
     "date": "November 6, 2026",
     "title": "Des filtres par sections, et une analyse qui ne chauffe plus ton Mac",

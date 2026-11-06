@@ -1,5 +1,20 @@
 [
   {
+    "version": "1.28",
+    "date": "November 6, 2026",
+    "title": "Paste your set's tracklist, and convert only what you pick",
+    "items": [
+      {
+        "text": "Paste a set's tracklist and Surco builds the playlist. In rekordbox, Traktor and Serato, right-click a playlist, “Paste tracklist…”, and paste the text as it comes, with or without times, a YouTube description or what your track identifier prints. Surco looks each line up in your collection and shows you what it found before touching anything. Lines that are another mix of the same track go in anyway, unless you leave them out; lines that only share the title wait for you to take them. Tracks go in in the set's order, and the ones you don't have stay out without getting in the way. On a folder, “New playlist from tracklist…” creates the playlist with the name you give it. Measured on a real 31-track set, 28 went in by themselves and 3 with one click.",
+        "in": "1.28.0"
+      },
+      {
+        "text": "In the rekordbox, Traktor, Engine DJ and Serato tabs, “Convert” converts only the tracks you have selected, and with none selected there is nothing to convert. With several selected, ⌘⏎ converts the whole selection instead of the open track. The button tells you what stays out and why, and so does the editor's plan: Serato tracks that would lose their cues, and a selection that mixes replacing a copy in your library with adding, which waits for you to split it. From the done menu, “Convert again” takes the ones you already converted.",
+        "in": "1.28.0"
+      }
+    ]
+  },
+  {
     "version": "1.27",
     "date": "November 6, 2026",
     "title": "Filters in sections, and an analysis that keeps your Mac cool",
