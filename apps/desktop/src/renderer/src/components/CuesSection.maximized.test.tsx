@@ -677,6 +677,31 @@ describe('CuesSection maximized keys', () => {
     expect(position()).toBe('1:04.0')
   })
 
+  it('says on an empty pad which letter its cue will take, since with the letters in track order a cue placed before C becomes C and not the pad pressed', async () => {
+    setup(
+      { cueLettersByTime: true },
+      {
+        ...READ,
+        cues: [
+          { id: 'a', ms: 16000, kind: 1, color: 1 },
+          { id: 'b', ms: 32000, kind: 2, color: 1 },
+          { id: 'c', ms: 96000, kind: 3, color: 1 },
+        ],
+      },
+    )
+    await maximize()
+    seek(64000)
+    expect(hoverTooltip(screen.getByTestId('cues-pad-E'))).toBe('Places a cue here · it becomes C')
+    seek(128000)
+    expect(hoverTooltip(screen.getByTestId('cues-pad-E'))).toBe('Places a cue here · it becomes D')
+  })
+
+  it('leaves the empty pads unexplained when each letter is a fixed pad', async () => {
+    setup({ cueLettersByTime: false })
+    await maximize()
+    expect(hoverTooltip(screen.getByTestId('cues-pad-E'))).toBeNull()
+  })
+
   it('marks a track with the keyboard only', async () => {
     setup({ cueLettersByTime: false })
     await maximize()

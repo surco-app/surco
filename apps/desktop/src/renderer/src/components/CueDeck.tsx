@@ -37,6 +37,7 @@ export function CueDeck({
   canRemoveMemory,
   onClearAll,
   canClearAll = false,
+  landsAs,
   onDone,
   gridControls,
 }: {
@@ -56,6 +57,7 @@ export function CueDeck({
   canRemoveMemory: boolean
   onClearAll?: () => void
   canClearAll?: boolean
+  landsAs?: (kind: number) => number | null
   onDone?: () => void
   gridControls?: React.ReactNode
 }): React.JSX.Element {
@@ -109,6 +111,7 @@ export function CueDeck({
           const cue = cues.find((c) => c.kind === kind)
           const letter = cueLetter(kind)
           const isSelected = cue !== undefined && cue.key === selected
+          const lands = !cue && landsAs ? landsAs(kind) : null
           return (
             <span key={kind} className="relative">
               <button
@@ -140,6 +143,9 @@ export function CueDeck({
                   cue ? '' : 'border border-dashed border-[var(--color-line-strong)] text-fg-faint'
                 } ${isSelected ? 'outline outline-2 outline-offset-2 outline-[var(--color-fg)]' : ''}`}
               >
+                {lands !== null && (
+                  <Tooltip label={tr('editor.cues.padLands', { letter: cueLetter(lands) })} />
+                )}
                 {letter}
               </button>
               {cue && onDelete && hovered === cue.key && !locked.includes(cue.key) && (

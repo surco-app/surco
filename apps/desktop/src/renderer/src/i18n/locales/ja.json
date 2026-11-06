@@ -933,6 +933,7 @@
       "colour": "色 {{index}}",
       "colourPicker": "キューの色",
       "selectedHot": "ホットキュー {{letter}}",
+      "padLands": "ここにキューを置く · {{letter}} になります",
       "selectedCall": "CALL",
       "menuAddHot": "ここにホットキューを追加",
       "menuAddCall": "ここに CALL を追加",

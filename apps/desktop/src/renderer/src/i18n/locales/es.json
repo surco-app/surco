@@ -933,6 +933,7 @@
       "colour": "Color {{index}}",
       "colourPicker": "Color del cue",
       "selectedHot": "Hot cue {{letter}}",
+      "padLands": "Pone un cue aquí · será la {{letter}}",
       "selectedCall": "CALL",
       "menuAddHot": "Añadir hot cue aquí",
       "menuAddCall": "Añadir CALL aquí",

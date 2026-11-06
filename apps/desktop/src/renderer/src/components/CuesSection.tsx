@@ -842,6 +842,14 @@ function Editing({
     dispatch({ type: 'select', key: existing.key })
     seekTo(existing.ms)
   }
+  const landsAs = (kind: number): number | null => {
+    const next = reduceDraft(
+      state,
+      { type: 'add-hot', ms: playheadMs, kind },
+      ctxRef.current as DraftContext,
+    )
+    return next.cues.find((c) => !state.cues.some((o) => o.key === c.key))?.kind ?? null
+  }
   const memoryStep = (dir: 1 | -1) => {
     const to = adjacentCall(state.cues, playheadMs, dir)
     if (to === null) return
@@ -1830,6 +1838,7 @@ function Editing({
           canRemoveMemory={removableCall !== undefined && !state.locked.includes(removableCall.key)}
           onClearAll={clearAll}
           canClearAll={clearable}
+          landsAs={settings.cueLettersByTime ? landsAs : undefined}
           onDone={focusEditor}
           gridControls={
             <>
