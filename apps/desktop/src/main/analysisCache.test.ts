@@ -393,7 +393,7 @@ describe('pruneAnalysisCache', () => {
     await entryAged(files[2], 20)
     const oneEntry = (await stat(newest)).size
 
-    await pruneAnalysisCache(oneEntry)
+    await pruneAnalysisCache(oneEntry, undefined, 0)
 
     const recompute = vi.fn().mockResolvedValue({ v: 2 })
     expect(await cachedAnalysis('demo', files[0], recompute)).toEqual({ v: 1 })
@@ -413,7 +413,7 @@ describe('pruneAnalysisCache', () => {
     await cachedAnalysis('demo', used, vi.fn())
     const oneEntry = (await stat(usedEntry)).size
 
-    await pruneAnalysisCache(oneEntry)
+    await pruneAnalysisCache(oneEntry, undefined, 0)
 
     const recompute = vi.fn().mockResolvedValue({ v: 2 })
     expect(await cachedAnalysis('demo', used, recompute)).toEqual({ v: 1 })
@@ -428,7 +428,7 @@ describe('pruneAnalysisCache', () => {
     await entryAged(unused, 50)
     await peekAnalysis('demo', peeked)
 
-    await pruneAnalysisCache((await stat(peekedEntry)).size)
+    await pruneAnalysisCache((await stat(peekedEntry)).size, undefined, 0)
 
     expect(await peekAnalysis('demo', peeked)).toEqual({ v: 1 })
     expect(await peekAnalysis('demo', unused)).toBeNull()
@@ -445,11 +445,49 @@ describe('pruneAnalysisCache', () => {
     await utimes(oldEntry, longAgo, longAgo)
     const recentEntry = await entryAged(recent, 50)
 
-    await pruneAnalysisCache((await stat(recentEntry)).size)
+    await pruneAnalysisCache((await stat(recentEntry)).size, undefined, 0)
 
     expect(await peekAnalysis('demo', old)).toBeNull()
     expect(await peekAnalysis('demo', recent)).toEqual({ v: 1 })
     expect(await peekVerdict('demo', old, () => 'recomputed')).toBe(1)
+  })
+
+  async function heavyEntryAged(file: string, secondsAgo: number): Promise<string> {
+    const before = new Set(await readdir(cacheDir()).catch(() => []))
+    await cachedAnalysis('demo', file, vi.fn().mockResolvedValue({ peaks: 'x'.repeat(4096) }))
+    const name = (await readdir(cacheDir())).find((n) => !before.has(n)) as string
+    const when = (Date.now() - secondsAgo * 1000) / 1000
+    await utimes(join(cacheDir(), name), when, when)
+    return join(cacheDir(), name)
+  }
+
+  // A library of 8000 tracks writes about 1 MB of wave, scan and spectrum image for each,
+  // well past the budget. Evicting those by age took the tag reads, the BPM and the key of
+  // the same tracks with them: a few KB each, yet each one a read off the NAS to get back.
+  it('keeps the small results of a library whose heavy entries overflow the budget', async () => {
+    const [small, heavyOld, heavyNew] = await Promise.all([makeFile(), makeFile(), makeFile()])
+    await entryAged(small, 300)
+    await heavyEntryAged(heavyOld, 200)
+    const recent = await heavyEntryAged(heavyNew, 100)
+
+    await pruneAnalysisCache((await stat(recent)).size, undefined, 1024)
+
+    const recompute = vi.fn().mockResolvedValue({ v: 2 })
+    expect(await cachedAnalysis('demo', small, recompute)).toEqual({ v: 1 })
+    expect(await peekAnalysis('demo', heavyNew)).not.toBeNull()
+    expect(await peekAnalysis('demo', heavyOld)).toBeNull()
+    expect(recompute).not.toHaveBeenCalled()
+  })
+
+  it('bounds the small results by a budget of their own', async () => {
+    const [old, recent] = await Promise.all([makeFile(), makeFile()])
+    await entryAged(old, 200)
+    const recentEntry = await entryAged(recent, 100)
+
+    await pruneAnalysisCache(undefined, undefined, 1024, (await stat(recentEntry)).size)
+
+    expect(await peekAnalysis('demo', recent)).toEqual({ v: 1 })
+    expect(await peekAnalysis('demo', old)).toBeNull()
   })
 
   // A 0.70.0 spectrogram entry could persist a decode error carrying the child's
