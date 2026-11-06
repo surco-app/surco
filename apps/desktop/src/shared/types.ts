@@ -217,6 +217,7 @@ export interface Settings {
   // store may take. Sanitized on save (see backupPolicy.ts): they come from text fields.
   backupRetentionDays: number
   backupMaxGb: number
+  analysisCacheGb: number
   // When true, a successful conversion is also registered in the Engine DJ library
   // database at engineLibraryDir. Engine references the file where it lives (it never
   // imports a copy), so the output-folder copy is always kept in this mode.

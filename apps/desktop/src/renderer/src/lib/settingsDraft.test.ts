@@ -27,6 +27,7 @@ const settings: Settings = {
   backupPolicy: 'always',
   backupRetentionDays: 30,
   backupMaxGb: 10,
+  analysisCacheGb: 10,
   addToEngineDj: false,
   addToRekordbox: false,
   addToTraktor: false,
@@ -127,6 +128,7 @@ const local: LocalDraft = {
   betaUpdates: false,
   autoMatch: false,
   beatportUsername: '',
+  analysisCacheGb: 10,
 }
 
 describe('pickSynced', () => {

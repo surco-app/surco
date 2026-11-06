@@ -1,7 +1,10 @@
 import type React from 'react'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { CACHE_GB_MAX, CACHE_GB_MIN, tracksThatFit } from '../../../../shared/analysisCacheSize'
 import { formatFileSize } from '../../lib/properties'
+import type { LocalDraft } from '../../lib/settingsDraft'
+import type { PatchLocal } from '../../lib/settingsTabs'
 import { PathField } from '../PathField'
 import { SettingsField, SettingsHint, SettingsLabel, SettingsSection } from './SettingsPrimitives'
 
@@ -13,6 +16,8 @@ interface Props {
   onExportSettings: () => void
   onImportSettings: () => void
   settingsFileError: string
+  local: LocalDraft
+  patchLocal: PatchLocal
 }
 
 export function AdvancedTab({
@@ -23,6 +28,8 @@ export function AdvancedTab({
   onExportSettings,
   onImportSettings,
   settingsFileError,
+  local,
+  patchLocal,
 }: Props): React.JSX.Element {
   const { t: tr, i18n } = useTranslation()
 
@@ -141,6 +148,34 @@ export function AdvancedTab({
             {tr('settings.cacheClear')}
           </button>
           <SettingsHint>{tr('settings.cacheHint')}</SettingsHint>
+          <div className="mt-2 flex flex-col gap-1.5">
+            <div className="flex items-baseline justify-between gap-3">
+              <SettingsLabel htmlFor="cache-size">{tr('settings.cacheSize')}</SettingsLabel>
+              <span
+                data-testid="settings-cache-size-value"
+                className="text-xs tabular-nums text-fg-dim"
+              >
+                {tr('settings.cacheSizeValue', {
+                  gb: local.analysisCacheGb,
+                  tracks: new Intl.NumberFormat(i18n.language).format(
+                    tracksThatFit(local.analysisCacheGb),
+                  ),
+                })}
+              </span>
+            </div>
+            <input
+              id="cache-size"
+              type="range"
+              data-testid="settings-cache-size"
+              min={CACHE_GB_MIN}
+              max={CACHE_GB_MAX}
+              step={1}
+              value={local.analysisCacheGb}
+              onChange={(e) => patchLocal('analysisCacheGb', Number(e.target.value))}
+              className="w-full accent-[var(--color-accent)]"
+            />
+            <SettingsHint>{tr('settings.cacheSizeHint')}</SettingsHint>
+          </div>
         </div>
 
         <SettingsField label={tr('settings.log')} hint={tr('settings.logHint')} searchId="log">

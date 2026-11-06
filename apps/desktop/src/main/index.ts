@@ -40,6 +40,7 @@ import {
 } from 'electron'
 import log from 'electron-log/main'
 import electronUpdater from 'electron-updater'
+import { cacheBytesOf } from '../shared/analysisCacheSize'
 import { trashLimits } from '../shared/backupPolicy'
 import { activeCueFlow } from '../shared/cueFlows'
 import type { CueProgram } from '../shared/djProgram'
@@ -2238,10 +2239,11 @@ app.whenReady().then(() => {
   }
   // Bound the on-disk analysis cache at launch, before any new entries land, and again
   // every half hour: an "analyze all" over a big library writes gigabytes in one session.
-  void pruneAnalysisCache()
+  const pruneToSetting = () => pruneAnalysisCache(cacheBytesOf(getSettings().analysisCacheGb))
+  void pruneToSetting()
   // Storing a thumbnail waits for this, so no URL handed out can be pruned afterwards.
   void pruneCoverThumbs()
-  setInterval(() => void pruneAnalysisCache(), 30 * 60 * 1000)
+  setInterval(() => void pruneToSetting(), 30 * 60 * 1000)
   // Drops what the trash no longer keeps (older than the retention, past the size cap).
   void surcoTrash.sweep().catch((err) => log.warn('trash sweep failed', String(err)))
   // Serve the local audio file ourselves with real HTTP range support: the

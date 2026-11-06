@@ -27,6 +27,7 @@ export const testSettings: Settings = {
   backupPolicy: 'always',
   backupRetentionDays: 30,
   backupMaxGb: 10,
+  analysisCacheGb: 10,
   addToEngineDj: false,
   addToRekordbox: false,
   addToTraktor: false,

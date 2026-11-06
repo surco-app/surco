@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { basename, dirname, join } from 'node:path'
 import { app } from 'electron'
+import { CACHE_GB_DEFAULT, sanitizeCacheGb } from '../shared/analysisCacheSize'
 import { autoMatchAvailable } from '../shared/autoMatch'
 import { sanitizeMaxGb, sanitizeRetentionDays } from '../shared/backupPolicy'
 import {
@@ -65,6 +66,7 @@ export const defaults: Settings = {
   // The values the app shipped with as constants, now the starting point of a setting.
   backupRetentionDays: TRASH_RETENTION_DAYS,
   backupMaxGb: TRASH_MAX_BYTES / 1024 ** 3,
+  analysisCacheGb: CACHE_GB_DEFAULT,
   addToEngineDj: false,
   addToRekordbox: false,
   addToTraktor: false,
@@ -221,6 +223,7 @@ export const LOCAL_KEYS = [
   'columnShares',
   'beatportUsername',
   'beatportPassword',
+  'analysisCacheGb',
 ] as const satisfies readonly (keyof Settings)[]
 
 // Repairs any stored value into a valid format: a synced settings.json can carry an
@@ -361,6 +364,7 @@ function mergeSettings(base: Settings, patch: Partial<Settings>): Settings {
       patch.backupRetentionDays ?? base.backupRetentionDays,
     ),
     backupMaxGb: sanitizeMaxGb(patch.backupMaxGb ?? base.backupMaxGb),
+    analysisCacheGb: sanitizeCacheGb(patch.analysisCacheGb ?? base.analysisCacheGb),
     cueFlows: keepLegacyFlow(flows.flows, flows.active),
     activeCueFlow: flows.active,
     cueJumpBars: normalizeCueJumpBars(patch.cueJumpBars ?? base.cueJumpBars),

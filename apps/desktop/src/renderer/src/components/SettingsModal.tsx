@@ -492,6 +492,8 @@ export function SettingsModal({
                 onExportSettings={exportSettings}
                 onImportSettings={importSettings}
                 settingsFileError={settingsFileError}
+                local={local}
+                patchLocal={patchLocal}
               />
             )}
             {tab === 'search' && (

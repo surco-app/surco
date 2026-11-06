@@ -105,6 +105,7 @@ const local: LocalDraft = {
   betaUpdates: false,
   autoMatch: false,
   beatportUsername: '',
+  analysisCacheGb: 10,
 }
 
 function renderTab(

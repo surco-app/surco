@@ -91,6 +91,7 @@ export interface LocalDraft {
   betaUpdates: boolean
   autoMatch: boolean
   beatportUsername: string
+  analysisCacheGb: number
 }
 
 // Machine-local fields (token, folders, auto-match) aren't moved by a config-dir
@@ -106,6 +107,7 @@ export function pickLocal(s: Settings): LocalDraft {
     betaUpdates: s.betaUpdates,
     autoMatch: s.autoMatch,
     beatportUsername: s.beatportUsername,
+    analysisCacheGb: s.analysisCacheGb,
   }
 }
 

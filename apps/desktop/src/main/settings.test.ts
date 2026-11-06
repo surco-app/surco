@@ -1464,3 +1464,29 @@ describe('the collection path of each DJ program', () => {
     }
   })
 })
+
+describe('the analysis cache size', () => {
+  const wipe = (): void => {
+    rmSync(join(app.getPath('userData'), 'settings.json'), { force: true })
+    rmSync(join(app.getPath('userData'), 'config-dir.json'), { force: true })
+  }
+  beforeEach(wipe)
+  afterEach(wipe)
+
+  // The disk it fills is this Mac's: a laptop and the studio Mac differ in what they spare.
+  it('stays on the machine it was set on', () => {
+    expect(LOCAL_KEYS).toContain('analysisCacheGb')
+  })
+
+  it('starts at 10 GB, about 10,000 tracks', () => {
+    expect(defaults.analysisCacheGb).toBe(10)
+  })
+
+  it('repairs a size the file got wrong', () => {
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({ analysisCacheGb: 'lots' }),
+    )
+    expect(getSettings().analysisCacheGb).toBe(10)
+  })
+})
