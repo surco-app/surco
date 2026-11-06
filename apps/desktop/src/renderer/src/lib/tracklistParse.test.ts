@@ -54,6 +54,14 @@ describe('parseTracklist', () => {
     expect(line.raw).toBe('DJ Blyatman - Kamaz (feat. dlb)')
   })
 
+  it('drops the dash YouTube descriptions put after the time', () => {
+    expect(one('00:00 - Rave Allstars - Bitte Anschnallen')).toMatchObject({
+      at: '00:00',
+      artist: 'Rave Allstars',
+      raw: 'Rave Allstars - Bitte Anschnallen',
+    })
+  })
+
   it('accepts an en dash between artist and title', () => {
     expect(one('  - 1:13:45 Nick Kamen – I Promised Myself').artist).toBe('Nick Kamen')
   })

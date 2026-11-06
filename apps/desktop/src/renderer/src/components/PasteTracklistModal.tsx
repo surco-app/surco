@@ -220,7 +220,7 @@ export function PasteTracklistModal({
                         {match.candidates.length === 1 ? (
                           <div className="truncate text-xs text-fg-dim">
                             <Candidate line={match.line.title} track={match.candidates[0]} />
-                            {level === 'similar' && (
+                            {level === 'similar' && match.line.artist && (
                               <span className="text-fg-faint">
                                 {' '}
                                 · {tr('pasteTracklist.otherArtist')}

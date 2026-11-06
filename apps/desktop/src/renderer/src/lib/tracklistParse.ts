@@ -12,7 +12,7 @@ export interface ParsedTracklist {
   ignored: number
 }
 
-const TIME = /^\s*[-•*]?\s*((?:\d{1,2}:)?\d{1,2}:\d{2})\s+(.*)$/
+const TIME = /^\s*[-•*]?\s*((?:\d{1,2}:)?\d{1,2}:\d{2})\s+(?:[-–—|]\s+)?(.*)$/
 const SUGGESTED = /\s*\(\?\)\s*$/
 const DASHES = /\s[-–—]\s/g
 const UNTIMED_TRACK = /\s[-–]\s/

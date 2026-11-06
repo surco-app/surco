@@ -438,7 +438,7 @@ describe('the recently added list', () => {
 
   it('lists the collection as title, artist and content id for matching a pasted tracklist', () => {
     const rows = readRekordboxCollection(rdb)
-    expect(rows).toHaveLength(readRekordboxTrackCount(rdb))
+    expect(rows).toHaveLength(5)
     expect(rows.find((r) => r.contentId === 'c2')).toEqual({
       contentId: 'c2',
       path: PLAY.FolderPath,
@@ -446,6 +446,10 @@ describe('the recently added list', () => {
       artist: '2 Fabiola',
     })
     expect(rows.find((r) => r.contentId === 'edge')?.artist).toBe('')
+  })
+
+  it('leaves streamed tracks out of the collection, since a playlist add refuses them', () => {
+    expect(readRekordboxCollection(rdb).map((r) => r.contentId)).not.toContain(SPOTIFY.ID)
   })
 
   it('gives its rows what any playlist row has, so they open, play and show cues alike', () => {

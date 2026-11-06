@@ -34,8 +34,12 @@ export function baseTitle(title: string): string {
   return fold(title.replace(/\s*[([][^)\]]*[)\]]/g, '').replace(/-\d+$/, ''))
 }
 
+function startsWord(whole: string, part: string): boolean {
+  return ` ${whole} `.includes(` ${part} `) || ` ${whole} `.includes(` ${part}s `)
+}
+
 function overlap(a: string[], b: string[]): boolean {
-  return a.some((x) => b.some((y) => x === y || x.includes(y) || y.includes(x)))
+  return a.some((x) => b.some((y) => startsWord(x, y) || startsWord(y, x)))
 }
 
 function tokens(base: string): Set<string> {
@@ -92,6 +96,7 @@ function matchLine(line: TracklistLine, indexed: Indexed[]): TracklistMatch {
   const words = tokens(base)
   const artists = splitArtists(line.artist)
   const named = artists.length > 0
+  if (!base) return { line, level: 'absent', candidates: [] }
   const rank = (c: Indexed): number => (c.full === full ? 2 : 1 + dice(words, c.words))
   const sorted = (list: Indexed[]): CollectionTrack[] =>
     list
@@ -122,7 +127,7 @@ export function matchTracklist(
   lines: TracklistLine[],
   collection: CollectionTrack[],
 ): TracklistMatch[] {
-  const indexed = index(collection)
+  const indexed = index(collection).filter((c) => c.base)
   return lines.map((line) => matchLine(line, indexed))
 }
 

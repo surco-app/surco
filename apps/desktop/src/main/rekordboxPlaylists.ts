@@ -161,10 +161,10 @@ export function readRekordboxCollection(db: RekordboxDb): CollectionTrack[] {
     .prepare(
       `SELECT c.ID AS contentId, c.FolderPath, c.FileType, c.Title, a.Name AS Artist
          FROM djmdContent c LEFT JOIN djmdArtist a ON a.ID = c.ArtistID
-        WHERE ${ALL}
+        WHERE ${ALL} AND c.FileType <> ?
         ORDER BY c.StockDate DESC, c.created_at DESC`,
     )
-    .all() as {
+    .all(STREAMING_FILE_TYPE) as {
     contentId: string
     FolderPath: string
     FileType: number

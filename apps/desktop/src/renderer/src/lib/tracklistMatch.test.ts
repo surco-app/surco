@@ -235,3 +235,18 @@ describe('reviewRows and chosenTracks', () => {
     expect(chosenTracks(rows)[0].contentId).toBe('3 Ways - Real Love')
   })
 })
+
+describe('matchTracklist guards', () => {
+  it('never matches a title that folds to nothing, so a Japanese title is absent, not anything', () => {
+    const m = match(line('Perfume', 'ポリリズム'), [
+      track('Perfume', 'チョコレイト・ディスコ'),
+      track('Perfume', 'ポリリズム'),
+    ])
+    expect(m.level).toBe('absent')
+  })
+
+  it('needs a whole word for an artist to overlap, so Ian is not Brian', () => {
+    expect(match(line('Ian', 'Go'), [track('Brian', 'Go (Mix)')]).level).toBe('similar')
+    expect(match(line('Javi Pirata', 'Go'), [track("Javi Pirata's", 'Go')]).level).toBe('found')
+  })
+})
