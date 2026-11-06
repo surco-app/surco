@@ -31,7 +31,7 @@
 
 ---
 
-### Tarea 1: Parser del tracklist
+### Task 1: Parser del tracklist
 
 **Files:**
 - Create: `apps/desktop/src/renderer/src/lib/tracklistParse.ts`
@@ -90,7 +90,7 @@ git commit -m "Parse a pasted tracklist into artist, title, time and gaps"
 
 ---
 
-### Tarea 2: Emparejador contra la colección
+### Task 2: Emparejador contra la colección
 
 **Files:**
 - Create: `apps/desktop/src/renderer/src/lib/tracklistMatch.ts`
@@ -166,7 +166,7 @@ git commit -m "Match pasted tracklist lines against a DJ collection in four leve
 
 ---
 
-### Tarea 3: Elección del usuario y lista final
+### Task 3: Elección del usuario y lista final
 
 **Files:**
 - Modify: `apps/desktop/src/renderer/src/lib/tracklistMatch.ts`
@@ -200,7 +200,7 @@ git commit -am "Keep the user's picks over tracklist matches and dedupe the trac
 
 ---
 
-### Tarea 4: IPC de colección por programa
+### Task 4: IPC de colección por programa
 
 **Files:**
 - Modify: `apps/desktop/src/main/rekordboxPlaylists.ts` (junto a `readRekordboxTrackCount`, línea 158)
@@ -251,7 +251,7 @@ git commit -am "Expose each DJ collection as title, artist and content id over I
 
 ---
 
-### Tarea 5: Item del menú en el árbol
+### Task 5: Item del menú en el árbol
 
 **Files:**
 - Modify: `apps/desktop/src/renderer/src/components/SourceTree.tsx` (props `edit` líneas 78-84; menú líneas 566-590)
@@ -289,7 +289,7 @@ git commit -am "Offer Paste tracklist in the playlist tree's context menu"
 
 ---
 
-### Tarea 6: El modal
+### Task 6: El modal
 
 **Files:**
 - Create: `apps/desktop/src/renderer/src/components/PasteTracklistModal.tsx`
@@ -365,7 +365,7 @@ git commit -m "Add the Paste tracklist modal with its paste and review steps"
 
 ---
 
-### Tarea 7: Cablear en App
+### Task 7: Cablear en App
 
 **Files:**
 - Modify: `apps/desktop/src/renderer/src/App.tsx` (`treeEdit` ~2746; render de `SourceTree` ~3502; junto a los otros modales en `ModalExit`)
@@ -413,7 +413,7 @@ git commit -am "Paste a tracklist into a playlist or a new playlist from the tre
 
 ---
 
-### Tarea 8: Comprobación en la app real
+### Task 8: Comprobación en la app real
 
 - [ ] Con el skill `run` (driver de Surco), abrir la pestaña rekordbox, botón derecho en una playlist de prueba, pegar `set3-xtv-remember.txt`, comprobar el recuento 9 / 19 / 3 / 0 contra la colección real, aceptar las 3 parecidas, Añadir 30, y verificar en rekordbox (o releyendo la playlist en Surco) que las 30 están en el orden del set.
 - [ ] Captura de las dos pantallas para el changelog.
