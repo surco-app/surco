@@ -574,6 +574,8 @@ export default function App(): React.JSX.Element {
   // never re-runs the search; cleared on failure so a transient error can retry.
   const discogsPrefetched = useRef<Set<string>>(new Set())
   const autoAnalyzeHeld = useRef<TrackItem[]>([])
+  // Analyze was pressed this session, which brings the measuring the filters need along.
+  const [analyzeAsked, setAnalyzeAsked] = useState(false)
   const [autoAnalyzeHeldCount, setAutoAnalyzeHeldCount] = useState(0)
   // The failures behind the standing error card. The toast is keyed, so a batch that
   // breaks on thirty tracks collapses onto one card — which is why the card has to carry
@@ -1946,11 +1948,17 @@ export default function App(): React.JSX.Element {
         (programOf(contentId) === 'traktor' && /\.mp3$/i.test(pathOf.get(trackId) ?? '')),
     )
   }, [playlistScope])
-  const gridVerdicts = useGridVerdicts(gridEntries, filterSelection.attention === 'badGrid')
+  // The grids and the comparison with the library copy are part of the analysis: they run
+  // with it, by themselves when every import is analysed, else once Analyze is pressed. Picking
+  // their filter still starts them, for a list nobody analysed yet.
+  const measureAll = Boolean(settings?.autoAnalyze) || analyzeAsked
+  const measuringGrid = filterSelection.attention === 'badGrid' || measureAll
+  const measuringLibrary = filterSelection.library === 'betterThanLibrary' || measureAll
+  const gridVerdicts = useGridVerdicts(gridEntries, measuringGrid)
   const libraryCopyVerdicts = useLibraryCopyVerdicts(
     scopeTracks,
     librarySource === 'appleMusic' ? libraryIndex : null,
-    filterSelection.library === 'betterThanLibrary',
+    measuringLibrary,
   )
   const gridNoteOf = useMemo(() => {
     if (filterSelection.attention !== 'badGrid') return undefined
@@ -2221,7 +2229,10 @@ export default function App(): React.JSX.Element {
     askFillAll(bulkTracksRef.current, { fromSelection: selectedTracks.length > 1 }),
   )
   const onFindReplace = useStableCallback(overlays.openFindReplace)
-  const onAnalyzeAll = useStableCallback(() => analyzeAllQuality())
+  const onAnalyzeAll = useStableCallback(() => {
+    setAnalyzeAsked(true)
+    analyzeAllQuality()
+  })
   const autoMatchTracks = useStableCallback((targets: TrackItem[]) => {
     allowAutoMatch(targets.map((t) => t.id))
     enqueueAutoMatch(targets)
@@ -2964,8 +2975,17 @@ export default function App(): React.JSX.Element {
   // once every visible row is measured — not the hidden ones. Change the filter to reveal
   // unanalysed tracks and the button re-enables. O(N), memoised over the visible set.
   const allAnalyzed = useMemo(
-    () => visibleTracks.every((t) => Boolean(t.spectrum)),
-    [visibleTracks],
+    () =>
+      visibleTracks.every((t) => Boolean(t.spectrum)) &&
+      gridVerdicts.done >= gridVerdicts.total &&
+      libraryCopyVerdicts.done >= libraryCopyVerdicts.total,
+    [
+      visibleTracks,
+      gridVerdicts.done,
+      gridVerdicts.total,
+      libraryCopyVerdicts.done,
+      libraryCopyVerdicts.total,
+    ],
   )
 
   // Move keyboard focus between the three columns. The targets are found by their stable
@@ -3563,13 +3583,13 @@ export default function App(): React.JSX.Element {
                             qualityTally={qualityTally}
                             gridMeasure={{
                               offered: gridEntries.length > 0,
-                              measuring: filterSelection.attention === 'badGrid',
+                              measuring: measuringGrid,
                               done: gridVerdicts.done,
                               total: gridVerdicts.total,
                             }}
                             libraryMeasure={{
                               offered: libraryCopyVerdicts.total > 0,
-                              measuring: filterSelection.library === 'betterThanLibrary',
+                              measuring: measuringLibrary,
                               done: libraryCopyVerdicts.done,
                               total: libraryCopyVerdicts.total,
                             }}
