@@ -253,7 +253,7 @@
           {
             "t": "Your rekordbox playlists",
             "s": "Open and organise your rekordbox playlists without leaving Surco.",
-            "d": "Open them in Surco with their folders and in their order, with rekordbox's waveform and cues on every track. And organise them from here. Create, rename and delete playlists and folders, add, remove and reorder tracks, and pick in the editor which playlists each track is in. If rekordbox is open, the changes wait for you to close it. «Recently added» comes first, with what you added to the collection in the last 30 days, then «All tracks», with your whole collection, including what is in no playlist. If you don't use rekordbox or Apple Music, hide that source."
+            "d": "Open them in Surco with their folders and in their order, with rekordbox's waveform and cues on every track. And organise them from here. Create, rename and delete playlists and folders, add, remove and reorder tracks, and pick in the editor which playlists each track is in. If rekordbox is open, the changes wait for you to close it. «Recently added» comes first, with what you added to the collection in the last 30 days, then «All tracks», with your whole collection, including what is in no playlist. If you don't use rekordbox or Apple Music, hide that source. And if you have a set's tracklist, paste it onto a playlist with “Paste tracklist…” and Surco looks each line up in your collection, shows you what it found and adds the tracks in the set's order. In Traktor and Serato too."
           },
           {
             "t": "rekordbox cues",
@@ -782,7 +782,9 @@
         "group": "tag",
         "title": "Match a whole release",
         "s": "Apply a whole release to all its tracks at once.",
-        "body": ["It's for an album or an EP you imported whole."],
+        "body": [
+          "It's for an album or an EP you imported whole."
+        ],
         "steps": [
           {
             "lead": "Select the tracks.",
@@ -904,7 +906,9 @@
         "group": "out",
         "title": "Name and organize the files",
         "s": "Files and folders named the way you want.",
-        "body": ["By default Surco keeps the original filename and you decide when to rename."],
+        "body": [
+          "By default Surco keeps the original filename and you decide when to rename."
+        ],
         "steps": [
           {
             "lead": "Build the template.",
@@ -1054,7 +1058,9 @@
         "group": "keep",
         "title": "Shortcuts and settings",
         "s": "Nearly everything has a shortcut, ⌘K finds it and Settings holds the rest.",
-        "body": ["Surco is built to work without a mouse."],
+        "body": [
+          "Surco is built to work without a mouse."
+        ],
         "steps": [
           {
             "lead": "Open the palette.",

@@ -253,7 +253,7 @@
           {
             "t": "Deine rekordbox-Playlists",
             "s": "Öffne und organisiere deine rekordbox-Playlists, ohne Surco zu verlassen.",
-            "d": "Öffne sie in Surco mit ihren Ordnern und in ihrer Reihenfolge, mit der Wellenform und den Cues von rekordbox bei jedem Track. Und organisiere sie von hier aus. Leg Playlists und Ordner an, benenne sie um und lösche sie, füge Tracks hinzu, entferne und sortiere sie, und wähle im Editor, in welchen Playlists jeder Track steckt. Ist rekordbox offen, warten die Änderungen, bis du es schließt. „Zuletzt hinzugefügt“ steht ganz oben, mit dem, was du in den letzten 30 Tagen zur Sammlung hinzugefügt hast, danach „Alle Titel“, mit deiner ganzen Sammlung, auch dem, was in keiner Playlist ist. Nutzt du rekordbox oder Apple Music nicht, blende diese Quelle aus."
+            "d": "Öffne sie in Surco mit ihren Ordnern und in ihrer Reihenfolge, mit der Wellenform und den Cues von rekordbox bei jedem Track. Und organisiere sie von hier aus. Leg Playlists und Ordner an, benenne sie um und lösche sie, füge Tracks hinzu, entferne und sortiere sie, und wähle im Editor, in welchen Playlists jeder Track steckt. Ist rekordbox offen, warten die Änderungen, bis du es schließt. „Zuletzt hinzugefügt“ steht ganz oben, mit dem, was du in den letzten 30 Tagen zur Sammlung hinzugefügt hast, danach „Alle Titel“, mit deiner ganzen Sammlung, auch dem, was in keiner Playlist ist. Nutzt du rekordbox oder Apple Music nicht, blende diese Quelle aus. Und hast du die Tracklist eines Sets, fügst du sie mit „Tracklist einfügen…“ in eine Playlist ein, und Surco sucht jede Zeile in deiner Sammlung, zeigt dir, was es gefunden hat, und fügt die Tracks in der Reihenfolge des Sets hinzu. Auch in Traktor und Serato."
           },
           {
             "t": "rekordbox-Cues",
@@ -782,7 +782,9 @@
         "group": "tag",
         "title": "Ein ganzes Release abgleichen",
         "s": "Übernimm ein ganzes Release auf einmal für alle seine Tracks.",
-        "body": ["Das ist für ein Album oder eine EP, die du komplett importiert hast."],
+        "body": [
+          "Das ist für ein Album oder eine EP, die du komplett importiert hast."
+        ],
         "steps": [
           {
             "lead": "Wähle die Tracks aus.",
@@ -1056,7 +1058,9 @@
         "group": "keep",
         "title": "Kürzel und Einstellungen",
         "s": "Fast alles hat ein Kürzel, ⌘K findet es, und die Einstellungen halten den Rest.",
-        "body": ["Surco ist dafür gebaut, ohne Maus zu arbeiten."],
+        "body": [
+          "Surco ist dafür gebaut, ohne Maus zu arbeiten."
+        ],
         "steps": [
           {
             "lead": "Öffne die Palette.",

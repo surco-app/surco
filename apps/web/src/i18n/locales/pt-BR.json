@@ -253,7 +253,7 @@
           {
             "t": "Suas playlists do rekordbox",
             "s": "Abra e organize suas playlists do rekordbox sem sair do Surco.",
-            "d": "Abra-as no Surco com suas pastas e na sua ordem, com a onda e os cues do rekordbox em cada faixa. E organize-as daqui. Crie, renomeie e apague playlists e pastas, adicione, remova e reordene faixas, e escolha no editor em quais playlists cada faixa está. Se o rekordbox estiver aberto, as mudanças esperam você fechá-lo. «Adicionadas recentemente» vem primeiro, com o que você adicionou à coleção nos últimos 30 dias, e depois «Todas as faixas», com a sua coleção inteira, inclusive o que não está em nenhuma playlist. Se você não usa rekordbox ou Apple Music, oculte essa fonte."
+            "d": "Abra-as no Surco com suas pastas e na sua ordem, com a onda e os cues do rekordbox em cada faixa. E organize-as daqui. Crie, renomeie e apague playlists e pastas, adicione, remova e reordene faixas, e escolha no editor em quais playlists cada faixa está. Se o rekordbox estiver aberto, as mudanças esperam você fechá-lo. «Adicionadas recentemente» vem primeiro, com o que você adicionou à coleção nos últimos 30 dias, e depois «Todas as faixas», com a sua coleção inteira, inclusive o que não está em nenhuma playlist. Se você não usa rekordbox ou Apple Music, oculte essa fonte. E se você tem a tracklist de um set, cole-a numa playlist com «Colar tracklist…» e o Surco procura cada linha na sua coleção, mostra o que encontrou e adiciona as faixas na ordem do set. No Traktor e no Serato também."
           },
           {
             "t": "Cues do rekordbox",
@@ -782,7 +782,9 @@
         "group": "tag",
         "title": "Associe um release inteiro",
         "s": "Aplique um release inteiro a todas as faixas dele de uma vez.",
-        "body": ["Serve para um álbum ou EP que você importou inteiro."],
+        "body": [
+          "Serve para um álbum ou EP que você importou inteiro."
+        ],
         "steps": [
           {
             "lead": "Selecione as faixas.",
@@ -904,7 +906,9 @@
         "group": "out",
         "title": "Nomeie e organize os arquivos",
         "s": "Arquivos e pastas com o nome que você quiser.",
-        "body": ["Por padrão o Surco mantém o nome original e você decide quando renomear."],
+        "body": [
+          "Por padrão o Surco mantém o nome original e você decide quando renomear."
+        ],
         "steps": [
           {
             "lead": "Monte o modelo.",
@@ -1054,7 +1058,9 @@
         "group": "keep",
         "title": "Atalhos e ajustes",
         "s": "Quase tudo tem atalho, o ⌘K encontra e os Ajustes guardam o resto.",
-        "body": ["O Surco foi feito para trabalhar sem mouse."],
+        "body": [
+          "O Surco foi feito para trabalhar sem mouse."
+        ],
         "steps": [
           {
             "lead": "Abra a paleta.",
