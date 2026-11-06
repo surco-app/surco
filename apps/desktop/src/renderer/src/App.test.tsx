@@ -3327,6 +3327,7 @@ describe('App source playlists', () => {
         loadRekordboxPlaylist: vi
           .fn<Api['loadRekordboxPlaylist']>()
           .mockImplementation(async (id) => (id === ALL_TRACKS_ID ? ENTRIES : [ENTRIES[0]])),
+        rekordboxGridVerdict: vi.fn<Api['rekordboxGridVerdict']>().mockResolvedValue(null),
       }
 
       function scrollPast(rows: HTMLElement[]): void {
