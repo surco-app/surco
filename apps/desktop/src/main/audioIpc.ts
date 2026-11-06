@@ -498,25 +498,28 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
   // player/compare strip pays for it. Its own cache namespace, so each entry always holds a
   // complete answer for its own contract — the peaks-only wave is never starved of marks,
   // and this is never served a wave with no scan.
-  handleAudio('audio:waveform-scan', async (_e, inputPath: string) => {
-    try {
-      const scan = await cachedAnalysis(CHANNELSCAN_NAMESPACE, inputPath, () =>
-        probe('activity.probeWaveform', inputPath, () =>
-          // Registered for cancellation like audio:waveform: the two probes now share one
-          // native decode, and it is only stopped once BOTH have gone away — so the scan
-          // has to report its own departure or a browsed-past track keeps decoding.
-          cancellable(inputPath, 'high', (signal) =>
-            analysisLimiter.run(() => measureChannelScan(inputPath, signal), 'high', signal),
+  handleAudio(
+    'audio:waveform-scan',
+    async (_e, inputPath: string, priority: 'high' | 'low' = 'high') => {
+      try {
+        const scan = await cachedAnalysis(CHANNELSCAN_NAMESPACE, inputPath, () =>
+          probe('activity.probeWaveform', inputPath, () =>
+            // Registered for cancellation like audio:waveform: the two probes now share one
+            // native decode, and it is only stopped once BOTH have gone away — so the scan
+            // has to report its own departure or a browsed-past track keeps decoding.
+            cancellable(inputPath, priority, (signal) =>
+              analysisLimiter.run(() => measureChannelScan(inputPath, signal), priority, signal),
+            ),
           ),
-        ),
-      )
-      await peekVerdict(CHANNELSCAN_NAMESPACE, inputPath, scanVerdictOf).catch(() => null)
-      return scan
-    } catch (err) {
-      if (!isAbortError(err)) log.error('audio:waveform-scan failed', err)
-      return null
-    }
-  })
+        )
+        await peekVerdict(CHANNELSCAN_NAMESPACE, inputPath, scanVerdictOf).catch(() => null)
+        return scan
+      } catch (err) {
+        if (!isAbortError(err)) log.error('audio:waveform-scan failed', err)
+        return null
+      }
+    },
+  )
 
   // Batch hydration for the track list on load: one round trip that peeks the disk
   // cache for every dropped path and returns whatever is already warm, computing

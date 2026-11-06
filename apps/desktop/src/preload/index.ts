@@ -487,8 +487,8 @@ const api: Api = {
     path: string,
     priority: 'urgent' | 'high' | 'low' = 'low',
   ): Promise<WaveformResult | null> => invokeAudio('audio:waveform', path, priority),
-  waveformScan: (path: string): Promise<WaveformScan | null> =>
-    invokeAudio('audio:waveform-scan', path),
+  waveformScan: (path: string, priority: 'high' | 'low' = 'high'): Promise<WaveformScan | null> =>
+    invokeAudio('audio:waveform-scan', path, priority),
   waveformWindow: (
     path: string,
     startSec: number,

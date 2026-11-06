@@ -36,8 +36,10 @@ export function useWaveform(
 // heavier probe from the peaks above, so the editor sections that draw just the envelope
 // (trim, declick) never trigger it. Its own cache entry, always complete for its
 // own contract, so the peaks-only wave is never starved of marks and vice versa.
-export function waveformScanOptions(inputPath: string) {
-  return analysisOptions('waveformScan', inputPath, () => window.api.waveformScan(inputPath))
+export function waveformScanOptions(inputPath: string, priority: 'high' | 'low' = 'high') {
+  return analysisOptions('waveformScan', inputPath, () =>
+    window.api.waveformScan(inputPath, priority),
+  )
 }
 
 // Where the list finds a track's clipping fact once the scan above is gone: the query

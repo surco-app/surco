@@ -90,7 +90,7 @@ export interface AudioAnalysisIpc {
     result: WaveformResult | null
   }
   'audio:waveform-scan': {
-    args: [inputPath: string]
+    args: [inputPath: string, priority?: 'high' | 'low']
     result: WaveformScan | null
   }
   'audio:waveformWindow': {

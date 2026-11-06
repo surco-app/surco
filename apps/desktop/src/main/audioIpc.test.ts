@@ -52,7 +52,7 @@ vi.mock('./analysisCancel', () => ({
   isAbortError: () => false,
 }))
 vi.mock('./analysisLimiter', () => ({
-  analysisLimiter: { run: (fn: () => unknown) => fn() },
+  analysisLimiter: { run: vi.fn((fn: () => unknown) => fn()) },
 }))
 
 import { mkdtempSync, rmSync } from 'node:fs'
@@ -61,6 +61,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { app, ipcMain } from 'electron'
 import { cachedAnalysis, pruneAnalysisCache } from './analysisCache'
+import { analysisLimiter } from './analysisLimiter'
 import { registerAudioIpc } from './audioIpc'
 import {
   buildSpectrum,
@@ -563,5 +564,25 @@ describe('audio:declickPreview', () => {
     expect(killed).toEqual([1])
     settle[1](null)
     await second
+  })
+})
+
+describe('audio:waveform-scan priority', () => {
+  it('queues a background sweep scan in the low lane, behind the track on screen', async () => {
+    const file = await makeFile()
+    vi.mocked(measureChannelScan).mockResolvedValue(null)
+
+    await handlerFor('audio:waveform-scan')({}, file, 'low')
+
+    expect(vi.mocked(analysisLimiter.run).mock.calls[0]?.[1]).toBe('low')
+  })
+
+  it('keeps the player strip scan in the high lane when no lane is given', async () => {
+    const file = await makeFile()
+    vi.mocked(measureChannelScan).mockResolvedValue(null)
+
+    await handlerFor('audio:waveform-scan')({}, file)
+
+    expect(vi.mocked(analysisLimiter.run).mock.calls[0]?.[1]).toBe('high')
   })
 })

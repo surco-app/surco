@@ -248,7 +248,7 @@ export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params)
           // collection-wide instead of only for tracks the user opened or played.
           await Promise.all([
             queryClient.fetchQuery(waveformOptions(path)),
-            queryClient.fetchQuery(waveformScanOptions(path)),
+            queryClient.fetchQuery(waveformScanOptions(path, 'low')),
           ])
           // Each probe returns a different result type, so the fetchQuery calls are wrapped
           // as thunks: kept in one array they'd unify to a union of option shapes fetchQuery
