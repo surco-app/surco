@@ -1,0 +1,314 @@
+import { useQuery } from '@tanstack/react-query'
+import type React from 'react'
+import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import type { DjProgram } from '../../../shared/djProgram'
+import type { CollectionTrack, PlaylistTrackRef, SourceNode } from '../../../shared/types'
+import { SOURCE_READ } from '../lib/sourcePrograms'
+import {
+  chosenTracks,
+  type MatchLevel,
+  matchTracklist,
+  type ReviewRow,
+  reviewRows,
+} from '../lib/tracklistMatch'
+import { parseTracklist } from '../lib/tracklistParse'
+import { ModalShell } from './ModalShell'
+
+interface Props {
+  program: DjProgram
+  node: SourceNode
+  create: boolean
+  onAdd: (tracks: PlaylistTrackRef[], newName: string | null) => void
+  onClose: () => void
+}
+
+const DOT: Record<Exclude<MatchLevel, 'absent'>, string> = {
+  found: 'bg-good',
+  doubtful: 'bg-warn',
+  similar: 'border border-fg-faint',
+}
+
+const CHIP = 'press rounded-full border px-2.5 py-0.5 text-[11px]'
+const CHIP_OFF = `${CHIP} border-[var(--color-line-strong)] text-fg-muted hover:bg-[var(--color-hover)] hover:text-fg`
+const CHIP_ON = `${CHIP} border-transparent bg-[var(--color-accent-soft)] text-fg`
+
+function mixOf(title: string): string {
+  return title.match(/[([]([^)\]]*)[)\]]\s*$/)?.[1] ?? ''
+}
+
+function Candidate({ line, track }: { line: string; track: CollectionTrack }): React.JSX.Element {
+  const mix = mixOf(track.title)
+  const differs = mix && mix !== mixOf(line)
+  const head = differs ? track.title.slice(0, track.title.lastIndexOf(`(${mix})`)) : track.title
+  return (
+    <>
+      {track.artist && `${track.artist} - `}
+      {head}
+      {differs && <em className="text-warn not-italic">({mix})</em>}
+    </>
+  )
+}
+
+export function PasteTracklistModal({
+  program,
+  node,
+  create,
+  onAdd,
+  onClose,
+}: Props): React.JSX.Element {
+  const { t: tr } = useTranslation()
+  const [text, setText] = useState('')
+  const [name, setName] = useState('')
+  const [step, setStep] = useState<'paste' | 'review'>('paste')
+  const [rows, setRows] = useState<ReviewRow[] | null>(null)
+  const parsed = useMemo(() => parseTracklist(text), [text])
+  const collection = useQuery({
+    queryKey: ['source-collection', program],
+    queryFn: () => SOURCE_READ[program].collection?.() ?? Promise.resolve([]),
+    enabled: step === 'review',
+    staleTime: 60_000,
+  })
+  const matches = useMemo(
+    () => (collection.data ? matchTracklist(parsed.lines, collection.data) : null),
+    [collection.data, parsed.lines],
+  )
+  const review = rows ?? (matches ? reviewRows(matches) : null)
+  const settled = collection.data !== undefined || collection.isError
+  const chosen = review ? chosenTracks(review) : []
+  const playlistName = create ? name.trim() : node.name
+  const canSearch = parsed.lines.length > 0 && playlistName !== ''
+
+  const count = (level: MatchLevel): number => matches?.filter((m) => m.level === level).length ?? 0
+  const update = (i: number, patch: Partial<ReviewRow>): void => {
+    if (!review) return
+    setRows(review.map((row, j) => (j === i ? { ...row, ...patch } : row)))
+  }
+  const submit = (): void => {
+    if (step === 'paste') {
+      if (canSearch) setStep('review')
+      return
+    }
+    if (chosen.length === 0) return
+    onAdd(
+      chosen.map((t) => ({ contentId: t.contentId, paths: t.path ? [t.path] : [] })),
+      create ? playlistName : null,
+    )
+    onClose()
+  }
+
+  return (
+    <ModalShell
+      onClose={onClose}
+      backdropTestId="paste-tracklist-backdrop"
+      dialogTestId="paste-tracklist-dialog"
+      labelledBy="paste-tracklist-title"
+      className={`${step === 'paste' ? 'w-[560px]' : 'w-[760px]'} max-w-[calc(100vw-32px)] rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-6`}
+      onSubmit={submit}
+    >
+      <div className="-mx-6 -mt-6 mb-4 border-b border-[var(--color-line)] px-6 pt-5 pb-3">
+        <h2 id="paste-tracklist-title" className="text-base font-semibold">
+          {create ? tr('pasteTracklist.titleNew') : tr('pasteTracklist.title', { name: node.name })}
+        </h2>
+        <p className="mt-0.5 text-xs text-fg-dim">
+          {step === 'paste'
+            ? tr('pasteTracklist.hint')
+            : tr('pasteTracklist.reviewHint', {
+                have: review?.length ?? 0,
+                total: parsed.lines.length,
+              })}
+        </p>
+      </div>
+
+      {step === 'paste' ? (
+        <>
+          {create && (
+            <label className="mb-3 block">
+              <span className="mb-1 block text-[11px] text-fg-dim">
+                {tr('pasteTracklist.name')}
+              </span>
+              <input
+                data-testid="paste-tracklist-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
+              />
+            </label>
+          )}
+          <textarea
+            data-testid="paste-tracklist-text"
+            aria-label={tr('pasteTracklist.hint')}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            spellCheck={false}
+            rows={12}
+            className="w-full resize-y rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 font-mono text-xs leading-relaxed outline-none focus:border-[var(--color-accent)]"
+          />
+          <div className="mt-5 flex items-center gap-2">
+            <span data-testid="paste-tracklist-count" className="mr-auto text-xs text-fg-dim">
+              {tr('pasteTracklist.count', { count: parsed.lines.length })}
+              {parsed.gaps > 0 && `, ${tr('pasteTracklist.gaps', { count: parsed.gaps })}`}
+            </span>
+            <button
+              type="button"
+              onClick={onClose}
+              className="press rounded-lg border border-[var(--color-line-strong)] px-4 py-2 text-sm font-medium hover:bg-[var(--color-hover)]"
+            >
+              {tr('common.cancel')}
+            </button>
+            <button
+              type="submit"
+              data-testid="paste-tracklist-search"
+              disabled={!canSearch}
+              className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
+            >
+              {tr('pasteTracklist.search', { program: tr(`sources.${program}`) })}
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
+          {!settled ? (
+            <p className="py-8 text-center text-sm text-fg-dim">{tr('pasteTracklist.loading')}</p>
+          ) : (
+            <>
+              <div
+                data-testid="paste-tracklist-summary"
+                className="mb-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-fg-dim"
+              >
+                <span>
+                  <span className={`mr-1.5 inline-block size-2 rounded-full ${DOT.found}`} />
+                  {tr('pasteTracklist.found', { count: count('found') })}
+                </span>
+                <span>
+                  <span className={`mr-1.5 inline-block size-2 rounded-full ${DOT.doubtful}`} />
+                  {tr('pasteTracklist.doubtful', { count: count('doubtful') })}
+                </span>
+                <span>
+                  <span className={`mr-1.5 inline-block size-2 rounded-full ${DOT.similar}`} />
+                  {tr('pasteTracklist.similar', { count: count('similar') })}
+                </span>
+                <span className="ml-auto">
+                  {collection.isError
+                    ? tr('pasteTracklist.failed')
+                    : tr('pasteTracklist.absent', { count: count('absent') })}
+                </span>
+              </div>
+              <ul className="max-h-[440px] overflow-y-auto rounded-[10px] border border-[var(--color-line)] bg-[var(--color-field)]">
+                {review?.map((row, i) => {
+                  const { match } = row
+                  const level = match.level as Exclude<MatchLevel, 'absent'>
+                  return (
+                    <li
+                      key={`${match.line.at ?? ''} ${match.line.raw}`}
+                      data-testid={`paste-tracklist-row-${i}`}
+                      className="grid grid-cols-[56px_8px_1fr_auto] items-center gap-x-2.5 border-t border-[var(--color-line)] px-3 py-1.5 first:border-t-0"
+                    >
+                      <span className="font-mono text-[11px] text-fg-faint tabular-nums">
+                        {match.line.at ?? ''}
+                      </span>
+                      <span className={`size-2 rounded-full ${DOT[level]}`} />
+                      <div className="min-w-0">
+                        <div className="truncate text-[13px]">
+                          {match.line.raw}
+                          {match.line.suggested && (
+                            <small className="ml-1.5 text-fg-faint">
+                              {tr('pasteTracklist.suggestedMark')}
+                            </small>
+                          )}
+                        </div>
+                        {match.candidates.length === 1 ? (
+                          <div className="truncate text-xs text-fg-dim">
+                            <Candidate line={match.line.title} track={match.candidates[0]} />
+                            {level === 'similar' && (
+                              <span className="text-fg-faint">
+                                {' '}
+                                · {tr('pasteTracklist.otherArtist')}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="mt-0.5 grid gap-0.5">
+                            {match.candidates.map((c, j) => (
+                              <label
+                                key={c.contentId}
+                                className="flex items-center gap-2 text-xs text-fg-dim"
+                              >
+                                <input
+                                  type="radio"
+                                  data-testid={`paste-tracklist-pick-${i}-${j}`}
+                                  name={`paste-tracklist-pick-${i}`}
+                                  checked={row.picked === j}
+                                  onChange={() => update(i, { picked: j })}
+                                  className="accent-[var(--color-accent)]"
+                                />
+                                <span className="truncate">
+                                  <Candidate line={match.line.title} track={c} />
+                                </span>
+                              </label>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      {level === 'found' ? (
+                        <span className="text-[11px] text-fg-faint">
+                          {tr('pasteTracklist.willAdd')}
+                        </span>
+                      ) : (
+                        <div className="flex gap-1">
+                          <button
+                            type="button"
+                            data-testid={`paste-tracklist-accept-${i}`}
+                            aria-pressed={row.included}
+                            onClick={() => update(i, { included: true })}
+                            className={row.included ? CHIP_ON : CHIP_OFF}
+                          >
+                            {tr('pasteTracklist.accept')}
+                          </button>
+                          <button
+                            type="button"
+                            data-testid={`paste-tracklist-exclude-${i}`}
+                            aria-pressed={!row.included}
+                            onClick={() => update(i, { included: false })}
+                            className={row.included ? CHIP_OFF : CHIP_ON}
+                          >
+                            {tr('pasteTracklist.exclude')}
+                          </button>
+                        </div>
+                      )}
+                    </li>
+                  )
+                })}
+              </ul>
+            </>
+          )}
+          <div className="mt-5 flex items-center gap-2">
+            <span className="mr-auto text-xs text-fg-dim">
+              {settled &&
+                tr('pasteTracklist.summary', { count: chosen.length, name: playlistName })}
+            </span>
+            <button
+              type="button"
+              data-testid="paste-tracklist-back"
+              onClick={() => {
+                setRows(null)
+                setStep('paste')
+              }}
+              className="press rounded-lg border border-[var(--color-line-strong)] px-4 py-2 text-sm font-medium hover:bg-[var(--color-hover)]"
+            >
+              {tr('pasteTracklist.back')}
+            </button>
+            <button
+              type="submit"
+              data-testid="paste-tracklist-add"
+              disabled={!settled || chosen.length === 0}
+              className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
+            >
+              {tr('pasteTracklist.add', { count: chosen.length })}
+            </button>
+          </div>
+        </>
+      )}
+    </ModalShell>
+  )
+}
