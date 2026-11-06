@@ -39,6 +39,10 @@
       {
         "text": "«Rejilla mal» recuerda lo que ha medido. Al volver a abrir una playlist ya no lee otra vez cada archivo, y solo vuelve a medir una pista si cambia el archivo o su rejilla en tu programa de DJ.",
         "in": "1.27.1"
+      },
+      {
+        "text": "Surco ya no vuelve a analizar una biblioteca grande cada vez que la abres. La caché de análisis guarda unas 10.000 pistas, antes unas 2.000, y en Ajustes › Avanzado › Caché de análisis eliges su «Tamaño máximo» viendo cuántas pistas caben. Las etiquetas, el BPM y la tonalidad ya no se borran para hacer sitio, y una pista con su calidad ya medida no se vuelve a medir al abrir su playlist.",
+        "in": "1.27.2"
       }
     ]
   },

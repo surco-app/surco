@@ -39,6 +39,10 @@
       {
         "text": "“Grade errada” lembra o que mediu. Reabrir uma playlist não lê mais cada arquivo de novo, e uma faixa só é medida outra vez se o arquivo ou a grade dela no seu programa de DJ mudar.",
         "in": "1.27.1"
+      },
+      {
+        "text": "O Surco não analisa mais uma biblioteca grande de novo toda vez que você a abre. O cache de análise guarda cerca de 10.000 faixas, antes cerca de 2.000, e em Ajustes › Avançado › Cache de análise você escolhe o “Tamanho máximo” vendo quantas faixas cabem. Tags, BPM e tom não são mais apagados para abrir espaço, e uma faixa com a qualidade já medida não é medida de novo ao abrir a playlist dela.",
+        "in": "1.27.2"
       }
     ]
   },

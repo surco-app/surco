@@ -39,6 +39,10 @@
       {
         "text": "« Grille fausse » se souvient de ce qu’il a mesuré. Rouvrir une playlist ne relit plus chaque fichier, et un morceau n’est remesuré que si son fichier ou sa grille dans ton logiciel DJ change.",
         "in": "1.27.1"
+      },
+      {
+        "text": "Surco ne réanalyse plus une grande bibliothèque chaque fois que tu l’ouvres. Le cache d’analyse garde environ 10 000 morceaux, contre environ 2 000 avant, et dans Réglages › Avancé › Cache d'analyse tu choisis sa « Taille maximale » en voyant combien de morceaux y tiennent. Les tags, le BPM et la tonalité ne sont plus effacés pour faire de la place, et un morceau dont la qualité est déjà mesurée n’est plus remesuré quand tu ouvres sa playlist.",
+        "in": "1.27.2"
       }
     ]
   },
