@@ -261,7 +261,7 @@ describe('QualityFilterBar', () => {
     })
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
     expect(screen.getByTestId('quality-filter-betterThanLibrary')).toHaveTextContent(
-      /^Better than Apple Music25 %3$/,
+      /^Better than Music25 %3$/,
     )
     expect(hoverTooltip(screen.getByTestId('quality-filter-betterThanLibrary-progress'))).toEqual(
       'Measuring 10 of 40',
