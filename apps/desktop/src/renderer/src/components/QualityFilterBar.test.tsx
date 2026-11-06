@@ -151,19 +151,20 @@ describe('QualityFilterBar menu', () => {
 describe('QualityFilterBar sections', () => {
   // The old single list grew past 1,100 px once every filter showed, so it hid each one
   // while nothing was in it, and a filter was there one day and gone the next. The sections
-  // are fixed, always in this order, so where a filter lives never changes.
-  it('lists the same sections in the same order whatever the crate holds', () => {
+  // are fixed, always in this order, so where a filter lives never changes. The order is the
+  // one a crate is worked in, from whether the file is worth keeping to converting it.
+  it('lists the same sections, in the order a crate is worked, whatever the crate holds', () => {
     const order = (): (string | null)[] =>
       screen.getAllByRole('tab').map((el) => el.getAttribute('data-testid'))
     const expected = [
-      'status',
+      'quality',
+      'library',
       'list',
       'stars',
-      'quality',
-      'tags',
       'match',
+      'tags',
       'attention',
-      'library',
+      'status',
       'format',
     ].map((k) => `quality-filter-section-${k}`)
     renderBar()
@@ -265,7 +266,7 @@ describe('QualityFilterBar sections', () => {
 
   it('switches the filters on the right when a section is clicked', () => {
     renderBar({ tally: tally({ unconverted: 3, good: 2 }) })
-    openMenu()
+    openMenu('status')
     expect(screen.getByTestId('quality-filter-unconverted')).toBeInTheDocument()
     fireEvent.click(screen.getByTestId('quality-filter-section-quality'))
     expect(screen.getByTestId('quality-filter-good')).toBeInTheDocument()
@@ -283,7 +284,7 @@ describe('QualityFilterBar sections', () => {
     vi.useFakeTimers()
     try {
       renderBar({ tally: tally({ unconverted: 3, good: 2, noCover: 1 }) })
-      openMenu()
+      openMenu('status')
       const quality = screen.getByTestId('quality-filter-section-quality')
       const tags = screen.getByTestId('quality-filter-section-tags')
       fireEvent.mouseEnter(quality)
@@ -330,12 +331,28 @@ describe('QualityFilterBar sections', () => {
   it('opens on the first section, focused on it, when nothing is picked', () => {
     renderBar()
     openMenu()
-    expect(screen.getByTestId('quality-filter-section-status')).toHaveFocus()
+    expect(screen.getByTestId('quality-filter-section-quality')).toHaveFocus()
+  })
+
+  // Someone finishing the tags opens the menu again and again on the same section: it comes
+  // back where they left it instead of making them walk down to it every time.
+  it('opens again on the section last looked at, while nothing is picked', () => {
+    renderBar()
+    openMenu('tags')
+    fireEvent.keyDown(document.activeElement as Element, { key: 'Escape' })
+    openMenu()
+    expect(screen.getByTestId('quality-filter-section-tags')).toHaveAttribute(
+      'aria-selected',
+      'true',
+    )
+    expect(screen.getByTestId('quality-filter-section-tags')).toHaveFocus()
   })
 
   it('walks the sections with the arrows, steps into the filters with → and back with ←', () => {
     renderBar({ tally: tally({ unplayed: 2, played: 1 }) })
     openMenu()
+    fireEvent.keyDown(document.activeElement as Element, { key: 'ArrowDown' })
+    expect(screen.getByTestId('quality-filter-section-library')).toHaveFocus()
     fireEvent.keyDown(document.activeElement as Element, { key: 'ArrowDown' })
     const list = screen.getByTestId('quality-filter-section-list')
     expect(list).toHaveFocus()
@@ -642,9 +659,9 @@ describe('QualityFilterBar', () => {
   // sidebar, so the filters collapse into one control that can't run out of width.
   it('collapses the filters into a single trigger that opens the menu on click', () => {
     renderBar()
-    expect(screen.queryByTestId('quality-filter-unconverted')).toBeNull()
+    expect(screen.queryByTestId('quality-filter-good')).toBeNull()
     openMenu()
-    expect(screen.getByTestId('quality-filter-unconverted')).toBeInTheDocument()
+    expect(screen.getByTestId('quality-filter-good')).toBeInTheDocument()
   })
 
   // A dropdown that rises from below reads as arriving from somewhere else; it has to
@@ -661,7 +678,7 @@ describe('QualityFilterBar', () => {
   // single-filter case shouldn't need a click outside to dismiss the popover.
   it('reports a bucket pick on its axis and closes the menu', () => {
     const { onChange } = renderBar({ tally: tally({ unconverted: 459 }) })
-    openMenu()
+    openMenu('status')
     fireEvent.click(screen.getByTestId('quality-filter-unconverted'))
     expect(onChange).toHaveBeenCalledWith(sel({ conversion: 'unconverted' }))
     expect(screen.queryByTestId('quality-filter-menu')).toBeNull()
@@ -1001,7 +1018,7 @@ describe('ActiveFilters', () => {
       sel({ format: 'WAV', quality: 'good', library: 'notInLibrary', listen: 'unplayed' }),
     )
     const chips = screen.getAllByRole('listitem')
-    expect(chips.map((c) => c.textContent)).toEqual(['Unplayed', 'Good', 'Not in Engine DJ', 'WAV'])
+    expect(chips.map((c) => c.textContent)).toEqual(['Good', 'Not in Engine DJ', 'Unplayed', 'WAV'])
   })
 
   // One filter already reads on the trigger itself; a second line repeating it would only
@@ -1087,7 +1104,7 @@ describe('QualityFilterBar search', () => {
 
   it('drops the search on Escape before closing the menu on the next one', () => {
     renderBar({ tally: tally({ unconverted: 2 }) })
-    openMenu()
+    openMenu('status')
     type('clip')
     fireEvent.keyDown(document.activeElement as Element, { key: 'Escape' })
     expect(screen.queryByTestId('quality-filter-search')).toBeNull()

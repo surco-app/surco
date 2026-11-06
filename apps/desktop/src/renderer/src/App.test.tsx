@@ -6226,6 +6226,7 @@ describe('App per-format filter', () => {
     await addMixedCrate()
     // Both tracks are unconverted, so the primary alone keeps the pair…
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-section-status'))
     fireEvent.click(screen.getByTestId('quality-filter-unconverted'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
     // …then reopening and layering the WAV format narrows it to just the wav, the conversion

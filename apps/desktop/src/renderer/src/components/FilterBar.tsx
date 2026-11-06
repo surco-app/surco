@@ -166,9 +166,14 @@ export function FilterPanes({
   onClear,
   searching,
   noMatch,
+  lastSection,
+  onSectionShown,
 }: {
   testid: string
   sections: PaneSection[]
+  // The section shown when the menu last closed, where it opens again while nothing is picked.
+  lastSection?: string | null
+  onSectionShown?: (key: string) => void
   sectionsLabel: string
   shown: string
   clearLabel: string
@@ -179,7 +184,12 @@ export function FilterPanes({
 }): React.JSX.Element {
   const id = useId()
   const firstPicked = sections.find((s) => s.options.some((o) => o.selected))
-  const [current, setCurrent] = useState(firstPicked?.key ?? sections[0]?.key)
+  const remembered = sections.find((s) => s.key === lastSection)?.key
+  const [current, setCurrent] = useState(firstPicked?.key ?? remembered ?? sections[0]?.key)
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reports the section shown, the caller's callback is not a trigger
+  useEffect(() => {
+    if (current) onSectionShown?.(current)
+  }, [current])
   const section = sections.find((s) => s.key === current) ?? sections[0]
   const [query, setQuery] = useState('')
   const rootRef = useRef<HTMLDivElement>(null)

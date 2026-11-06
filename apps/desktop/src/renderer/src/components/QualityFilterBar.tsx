@@ -42,6 +42,7 @@ import {
   Zap,
 } from 'lucide-react'
 import type React from 'react'
+import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { LibrarySource } from '../lib/librarySource'
 import { EMPTY_FILTER, type FilterSelection, type qualityCounts } from '../lib/triage'
@@ -231,15 +232,15 @@ function activeFilters(
   tr: TFunction,
 ): { axis: Axis; mode: string; Icon: LucideIcon; label: string }[] {
   const axes: Axis[] = [
-    'conversion',
+    'quality',
+    'library',
     'selection',
     'listen',
     'duplicates',
     'stars',
-    'quality',
+    'conversion',
     'tags',
     'attention',
-    'library',
   ]
   const picked = axes.flatMap((axis) => {
     const mode = value[axis]
@@ -364,6 +365,7 @@ export function QualityFilterBar({
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const filterLabel = (mode: string): string => labelOf(mode, librarySource, tr)
+  const lastSection = useRef<string | null>(null)
 
   const progressOf = (measure: Measure | undefined) =>
     measure?.measuring && measure.total > 0 && measure.done < measure.total
@@ -457,8 +459,12 @@ export function QualityFilterBar({
     })
     const grouped = (group: string, modes: Mode[]): PaneOption[] =>
       modes.map((m) => ({ ...modeOption(m, close), group: tr(`sidebar.filter.section.${group}`) }))
+    // In the order a crate is worked: whether the file is worth keeping, whether the library
+    // already has it, listening and rating, the tags, readying it for the booth, and last
+    // saving and converting. The format is a fact about the file, not a step, so it ends.
     return [
-      of('status', STATUS_MODES),
+      of('quality', QUALITY_MODES),
+      ...(librarySource ? [of('library', [...LIBRARY_MODES, 'betterThanLibrary'])] : []),
       // What the user did with the list rather than with the file, together in one section
       // so none of them is a section holding a single filter.
       {
@@ -471,11 +477,10 @@ export function QualityFilterBar({
         ],
       },
       of('stars', STARS_MODES),
-      of('quality', QUALITY_MODES),
-      of('tags', TAGS_MODES),
       of('match', MATCH_MODES),
+      of('tags', TAGS_MODES),
       of('attention', ATTENTION_MODES),
-      ...(librarySource ? [of('library', [...LIBRARY_MODES, 'betterThanLibrary'])] : []),
+      of('status', STATUS_MODES),
       {
         key: 'format',
         label: sectionLabel('format'),
@@ -509,6 +514,10 @@ export function QualityFilterBar({
           onClear={() => clearAll(close)}
           searching={(query) => tr('sidebar.filter.searching', { query })}
           noMatch={(query) => tr('sidebar.filter.noMatch', { query })}
+          lastSection={lastSection.current}
+          onSectionShown={(key) => {
+            lastSection.current = key
+          }}
         />
       )}
       counterTestId="track"
