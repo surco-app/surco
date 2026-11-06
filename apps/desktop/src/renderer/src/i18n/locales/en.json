@@ -2450,6 +2450,8 @@
       "folderMenu": "Folder actions",
       "exportUsb": "Export to USB",
       "rename": "Rename",
+      "pasteTracklist": "Paste tracklist…",
+      "newPlaylistFromTracklist": "New playlist from tracklist…",
       "delete": "Delete",
       "menu": "Playlist actions",
       "deleteTitle": "Delete from rekordbox",

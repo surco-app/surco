@@ -2450,6 +2450,8 @@
       "folderMenu": "Acciones de la carpeta",
       "exportUsb": "Exportar a USB",
       "rename": "Renombrar",
+      "pasteTracklist": "Pegar tracklist…",
+      "newPlaylistFromTracklist": "Nueva playlist desde tracklist…",
       "delete": "Borrar",
       "menu": "Acciones de la playlist",
       "deleteTitle": "Borrar de rekordbox",

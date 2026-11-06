@@ -37,6 +37,7 @@ function setup(selectedId: string | null = null, editable = false, nodes = NODES
     onDropTracks: vi.fn(),
     onRename: vi.fn(),
     onDelete: vi.fn(),
+    onPasteTracklist: vi.fn(),
   }
   const onOuterDrop = vi.fn()
   render(
@@ -917,5 +918,98 @@ describe('SourceTree on Serato crates', () => {
     expect(screen.getByRole('dialog')).toHaveTextContent(
       'Delete the crate “Z”? The tracks stay in Serato.',
     )
+  })
+})
+
+describe('SourceTree paste tracklist', () => {
+  const openMenu = (id: string) =>
+    fireEvent.contextMenu(screen.getByTestId(`source-node-${id}`), { clientX: 10, clientY: 10 })
+
+  it('offers Paste tracklist on a playlist and hands the node over', () => {
+    const { edit } = setup(null, true)
+    openMenu('house')
+    const item = screen.getByTestId('source-tree-paste-tracklist')
+    expect(item).toHaveTextContent('Paste tracklist…')
+    fireEvent.click(item)
+    expect(edit.onPasteTracklist).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'house' }),
+      false,
+    )
+    expect(screen.queryByTestId('source-tree-menu')).toBeNull()
+  })
+
+  it('offers a new playlist from a tracklist on a folder', () => {
+    const { edit } = setup(null, true)
+    openMenu('bases')
+    const item = screen.getByTestId('source-tree-paste-tracklist')
+    expect(item).toHaveTextContent('New playlist from tracklist…')
+    fireEvent.click(item)
+    expect(edit.onPasteTracklist).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'bases' }),
+      true,
+    )
+  })
+
+  it('keeps the item in the menu between Rename and Delete', () => {
+    setup(null, true)
+    openMenu('house')
+    const items = within(screen.getByTestId('source-tree-menu')).getAllByRole('menuitem')
+    expect(items.map((i) => i.getAttribute('data-testid'))).toEqual([
+      'source-tree-rename',
+      'source-tree-paste-tracklist',
+      'source-tree-delete',
+    ])
+  })
+
+  it('opens a paste-only menu on a tracks-only playlist and none on a locked one', () => {
+    const edit = {
+      onCreate: vi.fn(),
+      onDropTracks: vi.fn(),
+      onRename: vi.fn(),
+      onDelete: vi.fn(),
+      onPasteTracklist: vi.fn(),
+    }
+    render(
+      <SourceTree
+        width={236}
+        title="Traktor"
+        source="traktor"
+        nodes={NODES}
+        failed={false}
+        selectedId={null}
+        onSelect={vi.fn()}
+        edit={edit}
+        fixed={(n) => (n.id === 'house' ? 'tracks-only' : n.id === 'bases' ? 'locked' : null)}
+      />,
+    )
+    openMenu('house')
+    expect(screen.getByTestId('source-tree-paste-tracklist')).toBeInTheDocument()
+    expect(screen.queryByTestId('source-tree-rename')).toBeNull()
+    expect(screen.queryByTestId('source-tree-delete')).toBeNull()
+    fireEvent.click(screen.getByTestId('source-tree-paste-tracklist'))
+    expect(edit.onPasteTracklist).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'house' }),
+      false,
+    )
+    openMenu('bases')
+    expect(screen.queryByTestId('source-tree-menu')).toBeNull()
+  })
+
+  it('shows nothing of it when the tree was given no paste handler', () => {
+    const edit = { onCreate: vi.fn(), onDropTracks: vi.fn(), onRename: vi.fn(), onDelete: vi.fn() }
+    render(
+      <SourceTree
+        width={236}
+        title="rekordbox"
+        source="rekordbox"
+        nodes={NODES}
+        failed={false}
+        selectedId={null}
+        onSelect={vi.fn()}
+        edit={edit}
+      />,
+    )
+    openMenu('house')
+    expect(screen.queryByTestId('source-tree-paste-tracklist')).toBeNull()
   })
 })

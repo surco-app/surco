@@ -2450,6 +2450,8 @@
       "folderMenu": "フォルダーの操作",
       "exportUsb": "USB にエクスポート",
       "rename": "名前を変更",
+      "pasteTracklist": "トラックリストを貼り付け…",
+      "newPlaylistFromTracklist": "トラックリストから新しいプレイリスト…",
       "delete": "削除",
       "menu": "プレイリストの操作",
       "deleteTitle": "rekordbox から削除",
