@@ -252,11 +252,12 @@ export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params)
         // Read at the track's turn, not when it was queued: an in-place conversion that
         // renames the file meanwhile leaves the queued row on a path that no longer exists,
         // and the probe then reports a file the user can see right there as missing.
-        const path = targetsRef.current.find((x) => x.id === t.id)?.inputPath ?? t.inputPath
+        const latest = targetsRef.current.find((x) => x.id === t.id) ?? t
+        const path = latest.inputPath
         let evicted = false
         try {
           if (forgottenRef.current.has(t.id)) return
-          await queryClient.fetchQuery(spectrogramOptions(path))
+          if (!latest.spectrum) await queryClient.fetchQuery(spectrogramOptions(path))
           // The wave feeds the silence attention filter (silence left to trim); the
           // clip/channel scan — a separate probe since the split — feeds the clipping
           // one. Both decoded here so a single "analyze all" fills those buckets

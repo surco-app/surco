@@ -72,6 +72,26 @@ describe('useQualityAnalysis', () => {
     expect(measured).toEqual(['/music/a.wav', '/music/c.wav'])
   })
 
+  // Opening a playlist hands the sweep every track in it. One whose verdict the list already
+  // holds still needs its wave and scan for the silence and clipping filters, but redoing its
+  // spectrum cost 2.4 s a track and re-measured an 8000-track library the night had covered.
+  it('leaves the spectrum of a handed-in track that already has its verdict', async () => {
+    const spectrogram = vi.fn().mockResolvedValue(spectrum)
+    const waveform = vi.fn().mockResolvedValue(null)
+    setApi({ spectrogram, waveform })
+    const known = track('b', { spectrum })
+    const targetsRef = { current: [known] }
+    const { result } = renderHook(() => useQualityAnalysis({ targetsRef }), {
+      wrapper: wrapper(),
+    })
+
+    act(() => result.current.analyzeAllQuality([known]))
+    await waitFor(() => expect(result.current.analysis).toBeNull())
+
+    expect(waveform.mock.calls.map((c) => c[0])).toEqual(['/music/b.wav'])
+    expect(spectrogram).not.toHaveBeenCalled()
+  })
+
   // Clipping is the second attention-filter fact, and since the clip/channel scan
   // split into its own probe it no longer rides the peaks wave. The sweep must decode
   // that scan too, or one "analyze all" would fill the silence bucket collection-wide
