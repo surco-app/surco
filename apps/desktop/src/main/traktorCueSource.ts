@@ -1,4 +1,5 @@
-import { readFileSync, realpathSync } from 'node:fs'
+import { realpathSync } from 'node:fs'
+import { readFile, stat } from 'node:fs/promises'
 import type { BrowserWindow } from 'electron'
 import { traktorKey } from '../shared/traktorContent'
 import type { CueQueue, CueSource } from './cueSource'
@@ -21,14 +22,23 @@ export function traktorCueSource(
   collection: () => string,
   beatGrid: BeatGridOf,
 ): CueSource {
-  const nmlOf = (): string => {
+  let cached: { path: string; mtimeMs: number; size: number; text: string } | null = null
+  const nmlOf = async (): Promise<string> => {
     const path = traktor.nml()
-    return path ? readFileSync(path, 'utf8') : ''
+    if (!path) return ''
+    const { mtimeMs, size } = await stat(path)
+    if (cached?.path === path && cached.mtimeMs === mtimeMs && cached.size === size) {
+      return cached.text
+    }
+    const text = await readFile(path, 'utf8')
+    cached = { path, mtimeMs, size, text }
+    return text
   }
-  const traktorFile = (contentId: string) => {
-    const entry = traktorEntryBlock(nmlOf(), traktorKey(contentId) ?? '')
+  const traktorFileIn = (nml: string, contentId: string) => {
+    const entry = traktorEntryBlock(nml, traktorKey(contentId) ?? '')
     return entry ? traktorFileOf(entry.block, traktor.bootVolume()) : null
   }
+  const traktorFile = async (contentId: string) => traktorFileIn(await nmlOf(), contentId)
   const leadOf = async (file: string | null): Promise<number | null> =>
     file ? traktorLeadOfFile(file) : null
   const shiftedWordsOf = async (file: string): Promise<Uint16Array | null> => {
@@ -38,17 +48,18 @@ export function traktorCueSource(
   }
   return {
     trackCues: async (contentId) => {
-      const read = readTraktorTrackCues(nmlOf(), contentId)
-      return read && { ...read, clockLeadMs: await leadOf(traktorFile(contentId)) }
+      const nml = await nmlOf()
+      const read = readTraktorTrackCues(nml, contentId)
+      return read && { ...read, clockLeadMs: await leadOf(traktorFileIn(nml, contentId)) }
     },
     waveDetail: async (contentId) => {
-      const file = traktorFile(contentId)
+      const file = await traktorFile(contentId)
       return file ? shiftedWordsOf(file) : null
     },
     dropInput: async (contentId) => {
       const path = collection()
       return traktorDropInput(contentId, {
-        nml: nmlOf(),
+        nml: await nmlOf(),
         bootVolume: traktor.bootVolume(),
         collection: path,
         key: path ? await keyOf(path) : undefined,
@@ -56,22 +67,20 @@ export function traktorCueSource(
         words: shiftedWordsOf,
       })
     },
-    auditionLead: async (contentId) => (await leadOf(traktorFile(contentId))) ?? 0,
+    auditionLead: async (contentId) => (await leadOf(await traktorFile(contentId))) ?? 0,
     surcoGrid: async () => null,
     gridFit: async (contentId) => {
-      const file = traktorFile(contentId)
+      const file = await traktorFile(contentId)
       return sameClockFit(file, beatGrid, 'high', await leadOf(file))
     },
-    gridVerdict: async (contentId) =>
-      sameClockVerdict(
-        readTraktorTrackCues(nmlOf(), contentId)?.grid,
-        await sameClockFit(
-          traktorFile(contentId),
-          beatGrid,
-          'low',
-          await leadOf(traktorFile(contentId)),
-        ),
-      ),
+    gridVerdict: async (contentId) => {
+      const nml = await nmlOf()
+      const file = traktorFileIn(nml, contentId)
+      return sameClockVerdict(
+        readTraktorTrackCues(nml, contentId)?.grid,
+        await sameClockFit(file, beatGrid, 'low', await leadOf(file)),
+      )
+    },
     queuedWanted: async () => [],
     queue: traktor.queue,
     applyQuietly: traktor.applyQuietly,
