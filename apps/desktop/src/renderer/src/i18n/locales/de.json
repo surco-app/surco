@@ -148,7 +148,8 @@
       },
       "clear": "Filter entfernen",
       "shown": "{{visible}} von {{total}} Titeln",
-      "oneFormat": "Alle Titel haben dasselbe Format"
+      "oneFormat": "Alle Titel haben dasselbe Format",
+      "remove": "{{filter}} entfernen"
     },
     "search": {
       "placeholder": "Tracks suchen",

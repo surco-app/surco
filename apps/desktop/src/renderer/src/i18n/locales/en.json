@@ -148,7 +148,8 @@
       },
       "clear": "Clear filters",
       "shown": "{{visible}} of {{total}} tracks",
-      "oneFormat": "Every track has the same format"
+      "oneFormat": "Every track has the same format",
+      "remove": "Remove {{filter}}"
     },
     "search": {
       "placeholder": "Search tracks",

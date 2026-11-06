@@ -8,7 +8,7 @@ import { EMPTY_FILTER, type FilterSelection, type qualityCounts } from '../lib/t
 import { hoverTooltip } from '../test/tooltip'
 import { SECTION_HOVER_DELAY } from './FilterBar'
 import { ModalShell } from './ModalShell'
-import { QualityFilterBar } from './QualityFilterBar'
+import { ActiveFilters, QualityFilterBar } from './QualityFilterBar'
 
 afterEach(cleanup)
 
@@ -843,5 +843,39 @@ describe('QualityFilterBar', () => {
     cleanup()
     renderBar({ value: sel({ tags: 'missingRequired' }), tally: tally({ missingRequired: 4 }) })
     expect(screen.queryByTestId('review-incomplete')).toBeNull()
+  })
+})
+
+describe('ActiveFilters', () => {
+  function renderStrip(value: FilterSelection) {
+    const onChange = vi.fn()
+    render(<ActiveFilters value={value} onChange={onChange} librarySource="engineDj" />)
+    return { onChange }
+  }
+
+  // With two or more filters on, the trigger only says "Filters 23": this row is where the
+  // user reads which ones are on, without opening the menu.
+  it('names every filter in use once two are on, in the menu’s order', () => {
+    renderStrip(sel({ format: 'WAV', quality: 'good', library: 'notInLibrary' }))
+    const chips = screen.getAllByRole('listitem')
+    expect(chips.map((c) => c.textContent)).toEqual(['Good', 'Not in Engine DJ', 'WAV'])
+  })
+
+  // One filter already reads on the trigger itself; a second line repeating it would only
+  // push the list down.
+  it('stays out of the way while one filter or none is on', () => {
+    renderStrip(sel({ quality: 'good' }))
+    expect(screen.queryByTestId('active-filters')).toBeNull()
+    cleanup()
+    renderStrip(sel())
+    expect(screen.queryByTestId('active-filters')).toBeNull()
+  })
+
+  it('drops one filter from its ✕ and keeps the rest', () => {
+    const { onChange } = renderStrip(sel({ quality: 'good', tags: 'noCover' }))
+    const remove = screen.getByTestId('active-filter-tags-remove')
+    expect(remove).toHaveAccessibleName('Remove No artwork')
+    fireEvent.click(remove)
+    expect(onChange).toHaveBeenCalledWith(sel({ quality: 'good' }))
   })
 })

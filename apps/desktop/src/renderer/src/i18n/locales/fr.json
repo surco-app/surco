@@ -148,7 +148,8 @@
       },
       "clear": "Effacer les filtres",
       "shown": "{{visible}} sur {{total}} pistes",
-      "oneFormat": "Toutes les pistes ont le même format"
+      "oneFormat": "Toutes les pistes ont le même format",
+      "remove": "Retirer {{filter}}"
     },
     "search": {
       "placeholder": "Rechercher des morceaux",

@@ -352,6 +352,15 @@ describe('TrackListHeader menus', () => {
 })
 
 describe('TrackListHeader layout', () => {
+  // The filters in use read under the toolbar across the header's full width, so a long
+  // label never squeezes the filter trigger and the sort beside it.
+  it('lists the filters in use under the toolbar, inside the sticky header', () => {
+    renderHeader({ filterSelection: { ...EMPTY_FILTER, quality: 'good', format: 'WAV' } })
+    const strip = screen.getByTestId('active-filters')
+    expect(screen.getByTestId('track-list-header')).toContainElement(strip)
+    expect(screen.getByTestId('track-list-toolbar')).not.toContainElement(strip)
+  })
+
   it('keeps the list actions on the filter and sort row so the header spends one line, not two, above the tracks', () => {
     renderHeader()
     const row = screen.getByTestId('track-list-toolbar')

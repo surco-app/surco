@@ -1,3 +1,4 @@
+import type { TFunction } from 'i18next'
 import {
   Asterisk,
   AudioLines,
@@ -32,6 +33,7 @@ import {
   Store,
   Trash2,
   TriangleAlert,
+  X,
   Zap,
 } from 'lucide-react'
 import type React from 'react'
@@ -179,6 +181,74 @@ function attentionDot(mode: Mode, tally: Tally): string | null {
   return null
 }
 
+// The library buckets are shared mode strings; only their display names depend on which
+// library is active, so the swap lives here rather than forking the modes.
+function labelOf(mode: string, librarySource: LibrarySource, tr: TFunction): string {
+  return librarySource === 'engineDj' && (mode === 'inLibrary' || mode === 'notInLibrary')
+    ? tr(`sidebar.filter.${mode}Engine`)
+    : tr(`sidebar.filter.${mode}`)
+}
+
+type Axis = keyof FilterSelection
+
+// The filters in use, one per axis that holds one, in the order the menu lists them.
+function activeFilters(
+  value: FilterSelection,
+  librarySource: LibrarySource,
+  tr: TFunction,
+): { axis: Axis; mode: string; Icon: LucideIcon; label: string }[] {
+  const axes: Axis[] = ['quality', 'conversion', 'library', 'duplicates', 'attention', 'tags']
+  const picked = axes.flatMap((axis) => {
+    const mode = value[axis]
+    return mode
+      ? [{ axis, mode, Icon: FILTER_ICONS[mode as Mode], label: labelOf(mode, librarySource, tr) }]
+      : []
+  })
+  return value.format
+    ? [...picked, { axis: 'format', mode: value.format, Icon: FileAudio, label: value.format }]
+    : picked
+}
+
+// The filters in use, laid out under the list's toolbar, each with its ✕. Once two are on
+// the trigger only says "Filters 23", so this row is where the user reads which ones, and
+// drops one without opening the menu.
+export function ActiveFilters({
+  value,
+  onChange,
+  librarySource,
+}: {
+  value: FilterSelection
+  onChange: (next: FilterSelection) => void
+  librarySource: LibrarySource
+}): React.JSX.Element | null {
+  const { t: tr } = useTranslation()
+  const active = activeFilters(value, librarySource, tr)
+  if (active.length < 2) return null
+  return (
+    <ul data-testid="active-filters" className="flex flex-wrap gap-1 px-2 pb-2">
+      {active.map(({ axis, Icon, label }) => (
+        <li
+          key={axis}
+          data-testid={`active-filter-${axis}`}
+          className="flex h-[22px] items-center gap-1 rounded-full bg-[var(--color-accent-soft)] pr-0.5 pl-2 text-[11px] text-fg"
+        >
+          <Icon className="size-3 shrink-0" aria-hidden="true" />
+          <span className="max-w-[12rem] truncate">{label}</span>
+          <button
+            type="button"
+            data-testid={`active-filter-${axis}-remove`}
+            aria-label={tr('sidebar.filter.remove', { filter: label })}
+            onClick={() => onChange({ ...value, [axis]: null })}
+            className="press grid size-4 place-items-center rounded-full text-fg-dim outline-none hover:bg-[var(--color-hover)] hover:text-fg"
+          >
+            <X className="size-3" aria-hidden="true" />
+          </button>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
 interface Props {
   // Optional ref on the filter bar. Keyboard paging now measures the whole sticky header
   // (in TrackListHeader) rather than this bar alone, so it's usually left unset.
@@ -250,12 +320,7 @@ export function QualityFilterBar({
   children,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
-  // The library buckets are shared mode strings; only their display names depend on
-  // which library is active, so the swap lives here rather than forking the modes.
-  const filterLabel = (mode: string): string =>
-    librarySource === 'engineDj' && (mode === 'inLibrary' || mode === 'notInLibrary')
-      ? tr(`sidebar.filter.${mode}Engine`)
-      : tr(`sidebar.filter.${mode}`)
+  const filterLabel = (mode: string): string => labelOf(mode, librarySource, tr)
 
   const progressOf = (measure: Measure | undefined) =>
     measure && measure.total > 0 && measure.done < measure.total
@@ -305,49 +370,10 @@ export function QualityFilterBar({
   // without opening; with several it collapses to a generic "Filters" badge counting the
   // tracks that survive the combined filter (the per-axis counts are absolute, so none of
   // them would describe the intersection).
-  const activeChips: { Icon: LucideIcon; label: string; count: number }[] = []
-  if (value.quality)
-    activeChips.push({
-      Icon: FILTER_ICONS[value.quality],
-      label: tr(`sidebar.filter.${value.quality}`),
-      count: countOf(value.quality),
-    })
-  if (value.conversion)
-    activeChips.push({
-      Icon: FILTER_ICONS[value.conversion],
-      label: tr(`sidebar.filter.${value.conversion}`),
-      count: countOf(value.conversion),
-    })
-  if (value.library)
-    activeChips.push({
-      Icon: FILTER_ICONS[value.library],
-      label: filterLabel(value.library),
-      count: countOf(value.library),
-    })
-  if (value.duplicates)
-    activeChips.push({
-      Icon: FILTER_ICONS.duplicates,
-      label: tr('sidebar.filter.duplicates'),
-      count: countOf('duplicates'),
-    })
-  if (value.attention)
-    activeChips.push({
-      Icon: FILTER_ICONS[value.attention],
-      label: tr(`sidebar.filter.${value.attention}`),
-      count: countOf(value.attention),
-    })
-  if (value.tags)
-    activeChips.push({
-      Icon: FILTER_ICONS[value.tags],
-      label: tr(`sidebar.filter.${value.tags}`),
-      count: countOf(value.tags),
-    })
-  if (value.format)
-    activeChips.push({
-      Icon: FileAudio,
-      label: value.format,
-      count: facets.formats[value.format] ?? 0,
-    })
+  const activeChips = activeFilters(value, librarySource, tr).map((f) => ({
+    ...f,
+    count: f.axis === 'format' ? (facets.formats[f.mode] ?? 0) : countOf(f.mode as Mode),
+  }))
 
   const trigger =
     activeChips.length === 0

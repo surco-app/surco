@@ -148,7 +148,8 @@
       },
       "clear": "フィルターを解除",
       "shown": "{{total}} 曲中 {{visible}} 曲",
-      "oneFormat": "すべての曲が同じ形式です"
+      "oneFormat": "すべての曲が同じ形式です",
+      "remove": "{{filter}} を解除"
     },
     "search": {
       "placeholder": "トラックを検索",

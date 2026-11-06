@@ -37,7 +37,7 @@ import type { LibrarySource } from '../lib/librarySource'
 import type { FilterSelection, TrackSort } from '../lib/triage'
 import type { TrackItem } from '../types'
 import { type MenuPlacement, placeMenu, useCloseOnMove } from './menuPlacement'
-import { QualityFilterBar } from './QualityFilterBar'
+import { ActiveFilters, QualityFilterBar } from './QualityFilterBar'
 import { SearchInput } from './SearchInput'
 import { Select } from './Select'
 import { useSplitMenu } from './SplitButton'
@@ -475,6 +475,11 @@ export function TrackListHeader({
           </>
         )}
       </div>
+      <ActiveFilters
+        value={filterSelection}
+        onChange={setFilterSelection}
+        librarySource={librarySource}
+      />
     </div>
   )
 }
