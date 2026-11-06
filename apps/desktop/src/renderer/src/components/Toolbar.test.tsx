@@ -61,7 +61,11 @@ describe('Toolbar', () => {
   // The number alone left the DJ guessing which track the batch skips; the button names
   // how many a missing required field keeps out and which fields, where the count is.
   it('says how many tracks the count leaves out and what they lack', () => {
-    renderBar({ convertibleCount: 5, batchSize: 6, leftOut: leftOut({ missing: { count: 1, fields: ['artist'] } }) })
+    renderBar({
+      convertibleCount: 5,
+      batchSize: 6,
+      leftOut: leftOut({ missing: { count: 1, fields: ['artist'] } }),
+    })
     expect(screen.getByTestId('convert-all')).toHaveAccessibleName(
       'Convert 5 of 6 · 1 track left out, it has no Artist',
     )

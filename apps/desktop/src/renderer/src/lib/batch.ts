@@ -1,3 +1,4 @@
+import type { TFunction } from 'i18next'
 import type { CustomField } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import type { AppleMusicIndex } from './appleMusicLibrary'
@@ -13,6 +14,13 @@ function isConvertible(track: TrackItem): boolean {
   return track.status === 'idle' || track.status === 'error' || isStale(track)
 }
 
+// Whether a batch may take the track at all: a convertible state, or any settled state
+// when the run is a deliberate "convert again" over done tracks — the done menu's
+// re-export ran the plain gate and converted nothing (06/11).
+function inScope(track: TrackItem, again: boolean): boolean {
+  return again ? track.status !== 'processing' : isConvertible(track)
+}
+
 // Whether a single track can be converted right now: a convertible state plus every required
 // field filled. The same gate the convert button enforces, so the keyboard shortcut and
 // command palette can't bypass it and trigger a process that only fails on missing tags.
@@ -20,9 +28,10 @@ export function canProcessTrack(
   track: TrackItem,
   requiredFields: string[],
   customFields: readonly CustomField[] = [],
+  again = false,
 ): boolean {
   return (
-    isConvertible(track) &&
+    inScope(track, again) &&
     !track.fromSerato &&
     missingRequiredOf(track, requiredFields, customFields).length === 0
   )
@@ -37,19 +46,23 @@ export function eligibleForBatch(
   tracks: TrackItem[],
   requiredFields: string[],
   customFields: readonly CustomField[] = [],
+  again = false,
 ): string[] {
-  return tracks.filter((t) => canProcessTrack(t, requiredFields, customFields)).map((t) => t.id)
+  return tracks
+    .filter((t) => canProcessTrack(t, requiredFields, customFields, again))
+    .map((t) => t.id)
 }
 
 export function leftOutForMissing(
   tracks: TrackItem[],
   requiredFields: string[],
   customFields: readonly CustomField[] = [],
+  again = false,
 ): { count: number; fields: string[] } {
   const missing = new Set<string>()
   let count = 0
   for (const track of tracks) {
-    if (!isConvertible(track) || track.fromSerato) continue
+    if (!inScope(track, again) || track.fromSerato) continue
     const fields = missingRequiredOf(track, requiredFields, customFields)
     if (fields.length === 0) continue
     count += 1
@@ -76,14 +89,33 @@ export function convertGate(
   requiredFields: string[],
   customFields: readonly CustomField[] = [],
   libraryIndex: AppleMusicIndex | null = null,
+  again = false,
 ): ConvertGate {
   const mixed = tracks.length > 1 && selectionReplaceMode(libraryIndex, tracks) === 'mixed'
   return {
-    ready: mixed ? [] : tracks.filter((t) => canProcessTrack(t, requiredFields, customFields)),
-    missing: leftOutForMissing(tracks, requiredFields, customFields),
-    serato: tracks.filter((t) => isConvertible(t) && t.fromSerato).length,
+    ready: mixed
+      ? []
+      : tracks.filter((t) => canProcessTrack(t, requiredFields, customFields, again)),
+    missing: leftOutForMissing(tracks, requiredFields, customFields, again),
+    serato: tracks.filter((t) => inScope(t, again) && t.fromSerato).length,
     mixed,
   }
+}
+
+// The words for what the gate keeps out, shared by the header's note and the editor's
+// batch plan so the two never describe one selection differently.
+export function leftOutNote(gate: Omit<ConvertGate, 'ready'>, tr: TFunction): string | null {
+  if (gate.mixed) return tr('editor.mixedReplaceSelection')
+  const notes = [
+    gate.missing.count > 0
+      ? tr('header.leftOutMissing', {
+          count: gate.missing.count,
+          fields: gate.missing.fields.map((key) => tr(`fields.${key}`)).join(', '),
+        })
+      : null,
+    gate.serato > 0 ? tr('header.leftOutSerato', { count: gate.serato }) : null,
+  ].filter((note) => note !== null)
+  return notes.length ? notes.join(' · ') : null
 }
 
 // The outcome of converting one track: it wrote a file, the user skipped it past a

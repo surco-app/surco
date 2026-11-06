@@ -15,7 +15,7 @@ import {
 import type React from 'react'
 import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { BatchSummary, ConvertGate } from '../lib/batch'
+import { type BatchSummary, type ConvertGate, leftOutNote } from '../lib/batch'
 import { CleanSpark } from './CleanSpark'
 import { Tooltip } from './Tooltip'
 
@@ -169,22 +169,7 @@ export const Toolbar = memo(function Toolbar({
         : tr(selectionLabel ? 'header.convertSelected' : 'header.convertAll', {
             count: convertibleCount,
           })
-  const leftOutNote =
-    !leftOut || libraryIdle
-      ? null
-      : leftOut.mixed
-        ? tr('editor.mixedReplaceSelection')
-        : [
-            leftOut.missing.count > 0
-              ? tr('header.leftOutMissing', {
-                  count: leftOut.missing.count,
-                  fields: leftOut.missing.fields.map((key) => tr(`fields.${key}`)).join(', '),
-                })
-              : null,
-            leftOut.serato > 0 ? tr('header.leftOutSerato', { count: leftOut.serato }) : null,
-          ]
-            .filter(Boolean)
-            .join(' · ') || null
+  const note = !leftOut || libraryIdle ? null : leftOutNote(leftOut, tr)
   return (
     <header
       className="flex h-12 shrink-0 items-center justify-between border-b border-[var(--color-line)] pr-3 pl-20"
@@ -504,7 +489,7 @@ export const Toolbar = memo(function Toolbar({
                 testid="convert-all"
                 Icon={ArrowRightLeft}
                 label={convertLabel}
-                note={leftOutNote}
+                note={note}
                 labelWidest={
                   convertibleCount > 0 && convertibleCount < batchSize && !libraryIdle
                     ? tr(selectionLabel ? 'header.convertSomeSelected' : 'header.convertSome', {

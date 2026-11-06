@@ -122,11 +122,31 @@ describe('convertGate', () => {
     expect(gate.mixed).toBe(true)
   })
 
+  // The done menu's "Convert again" is a deliberate re-run over converted tracks, so the
+  // gate takes done rows too; the plain gate skipped them and the menu converted nothing.
+  it('takes done tracks too when the run is a deliberate convert again', () => {
+    const tracks = [
+      track('a', 'idle', { title: 'T', artist: 'A' }),
+      track('b', 'done', { title: 'T', artist: 'A' }),
+      track('c', 'done', { title: 'T' }),
+      track('d', 'processing', { title: 'T', artist: 'A' }),
+    ]
+    const gate = convertGate(tracks, ['title', 'artist'], [], null, true)
+    expect(gate.ready.map((t) => t.id)).toEqual(['a', 'b'])
+    expect(gate.missing).toEqual({ count: 1, fields: ['artist'] })
+    expect(eligibleForBatch(tracks, ['title', 'artist'], [], true)).toEqual(['a', 'b'])
+  })
+
   // Replace-vs-add is a question about a batch; a single track is never "mixed", and its
   // ambiguous match is handled where the single convert decides what to stamp.
   it('never calls a single track mixed', () => {
     const index = buildLibraryIndex([{ title: 'Sunrise', artist: 'Halo', persistentId: 'PID2' }])
-    const gate = convertGate([track('a', 'idle', { title: 'Sunrise', artist: 'Halo' })], ['title'], [], index)
+    const gate = convertGate(
+      [track('a', 'idle', { title: 'Sunrise', artist: 'Halo' })],
+      ['title'],
+      [],
+      index,
+    )
     expect(gate.ready.map((t) => t.id)).toEqual(['a'])
     expect(gate.mixed).toBe(false)
   })

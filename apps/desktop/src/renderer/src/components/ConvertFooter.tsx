@@ -67,6 +67,8 @@ interface ConvertFooterProps {
   isMulti: boolean
   // Size of the multi-selection, for the "Convert all (N)" label and the done counts.
   selectedCount: number
+  // How many of them the batch converts, for the plan's count, so it matches the header's.
+  readyCount?: number
   // The footer's aggregate view of the selection (done block, reveal, Apple Music).
   status: SelectionStatus
   stale: boolean
@@ -82,6 +84,9 @@ interface ConvertFooterProps {
   // The same block said short enough for the main button's face (a count past two missing
   // fields), since the full reason can list every required field.
   incompleteSummary?: string
+  // What the batch leaves out of a multi-selection and why, in the header's own words; the
+  // plan shows it even while the rest converts.
+  leftOut?: string
   onBlockedPress?: () => void
   willEditInPlace: boolean
   tagsOnly: boolean
@@ -140,6 +145,7 @@ export function ConvertFooter({
   spectrum,
   isMulti,
   selectedCount,
+  readyCount,
   status,
   stale,
   replaces,
@@ -148,6 +154,7 @@ export function ConvertFooter({
   incomplete,
   incompleteReason,
   incompleteSummary,
+  leftOut,
   onBlockedPress,
   willEditInPlace,
   tagsOnly,
@@ -684,14 +691,14 @@ export function ConvertFooter({
               <div className="flex h-10 items-center justify-center">{checkingLine}</div>
             ) : isMulti ? (
               <BatchPlan
-                count={selectedCount}
+                count={readyCount ?? selectedCount}
                 format={format}
                 destination={destination}
                 destinations={destinations}
                 withAppleMusic={isMacOS() && format !== 'flac' && addToAppleMusic}
                 djTargets={djTargets}
                 openSource={openSource}
-                blocked={incomplete ? incompleteSummary : undefined}
+                leftOut={leftOut}
                 onBlockedPress={onBlockedPress}
                 onSelectFormat={onSelectFormat}
                 onSelectDestination={onSelectDestination}

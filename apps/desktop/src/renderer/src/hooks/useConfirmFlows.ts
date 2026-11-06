@@ -122,6 +122,7 @@ interface Params {
     normalize?: NormalizeConfig,
     destination?: Destination,
     declick?: DeclickConfig,
+    again?: boolean,
   ) => Promise<void>
   openConfirm: (confirm: ConfirmModal) => void
   // A trash/delete IPC failure surfaced to the user — the action was confirmed, so a
@@ -156,6 +157,7 @@ interface ConfirmFlows {
     normalize?: NormalizeConfig,
     destination?: Destination,
     declick?: DeclickConfig,
+    again?: boolean,
   ) => void
   // The single-track counterpart of askConvertAll: it decides overwrite the same way,
   // then runs the conversion the caller wired (donate nudge, re-encode) rather than the
@@ -465,6 +467,7 @@ export function useConfirmFlows({
     normalize?: NormalizeConfig,
     destination?: Destination,
     declick?: DeclickConfig,
+    again = false,
   ): void {
     // The editor's one-shot destination pick decides whether this run rewrites
     // sources; only without one does the live setting. An override away from
@@ -499,13 +502,14 @@ export function useConfirmFlows({
 
     function confirmConvertAll(lossyReencode: boolean): void {
       if (!overwriting && !lossyReencode) {
-        void processAll(targets, format, normalize, destination, declick)
+        void processAll(targets, format, normalize, destination, declick, again)
         return
       }
       const count = eligibleForBatch(
         targets,
         settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS,
         settings?.customFields,
+        again,
       ).length
       // The lossy-reencode wording explains the quality-loss reason and wins whenever it
       // applies, overwrite or not — a plain "originals are replaced" dialog would leave
@@ -519,7 +523,7 @@ export function useConfirmFlows({
               destructive: true,
               onConfirm: () => {
                 consented.current.add('lossy')
-                void processAll(targets, format, normalize, destination, declick)
+                void processAll(targets, format, normalize, destination, declick, again)
               },
             }
           : {
@@ -529,7 +533,7 @@ export function useConfirmFlows({
               destructive: true,
               onConfirm: () => {
                 consented.current.add('overwrite')
-                void processAll(targets, format, normalize, destination, declick)
+                void processAll(targets, format, normalize, destination, declick, again)
               },
             },
       )

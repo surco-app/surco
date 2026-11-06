@@ -5097,6 +5097,26 @@ describe('App multi-select convert', () => {
     expect(processTrack.mock.calls.map((c) => c[0].format)).toEqual(['wav', 'wav'])
   })
 
+  // "Convert again" over a done selection runs the batch, whose gate skipped done tracks,
+  // so the menu promised a re-export and converted nothing (06/11).
+  it('converts a done selection again from the done menu', async () => {
+    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/music/a.aiff', inPlace: false })
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      processTrack,
+    })
+    await renderApp()
+    const rows = await addTwoTracks()
+    fireEvent.click(rows[0])
+    fireEvent.click(rows[1], { metaKey: true })
+    fireEvent.click(await screen.findByTestId('convert-all'))
+    await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
+    fireEvent.click(await screen.findByTestId('done-more'))
+    fireEvent.click(await screen.findByTestId('process-btn'))
+    await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(4))
+  })
+
   // The editor's convert button sent the format it showed, which the keep rule itself had
   // chosen, as if the user had picked it. Beside the original that wrote a "(2).mp3" next to
   // the file the setting promises to leave alone, while Convert all already left it be.

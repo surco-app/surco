@@ -135,6 +135,9 @@ interface TrackProcessing {
     normalizeOverride?: NormalizeConfig,
     destinationOverride?: Destination,
     declickOverride?: DeclickConfig,
+    // A deliberate re-run over done tracks (the done menu's "Convert again"), which the
+    // plain gate would skip as already converted.
+    again?: boolean,
   ) => Promise<void>
   retryVerification: (id: string) => Promise<void>
   addTrackToAppleMusic: (id: string) => Promise<void>
@@ -695,6 +698,7 @@ export function useTrackProcessing({
       normalizeOverride?: NormalizeConfig,
       destinationOverride?: Destination,
       declickOverride?: DeclickConfig,
+      again?: boolean,
     ): Promise<void> => {
       if (batchingRef.current) return
       // Same completeness gate as the count/button: incomplete tracks aren't attempted (and
@@ -703,6 +707,7 @@ export function useTrackProcessing({
         targets,
         settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS,
         settings?.customFields,
+        again,
       )
       // Pin the settings that decide what a conversion DOES to the user's files: every
       // queued track converts under the settings the run started with, so a Settings

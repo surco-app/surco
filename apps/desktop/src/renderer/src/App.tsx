@@ -2346,6 +2346,8 @@ export default function App(): React.JSX.Element {
         updateTrack(p.id, { ...p.patch, matched: true, matchProvider: provider })
     },
   )
+  // The editor's done menu over a selection: a deliberate "convert again", so done tracks
+  // are in — the plain batch gate skipped them and the menu converted nothing (06/11).
   const onProcessAllSelected = useStableCallback(() =>
     askConvertAll(
       selectedTracks,
@@ -2353,6 +2355,7 @@ export default function App(): React.JSX.Element {
       editorNormalizeRef.current ?? undefined,
       editorDestinationPickRef.current ?? undefined,
       editorDeclickRef.current ?? undefined,
+      true,
     ),
   )
   const onAddAllSelectedToAppleMusic = useStableCallback(() => void addAllToAppleMusic(selectedIds))

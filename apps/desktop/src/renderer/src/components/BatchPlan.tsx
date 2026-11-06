@@ -16,7 +16,7 @@ export function BatchPlan({
   withAppleMusic,
   djTargets,
   openSource,
-  blocked,
+  leftOut,
   onBlockedPress,
   onSelectFormat,
   onSelectDestination,
@@ -28,7 +28,7 @@ export function BatchPlan({
   withAppleMusic: boolean
   djTargets: DjLibraryId[]
   openSource?: PlaylistSource | null
-  blocked?: string
+  leftOut?: string
   onBlockedPress?: () => void
   onSelectFormat: (format: FormatSetting) => void
   onSelectDestination: (destination: Destination) => void
@@ -42,7 +42,7 @@ export function BatchPlan({
   )
   return (
     <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
-      {blocked && (
+      {leftOut && (
         <button
           type="button"
           data-testid="batch-plan-blocked"
@@ -50,7 +50,7 @@ export function BatchPlan({
           className="mr-auto flex items-center gap-1.5 text-xs text-fg-dim hover:text-fg"
         >
           <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-warn" />
-          {blocked}
+          {leftOut}
         </button>
       )}
       <span data-testid="batch-plan" className="text-xs text-fg-dim">

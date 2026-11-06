@@ -1757,6 +1757,7 @@ describe('Editor multi-select', () => {
       onCueAutoMarkAll?: () => void
       cueTargets?: React.ComponentProps<typeof Editor>['cueTargets']
       fromSeratoA?: boolean
+      libraryIndex?: AppleMusicIndex | null
     } = {},
   ) {
     if (opts.platform)
@@ -1788,7 +1789,7 @@ describe('Editor multi-select', () => {
     renderWithQuery(
       <Editor
         item={a}
-        libraryIndex={null}
+        libraryIndex={opts.libraryIndex ?? null}
         rekordboxCue={opts.rekordboxCue}
         onCueAutoMarkAll={opts.onCueAutoMarkAll}
         cueTargets={opts.cueTargets}
@@ -2049,27 +2050,48 @@ describe('Editor multi-select', () => {
     expect(screen.queryByTestId('batch-plan-blocked')).toBeNull()
   })
 
-  // The plan must say which fields are still empty somewhere in the selection, the
-  // same names the single-track gate gives.
+  // The plan reads the same gate as the header's Convert and says it in the same words,
+  // so "Convert 1 of 2 selected · 1 track left out, Serato would lose it and its cues" up
+  // top and the plan down here never disagree about one selection (06/11).
   it('names Serato as the reason in the batch plan when a selected track comes from Serato', () => {
     renderMulti({ fromSeratoA: true })
     expect(screen.getByTestId('batch-plan-blocked')).toHaveTextContent(
-      'Serato would lose the track and its cues',
+      i18n.t('header.leftOutSerato', { count: 1 }),
     )
   })
 
   it('names both Serato and the fields the other tracks still miss, so neither reason hides the other', () => {
     renderMulti({ fromSeratoA: true, requiredFields: ['artist'], metaA: { artist: 'Kumara' } })
     const blocked = screen.getByTestId('batch-plan-blocked')
-    expect(blocked).toHaveTextContent('Serato would lose the track and its cues')
+    expect(blocked).toHaveTextContent(i18n.t('header.leftOutSerato', { count: 1 }))
     expect(blocked).toHaveTextContent(i18n.t('fields.artist'))
   })
 
   it('does not name a field only the Serato track misses, since that track is not converted anyway', () => {
     renderMulti({ fromSeratoA: true, requiredFields: ['artist'], metaB: { artist: 'Cortina' } })
     expect(screen.getByTestId('batch-plan-blocked')).toHaveTextContent(
-      /^Serato would lose the track and its cues$/,
+      new RegExp(`^${i18n.t('header.leftOutSerato', { count: 1 })}$`),
     )
+  })
+
+  // "2 tracks → AIFF" under a header reading "Convert 1 of 2" counted the track the batch
+  // skips; the plan counts what the click converts, and the amber line says what stays out.
+  it('counts in the plan only the tracks the batch will convert, like the header', () => {
+    renderMulti({ requiredFields: ['artist'], metaA: { artist: 'Kumara' } })
+    expect(screen.getByTestId('batch-plan')).toHaveTextContent(/^1 track /)
+  })
+
+  // The one case with no honest subset: the header's Convert is held back for it, and the
+  // plan says why in the same words.
+  it('says the selection mixes replacing a library copy with adding, like the header', () => {
+    renderMulti({
+      metaA: { artist: 'Halo', title: 'Sunrise' },
+      libraryIndex: buildLibraryIndex([{ title: 'Sunrise', artist: 'Halo', persistentId: 'P1' }]),
+    })
+    expect(screen.getByTestId('batch-plan-blocked')).toHaveTextContent(
+      i18n.t('editor.mixedReplaceSelection'),
+    )
+    expect(screen.getByTestId('batch-plan')).toHaveTextContent(/^0 tracks /)
   })
 
   it('names the missing fields in the batch plan', () => {

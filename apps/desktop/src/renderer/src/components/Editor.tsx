@@ -62,6 +62,7 @@ import { isAmbiguousCandidate } from '../lib/appleMusicLibrary'
 import { activeCleanups, cleanReasons, undoCleanup } from '../lib/autoClean'
 import { clearedTrackPatch, matchTargetOf, shouldAutoApplyMatch } from '../lib/autoMatch'
 import { baseName } from '../lib/baseName'
+import { convertGate, leftOutNote } from '../lib/batch'
 import { type CopyReason, compareCopies } from '../lib/bestCopy'
 import { BULK_FIELDS, GENRE_TAGS, GROUPING_TAGS } from '../lib/bulkEdit'
 import type { CueActions } from '../lib/commands'
@@ -73,13 +74,7 @@ import type { DjLibraryId } from '../lib/djLibraries'
 import { DJ_COLLECTION_PATH, DJ_REACH_SETTINGS, reachedPrograms } from '../lib/djReach'
 import { editorPlace } from '../lib/editorPlace'
 import { buildFieldSpecs, type PlaylistsSpec } from '../lib/fieldSpecs'
-import {
-  FIELD_DEFS,
-  labeledFields,
-  missingRequired,
-  missingRequiredOf,
-  PLAYLIST_FIELDS,
-} from '../lib/fields'
+import { FIELD_DEFS, labeledFields, missingRequired, PLAYLIST_FIELDS } from '../lib/fields'
 import { genreChips as buildGenreChips } from '../lib/genre'
 import { isTypingTarget } from '../lib/keymap'
 import { librarySourceOf } from '../lib/librarySource'
@@ -102,7 +97,6 @@ import {
   type ReleaseMetaPatch,
 } from '../lib/release'
 import { replacePatch } from '../lib/replaceBeforeConvert'
-import { selectionReplaceMode } from '../lib/replaceSelection'
 import { replaceWarning } from '../lib/replaceWarning'
 import { selectionStatus } from '../lib/selectionStatus'
 import { useAppSettings } from '../lib/settingsContext'
@@ -991,40 +985,34 @@ export const Editor = memo(function Editor({
   // convert: with the convert button disabled below, that click can't surface the
   // reason any more, so the field's amber dot and the button's own tooltip — which
   // names exactly what's missing — are what tell the user why. The tooltip reuses the
-  // same phrasing the blocked-convert error would have shown. Multi-select gates on
-  // the whole selection (the union of every track's empty fields): "Convert (N)"
-  // promises N conversions, and eligibleForBatch would silently drop incomplete
-  // tracks — with all N incomplete, the click ran an empty batch that looked dead.
-  const convertible = (isMulti ? multiTracks : [item]).filter((t) => !t.fromSerato)
-  const seratoRows = convertible.length < (isMulti ? multiTracks.length : 1)
-  const missing =
-    convertible.length === 0
-      ? []
-      : isMulti
-        ? [
-            ...new Set(
-              convertible.flatMap((t) => missingRequiredOf(t, requiredFields, customFields)),
-            ),
-          ]
-        : missingRequired(resolvedMeta, requiredFields)
-  // A multi-select whose tracks disagree about what the convert MEANS: some supersede a
-  // copy in the library, others are plain adds. One click cannot honestly do both, so the
-  // batch is refused and the button says why rather than silently picking one for all of
-  // them (the label-promises-one-thing, click-does-another failure this feature already
-  // hit once). Single-select never mixes, so it is never gated here.
-  const replaceMode = isMulti ? selectionReplaceMode(libraryIndex, multiTracks) : 'replace'
-  const mixedReplace = replaceMode === 'mixed'
-  const incomplete = seratoRows || missing.length > 0 || mixedReplace
+  // same phrasing the blocked-convert error would have shown.
+  // Several tracks read the gate the header's Convert reads (ready rows, missing fields,
+  // Serato rows, a mixed replace/add selection), so the plan down here and the count up
+  // there cannot disagree over one selection. A single track keeps its own check over the
+  // live form, which the gate cannot see.
+  const multiGate = isMulti
+    ? convertGate(multiTracks, requiredFields, customFields, libraryIndex)
+    : null
+  const leftOut = multiGate ? leftOutNote(multiGate, tr) : null
+  // The done menu's "Convert again" re-runs every selected track, done ones included, and
+  // a menu item cannot name what it would drop, so anything the re-run would leave out
+  // holds it back with the reason (the same words as the header's note).
+  const againLeftOut = isMulti
+    ? leftOutNote(convertGate(multiTracks, requiredFields, customFields, libraryIndex, true), tr)
+    : null
+  const seratoRows = !isMulti && item.fromSerato === true
+  const missing = isMulti || seratoRows ? [] : missingRequired(resolvedMeta, requiredFields)
+  const firstMissing = (multiGate?.missing.fields ?? missing)[0]
+  const incomplete = isMulti ? againLeftOut !== null : seratoRows || missing.length > 0
   const seratoReason = seratoRows ? [tr('errors.seratoBlocked')] : []
   const otherReason = missing.length
     ? tr('editor.missingRequired', {
         fields: missing.map((key) => tr(`fields.${key}`)).join(', '),
       })
-    : mixedReplace
-      ? tr('editor.mixedReplaceSelection')
-      : undefined
-  const incompleteReason =
-    [...seratoReason, ...(otherReason ? [otherReason] : [])].join(' · ') || undefined
+    : undefined
+  const incompleteReason = isMulti
+    ? (againLeftOut ?? undefined)
+    : [...seratoReason, ...(otherReason ? [otherReason] : [])].join(' · ') || undefined
   const otherSummary = missing.length
     ? missingSummary(
         missing.map((key) => tr(`fields.${key}`)),
@@ -2035,6 +2023,7 @@ export const Editor = memo(function Editor({
           spectrum={spectrumInHand}
           isMulti={isMulti}
           selectedCount={multiTracks.length}
+          readyCount={multiGate?.ready.length}
           status={footerStatus}
           stale={stale}
           replaces={!!replaceTarget && !isAmbiguousCandidate(replaceTarget)}
@@ -2045,9 +2034,10 @@ export const Editor = memo(function Editor({
           incompleteSummary={
             [...seratoReason, ...(otherSummary ? [otherSummary] : [])].join(' · ') || undefined
           }
+          leftOut={leftOut ?? undefined}
           onBlockedPress={() => {
-            if (missing.length > 0)
-              document.querySelector<HTMLElement>(`[data-testid="field-${missing[0]}"]`)?.focus()
+            if (firstMissing)
+              document.querySelector<HTMLElement>(`[data-testid="field-${firstMissing}"]`)?.focus()
           }}
           willEditInPlace={willEditInPlace}
           tagsOnly={tagsOnlyExport}
