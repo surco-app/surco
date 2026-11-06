@@ -31,6 +31,14 @@
       {
         "text": "Avec de grandes collections Traktor, lire chaque morceau va beaucoup plus vite. Et un NAS ou un Apple Music qui ne répond plus ne bloque plus la liste des clés USB ni les autres lectures de Music.",
         "in": "1.27.0"
+      },
+      {
+        "text": "Le menu des filtres ne montre, dans chaque onglet, que les filtres qui peuvent y avoir des morceaux. « Sans cues », « Cues hors de la grille » et « Grille fausse » apparaissent dans les onglets de tes logiciels DJ, la section Apple Music disparaît de l’onglet Music et « Meilleur que dans Music » n’est que dans Morceaux. Si tu changes d’onglet avec un filtre qui n’y existe pas, il s’enlève tout seul au lieu de te laisser une liste vide.",
+        "in": "1.27.1"
+      },
+      {
+        "text": "« Grille fausse » se souvient de ce qu’il a mesuré. Rouvrir une playlist ne relit plus chaque fichier, et un morceau n’est remesuré que si son fichier ou sa grille dans ton logiciel DJ change.",
+        "in": "1.27.1"
       }
     ]
   },

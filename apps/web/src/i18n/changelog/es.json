@@ -31,6 +31,14 @@
       {
         "text": "Con colecciones de Traktor grandes, leer cada pista va mucho más rápido. Y un NAS o un Apple Music que dejan de responder ya no bloquean la lista de USB ni el resto de lecturas de Music.",
         "in": "1.27.0"
+      },
+      {
+        "text": "El menú de filtros solo enseña en cada pestaña los filtros que pueden tener pistas ahí. «Sin cues», «Cues fuera de la rejilla» y «Rejilla mal» salen en las pestañas de tus programas de DJ, la sección Apple Music no sale en la de Music y «Mejor que Music» solo en Pistas. Si al cambiar de pestaña tenías puesto uno que allí no existe, se quita solo en vez de dejarte la lista vacía.",
+        "in": "1.27.1"
+      },
+      {
+        "text": "«Rejilla mal» recuerda lo que ha medido. Al volver a abrir una playlist ya no lee otra vez cada archivo, y solo vuelve a medir una pista si cambia el archivo o su rejilla en tu programa de DJ.",
+        "in": "1.27.1"
       }
     ]
   },

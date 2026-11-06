@@ -31,6 +31,14 @@
       {
         "text": "Bei großen Traktor-Sammlungen geht das Lesen jedes Tracks viel schneller. Und ein NAS oder ein Apple Music, das nicht mehr antwortet, hält die USB-Liste und die übrigen Music-Lesevorgänge nicht mehr auf.",
         "in": "1.27.0"
+      },
+      {
+        "text": "Das Filtermenü zeigt in jedem Tab nur die Filter, die dort Tracks haben können. „Ohne Cues“, „Cues neben dem Raster“ und „Raster falsch“ erscheinen in den Tabs deiner DJ-Software, der Bereich Apple Music fehlt im Music-Tab und „Besser als in Music“ gibt es nur unter Titel. Wechselst du mit einem Filter, den es dort nicht gibt, den Tab, fällt er von selbst weg, statt dir eine leere Liste zu lassen.",
+        "in": "1.27.1"
+      },
+      {
+        "text": "„Raster falsch“ merkt sich, was es gemessen hat. Öffnest du eine Playlist wieder, liest Surco nicht mehr jede Datei neu, und ein Track wird nur dann erneut gemessen, wenn sich seine Datei oder sein Raster in deiner DJ-Software ändert.",
+        "in": "1.27.1"
       }
     ]
   },

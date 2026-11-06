@@ -31,6 +31,14 @@
       {
         "text": "Com coleções grandes do Traktor, ler cada faixa fica muito mais rápido. E um NAS ou um Apple Music que para de responder não trava mais a lista de USB nem as outras leituras do Music.",
         "in": "1.27.0"
+      },
+      {
+        "text": "O menu de filtros mostra em cada aba só os filtros que podem ter faixas ali. “Sem cues”, “Cues fora da grade” e “Grade errada” aparecem nas abas dos seus programas de DJ, a seção Apple Music some da aba Music e “Melhor que no Music” fica só em Faixas. Se você trocar de aba com um filtro que lá não existe, ele sai sozinho em vez de deixar a lista vazia.",
+        "in": "1.27.1"
+      },
+      {
+        "text": "“Grade errada” lembra o que mediu. Reabrir uma playlist não lê mais cada arquivo de novo, e uma faixa só é medida outra vez se o arquivo ou a grade dela no seu programa de DJ mudar.",
+        "in": "1.27.1"
       }
     ]
   },

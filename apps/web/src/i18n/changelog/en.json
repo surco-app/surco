@@ -31,6 +31,14 @@
       {
         "text": "With big Traktor collections, reading each track is much faster. And a NAS or an Apple Music that stops answering no longer holds up the USB list or the rest of the Music reads.",
         "in": "1.27.0"
+      },
+      {
+        "text": "The filter menu only shows, on each tab, the filters that can hold tracks there. “No cues”, “Cues off the grid” and “Bad grid” appear on your DJ software tabs, the Apple Music section stays off the Music tab and “Better than Music” only shows in Tracks. If you switch tabs with one on that doesn't exist there, it drops by itself instead of leaving you an empty list.",
+        "in": "1.27.1"
+      },
+      {
+        "text": "“Bad grid” remembers what it measured. Reopening a playlist no longer reads every file again, and a track is only measured again if its file or its grid in your DJ software changes.",
+        "in": "1.27.1"
       }
     ]
   },
