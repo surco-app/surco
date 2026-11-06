@@ -16,6 +16,8 @@ import type {
 // had reached.
 export interface SessionView {
   selectedPath: string | null
+  // Every track selected with it, so a pick of several to convert comes back whole.
+  selectedPaths: string[]
   playback: SessionPlayback | null
   search: string
   sortBy: TrackSort
@@ -36,9 +38,11 @@ export function sessionViewOf(
   state: AppState,
   selectedPath: string | null,
   playback: SessionPlayback | null,
+  selectedPaths: string[],
 ): SessionView {
   return {
     selectedPath,
+    selectedPaths,
     playback,
     search: state.search,
     sortBy: state.sortBy,
@@ -134,6 +138,10 @@ function known<T extends string>(table: Record<T, true>, value: unknown): T | nu
   return typeof value === 'string' && Object.hasOwn(table, value) ? (value as T) : null
 }
 
+function parsePaths(raw: unknown): string[] {
+  return Array.isArray(raw) ? raw.filter((path): path is string => typeof path === 'string') : []
+}
+
 function parsePlayback(raw: unknown): SessionPlayback | null {
   if (typeof raw !== 'object' || raw === null) return null
   const { path, time } = raw as Record<string, unknown>
@@ -150,6 +158,7 @@ export function parseSessionView(raw: unknown): SessionView | null {
       : {}
   return {
     selectedPath: typeof view.selectedPath === 'string' ? view.selectedPath : null,
+    selectedPaths: parsePaths(view.selectedPaths),
     playback: parsePlayback(view.playback),
     search: typeof view.search === 'string' ? view.search : '',
     sortBy: known(SORTS, view.sortBy) ?? 'import',
@@ -164,8 +173,6 @@ export function parseSessionView(raw: unknown): SessionView | null {
       listen: known(LISTEN, filters.listen),
       format: typeof filters.format === 'string' ? filters.format : null,
     },
-    played: Array.isArray(view.played)
-      ? view.played.filter((path): path is string => typeof path === 'string')
-      : [],
+    played: parsePaths(view.played),
   }
 }

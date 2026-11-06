@@ -1148,11 +1148,22 @@ export default function App(): React.JSX.Element {
   // The reopened selection is scrolled to once its row shows: under a library filter that
   // waits for the row's verdict to come in.
   const pendingRestoredReveal = useRef<string | null>(null)
-  const selectRestored = useStableCallback((path: string) => {
-    const track = tracksRef.current.find((t) => t.inFiles && t.inputPath === path)
-    if (!track) return
-    pendingRestoredReveal.current = track.id
-    setSelection({ ids: [track.id], anchor: track.id })
+  const selectedSourcePaths = useMemo(
+    () =>
+      (selectedIds.length > 1 ? tracks.filter((t) => selectedIdSet.has(t.id)) : []).map(
+        (t) => t.inputPath,
+      ),
+    [tracks, selectedIds, selectedIdSet],
+  )
+  const selectRestored = useStableCallback((path: string | null, selectedPaths: string[]) => {
+    const files = tracksRef.current.filter((t) => t.inFiles)
+    const open = files.find((t) => t.inputPath === path)
+    const wanted = new Set(selectedPaths)
+    const ids = files.filter((t) => wanted.has(t.inputPath)).map((t) => t.id)
+    const anchor = open?.id ?? ids[0]
+    if (!anchor) return
+    pendingRestoredReveal.current = anchor
+    setSelection({ ids: ids.includes(anchor) ? ids : [anchor, ...ids], anchor })
   })
   // The last session: offered back at launch, written out as it changes. Self-contained —
   // it hands nothing back.
@@ -1164,6 +1175,7 @@ export default function App(): React.JSX.Element {
     store,
     withdrawOffer: review !== null,
     selectedPath: selectedSourcePath,
+    selectedPaths: selectedSourcePaths,
     selectRestored,
     playbackPosition: () => playbackPositionRef.current(),
     resumePlayback: (path, time) => resumeAtRef.current(path, time),

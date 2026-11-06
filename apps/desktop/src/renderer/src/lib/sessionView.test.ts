@@ -17,11 +17,15 @@ describe('sessionView', () => {
     })
     const view = JSON.parse(
       JSON.stringify(
-        sessionViewOf(store.getState(), '/music/b.wav', { path: '/music/b.wav', time: 199.5 }),
+        sessionViewOf(store.getState(), '/music/b.wav', { path: '/music/b.wav', time: 199.5 }, [
+          '/music/a.wav',
+          '/music/b.wav',
+        ]),
       ),
     )
     expect(parseSessionView(view)).toEqual({
       selectedPath: '/music/b.wav',
+      selectedPaths: ['/music/a.wav', '/music/b.wav'],
       playback: { path: '/music/b.wav', time: 199.5 },
       search: 'dub',
       sortBy: 'bpm',
@@ -42,11 +46,13 @@ describe('sessionView', () => {
         sortDir: 'sideways',
         filters: { quality: 'retired', library: 'notInLibrary', tags: 42 },
         selectedPath: 7,
+        selectedPaths: ['/music/a.wav', false],
         playback: { path: '/music/b.wav', time: -3 },
         played: ['/music/a.wav', 4, null],
       }),
     ).toEqual({
       selectedPath: null,
+      selectedPaths: ['/music/a.wav'],
       playback: null,
       search: 'dub',
       sortBy: 'import',

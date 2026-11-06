@@ -7260,6 +7260,28 @@ describe('App reopen last session', () => {
     expect(screen.getAllByTestId('track-row')[0]).toHaveAttribute('aria-selected', 'false')
   })
 
+  // Two of 718 picked out to convert the next day: the reopen brings both back selected, so
+  // "Convert 2" is where it was left instead of a single track.
+  it('brings back every track that was selected, not only the open one', async () => {
+    setApi({
+      getLastSession: vi.fn<Api['getLastSession']>().mockResolvedValue({
+        paths: ['/music/a.wav', '/music/b.wav', '/music/c.wav'],
+        edits: {},
+        view: { selectedPath: '/music/c.wav', selectedPaths: ['/music/a.wav', '/music/c.wav'] },
+      }),
+    })
+    await renderApp()
+    await screen.findByTestId('last-session')
+    fireEvent.click(screen.getByTestId('last-session-action'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    await waitFor(() =>
+      expect(
+        screen.getAllByTestId('track-row').map((row) => row.getAttribute('aria-selected')),
+      ).toEqual(['true', 'false', 'true']),
+    )
+    expect(screen.getByTestId('track-selected-count')).toHaveTextContent('2 selected')
+  })
+
   // Accepting must retire the prompt itself: it once stayed up after the click (the
   // toast id ref was cleared before the withdraw effect could use it), so every extra
   // press re-imported the same session and rained "already in the list" notices.
