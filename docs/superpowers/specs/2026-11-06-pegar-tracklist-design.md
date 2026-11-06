@@ -19,8 +19,9 @@ abajo (encontradas / dudosas / parecidas / no están):
 
 Patrón de oro: el usuario había hecho a mano la playlist del set 3 («231026 - Sagy & Vicent»,
 en Bolos de rekordbox, 30 pistas). Las 28 líneas que entran solas (encontradas + dudosas)
-coinciden una a una con lo que él metió, incluida la candidata elegida donde había dos (Pray
-→ W.I.P., Do It Now → Lock 'n' Load). Las 3 parecidas (Dancer, Hardhouse, P.I.K) también
+coinciden una a una con lo que él metió. Donde había dos candidatas empatadas (Pray → W.I.P.
+o sin mezcla, Do It Now → Lock 'n' Load o Jake Shore), la suya está entre ellas; el orden de
+un empate es el de la colección (en rekordbox, la más reciente primero), no un criterio. Las 3 parecidas (Dancer, Hardhouse, P.I.K) también
 están en su playlist: un clic cada una. «Tom apart» y «Torn Apart (Extended)» caen en la
 misma pista y la playlist la lleva una vez. Fijar en un test: ese tracklist contra esa
 colección debe dar esas 30 pistas, 27 solas y 3 con clic. Los tres tracklists y la playlist a mano están en
