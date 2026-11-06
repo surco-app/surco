@@ -97,21 +97,24 @@ export function traktorGridOf(block: string, durationMs: number): { ms: number; 
 export function readTraktorTrackCues(nml: string, contentId: string): TrackCues | null {
   const key = traktorKey(contentId)
   const entry = key === null ? null : traktorEntryBlock(nml, key)
-  if (!entry) return null
-  const info = entry.block.match(/<INFO\b[^>]*>/)?.[0] ?? ''
+  return entry ? traktorTrackCuesOf(entry.block, contentId) : null
+}
+
+export function traktorTrackCuesOf(block: string, contentId: string): TrackCues {
+  const info = block.match(/<INFO\b[^>]*>/)?.[0] ?? ''
   const durationMs = (Number(attr(info, 'PLAYTIME_FLOAT') || attr(info, 'PLAYTIME')) || 0) * 1000
-  const cues = traktorCueRows(entry.block).map(({ id, ms, kind, color, loop }) => ({
+  const cues = traktorCueRows(block).map(({ id, ms, kind, color, loop }) => ({
     id,
     ms,
     kind,
     color,
     ...(loop && { loop }),
   }))
-  const grid = traktorGridOf(entry.block, durationMs)
+  const grid = traktorGridOf(block, durationMs)
   return {
     contentId,
     analysed: grid.length > 0,
-    gridLocked: attr(entry.block.match(/<ENTRY\b[^>]*>/)?.[0] ?? '', 'LOCK') === '1',
+    gridLocked: attr(block.match(/<ENTRY\b[^>]*>/)?.[0] ?? '', 'LOCK') === '1',
     grid,
     gridFingerprint: gridFingerprint(grid),
     strong: [],
