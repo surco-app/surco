@@ -35,11 +35,10 @@ import {
   Zap,
 } from 'lucide-react'
 import type React from 'react'
-import { Fragment } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { LibrarySource } from '../lib/librarySource'
 import { EMPTY_FILTER, type FilterSelection, type qualityCounts } from '../lib/triage'
-import { FilterBar, FilterDivider, FilterHeading, FilterOption } from './FilterBar'
+import { FilterBar, FilterPanes, type PaneOption, type PaneSection } from './FilterBar'
 import { Tooltip } from './Tooltip'
 
 // The selectable bucket modes, one row each, grouped by the dimension they belong to.
@@ -80,6 +79,7 @@ const CONVERSION_MODES: ConversionMode[] = [
   'matchedBandcamp',
 ]
 const MATCH_MODES: Mode[] = ['automatched', 'matchReview', 'matchedDiscogs', 'matchedBandcamp']
+const STATUS_MODES: Mode[] = CONVERSION_MODES.filter((m) => !MATCH_MODES.includes(m))
 const TAGS_MODES: TagsMode[] = ['missingRequired', 'noCover', 'smallCover', 'noBpm', 'noKey']
 const LIBRARY_MODES: LibraryMode[] = ['notInLibrary', 'inLibrary']
 const DUPLICATES_MODES: DuplicatesMode[] = ['duplicates']
@@ -129,6 +129,16 @@ const FILTER_ICONS: Record<Mode | 'all', LucideIcon> = {
 }
 
 type Tally = ReturnType<typeof qualityCounts>
+
+type SectionKey =
+  | 'status'
+  | 'quality'
+  | 'tags'
+  | 'match'
+  | 'attention'
+  | 'library'
+  | 'format'
+  | 'duplicates'
 
 interface Measure {
   offered: boolean
@@ -247,17 +257,6 @@ export function QualityFilterBar({
       ? tr(`sidebar.filter.${mode}Engine`)
       : tr(`sidebar.filter.${mode}`)
 
-  // Conversion status and provenance, surfaced right under "All": "unconverted" is the
-  // primary call to action (the whole backlog to convert), so it leads the buckets instead
-  // of trailing them. The auto-matched bucket joins only once something has been auto-filled
-  // — and each per-provider bucket only once that catalog has matched something — so the
-  // menu isn't padded with permanently-empty filters.
-  const shownConversion: Mode[] = CONVERSION_MODES.filter(
-    (m) => m === 'unconverted' || tally[m] > 0,
-  )
-  const conversionSection = shownConversion.filter((m) => !MATCH_MODES.includes(m))
-  const shownAttention = (m: AttentionMode): boolean =>
-    tally[m] > 0 || (m === 'badGrid' && gridMeasure?.offered === true)
   const progressOf = (measure: Measure | undefined) =>
     measure && measure.total > 0 && measure.done < measure.total
       ? {
@@ -272,68 +271,14 @@ export function QualityFilterBar({
     badGrid: progressOf(gridMeasure),
     betterThanLibrary: progressOf(libraryMeasure),
   }
-  const libraryModes: Mode[] = libraryMeasure?.offered
-    ? [...LIBRARY_MODES, 'betterThanLibrary']
-    : LIBRARY_MODES
-  const matchSection = shownConversion.filter((m) => MATCH_MODES.includes(m))
-  // The remaining buckets that follow the format axis, in logical groups rendered with a
-  // thin divider between them so the menu reads by dimension. Empty groups drop out, so the
-  // dividers only ever separate groups that actually have something to show.
-  const primarySections: { key: string; modes: Mode[] }[] = [
-    // The quality verdict.
-    { key: 'quality', modes: QUALITY_MODES },
-    // The tag work matching a release fixes, on its own axis so it stacks with the retouch
-    // buckets: artwork missing or too soft, no tempo, no key. Listed per bucket like those.
-    ...(TAGS_MODES.some((m) => tally[m] > 0)
-      ? [{ key: 'tags', modes: TAGS_MODES.filter((m) => tally[m] > 0) }]
-      : []),
-    // Where the tags came from, apart from how far the conversion got, though both filter
-    // on the conversion axis.
-    ...(matchSection.length > 0 ? [{ key: 'match', modes: matchSection }] : []),
-    // The retouch buckets (silence left to trim, true clipping, cues left to mark), each
-    // listed only once some track is actually in it — permanently-empty rows would just
-    // pad the menu, and the facts only exist once waves are decoded or a library is read.
-    ...(ATTENTION_MODES.some(shownAttention)
-      ? [{ key: 'attention', modes: ATTENTION_MODES.filter(shownAttention) }]
-      : []),
-    // Apple Music library buckets, listed only once the snapshot has resolved a verdict
-    // for at least one track — which also keeps them off Windows, where there is no
-    // library to read. "Not in library" leads: it's the actionable bucket.
-    ...(tally.inLibrary + tally.notInLibrary > 0 ? [{ key: 'library', modes: libraryModes }] : []),
-  ]
-  // Only once the crate actually holds the same song twice — a permanently-empty
-  // duplicates bucket would just pad the menu.
-  const duplicatesSection: Mode[] = tally.duplicates > 0 ? DUPLICATES_MODES : []
-  const sectionLabel = (key: string): string =>
+  const sectionLabel = (key: SectionKey): string =>
     key === 'library' && librarySource === 'engineDj'
       ? tr('sidebar.filter.section.libraryEngine')
-      : tr(`sidebar.filter.section.${key}`)
-  const heading = (key: string): React.JSX.Element => (
-    <FilterHeading testid={`quality-filter-section-${key}`} label={sectionLabel(key)} />
-  )
+      : key === 'duplicates'
+        ? tr('sidebar.filter.duplicates')
+        : tr(`sidebar.filter.section.${key}`)
   const countOf = (mode: Mode): number => facets.tally[mode as keyof Tally]
   const isActive = (mode: Mode): boolean => value[axisOf(mode)] === mode
-  // "All" reads as selected only when nothing is filtered on any axis, so picking a bucket
-  // or a format visibly clears its tick.
-  const nothingActive =
-    !value.quality &&
-    !value.conversion &&
-    !value.library &&
-    !value.duplicates &&
-    !value.attention &&
-    !value.tags &&
-    !value.format
-
-  // Focus an active option when the menu opens (the first set axis, or "All" when nothing
-  // is), so the arrows continue from the current choice like a native select.
-  const focusMode =
-    value.quality ??
-    value.conversion ??
-    value.library ??
-    value.duplicates ??
-    value.attention ??
-    value.tags ??
-    'all'
   // Toggle one axis and close, like a native select. The axes are still independent — the
   // reopened menu shows the current ticks — so layering a second axis is one reopen away,
   // while the common single-filter pick closes the moment it's made.
@@ -348,9 +293,9 @@ export function QualityFilterBar({
     close()
   }
 
-  // "All" clears every axis at once, so it's a true "show everything" reset rather than
-  // only resetting one dimension and leaving the others quietly applied.
-  function chooseAll(close: () => void): void {
+  // Clears every axis at once, so it's a true "show everything" reset rather than only
+  // resetting one dimension and leaving the others quietly applied.
+  function clearAll(close: () => void): void {
     onChange(EMPTY_FILTER)
     close()
   }
@@ -414,35 +359,48 @@ export function QualityFilterBar({
   // full of likely-fake rips still flags itself now that the buckets are hidden in a menu.
   const triggerDot = tally.suspect > 0 ? 'bg-warn' : null
 
-  // A primary bucket row. "All" is the odd one out: it reads as selected only when nothing
-  // is filtered and clears every axis, so it gets nothingActive/chooseAll instead of the
-  // plain axis match.
-  const renderPrimary = (mode: Mode | 'all', close: () => void): React.JSX.Element => (
-    <FilterOption
-      key={mode}
-      testid={`quality-filter-${mode}`}
-      Icon={FILTER_ICONS[mode]}
-      dot={mode === 'all' ? null : attentionDot(mode, facets.tally)}
-      label={filterLabel(mode)}
-      progress={mode === 'all' ? undefined : progress[mode]}
-      count={mode === 'all' ? trackCount : countOf(mode)}
-      selected={mode === 'all' ? nothingActive : isActive(mode)}
-      onClick={mode === 'all' ? () => chooseAll(close) : () => toggle(mode, close)}
-    />
-  )
-  // A format bucket row: an independent toggle that ANDs with the bucket axes. Clicking the
-  // active one clears it.
-  const renderFormat = (f: { format: string; count: number }, close: () => void) => (
-    <FilterOption
-      key={f.format}
-      testid={`quality-filter-ext:${f.format}`}
-      Icon={FileAudio}
-      label={f.format}
-      count={facets.formats[f.format] ?? 0}
-      selected={value.format === f.format}
-      onClick={() => toggleFormat(f.format, close)}
-    />
-  )
+  const modeOption = (mode: Mode, close: () => void): PaneOption => ({
+    id: mode,
+    Icon: FILTER_ICONS[mode],
+    dot: attentionDot(mode, facets.tally),
+    label: filterLabel(mode),
+    progress: progress[mode],
+    count: countOf(mode),
+    selected: isActive(mode),
+    onPick: () => toggle(mode, close),
+  })
+  // Every section is always there and lists every one of its filters, an empty one dimmed,
+  // so a filter is found where it was last time instead of turning up only once some track
+  // lands in it. The one exception is the library section, which needs a library to read.
+  const sections = (close: () => void): PaneSection[] => {
+    const of = (key: SectionKey, modes: Mode[]): PaneSection => ({
+      key,
+      label: sectionLabel(key),
+      options: modes.map((m) => modeOption(m, close)),
+    })
+    return [
+      of('status', STATUS_MODES),
+      of('quality', QUALITY_MODES),
+      of('tags', TAGS_MODES),
+      of('match', MATCH_MODES),
+      of('attention', ATTENTION_MODES),
+      ...(librarySource ? [of('library', [...LIBRARY_MODES, 'betterThanLibrary'])] : []),
+      {
+        key: 'format',
+        label: sectionLabel('format'),
+        empty: tr('sidebar.filter.oneFormat'),
+        options: formats.map((f) => ({
+          id: `ext:${f.format}`,
+          Icon: FileAudio,
+          label: f.format,
+          count: facets.formats[f.format] ?? 0,
+          selected: value.format === f.format,
+          onPick: () => toggleFormat(f.format, close),
+        })),
+      },
+      of('duplicates', DUPLICATES_MODES),
+    ]
+  }
 
   return (
     <FilterBar
@@ -450,43 +408,16 @@ export function QualityFilterBar({
       filterRef={filterRef}
       trigger={{ ...trigger, dot: triggerDot }}
       listLabel={tr('sidebar.filter.label')}
-      // Several buckets (one per axis) can be on at once.
-      multiselectable
-      focusTestId={`quality-filter-${focusMode}`}
       options={(close) => (
-        <>
-          {/* "All" leads as the reset, then the conversion buckets right under it (the
-              primary "what's left to convert" action), then the quality, tag, match and
-              library buckets, then the format axis. Fragments keep every option a direct child of the
-              listbox, with a divider between sections; empty sections (no formats, no
-              library) drop their divider too. */}
-          {renderPrimary('all', close)}
-          <Fragment key="conversion">
-            <FilterDivider testid="quality-filter-separator" />
-            {heading('status')}
-            {conversionSection.map((m) => renderPrimary(m, close))}
-          </Fragment>
-          {primarySections.map((group) => (
-            <Fragment key={group.key}>
-              <FilterDivider testid="quality-filter-separator" />
-              {heading(group.key)}
-              {group.modes.map((m) => renderPrimary(m, close))}
-            </Fragment>
-          ))}
-          {formats.length > 0 && (
-            <Fragment key="formats">
-              <FilterDivider testid="quality-filter-separator" />
-              {heading('format')}
-              {formats.map((f) => renderFormat(f, close))}
-            </Fragment>
-          )}
-          {duplicatesSection.length > 0 && (
-            <Fragment key="duplicates">
-              <FilterDivider testid="quality-filter-separator" />
-              {duplicatesSection.map((m) => renderPrimary(m, close))}
-            </Fragment>
-          )}
-        </>
+        <FilterPanes
+          testid="quality-filter"
+          sections={sections(close)}
+          sectionsLabel={tr('sidebar.filter.label')}
+          shown={tr('sidebar.filter.shown', { visible: visibleCount, total: trackCount })}
+          clearLabel={tr('sidebar.filter.clear')}
+          canClear={activeChips.length > 0}
+          onClear={() => clearAll(close)}
+        />
       )}
       counterTestId="track"
       visibleCount={visibleCount}

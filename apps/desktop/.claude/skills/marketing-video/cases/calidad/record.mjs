@@ -23,6 +23,7 @@ try {
     zoomAt(260, 260, 2)
     await clickOn(page.locator('[data-testid="quality-filter-trigger"]'), 800)
     await page.waitForTimeout(700)
+    await clickOn(page.locator('[data-testid="quality-filter-section-quality"]'), 500)
     const doubtful = page
       .getByRole('menuitemradio', { name: /Dudosas/ })
       .or(page.getByRole('menuitem', { name: /Dudosas/ }))

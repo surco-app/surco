@@ -145,7 +145,10 @@
         "library": "Apple Music",
         "libraryEngine": "Engine DJ",
         "format": "フォーマット"
-      }
+      },
+      "clear": "フィルターを解除",
+      "shown": "{{total}} 曲中 {{visible}} 曲",
+      "oneFormat": "すべての曲が同じ形式です"
     },
     "search": {
       "placeholder": "トラックを検索",

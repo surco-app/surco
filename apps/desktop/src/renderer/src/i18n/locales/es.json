@@ -145,7 +145,10 @@
         "library": "Apple Music",
         "libraryEngine": "Engine DJ",
         "format": "Formato"
-      }
+      },
+      "clear": "Quitar filtros",
+      "shown": "{{visible}} de {{total}} pistas",
+      "oneFormat": "Todas las pistas tienen el mismo formato"
     },
     "search": {
       "placeholder": "Buscar pistas",

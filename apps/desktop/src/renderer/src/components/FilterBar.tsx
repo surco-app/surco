@@ -1,6 +1,6 @@
 import { Check, ChevronDown, type LucideIcon } from 'lucide-react'
 import type React from 'react'
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { type MenuPlacement, placeMenu, useCloseOnMove } from './menuPlacement'
@@ -61,32 +61,211 @@ export function FilterOption({
   )
 }
 
-export function FilterDivider({ testid }: { testid: string }): React.JSX.Element {
-  return (
-    // A hidden div, not an <hr>: a listbox may own only options, and the divider is
-    // decoration, so it stays out of the accessibility tree.
-    <div
-      aria-hidden="true"
-      data-testid={testid}
-      className="my-1 border-0 border-t border-[var(--color-line)]"
-    />
-  )
+export interface PaneOption {
+  id: string
+  Icon: LucideIcon
+  dot?: string | null
+  label: string
+  count: number
+  progress?: { text: string; title: string }
+  selected: boolean
+  onPick: () => void
 }
 
-export function FilterHeading({
+export interface PaneSection {
+  key: string
+  label: string
+  options: PaneOption[]
+  // What the pane says when the section has no options to offer.
+  empty?: string
+}
+
+// How long the pointer rests on a section before its options replace the pane. Crossing
+// the column on the way to an option passes over other sections; switching on the first
+// touch swapped the pane out from under the pointer.
+export const SECTION_HOVER_DELAY = 120
+
+// A filter menu too long for one list: the sections down the left, always the same ones in
+// the same order, and the chosen section's filters on the right. The menu keeps its height
+// however many filters a section grows. ↑↓ walk the sections, → steps into the filters and
+// ← steps back.
+export function FilterPanes({
   testid,
-  label,
+  sections,
+  sectionsLabel,
+  shown,
+  clearLabel,
+  canClear,
+  onClear,
 }: {
   testid: string
-  label: string
+  sections: PaneSection[]
+  sectionsLabel: string
+  shown: string
+  clearLabel: string
+  canClear: boolean
+  onClear: () => void
 }): React.JSX.Element {
+  const id = useId()
+  const firstPicked = sections.find((s) => s.options.some((o) => o.selected))
+  const [current, setCurrent] = useState(firstPicked?.key ?? sections[0]?.key)
+  const section = sections.find((s) => s.key === current) ?? sections[0]
+  const tabsRef = useRef<HTMLDivElement>(null)
+  const paneRef = useRef<HTMLDivElement>(null)
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+
+  const tabs = (): HTMLElement[] =>
+    Array.from(tabsRef.current?.querySelectorAll<HTMLElement>('[role="tab"]') ?? [])
+  const options = (): HTMLElement[] =>
+    Array.from(paneRef.current?.querySelectorAll<HTMLElement>('[role="option"]') ?? [])
+  const tabOf = (key: string): HTMLElement | undefined =>
+    tabs().find((t) => t.dataset.section === key)
+
+  // Opening lands on the picked filter, so the arrows continue from the current choice;
+  // with nothing picked it lands on the first section.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: only where the menu opens
+  useLayoutEffect(() => {
+    const picked = options().find((o) => o.getAttribute('aria-selected') === 'true')
+    if (picked) showOption(paneRef.current, picked)
+    else {
+      const tab = tabOf(current)
+      if (tab) showOption(tabsRef.current, tab)
+    }
+  }, [])
+  useEffect(() => () => clearTimeout(hoverTimer.current), [])
+
+  function onKeyDown(e: React.KeyboardEvent): void {
+    const target = e.target as HTMLElement
+    const onTab = target.getAttribute('role') === 'tab'
+    const list = onTab ? tabs() : options()
+    const idx = list.indexOf(target)
+    let next: HTMLElement | undefined
+    if (e.key === 'ArrowDown') next = list[idx < list.length - 1 ? idx + 1 : 0]
+    else if (e.key === 'ArrowUp') next = list[idx > 0 ? idx - 1 : list.length - 1]
+    else if (e.key === 'Home') next = list[0]
+    else if (e.key === 'End') next = list[list.length - 1]
+    else if (e.key === 'ArrowRight' && onTab) next = options()[0]
+    else if (e.key === 'ArrowLeft' && !onTab) next = tabOf(current)
+    else return
+    e.preventDefault()
+    e.stopPropagation()
+    if (!next) return
+    if (next.getAttribute('role') === 'tab') {
+      if (onTab && next.dataset.section) setCurrent(next.dataset.section)
+      showOption(tabsRef.current, next)
+    } else showOption(paneRef.current, next)
+  }
+
+  const tabId = (key: string): string => `${id}-tab-${key}`
+  const paneId = `${id}-pane`
+
   return (
-    <div
-      aria-hidden="true"
-      data-testid={testid}
-      className="px-2 pt-1.5 pb-1 text-[11px] font-semibold text-fg-faint"
-    >
-      {label}
+    // biome-ignore lint/a11y/noStaticElementInteractions: the keys belong to the tabs and options inside
+    <div onKeyDown={onKeyDown} className="flex w-[26rem] max-w-[calc(100vw-1rem)] flex-col">
+      <div className="grid min-h-0 flex-1 grid-cols-[10rem_minmax(0,1fr)]">
+        <div
+          ref={tabsRef}
+          role="tablist"
+          aria-orientation="vertical"
+          aria-label={sectionsLabel}
+          className="flex flex-col gap-px border-r border-[var(--color-line)] p-1"
+        >
+          {sections.map((s) => {
+            const picked = s.options.filter((o) => o.selected).length
+            const flagged = s.options.some((o) => o.dot)
+            const empty = !picked && s.options.every((o) => o.count === 0)
+            const selected = s.key === section.key
+            return (
+              <button
+                key={s.key}
+                type="button"
+                role="tab"
+                id={tabId(s.key)}
+                data-section={s.key}
+                data-testid={`${testid}-section-${s.key}`}
+                aria-selected={selected}
+                aria-controls={paneId}
+                tabIndex={selected ? 0 : -1}
+                data-empty={empty ? '' : undefined}
+                onClick={() => {
+                  clearTimeout(hoverTimer.current)
+                  setCurrent(s.key)
+                }}
+                onMouseEnter={() => {
+                  clearTimeout(hoverTimer.current)
+                  hoverTimer.current = setTimeout(() => setCurrent(s.key), SECTION_HOVER_DELAY)
+                }}
+                onMouseLeave={() => clearTimeout(hoverTimer.current)}
+                className={`flex h-7 w-full items-center gap-2 rounded-md px-2 text-left text-xs outline-none hover:bg-[var(--color-hover)] hover:text-fg data-[empty]:text-fg-faint ${selected ? 'bg-[var(--color-hover)] text-fg' : 'text-fg-dim'}`}
+              >
+                <span className="min-w-0 flex-1 truncate">{s.label}</span>
+                {picked > 0 ? (
+                  <span
+                    data-testid={`${testid}-section-${s.key}-picked`}
+                    className="grid h-4 min-w-4 place-items-center rounded-full bg-[var(--color-accent)] px-1 text-[10px] font-bold tabular-nums text-[var(--color-on-accent)]"
+                  >
+                    {picked}
+                  </span>
+                ) : (
+                  flagged && (
+                    <span
+                      data-testid={`${testid}-section-${s.key}-dot`}
+                      className="h-1.5 w-1.5 shrink-0 rounded-full bg-warn"
+                    />
+                  )
+                )}
+              </button>
+            )
+          })}
+        </div>
+        <div
+          role="tabpanel"
+          id={paneId}
+          aria-labelledby={tabId(section.key)}
+          className="relative min-h-0"
+        >
+          {section.options.length > 0 ? (
+            <div
+              ref={paneRef}
+              role="listbox"
+              aria-multiselectable="true"
+              aria-label={section.label}
+              data-testid={`${testid}-listbox`}
+              className="absolute inset-0 overflow-y-auto p-1"
+            >
+              {section.options.map((o) => (
+                <FilterOption
+                  key={o.id}
+                  testid={`${testid}-${o.id}`}
+                  Icon={o.Icon}
+                  dot={o.dot}
+                  label={o.label}
+                  count={o.count}
+                  progress={o.progress}
+                  selected={o.selected}
+                  onClick={o.onPick}
+                />
+              ))}
+            </div>
+          ) : (
+            <p data-testid={`${testid}-empty`} className="px-3 py-2 text-xs text-fg-faint">
+              {section.empty}
+            </p>
+          )}
+        </div>
+      </div>
+      <div className="flex items-center justify-between gap-2 border-t border-[var(--color-line)] py-1 pr-1 pl-3 text-[11px] tabular-nums text-fg-faint">
+        <span data-testid={`${testid}-shown`}>{shown}</span>
+        <button
+          type="button"
+          data-testid={`${testid}-clear`}
+          disabled={!canClear}
+          onClick={onClear}
+          className="rounded px-2 py-1 text-xs text-[var(--color-accent)] outline-none hover:bg-[var(--color-hover)] disabled:text-fg-faint disabled:hover:bg-transparent"
+        >
+          {clearLabel}
+        </button>
+      </div>
     </div>
   )
 }
@@ -98,7 +277,8 @@ interface Props {
   listLabel: string
   multiselectable?: boolean
   // The option the open menu focuses first, so the arrows continue from the current choice.
-  focusTestId: string
+  // Left out when the menu is not one listbox: its contents then place focus and move it.
+  focusTestId?: string
   options: (close: () => void) => React.ReactNode
   // Controls that share the row, between the filter trigger and the position counter.
   children?: React.ReactNode
@@ -139,7 +319,7 @@ export function FilterBar({
   const [pos, setPos] = useState<MenuPlacement | null>(null)
   useCloseOnMove(open, listRef, setOpen)
   useLayoutEffect(() => {
-    if (!open) return
+    if (!open || !focusTestId) return
     const list = listRef.current
     if (!list) return
     const item = list.querySelector<HTMLElement>(`[data-testid="${focusTestId}"]`)
@@ -175,6 +355,7 @@ export function FilterBar({
       e.stopPropagation()
       return
     }
+    if (!focusTestId) return
     const items = Array.from(
       listRef.current?.querySelectorAll<HTMLElement>('[role="option"]') ?? [],
     )
@@ -230,13 +411,18 @@ export function FilterBar({
                 onClick={close}
                 className="fixed inset-0 z-50 cursor-default"
               />
+              {/* biome-ignore lint/a11y/noStaticElementInteractions: the menu's own controls take the keys, this only closes it */}
               <div
                 ref={listRef}
-                role="listbox"
+                {...(focusTestId
+                  ? {
+                      role: 'listbox',
+                      'aria-multiselectable': multiselectable || undefined,
+                      'aria-label': listLabel,
+                    }
+                  : {})}
                 data-menu
-                aria-multiselectable={multiselectable || undefined}
-                data-testid={`${testid}-listbox`}
-                aria-label={listLabel}
+                data-testid={focusTestId ? `${testid}-listbox` : `${testid}-menu`}
                 onKeyDown={onListKeyDown}
                 style={{
                   top: pos.top,
@@ -245,7 +431,7 @@ export function FilterBar({
                   minWidth: pos.minWidth,
                   maxHeight: pos.maxHeight,
                 }}
-                className={`animate-pop-flat fixed z-50 overflow-y-auto rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)] ${pos.bottom !== undefined ? 'origin-bottom-left' : 'origin-top-left'}`}
+                className={`animate-pop-flat fixed z-50 overflow-y-auto rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] ${focusTestId ? 'p-1' : ''} shadow-[var(--shadow-float)] ${pos.bottom !== undefined ? 'origin-bottom-left' : 'origin-top-left'}`}
               >
                 {options(close)}
               </div>

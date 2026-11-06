@@ -1500,13 +1500,14 @@ describe('App auto-match', () => {
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
     // Narrow to MP3 — only the mp3 row shows.
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-section-format'))
     fireEvent.click(screen.getByTestId('quality-filter-ext:MP3'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
     fireEvent.click(screen.getByTestId('auto-match'))
     // Only the single visible mp3 gets matched; the hidden wav is never swept in.
     await waitFor(() => expect(screen.getAllByTestId('track-automatched')).toHaveLength(1))
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
-    fireEvent.click(screen.getByTestId('quality-filter-all'))
+    fireEvent.click(screen.getByTestId('quality-filter-clear'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
     expect(screen.getAllByTestId('track-automatched')).toHaveLength(1)
   })
@@ -2545,6 +2546,7 @@ describe('App source playlists', () => {
     fireEvent.click(await screen.findByTestId('add-files'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-section-format'))
     fireEvent.click(screen.getByTestId('quality-filter-ext:MP3'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
 
@@ -3446,6 +3448,7 @@ describe('App source playlists', () => {
     await screen.findByTestId('track-separator-s1')
     expect(screen.queryByTestId('reorder-hint')).not.toBeInTheDocument()
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-section-format'))
     fireEvent.click(screen.getByTestId('quality-filter-ext:MP3'))
     await screen.findByTestId('reorder-hint')
     expectNoReorderLine()
@@ -4486,6 +4489,7 @@ describe('App multi-select removal', () => {
     fireEvent.click(rows[2], { metaKey: true })
 
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-section-format'))
     fireEvent.click(screen.getByTestId('quality-filter-ext:MP3'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
     fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
@@ -5244,6 +5248,7 @@ describe('App conversion failure notice', () => {
     fireEvent.click(await screen.findByTestId('add-files'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-section-format'))
     fireEvent.click(screen.getByTestId('quality-filter-ext:MP3'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
 
@@ -5856,6 +5861,7 @@ describe('App command palette list-wide actions', () => {
     fireEvent.click(await screen.findByTestId('add-files'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-section-format'))
     fireEvent.click(screen.getByTestId('quality-filter-ext:MP3'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
     fireEvent.keyDown(document.body, { key: 'k', ctrlKey: true })
@@ -6119,6 +6125,7 @@ describe('App per-format filter', () => {
     // …then reopening and layering the WAV format narrows it to just the wav, the conversion
     // axis still applied (each pick closes the menu, so the second needs a fresh open).
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-section-format'))
     fireEvent.click(screen.getByTestId('quality-filter-ext:WAV'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
   })
@@ -6130,6 +6137,7 @@ describe('App per-format filter', () => {
     await addMixedCrate()
     // Narrow to just the MP3.
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-section-format'))
     fireEvent.click(screen.getByTestId('quality-filter-ext:MP3'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
     fireEvent.contextMenu(screen.getByTestId('track-row'))
@@ -6146,6 +6154,7 @@ describe('App per-format filter', () => {
     await addMixedCrate()
     // Narrow to MP3 — only the mp3 row shows.
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-section-format'))
     fireEvent.click(screen.getByTestId('quality-filter-ext:MP3'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
     runMenu('remove-all')
@@ -6164,6 +6173,7 @@ describe('App per-format filter', () => {
     await addMixedCrate()
     // Both rows share artist 'A'; unscoped, a replace on 'A' would hit both.
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-section-format'))
     fireEvent.click(screen.getByTestId('quality-filter-ext:MP3'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
     runMenu('find-replace')
@@ -6189,6 +6199,7 @@ describe('App filter selection', () => {
     // Import auto-selects the first row (the wav). Filtering to MP3 hides it…
     expect(screen.getAllByTestId('track-row')[0]).toHaveAttribute('aria-selected', 'true')
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-section-format'))
     fireEvent.click(screen.getByTestId('quality-filter-ext:MP3'))
     // …so the lone remaining row (the mp3) becomes the selected one.
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
@@ -6226,6 +6237,7 @@ describe('App select all', () => {
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
     // Narrow to MP3 — only the two mp3 rows show.
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-section-format'))
     fireEvent.click(screen.getByTestId('quality-filter-ext:MP3'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
     runMenu('select-all')
@@ -6236,7 +6248,7 @@ describe('App select all', () => {
     // Clearing the filter reveals all three: exactly the two mp3s stay selected. Had Select
     // All grabbed the hidden wav too, all three would read selected here.
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
-    fireEvent.click(screen.getByTestId('quality-filter-all'))
+    fireEvent.click(screen.getByTestId('quality-filter-clear'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
     rows = screen.getAllByTestId('track-row')
     const selected = rows.filter((r) => r.getAttribute('aria-selected') === 'true')
@@ -6636,6 +6648,7 @@ describe('App Apple Music library filter', () => {
     // Both tracks get a verdict from the snapshot, so both library buckets list in the
     // filter menu: one owned (Strobe), one missing (Ghosts).
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-section-library'))
     const notInLibrary = await screen.findByTestId('quality-filter-notInLibrary')
     expect(screen.getByTestId('quality-filter-inLibrary')).toBeInTheDocument()
     // Filtering to "not in library" leaves only the track the library doesn't hold.
@@ -6657,9 +6670,9 @@ describe('App Apple Music library filter', () => {
     expect((await screen.findByTestId('library-check-failed')).textContent).toContain('Apple Music')
   })
 
-  // Off macOS there is no library to read, so the buckets never resolve and must not be
-  // listed — a Windows build shows no Apple Music filters in the menu at all.
-  it('lists no library buckets off macOS', async () => {
+  // Off macOS there is no library to read, so a Windows build shows no Apple Music section
+  // in the menu at all.
+  it('lists no library section off macOS', async () => {
     setApi({
       readTags: vi.fn().mockResolvedValue({ artist: 'deadmau5', title: 'Strobe' }),
       loadAppleMusicLibrary: vi.fn().mockResolvedValue([{ title: 'Strobe', artist: 'deadmau5' }]),
@@ -6667,8 +6680,7 @@ describe('App Apple Music library filter', () => {
     await renderApp()
     await addTwoTracks()
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
-    expect(screen.queryByTestId('quality-filter-notInLibrary')).toBeNull()
-    expect(screen.queryByTestId('quality-filter-inLibrary')).toBeNull()
+    expect(screen.queryByTestId('quality-filter-section-library')).toBeNull()
   })
 })
 
@@ -7650,13 +7662,14 @@ describe('App duplicates filter', () => {
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
 
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-section-duplicates'))
     fireEvent.click(await screen.findByTestId('quality-filter-duplicates'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
   })
 
-  // Without a duplicated pair the bucket must not exist — an empty filter row would
-  // just pad the menu with a dead entry.
-  it('lists no duplicates bucket when every track is unique', async () => {
+  // Without a duplicated pair the bucket stays in its place, dimmed at zero, so it is found
+  // where it always is the day a crate does hold the same song twice.
+  it('dims the duplicates bucket at zero when every track is unique', async () => {
     setApi({
       readTags: vi.fn((path: string) =>
         Promise.resolve({ title: path.includes('/a.') ? 'One' : 'Two', artist: 'X' }),
@@ -7665,7 +7678,10 @@ describe('App duplicates filter', () => {
     await renderApp()
     await addTwoTracks()
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
-    expect(screen.queryByTestId('quality-filter-duplicates')).toBeNull()
+    fireEvent.click(screen.getByTestId('quality-filter-section-duplicates'))
+    const duplicates = screen.getByTestId('quality-filter-duplicates')
+    expect(duplicates).toHaveAttribute('data-empty')
+    expect(duplicates).toHaveTextContent(/0$/)
   })
 })
 
@@ -8235,6 +8251,7 @@ describe('App list review', () => {
     fireEvent.click(await screen.findByTestId('add-files'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-section-tags'))
     fireEvent.click(await screen.findByTestId('quality-filter-missingRequired'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
     fireEvent.click(screen.getByTestId('review-incomplete'))

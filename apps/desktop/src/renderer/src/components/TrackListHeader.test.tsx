@@ -329,7 +329,7 @@ describe('TrackListHeader menus', () => {
     renderHeader()
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
     const header = screen.getByTestId('track-list-header')
-    expect(header).not.toContainElement(screen.getByTestId('quality-filter-listbox'))
+    expect(header).not.toContainElement(screen.getByTestId('quality-filter-menu'))
     expect(header).not.toContainElement(screen.getByTestId('quality-filter-backdrop'))
   })
 
