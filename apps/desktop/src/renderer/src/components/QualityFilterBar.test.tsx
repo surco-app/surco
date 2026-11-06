@@ -414,18 +414,69 @@ describe('QualityFilterBar', () => {
     expect(onChange).toHaveBeenCalledWith(sel({ attention: 'badGrid' }))
   })
 
-  it('says how far the measuring got beside the bad-grid filter, with the amber nudge once some are found', () => {
+  // The measuring shows as a ring closing round the filter's own icon: a second number
+  // beside the count read as another count, and took width the labels need.
+  it('rings the bad-grid icon with how far the measuring got, in place of a percentage', () => {
     renderBar({
       tally: tally({ badGrid: 3 }),
       gridMeasure: { offered: true, done: 344, total: 2077 },
     })
     openMenu('attention')
-    const option = screen.getByTestId('quality-filter-badGrid')
-    expect(option).toHaveTextContent(/^Bad grid16 %3$/)
-    expect(hoverTooltip(screen.getByTestId('quality-filter-badGrid-progress'))).toEqual(
-      'Measuring 344 of 2077',
-    )
+    expect(screen.getByTestId('quality-filter-badGrid')).toHaveTextContent(/^Bad grid3$/)
+    const ring = screen.getByTestId('quality-filter-badGrid-progress')
+    expect(ring).toHaveAttribute('role', 'progressbar')
+    expect(ring).toHaveAttribute('aria-valuenow', '16')
+    expect(ring).toHaveAccessibleName('Measuring 344 of 2077')
+    expect(hoverTooltip(ring)).toEqual('Measuring 344 of 2077')
+  })
+
+  // A filter still measuring has found nothing yet, which is not the same as holding nothing:
+  // dimmed like an empty one, its ring faded to where it could not be read.
+  it('never dims a filter or its section while it measures', () => {
+    renderBar({ gridMeasure: { offered: true, done: 10, total: 40 } })
+    openMenu('attention')
+    expect(screen.getByTestId('quality-filter-badGrid')).not.toHaveAttribute('data-empty')
+    expect(screen.getByTestId('quality-filter-noCues')).toHaveAttribute('data-empty')
+    expect(screen.getByTestId('quality-filter-section-attention')).not.toHaveAttribute('data-empty')
+  })
+
+  // The ring and the amber dot sit on the same icon: the dot waits for the measuring to end,
+  // then says there is something to fix.
+  it('holds the amber dot back until the measuring ends', () => {
+    renderBar({
+      tally: tally({ badGrid: 3 }),
+      gridMeasure: { offered: true, done: 344, total: 2077 },
+    })
+    openMenu('attention')
+    expect(screen.queryByTestId('quality-filter-badGrid-dot')).toBeNull()
+    cleanup()
+    renderBar({
+      tally: tally({ badGrid: 3 }),
+      gridMeasure: { offered: true, done: 2077, total: 2077 },
+    })
+    openMenu('attention')
+    expect(screen.queryByTestId('quality-filter-badGrid-progress')).toBeNull()
     expect(screen.getByTestId('quality-filter-badGrid-dot')).toBeInTheDocument()
+  })
+
+  // From another section the filter measuring is out of sight, so its section carries the
+  // same ring, unless a filter picked there already claims the spot with its count.
+  it('rings the section whose filter is measuring, its picked count winning the spot', () => {
+    renderBar({ gridMeasure: { offered: true, done: 10, total: 40 } })
+    openMenu()
+    expect(screen.getByTestId('quality-filter-section-attention-progress')).toHaveAttribute(
+      'aria-valuenow',
+      '25',
+    )
+    cleanup()
+    renderBar({
+      value: sel({ attention: 'clipping' }),
+      tally: tally({ clipping: 2 }),
+      gridMeasure: { offered: true, done: 10, total: 40 },
+    })
+    openMenu()
+    expect(screen.queryByTestId('quality-filter-section-attention-progress')).toBeNull()
+    expect(screen.getByTestId('quality-filter-section-attention-picked')).toHaveTextContent('1')
   })
 
   it('offers the better-than-the-library filter among the library buckets, since picking it is what starts the measuring', () => {
@@ -445,7 +496,11 @@ describe('QualityFilterBar', () => {
     })
     openMenu('library')
     expect(screen.getByTestId('quality-filter-betterThanLibrary')).toHaveTextContent(
-      /^Better than Music25 %3$/,
+      /^Better than Music3$/,
+    )
+    expect(screen.getByTestId('quality-filter-betterThanLibrary-progress')).toHaveAttribute(
+      'aria-valuenow',
+      '25',
     )
     expect(hoverTooltip(screen.getByTestId('quality-filter-betterThanLibrary-progress'))).toEqual(
       'Measuring 10 of 40',

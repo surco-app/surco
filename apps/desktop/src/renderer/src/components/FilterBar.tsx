@@ -11,6 +11,62 @@ import { Tooltip } from './Tooltip'
 const ROW_CLASS =
   'flex w-full items-center gap-2 whitespace-nowrap rounded-md px-2 py-1.5 text-left text-xs text-fg transition-colors hover:bg-[var(--color-hover)] group data-[empty]:text-fg-faint'
 
+export interface MeasureProgress {
+  fraction: number
+  title: string
+}
+
+const RING_RADIUS = 10
+const RING_LENGTH = 2 * Math.PI * RING_RADIUS
+
+// How far a filter's background measuring got, as a ring that closes as it goes: it sits
+// round the filter's own icon and costs the row no width, where a percentage read as a
+// second count beside the real one.
+function ProgressRing({
+  testid,
+  progress,
+  className,
+}: {
+  testid: string
+  progress: MeasureProgress
+  className: string
+}): React.JSX.Element {
+  return (
+    <span
+      data-testid={testid}
+      role="progressbar"
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={Math.floor(progress.fraction * 100)}
+      aria-label={progress.title}
+      className={className}
+    >
+      <svg viewBox="0 0 22 22" className="size-full -rotate-90" aria-hidden="true">
+        <circle
+          cx="11"
+          cy="11"
+          r={RING_RADIUS}
+          fill="none"
+          stroke="var(--color-line-strong)"
+          strokeWidth="1.8"
+        />
+        <circle
+          cx="11"
+          cy="11"
+          r={RING_RADIUS}
+          fill="none"
+          stroke="var(--color-accent)"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeDasharray={RING_LENGTH}
+          strokeDashoffset={RING_LENGTH * (1 - progress.fraction)}
+        />
+      </svg>
+      <Tooltip label={progress.title} />
+    </span>
+  )
+}
+
 export function FilterOption({
   testid,
   Icon,
@@ -26,7 +82,7 @@ export function FilterOption({
   dot?: string | null
   label: string
   count: number
-  progress?: { text: string; title: string }
+  progress?: MeasureProgress
   selected: boolean
   onClick: () => void
 }): React.JSX.Element {
@@ -36,13 +92,20 @@ export function FilterOption({
       role="option"
       aria-selected={selected}
       data-testid={testid}
-      data-empty={count === 0 && !selected ? '' : undefined}
+      data-empty={count === 0 && !selected && !progress ? '' : undefined}
       onClick={onClick}
       className={ROW_CLASS}
     >
       <span className="relative group-data-[empty]:opacity-50">
         <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
-        {dot && (
+        {progress && (
+          <ProgressRing
+            testid={`${testid}-progress`}
+            progress={progress}
+            className="absolute -inset-[3px]"
+          />
+        )}
+        {dot && !progress && (
           <span
             data-testid={`${testid}-dot`}
             className={`absolute -right-1 -top-1 h-1.5 w-1.5 rounded-full ${dot}`}
@@ -50,12 +113,6 @@ export function FilterOption({
         )}
       </span>
       <span className="flex-1">{label}</span>
-      {progress && (
-        <span data-testid={`${testid}-progress`} className="tabular-nums text-[11px] text-fg-faint">
-          <Tooltip label={progress.title} />
-          {progress.text}
-        </span>
-      )}
       <span className="tabular-nums text-fg-dim group-data-[empty]:text-fg-faint">{count}</span>
       <Check aria-hidden="true" className={`size-3 shrink-0 ${selected ? '' : 'invisible'}`} />
     </button>
@@ -68,7 +125,7 @@ export interface PaneOption {
   dot?: string | null
   label: string
   count: number
-  progress?: { text: string; title: string }
+  progress?: MeasureProgress
   selected: boolean
   onPick: () => void
 }
@@ -229,8 +286,9 @@ export function FilterPanes({
         >
           {sections.map((s) => {
             const picked = s.options.filter((o) => o.selected).length
-            const flagged = s.options.some((o) => o.dot)
-            const empty = !picked && s.options.every((o) => o.count === 0)
+            const flagged = s.options.some((o) => o.dot && !o.progress)
+            const measuring = s.options.find((o) => o.progress)?.progress
+            const empty = !picked && !measuring && s.options.every((o) => o.count === 0)
             const current = s.key === section.key
             const selected = current && !query
             return (
@@ -261,6 +319,12 @@ export function FilterPanes({
                   >
                     {picked}
                   </span>
+                ) : measuring ? (
+                  <ProgressRing
+                    testid={`${testid}-section-${s.key}-progress`}
+                    progress={measuring}
+                    className="relative size-3.5 shrink-0"
+                  />
                 ) : (
                   flagged && (
                     <span

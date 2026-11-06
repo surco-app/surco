@@ -368,7 +368,7 @@ export function QualityFilterBar({
   const progressOf = (measure: Measure | undefined) =>
     measure && measure.total > 0 && measure.done < measure.total
       ? {
-          text: `${Math.floor((measure.done / measure.total) * 100)} %`,
+          fraction: measure.done / measure.total,
           title: tr('sidebar.filter.gridMeasuring', {
             done: measure.done,
             total: measure.total,
