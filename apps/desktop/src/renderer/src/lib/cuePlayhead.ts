@@ -1,6 +1,6 @@
 import { BEATS_PER_BAR, nearestBeat, SAME_POSITION_MS } from '../../../shared/cueRules'
 
-const ZOOM_BARS = [4, 8, 16, 32, 64] as const
+const ZOOM_BARS = [1, 2, 4, 8, 16, 32, 64] as const
 export const DEFAULT_ZOOM_BARS = 16
 
 export function jumpBeats(beats: number[], ms: number, count: number): number {

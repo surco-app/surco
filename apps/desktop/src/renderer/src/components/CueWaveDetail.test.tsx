@@ -383,7 +383,7 @@ describe('CueWaveDetail', () => {
 
   it('disables + and − at the ends of the zoom and offers reset away from the default, never hiding any', () => {
     const onReset = vi.fn<() => void>()
-    const { rerender } = render(<CueZoom row bars={4} onZoom={vi.fn()} onReset={onReset} />)
+    const { rerender } = render(<CueZoom row bars={1} onZoom={vi.fn()} onReset={onReset} />)
     expect(screen.getByTestId('cue-zoom-in')).toBeDisabled()
     expect(screen.getByTestId('cue-zoom-out')).toBeEnabled()
     fireEvent.click(screen.getByTestId('cue-zoom-reset'))

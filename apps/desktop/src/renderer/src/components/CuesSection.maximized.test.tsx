@@ -162,18 +162,11 @@ describe('CuesSection maximized', () => {
     expect(screen.getByTestId('cues-save')).toHaveTextContent('Save to rekordbox')
   })
 
-  it('gathers what acts on the marks in one bar over the waves, the flow and Auto mark on the left and the time, the bars to the CALL and the zoom on the right', async () => {
+  it('gathers what acts on the marks in one bar over the waves, the flow and Auto mark on the left and the time and the bars to the CALL on the right', async () => {
     setup()
     await maximize()
     const toolbar = screen.getByTestId('cues-toolbar')
-    for (const id of [
-      'cues-flow',
-      'cues-auto-mark',
-      'cues-position',
-      'cue-zoom-out',
-      'cue-zoom-reset',
-      'cue-zoom-in',
-    ])
+    for (const id of ['cues-flow', 'cues-auto-mark', 'cues-position'])
       expect(toolbar).toContainElement(screen.getByTestId(id))
     expect(screen.getByTestId('cues-header')).not.toContainElement(screen.getByTestId('cues-flow'))
     expect(
@@ -182,7 +175,7 @@ describe('CuesSection maximized', () => {
     ).toBeTruthy()
   })
 
-  it('puts Jump and Q in the toolbar beside the zoom, since all three set how the playhead moves, so the deck fits one line', async () => {
+  it('puts Jump and Q in the toolbar, so the deck fits one line', async () => {
     setup()
     await maximize()
     const toolbar = screen.getByTestId('cues-toolbar')
@@ -191,9 +184,20 @@ describe('CuesSection maximized', () => {
       expect(toolbar).toContainElement(screen.getByTestId(id))
       expect(deck).not.toContainElement(screen.getByTestId(id))
     }
+  })
+
+  it('puts the zoom on the deck line right after Auto, so checking a grid fix up close never sends the hand up to the toolbar', async () => {
+    setup()
+    await maximize()
+    const toolbar = screen.getByTestId('cues-toolbar')
+    const deckGrid = screen.getByTestId('cues-deck-grid')
+    for (const id of ['cue-zoom-out', 'cue-zoom-reset', 'cue-zoom-in']) {
+      expect(deckGrid).toContainElement(screen.getByTestId(id))
+      expect(toolbar).not.toContainElement(screen.getByTestId(id))
+    }
     expect(
       screen
-        .getByTestId('cues-quantize')
+        .getByTestId('cues-grid-auto')
         .compareDocumentPosition(screen.getByTestId('cue-zoom-out')) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy()

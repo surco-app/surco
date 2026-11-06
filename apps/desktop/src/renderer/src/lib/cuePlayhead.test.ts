@@ -104,11 +104,13 @@ describe('barsToNextCall', () => {
 })
 
 describe('zoom', () => {
-  it('opens at 16 bars and steps through 4 to 64, stopping at both ends', () => {
+  it('opens at 16 bars and steps through 1 to 64, stopping at both ends, so a beat can be checked up close', () => {
     expect(DEFAULT_ZOOM_BARS).toBe(16)
     expect(zoomStep(16, 'in')).toBe(8)
     expect(zoomStep(16, 'out')).toBe(32)
-    expect(zoomStep(4, 'in')).toBe(4)
+    expect(zoomStep(4, 'in')).toBe(2)
+    expect(zoomStep(2, 'in')).toBe(1)
+    expect(zoomStep(1, 'in')).toBe(1)
     expect(zoomStep(64, 'out')).toBe(64)
     expect(zoomStep(12, 'in')).toBe(8)
   })

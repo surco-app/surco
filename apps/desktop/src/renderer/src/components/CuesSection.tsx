@@ -1552,12 +1552,6 @@ function Editing({
         onQuantize={(unit) => onQuantize?.(unit)}
         onDone={focusEditor}
       />
-      <CueZoom
-        row
-        bars={zoom}
-        onZoom={(dir) => setZoom((z) => zoomStep(z, dir))}
-        onReset={() => setZoom(DEFAULT_ZOOM_BARS)}
-      />
       <div ref={moreMenu.ref} className="relative flex shrink-0">
         <button
           type="button"
@@ -1870,17 +1864,26 @@ function Editing({
           canRemoveMemory={removableCall !== undefined && !state.locked.includes(removableCall.key)}
           onDone={focusEditor}
           gridControls={
-            <CueGridControls
-              grid={state.grid}
-              disabledReason={gridOff}
-              fit={gridFit}
-              needsFix={needsFix}
-              playheadMs={playheadMs}
-              onChange={setGrid}
-              onFit={fitGridTo}
-              onDone={focusEditor}
-              zones={rekordboxGrid}
-            />
+            <>
+              <CueGridControls
+                grid={state.grid}
+                disabledReason={gridOff}
+                fit={gridFit}
+                needsFix={needsFix}
+                playheadMs={playheadMs}
+                onChange={setGrid}
+                onFit={fitGridTo}
+                onDone={focusEditor}
+                zones={rekordboxGrid}
+              />
+              <span aria-hidden="true" className="mx-2 h-5 w-px bg-[var(--color-line)]" />
+              <CueZoom
+                row
+                bars={zoom}
+                onZoom={(dir) => setZoom((z) => zoomStep(z, dir))}
+                onReset={() => setZoom(DEFAULT_ZOOM_BARS)}
+              />
+            </>
           }
         />
       )}
