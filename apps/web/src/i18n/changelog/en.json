@@ -42,7 +42,15 @@
       },
       {
         "text": "Surco no longer analyses a big library again every time you open it. The analysis cache holds about 10,000 tracks, up from about 2,000, and in Settings › Advanced › Analysis cache you pick its “Maximum size” and see how many tracks fit. Tags, BPM and key are no longer dropped to make room, and a track whose quality is already measured isn't measured again when you open its playlist.",
-        "in": "1.27.2"
+        "in": "1.27.3"
+      },
+      {
+        "text": "The full cue editor opens with ⌘⇧C from the selected track. Its bottom buttons sit in groups, pads, CALL, grid and zoom, with “Clear all cues” alone at the end. The zoom closes in to a single bar, “Accept and save” saves the “Auto mark” suggestions to your DJ software in one click, and with “Letters in track order” an empty pad tells you which letter the cue will get.",
+        "in": "1.27.3"
+      },
+      {
+        "text": "“Review” shows you what you are about to apply before anything is written. The “To apply” filter leaves only what you have set up, the confirmation names each change with its track and what it becomes, and a group you have set up says “To apply” with a button to discard it.",
+        "in": "1.27.3"
       }
     ]
   },

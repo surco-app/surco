@@ -42,7 +42,15 @@
       },
       {
         "text": "O Surco não analisa mais uma biblioteca grande de novo toda vez que você a abre. O cache de análise guarda cerca de 10.000 faixas, antes cerca de 2.000, e em Ajustes › Avançado › Cache de análise você escolhe o “Tamanho máximo” vendo quantas faixas cabem. Tags, BPM e tom não são mais apagados para abrir espaço, e uma faixa com a qualidade já medida não é medida de novo ao abrir a playlist dela.",
-        "in": "1.27.2"
+        "in": "1.27.3"
+      },
+      {
+        "text": "O editor de cues ampliado abre com ⌘⇧C a partir da faixa selecionada. Os botões de baixo ficam em grupos, pads, CALL, grade e zoom, e “Apagar todas as cues” fica sozinho no fim. O zoom aproxima até um compasso, “Aceitar e salvar” salva as sugestões de “Marcar automático” no seu programa de DJ com um clique, e com “Letras na ordem da faixa” um pad vazio mostra que letra o cue vai ter.",
+        "in": "1.27.3"
+      },
+      {
+        "text": "“Revisar” mostra o que você vai aplicar antes de gravar qualquer coisa. O filtro “A aplicar” deixa só o que você preparou, a confirmação nomeia cada mudança com a faixa e como fica, e um grupo preparado diz “A aplicar” com um botão para descartar.",
+        "in": "1.27.3"
       }
     ]
   },

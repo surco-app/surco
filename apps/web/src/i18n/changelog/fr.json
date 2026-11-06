@@ -42,7 +42,15 @@
       },
       {
         "text": "Surco ne réanalyse plus une grande bibliothèque chaque fois que tu l’ouvres. Le cache d’analyse garde environ 10 000 morceaux, contre environ 2 000 avant, et dans Réglages › Avancé › Cache d'analyse tu choisis sa « Taille maximale » en voyant combien de morceaux y tiennent. Les tags, le BPM et la tonalité ne sont plus effacés pour faire de la place, et un morceau dont la qualité est déjà mesurée n’est plus remesuré quand tu ouvres sa playlist.",
-        "in": "1.27.2"
+        "in": "1.27.3"
+      },
+      {
+        "text": "Le grand éditeur de cues s’ouvre avec ⌘⇧C depuis le morceau sélectionné. Ses boutons du bas sont rangés par groupes, pads, CALL, grille et zoom, et « Effacer toutes les cues » reste seul au bout. Le zoom s’approche jusqu’à une mesure, « Accepter et enregistrer » enregistre les propositions de « Marquage auto » dans ton logiciel de DJ en un clic, et avec « Lettres dans l’ordre du morceau » un pad vide te dit quelle lettre aura la cue.",
+        "in": "1.27.3"
+      },
+      {
+        "text": "« Vérifier » te montre ce que tu vas appliquer avant d’écrire quoi que ce soit. Le filtre « À appliquer » ne garde que ce que tu as préparé, la confirmation nomme chaque changement avec son morceau et ce qu’il devient, et un groupe préparé indique « À appliquer » avec un bouton pour l’écarter.",
+        "in": "1.27.3"
       }
     ]
   },

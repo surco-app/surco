@@ -42,7 +42,15 @@
       },
       {
         "text": "Surco ya no vuelve a analizar una biblioteca grande cada vez que la abres. La caché de análisis guarda unas 10.000 pistas, antes unas 2.000, y en Ajustes › Avanzado › Caché de análisis eliges su «Tamaño máximo» viendo cuántas pistas caben. Las etiquetas, el BPM y la tonalidad ya no se borran para hacer sitio, y una pista con su calidad ya medida no se vuelve a medir al abrir su playlist.",
-        "in": "1.27.2"
+        "in": "1.27.3"
+      },
+      {
+        "text": "El editor de cues ampliado se abre con ⌘⇧C desde la pista seleccionada. Sus botones de abajo van en grupos, pads, CALL, rejilla y zoom, y «Borrar todos los cues» queda solo al final. El zoom acerca hasta un compás, «Aceptar y guardar» guarda las propuestas de «Auto marcar» en tu programa de DJ con un clic, y con «Letras en orden de la pista» un pad vacío te dice qué letra tendrá el cue.",
+        "in": "1.27.3"
+      },
+      {
+        "text": "«Revisar» te enseña lo que vas a aplicar antes de escribir nada. El filtro «Por aplicar» deja solo lo que has preparado, la confirmación nombra cada cambio con su pista y cómo queda, y un grupo preparado dice «Por aplicar» con un botón para descartarlo.",
+        "in": "1.27.3"
       }
     ]
   },

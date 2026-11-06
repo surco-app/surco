@@ -42,7 +42,15 @@
       },
       {
         "text": "Surco analysiert eine große Bibliothek nicht mehr bei jedem Öffnen neu. Der Analyse-Cache fasst etwa 10.000 Titel statt etwa 2.000, und unter Einstellungen › Erweitert › Analyse-Cache wählst du seine „Maximale Größe“ und siehst, wie viele Titel hineinpassen. Tags, BPM und Tonart werden nicht mehr gelöscht, um Platz zu schaffen, und ein Titel mit bereits gemessener Qualität wird beim Öffnen seiner Playlist nicht erneut gemessen.",
-        "in": "1.27.2"
+        "in": "1.27.3"
+      },
+      {
+        "text": "Der große Cue-Editor öffnet sich mit ⌘⇧C für den ausgewählten Titel. Seine Tasten unten stehen in Gruppen, Pads, CALL, Raster und Zoom, und „Alle Cues löschen“ steht allein am Ende. Der Zoom geht bis auf einen Takt heran, „Übernehmen und speichern“ speichert die Vorschläge von „Auto-Markieren“ mit einem Klick in deiner DJ-Software, und mit „Buchstaben in Titelreihenfolge“ zeigt ein leeres Pad, welchen Buchstaben der Cue bekommt.",
+        "in": "1.27.3"
+      },
+      {
+        "text": "„Prüfen“ zeigt dir vor dem Schreiben, was du anwenden wirst. Der Filter „Vorgemerkt“ lässt nur das Vorbereitete übrig, die Bestätigung nennt jede Änderung mit ihrem Titel und dem Ergebnis, und eine vorgemerkte Gruppe sagt „Vorgemerkt“, mit einer Taste zum Verwerfen.",
+        "in": "1.27.3"
       }
     ]
   },
