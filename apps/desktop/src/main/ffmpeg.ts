@@ -3631,7 +3631,7 @@ export async function measureLoudness(
     )
   const [peakPass, statsPass] = await Promise.all([
     pass(EBUR128_SUMMARY),
-    pass('astats=metadata=1:reset=0'),
+    pass('astats'),
   ])
   const loud = parseLoudness(peakPass.stderr)
   if (!loud) return null

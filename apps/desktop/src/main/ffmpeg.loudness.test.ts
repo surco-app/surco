@@ -79,6 +79,15 @@ describe('measureLoudness', () => {
     expect(stats).not.toContain('ebur128')
   })
 
+  it('asks astats for the summary alone, since per-frame metadata quadruples its cost on an MP3 and nothing reads it', async () => {
+    calls.length = 0
+    clock = 0
+    await measureLoudness('/in.mp3')
+
+    const stats = calls.map((c) => c.args.join(' ')).find((f) => f.includes('astats')) as string
+    expect(stats).not.toContain('metadata=1')
+  })
+
   // The editor's reading goes through the same 16 MB stderr buffer, so it needs the
   // same summary-only pass the loudness test on a long mix pins (ebur128LongTrack).
   it('measures with the summary-only pass, so a long mix fits the stderr buffer', async () => {
