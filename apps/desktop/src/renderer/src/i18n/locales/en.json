@@ -149,7 +149,9 @@
       "clear": "Clear filters",
       "shown": "{{visible}} of {{total}} tracks",
       "oneFormat": "Every track has the same format",
-      "remove": "Remove {{filter}}"
+      "remove": "Remove {{filter}}",
+      "searching": "Filters matching “{{query}}”",
+      "noMatch": "No filter matches “{{query}}”"
     },
     "search": {
       "placeholder": "Search tracks",

@@ -149,7 +149,9 @@
       "clear": "Quitar filtros",
       "shown": "{{visible}} de {{total}} pistas",
       "oneFormat": "Todas las pistas tienen el mismo formato",
-      "remove": "Quitar {{filter}}"
+      "remove": "Quitar {{filter}}",
+      "searching": "Filtros con «{{query}}»",
+      "noMatch": "Ningún filtro coincide con «{{query}}»"
     },
     "search": {
       "placeholder": "Buscar pistas",

@@ -443,6 +443,8 @@ export function QualityFilterBar({
           clearLabel={tr('sidebar.filter.clear')}
           canClear={activeChips.length > 0}
           onClear={() => clearAll(close)}
+          searching={(query) => tr('sidebar.filter.searching', { query })}
+          noMatch={(query) => tr('sidebar.filter.noMatch', { query })}
         />
       )}
       counterTestId="track"

@@ -149,7 +149,9 @@
       "clear": "Filter entfernen",
       "shown": "{{visible}} von {{total}} Titeln",
       "oneFormat": "Alle Titel haben dasselbe Format",
-      "remove": "{{filter}} entfernen"
+      "remove": "{{filter}} entfernen",
+      "searching": "Filter mit „{{query}}“",
+      "noMatch": "Kein Filter passt zu „{{query}}“"
     },
     "search": {
       "placeholder": "Tracks suchen",

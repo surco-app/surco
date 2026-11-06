@@ -1,8 +1,9 @@
-import { Check, ChevronDown, type LucideIcon } from 'lucide-react'
+import { Check, ChevronDown, type LucideIcon, Search } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
+import { foldText } from '../lib/normalizeText'
 import { type MenuPlacement, placeMenu, useCloseOnMove } from './menuPlacement'
 import { showOption } from './Select'
 import { Tooltip } from './Tooltip'
@@ -88,7 +89,8 @@ export const SECTION_HOVER_DELAY = 120
 // A filter menu too long for one list: the sections down the left, always the same ones in
 // the same order, and the chosen section's filters on the right. The menu keeps its height
 // however many filters a section grows. ↑↓ walk the sections, → steps into the filters and
-// ← steps back.
+// ← steps back. Typing searches every section at once, for whoever knows the filter's name
+// and not where it lives; Escape drops the search before it closes the menu.
 export function FilterPanes({
   testid,
   sections,
@@ -97,6 +99,8 @@ export function FilterPanes({
   clearLabel,
   canClear,
   onClear,
+  searching,
+  noMatch,
 }: {
   testid: string
   sections: PaneSection[]
@@ -105,11 +109,15 @@ export function FilterPanes({
   clearLabel: string
   canClear: boolean
   onClear: () => void
+  searching: (query: string) => string
+  noMatch: (query: string) => string
 }): React.JSX.Element {
   const id = useId()
   const firstPicked = sections.find((s) => s.options.some((o) => o.selected))
   const [current, setCurrent] = useState(firstPicked?.key ?? sections[0]?.key)
   const section = sections.find((s) => s.key === current) ?? sections[0]
+  const [query, setQuery] = useState('')
+  const rootRef = useRef<HTMLDivElement>(null)
   const tabsRef = useRef<HTMLDivElement>(null)
   const paneRef = useRef<HTMLDivElement>(null)
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
@@ -134,7 +142,51 @@ export function FilterPanes({
   }, [])
   useEffect(() => () => clearTimeout(hoverTimer.current), [])
 
+  const folded = foldText(query.trim())
+  const groups = folded
+    ? sections
+        .map((s) => ({
+          section: s,
+          options: foldText(s.label).includes(folded)
+            ? s.options
+            : s.options.filter((o) => foldText(o.label).includes(folded)),
+        }))
+        .filter((g) => g.options.length > 0)
+    : [{ section, options: section.options }]
+
+  // Each keystroke lands on the first match, so Enter picks it and the arrows walk the rest.
+  // With nothing matching the menu itself keeps the focus, or the next key would reach the
+  // list behind it.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: refocus only when the search changes
+  useLayoutEffect(() => {
+    if (!query) return
+    const first = options()[0]
+    if (first) showOption(paneRef.current, first)
+    else rootRef.current?.focus({ preventScroll: true })
+  }, [query])
+
+  function pickSection(key: string): void {
+    clearTimeout(hoverTimer.current)
+    setQuery('')
+    setCurrent(key)
+  }
+
+  function onSearchKey(e: React.KeyboardEvent): boolean {
+    if (e.metaKey || e.ctrlKey || e.altKey) return false
+    if (e.key === 'Escape' && query) {
+      setQuery('')
+      const tab = tabOf(current)
+      if (tab) showOption(tabsRef.current, tab)
+    } else if (e.key === 'Backspace' && query) setQuery(query.slice(0, -1))
+    else if (e.key.length === 1 && e.key !== ' ') setQuery(query + e.key)
+    else return false
+    e.preventDefault()
+    e.stopPropagation()
+    return true
+  }
+
   function onKeyDown(e: React.KeyboardEvent): void {
+    if (onSearchKey(e)) return
     const target = e.target as HTMLElement
     const onTab = target.getAttribute('role') === 'tab'
     const list = onTab ? tabs() : options()
@@ -151,7 +203,7 @@ export function FilterPanes({
     e.stopPropagation()
     if (!next) return
     if (next.getAttribute('role') === 'tab') {
-      if (onTab && next.dataset.section) setCurrent(next.dataset.section)
+      if (onTab && next.dataset.section) pickSection(next.dataset.section)
       showOption(tabsRef.current, next)
     } else showOption(paneRef.current, next)
   }
@@ -161,7 +213,12 @@ export function FilterPanes({
 
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: the keys belong to the tabs and options inside
-    <div onKeyDown={onKeyDown} className="flex w-[26rem] max-w-[calc(100vw-1rem)] flex-col">
+    <div
+      ref={rootRef}
+      tabIndex={-1}
+      onKeyDown={onKeyDown}
+      className="flex w-[26rem] max-w-[calc(100vw-1rem)] flex-col outline-none"
+    >
       <div className="grid min-h-0 flex-1 grid-cols-[10rem_minmax(0,1fr)]">
         <div
           ref={tabsRef}
@@ -174,7 +231,8 @@ export function FilterPanes({
             const picked = s.options.filter((o) => o.selected).length
             const flagged = s.options.some((o) => o.dot)
             const empty = !picked && s.options.every((o) => o.count === 0)
-            const selected = s.key === section.key
+            const current = s.key === section.key
+            const selected = current && !query
             return (
               <button
                 key={s.key}
@@ -185,15 +243,12 @@ export function FilterPanes({
                 data-testid={`${testid}-section-${s.key}`}
                 aria-selected={selected}
                 aria-controls={paneId}
-                tabIndex={selected ? 0 : -1}
+                tabIndex={current ? 0 : -1}
                 data-empty={empty ? '' : undefined}
-                onClick={() => {
-                  clearTimeout(hoverTimer.current)
-                  setCurrent(s.key)
-                }}
+                onClick={() => pickSection(s.key)}
                 onMouseEnter={() => {
                   clearTimeout(hoverTimer.current)
-                  hoverTimer.current = setTimeout(() => setCurrent(s.key), SECTION_HOVER_DELAY)
+                  hoverTimer.current = setTimeout(() => pickSection(s.key), SECTION_HOVER_DELAY)
                 }}
                 onMouseLeave={() => clearTimeout(hoverTimer.current)}
                 className={`flex h-7 w-full items-center gap-2 rounded-md px-2 text-left text-xs outline-none hover:bg-[var(--color-hover)] hover:text-fg data-[empty]:text-fg-faint ${selected ? 'bg-[var(--color-hover)] text-fg' : 'text-fg-dim'}`}
@@ -221,37 +276,75 @@ export function FilterPanes({
         <div
           role="tabpanel"
           id={paneId}
-          aria-labelledby={tabId(section.key)}
+          {...(query
+            ? { 'aria-label': searching(query) }
+            : { 'aria-labelledby': tabId(section.key) })}
           className="relative min-h-0"
         >
-          {section.options.length > 0 ? (
-            <div
-              ref={paneRef}
-              role="listbox"
-              aria-multiselectable="true"
-              aria-label={section.label}
-              data-testid={`${testid}-listbox`}
-              className="absolute inset-0 overflow-y-auto p-1"
-            >
-              {section.options.map((o) => (
-                <FilterOption
-                  key={o.id}
-                  testid={`${testid}-${o.id}`}
-                  Icon={o.Icon}
-                  dot={o.dot}
-                  label={o.label}
-                  count={o.count}
-                  progress={o.progress}
-                  selected={o.selected}
-                  onClick={o.onPick}
-                />
-              ))}
-            </div>
-          ) : (
-            <p data-testid={`${testid}-empty`} className="px-3 py-2 text-xs text-fg-faint">
-              {section.empty}
-            </p>
-          )}
+          <div className="absolute inset-0 flex flex-col">
+            {query && (
+              <p
+                data-testid={`${testid}-search`}
+                className="flex shrink-0 items-center gap-1.5 px-3 pt-2 pb-1 text-[11px] font-semibold text-fg-faint"
+              >
+                <Search className="size-3 shrink-0" aria-hidden="true" />
+                <span className="min-w-0 truncate">{searching(query)}</span>
+              </p>
+            )}
+            {groups.length > 0 && groups[0].options.length > 0 ? (
+              <div
+                ref={paneRef}
+                role="listbox"
+                aria-multiselectable="true"
+                aria-label={query ? searching(query) : section.label}
+                data-testid={`${testid}-listbox`}
+                className="min-h-0 flex-1 overflow-y-auto p-1"
+              >
+                {query
+                  ? groups.map((g) => (
+                      // biome-ignore lint/a11y/useSemanticElements: a listbox groups its options with role group; a fieldset groups form controls
+                      <div key={g.section.key} role="group" aria-label={g.section.label}>
+                        <div
+                          aria-hidden="true"
+                          className="px-2 pt-1.5 pb-1 text-[11px] font-semibold text-fg-faint"
+                        >
+                          {g.section.label}
+                        </div>
+                        {g.options.map((o) => (
+                          <FilterOption
+                            key={o.id}
+                            testid={`${testid}-${o.id}`}
+                            Icon={o.Icon}
+                            dot={o.dot}
+                            label={o.label}
+                            count={o.count}
+                            progress={o.progress}
+                            selected={o.selected}
+                            onClick={o.onPick}
+                          />
+                        ))}
+                      </div>
+                    ))
+                  : section.options.map((o) => (
+                      <FilterOption
+                        key={o.id}
+                        testid={`${testid}-${o.id}`}
+                        Icon={o.Icon}
+                        dot={o.dot}
+                        label={o.label}
+                        count={o.count}
+                        progress={o.progress}
+                        selected={o.selected}
+                        onClick={o.onPick}
+                      />
+                    ))}
+              </div>
+            ) : (
+              <p data-testid={`${testid}-empty`} className="px-3 py-2 text-xs text-fg-faint">
+                {query ? noMatch(query) : section.empty}
+              </p>
+            )}
+          </div>
         </div>
       </div>
       <div className="flex items-center justify-between gap-2 border-t border-[var(--color-line)] py-1 pr-1 pl-3 text-[11px] tabular-nums text-fg-faint">

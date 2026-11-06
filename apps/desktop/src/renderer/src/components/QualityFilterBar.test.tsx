@@ -879,3 +879,97 @@ describe('ActiveFilters', () => {
     expect(onChange).toHaveBeenCalledWith(sel({ quality: 'good' }))
   })
 })
+
+describe('QualityFilterBar search', () => {
+  const type = (text: string): void => {
+    for (const key of text) fireEvent.keyDown(document.activeElement as Element, { key })
+  }
+
+  // Whoever knows the filter's name should not have to know which section it lives in.
+  it('finds a filter from any section by typing its name, ignoring case', () => {
+    renderBar({ tally: tally({ noCover: 3, smallCover: 2, unconverted: 4 }) })
+    openMenu()
+    type('ARTW')
+    const shown = screen.getAllByRole('option').map((el) => el.getAttribute('data-testid'))
+    expect(shown).toEqual(['quality-filter-noCover', 'quality-filter-smallCover'])
+    expect(screen.getByRole('group', { name: 'Tags' })).toContainElement(
+      screen.getByTestId('quality-filter-noCover'),
+    )
+    expect(screen.getByTestId('quality-filter-search')).toHaveTextContent(
+      'Filters matching “ARTW”',
+    )
+  })
+
+  it('lands on the first match, so Enter or a click picks it', () => {
+    const { onChange } = renderBar({ tally: tally({ clipping: 2 }) })
+    openMenu()
+    type('clip')
+    const clipping = screen.getByTestId('quality-filter-clipping')
+    expect(clipping).toHaveFocus()
+    fireEvent.click(clipping)
+    expect(onChange).toHaveBeenCalledWith(sel({ attention: 'clipping' }))
+  })
+
+  it('lists a whole section when its name is what was typed', () => {
+    renderBar({
+      formats: [
+        { format: 'FLAC', count: 2 },
+        { format: 'WAV', count: 3 },
+      ],
+    })
+    openMenu()
+    type('form')
+    expect(screen.getAllByRole('option').map((el) => el.textContent)).toEqual(['FLAC2', 'WAV3'])
+  })
+
+  // With nothing left to focus the keys must still stay in the menu; landing on the page
+  // they would move the track selection behind it.
+  it('says nothing matches and keeps the keys in the menu', () => {
+    const onWindowKey = vi.fn()
+    renderBar()
+    openMenu()
+    type('zzq')
+    expect(screen.getByTestId('quality-filter-empty')).toHaveTextContent('No filter matches “zzq”')
+    window.addEventListener('keydown', onWindowKey)
+    fireEvent.keyDown(document.activeElement as Element, { key: 'ArrowDown' })
+    window.removeEventListener('keydown', onWindowKey)
+    expect(onWindowKey).not.toHaveBeenCalled()
+  })
+
+  it('edits the search with Backspace', () => {
+    renderBar({ tally: tally({ clipping: 2 }) })
+    openMenu()
+    type('clipx')
+    fireEvent.keyDown(document.activeElement as Element, { key: 'Backspace' })
+    expect(screen.getByTestId('quality-filter-clipping')).toBeInTheDocument()
+  })
+
+  it('drops the search on Escape before closing the menu on the next one', () => {
+    renderBar({ tally: tally({ unconverted: 2 }) })
+    openMenu()
+    type('clip')
+    fireEvent.keyDown(document.activeElement as Element, { key: 'Escape' })
+    expect(screen.queryByTestId('quality-filter-search')).toBeNull()
+    expect(screen.getByTestId('quality-filter-unconverted')).toBeInTheDocument()
+    expect(screen.getByTestId('quality-filter-section-status')).toHaveFocus()
+    fireEvent.keyDown(document.activeElement as Element, { key: 'Escape' })
+    expect(screen.queryByTestId('quality-filter-menu')).toBeNull()
+  })
+
+  it('ends the search when a section is picked', () => {
+    renderBar({ tally: tally({ good: 2 }) })
+    openMenu()
+    type('clip')
+    fireEvent.click(screen.getByTestId('quality-filter-section-quality'))
+    expect(screen.queryByTestId('quality-filter-search')).toBeNull()
+    expect(screen.getByTestId('quality-filter-good')).toBeInTheDocument()
+  })
+
+  // A shortcut held with ⌘ belongs to the app, not to the search.
+  it('leaves keys held with a modifier alone', () => {
+    renderBar()
+    openMenu()
+    fireEvent.keyDown(document.activeElement as Element, { key: 'k', metaKey: true })
+    expect(screen.queryByTestId('quality-filter-search')).toBeNull()
+  })
+})

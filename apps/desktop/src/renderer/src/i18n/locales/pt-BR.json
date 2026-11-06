@@ -149,7 +149,9 @@
       "clear": "Limpar filtros",
       "shown": "{{visible}} de {{total}} faixas",
       "oneFormat": "Todas as faixas têm o mesmo formato",
-      "remove": "Remover {{filter}}"
+      "remove": "Remover {{filter}}",
+      "searching": "Filtros com “{{query}}”",
+      "noMatch": "Nenhum filtro corresponde a “{{query}}”"
     },
     "search": {
       "placeholder": "Buscar faixas",

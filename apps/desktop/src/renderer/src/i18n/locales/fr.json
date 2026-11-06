@@ -149,7 +149,9 @@
       "clear": "Effacer les filtres",
       "shown": "{{visible}} sur {{total}} pistes",
       "oneFormat": "Toutes les pistes ont le même format",
-      "remove": "Retirer {{filter}}"
+      "remove": "Retirer {{filter}}",
+      "searching": "Filtres contenant « {{query}} »",
+      "noMatch": "Aucun filtre ne correspond à « {{query}} »"
     },
     "search": {
       "placeholder": "Rechercher des morceaux",
