@@ -51,7 +51,7 @@
     "allAnalyzed": "Alles bereits analysiert",
     "analyzingCount": "Analysiere Qualität… {{done}}/{{total}}",
     "analyzingDetails": "Messe Lautheit, BPM und Tonart… {{done}}/{{total}}",
-    "analyzingPaused": "Pausiert, solange ein DJ-Programm geöffnet ist · {{done}}/{{total}}",
+    "analyzingSlowed": "Langsamer, solange ein DJ-Programm geöffnet ist · {{done}}/{{total}}",
     "convertingCount": "Konvertiere… {{done}}/{{total}}",
     "convertAll_one": "{{count}} Titel konvertieren",
     "convertAll_other": "{{count}} Titel konvertieren",

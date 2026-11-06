@@ -34,7 +34,7 @@ interface SweepProgress {
 interface QualityAnalysis {
   // Progress of the "analyze quality" run (null when idle).
   analysis: SweepProgress | null
-  paused: boolean
+  slowed: boolean
   // tracks is folded into the sweep's targets alongside targetsRef, for a caller (an
   // import's onMetaLoaded) that fires before targetsRef's render has caught up with the
   // track it just added — mirroring enqueueAutoMatch's explicit candidates argument.
@@ -72,8 +72,6 @@ export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params)
   // ref guards in useTrackProcessing/useAutoMatch and keeping this callback's identity
   // stable so the command registry isn't rebuilt on every progress tick.
   const runningRef = useRef(false)
-  // Pauses the sweep while the window is in the background (fed by the main process's
-  // blur/focus events) so it stops spawning ffmpeg until the app returns.
   const focusGate = useRef(createFocusGate())
   // IDs this run has already measured, kept across a finally-triggered relaunch (see below)
   // so a track whose targetsRef entry hasn't yet caught up with its fetched spectrum isn't
@@ -322,11 +320,9 @@ export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params)
         detailsDone += 1
         report()
       }
-      const worker = async (): Promise<void> => {
+      const worker = async (lead: boolean): Promise<void> => {
         while (!analyzeCancel.current) {
-          // Hold here while the window is in the background so the sweep doesn't spawn
-          // ffmpeg off-screen; it resumes the moment the app is focused again.
-          await focusGate.current.wait()
+          if (!lead) await focusGate.current.wait()
           const t = nextTrack()
           if (analyzeCancel.current) return
           if (t) {
@@ -338,7 +334,7 @@ export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params)
           await measureDetails(next)
         }
       }
-      void Promise.all([worker(), worker(), worker()]).finally(() => {
+      void Promise.all([worker(true), worker(false), worker(false)]).finally(() => {
         runningRef.current = false
         if (!mountedRef.current) return
         if (failed.length > 0) onErrorsRef.current?.(failed)
@@ -380,7 +376,7 @@ export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params)
 
   return {
     analysis,
-    paused: analysis !== null && !sweepOpen,
+    slowed: analysis !== null && !sweepOpen,
     analyzeAllQuality,
     cancelAnalysis,
     forgetTracks,

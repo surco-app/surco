@@ -679,12 +679,20 @@ describe('useQualityAnalysis in the background', () => {
     act(() => result.current.analyzeAllQuality())
 
     await waitFor(() => expect(spectrogram).toHaveBeenCalledTimes(2))
-    expect(result.current.paused).toBe(false)
+    expect(result.current.slowed).toBe(false)
   })
 
-  it('pauses behind another window while a DJ program is open, and goes on when Surco comes back', async () => {
+  it('slows to one track at a time behind another window while a DJ program is open, instead of stopping', async () => {
     let setFocused: (focused: boolean) => void = () => {}
-    const spectrogram = vi.fn().mockResolvedValue(spectrum)
+    let inFlight = 0
+    let most = 0
+    const spectrogram = vi.fn(async () => {
+      inFlight += 1
+      most = Math.max(most, inFlight)
+      await new Promise((r) => setTimeout(r, 5))
+      inFlight -= 1
+      return spectrum
+    })
     setApi({
       spectrogram,
       djAppRunning: vi.fn().mockResolvedValue(true),
@@ -693,7 +701,7 @@ describe('useQualityAnalysis in the background', () => {
         return () => {}
       },
     })
-    const targetsRef = { current: [track('a'), track('b')] }
+    const targetsRef = { current: [track('a'), track('b'), track('c'), track('d')] }
     const { result } = renderHook(() => useQualityAnalysis({ targetsRef }), {
       wrapper: wrapper(),
     })
@@ -705,16 +713,47 @@ describe('useQualityAnalysis in the background', () => {
     })
     act(() => result.current.analyzeAllQuality())
 
-    await waitFor(() => expect(result.current.paused).toBe(true))
-    expect(spectrogram).not.toHaveBeenCalled()
+    await waitFor(() => expect(result.current.slowed).toBe(true))
+    await waitFor(() => expect(spectrogram).toHaveBeenCalledTimes(4))
+    expect(most).toBe(1)
+  })
+
+  it('goes back to full speed when Surco comes forward again', async () => {
+    let setFocused: (focused: boolean) => void = () => {}
+    setApi({
+      djAppRunning: vi.fn().mockResolvedValue(true),
+      onWindowFocus: (cb: (focused: boolean) => void) => {
+        setFocused = cb
+        return () => {}
+      },
+    })
+    let release: (v: SpectrumResult) => void = () => {}
+    const gate = new Promise<SpectrumResult>((r) => {
+      release = r
+    })
+    ;(window.api as unknown as { spectrogram: unknown }).spectrogram = vi.fn().mockReturnValue(gate)
+    const targetsRef = { current: [track('a'), track('b')] }
+    const { result } = renderHook(() => useQualityAnalysis({ targetsRef }), {
+      wrapper: wrapper(),
+    })
+
+    act(() => setFocused(false))
+    await waitFor(() => expect(window.api.djAppRunning).toHaveBeenCalled())
+    await act(async () => {
+      await window.api.djAppRunning()
+    })
+    act(() => result.current.analyzeAllQuality())
+    await waitFor(() => expect(result.current.slowed).toBe(true))
 
     act(() => setFocused(true))
 
-    expect(result.current.paused).toBe(false)
+    expect(result.current.slowed).toBe(false)
+    await waitFor(() => expect(window.api.spectrogram).toHaveBeenCalledTimes(2))
+    await act(async () => release(spectrum))
     await waitFor(() => expect(result.current.analysis).toBeNull())
   })
 
-  it('is not paused while idle, since an unfocused window with nothing to sweep holds nothing back', () => {
+  it('is not slowed while idle, since an unfocused window with nothing to sweep holds nothing back', () => {
     let setFocused: (focused: boolean) => void = () => {}
     setApi({
       onWindowFocus: (cb: (focused: boolean) => void) => {
@@ -728,6 +767,6 @@ describe('useQualityAnalysis in the background', () => {
 
     act(() => setFocused(false))
 
-    expect(result.current.paused).toBe(false)
+    expect(result.current.slowed).toBe(false)
   })
 })

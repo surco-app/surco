@@ -6,9 +6,9 @@ import {
   Gauge,
   Loader2,
   type LucideIcon,
-  Pause,
   Radio,
   Settings as SettingsIcon,
+  Snail,
   Sparkles,
   SpellCheck,
 } from 'lucide-react'
@@ -53,7 +53,7 @@ interface Props {
   // Progress of the analyze-quality sweep (null when idle) and whether every track is
   // already analyzed (which, when idle, disables the button).
   analysis: { done: number; total: number; stage?: 'quality' | 'details' } | null
-  analysisPaused: boolean
+  analysisSlowed: boolean
   allAnalyzed: boolean
   // Progress of the auto-match sweep (null when idle), whether its sources can run (see
   // autoMatchAvailable), and how many tracks are still matchable (zero disables the button).
@@ -116,7 +116,7 @@ export const Toolbar = memo(function Toolbar({
   batching,
   batchProgress,
   analysis,
-  analysisPaused,
+  analysisSlowed,
   allAnalyzed,
   matching,
   cleanedCount,
@@ -146,8 +146,8 @@ export const Toolbar = memo(function Toolbar({
   const analysisLabel =
     analysis &&
     tr(
-      analysisPaused
-        ? 'header.analyzingPaused'
+      analysisSlowed
+        ? 'header.analyzingSlowed'
         : analysis.stage === 'details'
           ? 'header.analyzingDetails'
           : 'header.analyzingCount',
@@ -303,8 +303,8 @@ export const Toolbar = memo(function Toolbar({
                   : 'text-fg-muted hover:text-fg'
               }`}
             >
-              {analysisPaused ? (
-                <Pause data-testid="analyze-paused" className="h-4 w-4" aria-hidden="true" />
+              {analysisSlowed ? (
+                <Snail data-testid="analyze-slowed" className="h-4 w-4" aria-hidden="true" />
               ) : (
                 <Gauge
                   className={`h-4 w-4 ${analysis ? 'animate-pulse' : ''}`}

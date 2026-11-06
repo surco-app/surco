@@ -1296,10 +1296,7 @@ describe('App quality triage', () => {
     expect(client.getQueryData(['waveform', '/music/b.wav'])).toEqual(wave)
   })
 
-  // Starting the sweep then switching to the DJ program must not keep ffmpeg churning
-  // under a set: with one open the sweep parks until Surco is focused again (it must still
-  // finish once the app comes back). Behind any other window it goes on.
-  it('parks the analyze sweep behind a DJ program and resumes on focus', async () => {
+  it('keeps the analyze sweep going behind a DJ program instead of parking it', async () => {
     // Both the analyze sweep and the editor's cover well subscribe to window focus, so
     // the mock fans the event out to every listener instead of keeping only the last.
     const focusListeners: ((focused: boolean) => void)[] = []
@@ -1327,10 +1324,7 @@ describe('App quality triage', () => {
     await new Promise((r) => setTimeout(r, 0))
     const baseline = spectrogram.mock.calls.length
     runMenu('analyze-quality')
-    await new Promise((r) => setTimeout(r, 0))
-    expect(spectrogram.mock.calls.length).toBe(baseline)
 
-    setFocus(true)
     await waitFor(() => expect(spectrogram.mock.calls.length).toBeGreaterThan(baseline))
   })
 

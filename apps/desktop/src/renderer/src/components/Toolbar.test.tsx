@@ -24,7 +24,7 @@ function renderBar(over: Partial<Props> = {}): Props {
     onShowSkipped: vi.fn(),
     batching: false,
     analysis: null,
-    analysisPaused: false,
+    analysisSlowed: false,
     allAnalyzed: false,
     batchProgress: { done: 0, total: 0 },
     matching: null,
@@ -198,18 +198,18 @@ describe('Toolbar', () => {
     expect(props.onAutoMatch).not.toHaveBeenCalled()
   })
 
-  it('says the quality sweep is paused while Surco is in the background, so a count that stops ticking is not taken for a hang', () => {
-    renderBar({ analysis: { done: 0, total: 4 }, analysisPaused: true })
-    const paused = i18n.t('header.analyzingPaused', { done: 0, total: 4 })
-    expect(screen.getAllByRole('status').filter((r) => r.textContent === paused)).toHaveLength(1)
-    expect(screen.getByTestId('analyze-paused')).toBeInTheDocument()
+  it('says the quality sweep goes slower while a DJ program is open, so a count that ticks slowly is not taken for a hang', () => {
+    renderBar({ analysis: { done: 0, total: 4 }, analysisSlowed: true })
+    const slowed = i18n.t('header.analyzingSlowed', { done: 0, total: 4 })
+    expect(screen.getAllByRole('status').filter((r) => r.textContent === slowed)).toHaveLength(1)
+    expect(screen.getByTestId('analyze-slowed')).toBeInTheDocument()
     fireEvent.focus(screen.getByTestId('analyze-quality'))
-    expect(screen.getByRole('tooltip')).toHaveTextContent(paused)
+    expect(screen.getByRole('tooltip')).toHaveTextContent(slowed)
   })
 
   it('keeps the running count while the window is in front', () => {
-    renderBar({ analysis: { done: 1, total: 4 }, analysisPaused: false })
-    expect(screen.queryByTestId('analyze-paused')).toBeNull()
+    renderBar({ analysis: { done: 1, total: 4 }, analysisSlowed: false })
+    expect(screen.queryByTestId('analyze-slowed')).toBeNull()
     fireEvent.focus(screen.getByTestId('analyze-quality'))
     expect(screen.getByRole('tooltip')).toHaveTextContent(
       i18n.t('header.analyzingCount', { done: 1, total: 4 }),
@@ -217,7 +217,7 @@ describe('Toolbar', () => {
   })
 
   it('tells the details pass apart from the quality pass, since its count starts over', () => {
-    renderBar({ analysis: { done: 1, total: 4, stage: 'details' }, analysisPaused: false })
+    renderBar({ analysis: { done: 1, total: 4, stage: 'details' }, analysisSlowed: false })
     fireEvent.focus(screen.getByTestId('analyze-quality'))
     expect(screen.getByRole('tooltip')).toHaveTextContent(
       i18n.t('header.analyzingDetails', { done: 1, total: 4 }),
