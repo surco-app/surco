@@ -91,6 +91,26 @@ describe('useQualityAnalysis', () => {
     expect(scanned).toEqual(['/music/a.wav', '/music/c.wav'])
   })
 
+  it('asks for the clip scan alongside the wave, so both ride one decode instead of two', async () => {
+    let release: (v: null) => void = () => {}
+    const waveform = vi.fn().mockReturnValue(
+      new Promise<null>((r) => {
+        release = r
+      }),
+    )
+    const waveformScan = vi.fn().mockResolvedValue(null)
+    setApi({ waveform, waveformScan })
+    const targetsRef = { current: [track('a')] }
+    const { result } = renderHook(() => useQualityAnalysis({ targetsRef }), {
+      wrapper: wrapper(),
+    })
+
+    act(() => result.current.analyzeAllQuality())
+    await waitFor(() => expect(waveformScan).toHaveBeenCalled())
+    await act(async () => release(null))
+    await waitFor(() => expect(result.current.analysis).toBeNull())
+  })
+
   // A second trigger while a sweep is already running must not start a competing pass.
   it('ignores a re-trigger while a sweep is in flight', async () => {
     let release: (v: SpectrumResult) => void = () => {}

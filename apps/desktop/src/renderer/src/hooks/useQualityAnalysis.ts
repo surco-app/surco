@@ -246,8 +246,10 @@ export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params)
           // clip/channel scan — a separate probe since the split — feeds the clipping
           // one. Both decoded here so a single "analyze all" fills those buckets
           // collection-wide instead of only for tracks the user opened or played.
-          await queryClient.fetchQuery(waveformOptions(path))
-          await queryClient.fetchQuery(waveformScanOptions(path))
+          await Promise.all([
+            queryClient.fetchQuery(waveformOptions(path)),
+            queryClient.fetchQuery(waveformScanOptions(path)),
+          ])
           // Each probe returns a different result type, so the fetchQuery calls are wrapped
           // as thunks: kept in one array they'd unify to a union of option shapes fetchQuery
           // can't accept, whereas each thunk keeps its own probe type monomorphic at its call.
