@@ -1231,6 +1231,13 @@ export interface PlaylistTrackRef {
   paths: string[]
 }
 
+export interface CollectionTrack {
+  contentId: string
+  path: string | null
+  title: string
+  artist: string
+}
+
 // One organising action on rekordbox, as the user made it: one drop, one menu choice, one
 // name typed. Each is written on its own, so the dialog asking to close rekordbox comes at
 // most once per gesture and every gesture has its own backup.

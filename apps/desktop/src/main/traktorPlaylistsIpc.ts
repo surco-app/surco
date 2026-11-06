@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { ipcMain } from 'electron'
 import {
+  readTraktorCollection,
   readTraktorMembership,
   readTraktorPlaylist,
   readTraktorRecentCount,
@@ -25,6 +26,9 @@ export function registerTraktorPlaylistsIpc(
   ipcMain.handle('traktor:tree', () => read(readTraktorTree, []))
   ipcMain.handle('traktor:recentCount', () => read((nml) => readTraktorRecentCount(nml), 0))
   ipcMain.handle('traktor:trackCount', () => read(readTraktorTrackCount, 0))
+  ipcMain.handle('traktor:collectionTracks', () =>
+    read((nml) => readTraktorCollection(nml, host.bootVolume()), []),
+  )
   ipcMain.handle('traktor:playlist', (_e, id: string) => {
     const entries = read((nml) => readTraktorPlaylist(nml, id, host.bootVolume()), [])
     host.allowMedia?.(entries.flatMap((e) => (e.path ? [e.path] : [])))

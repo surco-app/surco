@@ -11,6 +11,7 @@ import {
   readTraktorMembership,
   readTraktorPlaylist,
   readTraktorRecentCount,
+  readTraktorCollection,
   readTraktorTrackCount,
   readTraktorTree,
   TRAKTOR_TYPE_COLOR,
@@ -279,6 +280,17 @@ describe('all tracks', () => {
 
   it('counts the whole collection, so a track in no playlist can still be found', () => {
     expect(readTraktorTrackCount(doc)).toBe(3)
+  })
+
+  it('lists the collection as title, artist and content id for matching a pasted tracklist', () => {
+    const rows = readTraktorCollection(doc, 'Macintosh HD')
+    expect(rows).toHaveLength(3)
+    expect(rows.find((r) => r.path === '/Users/dj/Music/a.mp3')).toEqual({
+      contentId: traktorContentId('Macintosh HD/:Users/:dj/:Music/:a.mp3'),
+      path: '/Users/dj/Music/a.mp3',
+      title: 'Alpha',
+      artist: 'Ann',
+    })
   })
 
   it('lists every track newest first and leaves the separator files out', () => {

@@ -6,6 +6,7 @@ import { mediaUrl } from '../shared/media'
 import { RECENTLY_ADDED_ID } from '../shared/recentlyAdded'
 import type {
   AppleMusicTrackMeta,
+  CollectionTrack,
   RowCue,
   SourceNode,
   SourcePlaylistEntry,
@@ -153,6 +154,29 @@ export function readRecentlyAddedCount(db: RekordboxDb, now: Date = new Date()):
     .prepare(`SELECT count(*) AS n FROM djmdContent c WHERE ${RECENT}`)
     .get(recentSince(now)) as { n: number }
   return row.n
+}
+
+export function readRekordboxCollection(db: RekordboxDb): CollectionTrack[] {
+  const rows = db
+    .prepare(
+      `SELECT c.ID AS contentId, c.FolderPath, c.FileType, c.Title, a.Name AS Artist
+         FROM djmdContent c LEFT JOIN djmdArtist a ON a.ID = c.ArtistID
+        WHERE ${ALL} AND c.FileType <> ?
+        ORDER BY c.StockDate DESC, c.created_at DESC`,
+    )
+    .all(STREAMING_FILE_TYPE) as {
+    contentId: string
+    FolderPath: string
+    FileType: number
+    Title: string | null
+    Artist: string | null
+  }[]
+  return rows.map((row) => ({
+    contentId: String(row.contentId),
+    path: row.FileType === STREAMING_FILE_TYPE ? null : entryPath(row.FolderPath),
+    title: row.Title ?? '',
+    artist: row.Artist ?? '',
+  }))
 }
 
 export function readRekordboxTrackCount(db: RekordboxDb): number {

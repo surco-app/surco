@@ -2,6 +2,7 @@ import { ipcMain } from 'electron'
 import {
   readSeratoLibrary,
   type SeratoLibraryRoot,
+  seratoCollection,
   seratoMembership,
   seratoPlaylist,
   seratoRecentCount,
@@ -21,6 +22,7 @@ export function registerSeratoPlaylistsIpc(host: SeratoPlaylistsHost): void {
   ipcMain.handle('serato:tree', () => seratoTree(library()))
   ipcMain.handle('serato:recentCount', () => seratoRecentCount(library()))
   ipcMain.handle('serato:trackCount', () => seratoTrackCount(library()))
+  ipcMain.handle('serato:collectionTracks', () => seratoCollection(library()))
   ipcMain.handle('serato:playlist', (_e, id: string) => {
     const entries = seratoPlaylist(library(), id)
     host.allowMedia?.(entries.flatMap((e) => (e.path ? [e.path] : [])))

@@ -23,6 +23,7 @@ import {
   seratoMembership,
   seratoPlaylist,
   seratoRecentCount,
+  seratoCollection,
   seratoTrackCount,
   seratoTree,
 } from './seratoLibrary'
@@ -159,6 +160,18 @@ describe('the Serato tab', () => {
     const library = readSeratoLibrary(twoLibraries().roots)
     expect(seratoTrackCount(library)).toBe(3)
     expect(seratoPlaylist(library, ALL_TRACKS_ID, NOW)).toHaveLength(3)
+  })
+
+  it('lists the collection as title, artist and content id for matching a pasted tracklist', () => {
+    const library = readSeratoLibrary(twoLibraries().roots)
+    const rows = seratoCollection(library)
+    expect(rows).toHaveLength(3)
+    expect(rows.find((r) => r.title === 'Old')).toEqual({
+      contentId: 'serato:/Users/dj/Music/old.mp3',
+      path: '/Users/dj/Music/old.mp3',
+      title: 'Old',
+      artist: 'Ann',
+    })
   })
 
   it('lists in Recently added only what Serato added in the last 30 days, newest first', () => {

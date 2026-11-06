@@ -13,7 +13,7 @@ import {
   within,
 } from '@testing-library/react'
 import type React from 'react'
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, type Mock, vi } from 'vitest'
 import type { Api } from '../../preload/api'
 import { ALL_TRACKS_ID } from '../../shared/allTracks'
 import { DEFAULT_EDITOR_SECTIONS } from '../../shared/editorSections'
@@ -766,7 +766,10 @@ describe('App Traktor cues', () => {
     await renderApp()
     fireEvent.click(await screen.findByTestId('source-rail-traktor'))
     fireEvent.contextMenu(await screen.findByTestId('source-node-prep'))
-    expect(screen.queryByTestId('source-tree-menu')).not.toBeInTheDocument()
+    expect(screen.getByTestId('source-tree-paste-tracklist')).toBeInTheDocument()
+    expect(screen.queryByTestId('source-tree-rename')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('source-tree-delete')).not.toBeInTheDocument()
+    fireEvent.keyDown(screen.getByTestId('source-tree-menu'), { key: 'Escape' })
     fireEvent.contextMenu(screen.getByTestId('source-node-hist'))
     expect(screen.queryByTestId('source-tree-menu')).not.toBeInTheDocument()
     fireEvent.contextMenu(screen.getByTestId('source-node-u2'))
@@ -9774,5 +9777,97 @@ describe('App verification', () => {
 
     fireEvent.click(await screen.findByTestId('verify-open-originals'))
     expect(await screen.findByTestId('copies-screen')).toBeInTheDocument()
+  })
+})
+
+describe('paste tracklist from the tree', () => {
+  const TREE = [
+    { id: 'sets', name: 'Sets', kind: 'folder' as const, count: 1, children: [] },
+    { id: 'f', name: 'Factory', kind: 'playlist' as const, count: 2 },
+  ]
+  function openRekordboxTree(over: Partial<Api> = {}) {
+    const editRekordboxPlaylist =
+      (over.editRekordboxPlaylist as Mock<Api['editRekordboxPlaylist']> | undefined) ??
+      vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({
+        applied: true,
+        report: { added: 1, already: 0, notInCollection: 0, ambiguous: 0 },
+      })
+    setApi({
+      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
+      loadRekordboxTree: vi.fn<Api['loadRekordboxTree']>().mockResolvedValue(TREE),
+      loadRekordboxCollection: vi.fn<Api['loadRekordboxCollection']>().mockResolvedValue([
+        {
+          contentId: '41',
+          path: '/m/a.wav',
+          title: 'Silent Tears (Extended Mix)',
+          artist: 'Jessy',
+        },
+      ]),
+      editRekordboxPlaylist,
+      ...over,
+    })
+    return editRekordboxPlaylist
+  }
+  async function pasteAndAdd(nodeId: string, name?: string): Promise<void> {
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+    fireEvent.contextMenu(await screen.findByTestId(`source-node-${nodeId}`))
+    fireEvent.click(screen.getByTestId('source-tree-paste-tracklist'))
+    fireEvent.change(screen.getByTestId('paste-tracklist-text'), {
+      target: { value: 'Jessy - Silent Tears (Extended Mix)' },
+    })
+    if (name)
+      fireEvent.change(screen.getByTestId('paste-tracklist-name'), { target: { value: name } })
+    fireEvent.click(screen.getByTestId('paste-tracklist-search'))
+    await waitFor(() => expect(screen.getByTestId('paste-tracklist-add')).toBeEnabled())
+    fireEvent.click(screen.getByTestId('paste-tracklist-add'))
+  }
+
+  it('adds the matched tracks to the playlist the menu was opened on', async () => {
+    const edit = openRekordboxTree()
+    await pasteAndAdd('f')
+    await waitFor(() =>
+      expect(edit).toHaveBeenCalledWith(
+        { kind: 'add', playlistId: 'f', tracks: [{ contentId: '41', paths: ['/m/a.wav'] }] },
+        'Factory',
+      ),
+    )
+    await waitFor(() =>
+      expect(screen.queryByTestId('paste-tracklist-dialog')).not.toBeInTheDocument(),
+    )
+  })
+
+  it('creates the playlist inside the folder first, then adds to the new one', async () => {
+    const edit = openRekordboxTree({
+      editRekordboxPlaylist: vi
+        .fn<Api['editRekordboxPlaylist']>()
+        .mockResolvedValueOnce({ applied: true, createdId: 'new' })
+        .mockResolvedValue({ applied: true }),
+    })
+    await pasteAndAdd('sets', 'Mi set')
+    await waitFor(() => expect(edit).toHaveBeenCalledTimes(2))
+    expect(edit.mock.calls[0][0]).toEqual({
+      kind: 'create',
+      parentId: 'sets',
+      name: 'Mi set',
+      folder: false,
+    })
+    expect(edit.mock.calls[1][0]).toEqual({
+      kind: 'add',
+      playlistId: 'new',
+      tracks: [{ contentId: '41', paths: ['/m/a.wav'] }],
+    })
+  })
+
+  it('adds nothing when the playlist could not be created', async () => {
+    const edit = openRekordboxTree({
+      editRekordboxPlaylist: vi
+        .fn<Api['editRekordboxPlaylist']>()
+        .mockResolvedValue({ applied: false, reason: 'rekordbox-running' }),
+    })
+    await pasteAndAdd('sets', 'Mi set')
+    await waitFor(() => expect(edit).toHaveBeenCalledTimes(1))
+    await act(async () => {})
+    expect(edit).toHaveBeenCalledTimes(1)
   })
 })

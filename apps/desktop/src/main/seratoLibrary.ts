@@ -2,7 +2,12 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, posix } from 'node:path'
 import { ALL_TRACKS_ID } from '../shared/allTracks'
 import { RECENTLY_ADDED_ID } from '../shared/recentlyAdded'
-import type { AppleMusicTrackMeta, SourceNode, SourcePlaylistEntry } from '../shared/types'
+import type {
+  AppleMusicTrackMeta,
+  CollectionTrack,
+  SourceNode,
+  SourcePlaylistEntry,
+} from '../shared/types'
 import { crateTrackPaths, seratoLinkId } from './seratoCrateFile'
 import {
   crateTree,
@@ -143,6 +148,15 @@ export function seratoRecentCount(library: SeratoLibrary, now: Date = new Date()
 
 export function seratoTrackCount(library: SeratoLibrary): number {
   return library.tracks.length
+}
+
+export function seratoCollection(library: SeratoLibrary): CollectionTrack[] {
+  return newestFirst(library.tracks).map((t) => ({
+    contentId: `serato:${t.file}`,
+    path: t.file,
+    title: t.title,
+    artist: t.artist,
+  }))
 }
 
 function metaOf(track: SeratoLibraryTrack | undefined): AppleMusicTrackMeta {

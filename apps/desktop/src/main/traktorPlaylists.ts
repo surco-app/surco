@@ -8,7 +8,13 @@ import {
   TRAKTOR_HOT_OFFSET,
   traktorContentId,
 } from '../shared/traktorContent'
-import type { AppleMusicTrackMeta, RowCue, SourceNode, SourcePlaylistEntry } from '../shared/types'
+import type {
+  AppleMusicTrackMeta,
+  CollectionTrack,
+  RowCue,
+  SourceNode,
+  SourcePlaylistEntry,
+} from '../shared/types'
 import { attr, findEntries } from './traktorNml'
 import { rekordboxColorOf } from './traktorNmlCues'
 import { type ModelNode, nodeById, parsePlaylists, rowLinkId } from './traktorPlaylistModel'
@@ -216,6 +222,18 @@ export function readTraktorRecentCount(nml: string, now: Date = new Date()): num
 
 function allTracks(nml: string): Track[] {
   return newestFirst(collection(nml).filter((t) => !isSeparator(t)))
+}
+
+export function readTraktorCollection(nml: string, bootVolume: string): CollectionTrack[] {
+  return allTracks(nml).map((track) => {
+    const head = track.block.match(/<ENTRY\b[^>]*>/)?.[0] ?? ''
+    return {
+      contentId: traktorContentId(track.key),
+      path: traktorFileOf(track.block, bootVolume),
+      title: attr(head, 'TITLE').trim(),
+      artist: attr(head, 'ARTIST').trim(),
+    }
+  })
 }
 
 export function readTraktorTrackCount(nml: string): number {

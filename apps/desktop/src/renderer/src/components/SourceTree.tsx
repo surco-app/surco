@@ -80,6 +80,7 @@ export function SourceTree({
     onDropTracks: (node: SourceNode, files: File[]) => void
     onRename: (node: SourceNode, name: string) => void
     onDelete: (node: SourceNode) => void
+    onPasteTracklist?: (node: SourceNode, create: boolean) => void
     crates?: true
   }
   // Playlists the library keeps for itself (Traktor's Preparation, HISTORY…): 'tracks-only'
@@ -190,7 +191,12 @@ export function SourceTree({
   useEffect(() => {
     if (creating) nameRef.current?.focus()
   }, [creating])
-  const [menu, setMenu] = useState<{ node: SourceNode; x: number; y: number } | null>(null)
+  const [menu, setMenu] = useState<{
+    node: SourceNode
+    x: number
+    y: number
+    pasteOnly: boolean
+  } | null>(null)
   // Opened at the click, then pulled back inside the window once its size is known: from a
   // folder low in a long tree its items ran past the bottom, as the track menu's did.
   const menuRef = useRef<HTMLDivElement | null>(null)
@@ -259,6 +265,7 @@ export function SourceTree({
     const fixedAs = fixed?.(node) ?? null
     const dropEdit = fixedAs === 'locked' ? undefined : nodeEdit
     const menuEdit = fixedAs === null ? nodeEdit : undefined
+    const pasteOnly = fixedAs === 'tracks-only' && nodeEdit?.onPasteTracklist ? nodeEdit : undefined
     const open = opened.has(node.id)
     const selected = node.id === selectedId
     const Chevron = open ? ChevronDown : ChevronRight
@@ -302,9 +309,9 @@ export function SourceTree({
             aria-current={selected || undefined}
             onClick={() => (isFolder ? toggle(node.id) : onSelect(node, folders))}
             onContextMenu={(e) => {
-              if (!menuEdit) return
+              if (!menuEdit && !pasteOnly) return
               e.preventDefault()
-              setMenu({ node, x: e.clientX, y: e.clientY })
+              setMenu({ node, x: e.clientX, y: e.clientY, pasteOnly: !menuEdit })
             }}
             data-drop-target={dropOn?.id === node.id || undefined}
             onDragOver={dragOver}
@@ -540,7 +547,7 @@ export function SourceTree({
             style={{ top: menuAt.y, left: menuAt.x }}
             className="absolute min-w-[190px] rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]"
           >
-            {(menu.node.kind === 'folder' || edit?.crates) && (
+            {!menu.pasteOnly && (menu.node.kind === 'folder' || edit?.crates) && (
               <>
                 <button
                   type="button"
@@ -566,27 +573,49 @@ export function SourceTree({
                 )}
               </>
             )}
-            <button
-              type="button"
-              role="menuitem"
-              data-testid="source-tree-rename"
-              onClick={() => startRename(menu.node)}
-              className="block w-full rounded-md px-3 py-1.5 text-left text-sm hover:bg-[var(--color-hover)]"
-            >
-              {tr('sources.tree.rename')}
-            </button>
-            <button
-              type="button"
-              role="menuitem"
-              data-testid="source-tree-delete"
-              onClick={() => {
-                setDeleting(menu.node)
-                setMenu(null)
-              }}
-              className="block w-full rounded-md px-3 py-1.5 text-left text-sm text-danger hover:bg-[var(--color-hover)]"
-            >
-              {tr('sources.tree.delete')}
-            </button>
+            {!menu.pasteOnly && (
+              <button
+                type="button"
+                role="menuitem"
+                data-testid="source-tree-rename"
+                onClick={() => startRename(menu.node)}
+                className="block w-full rounded-md px-3 py-1.5 text-left text-sm hover:bg-[var(--color-hover)]"
+              >
+                {tr('sources.tree.rename')}
+              </button>
+            )}
+            {edit?.onPasteTracklist && (
+              <button
+                type="button"
+                role="menuitem"
+                data-testid="source-tree-paste-tracklist"
+                onClick={() => {
+                  edit.onPasteTracklist?.(menu.node, menu.node.kind === 'folder')
+                  setMenu(null)
+                }}
+                className="block w-full rounded-md px-3 py-1.5 text-left text-sm hover:bg-[var(--color-hover)]"
+              >
+                {tr(
+                  menu.node.kind === 'folder'
+                    ? 'sources.tree.newPlaylistFromTracklist'
+                    : 'sources.tree.pasteTracklist',
+                )}
+              </button>
+            )}
+            {!menu.pasteOnly && (
+              <button
+                type="button"
+                role="menuitem"
+                data-testid="source-tree-delete"
+                onClick={() => {
+                  setDeleting(menu.node)
+                  setMenu(null)
+                }}
+                className="block w-full rounded-md px-3 py-1.5 text-left text-sm text-danger hover:bg-[var(--color-hover)]"
+              >
+                {tr('sources.tree.delete')}
+              </button>
+            )}
           </div>
         </div>
       )}

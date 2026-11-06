@@ -66,6 +66,7 @@ import {
   MusicReviewTopProgress,
 } from './components/MusicReviewColumn'
 import { Overlays } from './components/Overlays'
+import { PasteTracklistModal } from './components/PasteTracklistModal'
 import { LivePlayer } from './components/Player'
 import { RekordboxQueuePill } from './components/RekordboxQueuePill'
 import { ResizeHandle } from './components/ResizeHandle'
@@ -2750,15 +2751,48 @@ export default function App(): React.JSX.Element {
     () => (fixedNode ? (node: SourceNode) => fixedNode(node, treeTop.has(node.id)) : undefined),
     [fixedNode, treeTop],
   )
+  const [pasteTracklist, setPasteTracklist] = useState<{
+    node: SourceNode
+    create: boolean
+  } | null>(null)
+  const openPasteTracklist = useStableCallback((node: SourceNode, create: boolean) =>
+    setPasteTracklist({ node, create }),
+  )
+  const addPastedTracklist = useStableCallback(
+    async (tracks: PlaylistTrackRef[], newName: string | null) => {
+      if (!pasteTracklist) return
+      const { node, create } = pasteTracklist
+      let playlistId = node.id
+      let name = node.name
+      if (create && newName) {
+        const created = await editRekordbox(
+          { kind: 'create', parentId: node.id, name: newName, folder: false },
+          newName,
+        )
+        if (!created.applied || !created.createdId) return
+        playlistId = created.createdId
+        name = newName
+      }
+      await editRekordbox({ kind: 'add', playlistId, tracks }, name)
+    },
+  )
   const treeEdit = useMemo(
     () => ({
       onCreate: createInRekordbox,
       onDropTracks: dropOnRekordbox,
       onRename: renameInRekordbox,
       onDelete: deleteInRekordbox,
+      onPasteTracklist: openPasteTracklist,
       ...(sourceProgram && SOURCE_PROGRAMS[sourceProgram].crates && { crates: true as const }),
     }),
-    [createInRekordbox, dropOnRekordbox, renameInRekordbox, deleteInRekordbox, sourceProgram],
+    [
+      createInRekordbox,
+      dropOnRekordbox,
+      renameInRekordbox,
+      deleteInRekordbox,
+      openPasteTracklist,
+      sourceProgram,
+    ],
   )
   // Read at drop time, so a re-read landing mid-drag still names the dragged rows. A track
   // row stands for every row it has in the playlist (the list shows it once), so all of them
@@ -3973,6 +4007,17 @@ export default function App(): React.JSX.Element {
                   onStart={(req) => window.api.usbExport(req)}
                   onCancelExport={() => void window.api.usbCancel()}
                   onClose={closeUsbExport}
+                />
+              )}
+            </ModalExit>
+            <ModalExit>
+              {pasteTracklist && editableSource && (
+                <PasteTracklistModal
+                  program={editableSource}
+                  node={pasteTracklist.node}
+                  create={pasteTracklist.create}
+                  onAdd={(tracks, newName) => void addPastedTracklist(tracks, newName)}
+                  onClose={() => setPasteTracklist(null)}
                 />
               )}
             </ModalExit>
