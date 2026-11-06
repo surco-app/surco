@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { CueJumpBars } from '../../../shared/cueJump'
 import type { CueQuantize } from '../../../shared/cueQuantize'
 import i18n from '../i18n'
+import { hoverTooltip } from '../test/tooltip'
 import { CueDeck, CueMoves } from './CueDeck'
 
 function setup(over: Partial<React.ComponentProps<typeof CueDeck>> = {}) {
@@ -128,9 +129,14 @@ describe('CueDeck', () => {
     expect(h.onMemoryStep.mock.calls).toEqual([[-1], [1]])
   })
 
+  it('names the ✕ in its tooltip as deleting this CALL, so it never reads as the trash that clears every cue', () => {
+    setup()
+    expect(hoverTooltip(screen.getByTestId('cues-memory-remove'))).toBe('Delete this CALL')
+  })
+
   it('removes the current CALL with the ✕ after ›, and greys it out when there is none', () => {
     const h = setup()
-    expect(screen.getByTestId('cues-memory-remove')).toHaveAccessibleName('Delete')
+    expect(screen.getByTestId('cues-memory-remove')).toHaveAccessibleName('Delete this CALL')
     expect(screen.getByTestId('cues-memory-next').nextElementSibling).toBe(
       screen.getByTestId('cues-memory-remove'),
     )

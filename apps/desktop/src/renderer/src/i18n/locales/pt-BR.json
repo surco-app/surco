@@ -927,6 +927,7 @@
       "flow": "Fluxo",
       "delete": "Apagar",
       "deleteHot": "Apagar o hot cue {{letter}}",
+      "deleteCall": "Apagar este CALL",
       "deleteCallMark": "Apagar o CALL",
       "menuColour": "Mudar a cor",
       "menuDeleteCall": "Apagar o CALL dele",

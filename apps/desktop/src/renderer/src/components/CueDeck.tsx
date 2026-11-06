@@ -211,15 +211,17 @@ export function CueDeck({
         <button
           type="button"
           data-testid="cues-memory-remove"
-          aria-label={tr('editor.cues.delete')}
+          aria-label={tr('editor.cues.deleteCall')}
           aria-disabled={!canRemoveMemory}
           onClick={() => {
             if (canRemoveMemory) onMemoryRemove()
           }}
           className={`${STEP} aria-disabled:opacity-40`}
         >
+          <Tooltip label={tr('editor.cues.deleteCall')} />
           <X className="h-4 w-4" aria-hidden="true" />
         </button>
+        {onClearAll && <span aria-hidden="true" className="mx-2 h-5 w-px bg-[var(--color-line)]" />}
         {onClearAll && (
           <button
             type="button"
@@ -227,7 +229,7 @@ export function CueDeck({
             aria-label={tr('editor.cues.clearAll')}
             disabled={!canClearAll}
             onClick={onClearAll}
-            className={`${STEP} ml-2 disabled:pointer-events-none disabled:opacity-40`}
+            className={`${STEP} disabled:pointer-events-none disabled:opacity-40`}
           >
             <Tooltip label={tr('editor.cues.clearAll')} />
             <Trash2 className="h-4 w-4" aria-hidden="true" />

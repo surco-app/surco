@@ -927,6 +927,7 @@
       "flow": "フロー",
       "delete": "削除",
       "deleteHot": "ホットキュー {{letter}} を削除",
+      "deleteCall": "この CALL を削除",
       "deleteCallMark": "CALL を削除",
       "menuColour": "色を変更",
       "menuDeleteCall": "その CALL を削除",
