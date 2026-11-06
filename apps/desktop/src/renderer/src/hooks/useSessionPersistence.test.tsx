@@ -190,6 +190,7 @@ describe('useSessionPersistence', () => {
     sortBy: 'bpm',
     sortDir: 'desc',
     filters: { library: 'notInLibrary' },
+    played: ['/music/a.wav'],
   }
 
   // Working through 700 tracks over two evenings: the reopen brings back the list the way it
@@ -203,6 +204,7 @@ describe('useSessionPersistence', () => {
       sortBy: 'bpm',
       sortDir: 'desc',
       libraryFilter: 'notInLibrary',
+      playedPaths: new Set(['/music/a.wav']),
     })
   })
 
@@ -257,6 +259,47 @@ describe('useSessionPersistence', () => {
     expect(saveLastSession.mock.lastCall?.[2]).toMatchObject({
       filters: { library: 'notInLibrary' },
     })
+  })
+
+  it('saves the session when a track is heard, so quitting right after keeps it', async () => {
+    vi.useFakeTimers()
+    const saveLastSession = vi.fn<Api['saveLastSession']>().mockResolvedValue(undefined)
+    ;(window as unknown as { api: Partial<Api> }).api = {
+      getLastSession: vi.fn<Api['getLastSession']>().mockResolvedValue({ paths: [], edits: {} }),
+      saveLastSession,
+    }
+    const tracks = [
+      { id: 'a', inputPath: '/music/a.wav', inFiles: true, meta: emptyMetadata() } as TrackItem,
+    ]
+    const store = createAppStore()
+    renderHook(() =>
+      useSessionPersistence({
+        tracks,
+        tracksRef: { current: tracks },
+        addPaths: vi.fn(),
+        seedRestoredEdits: vi.fn(),
+        store,
+        withdrawOffer: false,
+        selectedPath: null,
+        selectRestored: vi.fn(),
+        playbackPosition: () => null,
+        resumePlayback: vi.fn(),
+      }),
+    )
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_000)
+    })
+    act(() => store.setState({ playedPaths: new Set(['/music/a.wav']) }))
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_000)
+    })
+    vi.useRealTimers()
+    expect(saveLastSession).toHaveBeenLastCalledWith(
+      ['/music/a.wav'],
+      {},
+      sessionViewOf(store.getState(), null, null),
+    )
+    expect(saveLastSession.mock.lastCall?.[2]).toMatchObject({ played: ['/music/a.wav'] })
   })
 
   it('remembers which track was selected, for the reopen to land on', async () => {

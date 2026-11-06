@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createAppStore } from './appStore'
-import { parseSessionView, sessionViewOf } from './sessionView'
+import { parseSessionView, sessionViewOf, viewPatch } from './sessionView'
 import { EMPTY_FILTER } from './triage'
 
 describe('sessionView', () => {
@@ -13,6 +13,7 @@ describe('sessionView', () => {
       libraryFilter: 'notInLibrary',
       formatFilter: 'FLAC',
       listenFilter: 'unplayed',
+      playedPaths: new Set(['/music/a.wav']),
     })
     const view = JSON.parse(
       JSON.stringify(
@@ -26,6 +27,7 @@ describe('sessionView', () => {
       sortBy: 'bpm',
       sortDir: 'desc',
       filters: { ...EMPTY_FILTER, library: 'notInLibrary', format: 'FLAC', listen: 'unplayed' },
+      played: ['/music/a.wav'],
     })
   })
 
@@ -41,6 +43,7 @@ describe('sessionView', () => {
         filters: { quality: 'retired', library: 'notInLibrary', tags: 42 },
         selectedPath: 7,
         playback: { path: '/music/b.wav', time: -3 },
+        played: ['/music/a.wav', 4, null],
       }),
     ).toEqual({
       selectedPath: null,
@@ -49,7 +52,16 @@ describe('sessionView', () => {
       sortBy: 'import',
       sortDir: 'asc',
       filters: { ...EMPTY_FILTER, library: 'notInLibrary' },
+      played: ['/music/a.wav'],
     })
+  })
+
+  // The tracks already heard come back with the list, so a crate gone through over several
+  // days picks up with the same ones still to hear.
+  it('brings back which tracks were heard', () => {
+    const view = parseSessionView({ played: ['/music/a.wav'] })
+    expect(view && viewPatch(view).playedPaths).toEqual(new Set(['/music/a.wav']))
+    expect(parseSessionView({ played: 'all' })?.played).toEqual([])
   })
 
   it('has no view to apply from a session saved before views were', () => {

@@ -21,6 +21,8 @@ export interface SessionView {
   sortBy: TrackSort
   sortDir: SortDir
   filters: FilterSelection
+  // The tracks already heard, by path.
+  played: string[]
 }
 
 export interface SessionPlayback {
@@ -51,6 +53,7 @@ export function sessionViewOf(
       listen: state.listenFilter,
       format: state.formatFilter,
     },
+    played: [...state.playedPaths],
   }
 }
 
@@ -67,6 +70,7 @@ export function viewPatch(view: SessionView): Partial<AppState> {
     tagsFilter: view.filters.tags,
     listenFilter: view.filters.listen,
     formatFilter: view.filters.format,
+    playedPaths: new Set(view.played),
   }
 }
 
@@ -160,5 +164,8 @@ export function parseSessionView(raw: unknown): SessionView | null {
       listen: known(LISTEN, filters.listen),
       format: typeof filters.format === 'string' ? filters.format : null,
     },
+    played: Array.isArray(view.played)
+      ? view.played.filter((path): path is string => typeof path === 'string')
+      : [],
   }
 }
