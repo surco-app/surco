@@ -13,6 +13,7 @@ import { readNodeStamps } from './rekordboxMasterXml'
 import { separatorContent } from './rekordboxPlaylistEdit'
 import {
   readRecentlyAddedCount,
+  readRekordboxCollection,
   readRekordboxPlaylistWithPreview,
   readRekordboxTrackCount,
   readRekordboxTree,
@@ -92,6 +93,10 @@ export function registerRekordboxPlaylistsIpc(
   ipcMain.handle('rekordbox:trackCount', async () => {
     const path = collection()
     return withCollection(path, readRekordboxTrackCount, 0, await keyOf(path))
+  })
+  ipcMain.handle('rekordbox:collectionTracks', async () => {
+    const path = collection()
+    return withCollection(path, readRekordboxCollection, [], await keyOf(path))
   })
   ipcMain.handle('rekordbox:playlist', async (_e, id: string) => {
     const path = collection()

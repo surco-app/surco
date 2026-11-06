@@ -11,6 +11,7 @@ import type {
   AppleMusicPlaylistTracks,
   AppleMusicTrackMeta,
   BpmResult,
+  CollectionTrack,
   DjProgram,
   DockIconFrames,
   KeyResult,
@@ -231,6 +232,8 @@ const api: Api = {
   loadRekordboxTree: (): Promise<SourceNode[]> => ipcRenderer.invoke('rekordbox:tree'),
   rekordboxRecentCount: (): Promise<number> => ipcRenderer.invoke('rekordbox:recentCount'),
   rekordboxTrackCount: (): Promise<number> => ipcRenderer.invoke('rekordbox:trackCount'),
+  loadRekordboxCollection: (): Promise<CollectionTrack[]> =>
+    ipcRenderer.invoke('rekordbox:collectionTracks'),
   loadRekordboxPlaylist: (id: string): Promise<SourcePlaylistEntry[]> =>
     ipcRenderer.invoke('rekordbox:playlist', id),
   engineAvailable: (): Promise<boolean> => ipcRenderer.invoke('engine:available'),
@@ -243,12 +246,16 @@ const api: Api = {
   loadTraktorTree: (): Promise<SourceNode[]> => ipcRenderer.invoke('traktor:tree'),
   traktorRecentCount: (): Promise<number> => ipcRenderer.invoke('traktor:recentCount'),
   traktorTrackCount: (): Promise<number> => ipcRenderer.invoke('traktor:trackCount'),
+  loadTraktorCollection: (): Promise<CollectionTrack[]> =>
+    ipcRenderer.invoke('traktor:collectionTracks'),
   loadTraktorPlaylist: (id: string): Promise<SourcePlaylistEntry[]> =>
     ipcRenderer.invoke('traktor:playlist', id),
   seratoAvailable: (): Promise<boolean> => ipcRenderer.invoke('serato:available'),
   loadSeratoTree: (): Promise<SourceNode[]> => ipcRenderer.invoke('serato:tree'),
   seratoRecentCount: (): Promise<number> => ipcRenderer.invoke('serato:recentCount'),
   seratoTrackCount: (): Promise<number> => ipcRenderer.invoke('serato:trackCount'),
+  loadSeratoCollection: (): Promise<CollectionTrack[]> =>
+    ipcRenderer.invoke('serato:collectionTracks'),
   loadSeratoPlaylist: (id: string): Promise<SourcePlaylistEntry[]> =>
     ipcRenderer.invoke('serato:playlist', id),
   seratoRunning: (): Promise<boolean> => ipcRenderer.invoke('serato:running'),

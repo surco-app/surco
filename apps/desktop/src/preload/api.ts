@@ -16,6 +16,7 @@ import type {
   AppleMusicTrackMeta,
   AppleMusicUpdateJob,
   BpmResult,
+  CollectionTrack,
   CoverExportJob,
   CoverRead,
   DamageOutcome,
@@ -252,6 +253,7 @@ export interface Api {
   loadRekordboxTree: () => Promise<SourceNode[]>
   rekordboxRecentCount: () => Promise<number>
   rekordboxTrackCount: () => Promise<number>
+  loadRekordboxCollection: () => Promise<CollectionTrack[]>
   // One playlist's rows in order, separators and file-less rows included.
   loadRekordboxPlaylist: (id: string) => Promise<SourcePlaylistEntry[]>
   engineAvailable: () => Promise<boolean>
@@ -263,11 +265,13 @@ export interface Api {
   loadTraktorTree: () => Promise<SourceNode[]>
   traktorRecentCount: () => Promise<number>
   traktorTrackCount: () => Promise<number>
+  loadTraktorCollection: () => Promise<CollectionTrack[]>
   loadTraktorPlaylist: (id: string) => Promise<SourcePlaylistEntry[]>
   seratoAvailable: () => Promise<boolean>
   loadSeratoTree: () => Promise<SourceNode[]>
   seratoRecentCount: () => Promise<number>
   seratoTrackCount: () => Promise<number>
+  loadSeratoCollection: () => Promise<CollectionTrack[]>
   loadSeratoPlaylist: (id: string) => Promise<SourcePlaylistEntry[]>
   seratoRunning: () => Promise<boolean>
   djAppRunning: () => Promise<boolean>

@@ -1,6 +1,7 @@
 import type { DjProgram } from '../../../shared/djProgram'
 import { TRAKTOR_BUILT_IN, TRAKTOR_HISTORY } from '../../../shared/traktorContent'
 import type {
+  CollectionTrack,
   RekordboxEditResult,
   RekordboxPlaylistEdit,
   SourceNode,
@@ -16,6 +17,7 @@ export interface SourceRead {
   trackCount(): Promise<number>
   playlist(id: string): Promise<SourcePlaylistEntry[]>
   membership(paths: string[]): Promise<Record<string, string[]>>
+  collection?(): Promise<CollectionTrack[]>
 }
 
 export const SOURCE_READ: Record<DjProgram, SourceRead> = {
@@ -26,6 +28,7 @@ export const SOURCE_READ: Record<DjProgram, SourceRead> = {
     trackCount: () => window.api.rekordboxTrackCount(),
     playlist: (id) => window.api.loadRekordboxPlaylist(id),
     membership: (paths) => window.api.rekordboxMembership(paths),
+    collection: () => window.api.loadRekordboxCollection(),
   },
   traktor: {
     available: () => window.api.traktorAvailable(),
@@ -34,6 +37,7 @@ export const SOURCE_READ: Record<DjProgram, SourceRead> = {
     trackCount: () => window.api.traktorTrackCount(),
     playlist: (id) => window.api.loadTraktorPlaylist(id),
     membership: (paths) => window.api.traktorMembership(paths),
+    collection: () => window.api.loadTraktorCollection(),
   },
   engine: {
     available: () => window.api.engineAvailable(),
@@ -50,6 +54,7 @@ export const SOURCE_READ: Record<DjProgram, SourceRead> = {
     trackCount: () => window.api.seratoTrackCount(),
     playlist: (id) => window.api.loadSeratoPlaylist(id),
     membership: (paths) => window.api.seratoMembership(paths),
+    collection: () => window.api.loadSeratoCollection(),
   },
 }
 
