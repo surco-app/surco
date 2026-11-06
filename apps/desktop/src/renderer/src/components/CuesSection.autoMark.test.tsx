@@ -483,6 +483,29 @@ describe('accepting Auto marcar', () => {
     expect(screen.getByTestId('cues-unsaved')).toBeInTheDocument()
   })
 
+  it('saves to the program as soon as the suggestions are accepted, folded or in full screen, so accepting never needs a second click on Save', async () => {
+    const { saveRekordboxCues } = setup()
+    await ready()
+    await autoMark()
+    fireEvent.click(screen.getByTestId('cues-auto-accept'))
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalledTimes(1))
+    expect(saveRekordboxCues.mock.calls[0][0][0].wanted.length).toBeGreaterThan(0)
+    await openFull()
+    await autoMark()
+    fireEvent.keyDown(screen.getByTestId('cues-editor'), { key: 'Enter' })
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalledTimes(2))
+  })
+
+  it('leaves Save to the DJ after accepting one suggestion on its own, since the rest are still being weighed', async () => {
+    const { saveRekordboxCues } = setup()
+    await ready()
+    await autoMark()
+    seekStrip(bar(64))
+    fireEvent.click(screen.getByTestId(`cue-proposal-accept-${bar(64)}`))
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    expect(saveRekordboxCues).not.toHaveBeenCalled()
+  })
+
   it('places every proposal with Aceptar and takes them all back with one undo', async () => {
     setup()
     await ready()
@@ -628,6 +651,11 @@ describe('pending proposals', () => {
 })
 
 describe('saving several tracks', () => {
+  const acceptOne = () => {
+    seekStrip(bar(64))
+    fireEvent.click(screen.getByTestId(`cue-proposal-accept-${bar(64)}`))
+  }
+
   const other = () =>
     keepDraft('104', '104|f0|null', startDraft([{ ms: bar(32), kind: 0, color: null }], 'mine'), {
       path: '/m/h.wav',
@@ -643,7 +671,7 @@ describe('saving several tracks', () => {
     setup()
     await ready()
     await autoMark()
-    fireEvent.click(screen.getByTestId('cues-auto-accept'))
+    acceptOne()
     const more = await screen.findByTestId('cues-save-more')
     expect(more).toHaveTextContent('2')
     expect(screen.queryByTestId('cues-save-all')).toBeNull()
@@ -657,7 +685,7 @@ describe('saving several tracks', () => {
     setup()
     await ready()
     await autoMark()
-    fireEvent.click(screen.getByTestId('cues-auto-accept'))
+    acceptOne()
     await screen.findByTestId('cues-unsaved')
     expect(screen.getByTestId('cues-save')).toBeEnabled()
     const more = screen.getByTestId('cues-save-more')
@@ -673,7 +701,7 @@ describe('saving several tracks', () => {
     const { saveRekordboxCues } = setup()
     await ready()
     await autoMark()
-    fireEvent.click(screen.getByTestId('cues-auto-accept'))
+    acceptOne()
     const all = await saveAllItem()
     expect(all).toHaveTextContent('Save 2 tracks to rekordbox')
     fireEvent.click(all)
@@ -705,7 +733,7 @@ describe('saving several tracks', () => {
     const { saveRekordboxCues } = setup()
     await ready()
     await autoMark()
-    fireEvent.click(screen.getByTestId('cues-auto-accept'))
+    acceptOne()
     fireEvent.click(await saveAllItem())
     await waitFor(() => expect([...unsavedCueTracks()]).toEqual([]))
     const saved = saveRekordboxCues.mock.calls.flatMap(([reqs]) => reqs.map((r) => r.contentId))
@@ -718,7 +746,7 @@ describe('saving several tracks', () => {
     saveRekordboxCues.mockImplementation(() => new Promise(() => {}))
     await ready()
     await autoMark()
-    fireEvent.click(screen.getByTestId('cues-auto-accept'))
+    acceptOne()
     fireEvent.click(await saveAllItem())
     const more = screen.getByTestId('cues-save-more')
     await waitFor(() => expect(more).toBeDisabled())
@@ -736,7 +764,7 @@ describe('saving several tracks', () => {
     saveRekordboxCues.mockImplementation(answer)
     await ready()
     await autoMark()
-    fireEvent.click(screen.getByTestId('cues-auto-accept'))
+    acceptOne()
     fireEvent.click(await saveAllItem())
     expect(await screen.findByTestId('cues-save-failed')).toHaveTextContent(said)
     expect([...unsavedCueTracks()].sort()).toEqual(['103', '104'])
@@ -750,7 +778,7 @@ describe('saving several tracks', () => {
     saveRekordboxCues.mockImplementation(answer)
     await ready()
     await autoMark()
-    fireEvent.click(screen.getByTestId('cues-auto-accept'))
+    acceptOne()
     fireEvent.click(screen.getByTestId('cues-save'))
     expect(await screen.findByTestId('cues-save-failed')).toHaveTextContent(said)
     expect([...unsavedCueTracks()]).toEqual(['103'])
@@ -763,7 +791,7 @@ describe('saving several tracks', () => {
     await ready()
     await autoMark()
     expect(actionsRef.current?.saveAll).toBeUndefined()
-    fireEvent.click(screen.getByTestId('cues-auto-accept'))
+    acceptOne()
     const all = await saveAllItem()
     expect(actionsRef.current?.saveAll).toMatchObject({ label: all.textContent, saving: false })
     actionsRef.current?.saveAll?.run()
@@ -779,7 +807,7 @@ describe('saving several tracks', () => {
     setup({ actionsRef })
     await ready()
     await autoMark()
-    fireEvent.click(screen.getByTestId('cues-auto-accept'))
+    acceptOne()
     await saveAllItem()
     cleanup()
     expect(actionsRef.current).toBeNull()
@@ -789,7 +817,7 @@ describe('saving several tracks', () => {
     setup()
     await ready()
     await autoMark()
-    fireEvent.click(screen.getByTestId('cues-auto-accept'))
+    acceptOne()
     expect(screen.queryByTestId('cues-save-all')).toBeNull()
   })
 

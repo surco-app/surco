@@ -662,9 +662,11 @@ function Editing({
         setAutoNote('unanalysed')
       })
   }
+  const saveAccepted = useRef(false)
   const acceptProposals = () => {
     dispatch(acceptAll)
     setProposed(null)
+    saveAccepted.current = true
   }
   const dropProposal = (ms: number) => {
     setProposed((all) => (all ?? []).filter((p) => p.ms !== ms))
@@ -985,6 +987,11 @@ function Editing({
     ])
     if (saved) setProposed(null)
   }
+  useEffect(() => {
+    if (!saveAccepted.current) return
+    saveAccepted.current = false
+    if (!unchanged && !blocked) void save()
+  })
   const copy = copyOf(cue.contentId)
   const unsavedTracks = [...unsavedSet].filter(savable).length
   const [savingAll, setSavingAll] = useState(false)
