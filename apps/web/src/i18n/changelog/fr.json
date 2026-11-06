@@ -1,5 +1,40 @@
 [
   {
+    "version": "1.27",
+    "date": "November 6, 2026",
+    "title": "Des filtres par sections, et une analyse qui ne chauffe plus ton Mac",
+    "items": [
+      {
+        "text": "Le menu des filtres range ses sections à gauche et leurs filtres à droite, s’ouvre sur la dernière section que tu as regardée et, si tu tapes menu ouvert, trouve le filtre dans n’importe quelle section. Les filtres que tu as mis s’affichent sous la barre, chacun avec un bouton pour l’enlever.",
+        "in": "1.27.0"
+      },
+      {
+        "text": "De nouveaux filtres. Dans « Écoute », « Non écoutées » et « Écoutées », qui marquent un morceau dès que tu l’entends quelques secondes. Dans « Sélection », « Sélectionnées ». Dans « Étoiles », « Sans étoiles », « 3 ou plus », « 4 ou plus » et « 5 étoiles », et la liste se trie aussi par « Étoiles ».",
+        "in": "1.27.0"
+      },
+      {
+        "text": "« Meilleur que dans Music », dans la section Apple Music, ne garde que les morceaux que tu as ajoutés et qui sonnent mieux que la copie que tu as déjà dans Apple Music. Une copie .m4a est jugée sur ce qu’elle contient, donc l’AAC compte comme avec perte et l’ALAC comme sans perte.",
+        "in": "1.27.0"
+      },
+      {
+        "text": "« Grille fausse » et « Meilleur que dans Music » se mesurent avec l’analyse, toutes seules si « Tout analyser à l'import » est activé, ou dès que tu appuies sur « Analyser ». Pendant la mesure, un anneau se referme autour de leur icône et le nombre n’apparaît qu’avec un résultat, au lieu d’un 0 qui n’est pas encore vrai.",
+        "in": "1.27.0"
+      },
+      {
+        "text": "Quand tu rouvres ta dernière session, les filtres, le tri et la recherche reviennent, avec les morceaux que tu avais sélectionnés, ceux que tu avais déjà écoutés, et le morceau reprend là où tu l’avais laissé.",
+        "in": "1.27.0"
+      },
+      {
+        "text": "Analyser la qualité de centaines de morceaux chauffe beaucoup moins ton Mac et n’occupe plus tous les cœurs. Chaque morceau reçoit d’abord son verdict de qualité, puis on mesure le volume, le BPM et la tonalité. Avec un logiciel DJ ouvert, l’analyse ne s’arrête plus, elle continue plus lentement, un morceau à la fois.",
+        "in": "1.27.0"
+      },
+      {
+        "text": "Avec de grandes collections Traktor, lire chaque morceau va beaucoup plus vite. Et un NAS ou un Apple Music qui ne répond plus ne bloque plus la liste des clés USB ni les autres lectures de Music.",
+        "in": "1.27.0"
+      }
+    ]
+  },
+  {
     "version": "1.26",
     "date": "November 5, 2026",
     "title": "Tes logiciels DJ dans leur propre onglet, et des flux de cues plus fins",

@@ -1,5 +1,40 @@
 [
   {
+    "version": "1.27",
+    "date": "November 6, 2026",
+    "title": "Filters in sections, and an analysis that keeps your Mac cool",
+    "items": [
+      {
+        "text": "The filter menu lays its sections down the left and their filters on the right, opens on the last section you looked at, and if you type with the menu open it finds the filter in any section. The filters you have on show under the toolbar, each with a button to drop it.",
+        "in": "1.27.0"
+      },
+      {
+        "text": "New filters. Under “Listening”, “Unplayed” and “Played”, which mark a track as soon as you hear it for a few seconds. Under “Selection”, “Selected”. Under “Stars”, “No stars”, “3 or more”, “4 or more” and “5 stars”, and the list can also be sorted by “Stars”.",
+        "in": "1.27.0"
+      },
+      {
+        "text": "“Better than Music”, in the Apple Music section, leaves only the tracks you brought in that sound better than the copy you already have in Apple Music. An .m4a copy is judged by what it holds, so AAC counts as lossy and ALAC as lossless.",
+        "in": "1.27.0"
+      },
+      {
+        "text": "“Bad grid” and “Better than Music” are measured along with the analysis, by themselves if you have “Analyze everything on import” on, or as soon as you press “Analyze”. While they measure, a ring closes round their icon and the number only shows once there is a result, instead of a 0 that isn't true yet.",
+        "in": "1.27.0"
+      },
+      {
+        "text": "Reopening your last session brings back the filters, the sort and the search, the tracks you had selected, the ones you had already heard, and the track plays on from where you left it.",
+        "in": "1.27.0"
+      },
+      {
+        "text": "Analyzing the quality of hundreds of tracks heats your Mac far less and no longer eats every core. Each track gets its quality verdict first, and then its loudness, BPM and key are measured. With a DJ program open the analysis no longer stops, it carries on more slowly, one track at a time.",
+        "in": "1.27.0"
+      },
+      {
+        "text": "With big Traktor collections, reading each track is much faster. And a NAS or an Apple Music that stops answering no longer holds up the USB list or the rest of the Music reads.",
+        "in": "1.27.0"
+      }
+    ]
+  },
+  {
     "version": "1.26",
     "date": "November 5, 2026",
     "title": "Your DJ software in its own tab, and finer cue flows",

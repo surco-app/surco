@@ -1,5 +1,40 @@
 [
   {
+    "version": "1.27",
+    "date": "6 de noviembre de 2026",
+    "title": "Filtros por secciones, y un análisis que no calienta el Mac",
+    "items": [
+      {
+        "text": "El menú de filtros reparte sus secciones a la izquierda y sus filtros a la derecha, se abre en la última sección que miraste y, si escribes con el menú abierto, encuentra el filtro en cualquier sección. Los filtros que tienes puestos aparecen bajo la barra, cada uno con su botón para quitarlo.",
+        "in": "1.27.0"
+      },
+      {
+        "text": "Filtros nuevos. En «Escucha», «Sin escuchar» y «Escuchadas», que marcan una pista en cuanto la oyes unos segundos. En «Selección», «Seleccionadas». En «Estrellas», «Sin estrellas», «3 o más», «4 o más» y «5 estrellas», y la lista también se ordena por «Estrellas».",
+        "in": "1.27.0"
+      },
+      {
+        "text": "«Mejor que Music», en la sección Apple Music, te deja solo las pistas que has traído y que suenan mejor que la copia que ya tienes en Apple Music. Una copia .m4a se juzga por lo que lleva dentro, así que AAC cuenta como con pérdida y ALAC como sin pérdida.",
+        "in": "1.27.0"
+      },
+      {
+        "text": "«Rejilla mal» y «Mejor que Music» se miden con el análisis, solos si tienes «Analizar todo al importar» o en cuanto pulsas «Analizar». Mientras miden, un anillo se cierra alrededor de su icono y el número no aparece hasta que hay resultado, en vez de un 0 que aún no es verdad.",
+        "in": "1.27.0"
+      },
+      {
+        "text": "Al reabrir la última sesión vuelven los filtros, el orden y la búsqueda, las pistas que tenías seleccionadas, las que ya habías escuchado, y la pista sigue sonando desde donde la dejaste.",
+        "in": "1.27.0"
+      },
+      {
+        "text": "Analizar la calidad de cientos de pistas calienta mucho menos el Mac y no se come todos los núcleos. Cada pista recibe primero su veredicto de calidad, y después se miden la sonoridad, el BPM y la tonalidad. Con un programa de DJ abierto el análisis ya no se para, sigue más despacio, de una pista en una.",
+        "in": "1.27.0"
+      },
+      {
+        "text": "Con colecciones de Traktor grandes, leer cada pista va mucho más rápido. Y un NAS o un Apple Music que dejan de responder ya no bloquean la lista de USB ni el resto de lecturas de Music.",
+        "in": "1.27.0"
+      }
+    ]
+  },
+  {
     "version": "1.26",
     "date": "5 de noviembre de 2026",
     "title": "Tus programas de DJ en su propia pestaña, y flujos de cues más finos",

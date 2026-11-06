@@ -1,5 +1,40 @@
 [
   {
+    "version": "1.27",
+    "date": "November 6, 2026",
+    "title": "Filter in Bereichen, und eine Analyse, die deinen Mac kühl lässt",
+    "items": [
+      {
+        "text": "Das Filtermenü zeigt seine Bereiche links und ihre Filter rechts, öffnet sich im zuletzt angesehenen Bereich und findet, wenn du bei offenem Menü tippst, den Filter in jedem Bereich. Die Filter, die du gesetzt hast, stehen unter der Leiste, jeder mit einem Knopf zum Entfernen.",
+        "in": "1.27.0"
+      },
+      {
+        "text": "Neue Filter. Unter „Anhören“ gibt es „Nicht gehört“ und „Gehört“, die einen Track markieren, sobald du ihn ein paar Sekunden hörst. Unter „Auswahl“ gibt es „Ausgewählt“. Unter „Sterne“ gibt es „Ohne Sterne“, „3 oder mehr“, „4 oder mehr“ und „5 Sterne“, und die Liste lässt sich auch nach „Sterne“ sortieren.",
+        "in": "1.27.0"
+      },
+      {
+        "text": "„Besser als in Music“ im Bereich Apple Music lässt nur die Tracks übrig, die du hereingeholt hast und die besser klingen als die Kopie, die du schon in Apple Music hast. Eine .m4a-Kopie wird nach ihrem Inhalt beurteilt, AAC zählt also als verlustbehaftet und ALAC als verlustfrei.",
+        "in": "1.27.0"
+      },
+      {
+        "text": "„Raster falsch“ und „Besser als in Music“ werden mit der Analyse gemessen, von selbst, wenn „Beim Import alles analysieren“ an ist, oder sobald du „Analysieren“ drückst. Während sie messen, schließt sich ein Ring um ihr Symbol, und die Zahl erscheint erst mit einem Ergebnis, statt einer 0, die noch nicht stimmt.",
+        "in": "1.27.0"
+      },
+      {
+        "text": "Wenn du die letzte Sitzung wieder öffnest, kommen die Filter, die Sortierung und die Suche zurück, die Tracks, die du ausgewählt hattest, die du schon gehört hattest, und der Track spielt dort weiter, wo du aufgehört hast.",
+        "in": "1.27.0"
+      },
+      {
+        "text": "Die Qualität von Hunderten Tracks zu analysieren, heizt deinen Mac viel weniger auf und belegt nicht mehr alle Kerne. Jeder Track bekommt zuerst sein Qualitätsurteil, danach werden Lautheit, BPM und Tonart gemessen. Mit einem offenen DJ-Programm stoppt die Analyse nicht mehr, sie läuft langsamer weiter, ein Track nach dem anderen.",
+        "in": "1.27.0"
+      },
+      {
+        "text": "Bei großen Traktor-Sammlungen geht das Lesen jedes Tracks viel schneller. Und ein NAS oder ein Apple Music, das nicht mehr antwortet, hält die USB-Liste und die übrigen Music-Lesevorgänge nicht mehr auf.",
+        "in": "1.27.0"
+      }
+    ]
+  },
+  {
     "version": "1.26",
     "date": "November 5, 2026",
     "title": "Deine DJ-Software in einem eigenen Tab, und feinere Cue-Abläufe",

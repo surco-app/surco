@@ -1,5 +1,40 @@
 [
   {
+    "version": "1.27",
+    "date": "November 6, 2026",
+    "title": "Filtros por seções, e uma análise que não esquenta o Mac",
+    "items": [
+      {
+        "text": "O menu de filtros mostra as seções à esquerda e os filtros delas à direita, abre na última seção que você olhou e, se você digitar com o menu aberto, encontra o filtro em qualquer seção. Os filtros que você colocou aparecem embaixo da barra, cada um com um botão para tirá-lo.",
+        "in": "1.27.0"
+      },
+      {
+        "text": "Filtros novos. Em “Escuta”, “Não ouvidas” e “Ouvidas”, que marcam uma faixa assim que você a ouve por alguns segundos. Em “Seleção”, “Selecionadas”. Em “Estrelas”, “Sem estrelas”, “3 ou mais”, “4 ou mais” e “5 estrelas”, e a lista também pode ser ordenada por “Estrelas”.",
+        "in": "1.27.0"
+      },
+      {
+        "text": "“Melhor que no Music”, na seção Apple Music, deixa só as faixas que você trouxe e que soam melhor que a cópia que você já tem no Apple Music. Uma cópia .m4a é julgada pelo que leva dentro, então AAC conta como com perda e ALAC como sem perda.",
+        "in": "1.27.0"
+      },
+      {
+        "text": "“Grade errada” e “Melhor que no Music” são medidos junto com a análise, sozinhos se “Analisar tudo ao importar” estiver ligado, ou assim que você aperta “Analisar”. Enquanto medem, um anel se fecha em volta do ícone e o número só aparece quando há resultado, em vez de um 0 que ainda não é verdade.",
+        "in": "1.27.0"
+      },
+      {
+        "text": "Ao reabrir a última sessão voltam os filtros, a ordem e a busca, as faixas que você tinha selecionado, as que já tinha ouvido, e a faixa continua tocando de onde você parou.",
+        "in": "1.27.0"
+      },
+      {
+        "text": "Analisar a qualidade de centenas de faixas esquenta muito menos o Mac e não ocupa mais todos os núcleos. Cada faixa recebe primeiro o veredito de qualidade, e depois são medidos o volume, o BPM e o tom. Com um programa de DJ aberto a análise não para mais, segue mais devagar, uma faixa por vez.",
+        "in": "1.27.0"
+      },
+      {
+        "text": "Com coleções grandes do Traktor, ler cada faixa fica muito mais rápido. E um NAS ou um Apple Music que para de responder não trava mais a lista de USB nem as outras leituras do Music.",
+        "in": "1.27.0"
+      }
+    ]
+  },
+  {
     "version": "1.26",
     "date": "November 5, 2026",
     "title": "Seus programas de DJ numa aba só deles, e fluxos de cues mais finos",
