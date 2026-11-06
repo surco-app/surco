@@ -6,14 +6,17 @@ import type { TrackItem, TrackStatus } from '../types'
 import type { CopyVerdict } from './bestCopy'
 import * as normalizeText from './normalizeText'
 import {
+  attentionOffered,
   EMPTY_FILTER,
   type FilterFacts,
   type FilterSelection,
   facetCounts,
   filterSessionKey,
   filterWithSticky,
+  fitFilterToTab,
   formatBuckets,
   holdOrder,
+  libraryOffered,
   matchesFilter,
   matchesSearch,
   NO_FACTS,
@@ -1267,5 +1270,50 @@ describe('stars filter and sort', () => {
       sortTracks(tracks.slice(0, 5), 'rating', dir).map((t) => t.id)
     expect(order('asc')).toEqual(['five', 'four', 'three', 'two', 'none'])
     expect(order('desc')).toEqual(['two', 'three', 'four', 'five', 'none'])
+  })
+})
+
+// A filter is offered only on a tab whose tracks it can ever hold: cues and grids come from a
+// DJ program, each program's unanalysed rows from that program, Music has no other library
+// copy to be in, and Better than Music weighs files brought into Tracks.
+describe('filters offered per tab', () => {
+  it('keeps the cue and grid filters to the DJ program tabs', () => {
+    for (const mode of ['noCues', 'offGrid', 'badGrid'] as const) {
+      expect(attentionOffered(mode, 'rekordbox')).toBe(true)
+      expect(attentionOffered(mode, 'serato')).toBe(true)
+      expect(attentionOffered(mode, null)).toBe(false)
+      expect(attentionOffered(mode, 'appleMusic')).toBe(false)
+    }
+    expect(attentionOffered('silence', null)).toBe(true)
+    expect(attentionOffered('clipping', 'appleMusic')).toBe(true)
+  })
+
+  it('keeps each unanalysed filter to its own program', () => {
+    expect(attentionOffered('unanalysedRekordbox', 'rekordbox')).toBe(true)
+    expect(attentionOffered('unanalysedRekordbox', 'engine')).toBe(false)
+    expect(attentionOffered('unanalysedEngine', 'engine')).toBe(true)
+    expect(attentionOffered('unanalysedEngine', null)).toBe(false)
+  })
+
+  it('leaves the library filters out of Music and Better than Music to Tracks', () => {
+    expect(libraryOffered('inLibrary', 'rekordbox')).toBe(true)
+    expect(libraryOffered('notInLibrary', null)).toBe(true)
+    expect(libraryOffered('inLibrary', 'appleMusic')).toBe(false)
+    expect(libraryOffered('betterThanLibrary', null)).toBe(true)
+    expect(libraryOffered('betterThanLibrary', 'rekordbox')).toBe(false)
+  })
+
+  // Left on across a switch, a filter the new tab does not offer would empty its list from
+  // behind a menu that no longer lists it.
+  it('drops on a switch the filters the new tab does not offer', () => {
+    const sel = {
+      ...EMPTY_FILTER,
+      attention: 'offGrid',
+      library: 'inLibrary',
+      stars: 'stars4',
+    } as const
+    expect(fitFilterToTab(sel, null)).toEqual({ ...sel, attention: null })
+    expect(fitFilterToTab(sel, 'appleMusic')).toEqual({ ...sel, attention: null, library: null })
+    expect(fitFilterToTab(sel, 'traktor')).toBe(sel)
   })
 })

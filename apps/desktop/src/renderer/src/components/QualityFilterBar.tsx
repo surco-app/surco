@@ -45,7 +45,14 @@ import type React from 'react'
 import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { LibrarySource } from '../lib/librarySource'
-import { EMPTY_FILTER, type FilterSelection, type qualityCounts } from '../lib/triage'
+import {
+  attentionOffered,
+  EMPTY_FILTER,
+  type FilterSelection,
+  type FilterTab,
+  libraryOffered,
+  type qualityCounts,
+} from '../lib/triage'
 import { FilterBar, FilterPanes, type PaneOption, type PaneSection } from './FilterBar'
 import { Tooltip } from './Tooltip'
 
@@ -300,6 +307,7 @@ interface Props {
   // Which library the membership buckets read (the conversion destination's), so their
   // labels name the right one — "In Engine DJ" when conversions land there.
   librarySource: LibrarySource
+  tab: FilterTab
   gridMeasure?: Measure
   // The comparison of each file with the copy Apple Music already holds, which the
   // better-than-the-library bucket reads. Offered only when some track has one.
@@ -347,6 +355,7 @@ interface Props {
 export function QualityFilterBar({
   filterRef,
   librarySource,
+  tab,
   value,
   onChange,
   tally,
@@ -450,8 +459,13 @@ export function QualityFilterBar({
   })
   // Every section is always there and lists every one of its filters, an empty one dimmed,
   // so a filter is found where it was last time instead of turning up only once some track
-  // lands in it. The exceptions are the library section, which needs a library to read, and
-  // Better than Music, which needs files brought in to weigh against their library copy.
+  // lands in it, unless the open tab can never hold its tracks (attentionOffered,
+  // libraryOffered). The library section also needs a library to read, and Better than Music
+  // the comparison with its copy.
+  const libraryModes = [
+    ...LIBRARY_MODES,
+    ...(libraryMeasure ? ['betterThanLibrary' as const] : []),
+  ].filter((m) => libraryOffered(m, tab))
   const sections = (close: () => void): PaneSection[] => {
     const of = (key: SectionKey, modes: Mode[]): PaneSection => ({
       key,
@@ -465,14 +479,7 @@ export function QualityFilterBar({
     // saving and converting. The format is a fact about the file, not a step, so it ends.
     return [
       of('quality', QUALITY_MODES),
-      ...(librarySource
-        ? [
-            of('library', [
-              ...LIBRARY_MODES,
-              ...(libraryMeasure ? (['betterThanLibrary'] as Mode[]) : []),
-            ]),
-          ]
-        : []),
+      ...(librarySource && libraryModes.length > 0 ? [of('library', libraryModes)] : []),
       // What the user did with the list rather than with the file, together in one section
       // so none of them is a section holding a single filter.
       {
@@ -487,7 +494,10 @@ export function QualityFilterBar({
       of('stars', STARS_MODES),
       of('match', MATCH_MODES),
       of('tags', TAGS_MODES),
-      of('attention', ATTENTION_MODES),
+      of(
+        'attention',
+        ATTENTION_MODES.filter((m) => attentionOffered(m, tab)),
+      ),
       of('status', STATUS_MODES),
       {
         key: 'format',

@@ -60,6 +60,7 @@ function renderBar(over: Partial<Parameters<typeof QualityFilterBar>[0]> = {}) {
     <QualityFilterBar
       filterRef={createRef()}
       librarySource="appleMusic"
+      tab="rekordbox"
       value={sel()}
       onChange={onChange}
       tally={over.tally ?? tally()}
@@ -229,15 +230,9 @@ describe('QualityFilterBar sections', () => {
     openMenu('attention')
     const shown = screen.getAllByRole('option').map((el) => el.getAttribute('data-testid'))
     expect(shown).toEqual(
-      [
-        'silence',
-        'clipping',
-        'noCues',
-        'offGrid',
-        'badGrid',
-        'unanalysedRekordbox',
-        'unanalysedEngine',
-      ].map((m) => `quality-filter-${m}`),
+      ['silence', 'clipping', 'noCues', 'offGrid', 'badGrid', 'unanalysedRekordbox'].map(
+        (m) => `quality-filter-${m}`,
+      ),
     )
     expect(screen.queryByTestId('quality-filter-unconverted')).toBeNull()
   })
@@ -481,6 +476,7 @@ describe('QualityFilterBar', () => {
   // "measured, none better" while everything else said the crate was fully analysed.
   it('says a filter not measured yet holds an unknown count, with no progress to show', () => {
     renderBar({
+      tab: null,
       tally: tally({ inLibrary: 3 }),
       libraryMeasure: { offered: true, measuring: false, done: 0, total: 3 },
     })
@@ -494,7 +490,7 @@ describe('QualityFilterBar', () => {
 
   // Once measured the number is real, even a 0, picked or not.
   it('counts a filter measured to the end like any other', () => {
-    renderBar({ libraryMeasure: { offered: true, measuring: false, done: 3, total: 3 } })
+    renderBar({ tab: null, libraryMeasure: { offered: true, measuring: false, done: 3, total: 3 } })
     openMenu('library')
     expect(screen.getByTestId('quality-filter-betterThanLibrary')).toHaveTextContent(
       /^Better than Music0$/,
@@ -542,12 +538,36 @@ describe('QualityFilterBar', () => {
 
   it('offers the better-than-the-library filter among the library buckets, since picking it is what starts the measuring', () => {
     const { onChange } = renderBar({
+      tab: null,
       tally: tally({ inLibrary: 4 }),
       libraryMeasure: { offered: true, measuring: false, done: 0, total: 4 },
     })
     openMenu('library')
     fireEvent.click(screen.getByTestId('quality-filter-betterThanLibrary'))
     expect(onChange).toHaveBeenCalledWith(sel({ library: 'betterThanLibrary' }))
+  })
+
+  // On Tracks there is no DJ program to read cues, grids or its analysis from.
+  it('lists no cue, grid or unanalysed filter on the Tracks tab', () => {
+    renderBar({ tab: null })
+    openMenu('attention')
+    expect(screen.getByTestId('quality-filter-silence')).toBeInTheDocument()
+    for (const mode of ['noCues', 'offGrid', 'badGrid', 'unanalysedRekordbox', 'unanalysedEngine'])
+      expect(screen.queryByTestId(`quality-filter-${mode}`)).toBeNull()
+  })
+
+  it('lists only the open program its own unanalysed filter', () => {
+    renderBar({ tab: 'rekordbox' })
+    openMenu('attention')
+    expect(screen.getByTestId('quality-filter-unanalysedRekordbox')).toBeInTheDocument()
+    expect(screen.queryByTestId('quality-filter-unanalysedEngine')).toBeNull()
+  })
+
+  // Every track on the Music tab is in Music: the section could only ever split 30 and 0.
+  it('lists no Apple Music section on the Music tab', () => {
+    renderBar({ tab: 'appleMusic' })
+    openMenu()
+    expect(screen.queryByTestId('quality-filter-section-library')).toBeNull()
   })
 
   // With no comparison running, as on a DJ program's tab, the filter could only ever say 0.
@@ -560,6 +580,7 @@ describe('QualityFilterBar', () => {
 
   it('says how far the comparison with the library got beside its filter', () => {
     renderBar({
+      tab: null,
       tally: tally({ inLibrary: 40, betterThanLibrary: 3 }),
       libraryMeasure: { offered: true, measuring: true, done: 10, total: 40 },
     })
@@ -577,7 +598,7 @@ describe('QualityFilterBar', () => {
   })
 
   it('names the DJ program a track is waiting on in its unanalysed bucket', () => {
-    const { onChange } = renderBar({ tally: tally({ unanalysedEngine: 5 }) })
+    const { onChange } = renderBar({ tab: 'engine', tally: tally({ unanalysedEngine: 5 }) })
     openMenu('attention')
     expect(screen.getByTestId('quality-filter-unanalysedEngine')).toHaveTextContent(
       i18n.t('sidebar.filter.unanalysedEngine'),

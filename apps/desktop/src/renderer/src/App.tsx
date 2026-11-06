@@ -222,6 +222,7 @@ import {
   facetCounts,
   filterSessionKey,
   filterWithSticky,
+  fitFilterToTab,
   formatBuckets,
   holdOrder,
   matchesFilter,
@@ -1082,8 +1083,8 @@ export default function App(): React.JSX.Element {
       ids: kept?.ids.filter((id) => alive.has(id)) ?? [],
       anchor: kept?.anchor && alive.has(kept.anchor) ? kept.anchor : null,
     })
-    if (next !== null && filterSelection.library === 'betterThanLibrary')
-      setFilterSelection({ ...filterSelection, library: null })
+    const fitted = fitFilterToTab(filterSelection, next)
+    if (fitted !== filterSelection) setFilterSelection(fitted)
     browser.selectSource(next)
     closePlayer()
   })
@@ -3583,6 +3584,7 @@ export default function App(): React.JSX.Element {
                             filterSelection={filterSelection}
                             setFilterSelection={setFilterSelection}
                             librarySource={librarySource}
+                            tab={browser.source}
                             qualityTally={qualityTally}
                             gridMeasure={{
                               offered: gridEntries.length > 0,

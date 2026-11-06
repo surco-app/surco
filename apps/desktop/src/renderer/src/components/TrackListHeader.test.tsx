@@ -36,6 +36,7 @@ function renderHeader(over: Partial<Parameters<typeof TrackListHeader>[0]> = {})
       filterSelection={EMPTY_FILTER}
       setFilterSelection={() => {}}
       librarySource="appleMusic"
+      tab={null}
       qualityTally={{} as never}
       formatTally={[]}
       filterFacets={{ tally: {} as never, formats: {} }}

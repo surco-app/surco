@@ -35,7 +35,7 @@ import { useId, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { Command } from '../lib/commands'
 import type { LibrarySource } from '../lib/librarySource'
-import type { FilterSelection, TrackSort } from '../lib/triage'
+import type { FilterSelection, FilterTab, TrackSort } from '../lib/triage'
 import type { TrackItem } from '../types'
 import { type MenuPlacement, placeMenu, useCloseOnMove } from './menuPlacement'
 import { ActiveFilters, QualityFilterBar } from './QualityFilterBar'
@@ -56,6 +56,7 @@ interface Props {
   filterSelection: FilterSelection
   setFilterSelection: (next: FilterSelection) => void
   librarySource: LibrarySource
+  tab: FilterTab
   // The per-bucket counts and the format list the filter bar offers.
   qualityTally: React.ComponentProps<typeof QualityFilterBar>['tally']
   gridMeasure?: React.ComponentProps<typeof QualityFilterBar>['gridMeasure']
@@ -172,6 +173,7 @@ export function TrackListHeader({
   filterSelection,
   setFilterSelection,
   librarySource,
+  tab,
   qualityTally,
   gridMeasure,
   libraryMeasure,
@@ -310,6 +312,7 @@ export function TrackListHeader({
         <div className="order-first -mx-1.5 min-w-0 basis-full @[27rem]:order-none @[27rem]:mx-0 @[27rem]:flex-1 @[27rem]:basis-0">
           <QualityFilterBar
             librarySource={librarySource}
+            tab={tab}
             value={filterSelection}
             onChange={setFilterSelection}
             tally={qualityTally}

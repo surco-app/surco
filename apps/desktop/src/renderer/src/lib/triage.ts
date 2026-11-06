@@ -1,6 +1,7 @@
 import { DEFAULT_CUE_GRID_TOLERANCE } from '../../../shared/cueGrid'
 import type { GridVerdict } from '../../../shared/gridVerdict'
 import { MAJOR_CAMELOT, MAJOR_NAMES, MINOR_CAMELOT, MINOR_NAMES } from '../../../shared/keyNames'
+import type { PlaylistSource } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import type { CopyVerdict } from './bestCopy'
 import { foldText } from './normalizeText'
@@ -146,6 +147,32 @@ export const EMPTY_FILTER: FilterSelection = {
   selection: null,
   stars: null,
   format: null,
+}
+
+export type FilterTab = PlaylistSource | null
+
+export function attentionOffered(mode: AttentionFilter, tab: FilterTab): boolean {
+  if (mode === 'unanalysedRekordbox') return tab === 'rekordbox'
+  if (mode === 'unanalysedEngine') return tab === 'engine'
+  if (mode === 'noCues' || mode === 'offGrid' || mode === 'badGrid')
+    return tab !== null && tab !== 'appleMusic'
+  return true
+}
+
+export function libraryOffered(mode: LibraryFilter, tab: FilterTab): boolean {
+  if (mode === 'betterThanLibrary') return tab === null
+  return tab !== 'appleMusic'
+}
+
+export function fitFilterToTab(sel: FilterSelection, tab: FilterTab): FilterSelection {
+  const attention = sel.attention && !attentionOffered(sel.attention, tab)
+  const library = sel.library && !libraryOffered(sel.library, tab)
+  if (!attention && !library) return sel
+  return {
+    ...sel,
+    ...(attention ? { attention: null } : {}),
+    ...(library ? { library: null } : {}),
+  }
 }
 
 // The source container read straight off the input path's extension, uppercased (FLAC,
