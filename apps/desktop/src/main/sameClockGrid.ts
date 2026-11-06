@@ -1,5 +1,4 @@
 import type { GridFit } from '../shared/gridEdit'
-import { type GridVerdict, gridVerdictOf } from '../shared/gridVerdict'
 import { type BeatGridFit, REKORDBOX_BEAT_AFTER_RISE_MS } from './beatGrid'
 
 export type BeatGridOf = (file: string, priority?: 'high' | 'low') => Promise<BeatGridFit | null>
@@ -19,16 +18,4 @@ export async function sameClockFit(
     firstMs: fit.firstMs + lead,
     phases: fit.phases?.map((p) => ({ ms: p.ms + lead, firstMs: p.firstMs + lead })),
   }
-}
-
-export function sameClockVerdict(
-  grid: { ms: number }[] | undefined,
-  fit: GridFit | null,
-): GridVerdict | null {
-  return grid && fit
-    ? gridVerdictOf(
-        grid.map((b) => b.ms),
-        fit,
-      )
-    : null
 }

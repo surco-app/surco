@@ -6,8 +6,9 @@ import type { CueQueue, CueSource } from './cueSource'
 import { readEngineTrackCues } from './engineCues'
 import { engineDropInput } from './engineDropInput'
 import { withEngineLibrary } from './enginePlaylistsIpc'
+import { cachedGridVerdict } from './gridVerdictCache'
 import { keyOf } from './rekordboxPlaylistsIpc'
-import { type BeatGridOf, sameClockFit, sameClockVerdict } from './sameClockGrid'
+import { type BeatGridOf, sameClockFit } from './sameClockGrid'
 
 export function engineCueSource(
   engine: {
@@ -64,13 +65,14 @@ export function engineCueSource(
       return sameClockFit(file, beatGrid, 'high', leadOf(file))
     },
     gridVerdict: async (contentId) =>
-      sameClockVerdict(
+      cachedGridVerdict(
+        engineFile(contentId),
         withEngineLibrary(
           engine.libraryDir(),
           (db) => readEngineTrackCues(db, contentId, { wave: false }),
           null,
         )?.grid,
-        await sameClockFit(engineFile(contentId), beatGrid, 'low', leadOf(engineFile(contentId))),
+        () => sameClockFit(engineFile(contentId), beatGrid, 'low', leadOf(engineFile(contentId))),
       ),
     queuedWanted: async () => [],
     queue: engine.queue,

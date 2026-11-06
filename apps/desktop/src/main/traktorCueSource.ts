@@ -4,8 +4,9 @@ import type { BrowserWindow } from 'electron'
 import { traktorKey } from '../shared/traktorContent'
 import type { CueQueue, CueSource } from './cueSource'
 import { shiftedWords } from './cueWords'
+import { cachedGridVerdict } from './gridVerdictCache'
 import { keyOf } from './rekordboxPlaylistsIpc'
-import { type BeatGridOf, sameClockFit, sameClockVerdict } from './sameClockGrid'
+import { type BeatGridOf, sameClockFit } from './sameClockGrid'
 import { traktorTrackCuesOf } from './traktorCues'
 import { traktorDropInput } from './traktorDropInput'
 import { findEntries } from './traktorNml'
@@ -94,9 +95,10 @@ export function traktorCueSource(
     gridVerdict: async (contentId) => {
       const block = await blockOf(contentId)
       const file = fileOfBlock(block)
-      return sameClockVerdict(
+      return cachedGridVerdict(
+        file,
         block ? traktorTrackCuesOf(block, contentId).grid : undefined,
-        await sameClockFit(file, beatGrid, 'low', await leadOf(file)),
+        async () => sameClockFit(file, beatGrid, 'low', await leadOf(file)),
       )
     },
     queuedWanted: async () => [],

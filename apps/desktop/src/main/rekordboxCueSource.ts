@@ -1,8 +1,8 @@
 import type { GridFit } from '../shared/gridEdit'
-import { gridVerdictOf } from '../shared/gridVerdict'
 import { type BeatGridFit, provisionalGrid, REKORDBOX_BEAT_AFTER_RISE_MS } from './beatGrid'
 import type { CueQueue, CueSource } from './cueSource'
 import { shiftedWords } from './cueWords'
+import { cachedGridVerdict } from './gridVerdictCache'
 import { rekordboxShareDir } from './rekordboxArtwork'
 import { readCueWaveDetail, readTrackCues } from './rekordboxCues'
 import { keyOf, withCollection } from './rekordboxPlaylistsIpc'
@@ -104,8 +104,6 @@ export function rekordboxCueSource(host: {
     },
     gridFit: (contentId) => gridFit(contentId),
     gridVerdict: async (contentId) => {
-      const fit = await gridFit(contentId, 'low')
-      if (!fit) return null
       const path = host.collection()
       const read = withCollection(
         path,
@@ -113,12 +111,9 @@ export function rekordboxCueSource(host: {
         null,
         await keyOf(path),
       )
-      return read?.analysed
-        ? gridVerdictOf(
-            read.grid.map((b) => b.ms),
-            fit,
-          )
-        : null
+      if (!read?.analysed) return null
+      const row = await audioRowOf(contentId)
+      return cachedGridVerdict(row?.FolderPath ?? null, read.grid, () => gridFit(contentId, 'low'))
     },
     queuedWanted: async (contentId, op) => {
       const path = host.collection()
