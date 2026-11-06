@@ -5,6 +5,7 @@ import {
   Copy,
   CopyCheck,
   CopyMinus,
+  Headphones,
   Play,
   TriangleAlert,
   Undo2,
@@ -106,6 +107,8 @@ interface Props {
   backupAtByPath?: ReadonlyMap<string, number>
   pendingCuePaths?: ReadonlySet<string>
   unsavedCueIds?: ReadonlySet<string>
+  // The tracks played long enough to count as heard, by path.
+  playedPaths?: ReadonlySet<string>
   autoMarkById?: ReadonlyMap<string, AutoMark>
   onOpenBackup?: (track: TrackItem) => void
   // Which copy of a duplicated recording to keep (useDuplicateRanks), by track id.
@@ -364,6 +367,7 @@ interface RowProps {
   // This row's own rank, not the map, so only the rows whose rank changed re-render.
   duplicate?: DuplicateRank
   outsideFilter: boolean
+  played: boolean
   note?: GridNote
 }
 
@@ -398,6 +402,7 @@ const TrackRow = memo(function TrackRow({
   onOpenBackup,
   duplicate,
   outsideFilter,
+  played,
   note,
 }: RowProps): React.JSX.Element {
   const { t: tr, i18n } = useTranslation()
@@ -808,6 +813,16 @@ const TrackRow = memo(function TrackRow({
                     <span className="sr-only">{tr('trackList.unsaved')}</span>
                   </span>
                 )}
+                {played && (
+                  <span
+                    data-testid="track-played"
+                    className="group/dot relative flex shrink-0 items-center text-fg-faint"
+                  >
+                    <Headphones className="h-3 w-3" aria-hidden="true" />
+                    <Tooltip label={tr('trackList.played')} align="end" scope="dot" />
+                    <span className="sr-only">{tr('trackList.played')}</span>
+                  </span>
+                )}
                 {backupAt !== undefined && (
                   <span
                     data-testid="track-backup"
@@ -1075,6 +1090,7 @@ export const TrackList = memo(function TrackList({
   backupAtByPath,
   pendingCuePaths,
   unsavedCueIds,
+  playedPaths,
   autoMarkById,
   onOpenBackup,
   duplicateRankById,
@@ -1369,6 +1385,7 @@ export const TrackList = memo(function TrackList({
         onOpenBackup={onOpenBackup}
         duplicate={duplicateRankById?.get(t.id)}
         outsideFilter={outsideFilter?.has(t.id) ?? false}
+        played={playedPaths?.has(t.inputPath) ?? false}
         note={noteOf?.(t)}
       />
     </Fragment>

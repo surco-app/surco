@@ -5,6 +5,7 @@ import type {
   DuplicatesFilter,
   FilterSelection,
   LibraryFilter,
+  ListenFilter,
   QualityFilter,
   SortDir,
   TagsFilter,
@@ -47,6 +48,7 @@ export function sessionViewOf(
       duplicates: state.duplicatesFilter,
       attention: state.attentionFilter,
       tags: state.tagsFilter,
+      listen: state.listenFilter,
       format: state.formatFilter,
     },
   }
@@ -63,6 +65,7 @@ export function viewPatch(view: SessionView): Partial<AppState> {
     duplicatesFilter: view.filters.duplicates,
     attentionFilter: view.filters.attention,
     tagsFilter: view.filters.tags,
+    listenFilter: view.filters.listen,
     formatFilter: view.filters.format,
   }
 }
@@ -121,6 +124,8 @@ const TAGS: Record<TagsFilter, true> = {
   noKey: true,
 }
 
+const LISTEN: Record<ListenFilter, true> = { unplayed: true, played: true }
+
 function known<T extends string>(table: Record<T, true>, value: unknown): T | null {
   return typeof value === 'string' && Object.hasOwn(table, value) ? (value as T) : null
 }
@@ -152,6 +157,7 @@ export function parseSessionView(raw: unknown): SessionView | null {
       duplicates: known(DUPLICATES, filters.duplicates),
       attention: known(ATTENTION, filters.attention),
       tags: known(TAGS, filters.tags),
+      listen: known(LISTEN, filters.listen),
       format: typeof filters.format === 'string' ? filters.format : null,
     },
   }

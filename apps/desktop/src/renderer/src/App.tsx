@@ -448,6 +448,11 @@ export default function App(): React.JSX.Element {
   const { filterSelection, filterActive, formatFilter, setFilterSelection, setFormatFilter } =
     useTriageFilters(store)
   const search = useAppStore(store, (s) => s.search)
+  const playedPaths = useAppStore(store, (s) => s.playedPaths)
+  const markListened = useStableCallback((path: string) => {
+    const played = store.getState().playedPaths
+    if (!played.has(path)) store.setState({ playedPaths: new Set(played).add(path) })
+  })
   const setSearch = useCallback((v: string) => store.setState({ search: v }), [store])
   // The text box stays driven by `search` (instant keystrokes); the expensive filter/sort
   // pass below keys off the deferred value so typing in a large crate never blocks paint.
@@ -1750,6 +1755,7 @@ export default function App(): React.JSX.Element {
     tracks,
     selected,
     selectedId,
+    onListened: markListened,
   })
   releaseFileRef.current = releaseFile
   reclaimFileRef.current = reclaimFile
@@ -1958,6 +1964,7 @@ export default function App(): React.JSX.Element {
       gridTolerance: settings?.cueGridTolerance ?? DEFAULT_CUE_GRID_TOLERANCE,
       gridVerdict: (t) => gridVerdicts.verdictOf(t.id),
       libraryCopy: libraryCopyVerdicts.verdictOf,
+      played: (t) => playedPaths.has(t.inputPath),
     }),
     [
       gridVerdicts,
@@ -1967,6 +1974,7 @@ export default function App(): React.JSX.Element {
       settings?.cueGridTolerance,
       playlistScope,
       unsavedCues,
+      playedPaths,
     ],
   )
   const filterFactsRef = useRef(filterFacts)
@@ -3645,6 +3653,7 @@ export default function App(): React.JSX.Element {
                               backupAtByPath={backupAtByPath}
                               pendingCuePaths={pendingCuePaths}
                               unsavedCueIds={unsavedCueIds}
+                              playedPaths={playedPaths}
                               autoMarkById={autoMarkById}
                               onOpenBackup={onOpenBackup}
                               duplicateRankById={duplicateRankById}

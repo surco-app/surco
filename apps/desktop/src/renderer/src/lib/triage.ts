@@ -90,6 +90,9 @@ export type AttentionFilter =
 // 'missingRequired' is the Settings rule that keeps Convert all off a track, asked of App
 // through FilterFacts like 'unsaved'.
 export type TagsFilter = 'missingRequired' | 'noCover' | 'smallCover' | 'noBpm' | 'noKey'
+// The tracks played long enough to count as heard, against the ones still to hear: the
+// list worked through over several days, asked of App through FilterFacts like 'unsaved'.
+export type ListenFilter = 'unplayed' | 'played'
 
 // What the list knows about a row that the row itself does not carry: which fields
 // Settings require, and the cue drafts the cue editor holds. App answers; the filter asks.
@@ -99,6 +102,7 @@ export interface FilterFacts {
   gridTolerance: number
   gridVerdict: (track: TrackItem) => GridVerdict | null | undefined
   libraryCopy: (track: TrackItem) => CopyVerdict | null | undefined
+  played: (track: TrackItem) => boolean
 }
 
 export const NO_FACTS: FilterFacts = {
@@ -107,6 +111,7 @@ export const NO_FACTS: FilterFacts = {
   gridTolerance: DEFAULT_CUE_GRID_TOLERANCE,
   gridVerdict: () => undefined,
   libraryCopy: () => undefined,
+  played: () => false,
 }
 
 // One selection per dimension, all combined with AND. `format` is the source container
@@ -118,6 +123,7 @@ export interface FilterSelection {
   duplicates: DuplicatesFilter | null
   attention: AttentionFilter | null
   tags: TagsFilter | null
+  listen: ListenFilter | null
   format: string | null
 }
 
@@ -128,6 +134,7 @@ export const EMPTY_FILTER: FilterSelection = {
   tags: null,
   library: null,
   duplicates: null,
+  listen: null,
   format: null,
 }
 
@@ -209,6 +216,7 @@ export function matchesFilter(
   if (sel.attention === 'unanalysedRekordbox' && unanalysedIn(track) !== 'rekordbox') return false
   if (sel.attention === 'unanalysedEngine' && unanalysedIn(track) !== 'engine') return false
   if (sel.tags && !matchesTags(track, sel.tags, facts)) return false
+  if (sel.listen && facts.played(track) !== (sel.listen === 'played')) return false
   if (sel.format && sourceFormat(track) !== sel.format) return false
   return true
 }
@@ -499,6 +507,8 @@ export function qualityCounts(
   missingRequired: number
   unsaved: number
   mismatch: number
+  unplayed: number
+  played: number
 } {
   let suspect = 0
   let good = 0
@@ -529,7 +539,9 @@ export function qualityCounts(
   let missingRequired = 0
   let unsaved = 0
   let mismatch = 0
+  let played = 0
   for (const t of tracks) {
+    if (facts.played(t)) played += 1
     const q = trackQuality(t)
     if (q === 'warn' || q === 'bad' || q === 'processed' || q === 'transcoded') suspect += 1
     else if (q === 'good') good += 1
@@ -592,6 +604,8 @@ export function qualityCounts(
     missingRequired,
     unsaved,
     mismatch,
+    unplayed: tracks.length - played,
+    played,
   }
 }
 
@@ -627,6 +641,8 @@ const TALLY_AXIS: Record<keyof Tally, keyof FilterSelection> = {
   noBpm: 'tags',
   noKey: 'tags',
   missingRequired: 'tags',
+  unplayed: 'listen',
+  played: 'listen',
 }
 
 export function facetCounts(

@@ -13,6 +13,8 @@ import {
   FlagOff,
   Gauge,
   Grid2x2X,
+  HeadphoneOff,
+  Headphones,
   Hourglass,
   ImageMinus,
   ImageOff,
@@ -66,7 +68,15 @@ type AttentionMode =
   | 'unanalysedRekordbox'
   | 'unanalysedEngine'
 type TagsMode = 'missingRequired' | 'noCover' | 'smallCover' | 'noBpm' | 'noKey'
-type Mode = QualityMode | ConversionMode | LibraryMode | DuplicatesMode | AttentionMode | TagsMode
+type ListenMode = 'unplayed' | 'played'
+type Mode =
+  | QualityMode
+  | ConversionMode
+  | LibraryMode
+  | DuplicatesMode
+  | AttentionMode
+  | TagsMode
+  | ListenMode
 
 const QUALITY_MODES: QualityMode[] = ['unanalyzed', 'suspect', 'damaged', 'good']
 const CONVERSION_MODES: ConversionMode[] = [
@@ -85,6 +95,7 @@ const STATUS_MODES: Mode[] = CONVERSION_MODES.filter((m) => !MATCH_MODES.include
 const TAGS_MODES: TagsMode[] = ['missingRequired', 'noCover', 'smallCover', 'noBpm', 'noKey']
 const LIBRARY_MODES: LibraryMode[] = ['notInLibrary', 'inLibrary']
 const DUPLICATES_MODES: DuplicatesMode[] = ['duplicates']
+const LISTEN_MODES: ListenMode[] = ['unplayed', 'played']
 const ATTENTION_MODES: AttentionMode[] = [
   'silence',
   'clipping',
@@ -128,12 +139,15 @@ const FILTER_ICONS: Record<Mode | 'all', LucideIcon> = {
   smallCover: ImageMinus,
   noBpm: Gauge,
   noKey: KeyRound,
+  unplayed: HeadphoneOff,
+  played: Headphones,
 }
 
 type Tally = ReturnType<typeof qualityCounts>
 
 type SectionKey =
   | 'status'
+  | 'listen'
   | 'quality'
   | 'tags'
   | 'match'
@@ -156,6 +170,7 @@ function axisOf(mode: Mode): keyof Omit<FilterSelection, 'format'> {
   if (mode === 'duplicates') return 'duplicates'
   if ((ATTENTION_MODES as string[]).includes(mode)) return 'attention'
   if ((TAGS_MODES as string[]).includes(mode)) return 'tags'
+  if ((LISTEN_MODES as string[]).includes(mode)) return 'listen'
   return 'library'
 }
 
@@ -197,7 +212,15 @@ function activeFilters(
   librarySource: LibrarySource,
   tr: TFunction,
 ): { axis: Axis; mode: string; Icon: LucideIcon; label: string }[] {
-  const axes: Axis[] = ['quality', 'conversion', 'library', 'duplicates', 'attention', 'tags']
+  const axes: Axis[] = [
+    'conversion',
+    'listen',
+    'quality',
+    'tags',
+    'attention',
+    'library',
+    'duplicates',
+  ]
   const picked = axes.flatMap((axis) => {
     const mode = value[axis]
     return mode
@@ -406,6 +429,7 @@ export function QualityFilterBar({
     })
     return [
       of('status', STATUS_MODES),
+      of('listen', LISTEN_MODES),
       of('quality', QUALITY_MODES),
       of('tags', TAGS_MODES),
       of('match', MATCH_MODES),

@@ -6,6 +6,7 @@ import type {
   ConversionFilter,
   DuplicatesFilter,
   LibraryFilter,
+  ListenFilter,
   QualityFilter,
   SortDir,
   TagsFilter,
@@ -42,7 +43,11 @@ interface AppState {
   duplicatesFilter: DuplicatesFilter | null
   attentionFilter: AttentionFilter | null
   tagsFilter: TagsFilter | null
+  listenFilter: ListenFilter | null
   formatFilter: string | null
+  // The tracks played long enough to count as heard, by path, so the list worked through
+  // over several days can show what is still to hear.
+  playedPaths: ReadonlySet<string>
   // True while a file drag is hovering the window, for the drop overlay.
   dragging: boolean
   // The unified notification queue: notices, failures, update prompts and new-track prompts
@@ -70,7 +75,9 @@ const INITIAL: AppState = {
   duplicatesFilter: null,
   attentionFilter: null,
   tagsFilter: null,
+  listenFilter: null,
   formatFilter: null,
+  playedPaths: new Set(),
   dragging: false,
   toasts: [],
   copiedMeta: null,

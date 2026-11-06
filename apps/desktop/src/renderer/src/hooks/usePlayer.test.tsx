@@ -16,7 +16,7 @@ import { isRecoveryUrl, mediaPathFromUrl, mediaUrl } from '../../../shared/media
 import type { TrackMetadata } from '../../../shared/types'
 import { holdForAudition } from '../lib/auditionHolds'
 import type { TrackItem } from '../types'
-import { usePlayer } from './usePlayer'
+import { LISTENED_SECONDS, usePlayer } from './usePlayer'
 
 afterEach(cleanup)
 
@@ -597,5 +597,72 @@ describe('usePlayer keeps the player visible while a track sounds', () => {
     fireEvent.click(screen.getByTestId('close'))
     fireEvent.click(screen.getByTestId('read-position'))
     expect(screen.getByTestId('position')).toHaveTextContent('null')
+  })
+})
+
+describe('usePlayer listening', () => {
+  function ListenHarness({ onListened }: { onListened: (path: string) => void }) {
+    const tracks = [track('a', '/m/a.wav'), track('b', '/m/b.wav')]
+    const [index, setIndex] = useState(0)
+    const selected = tracks[index]
+    const { audioRef, togglePlay } = usePlayer({
+      tracks,
+      selected,
+      selectedId: selected.id,
+      onListened,
+    })
+    return (
+      <>
+        {/* biome-ignore lint/a11y/useMediaCaption: silent test fixture */}
+        <audio ref={audioRef} data-testid="audio" />
+        <button type="button" data-testid="toggle" onClick={togglePlay} />
+        <button type="button" data-testid="next" onClick={() => setIndex(1)} />
+      </>
+    )
+  }
+
+  function start(onListened: (path: string) => void): HTMLAudioElement {
+    render(<ListenHarness onListened={onListened} />)
+    const audio = screen.getByTestId('audio') as HTMLAudioElement
+    audio.play = vi.fn().mockResolvedValue(undefined)
+    audio.pause = vi.fn()
+    audio.load = vi.fn()
+    fireEvent.click(screen.getByTestId('toggle'))
+    return audio
+  }
+
+  function playTo(audio: HTMLAudioElement, time: number): void {
+    audio.currentTime = time
+    fireEvent.timeUpdate(audio)
+  }
+
+  // A track counts as heard once it has sounded for a few seconds: a stray double-click
+  // that plays half a second must not tick it off the list still to go through.
+  it('reports a track as listened once it has sounded for a few seconds', () => {
+    const onListened = vi.fn()
+    const audio = start(onListened)
+    for (let t = 0; t < LISTENED_SECONDS - 1; t += 0.25) playTo(audio, t)
+    expect(onListened).not.toHaveBeenCalled()
+    for (let t = LISTENED_SECONDS - 1; t <= LISTENED_SECONDS + 1; t += 0.25) playTo(audio, t)
+    expect(onListened).toHaveBeenCalledExactlyOnceWith('/m/a.wav')
+  })
+
+  // Jumping to the drop is not listening to the track: only time that actually sounds adds up.
+  it('does not count a jump along the track as time heard', () => {
+    const onListened = vi.fn()
+    const audio = start(onListened)
+    playTo(audio, 0.25)
+    playTo(audio, 180)
+    playTo(audio, 180.25)
+    expect(onListened).not.toHaveBeenCalled()
+  })
+
+  it('starts counting again for the next track', () => {
+    const onListened = vi.fn()
+    const audio = start(onListened)
+    for (let t = 0; t < 3; t += 0.25) playTo(audio, t)
+    fireEvent.click(screen.getByTestId('next'))
+    for (let t = 0; t < LISTENED_SECONDS - 1; t += 0.25) playTo(audio, t)
+    expect(onListened).not.toHaveBeenCalled()
   })
 })

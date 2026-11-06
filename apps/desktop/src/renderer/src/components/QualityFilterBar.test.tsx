@@ -43,6 +43,8 @@ const tally = (over: Partial<Tally> = {}): Tally => ({
   notInLibrary: 0,
   betterThanLibrary: 0,
   duplicates: 0,
+  unplayed: 0,
+  played: 0,
   ...over,
 })
 
@@ -151,6 +153,7 @@ describe('QualityFilterBar sections', () => {
       screen.getAllByRole('tab').map((el) => el.getAttribute('data-testid'))
     const expected = [
       'status',
+      'listen',
       'quality',
       'tags',
       'match',
@@ -171,7 +174,7 @@ describe('QualityFilterBar sections', () => {
   it('names each section, the library one after the library its filters read', () => {
     renderBar()
     openMenu()
-    for (const key of ['status', 'quality', 'tags', 'match', 'attention', 'format']) {
+    for (const key of ['status', 'listen', 'quality', 'tags', 'match', 'attention', 'format']) {
       expect(screen.getByTestId(`quality-filter-section-${key}`)).toHaveTextContent(
         i18n.t(`sidebar.filter.section.${key}`),
       )
@@ -303,18 +306,18 @@ describe('QualityFilterBar sections', () => {
   })
 
   it('walks the sections with the arrows, steps into the filters with → and back with ←', () => {
-    renderBar({ tally: tally({ good: 2, suspect: 1 }) })
+    renderBar({ tally: tally({ unplayed: 2, played: 1 }) })
     openMenu()
     fireEvent.keyDown(document.activeElement as Element, { key: 'ArrowDown' })
-    const quality = screen.getByTestId('quality-filter-section-quality')
-    expect(quality).toHaveFocus()
-    expect(quality).toHaveAttribute('aria-selected', 'true')
-    fireEvent.keyDown(quality, { key: 'ArrowRight' })
-    expect(screen.getByTestId('quality-filter-unanalyzed')).toHaveFocus()
+    const listen = screen.getByTestId('quality-filter-section-listen')
+    expect(listen).toHaveFocus()
+    expect(listen).toHaveAttribute('aria-selected', 'true')
+    fireEvent.keyDown(listen, { key: 'ArrowRight' })
+    expect(screen.getByTestId('quality-filter-unplayed')).toHaveFocus()
     fireEvent.keyDown(document.activeElement as Element, { key: 'ArrowDown' })
-    expect(screen.getByTestId('quality-filter-suspect')).toHaveFocus()
+    expect(screen.getByTestId('quality-filter-played')).toHaveFocus()
     fireEvent.keyDown(document.activeElement as Element, { key: 'ArrowLeft' })
-    expect(quality).toHaveFocus()
+    expect(listen).toHaveFocus()
   })
 
   // The arrows move inside the menu only: the window's shortcuts would otherwise also move
@@ -449,6 +452,16 @@ describe('QualityFilterBar', () => {
     )
     fireEvent.click(screen.getByTestId('quality-filter-unanalysedEngine'))
     expect(onChange).toHaveBeenCalledWith(sel({ attention: 'unanalysedEngine' }))
+  })
+
+  // Going through a long crate over several days, the tracks still to hear are one pick away.
+  it('filters the listen axis from the unplayed and played buckets', () => {
+    const { onChange } = renderBar({ tally: tally({ unplayed: 412, played: 306 }) })
+    openMenu('listen')
+    expect(screen.getByTestId('quality-filter-unplayed')).toHaveTextContent(/^Unplayed412$/)
+    expect(screen.getByTestId('quality-filter-played')).toHaveTextContent(/^Played306$/)
+    fireEvent.click(screen.getByTestId('quality-filter-unplayed'))
+    expect(onChange).toHaveBeenCalledWith(sel({ listen: 'unplayed' }))
   })
 
   it('filters the tags axis from a tag bucket', () => {
@@ -856,9 +869,11 @@ describe('ActiveFilters', () => {
   // With two or more filters on, the trigger only says "Filters 23": this row is where the
   // user reads which ones are on, without opening the menu.
   it('names every filter in use once two are on, in the menu’s order', () => {
-    renderStrip(sel({ format: 'WAV', quality: 'good', library: 'notInLibrary' }))
+    renderStrip(
+      sel({ format: 'WAV', quality: 'good', library: 'notInLibrary', listen: 'unplayed' }),
+    )
     const chips = screen.getAllByRole('listitem')
-    expect(chips.map((c) => c.textContent)).toEqual(['Good', 'Not in Engine DJ', 'WAV'])
+    expect(chips.map((c) => c.textContent)).toEqual(['Unplayed', 'Good', 'Not in Engine DJ', 'WAV'])
   })
 
   // One filter already reads on the trigger itself; a second line repeating it would only
@@ -895,9 +910,7 @@ describe('QualityFilterBar search', () => {
     expect(screen.getByRole('group', { name: 'Tags' })).toContainElement(
       screen.getByTestId('quality-filter-noCover'),
     )
-    expect(screen.getByTestId('quality-filter-search')).toHaveTextContent(
-      'Filters matching “ARTW”',
-    )
+    expect(screen.getByTestId('quality-filter-search')).toHaveTextContent('Filters matching “ARTW”')
   })
 
   it('lands on the first match, so Enter or a click picks it', () => {

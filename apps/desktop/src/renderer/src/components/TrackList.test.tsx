@@ -109,6 +109,7 @@ function renderList(
     pendingCuePaths,
     unsavedCueIds,
     autoMarkById,
+    playedPaths,
   }: {
     canPasteMeta?: boolean
     bindings?: Map<string, Chord>
@@ -122,6 +123,7 @@ function renderList(
     pendingCuePaths?: ReadonlySet<string>
     unsavedCueIds?: ReadonlySet<string>
     autoMarkById?: ReadonlyMap<string, AutoMark>
+    playedPaths?: ReadonlySet<string>
   } = {},
 ) {
   const onSelect = vi.fn()
@@ -157,6 +159,7 @@ function renderList(
       pendingCuePaths={pendingCuePaths}
       unsavedCueIds={unsavedCueIds}
       autoMarkById={autoMarkById}
+      playedPaths={playedPaths}
       // Composed here exactly as App composes it: the list owns when/where the menu
       // opens, the caller owns what it offers.
       renderMenu={(menu, close) => (
@@ -546,6 +549,16 @@ describe('TrackList', () => {
     const rows = screen.getAllByTestId('track-wave-line')
     expect(within(rows[0]).queryByTestId('track-cues-unsaved')).toBeNull()
     expect(within(rows[1]).getByTestId('track-cues-unsaved')).toHaveTextContent('Cues not saved')
+  })
+
+  // Working through a long crate over several days, the eye finds where it got to.
+  it('marks the row of a track already heard', () => {
+    renderList([track({ id: 'a' }), track({ id: 'b' })], null, [], {
+      playedPaths: new Set(['/music/b.wav']),
+    })
+    const rows = screen.getAllByTestId('track-row')
+    expect(within(rows[0]).queryByTestId('track-played')).toBeNull()
+    expect(within(rows[1]).getByTestId('track-played')).toHaveTextContent('Played')
   })
 
   it('says on each row what Auto marcar left for it, so the DJ sees which tracks still need a look', () => {

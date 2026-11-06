@@ -4559,6 +4559,30 @@ describe('App multi-select removal', () => {
 })
 
 describe('App row playback', () => {
+  // 700 tracks gone through over several days: what was heard is marked, and the filter
+  // keeps what is still to hear.
+  it('marks a track heard once it has played a few seconds, and filters it out of the unplayed', async () => {
+    await renderApp()
+    const rows = await addTwoTracks()
+    fireEvent.click(rows[1])
+    fireEvent.doubleClick(rows[1])
+    await screen.findByTestId('player')
+    const audio = document.querySelector('audio') as HTMLAudioElement
+    for (let t = 0; t <= 6; t += 0.25) {
+      audio.currentTime = t
+      fireEvent.timeUpdate(audio)
+    }
+    const marked = await screen.findAllByTestId('track-played')
+    expect(marked).toHaveLength(1)
+    expect(screen.getAllByTestId('track-row')[1]).toContainElement(marked[0])
+
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-section-listen'))
+    fireEvent.click(screen.getByTestId('quality-filter-unplayed'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    expect(screen.queryByTestId('track-played')).toBeNull()
+  })
+
   // Double-clicking a track is the quick "play this" gesture: it opens the floating
   // player straight on that row, without reaching for Space or the player toggle.
   it('opens the player on the double-clicked track', async () => {

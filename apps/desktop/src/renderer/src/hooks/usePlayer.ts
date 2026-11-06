@@ -11,7 +11,16 @@ interface Params {
   // and the card falls back to it between opening and the first track loading.
   selected: TrackItem | null
   selectedId: string | null
+  // Called once per play of a track, when it has sounded for LISTENED_SECONDS.
+  onListened?: (path: string) => void
 }
+
+// How long a track has to actually sound before it counts as heard: a stray double-click
+// that plays half a second must not tick it off the list still to go through.
+export const LISTENED_SECONDS = 5
+// A step of the clock longer than this between two timeupdates is a jump along the track,
+// not time heard (the element reports about four times a second while it plays).
+const MAX_HEARD_STEP = 1
 
 // The selection has to rest this long before its playable is warmed, so arrowing
 // through a crate doesn't fire a transcode per row it passes.
@@ -47,7 +56,7 @@ export interface Player {
 
 // The floating player follows the selection: while it's open, picking another
 // track plays it. Space toggles its visibility; the X (or Space again) closes.
-export function usePlayer({ tracks, selected, selectedId }: Params): Player {
+export function usePlayer({ tracks, selected, selectedId, onListened }: Params): Player {
   const audioRef = useRef<HTMLAudioElement>(null)
   const [playerVisible, setPlayerVisible] = useState(false)
   // A synchronous mirror of playerVisible. The selection-follow effect reads it instead of
@@ -67,6 +76,31 @@ export function usePlayer({ tracks, selected, selectedId }: Params): Player {
   // Where releaseFile left the track, so reclaimFile resumes it there.
   const releasedRef = useRef<{ path: string; time: number; paused: boolean } | null>(null)
   const resumeRef = useRef<{ path: string; time: number } | null>(null)
+  const onListenedRef = useRef(onListened)
+  onListenedRef.current = onListened
+
+  // Adds up the time the playing track actually sounds, and reports it heard once.
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio) return
+    let heard = { path: null as string | null, seconds: 0, last: 0, reported: false }
+    const onTime = (): void => {
+      const path = playingPathRef.current
+      const now = audio.currentTime
+      if (path !== heard.path) {
+        heard = { path, seconds: 0, last: now, reported: false }
+        return
+      }
+      const step = now - heard.last
+      heard.last = now
+      if (step > 0 && step <= MAX_HEARD_STEP) heard.seconds += step
+      if (!path || heard.reported || heard.seconds < LISTENED_SECONDS) return
+      heard.reported = true
+      onListenedRef.current?.(path)
+    }
+    audio.addEventListener('timeupdate', onTime)
+    return () => audio.removeEventListener('timeupdate', onTime)
+  }, [])
 
   const startPlayback = useCallback((track: TrackItem): void => {
     const audio = audioRef.current

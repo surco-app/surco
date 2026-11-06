@@ -231,6 +231,8 @@ describe('matchesFilter / qualityCounts', () => {
       missingRequired: 0,
       unsaved: 0,
       mismatch: 0,
+      unplayed: 5,
+      played: 0,
     })
   })
 })
@@ -466,6 +468,7 @@ describe('filters that read what App knows about a row', () => {
     gridTolerance: 10,
     gridVerdict: () => undefined,
     libraryCopy: () => undefined,
+    played: () => false,
   }
 
   // Which fields are required is a setting, and unsaved cues live in the cue editor's
@@ -1192,5 +1195,24 @@ describe('facetCounts', () => {
     expect(formats).toEqual({ MP3: 2, WAV: 1 })
     expect(tally.good).toBe(1)
     expect(tally.unanalyzed).toBe(2)
+  })
+})
+
+describe('listened filter', () => {
+  const tracks = ['heard', 'fresh'].map((id) => ({ id, status: 'idle' }) as TrackItem)
+  const facts: FilterFacts = { ...NO_FACTS, played: (t) => t.id === 'heard' }
+
+  // Going through 700 tracks over several days, what is left is the ones not heard yet.
+  it('splits the tracks the user has listened to from the ones still to hear', () => {
+    const ids = (listen: 'unplayed' | 'played') =>
+      tracks.filter((t) => matchesFilter(t, { ...EMPTY_FILTER, listen }, facts)).map((t) => t.id)
+    expect(ids('unplayed')).toEqual(['fresh'])
+    expect(ids('played')).toEqual(['heard'])
+    expect(qualityCounts(tracks, facts)).toMatchObject({ unplayed: 1, played: 1 })
+  })
+
+  it('counts each listen bucket within the other filters but not within its own', () => {
+    const { tally } = facetCounts(tracks, { ...EMPTY_FILTER, listen: 'unplayed' }, facts)
+    expect(tally).toMatchObject({ unplayed: 1, played: 1 })
   })
 })

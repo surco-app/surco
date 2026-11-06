@@ -12,6 +12,7 @@ describe('sessionView', () => {
       sortDir: 'desc',
       libraryFilter: 'notInLibrary',
       formatFilter: 'FLAC',
+      listenFilter: 'unplayed',
     })
     const view = JSON.parse(
       JSON.stringify(
@@ -24,7 +25,7 @@ describe('sessionView', () => {
       search: 'dub',
       sortBy: 'bpm',
       sortDir: 'desc',
-      filters: { ...EMPTY_FILTER, library: 'notInLibrary', format: 'FLAC' },
+      filters: { ...EMPTY_FILTER, library: 'notInLibrary', format: 'FLAC', listen: 'unplayed' },
     })
   })
 

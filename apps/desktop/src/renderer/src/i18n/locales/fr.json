@@ -144,14 +144,17 @@
         "attention": "Audio et cues",
         "library": "Apple Music",
         "libraryEngine": "Engine DJ",
-        "format": "Format"
+        "format": "Format",
+        "listen": "Écoute"
       },
       "clear": "Effacer les filtres",
       "shown": "{{visible}} sur {{total}} pistes",
       "oneFormat": "Toutes les pistes ont le même format",
       "remove": "Retirer {{filter}}",
       "searching": "Filtres contenant « {{query}} »",
-      "noMatch": "Aucun filtre ne correspond à « {{query}} »"
+      "noMatch": "Aucun filtre ne correspond à « {{query}} »",
+      "unplayed": "Non écoutées",
+      "played": "Écoutées"
     },
     "search": {
       "placeholder": "Rechercher des morceaux",
@@ -543,7 +546,8 @@
     "gridEarly": "Grille en avance de {{ms}} ms",
     "gridLate": "Grille en retard de {{ms}} ms",
     "gridDriftsEarly": "La grille avance de {{ms}} ms par minute",
-    "gridDriftsLate": "La grille retarde de {{ms}} ms par minute"
+    "gridDriftsLate": "La grille retarde de {{ms}} ms par minute",
+    "played": "Écoutée"
   },
   "editor": {
     "searchPlaceholder": "Rechercher dans tes sources ou coller un id de release Discogs…",
