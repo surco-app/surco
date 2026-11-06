@@ -77,7 +77,10 @@ export function CueDeck({
     }
   }, [colouring, onDone])
   return (
-    <div data-testid="cues-deck" className="flex shrink-0 flex-wrap items-center gap-x-5 gap-y-2">
+    <div
+      data-testid="cues-deck"
+      className="mt-3 flex shrink-0 flex-wrap items-center gap-x-5 gap-y-2"
+    >
       <button
         type="button"
         data-testid="cues-play"
