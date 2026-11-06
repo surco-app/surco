@@ -100,8 +100,13 @@ describe('CueProfileCard', () => {
     const button = await screen.findByTestId('cue-profile-learn')
     expect(button).toHaveAccessibleName('Learn again')
     expect(button).not.toHaveAttribute('title')
-    act(() => button.focus())
-    expect(await screen.findByRole('tooltip')).toHaveTextContent('Learn again')
+    await waitFor(() => {
+      act(() => {
+        button.blur()
+        button.focus()
+      })
+      expect(screen.getByRole('tooltip')).toHaveTextContent('Learn again')
+    })
   })
 
   it('names where it learned from inside the summary line instead of a row of chips', async () => {
