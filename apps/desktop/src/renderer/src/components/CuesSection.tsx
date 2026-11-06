@@ -1351,7 +1351,7 @@ function Editing({
           aria-label={tr(copy.save)}
           onClick={() => void save()}
           className={`press h-6 shrink-0 whitespace-nowrap px-3 text-xs font-semibold ${
-            saveMenuShown ? 'rounded-l-full' : 'rounded-full'
+            saveMenuShown ? 'rounded-l-md' : 'rounded-md'
           } ${
             unchanged
               ? 'text-fg-dim'
@@ -1370,7 +1370,7 @@ function Editing({
             aria-haspopup="menu"
             aria-expanded={saveMenu.open}
             onClick={() => saveMenu.setOpen((v) => !v)}
-            className="press flex h-6 shrink-0 items-center gap-0.5 rounded-r-full border-l border-[var(--color-on-accent)]/30 bg-[var(--color-accent)] pr-2 pl-1.5 text-xs font-semibold tabular-nums text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
+            className="press flex h-6 shrink-0 items-center gap-0.5 rounded-r-md border-l border-[var(--color-on-accent)]/30 bg-[var(--color-accent)] pr-2 pl-1.5 text-xs font-semibold tabular-nums text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
           >
             {saveAllButton && unsavedTracks}
             <ChevronDown className="h-3 w-3" aria-hidden="true" />
