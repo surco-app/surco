@@ -1004,6 +1004,7 @@
         "discard_other": "Vorschläge entfernen",
         "ask": "Bricht es hier los? {{time}}",
         "acceptOne": "Übernehmen",
+        "acceptSave": "Übernehmen und speichern",
         "drop": "Entfernen",
         "unanalysed": "Keine rekordbox-Analyse",
         "none": "Surco findet nicht, wo dieser Titel losbricht",
@@ -1012,7 +1013,9 @@
         "sure": "Bricht hier los {{time}}",
         "why_one": "nach {{count}} Takt mit wenig Bass",
         "why_other": "nach {{count}} Takten mit wenig Bass",
-        "whyNone": "ohne Basspause davor"
+        "whyNone": "ohne Basspause davor",
+        "acceptSave_one": "Vorschlag übernehmen und speichern",
+        "acceptSave_other": "{{count}} Vorschläge übernehmen und speichern"
       },
       "batch": {
         "mark_one": "{{count}} Track auto-markieren",

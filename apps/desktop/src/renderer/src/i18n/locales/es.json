@@ -1004,6 +1004,7 @@
         "discard_other": "Quitar propuestas",
         "ask": "¿Rompe aquí? {{time}}",
         "acceptOne": "Aceptar",
+        "acceptSave": "Aceptar y guardar",
         "drop": "Quitar",
         "unanalysed": "Sin análisis de rekordbox",
         "none": "Surco no encuentra dónde rompe en esta pista",
@@ -1012,7 +1013,9 @@
         "sure": "Rompe aquí {{time}}",
         "why_one": "tras {{count}} compás con poco grave",
         "why_other": "tras {{count}} compases con poco grave",
-        "whyNone": "sin parón de grave antes"
+        "whyNone": "sin parón de grave antes",
+        "acceptSave_one": "Aceptar la propuesta y guardar",
+        "acceptSave_other": "Aceptar las {{count}} propuestas y guardar"
       },
       "batch": {
         "mark_one": "Auto marcar {{count}} pista",

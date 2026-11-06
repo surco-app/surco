@@ -1004,6 +1004,7 @@
         "discard_other": "提案を取り消す",
         "ask": "ここでブレイクしますか？ {{time}}",
         "acceptOne": "採用",
+        "acceptSave": "採用して保存",
         "drop": "削除",
         "unanalysed": "rekordbox の解析なし",
         "none": "Surco はこのトラックのブレイク位置を見つけられません",
@@ -1012,7 +1013,9 @@
         "sure": "ここでブレイク {{time}}",
         "why_one": "低音の弱い {{count}} 小節のあと",
         "why_other": "低音の弱い {{count}} 小節のあと",
-        "whyNone": "直前に低音の休みなし"
+        "whyNone": "直前に低音の休みなし",
+        "acceptSave_one": "提案を採用して保存",
+        "acceptSave_other": "{{count}} 件の提案を採用して保存"
       },
       "batch": {
         "mark_one": "{{count}} トラックを自動マーク",

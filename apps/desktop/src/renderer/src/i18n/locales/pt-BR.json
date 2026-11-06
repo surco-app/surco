@@ -1004,6 +1004,7 @@
         "discard_other": "Remover sugestões",
         "ask": "Explode aqui? {{time}}",
         "acceptOne": "Aceitar",
+        "acceptSave": "Aceitar e salvar",
         "drop": "Remover",
         "unanalysed": "Sem análise do rekordbox",
         "none": "O Surco não encontra onde esta faixa explode",
@@ -1012,7 +1013,9 @@
         "sure": "Explode aqui {{time}}",
         "why_one": "depois de {{count}} compasso com pouco grave",
         "why_other": "depois de {{count}} compassos com pouco grave",
-        "whyNone": "sem pausa de grave antes"
+        "whyNone": "sem pausa de grave antes",
+        "acceptSave_one": "Aceitar a sugestão e salvar",
+        "acceptSave_other": "Aceitar as {{count}} sugestões e salvar"
       },
       "batch": {
         "mark_one": "Marcar automático em {{count}} faixa",

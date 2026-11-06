@@ -1079,7 +1079,7 @@ function Editing({
     </button>
   )
   const autoHeight = maximized ? 'h-8 rounded-lg px-3' : 'h-6 rounded-md px-2'
-  const acceptLabel = tr('editor.cues.auto.accept', { count: proposals.length })
+  const acceptLabel = tr('editor.cues.auto.acceptSave', { count: proposals.length })
   const discardLabel = tr('editor.cues.auto.discard', { count: proposals.length })
   const sureCount = proposals.filter((p) => p.sure).length
   const offGrid = provisional
@@ -1146,7 +1146,7 @@ function Editing({
           className="press flex h-6 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md bg-[var(--color-accent)] px-2.5 font-semibold text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]"
         >
           <Tooltip label={acceptLabel} />
-          {tr('editor.cues.auto.acceptOne')}
+          {tr('editor.cues.auto.acceptSave')}
           <kbd className="rounded border border-[var(--color-on-accent)]/40 px-1 font-sans text-[11px]">
             ↵
           </kbd>

@@ -269,9 +269,9 @@ describe('Auto marcar', () => {
     await autoMark()
     const review = screen.getByTestId('cues-auto-review')
     expect(review).toHaveTextContent('2 suggestions')
-    expect(screen.getByTestId('cues-auto-accept')).toHaveTextContent(/^Accept↵$/)
+    expect(screen.getByTestId('cues-auto-accept')).toHaveTextContent(/^Accept and save↵$/)
     expect(screen.getByTestId('cues-auto-discard')).toHaveTextContent(/^Remove$/)
-    expect(screen.getByRole('button', { name: 'Accept the 2 suggestions' })).toBe(
+    expect(screen.getByRole('button', { name: 'Accept the 2 suggestions and save' })).toBe(
       screen.getByTestId('cues-auto-accept'),
     )
     expect(screen.getByRole('button', { name: 'Remove suggestions' })).toBe(
@@ -297,7 +297,7 @@ describe('Auto marcar', () => {
     expect(accept.parentElement).toBe(remove.parentElement)
     expect(accept.parentElement).not.toBe(review)
     expect(remove).toHaveAccessibleName('Remove the suggestion')
-    expect(accept).toHaveAccessibleName('Accept the suggestion')
+    expect(accept).toHaveAccessibleName('Accept the suggestion and save')
   })
 
   it('removes one suggestion from the overview without moving the playhead to it', async () => {
@@ -352,7 +352,9 @@ describe('Auto marcar', () => {
     seekStrip(bar(64))
     fireEvent.click(screen.getByTestId(`cue-proposal-drop-${bar(64)}`))
     expect(proposals()).toEqual([`cue-wave-proposal-${bar(128)}`])
-    expect(screen.getByTestId('cues-auto-accept')).toHaveAccessibleName('Accept the suggestion')
+    expect(screen.getByTestId('cues-auto-accept')).toHaveAccessibleName(
+      'Accept the suggestion and save',
+    )
     expect(realMarks()).toHaveLength(0)
   })
 

@@ -1004,6 +1004,7 @@
         "discard_other": "Retirer les propositions",
         "ask": "Ça décolle ici ? {{time}}",
         "acceptOne": "Accepter",
+        "acceptSave": "Accepter et enregistrer",
         "drop": "Retirer",
         "unanalysed": "Pas d’analyse rekordbox",
         "none": "Surco ne trouve pas où ce morceau décolle",
@@ -1012,7 +1013,9 @@
         "sure": "Ça décolle ici {{time}}",
         "why_one": "après {{count}} mesure avec peu de basses",
         "why_other": "après {{count}} mesures avec peu de basses",
-        "whyNone": "sans pause de basses avant"
+        "whyNone": "sans pause de basses avant",
+        "acceptSave_one": "Accepter la proposition et enregistrer",
+        "acceptSave_other": "Accepter les {{count}} propositions et enregistrer"
       },
       "batch": {
         "mark_one": "Marquage auto de {{count}} morceau",
