@@ -128,18 +128,25 @@ export function darwinSource(deps: {
 
 const run = promisify(execFile)
 
+const DISKUTIL_TIMEOUT_MS = 10_000
+
+export async function diskutilInfo(
+  target: string,
+  timeoutMs = DISKUTIL_TIMEOUT_MS,
+): Promise<DiskutilInfo | null> {
+  try {
+    const { stdout } = await run('diskutil', ['info', '-plist', target], { timeout: timeoutMs })
+    const info = parsePlist(stdout) as DiskutilInfo | null
+    return info && info.Error !== true ? info : null
+  } catch {
+    return null
+  }
+}
+
 export const DARWIN_DISKUTIL = {
   list: async (): Promise<string[]> =>
     (await readdir('/Volumes').catch(() => [])).map((n) => join('/Volumes', n)),
-  info: async (target: string): Promise<DiskutilInfo | null> => {
-    try {
-      const { stdout } = await run('diskutil', ['info', '-plist', target])
-      const info = parsePlist(stdout) as DiskutilInfo | null
-      return info && info.Error !== true ? info : null
-    } catch {
-      return null
-    }
-  },
+  info: (target: string): Promise<DiskutilInfo | null> => diskutilInfo(target),
 }
 
 export interface WinVolume {
