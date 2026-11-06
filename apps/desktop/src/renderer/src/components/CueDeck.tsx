@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Pause, Play, Plus, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Pause, Play, Plus, Trash2, X } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -10,6 +10,7 @@ import { cueLetter } from '../lib/rowCues'
 import { CueDeleteBadge } from './CueDeleteBadge'
 import { CuePalette } from './CuePalette'
 import { Select } from './Select'
+import { Tooltip } from './Tooltip'
 
 export interface DeckCue {
   key: string
@@ -34,6 +35,8 @@ export function CueDeck({
   onMemoryStep,
   onMemoryRemove,
   canRemoveMemory,
+  onClearAll,
+  canClearAll = false,
   onDone,
   gridControls,
 }: {
@@ -51,6 +54,8 @@ export function CueDeck({
   onMemoryStep: (dir: 1 | -1) => void
   onMemoryRemove: () => void
   canRemoveMemory: boolean
+  onClearAll?: () => void
+  canClearAll?: boolean
   onDone?: () => void
   gridControls?: React.ReactNode
 }): React.JSX.Element {
@@ -209,6 +214,19 @@ export function CueDeck({
         >
           <X className="h-4 w-4" aria-hidden="true" />
         </button>
+        {onClearAll && (
+          <button
+            type="button"
+            data-testid="cues-clear-all"
+            aria-label={tr('editor.cues.clearAll')}
+            disabled={!canClearAll}
+            onClick={onClearAll}
+            className={`${STEP} ml-2 disabled:pointer-events-none disabled:opacity-40`}
+          >
+            <Tooltip label={tr('editor.cues.clearAll')} />
+            <Trash2 className="h-4 w-4" aria-hidden="true" />
+          </button>
+        )}
       </div>
       {gridControls && (
         <div data-testid="cues-deck-grid" className="flex items-center">

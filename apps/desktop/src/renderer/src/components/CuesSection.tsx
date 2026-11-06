@@ -3,7 +3,6 @@ import {
   Check,
   ChevronDown,
   CircleAlert,
-  Ellipsis,
   Keyboard,
   Minimize2,
   Pause,
@@ -1028,7 +1027,6 @@ function Editing({
     }
   })
   const saveMenu = useSplitMenu()
-  const moreMenu = useSplitMenu()
   const discardable = !unchanged || queued !== null
   const saveAllButton = unsavedTracks > 1 && (
     <button
@@ -1559,45 +1557,6 @@ function Editing({
         onQuantize={(unit) => onQuantize?.(unit)}
         onDone={focusEditor}
       />
-      <div ref={moreMenu.ref} className="relative flex shrink-0">
-        <button
-          type="button"
-          data-testid="cues-more"
-          ref={moreMenu.toggleRef}
-          aria-label={tr('editor.moreActions')}
-          aria-haspopup="menu"
-          aria-expanded={moreMenu.open}
-          onClick={() => moreMenu.setOpen((v) => !v)}
-          className="press flex h-8 w-8 items-center justify-center rounded-lg text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg"
-        >
-          <Tooltip label={tr('editor.moreActions')} />
-          <Ellipsis className="h-4 w-4" aria-hidden="true" />
-        </button>
-        {moreMenu.open && (
-          <div
-            ref={moreMenu.menuRef}
-            role="menu"
-            aria-label={tr('editor.moreActions')}
-            onKeyDown={moreMenu.onMenuKeyDown}
-            className="animate-pop-flat absolute top-full right-0 z-50 mt-1 w-max origin-top-right overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-panel-2)] py-1 shadow-[var(--shadow-float)]"
-          >
-            <button
-              type="button"
-              data-testid="cues-clear-all"
-              role="menuitem"
-              disabled={!clearable}
-              onClick={() => {
-                moreMenu.setOpen(false)
-                clearAll()
-              }}
-              className={`${SPLIT_ITEM} justify-start gap-2 whitespace-nowrap disabled:opacity-40`}
-            >
-              <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-              {tr('editor.cues.clearAll')}
-            </button>
-          </div>
-        )}
-      </div>
     </div>
   )
   return (
@@ -1869,6 +1828,8 @@ function Editing({
           onMemoryStep={memoryStep}
           onMemoryRemove={memoryRemove}
           canRemoveMemory={removableCall !== undefined && !state.locked.includes(removableCall.key)}
+          onClearAll={clearAll}
+          canClearAll={clearable}
           onDone={focusEditor}
           gridControls={
             <>
