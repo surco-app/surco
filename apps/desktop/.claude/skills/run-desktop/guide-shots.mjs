@@ -118,6 +118,10 @@ async function settle(page) {
     .locator('[data-testid="best-match-skeleton"]')
     .waitFor({ state: 'detached', timeout: 60000 })
     .catch(() => {})
+  await page
+    .locator('[data-testid="analyze-progress"]')
+    .waitFor({ state: 'detached', timeout: 180000 })
+    .catch(() => {})
   await wait(page, 1500)
 }
 
