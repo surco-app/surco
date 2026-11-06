@@ -14,6 +14,7 @@ describe('sessionView', () => {
       formatFilter: 'FLAC',
       listenFilter: 'unplayed',
       selectionFilter: 'selected',
+      starsFilter: 'stars4',
       playedPaths: new Set(['/music/a.wav']),
     })
     const view = JSON.parse(
@@ -37,6 +38,7 @@ describe('sessionView', () => {
         format: 'FLAC',
         listen: 'unplayed',
         selection: 'selected',
+        stars: 'stars4',
       },
       played: ['/music/a.wav'],
     })

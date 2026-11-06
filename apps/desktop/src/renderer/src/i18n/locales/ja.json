@@ -147,7 +147,8 @@
         "libraryEngine": "Engine DJ",
         "format": "フォーマット",
         "listen": "再生",
-        "selection": "選択"
+        "selection": "選択",
+        "stars": "星"
       },
       "clear": "フィルターを解除",
       "shown": "{{total}} 曲中 {{visible}} 曲",
@@ -157,7 +158,11 @@
       "noMatch": "「{{query}}」に一致するフィルターはありません",
       "unplayed": "未再生",
       "played": "再生済み",
-      "selected": "選択中"
+      "selected": "選択中",
+      "noStars": "星なし",
+      "stars3": "3つ以上",
+      "stars4": "4つ以上",
+      "stars5": "星5つ"
     },
     "search": {
       "placeholder": "トラックを検索",
@@ -178,7 +183,8 @@
       "year": "年",
       "quality": "品質",
       "ascending": "昇順",
-      "descending": "降順"
+      "descending": "降順",
+      "rating": "星"
     },
     "position": "{{total}} の {{current}} トラック",
     "selectedCount_one": "{{count}} 選択済み",

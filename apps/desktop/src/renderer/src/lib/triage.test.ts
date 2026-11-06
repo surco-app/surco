@@ -233,6 +233,10 @@ describe('matchesFilter / qualityCounts', () => {
       mismatch: 0,
       unplayed: 5,
       played: 0,
+      noStars: 5,
+      stars3: 0,
+      stars4: 0,
+      stars5: 0,
     })
   })
 })
@@ -1229,5 +1233,39 @@ describe('selected filter', () => {
         .filter((t) => matchesFilter(t, { ...EMPTY_FILTER, selection: 'selected' }, facts))
         .map((t) => t.id),
     ).toEqual(['picked'])
+  })
+})
+
+describe('stars filter and sort', () => {
+  const rated = (id: string, rating: string, over: Partial<TrackItem> = {}) =>
+    ({ id, status: 'idle', meta: { rating }, ...over }) as unknown as TrackItem
+  const tracks = [
+    rated('none', ''),
+    rated('two', '2'),
+    rated('three', '3'),
+    rated('four', '4'),
+    rated('five', '5'),
+    rated('reading', '', { loadingMeta: true }),
+  ]
+  const ids = (stars: 'noStars' | 'stars3' | 'stars4' | 'stars5') =>
+    tracks.filter((t) => matchesFilter(t, { ...EMPTY_FILTER, stars })).map((t) => t.id)
+
+  // The stars are the DJ's own verdict on a track: the floor picks the ones worth a set, and
+  // the unrated ones are what is still to judge. A row still being read has no rating yet.
+  it('keeps the tracks at or above a number of stars, or the ones still unrated', () => {
+    expect(ids('noStars')).toEqual(['none'])
+    expect(ids('stars3')).toEqual(['three', 'four', 'five'])
+    expect(ids('stars4')).toEqual(['four', 'five'])
+    expect(ids('stars5')).toEqual(['five'])
+    expect(qualityCounts(tracks)).toMatchObject({ noStars: 1, stars3: 3, stars4: 2, stars5: 1 })
+  })
+
+  // Sorting by stars puts the best first, the way a DJ reads a rating column; the unrated
+  // stay at the end either way, like every other missing value.
+  it('sorts by stars, most first, with the unrated last in both directions', () => {
+    const order = (dir: 'asc' | 'desc') =>
+      sortTracks(tracks.slice(0, 5), 'rating', dir).map((t) => t.id)
+    expect(order('asc')).toEqual(['five', 'four', 'three', 'two', 'none'])
+    expect(order('desc')).toEqual(['two', 'three', 'four', 'five', 'none'])
   })
 })

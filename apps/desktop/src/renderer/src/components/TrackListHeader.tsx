@@ -24,6 +24,7 @@ import {
   Scissors,
   SpellCheck,
   SquareCheckBig,
+  Star,
   Tag,
   Trash2,
   Usb,
@@ -342,6 +343,7 @@ export function TrackListHeader({
                 { value: 'key', label: tr('sidebar.sort.key'), icon: KeyRound },
                 { value: 'year', label: tr('sidebar.sort.year'), icon: Calendar },
                 { value: 'quality', label: tr('sidebar.sort.quality'), icon: Gauge },
+                { value: 'rating', label: tr('sidebar.sort.rating'), icon: Star },
               ]}
             />
             {sortBy !== 'import' && (

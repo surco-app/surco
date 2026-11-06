@@ -95,6 +95,8 @@ export type TagsFilter = 'missingRequired' | 'noCover' | 'smallCover' | 'noBpm' 
 export type ListenFilter = 'unplayed' | 'played'
 // The tracks selected in the list, to look at on their own before converting them.
 export type SelectionFilter = 'selected'
+// The DJ's own rating: the unrated still to judge, or a floor of stars worth a set.
+export type StarsFilter = 'noStars' | 'stars3' | 'stars4' | 'stars5'
 
 // What the list knows about a row that the row itself does not carry: which fields
 // Settings require, and the cue drafts the cue editor holds. App answers; the filter asks.
@@ -129,6 +131,7 @@ export interface FilterSelection {
   tags: TagsFilter | null
   listen: ListenFilter | null
   selection: SelectionFilter | null
+  stars: StarsFilter | null
   format: string | null
 }
 
@@ -141,6 +144,7 @@ export const EMPTY_FILTER: FilterSelection = {
   duplicates: null,
   listen: null,
   selection: null,
+  stars: null,
   format: null,
 }
 
@@ -224,8 +228,29 @@ export function matchesFilter(
   if (sel.tags && !matchesTags(track, sel.tags, facts)) return false
   if (sel.listen && facts.played(track) !== (sel.listen === 'played')) return false
   if (sel.selection && !facts.selected(track)) return false
+  if (sel.stars && !matchesStars(track, sel.stars)) return false
   if (sel.format && sourceFormat(track) !== sel.format) return false
   return true
+}
+
+// Stars as a number, 0 for none. A row still being read has no rating yet, so it belongs
+// to no stars bucket, the unrated one included.
+function starsOf(track: TrackItem): number | null {
+  if (track.loadingMeta) return null
+  const stars = Number.parseInt(track.meta?.rating ?? '', 10)
+  return Number.isFinite(stars) ? stars : 0
+}
+
+const STARS_FLOOR: Record<Exclude<StarsFilter, 'noStars'>, number> = {
+  stars3: 3,
+  stars4: 4,
+  stars5: 5,
+}
+
+function matchesStars(track: TrackItem, filter: StarsFilter): boolean {
+  const stars = starsOf(track)
+  if (stars === null) return false
+  return filter === 'noStars' ? stars === 0 : stars >= STARS_FLOOR[filter]
 }
 
 function isOffGrid(track: TrackItem, facts: FilterFacts): boolean {
@@ -369,6 +394,7 @@ export type TrackSort =
   | 'key'
   | 'year'
   | 'quality'
+  | 'rating'
 
 // The sort direction. 'import' has none (it's the drop order), so the toggle is hidden
 // there; every other mode flips between ascending and descending.
@@ -432,6 +458,11 @@ const NUMERIC_SORTS: Partial<Record<TrackSort, (track: TrackItem) => number | nu
   year: (t) => numberOrNull(Number.parseInt(t.meta.year ?? '', 10)),
   key: (t) => keyRanks.get((t.meta.key ?? '').trim().toLowerCase()) ?? null,
   quality: (t) => QUALITY_SEVERITY[trackQuality(t)] ?? null,
+  // Negated so the ascending order reads best first, as a rating column does.
+  rating: (t) => {
+    const stars = starsOf(t)
+    return stars ? -stars : null
+  },
 }
 
 // Orders the (already filtered) list for display. 'import' returns the list untouched so the
@@ -516,6 +547,10 @@ export function qualityCounts(
   mismatch: number
   unplayed: number
   played: number
+  noStars: number
+  stars3: number
+  stars4: number
+  stars5: number
 } {
   let suspect = 0
   let good = 0
@@ -547,7 +582,15 @@ export function qualityCounts(
   let unsaved = 0
   let mismatch = 0
   let played = 0
+  let noStars = 0
+  let stars3 = 0
+  let stars4 = 0
+  let stars5 = 0
   for (const t of tracks) {
+    if (matchesStars(t, 'noStars')) noStars += 1
+    if (matchesStars(t, 'stars3')) stars3 += 1
+    if (matchesStars(t, 'stars4')) stars4 += 1
+    if (matchesStars(t, 'stars5')) stars5 += 1
     if (facts.played(t)) played += 1
     const q = trackQuality(t)
     if (q === 'warn' || q === 'bad' || q === 'processed' || q === 'transcoded') suspect += 1
@@ -613,6 +656,10 @@ export function qualityCounts(
     mismatch,
     unplayed: tracks.length - played,
     played,
+    noStars,
+    stars3,
+    stars4,
+    stars5,
   }
 }
 
@@ -650,6 +697,10 @@ const TALLY_AXIS: Record<keyof Tally, keyof FilterSelection> = {
   missingRequired: 'tags',
   unplayed: 'listen',
   played: 'listen',
+  noStars: 'stars',
+  stars3: 'stars',
+  stars4: 'stars',
+  stars5: 'stars',
 }
 
 export function facetCounts(

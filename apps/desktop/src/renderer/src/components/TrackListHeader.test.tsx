@@ -376,6 +376,15 @@ describe('TrackListHeader layout', () => {
     }
   })
 
+  // The stars are read like any rating column, so they sort the list too.
+  it('sorts the list by stars', () => {
+    const setSortBy = vi.fn()
+    renderHeader({ setSortBy })
+    fireEvent.click(screen.getByTestId('track-sort'))
+    fireEvent.click(screen.getByRole('option', { name: 'Stars' }))
+    expect(setSortBy).toHaveBeenCalledWith('rating')
+  })
+
   it('names the sort by its short labels so the trigger fits beside the filter and the actions', () => {
     renderHeader()
     expect(screen.getByTestId('track-sort')).toHaveTextContent(/^Order$/)

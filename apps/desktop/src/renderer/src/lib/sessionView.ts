@@ -9,6 +9,7 @@ import type {
   QualityFilter,
   SelectionFilter,
   SortDir,
+  StarsFilter,
   TagsFilter,
   TrackSort,
 } from './triage'
@@ -57,6 +58,7 @@ export function sessionViewOf(
       tags: state.tagsFilter,
       listen: state.listenFilter,
       selection: state.selectionFilter,
+      stars: state.starsFilter,
       format: state.formatFilter,
     },
     played: [...state.playedPaths],
@@ -76,6 +78,7 @@ export function viewPatch(view: SessionView): Partial<AppState> {
     tagsFilter: view.filters.tags,
     listenFilter: view.filters.listen,
     selectionFilter: view.filters.selection,
+    starsFilter: view.filters.stars,
     formatFilter: view.filters.format,
     playedPaths: new Set(view.played),
   }
@@ -94,6 +97,7 @@ const SORTS: Record<TrackSort, true> = {
   key: true,
   year: true,
   quality: true,
+  rating: true,
 }
 const QUALITY: Record<QualityFilter, true> = {
   suspect: true,
@@ -137,6 +141,7 @@ const TAGS: Record<TagsFilter, true> = {
 
 const LISTEN: Record<ListenFilter, true> = { unplayed: true, played: true }
 const SELECTION: Record<SelectionFilter, true> = { selected: true }
+const STARS: Record<StarsFilter, true> = { noStars: true, stars3: true, stars4: true, stars5: true }
 
 function known<T extends string>(table: Record<T, true>, value: unknown): T | null {
   return typeof value === 'string' && Object.hasOwn(table, value) ? (value as T) : null
@@ -176,6 +181,7 @@ export function parseSessionView(raw: unknown): SessionView | null {
       tags: known(TAGS, filters.tags),
       listen: known(LISTEN, filters.listen),
       selection: known(SELECTION, filters.selection),
+      stars: known(STARS, filters.stars),
       format: typeof filters.format === 'string' ? filters.format : null,
     },
     played: parsePaths(view.played),

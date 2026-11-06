@@ -45,6 +45,10 @@ const tally = (over: Partial<Tally> = {}): Tally => ({
   duplicates: 0,
   unplayed: 0,
   played: 0,
+  noStars: 0,
+  stars3: 0,
+  stars4: 0,
+  stars5: 0,
   ...over,
 })
 
@@ -155,6 +159,7 @@ describe('QualityFilterBar sections', () => {
       'status',
       'selection',
       'listen',
+      'stars',
       'quality',
       'tags',
       'match',
@@ -474,6 +479,18 @@ describe('QualityFilterBar', () => {
     expect(screen.getByTestId('quality-filter-selected')).toHaveTextContent(/^Selected2$/)
     fireEvent.click(screen.getByTestId('quality-filter-selected'))
     expect(onChange).toHaveBeenCalledWith(sel({ selection: 'selected' }))
+  })
+
+  // The DJ's own verdict: the unrated still to judge, or a floor of stars worth a set.
+  it('filters the stars axis from the unrated bucket and the star floors', () => {
+    const { onChange } = renderBar({ tally: tally({ noStars: 540, stars3: 121, stars4: 61 }) })
+    openMenu('stars')
+    expect(screen.getAllByRole('option').map((el) => el.getAttribute('data-testid'))).toEqual(
+      ['noStars', 'stars3', 'stars4', 'stars5'].map((m) => `quality-filter-${m}`),
+    )
+    expect(screen.getByTestId('quality-filter-stars4')).toHaveTextContent(/^4 or more61$/)
+    fireEvent.click(screen.getByTestId('quality-filter-stars4'))
+    expect(onChange).toHaveBeenCalledWith(sel({ stars: 'stars4' }))
   })
 
   it('filters the tags axis from a tag bucket', () => {

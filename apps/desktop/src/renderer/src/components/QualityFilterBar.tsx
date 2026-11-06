@@ -33,6 +33,8 @@ import {
   SlidersHorizontal,
   Sparkles,
   SquareCheckBig,
+  Star,
+  StarOff,
   Store,
   Trash2,
   TriangleAlert,
@@ -71,6 +73,7 @@ type AttentionMode =
 type TagsMode = 'missingRequired' | 'noCover' | 'smallCover' | 'noBpm' | 'noKey'
 type ListenMode = 'unplayed' | 'played'
 type SelectionMode = 'selected'
+type StarsMode = 'noStars' | 'stars3' | 'stars4' | 'stars5'
 type Mode =
   | QualityMode
   | ConversionMode
@@ -80,6 +83,7 @@ type Mode =
   | TagsMode
   | ListenMode
   | SelectionMode
+  | StarsMode
 
 const QUALITY_MODES: QualityMode[] = ['unanalyzed', 'suspect', 'damaged', 'good']
 const CONVERSION_MODES: ConversionMode[] = [
@@ -100,6 +104,7 @@ const LIBRARY_MODES: LibraryMode[] = ['notInLibrary', 'inLibrary']
 const DUPLICATES_MODES: DuplicatesMode[] = ['duplicates']
 const LISTEN_MODES: ListenMode[] = ['unplayed', 'played']
 const SELECTION_MODES: SelectionMode[] = ['selected']
+const STARS_MODES: StarsMode[] = ['noStars', 'stars3', 'stars4', 'stars5']
 const ATTENTION_MODES: AttentionMode[] = [
   'silence',
   'clipping',
@@ -146,6 +151,10 @@ const FILTER_ICONS: Record<Mode | 'all', LucideIcon> = {
   unplayed: HeadphoneOff,
   played: Headphones,
   selected: SquareCheckBig,
+  noStars: StarOff,
+  stars3: Star,
+  stars4: Star,
+  stars5: Star,
 }
 
 type Tally = ReturnType<typeof qualityCounts>
@@ -154,6 +163,7 @@ type SectionKey =
   | 'status'
   | 'selection'
   | 'listen'
+  | 'stars'
   | 'quality'
   | 'tags'
   | 'match'
@@ -178,6 +188,7 @@ function axisOf(mode: Mode): keyof Omit<FilterSelection, 'format'> {
   if ((TAGS_MODES as string[]).includes(mode)) return 'tags'
   if ((LISTEN_MODES as string[]).includes(mode)) return 'listen'
   if (mode === 'selected') return 'selection'
+  if ((STARS_MODES as string[]).includes(mode)) return 'stars'
   return 'library'
 }
 
@@ -223,6 +234,7 @@ function activeFilters(
     'conversion',
     'selection',
     'listen',
+    'stars',
     'quality',
     'tags',
     'attention',
@@ -442,6 +454,7 @@ export function QualityFilterBar({
       of('status', STATUS_MODES),
       of('selection', SELECTION_MODES),
       of('listen', LISTEN_MODES),
+      of('stars', STARS_MODES),
       of('quality', QUALITY_MODES),
       of('tags', TAGS_MODES),
       of('match', MATCH_MODES),

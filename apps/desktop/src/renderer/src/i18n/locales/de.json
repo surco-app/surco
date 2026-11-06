@@ -147,7 +147,8 @@
         "libraryEngine": "Engine DJ",
         "format": "Format",
         "listen": "Anhören",
-        "selection": "Auswahl"
+        "selection": "Auswahl",
+        "stars": "Sterne"
       },
       "clear": "Filter entfernen",
       "shown": "{{visible}} von {{total}} Titeln",
@@ -157,7 +158,11 @@
       "noMatch": "Kein Filter passt zu „{{query}}“",
       "unplayed": "Nicht gehört",
       "played": "Gehört",
-      "selected": "Ausgewählt"
+      "selected": "Ausgewählt",
+      "noStars": "Ohne Sterne",
+      "stars3": "3 oder mehr",
+      "stars4": "4 oder mehr",
+      "stars5": "5 Sterne"
     },
     "search": {
       "placeholder": "Tracks suchen",
@@ -178,7 +183,8 @@
       "year": "Jahr",
       "quality": "Qualität",
       "ascending": "Aufsteigende Reihenfolge",
-      "descending": "Absteigende Reihenfolge"
+      "descending": "Absteigende Reihenfolge",
+      "rating": "Sterne"
     },
     "position": "Track {{current}} von {{total}}",
     "selectedCount_one": "{{count}} ausgewählt",

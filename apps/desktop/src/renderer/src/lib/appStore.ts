@@ -10,6 +10,7 @@ import type {
   QualityFilter,
   SelectionFilter,
   SortDir,
+  StarsFilter,
   TagsFilter,
   TrackSort,
 } from './triage'
@@ -46,6 +47,7 @@ interface AppState {
   tagsFilter: TagsFilter | null
   listenFilter: ListenFilter | null
   selectionFilter: SelectionFilter | null
+  starsFilter: StarsFilter | null
   formatFilter: string | null
   // The tracks played long enough to count as heard, by path, so the list worked through
   // over several days can show what is still to hear.
@@ -79,6 +81,7 @@ const INITIAL: AppState = {
   tagsFilter: null,
   listenFilter: null,
   selectionFilter: null,
+  starsFilter: null,
   formatFilter: null,
   playedPaths: new Set(),
   dragging: false,
