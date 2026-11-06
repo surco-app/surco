@@ -161,8 +161,7 @@ type Tally = ReturnType<typeof qualityCounts>
 
 type SectionKey =
   | 'status'
-  | 'selection'
-  | 'listen'
+  | 'list'
   | 'stars'
   | 'quality'
   | 'tags'
@@ -170,7 +169,6 @@ type SectionKey =
   | 'attention'
   | 'library'
   | 'format'
-  | 'duplicates'
 
 interface Measure {
   offered: boolean
@@ -236,12 +234,12 @@ function activeFilters(
     'conversion',
     'selection',
     'listen',
+    'duplicates',
     'stars',
     'quality',
     'tags',
     'attention',
     'library',
-    'duplicates',
   ]
   const picked = axes.flatMap((axis) => {
     const mode = value[axis]
@@ -390,9 +388,7 @@ export function QualityFilterBar({
   const sectionLabel = (key: SectionKey): string =>
     key === 'library' && librarySource === 'engineDj'
       ? tr('sidebar.filter.section.libraryEngine')
-      : key === 'duplicates'
-        ? tr('sidebar.filter.duplicates')
-        : tr(`sidebar.filter.section.${key}`)
+      : tr(`sidebar.filter.section.${key}`)
   // The selection's size is the counter's own number; counting it within the other filters
   // would recount every filter on each click that moves the selection.
   const countOf = (mode: Mode): number =>
@@ -459,10 +455,21 @@ export function QualityFilterBar({
       label: sectionLabel(key),
       options: modes.map((m) => modeOption(m, close)),
     })
+    const grouped = (group: string, modes: Mode[]): PaneOption[] =>
+      modes.map((m) => ({ ...modeOption(m, close), group: tr(`sidebar.filter.section.${group}`) }))
     return [
       of('status', STATUS_MODES),
-      of('selection', SELECTION_MODES),
-      of('listen', LISTEN_MODES),
+      // What the user did with the list rather than with the file, together in one section
+      // so none of them is a section holding a single filter.
+      {
+        key: 'list',
+        label: sectionLabel('list'),
+        options: [
+          ...grouped('selection', SELECTION_MODES),
+          ...grouped('listen', LISTEN_MODES),
+          ...grouped('repeats', DUPLICATES_MODES),
+        ],
+      },
       of('stars', STARS_MODES),
       of('quality', QUALITY_MODES),
       of('tags', TAGS_MODES),
@@ -482,7 +489,6 @@ export function QualityFilterBar({
           onPick: () => toggleFormat(f.format, close),
         })),
       },
-      of('duplicates', DUPLICATES_MODES),
     ]
   }
 

@@ -148,7 +148,9 @@
         "format": "Format",
         "listen": "Anhören",
         "selection": "Auswahl",
-        "stars": "Sterne"
+        "stars": "Sterne",
+        "list": "Liste",
+        "repeats": "Doppelte"
       },
       "clear": "Filter entfernen",
       "shown": "{{visible}} von {{total}} Titeln",

@@ -148,7 +148,9 @@
         "format": "Format",
         "listen": "Listening",
         "selection": "Selection",
-        "stars": "Stars"
+        "stars": "Stars",
+        "list": "List",
+        "repeats": "Repeats"
       },
       "clear": "Clear filters",
       "shown": "{{visible}} of {{total}} tracks",

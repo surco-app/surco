@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { createRef } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../i18n'
@@ -157,8 +157,7 @@ describe('QualityFilterBar sections', () => {
       screen.getAllByRole('tab').map((el) => el.getAttribute('data-testid'))
     const expected = [
       'status',
-      'selection',
-      'listen',
+      'list',
       'stars',
       'quality',
       'tags',
@@ -166,7 +165,6 @@ describe('QualityFilterBar sections', () => {
       'attention',
       'library',
       'format',
-      'duplicates',
     ].map((k) => `quality-filter-section-${k}`)
     renderBar()
     openMenu()
@@ -180,13 +178,21 @@ describe('QualityFilterBar sections', () => {
   it('names each section, the library one after the library its filters read', () => {
     renderBar()
     openMenu()
-    for (const key of ['status', 'listen', 'quality', 'tags', 'match', 'attention', 'format']) {
+    for (const key of [
+      'status',
+      'list',
+      'stars',
+      'quality',
+      'tags',
+      'match',
+      'attention',
+      'format',
+    ]) {
       expect(screen.getByTestId(`quality-filter-section-${key}`)).toHaveTextContent(
         i18n.t(`sidebar.filter.section.${key}`),
       )
     }
     expect(screen.getByTestId('quality-filter-section-library')).toHaveTextContent('Apple Music')
-    expect(screen.getByTestId('quality-filter-section-duplicates')).toHaveTextContent('Duplicates')
     cleanup()
     renderBar({ librarySource: 'engineDj' })
     openMenu()
@@ -198,6 +204,22 @@ describe('QualityFilterBar sections', () => {
     renderBar({ librarySource: null })
     openMenu()
     expect(screen.queryByTestId('quality-filter-section-library')).toBeNull()
+  })
+
+  // What the user did with the list, not with the file: the selection, what was heard and the
+  // songs loaded twice share one section, each under its own heading, instead of three
+  // sections where two held a single filter.
+  it('gathers the selection, the listening and the duplicates in one section, under headings', () => {
+    renderBar({ selectedCount: 2, tally: tally({ unplayed: 4, played: 1, duplicates: 2 }) })
+    openMenu('list')
+    const groups = screen.getAllByRole('group')
+    expect(groups.map((g) => g.getAttribute('aria-label'))).toEqual([
+      'Selection',
+      'Listening',
+      'Repeats',
+    ])
+    expect(groups.map((g) => within(g).getAllByRole('option').length)).toEqual([1, 2, 1])
+    expect(within(groups[2]).getByTestId('quality-filter-duplicates')).toHaveTextContent(/2$/)
   })
 
   // Only the chosen section's filters show, so the menu keeps its height as filters grow.
@@ -315,17 +337,15 @@ describe('QualityFilterBar sections', () => {
     renderBar({ tally: tally({ unplayed: 2, played: 1 }) })
     openMenu()
     fireEvent.keyDown(document.activeElement as Element, { key: 'ArrowDown' })
-    expect(screen.getByTestId('quality-filter-section-selection')).toHaveFocus()
+    const list = screen.getByTestId('quality-filter-section-list')
+    expect(list).toHaveFocus()
+    expect(list).toHaveAttribute('aria-selected', 'true')
+    fireEvent.keyDown(list, { key: 'ArrowRight' })
+    expect(screen.getByTestId('quality-filter-selected')).toHaveFocus()
     fireEvent.keyDown(document.activeElement as Element, { key: 'ArrowDown' })
-    const listen = screen.getByTestId('quality-filter-section-listen')
-    expect(listen).toHaveFocus()
-    expect(listen).toHaveAttribute('aria-selected', 'true')
-    fireEvent.keyDown(listen, { key: 'ArrowRight' })
     expect(screen.getByTestId('quality-filter-unplayed')).toHaveFocus()
-    fireEvent.keyDown(document.activeElement as Element, { key: 'ArrowDown' })
-    expect(screen.getByTestId('quality-filter-played')).toHaveFocus()
     fireEvent.keyDown(document.activeElement as Element, { key: 'ArrowLeft' })
-    expect(listen).toHaveFocus()
+    expect(list).toHaveFocus()
   })
 
   // The arrows move inside the menu only: the window's shortcuts would otherwise also move
@@ -544,7 +564,7 @@ describe('QualityFilterBar', () => {
   // Going through a long crate over several days, the tracks still to hear are one pick away.
   it('filters the listen axis from the unplayed and played buckets', () => {
     const { onChange } = renderBar({ tally: tally({ unplayed: 412, played: 306 }) })
-    openMenu('listen')
+    openMenu('list')
     expect(screen.getByTestId('quality-filter-unplayed')).toHaveTextContent(/^Unplayed412$/)
     expect(screen.getByTestId('quality-filter-played')).toHaveTextContent(/^Played306$/)
     fireEvent.click(screen.getByTestId('quality-filter-unplayed'))
@@ -554,7 +574,7 @@ describe('QualityFilterBar', () => {
   // The count is the selection's own size, the number the counter beside the menu shows.
   it('filters the selection axis from the selected bucket, counted as the selection', () => {
     const { onChange } = renderBar({ selectedCount: 2 })
-    openMenu('selection')
+    openMenu('list')
     expect(screen.getByTestId('quality-filter-selected')).toHaveTextContent(/^Selected2$/)
     fireEvent.click(screen.getByTestId('quality-filter-selected'))
     expect(onChange).toHaveBeenCalledWith(sel({ selection: 'selected' }))

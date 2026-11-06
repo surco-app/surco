@@ -132,6 +132,8 @@ export interface PaneOption {
   count: number
   progress?: MeasureProgress
   unknown?: boolean
+  // The heading the filter sits under inside its section, for a section that groups them.
+  group?: string
   selected: boolean
   onPick: () => void
 }
@@ -216,6 +218,17 @@ export function FilterPanes({
         }))
         .filter((g) => g.options.length > 0)
     : [{ section, options: section.options }]
+
+  // What the pane lists: the matches section by section while searching, else the chosen
+  // section, split under its own headings where its filters come in groups.
+  const blocks: { key: string; label?: string; options: PaneOption[] }[] = query
+    ? groups.map((g) => ({ key: g.section.key, label: g.section.label, options: g.options }))
+    : section.options.reduce<{ key: string; label?: string; options: PaneOption[] }[]>((acc, o) => {
+        const last = acc[acc.length - 1]
+        if (last && last.label === o.group) last.options.push(o)
+        else acc.push({ key: o.group ?? o.id, label: o.group, options: [o] })
+        return acc
+      }, [])
 
   // Each keystroke lands on the first match, so Enter picks it and the arrows walk the rest.
   // With nothing matching the menu itself keeps the focus, or the next key would reach the
@@ -371,46 +384,36 @@ export function FilterPanes({
                 data-testid={`${testid}-listbox`}
                 className="min-h-0 flex-1 overflow-y-auto p-1"
               >
-                {query
-                  ? groups.map((g) => (
-                      // biome-ignore lint/a11y/useSemanticElements: a listbox groups its options with role group; a fieldset groups form controls
-                      <div key={g.section.key} role="group" aria-label={g.section.label}>
-                        <div
-                          aria-hidden="true"
-                          className="px-2 pt-1.5 pb-1 text-[11px] font-semibold text-fg-faint"
-                        >
-                          {g.section.label}
-                        </div>
-                        {g.options.map((o) => (
-                          <FilterOption
-                            key={o.id}
-                            testid={`${testid}-${o.id}`}
-                            Icon={o.Icon}
-                            dot={o.dot}
-                            label={o.label}
-                            count={o.count}
-                            progress={o.progress}
-                            unknown={o.unknown}
-                            selected={o.selected}
-                            onClick={o.onPick}
-                          />
-                        ))}
+                {blocks.map((block) => {
+                  const rows = block.options.map((o) => (
+                    <FilterOption
+                      key={o.id}
+                      testid={`${testid}-${o.id}`}
+                      Icon={o.Icon}
+                      dot={o.dot}
+                      label={o.label}
+                      count={o.count}
+                      progress={o.progress}
+                      unknown={o.unknown}
+                      selected={o.selected}
+                      onClick={o.onPick}
+                    />
+                  ))
+                  return block.label ? (
+                    // biome-ignore lint/a11y/useSemanticElements: a listbox groups its options with role group; a fieldset groups form controls
+                    <div key={block.key} role="group" aria-label={block.label}>
+                      <div
+                        aria-hidden="true"
+                        className="px-2 pt-1.5 pb-1 text-[11px] font-semibold text-fg-faint"
+                      >
+                        {block.label}
                       </div>
-                    ))
-                  : section.options.map((o) => (
-                      <FilterOption
-                        key={o.id}
-                        testid={`${testid}-${o.id}`}
-                        Icon={o.Icon}
-                        dot={o.dot}
-                        label={o.label}
-                        count={o.count}
-                        progress={o.progress}
-                        unknown={o.unknown}
-                        selected={o.selected}
-                        onClick={o.onPick}
-                      />
-                    ))}
+                      {rows}
+                    </div>
+                  ) : (
+                    rows
+                  )
+                })}
               </div>
             ) : (
               <p data-testid={`${testid}-empty`} className="px-3 py-2 text-xs text-fg-faint">

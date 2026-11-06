@@ -148,7 +148,9 @@
         "format": "Format",
         "listen": "Écoute",
         "selection": "Sélection",
-        "stars": "Étoiles"
+        "stars": "Étoiles",
+        "list": "Liste",
+        "repeats": "Doublons"
       },
       "clear": "Effacer les filtres",
       "shown": "{{visible}} sur {{total}} pistes",

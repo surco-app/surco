@@ -148,7 +148,9 @@
         "format": "Formato",
         "listen": "Escuta",
         "selection": "Seleção",
-        "stars": "Estrelas"
+        "stars": "Estrelas",
+        "list": "Lista",
+        "repeats": "Repetidas"
       },
       "clear": "Limpar filtros",
       "shown": "{{visible}} de {{total}} faixas",

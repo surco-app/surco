@@ -148,7 +148,9 @@
         "format": "フォーマット",
         "listen": "再生",
         "selection": "選択",
-        "stars": "星"
+        "stars": "星",
+        "list": "リスト",
+        "repeats": "重複"
       },
       "clear": "フィルターを解除",
       "shown": "{{total}} 曲中 {{visible}} 曲",
