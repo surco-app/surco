@@ -74,6 +74,7 @@ export function FilterOption({
   label,
   count,
   progress,
+  unknown,
   selected,
   onClick,
 }: {
@@ -83,6 +84,8 @@ export function FilterOption({
   label: string
   count: number
   progress?: MeasureProgress
+  // Not measured yet: the count is shown as unknown, never as a 0 it has not found.
+  unknown?: boolean
   selected: boolean
   onClick: () => void
 }): React.JSX.Element {
@@ -92,7 +95,7 @@ export function FilterOption({
       role="option"
       aria-selected={selected}
       data-testid={testid}
-      data-empty={count === 0 && !selected && !progress ? '' : undefined}
+      data-empty={count === 0 && !selected && !progress && !unknown ? '' : undefined}
       onClick={onClick}
       className={ROW_CLASS}
     >
@@ -113,7 +116,9 @@ export function FilterOption({
         )}
       </span>
       <span className="flex-1">{label}</span>
-      <span className="tabular-nums text-fg-dim group-data-[empty]:text-fg-faint">{count}</span>
+      <span className="tabular-nums text-fg-dim group-data-[empty]:text-fg-faint">
+        {unknown ? '–' : count}
+      </span>
       <Check aria-hidden="true" className={`size-3 shrink-0 ${selected ? '' : 'invisible'}`} />
     </button>
   )
@@ -126,6 +131,7 @@ export interface PaneOption {
   label: string
   count: number
   progress?: MeasureProgress
+  unknown?: boolean
   selected: boolean
   onPick: () => void
 }
@@ -288,7 +294,8 @@ export function FilterPanes({
             const picked = s.options.filter((o) => o.selected).length
             const flagged = s.options.some((o) => o.dot && !o.progress)
             const measuring = s.options.find((o) => o.progress)?.progress
-            const empty = !picked && !measuring && s.options.every((o) => o.count === 0)
+            const empty =
+              !picked && !measuring && s.options.every((o) => o.count === 0 && !o.unknown)
             const current = s.key === section.key
             const selected = current && !query
             return (
@@ -383,6 +390,7 @@ export function FilterPanes({
                             label={o.label}
                             count={o.count}
                             progress={o.progress}
+                            unknown={o.unknown}
                             selected={o.selected}
                             onClick={o.onPick}
                           />
@@ -398,6 +406,7 @@ export function FilterPanes({
                         label={o.label}
                         count={o.count}
                         progress={o.progress}
+                        unknown={o.unknown}
                         selected={o.selected}
                         onClick={o.onPick}
                       />

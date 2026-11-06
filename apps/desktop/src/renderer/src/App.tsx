@@ -3563,11 +3563,13 @@ export default function App(): React.JSX.Element {
                             qualityTally={qualityTally}
                             gridMeasure={{
                               offered: gridEntries.length > 0,
+                              measuring: filterSelection.attention === 'badGrid',
                               done: gridVerdicts.done,
                               total: gridVerdicts.total,
                             }}
                             libraryMeasure={{
                               offered: libraryCopyVerdicts.total > 0,
+                              measuring: filterSelection.library === 'betterThanLibrary',
                               done: libraryCopyVerdicts.done,
                               total: libraryCopyVerdicts.total,
                             }}

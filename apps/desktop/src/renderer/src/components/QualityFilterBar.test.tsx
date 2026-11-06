@@ -407,7 +407,7 @@ describe('QualityFilterBar', () => {
   it('lets the bad-grid filter be picked before anything is measured, since picking it is what starts the measuring', () => {
     const { onChange } = renderBar({
       tally: tally(),
-      gridMeasure: { offered: true, done: 0, total: 0 },
+      gridMeasure: { offered: true, measuring: false, done: 0, total: 0 },
     })
     openMenu('attention')
     fireEvent.click(screen.getByTestId('quality-filter-badGrid'))
@@ -419,7 +419,7 @@ describe('QualityFilterBar', () => {
   it('rings the bad-grid icon with how far the measuring got, in place of a percentage', () => {
     renderBar({
       tally: tally({ badGrid: 3 }),
-      gridMeasure: { offered: true, done: 344, total: 2077 },
+      gridMeasure: { offered: true, measuring: true, done: 344, total: 2077 },
     })
     openMenu('attention')
     expect(screen.getByTestId('quality-filter-badGrid')).toHaveTextContent(/^Bad grid3$/)
@@ -433,11 +433,35 @@ describe('QualityFilterBar', () => {
   // A filter still measuring has found nothing yet, which is not the same as holding nothing:
   // dimmed like an empty one, its ring faded to where it could not be read.
   it('never dims a filter or its section while it measures', () => {
-    renderBar({ gridMeasure: { offered: true, done: 10, total: 40 } })
+    renderBar({ gridMeasure: { offered: true, measuring: true, done: 10, total: 40 } })
     openMenu('attention')
     expect(screen.getByTestId('quality-filter-badGrid')).not.toHaveAttribute('data-empty')
     expect(screen.getByTestId('quality-filter-noCues')).toHaveAttribute('data-empty')
     expect(screen.getByTestId('quality-filter-section-attention')).not.toHaveAttribute('data-empty')
+  })
+
+  // Better than Music is measured only once its filter is picked: before that, a 0 read as
+  // "measured, none better" while everything else said the crate was fully analysed.
+  it('says a filter not measured yet holds an unknown count, with no progress to show', () => {
+    renderBar({
+      tally: tally({ inLibrary: 3 }),
+      libraryMeasure: { offered: true, measuring: false, done: 0, total: 3 },
+    })
+    openMenu('library')
+    const option = screen.getByTestId('quality-filter-betterThanLibrary')
+    expect(option).toHaveTextContent(/^Better than Music–$/)
+    expect(option).not.toHaveAttribute('data-empty')
+    expect(screen.queryByTestId('quality-filter-betterThanLibrary-progress')).toBeNull()
+    expect(screen.queryByTestId('quality-filter-section-library-progress')).toBeNull()
+  })
+
+  // Once measured the number is real, even a 0, picked or not.
+  it('counts a filter measured to the end like any other', () => {
+    renderBar({ libraryMeasure: { offered: true, measuring: false, done: 3, total: 3 } })
+    openMenu('library')
+    expect(screen.getByTestId('quality-filter-betterThanLibrary')).toHaveTextContent(
+      /^Better than Music0$/,
+    )
   })
 
   // The ring and the amber dot sit on the same icon: the dot waits for the measuring to end,
@@ -445,14 +469,14 @@ describe('QualityFilterBar', () => {
   it('holds the amber dot back until the measuring ends', () => {
     renderBar({
       tally: tally({ badGrid: 3 }),
-      gridMeasure: { offered: true, done: 344, total: 2077 },
+      gridMeasure: { offered: true, measuring: true, done: 344, total: 2077 },
     })
     openMenu('attention')
     expect(screen.queryByTestId('quality-filter-badGrid-dot')).toBeNull()
     cleanup()
     renderBar({
       tally: tally({ badGrid: 3 }),
-      gridMeasure: { offered: true, done: 2077, total: 2077 },
+      gridMeasure: { offered: true, measuring: true, done: 2077, total: 2077 },
     })
     openMenu('attention')
     expect(screen.queryByTestId('quality-filter-badGrid-progress')).toBeNull()
@@ -462,7 +486,7 @@ describe('QualityFilterBar', () => {
   // From another section the filter measuring is out of sight, so its section carries the
   // same ring, unless a filter picked there already claims the spot with its count.
   it('rings the section whose filter is measuring, its picked count winning the spot', () => {
-    renderBar({ gridMeasure: { offered: true, done: 10, total: 40 } })
+    renderBar({ gridMeasure: { offered: true, measuring: true, done: 10, total: 40 } })
     openMenu()
     expect(screen.getByTestId('quality-filter-section-attention-progress')).toHaveAttribute(
       'aria-valuenow',
@@ -472,7 +496,7 @@ describe('QualityFilterBar', () => {
     renderBar({
       value: sel({ attention: 'clipping' }),
       tally: tally({ clipping: 2 }),
-      gridMeasure: { offered: true, done: 10, total: 40 },
+      gridMeasure: { offered: true, measuring: true, done: 10, total: 40 },
     })
     openMenu()
     expect(screen.queryByTestId('quality-filter-section-attention-progress')).toBeNull()
@@ -482,7 +506,7 @@ describe('QualityFilterBar', () => {
   it('offers the better-than-the-library filter among the library buckets, since picking it is what starts the measuring', () => {
     const { onChange } = renderBar({
       tally: tally({ inLibrary: 4 }),
-      libraryMeasure: { offered: true, done: 0, total: 4 },
+      libraryMeasure: { offered: true, measuring: false, done: 0, total: 4 },
     })
     openMenu('library')
     fireEvent.click(screen.getByTestId('quality-filter-betterThanLibrary'))
@@ -492,7 +516,7 @@ describe('QualityFilterBar', () => {
   it('says how far the comparison with the library got beside its filter', () => {
     renderBar({
       tally: tally({ inLibrary: 40, betterThanLibrary: 3 }),
-      libraryMeasure: { offered: true, done: 10, total: 40 },
+      libraryMeasure: { offered: true, measuring: true, done: 10, total: 40 },
     })
     openMenu('library')
     expect(screen.getByTestId('quality-filter-betterThanLibrary')).toHaveTextContent(

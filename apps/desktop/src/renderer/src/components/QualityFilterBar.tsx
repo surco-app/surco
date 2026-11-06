@@ -174,6 +174,8 @@ type SectionKey =
 
 interface Measure {
   offered: boolean
+  // Measuring runs only while its filter is picked; until then the count is not known.
+  measuring: boolean
   done: number
   total: number
 }
@@ -366,7 +368,7 @@ export function QualityFilterBar({
   const filterLabel = (mode: string): string => labelOf(mode, librarySource, tr)
 
   const progressOf = (measure: Measure | undefined) =>
-    measure && measure.total > 0 && measure.done < measure.total
+    measure?.measuring && measure.total > 0 && measure.done < measure.total
       ? {
           fraction: measure.done / measure.total,
           title: tr('sidebar.filter.gridMeasuring', {
@@ -378,6 +380,12 @@ export function QualityFilterBar({
   const progress: Partial<Record<Mode, ReturnType<typeof progressOf>>> = {
     badGrid: progressOf(gridMeasure),
     betterThanLibrary: progressOf(libraryMeasure),
+  }
+  const unmeasured = (measure: Measure | undefined): boolean =>
+    Boolean(measure?.offered && !measure.measuring && measure.done < measure.total)
+  const unknown: Partial<Record<Mode, boolean>> = {
+    badGrid: unmeasured(gridMeasure),
+    betterThanLibrary: unmeasured(libraryMeasure),
   }
   const sectionLabel = (key: SectionKey): string =>
     key === 'library' && librarySource === 'engineDj'
@@ -438,6 +446,7 @@ export function QualityFilterBar({
     label: filterLabel(mode),
     progress: progress[mode],
     count: countOf(mode),
+    unknown: unknown[mode],
     selected: isActive(mode),
     onPick: () => toggle(mode, close),
   })
