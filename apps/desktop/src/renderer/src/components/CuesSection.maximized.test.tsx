@@ -217,7 +217,7 @@ describe('CuesSection maximized', () => {
     expect(screen.getByTestId('cues-clear-all')).toBeDisabled()
   })
 
-  it('puts Clear all on the deck line after the pads and the CALL, away from Auto mark, so a slip beside Auto mark never wipes the marks', async () => {
+  it('puts Clear all alone at the far end of the deck line, after the zoom, so neither the ✕ of a CALL nor Auto mark sits beside it', async () => {
     setup(null, { ...READ, cues: [{ id: 'h', ms: 64000, kind: 2, color: 1 }] })
     await maximize()
     const clear = screen.getByTestId('cues-clear-all')
@@ -226,13 +226,34 @@ describe('CuesSection maximized', () => {
     expect(screen.getByTestId('cues-deck')).toContainElement(clear)
     expect(clear).toHaveAccessibleName('Clear all cues')
     expect(
-      screen.getByTestId('cues-memory-remove').compareDocumentPosition(clear) &
+      screen.getByTestId('cue-zoom-in').compareDocumentPosition(clear) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy()
-    expect(
-      clear.compareDocumentPosition(screen.getByTestId('cues-deck-grid')) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy()
+    expect(screen.getByTestId('cues-memory-remove').nextElementSibling).toBeNull()
+  })
+
+  it('splits the deck line into play, pads, CALL, grid, zoom and Clear all with a divider between each', async () => {
+    setup()
+    await maximize()
+    const deck = screen.getByTestId('cues-deck')
+    const marks = [
+      'cues-play',
+      'cues-pad-A',
+      'cues-memory',
+      'cues-grid-bpm',
+      'cue-zoom-out',
+      'cues-clear-all',
+    ].map((id) => screen.getByTestId(id))
+    const dividers = within(deck).getAllByTestId('cues-deck-divider')
+    expect(dividers).toHaveLength(5)
+    dividers.forEach((divider, i) => {
+      expect(
+        marks[i].compareDocumentPosition(divider) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy()
+      expect(
+        divider.compareDocumentPosition(marks[i + 1]) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy()
+    })
   })
 
   it('clears every hot cue and CALL but the loops from Clear all on the deck, and ⌘Z brings them back', async () => {

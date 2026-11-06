@@ -107,7 +107,7 @@ import { cueLetter } from '../lib/rowCues'
 import { useAppSettings } from '../lib/settingsContext'
 import { formatShortcut } from '../lib/shortcuts'
 import { claimKeys } from '../lib/spaceClaim'
-import { CueDeck, CueMoves } from './CueDeck'
+import { CueDeck, CueMoves, DeckDivider } from './CueDeck'
 import { CueGridControls } from './CueGridControls'
 import { CueOffGridBar } from './CueOffGridBar'
 import { CuePalette } from './CuePalette'
@@ -1853,7 +1853,7 @@ function Editing({
                 onDone={focusEditor}
                 zones={rekordboxGrid}
               />
-              <span aria-hidden="true" className="mx-2 h-5 w-px bg-[var(--color-line)]" />
+              <DeckDivider />
               <CueZoom
                 row
                 bars={zoom}

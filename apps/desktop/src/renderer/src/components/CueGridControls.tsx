@@ -195,7 +195,6 @@ export function CueGridControls({
           </div>
         )}
       </div>
-      <span aria-hidden="true" className="mx-1 h-5 w-px bg-[var(--color-line)]" />
       <div data-testid="cues-grid-move" className={GROUP}>
         <button
           type="button"

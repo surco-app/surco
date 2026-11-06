@@ -86,7 +86,7 @@ export function CueDeck({
   return (
     <div
       data-testid="cues-deck"
-      className="mt-3 flex shrink-0 flex-wrap items-center gap-x-5 gap-y-2"
+      className="mt-3 flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2"
     >
       <button
         type="button"
@@ -106,6 +106,7 @@ export function CueDeck({
           />
         )}
       </button>
+      <DeckDivider />
       <div className="flex items-center gap-1.5">
         {kinds.map((kind) => {
           const cue = cues.find((c) => c.kind === kind)
@@ -179,6 +180,7 @@ export function CueDeck({
           )
         })}
       </div>
+      <DeckDivider />
       <div className="flex items-center gap-0.5">
         <button
           type="button"
@@ -221,28 +223,38 @@ export function CueDeck({
           <Tooltip label={tr('editor.cues.deleteCall')} />
           <X className="h-4 w-4" aria-hidden="true" />
         </button>
-        {onClearAll && <span aria-hidden="true" className="mx-2 h-5 w-px bg-[var(--color-line)]" />}
-        {onClearAll && (
-          <button
-            type="button"
-            data-testid="cues-clear-all"
-            aria-label={tr('editor.cues.clearAll')}
-            disabled={!canClearAll}
-            onClick={onClearAll}
-            className={`${STEP} disabled:pointer-events-none disabled:opacity-40`}
-          >
-            <Tooltip label={tr('editor.cues.clearAll')} />
-            <Trash2 className="h-4 w-4" aria-hidden="true" />
-          </button>
-        )}
       </div>
       {gridControls && (
-        <div data-testid="cues-deck-grid" className="flex items-center">
-          <span aria-hidden="true" className="mx-2 h-5 w-px bg-[var(--color-line)]" />
+        <div data-testid="cues-deck-grid" className="flex items-center gap-3">
+          <DeckDivider />
           {gridControls}
         </div>
       )}
+      {onClearAll && <DeckDivider />}
+      {onClearAll && (
+        <button
+          type="button"
+          data-testid="cues-clear-all"
+          aria-label={tr('editor.cues.clearAll')}
+          disabled={!canClearAll}
+          onClick={onClearAll}
+          className={`${STEP} disabled:pointer-events-none disabled:opacity-40`}
+        >
+          <Tooltip label={tr('editor.cues.clearAll')} />
+          <Trash2 className="h-4 w-4" aria-hidden="true" />
+        </button>
+      )}
     </div>
+  )
+}
+
+export function DeckDivider(): React.JSX.Element {
+  return (
+    <span
+      data-testid="cues-deck-divider"
+      aria-hidden="true"
+      className="h-5 w-px shrink-0 bg-[var(--color-line)]"
+    />
   )
 }
 
