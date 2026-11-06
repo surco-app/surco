@@ -97,9 +97,10 @@ y por `feat` `ft` `presents` `vs` `meets`; quitar signos; descartar «Various Ar
 «Unknown». Dos listas se solapan si algún artista de una es igual o contiene a uno de la otra
 (`Javi Pirata's & Domene DJ` solapa con `Javi Pirata`; `Brain` con `Brain Bashers`).
 
-Reutilizar `foldText` (`lib/normalizeText.ts`) y, para el nivel dudoso, `titleSimilarity`
-(`lib/release.ts`) antes de escribir reglas nuevas; las reglas de arriba son lo medido, no una
-implementación. Sin llamadas a proveedores (Discogs, Deezer): sobre el ejemplo no habrían
+Reutilizar `foldText` (`lib/normalizeText.ts`). `titleSimilarity` de `lib/release.ts` NO
+sirve aquí: es asimétrica a propósito para Discogs (castiga al candidato que pierde palabras)
+y da 0,25 a `Good Vibration 2023 Rmx` frente a `Good Vibration`. La similitud es Dice sobre
+tokens del título base, ignorando artículos. Sin llamadas a proveedores (Discogs, Deezer): sobre el ejemplo no habrían
 ganado ninguna pista, porque las 7 ausentes lo están de verdad. Si otros sets lo desmienten,
 sería un segundo pase solo sobre las líneas que caen en «no está».
 
@@ -150,9 +151,9 @@ como primera línea no se usa para nada en esta entrega (el campo de nombre se e
 
 ## Lo que queda al constructor
 
-- La búsqueda corre en el renderer sobre la lista que devuelve `SOURCE_READ[p].playlist(ALL_TRACKS_ID)`,
-  o en el main con un IPC nuevo. Elegir mirando el coste de traer 2100 `preview` al renderer;
-  `rekordboxTrackCount` ya existe para dimensionar.
+- La colección llega por un IPC nuevo y ligero por programa (`contentId`, `path`, `title`,
+  `artist`), no por `playlist(ALL_TRACKS_ID)`, que arrastra cues y carátulas de 2100 pistas.
+  El emparejamiento corre en el renderer sobre esa lista. Decisión del plan.
 - Cómo pasar las elegidas a `add`: `contentId` donde la fuente lo da, `paths` si no.
 - Variante carpeta: `create` devuelve `createdId`; encadenar el `add` detrás en el renderer,
   como dos ediciones seguidas (así cada una conserva su copia de seguridad y no hace falta
