@@ -452,7 +452,8 @@
     "exportUsb": "Exporter vers USB…",
     "goToSource": "Aller à {{name}}",
     "newPlaylist": "Nouvelle playlist dans {{name}}",
-    "convertEditOriginal": "Convertir en modifiant l’original, cette fois seulement"
+    "convertEditOriginal": "Convertir en modifiant l’original, cette fois seulement",
+    "cuesOpenFull": "Modifier les cues en plein écran"
   },
   "trackList": {
     "qualityWord": {

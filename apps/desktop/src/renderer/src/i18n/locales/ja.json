@@ -452,7 +452,8 @@
     "exportUsb": "USB にエクスポート…",
     "goToSource": "{{name}} へ移動",
     "newPlaylist": "{{name}} に新規プレイリスト",
-    "convertEditOriginal": "今回だけ元ファイルを編集して変換"
+    "convertEditOriginal": "今回だけ元ファイルを編集して変換",
+    "cuesOpenFull": "キューを全画面で編集"
   },
   "trackList": {
     "qualityWord": {

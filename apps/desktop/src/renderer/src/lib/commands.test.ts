@@ -220,6 +220,22 @@ describe('buildCommands cue auto mark', () => {
   })
 })
 
+describe('buildCommands cue editor full screen', () => {
+  it('opens the cue editor full screen from ⌘⇧C, and only while the selected track has cues to edit', () => {
+    expect(commandById(makeDeps(), 'cues-open-full').enabled).toBe(false)
+    const openCuesFull = vi.fn()
+    const c = commandById(makeDeps({ openCuesFull }), 'cues-open-full')
+    expect(c.title).toBe('commands.cuesOpenFull')
+    c.run()
+    expect(openCuesFull).toHaveBeenCalledTimes(1)
+    expect(SHORTCUT_DEFAULTS.find((d) => d.id === 'cues-open-full')?.chord).toEqual([
+      'mod',
+      'shift',
+      'c',
+    ])
+  })
+})
+
 describe('buildCommands cue batch save', () => {
   it('is offered only while the cue editor shows its batch save button', () => {
     expect(buildCommands(makeDeps()).some((c) => c.id === 'cues-save-all')).toBe(false)

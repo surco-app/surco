@@ -283,6 +283,7 @@ export interface CommandDeps {
   sources: PlaylistSource[]
   selectSource: (source: PlaylistSource | null) => void
   autoMarkSelected?: () => void
+  openCuesFull?: () => void
   cueActionsRef: { readonly current: CueActions | null }
   newPlaylistRef: { readonly current: NewPlaylist | null }
 }
@@ -395,6 +396,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     sources,
     selectSource,
     autoMarkSelected,
+    openCuesFull,
     cueActionsRef,
     newPlaylistRef,
   } = deps
@@ -474,6 +476,14 @@ export function buildCommands(deps: CommandDeps): Command[] {
           },
         ]
       : []),
+    {
+      id: 'cues-open-full',
+      group: 'library' as const,
+      title: tr('commands.cuesOpenFull'),
+      hint: hintFor('cues-open-full'),
+      enabled: openCuesFull !== undefined,
+      run: () => openCuesFull?.(),
+    },
     ...(cueSaveAll
       ? [
           {

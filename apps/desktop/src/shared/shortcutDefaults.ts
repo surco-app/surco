@@ -73,6 +73,7 @@ export const SHORTCUT_DEFAULTS: ShortcutDef[] = [
   { id: 'analyze-quality', chord: ['mod', 'shift', 'a'] },
   { id: 'auto-match', chord: ['mod', 'shift', 'd'] },
   { id: 'export', chord: ['mod', 'shift', 'e'] },
+  { id: 'cues-open-full', chord: ['mod', 'shift', 'c'] },
   { id: 'stats', chord: ['mod', 'shift', 's'] },
   { id: 'toggle-language', chord: ['mod', 'shift', 'l'] },
   // Jump focus between the three columns — list, Discogs matches, editor. mod-combos so

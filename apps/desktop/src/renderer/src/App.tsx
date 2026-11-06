@@ -3123,6 +3123,12 @@ export default function App(): React.JSX.Element {
         !settings?.editorSections.some((s) => s.id === 'cues' && s.hidden)
           ? autoMarkSelected
           : undefined,
+      openCuesFull:
+        rekordboxCue &&
+        selectedTracks.length === 1 &&
+        !settings?.editorSections.some((s) => s.id === 'cues' && s.hidden)
+          ? () => setMaximized(maximized === 'cues' ? null : 'cues')
+          : undefined,
       cueActionsRef,
       newPlaylistRef,
     }),
