@@ -2510,7 +2510,8 @@
       "spelling": "Schreibweisen",
       "duplicates": "Duplikate",
       "damage": "Schäden",
-      "incomplete": "Unvollständig"
+      "incomplete": "Unvollständig",
+      "staged": "Vorgemerkt"
     },
     "copyTitle": "Titel kopieren",
     "field": {
@@ -2531,7 +2532,7 @@
       "version": "andere Version"
     },
     "tie": "Gleichstand. Wähle, welche bleibt.",
-    "staged": "Vormerkung aufheben",
+    "staged": "✓ Vorgemerkt · Verwerfen",
     "ignore": "Ignorieren",
     "ignored": "Aus der Prüfung ausgeblendet",
     "notSame": "Nicht derselbe",
@@ -2552,7 +2553,8 @@
       "backup": "Von jeder Datei wird eine Kopie in Backups abgelegt.",
       "cancel": "Abbrechen",
       "apply": "Anwenden",
-      "libraryMissing": "{{library}} wird nicht aktualisiert, weil die Sammlung nicht gefunden wurde."
+      "libraryMissing": "{{library}} wird nicht aktualisiert, weil die Sammlung nicht gefunden wurde.",
+      "changeRemove": "Entfernt „{{label}}“ und behält „{{keep}}“"
     },
     "stop": "Stoppen",
     "done": {

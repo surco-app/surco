@@ -177,6 +177,26 @@ describe('useMusicReview', () => {
     expect(result.current.spelling).toHaveLength(1)
   })
 
+  it('names each staged change with its track, so the confirmation can say what it writes and not only how many', async () => {
+    setApi()
+    const { result } = await ready()
+    act(() => result.current.toggleStaged(result.current.spelling[0].key))
+    expect(result.current.planned.fixes).toEqual([
+      { id: 'C', field: 'artist', from: 'Dj Lara', to: 'DJ Lara', title: 'TC' },
+    ])
+  })
+
+  it('names the copies a staged duplicate removes and the one it keeps', async () => {
+    setApi({ loadMusicReview: vi.fn().mockResolvedValue(DUPS) })
+    const { result } = await ready()
+    act(() => result.current.toggleStaged(result.current.duplicates[0].group.key))
+    expect(result.current.planned.removals).toHaveLength(1)
+    expect(result.current.planned.removals[0]).toMatchObject({
+      label: 'Ann - Song',
+      keepLabel: 'Ann - Song',
+    })
+  })
+
   // Nothing is written until the user applies: staging a group only fills the tray.
   it('writes only the staged groups, rereads and reports the files it changed', async () => {
     const api = setApi()
@@ -2088,6 +2108,13 @@ describe('damage in the list review', () => {
     expect(result.current.staged.has(damageKey(SURE))).toBe(true)
     expect(result.current.staged.has(damageKey(LIKELY))).toBe(false)
     expect(result.current.summary.damage).toEqual({ 'genre-number': 1 })
+  })
+
+  it('lists the damage it will repair, the sure ones it staged itself included', async () => {
+    damageApi()
+    const { result } = hook()
+    await waitFor(() => expect(result.current.damage).toHaveLength(2))
+    expect(result.current.planned.repairs).toEqual([SURE])
   })
 
   it('repairs after the spellings, re-scans and calls a repair still found a mismatch', async () => {

@@ -108,6 +108,7 @@ export function IncompleteDetail({
               : t('musicReview.incomplete.stage')
         }
         disabled={busy || (!editorOnly && !staged && !fillable)}
+        quiet={!editorOnly && staged}
         onStage={editorOnly ? openEditor : () => review.toggleStaged(key)}
         menuLabel={t('musicReview.ignore')}
         menuDisabled={busy}

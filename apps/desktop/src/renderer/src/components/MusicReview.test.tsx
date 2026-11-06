@@ -62,6 +62,7 @@ function review(over: Partial<Review> = {}): Review {
     toggleStaged: vi.fn(),
     ignore: vi.fn(),
     summary: { tracks: 0, byField: {}, duplicates: 0, damage: {} },
+    planned: { fixes: [], removals: [], repairs: [] },
     progress: null,
     phase: null,
     undoing: false,
@@ -283,12 +284,12 @@ describe('MusicReview', () => {
 
   // A staged group is a change not applied yet, which the track list marks with the amber
   // ring on the cover.
-  it('marks a row staged from the detail with the pending ring and says it is in the batch', () => {
+  it('marks a row staged from the detail with the pending ring and says it is still to apply', () => {
     render(<Panes review={review({ spelling: [group, other] })} />)
-    expect(rows()[0]).not.toHaveTextContent('in the batch')
+    expect(rows()[0]).not.toHaveTextContent('to apply')
     expect(within(rows()[0]).queryByTestId('music-review-row-staged')).toBeNull()
     fireEvent.click(screen.getByTestId('music-review-stage'))
-    expect(rows()[0]).toHaveTextContent('in the batch')
+    expect(rows()[0]).toHaveTextContent('to apply')
     expect(rows()[0]).toHaveAttribute('data-staged', 'true')
     expect(within(rows()[0]).getByTestId('music-review-row-staged')).toHaveAttribute(
       'data-tone',
@@ -479,7 +480,47 @@ describe('MusicReview', () => {
   // only takes it back out of the tray.
   it('labels a staged group so it does not read as undoing the run', () => {
     render(<Panes review={review({ staged: new Set([group.key]) })} />)
-    expect(screen.getByTestId('music-review-stage')).toHaveTextContent('Remove from the batch')
+    expect(screen.getByTestId('music-review-stage')).toHaveTextContent('✓ To apply · Discard')
+  })
+
+  it('greys the button of a staged group, since it only takes the change back out and Apply is what comes next', () => {
+    const { unmount } = render(<Panes review={review()} />)
+    expect(screen.getByTestId('music-review-stage-fill')).toHaveAttribute('data-on', 'true')
+    unmount()
+    render(<Panes review={review({ staged: new Set([group.key]) })} />)
+    expect(screen.getByTestId('music-review-stage-fill')).not.toHaveAttribute('data-on')
+  })
+
+  it('narrows the list to what is still to apply, so a staged change can be found and checked before applying', () => {
+    const base = review({ spelling: [group, other], staged: new Set([other.key]) })
+    expect(visibleGroups({ ...base, filter: 'staged' }, '', 'default').spelling).toEqual([other])
+    render(<Panes review={base} />)
+    fireEvent.click(screen.getByTestId('music-review-filter-trigger'))
+    expect(screen.getByTestId('music-review-filter-staged')).toHaveTextContent('To apply1')
+  })
+
+  it('lists every change before applying, with its track and what it becomes, not only how many', () => {
+    const r = review({
+      staged: new Set([group.key]),
+      summary: { tracks: 1, byField: { artist: 1 }, duplicates: 1, damage: {} },
+      planned: {
+        fixes: [{ id: 'C', field: 'artist', from: 'Dj Lara', to: 'DJ Lara', title: 'Pray' }],
+        removals: [
+          { removeId: 'Q', keepId: 'P', label: 'Ann - Song', keepLabel: 'Ann - Song (FLAC)' },
+        ],
+        repairs: [],
+      },
+    })
+    render(<Panes review={r} />)
+    fireEvent.click(screen.getByTestId('music-review-apply'))
+    const changes = screen.getAllByTestId('music-review-confirm-change')
+    expect(changes).toHaveLength(2)
+    expect(changes[0]).toHaveTextContent('Pray')
+    expect(changes[0]).toHaveTextContent('Artist')
+    expect(changes[0]).toHaveTextContent('Dj Lara')
+    expect(changes[0]).toHaveTextContent('DJ Lara')
+    expect(changes[1]).toHaveTextContent('Ann - Song')
+    expect(changes[1]).toHaveTextContent('Ann - Song (FLAC)')
   })
 
   it('tints a safe kind like a good pill and a risky one like a warning', () => {
@@ -1752,7 +1793,7 @@ describe('MusicReview', () => {
       expect(screen.getByTestId('music-review-stage-fill')).toHaveAttribute('data-on')
       fireEvent.click(stage)
       expect(r.ignore).not.toHaveBeenCalled()
-      expect(screen.getByTestId('music-review-stage')).toHaveTextContent('Remove from the batch')
+      expect(screen.getByTestId('music-review-stage')).toHaveTextContent('✓ To apply · Discard')
     })
 
     it('ignores a group from the menu and names it by kind', () => {
@@ -2218,7 +2259,7 @@ describe('MusicReview', () => {
       expect(r.choose).toHaveBeenCalledWith('k#1', '1')
       fireEvent.click(screen.getByTestId('music-review-stage'))
       expect(r.toggleStaged).toHaveBeenCalledWith('k#1')
-      expect(screen.getByTestId('music-review-stage')).toHaveTextContent('Remove from the batch')
+      expect(screen.getByTestId('music-review-stage')).toHaveTextContent('✓ To apply · Discard')
     })
   })
 })
@@ -2904,6 +2945,24 @@ describe('damage findings in the list review', () => {
     )
   })
 
+  it('lists each repair before applying with the file it touches and what it becomes', () => {
+    render(
+      <Panes
+        review={listReview({
+          staged: new Set([damageKey(SURE)]),
+          summary: { tracks: 0, byField: {}, duplicates: 0, damage: { 'genre-number': 1 } },
+          planned: { fixes: [], removals: [], repairs: [SURE] },
+          choice: () => null,
+        })}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('music-review-apply'))
+    const [change] = screen.getAllByTestId('music-review-confirm-change')
+    expect(change).toHaveTextContent('a.mp3')
+    expect(change).toHaveTextContent('(35) Deep House')
+    expect(change).toHaveTextContent('House; Deep House')
+  })
+
   it('says why a repair failed', () => {
     render(
       <Panes
@@ -3050,9 +3109,7 @@ describe('incomplete tracks', () => {
     render(<Panes review={incompleteReview({ stageProposals })} />)
     fireEvent.click(screen.getByTestId('incomplete-stage-all'))
     expect(stageProposals).toHaveBeenCalled()
-    expect(screen.getByTestId('incomplete-stage-all')).toHaveTextContent(
-      'Add 1 proposal to the batch',
-    )
+    expect(screen.getByTestId('incomplete-stage-all')).toHaveTextContent('Mark 1 proposal to apply')
   })
 
   it('offers no bulk staging once every proposal is in the tray', () => {

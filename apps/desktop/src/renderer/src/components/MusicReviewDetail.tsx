@@ -478,6 +478,7 @@ function SpellingDetail({
                 count: new Set(affected.map((f) => f.id)).size,
               })
         }
+        quiet={staged}
         disabled={busy || chosen === null}
         onStage={() => review.toggleStaged(group.key)}
         menuLabel={t(group.kind === 'typo' ? 'musicReview.notSame' : 'musicReview.ignore')}
@@ -763,7 +764,7 @@ function DuplicateDetail({
             ? t('musicReview.staged')
             : t('musicReview.removeCopies', { count: entries.length - 1 })
         }
-        quiet={version}
+        quiet={version || staged}
         disabled={busy || (unknown && !staged)}
         onStage={() => review.toggleStaged(group.key)}
         menuLabel={t(version ? 'musicReview.different' : 'musicReview.ignore')}

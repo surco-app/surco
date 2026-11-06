@@ -8,11 +8,11 @@ import ptBR from './locales/pt-BR.json'
 
 const BATCH_WORD = {
   de: [de, 'merk'],
-  en: [en, 'batch'],
-  es: [es, 'tanda'],
-  fr: [fr, 'lot'],
-  ja: [ja, 'バッチ'],
-  'pt-BR': [ptBR, 'lote'],
+  en: [en, 'apply'],
+  es: [es, 'aplicar'],
+  fr: [fr, 'appliquer'],
+  ja: [ja, '適用待ち'],
+  'pt-BR': [ptBR, 'aplicar'],
 } as const
 
 // English said "Stage 2 proposals" and "Unstage" beside "in the batch", and a DJ read

@@ -17,7 +17,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { isWritable, type LibraryProgram } from '../../../shared/djProgram'
 import { KEEPS_REPLACED } from '../../../shared/keepsReplaced'
-import type { DamageFinding, DamageOutcome, ListMusicStep } from '../../../shared/types'
+import type { DamageFinding, DamageNote, DamageOutcome, ListMusicStep } from '../../../shared/types'
 import {
   type DuplicateCard,
   type IncompleteCard,
@@ -34,7 +34,13 @@ import { INVISIBLE } from '../lib/musicSpelling'
 import { LIBRARY_NAME, TAG_LIBRARIES } from '../lib/reviewLibraries'
 import { REVIEW_COPY } from '../lib/reviewSource'
 import { DIALOG_BUTTON, DIALOG_CANCEL, DIALOG_OK, DIALOG_PANEL } from './ConfirmDialog'
-import { DamageCertainty, damageKindLabel, damageTitle } from './DamageDetail'
+import {
+  DamageCertainty,
+  damageAfter,
+  damageKindLabel,
+  damageNote,
+  damageTitle,
+} from './DamageDetail'
 import { FilterBar, FilterOption } from './FilterBar'
 import {
   CoverPlaceholder,
@@ -111,9 +117,10 @@ function Confirm({
   busy: boolean
   onCancel: () => void
 }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const copy = REVIEW_COPY[review.kind]
   const { tracks, byField, duplicates } = review.summary
+  const note = (n: DamageNote) => damageNote(t, i18n.language, n)
   const damage = Object.entries(review.summary.damage).reduce<Record<string, number>>(
     (out, [kind, n]) => {
       const label = damageKindLabel(kind as DamageFinding['kind'])
@@ -166,6 +173,44 @@ function Confirm({
           </div>
         ))}
       </dl>
+      <ul
+        data-testid="music-review-confirm-changes"
+        className="grid max-h-48 gap-1 overflow-y-auto text-xs text-fg-dim"
+      >
+        {review.planned.fixes.map((fix) => (
+          <li key={`${fix.id}\0${fix.field}`} data-testid="music-review-confirm-change">
+            <span className="font-medium text-fg">{fix.title}</span>
+            {' · '}
+            {t(`musicReview.field.${fix.field}`)}
+            {' · '}
+            {fix.from && `${fix.from} → `}
+            <span className="text-fg">{fix.to}</span>
+          </li>
+        ))}
+        {review.planned.removals.map((r) => (
+          <li key={r.removeId} data-testid="music-review-confirm-change">
+            {t('musicReview.confirm.changeRemove', { label: r.label, keep: r.keepLabel })}
+          </li>
+        ))}
+        {review.planned.repairs.map((f) => {
+          const after = damageAfter(f, review.choice(damageKey(f)), note)
+          return (
+            <li key={f.id} data-testid="music-review-confirm-change">
+              <span className="font-medium text-fg">{damageTitle(review, f.path)}</span>
+              {' · '}
+              {t(`damage.kind.${damageKindLabel(f.kind)}`)}
+              {' · '}
+              {note(f.before)}
+              {after && (
+                <>
+                  {' → '}
+                  <span className="text-fg">{after}</span>
+                </>
+              )}
+            </li>
+          )
+        })}
+      </ul>
       {duplicates > 0 && (
         <p className="text-xs text-fg-dim">
           {t(noMusic ? 'listReview.confirm.playlistsNoMusic' : copy.confirmPlaylists)}.{' '}
@@ -739,8 +784,8 @@ function Done({
 }
 
 const FILTERS: Record<Review['kind'], ReviewFilter[]> = {
-  music: ['all', 'spelling', 'duplicates', 'incomplete'],
-  list: ['all', 'spelling', 'duplicates', 'damage', 'incomplete'],
+  music: ['all', 'spelling', 'duplicates', 'incomplete', 'staged'],
+  list: ['all', 'spelling', 'duplicates', 'damage', 'incomplete', 'staged'],
 }
 const FILTER_ICONS: Record<ReviewFilter, LucideIcon> = {
   all: List,
@@ -748,6 +793,7 @@ const FILTER_ICONS: Record<ReviewFilter, LucideIcon> = {
   duplicates: CopyIcon,
   damage: ShieldAlert,
   incomplete: CircleDashed,
+  staged: ListChecks,
 }
 
 export type ReviewSort = 'default' | 'tracks' | 'name'
@@ -774,24 +820,26 @@ export function visibleGroups(
 } {
   const query = fold(search.trim())
   const hit = (texts: string[]) => !query || texts.some((text) => fold(text).includes(query))
-  const spelling =
-    review.filter === 'duplicates' || review.filter === 'damage' || review.filter === 'incomplete'
-      ? []
-      : review.spelling.filter((g) => hit([nameOf(review, g), ...g.variants.map((v) => v.value)]))
-  const duplicates =
-    review.filter === 'spelling' || review.filter === 'damage' || review.filter === 'incomplete'
-      ? []
-      : review.duplicates.filter((c) =>
-          hit(c.entries.flatMap((e) => [e.artist, e.title, e.album ?? ''])),
-        )
-  const damage =
-    review.filter === 'all' || review.filter === 'damage'
-      ? review.damage.filter((f) => hit([damageTitle(review, f.path), f.path]))
-      : []
-  const incomplete =
-    review.filter === 'all' || review.filter === 'incomplete'
-      ? review.incomplete.filter((f) => hit([f.name]))
-      : []
+  const on = (kind: ReviewFilter) =>
+    review.filter === 'all' || review.filter === 'staged' || review.filter === kind
+  const kept = (key: string) => review.filter !== 'staged' || review.staged.has(key)
+  const spelling = on('spelling')
+    ? review.spelling.filter(
+        (g) => kept(g.key) && hit([nameOf(review, g), ...g.variants.map((v) => v.value)]),
+      )
+    : []
+  const duplicates = on('duplicates')
+    ? review.duplicates.filter(
+        (c) =>
+          kept(c.group.key) && hit(c.entries.flatMap((e) => [e.artist, e.title, e.album ?? ''])),
+      )
+    : []
+  const damage = on('damage')
+    ? review.damage.filter((f) => kept(damageKey(f)) && hit([damageTitle(review, f.path), f.path]))
+    : []
+  const incomplete = on('incomplete')
+    ? review.incomplete.filter((f) => kept(incompleteKey(f.id)) && hit([f.name]))
+    : []
   if (sort === 'name')
     return {
       spelling: [...spelling].sort((a, b) => nameOf(review, a).localeCompare(nameOf(review, b))),
@@ -1072,6 +1120,12 @@ export function MusicReview({
     duplicates: review.duplicates.length,
     damage: review.damage.length,
     incomplete: review.incomplete.length,
+    staged: [
+      ...review.spelling.map((g) => g.key),
+      ...review.duplicates.map((c) => c.group.key),
+      ...review.damage.map(damageKey),
+      ...review.incomplete.map((f) => incompleteKey(f.id)),
+    ].filter((key) => review.staged.has(key)).length,
   }
   const keys = visibleKeys(visible)
   const at = selectedKey === null ? -1 : keys.indexOf(selectedKey)

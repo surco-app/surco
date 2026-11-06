@@ -2510,7 +2510,8 @@
       "spelling": "スペル",
       "duplicates": "重複",
       "damage": "破損",
-      "incomplete": "不完全"
+      "incomplete": "不完全",
+      "staged": "適用待ち"
     },
     "copyTitle": "タイトルをコピー",
     "field": {
@@ -2531,7 +2532,7 @@
       "version": "別バージョン"
     },
     "tie": "結びついています。保持するものを選んでください。",
-    "staged": "バッチから外す",
+    "staged": "✓ 適用待ち · 取り消す",
     "ignore": "無視",
     "ignored": "確認から非表示",
     "notSame": "同じではありません",
@@ -2552,7 +2553,8 @@
       "backup": "すべてのファイルのコピーが「バックアップ」に保持されます",
       "cancel": "キャンセル",
       "apply": "適用",
-      "libraryMissing": "{{library}} はコレクションが見つからなかったため更新されません"
+      "libraryMissing": "{{library}} はコレクションが見つからなかったため更新されません",
+      "changeRemove": "「{{label}}」を削除し、「{{keep}}」を残す"
     },
     "stop": "停止",
     "done": {
@@ -2648,7 +2650,7 @@
     "error": "Apple Music ライブラリを読み込めませんでした。",
     "loading": "ライブラリを読み取り中…",
     "bothArtists": "アーティストとアルバムアーティスト",
-    "inTray": "バッチ内で",
+    "inTray": "適用待ち",
     "detail": {
       "options": "現状と最終的な結果",
       "marks": "· は非表示文字で、␣ は余分なスペースです",
@@ -2715,8 +2717,8 @@
         "typed": "手入力",
         "editor": "エディタで"
       },
-      "stageAll_one": "{{count}}件の提案をバッチに追加",
-      "stageAll_other": "{{count}}件の提案をバッチに追加",
+      "stageAll_one": "{{count}}件の提案を適用待ちにする",
+      "stageAll_other": "{{count}}件の提案を適用待ちにする",
       "stage": "入力する",
       "empty": "空",
       "useForOthers_one": "ほかの{{count}}件にも使う",

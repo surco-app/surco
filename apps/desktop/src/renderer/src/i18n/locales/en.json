@@ -2510,7 +2510,8 @@
       "spelling": "Spellings",
       "duplicates": "Duplicates",
       "damage": "Damage",
-      "incomplete": "Incomplete"
+      "incomplete": "Incomplete",
+      "staged": "To apply"
     },
     "copyTitle": "Copy title",
     "field": {
@@ -2531,7 +2532,7 @@
       "version": "another version"
     },
     "tie": "Tied. Pick the one to keep.",
-    "staged": "Remove from the batch",
+    "staged": "✓ To apply · Discard",
     "ignore": "Ignore",
     "ignored": "Hidden from the review",
     "notSame": "Not the same",
@@ -2552,7 +2553,8 @@
       "backup": "A copy of every file is kept in Backups.",
       "cancel": "Cancel",
       "apply": "Apply",
-      "libraryMissing": "{{library}} will not be updated because its collection was not found."
+      "libraryMissing": "{{library}} will not be updated because its collection was not found.",
+      "changeRemove": "Removes “{{label}}” and keeps “{{keep}}”"
     },
     "stop": "Stop",
     "done": {
@@ -2648,7 +2650,7 @@
     "error": "Couldn't read your Apple Music library.",
     "loading": "Reading the library…",
     "bothArtists": "Artist and album artist",
-    "inTray": "in the batch",
+    "inTray": "to apply",
     "detail": {
       "options": "How it is and how it ends up",
       "marks": "· is an invisible character and ␣ a space too many",
@@ -2715,8 +2717,8 @@
         "typed": "Filled in by hand",
         "editor": "In the editor"
       },
-      "stageAll_one": "Add {{count}} proposal to the batch",
-      "stageAll_other": "Add {{count}} proposals to the batch",
+      "stageAll_one": "Mark {{count}} proposal to apply",
+      "stageAll_other": "Mark {{count}} proposals to apply",
       "stage": "Fill in",
       "empty": "Empty",
       "useForOthers_one": "Use on the other one",

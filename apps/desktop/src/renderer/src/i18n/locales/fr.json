@@ -2510,7 +2510,8 @@
       "spelling": "Graphies",
       "duplicates": "Doublons",
       "damage": "Dégâts",
-      "incomplete": "Incomplètes"
+      "incomplete": "Incomplètes",
+      "staged": "À appliquer"
     },
     "copyTitle": "Copier le titre",
     "field": {
@@ -2531,7 +2532,7 @@
       "version": "autre version"
     },
     "tie": "Égalité. Choisis laquelle garder.",
-    "staged": "Retirer du lot",
+    "staged": "✓ À appliquer · Écarter",
     "ignore": "Ignorer",
     "ignored": "Masqué de la révision",
     "notSame": "Pas le même",
@@ -2552,7 +2553,8 @@
       "backup": "Une copie de chaque fichier est conservée dans les Sauvegardes.",
       "cancel": "Annuler",
       "apply": "Appliquer",
-      "libraryMissing": "{{library}} ne sera pas mis à jour car sa collection est introuvable."
+      "libraryMissing": "{{library}} ne sera pas mis à jour car sa collection est introuvable.",
+      "changeRemove": "Retire « {{label}} » et garde « {{keep}} »"
     },
     "stop": "Arrêter",
     "done": {
@@ -2648,7 +2650,7 @@
     "error": "Impossible de lire la bibliothèque Apple Music.",
     "loading": "Lecture de la bibliothèque…",
     "bothArtists": "Artiste et artiste de l'album",
-    "inTray": "dans le lot",
+    "inTray": "à appliquer",
     "detail": {
       "options": "Comme c'est et comme ça reste",
       "marks": "· est un caractère invisible et ␣ un espace en trop",
@@ -2715,8 +2717,8 @@
         "typed": "Saisi à la main",
         "editor": "Dans l’éditeur"
       },
-      "stageAll_one": "Ajouter {{count}} proposition au lot",
-      "stageAll_other": "Ajouter {{count}} propositions au lot",
+      "stageAll_one": "Mettre {{count}} proposition à appliquer",
+      "stageAll_other": "Mettre {{count}} propositions à appliquer",
       "stage": "Compléter",
       "empty": "Vide",
       "useForOthers_one": "Utiliser pour l’autre",

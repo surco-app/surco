@@ -2510,7 +2510,8 @@
       "spelling": "Grafías",
       "duplicates": "Duplicados",
       "damage": "Daños",
-      "incomplete": "Incompletas"
+      "incomplete": "Incompletas",
+      "staged": "Por aplicar"
     },
     "copyTitle": "Copiar título",
     "field": {
@@ -2531,7 +2532,7 @@
       "version": "otra versión"
     },
     "tie": "Empate. Elige cuál se queda.",
-    "staged": "Quitar de la tanda",
+    "staged": "✓ Por aplicar · Descartar",
     "ignore": "Ignorar",
     "ignored": "Oculto de la revisión",
     "notSame": "No es el mismo",
@@ -2552,7 +2553,8 @@
       "backup": "Se guarda una copia de cada fichero en Copias.",
       "cancel": "Cancelar",
       "apply": "Aplicar",
-      "libraryMissing": "{{library}} no se actualizará porque no se encuentra su colección."
+      "libraryMissing": "{{library}} no se actualizará porque no se encuentra su colección.",
+      "changeRemove": "Quita «{{label}}» y se queda «{{keep}}»"
     },
     "stop": "Detener",
     "done": {
@@ -2648,7 +2650,7 @@
     "error": "No se pudo leer la biblioteca de Apple Music.",
     "loading": "Leyendo la biblioteca…",
     "bothArtists": "Artista y artista del álbum",
-    "inTray": "en la tanda",
+    "inTray": "por aplicar",
     "detail": {
       "options": "Cómo está y cómo queda",
       "marks": "· es un carácter invisible y ␣ un espacio de más",
@@ -2715,8 +2717,8 @@
         "typed": "Escrito a mano",
         "editor": "En el editor"
       },
-      "stageAll_one": "Meter {{count}} propuesta en la tanda",
-      "stageAll_other": "Meter {{count}} propuestas en la tanda",
+      "stageAll_one": "Dejar {{count}} propuesta por aplicar",
+      "stageAll_other": "Dejar {{count}} propuestas por aplicar",
       "stage": "Completar",
       "empty": "Vacío",
       "useForOthers_one": "Usar en la otra",

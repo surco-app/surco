@@ -37,6 +37,15 @@ export function damageNote(t: TFunction, lang: string, note: DamageNote): string
   return t(note.key, params)
 }
 
+export const damageAfter = (
+  finding: DamageFinding,
+  chosen: string | null,
+  note: (n: DamageNote) => string,
+): string | undefined =>
+  finding.repair?.target === 'genre'
+    ? (chosen ?? finding.options[0])
+    : finding.after && note(finding.after)
+
 export const damageTitle = (review: Review, path: string): string =>
   review.facts(path)?.meta.title || path.split('/').pop() || path
 
@@ -72,10 +81,7 @@ export function DamageDetail({ finding, review }: { finding: DamageFinding; revi
   const staged = review.staged.has(key)
   const chosen = review.choice(key)
   const note = (n: DamageNote) => damageNote(t, i18n.language, n)
-  const after =
-    finding.repair?.target === 'genre'
-      ? (chosen ?? finding.options[0])
-      : finding.after && note(finding.after)
+  const after = damageAfter(finding, chosen, note)
   return (
     <>
       <div data-testid="damage-detail" className="min-h-0 flex-1 overflow-y-auto p-7">
@@ -145,6 +151,7 @@ export function DamageDetail({ finding, review }: { finding: DamageFinding; revi
         <GroupFooter
           testid="damage-stage"
           label={staged ? t('musicReview.staged') : t('damage.repair')}
+          quiet={staged}
           disabled={busy}
           onStage={() => review.toggleStaged(key)}
           menuLabel={t('musicReview.ignore')}

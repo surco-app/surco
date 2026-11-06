@@ -47,7 +47,7 @@ import { useToast } from '../lib/toastContext'
 import type { TrackItem } from '../types'
 import { useLatest } from './useLatest'
 
-export type ReviewFilter = 'all' | 'spelling' | 'duplicates' | 'damage' | 'incomplete'
+export type ReviewFilter = 'all' | 'spelling' | 'duplicates' | 'damage' | 'incomplete' | 'staged'
 
 export type IncompleteCard = IncompleteFinding & { name: string }
 
@@ -122,6 +122,11 @@ export interface MusicReview {
     byField: ReturnType<typeof summarizeFixes>['byField']
     duplicates: number
     damage: Partial<Record<DamageKind, number>>
+  }
+  planned: {
+    fixes: (ReviewFix & { title: string })[]
+    removals: ReviewRemoval[]
+    repairs: DamageFinding[]
   }
   progress: { done: number; total: number } | null
   phase: ReviewPhase | null
@@ -654,6 +659,15 @@ export function useMusicReview({
     [fixes, removals, repairs],
   )
 
+  const planned = useMemo(() => {
+    const repairing = new Set(repairs.map((r) => r.id))
+    return {
+      fixes: fixes.map((fix) => ({ ...fix, title: byId.get(fix.id)?.title ?? '' })),
+      removals,
+      repairs: damage.filter((f) => repairing.has(f.id)),
+    }
+  }, [fixes, removals, repairs, damage, byId])
+
   const fill = useCallback(async (total: number) => {
     setProgress({ done: total, total })
     setPhase(null)
@@ -927,6 +941,7 @@ export function useMusicReview({
       toggleStaged,
       ignore,
       summary,
+      planned,
       progress,
       phase,
       undoing,
@@ -962,6 +977,7 @@ export function useMusicReview({
       toggleStaged,
       ignore,
       summary,
+      planned,
       progress,
       phase,
       undoing,
