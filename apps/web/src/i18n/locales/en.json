@@ -671,7 +671,7 @@
           },
           {
             "lead": "Filter.",
-            "text": "The filters up top (“Doubtful”, “Unconverted”, “Duplicates”, “Silence to trim”…) only appear when there are tracks to justify them. Whatever you do next acts only on what you see."
+            "text": "The filters up top (“Doubtful”, “Unconverted”, “Duplicates”, “Silence to trim”…) stay dimmed when no track fits them, and each one tells you how many you will see. Whatever you do next acts only on what you see."
           },
           {
             "lead": "Select.",

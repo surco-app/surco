@@ -671,7 +671,7 @@
           },
           {
             "lead": "Filtere.",
-            "text": "Die Filter oben („Zweifelhaft“, „Nicht konvertiert“, „Duplikate“, „Stille zum Kürzen“…) erscheinen nur, wenn es Tracks dafür gibt. Was du danach machst, wirkt nur auf das, was du siehst."
+            "text": "Die Filter oben („Zweifelhaft“, „Nicht konvertiert“, „Duplikate“, „Stille zum Kürzen“…) bleiben abgeblendet, wenn kein Track passt, und jeder zeigt, wie viele du sehen wirst. Was du danach machst, wirkt nur auf das, was du siehst."
           },
           {
             "lead": "Wähle aus.",

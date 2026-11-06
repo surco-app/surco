@@ -671,7 +671,7 @@
           },
           {
             "lead": "Filtra.",
-            "text": "Los filtros de arriba («Dudosas», «Sin convertir», «Duplicadas», «Silencio por recortar»…) salen solo cuando hay pistas que los justifiquen. Lo que hagas después actúa solo sobre lo que ves."
+            "text": "Los filtros de arriba («Dudosas», «Sin convertir», «Duplicadas», «Silencio por recortar»…) se quedan apagados cuando ninguna pista los cumple, y cada uno dice cuántas verás. Lo que hagas después actúa solo sobre lo que ves."
           },
           {
             "lead": "Selecciona.",

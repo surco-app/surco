@@ -671,7 +671,7 @@
           },
           {
             "lead": "Filtre.",
-            "text": "Les filtres du haut (« Douteux », « Non convertis », « Doublons », « Silence à rogner »…) n'apparaissent que s'il y a des morceaux pour les justifier. Ce que tu fais ensuite ne touche que ce que tu vois."
+            "text": "Les filtres du haut (« Douteux », « Non convertis », « Doublons », « Silence à rogner »…) restent grisés quand aucun morceau n'y correspond, et chacun dit combien tu en verras. Ce que tu fais ensuite ne touche que ce que tu vois."
           },
           {
             "lead": "Sélectionne.",

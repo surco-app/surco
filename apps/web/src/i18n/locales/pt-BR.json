@@ -671,7 +671,7 @@
           },
           {
             "lead": "Filtre.",
-            "text": "Os filtros de cima (“Duvidosas”, “Sem converter”, “Duplicadas”, “Silêncio a cortar”…) só aparecem quando há faixas que os justifiquem. O que você fizer depois age só sobre o que está à vista."
+            "text": "Os filtros de cima (“Duvidosas”, “Sem converter”, “Duplicadas”, “Silêncio a cortar”…) ficam apagados quando nenhuma faixa se encaixa, e cada um diz quantas você vai ver. O que você fizer depois age só sobre o que está à vista."
           },
           {
             "lead": "Selecione.",
