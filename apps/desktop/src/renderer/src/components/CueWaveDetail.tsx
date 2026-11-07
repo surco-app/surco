@@ -182,11 +182,14 @@ export function CueWaveDetail({
       if (!moved.current && drag.pick !== null) latest.current.onPlace?.(drag.pick)
       setDrag(null)
     }
+    const cancel = () => setDrag(null)
     window.addEventListener('mousemove', move)
     window.addEventListener('mouseup', up)
+    window.addEventListener('blur', cancel)
     return () => {
       window.removeEventListener('mousemove', move)
       window.removeEventListener('mouseup', up)
+      window.removeEventListener('blur', cancel)
     }
   }, [drag])
   const [markDrag, setMarkDrag] = useState<{
@@ -221,11 +224,24 @@ export function CueWaveDetail({
       setDragAt(null)
       setMarkDrag(null)
     }
+    const cancel = () => {
+      setDragAt(null)
+      setMarkDrag(null)
+    }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      e.stopImmediatePropagation()
+      cancel()
+    }
     window.addEventListener('mousemove', move)
     window.addEventListener('mouseup', up)
+    window.addEventListener('blur', cancel)
+    window.addEventListener('keydown', onKey, true)
     return () => {
       window.removeEventListener('mousemove', move)
       window.removeEventListener('mouseup', up)
+      window.removeEventListener('blur', cancel)
+      window.removeEventListener('keydown', onKey, true)
     }
   }, [markDrag])
   const grab = (key: string) =>

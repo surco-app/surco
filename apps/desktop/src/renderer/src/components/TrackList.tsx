@@ -35,6 +35,7 @@ import { isStale } from '../lib/dirty'
 import type { DuplicateRank } from '../lib/duplicateRanks'
 import { formatTime } from '../lib/duration'
 import type { GridNote } from '../lib/gridNote'
+import { coastDistance, releaseVelocity, type TrailPoint } from '../lib/momentum'
 import { prefersReducedMotion } from '../lib/motion'
 import { isMacOS } from '../lib/platform'
 import { moveBefore } from '../lib/playlistEdits'
@@ -447,6 +448,8 @@ const TrackRow = memo(function TrackRow({
   const [swipe, setSwipe] = useState(0)
   const [tracking, setTracking] = useState(false)
   const swipeRef = useRef(0)
+  const trailRef = useRef<TrailPoint[]>([])
+  const flingRef = useRef(0)
   const settleRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   useEffect(() => () => clearTimeout(settleRef.current), [])
   const [removing, setRemoving] = useState(false)
@@ -490,6 +493,9 @@ const TrackRow = memo(function TrackRow({
     if (removingRef.current || Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return
     setTracking(true)
     moveSwipe(Math.max(swipeRef.current + e.deltaX, 0))
+    const now = performance.now()
+    trailRef.current.push({ at: swipeRef.current, t: now })
+    flingRef.current = releaseVelocity(trailRef.current, now)
     clearTimeout(settleRef.current)
     if (swipeRef.current >= swipeBounds().removeAt) {
       setTracking(false)
@@ -498,7 +504,9 @@ const TrackRow = memo(function TrackRow({
     }
     settleRef.current = setTimeout(() => {
       setTracking(false)
-      moveSwipe(swipeRef.current < SWIPE_ACTION_PX / 2 ? 0 : SWIPE_ACTION_PX)
+      const heading = swipeRef.current + coastDistance(flingRef.current)
+      trailRef.current = []
+      moveSwipe(heading < SWIPE_ACTION_PX / 2 ? 0 : SWIPE_ACTION_PX)
     }, SWIPE_SETTLE_MS)
   }
   const closeSwipe = (): void => {

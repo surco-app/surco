@@ -366,6 +366,8 @@
     "undo": "元に戻す",
     "clearedMeta_one": "{{count}} トラックのメタデータを消去しました",
     "clearedMeta_other": "{{count}} トラックのメタデータを消去しました",
+    "updatedMeta_one": "{{count}} トラックのメタデータを更新しました",
+    "updatedMeta_other": "{{count}} トラックのメタデータを更新しました",
     "undoneMeta_one": "{{count}} トラックのメタデータを復元しました",
     "undoneMeta_other": "{{count}} トラックのメタデータを復元しました",
     "redoneMeta_one": "{{count}} トラックのメタデータ編集をやり直しました",

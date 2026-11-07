@@ -366,6 +366,8 @@
     "undo": "Rückgängig",
     "clearedMeta_one": "Metadaten in {{count}} Track gelöscht",
     "clearedMeta_other": "Metadaten in {{count}} Tracks gelöscht",
+    "updatedMeta_one": "Metadaten in {{count}} Track aktualisiert",
+    "updatedMeta_other": "Metadaten in {{count}} Tracks aktualisiert",
     "undoneMeta_one": "Metadaten in {{count}} Track wiederhergestellt",
     "undoneMeta_other": "Metadaten in {{count}} Tracks wiederhergestellt",
     "redoneMeta_one": "Metadaten-Änderung in {{count}} Track wiederholt",

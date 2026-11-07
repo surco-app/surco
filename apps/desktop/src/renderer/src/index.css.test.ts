@@ -689,3 +689,28 @@ describe('dropdown menu keyboard focus', () => {
     )
   })
 })
+
+describe('forced colors (Windows High Contrast)', () => {
+  function block(open: string): string {
+    const start = css.indexOf(open)
+    if (start === -1) return ''
+    let depth = 0
+    for (let i = css.indexOf('{', start); i < css.length; i++) {
+      if (css[i] === '{') depth++
+      if (css[i] === '}' && --depth === 0) return css.slice(start, i + 1)
+    }
+    return ''
+  }
+  const forced = block('@media (forced-colors: active)')
+
+  it('draws the keyboard focus as an outline, since forced colors strips every shadow', () => {
+    expect(forced).toMatch(/button:not\(:disabled\):focus-visible/)
+    expect(forced).toMatch(/input:focus-visible/)
+    expect(forced).toMatch(/outline:\s*2px solid Highlight/)
+  })
+
+  it('keeps the focused menu item and the selected row visible without a background', () => {
+    expect(forced).toMatch(/\[role="menu"\] \[role\^="menuitem"\]/)
+    expect(forced).toMatch(/\[data-selected\]|\[aria-selected="true"\]/)
+  })
+})

@@ -366,6 +366,8 @@
     "undo": "Desfazer",
     "clearedMeta_one": "Metadados apagados em {{count}} faixa",
     "clearedMeta_other": "Metadados apagados em {{count}} faixas",
+    "updatedMeta_one": "Metadados atualizados em {{count}} faixa",
+    "updatedMeta_other": "Metadados atualizados em {{count}} faixas",
     "undoneMeta_one": "Metadados restaurados em {{count}} faixa",
     "undoneMeta_other": "Metadados restaurados em {{count}} faixas",
     "redoneMeta_one": "Edição de metadados refeita em {{count}} faixa",

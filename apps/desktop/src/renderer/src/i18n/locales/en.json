@@ -366,6 +366,8 @@
     "undo": "Undo",
     "clearedMeta_one": "Metadata cleared on {{count}} track",
     "clearedMeta_other": "Metadata cleared on {{count}} tracks",
+    "updatedMeta_one": "Metadata updated on {{count}} track",
+    "updatedMeta_other": "Metadata updated on {{count}} tracks",
     "undoneMeta_one": "Metadata restored on {{count}} track",
     "undoneMeta_other": "Metadata restored on {{count}} tracks",
     "redoneMeta_one": "Metadata edit redone on {{count}} track",

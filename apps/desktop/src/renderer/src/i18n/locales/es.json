@@ -366,6 +366,8 @@
     "undo": "Deshacer",
     "clearedMeta_one": "Metadatos borrados en {{count}} pista",
     "clearedMeta_other": "Metadatos borrados en {{count}} pistas",
+    "updatedMeta_one": "Metadatos actualizados en {{count}} pista",
+    "updatedMeta_other": "Metadatos actualizados en {{count}} pistas",
     "undoneMeta_one": "Metadatos restaurados en {{count}} pista",
     "undoneMeta_other": "Metadatos restaurados en {{count}} pistas",
     "redoneMeta_one": "Edición de metadatos rehecha en {{count}} pista",

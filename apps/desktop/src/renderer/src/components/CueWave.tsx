@@ -131,9 +131,11 @@ export function CueWave({
     const up = () => setSeeking(false)
     window.addEventListener('mousemove', move)
     window.addEventListener('mouseup', up)
+    window.addEventListener('blur', up)
     return () => {
       window.removeEventListener('mousemove', move)
       window.removeEventListener('mouseup', up)
+      window.removeEventListener('blur', up)
     }
   }, [seeking, seekAt])
   const canvasRef = useRef<HTMLCanvasElement>(null)

@@ -7077,6 +7077,32 @@ describe('App metadata undo', () => {
     await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Imported Title'))
   })
 
+  // Find & Replace rewrites tags across the visible list and records an undo snapshot, but
+  // nothing on screen said so: ⌘Z worked for whoever knew it. Like the Eraser, the batch now
+  // names what it did and offers the way back.
+  it('offers an undo right after Find & Replace rewrites tags', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'Imported Title', artist: 'Artist' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await screen.findByText('Imported Title')
+
+    runMenu('find-replace')
+    fireEvent.change(await screen.findByTestId('find-replace-find'), {
+      target: { value: 'Imported' },
+    })
+    fireEvent.change(screen.getByTestId('find-replace-replace'), { target: { value: 'Changed' } })
+    fireEvent.click(screen.getByTestId('find-replace-apply'))
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Changed Title'))
+    expect(await screen.findByTestId('app-notice-message')).toHaveTextContent(
+      i18n.t('notices.updatedMeta', { count: 1 }),
+    )
+    fireEvent.click(screen.getByTestId('app-notice-action'))
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Imported Title'))
+  })
+
   // The ⌘K clear is the Eraser button's twin and has to clear the same things. It set
   // coverRemoved without dropping coverUrl, so the artwork stayed on screen: the clear
   // read as "it didn't touch the cover" while the conversion was already staged to wipe

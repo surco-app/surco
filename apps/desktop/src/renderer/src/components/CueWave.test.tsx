@@ -284,6 +284,15 @@ describe('CueWave', () => {
     expect(onSeek.mock.calls).toEqual([[40500], [40500], [41000]])
   })
 
+  it('stops following the pointer when the window loses focus mid-seek', () => {
+    const onSeek = vi.fn<(ms: number) => void>()
+    setup({ onSeek, playheadMs: 0 })
+    fireEvent.mouseDown(screen.getByTestId('cue-wave'), { button: 0, clientX: 403 })
+    fireEvent.blur(window)
+    fireEvent.mouseMove(window, { clientX: 612 })
+    expect(onSeek.mock.calls).toEqual([[40500]])
+  })
+
   it('draws no playhead when it is given none, as the Settings preview', () => {
     setup()
     expect(screen.queryByTestId('cue-wave-playhead')).toBeNull()
