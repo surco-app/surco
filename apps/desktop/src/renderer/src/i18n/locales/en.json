@@ -3031,7 +3031,8 @@
         "add": "add tracks",
         "move": "reorder",
         "remove": "remove tracks",
-        "insertSeparator": "add separator"
+        "insertSeparator": "add separator",
+        "moveNode": "move"
       },
       "cues": "cues",
       "tags": "tags"

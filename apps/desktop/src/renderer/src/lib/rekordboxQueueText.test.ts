@@ -103,6 +103,10 @@ describe('rekordbox queue text', () => {
     expect(partText(tr, { kind: 'tree', edit: 'rename' })).toBe('rename')
   })
 
+  it('names a node move in the queue pill', () => {
+    expect(partText(tr, { kind: 'tree', edit: 'moveNode' })).toBe('move')
+  })
+
   it('never lands in silence, naming what rekordbox kept in the same line as what landed', () => {
     expect(
       appliedMessage(tr, {

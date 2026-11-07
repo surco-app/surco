@@ -3031,7 +3031,8 @@
         "add": "ajouter des morceaux",
         "move": "réordonner",
         "remove": "retirer des morceaux",
-        "insertSeparator": "ajouter un séparateur"
+        "insertSeparator": "ajouter un séparateur",
+        "moveNode": "déplacer"
       },
       "cues": "cues",
       "tags": "tags"

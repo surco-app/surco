@@ -3031,7 +3031,8 @@
         "add": "Titel hinzufügen",
         "move": "umsortieren",
         "remove": "Titel entfernen",
-        "insertSeparator": "Trenner einfügen"
+        "insertSeparator": "Trenner einfügen",
+        "moveNode": "verschieben"
       },
       "cues": "Cues",
       "tags": "Tags"

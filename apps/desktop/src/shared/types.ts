@@ -1251,6 +1251,7 @@ export type RekordboxPlaylistEdit =
   | { kind: 'create'; parentId: string; name: string; folder: boolean }
   | { kind: 'rename'; playlistId: string; name: string }
   | { kind: 'delete'; playlistId: string }
+  | { kind: 'moveNode'; playlistId: string; parentId: string; beforeId: string | null }
 
 // Why an edit was not written. Every one leaves the collection exactly as it was.
 export type RekordboxEditRefusal =

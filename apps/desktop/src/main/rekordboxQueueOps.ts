@@ -83,6 +83,7 @@ const EDIT_RANK: Record<RekordboxPlaylistEdit['kind'], number> = {
   remove: 2,
   insertSeparator: 2,
   rename: 3,
+  moveNode: 3,
   delete: 5,
 }
 

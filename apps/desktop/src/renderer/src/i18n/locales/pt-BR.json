@@ -3031,7 +3031,8 @@
         "add": "adicionar faixas",
         "move": "reordenar",
         "remove": "tirar faixas",
-        "insertSeparator": "inserir separador"
+        "insertSeparator": "inserir separador",
+        "moveNode": "mover"
       },
       "cues": "cues",
       "tags": "tags"

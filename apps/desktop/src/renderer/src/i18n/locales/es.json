@@ -3031,7 +3031,8 @@
         "add": "añadir pistas",
         "move": "reordenar",
         "remove": "quitar pistas",
-        "insertSeparator": "poner separador"
+        "insertSeparator": "poner separador",
+        "moveNode": "mover"
       },
       "cues": "cues",
       "tags": "etiquetas"

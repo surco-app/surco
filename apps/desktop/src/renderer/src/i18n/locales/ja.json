@@ -3031,7 +3031,8 @@
         "add": "トラックを追加",
         "move": "並べ替え",
         "remove": "トラックを削除",
-        "insertSeparator": "区切りを追加"
+        "insertSeparator": "区切りを追加",
+        "moveNode": "移動"
       },
       "cues": "キュー",
       "tags": "タグ"
