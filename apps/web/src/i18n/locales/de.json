@@ -2489,7 +2489,18 @@
           "Dieses Rezept ändert nichts. Surco schaut nur hin."
         ],
         "keywords": "hi-res hires 96 khz 24 bit falsch gedehnt enhancer transcode",
-        "settings": [],
+        "settings": [
+          {
+            "tab": "Editor",
+            "setting": "Audioqualitätsanalyse",
+            "note": "Standardmäßig an. Damit wird das Spektrum jedes Tracks untersucht."
+          },
+          {
+            "tab": "Editor",
+            "setting": "Beim Import alles analysieren",
+            "note": "Standardmäßig an. Jeder Track wird analysiert, sobald er reinkommt, ohne dass du etwas anklickst."
+          }
+        ],
         "steps": [
           {
             "title": "Zieh den Ordner in Surco",
@@ -3319,7 +3330,21 @@
           "Traktor liest die Datei nicht neu ein. Es liest seine collection.nml, deshalb muss Surco wissen, wo sie liegt."
         ],
         "keywords": "traktor nml cues beatgrid raster sterne ranking aiff konvertieren",
-        "settings": [],
+        "settings": [
+          {
+            "tab": "DJ-Software",
+            "section": "Traktor-Sammlung",
+            "setting": "Traktor-Sammlung beim Konvertieren aktualisieren",
+            "value": "Aktualisieren",
+            "note": "Cues und Raster der konvertierten Tracks werden in deine Sammlung geschrieben. Ist Traktor geöffnet, wartet Surco, bis du es schließt."
+          },
+          {
+            "tab": "DJ-Software",
+            "section": "Traktor-Sammlung",
+            "setting": "collection.nml",
+            "note": "Wähle die Sammlung, die Traktor benutzt. Ist sie schon erkannt, musst du nichts anfassen."
+          }
+        ],
         "steps": [
           {
             "title": "Zeig auf deine Sammlung",

@@ -2489,7 +2489,18 @@
           "このレシピでは何も変更しません。Surco は見るだけです。"
         ],
         "keywords": "ハイレゾ hi-res 96 khz 24 ビット 偽 引き伸ばし エンハンサー トランスコード",
-        "settings": [],
+        "settings": [
+          {
+            "tab": "エディタ",
+            "setting": "オーディオ品質分析",
+            "note": "デフォルトでオンです。各トラックのスペクトラムを解析します。"
+          },
+          {
+            "tab": "エディタ",
+            "setting": "インポート時にすべて分析",
+            "note": "デフォルトでオンです。読み込まれたトラックを、何もクリックしなくてもすぐに分析します。"
+          }
+        ],
         "steps": [
           {
             "title": "フォルダを Surco にドラッグする",
@@ -3319,7 +3330,21 @@
           "Traktor はファイルを読み直さず collection.nml を読むので、Surco にその場所を教える必要があります。"
         ],
         "keywords": "traktor nml キュー ビートグリッド グリッド 星 ランキング aiff 変換",
-        "settings": [],
+        "settings": [
+          {
+            "tab": "DJソフト",
+            "section": "Traktor コレクション",
+            "setting": "変換時に Traktor コレクションを更新",
+            "value": "更新",
+            "note": "変換したトラックのキューとグリッドがコレクションに書き込まれます。Traktor が開いている間は、閉じるまで Surco が待ちます。"
+          },
+          {
+            "tab": "DJソフト",
+            "section": "Traktor コレクション",
+            "setting": "collection.nml",
+            "note": "Traktor が使っているコレクションを指定します。すでに検出されていれば、何も触る必要はありません。"
+          }
+        ],
         "steps": [
           {
             "title": "コレクションを指定する",

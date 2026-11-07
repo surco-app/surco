@@ -2489,7 +2489,18 @@
           "Esta receta no cambia nada. Surco solo mira."
         ],
         "keywords": "hi-res hires 96 khz 24 bits falso estirado enhancer transcodificacion",
-        "settings": [],
+        "settings": [
+          {
+            "tab": "Editor",
+            "setting": "Análisis de calidad de audio",
+            "note": "Viene activado. Es el que mira el espectro de cada pista."
+          },
+          {
+            "tab": "Editor",
+            "setting": "Analizar todo al importar",
+            "note": "Viene activado. Analiza cada pista nada más entrar, sin que pulses nada."
+          }
+        ],
         "steps": [
           {
             "title": "Arrastra la carpeta a Surco",
@@ -3319,7 +3330,21 @@
           "Traktor no relee el archivo. Lee su collection.nml, así que Surco necesita saber dónde está."
         ],
         "keywords": "traktor nml cues beatgrid rejilla estrellas ranking aiff convertir",
-        "settings": [],
+        "settings": [
+          {
+            "tab": "Programas de DJ",
+            "section": "Colección de Traktor",
+            "setting": "Actualizar la colección de Traktor al convertir",
+            "value": "Actualizar",
+            "note": "Los cues y la rejilla de las pistas convertidas se escriben en tu colección. Con Traktor abierto, Surco espera a que lo cierres."
+          },
+          {
+            "tab": "Programas de DJ",
+            "section": "Colección de Traktor",
+            "setting": "collection.nml",
+            "note": "Señala la colección que Traktor usa. Si ya está detectada, no tienes que tocar nada."
+          }
+        ],
         "steps": [
           {
             "title": "Señala tu colección",
