@@ -6,12 +6,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ALL_TRACKS_ID } from '../../../shared/allTracks'
 import { RECENTLY_ADDED_ID } from '../../../shared/recentlyAdded'
 import type { PlaylistSource, SourceNode } from '../../../shared/types'
-import { markOwnRemovals } from '../lib/ownRemovals'
+import { markOwnRemovals, takeOwnRemoval } from '../lib/ownRemovals'
 import { useRekordboxMembership } from './useRekordboxPlaylists'
 import { useSourceBrowser } from './useSourceBrowser'
 
 afterEach(cleanup)
 afterEach(() => vi.unstubAllEnvs())
+afterEach(() => takeOwnRemoval('house'))
 
 function setup(
   api: Record<string, unknown>,

@@ -228,7 +228,7 @@ export function useSourceBrowser({
   // A playlist deleted in rekordbox while it was open: once the re-read tree no longer
   // holds it, the list goes back to the tree instead of showing rows of a playlist that is
   // gone. The tree stays open where it was, which is the "back to the folder" of the spec,
-  // and the caller is told which playlist went, so the jump back has a reason. A failed
+  // and the caller is told which playlist went, unless Surco itself removed it. A failed
   // re-read keeps the tree it had, so it never reads as a deletion.
   useEffect(() => {
     if (!playlist || !source || !shownTree || containsNode(shownTree, playlist.id)) return
