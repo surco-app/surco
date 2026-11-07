@@ -16,6 +16,7 @@ const ARTIST_CUTS = /,|&| and | x |\//
 const ARTICLES = new Set(['a', 'the', 'el', 'la', 'los', 'las'])
 const DICE_MIN = 0.6
 const TYPO_SHARE = 0.2
+const ARTIST_TYPO_MIN = 6
 
 function fold(text: string): string {
   return foldText(text.replace(/[’‘`´']/g, ''))
@@ -38,8 +39,15 @@ function startsWord(whole: string, part: string): boolean {
   return ` ${whole} `.includes(` ${part} `) || ` ${whole} `.includes(` ${part}s `)
 }
 
+function sameArtist(x: string, y: string): boolean {
+  if (startsWord(x, y) || startsWord(y, x)) return true
+  const a = x.replace(/ /g, '')
+  const b = y.replace(/ /g, '')
+  return a === b || (Math.min(a.length, b.length) >= ARTIST_TYPO_MIN && levenshtein(a, b) <= 1)
+}
+
 function overlap(a: string[], b: string[]): boolean {
-  return a.some((x) => b.some((y) => startsWord(x, y) || startsWord(y, x)))
+  return a.some((x) => b.some((y) => sameArtist(x, y)))
 }
 
 function tokens(base: string): Set<string> {
@@ -124,9 +132,14 @@ function matchLine(line: TracklistLine, indexed: Indexed[]): TracklistMatch {
   const exact = byArtist.filter((c) => c.full === full)
   if (exact.length === 1 && !line.suggested)
     return { line, level: 'found', candidates: [exact[0].track] }
+  const bracketed = [...line.title.matchAll(/[([]([^)\]]*)[)\]]/g)].map((m) => fold(m[1]))
   const doubtful = byArtist.filter(
     (c) =>
-      c.full === full || c.base === base || dice(words, c.words) >= DICE_MIN || typo(base, c.base),
+      c.full === full ||
+      c.base === base ||
+      bracketed.includes(c.base) ||
+      dice(words, c.words) >= DICE_MIN ||
+      typo(base, c.base),
   )
   if (doubtful.length) return { line, level: 'doubtful', candidates: sorted(doubtful) }
 
@@ -135,6 +148,8 @@ function matchLine(line: TracklistLine, indexed: Indexed[]): TracklistMatch {
   if (!named) {
     const ofArtist = indexed.filter((c) => c.artists.includes(full))
     if (ofArtist.length === 1) return { line, level: 'similar', candidates: [ofArtist[0].track] }
+    const joined = indexed.filter((c) => c.artists.some((a) => `${a} ${c.base}` === full))
+    if (joined.length) return { line, level: 'similar', candidates: sorted(joined) }
   }
   return { line, level: 'absent', candidates: [] }
 }

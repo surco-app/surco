@@ -105,3 +105,61 @@ describe('parseTracklist', () => {
     expect(parsed.gaps).toBe(2)
   })
 })
+
+describe('parseTracklist on a hand-written YouTube description', () => {
+  it('ignores untimed lines once the paste has timed ones, so the video title is not a track', () => {
+    const parsed = parseTracklist(
+      'Ismael Lora - Sesión en directo #QuédateEnCasa 4.0\n- 00:00 Tukan - Light a rainbow',
+    )
+    expect(parsed.lines.map((l) => l.artist)).toEqual(['Tukan'])
+    expect(parsed.ignored).toBe(1)
+  })
+
+  it('reads a timed line in lowercase without separator as a gap, the way the DJ marks an unknown', () => {
+    const parsed = parseTracklist(
+      '- 28:25 base?\n- 44:20 cantadita?\n- 1:18:40 base la tengo\n- 47:15 ',
+    )
+    expect(parsed.lines).toEqual([])
+    expect(parsed.gaps).toBe(4)
+  })
+
+  it('keeps a title-only line that is written like a title', () => {
+    expect(one('- 13:55 E.X.E.L Wonderland').title).toBe('E.X.E.L Wonderland')
+    expect(one('- 09:00 The day will come').title).toBe('The day will come')
+  })
+
+  it('drops the notes the DJ writes after the track', () => {
+    expect(one('- 1:36:40 Sunniva - Feelings =< PAra la fiesta?').title).toBe('Feelings')
+    expect(one('- 1:11:00 DJ Frank – The Inside <<== FIESTA FIJO').title).toBe('The Inside')
+    expect(one("- 1:15:30 Di Carlo - Damn (I'm Fucking Mix)  <== FIESTA FIJO").title).toBe(
+      "Damn (I'm Fucking Mix)",
+    )
+    expect(one('- 2:05:24 Dj Marta - Stranger in My House CANTADO BRUTAL').title).toBe(
+      'Stranger in My House',
+    )
+    expect(one('- 50:29 Mindwalkers – The Future DESCARGAR + COMPRAR').title).toBe('The Future')
+    expect(one('- 40:45 Luis Junior - Right (You Understand) DESCARGAR').title).toBe(
+      'Right (You Understand)',
+    )
+    expect(
+      one(
+        '- 29:20 Justin Bourne - My House (Paul Glazby Remix) - https://www.toolboxdigitalshop.com/x',
+      ).title,
+    ).toBe('My House (Paul Glazby Remix)')
+  })
+
+  it('keeps an all-caps title whole', () => {
+    expect(one('- 59:10 SILENZI - EMPTY HOUSES').title).toBe('EMPTY HOUSES')
+  })
+
+  it('splits on a dash glued to the artist when the line has no spaced one', () => {
+    expect(one('- 1:02:43 Kadoc- The Nighttrain (Original)')).toMatchObject({
+      artist: 'Kadoc',
+      title: 'The Nighttrain (Original)',
+    })
+    expect(one('- 47:55 Itty Bitty, DJ BoozyWoozy- Tempo Fiesta (Roll Fiesta Mix)').artist).toBe(
+      'Itty Bitty, DJ BoozyWoozy',
+    )
+    expect(one('- 1:01:22 DJ Temple - Pinkert-on').title).toBe('Pinkert-on')
+  })
+})
