@@ -1677,6 +1677,7 @@ export default function App(): React.JSX.Element {
     (patches: { id: string; meta: Partial<TrackMetadata> }[]) => {
       recordMetaUndo(patches.map((p) => p.id))
       deriveTracks(patches)
+      toastReporter.reportUndo(tr('notices.updatedMeta', { count: patches.length }), undoMeta)
     },
   )
 

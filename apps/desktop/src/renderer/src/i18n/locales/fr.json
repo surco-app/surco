@@ -366,6 +366,8 @@
     "undo": "Annuler",
     "clearedMeta_one": "Métadonnées effacées sur {{count}} morceau",
     "clearedMeta_other": "Métadonnées effacées sur {{count}} morceaux",
+    "updatedMeta_one": "Métadonnées mises à jour sur {{count}} morceau",
+    "updatedMeta_other": "Métadonnées mises à jour sur {{count}} morceaux",
     "undoneMeta_one": "Métadonnées restaurées sur {{count}} morceau",
     "undoneMeta_other": "Métadonnées restaurées sur {{count}} morceaux",
     "redoneMeta_one": "Modification de métadonnées rétablie sur {{count}} morceau",
