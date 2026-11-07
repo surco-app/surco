@@ -3498,6 +3498,7 @@ export default function App(): React.JSX.Element {
                   onActivity={onToggleActivity}
                   activityRunning={activityRunning}
                   onSettings={onOpenSettings}
+                  onHelp={overlays.openHelp}
                   primary={reviewAction}
                   usbPill={usbPill}
                   queuePill={queuePill}
