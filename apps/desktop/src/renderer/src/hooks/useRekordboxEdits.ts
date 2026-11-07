@@ -14,8 +14,9 @@ import { SOURCE_PROGRAMS } from '../lib/sourcePrograms'
 
 // Sends one edit to rekordbox and then re-reads what rekordbox holds: the collection is the
 // only truth, so the tree, the open playlist and the separator check are fetched again
-// whatever the answer. Only a move is drawn before the answer (the dragged row must not
-// snap back during the write); the re-read corrects it if the write was refused.
+// whatever the answer. A move and the tree edits (create, rename, delete, moveNode) are drawn
+// before the answer (the dragged row must not snap back during the write); the re-read
+// corrects them if the write was refused.
 export function useRekordboxEdits(
   notify: (text: string, tone: 'neutral' | 'danger') => void,
   source: DjProgram = 'rekordbox',
