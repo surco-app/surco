@@ -1255,6 +1255,27 @@ describe('SourceTree dropping nodes', () => {
     expect(bases).toHaveAttribute('aria-expanded', 'true')
   })
 
+  it('draws the line after a folder from its lower quarter, and moves before its next sibling on drop', () => {
+    const { edit } = setup(null, true)
+    const dt = dragNode('house')
+    const cant = screen.getByTestId('source-node-cant')
+    over(cant, 26, dt)
+    expect(screen.getByTestId('source-tree-drop-line')).toBeInTheDocument()
+    expect(cant).not.toHaveAttribute('data-drop-target')
+    fireEvent.drop(cant, { dataTransfer: dt })
+    expect(edit.onMove).toHaveBeenCalledWith(NODES[2], 'root', 'bases', [])
+  })
+
+  it('draws the line after a playlist from its lower half, and moves last when it is the last row', () => {
+    const { edit } = setup(null, true)
+    const dt = dragNode('cant')
+    const house = screen.getByTestId('source-node-house')
+    over(house, 20, dt)
+    expect(screen.getByTestId('source-tree-drop-line')).toBeInTheDocument()
+    fireEvent.drop(house, { dataTransfer: dt })
+    expect(edit.onMove).toHaveBeenCalledWith(NODES[0], 'root', null, [])
+  })
+
   it('indents the line to the depth of the parent it lands in', () => {
     setup('ct', true)
     const dt = dragNode('house')
