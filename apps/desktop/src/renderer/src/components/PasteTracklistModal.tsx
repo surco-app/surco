@@ -81,6 +81,7 @@ export function PasteTracklistModal({
   const review = rows ?? (matches ? reviewRows(matches) : null)
   const settled = collection.data !== undefined || collection.isError
   const chosen = review ? chosenTracks(review) : []
+  const hasTimes = review?.some((row) => row.match.line.at) ?? false
   const playlistName = create ? name.trim() : node.name
   const canSearch = parsed.lines.length > 0 && playlistName !== ''
 
@@ -242,11 +243,16 @@ export function PasteTracklistModal({
                     <li
                       key={`${match.line.at ?? ''} ${match.line.raw}`}
                       data-testid={`paste-tracklist-row-${i}`}
-                      className={`grid grid-cols-[56px_8px_1fr_16px] items-start gap-x-2.5 border-t border-[var(--color-line)] px-3 py-2 first:border-t-0${row.included ? '' : ' [&>*:not(input)]:opacity-45'}`}
+                      className={`grid ${hasTimes ? 'grid-cols-[56px_8px_1fr_16px]' : 'grid-cols-[8px_1fr_16px]'} items-start gap-x-2.5 border-t border-[var(--color-line)] px-3 py-2 first:border-t-0${row.included ? '' : ' [&>*:not(input)]:opacity-45'}`}
                     >
-                      <span className="font-mono text-[11px] leading-[18px] text-fg-faint tabular-nums">
-                        {match.line.at ?? ''}
-                      </span>
+                      {hasTimes && (
+                        <span
+                          data-testid={`paste-tracklist-at-${i}`}
+                          className="font-mono text-[11px] leading-[18px] text-fg-faint tabular-nums"
+                        >
+                          {match.line.at ?? ''}
+                        </span>
+                      )}
                       <span className={`mt-[5px] size-2 rounded-full ${DOT[level]}`} />
                       <div className="min-w-0">
                         <div className="truncate text-[13px]">

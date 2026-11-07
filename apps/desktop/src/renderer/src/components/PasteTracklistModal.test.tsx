@@ -162,6 +162,21 @@ describe('PasteTracklistModal review step', () => {
     expect(screen.getByTestId('paste-tracklist-filter-all')).toHaveTextContent('5 en total')
   })
 
+  it('shows the time column when the pasted set has times, so each row says where it sits in the set', async () => {
+    setup()
+    paste(SET1)
+    await review()
+    expect(screen.getByTestId('paste-tracklist-at-0')).toBeInTheDocument()
+  })
+
+  it('drops the time column when no line has a time, so the rows do not start with an empty gap', async () => {
+    setup()
+    paste('Jessy - Silent Tears (Extended Mix)\nStephan K - Action (Poky Mix)')
+    await review()
+    expect(screen.getByTestId('paste-tracklist-row-0')).toBeInTheDocument()
+    expect(screen.queryByTestId('paste-tracklist-at-0')).toBeNull()
+  })
+
   it('hands over the picked candidate, in set order, as playlist refs', async () => {
     const { onAdd } = setup()
     paste(SET1)
