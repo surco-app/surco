@@ -42,6 +42,26 @@ function setup(over: Partial<React.ComponentProps<typeof CueGridControls>> = {})
 const lastGrid = (onChange: ReturnType<typeof setup>) => onChange.mock.calls.at(-1)?.[0]
 
 describe('CueGridControls', () => {
+  it('names each group of buttons so an icon is never the only clue to what it does', () => {
+    setup()
+    const groups = {
+      'cues-grid-tempo': 'Tempo',
+      'cues-grid-move': 'Desplazar',
+      'cues-grid-width': 'Abrir y cerrar',
+      'cues-grid-mark': 'Marcar',
+    }
+    for (const [testid, label] of Object.entries(groups)) {
+      expect(screen.getByTestId(testid)).toHaveTextContent(label)
+    }
+  })
+
+  it('keeps the tempo and its automatic fit side by side in the same group', () => {
+    setup()
+    const tempo = screen.getByTestId('cues-grid-tempo')
+    expect(tempo).toContainElement(screen.getByTestId('cues-grid-bpm'))
+    expect(tempo).toContainElement(screen.getByTestId('cues-grid-auto'))
+  })
+
   it('shows the BPM with two decimals in the app language, like rekordbox does', async () => {
     setup()
     expect(screen.getByTestId('cues-grid-bpm')).toHaveTextContent('150,00')
