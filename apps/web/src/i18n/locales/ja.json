@@ -2170,16 +2170,18 @@
             "note": "新しいコピーがより良い MP3（128 ではなく 320）であれば、AIFF にはならず MP3 のまま残ります。"
           },
           {
-            "tab": "出力",
+            "tab": "DJソフト",
             "section": "rekordbox コレクション",
+            "program": "rekordbox",
             "setting": "変換時に rekordbox コレクションを更新",
             "value": "更新",
             "optional": true,
             "note": "rekordbox を使用する場合、トラックはプレイリストに残り、キューポイントを保持します。"
           },
           {
-            "tab": "出力",
+            "tab": "DJソフト",
             "section": "Engine DJ ライブラリ",
+            "program": "engine",
             "setting": "変換時にEngine DJライブラリを更新する",
             "value": "更新",
             "optional": true,
@@ -2246,8 +2248,9 @@
             "note": "Apple Music は FLAC を受け付けません。AIFF は WAV と同じ音で、アートワークも持てます。"
           },
           {
-            "tab": "出力",
+            "tab": "DJソフト",
             "section": "rekordbox コレクション",
+            "program": "rekordbox",
             "setting": "変換時に rekordbox コレクションを更新",
             "value": "更新",
             "note": "これがrekordboxを最新に保ちます。これがなければ、rekordboxは古い情報とファイルのままです。"
@@ -2323,16 +2326,18 @@
             "note": "AIFFは同じフォルダーに保存され、元のファイルはそのまま残ります。"
           },
           {
-            "tab": "出力",
+            "tab": "DJソフト",
             "section": "rekordbox コレクション",
+            "program": "rekordbox",
             "setting": "変換時に rekordbox コレクションを更新",
             "value": "更新",
             "optional": true,
             "note": "rekordbox を使っている場合。トラックはプレイリストに入ったまま AIFF に切り替わります。"
           },
           {
-            "tab": "出力",
+            "tab": "DJソフト",
             "section": "Traktor コレクション",
+            "program": "traktor",
             "setting": "変換時に Traktor コレクションを更新",
             "value": "更新",
             "optional": true,
@@ -2730,24 +2735,27 @@
         "keywords": "大文字 アーティスト名 アクセント スペース 表記ゆれ capitals artists names accents spaces",
         "settings": [
           {
-            "tab": "出力",
+            "tab": "DJソフト",
             "section": "rekordbox コレクション",
+            "program": "rekordbox",
             "setting": "変換時に rekordbox コレクションを更新",
             "value": "更新",
             "optional": true,
             "note": "rekordboxを使用している場合。修正はそちらにも適用されます。"
           },
           {
-            "tab": "出力",
+            "tab": "DJソフト",
             "section": "Engine DJ ライブラリ",
+            "program": "engine",
             "setting": "変換時にEngine DJライブラリを更新する",
             "value": "更新",
             "optional": true,
             "note": "Engine DJを使用している場合。修正はそちらにも適用されます。"
           },
           {
-            "tab": "出力",
+            "tab": "DJソフト",
             "section": "Traktor コレクション",
+            "program": "traktor",
             "setting": "変換時に Traktor コレクションを更新",
             "value": "更新",
             "optional": true,
@@ -2793,24 +2801,27 @@
         "keywords": "重複 ダブり 同じ曲 duplicates doubles",
         "settings": [
           {
-            "tab": "出力",
+            "tab": "DJソフト",
             "section": "rekordbox コレクション",
+            "program": "rekordbox",
             "setting": "変換時に rekordbox コレクションを更新",
             "value": "更新",
             "optional": true,
             "note": "rekordbox を使用している場合、どのコピーにキューとプレイリストがあるかが表示され、そのプレイリストは保持する方へ移ります。"
           },
           {
-            "tab": "出力",
+            "tab": "DJソフト",
             "section": "Engine DJ ライブラリ",
+            "program": "engine",
             "setting": "変換時にEngine DJライブラリを更新する",
             "value": "更新",
             "optional": true,
             "note": "Engine DJ を使用している場合、どのコピーにキューとプレイリストがあるかが表示され、そのプレイリストは保持する方へ移ります。"
           },
           {
-            "tab": "出力",
+            "tab": "DJソフト",
             "section": "Traktor コレクション",
+            "program": "traktor",
             "setting": "変換時に Traktor コレクションを更新",
             "value": "更新",
             "optional": true,
@@ -3131,8 +3142,9 @@
         "keywords": "denon engine prime プレイリスト デノン エンジン playlist",
         "settings": [
           {
-            "tab": "出力",
+            "tab": "DJソフト",
             "section": "Engine DJ ライブラリ",
+            "program": "engine",
             "setting": "変換時にEngine DJライブラリを更新する",
             "value": "更新して追加",
             "note": "「更新して追加」にすると、Engine にまだないトラックは変換時にライブラリに追加されます。既にあるトラックは同じトラックのままで、プレイリストとキューポイントは保持されます。"
@@ -3196,8 +3208,9 @@
             "note": "これが初期設定です。Aは常にトラック内の最初のキューになります。各文字を固定のパッドとして使う場合はオフにしてください。"
           },
           {
-            "tab": "出力",
+            "tab": "DJソフト",
             "section": "rekordbox コレクション",
+            "program": "rekordbox",
             "setting": "rekordbox を閉じたときに、CALL があってホットキューのないトラックへ現在のフローを適用する",
             "optional": true,
             "note": "Surcoではなくrekordboxで位置をマークする場合に使います。準備中にトラックのドロップ位置にCALLを置いておくと、rekordboxを閉じたときにSurcoがフローのホットキューを追加します。オンにすると、補完されるトラック数が表示されます。"
@@ -3334,6 +3347,7 @@
           {
             "tab": "DJソフト",
             "section": "Traktor コレクション",
+            "program": "traktor",
             "setting": "変換時に Traktor コレクションを更新",
             "value": "更新",
             "note": "変換したトラックのキューとグリッドがコレクションに書き込まれます。Traktor が開いている間は、閉じるまで Surco が待ちます。"
@@ -3341,6 +3355,7 @@
           {
             "tab": "DJソフト",
             "section": "Traktor コレクション",
+            "program": "traktor",
             "setting": "collection.nml",
             "note": "Traktor が使っているコレクションを指定します。すでに検出されていれば、何も触る必要はありません。"
           }

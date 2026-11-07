@@ -2170,16 +2170,18 @@
             "note": "If the new copy is a better MP3 (320 instead of 128), it stays an MP3 instead of becoming an AIFF."
           },
           {
-            "tab": "Output",
+            "tab": "DJ software",
             "section": "rekordbox collection",
+            "program": "rekordbox",
             "setting": "Update the rekordbox collection when converting",
             "value": "Update",
             "optional": true,
             "note": "If you use rekordbox. The track stays in its playlists and keeps its cue points."
           },
           {
-            "tab": "Output",
+            "tab": "DJ software",
             "section": "Engine DJ library",
+            "program": "engine",
             "setting": "Update the Engine DJ library when converting",
             "value": "Update",
             "optional": true,
@@ -2246,8 +2248,9 @@
             "note": "Apple Music doesn't take FLAC. AIFF sounds the same as WAV and keeps the artwork too."
           },
           {
-            "tab": "Output",
+            "tab": "DJ software",
             "section": "rekordbox collection",
+            "program": "rekordbox",
             "setting": "Update the rekordbox collection when converting",
             "value": "Update",
             "note": "This is what keeps rekordbox up to date. Without it, rekordbox would stay on the old details and the old file."
@@ -2323,16 +2326,18 @@
             "note": "The AIFF is saved in the same folder and the original is left alone."
           },
           {
-            "tab": "Output",
+            "tab": "DJ software",
             "section": "rekordbox collection",
+            "program": "rekordbox",
             "setting": "Update the rekordbox collection when converting",
             "value": "Update",
             "optional": true,
             "note": "If you use rekordbox. The track moves to the AIFF without leaving its playlists."
           },
           {
-            "tab": "Output",
+            "tab": "DJ software",
             "section": "Traktor collection",
+            "program": "traktor",
             "setting": "Update the Traktor collection when converting",
             "value": "Update",
             "optional": true,
@@ -2730,24 +2735,27 @@
         "keywords": "capitals artists names accents spaces",
         "settings": [
           {
-            "tab": "Output",
+            "tab": "DJ software",
             "section": "rekordbox collection",
+            "program": "rekordbox",
             "setting": "Update the rekordbox collection when converting",
             "value": "Update",
             "optional": true,
             "note": "If you use rekordbox. The fix reaches it too."
           },
           {
-            "tab": "Output",
+            "tab": "DJ software",
             "section": "Engine DJ library",
+            "program": "engine",
             "setting": "Update the Engine DJ library when converting",
             "value": "Update",
             "optional": true,
             "note": "If you use Engine DJ. The fix reaches it too."
           },
           {
-            "tab": "Output",
+            "tab": "DJ software",
             "section": "Traktor collection",
+            "program": "traktor",
             "setting": "Update the Traktor collection when converting",
             "value": "Update",
             "optional": true,
@@ -2793,24 +2801,27 @@
         "keywords": "duplicates doubles",
         "settings": [
           {
-            "tab": "Output",
+            "tab": "DJ software",
             "section": "rekordbox collection",
+            "program": "rekordbox",
             "setting": "Update the rekordbox collection when converting",
             "value": "Update",
             "optional": true,
             "note": "If you use rekordbox. You'll see which copy has cues and playlists there, and its playlists move to the one you keep."
           },
           {
-            "tab": "Output",
+            "tab": "DJ software",
             "section": "Engine DJ library",
+            "program": "engine",
             "setting": "Update the Engine DJ library when converting",
             "value": "Update",
             "optional": true,
             "note": "If you use Engine DJ. You'll see which copy has cues and playlists there, and its playlists move to the one you keep."
           },
           {
-            "tab": "Output",
+            "tab": "DJ software",
             "section": "Traktor collection",
+            "program": "traktor",
             "setting": "Update the Traktor collection when converting",
             "value": "Update",
             "optional": true,
@@ -3131,8 +3142,9 @@
         "keywords": "denon engine prime playlist",
         "settings": [
           {
-            "tab": "Output",
+            "tab": "DJ software",
             "section": "Engine DJ library",
+            "program": "engine",
             "setting": "Update the Engine DJ library when converting",
             "value": "Update and add",
             "note": "With “Update and add”, tracks Engine doesn't have yet go into your library when you convert them. The ones it already has stay the same track, with their playlists and cue points."
@@ -3196,8 +3208,9 @@
             "note": "That's the default. A is always the first cue in the track. Turn it off if each letter is a fixed pad for you."
           },
           {
-            "tab": "Output",
+            "tab": "DJ software",
             "section": "rekordbox collection",
+            "program": "rekordbox",
             "setting": "When rekordbox closes, apply your active flow to tracks with CALLs and no hot cues",
             "optional": true,
             "note": "To mark the point in rekordbox instead of in Surco. You put a CALL where the track drops while you prepare and, when you close rekordbox, Surco adds your flow's hot cues. Turning it on tells you how many tracks it will complete."
@@ -3334,6 +3347,7 @@
           {
             "tab": "DJ software",
             "section": "Traktor collection",
+            "program": "traktor",
             "setting": "Update the Traktor collection when converting",
             "value": "Update",
             "note": "The cues and grid of converted tracks are written into your collection. With Traktor open, Surco waits for you to close it."
@@ -3341,6 +3355,7 @@
           {
             "tab": "DJ software",
             "section": "Traktor collection",
+            "program": "traktor",
             "setting": "collection.nml",
             "note": "Point to the collection Traktor uses. If it is already detected, you don’t need to touch anything."
           }

@@ -2170,16 +2170,18 @@
             "note": "Si la nouvelle copie est un meilleur MP3 (320 au lieu de 128), elle reste en MP3 au lieu de devenir un AIFF."
           },
           {
-            "tab": "Sortie",
+            "tab": "Logiciels DJ",
             "section": "Collection rekordbox",
+            "program": "rekordbox",
             "setting": "Mettre à jour la collection rekordbox à la conversion",
             "value": "Mettre à jour",
             "optional": true,
             "note": "Si tu utilises rekordbox. Le morceau reste dans ses playlists et garde ses cue points."
           },
           {
-            "tab": "Sortie",
+            "tab": "Logiciels DJ",
             "section": "Bibliothèque Engine DJ",
+            "program": "engine",
             "setting": "Mettre à jour la bibliothèque Engine DJ à la conversion",
             "value": "Mettre à jour",
             "optional": true,
@@ -2246,8 +2248,9 @@
             "note": "Apple Music n’accepte pas le FLAC. L’AIFF sonne comme le WAV et garde aussi la pochette."
           },
           {
-            "tab": "Sortie",
+            "tab": "Logiciels DJ",
             "section": "Collection rekordbox",
+            "program": "rekordbox",
             "setting": "Mettre à jour la collection rekordbox à la conversion",
             "value": "Mettre à jour",
             "note": "C’est ce qui tient rekordbox à jour. Sans ça, rekordbox resterait sur les anciennes infos et l’ancien fichier."
@@ -2323,16 +2326,18 @@
             "note": "L’AIFF est enregistré dans le même dossier et l’original n’est pas touché."
           },
           {
-            "tab": "Sortie",
+            "tab": "Logiciels DJ",
             "section": "Collection rekordbox",
+            "program": "rekordbox",
             "setting": "Mettre à jour la collection rekordbox à la conversion",
             "value": "Mettre à jour",
             "optional": true,
             "note": "Si tu utilises rekordbox. Le morceau passe à l’AIFF sans quitter ses playlists."
           },
           {
-            "tab": "Sortie",
+            "tab": "Logiciels DJ",
             "section": "Collection Traktor",
+            "program": "traktor",
             "setting": "Mettre à jour la collection Traktor à la conversion",
             "value": "Mettre à jour",
             "optional": true,
@@ -2730,24 +2735,27 @@
         "keywords": "majuscules artistes noms accents espaces orthographe harmoniser unifier apple music",
         "settings": [
           {
-            "tab": "Sortie",
+            "tab": "Logiciels DJ",
             "section": "Collection rekordbox",
+            "program": "rekordbox",
             "setting": "Mettre à jour la collection rekordbox à la conversion",
             "value": "Mettre à jour",
             "optional": true,
             "note": "Si tu utilises rekordbox. La correction y arrive aussi."
           },
           {
-            "tab": "Sortie",
+            "tab": "Logiciels DJ",
             "section": "Bibliothèque Engine DJ",
+            "program": "engine",
             "setting": "Mettre à jour la bibliothèque Engine DJ à la conversion",
             "value": "Mettre à jour",
             "optional": true,
             "note": "Si tu utilises Engine DJ. La correction y arrive aussi."
           },
           {
-            "tab": "Sortie",
+            "tab": "Logiciels DJ",
             "section": "Collection Traktor",
+            "program": "traktor",
             "setting": "Mettre à jour la collection Traktor à la conversion",
             "value": "Mettre à jour",
             "optional": true,
@@ -2793,24 +2801,27 @@
         "keywords": "doublons double duplicates supprimer apple music",
         "settings": [
           {
-            "tab": "Sortie",
+            "tab": "Logiciels DJ",
             "section": "Collection rekordbox",
+            "program": "rekordbox",
             "setting": "Mettre à jour la collection rekordbox à la conversion",
             "value": "Mettre à jour",
             "optional": true,
             "note": "Si tu utilises rekordbox. Tu verras quelle copie y a des cues et des playlists, et ses playlists passent à celle que tu gardes."
           },
           {
-            "tab": "Sortie",
+            "tab": "Logiciels DJ",
             "section": "Bibliothèque Engine DJ",
+            "program": "engine",
             "setting": "Mettre à jour la bibliothèque Engine DJ à la conversion",
             "value": "Mettre à jour",
             "optional": true,
             "note": "Si tu utilises Engine DJ. Tu verras quelle copie y a des cues et des playlists, et ses playlists passent à celle que tu gardes."
           },
           {
-            "tab": "Sortie",
+            "tab": "Logiciels DJ",
             "section": "Collection Traktor",
+            "program": "traktor",
             "setting": "Mettre à jour la collection Traktor à la conversion",
             "value": "Mettre à jour",
             "optional": true,
@@ -3131,8 +3142,9 @@
         "keywords": "denon engine dj prime playlist bibliothèque",
         "settings": [
           {
-            "tab": "Sortie",
+            "tab": "Logiciels DJ",
             "section": "Bibliothèque Engine DJ",
+            "program": "engine",
             "setting": "Mettre à jour la bibliothèque Engine DJ à la conversion",
             "value": "Mettre à jour et ajouter",
             "note": "Avec « Mettre à jour et ajouter », les morceaux qu’Engine n’a pas encore entrent dans ta bibliothèque à la conversion. Ceux qu’il a déjà restent le même morceau, avec leurs playlists et leurs cue points."
@@ -3196,8 +3208,9 @@
             "note": "C’est le réglage par défaut. A est toujours le premier cue du morceau. Désactive-le si chaque lettre est un pad fixe pour toi."
           },
           {
-            "tab": "Sortie",
+            "tab": "Logiciels DJ",
             "section": "Collection rekordbox",
+            "program": "rekordbox",
             "setting": "À la fermeture de rekordbox, appliquer ton flux actif aux morceaux avec des CALL et sans hot cues",
             "optional": true,
             "note": "Pour marquer le point dans rekordbox plutôt que dans Surco. Tu poses un CALL là où le morceau décolle pendant ta préparation et, quand tu fermes rekordbox, Surco ajoute les hot cues de ton flux. En l’activant, il te dit combien de morceaux il va compléter."
@@ -3334,6 +3347,7 @@
           {
             "tab": "Logiciels DJ",
             "section": "Collection Traktor",
+            "program": "traktor",
             "setting": "Mettre à jour la collection Traktor à la conversion",
             "value": "Mettre à jour",
             "note": "Les cues et la grille des morceaux convertis sont écrits dans ta collection. Si Traktor est ouvert, Surco attend que tu le fermes."
@@ -3341,6 +3355,7 @@
           {
             "tab": "Logiciels DJ",
             "section": "Collection Traktor",
+            "program": "traktor",
             "setting": "collection.nml",
             "note": "Indique la collection que Traktor utilise. Si elle est déjà détectée, tu n’as rien à toucher."
           }

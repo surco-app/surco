@@ -40,9 +40,9 @@ const json = (p) => JSON.parse(readFileSync(p, 'utf8'))
 const groupByTab = (settings) => {
   const groups = []
   for (const s of settings) {
-    const g = groups.find((o) => o.tab === s.tab)
+    const g = groups.find((o) => o.tab === s.tab && o.program === s.program)
     if (g) g.settings.push(s)
-    else groups.push({ tab: s.tab, settings: [s] })
+    else groups.push({ tab: s.tab, program: s.program, settings: [s] })
   }
   let n = 0
   return groups.map((g) => ({ ...g, settings: g.settings.map((s) => ({ ...s, n: ++n })) }))
@@ -95,6 +95,7 @@ async function capture(page, lang, c, group, index) {
   const row = ROW_OF[tabId]
   if (row) await page.click(`[data-testid="settings-tab-${row}"]`)
   await page.click(`[data-testid="${row ? 'settings-subtab' : 'settings-tab'}-${tabId}"]`)
+  if (group.program) await page.click(`[data-testid="settings-programs-${group.program}"]`)
   await page.waitForTimeout(400)
   const missing = await page.evaluate(async (settings) => {
     const dialog = document.querySelector('[role="dialog"]')

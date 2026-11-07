@@ -328,6 +328,28 @@ describe('use case settings by tab', () => {
     expect(groups[0].settings.map((x) => x.setting)).toEqual(['a', 'c'])
   })
 
+  // DJ software keeps one program per switcher segment, so two programs in the same tab
+  // cannot appear in one capture: each gets its own, or the numbers would mark controls
+  // the reader cannot see.
+  it('gives each DJ program its own capture even though they share a tab', () => {
+    const p = (setting: string, program: 'traktor' | 'rekordbox' | 'engine') => ({
+      ...s('Programas de DJ', setting),
+      program,
+    })
+    const groups = settingGroups([
+      p('a', 'rekordbox'),
+      s('Formato', 'b'),
+      p('c', 'engine'),
+      p('d', 'rekordbox'),
+    ])
+    expect(groups.map((g) => [g.tab, g.program])).toEqual([
+      ['Programas de DJ', 'rekordbox'],
+      ['Formato', undefined],
+      ['Programas de DJ', 'engine'],
+    ])
+    expect(groups[0].settings.map((x) => x.setting)).toEqual(['a', 'd'])
+  })
+
   it('numbers the settings straight through, so no number repeats across captures', () => {
     const groups = settingGroups([s('Destino', 'a'), s('Formato', 'b'), s('Destino', 'c')])
     expect(groups.flatMap((g) => g.settings.map((x) => x.n))).toEqual([1, 2, 3])

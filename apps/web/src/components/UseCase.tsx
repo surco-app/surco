@@ -4,6 +4,8 @@ import { ISSUES_URL } from '../config'
 import type { Language } from '../i18n'
 import { PAGES } from '../lib/nav'
 import {
+  DJ_PROGRAM_NAMES,
+  type DjProgram,
   recipeIndex,
   recipePages,
   recipePathForId,
@@ -24,6 +26,7 @@ import ScrollProgress from './ScrollProgress'
 type Setting = {
   tab: string
   section?: string
+  program?: DjProgram
   setting: string
   value?: string
   optional?: boolean
@@ -215,9 +218,15 @@ export default function UseCasePage({ id }: { id: string }) {
                   {settingGroups(c.settings).map((group, i) => {
                     const src = settingShot(lang, c.id, i)
                     const [width, height] = USE_CASE_SHOTS[src] ?? []
-                    const caption = `${t('useCases.settingsRoot')} › ${group.tab}`
+                    const caption = [
+                      t('useCases.settingsRoot'),
+                      group.tab,
+                      group.program && DJ_PROGRAM_NAMES[group.program],
+                    ]
+                      .filter(Boolean)
+                      .join(' › ')
                     return (
-                      <div key={group.tab} className="mt-5 border-t border-line pt-5">
+                      <div key={caption} className="mt-5 border-t border-line pt-5">
                         <ul className="divide-y divide-line/60">
                           {group.settings.map((s) => (
                             <SettingRow key={`${s.tab}-${s.setting}`} s={s} />

@@ -138,13 +138,21 @@ export function recipePathForAnchor(lang: Language, hash: string): string | null
 
 export const USE_CASE_SHOTS: Record<string, number[] | undefined> = shots
 
-export function settingGroups<S extends { tab: string }>(settings: S[]) {
-  const groups: { tab: string; settings: (S & { n: number })[] }[] = []
+export type DjProgram = 'traktor' | 'rekordbox' | 'engine'
+
+export const DJ_PROGRAM_NAMES: Record<DjProgram, string> = {
+  traktor: 'Traktor',
+  rekordbox: 'rekordbox',
+  engine: 'Engine DJ',
+}
+
+export function settingGroups<S extends { tab: string; program?: DjProgram }>(settings: S[]) {
+  const groups: { tab: string; program?: DjProgram; settings: (S & { n: number })[] }[] = []
   for (const s of settings) {
     const row = { ...s, n: 0 }
-    const group = groups.find((g) => g.tab === s.tab)
+    const group = groups.find((g) => g.tab === s.tab && g.program === s.program)
     if (group) group.settings.push(row)
-    else groups.push({ tab: s.tab, settings: [row] })
+    else groups.push({ tab: s.tab, program: s.program, settings: [row] })
   }
   let n = 0
   for (const g of groups) for (const s of g.settings) s.n = ++n
