@@ -86,8 +86,8 @@
           },
           {
             "t": "Te dice qué hará antes de hacerlo",
-            "s": "Antes de convertir ves cuánto subirá cada pista y si entrará el limitador.",
-            "d": "Cuánto subirá esta pista, si el limitador entrará y por cuántos decibelios se pasarían los picos."
+            "s": "Antes de convertir ves cuánto subirá o bajará cada pista y si entrará el limitador.",
+            "d": "Cuánto subirá o bajará esta pista, si entrará el limitador y por cuántos decibelios se pasarían los picos."
           },
           {
             "t": "Recorte de silencios",
@@ -101,20 +101,20 @@
           },
           {
             "t": "Frecuencia corregida",
-            "s": "Devuelve a 44.1 y a 16 bits lo que estaba inflado, y deja intacto lo genuino.",
-            "d": "El modo «Corregido» reescribe a 44.1 solo las pistas medidas como upsampleadas; lo genuino y lo dudoso sale intacto. Y la profundidad «Corregido» guarda como 16 bits reales, sin pérdidas, el audio de 16 bits rellenado a 24; «igual que el origen» conserva el contenedor tal cual."
+            "s": "Devuelve a 44,1 y a 16 bits lo que estaba inflado, y deja intacto lo genuino.",
+            "d": "El modo «Corregido» reescribe a 44,1 solo las pistas medidas como reescaladas; lo genuino y lo dudoso sale intacto. Y la profundidad «Corregido» guarda como 16 bits reales, sin pérdidas, el audio de 16 bits rellenado a 24; «igual que el origen» conserva el contenedor tal cual."
           }
         ]
       },
       {
         "kick": "etiquetar",
         "title": "Etiquetar",
-        "replaces": "en vez de cinco webs y un editor de tags",
+        "replaces": "en vez de cinco webs y un editor de etiquetas",
         "items": [
           {
             "t": "Discogs, Bandcamp, Deezer, Beatport y MusicBrainz",
-            "s": "Busca artista, álbum, año, BPM, tono, sello y catálogo en cinco fuentes.",
-            "d": "Artista, álbum, año, BPM y tono. El sello y el catálogo vienen de Discogs, Beatport y MusicBrainz, y Beatport añade el mix y el ISRC."
+            "s": "Busca artista, álbum, año, BPM, tonalidad, sello y catálogo en cinco fuentes.",
+            "d": "Artista, álbum, año, BPM y tonalidad. El sello y el catálogo vienen de Discogs, Beatport y MusicBrainz, y Beatport añade el mix y el ISRC."
           },
           {
             "t": "Empareja el disco entero",
@@ -138,7 +138,7 @@
           },
           {
             "t": "ID3v2.3, no v2.4",
-            "s": "Escribe la versión de tags que los CDJ y rekordbox leen sin problemas.",
+            "s": "Escribe la versión de etiquetas que los CDJ y rekordbox leen sin problemas.",
             "d": "Para que los CDJ y rekordbox lo lean sin rarezas."
           },
           {
@@ -148,8 +148,8 @@
           },
           {
             "t": "Campos de coleccionista",
-            "s": "Estilo, país, medio y URL de la edición, con los nombres de mp3tag.",
-            "d": "Estilo, país, tipo de medio y la URL de la edición, con los nombres que usa mp3tag para que no se dupliquen."
+            "s": "Estilo, país, medio y URL del disco, con los nombres de mp3tag.",
+            "d": "Estilo, país, tipo de medio y la URL del disco, con los nombres que usa mp3tag para que no se dupliquen."
           },
           {
             "t": "Tus propios campos",
@@ -169,11 +169,11 @@
           {
             "t": "Tú decides qué toca cada búsqueda",
             "s": "Un interruptor por campo para que una búsqueda no pise lo que pusiste a mano.",
-            "d": "Un interruptor por campo: el género que pusiste a mano no se pierde al aplicar una edición."
+            "d": "Un interruptor por campo: el género que pusiste a mano no se pierde al aplicar un disco."
           },
           {
-            "t": "Tags de otros programas",
-            "s": "Ves los tags que dejaron otros programas y borras los que sobran.",
+            "t": "Etiquetas de otros programas",
+            "s": "Ves las etiquetas que dejaron otros programas y borras los que sobran.",
             "d": "Inspecciónalos y bórralos uno a uno, o vacía la ficha entera."
           }
         ]
@@ -210,7 +210,7 @@
           },
           {
             "t": "Lectura por colores",
-            "s": "Loudness, picos, dinámica, balance y ruido de fondo, en colores.",
+            "s": "Sonoridad, picos, dinámica, balance y suelo de ruido, en colores.",
             "d": "LUFS, pico real, dinámica, balance L/R y suelo de ruido."
           },
           {
@@ -278,7 +278,7 @@
           {
             "t": "Un USB para tus CDJ",
             "s": "Prepara un USB para tus CDJ con cues, rejilla y ondas.",
-            "d": "Exportas tus playlists de rekordbox a un USB con sus cues, su rejilla y sus ondas, y rekordbox lo puede seguir sincronizando. Necesita rekordbox cerrado. En macOS y Windows. También desde tus crates de Serato y tus playlists de Traktor, con sus cues, bucles y rejilla, sin pasar por rekordbox."
+            "d": "Exportas tus playlists de rekordbox a un USB con sus cues, su rejilla y sus ondas, y rekordbox lo puede seguir sincronizando. Necesita rekordbox cerrado. En macOS y Windows. También desde tus crates de Serato y tus playlists de Traktor, con sus cues, loops y rejilla, sin pasar por rekordbox."
           },
           {
             "t": "Tus playlists de Traktor",
@@ -307,13 +307,13 @@
           },
           {
             "t": "Engine DJ (Denon)",
-            "s": "Lleva carátula, rating y playlist a tu biblioteca de Engine DJ.",
-            "d": "Carátula, rating y playlist en tu biblioteca. Copia de seguridad antes, y no la toca si Engine está abierto."
+            "s": "Lleva carátula, puntuación y playlist a tu biblioteca de Engine DJ.",
+            "d": "Carátula, puntuación y playlist en tu biblioteca. Copia de seguridad antes, y no la toca si Engine está abierto."
           },
           {
-            "t": "Ficheros para rekordbox, Serato y M3U8",
-            "s": "Exporta listas para rekordbox, Serato y M3U8.",
-            "d": "Llevan rutas y metadatos, sin cues ni rating. El crate de Serato, solo rutas."
+            "t": "Archivos para rekordbox, Serato y M3U8",
+            "s": "Exporta playlists para rekordbox, Serato y M3U8.",
+            "d": "Llevan rutas y metadatos, sin cues ni puntuación. El crate de Serato, solo rutas."
           }
         ]
       },
@@ -324,23 +324,23 @@
         "items": [
           {
             "t": "Apple Music",
-            "s": "Añade tus pistas a Apple Music con tags y carátula, también en WAV.",
+            "s": "Añade tus pistas a Apple Music con etiquetas y carátula, también en WAV.",
             "d": "Con etiquetas y carátula, hasta en WAV. Solo en macOS, y nunca FLAC: Music no lo admite."
           },
           {
             "t": "Sustituye lo que ya tienes",
             "s": "Una copia mejor ocupa el sitio de la vieja en Apple Music y rekordbox, con sus playlists.",
-            "d": "Cargas otra copia de un tema que ya tienes, en cualquier formato y también en el mismo, y ocupa su sitio en Apple Music y en rekordbox, en vez de acabar con dos. La pista sigue en sus playlists, sin volver a meterla a mano en cada una, y en Apple Music conserva sus reproducciones y tu valoración. La marca de Apple Music dice en qué formato está tu copia, para que sepas si merece la pena."
+            "d": "Cargas otra copia de una pista que ya tienes, en cualquier formato y también en el mismo, y ocupa su sitio en Apple Music y en rekordbox, en vez de acabar con dos. La pista sigue en sus playlists, sin volver a meterla a mano en cada una, y en Apple Music conserva sus reproducciones y tu puntuación. La marca de Apple Music dice en qué formato está tu copia, para que sepas si merece la pena."
           },
           {
             "t": "Erratas y duplicados de tu biblioteca",
             "s": "Encuentra erratas, caracteres invisibles y pistas repetidas en tu biblioteca.",
-            "d": "Agrupa lo que tu Apple Music o tu lista escribe de varias formas, los caracteres invisibles y las pistas que tienes dos veces. Cada corrección llega al fichero, a Apple Music y, si los sincronizas, a rekordbox, Engine DJ y Traktor, con copia antes de escribir, que restauras desde Copias, y Deshacer. La copia que quitas deja sus playlists a la que se queda. Apple Music, solo en macOS."
+            "d": "Agrupa lo que tu Apple Music o tu lista escribe de varias formas, los caracteres invisibles y las pistas que tienes dos veces. Cada corrección llega al archivo, a Apple Music y, si los sincronizas, a rekordbox, Engine DJ y Traktor, con copia antes de escribir, que restauras desde Copias, y Deshacer. La copia que quitas deja sus playlists a la que se queda. Apple Music, solo en macOS."
           },
           {
-            "t": "Traer una lista de Apple Music",
-            "s": "Abres una lista de Music y trabajas directamente sobre sus archivos.",
-            "d": "Cargas la lista y trabajas sobre sus ficheros. Conserva su formato y rellena lo que solo vive en Music, como el grouping, también en las pistas que abres sueltas. Solo en macOS."
+            "t": "Traer una playlist de Apple Music",
+            "s": "Abres una playlist de Music y trabajas directamente sobre sus archivos.",
+            "d": "Cargas la lista y trabajas sobre sus archivos. Conserva su formato y rellena lo que solo vive en Music, como el grouping, también en las pistas que abres sueltas. Solo en macOS."
           },
           {
             "t": "Grouping de Apple Music",
@@ -397,12 +397,12 @@
           {
             "t": "Comprueba la copia antes de darla por buena",
             "s": "No da por buena una conversión que se haya quedado a medias.",
-            "d": "Un fichero cortado a medias declara la misma duración que el entero. Surco compara lo que promete con lo que de verdad suena y no publica una conversión truncada."
+            "d": "Un archivo cortado a medias declara la misma duración que el entero. Surco compara lo que promete con lo que de verdad suena y no publica una conversión truncada."
           },
           {
             "t": "Rescata WAV rotos",
             "s": "Repara sobre una copia la cabecera que otras apps no saben leer.",
-            "d": "La cabecera que atraganta a otras apps, reparada sobre una copia. Tu fichero no se toca."
+            "d": "La cabecera que atraganta a otras apps, reparada sobre una copia. Tu archivo no se toca."
           }
         ]
       }
@@ -452,7 +452,7 @@
       },
       "discogs": {
         "title": "Match de Discogs, Bandcamp, Deezer, Beatport y MusicBrainz",
-        "desc": "Busca el lanzamiento exacto en Discogs, Bandcamp, Deezer, Beatport o MusicBrainz, de la edición de club al single comercial, y elige la versión correcta."
+        "desc": "Busca el disco exacto en Discogs, Bandcamp, Deezer, Beatport o MusicBrainz, de la edición de club al single comercial, y elige la versión correcta."
       },
       "metadata": {
         "title": "Editor de metadatos",
@@ -506,15 +506,15 @@
       },
       {
         "q": "¿Toca mis archivos originales?",
-        "a": "Depende de si cambias de formato. Si conviertes a un formato distinto del que ya tiene, el original queda intacto y la copia va a una carpeta aparte (Música/Surco). Hay dos excepciones. Si la copia nueva sustituye a la vieja en tu biblioteca, Surco retira el archivo viejo en cuanto comprueba que el nuevo está bien, y lo manda a la papelera o a Copias. Y con «Editar el original» el fichero se reescribe en su sitio, así que cambiar de formato elimina el original. Si reexportas al mismo formato, Surco reescribe ese fichero donde está, que es como actualiza las etiquetas sin recodificar el audio. Cuando el audio cambia (convertir, normalizar, recortar), Surco guarda antes una copia de seguridad del original que restauras desde la propia pista; en Ajustes → Destino eliges si la quieres siempre, solo cuando cambia el audio o nunca, y cuántos días y cuánto espacio ocupan."
+        "a": "Depende de si cambias de formato. Si conviertes a un formato distinto del que ya tiene, el original queda intacto y la copia va a una carpeta aparte (Música/Surco). Hay dos excepciones. Si la copia nueva sustituye a la vieja en tu biblioteca, Surco retira el archivo viejo en cuanto comprueba que el nuevo está bien, y lo manda a la papelera o a Copias. Y con «Editar el original» el archivo se reescribe en su sitio, así que cambiar de formato elimina el original. Si reexportas al mismo formato, Surco reescribe ese archivo donde está, que es como actualiza las etiquetas sin recodificar el audio. Cuando el audio cambia (convertir, normalizar, recortar), Surco guarda antes una copia de seguridad del original que restauras desde la propia pista; en Ajustes → Destino eliges si la quieres siempre, solo cuando cambia el audio o nunca, y cuántos días y cuánto espacio ocupan."
       },
       {
         "q": "¿Conserva los cue points?",
-        "a": "Los de Traktor, sí. Se conservan entre MP3, AIFF, FLAC y WAV en cualquier combinación, porque Surco lee el árbol que Traktor guarda dentro del fichero y lo vuelve a escribir en el formato de destino. Solo se pierden en ALAC, que no tiene dónde guardarlo. Los de rekordbox y Engine DJ viven en su biblioteca y siguen con la pista si actualizas esa biblioteca al convertir. Si recortas silencio, los cues se recolocan solos según lo que hayas cortado (incluida la rejilla, que se reancla por fase para que no se descuadre), y si algo no se puede recolocar con garantías se descarta en vez de quedar mal puesto. Surco te lo avisa antes de convertir."
+        "a": "Los de Traktor, sí. Se conservan entre MP3, AIFF, FLAC y WAV en cualquier combinación, porque Surco lee el árbol que Traktor guarda dentro del archivo y lo vuelve a escribir en el formato de destino. Solo se pierden en ALAC, que no tiene dónde guardarlo. Los de rekordbox y Engine DJ viven en su biblioteca y siguen con la pista si actualizas esa biblioteca al convertir. Si recortas silencio, los cues se recolocan solos según lo que hayas cortado (incluida la rejilla, que se reancla por fase para que no se descuadre), y si algo no se puede recolocar con garantías se descarta en vez de quedar mal puesto. Surco te lo avisa antes de convertir."
       },
       {
         "q": "¿Puedo recortar el silencio de mis rips?",
-        "a": "Sí. Surco detecta el silencio de entrada y de salida y te enseña los dos cortes sobre la onda, con zoom y ajuste al milisegundo, para que escuches cómo queda antes de aplicarlo. Puedes recortar una pista o toda la selección de una vez. Ojo: recortar recodifica el audio, así que revisa la nota sobre los cue points."
+        "a": "Sí. Surco detecta el silencio de entrada y de salida y te enseña los dos cortes sobre la onda, con zoom y ajuste al milisegundo, para que escuches cómo queda antes de aplicarlo. Puedes recortar una pista o toda la selección de una vez. Ten en cuenta que recortar recodifica el audio, así que revisa la nota sobre los cue points."
       },
       {
         "q": "¿Y los clics y el ruido del vinilo?",
@@ -522,11 +522,11 @@
       },
       {
         "q": "Tengo MP3 en mi biblioteca. ¿Puedo pasarlos a lossless sin perder las playlists?",
-        "a": "Sí, eso es sustituir. Carga el AIFF o el FLAC del mismo tema y, si Surco lo encuentra en tu biblioteca, el botón dice «Sustituir» en vez de «Añadir». Al convertir, la entrada de Apple Music deja de apuntar al MP3 y apunta al archivo nuevo, y en rekordbox se reapunta la misma ficha: conserva sus playlists y sus cue points, porque rekordbox enlaza por pista y no por ruta. Un aviso: rekordbox analiza el archivo nuevo y puede recolocar el beatgrid, así que conviene revisar la rejilla. rekordbox tiene que estar cerrado para escribir en su base de datos; Surco se ofrece a cerrarlo y hace copia de seguridad antes. Cuando la comprobación del archivo nuevo sale bien y ningún programa sigue usando el viejo, Surco retira el viejo solo. Va a la papelera, o a Copias › Archivos de música si está en un disco sin papelera, como un NAS. Con «Nunca» en Ajustes → Destino se borra del todo."
+        "a": "Sí, eso es sustituir. Carga el AIFF o el FLAC de la misma pista y, si Surco lo encuentra en tu biblioteca, el botón dice «Sustituir» en vez de «Añadir». Al convertir, la entrada de Apple Music deja de apuntar al MP3 y apunta al archivo nuevo, y en rekordbox se reapunta la misma fila: conserva sus playlists y sus cue points, porque rekordbox enlaza por pista y no por ruta. Un aviso: rekordbox analiza el archivo nuevo y puede recolocar el beatgrid, así que conviene revisar la rejilla. rekordbox tiene que estar cerrado para escribir en su base de datos; Surco se ofrece a cerrarlo y hace copia de seguridad antes. Cuando la comprobación del archivo nuevo sale bien y ningún programa sigue usando el viejo, Surco retira el viejo solo. Va a la papelera, o a Copias › Archivos de música si está en un disco sin papelera, como un NAS. Con «Nunca» en Ajustes → Destino se borra del todo."
       },
       {
         "q": "¿Funciona con equipos Denon (Engine DJ)?",
-        "a": "Sí. En Ajustes → Destino pon Engine DJ en «Actualizar y añadir» y cada pista convertida se registra directamente en tu biblioteca de Engine DJ (con carátula, rating y las playlists que elijas), lista para sincronizar a tus players. También exporta colecciones a rekordbox, Traktor y Serato."
+        "a": "Sí. En Ajustes → Destino pon Engine DJ en «Actualizar y añadir» y cada pista convertida se registra directamente en tu biblioteca de Engine DJ (con carátula, puntuación y las playlists que elijas), lista para sincronizar con tus reproductores. También exporta colecciones a rekordbox, Traktor y Serato."
       },
       {
         "q": "Windows dice «Windows protegió tu PC». ¿Es seguro?",
@@ -569,7 +569,7 @@
     "unreachableLink": "Descárgalo desde GitHub"
   },
   "guide": {
-    "metaTitle": "Cómo usar Surco: Guía paso a paso",
+    "metaTitle": "Cómo usar Surco: guía paso a paso",
     "metaDescription": "Guía de Surco paso a paso: importar pistas, etiquetar desde Discogs, Bandcamp, Deezer, Beatport y MusicBrainz, analizar el espectro, convertir, marcar cues y llevarlo a Apple Music, rekordbox, Engine DJ, Traktor o Serato.",
     "kicker": "Guía",
     "title": "Cómo usar Surco",
@@ -597,7 +597,7 @@
       },
       {
         "id": "keep",
-        "title": "Mantener"
+        "title": "Mantener en orden"
       }
     ],
     "sections": [
@@ -692,7 +692,7 @@
         "title": "Edita los metadatos",
         "s": "Todos los campos de la pista, y fuera los restos que dejaron otros programas.",
         "body": [
-          "Al seleccionar una pista, el editor de la derecha enseña sus campos, su carátula y su valoración."
+          "Al seleccionar una pista, el editor de la derecha enseña sus campos, su carátula y su puntuación."
         ],
         "steps": [
           {
@@ -701,7 +701,7 @@
           },
           {
             "lead": "Aprovecha lo que detecta Surco.",
-            "text": "Bajo BPM y tonalidad aparece lo medido en el propio audio, listo para aplicar. Si la pista no tiene tags, «Rellenar del nombre» saca el título y el artista."
+            "text": "Bajo BPM y tonalidad aparece lo medido en el propio audio, listo para aplicar. Si la pista no tiene etiquetas, «Rellenar del nombre» saca el título y el artista."
           },
           {
             "lead": "Limpia lo que arrastra el archivo.",
@@ -727,7 +727,7 @@
         "steps": [
           {
             "lead": "Busca.",
-            "text": "Escribe el nombre del disco o pega un release id de Discogs, y pulsa «Buscar» o la tecla /."
+            "text": "Escribe el nombre del disco o pega un ID de release de Discogs, y pulsa «Buscar» o la tecla /."
           },
           {
             "lead": "Elige la edición.",
@@ -825,14 +825,14 @@
             "text": "Hasta unos 20 kHz es calidad completa (verde), de 18 a 19,5 kHz es dudosa (ámbar) y por debajo es mala (rojo)."
           },
           {
-            "lead": "Tría la carpeta.",
+            "lead": "Criba la carpeta.",
             "text": "Filtra la lista por «Dudosas», «Buenas» o «Sin analizar» y decide qué pistas se quedan fuera."
           }
         ],
         "points": [
           "Un MP3 no se juzga como un lossless. Su corte es el formato, no un defecto.",
           "«Posible reprocesado» avisa de agudos que parecen regenerados sobre un corte anterior. Es una sospecha medida, no una prueba.",
-          "Debajo del espectro tienes LUFS, pico real, dinámica y ruido de fondo, y puedes guardar el informe en PNG."
+          "Debajo del espectro tienes LUFS, pico real, dinámica y suelo de ruido, y puedes guardar el informe en PNG."
         ],
         "shot": "calidad-es.webp",
         "shotCaption": "El espectro de una pista con su veredicto de calidad."
@@ -933,7 +933,7 @@
       {
         "id": "exportar",
         "group": "out",
-        "title": "Lleva tus pistas a tu software DJ",
+        "title": "Lleva tus pistas a tu programa de DJ",
         "s": "Apple Music, rekordbox, Engine DJ, Traktor y Serato, al convertir o desde sus playlists.",
         "body": [
           "La barra lateral enseña tus bibliotecas. Abre cualquier playlist y sus pistas entran en la lista con sus archivos de verdad."
@@ -945,7 +945,7 @@
           },
           {
             "lead": "Convierte.",
-            "text": "Las pistas llegan con sus tags y su carátula. También puedes exportar la cola como colección .xml, .nml o .crate, o como lista M3U8."
+            "text": "Las pistas llegan con sus etiquetas y su carátula. También puedes exportar la cola como colección .xml, .nml o .crate, o como playlist M3U8."
           },
           {
             "lead": "Organiza tus playlists.",
@@ -972,7 +972,7 @@
         "steps": [
           {
             "lead": "Elige un flujo.",
-            "text": "Vienen dos hechos, Mix in 64 y Mix in 32, y en Ajustes › Cues Surco aprende el tuyo de los cues que ya tienes."
+            "text": "Vienen dos ya hechos, Mix in 64 y Mix in 32, y en Ajustes › Cues Surco aprende el tuyo de los cues que ya tienes."
           },
           {
             "lead": "Haz clic donde rompe la pista.",
@@ -1028,7 +1028,7 @@
         "title": "Revisa tu biblioteca",
         "s": "Erratas, grafías y duplicados de tu biblioteca, en un solo sitio.",
         "body": [
-          "Los cambios llegan a los ficheros, a Apple Music y a las bibliotecas que sincronizas. Antes de escribir Surco guarda una copia, y la revisión tiene Deshacer."
+          "Los cambios llegan a los archivos, a Apple Music y a las bibliotecas que sincronizas. Antes de escribir Surco guarda una copia, y la revisión tiene Deshacer."
         ],
         "steps": [
           {
@@ -1048,7 +1048,7 @@
           "Grafías junta lo escrito de varias formas, como DJ Lara y Dj Lara.",
           "Duplicados te deja elegir cuál se queda, y esa hereda las playlists de la otra.",
           "Daños repara cues y duraciones rotas de Traktor y Engine DJ, e Incompletas propone cómo rellenar los campos obligatorios.",
-          "El BPM, la tonalidad, los cues y la valoración no se tocan."
+          "El BPM, la tonalidad, los cues y la puntuación no se tocan."
         ],
         "shot": "revisar-es.webp",
         "shotCaption": "Revisar sobre una playlist de rekordbox, con un espacio de más en un álbum."
@@ -1077,7 +1077,7 @@
         ],
         "points": [
           "⌘F busca y reemplaza en todas las pistas, y te dice cuántas tocará antes de hacerlo.",
-          "Exporta tu configuración a un archivo, o apunta su carpeta a iCloud Drive o Dropbox para compartirla entre Macs.",
+          "Exporta tu configuración a un archivo, o apunta su carpeta a iCloud Drive o Dropbox para compartirla entre varios Mac.",
           "Nada pasa por un servidor de Surco. No hay cuenta, ni nube, ni telemetría."
         ],
         "shot": "atajos-es.webp",
@@ -1088,7 +1088,7 @@
   },
   "changelog": {
     "metaTitle": "Novedades de Surco, Historial de versiones",
-    "metaDescription": "Qué hay de nuevo en cada versión de Surco: auto-match de Discogs, export a rekordbox y Traktor, análisis de sonoridad, edición multi-pista y más.",
+    "metaDescription": "Qué hay de nuevo en cada versión de Surco: auto-emparejado de Discogs, export a rekordbox y Traktor, análisis de sonoridad, edición multipista y más.",
     "kicker": "Novedades",
     "title": "Todo lo que ha cambiado en Surco",
     "lede": "Lo importante de cada versión, sin ruido. Las funciones que cambian cómo preparas tu música, versión a versión.",
@@ -1120,7 +1120,7 @@
       "evidenceGood": "Sin corte de códec detectado; agudos hasta ~21,2 kHz.",
       "evidenceBad": "Corte de códec en ~16 kHz: el origen fue con pérdidas.",
       "goodBadge": "● Buena calidad",
-      "fakeBadge": "● Fake lossless"
+      "fakeBadge": "● Falso lossless"
     },
     "tag": {
       "title": "Las etiquetas, de Discogs, en un clic.",
@@ -1129,7 +1129,7 @@
     },
     "batch": {
       "title": "Y aparece sola en tu Apple Music.",
-      "lede": "Elige formato y destino y convierte la carpeta entera. En Apple Music y Engine DJ no importas nada: la pista aparece en tu biblioteca con la carátula puesta, y en Engine DJ, con rating y playlist. A los demás les deja el fichero que esperan.",
+      "lede": "Elige formato y destino y convierte la carpeta entera. En Apple Music y Engine DJ no importas nada: la pista aparece en tu biblioteca con la carátula puesta, y en Engine DJ, con puntuación y playlist. A los demás les deja el archivo que esperan.",
       "stage": "Convirtiendo a AIFF…",
       "converting": "Convirtiendo… {{done}}/{{total}}",
       "converted": "{{count}} convertidas",
@@ -1141,8 +1141,8 @@
     },
     "heroFree": "Gratis. macOS, Windows y Linux. Sin cuenta.",
     "closeTitle": "Todo esto, en una ventana.",
-    "closeNote": "Sin nube, sin límites y sin nada que registrar. Se actualiza solo.",
-    "closeSafety": "Tus originales no se tocan: al cambiar de formato, la copia va a una carpeta aparte. Solo reescribe el fichero si reexportas al mismo formato, que es como actualiza las etiquetas sin recodificar. Notarizado por Apple.",
+    "closeNote": "Sin nube, sin límites y sin registrarte. Se actualiza solo.",
+    "closeSafety": "Tus originales no se tocan: al cambiar de formato, la copia va a una carpeta aparte. Solo reescribe el archivo si reexportas al mismo formato, que es como actualiza las etiquetas sin recodificar. Notarizado por Apple.",
     "closeDirect": "Descarga directa",
     "closeSafeLead": "Tus originales, a salvo.",
     "closeSafeRest": "Al cambiar de formato, la copia va a una carpeta aparte. Si la copia sustituye a la vieja en tu biblioteca, la vieja va a la papelera o a Copias después de comprobar la nueva. Notarizado por Apple.",
@@ -1172,7 +1172,7 @@
     },
     "replace": {
       "title": "Mejora el archivo. Tus playlists ni se enteran.",
-      "lede": "Si el tema ya está en tu Apple Music, el botón pasa a decir «Sustituir». Surco cambia el archivo y cada programa apunta al nuevo, así que no tienes que volver a meter la pista a mano en cada playlist.",
+      "lede": "Si la pista ya está en tu Apple Music, el botón pasa a decir «Sustituir». Surco cambia el archivo y cada programa apunta al nuevo, así que no tienes que volver a meter la pista a mano en cada playlist.",
       "convertAll": "Convertir 1 pista",
       "search": "Buscar pistas",
       "file": "Archivo",
@@ -1291,7 +1291,7 @@
     },
     "review": {
       "title": "Encuentra las erratas y los duplicados de tu biblioteca",
-      "lede": "Surco repasa tu biblioteca de Apple Music, la carpeta que sueltes o una playlist de rekordbox, Engine DJ o Traktor, y agrupa lo que está escrito de varias formas, los espacios y caracteres invisibles que se cuelan al copiar de una web y las pistas repetidas. Eliges cómo debe quedar y el cambio llega a los ficheros, a Apple Music y, si los sincronizas, a rekordbox, Engine DJ y Traktor.",
+      "lede": "Surco repasa tu biblioteca de Apple Music, la carpeta que sueltes o una playlist de rekordbox, Engine DJ o Traktor, y agrupa lo que está escrito de varias formas, los espacios y caracteres invisibles que se cuelan al copiar de una web y las pistas repetidas. Eliges cómo debe quedar y el cambio llega a los archivos, a Apple Music y, si los sincronizas, a rekordbox, Engine DJ y Traktor.",
       "points": {
         "spelling": {
           "title": "Grafías",
@@ -1307,7 +1307,7 @@
         },
         "everywhere": {
           "title": "En todas partes",
-          "text": "Ficheros, Apple Music, rekordbox, Engine DJ y Traktor, con copia de cada fichero y de cada biblioteca de DJ, que restauras desde Copias. Y las correcciones tienen Deshacer."
+          "text": "Archivos, Apple Music, rekordbox, Engine DJ y Traktor, con copia de cada archivo y de cada biblioteca de DJ, que restauras desde Copias. Y las correcciones tienen Deshacer."
         }
       },
       "all": "Todo",
@@ -1333,10 +1333,10 @@
       "after": "Queda",
       "where": "Dónde",
       "music": "Music",
-      "file": "Fichero",
+      "file": "Archivo",
       "applyCount_one": "Aplicar {{count}} cambio",
       "applyCount_other": "Aplicar {{count}} cambios",
-      "done": "rekordbox · 4 pistas actualizadas, playlists y cues intactas"
+      "done": "rekordbox · 4 pistas actualizadas, playlists y cues intactos"
     }
   },
   "convert": {
@@ -1371,7 +1371,7 @@
         {
           "what": "Audio",
           "result": "Sin pérdida entre lossless",
-          "how": "Entre AIFF, WAV, FLAC y ALAC las muestras son las mismas. A MP3 eliges la calidad, de 320 a 128 kbps o VBR V0/V2."
+          "how": "Entre AIFF, WAV, FLAC y ALAC las muestras son las mismas. Para MP3 eliges la calidad, de 320 a 128 kbps o VBR V0/V2."
         },
         {
           "what": "Etiquetas",
@@ -1400,7 +1400,7 @@
       "title": "Cada formato, para lo suyo",
       "items": [
         {
-          "title": "AIFF, el que lee todo",
+          "title": "AIFF, el que todos leen",
           "text": "Sin pérdida, con etiquetas y carátula, y lo lee cualquier CDJ y cualquier programa de DJ."
         },
         {
@@ -1418,7 +1418,7 @@
       "title": "Convertir en tres pasos",
       "items": [
         {
-          "title": "Suelta los ficheros",
+          "title": "Suelta los archivos",
           "text": "Arrastra a Surco un archivo en el formato que sea, una selección o una carpeta entera."
         },
         {
@@ -1524,7 +1524,7 @@
     },
     "why": {
       "kicker": "Por qué AIFF",
-      "title": "Por qué los DJs pasan de FLAC a AIFF",
+      "title": "Por qué los DJ pasan de FLAC a AIFF",
       "items": [
         {
           "title": "Los reproductores antiguos no leen FLAC",
@@ -1536,7 +1536,7 @@
         },
         {
           "title": "Mismo sonido, más espacio",
-          "text": "El AIFF va sin comprimir, así que los ficheros ocupan más que los FLAC. El sonido no cambia en nada."
+          "text": "El AIFF va sin comprimir, así que los archivos ocupan más que los FLAC. El sonido no cambia en nada."
         }
       ]
     },
@@ -1545,7 +1545,7 @@
       "title": "De FLAC a AIFF en tres pasos",
       "items": [
         {
-          "title": "Suelta los ficheros",
+          "title": "Suelta los archivos",
           "text": "Arrastra a Surco un FLAC, una selección o una carpeta entera."
         },
         {
@@ -1562,7 +1562,7 @@
     "quality": {
       "kicker": "Antes de convertir",
       "title": "¿Ese FLAC es de verdad sin pérdida?",
-      "lede": "Un MP3 convertido a FLAC pesa lo mismo y se ve igual en una lista de ficheros. El espectro lo delata: el sonido se corta en seco. Surco revisa cada pista antes de que la conviertas."
+      "lede": "Un MP3 convertido a FLAC pesa lo mismo y se ve igual en una lista de archivos. El espectro lo delata: el sonido se corta en seco. Surco revisa cada pista antes de que la conviertas."
     },
     "faq": {
       "kicker": "Preguntas",
@@ -1582,7 +1582,7 @@
         },
         {
           "q": "¿Se conservan mis cues?",
-          "a": "Los de Traktor sí: Surco lleva los cues y el beatgrid a donde Traktor los lee en un AIFF. rekordbox guarda sus cues en su propia biblioteca; carga el AIFF con «Sustituir» y la misma fila de rekordbox pasa a apuntar al fichero nuevo, con sus cues y sus listas."
+          "a": "Los de Traktor sí: Surco lleva los cues y el beatgrid a donde Traktor los lee en un AIFF. rekordbox guarda sus cues en su propia biblioteca; carga el AIFF con «Sustituir» y la misma fila de rekordbox pasa a apuntar al archivo nuevo, con sus cues y sus playlists."
         },
         {
           "q": "¿Funciona en Windows?",
@@ -1672,7 +1672,7 @@
       "title": "De WAV a AIFF en tres pasos",
       "items": [
         {
-          "title": "Suelta los ficheros",
+          "title": "Suelta los archivos",
           "text": "Arrastra a Surco un WAV, una selección o una carpeta entera."
         },
         {
@@ -1709,7 +1709,7 @@
         },
         {
           "q": "¿Se conservan mis cues?",
-          "a": "Los de Traktor sí. Surco los lleva a donde Traktor los lee en un AIFF. Los de rekordbox viven en su biblioteca. Carga el AIFF con «Sustituir» y la misma ficha de rekordbox pasa a apuntar al archivo nuevo, con sus cues y sus listas."
+          "a": "Los de Traktor sí. Surco los lleva a donde Traktor los lee en un AIFF. Los de rekordbox viven en su biblioteca. Carga el AIFF con «Sustituir» y la misma fila de rekordbox pasa a apuntar al archivo nuevo, con sus cues y sus playlists."
         },
         {
           "q": "¿Funciona en Windows?",
@@ -1794,7 +1794,7 @@
       "title": "De FLAC a MP3 en tres pasos",
       "items": [
         {
-          "title": "Suelta los ficheros",
+          "title": "Suelta los archivos",
           "text": "Arrastra a Surco un FLAC, una selección o una carpeta entera."
         },
         {
@@ -1811,7 +1811,7 @@
     "quality": {
       "kicker": "Antes de convertir",
       "title": "¿Ese FLAC es de verdad sin pérdida?",
-      "lede": "Un MP3 convertido a FLAC pesa lo mismo y se ve igual en una lista de ficheros. El espectro lo delata, porque el sonido se corta en seco. Surco revisa cada pista antes de que la conviertas."
+      "lede": "Un MP3 convertido a FLAC pesa lo mismo y se ve igual en una lista de archivos. El espectro lo delata, porque el sonido se corta en seco. Surco revisa cada pista antes de que la conviertas."
     },
     "faq": {
       "kicker": "Preguntas",
@@ -1921,7 +1921,7 @@
       "title": "De WAV a MP3 en tres pasos",
       "items": [
         {
-          "title": "Suelta los ficheros",
+          "title": "Suelta los archivos",
           "text": "Arrastra a Surco un WAV, una selección o una carpeta entera."
         },
         {
@@ -2093,7 +2093,7 @@
         ],
         "related": [
           {
-            "label": "Auto-match",
+            "label": "Auto-emparejar",
             "anchor": "automatch"
           },
           {
@@ -2110,7 +2110,7 @@
         "title": "Cambia una pista de tu biblioteca por una copia mejor",
         "s": "La copia nueva ocupa el sitio de la vieja y sigue en todas sus playlists.",
         "body": [
-          "Tienes un tema en MP3 en tu biblioteca y consigues el AIFF o el WAV. Quieres que la copia nueva ocupe el sitio de la vieja, sin acabar con dos y sin volver a meterla en cada playlist.",
+          "Tienes una pista en MP3 en tu biblioteca y consigues el AIFF o el WAV. Quieres que la copia nueva ocupe el sitio de la vieja, sin acabar con dos y sin volver a meterla en cada playlist.",
           "Solo funciona en Mac, porque la sustitución pasa por Apple Music. La pista vieja tiene que estar en tu biblioteca de Apple Music."
         ],
         "keywords": "sustituir reemplazar mejor calidad mp3 aiff wav",
@@ -2119,7 +2119,7 @@
             "tab": "Destino",
             "setting": "Destino de los archivos convertidos",
             "value": "Apple Music",
-            "note": "Así Surco mira si el tema ya está en tu biblioteca."
+            "note": "Así Surco mira si la pista ya está en tu biblioteca."
           },
           {
             "tab": "Formato",
@@ -2157,11 +2157,11 @@
           },
           {
             "title": "Arrastra las copias nuevas a Surco",
-            "text": "Las de mejor calidad, por ejemplo el AIFF de un tema que tienes en MP3."
+            "text": "Las de mejor calidad, por ejemplo el AIFF de una pista que tienes en MP3."
           },
           {
             "title": "Comprueba que el botón dice «Sustituir»",
-            "text": "Así sabes que Surco ha encontrado el tema en tu Apple Music. Si la copia nueva es peor que la que tienes, te avisa."
+            "text": "Así sabes que Surco ha encontrado la pista en tu Apple Music. Si la copia nueva es peor que la que tienes, te avisa."
           },
           {
             "title": "Pulsa «Sustituir»",
@@ -2170,12 +2170,12 @@
         ],
         "points": [
           "En rekordbox y Engine DJ la pista sigue en sus playlists y con sus cue points.",
-          "En Apple Music, las listas inteligentes la recogen solas. Si estaba en una lista normal, tendrás que volver a añadirla.",
+          "En Apple Music, las playlists inteligentes la recogen solas. Si estaba en una playlist normal, tendrás que volver a añadirla.",
           "En rekordbox, revisa la rejilla la primera vez que cargues la pista. Al ver un archivo distinto puede recalcularla."
         ],
         "related": [
           {
-            "label": "Lleva tus pistas a tu software DJ",
+            "label": "Lleva tus pistas a tu programa de DJ",
             "anchor": "exportar"
           },
           {
@@ -2248,7 +2248,7 @@
         ],
         "related": [
           {
-            "label": "Lleva tus pistas a tu software DJ",
+            "label": "Lleva tus pistas a tu programa de DJ",
             "anchor": "exportar"
           },
           {
@@ -2332,7 +2332,7 @@
             "anchor": "convertir"
           },
           {
-            "label": "Lleva tus pistas a tu software DJ",
+            "label": "Lleva tus pistas a tu programa de DJ",
             "anchor": "exportar"
           }
         ]
@@ -2450,7 +2450,7 @@
         "s": "Sin clics, sin soplido, sin silencios y con sus datos de Discogs.",
         "body": [
           "Has grabado tus discos en el ordenador y quieres dejarlos listos para pinchar. Sin clics de la aguja, sin soplido de fondo, sin silencio al principio y al final, y con sus datos de Discogs.",
-          "Surco no corta una cara entera en pistas. Necesitas un archivo por tema."
+          "Surco no corta una cara entera en pistas. Necesitas un archivo por pista."
         ],
         "keywords": "vinilos grabar clics aguja silencio recortar ruido soplido rumble",
         "settings": [
@@ -2472,7 +2472,7 @@
           {
             "tab": "Fuentes",
             "setting": "Mostrar solo estos formatos",
-            "value": "Vinyl",
+            "value": "Vinilo",
             "note": "Así Discogs te enseña la edición en vinilo y no la del CD."
           },
           {
@@ -2486,7 +2486,7 @@
         "steps": [
           {
             "title": "Arrastra tus grabaciones a Surco",
-            "text": "Un archivo por tema."
+            "text": "Un archivo por pista."
           },
           {
             "title": "Etiqueta el disco entero de una vez",
@@ -2503,7 +2503,7 @@
         ],
         "points": [
           "Antes de convertir puedes escuchar la reparación y compararla con el original en la sección de vinilo del editor.",
-          "Si un tema tiene muchos clics grandes, prueba «Fuerte». Puede suavizar un poco los golpes.",
+          "Si una pista tiene muchos clics grandes, prueba «Fuerte». Puede suavizar un poco los golpes.",
           "Si en los parones se oye un soplido, sube «Ruido de fondo». Funciona aunque la pista ya venga recortada.",
           "Un clic tapado por mucha música a la vez a veces se escapa."
         ],
@@ -2523,7 +2523,7 @@
         "slug": "preparar-usb-para-el-club",
         "group": "go",
         "title": "Prepara un USB para el club",
-        "s": "Tus playlists en un USB con cues, rejilla y ondas, listo para los platos.",
+        "s": "Tus playlists en un USB con cues, rejilla y ondas, listo para los reproductores.",
         "body": [
           "Quieres llevarte tus playlists de rekordbox o de Engine DJ en un USB, con sus cues, su rejilla y sus ondas, listo para los reproductores. Tus archivos de casa no se tocan.",
           "Funciona en Mac y en Windows."
@@ -2561,7 +2561,7 @@
             "anchor": "usb"
           },
           {
-            "label": "Lleva tus pistas a tu software DJ",
+            "label": "Lleva tus pistas a tu programa de DJ",
             "anchor": "exportar"
           }
         ]
@@ -2681,7 +2681,7 @@
         "points": [
           "El cambio llega al archivo y a Apple Music, y a rekordbox, Engine DJ y Traktor si los sincronizas.",
           "Antes de tocar nada, Surco guarda una copia de cada archivo y de tus bibliotecas de DJ. «Deshacer» lo deja todo como estaba.",
-          "El BPM, la tonalidad, los cue points y la valoración no se tocan.",
+          "El BPM, la tonalidad, los cue points y la puntuación no se tocan.",
           "Si un programa de DJ está abierto, Surco se ofrece a cerrarlo."
         ],
         "related": []
@@ -2744,8 +2744,8 @@
         "points": [
           "La copia que se queda entra en las playlists de la otra, en Apple Music y en tus programas de DJ.",
           "Los cue points de la copia que quitas no pasan a la otra. Mira cuál tiene cues antes de elegir.",
-          "El archivo quitado va a la Papelera, o a Copias › Archivos de música si el disco no tiene Papelera, como un NAS.",
-          "«Deshacer» no devuelve las copias quitadas. Si te equivocas, el archivo sigue en la Papelera o en Copias › Archivos de música."
+          "El archivo quitado va a la papelera, o a Copias › Archivos de música si el disco no tiene papelera, como un NAS.",
+          "«Deshacer» no devuelve las copias quitadas. Si te equivocas, el archivo sigue en la papelera o en Copias › Archivos de música."
         ],
         "related": []
       },
@@ -2859,7 +2859,7 @@
             "text": "Con / en el editor. Los resultados de Beatport salen junto a los de las demás fuentes."
           },
           {
-            "title": "Elige el lanzamiento",
+            "title": "Elige el disco",
             "text": "La pista se lleva el BPM, la tonalidad, el mix, el sello, el catálogo y la carátula."
           },
           {
@@ -2921,7 +2921,7 @@
         ],
         "related": [
           {
-            "label": "Auto-match",
+            "label": "Auto-emparejar",
             "anchor": "automatch"
           }
         ]
@@ -3010,7 +3010,7 @@
           },
           {
             "title": "Elige sus playlists",
-            "text": "En el editor, el campo «Playlists Engine DJ» dice en qué playlists entra cada pista, también si Engine aún no la tiene."
+            "text": "En el editor, el campo «Playlists de Engine DJ» dice en qué playlists entra cada pista, también si Engine aún no la tiene."
           },
           {
             "title": "Pulsa «Convertir»",
@@ -3022,14 +3022,14 @@
           }
         ],
         "points": [
-          "A Engine llegan los datos, la valoración y la carátula.",
+          "A Engine llegan los datos, la puntuación y la carátula.",
           "Una pista nueva entra sin análisis y Engine calcula la rejilla al abrirla. Los hot cues puedes ponerlos desde Surco, con tu flujo y Auto marcar.",
           "Antes de escribir, Surco guarda una copia de seguridad de la biblioteca, que restauras desde Copias.",
-          "Al terminar, el icono de Engine DJ junto al resultado te lleva a la pista con sus cues abiertas."
+          "Al terminar, el icono de Engine DJ junto al resultado te lleva a la pista con sus cues abiertos."
         ],
         "related": [
           {
-            "label": "Lleva tus pistas a tu software DJ",
+            "label": "Lleva tus pistas a tu programa de DJ",
             "anchor": "exportar"
           }
         ]
@@ -3090,7 +3090,7 @@
           "rekordbox admite como mucho 8 hot cues, de la A a la H. Si uno no cabe, Surco te lo dice.",
           "Si te basta un cue, vienen dos flujos hechos. Mix in 64 pone un hot cue 16 compases antes del punto y Mix in 32, 8 compases antes.",
           "Los cues se guardan en tu colección de rekordbox, no en el archivo. Antes de que Surco escriba en ella, haz tu propia copia de seguridad de la biblioteca desde rekordbox. Surco hace también la suya.",
-          "Si acabas de convertir la pista y la mandaste a playlists de rekordbox, el icono de rekordbox junto al resultado te lleva a ella en «Añadidas recientemente» con sus cues abiertas."
+          "Si acabas de convertir la pista y la mandaste a playlists de rekordbox, el icono de rekordbox junto al resultado te lleva a ella en «Añadidas recientemente» con sus cues abiertos."
         ],
         "related": []
       },
@@ -3116,11 +3116,11 @@
         "steps": [
           {
             "title": "Importa la playlist",
-            "text": "Desde la pantalla de inicio o con ⌘K, elige «Abrir playlists de Apple Music» y luego la lista."
+            "text": "Desde la pantalla de inicio o con ⌘K, elige «Abrir playlists de Apple Music» y luego la playlist."
           },
           {
             "title": "Mira si falta alguna",
-            "text": "Surco carga los archivos que tienes en el disco. Las pistas de streaming o sin descargar se cuentan aparte, como pistas sin fichero en el disco."
+            "text": "Surco carga los archivos que tienes en el disco. Las pistas de streaming o sin descargar se cuentan aparte, como pistas sin archivo en el disco."
           },
           {
             "title": "Elige el formato",
@@ -3133,7 +3133,7 @@
         ],
         "points": [
           "Si a un archivo le faltan datos que Music sí tiene, como el año o la carátula, Surco los toma de Music.",
-          "Surco carga la lista tal como está. Si después añades pistas a la playlist, vuelve a importarla."
+          "Surco carga la playlist tal como está. Si después añades pistas a la playlist, vuelve a importarla."
         ],
         "related": [
           {
@@ -3164,7 +3164,7 @@
             "section": "Copias de los originales",
             "setting": "Qué se guarda",
             "value": "Solo si cambia el audio",
-            "note": "Así viene. Un NAS no tiene Papelera, así que lo que borras va a Copias › Archivos de música."
+            "note": "Así viene. Un NAS no tiene papelera, así que lo que borras va a Copias › Archivos de música."
           }
         ],
         "steps": [
@@ -3270,13 +3270,13 @@
     "chartLabel": "Instalaciones acumuladas en Mac",
     "estimatedLegend": "La parte punteada está reconstruida a partir de la fecha de cada versión. La continua se mide cada día.",
     "weeklyHeading": "Instalaciones nuevas en Mac por semana",
-    "updatesHeading": "Macs que se actualizan a cada versión",
+    "updatesHeading": "Mac que se actualizan a cada versión",
     "updatesLede": "Cuántos Mac se bajaron cada actualización. Es lo más parecido a saber cuánta gente usa Surco de verdad.",
     "howHeading": "Cómo se cuenta",
     "howItems": [
-      "En Mac solo cuenta el instalador .dmg. Las actualizaciones bajan otro fichero, así que no se mezclan.",
+      "En Mac solo cuenta el instalador .dmg. Las actualizaciones bajan otro archivo, así que no se mezclan.",
       "En Windows y Linux el instalador también es la actualización, así que cada versión nueva suma una descarga por cada persona que actualiza.",
-      "Cada versión recibe una o dos descargas de programas automáticos que se bajan todos los ficheros. Se restan usando un fichero que ninguna persona necesita."
+      "Cada versión recibe una o dos descargas de programas automáticos que se bajan todos los archivos. Se restan usando un archivo que ninguna persona necesita."
     ],
     "measuredSince": "GitHub solo guarda el total de hoy. Lo anterior al {{date}} está reconstruido con la fecha de cada versión, y desde entonces se guarda una foto cada día.",
     "loading": "Cargando cifras…",
