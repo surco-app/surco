@@ -342,7 +342,7 @@ export function SettingsModal({
       {/* A vertical nav down the side reads like macOS System Settings and scales past the
           point a single centred row of ten tabs starts to crowd — every label gets its
           full width, and adding a tab costs a row, not horizontal space it doesn't have. */}
-      <div className="flex w-[188px] shrink-0 flex-col overflow-y-auto border-r border-[var(--color-line)] bg-[var(--color-ink)] p-3">
+      <div className="flex w-[204px] shrink-0 flex-col overflow-y-auto border-r border-[var(--color-line)] bg-[var(--color-ink)] p-3">
         <label className="mb-2 flex h-8 shrink-0 items-center gap-2 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] px-2.5 focus-within:border-[var(--color-accent)]">
           <Search
             className="h-3.5 w-3.5 shrink-0 text-fg-faint"
