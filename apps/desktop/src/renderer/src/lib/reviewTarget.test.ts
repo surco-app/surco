@@ -151,14 +151,14 @@ describe('reviewDetail', () => {
   it('reads in Spanish as approved', async () => {
     await i18n.changeLanguage('es')
     expect(reviewDetail(tr, { kind: 'music', name: '2K', ids: new Set(), count: 406 })).toBe(
-      'Las 406 pistas de «2K». Cambia Apple Music y los ficheros',
+      'Las 406 pistas de «2K». Cambia Apple Music y los archivos',
     )
     expect(
       reviewDetail(tr, { kind: 'playlist', name: 'Factory', paths: new Set(), count: 70 }),
-    ).toBe('Las 70 pistas de «Factory». Cambia los ficheros')
+    ).toBe('Las 70 pistas de «Factory». Cambia los archivos')
     expect(duplicatesDetail(tr, '2K')).toBe('De «2K» en toda tu biblioteca de Music')
     expect(reviewDetail(tr, { kind: 'list', count: 71 })).toBe(
-      'Las 71 pistas de la lista. Cambia los ficheros',
+      'Las 71 pistas de la lista. Cambia los archivos',
     )
   })
 })

@@ -28,7 +28,7 @@
         "in": "1.27.0"
       },
       {
-        "text": "«Mejor que Music», en la sección Apple Music, te deja solo las pistas que has traído y que suenan mejor que la copia que ya tienes en Apple Music. Una copia .m4a se juzga por lo que lleva dentro, así que AAC cuenta como con pérdida y ALAC como sin pérdida.",
+        "text": "«Mejor que Music», en la sección Apple Music, te deja solo las pistas que has traído y que suenan mejor que la copia que ya tienes en Apple Music. Una copia .m4a se juzga por lo que lleva dentro, así que AAC cuenta como con pérdidas y ALAC como sin pérdidas.",
         "in": "1.27.0"
       },
       {
@@ -40,7 +40,7 @@
         "in": "1.27.0"
       },
       {
-        "text": "Analizar la calidad de cientos de pistas calienta mucho menos el Mac y no se come todos los núcleos. Cada pista recibe primero su veredicto de calidad, y después se miden la sonoridad, el BPM y la tonalidad. Con un programa de DJ abierto el análisis ya no se para, sigue más despacio, de una pista en una.",
+        "text": "Analizar la calidad de cientos de pistas calienta mucho menos el Mac y ya no se come todos los núcleos. Cada pista recibe primero su veredicto de calidad, y después se miden la sonoridad, el BPM y la tonalidad. Con un programa de DJ abierto el análisis ya no se para, sigue más despacio, de una pista en una.",
         "in": "1.27.0"
       },
       {
@@ -60,7 +60,7 @@
         "in": "1.27.3"
       },
       {
-        "text": "El editor de cues ampliado se abre con ⌘⇧C desde la pista seleccionada. Sus botones de abajo van en grupos, pads, CALL, rejilla y zoom, y «Borrar todos los cues» queda solo al final. El zoom acerca hasta un compás, «Aceptar y guardar» guarda las propuestas de «Auto marcar» en tu programa de DJ con un clic, y con «Letras en orden de la pista» un pad vacío te dice qué letra tendrá el cue.",
+        "text": "El editor de cues a pantalla completa se abre con ⌘⇧C desde la pista seleccionada. Sus botones de abajo van en grupos, pads, CALL, rejilla y zoom, y «Borrar todos los cues» queda solo al final. El zoom acerca hasta un compás, «Aceptar y guardar» guarda las propuestas de «Auto marcar» en tu programa de DJ con un clic, y con «Letras en orden de la pista» un pad vacío te dice qué letra tendrá el cue.",
         "in": "1.27.3"
       },
       {
@@ -138,7 +138,7 @@
         "in": "1.25.0"
       },
       {
-        "text": "En el editor de cues completo la onda ampliada crece con la ventana, y la rejilla se ajusta desde la misma línea del reproductor, con los iconos de rekordbox y ×2 y ½ a mano.",
+        "text": "En el editor de cues a pantalla completa la onda ampliada crece con la ventana, y la rejilla se ajusta desde la misma línea del reproductor, con los iconos de rekordbox y ×2 y ½ a mano.",
         "in": "1.25.0"
       }
     ]
@@ -203,7 +203,7 @@
     "title": "Rejillas en su sitio, y Serato",
     "items": [
       {
-        "text": "Ajusta la rejilla de una pista sin abrir el programa. Con la sección de cues maximizada tienes una fila con el BPM, flechas para moverla, botones para estirarla o encogerla, el primer tiempo en el cabezal y «Auto», que la cuadra con los golpes. Al lado ves cuánto se desvía aquí y al final de la pista. Se guarda en rekordbox, Traktor y Engine DJ, y en rekordbox puedes partirla en tramos con su propio tempo para las pistas empalmadas. Las rejillas que tienes bloqueadas en el programa no se tocan.",
+        "text": "Ajusta la rejilla de una pista sin abrir el programa. Con la sección de cues maximizada tienes una fila con el BPM, flechas para moverla, botones para estirarla o encogerla, el primer tiempo en el cabezal y «Auto», que la cuadra con los golpes. Al lado ves cuánto se desvía aquí y al final de la pista. Se guarda en rekordbox, Traktor y Engine DJ, y en rekordbox puedes partirla en tramos con su propio tempo para las pistas editadas. Las rejillas que tienes bloqueadas en el programa no se tocan.",
         "in": "1.22.0"
       },
       {
@@ -284,7 +284,7 @@
         "in": "1.19.0"
       },
       {
-        "text": "Volver a abrir una carpeta o una playlist que ya habías cargado es más rápido. Surco recuerda el análisis y el resultado del auto-match de cada pista mientras el archivo no cambie, y el auto-match solo busca las pistas que dejan a la vista el filtro y la búsqueda. Las playlists y carátulas de Apple Music salen al momento tal como las viste la última vez. Si un archivo ha cambiado entretanto, Surco lo vuelve a leer antes de convertir.",
+        "text": "Volver a abrir una carpeta o una playlist que ya habías cargado es más rápido. Surco recuerda el análisis y el resultado del auto-emparejado de cada pista mientras el archivo no cambie, y el auto-emparejado solo busca las pistas que dejan a la vista el filtro y la búsqueda. Las playlists y carátulas de Apple Music salen al momento tal como las viste la última vez. Si un archivo ha cambiado entretanto, Surco lo vuelve a leer antes de convertir.",
         "in": "1.19.0"
       },
       {
@@ -303,11 +303,11 @@
     "title": "Surco comprueba lo que hace",
     "items": [
       {
-        "text": "Al terminar de convertir, Surco vuelve a leer lo que ha escrito en el archivo, en Apple Music, en rekordbox, en Engine DJ y en Traktor. El ✓ solo aparece cuando todo cuadra, y el escudo de al lado te enseña «Qué se comprobó». Si algo no cuadra, una línea en ámbar te dice qué y dónde, con «Reintentar», y el archivo anterior no se ofrece para la papelera mientras algo lo use. En un lote ves cuántas pistas están comprobadas, y el filtro «No cuadran» te lleva a las que no.",
+        "text": "Al terminar de convertir, Surco vuelve a leer lo que ha escrito en el archivo, en Apple Music, en rekordbox, en Engine DJ y en Traktor. El ✓ solo aparece cuando todo cuadra, y el escudo de al lado te enseña «Qué se comprobó». Si algo no cuadra, una línea en ámbar te dice qué y dónde, con «Reintentar», y el archivo anterior no se ofrece para la Papelera mientras algo lo use. En un lote ves cuántas pistas están comprobadas, y el filtro «No cuadran» te lleva a las que no.",
         "in": "1.18.0"
       },
       {
-        "text": "Si conviertes a otro formato una pista que ya tienes en Apple Music, Surco la sustituye en vez de dejar dos. Sigue en sus listas, con sus reproducciones y su valoración, y rekordbox, Engine DJ y Traktor pasan al archivo nuevo sin sacarla de sus playlists. Entre AIFF, WAV, FLAC y ALAC, si el audio no cambia, rekordbox conserva su análisis, su rejilla y sus cues.",
+        "text": "Si conviertes a otro formato una pista que ya tienes en Apple Music, Surco la sustituye en vez de dejar dos. Sigue en sus playlists, con sus reproducciones y su valoración, y rekordbox, Engine DJ y Traktor pasan al archivo nuevo sin sacarla de sus playlists. Entre AIFF, WAV, FLAC y ALAC, si el audio no cambia, rekordbox conserva su análisis, su rejilla y sus cues.",
         "in": "1.18.0"
       },
       {
@@ -323,7 +323,7 @@
         "in": "1.18.0"
       },
       {
-        "text": "La agrupación de los MP3 y AIFF llega a Traktor y a Apple Music en todas las conversiones, y un número de pista «3/12» o de disco «1/2» se guarda tal cual en vez de convertirse en 312 o perderse.",
+        "text": "El grouping de los MP3 y AIFF llega a Traktor y a Apple Music en todas las conversiones, y un número de pista «3/12» o de disco «1/2» se guarda tal cual en vez de convertirse en 312 o perderse.",
         "in": "1.18.0"
       },
       {
@@ -343,7 +343,7 @@
         "in": "1.18.3"
       },
       {
-        "text": "Al convertir un MP3 a WAV, los cues de Traktor se colocan igual que al pasar a AIFF o FLAC, y Surco lee la cabecera de cada MP3 para que caigan en su sitio también en MP3 sin cabecera, con carátulas grandes o de baja frecuencia. Lo hemos medido en Traktor.",
+        "text": "Al convertir un MP3 a WAV, los cues de Traktor se colocan igual que al pasar a AIFF o FLAC, y Surco lee la cabecera de cada MP3 para que caigan en su sitio también en MP3 sin cabecera, con carátulas grandes o con frecuencias de muestreo bajas. Lo hemos medido en Traktor.",
         "in": "1.18.4"
       },
       {
@@ -379,7 +379,7 @@
   {
     "version": "1.17",
     "date": "29 de octubre de 2026",
-    "title": "Cada programa DJ, a tu manera",
+    "title": "Cada programa de DJ, a tu manera",
     "items": [
       {
         "text": "En Ajustes › Destino eliges por separado para rekordbox, Engine DJ y Traktor qué hace una conversión. «No tocar» lo deja como está, «Actualizar» pone al día las pistas que ya tiene y «Actualizar y añadir» además da de alta las nuevas, aunque no las mandes a ninguna playlist. El botón de convertir nombra cada programa al que llegará la pista, y el asistente de inicio te lo pregunta.",
@@ -398,19 +398,19 @@
         "in": "1.17.0"
       },
       {
-        "text": "⌘Z deshace también elegir una edición, el auto-emparejado, aceptar una revisión y cambiar la carátula a mano, y ⇧⌘Z lo rehace. Cada paso deshace solo lo que cambió, así que lo que corregiste después se queda, en varias pistas a la vez cada una recupera su propio valor, y un emparejado que deshiciste no vuelve a aplicarse solo.",
+        "text": "⌘Z deshace también elegir un lanzamiento, el auto-emparejado, aceptar una revisión y cambiar la carátula a mano, y ⇧⌘Z lo rehace. Cada paso deshace solo lo que cambió, así que lo que corregiste después se queda, en varias pistas a la vez cada una recupera su propio valor, y un emparejado que deshiciste no vuelve a aplicarse solo.",
         "in": "1.17.0"
       },
       {
-        "text": "Al aplicar una edición, debajo de cada campo ves «Antes:» con lo que había, y «Restaurar» lo devuelve con un clic. El BPM y la tonalidad que la pista ya tenía se quedan, la edición solo los rellena si están vacíos.",
+        "text": "Al aplicar un lanzamiento, debajo de cada campo ves «Antes:» con lo que había, y «Restaurar» lo devuelve con un clic. El BPM y la tonalidad que la pista ya tenía se quedan, el lanzamiento solo los rellena si están vacíos.",
         "in": "1.17.0"
       },
       {
-        "text": "Si una pista de la edición dura bastante más o menos que tu archivo, Surco te avisa, también en las filas del álbum, para que no apliques otra versión sin darte cuenta. «Mejor coincidencia» solo aparece cuando la coincidencia se confirma, no por compartir el título.",
+        "text": "Si una pista del lanzamiento dura bastante más o menos que tu archivo, Surco te avisa, también en las filas del álbum, para que no apliques otra versión sin darte cuenta. «Mejor coincidencia» solo aparece cuando la coincidencia se confirma, no por compartir el título.",
         "in": "1.17.0"
       },
       {
-        "text": "Surco reconoce los archivos dañados, los que dejan de sonar antes de su duración. Los marca «Dañado» junto al formato, tienen su propio filtro «Dañadas» y nunca cuentan como falsos, así que no acaban en la papelera con ellos. Cada veredicto de calidad se lee en una palabra junto al formato, sin depender del color, y antes de convertir algo con pérdida a un formato sin pérdida Surco te recuerda que no recupera calidad.",
+        "text": "Surco reconoce los archivos dañados, los que dejan de sonar antes de su duración. Los marca «Dañado» junto al formato, tienen su propio filtro «Dañadas» y nunca cuentan como falsos, así que no acaban en la Papelera con ellos. Cada veredicto de calidad se lee en una palabra junto al formato, sin depender del color, y antes de convertir algo con pérdidas a un formato sin pérdidas Surco te recuerda que no recupera calidad.",
         "in": "1.17.0"
       },
       {
@@ -457,7 +457,7 @@
         "in": "1.16.0"
       },
       {
-        "text": "Cuando conviertes una pista que mandaste a playlists, el icono de rekordbox, Engine DJ o Traktor junto al resultado te lleva a ella con sus cues abiertas.",
+        "text": "Cuando conviertes una pista que mandaste a playlists, el icono de rekordbox, Engine DJ o Traktor junto al resultado te lleva a ella con sus cues abiertos.",
         "in": "1.16.0"
       },
       {
@@ -605,7 +605,7 @@
         "in": "1.12.1"
       },
       {
-        "text": "Más arreglos de estabilidad al convertir, al restaurar originales y al escribir en tus bibliotecas DJ.",
+        "text": "Más arreglos de estabilidad al convertir, al restaurar originales y al escribir en tus bibliotecas de DJ.",
         "in": "1.12.1"
       },
       {
@@ -636,7 +636,7 @@
         "in": "1.11.0"
       },
       {
-        "text": "Al convertir una pista con carátula nueva, Traktor la muestra solo en esa pista. Antes la pintaba también en el resto del disco.",
+        "text": "Al convertir una pista con carátula nueva, Traktor la muestra solo en esa pista. Antes la pintaba también en el resto del álbum.",
         "in": "1.11.0"
       },
       {
@@ -644,7 +644,7 @@
         "in": "1.11.0"
       },
       {
-        "text": "Convertir una pista que tienes en rekordbox ya no te mueve los cues. Siguen sobre el mismo golpe aunque cambies de formato o recortes el silencio del principio, y rekordbox la vuelve a analizar al abrirse, así que ves la onda del fichero nuevo y no la del antiguo.",
+        "text": "Convertir una pista que tienes en rekordbox ya no te mueve los cues. Siguen sobre el mismo golpe aunque cambies de formato o recortes el silencio del principio, y rekordbox la vuelve a analizar al abrirse, así que ves la onda del archivo nuevo y no la del antiguo.",
         "in": "1.11.1"
       },
       {
@@ -656,7 +656,7 @@
         "in": "1.11.2"
       },
       {
-        "text": "En el menú de convertir puedes elegir «Editar el original» solo para esa vez, sin cambiar los ajustes. Sirve, por ejemplo, para retocar las etiquetas de un fichero sin crear una copia. Surco te sigue pidiendo confirmación antes de reescribirlo.",
+        "text": "En el menú de convertir puedes elegir «Editar el original» solo para esa vez, sin cambiar los ajustes. Sirve, por ejemplo, para retocar las etiquetas de un archivo sin crear una copia. Surco te sigue pidiendo confirmación antes de reescribirlo.",
         "in": "1.11.2"
       }
     ]
@@ -726,7 +726,7 @@
         "in": "1.9.0"
       },
       {
-        "text": "Exportas tus playlists de rekordbox a un USB que rekordbox puede seguir sincronizando, con sus cues, rejilla y ondas.",
+        "text": "Exportas tus playlists de rekordbox a un USB que rekordbox puede seguir sincronizando, con sus cues, rejillas y ondas.",
         "in": "1.9.0"
       },
       {
@@ -749,7 +749,7 @@
     "title": "Vinilo más limpio",
     "items": [
       {
-        "text": "La reparación de vinilo ahora también baja el ruido de fondo, el soplido continuo del disco que más se oye en los parones. Tiene tres niveles, Suave, Medio y Fuerte, y cada uno quita además el retumbe del giradiscos. Lo eliges por pista en el editor, comparándolo en el A/B, o como ajuste por defecto para todas las conversiones.",
+        "text": "La reparación de vinilo ahora también baja el ruido de fondo, el soplido continuo del disco que más se oye en los breaks. Tiene tres niveles, Suave, Medio y Fuerte, y cada uno quita además el retumbo del giradiscos. Lo eliges por pista en el editor, comparándolo en el A/B, o como ajuste por defecto para todas las conversiones.",
         "in": "1.8.0"
       },
       {
@@ -812,7 +812,7 @@
     "title": "Ordena tu biblioteca",
     "items": [
       {
-        "text": "Nueva revisión de metadatos de Apple Music, en Archivo y en ⌘K. Agrupa lo que tu biblioteca escribe de varias formas (DJ Lara y Dj Lara, acentos que no casan, espacios o caracteres invisibles que se cuelan al copiar de una web y posibles erratas) y deja que elijas cómo queda. El cambio llega al fichero, a Apple Music y, si los sincronizas, a rekordbox, Engine DJ y Traktor, con copia de seguridad y Deshacer.",
+        "text": "Nueva revisión de metadatos de Apple Music, en Archivo y en ⌘K. Agrupa lo que tu biblioteca escribe de varias formas (DJ Lara y Dj Lara, acentos que no casan, espacios o caracteres invisibles que se cuelan al copiar de una web y posibles erratas) y deja que elijas cómo queda. El cambio llega al archivo, a Apple Music y, si los sincronizas, a rekordbox, Engine DJ y Traktor, con copia de seguridad y Deshacer.",
         "in": "1.7.0"
       },
       {
@@ -832,7 +832,7 @@
         "in": "1.7.0"
       },
       {
-        "text": "Borrar una pista de un disco sin Papelera, como un NAS, ya no la elimina para siempre. Va a Copias de seguridad, y el aviso dice antes adónde irá cada archivo.",
+        "text": "Borrar una pista de un disco sin Papelera, como un NAS, ya no la elimina para siempre. Va a Copias, y el aviso dice antes adónde irá cada archivo.",
         "in": "1.7.0"
       },
       {
@@ -848,7 +848,7 @@
         "in": "1.7.2"
       },
       {
-        "text": "Aplicar un filtro a un AAC que conservas en su formato lo deja en AAC con su misma calidad, en vez de un archivo sin pérdida tres veces más grande. Y Surco pregunta antes de recodificar en su sitio un MP3 o un AAC, porque eso degrada el original y no se puede deshacer.",
+        "text": "Aplicar un filtro a un AAC que conservas en su formato lo deja en AAC con su misma calidad, en vez de un archivo sin pérdidas tres veces más grande. Y Surco pregunta antes de recodificar en su sitio un MP3 o un AAC, porque eso degrada el original y no se puede deshacer.",
         "in": "1.7.2"
       },
       {
@@ -915,7 +915,7 @@
     "title": "Tus M4A se quedan en M4A",
     "items": [
       {
-        "text": "Actualizar las etiquetas de un M4A con audio con pérdida ya no lo convierte en un archivo sin pérdida hasta cuatro veces más grande que no suena mejor. Surco deja el audio como está y solo cambia las etiquetas. El ajuste «Mantener MP3 y M4A como están» cubre ahora también los M4A.",
+        "text": "Actualizar las etiquetas de un M4A con audio con pérdidas ya no lo convierte en un archivo sin pérdidas hasta cuatro veces más grande que no suena mejor. Surco deja el audio como está y solo cambia las etiquetas. El ajuste «Mantener MP3 y M4A como están» cubre ahora también los M4A.",
         "in": "1.6.0"
       },
       {
@@ -927,7 +927,7 @@
         "in": "1.6.1"
       },
       {
-        "text": "Las cifras de calidad, loudness, recorte, declick y tamaño de archivo se escriben con la coma decimal del idioma de la app, también el objetivo de loudness.",
+        "text": "Las cifras de calidad, sonoridad, recorte, declick y tamaño de archivo se escriben con el separador decimal del idioma de la app, también el objetivo de sonoridad.",
         "in": "1.6.1"
       },
       {
@@ -966,7 +966,7 @@
     "title": "Apple Music también para lo que arrastras",
     "items": [
       {
-        "text": "Una pista que está en tu biblioteca de Apple Music recibe lo que Music sabe de ella aunque la arrastres o la abras desde una carpeta, igual que al importar una lista: si el archivo no trae grouping, año, comentario, BPM, número de pista o de disco, estrellas o carátula, Surco los toma de Music. Manda siempre lo que ya lleva el archivo, solo se usa la entrada de ese mismo archivo y no la de otra copia de la canción, y una carátula que quitaste a mano no vuelve. Solo en macOS.",
+        "text": "Una pista que está en tu biblioteca de Apple Music recibe lo que Music sabe de ella aunque la arrastres o la abras desde una carpeta, igual que al importar una playlist: si el archivo no trae grouping, año, comentario, BPM, número de pista o de disco, estrellas o carátula, Surco los toma de Music. Manda siempre lo que ya lleva el archivo, solo se usa la entrada de ese mismo archivo y no la de otra copia de la canción, y una carátula que quitaste a mano no vuelve. Solo en macOS.",
         "in": "1.5.0"
       },
       {
@@ -1005,7 +1005,7 @@
         "in": "1.4.2"
       },
       {
-        "text": "Si falta algo para convertir, el botón lo dice en su propia cara y, al pulsarlo, te lleva al campo que falta. Al terminar, el resultado y los siguientes pasos caben en una sola línea. Menús, avisos y diálogos se mueven con más calma, y para quitar una pista deslizando hay que llevarla hasta la mitad de la lista, así que ya no se va sin querer.",
+        "text": "Si falta algo para convertir, el propio botón lo dice y, al pulsarlo, te lleva al campo que falta. Al terminar, el resultado y los siguientes pasos caben en una sola línea. Menús, avisos y diálogos se mueven con más calma, y para quitar una pista deslizando hay que llevarla hasta la mitad de la lista, así que ya no se va sin querer.",
         "in": "1.4.2"
       }
     ]
@@ -1118,7 +1118,7 @@
         "in": "1.1.0"
       },
       {
-        "text": "Si faltan campos obligatorios, el botón principal lo dice en su propia cara, por ejemplo «Faltan Artista y Título», en vez de quedarse apagado sin explicación.",
+        "text": "Si faltan campos obligatorios, el propio botón principal lo dice, por ejemplo «Faltan Artista y Título», en vez de quedarse apagado sin explicación.",
         "in": "1.1.0"
       },
       {
@@ -1173,7 +1173,7 @@
         "in": "1.0.0"
       },
       {
-        "text": "El volumen y la reparación de clicks que ajustas en cada pista se conservan al cerrar y volver a abrir Surco.",
+        "text": "El volumen y la reparación de clics que ajustas en cada pista se conservan al cerrar y volver a abrir Surco.",
         "in": "1.0.0"
       },
       {
@@ -1181,7 +1181,7 @@
         "in": "1.0.0"
       },
       {
-        "text": "El editor se lee de un vistazo: recorte, clicks y volumen dicen en una frase lo que pasará al convertir; ⌘I muestra la información del archivo; y tras convertir, un solo enlace limpia los archivos anteriores. Las mismas palabras en toda la app: Convertir, Volumen, Dudosa, Por confirmar.",
+        "text": "El editor se lee de un vistazo: recorte, clics y volumen dicen en una frase lo que pasará al convertir; ⌘I muestra la información del archivo; y tras convertir, un solo enlace limpia los archivos anteriores. Las mismas palabras en toda la app: Convertir, Volumen, Dudosa, Por confirmar.",
         "in": "1.0.0"
       },
       {
@@ -1197,11 +1197,11 @@
         "in": "1.0.1"
       },
       {
-        "text": "Los géneros y agrupaciones que solo se diferencian en mayúsculas cuentan como el mismo, y un género que llega de Discogs, Bandcamp o Deezer se escribe igual que en tu lista de géneros.",
+        "text": "Los géneros y los grouping que solo se diferencian en mayúsculas cuentan como el mismo, y un género que llega de Discogs, Bandcamp o Deezer se escribe igual que en tu lista de géneros.",
         "in": "1.0.1"
       },
       {
-        "text": "Surco se puede usar entero con teclado y con lector de pantalla: cada control dice qué es y en qué estado está, los avisos y el progreso se leen en voz alta, el foco se ve siempre y los colores tienen más contraste. Mayúsculas y las flechas amplían la selección de pistas, y con «Reducir movimiento» activado en el sistema las animaciones se quedan quietas.",
+        "text": "Surco se puede usar entero con teclado y con lector de pantalla: cada control dice qué es y en qué estado está, los avisos y el progreso se leen en voz alta, el foco se ve siempre y los colores tienen más contraste. Mayús y las flechas amplían la selección de pistas, y con «Reducir movimiento» activado en el sistema las animaciones se quedan quietas.",
         "in": "1.0.1"
       },
       {
@@ -1255,7 +1255,7 @@
         "in": "0.99.9"
       },
       {
-        "text": "Normalizar va más rápido: medir la sonoridad de una pista cuesta una cuarta parte de lo que costaba, y Surco mide una sola vez. La lectura de la sección de loudness del editor es la misma que usa la conversión, así que normalizar un lote deja medidas todas sus pistas y abrir una pista ya medida no vuelve a medirla.",
+        "text": "Normalizar va más rápido: medir la sonoridad de una pista cuesta una cuarta parte de lo que costaba, y Surco mide una sola vez. La lectura de la sección de sonoridad del editor es la misma que usa la conversión, así que normalizar un lote deja medidas todas sus pistas y abrir una pista ya medida no vuelve a medirla.",
         "in": "0.99.0"
       },
       {
@@ -1299,7 +1299,7 @@
         "in": "0.99.4"
       },
       {
-        "text": "Con el emparejamiento automático activado, arrastrar una carpeta la recorre entera aunque no la toques: antes solo se emparejaban las filas que tenías en pantalla y el contador se quedaba clavado, como si se hubiera parado en 20 de 1000, hasta que hacías scroll o lo reactivabas desde la barra. Las filas que estás mirando siguen yendo primero.",
+        "text": "Con el auto-emparejado activado, arrastrar una carpeta la recorre entera aunque no la toques: antes solo se emparejaban las filas que tenías en pantalla y el contador se quedaba clavado, como si se hubiera parado en 20 de 1000, hasta que te desplazabas o lo reactivabas desde la barra. Las filas que estás mirando siguen yendo primero.",
         "in": "0.99.5"
       },
       {
@@ -1307,7 +1307,7 @@
         "in": "0.99.5"
       },
       {
-        "text": "La papelera de Surco pasa a llamarse «Originales de Surco»: lo que guarda son los archivos de partida que una conversión sustituyó, nunca algo que hayas borrado tú. Y en Ajustes → Destino eliges cuándo guardar esa copia: siempre, solo cuando cambia el audio (convertir, normalizar, recortar) o nunca. Retocar las etiquetas de una crate entera llenaba el límite de la papelera con copias idénticas al archivo nuevo salvo por las etiquetas.",
+        "text": "La papelera de Surco pasa a llamarse «Originales de Surco»: lo que guarda son los archivos de partida que una conversión sustituyó, nunca algo que hayas borrado tú. Y en Ajustes → Destino eliges cuándo guardar esa copia: siempre, solo cuando cambia el audio (convertir, normalizar, recortar) o nunca. Retocar las etiquetas de un crate entero llenaba el límite de la papelera con copias idénticas al archivo nuevo salvo por las etiquetas.",
         "in": "0.99.5"
       },
       {
@@ -1381,27 +1381,27 @@
     "title": "Sube una pista de calidad sin perder rekordbox",
     "items": [
       {
-        "text": "Conviertes una pista que tienes en rekordbox y sigue siendo la misma pista: se queda en sus playlists, con sus cue points y su historial. No aparece duplicada ni tienes que volver a añadirla. Antes de tocar nada, Surco guarda dos copias de seguridad de tu colección: una de cómo estaba al empezar la tanda y otra de cada cambio, así que puedes volver atrás una pista o el lote entero. Y nunca trabaja con rekordbox abierto: se ofrece a cerrarlo y, si dices que no, prefiere no hacer nada. Viene desactivado: actívalo en Ajustes → Destino, o al configurar Surco por primera vez si ya tienes rekordbox en el equipo. Un aviso: rekordbox volverá a analizar la pista y puede recolocar el beatgrid, así que conviene revisarlo.",
+        "text": "Conviertes una pista que tienes en rekordbox y sigue siendo la misma pista: se queda en sus playlists, con sus cue points y su historial. No aparece duplicada ni tienes que volver a añadirla. Antes de tocar nada, Surco guarda dos copias de seguridad de tu colección: una de cómo estaba al empezar el lote y otra de cada cambio, así que puedes volver atrás una pista o el lote entero. Y nunca trabaja con rekordbox abierto: se ofrece a cerrarlo y, si dices que no, prefiere no hacer nada. Viene desactivado: actívalo en Ajustes → Destino, o al configurar Surco por primera vez si ya tienes rekordbox en el equipo. Un aviso: rekordbox volverá a analizar la pista y puede recolocar el beatgrid, así que conviene revisarlo.",
         "in": "0.97.0"
       },
       {
-        "text": "Puedes sustituir una pista que ya está en tu biblioteca, en vez de acabar con dos. Cargas un AIFF o un FLAC de un tema que tienes como MP3 y el botón pasa a decir «Sustituir»: la copia buena ocupa el lugar de la vieja en Apple Music y en rekordbox, y se queda con sus playlists y sus cue points. Si el cambio suena a peor (un máster sin pérdida que pasa a MP3, una copia con menos agudos, o un lossless hecho a partir de un MP3), Surco te lo dice y te deja seguir: la decisión es tuya.",
+        "text": "Puedes sustituir una pista que ya está en tu biblioteca, en vez de acabar con dos. Cargas un AIFF o un FLAC de un tema que tienes como MP3 y el botón pasa a decir «Sustituir»: la copia buena ocupa el lugar de la vieja en Apple Music y en rekordbox, y se queda con sus playlists y sus cue points. Si el cambio suena a peor (un máster sin pérdidas que pasa a MP3, una copia con menos agudos, o un lossless hecho a partir de un MP3), Surco te lo dice y te deja seguir: la decisión es tuya.",
         "in": "0.97.0"
       },
       {
-        "text": "Al terminar, Surco te ofrece mandar a la papelera el archivo al que acabas de sustituir, de una pista o de todo el lote a la vez. Antes de hacerlo le pregunta al disco si el borrado es recuperable: en un volumen de red, donde puede no haber papelera, te avisa de que puede ser definitivo en vez de prometerte una papelera que no existe.",
+        "text": "Al terminar, Surco te ofrece mandar a la Papelera el archivo que acabas de sustituir, de una pista o de todo el lote a la vez. Antes de hacerlo le pregunta al disco si el borrado es recuperable: en un volumen de red, donde puede no haber Papelera, te avisa de que puede ser definitivo en vez de prometerte una Papelera que no existe.",
         "in": "0.97.0"
       },
       {
-        "text": "El selector de listas de Apple Music se agrupa ahora por carpetas, plegables, en vez de dar una lista corrida. Si organizas tus listas en carpetas, las encuentras donde las guardaste.",
+        "text": "El selector de playlists de Apple Music se agrupa ahora por carpetas, plegables, en vez de dar una lista corrida. Si organizas tus playlists en carpetas, las encuentras donde las guardaste.",
         "in": "0.97.0"
       },
       {
-        "text": "Una pista sin carátula la toma de Apple Music, si tu biblioteca la tiene. Se rellena al importar y la portada se ve ya en la fila de la pista, sin tener que abrirla.",
+        "text": "Una pista sin carátula la toma de Apple Music, si tu biblioteca la tiene. Se rellena al importar y la carátula se ve ya en la fila de la pista, sin tener que abrirla.",
         "in": "0.97.0"
       },
       {
-        "text": "Cuando una conversión falla, el aviso dice qué pista fue, y desde el resumen de la tanda puedes dejar la lista solo con las que fallaron.",
+        "text": "Cuando una conversión falla, el aviso dice qué pista fue, y desde el resumen del lote puedes dejar la lista solo con las que fallaron.",
         "in": "0.97.0"
       }
     ]
@@ -1409,7 +1409,7 @@
   {
     "version": "0.96",
     "date": "11 de septiembre de 2026",
-    "title": "Trae una lista de Apple Music y trabaja sobre ella",
+    "title": "Trae una playlist de Apple Music y trabaja sobre ella",
     "items": [
       {
         "text": "La corrección de los cues al convertir desde o hacia MP3 se aplica ya a todas tus pistas. Un MP3 rippeado o editado a mano, de los que no siempre llevan la marca que ponen los programas al crearlos, se quedaba fuera: sus cues acababan algo más desplazados de donde Traktor los pinta. Ahora recibe la misma corrección que los demás. Los MP3 normales no cambian.",
@@ -1420,7 +1420,7 @@
         "in": "0.96.1"
       },
       {
-        "text": "Puedes cargar una lista de reproducción de Apple Music sin salir de Surco. Eliges cuál, y las pistas que esa lista tiene en tu disco aparecen en la columna de siempre, listas para etiquetar, analizar y reparar. Las canciones en streaming no tienen fichero, así que se quedan fuera y Surco te dice cuántas eran.",
+        "text": "Puedes cargar una playlist de Apple Music sin salir de Surco. Eliges cuál, y las pistas que esa playlist tiene en tu disco aparecen en la columna de siempre, listas para etiquetar, analizar y reparar. Las canciones en streaming no tienen archivo, así que se quedan fuera y Surco te dice cuántas eran.",
         "in": "0.96.0"
       },
       {
@@ -1447,7 +1447,7 @@
         "in": "0.95.6"
       },
       {
-        "text": "Las estrellas de un FLAC dicen lo mismo en Surco que en el resto de programas. Podías ver 2 estrellas aquí y 5 en otro sitio, y al borrarlas seguían apareciendo puestas fuera de Surco. Ahora la puntuación es una sola, la veas donde la veas.",
+        "text": "Las estrellas de un FLAC dicen lo mismo en Surco que en el resto de programas. Podías ver 2 estrellas aquí y 5 en otro sitio, y al borrarlas seguían apareciendo puestas fuera de Surco. Ahora la valoración es una sola, la veas donde la veas.",
         "in": "0.95.6"
       },
       {
@@ -1467,11 +1467,11 @@
         "in": "0.95.4"
       },
       {
-        "text": "Las estrellas que pones en Surco se ven ya en Traktor. Para una pista que Traktor ya tenía seguías viendo la puntuación antigua, por mucho que la cambiaras aquí.",
+        "text": "Las estrellas que pones en Surco se ven ya en Traktor. Para una pista que Traktor ya tenía seguías viendo la valoración antigua, por mucho que la cambiaras aquí.",
         "in": "0.95.4"
       },
       {
-        "text": "La carátula nueva aparece en Traktor después de convertir, también cuando conservas el original. Antes seguía viéndose la portada vieja hasta que Traktor se decidía a releer la pista.",
+        "text": "La carátula nueva aparece en Traktor después de convertir, también cuando conservas el original. Antes seguía viéndose la carátula vieja hasta que Traktor se decidía a releer la pista.",
         "in": "0.95.4"
       },
       {
@@ -1506,7 +1506,7 @@
         "in": "0.94.2"
       },
       {
-        "text": "Los diales de normalización y declick vuelven a ser de cada pista en el lote. El editor los deja puestos fila a fila, pero la conversión leía un solo valor para toda la tanda: si ponías una pista a -18 y otra a -7, las dos salían a -7, y un vinilo rasposo con el declick fuerte salía sin declick. De paso vuelve el aviso de re-codificar un MP3 con pérdidas, que se saltaba en las pistas que llevaban su propio ajuste.",
+        "text": "Los diales de normalización y declick vuelven a ser de cada pista en el lote. El editor los deja puestos fila a fila, pero la conversión leía un solo valor para todo el lote: si ponías una pista a -18 y otra a -7, las dos salían a -7, y un vinilo rasposo con el declick fuerte salía sin declick. De paso vuelve el aviso de recodificar un MP3 con pérdidas, que se saltaba en las pistas que llevaban su propio ajuste.",
         "in": "0.94.0"
       },
       {
@@ -1514,7 +1514,7 @@
         "in": "0.94.0"
       },
       {
-        "text": "Los cues llevables se pueden desplazar desde Ajustes, en el idioma del que pincha: eliges si entran antes o después y en pasos que se oyen, de apenas perceptible a claramente audible, en vez de teclear milisegundos a ciegas. Debajo queda un ajuste fino para afinarlo. Mueve el punto de inicio, nunca la duración de los loops.",
+        "text": "Los cues que viajan con la pista se pueden desplazar desde Ajustes, en el idioma del que pincha: eliges si entran antes o después y en pasos que se oyen, de apenas perceptible a claramente audible, en vez de teclear milisegundos a ciegas. Debajo queda un ajuste fino para afinarlo. Mueve el punto de inicio, nunca la duración de los loops.",
         "in": "0.94.0"
       },
       {
@@ -1522,7 +1522,7 @@
         "in": "0.94.0"
       },
       {
-        "text": "La carátula nueva se ve en Traktor sin trucos: al convertir, Traktor la redibuja sola, en vez de quedarse enseñando la portada vieja.",
+        "text": "La carátula nueva se ve en Traktor sin trucos: al convertir, Traktor la redibuja sola, en vez de quedarse enseñando la carátula vieja.",
         "in": "0.94.0"
       },
       {
@@ -1530,11 +1530,11 @@
         "in": "0.94.0"
       },
       {
-        "text": "El filtro de clipping ya no aparece vacío al reabrir una biblioteca ya analizada. Había que volver a tocar pista por pista para que las marcas reaparecieran, aunque el análisis ya estaba hecho.",
+        "text": "El filtro de saturación ya no aparece vacío al reabrir una biblioteca ya analizada. Había que volver a tocar pista por pista para que las marcas reaparecieran, aunque el análisis ya estaba hecho.",
         "in": "0.94.0"
       },
       {
-        "text": "El contador de clicks deja de tragarse la mitad de una ráfaga. Una tanda de crujidos de un vinilo sucio se contaba como «1 click», con una sola marca a la que saltar, cuando eran muchos seguidos. Medido sobre 25 pistas reales, el recuento solo puede subir.",
+        "text": "El contador de clics deja de tragarse la mitad de una ráfaga. Una tanda de crujidos de un vinilo sucio se contaba como «1 clic», con una sola marca a la que saltar, cuando eran muchos seguidos. Medido sobre 25 pistas reales, el recuento solo puede subir.",
         "in": "0.94.0"
       },
       {
@@ -1542,7 +1542,7 @@
         "in": "0.94.0"
       },
       {
-        "text": "Con la ganancia por canal y el quitado de DC marcados a la vez, la pista sale ya al volumen prometido. Antes acababa muy por debajo del techo que habías pedido.",
+        "text": "Con la ganancia por canal y eliminar el desplazamiento DC marcados a la vez, la pista sale ya al volumen prometido. Antes acababa muy por debajo del techo que habías pedido.",
         "in": "0.94.0"
       },
       {
@@ -1569,7 +1569,7 @@
     "title": "Los bits declarados también se verifican",
     "items": [
       {
-        "text": "El check de bits ya no se calla cuando no puede afirmar: un 24 bits al que el análisis no le saca una lectura clara (un minuto casi todo silencio, por ejemplo) lo dice en voz alta, para que no se confunda con una pista que no se ha comprobado.",
+        "text": "La comprobación de bits ya no se calla cuando no puede pronunciarse: un 24 bits al que el análisis no le saca una lectura clara (un minuto casi todo silencio, por ejemplo) lo dice en voz alta, para que no se confunda con una pista que no se ha comprobado.",
         "in": "0.93.1"
       },
       {
@@ -1581,11 +1581,11 @@
         "in": "0.93.0"
       },
       {
-        "text": "La frecuencia de salida gana el modo «Corregido»: solo las pistas que Surco ha medido como hinchadas desde 44.1 kHz vuelven a 44.1; lo genuino y lo que no se ha podido verificar sale intacto. La tarjeta «Al convertir» avisa en la propia pista de lo que va a pasar y por qué, antes de tocar nada.",
+        "text": "La frecuencia de salida gana el modo «Corregido»: solo las pistas que Surco ha medido como hinchadas desde 44,1 kHz vuelven a 44,1; lo genuino y lo que no se ha podido verificar sale intacto. La tarjeta «Al convertir» avisa en la propia pista de lo que va a pasar y por qué, antes de tocar nada.",
         "in": "0.93.0"
       },
       {
-        "text": "La misma canción ya no puede salir «Fuente con pérdidas» en su copia de 44.1 kHz y «Good quality» en la de 48. Encontrado gracias a un usuario con dos copias gemelas de la misma pista.",
+        "text": "La misma canción ya no puede salir «Fuente con pérdidas» en su copia de 44,1 kHz y «Buena calidad» en la de 48. Encontrado gracias a un usuario con dos copias gemelas de la misma pista.",
         "in": "0.93.0"
       }
     ]
@@ -1596,7 +1596,7 @@
     "title": "La frecuencia de muestreo, respondida siempre",
     "items": [
       {
-        "text": "Una pista que dice ser de más de 44.1 kHz recibe siempre una respuesta: confirmada como hi-res de verdad, señalada como hinchada desde 44.1 kHz, o un honesto «no se ha podido verificar». Antes, callar dejaba a un hi-res auténtico con exactamente el mismo aspecto que una pista que nadie había analizado. Un 44.1 kHz normal no afirma nada que comprobar, así que sigue en silencio en vez de ganar una línea que no dice nada.",
+        "text": "Una pista que dice ser de más de 44,1 kHz recibe siempre una respuesta: confirmada como hi-res de verdad, señalada como hinchada desde 44,1 kHz, o un honesto «no se ha podido verificar». Antes, callar dejaba a un hi-res auténtico con exactamente el mismo aspecto que una pista que nadie había analizado. Un 44,1 kHz normal no afirma nada que comprobar, así que sigue en silencio en vez de ganar una línea que no dice nada.",
         "in": "0.92.0"
       },
       {
@@ -1604,7 +1604,7 @@
         "in": "0.92.0"
       },
       {
-        "text": "El espectro de una pista hi-res se dibuja con la música a tamaño legible. Al pintar hasta el tope teórico de un fichero de 96 o 192 kHz, las octavas de arriba, donde no hay nada que ver, se comían el panel y aplastaban la música en una franja del fondo. Ahora la imagen se encuadra en la zona que importa. Los ficheros de 44.1 y 48 kHz se dibujan exactamente como antes.",
+        "text": "El espectro de una pista hi-res se dibuja con la música a tamaño legible. Al pintar hasta el tope teórico de un archivo de 96 o 192 kHz, las octavas de arriba, donde no hay nada que ver, se comían el panel y aplastaban la música en una franja del fondo. Ahora la imagen se encuadra en la zona que importa. Los archivos de 44,1 y 48 kHz se dibujan exactamente como antes.",
         "in": "0.92.0"
       },
       {
@@ -1627,11 +1627,11 @@
         "in": "0.91.0"
       },
       {
-        "text": "Los tres presets de columnas (\"ensanchar resultados\", \"equilibradas\", \"ensanchar el editor\") desaparecen de la barra y dejan su sitio a \"Convertir las N\", que lanza la conversión de toda la lista de una vez. El ancho de las columnas se sigue ajustando arrastrando el divisor, que es como se hacía de todos modos.",
+        "text": "Los tres presets de columnas («ensanchar resultados», «equilibradas», «ensanchar el editor») desaparecen de la barra y dejan su sitio a «Convertir las N», que lanza la conversión de toda la lista de una vez. El ancho de las columnas se sigue ajustando arrastrando el divisor, que es como se hacía de todos modos.",
         "in": "0.91.0"
       },
       {
-        "text": "La tarjeta \"Qué pasará con esta pista\" cuenta la verdad sobre el limitador: cuando solo lima las puntas de los transitorios más afilados dice que un toque así no se oye, y cuando el recorte es grande avisa de que esperes un pelín menos de pegada en los golpes más fuertes, en lugar de prometer siempre que no se toca nada.",
+        "text": "La tarjeta «Qué pasará con esta pista» cuenta la verdad sobre el limitador: cuando solo lima las puntas de los transitorios más afilados dice que un toque así no se oye, y cuando la saturación es grande avisa de que esperes un pelín menos de pegada en los golpes más fuertes, en lugar de prometer siempre que no se toca nada.",
         "in": "0.91.0"
       }
     ]
@@ -1646,31 +1646,31 @@
         "in": "0.90.3"
       },
       {
-        "text": "Un MP3 de 256 o 320 kbps pasado a CD o a FLAC/WAV/AIFF de 16 bits ya no cuela como «Good quality». Al pasar por 16 bits, el rastro que deja el MP3 se disimula y quedaba justo por debajo del listón. Se encontró con una batería nueva de pruebas que exige el mismo veredicto suba o baje el nivel de la pista, y se confirmó con archivos reales antes de tocar nada. Las pistas ya analizadas se vuelven a medir solas.",
+        "text": "Un MP3 de 256 o 320 kbps pasado a CD o a FLAC/WAV/AIFF de 16 bits ya no cuela como «Buena calidad». Al pasar por 16 bits, el rastro que deja el MP3 se disimula y quedaba justo por debajo del listón. Se encontró con una batería nueva de pruebas que exige el mismo veredicto suba o baje el nivel de la pista, y se confirmó con archivos reales antes de tocar nada. Las pistas ya analizadas se vuelven a medir solas.",
         "in": "0.90.2"
       },
       {
-        "text": "Un máster alto ya no sale como «Reprocessed» por sus propios armónicos. Dos versiones de la misma canción, la reedición tranquila y la remasterización 8 dB más alta, sonaban igual y recibían veredictos distintos. Ahora el veredicto ya no cambia con el volumen del máster. Las pistas ya analizadas se vuelven a medir solas.",
+        "text": "Un máster alto ya no sale como «Reprocesado» por sus propios armónicos. Dos versiones de la misma canción, la reedición tranquila y la remasterización 8 dB más alta, sonaban igual y recibían veredictos distintos. Ahora el veredicto ya no cambia con el volumen del máster. Las pistas ya analizadas se vuelven a medir solas.",
         "in": "0.90.1"
       },
       {
-        "text": "La nota \"Qué pasará con esta pista\" dice ahora cuánto pasarían los picos del techo antes de que actúe el limitador (\"en 4,0 dB\"), para ver de un vistazo cuánto trabaja en esa pista.",
+        "text": "La nota «Qué pasará con esta pista» dice ahora cuánto pasarían los picos del techo antes de que actúe el limitador («en 4,0 dB»), para ver de un vistazo cuánto trabaja en esa pista.",
         "in": "0.90.1"
       },
       {
-        "text": "Cada pista lleva ahora una tarjeta \"Qué pasará con esta pista\" bajo los controles de normalización: cuántos decibelios se moverá, si bastará una ganancia constante o si el limitador tendrá que frenar los picos en el techo, y a qué sonoridad saldrá. Es la misma predicción que ya alimentaba la vista previa, contada en una frase antes de convertir, para que el resultado nunca sorprenda.",
+        "text": "Cada pista lleva ahora una tarjeta «Qué pasará con esta pista» bajo los controles de normalización: cuántos decibelios se moverá, si bastará una ganancia constante o si el limitador tendrá que frenar los picos en el techo, y a qué sonoridad saldrá. Es la misma predicción que ya alimentaba la vista previa, contada en una frase antes de convertir, para que el resultado nunca sorprenda.",
         "in": "0.90.0"
       },
       {
-        "text": "El campo \"True peak\" pasa a llamarse \"Techo de picos\", con la aclaración que le faltaba: es un límite de seguridad, no un segundo objetivo, y solo actúa si los picos lo alcanzan. Cada modo explica además en una línea su efecto real: igualar cómo de fuerte suenan todas las pistas, o igualar su sample más alto dejando que el volumen percibido varíe.",
+        "text": "El campo «True peak» pasa a llamarse «Techo de picos», con la aclaración que le faltaba: es un límite de seguridad, no un segundo objetivo, y solo actúa si los picos lo alcanzan. Cada modo explica además en una línea su efecto real: igualar cómo de fuerte suenan todas las pistas, o igualar su sample más alto dejando que el volumen percibido varíe.",
         "in": "0.90.0"
       },
       {
-        "text": "La tabla de sonoridad marca con una flecha solo lo que la conversión va a cambiar (sonoridad, pico, offset DC) y con un \"=\" lo que no puede cambiar (rango, dinámica, balance), bajo el rótulo \"ahora → tras convertir\". Se acabaron las cursivas con leyenda al pie.",
+        "text": "La tabla de sonoridad marca con una flecha solo lo que la conversión va a cambiar (sonoridad, pico, desplazamiento DC) y con un «=» lo que no puede cambiar (rango, dinámica, balance), bajo el rótulo «ahora → tras convertir». Se acabaron las cursivas con leyenda al pie.",
         "in": "0.90.0"
       },
       {
-        "text": "Todas estas explicaciones se pueden apagar cuando ya te las sabes: con la X de la propia tarjeta o desde Ajustes → Editor → \"Explicaciones en línea\". La preferencia se guarda y se sincroniza entre equipos.",
+        "text": "Todas estas explicaciones se pueden apagar cuando ya te las sabes: con la X de la propia tarjeta o desde Ajustes → Editor → «Explicaciones en línea». La preferencia se guarda y se sincroniza entre equipos.",
         "in": "0.90.0"
       }
     ]
@@ -1685,7 +1685,7 @@
         "in": "0.89.6"
       },
       {
-        "text": "Quitar el offset DC ahora funciona igual en los dos modos de normalización. Con la casilla marcada, normalizar por pico centraba la señal siempre, pero normalizar por sonoridad solo lo hacía si el sesgo superaba el 0,2%: por debajo se quedaba tal cual, la ganancia podía incluso aumentarlo, y el editor prometía un 0,0% que luego no se cumplía. El mismo archivo con la misma casilla salía centrado o no según el modo elegido. Ahora cualquier sesgo medible se resta antes de ajustar el nivel, se normalice como se normalice.",
+        "text": "Eliminar el desplazamiento DC ahora funciona igual en los dos modos de normalización. Con la casilla marcada, normalizar por pico centraba la señal siempre, pero normalizar por sonoridad solo lo hacía si el sesgo superaba el 0,2%: por debajo se quedaba tal cual, la ganancia podía incluso aumentarlo, y el editor prometía un 0,0% que luego no se cumplía. El mismo archivo con la misma casilla salía centrado o no según el modo elegido. Ahora cualquier sesgo medible se resta antes de ajustar el nivel, se normalice como se normalice.",
         "in": "0.89.5"
       },
       {
@@ -1693,7 +1693,7 @@
         "in": "0.89.4"
       },
       {
-        "text": "Un agudo aislado ya no convierte una pista en Reprocesada. Surco detecta los agudos regenerados por un programa porque dejan una sierra en el espectro: una fila de dientes donde cada parche se junta con el siguiente. Bastaba con que un solo armónico levantara una banda por encima de sus vecinas para que sumara lo mismo que esa sierra, y algunos volcados limpios de CD, sobre todo másters brillantes, salían acusados de llevar agudos sintéticos. Ahora hace falta una fila de subidas de verdad, no una sola, y esos discos vuelven al verde. Las pistas ya analizadas se vuelven a medir solas al abrirlas.",
+        "text": "Un agudo aislado ya no convierte una pista en «Reprocesado». Surco detecta los agudos regenerados por un programa porque dejan una sierra en el espectro: una fila de dientes donde cada parche se junta con el siguiente. Bastaba con que un solo armónico levantara una banda por encima de sus vecinas para que sumara lo mismo que esa sierra, y algunos volcados limpios de CD, sobre todo másters brillantes, salían acusados de llevar agudos sintéticos. Ahora hace falta una fila de subidas de verdad, no una sola, y esos discos vuelven al verde. Las pistas ya analizadas se vuelven a medir solas al abrirlas.",
         "in": "0.89.3"
       },
       {
@@ -1747,7 +1747,7 @@
         "in": "0.87.0"
       },
       {
-        "text": "La onda deja de teñirse de rojo en pistas que no están saturadas. Un tema masterizado justo al límite salía marcado de punta a punta, con un aviso de picos por encima del máximo que no se correspondía con nada: el fallo estaba en cómo Surco juntaba los dos canales para dibujar la onda, que subía el nivel algo más de 3 dB antes de medirlo. Ahora se mide al nivel real del archivo, así que las marcas de saturación solo aparecen cuando de verdad hay recorte.",
+        "text": "La onda deja de teñirse de rojo en pistas que no están saturadas. Un tema masterizado justo al límite salía marcado de punta a punta, con un aviso de picos por encima del máximo que no se correspondía con nada: el fallo estaba en cómo Surco juntaba los dos canales para dibujar la onda, que subía el nivel algo más de 3 dB antes de medirlo. Ahora se mide al nivel real del archivo, así que las marcas de saturación solo aparecen cuando de verdad hay saturación.",
         "in": "0.87.0"
       },
       {
@@ -1755,11 +1755,11 @@
         "in": "0.87.1"
       },
       {
-        "text": "El comentario y la puntuación dejan de salir por duplicado. Un archivo convertido enseñaba dos veces el comentario y dos veces la valoración —una con el número interno y otra con las estrellas—, porque el dato se escribía en dos sitios a la vez y solo uno es el que leen Traktor y mp3tag. Ahora cada uno va donde toca y una sola vez. De paso, un tema sin estrellas ya conserva su comentario: antes quedaba guardado de una forma que esos programas no miran, así que lo veías vacío.",
+        "text": "El comentario y la valoración dejan de salir por duplicado. Un archivo convertido enseñaba dos veces el comentario y dos veces la valoración, una con el número interno y otra con las estrellas, porque el dato se escribía en dos sitios a la vez y solo uno es el que leen Traktor y mp3tag. Ahora cada uno va donde toca y una sola vez. De paso, una pista sin estrellas ya conserva su comentario: antes quedaba guardado de una forma que esos programas no miran, así que lo veías vacío.",
         "in": "0.87.1"
       },
       {
-        "text": "Una etiqueta estropeada ya no tumba la conversión a AIFF. Algunos archivos analizados con otras herramientas traen una etiqueta cuyo tamaño está mal apuntado y se solapa con las de al lado: al copiar los cues al archivo nuevo, Surco se atragantaba con ella, cortaba el proceso y no dejaba nada — aunque el audio ya estuviera convertido. Ahora se descarta esa etiqueta rota y la conversión termina con sus cues intactos. El mismo caso ya estaba resuelto en WAV desde hacía tiempo y le faltaba a AIFF.",
+        "text": "Una etiqueta estropeada ya no tumba la conversión a AIFF. Algunos archivos analizados con otras herramientas traen una etiqueta cuyo tamaño está mal apuntado y se solapa con las de al lado: al copiar los cues al archivo nuevo, Surco se atragantaba con ella, cortaba el proceso y no dejaba nada, aunque el audio ya estuviera convertido. Ahora se descarta esa etiqueta rota y la conversión termina con sus cues intactos. El mismo caso ya estaba resuelto en WAV desde hacía tiempo y le faltaba a AIFF.",
         "in": "0.87.2"
       }
     ]
@@ -1770,31 +1770,31 @@
     "title": "Tú decides qué toca Discogs",
     "items": [
       {
-        "text": "Ya puedes elegir qué campos rellena una edición cuando la aplicas. Hasta ahora aplicar un match lo escribía todo, y si tenías el género puesto a mano —o el año de tu copia, no el de la reedición que encontraste— se perdía sin remedio. Cada campo tiene ahora su interruptor «Auto» en Ajustes, Campos: apagado significa que el archivo se queda con lo que ya tenía. Vienen todos encendidos, así que si no tocas nada aplicar una edición hace exactamente lo de siempre.",
+        "text": "Ya puedes elegir qué campos rellena un lanzamiento cuando lo aplicas. Hasta ahora aplicar una coincidencia lo escribía todo, y si tenías el género puesto a mano (o el año de tu copia, no el de la reedición que encontraste) se perdía sin remedio. Cada campo tiene ahora su interruptor «Auto» en Ajustes, Campos: apagado significa que el archivo se queda con lo que ya tenía. Vienen todos encendidos, así que si no tocas nada aplicar un lanzamiento hace exactamente lo de siempre.",
         "in": "0.86.0"
       },
       {
-        "text": "Los resultados de búsqueda enseñan el país de la prensa. Cuando una referencia sale en cinco países con el mismo año y el mismo sello, era imposible saber cuál era tu copia sin abrir cada una; ahora el país va en su propia línea junto al resto de datos de la edición.",
+        "text": "Los resultados de búsqueda enseñan el país de prensaje. Cuando una referencia sale en cinco países con el mismo año y el mismo sello, era imposible saber cuál era tu copia sin abrir cada una; ahora el país va en su propia línea junto al resto de datos del lanzamiento.",
         "in": "0.86.0"
       },
       {
-        "text": "Importar una carpeta ya se puede cancelar. Era la operación más larga de la app —miles de archivos en un disco de red, leyendo etiquetas uno a uno— y la única sin salida: si soltabas la carpeta equivocada, tocaba esperar a que acabase. Ahora se pulsa sobre el contador de importación y para.",
+        "text": "Importar una carpeta ya se puede cancelar. Era la operación más larga de la app (miles de archivos en un disco de red, leyendo etiquetas uno a uno) y la única sin salida: si soltabas la carpeta equivocada, tocaba esperar a que acabase. Ahora se pulsa sobre el contador de importación y para.",
         "in": "0.86.0"
       },
       {
-        "text": "Convertir un MP3 con «Igual que el origen» ya no infla el archivo. Un MP3 no guarda profundidad de bits —guarda otra cosa—, y Surco se inventaba 24 bits al convertirlo: un MP3 de 320k salía como un FLAC de 60 KB donde 16 bits dan 21 KB, sin ninguna ganancia audible. Ahora sale a 16 bits, con su dither correspondiente. Si conviertes tu colección a FLAC, la diferencia se nota en el disco.",
+        "text": "Convertir un MP3 con «Igual que el origen» ya no infla el archivo. Un MP3 no guarda profundidad de bits, guarda otra cosa, y Surco se inventaba 24 bits al convertirlo: un MP3 de 320k salía como un FLAC de 60 KB donde 16 bits dan 21 KB, sin ninguna ganancia audible. Ahora sale a 16 bits, con su dither correspondiente. Si conviertes tu colección a FLAC, la diferencia se nota en el disco.",
         "in": "0.86.0"
       },
       {
-        "text": "El campo Energía vuelve a mostrar tu nivel de energía. En los archivos pasados por Platinum Notes, Surco leía la etiqueta equivocada y pintaba en la casilla un churro de letras y números —el dato interno que deja esa herramienta— en vez del 7 que tenías puesto. Peor aún: al guardar reescribía ese churro como si lo hubieras tecleado tú. Ahora lee ENERGYLEVEL, que es donde vive el nivel de toda la vida, y los archivos que solo traen ENERGY siguen funcionando igual.",
+        "text": "El campo Energía vuelve a mostrar tu nivel de energía. En los archivos pasados por Platinum Notes, Surco leía la etiqueta equivocada y pintaba en la casilla un churro de letras y números (el dato interno que deja esa herramienta) en vez del 7 que tenías puesto. Peor aún: al guardar reescribía ese churro como si lo hubieras tecleado tú. Ahora lee ENERGYLEVEL, que es donde vive el nivel de toda la vida, y los archivos que solo traen ENERGY siguen funcionando igual.",
         "in": "0.86.1"
       },
       {
-        "text": "Las estrellas de Traktor ya se ven en MP3 y AIFF. Traktor guarda la puntuación en un sitio del archivo que la herramienta con la que Surco lee etiquetas no sabe mirar, así que un tema que tenías con cinco estrellas aparecía siempre sin ninguna. No es que se perdieran al convertir: es que no se llegaban a leer. Ahora se leen directamente, y si un archivo viene puntuado a la vez en Traktor y en Windows Media Player manda el valor de Traktor.",
+        "text": "Las estrellas de Traktor ya se ven en MP3 y AIFF. Traktor guarda la valoración en un sitio del archivo que la herramienta con la que Surco lee etiquetas no sabe mirar, así que un tema que tenías con cinco estrellas aparecía siempre sin ninguna. No es que se perdieran al convertir: es que no se llegaban a leer. Ahora se leen directamente, y si un archivo viene puntuado a la vez en Traktor y en Windows Media Player manda el valor de Traktor.",
         "in": "0.86.1"
       },
       {
-        "text": "Los avisos sobre los cues de Traktor ya no te asustan sin motivo. Al convertir a FLAC, Surco te decía que perderías los puntos de cue, y no es verdad: los conserva. El aviso llevaba equivocado desde que se añadió esa conservación, así que si evitabas FLAC por eso, ya puedes usarlo con tranquilidad. WAV sigue siendo el único formato donde los cues se pierden de verdad.",
+        "text": "Los avisos sobre los cues de Traktor ya no te asustan sin motivo. Al convertir a FLAC, Surco te decía que perderías los cues, y no es verdad: los conserva. El aviso llevaba equivocado desde que se añadió esa conservación, así que si evitabas FLAC por eso, ya puedes usarlo con tranquilidad. WAV sigue siendo el único formato donde los cues se pierden de verdad.",
         "in": "0.86.2"
       },
       {
@@ -1826,15 +1826,15 @@
         "in": "0.86.5"
       },
       {
-        "text": "Convertir un lote ya no puede perder pistas. Cuando dos pistas resolvían al mismo nombre de salida — algo fácil después de aplicar un match de Discogs que rellena el mismo artista y título, o con etiquetas vacías cayendo a la misma plantilla — elegir Sobrescribir apuntaba las dos al mismo destino, y la segunda en escribirse caía encima de la primera. El proceso las contaba todas igual: «3 convertidas», un solo fichero en disco. Ahora se aparta de un nombre que otra pista del mismo lote ya ha reservado, y sobrescribir un fichero que sí está en la carpeta funciona exactamente como antes.",
+        "text": "Convertir un lote ya no puede perder pistas. Cuando dos pistas acababan con el mismo nombre de salida, algo fácil después de aplicar una coincidencia de Discogs que rellena el mismo artista y título, o con etiquetas vacías cayendo a la misma plantilla, elegir Sobrescribir apuntaba las dos al mismo destino, y la segunda en escribirse caía encima de la primera. El proceso las contaba todas igual: «3 convertidas», un solo archivo en disco. Ahora se aparta de un nombre que otra pista del mismo lote ya ha reservado, y sobrescribir un archivo que sí está en la carpeta funciona exactamente como antes.",
         "in": "0.86.6"
       },
       {
-        "text": "Un signo de dólar en el nombre ya no corrompe tu colección de Traktor. Al actualizar collection.nml después de una conversión, una pista con un $ en el nombre empalmaba parte del texto del propio fichero dentro de la entrada y escribía XML roto — y Traktor se niega a abrir una colección que no puede leer. El nombre se escribe ahora tal cual, lleve los caracteres que lleve.",
+        "text": "Un signo de dólar en el nombre ya no corrompe tu colección de Traktor. Al actualizar collection.nml después de una conversión, una pista con un $ en el nombre empalmaba parte del texto del propio archivo dentro de la entrada y escribía XML roto, y Traktor se niega a abrir una colección que no puede leer. El nombre se escribe ahora tal cual, lleve los caracteres que lleve.",
         "in": "0.86.6"
       },
       {
-        "text": "Un fichero que ya no está donde Surco lo dejó ahora lo dice. Si movías o renombrabas una pista en el Finder, todos los paneles ponían «No se ha podido analizar el audio», lo que te manda a buscar un fichero dañado cuando no le pasa nada: simplemente está en otro sitio. El mensaje ahora nombra la causa real.",
+        "text": "Un archivo que ya no está donde Surco lo dejó ahora lo dice. Si movías o renombrabas una pista en el Finder, todos los paneles ponían «No se ha podido analizar el audio», lo que te manda a buscar un archivo dañado cuando no le pasa nada: simplemente está en otro sitio. El mensaje ahora nombra la causa real.",
         "in": "0.86.6"
       },
       {
@@ -1846,19 +1846,19 @@
         "in": "0.86.7"
       },
       {
-        "text": "La clave musical se escribe donde Traktor la busca. Al convertir a FLAC solo se escribía como INITIALKEY, y Traktor lee KEY. Ahora se escriben las dos grafías, así que lea la que lea tu programa, la clave está ahí — el mismo trato que ya hacía el sello con LABEL y PUBLISHER.",
+        "text": "La tonalidad se escribe donde Traktor la busca. Al convertir a FLAC solo se escribía como INITIALKEY, y Traktor lee KEY. Ahora se escriben las dos grafías, así que lea la que lea tu programa, la tonalidad está ahí, el mismo trato que ya hacía el sello con LABEL y PUBLISHER.",
         "in": "0.86.7"
       },
       {
-        "text": "Convertir a WAV o ALAC ya no pierde tus cues ni la carátula. Los otros formatos los conservaban desde hace tiempo, pero estos dos se quedaron fuera: pasabas un crate analizado a WAV y salía sin rejilla ni puntos de cue, con la app diciendo «convertida». Ahora viajan igual que en MP3, AIFF y FLAC. La carátula también: hasta ahora una conversión que solo corregía el título se llevaba por delante la portada que el archivo ya tenía.",
+        "text": "Convertir a WAV o ALAC ya no pierde tus cues ni la carátula. Los otros formatos los conservaban desde hace tiempo, pero estos dos se quedaron fuera: pasabas un crate analizado a WAV y salía sin rejilla ni cues, con la app diciendo «convertida». Ahora viajan igual que en MP3, AIFF y FLAC. La carátula también: hasta ahora una conversión que solo corregía el título se llevaba por delante la carátula que el archivo ya tenía.",
         "in": "0.86.8"
       },
       {
-        "text": "Convertir un lote ya no pisa dos pistas cuyos nombres solo se diferencian en mayúsculas. En Mac y Windows «Artista - Tema.aiff» y «artista - tema.aiff» son el mismo archivo, algo fácil de provocar cuando un match de Discogs rellena el artista con otra caja que la que tenía el vecino. Surco los trataba como destinos distintos y la segunda conversión se escribía encima de la primera, contando las dos como hechas.",
+        "text": "Convertir un lote ya no pisa dos pistas cuyos nombres solo se diferencian en mayúsculas. En Mac y Windows «Artista - Tema.aiff» y «artista - tema.aiff» son el mismo archivo, algo fácil de provocar cuando una coincidencia de Discogs rellena el artista con mayúsculas distintas de las del de al lado. Surco los trataba como destinos distintos y la segunda conversión se escribía encima de la primera, contando las dos como hechas.",
         "in": "0.86.8"
       },
       {
-        "text": "Los atajos de sección funcionan dentro de Recorte de silencio. Con el foco puesto en un tirador del recorte, ⌘] y ⌘[ dejaban de saltar de sección: la tecla no hacía nada y solo volvía a responder al salir de la sección.",
+        "text": "Los atajos de sección funcionan dentro de Recorte de silencio. Con el foco puesto en un asa del recorte, ⌘] y ⌘[ dejaban de saltar de sección: la tecla no hacía nada y solo volvía a responder al salir de la sección.",
         "in": "0.86.8"
       }
     ]
@@ -1869,19 +1869,19 @@
     "title": "Etiquetar como lo hace un coleccionista",
     "items": [
       {
-        "text": "Cuatro campos nuevos que Discogs ya sabía y Surco tiraba: Estilo, País, Tipo de medio y la URL de la edición. Se guardan con los mismos nombres que usa mp3tag, así que si ya tienes la colección etiquetada con esa herramienta, los dos coinciden en vez de duplicarse. La URL es la forma de volver meses después a comprobar de dónde salió una pista.",
+        "text": "Cuatro campos nuevos que Discogs ya sabía y Surco tiraba: Estilo, País, Tipo de medio y la URL del lanzamiento. Se guardan con los mismos nombres que usa mp3tag, así que si ya tienes la colección etiquetada con esa herramienta, los dos coinciden en vez de duplicarse. La URL es la forma de volver meses después a comprobar de dónde salió una pista.",
         "in": "0.85.0"
       },
       {
-        "text": "Ojo, esto cambia lo que se escribe en Género: antes ponía ahí el estilo de Discogs («Deep House»); ahora Género lleva el género de verdad («Electronic») y el estilo va en su propio campo. Si una edición solo trae estilo, Género lo sigue cogiendo para no quedarse vacío.",
+        "text": "Ojo, esto cambia lo que se escribe en Género: antes ponía ahí el estilo de Discogs («Deep House»); ahora Género lleva el género de verdad («Electronic») y el estilo va en su propio campo. Si un lanzamiento solo trae estilo, Género lo sigue cogiendo para no quedarse vacío.",
         "in": "0.85.0"
       },
       {
-        "text": "En unidades de red ya no se quedan archivos a medias. Cuando una conversión fallaba y el archivo temporal tampoco se podía borrar —lo normal en un NAS, que retiene el archivo un momento—, ese temporal se quedaba en tu carpeta para siempre y sin que nada lo registrara, así que ninguna limpieza posterior lo encontraba. Ahora queda anotado y se barre al arrancar.",
+        "text": "En unidades de red ya no se quedan archivos a medias. Cuando una conversión fallaba y el archivo temporal tampoco se podía borrar (lo normal en un NAS, que retiene el archivo un momento), ese temporal se quedaba en tu carpeta para siempre y sin que nada lo registrara, así que ninguna limpieza posterior lo encontraba. Ahora queda anotado y se barre al arrancar.",
         "in": "0.85.0"
       },
       {
-        "text": "La copia de seguridad de la biblioteca de Engine DJ ya no se pierde en el peor momento. Si el m.db se había quedado vacío —lo que deja una escritura interrumpida de Engine—, Surco copiaba ese archivo vacío encima de la copia buena y luego fallaba igualmente. Ahora un archivo vacío se trata como lo que es, una biblioteca que hay que rehacer, y la copia se queda intacta.",
+        "text": "La copia de seguridad de la biblioteca de Engine DJ ya no se pierde en el peor momento. Si el m.db se había quedado vacío, lo que deja una escritura interrumpida de Engine, Surco copiaba ese archivo vacío encima de la copia buena y luego fallaba igualmente. Ahora un archivo vacío se trata como lo que es, una biblioteca que hay que rehacer, y la copia se queda intacta.",
         "in": "0.85.0"
       }
     ]
@@ -1900,23 +1900,23 @@
         "in": "0.84.1"
       },
       {
-        "text": "Si al terminar una conversión el archivo de destino está bloqueado, ya no pierdes el trabajo. Antes se descartaba una conversión que estaba entera —audio, etiquetas y cues— porque fallaba el último paso, el de mover el archivo a su sitio. Ahora se guarda al lado, con ~ al final del nombre, para que solo tengas que renombrarlo.",
+        "text": "Si al terminar una conversión el archivo de destino está bloqueado, ya no pierdes el trabajo. Antes se descartaba una conversión que estaba entera, con audio, etiquetas y cues, porque fallaba el último paso, el de mover el archivo a su sitio. Ahora se guarda al lado, con ~ al final del nombre, para que solo tengas que renombrarlo.",
         "in": "0.84.1"
       },
       {
-        "text": "Convertir ya no se lleva por delante la carátula. Si actualizabas una pista para corregirle el título, el archivo salía sin la portada que ya tenía: al reconvertir el audio se quedaba por el camino. Ahora la carátula viaja con la pista, también cuando cambias de formato, y sigue desapareciendo solo si tú pides quitarla.",
+        "text": "Convertir ya no se lleva por delante la carátula. Si actualizabas una pista para corregirle el título, el archivo salía sin la carátula que ya tenía: al reconvertir el audio se quedaba por el camino. Ahora la carátula viaja con la pista, también cuando cambias de formato, y sigue desapareciendo solo si tú pides quitarla.",
         "in": "0.84.2"
       },
       {
-        "text": "La miniatura de la carátula se actualiza al momento. Después de aplicar metadatos o borrar la imagen había que quitar la pista de la lista, volver a cargarla y actualizar otra vez para verla bien: el doble de trabajo en toda la colección. Y al vaciar los metadatos la portada seguía en pantalla aunque ya estuviera marcada para borrarse.",
+        "text": "La miniatura de la carátula se actualiza al momento. Después de aplicar metadatos o borrar la imagen había que quitar la pista de la lista, volver a cargarla y actualizar otra vez para verla bien: el doble de trabajo en toda la colección. Y al vaciar los metadatos la carátula seguía en pantalla aunque ya estuviera marcada para borrarse.",
         "in": "0.84.2"
       },
       {
-        "text": "En Mac, las portadas de los FLAC vuelven a verse en el Finder aunque no cambies la carátula. La cabecera que hace visible la imagen solo se escribía al aplicar una portada nueva, así que retocar las etiquetas dejaba el archivo con el icono en blanco. Requiere tener activado «Carátula visible en el Finder» en Ajustes.",
+        "text": "En Mac, las carátulas de los FLAC vuelven a verse en el Finder aunque no cambies la carátula. La cabecera que hace visible la imagen solo se escribía al aplicar una carátula nueva, así que retocar las etiquetas dejaba el archivo con el icono en blanco. Requiere tener activado «Carátula visible en el Finder» en Ajustes.",
         "in": "0.84.2"
       },
       {
-        "text": "Eliminar el desplazamiento DC junto con la normalización por loudness ya funciona: la combinación hacía fallar la conversión entera sin decir por qué. Y el balance de canales ya no anuncia «sin cambio» cuando normalizas los canales por separado, porque ahí cada canal lleva su propia ganancia y la diferencia entre ellos sí se mueve.",
+        "text": "Eliminar el desplazamiento DC junto con la normalización por sonoridad ya funciona: la combinación hacía fallar la conversión entera sin decir por qué. Y el balance de canales ya no anuncia «sin cambio» cuando normalizas los canales por separado, porque ahí cada canal lleva su propia ganancia y la diferencia entre ellos sí se mueve.",
         "in": "0.84.2"
       }
     ]
@@ -1931,7 +1931,7 @@
         "in": "0.83.0"
       },
       {
-        "text": "Los avisos que te dicen cómo desactivar algo ahora llevan a la pestaña correcta. El más importante —el que avisa de que sustituir un original sin pérdida por un MP3 pierde el máster para siempre— te mandaba a «Ajustes → Conversión», una pestaña que no existe: se llama Formato, y la opción vive en Destino.",
+        "text": "Los avisos que te dicen cómo desactivar algo ahora llevan a la pestaña correcta. El más importante, el que avisa de que sustituir un original sin pérdidas por un MP3 pierde el máster para siempre, te mandaba a «Ajustes → Conversión», una pestaña que no existe: se llama Formato, y la opción vive en Destino.",
         "in": "0.83.0"
       },
       {
@@ -1939,39 +1939,39 @@
         "in": "0.83.0"
       },
       {
-        "text": "⌘Z deshace el emparejado de un álbum entero. Aplicar un lanzamiento equivocado —una reedición con otro tracklist, un disco con el mismo nombre— reescribía título, artista y número de pista de todas las pistas seleccionadas sin vuelta atrás, y los tags originales del archivo ya no estaban.",
+        "text": "⌘Z deshace el emparejado de un álbum entero. Aplicar un lanzamiento equivocado, una reedición con otro tracklist o un disco con el mismo nombre, reescribía título, artista y número de pista de todas las pistas seleccionadas sin vuelta atrás, y las etiquetas originales del archivo ya no estaban.",
         "in": "0.83.0"
       },
       {
-        "text": "Detectar el recorte de silencios en varias pistas ahora se puede deshacer desde el propio aviso. Si la detección se equivocaba en unas cuantas —los vinilos con entrada larga de ruido de superficie son justo el caso difícil— la única salida era abrirlas una a una y quitarles el corte a mano.",
+        "text": "Detectar el recorte de silencios en varias pistas ahora se puede deshacer desde el propio aviso. Si la detección se equivocaba en unas cuantas (los vinilos con entrada larga de ruido de superficie son justo el caso difícil), la única salida era abrirlas una a una y quitarles el corte a mano.",
         "in": "0.83.0"
       },
       {
-        "text": "Dos filtros nuevos para lo que queda pendiente: «Con error» y «A revisar». Después de convertir un lote, la barra decía «180 convertidas · 20 con error» y no había forma de llegar a esas 20 más que buscando un aro rojo diminuto por toda la lista; lo mismo con las coincidencias que el emparejado automático deja marcadas para que las mires tú. Aparecen solo cuando hay algo dentro.",
+        "text": "Dos filtros nuevos para lo que queda pendiente: «Con error» y «A revisar». Después de convertir un lote, la barra decía «180 convertidas · 20 con error» y no había forma de llegar a esas 20 más que buscando un aro rojo diminuto por toda la lista; lo mismo con las coincidencias que el auto-emparejado deja marcadas para que las mires tú. Aparecen solo cuando hay algo dentro.",
         "in": "0.83.0"
       },
       {
-        "text": "Soltar una carpeta sin audio ya no se queda en nada. No pasaba absolutamente nada: ni fila, ni aviso, ni cambio, y era imposible distinguir «aquí no hay música» de «no he podido leer la carpeta» — que es lo que ocurre con un disco de red caído o una carpeta sin permisos.",
+        "text": "Soltar una carpeta sin audio ya no se queda en nada. No pasaba absolutamente nada: ni fila, ni aviso, ni cambio, y era imposible distinguir «aquí no hay música» de «no he podido leer la carpeta», que es lo que ocurre con un disco de red caído o una carpeta sin permisos.",
         "in": "0.83.0"
       },
       {
-        "text": "En la web, el botón de descarga ya dice para qué sistema es desde el primer momento. Si tu navegador tardaba en arrancar el JavaScript, o GitHub no respondía, acababas en una lista de archivos sueltos de GitHub en vez de en el instalador. Ahora además indica cuánto pesa la descarga, avisa a quien usa Windows del aviso de SmartScreen, y el enlace para los Mac con Intel se lee sin buscarlo.",
+        "text": "En la web, el botón de descarga ya dice para qué sistema es desde el primer momento. Si tu navegador tardaba en arrancar el JavaScript, o GitHub no respondía, acababas en una lista de archivos sueltos de GitHub en vez de en el instalador. Ahora además indica cuánto pesa la descarga, advierte a quien usa Windows del aviso de SmartScreen, y el enlace para los Mac con Intel se lee sin buscarlo.",
         "in": "0.83.0"
       },
       {
-        "text": "«Quitar el offset de DC» ya funciona junto con la normalización por loudness. Un lector nos escribió con el caso exacto: un vinilo capturado con la señal descentrada necesita las dos cosas a la vez, y la opción vivía solo en la pestaña de pico, así que elegir loudness la descartaba sin avisar. Ahora es una corrección propia, disponible en los dos modos, y quien la tenía activada la conserva.",
+        "text": "«Eliminar desplazamiento DC» ya funciona junto con la normalización por sonoridad. Un lector nos escribió con el caso exacto: un vinilo capturado con la señal descentrada necesita las dos cosas a la vez, y la opción vivía solo en la pestaña de pico, así que elegir sonoridad la descartaba sin avisar. Ahora es una corrección propia, disponible en los dos modos, y quien la tenía activada la conserva.",
         "in": "0.83.0"
       },
       {
-        "text": "La ayuda de calidad de audio («¿Qué significan?») ahora dice, para cada métrica, qué rango se considera bueno y si Surco puede corregirla — y con qué ajuste. Para las que vienen del máster (rango, dinámica, suelo de ruido) lo dice claro: no hay ajuste que las cambie, para que no busques uno que no existe. Los rangos son los mismos umbrales con los que se colorean los indicadores.",
+        "text": "La ayuda de calidad de audio («¿Qué significan?») ahora dice, para cada métrica, qué rango se considera bueno y si Surco puede corregirla, y con qué ajuste. Para las que vienen del máster (rango, dinámica, suelo de ruido) lo dice claro: no hay ajuste que las cambie, para que no busques uno que no existe. Los rangos son los mismos umbrales con los que se colorean los indicadores.",
         "in": "0.83.0"
       },
       {
-        "text": "La previsualización de normalización ahora dice dónde quedará la pista antes de convertir: la fila «Preview» sobre la onda muestra el LUFS y el pico reales que producirá la conversión, marcados como estimación, y se actualiza al mover el objetivo. Venía de un lector que convertía el mismo FLAC una y otra vez solo para leer el resultado. Además, el ⓘ de la sección abre ahora la ayuda de métricas, y cada preset se explica en una línea.",
+        "text": "La previsualización de normalización ahora dice dónde quedará la pista antes de convertir: la fila «Vista previa» sobre la onda muestra el LUFS y el pico reales que producirá la conversión, marcados como estimación, y se actualiza al mover el objetivo. Venía de un lector que convertía el mismo FLAC una y otra vez solo para leer el resultado. Además, el ⓘ de la sección abre ahora la ayuda de métricas, y cada preset se explica en una línea.",
         "in": "0.83.0"
       },
       {
-        "text": "El selector Ninguna / Loudness / Pico —y todos los interruptores de ese tipo en el editor y en Ajustes— va ahora sobre un carril hundido, y el valor activo se desliza al cambiar en vez de saltar. Antes parecía una fila de pestañas, y lo que había debajo parecía contenido de la pestaña: por eso «Eliminar desplazamiento DC» daba la impresión de pertenecer a Ninguna, un modo donde no hace nada. Esa casilla ahora solo aparece en Loudness y Pico, que es donde se aplica.",
+        "text": "El selector Ninguna / Sonoridad / Pico, y todos los interruptores de ese tipo en el editor y en Ajustes, va ahora sobre un carril hundido, y el valor activo se desliza al cambiar en vez de saltar. Antes parecía una fila de pestañas, y lo que había debajo parecía contenido de la pestaña: por eso «Eliminar desplazamiento DC» daba la impresión de pertenecer a Ninguna, un modo donde no hace nada. Esa casilla ahora solo aparece en Sonoridad y Pico, que es donde se aplica.",
         "in": "0.83.1"
       },
       {
@@ -1987,11 +1987,11 @@
         "in": "0.83.2"
       },
       {
-        "text": "El botón de reportar un error ahora reporta de verdad. No abría absolutamente nada —en ningún sistema, sin aviso ni error—, así que todos los reportes que alguien intentó enviar se perdieron por el camino. Ahora abre en el navegador un informe ya rellenado con la versión, tu sistema y lo que ha fallado, incluidas las últimas líneas de error del registro; los nombres de tus carpetas no viajan, solo el del archivo implicado.",
+        "text": "El botón de informar de un error ahora informa de verdad. No abría absolutamente nada, en ningún sistema, sin aviso ni error, así que todos los informes que alguien intentó enviar se perdieron por el camino. Ahora abre en el navegador un informe ya rellenado con la versión, tu sistema y lo que ha fallado, incluidas las últimas líneas de error del registro; los nombres de tus carpetas no viajan, solo el del archivo implicado.",
         "in": "0.83.3"
       },
       {
-        "text": "En Windows, guardar los cambios de una pista que tienes abierta en otro programa ya no falla. Si Traktor, el reproductor o el explorador tenían el archivo cogido en ese instante, Windows se negaba a reemplazarlo y el guardado se caía; ahora Surco espera un momento y lo reintenta, que es justo lo que suele bastar.",
+        "text": "En Windows, guardar los cambios de una pista que tienes abierta en otro programa ya no falla. Si Traktor, el reproductor o el Explorador tenían el archivo cogido en ese instante, Windows se negaba a reemplazarlo y el guardado se caía; ahora Surco espera un momento y lo reintenta, que es justo lo que suele bastar.",
         "in": "0.83.3"
       },
       {
@@ -2010,7 +2010,7 @@
         "in": "0.82.0"
       },
       {
-        "text": "Ahora se ve dónde está el teclado. La pista de la lista y el resultado de búsqueda que tienen el foco se marcan con un contorno, así que al recorrerlos con las flechas sabes en todo momento sobre cuál vas a actuar. Antes el foco era invisible fuera de la lista y navegar a ciegas por los resultados no era práctico.",
+        "text": "Ahora se ve dónde está el foco del teclado. La pista de la lista y el resultado de búsqueda que tienen el foco se marcan con un contorno, así que al recorrerlos con las flechas sabes en todo momento sobre cuál vas a actuar. Antes el foco era invisible fuera de la lista y navegar a ciegas por los resultados no era práctico.",
         "in": "0.82.0"
       },
       {
@@ -2044,7 +2044,7 @@
     "title": "Cualquier combinación de teclas vale como atajo",
     "items": [
       {
-        "text": "Option y Control ya sirven para grabar atajos. Antes, al intentar asignar ⌥E o ⌃E no pasaba nada: Surco solo entendía ⌘ y Mayúsculas, y descartaba en silencio lo que pulsabas. Si remapeas Surco a un teclado de macros, ahora puedes usar la combinación que emita tu hardware en vez de buscar cuál de ellas cuela.",
+        "text": "Option y Control ya sirven para grabar atajos. Antes, al intentar asignar ⌥E o ⌃E no pasaba nada: Surco solo entendía ⌘ y Mayús, y descartaba en silencio lo que pulsabas. Si remapeas Surco a un teclado de macros, ahora puedes usar la combinación que emita tu hardware en vez de buscar cuál de ellas cuela.",
         "in": "0.80.0"
       },
       {
@@ -2056,10 +2056,10 @@
   {
     "version": "0.79",
     "date": "1 de agosto de 2026",
-    "title": "La lupa del recorte también va con el teclado",
+    "title": "El zoom del recorte también va con el teclado",
     "items": [
       {
-        "text": "Acercar y alejar la vista de cada corte tiene ahora sus propias teclas, una pareja por lado. Ajustar la lupa es parte de recortar — se acerca para colocar el corte al milisegundo y se aleja para ver dónde cae dentro de la pista — así que era lo único del recorte que seguía obligando a coger el ratón.",
+        "text": "Acercar y alejar la vista de cada corte tiene ahora sus propias teclas, una pareja por lado. Ajustar el zoom es parte de recortar (se acerca para colocar el corte al milisegundo y se aleja para ver dónde cae dentro de la pista), así que era lo único del recorte que seguía obligando a coger el ratón.",
         "in": "0.79.0"
       },
       {
@@ -2074,15 +2074,15 @@
     "title": "Toda la conversión, de principio a fin, sin soltar el teclado",
     "items": [
       {
-        "text": "Las teclas del recorte de silencios ya no dependen de dónde tengas el foco: con la sección abierta actúan sobre la pista que estás editando, sin más. Cada corte tiene sus propias teclas — unas para el de entrada y otras para el de salida — así que una pulsación nunca mueve el que no era. Pensado para quien trabaja con un teclado de macros: se pulsa y el corte se mueve.",
+        "text": "Las teclas del recorte de silencios ya no dependen de dónde tengas el foco: con la sección abierta actúan sobre la pista que estás editando, sin más. Cada corte tiene sus propias teclas, unas para el de entrada y otras para el de salida, así que una pulsación nunca mueve el que no era. Pensado para quien trabaja con un teclado de macros: se pulsa y el corte se mueve.",
         "in": "0.78.0"
       },
       {
-        "text": "Puedes saltar de una sección del editor a la siguiente con ⌘] y ⌘[, sin pasar por todos los campos que hay en medio. Funcionan incluso mientras escribes en un campo, así que se puede ir del título al recorte sin tocar el ratón: ⌘3 para entrar al editor, un par de saltos, Enter para desplegar la sección y ya responden sus teclas.",
+        "text": "Puedes saltar de una sección del editor a la siguiente con ⌘] y ⌘[, sin pasar por todos los campos que hay en medio. Funcionan incluso mientras escribes en un campo, así que se puede ir del título al recorte sin tocar el ratón: ⌘3 para entrar al editor, un par de saltos, Intro para desplegar la sección y ya responden sus teclas.",
         "in": "0.78.0"
       },
       {
-        "text": "Los atajos de Ajustes están ordenados por lo que hace cada uno — etiquetas, convertir, biblioteca, reproducción, navegar — en vez de una lista larga donde había que leerlo todo para encontrar una tecla.",
+        "text": "Los atajos de Ajustes están ordenados por lo que hace cada uno (etiquetas, convertir, biblioteca, reproducción, navegar) en vez de una lista larga donde había que leerlo todo para encontrar una tecla.",
         "in": "0.78.0"
       },
       {
@@ -2101,15 +2101,15 @@
     "title": "El recorte de silencios se maneja con el teclado",
     "items": [
       {
-        "text": "El editor de silencios ya no necesita el ratón. Con el foco en un corte, las flechas lo mueven al milisegundo (con Mayúsculas, de golpe), y una tecla lo escucha, otra lo quita y otra aplica el silencio que Surco ha detectado. El corte que tiene el foco se ve marcado en la onda, también cuando llegas a él arrastrando con el ratón, así que siempre sabes sobre cuál de los dos estás actuando.",
+        "text": "El editor de silencios ya no necesita el ratón. Con el foco en un corte, las flechas lo mueven al milisegundo (con Mayús, a pasos más grandes), y una tecla lo escucha, otra lo quita y otra aplica el silencio que Surco ha detectado. El corte que tiene el foco se ve marcado en la onda, también cuando llegas a él arrastrando con el ratón, así que siempre sabes sobre cuál de los dos estás actuando.",
         "in": "0.77.0"
       },
       {
-        "text": "Los atajos del recorte se cambian en Ajustes, en su propio apartado, y aceptan teclas sueltas sin combinaciones — pensado para quien trabaja con un teclado de macros o un controlador que manda teclas.",
+        "text": "Los atajos del recorte se cambian en Ajustes, en su propio apartado, y aceptan teclas sueltas sin combinaciones, pensado para quien trabaja con un teclado de macros o un controlador que manda teclas.",
         "in": "0.77.0"
       },
       {
-        "text": "El menú de cada pista se abre ahora con el teclado (Mayúsculas+F10, reasignable). Detrás están copiar y pegar metadatos, copiar la ruta y volver a empezar con la pista: hasta ahora solo se llegaba a ellas con el botón derecho del ratón.",
+        "text": "El menú de cada pista se abre ahora con el teclado (Mayús+F10, reasignable). Detrás están copiar y pegar metadatos, copiar la ruta y volver a empezar con la pista: hasta ahora solo se llegaba a ellas con el botón derecho del ratón.",
         "in": "0.77.0"
       },
       {
@@ -2125,7 +2125,7 @@
         "in": "0.77.1"
       },
       {
-        "text": "Mostrar en el Finder funciona también con pistas que aún no has convertido: abre el archivo original en vez de no hacer nada.",
+        "text": "«Mostrar en Finder» funciona también con pistas que aún no has convertido: abre el archivo original en vez de no hacer nada.",
         "in": "0.77.1"
       },
       {
@@ -2140,11 +2140,11 @@
     "title": "Traktor ve por fin los cues que Surco escribe",
     "items": [
       {
-        "text": "Surco puede actualizar tu colección de Traktor al convertir. Hasta ahora escribía los cues dentro del archivo, pero Traktor lee su propia base de datos y seguía enseñando los de antes; ahora también le pone al día los cues, el beatgrid y la carátula de las pistas que ya tenía. Se activa en Ajustes eligiendo tu archivo collection.nml — Surco propone el que encuentra, y no toca nada hasta que tú lo confirmas. Antes de escribir siempre guarda una copia de seguridad, y si Traktor está abierto avisa y se ofrece a cerrarlo, porque si no tus cambios se perderían al salir.",
+        "text": "Surco puede actualizar tu colección de Traktor al convertir. Hasta ahora escribía los cues dentro del archivo, pero Traktor lee su propia base de datos y seguía enseñando los de antes; ahora también le pone al día los cues, el beatgrid y la carátula de las pistas que ya tenía. Se activa en Ajustes eligiendo tu archivo collection.nml: Surco propone el que encuentra, y no toca nada hasta que tú lo confirmas. Antes de escribir siempre guarda una copia de seguridad, y si Traktor está abierto avisa y se ofrece a cerrarlo, porque si no tus cambios se perderían al salir.",
         "in": "0.76.0"
       },
       {
-        "text": "Las animaciones de la aplicación se han repasado enteras: la selección se pinta al instante, los resultados de búsqueda entran de forma progresiva, las barras de carga barren en una dirección en vez de parpadear, y la estrella de la valoración responde al pulsarla. Con el movimiento reducido activado del sistema, las animaciones se simplifican en vez de desaparecer.",
+        "text": "Las animaciones de la aplicación se han repasado enteras: la selección se pinta al instante, los resultados de búsqueda entran de forma progresiva, las barras de carga barren en una dirección en vez de parpadear, y la estrella de la valoración responde al pulsarla. Con «Reducir movimiento» activado en el sistema, las animaciones se simplifican en vez de desaparecer.",
         "in": "0.76.0"
       },
       {
@@ -2152,7 +2152,7 @@
         "in": "0.76.1"
       },
       {
-        "text": "El recorte de silencios afina hasta el milisegundo: la lupa llega ahora a ±0,05 s, donde un píxel de la onda es menos de un milisegundo, y los botones de ajuste mueven el corte de milisegundo en milisegundo en vez de a saltos de diez. Además, un corte pequeño colocado muy al principio de la pista ya no se descarta al guardar — antes podía perderse y la pista arrancaba desde cero, comiéndose el primer golpe.",
+        "text": "El recorte de silencios afina hasta el milisegundo: el zoom llega ahora a ±0,05 s, donde un píxel de la onda es menos de un milisegundo, y los botones de ajuste mueven el corte de milisegundo en milisegundo en vez de a saltos de diez. Además, un corte pequeño colocado muy al principio de la pista ya no se descarta al guardar: antes podía perderse y la pista arrancaba desde cero, comiéndose el primer golpe.",
         "in": "0.76.2"
       },
       {
@@ -2203,7 +2203,7 @@
         "in": "0.75.3"
       },
       {
-        "text": "El volumen del reproductor sale de encima de la onda, así que se puede pinchar en cualquier punto para saltar ahí. El transporte tiene su propia fila con el volumen siempre visible, y el botón de cerrar se va a la esquina de la tarjeta.",
+        "text": "El volumen del reproductor sale de encima de la onda, así que se puede hacer clic en cualquier punto para saltar ahí. El transporte tiene su propia fila con el volumen siempre visible, y el botón de cerrar se va a la esquina de la tarjeta.",
         "in": "0.75.3"
       }
     ]
@@ -2214,7 +2214,7 @@
     "title": "Los MP3 se quedan como están y actualizaciones que se reintentan solas",
     "items": [
       {
-        "text": "Nueva opción «Mantener los MP3 como MP3» en Ajustes → Conversión: al exportar a un formato sin pérdida, los MP3 se saltan la conversión — que solo los haría más grandes sin recuperar calidad — y sus etiquetas se actualizan sobre el archivo original, mientras el resto del lote se convierte como siempre.",
+        "text": "Nueva opción «Mantener los MP3 como MP3» en Ajustes → Conversión: al exportar a un formato sin pérdidas, los MP3 se saltan la conversión, que solo los haría más grandes sin recuperar calidad, y sus etiquetas se actualizan sobre el archivo original, mientras el resto del lote se convierte como siempre.",
         "in": "0.74.0"
       },
       {
@@ -2244,7 +2244,7 @@
         "in": "0.72.0"
       },
       {
-        "text": "Surco ahora recuerda entre sesiones lo que ya sabe de tu música — la biblioteca de Apple Music, los metadatos y el análisis de cada pista, las búsquedas de Discogs y Bandcamp y la base de datos de Engine DJ —, así que la aplicación abre y muestra tu biblioteca al instante en vez de recalcularlo todo desde cero.",
+        "text": "Surco ahora recuerda entre sesiones lo que ya sabe de tu música (la biblioteca de Apple Music, los metadatos y el análisis de cada pista, las búsquedas de Discogs y Bandcamp y la base de datos de Engine DJ), así que la aplicación abre y muestra tu biblioteca al instante en vez de recalcularlo todo desde cero.",
         "in": "0.72.0"
       }
     ]
@@ -2275,7 +2275,7 @@
         "in": "0.71.1"
       },
       {
-        "text": "Apple Music en macOS 26: cuando Música se atasca y deja de importar (un fallo conocido del sistema), Surco ahora recupera la pista si llegó a importarse y, si no, te explica qué ha pasado y cómo salir en lugar de fallar con un error críptico.",
+        "text": "Apple Music en macOS 26: cuando Music se atasca y deja de importar (un fallo conocido del sistema), Surco ahora recupera la pista si llegó a importarse y, si no, te explica qué ha pasado y cómo salir en lugar de fallar con un error críptico.",
         "in": "0.71.2"
       }
     ]
@@ -2286,11 +2286,11 @@
     "title": "Igual que el origen: etiqueta sin reconvertir",
     "items": [
       {
-        "text": "«Igual que el origen» llega al formato por defecto: cada archivo conserva su propio formato, así que un lote mixto de WAV, FLAC y MP3 recibe sus metadatos de Discogs o Bandcamp sin reconvertirse. Con los filtros de audio apagados, los bytes de audio no se tocan — solo se reescriben las etiquetas y la carátula. Funciona con todos los destinos, también al sobrescribir el original, y se puede elegir desde el asistente de bienvenida.",
+        "text": "«Igual que el origen» se suma a las opciones de formato por defecto: cada archivo conserva su propio formato, así que un lote mixto de WAV, FLAC y MP3 recibe sus metadatos de Discogs o Bandcamp sin reconvertirse. Con los filtros de audio apagados, los bytes de audio no se tocan: solo se reescriben las etiquetas y la carátula. Funciona con todos los destinos, también al sobrescribir el original, y se puede elegir desde el asistente de bienvenida.",
         "in": "0.70.0"
       },
       {
-        "text": "Protecciones nuevas para tus archivos: una pista cuyo formato no se puede conservar (.opus, .m4a…) se salta con aviso en vez de convertirse a otra cosa — y sobrescribiendo, tu original nunca se borra. Y si un filtro obligaría a recodificar un MP3 sobre sí mismo, Surco pide confirmación antes de perder calidad, también cuando el filtro viene de los Ajustes.",
+        "text": "Protecciones nuevas para tus archivos: una pista cuyo formato no se puede conservar (.opus, .m4a…) se salta con aviso en vez de convertirse a otra cosa, y al sobrescribir, tu original nunca se borra. Y si un filtro obligaría a recodificar un MP3 sobre sí mismo, Surco pide confirmación antes de perder calidad, también cuando el filtro viene de los Ajustes.",
         "in": "0.70.0"
       },
       {
@@ -2309,7 +2309,7 @@
         "in": "0.69.0"
       },
       {
-        "text": "Si vuelves a exportar una pista sobre sí misma, Surco ya no aplica otra vez la normalización ni el declick que esa exportación dejó grabados. Editar solo los metadatos deja de reprocesar el audio, así que no pierdes una generación en formatos con pérdida ni acumulas ganancia sobre ganancia.",
+        "text": "Si vuelves a exportar una pista sobre sí misma, Surco ya no aplica otra vez la normalización ni el declick que esa exportación dejó grabados. Editar solo los metadatos deja de reprocesar el audio, así que no pierdes una generación en formatos con pérdidas ni acumulas ganancia sobre ganancia.",
         "in": "0.69.0"
       },
       {
@@ -2324,7 +2324,7 @@
     "title": "Copia de seguridad de tu configuración y mejores ajustes de fábrica",
     "items": [
       {
-        "text": "Ya puedes exportar toda tu configuración a un fichero y volver a importarla cuando quieras: tu copia de seguridad completa, con todo incluido, lista para restaurar en cualquier momento o llevártela a otro equipo.",
+        "text": "Ya puedes exportar toda tu configuración a un archivo y volver a importarla cuando quieras: tu copia de seguridad completa, con todo incluido, lista para restaurar en cualquier momento o llevártela a otro equipo.",
         "in": "0.68.0"
       },
       {
@@ -2347,7 +2347,7 @@
         "in": "0.67.0"
       },
       {
-        "text": "El editor recuerda tus valores de normalización entre pistas y entre sesiones: ajústalos una vez y se mantienen, sin volver a ponerlos en cada tema.",
+        "text": "El editor recuerda tus valores de normalización entre pistas y entre sesiones: ajústalos una vez y se mantienen, sin volver a ponerlos en cada pista.",
         "in": "0.67.0"
       },
       {
@@ -2363,7 +2363,7 @@
         "in": "0.67.0"
       },
       {
-        "text": "En Stats, el origen de las coincidencias se muestra ahora como una barra de proporción, así ves de un vistazo de dónde salen tus resultados.",
+        "text": "En Estadísticas, el origen de las coincidencias se muestra ahora como una barra de proporción, así ves de un vistazo de dónde salen tus resultados.",
         "in": "0.67.0"
       }
     ]
@@ -2401,7 +2401,7 @@
         "in": "0.65.0"
       },
       {
-        "text": "El mini-reproductor se ancla abajo en su propia barra en vez de flotar sobre la lista, así que ya no tapa tus pistas mientras escuchas.",
+        "text": "El minirreproductor se ancla abajo en su propia barra en vez de flotar sobre la lista, así que ya no tapa tus pistas mientras escuchas.",
         "in": "0.65.0"
       }
     ]
@@ -2412,7 +2412,7 @@
     "title": "Todos los metadatos, a la vista y bajo control",
     "items": [
       {
-        "text": "El editor ahora muestra todos los metadatos que lleva un fichero, no solo los campos habituales: una sección nueva de «Otros metadatos» lista los que dejan otras apps (Serato, Traktor, MusicBrainz, ReplayGain…) para que veas exactamente qué carga tu pista.",
+        "text": "El editor ahora muestra todos los metadatos que lleva un archivo, no solo los campos habituales: una sección nueva de «Otros metadatos» lista los que dejan otras apps (Serato, Traktor, MusicBrainz, ReplayGain…) para que veas exactamente qué carga tu pista.",
         "in": "0.64.0"
       },
       {
@@ -2420,11 +2420,11 @@
         "in": "0.64.0"
       },
       {
-        "text": "«Borrar todos los metadatos» ahora limpia de verdad: antes dejaba etiquetas de otras apps pegadas al fichero; ahora la pista sale con solo lo que tú has puesto.",
+        "text": "«Borrar todos los metadatos» ahora limpia de verdad: antes dejaba etiquetas de otras apps pegadas al archivo; ahora la pista sale con solo lo que tú has puesto.",
         "in": "0.64.0"
       },
       {
-        "text": "Los ficheros WAV ahora enseñan todas sus etiquetas en el editor, incluidas las que antes quedaban ocultas.",
+        "text": "Los archivos WAV ahora enseñan todas sus etiquetas en el editor, incluidas las que antes quedaban ocultas.",
         "in": "0.64.0"
       },
       {
@@ -2432,11 +2432,11 @@
         "in": "0.64.0"
       },
       {
-        "text": "El grouping que Apple Music guarda a su manera ahora se lee bien: un fichero que pasó por tu biblioteca vuelve a Surco con su grouping intacto, en vez de aparecer vacío.",
+        "text": "El grouping que Apple Music guarda a su manera ahora se lee bien: un archivo que pasó por tu biblioteca vuelve a Surco con su grouping intacto, en vez de aparecer vacío.",
         "in": "0.64.1"
       },
       {
-        "text": "El editor se ve más ordenado y coherente: todas las secciones comparten el mismo ritmo y espaciado, el análisis de loudness se presenta como una tabla clara con su semáforo de color, y los separadores entre bloques respiran mejor.",
+        "text": "El editor se ve más ordenado y coherente: todas las secciones comparten el mismo ritmo y espaciado, el análisis de sonoridad se presenta como una tabla clara con su semáforo de color, y los separadores entre bloques respiran mejor.",
         "in": "0.64.2"
       }
     ]
@@ -2447,15 +2447,15 @@
     "title": "Convertir con más control",
     "items": [
       {
-        "text": "Cuando el editor abre una pista con una coincidencia de alta confianza, ahora la aplica sola: los datos correctos aparecen sin que tengas que confirmar el match que ya era evidente.",
+        "text": "Cuando el editor abre una pista con una coincidencia de alta confianza, ahora la aplica sola: los datos correctos aparecen sin que tengas que confirmar la coincidencia que ya era evidente.",
         "in": "0.63.0"
       },
       {
-        "text": "Los campos de metadatos se confirman y saltan al siguiente con Enter, así puedes rellenar el disco entero desde el teclado sin tocar el ratón.",
+        "text": "Los campos de metadatos se confirman y saltan al siguiente con Intro, así puedes rellenar el disco entero desde el teclado sin tocar el ratón.",
         "in": "0.63.0"
       },
       {
-        "text": "Convertir una sola pista sobre su propio sitio ahora pide confirmación antes de sobrescribir el archivo original.",
+        "text": "Convertir una sola pista en su sitio ahora pide confirmación antes de sobrescribir el archivo original.",
         "in": "0.63.0"
       },
       {
@@ -2475,7 +2475,7 @@
         "in": "0.63.2"
       },
       {
-        "text": "Vaciar los metadatos ahora deja la pista de verdad en blanco: además de los campos de texto, borra también la valoración y la carátula, para retaguear un archivo desde cero sin restos.",
+        "text": "Vaciar los metadatos ahora deja la pista de verdad en blanco: además de los campos de texto, borra también la valoración y la carátula, para volver a etiquetar un archivo desde cero sin restos.",
         "in": "0.63.2"
       },
       {
@@ -2506,7 +2506,7 @@
     "title": "El editor, por fases",
     "items": [
       {
-        "text": "El editor ahora se lee en tres fases: Archivo, Audio y Salida. Cada bloque de secciones lleva su rótulo con una marca de acento, así que de un vistazo sabes en qué parte del trabajo estás — corregir los datos, limpiar el sonido o elegir cómo exportar — en vez de una lista larga de secciones sueltas.",
+        "text": "El editor ahora se lee en tres fases: Archivo, Audio y Salida. Cada bloque de secciones lleva su rótulo con una marca de acento, así que de un vistazo sabes en qué parte del trabajo estás, corregir los datos, limpiar el sonido o elegir cómo exportar, en vez de una lista larga de secciones sueltas.",
         "in": "0.62.0"
       },
       {
@@ -2514,15 +2514,15 @@
         "in": "0.62.0"
       },
       {
-        "text": "Las secciones de reparación de clicks y de loudness se pueden maximizar, como el resto de secciones con onda, para trabajar el detalle sin que el resto del editor te robe sitio.",
+        "text": "Las secciones de reparación de clics y de sonoridad se pueden maximizar, como el resto de secciones con onda, para trabajar el detalle sin que el resto del editor te robe sitio.",
         "in": "0.62.0"
       },
       {
-        "text": "Las ondas se dibujan con más información: un cuerpo relleno que marca el nivel RMS real y las marcas de recorte como líneas de altura completa, así ves de un golpe dónde el audio va fuerte y dónde satura.",
+        "text": "Las ondas se dibujan con más información: un cuerpo relleno que marca el nivel RMS real y las marcas de saturación como líneas de altura completa, así ves de un golpe dónde el audio va fuerte y dónde satura.",
         "in": "0.62.0"
       },
       {
-        "text": "Los ajustes de loudness quedan más ordenados: cada preset va junto a su campo numérico como un único control, la leyenda se lee en dos líneas y la ganancia aplicada aparece como un chip con signo.",
+        "text": "Los ajustes de sonoridad quedan más ordenados: cada preset va junto a su campo numérico como un único control, la leyenda se lee en dos líneas y la ganancia aplicada aparece como una pastilla con signo.",
         "in": "0.62.0"
       },
       {
@@ -2530,7 +2530,7 @@
         "in": "0.62.0"
       },
       {
-        "text": "Se retira el beatgrid. El BPM y la recolocación de cues al recortar se mantienen; la rejilla de beats deja de formar parte de la app.",
+        "text": "Se retira el beatgrid. El BPM y la recolocación de cues al recortar se mantienen; la rejilla deja de formar parte de la app.",
         "in": "0.62.0"
       }
     ]
@@ -2541,11 +2541,11 @@
     "title": "Coincidencias más rápidas",
     "items": [
       {
-        "text": "El auto-match corre mucho más. Los discos candidatos de cada pista se cargan varios a la vez en vez de uno tras otro, así que una pista sin coincidencia que antes tardaba medio minuto en rendirse ahora resuelve en un tercio del tiempo, y la cola entera de un crate grande avanza más deprisa.",
+        "text": "El auto-emparejado corre mucho más rápido. Los lanzamientos candidatos de cada pista se cargan varios a la vez en vez de uno tras otro, así que una pista sin coincidencia que antes tardaba medio minuto en rendirse ahora resuelve en un tercio del tiempo, y la cola entera de un crate grande avanza más deprisa.",
         "in": "0.61.0"
       },
       {
-        "text": "La pista que tienes abierta va primero. Su onda, BPM, tonalidad y loudness se cuelan por delante de los análisis de fondo, y su búsqueda de metadatos salta la cola — durante un barrido de todo el crate, lo que estás mirando responde al momento en vez de esperar su turno.",
+        "text": "La pista que tienes abierta va primero. Su onda, BPM, tonalidad y sonoridad se cuelan por delante de los análisis de fondo, y su búsqueda de metadatos salta la cola: durante un barrido de todo el crate, lo que estás mirando responde al momento en vez de esperar su turno.",
         "in": "0.61.0"
       },
       {
@@ -2553,15 +2553,15 @@
         "in": "0.61.0"
       },
       {
-        "text": "El panel de Actividad tiene botón de copiar. Todo el registro — cada búsqueda, cada tiempo, cada error con su detalle técnico — se copia como texto plano listo para pegar en un chat o un reporte, en vez de recortar capturas de pantalla.",
+        "text": "El panel de Actividad tiene botón de copiar. Todo el registro (cada búsqueda, cada tiempo, cada error con su detalle técnico) se copia como texto plano listo para pegar en un chat o un informe, en vez de recortar capturas de pantalla.",
         "in": "0.61.0"
       },
       {
-        "text": "Un rip falso se delata desde la lista. Las pistas con recorte de frecuencias sospechoso muestran su aviso directamente en la fila, y el espectro sombrea la banda muerta para que veas de un vistazo dónde muere el audio.",
+        "text": "Un rip falso se delata desde la lista. Las pistas con corte de frecuencias sospechoso muestran su aviso directamente en la fila, y el espectro sombrea la banda muerta para que veas de un vistazo dónde muere el audio.",
         "in": "0.61.0"
       },
       {
-        "text": "El editor carga sin parpadeos. Cada sección — onda, espectro, loudness, propiedades, BPM y tonalidad — muestra un esqueleto con su forma real mientras analiza, y las secciones se abren y cierran con una animación suave en vez de saltar.",
+        "text": "El editor carga sin parpadeos. Cada sección (onda, espectro, sonoridad, propiedades, BPM y tonalidad) muestra un esqueleto con su forma real mientras analiza, y las secciones se abren y cierran con una animación suave en vez de saltar.",
         "in": "0.61.0"
       },
       {
@@ -2569,11 +2569,11 @@
         "in": "0.61.0"
       },
       {
-        "text": "La lista se desplaza con suavidad. El scroll ya no da tirones al pasar por las pistas: las carátulas se decodifican fuera del hilo principal y el auto-match espera a que dejes de desplazarte antes de trabajar, así que recorrer el crate va fluido de arriba a abajo.",
+        "text": "La lista se desplaza con suavidad. El desplazamiento ya no da tirones al pasar por las pistas: las carátulas se decodifican fuera del hilo principal y el auto-emparejado espera a que dejes de desplazarte antes de trabajar, así que recorrer el crate va fluido de arriba a abajo.",
         "in": "0.61.2"
       },
       {
-        "text": "Saltar de pista en pista ya no deja trabajo fantasma. Al pasar a otra pista, los análisis de la anterior (espectro, loudness, onda) se cancelan al instante en vez de seguir decodificando en segundo plano — así, cuando repasas la lista escuchando un trocito de cada una, el espectro de la pista que miras aparece enseguida en lugar de esperar detrás de análisis que ya no importan.",
+        "text": "Saltar de pista en pista ya no deja trabajo fantasma. Al pasar a otra pista, los análisis de la anterior (espectro, sonoridad, onda) se cancelan al instante en vez de seguir decodificando en segundo plano. Así, cuando repasas la lista escuchando un trocito de cada una, el espectro de la pista que miras aparece enseguida en lugar de esperar detrás de análisis que ya no importan.",
         "in": "0.61.3"
       }
     ]
@@ -2581,30 +2581,30 @@
   {
     "version": "0.60",
     "date": "15 de julio de 2026",
-    "title": "Afinar el grid a mano",
+    "title": "Afinar la rejilla a mano",
     "items": [
       {
-        "text": "El botón Auto del beatgrid ahora manda. Es lo primero que pulsas y lo único de esa fila que reconstruye el grid entero en vez de ajustarlo, así que deja de ser un icono más camuflado entre los demás y pasa a ser un botón destacado que abre la barra: «empieza por aquí».",
+        "text": "El botón Auto del beatgrid ahora manda. Es lo primero que pulsas y lo único de esa fila que reconstruye la rejilla entera en vez de ajustarlo, así que deja de ser un icono más camuflado entre los demás y pasa a ser un botón destacado que abre la barra: «empieza por aquí».",
         "in": "0.60.0"
       },
       {
-        "text": "Y cuando Auto no acierta, empiezas de cero. Un botón nuevo colapsa todos los segmentos a un solo tempo limpio, para que ajustes el grid a mano desde un lienzo ordenado en vez de pelearte con los tramos que el detector no clavó. Reversible con deshacer.",
+        "text": "Y cuando Auto no acierta, empiezas de cero. Un botón nuevo colapsa todos los segmentos a un solo tempo limpio, para que ajustes la rejilla a mano desde un lienzo ordenado en vez de pelearte con los tramos que el detector no clavó. Reversible con deshacer.",
         "in": "0.60.0"
       },
       {
-        "text": "Las ondas te enseñan lo que el recorte se lleva. En reparación de clics, loudness y beatgrid, la parte que el trim de silencios va a cortar (por delante y por detrás) se muestra atenuada sobre la onda, así ves de un vistazo qué audio no llegará a la salida sin que nada se desplace.",
+        "text": "Las ondas te enseñan lo que el recorte se lleva. En reparación de clics, sonoridad y beatgrid, la parte que el recorte de silencios va a cortar (por delante y por detrás) se muestra atenuada sobre la onda, así ves de un vistazo qué audio no llegará a la salida sin que nada se desplace.",
         "in": "0.60.0"
       },
       {
-        "text": "Un corte de silencio se afina con las flechas. Además de arrastrar el asa, las flechas izquierda/derecha y unos botones a los lados mueven el punto de corte de a poco, para clavar el arranque o el final sin pelearte con el ratón.",
+        "text": "Un corte de silencio se afina con las flechas. Además de arrastrar el asa, las flechas izquierda/derecha y unos botones a los lados mueven el punto de corte un pelín cada vez, para clavar el arranque o el final sin pelearte con el ratón.",
         "in": "0.60.0"
       },
       {
-        "text": "Las bibliotecas grandes ya no se atascan. Soltar cientos de pistas de golpe —y teclear en el editor con muchas cargadas— dejó de congelar la lista: la app agrupa el trabajo en vez de rehacerlo pista a pista, así que se mantiene fluida por muy lleno que esté el crate.",
+        "text": "Las bibliotecas grandes ya no se atascan. Soltar cientos de pistas de golpe, y teclear en el editor con muchas cargadas, dejó de congelar la lista: la app agrupa el trabajo en vez de rehacerlo pista a pista, así que se mantiene fluida por muy lleno que esté el crate.",
         "in": "0.60.1"
       },
       {
-        "text": "Al abrir una sección del editor ves su esqueleto de carga al instante, en lugar de un hueco en blanco mientras se prepara: recorte, reparación de clics, loudness, beatgrid y calidad responden de inmediato.",
+        "text": "Al abrir una sección del editor ves su esqueleto de carga al instante, en lugar de un hueco en blanco mientras se prepara: recorte, reparación de clics, sonoridad, beatgrid y calidad responden de inmediato.",
         "in": "0.60.1"
       },
       {
@@ -2612,7 +2612,7 @@
         "in": "0.60.3"
       },
       {
-        "text": "Más ligera con el crate lleno. El resto del análisis pesado de audio pasa a segundo plano y las carátulas ocupan menos en memoria, así que con cientos de pistas cargadas la app va más suelta y consume menos.",
+        "text": "Más ligero con el crate lleno. El resto del análisis pesado de audio pasa a segundo plano y las carátulas ocupan menos en memoria, así que con cientos de pistas cargadas la app va más suelta y consume menos.",
         "in": "0.60.4"
       }
     ]
@@ -2620,26 +2620,26 @@
   {
     "version": "0.59",
     "date": "14 de julio de 2026",
-    "title": "El grid sigue al plato",
+    "title": "La rejilla sigue al plato",
     "items": [
       {
-        "text": "El beatgrid ahora sigue los discos que no van a tempo constante. Un vinilo rara vez lo va: el plato arrastra, una copia está prensada un pelín lenta, dos tomas se empalman en el mismo corte. Hasta ahora, cuando Surco detectaba eso, plantaba un cambio de grid pero le dejaba el mismo BPM debajo, así que la rejilla se volvía a despegar de los bombos a los pocos compases. Ahora cada tramo lleva su propio tempo, medido sobre los beats que suenan de verdad, y la rejilla se queda pegada de principio a fin: un disco que baja de 128 a 126 lo resuelve el botón Auto él solo. Está calibrado contra vinilos reales, con su tembleque y sus capas de percusión, así que un disco de tempo firme sigue saliendo con un solo tramo.",
+        "text": "El beatgrid ahora sigue los discos que no van a tempo constante. Un vinilo rara vez lo va: el plato arrastra, una copia está prensada un pelín lenta, dos tomas se empalman en el mismo corte. Hasta ahora, cuando Surco detectaba eso, plantaba un cambio de rejilla pero le dejaba el mismo BPM debajo, así que la rejilla se volvía a despegar de los bombos a los pocos compases. Ahora cada tramo lleva su propio tempo, medido sobre los golpes que suenan de verdad, y la rejilla se queda pegada de principio a fin: un disco que baja de 128 a 126 lo resuelve el botón Auto él solo. Está calibrado contra vinilos reales, con su tembleque y sus capas de percusión, así que un disco de tempo firme sigue saliendo con un solo tramo.",
         "in": "0.59.0"
       },
       {
-        "text": "La cabecera te dice cuántos tramos tiene el grid. Antes decía solo «128 BPM», que en un disco con deriva es el tempo del primer tramo y no el del disco. Ahora dice «128 BPM · 5 segmentos», y si pliegas la sección sabes lo que llevas dentro.",
+        "text": "La cabecera te dice cuántos tramos tiene la rejilla. Antes decía solo «128 BPM», que en un disco con deriva es el tempo del primer tramo y no el del disco. Ahora dice «128 BPM · 5 segmentos», y si pliegas la sección sabes lo que llevas dentro.",
         "in": "0.59.0"
       },
       {
-        "text": "El botón Auto dice lo que hace. Su descripción hablaba de volver a detectar el tempo, y se quedaba corta en las dos cosas que importan: que ajusta el grid entero creando segmentos si el disco deriva, y que descarta tus ediciones al hacerlo.",
+        "text": "El botón Auto dice lo que hace. Su descripción hablaba de volver a detectar el tempo, y se quedaba corta en las dos cosas que importan: que ajusta la rejilla entera creando segmentos si el disco deriva, y que descarta tus ediciones al hacerlo.",
         "in": "0.59.0"
       },
       {
-        "text": "Y el editor de grid se maneja mejor. Cada segmento enseña su tempo, por estrecho que sea (el primero se quedaba mudo justo cuando más falta hacía), el que estás editando se distingue de un vistazo, y ahora puedes quitar un cambio de tempo con la X del propio segmento: hasta ahora solo se podía borrar con la tecla Suprimir sobre el rombo, que no lo descubría nadie. Los minutos de la regla también se leen sobre la onda en vez de disolverse en ella.",
+        "text": "Y el editor de rejilla se maneja mejor. Cada segmento enseña su tempo, por estrecho que sea (el primero se quedaba mudo justo cuando más falta hacía), el que estás editando se distingue de un vistazo, y ahora puedes quitar un cambio de tempo con la X del propio segmento: hasta ahora solo se podía borrar con la tecla Suprimir sobre el rombo, que no lo descubría nadie. Los minutos de la regla también se leen sobre la onda en vez de disolverse en ella.",
         "in": "0.59.0"
       },
       {
-        "text": "Surco conserva las etiquetas de estado de ánimo y energía que escriben otras herramientas DJ, en vez de perderlas al convertir.",
+        "text": "Surco conserva las etiquetas de estado de ánimo y energía que escriben otras herramientas de DJ, en vez de perderlas al convertir.",
         "in": "0.59.0"
       }
     ]
@@ -2658,19 +2658,19 @@
         "in": "0.58.0"
       },
       {
-        "text": "Salta directamente a cualquier clic. Un clic dura milisegundos, así que buscarlo arrastrando es imposible: pulsa Siguiente clic para recorrerlos uno a uno, pincha una marca para oír ese en concreto, o coloca el cursor en cualquier punto de la onda y pulsa Espacio para reproducir desde ahí.",
+        "text": "Salta directamente a cualquier clic. Un clic dura milisegundos, así que buscarlo arrastrando es imposible: pulsa Siguiente clic para recorrerlos uno a uno, haz clic en una marca para oír ese en concreto, o coloca el cursor en cualquier punto de la onda y pulsa Espacio para reproducir desde ahí.",
         "in": "0.58.0"
       },
       {
-        "text": "Surco funciona en Linux. La app se distribuye ahora como AppImage, que se construye y se verifica en cada release junto a las versiones de macOS y Windows.",
+        "text": "Surco funciona en Linux. La app se distribuye ahora como AppImage, que se construye y se verifica en cada versión junto a las versiones de macOS y Windows.",
         "in": "0.58.0"
       },
       {
-        "text": "El beatgrid ya soporta pistas que cambian de tempo. Pulsa G para empezar un segmento nuevo donde cambie el tempo, sáltate de segmento en segmento con los corchetes y verás las costuras marcadas en el overview. La escucha del grid dura ahora hasta que la paras con Espacio, en vez de cortarse a mitad de la valoración.",
+        "text": "El beatgrid ya soporta pistas que cambian de tempo. Pulsa G para empezar un segmento nuevo donde cambie el tempo, salta de segmento en segmento con los corchetes y verás las costuras marcadas en la onda general. La escucha de la rejilla dura ahora hasta que la paras con Espacio, en vez de cortarse a mitad de la valoración.",
         "in": "0.58.0"
       },
       {
-        "text": "Unas cuantas cosas que fallaban en silencio: empujar el grid más allá del principio de la pista ahora sigue moviéndolo hacia donde pulsas en lugar de saltar atrás; un arrastre de carril que perdía el puntero ya no se queda pegado; y abrir el mini-player ya no desplaza todo el editor de golpe al aparecer la barra de scroll.",
+        "text": "Unas cuantas cosas que fallaban en silencio: empujar la rejilla más allá del principio de la pista ya no la sigue moviendo hacia donde pulsas, sino que vuelve a su sitio; un arrastre de carril que perdía el puntero ya no se queda pegado; y abrir el minirreproductor ya no desplaza todo el editor de golpe al aparecer la barra de desplazamiento.",
         "in": "0.58.0"
       }
     ]
@@ -2681,11 +2681,11 @@
     "title": "Nada se pierde en silencio",
     "items": [
       {
-        "text": "Quitar una selección de la lista ahora pregunta antes. La ✕ de una fila actuaba sobre toda la selección a la que pertenecía, así que un clic en un target de 12 píxeles podía llevarse cuarenta pistas y todas sus ediciones sin vuelta atrás. Ahora avisa; quitar una fila suelta sigue siendo un clic.",
+        "text": "Quitar una selección de la lista ahora pregunta antes. La ✕ de una fila actuaba sobre toda la selección a la que pertenecía, así que un clic en una zona de 12 píxeles podía llevarse cuarenta pistas y todas sus ediciones sin vuelta atrás. Ahora avisa; quitar una fila suelta sigue siendo un clic.",
         "in": "0.57.0"
       },
       {
-        "text": "Los fallos ya no ocurren en silencio. Guardar un informe de calidad, compartir tus estadísticas o arrastrar una carátula desde el navegador podían no hacer nada sin decir por qué — el spinner terminaba y no aparecía ningún archivo. Ahora te lo cuentan.",
+        "text": "Los fallos ya no ocurren en silencio. Guardar un informe de calidad, compartir tus estadísticas o arrastrar una carátula desde el navegador podían no hacer nada sin decir por qué: la rueda de carga terminaba y no aparecía ningún archivo. Ahora te lo cuentan.",
         "in": "0.57.0"
       },
       {
@@ -2693,11 +2693,11 @@
         "in": "0.57.0"
       },
       {
-        "text": "Las cajas grandes ya no se comen la memoria. Las ondas y los espectrogramas se liberan cuando nada los muestra, en vez de quedarse hasta cerrar la app: analizar 300 pistas de una tirada deja de pesar sobre el resto de la sesión.",
+        "text": "Los crates grandes ya no se comen la memoria. Las ondas y los espectrogramas se liberan cuando nada los muestra, en vez de quedarse hasta cerrar la app: analizar 300 pistas de una tirada deja de pesar sobre el resto de la sesión.",
         "in": "0.57.0"
       },
       {
-        "text": "Escuchar el beatgrid va fluido. La cabeza de reproducción se movía repintando toda la sección en cada fotograma — justo mientras juzgas a ojo si los clics caen sobre los transitorios.",
+        "text": "Escuchar el beatgrid va fluido. El cabezal se movía repintando toda la sección en cada fotograma, justo mientras juzgas a ojo si los clics caen sobre los transitorios.",
         "in": "0.57.0"
       }
     ]
@@ -2708,7 +2708,7 @@
     "title": "Recorte, de cerca",
     "items": [
       {
-        "text": "El recorte de silencio ahora muestra los dos sitios que importan — el inicio y el final de la pista — uno junto al otro y ya encuadrados en el corte. Se acabó buscar el silencio con la lupa.",
+        "text": "El recorte de silencio ahora muestra los dos sitios que importan, el inicio y el final de la pista, uno junto al otro y ya encuadrados en el corte. Se acabó buscar el silencio con el zoom.",
         "in": "0.56.0"
       },
       {
@@ -2716,11 +2716,11 @@
         "in": "0.56.0"
       },
       {
-        "text": "El carril del beatgrid vuelve a leerse como un grid: el downbeat manda, los beats quedan discretos y la onda ya no se pierde bajo una valla de líneas.",
+        "text": "El carril del beatgrid vuelve a leerse como una rejilla: el downbeat manda, los golpes quedan discretos y la onda ya no se pierde bajo una valla de líneas.",
         "in": "0.56.0"
       },
       {
-        "text": "Auto ahora vuelve a detectar solo el tramo en el que estás trabajando cuando has dividido el grid con Ajustar desde aquí, en vez de rehacer la pista entera.",
+        "text": "Auto ahora vuelve a detectar solo el tramo en el que estás trabajando cuando has dividido la rejilla con Ajustar desde aquí, en vez de rehacer la pista entera.",
         "in": "0.56.0"
       },
       {
@@ -2732,18 +2732,18 @@
   {
     "version": "0.55",
     "date": "13 de julio de 2026",
-    "title": "Edición de grid, ya mayor",
+    "title": "Edición de rejilla, ya mayor",
     "items": [
       {
-        "text": "Los beatgrids ahora admiten cambios de tempo: divide el grid con Ajustar desde aquí, edita cada tramo por separado y la detección marca las derivas a mitad de pista. Todos los exports DJ llevan el grid multi-segmento completo.",
+        "text": "Los beatgrids ahora admiten cambios de tempo: divide la rejilla con Ajustar desde aquí, edita cada tramo por separado y la detección marca las derivas a mitad de pista. Todas las exportaciones a programas de DJ llevan la rejilla multisegmento completa.",
         "in": "0.55.0"
       },
       {
-        "text": "La edición del grid funciona como rekordbox: referencia central fija con el desfase en compases, beats imantados, tap tempo, C para centrar un beat, poner-un-beat-aquí, pasos finos de intervalo y una barra compacta de una línea cuyos botones repiten al mantenerlos pulsados.",
+        "text": "La edición de la rejilla funciona como rekordbox: referencia central fija con el desfase en compases, golpes imantados, tap tempo, C para centrar un golpe, poner-un-golpe-aquí, pasos finos de intervalo y una barra compacta de una línea cuyos botones repiten al mantenerlos pulsados.",
         "in": "0.55.0"
       },
       {
-        "text": "Recorte, Beatgrid y Calidad de audio pueden ocupar toda la ventana mientras trabajas — Esc las devuelve a su sitio sin perder la selección.",
+        "text": "Recorte, Beatgrid y Calidad de audio pueden ocupar toda la ventana mientras trabajas, y Esc las devuelve a su sitio sin perder el punto en el que estabas.",
         "in": "0.55.0"
       },
       {
@@ -2751,7 +2751,7 @@
         "in": "0.55.0"
       },
       {
-        "text": "Las secciones del editor siguen ahora el orden de trabajo de una pista, de los tags al export.",
+        "text": "Las secciones del editor siguen ahora el orden de trabajo de una pista, de las etiquetas a la exportación.",
         "in": "0.55.0"
       }
     ]
@@ -2762,35 +2762,35 @@
     "title": "El beatgrid, tuyo",
     "items": [
       {
-        "text": "Nueva sección Beatgrid en el editor: Surco detecta el BPM y el primer beat y dibuja la rejilla sobre la onda. Ajústala agarrando cualquier línea, con botones de precisión, editando el BPM (con ÷2/×2 para la octava) y compruébala de oído con un clic. El botón Auto re-analiza desde cero cuando quieras.",
+        "text": "Nueva sección Beatgrid en el editor: Surco detecta el BPM y el primer golpe y dibuja la rejilla sobre la onda. Ajústala agarrando cualquier línea, con botones de precisión, editando el BPM (con ÷2/×2 para la octava) y compruébala de oído con un clic. El botón Auto reanaliza desde cero cuando quieras.",
         "in": "0.54.0"
       },
       {
-        "text": "El grid que confirmas viaja con tus exports: rekordbox y Traktor lo reciben en sus colecciones, y los ficheros convertidos llevan el grid de Serato en sus tags y el de Engine DJ en la biblioteca — bloqueado para que su análisis no lo pise.",
+        "text": "La rejilla que confirmas viaja con tus exportaciones: rekordbox y Traktor lo reciben en sus colecciones, y los archivos convertidos llevan la rejilla de Serato en sus etiquetas y la de Engine DJ en la biblioteca, bloqueada para que su análisis no lo pise.",
         "in": "0.54.0"
       },
       {
-        "text": "La detección entiende el trance: en pistas con sidechain el grid se ancla al kick, no al bajo a contratiempo, y las detecciones dudosas se marcan para que las revises de oído.",
+        "text": "La detección entiende el trance: en pistas con sidechain la rejilla se ancla al kick, no al bajo a contratiempo, y las detecciones dudosas se marcan para que las revises de oído.",
         "in": "0.54.0"
       },
       {
-        "text": "Nuevos filtros de repaso en la lista: pistas con silencio por recortar, con clipping y con el grid por revisar — para dejar la colección fina sección a sección.",
+        "text": "Nuevos filtros de repaso en la lista: pistas con silencio por recortar, con saturación y con la rejilla por revisar, para dejar la colección fina sección a sección.",
         "in": "0.54.0"
       },
       {
-        "text": "El recorte de silencio recoloca los cues y el beatgrid de Traktor en el fichero exportado, y el imán de las asas ajusta ahora al milisegundo exacto donde empieza la música.",
+        "text": "El recorte de silencio recoloca los cues y el beatgrid de Traktor en el archivo exportado, y el imán de las asas se ajusta ahora al milisegundo exacto donde empieza la música.",
         "in": "0.54.0"
       },
       {
-        "text": "La sección Beatgrid trabaja ahora en dos ondas, estilo rekordbox: la vista ampliada donde ajustas el grid (se abre ya con zoom sobre el primer beat) y, debajo, la pista entera — pulsa o arrastra para llevar la vista a cualquier parte, y «Escuchar el grid» avanza siguiendo el playhead como un reproductor.",
+        "text": "La sección Beatgrid trabaja ahora en dos ondas, estilo rekordbox: la vista ampliada donde ajustas la rejilla (se abre ya con zoom sobre el primer golpe) y, debajo, la pista entera: pulsa o arrastra para llevar la vista a cualquier parte, y «Escuchar la rejilla» avanza siguiendo el cabezal como un reproductor.",
         "in": "0.54.1"
       },
       {
-        "text": "El grid clava el kick también en hard dance: cuando un kick largo y un bajo a contratiempo confunden la detección, el ataque del sub decide el lado correcto del beat.",
+        "text": "La rejilla clava el kick también en hard dance: cuando un kick largo y un bajo a contratiempo confunden la detección, el ataque del sub decide el lado correcto del golpe.",
         "in": "0.54.1"
       },
       {
-        "text": "Las casillas de la normalización por picos (quitar DC, normalizar canales por separado) se recuerdan entre sesiones.",
+        "text": "Las casillas de la normalización por picos (eliminar el desplazamiento DC, normalizar canales por separado) se recuerdan entre sesiones.",
         "in": "0.54.1"
       }
     ]
@@ -2801,7 +2801,7 @@
     "title": "Precisión de cirujano",
     "items": [
       {
-        "text": "Zoom profundo en las ondas: pellizca el trackpad (o ⌘+rueda) para acercarte hasta ×256 anclado al cursor. Surco re-decodifica la ventana visible con fidelidad total — detalle real, no bloques — con regla de tiempo y gráficas más altas.",
+        "text": "Zoom profundo en las ondas: pellizca el trackpad (o ⌘+rueda) para acercarte hasta ×256 anclado al cursor. Surco vuelve a decodificar la ventana visible con fidelidad total, detalle real y no bloques, con regla de tiempo y gráficas más altas.",
         "in": "0.53.0"
       },
       {
@@ -2809,7 +2809,7 @@
         "in": "0.53.0"
       },
       {
-        "text": "Los resultados de los análisis viven ahora en píldoras en la cabecera de cada sección — silencio detectado, LUFS y picos medidos, clicks estimados — visibles de un vistazo.",
+        "text": "Los resultados de los análisis viven ahora en pastillas en la cabecera de cada sección (silencio detectado, LUFS y picos medidos, clics estimados), visibles de un vistazo.",
         "in": "0.53.0"
       },
       {
@@ -2824,7 +2824,7 @@
     "title": "Fuera silencios",
     "items": [
       {
-        "text": "Nueva sección Recorte de silencio: elimina el silencio del inicio y del final al convertir. Surco lo detecta y lo propone sobre la forma de onda, y tú afinas el corte exacto con dos asas — con zoom y ajuste fino con las flechas del teclado.",
+        "text": "Nueva sección Recorte de silencio: elimina el silencio del inicio y del final al convertir. Surco lo detecta y lo propone sobre la forma de onda, y tú afinas el corte exacto con dos asas, con zoom y ajuste fino con las flechas del teclado.",
         "in": "0.52.0"
       }
     ]
@@ -2832,14 +2832,14 @@
   {
     "version": "0.51",
     "date": "12 de julio de 2026",
-    "title": "Clicks bajo control",
+    "title": "Clics bajo control",
     "items": [
       {
-        "text": "La reparación de clicks estima cuántos clicks audibles tiene la pista antes de convertir.",
+        "text": "La reparación de clics estima cuántos clics audibles tiene la pista antes de convertir.",
         "in": "0.51.0"
       },
       {
-        "text": "Intensidad de reparación en tres niveles — Suave, Estándar y Fuerte — en un único control, junto a la escucha previa de lo que se eliminará.",
+        "text": "Intensidad de reparación en tres niveles (Suave, Estándar y Fuerte) en un único control, junto a la escucha previa de lo que se eliminará.",
         "in": "0.51.0"
       }
     ]
@@ -2850,15 +2850,15 @@
     "title": "Escucha la reparación y lee el editor de un vistazo",
     "items": [
       {
-        "text": "La reparación de clicks ahora se deja escuchar antes de convertir: una audición reproduce 20 segundos del centro de la pista con solo el ruido que se quitaría — si suena casi a silencio, la música queda intacta — junto al porcentaje del extracto que tocaría.",
+        "text": "La reparación de clics ahora se deja escuchar antes de convertir: una audición reproduce 20 segundos del centro de la pista con solo el ruido que se quitaría (si suena casi a silencio, la música queda intacta), junto al porcentaje del extracto que tocaría.",
         "in": "0.50.0"
       },
       {
-        "text": "Las secciones plegadas del editor resumen ahora su estado: artista y título, el nombre de archivo que se escribirá, los objetivos de normalización o un simple «No» — y sus botones se pliegan con ellas.",
+        "text": "Las secciones plegadas del editor resumen ahora su estado: artista y título, el nombre de archivo que se escribirá, los objetivos de normalización o un simple «No», y sus botones se pliegan con ellas.",
         "in": "0.50.0"
       },
       {
-        "text": "Las secciones del editor también pueden ocultarse del todo desde Ajustes → Editor, y la reparación de clicks empieza plegada.",
+        "text": "Las secciones del editor también pueden ocultarse del todo desde Ajustes → Editor, y la reparación de clics empieza plegada.",
         "in": "0.50.0"
       }
     ]
@@ -2877,7 +2877,7 @@
         "in": "0.49.0"
       },
       {
-        "text": "La búsqueda espera a leer los tags del archivo antes de lanzarse, en vez de adivinar a partir del nombre del fichero.",
+        "text": "La búsqueda espera a leer las etiquetas del archivo antes de lanzarse, en vez de adivinar a partir del nombre del archivo.",
         "in": "0.49.0"
       },
       {
@@ -2885,7 +2885,7 @@
         "in": "0.49.0"
       },
       {
-        "text": "Nueva reparación de clicks de vinilo: una etapa opcional que detecta los clicks y pops de la aguja y los repara durante la conversión, con dos intensidades y recuento de clicks corregidos.",
+        "text": "Nueva reparación de clics de vinilo: una etapa opcional que detecta los clics y pops de la aguja y los repara durante la conversión, con dos intensidades y recuento de clics corregidos.",
         "in": "0.49.1"
       },
       {
@@ -2893,7 +2893,7 @@
         "in": "0.49.1"
       },
       {
-        "text": "La reparación de clicks en modo Fuerte ya no se queda colgada al convertir: corre a toda velocidad con la misma eficacia contra los pops largos.",
+        "text": "La reparación de clics en modo Fuerte ya no se queda colgada al convertir: corre a toda velocidad con la misma eficacia contra los pops largos.",
         "in": "0.49.3"
       },
       {
@@ -2908,11 +2908,11 @@
     "title": "Explora la onda y haz tuyo el editor",
     "items": [
       {
-        "text": "La sección de volumen muestra la onda del tema desde el principio, con los picos de saturación marcados y una previsualización de cómo quedará tras normalizar.",
+        "text": "La sección de volumen muestra la onda de la pista desde el principio, con los picos de saturación marcados y una previsualización de cómo quedará tras normalizar.",
         "in": "0.48.0"
       },
       {
-        "text": "Explora la onda de cerca: un lector al pasar el cursor, zoom por pasos al estilo rekordbox con desplazamiento horizontal, y un interruptor que señala los picos que saturarían con el ajuste actual.",
+        "text": "Explora la onda de cerca: una lectura bajo el cursor, zoom por pasos al estilo rekordbox con desplazamiento horizontal, y un interruptor que señala los picos que saturarían con el ajuste actual.",
         "in": "0.48.0"
       },
       {
@@ -2920,7 +2920,7 @@
         "in": "0.48.0"
       },
       {
-        "text": "El panel de Discogs salta directo al disco emparejado, sin tener que volver a seleccionar el tema.",
+        "text": "El panel de Discogs salta directo al disco emparejado, sin tener que volver a seleccionar la pista.",
         "in": "0.48.0"
       },
       {
@@ -2928,7 +2928,7 @@
         "in": "0.48.0"
       },
       {
-        "text": "El botón de convertir refleja las etapas de la conversión, igual que la fila del tema.",
+        "text": "El botón de convertir refleja las etapas de la conversión, igual que la fila de la pista.",
         "in": "0.48.0"
       }
     ]
@@ -2951,7 +2951,7 @@
         "in": "0.47.0"
       },
       {
-        "text": "Cambia la normalización después de exportar y el botón volverá a ofrecer «Actualizar», sin tener que tocar los tags.",
+        "text": "Cambia la normalización después de exportar y el botón volverá a ofrecer «Actualizar», sin tener que tocar las etiquetas.",
         "in": "0.47.0"
       },
       {
@@ -2970,15 +2970,15 @@
         "in": "0.46.0"
       },
       {
-        "text": "El botón de convertir ahora también deja elegir el destino solo para esa conversión — carpeta, Apple Music, Engine DJ, junto al original o sobrescribir — sin cambiar tus Ajustes.",
+        "text": "El botón de convertir ahora también deja elegir el destino solo para esa conversión (carpeta, Apple Music, Engine DJ, junto al original o sobrescribir) sin cambiar tus Ajustes.",
         "in": "0.46.0"
       },
       {
-        "text": "Nueva opción para FLAC en macOS: mostrar las carátulas en el Finder y la Vista Previa, que normalmente no leen el arte de los FLAC.",
+        "text": "Nueva opción para FLAC en macOS: mostrar las carátulas en el Finder y en Vista Rápida, que normalmente no leen las carátulas de los FLAC.",
         "in": "0.46.0"
       },
       {
-        "text": "Tras exportar, si eliges otro formato en el menú, el botón lo anuncia — «Reexportar (FLAC)» — para que siempre sepas qué escribirá el siguiente clic.",
+        "text": "Tras exportar, si eliges otro formato en el menú, el botón lo anuncia, «Reexportar (FLAC)», para que siempre sepas qué escribirá el siguiente clic.",
         "in": "0.46.0"
       },
       {
@@ -2986,7 +2986,7 @@
         "in": "0.46.0"
       },
       {
-        "text": "Arreglado el ajuste «Máximo de resultados»: el selector salía recortado y forzaba una barra de scroll horizontal en la pestaña Búsqueda.",
+        "text": "Arreglado el ajuste «Máximo de resultados»: el selector salía recortado y forzaba una barra de desplazamiento horizontal en la pestaña Búsqueda.",
         "in": "0.46.1"
       }
     ]
@@ -3001,11 +3001,11 @@
         "in": "0.45.0"
       },
       {
-        "text": "Nuevo ajuste en Búsqueda: palabras a ignorar (por defecto «vinyl, rip»). Las firmas de rip y marcas en los títulos se ignoran al buscar y emparejar — tus tags no se modifican nunca.",
+        "text": "Nuevo ajuste en Búsqueda: palabras a ignorar (por defecto «vinyl, rip»). Las firmas de rip y marcas en los títulos se ignoran al buscar y emparejar: tus etiquetas no se modifican nunca.",
         "in": "0.45.0"
       },
       {
-        "text": "Una pista con su release de Discogs guardado ahora se auto-empareja directa cuando el título encaja, también en discos que no listan duraciones.",
+        "text": "Una pista con su lanzamiento de Discogs guardado ahora se auto-empareja directamente cuando el título encaja, también en discos que no listan duraciones.",
         "in": "0.45.0"
       },
       {
@@ -3020,7 +3020,7 @@
     "title": "Coincidencias más precisas, en tu propio idioma",
     "items": [
       {
-        "text": "El auto-match ahora prueba primero el ID de release ya guardado en el archivo antes de buscar por título, acertando con la edición correcta de Discogs más a menudo.",
+        "text": "El auto-emparejado ahora prueba primero el ID de lanzamiento ya guardado en el archivo antes de buscar por título, acertando con el lanzamiento correcto de Discogs más a menudo.",
         "in": "0.44.0"
       },
       {
@@ -3028,11 +3028,11 @@
         "in": "0.44.0"
       },
       {
-        "text": "Arreglado un cuelgue al abrir la app en Mac Intel.",
+        "text": "Arreglado un cierre inesperado al abrir la app en los Mac con Intel.",
         "in": "0.44.1"
       },
       {
-        "text": "Un archivo que ya lleva su release de Discogs ahora abre directo a ese disco exacto — el auto-match y el panel de búsqueda se quedan con él en vez de enterrarlo entre resultados por título, y solo buscan de nuevo si la release guardada ya no encaja.",
+        "text": "Un archivo que ya lleva su lanzamiento de Discogs ahora se abre directo a ese disco exacto: el auto-emparejado y el panel de búsqueda se quedan con él en vez de enterrarlo entre resultados por título, y solo buscan de nuevo si el lanzamiento guardado ya no encaja.",
         "in": "0.44.2"
       }
     ]
@@ -3043,7 +3043,7 @@
     "title": "Formato de título y paleta organizada",
     "items": [
       {
-        "text": "Formato de título configurable, al estilo coleccionista: define un patrón como ({trackNumber}) {title} ({year}) en Ajustes → Nombres y aplícalo cuando tú quieras — a una pista desde el menú ⋯ del campo título, o a toda la selección de golpe con el botón T del editor o la paleta de comandos. Nunca se aplica solo, y ⌘Z lo deshace.",
+        "text": "Formato de título configurable, al estilo coleccionista: define un patrón como ({trackNumber}) {title} ({year}) en Ajustes → Nombres y aplícalo cuando tú quieras: a una pista desde el menú ⋯ del campo título, o a toda la selección de golpe con el botón T del editor o la paleta de comandos. Nunca se aplica solo, y ⌘Z lo deshace.",
         "in": "0.43.0"
       },
       {
@@ -3051,7 +3051,7 @@
         "in": "0.43.0"
       },
       {
-        "text": "La paleta de comandos (⌘K) agrupa las acciones en secciones — Metadatos, Convertir y exportar, Biblioteca… — y la búsqueda ya ignora los acentos: «titulo» encuentra «título».",
+        "text": "La paleta de comandos (⌘K) agrupa las acciones en secciones (Metadatos, Convertir y exportar, Biblioteca…) y la búsqueda ya ignora los acentos: «titulo» encuentra «título».",
         "in": "0.43.0"
       },
       {
@@ -3070,7 +3070,7 @@
         "in": "0.42.0"
       },
       {
-        "text": "Los WAV se etiquetan en ID3v2.3, la versión que leen Mp3tag y compañía — y los archivos convertidos ya no llevan la marca ENCODER del codificador.",
+        "text": "Los WAV se etiquetan en ID3v2.3, la versión que leen Mp3tag y compañía, y los archivos convertidos ya no llevan la marca ENCODER del codificador.",
         "in": "0.42.0"
       },
       {
@@ -3089,7 +3089,7 @@
     "title": "Ediciones a salvo y conversiones más rápidas",
     "items": [
       {
-        "text": "Tus ediciones sin aplicar ya no se pierden: se guardan solas mientras trabajas y, si la app se cierra de golpe, al reabrir puedes recuperar la sesión con todo tal y como lo dejaste — metadatos, portadas y matches incluidos. Cuando hay trabajo en juego, el aviso de reabrir espera a que respondas en vez de esfumarse solo.",
+        "text": "Tus ediciones sin aplicar ya no se pierden: se guardan solas mientras trabajas y, si la app se cierra de golpe, al reabrir puedes recuperar la sesión con todo tal y como lo dejaste, metadatos, carátulas y coincidencias incluidas. Cuando hay trabajo en juego, el aviso de reabrir espera a que respondas en vez de esfumarse solo.",
         "in": "0.41.0"
       },
       {
@@ -3097,7 +3097,7 @@
         "in": "0.41.0"
       },
       {
-        "text": "El panel de actividad explica cada veredicto del auto-match: qué señales coincidieron, cuáles no y qué candidatos se sondearon.",
+        "text": "El panel de actividad explica cada veredicto del auto-emparejado: qué señales coincidieron, cuáles no y qué candidatos se sondearon.",
         "in": "0.41.0"
       }
     ]
@@ -3116,7 +3116,7 @@
         "in": "0.40.0"
       },
       {
-        "text": "Las posiciones de vinilo de caras doble-A (AA, AA1) también se conservan como número de pista al aplicar un release de Discogs.",
+        "text": "Las posiciones de vinilo de caras doble-A (AA, AA1) también se conservan como número de pista al aplicar un lanzamiento de Discogs.",
         "in": "0.40.0"
       }
     ]
@@ -3127,7 +3127,7 @@
     "title": "Tus estadísticas, y edición en lote más rápida",
     "items": [
       {
-        "text": "La pestaña Estadísticas ahora cuenta toda tu actividad: pistas cargadas, escuchadas, analizadas y encontradas en Discogs o Bandcamp, junto a una barra de progreso hacia tu próximo hito de conversiones. Todo a la vista, sin scroll.",
+        "text": "La pestaña Estadísticas ahora cuenta toda tu actividad: pistas cargadas, escuchadas, analizadas y encontradas en Discogs o Bandcamp, junto a una barra de progreso hacia tu próximo hito de conversiones. Todo a la vista, sin desplazarte.",
         "in": "0.39.0"
       },
       {
@@ -3158,7 +3158,7 @@
         "in": "0.38.0"
       },
       {
-        "text": "Manda los originales de las pistas ya convertidas a la papelera con una sola acción; las acciones en bloque actúan sobre tu selección múltiple cuando la hay.",
+        "text": "Manda los originales de las pistas ya convertidas a la Papelera con una sola acción; las acciones en bloque actúan sobre tu selección múltiple cuando la hay.",
         "in": "0.38.0"
       },
       {
@@ -3166,11 +3166,11 @@
         "in": "0.38.1"
       },
       {
-        "text": "Un archivo que ya está en el formato de salida sigue actualizándose sin reconvertir — pero si no cumple la frecuencia o profundidad de tus ajustes, el editor te ofrece reconvertirlo explícitamente, dejando el original intacto.",
+        "text": "Un archivo que ya está en el formato de salida sigue actualizándose sin reconvertir, pero si no cumple la frecuencia o profundidad de tus ajustes, el editor te ofrece reconvertirlo explícitamente, dejando el original intacto.",
         "in": "0.38.2"
       },
       {
-        "text": "Ajustes más cómodos: pestañas ordenadas según el flujo de trabajo, los campos del editor se reordenan arrastrándolos (con su nombre interno visible al pasar el cursor), y la puntuación ya puede usarse para nombrar archivos.",
+        "text": "Ajustes más cómodos: pestañas ordenadas según el flujo de trabajo, los campos del editor se reordenan arrastrándolos (con su nombre interno visible al pasar el cursor), y la valoración ya puede usarse para nombrar archivos.",
         "in": "0.38.3"
       }
     ]
@@ -3185,7 +3185,7 @@
         "in": "0.37.0"
       },
       {
-        "text": "El emparejado automático es más prudente: un título idéntico ya no basta para etiquetar por su cuenta — la duración, el artista o el número de catálogo tienen que corroborarlo, y si no, la sugerencia queda marcada para que la confirmes tú.",
+        "text": "El auto-emparejado es más prudente: un título idéntico ya no basta para etiquetar por su cuenta: la duración, el artista o el número de catálogo tienen que corroborarlo, y si no, la sugerencia queda marcada para que la confirmes tú.",
         "in": "0.37.0"
       },
       {
@@ -3201,7 +3201,7 @@
         "in": "0.37.0"
       },
       {
-        "text": "Quita la pista seleccionada con retroceso o suprimir; la selección salta a la vecina.",
+        "text": "Quita la pista seleccionada con Retroceso o Suprimir; la selección salta a la vecina.",
         "in": "0.37.0"
       }
     ]
@@ -3212,7 +3212,7 @@
     "title": "Reemplaza tu copia antigua de Apple Music",
     "items": [
       {
-        "text": "Al añadir una pista convertida a Apple Music, Surco detecta la copia antigua de la misma canción y te ofrece eliminarla: te enseña exactamente cuál es, quita la entrada de la biblioteca y manda su archivo a la papelera, de donde puedes recuperarlo.",
+        "text": "Al añadir una pista convertida a Apple Music, Surco detecta la copia antigua de la misma canción y te ofrece eliminarla: te enseña exactamente cuál es, quita la entrada de la biblioteca y manda su archivo a la Papelera, de donde puedes recuperarlo.",
         "in": "0.36.0"
       },
       {
@@ -3232,11 +3232,11 @@
         "in": "0.36.0"
       },
       {
-        "text": "Surco comprueba si hay actualizaciones de vez en cuando mientras está abierta, no solo al arrancar.",
+        "text": "Surco comprueba si hay actualizaciones de vez en cuando mientras está abierto, no solo al arrancar.",
         "in": "0.36.0"
       },
       {
-        "text": "Descartar la oferta de «reabrir la última sesión» —con la ✕ o dejándola expirar— ya cuenta como respuesta: no vuelve a aparecer en el siguiente arranque.",
+        "text": "Descartar la oferta de «reabrir la última sesión», con la ✕ o dejándola expirar, ya cuenta como respuesta: no vuelve a aparecer en el siguiente arranque.",
         "in": "0.36.1"
       }
     ]
@@ -3247,7 +3247,7 @@
     "title": "Un final de exportación más claro",
     "items": [
       {
-        "text": "Al terminar una exportación, el editor va al grano: la confirmación con enlaces para ver el archivo o eliminar el original, y una sola fila de botones — Apple Music, otra app de DJ y reexportar.",
+        "text": "Al terminar una exportación, el editor va al grano: la confirmación con enlaces para ver el archivo o eliminar el original, y una sola fila de botones: Apple Music, otra app de DJ y reexportar.",
         "in": "0.35.0"
       },
       {
@@ -3255,7 +3255,7 @@
         "in": "0.35.0"
       },
       {
-        "text": "El aviso de «recuperar la última sesión» ahora se cierra solo al cabo de unos segundos, con su cuenta atrás visible — y todos los avisos se despiden con una salida suave en vez de desaparecer de golpe.",
+        "text": "El aviso de «reabrir la última sesión» ahora se cierra solo al cabo de unos segundos, con su cuenta atrás visible, y todos los avisos se despiden con una salida suave en vez de desaparecer de golpe.",
         "in": "0.35.1"
       }
     ]
@@ -3266,7 +3266,7 @@
     "title": "Avisos más discretos",
     "items": [
       {
-        "text": "El aviso de pistas nuevas detectadas en tu carpeta ahora se cierra solo al cabo de unos segundos, con su cuenta atrás visible — y si lo descartas, no vuelve a ofrecerte los mismos ficheros.",
+        "text": "El aviso de pistas nuevas detectadas en tu carpeta ahora se cierra solo al cabo de unos segundos, con su cuenta atrás visible, y si lo descartas no vuelve a ofrecerte los mismos archivos.",
         "in": "0.34.0"
       }
     ]
@@ -3277,11 +3277,11 @@
     "title": "Directo a Engine DJ (Denon)",
     "items": [
       {
-        "text": "Nuevo destino de conversión Engine DJ: cada pista convertida se registra directa en tu biblioteca de Engine DJ (Denon), con su carátula, su rating y una playlist configurable — al abrir Engine, ahí están.",
+        "text": "Nuevo destino de conversión Engine DJ: cada pista convertida se registra directa en tu biblioteca de Engine DJ (Denon), con su carátula, su valoración y una playlist configurable: al abrir Engine, ahí están.",
         "in": "0.33.0"
       },
       {
-        "text": "Si Engine DJ está abierto al convertir, Surco se ofrece a cerrarlo y sigue solo — nunca escribe en la biblioteca mientras Engine la tiene en uso.",
+        "text": "Si Engine DJ está abierto al convertir, Surco se ofrece a cerrarlo y sigue solo: nunca escribe en la biblioteca mientras Engine la tiene en uso.",
         "in": "0.33.0"
       },
       {
@@ -3310,8 +3310,8 @@
       "Deshacer con ⌘Z: si un rellenado en lote, un buscar y reemplazar o un borrado machaca metadatos que no debía, un atajo lo devuelve todo a como estaba.",
       "Surco recuerda tu última sesión: al abrir la app, un aviso ofrece recargar las pistas con las que estabas trabajando.",
       "Análisis de calidad automático (opcional): actívalo en Ajustes y cada pista importada se analiza en segundo plano, así los archivos sospechosos se marcan solos sin pulsar Analizar.",
-      "Nuevo formato de salida ALAC (Apple Lossless), sin pérdida y listo para Apple Music; y en MP3 ahora eliges entre 320 kbps o V0.",
-      "Filtro de duplicadas: encuentra la misma canción cargada como dos archivos —un FLAC y un MP3, dos descargas— para decidir cuál conservar.",
+      "Nuevo formato de salida ALAC (Apple Lossless), sin pérdidas y listo para Apple Music; y en MP3 ahora eliges entre 320 kbps o V0.",
+      "Filtro de duplicadas: encuentra la misma canción cargada como dos archivos (un FLAC y un MP3, dos descargas) para decidir cuál conservar.",
       "Exporta tu lista como M3U8, la lista de reproducción estándar que entiende casi cualquier reproductor.",
       "Más claridad en el día a día: aviso cuando no se pueden leer los metadatos de un archivo, Estadísticas muestra el progreso de la lista actual, y el panel de actividad recuerda su posición y registra también importaciones y exportaciones."
     ]
@@ -3322,8 +3322,8 @@
     "title": "Emparejado más fino y limpieza de un vistazo",
     "items": [
       "El auto-emparejado acierta más: si la pista trae número de catálogo, Surco confirma con él el lanzamiento exacto y lo aplica sin que tengas que revisarlo; y ante dos ediciones, prefiere la que coincide con el año de tu archivo.",
-      "Cuando una sugerencia se queda «para revisar», ahora la aceptas de un paso —desde la paleta (⌘K) o su atajo— sin abrir el editor.",
-      "Un botón para mandar a la papelera todas las pistas marcadas como sospechosas de una vez, junto al filtro de calidad.",
+      "Cuando una sugerencia se queda «para revisar», ahora la aceptas en un paso, desde la paleta (⌘K) o su atajo, sin abrir el editor.",
+      "Un botón para mandar a la Papelera todas las pistas marcadas como sospechosas de una vez, junto al filtro de calidad.",
       "El reproductor gana un botón de play sobre la carátula al pasar el ratón, otro para saltar a la pista que está sonando, y avance/retroceso de 5 segundos con las flechas.",
       "Más control por teclado: buscar con «/», limpiar búsqueda y filtros con Escape, moverte entre pistas con Ctrl+flechas mientras editas un campo, y cada acción muestra su atajo en el tooltip."
     ]
@@ -3343,7 +3343,7 @@
     "date": "1 de julio de 2026",
     "title": "Conversión en paralelo y más acciones a un ⌘K",
     "items": [
-      "«Convertir todo» ahora procesa varias pistas a la vez en lugar de una tras otra, así una tanda grande termina mucho antes; el paso de añadir a Apple Music sigue yendo de una en una, que es como Music las importa.",
+      "«Convertir todo» ahora procesa varias pistas a la vez en lugar de una tras otra, así un lote grande termina mucho antes; el paso de añadir a Apple Music sigue yendo de una en una, que es como Music las importa.",
       "La paleta de comandos (⌘K) suma nuevos accesos directos: cambiar el tema, rellenar los metadatos desde el nombre del archivo, vaciar los metadatos de la selección, y un enlace directo para donar (con un pelín de confeti)."
     ]
   },
@@ -3353,7 +3353,7 @@
     "title": "Motor más rápido, filtros que se respetan",
     "items": [
       "Surco funciona ahora sobre un motor más reciente (Electron 42, Chromium 148): renderizado más ágil de la onda y el espectro, y las últimas correcciones de seguridad por debajo.",
-      "Las acciones de la barra de la lista —buscar y reemplazar, auto-match, analizar calidad, rellenar tags y vaciar— actúan sobre las pistas visibles, nunca sobre las que un filtro está ocultando; y «Vaciar la lista» desde ⌘K sigue borrándolo todo para empezar de cero."
+      "Las acciones de la barra de la lista (buscar y reemplazar, auto-emparejado, analizar calidad, rellenar etiquetas y vaciar) actúan sobre las pistas visibles, nunca sobre las que un filtro está ocultando; y «Vaciar la lista» desde ⌘K sigue borrándolo todo para empezar de cero."
     ]
   },
   {
@@ -3361,10 +3361,10 @@
     "date": "30 de junio de 2026",
     "title": "Barra más ordenada, resultados de Discogs más ricos",
     "items": [
-      "Las acciones que operan sobre la lista de pistas —añadir archivos, seleccionar todo, rellenar tags, buscar y reemplazar, vaciar— ahora viven en la cabecera de la propia lista en vez de en la barra superior, así queda claro qué toca cada una. La barra se queda solo con las herramientas de toda la crate.",
-      "Los resultados de Discogs ahora son tarjetas que combinan con las filas de tus pistas, y cada una muestra más datos del lanzamiento: año, sello, número de catálogo y formato, para elegir el prensaje exacto entre muchos.",
+      "Las acciones que operan sobre la lista de pistas (añadir archivos, seleccionar todo, rellenar etiquetas, buscar y reemplazar, vaciar) ahora viven en la cabecera de la propia lista en vez de en la barra superior, así queda claro qué toca cada una. La barra se queda solo con las herramientas de todo el crate.",
+      "Los resultados de Discogs ahora son tarjetas a juego con las filas de tus pistas, y cada una muestra más datos del lanzamiento: año, sello, número de catálogo y formato, para elegir el prensaje exacto entre muchos.",
       "Filtrar la lista y luego convertir solo afecta a las pistas que ves: filtra a MP3 y pulsa convertir, y tus FLAC se quedan intactos.",
-      "Seleccionar todo y Rellenar tags desde el nombre ahora actúan sobre las pistas visibles o seleccionadas, nunca en silencio sobre toda la crate.",
+      "Seleccionar todo y Rellenar etiquetas desde el nombre ahora actúan sobre las pistas visibles o seleccionadas, nunca en silencio sobre todo el crate.",
       "Buscar y reemplazar muestra las / / alrededor del campo en modo regex, así un patrón como Shake funciona en vez de buscarse literalmente.",
       "Las pistas que Surco carga solo desde una carpeta vigilada ahora se reproducen al instante."
     ]
@@ -3399,7 +3399,7 @@
     "items": [
       "Nuevo panel de Actividad, movible y redimensionable, que muestra en directo el trabajo en segundo plano: análisis de pistas, comprobaciones de la biblioteca de Apple Music y enlaces a las versiones publicadas. Lo abres desde la barra de herramientas.",
       "El espectrograma incorpora una mira que lee la frecuencia exacta bajo el cursor mientras lo recorres.",
-      "El veredicto de calidad informa del techo real de los audios de alta frecuencia en lugar de quedarse en Nyquist, y afina aún más el emparejamiento con tu biblioteca de Apple Music."
+      "El veredicto de calidad informa del techo real del audio con frecuencia de muestreo alta en lugar de quedarse en Nyquist, y afina aún más el emparejamiento con tu biblioteca de Apple Music."
     ]
   },
   {
@@ -3408,10 +3408,10 @@
     "title": "Detecta más fakes y afina tu biblioteca de Apple Music",
     "items": [
       "El veredicto de calidad caza un nuevo tipo de MP3 falso disfrazado de 320: pistas con un muro de frecuencia escondido tras unos pocos picos de agudos que antes pasaban como buenas.",
-      "La detección de \"ya en mi biblioteca\" de Apple Music es más precisa: empareja por título, artista y duración, recuerda el veredicto confirmado con Discogs y muestra un estado de comprobación mientras resuelve, así la lista, el filtro y el editor siempre coinciden.",
+      "La detección de «ya en mi biblioteca» de Apple Music es más precisa: empareja por título, artista y duración, recuerda el veredicto confirmado con Discogs y muestra un estado de comprobación mientras resuelve, así la lista, el filtro y el editor siempre coinciden.",
       "Buscar reparte los resultados entre proveedores, de modo que una búsqueda con muchos resultados de Discogs ya no sepulta los de Bandcamp.",
-      "El selector de portadas deja de mostrar la misma imagen repetida.",
-      "Nuevo botón en los ajustes para vaciar la caché de análisis y recalcular espectrogramas y verdictos desde cero."
+      "El selector de carátulas deja de mostrar la misma imagen repetida.",
+      "Nuevo botón en los ajustes para vaciar la caché de análisis y recalcular espectrogramas y veredictos desde cero."
     ]
   },
   {
@@ -3419,13 +3419,13 @@
     "date": "21 de junio de 2026",
     "title": "Convierte sin perder tus cues ni tus metadatos",
     "items": [
-      "El espectrograma se ve más grande y fiel a Spek: un corte del códec se lee como aire muerto y los agudos llegan hasta los 22 kHz.",
+      "El espectrograma se ve más grande y fiel a Spek: un corte del códec se lee como silencio y los agudos llegan hasta los 22 kHz.",
       "El selector de archivos ya admite carpetas y las despliega igual que al arrastrarlas.",
       "Buscar y reemplazar incluye un interruptor para distinguir mayúsculas y minúsculas.",
       "Al exportar a Apple Music se avisa si alguna pista aún no está convertida.",
       "Al convertir a cualquier formato se conservan los cue points y el beatgrid de Traktor, no solo al normalizar el volumen.",
       "La conversión ahora respeta los campos de metadatos que hayas vaciado: si borras un comentario u otro dato, deja de reaparecer el valor original.",
-      "Nuevos indicadores en la fila de pista: el veredicto de calidad se muestra como icono de severidad y las pistas ya convertidas lucen una marca azul.",
+      "Nuevos indicadores en la fila de pista: el veredicto de calidad se muestra como icono de gravedad y las pistas ya convertidas lucen una marca azul.",
       "Las pistas aparecen antes al soltar carpetas grandes o en red, y un archivo de red que se cuelga ya no congela el análisis de calidad.",
       "Mejor precisión al buscar en Discogs cuando el nombre de la pista empieza por un número.",
       "La interfaz se mantiene fluida mientras analizas la calidad de muchas pistas a la vez: el análisis ya no compite con la pantalla ni con la reproducción.",
@@ -3437,10 +3437,10 @@
     "date": "21 de junio de 2026",
     "title": "Haz todo el flujo con el teclado",
     "items": [
-      "Ahora todo el flujo se puede hacer con el teclado: salta entre la lista de pistas, los resultados de búsqueda y el editor, recorre y pagina la lista, elige un release de Discogs o Bandcamp con las flechas y convierte y pasa a la siguiente pista — todo sin ratón.",
+      "Ahora todo el flujo se puede hacer con el teclado: salta entre la lista de pistas, los resultados de búsqueda y el editor, recorre y pagina la lista, elige un lanzamiento de Discogs o Bandcamp con las flechas y convierte y pasa a la siguiente pista, todo sin ratón.",
       "La paleta de comandos ahora salta directa a cualquier pista: empieza a escribir su título o artista para encontrarla.",
-      "Resultados de búsqueda más limpios: un máximo configurable, con las recopilaciones más abajo y la edición más extendida arriba, para ver antes el release correcto.",
-      "Ocultar la forma de onda del reproductor ahora conserva el volumen, el tiempo transcurrido y total, y una barra para buscar posición — así no pierdes la referencia."
+      "Resultados de búsqueda más limpios: un máximo configurable, con las recopilaciones más abajo y la edición más extendida arriba, para ver antes el lanzamiento correcto.",
+      "Ocultar la forma de onda del reproductor ahora conserva el volumen, el tiempo transcurrido y total, y una barra para desplazarte por la pista, así no pierdes la referencia."
     ]
   },
   {
@@ -3448,16 +3448,16 @@
     "date": "20 de junio de 2026",
     "title": "Filtra los resultados de búsqueda por fuente",
     "items": [
-      "Cuando buscas a la vez en Discogs y Bandcamp, un nuevo filtro te deja mostrar Todos, Discogs o Bandcamp — y los resultados quedan más limpios: las ediciones de Discogs aparecen primero y cada fuente se limita para que la lista sea corta y relevante.",
-      "Al añadir archivos ahora ves un contador en vivo y una barra de progreso determinada mientras Surco lee los metadatos de cada pista, así sabes exactamente cuánto queda de la importación.",
+      "Cuando buscas a la vez en Discogs y Bandcamp, un nuevo filtro te deja mostrar Todos, Discogs o Bandcamp, y los resultados quedan más limpios: los lanzamientos de Discogs aparecen primero y cada fuente se limita para que la lista sea corta y relevante.",
+      "Al añadir archivos ahora ves un contador en vivo y una barra de progreso con porcentaje real mientras Surco lee los metadatos de cada pista, así sabes exactamente cuánto queda de la importación.",
       "Nuevo ajuste opcional para aplicar tu patrón de nombre de archivo automáticamente, de modo que las pistas convertidas se nombran sin un paso manual.",
-      "El reproductor incluye un botón para ocultar la forma de onda — útil en pantallas pequeñas — que además se salta su análisis para ahorrar trabajo.",
-      "Emparejado más inteligente con tu biblioteca de Apple Music: Surco reconoce la misma pista entre más variantes de artista y título — ampersands, siglas con puntos (D.J. frente a DJ), prefijos como DJ/Dr./MC, números escritos frente a cifras, un artista al principio del título y coletillas de versión finales — para que falten menos de tus copias.",
-      "Mejor emparejado de ediciones en pistas etiquetadas como «(Original Mix)»: Surco descarta esa coletilla final para que un título de catálogo a secas siga puntuando, y el emparejado de álbum en multipista deja un archivo sin asignar en vez de forzar un corte equivocado.",
-      "Búsquedas más limpias en las fuentes: Surco antepone el artista principal antes de un alias con «presents» e ignora una nota de versión entre paréntesis que solo repite el título, para que la edición correcta de Discogs o Bandcamp aparezca más a menudo.",
+      "El reproductor incluye un botón para ocultar la forma de onda, útil en pantallas pequeñas, que además se salta su análisis para ahorrar trabajo.",
+      "Emparejado más inteligente con tu biblioteca de Apple Music: Surco reconoce la misma pista entre más variantes de artista y título (el símbolo &, siglas con puntos (D.J. frente a DJ), prefijos como DJ/Dr./MC, números escritos frente a cifras, un artista al principio del título y coletillas de versión finales) para que menos copias tuyas parezcan faltar.",
+      "Mejor emparejado de lanzamientos en pistas etiquetadas como «(Original Mix)»: Surco descarta esa coletilla final para que un título de catálogo a secas siga puntuando, y el emparejado de álbumes de varias pistas deja un archivo sin asignar en vez de forzar un corte equivocado.",
+      "Búsquedas más limpias en las fuentes: Surco pone delante el artista principal cuando hay un alias con «presents» e ignora una nota de versión entre paréntesis que solo repite el título, para que el lanzamiento correcto de Discogs o Bandcamp aparezca más a menudo.",
       "El distintivo de «en tu biblioteca» del editor ahora se enciende cuando una sugerencia fiable de Discogs coincide con una pista que ya tienes en tu biblioteca de Apple Music.",
       "Filtros de lista más ordenados: cada sección de la barra lateral es ahora un filtro independiente, el menú se cierra en cuanto eliges y «Sin convertir» queda bajo «Todos».",
-      "Manejo de archivos más robusto: Surco lee las etiquetas de archivos que otras apps no abren y repara cabeceras WAV malformadas en vez de fallar el análisis.",
+      "Manejo de archivos más robusto: Surco lee las etiquetas de archivos que otras apps no abren y repara cabeceras WAV malformadas en vez de que falle el análisis.",
       "Estabilidad: empezar una pista de nuevo ya no deja el reproductor sonando después de cerrarse su tarjeta."
     ]
   },
@@ -3466,7 +3466,7 @@
     "date": "19 de junio de 2026",
     "title": "Exporta a Serato y Engine DJ",
     "items": [
-      "Exporta tus pistas a Serato DJ y a Engine DJ (Denon), además de a rekordbox y Traktor: Surco genera el fichero que cada programa importa.",
+      "Exporta tus pistas a Serato DJ y a Engine DJ (Denon), además de a rekordbox y Traktor: Surco genera el archivo que cada programa importa.",
       "El auto-emparejado ahora marca las coincidencias dudosas para que las revises antes de fiarte, en vez de descartarlas, y muestra el grado de confianza de cada pista.",
       "Detección de «lossless falso»: te avisa cuando un FLAC o WAV es en realidad una fuente con pérdidas reempaquetada como lossless.",
       "Filtra y ordena tus pistas por formato, con un selector para invertir el sentido del orden."
@@ -3477,12 +3477,12 @@
     "date": "18 de junio de 2026",
     "title": "Ahora también buscas en Bandcamp",
     "items": [
-      "Busca también en Bandcamp junto a Discogs: actívalo en Ajustes → Búsqueda y los resultados de ambas fuentes se combinan en una sola lista, cada uno con su etiqueta de origen — ideal para autoeditados, netlabels y exclusivos que no están en Discogs.",
+      "Busca también en Bandcamp junto a Discogs: actívalo en Ajustes → Búsqueda y los resultados de ambas fuentes se combinan en una sola lista, cada uno con su etiqueta de origen, ideal para autoeditados, netlabels y exclusivos que no están en Discogs.",
       "El auto-emparejado es ahora un ajuste global de búsqueda y puede recurrir a Bandcamp cuando Discogs no encuentra nada (con solo Bandcamp no necesita token).",
-      "Emparejado más preciso con descargas mal nombradas: Surco limpia el ruido del nombre de archivo y del título, fija la mezcla correcta y da prioridad al artista del archivo.",
+      "Emparejado más preciso con descargas mal nombradas: Surco limpia el ruido del nombre de archivo y del título, fija el mix correcto y da prioridad al artista del archivo.",
       "Nueva limpieza «Título base» en el menú del campo Álbum: quita la versión o mezcla del título de un toque.",
       "Los géneros que solo difieren en mayúsculas (tu «Electronic» y el «electronic» de una fuente) ya no se duplican: se muestra uno solo, con tu versión.",
-      "Tus portadas se conservan por defecto: Surco ya no las reemplaza salvo que actives la sustitución de las de baja resolución."
+      "Tus carátulas se conservan por defecto: Surco ya no las reemplaza salvo que actives la sustitución de las de baja resolución."
     ]
   },
   {
@@ -3490,12 +3490,12 @@
     "date": "17 de junio de 2026",
     "title": "Busca la edición exacta, en tu idioma",
     "items": [
-      "Filtra las búsquedas de Discogs por formato — vinilo, CD, digital… — desde la nueva pestaña Búsqueda en Ajustes, para dar con la edición que de verdad buscas.",
-      "Elige el idioma de la app — Sistema, Inglés o Español — y se recuerda entre sesiones.",
+      "Filtra las búsquedas de Discogs por formato (vinilo, CD, digital…) desde la nueva pestaña Búsqueda en Ajustes, para dar con la edición que de verdad buscas.",
+      "Elige el idioma de la app (Sistema, Inglés o Español) y se recuerda entre sesiones.",
       "Resultados de Discogs más limpios: las ediciones duplicadas se agrupan y un remix con las pistas reordenadas sigue emparejando con la correcta.",
-      "Detección de tu biblioteca de Apple Music más fina: empareja por palabras completas del artista y por el título base —así reconoce una copia guardada con el título canónico—, se actualiza al volver a la app y vuelve a añadir una pista si su copia en la biblioteca ya no está. (macOS)",
+      "Detección de tu biblioteca de Apple Music más fina: empareja por palabras completas del artista y por el título base (así reconoce una copia guardada con el título canónico), se actualiza al volver a la app y vuelve a añadir una pista si su copia en la biblioteca ya no está. (macOS)",
       "Surco te avisa si tiene que saltarse la normalización de volumen porque no puede medir la pista, en vez de hacerlo en silencio.",
-      "Más claridad en la lista y el editor: Shift-clic selecciona siguiendo el orden visible, los campos obligatorios que faltan se marcan con calma y el botón Convertir explica qué falta antes de dejarte convertir."
+      "Más claridad en la lista y el editor: Mayús-clic selecciona siguiendo el orden visible, los campos obligatorios que faltan se marcan con calma y el botón Convertir explica qué falta antes de dejarte convertir."
     ]
   },
   {
@@ -3503,9 +3503,9 @@
     "date": "17 de junio de 2026",
     "title": "Filtra por lo que ya tienes en Apple Music",
     "items": [
-      "Ve de un vistazo qué pistas ya tienes en Apple Music: todas las pistas se comparan con tu biblioteca, con filtros en la barra lateral para ver solo las que te faltan (o las que ya tienes) — y así nunca reimportas un duplicado. (macOS)",
+      "Ve de un vistazo qué pistas ya tienes en Apple Music: todas las pistas se comparan con tu biblioteca, con filtros en la barra lateral para ver solo las que te faltan (o las que ya tienes), y así nunca reimportas un duplicado. (macOS)",
       "Haz doble clic en una pista para reproducirla, y doble clic otra vez para pararla.",
-      "Los filtros de la lista son ahora un único desplegable que nunca se queda sin sitio, y el contador de posición — por qué pista vas y cuántas quedan — permanece visible al cambiar de filtro."
+      "Los filtros de la lista son ahora un único desplegable que nunca se queda sin sitio, y el contador de posición (por qué pista vas y cuántas quedan) permanece visible al cambiar de filtro."
     ]
   },
   {
@@ -3513,14 +3513,14 @@
     "date": "16 de junio de 2026",
     "title": "Veredicto de calidad más afinado y mejoras al organizar tus pistas",
     "items": [
-      "El veredicto de calidad afina el ojo: un máster genuino pero apagado deja de marcarse como «Revisar» (verde cuando no hay corte de códec), y ahora detecta el hi-res falso — archivos que dicen ser 48/96 kHz pero están reescalados desde 44.1 kHz.",
+      "El veredicto de calidad afina el ojo: un máster genuino pero apagado deja de marcarse como «Revisar» (verde cuando no hay corte de códec), y ahora detecta el hi-res falso: archivos que dicen ser 48/96 kHz pero están reescalados desde 44,1 kHz.",
       "El auto-emparejado recorre todas tus pistas, priorizando las que tienes en pantalla, y se detiene al instante cuando lo desactivas.",
-      "Las secciones del editor que pliegas se quedan plegadas al cambiar de pista, y no se analizan hasta que las abres — más ágil al revisar muchas pistas.",
+      "Las secciones del editor que pliegas se quedan plegadas al cambiar de pista, y no se analizan hasta que las abres, más ágil al revisar muchas pistas.",
       "Arrastra varias pistas seleccionadas fuera de Surco a la vez.",
-      "Elimina de la lista o envía a la papelera todas las pistas seleccionadas a la vez desde el menú contextual.",
+      "Elimina de la lista o envía a la Papelera todas las pistas seleccionadas a la vez desde el menú contextual.",
       "Arrastra una imagen desde el navegador directamente como carátula.",
       "La barra de herramientas se reorganiza en grupos (editar · analizar · convertir y exportar) para encontrar cada acción de un vistazo.",
-      "El visor de carátulas recorre todas las imágenes de la pista: la incrustada en el archivo y las de la edición de Discogs.",
+      "El visor de carátulas recorre todas las imágenes de la pista: la incrustada en el archivo y las del lanzamiento de Discogs.",
       "Surco arranca antes y va más suave al desplazarte por muchas pistas, y la primera reproducción suena al instante."
     ]
   },
@@ -3545,10 +3545,10 @@
     "date": "13 de junio de 2026",
     "title": "Copiar carátulas y etiquetas, y arrastrar pistas fuera",
     "items": [
-      "Arrastra una pista desde la lista a cualquier app externa —Spek, Finder, tu reproductor— para comprobarla al instante, sin exportarla antes.",
-      "Copia la carátula de una pista y pégala en otra: con el botón de la propia portada o con ⌘C/⌘V, a través del portapapeles del sistema (también desde y hacia otras apps).",
-      "Copia todos los metadatos de una pista y pégalos en otra desde el menú del botón derecho — ideal para repartir los datos de un disco entre sus cortes.",
-      "La normalización de loudness ahora alcanza de verdad los objetivos altos: el preset de club ya no se queda corto, aplica la ganancia justa al objetivo y un limitador de true-peak mantiene el techo."
+      "Arrastra una pista desde la lista a cualquier app externa (Spek, Finder, tu reproductor) para comprobarla al instante, sin exportarla antes.",
+      "Copia la carátula de una pista y pégala en otra: con el botón de la propia carátula o con ⌘C/⌘V, a través del portapapeles del sistema (también desde y hacia otras apps).",
+      "Copia todos los metadatos de una pista y pégalos en otra desde el menú del botón derecho, ideal para repartir los datos de un disco entre sus cortes.",
+      "La normalización de sonoridad ahora alcanza de verdad los objetivos altos: el preset de club ya no se queda corto, aplica la ganancia justa al objetivo y un limitador de true-peak mantiene el techo."
     ]
   },
   {
@@ -3557,8 +3557,8 @@
     "title": "Análisis de espectro mucho más fiable",
     "items": [
       "El veredicto de calidad se ha reconstruido: los másters oscuros y los MP3 de 320 kbps legítimos ya no se marcan como falsos por su caída natural de agudos.",
-      "La escala ahora es absoluta, como la lee un DJ: llegar a ~20 kHz es calidad completa (320 / sin pérdidas), 18–19,5 kHz es sospechoso y por debajo de 18 kHz es mala — sea cual sea la frecuencia de muestreo del archivo.",
-      "Surco detecta agudos regenerados por «mejoradores» de audio: una pista inflada artificialmente sobre una fuente de bajo bitrate ya no pasa por buena.",
+      "La escala ahora es absoluta, como la lee un DJ: llegar a ~20 kHz es calidad completa (320 / sin pérdidas), 18–19,5 kHz es sospechoso y por debajo de 18 kHz es mala, sea cual sea la frecuencia de muestreo del archivo.",
+      "Surco detecta agudos regenerados por «enhancers» de audio: una pista inflada artificialmente sobre una fuente de bajo bitrate ya no pasa por buena.",
       "Los cortes suaves de codificador (~160–192 kbps) que antes se colaban como buena calidad ahora se detectan y se sitúan donde están.",
       "Detección de agudos reconstruidos: los archivos «mejorados» a partir de fuentes de bajo bitrate (SBR/enhancers) ya no pasan como buena calidad aunque su espectro llegue hasta arriba."
     ]
@@ -3568,9 +3568,9 @@
     "date": "12 de junio de 2026",
     "title": "Apple Music, siempre al día",
     "items": [
-      "Sincronización con Apple Music: reconvertir una pista editada actualiza su copia en la biblioteca — tags y carátula — en vez de duplicarla.",
+      "Sincronización con Apple Music: reconvertir una pista editada actualiza su copia en la biblioteca, etiquetas y carátula, en vez de duplicarla.",
       "Nuevas acciones «Actualizar en Apple Music» y «Mostrar en Apple Music» en el editor; si borraste la copia de la biblioteca, Surco la vuelve a importar.",
-      "Pulsa la carátula para verla a tamaño completo, con su resolución real — el arte incrustado se extrae del archivo original, no de la miniatura.",
+      "Pulsa la carátula para verla a tamaño completo, con su resolución real: la carátula incrustada se extrae del archivo original, no de la miniatura.",
       "El menú de cada campo ahora también transforma el texto: Tipo Título, minúsculas o MAYÚSCULAS en un clic.",
       "Mientras suena una pista, el icono del Dock se anima con una onda de sonido.",
       "Al editar varias pistas a la vez solo se muestran los campos que elegiste en Ajustes, igual que al editar una."
@@ -3581,14 +3581,14 @@
     "date": "11 de junio de 2026",
     "title": "A prueba de muchas pistas",
     "items": [
-      "Tus ediciones ya no se pierden: escribir mientras Surco lee un archivo lento o mientras el auto-match consulta Discogs respeta siempre lo que tecleas.",
-      "Mucho más ligero con muchas pistas: las carátulas se guardan como miniaturas (el archivo convertido conserva el arte a resolución completa) y la memoria deja de crecer en sesiones largas.",
+      "Tus ediciones ya no se pierden: escribir mientras Surco lee un archivo lento o mientras el auto-emparejado consulta Discogs respeta siempre lo que tecleas.",
+      "Mucho más ligero con muchas pistas: las carátulas se guardan como miniaturas (el archivo convertido conserva la carátula a resolución completa) y la memoria deja de crecer en sesiones largas.",
       "Moverse por la lista es más fluido: los análisis de BPM, tonalidad y volumen esperan a que te detengas en una pista, y la que estás viendo pasa siempre por delante de las que dejaste atrás.",
       "Cada campo del editor puede insertar el valor de otro (el artista en el compositor, el título en el comentario…) desde su propio menú.",
       "Un punto ámbar marca las pistas editadas después de convertirlas, para ver de un vistazo qué falta por actualizar.",
       "La búsqueda de Discogs recuerda lo que escribiste en cada pista, muestra un esqueleto mientras carga y se puede reintentar si falla.",
       "Los nombres con número de pista («104. Artista - Título») se importan con el artista y el título correctos.",
-      "Añadir varias pistas a Apple Music muestra su progreso y se puede cancelar; y si algo falla al guardar ajustes o enviar a la papelera, Surco lo avisa en vez de fallar en silencio.",
+      "Añadir varias pistas a Apple Music muestra su progreso y se puede cancelar; y si algo falla al guardar ajustes o enviar a la Papelera, Surco lo avisa en vez de fallar en silencio.",
       "Corregido: las pistas cuya carátula era la del propio archivo se convertían y llegaban a Apple Music sin imagen.",
       "El reproductor muestra un indicador de carga cuando el audio tarda en llegar (por ejemplo, desde un disco en red)."
     ]
@@ -3598,8 +3598,8 @@
     "date": "10 de junio de 2026",
     "title": "Más metadatos y calidad en tres colores",
     "items": [
-      "Nuevos campos de metadatos: compositor, ISRC, mezcla, año original y marca de recopilatorio. El compositor se rellena solo desde los créditos de Discogs.",
-      "El punto de calidad distingue ahora tres niveles — verde, ámbar y rojo — para que un MP3 de bitrate bajo disfrazado de lossless salte a la vista, con un indicador mientras se analiza el espectro.",
+      "Nuevos campos de metadatos: compositor, ISRC, mix, año original y marca de recopilatorio. El compositor se rellena solo desde los créditos de Discogs.",
+      "El punto de calidad distingue ahora tres niveles (verde, ámbar y rojo) para que un MP3 de bitrate bajo disfrazado de lossless salte a la vista, con un indicador mientras se analiza el espectro.",
       "Botón para vaciar todos los metadatos de una pista, junto al de rellenar desde el nombre del archivo.",
       "Cada fila de la lista muestra su formato de origen (WAV, FLAC, MP3…) para ver de un vistazo lo que falta por convertir.",
       "«Empezar de nuevo» en el menú contextual reconstruye una pista desde su archivo original.",
@@ -3611,11 +3611,11 @@
     "date": "10 de junio de 2026",
     "title": "BPM, tonalidad y sin licencias",
     "items": [
-      "Detección de BPM y tonalidad: Surco analiza cada pista y sugiere el tempo y la clave como fichas de un clic, en la notación de clave que prefieras.",
+      "Detección de BPM y tonalidad: Surco analiza cada pista y sugiere el tempo y la tonalidad como pastillas de un clic, en la notación de tonalidad que prefieras.",
       "Desaparecen las licencias y los límites. Surco es gratis y completo, y si te ahorra horas puedes apoyarlo con una donación desde la pestaña de estadísticas.",
       "Nuevo destino de conversión que sobrescribe el archivo original, con confirmación antes de un lote.",
       "Búsqueda de texto y ordenación en la lista de pistas, con carátulas en miniatura en cada fila.",
-      "La carpeta de ajustes es configurable: apúntala a iCloud Drive o Dropbox para compartir tus preferencias entre Macs.",
+      "La carpeta de ajustes es configurable: apúntala a iCloud Drive o Dropbox para compartir tus preferencias entre varios Mac.",
       "Atajo para cambiar el idioma de la interfaz entre español e inglés al vuelo.",
       "Barra fina de progreso en la cabecera para los barridos largos en segundo plano."
     ]
@@ -3625,7 +3625,7 @@
     "date": "9 de junio de 2026",
     "title": "Mejor primera experiencia y accesibilidad a fondo",
     "items": [
-      "El asistente de bienvenida ahora configura la carpeta de destino, los campos visibles y obligatorios, y enseña a leer el espectro con una vista previa.",
+      "El asistente de bienvenida ahora configura la carpeta de salida, los campos visibles y obligatorios, y enseña a leer el espectro con una vista previa.",
       "Nuevo destino «solo Apple Music»: la pista entra en tu biblioteca sin dejar copia en la carpeta de salida.",
       "Accesibilidad completa: toda la app se maneja con teclado, funciona con lectores de pantalla y el contraste cumple WCAG AA.",
       "Regenera el nombre de archivo con un clic usando el patrón configurado en Ajustes.",
@@ -3636,24 +3636,24 @@
   {
     "version": "0.6",
     "date": "8 de junio de 2026",
-    "title": "Auto-match de Discogs y export a rekordbox y Traktor",
+    "title": "Auto-emparejado de Discogs y exportación a rekordbox y Traktor",
     "items": [
-      "Auto-match: Surco busca tus pistas en Discogs y aplica solo coincidencias de alta confianza, al importar o con un barrido desde la barra de herramientas.",
+      "Auto-emparejado: Surco busca tus pistas en Discogs y aplica solo coincidencias de alta confianza, al importar o con un barrido desde la barra de herramientas.",
       "Exporta tu colección como biblioteca de rekordbox (XML) o de Traktor (NML).",
       "Triaje de calidad por lotes: analiza toda la lista de una vez, marca cada pista con su veredicto y filtra los rips sospechosos.",
       "Atajos de teclado personalizables, con detección de conflictos y menús nativos que se actualizan solos.",
-      "Panel de propiedades por pista (códec, profundidad de bits, bitrate, formatos de etiqueta) y diálogo de renombrado con fichas de metadatos.",
+      "Panel de propiedades por pista (códec, profundidad de bits, bitrate, formatos de etiqueta) y diálogo de renombrado con pastillas de metadatos.",
       "Iconografía y tooltips rediseñados en toda la app."
     ]
   },
   {
     "version": "0.5",
     "date": "6 de junio de 2026",
-    "title": "Valoraciones con estrellas y control de portadas",
+    "title": "Valoraciones con estrellas y control de carátulas",
     "items": [
       "Valora tus pistas con estrellas; se guardan como etiquetas que Traktor, Windows Media Player y foobar2000 entienden.",
-      "Elige la portada entre todas las imágenes del disco en Discogs.",
-      "La resolución de la portada queda a la vista y las de baja calidad se marcan con un punto de color.",
+      "Elige la carátula entre todas las imágenes del disco en Discogs.",
+      "La resolución de la carátula queda a la vista y las de baja calidad se marcan con un punto de color.",
       "Nuevo campo de id de disco de Discogs en el editor."
     ]
   },
@@ -3666,13 +3666,13 @@
       "Menú contextual en las pistas y búsqueda dentro de la lista.",
       "Cancela una conversión por lotes en marcha.",
       "Géneros por defecto configurables que se aplican con un clic.",
-      "Envía el archivo original a la papelera tras convertir, si quieres."
+      "Envía el archivo original a la Papelera tras convertir, si quieres."
     ]
   },
   {
     "version": "0.3",
     "date": "5 de junio de 2026",
-    "title": "Edición multi-pista y discos completos",
+    "title": "Edición multipista y discos completos",
     "items": [
       "Selección múltiple con edición en bloque de los campos compartidos.",
       "Empareja un disco entero de Discogs con tus archivos, casando cada pista por duración.",
@@ -3699,7 +3699,7 @@
       "Convierte a AIFF, WAV, FLAC o MP3 arrastrando tus archivos.",
       "Etiquetado desde Discogs con la coincidencia más probable sugerida.",
       "Análisis del espectro para detectar falsos lossless antes de pinchar.",
-      "Envío directo a Apple Music con la portada incluida.",
+      "Envío directo a Apple Music con la carátula incluida.",
       "Nombres de archivo por plantilla, paleta de comandos, vista previa de pistas y actualizaciones automáticas.",
       "Instalación en macOS (Intel y Apple Silicon) y vía Homebrew."
     ]

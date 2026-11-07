@@ -402,7 +402,7 @@ describe('Serato queue text', () => {
         { code: 'source-in-serato', track: 'Tengo', playlist: 'Gig' },
         SERATO_QUEUE_WORDS,
       ),
-    ).toBe('Tengo sigue en Serato con el fichero original y no entra en el crate «Gig»')
+    ).toBe('Tengo sigue en Serato con el archivo original y no entra en el crate «Gig»')
   })
 
   it('says why Surco left a track whose older Serato cues say something else, and how to clear it', () => {

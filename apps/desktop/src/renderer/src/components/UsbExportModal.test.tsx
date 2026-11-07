@@ -207,7 +207,7 @@ describe('UsbExportModal choosing', () => {
       '2 pistas no se pueden exportar',
     )
     expect(screen.getByTestId('usb-warning-unexportable')).toHaveTextContent(
-      'Gone · no se encuentra el fichero',
+      'Gone · no se encuentra el archivo',
     )
   })
 
@@ -584,7 +584,7 @@ describe('UsbExportModal for Serato and Traktor', () => {
       { program: 'serato' },
     )
     expect(await screen.findByTestId('usb-summary')).toHaveTextContent(
-      'No encuentro la biblioteca de Serato.',
+      'No se encuentra la biblioteca de Serato.',
     )
   })
 

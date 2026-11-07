@@ -8,9 +8,9 @@ import ptBR from './locales/pt-BR.json'
 const READS = {
   es: [es, 'si no hay otro cue en ese compás'],
   en: [en, 'if there is no other cue in that bar'],
-  de: [de, 'wenn in diesem Takt keine andere Cue liegt'],
-  fr: [fr, 'si aucune autre cue ne tombe sur cette mesure'],
-  'pt-BR': [ptBR, 'se não houver outra cue nesse compasso'],
+  de: [de, 'wenn in diesem Takt kein anderer Cue liegt'],
+  fr: [fr, 'si aucun autre cue ne tombe sur cette mesure'],
+  'pt-BR': [ptBR, 'se não houver outro cue nesse compasso'],
 } as const
 
 describe('the clear rule condition', () => {

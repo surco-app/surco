@@ -38,7 +38,7 @@ describe('VerifiedPopover', () => {
   it('the popover lists one verify-line per touched place, in place order', () => {
     const lines = open([rekordboxOk, fileOk])
     expect(lines.map((l) => l.dataset.place)).toEqual(['file', 'rekordbox'])
-    expect(lines[0]).toHaveTextContent('Fichero')
+    expect(lines[0]).toHaveTextContent('Archivo')
     expect(lines[0]).toHaveTextContent('WAV · audio idéntico al original')
     expect(lines[1]).toHaveTextContent('rekordbox')
     expect(lines[1]).toHaveTextContent('Apunta al WAV · 13 cues')
@@ -201,7 +201,7 @@ describe('VerifiedPopover', () => {
       },
     ])
     expect(file).toHaveTextContent(
-      `No cuadra el campo ${i18n.t('fields.albumArtist')} en el fichero`,
+      `No cuadra el campo ${i18n.t('fields.albumArtist')} en el archivo`,
     )
   })
 
