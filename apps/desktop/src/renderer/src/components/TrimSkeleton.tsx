@@ -1,4 +1,5 @@
 import type React from 'react'
+import { useMaximizedSection } from '../hooks/useEditorSections'
 import { WaveformSkeleton } from './WaveformSkeleton'
 
 // The placeholder for Silence Trim's two-lane layout while the wave decodes. It mirrors
@@ -6,6 +7,17 @@ import { WaveformSkeleton } from './WaveformSkeleton'
 // control row (label + nudge/time/nudge + audition/clear + zoom, as greyed pills) above a
 // fixed-height wave — so the lanes swap in without a layout jump. The single-block skeleton
 // it replaces looked nothing like the split view it stood in for.
+
+export const LANE_H = 96
+export const LANE_H_TALL = 360
+
+export function useTallLanes(): boolean {
+  return useMaximizedSection().maximized === 'trim'
+}
+
+export function laneHeightClass(tall: boolean): string {
+  return tall ? 'h-[min(45vh,360px)]' : 'h-24'
+}
 
 // A greyed stand-in for one of the lane's h-7 controls, sized to the real button widths.
 function CtrlPill({ w }: { w: string }): React.JSX.Element {
@@ -29,7 +41,7 @@ function LaneSkeleton({ side }: { side: 'start' | 'end' }): React.JSX.Element {
         <CtrlPill w="w-7" />
         <CtrlPill w="w-14" />
       </div>
-      <div className="relative h-24">
+      <div className={`relative ${laneHeightClass(useTallLanes())}`}>
         <WaveformSkeleton testid={`trim-loading-${side}`} />
       </div>
     </div>

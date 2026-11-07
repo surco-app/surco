@@ -28,7 +28,7 @@ import { SectionHeader } from './SectionHeader'
 import { SectionPill } from './SectionPill'
 import { SectionSubhead } from './SectionSubhead'
 import { Tooltip } from './Tooltip'
-import { TrimSkeleton } from './TrimSkeleton'
+import { LANE_H, LANE_H_TALL, laneHeightClass, TrimSkeleton, useTallLanes } from './TrimSkeleton'
 import { useWaveColors } from './WaveformCompare'
 import { ZoomStepper } from './ZoomStepper'
 
@@ -72,7 +72,6 @@ const FINE_STEP_SEC = 0.001
 const COARSE_STEP_SEC = 0.1
 // The lane's own raster: one window's worth of pixels, no scrolling.
 const LANE_RASTER = 1200
-const LANE_H = 96
 
 interface Props {
   value: TrimRange | undefined
@@ -256,9 +255,11 @@ function Lane({
   }, [askedFrom, askedSpan])
   const { data: win } = useWaveformWindow(inputPath, settled.from, settled.span, enabled)
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const tall = useTallLanes()
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
+    canvas.height = tall ? LANE_H_TALL : LANE_H
     // While the window decodes, the overview's peaks stand in for the same stretch
     // — coarse, but the lane is never blank and never lies about WHERE it is.
     if (win) {
@@ -285,7 +286,7 @@ function Lane({
       rms: wave.rms,
       window: { from: fromSec / durationSec, to: toSec / durationSec },
     })
-  }, [win, wave, fromSec, toSec, durationSec, waveColor])
+  }, [win, wave, fromSec, toSec, durationSec, waveColor, tall])
 
   // Lane-relative: 0% is fromSec, 100% is toSec.
   const pct = (sec: number): number => ((sec - fromSec) / spanSec) * 100
@@ -449,7 +450,7 @@ function Lane({
           data-window={`${fromSec.toFixed(2)}-${toSec.toFixed(2)}`}
           width={LANE_RASTER}
           height={LANE_H}
-          className="block h-24 w-full rounded-lg bg-[var(--color-field)]"
+          className={`block ${laneHeightClass(tall)} w-full rounded-lg bg-[var(--color-field)]`}
         />
         <div
           ref={overlayRef}
