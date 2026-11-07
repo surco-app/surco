@@ -1003,7 +1003,7 @@
         "steps": [
           {
             "lead": "Clic droit sur une playlist.",
-            "text": "Choisis « Coller une tracklist… ». Sur un dossier, « Nouvelle playlist depuis une tracklist… » te demande le nom."
+            "text": "Choisis « Coller une tracklist… ». Sur un dossier, « Playlist depuis une tracklist… » te demande le nom."
           },
           {
             "lead": "Colle le texte.",

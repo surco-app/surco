@@ -1003,7 +1003,7 @@
         "steps": [
           {
             "lead": "Botón derecho sobre una playlist.",
-            "text": "Elige «Pegar tracklist…». Sobre una carpeta, «Nueva playlist desde tracklist…» te pide el nombre."
+            "text": "Elige «Pegar tracklist…». Sobre una carpeta, «Playlist desde tracklist…» te pide el nombre."
           },
           {
             "lead": "Pega el texto.",

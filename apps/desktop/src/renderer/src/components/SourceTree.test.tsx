@@ -892,9 +892,7 @@ describe('SourceTree on Serato crates', () => {
   it('offers a new crate inside any crate, not a folder, since a crate can hold crates', () => {
     const edit = setupCrates()
     fireEvent.contextMenu(screen.getByTestId('source-node-Z'))
-    expect(screen.getByTestId('source-tree-new-playlist-inside')).toHaveTextContent(
-      'New crate inside',
-    )
+    expect(screen.getByTestId('source-tree-new-playlist-inside')).toHaveTextContent('New crate')
     expect(screen.queryByTestId('source-tree-new-folder-inside')).toBeNull()
     fireEvent.click(screen.getByTestId('source-tree-new-playlist-inside'))
     fireEvent.change(screen.getByTestId('source-tree-name'), { target: { value: 'Sub' } })
@@ -942,7 +940,7 @@ describe('SourceTree paste tracklist', () => {
     const { edit } = setup(null, true)
     openMenu('bases')
     const item = screen.getByTestId('source-tree-paste-tracklist')
-    expect(item).toHaveTextContent('New playlist from tracklist…')
+    expect(item).toHaveTextContent('Playlist from tracklist…')
     fireEvent.click(item)
     expect(edit.onPasteTracklist).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'bases' }),
@@ -950,13 +948,15 @@ describe('SourceTree paste tracklist', () => {
     )
   })
 
-  it('keeps the item in the menu between Rename and Delete', () => {
+  it('groups the tracklist item with the creating items, before Rename and Delete', () => {
     setup(null, true)
-    openMenu('house')
+    openMenu('bases')
     const items = within(screen.getByTestId('source-tree-menu')).getAllByRole('menuitem')
     expect(items.map((i) => i.getAttribute('data-testid'))).toEqual([
-      'source-tree-rename',
+      'source-tree-new-playlist-inside',
+      'source-tree-new-folder-inside',
       'source-tree-paste-tracklist',
+      'source-tree-rename',
       'source-tree-delete',
     ])
   })
