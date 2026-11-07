@@ -9,7 +9,7 @@
         "in": "1.28.0"
       },
       {
-        "text": "In den Tabs rekordbox, Traktor, Engine DJ und Serato konvertiert „Konvertieren“ nur die Tracks, die du ausgewählt hast, und ohne Auswahl gibt es nichts zu konvertieren. Bei mehreren ausgewählten konvertiert ⌘⏎ die ganze Auswahl statt des geöffneten Tracks. Der Button sagt dir, was draußen bleibt und warum, und der Plan im Editor ebenso: Serato-Tracks, die ihre Cues verlieren würden, und eine Auswahl, die das Ersetzen einer Kopie aus deiner Bibliothek mit dem Hinzufügen mischt und darauf wartet, dass du sie trennst. Aus dem Menü der fertigen nimmt „Erneut konvertieren“ die, die du schon konvertiert hast.",
+        "text": "In den Tabs rekordbox, Traktor, Engine DJ und Serato konvertiert „Konvertieren“ nur die Tracks, die du ausgewählt hast, und ohne Auswahl gibt es nichts zu konvertieren. Bei mehreren ausgewählten konvertiert ⌘⏎ die ganze Auswahl statt des geöffneten Tracks. Der Button sagt dir, was draußen bleibt und warum, und der Plan im Editor ebenso: Serato-Tracks, die ihre Cues verlieren würden, und eine Auswahl, die das Ersetzen einer Kopie aus deiner Bibliothek mit dem Hinzufügen mischt und darauf wartet, dass du sie trennst. Im Menü der fertigen Tracks nimmt „Erneut konvertieren“ die, die du schon konvertiert hast.",
         "in": "1.28.0"
       }
     ]
@@ -20,7 +20,7 @@
     "title": "Filter in Bereichen, und eine Analyse, die deinen Mac kühl lässt",
     "items": [
       {
-        "text": "Das Filtermenü zeigt seine Bereiche links und ihre Filter rechts, öffnet sich im zuletzt angesehenen Bereich und findet, wenn du bei offenem Menü tippst, den Filter in jedem Bereich. Die Filter, die du gesetzt hast, stehen unter der Leiste, jeder mit einem Knopf zum Entfernen.",
+        "text": "Das Filtermenü zeigt seine Bereiche links und ihre Filter rechts, öffnet sich im zuletzt angesehenen Bereich und findet, wenn du bei offenem Menü tippst, den Filter in jedem Bereich. Die Filter, die du gesetzt hast, stehen unter der Leiste, jeder mit einem Button zum Entfernen.",
         "in": "1.27.0"
       },
       {
@@ -48,7 +48,7 @@
         "in": "1.27.0"
       },
       {
-        "text": "Das Filtermenü zeigt in jedem Tab nur die Filter, die dort Tracks haben können. „Ohne Cues“, „Cues neben dem Raster“ und „Raster falsch“ erscheinen in den Tabs deiner DJ-Software, der Bereich Apple Music fehlt im Music-Tab und „Besser als in Music“ gibt es nur unter Titel. Wechselst du mit einem Filter, den es dort nicht gibt, den Tab, fällt er von selbst weg, statt dir eine leere Liste zu lassen.",
+        "text": "Das Filtermenü zeigt in jedem Tab nur die Filter, die dort Tracks haben können. „Ohne Cues“, „Cues neben dem Raster“ und „Raster falsch“ erscheinen in den Tabs deiner DJ-Software, der Bereich Apple Music fehlt im Music-Tab und „Besser als in Music“ gibt es nur im Tab „Tracks“. Wechselst du den Tab mit einem Filter, den es dort nicht gibt, fällt er von selbst weg, statt dir eine leere Liste zu lassen.",
         "in": "1.27.1"
       },
       {
@@ -56,15 +56,15 @@
         "in": "1.27.1"
       },
       {
-        "text": "Surco analysiert eine große Bibliothek nicht mehr bei jedem Öffnen neu. Der Analyse-Cache fasst etwa 10.000 Titel statt etwa 2.000, und unter Einstellungen › Erweitert › Analyse-Cache wählst du seine „Maximale Größe“ und siehst, wie viele Titel hineinpassen. Tags, BPM und Tonart werden nicht mehr gelöscht, um Platz zu schaffen, und ein Titel mit bereits gemessener Qualität wird beim Öffnen seiner Playlist nicht erneut gemessen.",
+        "text": "Surco analysiert eine große Bibliothek nicht mehr bei jedem Öffnen neu. Der Analyse-Cache fasst etwa 10.000 Tracks statt etwa 2.000, und unter Einstellungen › Erweitert › Analyse-Cache wählst du seine „Maximale Größe“ und siehst, wie viele Tracks hineinpassen. Tags, BPM und Tonart werden nicht mehr gelöscht, um Platz zu schaffen, und ein Track mit bereits gemessener Qualität wird beim Öffnen seiner Playlist nicht erneut gemessen.",
         "in": "1.27.3"
       },
       {
-        "text": "Der große Cue-Editor öffnet sich mit ⌘⇧C für den ausgewählten Titel. Seine Tasten unten stehen in Gruppen, Pads, CALL, Raster und Zoom, und „Alle Cues löschen“ steht allein am Ende. Der Zoom geht bis auf einen Takt heran, „Übernehmen und speichern“ speichert die Vorschläge von „Auto-Markieren“ mit einem Klick in deiner DJ-Software, und mit „Buchstaben in Titelreihenfolge“ zeigt ein leeres Pad, welchen Buchstaben der Cue bekommt.",
+        "text": "Der große Cue-Editor öffnet sich mit ⌘⇧C für den ausgewählten Track. Seine Buttons unten stehen in Gruppen, Pads, CALL, Raster und Zoom, und „Alle Cues löschen“ steht allein am Ende. Der Zoom geht bis auf einen Takt heran, „Übernehmen und speichern“ speichert die Vorschläge von „Auto-Markieren“ mit einem Klick in deiner DJ-Software, und mit „Buchstaben nach Position im Track“ zeigt ein leeres Pad, welchen Buchstaben der Cue bekommt.",
         "in": "1.27.3"
       },
       {
-        "text": "„Prüfen“ zeigt dir vor dem Schreiben, was du anwenden wirst. Der Filter „Vorgemerkt“ lässt nur das Vorbereitete übrig, die Bestätigung nennt jede Änderung mit ihrem Titel und dem Ergebnis, und eine vorgemerkte Gruppe sagt „Vorgemerkt“, mit einer Taste zum Verwerfen.",
+        "text": "„Prüfen“ zeigt dir vor dem Schreiben, was du anwenden wirst. Der Filter „Vorgemerkt“ lässt nur das Vorbereitete übrig, die Bestätigung nennt jede Änderung mit ihrem Track und dem Ergebnis, und eine vorgemerkte Gruppe sagt „Vorgemerkt“, mit einem Button zum Verwerfen.",
         "in": "1.27.3"
       }
     ]
@@ -75,11 +75,11 @@
     "title": "Deine DJ-Software in einem eigenen Tab, und feinere Cue-Abläufe",
     "items": [
       {
-        "text": "Zum Start fragt Surco, welche DJ-Software du nutzt, und deine Antwort entscheidet, was du in der Seitenleiste und im Editor siehst. In den Einstellungen bündelt der neue Tab „DJ-Software“ Sammlung und Konvertierung jedes Programms, eines nach dem anderen und über eine Leiste gewählt, und „Ausgabe“ bleibt nur noch, wohin deine Dateien gehen.",
+        "text": "Zum Start fragt Surco, welche DJ-Software du nutzt, und deine Antwort entscheidet, was du in der Seitenleiste und im Editor siehst. In den Einstellungen bündelt der neue Tab „DJ-Software“ Sammlung und Konvertierung jedes Programms, eines nach dem anderen und über eine Leiste gewählt, und in „Ausgabe“ bleibt nur noch, wohin deine Dateien gehen.",
         "in": "1.26.0"
       },
       {
-        "text": "Cue-Abläufe haben zwei neue Bedingungen. „bis zur vorherigen Markierung“ lässt einen Countdown durch Refrains ohne Markierung laufen, und „wenn in den nächsten“ Takten keine andere Cue kommt, wird eine Cue weggelassen, wenn gleich danach eine andere folgt. Jede Regel bietet nur die Bedingungen an, die zu ihr passen, und sagt darunter, was sie tut.",
+        "text": "Cue-Abläufe haben zwei neue Bedingungen. „bis zur vorherigen Markierung“ lässt einen Countdown durch Refrains ohne Markierung laufen, und „wenn in den nächsten … Takten kein anderer Cue kommt“ lässt einen Cue weg, wenn gleich danach ein anderer folgt. Jede Regel bietet nur die Bedingungen an, die zu ihr passen, und sagt darunter, was sie tut.",
         "in": "1.26.0"
       },
       {
@@ -149,11 +149,11 @@
     "title": "Serato und Traktor auf einen Pioneer-USB, und Serato-Crates",
     "items": [
       {
-        "text": "Bring deine Serato-Crates oder Traktor-Playlists auf einen Pioneer-USB, ohne Umweg über rekordbox. „Auf USB exportieren“ im Baum ihres Tabs kopiert die Musik mit Cues, Loops und Grid an ihrem Platz, mit Tonart und BPM, und lässt die Einstellungen deines Players, wie sie waren. Lässt sich nicht sagen, wo die Cues eines Titels auf dem CDJ landen würden, geht er ohne sie, und du erfährst es vorher.",
+        "text": "Bring deine Serato-Crates oder Traktor-Playlists auf einen Pioneer-USB, ohne Umweg über rekordbox. „Auf USB exportieren“ im Baum ihres Tabs kopiert die Musik mit Cues, Loops und Grid an ihrem Platz, mit Tonart und BPM, und lässt die Einstellungen deines Players, wie sie waren. Lässt sich nicht sagen, wo die Cues eines Tracks auf dem CDJ landen würden, geht er ohne sie, und du erfährst es vorher.",
         "in": "1.24.0"
       },
       {
-        "text": "Im Serato-Tab kannst du jetzt Crates und Subcrates anlegen, umbenennen und löschen und ihre Titel hinzufügen, entfernen und neu ordnen, wie in rekordbox und Traktor. Ist Serato offen, warten die Änderungen, bis du es schließt.",
+        "text": "Im Serato-Tab kannst du jetzt Crates und Subcrates anlegen, umbenennen und löschen und ihre Tracks hinzufügen, entfernen und neu ordnen, wie in rekordbox und Traktor. Ist Serato offen, warten die Änderungen, bis du es schließt.",
         "in": "1.24.0"
       },
       {
@@ -165,7 +165,7 @@
         "in": "1.24.0"
       },
       {
-        "text": "„Auto-Markieren“ macht jetzt auch Vorschläge bei Titeln, die rekordbox nicht analysiert hat, denn Surco leitet aus dem Bass ab, wo jeder Takt beginnt.",
+        "text": "„Auto-Markieren“ macht jetzt auch Vorschläge bei Tracks, die rekordbox nicht analysiert hat, denn Surco leitet aus dem Bass ab, wo jeder Takt beginnt.",
         "in": "1.24.0"
       }
     ]
@@ -176,7 +176,7 @@
     "title": "Cues in Serato, und Änderungen, die jedes Programm erreichen",
     "items": [
       {
-        "text": "Surco schreibt deine Cues jetzt in Serato. Bearbeite sie im Cue-Editor, hol sie mit deinen „Abläufen“ aus rekordbox, Traktor oder Engine DJ und behalte sie beim Konvertieren eines Tracks. Geschrieben wird nur bei geschlossenem Serato, ist es offen, wartet Surco, bis du es schließt, und sichert vorher das Original.",
+        "text": "Surco schreibt deine Cues jetzt in Serato. Bearbeite sie im Cue-Editor, hol sie mit deinen „Abläufen“ aus rekordbox, Traktor oder Engine DJ und behalte sie beim Konvertieren eines Tracks. Geschrieben wird nur bei geschlossenem Serato; ist es offen, wartet Surco, bis du es schließt, und sichert vorher das Original.",
         "in": "1.23.0"
       },
       {
@@ -184,7 +184,7 @@
         "in": "1.23.0"
       },
       {
-        "text": "Korrigiere Titel, Interpret, Album oder Genre in Surco, und Traktor und Engine DJ zeigen den neuen Namen ebenfalls, wie rekordbox schon bisher. Hast du ihn in Traktor oder Engine DJ von Hand geändert, bleibt er so.",
+        "text": "Korrigiere Titel, Künstler, Album oder Genre in Surco, und Traktor und Engine DJ zeigen den neuen Namen ebenfalls, wie rekordbox schon bisher. Hast du ihn in Traktor oder Engine DJ von Hand geändert, bleibt er so.",
         "in": "1.23.0"
       },
       {
@@ -203,15 +203,15 @@
     "title": "Raster auf dem Beat, und Serato",
     "items": [
       {
-        "text": "Korrigiere das Beat-Raster eines Tracks, ohne das Programm zu öffnen. Mit maximiertem Cue-Abschnitt bekommst du eine Zeile mit dem BPM, Pfeilen zum Verschieben, Knöpfen zum Strecken oder Stauchen, dem ersten Schlag am Abspielkopf und „Auto“, das es an die Schläge anpasst. Daneben siehst du, wie weit es hier und am Ende des Tracks danebenliegt. Gespeichert wird in rekordbox, Traktor und Engine DJ, und in rekordbox kannst du es für geschnittene Tracks in Abschnitte mit eigenem Tempo teilen. Raster, die du im Programm gesperrt hast, bleiben unangetastet.",
+        "text": "Korrigiere das Beat-Raster eines Tracks, ohne das Programm zu öffnen. Mit maximiertem Cue-Abschnitt bekommst du eine Zeile mit dem BPM, Pfeilen zum Verschieben, Buttons zum Strecken oder Stauchen, dem ersten Beat am Abspielkopf und „Auto“, das es an die Beats anpasst. Daneben siehst du, wie weit es hier und am Ende des Tracks danebenliegt. Gespeichert wird in rekordbox, Traktor und Engine DJ, und in rekordbox kannst du es für geschnittene Tracks in Abschnitte mit eigenem Tempo teilen. Raster, die du im Programm gesperrt hast, bleiben unangetastet.",
         "in": "1.22.0"
       },
       {
-        "text": "Der Filter „Raster falsch“ zeigt dir die Tracks, deren Raster die Schläge verfehlt, und daneben jeweils, um wie viel, ob es um ein paar Millisekunden verschoben ist oder im Lauf des Tracks wegdriftet. In rekordbox gilt das für alle Tracks. In Traktor und Engine DJ vorerst für WAV, AIFF und FLAC, und in Traktor auch für MP3s, die mit iTunes erstellt wurden.",
+        "text": "Der Filter „Raster falsch“ zeigt dir die Tracks, deren Raster die Beats verfehlt, und daneben jeweils, um wie viel, ob es um ein paar Millisekunden verschoben ist oder im Lauf des Tracks wegdriftet. In rekordbox gilt das für alle Tracks. In Traktor und Engine DJ vorerst für WAV, AIFF und FLAC, und in Traktor auch für MP3s, die mit iTunes erstellt wurden.",
         "in": "1.22.0"
       },
       {
-        "text": "Im Cue-Editor werden Cues, die ihren Schlag verfehlen, eigens eingefärbt und über der Wellenform genannt, mit ihrer Abweichung. „Auf den Schlag“ setzt sie in einem Zug auf ihren Schlag, und wenn alle gleich weit danebenliegen, bietet dir Surco an, stattdessen das Raster zu verschieben.",
+        "text": "Im Cue-Editor werden Cues, die ihren Beat verfehlen, eigens eingefärbt und über der Wellenform genannt, mit ihrer Abweichung. „Auf den Beat“ setzt sie in einem Zug auf ihren Beat, und wenn alle gleich weit danebenliegen, bietet dir Surco an, stattdessen das Raster zu verschieben.",
         "in": "1.22.0"
       },
       {
@@ -245,7 +245,7 @@
     "title": "Cues auf einen Blick",
     "items": [
       {
-        "text": "Wenn Surco deinen Titel mit der Kopie in deiner Bibliothek vergleicht und das Spektrum entscheidet, welche besser ist, zeigt der Vergleich beide Spektren übereinander im selben Maßstab, jeweils mit ihrer Grenzfrequenz, damit du siehst, wo jede Kopie aufhört.",
+        "text": "Wenn Surco deinen Track mit der Kopie in deiner Mediathek vergleicht und das Spektrum entscheidet, welche besser ist, zeigt der Vergleich beide Spektren übereinander im selben Maßstab, jeweils mit ihrem Cutoff, damit du siehst, wo jede Kopie aufhört.",
         "in": "1.20.0"
       },
       {
@@ -257,11 +257,11 @@
         "in": "1.20.0"
       },
       {
-        "text": "Im eingeklappten Cue-Editor gibt es einen einzigen „Speichern“-Knopf. Sein Menü speichert diesen Titel, alle Titel mit ungespeicherten Cues oder verwirft deine Änderungen. Das Menü „Ablauf“ listet nur noch Abläufe, und „Alle Cues löschen“ ist ein Knopf neben Rückgängig.",
+        "text": "Im eingeklappten Cue-Editor gibt es einen einzigen „Speichern“-Button. Sein Menü speichert diesen Track, alle Tracks mit ungespeicherten Cues oder verwirft deine Änderungen. Das Menü „Ablauf“ listet nur noch Abläufe, und „Alle Cues löschen“ ist ein Button neben Rückgängig.",
         "in": "1.20.0"
       },
       {
-        "text": "Wenn du in der Seitenleiste den Tab wechselst, schließt sich der Player, damit er keinen Titel weiterspielt, den dieser Tab nicht zeigt.",
+        "text": "Wenn du in der Seitenleiste den Tab wechselst, schließt sich der Player, damit er keinen Track weiterspielt, den dieser Tab nicht zeigt.",
         "in": "1.20.0"
       }
     ]
@@ -272,7 +272,7 @@
     "title": "Ergänze, was fehlt",
     "items": [
       {
-        "text": "„Metadaten prüfen“ hat einen Filter „Unvollständig“ mit den Tracks, deren Datei ein Pflichtfeld fehlt, etwa das Jahr oder das Grouping. Surco schlägt für jedes einen Wert vor, aus dem, was die App anzeigt, aus einem vorgeschlagenen Treffer oder aus dem Dateinamen, und füllt nur, was leer ist, in der Datei und in Apple Music, ohne anzutasten, was die Datei schon hat. Vom Filter „Pflichtfelder fehlen“ bringt dich „In „Metadaten prüfen“ ausfüllen“ direkt dorthin, und was nur der Editor füllt, öffnet den Track im Editor.",
+        "text": "„Metadaten prüfen“ hat einen Filter „Unvollständig“ mit den Tracks, deren Datei ein Pflichtfeld fehlt, etwa das Jahr oder die Gruppierung. Surco schlägt für jedes einen Wert vor, aus dem, was die App anzeigt, aus einem vorgeschlagenen Treffer oder aus dem Dateinamen, und füllt nur, was leer ist, in der Datei und in Apple Music, ohne anzutasten, was die Datei schon hat. Vom Filter „Pflichtfelder fehlen“ bringt dich „In ‚Metadaten prüfen‘ ausfüllen“ direkt dorthin, und was nur der Editor füllt, öffnet den Track im Editor.",
         "in": "1.19.0"
       },
       {
@@ -280,11 +280,11 @@
         "in": "1.19.0"
       },
       {
-        "text": "„Metadaten löschen“ bietet direkt danach „Rückgängig“ an und steht abseits der Füllen-Schaltfläche, damit du es nicht versehentlich triffst.",
+        "text": "„Metadaten löschen“ bietet direkt danach „Rückgängig“ an und steht abseits des Füllen-Buttons, damit du es nicht versehentlich triffst.",
         "in": "1.19.0"
       },
       {
-        "text": "Einen Ordner oder eine Playlist, die du schon geladen hattest, erneut zu öffnen geht schneller. Surco merkt sich die Analyse und das Auto-Match-Ergebnis jedes Tracks, solange sich die Datei nicht ändert, und Auto-Match sucht nur die Tracks, die Filter und Suche sichtbar lassen. Playlists und Cover von Apple Music erscheinen sofort, so wie du sie zuletzt gesehen hast. Hat sich eine Datei inzwischen geändert, liest Surco sie vor dem Konvertieren neu.",
+        "text": "Einen Ordner oder eine Playlist, die du schon geladen hattest, erneut zu öffnen geht schneller. Surco merkt sich die Analyse und das Ergebnis des automatischen Abgleichs jedes Tracks, solange sich die Datei nicht ändert, und der automatische Abgleich sucht nur die Tracks, die Filter und Suche sichtbar lassen. Playlists und Cover von Apple Music erscheinen sofort, so wie du sie zuletzt gesehen hast. Hat sich eine Datei inzwischen geändert, liest Surco sie vor dem Konvertieren neu.",
         "in": "1.19.0"
       },
       {
@@ -303,15 +303,15 @@
     "title": "Surco prüft, was es tut",
     "items": [
       {
-        "text": "Nach dem Konvertieren liest Surco nach, was es in die Datei, in Apple Music, rekordbox, Engine DJ und Traktor geschrieben hat. Das ✓ erscheint nur, wenn alles stimmt, und das Schild daneben zeigt „Was geprüft wurde“. Stimmt etwas nicht, sagt dir eine orange Zeile was und wo, mit „Erneut versuchen“, und die alte Datei wird nicht für den Papierkorb angeboten, solange noch etwas sie nutzt. Bei mehreren Titeln siehst du, wie viele geprüft sind, und der Filter „Stimmen nicht“ bringt dich zu den übrigen.",
+        "text": "Nach dem Konvertieren liest Surco nach, was es in die Datei, in Apple Music, rekordbox, Engine DJ und Traktor geschrieben hat. Das ✓ erscheint nur, wenn alles stimmt, und das Schild daneben zeigt „Was geprüft wurde“. Stimmt etwas nicht, sagt dir eine orange Zeile was und wo, mit „Erneut versuchen“, und die alte Datei wird nicht für den Papierkorb angeboten, solange noch etwas sie nutzt. Bei mehreren Tracks siehst du, wie viele geprüft sind, und der Filter „Stimmen nicht“ bringt dich zu den übrigen.",
         "in": "1.18.0"
       },
       {
-        "text": "Konvertierst du einen Titel, den du schon in Apple Music hast, in ein anderes Format, ersetzt Surco ihn, statt zwei zu hinterlassen. Er bleibt in seinen Playlists, mit Wiedergaben und Bewertung, und rekordbox, Engine DJ und Traktor wechseln zur neuen Datei, ohne ihn aus ihren Playlists zu nehmen. Zwischen AIFF, WAV, FLAC und ALAC behält rekordbox Analyse, Beatgrid und Cues, wenn sich das Audio nicht ändert.",
+        "text": "Konvertierst du einen Track, den du schon in Apple Music hast, in ein anderes Format, ersetzt Surco ihn, statt zwei zu hinterlassen. Er bleibt in seinen Playlists, mit Wiedergaben und Bewertung, und rekordbox, Engine DJ und Traktor wechseln zur neuen Datei, ohne ihn aus ihren Playlists zu nehmen. Zwischen AIFF, WAV, FLAC und ALAC behält rekordbox Analyse, Beatgrid und Cues, wenn sich das Audio nicht ändert.",
         "in": "1.18.0"
       },
       {
-        "text": "Titel, die Surco zu Apple Music bringt, landen im Ordner ihres Interpreten und Albums, auch WAVs, die früher unter „Unknown Album“ landeten.",
+        "text": "Tracks, die Surco zu Apple Music bringt, landen im Ordner ihres Künstler und Albums, auch WAVs, die früher unter „Unknown Album“ landeten.",
         "in": "1.18.0"
       },
       {
@@ -319,11 +319,11 @@
         "in": "1.18.0"
       },
       {
-        "text": "Playlists aus Apple Music öffnen sich sofort mit allen Titeln, und die Playlist mit allen Songs steht als „Alle Titel“ ganz oben.",
+        "text": "Playlists aus Apple Music öffnen sich sofort mit allen Tracks, und die Playlist mit allen Songs steht als „Alle Tracks“ ganz oben.",
         "in": "1.18.0"
       },
       {
-        "text": "Die Gruppierung von MP3 und AIFF kommt bei jeder Konvertierung in Traktor und Apple Music an, und eine Titelnummer „3/12“ oder Disc-Nummer „1/2“ bleibt erhalten, statt zu 312 zu werden oder zu verschwinden.",
+        "text": "Die Gruppierung von MP3 und AIFF kommt bei jeder Konvertierung in Traktor und Apple Music an, und eine Tracknummer „3/12“ oder Disc-Nummer „1/2“ bleibt erhalten, statt zu 312 zu werden oder zu verschwinden.",
         "in": "1.18.0"
       },
       {
@@ -331,7 +331,7 @@
         "in": "1.18.2"
       },
       {
-        "text": "Beim Konvertieren einer MP3 in AIFF oder FLAC bleiben die Cues des Originaltracks in Traktor, wo sie waren, und wenn du bei geöffnetem Traktor konvertierst, bleiben Cues erhalten, die du in der Zwischenzeit bearbeitest.",
+        "text": "Beim Konvertieren eines MP3 in AIFF oder FLAC bleiben die Cues des Originaltracks in Traktor, wo sie waren, und wenn du bei geöffnetem Traktor konvertierst, bleiben Cues erhalten, die du in der Zwischenzeit bearbeitest.",
         "in": "1.18.3"
       },
       {
@@ -359,7 +359,7 @@
         "in": "1.18.5"
       },
       {
-        "text": "rekordbox behält Analyse und Cues beim Konvertieren in ALAC, setzt die Cues einer AAC anhand der Datei selbst und verschiebt doppelte Einträge derselben Datei gemeinsam. Engine DJ folgt Größe und Länge der Datei, wann immer Surco sie neu schreibt, und das Wiederherstellen des Originals bringt seine Cues zurück.",
+        "text": "rekordbox behält Analyse und Cues beim Konvertieren in ALAC, setzt die Cues eines AAC anhand der Datei selbst und verschiebt doppelte Einträge derselben Datei gemeinsam. Engine DJ folgt Größe und Länge der Datei, wann immer Surco sie neu schreibt, und das Wiederherstellen des Originals bringt seine Cues zurück.",
         "in": "1.18.5"
       },
       {
@@ -410,7 +410,7 @@
         "in": "1.17.0"
       },
       {
-        "text": "Surco erkennt beschädigte Dateien, die vor ihrer Länge aufhören zu spielen. Es markiert sie neben dem Format als „Beschädigt“, sie haben ihren eigenen Filter „Beschädigt“ und zählen nie als Fälschungen, landen also nicht mit ihnen im Papierkorb. Jedes Qualitätsurteil liest sich als Wort neben dem Format, ohne auf Farbe angewiesen zu sein, und bevor du etwas Verlustbehaftetes in ein verlustfreies Format konvertierst, erinnert dich Surco, dass es keine Qualität zurückgewinnt.",
+        "text": "Surco erkennt beschädigte Dateien, die vor ihrem Ende abbrechen. Es markiert sie neben dem Format als „Beschädigt“, sie haben ihren eigenen Filter „Beschädigt“ und zählen nie als Fälschungen, landen also nicht mit ihnen im Papierkorb. Jedes Qualitätsurteil liest sich als Wort neben dem Format, ohne auf Farbe angewiesen zu sein, und bevor du etwas Verlustbehaftetes in ein verlustfreies Format konvertierst, erinnert dich Surco, dass es keine Qualität zurückgewinnt.",
         "in": "1.17.0"
       },
       {
@@ -437,15 +437,15 @@
     "title": "Deine ganze Sammlung, ohne Warten",
     "items": [
       {
-        "text": "In rekordbox, Engine DJ und Traktor steht „Alle Titel“ über „Zuletzt hinzugefügt“ und zeigt deine ganze Sammlung, so findest du auch die Titel, die in keiner Playlist sind. Beim Öffnen analysiert und sucht Surco nur die Titel, an denen du vorbeiscrollst, nicht die ganze Sammlung.",
+        "text": "In rekordbox, Engine DJ und Traktor steht „Alle Tracks“ über „Zuletzt hinzugefügt“ und zeigt deine ganze Sammlung, so findest du auch die Tracks, die in keiner Playlist sind. Beim Öffnen analysiert und sucht Surco nur die Tracks, an denen du vorbeiscrollst, nicht die ganze Sammlung.",
         "in": "1.16.0"
       },
       {
-        "text": "Lange Listen scrollen flüssig. Eine Sammlung mit 8.000 Titeln läuft so ruhig wie eine kurze Playlist und braucht viel weniger Speicher.",
+        "text": "Lange Listen scrollen flüssig. Eine Sammlung mit 8.000 Tracks läuft so ruhig wie eine kurze Playlist und braucht viel weniger Speicher.",
         "in": "1.16.0"
       },
       {
-        "text": "Apple-Music-Playlists öffnen sich viel schneller. Die Titel erscheinen in Sekunden und die Cover folgen, und bei einer Playlist mit Tausenden Titeln siehst du die ersten sofort, während der Rest nachkommt. Der Sprung von einer Playlist zur nächsten lässt Music nicht mehr hängen.",
+        "text": "Apple-Music-Playlists öffnen sich viel schneller. Die Tracks erscheinen in Sekunden und die Cover folgen, und bei einer Playlist mit Tausenden Tracks siehst du die ersten sofort, während der Rest nachkommt. Der Sprung von einer Playlist zur nächsten lässt Music nicht mehr hängen.",
         "in": "1.16.0"
       },
       {
@@ -453,11 +453,11 @@
         "in": "1.16.0"
       },
       {
-        "text": "Im Editor haben Traktor und Engine DJ jetzt ein eigenes Feld „Playlists“, wie rekordbox es schon hatte, und damit wählst du, in welche Playlists jeder Titel kommt. Hatte die Bibliothek den Titel noch nicht, fügt Surco ihn beim Konvertieren hinzu (bei Traktor, wenn er auf einem Laufwerk liegt, das Traktor schon kennt). Das Traktor-Feld wird aktiv, sobald du die Sammlung in den Einstellungen bestätigst.",
+        "text": "Im Editor haben Traktor und Engine DJ jetzt ein eigenes Feld „Playlists“, wie rekordbox es schon hatte, und damit wählst du, in welche Playlists jeder Track kommt. Hatte die Bibliothek den Track noch nicht, fügt Surco ihn beim Konvertieren hinzu (bei Traktor, wenn er auf einem Laufwerk liegt, das Traktor schon kennt). Das Traktor-Feld wird aktiv, sobald du die Sammlung in den Einstellungen bestätigst.",
         "in": "1.16.0"
       },
       {
-        "text": "Wenn du einen Titel konvertierst, den du in Playlists geschickt hast, bringt dich das Symbol von rekordbox, Engine DJ oder Traktor neben dem Ergebnis zu ihm, mit offenen Cues.",
+        "text": "Wenn du einen Track konvertierst, den du in Playlists geschickt hast, bringt dich das Symbol von rekordbox, Engine DJ oder Traktor neben dem Ergebnis zu ihm, mit offenen Cues.",
         "in": "1.16.0"
       },
       {
@@ -499,7 +499,7 @@
         "in": "1.14.0"
       },
       {
-        "text": "Wenn du in Apple Music einen Titel ersetzt, etwa ein MP3 durch sein AIFF, behält der neue seine Playlists, seine Wiedergaben, deine Bewertung und seinen Favoriten-Status. Lässt sich etwas nicht übertragen, bleibt der alte in Music und nichts geht verloren.",
+        "text": "Wenn du in Apple Music einen Track ersetzt, etwa ein MP3 durch sein AIFF, behält der neue seine Playlists, seine Wiedergaben, deine Bewertung und seinen Favoriten-Status. Lässt sich etwas nicht übertragen, bleibt der alte in Music und nichts geht verloren.",
         "in": "1.14.0"
       },
       {
@@ -507,7 +507,7 @@
         "in": "1.14.0"
       },
       {
-        "text": "Der Ablauf, den du markierst, kommt in deinen anderen Programmen genau so an. Jeder Drop nimmt den Ablauf mit, den du für ihn gewählt hast, landet auf demselben Schlag der Musik, auch wenn jedes Programm den Takt anders zählt, und die Cues, die dort schon waren, bleiben unberührt.",
+        "text": "Der Ablauf, den du markierst, kommt in deinen anderen Programmen genau so an. Jeder Drop nimmt den Ablauf mit, den du für ihn gewählt hast, landet auf demselben Beat der Musik, auch wenn jedes Programm den Takt anders zählt, und die Cues, die dort schon waren, bleiben unberührt.",
         "in": "1.14.0"
       },
       {
@@ -515,7 +515,7 @@
         "in": "1.14.0"
       },
       {
-        "text": "Ein Titel, den du an Ort und Stelle aktualisierst, behält seinen Namen auch mit Zeichen wie ? oder Anführungszeichen. Er wird also nicht mehr umbenannt und fällt nicht mehr aus rekordbox oder Traktor heraus.",
+        "text": "Ein Track, den du an Ort und Stelle aktualisierst, behält seinen Namen auch mit Zeichen wie ? oder Anführungszeichen. Er wird also nicht mehr umbenannt und fällt nicht mehr aus rekordbox oder Traktor heraus.",
         "in": "1.14.0"
       },
       {
@@ -523,7 +523,7 @@
         "in": "1.14.0"
       },
       {
-        "text": "Weitere Korrekturen beim Konvertieren, bei eigenen Feldern, beim automatischen Abgleich, in Traktor-Playlists, auf Engine-DJ-USB-Laufwerken und unter Windows beim Konvertieren des Titels, den du gerade hörst.",
+        "text": "Weitere Korrekturen beim Konvertieren, bei eigenen Feldern, beim automatischen Abgleich, in Traktor-Playlists, auf Engine-DJ-USB-Laufwerken und unter Windows beim Konvertieren des Tracks, den du gerade hörst.",
         "in": "1.14.0"
       },
       {
@@ -538,7 +538,7 @@
     "title": "Ein Ablauf für alle deine Programme",
     "items": [
       {
-        "text": "Markiere einen Drop einmal, und beim Speichern erreicht der Ablauf denselben Titel auch in rekordbox, Traktor und Engine DJ. Jedes Programm setzt ihn auf sein eigenes Grid und behält die Cues, die es dort schon hat, und der Editor zeigt dir vor dem Speichern, was jedes bekommt. Hat der Titel in einem anderen Programm ungespeicherte Änderungen, lässt Surco sie in Ruhe. Welche Programme er erreicht, wählst du in Einstellungen, Cues.",
+        "text": "Markiere einen Drop einmal, und beim Speichern erreicht der Ablauf denselben Track auch in rekordbox, Traktor und Engine DJ. Jedes Programm setzt ihn auf sein eigenes Grid und behält die Cues, die es dort schon hat, und der Editor zeigt dir vor dem Speichern, was jedes bekommt. Hat der Track in einem anderen Programm ungespeicherte Änderungen, lässt Surco sie in Ruhe. Welche Programme er erreicht, wählst du in Einstellungen, Cues.",
         "in": "1.13.0"
       },
       {
@@ -557,11 +557,11 @@
     "title": "Traktor, wie rekordbox",
     "items": [
       {
-        "text": "Neuer Traktor-Tab, neben Music, rekordbox und Engine DJ. Du siehst deine Playlists und die Titel, die du in den letzten 30 Tagen hinzugefügt hast, und organisierst sie wie in rekordbox. Du erstellst, benennst und löschst Playlists und Ordner, fügst Titel hinzu, entfernst und sortierst sie und fügst Trenner ein.",
+        "text": "Neuer Traktor-Tab, neben Music, rekordbox und Engine DJ. Du siehst deine Playlists und die Tracks, die du in den letzten 30 Tagen hinzugefügt hast, und organisierst sie wie in rekordbox. Du erstellst Playlists und Ordner, benennst sie um und löschst sie, fügst Tracks hinzu, entfernst und sortierst sie und fügst Trenner ein.",
         "in": "1.12.0"
       },
       {
-        "text": "Cues für deine Traktor-Titel setzt du mit demselben Editor, Auto-Markieren inklusive. Traktor bekommt die Hot Cues in Blau, auf den Tasten 2 bis 8, denn Taste 1 gehört seinem Grid. Ist Traktor beim Speichern geöffnet, bittet Surco dich, es zu beenden, und schreibt nichts, bis du das tust.",
+        "text": "Cues für deine Traktor-Tracks setzt du mit demselben Editor, Auto-Markieren inklusive. Traktor bekommt die Hot Cues in Blau, auf den Tasten 2 bis 8, denn Taste 1 gehört seinem Grid. Ist Traktor beim Speichern geöffnet, bittet Surco dich, es zu beenden, und schreibt nichts, bis du das tust.",
         "in": "1.12.0"
       },
       {
@@ -569,7 +569,7 @@
         "in": "1.12.0"
       },
       {
-        "text": "⌘K erreicht alles Neue. Spring zu jedem Bibliothekstab, erstell eine Playlist, markiere die ausgewählten Titel automatisch, speichere ihre Cues oder lösch alle Cues eines Titels, ohne zur Maus zu greifen. Und konvertiere nur dieses eine Mal, indem du das Original bearbeitest.",
+        "text": "⌘K erreicht alles Neue. Spring zu jedem Bibliothekstab, erstell eine Playlist, markiere die ausgewählten Tracks automatisch, speichere ihre Cues oder lösch alle Cues eines Tracks, ohne zur Maus zu greifen. Und konvertiere mit „Original bearbeiten“, nur für dieses eine Mal.",
         "in": "1.12.0"
       },
       {
@@ -577,7 +577,7 @@
         "in": "1.12.0"
       },
       {
-        "text": "Konvertierst du mit synchronisierter Traktor-Sammlung, bleibt der Titel in seinen Traktor-Playlists, auch wenn sich sein Format ändert.",
+        "text": "Konvertierst du mit synchronisierter Traktor-Sammlung, bleibt der Track in seinen Traktor-Playlists, auch wenn sich sein Format ändert.",
         "in": "1.12.0"
       },
       {
@@ -585,7 +585,7 @@
         "in": "1.12.0"
       },
       {
-        "text": "FLAC-Cover erscheinen wieder im Finder, auch wenn du mit Traktor synchronisierst. Surco setzt es als Symbol der Datei, ohne das Audio anzufassen, sodass Traktor diese Titel nicht mehr aus deiner Sammlung wirft.",
+        "text": "FLAC-Cover erscheinen wieder im Finder, auch wenn du mit Traktor synchronisierst. Surco setzt sie als Symbol der Datei, ohne das Audio anzufassen, sodass Traktor diese Tracks nicht mehr aus deiner Sammlung wirft.",
         "in": "1.12.0"
       },
       {
@@ -593,11 +593,11 @@
         "in": "1.12.0"
       },
       {
-        "text": "Neue Listenfilter, um zu finden, was noch zu tun ist. Auf einen Blick siehst du die Titel ohne Cues, ohne Cover oder mit kleinem Cover, ohne BPM oder ohne Tonart, die mit leeren Pflichtfeldern, die mit ungespeicherten Änderungen und die, die rekordbox oder Engine DJ noch nicht analysiert hat. „Fehlgeschlagen“ enthält jetzt auch die Titel, die nicht gelesen oder analysiert werden konnten.",
+        "text": "Neue Listenfilter, um zu finden, was noch zu tun ist. Auf einen Blick siehst du die Tracks ohne Cues, ohne Cover oder mit kleinem Cover, ohne BPM oder ohne Tonart, die mit leeren Pflichtfeldern, die mit ungespeicherten Änderungen und die, die rekordbox oder Engine DJ noch nicht analysiert hat. „Fehlgeschlagen“ enthält jetzt auch die Tracks, die nicht gelesen oder analysiert werden konnten.",
         "in": "1.12.1"
       },
       {
-        "text": "FLAC-Cover erscheinen im Finder, wohin die Dateien auch wandern, denn sie reisen jetzt in der Datei selbst mit. Traktor nimmt diese Titel weiterhin in seine Sammlung auf.",
+        "text": "FLAC-Cover erscheinen im Finder, wohin die Dateien auch wandern, denn sie reisen jetzt in der Datei selbst mit. Traktor nimmt diese Tracks weiterhin in seine Sammlung auf.",
         "in": "1.12.1"
       },
       {
@@ -609,11 +609,11 @@
         "in": "1.12.1"
       },
       {
-        "text": "Leerst du die Metadaten eines Titels und füllst sie neu aus, behält das Aktualisieren jetzt alles, was du eingegeben hast. Bisher gingen Titel, Interpret, Album, Jahr und Genre unterwegs verloren.",
+        "text": "Leerst du die Metadaten eines Tracks und füllst sie neu aus, behält das Aktualisieren jetzt alles, was du eingegeben hast. Bisher gingen Titel, Künstler, Album, Jahr und Genre unterwegs verloren.",
         "in": "1.12.2"
       },
       {
-        "text": "Markiere mehrere Titel auf einmal automatisch, von Anfang bis Ende. Mit mehreren ausgewählten wählst du den Ablauf, markierst sie, siehst eine Zusammenfassung des Ergebnisses und übernimmst jeden Vorschlag mit einem Klick. Sie bleiben ungespeichert, damit du jeden noch anpassen kannst, und dann speicherst du alle zusammen.",
+        "text": "Markiere mehrere Tracks auf einmal automatisch, von Anfang bis Ende. Mit mehreren ausgewählten wählst du den Ablauf, markierst sie, siehst eine Zusammenfassung des Ergebnisses und übernimmst jeden Vorschlag mit einem Klick. Sie bleiben ungespeichert, damit du jeden noch anpassen kannst, und dann speicherst du alle zusammen.",
         "in": "1.12.3"
       }
     ]
@@ -624,7 +624,7 @@
     "title": "Engine DJ, wie rekordbox",
     "items": [
       {
-        "text": "Neuer Engine-DJ-Tab, neben Music und rekordbox. Du siehst deine Engine-DJ-Playlists und setzt Cues für ihre Titel mit demselben Editor, Auto-Markieren inklusive. Engine DJ speichert nur Hot Cues, deshalb werden CALL-Punkte nicht übertragen, und Surco sagt dir das. Der Tab erscheint, wenn du eine Engine-DJ-Bibliothek hast.",
+        "text": "Neuer Engine-DJ-Tab, neben Music und rekordbox. Du siehst deine Engine-DJ-Playlists und setzt Cues für ihre Tracks mit demselben Editor, Auto-Markieren inklusive. Engine DJ speichert nur Hot Cues, deshalb werden CALL-Punkte nicht übertragen, und Surco sagt dir das. Der Tab erscheint, wenn du eine Engine-DJ-Bibliothek hast.",
         "in": "1.11.0"
       },
       {
@@ -632,27 +632,27 @@
         "in": "1.11.0"
       },
       {
-        "text": "Bei geöffnetem Surco wandern die Cues, die du auf einem von rekordbox noch nicht analysierten Titel gesetzt hast, auf das Grid von rekordbox, sobald du es schließt, ganz ohne Neustart. Liegt einer weit weg von jedem Schlag, bietet der Hinweis „Zum Cue“ an und öffnet den Titel im Editor direkt an diesem Cue.",
+        "text": "Bei geöffnetem Surco wandern die Cues, die du auf einem von rekordbox noch nicht analysierten Track gesetzt hast, auf das Grid von rekordbox, sobald du es schließt, ganz ohne Neustart. Liegt einer weit weg von jedem Beat, bietet der Hinweis „Zum Cue“ an und öffnet den Track im Editor direkt an diesem Cue.",
         "in": "1.11.0"
       },
       {
-        "text": "Konvertiere einen Titel mit neuem Cover, und Traktor zeigt es nur bei diesem Titel. Vorher übertrug es das Cover auch auf den Rest des Albums.",
+        "text": "Konvertiere einen Track mit neuem Cover, und Traktor zeigt es nur bei diesem Track. Vorher übertrug es das Cover auch auf den Rest des Albums.",
         "in": "1.11.0"
       },
       {
-        "text": "Die Wellen in der Liste sehen aus wie die im Player. Ein sehr lautes Master erscheint nicht mehr als massiver Block.",
+        "text": "Die Wellenformen in der Liste sehen aus wie die im Player. Ein sehr lautes Master erscheint nicht mehr als massiver Block.",
         "in": "1.11.0"
       },
       {
-        "text": "Einen Titel, den du in rekordbox hast, zu konvertieren, verschiebt seine Cue-Punkte nicht mehr. Sie bleiben auf demselben Schlag, wenn du das Format wechselst oder die Stille am Anfang abschneidest, und rekordbox analysiert ihn beim Öffnen neu, sodass du die Wellenform der neuen Datei siehst statt die der alten.",
+        "text": "Einen Track, den du in rekordbox hast, zu konvertieren, verschiebt seine Cue-Points nicht mehr. Sie bleiben auf demselben Beat, wenn du das Format wechselst oder die Stille am Anfang abschneidest, und rekordbox analysiert ihn beim Öffnen neu, sodass du die Wellenform der neuen Datei siehst statt die der alten.",
         "in": "1.11.1"
       },
       {
-        "text": "Der Vollbild-Cue-Editor ist aufgeräumter. Die gezoomte Welle behält eine ruhige Höhe, alles beginnt direkt unter dem Titel, und unter der Übersicht siehst du die Phrasen, die rekordbox markiert hat (Intro, Up, Chorus, Down, Outro…). So erkennst du auf einen Blick, in welchen Teil des Tracks jeder Cue fällt.",
+        "text": "Der Vollbild-Cue-Editor ist aufgeräumter. Die gezoomte Wellenform behält eine ruhige Höhe, alles beginnt direkt unter dem Track, und unter der Übersicht siehst du die Phrasen, die rekordbox markiert hat (Intro, Up, Chorus, Down, Outro…). So erkennst du auf einen Blick, in welchen Teil des Tracks jeder Cue fällt.",
         "in": "1.11.2"
       },
       {
-        "text": "Neue Schaltfläche „Alle Cues löschen“ im Vollbild-Cue-Editor. Sie entfernt Hot Cues und CALL-Punkte in einem Rutsch, und ⌘Z holt sie zurück, falls du es dir anders überlegst.",
+        "text": "Neuer Button „Alle Cues löschen“ im Vollbild-Cue-Editor. Sie entfernt Hot Cues und CALL-Punkte in einem Rutsch, und ⌘Z holt sie zurück, falls du es dir anders überlegst.",
         "in": "1.11.2"
       },
       {
@@ -667,19 +667,19 @@
     "title": "Cues, ohne auf rekordbox zu warten",
     "items": [
       {
-        "text": "Auto-Markieren schlägt vor, wo jeder Titel losbricht, und zeigt halbtransparent, was dein Ablauf setzen würde. Übernimm die Vorschläge mit Return, alle auf einmal oder einzeln, und verwirf die, die dir nicht gefallen. Gespeichert wird erst, wenn du übernimmst.",
+        "text": "Auto-Markieren schlägt vor, wo bei jedem Track der Drop kommt, und zeigt halbtransparent, was dein Ablauf setzen würde. Übernimm die Vorschläge mit Return, alle auf einmal oder einzeln, und verwirf die, die dir nicht gefallen. Gespeichert wird erst, wenn du übernimmst.",
         "in": "1.10.0"
       },
       {
-        "text": "Wähle mehrere Titel einer rekordbox-Playlist aus und drück „Auswahl auto-markieren“. Jede Zeile sagt dir, was gefunden wurde, und „N Titel in rekordbox speichern“ speichert alle geprüften Titel in einem Rutsch.",
+        "text": "Wähle mehrere Tracks einer rekordbox-Playlist aus und drück „Auswahl auto-markieren“. Jede Zeile sagt dir, was gefunden wurde, und „N Tracks in rekordbox speichern“ speichert alle geprüften Tracks in einem Rutsch.",
         "in": "1.10.0"
       },
       {
-        "text": "Du kannst jetzt Cues auf einem Titel setzen, den rekordbox noch nicht analysiert hat, ohne ihn dort zu öffnen. Surco misst Tempo und Grid selbst, und sobald rekordbox den Titel analysiert, verschiebt es deine Cues auf dessen Grid und sagt dir, wie weit sie gewandert sind. Nicht analysierte Zeilen sagen das auch.",
+        "text": "Du kannst jetzt Cues auf einem Track setzen, den rekordbox noch nicht analysiert hat, ohne ihn dort zu öffnen. Surco misst Tempo und Grid selbst, und sobald rekordbox den Track analysiert, verschiebt es deine Cues auf dessen Grid und sagt dir, wie weit sie gewandert sind. Nicht analysierte Zeilen sagen das auch.",
         "in": "1.10.0"
       },
       {
-        "text": "„Zuletzt hinzugefügt“ steht im rekordbox-Baum ganz oben, mit den Titeln der letzten 30 Tage, die neuesten zuerst.",
+        "text": "„Zuletzt hinzugefügt“ steht im rekordbox-Baum ganz oben, mit den Tracks der letzten 30 Tage, die neuesten zuerst.",
         "in": "1.10.0"
       },
       {
@@ -687,11 +687,11 @@
         "in": "1.10.0"
       },
       {
-        "text": "Unter Windows findet Surco die Titel, die du konvertierst, in rekordbox, sodass sie mit ihren Playlists und Cues aktuell bleiben.",
+        "text": "Unter Windows findet Surco die Tracks, die du konvertierst, in rekordbox, sodass sie mit ihren Playlists und Cues aktuell bleiben.",
         "in": "1.10.0"
       },
       {
-        "text": "Tags werden so gespeichert, wie du sie schreibst. Ein Semikolon schneidet kein Feld mehr ab, Interpreten mit Schrägstrich werden vollständig zurückgelesen und ein WAV behält seinen Interpreten.",
+        "text": "Tags werden so gespeichert, wie du sie schreibst. Ein Semikolon schneidet kein Feld mehr ab, Künstler mit Schrägstrich werden vollständig zurückgelesen und ein WAV behält seinen Künstler.",
         "in": "1.10.0"
       },
       {
@@ -699,7 +699,7 @@
         "in": "1.10.0"
       },
       {
-        "text": "Wenn du Surco während einer Stapelkonvertierung schließt, fragt es vorher nach, auch zwischen zwei Titeln, und mit der Bestätigung stoppen die laufenden Konvertierungen.",
+        "text": "Wenn du Surco während einer Stapelkonvertierung schließt, fragt es vorher nach, auch zwischen zwei Tracks, und mit der Bestätigung stoppen die laufenden Konvertierungen.",
         "in": "1.10.0"
       }
     ]
@@ -710,19 +710,19 @@
     "title": "rekordbox in Surco",
     "items": [
       {
-        "text": "Deine rekordbox-Playlists erscheinen in der Seitenleiste neben denen aus Apple Music. Öffne eine und bearbeite sie in Surco in ihrer eigenen Reihenfolge, mit der Wellenform und den Cues von rekordbox auf jedem Titel.",
+        "text": "Deine rekordbox-Playlists erscheinen in der Seitenleiste neben denen aus Apple Music. Öffne eine und bearbeite sie in Surco in ihrer eigenen Reihenfolge, mit der Wellenform und den Cues von rekordbox auf jedem Track.",
         "in": "1.9.0"
       },
       {
-        "text": "Organisiere rekordbox aus Surco heraus. Erstelle, benenne und lösche Playlists und Ordner, füge Titel hinzu, entferne und sortiere sie und wähle im Editor, in welchen Playlists jeder Titel steckt. Ist rekordbox geöffnet, warten die Änderungen, bis du es schließt, und Surco legt vor dem Schreiben eine Sicherung an.",
+        "text": "Organisiere rekordbox aus Surco heraus. Erstelle Playlists und Ordner, benenne sie um und lösche sie, füge Tracks hinzu, entferne und sortiere sie und wähle im Editor, in welchen Playlists jeder Track steckt. Ist rekordbox geöffnet, warten die Änderungen, bis du es schließt, und Surco legt vor dem Schreiben eine Sicherung an.",
         "in": "1.9.0"
       },
       {
-        "text": "Ein neuer Cue-Editor auf der Wellenform von rekordbox, mit ihrem Grid und der roten Linie auf jedem Takt. Füge Hot Cues und Memory Cues hinzu oder entferne sie, zieh sie an ihren Platz, lass sie auf Schlag oder Takt einrasten und mach Schritte rückgängig. Arbeite im Panel oder im Vollbild mit Tastenkürzeln.",
+        "text": "Ein neuer Cue-Editor auf der Wellenform von rekordbox, mit ihrem Grid und der roten Linie auf jedem Takt. Füge Hot Cues und Memory Cues hinzu oder entferne sie, zieh sie an ihren Platz, lass sie auf Beat oder Takt einrasten und mach Schritte rückgängig. Arbeite im Panel oder im Vollbild mit Tastenkürzeln.",
         "in": "1.9.0"
       },
       {
-        "text": "Cue-Abläufe. Wähle einen Ablauf, etwa Mix in 64, Mix in 32 oder einen eigenen, und fahr über die Wellenform, um halbtransparent zu sehen, was er setzen würde. Ein Klick setzt ihn dort. Die Buchstaben folgen dem Titel, A ist also immer der erste, und du kannst das abschalten, wenn jeder Buchstabe für dich ein festes Pad ist.",
+        "text": "Cue-Abläufe. Wähle einen Ablauf, etwa Mix in 64, Mix in 32 oder einen eigenen, und fahr über die Wellenform, um halbtransparent zu sehen, was er setzen würde. Ein Klick setzt ihn dort. Die Buchstaben folgen dem Track, A ist also immer der erste, und du kannst das abschalten, wenn jeder Buchstabe für dich ein festes Pad ist.",
         "in": "1.9.0"
       },
       {
@@ -730,7 +730,7 @@
         "in": "1.9.0"
       },
       {
-        "text": "Mit „rekordbox-Sammlung beim Konvertieren aktualisieren“ in den Einstellungen bleibt ein konvertierter Titel in rekordbox derselbe Titel, mit seinen Playlists und Cues. Und wenn du die Tags eines rekordbox-Titels bearbeitest, wird seine Datei nicht mehr umbenannt.",
+        "text": "Mit „rekordbox-Sammlung beim Konvertieren aktualisieren“ in den Einstellungen bleibt ein konvertierter Track in rekordbox derselbe Track, mit seinen Playlists und Cues. Und wenn du die Tags eines rekordbox-Tracks bearbeitest, wird seine Datei nicht mehr umbenannt.",
         "in": "1.9.0"
       },
       {
@@ -749,7 +749,7 @@
     "title": "Saubereres Vinyl",
     "items": [
       {
-        "text": "Die Vinyl-Reparatur senkt jetzt auch das Hintergrundrauschen, das gleichmäßige Rauschen der Platte, das du vor allem in den Breaks hörst. Es gibt drei Stufen, Sanft, Mittel und Stark, und jede entfernt auch das Rumpeln des Plattenspielers. Wähle sie pro Titel im Editor, im A/B-Vergleich, oder als Standard für jede Konvertierung.",
+        "text": "Die Vinyl-Reparatur senkt jetzt auch das Hintergrundrauschen, das gleichmäßige Rauschen der Platte, das du vor allem in den Breaks hörst. Es gibt drei Stufen, Sanft, Mittel und Stark, und jede entfernt auch das Rumpeln des Plattenspielers. Wähle sie pro Track im Editor, im A/B-Vergleich, oder als Standard für jede Konvertierung.",
         "in": "1.8.0"
       },
       {
@@ -761,7 +761,7 @@
         "in": "1.8.1"
       },
       {
-        "text": "Einstellungen werden jetzt sofort übernommen, wie unter macOS. Jede Änderung speichert sich selbst und es gibt keine Speichern-Schaltfläche mehr, sodass beim Schließen mit Escape oder einem Klick daneben nichts verloren geht.",
+        "text": "Einstellungen werden jetzt sofort übernommen, wie unter macOS. Jede Änderung speichert sich selbst und es gibt keinen Speichern-Button mehr, sodass beim Schließen mit Escape oder einem Klick daneben nichts verloren geht.",
         "in": "1.8.2"
       },
       {
@@ -769,15 +769,15 @@
         "in": "1.8.2"
       },
       {
-        "text": "Welle und Prognose der Lautheitsnormalisierung folgen wieder dem Zielwert, während du ihn anpasst. Mit den Pfeilen ändern sie sich sofort, beim Tippen, sobald du aufhörst.",
+        "text": "Wellenform und Prognose der Lautheitsnormalisierung folgen wieder dem Zielwert, während du ihn anpasst. Mit den Pfeilen ändern sie sich sofort, beim Tippen, sobald du aufhörst.",
         "in": "1.8.3"
       },
       {
-        "text": "Surco erkennt besser, welche Titel du schon in Apple Music hast. Stimmen Titel und Länge überein, zählt er als deiner, auch wenn der Interpret anders geschrieben ist oder fehlt.",
+        "text": "Surco erkennt besser, welche Tracks du schon in Apple Music hast. Stimmen Titel und Länge überein, zählt er als deiner, auch wenn der Künstler anders geschrieben ist oder fehlt.",
         "in": "1.8.3"
       },
       {
-        "text": "Bandcamp-Downloads von der Seite eines Labels übernehmen den im Titel genannten Interpreten, nicht das Label.",
+        "text": "Bandcamp-Downloads von der Seite eines Labels übernehmen den im Titel genannten Künstler, nicht das Label.",
         "in": "1.8.3"
       },
       {
@@ -789,11 +789,11 @@
         "in": "1.8.3"
       },
       {
-        "text": "Hast du denselben Titel zweimal in der Liste, markiert Surco neben dem Interpreten, welche Kopie die bessere ist und warum. Es entscheidet nach dem, was es misst, nicht nach dem, was die Datei behauptet: Es prüft, ob eine Kopie verlustbehaftet ist, ob ihr Höhen fehlen oder, wenn beide vom selben Master stammen, welche durch einen Limiter gelaufen ist. Findet es keinen Unterschied, wählt es keine.",
+        "text": "Hast du denselben Track zweimal in der Liste, markiert Surco neben dem Künstler, welche Kopie die bessere ist und warum. Es entscheidet nach dem, was es misst, nicht nach dem, was die Datei behauptet: Es prüft, ob eine Kopie verlustbehaftet ist, ob ihr Höhen fehlen oder, wenn beide vom selben Master stammen, welche durch einen Limiter gelaufen ist. Findet es keinen Unterschied, wählt es keine.",
         "in": "1.8.4"
       },
       {
-        "text": "Öffnest du einen Titel, den du schon in Apple Music hast, vergleicht Audioqualität ihn mit der Kopie in deiner Bibliothek und sagt dir, welche du behalten solltest, mit den Zahlen daneben.",
+        "text": "Öffnest du einen Track, den du schon in Apple Music hast, vergleicht der Abschnitt „Audioqualität“ ihn mit der Kopie in deiner Mediathek und sagt dir, welche du behalten solltest, mit den Zahlen daneben.",
         "in": "1.8.4"
       },
       {
@@ -816,15 +816,15 @@
         "in": "1.7.0"
       },
       {
-        "text": "Dieselbe Prüfung zeigt die Titel, die du doppelt in Apple Music hast. Sie vergleicht jede Kopie nach Titel, Format, Datum des Hinzufügens und dem, was sie in rekordbox hat, und eine Schaltfläche kopiert den Titel, damit du ihn nachschlagen kannst. Entfernst du eine, übernimmt die behaltene Kopie ihre Playlists in Music, rekordbox, Engine DJ und Traktor, und ihre Datei wandert in den Papierkorb.",
+        "text": "Dieselbe Prüfung zeigt die Tracks, die du doppelt in Apple Music hast. Sie vergleicht jede Kopie nach Titel, Format, Datum des Hinzufügens und dem, was sie in rekordbox hat, und ein Button kopiert den Titel, damit du ihn nachschlagen kannst. Entfernst du eine, übernimmt die behaltene Kopie ihre Playlists in Music, rekordbox, Engine DJ und Traktor, und ihre Datei wandert in den Papierkorb.",
         "in": "1.7.0"
       },
       {
-        "text": "Sie funktioniert auch mit dem, was in deiner Liste steht. Zieh einen Ordner hinein, und findet sie Schreibweisen oder Duplikate, sagt Surco dir Bescheid und du öffnest sie mit einem Klick, über das Menü ⋯ in der Werkzeugleiste der Liste, über Titel oder über ⌘K.",
+        "text": "Sie funktioniert auch mit dem, was in deiner Liste steht. Zieh einen Ordner hinein, und findet sie Schreibweisen oder Duplikate, sagt Surco dir Bescheid und du öffnest sie mit einem Klick, über das Menü ⋯ in der Werkzeugleiste der Liste, über den Tab „Tracks“ oder über ⌘K.",
         "in": "1.7.0"
       },
       {
-        "text": "Der Startbildschirm ist jetzt eine Liste von Aktionen: Titel hinzufügen, aus Apple Music importieren, Metadaten prüfen und Duplikate anzeigen, jeweils mit einer Erklärung, was sie tun.",
+        "text": "Der Startbildschirm ist jetzt eine Liste von Aktionen: Tracks hinzufügen, aus Apple Music importieren, Metadaten prüfen und Duplikate anzeigen, jeweils mit einer Erklärung, was sie tun.",
         "in": "1.7.0"
       },
       {
@@ -832,19 +832,19 @@
         "in": "1.7.0"
       },
       {
-        "text": "Löschst du einen Titel von einem Laufwerk ohne Papierkorb, etwa einem NAS, ist er nicht mehr endgültig weg. Er landet in den Sicherungskopien, und die Abfrage sagt vorher, wohin jede Datei geht.",
+        "text": "Löschst du einen Track von einem Laufwerk ohne Papierkorb, etwa einem NAS, ist er nicht mehr endgültig weg. Er landet in Backups, und die Abfrage sagt vorher, wohin jede Datei geht.",
         "in": "1.7.0"
       },
       {
-        "text": "Die Suche findet ein Release besser, wenn du Interpret und Album eingibst, und unterscheidet seine Editionen, um die zuerst zu zeigen, die im Tag deines Titels steht.",
+        "text": "Die Suche findet ein Release besser, wenn du Künstler und Album eingibst, und unterscheidet seine Editionen, um die zuerst zu zeigen, die im Tag deines Tracks steht.",
         "in": "1.7.0"
       },
       {
-        "text": "Die Einstellung Sicherungskopien tut jetzt, was sie sagt. „Nur wenn sich das Audio ändert“ legt keine Kopie mehr an, wenn du nur Tags aktualisierst, und „Nie“ behält keine. Die Metadatenprüfung behält immer ihre eigene, damit Rückgängig funktioniert, und mit „Nie“ ist Löschen auf einem Laufwerk ohne Papierkorb endgültig, mit einer Warnung, die das vor dem Bestätigen sagt.",
+        "text": "Die Einstellung Backups tut jetzt, was sie sagt. „Nur wenn sich das Audio ändert“ legt keine Kopie mehr an, wenn du nur Tags aktualisierst, und „Nie“ behält keine. Die Metadatenprüfung behält immer ihre eigene, damit Rückgängig funktioniert, und mit „Nie“ ist Löschen auf einem Laufwerk ohne Papierkorb endgültig, mit einer Warnung, die das vor dem Bestätigen sagt.",
         "in": "1.7.1"
       },
       {
-        "text": "Neue Einstellung in Suche, um beim Laden zu bereinigen, standardmäßig aus. Sie entfernt überzählige Leerzeichen und unsichtbare Zeichen aus Titel, Interpret, Album und Genre und kann außerdem Groß- und Kleinschreibung und Akzente an die Schreibweise anpassen, die deine Bibliothek am häufigsten nutzt. Die obere Leiste zählt die bereinigten Titel, jede Zeile trägt eine Markierung und der Editor sagt, was sich geändert hat, mit Rückgängig. Geschrieben wird erst, wenn du konvertierst oder aktualisierst.",
+        "text": "Neue Einstellung in Suche, um beim Laden zu bereinigen, standardmäßig aus. Sie entfernt überzählige Leerzeichen und unsichtbare Zeichen aus Titel, Künstler, Album und Genre und kann außerdem Groß- und Kleinschreibung und Akzente an die Schreibweise anpassen, die deine Bibliothek am häufigsten nutzt. Die obere Leiste zählt die bereinigten Tracks, jede Zeile trägt eine Markierung und der Editor sagt, was sich geändert hat, mit Rückgängig. Geschrieben wird erst, wenn du konvertierst oder aktualisierst.",
         "in": "1.7.2"
       },
       {
@@ -856,7 +856,7 @@
         "in": "1.7.3"
       },
       {
-        "text": "Vinylseiten, die unter dem Namen aufgenommen wurden, den der Recorder vergibt, etwa Track 01 oder A1, werden über die Dauer den Titeln der Platte zugeordnet, und ein A1 im Namen zählt als Position.",
+        "text": "Vinylseiten, die unter dem Namen aufgenommen wurden, den der Recorder vergibt, etwa Track 01 oder A1, werden über die Dauer den Tracks der Platte zugeordnet, und ein A1 im Namen zählt als Position.",
         "in": "1.7.3"
       },
       {
@@ -864,7 +864,7 @@
         "in": "1.7.3"
       },
       {
-        "text": "Im Editor wird das Apple-Music-Abzeichen bernsteinfarben, wenn die Kopie in deiner Bibliothek besser ist als die Datei, die sie ersetzen soll.",
+        "text": "Im Editor wird das Apple-Music-Badge gelb, wenn die Kopie in deiner Mediathek besser ist als die Datei, die sie ersetzen soll.",
         "in": "1.7.3"
       },
       {
@@ -880,15 +880,15 @@
         "in": "1.7.3"
       },
       {
-        "text": "Gehst du zum nächsten Titel, steht das Release, das du beim letzten angewendet hast, ganz oben in den Suchergebnissen. Die Liste verschiebt sich nicht mehr, während dein Zeiger darüber ist, und späte Antworten werden unten angefügt.",
+        "text": "Gehst du zum nächsten Track, steht das Release, das du beim letzten angewendet hast, ganz oben in den Suchergebnissen. Die Liste verschiebt sich nicht mehr, während dein Zeiger darüber ist, und späte Antworten werden unten angefügt.",
         "in": "1.7.4"
       },
       {
-        "text": "Surco merkt sich für die Sitzung Format und Ziel, die du für jeden Titel gewählt hast, und die Konvertieren-Schaltfläche sagt, wohin die Datei geht: in den Ausgabeordner, neben das Original oder darüber. Steht ein Überschreiben an, fragt es einmal pro Sitzung statt bei jedem Titel.",
+        "text": "Surco merkt sich für die Sitzung Format und Ziel, die du für jeden Track gewählt hast, und der Konvertieren-Button sagt, wohin die Datei geht: in den Ausgabeordner, neben das Original oder darüber. Steht ein Überschreiben an, fragt es einmal pro Sitzung statt bei jedem Track.",
         "in": "1.7.4"
       },
       {
-        "text": "Der Editor öffnet den nächsten Titel an derselben Scrollposition, an der du den letzten verlassen hast, und jede Kürzungsspur behält ihren Zoom.",
+        "text": "Der Editor öffnet den nächsten Track an derselben Scrollposition, an der du den letzten verlassen hast, und jede Kürzungsspur behält ihren Zoom.",
         "in": "1.7.4"
       },
       {
@@ -896,7 +896,7 @@
         "in": "1.7.4"
       },
       {
-        "text": "Die Welle der Knackser-Reparatur lässt sich im Zoom mit der Maus ziehen, mit einer Übersicht des ganzen Titels, um dich darin zu bewegen.",
+        "text": "Die Wellenform der Knackser-Reparatur lässt sich im Zoom mit der Maus ziehen, mit einer Übersicht des ganzen Tracks, um dich darin zu bewegen.",
         "in": "1.7.4"
       },
       {
@@ -923,7 +923,7 @@
         "in": "1.6.0"
       },
       {
-        "text": "Bearbeitest du einen Titel, der schon in Apple Music ist, bietet die Schaltfläche jetzt „In Apple Music aktualisieren“ an und überträgt die Änderung auf die Kopie, die du schon hast, statt so zu klingen, als würde sie eine zweite hinzufügen. Und wenn du eine Kopie in Music ersetzt und Music die alte nicht loslässt, geht die Konvertierung nicht mehr verloren und Surco sagt dir, dass die alte Kopie noch da ist.",
+        "text": "Bearbeitest du einen Track, der schon in Apple Music ist, bietet der Button jetzt „In Apple Music aktualisieren“ an und überträgt die Änderung auf die Kopie, die du schon hast, statt so zu klingen, als würde sie eine zweite hinzufügen. Und wenn du eine Kopie in Music ersetzt und Music die alte nicht loslässt, geht die Konvertierung nicht mehr verloren und Surco sagt dir, dass die alte Kopie noch da ist.",
         "in": "1.6.1"
       },
       {
@@ -931,23 +931,23 @@
         "in": "1.6.1"
       },
       {
-        "text": "Ist ein Titel schon in Apple Music, sagt sein Bibliotheksabzeichen jetzt, in welchem Format die Kopie dort vorliegt (zum Beispiel MP3 320 oder AIFF 16/44.1), damit du siehst, ob sich das Ersetzen lohnt. Und sobald du einen Titel an Apple Music schickst, bestätigt Surco, dass er deiner Bibliothek hinzugefügt wurde, statt dich auf den Quellordner zu verweisen.",
+        "text": "Ist ein Track schon in Apple Music, sagt sein Mediathek-Badge jetzt, in welchem Format die Kopie dort vorliegt (zum Beispiel MP3 320 oder AIFF 16/44.1), damit du siehst, ob sich das Ersetzen lohnt. Und sobald du einen Track an Apple Music schickst, bestätigt Surco, dass er deiner Mediathek hinzugefügt wurde, statt dich auf den Quellordner zu verweisen.",
         "in": "1.6.2"
       },
       {
-        "text": "Die Suche findet mehr Releases, die zwei Acts zugeschrieben sind. Ein Titel von „Miguel Serna & Álex Cervera“ findet das Release jetzt auch, wenn der Katalog es als „Miguel Serna, Alex Cervera“ führt.",
+        "text": "Die Suche findet mehr Releases, die zwei Acts zugeschrieben sind. Ein Track von „Miguel Serna & Álex Cervera“ findet das Release jetzt auch, wenn der Katalog es als „Miguel Serna, Alex Cervera“ führt.",
         "in": "1.6.2"
       },
       {
-        "text": "Ein Titel, den Surco in einem überwachten Ordner konvertiert, erscheint nicht mehr als neuer Titel in der Liste.",
+        "text": "Ein Track, den Surco in einem überwachten Ordner konvertiert, erscheint nicht mehr als neuer Track in der Liste.",
         "in": "1.6.2"
       },
       {
-        "text": "Neue Einstellung „Engine-DJ-Bibliothek beim Konvertieren aktualisieren“: Konvertiere einen Titel, den du in Engine DJ hast, und er bleibt derselbe Titel, mit seinen Playlists und Cue-Punkten. Vor dem Schreiben sichert Surco die Bibliothek, und es schreibt nie, solange Engine DJ geöffnet ist.",
+        "text": "Neue Einstellung „Engine-DJ-Bibliothek beim Konvertieren aktualisieren“: Konvertiere einen Track, den du in Engine DJ hast, und er bleibt derselbe Track, mit seinen Playlists und Cue-Pointsn. Vor dem Schreiben sichert Surco die Bibliothek, und es schreibt nie, solange Engine DJ geöffnet ist.",
         "in": "1.6.3"
       },
       {
-        "text": "Mit aktiver rekordbox-Synchronisierung bekommt rekordbox beim Konvertieren oder Aktualisieren auch, was du in Surco bearbeitet hast: Titel, Interpret, Album, Genre, Label, Remixer, Kommentar, Jahr, Titel- und Discnummer sowie das Cover. Du musst nicht mehr alles dort noch einmal eintippen. BPM und Tonart bleiben unberührt, und ein Feld, das du in Surco leer lässt, löscht das in rekordbox nicht.",
+        "text": "Mit aktiver rekordbox-Synchronisierung bekommt rekordbox beim Konvertieren oder Aktualisieren auch, was du in Surco bearbeitet hast: Titel, Künstler, Album, Genre, Label, Remixer, Kommentar, Jahr, Track- und Discnummer sowie das Cover. Du musst nicht mehr alles dort noch einmal eintippen. BPM und Tonart bleiben unberührt, und ein Feld, das du in Surco leer lässt, löscht das in rekordbox nicht.",
         "in": "1.6.3"
       },
       {
@@ -955,7 +955,7 @@
         "in": "1.6.3"
       },
       {
-        "text": "Die Titelliste lässt sich jetzt nach Titelnummer sortieren, Disc für Disc, sodass ein Album in seiner Reihenfolge erscheint.",
+        "text": "Die Trackliste lässt sich jetzt nach Tracknummer sortieren, Disc für Disc, sodass ein Album in seiner Reihenfolge erscheint.",
         "in": "1.6.3"
       }
     ]
@@ -963,14 +963,14 @@
   {
     "version": "1.5",
     "date": "September 30, 2026",
-    "title": "Apple Music auch für hineingezogene Titel",
+    "title": "Apple Music auch für hineingezogene Tracks",
     "items": [
       {
-        "text": "Ein Titel aus deiner Apple-Music-Bibliothek bekommt jetzt, was Music über ihn weiß, auch wenn du ihn hineinziehst oder aus einem Ordner öffnest, genau wie beim Import einer Playlist: Fehlen der Datei Gruppierung, Jahr, Kommentar, BPM, Titel- oder Discnummer, Sterne oder Cover, übernimmt Surco sie aus Music. Was die Datei schon hat, hat immer Vorrang, es wird nur der Music-Eintrag genau dieser Datei verwendet, nie eine andere Kopie des Songs, und ein Cover, das du von Hand entfernt hast, bleibt entfernt. Nur unter macOS.",
+        "text": "Ein Track aus deiner Apple-Music-Mediathek bekommt jetzt, was Music über ihn weiß, auch wenn du ihn hineinziehst oder aus einem Ordner öffnest, genau wie beim Import einer Playlist: Fehlen der Datei Gruppierung, Jahr, Kommentar, BPM, Track- oder Discnummer, Sterne oder Cover, übernimmt Surco sie aus Music. Was die Datei schon hat, hat immer Vorrang, es wird nur der Music-Eintrag genau dieser Datei verwendet, nie eine andere Kopie des Songs, und ein Cover, das du von Hand entfernt hast, bleibt entfernt. Nur unter macOS.",
         "in": "1.5.0"
       },
       {
-        "text": "Öffnest du einen Titel, erscheinen bereits erledigte Analysen (Wellenform, Qualität, Lautheit, Knackser, BPM und Tonart) sofort, und die fehlenden starten direkt statt nach einer kurzen Wartezeit.",
+        "text": "Öffnest du einen Track, erscheinen bereits erledigte Analysen (Wellenform, Qualität, Lautheit, Knackser, BPM und Tonart) sofort, und die fehlenden starten direkt statt nach einer kurzen Wartezeit.",
         "in": "1.5.0"
       }
     ]
@@ -985,19 +985,19 @@
         "in": "1.4.0"
       },
       {
-        "text": "Neue Einstellung „Zuerst nach Album suchen“ unter Einstellungen → Suche: Haben deine Dateien das Album, sucht Surco zuerst danach und erst dann nach dem Titel, und wird es nicht gefunden, sucht es wie immer nach dem Titel. Standardmäßig ist sie aus.",
+        "text": "Neue Einstellung „Zuerst nach Album suchen“ unter Einstellungen → Suche: Haben deine Dateien das Album, sucht Surco zuerst danach, und wird es nicht gefunden, sucht es wie immer nach dem Track. Standardmäßig ist sie aus.",
         "in": "1.4.0"
       },
       {
-        "text": "Hat eine Quelle deinen Titel nicht, zeigt sie dir keine Releases anderer Interpreten mit ähnlichem Titel mehr: Ihre Liste bleibt leer und du kannst dich auf die Quellen konzentrieren, die ihn haben. In einem Durchlauf mit 120 echten Titeln sanken die Antworten, die nur Releases anderer Interpreten enthielten, von einem Viertel bis einem Drittel auf weniger als eine von zehn, ohne ein einziges Ergebnis des Interpreten zu verlieren.",
+        "text": "Hat eine Quelle deinen Track nicht, zeigt sie dir keine Releases anderer Künstler mit ähnlichem Titel mehr: Ihre Liste bleibt leer und du kannst dich auf die Quellen konzentrieren, die ihn haben. In einem Durchlauf mit 120 echten Tracks sanken die Antworten, die nur Releases anderer Künstler enthielten, von einem Viertel bis einem Drittel auf weniger als eine von zehn, ohne ein einziges Ergebnis des Künstlers zu verlieren.",
         "in": "1.4.0"
       },
       {
-        "text": "Gesucht wird, was du ins Suchfeld tippst: Suchst du einen anderen Song, ziehen die Tags des ausgewählten Titels die Ergebnisse nicht mehr zu seinem eigenen Release. Der Quellenfilter zählt nur die Ergebnisse, die du siehst, und ein Cover, das nicht lädt, lässt den Platz leer statt ein kaputtes Bild zu zeigen.",
+        "text": "Gesucht wird, was du ins Suchfeld tippst: Suchst du einen anderen Song, ziehen die Tags des ausgewählten Tracks die Ergebnisse nicht mehr zu seinem eigenen Release. Der Quellenfilter zählt nur die Ergebnisse, die du siehst, und ein Cover, das nicht lädt, lässt den Platz leer statt ein kaputtes Bild zu zeigen.",
         "in": "1.4.0"
       },
       {
-        "text": "Titel auf einem NAS zu konvertieren, deren Namen Akzente, Tilden oder Umlaute tragen (Tiësto, Señorita, Café…), schlägt nicht mehr fehl und hinterlässt keine versteckten Kopien mehr im Ordner. Und kann eine Konvertierung nicht abgeschlossen werden, bleibt deine Originaldatei, wo sie war, statt in Originale zu landen.",
+        "text": "Tracks auf einem NAS zu konvertieren, deren Namen Akzente, Tilden oder Umlaute tragen (Tiësto, Señorita, Café…), schlägt nicht mehr fehl und hinterlässt keine versteckten Kopien mehr im Ordner. Und kann eine Konvertierung nicht abgeschlossen werden, bleibt deine Originaldatei, wo sie war, statt in Originale zu landen.",
         "in": "1.4.1"
       },
       {
@@ -1005,7 +1005,7 @@
         "in": "1.4.2"
       },
       {
-        "text": "Fehlt etwas, bevor du konvertieren kannst, sagt die Schaltfläche es direkt in ihrer Beschriftung, und ein Klick bringt dich zum fehlenden Feld. Ist die Konvertierung fertig, passen Ergebnis und nächste Schritte in eine einzige Zeile. Menüs, Hinweise und Dialoge bewegen sich ruhiger, und um einen Titel per Wischen zu entfernen, musst du ihn jetzt bis zur Hälfte der Liste ziehen, damit das nicht mehr aus Versehen passiert.",
+        "text": "Fehlt etwas, bevor du konvertieren kannst, sagt der Button es direkt in seiner Beschriftung, und ein Klick bringt dich zum fehlenden Feld. Ist die Konvertierung fertig, passen Ergebnis und nächste Schritte in eine einzige Zeile. Menüs, Hinweise und Dialoge bewegen sich ruhiger, und um einen Track per Wischen zu entfernen, musst du ihn jetzt bis zur Hälfte der Liste ziehen, damit das nicht mehr aus Versehen passiert.",
         "in": "1.4.2"
       }
     ]
@@ -1016,7 +1016,7 @@
     "title": "Beatport in der Suche",
     "items": [
       {
-        "text": "Beatport kommt zu den Suchquellen dazu. Verbinde dein Konto unter Einstellungen → Suche (ein kostenloses reicht), und jeder Titel bringt BPM, Tonart in der Notation, die du nutzt, Mix und ISRC mit, dazu Label, Katalognummer und Cover. Unter mehreren Versionen mit gleichem Titel wählt Surco die, die deine Datei nennt, und der Mix kommt in den Titel, außer er heißt „Original Mix“. Standardmäßig ist es aus, und dein Passwort wird verschlüsselt und nur auf deinem Computer gespeichert.",
+        "text": "Beatport kommt zu den Suchquellen dazu. Verbinde dein Konto unter Einstellungen → Suche (ein kostenloses reicht), und jeder Track bringt BPM, Tonart in der Notation, die du nutzt, Mix und ISRC mit, dazu Label, Katalognummer und Cover. Unter mehreren Versionen mit gleichem Titel wählt Surco die, die deine Datei nennt, und der Mix kommt in den Titel, außer er heißt „Original Mix“. Standardmäßig ist es aus, und dein Passwort wird verschlüsselt und nur auf deinem Computer gespeichert.",
         "in": "1.3.0"
       },
       {
@@ -1036,11 +1036,11 @@
         "in": "1.3.1"
       },
       {
-        "text": "Hat Beatport das Cover eines Releases nicht mehr, wird der Titel trotzdem mit allem anderen konvertiert und behält sein eigenes Cover. Und öffnet Beatport ein Release in deinem Land nicht, sagt Surco dir das, statt dich zu bitten, es erneut zu versuchen.",
+        "text": "Hat Beatport das Cover eines Releases nicht mehr, wird der Track trotzdem mit allem anderen konvertiert und behält sein eigenes Cover. Und öffnet Beatport ein Release in deinem Land nicht, sagt Surco dir das, statt dich zu bitten, es erneut zu versuchen.",
         "in": "1.3.2"
       },
       {
-        "text": "Einige WAV-Dateien ließen sich wegen ihres Albuminterpreten nicht konvertieren. Sie werden jetzt normal konvertiert.",
+        "text": "Einige WAV-Dateien ließen sich wegen ihres Albumkünstlers nicht konvertieren. Sie werden jetzt normal konvertiert.",
         "in": "1.3.3"
       },
       {
@@ -1059,27 +1059,27 @@
     "title": "Treffsicherere Suche",
     "items": [
       {
-        "text": "Label- und Promo-Downloads, die das Label als Interpreten und den echten Namen im Titel tragen, etwa „Francesco Donadoni - Funky Roll“, werden jetzt gefunden: Surco sucht nach dem Interpreten und dem Titel, die im Titel stehen, auch hinter einem vorangestellten „Preview“.",
+        "text": "Label- und Promo-Downloads, die das Label als Künstler und den echten Namen im Titel tragen, etwa „Francesco Donadoni - Funky Roll“, werden jetzt gefunden: Surco sucht nach dem Künstler und dem Track, die im Titel stehen, auch hinter einem vorangestellten „Preview“.",
         "in": "1.2.0"
       },
       {
-        "text": "Unter den Ergebnissen steht ein Release, das dem Interpreten deiner Datei zugeschrieben ist, über einem, das ihn nur erwähnt. Jedes Ergebnis rutscht beim Eintreffen direkt an seinen Platz, statt dass die Liste am Ende neu gemischt wird, und ein spät eintreffendes wird kurz hervorgehoben, damit es dir auffällt.",
+        "text": "Unter den Ergebnissen steht ein Release, das dem Künstler deiner Datei zugeschrieben ist, über einem, das ihn nur erwähnt. Jedes Ergebnis rutscht beim Eintreffen direkt an seinen Platz, statt dass die Liste am Ende neu gemischt wird, und ein spät eintreffendes wird kurz hervorgehoben, damit es dir auffällt.",
         "in": "1.2.0"
       },
       {
-        "text": "Findet Discogs einen Titel nicht, wird dir ein Bandcamp-Treffer desselben Interpreten zur Bestätigung vorgeschlagen, statt kommentarlos zu verschwinden.",
+        "text": "Findet Discogs einen Track nicht, wird dir ein Bandcamp-Treffer desselben Künstler zur Bestätigung vorgeschlagen, statt kommentarlos zu verschwinden.",
         "in": "1.2.0"
       },
       {
-        "text": "Surco fühlt sich bei großen Bibliotheken schneller an: Die Liste reagiert früher beim Importieren und Bearbeiten, dieselbe Suche läuft nie zweimal, und nach dem Konvertieren vieler Titel auf einmal werden rekordbox und Engine DJ in einem einzigen Durchgang aktualisiert. Auch der Download ist kleiner.",
+        "text": "Surco fühlt sich bei großen Bibliotheken schneller an: Die Liste reagiert früher beim Importieren und Bearbeiten, dieselbe Suche läuft nie zweimal, und nach dem Konvertieren vieler Tracks auf einmal werden rekordbox und Engine DJ in einem einzigen Durchgang aktualisiert. Auch der Download ist kleiner.",
         "in": "1.2.0"
       },
       {
-        "text": "Um einen Titel aus der Liste zu entfernen, wisch ihn mit zwei Fingern auf dem Trackpad zur Seite: Er verschwindet sofort, ohne Nachfrage, und die Formatpille rückt beim Darüberfahren nicht mehr zur Seite, um Platz für ein X zu machen.",
+        "text": "Um einen Track aus der Liste zu entfernen, wisch ihn mit zwei Fingern auf dem Trackpad zur Seite: Er verschwindet sofort, ohne Nachfrage, und der Format-Chip rückt beim Darüberfahren nicht mehr zur Seite, um Platz für ein X zu machen.",
         "in": "1.2.1"
       },
       {
-        "text": "Die Formatpille ist in der Farbe des Qualitätsurteils getönt, sodass der Name des Interpreten in der Zeile wieder die volle Breite hat.",
+        "text": "Der Format-Chip ist in der Farbe des Qualitätsurteils getönt, sodass der Name des Künstlers in der Zeile wieder die volle Breite hat.",
         "in": "1.2.1"
       },
       {
@@ -1099,7 +1099,7 @@
         "in": "1.2.3"
       },
       {
-        "text": "Die Gesamtzahl der Titel bekommt dieselbe führende Null wie die Titelnummer, also 01/09 statt 01/9, und diese Null geht beim Aktualisieren eines MP3 nicht mehr verloren.",
+        "text": "Die Gesamtzahl der Tracks bekommt dieselbe führende Null wie die Tracknummer, also 01/09 statt 01/9, und diese Null geht beim Aktualisieren eines MP3 nicht mehr verloren.",
         "in": "1.2.3"
       }
     ]
@@ -1110,7 +1110,7 @@
     "title": "Eine ruhigere Oberfläche",
     "items": [
       {
-        "text": "Surco wirkt ruhiger: Die Bibliothek liest sich als Seitenleiste, die Kopfleiste gruppiert ihre Symbole und setzt die Hauptaktion ans Ende, Spaltenköpfe und Listenwerkzeuge verlieren ihre Kästen, und Scrollleisten erscheinen nur beim Scrollen. Auf der Welle ist nur blau, was schon gespielt wurde, und das Spektrogramm dämpft seine Farben, damit es nicht mehr den Blick auf sich zieht.",
+        "text": "Surco wirkt ruhiger: Die Bibliothek liest sich als Seitenleiste, die Kopfleiste gruppiert ihre Symbole und setzt die Hauptaktion ans Ende, Spaltenköpfe und Listenwerkzeuge verlieren ihre Kästen, und Scrollleisten erscheinen nur beim Scrollen. Auf der Wellenform ist nur blau, was schon gespielt wurde, und das Spektrogramm dämpft seine Farben, damit es nicht mehr den Blick auf sich zieht.",
         "in": "1.1.0"
       },
       {
@@ -1118,7 +1118,7 @@
         "in": "1.1.0"
       },
       {
-        "text": "Fehlen Pflichtfelder, sagt die Hauptschaltfläche es direkt in ihrer Beschriftung, zum Beispiel „Interpret und Titel fehlen“, statt ohne Erklärung abgeblendet dazustehen.",
+        "text": "Fehlen Pflichtfelder, sagt der Haupt-Button es direkt in seiner Beschriftung, zum Beispiel „Künstler und Titel fehlen“, statt ohne Erklärung abgeblendet dazustehen.",
         "in": "1.1.0"
       },
       {
@@ -1126,15 +1126,15 @@
         "in": "1.1.0"
       },
       {
-        "text": "Mit mehreren ausgewählten Titeln schlägt Titel gesamt vor, wie viele es sind, sodass du es mit einem Klick ausfüllst.",
+        "text": "Mit mehreren ausgewählten Tracks schlägt Tracks gesamt vor, wie viele es sind, sodass du es mit einem Klick ausfüllst.",
         "in": "1.1.0"
       },
       {
-        "text": "Titel guter Qualität tragen ihre Markierung wieder in der Liste, einen unauffälligen Punkt immer an derselben Stelle vor dem Format, sodass sich die Qualität der ganzen Spalte auf einen Blick ablesen lässt.",
+        "text": "Tracks guter Qualität tragen ihre Markierung wieder in der Liste, einen unauffälligen Punkt immer an derselben Stelle vor dem Format, sodass sich die Qualität der ganzen Spalte auf einen Blick ablesen lässt.",
         "in": "1.1.0"
       },
       {
-        "text": "Titel mit sehr flachen Höhen ändern ihr Qualitätsurteil nicht mehr, wenn du ein wenig Stille abschneidest.",
+        "text": "Tracks mit sehr flachen Höhen ändern ihr Qualitätsurteil nicht mehr, wenn du ein wenig Stille abschneidest.",
         "in": "1.1.0"
       }
     ]
@@ -1149,31 +1149,31 @@
         "in": "1.0.0"
       },
       {
-        "text": "Der Abschnitt Qualität sagt nur noch, was er misst. Rot bleibt Dateien vorbehalten, die aus einer verlustbehafteten Quelle stammen oder schlechte Qualität haben. Was nur ein Verdacht ist, erscheint in Bernstein und sagt „möglich“. Aufgefüllte Bits und hochgerechnetes Audio gelten nicht mehr als Mangel, weil sie gleich klingen. Die Zeilen sind kürzer, und mit ausgeschalteten „Erklärungen im Editor“ gibt es eine Zeile pro Befund.",
+        "text": "Der Abschnitt Qualität sagt nur noch, was er misst. Rot bleibt Dateien vorbehalten, die aus einer verlustbehafteten Quelle stammen oder schlechte Qualität haben. Was nur ein Verdacht ist, erscheint in Gelb und sagt „möglich“. Aufgefüllte Bits und hochgerechnetes Audio gelten nicht mehr als Mangel, weil sie gleich klingen. Die Zeilen sind kürzer, und mit ausgeschalteten „Erklärungen im Editor“ gibt es eine Zeile pro Befund.",
         "in": "1.0.0"
       },
       {
-        "text": "Club-Master mit stark limitierten Höhen erscheinen nicht mehr als „Nachbearbeitet“, und die Urteile ändern sich nicht mehr, wenn du eine Sekunde Stille abschneidest: In einem Durchlauf mit fast 600 Titeln sanken die so kippenden Alarme von 9 auf 1, ohne dass bei sauberen Dateien welche hinzukamen.",
+        "text": "Club-Master mit stark limitierten Höhen erscheinen nicht mehr als „Nachbearbeitet“, und die Urteile ändern sich nicht mehr, wenn du eine Sekunde Stille abschneidest: In einem Durchlauf mit fast 600 Tracks sanken die so kippenden Alarme von 9 auf 1, ohne dass bei sauberen Dateien welche hinzukamen.",
         "in": "1.0.0"
       },
       {
-        "text": "Wenn du die Lautstärke angleichst, bleibt die fertige Datei wirklich unter der gewünschten Spitzengrenze, in MP3 und auch in AIFF, WAV und FLAC. Um sie einzuhalten, kann ein Titel ein paar Zehntel unter der Ziellautheit enden, und der Plan des Titels sagt es dir.",
+        "text": "Wenn du die Lautstärke angleichst, bleibt die fertige Datei wirklich unter der gewünschten Peak-Obergrenze, in MP3 und auch in AIFF, WAV und FLAC. Um sie einzuhalten, kann ein Track ein paar Zehntel unter der Ziellautheit enden, und der Plan des Tracks sagt es dir.",
         "in": "1.0.0"
       },
       {
-        "text": "Alle konvertieren und das Konvertieren mehrerer Titel auf einmal behalten das Format jedes Titels: Ist ein MP3 geöffnet, kommen deine FLAC- und WAV-Dateien nicht mehr als MP3 heraus.",
+        "text": "Alle konvertieren und das Konvertieren mehrerer Tracks auf einmal behalten das Format jedes Tracks: Ist ein MP3 geöffnet, kommen deine FLAC- und WAV-Dateien nicht mehr als MP3 heraus.",
         "in": "1.0.0"
       },
       {
-        "text": "Würden zwei Titel im selben Stapel denselben Namen bekommen, wird jeder getrennt gespeichert. Vorher konnte einer auf dem anderen landen.",
+        "text": "Würden zwei Tracks im selben Stapel denselben Namen bekommen, wird jeder getrennt gespeichert. Vorher konnte einer auf dem anderen landen.",
         "in": "1.0.0"
       },
       {
-        "text": "Traktor: Hotcues, die du nur in Traktor hattest, bleiben beim Konvertieren erhalten, und der Originaltitel behält seine Cues auch dann, wenn die Konvertierung in einen anderen Ordner geht. Mit aktiver Traktor-Synchronisierung ist „FLAC-Cover im Finder anzeigen“ deaktiviert, damit Traktor diese Titel nicht verliert.",
+        "text": "Traktor: Hotcues, die du nur in Traktor hattest, bleiben beim Konvertieren erhalten, und der Originaltrack behält seine Cues auch dann, wenn die Konvertierung in einen anderen Ordner geht. Mit aktiver Traktor-Synchronisierung ist „FLAC-Cover im Finder anzeigen“ deaktiviert, damit Traktor diese Tracks nicht verliert.",
         "in": "1.0.0"
       },
       {
-        "text": "Lautstärke und Knackser-Reparatur, die du für jeden Titel einstellst, bleiben erhalten, wenn du Surco schließt und wieder öffnest.",
+        "text": "Lautstärke und Knackser-Reparatur, die du für jeden Track einstellst, bleiben erhalten, wenn du Surco schließt und wieder öffnest.",
         "in": "1.0.0"
       },
       {
@@ -1185,15 +1185,15 @@
         "in": "1.0.0"
       },
       {
-        "text": "Der automatische Abgleich funktioniert ohne Discogs-Token, wenn du nur Bandcamp oder Deezer nutzt, und jeder abgeglichene Titel sagt, aus welcher Quelle er stammt.",
+        "text": "Der automatische Abgleich funktioniert ohne Discogs-Token, wenn du nur Bandcamp oder Deezer nutzt, und jeder abgeglichene Track sagt, aus welcher Quelle er stammt.",
         "in": "1.0.0"
       },
       {
-        "text": "Was Surco behält, wenn du einen Titel überschreibst, heißt jetzt Sicherungskopien, denn genau das ist es: dein Original, nichts Gelöschtes. Ein Titel mit Sicherungskopie zeigt das in seiner Zeile, und über diese Markierung, das Titelmenü, die Befehlspalette oder das Menü Darstellung erreichst du seine Sicherungskopien. Beim Überschreiben sagt dir die Abfrage, ob das Original behalten wird.",
+        "text": "Was Surco behält, wenn du einen Track überschreibst, heißt jetzt Backups, denn genau das ist es: dein Original, nichts Gelöschtes. Ein Track mit Backup zeigt das in seiner Zeile, und über diese Markierung, das Track-Menü, die Befehlspalette oder das Menü Darstellung erreichst du seine Backups. Beim Überschreiben sagt dir die Abfrage, ob das Original behalten wird.",
         "in": "1.0.1"
       },
       {
-        "text": "Suchst du das Release eines Titels, erscheinen die Ergebnisse jeder Quelle, sobald sie eintreffen, ohne auf die anderen zu warten, und die Liste sortiert sich nicht mehr um, während du sie durchgehst. Bandcamp-Downloads werden nach ihrem Titel gesucht, ohne Interpret oder Titelnummer davor.",
+        "text": "Suchst du das Release eines Tracks, erscheinen die Ergebnisse jeder Quelle, sobald sie eintreffen, ohne auf die anderen zu warten, und die Liste sortiert sich nicht mehr um, während du sie durchgehst. Bandcamp-Downloads werden nach ihrem Titel gesucht, ohne Künstler oder Tracknummer davor.",
         "in": "1.0.1"
       },
       {
@@ -1201,11 +1201,11 @@
         "in": "1.0.1"
       },
       {
-        "text": "Surco lässt sich vollständig mit Tastatur und Bildschirmleser bedienen: Jedes Bedienelement sagt, was es ist und in welchem Zustand, Hinweise und Fortschritt werden vorgelesen, der Tastaturfokus ist immer sichtbar und die Farben haben mehr Kontrast. Umschalt und die Pfeiltasten erweitern die Titelauswahl, und mit „Bewegung reduzieren“ in deinem System bleiben die Animationen still.",
+        "text": "Surco lässt sich vollständig mit Tastatur und Bildschirmleser bedienen: Jedes Bedienelement sagt, was es ist und in welchem Zustand, Hinweise und Fortschritt werden vorgelesen, der Tastaturfokus ist immer sichtbar und die Farben haben mehr Kontrast. Umschalttaste und Pfeiltasten erweitern die Trackauswahl, und mit „Bewegung reduzieren“ in deinem System bleiben die Animationen still.",
         "in": "1.0.1"
       },
       {
-        "text": "Der Editor hat mehr Platz und liest sich besser: klarere Überschriften, mehr Abstand zwischen den Abschnitten und in einem schmalen Fenster rutschen Bedienelemente in die nächste Zeile, statt abgeschnitten zu werden. Ein Titel, der gerade konvertiert wird, zeigt seinen Fortschritt als Ring um sein Cover, und der Zoom der Oberfläche ist zurück im Menü Darstellung.",
+        "text": "Der Editor hat mehr Platz und liest sich besser: klarere Überschriften, mehr Abstand zwischen den Abschnitten und in einem schmalen Fenster rutschen Bedienelemente in die nächste Zeile, statt abgeschnitten zu werden. Ein Track, der gerade konvertiert wird, zeigt seinen Fortschritt als Ring um sein Cover, und der Zoom der Oberfläche ist zurück im Menü Darstellung.",
         "in": "1.0.1"
       }
     ]
@@ -1216,15 +1216,15 @@
     "title": "Eigene Felder und mehr Tags",
     "items": [
       {
-        "text": "Erstelle eigene Tag-Felder unter Einstellungen → Felder: Gib ihnen einen Namen und einen Schlüssel und bearbeite sie wie jedes andere, auch für mehrere Titel auf einmal. Du kannst sie im Dateinamen, beim Umbenennen, beim Suchen und Ersetzen und als Pflichtfeld nutzen, und sie werden in jedem Format in der Datei gespeichert. Hat ein anderes Programm diesen Schlüssel schon geschrieben, zeigt Surco seinen Wert.",
+        "text": "Erstelle eigene Tag-Felder unter Einstellungen → Felder: Gib ihnen einen Namen und einen Schlüssel und bearbeite sie wie jedes andere, auch für mehrere Tracks auf einmal. Du kannst sie im Dateinamen, beim Umbenennen, beim Suchen und Ersetzen und als Pflichtfeld nutzen, und sie werden in jedem Format in der Datei gespeichert. Hat ein anderes Programm diesen Schlüssel schon geschrieben, zeigt Surco seinen Wert.",
         "in": "0.100.0"
       },
       {
-        "text": "Neue Felder, standardmäßig ausgeblendet, damit der Editor aufgeräumt bleibt: Originalinterpret, Texter, Dirigent, Titel- und Disc-Gesamtzahl, Copyright und Kodiert von. Schalte sie unter Einstellungen → Felder ein. Surco verwirft die Titel- oder Disc-Gesamtzahl nicht mehr, die andere Programme setzen.",
+        "text": "Neue Felder, standardmäßig ausgeblendet, damit der Editor aufgeräumt bleibt: Originalkünstler, Texter, Dirigent, Track- und Disc-Gesamtzahl, Copyright und Kodiert von. Schalte sie unter Einstellungen → Felder ein. Surco verwirft die Track- oder Disc-Gesamtzahl nicht mehr, die andere Programme setzen.",
         "in": "0.100.0"
       },
       {
-        "text": "Genre nimmt mehrere Tags auf, wie Gruppierung: „Pop, Indie Pop“ erscheint als zwei Tags, die du mit einem Klick an- oder abschaltest, auch für mehrere Titel auf einmal. Discogs-Genres mit Komma, wie „Folk, World, & Country“, bleiben ganz.",
+        "text": "Genre nimmt mehrere Tags auf, wie Gruppierung: „Pop, Indie Pop“ erscheint als zwei Tags, die du mit einem Klick an- oder abschaltest, auch für mehrere Tracks auf einmal. Discogs-Genres mit Komma, wie „Folk, World, & Country“, bleiben ganz.",
         "in": "0.100.0"
       }
     ]
@@ -1239,11 +1239,11 @@
         "in": "0.99.10"
       },
       {
-        "text": "Schlägt eine Konvertierung beim allerletzten Schritt fehl, etwa auf einem externen Laufwerk, das das Umbenennen der Datei verweigert, bleibt dein Titel in seinem Ordner. Vorher konnte er nur noch in Originale landen und unbemerkt aus dem Ordner verschwinden.",
+        "text": "Schlägt eine Konvertierung beim allerletzten Schritt fehl, etwa auf einem externen Laufwerk, das das Umbenennen der Datei verweigert, bleibt dein Track in seinem Ordner. Vorher konnte er nur noch in Originale landen und unbemerkt aus dem Ordner verschwinden.",
         "in": "0.99.10"
       },
       {
-        "text": "Die Konvertieren-Schaltfläche oben zählt nur die Titel, die deine Filter und deine Suche sichtbar lassen, und genau die konvertiert sie. Vorher konnte sie 81 anzeigen und 79 konvertieren.",
+        "text": "Der Konvertieren-Button oben zählt nur die Tracks, die deine Filter und deine Suche sichtbar lassen, und genau die konvertiert sie. Vorher konnte sie 81 anzeigen und 79 konvertieren.",
         "in": "0.99.10"
       },
       {
@@ -1255,7 +1255,7 @@
         "in": "0.99.9"
       },
       {
-        "text": "Normalisieren geht schneller: Die Lautheit eines Titels zu messen, kostet ein Viertel der bisherigen Zeit, und Surco misst nur einmal. Der Wert im Lautheitsabschnitt des Editors ist derselbe, den die Konvertierung nutzt. Normalisierst du einen Stapel, ist danach also jeder Titel gemessen, und ein bereits gemessener Titel wird beim Öffnen nicht erneut gemessen.",
+        "text": "Normalisieren geht schneller: Die Lautheit eines Tracks zu messen, kostet ein Viertel der bisherigen Zeit, und Surco misst nur einmal. Der Wert im Lautheitsabschnitt des Editors ist derselbe, den die Konvertierung nutzt. Normalisierst du einen Stapel, ist danach also jeder Track gemessen, und ein bereits gemessener Track wird beim Öffnen nicht erneut gemessen.",
         "in": "0.99.0"
       },
       {
@@ -1263,15 +1263,15 @@
         "in": "0.99.0"
       },
       {
-        "text": "Ein WAV, AIFF oder M4A in seinem eigenen Format zu aktualisieren, löscht keine Tags mehr: Ein mit mp3tag getaggtes WAV kam ohne Interpret und Album heraus, ein AIFF verlor Gruppierung und Label und ein M4A seine BPM. Und ein Cover, das deine Einstellungen schon erfüllt, wird unverändert kopiert, statt bei jedem Durchgang neu komprimiert zu werden, sodass zweimaliges Aktualisieren es nicht mehr zweimal verschlechtert.",
+        "text": "Ein WAV, AIFF oder M4A in seinem eigenen Format zu aktualisieren, löscht keine Tags mehr: Ein mit mp3tag getaggtes WAV kam ohne Künstler und Album heraus, ein AIFF verlor Gruppierung und Label und ein M4A seine BPM. Und ein Cover, das deine Einstellungen schon erfüllt, wird unverändert kopiert, statt bei jedem Durchgang neu komprimiert zu werden, sodass zweimaliges Aktualisieren es nicht mehr zweimal verschlechtert.",
         "in": "0.99.0"
       },
       {
-        "text": "Ein FLAC ohne Längenangabe im Header, wie es manche Downloaddienste und Streaming-Ripper hinterlassen, wird nicht mehr mit einem Cutoff bei 10 kHz als „nachbearbeitet“ markiert, obwohl das Audio bis ganz oben sauber ist: Die Spektrummessungen verteilen sich über den ganzen Titel, statt sich auf den ersten Sekunden des Intros zu häufen.",
+        "text": "Ein FLAC ohne Längenangabe im Header, wie es manche Downloaddienste und Streaming-Ripper hinterlassen, wird nicht mehr mit einem Cutoff bei 10 kHz als „Nachbearbeitet“ markiert, obwohl das Audio bis ganz oben sauber ist: Die Spektrummessungen verteilen sich über den ganzen Track, statt sich auf den ersten Sekunden des Intros zu häufen.",
         "in": "0.99.0"
       },
       {
-        "text": "Konnte ein Titel beim Import nicht gelesen werden, liest Surco ihn vor dem Konvertieren erneut. Geht es immer noch nicht, lässt es die Datei unangetastet und sagt dir Bescheid, statt sie mit leeren Tags zu konvertieren.",
+        "text": "Konnte ein Track beim Import nicht gelesen werden, liest Surco ihn vor dem Konvertieren erneut. Geht es immer noch nicht, lässt es die Datei unangetastet und sagt dir Bescheid, statt sie mit leeren Tags zu konvertieren.",
         "in": "0.99.0"
       },
       {
@@ -1279,15 +1279,15 @@
         "in": "0.99.1"
       },
       {
-        "text": "Ein Titel, dessen Höhen in der Mitte leicht absinken und wieder ansteigen, wird nicht mehr wegen regenerierter Höhen markiert. Bisher reichte schon ein Schwanken weit innerhalb des normalen Bereichs, damit Surco darin einen künstlichen Flicken sah.",
+        "text": "Ein Track, dessen Höhen in der Mitte leicht absinken und wieder ansteigen, wird nicht mehr wegen regenerierter Höhen markiert. Bisher reichte schon ein Schwanken weit innerhalb des normalen Bereichs, damit Surco darin einen künstlichen Flicken sah.",
         "in": "0.99.1"
       },
       {
-        "text": "Ein einzelner Ton weit oben in den Höhen, ein Synth oder eine gehaltene Stimme, lässt einen Titel nicht mehr wegen regenerierter Höhen markieren. Surco verlangt jetzt, dass sich der Anstieg über ein breites Band hält statt an einer Stelle, und dass das Sägezahnmuster, das einen Flicken verrät, Zähne ähnlicher Größe hat.",
+        "text": "Ein einzelner Ton weit oben in den Höhen, ein Synth oder eine gehaltene Stimme, führt nicht mehr dazu, dass ein Track wegen regenerierter Höhen markiert wird. Surco verlangt jetzt, dass sich der Anstieg über ein breites Band hält statt an einer Stelle, und dass das Sägezahnmuster, das einen Flicken verrät, Zähne ähnlicher Größe hat.",
         "in": "0.99.2"
       },
       {
-        "text": "Ein Titel, der ganz oben in den Höhen wieder ansteigt, wo fast keine Datei hinkommt, wird nicht mehr wegen regenerierter Höhen markiert. Dieser letzte Abschnitt ist der unruhigste von allen: Eine kleine Abweichung zwischen zwei Messungen reichte, damit dieselbe Datei einmal sauber und beim nächsten Mal markiert herauskam. Surco wertet ihn nicht mehr.",
+        "text": "Ein Track, der ganz oben in den Höhen wieder ansteigt, wo fast keine Datei hinkommt, wird nicht mehr wegen regenerierter Höhen markiert. Dieser letzte Abschnitt ist der unruhigste von allen: Eine kleine Abweichung zwischen zwei Messungen reichte, damit dieselbe Datei einmal sauber und beim nächsten Mal markiert herauskam. Surco wertet ihn nicht mehr.",
         "in": "0.99.3"
       },
       {
@@ -1295,7 +1295,7 @@
         "in": "0.99.4"
       },
       {
-        "text": "Einen Titel mit Dezimal-BPM, etwa die 150.55, die Traktor oder Mixed In Key schreiben, nach AIFF oder WAV zu konvertieren, scheiterte mit einem Bereichsfehler und erzeugte gar keine Datei. Jetzt kommt sie heraus, mit unveränderten BPM.",
+        "text": "Einen Track mit Dezimal-BPM, etwa die 150.55, die Traktor oder Mixed In Key schreiben, nach AIFF oder WAV zu konvertieren, scheiterte mit einem Bereichsfehler und erzeugte gar keine Datei. Jetzt kommt sie heraus, mit unveränderten BPM.",
         "in": "0.99.4"
       },
       {
@@ -1307,7 +1307,7 @@
         "in": "0.99.5"
       },
       {
-        "text": "Surcos Papierkorb heißt jetzt „Surcos Originale“: Er behält die Dateien, die eine Konvertierung ersetzt hat, nie etwas, das du selbst gelöscht hast. Und unter Einstellungen → Ausgabe wählst du, wann diese Kopie behalten wird: immer, nur wenn sich das Audio ändert (Konvertieren, Normalisieren, Kürzen) oder nie. Die Tags einer ganzen Kiste nachzubessern, füllte früher die Grenze des Papierkorbs mit Kopien, die bis auf die Tags mit der neuen Datei identisch waren.",
+        "text": "Surcos Papierkorb heißt jetzt „Surcos Originale“: Er behält die Dateien, die eine Konvertierung ersetzt hat, nie etwas, das du selbst gelöscht hast. Und unter Einstellungen → Ausgabe wählst du, wann diese Kopie behalten wird: immer, nur wenn sich das Audio ändert (Konvertieren, Normalisieren, Kürzen) oder nie. Die Tags einer ganzen Crate nachzubessern, füllte früher den Papierkorb bis an seine Grenze mit Kopien, die bis auf die Tags mit der neuen Datei identisch waren.",
         "in": "0.99.5"
       },
       {
@@ -1315,11 +1315,11 @@
         "in": "0.99.6"
       },
       {
-        "text": "Ein konvertierter Titel trägt nicht mehr die Spuren derer in die neue Datei, die ihn produziert haben, bevor er bei dir ankam: Studio, Toningenieur und Werkzeug des Vorbesitzers steckten noch in einer Datei, deren Titel und Interpret schon deine waren, und tauchten wieder auf, wenn du zurück zu WAV gingst. Die Datei, die herauskommt, gehört dir und sonst niemandem.",
+        "text": "Ein konvertierter Track trägt nicht mehr die Spuren derer in die neue Datei, die ihn produziert haben, bevor er bei dir ankam: Studio, Toningenieur und Werkzeug des Vorbesitzers steckten noch in einer Datei, deren Titel und Künstler schon deine waren, und tauchten wieder auf, wenn du zurück zu WAV gingst. Die Datei, die herauskommt, gehört dir und sonst niemandem.",
         "in": "0.99.7"
       },
       {
-        "text": "Ein MP3 mit fehlerhafter Kaufmarkierung eines Shops, wie sie Beatport mit leerer Kennung hinterlässt, scheitert nicht mehr komplett, wenn du es nach MP3 konvertierst oder an Ort und Stelle aktualisierst. In einer Bibliothek mit 847 Titeln betraf das 12 der 14 Dateien mit so einer Markierung. Surco entfernt nur die kaputte Markierung und schreibt die übrigen Tags wie gewohnt.",
+        "text": "Ein MP3 mit fehlerhafter Kaufmarkierung eines Shops, wie sie Beatport mit leerer Kennung hinterlässt, scheitert nicht mehr komplett, wenn du es nach MP3 konvertierst oder an Ort und Stelle aktualisierst. In einer Bibliothek mit 847 Tracks betraf das 12 der 14 Dateien mit so einer Markierung. Surco entfernt nur die kaputte Markierung und schreibt die übrigen Tags wie gewohnt.",
         "in": "0.99.7"
       },
       {
@@ -1327,7 +1327,7 @@
         "in": "0.99.7"
       },
       {
-        "text": "Eine leere Datei, die du in die Liste ziehst, erscheint nicht mehr als Zeile ohne Titel und ohne Länge, die ohne Begründung scheitert: Surco verwirft sie, sobald du loslässt. Und kann ein Titel nicht gelesen werden, sagt seine Zeile das, statt nur mit dem Dateinamen dazustehen, als hätte er einfach keine Tags.",
+        "text": "Eine leere Datei, die du in die Liste ziehst, erscheint nicht mehr als Zeile ohne Titel und ohne Länge, die ohne Begründung scheitert: Surco verwirft sie, sobald du loslässt. Und kann ein Track nicht gelesen werden, sagt seine Zeile das, statt nur mit dem Dateinamen dazustehen, als hätte er einfach keine Tags.",
         "in": "0.99.7"
       },
       {
@@ -1335,7 +1335,7 @@
         "in": "0.99.8"
       },
       {
-        "text": "Die Wahl, nie Kopien zu behalten, wird jetzt immer respektiert. Einen Titel in ein anderes Format zu konvertieren oder auf einem Netzlaufwerk zu löschen, behielt bisher trotzdem eine Kopie, sodass sich der Platz mit Dateien füllte, die Surco nach deinem Wunsch nicht behalten sollte.",
+        "text": "Die Wahl, nie Kopien zu behalten, wird jetzt immer respektiert. Einen Track in ein anderes Format zu konvertieren oder auf einem Netzlaufwerk zu löschen, behielt bisher trotzdem eine Kopie, sodass sich der Platz mit Dateien füllte, die Surco nach deinem Wunsch nicht behalten sollte.",
         "in": "0.99.8"
       }
     ]
@@ -1343,14 +1343,14 @@
   {
     "version": "0.98",
     "date": "September 16, 2026",
-    "title": "Grouping Track für Track taggen, ohne den Rest zu überschreiben",
+    "title": "Gruppierung Track für Track taggen, ohne den Rest zu überschreiben",
     "items": [
       {
         "text": "Bei mehreren ausgewählten Tracks wird die Gruppierung nicht mehr überschrieben. Jedes Tag erscheint als Chip, der zeigt, ob es auf allen, einigen oder keinem Track steht, und ein Klick fügt es der ganzen Auswahl hinzu oder entfernt es, ohne die übrigen Tags der einzelnen Tracks anzurühren. Darunter listet ein aufklappbares „Pro Track“ die Tracks einzeln auf, damit du die abweichenden feinjustieren kannst. Aktive Tags stehen immer vorne und verschwinden so nie hinter dem „+N“.",
         "in": "0.98.0"
       },
       {
-        "text": "Das Urteil des Spektrums schwankt nicht mehr. Ein echter Hi-Res-Master kam je nachdem, wo die Messungen lagen, mal als „von 44,1 hochgerechnet“ und mal als „nicht überprüfbar“ heraus, und ein sauberer CD-Rip wechselte zwischen „gute Qualität“ und „nachbearbeitet“, nachdem ein paar Zehntelsekunden vom Ende abgeschnitten wurden. Jede Messung hört jetzt einen längeren Abschnitt an, und dieselbe Datei bekommt immer dieselbe Antwort. Außerdem bleiben regenerierte Höhen markiert, auch wenn der Track leiser gemacht wird: Surcos eigene normalisierte Kopie kam sauber heraus, während das Original markiert war.",
+        "text": "Das Urteil des Spektrums schwankt nicht mehr. Ein echter Hi-Res-Master kam je nachdem, wo die Messungen lagen, mal als „von 44,1 hochgerechnet“ und mal als „nicht überprüfbar“ heraus, und ein sauberer CD-Rip wechselte zwischen „gute Qualität“ und „Nachbearbeitet“, nachdem ein paar Zehntelsekunden vom Ende abgeschnitten wurden. Jede Messung hört jetzt einen längeren Abschnitt an, und dieselbe Datei bekommt immer dieselbe Antwort. Außerdem bleiben regenerierte Höhen markiert, auch wenn der Track leiser gemacht wird: Surcos eigene normalisierte Kopie kam sauber heraus, während das Original markiert war.",
         "in": "0.98.0"
       },
       {
@@ -1358,11 +1358,11 @@
         "in": "0.98.1"
       },
       {
-        "text": "Ein verlustfreier Master mit einer Delle in den Höhen, die sich wieder erholt, wird nicht mehr als „nachbearbeitet“ markiert, und sein Urteil ändert sich nicht mehr, wenn ein paar Sekunden Stille vom Ende gekürzt werden.",
+        "text": "Ein verlustfreier Master mit einer Delle in den Höhen, die sich wieder erholt, wird nicht mehr als „Nachbearbeitet“ markiert, und sein Urteil ändert sich nicht mehr, wenn ein paar Sekunden Stille vom Ende gekürzt werden.",
         "in": "0.98.1"
       },
       {
-        "text": "Ein FLAC im eigenen Format zu aktualisieren, lässt seine Tags jetzt in Ruhe. Der Kommentar bleibt ein Kommentar, das Cover bleibt unverändert, wird nicht neu komprimiert und als Frontcover markiert, und der Album-Interpret wird nicht mehr von selbst mit dem Interpreten des Tracks gefüllt.",
+        "text": "Ein FLAC im eigenen Format zu aktualisieren, lässt seine Tags jetzt in Ruhe. Der Kommentar bleibt ein Kommentar, das Cover bleibt unverändert, wird nicht neu komprimiert und als Frontcover markiert, und der Albumkünstler wird nicht mehr von selbst mit dem Künstler des Tracks gefüllt.",
         "in": "0.98.2"
       },
       {
@@ -1381,11 +1381,11 @@
     "title": "Einen Track verbessern, ohne rekordbox zu verlieren",
     "items": [
       {
-        "text": "Konvertierst du einen Track, den du in rekordbox hast, bleibt es derselbe Track. Er behält seine Playlists, seine Cue-Punkte und seinen Spielverlauf. Er taucht nicht doppelt auf, und du musst ihn nicht neu hinzufügen. Bevor Surco etwas anrührt, legt es zwei Sicherungen deiner Sammlung an: eine vom Stand zu Beginn des Durchlaufs und eine mit jeder Änderung, sodass du einen einzelnen Track oder den ganzen Durchlauf zurückdrehen kannst. Und es arbeitet nie, solange rekordbox offen ist. Es bietet an, rekordbox zu schließen, und wenn du ablehnst, tut es lieber gar nichts. Die Funktion ist anfangs aus. Schalte sie unter Einstellungen → Ausgabe ein, oder bei der Ersteinrichtung von Surco, falls rekordbox schon auf dem Rechner ist. Ein Hinweis noch: rekordbox analysiert den Track neu und kann das Beatgrid verschieben, ein kurzer Blick lohnt sich also.",
+        "text": "Konvertierst du einen Track, den du in rekordbox hast, bleibt es derselbe Track. Er behält seine Playlists, seine Cue-Points und seinen Spielverlauf. Er taucht nicht doppelt auf, und du musst ihn nicht neu hinzufügen. Bevor Surco etwas anrührt, legt es zwei Sicherungen deiner Sammlung an: eine vom Stand zu Beginn des Durchlaufs und eine mit jeder Änderung, sodass du einen einzelnen Track oder den ganzen Durchlauf zurückdrehen kannst. Und es arbeitet nie, solange rekordbox offen ist. Es bietet an, rekordbox zu schließen, und wenn du ablehnst, tut es lieber gar nichts. Die Funktion ist anfangs aus. Schalte sie unter Einstellungen → Ausgabe ein, oder bei der Ersteinrichtung von Surco, falls rekordbox schon auf dem Rechner ist. Ein Hinweis noch: rekordbox analysiert den Track neu und kann das Beatgrid verschieben, ein kurzer Blick lohnt sich also.",
         "in": "0.97.0"
       },
       {
-        "text": "Du kannst einen Track in deiner Bibliothek ersetzen, statt am Ende zwei zu haben. Lädst du ein AIFF oder FLAC eines Songs, den du als MP3 hast, wird der Button zu „Ersetzen“. Die bessere Kopie nimmt den Platz der alten in Apple Music und rekordbox ein und behält ihre Playlists und Cue-Punkte. Wäre der Tausch ein Rückschritt (ein verlustfreier Master gegen ein MP3, eine Kopie mit weniger Höhen oder ein Lossless, das aus einem MP3 gebaut wurde), sagt Surco es dir und lässt dich trotzdem weitermachen. Die Entscheidung liegt bei dir.",
+        "text": "Du kannst einen Track in deiner Bibliothek ersetzen, statt am Ende zwei zu haben. Lädst du ein AIFF oder FLAC eines Songs, den du als MP3 hast, wird der Button zu „Ersetzen“. Die bessere Kopie nimmt den Platz der alten in Apple Music und rekordbox ein und behält ihre Playlists und Cue-Points. Wäre der Tausch ein Rückschritt (ein verlustfreier Master gegen ein MP3, eine Kopie mit weniger Höhen oder ein Lossless, das aus einem MP3 gebaut wurde), sagt Surco es dir und lässt dich trotzdem weitermachen. Die Entscheidung liegt bei dir.",
         "in": "0.97.0"
       },
       {
@@ -1416,7 +1416,7 @@
         "in": "0.96.1"
       },
       {
-        "text": "Der Startbildschirm sagt jetzt nur noch eine Sache. Früher bot er gleichzeitig Ziehen und einen Button an, während die Platte pausenlos rotierte. Jetzt lädt er dich ein, deine Tracks darauf abzulegen, mit dem Button darunter, falls du lieber suchst, und die Platte pulsiert langsam, statt sich zu drehen.",
+        "text": "Der Startbildschirm sagt jetzt nur noch eine Sache. Früher bot er gleichzeitig Ziehen und einen Button an, während die Platte pausenlos rotierte. Jetzt lädt er dich ein, deine Tracks darauf abzulegen, mit dem Button darunter, falls du sie lieber auswählst, und die Platte pulsiert langsam, statt sich zu drehen.",
         "in": "0.96.1"
       },
       {
@@ -1451,7 +1451,7 @@
         "in": "0.95.6"
       },
       {
-        "text": "Cue-Punkte landen jetzt dort, wo du sie in Traktor siehst, wenn du von oder nach MP3 konvertierst. Traktor zeichnete die Markierung bei diesen Wechseln rund 51 ms daneben, und Surco gleicht das jetzt selbst aus, ohne dass du etwas einstellen musst. Die manuelle Anpassung bleibt getrennt und startet weiter bei null, falls du nachjustieren willst.",
+        "text": "Cue-Points landen jetzt dort, wo du sie in Traktor siehst, wenn du von oder nach MP3 konvertierst. Traktor zeichnete die Markierung bei diesen Wechseln rund 51 ms daneben, und Surco gleicht das jetzt selbst aus, ohne dass du etwas einstellen musst. Die manuelle Anpassung bleibt getrennt und startet weiter bei null, falls du nachjustieren willst.",
         "in": "0.95.5"
       },
       {
@@ -1459,7 +1459,7 @@
         "in": "0.95.5"
       },
       {
-        "text": "Die Cue-Punkt-Anpassung fragt jetzt, was du hörst, statt eine Zahl mit Vorzeichen zu verlangen. Du wählst, ob deine Cues zu früh kommen, zu spät oder dort bleiben, wo du sie gesetzt hast, und Surco rechnet die Richtung aus. Die Zahl ist immer positiv, du musst dir also nicht merken, was welches Vorzeichen bewirkt hat.",
+        "text": "Die Cue-Point-Anpassung fragt jetzt, was du hörst, statt eine Zahl mit Vorzeichen zu verlangen. Du wählst, ob deine Cues zu früh kommen, zu spät oder dort bleiben, wo du sie gesetzt hast, und Surco rechnet die Richtung aus. Die Zahl ist immer positiv, du musst dir also nicht merken, was welches Vorzeichen bewirkt hat.",
         "in": "0.95.4"
       },
       {
@@ -1475,11 +1475,11 @@
         "in": "0.95.4"
       },
       {
-        "text": "Die Cue-Punkt-Anpassung funktioniert, ohne dass du Surco auf deine collection.nml verweist. Das Steuerelement blieb deaktiviert, bis du diesen Pfad angegeben hattest, aber die Anpassung funktioniert genauso für alle, die nicht mit Traktor synchronisieren. Deshalb ist er nicht mehr nötig.",
+        "text": "Die Cue-Point-Anpassung funktioniert, ohne dass du Surco auf deine collection.nml verweist. Das Steuerelement blieb deaktiviert, bis du diesen Pfad angegeben hattest, aber die Anpassung funktioniert genauso für alle, die nicht mit Traktor synchronisieren. Deshalb ist er nicht mehr nötig.",
         "in": "0.95.3"
       },
       {
-        "text": "Die Cue-Punkt-Anpassung sagt jetzt, in welche Richtung jeder Wert sie verschiebt. Unter dem Steuerelement steht in einfachen Worten, was du hören wirst, und der Hinweis erklärt, dass ein negativer Wert sie früher und ein positiver später auslöst. Vorher sahst du nur eine Zahl mit Vorzeichen, und die Richtung erfuhrst du erst, wenn du konvertiert und hingehört hattest.",
+        "text": "Die Cue-Point-Anpassung sagt jetzt, in welche Richtung jeder Wert sie verschiebt. Unter dem Steuerelement steht in einfachen Worten, was du hören wirst, und der Hinweis erklärt, dass ein negativer Wert sie früher und ein positiver später auslöst. Vorher sahst du nur eine Zahl mit Vorzeichen, und die Richtung erfuhrst du erst, wenn du konvertiert und hingehört hattest.",
         "in": "0.95.2"
       },
       {
@@ -1494,7 +1494,7 @@
     "title": "Jeder Track wird mit seinen eigenen Reglern konvertiert",
     "items": [
       {
-        "text": "Die Cue-Punkt-Anpassung greift jetzt auch beim Konvertieren in dasselbe Format. Ein MP3, das als MP3 herauskam, nahm seine Cues unverändert mit, sodass sie bei diesen Konvertierungen verschoben blieben.",
+        "text": "Die Cue-Point-Anpassung greift jetzt auch beim Konvertieren in dasselbe Format. Ein MP3, das als MP3 herauskam, nahm seine Cues unverändert mit, sodass sie bei diesen Konvertierungen verschoben blieben.",
         "in": "0.94.3"
       },
       {
@@ -1506,7 +1506,7 @@
         "in": "0.94.2"
       },
       {
-        "text": "Normalisierung und Klick-Reparatur gelten im Stapel wieder pro Track. Der Editor legt sie Zeile für Zeile fest, aber die Konvertierung las einen einzigen Wert für den ganzen Durchlauf. Stelltest du einen Track auf -18 und einen anderen auf -7, kamen beide mit -7 heraus, und ein staubiger Rip mit starker Klick-Reparatur wurde ganz ohne konvertiert. Auch die Warnung vor verlustbehafteter Neukodierung ist zurück, denn sie fiel bei jedem Track mit eigener Einstellung weg.",
+        "text": "Normalisierung und Knackser-Reparatur gelten im Stapel wieder pro Track. Der Editor legt sie Zeile für Zeile fest, aber die Konvertierung las einen einzigen Wert für den ganzen Durchlauf. Stelltest du einen Track auf -18 und einen anderen auf -7, kamen beide mit -7 heraus, und ein staubiger Rip mit starker Knackser-Reparatur wurde ganz ohne konvertiert. Auch die Warnung vor verlustbehafteter Neukodierung ist zurück, denn sie fiel bei jedem Track mit eigener Einstellung weg.",
         "in": "0.94.0"
       },
       {
@@ -1514,7 +1514,7 @@
         "in": "0.94.0"
       },
       {
-        "text": "Mitgenommene Cue-Punkte lassen sich in den Einstellungen nachjustieren, und zwar in der Sprache von DJs. Du wählst, ob sie früher oder später kommen, in Schritten, die du wirklich hörst, von kaum hörbar bis deutlich hörbar, statt blind Millisekunden einzutippen. Darunter gibt es eine Feineinstellung für den Rest. Sie verschiebt den Startpunkt, nie die Länge deiner Loops.",
+        "text": "Mitgenommene Cue-Points lassen sich in den Einstellungen nachjustieren, und zwar in der Sprache von DJs. Du wählst, ob sie früher oder später kommen, in Schritten, die du wirklich hörst, von kaum hörbar bis deutlich hörbar, statt blind Millisekunden einzutippen. Darunter gibt es eine Feineinstellung für den Rest. Sie verschiebt den Startpunkt, nie die Länge deiner Loops.",
         "in": "0.94.0"
       },
       {
@@ -1534,7 +1534,7 @@
         "in": "0.94.0"
       },
       {
-        "text": "Der Klickzähler verschluckt keine halben Salven mehr. Das ganze Knistern einer verschmutzten Platte zählte als „1 Klick“, mit einer einzigen Markierung zum Anspringen, obwohl es viele hintereinander waren. Gemessen an 25 echten Tracks kann die Zahl nur steigen.",
+        "text": "Der Knackser-Zähler verschluckt keine halben Salven mehr. Das ganze Knistern einer verschmutzten Platte zählte als „1 Knackser“, mit einer einzigen Markierung zum Anspringen, obwohl es viele hintereinander waren. Gemessen an 25 echten Tracks kann die Zahl nur steigen.",
         "in": "0.94.0"
       },
       {
@@ -1550,7 +1550,7 @@
         "in": "0.94.0"
       },
       {
-        "text": "Eine leere Apple-Music-Bibliothek gilt als null Tracks statt als Fehler.",
+        "text": "Eine leere Apple-Music-Mediathek gilt als null Tracks statt als Fehler.",
         "in": "0.94.0"
       },
       {
@@ -1666,7 +1666,7 @@
         "in": "0.90.0"
       },
       {
-        "text": "Die Lautheitstabelle zeichnet nur bei dem einen Pfeil, was die Konvertierung ändern wird (Lautheit, Peak, DC-Offset), und ein „=“ bei dem, was sie nicht ändern kann (Umfang, Dynamik, Balance), unter der Überschrift „jetzt → nach dem Konvertieren“. Schluss mit Kursivschrift und Fußnote.",
+        "text": "Die Lautheitstabelle zeichnet einen Pfeil nur bei dem, was die Konvertierung ändern wird (Lautheit, Peak, DC-Offset), und ein „=“ bei dem, was sie nicht ändern kann (Umfang, Dynamik, Balance), unter der Überschrift „jetzt → nach dem Konvertieren“. Schluss mit Kursivschrift und Fußnote.",
         "in": "0.90.0"
       },
       {
@@ -1724,11 +1724,11 @@
     "title": "Tracks öffnen sich sofort",
     "items": [
       {
-        "text": "Einen Track zu öffnen, geht jetzt zwei- bis dreimal schneller. Surco dekodierte dieselbe Datei bei jedem Druck auf Play zweimal: einmal, um die Wellenform zu zeichnen, und einmal, um die clippenden Spitzen zu finden. Jetzt liest es die Datei einmal und holt beides aus diesem einen Durchgang. Die Welle erscheint in der halben Zeit, und dein Laptop hat halb so viel zu tun. Bei einem fünfminütigen FLAC sind das 100 Millisekunden statt 270, bei einem zweistündigen Mix anderthalb Sekunden statt über drei.",
+        "text": "Einen Track zu öffnen, geht jetzt zwei- bis dreimal schneller. Surco dekodierte dieselbe Datei bei jedem Druck auf Play zweimal: einmal, um die Wellenform zu zeichnen, und einmal, um die clippenden Spitzen zu finden. Jetzt liest es die Datei einmal und holt beides aus diesem einen Durchgang. Die Wellenform erscheint in der halben Zeit, und dein Laptop hat halb so viel zu tun. Bei einem fünfminütigen FLAC sind das 100 Millisekunden statt 270, bei einem zweistündigen Mix anderthalb Sekunden statt über drei.",
         "in": "0.88.0"
       },
       {
-        "text": "Die Wellenform zeigt Details, die früher verloren gingen. Um sie zu zeichnen, reduzierte Surco das Audio zuerst auf sehr niedrige Qualität, und diese Abkürzung rundete die Transienten ab: Schläge kamen niedriger heraus, als sie in der Datei wirklich sind. Die Welle wird jetzt aus dem Audio in seiner echten Qualität gebaut, die Spitzen sind also die wahren, und der Körper des Tracks hebt sich von den Schlägen ab, statt zu einem blauen Block zu verschmelzen. Am meisten merkst du das, wenn du die genaue Stelle einer Kick für einen Schnitt suchst.",
+        "text": "Die Wellenform zeigt Details, die früher verloren gingen. Um sie zu zeichnen, reduzierte Surco das Audio zuerst auf sehr niedrige Qualität, und diese Abkürzung rundete die Transienten ab: Schläge kamen niedriger heraus, als sie in der Datei wirklich sind. Die Wellenform wird jetzt aus dem Audio in seiner echten Qualität gebaut, die Spitzen sind also die wahren, und der Körper des Tracks hebt sich von den Schlägen ab, statt zu einem blauen Block zu verschmelzen. Am meisten merkst du das, wenn du die genaue Stelle einer Kick für einen Schnitt suchst.",
         "in": "0.88.0"
       },
       {
@@ -1794,7 +1794,7 @@
         "in": "0.86.1"
       },
       {
-        "text": "Die Traktor-Cue-Warnungen schrecken dich nicht mehr grundlos ab. Beim Konvertieren nach FLAC hieß es, die Cue-Punkte gingen verloren, und das stimmt nicht, sie bleiben erhalten. Die Warnung war falsch, seit diese Erhaltung eingebaut wurde. Wenn du deshalb FLAC gemieden hast, nur zu. WAV ist weiterhin das einzige Format, bei dem Cues wirklich verloren gehen.",
+        "text": "Die Traktor-Cue-Warnungen schrecken dich nicht mehr grundlos ab. Beim Konvertieren nach FLAC hieß es, die Cue-Points gingen verloren, und das stimmt nicht, sie bleiben erhalten. Die Warnung war falsch, seit diese Erhaltung eingebaut wurde. Wenn du deshalb FLAC gemieden hast, nur zu. WAV ist weiterhin das einzige Format, bei dem Cues wirklich verloren gehen.",
         "in": "0.86.2"
       },
       {
@@ -1810,7 +1810,7 @@
         "in": "0.86.3"
       },
       {
-        "text": "Auch Cues von Mixed In Key bleiben erhalten. Kommen deine Tracks von Mixed In Key analysiert, werden dessen Punkte beim Konvertieren in Traktors Format übersetzt, statt zurückzubleiben. Und Tags anderer Tools landen nicht mehr dort, wo sie nicht hingehören: Bei manchen Dateien stand die Tonart am Ende im Cue-Feld.",
+        "text": "Auch Cues von Mixed In Key bleiben erhalten. Kommen deine Tracks von Mixed In Key analysiert, werden dessen Punkte beim Konvertieren in Traktors Format übersetzt, statt zurückzubleiben. Und Tags anderer Tools landen nicht mehr dort, wo sie nicht hingehören: Bei manchen Dateien landete die Tonart im Cue-Feld.",
         "in": "0.86.3"
       },
       {
@@ -1826,7 +1826,7 @@
         "in": "0.86.5"
       },
       {
-        "text": "Das Konvertieren eines Stapels kann keine Tracks mehr verlieren. Ergaben zwei Tracks denselben Ausgabenamen, was leicht passiert, wenn ein Discogs-Treffer denselben Interpreten und Titel einträgt oder leere Tags auf dieselbe Vorlage zurückfallen, zeigten bei „Überschreiben“ beide auf ein Ziel, und der zweite landete auf dem ersten. Der Durchlauf zählte trotzdem alle: „3 konvertiert“, eine Datei auf der Platte. Ein Name, den ein anderer Track im selben Durchlauf schon belegt, wird jetzt umgangen, und eine Datei zu überschreiben, die wirklich im Ordner liegt, funktioniert genau wie vorher.",
+        "text": "Das Konvertieren eines Stapels kann keine Tracks mehr verlieren. Ergaben zwei Tracks denselben Ausgabenamen, was leicht passiert, wenn ein Discogs-Treffer denselben Künstler und Titel einträgt oder leere Tags auf dieselbe Vorlage zurückfallen, zeigten bei „Überschreiben“ beide auf ein Ziel, und der zweite landete auf dem ersten. Der Durchlauf zählte trotzdem alle: „3 konvertiert“, eine Datei auf der Platte. Ein Name, den ein anderer Track im selben Durchlauf schon belegt, wird jetzt umgangen, und eine Datei zu überschreiben, die wirklich im Ordner liegt, funktioniert genau wie vorher.",
         "in": "0.86.6"
       },
       {
@@ -1842,7 +1842,7 @@
         "in": "0.86.6"
       },
       {
-        "text": "Traktor liest deine konvertierten WAVs wieder. Ein WAV speichert Tags an zwei Stellen zugleich, und Surco löschte genau die, die Traktor liest. Ein Track kam also ohne Interpret und mit dem Dateinamen statt des Titels heraus, während ein Tag-Editor dieselbe Datei tadellos zeigte. Jetzt bleiben beide erhalten. Ein Kompromiss, den du kennen solltest: Dieser Chunk hat kein Feld für das Label, eine einfache Abfrage eines WAV zeigt es also nicht. Surco liest es trotzdem, und es reist weiter mit, wenn du dieses WAV in ein anderes Format konvertierst.",
+        "text": "Traktor liest deine konvertierten WAVs wieder. Ein WAV speichert Tags an zwei Stellen zugleich, und Surco löschte genau die, die Traktor liest. Ein Track kam also ohne Künstler und mit dem Dateinamen statt des Titels heraus, während ein Tag-Editor dieselbe Datei tadellos zeigte. Jetzt bleiben beide erhalten. Ein Kompromiss, den du kennen solltest: Dieser Chunk hat kein Feld für das Label, eine einfache Abfrage eines WAV zeigt es also nicht. Surco liest es trotzdem, und es reist weiter mit, wenn du dieses WAV in ein anderes Format konvertierst.",
         "in": "0.86.7"
       },
       {
@@ -1850,15 +1850,15 @@
         "in": "0.86.7"
       },
       {
-        "text": "Beim Konvertieren nach WAV oder ALAC gehen Cues und Cover nicht mehr verloren. Die anderen Formate trugen sie schon eine Weile, diese beiden blieben außen vor. Eine analysierte Crate, nach WAV konvertiert, kam ohne Beatgrid und ohne Cue-Punkte heraus, während die App sie als konvertiert meldete. Jetzt reisen sie genauso mit wie bei MP3, AIFF und FLAC. Das Cover ebenso: Bisher entfernte eine Konvertierung, die nur einen Titel korrigieren sollte, das Cover, das die Datei schon hatte.",
+        "text": "Beim Konvertieren nach WAV oder ALAC gehen Cues und Cover nicht mehr verloren. Die anderen Formate trugen sie schon eine Weile, diese beiden blieben außen vor. Eine analysierte Crate, nach WAV konvertiert, kam ohne Beatgrid und ohne Cue-Points heraus, während die App sie als konvertiert meldete. Jetzt reisen sie genauso mit wie bei MP3, AIFF und FLAC. Das Cover ebenso: Bisher entfernte eine Konvertierung, die nur einen Titel korrigieren sollte, das Cover, das die Datei schon hatte.",
         "in": "0.86.8"
       },
       {
-        "text": "Das Konvertieren eines Stapels überschreibt keine zwei Tracks mehr, deren Namen sich nur in der Groß- und Kleinschreibung unterscheiden. Auf Mac und Windows sind „Artist - Track.aiff“ und „artist - track.aiff“ ein und dieselbe Datei, was leicht passiert, wenn ein Discogs-Treffer einen Interpreten anders schreibt als beim Track daneben. Surco behandelte sie als getrennte Ziele, und die zweite Konvertierung landete auf der ersten, wobei beide als erledigt zählten.",
+        "text": "Das Konvertieren eines Stapels überschreibt keine zwei Tracks mehr, deren Namen sich nur in der Groß- und Kleinschreibung unterscheiden. Auf Mac und Windows sind „Artist - Track.aiff“ und „artist - track.aiff“ ein und dieselbe Datei, was leicht passiert, wenn ein Discogs-Treffer einen Künstler anders schreibt als beim Track daneben. Surco behandelte sie als getrennte Ziele, und die zweite Konvertierung landete auf der ersten, wobei beide als erledigt zählten.",
         "in": "0.86.8"
       },
       {
-        "text": "Die Abschnitts-Kürzel funktionieren in „Stille kürzen“. Lag der Fokus auf einem Schnittgriff, sprangen ⌘] und ⌘[ nicht mehr zwischen den Abschnitten: Die Taste tat nichts und reagierte erst wieder, wenn du den Abschnitt verlassen hattest.",
+        "text": "Die Kürzel zum Springen zwischen Abschnitten funktionieren in „Stille kürzen“. Lag der Fokus auf einem Schnittgriff, sprangen ⌘] und ⌘[ nicht mehr zwischen den Abschnitten: Die Taste tat nichts und reagierte erst wieder, wenn du den Abschnitt verlassen hattest.",
         "in": "0.86.8"
       }
     ]
@@ -1935,11 +1935,11 @@
         "in": "0.83.0"
       },
       {
-        "text": "Die Stärke der Klick-Reparatur bleibt jetzt beim Track. Stelltest du „Stark“ für einen verrauschten Vinyl-Rip ein, wechseltest zum nächsten Track und kamst zurück, war sie still auf den globalen Standard zurückgesprungen. Jetzt verhält sie sich wie das Kürzen von Stille und die Normalisierung, die schon pro Track gespeichert wurden.",
+        "text": "Die Stärke der Knackser-Reparatur bleibt jetzt beim Track. Stelltest du „Stark“ für einen verrauschten Vinyl-Rip ein, wechseltest zum nächsten Track und kamst zurück, war sie still auf den globalen Standard zurückgesprungen. Jetzt verhält sie sich wie das Kürzen von Stille und die Normalisierung, die schon pro Track gespeichert wurden.",
         "in": "0.83.0"
       },
       {
-        "text": "⌘Z macht einen Treffer für ein ganzes Album rückgängig. Das falsche Release anzuwenden, etwa eine Neuauflage mit anderer Trackliste oder eine gleichnamige LP, überschrieb Titel, Interpret und Tracknummer jedes ausgewählten Tracks ohne Weg zurück, und die ursprünglichen Tags der Datei waren schon weg.",
+        "text": "⌘Z macht einen Treffer für ein ganzes Album rückgängig. Das falsche Release anzuwenden, etwa eine Neuauflage mit anderer Trackliste oder eine gleichnamige LP, überschrieb Titel, Künstler und Tracknummer jedes ausgewählten Tracks ohne Weg zurück, und die ursprünglichen Tags der Datei waren schon weg.",
         "in": "0.83.0"
       },
       {
@@ -1947,7 +1947,7 @@
         "in": "0.83.0"
       },
       {
-        "text": "Zwei neue Filter für das, was noch offen ist: „Fehlgeschlagen“ und „Zu prüfen“. Nach einem Stapel zeigte die Leiste „180 konvertiert · 20 fehlgeschlagen“, ohne Weg zu diesen 20 außer der Suche nach einem kleinen roten Ring in der Liste. Dasselbe galt für die Treffer, die der Auto-Abgleich zur Prüfung markiert. Die Filter erscheinen nur, wenn etwas drin ist.",
+        "text": "Zwei neue Filter für das, was noch offen ist: „Fehlgeschlagen“ und „Zu prüfen“. Nach einem Stapel zeigte die Leiste „180 konvertiert · 20 fehlgeschlagen“, ohne Weg zu diesen 20 außer der Suche nach einem kleinen roten Ring in der Liste. Dasselbe galt für die Treffer, die der automatische Abgleich zur Prüfung markiert. Die Filter erscheinen nur, wenn etwas drin ist.",
         "in": "0.83.0"
       },
       {
@@ -1959,7 +1959,7 @@
         "in": "0.83.0"
       },
       {
-        "text": "„DC-Versatz entfernen“ funktioniert jetzt zusammen mit der Lautheitsnormalisierung. Ein Leser schrieb mit genau diesem Fall: Eine Vinyl-Aufnahme mit dezentriertem Signal braucht beides zugleich, und die Option lebte nur im Peak-Tab, sodass die Wahl von Lautheit sie still wegfallen ließ. Jetzt ist sie eine eigene Korrektur, in beiden Modi verfügbar, und wer sie eingeschaltet hatte, behält sie.",
+        "text": "„DC-Versatz entfernen“ funktioniert jetzt zusammen mit der Lautheitsnormalisierung. Ein Nutzer schrieb mit genau diesem Fall: Eine Vinyl-Aufnahme mit dezentriertem Signal braucht beides zugleich, und die Option lebte nur im Peak-Tab, sodass die Wahl von Lautheit sie still wegfallen ließ. Jetzt ist sie eine eigene Korrektur, in beiden Modi verfügbar, und wer sie eingeschaltet hatte, behält sie.",
         "in": "0.83.0"
       },
       {
@@ -1967,7 +1967,7 @@
         "in": "0.83.0"
       },
       {
-        "text": "Die Normalisierungsvorschau sagt dir jetzt vor dem Konvertieren, wo der Track landen wird. Die Zeile „Vorschau“ über der Welle zeigt die tatsächlichen LUFS und den Peak, die die Konvertierung erzeugen wird, als Schätzung gekennzeichnet und mitlaufend, während du das Ziel verschiebst. Die Idee kam von einem Leser, der dasselbe FLAC immer wieder konvertierte, nur um das Ergebnis abzulesen. Das ⓘ des Abschnitts öffnet jetzt auch die Hilfe zu den Kennzahlen, und jede Voreinstellung erklärt sich in einer Zeile.",
+        "text": "Die Normalisierungsvorschau sagt dir jetzt vor dem Konvertieren, wo der Track landen wird. Die Zeile „Vorschau“ über der Wellenform zeigt die tatsächlichen LUFS und den Peak, die die Konvertierung erzeugen wird, als Schätzung gekennzeichnet und mitlaufend, während du das Ziel verschiebst. Die Idee kam von einem Nutzer, der dasselbe FLAC immer wieder konvertierte, nur um das Ergebnis abzulesen. Das ⓘ des Abschnitts öffnet jetzt auch die Hilfe zu den Kennzahlen, und jede Voreinstellung erklärt sich in einer Zeile.",
         "in": "0.83.0"
       },
       {
@@ -2006,7 +2006,7 @@
     "title": "Surco bedienen, ohne die Tastatur loszulassen",
     "items": [
       {
-        "text": "⌘← und ⌘→ springen zur benachbarten Spalte, als Alternative zu den direkten Sprüngen mit ⌘1, ⌘2 und ⌘3. An den Rändern bleiben sie stehen, statt herumzuspringen, damit du immer weißt, auf welcher Seite des Fensters du gerade bist. Hinweis: In einem Textfeld wechseln sie ebenfalls die Spalte und setzen den Cursor dort also nicht mehr an den Anfang oder das Ende der Zeile.",
+        "text": "⌘← und ⌘→ springen zur benachbarten Spalte, als Alternative zu den direkten Sprüngen mit ⌘1, ⌘2 und ⌘3. An den Rändern bleiben sie stehen, statt zur anderen Seite umzubrechen, damit du immer weißt, auf welcher Seite des Fensters du gerade bist. Hinweis: In einem Textfeld wechseln sie ebenfalls die Spalte und setzen den Cursor dort also nicht mehr an den Anfang oder das Ende der Zeile.",
         "in": "0.82.0"
       },
       {
@@ -2044,7 +2044,7 @@
     "title": "Jede Tastenkombination taugt als Kürzel",
     "items": [
       {
-        "text": "Option und Control funktionieren jetzt beim Aufnehmen eines Kürzels. ⌥E oder ⌃E zuzuweisen bewirkte bisher gar nichts: Surco verstand nur ⌘ und Shift und ignorierte stillschweigend alles andere, was du gedrückt hast. Wenn du Surco auf eine Makro-Tastatur legst, kannst du jetzt jede Kombination nutzen, die deine Hardware sendet, statt nach einer zu suchen, die hängen bleibt.",
+        "text": "Option und Control funktionieren jetzt beim Aufnehmen eines Kürzels. ⌥E oder ⌃E zuzuweisen bewirkte bisher gar nichts: Surco verstand nur ⌘ und Shift und ignorierte stillschweigend alles andere, was du gedrückt hast. Wenn du Surco auf eine Makro-Tastatur legst, kannst du jetzt jede Kombination nutzen, die deine Hardware sendet, statt nach einer zu suchen, die auch angenommen wird.",
         "in": "0.80.0"
       },
       {
@@ -2113,7 +2113,7 @@
         "in": "0.77.0"
       },
       {
-        "text": "Bei der Klick-Reparatur lässt sich die Wiedergabeposition jetzt mit den Pfeiltasten an jede Stelle im Track setzen, statt nur von einem erkannten Klick zum nächsten zu springen.",
+        "text": "Bei der Knackser-Reparatur lässt sich der Abspielkopf jetzt mit den Pfeiltasten an jede Stelle im Track setzen, statt nur von einem erkannten Knackser zum nächsten zu springen.",
         "in": "0.77.0"
       },
       {
@@ -2160,7 +2160,7 @@
         "in": "0.76.2"
       },
       {
-        "text": "Beim Kürzen der Stille wird die Wellenform jetzt genau dort gezeichnet, wo sie hingehört. Beim Hineinzoomen konnte sie sich um bis zu vier Hundertstelsekunden von der Schnittlinie verschieben, sodass du den Schnitt an einer Zeichnung ausgerichtet hast, die gelogen hat, und am Ende in den ersten Beat geschnitten hast. Die Welle bleibt beim Zoomen außerdem auf den Schnitt zentriert, mit Stille auf der einen und Musik auf der anderen Seite, statt an einen Rand abzudriften.",
+        "text": "Beim Kürzen der Stille wird die Wellenform jetzt genau dort gezeichnet, wo sie hingehört. Beim Hineinzoomen konnte sie sich um bis zu vier Hundertstelsekunden von der Schnittlinie verschieben, sodass du den Schnitt an einer Zeichnung ausgerichtet hast, die gelogen hat, und am Ende in den ersten Beat geschnitten hast. Die Wellenform bleibt beim Zoomen außerdem auf den Schnitt zentriert, mit Stille auf der einen und Musik auf der anderen Seite, statt an einen Rand abzudriften.",
         "in": "0.76.3"
       },
       {
@@ -2203,7 +2203,7 @@
         "in": "0.75.3"
       },
       {
-        "text": "Die Lautstärke des Players verlässt die Wellenform, sodass du überall auf die Welle klicken kannst, um dorthin zu springen. Die Transportsteuerung bekommt eine eigene Zeile mit stets sichtbarer Lautstärke, und der Schließen-Button wandert in die Ecke der Karte.",
+        "text": "Die Lautstärke des Players verlässt die Wellenform, sodass du überall auf die Wellenform klicken kannst, um dorthin zu springen. Die Transportsteuerung bekommt eine eigene Zeile mit stets sichtbarer Lautstärke, und der Schließen-Button wandert in die Ecke der Karte.",
         "in": "0.75.3"
       }
     ]
@@ -2244,7 +2244,7 @@
         "in": "0.72.0"
       },
       {
-        "text": "Surco merkt sich jetzt zwischen den Sitzungen, was es über deine Musik schon weiß: deine Apple-Music-Bibliothek, die Metadaten und Analysen jedes Tracks, Abfragen bei Discogs und Bandcamp und deine Engine-DJ-Datenbank. So öffnet sich die App und zeigt deine Bibliothek sofort, statt alles von Grund auf neu zu berechnen.",
+        "text": "Surco merkt sich jetzt zwischen den Sitzungen, was es über deine Musik schon weiß: deine Apple-Music-Mediathek, die Metadaten und Analysen jedes Tracks, Abfragen bei Discogs und Bandcamp und deine Engine-DJ-Datenbank. So öffnet sich die App und zeigt deine Bibliothek sofort, statt alles von Grund auf neu zu berechnen.",
         "in": "0.72.0"
       }
     ]
@@ -2267,7 +2267,7 @@
         "in": "0.71.0"
       },
       {
-        "text": "Beschädigte Audiodateien frieren die App nicht mehr ein: Die Analyse markiert sie als unlesbar und macht mit dem Rest weiter, und eine WAV mit kaputtem Header wird im Vorbeigehen repariert, damit sie trotzdem abspielbar ist.",
+        "text": "Beschädigte Audiodateien frieren die App nicht mehr ein: Die Analyse markiert sie als unlesbar und macht mit dem Rest weiter, und ein WAV mit kaputtem Header wird im Vorbeigehen repariert, damit es trotzdem abspielbar ist.",
         "in": "0.71.0"
       },
       {
@@ -2290,7 +2290,7 @@
         "in": "0.70.0"
       },
       {
-        "text": "Neuer Schutz für deine Dateien: Ein Track, dessen Format nicht beibehalten werden kann (.opus, .m4a…), wird mit einem Hinweis übersprungen, statt in etwas anderes konvertiert zu werden, und beim Überschreiben wird dein Original nie gelöscht. Würde ein Filter eine MP3 zwingen, über sich selbst neu kodiert zu werden, fragt Surco nach, bevor Qualität verloren geht, auch wenn der Filter aus den Einstellungen kommt.",
+        "text": "Neuer Schutz für deine Dateien: Ein Track, dessen Format nicht beibehalten werden kann (.opus, .m4a…), wird mit einem Hinweis übersprungen, statt in etwas anderes konvertiert zu werden, und beim Überschreiben wird dein Original nie gelöscht. Würde ein Filter ein MP3 zwingen, über sich selbst neu kodiert zu werden, fragt Surco nach, bevor Qualität verloren geht, auch wenn der Filter aus den Einstellungen kommt.",
         "in": "0.70.0"
       },
       {
@@ -2309,7 +2309,7 @@
         "in": "0.69.0"
       },
       {
-        "text": "Wenn du einen Track über sich selbst exportierst, wendet Surco die Normalisierung und Klick-Entfernung, die dieser Export schon eingebrannt hat, nicht erneut an. Bearbeitest du nur die Metadaten, wird das Audio nicht mehr neu verarbeitet, sodass du bei verlustbehafteten Formaten keine Generation verlierst und keine Verstärkung auf Verstärkung stapelst.",
+        "text": "Wenn du einen Track über sich selbst exportierst, wendet Surco die Normalisierung und Knackser-Entfernung, die dieser Export schon eingebrannt hat, nicht erneut an. Bearbeitest du nur die Metadaten, wird das Audio nicht mehr neu verarbeitet, sodass du bei verlustbehafteten Formaten keine Generation verlierst und keine Verstärkung auf Verstärkung stapelst.",
         "in": "0.69.0"
       },
       {
@@ -2514,7 +2514,7 @@
         "in": "0.62.0"
       },
       {
-        "text": "Die Abschnitte für Klick-Reparatur und Lautheit lassen sich jetzt wie die anderen Wellenform-Abschnitte maximieren, sodass du im Detail arbeiten kannst, ohne dass dir der Rest des Editors im Weg ist.",
+        "text": "Die Abschnitte für Knackser-Reparatur und Lautheit lassen sich jetzt wie die anderen Wellenform-Abschnitte maximieren, sodass du im Detail arbeiten kannst, ohne dass dir der Rest des Editors im Weg ist.",
         "in": "0.62.0"
       },
       {
@@ -2557,11 +2557,11 @@
         "in": "0.61.0"
       },
       {
-        "text": "Ein gefälschter Rip verrät sich schon in der Liste. Tracks mit verdächtigem Frequenzabschnitt zeigen ihre Warnung direkt in der Zeile, und das Spektrum schattiert das tote Band, damit du auf einen Blick siehst, wo das Audio aufhört.",
+        "text": "Ein gefälschter Rip verrät sich schon in der Liste. Tracks mit verdächtigem Frequenz-Cutoff zeigen ihre Warnung direkt in der Zeile, und das Spektrum schattiert das tote Band, damit du auf einen Blick siehst, wo das Audio aufhört.",
         "in": "0.61.0"
       },
       {
-        "text": "Der Editor lädt ohne Aufblitzen. Jeder Abschnitt (Welle, Spektrum, Lautheit, Eigenschaften, BPM und Tonart) zeigt während der Analyse ein Platzhaltergerüst in seiner echten Form, und Abschnitte öffnen und schließen sich mit einer weichen Animation, statt zu springen.",
+        "text": "Der Editor lädt ohne Aufblitzen. Jeder Abschnitt (Wellenform, Spektrum, Lautheit, Eigenschaften, BPM und Tonart) zeigt während der Analyse ein Platzhaltergerüst in seiner echten Form, und Abschnitte öffnen und schließen sich mit einer weichen Animation, statt zu springen.",
         "in": "0.61.0"
       },
       {
@@ -2592,7 +2592,7 @@
         "in": "0.60.0"
       },
       {
-        "text": "Die Wellen zeigen, was das Kürzen wegnimmt. Bei Klick-Reparatur, Lautheit und Beatgrid sind Anfang und Ende, die das Kürzen der Stille abschneidet, über der Welle abgedunkelt, sodass du auf einen Blick siehst, welches Audio nicht im Export landet, ohne dass sich etwas verschiebt.",
+        "text": "Die Wellenformen zeigen, was das Kürzen wegnimmt. Bei Knackser-Reparatur, Lautheit und Beatgrid sind Anfang und Ende, die das Kürzen der Stille abschneidet, über der Wellenform abgedunkelt, sodass du auf einen Blick siehst, welches Audio nicht im Export landet, ohne dass sich etwas verschiebt.",
         "in": "0.60.0"
       },
       {
@@ -2604,11 +2604,11 @@
         "in": "0.60.1"
       },
       {
-        "text": "Beim Öffnen eines Editor-Abschnitts erscheint sein Ladegerüst sofort statt einer leeren Lücke, während er warmläuft: Kürzen, Klick-Reparatur, Lautheit, Beatgrid und Qualität reagieren alle sofort.",
+        "text": "Beim Öffnen eines Editor-Abschnitts erscheint sein Ladegerüst sofort statt einer leeren Lücke, während er warmläuft: Kürzen, Knackser-Reparatur, Lautheit, Beatgrid und Qualität reagieren alle sofort.",
         "in": "0.60.1"
       },
       {
-        "text": "Das Laden einer Welle ruckelt nicht mehr. Die Kanalanalyse, die die Welle braucht, läuft jetzt im Hintergrund, sodass die Oberfläche reaktionsfähig bleibt, während ein schwerer Track vorbereitet wird, statt kurz zu blockieren.",
+        "text": "Das Laden einer Wellenform ruckelt nicht mehr. Die Kanalanalyse, die die Wellenform braucht, läuft jetzt im Hintergrund, sodass die Oberfläche reaktionsfähig bleibt, während ein schwerer Track vorbereitet wird, statt kurz zu blockieren.",
         "in": "0.60.3"
       },
       {
@@ -2650,7 +2650,7 @@
     "title": "Hör, was du behältst, nicht was du verlierst",
     "items": [
       {
-        "text": "Die Vinyl-Klick-Reparatur zeigt dir jetzt, wo die Klicks sitzen. Jeder Klick, den der Detektor findet, ist auf der Wellenform des Tracks markiert, sodass sich eine staubige Pressung auf einen Blick lesen lässt statt als bloße Zahl.",
+        "text": "Die Vinyl-Knackser-Reparatur zeigt dir jetzt, wo die Knackser sitzen. Jeder Knackser, den der Detektor findet, ist auf der Wellenform des Tracks markiert, sodass sich eine staubige Pressung auf einen Blick lesen lässt statt als bloße Zahl.",
         "in": "0.58.0"
       },
       {
@@ -2658,7 +2658,7 @@
         "in": "0.58.0"
       },
       {
-        "text": "Spring direkt zu jedem Klick. Klicks dauern Millisekunden, sie per Ziehen zu suchen ist hoffnungslos. Drück Nächster Klick, um sie einzeln durchzugehen, klick auf eine Markierung, um genau diesen zu hören, oder zieh irgendwo auf der Welle und drück die Leertaste, um von dort abzuspielen.",
+        "text": "Spring direkt zu jedem Knackser. Knackser dauern Millisekunden, sie per Ziehen zu suchen ist hoffnungslos. Drück Nächster Knackser, um sie einzeln durchzugehen, klick auf eine Markierung, um genau diesen zu hören, oder zieh irgendwo auf der Wellenform und drück die Leertaste, um von dort abzuspielen.",
         "in": "0.58.0"
       },
       {
@@ -2697,7 +2697,7 @@
         "in": "0.57.0"
       },
       {
-        "text": "Das Probehören des Beatgrids läuft flüssig. Die Wiedergabeposition zeichnete früher bei jedem Frame den ganzen Abschnitt neu, und das ausgerechnet, während du nach Augenmaß beurteilst, ob die Klicks auf den Transienten landen.",
+        "text": "Das Probehören des Beatgrids läuft flüssig. Der Abspielkopf zeichnete früher bei jedem Frame den ganzen Abschnitt neu, und das ausgerechnet, während du nach Augenmaß beurteilst, ob die Klicks auf den Transienten landen.",
         "in": "0.57.0"
       }
     ]
@@ -2716,7 +2716,7 @@
         "in": "0.56.0"
       },
       {
-        "text": "Die Beatgrid-Spur liest sich wieder wie ein Grid: Der Downbeat führt, die Beats bleiben zurückhaltend, und die Welle verschwindet nicht mehr unter einem Lattenzaun aus Linien.",
+        "text": "Die Beatgrid-Spur liest sich wieder wie ein Grid: Der Downbeat führt, die Beats bleiben zurückhaltend, und die Wellenform verschwindet nicht mehr unter einem Lattenzaun aus Linien.",
         "in": "0.56.0"
       },
       {
@@ -2724,7 +2724,7 @@
         "in": "0.56.0"
       },
       {
-        "text": "Alle Wellen-Abschnitte teilen sich eine Zoom-Steuerung, und die Werkzeugleisten sind einheitlich: dieselben Buttons, dieselbe Reihenfolge, derselbe Platz, egal in welchem Abschnitt du bist.",
+        "text": "Alle Wellenform-Abschnitte teilen sich eine Zoom-Steuerung, und die Werkzeugleisten sind einheitlich: dieselben Buttons, dieselbe Reihenfolge, derselbe Platz, egal in welchem Abschnitt du bist.",
         "in": "0.56.0"
       }
     ]
@@ -2762,7 +2762,7 @@
     "title": "Das Beatgrid gehört dir",
     "items": [
       {
-        "text": "Neuer Abschnitt Beatgrid im Editor: Surco erkennt die BPM und den ersten Beat und zeichnet das Grid über die Welle. Passe es an, indem du eine beliebige Linie greifst, mit Präzisionsschritten oder durch Bearbeiten der BPM (÷2/×2 für die Oktave), und prüfe es mit einem Klick nach Gehör. Der Auto-Button analysiert jederzeit von Grund auf neu.",
+        "text": "Neuer Abschnitt Beatgrid im Editor: Surco erkennt die BPM und den ersten Beat und zeichnet das Grid über die Wellenform. Passe es an, indem du eine beliebige Linie greifst, mit Präzisionsschritten oder durch Bearbeiten der BPM (÷2/×2 für die Oktave), und prüfe es mit einem Klick nach Gehör. Der Auto-Button analysiert jederzeit von Grund auf neu.",
         "in": "0.54.0"
       },
       {
@@ -2782,7 +2782,7 @@
         "in": "0.54.0"
       },
       {
-        "text": "Der Beatgrid-Abschnitt arbeitet jetzt im Stil von rekordbox mit zwei Wellen: der gezoomten Ansicht, in der du das Grid anpasst (sie öffnet sich auf den ersten Beat gezoomt), und darunter dem ganzen Track. Drück oder zieh, um die Ansicht beliebig zu verschieben, und „Grid anhören“ scrollt wie ein Player mit der Wiedergabeposition mit.",
+        "text": "Der Beatgrid-Abschnitt arbeitet jetzt im Stil von rekordbox mit zwei Wellenformen: der gezoomten Ansicht, in der du das Grid anpasst (sie öffnet sich auf den ersten Beat gezoomt), und darunter dem ganzen Track. Drück oder zieh, um die Ansicht beliebig zu verschieben, und „Grid anhören“ scrollt wie ein Player mit dem Abspielkopf mit.",
         "in": "0.54.1"
       },
       {
@@ -2790,7 +2790,7 @@
         "in": "0.54.1"
       },
       {
-        "text": "Die Checkboxen der Spitzenpegel-Normalisierung (DC-Versatz entfernen, Kanäle unabhängig normalisieren) bleiben über Sitzungen hinweg gespeichert.",
+        "text": "Die Checkboxen der Peak-Normalisierung (DC-Versatz entfernen, Kanäle unabhängig normalisieren) bleiben über Sitzungen hinweg gespeichert.",
         "in": "0.54.1"
       }
     ]
@@ -2805,11 +2805,11 @@
         "in": "0.53.0"
       },
       {
-        "text": "Feineres Kürzen der Stille: eine Schere direkt auf der Welle, um jeden Schnitt anzuwenden, ein Klick auf die Welle setzt den nächstgelegenen Griff, ein Magnet rastet dort ein, wo die Musik wirklich beginnt, und Buttons prüfen jeden Schnitt nach Gehör.",
+        "text": "Feineres Kürzen der Stille: eine Schere direkt auf der Wellenform, um jeden Schnitt anzuwenden, ein Klick auf die Wellenform setzt den nächstgelegenen Griff, ein Magnet rastet dort ein, wo die Musik wirklich beginnt, und Buttons prüfen jeden Schnitt nach Gehör.",
         "in": "0.53.0"
       },
       {
-        "text": "Die Analyseergebnisse stehen jetzt als Pillen in der Kopfzeile jedes Abschnitts (erkannte Stille, gemessene LUFS und Spitzen, geschätzte Klicks) und sind auf einen Blick lesbar.",
+        "text": "Die Analyseergebnisse stehen jetzt als Chips in der Kopfzeile jedes Abschnitts (erkannte Stille, gemessene LUFS und Spitzen, geschätzte Knackser) und sind auf einen Blick lesbar.",
         "in": "0.53.0"
       },
       {
@@ -2832,10 +2832,10 @@
   {
     "version": "0.51",
     "date": "July 12, 2026",
-    "title": "Klicks unter Kontrolle",
+    "title": "Knackser unter Kontrolle",
     "items": [
       {
-        "text": "Die Klick-Reparatur schätzt jetzt vor dem Konvertieren, wie viele hörbare Klicks ein Track hat.",
+        "text": "Die Knackser-Reparatur schätzt jetzt vor dem Konvertieren, wie viele hörbare Knackser ein Track hat.",
         "in": "0.51.0"
       },
       {
@@ -2850,7 +2850,7 @@
     "title": "Die Reparatur anhören und den Editor auf einen Blick lesen",
     "items": [
       {
-        "text": "Die Klick-Reparatur lässt sich jetzt vor dem Konvertieren probehören: Sie spielt 20 Sekunden aus der Mitte des Tracks mit nur dem Rauschen, das sie entfernen würde. Fast Stille heißt, die Musik bleibt unberührt. Dazu siehst du den Anteil des Ausschnitts, den sie verändern würde.",
+        "text": "Die Knackser-Reparatur lässt sich jetzt vor dem Konvertieren probehören: Sie spielt 20 Sekunden aus der Mitte des Tracks mit nur dem Rauschen, das sie entfernen würde. Fast Stille heißt, die Musik bleibt unberührt. Dazu siehst du den Anteil des Ausschnitts, den sie verändern würde.",
         "in": "0.50.0"
       },
       {
@@ -2858,7 +2858,7 @@
         "in": "0.50.0"
       },
       {
-        "text": "Editor-Abschnitte lassen sich jetzt unter Einstellungen → Editor ganz ausblenden, und die Klick-Reparatur startet eingeklappt.",
+        "text": "Editor-Abschnitte lassen sich jetzt unter Einstellungen → Editor ganz ausblenden, und die Knackser-Reparatur startet eingeklappt.",
         "in": "0.50.0"
       }
     ]
@@ -2885,15 +2885,15 @@
         "in": "0.49.0"
       },
       {
-        "text": "Neue Vinyl-Klick-Reparatur: ein optionaler Schritt, der Klicks und Knackser der Nadel erkennt und beim Konvertieren repariert, mit zwei Stärken und einer Zählung der reparierten Klicks.",
+        "text": "Neue Vinyl-Knackser-Reparatur: ein optionaler Schritt, der Knackser und Knistern der Nadel erkennt und beim Konvertieren repariert, mit zwei Stärken und einer Zählung der reparierten Knackser.",
         "in": "0.49.1"
       },
       {
-        "text": "Die Normalisierung scheitert nicht mehr, wenn das Lautheitsziel oder die Spitzenobergrenze außerhalb des Bereichs eingegeben wurde: Sie werden auf die Werte begrenzt, die ffmpeg akzeptiert.",
+        "text": "Die Normalisierung scheitert nicht mehr, wenn das Lautheitsziel oder die Peak-Obergrenze außerhalb des Bereichs eingegeben wurde: Sie werden auf die Werte begrenzt, die ffmpeg akzeptiert.",
         "in": "0.49.1"
       },
       {
-        "text": "Die starke Klick-Reparatur bremst die Konvertierung nicht mehr aus: Sie läuft mit voller Geschwindigkeit und mit derselben Wirkung auf lange Knackser.",
+        "text": "Die starke Knackser-Reparatur bremst die Konvertierung nicht mehr aus: Sie läuft mit voller Geschwindigkeit und mit derselben Wirkung auf lange Knackser.",
         "in": "0.49.3"
       },
       {
@@ -2905,14 +2905,14 @@
   {
     "version": "0.48",
     "date": "July 11, 2026",
-    "title": "Die Welle erkunden und den Editor zu deinem machen",
+    "title": "Die Wellenform erkunden und den Editor zu deinem machen",
     "items": [
       {
         "text": "Der Lautheitsabschnitt zeigt die Wellenform des Tracks von Anfang an, mit markierten Clipping-Spitzen und einer Vorschau, wie sie nach dem Normalisieren aussehen wird.",
         "in": "0.48.0"
       },
       {
-        "text": "Erkunde die Welle aus der Nähe: eine Anzeige unter dem Cursor, gestufter Zoom im Stil von rekordbox mit waagerechtem Scrollen und ein Schalter, der die Spitzen markiert, die mit der aktuellen Einstellung clippen würden.",
+        "text": "Erkunde die Wellenform aus der Nähe: eine Anzeige unter dem Cursor, gestufter Zoom im Stil von rekordbox mit waagerechtem Scrollen und ein Schalter, der die Spitzen markiert, die mit der aktuellen Einstellung clippen würden.",
         "in": "0.48.0"
       },
       {
@@ -2943,11 +2943,11 @@
         "in": "0.47.0"
       },
       {
-        "text": "Zwei Arten zu vergleichen: nebeneinander oder übereinandergelegt, mit einem Schieberegler, der eine Welle über die andere blendet, damit du den Unterschied erkennst.",
+        "text": "Zwei Arten zu vergleichen: nebeneinander oder übereinandergelegt, mit einem Schieberegler, der eine Wellenform über die andere blendet, damit du den Unterschied erkennst.",
         "in": "0.47.0"
       },
       {
-        "text": "Die Spitzenpegel-Normalisierung kann jetzt DC-Versatz entfernen und jeden Stereokanal unabhängig normalisieren, wie in Audacity.",
+        "text": "Die Peak-Normalisierung kann jetzt DC-Versatz entfernen und jeden Stereokanal unabhängig normalisieren, wie in Audacity.",
         "in": "0.47.0"
       },
       {
@@ -3032,7 +3032,7 @@
         "in": "0.44.1"
       },
       {
-        "text": "Eine Datei, die ihr Discogs-Release schon mitbringt, öffnet jetzt direkt genau diese Pressung. Der automatische Abgleich und das Suchfeld bleiben dabei, statt sie unter Ergebnissen der Titelsuche zu begraben, und suchen nur dann neu, wenn das gespeicherte Release nicht mehr passt.",
+        "text": "Eine Datei, die ihr Discogs-Release schon mitbringt, öffnet jetzt direkt genau diese Pressung. Der automatische Abgleich und das Such-Panel bleiben dabei, statt sie unter Ergebnissen der Titelsuche zu begraben, und suchen nur dann neu, wenn das gespeicherte Release nicht mehr passt.",
         "in": "0.44.2"
       }
     ]
@@ -3043,7 +3043,7 @@
     "title": "Titelmuster und eine aufgeräumte Palette",
     "items": [
       {
-        "text": "Einstellbares Titelformat im Stil von Sammlern: Leg unter Einstellungen → Benennung ein Muster wie ({trackNumber}) {title} ({year}) fest und wende es an, wann du willst: auf einen Track über das ⋯-Menü des Titelfelds oder auf die ganze Auswahl auf einmal mit der T-Taste im Editor oder über die Befehlspalette. Es läuft nie von selbst, und ⌘Z macht es rückgängig.",
+        "text": "Einstellbares Titelformat im Stil von Sammlern: Leg unter Einstellungen → Benennung ein Muster wie ({trackNumber}) {title} ({year}) fest und wende es an, wann du willst: auf einen Track über das ⋯-Menü des Titelfelds oder auf die ganze Auswahl auf einmal mit dem T-Button im Editor oder über die Befehlspalette. Es läuft nie von selbst, und ⌘Z macht es rückgängig.",
         "in": "0.43.0"
       },
       {
@@ -3055,7 +3055,7 @@
         "in": "0.43.0"
       },
       {
-        "text": "Wendest du das Titelformat zweimal an, verdoppelt sich das Präfix nicht mehr, und die App erklärt immer das Ergebnis: wie viele Titel sich geändert haben, welche übersprungen wurden und welches leere Feld im Weg war.",
+        "text": "Wendest du das Titelformat zweimal an, verdoppelt sich das Präfix nicht mehr, und die App erklärt immer das Ergebnis: wie viele Tracks sich geändert haben, welche übersprungen wurden und welches leere Feld im Weg war.",
         "in": "0.43.1"
       }
     ]
@@ -3066,7 +3066,7 @@
     "title": "Tags, die in jedem Editor sauber aussehen",
     "items": [
       {
-        "text": "Konvertierungen räumen jetzt die Tag-Varianten auf, die andere Editoren hinterlassen (LABEL, ORGANIZATION, ALBUMARTIST2…): kein doppeltes Label oder doppelter Albuminterpret mehr, und ein geleertes Feld wird jetzt wirklich aus der Datei entfernt.",
+        "text": "Konvertierungen räumen jetzt die Tag-Varianten auf, die andere Editoren hinterlassen (LABEL, ORGANIZATION, ALBUMARTIST2…): kein doppeltes Label oder doppelter Albumkünstler mehr, und ein geleertes Feld wird jetzt wirklich aus der Datei entfernt.",
         "in": "0.42.0"
       },
       {
@@ -3108,7 +3108,7 @@
     "title": "Google-Suche und teilbare Statistiken",
     "items": [
       {
-        "text": "Neue Editor-Schaltfläche, um einen Track auf Google zu suchen: Sie öffnet deinen Browser mit dem Dateinamen als Suchbegriff, ganz ohne Kopieren und Einfügen.",
+        "text": "Neuer Editor-Button, um einen Track auf Google zu suchen: Sie öffnet deinen Browser mit dem Dateinamen als Suchbegriff, ganz ohne Kopieren und Einfügen.",
         "in": "0.40.0"
       },
       {
@@ -3146,11 +3146,11 @@
     "title": "Konvertierungsqualität in deiner Hand",
     "items": [
       {
-        "text": "Wähle die Qualität jeder Konvertierung: MP3-Bitrate (320 bis 128 kbps oder V0/V2 VBR), Bittiefe, Samplerate und FLAC-Kompressionsstufe. Standardmäßig entspricht alles dem Original, maximale Klangtreue, ohne etwas anzufassen.",
+        "text": "Wähle die Qualität jeder Konvertierung: MP3-Bitrate (320 bis 128 kbps oder V0/V2 VBR), Bittiefe, Abtastrate und FLAC-Kompressionsstufe. Standardmäßig entspricht alles dem Original, maximale Klangtreue, ohne etwas anzufassen.",
         "in": "0.38.0"
       },
       {
-        "text": "Konvertierungen behalten die exakte Bittiefe der Quelle: Eine 44,1/16-Datei kommt beim Normalisieren nicht mehr mit 24 Bit heraus, beim Reduzieren auf 16 Bit wird Dither angewendet, und eine MP3, die du in WAV oder AIFF konvertierst, ergibt Integer-PCM, das jeder Player annimmt.",
+        "text": "Konvertierungen behalten die exakte Bittiefe der Quelle: Eine 44,1/16-Datei kommt beim Normalisieren nicht mehr mit 24 Bit heraus, beim Reduzieren auf 16 Bit wird Dither angewendet, und ein MP3, das du in WAV oder AIFF konvertierst, ergibt Integer-PCM, das jeder Player annimmt.",
         "in": "0.38.0"
       },
       {
@@ -3166,7 +3166,7 @@
         "in": "0.38.1"
       },
       {
-        "text": "Eine Datei, die schon im Ausgabeformat vorliegt, wird weiterhin ohne Neukodierung aktualisiert. Erfüllt sie aber deine festgelegte Samplerate oder Bittiefe nicht, bietet der Editor jetzt ausdrücklich eine Neukodierung an und lässt das Original unangetastet.",
+        "text": "Eine Datei, die schon im Ausgabeformat vorliegt, wird weiterhin ohne Neukodierung aktualisiert. Erfüllt sie aber deine festgelegte Abtastrate oder Bittiefe nicht, bietet der Editor jetzt ausdrücklich eine Neukodierung an und lässt das Original unangetastet.",
         "in": "0.38.2"
       },
       {
@@ -3185,7 +3185,7 @@
         "in": "0.37.0"
       },
       {
-        "text": "Der automatische Abgleich ist vorsichtiger: Ein identischer Titel allein taggt eine Datei nicht mehr selbstständig. Laufzeit, Interpret oder Katalognummer müssen ihn bestätigen, sonst wird der Vorschlag markiert, damit du ihn bestätigst.",
+        "text": "Der automatische Abgleich ist vorsichtiger: Ein identischer Titel allein taggt eine Datei nicht mehr selbstständig. Laufzeit, Künstler oder Katalognummer müssen ihn bestätigen, sonst wird der Vorschlag markiert, damit du ihn bestätigst.",
         "in": "0.37.0"
       },
       {
@@ -3193,7 +3193,7 @@
         "in": "0.37.0"
       },
       {
-        "text": "Speichere im Editor einen Qualitätsbericht als PNG: das Spektrogramm mit Urteil und Grenzlinie, bereit zum Teilen, wenn jemand fragt, ob eine Datei wirklich verlustfrei ist.",
+        "text": "Speichere im Editor einen Qualitätsbericht als PNG: das Spektrogramm mit Urteil und Cutoff-Linie, bereit zum Teilen, wenn jemand fragt, ob eine Datei wirklich verlustfrei ist.",
         "in": "0.37.0"
       },
       {
@@ -3247,7 +3247,7 @@
     "title": "Ein klarerer Abschluss beim Export",
     "items": [
       {
-        "text": "Wenn ein Export fertig ist, kommt der Editor auf den Punkt: die Bestätigung mit Links, um die Datei zu zeigen oder das Original zu löschen, und eine einzige Reihe von Schaltflächen: Apple Music, eine andere DJ-App und erneut exportieren.",
+        "text": "Wenn ein Export fertig ist, kommt der Editor auf den Punkt: die Bestätigung mit Links, um die Datei zu zeigen oder das Original zu löschen, und eine einzige Reihe von Buttons: Apple Music, eine andere DJ-App und erneut exportieren.",
         "in": "0.35.0"
       },
       {
@@ -3285,11 +3285,11 @@
         "in": "0.33.0"
       },
       {
-        "text": "Das Abzeichen „schon in deiner Bibliothek“ folgt jetzt deinem Ziel: Es prüft Apple Music oder Engine DJ, je nachdem, wohin deine Tracks gehen, und verschwindet, wenn du nur in einen Ordner konvertierst.",
+        "text": "Das Badge „schon in deiner Bibliothek“ folgt jetzt deinem Ziel: Es prüft Apple Music oder Engine DJ, je nachdem, wohin deine Tracks gehen, und verschwindet, wenn du nur in einen Ordner konvertierst.",
         "in": "0.33.0"
       },
       {
-        "text": "Der Export nach rekordbox, Traktor, Serato oder M3U8 sitzt jetzt im Editor, genau dort, wo eine Konvertierung endet, statt als einsame Schaltfläche in der Werkzeugleiste.",
+        "text": "Der Export nach rekordbox, Traktor, Serato oder M3U8 sitzt jetzt im Editor, genau dort, wo eine Konvertierung endet, statt als einsamer Button in der Werkzeugleiste.",
         "in": "0.33.0"
       },
       {
@@ -3311,7 +3311,7 @@
       "Surco merkt sich deine letzte Sitzung: Beim Start bietet eine Abfrage an, die Tracks neu zu laden, an denen du gearbeitet hast.",
       "Automatische Qualitätsanalyse (optional): Schalte sie in den Einstellungen ein, und jeder importierte Track wird im Hintergrund analysiert. So markieren sich verdächtige Dateien selbst, ohne dass du auf Analysieren drückst.",
       "Neues Ausgabeformat ALAC (Apple Lossless), verlustfrei und bereit für Apple Music. Bei MP3 kannst du jetzt zwischen 320 kbps und V0 wählen.",
-      "Duplikate-Filter: Finde denselben Song, der als zwei Dateien geladen ist (eine FLAC und eine MP3, zwei Downloads), und entscheide, welche du behältst.",
+      "Duplikate-Filter: Finde denselben Song, der als zwei Dateien geladen ist (ein FLAC und ein MP3, zwei Downloads), und entscheide, welche du behältst.",
       "Exportiere deine Liste als M3U8, die Standard-Playlist, die fast jeder Player versteht.",
       "Mehr Klarheit im Alltag: ein Hinweis, wenn sich die Metadaten einer Datei nicht lesen lassen, die Statistiken zeigen den Fortschritt der aktuellen Liste, und das Aktivitätsfenster merkt sich seine Position und protokolliert jetzt auch Importe und Exporte."
     ]
@@ -3321,10 +3321,10 @@
     "date": "July 2, 2026",
     "title": "Treffsichererer Abgleich und Aufräumen auf einen Blick",
     "items": [
-      "Der automatische Abgleich wird genauer: Hat ein Track eine Katalognummer, bestätigt Surco damit das exakte Release und wendet den Treffer an, ohne dass du ihn prüfen musst. Zwischen zwei Ausgaben bevorzugt es die, deren Jahr zu deiner Datei passt.",
+      "Der automatische Abgleich wird genauer: Hat ein Track eine Katalognummer, bestätigt Surco damit das exakte Release und wendet den Treffer an, ohne dass du ihn prüfen musst. Zwischen zwei Editionen bevorzugt es die, deren Jahr zu deiner Datei passt.",
       "Landet ein Vorschlag als „zu prüfen“, kannst du ihn jetzt in einem Schritt annehmen, über die Palette (⌘K) oder sein Kürzel, ohne den Editor zu öffnen.",
-      "Eine Schaltfläche direkt neben dem Qualitätsfilter legt alle als verdächtig markierten Tracks auf einmal in den Papierkorb.",
-      "Der Player bekommt eine Play-Taste über dem Cover beim Überfahren, eine weitere, um zum laufenden Track zu springen, und mit den Pfeiltasten 5 Sekunden zurück und vor.",
+      "Ein Button direkt neben dem Qualitätsfilter legt alle als verdächtig markierten Tracks auf einmal in den Papierkorb.",
+      "Der Player bekommt einen Play-Button über dem Cover beim Überfahren, einen weiteren, um zum laufenden Track zu springen, und mit den Pfeiltasten 5 Sekunden zurück und vor.",
       "Mehr Tastatursteuerung: Suchen mit „/“, Suche und Filter mit Escape leeren, mit Ctrl+Pfeiltasten beim Bearbeiten eines Felds zwischen Tracks wechseln, und jede Aktion zeigt ihr Kürzel im Tooltip."
     ]
   },
@@ -3333,9 +3333,9 @@
     "date": "July 1, 2026",
     "title": "Ein Editor mit Abschnitten und eine Palette, die dazulernt",
     "items": [
-      "Der Editor gruppiert die Felder in Abschnitte (Identität, Katalog, DJ und Reihenfolge), damit du den Überblick behältst, wenn viele aktiv sind. Unter Einstellungen → Felder sortiert die Schaltfläche „Auto-Sortieren“ sie mit einem Klick in Abschnitte.",
+      "Der Editor gruppiert die Felder in Abschnitte (Identität, Katalog, DJ und Reihenfolge), damit du den Überblick behältst, wenn viele aktiv sind. Unter Einstellungen → Felder sortiert der Button „Auto-Sortieren“ sie mit einem Klick in Abschnitte.",
       "Die Befehlspalette (⌘K) lernt von dir: Beim Tippen steigen die Befehle, die du am häufigsten nutzt, in der Liste nach oben, sodass dein üblicher direkt unter dem Cursor landet.",
-      "Die Discogs-Suche gleicht präziser ab: Hat ein Track Interpret und Titel, fragt sie diese Felder getrennt ab statt als einen losen Text und findet das richtige Release mit weniger Rauschen."
+      "Die Discogs-Suche gleicht präziser ab: Hat ein Track Künstler und Titel, fragt sie diese Felder getrennt ab statt als einen losen Text und findet das richtige Release mit weniger Rauschen."
     ]
   },
   {
@@ -3343,7 +3343,7 @@
     "date": "July 1, 2026",
     "title": "Parallele Konvertierung und mehr über ⌘K",
     "items": [
-      "„Alle konvertieren“ verarbeitet jetzt mehrere Tracks gleichzeitig statt nacheinander, sodass ein großer Stapel viel früher fertig ist. Der Schritt zu Apple Music läuft weiterhin einzeln, so wie Musik sie importiert.",
+      "„Alle konvertieren“ verarbeitet jetzt mehrere Tracks gleichzeitig statt nacheinander, sodass ein großer Stapel viel früher fertig ist. Der Schritt zu Apple Music läuft weiterhin einzeln, so wie Music sie importiert.",
       "Die Befehlspalette (⌘K) bekommt neue Kürzel: Design wechseln, Metadaten aus dem Dateinamen füllen, Metadaten der Auswahl löschen und ein direkter Link zum Spenden (mit ein bisschen Konfetti)."
     ]
   },
@@ -3374,7 +3374,7 @@
     "date": "June 30, 2026",
     "title": "Ein neu gestalteter Player und überall aufgeräumter",
     "items": [
-      "Die Karte des laufenden Tracks wurde neu gebaut: Der Titel bekommt eine eigene Zeile und wird nicht mehr abgeschnitten, Cover und Bedienelemente stehen ausgewogen daneben, und die Tasten sind nach Funktion gruppiert: Wiedergabe, Loop und Wellenform, Schließen.",
+      "Die Karte des laufenden Tracks wurde neu gebaut: Der Titel bekommt eine eigene Zeile und wird nicht mehr abgeschnitten, Cover und Bedienelemente stehen ausgewogen daneben, und die Buttons sind nach Funktion gruppiert: Wiedergabe, Loop und Wellenform, Schließen.",
       "Die Trackliste und der Player zeigen jetzt immer das eigene Cover der Datei, nie ein anderes Bild, das du gerade im Editor ausprobierst. Ein Discogs-Release tauscht dein Cover nur noch aus, wenn du das willst.",
       "Das Discogs-Suchfeld bekommt eine Lupe und ein Leeren mit einem Klick, passend zum Trackfilter.",
       "Tooltips in der ganzen App passen jetzt zum dunklen Design von Surco statt den schlichten Systemvarianten, und die Werkzeugleiste wirkt mit leichteren Symboltasten ruhiger.",
@@ -3397,9 +3397,9 @@
     "date": "June 26, 2026",
     "title": "Hintergrundarbeit im Aktivitätsfenster verfolgen",
     "items": [
-      "Ein neues verschieb- und skalierbares Aktivitätsfenster zeigt die Hintergrundarbeit live: Trackanalyse, Prüfungen der Apple-Music-Mediathek und Links zu den veröffentlichten Versionen. Öffne es über die Werkzeugleiste.",
+      "Ein neues verschieb- und skalierbares Aktivitätsfenster zeigt die Hintergrundarbeit live: Trackanalyse, Prüfungen der Apple-Music-Mediathek und Links zu den gefundenen Releases. Öffne es über die Werkzeugleiste.",
       "Das Spektrogramm bekommt ein Fadenkreuz, das beim Bewegen die exakte Frequenz unter deinem Cursor anzeigt.",
-      "Das Qualitätsurteil meldet die echte Obergrenze von Audio mit hoher Samplerate, statt bei Nyquist aufzuhören, und gleicht mit der Apple-Music-Mediathek noch genauer ab."
+      "Das Qualitätsurteil meldet die echte Obergrenze von Audio mit hoher Abtastrate, statt bei Nyquist aufzuhören, und gleicht mit der Apple-Music-Mediathek noch genauer ab."
     ]
   },
   {
@@ -3408,10 +3408,10 @@
     "title": "Mehr Fälschungen erkennen und deine Apple-Music-Mediathek schärfen",
     "items": [
       "Das Qualitätsurteil erkennt eine neue Art falscher 320er: Tracks mit einer Frequenzwand, versteckt hinter ein paar Spitzen in den Höhen, die bisher als gut durchgingen.",
-      "Die Erkennung „schon in meiner Mediathek“ für Apple Music ist genauer: Sie gleicht nach Titel, Interpret und Laufzeit ab, merkt sich das über Discogs bestätigte Urteil und zeigt einen Prüfstatus, solange sie arbeitet. So stimmen Liste, Filter und Editor immer überein.",
+      "Die Erkennung „schon in meiner Mediathek“ für Apple Music ist genauer: Sie gleicht nach Titel, Künstler und Laufzeit ab, merkt sich das über Discogs bestätigte Urteil und zeigt einen Prüfstatus, solange sie arbeitet. So stimmen Liste, Filter und Editor immer überein.",
       "Die Suche verteilt die Ergebnisse auf die Anbieter, damit eine Discogs-lastige Suche die Bandcamp-Ergebnisse nicht mehr begräbt.",
       "Die Cover-Auswahl zeigt dasselbe Bild nicht mehr mehrfach.",
-      "Eine neue Schaltfläche in den Einstellungen leert den Analyse-Cache, um Spektrogramme und Urteile von Grund auf neu zu berechnen."
+      "Ein neuer Button in den Einstellungen leert den Analyse-Cache, um Spektrogramme und Urteile von Grund auf neu zu berechnen."
     ]
   },
   {
@@ -3423,13 +3423,13 @@
       "Die Dateiauswahl akzeptiert jetzt Ordner und klappt sie auf, genau wie beim Hineinziehen.",
       "Suchen und Ersetzen hat einen Schalter für Groß-/Kleinschreibung.",
       "Der Export nach Apple Music warnt dich, wenn ein Track noch nicht konvertiert ist.",
-      "Die Konvertierung in jedes Format behält jetzt die Cue-Punkte und das Beatgrid von Traktor, nicht nur beim Normalisieren der Lautstärke.",
+      "Die Konvertierung in jedes Format behält jetzt die Cue-Points und das Beatgrid von Traktor, nicht nur beim Normalisieren der Lautstärke.",
       "Die Konvertierung respektiert jetzt Metadatenfelder, die du geleert hast: Lösch einen Kommentar oder einen anderen Wert, und das Original kommt nicht mehr zurück.",
       "Neue Anzeigen in den Trackzeilen: Das Qualitätsurteil erscheint als Schweregrad-Symbol, und bereits konvertierte Tracks bekommen ein blaues Häkchen.",
       "Tracks erscheinen schneller, wenn du große oder Netzwerkordner hineinziehst, und eine hängende Netzwerkdatei friert die Qualitätsanalyse nicht mehr ein.",
       "Genauere Discogs-Suchen, wenn der Name eines Tracks mit einer Zahl beginnt.",
       "Die Oberfläche bleibt flüssig, während du die Qualität vieler Tracks auf einmal analysierst. Die Analyse konkurriert nicht mehr mit dem Bildschirm oder der Wiedergabe.",
-      "Das Qualitätsurteil erkennt Tracks besser, deren Frequenzgrenze der Codec verschmiert hat."
+      "Das Qualitätsurteil erkennt Tracks besser, deren Cutoff der Codec verschmiert hat."
     ]
   },
   {
@@ -3438,9 +3438,9 @@
     "title": "Der ganze Ablauf über die Tastatur",
     "items": [
       "Der gesamte Arbeitsablauf lässt sich jetzt per Tastatur steuern: zwischen Trackliste, Suchergebnissen und Editor springen, durch die Liste bewegen und blättern, ein Discogs- oder Bandcamp-Release mit den Pfeiltasten wählen und konvertieren und zum nächsten Track weitergehen, alles ohne Maus.",
-      "Die Befehlspalette springt jetzt direkt zu jedem Track: Tipp einfach seinen Titel oder Interpreten ein.",
+      "Die Befehlspalette springt jetzt direkt zu jedem Track: Tipp einfach seinen Titel oder Künstler ein.",
       "Aufgeräumtere Suchergebnisse: ein einstellbares Maximum, Compilations rutschen nach unten und die meistbesessene Pressung nach oben, sodass das richtige Release leichter zu finden ist.",
-      "Blendest du die Wellenform des Players aus, bleiben Lautstärke, verstrichene und Gesamtzeit sowie eine Suchleiste erhalten, damit du nie die Position verlierst."
+      "Blendest du die Wellenform des Players aus, bleiben Lautstärke, verstrichene und Gesamtzeit sowie eine Positionsleiste erhalten, damit du nie die Position verlierst."
     ]
   },
   {
@@ -3452,10 +3452,10 @@
       "Beim Hinzufügen von Dateien zeigen jetzt ein Live-Zähler und ein echter Fortschrittsbalken, wie Surco die Metadaten jedes Tracks liest, sodass du genau siehst, wie weit ein Import ist.",
       "Neue optionale Einstellung, um dein Dateinamenmuster automatisch anzuwenden, damit konvertierte Tracks ohne Handarbeit benannt werden.",
       "Der Player bekommt einen Schalter, um die Wellenform auszublenden (praktisch auf kleinen Bildschirmen), der auch die Wellenformanalyse überspringt und so Arbeit spart.",
-      "Schlauerer Abgleich mit der Apple-Music-Mediathek: Surco erkennt denselben Track über mehr Varianten von Interpret und Titel hinweg (Und-Zeichen, Abkürzungen mit Punkten wie D.J. und DJ, vorangestellte Namen wie DJ/Dr./MC, ausgeschriebene Zahlen und Ziffern, ein Interpret vor dem Titel und Versionsangaben am Ende), sodass weniger deiner Kopien als fehlend erscheinen.",
+      "Schlauerer Abgleich mit der Apple-Music-Mediathek: Surco erkennt denselben Track über mehr Varianten von Künstler und Titel hinweg (Und-Zeichen, Abkürzungen mit Punkten wie D.J. und DJ, vorangestellte Namen wie DJ/Dr./MC, ausgeschriebene Zahlen und Ziffern, ein Künstler vor dem Titel und Versionsangaben am Ende), sodass weniger deiner Kopien als fehlend erscheinen.",
       "Besserer Release-Abgleich für Tracks mit „(Original Mix)“: Surco entfernt diese Angabe am Ende, damit ein schlichter Katalogtitel trotzdem punktet, und der Abgleich von Alben mit mehreren Tracks lässt eine Datei lieber unzugeordnet, als einen falschen Track zu erzwingen.",
-      "Sauberere Anbietersuchen: Surco stellt den Hauptinterpreten vor einen „presents“-Alias und ignoriert eine Versionsangabe in Klammern, die nur den Titel wiederholt, sodass das richtige Discogs- oder Bandcamp-Release öfter auftaucht.",
-      "Das Mediathek-Abzeichen im Editor leuchtet jetzt auf, wenn ein sicherer Discogs-Vorschlag zu einem Track passt, den du schon in deiner Apple-Music-Mediathek hast.",
+      "Sauberere Anbietersuchen: Surco stellt den Hauptkünstler vor einen „presents“-Alias und ignoriert eine Versionsangabe in Klammern, die nur den Titel wiederholt, sodass das richtige Discogs- oder Bandcamp-Release öfter auftaucht.",
+      "Das Mediathek-Badge im Editor leuchtet jetzt auf, wenn ein sicherer Discogs-Vorschlag zu einem Track passt, den du schon in deiner Apple-Music-Mediathek hast.",
       "Aufgeräumtere Listenfilter: Jeder Abschnitt der Seitenleiste ist jetzt ein eigener, unabhängiger Filter, das Menü schließt sich, sobald du wählst, und Nicht konvertiert steht unter Alle.",
       "Robusterer Umgang mit Dateien: Surco liest Tags aus Dateien, an denen andere Apps scheitern, und repariert fehlerhafte WAV-Header, statt bei der Analyse abzubrechen.",
       "Stabilität: Startest du einen Track neu, klingt der Player nicht mehr weiter, nachdem seine Karte geschlossen ist."
@@ -3468,7 +3468,7 @@
     "items": [
       "Exportiere deine Tracks nach Serato DJ und Engine DJ (Denon), zusätzlich zu rekordbox und Traktor: Surco schreibt die Datei, die jede App importiert.",
       "Der automatische Abgleich markiert unsichere Treffer jetzt zur Prüfung, bevor du ihnen vertraust, statt sie zu verwerfen, und zeigt die Abgleichssicherheit jedes Tracks.",
-      "Erkennung von falschem Lossless: ein Hinweis, wenn eine FLAC oder WAV in Wahrheit eine verlustbehaftete Quelle ist, die als verlustfrei verpackt wurde.",
+      "Erkennung von falschem Lossless: ein Hinweis, wenn ein FLAC oder WAV in Wahrheit eine verlustbehaftete Quelle ist, die als verlustfrei verpackt wurde.",
       "Filtere und sortiere deine Tracks nach Format, mit einem Schalter, um die Sortierrichtung umzukehren."
     ]
   },
@@ -3479,8 +3479,8 @@
     "items": [
       "Durchsuche Bandcamp zusammen mit Discogs: Schalte es unter Einstellungen → Suche ein, und die Ergebnisse beider Quellen landen in einer einzigen Liste, jeweils mit ihrer Herkunft markiert. Ideal für Eigenveröffentlichungen, Netlabels und Exklusives, das es nicht auf Discogs gibt.",
       "Der automatische Abgleich ist jetzt eine globale Sucheinstellung und kann auf Bandcamp ausweichen, wenn Discogs nichts findet (nur mit Bandcamp braucht er kein Token).",
-      "Treffsichererer Abgleich für schlecht benannte Downloads: Surco entfernt Störendes aus Dateinamen und Titel, hält den richtigen Mix fest und gibt dem Interpreten der Datei Vorrang.",
-      "Neue Bereinigung „Basistitel“ im Menü des Albumfelds: Entferne die Version oder den Mix mit einem Tippen aus einem Titel.",
+      "Treffsichererer Abgleich für schlecht benannte Downloads: Surco entfernt Störendes aus Dateinamen und Titel, hält den richtigen Mix fest und gibt dem Künstler der Datei Vorrang.",
+      "Neue Bereinigung „Basistitel“ im Menü des Albumfelds: Entferne die Version oder den Mix mit einem Klick aus einem Titel.",
       "Genres, die sich nur in der Schreibweise unterscheiden (dein „Electronic“ und das „electronic“ einer Quelle), werden nicht mehr doppelt angezeigt: Es erscheint ein einziger Chip, in deiner Schreibweise.",
       "Deine vorhandenen Cover bleiben standardmäßig erhalten: Surco ersetzt sie nicht mehr, außer du entscheidest dich, niedrig aufgelöste auszutauschen."
     ]
@@ -3490,12 +3490,12 @@
     "date": "June 17, 2026",
     "title": "Die exakte Ausgabe finden, in deiner Sprache",
     "items": [
-      "Filtere Discogs-Suchen nach Format (Vinyl, CD, digital…) im neuen Tab Suche in den Einstellungen, damit du bei der Ausgabe landest, die du wirklich willst.",
+      "Filtere Discogs-Suchen nach Format (Vinyl, CD, digital…) im neuen Tab Suche in den Einstellungen, damit du bei der Edition landest, die du wirklich willst.",
       "Wähle die Sprache der App (System, English oder Español), und sie bleibt zwischen Sitzungen gespeichert.",
-      "Sauberere Discogs-Ergebnisse: Doppelte Ausgaben werden zusammengeführt, und ein Remix mit umsortierten Tracks passt trotzdem zur richtigen.",
-      "Schärfere Erkennung der Apple-Music-Mediathek: Sie gleicht nach ganzen Wörtern des Interpreten und nach dem Basistitel ab und erkennt so auch eine Kopie unter dem kanonischen Titel. Sie aktualisiert sich, wenn du zur App zurückkehrst, und fügt einen Track erneut hinzu, wenn seine Kopie in der Mediathek fehlt. (macOS)",
+      "Sauberere Discogs-Ergebnisse: Doppelte Editionen werden zusammengeführt, und ein Remix mit umsortierten Tracks passt trotzdem zur richtigen.",
+      "Schärfere Erkennung der Apple-Music-Mediathek: Sie gleicht nach ganzen Wörtern des Künstlers und nach dem Basistitel ab und erkennt so auch eine Kopie unter dem kanonischen Titel. Sie aktualisiert sich, wenn du zur App zurückkehrst, und fügt einen Track erneut hinzu, wenn seine Kopie in der Mediathek fehlt. (macOS)",
       "Surco warnt dich, wenn es die Lautheitsnormalisierung überspringen muss, weil es den Track nicht messen kann, statt es stillschweigend zu tun.",
-      "Klarere Liste und klarerer Editor: Shift-Klick wählt entlang der sichtbaren Reihenfolge aus, leere Pflichtfelder werden dezent markiert, und die Schaltfläche Konvertieren erklärt, was fehlt, bevor sie dich konvertieren lässt."
+      "Klarere Liste und klarerer Editor: Shift-Klick wählt entlang der sichtbaren Reihenfolge aus, leere Pflichtfelder werden dezent markiert, und der Button Konvertieren erklärt, was fehlt, bevor sie dich konvertieren lässt."
     ]
   },
   {
@@ -3530,9 +3530,9 @@
     "title": "Wellenform-Player und treffsichererer Discogs-Abgleich",
     "items": [
       "Der Player zeigt jetzt die Wellenform des Tracks: Klick oder zieh darauf, um zu spulen, die Zeit schwebt darüber.",
-      "Fortlaufende Wiedergabe: Wenn ein Track endet, spielt der nächste in der Liste. Schalte sie mit der ∞-Taste im Player ein und aus.",
+      "Fortlaufende Wiedergabe: Wenn ein Track endet, spielt der nächste in der Liste. Schalte sie mit dem ∞-Button im Player ein und aus.",
       "Viel treffsichererer Discogs-Abgleich: Er ignoriert Störendes im Dateinamen (320, Labels, „feat.“…), achtet nicht auf Akzente, versteht mehr Namensformate und versucht es bei Bedarf erneut nur mit Katalognummer oder Titel.",
-      "Mit eingeschaltetem automatischem Abgleich wird der Track, den du auswählst, von selbst abgeglichen. Du musst nicht bei jedem auf die Schaltfläche drücken.",
+      "Mit eingeschaltetem automatischem Abgleich wird der Track, den du auswählst, von selbst abgeglichen. Du musst nicht bei jedem auf den Button drücken.",
       "Ziehst du Dateien hinein, die schon in der Liste sind, werden sie jetzt übersprungen und du bekommst Bescheid, statt dass nichts passiert.",
       "Taggen und „Zu Apple Music hinzufügen“ gibt es jetzt auch für WAV-Dateien.",
       "Stell die Lautstärke des Players durch Scrollen darüber ein. Beim Überfahren schwebt der Pegel neben der Zeit.",
@@ -3546,7 +3546,7 @@
     "title": "Cover und Tags kopieren, Tracks herausziehen",
     "items": [
       "Zieh einen Track aus der Liste direkt in jede externe App (Spek, Finder, deinen Player), um ihn sofort zu prüfen, ganz ohne vorherigen Export.",
-      "Kopiere das Cover eines Tracks und füge es bei einem anderen ein: über die Taste auf dem Cover selbst oder mit ⌘C/⌘V, über die Zwischenablage des Systems (auch von und zu anderen Apps).",
+      "Kopiere das Cover eines Tracks und füge es bei einem anderen ein: über den Button auf dem Cover selbst oder mit ⌘C/⌘V, über die Zwischenablage des Systems (auch von und zu anderen Apps).",
       "Kopiere die kompletten Metadaten eines Tracks und füge sie über das Kontextmenü bei einem anderen ein. Perfekt, um die Angaben eines Release auf alle seine Tracks zu übertragen.",
       "Die Lautheitsnormalisierung erreicht jetzt wirklich laute Ziele: Das Club-Preset bleibt nicht mehr darunter, es wendet die exakte Verstärkung bis zum Ziel an, und ein True-Peak-Limiter hält die Obergrenze."
     ]
@@ -3557,7 +3557,7 @@
     "title": "Viel zuverlässigere Spektrumanalyse",
     "items": [
       "Das Qualitätsurteil wurde neu gebaut: Dunkle Master und legitime MP3s mit 320 kbps werden wegen ihres natürlichen Abfalls in den Höhen nicht mehr als Fälschung markiert.",
-      "Die Bewertung ist jetzt absolut, so wie ein DJ sie liest: Bis ~20 kHz ist volle Qualität (320 / verlustfrei), 18 bis 19,5 kHz ist verdächtig und unter 18 kHz schlecht, egal welche Samplerate die Datei hat.",
+      "Die Bewertung ist jetzt absolut, so wie ein DJ sie liest: Bis ~20 kHz ist volle Qualität (320 / verlustfrei), 18 bis 19,5 kHz ist verdächtig und unter 18 kHz schlecht, egal welche Abtastrate die Datei hat.",
       "Surco erkennt jetzt Höhen, die von Audio-„Enhancern“ regeneriert wurden: Ein Track, der künstlich über eine Quelle mit niedriger Bitrate aufpoliert wurde, geht nicht mehr als gut durch.",
       "Weiche Encoder-Grenzen (~160 bis 192 kbps), die früher als gute Qualität durchrutschten, werden jetzt erkannt und dort eingeordnet, wo sie wirklich liegen.",
       "Erkennung rekonstruierter Höhen: Dateien, die aus Quellen mit niedriger Bitrate „aufgewertet“ wurden (SBR/Enhancer), gehen nicht mehr als gute Qualität durch, selbst wenn ihr Spektrum bis ganz oben reicht."
@@ -3584,10 +3584,10 @@
       "Deine Änderungen gehen nie verloren: Tippst du, während Surco noch eine langsame Datei liest oder der automatische Abgleich Discogs abfragt, bleibt immer erhalten, was du getippt hast.",
       "Viel leichter bei vielen Tracks: Cover werden als Vorschaubilder gehalten (konvertierte Dateien bekommen trotzdem das Cover in voller Auflösung), und der Speicher wächst bei langen Sitzungen nicht mehr an.",
       "Das Durchblättern der Liste fühlt sich flüssiger an: BPM-, Tonart- und Lautheitsanalysen warten, bis du auf einem Track verweilst, und der, den du gerade ansiehst, kommt immer vor denen dran, die du hinter dir gelassen hast.",
-      "Jedes Editorfeld kann über sein eigenes Menü den Wert eines anderen Felds einfügen (Interpret in Komponist, Titel in Kommentar…).",
-      "Ein bernsteinfarbener Punkt markiert Tracks, die nach dem Konvertieren bearbeitet wurden, damit du auf einen Blick siehst, was noch ein Update braucht.",
+      "Jedes Editorfeld kann über sein eigenes Menü den Wert eines anderen Felds einfügen (Künstler in Komponist, Titel in Kommentar…).",
+      "Ein gelber Punkt markiert Tracks, die nach dem Konvertieren bearbeitet wurden, damit du auf einen Blick siehst, was noch ein Update braucht.",
       "Die Discogs-Suche merkt sich, was du bei jedem Track eingegeben hast, zeigt ein Lade-Skelett und lässt sich wiederholen, wenn sie fehlschlägt.",
-      "Namen mit vorangestellter Tracknummer („104. Artist - Title“) werden jetzt mit dem richtigen Interpreten und Titel importiert.",
+      "Namen mit vorangestellter Tracknummer („104. Artist - Title“) werden jetzt mit dem richtigen Künstler und Titel importiert.",
       "Beim Hinzufügen mehrerer Tracks zu Apple Music siehst du den Fortschritt und kannst abbrechen. Schlägt das Speichern der Einstellungen oder das Löschen einer Datei fehl, sagt Surco es dir, statt still zu scheitern.",
       "Behoben: Tracks, deren Cover das in die Datei eingebettete war, wurden konvertiert und landeten ohne Cover in Apple Music.",
       "Der Player zeigt eine Ladeanzeige, wenn das Audio einen Moment braucht (etwa von einem Netzlaufwerk)."
@@ -3599,8 +3599,8 @@
     "title": "Reichere Metadaten und Qualität in drei Farben",
     "items": [
       "Neue Metadatenfelder: Komponist, ISRC, Mix, Originaljahr und eine Compilation-Markierung. Der Komponist füllt sich selbst aus den Autoren-Credits auf Discogs.",
-      "Der Qualitätspunkt kennt jetzt drei Stufen (Grün, Bernstein und Rot), sodass eine MP3 mit niedriger Bitrate, die sich als verlustfrei ausgibt, auffällt. Während das Spektrum analysiert wird, gibt es eine Anzeige.",
-      "Eine Schaltfläche zum Löschen aller Metadaten eines Tracks, neben Aus Dateinamen füllen.",
+      "Der Qualitätspunkt kennt jetzt drei Stufen (Grün, Gelb und Rot), sodass ein MP3 mit niedriger Bitrate, das sich als verlustfrei ausgibt, auffällt. Während das Spektrum analysiert wird, gibt es eine Anzeige.",
+      "Ein Button zum Löschen aller Metadaten eines Tracks, neben Aus Dateinamen füllen.",
       "Jede Listenzeile zeigt ihr Quellformat (WAV, FLAC, MP3…), damit auf einen Blick klar ist, was noch konvertiert werden muss.",
       "Von vorn beginnen im Kontextmenü baut einen Track aus seiner Originaldatei neu auf.",
       "Die Apple-Music-Prüfung sucht auch nach dem von Discogs vorgeschlagenen Titel und findet so Kopien in der Mediathek, die unter dem kanonischen Namen gespeichert sind."
