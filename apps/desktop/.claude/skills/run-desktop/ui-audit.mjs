@@ -22,6 +22,14 @@ const repoRoot = resolve(appDir, '../..')
 const electronPath = createRequire(resolve(repoRoot, 'index.js'))('electron')
 
 const LANGUAGES = ['es', 'en', 'de', 'fr', 'pt-BR']
+// Tabs that sit behind another tab's sidebar row, with the row that holds them.
+const ROW_OF = {
+  layout: 'editor',
+  fields: 'editor',
+  processing: 'conversion',
+  destination: 'naming',
+  stats: 'shortcuts',
+}
 const SIZES = [
   [1080, 620],
   [1440, 900],
@@ -217,7 +225,11 @@ async function main() {
         await page.click('[data-testid="settings-tab-general"]')
         await page.click(`[data-testid="settings-language-${lang}"]`)
         for (const tab of TABS) {
-          const tabButton = page.locator(`[data-testid="settings-tab-${tab}"]`)
+          const row = ROW_OF[tab]
+          if (row) await page.click(`[data-testid="settings-tab-${row}"]`)
+          const tabButton = page.locator(
+            `[data-testid="${row ? 'settings-subtab' : 'settings-tab'}-${tab}"]`,
+          )
           if ((await tabButton.count()) === 0) continue
           await tabButton.click()
           await record(`settings-${tab}`, lang, size, '[role="dialog"]')

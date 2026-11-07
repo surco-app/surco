@@ -1395,6 +1395,12 @@
     }
   },
   "settings": {
+    "entries": {
+      "editor": "Éditeur",
+      "conversion": "Audio",
+      "naming": "Fichiers",
+      "shortcuts": "Usage"
+    },
     "tabs": {
       "general": "Général",
       "search": "Sources",

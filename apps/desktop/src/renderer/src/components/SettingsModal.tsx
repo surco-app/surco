@@ -17,13 +17,15 @@ import {
 import { groupByTab, searchSettings } from '../lib/settingsSearch'
 import { SETTINGS_SEARCH_INDEX } from '../lib/settingsSearchIndex'
 import {
-  SETTINGS_TAB_GROUPS,
+  entryOf,
+  SETTINGS_ENTRIES,
+  SETTINGS_ENTRY_GROUPS,
   SETTINGS_TAB_ICONS,
-  SETTINGS_TABS,
   type SettingsTab,
 } from '../lib/settingsTabs'
 import { FieldsEditor } from './FieldsEditor'
 import { ModalShell } from './ModalShell'
+import { SegmentedControl } from './SegmentedControl'
 import { AdvancedTab } from './settings/AdvancedTab'
 import { ArtworkTab } from './settings/ArtworkTab'
 import { ConversionTab } from './settings/ConversionTab'
@@ -81,6 +83,9 @@ export function SettingsModal({
   // selection and focus together, wrapping around, per the ARIA tabs pattern. Left/Right
   // stay wired as aliases so muscle memory from the old horizontal row still works.
   const tabRefs = useRef<Partial<Record<SettingsTab, HTMLButtonElement | null>>>({})
+  // The sidebar's row that holds the open tab: a row joins several tabs, and the tab itself
+  // is picked from the switcher above the panel.
+  const entry = entryOf(tab)
   // The active tab's pill is one element that TRAVELS between rows — the vertical
   // sibling of the segmented control's sliding relief, so the two switch patterns in
   // the app tell the same story. Measured before paint so opening the modal shows the
@@ -91,7 +96,7 @@ export function SettingsModal({
   useLayoutEffect(() => {
     const list = tablistRef.current
     const measure = (): void => {
-      const btn = tabRefs.current[tab]
+      const btn = tabRefs.current[entry.id]
       if (btn && !list?.hidden) setPill({ top: btn.offsetTop, height: btn.offsetHeight })
     }
     measure()
@@ -99,7 +104,7 @@ export function SettingsModal({
     const ro = new ResizeObserver(measure)
     ro.observe(list)
     return () => ro.disconnect()
-  }, [tab])
+  }, [entry.id])
   // The pill already says which tab is active, so the opening focus lands there without
   // the ring, as macOS Settings opens; the ring comes back on the first arrow key. A layout
   // effect so it runs before ModalShell's focus trap, which would focus the tab plainly.
@@ -169,7 +174,7 @@ export function SettingsModal({
     }
   }
   function onTabKeyDown(e: React.KeyboardEvent, idx: number): void {
-    const last = SETTINGS_TABS.length - 1
+    const last = SETTINGS_ENTRIES.length - 1
     let next = -1
     if (e.key === 'ArrowDown' || e.key === 'ArrowRight') next = idx === last ? 0 : idx + 1
     else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') next = idx === 0 ? last : idx - 1
@@ -177,7 +182,7 @@ export function SettingsModal({
     else if (e.key === 'End') next = last
     if (next === -1) return
     e.preventDefault()
-    const id = SETTINGS_TABS[next]
+    const id = SETTINGS_ENTRIES[next].id
     setTab(id)
     tabRefs.current[id]?.focus()
   }
@@ -394,7 +399,7 @@ export function SettingsModal({
               style={{ transform: `translateY(${pill.top}px)`, height: pill.height }}
             />
           )}
-          {SETTINGS_TAB_GROUPS.map((group) => (
+          {SETTINGS_ENTRY_GROUPS.map((group) => (
             // A tablist may only own tabs, so the group wrapper and its heading are
             // presentational: the heading stays a visual divider and the arrows (and a
             // screen reader's tab count) walk one flat list.
@@ -411,11 +416,13 @@ export function SettingsModal({
                   {tr(`settings.tabGroups.${group.heading}`)}
                 </p>
               )}
-              {group.tabs.map((id) => {
+              {group.entries.map((row) => {
+                const id = row.id
+                const active = entry.id === id
                 const Icon = SETTINGS_TAB_ICONS[id]
                 // The keyboard handler walks the flat SETTINGS_TABS order, so the button
                 // reports its index there, not its position within the group.
-                const idx = SETTINGS_TABS.indexOf(id)
+                const idx = SETTINGS_ENTRIES.indexOf(row)
                 return (
                   <button
                     key={id}
@@ -426,23 +433,25 @@ export function SettingsModal({
                     role="tab"
                     id={`settings-tab-${id}`}
                     data-testid={`settings-tab-${id}`}
-                    aria-selected={tab === id}
+                    aria-selected={active}
                     aria-controls="settings-tabpanel"
-                    tabIndex={tab === id ? 0 : -1}
-                    onClick={() => setTab(id)}
+                    tabIndex={active ? 0 : -1}
+                    onClick={() => {
+                      if (!active) setTab(id)
+                    }}
                     onKeyDown={(e) => onTabKeyDown(e, idx)}
                     // The button paints no background of its own — the sliding pill behind
                     // it does, in the same ink sidebar and selected-row fill as the track
                     // list, so Settings reads like the window it opens over. Text color
                     // shares the pill's 200ms so the two arrive together.
                     className={`flex items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition-colors duration-200 ${
-                      tab === id
+                      active
                         ? 'font-medium text-[var(--color-on-row-selected)]'
                         : 'text-fg-muted hover:text-fg'
                     }`}
                   >
                     <Icon className="h-4 w-4 shrink-0" strokeWidth={1.8} aria-hidden="true" />
-                    {tr(`settings.tabs.${id}`)}
+                    {tr(row.tabs.length > 1 ? `settings.entries.${id}` : `settings.tabs.${id}`)}
                   </button>
                 )
               })}
@@ -454,7 +463,7 @@ export function SettingsModal({
       <div className="flex min-w-0 flex-1 flex-col px-6 pb-6">
         <div className="-mr-3 flex h-13 shrink-0 items-center justify-between gap-3">
           <h2 className="truncate text-[15px] font-semibold text-fg">
-            {tr(`settings.tabs.${tab}`)}
+            {tr(entry.tabs.length > 1 ? `settings.entries.${entry.id}` : `settings.tabs.${tab}`)}
           </h2>
           <button
             type="button"
@@ -466,12 +475,24 @@ export function SettingsModal({
             <X className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
+        {entry.tabs.length > 1 && (
+          <SegmentedControl
+            options={entry.tabs}
+            value={tab}
+            onChange={setTab}
+            testidPrefix="settings-subtab"
+            labelFor={(id) => tr(`settings.tabs.${id}`)}
+            label={tr(`settings.entries.${entry.id}`)}
+            compact
+            className="mb-3 self-start"
+          />
+        )}
         <div className="relative flex min-h-[280px] flex-1 flex-col">
           <div
             ref={bodyRef}
             role="tabpanel"
             id="settings-tabpanel"
-            aria-labelledby={`settings-tab-${tab}`}
+            aria-labelledby={`settings-tab-${entry.id}`}
             className="-mr-2 flex-1 overflow-x-hidden overflow-y-auto pr-2 [&_[data-search-id]]:rounded-md [&_[data-search-id]]:outline-1 [&_[data-search-id]]:outline-offset-4 [&_[data-search-id]]:outline-transparent [&_[data-search-id]]:outline-solid [&_[data-search-id]]:transition-[outline-color] [&_[data-search-id]]:duration-500 motion-reduce:[&_[data-search-id]]:transition-none [&_[data-search-hit=true]]:outline-[var(--color-accent)]"
           >
             {tab === 'general' && (

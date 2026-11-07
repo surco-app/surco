@@ -183,7 +183,8 @@ Renderer components (e.g. `src/renderer/src/components/Player.tsx`) likewise hav
   after `launch`, and `park` before every `ss` or the hovered row covers its own title
   with the play button. The settings tabs are `role="tab"`, so `clicktext` never matches
   them and fails *silently* — address them by testid (`settings-tab-conversion` is
-  "Formato", `-destination` is "Destino"), or two sections end up with the same picture.
+  the "Formato y procesado" row; `settings-subtab-destination` is its "Destino" tab, picked
+  after opening the `settings-tab-naming` row), or two sections end up with the same picture.
   Shoot the onboarding wizard LAST: it needs `hasSeenOnboarding:false`, which otherwise
   covers every later screen.
 - **The player card hides its pills until hovered.** The driver hovers before screenshotting;

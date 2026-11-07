@@ -478,6 +478,12 @@ async function addOneTrack(): Promise<HTMLElement[]> {
 // BELOW the sidebar. With nothing clipping it that overhang counts as scrollable page,
 // and a vertical scrollbar flashes down the right edge of the window and vanishes. The
 // column has to clip its own children; the animation is fine as it is.
+// Joined settings tabs sit behind their sidebar row: open the row, then pick the tab.
+const openTab = (row: string, tab: string): void => {
+  fireEvent.click(screen.getByTestId(`settings-tab-${row}`))
+  fireEvent.click(screen.getByTestId(`settings-subtab-${tab}`))
+}
+
 describe('App unsaved cues', () => {
   afterEach(resetCueSession)
 
@@ -5634,7 +5640,8 @@ describe('App editor format/destination reseed', () => {
     expect(await screen.findByTestId('process-btn')).toHaveTextContent('Convert to AIFF')
 
     fireEvent.click(screen.getByTestId('open-settings'))
-    fireEvent.click(await screen.findByTestId('settings-tab-destination'))
+    await screen.findByTestId('settings-tab-naming')
+    openTab('naming', 'destination')
     fireEvent.click(screen.getByTestId('settings-destination-appleMusic'))
     fireEvent.click(screen.getByTestId('settings-close'))
 
@@ -5916,7 +5923,8 @@ describe('App on Windows', () => {
       setApi({ getSettings: vi.fn().mockResolvedValue(synced) })
       await renderApp()
       fireEvent.click(await screen.findByTestId('open-settings'))
-      fireEvent.click(await screen.findByTestId('settings-tab-destination'))
+      await screen.findByTestId('settings-tab-naming')
+      openTab('naming', 'destination')
 
       expect(await screen.findByTestId('settings-destination-folder')).toBeChecked()
     })
@@ -6000,7 +6008,7 @@ describe('App stats', () => {
     await screen.findByTestId('add-files')
     runMenu('stats')
     await waitFor(() =>
-      expect(screen.getByTestId('settings-tab-stats')).toHaveAttribute('aria-selected', 'true'),
+      expect(screen.getByTestId('settings-subtab-stats')).toHaveAttribute('aria-pressed', 'true'),
     )
   })
 
@@ -6008,7 +6016,7 @@ describe('App stats', () => {
     await renderApp()
     fireEvent.click(await screen.findByTestId('open-stats'))
     await waitFor(() =>
-      expect(screen.getByTestId('settings-tab-stats')).toHaveAttribute('aria-selected', 'true'),
+      expect(screen.getByTestId('settings-subtab-stats')).toHaveAttribute('aria-pressed', 'true'),
     )
   })
 })
@@ -6035,7 +6043,7 @@ describe('App command palette list-wide actions', () => {
     expect(items).toHaveLength(1)
     fireEvent.click(items[0])
     await waitFor(() =>
-      expect(screen.getByTestId('settings-tab-stats')).toHaveAttribute('aria-selected', 'true'),
+      expect(screen.getByTestId('settings-subtab-stats')).toHaveAttribute('aria-pressed', 'true'),
     )
   })
 
