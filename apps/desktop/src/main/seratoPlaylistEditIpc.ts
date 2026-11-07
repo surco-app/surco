@@ -11,6 +11,7 @@ import type { SeratoLibraryRoot } from './seratoLibrary'
 import { createSeratoDraft } from './seratoLibraryWrite'
 
 function badName(edit: RekordboxPlaylistEdit, roots: SeratoLibraryRoot[]): boolean {
+  if (edit.kind === 'moveNode') return seratoNameTaken(createSeratoDraft(), edit, roots)
   if (edit.kind !== 'create' && edit.kind !== 'rename') return false
   return !validCrateName(edit.name.trim()) || seratoNameTaken(createSeratoDraft(), edit, roots)
 }

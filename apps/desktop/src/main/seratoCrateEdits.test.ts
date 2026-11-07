@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('./seratoCuesWrite', () => ({ applySeratoCuesBatch: vi.fn() }))
 
+import type { RekordboxPlaylistEdit } from '../shared/types'
 import type { RekordboxMeta } from './rekordboxMetadata'
 import type { TagsOp, TrackOp } from './rekordboxQueueOps'
 import { applySeratoLibraryOps } from './seratoBatch'
@@ -131,6 +132,83 @@ describe('renaming a crate', () => {
       reason: 'unreadable',
     })
     expect(listCrates(roots[0])).toEqual(['A.crate'])
+  })
+})
+
+const moveNode = (playlistId: string, parentId: string): RekordboxPlaylistEdit => ({
+  kind: 'moveNode',
+  playlistId,
+  parentId,
+  beforeId: null,
+})
+
+describe('moving a crate', () => {
+  it('moves a crate and its subcrates under another crate in every root, keeping their bytes', async () => {
+    const { roots, deps, bytes } = twoRoots({
+      internal: ['A', 'A%%B', 'A%%B%%C', 'D'],
+      gig: ['A%%B'],
+    })
+    const outcome = await apply(roots, deps, moveNode('A%%B', 'D'))
+    expect(outcome.applied).toBe(true)
+    expect(readFileSync(crateFileOf(roots[0], 'D%%B%%C'))).toEqual(bytes.internal['A%%B%%C'])
+    expect(existsSync(crateFileOf(roots[1], 'D%%B'))).toBe(true)
+    expect(listCrates(roots[0])).toEqual(['A.crate', 'D%%B%%C.crate', 'D%%B.crate', 'D.crate'])
+  })
+
+  it('moves a subcrate to the root', async () => {
+    const { roots, deps } = twoRoots({ internal: ['A', 'A%%B'] })
+    await apply(roots, deps, moveNode('A%%B', 'root'))
+    expect(listCrates(roots[0])).toEqual(['A.crate', 'B.crate'])
+  })
+
+  it('ignores the position asked for, since Serato lists crates by name', async () => {
+    const { roots, deps } = twoRoots({ internal: ['A', 'B'] })
+    const outcome = await apply(roots, deps, {
+      kind: 'moveNode',
+      playlistId: 'B',
+      parentId: 'root',
+      beforeId: 'A',
+    })
+    expect(outcome.applied).toBe(true)
+    expect(listCrates(roots[0])).toEqual(['A.crate', 'B.crate'])
+  })
+
+  it('refuses a move into itself, into its own subcrate, onto a name the destination already has, or under a crate that is gone', async () => {
+    const { roots, deps } = twoRoots({ internal: ['A', 'A%%B', 'D', 'D%%B'] })
+    expect(await apply(roots, deps, moveNode('A', 'A'))).toMatchObject({
+      applied: false,
+      reason: 'stale',
+    })
+    expect(await apply(roots, deps, moveNode('A', 'A%%B'))).toMatchObject({
+      applied: false,
+      reason: 'stale',
+    })
+    expect(await apply(roots, deps, moveNode('A%%B', 'D'))).toMatchObject({
+      applied: false,
+      reason: 'bad-name',
+    })
+    expect(await apply(roots, deps, moveNode('A%%B', 'Z'))).toMatchObject({
+      applied: false,
+      reason: 'stale',
+    })
+  })
+
+  it('refuses to move a family Serato cannot read back', async () => {
+    const { roots, deps } = twoRoots({ internal: ['A', 'A%%B', 'D'] })
+    writeFileSync(crateFileOf(roots[0], 'A%%B'), Buffer.from('vrsn\0\0\x01\0'))
+    expect(await apply(roots, deps, moveNode('A', 'D'))).toMatchObject({
+      applied: false,
+      reason: 'unreadable',
+    })
+  })
+
+  it('stamps the family it will rename and claims the new paths, so a crate Serato touched meanwhile refuses it', () => {
+    const { roots } = twoRoots({ internal: ['A', 'A%%B', 'D'] })
+    const files = seratoEditFiles(moveNode('A%%B', 'D'), roots)
+    expect(files[crateFileOf(roots[0], 'A%%B')]).toEqual({
+      tracks: ['Users/dj/internal/A%%B.mp3'],
+    })
+    expect(files[crateFileOf(roots[0], 'D%%B')]).toBeNull()
   })
 })
 
