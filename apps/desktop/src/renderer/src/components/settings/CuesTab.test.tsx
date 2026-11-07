@@ -551,7 +551,7 @@ describe('CuesTab', () => {
       'Desde donde marcas, hacia atrás, cada 16 compases, 3 veces, si cabe, pon hot cue + CALL',
     )
     expect(screen.getByTestId('cue-rule-1')).toHaveTextContent(
-      'Desde el primer golpe de la pista, en el mismo golpe, si no hay otra antes de donde marcas, pon hot cue + CALL',
+      'Desde el primer golpe de la pista, en el mismo golpe, si no hay otro antes de donde marcas, pon hot cue + CALL',
     )
   })
 

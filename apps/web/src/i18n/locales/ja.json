@@ -3059,7 +3059,7 @@
           {
             "tab": "出力",
             "section": "rekordbox コレクション",
-            "setting": "rekordbox を閉じたときに、CALL があってホットキューのないトラックへ有効なフローを適用する",
+            "setting": "rekordbox を閉じたときに、CALL があってホットキューのないトラックへ現在のフローを適用する",
             "optional": true,
             "note": "Surcoではなくrekordboxで位置をマークする場合に使います。準備中にトラックのドロップ位置にCALLを置いておくと、rekordboxを閉じたときにSurcoがフローのホットキューを追加します。オンにすると、補完されるトラック数が表示されます。"
           }

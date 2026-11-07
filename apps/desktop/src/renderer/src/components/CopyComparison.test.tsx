@@ -287,7 +287,7 @@ describe('CopyComparison', () => {
       />,
     )
     expect(screen.getByTestId('copy-sentence')).toHaveTextContent(
-      'La copia de Apple Music probablemente está reescalada desde una frecuencia más baja. Este fichero no.',
+      'La copia de Apple Music probablemente está reescalada desde una frecuencia más baja. Este archivo no.',
     )
   })
 })

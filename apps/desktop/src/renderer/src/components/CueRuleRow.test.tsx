@@ -141,7 +141,7 @@ describe('CueRuleRow room sentence', () => {
     await i18n.changeLanguage('de')
     try {
       setup(room)
-      expect(sentence()).toContain('wenn in den nächsten 8 Takten keine andere Cue kommt,')
+      expect(sentence()).toContain('wenn in den nächsten 8 Takten kein anderer Cue kommt,')
     } finally {
       await i18n.changeLanguage('en')
     }

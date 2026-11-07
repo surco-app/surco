@@ -72,7 +72,7 @@ describe('UsbExportProgress', () => {
   // baken's English never reaches the row: the reason is a code, translated.
   it('says why a track failed, in the user language', () => {
     show([STARTED, { type: 'failed', index: 2, reason: 'missing-file' }])
-    expect(screen.getByTestId('export-row-2')).toHaveTextContent('no se encuentra el fichero')
+    expect(screen.getByTestId('export-row-2')).toHaveTextContent('no se encuentra el archivo')
   })
 
   it('names the stick, its free space and filesystem in the footer', () => {
