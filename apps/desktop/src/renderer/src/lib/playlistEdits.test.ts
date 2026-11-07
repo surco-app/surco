@@ -1,7 +1,17 @@
 import { describe, expect, it } from 'vitest'
-import type { RekordboxPlaylistEdit, SourcePlaylistEntry } from '../../../shared/types'
+import type { RekordboxPlaylistEdit, SourceNode, SourcePlaylistEntry } from '../../../shared/types'
 import i18n from '../i18n'
-import { editMessage, moveBefore, movedEntries, subtreeCounts } from './playlistEdits'
+import {
+  PENDING_NODE,
+  editMessage,
+  editedTree,
+  isPendingNode,
+  moveBefore,
+  movedCrateId,
+  movedEntries,
+  subtreeCounts,
+  subtreeIds,
+} from './playlistEdits'
 
 const row = (linkId: string): SourcePlaylistEntry => ({
   path: `/m/${linkId}.wav`,
@@ -176,5 +186,193 @@ describe('subtreeCounts', () => {
         ],
       }),
     ).toEqual({ playlists: 3, folders: 1 })
+  })
+})
+
+const leaf = (id: string): SourceNode => ({
+  id,
+  name: id,
+  kind: 'playlist',
+  count: 1,
+})
+const TREE: SourceNode[] = [
+  {
+    id: 'A',
+    name: 'A',
+    kind: 'folder',
+    count: 0,
+    children: [
+      leaf('a1'),
+      {
+        id: 'A2',
+        name: 'A2',
+        kind: 'folder',
+        count: 0,
+        children: [leaf('a21')],
+      },
+    ],
+  },
+  leaf('b'),
+  leaf('c'),
+]
+
+describe('editedTree', () => {
+  it('draws a created playlist last in its parent with a pending id and no tracks', () => {
+    const next = editedTree(TREE, {
+      kind: 'create',
+      parentId: 'A',
+      name: 'New',
+      folder: false,
+    })
+    const created = next?.[0].children?.at(-1)
+    expect(created).toMatchObject({ name: 'New', kind: 'playlist', count: 0 })
+    expect(created?.children).toBeUndefined()
+    expect(isPendingNode(created?.id ?? '')).toBe(true)
+    expect(created?.id.startsWith(PENDING_NODE)).toBe(true)
+  })
+  it('draws a created folder with an empty children list, so it can open', () => {
+    const next = editedTree(TREE, {
+      kind: 'create',
+      parentId: 'root',
+      name: 'F',
+      folder: true,
+    })
+    expect(next?.at(-1)).toMatchObject({
+      name: 'F',
+      kind: 'folder',
+      count: 0,
+      children: [],
+    })
+  })
+  it('renames in place', () => {
+    expect(
+      editedTree(TREE, { kind: 'rename', playlistId: 'a21', name: 'X' })?.[0].children?.[1]
+        .children?.[0].name,
+    ).toBe('X')
+  })
+  it('removes a deleted folder with everything inside', () => {
+    expect(editedTree(TREE, { kind: 'delete', playlistId: 'A' })?.map((n) => n.id)).toEqual([
+      'b',
+      'c',
+    ])
+  })
+  it('moves a node before the sibling named, into another parent', () => {
+    const next = editedTree(TREE, {
+      kind: 'moveNode',
+      playlistId: 'c',
+      parentId: 'A',
+      beforeId: 'A2',
+    })
+    expect(next?.[0].children?.map((n) => n.id)).toEqual(['a1', 'c', 'A2'])
+    expect(next?.map((n) => n.id)).toEqual(['A', 'b'])
+  })
+  it('moves a folder with its children to the end of the root', () => {
+    const next = editedTree(TREE, {
+      kind: 'moveNode',
+      playlistId: 'A',
+      parentId: 'root',
+      beforeId: null,
+    })
+    expect(next?.map((n) => n.id)).toEqual(['b', 'c', 'A'])
+    expect(next?.[2].children?.map((n) => n.id)).toEqual(['a1', 'A2'])
+  })
+  it('has no answer for a move into the node itself or its children, or onto a target that is gone', () => {
+    expect(
+      editedTree(TREE, {
+        kind: 'moveNode',
+        playlistId: 'A',
+        parentId: 'A2',
+        beforeId: null,
+      }),
+    ).toBeNull()
+    expect(
+      editedTree(TREE, {
+        kind: 'moveNode',
+        playlistId: 'A',
+        parentId: 'A',
+        beforeId: null,
+      }),
+    ).toBeNull()
+    expect(
+      editedTree(TREE, {
+        kind: 'moveNode',
+        playlistId: 'c',
+        parentId: 'A',
+        beforeId: 'nope',
+      }),
+    ).toBeNull()
+  })
+  it('has no answer for a node or parent that is gone', () => {
+    expect(editedTree(TREE, { kind: 'rename', playlistId: 'nope', name: 'X' })).toBeNull()
+    expect(editedTree(TREE, { kind: 'delete', playlistId: 'nope' })).toBeNull()
+    expect(
+      editedTree(TREE, {
+        kind: 'create',
+        parentId: 'nope',
+        name: 'N',
+        folder: false,
+      }),
+    ).toBeNull()
+    expect(
+      editedTree(TREE, {
+        kind: 'moveNode',
+        playlistId: 'nope',
+        parentId: 'root',
+        beforeId: null,
+      }),
+    ).toBeNull()
+  })
+  it('places a moved crate by name and renames it and its subcrates, as Serato will read them', () => {
+    const crate = (id: string, children?: SourceNode[]): SourceNode => ({
+      id,
+      name: id.split('%%').at(-1) ?? id,
+      kind: 'playlist',
+      count: 0,
+      ...(children ? { children } : {}),
+    })
+    const crates = [crate('A', [crate('A%%B', [crate('A%%B%%C')])]), crate('D', [crate('D%%E')])]
+    const next = editedTree(
+      crates,
+      { kind: 'moveNode', playlistId: 'A%%B', parentId: 'D', beforeId: 'D%%E' },
+      { crates: true },
+    )
+    expect(next?.[1].children?.map((n) => n.id)).toEqual(['D%%B', 'D%%E'])
+    expect(next?.[1].children?.[0].children?.[0].id).toBe('D%%B%%C')
+    expect(next?.[0].children).toEqual([])
+  })
+  it('leaves edits that do not change the tree alone', () => {
+    expect(editedTree(TREE, { kind: 'add', playlistId: 'b', tracks: [] })).toBeNull()
+  })
+  it('never touches the tree it was given, because the cache still holds it', () => {
+    const before = structuredClone(TREE)
+    editedTree(TREE, {
+      kind: 'moveNode',
+      playlistId: 'c',
+      parentId: 'A',
+      beforeId: 'A2',
+    })
+    editedTree(TREE, { kind: 'rename', playlistId: 'a1', name: 'X' })
+    editedTree(TREE, { kind: 'delete', playlistId: 'A' })
+    editedTree(TREE, {
+      kind: 'create',
+      parentId: 'A',
+      name: 'N',
+      folder: true,
+    })
+    expect(TREE).toEqual(before)
+  })
+})
+
+describe('subtreeIds', () => {
+  it('lists the node and everything under it', () => {
+    expect(subtreeIds(TREE, 'A')).toEqual(['A', 'a1', 'A2', 'a21'])
+    expect(subtreeIds(TREE, 'nope')).toEqual([])
+  })
+})
+
+describe('movedCrateId', () => {
+  it('joins the last segment to the new parent, or stands alone at the root', () => {
+    expect(movedCrateId('A%%B', 'D')).toBe('D%%B')
+    expect(movedCrateId('A%%B', 'root')).toBe('B')
   })
 })
