@@ -230,6 +230,13 @@ export function Player({
     return () => el.removeEventListener('transitionend', settle)
   }, [showWaveform])
 
+  function seekFrom(clientX: number, el: HTMLElement): void {
+    if (duration <= 0) return
+    const rect = el.getBoundingClientRect()
+    const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width))
+    onScrub(ratio * duration)
+  }
+
   return (
     <div
       data-testid="player"
@@ -363,9 +370,14 @@ export function Player({
                 current: formatTime(currentTime),
                 total: formatTime(duration),
               })}
-              onClick={(e) => {
-                const rect = e.currentTarget.getBoundingClientRect()
-                if (duration > 0) onScrub(((e.clientX - rect.left) / rect.width) * duration)
+              onPointerDown={(e) => {
+                e.currentTarget.setPointerCapture(e.pointerId)
+                seekFrom(e.clientX, e.currentTarget)
+              }}
+              onPointerMove={(e) => {
+                if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+                  seekFrom(e.clientX, e.currentTarget)
+                }
               }}
               onKeyDown={(e) => {
                 const step = e.shiftKey ? SEEK_COARSE_STEP_SEC : SEEK_STEP_SEC
@@ -383,7 +395,7 @@ export function Player({
                 e.preventDefault()
                 if (duration > 0) onScrub(Math.min(duration, Math.max(0, target)))
               }}
-              className="group/seek relative flex h-4 min-w-0 flex-1 cursor-pointer items-center"
+              className="group/seek relative flex h-4 min-w-0 flex-1 cursor-pointer touch-none items-center"
             >
               <span className="relative h-1 w-full overflow-hidden rounded-full bg-[var(--color-panel)] transition-transform group-hover/seek:scale-y-150">
                 <span

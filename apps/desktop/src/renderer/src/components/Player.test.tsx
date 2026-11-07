@@ -100,6 +100,12 @@ function props(over = {}) {
   }
 }
 
+function stubPointer(held: boolean): void {
+  ;(window as unknown as { PointerEvent: typeof MouseEvent }).PointerEvent = window.MouseEvent
+  HTMLElement.prototype.setPointerCapture = vi.fn()
+  HTMLElement.prototype.hasPointerCapture = vi.fn().mockReturnValue(held)
+}
+
 describe('Player', () => {
   it('shows what is playing', () => {
     renderUI(<Player {...props()} />)
@@ -268,12 +274,38 @@ describe('Player', () => {
 
   // That row keeps the track scrubbable without the waveform: a click seeks proportionally.
   it('seeks from the compact progress bar when the waveform is hidden', () => {
+    stubPointer(true)
     const onScrub = vi.fn()
     renderUI(<Player {...props({ showWaveform: false, duration: 100, onScrub })} />)
     const bar = screen.getByTestId('player-seek')
     bar.getBoundingClientRect = () => ({ left: 0, width: 200 }) as DOMRect
-    fireEvent.click(bar, { clientX: 100 })
+    fireEvent.pointerDown(bar, { clientX: 100, pointerId: 1 })
     expect(onScrub).toHaveBeenCalledWith(50)
+  })
+
+  it('follows the pointer while dragging the compact progress bar, clamped to its ends', () => {
+    stubPointer(true)
+    const onScrub = vi.fn()
+    renderUI(<Player {...props({ showWaveform: false, duration: 100, onScrub })} />)
+    const bar = screen.getByTestId('player-seek')
+    bar.getBoundingClientRect = () => ({ left: 0, width: 200 }) as DOMRect
+    fireEvent.pointerDown(bar, { clientX: 100, pointerId: 1 })
+    fireEvent.pointerMove(bar, { clientX: 150, pointerId: 1 })
+    expect(onScrub).toHaveBeenLastCalledWith(75)
+    fireEvent.pointerMove(bar, { clientX: 400, pointerId: 1 })
+    expect(onScrub).toHaveBeenLastCalledWith(100)
+    fireEvent.pointerMove(bar, { clientX: -50, pointerId: 1 })
+    expect(onScrub).toHaveBeenLastCalledWith(0)
+  })
+
+  it('ignores the pointer moving over the compact progress bar when it is not held', () => {
+    stubPointer(false)
+    const onScrub = vi.fn()
+    renderUI(<Player {...props({ showWaveform: false, duration: 100, onScrub })} />)
+    const bar = screen.getByTestId('player-seek')
+    bar.getBoundingClientRect = () => ({ left: 0, width: 200 }) as DOMRect
+    fireEvent.pointerMove(bar, { clientX: 150, pointerId: 1 })
+    expect(onScrub).not.toHaveBeenCalled()
   })
 
   // The bar was a <button> reading e.clientX: Enter or Space on it fires a click at
