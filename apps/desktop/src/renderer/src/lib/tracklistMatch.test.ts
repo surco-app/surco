@@ -192,8 +192,8 @@ describe('matchTracklist against the real collection', () => {
   it('scores the sample.json set as measured', () => {
     expect(counts('set2-sample-json.txt').by).toEqual({
       found: 15,
-      doubtful: 15,
-      similar: 4,
+      doubtful: 16,
+      similar: 3,
       absent: 12,
     })
   })
@@ -285,5 +285,44 @@ describe('matchTracklist proposes the mix the set names', () => {
       track('Wand', 'Happiness'),
     ])
     expect(m.candidates[0].title).toBe('Happiness')
+  })
+})
+
+describe('matchTracklist against the DJ spelling of an artist', () => {
+  it('ignores spaces and dots inside an artist name', () => {
+    expect(match(line('Motiv8', 'Golden Eye'), [track('Motiv 8', 'Golden Eye')]).level).toBe(
+      'found',
+    )
+    expect(match(line('A. Kay-B.J.', 'Destiny'), [track('A Kay BJ', 'Destiny')]).level).toBe(
+      'found',
+    )
+    expect(match(line('Dj Frank', 'Dinner'), [track('DJ F.R.A.N.K.', 'Dinner (Mix)')]).level).toBe(
+      'doubtful',
+    )
+  })
+
+  it('forgives one letter in an artist of six or more', () => {
+    expect(
+      match(line('Committe', 'Drop the bass'), [track('Committee', 'Drop The Bass')]).level,
+    ).toBe('found')
+    expect(
+      match(line('Diamon', 'Reason'), [track('Diamond', 'Reason (Kareema Remix)')]).level,
+    ).toBe('doubtful')
+    expect(match(line('Ian', 'Go'), [track('Iam', 'Go')]).level).toBe('similar')
+  })
+
+  it('tries the bracketed part of the line as the title, since the DJ may have swapped them', () => {
+    const m = match(line('The Soca Boys', "Bumpin' (Keep On Bumpin')"), [
+      track('Soca Boys', "Keep On Bumpin' (Marco V Remix)"),
+    ])
+    expect(m.level).toBe('doubtful')
+  })
+
+  it('reads a line without separator as artist plus title when the collection spells it so', () => {
+    const m = match(line('', 'E.X.E.L Wonderland'), [
+      track('E.X.E.L.', 'Wonderland (Extended Mix)'),
+    ])
+    expect(m.level).toBe('similar')
+    expect(m.candidates[0].title).toBe('Wonderland (Extended Mix)')
   })
 })
