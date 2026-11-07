@@ -45,7 +45,7 @@
     "latestRelease": "Novidades da {{version}}",
     "h1a": "Do download",
     "h1b": "para a cabine, em um clique.",
-    "ledeShort": "Converter, etiquetar, checar a qualidade e mandar para o Apple Music ou o Engine DJ: o que antes exigia quatro ou cinco apps, o Surco faz em um só. De minutos por faixa para um par de segundos."
+    "ledeShort": "Converter, etiquetar, checar a qualidade e mandar para o Apple Music ou o Engine DJ: o que antes exigia quatro ou cinco apps, o Surco faz em um só. De minutos por faixa para uns poucos segundos."
   },
   "features": {
     "kicker": "Funções",
@@ -86,7 +86,7 @@
           },
           {
             "t": "Ele avisa antes o que vai fazer",
-            "s": "Antes de converter você vê quanto cada faixa vai subir e se o limitador entra.",
+            "s": "Antes de converter você vê quanto cada faixa vai mudar de volume e se o limitador entra.",
             "d": "Quanto esta faixa vai se mover, se o limitador entra e em quantos decibéis os picos passariam do teto."
           },
           {
@@ -225,7 +225,7 @@
           },
           {
             "t": "Vinil limpo",
-            "s": "Tira estalos, ruído e ronco do vinil e compara o antes e o depois.",
+            "s": "Tira estalos, ruído e ronco do vinil e deixa você comparar o antes e o depois.",
             "d": "Estalos, ruído de fundo e ronco, com um A/B sem cortes para ouvir o que foi tirado."
           },
           {
@@ -253,12 +253,12 @@
           {
             "t": "Suas playlists do rekordbox",
             "s": "Abra e organize suas playlists do rekordbox sem sair do Surco.",
-            "d": "Abra-as no Surco com suas pastas e na sua ordem, com a onda e os cues do rekordbox em cada faixa. E organize-as daqui. Crie, renomeie e apague playlists e pastas, adicione, remova e reordene faixas, e escolha no editor em quais playlists cada faixa está. Se o rekordbox estiver aberto, as mudanças esperam você fechá-lo. «Adicionadas recentemente» vem primeiro, com o que você adicionou à coleção nos últimos 30 dias, e depois «Todas as faixas», com a sua coleção inteira, inclusive o que não está em nenhuma playlist. Se você não usa rekordbox ou Apple Music, oculte essa fonte. E se você tem a tracklist de um set, cole-a numa playlist com «Colar tracklist…» e o Surco procura cada linha na sua coleção, mostra o que encontrou e adiciona as faixas na ordem do set. No Traktor e no Serato também."
+            "d": "Abra-as no Surco com suas pastas e na sua ordem, com a onda e os cues do rekordbox em cada faixa. E organize-as daqui. Crie, renomeie e apague playlists e pastas, adicione, remova e reordene faixas, e escolha no editor em quais playlists cada faixa está. Se o rekordbox estiver aberto, as mudanças esperam você fechá-lo. “Adicionadas recentemente” vem primeiro, com o que você adicionou à coleção nos últimos 30 dias, e depois “Todas as faixas”, com a sua coleção inteira, inclusive o que não está em nenhuma playlist. Se você não usa rekordbox ou Apple Music, oculte essa fonte. E se você tem a tracklist de um set, cole-a numa playlist com “Colar tracklist…” e o Surco procura cada linha na sua coleção, mostra o que encontrou e adiciona as faixas na ordem do set. No Traktor e no Serato também."
           },
           {
             "t": "Cues do rekordbox",
             "s": "Coloque hot cues sobre a onda do rekordbox, à mão ou com o seu fluxo.",
-            "d": "Hot cues de A a H e CALLs, sobre a onda e a grade do rekordbox. Arraste-os, eles se encaixam no compasso ou no tempo, e você pode desfazer. Escolha um fluxo, como Mix in 64, Mix in 32 ou um seu, montado com blocos ou aprendido da sua coleção, e passar o mouse sobre a onda mostra uma sombra do que ele colocaria. Um clique o coloca e diz o que não cabe. O Marcar automático sugere onde cada faixa sobe, em várias de uma vez também. Ele aprende seu jeito de marcar com os cues que você já colocou e os que você salva, e separa o que vê como certo do que é duvidoso. E se você marcar os CALLs no rekordbox, o Surco coloca os hot cues do seu fluxo quando você o fecha. Numa faixa que o rekordbox ainda não analisou você trabalha sobre a grade do Surco, e quando o rekordbox a analisa, seus cues passam para a grade dele. As letras seguem a ordem da faixa, e se cada letra for um pad fixo para você, desative isso em Ajustes. Se a mesma faixa estiver no Traktor ou no Engine DJ, salvar coloca o fluxo lá também, sobre a grade dele e em volta dos cues dele. Gravado no rekordbox depois de uma cópia de segurança."
+            "d": "Hot cues de A a H e CALLs, sobre a onda e a grade do rekordbox. Arraste-os, eles se encaixam no compasso ou no tempo, e você pode desfazer. Escolha um fluxo, como Mix in 64, Mix in 32 ou um seu, montado com blocos ou aprendido da sua coleção, e passar o mouse sobre a onda mostra uma sombra do que ele colocaria. Um clique o coloca e diz o que não cabe. O Marcar automático sugere onde cada faixa explode, em várias de uma vez também. Ele aprende seu jeito de marcar com os cues que você já colocou e os que você salva, e separa o que vê como certo do que é duvidoso. E se você marcar os CALLs no rekordbox, o Surco coloca os hot cues do seu fluxo quando você o fecha. Numa faixa que o rekordbox ainda não analisou você trabalha sobre a grade do Surco, e quando o rekordbox a analisa, seus cues passam para a grade dele. As letras seguem a ordem da faixa, e se cada letra for um pad fixo para você, desative isso em Ajustes. Se a mesma faixa estiver no Traktor ou no Engine DJ, salvar coloca o fluxo lá também, sobre a grade dele e em volta dos cues dele. Gravado no rekordbox depois de um backup."
           },
           {
             "t": "Cues fora da grade",
@@ -273,11 +273,11 @@
           {
             "t": "Sua coleção do rekordbox",
             "s": "Ao converter, a faixa continua a mesma no rekordbox, com suas playlists e cues.",
-            "d": "Depois de converter, a faixa continua sendo a mesma faixa no rekordbox, com suas playlists, cue points e histórico, e editar as tags nunca renomeia o arquivo. Ative em Ajustes. Faz uma cópia de segurança antes, e se o rekordbox estiver aberto espera você fechá-lo."
+            "d": "Depois de converter, a faixa continua sendo a mesma faixa no rekordbox, com suas playlists, cue points e histórico, e editar as tags nunca renomeia o arquivo. Ative em Ajustes. Faz um backup antes, e se o rekordbox estiver aberto espera você fechá-lo."
           },
           {
-            "t": "Um pendrive para as suas CDJs",
-            "s": "Prepara um pendrive para as suas CDJs com cues, grade e ondas.",
+            "t": "Um pendrive para os seus CDJs",
+            "s": "Prepara um pendrive para os seus CDJs com cues, grade e ondas.",
             "d": "Exporte suas playlists do rekordbox para um pendrive com cues, grade e ondas, e o rekordbox pode continuar sincronizando com ele. Precisa do rekordbox fechado. No macOS e no Windows. Também a partir dos seus crates do Serato e das suas playlists do Traktor, com cues, loops e grade, sem passar pelo rekordbox."
           },
           {
@@ -287,7 +287,7 @@
           },
           {
             "t": "Sua coleção do Traktor",
-            "s": "Atualiza sua coleção do Traktor com uma cópia de segurança antes.",
+            "s": "Atualiza sua coleção do Traktor com um backup antes.",
             "d": "Atualiza o .nml com uma cópia antes, que você restaura em Cópias, e uma gravação por lote. Precisa do Traktor fechado."
           },
           {
@@ -308,12 +308,12 @@
           {
             "t": "Engine DJ (Denon)",
             "s": "Leva capa, avaliação e playlist para a sua biblioteca do Engine DJ.",
-            "d": "Capa, avaliação e playlist na sua biblioteca. Faz uma cópia de segurança antes, e não mexe nela com o Engine aberto."
+            "d": "Capa, avaliação e playlist na sua biblioteca. Faz um backup antes, e não mexe nela com o Engine aberto."
           },
           {
             "t": "Arquivos para rekordbox, Serato, M3U8",
-            "s": "Exporta listas para rekordbox, Serato e M3U8.",
-            "d": "Caminhos e metadados, sem cues, sem avaliações. A crate do Serato, só caminhos."
+            "s": "Exporta playlists para rekordbox, Serato e M3U8.",
+            "d": "Caminhos e metadados, sem cues, sem avaliações. O crate do Serato, só caminhos."
           }
         ]
       },
@@ -392,7 +392,7 @@
           {
             "t": "Nada se perde",
             "s": "As edições se salvam sozinhas, mesmo se o app fechar de repente.",
-            "d": "As edições se salvam sozinhas: a sessão volta mesmo se o app morrer no meio da caixa de discos."
+            "d": "As edições se salvam sozinhas: a sessão volta mesmo se o app morrer no meio do trabalho."
           },
           {
             "t": "Confere a cópia antes de confiar nela",
@@ -402,13 +402,13 @@
           {
             "t": "Resgata WAVs quebrados",
             "s": "Repara numa cópia o cabeçalho que outros apps não conseguem ler.",
-            "d": "O cabeçalho que trava outros apps, reparado numa cópia. Seu arquivo nunca é tocado."
+            "d": "O cabeçalho que trava outros apps, reparado numa cópia. Seu arquivo nunca é alterado."
           }
         ]
       }
     ],
     "metaTitle": "Tudo o que o Surco faz · Funções",
-    "metaDescription": "Converta, etiquete com Discogs, Bandcamp, Deezer, Beatport ou MusicBrainz, analise a qualidade, repare clicks, corte silêncios e exporte para rekordbox, Engine DJ, Traktor ou Serato. Grátis."
+    "metaDescription": "Converta, etiquete com Discogs, Bandcamp, Deezer, Beatport ou MusicBrainz, analise a qualidade, repare cliques, corte silêncios e exporte para rekordbox, Engine DJ, Traktor ou Serato. Grátis."
   },
   "shortcuts": {
     "kicker": "Teclado primeiro",
@@ -433,7 +433,7 @@
         "body": "Arraste seus WAV, FLAC, AIFF ou MP3. O Surco lê as tags e a capa na hora."
       },
       {
-        "title": "Escolha o lançamento",
+        "title": "Escolha o release",
         "body": "Busque no Discogs, Bandcamp, Deezer, Beatport ou MusicBrainz e aplique artista, álbum, ano, gênero e capa em um clique."
       },
       {
@@ -443,7 +443,7 @@
     ]
   },
   "showcase": {
-    "alt": "Surco no macOS: lista de faixas, correspondência do Discogs, editor de metadados e análise de qualidade",
+    "alt": "Surco no macOS: lista de faixas, associação com o Discogs, editor de metadados e análise de qualidade",
     "zoom": "Ampliar a captura de tela",
     "tour": {
       "tracks": {
@@ -451,8 +451,8 @@
         "desc": "Suas faixas, com um filtro para ver o que já está na sua biblioteca do Apple Music ou do Engine DJ."
       },
       "discogs": {
-        "title": "Correspondência com Discogs, Bandcamp, Deezer, Beatport e MusicBrainz",
-        "desc": "Encontre o lançamento exato no Discogs, Bandcamp, Deezer, Beatport ou MusicBrainz, das prensagens de clube aos singles das paradas, e escolha a versão certa."
+        "title": "Associação com Discogs, Bandcamp, Deezer, Beatport e MusicBrainz",
+        "desc": "Encontre o release exato no Discogs, Bandcamp, Deezer, Beatport ou MusicBrainz, das prensagens de clube aos singles das paradas, e escolha a versão certa."
       },
       "metadata": {
         "title": "Editor de metadados",
@@ -506,7 +506,7 @@
       },
       {
         "q": "Ele mexe nos meus arquivos originais?",
-        "a": "Depende de o formato mudar ou não. Converta para outro formato e o original fica intocado, com a cópia indo para uma pasta separada (Music/Surco). Há duas exceções. Se a cópia nova substitui a antiga na sua biblioteca, o Surco retira o arquivo antigo assim que confirma que o novo está bom e o manda para a Lixeira ou para Cópias. E com “Editar o original” o arquivo é regravado no lugar, então mudar de formato elimina o original. Reexporte para o mesmo formato e o Surco regrava aquele arquivo onde ele está, que é como ele atualiza as tags sem recodificar o áudio. Quando o áudio muda (converter, normalizar, cortar), o Surco guarda antes uma cópia de segurança do original, que você restaura pela própria faixa; em Ajustes → Saída você escolhe se quer guardar uma sempre, só quando o áudio muda ou nunca, e por quantos dias e quanto espaço."
+        "a": "Depende de o formato mudar ou não. Converta para outro formato e o original fica intocado, com a cópia indo para uma pasta separada (Music/Surco). Há duas exceções. Se a cópia nova substitui a antiga na sua biblioteca, o Surco retira o arquivo antigo assim que confirma que o novo está bom e o manda para a Lixeira ou para Cópias. E com “Editar o original” o arquivo é regravado no lugar, então mudar de formato elimina o original. Reexporte para o mesmo formato e o Surco regrava aquele arquivo onde ele está, que é como ele atualiza as tags sem recodificar o áudio. Quando o áudio muda (converter, normalizar, cortar), o Surco guarda antes um backup do original, que você restaura pela própria faixa; em Ajustes → Saída você escolhe se quer guardar uma sempre, só quando o áudio muda ou nunca, e por quantos dias e quanto espaço."
       },
       {
         "q": "Ele mantém os cue points?",
@@ -538,7 +538,7 @@
       },
       {
         "q": "E os arquivos WAV quebrados?",
-        "a": "Downloads antigos às vezes trazem cabeçalhos WAV malformados que outros apps não engolem. O Surco os repara numa cópia temporária enquanto lê (o seu original nunca é tocado), para que a faixa toque, seja analisada e convertida normalmente."
+        "a": "Downloads antigos às vezes trazem cabeçalhos WAV malformados que outros apps não engolem. O Surco os repara numa cópia temporária enquanto lê (o seu original nunca é alterado), para que a faixa toque, seja analisada e convertida normalmente."
       },
       {
         "q": "E se o app fechar no meio da sessão?",
@@ -597,7 +597,7 @@
       },
       {
         "id": "keep",
-        "title": "Manter"
+        "title": "Manter em ordem"
       }
     ],
     "sections": [
@@ -719,7 +719,7 @@
       {
         "id": "discogs",
         "group": "tag",
-        "title": "Encontre o disco nas suas fontes",
+        "title": "Encontre o release nas suas fontes",
         "s": "Discogs, Bandcamp, Deezer, Beatport e MusicBrainz, com dados e capa em um clique.",
         "body": [
           "Discogs, Bandcamp, Deezer e MusicBrainz vêm ativados e não pedem conta. O Beatport se ativa em Ajustes → Fontes."
@@ -727,10 +727,10 @@
         "steps": [
           {
             "lead": "Busque.",
-            "text": "Digite o nome do disco ou cole um release id do Discogs, e aperte “Buscar” ou a tecla /."
+            "text": "Digite o nome do release ou cole um release id do Discogs, e aperte “Buscar” ou a tecla /."
           },
           {
-            "lead": "Escolha a edição.",
+            "lead": "Escolha a prensagem.",
             "text": "Cada resultado traz capa, ano, selo, catálogo e formato. Abra um para ver o tracklist. O mais parecido vem marcado como “Sugerida”."
           },
           {
@@ -751,7 +751,7 @@
         "id": "automatch",
         "group": "tag",
         "title": "Deixe o Surco etiquetar sozinho",
-        "s": "Cada faixa que você solta é buscada e etiquetada sozinha quando a correspondência é confiável.",
+        "s": "Cada faixa que você solta é buscada e etiquetada sozinha quando a associação é confiável.",
         "body": [
           "O Surco compara título, duração, número da faixa e artista com cada candidato. Um título igual não basta, algo mais tem que confirmar."
         ],
@@ -762,7 +762,7 @@
           },
           {
             "lead": "Solte suas faixas.",
-            "text": "Cada uma é buscada em segundo plano nas suas fontes e, se a correspondência for confiável, recebe os dados e a capa."
+            "text": "Cada uma é buscada em segundo plano nas suas fontes e, se a associação for confiável, recebe os dados e a capa."
           },
           {
             "lead": "Confirme as duvidosas.",
@@ -791,7 +791,7 @@
             "text": "Com ⌘ + clique ou Shift + clique. O cabeçalho do editor passa a dizer “Editando N faixas”."
           },
           {
-            "lead": "Busque o disco uma vez.",
+            "lead": "Busque o release uma vez.",
             "text": "O Surco monta uma grade com seus arquivos à esquerda e o tracklist à direita, e associa cada um pela duração."
           },
           {
@@ -802,7 +802,7 @@
         "points": [
           "Um arquivo que não encaixa em nenhuma música fica sem associação em vez de cair na errada.",
           "No grouping e no gênero, cada tag diz se está em todas, em algumas ou em nenhuma.",
-          "Se o disco não está nas suas fontes, um comando numera a seleção na ordem da lista."
+          "Se o release não está nas suas fontes, um comando numera a seleção na ordem da lista."
         ],
         "shot": "album-pt-BR.webp",
         "shotCaption": "Atribuindo cada arquivo à sua música e aplicando a todas."
@@ -832,7 +832,7 @@
         "points": [
           "Um MP3 não é julgado como um lossless. O corte dele é o formato, não um defeito.",
           "“Possível reprocessamento” avisa de agudos que parecem regenerados sobre um corte anterior. É uma suspeita medida, não uma prova.",
-          "Abaixo do espectro você tem LUFS, true peak, dinâmica e ruído de fundo, e pode salvar o relatório em PNG."
+          "Abaixo do espectro você tem LUFS, true peak, dinâmica e piso de ruído, e pode salvar o relatório em PNG."
         ],
         "shot": "calidad-pt-BR.webp",
         "shotCaption": "O espectro de uma faixa com o seu veredito de qualidade."
@@ -912,7 +912,7 @@
         "steps": [
           {
             "lead": "Monte o modelo.",
-            "text": "Em Ajustes → Nomes clique em fichas como {artist}, {title} ou {year}, e uma prévia mostra o resultado."
+            "text": "Em Ajustes → Nomes clique nos campos como {artist}, {title} ou {year}, e uma prévia mostra o resultado."
           },
           {
             "lead": "Crie pastas se quiser.",
@@ -933,7 +933,7 @@
       {
         "id": "exportar",
         "group": "out",
-        "title": "Leve suas faixas para o seu software de DJ",
+        "title": "Leve suas faixas para o seu programa de DJ",
         "s": "Apple Music, rekordbox, Engine DJ, Traktor e Serato, ao converter ou pelas playlists deles.",
         "body": [
           "A barra lateral mostra suas bibliotecas. Abra qualquer playlist e as faixas entram na lista com os arquivos de verdade."
@@ -990,7 +990,7 @@
           "O filtro “Cues fora da grade” mostra as faixas com algum cue fora da batida."
         ],
         "shot": "rekordbox-pt-BR.webp",
-        "shotCaption": "Marcar automático sugere onde a faixa entra, com o seu fluxo pronto para aceitar."
+        "shotCaption": "Marcar automático sugere onde a faixa explode, com o seu fluxo pronto para aceitar."
       },
       {
         "id": "usb",
@@ -1046,9 +1046,9 @@
         ],
         "points": [
           "Grafias junta o que está escrito de várias formas, como DJ Lara e Dj Lara.",
-          "Duplicados deixa você escolher qual fica, e ela herda as playlists da outra.",
+          "Duplicadas deixa você escolher qual fica, e ela herda as playlists da outra.",
           "Danos repara cues e durações quebradas do Traktor e do Engine DJ, e Incompletas propõe como preencher os campos obrigatórios.",
-          "BPM, tom, cues e avaliação não são tocados."
+          "BPM, tom, cues e avaliação ficam como estão."
         ],
         "shot": "revisar-pt-BR.webp",
         "shotCaption": "Revisão de uma playlist do rekordbox, com um espaço sobrando no nome de um álbum."
@@ -1113,7 +1113,7 @@
       "fakeAlt": "Espectro de um MP3 convertido para FLAC: faixa vazia acima de 16 kHz com borda reta",
       "section": "Qualidade de áudio",
       "good": "Boa qualidade",
-      "bad": "Má qualidade",
+      "bad": "Qualidade ruim",
       "analyzing": "Analisando espectro…",
       "highsGood": "agudos até ~21,2 kHz",
       "highsBad": "agudos até ~16 kHz",
@@ -1212,14 +1212,14 @@
     },
     "sync": {
       "title": "Você muda uma vez. Todos os seus programas veem.",
-      "lede": "Abra a faixa pela aba do Apple Music ou do rekordbox, corrija o título, o gênero ou o nome do arquivo e clique em Atualizar etiquetas. O Surco leva a mudança ao Apple Music, ao rekordbox, ao Traktor e ao Engine DJ, e em cada um continua sendo a mesma faixa.",
+      "lede": "Abra a faixa pela aba do Apple Music ou do rekordbox, corrija o título, o gênero ou o nome do arquivo e clique em Atualizar tags. O Surco leva a mudança ao Apple Music, ao rekordbox, ao Traktor e ao Engine DJ, e em cada um continua sendo a mesma faixa.",
       "tabAppleMusic": "Aba Apple Music",
       "tabRekordbox": "Aba rekordbox",
       "fieldTitle": "Título",
       "fieldGenre": "Gênero",
       "fieldFile": "Nome do arquivo",
-      "button": "Atualizar etiquetas",
-      "saved": "Etiquetas atualizadas",
+      "button": "Atualizar tags",
+      "saved": "Tags atualizadas",
       "origin": "origem",
       "points": {
         "anyTab": {
@@ -1264,7 +1264,7 @@
       "grid": {
         "title": "Encontre os cues que não caem na batida.",
         "text": "No rekordbox, no Engine DJ e no Traktor, o Surco mede cada cue contra a grade e separa as faixas que passam do ponto. Você apaga e clica em Marcar automático. Você escolhe a partir de quantos ms conta.",
-        "clearAll": "Apagar todas as cues",
+        "clearAll": "Apagar todos os cues",
         "miss": "a {{ms}} ms da batida",
         "hit": "na batida",
         "filters": {
@@ -1302,7 +1302,7 @@
           "text": "Rahcel em vez de Rachel. Um erro nunca entra no lote sozinho, quem decide é você."
         },
         "duplicate": {
-          "title": "Duplicados",
+          "title": "Duplicadas",
           "text": "A mesma faixa duas vezes. A cópia que você mantém entra nas playlists da que você remove."
         },
         "everywhere": {
@@ -1320,14 +1320,14 @@
       "badge": {
         "case": "Maiúsculas",
         "invisible": "Invisíveis",
-        "punctuation": "Sinais",
+        "punctuation": "Pontuação",
         "typo": "Erro",
         "duplicate": "Duplicado"
       },
       "typo": "possível erro",
       "tie": "Empate. Escolha qual fica.",
       "options": "Como está e como fica",
-      "keeps": "Fica",
+      "keeps": "Mantida",
       "fieldTitle": "Título",
       "now": "Agora",
       "after": "Fica",
@@ -1386,7 +1386,7 @@
         {
           "what": "Cues do Traktor",
           "result": "Mantidos",
-          "how": "Entre MP3, AIFF, FLAC e WAV em qualquer combinação, com o atraso do MP3 compensado. Só o ALAC não tem onde guardá-los."
+          "how": "Entre MP3, AIFF, FLAC e WAV em qualquer combinação, com o offset do MP3 compensado. Só o ALAC não tem onde guardá-los."
         },
         {
           "what": "Mesmo formato",
@@ -1724,7 +1724,7 @@
   },
   "flacToMp3": {
     "metaTitle": "Converter FLAC para MP3 de 320 kbps sem perder tags nem cues",
-    "metaDescription": "Converta FLAC para MP3 em lote, a 320 kbps ou na qualidade que você escolher. O Surco mantém as tags, a capa e os cues do Traktor, com o atraso do MP3 compensado.",
+    "metaDescription": "Converta FLAC para MP3 em lote, a 320 kbps ou na qualidade que você escolher. O Surco mantém as tags, a capa e os cues do Traktor, com o offset do MP3 compensado.",
     "h1a": "Converta FLAC para MP3",
     "h1b": "e faça caber no pendrive.",
     "lede": "Passe seus FLAC para MP3 de 320 kbps, ou para a qualidade que você escolher, para um pendrive pequeno, um equipamento que não lê FLAC ou o celular. As tags, a capa e os cues do Traktor vêm junto com o áudio.",
@@ -1767,7 +1767,7 @@
         {
           "what": "Cues do Traktor",
           "result": "Mantidos",
-          "how": "O Surco leva a árvore de cues do Traktor para o MP3 e compensa o atraso que o codec adiciona, para cada cue cair onde estava."
+          "how": "O Surco leva a árvore de cues do Traktor para o MP3 e compensa o offset que o codec adiciona, para cada cue cair onde estava."
         }
       ]
     },
@@ -1831,7 +1831,7 @@
         },
         {
           "q": "Meus cue points sobrevivem?",
-          "a": "Os do Traktor, sim, com o atraso do codec compensado para caírem onde estavam. Os do rekordbox e do Engine DJ vivem na biblioteca de cada um e não viajam dentro do arquivo."
+          "a": "Os do Traktor, sim, com o offset do codec compensado para caírem onde estavam. Os do rekordbox e do Engine DJ vivem na biblioteca de cada um e não viajam dentro do arquivo."
         },
         {
           "q": "Funciona no Windows?",
@@ -1889,7 +1889,7 @@
         {
           "what": "Cues do Traktor",
           "result": "Mantidos",
-          "how": "O Surco leva a árvore de cues do Traktor para o MP3 e compensa o atraso que o codec adiciona, para cada cue cair onde estava."
+          "how": "O Surco leva a árvore de cues do Traktor para o MP3 e compensa o offset que o codec adiciona, para cada cue cair onde estava."
         },
         {
           "what": "Cabeçalhos quebrados",
@@ -1958,7 +1958,7 @@
         },
         {
           "q": "Meus cue points sobrevivem?",
-          "a": "Os do Traktor, sim, com o atraso do codec compensado para caírem onde estavam. Os do rekordbox e do Engine DJ vivem na biblioteca de cada um e não viajam dentro do arquivo."
+          "a": "Os do Traktor, sim, com o offset do codec compensado para caírem onde estavam. Os do rekordbox e do Engine DJ vivem na biblioteca de cada um e não viajam dentro do arquivo."
         },
         {
           "q": "Funciona no Windows?",
@@ -2020,7 +2020,7 @@
       },
       {
         "id": "library",
-        "title": "Sua biblioteca e seu software de DJ",
+        "title": "Sua biblioteca e seu programa de DJ",
         "lede": "Apple Music, rekordbox, Engine DJ e Traktor em dia com o que você muda no Surco."
       },
       {
@@ -2175,7 +2175,7 @@
         ],
         "related": [
           {
-            "label": "Leve suas faixas para o seu software de DJ",
+            "label": "Leve suas faixas para o seu programa de DJ",
             "anchor": "exportar"
           },
           {
@@ -2248,7 +2248,7 @@
         ],
         "related": [
           {
-            "label": "Leve suas faixas para o seu software de DJ",
+            "label": "Leve suas faixas para o seu programa de DJ",
             "anchor": "exportar"
           },
           {
@@ -2264,7 +2264,7 @@
         "title": "Passe sua coleção para AIFF sem perder os cue points",
         "s": "A coleção inteira em AIFF de uma vez, com os cue points onde estavam.",
         "body": [
-          "Sua música está em FLAC ou WAV e seu software de DJ ou suas CDJs preferem AIFF, que ainda guarda a capa. Você quer converter tudo de uma vez e manter os cue points onde estavam.",
+          "Sua música está em FLAC ou WAV e seu programa de DJ ou seus CDJs preferem AIFF, que ainda guarda a capa. Você quer converter tudo de uma vez e manter os cue points onde estavam.",
           "O som não perde nada. Passar de FLAC ou WAV para AIFF é sem perdas."
         ],
         "keywords": "converter formato convert flac wav aiff cdj cues",
@@ -2332,7 +2332,7 @@
             "anchor": "convertir"
           },
           {
-            "label": "Leve suas faixas para o seu software de DJ",
+            "label": "Leve suas faixas para o seu programa de DJ",
             "anchor": "exportar"
           }
         ]
@@ -2426,7 +2426,7 @@
           }
         ],
         "points": [
-          "Só “Fonte com perdas” e “Má qualidade” aparecem em vermelho.",
+          "Só “Fonte com perdas” e “Qualidade ruim” aparecem em vermelho.",
           "“Possível reprocessamento” aparece em âmbar porque é uma suspeita, não uma prova.",
           "Um MP3 nunca é classificado como má qualidade. Cortar os agudos faz parte do formato.",
           "Até você clicar em “Converter”, o Surco não grava nada nos seus arquivos."
@@ -2457,7 +2457,7 @@
           {
             "tab": "Processamento",
             "section": "Reparo de vinil",
-            "setting": "Clicks",
+            "setting": "Cliques",
             "value": "Padrão",
             "note": "Tira os estalos curtos da agulha ao converter."
           },
@@ -2472,7 +2472,7 @@
           {
             "tab": "Fontes",
             "setting": "Mostrar só estes formatos",
-            "value": "Vinyl",
+            "value": "Vinil",
             "note": "Assim o Discogs mostra a prensagem em vinil e não o CD."
           },
           {
@@ -2498,7 +2498,7 @@
           },
           {
             "title": "Clique em “Converter”",
-            "text": "O reparo de vinil e o loudness são aplicados ao converter."
+            "text": "O reparo de vinil e o volume são aplicados ao converter."
           }
         ],
         "points": [
@@ -2561,7 +2561,7 @@
             "anchor": "usb"
           },
           {
-            "label": "Leve suas faixas para o seu software de DJ",
+            "label": "Leve suas faixas para o seu programa de DJ",
             "anchor": "exportar"
           }
         ]
@@ -2608,7 +2608,7 @@
           }
         ],
         "points": [
-          "Os cue points do Traktor passam para o MP3, com o atraso do codec compensado.",
+          "Os cue points do Traktor passam para o MP3, com o offset do codec compensado.",
           "As tags e a capa vão em ID3v2.3, as que os CDJs leem.",
           "Passar para MP3 não tem volta. Guarde os originais sem perdas em casa."
         ],
@@ -2671,7 +2671,7 @@
           },
           {
             "title": "Decida sobre os possíveis erros de digitação",
-            "text": "“Armin van Buren” por “Armin van Buuren” aparece em âmbar e nunca entra no lote sozinho. Se não forem o mesmo, escolha “Não é o mesmo”."
+            "text": "“Armin van Buren” em vez de “Armin van Buuren” aparece em âmbar e nunca entra no lote sozinho. Se não forem o mesmo, escolha “Não é o mesmo”."
           },
           {
             "title": "Clique em “Aplicar”",
@@ -2730,11 +2730,11 @@
           },
           {
             "title": "Compare as cópias",
-            "text": "Cada uma mostra o formato, quando você a adicionou e o que tem nos seus apps de DJ. “Copiar título” ajuda a buscá-la."
+            "text": "Cada uma mostra o formato, quando você a adicionou e o que tem nos seus programas de DJ. “Copiar título” ajuda a buscá-la."
           },
           {
             "title": "Escolha qual manter",
-            "text": "O Surco marca de saída o melhor formato. Mude se quiser e clique em “Remover”."
+            "text": "O Surco já marca de início o melhor formato. Mude se quiser e clique em “Remover”."
           },
           {
             "title": "Clique em “Aplicar”",
@@ -2742,7 +2742,7 @@
           }
         ],
         "points": [
-          "A cópia que você mantém entra nas playlists da outra, no Apple Music e nos seus apps de DJ.",
+          "A cópia que você mantém entra nas playlists da outra, no Apple Music e nos seus programas de DJ.",
           "Os cue points da cópia que você remove não passam para a outra. Veja qual tem cues antes de escolher.",
           "O arquivo removido vai para a Lixeira, ou para Cópias › Arquivos de música num disco sem Lixeira, como um NAS.",
           "“Desfazer” não traz de volta as cópias removidas. Se errar, o arquivo continua na Lixeira ou em Cópias › Arquivos de música."
@@ -2776,7 +2776,7 @@
           },
           {
             "title": "Clique em “Aplicar”",
-            "text": "As mudanças vão para os arquivos e, se a faixa estiver no Apple Music ou nos seus apps de DJ, para lá também."
+            "text": "As mudanças vão para os arquivos e, se a faixa estiver no Apple Music ou nos seus programas de DJ, para lá também."
           }
         ],
         "points": [
@@ -2812,7 +2812,7 @@
           },
           {
             "title": "Substitua e salve",
-            "text": "Clique em “Substituir em…”. A mudança não está nos arquivos até você clicar em “Atualizar etiquetas” ou “Converter”."
+            "text": "Clique em “Substituir em…”. A mudança não está nos arquivos até você clicar em “Atualizar tags” ou “Converter”."
           }
         ],
         "points": [
@@ -2864,7 +2864,7 @@
           },
           {
             "title": "Clique em “Converter”",
-            "text": "Ou em “Atualizar etiquetas”. Até lá o arquivo não muda."
+            "text": "Ou em “Atualizar tags”. Até lá o arquivo não muda."
           }
         ],
         "points": [
@@ -2874,7 +2874,7 @@
         ],
         "related": [
           {
-            "label": "Encontre o disco nas suas fontes",
+            "label": "Encontre o release nas suas fontes",
             "anchor": "discogs"
           }
         ]
@@ -3024,12 +3024,12 @@
         "points": [
           "Os dados, a avaliação e a capa chegam ao Engine.",
           "Uma faixa nova entra sem análise e o Engine calcula a grade quando você a abre. Os hot cues você pode colocar pelo Surco, com o seu fluxo e Marcar automático.",
-          "Antes de gravar, o Surco faz uma cópia de segurança da biblioteca, que você restaura em Cópias.",
+          "Antes de gravar, o Surco faz um backup da biblioteca, que você restaura em Cópias.",
           "No fim, o ícone do Engine DJ ao lado do resultado leva você à faixa com os cues abertos."
         ],
         "related": [
           {
-            "label": "Leve suas faixas para o seu software de DJ",
+            "label": "Leve suas faixas para o seu programa de DJ",
             "anchor": "exportar"
           }
         ]
@@ -3039,16 +3039,16 @@
         "slug": "set-up-rekordbox-cues-with-your-flow",
         "group": "library",
         "title": "Prepare os cues das suas faixas com o seu próprio fluxo",
-        "s": "Marque onde a faixa sobe e o seu fluxo coloca o resto dos cues.",
+        "s": "Marque onde a faixa explode e o seu fluxo coloca o resto dos cues.",
         "body": [
-          "Você prepara suas faixas do rekordbox sempre do mesmo jeito, com cues contados a partir de onde a faixa sobe. Quer marcar esse ponto com um clique, ou que o Surco o sugira, e que ele coloque o resto.",
+          "Você prepara suas faixas do rekordbox sempre do mesmo jeito, com cues contados a partir de onde a faixa explode. Quer marcar esse ponto com um clique, ou que o Surco o sugira, e que ele coloque o resto.",
           "É assim que um DJ faz com o fluxo dele, mas o ponto pode ser o que você quiser e você monta o fluxo do seu jeito. Funciona no Mac e no Windows."
         ],
         "keywords": "hot cues call memory drop subida breakdown subidón mix in compassos bars marcar automático auto mark sugestões sem análise completar ao fechar",
         "settings": [
           {
             "tab": "Cues",
-            "setting": "Pôr um CALL onde você marca",
+            "setting": "Colocar um CALL onde você marca",
             "note": "Dê um nome ao seu fluxo, por exemplo Subidón. A regra dele já conta para trás a partir de onde você marca a cada 16 compassos e coloca hot cue + CALL. Mude “uma vez” para “3 vezes” e escolha “uma cor por repetição” com azul, verde e vermelho. Esta caixa, marcada por padrão, adiciona o CALL no ponto."
           },
           {
@@ -3061,7 +3061,7 @@
             "section": "Coleção do rekordbox",
             "setting": "Ao fechar o rekordbox, aplicar seu fluxo ativo nas faixas com CALL e sem hot cues",
             "optional": true,
-            "note": "Para marcar o ponto no rekordbox em vez de no Surco. Você coloca um CALL onde a faixa sobe enquanto prepara e, quando fecha o rekordbox, o Surco adiciona os hot cues do seu fluxo. Ao ativar, ele diz quantas faixas vai completar."
+            "note": "Para marcar o ponto no rekordbox em vez de no Surco. Você coloca um CALL onde a faixa explode enquanto prepara e, quando fecha o rekordbox, o Surco adiciona os hot cues do seu fluxo. Ao ativar, ele diz quantas faixas vai completar."
           }
         ],
         "steps": [
@@ -3074,8 +3074,8 @@
             "text": "No menu “Fluxo” da seção, por exemplo Subidón. Ele fica escolhido para as próximas faixas."
           },
           {
-            "title": "Marque onde a faixa sobe",
-            "text": "Passar o mouse sobre a onda ampliada mostra uma prévia em contorno do que o fluxo colocaria. Ao clicar, o Surco conta para trás a partir desse ponto e coloca um hot cue vermelho a 48 compassos, um verde a 32 e um azul a 16, cada um com seu CALL, mais um CALL no ponto. Se preferir que o Surco procure, aperte “Marcar automático”. Ele sugere onde a faixa sobe, com o fluxo desenhado em contorno, e você aceita todas de uma vez com Return ou uma por uma."
+            "title": "Marque onde a faixa explode",
+            "text": "Passar o mouse sobre a onda ampliada mostra uma prévia em contorno do que o fluxo colocaria. Ao clicar, o Surco conta para trás a partir desse ponto e coloca um hot cue vermelho a 48 compassos, um verde a 32 e um azul a 16, cada um com seu CALL, mais um CALL no ponto. Se preferir que o Surco procure, aperte “Marcar automático”. Ele sugere onde a faixa explode, com o fluxo desenhado em contorno, e você aceita todas de uma vez com Return ou uma por uma."
           },
           {
             "title": "Clique em “Salvar no rekordbox”",
@@ -3089,7 +3089,7 @@
           "Quando o rekordbox fecha, o Surco só completa faixas que o rekordbox já analisou, com um CALL e sem hot cues, então uma faixa que já tem hot cues fica como está. O Surco precisa estar aberto quando você fecha o rekordbox.",
           "O rekordbox aceita no máximo 8 hot cues, de A a H. Se algum não couber, o Surco avisa.",
           "Se um cue basta, dois fluxos já vêm prontos. Mix in 64 coloca um hot cue 16 compassos antes do ponto, e Mix in 32, 8 compassos antes.",
-          "Os cues são salvos na sua coleção do rekordbox, não no arquivo. Antes que o Surco grave nela, faça você mesmo uma cópia de segurança da biblioteca pelo rekordbox. O Surco também faz uma.",
+          "Os cues são salvos na sua coleção do rekordbox, não no arquivo. Antes que o Surco grave nela, faça você mesmo um backup da biblioteca pelo rekordbox. O Surco também faz um.",
           "Se você acabou de converter a faixa e a mandou para playlists do rekordbox, o ícone do rekordbox ao lado do resultado leva você até ela em “Adicionadas recentemente” com os cues abertos."
         ],
         "related": []

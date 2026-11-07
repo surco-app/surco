@@ -5,11 +5,11 @@
     "title": "Cole a tracklist do seu set e converta só o que escolher",
     "items": [
       {
-        "text": "Cole a tracklist de um set e o Surco monta a playlist. No rekordbox, Traktor e Serato, clique com o botão direito numa playlist, «Colar tracklist…», e cole o texto como vier, com ou sem tempos, a descrição do YouTube ou o que o seu identificador de faixas mostra. O Surco procura cada linha na sua coleção e mostra o que encontrou antes de mexer em qualquer coisa. As linhas que são outro mix da mesma faixa entram mesmo assim, a menos que você as tire; as que só têm o título em comum esperam você pegá-las. As faixas entram na ordem do set, e as que você não tem ficam de fora sem atrapalhar. Numa pasta, «Nova playlist a partir de tracklist…» cria a playlist com o nome que você der. Medido num set real de 31 faixas, 28 entraram sozinhas e 3 com um clique.",
+        "text": "Cole a tracklist de um set e o Surco monta a playlist. No rekordbox, Traktor e Serato, clique com o botão direito numa playlist, “Colar tracklist…”, e cole o texto como vier, com ou sem tempos, a descrição do YouTube ou o que o seu identificador de faixas mostra. O Surco procura cada linha na sua coleção e mostra o que encontrou antes de mexer em qualquer coisa. As linhas que são outro mix da mesma faixa entram mesmo assim, a menos que você as tire; as que só têm o título em comum esperam você pegá-las. As faixas entram na ordem do set, e as que você não tem ficam de fora sem atrapalhar. Numa pasta, “Nova playlist a partir de tracklist…” cria a playlist com o nome que você der. Medido num set real de 31 faixas, 28 entraram sozinhas e 3 com um clique.",
         "in": "1.28.0"
       },
       {
-        "text": "Nas abas do rekordbox, Traktor, Engine DJ e Serato, «Converter» converte só as faixas que você selecionou, e sem nenhuma selecionada não há nada para converter. Com várias selecionadas, ⌘⏎ converte a seleção inteira em vez da faixa aberta. O botão diz o que fica de fora e por quê, e o plano do editor também: as faixas do Serato que perderiam seus cues, e uma seleção que mistura substituir uma cópia da sua biblioteca com adicionar, que espera você separá-la. No menu das concluídas, «Converter de novo» retoma as que você já converteu.",
+        "text": "Nas abas do rekordbox, Traktor, Engine DJ e Serato, “Converter” converte só as faixas que você selecionou, e sem nenhuma selecionada não há nada para converter. Com várias selecionadas, ⌘⏎ converte a seleção inteira em vez da faixa aberta. O botão diz o que fica de fora e por quê, e o plano do editor também: as faixas do Serato que perderiam seus cues, e uma seleção que mistura substituir uma cópia da sua biblioteca com adicionar, que espera você separá-la. No menu das concluídas, “Converter de novo” retoma as que você já converteu.",
         "in": "1.28.0"
       }
     ]
@@ -28,7 +28,7 @@
         "in": "1.27.0"
       },
       {
-        "text": "“Melhor que no Music”, na seção Apple Music, deixa só as faixas que você trouxe e que soam melhor que a cópia que você já tem no Apple Music. Uma cópia .m4a é julgada pelo que leva dentro, então AAC conta como com perda e ALAC como sem perda.",
+        "text": "“Melhor que no Music”, na seção Apple Music, deixa só as faixas que você trouxe e que soam melhor que a cópia que você já tem no Apple Music. Uma cópia .m4a é julgada pelo que leva dentro, então AAC conta como com perdas e ALAC como sem perdas.",
         "in": "1.27.0"
       },
       {
@@ -60,7 +60,7 @@
         "in": "1.27.3"
       },
       {
-        "text": "O editor de cues ampliado abre com ⌘⇧C a partir da faixa selecionada. Os botões de baixo ficam em grupos, pads, CALL, grade e zoom, e “Apagar todas as cues” fica sozinho no fim. O zoom aproxima até um compasso, “Aceitar e salvar” salva as sugestões de “Marcar automático” no seu programa de DJ com um clique, e com “Letras na ordem da faixa” um pad vazio mostra que letra o cue vai ter.",
+        "text": "O editor de cues ampliado abre com ⌘⇧C a partir da faixa selecionada. Os botões de baixo ficam em grupos, pads, CALL, grade e zoom, e “Apagar todos os cues” fica sozinho no fim. O zoom aproxima até um compasso, “Aceitar e salvar” salva as sugestões de “Marcar automático” no seu programa de DJ com um clique, e com “Letras na ordem da faixa” um pad vazio mostra que letra o cue vai ter.",
         "in": "1.27.3"
       },
       {
@@ -79,7 +79,7 @@
         "in": "1.26.0"
       },
       {
-        "text": "Os fluxos de cues têm duas condições novas. “até a marca anterior” deixa uma contagem regressiva atravessar refrões sem marca, e “se não vier outra cue nos próximos” compassos deixa uma cue de fora quando outra vem logo depois. Cada regra oferece só as condições que servem para ela e diz embaixo o que faz.",
+        "text": "Os fluxos de cues têm duas condições novas. “até a marca anterior” deixa uma contagem regressiva atravessar refrões sem marca, e “se não vier outro cue nos próximos” compassos deixa um cue de fora quando outro vem logo depois. Cada regra oferece só as condições que servem para ela e diz embaixo o que faz.",
         "in": "1.26.0"
       },
       {
@@ -107,7 +107,7 @@
         "in": "1.26.0"
       },
       {
-        "text": "A análise de qualidade continua com o Surco atrás de outras janelas, a não ser que um programa de DJ esteja aberto. E se você não usa o Apple Music, converter não abre mais ele.",
+        "text": "A análise de qualidade continua com o Surco atrás de outras janelas, a não ser que um programa de DJ esteja aberto. E se você não usa o Apple Music, converter não o abre mais.",
         "in": "1.26.0"
       }
     ]
@@ -118,7 +118,7 @@
     "title": "Um campo de Qualidade, e buscas do seu jeito nas abas de DJ",
     "items": [
       {
-        "text": "Novo campo “Qualidade”, que você mostra em “Campos” nas configurações. Com “Auto” ligado, o Surco grava no arquivo o veredito da análise, sempre em inglês (Good, Reprocessed, Lossy…), para você filtrar por ele nas playlists inteligentes do seu programa de DJ ou levá-lo para o nome do arquivo.",
+        "text": "Novo campo “Qualidade”, que você mostra em “Campos” nos Ajustes. Com “Auto” ligado, o Surco grava no arquivo o veredito da análise, sempre em inglês (Good, Reprocessed, Lossy…), para você filtrar por ele nas playlists inteligentes do seu programa de DJ ou levá-lo para o nome do arquivo.",
         "in": "1.25.0"
       },
       {
@@ -188,7 +188,7 @@
         "in": "1.23.0"
       },
       {
-        "text": "Quando você edita uma faixa no lugar, o Apple Music mostra as etiquetas novas na hora, e uma faixa cujo arquivo você renomeia continua sendo encontrada no Music.",
+        "text": "Quando você edita uma faixa no lugar, o Apple Music mostra as tags novas na hora, e uma faixa cujo arquivo você renomeia continua sendo encontrada no Music.",
         "in": "1.23.0"
       },
       {
@@ -257,7 +257,7 @@
         "in": "1.20.0"
       },
       {
-        "text": "No editor de cues recolhido há um só botão “Salvar”. O menu dele salva esta faixa, salva todas as faixas com cues não salvos ou descarta as suas alterações. O menu “Fluxo” agora só lista fluxos, e “Apagar todas as cues” é um botão ao lado de desfazer.",
+        "text": "No editor de cues recolhido há um só botão “Salvar”. O menu dele salva esta faixa, salva todas as faixas com cues não salvos ou descarta as suas alterações. O menu “Fluxo” agora só lista fluxos, e “Apagar todos os cues” é um botão ao lado de desfazer.",
         "in": "1.20.0"
       },
       {
@@ -272,7 +272,7 @@
     "title": "Complete o que falta",
     "items": [
       {
-        "text": "“Revisar metadados” tem um filtro “Incompletas” com as faixas cujo arquivo não tem um campo obrigatório, como o ano ou o grouping. O Surco propõe um valor para cada um, tirado do que o app mostra, de uma correspondência sugerida ou do nome do arquivo, e só preenche o que está vazio, no arquivo e no Apple Music, sem mexer no que o arquivo já tem. No filtro “Faltam obrigatórios”, “Completar em Revisar metadados” leva você direto, e o que só o editor preenche abre a faixa no editor.",
+        "text": "“Revisar metadados” tem um filtro “Incompletas” com as faixas cujo arquivo não tem um campo obrigatório, como o ano ou o agrupamento. O Surco propõe um valor para cada um, tirado do que o app mostra, de uma associação sugerida ou do nome do arquivo, e só preenche o que está vazio, no arquivo e no Apple Music, sem mexer no que o arquivo já tem. No filtro “Faltam obrigatórios”, “Completar em Revisar metadados” leva você direto, e o que só o editor preenche abre a faixa no editor.",
         "in": "1.19.0"
       },
       {
@@ -284,7 +284,7 @@
         "in": "1.19.0"
       },
       {
-        "text": "Reabrir uma pasta ou playlist que você já tinha carregado é mais rápido. O Surco lembra a análise e o resultado do auto-match de cada faixa enquanto o arquivo não muda, e o auto-match só busca as faixas que o filtro e a busca deixam na tela. As playlists e capas do Apple Music aparecem na hora, como você as viu da última vez. Se um arquivo mudou nesse meio-tempo, o Surco o relê antes de converter.",
+        "text": "Reabrir uma pasta ou playlist que você já tinha carregado é mais rápido. O Surco lembra a análise e o resultado da auto-associação de cada faixa enquanto o arquivo não muda, e a auto-associação só busca as faixas que o filtro e a busca deixam na tela. As playlists e capas do Apple Music aparecem na hora, como você as viu da última vez. Se um arquivo mudou nesse meio-tempo, o Surco o relê antes de converter.",
         "in": "1.19.0"
       },
       {
@@ -307,11 +307,11 @@
         "in": "1.18.0"
       },
       {
-        "text": "Converta para outro formato uma faixa que você já tem no Apple Music e o Surco a substitui em vez de deixar duas. Ela continua nas playlists, com reproduções e avaliação, e o rekordbox, o Engine DJ e o Traktor passam para o arquivo novo sem tirá-la das playlists. Entre AIFF, WAV, FLAC e ALAC, quando o áudio não muda, o rekordbox mantém a análise, o grid e os cues.",
+        "text": "Converta para outro formato uma faixa que você já tem no Apple Music e o Surco a substitui em vez de deixar duas. Ela continua nas playlists, com reproduções e avaliação, e o rekordbox, o Engine DJ e o Traktor passam para o arquivo novo sem tirá-la das playlists. Entre AIFF, WAV, FLAC e ALAC, quando o áudio não muda, o rekordbox mantém a análise, a grade e os cues.",
         "in": "1.18.0"
       },
       {
-        "text": "As faixas que o Surco leva ao Apple Music ficam na pasta do artista e do álbum, inclusive os WAV, que antes iam parar em “Unknown Album”.",
+        "text": "As faixas que o Surco leva ao Apple Music ficam na pasta do artista e do álbum, inclusive os WAV, que antes iam parar em “Álbum Desconhecido”.",
         "in": "1.18.0"
       },
       {
@@ -335,7 +335,7 @@
         "in": "1.18.3"
       },
       {
-        "text": "Faixas do rekordbox com acentos no nome acompanham a versão convertida com seus cues e playlists, e o Engine DJ move hot cues, loops e grid quando você corta o silêncio do início.",
+        "text": "Faixas do rekordbox com acentos no nome acompanham a versão convertida com seus cues e playlists, e o Engine DJ move hot cues, loops e grade quando você corta o silêncio do início.",
         "in": "1.18.3"
       },
       {
@@ -347,7 +347,7 @@
         "in": "1.18.4"
       },
       {
-        "text": "O Engine DJ move hot cues, loops e grid também quando você corta o silêncio sem trocar de arquivo, e ajusta a forma de onda e a duração da faixa.",
+        "text": "O Engine DJ move hot cues, loops e grade também quando você corta o silêncio sem trocar de arquivo, e ajusta a forma de onda e a duração da faixa.",
         "in": "1.18.4"
       },
       {
@@ -367,7 +367,7 @@
         "in": "1.18.5"
       },
       {
-        "text": "Ao converter para outro formato uma faixa que você já tinha na biblioteca, o Surco retira o arquivo antigo só quando a verificação dá certo e nem o rekordbox, nem o Engine DJ, nem o Traktor, nem o Apple Music ainda o usam. Ele vai para o Lixo, ou para Cópias num disco sem Lixo, e se as cópias dos originais estiverem em “Nunca” ele é apagado ali.",
+        "text": "Ao converter para outro formato uma faixa que você já tinha na biblioteca, o Surco retira o arquivo antigo só quando a verificação dá certo e nem o rekordbox, nem o Engine DJ, nem o Traktor, nem o Apple Music ainda o usam. Ele vai para a Lixeira, ou para Cópias num disco sem Lixeira, e se as cópias dos originais estiverem em “Nunca” ele é apagado ali.",
         "in": "1.18.6"
       },
       {
@@ -390,23 +390,23 @@
         "in": "1.17.0"
       },
       {
-        "text": "O Surco também funciona com o Traktor Play, as faixas que ele adiciona ao Traktor chegam com a capa e, se a sua coleção já tinha o grid de uma faixa, fica o seu.",
+        "text": "O Surco também funciona com o Traktor Play, as faixas que ele adiciona ao Traktor chegam com a capa e, se a sua coleção já tinha a grade de uma faixa, fica a sua.",
         "in": "1.17.0"
       },
       {
-        "text": "Os Ajustes têm busca. Digite em “Buscar ajustes” e o Surco leva você ao ajuste, mesmo sem acentos ou com outra palavra (bitrate, LUFS, iCloud). A aba Busca passa a se chamar Fontes, e a pasta de ajustes, os backups, o cache de análise e o registro de erros vão para Avançado.",
+        "text": "Os Ajustes têm busca. Digite em “Buscar ajustes” e o Surco leva você ao ajuste, mesmo sem acentos ou com outra palavra (bitrate, LUFS, iCloud). A aba Busca passa a se chamar Fontes, e a pasta de ajustes, as cópias, o cache de análise e o registro de erros vão para Avançado.",
         "in": "1.17.0"
       },
       {
-        "text": "⌘Z também desfaz escolher uma edição, o auto-associar, aceitar uma revisão e trocar a capa à mão, e ⇧⌘Z refaz. Cada passo desfaz só o que mudou, então o que você corrigiu depois fica, em várias faixas de uma vez cada uma recupera o próprio valor, e uma associação que você desfez não volta a se aplicar sozinha.",
+        "text": "⌘Z também desfaz escolher um release, a auto-associação, aceitar uma revisão e trocar a capa à mão, e ⇧⌘Z refaz. Cada passo desfaz só o que mudou, então o que você corrigiu depois fica, em várias faixas de uma vez cada uma recupera o próprio valor, e uma associação que você desfez não volta a se aplicar sozinha.",
         "in": "1.17.0"
       },
       {
-        "text": "Ao aplicar uma edição, embaixo de cada campo você vê “Antes:” com o que havia, e “Restaurar” devolve com um clique. O BPM e o tom que a faixa já tinha ficam, a edição só os preenche se estiverem vazios.",
+        "text": "Ao aplicar um release, embaixo de cada campo você vê “Antes:” com o que havia, e “Restaurar” devolve com um clique. O BPM e o tom que a faixa já tinha ficam, o release só os preenche se estiverem vazios.",
         "in": "1.17.0"
       },
       {
-        "text": "Se uma faixa da edição dura bem mais ou bem menos que o seu arquivo, o Surco avisa, também nas linhas do álbum, para você não aplicar outra versão sem perceber. “Melhor correspondência” só aparece quando a correspondência é confirmada, não por compartilhar o título.",
+        "text": "Se uma faixa do release dura bem mais ou bem menos que o seu arquivo, o Surco avisa, também nas linhas do álbum, para você não aplicar outra versão sem perceber. “Melhor associação” só aparece quando a associação é confirmada, não por compartilhar o título.",
         "in": "1.17.0"
       },
       {
@@ -511,7 +511,7 @@
         "in": "1.14.0"
       },
       {
-        "text": "Se você aplica um lançamento errado e depois o certo, o selo, o número de catálogo, o país e a capa do primeiro não ficam mais para trás. O que você editou por conta própria é mantido.",
+        "text": "Se você aplica um release errado e depois o certo, o selo, o número de catálogo, o país e a capa do primeiro não ficam mais para trás. O que você editou por conta própria é mantido.",
         "in": "1.14.0"
       },
       {
@@ -632,7 +632,7 @@
         "in": "1.11.0"
       },
       {
-        "text": "Com o Surco aberto, os cues que você coloca numa faixa que o rekordbox não tinha analisado passam para a grade do rekordbox assim que você o fecha, sem reiniciar. Se algum ficar longe de qualquer batida, o aviso traz «Ir ao cue» e abre a faixa no editor bem nesse cue.",
+        "text": "Com o Surco aberto, os cues que você coloca numa faixa que o rekordbox não tinha analisado passam para a grade do rekordbox assim que você o fecha, sem reiniciar. Se algum ficar longe de qualquer batida, o aviso traz “Ir ao cue” e abre a faixa no editor bem nesse cue.",
         "in": "1.11.0"
       },
       {
@@ -652,11 +652,11 @@
         "in": "1.11.2"
       },
       {
-        "text": "Novo botão «Apagar todas as cues» no editor de cues em tela cheia. Ele remove os hot cues e os pontos CALL de uma vez, e ⌘Z os traz de volta se você mudar de ideia.",
+        "text": "Novo botão “Apagar todos os cues” no editor de cues em tela cheia. Ele remove os hot cues e os pontos CALL de uma vez, e ⌘Z os traz de volta se você mudar de ideia.",
         "in": "1.11.2"
       },
       {
-        "text": "No menu de converter você pode escolher «Editar o original» só desta vez, sem mudar seus ajustes. Útil, por exemplo, para retocar as tags de um arquivo sem fazer uma cópia. O Surco continua pedindo confirmação antes de reescrevê-lo.",
+        "text": "No menu de converter você pode escolher “Editar o original” só desta vez, sem mudar seus ajustes. Útil, por exemplo, para retocar as tags de um arquivo sem fazer uma cópia. O Surco continua pedindo confirmação antes de reescrevê-lo.",
         "in": "1.11.2"
       }
     ]
@@ -671,7 +671,7 @@
         "in": "1.10.0"
       },
       {
-        "text": "Selecione várias faixas de uma playlist do rekordbox e aperte «Marcar automático nas selecionadas». Cada linha diz o que encontrou, e «Salvar N faixas no rekordbox» salva de uma vez todas as faixas que você revisou.",
+        "text": "Selecione várias faixas de uma playlist do rekordbox e aperte “Marcar automático nas selecionadas”. Cada linha diz o que encontrou, e “Salvar N faixas no rekordbox” salva de uma vez todas as faixas que você revisou.",
         "in": "1.10.0"
       },
       {
@@ -679,7 +679,7 @@
         "in": "1.10.0"
       },
       {
-        "text": "«Adicionadas recentemente» aparece primeiro na árvore do rekordbox, com as faixas que você adicionou nos últimos 30 dias, das mais novas para as mais antigas.",
+        "text": "“Adicionadas recentemente” aparece primeiro na árvore do rekordbox, com as faixas que você adicionou nos últimos 30 dias, das mais novas para as mais antigas.",
         "in": "1.10.0"
       },
       {
@@ -714,7 +714,7 @@
         "in": "1.9.0"
       },
       {
-        "text": "Organize o rekordbox pelo Surco. Crie, renomeie e apague playlists e pastas, adicione, remova e reordene faixas, e escolha no editor em quais playlists cada faixa está. Se o rekordbox estiver aberto, as mudanças esperam até você fechá-lo, e o Surco faz uma cópia de segurança antes de escrever.",
+        "text": "Organize o rekordbox pelo Surco. Crie, renomeie e apague playlists e pastas, adicione, remova e reordene faixas, e escolha no editor em quais playlists cada faixa está. Se o rekordbox estiver aberto, as mudanças esperam até você fechá-lo, e o Surco faz um backup antes de escrever.",
         "in": "1.9.0"
       },
       {
@@ -722,7 +722,7 @@
         "in": "1.9.0"
       },
       {
-        "text": "Fluxos de cues. Escolha um fluxo, como Mix in 64, Mix in 32 ou um seu, e passe por cima da forma de onda para ver em transparência o que ele colocaria. Um clique o coloca ali. As letras seguem a faixa, então A é sempre a primeira, e você pode desligar isso se para você cada letra é um pad fixo.",
+        "text": "Fluxos de cues. Escolha um fluxo, como Mix in 64, Mix in 32 ou um que você criou, e passe por cima da forma de onda para ver em transparência o que ele colocaria. Um clique o coloca ali. As letras seguem a faixa, então A é sempre a primeira, e você pode desligar isso se para você cada letra é um pad fixo.",
         "in": "1.9.0"
       },
       {
@@ -730,7 +730,7 @@
         "in": "1.9.0"
       },
       {
-        "text": "Com «Atualizar a coleção do rekordbox ao converter» ligado nos Ajustes, uma faixa que você converte continua sendo a mesma faixa no rekordbox, com as playlists e os cues dela. E editar as tags de uma faixa do rekordbox não renomeia mais o arquivo.",
+        "text": "Com “Atualizar a coleção do rekordbox ao converter” ligado nos Ajustes, uma faixa que você converte continua sendo a mesma faixa no rekordbox, com as playlists e os cues dela. E editar as tags de uma faixa do rekordbox não renomeia mais o arquivo.",
         "in": "1.9.0"
       },
       {
@@ -738,7 +738,7 @@
         "in": "1.9.0"
       },
       {
-        "text": "Antes de o Surco escrever no rekordbox, faça sua própria cópia de segurança da biblioteca pelo rekordbox. O Surco também faz uma, mas sua biblioteca é aquilo com que você toca, então tenha sempre uma cópia sua.",
+        "text": "Antes de o Surco escrever no rekordbox, faça seu próprio backup da biblioteca pelo rekordbox. O Surco também faz um, mas sua biblioteca é aquilo com que você toca, então tenha sempre uma cópia sua.",
         "in": "1.9.0"
       }
     ]
@@ -801,7 +801,7 @@
         "in": "1.8.4"
       },
       {
-        "text": "Converter no lugar dois arquivos com o mesmo nome em formatos diferentes, como Song.flac e Song.wav, não faz mais um sobrescrever o outro quando os dois acabam no mesmo formato. Só uma das duas gravações podia sobrar; agora a segunda é salva como \"Song (2)\".",
+        "text": "Converter no lugar dois arquivos com o mesmo nome em formatos diferentes, como Song.flac e Song.wav, não faz mais um sobrescrever o outro quando os dois acabam no mesmo formato. Só uma das duas gravações podia sobrar; agora a segunda é salva como “Song (2)”.",
         "in": "1.8.4"
       }
     ]
@@ -812,7 +812,7 @@
     "title": "Ponha sua biblioteca em ordem",
     "items": [
       {
-        "text": "Nova revisão de metadados do Apple Music, em Arquivo e no ⌘K. Ela agrupa o que sua biblioteca escreve de várias formas (DJ Lara e Dj Lara, acentos que não batem, espaços ou caracteres invisíveis que entram quando você copia de um site, e prováveis erros de digitação) e deixa você escolher como fica. A mudança chega ao arquivo, ao Apple Music e, se você os sincroniza, ao rekordbox, ao Engine DJ e ao Traktor, com cópia de segurança e Desfazer.",
+        "text": "Nova revisão de metadados do Apple Music, em Arquivo e no ⌘K. Ela agrupa o que sua biblioteca escreve de várias formas (DJ Lara e Dj Lara, acentos que não batem, espaços ou caracteres invisíveis que entram quando você copia de um site, e prováveis erros de digitação) e deixa você escolher como fica. A mudança chega ao arquivo, ao Apple Music e, se você os sincroniza, ao rekordbox, ao Engine DJ e ao Traktor, com backup e Desfazer.",
         "in": "1.7.0"
       },
       {
@@ -832,15 +832,15 @@
         "in": "1.7.0"
       },
       {
-        "text": "Apagar uma faixa de um disco sem Lixeira, como um NAS, não a remove mais para sempre. Ela vai para Cópias de segurança, e o aviso diz de antemão para onde vai cada arquivo.",
+        "text": "Apagar uma faixa de um disco sem Lixeira, como um NAS, não a remove mais para sempre. Ela vai para Cópias, e o aviso diz de antemão para onde vai cada arquivo.",
         "in": "1.7.0"
       },
       {
-        "text": "A busca encontra melhor um lançamento quando você digita o artista e o álbum, e distingue as edições para pôr primeiro a que a tag da sua faixa cita.",
+        "text": "A busca encontra melhor um release quando você digita o artista e o álbum, e distingue as edições para pôr primeiro a que a tag da sua faixa cita.",
         "in": "1.7.0"
       },
       {
-        "text": "O ajuste de Cópias de segurança agora faz o que diz. “Só se o áudio mudar” deixa de guardar uma cópia quando você só atualiza tags, e “Nunca” não guarda nenhuma. A revisão de metadados sempre guarda a sua para o Desfazer funcionar, e com “Nunca” apagar num disco sem Lixeira é definitivo, com um aviso que diz isso antes de você confirmar.",
+        "text": "O ajuste de Cópias agora faz o que diz. “Só se o áudio mudar” deixa de guardar uma cópia quando você só atualiza tags, e “Nunca” não guarda nenhuma. A revisão de metadados sempre guarda a sua para o Desfazer funcionar, e com “Nunca” apagar num disco sem Lixeira é definitivo, com um aviso que diz isso antes de você confirmar.",
         "in": "1.7.1"
       },
       {
@@ -872,7 +872,7 @@
         "in": "1.7.3"
       },
       {
-        "text": "A cópia de segurança do Engine DJ guarda sua biblioteca como estava antes da conversão inteira, e não só antes da última mudança.",
+        "text": "O backup do Engine DJ guarda sua biblioteca como estava antes da conversão inteira, e não só antes da última mudança.",
         "in": "1.7.3"
       },
       {
@@ -880,7 +880,7 @@
         "in": "1.7.3"
       },
       {
-        "text": "Quando você passa para a próxima faixa, o lançamento que aplicou na anterior aparece primeiro nos resultados da busca. A lista não se mexe mais enquanto o ponteiro está sobre ela, e as respostas que chegam tarde são adicionadas no fim.",
+        "text": "Quando você passa para a próxima faixa, o release que aplicou na anterior aparece primeiro nos resultados da busca. A lista não se mexe mais enquanto o ponteiro está sobre ela, e as respostas que chegam tarde são adicionadas no fim.",
         "in": "1.7.4"
       },
       {
@@ -896,7 +896,7 @@
         "in": "1.7.4"
       },
       {
-        "text": "A onda do reparo de clicks pode ser arrastada com o mouse quando ampliada, com uma visão geral da faixa inteira para navegar por ela.",
+        "text": "A onda do reparo de cliques pode ser arrastada com o mouse quando ampliada, com uma visão geral da faixa inteira para navegar por ela.",
         "in": "1.7.4"
       },
       {
@@ -931,11 +931,11 @@
         "in": "1.6.1"
       },
       {
-        "text": "Quando uma faixa já está no Apple Music, o selo da biblioteca agora diz em que formato está a cópia de lá (MP3 320 ou AIFF 16/44.1, por exemplo), para você saber se vale a pena substituí-la. E quando você manda uma faixa para o Apple Music, o Surco confirma que ela foi adicionada à sua biblioteca em vez de apontar para a pasta de origem.",
+        "text": "Quando uma faixa já está no Apple Music, o selo da biblioteca agora diz em que formato está a cópia de lá (MP3 320 ou AIFF 16/44,1, por exemplo), para você saber se vale a pena substituí-la. E quando você manda uma faixa para o Apple Music, o Surco confirma que ela foi adicionada à sua biblioteca em vez de apontar para a pasta de origem.",
         "in": "1.6.2"
       },
       {
-        "text": "A busca encontra mais lançamentos creditados a dois artistas. Uma faixa creditada a “Miguel Serna & Álex Cervera” agora encontra o lançamento mesmo quando o catálogo o lista como “Miguel Serna, Alex Cervera”.",
+        "text": "A busca encontra mais releases creditados a dois artistas. Uma faixa creditada a “Miguel Serna & Álex Cervera” agora encontra o release mesmo quando o catálogo o lista como “Miguel Serna, Alex Cervera”.",
         "in": "1.6.2"
       },
       {
@@ -943,7 +943,7 @@
         "in": "1.6.2"
       },
       {
-        "text": "Novo ajuste, “Atualizar a biblioteca do Engine DJ ao converter”: converta uma faixa que você tem no Engine DJ e ela continua sendo a mesma faixa, com as playlists e os cue points dela. Antes de escrever, o Surco salva uma cópia de segurança da biblioteca, e nunca escreve com o Engine DJ aberto.",
+        "text": "Novo ajuste, “Atualizar a biblioteca do Engine DJ ao converter”: converta uma faixa que você tem no Engine DJ e ela continua sendo a mesma faixa, com as playlists e os cue points dela. Antes de escrever, o Surco salva um backup da biblioteca, e nunca escreve com o Engine DJ aberto.",
         "in": "1.6.3"
       },
       {
@@ -951,7 +951,7 @@
         "in": "1.6.3"
       },
       {
-        "text": "Buscar pelo álbum encontra mais lançamentos: quando a tag escreve a edição entre parênteses, como “(Deluxe Edition)”, o Surco busca de novo no Discogs e no MusicBrainz sem ela. E o álbum que sua tag cita aparece primeiro nos resultados.",
+        "text": "Buscar pelo álbum encontra mais releases: quando a tag escreve a edição entre parênteses, como “(Deluxe Edition)”, o Surco busca de novo no Discogs e no MusicBrainz sem ela. E o álbum que sua tag cita aparece primeiro nos resultados.",
         "in": "1.6.3"
       },
       {
@@ -970,7 +970,7 @@
         "in": "1.5.0"
       },
       {
-        "text": "Quando você abre uma faixa, as análises já feitas (forma de onda, qualidade, volume, clicks, BPM e tom) aparecem na hora, e as que faltam começam imediatamente em vez de depois de uma pequena espera.",
+        "text": "Quando você abre uma faixa, as análises já feitas (forma de onda, qualidade, volume, cliques, BPM e tom) aparecem na hora, e as que faltam começam imediatamente em vez de depois de uma pequena espera.",
         "in": "1.5.0"
       }
     ]
@@ -989,11 +989,11 @@
         "in": "1.4.0"
       },
       {
-        "text": "Quando uma fonte não tem sua faixa, ela não mostra mais lançamentos de outros artistas com título parecido: a lista dela fica vazia e você pode se concentrar nas fontes que a têm. Num teste com 120 faixas reais, as respostas com nada além de lançamentos de outros artistas caíram de entre um quarto e um terço para menos de uma em dez, sem perder um único resultado do artista.",
+        "text": "Quando uma fonte não tem sua faixa, ela não mostra mais releases de outros artistas com título parecido: a lista dela fica vazia e você pode se concentrar nas fontes que a têm. Num teste com 120 faixas reais, as respostas com nada além de releases de outros artistas caíram de entre um quarto e um terço para menos de uma em dez, sem perder um único resultado do artista.",
         "in": "1.4.0"
       },
       {
-        "text": "O que você digita na caixa de busca é o que se busca: quando você procura outra música, as tags da faixa selecionada não puxam mais os resultados para o lançamento dela. O filtro de fontes conta só os resultados que você vê, e uma capa que não carrega deixa o espaço vazio em vez de uma imagem quebrada.",
+        "text": "O que você digita na caixa de busca é o que se busca: quando você procura outra música, as tags da faixa selecionada não puxam mais os resultados para o release dela. O filtro de fontes conta só os resultados que você vê, e uma capa que não carrega deixa o espaço vazio em vez de uma imagem quebrada.",
         "in": "1.4.0"
       },
       {
@@ -1016,7 +1016,7 @@
     "title": "Beatport na busca",
     "items": [
       {
-        "text": "O Beatport entra nas fontes de busca. Conecte sua conta em Ajustes → Busca (uma gratuita serve) e cada faixa traz o BPM, o tom na notação que você usa, a mix e o ISRC, junto com o selo, o número de catálogo e a capa. Entre várias versões com o mesmo título, o Surco escolhe a que o seu arquivo cita, e a mix vai para o título, a não ser que seja “Original Mix”. Começa desligado, e sua senha é guardada criptografada e só no seu computador.",
+        "text": "O Beatport entra nas fontes de busca. Conecte sua conta em Ajustes → Busca (uma gratuita serve) e cada faixa traz o BPM, o tom na notação que você usa, o mix e o ISRC, junto com o selo, o número de catálogo e a capa. Entre várias versões com o mesmo título, o Surco escolhe a que o seu arquivo cita, e o mix vai para o título, a não ser que seja “Original Mix”. Começa desligado, e sua senha é guardada criptografada e só no seu computador.",
         "in": "1.3.0"
       },
       {
@@ -1036,7 +1036,7 @@
         "in": "1.3.1"
       },
       {
-        "text": "Se o Beatport não tem mais a capa de um lançamento, a faixa converte mesmo assim com todo o resto e mantém a capa dela. E se o Beatport não abre um lançamento no seu país, o Surco diz isso em vez de pedir para você tentar de novo.",
+        "text": "Se o Beatport não tem mais a capa de um release, a faixa converte mesmo assim com todo o resto e mantém a capa dela. E se o Beatport não abre um release no seu país, o Surco diz isso em vez de pedir para você tentar de novo.",
         "in": "1.3.2"
       },
       {
@@ -1063,7 +1063,7 @@
         "in": "1.2.0"
       },
       {
-        "text": "Entre os resultados, um lançamento creditado ao artista do seu arquivo fica acima de um que só o menciona. Cada resultado cai direto no seu lugar ao chegar, em vez de a lista se reorganizar no fim, e o que chega tarde fica marcado por um instante para você notar.",
+        "text": "Entre os resultados, um release creditado ao artista do seu arquivo fica acima de um que só o menciona. Cada resultado cai direto no seu lugar ao chegar, em vez de a lista se reorganizar no fim, e o que chega tarde fica marcado por um instante para você notar.",
         "in": "1.2.0"
       },
       {
@@ -1126,7 +1126,7 @@
         "in": "1.1.0"
       },
       {
-        "text": "Com várias faixas selecionadas, Total faixas sugere quantas são, para você preencher com um clique.",
+        "text": "Com várias faixas selecionadas, Total de faixas sugere quantas são, para você preencher com um clique.",
         "in": "1.1.0"
       },
       {
@@ -1153,7 +1153,7 @@
         "in": "1.0.0"
       },
       {
-        "text": "Os masters de clube com agudos muito limitados não aparecem mais como “Reprocessado”, e os vereditos param de mudar quando você corta um segundo de silêncio: num teste com quase 600 faixas, os alarmes que viravam assim passaram de 9 para 1, sem nenhum novo em arquivos limpos.",
+        "text": "Os masters de clube com agudos muito limitados não aparecem mais como “Reprocessada”, e os vereditos param de mudar quando você corta um segundo de silêncio: num teste com quase 600 faixas, os alarmes que viravam assim passaram de 9 para 1, sem nenhum novo em arquivos limpos.",
         "in": "1.0.0"
       },
       {
@@ -1173,7 +1173,7 @@
         "in": "1.0.0"
       },
       {
-        "text": "O volume e o reparo de clicks que você define em cada faixa são mantidos quando você fecha e reabre o Surco.",
+        "text": "O volume e o reparo de cliques que você define em cada faixa são mantidos quando você fecha e reabre o Surco.",
         "in": "1.0.0"
       },
       {
@@ -1181,7 +1181,7 @@
         "in": "1.0.0"
       },
       {
-        "text": "O editor se lê de relance: corte, clicks e volume dizem numa frase o que a conversão vai fazer; ⌘I mostra as informações do arquivo; e depois de converter, um link limpa os arquivos anteriores. As mesmas palavras no app inteiro: Converter, Volume, Duvidosa, A confirmar.",
+        "text": "O editor se lê de relance: corte, cliques e volume dizem numa frase o que a conversão vai fazer; ⌘I mostra as informações do arquivo; e depois de converter, um link limpa os arquivos anteriores. As mesmas palavras no app inteiro: Converter, Volume, Duvidosa, A confirmar.",
         "in": "1.0.0"
       },
       {
@@ -1189,11 +1189,11 @@
         "in": "1.0.0"
       },
       {
-        "text": "O que o Surco guarda quando você sobrescreve uma faixa agora se chama Cópias de segurança, porque é isso que é: seu original, e não algo apagado. Uma faixa com cópia de segurança mostra isso na linha dela, e por essa marca, pelo menu da faixa, pela paleta de comandos ou pelo menu Visualizar você chega às cópias dela. Quando você sobrescreve, o aviso diz se o original é guardado.",
+        "text": "O que o Surco guarda quando você sobrescreve uma faixa agora se chama Cópias, porque é isso que é: seu original, e não algo apagado. Uma faixa com backup mostra isso na linha dela, e por essa marca, pelo menu da faixa, pela paleta de comandos ou pelo menu Visualizar você chega às cópias dela. Quando você sobrescreve, o aviso diz se o original é guardado.",
         "in": "1.0.1"
       },
       {
-        "text": "Quando você busca o lançamento de uma faixa, os resultados de cada fonte aparecem assim que chegam, sem esperar as outras, e a lista não se reordena mais enquanto você a percorre. Os downloads do Bandcamp são buscados pelo título, sem o artista nem o número da faixa na frente.",
+        "text": "Quando você busca o release de uma faixa, os resultados de cada fonte aparecem assim que chegam, sem esperar as outras, e a lista não se reordena mais enquanto você a percorre. Os downloads do Bandcamp são buscados pelo título, sem o artista nem o número da faixa na frente.",
         "in": "1.0.1"
       },
       {
@@ -1224,7 +1224,7 @@
         "in": "0.100.0"
       },
       {
-        "text": "Gênero aceita várias tags, como Agrupamento: \"Pop, Indie Pop\" aparece como duas tags que você liga ou desliga com um clique, também em várias faixas de uma vez. Os gêneros do Discogs que têm vírgula, como \"Folk, World, & Country\", ficam inteiros.",
+        "text": "Gênero aceita várias tags, como Agrupamento: “Pop, Indie Pop” aparece como duas tags que você liga ou desliga com um clique, também em várias faixas de uma vez. Os gêneros do Discogs que têm vírgula, como “Folk, World, & Country”, ficam inteiros.",
         "in": "0.100.0"
       }
     ]
@@ -1267,7 +1267,7 @@
         "in": "0.99.0"
       },
       {
-        "text": "Um FLAC sem duração no cabeçalho, do tipo que alguns serviços de download e ripadores de streaming deixam, não é mais marcado como “reprocessado” com corte em 10 kHz quando o áudio vai limpo até o topo: as leituras do espectro se espalham pela faixa inteira em vez de se amontoarem nos primeiros segundos da intro.",
+        "text": "Um FLAC sem duração no cabeçalho, do tipo que alguns serviços de download e ripadores de streaming deixam, não é mais marcado como “Reprocessada” com corte em 10 kHz quando o áudio vai limpo até o topo: as leituras do espectro se espalham pela faixa inteira em vez de se amontoarem nos primeiros segundos da intro.",
         "in": "0.99.0"
       },
       {
@@ -1299,7 +1299,7 @@
         "in": "0.99.4"
       },
       {
-        "text": "Com o auto-associar ligado, soltar uma pasta percorre ela inteira mesmo que você não mexa em nada: antes só as linhas na tela eram associadas e o contador ficava parado, como se tivesse travado em 20 de 1000, até você rolar ou reiniciar pela barra de ferramentas. As linhas que você está vendo continuam indo primeiro.",
+        "text": "Com o auto-associar ligado, soltar uma pasta percorre a pasta inteira mesmo que você não mexa em nada: antes só as linhas na tela eram associadas e o contador ficava parado, como se tivesse travado em 20 de 1000, até você rolar ou reiniciar pela barra de ferramentas. As linhas que você está vendo continuam indo primeiro.",
         "in": "0.99.5"
       },
       {
@@ -1323,7 +1323,7 @@
         "in": "0.99.7"
       },
       {
-        "text": "Um MP3 de bitrate variável sem índice interno, do tipo que declara uma duração aproximada e não a real, não tem mais a conversão jogada fora como \"mais curta que o original\". Eram 432 dos 837 MP3 de uma biblioteca: o arquivo saía bem e o Surco o descartava mesmo assim, comparando com uma duração que o próprio arquivo estava chutando.",
+        "text": "Um MP3 de bitrate variável sem índice interno, do tipo que declara uma duração aproximada e não a real, não tem mais a conversão jogada fora como “mais curta que o original”. Eram 432 dos 837 MP3 de uma biblioteca: o arquivo saía bem e o Surco o descartava mesmo assim, comparando com uma duração que o próprio arquivo estava chutando.",
         "in": "0.99.7"
       },
       {
@@ -1346,7 +1346,7 @@
     "title": "Agrupamento faixa a faixa sem sobrescrever o resto",
     "items": [
       {
-        "text": "Com várias faixas selecionadas, o agrupamento não é mais sobrescrito. Cada etiqueta aparece como um chip que mostra se está em todas, em algumas ou em nenhuma, e um clique a adiciona ou remove em toda a seleção sem mexer nas outras etiquetas de cada faixa. Logo abaixo, a seção “Por faixa” lista as faixas uma a uma para você ajustar as que diferem. As etiquetas ativas sempre vêm primeiro, então nunca ficam escondidas atrás do “+N”.",
+        "text": "Com várias faixas selecionadas, o agrupamento não é mais sobrescrito. Cada tag aparece como um chip que mostra se está em todas, em algumas ou em nenhuma, e um clique a adiciona ou remove em toda a seleção sem mexer nas outras tags de cada faixa. Logo abaixo, a seção “Por faixa” lista as faixas uma a uma para você ajustar as que diferem. As tags ativas sempre vêm primeiro, então nunca ficam escondidas atrás do “+N”.",
         "in": "0.98.0"
       },
       {
@@ -1354,7 +1354,7 @@
         "in": "0.98.0"
       },
       {
-        "text": "Com várias faixas selecionadas, agora você pode percorrer as capas do lançamento com as setas, e a que você escolher vai para todas as faixas da seleção de uma vez.",
+        "text": "Com várias faixas selecionadas, agora você pode percorrer as capas do release com as setas, e a que você escolher vai para todas as faixas da seleção de uma vez.",
         "in": "0.98.1"
       },
       {
@@ -1370,7 +1370,7 @@
         "in": "0.98.2"
       },
       {
-        "text": "Com várias faixas selecionadas, a capa que elas já compartilham é a primeira opção do seletor, então deixar o lançamento com uma única imagem fica a um passo.",
+        "text": "Com várias faixas selecionadas, a capa que elas já compartilham é a primeira opção do seletor, então deixar o release com uma única imagem fica a um passo.",
         "in": "0.98.2"
       }
     ]
@@ -1428,7 +1428,7 @@
         "in": "0.96.0"
       },
       {
-        "text": "Uma faixa que veio do Apple Music mantém o formato. O botão oferecia converter para AIFF só porque esse é o destino padrão, mesmo que você estivesse trabalhando numa coleção já organizada: agora ele diz “Atualizar etiquetas” e salva no mesmo formato, e só converte quando você mesmo escolhe outro. A sua biblioteca atualiza a faixa que você já tinha, em vez de mostrar uma segunda.",
+        "text": "Uma faixa que veio do Apple Music mantém o formato. O botão oferecia converter para AIFF só porque esse é o destino padrão, mesmo que você estivesse trabalhando numa coleção já organizada: agora ele diz “Atualizar” e salva no mesmo formato, e só converte quando você mesmo escolhe outro. A sua biblioteca atualiza a faixa que você já tinha, em vez de mostrar uma segunda.",
         "in": "0.96.0"
       }
     ]
@@ -1463,7 +1463,7 @@
         "in": "0.95.4"
       },
       {
-        "text": "Converter uma faixa mantendo o original não confunde mais o Traktor. O Traktor não conseguia distinguir as duas cópias: as capas se misturavam e, em alguns casos, ele nem abria. A faixa convertida agora é independente e mantém os cues, o grid e os loops.",
+        "text": "Converter uma faixa mantendo o original não confunde mais o Traktor. O Traktor não conseguia distinguir as duas cópias: as capas se misturavam e, em alguns casos, ele nem abria. A faixa convertida agora é independente e mantém os cues, a grade e os loops.",
         "in": "0.95.4"
       },
       {
@@ -1483,7 +1483,7 @@
         "in": "0.95.2"
       },
       {
-        "text": "O Surco pode receber versões beta. Em Ajustes → Geral há um botão para pedi-las: elas chegam antes das versões estáveis e servem para testar as novidades, com os bugs que isso implica. A opção vale por computador, então você pode testar no notebook e deixar o que usa para tocar com as versões estáveis. Quem deixar desativado nunca verá uma beta.",
+        "text": "O Surco pode receber versões beta. Em Ajustes → Geral há uma opção para recebê-las: elas chegam antes das versões estáveis e servem para testar as novidades, com os bugs que isso implica. A opção vale por computador, então você pode testar no notebook e deixar o que usa para tocar com as versões estáveis. Quem deixar desativado nunca verá uma beta.",
         "in": "0.95.0"
       }
     ]
@@ -1534,7 +1534,7 @@
         "in": "0.94.0"
       },
       {
-        "text": "O contador de clicks parou de engolir metade de uma rajada. Toda a sequência de chiado de um disco sujo contava como “1 click”, com uma única marca para pular, quando havia muitos seguidos. Medido em 25 faixas reais, a contagem só pode subir.",
+        "text": "O contador de cliques parou de engolir metade de uma rajada. Toda a sequência de estalos de um disco sujo contava como “1 clique”, com uma única marca para pular, quando havia muitos seguidos. Medido em 25 faixas reais, a contagem só pode subir.",
         "in": "0.94.0"
       },
       {
@@ -1554,7 +1554,7 @@
         "in": "0.94.0"
       },
       {
-        "text": "Sincronizar com o Traktor agora mantém o andamento que o Traktor analisou. O Surco gravava por cima o BPM arredondado da tag, então um 141,999619 analisado virava 142,000000 e o grid se deslocava: cerca de 7 ms ao longo de uma faixa de cinco minutos. Se foi você quem digitou o BPM de novo, o seu valor continua prevalecendo.",
+        "text": "Sincronizar com o Traktor agora mantém o andamento que o Traktor analisou. O Surco gravava por cima o BPM arredondado da tag, então um 141,999619 analisado virava 142,000000 e a grade se deslocava: cerca de 7 ms ao longo de uma faixa de cinco minutos. Se foi você quem digitou o BPM de novo, o seu valor continua prevalecendo.",
         "in": "0.94.1"
       },
       {
@@ -1573,7 +1573,7 @@
         "in": "0.93.1"
       },
       {
-        "text": "Uma faixa que diz ter 24 bits não é mais aceita só pela palavra da etiqueta: o Surco escuta o áudio e verifica se é mesmo. Um áudio de 16 bits inflado para 24 se entrega e é sinalizado; um arquivo de 24 bits real ganha a sua linha com a medição na frente.",
+        "text": "Uma faixa que diz ter 24 bits não é mais aceita só pela palavra da tag: o Surco escuta o áudio e verifica se é mesmo. Um áudio de 16 bits inflado para 24 se entrega e é sinalizado; um arquivo de 24 bits real ganha a sua linha com a medição na frente.",
         "in": "0.93.0"
       },
       {
@@ -1608,7 +1608,7 @@
         "in": "0.92.0"
       },
       {
-        "text": "O corte de silêncio se adapta ao ruído de cada faixa em vez de usar um limite fixo. Uma entrada com chiado ou zumbido em torno de -50 dB passava desse limite, contava como música e deixava o corte folgado, sobretudo em rips de vinil. Agora o limiar fica ancorado no piso de ruído da própria faixa, com margem para os picos dele e um teto que nunca sobe até uma intro suave. Nas faixas com piso limpo, o corte sai exatamente como sempre.",
+        "text": "O corte de silêncio se adapta ao ruído de cada faixa em vez de usar um limite fixo. Uma entrada com chiado ou zumbido em torno de -50 dB passava desse limite, contava como música e deixava o corte folgado, sobretudo em rips de vinil. Agora o limiar fica ancorado no piso de ruído da própria faixa, com margem para os picos dele e um teto que nunca sobe até uma intro baixa. Nas faixas com piso limpo, o corte sai exatamente como sempre.",
         "in": "0.92.0"
       }
     ]
@@ -1619,7 +1619,7 @@
     "title": "O veredito de qualidade mostra como chegou lá",
     "items": [
       {
-        "text": "O veredito de qualidade não se limita mais a rotular a faixa: ele mostra a medição por trás. Diz até onde a energia chega, quanto ela cai dentro de um quilohertz e por que esse formato denuncia um codec, um realçador ou um upscaler, em vez de pedir que você confie numa única palavra. A nota do corte faz o mesmo: além da duração que sobra, avisa que o áudio é recodificado e que os cues e o beatgrid do Traktor se movem com o corte, para tudo continuar caindo no mesmo tempo.",
+        "text": "O veredito de qualidade não se limita mais a rotular a faixa: ele mostra a medição por trás. Diz até onde a energia chega, quanto ela cai dentro de um quilohertz e por que esse formato denuncia um codec, um enhancer ou um upscaler, em vez de pedir que você confie numa única palavra. A nota do corte faz o mesmo: além da duração que sobra, avisa que o áudio é recodificado e que os cues e o beatgrid do Traktor se movem com o corte, para tudo continuar caindo no mesmo tempo.",
         "in": "0.91.0"
       },
       {
@@ -1631,7 +1631,7 @@
         "in": "0.91.0"
       },
       {
-        "text": "O cartão “O que vai acontecer com esta faixa” diz a verdade sobre o limitador: quando ele só apara as pontas dos transientes mais agudos, diz que um toque tão leve é inaudível, e quando o clipping é forte, avisa para esperar um pouco menos de punch nos golpes mais altos, em vez de sempre prometer que nada será tocado.",
+        "text": "O cartão “O que vai acontecer com esta faixa” diz a verdade sobre o limitador: quando ele só apara as pontas dos transientes mais afiados, diz que um toque tão leve é inaudível, e quando o clipping é forte, avisa para esperar um pouco menos de punch nas batidas mais fortes, em vez de sempre prometer que nada será tocado.",
         "in": "0.91.0"
       }
     ]
@@ -1650,7 +1650,7 @@
         "in": "0.90.2"
       },
       {
-        "text": "Um master alto não aparece mais como “Possível reprocessamento” por causa dos próprios harmônicos. Duas versões da mesma música, a reedição suave e a remasterização 8 dB mais alta, soavam iguais e recebiam vereditos diferentes. O veredito não muda mais com o nível do master. As faixas já analisadas se medem de novo sozinhas.",
+        "text": "Um master alto não aparece mais como “Possível reprocessamento” por causa dos próprios harmônicos. Duas versões da mesma música, a reedição mais baixa e a remasterização 8 dB mais alta, soavam iguais e recebiam vereditos diferentes. O veredito não muda mais com o nível do master. As faixas já analisadas se medem de novo sozinhas.",
         "in": "0.90.1"
       },
       {
@@ -1689,7 +1689,7 @@
         "in": "0.89.5"
       },
       {
-        "text": "Um master alto com rolloff de masterização não aparece mais como Fonte com perdas. Muitas produções de club são masterizadas com um filtro suave por volta de 19 kHz: a energia desce uma dúzia de decibéis ao longo de quase um quilohertz e ainda há conteúdo até o topo. Um codec não faz nada parecido: ele cai mais de trinta decibéis em trezentos hertz e deixa silêncio para trás. O Surco tinha um segundo detector de corte que lia essa rampa como uma parede e acusava um FLAC legítimo do Beatport de esconder um MP3. Agora esse detector passa pela mesma verificação detalhada que o principal, então só conta um colapso real de codec. As faixas já analisadas se medem de novo ao serem abertas.",
+        "text": "Um master alto com rolloff de masterização não aparece mais como Fonte com perdas. Muitas produções de clube são masterizadas com um filtro suave por volta de 19 kHz: a energia desce uma dúzia de decibéis ao longo de quase um quilohertz e ainda há conteúdo até o topo. Um codec não faz nada parecido: ele cai mais de trinta decibéis em trezentos hertz e deixa silêncio para trás. O Surco tinha um segundo detector de corte que lia essa rampa como uma parede e acusava um FLAC legítimo do Beatport de esconder um MP3. Agora esse detector passa pela mesma verificação detalhada que o principal, então só conta um colapso real de codec. As faixas já analisadas se medem de novo ao serem abertas.",
         "in": "0.89.4"
       },
       {
@@ -1697,7 +1697,7 @@
         "in": "0.89.3"
       },
       {
-        "text": "Masters suaves não são mais marcados como Fonte com perdas. Alguns discos, sobretudo gravações antigas e algumas remasterizações, têm um topo tão fraco que acima de 16 kHz sobra pouco além do próprio piso de ruído do CD. O Surco fazia a média desse ruído em bandas de um quilohertz e chegava a um degrau que parecia um corte de codec, então um FLAC ripado direto do disco era acusado de esconder um MP3. Agora um corte suspeito é verificado com cinco vezes mais resolução antes de contar, e ali a diferença é clara: um codec real despenca mais de 60 dB numa queda limpa, enquanto o ruído sobe e desce. Se você já tinha faixas analisadas, elas se medem de novo na primeira vez que você as abrir.",
+        "text": "Masters baixos não são mais marcados como Fonte com perdas. Alguns discos, sobretudo gravações antigas e algumas remasterizações, têm um topo tão fraco que acima de 16 kHz sobra pouco além do próprio piso de ruído do CD. O Surco fazia a média desse ruído em bandas de um quilohertz e chegava a um degrau que parecia um corte de codec, então um FLAC ripado direto do disco era acusado de esconder um MP3. Agora um corte suspeito é verificado com cinco vezes mais resolução antes de contar, e ali a diferença é clara: um codec real despenca mais de 60 dB numa queda limpa, enquanto o ruído sobe e desce. Se você já tinha faixas analisadas, elas se medem de novo na primeira vez que você as abrir.",
         "in": "0.89.2"
       },
       {
@@ -1728,7 +1728,7 @@
         "in": "0.88.0"
       },
       {
-        "text": "A forma de onda mostra detalhes que antes se perdiam. Para desenhá-la, o Surco primeiro reduzia o áudio a uma qualidade muito baixa, e esse atalho arredondava os transientes: os golpes saíam mais baixos do que realmente são no arquivo. Agora a onda é construída a partir do áudio na qualidade real, então os picos são os verdadeiros e o corpo da faixa se distingue dos golpes em vez de derreter num bloco azul. Você percebe mais quando procura o ponto exato de um bumbo para posicionar um corte.",
+        "text": "A forma de onda mostra detalhes que antes se perdiam. Para desenhá-la, o Surco primeiro reduzia o áudio a uma qualidade muito baixa, e esse atalho arredondava os transientes: as batidas saíam mais baixas do que realmente são no arquivo. Agora a onda é construída a partir do áudio na qualidade real, então os picos são os verdadeiros e o corpo da faixa se distingue das batidas em vez de derreter num bloco azul. Você percebe mais quando procura o ponto exato de um bumbo para posicionar um corte.",
         "in": "0.88.0"
       },
       {
@@ -1770,15 +1770,15 @@
     "title": "Você decide o que o Discogs altera",
     "items": [
       {
-        "text": "Agora você pode escolher quais campos um lançamento preenche ao aplicá-lo. Até agora, aplicar uma correspondência gravava tudo, então um gênero que você tinha definido à mão, ou o ano da sua cópia em vez do da reedição que você encontrou, se perdia de vez. Cada campo agora tem o próprio botão “Auto” em Ajustes, Campos: desativado, o arquivo mantém o que já tinha. Todos começam ativados, então, se você não mexer, aplicar um lançamento funciona exatamente como sempre.",
+        "text": "Agora você pode escolher quais campos um release preenche ao aplicá-lo. Até agora, aplicar uma associação gravava tudo, então um gênero que você tinha definido à mão, ou o ano da sua cópia em vez do da reedição que você encontrou, se perdia de vez. Cada campo agora tem o próprio botão “Auto” em Ajustes, Campos: desativado, o arquivo mantém o que já tinha. Todos começam ativados, então, se você não mexer, aplicar um release funciona exatamente como sempre.",
         "in": "0.86.0"
       },
       {
-        "text": "Os resultados da busca mostram o país da prensagem. Quando um mesmo número de catálogo sai em cinco países com o mesmo ano e o mesmo selo, não havia como saber qual era a sua cópia sem abrir cada um; agora o país aparece numa linha própria junto com o resto dos detalhes do lançamento.",
+        "text": "Os resultados da busca mostram o país da prensagem. Quando um mesmo número de catálogo sai em cinco países com o mesmo ano e o mesmo selo, não havia como saber qual era a sua cópia sem abrir cada um; agora o país aparece numa linha própria junto com o resto dos detalhes do release.",
         "in": "0.86.0"
       },
       {
-        "text": "A importação de uma pasta pode ser cancelada. Era a operação mais longa do app, com milhares de arquivos num drive de rede e uma leitura de tags para cada um, e a única sem saída: se você soltava a pasta errada, só restava esperar. Agora clicar no contador da importação a interrompe.",
+        "text": "A importação de uma pasta pode ser cancelada. Era a operação mais longa do app, com milhares de arquivos num disco de rede e uma leitura de tags para cada um, e a única sem saída: se você soltava a pasta errada, só restava esperar. Agora clicar no contador da importação a interrompe.",
         "in": "0.86.0"
       },
       {
@@ -1826,7 +1826,7 @@
         "in": "0.86.5"
       },
       {
-        "text": "Converter um lote não pode mais fazer você perder faixas. Quando duas faixas resultavam no mesmo nome de saída (fácil depois que uma correspondência do Discogs preenche o mesmo artista e título, ou com tags vazias que caem no mesmo modelo), escolher Sobrescrever apontava as duas para o mesmo destino, e a segunda a ser gravada ficava por cima da primeira. A execução contava todas mesmo assim: “3 convertidas”, um arquivo no disco. Agora um nome que outra faixa da mesma execução já ocupou é evitado, e sobrescrever um arquivo que realmente está na pasta funciona exatamente como antes.",
+        "text": "Converter um lote não pode mais fazer você perder faixas. Quando duas faixas resultavam no mesmo nome de saída (fácil depois que uma associação do Discogs preenche o mesmo artista e título, ou com tags vazias que caem no mesmo modelo), escolher Sobrescrever apontava as duas para o mesmo destino, e a segunda a ser gravada ficava por cima da primeira. A execução contava todas mesmo assim: “3 convertidas”, um arquivo no disco. Agora um nome que outra faixa da mesma execução já ocupou é evitado, e sobrescrever um arquivo que realmente está na pasta funciona exatamente como antes.",
         "in": "0.86.6"
       },
       {
@@ -1854,7 +1854,7 @@
         "in": "0.86.8"
       },
       {
-        "text": "Converter um lote não sobrescreve mais duas faixas cujos nomes só diferem nas maiúsculas. No Mac e no Windows, “Artist - Track.aiff” e “artist - track.aiff” são o mesmo arquivo, algo fácil de acontecer quando uma correspondência do Discogs preenche um artista com maiúsculas diferentes das da faixa ao lado. O Surco os tratava como destinos separados e a segunda conversão ficava por cima da primeira, contando as duas como feitas.",
+        "text": "Converter um lote não sobrescreve mais duas faixas cujos nomes só diferem nas maiúsculas. No Mac e no Windows, “Artist - Track.aiff” e “artist - track.aiff” são o mesmo arquivo, algo fácil de acontecer quando uma associação do Discogs preenche um artista com maiúsculas diferentes das da faixa ao lado. O Surco os tratava como destinos separados e a segunda conversão ficava por cima da primeira, contando as duas como feitas.",
         "in": "0.86.8"
       },
       {
@@ -1869,15 +1869,15 @@
     "title": "Etiquetar como um colecionador",
     "items": [
       {
-        "text": "Quatro campos novos que o Discogs já conhecia e o Surco jogava fora: Estilo, País, Tipo de mídia e a URL do lançamento. Eles são gravados com os mesmos nomes que o mp3tag usa, então uma coleção etiquetada com essa ferramenta e outra etiquetada aqui concordam em vez de acumular duplicados. A URL é como você volta meses depois e confere de onde veio uma faixa.",
+        "text": "Quatro campos novos que o Discogs já conhecia e o Surco jogava fora: Estilo, País, Tipo de mídia e a URL do release. Eles são gravados com os mesmos nomes que o mp3tag usa, então uma coleção etiquetada com essa ferramenta e outra etiquetada aqui concordam em vez de acumular duplicados. A URL é como você volta meses depois e confere de onde veio uma faixa.",
         "in": "0.85.0"
       },
       {
-        "text": "Atenção, isso muda o que vai para Gênero: antes ele guardava o estilo do Discogs (“Deep House”); agora Gênero guarda o gênero de fato (“Electronic”) e o estilo tem um campo próprio. Quando um lançamento traz só um estilo, Gênero continua recebendo esse estilo em vez de ficar vazio.",
+        "text": "Atenção, isso muda o que vai para Gênero: antes ele guardava o estilo do Discogs (“Deep House”); agora Gênero guarda o gênero de fato (“Electronic”) e o estilo tem um campo próprio. Quando um release traz só um estilo, Gênero continua recebendo esse estilo em vez de ficar vazio.",
         "in": "0.85.0"
       },
       {
-        "text": "Os drives de rede não acumulam mais arquivos pela metade. Quando uma conversão falhava e o arquivo temporário também não podia ser apagado (algo rotineiro num NAS, que segura o arquivo por um instante), esse temporário ficava na sua pasta para sempre sem nenhum registro, então nenhuma limpeza posterior conseguia encontrá-lo. Agora ele é registrado e removido na próxima vez que o app abrir.",
+        "text": "Os discos de rede não acumulam mais arquivos pela metade. Quando uma conversão falhava e o arquivo temporário também não podia ser apagado (algo rotineiro num NAS, que segura o arquivo por um instante), esse temporário ficava na sua pasta para sempre sem nenhum registro, então nenhuma limpeza posterior conseguia encontrá-lo. Agora ele é registrado e removido na próxima vez que o app abrir.",
         "in": "0.85.0"
       },
       {
@@ -1892,7 +1892,7 @@
     "title": "Veja onde uma faixa vai ficar antes de convertê-la",
     "items": [
       {
-        "text": "A tabela de qualidade de áudio agora mostra, ao lado de cada medição, onde o valor vai ficar quando você converter com os seus ajustes de normalização. Até agora você precisava converter o arquivo para descobrir, ou ir para a seção de Normalização para ver só dois dos números. O volume e o pico ganham uma estimativa; a variação, a dinâmica e o equilíbrio mostram “sem mudança”, porque normalizar sobe ou desce o nível inteiro e não mexe na distância entre as partes suaves e as fortes.",
+        "text": "A tabela de qualidade de áudio agora mostra, ao lado de cada medição, onde o valor vai ficar quando você converter com os seus ajustes de normalização. Até agora você precisava converter o arquivo para descobrir, ou ir para a seção de Normalização para ver só dois dos números. O volume e o pico ganham uma estimativa; a variação, a dinâmica e o equilíbrio mostram “sem mudança”, porque normalizar sobe ou desce o nível inteiro e não mexe na distância entre as partes baixas e as altas.",
         "in": "0.84.0"
       },
       {
@@ -1935,11 +1935,11 @@
         "in": "0.83.0"
       },
       {
-        "text": "O nível de reparo de clicks agora fica com a faixa. Você escolhia “Forte” para um rip de vinil ruidoso, passava para a faixa seguinte e voltava, e ele tinha voltado em silêncio ao padrão global. Agora ele se comporta como o corte de silêncio e a normalização, que já eram guardados por faixa.",
+        "text": "O nível de reparo de cliques agora fica com a faixa. Você escolhia “Forte” para um rip de vinil ruidoso, passava para a faixa seguinte e voltava, e ele tinha voltado em silêncio ao padrão global. Agora ele se comporta como o corte de silêncio e a normalização, que já eram guardados por faixa.",
         "in": "0.83.0"
       },
       {
-        "text": "⌘Z desfaz a correspondência de um álbum inteiro. Aplicar o lançamento errado (uma reedição com outra lista de faixas, um LP com o mesmo nome) reescrevia o título, o artista e o número de faixa de todas as faixas selecionadas sem volta, e as tags originais do arquivo já tinham ido embora.",
+        "text": "⌘Z desfaz a associação de um álbum inteiro. Aplicar o release errado (uma reedição com outra lista de faixas, um LP com o mesmo nome) reescrevia o título, o artista e o número de faixa de todas as faixas selecionadas sem volta, e as tags originais do arquivo já tinham ido embora.",
         "in": "0.83.0"
       },
       {
@@ -1947,11 +1947,11 @@
         "in": "0.83.0"
       },
       {
-        "text": "Dois filtros novos para o que ainda está pendente: “Com erro” e “Para revisar”. Depois de um lote, a barra dizia “180 convertidas · 20 com erro” sem nenhuma forma de chegar a essas 20 além de caçar um pequeno círculo vermelho lista abaixo, e o mesmo valia para as correspondências que a auto-associação deixa marcadas para você conferir. Eles só aparecem quando há algo dentro.",
+        "text": "Dois filtros novos para o que ainda está pendente: “Com erro” e “Para revisar”. Depois de um lote, a barra dizia “180 convertidas · 20 com erro” sem nenhuma forma de chegar a essas 20 além de caçar um pequeno círculo vermelho lista abaixo, e o mesmo valia para as associações que a auto-associação deixa marcadas para você conferir. Eles só aparecem quando há algo dentro.",
         "in": "0.83.0"
       },
       {
-        "text": "Soltar uma pasta sem áudio não fica mais sem resposta. Não aparecia nenhuma linha, nenhum aviso, nenhuma mudança, e não havia como distinguir “aqui não tem música” de “não consegui ler a pasta”, que é o que acontece com um drive de rede desconectado ou uma pasta sem permissão.",
+        "text": "Soltar uma pasta sem áudio não fica mais sem resposta. Não aparecia nenhuma linha, nenhum aviso, nenhuma mudança, e não havia como distinguir “aqui não tem música” de “não consegui ler a pasta”, que é o que acontece com um disco de rede desconectado ou uma pasta sem permissão.",
         "in": "0.83.0"
       },
       {
@@ -2006,7 +2006,7 @@
     "title": "Navegue pelo Surco sem tirar as mãos do teclado",
     "items": [
       {
-        "text": "⌘← e ⌘→ pulam para a coluna ao lado, como alternativa aos atalhos diretos ⌘1, ⌘2 e ⌘3. Eles param nas pontas em vez de dar a volta, então você nunca perde a noção de que lado da janela está. Atenção: dentro de um campo de texto eles também mudam de coluna, então ali já não levam o cursor ao início ou ao fim da linha.",
+        "text": "⌘← e ⌘→ pulam para a coluna ao lado, como alternativa aos atalhos diretos ⌘1, ⌘2 e ⌘3. Eles param nas pontas em vez de dar a volta, então você nunca perde a noção de que lado da janela está. Atenção: dentro de um campo de texto eles também mudam de coluna, então ali não levam mais o cursor ao início ou ao fim da linha.",
         "in": "0.82.0"
       },
       {
@@ -2113,7 +2113,7 @@
         "in": "0.77.0"
       },
       {
-        "text": "No reparo de clicks, o cursor de reprodução pode ser colocado em qualquer ponto da faixa com as setas, em vez de só pular de um clique detectado para o próximo.",
+        "text": "No reparo de cliques, o cursor de reprodução pode ser colocado em qualquer ponto da faixa com as setas, em vez de só pular de um clique detectado para o próximo.",
         "in": "0.77.0"
       },
       {
@@ -2129,7 +2129,7 @@
         "in": "0.77.1"
       },
       {
-        "text": "Abrir o reprodutor não faz mais piscar uma barra de rolagem na borda direita da janela enquanto o cartão desliza.",
+        "text": "Abrir o player não faz mais piscar uma barra de rolagem na borda direita da janela enquanto o cartão desliza.",
         "in": "0.77.2"
       }
     ]
@@ -2152,15 +2152,15 @@
         "in": "0.76.1"
       },
       {
-        "text": "O corte de silêncio agora chega ao milissegundo: o zoom vai até ±0,05 s, onde um pixel da forma de onda é menos de um milissegundo, e os botões de ajuste movem o corte de um em um milissegundo em vez de saltos de dez. Um corte pequeno colocado logo no início de uma faixa também não é mais descartado ao salvar; antes ele podia se perder, e a faixa começava do zero e engolia o primeiro beat.",
+        "text": "O corte de silêncio agora chega ao milissegundo: o zoom vai até ±0,05 s, onde um pixel da forma de onda é menos de um milissegundo, e os botões de ajuste movem o corte de um em um milissegundo em vez de saltos de dez. Um corte pequeno colocado logo no início de uma faixa também não é mais descartado ao salvar; antes ele podia se perder, e a faixa começava do zero e engolia a primeira batida.",
         "in": "0.76.2"
       },
       {
-        "text": "O relógio do reprodutor passa para a linha do artista, e o painel de resultados e o editor agora têm a mesma densidade da lista de faixas.",
+        "text": "O relógio do player passa para a linha do artista, e o painel de resultados e o editor agora têm a mesma densidade da lista de faixas.",
         "in": "0.76.2"
       },
       {
-        "text": "No corte de silêncio, a forma de onda agora é desenhada exatamente onde deve: aproximar o zoom podia deslocá-la até quatro centésimos de segundo da linha de corte, então você alinhava o corte com um desenho que mentia e acabava cortando o primeiro beat. A onda também fica centralizada no corte ao dar zoom, com o silêncio de um lado e a música do outro, em vez de escorregar para uma borda.",
+        "text": "No corte de silêncio, a forma de onda agora é desenhada exatamente onde deve: aproximar o zoom podia deslocá-la até quatro centésimos de segundo da linha de corte, então você alinhava o corte com um desenho que mentia e acabava cortando a primeira batida. A onda também fica centralizada no corte ao dar zoom, com o silêncio de um lado e a música do outro, em vez de escorregar para uma borda.",
         "in": "0.76.3"
       },
       {
@@ -2179,7 +2179,7 @@
     "title": "Os cues do Traktor agora sobrevivem ao corte também em FLAC",
     "items": [
       {
-        "text": "Quando você corta uma faixa, os cues e o beatgrid do Traktor salvos no arquivo são realinhados ao corte também em FLAC, que antes exigia uma nova análise. Isso se soma a MP3 e AIFF, onde o início do grid agora também mantém a fase do beat quando um corte divide um beat ao meio, então o grid não fica mais desalinhado. WAV ainda os perde.",
+        "text": "Quando você corta uma faixa, os cues e o beatgrid do Traktor salvos no arquivo são realinhados ao corte também em FLAC, que antes exigia uma nova análise. Isso se soma a MP3 e AIFF, onde o início da grade agora também mantém a fase da batida quando um corte divide uma batida ao meio, então a grade não fica mais desalinhada. WAV ainda os perde.",
         "in": "0.75.0"
       },
       {
@@ -2203,7 +2203,7 @@
         "in": "0.75.3"
       },
       {
-        "text": "O volume do reprodutor sai de cima da forma de onda, então você pode clicar em qualquer ponto da onda para pular até lá. Os controles de reprodução ganham uma linha própria com o volume sempre à vista, e o botão de fechar vai para o canto do cartão.",
+        "text": "O volume do player sai de cima da forma de onda, então você pode clicar em qualquer ponto da onda para pular até lá. Os controles de reprodução ganham uma linha própria com o volume sempre à vista, e o botão de fechar vai para o canto do cartão.",
         "in": "0.75.3"
       }
     ]
@@ -2240,7 +2240,7 @@
     "title": "Uma forma de onda que se lê num relance, e abertura instantânea",
     "items": [
       {
-        "text": "A forma de onda do reprodutor está maior e mais nítida, e a parte que ainda falta tocar fica esmaecida, então o progresso se lê num relance. Passar o mouse por cima mostra o ponto exato para onde um clique vai pular, o relógio agora fica sempre visível e os botões ativos do reprodutor são mais fáceis de distinguir.",
+        "text": "A forma de onda do player está maior e mais nítida, e a parte que ainda falta tocar fica esmaecida, então o progresso se lê num relance. Passar o mouse por cima mostra o ponto exato para onde um clique vai pular, o relógio agora fica sempre visível e os botões ativos do player são mais fáceis de distinguir.",
         "in": "0.72.0"
       },
       {
@@ -2255,7 +2255,7 @@
     "title": "Um vinil que gira, o assistente sempre à mão e nada de travamentos com arquivos danificados",
     "items": [
       {
-        "text": "A capa do reprodutor agora é um disco de vinil que gira enquanto a faixa toca, com um selo nas cores do Surco quando o arquivo não tem capa. A forma de onda do reprodutor também usa a cor de destaque do seu tema, inclusive no tema claro.",
+        "text": "A capa do player agora é um disco de vinil que gira enquanto a faixa toca, com um selo nas cores do Surco quando o arquivo não tem capa. A forma de onda do player também usa a cor de destaque do seu tema, inclusive no tema claro.",
         "in": "0.71.0"
       },
       {
@@ -2275,7 +2275,7 @@
         "in": "0.71.1"
       },
       {
-        "text": "Apple Music no macOS 26: quando o Música trava e para de importar (um bug conhecido do sistema), o Surco agora recupera a faixa se ela chegou a ser importada e, se não, explica o que aconteceu e como destravar, em vez de falhar com um erro enigmático.",
+        "text": "Apple Music no macOS 26: quando o Music trava e para de importar (um bug conhecido do sistema), o Surco agora recupera a faixa se ela chegou a ser importada e, se não, explica o que aconteceu e como destravar, em vez de falhar com um erro enigmático.",
         "in": "0.71.2"
       }
     ]
@@ -2309,7 +2309,7 @@
         "in": "0.69.0"
       },
       {
-        "text": "Quando você exporta uma faixa sobre ela mesma, o Surco não reaplica mais a normalização e o reparo de clicks que essa exportação já tinha incorporado. Editar só os metadados não reprocessa mais o áudio, então você não perde uma geração em formatos com perdas nem empilha ganho sobre ganho.",
+        "text": "Quando você exporta uma faixa sobre ela mesma, o Surco não reaplica mais a normalização e o reparo de cliques que essa exportação já tinha incorporado. Editar só os metadados não reprocessa mais o áudio, então você não perde uma geração em formatos com perdas nem empilha ganho sobre ganho.",
         "in": "0.69.0"
       },
       {
@@ -2363,7 +2363,7 @@
         "in": "0.67.0"
       },
       {
-        "text": "Em Estatísticas, a origem das correspondências agora aparece como uma barra de proporção, para você ver num relance de onde vêm seus resultados.",
+        "text": "Em Estatísticas, a origem das associações agora aparece como uma barra de proporção, para você ver num relance de onde vêm seus resultados.",
         "in": "0.67.0"
       }
     ]
@@ -2401,7 +2401,7 @@
         "in": "0.65.0"
       },
       {
-        "text": "O reprodutor compacto fica fixo embaixo, numa barra própria, em vez de flutuar sobre a lista, então não cobre mais suas faixas enquanto você ouve.",
+        "text": "O mini-player fica fixo embaixo, numa barra própria, em vez de flutuar sobre a lista, então não cobre mais suas faixas enquanto você ouve.",
         "in": "0.65.0"
       }
     ]
@@ -2447,7 +2447,7 @@
     "title": "Converter, com mais controle",
     "items": [
       {
-        "text": "Quando o editor abre uma faixa com uma correspondência de alta confiança, agora a aplica sozinho: as tags certas aparecem sem você ter que confirmar uma correspondência que já era óbvia.",
+        "text": "Quando o editor abre uma faixa com uma associação de alta confiança, agora a aplica sozinho: as tags certas aparecem sem você ter que confirmar uma associação que já era óbvia.",
         "in": "0.63.0"
       },
       {
@@ -2483,7 +2483,7 @@
         "in": "0.63.3"
       },
       {
-        "text": "A coluna de resultados de busca e suas linhas agora têm o mesmo design da sua lista de faixas: uma correspondência sugerida é marcada com um ícone em vez de um rótulo que cobria o nome, então tudo se lê num relance.",
+        "text": "A coluna de resultados de busca e suas linhas agora têm o mesmo design da sua lista de faixas: uma associação sugerida é marcada com um ícone em vez de um rótulo que cobria o nome, então tudo se lê num relance.",
         "in": "0.63.3"
       },
       {
@@ -2514,7 +2514,7 @@
         "in": "0.62.0"
       },
       {
-        "text": "As seções de reparo de clicks e de volume agora podem ser maximizadas, como as outras seções com forma de onda, para você trabalhar no detalhe sem o resto do editor atrapalhando.",
+        "text": "As seções de reparo de cliques e de volume agora podem ser maximizadas, como as outras seções com forma de onda, para você trabalhar no detalhe sem o resto do editor atrapalhando.",
         "in": "0.62.0"
       },
       {
@@ -2538,10 +2538,10 @@
   {
     "version": "0.61",
     "date": "July 16, 2026",
-    "title": "Correspondências mais rápidas",
+    "title": "Associações mais rápidas",
     "items": [
       {
-        "text": "A correspondência automática ficou muito mais rápida. Os releases candidatos de cada faixa carregam vários de uma vez em vez de um após o outro, então uma faixa sem correspondência que levava meio minuto para desistir agora se resolve em um terço do tempo, e a fila inteira de uma coleção grande anda mais rápido.",
+        "text": "A auto-associação ficou muito mais rápida. Os releases candidatos de cada faixa carregam vários de uma vez em vez de um após o outro, então uma faixa sem associação que levava meio minuto para desistir agora se resolve em um terço do tempo, e a fila inteira de uma coleção grande anda mais rápido.",
         "in": "0.61.0"
       },
       {
@@ -2569,11 +2569,11 @@
         "in": "0.61.0"
       },
       {
-        "text": "A lista rola com suavidade. Rolar pelas faixas não engasga mais: as capas são decodificadas fora da thread principal e a correspondência automática espera você parar de rolar para trabalhar, então percorrer a coleção fica fluido de cima a baixo.",
+        "text": "A lista rola com suavidade. Rolar pelas faixas não engasga mais: as capas são decodificadas fora da thread principal e a auto-associação espera você parar de rolar para trabalhar, então percorrer a coleção fica fluido de cima a baixo.",
         "in": "0.61.2"
       },
       {
-        "text": "Pular entre faixas não deixa mais trabalho fantasma para trás. Quando você passa para outra faixa, as análises da anterior (espectro, volume, forma de onda) são canceladas na hora em vez de continuar decodificando em segundo plano; assim, quando você desce a lista ouvindo um pouco de cada faixa, o espectro da que você está olhando aparece na hora em vez de esperar atrás de análises que já não importam.",
+        "text": "Pular entre faixas não deixa mais trabalho fantasma para trás. Quando você passa para outra faixa, as análises da anterior (espectro, volume, forma de onda) são canceladas na hora em vez de continuar decodificando em segundo plano; assim, quando você desce a lista ouvindo um pouco de cada faixa, o espectro da que você está olhando aparece na hora em vez de esperar atrás de análises que não importam mais.",
         "in": "0.61.3"
       }
     ]
@@ -2592,7 +2592,7 @@
         "in": "0.60.0"
       },
       {
-        "text": "As ondas mostram o que o corte remove. No reparo de clicks, no volume e no beatgrid, o início e o fim que o corte de silêncio vai remover ficam esmaecidos sobre a onda, para você ver num relance qual áudio não chega à exportação, sem nada se deslocar.",
+        "text": "As ondas mostram o que o corte remove. No reparo de cliques, no volume e no beatgrid, o início e o fim que o corte de silêncio vai remover ficam esmaecidos sobre a onda, para você ver num relance qual áudio não chega à exportação, sem nada se deslocar.",
         "in": "0.60.0"
       },
       {
@@ -2604,7 +2604,7 @@
         "in": "0.60.1"
       },
       {
-        "text": "Abrir uma seção do editor mostra seu esqueleto de carregamento na hora, em vez de um espaço vazio enquanto ela se prepara: corte, reparo de clicks, volume, beatgrid e qualidade respondem de imediato.",
+        "text": "Abrir uma seção do editor mostra seu esqueleto de carregamento na hora, em vez de um espaço vazio enquanto ela se prepara: corte, reparo de cliques, volume, beatgrid e qualidade respondem de imediato.",
         "in": "0.60.1"
       },
       {
@@ -2650,7 +2650,7 @@
     "title": "Ouça o que você mantém, não o que perde",
     "items": [
       {
-        "text": "O reparo de clicks de vinil agora mostra onde estão os cliques. Cada clique que o detector encontra é marcado na própria forma de onda da faixa, então uma prensagem empoeirada se lê num relance em vez de virar um número.",
+        "text": "O reparo de cliques de vinil agora mostra onde estão os cliques. Cada clique que o detector encontra é marcado na própria forma de onda da faixa, então uma prensagem empoeirada se lê num relance em vez de virar um número.",
         "in": "0.58.0"
       },
       {
@@ -2670,7 +2670,7 @@
         "in": "0.58.0"
       },
       {
-        "text": "Algumas coisas que estavam erradas sem ninguém perceber: deslocar o grid para antes do início da faixa continuava a movê-lo na direção que você apertava em vez de voltar ao lugar; um arraste da vista cujo ponteiro escapava não fica mais preso; e abrir o reprodutor compacto não empurra mais o editor inteiro para o lado quando aparece uma barra de rolagem.",
+        "text": "Algumas coisas que estavam erradas sem ninguém perceber: deslocar o grid para antes do início da faixa continuava a movê-lo na direção que você apertava em vez de voltar ao lugar; um arraste da vista cujo ponteiro escapava não fica mais preso; e abrir o mini-player não empurra mais o editor inteiro para o lado quando aparece uma barra de rolagem.",
         "in": "0.58.0"
       }
     ]
@@ -2809,7 +2809,7 @@
         "in": "0.53.0"
       },
       {
-        "text": "Os resultados das análises agora aparecem como pílulas no cabeçalho de cada seção (silêncio detectado, LUFS e picos medidos, cliques estimados), legíveis num relance.",
+        "text": "Os resultados das análises agora aparecem como etiquetas no cabeçalho de cada seção (silêncio detectado, LUFS e picos medidos, cliques estimados), legíveis num relance.",
         "in": "0.53.0"
       },
       {
@@ -2835,7 +2835,7 @@
     "title": "Cliques sob controle",
     "items": [
       {
-        "text": "O reparo de clicks agora estima quantos cliques audíveis uma faixa tem antes de você converter.",
+        "text": "O reparo de cliques agora estima quantos cliques audíveis uma faixa tem antes de você converter.",
         "in": "0.51.0"
       },
       {
@@ -2850,7 +2850,7 @@
     "title": "Ouça o reparo e leia o editor num relance",
     "items": [
       {
-        "text": "O reparo de clicks agora pode ser ouvido antes de converter: ele toca 20 segundos do meio da faixa só com o ruído que removeria (quase silêncio significa que a música fica intacta), junto com a porcentagem do trecho que ele alteraria.",
+        "text": "O reparo de cliques agora pode ser ouvido antes de converter: ele toca 20 segundos do meio da faixa só com o ruído que removeria (quase silêncio significa que a música fica intacta), junto com a porcentagem do trecho que ele alteraria.",
         "in": "0.50.0"
       },
       {
@@ -2858,7 +2858,7 @@
         "in": "0.50.0"
       },
       {
-        "text": "As seções do editor agora podem ser ocultadas por completo em Ajustes → Editor, e o reparo de clicks começa recolhido.",
+        "text": "As seções do editor agora podem ser ocultadas por completo em Ajustes → Editor, e o reparo de cliques começa recolhido.",
         "in": "0.50.0"
       }
     ]
@@ -2885,7 +2885,7 @@
         "in": "0.49.0"
       },
       {
-        "text": "Novo reparo de clicks de vinil: uma etapa opcional que detecta cliques e estalos da agulha e os repara durante a conversão, com duas intensidades e uma contagem dos cliques reparados.",
+        "text": "Novo reparo de cliques de vinil: uma etapa opcional que detecta cliques e estalos da agulha e os repara durante a conversão, com duas intensidades e uma contagem dos cliques reparados.",
         "in": "0.49.1"
       },
       {
@@ -2893,7 +2893,7 @@
         "in": "0.49.1"
       },
       {
-        "text": "O reparo de clicks Forte não trava mais a conversão: roda em velocidade total com o mesmo efeito nos estalos longos.",
+        "text": "O reparo de cliques Forte não trava mais a conversão: roda em velocidade total com o mesmo efeito nos estalos longos.",
         "in": "0.49.3"
       },
       {
@@ -2997,7 +2997,7 @@
     "title": "Uma busca que entende seus títulos",
     "items": [
       {
-        "text": "Se você usa um formato de título como “(A2) Título (1998)”, a correspondência agora o reconhece: seu próprio padrão é desfeito ao buscar e pontuar, e uma faixa renomeada encontra o disco na primeira tentativa.",
+        "text": "Se você usa um formato de título como “(A2) Título (1998)”, a associação agora o reconhece: seu próprio padrão é desfeito ao buscar e pontuar, e uma faixa renomeada encontra o disco na primeira tentativa.",
         "in": "0.45.0"
       },
       {
@@ -3017,7 +3017,7 @@
   {
     "version": "0.44",
     "date": "July 9, 2026",
-    "title": "Correspondências mais certeiras, no seu idioma",
+    "title": "Associações mais certeiras, no seu idioma",
     "items": [
       {
         "text": "A auto-associação agora tenta primeiro o ID do release já gravado no arquivo antes de recorrer a uma busca por título, e acerta o release do Discogs com mais frequência.",
@@ -3028,11 +3028,11 @@
         "in": "0.44.0"
       },
       {
-        "text": "Corrigido um travamento ao abrir em Macs Intel.",
+        "text": "Corrigida uma falha ao abrir em Macs Intel.",
         "in": "0.44.1"
       },
       {
-        "text": "Um arquivo que já traz o release do Discogs agora abre direto nesse disco exato. A auto-associação e o painel de busca ficam nele em vez de enterrá-lo entre os resultados da busca por título, e só recorrem a uma busca quando o release salvo já não serve.",
+        "text": "Um arquivo que já traz o release do Discogs agora abre direto nesse disco exato. A auto-associação e o painel de busca ficam nele em vez de enterrá-lo entre os resultados da busca por título, e só recorrem a uma busca quando o release salvo não serve mais.",
         "in": "0.44.2"
       }
     ]
@@ -3086,10 +3086,10 @@
   {
     "version": "0.41",
     "date": "July 8, 2026",
-    "title": "Edições à prova de travamentos e conversões mais rápidas",
+    "title": "Edições à prova de falhas e conversões mais rápidas",
     "items": [
       {
-        "text": "Suas edições não aplicadas não se perdem mais: elas são salvas automaticamente enquanto você trabalha, e se o app fechar de repente você pode reabrir a sessão exatamente como a deixou, com metadados, capas e correspondências. Quando há trabalho em jogo, o aviso para reabrir espera sua resposta em vez de sumir sozinho.",
+        "text": "Suas edições não aplicadas não se perdem mais: elas são salvas automaticamente enquanto você trabalha, e se o app fechar de repente você pode reabrir a sessão exatamente como a deixou, com metadados, capas e associações. Quando há trabalho em jogo, o aviso para reabrir espera sua resposta em vez de sumir sozinho.",
         "in": "0.41.0"
       },
       {
@@ -3112,7 +3112,7 @@
         "in": "0.40.0"
       },
       {
-        "text": "Compartilhe suas estatísticas: a aba Estatísticas agora gera uma imagem com seus números de sempre, pronta para mostrar nas redes sociais.",
+        "text": "Compartilhe suas estatísticas: a aba Estatísticas agora gera uma imagem com seus números acumulados desde o início, pronta para mostrar nas redes sociais.",
         "in": "0.40.0"
       },
       {
@@ -3150,7 +3150,7 @@
         "in": "0.38.0"
       },
       {
-        "text": "As conversões mantêm a profundidade de bits exata da origem: um arquivo 44.1/16 não sai mais em 24 bits ao normalizar, reduzir para 16 bits aplica dither e um MP3 convertido para WAV ou AIFF gera PCM inteiro, que qualquer player aceita.",
+        "text": "As conversões mantêm a profundidade de bits exata da origem: um arquivo 44,1/16 não sai mais em 24 bits ao normalizar, reduzir para 16 bits aplica dither e um MP3 convertido para WAV ou AIFF gera PCM inteiro, que qualquer player aceita.",
         "in": "0.38.0"
       },
       {
@@ -3178,7 +3178,7 @@
   {
     "version": "0.37",
     "date": "July 7, 2026",
-    "title": "O Surco em cinco idiomas e correspondências confiáveis",
+    "title": "O Surco em cinco idiomas e associações confiáveis",
     "items": [
       {
         "text": "O Surco agora fala alemão, francês e português do Brasil, além de espanhol e inglês. Escolha um idioma em Ajustes ou deixe que ele siga o do sistema.",
@@ -3319,9 +3319,9 @@
   {
     "version": "0.31",
     "date": "July 2, 2026",
-    "title": "Correspondências mais precisas e limpeza num relance",
+    "title": "Associações mais precisas e limpeza num relance",
     "items": [
-      "A auto-associação fica mais precisa: quando uma faixa traz número de catálogo, o Surco confirma com ele o release exato e aplica a correspondência sem pedir revisão; e entre duas edições, prefere aquela cujo ano bate com o do seu arquivo.",
+      "A auto-associação fica mais precisa: quando uma faixa traz número de catálogo, o Surco confirma com ele o release exato e aplica a associação sem pedir revisão; e entre duas edições, prefere aquela cujo ano bate com o do seu arquivo.",
       "Quando uma sugestão chega como “revisar”, agora você pode aceitá-la num passo, pela paleta (⌘K) ou pelo atalho dela, sem abrir o editor.",
       "Um botão para mandar de uma vez para a Lixeira todas as faixas marcadas como suspeitas, bem ao lado do filtro de qualidade.",
       "O player ganha um botão de play sobre a capa ao passar o mouse, outro para pular até a faixa que está tocando, e avanço e retrocesso de 5 segundos com as setas.",
@@ -3343,7 +3343,7 @@
     "date": "July 1, 2026",
     "title": "Conversão em paralelo e mais coisas no ⌘K",
     "items": [
-      "“Converter tudo” agora processa várias faixas ao mesmo tempo em vez de uma depois da outra, então um lote grande termina muito antes; a etapa do Apple Music continua indo uma de cada vez, do jeito que o Música importa.",
+      "“Converter tudo” agora processa várias faixas ao mesmo tempo em vez de uma depois da outra, então um lote grande termina muito antes; a etapa do Apple Music continua indo uma de cada vez, do jeito que o Music importa.",
       "A paleta de comandos (⌘K) ganha novos atalhos: trocar o tema, preencher os metadados pelo nome do arquivo, limpar os metadados da seleção e um link direto para doar (com um pouco de confete)."
     ]
   },
@@ -3378,7 +3378,7 @@
       "A lista de faixas e o player agora mostram sempre a capa do próprio arquivo, nunca uma imagem diferente que você está testando no editor, e aplicar um release do Discogs só troca sua capa quando você pediu.",
       "A caixa de busca do Discogs ganha uma lupa e um botão para limpar com um clique, igual ao filtro de faixas.",
       "As dicas em todo o app agora seguem o tema escuro do Surco em vez das do sistema, e a barra de ferramentas fica mais calma com botões de ícone mais leves.",
-      "O espectro de qualidade de áudio da faixa selecionada agora aparece na hora, mesmo com uma correspondência da coleção inteira rodando em segundo plano."
+      "O espectro de qualidade de áudio da faixa selecionada agora aparece na hora, mesmo com uma associação da coleção inteira rodando em segundo plano."
     ]
   },
   {
@@ -3453,7 +3453,7 @@
       "Novo ajuste opcional para aplicar automaticamente seu padrão de nome de arquivo, para que as faixas convertidas saiam nomeadas sem um passo manual.",
       "O player ganha uma opção para esconder a forma de onda, útil numa tela pequena, que também pula a análise da forma de onda para poupar trabalho.",
       "Correspondência mais esperta com a biblioteca do Apple Music: o Surco reconhece a mesma faixa em mais variações de artista e título (“&”, siglas com pontos como D.J. e DJ, prefixos DJ/Dr./MC no início, números por extenso ou em algarismos, um artista antes do título e marcadores de versão no final), então menos cópias suas parecem faltar.",
-      "Melhor correspondência de releases para faixas etiquetadas com “(Original Mix)”: o Surco descarta esse marcador final para que um título simples do catálogo ainda pontue, e a correspondência de álbuns com várias faixas deixa um arquivo sem atribuir em vez de forçar uma faixa errada.",
+      "Melhor associação de releases para faixas etiquetadas com “(Original Mix)”: o Surco descarta esse marcador final para que um título simples do catálogo ainda pontue, e a associação de álbuns com várias faixas deixa um arquivo sem atribuir em vez de forçar uma faixa errada.",
       "Buscas mais limpas nos provedores: o Surco começa pelo artista principal antes de um alias “presents” e ignora uma nota de versão entre parênteses que só repete o título, e o release certo do Discogs ou do Bandcamp aparece com mais frequência.",
       "O selo de biblioteca do editor agora acende quando uma sugestão confiável do Discogs bate com uma faixa que você já tem na sua biblioteca do Apple Music.",
       "Filtros da lista mais arrumados: cada seção da barra lateral agora é um filtro independente, o menu fecha assim que você escolhe e Sem converter fica embaixo de Todas.",
@@ -3467,7 +3467,7 @@
     "title": "Exporte para Serato e Engine DJ",
     "items": [
       "Exporte suas faixas para o Serato DJ e o Engine DJ (Denon), além do rekordbox e do Traktor: o Surco gera o arquivo que cada app importa.",
-      "A auto-associação agora marca as correspondências duvidosas para você revisar antes de confiar nelas, em vez de descartá-las, e mostra a confiança da correspondência de cada faixa.",
+      "A auto-associação agora marca as associações duvidosas para você revisar antes de confiar nelas, em vez de descartá-las, e mostra a confiança da associação de cada faixa.",
       "Detecção de falso sem perdas: um alerta quando um FLAC ou WAV é na verdade uma fonte com perdas reembalada como sem perdas.",
       "Filtre e ordene suas faixas por formato, com uma opção para inverter a direção da ordenação."
     ]
@@ -3479,7 +3479,7 @@
     "items": [
       "Busque no Bandcamp junto com o Discogs: ative em Ajustes → Busca e os resultados das duas fontes se juntam numa única lista, cada um marcado com a origem. Ótimo para lançamentos independentes, netlabels e exclusivas que não estão no Discogs.",
       "A auto-associação agora é um ajuste global de busca e pode recorrer ao Bandcamp quando o Discogs não encontra nada (só com o Bandcamp não precisa de token).",
-      "Correspondência mais certeira para downloads mal nomeados: o Surco tira o ruído do nome do arquivo e do título, fixa o mix certo e dá prioridade ao artista do próprio arquivo.",
+      "Associação mais certeira para downloads mal nomeados: o Surco tira o ruído do nome do arquivo e do título, fixa o mix certo e dá prioridade ao artista do próprio arquivo.",
       "Nova limpeza “Título base” no menu do campo Álbum: tire a versão ou o mix de um título com um toque.",
       "Gêneros que só diferem em maiúsculas (o seu “Electronic” e o “electronic” de uma fonte) não se duplicam mais: aparece um único chip, com a sua grafia.",
       "Suas capas atuais são mantidas por padrão: o Surco não as substitui mais, a menos que você ative a troca das de baixa resolução."
@@ -3495,7 +3495,7 @@
       "Resultados do Discogs mais limpos: edições duplicadas são unidas, e um remix com as faixas reordenadas ainda bate com o certo.",
       "Detecção mais certeira na biblioteca do Apple Music: compara palavras inteiras do artista e o título base, e assim encontra uma cópia salva com o título canônico; atualiza quando você volta ao app e adiciona de novo uma faixa se a cópia da biblioteca sumiu. (macOS)",
       "O Surco avisa quando precisa pular a normalização de volume porque não consegue medir a faixa, em vez de fazer isso em silêncio.",
-      "Lista e editor mais claros: Shift-clique seleciona seguindo a ordem visível, os campos obrigatórios vazios são marcados com calma e o botão Converter explica o que falta antes de deixar você converter."
+      "Lista e editor mais claros: Shift-clique seleciona seguindo a ordem visível, os campos obrigatórios vazios são sinalizados discretamente e o botão Converter explica o que falta antes de deixar você converter."
     ]
   },
   {
@@ -3513,7 +3513,7 @@
     "date": "June 16, 2026",
     "title": "Veredito de qualidade mais certeiro e trabalho mais fluido com as faixas",
     "items": [
-      "O veredito de qualidade tem um olho mais apurado: um master legítimo mas apagado não é mais marcado como “Revisar” (bom quando não há corte de codec), e agora o falso hi-res é detectado: arquivos que dizem ser 48/96 kHz mas foram reamostrados a partir de 44.1 kHz.",
+      "O veredito de qualidade tem um olho mais apurado: um master legítimo mas apagado não é mais marcado como “Revisar” (bom quando não há corte de codec), e agora o falso hi-res é detectado: arquivos que dizem ser 48/96 kHz mas foram reamostrados a partir de 44,1 kHz.",
       "A auto-associação agora percorre todas as suas faixas, priorizando as que estão na tela, e para assim que você a desliga.",
       "As seções do editor que você recolhe continuam recolhidas quando você passa de uma faixa para outra, e não são analisadas até você abri-las. Mais rápido para revisar muitas faixas.",
       "Arraste várias faixas selecionadas para fora do Surco de uma vez.",
@@ -3527,16 +3527,16 @@
   {
     "version": "0.14",
     "date": "June 15, 2026",
-    "title": "Player com forma de onda e correspondência mais certeira no Discogs",
+    "title": "Player com forma de onda e associação mais certeira no Discogs",
     "items": [
       "O player agora mostra a forma de onda da faixa: clique ou arraste sobre ela para navegar, com o tempo flutuando por cima.",
       "Reprodução contínua: quando uma faixa termina, toca a próxima da lista. Ative ou desative com o botão ∞ do player.",
-      "Correspondência muito mais certeira no Discogs: ignora o ruído do nome do arquivo (320, selos, “feat.”…), não liga para acentos, entende mais formatos de nome e tenta de novo só pelo número de catálogo ou pelo título quando preciso.",
+      "Associação muito mais certeira no Discogs: ignora o ruído do nome do arquivo (320, selos, “feat.”…), ignora acentos, entende mais formatos de nome e tenta de novo só pelo número de catálogo ou pelo título quando preciso.",
       "Com a auto-associação ligada, a faixa que você seleciona é associada sozinha, sem precisar apertar o botão em cada uma.",
       "Soltar arquivos que já estão na lista agora os pula e avisa você, em vez de não fazer nada.",
       "A etiquetagem e “Adicionar ao Apple Music” agora também estão disponíveis para arquivos WAV.",
       "Ajuste o volume do player rolando sobre ele; o nível aparece ao lado do tempo ao passar o mouse.",
-      "Arquivos cujos agudos foram regenerados por um enhancer agora são marcados como “Reprocessado” em vez de “Má qualidade”, para que um espectro cheio mas falso não engane.",
+      "Arquivos cujos agudos foram regenerados por um enhancer agora são marcados como “Reprocessada” em vez de “Qualidade ruim”, para que um espectro cheio mas falso não engane.",
       "Copie para a área de transferência o nome de arquivo gerado de uma faixa, a partir do seu padrão de nomes."
     ]
   },
@@ -3548,7 +3548,7 @@
       "Arraste uma faixa da lista direto para qualquer app externo (Spek, Finder, seu player) para conferi-la na hora, sem exportar antes.",
       "Copie a capa de uma faixa e cole em outra, pelo botão na própria capa ou com ⌘C/⌘V, pela área de transferência do sistema (de e para outros apps também).",
       "Copie todos os metadados de uma faixa e cole em outra pelo menu do botão direito. Perfeito para compartilhar os dados de um release entre as faixas dele.",
-      "A normalização de volume agora alcança de verdade os alvos altos: o preset de clube não fica mais aquém. Ela aplica o ganho exato até o alvo e um limitador de true peak segura o teto."
+      "A normalização de volume agora alcança de verdade os alvos altos: a predefinição de clube não fica mais aquém. Ela aplica o ganho exato até o alvo e um limitador de true peak segura o teto."
     ]
   },
   {
@@ -3638,7 +3638,7 @@
     "date": "June 8, 2026",
     "title": "Auto-associação com o Discogs e exportação para rekordbox e Traktor",
     "items": [
-      "Auto-associação: o Surco procura suas faixas no Discogs e aplica só as correspondências de alta confiança, ao importar ou com uma varredura pela barra de ferramentas.",
+      "Auto-associação: o Surco procura suas faixas no Discogs e aplica só as associações de alta confiança, ao importar ou com uma varredura pela barra de ferramentas.",
       "Exporte sua coleção como biblioteca do rekordbox (XML) ou do Traktor (NML).",
       "Triagem de qualidade em lote: analise a lista inteira de uma vez, marque cada faixa com seu veredito e filtre os rips suspeitos.",
       "Atalhos de teclado personalizáveis com detecção de conflitos e menus nativos que se atualizam sozinhos.",
@@ -3697,7 +3697,7 @@
     "title": "Primeira versão pública",
     "items": [
       "Converta para AIFF, WAV, FLAC ou MP3 arrastando seus arquivos.",
-      "Etiquetagem pelo Discogs com a correspondência mais provável sugerida.",
+      "Etiquetagem pelo Discogs com a associação mais provável sugerida.",
       "Análise de espectro para pegar falsos sem perdas antes de tocar.",
       "Mande faixas direto para o Apple Music, com capa.",
       "Nomes de arquivo por modelo, paleta de comandos, prévia das faixas e atualizações automáticas.",
