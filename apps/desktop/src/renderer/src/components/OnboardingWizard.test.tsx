@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { BUNDLED_FLOWS } from '../../../shared/cueFlows'
 import '@testing-library/jest-dom/vitest'
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 // OnboardingWizard's tree reads window.api.platform at module load, so stub it first.
@@ -978,5 +978,33 @@ describe('OnboardingWizard token offer', () => {
     expect(screen.queryByTestId('onboarding-token')).toBeNull()
     fireEvent.click(screen.getByTestId('onboarding-token-add'))
     expect(screen.getByTestId('onboarding-token')).toBeInTheDocument()
+  })
+})
+
+describe('OnboardingWizard welcome', () => {
+  const api = (window as unknown as { api: { rekordboxCollection: () => Promise<string> } }).api
+
+  // "Less than a minute" promised the DJ a short setup and then showed a card with nothing
+  // on it. The welcome now says what the next steps are, so the minute has a shape.
+  it('lists the steps that follow the welcome', async () => {
+    api.rekordboxCollection = async () => ''
+    render(<OnboardingWizard settings={settings} onFinish={() => {}} />)
+    const steps = within(screen.getByTestId('onboarding-steps')).getAllByRole('listitem')
+    expect(steps.map((li) => li.textContent)).toEqual([
+      i18n.t('onboarding.formatTitle'),
+      i18n.t('onboarding.audioTitle'),
+      i18n.t('settings.searchProviders'),
+    ])
+  })
+
+  // The DJ software step only exists when something was found, so the list must follow the
+  // wizard's real length instead of promising a fixed one.
+  it('adds the DJ software step to the list when one was found', async () => {
+    api.rekordboxCollection = async () => '/Users/dj/Library/Pioneer/rekordbox/master.db'
+    render(<OnboardingWizard settings={settings} onFinish={() => {}} />)
+    await screen.findByText(i18n.t('onboarding.step', { current: 1, total: 5 }))
+    const steps = within(screen.getByTestId('onboarding-steps')).getAllByRole('listitem')
+    expect(steps).toHaveLength(4)
+    expect(steps[0]).toHaveTextContent(i18n.t('onboarding.djLibrariesTitle'))
   })
 })
