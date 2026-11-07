@@ -4945,6 +4945,7 @@ describe('App regenerate filename', () => {
     await renderApp()
     fireEvent.click(await screen.findByTestId('add-files'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    openMore()
     fireEvent.click(screen.getByTestId('copy-filename-btn'))
     await waitFor(() => expect(copyText).toHaveBeenCalledWith('Di Carlo - Bumping'))
   })
@@ -4962,11 +4963,17 @@ describe('App regenerate filename', () => {
     await renderApp()
     fireEvent.click(await screen.findByTestId('add-files'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    openMore()
     fireEvent.click(screen.getByTestId('search-web-btn'))
     expect(open).toHaveBeenCalledWith('https://www.google.com/search?q=Di%20Carlo%20-%20Bumping')
     open.mockRestore()
   })
 })
+
+// The metadata header keeps two tag actions in sight and tucks the rest into one menu.
+const openMore = (): void => {
+  if (!screen.queryByRole('menu')) fireEvent.click(screen.getByTestId('meta-more'))
+}
 
 describe('App open with', () => {
   // "Open With Surco" in Finder launches the app and hands the chosen file to the OS
@@ -7920,7 +7927,9 @@ describe('App copy and paste metadata from the editor', () => {
     await waitFor(() =>
       expect((screen.getByTestId('field-title') as HTMLInputElement).value).toBe('Rave Party'),
     )
+    openMore()
     expect(screen.getByTestId('paste-meta-btn')).toBeDisabled()
+    openMore()
     fireEvent.click(screen.getByTestId('copy-meta-btn'))
     expect(await screen.findByText('Metadata copied')).toBeInTheDocument()
 
@@ -7928,6 +7937,7 @@ describe('App copy and paste metadata from the editor', () => {
     await waitFor(() =>
       expect((screen.getByTestId('field-title') as HTMLInputElement).value).toBe('Untitled'),
     )
+    openMore()
     fireEvent.click(screen.getByTestId('paste-meta-btn'))
     await waitFor(() =>
       expect((screen.getByTestId('field-title') as HTMLInputElement).value).toBe('Rave Party'),

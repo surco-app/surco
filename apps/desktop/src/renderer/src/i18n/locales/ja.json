@@ -860,6 +860,7 @@
     "deriveFromName": "ファイル名から入力",
     "deriveFromNameHint": "ファイル名からメタデータ項目を入力",
     "clearMeta": "メタデータをクリア",
+    "clearMetaShort": "消去",
     "clearMetaHint": "すべてのメタデータ項目を空にする",
     "copyFilename": "ファイル名をコピー",
     "copyFilenameHint": "ファイル名をクリップボードにコピー",

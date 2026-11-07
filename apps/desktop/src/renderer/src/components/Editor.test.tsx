@@ -598,6 +598,44 @@ describe('Editor cover picker', () => {
   })
 })
 
+// The header keeps the two tag actions in sight; the rest of its glyphs live in one menu,
+// opened here before reaching for any of them.
+const openMore = (): void => {
+  if (!screen.queryByRole('menu')) fireEvent.click(screen.getByTestId('meta-more'))
+}
+
+describe('Editor metadata header', () => {
+  // Eight bare glyphs in a row told nobody which one empties every field: the two tag
+  // actions are named in the header and the file and clipboard ones wait in one menu, so
+  // the eraser is never a pixel away from "paste".
+  it('names the fill and clear actions and tucks the other glyphs into one menu', () => {
+    renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } }, 'wav')
+    expect(screen.getByTestId('derive-btn')).toHaveTextContent('Fill from filename')
+    expect(screen.getByTestId('clear-meta-btn')).toHaveTextContent('Clear')
+    expect(screen.queryByTestId('reveal-file-btn')).toBeNull()
+    expect(screen.queryByTestId('paste-meta-btn')).toBeNull()
+    openMore()
+    const menu = screen.getByRole('menu')
+    for (const id of [
+      'reveal-file-btn',
+      'copy-filename-btn',
+      'search-web-btn',
+      'copy-meta-btn',
+      'paste-meta-btn',
+    ]) {
+      expect(menu).toContainElement(screen.getByTestId(id))
+      expect(screen.getByTestId(id)).toHaveAttribute('role', 'menuitem')
+    }
+  })
+
+  it('closes the menu once an action in it has run', () => {
+    renderEditor({ id: 'a' })
+    openMore()
+    fireEvent.click(screen.getByTestId('copy-filename-btn'))
+    expect(screen.queryByRole('menu')).toBeNull()
+  })
+})
+
 describe('Editor derive from filename', () => {
   // The control fills tags from the file name (filename → tags), the inverse of File Name's
   // Regenerate (tags → filename); it lives in the metadata header so the two never look alike.
@@ -617,6 +655,7 @@ describe('Editor copy filename', () => {
   // button just signals intent.
   it('copies the file name in one click', () => {
     const { onCopyFilename } = renderEditor({ id: 'a' })
+    openMore()
     fireEvent.click(screen.getByTestId('copy-filename-btn'))
     expect(onCopyFilename).toHaveBeenCalledTimes(1)
   })
@@ -628,6 +667,7 @@ describe('Editor search web', () => {
   // so the button just signals intent.
   it('searches the web for the file name in one click', () => {
     const { onSearchWeb } = renderEditor({ id: 'a' })
+    openMore()
     fireEvent.click(screen.getByTestId('search-web-btn'))
     expect(onSearchWeb).toHaveBeenCalledTimes(1)
   })
@@ -639,12 +679,14 @@ describe('Editor reveal file', () => {
   // took a detour. Main checks the path against the files it handed out.
   it('shows the edited track in the file manager in one click', () => {
     renderEditor({ id: 'a', inputPath: '/music/Rave Party.aiff' })
+    openMore()
     fireEvent.click(screen.getByTestId('reveal-file-btn'))
     expect(window.api.reveal).toHaveBeenCalledWith('/music/Rave Party.aiff')
   })
 
   it('names the file manager of the platform', () => {
     renderEditor({ id: 'a' })
+    openMore()
     expect(screen.getByTestId('reveal-file-btn')).toHaveAccessibleName('Show in File Explorer')
   })
 })
@@ -654,6 +696,7 @@ describe('Editor copy and paste metadata', () => {
   // only behind a right click on the list. App owns the clipboard, so the buttons signal.
   it('copies the edited track metadata in one click', () => {
     const { onCopyMeta } = renderEditor({ id: 'a' })
+    openMore()
     fireEvent.click(screen.getByTestId('copy-meta-btn'))
     expect(onCopyMeta).toHaveBeenCalledTimes(1)
   })
@@ -662,6 +705,7 @@ describe('Editor copy and paste metadata', () => {
   // under the pointer the moment something is copied.
   it('keeps paste in place but off until something is copied', () => {
     const { onPasteMeta } = renderEditor({ id: 'a' }, 'wav', { copiedMetaTitle: null })
+    openMore()
     const paste = screen.getByTestId('paste-meta-btn')
     expect(paste).toBeDisabled()
     fireEvent.click(paste)
@@ -672,6 +716,7 @@ describe('Editor copy and paste metadata', () => {
   // before the click, not only in the toast after it.
   it('pastes in one click and names the track the tags come from', () => {
     const { onPasteMeta } = renderEditor({ id: 'a' }, 'wav', { copiedMetaTitle: 'Rave Party' })
+    openMore()
     const paste = screen.getByTestId('paste-meta-btn')
     expect(paste).toHaveAccessibleName('Paste the metadata of “Rave Party”')
     fireEvent.click(paste)
@@ -680,6 +725,7 @@ describe('Editor copy and paste metadata', () => {
 
   it('says plainly what it pastes when the copied track has no title', () => {
     renderEditor({ id: 'a' }, 'wav', { copiedMetaTitle: '' })
+    openMore()
     expect(screen.getByTestId('paste-meta-btn')).toHaveAccessibleName('Paste metadata')
   })
 })
@@ -2661,6 +2707,7 @@ describe('Editor export control', () => {
     expect(screen.queryByTestId('reveal-file-btn')).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Metadata' }))
     expect(screen.getByTestId('clear-meta-btn')).toBeInTheDocument()
+    openMore()
     expect(screen.getByTestId('copy-filename-btn')).toBeInTheDocument()
   })
 
@@ -2669,6 +2716,7 @@ describe('Editor export control', () => {
   // as one line, like OUTPUT and PROPERTIES, instead of two stacked rows.
   it('shows the header action buttons without inline group labels', () => {
     renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } }, 'wav')
+    openMore()
     expect(screen.getByTestId('copy-filename-btn')).toBeInTheDocument()
     expect(screen.getByTestId('clear-meta-btn')).toBeInTheDocument()
     expect(screen.queryByTestId('actions-file-label')).not.toBeInTheDocument()
@@ -4916,6 +4964,7 @@ describe('Editor insert from field', () => {
       'wav',
       { visibleFields: ['title', 'trackNumber'], titleFormat: '({trackNumber}) {title}' },
     )
+    openMore()
     fireEvent.click(screen.getByTestId('apply-title-format-btn'))
     expect(onApplyTitleFormat).toHaveBeenCalledOnce()
   })

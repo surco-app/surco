@@ -860,6 +860,7 @@
     "deriveFromName": "Aus Dateinamen füllen",
     "deriveFromNameHint": "Füllt die Metadatenfelder aus dem Dateinamen",
     "clearMeta": "Metadaten löschen",
+    "clearMetaShort": "Leeren",
     "clearMetaHint": "Leert alle Metadatenfelder",
     "copyFilename": "Dateinamen kopieren",
     "copyFilenameHint": "Kopiert den Dateinamen in die Zwischenablage",
