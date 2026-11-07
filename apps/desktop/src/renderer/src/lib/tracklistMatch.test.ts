@@ -250,3 +250,40 @@ describe('matchTracklist guards', () => {
     expect(match(line('Javi Pirata', 'Go'), [track("Javi Pirata's", 'Go')]).level).toBe('found')
   })
 })
+
+describe('matchTracklist proposes the mix the set names', () => {
+  it('puts the candidate sharing the mix words first, so a tie is not left to collection order', () => {
+    const m = match(line('3 Ways', 'Real Love (Extended Remastered)'), [
+      track('3 Ways', 'Real Love'),
+      track('3 Ways', 'Real Love (Extended Version)'),
+    ])
+    expect(m.candidates.map((c) => c.title)).toEqual(['Real Love (Extended Version)', 'Real Love'])
+  })
+
+  it('reads the mix words wherever the collection spells them', () => {
+    const m = match(
+      line(
+        'Tess',
+        'The Second You Sleep (I Stay to Watch You Fade Away) (Silverroom Extended Mix)',
+      ),
+      [
+        track('Tess', 'The Second You Sleep'),
+        track(
+          'Tess',
+          'The Second You Sleep (I Stay To Watch You Fade Away) (Extended - Silverroom)',
+        ),
+      ],
+    )
+    expect(m.candidates[0].title).toBe(
+      'The Second You Sleep (I Stay To Watch You Fade Away) (Extended - Silverroom)',
+    )
+  })
+
+  it('keeps the plain title first when the set names no mix', () => {
+    const m = match(line('Wand', 'Happiness'), [
+      track('Wand', 'Happiness (Club Mix)'),
+      track('Wand', 'Happiness'),
+    ])
+    expect(m.candidates[0].title).toBe('Happiness')
+  })
+})

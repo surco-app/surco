@@ -46,6 +46,16 @@ function tokens(base: string): Set<string> {
   return new Set(base.split(' ').filter((w) => w && !ARTICLES.has(w)))
 }
 
+function mixTokens(title: string): Set<string> {
+  const inside = [...title.matchAll(/[([]([^)\]]*)[)\]]/g)].map((m) => m[1]).join(' ')
+  return tokens(fold(inside))
+}
+
+function mixScore(line: Set<string>, candidate: Set<string>): number {
+  if (!line.size) return candidate.size ? 0 : 1
+  return dice(line, candidate)
+}
+
 function dice(a: Set<string>, b: Set<string>): number {
   if (!a.size || !b.size) return 0
   let shared = 0
@@ -74,6 +84,7 @@ interface Indexed {
   full: string
   base: string
   words: Set<string>
+  mix: Set<string>
   artists: string[]
 }
 
@@ -85,6 +96,7 @@ function index(collection: CollectionTrack[]): Indexed[] {
       full: fold(track.title),
       base,
       words: tokens(base),
+      mix: mixTokens(track.title),
       artists: splitArtists(track.artist),
     }
   })
@@ -97,11 +109,15 @@ function matchLine(line: TracklistLine, indexed: Indexed[]): TracklistMatch {
   const artists = splitArtists(line.artist)
   const named = artists.length > 0
   if (!base) return { line, level: 'absent', candidates: [] }
+  const mix = mixTokens(line.title)
   const rank = (c: Indexed): number => (c.full === full ? 2 : 1 + dice(words, c.words))
   const sorted = (list: Indexed[]): CollectionTrack[] =>
     list
       .map((c, i) => ({ c, i }))
-      .sort((x, y) => rank(y.c) - rank(x.c) || x.i - y.i)
+      .sort(
+        (x, y) =>
+          rank(y.c) - rank(x.c) || mixScore(mix, y.c.mix) - mixScore(mix, x.c.mix) || x.i - y.i,
+      )
       .map(({ c }) => c.track)
 
   const byArtist = named ? indexed.filter((c) => overlap(artists, c.artists)) : []
