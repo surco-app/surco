@@ -153,7 +153,7 @@ function apply(r: Resolved, src: Sources): OpOutcome {
     const from = node.parent
     if (node.id === 'root' || builtIn(node) || node.kind === 'smartlist' || !from)
       return refused('stale')
-    if (parent?.kind !== 'folder') return refused('stale')
+    if (parent?.kind !== 'folder' || edit.beforeId === node.id) return refused('stale')
     for (let up: ModelNode | null = parent; up; up = up.parent)
       if (up === node) return refused('stale')
     const target =

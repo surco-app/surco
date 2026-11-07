@@ -552,6 +552,49 @@ describe('moving a node', () => {
     ).toMatchObject({ applied: false, reason: 'stale' })
   })
 
+  it('reorders inside the same parent, forward and backward, and keeps a move to its own place', () => {
+    const labels = (nml: string) =>
+      parsePlaylists(nml)?.root.children.map((c) =>
+        c.kind === 'folder' ? `${c.name}${c.children.length}` : c.name,
+      )
+    const moved = (edit: RekordboxPlaylistEdit, id: string) => labels(run(op(edit, id)).nml)
+    expect(
+      moved(
+        { kind: 'moveNode', playlistId: 'folder:Sets', parentId: 'root', beforeId: 'dnb' },
+        'folder:Sets',
+      ),
+    ).toEqual(['Preparation', 'Sets1', 'Sets2', 'Drum & Bass'])
+    expect(
+      moved(
+        { kind: 'moveNode', playlistId: 'folder:Sets#2', parentId: 'root', beforeId: 'prep' },
+        'folder:Sets#2',
+      ),
+    ).toEqual(['Sets1', 'Preparation', 'Sets2', 'Drum & Bass'])
+    expect(
+      moved(
+        { kind: 'moveNode', playlistId: 'dnb', parentId: 'root', beforeId: 'folder:Sets' },
+        'dnb',
+      ),
+    ).toEqual(['Preparation', 'Drum & Bass', 'Sets2', 'Sets1'])
+    const same = run(
+      op({ kind: 'moveNode', playlistId: 'dnb', parentId: 'root', beforeId: null }, 'dnb'),
+    )
+    expect([...same.outcomes.values()][0].applied).toBe(true)
+    expect(labels(same.nml)).toEqual(['Preparation', 'Sets2', 'Sets1', 'Drum & Bass'])
+  })
+
+  it('refuses a node dropped before itself and leaves the NML untouched', () => {
+    const { nml, outcomes } = run(
+      op({ kind: 'moveNode', playlistId: 'dnb', parentId: 'root', beforeId: 'dnb' }, 'dnb'),
+      op({ kind: 'moveNode', playlistId: 'fri', parentId: 'folder:Sets', beforeId: 'fri' }, 'fri'),
+    )
+    expect([...outcomes.values()]).toMatchObject([
+      { applied: false, reason: 'stale' },
+      { applied: false, reason: 'stale' },
+    ])
+    expect(nml).toBe(DOC)
+  })
+
   it('refuses the move when the DJ changed the node since', () => {
     const changed = {
       ...op({ kind: 'moveNode', playlistId: 'dnb', parentId: 'root', beforeId: null }, 'dnb'),
