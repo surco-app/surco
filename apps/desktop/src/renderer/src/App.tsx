@@ -3264,7 +3264,11 @@ export default function App(): React.JSX.Element {
   // Any open modal/overlay also swallows the global shortcuts, or space/j/k/⌘⏎ would act
   // on the list behind the dialog (e.g. start a conversion behind the confirm prompt).
   const overlayOpen =
-    activeModal !== null || copiesOpen !== null || review !== null || usbModal !== null
+    activeModal !== null ||
+    copiesOpen !== null ||
+    review !== null ||
+    usbModal !== null ||
+    pasteTracklist !== null
   overlayOpenRef.current = overlayOpen
 
   useKeyboardShortcuts({
