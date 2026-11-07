@@ -66,6 +66,8 @@ interface Props {
   // duration), while the badge stays the matcher's own verdict.
   appliedTrack: ReleaseTrack | undefined
   fileDurationSec: number | undefined
+  // The open track, so the folded rest of the results opens again on the next one.
+  trackId?: string
   discogsTokenMissing: boolean
   isMulti: boolean
   selectedTracks: TrackItem[] | undefined
@@ -97,6 +99,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
   matchTier,
   appliedTrack,
   fileDurationSec,
+  trackId,
   discogsTokenMissing,
   isMulti,
   selectedTracks,
@@ -169,6 +172,14 @@ export const DiscogsPanel = memo(function DiscogsPanel({
   const pinned = results.some((r) => resultKeyOf(r) === lastAlbumKey) ? lastAlbum : null
   const pinnedKey = pinned ? lastAlbumKey : null
   const listed = pinned ? results.filter((r) => resultKeyOf(r) !== pinnedKey) : results
+  // Once a match is applied, the release it came from stays and the other results wait behind
+  // one button, so the choice the app already made is not offered again. Opened by the button
+  // or by the user's own search, and closed again on the next track.
+  const [openedFor, setOpenedFor] = useState<{ id: string | undefined } | null>(null)
+  const restOpen = openedFor !== null && openedFor.id === trackId
+  const foldRest =
+    !restOpen && !isMulti && !!appliedTrack && listed.some((r) => resultKeyOf(r) === openKey)
+  const shown = foldRest ? listed.filter((r) => resultKeyOf(r) === openKey) : listed
   const applyTrack = (track: ReleaseTrack): void => {
     const open = [...(pinned ? [pinned] : []), ...results].find(
       (r) => resultKeyOf(r) === liveOpenKey,
@@ -567,7 +578,10 @@ export const DiscogsPanel = memo(function DiscogsPanel({
               onClear={() => setQuery('')}
               busy={busy}
               onKeyDown={(e) => {
-                if (e.key === 'Enter') doSearch()
+                if (e.key === 'Enter') {
+                  setOpenedFor({ id: trackId })
+                  doSearch()
+                }
                 // ↓ from the search box dives into the results, so search → pick is one
                 // continuous keyboard motion.
                 else if (e.key === 'ArrowDown') {
@@ -749,7 +763,19 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                   <SkeletonRows testid="best-match-skeleton" count={1} />
                 </div>
               )}
-              {listed.map(renderCard)}
+              {shown.map(renderCard)}
+              {foldRest && (
+                <div className="flex justify-center px-1.5 pt-1.5 pb-0.5">
+                  <button
+                    type="button"
+                    data-testid="discogs-show-rest"
+                    onClick={() => setOpenedFor({ id: trackId })}
+                    className="press rounded-full border border-dashed border-[var(--color-line-strong)] px-3 py-1 text-[11px] font-medium text-[var(--color-accent)] transition-colors hover:bg-[var(--color-hover)]"
+                  >
+                    {tr('editor.showRest', { count: listed.length - shown.length })}
+                  </button>
+                </div>
+              )}
               {heldButton}
             </>
           )}

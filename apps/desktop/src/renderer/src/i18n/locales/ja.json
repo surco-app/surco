@@ -600,6 +600,8 @@
     "played": "再生済み"
   },
   "editor": {
+    "showRest_one": "他の {{count}} 件を表示",
+    "showRest_other": "他の {{count}} 件を表示",
     "searchPlaceholder": "ソースを検索するか Discogs リリース ID を貼り付け…",
     "searchClear": "検索をクリア",
     "searchScope": "カタログ",

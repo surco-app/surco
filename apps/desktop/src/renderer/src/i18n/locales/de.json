@@ -600,6 +600,8 @@
     "played": "Gehört"
   },
   "editor": {
+    "showRest_one": "{{count}} weiteres Ergebnis anzeigen",
+    "showRest_other": "{{count}} weitere Ergebnisse anzeigen",
     "searchPlaceholder": "Deine Quellen durchsuchen oder eine Discogs-Release-ID einfügen…",
     "searchClear": "Suche leeren",
     "searchScope": "Kataloge",

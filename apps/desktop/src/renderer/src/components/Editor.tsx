@@ -1583,6 +1583,7 @@ export const Editor = memo(function Editor({
           matchTier={matchTier}
           appliedTrack={appliedTrack}
           fileDurationSec={item.duration}
+          trackId={item.id}
           discogsTokenMissing={discogsTokenMissing}
           isMulti={isMulti}
           selectedTracks={selectedTracks}
