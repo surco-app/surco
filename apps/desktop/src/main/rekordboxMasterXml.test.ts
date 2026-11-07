@@ -8,6 +8,7 @@ import {
   nodeTimestamps,
   playlistXmlPath,
   readNodeStamps,
+  withNodeParent,
   withNodeTimestamp,
   withoutNodes,
   withPlaylistNode,
@@ -136,6 +137,16 @@ describe('masterPlaylists6.xml node timestamps', () => {
 
   it('leaves the text alone when the node is missing', () => {
     expect(withNodeTimestamp(THREE, '4000', 1797000000000)).toBe(THREE)
+  })
+
+  it('moves only the one node ParentId, so the rest of the file stays byte for byte', () => {
+    expect(withNodeParent(THREE, '2000', 'root')).toBe(
+      THREE.replace('Id="7D0" ParentId="3E8"', 'Id="7D0" ParentId="0"'),
+    )
+  })
+
+  it('leaves the text alone when the node to reparent is missing', () => {
+    expect(withNodeParent(THREE, '4000', 'root')).toBe(THREE)
   })
 })
 
