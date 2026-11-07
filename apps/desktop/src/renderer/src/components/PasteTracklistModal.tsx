@@ -30,6 +30,12 @@ const DOT: Record<Exclude<MatchLevel, 'absent'>, string> = {
   similar: 'border border-fg-faint',
 }
 
+const LEVELS = ['found', 'doubtful', 'similar'] as const
+
+const FILTER = 'press rounded-full px-2.5 py-0.5'
+const FILTER_OFF = `${FILTER} text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg`
+const FILTER_ON = `${FILTER} bg-[var(--color-accent-soft)] text-fg`
+
 function mixOf(title: string): string {
   return title.match(/[([]([^)\]]*)[)\]]\s*$/)?.[1] ?? ''
 }
@@ -59,6 +65,7 @@ export function PasteTracklistModal({
   const [name, setName] = useState('')
   const [step, setStep] = useState<'paste' | 'review'>('paste')
   const [rows, setRows] = useState<ReviewRow[] | null>(null)
+  const [filter, setFilter] = useState<'all' | Exclude<MatchLevel, 'absent'>>('all')
   const parsed = useMemo(() => parseTracklist(text), [text])
   const collection = useQuery({
     queryKey: ['source-collection', program],
@@ -184,20 +191,30 @@ export function PasteTracklistModal({
             <>
               <div
                 data-testid="paste-tracklist-summary"
-                className="mb-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-fg-dim"
+                className="mb-2.5 flex flex-wrap items-center gap-x-1 gap-y-1 text-xs text-fg-dim"
               >
-                <span>
-                  <span className={`mr-1.5 inline-block size-2 rounded-full ${DOT.found}`} />
-                  {tr('pasteTracklist.found', { count: count('found') })}
-                </span>
-                <span>
-                  <span className={`mr-1.5 inline-block size-2 rounded-full ${DOT.doubtful}`} />
-                  {tr('pasteTracklist.doubtful', { count: count('doubtful') })}
-                </span>
-                <span>
-                  <span className={`mr-1.5 inline-block size-2 rounded-full ${DOT.similar}`} />
-                  {tr('pasteTracklist.similar', { count: count('similar') })}
-                </span>
+                <button
+                  type="button"
+                  data-testid="paste-tracklist-filter-all"
+                  aria-pressed={filter === 'all'}
+                  onClick={() => setFilter('all')}
+                  className={filter === 'all' ? FILTER_ON : FILTER_OFF}
+                >
+                  {tr('pasteTracklist.total', { count: review?.length ?? 0 })}
+                </button>
+                {LEVELS.map((level) => (
+                  <button
+                    key={level}
+                    type="button"
+                    data-testid={`paste-tracklist-filter-${level}`}
+                    aria-pressed={filter === level}
+                    onClick={() => setFilter(level)}
+                    className={filter === level ? FILTER_ON : FILTER_OFF}
+                  >
+                    <span className={`mr-1.5 inline-block size-2 rounded-full ${DOT[level]}`} />
+                    {tr(`pasteTracklist.${level}`, { count: count(level) })}
+                  </button>
+                ))}
                 <span className="ml-auto">
                   {collection.isError
                     ? tr('pasteTracklist.failed')
@@ -208,6 +225,7 @@ export function PasteTracklistModal({
                 {review?.map((row, i) => {
                   const { match } = row
                   const level = match.level as Exclude<MatchLevel, 'absent'>
+                  if (filter !== 'all' && level !== filter) return null
                   return (
                     <li
                       key={`${match.line.at ?? ''} ${match.line.raw}`}
@@ -284,6 +302,7 @@ export function PasteTracklistModal({
               data-testid="paste-tracklist-back"
               onClick={() => {
                 setRows(null)
+                setFilter('all')
                 setStep('paste')
               }}
               className="press rounded-lg border border-[var(--color-line-strong)] px-4 py-2 text-sm font-medium hover:bg-[var(--color-hover)]"

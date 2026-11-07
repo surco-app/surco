@@ -27,6 +27,8 @@
     "gaps_other": "{{count}} Lücken",
     "search": "In {{program}} suchen",
     "reviewHint": "{{have}} von {{total}} sind da. Zweifelhafte sind ein anderer Mix oder ein anderer Kandidat und kommen trotzdem rein, außer du nimmst sie raus. Ähnliche haben denselben Titel, aber einen anderen Künstler, und bleiben draußen, außer du nimmst sie.",
+    "total_one": "{{count}} insgesamt",
+    "total_other": "{{count}} insgesamt",
     "found_one": "{{count}} gefunden",
     "found_other": "{{count}} gefunden",
     "doubtful_one": "{{count}} zweifelhaft",

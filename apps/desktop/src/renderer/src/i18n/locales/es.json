@@ -27,6 +27,8 @@
     "gaps_other": "{{count}} huecos",
     "search": "Buscar en {{program}}",
     "reviewHint": "{{have}} de {{total}} están. Las dudosas son otro mix u otro candidato y entran igual, salvo que las saques. Las parecidas tienen el título pero otro artista y van fuera, salvo que las cojas.",
+    "total_one": "{{count}} en total",
+    "total_other": "{{count}} en total",
     "found_one": "{{count}} encontrada",
     "found_other": "{{count}} encontradas",
     "doubtful_one": "{{count}} dudosa",

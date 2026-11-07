@@ -27,6 +27,8 @@
     "gaps_other": "空白{{count}}件",
     "search": "{{program}}で検索",
     "reviewHint": "{{total}}トラック中{{have}}トラックがあります。「要確認」は別ミックスか別候補で、外さない限り追加されます。「類似」はタイトルは同じでアーティストが違い、選ばない限り追加されません。",
+    "total_one": "合計 {{count}}",
+    "total_other": "合計 {{count}}",
     "found_one": "マッチ {{count}}",
     "found_other": "マッチ {{count}}",
     "doubtful_one": "要確認 {{count}}",

@@ -27,6 +27,8 @@
     "gaps_other": "{{count}} trous",
     "search": "Chercher dans {{program}}",
     "reviewHint": "{{have}} sur {{total}} sont là. Les douteux sont un autre mix ou un autre candidat et entrent quand même, sauf si tu les retires. Les proches ont le titre mais pas l’artiste et restent dehors, sauf si tu les prends.",
+    "total_one": "{{count}} au total",
+    "total_other": "{{count}} au total",
     "found_one": "{{count}} trouvé",
     "found_other": "{{count}} trouvés",
     "doubtful_one": "{{count}} douteux",

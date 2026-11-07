@@ -27,6 +27,8 @@
     "gaps_other": "{{count}} gaps",
     "search": "Search in {{program}}",
     "reviewHint": "{{have}} of {{total}} are there. Doubtful ones are another mix or another candidate and go in anyway, unless you leave them out. Similar ones share the title but not the artist and stay out, unless you take them.",
+    "total_one": "{{count}} total",
+    "total_other": "{{count}} total",
     "found_one": "{{count}} found",
     "found_other": "{{count}} found",
     "doubtful_one": "{{count}} doubtful",

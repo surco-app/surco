@@ -145,6 +145,20 @@ describe('PasteTracklistModal review step', () => {
     expect(screen.getByTestId('paste-tracklist-add')).toHaveTextContent('Añadir 3 pistas')
   })
 
+  it('narrows the list to one level from its count, so 13 similar can be checked without wading through 107', async () => {
+    setup()
+    paste(SET1)
+    await review()
+    fireEvent.click(screen.getByTestId('paste-tracklist-filter-doubtful'))
+    expect(screen.getByTestId('paste-tracklist-filter-doubtful')).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getAllByTestId(/^paste-tracklist-row-\d+$/)).toHaveLength(2)
+    fireEvent.click(screen.getByTestId('paste-tracklist-include-2'))
+    expect(screen.getByTestId('paste-tracklist-add')).toHaveTextContent('Añadir 3 pistas')
+    fireEvent.click(screen.getByTestId('paste-tracklist-filter-all'))
+    expect(screen.getAllByTestId(/^paste-tracklist-row-\d+$/)).toHaveLength(5)
+    expect(screen.getByTestId('paste-tracklist-filter-all')).toHaveTextContent('5 en total')
+  })
+
   it('hands over the picked candidate, in set order, as playlist refs', async () => {
     const { onAdd } = setup()
     paste(SET1)
