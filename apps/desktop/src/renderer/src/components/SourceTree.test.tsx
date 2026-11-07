@@ -948,13 +948,15 @@ describe('SourceTree paste tracklist', () => {
     )
   })
 
-  it('keeps the item in the menu between Rename and Delete', () => {
+  it('groups the tracklist item with the creating items, before Rename and Delete', () => {
     setup(null, true)
-    openMenu('house')
+    openMenu('bases')
     const items = within(screen.getByTestId('source-tree-menu')).getAllByRole('menuitem')
     expect(items.map((i) => i.getAttribute('data-testid'))).toEqual([
-      'source-tree-rename',
+      'source-tree-new-playlist-inside',
+      'source-tree-new-folder-inside',
       'source-tree-paste-tracklist',
+      'source-tree-rename',
       'source-tree-delete',
     ])
   })

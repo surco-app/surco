@@ -573,17 +573,6 @@ export function SourceTree({
                 )}
               </>
             )}
-            {!menu.pasteOnly && (
-              <button
-                type="button"
-                role="menuitem"
-                data-testid="source-tree-rename"
-                onClick={() => startRename(menu.node)}
-                className="block w-full rounded-md px-3 py-1.5 text-left text-sm hover:bg-[var(--color-hover)]"
-              >
-                {tr('sources.tree.rename')}
-              </button>
-            )}
             {edit?.onPasteTracklist && (
               <button
                 type="button"
@@ -600,6 +589,17 @@ export function SourceTree({
                     ? 'sources.tree.newPlaylistFromTracklist'
                     : 'sources.tree.pasteTracklist',
                 )}
+              </button>
+            )}
+            {!menu.pasteOnly && (
+              <button
+                type="button"
+                role="menuitem"
+                data-testid="source-tree-rename"
+                onClick={() => startRename(menu.node)}
+                className="block w-full rounded-md px-3 py-1.5 text-left text-sm hover:bg-[var(--color-hover)]"
+              >
+                {tr('sources.tree.rename')}
               </button>
             )}
             {!menu.pasteOnly && (
