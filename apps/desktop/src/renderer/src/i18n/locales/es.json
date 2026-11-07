@@ -784,6 +784,7 @@
     "formatAndDestination": "Formato y destino",
     "menuFormat": "Formato",
     "menuDestination": "Destino",
+    "menuOverwriteNote": "Sobrescribe el archivo",
     "update": "Actualizar etiquetas",
     "updateMusic": "Actualizar etiquetas + Apple Music",
     "processing": "Convirtiendo…",

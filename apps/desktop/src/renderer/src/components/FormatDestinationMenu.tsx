@@ -88,7 +88,16 @@ export function FormatDestinationMenu({
               d === destination ? 'font-medium text-[var(--color-accent)]' : ''
             }`}
           >
-            {tr(`settings.destinations.${d}`)}
+            {d === 'overwrite' ? (
+              <span className="flex flex-col">
+                {tr(`settings.destinations.${d}`)}
+                <span className="text-[11px] font-normal text-warn">
+                  {tr('editor.menuOverwriteNote')}
+                </span>
+              </span>
+            ) : (
+              tr(`settings.destinations.${d}`)
+            )}
           </button>
         ))}
       </fieldset>
