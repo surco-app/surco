@@ -39,7 +39,7 @@ import { autoMarkOf, forgetDraft, keepAutoMark, keepDraft, resetCueSession } fro
 import { resetEditorPlace } from './lib/editorPlace'
 import { spellingGroups } from './lib/musicSpelling'
 import { createQueryClient } from './lib/queryClient'
-import { clearDraggedRows, draggedRows } from './lib/reorderDrag'
+import { clearDraggedRows, draggedRows, TREE_NODE_TYPE } from './lib/reorderDrag'
 import { usbExportStore } from './lib/usbExportStore'
 import { fakeDataTransfer, installDragEvent } from './test/drag'
 
@@ -7927,6 +7927,19 @@ describe('drop target', () => {
     await waitFor(() =>
       expect(screen.getByTestId('sidebar')).toHaveAttribute('data-drop-over', 'true'),
     )
+  })
+
+  it('lights no column for a playlist dragged in the tree, which is not files arriving', async () => {
+    await renderApp()
+    await addTwoTracks()
+    const root = screen.getByTestId('sidebar').closest('.flex.h-screen') as HTMLElement
+    const dt = fakeDataTransfer()
+    dt.setData(TREE_NODE_TYPE, 'house')
+
+    fireEvent.dragEnter(root, { dataTransfer: dt })
+    await new Promise((r) => setTimeout(r, 0))
+
+    expect(screen.getByTestId('sidebar')).not.toHaveAttribute('data-drop-over', 'true')
   })
 
   // On the empty screen there is no column yet: the one screen there is answers the drag,
