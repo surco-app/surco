@@ -99,7 +99,7 @@ export function PasteTracklistModal({
 
   return (
     <ModalShell
-      onClose={onClose}
+      onClose={text.trim() ? () => {} : onClose}
       backdropTestId="paste-tracklist-backdrop"
       dialogTestId="paste-tracklist-dialog"
       labelledBy="paste-tracklist-title"

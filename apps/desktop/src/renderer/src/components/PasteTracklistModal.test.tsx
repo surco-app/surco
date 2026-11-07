@@ -178,6 +178,23 @@ describe('PasteTracklistModal review step', () => {
     expect(screen.getByTestId('paste-tracklist-add')).toBeDisabled()
   })
 
+  it('keeps the pasted text when the user clicks outside the modal', async () => {
+    const { onClose } = setup()
+    paste(SET1)
+    fireEvent.click(screen.getByTestId('paste-tracklist-backdrop'))
+    expect(onClose).not.toHaveBeenCalled()
+    await review()
+    fireEvent.click(screen.getByTestId('paste-tracklist-backdrop'))
+    expect(onClose).not.toHaveBeenCalled()
+    expect(screen.getByTestId('paste-tracklist-summary')).toBeInTheDocument()
+  })
+
+  it('still closes from the backdrop while nothing is pasted', () => {
+    const { onClose } = setup()
+    fireEvent.click(screen.getByTestId('paste-tracklist-backdrop'))
+    expect(onClose).toHaveBeenCalled()
+  })
+
   it('goes back to the pasted text untouched', async () => {
     setup()
     paste(SET1)
