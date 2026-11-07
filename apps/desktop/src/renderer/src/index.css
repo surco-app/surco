@@ -1241,3 +1241,27 @@ button:hover > .process-fill {
 :is([data-menu] [role="option"], [role="menu"] [role^="menuitem"]):focus-visible * {
   color: var(--color-on-accent);
 }
+
+@media (forced-colors: active) {
+  input:focus-visible,
+  textarea:focus-visible,
+  button:not(:disabled):focus-visible,
+  a:focus-visible,
+  select:focus-visible,
+  [role="button"]:focus-visible,
+  [role="option"]:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+  :is([data-menu] [role="option"], [role="menu"] [role^="menuitem"]):focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+    background-color: Highlight;
+    color: HighlightText;
+  }
+  [aria-selected="true"] {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+}
