@@ -2,7 +2,7 @@ import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { CustomField, TrackMetadata } from '../../../shared/types'
-import { labeledFields } from '../lib/fields'
+import { groupOfField, labeledFields } from '../lib/fields'
 import { insertToken } from '../lib/insertToken'
 import { renderOutputName } from '../lib/outputName'
 import { ModalShell } from './ModalShell'
@@ -31,6 +31,7 @@ export function RenameModal({
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [format, setFormat] = useState(initialFormat)
+  const [moreOpen, setMoreOpen] = useState(false)
   const formatRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -41,6 +42,21 @@ export function RenameModal({
   }, [])
 
   const preview = renderOutputName(format, meta)
+
+  const fields = labeledFields(customFields, tr)
+  const customKeys = new Set(customFields.map((f) => f.key))
+  const where = (f: { key: string }): string =>
+    customKeys.has(f.key) ? 'custom' : (groupOfField(f.key) ?? 'catalog')
+  const pick = (id: string): { key: string; label: string }[] =>
+    fields.filter((f) => where(f) === id)
+  const rare = pick('catalog')
+  const sections = [
+    { id: 'identity', label: tr('fields.groupIdentity'), fields: pick('identity') },
+    { id: 'order', label: tr('fields.groupOrder'), fields: pick('order') },
+    { id: 'dj', label: tr('fields.groupDj'), fields: pick('dj') },
+    { id: 'custom', label: tr('fields.groupCustom'), fields: pick('custom') },
+    ...(moreOpen ? [{ id: 'catalog', label: tr('fields.groupCatalog'), fields: rare }] : []),
+  ].filter((section) => section.fields.length > 0)
 
   function addToken(key: string): void {
     const el = formatRef.current
@@ -86,20 +102,41 @@ export function RenameModal({
         className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
       />
       <p className="mt-2.5 mb-1.5 text-xs text-fg-dim">{tr('settings.insertToken')}</p>
-      <div className="flex flex-wrap gap-1.5">
-        {labeledFields(customFields, tr).map((f) => (
-          <button
-            key={f.key}
-            type="button"
-            data-testid={`rename-token-${f.key}`}
-            onClick={() => addToken(f.key)}
-            className="press group relative rounded-full border border-[var(--color-line-strong)] px-2.5 py-0.5 text-[11px] text-fg-muted hover:bg-[var(--color-hover)] hover:text-fg"
+      {sections.map(({ id, label, fields }) => (
+        <div key={id}>
+          <p
+            data-testid={`rename-group-${id}`}
+            className="mt-2 mb-1 text-[11px] font-medium text-fg-faint"
           >
-            {f.label}
-            <Tooltip label={`{${f.key}}`} />
-          </button>
-        ))}
-      </div>
+            {label}
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {fields.map((f) => (
+              <button
+                key={f.key}
+                type="button"
+                data-testid={`rename-token-${f.key}`}
+                onClick={() => addToken(f.key)}
+                className="press group relative rounded-full border border-[var(--color-line-strong)] px-2.5 py-0.5 text-[11px] text-fg-muted hover:bg-[var(--color-hover)] hover:text-fg"
+              >
+                {f.label}
+                <Tooltip label={`{${f.key}}`} />
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
+      {rare.length > 0 && (
+        <button
+          type="button"
+          data-testid="rename-more-fields"
+          aria-expanded={moreOpen}
+          onClick={() => setMoreOpen((v) => !v)}
+          className="press mt-2.5 rounded-full border border-dashed border-[var(--color-line-strong)] px-2.5 py-0.5 text-[11px] text-[var(--color-accent)] hover:bg-[var(--color-hover)]"
+        >
+          {moreOpen ? tr('rename.fewerFields') : tr('rename.moreFields', { count: rare.length })}
+        </button>
+      )}
       <p className="mt-3 text-xs text-fg-dim">
         {tr('settings.preview')}{' '}
         <span data-testid="rename-preview" className="font-mono text-fg-muted">

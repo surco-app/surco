@@ -50,6 +50,25 @@ describe('RenameModal', () => {
     expect(screen.getByTestId('rename-preview')).toHaveTextContent('AladinoVG+')
   })
 
+  // 35 chips in one heap weighed ISRC the same as Artist. The everyday fields come grouped
+  // and in sight; the catalogue and credits wait behind one button, counted, so the dialog
+  // opens on what a file name is actually built from.
+  it('shows the everyday fields in named groups and keeps the catalogue ones behind a button', () => {
+    renderModal()
+    expect(screen.getByTestId('rename-group-identity')).toHaveTextContent('Basics')
+    expect(screen.getByTestId('rename-group-dj')).toHaveTextContent('For DJing')
+    expect(screen.getByTestId('rename-token-artist')).toBeInTheDocument()
+    expect(screen.getByTestId('rename-token-bpm')).toBeInTheDocument()
+    expect(screen.queryByTestId('rename-token-isrc')).toBeNull()
+    const more = screen.getByTestId('rename-more-fields')
+    expect(more).toHaveAttribute('aria-expanded', 'false')
+    fireEvent.click(more)
+    expect(more).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByTestId('rename-group-catalog')).toHaveTextContent('Release and credits')
+    fireEvent.click(screen.getByTestId('rename-token-isrc'))
+    expect(screen.getByTestId('rename-format')).toHaveValue('{artist} - {title}{isrc}')
+  })
+
   it('exposes an accessible name on the dialog', () => {
     renderModal()
     expect(screen.getByRole('dialog')).toHaveAccessibleName()

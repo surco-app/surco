@@ -12,6 +12,8 @@
     "copy": "コピー"
   },
   "rename": {
+    "moreFields": "その他のフィールド ({{count}})",
+    "fewerFields": "フィールドを減らす",
     "title": "ファイル名を作成",
     "description": "テキストとメタデータを組み合わせてファイル名を作成します。",
     "apply": "適用"
@@ -1167,6 +1169,11 @@
     }
   },
   "fields": {
+    "groupIdentity": "基本",
+    "groupOrder": "ディスクと順序",
+    "groupDj": "DJ向け",
+    "groupCatalog": "リリースとクレジット",
+    "groupCustom": "独自フィールド",
     "groupFilled_one": "{{count}} 件入力済み",
     "groupFilled_other": "{{count}} 件入力済み",
     "title": "タイトル",
