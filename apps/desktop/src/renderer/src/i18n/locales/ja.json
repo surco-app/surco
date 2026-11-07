@@ -784,6 +784,7 @@
     "formatAndDestination": "フォーマットと保存先",
     "menuFormat": "フォーマット",
     "menuDestination": "保存先",
+    "menuOverwriteNote": "ファイルを上書きします",
     "update": "タグを更新",
     "updateMusic": "タグを更新 + Apple Music",
     "processing": "変換中…",

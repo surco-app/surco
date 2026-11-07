@@ -171,6 +171,25 @@ describe('ExportButton', () => {
     )
   })
 
+  // "Edit the original" sat in the menu looking like the folder beside it, though it is the
+  // one choice that rewrites the user's own file; the warning lives where the choice is made,
+  // not only in the confirmation that comes after pressing Convert.
+  it('says in the menu that only "edit the original" overwrites the file', () => {
+    render(
+      <ExportButton
+        {...baseProps}
+        incomplete={false}
+        destinations={['folder', 'appleMusic', 'beside', 'overwrite'] as const}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    expect(screen.getByTestId('process-destination-overwrite')).toHaveTextContent(
+      'Overwrites the file',
+    )
+    expect(screen.getByTestId('process-destination-beside')).not.toHaveTextContent('Overwrites')
+    expect(screen.getByTestId('process-destination-folder')).not.toHaveTextContent('Overwrites')
+  })
+
   // The chevron opened a plain stack of buttons: no announced popup, focus left behind on
   // the chevron, no arrows and no Escape, so from the keyboard the menu was a trap of Tab
   // presses. It has to behave like the app's other menus (TrackContextMenu).
