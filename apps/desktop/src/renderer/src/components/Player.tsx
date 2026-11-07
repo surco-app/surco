@@ -120,6 +120,8 @@ export function LivePlayer({
     [audioRef],
   )
 
+  const clock = useCallback((): number => audioRef.current?.currentTime ?? 0, [audioRef])
+
   // The slider reports an absolute level; mirror it onto the element, which persists it
   // across tracks, and reflect it live on the slider.
   const onSetVolume = useCallback(
@@ -144,6 +146,7 @@ export function LivePlayer({
       volume={volume}
       onToggle={onToggle}
       onScrub={onScrub}
+      clock={clock}
       onSetVolume={onSetVolume}
       onToggleContinuous={onToggleContinuous}
       showWaveform={showWaveform}
@@ -165,6 +168,7 @@ interface PlayerProps {
   volume: number
   onToggle: () => void
   onScrub: (seconds: number) => void
+  clock?: () => number
   onSetVolume: (value: number) => void
   onToggleContinuous: () => void
   showWaveform: boolean
@@ -186,6 +190,7 @@ export function Player({
   volume,
   onToggle,
   onScrub,
+  clock,
   onSetVolume,
   onToggleContinuous,
   showWaveform,
@@ -330,6 +335,8 @@ export function Player({
             active
             audioDurationSec={duration}
             playheadSec={currentTime}
+            playing={!paused}
+            clock={clock}
             onScrub={onScrub}
           />
         ) : (
