@@ -3,8 +3,9 @@ import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-quer
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { RekordboxEditResult, SourcePlaylistEntry } from '../../../shared/types'
+import type { RekordboxEditResult, SourceNode, SourcePlaylistEntry } from '../../../shared/types'
 import '../i18n'
+import { takeOwnRemoval } from '../lib/ownRemovals'
 import { useRekordboxEdits } from './useRekordboxEdits'
 
 afterEach(cleanup)
@@ -16,11 +17,18 @@ const row = (linkId: string): SourcePlaylistEntry => ({
   linkId,
 })
 const ORDER = [row('a'), row('b'), row('c')]
+const playlist = (id: string): SourceNode => ({ id, name: id, kind: 'playlist', count: 1 })
+const TREE: SourceNode[] = [
+  { id: 'A', name: 'A', kind: 'folder', count: 1, children: [playlist('a1')] },
+  playlist('b'),
+]
 
 function setup(answer: Promise<RekordboxEditResult>) {
   const loadRekordboxPlaylist = vi.fn().mockResolvedValue(ORDER)
+  const loadRekordboxTree = vi.fn().mockResolvedValue(TREE)
   ;(window as unknown as { api: unknown }).api = {
     loadRekordboxPlaylist,
+    loadRekordboxTree,
     editRekordboxPlaylist: vi.fn(() => answer),
   }
   const notify = vi.fn()
@@ -36,10 +44,15 @@ function setup(answer: Promise<RekordboxEditResult>) {
         queryFn: () => window.api.loadRekordboxPlaylist('f'),
         staleTime: Number.POSITIVE_INFINITY,
       }).data,
+      tree: useQuery({
+        queryKey: ['source-tree', 'rekordbox'],
+        queryFn: () => window.api.loadRekordboxTree(),
+        staleTime: Number.POSITIVE_INFINITY,
+      }).data,
     }),
     { wrapper },
   )
-  return { ...hook, notify, loadRekordboxPlaylist, client }
+  return { ...hook, notify, loadRekordboxPlaylist, loadRekordboxTree, client }
 }
 
 describe('useRekordboxEdits', () => {
@@ -156,6 +169,143 @@ describe('useRekordboxEdits', () => {
     })
     expect(loadRekordboxPlaylist).toHaveBeenCalledTimes(2)
     expect(notify).not.toHaveBeenCalled()
+  })
+})
+
+describe('useRekordboxEdits drawing the tree', () => {
+  it('draws a created playlist in the tree at once, pending, and re-reads the tree after the write', async () => {
+    let answer: (r: RekordboxEditResult) => void = () => {}
+    const { result, loadRekordboxTree } = setup(
+      new Promise((resolve) => {
+        answer = resolve
+      }),
+    )
+    await waitFor(() => expect(result.current.tree).toHaveLength(2))
+    let done: Promise<RekordboxEditResult> = Promise.resolve({ applied: true })
+    act(() => {
+      done = result.current.edit(
+        { kind: 'create', parentId: 'A', name: 'New', folder: false },
+        'New',
+      )
+    })
+    await waitFor(() =>
+      expect(result.current.tree?.[0].children?.map((n) => n.name)).toEqual(['a1', 'New']),
+    )
+    expect(result.current.tree?.[0].children?.[1].id.startsWith('pending:')).toBe(true)
+    await act(async () => {
+      answer({ applied: true, createdId: '777' })
+      await done
+    })
+    expect(loadRekordboxTree).toHaveBeenCalledTimes(2)
+  })
+
+  it('draws a rename, a delete and a node move before the program answers', async () => {
+    const { result } = setup(new Promise(() => {}))
+    await waitFor(() => expect(result.current.tree).toHaveLength(2))
+    act(() => {
+      void result.current.edit({ kind: 'rename', playlistId: 'b', name: 'B2' }, 'b')
+    })
+    await waitFor(() => expect(result.current.tree?.[1].name).toBe('B2'))
+    act(() => {
+      void result.current.edit(
+        { kind: 'moveNode', playlistId: 'b', parentId: 'A', beforeId: 'a1' },
+        'b',
+      )
+    })
+    await waitFor(() =>
+      expect(result.current.tree?.[0].children?.map((n) => n.id)).toEqual(['b', 'a1']),
+    )
+    act(() => {
+      void result.current.edit({ kind: 'delete', playlistId: 'A' }, 'A')
+    })
+    await waitFor(() => expect(result.current.tree).toEqual([]))
+  })
+
+  it('returns to the real tree when the write is refused', async () => {
+    let refuse: (r: RekordboxEditResult) => void = () => {}
+    const { result } = setup(
+      new Promise((resolve) => {
+        refuse = resolve
+      }),
+    )
+    await waitFor(() => expect(result.current.tree).toHaveLength(2))
+    let done: Promise<RekordboxEditResult> = Promise.resolve({ applied: true })
+    act(() => {
+      done = result.current.edit({ kind: 'delete', playlistId: 'b' }, 'b')
+    })
+    await waitFor(() => expect(result.current.tree).toHaveLength(1))
+    await act(async () => {
+      refuse({ applied: false, reason: 'cancelled' })
+      await done
+    })
+    await waitFor(() => expect(result.current.tree).toHaveLength(2))
+  })
+
+  it('marks what a delete takes as Surco’s own removal, so the open playlist closes quietly', async () => {
+    const { result } = setup(new Promise(() => {}))
+    await waitFor(() => expect(result.current.tree).toHaveLength(2))
+    act(() => {
+      void result.current.edit({ kind: 'delete', playlistId: 'A' }, 'A')
+    })
+    expect(takeOwnRemoval('a1')).toBe(true)
+  })
+
+  it('leaves no own-removal mark behind once a refused delete has settled', async () => {
+    let refuse: (r: RekordboxEditResult) => void = () => {}
+    const { result } = setup(
+      new Promise((resolve) => {
+        refuse = resolve
+      }),
+    )
+    await waitFor(() => expect(result.current.tree).toHaveLength(2))
+    let done: Promise<RekordboxEditResult> = Promise.resolve({ applied: true })
+    act(() => {
+      done = result.current.edit({ kind: 'delete', playlistId: 'b' }, 'b')
+    })
+    await act(async () => {
+      refuse({ applied: false, reason: 'cancelled' })
+      await done
+    })
+    expect(takeOwnRemoval('b')).toBe(false)
+  })
+
+  it('marks nothing for a move in rekordbox, whose ids survive it, so the moved open playlist stays open', async () => {
+    const { result } = setup(new Promise(() => {}))
+    await waitFor(() => expect(result.current.tree).toHaveLength(2))
+    act(() => {
+      void result.current.edit(
+        { kind: 'moveNode', playlistId: 'b', parentId: 'A', beforeId: null },
+        'b',
+      )
+    })
+    await waitFor(() =>
+      expect(result.current.tree?.[0].children?.map((n) => n.id)).toEqual(['a1', 'b']),
+    )
+    expect(takeOwnRemoval('b')).toBe(false)
+  })
+
+  it('keeps the drawn tree over a re-read that started before the edit', async () => {
+    const { result, loadRekordboxTree, client } = setup(new Promise(() => {}))
+    await waitFor(() => expect(result.current.tree).toHaveLength(2))
+    let stale: (nodes: SourceNode[]) => void = () => {}
+    loadRekordboxTree.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          stale = resolve
+        }),
+    )
+    act(() => {
+      void client.invalidateQueries({ queryKey: ['source-tree'] })
+    })
+    await waitFor(() => expect(loadRekordboxTree).toHaveBeenCalledTimes(2))
+    act(() => {
+      void result.current.edit({ kind: 'rename', playlistId: 'b', name: 'B2' }, 'b')
+    })
+    await act(async () => {
+      stale(TREE)
+      await new Promise((r) => setTimeout(r, 0))
+    })
+    expect(result.current.tree?.[1].name).toBe('B2')
   })
 })
 

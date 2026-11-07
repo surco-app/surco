@@ -5,9 +5,11 @@ import { DJ_PROGRAMS, type DjProgram } from '../../../shared/djProgram'
 import type {
   RekordboxEditResult,
   RekordboxPlaylistEdit,
+  SourceNode,
   SourcePlaylistEntry,
 } from '../../../shared/types'
-import { editMessage, movedEntries } from '../lib/playlistEdits'
+import { markOwnRemovals, takeOwnRemoval } from '../lib/ownRemovals'
+import { editMessage, editedTree, movedEntries, subtreeIds } from '../lib/playlistEdits'
 import { SOURCE_PROGRAMS } from '../lib/sourcePrograms'
 
 // Sends one edit to rekordbox and then re-reads what rekordbox holds: the collection is the
@@ -33,6 +35,18 @@ export function useRekordboxEdits(
           (prev) => prev && movedEntries(prev, edit.linkIds, edit.beforeLinkId),
         )
       }
+      const treeKey = ['source-tree', source]
+      const { crates } = SOURCE_PROGRAMS[source]
+      let markedIds: string[] = []
+      void queryClient.cancelQueries({ queryKey: treeKey })
+      queryClient.setQueryData<SourceNode[]>(treeKey, (prev) => {
+        if (!prev) return prev
+        if (edit.kind === 'delete' || (edit.kind === 'moveNode' && crates)) {
+          markedIds = subtreeIds(prev, edit.playlistId)
+          markOwnRemovals(markedIds)
+        }
+        return editedTree(prev, edit, { crates }) ?? prev
+      })
       let result: RekordboxEditResult
       try {
         result = sourceEdit
@@ -49,6 +63,7 @@ export function useRekordboxEdits(
           queryClient.invalidateQueries({ queryKey: [SOURCE_PROGRAMS[p].membershipKey] }),
         ),
       ])
+      for (const id of markedIds) takeOwnRemoval(id)
       const message = editMessage(tr, edit, result, playlistName, sourceEdit?.messagePrefix)
       if (message) notify(message.text, message.tone)
       return result
