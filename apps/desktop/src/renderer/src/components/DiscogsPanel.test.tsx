@@ -979,3 +979,67 @@ describe('DiscogsPanel search scope', () => {
     expect(screen.getByTestId('discogs-query-scope')).toHaveTextContent('Catalogs')
   })
 })
+
+describe('DiscogsPanel once a match is applied', () => {
+  const results = [
+    { provider: 'discogs', id: 1, title: 'Uno' },
+    { provider: 'discogs', id: 2, title: 'Dos' },
+    { provider: 'discogs', id: 3, title: 'Tres' },
+    { provider: 'discogs', id: 4, title: 'Cuatro' },
+  ] as unknown as DiscogsBrowser['results']
+  const dos = {
+    provider: 'discogs' as const,
+    id: 2,
+    title: 'Dos',
+    artists: [],
+    tracklist: [{ position: '1', title: 'Cara A' }],
+  }
+
+  function renderApplied(applied: boolean) {
+    render(
+      <DiscogsPanel
+        browser={browser({ results, openKey: 'discogs:2', release: dos })}
+        matchedTrack={undefined}
+        matchTier={undefined}
+        appliedTrack={applied ? dos.tracklist[0] : undefined}
+        fileDurationSec={undefined}
+        discogsTokenMissing={false}
+        isMulti={false}
+        selectedTracks={undefined}
+        onApplyMatches={undefined}
+        selectTrack={vi.fn()}
+        searchInputRef={createRef<HTMLInputElement>()}
+        formatFilter={[]}
+        width={315}
+        onResizeStart={vi.fn()}
+        onFit={vi.fn()}
+        onFold={vi.fn()}
+      />,
+    )
+  }
+
+  // The match was already applied, so 23 other releases competing with it for the eye made
+  // the DJ choose again what the app had chosen: the applied release stays, the rest wait
+  // behind one counted button instead of being thrown away.
+  it('keeps the applied release and folds the other results behind a counted button', () => {
+    renderApplied(true)
+    const cards = screen.getAllByTestId('result-card')
+    expect(cards).toHaveLength(1)
+    expect(cards[0]).toHaveTextContent('Dos')
+    expect(screen.getByTestId('discogs-show-rest')).toHaveTextContent('Show 3 more results')
+  })
+
+  it('shows every result once the button is pressed', () => {
+    renderApplied(true)
+    fireEvent.click(screen.getByTestId('discogs-show-rest'))
+    expect(screen.getAllByTestId('result-card')).toHaveLength(4)
+    expect(screen.queryByTestId('discogs-show-rest')).toBeNull()
+  })
+
+  // Nothing is applied yet: the DJ still has to pick, so folding would hide the choice.
+  it('lists every result while nothing has been applied', () => {
+    renderApplied(false)
+    expect(screen.getAllByTestId('result-card')).toHaveLength(4)
+    expect(screen.queryByTestId('discogs-show-rest')).toBeNull()
+  })
+})
