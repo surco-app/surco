@@ -1003,7 +1003,7 @@
         "steps": [
           {
             "lead": "Botão direito numa playlist.",
-            "text": "Escolha «Colar tracklist…». Numa pasta, «Nova playlist a partir de tracklist…» pede o nome."
+            "text": "Escolha «Colar tracklist…». Numa pasta, «Playlist a partir de tracklist…» pede o nome."
           },
           {
             "lead": "Cole o texto.",

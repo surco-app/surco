@@ -1003,7 +1003,7 @@
         "steps": [
           {
             "lead": "Rechtsklick auf eine Playlist.",
-            "text": "Wähle „Tracklist einfügen…“. Auf einem Ordner fragt „Neue Playlist aus Tracklist…“ nach dem Namen."
+            "text": "Wähle „Tracklist einfügen…“. Auf einem Ordner fragt „Playlist aus Tracklist…“ nach dem Namen."
           },
           {
             "lead": "Füge den Text ein.",

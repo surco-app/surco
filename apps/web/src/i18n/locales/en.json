@@ -1003,7 +1003,7 @@
         "steps": [
           {
             "lead": "Right-click a playlist.",
-            "text": "Pick “Paste tracklist…”. On a folder, “New playlist from tracklist…” asks for the name."
+            "text": "Pick “Paste tracklist…”. On a folder, “Playlist from tracklist…” asks for the name."
           },
           {
             "lead": "Paste the text.",
