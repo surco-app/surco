@@ -95,9 +95,9 @@ estaban ahí y después suben uno) o al final, y actualiza `ParentID`, `Seq`, `r
 y `updated_at`. Cuando el padre no cambia, es solo la renumeración.
 
 El espejo XML (`rekordboxMasterXml.ts`) guarda `ParentId` por nodo: al cambiar de padre se
-quita la línea del nodo (`withoutNodes`) y se vuelve a poner con el padre nuevo
-(`withPlaylistNode`), con `Timestamp` nuevo. Si el padre no cambia, el XML no se toca (no
-guarda orden).
+reescribe solo ese atributo en la línea del nodo (hermana de `withNodeTimestamp`), y el
+`Timestamp` se renueva como en cualquier edit. Si el padre no cambia, el XML solo renueva
+el `Timestamp` (no guarda orden).
 
 `editProblem` gana la rama de `moveNode` con los rechazos de arriba. `editStamps` lo trata
 como `rename` (sello del nodo). `EDIT_RANK.moveNode = 3`, el de `rename`: después de los
