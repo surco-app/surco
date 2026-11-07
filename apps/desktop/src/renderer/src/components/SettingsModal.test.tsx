@@ -29,7 +29,7 @@ import type { Settings } from '../../../shared/types'
 import i18n from '../i18n'
 import { FIELD_DEFS } from '../lib/fields'
 import { SETTINGS_SEARCH_INDEX } from '../lib/settingsSearchIndex'
-import { SETTINGS_TABS } from '../lib/settingsTabs'
+import { SETTINGS_TABS, type SettingsTab } from '../lib/settingsTabs'
 import { DONATE_URL, SettingsModal } from './SettingsModal'
 
 afterEach(cleanup)
@@ -147,6 +147,12 @@ const settings: Settings = {
   donateNudgeDismissed: false,
   donateNudgeLastShown: '',
   lastSeenChangelogVersion: '',
+}
+
+// Joined tabs sit behind their sidebar row: open the row, then pick the tab in its switcher.
+const openTab = (row: string, tab: string): void => {
+  fireEvent.click(screen.getByTestId(`settings-tab-${row}`))
+  fireEvent.click(screen.getByTestId(`settings-subtab-${tab}`))
 }
 
 function openNaming() {
@@ -599,7 +605,7 @@ describe('SettingsModal destination', () => {
         onSettingsReplaced={() => {}}
       />,
     )
-    fireEvent.click(screen.getByTestId('settings-tab-destination'))
+    openTab('naming', 'destination')
   }
 
   // The single radio choice is what keeps "no copy anywhere" unrepresentable, so the
@@ -801,7 +807,7 @@ describe('SettingsModal stats', () => {
         onSettingsReplaced={() => {}}
       />,
     )
-    fireEvent.click(screen.getByTestId('settings-tab-stats'))
+    openTab('shortcuts', 'stats')
     expect(screen.getByTestId('stats-count')).toHaveTextContent('142')
     expect(screen.getByTestId('stats-time-saved')).toHaveTextContent('one workday')
   })
@@ -818,7 +824,7 @@ describe('SettingsModal stats', () => {
         onSettingsReplaced={() => {}}
       />,
     )
-    fireEvent.click(screen.getByTestId('settings-tab-stats'))
+    openTab('shortcuts', 'stats')
     expect(screen.getByTestId('stats-empty')).toBeInTheDocument()
     expect(screen.queryByTestId('stats-count')).not.toBeInTheDocument()
   })
@@ -837,7 +843,7 @@ describe('SettingsModal stats', () => {
         onSettingsReplaced={() => {}}
       />,
     )
-    fireEvent.click(screen.getByTestId('settings-tab-stats'))
+    openTab('shortcuts', 'stats')
     const donate = screen.getByTestId('stats-donate')
     expect(donate).toHaveAttribute('href', DONATE_URL)
     expect(donate).toHaveAttribute('target', '_blank')
@@ -852,7 +858,7 @@ describe('SettingsModal stats', () => {
         onSettingsReplaced={() => {}}
       />,
     )
-    fireEvent.click(screen.getByTestId('settings-tab-stats'))
+    openTab('shortcuts', 'stats')
     expect(screen.getByTestId('stats-donate')).toHaveAttribute('href', DONATE_URL)
   })
 
@@ -1070,11 +1076,54 @@ describe('SettingsModal advanced', () => {
       />,
     )
     const tabs = screen.getAllByRole('tab').map((t) => t.dataset.testid)
-    expect(tabs.slice(-3)).toEqual([
-      'settings-tab-shortcuts',
-      'settings-tab-stats',
-      'settings-tab-advanced',
-    ])
+    expect(tabs.slice(-2)).toEqual(['settings-tab-shortcuts', 'settings-tab-advanced'])
+  })
+})
+
+describe('SettingsModal grouped tabs', () => {
+  function open(initialTab?: SettingsTab) {
+    render(
+      <SettingsModal
+        settings={settings}
+        onClose={() => {}}
+        onSave={() => {}}
+        onPreviewTheme={() => {}}
+        onSettingsReplaced={() => {}}
+        initialTab={initialTab}
+      />,
+    )
+  }
+
+  // Fifteen sidebar rows were a long list to scan for one setting. The tabs that are read
+  // together share a row (format with processing, naming with the output, shortcuts with
+  // stats, the editor with its sections and fields), so the sidebar is ten short rows and
+  // every tab is still one click away from its switcher.
+  it('lists ten rows in the sidebar, joining the tabs that are read together', () => {
+    open()
+    expect(screen.getAllByRole('tab')).toHaveLength(10)
+    expect(screen.queryByTestId('settings-tab-processing')).toBeNull()
+    expect(screen.getByTestId('settings-tab-conversion')).toHaveTextContent('Audio')
+  })
+
+  it('offers the joined tabs as a switcher above the panel', () => {
+    open()
+    fireEvent.click(screen.getByTestId('settings-tab-conversion'))
+    expect(screen.getByTestId('settings-subtab-conversion')).toHaveAttribute('aria-pressed', 'true')
+    fireEvent.click(screen.getByTestId('settings-subtab-processing'))
+    expect(screen.getByTestId('settings-subtab-processing')).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByTestId('settings-tab-conversion')).toHaveAttribute('aria-selected', 'true')
+  })
+
+  // A link such as the toolbar's stats button names its own tab, which now sits inside a row.
+  it('opens a deep link on its own tab inside the joined row', () => {
+    open('stats')
+    expect(screen.getByTestId('settings-tab-shortcuts')).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByTestId('settings-subtab-stats')).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('shows no switcher on a row that stands alone', () => {
+    open('cues')
+    expect(screen.queryByTestId('settings-subtab-cues')).toBeNull()
   })
 })
 
@@ -1715,7 +1764,8 @@ describe('the DJ software tab', () => {
         onSettingsReplaced={() => {}}
       />,
     )
-    fireEvent.click(await screen.findByTestId('settings-tab-destination'))
+    await screen.findByTestId('settings-tab-naming')
+    openTab('naming', 'destination')
     const output = screen.getByRole('tabpanel')
     expect(output.querySelector('[data-search-id="destination"]')).not.toBeNull()
     expect(output.querySelector('[data-search-id="traktorSync"]')).toBeNull()

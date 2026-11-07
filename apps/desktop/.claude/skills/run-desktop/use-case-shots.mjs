@@ -80,10 +80,21 @@ async function launch(lang) {
   return { app, page }
 }
 
+// Tabs that sit behind another tab's sidebar row, with the row that holds them.
+const ROW_OF = {
+  layout: 'editor',
+  fields: 'editor',
+  processing: 'conversion',
+  destination: 'naming',
+  stats: 'shortcuts',
+}
+
 async function capture(page, lang, c, group, index) {
   const tabId = Object.entries(appLocale(lang).settings.tabs).find(([, v]) => v === group.tab)[0]
   await page.click('[data-testid="open-settings"]')
-  await page.click(`[data-testid="settings-tab-${tabId}"]`)
+  const row = ROW_OF[tabId]
+  if (row) await page.click(`[data-testid="settings-tab-${row}"]`)
+  await page.click(`[data-testid="${row ? 'settings-subtab' : 'settings-tab'}-${tabId}"]`)
   await page.waitForTimeout(400)
   const missing = await page.evaluate(async (settings) => {
     const dialog = document.querySelector('[role="dialog"]')

@@ -1399,6 +1399,12 @@
     }
   },
   "settings": {
+    "entries": {
+      "editor": "エディタ",
+      "conversion": "オーディオ",
+      "naming": "ファイル",
+      "shortcuts": "使い方"
+    },
     "tabs": {
       "general": "一般",
       "search": "ソース",

@@ -1399,6 +1399,12 @@
     }
   },
   "settings": {
+    "entries": {
+      "editor": "Editor",
+      "conversion": "Audio",
+      "naming": "Dateien",
+      "shortcuts": "Nutzung"
+    },
     "tabs": {
       "general": "Allgemein",
       "search": "Quellen",
