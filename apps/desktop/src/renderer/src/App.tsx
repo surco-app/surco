@@ -3248,6 +3248,10 @@ export default function App(): React.JSX.Element {
       closeUsbExport()
       return
     }
+    if (pasteTracklist) {
+      setPasteTracklist(null)
+      return
+    }
     if (review !== null) return
     // A maximized editor section is an overlay layer too: its own listener
     // restores it, and Escape must stop there — falling through would ALSO
@@ -3260,7 +3264,11 @@ export default function App(): React.JSX.Element {
   // Any open modal/overlay also swallows the global shortcuts, or space/j/k/⌘⏎ would act
   // on the list behind the dialog (e.g. start a conversion behind the confirm prompt).
   const overlayOpen =
-    activeModal !== null || copiesOpen !== null || review !== null || usbModal !== null
+    activeModal !== null ||
+    copiesOpen !== null ||
+    review !== null ||
+    usbModal !== null ||
+    pasteTracklist !== null
   overlayOpenRef.current = overlayOpen
 
   useKeyboardShortcuts({

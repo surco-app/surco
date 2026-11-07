@@ -9837,6 +9837,36 @@ describe('paste tracklist from the tree', () => {
     )
   })
 
+  it('closes the tracklist modal on Escape, like every other dialog', async () => {
+    openRekordboxTree()
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+    fireEvent.contextMenu(await screen.findByTestId('source-node-f'))
+    fireEvent.click(screen.getByTestId('source-tree-paste-tracklist'))
+    fireEvent.change(screen.getByTestId('paste-tracklist-text'), {
+      target: { value: 'Jessy - Silent Tears (Extended Mix)' },
+    })
+    fireEvent.keyDown(window, { key: 'Escape' })
+    await waitFor(() =>
+      expect(screen.queryByTestId('paste-tracklist-dialog')).not.toBeInTheDocument(),
+    )
+  })
+
+  it('keeps the global shortcuts off the list while the tracklist modal is open', async () => {
+    openRekordboxTree()
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+    fireEvent.contextMenu(await screen.findByTestId('source-node-f'))
+    fireEvent.keyDown(window, { key: 'k', metaKey: true })
+    await screen.findByTestId('palette-input')
+    fireEvent.keyDown(window, { key: 'Escape' })
+    await waitFor(() => expect(screen.queryByTestId('palette-input')).not.toBeInTheDocument())
+    fireEvent.click(screen.getByTestId('source-tree-paste-tracklist'))
+    fireEvent.keyDown(window, { key: 'k', metaKey: true })
+    expect(screen.queryByTestId('palette-input')).not.toBeInTheDocument()
+    expect(screen.getByTestId('paste-tracklist-dialog')).toBeInTheDocument()
+  })
+
   it('creates the playlist inside the folder first, then adds to the new one', async () => {
     const edit = openRekordboxTree({
       editRekordboxPlaylist: vi
