@@ -12,6 +12,8 @@
     "copy": "Copiar"
   },
   "rename": {
+    "moreFields": "Más campos ({{count}})",
+    "fewerFields": "Menos campos",
     "title": "Generar nombre del archivo",
     "description": "Combina texto y metadatos para generar el nombre del archivo.",
     "apply": "Aplicar"
@@ -1167,6 +1169,11 @@
     }
   },
   "fields": {
+    "groupIdentity": "Básicos",
+    "groupOrder": "Disco y orden",
+    "groupDj": "Para pinchar",
+    "groupCatalog": "Edición y créditos",
+    "groupCustom": "Tus campos",
     "groupFilled_one": "{{count}} con datos",
     "groupFilled_other": "{{count}} con datos",
     "title": "Título",

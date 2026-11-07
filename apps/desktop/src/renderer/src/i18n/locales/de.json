@@ -12,6 +12,8 @@
     "copy": "Kopieren"
   },
   "rename": {
+    "moreFields": "Mehr Felder ({{count}})",
+    "fewerFields": "Weniger Felder",
     "title": "Dateinamen erstellen",
     "description": "Kombiniere Text und Metadaten, um den Dateinamen zu erstellen.",
     "apply": "Anwenden"
@@ -1167,6 +1169,11 @@
     }
   },
   "fields": {
+    "groupIdentity": "Grundlagen",
+    "groupOrder": "Disc und Reihenfolge",
+    "groupDj": "Zum Auflegen",
+    "groupCatalog": "Veröffentlichung und Credits",
+    "groupCustom": "Eigene Felder",
     "groupFilled_one": "{{count}} ausgefüllt",
     "groupFilled_other": "{{count}} ausgefüllt",
     "title": "Titel",

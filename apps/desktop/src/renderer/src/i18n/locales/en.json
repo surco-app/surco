@@ -12,6 +12,8 @@
     "copy": "Copy"
   },
   "rename": {
+    "moreFields": "More fields ({{count}})",
+    "fewerFields": "Fewer fields",
     "title": "Build file name",
     "description": "Combine text and metadata to build the file name.",
     "apply": "Apply"
@@ -1167,6 +1169,11 @@
     }
   },
   "fields": {
+    "groupIdentity": "Basics",
+    "groupOrder": "Disc and order",
+    "groupDj": "For DJing",
+    "groupCatalog": "Release and credits",
+    "groupCustom": "Your fields",
     "groupFilled_one": "{{count}} filled",
     "groupFilled_other": "{{count}} filled",
     "title": "Title",

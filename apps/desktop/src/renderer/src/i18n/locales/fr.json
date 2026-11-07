@@ -12,6 +12,8 @@
     "copy": "Copier"
   },
   "rename": {
+    "moreFields": "Plus de champs ({{count}})",
+    "fewerFields": "Moins de champs",
     "title": "Composer le nom du fichier",
     "description": "Combine du texte et des métadonnées pour composer le nom du fichier.",
     "apply": "Appliquer"
@@ -1167,6 +1169,11 @@
     }
   },
   "fields": {
+    "groupIdentity": "Essentiels",
+    "groupOrder": "Disque et ordre",
+    "groupDj": "Pour mixer",
+    "groupCatalog": "Édition et crédits",
+    "groupCustom": "Tes champs",
     "groupFilled_one": "{{count}} rempli",
     "groupFilled_other": "{{count}} remplis",
     "title": "Titre",
