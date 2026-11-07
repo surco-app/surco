@@ -36,6 +36,13 @@ const AUDIO_INTENTS: AudioIntent[] = ['restore', 'level', 'quality']
 // in Settings — every extra question here delays the first drop of files.
 const AFTER_PROGRAMS = ['format', 'audio', 'search'] as const
 type Step = 'welcome' | 'djLibraries' | (typeof AFTER_PROGRAMS)[number]
+
+const STEP_TITLES: Record<Exclude<Step, 'welcome'>, string> = {
+  djLibraries: 'onboarding.djLibrariesTitle',
+  format: 'onboarding.formatTitle',
+  audio: 'onboarding.audioTitle',
+  search: 'settings.searchProviders',
+}
 const PRESELECTED = new Set<DetectedDjLibrary['id']>(['rekordbox', 'traktor'])
 const WIZARD_DESTINATIONS = ['folder', 'beside', 'appleMusic'] as const
 
@@ -218,6 +225,14 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                 <p className="mt-2 max-w-sm text-sm text-pretty text-fg-dim">
                   {tr('onboarding.welcomeBody')}
                 </p>
+                <ol
+                  data-testid="onboarding-steps"
+                  className="mt-5 flex list-decimal flex-col gap-1.5 pl-5 text-left text-sm text-fg-muted marker:text-fg-faint"
+                >
+                  {STEPS.slice(1).map((id) => (
+                    <li key={id}>{tr(STEP_TITLES[id as Exclude<Step, 'welcome'>])}</li>
+                  ))}
+                </ol>
               </div>
             )}
 
