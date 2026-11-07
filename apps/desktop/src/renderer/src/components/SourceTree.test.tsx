@@ -958,6 +958,25 @@ describe('SourceTree on Serato crates', () => {
     expect(edit.onMove).toHaveBeenCalledWith(CRATES[1], 'Y', null, ['Y'])
   })
 
+  it('sends nothing for a crate dropped back on the crate it sits under, since Serato has no order to change', () => {
+    const edit = setupCrates(PARENT)
+    fireEvent.click(screen.getByTestId('source-node-expand-P'))
+    const dt = dragNode('P%%Q')
+    const parent = screen.getByTestId('source-node-P')
+    over(parent, 14, dt)
+    fireEvent.drop(parent, { dataTransfer: dt })
+    expect(edit.onMove).not.toHaveBeenCalled()
+  })
+
+  it('sends nothing for a root crate dropped on the end of the tree, where it already is', () => {
+    const edit = setupCrates()
+    const dt = dragNode('A')
+    const end = screen.getByTestId('source-tree-drop-end')
+    fireEvent.dragOver(end, { dataTransfer: dt })
+    fireEvent.drop(end, { dataTransfer: dt })
+    expect(edit.onMove).not.toHaveBeenCalled()
+  })
+
   it('confirms a delete of a crate with no subcrates in short words', () => {
     setupCrates()
     fireEvent.contextMenu(screen.getByTestId('source-node-Z'))

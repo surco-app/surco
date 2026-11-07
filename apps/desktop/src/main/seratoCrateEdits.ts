@@ -128,7 +128,7 @@ export function seratoEditFiles(
   if (edit.kind === 'rename' && !caseOnly(id, edit.name.trim()))
     for (const [r, family] of families)
       for (const f of family) files[crateFileOf(r, renamedCrateId(f, id, edit.name.trim()))] = null
-  if (edit.kind === 'moveNode')
+  if (edit.kind === 'moveNode' && movedCrateId(id, edit) !== id)
     for (const [r, family] of families)
       for (const f of family) files[crateFileOf(r, movedCrateId(f, edit))] = null
   return files

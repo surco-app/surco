@@ -210,6 +210,18 @@ describe('moving a crate', () => {
     })
     expect(files[crateFileOf(roots[0], 'D%%B')]).toBeNull()
   })
+
+  it('applies a move to the crate it already sits under without touching a file, since the tree can drop it back where it was', async () => {
+    const { roots, deps, bytes } = twoRoots({ internal: ['A', 'A%%B', 'A%%B%%C'], gig: ['A%%B'] })
+    const edit = moveNode('A%%B', 'A')
+    const files = seratoEditFiles(edit, roots)
+    expect(Object.values(files)).not.toContain(null)
+    expect(await applyOne(editOp(edit, files), deps)).toMatchObject({ applied: true })
+    expect(listCrates(roots[0])).toEqual(['A%%B%%C.crate', 'A%%B.crate', 'A.crate'])
+    expect(listCrates(roots[1])).toEqual(['A%%B.crate'])
+    expect(readFileSync(crateFileOf(roots[0], 'A%%B'))).toEqual(bytes.internal['A%%B'])
+    expect(readFileSync(crateFileOf(roots[0], 'A%%B%%C'))).toEqual(bytes.internal['A%%B%%C'])
+  })
 })
 
 describe('deleting a crate', () => {

@@ -253,7 +253,7 @@ export function SourceTree({
     const next = siblings[index + 1]?.id ?? null
     const samePlace =
       (parent?.id ?? 'root') === target.parentId &&
-      (target.beforeId === dragging || target.beforeId === next)
+      (edit.crates || target.beforeId === dragging || target.beforeId === next)
     if (samePlace) return
     edit.onMove(siblings[index], target.parentId, target.beforeId, target.folders)
     if (target.inside) setOpened((prev) => new Set([...prev, target.parentId]))
