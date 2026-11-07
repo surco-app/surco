@@ -19,7 +19,22 @@ import {
 import { formatFixed } from '../lib/numberFormat'
 import { Tooltip } from './Tooltip'
 
-const GROUP = 'flex shrink-0 items-center gap-1'
+function GridGroup({
+  testid,
+  label,
+  children,
+}: {
+  testid: string
+  label: string
+  children: React.ReactNode
+}): React.JSX.Element {
+  return (
+    <div data-testid={testid} className="flex shrink-0 flex-col gap-1.5">
+      <span className="text-[11px] leading-none text-fg-faint">{label}</span>
+      <div className="flex items-center gap-1">{children}</div>
+    </div>
+  )
+}
 const ICON =
   'press flex h-7 w-8 items-center justify-center rounded-md bg-[var(--color-panel-2)] text-fg-muted transition-colors enabled:hover:bg-[var(--color-hover)] hover:text-fg disabled:opacity-40'
 const MENU_ITEM =
@@ -138,64 +153,81 @@ export function CueGridControls({
   }
 
   return (
-    <div data-testid="cues-grid" aria-disabled={off} className="flex flex-wrap items-center gap-2">
+    <div
+      data-testid="cues-grid"
+      aria-disabled={off}
+      className="flex flex-wrap items-end gap-x-5 gap-y-2"
+    >
       {disabledReason && <Tooltip label={disabledReason} />}
-      <div ref={menuRoot} className="relative">
+      <GridGroup testid="cues-grid-tempo" label={tr('editor.cues.grid.groupTempo')}>
+        <div ref={menuRoot} className="relative">
+          <button
+            type="button"
+            data-testid="cues-grid-bpm"
+            aria-label={tr('editor.cues.grid.bpm')}
+            disabled={off}
+            onClick={toggleMenu}
+            className="press flex h-7 w-[62px] items-center justify-center rounded-md border border-[var(--color-input-border)] bg-[var(--color-field)] text-xs font-semibold tabular-nums text-fg disabled:opacity-40"
+          >
+            {grid ? formatFixed(bpm, 2, i18n.language) : '–'}
+          </button>
+          {menu && (
+            <div
+              data-testid="cues-grid-bpm-menu"
+              className="absolute bottom-9 left-0 z-20 flex w-40 flex-col gap-0.5 rounded-lg bg-[var(--color-panel-2)] p-1.5 shadow-[var(--shadow-float)]"
+            >
+              <label className="flex flex-col gap-1 px-1 pb-1 text-xs text-fg-dim">
+                {tr('editor.cues.grid.bpmHint')}
+                <input
+                  data-testid="cues-grid-bpm-input"
+                  ref={input}
+                  inputMode="decimal"
+                  value={typed}
+                  onChange={(e) => setTyped(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') return
+                    e.stopPropagation()
+                    if (e.key !== 'Enter') return
+                    const value = parseBpm(typed)
+                    fromMenu(value === null ? null : retempo(value))
+                  }}
+                  className="h-7 rounded-md border border-[var(--color-input-border)] bg-[var(--color-field)] px-2 text-xs tabular-nums text-fg"
+                />
+              </label>
+              <button
+                type="button"
+                data-testid="cues-grid-double"
+                disabled={bpm * 2 > GRID_BPM_MAX}
+                onClick={() => fromMenu(scale(2))}
+                className={MENU_ITEM}
+              >
+                {tr('editor.cues.grid.double')}
+              </button>
+              <button
+                type="button"
+                data-testid="cues-grid-half"
+                disabled={bpm / 2 < GRID_BPM_MIN}
+                onClick={() => fromMenu(scale(0.5))}
+                className={MENU_ITEM}
+              >
+                {tr('editor.cues.grid.half')}
+              </button>
+            </div>
+          )}
+        </div>
         <button
           type="button"
-          data-testid="cues-grid-bpm"
-          aria-label={tr('editor.cues.grid.bpm')}
-          disabled={off}
-          onClick={toggleMenu}
-          className="press flex h-7 w-[62px] items-center justify-center rounded-md border border-[var(--color-input-border)] bg-[var(--color-field)] text-xs font-semibold tabular-nums text-fg disabled:opacity-40"
+          data-testid="cues-grid-auto"
+          data-needs-fix={needsFix && !off ? 'true' : undefined}
+          disabled={off || fit === null}
+          onClick={() => grid && fit && onFit(fitGrid(grid, fit, playheadMs))}
+          className="press flex h-7 items-center rounded-md border border-[var(--color-line-strong)] px-2 text-xs font-medium text-fg-muted transition-colors hover:bg-[var(--color-hover)] disabled:opacity-40 data-[needs-fix=true]:border-[var(--color-accent)] data-[needs-fix=true]:bg-[var(--color-accent)] data-[needs-fix=true]:font-semibold data-[needs-fix=true]:text-[var(--color-on-accent)]"
         >
-          {grid ? formatFixed(bpm, 2, i18n.language) : '–'}
+          {!disabledReason && <Tooltip label={tr('editor.cues.grid.autoHint')} />}
+          {tr('editor.cues.grid.auto')}
         </button>
-        {menu && (
-          <div
-            data-testid="cues-grid-bpm-menu"
-            className="absolute bottom-9 left-0 z-20 flex w-40 flex-col gap-0.5 rounded-lg bg-[var(--color-panel-2)] p-1.5 shadow-[var(--shadow-float)]"
-          >
-            <label className="flex flex-col gap-1 px-1 pb-1 text-xs text-fg-dim">
-              {tr('editor.cues.grid.bpmHint')}
-              <input
-                data-testid="cues-grid-bpm-input"
-                ref={input}
-                inputMode="decimal"
-                value={typed}
-                onChange={(e) => setTyped(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Escape') return
-                  e.stopPropagation()
-                  if (e.key !== 'Enter') return
-                  const value = parseBpm(typed)
-                  fromMenu(value === null ? null : retempo(value))
-                }}
-                className="h-7 rounded-md border border-[var(--color-input-border)] bg-[var(--color-field)] px-2 text-xs tabular-nums text-fg"
-              />
-            </label>
-            <button
-              type="button"
-              data-testid="cues-grid-double"
-              disabled={bpm * 2 > GRID_BPM_MAX}
-              onClick={() => fromMenu(scale(2))}
-              className={MENU_ITEM}
-            >
-              {tr('editor.cues.grid.double')}
-            </button>
-            <button
-              type="button"
-              data-testid="cues-grid-half"
-              disabled={bpm / 2 < GRID_BPM_MIN}
-              onClick={() => fromMenu(scale(0.5))}
-              className={MENU_ITEM}
-            >
-              {tr('editor.cues.grid.half')}
-            </button>
-          </div>
-        )}
-      </div>
-      <div data-testid="cues-grid-move" className={GROUP}>
+      </GridGroup>
+      <GridGroup testid="cues-grid-move" label={tr('editor.cues.grid.groupMove')}>
         <button
           type="button"
           data-testid="cues-grid-left"
@@ -218,8 +250,8 @@ export function CueGridControls({
           {!disabledReason && <Tooltip label={tr('editor.cues.grid.right')} />}
           <Bars right="out" />
         </button>
-      </div>
-      <div data-testid="cues-grid-width" className={GROUP}>
+      </GridGroup>
+      <GridGroup testid="cues-grid-width" label={tr('editor.cues.grid.groupWidth')}>
         <button
           type="button"
           data-testid="cues-grid-widen"
@@ -264,8 +296,8 @@ export function CueGridControls({
           {!disabledReason && <Tooltip label={tr('editor.cues.grid.half')} />}
           <Bars times="×½" />
         </button>
-      </div>
-      <div data-testid="cues-grid-mark" className={GROUP}>
+      </GridGroup>
+      <GridGroup testid="cues-grid-mark" label={tr('editor.cues.grid.groupMark')}>
         <button
           type="button"
           data-testid="cues-grid-downbeat"
@@ -304,18 +336,7 @@ export function CueGridControls({
             />
           </svg>
         </button>
-      </div>
-      <button
-        type="button"
-        data-testid="cues-grid-auto"
-        data-needs-fix={needsFix && !off ? 'true' : undefined}
-        disabled={off || fit === null}
-        onClick={() => grid && fit && onFit(fitGrid(grid, fit, playheadMs))}
-        className="press ml-1 flex h-7 items-center rounded-md border border-[var(--color-line-strong)] px-2 text-xs font-medium text-fg-muted transition-colors hover:bg-[var(--color-hover)] disabled:opacity-40 data-[needs-fix=true]:border-[var(--color-accent)] data-[needs-fix=true]:bg-[var(--color-accent)] data-[needs-fix=true]:font-semibold data-[needs-fix=true]:text-[var(--color-on-accent)]"
-      >
-        {!disabledReason && <Tooltip label={tr('editor.cues.grid.autoHint')} />}
-        {tr('editor.cues.grid.auto')}
-      </button>
+      </GridGroup>
     </div>
   )
 }

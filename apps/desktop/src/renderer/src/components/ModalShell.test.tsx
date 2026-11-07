@@ -192,3 +192,15 @@ describe('ModalShell exit', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 })
+
+describe('ModalShell depth', () => {
+  it('lifts every dialog above the page with the modal shadow, deeper than a menu would be', () => {
+    render(
+      <ModalShell onClose={() => {}} backdropTestId="depth-backdrop" className="w-80">
+        <p>body</p>
+      </ModalShell>,
+    )
+    expect(screen.getByRole('dialog')).toHaveClass('shadow-modal')
+    expect(screen.getByRole('dialog')).not.toHaveClass('shadow-float')
+  })
+})

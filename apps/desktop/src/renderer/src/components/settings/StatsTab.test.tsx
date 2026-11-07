@@ -166,6 +166,16 @@ describe('StatsTab', () => {
     expect(hoverTooltip(count)).toEqual('1234')
   })
 
+  it('tightens the tracking of the big figures, which read too loose as they grow', () => {
+    render(
+      <StatsTab
+        settings={withStats({ conversionCount: 29215, stats: { ...zeroStats, imported: 3071 } })}
+      />,
+    )
+    expect(screen.getByTestId('stats-count')).toHaveClass('tracking-[-0.035em]')
+    expect(screen.getByText('3,071')).toHaveClass('tracking-[-0.02em]')
+  })
+
   // A five-digit lifetime count is the tab's headline; ungrouped it reads as raw output.
   it('groups the thousands of the counters', () => {
     render(

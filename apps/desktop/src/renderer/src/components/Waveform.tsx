@@ -22,6 +22,8 @@ export function Waveform({
   active,
   audioDurationSec = 0,
   playheadSec: playheadProp = null,
+  playing = false,
+  clock,
   onScrub,
 }: {
   inputPath: string
@@ -31,14 +33,19 @@ export function Waveform({
   // element's ~4Hz timeupdate). This used to be a second listener on the same element,
   // so every tick woke two components to compute the same number.
   playheadSec?: number | null
+  playing?: boolean
+  clock?: () => number
   onScrub: (seconds: number) => void
 }): React.JSX.Element | null {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const playedCanvasRef = useRef<HTMLCanvasElement>(null)
+  const playheadCarrierRef = useRef<HTMLDivElement>(null)
   const [hoverRatio, setHoverRatio] = useState<number | null>(null)
+  const [scrubbing, setScrubbing] = useState(false)
   // Only shown while this strip is the one streaming; any other source (or a closed
   // player) hides the playhead rather than leaving it parked at a stale position.
-  const playheadSec = active ? playheadProp : null
+  const framing = active && clock !== undefined && (playing || scrubbing)
+  const playheadSec = active ? (framing ? clock() : playheadProp) : null
 
   const { data: wave, isFetching } = useWaveform(inputPath, true)
   // The strip's geometry follows the playback clock so a DJ can scrub the instant
@@ -47,6 +54,21 @@ export function Waveform({
   // duration yet (e.g. before metadata loads, or in tests with no <audio>).
   const durationSec = audioDurationSec || wave?.durationSec || 0
   const loading = isFetching && !wave
+
+  useEffect(() => {
+    if (!framing || !clock || durationSec === 0) return
+    let id = 0
+    const tick = (): void => {
+      const pct = (clock() / durationSec) * 100
+      if (playedCanvasRef.current)
+        playedCanvasRef.current.style.clipPath = `inset(0 ${100 - pct}% 0 0)`
+      if (playheadCarrierRef.current)
+        playheadCarrierRef.current.style.transform = `translateX(${pct}%)`
+      id = requestAnimationFrame(tick)
+    }
+    id = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(id)
+  }, [framing, clock, durationSec])
 
   // The bars take the theme accent rather than drawWaveform's fixed blue, which washed
   // out against the light theme's pale panels. The theme is written one-way to
@@ -113,12 +135,16 @@ export function Waveform({
       className="relative cursor-pointer"
       onPointerDown={(e) => {
         e.currentTarget.setPointerCapture(e.pointerId)
+        setScrubbing(true)
         scrubFrom(e.clientX, e.currentTarget)
       }}
       onPointerMove={(e) => {
         setHoverRatio(ratioFrom(e.clientX, e.currentTarget))
         if (e.currentTarget.hasPointerCapture(e.pointerId)) scrubFrom(e.clientX, e.currentTarget)
       }}
+      onPointerUp={() => setScrubbing(false)}
+      onPointerCancel={() => setScrubbing(false)}
+      onLostPointerCapture={() => setScrubbing(false)}
       onPointerLeave={() => setHoverRatio(null)}
     >
       {/* The wave is two stacked copies of the same raster, each drawn once: the dimmed
@@ -148,6 +174,7 @@ export function Waveform({
         // forces layout + paint on every ~4 Hz timeupdate; a transform stays on the
         // compositor, so playback doesn't repaint the strip while the list scrolls.
         <div
+          ref={playheadCarrierRef}
           className="pointer-events-none absolute inset-0"
           style={{ transform: `translateX(${pct(playheadSec)}%)` }}
         >

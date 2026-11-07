@@ -5,6 +5,7 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { WaveformResult } from '../../../shared/types'
+import { resetEditorSections, useMaximizedSection } from '../hooks/useEditorSections'
 import i18n from '../i18n'
 import { stopAuditionsOf } from '../lib/auditionHolds'
 import { resetEditorPlace } from '../lib/editorPlace'
@@ -27,7 +28,10 @@ vi.mock('../lib/waveform', async (importOriginal) => ({
   drawWaveform: vi.fn(),
 }))
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  resetEditorSections()
+})
 
 // 100 s track with 10 s of surface noise on each side of the music: the detector
 // (pad 0.3 s) should suggest cutting ~9.7 s from the start and ~9.7 s from the end.
@@ -100,6 +104,28 @@ function section(over: Partial<React.ComponentProps<typeof TrimSection>> = {}): 
 }
 
 describe('TrimSection', () => {
+  it('lets the lanes grow with the window once the section is maximized, redrawn at that height', async () => {
+    function Maximize(): React.JSX.Element {
+      const { setMaximized } = useMaximizedSection()
+      return (
+        <button type="button" data-testid="maximize-trim" onClick={() => setMaximized('trim')} />
+      )
+    }
+    render(
+      <>
+        <Maximize />
+        {section({ open: true })}
+      </>,
+    )
+    const lane = await screen.findByTestId('trim-lane-start', undefined, { timeout: 3000 })
+    expect(lane).toHaveAttribute('height', '96')
+    expect(lane).toHaveClass('h-24')
+    act(() => screen.getByTestId('maximize-trim').click())
+    const tall = screen.getByTestId('trim-lane-start')
+    expect(Number(tall.getAttribute('height'))).toBeGreaterThan(96)
+    expect(tall).not.toHaveClass('h-24')
+  })
+
   it('draws a wave already decoded on disk before its live probe answers', async () => {
     const api = window as unknown as {
       api: { waveform: unknown; peekAnalysis: unknown; cancelAnalysis: unknown }

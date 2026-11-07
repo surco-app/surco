@@ -28,6 +28,11 @@ describe('DonateNudgeModal', () => {
     expect(screen.getByTestId('donate-nudge-time')).toHaveTextContent('one workday')
   })
 
+  it('tightens the tracking of the headline count', () => {
+    render(<DonateNudgeModal conversionCount={120} onClose={vi.fn()} />)
+    expect(screen.getByTestId('donate-nudge-count')).toHaveClass('tracking-[-0.035em]')
+  })
+
   it('links the donate button to the PayPal page in an external tab', () => {
     render(<DonateNudgeModal conversionCount={10} onClose={vi.fn()} />)
     const cta = screen.getByTestId('donate-nudge-cta')

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { WaveformResult } from '../../../shared/types'
@@ -249,5 +249,133 @@ describe('Waveform', () => {
     expect(strip).not.toBeNull()
     expect(strip).toHaveClass('h-12')
     expect(strip).toHaveAttribute('height', '96')
+  })
+  describe('frame-rate playhead', () => {
+    let queue: Map<number, (t: number) => void>
+    let cancelled: number[]
+    let nextId: number
+
+    beforeEach(() => {
+      queue = new Map()
+      cancelled = []
+      nextId = 1
+      vi.stubGlobal('requestAnimationFrame', (cb: (t: number) => void) => {
+        queue.set(nextId, cb)
+        return nextId++
+      })
+      vi.stubGlobal('cancelAnimationFrame', (id: number) => {
+        cancelled.push(id)
+        queue.delete(id)
+      })
+    })
+
+    afterEach(() => {
+      vi.unstubAllGlobals()
+    })
+
+    function nextFrame(): void {
+      const queued = [...queue.values()]
+      queue.clear()
+      for (const cb of queued) cb(0)
+    }
+
+    it('follows the audio clock on every frame while playing, not the 4 Hz tick', async () => {
+      setWaveform(wave)
+      let now = 15
+      renderWithQuery(
+        <Waveform
+          inputPath="/m/a.wav"
+          active
+          playing
+          clock={() => now}
+          playheadSec={15}
+          onScrub={vi.fn()}
+        />,
+      )
+      const playhead = await screen.findByTestId('waveform-playhead')
+      now = 18
+      act(() => nextFrame())
+      expect(playhead.parentElement).toHaveStyle({ transform: 'translateX(30%)' })
+      expect(screen.getByTestId('waveform-played')).toHaveStyle({ clipPath: 'inset(0 70% 0 0)' })
+      now = 24
+      act(() => nextFrame())
+      expect(playhead.parentElement).toHaveStyle({ transform: 'translateX(40%)' })
+    })
+
+    it('stops asking for frames once playback is paused so an idle card costs nothing', async () => {
+      setWaveform(wave)
+      const { rerender } = renderWithQuery(
+        <Waveform
+          inputPath="/m/a.wav"
+          active
+          playing
+          clock={() => 10}
+          playheadSec={10}
+          onScrub={vi.fn()}
+        />,
+      )
+      await screen.findByTestId('waveform-playhead')
+      expect(queue.size).toBeGreaterThan(0)
+      rerender(
+        <QueryClientProvider client={createQueryClient()}>
+          <Waveform
+            inputPath="/m/a.wav"
+            active
+            playing={false}
+            clock={() => 10}
+            playheadSec={10}
+            onScrub={vi.fn()}
+          />
+        </QueryClientProvider>,
+      )
+      expect(cancelled.length).toBeGreaterThan(0)
+    })
+
+    it('keeps the playhead glued to the pointer while scrubbing a paused track', async () => {
+      setWaveform(wave)
+      let now = 0
+      const onScrub = vi.fn((seconds: number) => {
+        now = seconds
+      })
+      renderWithQuery(
+        <Waveform
+          inputPath="/m/a.wav"
+          active
+          playing={false}
+          clock={() => now}
+          playheadSec={0}
+          onScrub={onScrub}
+        />,
+      )
+      const playhead = await screen.findByTestId('waveform-playhead')
+      const strip = screen.getByTestId('waveform')
+      strip.getBoundingClientRect = () => ({ left: 0, width: 200 }) as DOMRect
+      fireEvent.pointerDown(strip, { clientX: 100, pointerId: 1 })
+      act(() => nextFrame())
+      expect(playhead.parentElement).toHaveStyle({ transform: 'translateX(50%)' })
+      fireEvent.pointerMove(strip, { clientX: 150, pointerId: 1 })
+      act(() => nextFrame())
+      expect(playhead.parentElement).toHaveStyle({ transform: 'translateX(75%)' })
+    })
+
+    it('does not keep a frame loop running after the strip is released', async () => {
+      setWaveform(wave)
+      renderWithQuery(
+        <Waveform
+          inputPath="/m/a.wav"
+          active
+          playing={false}
+          clock={() => 0}
+          playheadSec={0}
+          onScrub={vi.fn()}
+        />,
+      )
+      const strip = await screen.findByTestId('waveform')
+      strip.getBoundingClientRect = () => ({ left: 0, width: 200 }) as DOMRect
+      fireEvent.pointerDown(strip, { clientX: 10, pointerId: 1 })
+      fireEvent.pointerUp(strip, { pointerId: 1 })
+      act(() => nextFrame())
+      expect(queue.size).toBe(0)
+    })
   })
 })
