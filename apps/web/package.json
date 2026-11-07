@@ -17,10 +17,10 @@
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
     "canvas-confetti": "^1.9.4",
-    "i18next": "^26.5.11",
+    "i18next": "^26.7.1",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
-    "react-i18next": "^17.1.9",
+    "react-i18next": "^17.1.11",
     "react-router-dom": "^6.30.6",
     "vite-react-ssg": "^0.9.2"
   },
