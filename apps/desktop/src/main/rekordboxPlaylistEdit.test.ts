@@ -11,6 +11,7 @@ import {
   editProblem,
   insertSeparator,
   moveInPlaylist,
+  moveNode,
   nodeSubtree,
   randomPlaylistId,
   removeFromPlaylist,
@@ -596,8 +597,54 @@ describe('editProblem for rename and delete', () => {
     expect(editProblem(db, { kind: 'delete', playlistId: '9999' })).toBe('stale')
   })
 
+  it('flags a node move whose parent is inside the node or whose target is not there, before rekordbox is closed', () => {
+    expect(editProblem(db, { kind: 'moveNode', playlistId: '1000', parentId: '2000', beforeId: null })).toBe('stale')
+    expect(editProblem(db, { kind: 'moveNode', playlistId: '3000', parentId: '1000', beforeId: '9999' })).toBe('stale')
+    expect(editProblem(db, { kind: 'moveNode', playlistId: '3000', parentId: '1000', beforeId: '2000' })).toBeNull()
+    expect(editProblem(db, { kind: 'moveNode', playlistId: '3000', parentId: 'root', beforeId: null })).toBeNull()
+  })
+
   it('passes a folder and a playlist', () => {
     expect(editProblem(db, { kind: 'rename', playlistId: '1000', name: 'X' })).toBeNull()
     expect(editProblem(db, { kind: 'delete', playlistId: '3000' })).toBeNull()
+  })
+})
+
+describe('moveNode', () => {
+  beforeEach(async () => {
+    db.close()
+    db = await openFixture(NESTED)
+  })
+
+  it('moves a playlist into a folder before the sibling it was dropped on, renumbering both parents', () => {
+    moveNode(db, '3000', '1000', '2000', ctx)
+    expect(live('3000')).toMatchObject({ Seq: 1, usn: 501, updated_at: STAMP })
+    expect(db.prepare('SELECT ParentID FROM djmdPlaylist WHERE ID = ?').get('3000')).toEqual({ ParentID: '1000' })
+    expect(live('2000')?.Seq).toBe(2)
+    expect(live('1100')?.Seq).toBe(3)
+    expect(live('4000')?.Seq).toBe(2)
+  })
+
+  it('moves a folder to the end of the root with everything inside it, closing the gap it left', () => {
+    moveNode(db, '1000', 'root', null, ctx)
+    expect(live('1000')?.Seq).toBe(3)
+    expect(live('3000')?.Seq).toBe(1)
+    expect(live('4000')?.Seq).toBe(2)
+    expect(nodeSubtree(db, '1000').sort()).toEqual(['1000', '1100', '1110', '2000'])
+  })
+
+  it('reorders among the same siblings without touching other parents', () => {
+    moveNode(db, '1100', '1000', '2000', ctx)
+    expect(live('1100')?.Seq).toBe(1)
+    expect(live('2000')?.Seq).toBe(2)
+    expect(live('3000')?.Seq).toBe(2)
+  })
+
+  it('refuses a parent inside the moved folder, a playlist as parent, a target that is not a child of the parent, and a node that is gone', () => {
+    expect(() => moveNode(db, '1000', '1100', null, ctx)).toThrow(EditRefused)
+    expect(() => moveNode(db, '1000', '1000', null, ctx)).toThrow(EditRefused)
+    expect(() => moveNode(db, '3000', '2000', null, ctx)).toThrow(EditRefused)
+    expect(() => moveNode(db, '2000', '1000', '3000', ctx)).toThrow(EditRefused)
+    expect(() => moveNode(db, '9999', 'root', null, ctx)).toThrow(EditRefused)
   })
 })
