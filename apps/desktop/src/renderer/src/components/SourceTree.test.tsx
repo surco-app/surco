@@ -8,7 +8,7 @@ import { RECENTLY_ADDED_ID } from '../../../shared/recentlyAdded'
 import type { SourceNode } from '../../../shared/types'
 import i18n from '../i18n'
 import type { NewPlaylist } from '../lib/commands'
-import { clearDraggedRows, setDraggedRows } from '../lib/reorderDrag'
+import { clearDraggedRows, setDraggedRows, TREE_NODE_TYPE } from '../lib/reorderDrag'
 import { fakeDataTransfer, installDragEvent } from '../test/drag'
 import { SourceTree } from './SourceTree'
 
@@ -38,6 +38,7 @@ function setup(selectedId: string | null = null, editable = false, nodes = NODES
     onRename: vi.fn(),
     onDelete: vi.fn(),
     onPasteTracklist: vi.fn(),
+    onMove: vi.fn(),
   }
   const onOuterDrop = vi.fn()
   render(
@@ -1011,5 +1012,118 @@ describe('SourceTree paste tracklist', () => {
     )
     openMenu('house')
     expect(screen.queryByTestId('source-tree-paste-tracklist')).toBeNull()
+  })
+})
+
+describe('SourceTree dragging nodes', () => {
+  const editOnly = {
+    onCreate: vi.fn(),
+    onDropTracks: vi.fn(),
+    onRename: vi.fn(),
+    onDelete: vi.fn(),
+    onMove: vi.fn(),
+  }
+  const draw = (nodes: SourceNode[], fixed?: (n: SourceNode) => 'locked' | 'tracks-only' | null) =>
+    render(
+      <SourceTree
+        width={236}
+        title="Traktor"
+        source="traktor"
+        nodes={nodes}
+        failed={false}
+        selectedId={null}
+        onSelect={vi.fn()}
+        edit={editOnly}
+        fixed={fixed}
+      />,
+    )
+  const house = NODES[2]
+
+  it('lets playlists and folders be dragged where the tree can be edited, and nothing where it cannot', () => {
+    setup(null, true)
+    expect(screen.getByTestId('source-node-house')).toHaveAttribute('draggable', 'true')
+    expect(screen.getByTestId('source-node-bases')).toHaveAttribute('draggable', 'true')
+    cleanup()
+    setup(null, false)
+    expect(screen.getByTestId('source-node-house')).not.toHaveAttribute('draggable', 'true')
+  })
+
+  it('does not drag while the edit has no way to move', () => {
+    const { onMove: _, ...withoutMove } = editOnly
+    render(
+      <SourceTree
+        width={236}
+        title="rekordbox"
+        source="rekordbox"
+        nodes={NODES}
+        failed={false}
+        selectedId={null}
+        onSelect={vi.fn()}
+        edit={withoutMove}
+      />,
+    )
+    expect(screen.getByTestId('source-node-house')).not.toHaveAttribute('draggable', 'true')
+  })
+
+  it('never drags Recently added or All tracks', () => {
+    const recent: SourceNode = { id: RECENTLY_ADDED_ID, name: 'Recent', kind: 'playlist', count: 1 }
+    const all: SourceNode = { id: ALL_TRACKS_ID, name: 'All', kind: 'playlist', count: 1 }
+    draw([recent, all, house])
+    expect(screen.getByTestId(`source-node-${RECENTLY_ADDED_ID}`)).not.toHaveAttribute(
+      'draggable',
+      'true',
+    )
+    expect(screen.getByTestId(`source-node-${ALL_TRACKS_ID}`)).not.toHaveAttribute(
+      'draggable',
+      'true',
+    )
+    expect(screen.getByTestId('source-node-house')).toHaveAttribute('draggable', 'true')
+  })
+
+  it('never drags Traktor’s own playlists, locked or tracks-only', () => {
+    const prep: SourceNode = { id: 'prep', name: 'Preparation', kind: 'playlist', count: 0 }
+    const hist: SourceNode = { id: 'hist', name: 'HISTORY', kind: 'playlist', count: 0 }
+    draw([prep, hist, house], (n) =>
+      n.id === 'hist' ? 'locked' : n.id === 'prep' ? 'tracks-only' : null,
+    )
+    expect(screen.getByTestId('source-node-prep')).not.toHaveAttribute('draggable', 'true')
+    expect(screen.getByTestId('source-node-hist')).not.toHaveAttribute('draggable', 'true')
+    expect(screen.getByTestId('source-node-house')).toHaveAttribute('draggable', 'true')
+  })
+
+  it('never drags a pending node', () => {
+    const pending: SourceNode = { id: 'pending:x', name: 'New', kind: 'playlist', count: 0 }
+    draw([pending, house])
+    expect(screen.getByTestId('source-node-pending:x')).not.toHaveAttribute('draggable', 'true')
+  })
+
+  it('never drags a search hit', () => {
+    setup(null, true)
+    fireEvent.change(screen.getByTestId('source-tree-search'), { target: { value: 'House' } })
+    expect(screen.getByTestId('source-node-house')).not.toHaveAttribute('draggable', 'true')
+  })
+
+  it('carries the node id under its own type and marks the row while it is dragged', () => {
+    setup(null, true)
+    const row = screen.getByTestId('source-node-house')
+    const dt = fakeDataTransfer()
+    fireEvent.dragStart(row, { dataTransfer: dt })
+    expect(dt.getData(TREE_NODE_TYPE)).toBe('house')
+    expect(dt.effectAllowed).toBe('move')
+    expect(row).toHaveAttribute('data-dragging')
+    fireEvent.dragEnd(row, { dataTransfer: dt })
+    expect(row).not.toHaveAttribute('data-dragging')
+  })
+
+  it('keeps a pending node inert: no selection, no menu, no track drop', () => {
+    const pending: SourceNode = { id: 'pending:x', name: 'New', kind: 'playlist', count: 0 }
+    const onSelect = setup(null, true, [...NODES, pending])
+    const row = screen.getByTestId('source-node-pending:x')
+    fireEvent.click(row)
+    expect(onSelect).not.toHaveBeenCalled()
+    fireEvent.contextMenu(row)
+    expect(screen.queryByTestId('source-tree-menu')).toBeNull()
+    fireEvent.dragOver(row, { dataTransfer: files('a.wav') })
+    expect(row).not.toHaveAttribute('data-drop-target')
   })
 })

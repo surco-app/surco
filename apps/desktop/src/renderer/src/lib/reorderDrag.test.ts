@@ -4,9 +4,11 @@ import {
   clearDraggedRows,
   draggedRows,
   isReorderDrag,
+  isTreeNodeDrag,
   ownRowsDropped,
   REORDER_TYPE,
   setDraggedRows,
+  TREE_NODE_TYPE,
 } from './reorderDrag'
 
 afterEach(clearDraggedRows)
@@ -110,5 +112,15 @@ describe('ownRowsDropped without files', () => {
   it('does not take a link or text drag as the dragged rows', () => {
     setDraggedRows(['a'])
     expect(ownRowsDropped(drop(['text/uri-list', 'text/plain']), () => undefined)).toBeNull()
+  })
+})
+
+describe('isTreeNodeDrag', () => {
+  it('knows a tree node drag by its own type and never confuses it with a separator reorder', () => {
+    const drag = (types: string[]) => ({ dataTransfer: { types } as unknown as DataTransfer })
+    expect(isTreeNodeDrag(drag([TREE_NODE_TYPE]))).toBe(true)
+    expect(isReorderDrag(drag([TREE_NODE_TYPE]))).toBe(false)
+    expect(isTreeNodeDrag(drag(['Files']))).toBe(false)
+    expect(isTreeNodeDrag({})).toBe(false)
   })
 })

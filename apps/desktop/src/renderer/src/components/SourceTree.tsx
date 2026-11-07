@@ -15,8 +15,8 @@ import { ALL_TRACKS_ID } from '../../../shared/allTracks'
 import { RECENTLY_ADDED_ID } from '../../../shared/recentlyAdded'
 import type { PlaylistSource, SourceNode } from '../../../shared/types'
 import type { NewPlaylist } from '../lib/commands'
-import { subtreeCounts } from '../lib/playlistEdits'
-import { carriesOnlyFiles, draggedRows } from '../lib/reorderDrag'
+import { isPendingNode, subtreeCounts } from '../lib/playlistEdits'
+import { carriesOnlyFiles, draggedRows, TREE_NODE_TYPE } from '../lib/reorderDrag'
 import { ConfirmDialog } from './ConfirmDialog'
 import { ModalExit } from './ModalShell'
 import { Tooltip } from './Tooltip'
@@ -81,6 +81,12 @@ export function SourceTree({
     onRename: (node: SourceNode, name: string) => void
     onDelete: (node: SourceNode) => void
     onPasteTracklist?: (node: SourceNode, create: boolean) => void
+    onMove?: (
+      node: SourceNode,
+      parentId: string,
+      beforeId: string | null,
+      folders: string[],
+    ) => void
     crates?: true
   }
   // Playlists the library keeps for itself (Traktor's Preparation, HISTORY…): 'tracks-only'
@@ -218,6 +224,7 @@ export function SourceTree({
   // Which playlist a drag of tracks is over, and how many it carries: the list's own rows
   // when a drag from the list is in progress, otherwise the files of a drag from Finder.
   const [dropOn, setDropOn] = useState<{ id: string; count: number } | null>(null)
+  const [dragging, setDragging] = useState<string | null>(null)
   const carriesTracks = (e: React.DragEvent): boolean =>
     e.dataTransfer.types.includes('Files') || (draggedRows() !== null && carriesOnlyFiles(e))
   // Files the drag shows are what lands, so a stale record never inflates the count; the
@@ -261,8 +268,17 @@ export function SourceTree({
     const expandable = isFolder || parentCrate
     const recent = node.id === RECENTLY_ADDED_ID
     const all = node.id === ALL_TRACKS_ID
-    const nodeEdit = recent || all ? undefined : edit
+    const pendingNode = isPendingNode(node.id)
+    const nodeEdit = recent || all || pendingNode ? undefined : edit
     const fixedAs = fixed?.(node) ?? null
+    const canDrag =
+      Boolean(edit?.onMove) &&
+      !hits &&
+      !recent &&
+      !all &&
+      fixedAs === null &&
+      !pendingNode &&
+      renaming !== node.id
     const dropEdit = fixedAs === 'locked' ? undefined : nodeEdit
     const menuEdit = fixedAs === null ? nodeEdit : undefined
     const pasteOnly = fixedAs === 'tracks-only' && nodeEdit?.onPasteTracklist ? nodeEdit : undefined
@@ -307,7 +323,20 @@ export function SourceTree({
             data-testid={`source-node-${node.id}`}
             aria-expanded={isFolder ? open : undefined}
             aria-current={selected || undefined}
-            onClick={() => (isFolder ? toggle(node.id) : onSelect(node, folders))}
+            onClick={() => {
+              if (pendingNode) return
+              if (isFolder) toggle(node.id)
+              else onSelect(node, folders)
+            }}
+            draggable={canDrag || undefined}
+            onDragStart={(e) => {
+              if (!canDrag) return
+              e.dataTransfer.effectAllowed = 'move'
+              e.dataTransfer.setData(TREE_NODE_TYPE, node.id)
+              setDragging(node.id)
+            }}
+            onDragEnd={() => setDragging(null)}
+            data-dragging={dragging === node.id || undefined}
             onContextMenu={(e) => {
               if (!menuEdit && !pasteOnly) return
               e.preventDefault()
@@ -326,7 +355,7 @@ export function SourceTree({
               selected
                 ? 'bg-[var(--color-row-selected)] text-[var(--color-on-row-selected)]'
                 : `${isFolder ? 'text-fg' : 'text-fg-muted'} hover:bg-[var(--color-hover)]`
-            } ${isFolder ? 'font-medium' : ''} ${
+            } ${isFolder ? 'font-medium' : ''} ${dragging === node.id ? 'opacity-50' : ''} ${
               dropOn?.id === node.id
                 ? 'outline-dashed outline-1 -outline-offset-1 outline-[var(--color-accent)]'
                 : ''
