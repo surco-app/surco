@@ -860,6 +860,7 @@
     "deriveFromName": "Rellenar del nombre",
     "deriveFromNameHint": "Rellena los metadatos a partir del nombre del archivo",
     "clearMeta": "Borrar metadatos",
+    "clearMetaShort": "Borrar",
     "clearMetaHint": "Vacía todos los campos de metadatos",
     "copyFilename": "Copiar nombre de archivo",
     "copyFilenameHint": "Copia el nombre del archivo al portapapeles",

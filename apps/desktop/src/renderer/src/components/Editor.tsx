@@ -116,6 +116,7 @@ import type { InsertSource } from './FieldInsertMenu'
 import { ForeignTagsInspector } from './ForeignTagsInspector'
 import { LimiterGlimpse } from './LimiterGlimpse'
 import { MetadataForm } from './MetadataForm'
+import { type MetaMenuItem, MetaMoreMenu } from './MetaMoreMenu'
 import { NormalizeSection } from './NormalizeSection'
 import { OutputNameSection } from './OutputNameSection'
 import { PropertiesSection } from './PropertiesSection'
@@ -1254,124 +1255,102 @@ export const Editor = memo(function Editor({
   )
 
   // One-click "empty every tag", set apart at the end of the header so a reach for fill
-  // never lands on it. Icon-only (like the output-name pencil) because the Apple Music
-  // badge already crowds the header; the tooltip and aria-label carry the name.
+  // never lands on it. Named in the header so the eraser is never taken for a neighbour.
   const clearButton = (
     <button
       type="button"
       data-testid="clear-meta-btn"
       aria-label={tr('editor.clearMeta')}
       onClick={clearAllMeta}
-      className="press group relative flex h-7 w-7 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-hover)] hover:text-danger"
+      className="press group relative flex h-7 items-center gap-1.5 rounded-md px-2 text-xs text-fg-dim hover:bg-[var(--color-hover)] hover:text-danger"
     >
       <Eraser className="h-3.5 w-3.5" aria-hidden="true" />
+      {tr('editor.clearMetaShort')}
       <Tooltip label={tr('editor.clearMetaHint')} align="end" />
     </button>
   )
 
-  // One-click "fill tags from the file name", shown in the form header. Icon-only
-  // for the same reason as the clear button beside it.
+  // One-click "fill tags from the file name", shown in the form header.
   const deriveButton = onDeriveTags ? (
     <button
       type="button"
       data-testid="derive-btn"
       aria-label={tr('editor.deriveFromName')}
       onClick={deriveFromNames}
-      className="press group relative flex h-7 w-7 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg"
+      className="press group relative flex h-7 items-center gap-1.5 rounded-md px-2 text-xs text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg"
     >
       <Tag className="h-3.5 w-3.5" aria-hidden="true" />
+      {tr('editor.deriveFromName')}
       <Tooltip label={tr('editor.deriveFromNameHint')} align="end" />
     </button>
   ) : null
 
-  // One-click "rewrite titles from the pattern" over the selection. Only present
-  // when a title format is configured — without one there is nothing to apply.
-  const titleFormatButton =
-    onApplyTitleFormat && titleFormat.trim() !== '' ? (
-      <button
-        type="button"
-        data-testid="apply-title-format-btn"
-        aria-label={tr('editor.applyTitleFormat')}
-        onClick={onApplyTitleFormat}
-        className="press group relative flex h-7 w-7 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg"
-      >
-        <Type className="h-3.5 w-3.5" aria-hidden="true" />
-        <Tooltip label={tr('editor.applyTitleFormatHint')} align="end" />
-      </button>
-    ) : null
-
-  // Hands the Settings-pattern name to the clipboard so the user can paste the track into a
-  // search box (Google, Soulseek) to chase a better rip. Icon-only like its neighbours.
-  const copyFilenameButton = (
-    <button
-      type="button"
-      data-testid="copy-filename-btn"
-      aria-label={tr('editor.copyFilename')}
-      onClick={onCopyFilename}
-      className="press group relative flex h-7 w-7 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg"
-    >
-      <Copy className="h-3.5 w-3.5" aria-hidden="true" />
-      <Tooltip label={tr('editor.copyFilenameHint')} align="end" />
-    </button>
-  )
-
-  const revealFileButton = (
-    <button
-      type="button"
-      data-testid="reveal-file-btn"
-      aria-label={tr(revealCommandKey())}
-      onClick={() => window.api.reveal(item.inputPath)}
-      className="press group relative flex h-7 w-7 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg"
-    >
-      <Folder className="h-3.5 w-3.5" aria-hidden="true" />
-      <Tooltip label={tr(revealCommandKey())} align="end" />
-    </button>
-  )
-
-  const copyMetaButton = (
-    <button
-      type="button"
-      data-testid="copy-meta-btn"
-      aria-label={tr('trackList.context.copyMeta')}
-      onClick={onCopyMeta}
-      className="press group relative flex h-7 w-7 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg"
-    >
-      <ClipboardCopy className="h-3.5 w-3.5" aria-hidden="true" />
-      <Tooltip label={tr('trackList.context.copyMeta')} align="end" />
-    </button>
-  )
-
   const pasteMetaLabel = copiedMetaTitle
     ? tr('editor.pasteMetaFrom', { title: copiedMetaTitle })
     : tr('trackList.context.pasteMeta')
-  const pasteMetaButton = (
-    <button
-      type="button"
-      data-testid="paste-meta-btn"
-      aria-label={pasteMetaLabel}
-      onClick={onPasteMeta}
-      disabled={copiedMetaTitle === null}
-      className="press group relative flex h-7 w-7 items-center justify-center rounded-md text-fg-dim enabled:hover:bg-[var(--color-hover)] enabled:hover:text-fg disabled:opacity-40"
-    >
-      <ClipboardPaste className="h-3.5 w-3.5" aria-hidden="true" />
-      <Tooltip label={pasteMetaLabel} align="end" />
-    </button>
-  )
 
-  // The copy button's one-click twin: opens the search directly instead of leaving the
-  // paste to the user. Icon-only like its neighbours.
-  const searchWebButton = (
-    <button
-      type="button"
-      data-testid="search-web-btn"
-      aria-label={tr('editor.searchWeb')}
-      onClick={onSearchWeb}
-      className="press group relative flex h-7 w-7 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg"
-    >
-      <Globe className="h-3.5 w-3.5" aria-hidden="true" />
-      <Tooltip label={tr('editor.searchWebHint')} align="end" />
-    </button>
-  )
+  // The glyphs that used to run along the header, now one menu: the file's own actions
+  // first (reveal, copy the name, search it), then what works on the tags. "Rewrite titles"
+  // only exists when a title format is configured, since without one there is nothing to apply.
+  const moreItems: MetaMenuItem[] = [
+    ...(isMulti
+      ? []
+      : [
+          {
+            id: 'reveal',
+            testid: 'reveal-file-btn',
+            label: tr(revealCommandKey()),
+            Icon: Folder,
+            onSelect: () => window.api.reveal(item.inputPath),
+          },
+          {
+            id: 'copy-filename',
+            testid: 'copy-filename-btn',
+            label: tr('editor.copyFilename'),
+            Icon: Copy,
+            onSelect: onCopyFilename,
+          },
+          {
+            id: 'search-web',
+            testid: 'search-web-btn',
+            label: tr('editor.searchWeb'),
+            Icon: Globe,
+            onSelect: onSearchWeb,
+          },
+        ]),
+    ...(onApplyTitleFormat && titleFormat.trim() !== ''
+      ? [
+          {
+            id: 'title-format',
+            testid: 'apply-title-format-btn',
+            label: tr('editor.applyTitleFormat'),
+            Icon: Type,
+            onSelect: onApplyTitleFormat,
+            separatorBefore: !isMulti,
+          },
+        ]
+      : []),
+    ...(isMulti
+      ? []
+      : [
+          {
+            id: 'copy-meta',
+            testid: 'copy-meta-btn',
+            label: tr('trackList.context.copyMeta'),
+            Icon: ClipboardCopy,
+            onSelect: onCopyMeta,
+            separatorBefore: !(onApplyTitleFormat && titleFormat.trim() !== ''),
+          },
+          {
+            id: 'paste-meta',
+            testid: 'paste-meta-btn',
+            label: pasteMetaLabel,
+            Icon: ClipboardPaste,
+            onSelect: onPasteMeta,
+            disabled: copiedMetaTitle === null,
+          },
+        ]),
+  ]
 
   // The library state rides the section's title line, beside the title: a line of its own
   // under the header hung there like a stray fragment of the body, open or folded.
@@ -1656,35 +1635,17 @@ export const Editor = memo(function Editor({
             summaryTestId="form-summary"
             status={hasLibraryMarks ? libraryMarks : undefined}
             right={
-              // The two action groups (file: copy/search — tags: clear/fill/format) ride the
-              // title line as bare toolbar glyphs, split by a divider.
+              // Fill and Clear stay in the header with their names; every other glyph that
+              // used to ride this line waits in the menu. Clear sits last, set apart by a
+              // divider, so a reach for fill never lands on it.
               <div className="flex items-center gap-1">
-                {formOpen && !isMulti && (
-                  <div className="flex items-center gap-0.5">
-                    {revealFileButton}
-                    {copyFilenameButton}
-                    {searchWebButton}
-                  </div>
-                )}
-                {formOpen && !isMulti && (
-                  <div
-                    aria-hidden="true"
-                    className="mx-1 h-4 w-px self-center bg-[var(--color-line)]"
-                  />
-                )}
-                {formOpen && (
-                  <div className="flex items-center gap-0.5">
-                    {deriveButton}
-                    {titleFormatButton}
-                    {!isMulti && copyMetaButton}
-                    {!isMulti && pasteMetaButton}
-                  </div>
-                )}
+                {formOpen && <MetaMoreMenu items={moreItems} />}
+                {formOpen && deriveButton}
                 {formOpen && (
                   <>
                     <div
                       aria-hidden="true"
-                      className="mx-2 h-4 w-px self-center bg-[var(--color-line)]"
+                      className="mx-1 h-4 w-px self-center bg-[var(--color-line)]"
                     />
                     {clearButton}
                   </>
