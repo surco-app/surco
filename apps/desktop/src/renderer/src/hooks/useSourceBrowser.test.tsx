@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ALL_TRACKS_ID } from '../../../shared/allTracks'
 import { RECENTLY_ADDED_ID } from '../../../shared/recentlyAdded'
 import type { PlaylistSource, SourceNode } from '../../../shared/types'
+import { markOwnRemovals } from '../lib/ownRemovals'
 import { useRekordboxMembership } from './useRekordboxPlaylists'
 import { useSourceBrowser } from './useSourceBrowser'
 
@@ -565,6 +566,24 @@ describe('useSourceBrowser', () => {
     await waitFor(() => expect(result.current.playlist).toBeNull())
     expect(onPlaylistGone).toHaveBeenCalledTimes(1)
     expect(onPlaylistGone).toHaveBeenCalledWith('House', 'rekordbox')
+  })
+
+  it('closes a playlist Surco itself deleted without saying it went away in rekordbox', async () => {
+    const loadRekordboxTree = vi
+      .fn()
+      .mockResolvedValueOnce([{ id: 'house', name: 'House', kind: 'playlist', count: 1 }])
+      .mockResolvedValue([])
+    const onPlaylistGone = vi.fn()
+    const { result, focus } = setup({ loadRekordboxTree }, 'darwin', onPlaylistGone)
+    act(() => result.current.selectSource('rekordbox'))
+    await waitFor(() => expect(result.current.tree).toHaveLength(1))
+    act(() =>
+      result.current.selectPlaylist({ id: 'house', name: 'House', kind: 'playlist', count: 1 }, []),
+    )
+    markOwnRemovals(['house'])
+    act(() => focus())
+    await waitFor(() => expect(result.current.playlist).toBeNull())
+    expect(onPlaylistGone).not.toHaveBeenCalled()
   })
 
   // rekordbox mid-write fails one read; the playlist the user is looking at is still

@@ -12,6 +12,7 @@ import {
   musicTree,
   withReadCounts,
 } from '../lib/appleMusicSource'
+import { takeOwnRemoval } from '../lib/ownRemovals'
 import { SOURCE_PROGRAMS, SOURCE_READ } from '../lib/sourcePrograms'
 import { useRekordboxAvailable } from './useRekordboxPlaylists'
 import { useWindowFocus } from './useWindowFocus'
@@ -232,7 +233,7 @@ export function useSourceBrowser({
   useEffect(() => {
     if (!playlist || !source || !shownTree || containsNode(shownTree, playlist.id)) return
     setPlaylists(({ [source]: _, ...rest }) => rest)
-    onPlaylistGoneRef.current(playlist.name, source)
+    if (!takeOwnRemoval(playlist.id)) onPlaylistGoneRef.current(playlist.name, source)
   }, [playlist, source, shownTree])
 
   useWindowFocus((focused) => {
