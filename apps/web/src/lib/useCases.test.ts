@@ -278,7 +278,7 @@ describe('use case filters in the address', () => {
 
   it('starts unfiltered when the address carries nothing or a source that does not exist', () => {
     expect(filtersFromSearch('')).toEqual({ query: '', source: null })
-    expect(filtersFromSearch('?source=traktor')).toEqual({ query: '', source: null })
+    expect(filtersFromSearch('?source=winamp')).toEqual({ query: '', source: null })
   })
 
   it('writes only what is set, so the unfiltered page keeps its clean address', () => {

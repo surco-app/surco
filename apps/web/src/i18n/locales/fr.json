@@ -2039,6 +2039,7 @@
       "appleMusic": "Apple Music",
       "rekordbox": "rekordbox",
       "engineDj": "Engine DJ",
+      "traktor": "Traktor",
       "usb": "USB",
       "nas": "NAS"
     },
@@ -2478,6 +2479,53 @@
         ]
       },
       {
+        "id": "fake-hires",
+        "slug": "spot-fake-hi-res",
+        "group": "sound",
+        "title": "Repère les faux hi-res avant de payer deux fois",
+        "s": "Un 96 kHz qui était un 44,1 étiré, ou un 24 bits qui en porte 16, se voit dans le spectre.",
+        "body": [
+          "Tu as acheté ou téléchargé de la musique « hi-res » et tu veux savoir si elle l’est. Surco distingue trois astuces différentes, pas seulement un FLAC issu d’un MP3.",
+          "Cette recette ne change rien. Surco regarde seulement."
+        ],
+        "keywords": "hi-res hires 96 khz 24 bits faux étiré enhancer transcodage",
+        "settings": [],
+        "steps": [
+          {
+            "title": "Glisse le dossier dans Surco",
+            "text": "Les morceaux de ses sous-dossiers entrent aussi."
+          },
+          {
+            "title": "Attends la fin de l’analyse",
+            "text": "En haut tu verras « Analyse de la qualité… » avec un compteur."
+          },
+          {
+            "title": "Filtre par « Douteux »",
+            "text": "Ce sont les morceaux où Surco a trouvé quelque chose."
+          },
+          {
+            "title": "Ouvre-en un pour voir pourquoi",
+            "text": "Le spectre marque où finit le vrai son et le verdict l’explique avec des chiffres mesurés."
+          }
+        ],
+        "points": [
+          "Un hi-res qui était un 44,1 étiré a son spectre coupé là où un 44,1 serait coupé.",
+          "Des aigus régénérés par un « enhancer » sortent en ambre comme « Retraitement possible », car c’est un soupçon et pas une preuve.",
+          "Un 24 bits qui en porte en réalité 16 est signalé à part.",
+          "Tant que tu n’appuies pas sur « Convertir », Surco n’écrit rien dans tes fichiers."
+        ],
+        "related": [
+          {
+            "label": "Vérifier la vraie qualité",
+            "anchor": "calidad"
+          },
+          {
+            "label": "Découvrir la liste des morceaux",
+            "anchor": "lista"
+          }
+        ]
+      },
+      {
         "id": "vinyl",
         "slug": "digitize-vinyl",
         "group": "sound",
@@ -2863,6 +2911,51 @@
         ]
       },
       {
+        "id": "custom-fields",
+        "slug": "custom-fields",
+        "group": "organize",
+        "title": "Crée le champ qui te manque et utilise-le dans tes fichiers",
+        "s": "Style, pays, support ou ce que tu veux, avec ton propre nom et ta propre clé, dans tous les formats.",
+        "body": [
+          "Tu dois stocker une donnée qu’aucun tag standard ne couvre, comme le style, le pays ou le type de support d’un disque.",
+          "Les champs de collectionneur utilisent les noms de mp3tag, pour ne pas être dupliqués."
+        ],
+        "keywords": "champs personnalisés propres tags mp3tag style pays support url",
+        "settings": [],
+        "steps": [
+          {
+            "title": "Crée le champ",
+            "text": "Dans Réglages › Champs, donne-lui un nom et une clé."
+          },
+          {
+            "title": "Remplis-le dans l’éditeur",
+            "text": "Il apparaît avec les autres champs du morceau."
+          },
+          {
+            "title": "Utilise-le dans les noms de fichier",
+            "text": "Tu peux le mettre dans le modèle de nom."
+          },
+          {
+            "title": "Utilise-le dans chercher et remplacer",
+            "text": "Pour nettoyer ou changer sa valeur sur des centaines de morceaux à la fois."
+          }
+        ],
+        "points": [
+          "Il est enregistré dans tous les formats.",
+          "Un champ qui existe déjà dans mp3tag n’est pas dupliqué."
+        ],
+        "related": [
+          {
+            "label": "Modifier les métadonnées",
+            "anchor": "editor"
+          },
+          {
+            "label": "Nommer et ranger les fichiers",
+            "anchor": "nombres"
+          }
+        ]
+      },
+      {
         "id": "beatport",
         "slug": "bpm-and-key-from-beatport",
         "group": "organize",
@@ -3130,6 +3223,138 @@
         "related": []
       },
       {
+        "id": "organize-playlists",
+        "slug": "organize-playlists",
+        "group": "library",
+        "title": "Organise tes playlists et dossiers sans ouvrir le logiciel",
+        "s": "Crée, renomme, déplace et trie les playlists de rekordbox ou Traktor depuis la barre latérale de Surco.",
+        "body": [
+          "Tu veux trier tes playlists rekordbox ou Traktor sans ouvrir le programme."
+        ],
+        "keywords": "playlists dossiers glisser déplacer renommer trier rekordbox traktor",
+        "settings": [],
+        "steps": [
+          {
+            "title": "Ouvre ta bibliothèque dans la barre latérale",
+            "text": "Les playlists apparaissent avec leurs dossiers et dans leur ordre."
+          },
+          {
+            "title": "Crée, renomme ou supprime",
+            "text": "Avec un clic droit sur une playlist ou un dossier."
+          },
+          {
+            "title": "Glisse pour déplacer",
+            "text": "Tu déplaces playlists et dossiers, et aussi des morceaux dans une playlist."
+          },
+          {
+            "title": "Choisis les playlists d’un morceau",
+            "text": "Dans l’éditeur tu décides dans lesquelles se trouve chaque morceau."
+          }
+        ],
+        "points": [
+          "Si le programme est ouvert, les changements attendent que tu le fermes.",
+          "« Ajoutés récemment » vient en premier, avec les 30 derniers jours. Puis « Tous les morceaux ».",
+          "Surco garde une copie avant d’écrire."
+        ],
+        "related": [
+          {
+            "label": "Envoie tes morceaux vers ton logiciel DJ",
+            "anchor": "exportar"
+          },
+          {
+            "label": "Pose tes cues",
+            "anchor": "rekordbox"
+          }
+        ]
+      },
+      {
+        "id": "repair-library",
+        "slug": "repair-your-library",
+        "group": "library",
+        "title": "Répare les cues cassés, les durées fausses et les champs vides de ta bibliothèque",
+        "s": "Vérifier trouve les dégâts et les champs obligatoires vides, et les corrige d’un coup.",
+        "body": [
+          "Ta bibliothèque a des morceaux avec des cues qui ne collent pas, des durées fausses ou des champs obligatoires vides. Tu veux les voir tous ensemble et les corriger sans y aller un par un.",
+          "Avant d’écrire, Surco garde une copie. Et la vérification a un Annuler."
+        ],
+        "keywords": "vérifier dégâts abîmés durée cues cassés incomplètes champs vides traktor engine",
+        "settings": [],
+        "steps": [
+          {
+            "title": "Ouvre « Vérifier »",
+            "text": "C’est dans la barre d’outils, et ça passe en revue ton Apple Music, la liste chargée ou une playlist."
+          },
+          {
+            "title": "Regarde « Dégâts »",
+            "text": "Ce sont les cues et les durées cassés de Traktor et Engine DJ."
+          },
+          {
+            "title": "Regarde « Incomplètes »",
+            "text": "Surco propose comment remplir les champs obligatoires manquants."
+          },
+          {
+            "title": "Choisis et applique",
+            "text": "Pour chaque cas tu vois comment c’est et comment ce sera. Mets dans le lot ce que tu veux et tout s’écrit d’un coup."
+          }
+        ],
+        "points": [
+          "Le BPM, la tonalité, les cues et la note ne sont pas touchés.",
+          "Les changements arrivent dans les fichiers, Apple Music et les bibliothèques que tu synchronises."
+        ],
+        "related": [
+          {
+            "label": "Vérifie ta bibliothèque",
+            "anchor": "revisar"
+          }
+        ]
+      },
+      {
+        "id": "traktor-convert",
+        "slug": "convert-traktor-collection",
+        "group": "library",
+        "title": "Convertis ta collection Traktor sans perdre cues, grille ni étoiles",
+        "s": "Passe tes morceaux en AIFF, FLAC, WAV ou MP3 et Traktor les voit comme avant.",
+        "body": [
+          "Tu veux changer le format de morceaux déjà dans Traktor sans reposer les cues ni recaler les grilles.",
+          "Traktor ne relit pas le fichier. Il lit son collection.nml, donc Surco doit savoir où il se trouve."
+        ],
+        "keywords": "traktor nml cues beatgrid grille étoiles ranking aiff convertir",
+        "settings": [],
+        "steps": [
+          {
+            "title": "Indique ta collection",
+            "text": "Dans les Réglages, indique où se trouve ton collection.nml. Sans ça, Traktor ne verra pas les changements."
+          },
+          {
+            "title": "Ouvre ta playlist Traktor",
+            "text": "Elle est dans la barre latérale. Ses morceaux arrivent dans la liste avec les étoiles que tu leur as déjà données."
+          },
+          {
+            "title": "Choisis le format et convertis",
+            "text": "Les cues et la grille partent là où Traktor les lit dans le nouveau fichier."
+          },
+          {
+            "title": "Ferme Traktor avant d’enregistrer",
+            "text": "Surco garde une copie du .nml et écrit dans ta collection."
+          }
+        ],
+        "points": [
+          "Les cues survivent entre MP3, AIFF, FLAC et WAV. Ils ne se perdent que vers ALAC.",
+          "Si Traktor est ouvert, Surco attend que tu le fermes.",
+          "Si quelque chose tourne mal, tu restaures le .nml depuis les Sauvegardes."
+        ],
+        "related": [
+          {
+            "label": "Envoie tes morceaux vers ton logiciel DJ",
+            "anchor": "exportar"
+          },
+          {
+            "label": "Pose tes cues",
+            "anchor": "rekordbox"
+          }
+        ]
+      },
+      {
         "id": "music-playlist-set",
         "slug": "set-from-apple-music-playlist",
         "group": "go",
@@ -3174,6 +3399,53 @@
           {
             "label": "Convertis tes morceaux",
             "anchor": "convertir"
+          }
+        ]
+      },
+      {
+        "id": "paste-tracklist",
+        "slug": "paste-tracklist-into-playlist",
+        "group": "library",
+        "title": "Transforme la tracklist d’un set en playlist",
+        "s": "Colle la liste en texte et Surco cherche chaque morceau dans ta collection, dans l’ordre du set.",
+        "body": [
+          "Tu as la liste d’un set, d’une vidéo YouTube ou d’une page web, et tu veux ces morceaux dans une playlist de ton logiciel DJ, dans le même ordre.",
+          "Il n’y a aucun réglage à changer. Ça marche avec rekordbox, Traktor et Serato."
+        ],
+        "keywords": "tracklist set liste coller playlist youtube ordre session",
+        "settings": [],
+        "steps": [
+          {
+            "title": "Clic droit sur une playlist.",
+            "text": "Choisis « Coller une tracklist… ». Sur un dossier, « Playlist depuis une tracklist… » te demande le nom."
+          },
+          {
+            "title": "Colle le texte.",
+            "text": "Surco compte les morceaux et les trous qu'il a compris. Appuie sur « Chercher dans rekordbox »."
+          },
+          {
+            "title": "Vérifie.",
+            "text": "Chaque ligne montre ce que Surco a trouvé dans ta collection. Les morceaux trouvés et les autres mixes entrent ; les lignes qui n'ont que le titre en commun attendent que tu les prennes."
+          },
+          {
+            "title": "Ajoute.",
+            "text": "Les morceaux vont à la fin de la playlist, dans l'ordre du set. Rien n'est écrit avant ce bouton."
+          }
+        ],
+        "points": [
+          "Les morceaux que tu n'as pas n'apparaissent pas dans la vérification : ils sont seulement comptés.",
+          "Si deux lignes tombent sur le même morceau, il n'entre qu'une fois.",
+          "Si rekordbox est ouvert, Surco te demande de le fermer, comme pour tout changement de playlist.",
+          "Mesuré sur un vrai set de 31 morceaux : 28 sont entrés tout seuls et 3 avec un clic."
+        ],
+        "related": [
+          {
+            "label": "Colle la tracklist de ton set",
+            "anchor": "tracklist"
+          },
+          {
+            "label": "Emporte tes playlists sur une clé USB",
+            "anchor": "usb"
           }
         ]
       },

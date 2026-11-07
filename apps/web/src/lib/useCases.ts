@@ -9,6 +9,7 @@ export const USE_CASE_SOURCES = [
   'appleMusic',
   'rekordbox',
   'engineDj',
+  'traktor',
   'usb',
   'nas',
 ] as const
@@ -36,6 +37,12 @@ export const USE_CASE_SOURCES_BY_CASE: Record<string, UseCaseSource[]> = {
   'rekordbox-cues': ['rekordbox'],
   'music-playlist-set': ['appleMusic', 'usb'],
   nas: ['nas'],
+  'paste-tracklist': ['rekordbox', 'traktor'],
+  'traktor-convert': ['traktor'],
+  'fake-hires': ['folder'],
+  'repair-library': ['appleMusic', 'traktor', 'engineDj'],
+  'organize-playlists': ['rekordbox', 'traktor'],
+  'custom-fields': ['folder'],
 }
 
 export type UseCaseFilters = { query: string; source: UseCaseSource | null }

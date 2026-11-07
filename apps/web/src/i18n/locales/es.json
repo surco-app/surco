@@ -2039,6 +2039,7 @@
       "appleMusic": "Apple Music",
       "rekordbox": "rekordbox",
       "engineDj": "Engine DJ",
+      "traktor": "Traktor",
       "usb": "USB",
       "nas": "NAS"
     },
@@ -2478,6 +2479,53 @@
         ]
       },
       {
+        "id": "fake-hires",
+        "slug": "detectar-hires-falsos",
+        "group": "sound",
+        "title": "Detecta los hi-res falsos antes de pagarlos dos veces",
+        "s": "Un 96 kHz que era un 44,1 estirado, o un 24 bits que lleva 16, se ve en el espectro.",
+        "body": [
+          "Has comprado o bajado música «hi-res» y quieres saber si lo es. Surco distingue tres engaños distintos, y no solo un FLAC que viene de un MP3.",
+          "Esta receta no cambia nada. Surco solo mira."
+        ],
+        "keywords": "hi-res hires 96 khz 24 bits falso estirado enhancer transcodificacion",
+        "settings": [],
+        "steps": [
+          {
+            "title": "Arrastra la carpeta a Surco",
+            "text": "También entran las pistas de sus subcarpetas."
+          },
+          {
+            "title": "Espera a que acabe el análisis",
+            "text": "Arriba verás «Analizando calidad…» con un contador."
+          },
+          {
+            "title": "Filtra por «Dudosas»",
+            "text": "Son las pistas en las que Surco ha encontrado algo."
+          },
+          {
+            "title": "Abre una para ver por qué",
+            "text": "El espectro marca dónde acaba el sonido real y el veredicto lo explica con números medidos."
+          }
+        ],
+        "points": [
+          "Un hi-res que era un 44,1 estirado tiene el espectro cortado donde cortaría un 44,1.",
+          "Unos agudos regenerados por un «enhancer» salen como «Posible reprocesado», en ámbar, porque es una sospecha y no una prueba.",
+          "Un 24 bits que en realidad lleva 16 se marca aparte.",
+          "Mientras no pulses «Convertir», Surco no escribe nada en tus archivos."
+        ],
+        "related": [
+          {
+            "label": "Comprueba la calidad real",
+            "anchor": "calidad"
+          },
+          {
+            "label": "Conoce la lista de pistas",
+            "anchor": "lista"
+          }
+        ]
+      },
+      {
         "id": "vinyl",
         "slug": "digitalizar-vinilos",
         "group": "sound",
@@ -2863,6 +2911,51 @@
         ]
       },
       {
+        "id": "custom-fields",
+        "slug": "campos-propios",
+        "group": "organize",
+        "title": "Crea el campo que te falta y úsalo en tus archivos",
+        "s": "Estilo, país, medio o el que se te ocurra, con nombre y clave propios, en todos los formatos.",
+        "body": [
+          "Necesitas guardar un dato que ninguna etiqueta estándar recoge, como el estilo, el país o el tipo de medio del disco.",
+          "Los campos de coleccionista usan los nombres de mp3tag, así que no se duplican."
+        ],
+        "keywords": "campos propios personalizados custom etiquetas mp3tag estilo pais medio url",
+        "settings": [],
+        "steps": [
+          {
+            "title": "Crea el campo",
+            "text": "En Ajustes › Campos, pon un nombre y una clave."
+          },
+          {
+            "title": "Rellénalo en el editor",
+            "text": "Sale con el resto de los campos de la pista."
+          },
+          {
+            "title": "Úsalo en los nombres de archivo",
+            "text": "Lo puedes meter en el patrón de nombre."
+          },
+          {
+            "title": "Úsalo en buscar y reemplazar",
+            "text": "Para limpiar o cambiar su valor en cientos de pistas a la vez."
+          }
+        ],
+        "points": [
+          "Se guarda en todos los formatos.",
+          "Un campo que ya existe en mp3tag no se duplica."
+        ],
+        "related": [
+          {
+            "label": "Edita los metadatos",
+            "anchor": "editor"
+          },
+          {
+            "label": "Nombra y ordena los archivos",
+            "anchor": "nombres"
+          }
+        ]
+      },
+      {
         "id": "beatport",
         "slug": "bpm-y-tonalidad-de-beatport",
         "group": "organize",
@@ -3130,6 +3223,138 @@
         "related": []
       },
       {
+        "id": "organize-playlists",
+        "slug": "organizar-playlists",
+        "group": "library",
+        "title": "Organiza tus playlists y carpetas sin abrir el programa",
+        "s": "Crea, renombra, mueve y ordena playlists de rekordbox o Traktor desde la barra lateral de Surco.",
+        "body": [
+          "Quieres ordenar tus playlists de rekordbox o de Traktor sin abrir el programa."
+        ],
+        "keywords": "playlists carpetas arrastrar mover renombrar ordenar rekordbox traktor",
+        "settings": [],
+        "steps": [
+          {
+            "title": "Abre tu biblioteca en la barra lateral",
+            "text": "Las playlists salen con sus carpetas y en su orden."
+          },
+          {
+            "title": "Crea, renombra o borra",
+            "text": "Con el botón derecho sobre una playlist o una carpeta."
+          },
+          {
+            "title": "Arrastra para mover",
+            "text": "Mueves playlists y carpetas, y también pistas dentro de una playlist."
+          },
+          {
+            "title": "Elige las playlists de una pista",
+            "text": "En el editor decides en cuáles está cada pista."
+          }
+        ],
+        "points": [
+          "Si el programa está abierto, los cambios esperan a que lo cierres.",
+          "«Añadidas recientemente» sale primero, con lo de los últimos 30 días. Después va «Todas las pistas».",
+          "Surco guarda una copia antes de escribir."
+        ],
+        "related": [
+          {
+            "label": "Lleva tus pistas a tu programa de DJ",
+            "anchor": "exportar"
+          },
+          {
+            "label": "Marca tus cues",
+            "anchor": "rekordbox"
+          }
+        ]
+      },
+      {
+        "id": "repair-library",
+        "slug": "reparar-biblioteca",
+        "group": "library",
+        "title": "Arregla cues rotos, duraciones mal y campos vacíos de tu biblioteca",
+        "s": "Revisar encuentra los daños y los campos obligatorios sin rellenar, y los arregla de una vez.",
+        "body": [
+          "Tu biblioteca tiene pistas con cues que no cuadran, duraciones erróneas o campos obligatorios vacíos. Quieres verlas todas juntas y arreglarlas sin ir una a una.",
+          "Antes de escribir, Surco guarda una copia. Y la revisión tiene Deshacer."
+        ],
+        "keywords": "revisar daños dañadas duracion cues rotos incompletas campos vacios traktor engine",
+        "settings": [],
+        "steps": [
+          {
+            "title": "Abre «Revisar»",
+            "text": "Está en la barra de herramientas y repasa tu Apple Music, la lista cargada o una playlist."
+          },
+          {
+            "title": "Mira «Daños»",
+            "text": "Son los cues y las duraciones rotas de Traktor y Engine DJ."
+          },
+          {
+            "title": "Mira «Incompletas»",
+            "text": "Surco propone cómo rellenar los campos obligatorios que faltan."
+          },
+          {
+            "title": "Elige y aplica",
+            "text": "Para cada caso ves cómo está y cómo queda. Metes en la tanda lo que quieras y todo se escribe de una vez."
+          }
+        ],
+        "points": [
+          "El BPM, la tonalidad, los cues y la puntuación no se tocan.",
+          "Los cambios llegan a los archivos, a Apple Music y a las bibliotecas que sincronizas."
+        ],
+        "related": [
+          {
+            "label": "Revisa tu biblioteca",
+            "anchor": "revisar"
+          }
+        ]
+      },
+      {
+        "id": "traktor-convert",
+        "slug": "convertir-coleccion-traktor",
+        "group": "library",
+        "title": "Convierte tu colección de Traktor sin perder cues, rejilla ni estrellas",
+        "s": "Pasa tus pistas a AIFF, FLAC, WAV o MP3 y Traktor las sigue viendo como siempre.",
+        "body": [
+          "Quieres cambiar el formato de pistas que ya tienes en Traktor sin volver a marcar cues ni a cuadrar rejillas.",
+          "Traktor no relee el archivo. Lee su collection.nml, así que Surco necesita saber dónde está."
+        ],
+        "keywords": "traktor nml cues beatgrid rejilla estrellas ranking aiff convertir",
+        "settings": [],
+        "steps": [
+          {
+            "title": "Señala tu colección",
+            "text": "En Ajustes, indica dónde está tu collection.nml. Sin eso, Traktor no verá los cambios."
+          },
+          {
+            "title": "Abre tu playlist de Traktor",
+            "text": "Está en la barra lateral. Sus pistas entran en la lista con las estrellas que ya les pusiste."
+          },
+          {
+            "title": "Elige el formato y convierte",
+            "text": "Los cues y la rejilla viajan a donde Traktor los lee en el archivo nuevo."
+          },
+          {
+            "title": "Cierra Traktor antes de guardar",
+            "text": "Surco guarda una copia del .nml y escribe en tu colección."
+          }
+        ],
+        "points": [
+          "Los cues sobreviven entre MP3, AIFF, FLAC y WAV. Solo se pierden al pasar a ALAC.",
+          "Si Traktor está abierto, Surco espera a que lo cierres.",
+          "Si algo sale mal, restauras el .nml desde Copias."
+        ],
+        "related": [
+          {
+            "label": "Lleva tus pistas a tu programa de DJ",
+            "anchor": "exportar"
+          },
+          {
+            "label": "Marca tus cues",
+            "anchor": "rekordbox"
+          }
+        ]
+      },
+      {
         "id": "music-playlist-set",
         "slug": "set-desde-playlist-apple-music",
         "group": "go",
@@ -3174,6 +3399,53 @@
           {
             "label": "Convierte tus pistas",
             "anchor": "convertir"
+          }
+        ]
+      },
+      {
+        "id": "paste-tracklist",
+        "slug": "pegar-tracklist-en-playlist",
+        "group": "library",
+        "title": "Convierte el tracklist de un set en una playlist",
+        "s": "Pega la lista en texto y Surco busca cada pista en tu colección, en el orden del set.",
+        "body": [
+          "Tienes la lista de un set, de un vídeo de YouTube o de una web, y quieres esas pistas en una playlist de tu programa, en el mismo orden.",
+          "No hay ajustes que tocar. Funciona con rekordbox, Traktor y Serato."
+        ],
+        "keywords": "tracklist set lista pegar playlist youtube orden sesion",
+        "settings": [],
+        "steps": [
+          {
+            "title": "Botón derecho sobre una playlist.",
+            "text": "Elige «Pegar tracklist…». Sobre una carpeta, «Playlist desde tracklist…» te pide el nombre."
+          },
+          {
+            "title": "Pega el texto.",
+            "text": "Surco cuenta las pistas y los huecos que ha entendido. Pulsa «Buscar en rekordbox»."
+          },
+          {
+            "title": "Revisa.",
+            "text": "Cada línea sale con lo que Surco ha encontrado en tu colección. Las encontradas y las de otra mezcla entran; las que solo coinciden en el título esperan tu clic."
+          },
+          {
+            "title": "Añade.",
+            "text": "Las pistas entran al final de la playlist en el orden del set. Nada se escribe antes de este botón."
+          }
+        ],
+        "points": [
+          "Las pistas que no tienes no aparecen en la revisión: solo se cuentan.",
+          "Si dos líneas caen en la misma pista, entra una vez.",
+          "Si rekordbox está abierto, Surco te pide cerrarlo.",
+          "Medido con un set real de 31 pistas: 28 entraron solas y 3 con un clic."
+        ],
+        "related": [
+          {
+            "label": "Pega el tracklist de tu sesión",
+            "anchor": "tracklist"
+          },
+          {
+            "label": "Lleva tus playlists a un USB",
+            "anchor": "usb"
           }
         ]
       },
