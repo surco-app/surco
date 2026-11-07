@@ -119,7 +119,10 @@ describe('PasteTracklistModal review step', () => {
     expect(summary).toHaveTextContent('2 encontradas')
     expect(summary).toHaveTextContent('2 dudosas')
     expect(summary).toHaveTextContent('1 parecida')
-    expect(summary).toHaveTextContent('14 no están en la colección y se ignoran')
+    expect(screen.getByTestId('paste-tracklist-hint')).toHaveTextContent(
+      '5 de 19 están en la colección. Las otras 14 se ignoran.',
+    )
+    expect(screen.getByTestId('paste-tracklist-rules')).toHaveTextContent('Dudosa')
     expect(screen.getAllByTestId(/^paste-tracklist-row-\d+$/)).toHaveLength(5)
     expect(screen.getByTestId('paste-tracklist-add')).toHaveTextContent('Añadir 4 pistas')
   })
@@ -130,9 +133,33 @@ describe('PasteTracklistModal review step', () => {
     await review()
     const similar = screen.getByTestId('paste-tracklist-row-4')
     expect(similar).toHaveTextContent('Action (Poky Mix)')
-    expect(screen.getByTestId('paste-tracklist-exclude-4')).toHaveAttribute('aria-pressed', 'true')
-    fireEvent.click(screen.getByTestId('paste-tracklist-accept-4'))
+    expect(screen.getByTestId('paste-tracklist-include-4')).not.toBeChecked()
+    fireEvent.click(screen.getByTestId('paste-tracklist-include-4'))
+    expect(screen.getByTestId('paste-tracklist-include-4')).toBeChecked()
     expect(screen.getByTestId('paste-tracklist-add')).toHaveTextContent('Añadir 5 pistas')
+  })
+
+  it('lets the user leave a found track out too, the one control every row shares', async () => {
+    setup()
+    paste(SET1)
+    await review()
+    expect(screen.getByTestId('paste-tracklist-include-0')).toBeChecked()
+    fireEvent.click(screen.getByTestId('paste-tracklist-include-0'))
+    expect(screen.getByTestId('paste-tracklist-add')).toHaveTextContent('Añadir 3 pistas')
+  })
+
+  it('narrows the list to one level from its count, so 13 similar can be checked without wading through 107', async () => {
+    setup()
+    paste(SET1)
+    await review()
+    fireEvent.click(screen.getByTestId('paste-tracklist-filter-doubtful'))
+    expect(screen.getByTestId('paste-tracklist-filter-doubtful')).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getAllByTestId(/^paste-tracklist-row-\d+$/)).toHaveLength(2)
+    fireEvent.click(screen.getByTestId('paste-tracklist-include-2'))
+    expect(screen.getByTestId('paste-tracklist-add')).toHaveTextContent('Añadir 3 pistas')
+    fireEvent.click(screen.getByTestId('paste-tracklist-filter-all'))
+    expect(screen.getAllByTestId(/^paste-tracklist-row-\d+$/)).toHaveLength(5)
+    expect(screen.getByTestId('paste-tracklist-filter-all')).toHaveTextContent('5 en total')
   })
 
   it('hands over the picked candidate, in set order, as playlist refs', async () => {
@@ -175,6 +202,9 @@ describe('PasteTracklistModal review step', () => {
     paste(SET1)
     await review()
     expect(screen.getByTestId('paste-tracklist-summary')).toHaveTextContent('0 encontradas')
+    expect(screen.getByTestId('paste-tracklist-hint')).toHaveTextContent(
+      'No se pudo leer la colección',
+    )
     expect(screen.getByTestId('paste-tracklist-add')).toBeDisabled()
   })
 
