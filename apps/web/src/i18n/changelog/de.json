@@ -1,5 +1,36 @@
 [
   {
+    "version": "1.29",
+    "date": "November 7, 2026",
+    "title": "Verschiebe Playlists per Drag-and-drop und mach Tag-Änderungen rückgängig",
+    "items": [
+      {
+        "text": "Zieh eine Playlist oder einen Ordner im Baum von rekordbox, Traktor oder Serato und lass sie zwischen anderen oder in einem Ordner fallen. Surco macht dieselbe Änderung in deinem Programm. Anlegen, Umbenennen, Löschen und Verschieben siehst du sofort im Baum, ohne zu warten, bis das Programm es schreibt, und in Serato lässt Surco dich nichts dort ablegen, wo schon eine Playlist diesen Namen hat.",
+        "in": "1.29.0"
+      },
+      {
+        "text": "Nach „Suchen und ersetzen…“, nach dem Füllen der ganzen Liste aus dem Dateinamen oder nach den Tag-Buttons sagt dir ein Hinweis, bei wie vielen Tracks die Tags geändert wurden, und du kannst es mit einem Klick rückgängig machen.",
+        "in": "1.29.0"
+      },
+      {
+        "text": "Die Prüfung einer eingefügten Tracklist ist klarer. Jede Zeile hat ein Kästchen, auch die gefundenen, um sie auszuschließen oder aufzunehmen, und die Zähler Gefunden, Zweifelhaft und Ähnlich filtern die Liste, damit du eine Stufe für sich prüfen kannst. Sie schließt mit Escape oder ihrem Schließen-Button, und ein Klick daneben verwirft sie nicht mehr. Surco liest handgeschriebene YouTube-Tracklists besser, mit Notizen, Lücken, zusammengeklebten Strichen und Künstlern, die mit Punkten, Leerzeichen oder einem Tippfehler geschrieben sind, und schlägt zuerst die Version vor, deren Mix die Tracklist nennt.",
+        "in": "1.29.0"
+      },
+      {
+        "text": "Die Einstellungen fassen die Tabs, die man zusammen liest, in zehn Zeilen der Seitenleiste zusammen, mit einer Umschaltleiste über dem Panel, um zwischen ihnen zu wechseln. Die Werkzeugleiste hat einen Button „Hilfe & FAQ“, und das Ausgabemenü sagt „Überschreibt die Datei“, wenn du das Original bearbeitest.",
+        "in": "1.29.0"
+      },
+      {
+        "text": "Der Editor ist aufgeräumter. Die Metadaten-Kopfzeile benennt die Aktionen zum Füllen und Leeren und legt den Rest in ein einziges Menü, die Felder für den Dateinamen sind gruppiert und die Katalogfelder warten hinter „Mehr Felder (N)“, und nach dem Übernehmen eines Ergebnisses klappen die übrigen hinter „N weitere Ergebnisse anzeigen“ zu. Die Steuerelemente des Cue-Rasters stehen in benannten Gruppen, und die Trim-Spuren wachsen mit dem Fenster, wenn du den Abschnitt maximierst.",
+        "in": "1.29.0"
+      },
+      {
+        "text": "Im Player lässt sich die kompakte Leiste ziehen, und der Abspielkopf folgt beim Spulen ohne Verzögerung dem Zeiger. Im Modus für hohen Kontrast deines Systems bleiben der Tastaturfokus und die ausgewählte Zeile sichtbar.",
+        "in": "1.29.0"
+      }
+    ]
+  },
+  {
     "version": "1.28",
     "date": "November 6, 2026",
     "title": "Füge die Tracklist deines Sets ein, und konvertiere nur, was du auswählst",

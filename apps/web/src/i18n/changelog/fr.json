@@ -1,5 +1,36 @@
 [
   {
+    "version": "1.29",
+    "date": "November 7, 2026",
+    "title": "Déplace les playlists en les faisant glisser, et annule les changements de tags",
+    "items": [
+      {
+        "text": "Fais glisser une playlist ou un dossier dans l’arbre de rekordbox, Traktor ou Serato et dépose-la entre d’autres ou dans un dossier. Surco fait le même changement dans ton logiciel DJ. Créer, renommer, supprimer et déplacer se voient tout de suite dans l’arbre, sans attendre que le logiciel l’écrive, et dans Serato il ne te laisse pas la déposer là où une autre porte déjà ce nom.",
+        "in": "1.29.0"
+      },
+      {
+        "text": "Après « Rechercher et remplacer… », après avoir rempli toute la liste à partir du nom du fichier ou après les boutons Tag, un message te dit sur combien de morceaux les tags ont changé et te laisse l’annuler d’un clic.",
+        "in": "1.29.0"
+      },
+      {
+        "text": "La vérification d’une tracklist collée est plus claire. Chaque ligne a sa case, les trouvées aussi, pour la laisser dehors ou la prendre, et les compteurs Trouvé, Douteux et Proche filtrent la liste pour vérifier un niveau à part. Elle se ferme avec Échap ou son bouton de fermeture, et un clic à côté ne la perd plus. Surco lit mieux les tracklists YouTube écrites à la main, avec des notes, des trous, des tirets collés et des artistes écrits avec des points, des espaces ou une faute de frappe, et propose d’abord la version dont le mix est nommé dans la tracklist.",
+        "in": "1.29.0"
+      },
+      {
+        "text": "Les Réglages réunissent en dix lignes de la barre latérale les onglets qui se lisent ensemble, avec un sélecteur au-dessus du panneau pour passer de l’un à l’autre. La barre d’outils a un bouton « Aide et FAQ », et le menu de sortie indique « Écrase le fichier » quand tu modifies l’original.",
+        "in": "1.29.0"
+      },
+      {
+        "text": "L’éditeur est plus aéré. L’en-tête des métadonnées nomme les actions de remplissage et d’effacement et range le reste dans un seul menu, les champs du nom de fichier sont regroupés et ceux du catalogue attendent derrière « Plus de champs (N) », et une fois un résultat appliqué, les autres se replient derrière « Afficher N autres résultats ». Les commandes de la grille de cues sont en groupes nommés, et les pistes de rognage grandissent avec la fenêtre quand tu agrandis la section.",
+        "in": "1.29.0"
+      },
+      {
+        "text": "Dans le lecteur, la barre compacte se fait glisser et la tête de lecture suit le pointeur sans retard quand tu te déplaces dans le morceau. Avec le mode contraste élevé de ton système, le focus du clavier et la ligne sélectionnée restent visibles.",
+        "in": "1.29.0"
+      }
+    ]
+  },
+  {
     "version": "1.28",
     "date": "November 6, 2026",
     "title": "Colle la tracklist de ton set, et convertis seulement ce que tu choisis",

@@ -1,5 +1,36 @@
 [
   {
+    "version": "1.29",
+    "date": "7 de noviembre de 2026",
+    "title": "Mueve playlists arrastrando y deshaz los cambios de etiquetas",
+    "items": [
+      {
+        "text": "Arrastra una playlist o una carpeta en el árbol de rekordbox, Traktor o Serato y suéltala entre otras o dentro de una carpeta. Surco hace el mismo cambio en tu programa. Crear, renombrar, borrar y mover se ven en el árbol al instante, sin esperar a que el programa lo escriba, y en Serato no te deja soltarla donde ya hay otra con ese nombre.",
+        "in": "1.29.0"
+      },
+      {
+        "text": "Después de «Buscar y reemplazar…», de rellenar toda la lista desde el nombre del archivo o de los botones de Tag, un aviso te dice en cuántas pistas han cambiado las etiquetas y te deja deshacerlo con un clic.",
+        "in": "1.29.0"
+      },
+      {
+        "text": "La revisión de un tracklist pegado es más clara. Cada fila tiene su casilla, también las encontradas, para dejarla fuera o meterla, y los contadores de Encontrada, Dudosa y Parecida filtran la lista para revisar un nivel solo. Se cierra con Escape o con su botón de cerrar, y un clic fuera ya no la pierde. Surco lee mejor los tracklists de YouTube escritos a mano, con notas, huecos, guiones pegados y artistas escritos con puntos, espacios o una errata, y propone primero la versión cuyo mix nombra el tracklist.",
+        "in": "1.29.0"
+      },
+      {
+        "text": "Ajustes junta en diez filas de la barra lateral las pestañas que se leen juntas, con un selector sobre el panel para pasar de una a otra. La barra de herramientas tiene un botón «Ayuda y preguntas», y el menú de destino avisa «Sobrescribe el archivo» cuando editas el original.",
+        "in": "1.29.0"
+      },
+      {
+        "text": "El editor está más despejado. La cabecera de metadatos nombra las acciones de rellenar y borrar y guarda el resto en un solo menú, los campos del nombre del archivo van agrupados y los de catálogo esperan tras «Más campos (N)», y al aplicar un resultado los demás se pliegan tras «Ver N resultados más». Los controles de la rejilla de cues van en grupos con nombre, y las pistas de recorte crecen con la ventana cuando maximizas la sección.",
+        "in": "1.29.0"
+      },
+      {
+        "text": "En el reproductor, la barra compacta se puede arrastrar y el cabezal sigue al puntero sin retraso mientras buscas. Con el modo de alto contraste de tu sistema, el foco del teclado y la fila seleccionada se siguen viendo.",
+        "in": "1.29.0"
+      }
+    ]
+  },
+  {
     "version": "1.28",
     "date": "6 de noviembre de 2026",
     "title": "Pega el tracklist de tu sesión y convierte solo lo que eliges",

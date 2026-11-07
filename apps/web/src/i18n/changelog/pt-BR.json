@@ -1,5 +1,36 @@
 [
   {
+    "version": "1.29",
+    "date": "November 7, 2026",
+    "title": "Mova playlists arrastando e desfaça mudanças nas tags",
+    "items": [
+      {
+        "text": "Arraste uma playlist ou uma pasta na árvore do rekordbox, Traktor ou Serato e solte entre outras ou dentro de uma pasta. O Surco faz a mesma mudança no seu programa. Criar, renomear, apagar e mover aparecem na árvore na hora, sem esperar o programa escrever, e no Serato ele não deixa soltar onde já existe outra com esse nome.",
+        "in": "1.29.0"
+      },
+      {
+        "text": "Depois de “Localizar e substituir…”, de preencher a lista toda a partir do nome do arquivo ou dos botões de Tag, um aviso diz em quantas faixas as tags mudaram e deixa você desfazer com um clique.",
+        "in": "1.29.0"
+      },
+      {
+        "text": "A revisão de uma tracklist colada ficou mais clara. Cada linha tem sua caixa, inclusive as encontradas, para deixar de fora ou incluir, e os contadores Encontrada, Duvidosa e Parecida filtram a lista para você revisar um nível só. Ela fecha com Escape ou pelo botão de fechar, e um clique fora não a perde mais. O Surco lê melhor as tracklists do YouTube escritas à mão, com notas, vãos, hífens colados e artistas escritos com pontos, espaços ou um erro de digitação, e propõe primeiro a versão cujo mix a tracklist nomeia.",
+        "in": "1.29.0"
+      },
+      {
+        "text": "Os Ajustes juntam em dez linhas da barra lateral as abas que se leem juntas, com um seletor acima do painel para alternar entre elas. A barra de ferramentas tem um botão “Ajuda e FAQ”, e o menu de saída avisa “Sobrescreve o arquivo” quando você edita o original.",
+        "in": "1.29.0"
+      },
+      {
+        "text": "O editor ficou mais leve. O cabeçalho dos metadados nomeia as ações de preencher e limpar e guarda o resto em um só menu, os campos do nome do arquivo ficam agrupados e os de catálogo esperam atrás de “Mais campos (N)”, e depois de aplicar um resultado os outros se recolhem atrás de “Mostrar mais N resultados”. Os controles da grade de cues vêm em grupos com nome, e as pistas de corte crescem com a janela quando você maximiza a seção.",
+        "in": "1.29.0"
+      },
+      {
+        "text": "No player, a barra compacta pode ser arrastada e o cursor de reprodução acompanha o ponteiro sem atraso enquanto você procura. No modo de alto contraste do seu sistema, o foco do teclado e a linha selecionada continuam visíveis.",
+        "in": "1.29.0"
+      }
+    ]
+  },
+  {
     "version": "1.28",
     "date": "November 6, 2026",
     "title": "Cole a tracklist do seu set e converta só o que escolher",

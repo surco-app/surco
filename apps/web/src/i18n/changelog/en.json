@@ -1,5 +1,36 @@
 [
   {
+    "version": "1.29",
+    "date": "November 7, 2026",
+    "title": "Drag playlists around, and undo tag changes",
+    "items": [
+      {
+        "text": "Drag a playlist or a folder in the rekordbox, Traktor or Serato tree and drop it between others or inside a folder. Surco makes the same change in your program. Creating, renaming, deleting and moving show in the tree at once, without waiting for the program to write it, and in Serato it won’t let you drop one where another already has that name.",
+        "in": "1.29.0"
+      },
+      {
+        "text": "After “Find and replace…”, after filling the whole list from the file name, or after the Tag buttons, a notice tells you how many tracks had their tags changed and lets you undo it with one click.",
+        "in": "1.29.0"
+      },
+      {
+        "text": "Reviewing a pasted tracklist is clearer. Every row has a checkbox, found ones too, to leave it out or take it, and the Found, Doubtful and Similar counts filter the list so you can check one level on its own. It closes with Escape or its close button, and a click outside no longer loses it. Surco reads hand-written YouTube tracklists better, with notes, gaps, glued dashes and artists spelt with dots, spaces or a typo, and it offers first the version whose mix the tracklist names.",
+        "in": "1.29.0"
+      },
+      {
+        "text": "Settings joins the tabs you read together into ten rows of the sidebar, with a switcher above the panel to move between them. The toolbar has a “Help & FAQ” button, and the destination menu says “Overwrites the file” when you edit the original.",
+        "in": "1.29.0"
+      },
+      {
+        "text": "The editor is calmer. The metadata header names the fill and clear actions and keeps the rest in one menu, the file name fields are grouped and the catalogue ones wait behind “More fields (N)”, and once you apply a result the other results fold behind “Show N more results”. The cue grid controls come in named groups, and the trim lanes grow with the window when you maximize the section.",
+        "in": "1.29.0"
+      },
+      {
+        "text": "In the player, the compact bar can be dragged and the playhead follows the pointer without lagging while you scrub. In your system’s high contrast mode, the keyboard focus and the selected row stay visible.",
+        "in": "1.29.0"
+      }
+    ]
+  },
+  {
     "version": "1.28",
     "date": "November 6, 2026",
     "title": "Paste your set's tracklist, and convert only what you pick",
