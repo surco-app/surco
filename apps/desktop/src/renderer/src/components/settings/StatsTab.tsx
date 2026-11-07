@@ -137,7 +137,10 @@ export function StatsTab({ settings }: Props): React.JSX.Element {
     <div className="flex min-h-[280px] flex-col items-center justify-center text-center">
       {conversionCount > 0 && (
         <>
-          <p data-testid="stats-count" className="text-4xl font-semibold tabular-nums text-fg">
+          <p
+            data-testid="stats-count"
+            className="text-4xl font-semibold tracking-[-0.035em] tabular-nums text-fg"
+          >
             {formatCount(conversionCount, i18n.language)}
           </p>
           <p className="mt-0.5 text-sm text-fg-muted">{tr('settings.stats.count')}</p>
@@ -171,7 +174,7 @@ export function StatsTab({ settings }: Props): React.JSX.Element {
                 className="rounded-xl border border-[var(--color-line)] bg-[var(--color-panel-2)] px-3 py-3"
               >
                 <Icon size={15} className="mx-auto text-fg-dim" aria-hidden="true" />
-                <p className="mt-1.5 text-2xl font-semibold tabular-nums text-fg">
+                <p className="mt-1.5 text-2xl font-semibold tracking-[-0.02em] tabular-nums text-fg">
                   {formatCount(stats[key], i18n.language)}
                 </p>
                 <p className="mt-0.5 text-xs leading-tight text-fg-muted">
