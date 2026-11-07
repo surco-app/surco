@@ -130,9 +130,19 @@ describe('PasteTracklistModal review step', () => {
     await review()
     const similar = screen.getByTestId('paste-tracklist-row-4')
     expect(similar).toHaveTextContent('Action (Poky Mix)')
-    expect(screen.getByTestId('paste-tracklist-exclude-4')).toHaveAttribute('aria-pressed', 'true')
-    fireEvent.click(screen.getByTestId('paste-tracklist-accept-4'))
+    expect(screen.getByTestId('paste-tracklist-include-4')).not.toBeChecked()
+    fireEvent.click(screen.getByTestId('paste-tracklist-include-4'))
+    expect(screen.getByTestId('paste-tracklist-include-4')).toBeChecked()
     expect(screen.getByTestId('paste-tracklist-add')).toHaveTextContent('Añadir 5 pistas')
+  })
+
+  it('lets the user leave a found track out too, the one control every row shares', async () => {
+    setup()
+    paste(SET1)
+    await review()
+    expect(screen.getByTestId('paste-tracklist-include-0')).toBeChecked()
+    fireEvent.click(screen.getByTestId('paste-tracklist-include-0'))
+    expect(screen.getByTestId('paste-tracklist-add')).toHaveTextContent('Añadir 3 pistas')
   })
 
   it('hands over the picked candidate, in set order, as playlist refs', async () => {

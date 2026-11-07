@@ -30,10 +30,6 @@ const DOT: Record<Exclude<MatchLevel, 'absent'>, string> = {
   similar: 'border border-fg-faint',
 }
 
-const CHIP = 'press rounded-full border px-2.5 py-0.5 text-[11px]'
-const CHIP_OFF = `${CHIP} border-[var(--color-line-strong)] text-fg-muted hover:bg-[var(--color-hover)] hover:text-fg`
-const CHIP_ON = `${CHIP} border-transparent bg-[var(--color-accent-soft)] text-fg`
-
 function mixOf(title: string): string {
   return title.match(/[([]([^)\]]*)[)\]]\s*$/)?.[1] ?? ''
 }
@@ -216,12 +212,12 @@ export function PasteTracklistModal({
                     <li
                       key={`${match.line.at ?? ''} ${match.line.raw}`}
                       data-testid={`paste-tracklist-row-${i}`}
-                      className="grid grid-cols-[56px_8px_1fr_auto] items-center gap-x-2.5 border-t border-[var(--color-line)] px-3 py-1.5 first:border-t-0"
+                      className={`grid grid-cols-[56px_8px_1fr_16px] items-start gap-x-2.5 border-t border-[var(--color-line)] px-3 py-2 first:border-t-0${row.included ? '' : ' [&>*:not(input)]:opacity-45'}`}
                     >
-                      <span className="font-mono text-[11px] text-fg-faint tabular-nums">
+                      <span className="font-mono text-[11px] leading-[18px] text-fg-faint tabular-nums">
                         {match.line.at ?? ''}
                       </span>
-                      <span className={`size-2 rounded-full ${DOT[level]}`} />
+                      <span className={`mt-[5px] size-2 rounded-full ${DOT[level]}`} />
                       <div className="min-w-0">
                         <div className="truncate text-[13px]">
                           {match.line.raw}
@@ -264,32 +260,14 @@ export function PasteTracklistModal({
                           </div>
                         )}
                       </div>
-                      {level === 'found' ? (
-                        <span className="text-[11px] text-fg-faint">
-                          {tr('pasteTracklist.willAdd')}
-                        </span>
-                      ) : (
-                        <div className="flex gap-1">
-                          <button
-                            type="button"
-                            data-testid={`paste-tracklist-accept-${i}`}
-                            aria-pressed={row.included}
-                            onClick={() => update(i, { included: true })}
-                            className={row.included ? CHIP_ON : CHIP_OFF}
-                          >
-                            {tr('pasteTracklist.accept')}
-                          </button>
-                          <button
-                            type="button"
-                            data-testid={`paste-tracklist-exclude-${i}`}
-                            aria-pressed={!row.included}
-                            onClick={() => update(i, { included: false })}
-                            className={row.included ? CHIP_OFF : CHIP_ON}
-                          >
-                            {tr('pasteTracklist.exclude')}
-                          </button>
-                        </div>
-                      )}
+                      <input
+                        type="checkbox"
+                        data-testid={`paste-tracklist-include-${i}`}
+                        checked={row.included}
+                        onChange={(e) => update(i, { included: e.target.checked })}
+                        aria-label={tr('pasteTracklist.include', { line: match.line.raw })}
+                        className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--color-accent)]"
+                      />
                     </li>
                   )
                 })}
