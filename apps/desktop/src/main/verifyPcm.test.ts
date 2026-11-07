@@ -11,6 +11,7 @@ vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 const spawned: { args: string[]; signal?: AbortSignal; timeout?: number }[] = []
 let onSpawn: (() => void) | undefined
 const digests = () => spawned.filter((o) => o.args.includes('md5'))
+const probes = () => spawned.filter((o) => o.args.includes('-show_entries'))
 
 vi.mock('node:child_process', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:child_process')>()
@@ -133,8 +134,8 @@ describe('pcmDigest', () => {
     const low = [1, 2, 3, 4].map(() => pcmDigest(at('kick24.wav')))
     const high = pcmDigest(at('kick16.wav'), { priority: 'high' })
     await Promise.all([...low, high])
-    const order = digests().map((o) => o.args.includes(at('kick16.wav')))
-    expect(order.indexOf(true)).toBeLessThan(4)
+    const order = probes().map((o) => o.args.includes(at('kick16.wav')))
+    expect(order.indexOf(true)).toBe(2)
   })
 
   // An aborted or timed out decode must reject, never hand back a digest of partial audio.
