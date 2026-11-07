@@ -119,7 +119,10 @@ describe('PasteTracklistModal review step', () => {
     expect(summary).toHaveTextContent('2 encontradas')
     expect(summary).toHaveTextContent('2 dudosas')
     expect(summary).toHaveTextContent('1 parecida')
-    expect(summary).toHaveTextContent('14 no están en la colección y se ignoran')
+    expect(screen.getByTestId('paste-tracklist-hint')).toHaveTextContent(
+      '5 de 19 están en la colección. Las otras 14 se ignoran.',
+    )
+    expect(screen.getByTestId('paste-tracklist-rules')).toHaveTextContent('Dudosa')
     expect(screen.getAllByTestId(/^paste-tracklist-row-\d+$/)).toHaveLength(5)
     expect(screen.getByTestId('paste-tracklist-add')).toHaveTextContent('Añadir 4 pistas')
   })
@@ -199,6 +202,9 @@ describe('PasteTracklistModal review step', () => {
     paste(SET1)
     await review()
     expect(screen.getByTestId('paste-tracklist-summary')).toHaveTextContent('0 encontradas')
+    expect(screen.getByTestId('paste-tracklist-hint')).toHaveTextContent(
+      'No se pudo leer la colección',
+    )
     expect(screen.getByTestId('paste-tracklist-add')).toBeDisabled()
   })
 

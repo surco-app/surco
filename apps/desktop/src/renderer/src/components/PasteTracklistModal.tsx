@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { X } from 'lucide-react'
+import { Info, X } from 'lucide-react'
 import type React from 'react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -15,6 +15,7 @@ import {
 } from '../lib/tracklistMatch'
 import { parseTracklist } from '../lib/tracklistParse'
 import { ModalShell } from './ModalShell'
+import { Tooltip } from './Tooltip'
 
 interface Props {
   program: DjProgram
@@ -127,13 +128,20 @@ export function PasteTracklistModal({
             <X className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
-        <p className="mt-0.5 text-xs text-fg-dim">
+        <p data-testid="paste-tracklist-hint" className="mt-0.5 text-xs text-fg-dim">
           {step === 'paste'
             ? tr('pasteTracklist.hint')
-            : tr('pasteTracklist.reviewHint', {
-                have: review?.length ?? 0,
-                total: parsed.lines.length,
-              })}
+            : collection.isError
+              ? tr('pasteTracklist.failed')
+              : [
+                  tr('pasteTracklist.reviewHint', {
+                    have: review?.length ?? 0,
+                    total: parsed.lines.length,
+                  }),
+                  count('absent') > 0 && tr('pasteTracklist.absent', { count: count('absent') }),
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
         </p>
       </div>
 
@@ -215,10 +223,14 @@ export function PasteTracklistModal({
                     {tr(`pasteTracklist.${level}`, { count: count(level) })}
                   </button>
                 ))}
-                <span className="ml-auto">
-                  {collection.isError
-                    ? tr('pasteTracklist.failed')
-                    : tr('pasteTracklist.absent', { count: count('absent') })}
+                <span
+                  data-testid="paste-tracklist-rules"
+                  role="note"
+                  className="relative ml-auto flex h-5 w-5 items-center justify-center text-fg-dim after:absolute after:-inset-0.5 after:content-[''] hover:text-fg-muted"
+                >
+                  <Info className="h-3 w-3" aria-hidden="true" />
+                  <span className="sr-only">{tr('pasteTracklist.rules')}</span>
+                  <Tooltip label={tr('pasteTracklist.rules')} />
                 </span>
               </div>
               <ul className="max-h-[440px] overflow-y-auto rounded-[10px] border border-[var(--color-line)] bg-[var(--color-field)]">
