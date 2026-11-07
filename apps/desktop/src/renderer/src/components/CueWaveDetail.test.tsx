@@ -297,6 +297,62 @@ describe('CueWaveDetail', () => {
     expect(onScrub).toHaveBeenCalled()
   })
 
+  it('drops a CALL where it was when Escape cancels the drag, without the Escape reaching anything else', () => {
+    const onMoveMark = vi.fn<(key: string, ms: number) => void>()
+    const onMarkDrag = vi.fn<(dragging: boolean) => void>()
+    setup({
+      cues: [{ key: 'p', ms: bar(36), kind: 0, color: null, pending: false }],
+      movable: ['p'],
+      onMoveMark,
+      onMarkDrag,
+    })
+    const elsewhere = vi.fn()
+    window.addEventListener('keydown', elsewhere)
+    fireEvent.mouseDown(screen.getByTestId(`cue-detail-call-${bar(36)}`), {
+      button: 0,
+      clientX: 300,
+    })
+    fireEvent.mouseMove(window, { clientX: 352 })
+    expect(screen.getByTestId('cue-detail-drag-ghost')).toBeInTheDocument()
+    fireEvent.keyDown(window, { key: 'Escape' })
+    window.removeEventListener('keydown', elsewhere)
+    expect(screen.queryByTestId('cue-detail-drag-ghost')).toBeNull()
+    expect(onMarkDrag).toHaveBeenLastCalledWith(false)
+    fireEvent.mouseUp(window, { clientX: 352 })
+    expect(onMoveMark).not.toHaveBeenCalled()
+    expect(elsewhere).not.toHaveBeenCalled()
+  })
+
+  it('does not leave a CALL drag stuck when the window loses focus mid-drag', () => {
+    const onMoveMark = vi.fn<(key: string, ms: number) => void>()
+    const onMarkDrag = vi.fn<(dragging: boolean) => void>()
+    setup({
+      cues: [{ key: 'p', ms: bar(36), kind: 0, color: null, pending: false }],
+      movable: ['p'],
+      onMoveMark,
+      onMarkDrag,
+    })
+    fireEvent.mouseDown(screen.getByTestId(`cue-detail-call-${bar(36)}`), {
+      button: 0,
+      clientX: 300,
+    })
+    fireEvent.mouseMove(window, { clientX: 352 })
+    fireEvent.blur(window)
+    expect(onMarkDrag).toHaveBeenLastCalledWith(false)
+    expect(screen.queryByTestId('cue-detail-drag-ghost')).toBeNull()
+    expect(onMoveMark).not.toHaveBeenCalled()
+  })
+
+  it('stops scrubbing the zoomed wave when the window loses focus mid-drag', () => {
+    const { onScrub } = setup()
+    fireEvent.mouseDown(screen.getByTestId('cue-detail'), { button: 0, clientX: 400 })
+    fireEvent.mouseMove(window, { clientX: 300 })
+    const calls = onScrub.mock.calls.length
+    fireEvent.blur(window)
+    fireEvent.mouseMove(window, { clientX: 200 })
+    expect(onScrub.mock.calls.length).toBe(calls)
+  })
+
   it('says when a CALL drag starts and ends, so the editor hides the flow meanwhile', () => {
     const onMarkDrag = vi.fn<(dragging: boolean) => void>()
     setup({
