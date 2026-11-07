@@ -299,6 +299,9 @@ export function editProblem(db: Db, edit: RekordboxPlaylistEdit): 'stale' | 'no-
     if (attribute !== 0 && attribute !== 1) return 'stale'
     return edit.kind === 'rename' && edit.name.trim() === '' ? 'stale' : null
   }
+  if (edit.kind === 'moveNode') {
+    return moveRefused(db, edit.playlistId, edit.parentId, edit.beforeId) ? 'stale' : null
+  }
   if (nodeAttribute(db, edit.playlistId) !== 0) return 'stale'
   const known = new Set(links(db, edit.playlistId).map((l) => l.ID))
   const named =
@@ -408,6 +411,53 @@ export function deleteNode(db: Db, id: string, ctx: EditContext): string[] {
   for (const sibling of after)
     renumber.run(sibling.Seq - 1, takeLocalUsn(db, stamp), stamp, sibling.ID)
   return doomed
+}
+
+function liveChildren(db: Db, parentId: string): { ID: string; Seq: number }[] {
+  return db
+    .prepare(
+      `SELECT ID, Seq FROM djmdPlaylist
+        WHERE ParentID = ? AND coalesce(rb_local_deleted, 0) = 0 ORDER BY Seq, ID`,
+    )
+    .all(parentId) as { ID: string; Seq: number }[]
+}
+
+function moveRefused(db: Db, id: string, parentId: string, beforeId: string | null): boolean {
+  const attribute = nodeAttribute(db, id)
+  if (attribute !== 0 && attribute !== 1) return true
+  if (parentId !== 'root' && nodeAttribute(db, parentId) !== 1) return true
+  if (nodeSubtree(db, id).includes(parentId)) return true
+  if (beforeId === null) return false
+  return beforeId === id || !liveChildren(db, parentId).some((c) => String(c.ID) === beforeId)
+}
+
+export function moveNode(
+  db: Db,
+  id: string,
+  parentId: string,
+  beforeId: string | null,
+  ctx: EditContext,
+): void {
+  if (moveRefused(db, id, parentId, beforeId)) throw new EditRefused('stale')
+  const { ParentID } = db.prepare('SELECT ParentID FROM djmdPlaylist WHERE ID = ?').get(id) as {
+    ParentID: string
+  }
+  const stamp = rekordboxStamp(ctx.now)
+  const target = liveChildren(db, parentId).filter((c) => String(c.ID) !== id)
+  const at = beforeId === null ? target.length : target.findIndex((c) => String(c.ID) === beforeId)
+  db.prepare(
+    'UPDATE djmdPlaylist SET ParentID = ?, Seq = ?, rb_local_usn = ?, updated_at = ? WHERE ID = ?',
+  ).run(parentId, at + 1, takeLocalUsn(db, stamp), stamp, id)
+  const renumber = db.prepare(
+    'UPDATE djmdPlaylist SET Seq = ?, rb_local_usn = ?, updated_at = ? WHERE ID = ?',
+  )
+  const settle = (siblings: { ID: string; Seq: number }[]) =>
+    siblings.forEach((sibling, index) => {
+      if (sibling.Seq !== index + 1)
+        renumber.run(index + 1, takeLocalUsn(db, stamp), stamp, sibling.ID)
+    })
+  settle([...target.slice(0, at), { ID: id, Seq: at + 1 }, ...target.slice(at)])
+  if (ParentID !== parentId) settle(liveChildren(db, ParentID))
 }
 
 export function trackPlaylists(db: Db, contentId: string): string[] {

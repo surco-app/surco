@@ -37,6 +37,7 @@ import {
   hexId,
   nodeTimestamp,
   playlistXmlPath,
+  withNodeParent,
   withoutNodes,
   withPlaylistNode,
   xmlNodeIds,
@@ -50,6 +51,7 @@ import {
   insertSeparator,
   moveChangesOrder,
   moveInPlaylist,
+  moveNode,
   nodeAttribute,
   playlistContents,
   randomPlaylistId,
@@ -394,6 +396,16 @@ function writeEdit(db: Db, draft: XmlDraft, planned: Planned, now: Date): OpOutc
   }
   if (edit.kind === 'rename') {
     renameNode(db, edit.playlistId, edit.name, ctx)
+    bumpNode(draft, edit.playlistId)
+    return done()
+  }
+  if (edit.kind === 'moveNode') {
+    const { ParentID } = db
+      .prepare('SELECT ParentID FROM djmdPlaylist WHERE ID = ?')
+      .get(edit.playlistId) as { ParentID: string }
+    moveNode(db, edit.playlistId, edit.parentId, edit.beforeId, ctx)
+    if (draft.xml !== null && ParentID !== edit.parentId)
+      draft.xml = withNodeParent(draft.xml, edit.playlistId, edit.parentId)
     bumpNode(draft, edit.playlistId)
     return done()
   }

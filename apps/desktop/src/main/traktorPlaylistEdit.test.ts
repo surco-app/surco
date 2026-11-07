@@ -477,3 +477,132 @@ describe('playlists chosen in the editor for a track', () => {
     })
   })
 })
+
+describe('moving a node', () => {
+  it('moves a playlist into a folder before the child it was dropped on, recounting both parents', () => {
+    const { nml, outcomes } = run(
+      op({ kind: 'moveNode', playlistId: 'dnb', parentId: 'folder:Sets', beforeId: 'fri' }, 'dnb'),
+    )
+    expect([...outcomes.values()][0].applied).toBe(true)
+    expect(readTraktorTree(nml).map((n) => n.name)).toEqual(['Preparation', 'Sets', 'Sets'])
+    expect(nodeById(parsePlaylists(nml), 'folder:Sets')?.children.map((c) => c.name)).toEqual([
+      'Drum & Bass',
+      'Friday',
+      'Top',
+    ])
+    expect(nml).toContain('<NODE TYPE="FOLDER" NAME="$ROOT"><SUBNODES COUNT="3">')
+    expect(nml).toContain('<NODE TYPE="FOLDER" NAME="Sets"><SUBNODES COUNT="3">')
+    expect(outsidePlaylists(nml)).toBe(outsidePlaylists(DOC))
+  })
+
+  it('moves a folder with everything inside it to the end of the root', () => {
+    const { nml } = run(
+      op(
+        { kind: 'moveNode', playlistId: 'folder:Sets', parentId: 'root', beforeId: null },
+        'folder:Sets',
+      ),
+    )
+    expect(readTraktorTree(nml).map((n) => n.name)).toEqual([
+      'Preparation',
+      'Sets',
+      'Drum & Bass',
+      'Sets',
+    ])
+    expect(rows(nml, 'fri')).toEqual(['a.mp3', '|', 'a.mp3'])
+  })
+
+  it('lets a playlist land before one of Traktor’s own, which are ordinary root nodes', () => {
+    const { nml } = run(
+      op({ kind: 'moveNode', playlistId: 'dnb', parentId: 'root', beforeId: 'prep' }, 'dnb'),
+    )
+    expect(readTraktorTree(nml).map((n) => n.name)).toEqual([
+      'Drum & Bass',
+      'Preparation',
+      'Sets',
+      'Sets',
+    ])
+  })
+
+  it('refuses to move Traktor’s own playlists, a folder into itself or its children, and onto a target that is not there', () => {
+    const refused = (edit: RekordboxPlaylistEdit) => [...run(op(edit)).outcomes.values()][0]
+    expect(
+      refused({ kind: 'moveNode', playlistId: 'prep', parentId: 'folder:Sets', beforeId: null }),
+    ).toMatchObject({ applied: false, reason: 'stale' })
+    expect(
+      refused({
+        kind: 'moveNode',
+        playlistId: 'folder:Sets#2',
+        parentId: 'folder:Sets#2/Old',
+        beforeId: null,
+      }),
+    ).toMatchObject({ applied: false, reason: 'stale' })
+    expect(
+      refused({
+        kind: 'moveNode',
+        playlistId: 'folder:Sets#2',
+        parentId: 'folder:Sets#2',
+        beforeId: null,
+      }),
+    ).toMatchObject({ applied: false, reason: 'stale' })
+    expect(
+      refused({ kind: 'moveNode', playlistId: 'dnb', parentId: 'folder:Sets', beforeId: 'nope' }),
+    ).toMatchObject({ applied: false, reason: 'stale' })
+    expect(
+      refused({ kind: 'moveNode', playlistId: 'dnb', parentId: 'fri', beforeId: null }),
+    ).toMatchObject({ applied: false, reason: 'stale' })
+  })
+
+  it('reorders inside the same parent, forward and backward, and keeps a move to its own place', () => {
+    const labels = (nml: string) =>
+      parsePlaylists(nml)?.root.children.map((c) =>
+        c.kind === 'folder' ? `${c.name}${c.children.length}` : c.name,
+      )
+    const moved = (edit: RekordboxPlaylistEdit, id: string) => labels(run(op(edit, id)).nml)
+    expect(
+      moved(
+        { kind: 'moveNode', playlistId: 'folder:Sets', parentId: 'root', beforeId: 'dnb' },
+        'folder:Sets',
+      ),
+    ).toEqual(['Preparation', 'Sets1', 'Sets2', 'Drum & Bass'])
+    expect(
+      moved(
+        { kind: 'moveNode', playlistId: 'folder:Sets#2', parentId: 'root', beforeId: 'prep' },
+        'folder:Sets#2',
+      ),
+    ).toEqual(['Sets1', 'Preparation', 'Sets2', 'Drum & Bass'])
+    expect(
+      moved(
+        { kind: 'moveNode', playlistId: 'dnb', parentId: 'root', beforeId: 'folder:Sets' },
+        'dnb',
+      ),
+    ).toEqual(['Preparation', 'Drum & Bass', 'Sets2', 'Sets1'])
+    const same = run(
+      op({ kind: 'moveNode', playlistId: 'dnb', parentId: 'root', beforeId: null }, 'dnb'),
+    )
+    expect([...same.outcomes.values()][0].applied).toBe(true)
+    expect(labels(same.nml)).toEqual(['Preparation', 'Sets2', 'Sets1', 'Drum & Bass'])
+  })
+
+  it('refuses a node dropped before itself and leaves the NML untouched', () => {
+    const { nml, outcomes } = run(
+      op({ kind: 'moveNode', playlistId: 'dnb', parentId: 'root', beforeId: 'dnb' }, 'dnb'),
+      op({ kind: 'moveNode', playlistId: 'fri', parentId: 'folder:Sets', beforeId: 'fri' }, 'fri'),
+    )
+    expect([...outcomes.values()]).toMatchObject([
+      { applied: false, reason: 'stale' },
+      { applied: false, reason: 'stale' },
+    ])
+    expect(nml).toBe(DOC)
+  })
+
+  it('refuses the move when the DJ changed the node since', () => {
+    const changed = {
+      ...op({ kind: 'moveNode', playlistId: 'dnb', parentId: 'root', beforeId: null }, 'dnb'),
+      stamps: { dnb: 1 },
+    }
+    expect([...run(changed).outcomes.values()][0]).toMatchObject({
+      applied: false,
+      reason: 'stale',
+    })
+  })
+})

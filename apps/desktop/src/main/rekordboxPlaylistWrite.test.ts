@@ -341,6 +341,32 @@ describe('editRekordboxPlaylist', () => {
     expect(existsSync(backupOf(xmlPath, 'backup'))).toBe(true)
   })
 
+  it('moves a playlist into a folder in the database and repoints its XML node, stamping it', async () => {
+    const path = await collection()
+    const xmlPath = join(path, '..', 'masterPlaylists6.xml')
+    const result = await editRekordboxPlaylist(
+      path,
+      { kind: 'moveNode', playlistId: '3000', parentId: '1000', beforeId: '2000' },
+      deps(),
+    )
+    expect(result).toEqual({ applied: true })
+    const xml = await readFile(xmlPath, 'utf8')
+    expect(xml).toMatch(/<NODE Id="BB8" ParentId="3E8" [^>]*Timestamp="1792087200000"/)
+  })
+
+  it('keeps the XML node where it was for a move that only reorders siblings, beyond its Timestamp', async () => {
+    const path = await collection()
+    const xmlPath = join(path, '..', 'masterPlaylists6.xml')
+    const before = await readFile(xmlPath, 'utf8')
+    await editRekordboxPlaylist(
+      path,
+      { kind: 'moveNode', playlistId: '3000', parentId: 'root', beforeId: '1000' },
+      deps(),
+    )
+    const after = await readFile(xmlPath, 'utf8')
+    expect(after.replace(/Timestamp="\d+"/g, '')).toBe(before.replace(/Timestamp="\d+"/g, ''))
+  })
+
   // The XML can hold a node the table no longer has; giving a new playlist that ID would
   // make rekordbox read two playlists as one.
   it('never gives a new playlist an ID the XML already holds', async () => {

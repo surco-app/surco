@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { editResultOfOutcome } from './rekordboxQueueOps'
+import type { RekordboxPlaylistEdit } from '../shared/types'
+import { editResultOfOutcome, opRank } from './rekordboxQueueOps'
 
 describe('editResultOfOutcome', () => {
   it('answers an applied outcome with what it created', () => {
@@ -30,5 +31,15 @@ describe('editResultOfOutcome', () => {
       reason: 'write-failed',
     })
     expect(editResultOfOutcome(undefined)).toEqual({ applied: false, reason: 'write-failed' })
+  })
+})
+
+describe('opRank', () => {
+  it('ranks a node move with renames, after creates and track edits and before deletes', () => {
+    const rank = (edit: RekordboxPlaylistEdit) =>
+      opRank({ id: 'x', kind: 'edit', edit, stamps: {} })
+    const move = rank({ kind: 'moveNode', playlistId: 'a', parentId: 'root', beforeId: null })
+    expect(move).toBe(rank({ kind: 'rename', playlistId: 'a', name: 'b' }))
+    expect(move).toBeLessThan(rank({ kind: 'delete', playlistId: 'a' }))
   })
 })

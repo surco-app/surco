@@ -59,6 +59,13 @@ export function withNodeTimestamp(xml: string, id: string, timestamp: number): s
   return `${xml.slice(0, tag.index)}${next}${xml.slice(tag.index + tag[0].length)}`
 }
 
+export function withNodeParent(xml: string, id: string, parentId: string): string {
+  const tag = nodeTag(xml, id)
+  if (!tag) return xml
+  const next = tag[0].replace(/\bParentId="[^"]*"/, `ParentId="${hexId(parentId)}"`)
+  return `${xml.slice(0, tag.index)}${next}${xml.slice(tag.index + tag[0].length)}`
+}
+
 export function withoutNodes(xml: string, ids: string[]): string {
   const doomed = new Set(ids.map(hexId))
   return xml

@@ -52,6 +52,7 @@ interface Resolved {
   node: ModelNode | null
   rows: ModelRow[]
   before: ModelRow | null
+  parent: ModelNode | null
 }
 
 function rowAt(node: ModelNode | null, linkId: string): ModelRow | undefined {
@@ -77,7 +78,13 @@ function resolve(model: PlaylistModel | null, op: EditOp): Resolved | null {
         : null
   const before = beforeId === null ? null : (rowAt(node, beforeId) ?? null)
   if (beforeId !== null && before === null) return null
-  return { op, node, rows: rows as ModelRow[], before }
+  const parent =
+    edit.kind === 'moveNode'
+      ? edit.parentId === 'root'
+        ? (model?.root ?? null)
+        : nodeById(model, edit.parentId)
+      : null
+  return { op, node, rows: rows as ModelRow[], before, parent }
 }
 
 function stale(op: EditOp, model: PlaylistModel | null): OpOutcome | null {
@@ -139,6 +146,25 @@ function apply(r: Resolved, src: Sources): OpOutcome {
     if (node.id === 'root' || builtIn(node) || !node.parent) return refused('stale')
     node.parent.children = node.parent.children.filter((c) => c !== node)
     node.parent.dirty = true
+    return done()
+  }
+  if (edit.kind === 'moveNode') {
+    const { parent } = r
+    const from = node.parent
+    if (node.id === 'root' || builtIn(node) || node.kind === 'smartlist' || !from)
+      return refused('stale')
+    if (parent?.kind !== 'folder' || edit.beforeId === node.id) return refused('stale')
+    for (let up: ModelNode | null = parent; up; up = up.parent)
+      if (up === node) return refused('stale')
+    const target =
+      edit.beforeId === null ? null : parent.children.find((c) => c.id === edit.beforeId)
+    if (edit.beforeId !== null && !target) return refused('stale')
+    from.children = from.children.filter((c) => c !== node)
+    const at = target ? parent.children.indexOf(target) : parent.children.length
+    parent.children.splice(at, 0, node)
+    node.parent = parent
+    from.dirty = true
+    parent.dirty = true
     return done()
   }
   if (!playlist) return refused('stale')

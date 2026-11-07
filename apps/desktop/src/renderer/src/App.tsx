@@ -171,6 +171,7 @@ import { outputNamePatches, renderOutputName, titleFormatSummary } from './lib/o
 import { clampPanelGeometry } from './lib/panelGeometry'
 import { flushPendingEdits } from './lib/pendingEdits'
 import { isMacOS } from './lib/platform'
+import { movedCrateId } from './lib/playlistEdits'
 import { playlistMembership, playlistView } from './lib/playlistView'
 import { needsDiscogsPrefetch } from './lib/prefetch'
 import { topBarProgress } from './lib/progress'
@@ -187,6 +188,7 @@ import {
   draggedRows,
   isDraggedPath,
   isReorderDrag,
+  isTreeNodeDrag,
   ownRowsDropped,
 } from './lib/reorderDrag'
 import { contentDeficit } from './lib/resize'
@@ -1308,7 +1310,7 @@ export default function App(): React.JSX.Element {
     // Bubble phase on purpose, after the tree's own drop has read the record.
     clearDraggedRows()
     // A separator let go outside the list carries no files; it is not an import either.
-    if (own || isReorderDrag(e)) return
+    if (own || isReorderDrag(e) || isTreeNodeDrag(e)) return
     const dropped = Array.from(e.dataTransfer.files).map((f) => window.api.getPathForFile(f))
     await watchLoad(() => addToWorkingList(dropped))
   }
@@ -2776,6 +2778,17 @@ export default function App(): React.JSX.Element {
       await editRekordbox({ kind: 'add', playlistId, tracks }, name)
     },
   )
+  const moveInTree = useStableCallback(
+    async (node: SourceNode, parentId: string, beforeId: string | null, folders: string[]) => {
+      const wasOpen = browser.playlist?.id === node.id
+      const result = await editRekordbox(
+        { kind: 'moveNode', playlistId: node.id, parentId, beforeId },
+        node.name,
+      )
+      if (result.applied && wasOpen && sourceProgram && SOURCE_PROGRAMS[sourceProgram].crates)
+        browser.selectPlaylist({ ...node, id: movedCrateId(node.id, parentId) }, folders)
+    },
+  )
   const treeEdit = useMemo(
     () => ({
       onCreate: createInRekordbox,
@@ -2783,6 +2796,7 @@ export default function App(): React.JSX.Element {
       onRename: renameInRekordbox,
       onDelete: deleteInRekordbox,
       onPasteTracklist: openPasteTracklist,
+      onMove: moveInTree,
       ...(sourceProgram && SOURCE_PROGRAMS[sourceProgram].crates && { crates: true as const }),
     }),
     [
@@ -2791,6 +2805,7 @@ export default function App(): React.JSX.Element {
       renameInRekordbox,
       deleteInRekordbox,
       openPasteTracklist,
+      moveInTree,
       sourceProgram,
     ],
   )
@@ -3412,7 +3427,7 @@ export default function App(): React.JSX.Element {
             onDragEnterCapture={(e) => {
               // A reorder inside the list is not files arriving, and rows dragged out of the
               // list (toward a playlist in the tree) are already in it: no import overlay.
-              if (!isReorderDrag(e) && draggedRows() === null)
+              if (!isReorderDrag(e) && !isTreeNodeDrag(e) && draggedRows() === null)
                 setDragging(dragDepth.current.enter())
             }}
             onDragOver={(e) => {
@@ -3420,7 +3435,7 @@ export default function App(): React.JSX.Element {
               e.preventDefault()
             }}
             onDragLeaveCapture={(e) => {
-              if (!isReorderDrag(e) && draggedRows() === null)
+              if (!isReorderDrag(e) && !isTreeNodeDrag(e) && draggedRows() === null)
                 setDragging(dragDepth.current.leave())
             }}
             onDropCapture={() => setDragging(dragDepth.current.reset())}

@@ -63,3 +63,9 @@ export const REORDER_TYPE = 'application/x-surco-reorder'
 export function isReorderDrag(e: { dataTransfer?: DataTransfer | null }): boolean {
   return e.dataTransfer?.types?.includes(REORDER_TYPE) ?? false
 }
+
+export const TREE_NODE_TYPE = 'application/x-surco-tree-node'
+
+export function isTreeNodeDrag(e: { dataTransfer?: DataTransfer | null }): boolean {
+  return e.dataTransfer?.types?.includes(TREE_NODE_TYPE) ?? false
+}

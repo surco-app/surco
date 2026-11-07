@@ -75,20 +75,28 @@ export function seratoNameTaken(
   edit: RekordboxPlaylistEdit,
   roots: SeratoLibraryRoot[],
 ): boolean {
-  if (edit.kind !== 'create' && edit.kind !== 'rename') return false
-  const name = edit.name.trim()
+  if (edit.kind !== 'create' && edit.kind !== 'rename' && edit.kind !== 'moveNode') return false
   const family =
-    edit.kind === 'rename'
-      ? familyByRoot(draft, edit.playlistId, roots).flatMap(([, ids]) => ids)
-      : []
+    edit.kind === 'create'
+      ? []
+      : familyByRoot(draft, edit.playlistId, roots).flatMap(([, ids]) => ids)
   const taken = new Set(
     roots
       .flatMap((r) => crateIds(draft, r))
       .filter((id) => !family.includes(id))
       .map(lower),
   )
+  if (edit.kind === 'moveNode')
+    return family.some((f) => taken.has(lower(movedCrateId(f, edit))))
+  const name = edit.name.trim()
   if (edit.kind === 'create') return taken.has(lower(crateIdOf(edit.parentId, name)))
   return family.some((f) => taken.has(lower(renamedCrateId(f, edit.playlistId, name))))
+}
+
+const crateName = (id: string): string => id.split('%%').pop() ?? id
+
+function movedCrateId(id: string, edit: Extract<RekordboxPlaylistEdit, { kind: 'moveNode' }>): string {
+  return crateIdOf(edit.parentId, crateName(edit.playlistId)) + id.slice(edit.playlistId.length)
 }
 
 const caseOnly = (id: string, name: string): boolean =>
@@ -114,12 +122,15 @@ export function seratoEditFiles(
     return files
   }
   const id = edit.playlistId
-  if (edit.kind !== 'rename' && edit.kind !== 'delete') return files
+  if (edit.kind !== 'rename' && edit.kind !== 'delete' && edit.kind !== 'moveNode') return files
   const families = familyByRoot(draft, id, roots)
   for (const [r, family] of families) for (const f of family) stamp(crateFileOf(r, f))
   if (edit.kind === 'rename' && !caseOnly(id, edit.name.trim()))
     for (const [r, family] of families)
       for (const f of family) files[crateFileOf(r, renamedCrateId(f, id, edit.name.trim()))] = null
+  if (edit.kind === 'moveNode' && movedCrateId(id, edit) !== id)
+    for (const [r, family] of families)
+      for (const f of family) files[crateFileOf(r, movedCrateId(f, edit))] = null
   return files
 }
 
@@ -340,8 +351,14 @@ export function applySeratoEdit(
       return { ...refused(result.refused), ...(result.report && { report: result.report }) }
     return done(result)
   }
-  if (edit.kind !== 'rename' && edit.kind !== 'delete') return refused('write-failed')
+  if (edit.kind !== 'rename' && edit.kind !== 'delete' && edit.kind !== 'moveNode')
+    return refused('write-failed')
   const id = edit.playlistId
+  if (edit.kind === 'moveNode') {
+    if (edit.parentId === id || edit.parentId.startsWith(`${id}%%`)) return refused('stale')
+    if (familyByRoot(draft, id, roots).length === 0) return refused('stale')
+    if (createRoots(draft, edit.parentId, roots).length === 0) return refused('stale')
+  }
   const families = familyByRoot(draft, id, roots)
   if (families.length === 0) return refused('stale')
   for (const [r, family] of families)
@@ -350,10 +367,12 @@ export function applySeratoEdit(
     for (const [r, family] of families) for (const f of family) draft.remove(crateFileOf(r, f))
     return done()
   }
-  const name = edit.name.trim()
-  if (!validCrateName(name)) return refused('bad-name')
-  if (seratoNameTaken(draft, edit, roots)) return refused('bad-name')
-  const renamed = (f: string): string => renamedCrateId(f, id, name)
+  if (edit.kind === 'moveNode' && seratoNameTaken(draft, edit, roots)) return refused('bad-name')
+  const name = edit.kind === 'moveNode' ? '' : edit.name.trim()
+  if (edit.kind === 'rename' && !validCrateName(name)) return refused('bad-name')
+  if (edit.kind === 'rename' && seratoNameTaken(draft, edit, roots)) return refused('bad-name')
+  const renamed = (f: string): string =>
+    edit.kind === 'moveNode' ? movedCrateId(f, edit) : renamedCrateId(f, id, name)
   for (const [r, family] of families)
     for (const f of family)
       if (renamed(f) !== f) {
@@ -386,8 +405,6 @@ export function seratoLibraryHas(
     databaseHolds(read, roots, path) ||
     (!!from && databaseHolds(read, roots, from))
 }
-
-const crateName = (id: string): string => id.split('%%').pop() ?? id
 
 type Pick = { file: string } | { missing: 'other-volume' | 'playlist-gone' }
 

@@ -3034,7 +3034,8 @@
         "add": "Tracks hinzufügen",
         "move": "umsortieren",
         "remove": "Tracks entfernen",
-        "insertSeparator": "Trenner einfügen"
+        "insertSeparator": "Trenner einfügen",
+        "moveNode": "verschieben"
       },
       "cues": "Cues",
       "tags": "Tags"
