@@ -15,8 +15,8 @@ import { ALL_TRACKS_ID } from '../../../shared/allTracks'
 import { RECENTLY_ADDED_ID } from '../../../shared/recentlyAdded'
 import type { PlaylistSource, SourceNode } from '../../../shared/types'
 import type { NewPlaylist } from '../lib/commands'
-import { isPendingNode, subtreeCounts } from '../lib/playlistEdits'
-import { carriesOnlyFiles, draggedRows, TREE_NODE_TYPE } from '../lib/reorderDrag'
+import { isPendingNode, subtreeCounts, subtreeIds } from '../lib/playlistEdits'
+import { carriesOnlyFiles, draggedRows, isTreeNodeDrag, TREE_NODE_TYPE } from '../lib/reorderDrag'
 import { ConfirmDialog } from './ConfirmDialog'
 import { ModalExit } from './ModalShell'
 import { Tooltip } from './Tooltip'
@@ -225,6 +225,66 @@ export function SourceTree({
   // when a drag from the list is in progress, otherwise the files of a drag from Finder.
   const [dropOn, setDropOn] = useState<{ id: string; count: number } | null>(null)
   const [dragging, setDragging] = useState<string | null>(null)
+  const [dropAt, setDropAt] = useState<{
+    parentId: string
+    beforeId: string | null
+    inside: boolean
+    folders: string[]
+  } | null>(null)
+  const draggedIds = useMemo(
+    () => new Set(dragging && nodes ? subtreeIds(nodes, dragging) : []),
+    [nodes, dragging],
+  )
+  const endNodeDrag = (): void => {
+    setDropAt(null)
+    setDragging(null)
+  }
+  const dropNode = (e: React.DragEvent): void => {
+    e.preventDefault()
+    e.stopPropagation()
+    const target = dropAt
+    endNodeDrag()
+    if (!target || !dragging || !nodes || !edit?.onMove) return
+    const trail = pathTo(nodes, dragging)
+    if (!trail) return
+    const parent = trail.at(-1)
+    const siblings = parent?.children ?? nodes
+    const index = siblings.findIndex((n) => n.id === dragging)
+    const next = siblings[index + 1]?.id ?? null
+    const samePlace =
+      (parent?.id ?? 'root') === target.parentId &&
+      (target.beforeId === dragging || target.beforeId === next)
+    if (samePlace) return
+    edit.onMove(siblings[index], target.parentId, target.beforeId, target.folders)
+    if (target.inside) setOpened((prev) => new Set([...prev, target.parentId]))
+  }
+  const dropLine = (parentId: string, beforeId: string | null, depth: number): React.ReactNode =>
+    !edit?.crates &&
+    dropAt?.parentId === parentId &&
+    dropAt.beforeId === beforeId &&
+    !dropAt.inside && (
+      <li
+        key="drop-line"
+        data-testid="source-tree-drop-line"
+        aria-hidden="true"
+        style={{ paddingLeft: 10 + depth * 18 }}
+        className="pointer-events-none h-0 pr-2.5"
+      >
+        <div className="h-0.5 -translate-y-px rounded-full bg-[var(--color-accent)]" />
+      </li>
+    )
+  const childRows = (
+    list: SourceNode[],
+    parentId: string,
+    depth: number,
+    folders: string[],
+  ): React.ReactNode => [
+    ...list.flatMap((c) => [
+      dropLine(parentId, c.id, depth),
+      row(c, depth, folders, parentId, list),
+    ]),
+    dropLine(parentId, null, depth),
+  ]
   const carriesTracks = (e: React.DragEvent): boolean =>
     e.dataTransfer.types.includes('Files') || (draggedRows() !== null && carriesOnlyFiles(e))
   // Files the drag shows are what lands, so a stale record never inflates the count; the
@@ -260,6 +320,8 @@ export function SourceTree({
     node: SourceNode,
     depth: number,
     folders: string[],
+    parentId: string,
+    siblings: SourceNode[],
     trail?: string,
   ): React.JSX.Element => {
     const isFolder = node.kind === 'folder'
@@ -285,17 +347,44 @@ export function SourceTree({
     const open = opened.has(node.id)
     const selected = node.id === selectedId
     const Chevron = open ? ChevronDown : ChevronRight
-    const dragOver = (e: React.DragEvent): void => {
-      if (!dropEdit || isFolder || !carriesTracks(e)) return
+    const nodeDragOver = (e: React.DragEvent): void => {
+      if (!edit?.onMove || hits || !dragging) return
+      if (recent || all || pendingNode || draggedIds.has(node.id)) {
+        setDropAt(null)
+        return
+      }
       e.preventDefault()
-      setDropOn({ id: node.id, count: dropCount(e) })
+      const box = e.currentTarget.getBoundingClientRect()
+      const y = (e.clientY - box.top) / box.height
+      const next = siblings[siblings.findIndex((n) => n.id === node.id) + 1]?.id ?? null
+      if (edit.crates || (isFolder && y >= 0.25 && y <= 0.75))
+        setDropAt({
+          parentId: node.id,
+          beforeId: null,
+          inside: true,
+          folders: [...folders, node.name],
+        })
+      else if (y < (isFolder ? 0.25 : 0.5))
+        setDropAt({ parentId, beforeId: node.id, inside: false, folders })
+      else setDropAt({ parentId, beforeId: next, inside: false, folders })
+    }
+    const insideHere = dropAt?.inside === true && dropAt.parentId === node.id
+    const dragOver = (e: React.DragEvent): void => {
+      if (isTreeNodeDrag(e)) nodeDragOver(e)
+      else if (dropEdit && !isFolder && carriesTracks(e)) {
+        e.preventDefault()
+        setDropOn({ id: node.id, count: dropCount(e) })
+      }
     }
     const drop = (e: React.DragEvent): void => {
-      if (!dropEdit || isFolder || !carriesTracks(e)) return
-      e.preventDefault()
-      e.stopPropagation()
-      setDropOn(null)
-      dropEdit.onDropTracks(node, Array.from(e.dataTransfer.files))
+      if (isTreeNodeDrag(e)) {
+        if (edit?.onMove) dropNode(e)
+      } else if (dropEdit && !isFolder && carriesTracks(e)) {
+        e.preventDefault()
+        e.stopPropagation()
+        setDropOn(null)
+        dropEdit.onDropTracks(node, Array.from(e.dataTransfer.files))
+      }
     }
     return (
       <li key={node.id} className={parentCrate ? 'relative' : undefined}>
@@ -335,19 +424,20 @@ export function SourceTree({
               e.dataTransfer.setData(TREE_NODE_TYPE, node.id)
               setDragging(node.id)
             }}
-            onDragEnd={() => setDragging(null)}
+            onDragEnd={endNodeDrag}
             data-dragging={dragging === node.id || undefined}
             onContextMenu={(e) => {
               if (!menuEdit && !pasteOnly) return
               e.preventDefault()
               setMenu({ node, x: e.clientX, y: e.clientY, pasteOnly: !menuEdit })
             }}
-            data-drop-target={dropOn?.id === node.id || undefined}
+            data-drop-target={dropOn?.id === node.id || insideHere || undefined}
             onDragOver={dragOver}
             onDragLeave={(e) => {
               // Moving onto the row's own name or count fires a leave on the row itself.
               if (e.currentTarget.contains(e.relatedTarget as Node | null)) return
               setDropOn((d) => (d?.id === node.id ? null : d))
+              if (isTreeNodeDrag(e)) setDropAt(null)
             }}
             onDrop={drop}
             style={{ paddingLeft: 10 + depth * 18 }}
@@ -356,7 +446,7 @@ export function SourceTree({
                 ? 'bg-[var(--color-row-selected)] text-[var(--color-on-row-selected)]'
                 : `${isFolder ? 'text-fg' : 'text-fg-muted'} hover:bg-[var(--color-hover)]`
             } ${isFolder ? 'font-medium' : ''} ${dragging === node.id ? 'opacity-50' : ''} ${
-              dropOn?.id === node.id
+              dropOn?.id === node.id || insideHere
                 ? 'outline-dashed outline-1 -outline-offset-1 outline-[var(--color-accent)]'
                 : ''
             }`}
@@ -414,7 +504,7 @@ export function SourceTree({
         )}
         {((expandable && open) || creating?.parentId === node.id) && (
           <ul>
-            {(node.children ?? []).map((c) => row(c, depth + 1, [...folders, node.name]))}
+            {childRows(node.children ?? [], node.id, depth + 1, [...folders, node.name])}
             {nameField(node.id, depth + 1)}
           </ul>
         )}
@@ -462,11 +552,12 @@ export function SourceTree({
     body = <p className="px-3 text-xs text-fg-faint">{tr('sources.empty')}</p>
   else if (hits && hits.length === 0)
     body = <p className="px-3 text-xs text-fg-faint">{tr('sources.noMatch')}</p>
-  else if (hits) body = <ul>{hits.map((h) => row(h.node, 0, h.folders, h.folders.join(' › ')))}</ul>
+  else if (hits)
+    body = <ul>{hits.map((h) => row(h.node, 0, h.folders, 'root', [], h.folders.join(' › ')))}</ul>
   else
     body = (
       <ul>
-        {nodes.map((n) => row(n, 0, []))}
+        {childRows(nodes, 'root', 0, [])}
         {nameField('root', 0)}
       </ul>
     )
@@ -551,7 +642,27 @@ export function SourceTree({
           className="min-w-0 flex-1 bg-transparent outline-none"
         />
       </label>
-      <div className="min-h-0 flex-1 overflow-y-auto px-1.5 pt-0.5 pb-2">{body}</div>
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-1.5 pt-0.5 pb-2">
+        {body}
+        {edit?.onMove && nodes && !missing && !hits && (
+          // biome-ignore lint/a11y/noStaticElementInteractions: drop target, not a control
+          <div
+            data-testid="source-tree-drop-end"
+            onDragOver={(e) => {
+              if (!isTreeNodeDrag(e) || !dragging) return
+              e.preventDefault()
+              setDropAt({ parentId: 'root', beforeId: null, inside: false, folders: [] })
+            }}
+            onDragLeave={(e) => {
+              if (isTreeNodeDrag(e)) setDropAt(null)
+            }}
+            onDrop={(e) => {
+              if (isTreeNodeDrag(e)) dropNode(e)
+            }}
+            className="min-h-[28px] flex-1"
+          />
+        )}
+      </div>
       {menu && (
         <div className="fixed inset-0 z-50">
           <button

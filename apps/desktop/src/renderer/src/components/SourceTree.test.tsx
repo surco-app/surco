@@ -61,6 +61,17 @@ function setup(selectedId: string | null = null, editable = false, nodes = NODES
 
 const files = (...names: string[]) => fakeDataTransfer(names.map((n) => new File([''], n)))
 
+const dragNode = (id: string) => {
+  const dt = fakeDataTransfer()
+  fireEvent.dragStart(screen.getByTestId(`source-node-${id}`), { dataTransfer: dt })
+  return dt
+}
+
+const over = (el: HTMLElement, y: number, dt: ReturnType<typeof fakeDataTransfer>) => {
+  vi.spyOn(el, 'getBoundingClientRect').mockReturnValue({ top: 0, height: 28 } as DOMRect)
+  fireEvent.dragOver(el, { dataTransfer: dt, clientY: y })
+}
+
 describe('SourceTree', () => {
   it('draws placeholder rows in the shape of the playlists while the tree is read', () => {
     render(
@@ -719,6 +730,17 @@ describe('SourceTree Recently added', () => {
     expect(edit.onDropTracks).not.toHaveBeenCalled()
     expect(onOuterDrop).not.toHaveBeenCalled()
   })
+
+  it('takes no node dropped before, after or on it, since its place is Surco’s and not the collection’s', () => {
+    const { edit, onOuterDrop } = setup(null, true, [RECENT, ...NODES])
+    const dt = dragNode('house')
+    over(node(), 3, dt)
+    expect(screen.queryByTestId('source-tree-drop-line')).toBeNull()
+    expect(node()).not.toHaveAttribute('data-drop-target')
+    fireEvent.drop(node(), { dataTransfer: dt })
+    expect(edit.onMove).not.toHaveBeenCalled()
+    expect(onOuterDrop).not.toHaveBeenCalled()
+  })
 })
 
 describe('SourceTree All tracks', () => {
@@ -755,6 +777,17 @@ describe('SourceTree All tracks', () => {
     expect(edit.onDropTracks).not.toHaveBeenCalled()
     expect(onOuterDrop).not.toHaveBeenCalled()
   })
+
+  it('takes no node dropped before, after or on it, since it is the collection and not a place in it', () => {
+    const { edit, onOuterDrop } = setup(null, true, [ALL, ...NODES])
+    const dt = dragNode('house')
+    over(node(), 24, dt)
+    expect(screen.queryByTestId('source-tree-drop-line')).toBeNull()
+    expect(node()).not.toHaveAttribute('data-drop-target')
+    fireEvent.drop(node(), { dataTransfer: dt })
+    expect(edit.onMove).not.toHaveBeenCalled()
+    expect(onOuterDrop).not.toHaveBeenCalled()
+  })
 })
 
 describe('SourceTree on Serato crates', () => {
@@ -784,6 +817,7 @@ describe('SourceTree on Serato crates', () => {
       onDropTracks: vi.fn(),
       onRename: vi.fn(),
       onDelete: vi.fn(),
+      onMove: vi.fn(),
       crates: true as const,
     }
     render(
@@ -910,6 +944,18 @@ describe('SourceTree on Serato crates', () => {
     expect(screen.getByRole('dialog')).toHaveTextContent(
       'Delete the crate “A” and its 2 subcrates? The tracks stay in Serato.',
     )
+  })
+
+  it('treats the whole crate row as inside and draws no line on Serato, where a crate is never placed between others', () => {
+    const Y: SourceNode = { id: 'Y', name: 'Y', kind: 'playlist', count: 0 }
+    const edit = setupCrates([Y, CRATES[1]])
+    const dt = dragNode('Z')
+    const target = screen.getByTestId('source-node-Y')
+    over(target, 3, dt)
+    expect(target).toHaveAttribute('data-drop-target')
+    expect(screen.queryByTestId('source-tree-drop-line')).toBeNull()
+    fireEvent.drop(target, { dataTransfer: dt })
+    expect(edit.onMove).toHaveBeenCalledWith(CRATES[1], 'Y', null, ['Y'])
   })
 
   it('confirms a delete of a crate with no subcrates in short words', () => {
@@ -1125,5 +1171,87 @@ describe('SourceTree dragging nodes', () => {
     expect(screen.queryByTestId('source-tree-menu')).toBeNull()
     fireEvent.dragOver(row, { dataTransfer: files('a.wav') })
     expect(row).not.toHaveAttribute('data-drop-target')
+  })
+})
+
+describe('SourceTree dropping nodes', () => {
+  it('draws the line before a folder from its upper quarter, and moves there on drop', () => {
+    const { edit } = setup(null, true)
+    const dt = dragNode('house')
+    const bases = screen.getByTestId('source-node-bases')
+    over(bases, 3, dt)
+    expect(screen.getByTestId('source-tree-drop-line')).toBeInTheDocument()
+    fireEvent.drop(bases, { dataTransfer: dt })
+    expect(edit.onMove).toHaveBeenCalledWith(NODES[2], 'root', 'bases', [])
+  })
+
+  it('drops inside a folder from its middle, opens it, and shows no line', () => {
+    const { edit } = setup(null, true)
+    const dt = dragNode('house')
+    const bases = screen.getByTestId('source-node-bases')
+    over(bases, 14, dt)
+    expect(bases).toHaveAttribute('data-drop-target')
+    expect(screen.queryByTestId('source-tree-drop-line')).toBeNull()
+    fireEvent.drop(bases, { dataTransfer: dt })
+    expect(edit.onMove).toHaveBeenCalledWith(NODES[2], 'bases', null, ['BASES'])
+    expect(bases).toHaveAttribute('aria-expanded', 'true')
+  })
+
+  it('indents the line to the depth of the parent it lands in', () => {
+    setup('ct', true)
+    const dt = dragNode('house')
+    over(screen.getByTestId('source-node-c90'), 3, dt)
+    expect(screen.getByTestId('source-tree-drop-line')).toHaveStyle({ paddingLeft: '28px' })
+  })
+
+  it('lands last at the root when dropped under the last row', () => {
+    const { edit } = setup(null, true)
+    const dt = dragNode('cant')
+    const end = screen.getByTestId('source-tree-drop-end')
+    fireEvent.dragOver(end, { dataTransfer: dt })
+    fireEvent.drop(end, { dataTransfer: dt })
+    expect(edit.onMove).toHaveBeenCalledWith(NODES[0], 'root', null, [])
+  })
+
+  it('refuses a folder as a target inside itself or its children', () => {
+    const { edit } = setup('ct', true)
+    const dt = dragNode('cant')
+    const c90 = screen.getByTestId('source-node-c90')
+    over(c90, 14, dt)
+    expect(c90).not.toHaveAttribute('data-drop-target')
+    fireEvent.drop(c90, { dataTransfer: dt })
+    expect(edit.onMove).not.toHaveBeenCalled()
+  })
+
+  it('sends nothing for a drop on the place the node already has', () => {
+    const { edit } = setup(null, true)
+    const dt = dragNode('bases')
+    over(screen.getByTestId('source-node-house'), 3, dt)
+    fireEvent.drop(screen.getByTestId('source-node-house'), { dataTransfer: dt })
+    fireEvent.dragStart(screen.getByTestId('source-node-bases'), { dataTransfer: dt })
+    over(screen.getByTestId('source-node-cant'), 24, dt)
+    fireEvent.drop(screen.getByTestId('source-node-cant'), { dataTransfer: dt })
+    expect(edit.onMove).not.toHaveBeenCalled()
+  })
+
+  it('accepts the drag only over a place it can land, so a refused row keeps the no-drop cursor', () => {
+    setup('ct', true)
+    const dt = dragNode('cant')
+    const c90 = screen.getByTestId('source-node-c90')
+    vi.spyOn(c90, 'getBoundingClientRect').mockReturnValue({ top: 0, height: 28 } as DOMRect)
+    expect(fireEvent.dragOver(c90, { dataTransfer: dt, clientY: 14 })).toBe(true)
+    const house = screen.getByTestId('source-node-house')
+    vi.spyOn(house, 'getBoundingClientRect').mockReturnValue({ top: 0, height: 28 } as DOMRect)
+    expect(fireEvent.dragOver(house, { dataTransfer: dt, clientY: 3 })).toBe(false)
+    expect(
+      fireEvent.dragOver(screen.getByTestId('source-tree-drop-end'), { dataTransfer: dt }),
+    ).toBe(false)
+  })
+
+  it('keeps a node drop from reaching the window import', () => {
+    const { onOuterDrop } = setup(null, true)
+    const dt = dragNode('house')
+    fireEvent.drop(screen.getByTestId('source-node-bases'), { dataTransfer: dt })
+    expect(onOuterDrop).not.toHaveBeenCalled()
   })
 })
