@@ -253,7 +253,7 @@
           {
             "t": "Deine rekordbox-Playlists",
             "s": "Öffne und organisiere deine rekordbox-Playlists, ohne Surco zu verlassen.",
-            "d": "Öffne sie in Surco mit ihren Ordnern und in ihrer Reihenfolge, mit der Wellenform und den Cues von rekordbox bei jedem Track. Und organisiere sie von hier aus. Leg Playlists und Ordner an, benenne sie um und lösche sie, füge Tracks hinzu, entferne und sortiere sie, und wähle im Editor, in welchen Playlists jeder Track steckt. Ist rekordbox offen, warten die Änderungen, bis du es schließt. „Zuletzt hinzugefügt“ steht ganz oben, mit dem, was du in den letzten 30 Tagen zur Sammlung hinzugefügt hast, danach „Alle Tracks“, mit deiner ganzen Sammlung, auch dem, was in keiner Playlist ist. Nutzt du rekordbox oder Apple Music nicht, blende diese Quelle aus. Und hast du die Tracklist eines Sets, fügst du sie mit „Tracklist einfügen…“ in eine Playlist ein, und Surco sucht jede Zeile in deiner Sammlung, zeigt dir, was es gefunden hat, und fügt die Tracks in der Reihenfolge des Sets hinzu. Auch in Traktor und Serato."
+            "d": "Öffne sie in Surco mit ihren Ordnern und in ihrer Reihenfolge, mit der Wellenform und den Cues von rekordbox bei jedem Track. Und organisiere sie von hier aus. Leg Playlists und Ordner an, benenne sie um und lösche sie, verschiebe sie per Drag-and-drop, füge Tracks hinzu, entferne und sortiere sie, und wähle im Editor, in welchen Playlists jeder Track steckt. Ist rekordbox offen, warten die Änderungen, bis du es schließt. „Zuletzt hinzugefügt“ steht ganz oben, mit dem, was du in den letzten 30 Tagen zur Sammlung hinzugefügt hast, danach „Alle Tracks“, mit deiner ganzen Sammlung, auch dem, was in keiner Playlist ist. Nutzt du rekordbox oder Apple Music nicht, blende diese Quelle aus. Und hast du die Tracklist eines Sets, fügst du sie mit „Tracklist einfügen…“ in eine Playlist ein, und Surco sucht jede Zeile in deiner Sammlung, zeigt dir, was es gefunden hat, und fügt die Tracks in der Reihenfolge des Sets hinzu. Auch in Traktor und Serato."
           },
           {
             "t": "rekordbox-Cues",
@@ -949,7 +949,7 @@
           },
           {
             "lead": "Organisiere deine Playlists.",
-            "text": "In der Seitenleiste legst du Playlists und Ordner an, benennst sie um und sortierst sie, ohne das Programm zu öffnen."
+            "text": "In der Seitenleiste legst du Playlists und Ordner an, benennst sie um und verschiebst sie per Drag-and-drop, ohne das Programm zu öffnen."
           }
         ],
         "points": [

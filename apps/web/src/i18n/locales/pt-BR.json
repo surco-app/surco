@@ -253,7 +253,7 @@
           {
             "t": "Suas playlists do rekordbox",
             "s": "Abra e organize suas playlists do rekordbox sem sair do Surco.",
-            "d": "Abra-as no Surco com suas pastas e na sua ordem, com a onda e os cues do rekordbox em cada faixa. E organize-as daqui. Crie, renomeie e apague playlists e pastas, adicione, remova e reordene faixas, e escolha no editor em quais playlists cada faixa está. Se o rekordbox estiver aberto, as mudanças esperam você fechá-lo. “Adicionadas recentemente” vem primeiro, com o que você adicionou à coleção nos últimos 30 dias, e depois “Todas as faixas”, com a sua coleção inteira, inclusive o que não está em nenhuma playlist. Se você não usa rekordbox ou Apple Music, oculte essa fonte. E se você tem a tracklist de um set, cole-a numa playlist com “Colar tracklist…” e o Surco procura cada linha na sua coleção, mostra o que encontrou e adiciona as faixas na ordem do set. No Traktor e no Serato também."
+            "d": "Abra-as no Surco com suas pastas e na sua ordem, com a onda e os cues do rekordbox em cada faixa. E organize-as daqui. Crie, renomeie e apague playlists e pastas, mova-as arrastando, adicione, remova e reordene faixas, e escolha no editor em quais playlists cada faixa está. Se o rekordbox estiver aberto, as mudanças esperam você fechá-lo. “Adicionadas recentemente” vem primeiro, com o que você adicionou à coleção nos últimos 30 dias, e depois “Todas as faixas”, com a sua coleção inteira, inclusive o que não está em nenhuma playlist. Se você não usa rekordbox ou Apple Music, oculte essa fonte. E se você tem a tracklist de um set, cole-a numa playlist com “Colar tracklist…” e o Surco procura cada linha na sua coleção, mostra o que encontrou e adiciona as faixas na ordem do set. No Traktor e no Serato também."
           },
           {
             "t": "Cues do rekordbox",
@@ -949,7 +949,7 @@
           },
           {
             "lead": "Organize suas playlists.",
-            "text": "Pela barra lateral você cria, renomeia e reordena playlists e pastas sem abrir o programa."
+            "text": "Pela barra lateral você cria, renomeia e move playlists e pastas arrastando, sem abrir o programa."
           }
         ],
         "points": [

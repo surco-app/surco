@@ -253,7 +253,7 @@
           {
             "t": "Tes playlists rekordbox",
             "s": "Ouvre et organise tes playlists rekordbox sans quitter Surco.",
-            "d": "Ouvre-les dans Surco avec leurs dossiers et dans leur ordre, avec la forme d’onde et les cues de rekordbox sur chaque morceau. Et organise-les d’ici. Crée, renomme et supprime playlists et dossiers, ajoute, retire et réordonne les morceaux, et choisis dans l’éditeur dans quelles playlists est chaque morceau. Si rekordbox est ouvert, les changements attendent que tu le fermes. « Ajoutées récemment » arrive en premier, avec ce que tu as ajouté à la collection ces 30 derniers jours, puis « Tous les morceaux », avec toute ta collection, y compris ce qui n’est dans aucune playlist. Si tu n’utilises pas rekordbox ou Apple Music, masque cette source. Et si tu as la tracklist d’un set, tu la colles sur une playlist avec « Coller une tracklist… » et Surco cherche chaque ligne dans ta collection, te montre ce qu’il a trouvé et ajoute les morceaux dans l’ordre du set. Dans Traktor et Serato aussi."
+            "d": "Ouvre-les dans Surco avec leurs dossiers et dans leur ordre, avec la forme d’onde et les cues de rekordbox sur chaque morceau. Et organise-les d’ici. Crée, renomme et supprime playlists et dossiers, déplace-les en les faisant glisser, ajoute, retire et réordonne les morceaux, et choisis dans l’éditeur dans quelles playlists est chaque morceau. Si rekordbox est ouvert, les changements attendent que tu le fermes. « Ajoutées récemment » arrive en premier, avec ce que tu as ajouté à la collection ces 30 derniers jours, puis « Tous les morceaux », avec toute ta collection, y compris ce qui n’est dans aucune playlist. Si tu n’utilises pas rekordbox ou Apple Music, masque cette source. Et si tu as la tracklist d’un set, tu la colles sur une playlist avec « Coller une tracklist… » et Surco cherche chaque ligne dans ta collection, te montre ce qu’il a trouvé et ajoute les morceaux dans l’ordre du set. Dans Traktor et Serato aussi."
           },
           {
             "t": "Cues rekordbox",
@@ -949,7 +949,7 @@
           },
           {
             "lead": "Organise tes playlists.",
-            "text": "Depuis la barre latérale, tu crées, renommes et réordonnes playlists et dossiers sans ouvrir le logiciel."
+            "text": "Depuis la barre latérale, tu crées, renommes et déplaces playlists et dossiers en les faisant glisser, sans ouvrir le logiciel."
           }
         ],
         "points": [
