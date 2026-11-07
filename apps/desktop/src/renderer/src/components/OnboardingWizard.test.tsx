@@ -171,6 +171,11 @@ function openTokenStep(onFinish: (patch: Partial<Settings>) => void = () => {}) 
 describe('OnboardingWizard keyboard', () => {
   // The wizard is a form whose default button is Next, so pressing Enter in a field
   // advances the step instead of doing nothing.
+  it('lifts the wizard above the page like every other dialog', () => {
+    render(<OnboardingWizard settings={settings} onFinish={() => {}} />)
+    expect(screen.getByRole('dialog')).toHaveClass('shadow-modal')
+  })
+
   it('advances to the next step when the form is submitted with Enter', () => {
     render(<OnboardingWizard settings={settings} onFinish={() => {}} />)
     expect(screen.queryByTestId('onboarding-destination-folder')).toBeNull()

@@ -190,7 +190,7 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
         role="dialog"
         aria-modal="true"
         aria-labelledby="onboarding-step-title"
-        className="animate-pop w-[560px] rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-6"
+        className="animate-pop shadow-modal w-[560px] rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-6"
       >
         <form
           className="contents"

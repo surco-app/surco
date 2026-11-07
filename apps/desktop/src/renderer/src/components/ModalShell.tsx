@@ -107,7 +107,7 @@ export function ModalShell({
         data-testid={dialogTestId}
         aria-labelledby={labelledBy}
         aria-label={label}
-        className={`${leaving ? 'animate-pop-out ' : bare ? '' : 'animate-pop '}relative z-10 ${className}`}
+        className={`${leaving ? 'animate-pop-out ' : bare ? '' : 'animate-pop '}relative z-10 shadow-modal ${className}`}
       >
         {body}
       </div>
