@@ -235,6 +235,14 @@ export function SourceTree({
     () => new Set(dragging && nodes ? subtreeIds(nodes, dragging) : []),
     [nodes, dragging],
   )
+  const draggedName = useMemo(() => {
+    const trail = dragging && nodes ? pathTo(nodes, dragging) : null
+    const siblings = trail?.at(-1)?.children ?? nodes
+    return trail && siblings?.find((n) => n.id === dragging)?.name.toLowerCase()
+  }, [nodes, dragging])
+  const crateNameTaken = (list: SourceNode[] | undefined): boolean =>
+    Boolean(edit?.crates) &&
+    (list ?? []).some((n) => n.id !== dragging && n.name.toLowerCase() === draggedName)
   const endNodeDrag = (): void => {
     setDropAt(null)
     setDragging(null)
@@ -349,7 +357,13 @@ export function SourceTree({
     const Chevron = open ? ChevronDown : ChevronRight
     const nodeDragOver = (e: React.DragEvent): void => {
       if (!edit?.onMove || hits || !dragging) return
-      if (recent || all || pendingNode || draggedIds.has(node.id)) {
+      if (
+        recent ||
+        all ||
+        pendingNode ||
+        draggedIds.has(node.id) ||
+        crateNameTaken(node.children)
+      ) {
         setDropAt(null)
         return
       }
@@ -650,6 +664,10 @@ export function SourceTree({
             data-testid="source-tree-drop-end"
             onDragOver={(e) => {
               if (!isTreeNodeDrag(e) || !dragging) return
+              if (crateNameTaken(nodes)) {
+                setDropAt(null)
+                return
+              }
               e.preventDefault()
               setDropAt({ parentId: 'root', beforeId: null, inside: false, folders: [] })
             }}

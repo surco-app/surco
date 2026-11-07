@@ -2779,13 +2779,13 @@ export default function App(): React.JSX.Element {
     },
   )
   const moveInTree = useStableCallback(
-    (node: SourceNode, parentId: string, beforeId: string | null, folders: string[]) => {
-      void editRekordbox({ kind: 'moveNode', playlistId: node.id, parentId, beforeId }, node.name)
-      if (
-        sourceProgram &&
-        SOURCE_PROGRAMS[sourceProgram].crates &&
-        browser.playlist?.id === node.id
+    async (node: SourceNode, parentId: string, beforeId: string | null, folders: string[]) => {
+      const wasOpen = browser.playlist?.id === node.id
+      const result = await editRekordbox(
+        { kind: 'moveNode', playlistId: node.id, parentId, beforeId },
+        node.name,
       )
+      if (result.applied && wasOpen && sourceProgram && SOURCE_PROGRAMS[sourceProgram].crates)
         browser.selectPlaylist({ ...node, id: movedCrateId(node.id, parentId) }, folders)
     },
   )

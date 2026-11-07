@@ -22,10 +22,12 @@ import { RECENTLY_ADDED_ID } from '../../shared/recentlyAdded'
 import type {
   ActivityEvent,
   ProgramCopies,
+  RekordboxEditResult,
   RekordboxSyncIssue,
   Release,
   RestoreResult,
   Settings,
+  SourceNode,
   UsbExportEvent,
   UsbVolume,
   UsbVolumeList,
@@ -982,6 +984,70 @@ describe('App Serato cues', () => {
       '1 track waits for you to close Serato',
     )
     expect(seratoCueQueueReady).toHaveBeenCalled()
+  })
+})
+
+describe('App Serato crate move', () => {
+  const B: SourceNode = { id: 'A%%B', name: 'B', kind: 'playlist', count: 1 }
+  const BEFORE: SourceNode[] = [
+    { id: 'A', name: 'A', kind: 'playlist', count: 0, children: [B] },
+    { id: 'D', name: 'D', kind: 'playlist', count: 0 },
+  ]
+  const AFTER: SourceNode[] = [
+    { id: 'A', name: 'A', kind: 'playlist', count: 0 },
+    { id: 'D', name: 'D', kind: 'playlist', count: 0, children: [{ ...B, id: 'D%%B' }] },
+  ]
+
+  async function dropBIntoD(answer: RekordboxEditResult) {
+    let settle: (result: RekordboxEditResult) => void = () => {}
+    let tree = BEFORE
+    const loadSeratoPlaylist = vi
+      .fn<Api['loadSeratoPlaylist']>()
+      .mockResolvedValue([
+        { path: '/m/a.wav', separator: false, meta: {}, contentId: 'serato:/m/a.wav' },
+      ])
+    setApi({
+      seratoAvailable: vi.fn<Api['seratoAvailable']>().mockResolvedValue(true),
+      loadSeratoTree: vi.fn<Api['loadSeratoTree']>(async () => tree),
+      seratoRecentCount: vi.fn<Api['seratoRecentCount']>().mockResolvedValue(0),
+      loadSeratoPlaylist,
+      editSeratoPlaylist: vi.fn<Api['editSeratoPlaylist']>(
+        () =>
+          new Promise((resolve) => {
+            settle = (result) => {
+              if (result.applied) tree = AFTER
+              resolve(result)
+            }
+          }),
+      ),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-serato'))
+    fireEvent.click(await screen.findByTestId('source-node-expand-A'))
+    fireEvent.click(await screen.findByTestId('source-node-A%%B'))
+    await waitFor(() => expect(loadSeratoPlaylist).toHaveBeenCalledWith('A%%B'))
+    const dt = fakeDataTransfer()
+    fireEvent.dragStart(screen.getByTestId('source-node-A%%B'), { dataTransfer: dt })
+    fireEvent.dragOver(screen.getByTestId('source-node-D'), { dataTransfer: dt })
+    fireEvent.drop(screen.getByTestId('source-node-D'), { dataTransfer: dt })
+    await waitFor(() => expect(window.api.editSeratoPlaylist).toHaveBeenCalled())
+    expect(loadSeratoPlaylist).not.toHaveBeenCalledWith('D%%B')
+    await act(async () => settle(answer))
+    return loadSeratoPlaylist
+  }
+
+  it('opens the moved crate under its new name once Serato has written it, not before', async () => {
+    await dropBIntoD({ applied: true })
+    await waitFor(() =>
+      expect(screen.getByTestId('source-node-D%%B')).toHaveAttribute('aria-current', 'true'),
+    )
+  })
+
+  it('opens no crate under the new name when Serato refuses the move', async () => {
+    const load = await dropBIntoD({ applied: false, reason: 'bad-name' })
+    await waitFor(() => expect(screen.getByTestId('source-node-A%%B')).toBeInTheDocument())
+    expect(screen.queryByTestId('source-node-D%%B')).toBeNull()
+    expect(load).not.toHaveBeenCalledWith('D%%B')
   })
 })
 

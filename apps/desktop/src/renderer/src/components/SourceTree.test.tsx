@@ -977,6 +977,45 @@ describe('SourceTree on Serato crates', () => {
     expect(edit.onMove).not.toHaveBeenCalled()
   })
 
+  const CLASH: SourceNode[] = [
+    {
+      id: 'A',
+      name: 'A',
+      kind: 'folder',
+      count: 1,
+      children: [{ id: 'A%%B', name: 'B', kind: 'playlist', count: 1 }],
+    },
+    {
+      id: 'D',
+      name: 'D',
+      kind: 'folder',
+      count: 1,
+      children: [{ id: 'D%%b', name: 'b', kind: 'playlist', count: 1 }],
+    },
+    { id: 'b', name: 'b', kind: 'playlist', count: 0 },
+  ]
+
+  it('refuses a crate over a crate that already holds one of its name in any case, since Serato would refuse the move', () => {
+    const edit = setupCrates(CLASH)
+    fireEvent.click(screen.getByTestId('source-node-A'))
+    const dt = dragNode('A%%B')
+    const target = screen.getByTestId('source-node-D')
+    over(target, 14, dt)
+    expect(target).not.toHaveAttribute('data-drop-target')
+    fireEvent.drop(target, { dataTransfer: dt })
+    expect(edit.onMove).not.toHaveBeenCalled()
+  })
+
+  it('refuses a crate on the end of the tree when a root crate already has its name', () => {
+    const edit = setupCrates(CLASH)
+    fireEvent.click(screen.getByTestId('source-node-A'))
+    const dt = dragNode('A%%B')
+    const end = screen.getByTestId('source-tree-drop-end')
+    expect(fireEvent.dragOver(end, { dataTransfer: dt })).toBe(true)
+    fireEvent.drop(end, { dataTransfer: dt })
+    expect(edit.onMove).not.toHaveBeenCalled()
+  })
+
   it('confirms a delete of a crate with no subcrates in short words', () => {
     setupCrates()
     fireEvent.contextMenu(screen.getByTestId('source-node-Z'))
