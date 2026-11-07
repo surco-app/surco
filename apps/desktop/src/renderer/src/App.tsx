@@ -3248,6 +3248,10 @@ export default function App(): React.JSX.Element {
       closeUsbExport()
       return
     }
+    if (pasteTracklist) {
+      setPasteTracklist(null)
+      return
+    }
     if (review !== null) return
     // A maximized editor section is an overlay layer too: its own listener
     // restores it, and Escape must stop there — falling through would ALSO

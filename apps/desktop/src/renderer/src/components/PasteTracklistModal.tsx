@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { X } from 'lucide-react'
 import type React from 'react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -107,9 +108,22 @@ export function PasteTracklistModal({
       onSubmit={submit}
     >
       <div className="-mx-6 -mt-6 mb-4 border-b border-[var(--color-line)] px-6 pt-5 pb-3">
-        <h2 id="paste-tracklist-title" className="text-base font-semibold">
-          {create ? tr('pasteTracklist.titleNew') : tr('pasteTracklist.title', { name: node.name })}
-        </h2>
+        <div className="flex items-center justify-between">
+          <h2 id="paste-tracklist-title" className="text-base font-semibold">
+            {create
+              ? tr('pasteTracklist.titleNew')
+              : tr('pasteTracklist.title', { name: node.name })}
+          </h2>
+          <button
+            type="button"
+            data-testid="paste-tracklist-close"
+            onClick={onClose}
+            aria-label={tr('common.close')}
+            className="press flex h-7 w-7 items-center justify-center rounded-lg text-fg-muted hover:bg-[var(--color-hover)] hover:text-fg"
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </div>
         <p className="mt-0.5 text-xs text-fg-dim">
           {step === 'paste'
             ? tr('pasteTracklist.hint')

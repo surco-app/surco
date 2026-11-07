@@ -9837,6 +9837,21 @@ describe('paste tracklist from the tree', () => {
     )
   })
 
+  it('closes the tracklist modal on Escape, like every other dialog', async () => {
+    openRekordboxTree()
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+    fireEvent.contextMenu(await screen.findByTestId('source-node-f'))
+    fireEvent.click(screen.getByTestId('source-tree-paste-tracklist'))
+    fireEvent.change(screen.getByTestId('paste-tracklist-text'), {
+      target: { value: 'Jessy - Silent Tears (Extended Mix)' },
+    })
+    fireEvent.keyDown(window, { key: 'Escape' })
+    await waitFor(() =>
+      expect(screen.queryByTestId('paste-tracklist-dialog')).not.toBeInTheDocument(),
+    )
+  })
+
   it('creates the playlist inside the folder first, then adds to the new one', async () => {
     const edit = openRekordboxTree({
       editRekordboxPlaylist: vi

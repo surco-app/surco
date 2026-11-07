@@ -195,6 +195,16 @@ describe('PasteTracklistModal review step', () => {
     expect(onClose).toHaveBeenCalled()
   })
 
+  it('closes from the X at either step, pasted text or not, so the review is never a trap', async () => {
+    const { onClose } = setup()
+    paste(SET1)
+    fireEvent.click(screen.getByTestId('paste-tracklist-close'))
+    expect(onClose).toHaveBeenCalledTimes(1)
+    await review()
+    fireEvent.click(screen.getByTestId('paste-tracklist-close'))
+    expect(onClose).toHaveBeenCalledTimes(2)
+  })
+
   it('goes back to the pasted text untouched', async () => {
     setup()
     paste(SET1)
