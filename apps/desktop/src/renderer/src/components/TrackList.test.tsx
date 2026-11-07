@@ -1279,6 +1279,34 @@ describe('TrackList swipe to remove', () => {
     expect(onSwipeRemove).toHaveBeenCalledWith('a')
   })
 
+  const drag = (steps: number, deltaX: number, everyMs: number) => {
+    const row = screen.getByTestId('track-row').parentElement as Element
+    for (let i = 0; i < steps; i++) {
+      fireEvent.wheel(row, { deltaX, deltaY: 0 })
+      act(() => vi.advanceTimersByTime(everyMs))
+    }
+    act(() => vi.advanceTimersByTime(500))
+  }
+
+  it('reveals Remove on a short flick, because how fast the hand moved says where it was going', () => {
+    renderList([track({ id: 'a' })])
+    drag(3, 6, 8)
+    expect(screen.getByRole('button', { name: i18n.t('trackList.remove') })).toBeInTheDocument()
+  })
+
+  it('closes again when the same short distance is covered slowly, a drift that meant nothing', () => {
+    renderList([track({ id: 'a' })])
+    drag(3, 6, 100)
+    expect(screen.queryByRole('button', { name: i18n.t('trackList.remove') })).toBeNull()
+  })
+
+  it('never removes the track on speed alone, since taking it off the list cannot be undone', () => {
+    const { onSwipeRemove } = renderList([track({ id: 'a' })])
+    drag(4, 12, 4)
+    act(() => vi.advanceTimersByTime(500))
+    expect(onSwipeRemove).not.toHaveBeenCalled()
+  })
+
   it('closes again on a swipe back or a nudge too small to mean it', () => {
     renderList([track({ id: 'a' })])
     swipe(70)
