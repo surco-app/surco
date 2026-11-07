@@ -8,7 +8,7 @@
 // set, which is why the search panel shows its "works without setup" note.
 
 import { execFileSync } from 'node:child_process'
-import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { homedir, tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
@@ -318,6 +318,33 @@ export const LIBRARY_SCENES = {
   },
 }
 
+// The paste step is the real XTV set the spec measured; the review is shot and the
+// modal closed before anything is added, so the clone's playlist never changes. It only
+// needs the tree, so it does not wait for a playlist to finish reading from the NAS.
+export const TRACKLIST_SCENE = {
+  run: async (_app, page) => {
+    await page.click('[data-testid="source-rail-rekordbox"]')
+    await page.waitForTimeout(3000)
+    const first = await page.evaluate(() =>
+      [...document.querySelectorAll('[data-testid^="source-node-"]')]
+        .map((e) => e.dataset.testid)
+        .find((id) => /^source-node-\d+$/.test(id)),
+    )
+    await page.click(`[data-testid="${first}"]`, { button: 'right' })
+    await page.click('[data-testid="source-tree-paste-tracklist"]')
+    await page.fill(
+      '[data-testid="paste-tracklist-text"]',
+      readFileSync(
+        join(root, 'docs/superpowers/specs/2026-11-06-pegar-tracklist/set3-xtv-remember.txt'),
+        'utf8',
+      ),
+    )
+    await page.click('[data-testid="paste-tracklist-search"]')
+    await page.locator('[data-testid="paste-tracklist-summary"]').waitFor({ timeout: 60000 })
+    await wait(page, 1500)
+  },
+}
+
 async function shoot(app, page, lang, id, scene) {
   await scene.run(app, page)
   await save(page, `${id}-${lang}`)
@@ -348,6 +375,11 @@ async function main() {
     if (want('rekordbox')) {
       const { app, page } = await launch(lang, { rekordboxDbPath: rekordboxClone() })
       await shoot(app, page, lang, 'rekordbox', REKORDBOX_SCENE)
+      app.process().kill('SIGKILL')
+    }
+    if (want('tracklist')) {
+      const { app, page } = await launch(lang, { rekordboxDbPath: rekordboxClone() })
+      await shoot(app, page, lang, 'tracklist', TRACKLIST_SCENE)
       app.process().kill('SIGKILL')
     }
     const library = Object.entries(LIBRARY_SCENES).filter(([id]) => want(id))

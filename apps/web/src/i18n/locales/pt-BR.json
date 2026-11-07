@@ -993,6 +993,41 @@
         "shotCaption": "Marcar automático sugere onde a faixa entra, com o seu fluxo pronto para aceitar."
       },
       {
+        "id": "tracklist",
+        "group": "out",
+        "title": "Cole a tracklist do seu set",
+        "s": "De uma tracklist em texto a uma playlist do rekordbox, Traktor ou Serato, na ordem do set.",
+        "body": [
+          "Serve qualquer lista com uma faixa por linha, com ou sem tempos: a descrição de um vídeo do YouTube, uma tracklist copiada de um site ou o que o tracklist mostra, o programa do autor do Surco que identifica as faixas de um vídeo seu pelas reivindicações do YouTube e pelo Shazam (github.com/vigosan/tracklist)."
+        ],
+        "steps": [
+          {
+            "lead": "Botão direito numa playlist.",
+            "text": "Escolha «Colar tracklist…». Numa pasta, «Nova playlist a partir de tracklist…» pede o nome."
+          },
+          {
+            "lead": "Cole o texto.",
+            "text": "O Surco conta as faixas e as lacunas que entendeu. Aperte «Buscar no rekordbox»."
+          },
+          {
+            "lead": "Revise.",
+            "text": "Cada linha mostra o que o Surco encontrou na sua coleção. As encontradas e os outros mixes entram; as que só coincidem no título esperam você aceitá-las."
+          },
+          {
+            "lead": "Adicione.",
+            "text": "As faixas entram no fim da playlist, na ordem do set. Nada é gravado antes deste botão."
+          }
+        ],
+        "points": [
+          "As faixas que você não tem não aparecem na revisão: só são contadas.",
+          "Se duas linhas caem na mesma faixa, ela entra uma vez.",
+          "Se o rekordbox estiver aberto, o Surco pede para fechá-lo, como em qualquer mudança de playlist.",
+          "Medido num set real de 31 faixas: 28 entraram sozinhas e 3 com um clique."
+        ],
+        "shotCaption": "A revisão da tracklist antes de adicionar: encontradas, duvidosas e parecidas.",
+        "shot": "tracklist-pt-BR.webp"
+      },
+      {
         "id": "usb",
         "group": "out",
         "title": "Leve suas playlists para um USB",

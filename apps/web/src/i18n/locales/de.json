@@ -993,6 +993,41 @@
         "shotCaption": "Auto-Markieren schlägt vor, wo der Track droppt, mit deinem Flow bereit zum Annehmen."
       },
       {
+        "id": "tracklist",
+        "group": "out",
+        "title": "Füge die Tracklist deines Sets ein",
+        "s": "Von einer Tracklist als Text zu einer Playlist in rekordbox, Traktor oder Serato, in der Reihenfolge des Sets.",
+        "body": [
+          "Jede Liste mit einem Track pro Zeile geht, mit oder ohne Zeiten: die Beschreibung eines YouTube-Videos, eine von einer Website kopierte Tracklist oder die Ausgabe von tracklist, dem Programm des Surco-Autors, das die Tracks eines eigenen Videos über YouTubes Ansprüche und Shazam erkennt (github.com/vigosan/tracklist)."
+        ],
+        "steps": [
+          {
+            "lead": "Rechtsklick auf eine Playlist.",
+            "text": "Wähle „Tracklist einfügen…“. Auf einem Ordner fragt „Neue Playlist aus Tracklist…“ nach dem Namen."
+          },
+          {
+            "lead": "Füge den Text ein.",
+            "text": "Surco zählt die erkannten Tracks und Lücken. Drücke „In rekordbox suchen“."
+          },
+          {
+            "lead": "Prüfe.",
+            "text": "Jede Zeile zeigt, was Surco in deiner Sammlung gefunden hat. Gefundene Tracks und andere Mixe kommen rein; Zeilen, die nur den Titel teilen, warten darauf, dass du sie nimmst."
+          },
+          {
+            "lead": "Füge hinzu.",
+            "text": "Die Tracks kommen ans Ende der Playlist, in der Reihenfolge des Sets. Vor diesem Button wird nichts geschrieben."
+          }
+        ],
+        "points": [
+          "Tracks, die du nicht hast, stehen nicht in der Prüfung: sie werden nur gezählt.",
+          "Treffen zwei Zeilen denselben Track, kommt er einmal rein.",
+          "Ist rekordbox offen, bittet Surco dich, es zu schließen, wie bei jeder Playlist-Änderung.",
+          "Gemessen an einem echten Set mit 31 Tracks: 28 kamen von selbst rein und 3 mit einem Klick."
+        ],
+        "shotCaption": "Die Prüfung der Tracklist vor dem Hinzufügen: gefunden, zweifelhaft und ähnlich.",
+        "shot": "tracklist-de.webp"
+      },
+      {
         "id": "usb",
         "group": "out",
         "title": "Deine Playlists auf einen USB-Stick bringen",
