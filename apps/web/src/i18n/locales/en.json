@@ -993,6 +993,41 @@
         "shotCaption": "Auto mark suggests where the track drops, with your flow ready to accept."
       },
       {
+        "id": "tracklist",
+        "group": "out",
+        "title": "Paste your set's tracklist",
+        "s": "From a text tracklist to a rekordbox, Traktor or Serato playlist, in the set's order.",
+        "body": [
+          "Any list with one track per line works, with or without times: a YouTube video description, a tracklist copied from a website, or what tracklist prints, the program by Surco's author that identifies the tracks of your own video from YouTube's claims and Shazam (github.com/vigosan/tracklist)."
+        ],
+        "steps": [
+          {
+            "lead": "Right-click a playlist.",
+            "text": "Pick “Paste tracklist…”. On a folder, “New playlist from tracklist…” asks for the name."
+          },
+          {
+            "lead": "Paste the text.",
+            "text": "Surco counts the tracks and gaps it understood. Press “Search in rekordbox”."
+          },
+          {
+            "lead": "Review.",
+            "text": "Each line shows what Surco found in your collection. Found tracks and other mixes go in; lines that only share the title wait for you to take them."
+          },
+          {
+            "lead": "Add.",
+            "text": "The tracks go to the end of the playlist in the set's order. Nothing is written before this button."
+          }
+        ],
+        "points": [
+          "Tracks you don't have are not listed in the review: they are only counted.",
+          "If two lines land on the same track, it goes in once.",
+          "If rekordbox is open, Surco asks you to close it, as with any playlist change.",
+          "Measured on a real 31-track set: 28 went in by themselves and 3 with one click."
+        ],
+        "shotCaption": "The tracklist review before adding: found, doubtful and similar.",
+        "shot": "tracklist-en.webp"
+      },
+      {
         "id": "usb",
         "group": "out",
         "title": "Take your playlists on a USB stick",

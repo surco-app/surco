@@ -993,6 +993,41 @@
         "shotCaption": "Marquage auto suggère où le morceau drope, avec ton flux prêt à accepter."
       },
       {
+        "id": "tracklist",
+        "group": "out",
+        "title": "Colle la tracklist de ton set",
+        "s": "D'une tracklist en texte à une playlist rekordbox, Traktor ou Serato, dans l'ordre du set.",
+        "body": [
+          "N'importe quelle liste avec un morceau par ligne fait l'affaire, avec ou sans temps : la description d'une vidéo YouTube, une tracklist copiée d'un site ou ce que sort tracklist, le programme de l'auteur de Surco qui identifie les morceaux de ta propre vidéo grâce aux réclamations YouTube et à Shazam (github.com/vigosan/tracklist)."
+        ],
+        "steps": [
+          {
+            "lead": "Clic droit sur une playlist.",
+            "text": "Choisis « Coller une tracklist… ». Sur un dossier, « Nouvelle playlist depuis une tracklist… » te demande le nom."
+          },
+          {
+            "lead": "Colle le texte.",
+            "text": "Surco compte les morceaux et les trous qu'il a compris. Appuie sur « Chercher dans rekordbox »."
+          },
+          {
+            "lead": "Vérifie.",
+            "text": "Chaque ligne montre ce que Surco a trouvé dans ta collection. Les morceaux trouvés et les autres mixes entrent ; les lignes qui n'ont que le titre en commun attendent que tu les prennes."
+          },
+          {
+            "lead": "Ajoute.",
+            "text": "Les morceaux vont à la fin de la playlist, dans l'ordre du set. Rien n'est écrit avant ce bouton."
+          }
+        ],
+        "points": [
+          "Les morceaux que tu n'as pas n'apparaissent pas dans la vérification : ils sont seulement comptés.",
+          "Si deux lignes tombent sur le même morceau, il n'entre qu'une fois.",
+          "Si rekordbox est ouvert, Surco te demande de le fermer, comme pour tout changement de playlist.",
+          "Mesuré sur un vrai set de 31 morceaux : 28 sont entrés tout seuls et 3 avec un clic."
+        ],
+        "shotCaption": "La vérification de la tracklist avant d'ajouter : trouvés, douteux et proches.",
+        "shot": "tracklist-fr.webp"
+      },
+      {
         "id": "usb",
         "group": "out",
         "title": "Emporte tes playlists sur une clé USB",

@@ -993,6 +993,41 @@
         "shotCaption": "Auto marcar propone dónde rompe la pista, con tu flujo listo para aceptar."
       },
       {
+        "id": "tracklist",
+        "group": "out",
+        "title": "Pega el tracklist de tu sesión",
+        "s": "De un tracklist en texto a una playlist de rekordbox, Traktor o Serato, en el orden del set.",
+        "body": [
+          "Vale cualquier lista con una pista por línea, con o sin tiempos: la descripción de un vídeo de YouTube, un tracklist copiado de una web o lo que saca tracklist, el programa del autor de Surco que identifica las pistas de un vídeo propio (github.com/vigosan/tracklist)."
+        ],
+        "steps": [
+          {
+            "lead": "Botón derecho sobre una playlist.",
+            "text": "Elige «Pegar tracklist…». Sobre una carpeta, «Nueva playlist desde tracklist…» te pide el nombre."
+          },
+          {
+            "lead": "Pega el texto.",
+            "text": "Surco cuenta las pistas y los huecos que ha entendido. Pulsa «Buscar en rekordbox»."
+          },
+          {
+            "lead": "Revisa.",
+            "text": "Cada línea sale con lo que Surco ha encontrado en tu colección. Las encontradas y las de otra mezcla entran; las que solo coinciden en el título esperan tu clic."
+          },
+          {
+            "lead": "Añade.",
+            "text": "Las pistas entran al final de la playlist en el orden del set. Nada se escribe antes de este botón."
+          }
+        ],
+        "points": [
+          "Las pistas que no tienes no aparecen en la revisión: solo se cuentan.",
+          "Si dos líneas caen en la misma pista, entra una vez.",
+          "Si rekordbox está abierto, Surco te pide cerrarlo.",
+          "Medido con un set real de 31 pistas: 28 entraron solas y 3 con un clic."
+        ],
+        "shotCaption": "La revisión del tracklist antes de añadir: encontradas, dudosas y parecidas.",
+        "shot": "tracklist-es.webp"
+      },
+      {
         "id": "usb",
         "group": "out",
         "title": "Lleva tus playlists a un USB",
