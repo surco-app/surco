@@ -6,7 +6,7 @@ evidencia en `fichero:línea`. Lo que aquí no está, no se puede prometer en la
 Documento de referencia: sirve para redactar la home, llenar `/funciones` y
 saber qué NO decir.
 
-**Última revisión: 6 de noviembre de 2026** (v1.28.0, «Pegar tracklist…» sobre una playlist de rekordbox, Traktor o Serato y «Nueva playlist desde tracklist…» sobre una carpeta, con revisión por niveles antes de escribir; en las pestañas de los programas de DJ «Convertir» solo convierte lo seleccionado, ⌘⏎ convierte la selección, el botón y el plan del editor dicen qué se queda fuera; antes v1.27.0, menú de filtros por secciones con búsqueda y filtros puestos bajo la barra, filtros «Escucha», «Selección» y «Estrellas» y orden por estrellas, filtro «Mejor que Music», «Rejilla mal» y «Mejor que Music» medidos con el análisis y con anillo de progreso, sesión reabierta con filtros, orden, búsqueda, selección, escuchadas y posición, barrido en dos fases a un hilo que solo se frena con un programa de DJ abierto; antes v1.26.0, pestaña «Programas de DJ» en Ajustes y pregunta por el programa al empezar, condiciones «hasta la marca anterior» y «si no viene otro cue en los siguientes» en los flujos, vista previa del flujo sobre la pista seleccionada con cues que se quedan fuera, flujo aprendido desde el +, Auto marcar a más de 32 compases entre propuestas, copiar y pegar metadatos y Mostrar en Finder desde la cabecera, pistas fuera de «Convertir todas» por campo obligatorio, análisis que solo se pausa con un programa de DJ abierto; antes v1.25.0, campo «Calidad» con el veredicto del análisis, autocomprobación de las playlists de rekordbox, Traktor y Engine DJ, búsqueda solo de lo seleccionado fuera de la pestaña de ficheros y columna de resultados plegable, recuentos de los filtros combinados, la playlist abierta se analiza primero; antes v1.24.0, USB de Pioneer desde Serato y Traktor, crates de Serato editables, ajuste «Biblioteca de Serato» con Actualizar y Actualizar y añadir, crates de Serato elegidos en el editor, «Auto» de la rejilla que lleva los cues al golpe, Auto marcar en pistas que rekordbox no ha analizado; antes v1.23.0, cues de Serato escritos en el fichero con Serato cerrado, editor y flujos de cues en Serato, cues de Serato conservados al convertir, rejilla de Serato leída, Music relee una pista reescrita en su sitio, original renombrado que se queda si otro programa lo usa, título, artista, álbum y género cambiados al convertir que llegan a Traktor y Engine DJ, cambios de biblioteca que sobreviven a una recarga; antes v1.22.0, ajuste de la rejilla en el editor de cues maximizado con guardado en rekordbox, Traktor y Engine DJ, filtro «Rejilla mal», cues fuera del golpe señalados y «Al golpe», pestaña de Serato de solo lectura, MP3 de iTunes a tiempo en Traktor; antes v1.21.0, filtro «Cues fuera de la rejilla» en rekordbox, Traktor y Engine DJ con su tolerancia en Ajustes › Cues; antes v1.20.0, espectros de las dos copias en la comparación con la biblioteca, editor de cues sin vista previa en reposo, barra de propuestas de Auto marcar, un solo Guardar en el editor plegado, reproductor que se cierra al cambiar de pestaña; antes v1.19.0, filtro Incompletas en la revisión, valores de un campo mezclado, deshacer «Borrar metadatos», 32 bits a 24 bajo «Corregido», fechas y auto-match recordados; antes filtro Daños en «Revisar metadatos de la lista…»; antes v1.18.0, autocomprobación tras convertir, sustituir al cambiar de formato, pantalla Copias, carpeta Artista/Álbum en Music, grouping y totales; antes v1.17.0, elección por programa de DJ, cola de Engine DJ abierto, búsqueda en Ajustes, deshacer y rehacer, «Antes:» por campo, archivos dañados, orden por BPM/tonalidad/año/calidad). Levantado por primera vez el
+**Última revisión: 7 de noviembre de 2026** (v1.29.0, playlists y carpetas que se mueven arrastrándolas en el árbol de rekordbox, Traktor y Serato, árbol que pinta crear, renombrar, borrar y mover antes de que el programa escriba, aviso con «Deshacer» tras Buscar y reemplazar, rellenar toda la lista y los botones de Tag, revisión del tracklist con una casilla por fila y filtros por nivel, lectura de tracklists de YouTube escritos a mano, Ajustes en diez filas, botón de ayuda en la barra de herramientas, acciones de archivo de la cabecera de metadatos en «Más acciones»; antes v1.28.0, «Pegar tracklist…» sobre una playlist de rekordbox, Traktor o Serato y «Nueva playlist desde tracklist…» sobre una carpeta, con revisión por niveles antes de escribir; en las pestañas de los programas de DJ «Convertir» solo convierte lo seleccionado, ⌘⏎ convierte la selección, el botón y el plan del editor dicen qué se queda fuera; antes v1.27.0, menú de filtros por secciones con búsqueda y filtros puestos bajo la barra, filtros «Escucha», «Selección» y «Estrellas» y orden por estrellas, filtro «Mejor que Music», «Rejilla mal» y «Mejor que Music» medidos con el análisis y con anillo de progreso, sesión reabierta con filtros, orden, búsqueda, selección, escuchadas y posición, barrido en dos fases a un hilo que solo se frena con un programa de DJ abierto; antes v1.26.0, pestaña «Programas de DJ» en Ajustes y pregunta por el programa al empezar, condiciones «hasta la marca anterior» y «si no viene otro cue en los siguientes» en los flujos, vista previa del flujo sobre la pista seleccionada con cues que se quedan fuera, flujo aprendido desde el +, Auto marcar a más de 32 compases entre propuestas, copiar y pegar metadatos y Mostrar en Finder desde la cabecera, pistas fuera de «Convertir todas» por campo obligatorio, análisis que solo se pausa con un programa de DJ abierto; antes v1.25.0, campo «Calidad» con el veredicto del análisis, autocomprobación de las playlists de rekordbox, Traktor y Engine DJ, búsqueda solo de lo seleccionado fuera de la pestaña de ficheros y columna de resultados plegable, recuentos de los filtros combinados, la playlist abierta se analiza primero; antes v1.24.0, USB de Pioneer desde Serato y Traktor, crates de Serato editables, ajuste «Biblioteca de Serato» con Actualizar y Actualizar y añadir, crates de Serato elegidos en el editor, «Auto» de la rejilla que lleva los cues al golpe, Auto marcar en pistas que rekordbox no ha analizado; antes v1.23.0, cues de Serato escritos en el fichero con Serato cerrado, editor y flujos de cues en Serato, cues de Serato conservados al convertir, rejilla de Serato leída, Music relee una pista reescrita en su sitio, original renombrado que se queda si otro programa lo usa, título, artista, álbum y género cambiados al convertir que llegan a Traktor y Engine DJ, cambios de biblioteca que sobreviven a una recarga; antes v1.22.0, ajuste de la rejilla en el editor de cues maximizado con guardado en rekordbox, Traktor y Engine DJ, filtro «Rejilla mal», cues fuera del golpe señalados y «Al golpe», pestaña de Serato de solo lectura, MP3 de iTunes a tiempo en Traktor; antes v1.21.0, filtro «Cues fuera de la rejilla» en rekordbox, Traktor y Engine DJ con su tolerancia en Ajustes › Cues; antes v1.20.0, espectros de las dos copias en la comparación con la biblioteca, editor de cues sin vista previa en reposo, barra de propuestas de Auto marcar, un solo Guardar en el editor plegado, reproductor que se cierra al cambiar de pestaña; antes v1.19.0, filtro Incompletas en la revisión, valores de un campo mezclado, deshacer «Borrar metadatos», 32 bits a 24 bajo «Corregido», fechas y auto-match recordados; antes filtro Daños en «Revisar metadatos de la lista…»; antes v1.18.0, autocomprobación tras convertir, sustituir al cambiar de formato, pantalla Copias, carpeta Artista/Álbum en Music, grouping y totales; antes v1.17.0, elección por programa de DJ, cola de Engine DJ abierto, búsqueda en Ajustes, deshacer y rehacer, «Antes:» por campo, archivos dañados, orden por BPM/tonalidad/año/calidad). Levantado por primera vez el
 2026-07-30 y revisado contra el código el 2026-09-02, cuando cinco releases lo
 habían dejado atrás: daba por perdidos cues que hoy se conservan y publicaba
 umbrales del espectro que el código había recalibrado.
@@ -737,9 +737,13 @@ impide que un campo nuevo quede ilegible o inescribible. A esos se suman los
 campos propios del usuario (abajo).
 
 **Copiar, pegar y mostrar desde la cabecera** (v1.26.0). La cabecera «Metadatos» del
-editor de una pista lleva iconos para copiar todos sus metadatos, pegar en ella los de
-la última copiada («Pegar los metadatos de "…"») y «Mostrar en Finder»
-(`copy-meta-btn`, `reveal-file-btn`, `Editor.tsx:1330-1357`).
+editor permite copiar todos los metadatos de la pista, pegar en ella los de la última
+copiada («Pegar los metadatos de "…"») y «Mostrar en Finder». Desde v1.29.0 ya no son iconos
+sueltos: viven en el menú «Más acciones» (`MetaMoreMenu.tsx`, `moreItems` en
+`Editor.tsx:1295`) junto a copiar el nombre del archivo, buscar en la web y reescribir títulos
+(este solo si hay un formato de título configurado); con varias pistas seleccionadas no salen
+«Mostrar en Finder», copiar el nombre ni buscar en la web. En la cabecera quedan, con su nombre, «Rellenar del nombre» y «Borrar», este
+al final y aparte tras un separador (`derive-btn`, `clear-meta-btn`, `Editor.tsx:1262`).
 
 **El grouping y el género se editan por etiqueta y por pista cuando hay varias
 seleccionadas.** En el editor de varias pistas el resto de campos escriben un valor
@@ -1863,6 +1867,29 @@ menú de una pista se puede insertar un separador copiando uno que ya exista en 
 nunca borra pistas de la colección, porque una playlist solo enlaza entradas
 (`rekordboxPlaylistEdit.ts:3-6`). No se tocan las listas inteligentes, que no se leen.
 
+**Mover playlists y carpetas** (nuevo en v1.29.0). En el árbol de rekordbox, Traktor o Serato
+se coge una playlist o una carpeta y se suelta en la raíz (el hueco bajo el árbol), dentro de
+una carpeta o, en rekordbox y Traktor, entre dos hermanas, con una línea que marca dónde caerá
+(`SourceTree.tsx:250`, `:664`; operación `moveNode`, `shared/types.ts:1254`). El árbol se pinta
+ya movido, antes de que el programa escriba, y la relectura lo corrige si se rechazó
+(`editedTree`, `playlistEdits.ts:177`; `useRekordboxEdits.ts`). Crear, renombrar y borrar se
+pintan igual, y una playlist o carpeta recién creada (`pending:`, `playlistEdits.ts:104`) no se
+puede abrir, arrastrar ni editar hasta que el programa responde. Va por la misma cola que el
+resto de ediciones del árbol. En rekordbox se reasignan padre y orden en `master.db` y, si el
+padre cambia, el nodo de `masterPlaylists6.xml` (`moveNode`, `rekordboxPlaylistEdit.ts:434`;
+`withNodeParent`, `rekordboxMasterXml.ts`): solo se mueven playlists y carpetas, no las
+inteligentes, y nunca dentro de sí mismas ni de algo que no sea una carpeta. En Traktor se
+recoloca el nodo en el `.nml` (`traktorPlaylistEdit.ts:151`) y no se mueven Preparation, HISTORY,
+_LOOPS ni _RECORDINGS (`TRAKTOR_BUILT_IN`) ni las inteligentes. **En Serato los crates no tienen
+orden**: se sueltan sobre otro crate o en la raíz, nunca entre dos, y mover un crate cambia el
+nombre del archivo `.crate` de él y de sus subcrates. Se rechaza si el destino ya tiene un crate
+con ese nombre, sin distinguir mayúsculas, o si se suelta dentro de sí mismo
+(`seratoNameTaken`, `seratoCrateEdits.ts:73`; `:357`). Si el crate movido estaba abierto, se
+reabre bajo su nombre nuevo cuando Serato ya lo ha escrito (`movedCrateId`,
+`playlistEdits.ts:117`). Si Surco mismo quita o mueve la playlist que estaba abierta, la lista no
+avisa de que «ya no está» (`ownRemovals.ts`). Engine DJ no lo ofrece, porque Surco no escribe
+sus playlists.
+
 **Pegar un tracklist** (nuevo en v1.28.0). En el menú de una playlist de rekordbox, Traktor
 o Serato, «Pegar tracklist…» abre un modal de dos pasos (`PasteTracklistModal.tsx`): se pega
 el texto de una sesión, con o sin tiempos, y Surco busca cada línea en la colección entera
@@ -1871,10 +1898,20 @@ del programa, que llega como título, artista y ruta por un IPC propio (`*:colle
 (`lib/tracklistMatch.ts`) tiene cuatro niveles: encontrada (título igual y artista en
 común), dudosa (mismo artista y otra mezcla, errata de hasta un 20 % del título o la mayoría
 de las palabras), parecida (mismo título y otro artista, o una línea sin artista) y no está.
-Encontradas y dudosas entran de serie, las parecidas esperan un clic, las que no están no se
-listan, y nada se escribe hasta el botón final; las pistas entran al final de la playlist
-en el orden del set, una vez cada una. Sobre una carpeta, «Nueva playlist desde
-tracklist…» crea la playlist y añade detrás. Medido contra una colección real de 2100
+Cada fila lleva su casilla (`pasteTracklist.include`): encontradas y dudosas vienen marcadas,
+y también las encontradas se pueden dejar fuera; las parecidas esperan a que se marquen; las
+que no están no se listan. Los contadores de cada nivel filtran la lista para revisar uno solo
+(desde v1.29.0), el modal se cierra con Escape o con su botón y un clic fuera no lo cierra, y
+mientras está abierto los atajos globales y la paleta no actúan sobre la lista. Nada se escribe
+hasta el botón final; las pistas entran al final de la playlist en el orden del set, una vez
+cada una. Sobre una carpeta, «Nueva playlist desde tracklist…» crea la playlist y añade detrás.
+La lectura (`lib/tracklistParse.ts`) descarta notas (`=<`, enlaces, un final en mayúsculas),
+separa guiones pegados a la palabra de la izquierda, admite el tiempo sin espacio antes del
+texto y, si alguna línea lleva tiempo, ignora las que no. Al emparejar, el artista admite una
+errata de una letra en nombres de 6 o más letras y se ignoran los espacios; entre candidatas
+del mismo nivel va primera la cuya mezcla, lo que lleva entre paréntesis, más se parece a la que
+nombra el tracklist (`mixScore`, `lib/tracklistMatch.ts`); una línea sin guion entre artista y
+título se empareja como parecida si coincide con «artista título» de una candidata. Medido contra una colección real de 2100
 pistas con tres sets (96 líneas): el set de 31 que el usuario había pasado a mano dio 28
 solas y 3 con un clic, 0 falsas (`tracklistMatch.test.ts`, con un fixture de 1234 pistas).
 Engine DJ no lo ofrece porque Surco no escribe sus playlists; los títulos en alfabetos no
@@ -2712,13 +2749,26 @@ comparación»* (`useDeclickAb.ts:60-67`).
   valor, se saltan los pasos que no cambiaron nada, y un auto-emparejado deshecho no se
   vuelve a aplicar al volver a la pista. No cubre operaciones de fichero ni conversiones.
   «Borrar metadatos» ofrece además «Deshacer» en el aviso que sale al vaciar
-  (`notices.clearedMeta`, `App.tsx:2636`), y el botón está apartado del de rellenar.
+  (`notices.clearedMeta`, `App.tsx:2937`), y el botón está apartado del de rellenar. Desde
+  v1.29.0 también lo ofrecen «Buscar y reemplazar…», «Rellenar desde el nombre del archivo,
+  toda la lista» y los botones de Tag: el aviso dice «Metadatos actualizados en N pistas» y su
+  acción devuelve las etiquetas (`notices.updatedMeta`, `deriveTracksUndoable`,
+  `App.tsx:1680`); ⌘Z ya lo hacía.
 - **Buscar en Ajustes** (v1.17.0). Un campo «Buscar ajustes» sobre las pestañas encuentra
   cualquier ajuste por su etiqueta o por sinónimos por idioma, sin distinguir mayúsculas
   ni tildes, y lleva a él resaltándolo (`searchSettings`, `lib/settingsSearch.ts:28`;
   claves `settings.searchSynonyms`). La pestaña Búsqueda pasó a llamarse **Fuentes**, y la
   carpeta de ajustes, la copia de seguridad, la caché de análisis y el registro de errores
-  viven en la pestaña **Avanzado** (`settings/AdvancedTab.tsx`).
+  viven en la pestaña **Avanzado** (`settings/AdvancedTab.tsx`). Desde v1.29.0 la barra
+  lateral tiene diez filas y no quince: las pestañas que se leen juntas comparten fila y se
+  cambian con un selector sobre el panel (Editor con Secciones y Campos, Formato con
+  Procesado, Nombres con Destino, Atajos con Estadísticas; `SETTINGS_ENTRY_GROUPS`,
+  `lib/settingsTabs.ts:60`).
+- **Botón de ayuda** (v1.29.0). La barra de herramientas lleva un botón «Ayuda y preguntas»
+  que abre la FAQ, que antes solo salía por la paleta (`header.help`, `Toolbar.tsx:479`).
+- **Editar el original avisa en el menú de destino** (v1.29.0). En el menú de destino de
+  «Convertir», la opción que sobrescribe lleva debajo «Sobrescribe el archivo»
+  (`editor.menuOverwriteNote`, `FormatDestinationMenu.tsx:95`).
 - **Lista** (v1.17.0). Se ordena también por BPM, tonalidad, año y calidad
   (`SortKey`, `triage.ts:318-325`), y la búsqueda encuentra por género y sello además de
   título, artista y álbum (`triage.ts:286-294`). Las filas con ediciones sin escribir en el
@@ -2903,3 +2953,10 @@ Recopilado de los cinco informes. Cada punto está verificado.
     uno con su rejilla y sus cues, así que cada programa puede quedarse con algo distinto. Solo
     viaja lo que se marca con un flujo, no las cues puestas a mano ni los puntos que se quitan.
     Medido de rekordbox a Engine DJ con AIFF; con Traktor y con MP3 no se ha medido.
+43. **Mover playlists y carpetas tiene límites por programa.** No mueve listas inteligentes
+    ni, en Traktor, Preparation, HISTORY, _LOOPS y _RECORDINGS; no mete nada dentro de una
+    playlist ni de sí mismo; y Engine DJ no lo ofrece. En Serato los crates no tienen orden,
+    así que se pueden mover bajo otro crate o a la raíz pero no colocar entre dos: no decir
+    «reordena tus crates», y mover uno cambia el nombre de su archivo y los de sus subcrates.
+    No decir que el programa lo ve al instante: el árbol de Surco se pinta antes, pero el
+    programa lo recibe cuando se escribe, y con el programa abierto el cambio espera en la cola.
