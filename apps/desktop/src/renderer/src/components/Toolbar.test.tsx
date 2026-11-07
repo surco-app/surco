@@ -51,6 +51,7 @@ function renderBar(over: Partial<Props> = {}): Props {
     onActivity: vi.fn(),
     activityRunning: false,
     onSettings: vi.fn(),
+    onHelp: vi.fn(),
     ...over,
   }
   render(<Toolbar {...props} />)
@@ -543,6 +544,14 @@ describe('Toolbar', () => {
     expect(props.onPalette).toHaveBeenCalledOnce()
     expect(props.onStats).toHaveBeenCalledOnce()
     expect(props.onActivity).toHaveBeenCalledOnce()
+  })
+
+  // The help only opened by typing "ayuda" into the command palette, so a DJ who had never
+  // opened the palette had no way to learn it existed; it sits in the bar like the rest.
+  it('opens the help from the bar, where a first-time user looks for it', () => {
+    const props = renderBar()
+    fireEvent.click(screen.getByTestId('open-help'))
+    expect(props.onHelp).toHaveBeenCalledOnce()
   })
 
   // The backups icon counted every copy Surco keeps, so it climbed with each conversion
