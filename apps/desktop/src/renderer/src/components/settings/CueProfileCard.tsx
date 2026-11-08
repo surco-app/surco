@@ -46,9 +46,6 @@ export function useCueProfileRead(): [CueProfileRead | null, (profile: CueProfil
   return [read, learned]
 }
 
-const BUTTON =
-  'press inline-flex shrink-0 items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50'
-const PRIMARY = `${BUTTON} border-transparent bg-[var(--color-accent)] text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]`
 const ICON_BUTTON =
   'press flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] text-fg hover:bg-[var(--color-line-strong)] disabled:cursor-not-allowed disabled:opacity-50'
 
@@ -158,18 +155,7 @@ export function CueProfileCard({ read, onLearned, synced, patch }: Props): React
         label={learning ? tr('settings.cueProfile.learning') : tr('settings.cueProfile.relearn')}
       />
     </button>
-  ) : (
-    <button
-      type="button"
-      data-testid="cue-profile-learn"
-      disabled={learning || nothing}
-      onClick={learn}
-      className={PRIMARY}
-    >
-      {learning && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />}
-      {learning ? tr('settings.cueProfile.learning') : tr('settings.cueProfile.learn')}
-    </button>
-  )
+  ) : null
   const countdown = countdownOf(profile?.flow ?? null)
   const distances = countdown
     ? Array.from(

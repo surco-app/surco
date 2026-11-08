@@ -8,7 +8,13 @@ import {
   dropCandidates,
   dropProposals,
 } from '../shared/dropDetect'
-import { barIndexOf, modelWithTaste, type TasteTrack, tuneDropTaste } from '../shared/dropTaste'
+import {
+  barIndexOf,
+  modelWithTaste,
+  type TasteTrack,
+  tasteTrackOf,
+  tuneDropTaste,
+} from '../shared/dropTaste'
 import { rekordboxShareDir } from './rekordboxArtwork'
 import { readCueWaveDetail, readTrackCues } from './rekordboxCues'
 import { openRekordboxDb, rekordboxRawKey } from './rekordboxDb'
@@ -127,4 +133,41 @@ describe.skipIf(!copy)('Auto marcar tuned to a DJ’s own marks', () => {
         )
       }
   }, 1_800_000)
+
+  it('measures how much a correction should weigh, on held-out tracks, on a copy only', async () => {
+    const path = resolve(copy as string)
+    expect(path.startsWith(SCRATCH) && !path.includes('/Library/Pioneer')).toBe(true)
+    const tracks = await loadTracks(path)
+    const test = tracks.filter((t) => t.test)
+    const train = tracks.filter((t) => !t.test)
+    const djs: Record<string, (t: Track) => number[]> = {
+      vicent: (t) => t.mine,
+      firstOnly: (t) => [Math.min(...t.mine)],
+    }
+    for (const [dj, labels] of Object.entries(djs))
+      for (const size of [30, 60, 120, train.length]) {
+        const taken = train
+          .slice(0, size)
+          .flatMap((t) => tasteTrackOf(t.input, labels(t), DROP_MODEL) ?? [])
+        const outcomes = Object.fromEntries(
+          ['accepted', 'corrected', 'manual'].map((o) => [
+            o,
+            taken.filter((t) => t.outcome === o).length,
+          ]),
+        )
+        for (const weight of [1, 2, 3, 5, 8]) {
+          const tuned = tuneDropTaste(taken, DROP_MODEL, weight)
+          console.log(
+            JSON.stringify({
+              dj,
+              learnedFrom: size,
+              outcomes,
+              weight,
+              adopted: tuned?.taste !== null,
+              tuned: rates(test, labels, modelWithTaste(tuned?.taste ?? null)),
+            }),
+          )
+        }
+      }
+  }, 3_600_000)
 })

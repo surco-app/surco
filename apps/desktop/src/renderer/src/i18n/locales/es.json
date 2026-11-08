@@ -1946,10 +1946,9 @@
     },
     "cueProfile": {
       "title": "Tu forma de marcar",
-      "firstTitle": "Enseña a Surco tu forma de marcar",
-      "firstHint": "Lee los cues que ya pusiste y ajusta Auto marcar y el flujo a ti. Solo lee, no cambia nada.",
+      "firstTitle": "Surco aprenderá cómo marcas",
+      "firstHint": "Lo hace solo, con las pistas que ya marcaste en rekordbox y con lo que guardes en el editor. No tienes que hacer nada.",
       "nothing": "Aún no hay pistas marcadas de las que aprender. Auto marcar usa el modelo general y aprenderá de los cues que guardes.",
-      "learn": "Aprender de mis pistas",
       "relearn": "Volver a aprender",
       "learning": "Aprendiendo…",
       "summary_one": "Aprendido de {{tracks}} pista que ya marcaste",

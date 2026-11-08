@@ -106,6 +106,11 @@ describe('weighedForLearning', () => {
     expect(counts(of('c', 'manual'))).toBe(counts(of('a', 'corrected')))
   })
 
+  it('takes the weight as a parameter, so it can be measured instead of guessed', () => {
+    expect(weighedForLearning([of('a', 'corrected')], 5)).toHaveLength(5)
+    expect(weighedForLearning([of('b', 'accepted')], 5)).toHaveLength(1)
+  })
+
   it('treats tracks saved before outcomes were recorded like accepted ones', () => {
     expect(weighedForLearning([of('old')]).length).toBe(1)
   })

@@ -1946,10 +1946,9 @@
     },
     "cueProfile": {
       "title": "Wie du markierst",
-      "firstTitle": "Zeig Surco, wie du markierst",
-      "firstHint": "Liest die Cues, die du schon gesetzt hast, und passt Auto-Markieren und den Ablauf an dich an. Es liest nur und ändert nichts.",
+      "firstTitle": "Surco lernt, wie du markierst",
+      "firstHint": "Das geschieht von selbst, anhand der Titel, die du in rekordbox schon markiert hast, und dessen, was du im Editor speicherst. Du musst nichts tun.",
       "nothing": "Noch keine markierten Tracks zum Lernen. Auto-Markieren nutzt das allgemeine Modell und lernt aus den Cues, die du speicherst.",
-      "learn": "Aus meinen Tracks lernen",
       "relearn": "Neu lernen",
       "learning": "Lernt…",
       "summary_one": "Gelernt aus {{tracks}} Track, den du schon markiert hast",

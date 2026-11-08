@@ -20,6 +20,7 @@ export interface CueTasteDeps {
   readCollection: () => Promise<CollectionMarks | null>
   tune: (tracks: TasteTrack[]) => Promise<TunedTaste | null>
   shared?: SharedEdits
+  marked?: () => number | Promise<number>
   newId?: () => string
   now?: () => Date
   onLearned?: (profile: CueProfile) => void
@@ -30,7 +31,7 @@ export interface CueTaste {
   edits: () => { count: number; sinceLearn: number; corrected: number }
   record: (track: TasteTrack, learnNow: boolean) => void
   learn: () => Promise<CueProfile>
-  refresh: (learnNow: boolean) => void
+  refresh: (learnNow: boolean) => Promise<void>
   flush: () => void
 }
 
@@ -87,6 +88,15 @@ export function createCueTaste(
     } catch (err) {
       log.warn(`cue taste: other Macs' edits unreadable, learning without them: ${String(err)}`)
       return []
+    }
+  }
+
+  const markedCount = async (): Promise<number> => {
+    try {
+      return (await deps.marked?.()) ?? 0
+    } catch (err) {
+      log.warn(`cue taste: could not count the marked tracks: ${String(err)}`)
+      return 0
     }
   }
 
@@ -172,10 +182,12 @@ export function createCueTaste(
         saved.sinceLearn >= RELEARN_EVERY || (saved.corrections ?? 0) >= RELEARN_AFTER_CORRECTIONS
       if (learnNow && due && !learning) learnInBackground()
     },
-    refresh(learnNow) {
+    async refresh(learnNow) {
       if (!learnNow || learning) return
       const count = othersEdits().length
-      if (count > 0 && count !== (saved.othersSeen ?? 0)) learnInBackground()
+      const othersChanged = count > 0 && count !== (saved.othersSeen ?? 0)
+      const firstTime = !saved.profile && (saved.edits.length > 0 || (await markedCount()) > 0)
+      if (othersChanged || firstTime) learnInBackground()
     },
     learn,
     flush,
