@@ -11,8 +11,10 @@ permissions:
 jobs:
   # The same gate CI runs on every push, repeated here because the tag push and the
   # branch push race as independent workflows: a red CI never stopped the binaries
-  # from shipping (v0.46.0 built while its CI run was failing). Nothing downstream —
-  # not even the draft release — starts until the suite is green on the tagged tree.
+  # from shipping (v0.46.0 built while its CI run was failing). It runs beside the
+  # builds, not before them: the release stays a prerelease until publish, and verify
+  # waits for this job, so nothing is promoted until the suite is green on the tagged
+  # tree. Gating the start instead put its 7 minutes in front of every build.
   check:
     runs-on: ubuntu-latest
     steps:
@@ -75,7 +77,6 @@ jobs:
   # apps/desktop/electron-builder.yml, which has required a tag-bound release all
   # along.
   prepare:
-    needs: check
     runs-on: ubuntu-latest
     steps:
       # The git tag lives in this source repo, not in surco-releases. Create the tag
@@ -396,7 +397,7 @@ jobs:
   # (the race above) or a missing installer turns this run red immediately,
   # instead of surfacing days later as a dead download button on the website.
   verify:
-    needs: [release, merge-mac-feed]
+    needs: [check, release, merge-mac-feed]
     runs-on: ubuntu-latest
     steps:
       - name: Assert one release with the full asset set
