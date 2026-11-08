@@ -76,12 +76,12 @@ export async function restoreGridFiles(written: string[]): Promise<boolean> {
   return restored
 }
 
+const GRID_LOCK = 0x80
+
 export function applyGridBpm(db: Db, contentId: string, bpm: number, ctx: { now: Date }): void {
   const stamp = rekordboxStamp(ctx.now)
-  db.prepare('UPDATE djmdContent SET BPM = ?, rb_local_usn = ?, updated_at = ? WHERE ID = ?').run(
-    Math.round(bpm * 100),
-    takeLocalUsn(db, stamp),
-    stamp,
-    contentId,
-  )
+  db.prepare(
+    `UPDATE djmdContent SET BPM = ?, Analysed = coalesce(Analysed, 0) | ${GRID_LOCK},
+       rb_local_usn = ?, updated_at = ? WHERE ID = ?`,
+  ).run(Math.round(bpm * 100), takeLocalUsn(db, stamp), stamp, contentId)
 }

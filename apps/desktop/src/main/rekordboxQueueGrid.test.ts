@@ -24,13 +24,13 @@ const BEATS = Array.from({ length: 600 }, (_, i) => i * 500)
 const READ_GRID = BEATS.map((ms, i) => ({ ms, beat: (i % 4) + 1 }))
 const MOVED = { bpm: 120.5, anchorMs: 40 }
 
-async function collection({ ext = true, analysed = true } = {}) {
+async function collection({ ext = true, analysed = true, flags = 105 } = {}) {
   const dir = await mkdtemp(join(tmpdir(), 'surco-rbqgrid-'))
   const path = join(dir, 'master.db')
   writeRekordboxPlaylistFixture(path, {
     ...ORGANISE_FIXTURE,
     content: ORGANISE_FIXTURE.content.map((c) =>
-      c.ID === '103' && analysed ? { ...c, AnalysisDataPath: ANLZ } : c,
+      c.ID === '103' && analysed ? { ...c, AnalysisDataPath: ANLZ, Analysed: flags } : c,
     ),
   })
   mkdirSync(join(dir, 'share/PIONEER/USBANLZ/1/a'), { recursive: true })
@@ -61,15 +61,21 @@ const op = (over: Partial<CuesOp> = {}): CuesOp => ({
   ...over,
 })
 
-function bpmOf(path: string): number {
+function columnOf(path: string, column: 'BPM' | 'Analysed'): number {
   const db = openRekordboxDb(path, { readonly: true })
   if (!db) throw new Error('did not open')
   try {
-    return (db.prepare("SELECT BPM FROM djmdContent WHERE ID = '103'").get() as { BPM: number }).BPM
+    return (
+      db.prepare(`SELECT ${column} AS v FROM djmdContent WHERE ID = '103'`).get() as { v: number }
+    ).v
   } finally {
     db.close()
   }
 }
+
+const bpmOf = (path: string): number => columnOf(path, 'BPM')
+
+const GRID_LOCK = 0x80
 
 const expectedBeats = () =>
   gridBeats(MOVED, 300000).map((b) => ({ ms: Math.round(b.ms), beat: b.beat, bpm: 120.5 }))
@@ -81,6 +87,36 @@ describe('saving an edited beat grid to rekordbox', () => {
     expect(result.ok && result.outcomes[0]).toEqual({ id: 'g', applied: true, notices: [] })
     expect(beatGrid(readFileSync(dat))).toEqual(expectedBeats())
     expect(bpmOf(path)).toBe(12050)
+  })
+
+  it('locks the grid in rekordbox so a re-analysis there cannot wipe the one the DJ fixed in Surco', async () => {
+    const { path } = await collection({ flags: 105 })
+    await applyRekordboxBatch(path, [op()], deps())
+    expect(columnOf(path, 'Analysed')).toBe(105 | GRID_LOCK)
+  })
+
+  it('saves a new grid over one already locked, since editing it in Surco is the DJ asking for the change', async () => {
+    const { path, dat } = await collection({ flags: 105 | GRID_LOCK })
+    const result = await applyRekordboxBatch(path, [op()], deps())
+    expect(result.ok && result.outcomes[0]).toMatchObject({ applied: true })
+    expect(beatGrid(readFileSync(dat))).toEqual(expectedBeats())
+    expect(columnOf(path, 'Analysed')).toBe(105 | GRID_LOCK)
+  })
+
+  it('leaves the lock alone when only cues are saved, since the grid was not touched', async () => {
+    const { path } = await collection({ flags: 105 })
+    await applyRekordboxBatch(
+      path,
+      [
+        op({
+          grid: undefined,
+          gridFingerprint: undefined,
+          wanted: [{ ms: 2000, kind: 0, color: null }],
+        }),
+      ],
+      deps(),
+    )
+    expect(columnOf(path, 'Analysed')).toBe(105)
   })
 
   it('points the extended grid at the new first and last beats and keeps its per-beat body', async () => {
