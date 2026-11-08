@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { TasteTrack, TunedTaste } from '../shared/dropTaste'
+import { fingerprintOf, type TasteTrack, type TunedTaste } from '../shared/dropTaste'
 import type { LearnTrack } from '../shared/learnFlow'
 import { type CueTasteDeps, createCueTaste, RELEARN_EVERY } from './cueTaste'
 import type { CollectionMarks } from './rekordboxLearnFlow'
@@ -125,6 +125,14 @@ describe('createCueTaste', () => {
     const taste = createCueTaste(memoryStore('{not json'), deps())
     expect(taste.profile()).toBeNull()
     taste.record(track('a'), false)
+    expect(taste.edits().count).toBe(1)
+  })
+
+  it('renames edits saved under a library id, so the same track edited again does not count twice', () => {
+    const old = { key: '103', candidates: [{ bar: 8, features: [1] }], drops: [8] }
+    const store = memoryStore(JSON.stringify({ version: 1, profile: null, edits: [old] }))
+    const taste = createCueTaste(store, deps())
+    taste.record({ ...old, key: fingerprintOf(old.candidates) }, false)
     expect(taste.edits().count).toBe(1)
   })
 })

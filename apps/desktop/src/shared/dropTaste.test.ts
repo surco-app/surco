@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { type DropModel, pickDrops } from './dropDetect'
-import { MIN_TASTE_TRACKS, modelWithTaste, type TasteTrack, tuneDropTaste } from './dropTaste'
+import { type DropInput, type DropModel, pickDrops } from './dropDetect'
+import {
+  MIN_TASTE_TRACKS,
+  modelWithTaste,
+  type TasteTrack,
+  tasteTrackOf,
+  tuneDropTaste,
+} from './dropTaste'
 import { predictTrees, trainTrees } from './dropTrees'
 
 const BARS = [0, 16, 32, 48, 64, 80]
@@ -82,5 +88,47 @@ describe('modelWithTaste', () => {
   it('runs the shipped detector untouched without a taste', () => {
     const base = shipped()
     expect(modelWithTaste(null, base)).toBe(base)
+  })
+})
+
+describe('tasteTrackOf', () => {
+  const BAR_MS = 2000
+  const PER_BAR = (BAR_MS * 150) / 1000
+  const word = (height: number, low: number): number =>
+    (low << 13) | (3 << 10) | (2 << 7) | (height << 2)
+  const inputOf = (sections: [bars: number, height: number, low: number][]): DropInput => {
+    const total = sections.reduce((n, [bars]) => n + bars, 0)
+    const words = new Uint16Array(total * PER_BAR)
+    let at = 0
+    for (const [bars, height, low] of sections) {
+      words.fill(word(height, low), at, at + bars * PER_BAR)
+      at += bars * PER_BAR
+    }
+    const grid = Array.from({ length: total * 4 }, (_, i) => ({
+      ms: (i * BAR_MS) / 4,
+      beat: (i % 4) + 1,
+    }))
+    return { grid, phrases: [], words }
+  }
+  const SONG: [number, number, number][] = [
+    [16, 7, 7],
+    [8, 0, 0],
+    [16, 7, 7],
+  ]
+
+  it('names a track by its own sound so two Macs with different libraries agree on it', () => {
+    const a = tasteTrackOf(inputOf(SONG), [0])
+    const b = tasteTrackOf(inputOf(SONG), [24 * BAR_MS])
+    expect(a?.key).toBeTruthy()
+    expect(a?.key).toBe(b?.key)
+  })
+
+  it('tells two different tracks apart', () => {
+    const other: [number, number, number][] = [
+      [16, 7, 7],
+      [12, 0, 0],
+      [16, 7, 7],
+    ]
+    expect(tasteTrackOf(inputOf(SONG), [0])?.key).not.toBe(tasteTrackOf(inputOf(other), [0])?.key)
   })
 })

@@ -20,7 +20,7 @@ export function recordCueEdits(
 ): void {
   for (const { contentId, draft } of saved) {
     const input = inputOf(client, contentId)
-    const track = input && tasteTrackOf(contentId, input, draftDrops(draft.cues, draft.locked))
+    const track = input && tasteTrackOf(input, draftDrops(draft.cues, draft.locked))
     if (track)
       window.api.recordCueEdit(track).catch((e: unknown) => {
         window.api.logError(

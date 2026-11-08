@@ -66,10 +66,19 @@ export function barIndexOf(grid: DropInput['grid'], ms: number): number {
   return bars - 1
 }
 
-export function tasteTrackOf(key: string, input: DropInput, drops: number[]): TasteTrack | null {
+export function fingerprintOf(candidates: TasteTrack['candidates']): string {
+  const text = candidates
+    .map((c) => `${c.bar}:${c.features.map((f) => f.toFixed(3)).join(',')}`)
+    .join(';')
+  return `${hashOf(text).toString(36)}${hashOf(`#${text}`).toString(36)}`
+}
+
+export function tasteTrackOf(input: DropInput, drops: number[]): TasteTrack | null {
   const candidates = dropCandidates(input).map((c) => ({ bar: c.bar, features: c.features }))
   const bars = [...new Set(drops.map((ms) => barIndexOf(input.grid, ms)))].filter((b) => b >= 0)
-  return candidates.length > 0 && bars.length > 0 ? { key, candidates, drops: bars } : null
+  return candidates.length > 0 && bars.length > 0
+    ? { key: fingerprintOf(candidates), candidates, drops: bars }
+    : null
 }
 
 type Scored = { drops: number[]; scored: { bar: number; ms: number; score: number }[] }

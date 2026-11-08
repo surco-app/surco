@@ -3,6 +3,7 @@ import { QueryClient } from '@tanstack/react-query'
 import { describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import type { DropInput } from '../../../shared/dropDetect'
+import { fingerprintOf } from '../../../shared/dropTaste'
 import type { TrackCues } from '../../../shared/types'
 import { cueDropInputQuery, cueWaveDetailQuery, trackCuesQuery } from '../hooks/useTrackCues'
 import { installApi } from '../test/api'
@@ -57,7 +58,7 @@ describe('recordCueEdits', () => {
     ])
     expect(recordCueEdit).toHaveBeenCalledTimes(1)
     const [track] = recordCueEdit.mock.calls[0]
-    expect(track.key).toBe('103')
+    expect(track.key).toBe(fingerprintOf(track.candidates))
     expect(track.drops).toEqual([32])
     expect(track.candidates.length).toBeGreaterThan(0)
   })
@@ -67,7 +68,7 @@ describe('recordCueEdits', () => {
     const input: DropInput = { grid: GRID, phrases: [], words: WORDS }
     client.setQueryData(cueDropInputQuery('engine:4').queryKey, input)
     recordCueEdits(client, [{ contentId: 'engine:4', draft: drafted([{ ms: bar(32), kind: 0 }]) }])
-    expect(recordCueEdit.mock.calls[0][0]).toMatchObject({ key: 'engine:4', drops: [32] })
+    expect(recordCueEdit.mock.calls[0][0]).toMatchObject({ drops: [32] })
   })
 
   it('learns nothing from a save without a marked point or without the wave Auto reads, never fetching it for this', () => {

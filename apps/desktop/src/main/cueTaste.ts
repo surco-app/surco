@@ -1,6 +1,6 @@
 import log from 'electron-log/main'
 import type { CueProfile } from '../shared/cueProfile'
-import type { TasteTrack, TunedTaste } from '../shared/dropTaste'
+import { fingerprintOf, type TasteTrack, type TunedTaste } from '../shared/dropTaste'
 import { diagnoseLearnFlow, learnFlow } from '../shared/learnFlow'
 import type { CollectionMarks } from './rekordboxLearnFlow'
 import type { QueueStore } from './rekordboxQueue'
@@ -32,8 +32,11 @@ function parse(text: string | null): Saved {
   const empty: Saved = { profile: null, edits: [], sinceLearn: 0 }
   if (!text) return empty
   try {
-    const saved = JSON.parse(text) as Saved
-    return { ...empty, ...saved }
+    const saved = { ...empty, ...(JSON.parse(text) as Saved) }
+    return {
+      ...saved,
+      edits: saved.edits.map((e) => ({ ...e, key: fingerprintOf(e.candidates) })),
+    }
   } catch (err) {
     log.warn(`cue taste unreadable, starting empty: ${String(err)}`)
     return empty
