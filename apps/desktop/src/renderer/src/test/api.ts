@@ -165,6 +165,7 @@ export function stubApi(over: Partial<Api> = {}): Api {
     getConfigDir: async () => null,
     defaultConfigDir: async () => '',
     setConfigDir: async () => testSettings,
+    configDirHasSettings: async () => false,
     cacheStats: async () => ({ files: 0, bytes: 0 }),
     clearCache: async () => {},
     pickConfigDir: async () => null,

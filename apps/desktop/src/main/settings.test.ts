@@ -57,6 +57,7 @@ import { DJ_COLLECTION_PATH } from '../shared/djSettings'
 import type { Settings } from '../shared/types'
 import {
   defaults,
+  configDirHasSettings,
   getConfigDir,
   getSettings,
   LOCAL_KEYS,
@@ -242,6 +243,18 @@ describe('getSettings caching', () => {
     expect(getSettings().filenameFormat).toBe('{album}')
     setConfigDir(null)
     rmSync(dir, { recursive: true, force: true })
+  })
+
+  it('tells a folder that holds a Surco configuration from one that does not', () => {
+    const empty = mkdtempSync(join(tmpdir(), 'surco-empty-'))
+    const full = mkdtempSync(join(tmpdir(), 'surco-full-'))
+    writeFileSync(join(full, 'settings.json'), '{}')
+
+    expect(configDirHasSettings(empty)).toBe(false)
+    expect(configDirHasSettings(full)).toBe(true)
+
+    rmSync(empty, { recursive: true, force: true })
+    rmSync(full, { recursive: true, force: true })
   })
 
   // A settings.json edited by hand (or landed from the sync folder while the app is

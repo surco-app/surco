@@ -126,6 +126,8 @@ const api: Api = {
   getConfigDir: (): Promise<string | null> => ipcRenderer.invoke('settings:getConfigDir'),
   defaultConfigDir: (): Promise<string> => ipcRenderer.invoke('settings:defaultConfigDir'),
   setConfigDir: (dir: string | null) => ipcRenderer.invoke('settings:setConfigDir', dir),
+  configDirHasSettings: (dir: string): Promise<boolean> =>
+    ipcRenderer.invoke('settings:configDirHasSettings', dir),
   cacheStats: (): Promise<{ files: number; bytes: number }> => ipcRenderer.invoke('cache:stats'),
   clearCache: (): Promise<void> => ipcRenderer.invoke('cache:clear'),
   pickConfigDir: (): Promise<string | null> => ipcRenderer.invoke('dialog:pickConfigDir'),

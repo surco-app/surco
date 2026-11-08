@@ -203,6 +203,7 @@ import { registerSeratoPlaylistEditIpc } from './seratoPlaylistEditIpc'
 import { registerSeratoPlaylistsIpc } from './seratoPlaylistsIpc'
 import { loadLastSession, saveLastSession } from './session'
 import {
+  configDirHasSettings,
   defaultConfigDir,
   getConfigDir,
   getSettings,
@@ -1159,6 +1160,11 @@ function registerIpc(): void {
 
   ipcMain.handle('cache:stats', () => analysisCacheStats())
   ipcMain.handle('cache:clear', () => clearAnalysisCache())
+
+  ipcMain.handle('settings:configDirHasSettings', (_e, dir: string) => {
+    if (!pickedConfigDirs.has(dir)) throw errorWithKey('pathNotAllowed')
+    return configDirHasSettings(dir)
+  })
 
   ipcMain.handle('dialog:pickConfigDir', async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({

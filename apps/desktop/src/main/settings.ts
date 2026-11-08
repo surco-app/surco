@@ -274,6 +274,10 @@ export function defaultConfigDir(): string {
   return app.getPath('userData')
 }
 
+export function configDirHasSettings(dir: string): boolean {
+  return existsSync(join(dir, 'settings.json'))
+}
+
 function syncedFile(): string | null {
   const dir = getConfigDir()
   return dir ? join(dir, 'settings.json') : null

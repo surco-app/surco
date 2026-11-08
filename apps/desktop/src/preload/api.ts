@@ -135,6 +135,7 @@ export interface Api {
   // The app-default settings location, shown in the field when no custom folder is set.
   defaultConfigDir: () => Promise<string>
   setConfigDir: (dir: string | null) => Promise<Settings>
+  configDirHasSettings: (dir: string) => Promise<boolean>
   cacheStats: () => Promise<{ files: number; bytes: number }>
   clearCache: () => Promise<void>
   pickConfigDir: () => Promise<string | null>
