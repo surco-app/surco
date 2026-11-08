@@ -54,7 +54,7 @@ export async function readCollectionMarks(
     )
     const words = drops.length > 0 ? readCueWaveDetail(db, shareDir, contentId) : null
     const track =
-      words && tasteTrackOf(contentId, { grid: read.grid, phrases: read.phrases, words }, drops)
+      words && tasteTrackOf({ grid: read.grid, phrases: read.phrases, words }, drops)
     if (track) out.taste.push(track)
   }
   return out

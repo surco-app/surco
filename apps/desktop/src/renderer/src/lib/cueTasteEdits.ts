@@ -1,8 +1,14 @@
 import type { QueryClient } from '@tanstack/react-query'
+import type { CueProfileRead } from '../../../shared/cueProfile'
 import type { DropInput } from '../../../shared/dropDetect'
-import { tasteTrackOf } from '../../../shared/dropTaste'
+import { modelWithTaste, tasteTrackOf } from '../../../shared/dropTaste'
 import type { TrackCues } from '../../../shared/types'
-import { cueDropInputQuery, cueWaveDetailQuery, trackCuesQuery } from '../hooks/useTrackCues'
+import {
+  cueDropInputQuery,
+  cueProfileQuery,
+  cueWaveDetailQuery,
+  trackCuesQuery,
+} from '../hooks/useTrackCues'
 import { type CueDraft, draftDrops } from './cueDraft'
 import { cueProgramOf } from './cuePrograms'
 
@@ -18,9 +24,12 @@ export function recordCueEdits(
   client: QueryClient,
   saved: { contentId: string; draft: CueDraft }[],
 ): void {
+  const taste =
+    client.getQueryData<CueProfileRead>(cueProfileQuery.queryKey)?.profile?.taste ?? null
   for (const { contentId, draft } of saved) {
     const input = inputOf(client, contentId)
-    const track = input && tasteTrackOf(contentId, input, draftDrops(draft.cues, draft.locked))
+    const track =
+      input && tasteTrackOf(input, draftDrops(draft.cues, draft.locked), modelWithTaste(taste))
     if (track)
       window.api.recordCueEdit(track).catch((e: unknown) => {
         window.api.logError(

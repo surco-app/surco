@@ -16,6 +16,6 @@ export interface CueProfile {
 
 export interface CueProfileRead {
   profile: CueProfile | null
-  edits: { count: number; sinceLearn: number }
+  edits: { count: number; sinceLearn: number; corrected: number }
   marked: number
 }

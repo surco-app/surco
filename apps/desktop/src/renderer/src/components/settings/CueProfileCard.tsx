@@ -256,6 +256,18 @@ export function CueProfileCard({ read, onLearned, synced, patch }: Props): React
               ? tr('settings.cueProfile.autoFound', { found: tenths(check.after.found) })
               : tr('settings.cueProfile.autoFew')}
           </Fact>
+          {read.edits.corrected > 0 && (
+            <Fact
+              testid="cue-profile-corrections"
+              label={tr('settings.cueProfile.corrections')}
+              sub={tr('settings.cueProfile.correctionsSub')}
+            >
+              {tr('settings.cueProfile.correctionsValue', {
+                corrected: count(read.edits.corrected),
+                total: count(read.edits.count),
+              })}
+            </Fact>
+          )}
           {countdown && (
             <Fact
               testid="cue-profile-countdown"

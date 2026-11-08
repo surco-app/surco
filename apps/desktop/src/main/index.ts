@@ -109,6 +109,7 @@ import { coverThumbPathOf, pruneCoverThumbs } from './coverThumbs'
 import { installCrashGuards, logHandlerFailures, wireRendererRecovery } from './crashGuards'
 import { createCueTaste } from './cueTaste'
 import { registerCueTasteIpc } from './cueTasteIpc'
+import { createSharedEdits } from './cueTasteShared'
 import { cachedCueWaveWords } from './cueWaveWordsCache'
 import { registerDamageIpc } from './damageIpc'
 import { damageDeps } from './damageWiring'
@@ -576,6 +577,7 @@ const provisionalCues = createProvisionalList(
 const cueTaste = createCueTaste(fileStore(join(app.getPath('userData'), 'cue-taste.json')), {
   readCollection: () => readCollectionMarksAt(rekordboxCollectionPath()),
   tune: (tracks) => runInWorker<TunedTaste | null>({ type: 'tuneDrops', tracks }),
+  shared: createSharedEdits(getConfigDir),
   onLearned: () => broadcast('cues:profileChanged', null),
 })
 const adjustProvisionalCues = (): void =>
@@ -2222,6 +2224,7 @@ app.whenReady().then(() => {
     app.dock?.setIcon(nativeImage.createFromPath(join(app.getAppPath(), 'build', 'icon.png')))
   }
   registerIpc()
+  setTimeout(() => cueTaste.refresh(getSettings().cueLearnFromEdits), 10_000).unref()
   // Lock scripts to same-origin in the packaged build. The meta CSP in index.html
   // keeps 'unsafe-inline' because the dev server's React Fast Refresh injects an
   // inline script; production has no inline scripts (the theme bootstrap is the
@@ -2446,4 +2449,5 @@ app.on('window-all-closed', () => {
 app.on('will-quit', () => {
   activeConversions.killAll()
   cleanupPlaybackTemps()
+  cueTaste.flush()
 })

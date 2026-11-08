@@ -57,7 +57,8 @@ describe('readCollectionMarks', () => {
     ])
     const marks = await readCollectionMarks(db, share, async () => {})
     expect(marks.learn).toHaveLength(1)
-    expect(marks.taste).toEqual([expect.objectContaining({ key: '103', drops: [8] })])
+    expect(marks.taste).toEqual([expect.objectContaining({ drops: [8] })])
+    expect(marks.taste[0].key).not.toBe('103')
     expect(marks.taste[0].candidates.length).toBeGreaterThan(0)
   })
 
@@ -97,7 +98,7 @@ describe('readCollectionMarksAt', () => {
     const { path } = await collectionAt([{ ID: 'd', InMsec: 16000, Kind: 0 }])
     const before = readFileSync(path)
     const marks = await readCollectionMarksAt(path)
-    expect(marks?.taste.map((t) => t.key)).toEqual(['103'])
+    expect(marks?.taste).toHaveLength(1)
     expect(readFileSync(path).equals(before)).toBe(true)
   })
 
