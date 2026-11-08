@@ -7,6 +7,7 @@ import type { CollectionMarks } from './rekordboxLearnFlow'
 import type { QueueStore } from './rekordboxQueue'
 
 export const RELEARN_EVERY = 10
+export const RELEARN_AFTER_CORRECTIONS = 3
 export const SHARE_AFTER_MS = 60_000
 const MAX_EDITS = 1000
 
@@ -29,6 +30,7 @@ export interface CueTaste {
   edits: () => { count: number; sinceLearn: number }
   record: (track: TasteTrack, learnNow: boolean) => void
   learn: () => Promise<CueProfile>
+  refresh: (learnNow: boolean) => void
   flush: () => void
 }
 
@@ -36,6 +38,8 @@ interface Saved {
   profile: CueProfile | null
   edits: TasteTrack[]
   sinceLearn: number
+  corrections?: number
+  othersSeen?: number
   machine?: string
 }
 
@@ -113,10 +117,12 @@ export function createCueTaste(
   }
 
   const run = async (): Promise<CueProfile> => {
-    saved = { ...saved, sinceLearn: 0 }
+    saved = { ...saved, sinceLearn: 0, corrections: 0 }
     const collection = (await deps.readCollection()) ?? { learn: [], taste: [] }
     const byKey = new Map(collection.taste.map((t) => [t.key, t]))
-    for (const edit of othersEdits()) byKey.set(edit.key, edit)
+    const others = othersEdits()
+    saved = { ...saved, othersSeen: others.length }
+    for (const edit of others) byKey.set(edit.key, edit)
     for (const edit of saved.edits) byKey.set(edit.key, edit)
     const tuned = await deps.tune([...byKey.values()])
     const profile: CueProfile = {
@@ -139,16 +145,32 @@ export function createCueTaste(
     return learning
   }
 
+  const learnInBackground = (): void => {
+    learn().catch((err) => log.warn(`cue taste: learning from edits failed: ${String(err)}`))
+  }
+
   return {
     profile: () => saved.profile,
     edits: () => ({ count: saved.edits.length, sinceLearn: saved.sinceLearn }),
     record(track, learnNow) {
       const edits = [...saved.edits.filter((e) => e.key !== track.key), track].slice(-MAX_EDITS)
-      saved = { ...saved, edits, sinceLearn: saved.sinceLearn + 1 }
+      const corrected = track.outcome === 'corrected' || track.outcome === 'manual'
+      saved = {
+        ...saved,
+        edits,
+        sinceLearn: saved.sinceLearn + 1,
+        corrections: (saved.corrections ?? 0) + (corrected ? 1 : 0),
+      }
       save()
       shareSoon()
-      if (learnNow && saved.sinceLearn >= RELEARN_EVERY && !learning)
-        learn().catch((err) => log.warn(`cue taste: learning from edits failed: ${String(err)}`))
+      const due =
+        saved.sinceLearn >= RELEARN_EVERY || (saved.corrections ?? 0) >= RELEARN_AFTER_CORRECTIONS
+      if (learnNow && due && !learning) learnInBackground()
+    },
+    refresh(learnNow) {
+      if (!learnNow || learning) return
+      const count = othersEdits().length
+      if (count > 0 && count !== (saved.othersSeen ?? 0)) learnInBackground()
     },
     learn,
     flush,

@@ -2218,6 +2218,7 @@ app.whenReady().then(() => {
     app.dock?.setIcon(nativeImage.createFromPath(join(app.getAppPath(), 'build', 'icon.png')))
   }
   registerIpc()
+  setTimeout(() => cueTaste.refresh(getSettings().cueLearnFromEdits), 10_000).unref()
   // Lock scripts to same-origin in the packaged build. The meta CSP in index.html
   // keeps 'unsafe-inline' because the dev server's React Fast Refresh injects an
   // inline script; production has no inline scripts (the theme bootstrap is the

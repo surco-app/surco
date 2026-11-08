@@ -19,6 +19,7 @@ function taste(): CueTaste {
     edits: () => ({ count: 3, sinceLearn: 2 }),
     record: vi.fn(),
     learn: vi.fn(async () => PROFILE),
+    refresh: vi.fn(),
     flush: vi.fn(),
   }
 }

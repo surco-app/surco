@@ -1,7 +1,13 @@
 import { describe, expect, it, vi } from 'vitest'
 import { fingerprintOf, type TasteTrack, type TunedTaste } from '../shared/dropTaste'
 import type { LearnTrack } from '../shared/learnFlow'
-import { type CueTasteDeps, createCueTaste, RELEARN_EVERY, SHARE_AFTER_MS } from './cueTaste'
+import {
+  type CueTasteDeps,
+  createCueTaste,
+  RELEARN_AFTER_CORRECTIONS,
+  RELEARN_EVERY,
+  SHARE_AFTER_MS,
+} from './cueTaste'
 import type { CollectionMarks } from './rekordboxLearnFlow'
 
 function memoryStore(text: string | null = null) {
@@ -103,6 +109,60 @@ describe('createCueTaste', () => {
     await new Promise((r) => setTimeout(r, 0))
     expect(tune).not.toHaveBeenCalled()
     expect(taste.edits().sinceLearn).toBe(RELEARN_EVERY * 2)
+  })
+
+  it('learns sooner from corrections than from proposals taken as they came, because they are where Auto was wrong', async () => {
+    const tune = vi.fn(async () => TUNED)
+    const taste = createCueTaste(memoryStore(), deps({ tune }))
+    for (let i = 0; i < RELEARN_AFTER_CORRECTIONS - 1; i++)
+      taste.record({ ...track(`c${i}`), outcome: 'corrected' }, true)
+    for (let i = 0; i < 4; i++) taste.record({ ...track(`a${i}`), outcome: 'accepted' }, true)
+    await new Promise((r) => setTimeout(r, 0))
+    expect(tune).not.toHaveBeenCalled()
+    taste.record({ ...track('last'), outcome: 'manual' }, true)
+    await vi.waitFor(() => expect(tune).toHaveBeenCalledTimes(1))
+  })
+
+  describe('when another Mac saved something new', () => {
+    const others = (edits: TasteTrack[]) => ({
+      write: vi.fn(),
+      readOthers: vi.fn(() => edits),
+    })
+
+    it('learns from it on its own, so the DJ never has to ask Auto to catch up', async () => {
+      const tune = vi.fn(async () => TUNED)
+      const taste = createCueTaste(
+        memoryStore(),
+        deps({ tune, shared: others([track('x'), track('y')]) }),
+      )
+      taste.refresh(true)
+      await vi.waitFor(() => expect(tune).toHaveBeenCalledTimes(1))
+    })
+
+    it('does not learn again when nothing changed since the last time', async () => {
+      const tune = vi.fn(async () => TUNED)
+      const taste = createCueTaste(memoryStore(), deps({ tune, shared: others([track('x')]) }))
+      await taste.learn()
+      taste.refresh(true)
+      await new Promise((r) => setTimeout(r, 0))
+      expect(tune).toHaveBeenCalledTimes(1)
+    })
+
+    it('does nothing when there are no other Macs', async () => {
+      const tune = vi.fn(async () => TUNED)
+      const taste = createCueTaste(memoryStore(), deps({ tune, shared: others([]) }))
+      taste.refresh(true)
+      await new Promise((r) => setTimeout(r, 0))
+      expect(tune).not.toHaveBeenCalled()
+    })
+
+    it('stays quiet when the DJ turned learning off', async () => {
+      const tune = vi.fn(async () => TUNED)
+      const taste = createCueTaste(memoryStore(), deps({ tune, shared: others([track('x')]) }))
+      taste.refresh(false)
+      await new Promise((r) => setTimeout(r, 0))
+      expect(tune).not.toHaveBeenCalled()
+    })
   })
 
   it('runs one learning at a time when the button and the edits ask together', async () => {
