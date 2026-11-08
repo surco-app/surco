@@ -566,7 +566,8 @@ export function replaceSettings(imported: Partial<Settings>): Settings {
   const next = mergeSettings(defaults, sanitizeSettingsPatch(imported))
   for (const key of INTERNAL_ONLY_KEYS) next[key] = current[key] as never
   for (const key of MACHINE_PATH_KEYS) {
-    if (!existsSync(next[key])) next[key] = current[key]
+    const wanted = imported[key]
+    if (!wanted || !(existsSync(wanted) || existsSync(dirname(wanted)))) next[key] = current[key]
   }
   if (!autoMatchAvailable(next)) next.autoMatch = false
   return persist(next)

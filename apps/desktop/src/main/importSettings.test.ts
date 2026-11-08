@@ -73,4 +73,26 @@ describe('applyImportedSettings', () => {
     expect(getSettings().outputDir).toBe(dir)
     rmSync(dir, { recursive: true, force: true })
   })
+
+  it('adopts a backup folder that does not exist yet while the folder holding it does', () => {
+    const parent = mkdtempSync(join(tmpdir(), 'surco-parent-'))
+    const toCreate = join(parent, 'Surco')
+    saveSettings({ outputDir: '/aqui/salida' })
+    applyImportedSettings({ theme: 'dark', outputDir: toCreate })
+    expect(getSettings().outputDir).toBe(toCreate)
+    rmSync(parent, { recursive: true, force: true })
+  })
+
+  it("keeps this machine's paths when the backup does not mention them", () => {
+    saveSettings({ engineLibraryDir: '/aqui/engine', traktorNmlPath: '/aqui/collection.nml' })
+    applyImportedSettings({ theme: 'dark' })
+    expect(getSettings().engineLibraryDir).toBe('/aqui/engine')
+    expect(getSettings().traktorNmlPath).toBe('/aqui/collection.nml')
+  })
+
+  it("keeps this machine's path when the backup holds an empty one", () => {
+    saveSettings({ rekordboxDbPath: '/aqui/master.db' })
+    applyImportedSettings({ theme: 'dark', rekordboxDbPath: '' })
+    expect(getSettings().rekordboxDbPath).toBe('/aqui/master.db')
+  })
 })
