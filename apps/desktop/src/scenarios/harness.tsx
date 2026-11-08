@@ -692,7 +692,11 @@ function scenarioApi(
     rekordboxSurcoGrid: async () => null,
     rowWaves: async () => ({}),
     rekordboxCountCompletable: async () => 0,
-    cueProfile: async () => ({ profile: null, edits: { count: 0, sinceLearn: 0 }, marked: 0 }),
+    cueProfile: async () => ({
+      profile: null,
+      edits: { count: 0, sinceLearn: 0, corrected: 0 },
+      marked: 0,
+    }),
     learnCueProfile: async () => {
       throw new Error('no collection to learn from')
     },
