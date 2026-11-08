@@ -109,6 +109,7 @@ import { coverThumbPathOf, pruneCoverThumbs } from './coverThumbs'
 import { installCrashGuards, logHandlerFailures, wireRendererRecovery } from './crashGuards'
 import { createCueTaste } from './cueTaste'
 import { registerCueTasteIpc } from './cueTasteIpc'
+import { createSharedEdits } from './cueTasteShared'
 import { cachedCueWaveWords } from './cueWaveWordsCache'
 import { registerDamageIpc } from './damageIpc'
 import { damageDeps } from './damageWiring'
@@ -575,6 +576,7 @@ const provisionalCues = createProvisionalList(
 const cueTaste = createCueTaste(fileStore(join(app.getPath('userData'), 'cue-taste.json')), {
   readCollection: () => readCollectionMarksAt(rekordboxCollectionPath()),
   tune: (tracks) => runInWorker<TunedTaste | null>({ type: 'tuneDrops', tracks }),
+  shared: createSharedEdits(getConfigDir),
   onLearned: () => broadcast('cues:profileChanged', null),
 })
 const adjustProvisionalCues = (): void =>

@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import log from 'electron-log/main'
 import type { CueProfile } from '../shared/cueProfile'
 import { fingerprintOf, type TasteTrack, type TunedTaste } from '../shared/dropTaste'
@@ -8,9 +9,16 @@ import type { QueueStore } from './rekordboxQueue'
 export const RELEARN_EVERY = 10
 const MAX_EDITS = 1000
 
+export interface SharedEdits {
+  write: (machine: string, edits: TasteTrack[]) => void
+  readOthers: (machine: string) => TasteTrack[]
+}
+
 export interface CueTasteDeps {
   readCollection: () => Promise<CollectionMarks | null>
   tune: (tracks: TasteTrack[]) => Promise<TunedTaste | null>
+  shared?: SharedEdits
+  newId?: () => string
   now?: () => Date
   onLearned?: (profile: CueProfile) => void
 }
@@ -26,6 +34,7 @@ interface Saved {
   profile: CueProfile | null
   edits: TasteTrack[]
   sinceLearn: number
+  machine?: string
 }
 
 function parse(text: string | null): Saved {
@@ -60,14 +69,34 @@ export function createCueTaste(
   deps: CueTasteDeps,
 ): CueTaste {
   let saved = parse(store.read())
+  const machine = saved.machine ?? (deps.newId ?? randomUUID)()
+  saved = { ...saved, machine }
   let learning: Promise<CueProfile> | null = null
   const save = () => store.write(JSON.stringify({ version: 1, ...saved }))
   const now = deps.now ?? (() => new Date())
+
+  const othersEdits = (): TasteTrack[] => {
+    try {
+      return deps.shared?.readOthers(machine) ?? []
+    } catch (err) {
+      log.warn(`cue taste: other Macs' edits unreadable, learning without them: ${String(err)}`)
+      return []
+    }
+  }
+
+  const shareEdits = (): void => {
+    try {
+      deps.shared?.write(machine, saved.edits)
+    } catch (err) {
+      log.warn(`cue taste: edits not shared with other Macs: ${String(err)}`)
+    }
+  }
 
   const run = async (): Promise<CueProfile> => {
     saved = { ...saved, sinceLearn: 0 }
     const collection = (await deps.readCollection()) ?? { learn: [], taste: [] }
     const byKey = new Map(collection.taste.map((t) => [t.key, t]))
+    for (const edit of othersEdits()) byKey.set(edit.key, edit)
     for (const edit of saved.edits) byKey.set(edit.key, edit)
     const tuned = await deps.tune([...byKey.values()])
     const profile: CueProfile = {
@@ -97,6 +126,7 @@ export function createCueTaste(
       const edits = [...saved.edits.filter((e) => e.key !== track.key), track].slice(-MAX_EDITS)
       saved = { ...saved, edits, sinceLearn: saved.sinceLearn + 1 }
       save()
+      shareEdits()
       if (learnNow && saved.sinceLearn >= RELEARN_EVERY && !learning)
         learn().catch((err) => log.warn(`cue taste: learning from edits failed: ${String(err)}`))
     },

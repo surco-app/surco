@@ -135,4 +135,60 @@ describe('createCueTaste', () => {
     taste.record({ ...old, key: fingerprintOf(old.candidates) }, false)
     expect(taste.edits().count).toBe(1)
   })
+
+  describe('across Macs', () => {
+    const sharedWith = (others: TasteTrack[] = []) => ({
+      write: vi.fn<(machine: string, edits: TasteTrack[]) => void>(),
+      readOthers: vi.fn<(machine: string) => TasteTrack[]>(() => others),
+    })
+
+    it('writes the edits to the shared folder under this Mac, so another Mac can learn from them', () => {
+      const shared = sharedWith()
+      const taste = createCueTaste(memoryStore(), deps({ shared, newId: () => 'mac-a' }))
+      taste.record(track('a'), false)
+      expect(shared.write).toHaveBeenLastCalledWith('mac-a', [track('a')])
+    })
+
+    it('keeps the same Mac name after a restart, so it overwrites its own file instead of leaving copies', () => {
+      const store = memoryStore()
+      const shared = sharedWith()
+      createCueTaste(store, deps({ shared, newId: () => 'mac-a' })).record(track('a'), false)
+      createCueTaste(store, deps({ shared, newId: () => 'mac-b' })).record(track('b'), false)
+      expect(shared.write.mock.calls.map(([machine]) => machine)).toEqual(['mac-a', 'mac-a'])
+    })
+
+    it('learns from what the other Macs saved, an edit made here winning over the same track there', async () => {
+      const tune = vi.fn(async () => TUNED)
+      const shared = sharedWith([track('x', [4]), track('a', [99])])
+      const taste = createCueTaste(memoryStore(), deps({ shared, tune, newId: () => 'mac-a' }))
+      taste.record(track('a', [12]), false)
+      await taste.learn()
+      const sent = (tune.mock.calls[0] as unknown as [TasteTrack[]])[0]
+      expect(sent.map((t) => [t.key, t.drops])).toEqual([
+        ['x', [4]],
+        ['a', [12]],
+      ])
+      expect(shared.readOthers).toHaveBeenCalledWith('mac-a')
+    })
+
+    it('keeps the edit here when the shared folder refuses the write, so a full iCloud does not cost the DJ their lesson', () => {
+      const shared = sharedWith()
+      shared.write.mockImplementation(() => {
+        throw new Error('disk full')
+      })
+      const taste = createCueTaste(memoryStore(), deps({ shared }))
+      expect(() => taste.record(track('a'), false)).not.toThrow()
+      expect(taste.edits().count).toBe(1)
+    })
+
+    it('learns without the shared folder when it cannot be read', async () => {
+      const shared = sharedWith()
+      shared.readOthers.mockImplementation(() => {
+        throw new Error('not downloaded yet')
+      })
+      const taste = createCueTaste(memoryStore(), deps({ shared }))
+      taste.record(track('a'), false)
+      await expect(taste.learn()).resolves.toMatchObject({ sources: { edits: 1 } })
+    })
+  })
 })
