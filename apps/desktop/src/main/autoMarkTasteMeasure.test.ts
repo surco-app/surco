@@ -170,4 +170,71 @@ describe.skipIf(!copy)('Auto marcar tuned to a DJ’s own marks', () => {
         }
       }
   }, 3_600_000)
+
+  it('measures what a shared edits file weighs and how long learning takes, on a copy only', async () => {
+    const path = resolve(copy as string)
+    expect(path.startsWith(SCRATCH) && !path.includes('/Library/Pioneer')).toBe(true)
+    const tracks = await loadTracks(path)
+    const taken = tracks
+      .flatMap((t) => tasteTrackOf(t.input, t.mine, DROP_MODEL) ?? [])
+      .slice(-1000)
+    const text = JSON.stringify({ version: 1, edits: taken })
+    const candidates = taken.reduce((n, t) => n + t.candidates.length, 0)
+    console.log(
+      JSON.stringify({
+        edits: taken.length,
+        candidates,
+        megabytes: r3(text.length / 1_000_000),
+        bytesPerEdit: Math.round(text.length / taken.length),
+      }),
+    )
+    for (const size of [30, 100, 300, 1000]) {
+      const started = performance.now()
+      tuneDropTaste(taken.slice(0, size))
+      console.log(
+        JSON.stringify({ learnedFrom: size, seconds: r3((performance.now() - started) / 1000) }),
+      )
+    }
+  }, 3_600_000)
+
+  it('measures whether rounding the stored features changes what Auto learns, on a copy only', async () => {
+    const path = resolve(copy as string)
+    expect(path.startsWith(SCRATCH) && !path.includes('/Library/Pioneer')).toBe(true)
+    const tracks = await loadTracks(path)
+    const test = tracks.filter((t) => t.test)
+    const train = tracks.filter((t) => !t.test)
+    const all = (labels: (t: Track) => number[]) =>
+      train.flatMap((t) => tasteTrackOf(t.input, labels(t), DROP_MODEL) ?? [])
+    const rounded = (edits: TasteTrack[], decimals: number): TasteTrack[] =>
+      edits.map((e) => ({
+        ...e,
+        candidates: e.candidates.map((c) => ({
+          bar: c.bar,
+          features: c.features.map((f) => Number(f.toFixed(decimals))),
+        })),
+      }))
+    const djs: Record<string, (t: Track) => number[]> = {
+      vicent: (t) => t.mine,
+      firstOnly: (t) => [Math.min(...t.mine)],
+    }
+    for (const [dj, labels] of Object.entries(djs)) {
+      const edits = all(labels)
+      for (const decimals of [null, 3, 2]) {
+        const used = decimals === null ? edits : rounded(edits, decimals)
+        const tuned = tuneDropTaste(used)
+        console.log(
+          JSON.stringify({
+            dj,
+            decimals,
+            megabytesPer1000: r3(
+              (JSON.stringify({ version: 1, edits: used.slice(0, 1000) }).length / 1_000_000) *
+                (1000 / Math.min(1000, used.length)),
+            ),
+            adopted: tuned?.taste !== null,
+            tuned: rates(test, labels, modelWithTaste(tuned?.taste ?? null)),
+          }),
+        )
+      }
+    }
+  }, 3_600_000)
 })

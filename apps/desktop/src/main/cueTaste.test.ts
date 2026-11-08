@@ -4,6 +4,7 @@ import type { LearnTrack } from '../shared/learnFlow'
 import {
   type CueTasteDeps,
   createCueTaste,
+  MAX_EDITS,
   RELEARN_AFTER_CORRECTIONS,
   RELEARN_EVERY,
   SHARE_AFTER_MS,
@@ -217,6 +218,22 @@ describe('createCueTaste', () => {
       await new Promise((r) => setTimeout(r, 0))
       expect(tune).not.toHaveBeenCalled()
     })
+  })
+
+  it('keeps only the latest edits, so the file in a synced folder and each learning stay small', () => {
+    const taste = createCueTaste(memoryStore(), deps())
+    for (let i = 0; i < MAX_EDITS + 5; i++) taste.record(track(`t${i}`), false)
+    expect(taste.edits().count).toBe(MAX_EDITS)
+  })
+
+  it('shrinks edits saved with long decimals the next time it writes, so an old file stops weighing tens of megabytes', () => {
+    const long = { key: 'old', candidates: [{ bar: 8, features: [0.123456789012345] }], drops: [8] }
+    const store = memoryStore(JSON.stringify({ version: 1, profile: null, edits: [long] }))
+    const taste = createCueTaste(store, deps())
+    taste.record(track('new'), false)
+    const text = store.read() ?? ''
+    expect(text).toContain('0.123')
+    expect(text).not.toContain('0.1234')
   })
 
   it('counts the tracks the DJ corrected, so Settings can show their corrections are being used', () => {

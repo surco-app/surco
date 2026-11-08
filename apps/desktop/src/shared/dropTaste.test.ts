@@ -148,6 +148,13 @@ describe('tasteTrackOf', () => {
     expect(a?.key).toBe(b?.key)
   })
 
+  it('keeps the features to three decimals, so a stored edit stays small and the stored value is what the fingerprint saw', () => {
+    const track = tasteTrackOf(inputOf(SONG), [0])
+    const features = track?.candidates.flatMap((c) => c.features) ?? []
+    expect(features.length).toBeGreaterThan(0)
+    expect(features.every((f) => Number(f.toFixed(3)) === f)).toBe(true)
+  })
+
   it('tells two different tracks apart', () => {
     const other: [number, number, number][] = [
       [16, 7, 7],

@@ -1057,6 +1057,8 @@
         "unanalysed": "Pas d’analyse rekordbox",
         "none": "Surco ne trouve pas où ce morceau décolle",
         "marked": "Tu as déjà un CALL partout où Surco pense que le morceau décolle",
+        "changed": "Tu as modifié ce que Auto proposait. Auto apprend de cela quand tu enregistres.",
+        "own": "Tu as marqué autrement que Auto. Auto apprend de cela quand tu enregistres.",
         "selected": "Marquage auto de la sélection",
         "sure": "Ça décolle ici {{time}}",
         "why_one": "après {{count}} mesure avec peu de basses",
@@ -1972,7 +1974,7 @@
       "startShare": "{{with}} sur {{open}} morceaux où il tiendrait",
       "details": "Ce que Surco a appris",
       "fromEdits": "Apprendre pendant que tu corriges",
-      "fromEditsHint": "Chaque morceau que tu enregistres dans l’éditeur s’ajoute à ce qui est appris, et Surco réapprend tous les 10."
+      "fromEditsHint": "Chaque morceau que tu enregistres dans l’éditeur s’ajoute à ce qui est appris, et Surco réapprend tout seul quand tu corriges. Avec un dossier de réglages synchronisé, il apprend aussi de tes autres Mac."
     },
     "searchSynonyms": {
       "mp3Quality": "débit, bitrate, kbps, CBR, VBR",

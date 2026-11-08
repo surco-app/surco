@@ -1,7 +1,12 @@
 import { randomUUID } from 'node:crypto'
 import log from 'electron-log/main'
 import type { CueProfile } from '../shared/cueProfile'
-import { fingerprintOf, type TasteTrack, type TunedTaste } from '../shared/dropTaste'
+import {
+  fingerprintOf,
+  roundedCandidates,
+  type TasteTrack,
+  type TunedTaste,
+} from '../shared/dropTaste'
 import { diagnoseLearnFlow, learnFlow } from '../shared/learnFlow'
 import type { CollectionMarks } from './rekordboxLearnFlow'
 import type { QueueStore } from './rekordboxQueue'
@@ -9,7 +14,7 @@ import type { QueueStore } from './rekordboxQueue'
 export const RELEARN_EVERY = 10
 export const RELEARN_AFTER_CORRECTIONS = 3
 export const SHARE_AFTER_MS = 60_000
-const MAX_EDITS = 1000
+export const MAX_EDITS = 300
 
 export interface SharedEdits {
   write: (machine: string, edits: TasteTrack[]) => void
@@ -51,7 +56,11 @@ function parse(text: string | null): Saved {
     const saved = { ...empty, ...(JSON.parse(text) as Saved) }
     return {
       ...saved,
-      edits: saved.edits.map((e) => ({ ...e, key: fingerprintOf(e.candidates) })),
+      edits: saved.edits.map((e) => ({
+        ...e,
+        key: fingerprintOf(e.candidates),
+        candidates: roundedCandidates(e.candidates),
+      })),
     }
   } catch (err) {
     log.warn(`cue taste unreadable, starting empty: ${String(err)}`)

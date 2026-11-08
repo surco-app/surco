@@ -1057,6 +1057,8 @@
         "unanalysed": "rekordbox の解析なし",
         "none": "Surco はこのトラックのブレイク位置を見つけられません",
         "marked": "Surco がブレイクと判断した位置には、すべて CALL がすでにあります",
+        "changed": "Auto の提案を変更しました。保存すると Auto がそこから学びます。",
+        "own": "Auto とは違う場所にマークしました。保存すると Auto がそこから学びます。",
         "selected": "選択したトラックを自動マーク",
         "sure": "ここでブレイク {{time}}",
         "why_one": "低音の弱い {{count}} 小節のあと",
@@ -1972,7 +1974,7 @@
       "startShare": "置ける {{open}} トラック中 {{with}}",
       "details": "Surcoが学んだこと",
       "fromEdits": "修正しながら学習",
-      "fromEditsHint": "エディタで保存したトラックは学習内容に加わり、10 件ごとに Surco が学習し直します。"
+      "fromEditsHint": "エディタで保存したトラックは学習内容に加わり、修正すると Surco が自動で学び直します。設定フォルダを同期していれば、ほかの Mac からも学びます。"
     },
     "searchSynonyms": {
       "mp3Quality": "ビットレート, bitrate, kbps, CBR, VBR",

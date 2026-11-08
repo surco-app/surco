@@ -1057,6 +1057,8 @@
         "unanalysed": "Sin análisis de rekordbox",
         "none": "Surco no encuentra dónde rompe esta pista",
         "marked": "Ya tienes un CALL en cada sitio donde Surco cree que rompe",
+        "changed": "Cambiaste lo que propuso Auto. Auto aprende de esto al guardar.",
+        "own": "Marcaste esto distinto a Auto. Auto aprende de esto al guardar.",
         "selected": "Auto marcar las seleccionadas",
         "sure": "Rompe aquí {{time}}",
         "why_one": "tras {{count}} compás con poco grave",
@@ -1972,7 +1974,7 @@
       "startShare": "{{with}} de {{open}} pistas donde cabría",
       "details": "Lo que aprendió Surco",
       "fromEdits": "Aprender mientras corriges",
-      "fromEditsHint": "Cada pista que guardas en el editor se suma a lo aprendido, y Surco vuelve a aprender cada 10."
+      "fromEditsHint": "Cada pista que guardas en el editor se suma a lo aprendido, y Surco vuelve a aprender solo cuando corriges. Con una carpeta de ajustes sincronizada, también aprende de tus otros Macs."
     },
     "searchSynonyms": {
       "mp3Quality": "tasa de bits, bitrate, kbps, CBR, VBR",

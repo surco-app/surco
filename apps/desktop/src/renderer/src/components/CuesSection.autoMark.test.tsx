@@ -31,7 +31,8 @@ import { hoverTooltip } from '../test/tooltip'
 import { CuesSection } from './CuesSection'
 
 const recordCueEdits = vi.hoisted(() => vi.fn())
-vi.mock('../lib/cueTasteEdits', () => ({ recordCueEdits }))
+const cueOutcomeOf = vi.hoisted(() => vi.fn<() => 'accepted' | 'corrected' | 'manual' | null>())
+vi.mock('../lib/cueTasteEdits', () => ({ recordCueEdits, cueOutcomeOf }))
 
 const dropProposals = vi.hoisted(() =>
   vi.fn<(input: DropInput, model?: DropModel) => DropProposal[]>(),
@@ -69,6 +70,7 @@ afterEach(() => {
 })
 
 beforeEach(() => {
+  cueOutcomeOf.mockReset().mockReturnValue(null)
   dropProposals.mockReset().mockReturnValue(found(bar(64), bar(128)))
   vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
     left: 0,
@@ -838,5 +840,46 @@ describe('saving several tracks', () => {
     const mine = reqs.find((r) => r.contentId === '103')
     expect(mine?.wanted.some((c) => c.ms === bar(128))).toBe(false)
     expect(autoMarkOf('105')).toEqual({ kind: 'proposed', proposals: found(bar(16)) })
+  })
+
+  describe('telling the DJ Auto learns from what they changed', () => {
+    it('says Auto learns from the track when the DJ changed what it proposed', async () => {
+      cueOutcomeOf.mockReturnValue('corrected')
+      setup()
+      await ready()
+      expect(await screen.findByTestId('cues-auto-outcome')).toHaveTextContent(
+        'You changed what Auto proposed',
+      )
+    })
+
+    it('says so differently when the DJ marked their own, none of Auto’s', async () => {
+      cueOutcomeOf.mockReturnValue('manual')
+      setup()
+      await ready()
+      expect(await screen.findByTestId('cues-auto-outcome')).toHaveTextContent(
+        'marked this differently',
+      )
+    })
+
+    it('says nothing when the marks are what Auto proposed, or Auto has nothing to compare with', async () => {
+      setup()
+      await ready()
+      await wordsLoaded()
+      expect(screen.queryByTestId('cues-auto-outcome')).toBeNull()
+      cleanup()
+      cueOutcomeOf.mockReturnValue('accepted')
+      setup()
+      await ready()
+      await wordsLoaded()
+      expect(screen.queryByTestId('cues-auto-outcome')).toBeNull()
+    })
+
+    it('stays quiet when the DJ turned off learning from what they save, so it never claims what is not true', async () => {
+      cueOutcomeOf.mockReturnValue('corrected')
+      setup({ settings: { cueLearnFromEdits: false } })
+      await ready()
+      await wordsLoaded()
+      expect(screen.queryByTestId('cues-auto-outcome')).toBeNull()
+    })
   })
 })

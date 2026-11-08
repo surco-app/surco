@@ -1057,6 +1057,8 @@
         "unanalysed": "No rekordbox analysis",
         "none": "Surco can’t find where this track breaks",
         "marked": "You already have a CALL everywhere Surco thinks the track breaks",
+        "changed": "You changed what Auto proposed. Auto learns from this when you save.",
+        "own": "You marked this differently from Auto. Auto learns from this when you save.",
         "selected": "Auto mark the selected",
         "sure": "Breaks here {{time}}",
         "why_one": "after {{count}} bar of weak bass",
@@ -1972,7 +1974,7 @@
       "startShare": "{{with}} of {{open}} tracks where it would fit",
       "details": "What Surco learned",
       "fromEdits": "Learn while you correct",
-      "fromEditsHint": "Every track you save in the editor adds to what Surco learned, and it learns again every 10."
+      "fromEditsHint": "Every track you save in the editor adds to what Surco learned, and it learns again on its own as you correct it. With a synced settings folder it also learns from your other Macs."
     },
     "searchSynonyms": {
       "mp3Quality": "bitrate, kbps, CBR, VBR",

@@ -82,12 +82,21 @@ function outcomeOf(proposed: number[], kept: number[]): TasteOutcome {
   return proposed.some((b) => kept.includes(b)) ? 'corrected' : 'manual'
 }
 
+export function roundedCandidates(candidates: TasteTrack['candidates']): TasteTrack['candidates'] {
+  return candidates.map((c) => ({
+    bar: c.bar,
+    features: c.features.map((f) => Number(f.toFixed(3))),
+  }))
+}
+
 export function tasteTrackOf(
   input: DropInput,
   drops: number[],
   proposedBy?: DropModel,
 ): TasteTrack | null {
-  const candidates = dropCandidates(input).map((c) => ({ bar: c.bar, features: c.features }))
+  const candidates = roundedCandidates(
+    dropCandidates(input).map((c) => ({ bar: c.bar, features: c.features })),
+  )
   const bars = [...new Set(drops.map((ms) => barIndexOf(input.grid, ms)))].filter((b) => b >= 0)
   if (candidates.length === 0 || bars.length === 0) return null
   const track = { key: fingerprintOf(candidates), candidates, drops: bars }

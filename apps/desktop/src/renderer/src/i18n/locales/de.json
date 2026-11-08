@@ -1057,6 +1057,8 @@
         "unanalysed": "Keine rekordbox-Analyse",
         "none": "Surco findet den Drop in diesem Track nicht",
         "marked": "Du hast schon überall einen CALL, wo Surco den Drop vermutet",
+        "changed": "Du hast geändert, was Auto vorgeschlagen hat. Auto lernt daraus, wenn du speicherst.",
+        "own": "Du hast anders markiert als Auto. Auto lernt daraus, wenn du speicherst.",
         "selected": "Auswahl auto-markieren",
         "sure": "Drop hier {{time}}",
         "why_one": "nach {{count}} Takt mit wenig Bass",
@@ -1972,7 +1974,7 @@
       "startShare": "{{with}} von {{open}} Tracks, in die er passen würde",
       "details": "Was Surco gelernt hat",
       "fromEdits": "Beim Korrigieren lernen",
-      "fromEditsHint": "Jeder Track, den du im Editor speicherst, fließt ins Gelernte ein, und Surco lernt alle 10 neu."
+      "fromEditsHint": "Jeder Track, den du im Editor speicherst, fließt ins Gelernte ein, und Surco lernt von selbst neu, wenn du korrigierst. Mit einem synchronisierten Einstellungsordner lernt es auch von deinen anderen Macs."
     },
     "searchSynonyms": {
       "mp3Quality": "Bitrate, kbps, CBR, VBR",
