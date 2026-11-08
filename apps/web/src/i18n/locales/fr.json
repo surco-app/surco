@@ -268,7 +268,7 @@
           {
             "t": "La grille, à sa place",
             "s": "Corrige la grille d’un morceau à la main ou avec Auto, et le filtre « Grille fausse » te dit lesquels.",
-            "d": "Avec la section des cues agrandie, tu déplaces la grille, tu changes le BPM, tu mets le premier temps sur la tête de lecture ou tu lances « Auto », qui la cale sur les temps, et tu vois de combien elle s’écarte ici et à la fin du morceau. Elle s’enregistre dans rekordbox, Traktor et Engine DJ, et dans rekordbox aussi par tronçons avec leur propre tempo. Le filtre « Grille fausse » te sort les morceaux dont la grille rate les temps. Dans Traktor et Engine DJ, pour l’instant, pour le WAV, l’AIFF et le FLAC, et dans Traktor aussi pour les MP3 créés avec iTunes. Les grilles que tu as verrouillées dans le logiciel ne sont pas touchées."
+            "d": "Avec la section des cues agrandie, tu déplaces la grille, tu changes le BPM, tu mets le premier temps sur la tête de lecture ou tu lances « Auto », qui la cale sur les temps, et tu vois de combien elle s’écarte ici et à la fin du morceau. Elle s’enregistre dans rekordbox, Traktor et Engine DJ, et dans rekordbox aussi par tronçons avec leur propre tempo. Le filtre « Grille fausse » te sort les morceaux dont la grille rate les temps. Dans Traktor et Engine DJ, pour l’instant, pour le WAV, l’AIFF et le FLAC, et dans Traktor aussi pour les MP3 créés avec iTunes. Surco laisse verrouillée la grille qu'il enregistre, et enregistre aussi par-dessus une grille déjà verrouillée dans le logiciel."
           },
           {
             "t": "Ta collection rekordbox",

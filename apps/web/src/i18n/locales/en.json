@@ -268,7 +268,7 @@
           {
             "t": "The grid, in place",
             "s": "Fix a track's beat grid by hand or with Auto, and the “Bad grid” filter tells you which ones.",
-            "d": "With the cues section maximized you move the grid, change the BPM, put the downbeat at the playhead or hit “Auto”, which fits it to the beats, and see how far it is off here and at the end of the track. It saves to rekordbox, Traktor and Engine DJ, and in rekordbox also in stretches with their own tempo. The “Bad grid” filter pulls out the tracks whose grid misses the beats. In Traktor and Engine DJ, for now, for WAV, AIFF and FLAC, and in Traktor also for MP3s made with iTunes. Grids you locked in the program are left alone."
+            "d": "With the cues section maximized you move the grid, change the BPM, put the downbeat at the playhead or hit “Auto”, which fits it to the beats, and see how far it is off here and at the end of the track. It saves to rekordbox, Traktor and Engine DJ, and in rekordbox also in stretches with their own tempo. The “Bad grid” filter pulls out the tracks whose grid misses the beats. In Traktor and Engine DJ, for now, for WAV, AIFF and FLAC, and in Traktor also for MP3s made with iTunes. Surco leaves the grid it saves locked, and also saves over one that was already locked in the program."
           },
           {
             "t": "Your rekordbox collection",

@@ -268,7 +268,7 @@
           {
             "t": "A grade no lugar",
             "s": "Corrija a grade de uma faixa à mão ou com Auto, e o filtro “Grade errada” mostra quais.",
-            "d": "Com a seção de cues maximizada, você move a grade, muda o BPM, põe o primeiro tempo no cursor ou clica em “Auto”, que a encaixa nas batidas, e vê quanto ela se desvia aqui e no fim da faixa. Ela é salva no rekordbox, no Traktor e no Engine DJ, e no rekordbox também em trechos com tempo próprio. O filtro “Grade errada” separa as faixas cuja grade não cai nas batidas. No Traktor e no Engine DJ, por enquanto, para WAV, AIFF e FLAC, e no Traktor também para MP3 criados com o iTunes. As grades que você travou no programa não são mexidas."
+            "d": "Com a seção de cues maximizada, você move a grade, muda o BPM, põe o primeiro tempo no cursor ou clica em “Auto”, que a encaixa nas batidas, e vê quanto ela se desvia aqui e no fim da faixa. Ela é salva no rekordbox, no Traktor e no Engine DJ, e no rekordbox também em trechos com tempo próprio. O filtro “Grade errada” separa as faixas cuja grade não cai nas batidas. No Traktor e no Engine DJ, por enquanto, para WAV, AIFF e FLAC, e no Traktor também para MP3 criados com o iTunes. O Surco deixa travada a grade que salva e também salva por cima de uma que já estava travada no programa."
           },
           {
             "t": "Sua coleção do rekordbox",

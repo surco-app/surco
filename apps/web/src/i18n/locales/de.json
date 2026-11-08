@@ -268,7 +268,7 @@
           {
             "t": "Das Raster, wo es hingehört",
             "s": "Korrigiere das Beat-Raster von Hand oder mit Auto, der Filter „Raster falsch“ zeigt dir, welche.",
-            "d": "Mit maximiertem Cue-Abschnitt verschiebst du das Raster, änderst die BPM, setzt den ersten Beat an den Abspielkopf oder drückst „Auto“, das es an die Beats anpasst, und siehst, wie weit es hier und am Ende des Tracks danebenliegt. Gespeichert wird in rekordbox, Traktor und Engine DJ, in rekordbox auch in Abschnitten mit eigenem Tempo. Der Filter „Raster falsch“ zeigt dir die Tracks, deren Raster die Beats verfehlt. In Traktor und Engine DJ vorerst für WAV, AIFF und FLAC, in Traktor auch für MP3s, die mit iTunes erstellt wurden. Raster, die du im Programm gesperrt hast, bleiben unangetastet."
+            "d": "Mit maximiertem Cue-Abschnitt verschiebst du das Raster, änderst die BPM, setzt den ersten Beat an den Abspielkopf oder drückst „Auto“, das es an die Beats anpasst, und siehst, wie weit es hier und am Ende des Tracks danebenliegt. Gespeichert wird in rekordbox, Traktor und Engine DJ, in rekordbox auch in Abschnitten mit eigenem Tempo. Der Filter „Raster falsch“ zeigt dir die Tracks, deren Raster die Beats verfehlt. In Traktor und Engine DJ vorerst für WAV, AIFF und FLAC, in Traktor auch für MP3s, die mit iTunes erstellt wurden. Surco lässt das Raster, das es speichert, gesperrt und speichert auch über ein Raster, das im Programm schon gesperrt war."
           },
           {
             "t": "Deine rekordbox-Sammlung",

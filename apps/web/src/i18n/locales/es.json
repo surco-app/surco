@@ -268,7 +268,7 @@
           {
             "t": "La rejilla, en su sitio",
             "s": "Corrige la rejilla de una pista a mano o con Auto, y el filtro «Rejilla mal» te dice cuáles.",
-            "d": "Con la sección de cues maximizada mueves la rejilla, cambias el BPM, pones el primer tiempo en el cabezal o das a «Auto», que la cuadra con los golpes, y ves cuánto se desvía aquí y al final de la pista. Se guarda en rekordbox, Traktor y Engine DJ, y en rekordbox también por tramos con su propio tempo. El filtro «Rejilla mal» saca las pistas cuya rejilla no cae en los golpes. En Traktor y Engine DJ, de momento, para WAV, AIFF y FLAC, y en Traktor también para los MP3 creados con iTunes. Las rejillas que bloqueaste en el programa no se tocan."
+            "d": "Con la sección de cues maximizada mueves la rejilla, cambias el BPM, pones el primer tiempo en el cabezal o das a «Auto», que la cuadra con los golpes, y ves cuánto se desvía aquí y al final de la pista. Se guarda en rekordbox, Traktor y Engine DJ, y en rekordbox también por tramos con su propio tempo. El filtro «Rejilla mal» saca las pistas cuya rejilla no cae en los golpes. En Traktor y Engine DJ, de momento, para WAV, AIFF y FLAC, y en Traktor también para los MP3 creados con iTunes. Surco deja bloqueada la rejilla que guarda, y también guarda sobre una que ya estuviera bloqueada en el programa."
           },
           {
             "t": "Tu colección de rekordbox",
