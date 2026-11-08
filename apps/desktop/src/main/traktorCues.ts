@@ -114,7 +114,6 @@ export function traktorTrackCuesOf(block: string, contentId: string): TrackCues 
   return {
     contentId,
     analysed: grid.length > 0,
-    gridLocked: attr(block.match(/<ENTRY\b[^>]*>/)?.[0] ?? '', 'LOCK') === '1',
     grid,
     gridFingerprint: gridFingerprint(grid),
     strong: [],

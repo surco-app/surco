@@ -362,13 +362,4 @@ describe('CuesSection on a Traktor track', () => {
     const [[req]] = saveRekordboxCues.mock.calls[0]
     expect(req.wanted?.map((c) => c.ms)).toEqual([bar(16) - 46])
   })
-
-  it('leaves a grid the DJ locked in the program alone, and says so', async () => {
-    setup({ ...READ, clockLeadMs: 0, gridLocked: true })
-    await ready()
-    fireEvent.click(screen.getByTestId('section-maximize'))
-    await waitFor(() => expect(screen.getByTestId('cues-grid')).toBeInTheDocument())
-    expect(screen.getByTestId('cues-grid')).toHaveAttribute('aria-disabled', 'true')
-    expect(hoverTooltip(screen.getByTestId('cues-grid'))).toEqual(expect.stringMatching(/locked/i))
-  })
 })

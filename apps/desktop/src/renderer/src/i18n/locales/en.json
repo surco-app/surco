@@ -1161,7 +1161,6 @@
         "surcoDraft": "These cues were set on the Surco grid. Save or discard them to adjust the grid",
         "anchorAdd": "Anchor at the playhead, starts a zone",
         "anchorRemove": "Remove the anchor at the playhead",
-        "locked": "The program has this grid locked",
         "serato": "Serato's beat grid comes from Serato and can't be changed here"
       },
       "offGrid": {

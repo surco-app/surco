@@ -516,11 +516,9 @@ function Editing({
         ? tr('editor.cues.grid.provisional')
         : onSurcoGrid
           ? tr('editor.cues.grid.surcoDraft')
-          : read.gridLocked
-            ? tr('editor.cues.grid.locked')
-            : state.grid === null || (!rekordboxGrid && state.grid.zones)
-              ? tr('editor.cues.grid.varying')
-              : null
+          : state.grid === null || (!rekordboxGrid && state.grid.zones)
+            ? tr('editor.cues.grid.varying')
+            : null
   const gridFit = useGridFit(cue.contentId, maximized && gridOff === null)
   const offsets =
     gridFit && state.grid ? gridOffsets(ctx.beats, gridFit, playheadMs, read.durationMs) : null

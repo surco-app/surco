@@ -16,7 +16,6 @@ import { cueFingerprint } from './rekordboxCues'
 
 export interface EnginePerformance {
   length: number | null
-  gridLocked?: number
   trackData: Uint8Array | null
   beatData: Uint8Array | null
   quickCues: Uint8Array | null
@@ -94,7 +93,6 @@ export function engineCuesOf(
     cues,
     durationMs,
     fingerprint: cueFingerprint(cues),
-    gridLocked: Boolean(perf.gridLocked),
   }
   if (grid.length === 0)
     return { ...base, analysed: false, grid: [], gridFingerprint: '', wave: null }
@@ -111,8 +109,7 @@ export function readEnginePerformance(db: EngineDb, trackId: number): EnginePerf
   return (
     (db
       .prepare(
-        `SELECT t.length, coalesce(t.isBeatGridLocked, 0) AS gridLocked, p.trackData, p.beatData,
-                p.quickCues, p.overviewWaveFormData
+        `SELECT t.length, p.trackData, p.beatData, p.quickCues, p.overviewWaveFormData
            FROM Track t LEFT JOIN PerformanceData p ON p.trackId = t.id WHERE t.id = ?`,
       )
       .get(trackId) as EnginePerformance | undefined) ?? null

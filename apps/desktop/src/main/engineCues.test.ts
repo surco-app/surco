@@ -2,7 +2,6 @@ import { mkdirSync, writeFileSync } from 'node:fs'
 import { mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import Database from 'better-sqlite3-multiple-ciphers'
 import { describe, expect, it } from 'vitest'
 import { buildEngineDatabase, loadSqlJs } from './engine'
 import { readEngineTrackCues } from './engineCues'
@@ -113,15 +112,6 @@ describe('readEngineTrackCues', () => {
     expect(grid.at(-1)).toEqual({ ms: 59500, beat: 4 })
   })
 
-  it('says when the DJ locked the grid in Engine, so Surco leaves it alone', async () => {
-    const dir = await library([analysedTrack(1)])
-    expect(read(dir, 'engine:1')?.gridLocked).toBe(false)
-    const db = new Database(join(dir, 'Database2', 'm.db'))
-    db.prepare('UPDATE Track SET isBeatGridLocked = 1 WHERE id = 1').run()
-    db.close()
-    expect(read(dir, 'engine:1')?.gridLocked).toBe(true)
-  })
-
   it('draws the overview at its loudest band, scaled to the track’s peak', async () => {
     const dir = await library([analysedTrack(1)])
     expect(read(dir, 'engine:1')?.wave).toEqual([
@@ -144,7 +134,6 @@ describe('readEngineTrackCues', () => {
       durationMs: 200000,
       fingerprint: '',
       gridFingerprint: '',
-      gridLocked: false,
     })
   })
 
