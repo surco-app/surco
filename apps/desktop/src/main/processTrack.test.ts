@@ -578,6 +578,22 @@ describe('runProcessTrack — output conflict', () => {
     expect(result.outputIdentity).toBe('dev:7')
   })
 
+  it('tells the file dates a file was just written, after the write and before the row reads it back', async () => {
+    const order: string[] = []
+    const deps = makeDeps({
+      convertAudio: vi.fn<ProcessTrackDeps['convertAudio']>(async () => {
+        order.push('convert')
+        return { normalizeSkipped: false, written }
+      }),
+      noteWritten: vi.fn(async () => {
+        order.push('noted')
+      }),
+    })
+    await runProcessTrack(job({ overwriteOriginal: true, format: 'wav' }), deps)
+    expect(deps.noteWritten).toHaveBeenCalledWith('/in/Artist - Title.wav')
+    expect(order).toEqual(['convert', 'noted'])
+  })
+
   // A concurrent batch job resolved the same output name a moment ago and hasn't
   // finished writing it yet, so existsSync is still false — the reservation is the
   // only signal that a collision is coming.

@@ -150,6 +150,7 @@ export interface ProcessTrackDeps {
   // being rewritten" (fine) from "the target is an unrelated file" (a collision).
   isSameFile: (a: string, b: string) => Promise<boolean>
   fileIdentity: (path: string) => Promise<string | undefined>
+  noteWritten?: (path: string) => Promise<unknown>
   mkdir: (path: string, opts: { recursive: boolean }) => Promise<unknown>
   mkdtemp: (prefix: string) => Promise<string>
   rm: (path: string, opts: { recursive: boolean; force: boolean }) => Promise<void>
@@ -816,6 +817,7 @@ export async function runProcessTrack(
       // to sweep and the manifest entry is stale.
       if (tmpPath) deps.untrackTmp(tmpPath)
     }
+    await deps.noteWritten?.(target).catch(() => undefined)
     const outputIdentity = musicOnly ? undefined : await deps.fileIdentity(target)
     for (const program of LIBRARY_PROGRAMS) {
       const choice = JOB_PLAYLISTS[program](job)

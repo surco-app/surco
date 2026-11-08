@@ -361,6 +361,7 @@ const optionalDeps: Record<OptionalDepKey, 'wired' | 'notNeeded'> = {
   realPath: 'wired',
   registerVerification: 'notNeeded',
   fileBytes: 'notNeeded',
+  noteWritten: 'notNeeded',
   followEngineSize: 'notNeeded',
   librariesKeepingOriginal: 'notNeeded',
   refreshAppleMusicEntry: 'notNeeded',
