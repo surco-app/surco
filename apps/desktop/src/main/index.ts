@@ -1723,6 +1723,7 @@ function registerIpc(): void {
       },
       hasCoverSource,
       prepareProcessedCover: coverMemo.prepare,
+      noteWritten: fileSignatures.changed,
       isPathReserved: outputReservations.isReserved,
       reservePath: outputReservations.reserve,
       releasePath: outputReservations.release,
