@@ -2,7 +2,7 @@
 import { QueryClient } from '@tanstack/react-query'
 import { describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
-import type { DropInput } from '../../../shared/dropDetect'
+import { type DropInput, detectDrops } from '../../../shared/dropDetect'
 import { fingerprintOf } from '../../../shared/dropTaste'
 import type { TrackCues } from '../../../shared/types'
 import { cueDropInputQuery, cueWaveDetailQuery, trackCuesQuery } from '../hooks/useTrackCues'
@@ -81,5 +81,46 @@ describe('recordCueEdits', () => {
     ])
     expect(recordCueEdit).not.toHaveBeenCalled()
     expect(window.api.rekordboxCueWaveDetail).not.toHaveBeenCalled()
+  })
+
+  describe('what Auto proposed against what the DJ kept', () => {
+    const PER_BAR = 300
+    const sectioned = (): DropInput => {
+      const sections: [number, number][] = [
+        [16, 7],
+        [8, 0],
+        [16, 7],
+      ]
+      const words = new Uint16Array(40 * PER_BAR)
+      let at = 0
+      for (const [bars, low] of sections) {
+        words.fill((low << 13) | (3 << 10) | (2 << 7) | (20 << 2), at, at + bars * PER_BAR)
+        at += bars * PER_BAR
+      }
+      return { grid: GRID, phrases: [], words }
+    }
+    const recorded = (cues: { ms: number; kind: number }[]) => {
+      const { client, recordCueEdit } = setup()
+      const input = sectioned()
+      expect(detectDrops(input).length).toBeGreaterThan(0)
+      client.setQueryData(cueDropInputQuery('engine:4').queryKey, input)
+      recordCueEdits(client, [{ contentId: 'engine:4', draft: drafted(cues) }])
+      return recordCueEdit.mock.calls[0][0]
+    }
+
+    it('calls a track accepted when the DJ kept exactly the drops Auto proposed', () => {
+      const proposed = detectDrops(sectioned())
+      expect(recorded(proposed.map((ms) => ({ ms, kind: 0 }))).outcome).toBe('accepted')
+    })
+
+    it('calls a track corrected when the DJ kept a proposal and changed the rest', () => {
+      const proposed = detectDrops(sectioned())
+      const cues = [...proposed, bar(2)].map((ms) => ({ ms, kind: 0 }))
+      expect(recorded(cues).outcome).toBe('corrected')
+    })
+
+    it('calls a track manual when none of the proposed drops survived', () => {
+      expect(recorded([{ ms: bar(2), kind: 0 }]).outcome).toBe('manual')
+    })
   })
 })

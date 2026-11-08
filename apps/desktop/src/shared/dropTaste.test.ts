@@ -6,6 +6,7 @@ import {
   type TasteTrack,
   tasteTrackOf,
   tuneDropTaste,
+  weighedForLearning,
 } from './dropTaste'
 import { predictTrees, trainTrees } from './dropTrees'
 
@@ -88,6 +89,25 @@ describe('modelWithTaste', () => {
   it('runs the shipped detector untouched without a taste', () => {
     const base = shipped()
     expect(modelWithTaste(null, base)).toBe(base)
+  })
+})
+
+describe('weighedForLearning', () => {
+  const of = (key: string, outcome?: TasteTrack['outcome']): TasteTrack => ({
+    key,
+    candidates: [{ bar: 8, features: [1] }],
+    drops: [8],
+    outcome,
+  })
+
+  it('lets a correction teach more than a proposal the DJ took as it came', () => {
+    const counts = (t: TasteTrack) => weighedForLearning([t]).length
+    expect(counts(of('a', 'corrected'))).toBeGreaterThan(counts(of('b', 'accepted')))
+    expect(counts(of('c', 'manual'))).toBe(counts(of('a', 'corrected')))
+  })
+
+  it('treats tracks saved before outcomes were recorded like accepted ones', () => {
+    expect(weighedForLearning([of('old')]).length).toBe(1)
   })
 })
 

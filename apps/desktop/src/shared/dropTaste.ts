@@ -5,6 +5,7 @@ import {
   type DropModel,
   type DropPicking,
   dropCandidates,
+  dropProposals,
   pickDrops,
 } from './dropDetect'
 import { predictTrees, type TreeNode, type TreesModel, trainTrees } from './dropTrees'
@@ -23,7 +24,10 @@ export interface TasteTrack {
   key: string
   candidates: { bar: number; features: number[] }[]
   drops: number[]
+  outcome?: TasteOutcome
 }
+
+export type TasteOutcome = 'accepted' | 'corrected' | 'manual'
 
 export interface DropTaste {
   trees: TreeNode[][]
@@ -73,12 +77,23 @@ export function fingerprintOf(candidates: TasteTrack['candidates']): string {
   return `${hashOf(text).toString(36)}${hashOf(`#${text}`).toString(36)}`
 }
 
-export function tasteTrackOf(input: DropInput, drops: number[]): TasteTrack | null {
+function outcomeOf(proposed: number[], kept: number[]): TasteOutcome {
+  if (proposed.length === kept.length && proposed.every((b) => kept.includes(b))) return 'accepted'
+  return proposed.some((b) => kept.includes(b)) ? 'corrected' : 'manual'
+}
+
+export function tasteTrackOf(
+  input: DropInput,
+  drops: number[],
+  proposedBy?: DropModel,
+): TasteTrack | null {
   const candidates = dropCandidates(input).map((c) => ({ bar: c.bar, features: c.features }))
   const bars = [...new Set(drops.map((ms) => barIndexOf(input.grid, ms)))].filter((b) => b >= 0)
-  return candidates.length > 0 && bars.length > 0
-    ? { key: fingerprintOf(candidates), candidates, drops: bars }
-    : null
+  if (candidates.length === 0 || bars.length === 0) return null
+  const track = { key: fingerprintOf(candidates), candidates, drops: bars }
+  if (!proposedBy) return track
+  const proposed = dropProposals(input, proposedBy).map((p) => barIndexOf(input.grid, p.ms))
+  return { ...track, outcome: outcomeOf(proposed, bars) }
 }
 
 type Scored = { drops: number[]; scored: { bar: number; ms: number; score: number }[] }
@@ -134,6 +149,16 @@ function tune(tracks: TasteTrack[], base: DropModel): DropModel {
 
 const plain = ({ found, right }: TasteRates): TasteRates => ({ found, right })
 
+const CORRECTION_WEIGHT = 3
+
+export function weighedForLearning(tracks: TasteTrack[]): TasteTrack[] {
+  return tracks.flatMap((t) =>
+    t.outcome === 'corrected' || t.outcome === 'manual'
+      ? Array.from({ length: CORRECTION_WEIGHT }, () => t)
+      : [t],
+  )
+}
+
 export function tuneDropTaste(all: TasteTrack[], base: DropModel = DROP_MODEL): TunedTaste | null {
   const tracks = all
     .filter((t) => t.drops.length > 0 && t.candidates.length > 0)
@@ -143,11 +168,11 @@ export function tuneDropTaste(all: TasteTrack[], base: DropModel = DROP_MODEL): 
   const isCheck = (t: TasteTrack): boolean => hashOf(`${t.key}#check`) % 10 < CHECK_SHARE
   const learn = tracks.filter((t) => !isCheck(t))
   const check = scoredOf(tracks.filter(isCheck), base)
-  const tried = tune(learn, base)
+  const tried = tune(weighedForLearning(learn), base)
   const before = ratesOf(check, base.picking)
   const after = ratesOf(scoredOf(tracks.filter(isCheck), tried), tried.picking)
   const better = after.f1 > before.f1
-  const final = better ? tune(tracks, base) : null
+  const final = better ? tune(weighedForLearning(tracks), base) : null
   return {
     taste: final ? { trees: final.trees.slice(base.trees.length), picking: final.picking } : null,
     check: {
