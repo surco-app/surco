@@ -39,7 +39,7 @@ const PROFILE_CHECK = {
 
 const read = (over: Partial<CueProfileRead> = {}): CueProfileRead => ({
   profile: null,
-  edits: { count: 0, sinceLearn: 0 },
+  edits: { count: 0, sinceLearn: 0, corrected: 0 },
   marked: 1576,
   ...over,
 })
@@ -95,6 +95,19 @@ describe('CueProfileCard', () => {
     expect(screen.getByTestId('cue-profile-countdown')).toBeInTheDocument()
   })
 
+  it('shows how many saved tracks the DJ corrected, so they can see their corrections are what Auto learns from', async () => {
+    setup(read({ profile: PROFILE, edits: { count: 41, sinceLearn: 0, corrected: 12 } }))
+    const fact = await openDetails('cue-profile-corrections')
+    expect(fact).toHaveTextContent('12')
+    expect(fact).toHaveTextContent('41')
+  })
+
+  it('leaves the corrections out until the DJ has corrected something, so there is no empty figure to read', async () => {
+    setup(read({ profile: PROFILE, edits: { count: 41, sinceLearn: 0, corrected: 0 } }))
+    fireEvent.click(await screen.findByTestId('cue-profile-details'))
+    expect(screen.queryByTestId('cue-profile-corrections')).toBeNull()
+  })
+
   it('learns again from an icon on the heading line, named Learn again in Surco’s own tooltip and for screen readers', async () => {
     setup(read({ profile: PROFILE }))
     const button = await screen.findByTestId('cue-profile-learn')
@@ -118,7 +131,7 @@ describe('CueProfileCard', () => {
   })
 
   it('invites the DJ to teach Surco, saying how many marked tracks each source has', async () => {
-    setup(read({ edits: { count: 3, sinceLearn: 3 } }))
+    setup(read({ edits: { count: 3, sinceLearn: 3, corrected: 0 } }))
     const card = await screen.findByTestId('cue-profile')
     expect(card).toHaveTextContent('Teach Surco how you mark')
     expect(screen.getByTestId('cue-profile-source-rekordbox')).toHaveTextContent('1,576')

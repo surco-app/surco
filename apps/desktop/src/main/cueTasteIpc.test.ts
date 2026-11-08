@@ -16,7 +16,7 @@ const PROFILE = { learnedAt: '2026-10-28T10:00:00.000Z' } as CueProfile
 function taste(): CueTaste {
   return {
     profile: () => PROFILE,
-    edits: () => ({ count: 3, sinceLearn: 2 }),
+    edits: () => ({ count: 3, sinceLearn: 2, corrected: 0 }),
     record: vi.fn(),
     learn: vi.fn(async () => PROFILE),
     refresh: vi.fn(),
@@ -31,7 +31,7 @@ describe('registerCueTasteIpc', () => {
     registerCueTasteIpc({ taste: taste(), marked: () => 1576, learnFromEdits: () => true })
     expect(await handlers.get('cues:profile')?.({})).toEqual({
       profile: PROFILE,
-      edits: { count: 3, sinceLearn: 2 },
+      edits: { count: 3, sinceLearn: 2, corrected: 0 },
       marked: 1576,
     })
   })

@@ -27,7 +27,7 @@ export interface CueTasteDeps {
 
 export interface CueTaste {
   profile: () => CueProfile | null
-  edits: () => { count: number; sinceLearn: number }
+  edits: () => { count: number; sinceLearn: number; corrected: number }
   record: (track: TasteTrack, learnNow: boolean) => void
   learn: () => Promise<CueProfile>
   refresh: (learnNow: boolean) => void
@@ -151,7 +151,12 @@ export function createCueTaste(
 
   return {
     profile: () => saved.profile,
-    edits: () => ({ count: saved.edits.length, sinceLearn: saved.sinceLearn }),
+    edits: () => ({
+      count: saved.edits.length,
+      sinceLearn: saved.sinceLearn,
+      corrected: saved.edits.filter((e) => e.outcome === 'corrected' || e.outcome === 'manual')
+        .length,
+    }),
     record(track, learnNow) {
       const edits = [...saved.edits.filter((e) => e.key !== track.key), track].slice(-MAX_EDITS)
       const corrected = track.outcome === 'corrected' || track.outcome === 'manual'

@@ -342,7 +342,7 @@ describe('Editor cues section', () => {
       rekordboxCueWaveDetail: vi.fn<Api['rekordboxCueWaveDetail']>().mockResolvedValue(null),
       cueProfile: vi.fn<Api['cueProfile']>().mockResolvedValue({
         profile: null,
-        edits: { count: 0, sinceLearn: 0 },
+        edits: { count: 0, sinceLearn: 0, corrected: 0 },
         marked: 0,
       }),
       onCueProfileChanged: () => () => {},

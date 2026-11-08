@@ -107,7 +107,7 @@ function setup({
     saveRekordboxCues,
     cueProfile: vi.fn<Api['cueProfile']>(async () => ({
       profile,
-      edits: { count: 0, sinceLearn: 0 },
+      edits: { count: 0, sinceLearn: 0, corrected: 0 },
       marked: 0,
     })),
   })

@@ -90,7 +90,7 @@ describe('createCueTaste', () => {
     await first.learn()
     const again = createCueTaste(store, deps())
     expect(again.profile()?.taste).toEqual(TUNED.taste)
-    expect(again.edits()).toEqual({ count: 1, sinceLearn: 0 })
+    expect(again.edits()).toEqual({ count: 1, sinceLearn: 0, corrected: 0 })
   })
 
   it('learns again on its own after enough edits when the DJ lets it, so Auto keeps up with their corrections', async () => {
@@ -163,6 +163,15 @@ describe('createCueTaste', () => {
       await new Promise((r) => setTimeout(r, 0))
       expect(tune).not.toHaveBeenCalled()
     })
+  })
+
+  it('counts the tracks the DJ corrected, so Settings can show their corrections are being used', () => {
+    const taste = createCueTaste(memoryStore(), deps())
+    taste.record({ ...track('a'), outcome: 'corrected' }, false)
+    taste.record({ ...track('b'), outcome: 'manual' }, false)
+    taste.record({ ...track('c'), outcome: 'accepted' }, false)
+    taste.record(track('d'), false)
+    expect(taste.edits()).toMatchObject({ count: 4, corrected: 2 })
   })
 
   it('runs one learning at a time when the button and the edits ask together', async () => {
