@@ -8,7 +8,9 @@ vi.mock('electron', () => {
   return { app: { getPath: () => dir } }
 })
 
-import { rmSync } from 'node:fs'
+import { mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { app } from 'electron'
 import { applyImportedSettings } from './exportIpc'
 import { getSettings, saveSettings } from './settings'
@@ -41,5 +43,34 @@ describe('applyImportedSettings', () => {
     applyImportedSettings({ theme: 'dark', beatportUsername: 'other', beatportPassword: 'OTHER' })
     expect(getSettings().beatportUsername).toBe('dj')
     expect(getSettings().beatportPassword).toBe('ENCRYPTED')
+  })
+
+  it("keeps this machine's own paths when the backup's folders don't exist here", () => {
+    saveSettings({
+      outputDir: '/aqui/salida',
+      engineLibraryDir: '/aqui/engine',
+      traktorNmlPath: '/aqui/collection.nml',
+      rekordboxDbPath: '/aqui/master.db',
+    })
+    applyImportedSettings({
+      theme: 'dark',
+      outputDir: '/otro-mac/salida',
+      engineLibraryDir: '/otro-mac/engine',
+      traktorNmlPath: '/otro-mac/collection.nml',
+      rekordboxDbPath: '/otro-mac/master.db',
+    })
+    const s = getSettings()
+    expect(s.outputDir).toBe('/aqui/salida')
+    expect(s.engineLibraryDir).toBe('/aqui/engine')
+    expect(s.traktorNmlPath).toBe('/aqui/collection.nml')
+    expect(s.rekordboxDbPath).toBe('/aqui/master.db')
+  })
+
+  it('adopts the backup path when that folder exists here', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-out-'))
+    saveSettings({ outputDir: '/aqui/salida' })
+    applyImportedSettings({ theme: 'dark', outputDir: dir })
+    expect(getSettings().outputDir).toBe(dir)
+    rmSync(dir, { recursive: true, force: true })
   })
 })

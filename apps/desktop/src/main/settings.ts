@@ -550,10 +550,20 @@ export function saveSettings(patch: Partial<Settings>): Settings {
 // inject a tally — and the tallies this machine already has are carried across
 // rather than rebuilt from defaults: they are its own history, not a preference the
 // backup describes, and rebuilding them zeroed the stats card on every restore.
+const MACHINE_PATH_KEYS = [
+  'outputDir',
+  'engineLibraryDir',
+  'traktorNmlPath',
+  'rekordboxDbPath',
+] as const satisfies readonly (keyof Settings)[]
+
 export function replaceSettings(imported: Partial<Settings>): Settings {
   const current = getSettings()
   const next = mergeSettings(defaults, sanitizeSettingsPatch(imported))
   for (const key of INTERNAL_ONLY_KEYS) next[key] = current[key] as never
+  for (const key of MACHINE_PATH_KEYS) {
+    if (!existsSync(next[key])) next[key] = current[key]
+  }
   if (!autoMatchAvailable(next)) next.autoMatch = false
   return persist(next)
 }
