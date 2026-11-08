@@ -1973,7 +1973,7 @@
       "startShare": "{{with}} of {{open}} tracks where it would fit",
       "details": "What Surco learned",
       "fromEdits": "Learn while you correct",
-      "fromEditsHint": "Every track you save in the editor adds to what Surco learned, and it learns again every 10."
+      "fromEditsHint": "Every track you save in the editor adds to what Surco learned, and it learns again on its own as you correct it. With a synced settings folder it also learns from your other Macs."
     },
     "searchSynonyms": {
       "mp3Quality": "bitrate, kbps, CBR, VBR",

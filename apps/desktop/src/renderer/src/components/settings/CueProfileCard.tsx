@@ -307,7 +307,9 @@ export function CueProfileCard({ read, onLearned, synced, patch }: Props): React
           onChange={(v) => patch('cueLearnFromEdits', v)}
           label={tr('settings.cueProfile.fromEdits')}
         />
-        <SettingsHint className="mt-1 pl-7">{tr('settings.cueProfile.fromEditsHint')}</SettingsHint>
+        <SettingsHint data-testid="cue-profile-from-edits-hint" className="mt-1 pl-7">
+          {tr('settings.cueProfile.fromEditsHint')}
+        </SettingsHint>
       </div>
     </section>
   )

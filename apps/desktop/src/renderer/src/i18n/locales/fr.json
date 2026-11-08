@@ -1973,7 +1973,7 @@
       "startShare": "{{with}} sur {{open}} morceaux où il tiendrait",
       "details": "Ce que Surco a appris",
       "fromEdits": "Apprendre pendant que tu corriges",
-      "fromEditsHint": "Chaque morceau que tu enregistres dans l’éditeur s’ajoute à ce qui est appris, et Surco réapprend tous les 10."
+      "fromEditsHint": "Chaque morceau que tu enregistres dans l’éditeur s’ajoute à ce qui est appris, et Surco réapprend tout seul quand tu corriges. Avec un dossier de réglages synchronisé, il apprend aussi de tes autres Mac."
     },
     "searchSynonyms": {
       "mp3Quality": "débit, bitrate, kbps, CBR, VBR",

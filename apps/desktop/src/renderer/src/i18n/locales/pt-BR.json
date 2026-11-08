@@ -1973,7 +1973,7 @@
       "startShare": "{{with}} de {{open}} faixas onde caberia",
       "details": "O que o Surco aprendeu",
       "fromEdits": "Aprender enquanto você corrige",
-      "fromEditsHint": "Cada faixa que você salva no editor soma ao que foi aprendido, e o Surco aprende de novo a cada 10."
+      "fromEditsHint": "Cada faixa que você salva no editor soma ao que foi aprendido, e o Surco aprende de novo sozinho quando você corrige. Com uma pasta de ajustes sincronizada, ele também aprende com seus outros Macs."
     },
     "searchSynonyms": {
       "mp3Quality": "taxa de bits, bitrate, kbps, CBR, VBR",

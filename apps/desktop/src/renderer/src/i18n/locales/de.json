@@ -1973,7 +1973,7 @@
       "startShare": "{{with}} von {{open}} Tracks, in die er passen würde",
       "details": "Was Surco gelernt hat",
       "fromEdits": "Beim Korrigieren lernen",
-      "fromEditsHint": "Jeder Track, den du im Editor speicherst, fließt ins Gelernte ein, und Surco lernt alle 10 neu."
+      "fromEditsHint": "Jeder Track, den du im Editor speicherst, fließt ins Gelernte ein, und Surco lernt von selbst neu, wenn du korrigierst. Mit einem synchronisierten Einstellungsordner lernt es auch von deinen anderen Macs."
     },
     "searchSynonyms": {
       "mp3Quality": "Bitrate, kbps, CBR, VBR",

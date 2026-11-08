@@ -211,6 +211,13 @@ describe('CueProfileCard', () => {
     expect(screen.getByTestId('cue-profile-start')).toHaveTextContent('44 of 322')
   })
 
+  it('says what makes it learn again without a number that is no longer true, and that other Macs count', async () => {
+    setup(read({ profile: PROFILE }))
+    const hint = await screen.findByTestId('cue-profile-from-edits-hint')
+    expect(hint).toHaveTextContent('other Macs')
+    expect(hint).not.toHaveTextContent('every 10')
+  })
+
   it('lets the DJ stop Auto from learning from what they save', async () => {
     setup(read({ profile: PROFILE }))
     fireEvent.click(await screen.findByTestId('settings-cue-learn-from-edits'))

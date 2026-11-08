@@ -1973,7 +1973,7 @@
       "startShare": "{{with}} de {{open}} pistas donde cabría",
       "details": "Lo que aprendió Surco",
       "fromEdits": "Aprender mientras corriges",
-      "fromEditsHint": "Cada pista que guardas en el editor se suma a lo aprendido, y Surco vuelve a aprender cada 10."
+      "fromEditsHint": "Cada pista que guardas en el editor se suma a lo aprendido, y Surco vuelve a aprender solo cuando corriges. Con una carpeta de ajustes sincronizada, también aprende de tus otros Macs."
     },
     "searchSynonyms": {
       "mp3Quality": "tasa de bits, bitrate, kbps, CBR, VBR",

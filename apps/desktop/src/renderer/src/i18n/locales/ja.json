@@ -1973,7 +1973,7 @@
       "startShare": "置ける {{open}} トラック中 {{with}}",
       "details": "Surcoが学んだこと",
       "fromEdits": "修正しながら学習",
-      "fromEditsHint": "エディタで保存したトラックは学習内容に加わり、10 件ごとに Surco が学習し直します。"
+      "fromEditsHint": "エディタで保存したトラックは学習内容に加わり、修正すると Surco が自動で学び直します。設定フォルダを同期していれば、ほかの Mac からも学びます。"
     },
     "searchSynonyms": {
       "mp3Quality": "ビットレート, bitrate, kbps, CBR, VBR",
