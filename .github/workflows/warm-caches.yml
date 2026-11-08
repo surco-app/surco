@@ -1,0 +1,80 @@
+name: Warm caches
+
+# A run started by a tag only restores caches saved on its own tag or on the default
+# branch, and no tag ever shares one with the next. Saved from release.yml, the baken,
+# Electron and npm caches therefore never hit: every release recompiled baken from
+# scratch (almost 10 minutes of cargo on macOS Intel). Saving them here, on main, with
+# the same keys release.yml restores, is what lets a tag find them.
+on:
+  push:
+    branches: [main]
+    paths:
+      - package-lock.json
+      - scripts/build-baken.mjs
+      - apps/desktop/vendor/baken/**
+      - .github/workflows/warm-caches.yml
+  schedule:
+    - cron: '0 5 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  warm:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-15, macos-15-intel, windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          for attempt in 1 2 3; do
+            npm ci && exit 0
+            echo "npm ci failed (attempt $attempt), retrying in 15s..."
+            sleep 15
+          done
+          exit 1
+
+      - name: Resolve Electron version
+        id: electron
+        shell: bash
+        run: echo "version=$(node -p "require('electron/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Electron binary
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Caches/electron
+            ~/.cache/electron
+            ~/AppData/Local/electron/Cache
+          key: electron-${{ runner.os }}-${{ runner.arch }}-${{ steps.electron.outputs.version }}
+
+      - name: Fetch Electron binary
+        shell: bash
+        run: node node_modules/electron/install.js
+
+      - name: Cache baken build
+        if: runner.os != 'Linux'
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            apps/desktop/.baken-build
+          key: baken-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('apps/desktop/vendor/baken/**') }}
+
+      - name: Build baken
+        shell: bash
+        env:
+          BAKEN_TEST: '1'
+        run: node scripts/build-baken.mjs
