@@ -24,6 +24,7 @@ export interface TraktorCuesWriteDeps {
   session: SessionBackup
   write?: typeof writeCollection
   bootVolume?: string
+  now?: () => Date
 }
 
 function buttonOf(kind: number): number {
@@ -72,20 +73,37 @@ const TRAKTOR_GRID_FILE = /\.(wav|aif|aiff|flac|mp3)$/i
 const GRID_MARKER_RE = /<CUE_V2\b[^>]*\bTYPE="4"[^>]*>[\s\S]*?<\/CUE_V2>/
 const TEMPO_RE = /<TEMPO\b[^>]*>/
 
-export function withTraktorGrid(block: string, grid: EditableGrid): string {
+const pad = (n: number): string => String(n).padStart(2, '0')
+
+function lockStamp(at: Date): string {
+  const day = `${at.getFullYear()}-${pad(at.getMonth() + 1)}-${pad(at.getDate())}`
+  return `${day}T${pad(at.getHours())}:${pad(at.getMinutes())}:${pad(at.getSeconds())}`
+}
+
+function withGridLock(block: string, at: Date): string {
+  const open = block.match(/<ENTRY\b[^>]*>/)?.[0] ?? ''
+  const bare = open.replace(/ LOCK(_MODIFICATION_TIME)?="[^"]*"/g, '')
+  const lock = ` LOCK="1" LOCK_MODIFICATION_TIME="${lockStamp(at)}"`
+  const after =
+    bare.match(/<ENTRY\b(?: MODIFIED_DATE="[^"]*")?(?: MODIFIED_TIME="[^"]*")?/)?.[0] ?? '<ENTRY'
+  return block.replace(open, () => `${after}${lock}${bare.slice(after.length)}`)
+}
+
+export function withTraktorGrid(block: string, grid: EditableGrid, at: Date): string {
   const bar = (4 * 60000) / grid.bpm
   const start = (((grid.anchorMs % bar) + bar) % bar).toFixed(6)
   const bpm = grid.bpm.toFixed(6)
   const eol = block.includes('\r\n') ? '\r\n' : '\n'
-  const marker = block.match(GRID_MARKER_RE)?.[0]
+  const locked = withGridLock(block, at)
+  const marker = locked.match(GRID_MARKER_RE)?.[0]
   let out = marker
-    ? block.replace(marker, () => {
+    ? locked.replace(marker, () => {
         const open = marker.match(/<CUE_V2\b[^>]*>/)?.[0] ?? ''
         return marker
           .replace(open, withAttr(open, 'START', start))
           .replace(/<GRID\b[^>]*>/, (tag) => withAttr(tag, 'BPM', bpm))
       })
-    : block.replace(
+    : locked.replace(
         /(<CUE_V2\b|<\/ENTRY>)/,
         (at) =>
           `<CUE_V2 NAME="AutoGrid" DISPL_ORDER="0" TYPE="4" START="${start}" LEN="0.000000" REPEATS="-1" HOTCUE="-1"><GRID BPM="${bpm}"></GRID>${eol}</CUE_V2>${eol}${at}`,
@@ -118,6 +136,7 @@ function planBatch(
   text: string,
   ops: QueueOp[],
   bootVolume: string,
+  now: Date,
 ): { nml: string; outcomes: OpOutcome[]; added: string[] } {
   const edits = applyTraktorEdits(
     text,
@@ -155,10 +174,9 @@ function planBatch(
       : []
     if (op.grid && (!saneGrid(op.grid) || !TRAKTOR_GRID_FILE.test(op.path)))
       return refused('cues-invalid')
-    if (op.grid && (read.gridLocked || read.gridFingerprint !== op.gridFingerprint))
-      return refused('cues-changed')
+    if (op.grid && read.gridFingerprint !== op.gridFingerprint) return refused('cues-changed')
     const cued = withTraktorCues(entry.block, op.wanted)
-    const next = op.grid ? withTraktorGrid(cued, op.grid) : cued
+    const next = op.grid ? withTraktorGrid(cued, op.grid, now) : cued
     nml = `${nml.slice(0, entry.start)}${next}${nml.slice(entry.end)}`
     return { id: op.id, applied: true, notices }
   })
@@ -182,7 +200,8 @@ export async function applyTraktorBatch(
   const bootVolume = deps.bootVolume ?? bootVolumeName()
   const original = await read()
   if (original === null) return { ok: false, reason: 'unreadable' }
-  const first = planBatch(original, ops, bootVolume)
+  const now = deps.now?.() ?? new Date()
+  const first = planBatch(original, ops, bootVolume, now)
   if (first.nml === original) return { ok: true, wrote: false, outcomes: first.outcomes }
   // Closing Traktor makes it save the collection on its way out, so what was read above
   // is out of date the moment it quits: the batch is worked out again on what it saved,
@@ -190,7 +209,7 @@ export async function applyTraktorBatch(
   if (!(await deps.ensureClosed())) return { ok: false, reason: 'cancelled' }
   const fresh = await read()
   if (fresh === null) return { ok: false, reason: 'unreadable' }
-  const { nml, outcomes, added } = planBatch(fresh, ops, bootVolume)
+  const { nml, outcomes, added } = planBatch(fresh, ops, bootVolume, now)
   if (nml === fresh) return { ok: true, wrote: false, outcomes }
   const failure = await (deps.write ?? writeCollection)(nmlPath, nml, deps.session)
   if (failure) return { ok: false, reason: refusalOf(failure) }

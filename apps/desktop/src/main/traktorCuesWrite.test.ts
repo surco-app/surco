@@ -430,7 +430,9 @@ describe('applyTraktorBatch', () => {
 })
 
 describe('saving an edited grid to Traktor', () => {
+  const NOW = new Date(2026, 10, 8, 18, 5, 9)
   const doc = nml([GRID, AUTOGRID, LOAD, BLUE])
+  const entryTag = (text: string) => text.match(/<ENTRY\b[^>]*>/)?.[0] ?? ''
   const write = async (path: string, text: string) => {
     await writeFile(path, text)
     return null
@@ -443,7 +445,7 @@ describe('saving an edited grid to Traktor', () => {
   })
 
   it('moves the grid marker to the first downbeat and writes the tempo on it and on the track', () => {
-    const out = withTraktorGrid(block(doc), { bpm: 128.5, anchorMs: 40 + (4 * 60000) / 128.5 })
+    const out = withTraktorGrid(block(doc), { bpm: 128.5, anchorMs: 40 + (4 * 60000) / 128.5 }, NOW)
     expect(out).toContain('TYPE="4" START="40.000000"')
     expect(out).toContain('<GRID BPM="128.500000">')
     expect(out).toContain('<TEMPO BPM="128.500000"')
@@ -451,7 +453,7 @@ describe('saving an edited grid to Traktor', () => {
   })
 
   it('adds a grid marker when the track has none', () => {
-    const out = withTraktorGrid(block(nml([LOAD])), { bpm: 120, anchorMs: 500 })
+    const out = withTraktorGrid(block(nml([LOAD])), { bpm: 120, anchorMs: 500 }, NOW)
     expect(out).toContain('TYPE="4" START="500.000000"')
     expect(out).toContain('<GRID BPM="120.000000">')
     expect(out).toContain(LOAD)
@@ -481,16 +483,53 @@ describe('saving an edited grid to Traktor', () => {
     expect(await readFile(file, 'utf8')).toBe(doc)
   })
 
-  it('refuses a grid the DJ locked in Traktor', async () => {
-    const locked = doc.replace('<ENTRY TITLE', '<ENTRY LOCK="1" TITLE')
+  it('locks the grid in Traktor, stamped the way Traktor stamps it, so an analysis there cannot wipe the one fixed in Surco', () => {
+    const out = withTraktorGrid(block(doc), { bpm: 128.5, anchorMs: 40 }, NOW)
+    expect(entryTag(out)).toBe(
+      '<ENTRY LOCK="1" LOCK_MODIFICATION_TIME="2026-11-08T18:05:09" TITLE="The Power">',
+    )
+  })
+
+  it('puts the lock where Traktor writes it, after the modification time', () => {
+    const stamped = doc.replace(
+      '<ENTRY TITLE',
+      '<ENTRY MODIFIED_DATE="2026/10/29" MODIFIED_TIME="56466" TITLE',
+    )
+    const out = withTraktorGrid(block(stamped), { bpm: 128.5, anchorMs: 40 }, NOW)
+    expect(entryTag(out)).toBe(
+      '<ENTRY MODIFIED_DATE="2026/10/29" MODIFIED_TIME="56466" LOCK="1" LOCK_MODIFICATION_TIME="2026-11-08T18:05:09" TITLE="The Power">',
+    )
+  })
+
+  it('saves a new grid over one already locked, since editing it in Surco is the DJ asking for the change', async () => {
+    const locked = doc.replace(
+      '<ENTRY TITLE',
+      '<ENTRY LOCK="1" LOCK_MODIFICATION_TIME="2024-06-18T16:00:05" TITLE',
+    )
     const file = await onDisk(locked)
     const result = await applyTraktorBatch(
       file,
       [{ ...gridOp(), fingerprint: readTraktorTrackCues(locked, ID)?.fingerprint ?? '' }],
-      { session, ensureClosed: async () => true, write },
+      { session, ensureClosed: async () => true, write, now: () => NOW },
     )
-    expect(result).toMatchObject({ outcomes: [{ applied: false }] })
-    expect(await readFile(file, 'utf8')).toBe(locked)
+    expect(result).toMatchObject({ outcomes: [{ applied: true }] })
+    const saved = await readFile(file, 'utf8')
+    expect(Math.round(read(saved)?.grid[0].ms ?? 0)).toBe(40)
+    expect(entryTag(saved)).toBe(
+      '<ENTRY LOCK="1" LOCK_MODIFICATION_TIME="2026-11-08T18:05:09" TITLE="The Power">',
+    )
+  })
+
+  it('leaves the lock alone when only cues are saved, since the grid was not touched', async () => {
+    const file = await onDisk(doc)
+    await applyTraktorBatch(
+      file,
+      [op(doc, [...asWanted(doc), { ms: 120000, kind: HOT_KINDS[2], color: null }])],
+      { session, ensureClosed: async () => true, write, now: () => NOW },
+    )
+    const saved = await readFile(file, 'utf8')
+    expect(saved).not.toBe(doc)
+    expect(entryTag(saved)).toBe('<ENTRY TITLE="The Power">')
   })
 
   it('refuses an impossible tempo', async () => {
