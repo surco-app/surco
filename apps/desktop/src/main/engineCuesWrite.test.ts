@@ -846,13 +846,51 @@ describe('saving an edited grid to Engine DJ', () => {
     expect(current(dir).grid[0].ms).toBe(0)
   })
 
-  it('refuses a grid the DJ locked in Engine', async () => {
+  const lockOf = (dir: string) => {
+    const db = new Database(dbFile(dir), { readonly: true })
+    try {
+      return (
+        db.prepare('SELECT isBeatGridLocked AS locked FROM Track WHERE id = 1').get() as {
+          locked: number | null
+        }
+      ).locked
+    } finally {
+      db.close()
+    }
+  }
+
+  it('locks the grid in Engine so an analysis there cannot wipe the one fixed in Surco', async () => {
+    const dir = await library()
+    await applyEngineCuesBatch(dir, [gridOp(dir)], deps())
+    expect(lockOf(dir)).toBe(1)
+  })
+
+  it('saves a new grid over one already locked, since editing it in Surco is the DJ asking for the change', async () => {
     const dir = await library()
     const db = new Database(dbFile(dir))
     db.prepare('UPDATE Track SET isBeatGridLocked = 1 WHERE id = 1').run()
     db.close()
     const result = await applyEngineCuesBatch(dir, [gridOp(dir)], deps())
-    expect(result).toMatchObject({ outcomes: [{ applied: false }] })
+    expect(result).toMatchObject({ outcomes: [{ applied: true }] })
+    expect(current(dir).grid[0].ms).toBeCloseTo(40, 3)
+    expect(lockOf(dir)).toBe(1)
+  })
+
+  it('leaves the lock alone when only cues are saved, since the grid was not touched', async () => {
+    const dir = await library()
+    const before = lockOf(dir)
+    const result = await applyEngineCuesBatch(
+      dir,
+      [
+        op(dir, [
+          ...current(dir).cues.map(({ id, ms, kind, color }) => ({ id, ms, kind, color })),
+          { ms: 90000, kind: 2, color: 42 },
+        ]),
+      ],
+      deps(),
+    )
+    expect(result).toMatchObject({ outcomes: [{ applied: true }] })
+    expect(lockOf(dir)).toBe(before)
   })
 
   it('refuses a grid on a compressed file, whose clock in Engine is not measured', async () => {

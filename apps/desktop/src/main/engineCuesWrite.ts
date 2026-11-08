@@ -83,8 +83,7 @@ type Plan = { outcome: OpOutcome } | Planned
 
 function row(db: Database, trackId: number): EnginePerformance | null {
   const statement = db.prepare(
-    `SELECT t.length, coalesce(t.isBeatGridLocked, 0) AS gridLocked, p.trackData, p.beatData,
-            p.quickCues, p.overviewWaveFormData
+    `SELECT t.length, p.trackData, p.beatData, p.quickCues, p.overviewWaveFormData
        FROM Track t LEFT JOIN PerformanceData p ON p.trackId = t.id WHERE t.id = ?`,
   )
   try {
@@ -158,7 +157,8 @@ function plan(db: Database, op: QueueOp, libraryDir: string): Plan {
           trackId,
         ])
         target.run(
-          'UPDATE Track SET bpm = CASE WHEN bpm IS NULL THEN NULL ELSE ? END, bpmAnalyzed = ? WHERE id = ?',
+          `UPDATE Track SET bpm = CASE WHEN bpm IS NULL THEN NULL ELSE ? END, bpmAnalyzed = ?,
+             isBeatGridLocked = 1 WHERE id = ?`,
           [Math.round(gridWrite.bpm), gridWrite.bpm, trackId],
         )
       }
@@ -177,7 +177,6 @@ function gridWriteOf(
     !grid ||
     grid.zones ||
     !SAME_CLOCK_FILE.test(op.path) ||
-    perf.gridLocked ||
     read.gridFingerprint !== op.gridFingerprint ||
     !Number.isFinite(grid.bpm) ||
     grid.bpm < GRID_BPM_MIN ||
