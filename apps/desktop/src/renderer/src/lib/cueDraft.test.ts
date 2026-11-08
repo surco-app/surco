@@ -1206,11 +1206,84 @@ describe('the beat grid in the draft', () => {
     expect(empty().grid).toBeNull()
   })
 
-  it('moves the grid without moving a single cue, because the cue was right and the grid wrong', () => {
-    const marked = run(withGrid(), { type: 'mark-drop', ms: bar(32) })
-    const moved = run(marked, { type: 'set-grid', grid: { bpm: 150, anchorMs: 6 } })
-    expect(moved.grid).toEqual({ bpm: 150, anchorMs: 6 })
-    expect(moved.cues).toBe(marked.cues)
+  const OPEN_UP = { bpm: 139.06, anchorMs: 3 }
+  const period = 60000 / OPEN_UP.bpm
+  const onBeats = (grid: { bpm: number; anchorMs: number }, n: number[], locked: string[] = []) =>
+    startDraft(
+      n.map((k, i) => ({
+        id: `c${i}`,
+        ms: grid.anchorMs + k * (60000 / grid.bpm),
+        kind: i % 2 ? 0 : HOT_KINDS[i % 7],
+        color: null,
+      })),
+      'mine',
+      locked,
+      grid,
+    )
+
+  it('carries the cues that sat on the old grid to the same beat of the new one, since a flow placed them on that grid', () => {
+    const moved = run(onBeats(OPEN_UP, [0, 64, 128]), {
+      type: 'set-grid',
+      grid: { ...OPEN_UP, anchorMs: 236 },
+    })
+    expect(moved.cues.map((c) => Math.round(c.ms))).toEqual([
+      236,
+      Math.round(236 + 64 * period),
+      Math.round(236 + 128 * period),
+    ])
+  })
+
+  it('keeps a downbeat on the downbeat when the grid moves more than half a beat, where the nearest beat would be the 4', () => {
+    const moved = run(onBeats(OPEN_UP, [64]), {
+      type: 'set-grid',
+      grid: { ...OPEN_UP, anchorMs: 3 + 0.54 * period },
+    })
+    const beat = (moved.cues[0].ms - (3 + 0.54 * period)) / period
+    expect(beat).toBeCloseTo(64, 6)
+  })
+
+  it('stretches the cues with the tempo, each staying on its beat', () => {
+    const grid = { bpm: 120, anchorMs: 0 }
+    const moved = run(onBeats(grid, [256]), { type: 'set-grid', grid: { bpm: 121, anchorMs: 0 } })
+    expect(moved.cues[0].ms).toBeCloseTo(256 * (60000 / 121), 6)
+  })
+
+  it('keeps the cues in place when the grid is doubled or halved, since only the beats in between change', () => {
+    const grid = { bpm: 120, anchorMs: 0 }
+    const start = onBeats(grid, [64, 128])
+    for (const bpm of [240, 60]) {
+      const moved = run(start, { type: 'set-grid', grid: { bpm, anchorMs: 0 } })
+      expect(moved.cues.map((c) => c.ms)).toEqual(start.cues.map((c) => c.ms))
+    }
+  })
+
+  it('leaves a cue set between beats where it is, since it marks the audio and not the grid', () => {
+    const grid = { bpm: 120, anchorMs: 0 }
+    const off = startDraft(
+      [{ id: 'x', ms: 32250, kind: HOT_KINDS[0], color: null }],
+      'mine',
+      [],
+      grid,
+    )
+    const moved = run(off, { type: 'set-grid', grid: { bpm: 120, anchorMs: 40 } })
+    expect(moved.cues).toBe(off.cues)
+  })
+
+  it('leaves a cue the DJ kept as it was alone', () => {
+    const start = onBeats({ bpm: 120, anchorMs: 0 }, [64], ['c0'])
+    const moved = run(start, { type: 'set-grid', grid: { bpm: 120, anchorMs: 40 } })
+    expect(moved.cues[0].ms).toBe(start.cues[0].ms)
+  })
+
+  it('takes the grid and the carried cues back in one undo', () => {
+    const start = onBeats(OPEN_UP, [0, 64])
+    const back = run(
+      start,
+      { type: 'set-grid', grid: { ...OPEN_UP, anchorMs: 236 } },
+      { type: 'undo' },
+    )
+    expect(back.grid).toEqual(start.grid)
+    expect(back.cues).toEqual(start.cues)
   })
 
   it('undoes and redoes a grid change like a cue change', () => {
@@ -1330,6 +1403,35 @@ describe('fitting the grid to the beats', () => {
       ['b', 64046],
       ['loop', 96000],
     ])
+  })
+
+  it('carries a cue on the old grid by its beat, not to the nearest one, when Auto moves the grid more than half a beat', () => {
+    const start = startDraft(
+      [{ id: 'a', ms: 32000, kind: HOT_KINDS[0], color: null }],
+      'mine',
+      [],
+      {
+        bpm: 120,
+        anchorMs: 0,
+      },
+    )
+    const far = { bpm: 120, anchorMs: 300 }
+    const s = run(start, { type: 'fit-grid', grid: far, beats: beats.map((ms) => ms + 300) })
+    expect(s.cues[0].ms).toBe(32300)
+  })
+
+  it('still puts a cue that was off the old grid on the nearest fitted beat', () => {
+    const start = startDraft(
+      [{ id: 'a', ms: 32180, kind: HOT_KINDS[0], color: null }],
+      'mine',
+      [],
+      {
+        bpm: 120,
+        anchorMs: 0,
+      },
+    )
+    const s = run(start, { type: 'fit-grid', grid: fitted, beats: fittedBeats })
+    expect(s.cues[0].ms).toBe(32046)
   })
 
   it('takes the grid and the cues back in one undo', () => {

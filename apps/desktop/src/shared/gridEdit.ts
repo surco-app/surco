@@ -111,6 +111,21 @@ export function zoneAt(grid: EditableGrid, ms: number): EditableGrid {
   return { bpm: zone.bpm, anchorMs: zone.anchorMs }
 }
 
+export function carryOntoGrid(
+  from: EditableGrid,
+  to: EditableGrid,
+  ms: number,
+  toleranceMs: number,
+): number | null {
+  const was = zoneAt(from, ms)
+  const now = zoneAt(to, ms)
+  const k = Math.round((ms - was.anchorMs) / periodOf(was.bpm))
+  if (Math.abs(was.anchorMs + k * periodOf(was.bpm) - ms) > toleranceMs) return null
+  const ratio = now.bpm / was.bpm
+  const beat = k * (ratio > 1.5 ? 2 : ratio < 0.75 ? 0.5 : 1)
+  return Number.isInteger(beat) ? now.anchorMs + beat * periodOf(now.bpm) : null
+}
+
 export function anchorNear(grid: EditableGrid, ms: number): boolean {
   return (grid.zones ?? []).some((z) => Math.abs(z.fromMs - ms) < periodOf(z.bpm) / 2)
 }

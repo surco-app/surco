@@ -16,7 +16,7 @@ import {
   type StrongPart,
   type WantedCue,
 } from '../../../shared/cueRules'
-import { type EditableGrid, sameGrid } from '../../../shared/gridEdit'
+import { carryOntoGrid, type EditableGrid, sameGrid } from '../../../shared/gridEdit'
 import { HOT_CUE_DEFAULT_INDEX } from '../../../shared/rekordboxCueColors'
 import type { SaveCuesRequest } from '../../../shared/types'
 
@@ -535,15 +535,19 @@ function step(state: CueDraft, action: DraftAction, ctx: DraftContext): CueDraft
     if (moved.every((c, i) => c.ms === state.cues[i].ms)) return state
     return commit(state, moved, { edited: [...state.edited, ...keys] })
   }
-  if (action.type === 'fit-grid') {
-    const moved = state.cues.map((c) =>
-      state.locked.includes(c.key) ? c : { ...c, ms: nearestBeatMs(c.ms, action.beats) },
-    )
-    const keys = moved.filter((c, i) => c.ms !== state.cues[i].ms).map((c) => c.key)
+  if (action.type === 'fit-grid' || action.type === 'set-grid') {
+    const from = state.grid
+    const moved = state.cues.map((c) => {
+      if (state.locked.includes(c.key)) return c
+      const carried = from && carryOntoGrid(from, action.grid, c.ms, SAME_POSITION_MS)
+      const ms = carried ?? (action.type === 'fit-grid' ? nearestBeatMs(c.ms, action.beats) : c.ms)
+      return ms === c.ms ? c : { ...c, ms }
+    })
+    const keys = moved.filter((c, i) => c !== state.cues[i]).map((c) => c.key)
+    if (action.type === 'set-grid' && keys.length === 0)
+      return { ...state, grid: action.grid, past: [...state.past, snapshot(state)], future: [] }
     return commit(state, moved, { grid: action.grid, edited: [...state.edited, ...keys] })
   }
-  if (action.type === 'set-grid')
-    return { ...state, grid: action.grid, past: [...state.past, snapshot(state)], future: [] }
   if (action.type === 'batch') {
     const next = action.actions.reduce((s, a) => reduceDraft(s, a, ctx), state)
     if (next.cues === state.cues) return { ...next, past: state.past, future: state.future }

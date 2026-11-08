@@ -1701,7 +1701,7 @@ describe('CuesSection maximized grid', () => {
   const fitAt = (firstMs: number) =>
     vi.fn<Api['rekordboxGridFit']>(async () => ({ bpm: 120, firstMs }))
 
-  it('moves the drawn grid with the grid row and leaves the cues where they were', async () => {
+  it('moves the drawn grid with the grid row and carries the cues on its beats along', async () => {
     setup({ cueLettersByTime: false })
     await maximize()
     key('ArrowRight')
@@ -1710,7 +1710,8 @@ describe('CuesSection maximized grid', () => {
     fireEvent.click(screen.getByTestId('cues-grid-right'))
     expect(bars()).toContain(32005)
     expect(bars()).not.toContain(32000)
-    expect(screen.getByTestId('cue-wave-call-32000')).toBeInTheDocument()
+    expect(screen.getByTestId('cue-wave-call-32005')).toBeInTheDocument()
+    expect(screen.queryByTestId('cue-wave-call-32000')).not.toBeInTheDocument()
     expect(screen.getByTestId('cues-unsaved')).toBeInTheDocument()
   })
 
