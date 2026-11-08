@@ -151,15 +151,19 @@ const plain = ({ found, right }: TasteRates): TasteRates => ({ found, right })
 
 const CORRECTION_WEIGHT = 3
 
-export function weighedForLearning(tracks: TasteTrack[]): TasteTrack[] {
+export function weighedForLearning(tracks: TasteTrack[], weight = CORRECTION_WEIGHT): TasteTrack[] {
   return tracks.flatMap((t) =>
     t.outcome === 'corrected' || t.outcome === 'manual'
-      ? Array.from({ length: CORRECTION_WEIGHT }, () => t)
+      ? Array.from({ length: weight }, () => t)
       : [t],
   )
 }
 
-export function tuneDropTaste(all: TasteTrack[], base: DropModel = DROP_MODEL): TunedTaste | null {
+export function tuneDropTaste(
+  all: TasteTrack[],
+  base: DropModel = DROP_MODEL,
+  weight = CORRECTION_WEIGHT,
+): TunedTaste | null {
   const tracks = all
     .filter((t) => t.drops.length > 0 && t.candidates.length > 0)
     .sort((a, b) => hashOf(a.key) - hashOf(b.key))
@@ -168,11 +172,11 @@ export function tuneDropTaste(all: TasteTrack[], base: DropModel = DROP_MODEL): 
   const isCheck = (t: TasteTrack): boolean => hashOf(`${t.key}#check`) % 10 < CHECK_SHARE
   const learn = tracks.filter((t) => !isCheck(t))
   const check = scoredOf(tracks.filter(isCheck), base)
-  const tried = tune(weighedForLearning(learn), base)
+  const tried = tune(weighedForLearning(learn, weight), base)
   const before = ratesOf(check, base.picking)
   const after = ratesOf(scoredOf(tracks.filter(isCheck), tried), tried.picking)
   const better = after.f1 > before.f1
-  const final = better ? tune(weighedForLearning(tracks), base) : null
+  const final = better ? tune(weighedForLearning(tracks, weight), base) : null
   return {
     taste: final ? { trees: final.trees.slice(base.trees.length), picking: final.picking } : null,
     check: {
