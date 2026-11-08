@@ -2947,7 +2947,7 @@
         "steps": [
           {
             "title": "Crea el campo",
-            "text": "En Ajustes › Campos, pon un nombre y una clave."
+            "text": "En Ajustes › Editor › Campos, pon un nombre y una clave."
           },
           {
             "title": "Rellénalo en el editor",
@@ -2975,7 +2975,9 @@
             "label": "Nombra y ordena los archivos",
             "anchor": "nombres"
           }
-        ]
+        ],
+        "shot": "use-cases/custom-fields-es.webp",
+        "shotCaption": "Ajustes › Editor › Campos, con el formulario para añadir un campo al final."
       },
       {
         "id": "beatport",
@@ -3289,7 +3291,9 @@
             "label": "Marca tus cues",
             "anchor": "rekordbox"
           }
-        ]
+        ],
+        "shot": "use-cases/organize-playlists-es.webp",
+        "shotCaption": "La barra lateral de rekordbox con sus carpetas y el menú de una playlist."
       },
       {
         "id": "repair-library",
@@ -3330,7 +3334,9 @@
             "label": "Revisa tu biblioteca",
             "anchor": "revisar"
           }
-        ]
+        ],
+        "shot": "guide/revisar-es.webp",
+        "shotCaption": "Revisar sobre una playlist de rekordbox, con un espacio de más en un álbum."
       },
       {
         "id": "traktor-convert",
@@ -3487,7 +3493,9 @@
             "label": "Lleva tus playlists a un USB",
             "anchor": "usb"
           }
-        ]
+        ],
+        "shot": "guide/tracklist-es.webp",
+        "shotCaption": "La revisión del tracklist antes de añadir: encontradas, dudosas y parecidas."
       },
       {
         "id": "nas",

@@ -2947,7 +2947,7 @@
         "steps": [
           {
             "title": "Lege das Feld an",
-            "text": "Gib unter Einstellungen › Felder einen Namen und einen Schlüssel ein."
+            "text": "Gib unter Einstellungen › Editor › Felder einen Namen und einen Schlüssel ein."
           },
           {
             "title": "Fülle es im Editor aus",
@@ -2975,7 +2975,9 @@
             "label": "Dateien benennen und ordnen",
             "anchor": "nombres"
           }
-        ]
+        ],
+        "shot": "use-cases/custom-fields-de.webp",
+        "shotCaption": "Einstellungen › Editor › Felder, mit dem Formular zum Hinzufügen eines Felds am Ende."
       },
       {
         "id": "beatport",
@@ -3289,7 +3291,9 @@
             "label": "Setz deine Cues",
             "anchor": "rekordbox"
           }
-        ]
+        ],
+        "shot": "use-cases/organize-playlists-de.webp",
+        "shotCaption": "Die rekordbox-Seitenleiste mit ihren Ordnern und dem Menü einer Playlist."
       },
       {
         "id": "repair-library",
@@ -3330,7 +3334,9 @@
             "label": "Deine Bibliothek prüfen",
             "anchor": "revisar"
           }
-        ]
+        ],
+        "shot": "guide/revisar-de.webp",
+        "shotCaption": "„Prüfen“ auf einer rekordbox-Playlist, mit einem überzähligen Leerzeichen in einem Album."
       },
       {
         "id": "traktor-convert",
@@ -3487,7 +3493,9 @@
             "label": "Deine Playlists auf einen USB-Stick bringen",
             "anchor": "usb"
           }
-        ]
+        ],
+        "shot": "guide/tracklist-de.webp",
+        "shotCaption": "Die Prüfung der Tracklist vor dem Hinzufügen: gefunden, zweifelhaft und ähnlich."
       },
       {
         "id": "nas",

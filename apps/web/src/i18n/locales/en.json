@@ -2947,7 +2947,7 @@
         "steps": [
           {
             "title": "Create the field",
-            "text": "In Settings › Fields, give it a name and a key."
+            "text": "In Settings › Editor › Fields, give it a name and a key."
           },
           {
             "title": "Fill it in the editor",
@@ -2975,7 +2975,9 @@
             "label": "Name and organize the files",
             "anchor": "nombres"
           }
-        ]
+        ],
+        "shot": "use-cases/custom-fields-en.webp",
+        "shotCaption": "Settings › Editor › Fields, with the form to add a field at the bottom."
       },
       {
         "id": "beatport",
@@ -3289,7 +3291,9 @@
             "label": "Mark your cues",
             "anchor": "rekordbox"
           }
-        ]
+        ],
+        "shot": "use-cases/organize-playlists-en.webp",
+        "shotCaption": "The rekordbox sidebar with its folders and a playlist’s menu."
       },
       {
         "id": "repair-library",
@@ -3330,7 +3334,9 @@
             "label": "Review your library",
             "anchor": "revisar"
           }
-        ]
+        ],
+        "shot": "guide/revisar-en.webp",
+        "shotCaption": "Review on a rekordbox playlist, with an extra space in an album name."
       },
       {
         "id": "traktor-convert",
@@ -3487,7 +3493,9 @@
             "label": "Take your playlists on a USB stick",
             "anchor": "usb"
           }
-        ]
+        ],
+        "shot": "guide/tracklist-en.webp",
+        "shotCaption": "The tracklist review before adding: found, doubtful and similar."
       },
       {
         "id": "nas",

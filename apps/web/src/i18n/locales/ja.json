@@ -2947,7 +2947,7 @@
         "steps": [
           {
             "title": "フィールドを作る",
-            "text": "設定 › フィールドで、名前とキーを付けます。"
+            "text": "設定 › エディタ › フィールドで、名前とキーを付けます。"
           },
           {
             "title": "エディタで入力する",
@@ -2975,7 +2975,9 @@
             "label": "ファイル名を付けて整理",
             "anchor": "nombres"
           }
-        ]
+        ],
+        "shot": "use-cases/custom-fields-ja.webp",
+        "shotCaption": "設定 › エディタ › フィールド。末尾にフィールドを追加するフォームがあります。"
       },
       {
         "id": "beatport",
@@ -3289,7 +3291,9 @@
             "label": "キューを打つ",
             "anchor": "rekordbox"
           }
-        ]
+        ],
+        "shot": "use-cases/organize-playlists-ja.webp",
+        "shotCaption": "rekordbox のサイドバーに、フォルダとプレイリストのメニューを表示した画面です。"
       },
       {
         "id": "repair-library",
@@ -3330,7 +3334,9 @@
             "label": "ライブラリを確認する",
             "anchor": "revisar"
           }
-        ]
+        ],
+        "shot": "guide/revisar-ja.webp",
+        "shotCaption": "rekordbox のプレイリストを見直し、アルバム名の余分な空白を見つけたところ。"
       },
       {
         "id": "traktor-convert",
@@ -3487,7 +3493,9 @@
             "label": "プレイリストを USB に持ち出す",
             "anchor": "usb"
           }
-        ]
+        ],
+        "shot": "guide/tracklist-ja.webp",
+        "shotCaption": "追加前のトラックリスト確認: 一致、要確認、類似。"
       },
       {
         "id": "nas",

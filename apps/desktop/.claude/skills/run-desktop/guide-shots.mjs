@@ -239,7 +239,7 @@ export const ALBUM_SCENES = {
 // The rekordbox scene edits cues, so it runs on an APFS clone of this Mac's collection
 // (master.db and its share folder with the analysis files), never on the real one, and
 // the window is killed rather than closed: nothing is ever saved, not even to the clone.
-function rekordboxClone() {
+export function rekordboxClone() {
   const real = join(homedir(), 'Library/Pioneer/rekordbox')
   const dir = join(tmpdir(), 'surco-guide-rekordbox')
   if (!existsSync(join(dir, 'master.db'))) {

@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import appDe from '../../../desktop/src/renderer/src/i18n/locales/de.json'
 import appEn from '../../../desktop/src/renderer/src/i18n/locales/en.json'
@@ -373,6 +375,41 @@ describe('use case settings by tab', () => {
         settingGroups(c.settings).map((_, i) => settingShot(lang, c.id, i)),
       )
       expect(wanted.filter((f) => !USE_CASE_SHOTS[f])).toEqual([])
+    }
+  })
+})
+
+// A recipe with no setting to point at still needs the reader to see the screen it talks
+// about. Its capture is declared on the recipe, so a path with no file behind it shows a
+// broken image exactly where the reader is checking they are in the right place.
+describe('use case captures that are not settings tabs', () => {
+  type Shot = { id: string; shot?: string; shotCaption?: string }
+  const withShots = (locale: unknown) => (locale as { useCases: { cases: Shot[] } }).useCases.cases
+  const SHOT_CASES = ['paste-tracklist', 'repair-library', 'organize-playlists', 'custom-fields']
+
+  it('has a file and a caption behind every capture a recipe declares, in every language', () => {
+    for (const [name, locale] of SITE_LANGUAGES) {
+      for (const c of withShots(locale).filter((o) => o.shot)) {
+        const file = fileURLToPath(new URL(`../../public/${c.shot}`, import.meta.url))
+        expect(existsSync(file), `${name} ${c.id} ${c.shot}`).toBe(true)
+        expect(c.shotCaption, `${name} ${c.id}`).toBeTruthy()
+      }
+    }
+  })
+
+  it('shows the screen on the recipes that have no settings tab to capture', () => {
+    for (const [name, locale] of SITE_LANGUAGES) {
+      const without = withShots(locale)
+        .filter((c) => SHOT_CASES.includes(c.id) && !c.shot)
+        .map((c) => c.id)
+      expect(without, name).toEqual([])
+    }
+  })
+
+  it('names the language of the capture in the file, so no reader sees another language’s app', () => {
+    for (const [name, locale] of SITE_LANGUAGES) {
+      for (const c of withShots(locale).filter((o) => o.shot))
+        expect(c.shot, `${name} ${c.id}`).toContain(`-${name}.webp`)
     }
   })
 })

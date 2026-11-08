@@ -2947,7 +2947,7 @@
         "steps": [
           {
             "title": "Crée le champ",
-            "text": "Dans Réglages › Champs, donne-lui un nom et une clé."
+            "text": "Dans Réglages › Éditeur › Champs, donne-lui un nom et une clé."
           },
           {
             "title": "Remplis-le dans l’éditeur",
@@ -2975,7 +2975,9 @@
             "label": "Nommer et ranger les fichiers",
             "anchor": "nombres"
           }
-        ]
+        ],
+        "shot": "use-cases/custom-fields-fr.webp",
+        "shotCaption": "Réglages › Éditeur › Champs, avec le formulaire d’ajout d’un champ en bas."
       },
       {
         "id": "beatport",
@@ -3289,7 +3291,9 @@
             "label": "Pose tes cues",
             "anchor": "rekordbox"
           }
-        ]
+        ],
+        "shot": "use-cases/organize-playlists-fr.webp",
+        "shotCaption": "La barre latérale de rekordbox avec ses dossiers et le menu d’une playlist."
       },
       {
         "id": "repair-library",
@@ -3330,7 +3334,9 @@
             "label": "Vérifie ta bibliothèque",
             "anchor": "revisar"
           }
-        ]
+        ],
+        "shot": "guide/revisar-fr.webp",
+        "shotCaption": "« Vérifier » sur une playlist rekordbox, avec un espace en trop dans un album."
       },
       {
         "id": "traktor-convert",
@@ -3487,7 +3493,9 @@
             "label": "Emporte tes playlists sur une clé USB",
             "anchor": "usb"
           }
-        ]
+        ],
+        "shot": "guide/tracklist-fr.webp",
+        "shotCaption": "La vérification de la tracklist avant d'ajouter : trouvés, douteux et proches."
       },
       {
         "id": "nas",

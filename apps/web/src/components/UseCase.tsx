@@ -23,6 +23,9 @@ import Lightbox from './Lightbox'
 import Reveal from './Reveal'
 import ScrollProgress from './ScrollProgress'
 
+const SCREEN_WIDTH = 1440
+const SCREEN_HEIGHT = 867
+
 type Setting = {
   tab: string
   section?: string
@@ -44,6 +47,8 @@ export type UseCase = {
   s: string
   body: string[]
   keywords: string
+  shot?: string
+  shotCaption?: string
   settings: Setting[]
   steps: Step[]
   points: string[]
@@ -208,6 +213,27 @@ export default function UseCasePage({ id }: { id: string }) {
                   {p}
                 </p>
               ))}
+
+              {c.shot && c.shotCaption && (
+                <button
+                  type="button"
+                  data-testid="use-case-screen"
+                  onClick={() => {
+                    setShot({ src: `/${c.shot}`, caption: c.shotCaption ?? '' })
+                    setShotOpen(true)
+                  }}
+                  className="mt-8 block w-full cursor-zoom-in overflow-hidden rounded-xl border border-line"
+                >
+                  <img
+                    src={`/${c.shot}`}
+                    alt={c.shotCaption}
+                    width={SCREEN_WIDTH}
+                    height={SCREEN_HEIGHT}
+                    loading="lazy"
+                    className="block h-auto w-full"
+                  />
+                </button>
+              )}
 
               {c.settings.length > 0 && (
                 <>
