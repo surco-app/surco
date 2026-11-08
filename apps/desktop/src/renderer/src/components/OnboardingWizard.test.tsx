@@ -179,7 +179,9 @@ describe('OnboardingWizard keyboard', () => {
   it('advances to the next step when the form is submitted with Enter', () => {
     render(<OnboardingWizard settings={settings} onFinish={() => {}} />)
     expect(screen.queryByTestId('onboarding-destination-folder')).toBeNull()
-    fireEvent.submit(screen.getByTestId('onboarding-next').closest('form') as HTMLFormElement)
+    const form = screen.getByTestId('onboarding-next').closest('form') as HTMLFormElement
+    fireEvent.submit(form)
+    fireEvent.submit(form)
     expect(screen.getByTestId('onboarding-destination-folder')).toBeInTheDocument()
   })
 
@@ -224,6 +226,7 @@ describe('OnboardingWizard step focus', () => {
   // and makes VoiceOver read which step the user is on.
   it('moves the focus to the new step heading on every step change, back to the first too', () => {
     render(<OnboardingWizard settings={settings} onFinish={() => {}} />)
+    fireEvent.click(screen.getByTestId('onboarding-next'))
     fireEvent.click(screen.getByTestId('onboarding-next'))
     expect(document.activeElement).toBe(screen.getByRole('heading', { level: 2 }))
     expect(document.activeElement).not.toHaveTextContent(i18n.t('onboarding.welcomeTitle'))
@@ -349,7 +352,7 @@ describe('OnboardingWizard destination', () => {
       render(<OnboardingWizard settings={settings} onFinish={vi.fn()} />)
       await new Promise((r) => setTimeout(r, 0))
       expect(unhandled).not.toHaveBeenCalled()
-      expect(screen.getByText(i18n.t('onboarding.step', { current: 1, total: 4 }))).toBeVisible()
+      expect(screen.getByText(i18n.t('onboarding.step', { current: 1, total: 5 }))).toBeVisible()
     } finally {
       api.api.engineAvailable = async () => false
       process.off('unhandledRejection', unhandled)
@@ -370,8 +373,9 @@ describe('OnboardingWizard destination', () => {
       const onFinish = vi.fn()
       render(<OnboardingWizard settings={settings} onFinish={onFinish} />)
       fireEvent.click(screen.getByTestId('onboarding-next'))
+      fireEvent.click(screen.getByTestId('onboarding-next'))
       await act(async () => land('/Users/dj/Library/Pioneer/rekordbox/master.db'))
-      expect(screen.getByText(i18n.t('onboarding.step', { current: 2, total: 4 }))).toBeVisible()
+      expect(screen.getByText(i18n.t('onboarding.step', { current: 3, total: 5 }))).toBeVisible()
       for (let i = 0; i < 2; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
       fireEvent.click(screen.getByTestId('onboarding-next'))
       expect(onFinish).toHaveBeenCalledTimes(1)
@@ -392,11 +396,12 @@ describe('OnboardingWizard destination', () => {
     // The detection resolves after mount, and it is what decides the wizard's length —
     // clicking through before it lands would walk a four-step wizard off its end.
     expect(
-      await screen.findByText(i18n.t('onboarding.step', { current: 1, total: 5 })),
+      await screen.findByText(i18n.t('onboarding.step', { current: 1, total: 6 })),
     ).toBeInTheDocument()
 
     next()
-    expect(screen.getByText(i18n.t('onboarding.step', { current: 2, total: 5 }))).toBeVisible()
+    next()
+    expect(screen.getByText(i18n.t('onboarding.step', { current: 3, total: 6 }))).toBeVisible()
     expect(await screen.findByTestId('onboarding-sync-rekordbox')).toBeChecked()
     finishWizard()
     expect(onFinish).toHaveBeenCalledWith(
@@ -422,7 +427,7 @@ describe('OnboardingWizard destination', () => {
         />,
       )
       expect(
-        await screen.findByText(i18n.t('onboarding.step', { current: 1, total: 5 })),
+        await screen.findByText(i18n.t('onboarding.step', { current: 1, total: 6 })),
       ).toBeInTheDocument()
       goTo('programs')
       const toggle = await screen.findByTestId('onboarding-sync-rekordbox')
@@ -660,9 +665,9 @@ describe('OnboardingWizard destination', () => {
     ).api.rekordboxCollection = async () => ''
     render(<OnboardingWizard settings={settings} onFinish={vi.fn()} />)
 
-    for (let i = 0; i < 3; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
+    for (let i = 0; i < 4; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
     expect(
-      await screen.findByText(i18n.t('onboarding.step', { current: 4, total: 4 })),
+      await screen.findByText(i18n.t('onboarding.step', { current: 5, total: 5 })),
     ).toBeInTheDocument()
     expect(screen.queryByTestId('onboarding-sync-rekordbox')).not.toBeInTheDocument()
   })
@@ -874,9 +879,9 @@ describe('OnboardingWizard length', () => {
   // Every extra question delays the first drop of files. The wizard asks only what shapes
   // the first import — sources + token + auto-match, format + destination, and the audio
   // workflow — and defers power-user tuning (naming, presets, fields) to Settings.
-  it('reaches Finish on the fourth step', () => {
+  it('reaches Finish on the fifth screen, the first being the question about this Mac', () => {
     render(<OnboardingWizard settings={settings} onFinish={() => {}} />)
-    for (let i = 0; i < 3; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
+    for (let i = 0; i < 4; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
     expect(screen.getByTestId('onboarding-next')).toHaveTextContent(i18n.t('onboarding.finish'))
   })
 })
@@ -989,6 +994,7 @@ describe('OnboardingWizard welcome', () => {
   it('lists the steps that follow the welcome', async () => {
     api.rekordboxCollection = async () => ''
     render(<OnboardingWizard settings={settings} onFinish={() => {}} />)
+    next()
     const steps = within(screen.getByTestId('onboarding-steps')).getAllByRole('listitem')
     expect(steps.map((li) => li.textContent)).toEqual([
       i18n.t('onboarding.formatTitle'),
@@ -1002,9 +1008,143 @@ describe('OnboardingWizard welcome', () => {
   it('adds the DJ software step to the list when one was found', async () => {
     api.rekordboxCollection = async () => '/Users/dj/Library/Pioneer/rekordbox/master.db'
     render(<OnboardingWizard settings={settings} onFinish={() => {}} />)
-    await screen.findByText(i18n.t('onboarding.step', { current: 1, total: 5 }))
+    await screen.findByText(i18n.t('onboarding.step', { current: 1, total: 6 }))
+    next()
     const steps = within(screen.getByTestId('onboarding-steps')).getAllByRole('listitem')
     expect(steps).toHaveLength(4)
     expect(steps[0]).toHaveTextContent(i18n.t('onboarding.djLibrariesTitle'))
+  })
+})
+
+describe('OnboardingWizard second Mac', () => {
+  type MacApi = {
+    pickConfigDir: () => Promise<string | null>
+    configDirHasSettings: (dir: string) => Promise<boolean>
+    setConfigDir: (dir: string | null) => Promise<Settings>
+  }
+  const api = (window as unknown as { api: MacApi }).api
+  const adopted: Settings = { ...settings, outputFormat: 'flac', outputDir: '/this-mac/out' }
+
+  function offerFolder(dir: string | null, hasSettings: boolean) {
+    api.pickConfigDir = async () => dir
+    api.configDirHasSettings = async () => hasSettings
+    api.setConfigDir = vi.fn(async () => adopted)
+    return api.setConfigDir as ReturnType<typeof vi.fn>
+  }
+
+  async function pickFolder(): Promise<void> {
+    fireEvent.click(screen.getByTestId('onboarding-mac-other'))
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('onboarding-mac-pick'))
+    })
+  }
+
+  it('asks first whether this is the first Mac, answered "yes" by default', () => {
+    render(<OnboardingWizard settings={settings} onFinish={() => {}} />)
+    expect(screen.getByTestId('onboarding-mac-first')).toBeChecked()
+    next()
+    expect(screen.getByTestId('onboarding-steps')).toBeInTheDocument()
+  })
+
+  it('does not ask on a re-run, where the DJ already went through the wizard', () => {
+    render(
+      <OnboardingWizard settings={{ ...settings, hasSeenOnboarding: true }} onFinish={() => {}} />,
+    )
+    expect(screen.queryByTestId('onboarding-mac-first')).toBeNull()
+  })
+
+  it('adopts the configuration of the folder picked and tells the app about it', async () => {
+    const setConfigDir = offerFolder('/icloud/Surco', true)
+    const onSettingsReplaced = vi.fn()
+    render(
+      <OnboardingWizard
+        settings={settings}
+        onFinish={() => {}}
+        onSettingsReplaced={onSettingsReplaced}
+      />,
+    )
+    await pickFolder()
+    expect(setConfigDir).toHaveBeenCalledWith('/icloud/Surco')
+    expect(onSettingsReplaced).toHaveBeenCalledWith(adopted)
+    expect(screen.getByTestId('onboarding-mac-picked')).toHaveTextContent('/icloud/Surco')
+  })
+
+  it('refuses a folder with no Surco configuration and moves nothing', async () => {
+    const setConfigDir = offerFolder('/icloud/Empty', false)
+    render(<OnboardingWizard settings={settings} onFinish={() => {}} />)
+    await pickFolder()
+    expect(setConfigDir).not.toHaveBeenCalled()
+    expect(screen.getByTestId('onboarding-mac-empty')).toBeInTheDocument()
+    expect(screen.getByTestId('onboarding-next')).toBeDisabled()
+  })
+
+  it('fills in the Traktor collection found on this Mac when the synced settings sync with Traktor', async () => {
+    const detect = window as unknown as {
+      api: { detectTraktorNmlPath: () => Promise<string | null> }
+    }
+    detect.api.detectTraktorNmlPath = async () => '/Users/dj/Traktor/collection.nml'
+    api.pickConfigDir = async () => '/icloud/Surco'
+    api.configDirHasSettings = async () => true
+    api.setConfigDir = async () => ({ ...adopted, syncTraktor: true, addToTraktor: true })
+    const onFinish = vi.fn()
+    try {
+      render(<OnboardingWizard settings={settings} onFinish={onFinish} />)
+      await act(async () => {})
+      await pickFolder()
+      next()
+      next()
+      expect(onFinish.mock.calls[0][0]).toEqual(
+        expect.objectContaining({ traktorNmlPath: '/Users/dj/Traktor/collection.nml' }),
+      )
+    } finally {
+      detect.api.detectTraktorNmlPath = async () => null
+    }
+  })
+
+  it('says so when the folder cannot be used and stays on the question', async () => {
+    api.pickConfigDir = async () => '/readonly/Surco'
+    api.configDirHasSettings = async () => true
+    api.setConfigDir = async () => {
+      throw new Error('EROFS')
+    }
+    render(<OnboardingWizard settings={settings} onFinish={() => {}} />)
+    await pickFolder()
+    expect(screen.getByTestId('onboarding-mac-failed')).toBeInTheDocument()
+    expect(screen.getByTestId('onboarding-next')).toBeDisabled()
+  })
+
+  it('keeps Next disabled until a folder has been adopted', async () => {
+    offerFolder(null, false)
+    render(<OnboardingWizard settings={settings} onFinish={() => {}} />)
+    await pickFolder()
+    expect(screen.getByTestId('onboarding-next')).toBeDisabled()
+  })
+
+  it('goes straight to what belongs to this Mac and skips the steps that synced', async () => {
+    offerFolder('/icloud/Surco', true)
+    render(<OnboardingWizard settings={settings} onFinish={() => {}} />)
+    await pickFolder()
+    next()
+    expect(screen.getByTestId('onboarding-output')).toBeInTheDocument()
+    expect(screen.queryByTestId('onboarding-steps')).toBeNull()
+    expect(
+      screen.getByText(i18n.t('onboarding.step', { current: 2, total: 2 })),
+    ).toBeInTheDocument()
+  })
+
+  it("finishes saving only this Mac's own paths and marking the wizard as seen", async () => {
+    offerFolder('/icloud/Surco', true)
+    const onFinish = vi.fn()
+    render(<OnboardingWizard settings={settings} onFinish={onFinish} />)
+    await pickFolder()
+    next()
+    next()
+    expect(onFinish).toHaveBeenCalledTimes(1)
+    expect(onFinish.mock.calls[0][0]).toEqual({
+      outputDir: '/this-mac/out',
+      engineLibraryDir: adopted.engineLibraryDir,
+      traktorNmlPath: adopted.traktorNmlPath,
+      hasSeenOnboarding: true,
+    })
   })
 })

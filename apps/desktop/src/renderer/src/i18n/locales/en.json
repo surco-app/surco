@@ -2088,7 +2088,23 @@
     "djLibraryNone": "None, I only tag files",
     "destinationKeepsCollection": "Tracks already in your DJ software or in Apple Music are updated where they are, so they keep their place in your collection.",
     "tokenOffer": "Search works as it is. A Discogs token turns on auto-match on import and keeps searches steady at busy times.",
-    "tokenAdd": "Add a Discogs token"
+    "tokenAdd": "Add a Discogs token",
+    "macTitle": "Is this your first Mac with Surco?",
+    "macBody": "If you already use it on another Mac, we bring your settings over and only ask about this one.",
+    "mac": {
+      "first": "Yes, I'm starting fresh",
+      "firstBody": "We walk you through format, audio and search.",
+      "other": "I already use it on another Mac",
+      "otherBody": "Pick the folder where you keep your settings."
+    },
+    "macPick": "Choose folder",
+    "macPicked": "Settings brought over from {{folder}}",
+    "macEmpty": "That folder has no Surco settings. Pick the one you use on your other Mac.",
+    "macFailed": "That folder couldn't be used. Check that it is writable and fully downloaded.",
+    "thisMacTitle": "What belongs to this Mac",
+    "thisMacBody": "Format, fields and search already come from your other Mac. What's left is where this one keeps its files.",
+    "thisMacTraktor": "Traktor collection at {{path}}",
+    "thisMacNote": "Everything else can be changed in Settings."
   },
   "help": {
     "title": "Help & FAQ",

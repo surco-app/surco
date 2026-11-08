@@ -10,8 +10,10 @@ import { type DetectedDjLibrary, detectedDjLibraries } from '../lib/djLibraries'
 import { DJ_REACH_SETTINGS, toDjReach } from '../lib/djReach'
 import {
   type AudioIntent,
+  buildAdoptedPatch,
   buildOnboardingPatch,
   programChoicePatch,
+  shouldShowOnboarding,
   seedAudioIntents,
 } from '../lib/onboarding'
 import { isMacOS } from '../lib/platform'
@@ -35,9 +37,9 @@ const AUDIO_INTENTS: AudioIntent[] = ['restore', 'level', 'quality']
 // Naming, grouping/genre presets and the fields editor are power-user tuning that lives
 // in Settings — every extra question here delays the first drop of files.
 const AFTER_PROGRAMS = ['format', 'audio', 'search'] as const
-type Step = 'welcome' | 'djLibraries' | (typeof AFTER_PROGRAMS)[number]
+type Step = 'mac' | 'thisMac' | 'welcome' | 'djLibraries' | (typeof AFTER_PROGRAMS)[number]
 
-const STEP_TITLES: Record<Exclude<Step, 'welcome'>, string> = {
+const STEP_TITLES: Record<Exclude<Step, 'mac' | 'thisMac' | 'welcome'>, string> = {
   djLibraries: 'onboarding.djLibrariesTitle',
   format: 'onboarding.formatTitle',
   audio: 'onboarding.audioTitle',
@@ -49,14 +51,23 @@ const WIZARD_DESTINATIONS = ['folder', 'beside', 'appleMusic'] as const
 interface Props {
   settings: Settings
   onFinish: (patch: Partial<Settings>) => void
+  onSettingsReplaced?: (settings: Settings) => void
 }
 
-export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Element {
+export function OnboardingWizard({
+  settings,
+  onFinish,
+  onSettingsReplaced,
+}: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   // Read at render (not module load) like the rest of the tree; Apple Music is the one
   // destination that only exists on macOS.
   const isMac = isMacOS()
   const [step, setStep] = useState(0)
+  const [asksMac] = useState(() => shouldShowOnboarding(settings))
+  const [otherMac, setOtherMac] = useState(false)
+  const [adoptedDir, setAdoptedDir] = useState<string | null>(null)
+  const [folderProblem, setFolderProblem] = useState<'empty' | 'failed' | null>(null)
   // The same two staged drafts the Settings modal keeps: every field the wizard offers
   // exists in Settings too, so staging them in the shared shape means the seeding and
   // the save serialization can never diverge between the two surfaces.
@@ -86,7 +97,7 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
   // A detection landing after the user moved on would grow the wizard under them (the
   // count jumps and Finish turns into Next), so from the second step on the length holds.
   const movedOn = useRef(false)
-  if (step > 0) movedOn.current = true
+  if (step > (asksMac ? 1 : 0)) movedOn.current = true
   useEffect(() => {
     Promise.all([
       window.api.rekordboxCollection(),
@@ -109,11 +120,15 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
         setDjLibraries(found)
       })
   }, [settings.engineLibraryDir])
-  const STEPS: readonly Step[] = [
-    'welcome',
-    ...(djLibraries.length > 0 ? (['djLibraries'] as const) : []),
-    ...AFTER_PROGRAMS,
-  ]
+  const STEPS: readonly Step[] =
+    adoptedDir !== null
+      ? ['mac', 'thisMac']
+      : [
+          ...(asksMac ? (['mac'] as const) : []),
+          'welcome',
+          ...(djLibraries.length > 0 ? (['djLibraries'] as const) : []),
+          ...AFTER_PROGRAMS,
+        ]
 
   // Each step change lands the focus on the new step's heading: Back unmounts on the first
   // step and the focus fell to body, outside the trap, and a focused heading is also what
@@ -134,7 +149,29 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
   function patchLocal<K extends keyof LocalDraft>(key: K, value: LocalDraft[K]): void {
     setLocal((p) => ({ ...p, [key]: value }))
   }
+  async function pickConfigFolder(): Promise<void> {
+    const dir = await window.api.pickConfigDir()
+    if (!dir) return
+    try {
+      if (!(await window.api.configDirHasSettings(dir))) {
+        setFolderProblem('empty')
+        return
+      }
+      const adopted = await window.api.setConfigDir(dir)
+      onSettingsReplaced?.(adopted)
+      setSynced(pickSynced(adopted))
+      setLocal(pickLocal(adopted))
+      setFolderProblem(null)
+      setAdoptedDir(dir)
+    } catch {
+      setFolderProblem('failed')
+    }
+  }
   function finish(): void {
+    if (adoptedDir !== null) {
+      onFinish(buildAdoptedPatch(local))
+      return
+    }
     const base = buildOnboardingPatch({ synced, local, audioIntents, seededIntents, settings })
     onFinish(
       djLibraries.length > 0
@@ -170,6 +207,14 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
     if (library.id === 'traktor' && on && !local.traktorNmlPath)
       patchLocal('traktorNmlPath', library.path)
   })
+  const fillTraktorPath = useStableCallback((library: DetectedDjLibrary): void => {
+    if (!local.traktorNmlPath && reaches(library)) patchLocal('traktorNmlPath', library.path)
+  })
+  useEffect(() => {
+    if (adoptedDir === null) return
+    const traktor = djLibraries.find((l) => l.id === 'traktor')
+    if (traktor?.path) fillTraktorPath(traktor)
+  }, [adoptedDir, djLibraries, fillTraktorPath])
   const preselected = useRef(false)
   useEffect(() => {
     if (preselected.current || !firstPick || djLibraries.length === 0) return
@@ -208,6 +253,123 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
           }}
         >
           <div className="min-h-[min(70vh,592px)]">
+            {STEPS[step] === 'mac' && (
+              <>
+                <h2
+                  id="onboarding-step-title"
+                  tabIndex={-1}
+                  className="focus-visible:shadow-none mb-1 text-lg font-semibold"
+                >
+                  {tr('onboarding.macTitle')}
+                </h2>
+                <p className="mb-4 text-sm text-fg-dim">{tr('onboarding.macBody')}</p>
+                <div role="radiogroup" className="flex flex-col gap-2">
+                  {(['first', 'other'] as const).map((choice) => (
+                    <label
+                      key={choice}
+                      className="flex cursor-pointer items-start gap-3 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2.5 has-[:checked]:border-[var(--color-accent)] has-[:checked]:bg-[var(--color-accent-soft)]"
+                    >
+                      <input
+                        data-testid={`onboarding-mac-${choice}`}
+                        type="radio"
+                        name="onboarding-mac"
+                        checked={(choice === 'other') === otherMac}
+                        disabled={adoptedDir !== null}
+                        onChange={() => setOtherMac(choice === 'other')}
+                        className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--color-accent)]"
+                      />
+                      <span className="min-w-0 text-sm font-medium">
+                        {tr(`onboarding.mac.${choice}`)}
+                        <span className="mt-0.5 block text-xs font-normal text-fg-dim">
+                          {tr(`onboarding.mac.${choice}Body`)}
+                        </span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+                {otherMac && (
+                  <div className="mt-4 flex flex-col gap-2">
+                    {adoptedDir === null ? (
+                      <button
+                        type="button"
+                        data-testid="onboarding-mac-pick"
+                        onClick={() => void pickConfigFolder()}
+                        className="press self-start rounded-lg border border-[var(--color-line-strong)] px-3 py-2 text-sm text-fg hover:bg-[var(--color-line)]"
+                      >
+                        {tr('onboarding.macPick')}
+                      </button>
+                    ) : (
+                      <p
+                        data-testid="onboarding-mac-picked"
+                        className="min-w-0 truncate text-sm text-fg-muted"
+                      >
+                        <Tooltip label={adoptedDir} />
+                        {tr('onboarding.macPicked', { folder: adoptedDir })}
+                      </p>
+                    )}
+                    {folderProblem === 'empty' && (
+                      <p
+                        data-testid="onboarding-mac-empty"
+                        role="alert"
+                        className="text-sm text-[var(--color-danger)]"
+                      >
+                        {tr('onboarding.macEmpty')}
+                      </p>
+                    )}
+                    {folderProblem === 'failed' && (
+                      <p
+                        data-testid="onboarding-mac-failed"
+                        role="alert"
+                        className="text-sm text-[var(--color-danger)]"
+                      >
+                        {tr('onboarding.macFailed')}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
+
+            {STEPS[step] === 'thisMac' && (
+              <>
+                <h2
+                  id="onboarding-step-title"
+                  tabIndex={-1}
+                  className="focus-visible:shadow-none mb-1 text-lg font-semibold"
+                >
+                  {tr('onboarding.thisMacTitle')}
+                </h2>
+                <p className="mb-4 text-sm text-fg-dim">{tr('onboarding.thisMacBody')}</p>
+                <span className="mb-1.5 block text-sm font-medium text-fg-muted">
+                  {tr('settings.outputDir')}
+                </span>
+                <OutputFolderField
+                  value={local.outputDir}
+                  onChange={(dir) => patchLocal('outputDir', dir)}
+                  testid="onboarding-output"
+                />
+                {synced.addToEngineDj || synced.syncEngineDj ? (
+                  <div className="mt-4">
+                    <EngineLibraryFields
+                      libraryDir={local.engineLibraryDir}
+                      onLibraryDirChange={(dir) => patchLocal('engineLibraryDir', dir)}
+                      testidPrefix="onboarding-engine"
+                    />
+                  </div>
+                ) : null}
+                {local.traktorNmlPath && (
+                  <p
+                    data-testid="onboarding-traktor-path"
+                    className="mt-4 min-w-0 truncate text-sm text-fg-muted"
+                  >
+                    <Tooltip label={local.traktorNmlPath} />
+                    {tr('onboarding.thisMacTraktor', { path: local.traktorNmlPath })}
+                  </p>
+                )}
+                <p className="mt-4 text-xs text-fg-dim">{tr('onboarding.thisMacNote')}</p>
+              </>
+            )}
+
             {STEPS[step] === 'welcome' && (
               <div className="flex min-h-[min(70vh,592px)] flex-col items-center justify-center text-center">
                 <AudioLines
@@ -229,8 +391,10 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                   data-testid="onboarding-steps"
                   className="mt-5 flex list-decimal flex-col gap-1.5 pl-5 text-left text-sm text-fg-muted marker:text-fg-faint"
                 >
-                  {STEPS.slice(1).map((id) => (
-                    <li key={id}>{tr(STEP_TITLES[id as Exclude<Step, 'welcome'>])}</li>
+                  {STEPS.filter((id) => id !== 'mac' && id !== 'welcome').map((id) => (
+                    <li key={id}>
+                      {tr(STEP_TITLES[id as Exclude<Step, 'mac' | 'thisMac' | 'welcome'>])}
+                    </li>
                   ))}
                 </ol>
               </div>
@@ -507,6 +671,7 @@ export function OnboardingWizard({ settings, onFinish }: Props): React.JSX.Eleme
                 ref={nextRef}
                 type="submit"
                 data-testid="onboarding-next"
+                disabled={STEPS[step] === 'mac' && otherMac && adoptedDir === null}
                 className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]"
               >
                 {isLast ? tr('onboarding.finish') : tr('onboarding.next')}

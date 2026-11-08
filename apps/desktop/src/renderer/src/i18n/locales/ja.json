@@ -2088,7 +2088,23 @@
     "djLibraryNone": "使っていない（ファイルのタグ付けだけ）",
     "destinationKeepsCollection": "DJソフトやApple Musicにすでにあるトラックはその場で更新され、コレクション内の位置が保たれます。",
     "tokenOffer": "検索はそのまま使えます。Discogsトークンがあると「インポート時の自動マッチング」が使え、混雑時も検索が安定します。",
-    "tokenAdd": "Discogsトークンを追加"
+    "tokenAdd": "Discogsトークンを追加",
+    "macTitle": "このMacでSurcoを使うのは初めてですか？",
+    "macBody": "すでに別のMacで使っている場合は、設定を引き継ぎ、このMacについてだけ質問します。",
+    "mac": {
+      "first": "はい、最初から始めます",
+      "firstBody": "フォーマット、オーディオ、検索の順にご案内します。",
+      "other": "別のMacですでに使っています",
+      "otherBody": "設定を保存しているフォルダを選んでください。"
+    },
+    "macPick": "フォルダを選ぶ",
+    "macPicked": "{{folder}} から設定を引き継ぎました",
+    "macEmpty": "そのフォルダにはSurcoの設定がありません。別のMacで使っているフォルダを選んでください。",
+    "macFailed": "そのフォルダは使えませんでした。書き込みできるか、ダウンロードが完了しているか確認してください。",
+    "thisMacTitle": "このMacに関すること",
+    "thisMacBody": "フォーマット、フィールド、検索はすでに別のMacから引き継がれています。残るのは、このMacがファイルを置く場所です。",
+    "thisMacTraktor": "{{path}} のTraktorコレクション",
+    "thisMacNote": "そのほかの項目は設定から変更できます。"
   },
   "help": {
     "title": "ヘルプ & FAQ",

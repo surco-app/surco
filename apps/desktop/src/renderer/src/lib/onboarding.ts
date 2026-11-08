@@ -153,6 +153,17 @@ export function buildOnboardingPatch(
   }
 }
 
+export function buildAdoptedPatch(
+  local: Pick<Settings, 'outputDir' | 'engineLibraryDir' | 'traktorNmlPath'>,
+): Partial<Settings> {
+  return {
+    outputDir: local.outputDir,
+    engineLibraryDir: local.engineLibraryDir,
+    traktorNmlPath: local.traktorNmlPath,
+    hasSeenOnboarding: true,
+  }
+}
+
 const PLAYLISTS_FIELD_OFFERED = {
   rekordbox: 'rekordboxPlaylistsFieldOffered',
   traktor: 'traktorPlaylistsFieldOffered',

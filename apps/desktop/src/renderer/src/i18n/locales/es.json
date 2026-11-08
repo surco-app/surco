@@ -2088,7 +2088,23 @@
     "djLibraryNone": "Ninguno, solo etiqueto archivos",
     "destinationKeepsCollection": "Las pistas que ya están en tu programa de DJ o en Apple Music se actualizan donde están, así conservan su sitio en tu colección.",
     "tokenOffer": "La búsqueda funciona tal cual. Un token de Discogs activa «Auto-emparejar al importar» y mantiene las búsquedas estables en horas punta.",
-    "tokenAdd": "Añadir un token de Discogs"
+    "tokenAdd": "Añadir un token de Discogs",
+    "macTitle": "¿Es tu primer Mac con Surco?",
+    "macBody": "Si ya lo usas en otro Mac, traemos tu configuración y solo te preguntamos lo de este equipo.",
+    "mac": {
+      "first": "Sí, empiezo de cero",
+      "firstBody": "Te guiamos por el formato, el audio y la búsqueda.",
+      "other": "Ya lo uso en otro Mac",
+      "otherBody": "Elige la carpeta donde guardas la configuración."
+    },
+    "macPick": "Elegir carpeta",
+    "macPicked": "Configuración traída de {{folder}}",
+    "macEmpty": "Esa carpeta no tiene configuración de Surco. Elige la que usas en el otro Mac.",
+    "macFailed": "No se pudo usar esa carpeta. Comprueba que se puede escribir en ella y que ya se ha descargado.",
+    "thisMacTitle": "Lo que es de este Mac",
+    "thisMacBody": "El formato, los campos y la búsqueda ya vienen de tu otro Mac. Falta saber dónde guarda este equipo sus ficheros.",
+    "thisMacTraktor": "Colección de Traktor en {{path}}",
+    "thisMacNote": "Todo lo demás se puede cambiar en Ajustes."
   },
   "help": {
     "title": "Ayuda y preguntas",

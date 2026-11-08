@@ -141,7 +141,11 @@ export function Overlays({
       </ModalExit>
 
       {activeModal?.type === 'onboarding' && settings && (
-        <OnboardingWizard settings={settings} onFinish={finishOnboarding} />
+        <OnboardingWizard
+          settings={settings}
+          onFinish={finishOnboarding}
+          onSettingsReplaced={setSettings}
+        />
       )}
 
       <ModalExit>
