@@ -1056,6 +1056,8 @@
         "unanalysed": "Pas d’analyse rekordbox",
         "none": "Surco ne trouve pas où ce morceau décolle",
         "marked": "Tu as déjà un CALL partout où Surco pense que le morceau décolle",
+        "changed": "Tu as modifié ce que Auto proposait. Auto apprend de cela quand tu enregistres.",
+        "own": "Tu as marqué autrement que Auto. Auto apprend de cela quand tu enregistres.",
         "selected": "Marquage auto de la sélection",
         "sure": "Ça décolle ici {{time}}",
         "why_one": "après {{count}} mesure avec peu de basses",

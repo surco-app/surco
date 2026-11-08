@@ -1056,6 +1056,8 @@
         "unanalysed": "rekordbox の解析なし",
         "none": "Surco はこのトラックのブレイク位置を見つけられません",
         "marked": "Surco がブレイクと判断した位置には、すべて CALL がすでにあります",
+        "changed": "Auto の提案を変更しました。保存すると Auto がそこから学びます。",
+        "own": "Auto とは違う場所にマークしました。保存すると Auto がそこから学びます。",
         "selected": "選択したトラックを自動マーク",
         "sure": "ここでブレイク {{time}}",
         "why_one": "低音の弱い {{count}} 小節のあと",

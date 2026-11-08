@@ -1056,6 +1056,8 @@
         "unanalysed": "No rekordbox analysis",
         "none": "Surco can’t find where this track breaks",
         "marked": "You already have a CALL everywhere Surco thinks the track breaks",
+        "changed": "You changed what Auto proposed. Auto learns from this when you save.",
+        "own": "You marked this differently from Auto. Auto learns from this when you save.",
         "selected": "Auto mark the selected",
         "sure": "Breaks here {{time}}",
         "why_one": "after {{count}} bar of weak bass",

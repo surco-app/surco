@@ -1056,6 +1056,8 @@
         "unanalysed": "Sem análise do rekordbox",
         "none": "O Surco não encontra onde esta faixa explode",
         "marked": "Você já tem um CALL em cada lugar onde o Surco acha que a faixa explode",
+        "changed": "Você mudou o que o Auto propôs. O Auto aprende com isso ao salvar.",
+        "own": "Você marcou diferente do Auto. O Auto aprende com isso ao salvar.",
         "selected": "Marcar automático nas selecionadas",
         "sure": "Explode aqui {{time}}",
         "why_one": "depois de {{count}} compasso com pouco grave",

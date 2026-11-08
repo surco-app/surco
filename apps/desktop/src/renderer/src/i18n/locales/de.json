@@ -1056,6 +1056,8 @@
         "unanalysed": "Keine rekordbox-Analyse",
         "none": "Surco findet den Drop in diesem Track nicht",
         "marked": "Du hast schon überall einen CALL, wo Surco den Drop vermutet",
+        "changed": "Du hast geändert, was Auto vorgeschlagen hat. Auto lernt daraus, wenn du speicherst.",
+        "own": "Du hast anders markiert als Auto. Auto lernt daraus, wenn du speicherst.",
         "selected": "Auswahl auto-markieren",
         "sure": "Drop hier {{time}}",
         "why_one": "nach {{count}} Takt mit wenig Bass",
