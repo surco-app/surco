@@ -574,7 +574,10 @@ const provisionalCues = createProvisionalList(
   fileStore(join(app.getPath('userData'), 'rekordbox-provisional.json')),
   () => rekordboxQueueWatch.poke(),
 )
+const markedRekordboxTracks = async (): Promise<number> =>
+  markedTracks(rekordboxCollectionPath(), await keyOf(rekordboxCollectionPath()))
 const cueTaste = createCueTaste(fileStore(join(app.getPath('userData'), 'cue-taste.json')), {
+  marked: markedRekordboxTracks,
   readCollection: () => readCollectionMarksAt(rekordboxCollectionPath()),
   tune: (tracks) => runInWorker<TunedTaste | null>({ type: 'tuneDrops', tracks }),
   shared: createSharedEdits(getConfigDir),
@@ -1453,8 +1456,7 @@ function registerIpc(): void {
   })
   registerCueTasteIpc({
     taste: cueTaste,
-    marked: async () =>
-      markedTracks(rekordboxCollectionPath(), await keyOf(rekordboxCollectionPath())),
+    marked: markedRekordboxTracks,
     learnFromEdits: () => getSettings().cueLearnFromEdits,
   })
   registerEngineCueQueueIpc(engineCueQueue, {

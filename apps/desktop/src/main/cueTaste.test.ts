@@ -123,6 +123,60 @@ describe('createCueTaste', () => {
     await vi.waitFor(() => expect(tune).toHaveBeenCalledTimes(1))
   })
 
+  describe('the first time', () => {
+    it('learns from the rekordbox marks on its own, so the DJ never has to press Learn', async () => {
+      const tune = vi.fn(async () => TUNED)
+      const taste = createCueTaste(memoryStore(), deps({ tune, marked: async () => 1576 }))
+      await taste.refresh(true)
+      await vi.waitFor(() => expect(tune).toHaveBeenCalledTimes(1))
+      expect(taste.profile()).not.toBeNull()
+    })
+
+    it('learns from saved edits when there are no rekordbox marks, as with Traktor or Engine', async () => {
+      const tune = vi.fn(async () => TUNED)
+      const taste = createCueTaste(memoryStore(), deps({ tune, marked: async () => 0 }))
+      taste.record(track('a'), false)
+      await taste.refresh(true)
+      await vi.waitFor(() => expect(tune).toHaveBeenCalledTimes(1))
+    })
+
+    it('does not make an empty profile when there is nothing marked and nothing saved', async () => {
+      const tune = vi.fn(async () => TUNED)
+      const taste = createCueTaste(memoryStore(), deps({ tune, marked: async () => 0 }))
+      await taste.refresh(true)
+      await new Promise((r) => setTimeout(r, 0))
+      expect(tune).not.toHaveBeenCalled()
+      expect(taste.profile()).toBeNull()
+    })
+
+    it('leaves a profile it already has alone on every launch', async () => {
+      const tune = vi.fn(async () => TUNED)
+      const taste = createCueTaste(memoryStore(), deps({ tune, marked: async () => 1576 }))
+      await taste.learn()
+      await taste.refresh(true)
+      await new Promise((r) => setTimeout(r, 0))
+      expect(tune).toHaveBeenCalledTimes(1)
+    })
+
+    it('stays quiet when the DJ turned learning off', async () => {
+      const tune = vi.fn(async () => TUNED)
+      const taste = createCueTaste(memoryStore(), deps({ tune, marked: async () => 1576 }))
+      await taste.refresh(false)
+      await new Promise((r) => setTimeout(r, 0))
+      expect(tune).not.toHaveBeenCalled()
+    })
+
+    it('treats an unreadable collection as nothing marked instead of failing the launch', async () => {
+      const tune = vi.fn(async () => TUNED)
+      const marked = async () => {
+        throw new Error('database locked')
+      }
+      const taste = createCueTaste(memoryStore(), deps({ tune, marked }))
+      await expect(taste.refresh(true)).resolves.toBeUndefined()
+      expect(tune).not.toHaveBeenCalled()
+    })
+  })
+
   describe('when another Mac saved something new', () => {
     const others = (edits: TasteTrack[]) => ({
       write: vi.fn(),

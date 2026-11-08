@@ -1946,10 +1946,9 @@
     },
     "cueProfile": {
       "title": "How you mark",
-      "firstTitle": "Teach Surco how you mark",
-      "firstHint": "Reads the cues you already placed and tunes Auto mark and the flow to you. It only reads and changes nothing.",
+      "firstTitle": "Surco will learn how you mark",
+      "firstHint": "It does it on its own, from the tracks you already marked in rekordbox and from what you save in the editor. You don't have to do anything.",
       "nothing": "There are no marked tracks to learn from yet. Auto mark uses the general model and will learn from the cues you save.",
-      "learn": "Learn from my tracks",
       "relearn": "Learn again",
       "learning": "Learning…",
       "summary_one": "Learned from {{tracks}} track you already marked",

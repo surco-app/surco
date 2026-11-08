@@ -130,13 +130,13 @@ describe('CueProfileCard', () => {
     expect(summary).toHaveTextContent('Surco 42')
   })
 
-  it('invites the DJ to teach Surco, saying how many marked tracks each source has', async () => {
+  it('tells the DJ Surco will learn on its own, saying how many marked tracks each source has, with no button to press', async () => {
     setup(read({ edits: { count: 3, sinceLearn: 3, corrected: 0 } }))
     const card = await screen.findByTestId('cue-profile')
-    expect(card).toHaveTextContent('Teach Surco how you mark')
+    expect(card).toHaveTextContent('Surco will learn how you mark')
     expect(screen.getByTestId('cue-profile-source-rekordbox')).toHaveTextContent('1,576')
     expect(screen.getByTestId('cue-profile-source-edits')).toHaveTextContent('3')
-    expect(screen.getByTestId('cue-profile-learn')).toBeEnabled()
+    expect(screen.queryByTestId('cue-profile-learn')).toBeNull()
   })
 
   it('says it learned from every marked track it read, rekordbox and saved together, whatever it tuned Auto on', async () => {
@@ -152,16 +152,16 @@ describe('CueProfileCard', () => {
     expect(screen.queryByTestId('cue-profile-source-edits')).toBeNull()
   })
 
-  it('says Auto uses the general model until there is something to learn from, the button there but off', async () => {
+  it('says Auto uses the general model until there is something to learn from', async () => {
     setup(read({ marked: 0 }))
     expect(await screen.findByTestId('cue-profile-nothing')).toBeInTheDocument()
-    expect(screen.getByTestId('cue-profile-learn')).toBeDisabled()
+    expect(screen.queryByTestId('cue-profile-learn')).toBeNull()
   })
 
-  it('learns on request and then shows what it learned', async () => {
+  it('learns again on request and then shows what it learned', async () => {
     let finish: (p: CueProfile) => void = () => {}
     const { api } = setup(
-      read(),
+      read({ profile: { ...PROFILE, sources: { rekordbox: 10, edits: 0 } } }),
       new Promise((done) => {
         finish = done
       }),
@@ -170,7 +170,6 @@ describe('CueProfileCard', () => {
     expect(screen.getByTestId('cue-profile-learn')).toBeDisabled()
     await act(async () => finish(PROFILE))
     expect(api.learnCueProfile).toHaveBeenCalledTimes(1)
-    expect(screen.getByTestId('cue-profile')).toHaveTextContent('How you mark')
     expect(screen.getByTestId('cue-profile-summary')).toHaveTextContent('1,618 tracks')
   })
 
@@ -220,7 +219,7 @@ describe('CueProfileCard', () => {
 
   it('shows a profile learned in the background as soon as it lands', async () => {
     const { api, changed } = setup(read())
-    await screen.findByTestId('cue-profile-learn')
+    await screen.findByTestId('cue-profile')
     vi.mocked(api.cueProfile).mockResolvedValue(read({ profile: PROFILE }))
     act(() => changed())
     await waitFor(() => expect(screen.getByTestId('cue-profile-summary')).toBeInTheDocument())
@@ -229,7 +228,7 @@ describe('CueProfileCard', () => {
   it('says the collection could not be read instead of spinning forever', async () => {
     const locked = Promise.reject(new Error('locked'))
     locked.catch(() => {})
-    setup(read(), locked)
+    setup(read({ profile: PROFILE }), locked)
     fireEvent.click(await screen.findByTestId('cue-profile-learn'))
     expect(await screen.findByTestId('cue-profile-failed')).toBeInTheDocument()
     expect(screen.getByTestId('cue-profile-learn')).toBeEnabled()

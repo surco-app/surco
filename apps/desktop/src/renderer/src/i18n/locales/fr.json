@@ -1946,10 +1946,9 @@
     },
     "cueProfile": {
       "title": "Ta façon de marquer",
-      "firstTitle": "Apprends à Surco ta façon de marquer",
-      "firstHint": "Lit les cues que tu as déjà posés et adapte le marquage auto et le flux à ta façon de faire. Il lit seulement et ne change rien.",
+      "firstTitle": "Surco va apprendre comment tu marques",
+      "firstHint": "Il le fait tout seul, à partir des pistes déjà marquées dans rekordbox et de ce que tu enregistres dans l'éditeur. Tu n'as rien à faire.",
       "nothing": "Pas encore de morceaux marqués pour apprendre. Le marquage auto utilise le modèle général et apprendra des cues que tu enregistres.",
-      "learn": "Apprendre de mes morceaux",
       "relearn": "Réapprendre",
       "learning": "Apprentissage…",
       "summary_one": "Appris de {{tracks}} morceau que tu as déjà marqué",
