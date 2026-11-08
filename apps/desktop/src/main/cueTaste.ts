@@ -7,6 +7,7 @@ import type { CollectionMarks } from './rekordboxLearnFlow'
 import type { QueueStore } from './rekordboxQueue'
 
 export const RELEARN_EVERY = 10
+export const SHARE_AFTER_MS = 60_000
 const MAX_EDITS = 1000
 
 export interface SharedEdits {
@@ -28,6 +29,7 @@ export interface CueTaste {
   edits: () => { count: number; sinceLearn: number }
   record: (track: TasteTrack, learnNow: boolean) => void
   learn: () => Promise<CueProfile>
+  flush: () => void
 }
 
 interface Saved {
@@ -84,12 +86,30 @@ export function createCueTaste(
     }
   }
 
+  let shareTimer: ReturnType<typeof setTimeout> | null = null
+
   const shareEdits = (): void => {
     try {
       deps.shared?.write(machine, saved.edits)
     } catch (err) {
       log.warn(`cue taste: edits not shared with other Macs: ${String(err)}`)
     }
+  }
+
+  const shareSoon = (): void => {
+    if (shareTimer) clearTimeout(shareTimer)
+    shareTimer = setTimeout(() => {
+      shareTimer = null
+      shareEdits()
+    }, SHARE_AFTER_MS)
+    shareTimer.unref?.()
+  }
+
+  const flush = (): void => {
+    if (!shareTimer) return
+    clearTimeout(shareTimer)
+    shareTimer = null
+    shareEdits()
   }
 
   const run = async (): Promise<CueProfile> => {
@@ -126,10 +146,11 @@ export function createCueTaste(
       const edits = [...saved.edits.filter((e) => e.key !== track.key), track].slice(-MAX_EDITS)
       saved = { ...saved, edits, sinceLearn: saved.sinceLearn + 1 }
       save()
-      shareEdits()
+      shareSoon()
       if (learnNow && saved.sinceLearn >= RELEARN_EVERY && !learning)
         learn().catch((err) => log.warn(`cue taste: learning from edits failed: ${String(err)}`))
     },
     learn,
+    flush,
   }
 }

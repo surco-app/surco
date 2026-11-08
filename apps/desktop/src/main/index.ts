@@ -2442,4 +2442,5 @@ app.on('window-all-closed', () => {
 app.on('will-quit', () => {
   activeConversions.killAll()
   cleanupPlaybackTemps()
+  cueTaste.flush()
 })

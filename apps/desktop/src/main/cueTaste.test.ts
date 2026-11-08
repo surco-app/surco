@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { fingerprintOf, type TasteTrack, type TunedTaste } from '../shared/dropTaste'
 import type { LearnTrack } from '../shared/learnFlow'
-import { type CueTasteDeps, createCueTaste, RELEARN_EVERY } from './cueTaste'
+import { type CueTasteDeps, createCueTaste, RELEARN_EVERY, SHARE_AFTER_MS } from './cueTaste'
 import type { CollectionMarks } from './rekordboxLearnFlow'
 
 function memoryStore(text: string | null = null) {
@@ -142,18 +142,59 @@ describe('createCueTaste', () => {
       readOthers: vi.fn<(machine: string) => TasteTrack[]>(() => others),
     })
 
-    it('writes the edits to the shared folder under this Mac, so another Mac can learn from them', () => {
+    it('writes the edits to the shared folder under this Mac once the DJ pauses, so another Mac can learn from them', () => {
+      vi.useFakeTimers()
       const shared = sharedWith()
       const taste = createCueTaste(memoryStore(), deps({ shared, newId: () => 'mac-a' }))
       taste.record(track('a'), false)
+      expect(shared.write).not.toHaveBeenCalled()
+      vi.advanceTimersByTime(SHARE_AFTER_MS)
       expect(shared.write).toHaveBeenLastCalledWith('mac-a', [track('a')])
+      vi.useRealTimers()
+    })
+
+    it('writes a whole session of saves once, because the shared file is megabytes in a synced folder', () => {
+      vi.useFakeTimers()
+      const shared = sharedWith()
+      const taste = createCueTaste(memoryStore(), deps({ shared }))
+      for (const key of ['a', 'b', 'c']) {
+        taste.record(track(key), false)
+        vi.advanceTimersByTime(SHARE_AFTER_MS / 2)
+      }
+      expect(shared.write).not.toHaveBeenCalled()
+      vi.advanceTimersByTime(SHARE_AFTER_MS)
+      expect(shared.write).toHaveBeenCalledTimes(1)
+      expect(shared.write.mock.calls[0][1]).toHaveLength(3)
+      vi.useRealTimers()
+    })
+
+    it('writes right away when the app is closing, so the last saves are not stuck waiting', () => {
+      vi.useFakeTimers()
+      const shared = sharedWith()
+      const taste = createCueTaste(memoryStore(), deps({ shared }))
+      taste.record(track('a'), false)
+      taste.flush()
+      expect(shared.write).toHaveBeenCalledTimes(1)
+      vi.advanceTimersByTime(SHARE_AFTER_MS * 2)
+      expect(shared.write).toHaveBeenCalledTimes(1)
+      vi.useRealTimers()
+    })
+
+    it('has nothing to write on close when nothing was saved', () => {
+      const shared = sharedWith()
+      createCueTaste(memoryStore(), deps({ shared })).flush()
+      expect(shared.write).not.toHaveBeenCalled()
     })
 
     it('keeps the same Mac name after a restart, so it overwrites its own file instead of leaving copies', () => {
       const store = memoryStore()
       const shared = sharedWith()
-      createCueTaste(store, deps({ shared, newId: () => 'mac-a' })).record(track('a'), false)
-      createCueTaste(store, deps({ shared, newId: () => 'mac-b' })).record(track('b'), false)
+      const first = createCueTaste(store, deps({ shared, newId: () => 'mac-a' }))
+      first.record(track('a'), false)
+      first.flush()
+      const second = createCueTaste(store, deps({ shared, newId: () => 'mac-b' }))
+      second.record(track('b'), false)
+      second.flush()
       expect(shared.write.mock.calls.map(([machine]) => machine)).toEqual(['mac-a', 'mac-a'])
     })
 
@@ -177,7 +218,8 @@ describe('createCueTaste', () => {
         throw new Error('disk full')
       })
       const taste = createCueTaste(memoryStore(), deps({ shared }))
-      expect(() => taste.record(track('a'), false)).not.toThrow()
+      taste.record(track('a'), false)
+      expect(() => taste.flush()).not.toThrow()
       expect(taste.edits().count).toBe(1)
     })
 
