@@ -1,5 +1,32 @@
 [
   {
+    "version": "1.30",
+    "date": "November 8, 2026",
+    "title": "Auto apprend tout seul comment tu marques, et la grille reste verrouillée",
+    "items": [
+      {
+        "text": "Auto apprend tout seul comment tu marques. Il n'y a pas de bouton pour apprendre : il le fait la première fois à partir des pistes que tu as déjà marquées, puis de nouveau quand tu corriges quelques pistes ou qu'un autre Mac apporte de nouvelles modifications. Ce que tu corriges pèse plus que ce que tu laisses tel qu'Auto l'a proposé. La carte « Ta façon de marquer » compte combien de tes pistes enregistrées tu as corrigées, et dans l'éditeur un avis te dit quand Auto va apprendre d'un changement que tu as fait.",
+        "in": "1.30.0"
+      },
+      {
+        "text": "Avec un dossier de réglages synchronisé, tes modifications de cues voyagent entre tes Mac et Auto apprend sur chacun de ce que tu corriges sur n'importe lequel.",
+        "in": "1.30.0"
+      },
+      {
+        "text": "Quand Surco écrit une grille dans rekordbox, Traktor ou Engine DJ, il la laisse verrouillée, donc réanalyser la piste dans le logiciel ne l'efface plus. Si tu la corriges dans Surco, il enregistre par-dessus même verrouillée, et tu peux corriger depuis Surco une grille que tu avais verrouillée dans Traktor ou Engine DJ.",
+        "in": "1.30.0"
+      },
+      {
+        "text": "Quand la grille d'une piste change, les cues qui étaient sur un temps de l'ancienne restent sur le même temps de la nouvelle au lieu de rester là où ils étaient.",
+        "in": "1.30.0"
+      },
+      {
+        "text": "Le premier lancement demande si c'est ton premier Mac avec Surco. Si tu l'utilises déjà sur un autre, tu choisis le dossier de réglages, Surco reprend ta configuration et ne pose de questions que sur cette machine. Quand tu restaures une sauvegarde faite sur un autre Mac, les dossiers et la collection qui n'existent pas sur celui-ci restent comme tu les avais ici.",
+        "in": "1.30.0"
+      }
+    ]
+  },
+  {
     "version": "1.29",
     "date": "November 7, 2026",
     "title": "Déplace les playlists en les faisant glisser, et annule les changements de tags",

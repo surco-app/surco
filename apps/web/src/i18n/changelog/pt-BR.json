@@ -1,5 +1,32 @@
 [
   {
+    "version": "1.30",
+    "date": "November 8, 2026",
+    "title": "O Auto aprende sozinho como você marca, e a grade fica travada",
+    "items": [
+      {
+        "text": "O Auto aprende sozinho como você marca. Não há botão de aprender: ele faz isso na primeira vez com as faixas que você já marcou, e de novo quando você corrige algumas faixas ou outro Mac traz edições novas. O que você corrige pesa mais do que o que você deixa como o Auto propôs. O cartão “Seu jeito de marcar” conta quantas das suas faixas salvas você corrigiu, e no editor um aviso diz quando o Auto vai aprender com uma mudança sua.",
+        "in": "1.30.0"
+      },
+      {
+        "text": "Com uma pasta de ajustes sincronizada, suas edições de cues viajam entre seus Macs e o Auto aprende em todos eles com o que você corrige em qualquer um.",
+        "in": "1.30.0"
+      },
+      {
+        "text": "Quando o Surco escreve uma grade no rekordbox, no Traktor ou no Engine DJ, ele a deixa travada, então analisar a faixa de novo no programa não a apaga mais. Se você a corrige no Surco, ele salva por cima mesmo travada, e você pode corrigir pelo Surco uma grade que travou no Traktor ou no Engine DJ.",
+        "in": "1.30.0"
+      },
+      {
+        "text": "Quando a grade de uma faixa muda, os cues que estavam sobre uma batida da antiga ficam na mesma batida da nova em vez de ficar onde estavam.",
+        "in": "1.30.0"
+      },
+      {
+        "text": "A primeira abertura pergunta se este é o seu primeiro Mac com o Surco. Se você já usa em outro, escolhe a pasta de ajustes, o Surco traz sua configuração e só pergunta sobre este equipamento. Ao restaurar um backup feito em outro Mac, as pastas e a coleção que não existem neste ficam como você as tinha aqui.",
+        "in": "1.30.0"
+      }
+    ]
+  },
+  {
     "version": "1.29",
     "date": "November 7, 2026",
     "title": "Mova playlists arrastando e desfaça mudanças nas tags",

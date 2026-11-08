@@ -1,5 +1,32 @@
 [
   {
+    "version": "1.30",
+    "date": "8 de noviembre de 2026",
+    "title": "Auto aprende solo cómo marcas y la rejilla queda bloqueada",
+    "items": [
+      {
+        "text": "Auto aprende solo cómo marcas. No hay botón de aprender: lo hace la primera vez con las pistas que ya marcaste, y vuelve a hacerlo cuando corriges unas cuantas pistas o cuando otro Mac trae ediciones nuevas. Lo que corriges pesa más que lo que dejas como Auto lo propuso. La tarjeta «Tu forma de marcar» cuenta cuántas de tus pistas guardadas corregiste, y en el editor un aviso te dice cuándo Auto va a aprender de un cambio tuyo.",
+        "in": "1.30.0"
+      },
+      {
+        "text": "Con una carpeta de ajustes sincronizada, tus ediciones de cues viajan entre tus Macs y Auto aprende en todos de lo que corriges en cualquiera.",
+        "in": "1.30.0"
+      },
+      {
+        "text": "Cuando Surco escribe una rejilla en rekordbox, Traktor o Engine DJ, la deja bloqueada, así que volver a analizar la pista en el programa ya no la borra. Si la corriges en Surco, guarda encima aunque esté bloqueada, y puedes arreglar desde Surco una rejilla que bloqueaste en Traktor o Engine DJ.",
+        "in": "1.30.0"
+      },
+      {
+        "text": "Al cambiar la rejilla de una pista, los cues que estaban sobre un golpe de la anterior se quedan en el mismo golpe de la nueva en vez de quedarse donde estaban.",
+        "in": "1.30.0"
+      },
+      {
+        "text": "El primer arranque pregunta si es tu primer Mac con Surco. Si ya lo usas en otro, eliges la carpeta de ajustes, Surco trae tu configuración y solo te pregunta lo de este equipo. Al restaurar una copia hecha en otro Mac, las carpetas y la colección que no existen en este se quedan como las tenías aquí.",
+        "in": "1.30.0"
+      }
+    ]
+  },
+  {
     "version": "1.29",
     "date": "7 de noviembre de 2026",
     "title": "Mueve playlists arrastrando y deshaz los cambios de etiquetas",

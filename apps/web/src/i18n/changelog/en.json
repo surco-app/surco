@@ -1,5 +1,32 @@
 [
   {
+    "version": "1.30",
+    "date": "November 8, 2026",
+    "title": "Auto learns how you mark on its own, and the grid stays locked",
+    "items": [
+      {
+        "text": "Auto learns how you mark on its own. There is no learn button: it does it the first time from the tracks you already marked, and again when you correct a few tracks or another Mac brings new edits. What you correct weighs more than what you leave as Auto proposed it. The “How you mark” card counts how many of your saved tracks you corrected, and in the editor a notice tells you when Auto will learn from a change you made.",
+        "in": "1.30.0"
+      },
+      {
+        "text": "With a synced settings folder, your cue edits travel between your Macs and Auto learns on all of them from what you correct on any one.",
+        "in": "1.30.0"
+      },
+      {
+        "text": "When Surco writes a grid in rekordbox, Traktor or Engine DJ, it leaves it locked, so analyzing the track again in the program no longer wipes it. If you fix it in Surco, it saves over a locked grid, and you can fix from Surco a grid you locked in Traktor or Engine DJ.",
+        "in": "1.30.0"
+      },
+      {
+        "text": "When a track’s grid changes, the cues that sat on a beat of the old one stay on the same beat of the new one instead of staying where they were.",
+        "in": "1.30.0"
+      },
+      {
+        "text": "The first run asks whether this is your first Mac with Surco. If you already use it on another, you pick the settings folder, Surco brings your setup over and only asks about this machine. When you restore a backup made on another Mac, the folders and collection that don’t exist on this one stay as you had them here.",
+        "in": "1.30.0"
+      }
+    ]
+  },
+  {
     "version": "1.29",
     "date": "November 7, 2026",
     "title": "Drag playlists around, and undo tag changes",

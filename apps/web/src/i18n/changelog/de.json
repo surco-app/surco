@@ -1,5 +1,32 @@
 [
   {
+    "version": "1.30",
+    "date": "November 8, 2026",
+    "title": "Auto lernt von selbst, wie du markierst, und das Raster bleibt gesperrt",
+    "items": [
+      {
+        "text": "Auto lernt von selbst, wie du markierst. Es gibt keinen Lernen-Button: Beim ersten Mal lernt es aus den Tracks, die du schon markiert hast, und dann wieder, wenn du ein paar Tracks korrigierst oder ein anderer Mac neue Änderungen mitbringt. Was du korrigierst, zählt mehr als das, was du so lässt, wie Auto es vorgeschlagen hat. Die Karte „Wie du markierst“ zählt, wie viele deiner gespeicherten Titel du korrigiert hast, und im Editor sagt dir ein Hinweis, wann Auto aus einer Änderung von dir lernt.",
+        "in": "1.30.0"
+      },
+      {
+        "text": "Mit einem synchronisierten Einstellungsordner wandern deine Cue-Änderungen zwischen deinen Macs, und Auto lernt auf allen davon, was du auf einem einzigen korrigierst.",
+        "in": "1.30.0"
+      },
+      {
+        "text": "Wenn Surco ein Raster in rekordbox, Traktor oder Engine DJ schreibt, lässt es es gesperrt, sodass eine erneute Analyse des Tracks im Programm es nicht mehr löscht. Korrigierst du es in Surco, speichert es auch über ein gesperrtes Raster, und ein Raster, das du in Traktor oder Engine DJ gesperrt hast, kannst du von Surco aus korrigieren.",
+        "in": "1.30.0"
+      },
+      {
+        "text": "Wenn sich das Raster eines Tracks ändert, bleiben die Cues, die auf einem Beat des alten lagen, auf demselben Beat des neuen, statt dort zu bleiben, wo sie waren.",
+        "in": "1.30.0"
+      },
+      {
+        "text": "Der erste Start fragt, ob das dein erster Mac mit Surco ist. Nutzt du es schon auf einem anderen, wählst du den Einstellungsordner, Surco übernimmt deine Einrichtung und fragt nur nach diesem Gerät. Stellst du eine Sicherung wieder her, die auf einem anderen Mac erstellt wurde, bleiben Ordner und Sammlung, die es auf diesem nicht gibt, so, wie du sie hier hattest.",
+        "in": "1.30.0"
+      }
+    ]
+  },
+  {
     "version": "1.29",
     "date": "November 7, 2026",
     "title": "Verschiebe Playlists per Drag-and-drop und mach Tag-Änderungen rückgängig",
