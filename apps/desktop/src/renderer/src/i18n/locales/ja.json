@@ -269,6 +269,7 @@
     "coverDownloadFailed": "アートワークのダウンロードに失敗しました。",
     "coverNotImage": "そのアドレスは画像を示していません。",
     "bandcampUnavailable": "Bandcampが正しく応答しませんでした。しばらく待って再度お試しください。",
+    "bandcampRefused": "BandcampがSurcoにこのリリースを開かせてくれません。ほかの結果を試してください。",
     "bandcampPageUnreadable": "そのBandcampページは読み込めませんでした。",
     "bandcampUrlBlocked": "そのBandcampアドレスは許可されていないため、開きませんでした。",
     "deezerUnavailable": "Deezerが正しく応答しませんでした。しばらく待って再度お試しください。",

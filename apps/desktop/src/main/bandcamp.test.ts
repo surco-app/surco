@@ -287,6 +287,60 @@ describe('getRelease', () => {
   })
 })
 
+describe("getRelease on a label's own domain", () => {
+  const tralbum = {
+    id: 7,
+    artist: 'Kyle Starkey',
+    current: { title: 'Yo Wicked' },
+    trackinfo: [{ track_num: 1, title: 'Yo Wicked', duration: 60 }],
+  }
+  const url = 'https://shallnotfade.co.uk/track/yo-wicked'
+
+  function redirectLoop(): TypeError {
+    const error = new TypeError('fetch failed')
+    error.cause = new Error('redirect count exceeded')
+    return error
+  }
+
+  function userAgentOf(call: unknown[]): string {
+    return (call[1] as { headers: Record<string, string> }).headers['User-Agent']
+  }
+
+  it('asks as Surco first, and keeps asking as Surco when the page answers', async () => {
+    const fn = mockPage(pageWith(tralbum))
+    await getRelease('https://shallnotfade.co.uk/track/plain')
+    expect(fn).toHaveBeenCalledTimes(1)
+    expect(userAgentOf(fn.mock.calls[0])).toMatch(/^Surco\//)
+  })
+
+  it('tries once more as a web browser still naming Surco when Bandcamp loops the redirects', async () => {
+    const fn = vi
+      .fn()
+      .mockRejectedValueOnce(redirectLoop())
+      .mockResolvedValueOnce({ status: 200, ok: true, text: async () => pageWith(tralbum) })
+    vi.stubGlobal('fetch', fn)
+    const release = await getRelease(`${url}?first`)
+    expect(release.title).toBe('Yo Wicked')
+    expect(fn).toHaveBeenCalledTimes(2)
+    expect(userAgentOf(fn.mock.calls[0])).toMatch(/^Surco\//)
+    expect(userAgentOf(fn.mock.calls[1])).toMatch(/^Mozilla\/5\.0 .*Surco\//)
+  })
+
+  it('says Bandcamp refused when the web identity loops too, instead of blaming the connection', async () => {
+    const fn = vi.fn().mockRejectedValue(redirectLoop())
+    vi.stubGlobal('fetch', fn)
+    await expect(getRelease(`${url}?second`)).rejects.toThrow('SURCO_ERR:bandcampRefused')
+    expect(fn).toHaveBeenCalledTimes(2)
+  })
+
+  it('does not retry a failure that is not a redirect loop', async () => {
+    const fn = vi.fn().mockRejectedValue(new TypeError('fetch failed'))
+    vi.stubGlobal('fetch', fn)
+    await expect(getRelease(`${url}?offline`)).rejects.toThrow('fetch failed')
+    expect(fn).toHaveBeenCalledTimes(1)
+  })
+})
+
 describe('extractTralbum / parseRelease', () => {
   // The attribute is HTML-escaped; the unescape must round-trip quotes and ampersands so
   // a title like «Rock & "Roll"» parses instead of throwing.

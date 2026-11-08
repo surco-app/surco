@@ -269,6 +269,7 @@
     "coverDownloadFailed": "Não foi possível baixar a capa.",
     "coverNotImage": "Esse endereço não leva a uma imagem.",
     "bandcampUnavailable": "O Bandcamp não respondeu direito. Tente de novo daqui a pouco.",
+    "bandcampRefused": "O Bandcamp não deixa o Surco abrir esta página. Tente outro resultado.",
     "bandcampPageUnreadable": "Não foi possível ler essa página do Bandcamp.",
     "bandcampUrlBlocked": "Esse endereço do Bandcamp não é permitido, então não foi aberto.",
     "deezerUnavailable": "O Deezer não respondeu direito. Tente de novo daqui a pouco.",

@@ -12,6 +12,8 @@ import { searchCandidates } from './searchQuery'
 // notice — the parsing is defensive and the limiter keeps the call rate gentle.
 const SEARCH_URL = 'https://bandcamp.com/api/bcsearch_public_api/1/autocomplete_elastic'
 const USER_AGENT = 'Surco/0.1 +https://github.com/surco-app/surco'
+const WEB_USER_AGENT =
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Surco/0.1 (+https://github.com/surco-app/surco)'
 
 // A stalled socket would otherwise leave the request — and the limiter token it spent —
 // hanging forever; 10s is generous for endpoints that answer in well under a second.
@@ -211,6 +213,34 @@ export function parseRelease(html: string, url: string): Release {
   }
 }
 
+function loopedRedirects(e: unknown): boolean {
+  return (
+    e instanceof TypeError &&
+    e.cause instanceof Error &&
+    e.cause.message === 'redirect count exceeded'
+  )
+}
+
+async function fetchPage(url: string, priority?: SearchPriority): Promise<Response> {
+  const get = (userAgent: string): Promise<Response> =>
+    fetch(url, {
+      headers: { 'User-Agent': userAgent },
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    })
+  try {
+    return await get(USER_AGENT)
+  } catch (e) {
+    if (!loopedRedirects(e)) throw e
+  }
+  await bandcampLimiter.acquire(priority)
+  try {
+    return await get(WEB_USER_AGENT)
+  } catch (e) {
+    if (loopedRedirects(e)) throw errorWithKey('bandcampRefused', url)
+    throw e
+  }
+}
+
 // A Bandcamp release is addressed by its page URL (not a numeric id): the URL is the one
 // thing the autocomplete hands back that resolves to the full album/track data.
 export async function getRelease(url: string, priority?: SearchPriority): Promise<Release> {
@@ -225,10 +255,7 @@ export async function getRelease(url: string, priority?: SearchPriority): Promis
     'activity.loadBandcampRelease',
     async () => {
       await bandcampLimiter.acquire(priority)
-      const res = await fetch(url, {
-        headers: { 'User-Agent': USER_AGENT },
-        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-      })
+      const res = await fetchPage(url, priority)
       if (!res.ok) throw errorWithKey('bandcampUnavailable', String(res.status))
       const release = parseRelease(await res.text(), url)
       cacheStore.setRelease(url, release)

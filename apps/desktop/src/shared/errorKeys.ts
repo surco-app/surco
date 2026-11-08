@@ -31,6 +31,7 @@ export const ERROR_KEYS = [
   'coverDownloadFailed',
   'coverNotImage',
   'bandcampUnavailable',
+  'bandcampRefused',
   'bandcampPageUnreadable',
   'bandcampUrlBlocked',
   'deezerUnavailable',

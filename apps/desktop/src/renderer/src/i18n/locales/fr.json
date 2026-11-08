@@ -269,6 +269,7 @@
     "coverDownloadFailed": "La pochette n’a pas pu être téléchargée.",
     "coverNotImage": "Cette adresse ne mène pas à une image.",
     "bandcampUnavailable": "Bandcamp n’a pas répondu correctement. Réessaie dans un instant.",
+    "bandcampRefused": "Bandcamp ne laisse pas Surco ouvrir cette fiche. Essaie un autre résultat.",
     "bandcampPageUnreadable": "Cette page Bandcamp n’a pas pu être lue.",
     "bandcampUrlBlocked": "Cette adresse Bandcamp n’est pas autorisée, elle n’a donc pas été ouverte.",
     "deezerUnavailable": "Deezer n’a pas répondu correctement. Réessaie dans un instant.",
