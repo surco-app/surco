@@ -3996,8 +3996,9 @@ describe('runProcessTrack — checking what it wrote', () => {
   })
 
   // The step already said it failed; with no entry to read, the place is not left out as if
-  // Music were never asked.
-  it('a Music step that failed lists Music as missing', async () => {
+  // Music were never asked. It is not called missing either: a failed add can leave the entry
+  // in Music, as when Music answers an add with the entry it already had.
+  it('a Music step that failed lists Music as unchecked, never as missing', async () => {
     const verifyMusic = vi.fn<NonNullable<ProcessTrackDeps['verifyMusic']>>(async () => musicOk)
     const deps = makeDeps({
       platform: 'darwin',
@@ -4013,9 +4014,23 @@ describe('runProcessTrack — checking what it wrote', () => {
     expect(result.appleMusicFailed).toBe(true)
     expect(result.verification?.checks[1]).toEqual({
       place: 'appleMusic',
-      state: 'mismatch',
-      detail: { key: 'musicMissing' },
+      state: 'unreadable',
+      detail: { key: 'musicUnreadable' },
     })
+  })
+
+  it('a Music add answered with the entry it already had is not reported as missing', async () => {
+    const deps = makeDeps({
+      platform: 'darwin',
+      addToAppleMusic: vi.fn(async () => {
+        throw new Error('SURCO_ERR:appleMusicAddReturnedOld: lib-9')
+      }),
+    })
+
+    const result = await runProcessTrack(job({ meta, addToAppleMusic: true }), deps)
+
+    expect(result.appleMusicErrorKey).toBe('appleMusicAddReturnedOld')
+    expect(result.verification?.checks[1].detail.key).not.toBe('musicMissing')
   })
 
   it("Music only checks the file at the entry's location, not the removed temp", async () => {

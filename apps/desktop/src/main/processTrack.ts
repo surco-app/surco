@@ -1222,7 +1222,11 @@ export async function runProcessTrack(
               'musicUnreadable',
             )
           : musicStep && appleMusicFailed
-            ? ({ place: 'appleMusic', state: 'mismatch', detail: { key: 'musicMissing' } } as const)
+            ? ({
+                place: 'appleMusic',
+                state: 'unreadable',
+                detail: { key: 'musicUnreadable' },
+              } as const)
             : undefined,
       ])
     } finally {
