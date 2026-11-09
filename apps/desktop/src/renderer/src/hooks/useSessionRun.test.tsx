@@ -1,0 +1,226 @@
+// @vitest-environment jsdom
+import { act, cleanup, renderHook } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { PlaylistRole, SessionAnswers } from '../../../shared/sessionTypes'
+import type { SourcePlaylistEntry } from '../../../shared/types'
+import { type SessionRunDeps, useSessionRun } from './useSessionRun'
+import type { SessionWriter } from './useSessionWrite'
+
+afterEach(cleanup)
+
+const ANSWERS: SessionAnswers = {
+  minutes: 10,
+  sources: ['s'],
+  fresh: [],
+  freshShare: 0,
+  preferCombos: false,
+  harmony: 'free',
+  tasteWeight: true,
+  alternate: false,
+  surprise: false,
+}
+
+const entry = (path: string): SourcePlaylistEntry => ({
+  path,
+  separator: false,
+  meta: { bpm: '140' },
+  preview: { title: path, artist: '', durationSec: 300, cues: [] },
+})
+
+const ROWS = new Map([['s', [entry('/m/a.mp3'), entry('/m/b.mp3'), entry('/m/c.mp3')]]])
+
+let create = vi.fn<SessionWriter['create']>()
+let replace = vi.fn<SessionWriter['replace']>()
+
+function setup(over: Partial<SessionRunDeps> = {}) {
+  create = vi.fn<SessionWriter['create']>(async () => 'new1')
+  replace = vi.fn<SessionWriter['replace']>(async () => 'new2')
+  const deps: SessionRunDeps = {
+    roles: { s: 'any' } satisfies Record<string, PlaylistRole>,
+    rows: { load: vi.fn(async () => ROWS), loading: false, failed: [] },
+    writer: { create, replace },
+    nameFor: () => 'Sesión del 9/11',
+    openPlaylist: vi.fn(),
+    saveAnswers: vi.fn(),
+    newSeed: () => 100,
+    ...over,
+  }
+  const { result } = renderHook(() => useSessionRun(deps))
+  return { deps, result }
+}
+
+describe('useSessionRun build', () => {
+  it('saves the answers, writes the session as a new playlist and opens it', async () => {
+    const { deps, result } = setup()
+
+    let outcome: string | undefined
+    await act(async () => {
+      outcome = await result.current.build('folder', ANSWERS)
+    })
+
+    expect(outcome).toBe('built')
+    expect(deps.saveAnswers).toHaveBeenCalledExactlyOnceWith(ANSWERS)
+    expect(create).toHaveBeenCalledOnce()
+    const [parent, name, refs] = create.mock.calls[0] as unknown as [string, string, unknown[]]
+    expect(parent).toBe('folder')
+    expect(name).toBe('Sesión del 9/11')
+    expect(refs.length).toBeGreaterThan(0)
+    expect(deps.openPlaylist).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ id: 'new1', name: 'Sesión del 9/11', kind: 'playlist' }),
+    )
+    expect(result.current.recent).toMatchObject({
+      playlistId: 'new1',
+      parentId: 'folder',
+      name: 'Sesión del 9/11',
+      seed: 100,
+    })
+  })
+
+  it('reads the chosen playlists through the shared reader', async () => {
+    const { deps, result } = setup()
+    await act(async () => {
+      await result.current.build('folder', { ...ANSWERS, fresh: ['n'] })
+    })
+    expect(deps.rows.load).toHaveBeenCalledWith(['s', 'n'])
+  })
+
+  it('reports a refused write and leaves no band behind', async () => {
+    const { deps, result } = setup({
+      writer: { create: vi.fn(async () => null), replace: vi.fn(async () => null) },
+    })
+
+    let outcome: string | undefined
+    await act(async () => {
+      outcome = await result.current.build('folder', ANSWERS)
+    })
+
+    expect(outcome).toBe('refused')
+    expect(result.current.recent).toBeNull()
+    expect(deps.openPlaylist).not.toHaveBeenCalled()
+  })
+
+  it('writes nothing when there is not a single track to put in', async () => {
+    const { result } = setup({
+      rows: { load: vi.fn(async () => new Map()), loading: false, failed: [] },
+    })
+
+    let outcome: string | undefined
+    await act(async () => {
+      outcome = await result.current.build('folder', ANSWERS)
+    })
+
+    expect(outcome).toBe('empty')
+    expect(create).not.toHaveBeenCalled()
+  })
+
+  it('is busy while the write is going and ignores a second build meanwhile', async () => {
+    let release: (id: string | null) => void = () => {}
+    const create = vi.fn(() => new Promise<string | null>((resolve) => (release = resolve)))
+    const { result } = setup({ writer: { create, replace: vi.fn(async () => null) } })
+
+    let first: Promise<string> = Promise.resolve('')
+    act(() => {
+      first = result.current.build('folder', ANSWERS)
+    })
+    expect(result.current.busy).toBe(true)
+    let second: string | undefined
+    await act(async () => {
+      second = await result.current.build('folder', ANSWERS)
+    })
+    expect(second).toBe('refused')
+    expect(create).toHaveBeenCalledOnce()
+
+    await act(async () => {
+      release('new1')
+      await first
+    })
+    expect(result.current.busy).toBe(false)
+  })
+})
+
+async function built(over: Partial<SessionRunDeps> = {}) {
+  const ctx = setup(over)
+  await act(async () => {
+    await ctx.result.current.build('folder', ANSWERS)
+  })
+  return ctx
+}
+
+describe('useSessionRun redo and adjust', () => {
+  it('replaces the playlist with another draw of the same answers', async () => {
+    const { deps, result } = await built()
+
+    let outcome: string | undefined
+    await act(async () => {
+      outcome = await result.current.redo()
+    })
+
+    expect(outcome).toBe('built')
+    expect(replace).toHaveBeenCalledOnce()
+    const [parent, oldId, name] = replace.mock.calls[0] as unknown as [string, string, string]
+    expect([parent, oldId, name]).toEqual(['folder', 'new1', 'Sesión del 9/11'])
+    expect(result.current.recent).toMatchObject({ playlistId: 'new2', seed: 101 })
+    expect(deps.openPlaylist).toHaveBeenLastCalledWith(expect.objectContaining({ id: 'new2' }))
+  })
+
+  it('keeps the band and the old playlist when the replacement is refused', async () => {
+    const { result } = await built({
+      writer: {
+        create: vi.fn(async () => 'new1'),
+        replace: vi.fn(async () => null),
+      },
+    })
+
+    let outcome: string | undefined
+    await act(async () => {
+      outcome = await result.current.redo()
+    })
+
+    expect(outcome).toBe('refused')
+    expect(result.current.recent).toMatchObject({ playlistId: 'new1', seed: 100 })
+  })
+
+  it('has nothing to redo before a session was built', async () => {
+    const { result } = setup()
+    let outcome: string | undefined
+    await act(async () => {
+      outcome = await result.current.redo()
+    })
+    expect(outcome).toBe('refused')
+    expect(replace).not.toHaveBeenCalled()
+  })
+
+  it('adjusts with new answers, saves them and replaces the playlist', async () => {
+    const { deps, result } = await built()
+    const adjusted = { ...ANSWERS, minutes: 15, surprise: true }
+
+    await act(async () => {
+      await result.current.adjust(adjusted)
+    })
+
+    expect(deps.saveAnswers).toHaveBeenLastCalledWith(adjusted)
+    expect(replace).toHaveBeenCalledOnce()
+    expect(result.current.recent?.answers).toEqual(adjusted)
+  })
+})
+
+describe('useSessionRun keeping and editing', () => {
+  it('drops the band when the session is kept, writing nothing', async () => {
+    const { result } = await built()
+    act(() => result.current.keep())
+    expect(result.current.recent).toBeNull()
+    expect(replace).not.toHaveBeenCalled()
+  })
+
+  it('drops the band when the user edits that playlist', async () => {
+    const { result } = await built()
+    act(() => result.current.noteEdit('new1'))
+    expect(result.current.recent).toBeNull()
+  })
+
+  it('keeps the band when the edit was on another playlist', async () => {
+    const { result } = await built()
+    act(() => result.current.noteEdit('other'))
+    expect(result.current.recent).not.toBeNull()
+  })
+})
