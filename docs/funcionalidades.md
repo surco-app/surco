@@ -1996,8 +1996,15 @@ que suena cada pista, no con el fichero (`secsOf`); una pista sin duración cuen
 el tiempo por pista si es menor, y la banda lo dice. Un combo es una pareja seguida que se
 repite en al menos dos playlists Mezcladas elegidas (`MIN_PLAYLISTS_PER_COMBO`,
 `lib/sessionRun.ts:7`; `mineCombos`, `shared/sessionCombos.ts`); los separadores cortan la
-secuencia. Sin Mezcladas no hay combos, y el asistente y la banda lo explican. El tempo se
-encaja con ±4 BPM y, si nada cabe, ±8 (`TEMPO_TIGHT`, `TEMPO_WIDE`). Nueva es una pista añadida
+secuencia. Sin Mezcladas no hay combos, y el asistente y la banda lo explican. Una pareja vista una sola vez
+no es combo, pero si la segunda pista es del rol que toca y cabe en tempo y armonía se prefiere
+como «partner», «Sonó justo después en un set» (`nextByCombo`, `partnerFits`). El tempo se
+encaja con ±4 BPM y, si nada cabe, ±8 (`TEMPO_TIGHT`, `TEMPO_WIDE`); si ninguna pista del rol
+que toca está a ±8 se toma la de tempo más cercano antes que repetir el rol (`fitTier`). Con
+Bases y Cantaditas conocidas y «Alternar» activado la alternancia es estricta (`strict`): las
+pistas sin rol, que solo están en Mezcladas, no se usan de relleno, no arrancan la sesión ni se
+encadenan por un set. Entran como pareja de un combo repetido en dos sets, o cuando se acaba el
+rol que toca, y entonces ocupan su hueco. Nueva es una pista añadida
 en los últimos 30 días; si el programa no da fechas, una sin escuchas ni estrellas cuando otras
 sí las tienen (`isNew`, `lib/sessionCandidates.ts`). Fecha de alta y escuchas solo las trae
 rekordbox (`rekordboxPlaylists.ts:98-102`); Traktor da estrellas (`traktorPlaylists.ts:105`);
@@ -2013,7 +2020,13 @@ pistas, combos, nuevas y armónicas, la duración contada y lo que suman los fic
 (`SessionBand.tsx`). Bajo cada pista una línea dice por qué está (arranque, combo en N sets,
 salto Camelot, estrellas o escuchas, tempo, nueva, elegida por ti) y «Cambiar» lista solo
 entonces las que encajan en ese hueco (`SessionWhyLine.tsx`, `lib/sessionAlternatives.ts`). Al
-quedársela queda como una playlist normal y un aviso lo dice. Probado solo en tests; no hay medida de cuántas
+quedársela queda como una playlist normal y un aviso lo dice. Medido el 9-11 con la colección real, 20 sesiones por caso y el rol de cada pista según las
+carpetas Bases y Cantaditas: con las carpetas enteras, 0 de 880 parejas seguidas repiten rol.
+Con «Top» de Bases, «Top» de Cantaditas y la Mezclada «rockola-spook-2016», que antes repetían
+rol en un 26 a 40 % de las parejas con tramos de hasta 9, queda en 0 con 2 y 3 min por pista y en
+un 2,7 % con 1 min, solo al final, cuando se acaban las cantaditas. Se probó deducir el rol de
+una pista sin rol por la vecina en el set y acierta un 51 %: los sets reales no alternan
+(`?BVBBVBVVVVBVVVBVBB…`), así que no se usa. No hay medida de cuántas
 sesiones da por buenas un DJ.
 
 ### Editor de cues de rekordbox
