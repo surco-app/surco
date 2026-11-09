@@ -1,5 +1,28 @@
 [
   {
+    "version": "1.31",
+    "date": "November 9, 2026",
+    "title": "Sessões automáticas a partir das suas playlists",
+    "items": [
+      {
+        "text": "“Sessão automática…” monta uma sessão no seu programa de DJ. Abra pela paleta de comandos, pelo menu de uma pasta ou com “Preencher com uma sessão…” numa playlist vazia. Você escolhe quanto ela dura e de quais playlists saem as faixas, e marca cada playlist, ou uma pasta inteira, como Bases, Cantadas ou Misto. O Surco junta os combos que você mais repete nos seus sets, as faixas com mais estrelas e reproduções, mixagem harmônica Camelot se você quiser e um espaço para as suas faixas novas.",
+        "in": "1.31.0"
+      },
+      {
+        "text": "A duração conta o tempo que cada faixa toca na mixagem, dois minutos por padrão, não o arquivo inteiro. Embaixo de cada faixa uma linha diz por que ela está ali, seja um combo testado, o tom, as estrelas ou as reproduções, e “Trocar” oferece as que cabem naquele lugar. Você pode refazer, ajustar ou mantê-la como uma playlist normal, e se o seu programa de DJ estiver aberto o Surco pede para fechá-lo antes, para nunca deixá-la pela metade.",
+        "in": "1.31.0"
+      },
+      {
+        "text": "“Fixar” (G) prende a grade na batida mais próxima do cursor, e embaixo da onda da faixa inteira seis pontos espalhados pela música dizem se a grade continua sobre o bumbo. O Auto não desloca mais a grade meio tempo em faixas onde o bumbo e o contratempo se confundiam.",
+        "in": "1.31.0"
+      },
+      {
+        "text": "A onda ampliada do editor de cues tem muito mais detalhe, e o Play toca na hora assim que o editor abre.",
+        "in": "1.31.0"
+      }
+    ]
+  },
+  {
     "version": "1.30",
     "date": "November 8, 2026",
     "title": "O Auto aprende sozinho como você marca, e a grade fica travada",

@@ -1,5 +1,28 @@
 [
   {
+    "version": "1.31",
+    "date": "November 9, 2026",
+    "title": "Automatische Sessions aus deinen Playlists",
+    "items": [
+      {
+        "text": "„Automatische Session…“ baut eine Session in deinem DJ-Programm. Öffne sie über die Befehlspalette, über das Menü eines Ordners oder mit „Mit einer Session füllen…“ bei einer leeren Playlist. Du wählst, wie lange sie dauert und aus welchen Playlists die Tracks kommen, und markierst jede Playlist, oder einen ganzen Ordner, als Bases, Gesang oder Gemischt. Surco bringt die Combos, die du in deinen Sets am häufigsten wiederholst, deine Tracks mit den meisten Sternen und Wiedergaben, harmonisches Mixen nach Camelot, wenn du willst, und Platz für deine neuen Tracks zusammen.",
+        "in": "1.31.0"
+      },
+      {
+        "text": "Die Dauer zählt die Zeit, die jeder Track im Mix läuft, standardmäßig zwei Minuten, nicht die ganze Datei. Unter jedem Track sagt eine Zeile, warum er dort ist, ob bewährte Combo, Tonart, Sterne oder Wiedergaben, und „Ändern“ bietet dir die an, die an diese Stelle passen. Du kannst sie neu würfeln, anpassen oder als normale Playlist behalten, und ist dein DJ-Programm offen, bittet Surco dich, es vorher zu schließen, damit sie nie halb geschrieben bleibt.",
+        "in": "1.31.0"
+      },
+      {
+        "text": "„Anheften“ (G) setzt das Raster auf den Schlag, der dem Abspielkopf am nächsten ist, und unter der Wellenform des ganzen Tracks zeigen dir sechs über den Track verteilte Punkte, ob das Raster noch auf der Kick liegt. Auto verschiebt das Raster nicht mehr um einen halben Schlag bei Tracks, in denen Kick und Offbeat verwechselt wurden.",
+        "in": "1.31.0"
+      },
+      {
+        "text": "Die vergrößerte Wellenform im Cue-Editor zeigt viel mehr Details, und Play spielt sofort, sobald der Editor offen ist.",
+        "in": "1.31.0"
+      }
+    ]
+  },
+  {
     "version": "1.30",
     "date": "November 8, 2026",
     "title": "Auto lernt von selbst, wie du markierst, und das Raster bleibt gesperrt",

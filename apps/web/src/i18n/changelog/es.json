@@ -1,5 +1,28 @@
 [
   {
+    "version": "1.31",
+    "date": "9 de noviembre de 2026",
+    "title": "Sesión automática a partir de tus playlists",
+    "items": [
+      {
+        "text": "«Sesión automática…» monta una sesión en tu programa DJ. Ábrela desde la paleta de comandos, desde el menú de una carpeta o con «Rellenar con una sesión…» en una playlist vacía. Eliges cuánto dura y de qué playlists salen las pistas, y marcas cada playlist, o una carpeta entera, como Bases, Cantaditas o Mezcladas. Surco junta los combos que más repites en tus sets, las pistas con más estrellas y escuchas, mezcla armónica Camelot si la quieres y un hueco para tus pistas nuevas.",
+        "in": "1.31.0"
+      },
+      {
+        "text": "La duración cuenta el tiempo que suena cada pista en la mezcla, dos minutos por defecto, no el archivo entero. Bajo cada pista una línea dice por qué está ahí, sea un combo probado, el tono, las estrellas o las escuchas, y «Cambiar» te ofrece las que encajan en ese hueco. Puedes rehacerla, ajustarla o quedártela como una playlist normal, y si tu programa DJ está abierto Surco te pide cerrarlo antes, para no dejarla a medias.",
+        "in": "1.31.0"
+      },
+      {
+        "text": "«Clavar» (G) fija la rejilla en el golpe más cercano al cabezal, y bajo la onda de toda la pista seis puntos repartidos por el tema te dicen si la rejilla sigue sobre el bombo. Auto ya no desplaza la rejilla medio tiempo en pistas donde se confundían el bombo y el contratiempo.",
+        "in": "1.31.0"
+      },
+      {
+        "text": "La onda ampliada del editor de cues tiene mucho más detalle, y Play suena al instante nada más abrir el editor.",
+        "in": "1.31.0"
+      }
+    ]
+  },
+  {
     "version": "1.30",
     "date": "8 de noviembre de 2026",
     "title": "Auto aprende solo cómo marcas y la rejilla queda bloqueada",

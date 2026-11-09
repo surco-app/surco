@@ -1,5 +1,28 @@
 [
   {
+    "version": "1.31",
+    "date": "November 9, 2026",
+    "title": "Automatic sessions from your playlists",
+    "items": [
+      {
+        "text": "“Automatic session…” builds a session in your DJ program. Open it from the command palette, from a folder’s menu or with “Fill with a session…” on an empty playlist. You choose how long it lasts and which playlists the tracks come from, and you mark each playlist, or a whole folder, as Bases, Vocals or Mixed. Surco brings together the combos you repeat most in your sets, your tracks with the most stars and plays, Camelot harmonic mixing if you want it and room for your new tracks.",
+        "in": "1.31.0"
+      },
+      {
+        "text": "The length counts the time each track plays in the mix, two minutes by default, not the whole file. Under each track a line says why it is there, be it a proven combo, the key, the stars or the plays, and “Change” offers the ones that fit that slot. You can redo it, adjust it or keep it as a normal playlist, and if your DJ program is open Surco asks you to close it first, so it is never left half written.",
+        "in": "1.31.0"
+      },
+      {
+        "text": "“Pin” (G) fixes the grid on the beat nearest the playhead, and under the whole-track wave six points spread across the track tell you whether the grid is still on the kick. Auto no longer shifts the grid half a beat on tracks where the kick and the offbeat got mixed up.",
+        "in": "1.31.0"
+      },
+      {
+        "text": "The zoomed wave in the cue editor has much more detail, and Play sounds at once as soon as the editor opens.",
+        "in": "1.31.0"
+      }
+    ]
+  },
+  {
     "version": "1.30",
     "date": "November 8, 2026",
     "title": "Auto learns how you mark on its own, and the grid stays locked",
