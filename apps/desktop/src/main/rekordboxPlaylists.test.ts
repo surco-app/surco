@@ -237,6 +237,44 @@ describe('play counts in playlist rows', () => {
   })
 })
 
+describe('date added in playlist rows', () => {
+  let dated: NonNullable<ReturnType<typeof openRekordboxDb>>
+
+  beforeAll(async () => {
+    const path = join(await mkdtemp(join(tmpdir(), 'surco-rbda-')), 'master.db')
+    writeRekordboxPlaylistFixture(path, {
+      content: [
+        { ...PLAY, ID: 'd1', FolderPath: '/m/fresh.wav', StockDate: '2026-11-01' },
+        { ...PLAY, ID: 'd2', FolderPath: '/m/blank.wav', StockDate: '' },
+        { ...PLAY, ID: 'd3', FolderPath: '/m/none.wav' },
+      ],
+      keys: [{ ID: 'k2', ScaleName: '8A' }],
+      playlists: [{ ID: 'mix', Name: 'Mix', Attribute: 0, ParentID: 'root', Seq: 1 }],
+      links: [
+        { PlaylistID: 'mix', ContentID: 'd1', TrackNo: 1 },
+        { PlaylistID: 'mix', ContentID: 'd2', TrackNo: 2 },
+        { PlaylistID: 'mix', ContentID: 'd3', TrackNo: 3 },
+      ],
+    })
+    const opened = openRekordboxDb(path, { readonly: true })
+    if (!opened) throw new Error('fixture did not open')
+    dated = opened
+  })
+
+  afterAll(() => dated.close())
+
+  it('carries the day rekordbox says a track came into the collection', () => {
+    const [fresh] = readRekordboxPlaylist(dated, 'mix')
+    expect(fresh.meta.dateAdded).toBe('2026-11-01')
+  })
+
+  it('leaves the date out when rekordbox holds none, so a blank is not read as a day', () => {
+    const [, blank, none] = readRekordboxPlaylist(dated, 'mix')
+    expect(blank.meta.dateAdded).toBeUndefined()
+    expect(none.meta.dateAdded).toBeUndefined()
+  })
+})
+
 describe('entryPath', () => {
   // rekordbox on Windows stores C:/... while a file dropped on Surco arrives as C:\...;
   // spelt differently, one file would load as two rows.
