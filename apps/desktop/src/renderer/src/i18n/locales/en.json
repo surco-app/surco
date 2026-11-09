@@ -2656,6 +2656,7 @@
       "pasteTracklist": "Paste tracklist…",
       "newPlaylistFromTracklist": "Playlist from tracklist…",
       "newSession": "Automatic session…",
+      "fillSession": "Fill with a session…",
       "delete": "Delete",
       "menu": "Playlist actions",
       "deleteTitle": "Delete from rekordbox",

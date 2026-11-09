@@ -18,18 +18,22 @@ const NODES: SourceNode[] = [
   },
   { id: 'prep', name: 'Preparation', kind: 'folder', count: 0, children: [] },
   { id: 'house', name: 'House', kind: 'playlist', count: 32 },
+  { id: 'emptied', name: 'Session 11-9', kind: 'playlist', count: 0 },
 ]
 
 function setup({
   withSession = true,
+  withFill = true,
   crates = false,
   fixed,
 }: {
   withSession?: boolean
+  withFill?: boolean
   crates?: boolean
   fixed?: (node: SourceNode) => 'locked' | 'tracks-only' | null
 } = {}) {
   const onSession = vi.fn()
+  const onFill = vi.fn()
   render(
     <SourceTree
       width={236}
@@ -47,11 +51,12 @@ function setup({
         onDelete: vi.fn(),
         onPasteTracklist: vi.fn(),
         ...(withSession ? { onSession } : {}),
+        ...(withFill ? { onFill } : {}),
         ...(crates ? { crates: true as const } : {}),
       }}
     />,
   )
-  return onSession
+  return Object.assign(onSession, { onFill })
 }
 
 const openMenu = (id: string) =>
@@ -104,5 +109,53 @@ describe('SourceTree automatic session item', () => {
     setup({ withSession: false })
     openMenu('bases')
     expect(screen.queryByTestId('source-tree-session')).toBeNull()
+  })
+})
+
+describe('SourceTree fill with a session item', () => {
+  it('offers to fill a playlist that has no track, handing it over and closing the menu', () => {
+    const { onFill } = setup()
+    openMenu('emptied')
+    const item = screen.getByTestId('source-tree-fill-session')
+    expect(item).toHaveTextContent(i18n.t('sources.tree.fillSession'))
+    fireEvent.click(item)
+    expect(onFill).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ id: 'emptied' }))
+    expect(screen.queryByTestId('source-tree-menu')).toBeNull()
+  })
+
+  it('does not offer it on a playlist that already has tracks, which it would add to', () => {
+    setup()
+    openMenu('house')
+    expect(screen.queryByTestId('source-tree-fill-session')).toBeNull()
+  })
+
+  it('does not offer it on a folder, which has its own new session item', () => {
+    setup()
+    openMenu('bases')
+    expect(screen.queryByTestId('source-tree-fill-session')).toBeNull()
+  })
+
+  it('offers nothing when the tree cannot fill a playlist', () => {
+    setup({ withFill: false })
+    openMenu('emptied')
+    expect(screen.queryByTestId('source-tree-fill-session')).toBeNull()
+  })
+
+  it('does not offer it in a playlist the library keeps for itself', () => {
+    setup({ fixed: (node) => (node.id === 'emptied' ? 'tracks-only' : null) })
+    openMenu('emptied')
+    expect(screen.queryByTestId('source-tree-fill-session')).toBeNull()
+  })
+
+  it('files it right after Paste tracklist, before Rename and Delete', () => {
+    setup()
+    openMenu('emptied')
+    const items = within(screen.getByTestId('source-tree-menu')).getAllByRole('menuitem')
+    expect(items.map((i) => i.getAttribute('data-testid'))).toEqual([
+      'source-tree-paste-tracklist',
+      'source-tree-fill-session',
+      'source-tree-rename',
+      'source-tree-delete',
+    ])
   })
 })

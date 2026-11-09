@@ -85,6 +85,7 @@ export function SourceTree({
     onDelete: (node: SourceNode) => void
     onPasteTracklist?: (node: SourceNode, create: boolean) => void
     onSession?: (node: SourceNode) => void
+    onFill?: (node: SourceNode) => void
     onMove?: (
       node: SourceNode,
       parentId: string,
@@ -781,6 +782,23 @@ export function SourceTree({
                 {tr('sources.tree.newSession')}
               </button>
             )}
+            {edit?.onFill &&
+              !menu.pasteOnly &&
+              menu.node.kind === 'playlist' &&
+              menu.node.count === 0 && (
+                <button
+                  type="button"
+                  role="menuitem"
+                  data-testid="source-tree-fill-session"
+                  onClick={() => {
+                    edit.onFill?.(menu.node)
+                    setMenu(null)
+                  }}
+                  className="block w-full rounded-md px-3 py-1.5 text-left text-sm hover:bg-[var(--color-hover)]"
+                >
+                  {tr('sources.tree.fillSession')}
+                </button>
+              )}
             {roles && menu.node.kind === 'playlist' && !menu.pasteOnly && (
               <div className="px-3 pt-1.5 pb-1">
                 <div className="mb-1 text-[11px] text-fg-dim">{tr('sessions.role.title')}</div>
