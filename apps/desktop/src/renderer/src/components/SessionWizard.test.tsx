@@ -302,6 +302,7 @@ describe('SessionWizard new tracks step', () => {
     fireEvent.click(screen.getByTestId('session-wizard-build'))
     expect(onBuild).toHaveBeenCalledExactlyOnceWith(
       expect.objectContaining({ fresh: [], freshShare: 0, sources: ['b90'] }),
+      { b90: 'base' },
     )
   })
 
@@ -319,6 +320,7 @@ describe('SessionWizard new tracks step', () => {
     fireEvent.click(screen.getByTestId('session-wizard-build'))
     expect(onBuild).toHaveBeenCalledExactlyOnceWith(
       expect.objectContaining({ fresh: ['mak'], freshShare: 0.3 }),
+      { b90: 'base' },
     )
   })
 
@@ -386,7 +388,9 @@ describe('SessionWizard character step', () => {
     const { onBuild } = setup({ b90: 'base' }, { ...INITIAL, harmony: 'same' })
     await toCharacter()
     fireEvent.click(screen.getByTestId('session-wizard-build'))
-    expect(onBuild).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ harmony: 'free' }))
+    expect(onBuild).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ harmony: 'free' }), {
+      b90: 'base',
+    })
   })
 
   it('offers the harmony modes when a chosen playlist has keys', async () => {
@@ -407,16 +411,56 @@ describe('SessionWizard character step', () => {
     fireEvent.click(screen.getByTestId('session-wizard-harmony-neighbours'))
     fireEvent.click(screen.getByTestId('session-wizard-opt-surprise'))
     fireEvent.click(screen.getByTestId('session-wizard-build'))
-    expect(onBuild).toHaveBeenCalledExactlyOnceWith({
-      minutes: 120,
-      sources: ['b90', 'c90'],
-      fresh: [],
-      freshShare: 0,
-      preferCombos: true,
-      harmony: 'neighbours',
-      tasteWeight: true,
-      alternate: true,
-      surprise: true,
+    expect(onBuild).toHaveBeenCalledExactlyOnceWith(
+      {
+        minutes: 120,
+        sources: ['b90', 'c90'],
+        fresh: [],
+        freshShare: 0,
+        preferCombos: true,
+        harmony: 'neighbours',
+        tasteWeight: true,
+        alternate: true,
+        surprise: true,
+      },
+      { b90: 'base', c90: 'vocal' },
+    )
+  })
+
+  it('hands over the roles chosen inside the wizard, even before the app has saved them', async () => {
+    const { onBuild } = setup({ b90: 'base' })
+    toSources()
+    fireEvent.change(screen.getByTestId('session-wizard-search'), { target: { value: 'combos' } })
+    fireEvent.click(screen.getByTestId('session-wizard-hit-role-combos-set'))
+    fireEvent.change(screen.getByTestId('session-wizard-search'), {
+      target: { value: 'cantaditas' },
+    })
+    fireEvent.click(screen.getByTestId('session-wizard-hit-role-c90-vocal'))
+    next()
+    await screen.findByTestId('session-wizard-fresh-search')
+    next()
+    await screen.findByTestId('session-wizard-build')
+    fireEvent.click(screen.getByTestId('session-wizard-build'))
+    expect(onBuild).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ sources: ['b90', 'combos', 'c90'] }),
+      { b90: 'base', combos: 'set', c90: 'vocal' },
+    )
+  })
+
+  it('does not hand over the role of a playlist that was taken away', async () => {
+    const { onBuild } = setup({ b90: 'base', c90: 'vocal' })
+    toSources()
+    fireEvent.change(screen.getByTestId('session-wizard-search'), {
+      target: { value: 'cantaditas' },
+    })
+    fireEvent.click(screen.getByTestId('session-wizard-hit-role-c90-vocal'))
+    next()
+    await screen.findByTestId('session-wizard-fresh-search')
+    next()
+    await screen.findByTestId('session-wizard-build')
+    fireEvent.click(screen.getByTestId('session-wizard-build'))
+    expect(onBuild).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ sources: ['b90'] }), {
+      b90: 'base',
     })
   })
 })

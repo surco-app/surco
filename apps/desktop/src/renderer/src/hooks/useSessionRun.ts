@@ -15,14 +15,16 @@ export interface RecentSession {
   parentId: string
   name: string
   answers: SessionAnswers
+  roles: Readonly<Record<string, PlaylistRole>>
   seed: number
   plan: SessionPlan
   pool: SessionTrack[]
   refsById: ReadonlyMap<string, PlaylistTrackRef>
 }
 
+type Roles = Readonly<Record<string, PlaylistRole>>
+
 export interface SessionRunDeps {
-  roles: Readonly<Record<string, PlaylistRole>>
   rows: SessionRows
   writer: SessionWriter
   nameFor: () => string
@@ -34,9 +36,9 @@ export interface SessionRunDeps {
 export interface SessionRunner {
   recent: RecentSession | null
   busy: boolean
-  build: (parentId: string, answers: SessionAnswers) => Promise<BuildResult>
+  build: (parentId: string, answers: SessionAnswers, roles: Roles) => Promise<BuildResult>
   redo: () => Promise<BuildResult>
-  adjust: (answers: SessionAnswers) => Promise<BuildResult>
+  adjust: (answers: SessionAnswers, roles: Roles) => Promise<BuildResult>
   swap: (index: number, track: SessionTrack) => Promise<BuildResult>
   alternatives: (index: number) => SessionTrack[]
   keep: () => void
@@ -60,9 +62,13 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
     }
   }
 
-  const produce = async (answers: SessionAnswers, seed: number): Promise<SessionRun> => {
+  const produce = async (
+    answers: SessionAnswers,
+    roles: Roles,
+    seed: number,
+  ): Promise<SessionRun> => {
     const loaded = await deps.rows.load([...answers.sources, ...answers.fresh])
-    return runSession({ answers, roles: deps.roles, rows: loaded, seed })
+    return runSession({ answers, roles, rows: loaded, seed })
   }
 
   const settle = (
@@ -70,6 +76,7 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
     parentId: string,
     name: string,
     answers: SessionAnswers,
+    roles: Roles,
     seed: number,
     run: SessionRun,
   ): BuildResult => {
@@ -79,6 +86,7 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
       parentId,
       name,
       answers,
+      roles,
       seed,
       plan: run.plan,
       pool: run.pool,
@@ -87,22 +95,26 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
     return 'built'
   }
 
-  const build = useStableCallback((parentId: string, answers: SessionAnswers) =>
+  const build = useStableCallback((parentId: string, answers: SessionAnswers, roles: Roles) =>
     exclusive(async () => {
       deps.saveAnswers(answers)
       const seed = deps.newSeed()
-      const run = await produce(answers, seed)
+      const run = await produce(answers, roles, seed)
       if (run.refs.length === 0) return 'empty'
       const name = deps.nameFor()
       const id = await deps.writer.create(parentId, name, run.refs)
-      return id === null ? 'refused' : settle(id, parentId, name, answers, seed, run)
+      return id === null ? 'refused' : settle(id, parentId, name, answers, roles, seed, run)
     }),
   )
 
-  const replaceWith = (previous: RecentSession, answers: SessionAnswers): Promise<BuildResult> =>
+  const replaceWith = (
+    previous: RecentSession,
+    answers: SessionAnswers,
+    roles: Roles,
+  ): Promise<BuildResult> =>
     exclusive(async () => {
       const seed = previous.seed + 1
-      const run = await produce(answers, seed)
+      const run = await produce(answers, roles, seed)
       if (run.refs.length === 0) return 'empty'
       const id = await deps.writer.replace(
         previous.parentId,
@@ -112,17 +124,17 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
       )
       return id === null
         ? 'refused'
-        : settle(id, previous.parentId, previous.name, answers, seed, run)
+        : settle(id, previous.parentId, previous.name, answers, roles, seed, run)
     })
 
   const redo = useStableCallback(async () =>
-    recent ? replaceWith(recent, recent.answers) : 'refused',
+    recent ? replaceWith(recent, recent.answers, recent.roles) : 'refused',
   )
 
-  const adjust = useStableCallback(async (answers: SessionAnswers) => {
+  const adjust = useStableCallback(async (answers: SessionAnswers, roles: Roles) => {
     if (!recent) return 'refused'
     deps.saveAnswers(answers)
-    return replaceWith(recent, answers)
+    return replaceWith(recent, answers, roles)
   })
 
   const alternatives = useStableCallback((index: number): SessionTrack[] =>

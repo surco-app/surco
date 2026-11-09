@@ -29,12 +29,7 @@ import {
 import { SAME_CLOCK_FILE } from '../../shared/gridEdit'
 import { emptyMetadata } from '../../shared/metadata'
 import { RECENTLY_ADDED_ID } from '../../shared/recentlyAdded'
-import {
-  answersFromSettings,
-  rolesForProgram,
-  withPlaylistRole,
-  wizardSettingsFrom,
-} from '../../shared/sessionSettings'
+import { answersFromSettings, wizardSettingsFrom } from '../../shared/sessionSettings'
 import type { PlaylistRole } from '../../shared/sessionTypes'
 import { resolveBindings } from '../../shared/shortcutDefaults'
 import { TRASH_MAX_BYTES, TRASH_RETENTION_DAYS } from '../../shared/trash'
@@ -120,6 +115,7 @@ import { useLibraryAvailable, useOfferPlaylistFields } from './hooks/useRekordbo
 import { PROGRAM_QUEUES, useRekordboxQueue } from './hooks/useRekordboxQueue'
 import { useRetireSuperseded } from './hooks/useRetireSuperseded'
 import { useSessionPersistence } from './hooks/useSessionPersistence'
+import { useSessionRoles } from './hooks/useSessionRoles'
 import { useSessionRows } from './hooks/useSessionRows'
 import { useSessionRun } from './hooks/useSessionRun'
 import { useSessionWrite } from './hooks/useSessionWrite'
@@ -273,6 +269,8 @@ const SYNC_ISSUES: Record<
 }
 
 const inFiles = (t: TrackItem): boolean => !!t.inFiles
+
+const NO_ROLES: Record<string, PlaylistRole> = {}
 
 const SEEN_SETTLE_MS = 250
 
@@ -1091,10 +1089,12 @@ export default function App(): React.JSX.Element {
     browser.selectPlaylist(node, folders)
   })
   const sessionProgram = editableSource
+  const sessionRoles = useSessionRoles(settings?.sessionRoles ?? NO_ROLES, sessionProgram, (next) =>
+    saveSettings({ sessionRoles: next }),
+  )
   const sessionRows = useSessionRows(sessionProgram ?? 'rekordbox')
   const sessionWriter = useSessionWrite(editRekordboxRaw)
   const sessionRun = useSessionRun({
-    roles: rolesForProgram(settings?.sessionRoles ?? {}, sessionProgram ?? 'rekordbox'),
     rows: sessionRows,
     writer: sessionWriter,
     nameFor: () =>
@@ -2900,23 +2900,17 @@ export default function App(): React.JSX.Element {
       sourceProgram,
     ],
   )
+  const { forProgram: programRoles, setRole: setPlaylistRole } = sessionRoles
   const treeRoles = useMemo(
     () =>
-      editableSource && settings
+      editableSource
         ? {
-            values: rolesForProgram(settings.sessionRoles, editableSource),
+            values: programRoles,
             onChange: (node: SourceNode, role: PlaylistRole | null) =>
-              saveSettings({
-                sessionRoles: withPlaylistRole(
-                  settings.sessionRoles,
-                  editableSource,
-                  node.id,
-                  role,
-                ),
-              }),
+              setPlaylistRole(node.id, role),
           }
         : undefined,
-    [editableSource, settings, saveSettings],
+    [editableSource, programRoles, setPlaylistRole],
   )
   // Read at drop time, so a re-read landing mid-drag still names the dragged rows. A track
   // row stands for every row it has in the playlist (the list shows it once), so all of them
@@ -4171,28 +4165,19 @@ export default function App(): React.JSX.Element {
               {sessionWizard && sessionProgram && settings && browser.tree && (
                 <SessionWizard
                   tree={browser.tree}
-                  roles={rolesForProgram(settings.sessionRoles, sessionProgram)}
+                  roles={programRoles}
                   initial={
                     sessionWizard.adjust && sessionRun.recent
                       ? sessionRun.recent.answers
                       : answersFromSettings(settings.sessionWizard)
                   }
                   rows={sessionRows}
-                  onRole={(id, role) =>
-                    saveSettings({
-                      sessionRoles: withPlaylistRole(
-                        settings.sessionRoles,
-                        sessionProgram,
-                        id,
-                        role,
-                      ),
-                    })
-                  }
+                  onRole={setPlaylistRole}
                   onClose={() => setSessionWizard(null)}
-                  onBuild={async (answers) => {
+                  onBuild={async (answers, roles) => {
                     const result = sessionWizard.adjust
-                      ? await sessionRun.adjust(answers)
-                      : await sessionRun.build(sessionWizard.parentId, answers)
+                      ? await sessionRun.adjust(answers, roles)
+                      : await sessionRun.build(sessionWizard.parentId, answers, roles)
                     if (result === 'built') setSessionWizard(null)
                     return result
                   }}

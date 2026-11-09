@@ -40,7 +40,10 @@ export function SessionWizard({
   rows: SessionRows
   onRole: (id: string, role: PlaylistRole | null) => void
   onClose: () => void
-  onBuild: (answers: SessionAnswers) => Promise<BuildResult>
+  onBuild: (
+    answers: SessionAnswers,
+    roles: Readonly<Record<string, PlaylistRole>>,
+  ) => Promise<BuildResult>
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [step, setStep] = useState(0)
@@ -116,17 +119,25 @@ export function SessionWizard({
   const build = async (): Promise<void> => {
     setBuilding(true)
     setEmpty(false)
-    const result = await onBuild({
-      minutes,
-      sources,
-      fresh,
-      freshShare: fresh.length > 0 ? freshShare : 0,
-      preferCombos: options.preferCombos,
-      harmony: hasKeys ? options.harmony : 'free',
-      tasteWeight: options.tasteWeight,
-      alternate: options.alternate,
-      surprise: options.surprise,
-    })
+    const chosenRoles: Record<string, PlaylistRole> = {}
+    for (const id of [...sources, ...fresh]) {
+      const role = roles[id]
+      if (role) chosenRoles[id] = role
+    }
+    const result = await onBuild(
+      {
+        minutes,
+        sources,
+        fresh,
+        freshShare: fresh.length > 0 ? freshShare : 0,
+        preferCombos: options.preferCombos,
+        harmony: hasKeys ? options.harmony : 'free',
+        tasteWeight: options.tasteWeight,
+        alternate: options.alternate,
+        surprise: options.surprise,
+      },
+      chosenRoles,
+    )
     setBuilding(false)
     setEmpty(result === 'empty')
   }

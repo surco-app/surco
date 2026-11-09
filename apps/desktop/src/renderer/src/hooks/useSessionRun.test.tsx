@@ -27,6 +27,8 @@ const entry = (path: string): SourcePlaylistEntry => ({
   preview: { title: path, artist: '', durationSec: 300, cues: [] },
 })
 
+const ROLES: Record<string, PlaylistRole> = { s: 'any' }
+
 const ROWS = new Map([['s', [entry('/m/a.mp3'), entry('/m/b.mp3'), entry('/m/c.mp3')]]])
 
 let create = vi.fn<SessionWriter['create']>()
@@ -36,7 +38,6 @@ function setup(over: Partial<SessionRunDeps> = {}) {
   create = vi.fn<SessionWriter['create']>(async () => 'new1')
   replace = vi.fn<SessionWriter['replace']>(async () => 'new2')
   const deps: SessionRunDeps = {
-    roles: { s: 'any' } satisfies Record<string, PlaylistRole>,
     rows: { load: vi.fn(async () => ROWS), loading: false, failed: [] },
     writer: { create, replace },
     nameFor: () => 'Sesión del 9/11',
@@ -55,7 +56,7 @@ describe('useSessionRun build', () => {
 
     let outcome: string | undefined
     await act(async () => {
-      outcome = await result.current.build('folder', ANSWERS)
+      outcome = await result.current.build('folder', ANSWERS, ROLES)
     })
 
     expect(outcome).toBe('built')
@@ -79,7 +80,7 @@ describe('useSessionRun build', () => {
   it('reads the chosen playlists through the shared reader', async () => {
     const { deps, result } = setup()
     await act(async () => {
-      await result.current.build('folder', { ...ANSWERS, fresh: ['n'] })
+      await result.current.build('folder', { ...ANSWERS, fresh: ['n'] }, ROLES)
     })
     expect(deps.rows.load).toHaveBeenCalledWith(['s', 'n'])
   })
@@ -91,7 +92,7 @@ describe('useSessionRun build', () => {
 
     let outcome: string | undefined
     await act(async () => {
-      outcome = await result.current.build('folder', ANSWERS)
+      outcome = await result.current.build('folder', ANSWERS, ROLES)
     })
 
     expect(outcome).toBe('refused')
@@ -106,7 +107,7 @@ describe('useSessionRun build', () => {
 
     let outcome: string | undefined
     await act(async () => {
-      outcome = await result.current.build('folder', ANSWERS)
+      outcome = await result.current.build('folder', ANSWERS, ROLES)
     })
 
     expect(outcome).toBe('empty')
@@ -120,12 +121,12 @@ describe('useSessionRun build', () => {
 
     let first: Promise<string> = Promise.resolve('')
     act(() => {
-      first = result.current.build('folder', ANSWERS)
+      first = result.current.build('folder', ANSWERS, ROLES)
     })
     expect(result.current.busy).toBe(true)
     let second: string | undefined
     await act(async () => {
-      second = await result.current.build('folder', ANSWERS)
+      second = await result.current.build('folder', ANSWERS, ROLES)
     })
     expect(second).toBe('refused')
     expect(create).toHaveBeenCalledOnce()
@@ -141,7 +142,7 @@ describe('useSessionRun build', () => {
 async function built(over: Partial<SessionRunDeps> = {}) {
   const ctx = setup(over)
   await act(async () => {
-    await ctx.result.current.build('folder', ANSWERS)
+    await ctx.result.current.build('folder', ANSWERS, ROLES)
   })
   return ctx
 }
@@ -195,12 +196,60 @@ describe('useSessionRun redo and adjust', () => {
     const adjusted = { ...ANSWERS, minutes: 15, surprise: true }
 
     await act(async () => {
-      await result.current.adjust(adjusted)
+      await result.current.adjust(adjusted, ROLES)
     })
 
     expect(deps.saveAnswers).toHaveBeenLastCalledWith(adjusted)
     expect(replace).toHaveBeenCalledOnce()
     expect(result.current.recent?.answers).toEqual(adjusted)
+  })
+})
+
+describe('useSessionRun roles', () => {
+  const SET_ROWS = new Map([
+    ['s', [entry('/m/a.mp3'), entry('/m/b.mp3'), entry('/m/c.mp3')]],
+    ['t', [entry('/m/a.mp3'), entry('/m/b.mp3')]],
+  ])
+
+  it('builds with the roles it is given, so a role just chosen counts before it is saved', async () => {
+    const { result } = setup({
+      rows: { load: vi.fn(async () => SET_ROWS), loading: false, failed: [] },
+    })
+    await act(async () => {
+      await result.current.build(
+        'folder',
+        { ...ANSWERS, sources: ['s', 't'], preferCombos: true },
+        { s: 'set', t: 'set' },
+      )
+    })
+    expect(result.current.recent?.plan.items[0].track.id).toBe('/m/a.mp3')
+    expect(result.current.recent?.plan.items[1].why).toEqual({ kind: 'combo', sets: 2 })
+  })
+
+  it('keeps those roles for the redo, whatever the settings say by then', async () => {
+    const { result } = setup({
+      rows: { load: vi.fn(async () => SET_ROWS), loading: false, failed: [] },
+    })
+    await act(async () => {
+      await result.current.build(
+        'folder',
+        { ...ANSWERS, sources: ['s', 't'], preferCombos: true },
+        { s: 'set', t: 'set' },
+      )
+    })
+    await act(async () => {
+      await result.current.redo()
+    })
+    expect(result.current.recent?.roles).toEqual({ s: 'set', t: 'set' })
+    expect(result.current.recent?.plan.items[1].why).toEqual({ kind: 'combo', sets: 2 })
+  })
+
+  it('adjusts with the roles chosen in the wizard', async () => {
+    const { result } = await built()
+    await act(async () => {
+      await result.current.adjust(ANSWERS, { s: 'base' })
+    })
+    expect(result.current.recent?.roles).toEqual({ s: 'base' })
   })
 })
 
