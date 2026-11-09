@@ -52,6 +52,8 @@
         "search": "Chercher parmi {{count}} playlists",
         "noHits": "Aucune playlist ne correspond",
         "none": "Aucune playlist choisie pour l’instant",
+        "onlyChosen": "Voir seulement les choisies",
+        "allPlaylists": "Voir toutes les playlists",
         "remove": "Retirer {{name}}",
         "summary_one": "{{count}} playlist choisie, jusqu’à {{tracks}} morceaux au choix",
         "summary_other": "{{count}} playlists choisies, jusqu’à {{tracks}} morceaux au choix"

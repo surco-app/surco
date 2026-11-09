@@ -1,5 +1,5 @@
 import type React from 'react'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { PlaylistRole, SessionHarmony } from '../../../shared/sessionTypes'
 import type { SourceNode } from '../../../shared/types'
@@ -117,7 +117,9 @@ export function SourcesStep({
       }),
     [sources, byId],
   )
+  const [only, setOnly] = useState(false)
   const chosen = sources.filter((id) => byId.has(id))
+  const onlyIds = only && chosen.length > 0 ? new Set(chosen) : undefined
   const eligible = chosen.reduce((sum, id) => sum + (byId.get(id)?.count ?? 0), 0)
   return (
     <div className="flex flex-col gap-3">
@@ -132,6 +134,7 @@ export function SourcesStep({
           autoFocus={false}
           emptyText={tr('sessions.wizard.sources.noHits')}
           searchLabel={tr('sessions.wizard.sources.search', { count: playlists.length })}
+          onlyIds={onlyIds}
           control={({ id }) =>
             id ? (
               <PlaylistRolePicker
@@ -148,9 +151,20 @@ export function SourcesStep({
           {tr('sessions.wizard.sources.none')}
         </p>
       ) : (
-        <p data-testid="session-wizard-summary" className="text-xs text-fg-dim">
-          {tr('sessions.wizard.sources.summary', { count: chosen.length, tracks: eligible })}
-        </p>
+        <div className="flex items-center justify-between gap-3 text-xs text-fg-dim">
+          <p data-testid="session-wizard-summary">
+            {tr('sessions.wizard.sources.summary', { count: chosen.length, tracks: eligible })}
+          </p>
+          <button
+            type="button"
+            data-testid="session-wizard-only-chosen"
+            aria-pressed={only}
+            onClick={() => setOnly((value) => !value)}
+            className="press shrink-0 rounded-md px-2 py-1 text-[var(--color-accent)] hover:bg-[var(--color-hover)]"
+          >
+            {tr(only ? 'sessions.wizard.sources.allPlaylists' : 'sessions.wizard.sources.onlyChosen')}
+          </button>
+        </div>
       )}
     </div>
   )

@@ -253,6 +253,46 @@ describe('SessionWizard sources step', () => {
     )
   })
 
+  it('offers to see only the chosen playlists, and to see them all again', () => {
+    setup({ b90: 'base', c90: 'vocal' })
+    toSources()
+    const button = screen.getByTestId('session-wizard-only-chosen')
+    expect(button).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByTestId('playlists-row-mak')).toBeInTheDocument()
+    fireEvent.click(button)
+    expect(button).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.queryByTestId('playlists-row-mak')).toBeNull()
+    expect(screen.getByTestId('playlists-row-b90')).toBeInTheDocument()
+    expect(screen.getByTestId('playlists-row-c90')).toBeInTheDocument()
+    fireEvent.click(button)
+    expect(screen.getByTestId('playlists-row-mak')).toBeInTheDocument()
+  })
+
+  it('takes a playlist out of that view as soon as its role is unpressed', () => {
+    const { onRole } = setup({ b90: 'base', c90: 'vocal' })
+    toSources()
+    fireEvent.click(screen.getByTestId('session-wizard-only-chosen'))
+    fireEvent.click(screen.getByTestId('session-wizard-role-b90-base'))
+    expect(onRole).toHaveBeenCalledExactlyOnceWith('b90', null)
+    expect(screen.queryByTestId('playlists-row-b90')).toBeNull()
+    expect(screen.getByTestId('playlists-row-c90')).toBeInTheDocument()
+  })
+
+  it('offers nothing to filter while no playlist is chosen', () => {
+    setup()
+    toSources()
+    expect(screen.queryByTestId('session-wizard-only-chosen')).toBeNull()
+  })
+
+  it('goes back to the whole list when the last chosen playlist is unpressed', () => {
+    setup({ b90: 'base' })
+    toSources()
+    fireEvent.click(screen.getByTestId('session-wizard-only-chosen'))
+    fireEvent.click(screen.getByTestId('session-wizard-role-b90-base'))
+    expect(screen.getByTestId('playlists-row-mak')).toBeInTheDocument()
+    expect(screen.queryByTestId('session-wizard-only-chosen')).toBeNull()
+  })
+
   it('will not go on without a playlist and goes on with one', () => {
     setup()
     toSources()

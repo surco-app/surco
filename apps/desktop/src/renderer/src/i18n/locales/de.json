@@ -52,6 +52,8 @@
         "search": "Unter {{count}} Playlists suchen",
         "noHits": "Keine Playlist passt",
         "none": "Noch keine Playlist ausgewählt",
+        "onlyChosen": "Nur die gewählten zeigen",
+        "allPlaylists": "Alle Playlists zeigen",
         "remove": "{{name}} entfernen",
         "summary_one": "{{count}} Playlist gewählt, bis zu {{tracks}} Tracks zur Auswahl",
         "summary_other": "{{count}} Playlists gewählt, bis zu {{tracks}} Tracks zur Auswahl"
