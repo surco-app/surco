@@ -2,97 +2,9 @@ import { describe, expect, it } from 'vitest'
 import {
   answersFromSettings,
   DEFAULT_SESSION_WIZARD,
-  normalizeSessionRoles,
   normalizeSessionWizard,
-  rolesForProgram,
-  withPlaylistRole,
   wizardSettingsFrom,
 } from './sessionSettings'
-import { sessionRoleKey } from './sessionTypes'
-
-describe('sessionRoleKey', () => {
-  it('names a playlist by its program and id', () => {
-    expect(sessionRoleKey('rekordbox', '12')).toBe('rekordbox:12')
-  })
-})
-
-describe('rolesForProgram', () => {
-  it('lists the roles of one program by playlist id and leaves the others out', () => {
-    expect(
-      rolesForProgram(
-        { 'rekordbox:1': 'base', 'rekordbox:Top/Mix': 'any', 'traktor:1': 'vocal' },
-        'rekordbox',
-      ),
-    ).toEqual({ '1': 'base', 'Top/Mix': 'any' })
-  })
-
-  it('keeps an id that itself holds a colon', () => {
-    expect(rolesForProgram({ 'serato:Sets:Friday': 'any' }, 'serato')).toEqual({
-      'Sets:Friday': 'any',
-    })
-  })
-})
-
-describe('withPlaylistRole', () => {
-  it('adds a role without touching the roles it was given', () => {
-    const before = { 'rekordbox:1': 'base' as const }
-    const after = withPlaylistRole(before, 'rekordbox', '2', 'any')
-    expect(after).toEqual({ 'rekordbox:1': 'base', 'rekordbox:2': 'any' })
-    expect(before).toEqual({ 'rekordbox:1': 'base' })
-  })
-
-  it('replaces the role of a playlist', () => {
-    expect(withPlaylistRole({ 'rekordbox:1': 'base' }, 'rekordbox', '1', 'vocal')).toEqual({
-      'rekordbox:1': 'vocal',
-    })
-  })
-
-  it('takes a role away with null', () => {
-    expect(
-      withPlaylistRole({ 'rekordbox:1': 'base', 'traktor:1': 'any' }, 'rekordbox', '1', null),
-    ).toEqual({ 'traktor:1': 'any' })
-  })
-})
-
-describe('normalizeSessionRoles', () => {
-  it('reads a Set saved before the role went away as Mixed, so the choice is not lost', () => {
-    expect(
-      normalizeSessionRoles({ 'rekordbox:1': 'set', 'traktor:2': 'base' }),
-    ).toEqual({ 'rekordbox:1': 'any', 'traktor:2': 'base' })
-  })
-
-  it('keeps valid roles', () => {
-    expect(
-      normalizeSessionRoles({ 'rekordbox:1': 'base', 'traktor:Top/Mix': 'any', 'serato:c': 'any' }),
-    ).toEqual({ 'rekordbox:1': 'base', 'traktor:Top/Mix': 'any', 'serato:c': 'any' })
-  })
-
-  it('drops a key without a known program and an id', () => {
-    expect(
-      normalizeSessionRoles({
-        '12': 'base',
-        'virtualdj:1': 'base',
-        'rekordbox:': 'base',
-        'rekordbox:7': 'vocal',
-      }),
-    ).toEqual({ 'rekordbox:7': 'vocal' })
-  })
-
-  it('drops a value that is not one of the four roles', () => {
-    expect(
-      normalizeSessionRoles({ 'rekordbox:1': 'bases', 'rekordbox:2': 3, 'rekordbox:3': 'any' }),
-    ).toEqual({
-      'rekordbox:3': 'any',
-    })
-  })
-
-  it('reads anything that is not an object as no roles', () => {
-    expect(normalizeSessionRoles(undefined)).toEqual({})
-    expect(normalizeSessionRoles(null)).toEqual({})
-    expect(normalizeSessionRoles(['rekordbox:1'])).toEqual({})
-    expect(normalizeSessionRoles('base')).toEqual({})
-  })
-})
 
 describe('answersFromSettings', () => {
   it('starts the wizard from the saved answers with no playlists chosen yet', () => {

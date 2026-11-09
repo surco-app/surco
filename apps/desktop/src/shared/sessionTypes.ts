@@ -1,5 +1,3 @@
-import type { DjProgram } from './djProgram'
-
 export type PlaylistRole = 'base' | 'vocal' | 'any'
 
 export type SessionHarmony = 'free' | 'neighbours' | 'same'
@@ -18,10 +16,6 @@ export interface SessionWizardSettings {
 export interface SessionAnswers extends SessionWizardSettings {
   sources: string[]
   fresh: string[]
-}
-
-export function sessionRoleKey(program: DjProgram, playlistId: string): string {
-  return `${program}:${playlistId}`
 }
 
 export type TrackRole = 'base' | 'vocal' | 'any'

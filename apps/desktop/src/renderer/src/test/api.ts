@@ -51,7 +51,6 @@ export const testSettings: Settings = {
   cueFlowToSerato: true,
   cueLearnFromEdits: true,
   hiddenSources: [],
-  sessionRoles: {},
   sessionWizard: { ...DEFAULT_SESSION_WIZARD },
   rekordboxPlaylistsFieldOffered: false,
   traktorPlaylistsFieldOffered: false,

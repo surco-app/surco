@@ -98,7 +98,6 @@ const settings: Settings = {
   cueFlowToSerato: true,
   cueLearnFromEdits: true,
   hiddenSources: [],
-  sessionRoles: {},
   sessionWizard: { ...DEFAULT_SESSION_WIZARD },
   hasSeenOnboarding: true,
   deezerProviderMigrated: true,

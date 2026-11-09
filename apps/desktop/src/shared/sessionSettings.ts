@@ -1,11 +1,4 @@
-import type { DjProgram } from './djProgram'
-import {
-  type PlaylistRole,
-  type SessionAnswers,
-  type SessionHarmony,
-  type SessionWizardSettings,
-  sessionRoleKey,
-} from './sessionTypes'
+import type { SessionAnswers, SessionHarmony, SessionWizardSettings } from './sessionTypes'
 
 export const DEFAULT_SESSION_WIZARD: SessionWizardSettings = {
   minutes: 90,
@@ -18,32 +11,13 @@ export const DEFAULT_SESSION_WIZARD: SessionWizardSettings = {
   surprise: false,
 }
 
-const ROLES: readonly PlaylistRole[] = ['base', 'vocal', 'any']
-const LEGACY_ROLES: Readonly<Record<string, PlaylistRole>> = { set: 'any' }
 const HARMONIES: readonly SessionHarmony[] = ['free', 'neighbours', 'same']
-const KEY_PROGRAMS = ['rekordbox', 'traktor', 'engine', 'serato']
 const MAX_FRESH_SHARE = 0.4
 const MIN_PLAY_MINUTES = 1
 const MAX_PLAY_MINUTES = 10
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
-}
-
-function validKey(key: string): boolean {
-  const colon = key.indexOf(':')
-  return colon > 0 && colon < key.length - 1 && KEY_PROGRAMS.includes(key.slice(0, colon))
-}
-
-export function normalizeSessionRoles(raw: unknown): Record<string, PlaylistRole> {
-  if (!isRecord(raw)) return {}
-  const roles: Record<string, PlaylistRole> = {}
-  for (const [key, value] of Object.entries(raw)) {
-    if (!validKey(key)) continue
-    if (ROLES.includes(value as PlaylistRole)) roles[key] = value as PlaylistRole
-    else if (typeof value === 'string' && value in LEGACY_ROLES) roles[key] = LEGACY_ROLES[value]
-  }
-  return roles
 }
 
 export function answersFromSettings(wizard: SessionWizardSettings): SessionAnswers {
@@ -64,31 +38,6 @@ export function wizardSettingsFrom(
     alternate: answers.alternate,
     surprise: answers.surprise,
   }
-}
-
-export function rolesForProgram(
-  roles: Readonly<Record<string, PlaylistRole>>,
-  program: DjProgram,
-): Record<string, PlaylistRole> {
-  const prefix = `${program}:`
-  const own: Record<string, PlaylistRole> = {}
-  for (const [key, role] of Object.entries(roles)) {
-    if (key.startsWith(prefix)) own[key.slice(prefix.length)] = role
-  }
-  return own
-}
-
-export function withPlaylistRole(
-  roles: Readonly<Record<string, PlaylistRole>>,
-  program: DjProgram,
-  playlistId: string,
-  role: PlaylistRole | null,
-): Record<string, PlaylistRole> {
-  const next = { ...roles }
-  const key = sessionRoleKey(program, playlistId)
-  if (role) next[key] = role
-  else delete next[key]
-  return next
 }
 
 function flag(value: unknown, fallback: boolean): boolean {

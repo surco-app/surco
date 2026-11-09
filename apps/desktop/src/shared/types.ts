@@ -8,7 +8,7 @@ import type { DjProgram, LibraryProgram, WritableProgram } from './djProgram'
 import type { EditorSectionPref } from './editorSections'
 import type { ErrorKey } from './errorKeys'
 import type { EditableGrid } from './gridEdit'
-import type { PlaylistRole, SessionWizardSettings } from './sessionTypes'
+import type { SessionWizardSettings } from './sessionTypes'
 import type { Chord } from './shortcuts'
 import type { Verification } from './verification'
 
@@ -250,7 +250,6 @@ export interface Settings {
   cueFlowToSerato: boolean
   cueLearnFromEdits: boolean
   hiddenSources: PlaylistSource[]
-  sessionRoles: Record<string, PlaylistRole>
   sessionWizard: SessionWizardSettings
   rekordboxPlaylistsFieldOffered: boolean
   traktorPlaylistsFieldOffered: boolean

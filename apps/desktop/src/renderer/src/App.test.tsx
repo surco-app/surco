@@ -139,7 +139,6 @@ function settings(over: Partial<Settings> = {}): Settings {
     cueFlowToSerato: true,
     cueLearnFromEdits: true,
     hiddenSources: [],
-    sessionRoles: {},
     sessionWizard: { ...DEFAULT_SESSION_WIZARD },
     language: 'system',
     discogsToken: '',
