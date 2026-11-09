@@ -1,6 +1,7 @@
 import type { DjProgram } from './djProgram'
 import {
   type PlaylistRole,
+  type SessionAnswers,
   type SessionHarmony,
   type SessionWizardSettings,
   sessionRoleKey,
@@ -37,6 +38,25 @@ export function normalizeSessionRoles(raw: unknown): Record<string, PlaylistRole
     if (validKey(key) && ROLES.includes(value as PlaylistRole)) roles[key] = value as PlaylistRole
   }
   return roles
+}
+
+export function answersFromSettings(wizard: SessionWizardSettings): SessionAnswers {
+  return { ...wizard, sources: [], fresh: [] }
+}
+
+export function wizardSettingsFrom(
+  answers: SessionAnswers,
+  previous: SessionWizardSettings,
+): SessionWizardSettings {
+  return {
+    minutes: answers.minutes,
+    freshShare: answers.fresh.length > 0 ? answers.freshShare : previous.freshShare,
+    preferCombos: answers.preferCombos,
+    harmony: answers.harmony,
+    tasteWeight: answers.tasteWeight,
+    alternate: answers.alternate,
+    surprise: answers.surprise,
+  }
 }
 
 export function rolesForProgram(

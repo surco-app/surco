@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import {
+  answersFromSettings,
   DEFAULT_SESSION_WIZARD,
   normalizeSessionRoles,
   normalizeSessionWizard,
   rolesForProgram,
   withPlaylistRole,
+  wizardSettingsFrom,
 } from './sessionSettings'
 import { sessionRoleKey } from './sessionTypes'
 
@@ -83,6 +85,45 @@ describe('normalizeSessionRoles', () => {
     expect(normalizeSessionRoles(null)).toEqual({})
     expect(normalizeSessionRoles(['rekordbox:1'])).toEqual({})
     expect(normalizeSessionRoles('base')).toEqual({})
+  })
+})
+
+describe('answersFromSettings', () => {
+  it('starts the wizard from the saved answers with no playlists chosen yet', () => {
+    const saved = { ...DEFAULT_SESSION_WIZARD, minutes: 120, surprise: true }
+    expect(answersFromSettings(saved)).toEqual({ ...saved, sources: [], fresh: [] })
+  })
+})
+
+describe('wizardSettingsFrom', () => {
+  const answers = {
+    ...DEFAULT_SESSION_WIZARD,
+    minutes: 60,
+    harmony: 'neighbours' as const,
+    alternate: false,
+    sources: ['a'],
+    fresh: [],
+  }
+
+  it('keeps the way the session was asked for and leaves the playlists out', () => {
+    expect(wizardSettingsFrom(answers, DEFAULT_SESSION_WIZARD)).toEqual({
+      ...DEFAULT_SESSION_WIZARD,
+      minutes: 60,
+      harmony: 'neighbours',
+      alternate: false,
+    })
+  })
+
+  it('keeps the share the user last chose when no new playlist was picked and the share came as zero', () => {
+    const saved = { ...DEFAULT_SESSION_WIZARD, freshShare: 0.3 }
+    expect(wizardSettingsFrom({ ...answers, freshShare: 0 }, saved).freshShare).toBe(0.3)
+  })
+
+  it('takes the share of this session when new playlists were picked', () => {
+    expect(
+      wizardSettingsFrom({ ...answers, fresh: ['n'], freshShare: 0.25 }, DEFAULT_SESSION_WIZARD)
+        .freshShare,
+    ).toBe(0.25)
   })
 })
 
