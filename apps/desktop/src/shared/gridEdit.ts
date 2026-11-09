@@ -282,6 +282,9 @@ function driftCorrectedBpm(fit: GridFit): number {
   return fit.bpm / (1 + driftSlope(fit))
 }
 
+const offbeatFolded = (offsetMs: number, period: number): number =>
+  Math.abs(offsetMs) > period / 4 ? offsetMs - Math.sign(offsetMs) * (period / 2) : offsetMs
+
 export function fitGrid(grid: EditableGrid, fit: GridFit, atMs?: number): EditableGrid {
   const first =
     atMs === undefined
@@ -292,7 +295,9 @@ export function fitGrid(grid: EditableGrid, fit: GridFit, atMs?: number): Editab
     const sameTempo = Math.abs(bpm - zone.bpm) / zone.bpm < SAME_TEMPO_RATIO
     const tempo = sameTempo ? bpm : zone.bpm
     const at = atMs ?? first
-    const beatAt = nearestOn(at, first, periodOf(fit.bpm))
+    const heard = nearestOn(at, first, periodOf(fit.bpm))
+    const off = heard - nearestOn(heard, zone.anchorMs, periodOf(zone.bpm))
+    const beatAt = heard - off + offbeatFolded(off, periodOf(fit.bpm))
     return {
       bpm: tempo,
       anchorMs: nearestOn(zone.anchorMs, beatAt, periodOf(tempo)),
@@ -309,7 +314,8 @@ export function gridOffsets(
 ): { hereMs: number; endMs: number } {
   const offsetAt = (ms: number): number => {
     const beat = nearestBeatMs(ms, beats)
-    return Math.round(beat - nearestOn(beat, phaseNear(fit, ms), periodOf(fit.bpm)))
+    const period = periodOf(fit.bpm)
+    return Math.round(offbeatFolded(beat - nearestOn(beat, phaseNear(fit, ms), period), period))
   }
   return { hereMs: offsetAt(playheadMs), endMs: offsetAt(durationMs) }
 }
@@ -318,8 +324,12 @@ export function gridFingerprint(grid: { ms: number; beat: number }[]): string {
   return grid.map((b) => `${b.ms}|${b.beat}`).join(';')
 }
 
-export function detectedBeatNear(fit: GridFit, ms: number): number {
-  return nearestOn(ms, phaseNear(fit, ms), periodOf(fit.bpm))
+export function detectedBeatNear(fit: GridFit, ms: number, beats: number[]): number {
+  const period = periodOf(fit.bpm)
+  const heard = nearestOn(ms, phaseNear(fit, ms), period)
+  if (beats.length < 2) return heard
+  const off = heard - nearestBeatMs(heard, beats)
+  return nearestOn(ms, heard - off + offbeatFolded(off, period), period)
 }
 
 export function pinGrid(

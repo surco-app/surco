@@ -40,7 +40,7 @@ export function CueGridStrip({
   const { t } = useTranslation()
   const pct = (ms: number): string => `${(ms / durationMs) * 100}%`
   const checks = Array.from({ length: CHECKS }, (_, i) => {
-    const kickMs = detectedBeatNear(fit, (durationMs * (i + 0.5)) / CHECKS)
+    const kickMs = detectedBeatNear(fit, (durationMs * (i + 0.5)) / CHECKS, beats)
     return { kickMs, offsetMs: nearestBeatMs(kickMs, beats) - kickMs }
   })
   const onCheck = (ms: number) => checks.some((c) => Math.abs(c.kickMs - ms) < 1)

@@ -535,7 +535,7 @@ function Editing({
   const pins = pinned && sameGrid(pinned.grid, state.grid) ? pinned.pins : []
   const pin = (exact: boolean) => {
     if (!state.grid || gridOff !== null) return
-    const detected = gridFit ? detectedBeatNear(gridFit, playheadMs) : playheadMs
+    const detected = gridFit ? detectedBeatNear(gridFit, playheadMs, ctx.beats) : playheadMs
     const period = gridFit ? 60000 / gridFit.bpm : 0
     const at = !exact && Math.abs(detected - playheadMs) <= period / 4 ? detected : playheadMs
     if (pins.some((p) => Math.abs(p - at) < 1)) return

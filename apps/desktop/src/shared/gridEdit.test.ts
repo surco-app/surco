@@ -437,8 +437,17 @@ describe('pinGrid', () => {
 
 describe('detectedBeatNear', () => {
   it('gives the beat the detector heard nearest a moment, so a pin lands on the kick and not where the click fell', () => {
-    expect(detectedBeatNear({ bpm: 120, firstMs: 130 }, 10400)).toBe(10630)
-    expect(detectedBeatNear({ bpm: 120, firstMs: 130 }, 10100)).toBe(10130)
+    expect(detectedBeatNear({ bpm: 120, firstMs: 130 }, 10400, [])).toBe(10630)
+    expect(detectedBeatNear({ bpm: 120, firstMs: 130 }, 10100, [])).toBe(10130)
+  })
+
+  // On Onirik the detector hears the offbeat, so pinning the beat it heard put the grid half
+  // a beat off the kick. Of the beat heard and the one half a beat away, the one nearer the
+  // grid is the kick the grid already follows.
+  it('gives the beat half a beat away when that one sits nearer the grid, since the detector cannot tell kick from offbeat', () => {
+    const grid = Array.from({ length: 100 }, (_, i) => 3 + i * 500)
+    expect(detectedBeatNear({ bpm: 120, firstMs: 253 }, 10000, grid)).toBe(10003)
+    expect(detectedBeatNear({ bpm: 120, firstMs: 63 }, 10000, grid)).toBe(10063)
   })
 })
 
@@ -480,5 +489,39 @@ describe('carrying a cue on the first beat', () => {
 
   it('does not carry a cue onto a beat that is really before the start', () => {
     expect(carryOntoGrid({ bpm: 142, anchorMs: 0 }, { bpm: 142, anchorMs: -3 }, 0, 20)).toBeNull()
+  })
+})
+
+describe('a detector locked on the offbeat', () => {
+  // Onirik (09/11): rekordbox's grid sat on the kick at 3 ms, the detector heard the offbeat in
+  // 46 of 50 stretches, and Auto moved the grid half a beat. The detector cannot tell kick
+  // from offbeat, so it only ever moves the grid by less than a quarter beat.
+  const period = 60000 / 140
+  const offbeat = (ms: number) => ({ ms, firstMs: 3 + period / 2 })
+  const fit = {
+    bpm: 140,
+    firstMs: 3 + period / 2,
+    phases: Array.from({ length: 50 }, (_, i) => offbeat(6800 * (i + 1))),
+  }
+
+  it('keeps a grid on the kick where it is when the detector heard the offbeat', () => {
+    const fitted = fitGrid({ bpm: 140, anchorMs: 3 }, fit, 0)
+    expect(Math.abs(fitted.anchorMs - 3)).toBeLessThan(0.01)
+  })
+
+  it('still moves a grid a little off the kick onto it, reading the offbeat half a beat away', () => {
+    const fitted = fitGrid({ bpm: 140, anchorMs: 63 }, fit, 0)
+    expect(Math.abs(fitted.anchorMs - 3)).toBeLessThan(0.01)
+  })
+
+  it('reads a grid on the kick as on the beat, so Auto is not offered to break it', () => {
+    const { hereMs, endMs } = gridOffsets(
+      drawn({ bpm: 140, anchorMs: 3 }, 300000),
+      fit,
+      30000,
+      300000,
+    )
+    expect(Math.abs(hereMs)).toBeLessThanOrEqual(1)
+    expect(Math.abs(endMs)).toBeLessThanOrEqual(1)
   })
 })
