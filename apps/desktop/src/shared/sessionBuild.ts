@@ -73,6 +73,25 @@ function harmonyAllows(mode: SessionOptions['harmony'], distance: number | null)
   return mode === 'neighbours' ? distance <= 1 : distance === 0
 }
 
+export function tasteOf(track: SessionTrack, maxPlays: number, enabled: boolean): number {
+  if (!enabled) return 0
+  return track.rating / 100 + (maxPlays > 0 ? PLAYS_WEIGHT * (track.plays / maxPlays) : 0)
+}
+
+export function transitionFits(
+  from: SessionTrack,
+  to: SessionTrack,
+  options: Pick<SessionOptions, 'harmony' | 'alternate'>,
+  tempoLimit: number,
+): boolean {
+  if (!harmonyAllows(options.harmony, camelotDistance(from.key, to.key))) return false
+  const gap = tempoGap(from, to)
+  if (gap !== null && gap > tempoLimit) return false
+  return !options.alternate || from.role === 'any' || to.role === 'any' || from.role !== to.role
+}
+
+export const TEMPO_LIMITS = { tight: TEMPO_TIGHT, wide: TEMPO_WIDE } as const
+
 function freshSlots(goal: number, estimated: number): number[] {
   return Array.from({ length: goal }, (_, k) =>
     Math.max(1, Math.round(((k + 1) * estimated) / (goal + 1))),
@@ -108,10 +127,7 @@ export function buildSession(
 
   const pickOne = <T>(list: readonly T[]): T => list[Math.floor(random() * list.length)]
 
-  const taste = (track: SessionTrack): number =>
-    options.tasteWeight
-      ? track.rating / 100 + (maxPlays > 0 ? PLAYS_WEIGHT * (track.plays / maxPlays) : 0)
-      : 0
+  const taste = (track: SessionTrack): number => tasteOf(track, maxPlays, options.tasteWeight)
 
   const roleFits = (track: SessionTrack): boolean =>
     !options.alternate || expected === null || track.role === 'any' || track.role === expected
