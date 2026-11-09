@@ -56,20 +56,15 @@
       "sources": {
         "heading": "¿De qué playlists salen las pistas?",
         "hint": "Busca una playlist y di qué hay en ella. Surco lo guarda en la playlist, así que la próxima vez ya están aquí. También se marca desde el menú de cada playlist.",
-        "search": "Buscar entre {{count}} playlists",
         "noHits": "Ninguna playlist coincide",
         "none": "Aún no has elegido ninguna playlist",
         "remove": "Quitar {{name}}",
-        "tracks_one": "{{count}} pista",
-        "tracks_other": "{{count}} pistas",
         "upTo_one": "Hasta {{count}} pista para elegir",
         "upTo_other": "Hasta {{count}} pistas para elegir"
       },
       "fresh": {
         "heading": "¿Quieres probar pistas nuevas?",
         "hint": "Las nuevas no tienen historial. Surco las coloca por tono, BPM y por si son base o cantadita, detrás de una pista que ya conoces.",
-        "search": "Buscar una playlist de pistas nuevas",
-        "add": "Añadir",
         "share": "Pistas nuevas en la sesión",
         "shareValue": "{{percent}} %"
       },

@@ -56,20 +56,15 @@
       "sources": {
         "heading": "Aus welchen Playlists sollen die Tracks kommen?",
         "hint": "Suche eine Playlist und gib an, was sie enthält. Surco merkt es sich an der Playlist, beim nächsten Mal ist sie also schon hier. Du kannst es auch im Menü jeder Playlist festlegen.",
-        "search": "Unter {{count}} Playlists suchen",
         "noHits": "Keine Playlist passt",
         "none": "Noch keine Playlist ausgewählt",
         "remove": "{{name}} entfernen",
-        "tracks_one": "{{count}} Track",
-        "tracks_other": "{{count}} Tracks",
         "upTo_one": "Bis zu {{count}} Track zur Auswahl",
         "upTo_other": "Bis zu {{count}} Tracks zur Auswahl"
       },
       "fresh": {
         "heading": "Möchtest du neue Tracks ausprobieren?",
         "hint": "Neue Tracks haben keinen Verlauf. Surco platziert sie nach Tonart, Tempo und danach, ob sie Base oder Gesang sind, hinter einem Track, den du schon kennst.",
-        "search": "Playlist mit neuen Tracks suchen",
-        "add": "Hinzufügen",
         "share": "Neue Tracks in der Session",
         "shareValue": "{{percent}} %"
       },

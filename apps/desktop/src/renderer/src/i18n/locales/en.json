@@ -56,20 +56,15 @@
       "sources": {
         "heading": "Which playlists should the tracks come from?",
         "hint": "Search a playlist and say what it holds. Surco keeps it on the playlist, so next time it is already here. You can also set it from each playlist's menu.",
-        "search": "Search among {{count}} playlists",
         "noHits": "No playlist matches",
         "none": "No playlist chosen yet",
         "remove": "Remove {{name}}",
-        "tracks_one": "{{count}} track",
-        "tracks_other": "{{count}} tracks",
         "upTo_one": "Up to {{count}} track to choose from",
         "upTo_other": "Up to {{count}} tracks to choose from"
       },
       "fresh": {
         "heading": "Want to try some new tracks?",
         "hint": "New tracks have no history. Surco places them by key, tempo and whether they are base or vocal, after a track you already know.",
-        "search": "Search a playlist of new tracks",
-        "add": "Add",
         "share": "New tracks in the session",
         "shareValue": "{{percent}} %"
       },

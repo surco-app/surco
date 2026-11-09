@@ -56,20 +56,15 @@
       "sources": {
         "heading": "De quais playlists saem as faixas?",
         "hint": "Busque uma playlist e diga o que há nela. O Surco guarda isso na playlist, então da próxima vez ela já estará aqui. Também dá para definir pelo menu de cada playlist.",
-        "search": "Buscar entre {{count}} playlists",
         "noHits": "Nenhuma playlist corresponde",
         "none": "Nenhuma playlist escolhida ainda",
         "remove": "Remover {{name}}",
-        "tracks_one": "{{count}} faixa",
-        "tracks_other": "{{count}} faixas",
         "upTo_one": "Até {{count}} faixa para escolher",
         "upTo_other": "Até {{count}} faixas para escolher"
       },
       "fresh": {
         "heading": "Quer experimentar faixas novas?",
         "hint": "Faixas novas não têm histórico. O Surco as coloca por tom, BPM e por serem base ou cantada, depois de uma faixa que você já conhece.",
-        "search": "Buscar uma playlist de faixas novas",
-        "add": "Adicionar",
         "share": "Faixas novas na sessão",
         "shareValue": "{{percent}} %"
       },

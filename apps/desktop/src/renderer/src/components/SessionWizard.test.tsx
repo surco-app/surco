@@ -84,7 +84,7 @@ const toSources = () => next()
 const toFresh = async () => {
   toSources()
   next()
-  await screen.findByTestId('session-wizard-fresh-search')
+  await screen.findByTestId('session-wizard-fresh')
 }
 const toCharacter = async () => {
   await toFresh()
@@ -156,26 +156,51 @@ describe('SessionWizard sources step', () => {
   it('lists the playlists whose name has what was typed, ignoring case and accents', () => {
     setup()
     toSources()
-    fireEvent.change(screen.getByTestId('session-wizard-search'), { target: { value: 'XATIVA' } })
-    expect(screen.getByTestId('session-wizard-hit-mak')).toBeInTheDocument()
-    expect(screen.queryByTestId('session-wizard-hit-b90')).toBeNull()
-    fireEvent.change(screen.getByTestId('session-wizard-search'), { target: { value: 'mak' } })
-    expect(screen.getByTestId('session-wizard-hit-mak')).toBeInTheDocument()
-    expect(screen.getByTestId('session-wizard-hit-mk97')).toBeInTheDocument()
+    fireEvent.change(screen.getByTestId('playlists-search'), { target: { value: 'XATIVA' } })
+    expect(screen.getByTestId('playlists-row-mak')).toBeInTheDocument()
+    expect(screen.queryByTestId('playlists-row-b90')).toBeNull()
+    fireEvent.change(screen.getByTestId('playlists-search'), { target: { value: 'mak' } })
+    expect(screen.getByTestId('playlists-row-mak')).toBeInTheDocument()
+    expect(screen.getByTestId('playlists-row-mk97')).toBeInTheDocument()
+  })
+
+  it('browses the folders without typing and gives a role from the row', () => {
+    const { onRole } = setup()
+    toSources()
+    expect(screen.queryByTestId('session-wizard-role-b90-base')).toBeNull()
+    fireEvent.click(screen.getByTestId('playlists-folder-rem'))
+    fireEvent.click(screen.getByTestId('session-wizard-role-b90-base'))
+    expect(onRole).toHaveBeenCalledExactlyOnceWith('b90', 'base')
+    expect(
+      within(screen.getByTestId('session-wizard-group-base')).getByTestId('session-wizard-chip-b90'),
+    ).toBeInTheDocument()
+  })
+
+  it('has no box to create a playlist, since the session only reads them', () => {
+    setup()
+    toSources()
+    fireEvent.change(screen.getByTestId('playlists-search'), { target: { value: 'Algo nuevo' } })
+    expect(screen.queryByTestId('playlists-create')).toBeNull()
+  })
+
+  it('keeps the focus on the heading instead of on the search', () => {
+    setup()
+    toSources()
+    expect(screen.getByTestId('playlists-search')).not.toHaveFocus()
   })
 
   it('says so when nothing matches', () => {
     setup()
     toSources()
-    fireEvent.change(screen.getByTestId('session-wizard-search'), { target: { value: 'zzz' } })
-    expect(screen.getByTestId('session-wizard-no-hits')).toBeInTheDocument()
+    fireEvent.change(screen.getByTestId('playlists-search'), { target: { value: 'zzz' } })
+    expect(screen.getByTestId('playlists-empty')).toBeInTheDocument()
   })
 
   it('shows a chip in the group of the role it was given and tells the app', () => {
     const { onRole } = setup()
     toSources()
-    fireEvent.change(screen.getByTestId('session-wizard-search'), { target: { value: 'mak' } })
-    fireEvent.click(screen.getByTestId('session-wizard-hit-role-mk97-base'))
+    fireEvent.change(screen.getByTestId('playlists-search'), { target: { value: 'mak' } })
+    fireEvent.click(screen.getByTestId('session-wizard-role-mk97-base'))
     expect(onRole).toHaveBeenCalledExactlyOnceWith('mk97', 'base')
     const group = screen.getByTestId('session-wizard-group-base')
     expect(within(group).getByTestId('session-wizard-chip-mk97')).toBeInTheDocument()
@@ -184,9 +209,9 @@ describe('SessionWizard sources step', () => {
   it('takes the chip away and clears the role when the active role is pressed again', () => {
     const { onRole } = setup({ mk97: 'base' })
     toSources()
-    fireEvent.change(screen.getByTestId('session-wizard-search'), { target: { value: 'mk97' } })
-    fireEvent.change(screen.getByTestId('session-wizard-search'), { target: { value: 'bases 97' } })
-    fireEvent.click(screen.getByTestId('session-wizard-hit-role-mk97-base'))
+    fireEvent.change(screen.getByTestId('playlists-search'), { target: { value: 'mk97' } })
+    fireEvent.change(screen.getByTestId('playlists-search'), { target: { value: 'bases 97' } })
+    fireEvent.click(screen.getByTestId('session-wizard-role-mk97-base'))
     expect(onRole).toHaveBeenCalledExactlyOnceWith('mk97', null)
     expect(screen.queryByTestId('session-wizard-chip-mk97')).toBeNull()
   })
@@ -248,7 +273,7 @@ describe('SessionWizard reading the chosen playlists', () => {
     const { rows } = setup({ b90: 'base', c90: 'vocal' })
     toSources()
     next()
-    await screen.findByTestId('session-wizard-fresh-search')
+    await screen.findByTestId('session-wizard-fresh')
     expect(rows.load).toHaveBeenCalledTimes(1)
     expect(rows.load).toHaveBeenCalledWith(['b90', 'c90'])
   })
@@ -270,16 +295,16 @@ describe('SessionWizard reading the chosen playlists', () => {
       i18n.t('sessions.wizard.loading'),
     )
     release(new Map())
-    await screen.findByTestId('session-wizard-fresh-search')
+    await screen.findByTestId('session-wizard-fresh')
   })
 
   it('also reads the new-track playlists when leaving that step', async () => {
     const { rows } = setup({ b90: 'base' })
     await toFresh()
-    fireEvent.change(screen.getByTestId('session-wizard-fresh-search'), {
+    fireEvent.change(screen.getByTestId('playlists-search'), {
       target: { value: 'mak' },
     })
-    fireEvent.click(screen.getByTestId('session-wizard-fresh-add-mak'))
+    fireEvent.click(screen.getByTestId('playlists-check-mak'))
     next()
     await screen.findByTestId('session-wizard-build')
     expect(rows.load).toHaveBeenLastCalledWith(['mak'])
@@ -310,10 +335,10 @@ describe('SessionWizard new tracks step', () => {
   it('adds a playlist of new tracks and takes the share from the slider', async () => {
     const { onBuild } = setup({ b90: 'base' })
     await toFresh()
-    fireEvent.change(screen.getByTestId('session-wizard-fresh-search'), {
+    fireEvent.change(screen.getByTestId('playlists-search'), {
       target: { value: 'xativa' },
     })
-    fireEvent.click(screen.getByTestId('session-wizard-fresh-add-mak'))
+    fireEvent.click(screen.getByTestId('playlists-check-mak'))
     expect(screen.getByTestId('session-wizard-fresh-chip-mak')).toBeInTheDocument()
     fireEvent.change(screen.getByTestId('session-wizard-fresh-share'), { target: { value: '30' } })
     next()
@@ -325,6 +350,24 @@ describe('SessionWizard new tracks step', () => {
     )
   })
 
+  it('browses the folders and ticks a playlist without typing, and unticks it from the same row', async () => {
+    setup({ b90: 'base' })
+    await toFresh()
+    fireEvent.click(screen.getByTestId('playlists-folder-rem'))
+    fireEvent.click(screen.getByTestId('playlists-check-mak'))
+    expect(screen.getByTestId('session-wizard-fresh-chip-mak')).toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('playlists-check-mak'))
+    expect(screen.queryByTestId('session-wizard-fresh-chip-mak')).toBeNull()
+  })
+
+  it('has no box to create a playlist and keeps the focus on the heading', async () => {
+    setup({ b90: 'base' })
+    await toFresh()
+    fireEvent.change(screen.getByTestId('playlists-search'), { target: { value: 'Algo nuevo' } })
+    expect(screen.queryByTestId('playlists-create')).toBeNull()
+    expect(screen.getByTestId('session-wizard-step-title')).toHaveFocus()
+  })
+
   it('keeps the share between 0 and 40 and off until a playlist is chosen', async () => {
     setup({ b90: 'base' })
     await toFresh()
@@ -332,20 +375,20 @@ describe('SessionWizard new tracks step', () => {
     expect(slider).toHaveAttribute('min', '0')
     expect(slider).toHaveAttribute('max', '40')
     expect(slider).toBeDisabled()
-    fireEvent.change(screen.getByTestId('session-wizard-fresh-search'), {
+    fireEvent.change(screen.getByTestId('playlists-search'), {
       target: { value: 'mak' },
     })
-    fireEvent.click(screen.getByTestId('session-wizard-fresh-add-mak'))
+    fireEvent.click(screen.getByTestId('playlists-check-mak'))
     expect(slider).toBeEnabled()
   })
 
   it('takes a new-track playlist away with its cross', async () => {
     setup({ b90: 'base' })
     await toFresh()
-    fireEvent.change(screen.getByTestId('session-wizard-fresh-search'), {
+    fireEvent.change(screen.getByTestId('playlists-search'), {
       target: { value: 'mak' },
     })
-    fireEvent.click(screen.getByTestId('session-wizard-fresh-add-mak'))
+    fireEvent.click(screen.getByTestId('playlists-check-mak'))
     fireEvent.click(screen.getByTestId('session-wizard-fresh-chip-remove-mak'))
     expect(screen.queryByTestId('session-wizard-fresh-chip-mak')).toBeNull()
   })
@@ -431,14 +474,14 @@ describe('SessionWizard character step', () => {
   it('hands over the roles chosen inside the wizard, even before the app has saved them', async () => {
     const { onBuild } = setup({ b90: 'base' })
     toSources()
-    fireEvent.change(screen.getByTestId('session-wizard-search'), { target: { value: 'combos' } })
-    fireEvent.click(screen.getByTestId('session-wizard-hit-role-combos-set'))
-    fireEvent.change(screen.getByTestId('session-wizard-search'), {
+    fireEvent.change(screen.getByTestId('playlists-search'), { target: { value: 'combos' } })
+    fireEvent.click(screen.getByTestId('session-wizard-role-combos-set'))
+    fireEvent.change(screen.getByTestId('playlists-search'), {
       target: { value: 'cantaditas' },
     })
-    fireEvent.click(screen.getByTestId('session-wizard-hit-role-c90-vocal'))
+    fireEvent.click(screen.getByTestId('session-wizard-role-c90-vocal'))
     next()
-    await screen.findByTestId('session-wizard-fresh-search')
+    await screen.findByTestId('session-wizard-fresh')
     next()
     await screen.findByTestId('session-wizard-build')
     fireEvent.click(screen.getByTestId('session-wizard-build'))
@@ -451,12 +494,12 @@ describe('SessionWizard character step', () => {
   it('does not hand over the role of a playlist that was taken away', async () => {
     const { onBuild } = setup({ b90: 'base', c90: 'vocal' })
     toSources()
-    fireEvent.change(screen.getByTestId('session-wizard-search'), {
+    fireEvent.change(screen.getByTestId('playlists-search'), {
       target: { value: 'cantaditas' },
     })
-    fireEvent.click(screen.getByTestId('session-wizard-hit-role-c90-vocal'))
+    fireEvent.click(screen.getByTestId('session-wizard-role-c90-vocal'))
     next()
-    await screen.findByTestId('session-wizard-fresh-search')
+    await screen.findByTestId('session-wizard-fresh')
     next()
     await screen.findByTestId('session-wizard-build')
     fireEvent.click(screen.getByTestId('session-wizard-build'))

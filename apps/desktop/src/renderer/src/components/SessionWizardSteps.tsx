@@ -1,11 +1,11 @@
-import { Search } from 'lucide-react'
 import type React from 'react'
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { PlaylistRole, SessionHarmony } from '../../../shared/sessionTypes'
 import type { SourceNode } from '../../../shared/types'
-import { foldText } from '../lib/normalizeText'
+import { playlistOptions } from '../lib/rekordboxPlaylists'
 import { PlaylistRolePicker } from './PlaylistRolePicker'
+import { PlaylistTree } from './PlaylistTree'
 import { flattenPlaylists } from './SourceTree'
 
 const CHIP = 'press rounded-full border px-3 py-1 text-sm'
@@ -22,7 +22,7 @@ const PRESETS: readonly { minutes: number; key: string }[] = [
 ]
 
 const ROLES: readonly PlaylistRole[] = ['base', 'vocal', 'any', 'set']
-const MAX_HITS = 8
+const NO_TOGGLE = (): void => undefined
 
 export function isPresetMinutes(minutes: number): boolean {
   return PRESETS.some((preset) => preset.minutes === minutes)
@@ -109,62 +109,41 @@ export function SourcesStep({
   onDrop: (id: string) => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
-  const [query, setQuery] = useState('')
   const playlists = useMemo(() => flattenPlaylists([...tree]), [tree])
   const byId = useMemo(() => new Map(playlists.map((p) => [p.node.id, p.node])), [playlists])
-  const needle = foldText(query.trim())
-  const hits = needle
-    ? playlists.filter((p) => foldText(p.node.name).includes(needle)).slice(0, MAX_HITS)
-    : []
+  const options = useMemo(() => playlistOptions(tree), [tree])
+  const tokens = useMemo(
+    () =>
+      sources.flatMap((id) => {
+        const node = byId.get(id)
+        return node ? [{ target: { id, name: node.name }, state: 'all' as const }] : []
+      }),
+    [sources, byId],
+  )
   const eligible = sources.reduce((sum, id) => sum + (byId.get(id)?.count ?? 0), 0)
   return (
     <div className="flex flex-col gap-3">
       <p className="text-xs text-fg-dim">{tr('sessions.wizard.sources.hint')}</p>
-      <div className="relative">
-        <Search
-          className="pointer-events-none absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2 text-fg-faint"
-          aria-hidden="true"
-        />
-        <input
-          type="search"
-          data-testid="session-wizard-search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder={tr('sessions.wizard.sources.search', { count: playlists.length })}
-          aria-label={tr('sessions.wizard.sources.search', { count: playlists.length })}
-          className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] py-2 pr-3 pl-9 text-sm outline-none focus:border-[var(--color-accent)]"
+      <div className="flex flex-col overflow-hidden rounded-[10px] border border-[var(--color-line)] bg-[var(--color-field)]">
+        <PlaylistTree
+          tree={tree}
+          options={options}
+          tokens={tokens}
+          onToggle={NO_TOGGLE}
+          allowCreate={false}
+          autoFocus={false}
+          emptyText={tr('sessions.wizard.sources.noHits')}
+          control={({ id }) =>
+            id ? (
+              <PlaylistRolePicker
+                value={roles[id] ?? null}
+                onChange={(role) => onPick(id, role)}
+                testIdPrefix={`session-wizard-role-${id}`}
+              />
+            ) : null
+          }
         />
       </div>
-      {needle &&
-        (hits.length === 0 ? (
-          <p data-testid="session-wizard-no-hits" className="text-xs text-fg-dim">
-            {tr('sessions.wizard.sources.noHits')}
-          </p>
-        ) : (
-          <ul className="overflow-hidden rounded-[10px] border border-[var(--color-line)] bg-[var(--color-field)]">
-            {hits.map(({ node, folders }) => (
-              <li
-                key={node.id}
-                data-testid={`session-wizard-hit-${node.id}`}
-                className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-t border-[var(--color-line)] px-3 py-2 first:border-t-0"
-              >
-                <span className="min-w-0 truncate text-[13px]">
-                  {node.name}
-                  <small className="ml-1.5 text-fg-faint">
-                    {[...folders, tr('sessions.wizard.sources.tracks', { count: node.count })].join(
-                      ' · ',
-                    )}
-                  </small>
-                </span>
-                <PlaylistRolePicker
-                  value={roles[node.id] ?? null}
-                  onChange={(role) => onPick(node.id, role)}
-                  testIdPrefix={`session-wizard-hit-role-${node.id}`}
-                />
-              </li>
-            ))}
-          </ul>
-        ))}
       {sources.length === 0 ? (
         <p data-testid="session-wizard-none" className="text-xs text-fg-dim">
           {tr('sessions.wizard.sources.none')}
@@ -229,64 +208,36 @@ export function FreshStep({
   onShare: (share: number) => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
-  const [query, setQuery] = useState('')
   const playlists = useMemo(() => flattenPlaylists([...tree]), [tree])
   const byId = useMemo(() => new Map(playlists.map((p) => [p.node.id, p.node])), [playlists])
-  const needle = foldText(query.trim())
-  const hits = needle
-    ? playlists
-        .filter((p) => !fresh.includes(p.node.id) && foldText(p.node.name).includes(needle))
-        .slice(0, MAX_HITS)
-    : []
+  const options = useMemo(() => playlistOptions(tree), [tree])
+  const tokens = useMemo(
+    () =>
+      fresh.flatMap((id) => {
+        const node = byId.get(id)
+        return node ? [{ target: { id, name: node.name }, state: 'all' as const }] : []
+      }),
+    [fresh, byId],
+  )
   const percent = Math.round(share * 100)
   return (
-    <div className="flex flex-col gap-3">
+    <div data-testid="session-wizard-fresh" className="flex flex-col gap-3">
       <p className="text-xs text-fg-dim">{tr('sessions.wizard.fresh.hint')}</p>
-      <div className="relative">
-        <Search
-          className="pointer-events-none absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2 text-fg-faint"
-          aria-hidden="true"
-        />
-        <input
-          type="search"
-          data-testid="session-wizard-fresh-search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder={tr('sessions.wizard.fresh.search')}
-          aria-label={tr('sessions.wizard.fresh.search')}
-          className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] py-2 pr-3 pl-9 text-sm outline-none focus:border-[var(--color-accent)]"
+      <div className="flex flex-col overflow-hidden rounded-[10px] border border-[var(--color-line)] bg-[var(--color-field)]">
+        <PlaylistTree
+          tree={tree}
+          options={options}
+          tokens={tokens}
+          onToggle={(target, on) => {
+            if (!target.id) return
+            if (on) onAdd(target.id)
+            else onDrop(target.id)
+          }}
+          allowCreate={false}
+          autoFocus={false}
+          emptyText={tr('sessions.wizard.sources.noHits')}
         />
       </div>
-      {needle &&
-        (hits.length === 0 ? (
-          <p className="text-xs text-fg-dim">{tr('sessions.wizard.sources.noHits')}</p>
-        ) : (
-          <ul className="overflow-hidden rounded-[10px] border border-[var(--color-line)] bg-[var(--color-field)]">
-            {hits.map(({ node, folders }) => (
-              <li
-                key={node.id}
-                className="flex items-center justify-between gap-3 border-t border-[var(--color-line)] px-3 py-2 first:border-t-0"
-              >
-                <span className="min-w-0 truncate text-[13px]">
-                  {node.name}
-                  <small className="ml-1.5 text-fg-faint">
-                    {[...folders, tr('sessions.wizard.sources.tracks', { count: node.count })].join(
-                      ' · ',
-                    )}
-                  </small>
-                </span>
-                <button
-                  type="button"
-                  data-testid={`session-wizard-fresh-add-${node.id}`}
-                  onClick={() => onAdd(node.id)}
-                  className={`${CHIP} ${CHIP_OFF} shrink-0 py-0.5 text-xs`}
-                >
-                  {tr('sessions.wizard.fresh.add')}
-                </button>
-              </li>
-            ))}
-          </ul>
-        ))}
       {fresh.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {fresh.map((id) => (

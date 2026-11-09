@@ -105,7 +105,7 @@ describe('PlaylistTree focus', () => {
 describe('PlaylistTree leaving with Escape', () => {
   it('stays quiet when nobody asked to hear about it', () => {
     renderTree({ onEscape: undefined })
-    const escape = fireEvent.keyDown(screen.getByTestId('playlists-search'), { key: 'Escape' })
-    expect(escape).toBe(true)
+    const notStopped = fireEvent.keyDown(screen.getByTestId('playlists-search'), { key: 'Escape' })
+    expect(notStopped).toBe(true)
   })
 })

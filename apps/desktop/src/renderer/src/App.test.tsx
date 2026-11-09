@@ -10066,10 +10066,10 @@ describe('automatic session from the tree', () => {
   async function toBuild(): Promise<void> {
     await openWizard()
     fireEvent.click(screen.getByTestId('session-wizard-next'))
-    fireEvent.change(screen.getByTestId('session-wizard-search'), { target: { value: 'fact' } })
-    fireEvent.click(screen.getByTestId('session-wizard-hit-role-f-any'))
+    fireEvent.change(screen.getByTestId('playlists-search'), { target: { value: 'fact' } })
+    fireEvent.click(screen.getByTestId('session-wizard-role-f-any'))
     fireEvent.click(screen.getByTestId('session-wizard-next'))
-    await screen.findByTestId('session-wizard-fresh-search')
+    await screen.findByTestId('session-wizard-fresh')
     fireEvent.click(screen.getByTestId('session-wizard-next'))
     await screen.findByTestId('session-wizard-build')
   }
@@ -10139,10 +10139,10 @@ describe('automatic session from the tree', () => {
     const read = vi.mocked(window.api.loadRekordboxPlaylist)
     await openWizard()
     fireEvent.click(screen.getByTestId('session-wizard-next'))
-    fireEvent.change(screen.getByTestId('session-wizard-search'), { target: { value: 'fact' } })
-    fireEvent.click(screen.getByTestId('session-wizard-hit-role-f-any'))
+    fireEvent.change(screen.getByTestId('playlists-search'), { target: { value: 'fact' } })
+    fireEvent.click(screen.getByTestId('session-wizard-role-f-any'))
     fireEvent.click(screen.getByTestId('session-wizard-next'))
-    await screen.findByTestId('session-wizard-fresh-search')
+    await screen.findByTestId('session-wizard-fresh')
     const first = read.mock.calls.length
     fireEvent.keyDown(window, { key: 'Escape' })
     await waitFor(() =>
@@ -10156,11 +10156,11 @@ describe('automatic session from the tree', () => {
     await screen.findByTestId('session-wizard-dialog')
     fireEvent.click(screen.getByTestId('session-wizard-next'))
     if (!screen.queryByTestId('session-wizard-chip-f')) {
-      fireEvent.change(screen.getByTestId('session-wizard-search'), { target: { value: 'fact' } })
-      fireEvent.click(screen.getByTestId('session-wizard-hit-role-f-any'))
+      fireEvent.change(screen.getByTestId('playlists-search'), { target: { value: 'fact' } })
+      fireEvent.click(screen.getByTestId('session-wizard-role-f-any'))
     }
     fireEvent.click(screen.getByTestId('session-wizard-next'))
-    await screen.findByTestId('session-wizard-fresh-search')
+    await screen.findByTestId('session-wizard-fresh')
     expect(read.mock.calls.length).toBeGreaterThan(first)
   })
 
