@@ -52,4 +52,23 @@ describe('mineCombos', () => {
     expect(combos.get('absolom-secret')?.get('the-bass-here-we-go')).toBe(1)
     expect(combos.get('the-bass-here-we-go')?.get('crush-jellyhead')).toBe(1)
   })
+
+  it('keeps only the pairs that at least that many playlists hold, when asked for a minimum', () => {
+    const combos = mineCombos(
+      [
+        ['a', 'b', 'c'],
+        ['x', 'a', 'b'],
+      ],
+      pool('a', 'b', 'c', 'x'),
+      2,
+    )
+    expect(combos.get('a')?.get('b')).toBe(2)
+    expect(combos.get('b')?.get('c')).toBeUndefined()
+    expect(combos.get('x')).toBeUndefined()
+  })
+
+  it('leaves no entry behind for a track whose every pair fell under the minimum', () => {
+    const combos = mineCombos([['a', 'b']], pool('a', 'b'), 2)
+    expect(combos.size).toBe(0)
+  })
 })
