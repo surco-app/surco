@@ -92,7 +92,24 @@
       "loading": "Reading…",
       "build": "Build session",
       "loadFailed": "{{names}} could not be read and is left out"
-    }
+    },
+    "band": {
+      "title": "Session built by Surco",
+      "tracks_one": "{{count}} track",
+      "tracks_other": "{{count}} tracks",
+      "combos_one": "{{count}} combo",
+      "combos_other": "{{count}} combos",
+      "fresh_one": "{{count}} new",
+      "fresh_other": "{{count}} new",
+      "harmonic": "{{harmonic}}/{{total}} harmonic",
+      "redo": "Redo",
+      "adjust": "Adjust…",
+      "keep": "Keep it as is",
+      "short": "Only enough tracks for {{minutes}} min",
+      "assumed_one": "{{count}} track has no length and counts as 6 min",
+      "assumed_other": "{{count}} tracks have no length and count as 6 min each"
+    },
+    "playlistName": "Session {{date}}"
   },
   "pasteTracklist": {
     "title": "Paste tracklist into “{{name}}”",

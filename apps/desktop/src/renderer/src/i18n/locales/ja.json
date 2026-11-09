@@ -92,7 +92,24 @@
       "loading": "読み込み中…",
       "build": "セッションを作成",
       "loadFailed": "{{names}} を読み込めなかったため除外します"
-    }
+    },
+    "band": {
+      "title": "Surco が作ったセッション",
+      "tracks_one": "{{count}} トラック",
+      "tracks_other": "{{count}} トラック",
+      "combos_one": "{{count}} コンボ",
+      "combos_other": "{{count}} コンボ",
+      "fresh_one": "新曲 {{count}}",
+      "fresh_other": "新曲 {{count}}",
+      "harmonic": "{{harmonic}}/{{total}} ハーモニック",
+      "redo": "やり直す",
+      "adjust": "調整…",
+      "keep": "このまま使う",
+      "short": "{{minutes}} 分ぶんの曲しかありません",
+      "assumed_one": "{{count}} トラックは長さ不明のため 6 分として計算",
+      "assumed_other": "{{count}} トラックは長さ不明のため 6 分として計算"
+    },
+    "playlistName": "{{date}} のセッション"
   },
   "pasteTracklist": {
     "title": "「{{name}}」にトラックリストを貼り付け",

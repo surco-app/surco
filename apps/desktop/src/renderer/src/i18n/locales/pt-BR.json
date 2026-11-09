@@ -92,7 +92,24 @@
       "loading": "Lendo…",
       "build": "Montar sessão",
       "loadFailed": "{{names}} não pôde ser lido e fica de fora"
-    }
+    },
+    "band": {
+      "title": "Sessão montada pelo Surco",
+      "tracks_one": "{{count}} faixa",
+      "tracks_other": "{{count}} faixas",
+      "combos_one": "{{count}} combo",
+      "combos_other": "{{count}} combos",
+      "fresh_one": "{{count}} nova",
+      "fresh_other": "{{count}} novas",
+      "harmonic": "{{harmonic}}/{{total}} harmônicas",
+      "redo": "Refazer",
+      "adjust": "Ajustar…",
+      "keep": "Ficar assim",
+      "short": "Só há faixas para {{minutes}} min",
+      "assumed_one": "{{count}} faixa sem duração, conta como 6 min",
+      "assumed_other": "{{count}} faixas sem duração, contam como 6 min cada"
+    },
+    "playlistName": "Sessão de {{date}}"
   },
   "pasteTracklist": {
     "title": "Colar tracklist em “{{name}}”",

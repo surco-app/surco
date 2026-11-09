@@ -92,7 +92,24 @@
       "loading": "Lecture…",
       "build": "Composer la session",
       "loadFailed": "{{names}} n’a pas pu être lu et reste de côté"
-    }
+    },
+    "band": {
+      "title": "Session composée par Surco",
+      "tracks_one": "{{count}} morceau",
+      "tracks_other": "{{count}} morceaux",
+      "combos_one": "{{count}} combo",
+      "combos_other": "{{count}} combos",
+      "fresh_one": "{{count}} nouveauté",
+      "fresh_other": "{{count}} nouveautés",
+      "harmonic": "{{harmonic}}/{{total}} harmoniques",
+      "redo": "Refaire",
+      "adjust": "Ajuster…",
+      "keep": "La garder telle quelle",
+      "short": "Il n’y a de morceaux que pour {{minutes}} min",
+      "assumed_one": "{{count}} morceau sans durée, compté pour 6 min",
+      "assumed_other": "{{count}} morceaux sans durée, comptés pour 6 min chacun"
+    },
+    "playlistName": "Session du {{date}}"
   },
   "pasteTracklist": {
     "title": "Coller la tracklist dans « {{name}} »",
