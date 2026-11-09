@@ -53,8 +53,8 @@
         "noHits": "Keine Playlist passt",
         "none": "Noch keine Playlist ausgewählt",
         "remove": "{{name}} entfernen",
-        "upTo_one": "Bis zu {{count}} Track zur Auswahl",
-        "upTo_other": "Bis zu {{count}} Tracks zur Auswahl"
+        "summary_one": "{{count}} Playlist gewählt, bis zu {{tracks}} Tracks zur Auswahl",
+        "summary_other": "{{count}} Playlists gewählt, bis zu {{tracks}} Tracks zur Auswahl"
       },
       "fresh": {
         "heading": "Möchtest du neue Tracks ausprobieren?",

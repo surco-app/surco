@@ -234,7 +234,6 @@ export function SessionWizard({
           roles={roles}
           sources={sources}
           onPick={pick}
-          onDrop={(id) => setSources((prev) => prev.filter((other) => other !== id))}
         />
       )}
       {current === 'fresh' && (

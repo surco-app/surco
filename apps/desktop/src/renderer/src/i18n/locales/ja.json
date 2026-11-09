@@ -53,8 +53,8 @@
         "noHits": "一致するプレイリストがありません",
         "none": "まだプレイリストを選んでいません",
         "remove": "{{name}} を外す",
-        "upTo_one": "最大 {{count}} トラックから選びます",
-        "upTo_other": "最大 {{count}} トラックから選びます"
+        "summary_one": "{{count}} 件のプレイリストを選択中、最大 {{tracks}} 曲から選びます",
+        "summary_other": "{{count}} 件のプレイリストを選択中、最大 {{tracks}} 曲から選びます"
       },
       "fresh": {
         "heading": "新曲を試しますか？",

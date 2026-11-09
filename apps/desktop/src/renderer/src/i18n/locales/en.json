@@ -53,8 +53,8 @@
         "noHits": "No playlist matches",
         "none": "No playlist chosen yet",
         "remove": "Remove {{name}}",
-        "upTo_one": "Up to {{count}} track to choose from",
-        "upTo_other": "Up to {{count}} tracks to choose from"
+        "summary_one": "{{count}} playlist chosen, up to {{tracks}} tracks to pick from",
+        "summary_other": "{{count}} playlists chosen, up to {{tracks}} tracks to pick from"
       },
       "fresh": {
         "heading": "Want to try some new tracks?",

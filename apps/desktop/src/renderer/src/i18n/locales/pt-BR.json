@@ -53,8 +53,8 @@
         "noHits": "Nenhuma playlist corresponde",
         "none": "Nenhuma playlist escolhida ainda",
         "remove": "Remover {{name}}",
-        "upTo_one": "Até {{count}} faixa para escolher",
-        "upTo_other": "Até {{count}} faixas para escolher"
+        "summary_one": "{{count}} playlist escolhida, até {{tracks}} faixas para escolher",
+        "summary_other": "{{count}} playlists escolhidas, até {{tracks}} faixas para escolher"
       },
       "fresh": {
         "heading": "Quer experimentar faixas novas?",

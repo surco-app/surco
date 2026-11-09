@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { PlaylistRole, SessionAnswers } from '../../../shared/sessionTypes'
 import type { SourceNode, SourcePlaylistEntry } from '../../../shared/types'
@@ -172,9 +172,9 @@ describe('SessionWizard sources step', () => {
     fireEvent.click(screen.getByTestId('playlists-folder-rem'))
     fireEvent.click(screen.getByTestId('session-wizard-role-b90-base'))
     expect(onRole).toHaveBeenCalledExactlyOnceWith('b90', 'base')
-    expect(
-      within(screen.getByTestId('session-wizard-group-base')).getByTestId('session-wizard-chip-b90'),
-    ).toBeInTheDocument()
+    expect(screen.getByTestId('session-wizard-summary')).toHaveTextContent(
+        i18n.t('sessions.wizard.sources.summary', { count: 1, tracks: 38 }),
+    )
   })
 
   it('invites to search the playlists and never to create one', () => {
@@ -206,59 +206,51 @@ describe('SessionWizard sources step', () => {
     expect(screen.getByTestId('playlists-empty')).toBeInTheDocument()
   })
 
-  it('shows a chip in the group of the role it was given and tells the app', () => {
+  it('counts the playlist it was given a role in, in one line, and tells the app', () => {
     const { onRole } = setup()
     toSources()
     fireEvent.change(screen.getByTestId('playlists-search'), { target: { value: 'mak' } })
     fireEvent.click(screen.getByTestId('session-wizard-role-mk97-base'))
     expect(onRole).toHaveBeenCalledExactlyOnceWith('mk97', 'base')
-    const group = screen.getByTestId('session-wizard-group-base')
-    expect(within(group).getByTestId('session-wizard-chip-mk97')).toBeInTheDocument()
+    expect(screen.getByTestId('session-wizard-summary')).toHaveTextContent(
+        i18n.t('sessions.wizard.sources.summary', { count: 1, tracks: 22 }),
+    )
   })
 
-  it('takes the chip away and clears the role when the active role is pressed again', () => {
+  it('takes the playlist away and clears the role when the active role is pressed again', () => {
     const { onRole } = setup({ mk97: 'base' })
     toSources()
     fireEvent.change(screen.getByTestId('playlists-search'), { target: { value: 'mk97' } })
     fireEvent.change(screen.getByTestId('playlists-search'), { target: { value: 'bases 97' } })
     fireEvent.click(screen.getByTestId('session-wizard-role-mk97-base'))
     expect(onRole).toHaveBeenCalledExactlyOnceWith('mk97', null)
-    expect(screen.queryByTestId('session-wizard-chip-mk97')).toBeNull()
+    expect(screen.queryByTestId('session-wizard-summary')).toBeNull()
+    expect(screen.getByTestId('session-wizard-none')).toBeInTheDocument()
   })
 
-  it('opens with the playlists already marked in the tree, each in its own group', () => {
+  it('opens with the playlists already marked in the tree, each pressed in its own row', () => {
     setup({ b90: 'base', c90: 'vocal', combos: 'any' })
     toSources()
-    expect(
-      within(screen.getByTestId('session-wizard-group-base')).getByTestId(
-        'session-wizard-chip-b90',
-      ),
-    ).toBeInTheDocument()
-    expect(
-      within(screen.getByTestId('session-wizard-group-vocal')).getByTestId(
-        'session-wizard-chip-c90',
-      ),
-    ).toBeInTheDocument()
-    expect(
-      within(screen.getByTestId('session-wizard-group-any')).getByTestId(
-        'session-wizard-chip-combos',
-      ),
-    ).toBeInTheDocument()
-  })
-
-  it('drops a chip for this session with the cross without forgetting its role', () => {
-    const { onRole } = setup({ b90: 'base' })
-    toSources()
-    fireEvent.click(screen.getByTestId('session-wizard-chip-remove-b90'))
-    expect(screen.queryByTestId('session-wizard-chip-b90')).toBeNull()
-    expect(onRole).not.toHaveBeenCalled()
+    expect(screen.getByTestId('session-wizard-role-b90-base')).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    expect(screen.getByTestId('session-wizard-role-c90-vocal')).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    expect(screen.getByTestId('session-wizard-role-combos-any')).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
   })
 
   it('ignores a marked playlist that is no longer in the tree', () => {
     setup({ gone: 'base', b90: 'base' })
     toSources()
-    expect(screen.queryByTestId('session-wizard-chip-gone')).toBeNull()
-    expect(screen.getByTestId('session-wizard-chip-b90')).toBeInTheDocument()
+    expect(screen.getByTestId('session-wizard-summary')).toHaveTextContent(
+        i18n.t('sessions.wizard.sources.summary', { count: 1, tracks: 38 }),
+    )
   })
 
   it('will not go on without a playlist and goes on with one', () => {
@@ -274,7 +266,9 @@ describe('SessionWizard sources step', () => {
   it('counts the tracks the chosen playlists hold', () => {
     setup({ b90: 'base', c90: 'vocal' })
     toSources()
-    expect(screen.getByTestId('session-wizard-eligible')).toHaveTextContent('99')
+    expect(screen.getByTestId('session-wizard-summary')).toHaveTextContent(
+      i18n.t('sessions.wizard.sources.summary', { count: 2, tracks: 99 }),
+    )
   })
 })
 

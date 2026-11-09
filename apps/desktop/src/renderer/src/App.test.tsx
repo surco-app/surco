@@ -10206,7 +10206,7 @@ describe('automatic session from the tree', () => {
     fireEvent.click(screen.getByTestId('source-tree-session'))
     await screen.findByTestId('session-wizard-dialog')
     fireEvent.click(screen.getByTestId('session-wizard-next'))
-    if (!screen.queryByTestId('session-wizard-chip-f')) {
+    if (screen.queryByTestId('session-wizard-none')) {
       fireEvent.change(screen.getByTestId('playlists-search'), { target: { value: 'fact' } })
       fireEvent.click(screen.getByTestId('session-wizard-role-f-any'))
     }

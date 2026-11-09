@@ -21,7 +21,6 @@ const PRESETS: readonly { minutes: number; key: string }[] = [
   { minutes: 180, key: 'h3' },
 ]
 
-const ROLES: readonly PlaylistRole[] = ['base', 'vocal', 'any']
 const NO_TOGGLE = (): void => undefined
 
 export function isPresetMinutes(minutes: number): boolean {
@@ -100,13 +99,11 @@ export function SourcesStep({
   roles,
   sources,
   onPick,
-  onDrop,
 }: {
   tree: readonly SourceNode[]
   roles: Readonly<Record<string, PlaylistRole>>
   sources: readonly string[]
   onPick: (id: string, role: PlaylistRole | null) => void
-  onDrop: (id: string) => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const playlists = useMemo(() => flattenPlaylists([...tree]), [tree])
@@ -120,7 +117,8 @@ export function SourcesStep({
       }),
     [sources, byId],
   )
-  const eligible = sources.reduce((sum, id) => sum + (byId.get(id)?.count ?? 0), 0)
+  const chosen = sources.filter((id) => byId.has(id))
+  const eligible = chosen.reduce((sum, id) => sum + (byId.get(id)?.count ?? 0), 0)
   return (
     <div className="flex flex-col gap-3">
       <p className="text-xs text-fg-dim">{tr('sessions.wizard.sources.hint')}</p>
@@ -145,50 +143,15 @@ export function SourcesStep({
           }
         />
       </div>
-      {sources.length === 0 ? (
+      {chosen.length === 0 ? (
         <p data-testid="session-wizard-none" className="text-xs text-fg-dim">
           {tr('sessions.wizard.sources.none')}
         </p>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
-          {ROLES.map((role) => {
-            const ids = sources.filter((id) => roles[id] === role && byId.has(id))
-            return ids.length === 0 ? null : (
-              <div key={role} data-testid={`session-wizard-group-${role}`}>
-                <h4 className="mb-1.5 text-[11px] font-semibold tracking-wide text-fg-dim uppercase">
-                  {tr(`sessions.role.${role}`)}
-                </h4>
-                <div className="flex flex-wrap gap-1.5">
-                  {ids.map((id) => (
-                    <span
-                      key={id}
-                      data-testid={`session-wizard-chip-${id}`}
-                      className="flex items-center gap-1.5 rounded-full border border-[var(--color-line-strong)] py-0.5 pr-1 pl-2.5 text-xs"
-                    >
-                      {byId.get(id)?.name}
-                      <small className="text-fg-faint">{byId.get(id)?.count}</small>
-                      <button
-                        type="button"
-                        data-testid={`session-wizard-chip-remove-${id}`}
-                        aria-label={tr('sessions.wizard.sources.remove', {
-                          name: byId.get(id)?.name,
-                        })}
-                        onClick={() => onDrop(id)}
-                        className="press flex h-4 w-4 items-center justify-center rounded-full text-fg-faint hover:bg-[var(--color-hover)] hover:text-fg"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )
-          })}
-        </div>
+        <p data-testid="session-wizard-summary" className="text-xs text-fg-dim">
+          {tr('sessions.wizard.sources.summary', { count: chosen.length, tracks: eligible })}
+        </p>
       )}
-      <p data-testid="session-wizard-eligible" className="text-xs text-fg-dim">
-        {tr('sessions.wizard.sources.upTo', { count: eligible })}
-      </p>
     </div>
   )
 }
