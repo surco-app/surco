@@ -20,6 +20,7 @@ export type SessionWhy =
   | { kind: 'taste'; plays: number; rating: number }
   | { kind: 'bpm'; relaxed: boolean }
   | { kind: 'fresh'; key: string | null; role: TrackRole }
+  | { kind: 'chosen' }
 
 export interface SessionItem {
   track: SessionTrack
@@ -229,6 +230,13 @@ export function buildSession(
     }
   }
 
+  return { items, summary: summarizeSession(items, target) }
+}
+
+export function summarizeSession(
+  items: readonly SessionItem[],
+  targetSecs: number,
+): SessionSummary {
   let harmonic = 0
   let withKey = 0
   for (let i = 1; i < items.length; i++) {
@@ -237,17 +245,28 @@ export function buildSession(
     withKey++
     if (distance <= 1) harmonic++
   }
+  const secs = items.reduce((sum, item) => sum + secsOf(item.track), 0)
   return {
-    items,
-    summary: {
-      secs: total,
-      tracks: items.length,
-      combos: items.filter((item) => item.why.kind === 'combo').length,
-      fresh: items.filter((item) => item.why.kind === 'fresh').length,
-      harmonic,
-      withKey,
-      shortBySecs: Math.max(0, target - total),
-      missingDurations: items.filter((item) => item.track.secs <= 0).length,
-    },
+    secs,
+    tracks: items.length,
+    combos: items.filter((item) => item.why.kind === 'combo').length,
+    fresh: items.filter((item) => item.track.fresh).length,
+    harmonic,
+    withKey,
+    shortBySecs: Math.max(0, targetSecs - secs),
+    missingDurations: items.filter((item) => item.track.secs <= 0).length,
   }
+}
+
+export function swapAt(
+  plan: SessionPlan,
+  index: number,
+  track: SessionTrack,
+  targetSecs: number,
+): SessionPlan {
+  if (index < 0 || index >= plan.items.length) return plan
+  const items = plan.items.map((item, i) =>
+    i === index ? { track, why: { kind: 'chosen' } as const } : item,
+  )
+  return { items, summary: summarizeSession(items, targetSecs) }
 }
