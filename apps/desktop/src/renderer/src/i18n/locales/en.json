@@ -21,12 +21,13 @@
   "sessions": {
     "role": {
       "title": "Role for sessions",
+    "of": "Role of {{name}}",
       "base": "Bases",
       "vocal": "Vocals",
       "any": "Mixed"
     },
     "wizard": {
-      "title": "Build a session",
+      "title": "Automatic session",
       "step": "Step {{current}} of {{total}}",
       "steps": {
         "duration": "Length",
@@ -47,10 +48,11 @@
       },
       "sources": {
         "heading": "Which playlists should the tracks come from?",
-        "hint": "Search a playlist and say what it holds. Surco keeps it on the playlist, so next time it is already here.",
+        "hint": "Search a playlist and say what it holds. Use Mixed for tracklists and sets, where the order matters. Surco reads that order to find combos.",
         "search": "Search among {{count}} playlists",
         "noHits": "No playlist matches",
         "none": "No playlist chosen yet",
+        "suggest": "Mark folders by name ({{names}})",
         "onlyChosen": "See only the chosen",
         "allPlaylists": "See all playlists",
         "summary_one": "{{count}} playlist chosen, up to {{tracks}} tracks to pick from",
@@ -71,10 +73,11 @@
         "tasteWeightHint": "Stars and play count weigh in when picking",
         "surprise": "Surprise me",
         "surpriseHint": "Leaves room for pairs that were never played together",
+        "noMixed": "No Mixed playlist is chosen, so there is no order to read for combos. Add one in the Playlists step.",
         "play": "Time each track plays",
         "playValue": "{{minutes}} min",
         "playHint": "Tracks are mixed, not played whole. This is how long each one counts toward the session.",
-        "harmony": "Harmonic mixing",
+        "harmony": "Harmonic mixing (Camelot)",
         "harmonyFree": "Free",
         "harmonyNeighbours": "Neighbours",
         "harmonySame": "Same key",
@@ -82,12 +85,17 @@
       },
       "loading": "Reading…",
       "build": "Build session",
+      "building": "Building…",
+      "destinationNew": "It will be created as “{{name}}”.",
+      "destinationNewIn": "It will be created as “{{name}}” in {{where}}.",
+      "destinationFill": "“{{name}}” will be filled with the session.",
+      "destinationReplace": "The session will replace “{{name}}”.",
       "loadFailed": "{{names}} could not be read and is left out",
       "empty": "The chosen playlists have no track to build a session with",
       "refused": "The session could not be written. Check the notice and try again"
     },
     "band": {
-      "title": "Session built by Surco",
+      "title": "Automatic session",
       "tracks_one": "{{count}} track",
       "tracks_other": "{{count}} tracks",
       "combos_one": "{{count}} combo",
@@ -98,9 +106,13 @@
       "redo": "Redo",
       "adjust": "Adjust…",
       "keep": "Keep it as is",
+    "kept": "Kept as a normal playlist",
       "short": "Only enough tracks for {{minutes}} min",
-      "assumed_one": "{{count}} track has no length and counts as 6 min",
-      "assumed_other": "{{count}} tracks have no length and count as 6 min each"
+    "counted": "Counted at {{minutes}} min a track. The files add up to {{audio}}.",
+    "countedAtLeast": "Counted at {{minutes}} min a track. The files add up to at least {{audio}}.",
+    "noCombos": "No combos found, because no pair repeats in two or more of the Mixed playlists you chose.",
+      "assumed_one": "{{count}} track has no length and counts as {{minutes}} min",
+      "assumed_other": "{{count}} tracks have no length and count as {{minutes}} min each"
     },
     "playlistName": "Session {{date}}",
     "closed": "Close your DJ program to build the session. With it open, the playlist would be left half written",
@@ -111,15 +123,17 @@
       "harmonicSame": "{{from}} → {{to}}, same key",
       "harmonicRing": "{{from}} → {{to}}, same ring",
       "harmonicNeighbour": "{{from}} → {{to}}, neighbour",
-      "tasteRated": "Among the best rated that fit",
-      "tastePlayed": "Among the most played that fit",
+      "tasteRated": "Rated {{stars}} of 5, among the best that fit",
+      "tastePlayed_one": "Played {{count}} time, among the most played that fit",
+    "tastePlayed_other": "Played {{count}} times, among the most played that fit",
       "bpm": "Fits by tempo",
       "bpmRelaxed": "Nothing else fit, so the tempo moves more than usual",
       "freshKey": "New. Fits by key {{key}}",
       "freshTempo": "New. Fits by tempo",
       "chosen": "Chosen by you",
       "change": "Change",
-      "pick": "Change to"
+      "pick": "Change to",
+    "noneFit": "Nothing else fits here"
     }
   },
   "pasteTracklist": {

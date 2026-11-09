@@ -1,6 +1,7 @@
 import { X } from 'lucide-react'
+import type { TFunction } from 'i18next'
 import type React from 'react'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { camelotOf } from '../../../shared/camelot'
 import type { PlaylistRole, SessionAnswers } from '../../../shared/sessionTypes'
@@ -8,6 +9,7 @@ import type { SourceNode, SourcePlaylistEntry } from '../../../shared/types'
 import type { BuildResult } from '../hooks/useSessionRun'
 import type { SessionRows } from '../hooks/useSessionRows'
 import { toCandidates } from '../lib/sessionCandidates'
+import { withoutSeparators } from '../lib/sessionTree'
 import { ModalShell } from './ModalShell'
 import {
   CharacterStep,
@@ -31,11 +33,28 @@ type Options = Pick<
   'alternate' | 'preferCombos' | 'tasteWeight' | 'surprise' | 'harmony'
 >
 
+export interface SessionDestination {
+  kind: 'new' | 'fill' | 'replace'
+  name: string
+  where: string | null
+}
+
+function destinationText(destination: SessionDestination, tr: TFunction): string {
+  if (destination.kind === 'fill')
+    return tr('sessions.wizard.destinationFill', { name: destination.name })
+  if (destination.kind === 'replace')
+    return tr('sessions.wizard.destinationReplace', { name: destination.name })
+  return destination.where
+    ? tr('sessions.wizard.destinationNewIn', { name: destination.name, where: destination.where })
+    : tr('sessions.wizard.destinationNew', { name: destination.name })
+}
+
 export function SessionWizard({
   tree,
   roles: savedRoles = {},
   initial,
   rows,
+  destination,
   onClose,
   onBuild,
 }: {
@@ -43,6 +62,7 @@ export function SessionWizard({
   roles?: Readonly<Record<string, PlaylistRole>>
   initial: SessionAnswers
   rows: SessionRows
+  destination: SessionDestination
   onClose: () => void
   onBuild: (
     answers: SessionAnswers,
@@ -56,10 +76,12 @@ export function SessionWizard({
     isPresetMinutes(initial.minutes) ? null : String(initial.minutes),
   )
   const [roles, setRoles] = useState<Record<string, PlaylistRole>>({ ...savedRoles })
+  const usable = useMemo(() => withoutSeparators(tree), [tree])
   const names = useMemo(
-    () => new Map(flattenPlaylists([...tree]).map((p) => [p.node.id, p.node.name])),
-    [tree],
+    () => new Map(flattenPlaylists([...usable]).map((p) => [p.node.id, p.node.name])),
+    [usable],
   )
+  const [onlyChosen, setOnlyChosen] = useState(false)
   const [sources, setSources] = useState<string[]>(() => {
     return initial.sources.filter((id) => names.has(id) && savedRoles[id] !== undefined)
   })
@@ -90,6 +112,24 @@ export function SessionWizard({
     setSources((prev) =>
       role ? (prev.includes(id) ? prev : [...prev, id]) : prev.filter((other) => other !== id),
     )
+  }
+
+  const pickMany = (picks: Readonly<Record<string, PlaylistRole | null>>): void => {
+    setRoles((prev) => {
+      const next = { ...prev }
+      for (const [id, role] of Object.entries(picks)) {
+        if (role) next[id] = role
+        else delete next[id]
+      }
+      return next
+    })
+    setSources((prev) => {
+      const kept = prev.filter((id) => picks[id] !== null)
+      const added = Object.entries(picks)
+        .filter(([id, role]) => role !== null && !kept.includes(id))
+        .map(([id]) => id)
+      return [...kept, ...added]
+    })
   }
 
   const current = STEPS[step]
@@ -150,6 +190,18 @@ export function SessionWizard({
     setBuilding(false)
     setProblem(result === 'built' ? null : result)
   }
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key !== 'Enter' || !(e.metaKey || e.ctrlKey)) return
+      e.preventDefault()
+      if (last) {
+        if (!building) void build()
+      } else if (!blocked) void advance()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  })
 
   return (
     <ModalShell
@@ -213,44 +265,59 @@ export function SessionWizard({
           {tr('sessions.wizard.loadFailed', { names: unreadable.join(', ') })}
         </p>
       )}
-      {current === 'duration' && (
-        <DurationStep
-          minutes={minutes}
-          custom={custom}
-          onPreset={(value) => {
-            setMinutes(value)
-            setCustom(null)
-          }}
-          onCustomOpen={() => setCustom((text) => text ?? String(minutes))}
-          onCustomText={(text) => {
-            setCustom(text)
-            const value = wholeMinutes(text)
-            if (value !== null) setMinutes(value)
-          }}
-        />
-      )}
-      {current === 'sources' && (
-        <SourcesStep
-          tree={tree}
-          roles={roles}
-          sources={sources}
-          onPick={pick}
-        />
-      )}
-      {current === 'character' && (
-        <CharacterStep
-          options={options}
-          hasKeys={hasKeys}
-          playMinutes={playMinutes}
-          onPlayMinutes={setPlayMinutes}
-          hasNew={hasNew}
-          freshShare={freshShare}
-          onFreshShare={setFreshShare}
-          onChange={(patch) => setOptions((prev) => ({ ...prev, ...patch }))}
-        />
-      )}
+      <div className="min-h-[480px]">
+        {current === 'duration' && (
+          <DurationStep
+            minutes={minutes}
+            custom={custom}
+            onPreset={(value) => {
+              setMinutes(value)
+              setCustom(null)
+            }}
+            onCustomOpen={() => setCustom((text) => text ?? String(minutes))}
+            onCustomText={(text) => {
+              setCustom(text)
+              const value = wholeMinutes(text)
+              if (value !== null) setMinutes(value)
+            }}
+          />
+        )}
+        {current === 'sources' && (
+          <SourcesStep
+            tree={usable}
+            roles={roles}
+            sources={sources}
+            onPick={pick}
+            onPickMany={pickMany}
+            only={onlyChosen}
+            onOnly={setOnlyChosen}
+          />
+        )}
+        {current === 'character' && (
+          <CharacterStep
+            options={options}
+            hasKeys={hasKeys}
+            playMinutes={playMinutes}
+            onPlayMinutes={setPlayMinutes}
+            hasNew={hasNew}
+            hasMixed={sources.some((id) => roles[id] === 'any')}
+            freshShare={freshShare}
+            onFreshShare={setFreshShare}
+            onChange={(patch) => setOptions((prev) => ({ ...prev, ...patch }))}
+          />
+        )}
+        {last && (
+          <p data-testid="session-wizard-destination" className="mt-3 text-xs text-fg-dim">
+            {destinationText(destination, tr)}
+          </p>
+        )}
+      </div>
       {problem && (
-        <p data-testid={`session-wizard-${problem}`} className="mt-3 text-xs text-warn">
+        <p
+          data-testid={`session-wizard-${problem}`}
+          role="status"
+          className="mt-3 text-xs text-warn"
+        >
           {tr(PROBLEM_TEXT[problem])}
         </p>
       )}
@@ -270,10 +337,11 @@ export function SessionWizard({
             type="button"
             data-testid="session-wizard-build"
             disabled={building}
+            aria-busy={building}
             onClick={build}
             className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]"
           >
-            {tr('sessions.wizard.build')}
+            {tr(building ? 'sessions.wizard.building' : 'sessions.wizard.build')}
           </button>
         ) : (
           <button

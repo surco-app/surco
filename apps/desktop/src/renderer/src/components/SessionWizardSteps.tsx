@@ -1,9 +1,11 @@
 import type React from 'react'
-import { useMemo, useState } from 'react'
+import { Fragment, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { PlaylistRole, SessionHarmony } from '../../../shared/sessionTypes'
 import type { SourceNode } from '../../../shared/types'
 import { playlistOptions } from '../lib/rekordboxPlaylists'
+import { suggestedFolderNames, suggestRoles } from '../lib/sessionTree'
+import { playlistIdsUnder } from './CheckTree'
 import { PlaylistRolePicker } from './PlaylistRolePicker'
 import { PlaylistTree } from './PlaylistTree'
 import { flattenPlaylists } from './SourceTree'
@@ -99,11 +101,17 @@ export function SourcesStep({
   roles,
   sources,
   onPick,
+  onPickMany,
+  only,
+  onOnly,
 }: {
   tree: readonly SourceNode[]
   roles: Readonly<Record<string, PlaylistRole>>
   sources: readonly string[]
   onPick: (id: string, role: PlaylistRole | null) => void
+  onPickMany: (roles: Readonly<Record<string, PlaylistRole | null>>) => void
+  only: boolean
+  onOnly: (only: boolean) => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const playlists = useMemo(() => flattenPlaylists([...tree]), [tree])
@@ -117,13 +125,26 @@ export function SourcesStep({
       }),
     [sources, byId],
   )
-  const [only, setOnly] = useState(false)
   const chosen = sources.filter((id) => byId.has(id))
+  const suggested = useMemo(() => suggestRoles(tree), [tree])
+  const suggestedNames = useMemo(() => suggestedFolderNames(tree), [tree])
   const onlyIds = only && chosen.length > 0 ? new Set(chosen) : undefined
   const eligible = chosen.reduce((sum, id) => sum + (byId.get(id)?.count ?? 0), 0)
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-xs text-fg-dim">{tr('sessions.wizard.sources.hint')}</p>
+      <p data-testid="session-wizard-sources-hint" className="text-xs text-fg-dim">
+        {tr('sessions.wizard.sources.hint')}
+      </p>
+      {chosen.length === 0 && suggestedNames.length > 0 && (
+        <button
+          type="button"
+          data-testid="session-wizard-suggest"
+          onClick={() => onPickMany(suggested)}
+          className="press self-start rounded-md border border-[var(--color-line-strong)] px-3 py-1.5 text-xs font-medium hover:bg-[var(--color-hover)]"
+        >
+          {tr('sessions.wizard.sources.suggest', { names: suggestedNames.join(', ') })}
+        </button>
+      )}
       <div className="flex flex-col overflow-hidden rounded-[10px] border border-[var(--color-line)] bg-[var(--color-field)]">
         <PlaylistTree
           tree={tree}
@@ -135,9 +156,23 @@ export function SourcesStep({
           emptyText={tr('sessions.wizard.sources.noHits')}
           searchLabel={tr('sessions.wizard.sources.search', { count: playlists.length })}
           onlyIds={onlyIds}
-          control={({ id }) =>
+          folderControl={(node) => {
+            const ids = playlistIdsUnder(node)
+            const first = ids.length > 0 ? roles[ids[0]] : undefined
+            const same = first !== undefined && ids.every((id) => roles[id] === first)
+            return ids.length > 0 ? (
+              <PlaylistRolePicker
+                name={node.name}
+                value={same ? first : null}
+                onChange={(role) => onPickMany(Object.fromEntries(ids.map((id) => [id, role])))}
+                testIdPrefix={`session-wizard-folder-role-${node.id}`}
+              />
+            ) : null
+          }}
+          control={({ id, name }) =>
             id ? (
               <PlaylistRolePicker
+                name={name}
                 value={roles[id] ?? null}
                 onChange={(role) => onPick(id, role)}
                 testIdPrefix={`session-wizard-role-${id}`}
@@ -159,10 +194,12 @@ export function SourcesStep({
             type="button"
             data-testid="session-wizard-only-chosen"
             aria-pressed={only}
-            onClick={() => setOnly((value) => !value)}
+            onClick={() => onOnly(!only)}
             className="press shrink-0 rounded-md px-2 py-1 text-[var(--color-accent)] hover:bg-[var(--color-hover)]"
           >
-            {tr(only ? 'sessions.wizard.sources.allPlaylists' : 'sessions.wizard.sources.onlyChosen')}
+            {tr(
+              only ? 'sessions.wizard.sources.allPlaylists' : 'sessions.wizard.sources.onlyChosen',
+            )}
           </button>
         </div>
       )}
@@ -191,6 +228,7 @@ export function CharacterStep({
   playMinutes,
   onPlayMinutes,
   hasNew,
+  hasMixed,
   freshShare,
   onFreshShare,
   onChange,
@@ -200,6 +238,7 @@ export function CharacterStep({
   playMinutes: number
   onPlayMinutes: (minutes: number) => void
   hasNew: boolean
+  hasMixed: boolean
   freshShare: number
   onFreshShare: (share: number) => void
   onChange: (patch: Partial<Record<CharacterKey, boolean> & { harmony: SessionHarmony }>) => void
@@ -208,23 +247,30 @@ export function CharacterStep({
   return (
     <div className="flex flex-col gap-3">
       {CHARACTER_OPTIONS.map((key) => (
-        <label key={key} className="flex cursor-pointer items-start gap-3">
-          <input
-            type="checkbox"
-            data-testid={`session-wizard-opt-${key}`}
-            checked={options[key]}
-            onChange={(e) => onChange({ [key]: e.target.checked })}
-            className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--color-accent)]"
-          />
-          <span className="text-sm">
-            {tr(`sessions.wizard.character.${key}`)}
-            <span className="mt-0.5 block text-xs text-fg-dim">
-              {tr(`sessions.wizard.character.${key}Hint`)}
+        <Fragment key={key}>
+          <label className="flex cursor-pointer items-start gap-3">
+            <input
+              type="checkbox"
+              data-testid={`session-wizard-opt-${key}`}
+              checked={options[key]}
+              onChange={(e) => onChange({ [key]: e.target.checked })}
+              className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--color-accent)]"
+            />
+            <span className="text-sm">
+              {tr(`sessions.wizard.character.${key}`)}
+              <span className="mt-0.5 block text-xs text-fg-dim">
+                {tr(`sessions.wizard.character.${key}Hint`)}
+              </span>
             </span>
-          </span>
-        </label>
+          </label>
+          {key === 'preferCombos' && options.preferCombos && !hasMixed && (
+            <p data-testid="session-wizard-combos-hint" className="-mt-1.5 pl-7 text-xs text-warn">
+              {tr('sessions.wizard.character.noMixed')}
+            </p>
+          )}
+        </Fragment>
       ))}
-      <label className="flex flex-col gap-1.5 text-sm">
+      <label className="flex flex-col gap-1.5 border-t border-[var(--color-line)] pt-3 text-sm">
         <span className="flex justify-between">
           {tr('sessions.wizard.character.play')}
           <span data-testid="session-wizard-play-value" className="tabular-nums text-fg">
@@ -238,6 +284,7 @@ export function CharacterStep({
           step={1}
           value={playMinutes}
           data-testid="session-wizard-play"
+          aria-valuetext={tr('sessions.wizard.character.playValue', { minutes: playMinutes })}
           onChange={(e) => onPlayMinutes(Number(e.target.value))}
           className="accent-[var(--color-accent)]"
         />
@@ -260,6 +307,9 @@ export function CharacterStep({
             step={1}
             value={Math.round(freshShare * 100)}
             data-testid="session-wizard-fresh-share"
+            aria-valuetext={tr('sessions.wizard.fresh.shareValue', {
+              percent: Math.round(freshShare * 100),
+            })}
             onChange={(e) => onFreshShare(Number(e.target.value) / 100)}
             className="accent-[var(--color-accent)]"
           />
@@ -268,8 +318,10 @@ export function CharacterStep({
           </span>
         </label>
       )}
-      <div className="flex flex-col gap-1.5">
-        <span className="text-sm">{tr('sessions.wizard.character.harmony')}</span>
+      <div className="flex flex-col gap-1.5 border-t border-[var(--color-line)] pt-3">
+        <span data-testid="session-wizard-harmony-title" className="text-sm">
+          {tr('sessions.wizard.character.harmony')}
+        </span>
         <div className="flex flex-wrap gap-2">
           {HARMONIES.map(({ mode, label }) => (
             <button

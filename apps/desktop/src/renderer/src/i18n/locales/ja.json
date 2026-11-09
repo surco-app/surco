@@ -21,12 +21,13 @@
   "sessions": {
     "role": {
       "title": "セッション用の役割",
+    "of": "{{name}} の役割",
       "base": "ベース",
       "vocal": "ボーカル",
       "any": "ミックス"
     },
     "wizard": {
-      "title": "セッションを作成",
+      "title": "自動セッション",
       "step": "ステップ {{current}} / {{total}}",
       "steps": {
         "duration": "長さ",
@@ -47,10 +48,11 @@
       },
       "sources": {
         "heading": "どのプレイリストから曲を選びますか？",
-        "hint": "プレイリストを検索して、中身の種類を選びます。Surco はプレイリストに覚えさせるので、次回からは最初から並びます。",
+        "hint": "プレイリストを検索して、中身の種類を選びます。順番が大事なトラックリストやセットは「ミックス」にしてください。Surco はその順番を読んでコンボを探します。",
         "search": "{{count}} 件のプレイリストから検索",
         "noHits": "一致するプレイリストがありません",
         "none": "まだプレイリストを選んでいません",
+        "suggest": "フォルダ名で自動設定 ({{names}})",
         "onlyChosen": "選択中のみ表示",
         "allPlaylists": "すべて表示",
         "summary_one": "{{count}} 件のプレイリストを選択中、最大 {{tracks}} 曲から選びます",
@@ -71,10 +73,11 @@
         "tasteWeightHint": "星と再生回数を選ぶときに考慮します",
         "surprise": "おまかせ",
         "surpriseHint": "一緒にかけたことのない組み合わせの余地を残します",
+        "noMixed": "ミックスのプレイリストが選ばれていないため、コンボを探す順番がありません。プレイリストの手順で追加してください。",
         "play": "1曲あたりの再生時間",
         "playValue": "{{minutes}} 分",
         "playHint": "曲はミックスされ、最後まで流れるわけではありません。セッションの長さには、この時間だけが数えられます。",
-        "harmony": "ハーモニックミックス",
+        "harmony": "ハーモニックミックス (Camelot)",
         "harmonyFree": "自由",
         "harmonyNeighbours": "隣のキー",
         "harmonySame": "同じキー",
@@ -82,12 +85,17 @@
       },
       "loading": "読み込み中…",
       "build": "セッションを作成",
+      "building": "作成中…",
+      "destinationNew": "「{{name}}」として作成されます。",
+      "destinationNewIn": "{{where}} に「{{name}}」として作成されます。",
+      "destinationFill": "「{{name}}」にセッションを入れます。",
+      "destinationReplace": "セッションが「{{name}}」を置き換えます。",
       "loadFailed": "{{names}} を読み込めなかったため除外します",
       "empty": "選んだプレイリストにはセッションを作れるトラックがありません",
       "refused": "セッションを書き込めませんでした。通知を確認してもう一度お試しください"
     },
     "band": {
-      "title": "Surco が作ったセッション",
+      "title": "自動セッション",
       "tracks_one": "{{count}} トラック",
       "tracks_other": "{{count}} トラック",
       "combos_one": "{{count}} コンボ",
@@ -98,9 +106,13 @@
       "redo": "やり直す",
       "adjust": "調整…",
       "keep": "このまま使う",
+    "kept": "通常のプレイリストとして残しました",
       "short": "{{minutes}} 分ぶんの曲しかありません",
-      "assumed_one": "{{count}} トラックは長さ不明のため 6 分として計算",
-      "assumed_other": "{{count}} トラックは長さ不明のため 6 分として計算"
+    "counted": "1曲あたり{{minutes}}分で数えています。ファイルの合計は{{audio}}です。",
+    "countedAtLeast": "1曲あたり{{minutes}}分で数えています。ファイルの合計は少なくとも{{audio}}です。",
+    "noCombos": "コンボは見つかりませんでした。選んだミックスのプレイリスト2つ以上に繰り返し出るペアがないためです。",
+      "assumed_one": "{{count}} トラックは長さ不明のため {{minutes}} 分として計算",
+      "assumed_other": "{{count}} トラックは長さ不明のため {{minutes}} 分として計算"
     },
     "playlistName": "{{date}} のセッション",
     "closed": "セッションを作るには DJ ソフトを閉じてください。開いたままだとプレイリストが中途半端になります",
@@ -111,15 +123,17 @@
       "harmonicSame": "{{from}} → {{to}}、同じキー",
       "harmonicRing": "{{from}} → {{to}}、同じリング",
       "harmonicNeighbour": "{{from}} → {{to}}、隣のキー",
-      "tasteRated": "合う中で評価が高い曲",
-      "tastePlayed": "合う中でよく聴いた曲",
+      "tasteRated": "評価は5段階中{{stars}}で、合う曲の中でも上位です",
+      "tastePlayed_one": "{{count}} 回再生しており、合う曲の中でも再生数が多い方です",
+    "tastePlayed_other": "{{count}} 回再生しており、合う曲の中でも再生数が多い方です",
       "bpm": "テンポが合います",
       "bpmRelaxed": "他に合う曲がなく、テンポの差が通常より大きくなります",
       "freshKey": "新曲。キー {{key}} に合います",
       "freshTempo": "新曲。テンポが合います",
       "chosen": "あなたが選んだ曲",
       "change": "変更",
-      "pick": "変更先"
+      "pick": "変更先",
+    "noneFit": "ここに合う曲は他にありません"
     }
   },
   "pasteTracklist": {

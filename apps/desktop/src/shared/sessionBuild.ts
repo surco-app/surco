@@ -37,6 +37,7 @@ export interface SessionSummary {
   withKey: number
   shortBySecs: number
   missingDurations: number
+  audioSecs: number
 }
 
 export interface SessionPlan {
@@ -285,6 +286,7 @@ export function summarizeSession(
     withKey,
     shortBySecs: Math.max(0, targetSecs - secs),
     missingDurations: items.filter((item) => item.track.secs <= 0).length,
+    audioSecs: items.reduce((sum, item) => sum + Math.max(0, item.track.secs), 0),
   }
 }
 

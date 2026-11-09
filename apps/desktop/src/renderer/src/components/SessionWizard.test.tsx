@@ -7,7 +7,7 @@ import type { SourceNode, SourcePlaylistEntry } from '../../../shared/types'
 import type { SessionRows } from '../hooks/useSessionRows'
 import type { BuildResult } from '../hooks/useSessionRun'
 import i18n from '../i18n'
-import { SessionWizard } from './SessionWizard'
+import { SessionWizard, type SessionDestination } from './SessionWizard'
 
 afterEach(cleanup)
 
@@ -25,6 +25,7 @@ const TREE: SourceNode[] = [
     ],
   },
   { id: 'combos', name: 'COMBOS', kind: 'playlist', count: 24 },
+  { id: 'sep', name: '--------------------', kind: 'playlist', count: 0 },
 ]
 
 const INITIAL: SessionAnswers = {
@@ -57,10 +58,13 @@ function fakeRows(byId: Record<string, SourcePlaylistEntry[]> = {}, failed: stri
   return { load, reset: vi.fn(), loading: false, failed }
 }
 
+const DESTINATION: SessionDestination = { kind: 'new', name: 'Session 11-9 (2)', where: 'COMBOS' }
+
 function setup(
   roles: Record<string, PlaylistRole> = {},
   initial: SessionAnswers = INITIAL,
   rows: SessionRows = fakeRows(),
+  destination: SessionDestination = DESTINATION,
 ) {
   const handed = {
     ...initial,
@@ -74,6 +78,7 @@ function setup(
       roles={roles}
       initial={handed}
       rows={rows}
+      destination={destination}
       onClose={onClose}
       onBuild={onBuild}
     />,
@@ -168,7 +173,7 @@ describe('SessionWizard sources step', () => {
     fireEvent.click(screen.getByTestId('playlists-folder-rem'))
     fireEvent.click(screen.getByTestId('session-wizard-role-b90-base'))
     expect(screen.getByTestId('session-wizard-summary')).toHaveTextContent(
-        i18n.t('sessions.wizard.sources.summary', { count: 1, tracks: 38 }),
+      i18n.t('sessions.wizard.sources.summary', { count: 1, tracks: 38 }),
     )
   })
 
@@ -207,7 +212,7 @@ describe('SessionWizard sources step', () => {
     fireEvent.change(screen.getByTestId('playlists-search'), { target: { value: 'mak' } })
     fireEvent.click(screen.getByTestId('session-wizard-role-mk97-base'))
     expect(screen.getByTestId('session-wizard-summary')).toHaveTextContent(
-        i18n.t('sessions.wizard.sources.summary', { count: 1, tracks: 22 }),
+      i18n.t('sessions.wizard.sources.summary', { count: 1, tracks: 22 }),
     )
   })
 
@@ -242,7 +247,7 @@ describe('SessionWizard sources step', () => {
     setup({ gone: 'base', b90: 'base' })
     toSources()
     expect(screen.getByTestId('session-wizard-summary')).toHaveTextContent(
-        i18n.t('sessions.wizard.sources.summary', { count: 1, tracks: 38 }),
+      i18n.t('sessions.wizard.sources.summary', { count: 1, tracks: 38 }),
     )
   })
 
@@ -253,6 +258,7 @@ describe('SessionWizard sources step', () => {
         roles={{ b90: 'base', c90: 'vocal' }}
         initial={INITIAL}
         rows={fakeRows()}
+        destination={DESTINATION}
         onClose={vi.fn()}
         onBuild={vi.fn()}
       />,
@@ -575,6 +581,392 @@ describe('SessionWizard character step', () => {
     expect(onBuild).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ sources: ['b90'] }), {
       b90: 'base',
     })
+  })
+})
+
+describe('SessionWizard roles for a whole folder', () => {
+  const FOLDERS: SourceNode[] = [
+    {
+      id: 'fb',
+      name: 'BASES',
+      kind: 'folder',
+      count: 2,
+      children: [
+        { id: 'b1', name: 'Todas', kind: 'playlist', count: 10 },
+        { id: 'b2', name: 'Fijas', kind: 'playlist', count: 5 },
+      ],
+    },
+    {
+      id: 'fc',
+      name: 'CANTADITAS',
+      kind: 'folder',
+      count: 1,
+      children: [{ id: 'c1', name: 'Todas', kind: 'playlist', count: 7 }],
+    },
+    {
+      id: 'fo',
+      name: 'Remember',
+      kind: 'folder',
+      count: 1,
+      children: [{ id: 'o1', name: 'Otra', kind: 'playlist', count: 3 }],
+    },
+  ]
+  const renderFolders = (roles: Record<string, PlaylistRole> = {}, sources: string[] = []) => {
+    const onBuild = vi.fn()
+    render(
+      <SessionWizard
+        tree={FOLDERS}
+        roles={roles}
+        initial={{ ...INITIAL, sources }}
+        rows={fakeRows()}
+        destination={DESTINATION}
+        onClose={vi.fn()}
+        onBuild={onBuild}
+      />,
+    )
+    toSources()
+    return onBuild
+  }
+
+  it('gives every playlist of the folder the role with one press', () => {
+    renderFolders()
+    fireEvent.click(screen.getByTestId('session-wizard-folder-role-fb-base'))
+    expect(screen.getByTestId('session-wizard-summary')).toHaveTextContent(
+      i18n.t('sessions.wizard.sources.summary', { count: 2, tracks: 15 }),
+    )
+    expect(screen.getByTestId('playlists-folder-count-fb')).toHaveTextContent(
+      i18n.t('editor.playlists.ofTotal', { chosen: 2, total: 2 }),
+    )
+    fireEvent.click(screen.getByTestId('playlists-folder-fb'))
+    expect(screen.getByTestId('session-wizard-role-b1-base')).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    expect(screen.getByTestId('session-wizard-role-b2-base')).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+  })
+
+  it('leaves the playlists of the other folders alone', () => {
+    renderFolders()
+    fireEvent.click(screen.getByTestId('session-wizard-folder-role-fb-base'))
+    fireEvent.click(screen.getByTestId('playlists-folder-fc'))
+    expect(screen.getByTestId('session-wizard-role-c1-base')).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
+  })
+
+  it('shows the role as pressed on the folder only when all its playlists have it', () => {
+    renderFolders({ b1: 'base' }, ['b1'])
+    expect(screen.getByTestId('session-wizard-folder-role-fb-base')).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
+    fireEvent.click(screen.getByTestId('session-wizard-folder-role-fb-base'))
+    expect(screen.getByTestId('session-wizard-folder-role-fb-base')).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+  })
+
+  it('takes the role off every playlist of the folder when the pressed role is pressed again', () => {
+    renderFolders()
+    fireEvent.click(screen.getByTestId('session-wizard-folder-role-fb-base'))
+    fireEvent.click(screen.getByTestId('session-wizard-folder-role-fb-base'))
+    expect(screen.getByTestId('session-wizard-none')).toBeInTheDocument()
+  })
+
+  it('replaces a different role the playlists already had', () => {
+    renderFolders({ b1: 'vocal' }, ['b1'])
+    fireEvent.click(screen.getByTestId('session-wizard-folder-role-fb-base'))
+    expect(screen.getByTestId('session-wizard-role-b1-base')).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    expect(screen.getByTestId('session-wizard-role-b1-vocal')).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
+  })
+
+  it('hands the roles of the whole folder over when building', async () => {
+    const onBuild = renderFolders()
+    fireEvent.click(screen.getByTestId('session-wizard-folder-role-fb-base'))
+    next()
+    await screen.findByTestId('session-wizard-build')
+    fireEvent.click(screen.getByTestId('session-wizard-build'))
+    expect(onBuild).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ sources: ['b1', 'b2'] }),
+      { b1: 'base', b2: 'base' },
+    )
+  })
+
+  it('offers to mark the folders by their name when nothing is chosen yet', () => {
+    renderFolders()
+    const suggest = screen.getByTestId('session-wizard-suggest')
+    expect(suggest).toHaveTextContent('BASES')
+    expect(suggest).toHaveTextContent('CANTADITAS')
+    expect(suggest).not.toHaveTextContent('Remember')
+  })
+
+  it('marks them with one press and then stops offering', () => {
+    renderFolders()
+    fireEvent.click(screen.getByTestId('session-wizard-suggest'))
+    expect(screen.getByTestId('session-wizard-summary')).toHaveTextContent(
+      i18n.t('sessions.wizard.sources.summary', { count: 3, tracks: 22 }),
+    )
+    expect(screen.queryByTestId('session-wizard-suggest')).toBeNull()
+  })
+
+  it('does not offer it when something is already chosen', () => {
+    renderFolders({ o1: 'any' }, ['o1'])
+    expect(screen.queryByTestId('session-wizard-suggest')).toBeNull()
+  })
+
+  it('does not offer it when no folder is called like a role', () => {
+    setup()
+    toSources()
+    expect(screen.queryByTestId('session-wizard-suggest')).toBeNull()
+  })
+})
+
+describe('SessionWizard for assistive technology', () => {
+  it('names the role buttons of every row after its playlist', () => {
+    setup()
+    toSources()
+    fireEvent.click(screen.getByTestId('playlists-folder-rem'))
+    expect(
+      screen.getByRole('group', { name: i18n.t('sessions.role.of', { name: 'Bases 90' }) }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('group', { name: i18n.t('sessions.role.of', { name: 'COMBOS' }) }),
+    ).toBeInTheDocument()
+  })
+
+  it('reads the time each track plays with its unit, not as a bare number', async () => {
+    setup({ b90: 'base' })
+    await toCharacter()
+    expect(screen.getByTestId('session-wizard-play')).toHaveAttribute(
+      'aria-valuetext',
+      i18n.t('sessions.wizard.character.playValue', { minutes: 3 }),
+    )
+  })
+
+  it('reads the share of new tracks as a percentage', async () => {
+    const today = new Date().toISOString().slice(0, 10)
+    setup(
+      { b90: 'base' },
+      INITIAL,
+      fakeRows({
+        b90: [
+          { path: '/m/k.mp3', separator: false, meta: { rating: 80, dateAdded: '2025-01-01' } },
+          { path: '/m/n.mp3', separator: false, meta: { dateAdded: today } },
+        ],
+      }),
+    )
+    await toCharacter()
+    expect(screen.getByTestId('session-wizard-fresh-share')).toHaveAttribute(
+      'aria-valuetext',
+      i18n.t('sessions.wizard.fresh.shareValue', { percent: 15 }),
+    )
+  })
+
+  it('announces a problem when building fails, without taking the focus', async () => {
+    const { onBuild } = setup({ b90: 'base' })
+    onBuild.mockResolvedValue('refused')
+    await toCharacter()
+    fireEvent.click(screen.getByTestId('session-wizard-build'))
+    expect(await screen.findByRole('status')).toHaveTextContent(i18n.t('sessions.wizard.refused'))
+  })
+})
+
+describe('SessionWizard playlists that are not playlists', () => {
+  it('leaves out the playlists that are only a line of dashes, which DJs use as separators', () => {
+    setup()
+    toSources()
+    expect(screen.queryByTestId('playlists-row-sep')).toBeNull()
+    expect(screen.getByTestId('playlists-search')).toHaveAttribute(
+      'placeholder',
+      i18n.t('sessions.wizard.sources.search', { count: 5 }),
+    )
+  })
+})
+
+describe('SessionWizard keeping the view when going back', () => {
+  it('keeps the list of only the chosen playlists after going back from the last step', async () => {
+    setup({ b90: 'base', c90: 'vocal' })
+    toSources()
+    fireEvent.click(screen.getByTestId('session-wizard-only-chosen'))
+    next()
+    await screen.findByTestId('session-wizard-build')
+    fireEvent.click(screen.getByTestId('session-wizard-back'))
+    expect(screen.getByTestId('session-wizard-only-chosen')).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.queryByTestId('playlists-row-mak')).toBeNull()
+  })
+})
+
+describe('SessionWizard keyboard', () => {
+  const commandEnter = () => fireEvent.keyDown(window, { key: 'Enter', metaKey: true })
+
+  it('goes on to the next step with Command and Enter', () => {
+    setup({ b90: 'base' })
+    commandEnter()
+    expect(screen.getByTestId('session-wizard-step-title')).toHaveTextContent(
+      i18n.t('sessions.wizard.sources.heading'),
+    )
+  })
+
+  it('also takes Control and Enter, for Windows', () => {
+    setup({ b90: 'base' })
+    fireEvent.keyDown(window, { key: 'Enter', ctrlKey: true })
+    expect(screen.getByTestId('session-wizard-step-title')).toHaveTextContent(
+      i18n.t('sessions.wizard.sources.heading'),
+    )
+  })
+
+  it('does not go on while the step is blocked, like Next itself', () => {
+    setup()
+    toSources()
+    commandEnter()
+    expect(screen.getByTestId('session-wizard-step-title')).toHaveTextContent(
+      i18n.t('sessions.wizard.sources.heading'),
+    )
+  })
+
+  it('builds from the last step', async () => {
+    const { onBuild } = setup({ b90: 'base' })
+    await toCharacter()
+    commandEnter()
+    expect(onBuild).toHaveBeenCalledOnce()
+  })
+
+  it('does not build twice while it is already writing', async () => {
+    const { onBuild } = setup({ b90: 'base' })
+    onBuild.mockImplementation(() => new Promise<BuildResult>(() => {}))
+    await toCharacter()
+    commandEnter()
+    commandEnter()
+    expect(onBuild).toHaveBeenCalledOnce()
+  })
+
+  it('leaves a plain Enter alone, so typing in a field does not move the wizard', () => {
+    setup({ b90: 'base' })
+    fireEvent.keyDown(window, { key: 'Enter' })
+    expect(screen.getByTestId('session-wizard-duration-90')).toBeInTheDocument()
+  })
+})
+
+describe('SessionWizard combos without Mixed playlists', () => {
+  it('warns under Prefer combos when no Mixed playlist was chosen, since there is no order to read', async () => {
+    setup({ b90: 'base' })
+    await toCharacter()
+    expect(screen.getByTestId('session-wizard-combos-hint')).toHaveTextContent(
+      i18n.t('sessions.wizard.character.noMixed'),
+    )
+  })
+
+  it('says nothing when a Mixed playlist was chosen', async () => {
+    setup({ b90: 'base', combos: 'any' })
+    await toCharacter()
+    expect(screen.queryByTestId('session-wizard-combos-hint')).toBeNull()
+  })
+
+  it('says nothing once Prefer combos is switched off', async () => {
+    setup({ b90: 'base' })
+    await toCharacter()
+    fireEvent.click(screen.getByTestId('session-wizard-opt-preferCombos'))
+    expect(screen.queryByTestId('session-wizard-combos-hint')).toBeNull()
+  })
+})
+
+describe('SessionWizard wording', () => {
+  it('explains in the playlists step what Mixed is for, since the order of those playlists makes the combos', () => {
+    setup()
+    toSources()
+    expect(screen.getByTestId('session-wizard-sources-hint')).toHaveTextContent(
+      i18n.t('sessions.role.any'),
+    )
+  })
+
+  it('does not promise to remember playlists, since it opens empty every time', () => {
+    setup()
+    toSources()
+    const hint = i18n.t('sessions.wizard.sources.hint')
+    expect(hint).not.toMatch(/next time|próxima vez|nächsten Mal|prochaine fois|次回|próxima vez/i)
+  })
+
+  it('is called by the same name as the menu item that opens it', () => {
+    setup()
+    const menu = i18n.t('sources.tree.newSession')
+    expect(menu.startsWith(i18n.t('sessions.wizard.title'))).toBe(true)
+    expect(menu.startsWith(i18n.t('sessions.band.title'))).toBe(true)
+  })
+
+  it('says harmonic mixing is Camelot', async () => {
+    setup({ b90: 'base' })
+    await toCharacter()
+    expect(screen.getByTestId('session-wizard-harmony-title')).toHaveTextContent('Camelot')
+  })
+})
+
+describe('SessionWizard where it writes', () => {
+  it('says the name and the folder of the playlist it is going to create, before building', async () => {
+    setup({ b90: 'base' })
+    await toCharacter()
+    const line = screen.getByTestId('session-wizard-destination')
+    expect(line).toHaveTextContent('Session 11-9 (2)')
+    expect(line).toHaveTextContent('COMBOS')
+  })
+
+  it('names no folder when the playlist goes to the top of the tree', async () => {
+    setup({ b90: 'base' }, INITIAL, fakeRows(), { kind: 'new', name: 'Session 11-9', where: null })
+    await toCharacter()
+    const line = screen.getByTestId('session-wizard-destination')
+    expect(line).toHaveTextContent('Session 11-9')
+    expect(line.textContent).not.toContain('null')
+  })
+
+  it('says it will fill the playlist when it was opened on an empty one', async () => {
+    setup({ b90: 'base' }, INITIAL, fakeRows(), { kind: 'fill', name: 'Session 11-9', where: null })
+    await toCharacter()
+    expect(screen.getByTestId('session-wizard-destination')).toHaveTextContent(
+      i18n.t('sessions.wizard.destinationFill', { name: 'Session 11-9' }),
+    )
+  })
+
+  it('says it will replace the playlist when it was opened to adjust one', async () => {
+    setup({ b90: 'base' }, INITIAL, fakeRows(), {
+      kind: 'replace',
+      name: 'Session 11-9',
+      where: null,
+    })
+    await toCharacter()
+    expect(screen.getByTestId('session-wizard-destination')).toHaveTextContent(
+      i18n.t('sessions.wizard.destinationReplace', { name: 'Session 11-9' }),
+    )
+  })
+
+  it('keeps it out of the steps before the last one', () => {
+    setup({ b90: 'base' })
+    toSources()
+    expect(screen.queryByTestId('session-wizard-destination')).toBeNull()
+  })
+
+  it('turns the Build button into a Building label with the busy state while it writes', async () => {
+    let finish: (result: BuildResult) => void = () => {}
+    const { onBuild } = setup({ b90: 'base' })
+    onBuild.mockImplementation(() => new Promise<BuildResult>((resolve) => (finish = resolve)))
+    await toCharacter()
+    const button = screen.getByTestId('session-wizard-build')
+    expect(button).toHaveTextContent(i18n.t('sessions.wizard.build'))
+    expect(button).toHaveAttribute('aria-busy', 'false')
+    fireEvent.click(button)
+    expect(button).toHaveTextContent(i18n.t('sessions.wizard.building'))
+    expect(button).toHaveAttribute('aria-busy', 'true')
+    finish('refused')
+    await waitFor(() => expect(button).toHaveTextContent(i18n.t('sessions.wizard.build')))
   })
 })
 

@@ -655,7 +655,7 @@ export function SourceTree({
           placeholder={tr('sources.search')}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="min-w-0 flex-1 bg-transparent outline-none"
+          className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-fg-faint"
         />
       </label>
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-1.5 pt-0.5 pb-2">

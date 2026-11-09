@@ -21,12 +21,13 @@
   "sessions": {
     "role": {
       "title": "Rolle für Sessions",
+    "of": "Rolle von {{name}}",
       "base": "Bases",
       "vocal": "Gesang",
       "any": "Gemischt"
     },
     "wizard": {
-      "title": "Session zusammenstellen",
+      "title": "Automatische Session",
       "step": "Schritt {{current}} von {{total}}",
       "steps": {
         "duration": "Dauer",
@@ -47,10 +48,11 @@
       },
       "sources": {
         "heading": "Aus welchen Playlists sollen die Tracks kommen?",
-        "hint": "Suche eine Playlist und gib an, was sie enthält. Surco merkt es sich an der Playlist, beim nächsten Mal ist sie also schon hier.",
+        "hint": "Suche eine Playlist und gib an, was sie enthält. Nimm Gemischt für Tracklists und Sets, bei denen die Reihenfolge zählt. Surco liest sie, um Combos zu finden.",
         "search": "Unter {{count}} Playlists suchen",
         "noHits": "Keine Playlist passt",
         "none": "Noch keine Playlist ausgewählt",
+        "suggest": "Ordner nach Namen markieren ({{names}})",
         "onlyChosen": "Nur die gewählten zeigen",
         "allPlaylists": "Alle Playlists zeigen",
         "summary_one": "{{count}} Playlist gewählt, bis zu {{tracks}} Tracks zur Auswahl",
@@ -71,10 +73,11 @@
         "tasteWeightHint": "Sterne und Wiedergaben zählen bei der Auswahl",
         "surprise": "Überrasch mich",
         "surpriseHint": "Lässt Platz für Paare, die nie zusammen gespielt wurden",
+        "noMixed": "Es ist keine gemischte Playlist gewählt, also gibt es keine Reihenfolge für Combos. Füge im Schritt Playlists eine hinzu.",
         "play": "Spielzeit pro Track",
         "playValue": "{{minutes}} Min.",
         "playHint": "Tracks werden gemixt und nicht ganz gespielt. So lange zählt jeder für die Länge der Session.",
-        "harmony": "Harmonisches Mixen",
+        "harmony": "Harmonisches Mixen (Camelot)",
         "harmonyFree": "Frei",
         "harmonyNeighbours": "Nachbarn",
         "harmonySame": "Gleiche Tonart",
@@ -82,12 +85,17 @@
       },
       "loading": "Liest …",
       "build": "Session erstellen",
+      "building": "Wird gebaut…",
+      "destinationNew": "Wird als „{{name}}“ angelegt.",
+      "destinationNewIn": "Wird als „{{name}}“ in {{where}} angelegt.",
+      "destinationFill": "„{{name}}“ wird mit der Session gefüllt.",
+      "destinationReplace": "Die Session ersetzt „{{name}}“.",
       "loadFailed": "{{names}} konnte nicht gelesen werden und bleibt draußen",
       "empty": "Die gewählten Playlists enthalten keinen Track für eine Session",
       "refused": "Die Session konnte nicht geschrieben werden. Prüfe die Meldung und versuche es erneut"
     },
     "band": {
-      "title": "Von Surco zusammengestellte Session",
+      "title": "Automatische Session",
       "tracks_one": "{{count}} Track",
       "tracks_other": "{{count}} Tracks",
       "combos_one": "{{count}} Combo",
@@ -98,9 +106,13 @@
       "redo": "Neu würfeln",
       "adjust": "Anpassen…",
       "keep": "So behalten",
+    "kept": "Bleibt als normale Playlist erhalten",
       "short": "Nur genug Tracks für {{minutes}} Min.",
-      "assumed_one": "{{count}} Track ohne Länge, zählt als 6 Min.",
-      "assumed_other": "{{count}} Tracks ohne Länge, zählen je als 6 Min."
+    "counted": "Gezählt mit {{minutes}} Min. pro Track. Die Dateien dauern zusammen {{audio}}.",
+    "countedAtLeast": "Gezählt mit {{minutes}} Min. pro Track. Die Dateien dauern zusammen mindestens {{audio}}.",
+    "noCombos": "Keine Combos gefunden, weil sich kein Paar in zwei oder mehr der gewählten gemischten Playlists wiederholt.",
+      "assumed_one": "{{count}} Track ohne Länge, zählt als {{minutes}} Min.",
+      "assumed_other": "{{count}} Tracks ohne Länge, zählen je als {{minutes}} Min."
     },
     "playlistName": "Session vom {{date}}",
     "closed": "Schließe dein DJ-Programm, um die Session zu erstellen. Bei geöffnetem Programm bliebe die Playlist unvollständig",
@@ -111,15 +123,17 @@
       "harmonicSame": "{{from}} → {{to}}, gleiche Tonart",
       "harmonicRing": "{{from}} → {{to}}, gleicher Ring",
       "harmonicNeighbour": "{{from}} → {{to}}, Nachbar",
-      "tasteRated": "Unter den bestbewerteten, die passen",
-      "tastePlayed": "Unter den meistgespielten, die passen",
+      "tasteRated": "Mit {{stars}} von 5 bewertet, eine der besten, die passen",
+      "tastePlayed_one": "{{count}}-mal gespielt, einer der meistgespielten, die passen",
+    "tastePlayed_other": "{{count}}-mal gespielt, einer der meistgespielten, die passen",
       "bpm": "Passt vom Tempo her",
       "bpmRelaxed": "Nichts anderes passte, daher ändert sich das Tempo stärker als üblich",
       "freshKey": "Neu. Passt zur Tonart {{key}}",
       "freshTempo": "Neu. Passt vom Tempo her",
       "chosen": "Von dir gewählt",
       "change": "Ändern",
-      "pick": "Ändern zu"
+      "pick": "Ändern zu",
+    "noneFit": "Hier passt sonst nichts"
     }
   },
   "pasteTracklist": {

@@ -17,12 +17,25 @@ const SUMMARY: SessionSummary = {
   withKey: 23,
   shortBySecs: 0,
   missingDurations: 0,
+  audioSecs: 9840,
 }
 
-function setup(summary: Partial<SessionSummary> = {}, busy = false) {
+function setup(
+  summary: Partial<SessionSummary> = {},
+  busy = false,
+  extra: { playMinutes?: number; preferCombos?: boolean } = {},
+) {
   const plan: SessionPlan = { items: [], summary: { ...SUMMARY, ...summary } }
   const handlers = { onRedo: vi.fn(), onAdjust: vi.fn(), onKeep: vi.fn() }
-  render(<SessionBand plan={plan} busy={busy} {...handlers} />)
+  render(
+    <SessionBand
+      plan={plan}
+      busy={busy}
+      playMinutes={extra.playMinutes ?? 2}
+      preferCombos={extra.preferCombos ?? true}
+      {...handlers}
+    />,
+  )
   return handlers
 }
 
@@ -82,5 +95,53 @@ describe('SessionBand', () => {
   it('says nothing about lengths when every track had one', () => {
     setup()
     expect(screen.queryByTestId('session-band-assumed')).toBeNull()
+  })
+
+  it('says the length is counted at the minutes each track plays and gives the length of the files', () => {
+    setup({ secs: 3600, audioSecs: 9840 }, false, { playMinutes: 2 })
+    const counted = screen.getByTestId('session-band-counted')
+    expect(counted).toHaveTextContent('2')
+    expect(counted).toHaveTextContent('2 h 44 min')
+  })
+
+  it('keeps the hours and the minutes of the files together, so the line never breaks inside them', () => {
+    setup({ audioSecs: 9840 })
+    expect(screen.getByTestId('session-band-counted').textContent).toContain(
+      '2\u00a0h\u00a044\u00a0min',
+    )
+  })
+
+  it('gives the files in minutes when they last less than an hour', () => {
+    setup({ secs: 1800, audioSecs: 2820 })
+    expect(screen.getByTestId('session-band-counted')).toHaveTextContent('47 min')
+  })
+
+  it('says the files add up to at least that when some track has no length', () => {
+    setup({ missingDurations: 2, audioSecs: 3600 })
+    expect(screen.getByTestId('session-band-counted')).toHaveTextContent(/at least|al menos/i)
+  })
+
+  it('explains why there are no combos when proven combos were asked for', () => {
+    setup({ combos: 0 })
+    expect(screen.getByTestId('session-band-nocombos')).toBeInTheDocument()
+  })
+
+  it('stays quiet about combos when there are some, or when they were not asked for', () => {
+    setup()
+    expect(screen.queryByTestId('session-band-nocombos')).toBeNull()
+    cleanup()
+    setup({ combos: 0 }, false, { preferCombos: false })
+    expect(screen.queryByTestId('session-band-nocombos')).toBeNull()
+  })
+
+  it('counts a track with no length at the time it plays, not at six minutes', () => {
+    setup({ missingDurations: 1 }, false, { playMinutes: 2 })
+    expect(screen.getByTestId('session-band-assumed')).toHaveTextContent('2')
+    expect(screen.getByTestId('session-band-assumed').textContent).not.toContain('6')
+  })
+
+  it('counts a track with no length as six minutes at most', () => {
+    setup({ missingDurations: 1 }, false, { playMinutes: 9 })
+    expect(screen.getByTestId('session-band-assumed')).toHaveTextContent('6')
   })
 })

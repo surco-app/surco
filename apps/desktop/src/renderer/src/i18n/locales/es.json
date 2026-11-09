@@ -21,12 +21,13 @@
   "sessions": {
     "role": {
       "title": "Papel para sesiones",
+    "of": "Papel de {{name}}",
       "base": "Bases",
       "vocal": "Cantaditas",
       "any": "Mezcladas"
     },
     "wizard": {
-      "title": "Montar una sesión",
+      "title": "Sesión automática",
       "step": "Paso {{current}} de {{total}}",
       "steps": {
         "duration": "Duración",
@@ -47,10 +48,11 @@
       },
       "sources": {
         "heading": "¿De qué playlists salen las pistas?",
-        "hint": "Busca una playlist y di qué hay en ella. Surco lo guarda en la playlist, así que la próxima vez ya están aquí.",
+        "hint": "Busca una playlist y di qué hay en ella. Usa Mezcladas para tracklists y sets, donde el orden importa. Surco lee ese orden para encontrar combos.",
         "search": "Buscar entre {{count}} playlists",
         "noHits": "Ninguna playlist coincide",
         "none": "Aún no has elegido ninguna playlist",
+        "suggest": "Marcar carpetas por su nombre ({{names}})",
         "onlyChosen": "Ver solo las elegidas",
         "allPlaylists": "Ver todas las playlists",
         "summary_one": "{{count}} playlist elegida, hasta {{tracks}} pistas para escoger",
@@ -71,10 +73,11 @@
         "tasteWeightHint": "Estrellas y veces escuchada pesan al elegir",
         "surprise": "Sorpréndeme",
         "surpriseHint": "Deja un hueco a parejas que nunca se han puesto juntas",
+        "noMixed": "No hay ninguna playlist Mezclada elegida, así que no hay orden que leer para los combos. Añade una en el paso Playlists.",
         "play": "Tiempo que suena cada pista",
         "playValue": "{{minutes}} min",
         "playHint": "Las pistas se mezclan, no suenan enteras. Es lo que cuenta cada una para la duración de la sesión.",
-        "harmony": "Mezcla armónica",
+        "harmony": "Mezcla armónica (Camelot)",
         "harmonyFree": "Libre",
         "harmonyNeighbours": "Vecinos",
         "harmonySame": "Mismo tono",
@@ -82,12 +85,17 @@
       },
       "loading": "Leyendo…",
       "build": "Montar sesión",
+      "building": "Montando…",
+      "destinationNew": "Se creará como «{{name}}».",
+      "destinationNewIn": "Se creará como «{{name}}» en {{where}}.",
+      "destinationFill": "«{{name}}» se rellenará con la sesión.",
+      "destinationReplace": "La sesión sustituirá a «{{name}}».",
       "loadFailed": "{{names}} no se pudo leer y se deja fuera",
       "empty": "Las playlists elegidas no tienen ninguna pista con la que montar una sesión",
       "refused": "No se pudo escribir la sesión. Mira el aviso y vuelve a intentarlo"
     },
     "band": {
-      "title": "Sesión montada por Surco",
+      "title": "Sesión automática",
       "tracks_one": "{{count}} pista",
       "tracks_other": "{{count}} pistas",
       "combos_one": "{{count}} combo",
@@ -98,9 +106,13 @@
       "redo": "Rehacer",
       "adjust": "Ajustar…",
       "keep": "Quedármela así",
+    "kept": "Se queda como playlist normal",
       "short": "Solo hay pistas para {{minutes}} min",
-      "assumed_one": "{{count}} pista sin duración, se cuenta como 6 min",
-      "assumed_other": "{{count}} pistas sin duración, se cuentan como 6 min cada una"
+    "counted": "Contado a {{minutes}} min por pista. Los ficheros suman {{audio}}.",
+    "countedAtLeast": "Contado a {{minutes}} min por pista. Los ficheros suman al menos {{audio}}.",
+    "noCombos": "Sin combos, porque ninguna pareja se repite en dos o más de las playlists Mezcladas que elegiste.",
+      "assumed_one": "{{count}} pista sin duración, se cuenta como {{minutes}} min",
+      "assumed_other": "{{count}} pistas sin duración, se cuentan como {{minutes}} min cada una"
     },
     "playlistName": "Sesión del {{date}}",
     "closed": "Cierra tu programa DJ para montar la sesión. Con él abierto, la playlist quedaría a medias",
@@ -111,15 +123,17 @@
       "harmonicSame": "{{from}} → {{to}}, mismo tono",
       "harmonicRing": "{{from}} → {{to}}, misma rueda",
       "harmonicNeighbour": "{{from}} → {{to}}, vecino",
-      "tasteRated": "De las mejor valoradas que cuadran",
-      "tastePlayed": "De las más escuchadas que cuadran",
+      "tasteRated": "Valorada con {{stars}} de 5, de las mejores que cuadran",
+      "tastePlayed_one": "Escuchada {{count}} vez, de las más escuchadas que cuadran",
+    "tastePlayed_other": "Escuchada {{count}} veces, de las más escuchadas que cuadran",
       "bpm": "Encaja por tempo",
       "bpmRelaxed": "No había otra que encajara, así que el tempo cambia más de lo normal",
       "freshKey": "Nueva. Encaja por tono {{key}}",
       "freshTempo": "Nueva. Encaja por tempo",
       "chosen": "Elegida por ti",
       "change": "Cambiar",
-      "pick": "Cambiar por"
+      "pick": "Cambiar por",
+    "noneFit": "No hay otra que cuadre aquí"
     }
   },
   "pasteTracklist": {

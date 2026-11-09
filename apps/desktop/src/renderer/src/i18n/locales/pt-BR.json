@@ -21,12 +21,13 @@
   "sessions": {
     "role": {
       "title": "Papel para sessões",
+    "of": "Papel de {{name}}",
       "base": "Bases",
       "vocal": "Cantadas",
       "any": "Misto"
     },
     "wizard": {
-      "title": "Montar uma sessão",
+      "title": "Sessão automática",
       "step": "Passo {{current}} de {{total}}",
       "steps": {
         "duration": "Duração",
@@ -47,10 +48,11 @@
       },
       "sources": {
         "heading": "De quais playlists saem as faixas?",
-        "hint": "Busque uma playlist e diga o que há nela. O Surco guarda isso na playlist, então da próxima vez ela já estará aqui.",
+        "hint": "Busque uma playlist e diga o que há nela. Use Misto para tracklists e sets, onde a ordem importa. O Surco lê essa ordem para achar combos.",
         "search": "Buscar entre {{count}} playlists",
         "noHits": "Nenhuma playlist corresponde",
         "none": "Nenhuma playlist escolhida ainda",
+        "suggest": "Marcar pastas pelo nome ({{names}})",
         "onlyChosen": "Ver só as escolhidas",
         "allPlaylists": "Ver todas as playlists",
         "summary_one": "{{count}} playlist escolhida, até {{tracks}} faixas para escolher",
@@ -71,10 +73,11 @@
         "tasteWeightHint": "Estrelas e reproduções pesam na escolha",
         "surprise": "Surpreenda-me",
         "surpriseHint": "Deixa espaço para pares que nunca tocaram juntos",
+        "noMixed": "Nenhuma playlist Mista foi escolhida, então não há ordem para ler os combos. Adicione uma no passo Playlists.",
         "play": "Tempo que cada faixa toca",
         "playValue": "{{minutes}} min",
         "playHint": "As faixas são mixadas, não tocam inteiras. É o que cada uma conta para a duração da sessão.",
-        "harmony": "Mixagem harmônica",
+        "harmony": "Mixagem harmônica (Camelot)",
         "harmonyFree": "Livre",
         "harmonyNeighbours": "Vizinhos",
         "harmonySame": "Mesmo tom",
@@ -82,12 +85,17 @@
       },
       "loading": "Lendo…",
       "build": "Montar sessão",
+      "building": "Montando…",
+      "destinationNew": "Será criada como “{{name}}”.",
+      "destinationNewIn": "Será criada como “{{name}}” em {{where}}.",
+      "destinationFill": "“{{name}}” será preenchida com a sessão.",
+      "destinationReplace": "A sessão substituirá “{{name}}”.",
       "loadFailed": "{{names}} não pôde ser lido e fica de fora",
       "empty": "As playlists escolhidas não têm nenhuma faixa para montar uma sessão",
       "refused": "Não foi possível gravar a sessão. Veja o aviso e tente de novo"
     },
     "band": {
-      "title": "Sessão montada pelo Surco",
+      "title": "Sessão automática",
       "tracks_one": "{{count}} faixa",
       "tracks_other": "{{count}} faixas",
       "combos_one": "{{count}} combo",
@@ -98,9 +106,13 @@
       "redo": "Refazer",
       "adjust": "Ajustar…",
       "keep": "Ficar assim",
+    "kept": "Mantida como playlist normal",
       "short": "Só há faixas para {{minutes}} min",
-      "assumed_one": "{{count}} faixa sem duração, conta como 6 min",
-      "assumed_other": "{{count}} faixas sem duração, contam como 6 min cada"
+    "counted": "Contado a {{minutes}} min por faixa. Os arquivos somam {{audio}}.",
+    "countedAtLeast": "Contado a {{minutes}} min por faixa. Os arquivos somam pelo menos {{audio}}.",
+    "noCombos": "Sem combos, porque nenhum par se repete em duas ou mais das playlists Mistas escolhidas.",
+      "assumed_one": "{{count}} faixa sem duração, conta como {{minutes}} min",
+      "assumed_other": "{{count}} faixas sem duração, contam como {{minutes}} min cada"
     },
     "playlistName": "Sessão de {{date}}",
     "closed": "Feche seu programa de DJ para montar a sessão. Com ele aberto, a playlist ficaria pela metade",
@@ -111,15 +123,17 @@
       "harmonicSame": "{{from}} → {{to}}, mesmo tom",
       "harmonicRing": "{{from}} → {{to}}, mesmo anel",
       "harmonicNeighbour": "{{from}} → {{to}}, vizinho",
-      "tasteRated": "Entre as mais bem avaliadas que combinam",
-      "tastePlayed": "Entre as mais ouvidas que combinam",
+      "tasteRated": "Avaliada com {{stars}} de 5, entre as melhores que combinam",
+      "tastePlayed_one": "Tocada {{count}} vez, entre as mais tocadas que combinam",
+    "tastePlayed_other": "Tocada {{count}} vezes, entre as mais tocadas que combinam",
       "bpm": "Combina pelo andamento",
       "bpmRelaxed": "Nenhuma outra combinava, então o andamento muda mais que o normal",
       "freshKey": "Nova. Combina pelo tom {{key}}",
       "freshTempo": "Nova. Combina pelo andamento",
       "chosen": "Escolhida por você",
       "change": "Trocar",
-      "pick": "Trocar por"
+      "pick": "Trocar por",
+    "noneFit": "Nenhuma outra combina aqui"
     }
   },
   "pasteTracklist": {
