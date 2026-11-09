@@ -6,6 +6,7 @@ export interface CueAudition {
   playing: boolean
   toggle: (fromMs: number) => void
   seek: (ms: number) => void
+  pause: () => void
   stop: () => void
 }
 
@@ -18,6 +19,8 @@ export function useCueAudition(
   leadMs = 0,
 ): CueAudition {
   const audioRef = useRef<HTMLAudioElement | null>(null)
+  const ready = useRef(false)
+  const wanted = useRef(false)
   const frame = useRef<number | null>(null)
   const soundingPath = useRef(path)
   const wantedMs = useRef(0)
@@ -28,11 +31,17 @@ export function useCueAudition(
   const unhold = useRef<(() => void) | null>(null)
   const [playing, setPlaying] = useState(false)
 
-  const stop = useCallback((): void => {
+  const unfollow = useCallback((): void => {
     if (frame.current !== null) cancelAnimationFrame(frame.current)
     frame.current = null
+  }, [])
+
+  const stop = useCallback((): void => {
+    unfollow()
     unhold.current?.()
     unhold.current = null
+    wanted.current = false
+    ready.current = false
     const audio = audioRef.current
     audioRef.current = null
     if (audio) {
@@ -44,48 +53,72 @@ export function useCueAudition(
       audio.load()
     }
     setPlaying(false)
-  }, [])
+  }, [unfollow])
+
+  const pause = useCallback((): void => {
+    unfollow()
+    wanted.current = false
+    audioRef.current?.pause()
+    setPlaying(false)
+  }, [unfollow])
 
   const follow = useCallback((audio: HTMLAudioElement): void => {
     const tick = () => {
-      if (audioRef.current !== audio) return
+      if (audioRef.current !== audio || !wanted.current) return
       latest.current(audio.currentTime * 1000 + lead.current)
       frame.current = requestAnimationFrame(tick)
     }
     frame.current = requestAnimationFrame(tick)
   }, [])
 
+  const sound = useCallback(
+    (audio: HTMLAudioElement): void => {
+      audio.currentTime = elementSec(wantedMs.current, lead.current)
+      audio
+        .play()
+        .then(() => {
+          if (audioRef.current === audio && wanted.current) follow(audio)
+        })
+        .catch(() => {
+          if (audioRef.current === audio) stop()
+        })
+    },
+    [follow, stop],
+  )
+
+  const load = useCallback((): HTMLAudioElement => {
+    if (audioRef.current) return audioRef.current
+    const audio = new Audio(mediaUrl(path))
+    audio.preload = 'auto'
+    audioRef.current = audio
+    ready.current = false
+    unhold.current = holdForAudition(path, stop)
+    soundingPath.current = path
+    audio.onloadedmetadata = () => {
+      if (audioRef.current !== audio) return
+      ready.current = true
+      if (wanted.current) sound(audio)
+    }
+    audio.onended = () => pause()
+    audio.onerror = () => stop()
+    return audio
+  }, [path, stop, pause, sound])
+
   const start = useCallback(
     (fromMs: number): void => {
-      stop()
       for (const other of document.querySelectorAll('audio')) other.pause()
-      const audio = new Audio(mediaUrl(path))
-      audioRef.current = audio
-      unhold.current = holdForAudition(path, stop)
-      soundingPath.current = path
+      const audio = load()
       wantedMs.current = fromMs
-      audio.onloadedmetadata = () => {
-        if (audioRef.current !== audio) return
-        audio.currentTime = elementSec(wantedMs.current, lead.current)
-        audio
-          .play()
-          .then(() => {
-            if (audioRef.current === audio) follow(audio)
-          })
-          .catch(() => {
-            if (audioRef.current === audio) stop()
-          })
-      }
-      audio.onended = () => stop()
-      audio.onerror = () => stop()
+      wanted.current = true
+      if (ready.current) sound(audio)
       setPlaying(true)
     },
-    [path, stop, follow],
+    [load, sound],
   )
 
   const toggle = useCallback(
-    (fromMs: number): void => (audioRef.current ? stop() : start(fromMs)),
-    [start, stop],
+    (fromMs: number): void => (wanted.current ? pause() : start(fromMs)),
+    [start, pause],
   )
 
   const seek = useCallback((ms: number): void => {
@@ -98,19 +131,20 @@ export function useCueAudition(
   }, [active, stop])
 
   useEffect(() => {
+    if (soundingPath.current !== path) stop()
+    if (active) load()
+  }, [path, active, stop, load])
+
+  useEffect(() => {
     if (!playing) return
     const onOther = (e: Event) => {
-      if (e.target !== audioRef.current) stop()
+      if (e.target !== audioRef.current) pause()
     }
     document.addEventListener('play', onOther, true)
     return () => document.removeEventListener('play', onOther, true)
-  }, [playing, stop])
-
-  useEffect(() => {
-    if (soundingPath.current !== path) stop()
-  }, [path, stop])
+  }, [playing, pause])
 
   useEffect(() => stop, [stop])
 
-  return { playing, toggle, seek, stop }
+  return { playing, toggle, seek, pause, stop }
 }

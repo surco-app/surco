@@ -984,7 +984,7 @@ describe('CuesSection maximized keys', () => {
     expect(pause).toHaveBeenCalled()
   })
 
-  it('stops the sound on restore even when the section stays mounted where it was', async () => {
+  it('stops the sound on restore even when the section stays mounted where it was, and keeps the track loaded for the next Play', async () => {
     stubSound()
     setup()
     await maximize()
@@ -993,10 +993,11 @@ describe('CuesSection maximized keys', () => {
     await act(async () => {
       audios[0].onloadedmetadata?.()
     })
+    pause.mockClear()
     fireEvent.click(screen.getByTestId('section-maximize'))
     expect(screen.getByTestId('cues-section')).toBe(section)
     expect(pause).toHaveBeenCalledTimes(1)
-    expect(audios[0].removeAttribute).toHaveBeenCalledWith('src')
+    expect(audios[0].removeAttribute).not.toHaveBeenCalled()
   })
 
   it('lists the keys with the jump in use', async () => {

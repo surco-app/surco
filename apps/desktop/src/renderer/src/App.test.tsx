@@ -280,6 +280,7 @@ function setApi(over: Record<string, unknown> = {}): void {
   ;(window as unknown as { api: unknown }).api = {
     platform: 'win32',
     version: '0.0.0-test',
+    releasePlayingFile: vi.fn<Api['releasePlayingFile']>().mockResolvedValue(undefined),
     getSettings: vi.fn().mockResolvedValue(settings()),
     loadAppleMusicLibraryPlaylistTracks: vi.fn().mockResolvedValue(null),
     loadAppleMusicPlaylistsCached: vi.fn().mockResolvedValue(null),

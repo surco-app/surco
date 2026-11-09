@@ -1955,13 +1955,13 @@ export function CuesSection({
   }
   const leadMs = useAuditionLead(cue.contentId)
   const audition = useCueAudition(cue.path, open, follow, leadMs)
-  const stopSound = audition.stop
+  const pauseSound = audition.pause
   const shownMaximized = useRef(maximized)
   useEffect(() => {
     if (shownMaximized.current === maximized) return
     shownMaximized.current = maximized
-    stopSound()
-  }, [maximized, stopSound])
+    pauseSound()
+  }, [maximized, pauseSound])
   const [headerSlot, setHeaderSlot] = useState<HTMLSpanElement | null>(null)
   const moveHead = (ms: number) => {
     follow(ms)

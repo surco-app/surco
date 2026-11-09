@@ -14,6 +14,7 @@ class FakeAudio {
   onloadedmetadata: (() => void) | null = null
   onended: (() => void) | null = null
   currentTime = 0
+  preload = ''
   play = play
   pause = vi.fn<() => void>()
   load = vi.fn<() => void>()
@@ -125,6 +126,51 @@ describe('useCueAudition', () => {
     onPosition.mockClear()
     nextFrame()
     expect(onPosition).not.toHaveBeenCalled()
+  })
+
+  // From a NAS every Play reopened the file over the network: 10 to 460 ms of silence after
+  // the press, over 3 s the first time. A pause keeps what was loaded, so Play sounds at once.
+  it('sounds again at once after a pause, from the loaded track, without opening the file again', async () => {
+    const { hook } = await started()
+    act(() => hook.result.current.toggle(0))
+    play.mockClear()
+    act(() => hook.result.current.toggle(30000))
+    expect(audios).toHaveLength(1)
+    expect(audios[0].currentTime).toBe(30)
+    expect(play).toHaveBeenCalled()
+    expect(hook.result.current.playing).toBe(true)
+  })
+
+  it('starts loading the track when the editor opens, so the first Play does not wait for the file', () => {
+    renderHook(() => useCueAudition('/m/g.wav', true, vi.fn()))
+    expect(audios).toHaveLength(1)
+    expect(audios[0].src).toContain('g.wav')
+    expect(audios[0].preload).toBe('auto')
+    expect(play).not.toHaveBeenCalled()
+  })
+
+  it('loads nothing while the editor is closed', () => {
+    renderHook(() => useCueAudition('/m/g.wav', false, vi.fn()))
+    expect(audios).toHaveLength(0)
+  })
+
+  // Windows refuses to rename over a file still open, so a paused track must still let go
+  // of its stream when a conversion asks for it.
+  it('releases a paused track when a conversion asks for its file', async () => {
+    const { hook } = await started()
+    act(() => hook.result.current.toggle(0))
+    act(() => {
+      expect(stopAuditionsOf('/m/g.wav')).toBe(true)
+    })
+    expect(audios[0].removeAttribute).toHaveBeenCalledWith('src')
+    expect(audios[0].load).toHaveBeenCalled()
+  })
+
+  it('keeps the track loaded when it reaches the end, ready to play again', async () => {
+    const { hook } = await started()
+    act(() => audios[0].onended?.())
+    expect(hook.result.current.playing).toBe(false)
+    expect(audios[0].removeAttribute).not.toHaveBeenCalled()
   })
 
   it('stops when the editor is no longer maximized', async () => {
