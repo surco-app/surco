@@ -29,7 +29,12 @@ import {
 import { SAME_CLOCK_FILE } from '../../shared/gridEdit'
 import { emptyMetadata } from '../../shared/metadata'
 import { RECENTLY_ADDED_ID } from '../../shared/recentlyAdded'
-import { rolesForProgram, withPlaylistRole } from '../../shared/sessionSettings'
+import {
+  answersFromSettings,
+  rolesForProgram,
+  withPlaylistRole,
+  wizardSettingsFrom,
+} from '../../shared/sessionSettings'
 import type { PlaylistRole } from '../../shared/sessionTypes'
 import { resolveBindings } from '../../shared/shortcutDefaults'
 import { TRASH_MAX_BYTES, TRASH_RETENTION_DAYS } from '../../shared/trash'
@@ -72,6 +77,8 @@ import { PasteTracklistModal } from './components/PasteTracklistModal'
 import { LivePlayer } from './components/Player'
 import { RekordboxQueuePill } from './components/RekordboxQueuePill'
 import { ResizeHandle } from './components/ResizeHandle'
+import { SessionBand } from './components/SessionBand'
+import { SessionWizard } from './components/SessionWizard'
 import { SourceRail } from './components/SourceRail'
 import { flattenPlaylists, SourceTree } from './components/SourceTree'
 import { ToastStack } from './components/ToastStack'
@@ -112,6 +119,9 @@ import { useLibraryAvailable, useOfferPlaylistFields } from './hooks/useRekordbo
 import { PROGRAM_QUEUES, useRekordboxQueue } from './hooks/useRekordboxQueue'
 import { useRetireSuperseded } from './hooks/useRetireSuperseded'
 import { useSessionPersistence } from './hooks/useSessionPersistence'
+import { useSessionRows } from './hooks/useSessionRows'
+import { useSessionRun } from './hooks/useSessionRun'
+import { useSessionWrite } from './hooks/useSessionWrite'
 import { useSettings } from './hooks/useSettings'
 import { useSourceBrowser } from './hooks/useSourceBrowser'
 import { spectrogramOptions } from './hooks/useSpectrogram'
@@ -853,7 +863,7 @@ export default function App(): React.JSX.Element {
     }).data === true
   const editableSource =
     sourceEdit && (sourceEdit.gate === 'none' || traktorCanSave) ? sourceProgram : null
-  const editRekordbox = useRekordboxEdits(notifyEdit, editableSource ?? 'rekordbox')
+  const editRekordboxRaw = useRekordboxEdits(notifyEdit, editableSource ?? 'rekordbox')
   const dropDiscardedPlaylists = useStableCallback((paths: string[]) =>
     setTracks((prev) => discardPlaylistEdits(prev, paths)),
   )
@@ -1079,6 +1089,37 @@ export default function App(): React.JSX.Element {
     }
     browser.selectPlaylist(node, folders)
   })
+  const sessionProgram = editableSource
+  const sessionRows = useSessionRows(sessionProgram ?? 'rekordbox')
+  const sessionWriter = useSessionWrite(editRekordboxRaw)
+  const sessionRun = useSessionRun({
+    roles: rolesForProgram(settings?.sessionRoles ?? {}, sessionProgram ?? 'rekordbox'),
+    rows: sessionRows,
+    writer: sessionWriter,
+    nameFor: () =>
+      tr('sessions.playlistName', {
+        date: new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'numeric' }),
+      }),
+    openPlaylist: (node) => selectPlaylist(node, []),
+    saveAnswers: (answers) => {
+      if (settings)
+        saveSettings({ sessionWizard: wizardSettingsFrom(answers, settings.sessionWizard) })
+    },
+    newSeed: () => Date.now() % 2_147_483_647,
+  })
+  const editRekordbox = useStableCallback(
+    async (edit: Parameters<typeof editRekordboxRaw>[0], name: string) => {
+      const result = await editRekordboxRaw(edit, name)
+      if (result.applied && 'playlistId' in edit) sessionRun.noteEdit(edit.playlistId)
+      return result
+    },
+  )
+  const [sessionWizard, setSessionWizard] = useState<{ parentId: string; adjust: boolean } | null>(
+    null,
+  )
+  const openSessionAdjust = useStableCallback(() =>
+    setSessionWizard({ parentId: sessionRun.recent?.parentId ?? 'root', adjust: true }),
+  )
   const selectSource = useStableCallback((next: PlaylistSource | null) => {
     if (next === browser.source) return
     heldSelection.current = null
@@ -3731,6 +3772,16 @@ export default function App(): React.JSX.Element {
                               canReviewList ? () => openTargetReview('incomplete') : undefined
                             }
                           />
+                          {sessionRun.recent &&
+                            browser.playlist?.id === sessionRun.recent.playlistId && (
+                              <SessionBand
+                                plan={sessionRun.recent.plan}
+                                busy={sessionRun.busy}
+                                onRedo={() => void sessionRun.redo()}
+                                onAdjust={openSessionAdjust}
+                                onKeep={sessionRun.keep}
+                              />
+                            )}
                           {crateOpen && !reorderEnabled && (
                             <p
                               data-testid="reorder-hint"
@@ -4064,6 +4115,38 @@ export default function App(): React.JSX.Element {
                   create={pasteTracklist.create}
                   onAdd={(tracks, newName) => void addPastedTracklist(tracks, newName)}
                   onClose={() => setPasteTracklist(null)}
+                />
+              )}
+            </ModalExit>
+            <ModalExit>
+              {sessionWizard && sessionProgram && settings && browser.tree && (
+                <SessionWizard
+                  tree={browser.tree}
+                  roles={rolesForProgram(settings.sessionRoles, sessionProgram)}
+                  initial={
+                    sessionWizard.adjust && sessionRun.recent
+                      ? sessionRun.recent.answers
+                      : answersFromSettings(settings.sessionWizard)
+                  }
+                  rows={sessionRows}
+                  onRole={(id, role) =>
+                    saveSettings({
+                      sessionRoles: withPlaylistRole(
+                        settings.sessionRoles,
+                        sessionProgram,
+                        id,
+                        role,
+                      ),
+                    })
+                  }
+                  onClose={() => setSessionWizard(null)}
+                  onBuild={async (answers) => {
+                    const result = sessionWizard.adjust
+                      ? await sessionRun.adjust(answers)
+                      : await sessionRun.build(sessionWizard.parentId, answers)
+                    if (result === 'built') setSessionWizard(null)
+                    return result
+                  }}
                 />
               )}
             </ModalExit>
