@@ -176,6 +176,15 @@ describe('SessionWizard sources step', () => {
     ).toBeInTheDocument()
   })
 
+  it('invites to search the playlists and never to create one', () => {
+    setup()
+    toSources()
+    expect(screen.getByTestId('playlists-search')).toHaveAttribute(
+      'placeholder',
+      i18n.t('sessions.wizard.sources.search', { count: 5 }),
+    )
+  })
+
   it('has no box to create a playlist, since the session only reads them', () => {
     setup()
     toSources()

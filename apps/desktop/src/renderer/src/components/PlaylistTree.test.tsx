@@ -90,6 +90,23 @@ describe('PlaylistTree when nothing matches', () => {
   })
 })
 
+describe('PlaylistTree search label', () => {
+  it('offers to search or create by default', () => {
+    renderTree()
+    expect(screen.getByTestId('playlists-search')).toHaveAttribute(
+      'placeholder',
+      'Search or create a playlist',
+    )
+  })
+
+  it('says only what it was told when it cannot create, so it does not promise what it will not do', () => {
+    renderTree({ allowCreate: false, searchLabel: 'Search a playlist' })
+    const search = screen.getByTestId('playlists-search')
+    expect(search).toHaveAttribute('placeholder', 'Search a playlist')
+    expect(search).toHaveAttribute('aria-label', 'Search a playlist')
+  })
+})
+
 describe('PlaylistTree focus', () => {
   it('puts the focus on the search by default', () => {
     renderTree()

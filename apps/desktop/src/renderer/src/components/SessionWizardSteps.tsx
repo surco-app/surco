@@ -133,6 +133,7 @@ export function SourcesStep({
           allowCreate={false}
           autoFocus={false}
           emptyText={tr('sessions.wizard.sources.noHits')}
+          searchLabel={tr('sessions.wizard.sources.search', { count: playlists.length })}
           control={({ id }) =>
             id ? (
               <PlaylistRolePicker
@@ -236,6 +237,7 @@ export function FreshStep({
           allowCreate={false}
           autoFocus={false}
           emptyText={tr('sessions.wizard.sources.noHits')}
+          searchLabel={tr('sessions.wizard.fresh.search')}
         />
       </div>
       {fresh.length > 0 && (

@@ -78,6 +78,7 @@ export function PlaylistTree({
   allowCreate = true,
   autoFocus = true,
   emptyText,
+  searchLabel,
 }: {
   tree: readonly SourceNode[]
   options: readonly PlaylistOption[]
@@ -88,6 +89,7 @@ export function PlaylistTree({
   allowCreate?: boolean
   autoFocus?: boolean
   emptyText?: string
+  searchLabel?: string
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [query, setQuery] = useState('')
@@ -303,8 +305,8 @@ export function PlaylistTree({
             rowRefs.current[0] = el
           }}
           data-testid="playlists-search"
-          aria-label={tr('editor.playlists.search')}
-          placeholder={tr('editor.playlists.search')}
+          aria-label={searchLabel ?? tr('editor.playlists.search')}
+          placeholder={searchLabel ?? tr('editor.playlists.search')}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           className="min-w-0 flex-1 bg-transparent text-fg outline-none focus-visible:shadow-none placeholder:text-fg-faint"
