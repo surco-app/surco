@@ -123,15 +123,17 @@
       "harmonicSame": "{{from}} → {{to}}, same key",
       "harmonicRing": "{{from}} → {{to}}, same ring",
       "harmonicNeighbour": "{{from}} → {{to}}, neighbour",
-      "tasteRated": "Among the best rated that fit",
-      "tastePlayed": "Among the most played that fit",
+      "tasteRated": "Rated {{stars}} of 5, among the best that fit",
+      "tastePlayed_one": "Played {{count}} time, among the most played that fit",
+    "tastePlayed_other": "Played {{count}} times, among the most played that fit",
       "bpm": "Fits by tempo",
       "bpmRelaxed": "Nothing else fit, so the tempo moves more than usual",
       "freshKey": "New. Fits by key {{key}}",
       "freshTempo": "New. Fits by tempo",
       "chosen": "Chosen by you",
       "change": "Change",
-      "pick": "Change to"
+      "pick": "Change to",
+    "noneFit": "Nothing else fits here"
     }
   },
   "pasteTracklist": {

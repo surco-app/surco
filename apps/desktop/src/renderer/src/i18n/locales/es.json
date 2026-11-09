@@ -123,15 +123,17 @@
       "harmonicSame": "{{from}} → {{to}}, mismo tono",
       "harmonicRing": "{{from}} → {{to}}, misma rueda",
       "harmonicNeighbour": "{{from}} → {{to}}, vecino",
-      "tasteRated": "De las mejor valoradas que cuadran",
-      "tastePlayed": "De las más escuchadas que cuadran",
+      "tasteRated": "Valorada con {{stars}} de 5, de las mejores que cuadran",
+      "tastePlayed_one": "Escuchada {{count}} vez, de las más escuchadas que cuadran",
+    "tastePlayed_other": "Escuchada {{count}} veces, de las más escuchadas que cuadran",
       "bpm": "Encaja por tempo",
       "bpmRelaxed": "No había otra que encajara, así que el tempo cambia más de lo normal",
       "freshKey": "Nueva. Encaja por tono {{key}}",
       "freshTempo": "Nueva. Encaja por tempo",
       "chosen": "Elegida por ti",
       "change": "Cambiar",
-      "pick": "Cambiar por"
+      "pick": "Cambiar por",
+    "noneFit": "No hay otra que cuadre aquí"
     }
   },
   "pasteTracklist": {

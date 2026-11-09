@@ -32,7 +32,10 @@ function phraseOf(why: SessionWhy, tr: TFunction): Phrase {
     }
     case 'taste':
       return {
-        text: tr(why.rating > 0 ? 'sessions.why.tasteRated' : 'sessions.why.tastePlayed'),
+        text:
+          why.rating > 0
+            ? tr('sessions.why.tasteRated', { stars: Math.round(why.rating / 20) })
+            : tr('sessions.why.tastePlayed', { count: why.plays }),
         tone: 'text-warn',
       }
     case 'bpm':
@@ -56,21 +59,21 @@ function phraseOf(why: SessionWhy, tr: TFunction): Phrase {
 
 export function SessionWhyLine({
   why,
-  selected,
+  canChange,
   busy,
   alternatives,
   onPick,
 }: {
   why: SessionWhy
-  selected: boolean
+  canChange: boolean
   busy: boolean
-  alternatives: readonly SessionTrack[]
+  alternatives: () => SessionTrack[]
   onPick: (track: SessionTrack) => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [open, setOpen] = useState(false)
+  const [options, setOptions] = useState<SessionTrack[]>([])
   const phrase = phraseOf(why, tr)
-  const canChange = selected && alternatives.length > 0
   return (
     <div data-testid="session-why" className="flex flex-col gap-1">
       <div className="flex items-center gap-2 text-[11px] leading-4">
@@ -86,6 +89,7 @@ export function SessionWhyLine({
             aria-expanded={open}
             onClick={(e) => {
               e.stopPropagation()
+              if (!open) setOptions(alternatives())
               setOpen((was) => !was)
             }}
             className="press ml-auto shrink-0 text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] disabled:opacity-50"
@@ -94,12 +98,17 @@ export function SessionWhyLine({
           </button>
         )}
       </div>
-      {canChange && open && (
+      {canChange && open && options.length === 0 && (
+        <p data-testid="session-why-none" className="text-[11px] text-fg-dim">
+          {tr('sessions.why.noneFit')}
+        </p>
+      )}
+      {canChange && open && options.length > 0 && (
         <ul
           aria-label={tr('sessions.why.pick')}
           className="overflow-hidden rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-field)]"
         >
-          {alternatives.map((track) => (
+          {options.map((track) => (
             <li key={track.id} className="border-t border-[var(--color-line)] first:border-t-0">
               <button
                 type="button"

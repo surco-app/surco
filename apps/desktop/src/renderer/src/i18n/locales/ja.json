@@ -123,15 +123,17 @@
       "harmonicSame": "{{from}} → {{to}}、同じキー",
       "harmonicRing": "{{from}} → {{to}}、同じリング",
       "harmonicNeighbour": "{{from}} → {{to}}、隣のキー",
-      "tasteRated": "合う中で評価が高い曲",
-      "tastePlayed": "合う中でよく聴いた曲",
+      "tasteRated": "評価は5段階中{{stars}}で、合う曲の中でも上位です",
+      "tastePlayed_one": "{{count}} 回再生しており、合う曲の中でも再生数が多い方です",
+    "tastePlayed_other": "{{count}} 回再生しており、合う曲の中でも再生数が多い方です",
       "bpm": "テンポが合います",
       "bpmRelaxed": "他に合う曲がなく、テンポの差が通常より大きくなります",
       "freshKey": "新曲。キー {{key}} に合います",
       "freshTempo": "新曲。テンポが合います",
       "chosen": "あなたが選んだ曲",
       "change": "変更",
-      "pick": "変更先"
+      "pick": "変更先",
+    "noneFit": "ここに合う曲は他にありません"
     }
   },
   "pasteTracklist": {

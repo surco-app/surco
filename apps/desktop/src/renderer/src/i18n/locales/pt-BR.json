@@ -123,15 +123,17 @@
       "harmonicSame": "{{from}} → {{to}}, mesmo tom",
       "harmonicRing": "{{from}} → {{to}}, mesmo anel",
       "harmonicNeighbour": "{{from}} → {{to}}, vizinho",
-      "tasteRated": "Entre as mais bem avaliadas que combinam",
-      "tastePlayed": "Entre as mais ouvidas que combinam",
+      "tasteRated": "Avaliada com {{stars}} de 5, entre as melhores que combinam",
+      "tastePlayed_one": "Tocada {{count}} vez, entre as mais tocadas que combinam",
+    "tastePlayed_other": "Tocada {{count}} vezes, entre as mais tocadas que combinam",
       "bpm": "Combina pelo andamento",
       "bpmRelaxed": "Nenhuma outra combinava, então o andamento muda mais que o normal",
       "freshKey": "Nova. Combina pelo tom {{key}}",
       "freshTempo": "Nova. Combina pelo andamento",
       "chosen": "Escolhida por você",
       "change": "Trocar",
-      "pick": "Trocar por"
+      "pick": "Trocar por",
+    "noneFit": "Nenhuma outra combina aqui"
     }
   },
   "pasteTracklist": {

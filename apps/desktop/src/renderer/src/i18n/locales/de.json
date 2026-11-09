@@ -123,15 +123,17 @@
       "harmonicSame": "{{from}} → {{to}}, gleiche Tonart",
       "harmonicRing": "{{from}} → {{to}}, gleicher Ring",
       "harmonicNeighbour": "{{from}} → {{to}}, Nachbar",
-      "tasteRated": "Unter den bestbewerteten, die passen",
-      "tastePlayed": "Unter den meistgespielten, die passen",
+      "tasteRated": "Mit {{stars}} von 5 bewertet, eine der besten, die passen",
+      "tastePlayed_one": "{{count}}-mal gespielt, einer der meistgespielten, die passen",
+    "tastePlayed_other": "{{count}}-mal gespielt, einer der meistgespielten, die passen",
       "bpm": "Passt vom Tempo her",
       "bpmRelaxed": "Nichts anderes passte, daher ändert sich das Tempo stärker als üblich",
       "freshKey": "Neu. Passt zur Tonart {{key}}",
       "freshTempo": "Neu. Passt vom Tempo her",
       "chosen": "Von dir gewählt",
       "change": "Ändern",
-      "pick": "Ändern zu"
+      "pick": "Ändern zu",
+    "noneFit": "Hier passt sonst nichts"
     }
   },
   "pasteTracklist": {

@@ -1175,13 +1175,12 @@ export default function App(): React.JSX.Element {
     (track: TrackItem) => {
       const index = sessionIndexByPath.get(track.inputPath.normalize('NFC'))
       if (!sessionRecent || index === undefined) return undefined
-      const current = track.id === selectedId
       return (
         <SessionWhyLine
           why={sessionRecent.plan.items[index].why}
-          selected={current}
+          canChange={sessionRecent.pool.length > sessionRecent.plan.items.length}
           busy={sessionBusy}
-          alternatives={current ? sessionAlternatives(index) : []}
+          alternatives={() => sessionAlternatives(index)}
           onPick={(picked) => void reportSession(swapSessionTrack(index, picked))}
         />
       )
@@ -1189,7 +1188,6 @@ export default function App(): React.JSX.Element {
     [
       sessionRecent,
       sessionIndexByPath,
-      selectedId,
       sessionBusy,
       sessionAlternatives,
       swapSessionTrack,
