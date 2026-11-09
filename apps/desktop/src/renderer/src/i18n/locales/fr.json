@@ -31,7 +31,6 @@
       "steps": {
         "duration": "Durée",
         "sources": "Playlists",
-        "fresh": "Nouveautés",
         "character": "Ambiance"
       },
       "next": "Suivant",
@@ -54,14 +53,11 @@
         "none": "Aucune playlist choisie pour l’instant",
         "onlyChosen": "Voir seulement les choisies",
         "allPlaylists": "Voir toutes les playlists",
-        "remove": "Retirer {{name}}",
         "summary_one": "{{count}} playlist choisie, jusqu’à {{tracks}} morceaux au choix",
         "summary_other": "{{count}} playlists choisies, jusqu’à {{tracks}} morceaux au choix"
       },
       "fresh": {
-        "heading": "Envie d’essayer des nouveautés ?",
-        "hint": "Les nouveautés n’ont pas d’historique. Surco les place selon la tonalité, le tempo et leur rôle de base ou de voix, après un morceau que tu connais déjà.",
-        "search": "Chercher une playlist de nouveautés",
+        "hint": "Les nouveaux morceaux sont ceux ajoutés ces 30 derniers jours. Si le programme ne garde pas les dates, ceux sans lectures ni étoiles.",
         "share": "Nouveautés dans la session",
         "shareValue": "{{percent}} %"
       },

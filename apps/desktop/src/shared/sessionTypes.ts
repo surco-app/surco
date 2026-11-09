@@ -15,7 +15,6 @@ export interface SessionWizardSettings {
 
 export interface SessionAnswers extends SessionWizardSettings {
   sources: string[]
-  fresh: string[]
 }
 
 export type TrackRole = 'base' | 'vocal' | 'any'

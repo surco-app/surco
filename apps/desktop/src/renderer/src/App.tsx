@@ -1097,7 +1097,7 @@ export default function App(): React.JSX.Element {
     openPlaylist: (node) => selectPlaylist(node, []),
     saveAnswers: (answers) => {
       if (settings)
-        saveSettings({ sessionWizard: wizardSettingsFrom(answers, settings.sessionWizard) })
+        saveSettings({ sessionWizard: wizardSettingsFrom(answers) })
     },
     newSeed: () => Date.now() % 2_147_483_647,
   })

@@ -10068,8 +10068,6 @@ describe('automatic session from the tree', () => {
     fireEvent.change(screen.getByTestId('playlists-search'), { target: { value: 'fact' } })
     fireEvent.click(screen.getByTestId('session-wizard-role-f-any'))
     fireEvent.click(screen.getByTestId('session-wizard-next'))
-    await screen.findByTestId('session-wizard-fresh')
-    fireEvent.click(screen.getByTestId('session-wizard-next'))
     await screen.findByTestId('session-wizard-build')
   }
 
@@ -10095,8 +10093,6 @@ describe('automatic session from the tree', () => {
       fireEvent.click(screen.getByTestId('session-wizard-next'))
       fireEvent.change(screen.getByTestId('playlists-search'), { target: { value: 'fact' } })
       fireEvent.click(screen.getByTestId('session-wizard-role-f-any'))
-      fireEvent.click(screen.getByTestId('session-wizard-next'))
-      await screen.findByTestId('session-wizard-fresh')
       fireEvent.click(screen.getByTestId('session-wizard-next'))
       await screen.findByTestId('session-wizard-build')
     }
@@ -10192,7 +10188,7 @@ describe('automatic session from the tree', () => {
     fireEvent.change(screen.getByTestId('playlists-search'), { target: { value: 'fact' } })
     fireEvent.click(screen.getByTestId('session-wizard-role-f-any'))
     fireEvent.click(screen.getByTestId('session-wizard-next'))
-    await screen.findByTestId('session-wizard-fresh')
+    await screen.findByTestId('session-wizard-build')
     const first = read.mock.calls.length
     fireEvent.keyDown(window, { key: 'Escape' })
     await waitFor(() =>
@@ -10205,12 +10201,11 @@ describe('automatic session from the tree', () => {
     fireEvent.click(screen.getByTestId('source-tree-session'))
     await screen.findByTestId('session-wizard-dialog')
     fireEvent.click(screen.getByTestId('session-wizard-next'))
-    if (screen.queryByTestId('session-wizard-none')) {
-      fireEvent.change(screen.getByTestId('playlists-search'), { target: { value: 'fact' } })
-      fireEvent.click(screen.getByTestId('session-wizard-role-f-any'))
-    }
+    expect(screen.getByTestId('session-wizard-none')).toBeInTheDocument()
+    fireEvent.change(screen.getByTestId('playlists-search'), { target: { value: 'fact' } })
+    fireEvent.click(screen.getByTestId('session-wizard-role-f-any'))
     fireEvent.click(screen.getByTestId('session-wizard-next'))
-    await screen.findByTestId('session-wizard-fresh')
+    await screen.findByTestId('session-wizard-build')
     expect(read.mock.calls.length).toBeGreaterThan(first)
   })
 

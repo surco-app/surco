@@ -57,21 +57,6 @@ describe('toCandidates', () => {
     expect(tracks).toHaveLength(1)
   })
 
-  it('marks a track only in a new-tracks playlist as fresh with the role it was given', () => {
-    const tracks = toCandidates([
-      { role: 'fresh', freshRole: 'vocal', entries: [entry('/m/n.mp3')] },
-    ])
-    expect(tracks[0]).toMatchObject({ fresh: true, role: 'vocal' })
-  })
-
-  it('does not call a track fresh when an origin playlist also holds it', () => {
-    const tracks = toCandidates([
-      source('base', entry('/m/a.mp3')),
-      { role: 'fresh', entries: [entry('/m/a.mp3')] },
-    ])
-    expect(tracks[0]).toMatchObject({ fresh: false, role: 'base' })
-  })
-
   it('brings the tracks of a Mixed playlist in as neutral', () => {
     const tracks = toCandidates([source('any', entry('/m/a.mp3'), entry('/m/b.mp3'))])
     expect(tracks.map((t) => t.role)).toEqual(['any', 'any'])

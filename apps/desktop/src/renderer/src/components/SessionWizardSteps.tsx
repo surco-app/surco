@@ -170,99 +170,6 @@ export function SourcesStep({
   )
 }
 
-export function FreshStep({
-  tree,
-  fresh,
-  share,
-  onAdd,
-  onDrop,
-  onShare,
-}: {
-  tree: readonly SourceNode[]
-  fresh: readonly string[]
-  share: number
-  onAdd: (id: string) => void
-  onDrop: (id: string) => void
-  onShare: (share: number) => void
-}): React.JSX.Element {
-  const { t: tr } = useTranslation()
-  const playlists = useMemo(() => flattenPlaylists([...tree]), [tree])
-  const byId = useMemo(() => new Map(playlists.map((p) => [p.node.id, p.node])), [playlists])
-  const options = useMemo(() => playlistOptions(tree), [tree])
-  const tokens = useMemo(
-    () =>
-      fresh.flatMap((id) => {
-        const node = byId.get(id)
-        return node ? [{ target: { id, name: node.name }, state: 'all' as const }] : []
-      }),
-    [fresh, byId],
-  )
-  const percent = Math.round(share * 100)
-  return (
-    <div data-testid="session-wizard-fresh" className="flex flex-col gap-3">
-      <p className="text-xs text-fg-dim">{tr('sessions.wizard.fresh.hint')}</p>
-      <div className="flex flex-col overflow-hidden rounded-[10px] border border-[var(--color-line)] bg-[var(--color-field)]">
-        <PlaylistTree
-          tree={tree}
-          options={options}
-          tokens={tokens}
-          onToggle={(target, on) => {
-            if (!target.id) return
-            if (on) onAdd(target.id)
-            else onDrop(target.id)
-          }}
-          allowCreate={false}
-          autoFocus={false}
-          emptyText={tr('sessions.wizard.sources.noHits')}
-          searchLabel={tr('sessions.wizard.fresh.search')}
-        />
-      </div>
-      {fresh.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {fresh.map((id) => (
-            <span
-              key={id}
-              data-testid={`session-wizard-fresh-chip-${id}`}
-              className="flex items-center gap-1.5 rounded-full border border-[var(--color-line-strong)] py-0.5 pr-1 pl-2.5 text-xs"
-            >
-              {byId.get(id)?.name}
-              <small className="text-fg-faint">{byId.get(id)?.count}</small>
-              <button
-                type="button"
-                data-testid={`session-wizard-fresh-chip-remove-${id}`}
-                aria-label={tr('sessions.wizard.sources.remove', { name: byId.get(id)?.name })}
-                onClick={() => onDrop(id)}
-                className="press flex h-4 w-4 items-center justify-center rounded-full text-fg-faint hover:bg-[var(--color-hover)] hover:text-fg"
-              >
-                ×
-              </button>
-            </span>
-          ))}
-        </div>
-      )}
-      <label className="flex flex-col gap-1.5 text-xs text-fg-dim">
-        <span className="flex justify-between">
-          {tr('sessions.wizard.fresh.share')}
-          <span className="tabular-nums text-fg">
-            {tr('sessions.wizard.fresh.shareValue', { percent })}
-          </span>
-        </span>
-        <input
-          type="range"
-          min={0}
-          max={40}
-          step={1}
-          value={percent}
-          disabled={fresh.length === 0}
-          data-testid="session-wizard-fresh-share"
-          onChange={(e) => onShare(Number(e.target.value) / 100)}
-          className="accent-[var(--color-accent)] disabled:opacity-50"
-        />
-      </label>
-    </div>
-  )
-}
-
 type CharacterKey = 'alternate' | 'preferCombos' | 'tasteWeight' | 'surprise'
 
 const CHARACTER_OPTIONS: readonly CharacterKey[] = [
@@ -283,12 +190,18 @@ export function CharacterStep({
   hasKeys,
   playMinutes,
   onPlayMinutes,
+  hasNew,
+  freshShare,
+  onFreshShare,
   onChange,
 }: {
   options: Record<CharacterKey, boolean> & { harmony: SessionHarmony }
   hasKeys: boolean
   playMinutes: number
   onPlayMinutes: (minutes: number) => void
+  hasNew: boolean
+  freshShare: number
+  onFreshShare: (share: number) => void
   onChange: (patch: Partial<Record<CharacterKey, boolean> & { harmony: SessionHarmony }>) => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
@@ -332,6 +245,29 @@ export function CharacterStep({
           {tr('sessions.wizard.character.playHint')}
         </span>
       </label>
+      {hasNew && (
+        <label className="flex flex-col gap-1.5 text-sm">
+          <span className="flex justify-between">
+            {tr('sessions.wizard.fresh.share')}
+            <span className="tabular-nums text-fg">
+              {tr('sessions.wizard.fresh.shareValue', { percent: Math.round(freshShare * 100) })}
+            </span>
+          </span>
+          <input
+            type="range"
+            min={0}
+            max={40}
+            step={1}
+            value={Math.round(freshShare * 100)}
+            data-testid="session-wizard-fresh-share"
+            onChange={(e) => onFreshShare(Number(e.target.value) / 100)}
+            className="accent-[var(--color-accent)]"
+          />
+          <span data-testid="session-wizard-fresh-hint" className="text-xs text-fg-dim">
+            {tr('sessions.wizard.fresh.hint')}
+          </span>
+        </label>
+      )}
       <div className="flex flex-col gap-1.5">
         <span className="text-sm">{tr('sessions.wizard.character.harmony')}</span>
         <div className="flex flex-wrap gap-2">

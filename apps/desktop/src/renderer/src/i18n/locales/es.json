@@ -31,7 +31,6 @@
       "steps": {
         "duration": "Duración",
         "sources": "Playlists",
-        "fresh": "Nuevas",
         "character": "Carácter"
       },
       "next": "Siguiente",
@@ -54,14 +53,11 @@
         "none": "Aún no has elegido ninguna playlist",
         "onlyChosen": "Ver solo las elegidas",
         "allPlaylists": "Ver todas las playlists",
-        "remove": "Quitar {{name}}",
         "summary_one": "{{count}} playlist elegida, hasta {{tracks}} pistas para escoger",
         "summary_other": "{{count}} playlists elegidas, hasta {{tracks}} pistas para escoger"
       },
       "fresh": {
-        "heading": "¿Quieres probar pistas nuevas?",
-        "hint": "Las nuevas no tienen historial. Surco las coloca por tono, BPM y por si son base o cantadita, detrás de una pista que ya conoces.",
-        "search": "Buscar una playlist de pistas nuevas",
+        "hint": "Nuevas son las añadidas en los últimos 30 días. Si el programa no guarda fechas, las que no tienen reproducciones ni estrellas.",
         "share": "Pistas nuevas en la sesión",
         "shareValue": "{{percent}} %"
       },

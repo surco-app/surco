@@ -21,17 +21,14 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 export function answersFromSettings(wizard: SessionWizardSettings): SessionAnswers {
-  return { ...wizard, sources: [], fresh: [] }
+  return { ...wizard, sources: [] }
 }
 
-export function wizardSettingsFrom(
-  answers: SessionAnswers,
-  previous: SessionWizardSettings,
-): SessionWizardSettings {
+export function wizardSettingsFrom(answers: SessionAnswers): SessionWizardSettings {
   return {
     minutes: answers.minutes,
     playMinutes: answers.playMinutes,
-    freshShare: answers.fresh.length > 0 ? answers.freshShare : previous.freshShare,
+    freshShare: answers.freshShare,
     preferCombos: answers.preferCombos,
     harmony: answers.harmony,
     tasteWeight: answers.tasteWeight,

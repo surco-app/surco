@@ -3,16 +3,13 @@ import type { PlaylistRole, SessionTrack, TrackRole } from '../../../shared/sess
 import type { SourcePlaylistEntry } from '../../../shared/types'
 
 export interface SessionSource {
-  role: PlaylistRole | 'fresh'
+  role: PlaylistRole
   entries: readonly SourcePlaylistEntry[]
-  freshRole?: TrackRole
 }
 
 interface Seen {
   entry: SourcePlaylistEntry
   roles: Set<TrackRole>
-  origin: boolean
-  freshRole: TrackRole
 }
 
 export function trackIdOf(entry: SourcePlaylistEntry): string | null {
@@ -58,20 +55,12 @@ export function toCandidates(
     for (const entry of source.entries) {
       const id = trackIdOf(entry)
       if (id === null) continue
-      const seen = found.get(id) ?? {
-        entry,
-        roles: new Set<TrackRole>(),
-        origin: false,
-        freshRole: source.freshRole ?? 'any',
-      }
-      if (source.role !== 'fresh') {
-        seen.origin = true
-        seen.roles.add(source.role)
-      }
+      const seen = found.get(id) ?? { entry, roles: new Set<TrackRole>() }
+      seen.roles.add(source.role)
       found.set(id, seen)
     }
   }
-  const origins = [...found.values()].filter((seen) => seen.origin)
+  const origins = [...found.values()]
   const anyHistory = origins.some((seen) => hasHistory(seen.entry))
   const isNew = (seen: Seen): boolean => {
     const recency = recencyOf(seen.entry, now)
@@ -83,13 +72,13 @@ export function toCandidates(
     const { entry } = seen
     return {
       id,
-      role: seen.origin ? roleOf(seen) : seen.freshRole,
+      role: roleOf(seen),
       key: camelotOf(entry.meta.key),
       bpm: tempoOf(entry.meta.bpm),
       rating: entry.meta.rating ?? 0,
       plays: entry.meta.playCount ?? 0,
       secs: entry.preview?.durationSec ?? 0,
-      fresh: !seen.origin || (!everyNew && isNew(seen)),
+      fresh: !everyNew && isNew(seen),
       title: entry.preview?.title ?? titleFromPath(entry.path),
       artist: entry.preview?.artist ?? '',
     }

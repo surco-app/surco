@@ -9,7 +9,7 @@ import {
 describe('answersFromSettings', () => {
   it('starts the wizard from the saved answers with no playlists chosen yet', () => {
     const saved = { ...DEFAULT_SESSION_WIZARD, minutes: 120, surprise: true }
-    expect(answersFromSettings(saved)).toEqual({ ...saved, sources: [], fresh: [] })
+    expect(answersFromSettings(saved)).toEqual({ ...saved, sources: [] })
   })
 })
 
@@ -20,11 +20,10 @@ describe('wizardSettingsFrom', () => {
     harmony: 'neighbours' as const,
     alternate: false,
     sources: ['a'],
-    fresh: [],
   }
 
   it('keeps the way the session was asked for and leaves the playlists out', () => {
-    expect(wizardSettingsFrom(answers, DEFAULT_SESSION_WIZARD)).toEqual({
+    expect(wizardSettingsFrom(answers)).toEqual({
       ...DEFAULT_SESSION_WIZARD,
       minutes: 60,
       harmony: 'neighbours',
@@ -32,16 +31,9 @@ describe('wizardSettingsFrom', () => {
     })
   })
 
-  it('keeps the share the user last chose when no new playlist was picked and the share came as zero', () => {
-    const saved = { ...DEFAULT_SESSION_WIZARD, freshShare: 0.3 }
-    expect(wizardSettingsFrom({ ...answers, freshShare: 0 }, saved).freshShare).toBe(0.3)
-  })
-
-  it('takes the share of this session when new playlists were picked', () => {
-    expect(
-      wizardSettingsFrom({ ...answers, fresh: ['n'], freshShare: 0.25 }, DEFAULT_SESSION_WIZARD)
-        .freshShare,
-    ).toBe(0.25)
+  it('takes the share of new tracks this session was asked with, zero included', () => {
+    expect(wizardSettingsFrom({ ...answers, freshShare: 0.25 }).freshShare).toBe(0.25)
+    expect(wizardSettingsFrom({ ...answers, freshShare: 0 }).freshShare).toBe(0)
   })
 })
 

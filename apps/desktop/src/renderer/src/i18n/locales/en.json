@@ -31,7 +31,6 @@
       "steps": {
         "duration": "Length",
         "sources": "Playlists",
-        "fresh": "New tracks",
         "character": "Feel"
       },
       "next": "Next",
@@ -54,14 +53,11 @@
         "none": "No playlist chosen yet",
         "onlyChosen": "See only the chosen",
         "allPlaylists": "See all playlists",
-        "remove": "Remove {{name}}",
         "summary_one": "{{count}} playlist chosen, up to {{tracks}} tracks to pick from",
         "summary_other": "{{count}} playlists chosen, up to {{tracks}} tracks to pick from"
       },
       "fresh": {
-        "heading": "Want to try some new tracks?",
-        "hint": "New tracks have no history. Surco places them by key, tempo and whether they are base or vocal, after a track you already know.",
-        "search": "Search a playlist of new tracks",
+        "hint": "New tracks are the ones added in the last 30 days. Where the program keeps no dates, the ones with no plays or stars.",
         "share": "New tracks in the session",
         "shareValue": "{{percent}} %"
       },

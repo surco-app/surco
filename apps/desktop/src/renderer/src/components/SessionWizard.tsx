@@ -7,18 +7,18 @@ import type { PlaylistRole, SessionAnswers } from '../../../shared/sessionTypes'
 import type { SourceNode, SourcePlaylistEntry } from '../../../shared/types'
 import type { BuildResult } from '../hooks/useSessionRun'
 import type { SessionRows } from '../hooks/useSessionRows'
+import { toCandidates } from '../lib/sessionCandidates'
 import { ModalShell } from './ModalShell'
 import {
   CharacterStep,
   DurationStep,
-  FreshStep,
   isPresetMinutes,
   SourcesStep,
   wholeMinutes,
 } from './SessionWizardSteps'
 import { flattenPlaylists } from './SourceTree'
 
-const STEPS = ['duration', 'sources', 'fresh', 'character'] as const
+const STEPS = ['duration', 'sources', 'character'] as const
 
 const PROBLEM_TEXT: Record<Exclude<BuildResult, 'built'>, string> = {
   empty: 'sessions.wizard.empty',
@@ -63,7 +63,6 @@ export function SessionWizard({
   const [sources, setSources] = useState<string[]>(() => {
     return initial.sources.filter((id) => names.has(id) && savedRoles[id] !== undefined)
   })
-  const [fresh, setFresh] = useState<string[]>(() => initial.fresh.filter((id) => names.has(id)))
   const [freshShare, setFreshShare] = useState(initial.freshShare)
   const [playMinutes, setPlayMinutes] = useState(initial.playMinutes)
   const [options, setOptions] = useState<Options>({
@@ -101,15 +100,22 @@ export function SessionWizard({
     (current === 'duration' && !minutesValid) ||
     (current === 'sources' && sources.length === 0)
 
-  const hasKeys = [...sources, ...fresh].some((id) =>
+  const hasKeys = sources.some((id) =>
     (loaded.get(id) ?? []).some((entry) => camelotOf(entry.meta.key) !== null),
   )
-  const unreadable = [...sources, ...fresh]
+  const hasNew = useMemo(
+    () =>
+      toCandidates(
+        sources.map((id) => ({ role: roles[id] ?? 'any', entries: loaded.get(id) ?? [] })),
+      ).some((track) => track.fresh),
+    [sources, roles, loaded],
+  )
+  const unreadable = sources
     .filter((id) => rows.failed.includes(id))
     .map((id) => names.get(id) ?? id)
 
   const advance = async (): Promise<void> => {
-    const ids = current === 'sources' ? sources : current === 'fresh' ? fresh : []
+    const ids = current === 'sources' ? sources : []
     if (ids.length > 0) {
       setReading(true)
       const got = await rows.load(ids)
@@ -123,7 +129,7 @@ export function SessionWizard({
     setBuilding(true)
     setProblem(null)
     const chosenRoles: Record<string, PlaylistRole> = {}
-    for (const id of [...sources, ...fresh]) {
+    for (const id of sources) {
       const role = roles[id]
       if (role) chosenRoles[id] = role
     }
@@ -132,8 +138,7 @@ export function SessionWizard({
         minutes,
         playMinutes,
         sources,
-        fresh,
-        freshShare: fresh.length > 0 ? freshShare : 0,
+        freshShare,
         preferCombos: options.preferCombos,
         harmony: hasKeys ? options.harmony : 'free',
         tasteWeight: options.tasteWeight,
@@ -232,22 +237,15 @@ export function SessionWizard({
           onPick={pick}
         />
       )}
-      {current === 'fresh' && (
-        <FreshStep
-          tree={tree}
-          fresh={fresh}
-          share={freshShare}
-          onAdd={(id) => setFresh((prev) => (prev.includes(id) ? prev : [...prev, id]))}
-          onDrop={(id) => setFresh((prev) => prev.filter((other) => other !== id))}
-          onShare={setFreshShare}
-        />
-      )}
       {current === 'character' && (
         <CharacterStep
           options={options}
           hasKeys={hasKeys}
           playMinutes={playMinutes}
           onPlayMinutes={setPlayMinutes}
+          hasNew={hasNew}
+          freshShare={freshShare}
+          onFreshShare={setFreshShare}
           onChange={(patch) => setOptions((prev) => ({ ...prev, ...patch }))}
         />
       )}
