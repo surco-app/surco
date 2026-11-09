@@ -3376,6 +3376,10 @@ export default function App(): React.JSX.Element {
       setPasteTracklist(null)
       return
     }
+    if (sessionWizard) {
+      if (!sessionRun.busy) setSessionWizard(null)
+      return
+    }
     if (review !== null) return
     // A maximized editor section is an overlay layer too: its own listener
     // restores it, and Escape must stop there — falling through would ALSO
@@ -3392,7 +3396,8 @@ export default function App(): React.JSX.Element {
     copiesOpen !== null ||
     review !== null ||
     usbModal !== null ||
-    pasteTracklist !== null
+    pasteTracklist !== null ||
+    sessionWizard !== null
   overlayOpenRef.current = overlayOpen
 
   useKeyboardShortcuts({
