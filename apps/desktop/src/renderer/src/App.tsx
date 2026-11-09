@@ -29,6 +29,7 @@ import {
 import { SAME_CLOCK_FILE } from '../../shared/gridEdit'
 import { emptyMetadata } from '../../shared/metadata'
 import { RECENTLY_ADDED_ID } from '../../shared/recentlyAdded'
+import { childNames, sessionDateLabel } from '../../shared/sessionName'
 import { answersFromSettings, wizardSettingsFrom } from '../../shared/sessionSettings'
 import type { PlaylistRole } from '../../shared/sessionTypes'
 import { resolveBindings } from '../../shared/shortcutDefaults'
@@ -1098,10 +1099,8 @@ export default function App(): React.JSX.Element {
     canWrite: async () => !(await window.api.djAppRunning()),
     rows: sessionRows,
     writer: sessionWriter,
-    nameFor: () =>
-      tr('sessions.playlistName', {
-        date: new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'numeric' }),
-      }),
+    namesIn: (parentId) => childNames(browser.tree, parentId),
+    nameFor: () => tr('sessions.playlistName', { date: sessionDateLabel(new Date()) }),
     openPlaylist: (node) => selectPlaylist(node, []),
     saveAnswers: (answers) => {
       if (settings)

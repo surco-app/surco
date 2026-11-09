@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { type SessionPlan, swapAt } from '../../../shared/sessionBuild'
+import { uniqueName } from '../../../shared/sessionName'
 import type { PlaylistRole, SessionAnswers, SessionTrack } from '../../../shared/sessionTypes'
 import type { PlaylistTrackRef, SourceNode } from '../../../shared/types'
 import { alternativesFor } from '../lib/sessionAlternatives'
@@ -28,6 +29,7 @@ export interface SessionRunDeps {
   canWrite: () => Promise<boolean>
   rows: SessionRows
   writer: SessionWriter
+  namesIn: (parentId: string) => ReadonlySet<string>
   nameFor: () => string
   openPlaylist: (node: SourceNode) => void
   saveAnswers: (answers: SessionAnswers) => void
@@ -77,12 +79,13 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
     id: string,
     parentId: string,
     name: string,
+    shown: string,
     answers: SessionAnswers,
     roles: Roles,
     seed: number,
     run: SessionRun,
   ): BuildResult => {
-    deps.openPlaylist({ id, name, kind: 'playlist', count: run.refs.length })
+    deps.openPlaylist({ id, name: shown, kind: 'playlist', count: run.refs.length })
     setRecent({
       playlistId: id,
       parentId,
@@ -104,8 +107,9 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
       const run = await produce(answers, roles, seed)
       if (run.refs.length === 0) return 'empty'
       const name = deps.nameFor()
-      const id = await deps.writer.create(parentId, name, run.refs)
-      return id === null ? 'refused' : settle(id, parentId, name, answers, roles, seed, run)
+      const shown = uniqueName(name, deps.namesIn(parentId))
+      const id = await deps.writer.create(parentId, shown, run.refs)
+      return id === null ? 'refused' : settle(id, parentId, name, shown, answers, roles, seed, run)
     }),
   )
 
@@ -118,15 +122,11 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
       const seed = previous.seed + 1
       const run = await produce(answers, roles, seed)
       if (run.refs.length === 0) return 'empty'
-      const id = await deps.writer.replace(
-        previous.parentId,
-        previous.playlistId,
-        previous.name,
-        run.refs,
-      )
+      const shown = uniqueName(previous.name, deps.namesIn(previous.parentId))
+      const id = await deps.writer.replace(previous.parentId, previous.playlistId, shown, run.refs)
       return id === null
         ? 'refused'
-        : settle(id, previous.parentId, previous.name, answers, roles, seed, run)
+        : settle(id, previous.parentId, previous.name, shown, answers, roles, seed, run)
     })
 
   const redo = useStableCallback(async () =>
@@ -156,9 +156,10 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
     if (plan === recent.plan) return 'refused'
     return exclusive(async () => {
       const refs = plan.items.map((item) => recent.refsById.get(item.track.id) ?? { paths: [] })
-      const id = await deps.writer.replace(recent.parentId, recent.playlistId, recent.name, refs)
+      const shown = uniqueName(recent.name, deps.namesIn(recent.parentId))
+      const id = await deps.writer.replace(recent.parentId, recent.playlistId, shown, refs)
       if (id === null) return 'refused'
-      deps.openPlaylist({ id, name: recent.name, kind: 'playlist', count: refs.length })
+      deps.openPlaylist({ id, name: shown, kind: 'playlist', count: refs.length })
       setRecent({ ...recent, playlistId: id, plan })
       return 'built'
     })

@@ -41,7 +41,8 @@ function setup(over: Partial<SessionRunDeps> = {}) {
     rows: { load: vi.fn(async () => ROWS), loading: false, failed: [] },
     writer: { create, replace },
     canWrite: async () => true,
-    nameFor: () => 'Sesión del 9/11',
+    namesIn: () => new Set<string>(),
+    nameFor: () => 'Sesión del 9-11',
     openPlaylist: vi.fn(),
     saveAnswers: vi.fn(),
     newSeed: () => 100,
@@ -65,15 +66,15 @@ describe('useSessionRun build', () => {
     expect(create).toHaveBeenCalledOnce()
     const [parent, name, refs] = create.mock.calls[0] as unknown as [string, string, unknown[]]
     expect(parent).toBe('folder')
-    expect(name).toBe('Sesión del 9/11')
+    expect(name).toBe('Sesión del 9-11')
     expect(refs.length).toBeGreaterThan(0)
     expect(deps.openPlaylist).toHaveBeenCalledExactlyOnceWith(
-      expect.objectContaining({ id: 'new1', name: 'Sesión del 9/11', kind: 'playlist' }),
+      expect.objectContaining({ id: 'new1', name: 'Sesión del 9-11', kind: 'playlist' }),
     )
     expect(result.current.recent).toMatchObject({
       playlistId: 'new1',
       parentId: 'folder',
-      name: 'Sesión del 9/11',
+      name: 'Sesión del 9-11',
       seed: 100,
     })
   })
@@ -160,7 +161,7 @@ describe('useSessionRun redo and adjust', () => {
     expect(outcome).toBe('built')
     expect(replace).toHaveBeenCalledOnce()
     const [parent, oldId, name] = replace.mock.calls[0] as unknown as [string, string, string]
-    expect([parent, oldId, name]).toEqual(['folder', 'new1', 'Sesión del 9/11'])
+    expect([parent, oldId, name]).toEqual(['folder', 'new1', 'Sesión del 9-11'])
     expect(result.current.recent).toMatchObject({ playlistId: 'new2', seed: 101 })
     expect(deps.openPlaylist).toHaveBeenLastCalledWith(expect.objectContaining({ id: 'new2' }))
   })
@@ -203,6 +204,61 @@ describe('useSessionRun redo and adjust', () => {
     expect(deps.saveAnswers).toHaveBeenLastCalledWith(adjusted)
     expect(replace).toHaveBeenCalledOnce()
     expect(result.current.recent?.answers).toEqual(adjusted)
+  })
+})
+
+describe('useSessionRun naming', () => {
+  it('numbers the playlist when a sibling already has the name, and opens it under that name', async () => {
+    const { deps, result } = setup({ namesIn: () => new Set(['Sesión del 9-11']) })
+    await act(async () => {
+      await result.current.build('folder', ANSWERS, ROLES)
+    })
+    expect(create.mock.calls[0][1]).toBe('Sesión del 9-11 (2)')
+    expect(deps.openPlaylist).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'Sesión del 9-11 (2)' }),
+    )
+    expect(result.current.recent?.name).toBe('Sesión del 9-11')
+  })
+
+  it('asks for the names of the folder the playlist goes in', async () => {
+    const namesIn = vi.fn(() => new Set<string>())
+    const { result } = setup({ namesIn })
+    await act(async () => {
+      await result.current.build('folder', ANSWERS, ROLES)
+    })
+    expect(namesIn).toHaveBeenCalledWith('folder')
+  })
+
+  it('writes the replacement under a name the old playlist does not have, since it is still there', async () => {
+    let existing = new Set<string>()
+    const { result } = setup({ namesIn: () => existing })
+    await act(async () => {
+      await result.current.build('folder', ANSWERS, ROLES)
+    })
+    existing = new Set(['Sesión del 9-11'])
+    await act(async () => {
+      await result.current.redo()
+    })
+    expect(replace.mock.calls[0][2]).toBe('Sesión del 9-11 (2)')
+    existing = new Set(['Sesión del 9-11 (2)'])
+    await act(async () => {
+      await result.current.redo()
+    })
+    expect(replace.mock.calls[1][2]).toBe('Sesión del 9-11')
+  })
+
+  it('does the same when a track is swapped', async () => {
+    let existing = new Set<string>()
+    const { result } = setup({ namesIn: () => existing })
+    await act(async () => {
+      await result.current.build('folder', ANSWERS, ROLES)
+    })
+    existing = new Set(['Sesión del 9-11'])
+    const spare = result.current.alternatives(1)[0]
+    await act(async () => {
+      await result.current.swap(1, spare)
+    })
+    expect(replace.mock.calls[0][2]).toBe('Sesión del 9-11 (2)')
   })
 })
 
