@@ -1118,6 +1118,9 @@ export default function App(): React.JSX.Element {
   const [sessionWizard, setSessionWizard] = useState<{ parentId: string; adjust: boolean } | null>(
     null,
   )
+  const openSessionAt = useStableCallback((parentId: string) =>
+    setSessionWizard({ parentId, adjust: false }),
+  )
   const openSessionAdjust = useStableCallback(() =>
     setSessionWizard({ parentId: sessionRun.recent?.parentId ?? 'root', adjust: true }),
   )
@@ -2882,6 +2885,7 @@ export default function App(): React.JSX.Element {
       onRename: renameInRekordbox,
       onDelete: deleteInRekordbox,
       onPasteTracklist: openPasteTracklist,
+      onSession: (node: SourceNode) => openSessionAt(node.id),
       onMove: moveInTree,
       ...(sourceProgram && SOURCE_PROGRAMS[sourceProgram].crates && { crates: true as const }),
     }),
@@ -2891,6 +2895,7 @@ export default function App(): React.JSX.Element {
       renameInRekordbox,
       deleteInRekordbox,
       openPasteTracklist,
+      openSessionAt,
       moveInTree,
       sourceProgram,
     ],
@@ -3220,6 +3225,7 @@ export default function App(): React.JSX.Element {
       openMusicReview: isMac ? (filter) => setReview({ source: 'music', filter }) : undefined,
       openListReview: () => openTargetReview('all'),
       openUsbExport: usbAvailable ? () => openUsbExport() : undefined,
+      openSessionWizard: sessionProgram ? () => openSessionAt('root') : undefined,
       selectAll,
       askFillAll: onFillAll,
       moveSelection,
