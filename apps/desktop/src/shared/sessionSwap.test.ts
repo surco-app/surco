@@ -54,6 +54,7 @@ describe('summarizeSession', () => {
       withKey: 0,
       shortBySecs: 900,
       missingDurations: 0,
+      audioSecs: 0,
     })
   })
 })

@@ -99,8 +99,11 @@
       "adjust": "Anpassen…",
       "keep": "So behalten",
       "short": "Nur genug Tracks für {{minutes}} Min.",
-      "assumed_one": "{{count}} Track ohne Länge, zählt als 6 Min.",
-      "assumed_other": "{{count}} Tracks ohne Länge, zählen je als 6 Min."
+    "counted": "Gezählt mit {{minutes}} Min. pro Track. Die Dateien dauern zusammen {{audio}}.",
+    "countedAtLeast": "Gezählt mit {{minutes}} Min. pro Track. Die Dateien dauern zusammen mindestens {{audio}}.",
+    "noCombos": "Keine Combos gefunden, weil sich kein Paar in zwei oder mehr der gewählten gemischten Playlists wiederholt.",
+      "assumed_one": "{{count}} Track ohne Länge, zählt als {{minutes}} Min.",
+      "assumed_other": "{{count}} Tracks ohne Länge, zählen je als {{minutes}} Min."
     },
     "playlistName": "Session vom {{date}}",
     "closed": "Schließe dein DJ-Programm, um die Session zu erstellen. Bei geöffnetem Programm bliebe die Playlist unvollständig",

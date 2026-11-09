@@ -99,8 +99,11 @@
       "adjust": "Ajustar…",
       "keep": "Ficar assim",
       "short": "Só há faixas para {{minutes}} min",
-      "assumed_one": "{{count}} faixa sem duração, conta como 6 min",
-      "assumed_other": "{{count}} faixas sem duração, contam como 6 min cada"
+    "counted": "Contado a {{minutes}} min por faixa. Os arquivos somam {{audio}}.",
+    "countedAtLeast": "Contado a {{minutes}} min por faixa. Os arquivos somam pelo menos {{audio}}.",
+    "noCombos": "Sem combos, porque nenhum par se repete em duas ou mais das playlists Mistas escolhidas.",
+      "assumed_one": "{{count}} faixa sem duração, conta como {{minutes}} min",
+      "assumed_other": "{{count}} faixas sem duração, contam como {{minutes}} min cada"
     },
     "playlistName": "Sessão de {{date}}",
     "closed": "Feche seu programa de DJ para montar a sessão. Com ele aberto, a playlist ficaria pela metade",

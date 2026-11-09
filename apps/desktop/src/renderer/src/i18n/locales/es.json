@@ -99,8 +99,11 @@
       "adjust": "Ajustar…",
       "keep": "Quedármela así",
       "short": "Solo hay pistas para {{minutes}} min",
-      "assumed_one": "{{count}} pista sin duración, se cuenta como 6 min",
-      "assumed_other": "{{count}} pistas sin duración, se cuentan como 6 min cada una"
+    "counted": "Contado a {{minutes}} min por pista. Los ficheros suman {{audio}}.",
+    "countedAtLeast": "Contado a {{minutes}} min por pista. Los ficheros suman al menos {{audio}}.",
+    "noCombos": "Sin combos, porque ninguna pareja se repite en dos o más de las playlists Mezcladas que elegiste.",
+      "assumed_one": "{{count}} pista sin duración, se cuenta como {{minutes}} min",
+      "assumed_other": "{{count}} pistas sin duración, se cuentan como {{minutes}} min cada una"
     },
     "playlistName": "Sesión del {{date}}",
     "closed": "Cierra tu programa DJ para montar la sesión. Con él abierto, la playlist quedaría a medias",

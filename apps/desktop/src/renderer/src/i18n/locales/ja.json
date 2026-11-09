@@ -99,8 +99,11 @@
       "adjust": "調整…",
       "keep": "このまま使う",
       "short": "{{minutes}} 分ぶんの曲しかありません",
-      "assumed_one": "{{count}} トラックは長さ不明のため 6 分として計算",
-      "assumed_other": "{{count}} トラックは長さ不明のため 6 分として計算"
+    "counted": "1曲あたり{{minutes}}分で数えています。ファイルの合計は{{audio}}です。",
+    "countedAtLeast": "1曲あたり{{minutes}}分で数えています。ファイルの合計は少なくとも{{audio}}です。",
+    "noCombos": "コンボは見つかりませんでした。選んだミックスのプレイリスト2つ以上に繰り返し出るペアがないためです。",
+      "assumed_one": "{{count}} トラックは長さ不明のため {{minutes}} 分として計算",
+      "assumed_other": "{{count}} トラックは長さ不明のため {{minutes}} 分として計算"
     },
     "playlistName": "{{date}} のセッション",
     "closed": "セッションを作るには DJ ソフトを閉じてください。開いたままだとプレイリストが中途半端になります",

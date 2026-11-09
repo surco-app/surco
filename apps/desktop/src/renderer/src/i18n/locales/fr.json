@@ -99,8 +99,11 @@
       "adjust": "Ajuster…",
       "keep": "La garder telle quelle",
       "short": "Il n’y a de morceaux que pour {{minutes}} min",
-      "assumed_one": "{{count}} morceau sans durée, compté pour 6 min",
-      "assumed_other": "{{count}} morceaux sans durée, comptés pour 6 min chacun"
+    "counted": "Compté à {{minutes}} min par morceau. Les fichiers durent {{audio}} en tout.",
+    "countedAtLeast": "Compté à {{minutes}} min par morceau. Les fichiers durent au moins {{audio}} en tout.",
+    "noCombos": "Aucun combo trouvé, car aucune paire ne se répète dans deux playlists mixtes choisies ou plus.",
+      "assumed_one": "{{count}} morceau sans durée, compté pour {{minutes}} min",
+      "assumed_other": "{{count}} morceaux sans durée, comptés pour {{minutes}} min chacun"
     },
     "playlistName": "Session du {{date}}",
     "closed": "Ferme ton logiciel DJ pour composer la session. Ouvert, il laisserait la playlist à moitié écrite",

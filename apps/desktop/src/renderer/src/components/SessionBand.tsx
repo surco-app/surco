@@ -11,15 +11,27 @@ function clock(secs: number): string {
   return `${minutes}:${String(Math.floor(secs % 60)).padStart(2, '0')}`
 }
 
+function audioLabel(secs: number): string {
+  const minutes = Math.round(secs / 60)
+  if (minutes < 60) return `${minutes} min`
+  return `${Math.floor(minutes / 60)} h ${String(minutes % 60).padStart(2, '0')} min`
+}
+
+const UNKNOWN_MINUTES = 6
+
 export function SessionBand({
   plan,
   busy,
+  playMinutes,
+  preferCombos,
   onRedo,
   onAdjust,
   onKeep,
 }: {
   plan: SessionPlan
   busy: boolean
+  playMinutes: number
+  preferCombos: boolean
   onRedo: () => void
   onAdjust: () => void
   onKeep: () => void
@@ -53,6 +65,17 @@ export function SessionBand({
           </span>
         )}
       </p>
+      <p data-testid="session-band-counted" className="text-xs text-fg-dim">
+        {tr(summary.missingDurations > 0 ? 'sessions.band.countedAtLeast' : 'sessions.band.counted', {
+          minutes: playMinutes,
+          audio: audioLabel(summary.audioSecs),
+        })}
+      </p>
+      {preferCombos && summary.combos === 0 && (
+        <p data-testid="session-band-nocombos" className="text-xs text-fg-dim">
+          {tr('sessions.band.noCombos')}
+        </p>
+      )}
       {summary.shortBySecs > 0 && (
         <p data-testid="session-band-short" className="text-xs text-warn">
           {tr('sessions.band.short', { minutes: Math.round(summary.secs / 60) })}
@@ -60,7 +83,10 @@ export function SessionBand({
       )}
       {summary.missingDurations > 0 && (
         <p data-testid="session-band-assumed" className="text-xs text-fg-dim">
-          {tr('sessions.band.assumed', { count: summary.missingDurations })}
+          {tr('sessions.band.assumed', {
+            count: summary.missingDurations,
+            minutes: Math.min(UNKNOWN_MINUTES, playMinutes),
+          })}
         </p>
       )}
       <div className="flex flex-wrap items-center gap-2">

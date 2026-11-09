@@ -71,4 +71,18 @@ describe('session length when tracks are mixed and not played whole', () => {
     expect(swapped.summary.secs).toBe(3600 - 180 + 90)
     expect(swapped.summary.shortBySecs).toBe(90)
   })
+
+  it('also adds up the real length of the files, which is more than the time counted', () => {
+    const plan = buildSession(many(60, 360), new Map(), options())
+    expect(plan.summary.secs).toBe(3600)
+    expect(plan.summary.audioSecs).toBe(7200)
+  })
+
+  it('leaves a track with no duration out of the length of the files', () => {
+    const pool = [...many(10, 360), track('blank', 0)]
+    const plan = buildSession(pool, new Map(), options({ minutes: 120 }))
+    expect(plan.items).toHaveLength(11)
+    expect(plan.summary.audioSecs).toBe(3600)
+    expect(plan.summary.missingDurations).toBe(1)
+  })
 })

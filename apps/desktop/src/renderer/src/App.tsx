@@ -3819,6 +3819,8 @@ export default function App(): React.JSX.Element {
                               <SessionBand
                                 plan={sessionRun.recent.plan}
                                 busy={sessionRun.busy}
+                                playMinutes={sessionRun.recent.answers.playMinutes}
+                                preferCombos={sessionRun.recent.answers.preferCombos}
                                 onRedo={() => void reportSession(sessionRun.redo())}
                                 onAdjust={openSessionAdjust}
                                 onKeep={sessionRun.keep}

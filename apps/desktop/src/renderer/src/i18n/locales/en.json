@@ -99,8 +99,11 @@
       "adjust": "Adjust…",
       "keep": "Keep it as is",
       "short": "Only enough tracks for {{minutes}} min",
-      "assumed_one": "{{count}} track has no length and counts as 6 min",
-      "assumed_other": "{{count}} tracks have no length and count as 6 min each"
+    "counted": "Counted at {{minutes}} min a track. The files add up to {{audio}}.",
+    "countedAtLeast": "Counted at {{minutes}} min a track. The files add up to at least {{audio}}.",
+    "noCombos": "No combos found, because no pair repeats in two or more of the Mixed playlists you chose.",
+      "assumed_one": "{{count}} track has no length and counts as {{minutes}} min",
+      "assumed_other": "{{count}} tracks have no length and count as {{minutes}} min each"
     },
     "playlistName": "Session {{date}}",
     "closed": "Close your DJ program to build the session. With it open, the playlist would be left half written",
