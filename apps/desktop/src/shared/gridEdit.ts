@@ -293,3 +293,28 @@ export function gridOffsets(
 export function gridFingerprint(grid: { ms: number; beat: number }[]): string {
   return grid.map((b) => `${b.ms}|${b.beat}`).join(';')
 }
+
+export function detectedBeatNear(fit: GridFit, ms: number): number {
+  return nearestOn(ms, phaseNear(fit, ms), periodOf(fit.bpm))
+}
+
+export function pinGrid(
+  grid: EditableGrid,
+  pins: number[],
+  ms: number,
+  zones: boolean,
+): EditableGrid | null {
+  const index = zoneIndexAt(grid, ms)
+  const inZone = pins.filter((p) => zoneIndexAt(grid, p) === index)
+  if (inZone.length === 0)
+    return editAt(grid, ms, (zone) =>
+      shiftGrid(zone, ms - nearestOn(ms, zone.anchorMs, periodOf(zone.bpm))),
+    )
+  const pivot = inZone.reduce((best, p) => (Math.abs(p - ms) < Math.abs(best - ms) ? p : best))
+  const base =
+    zones && inZone.length >= 2 && !anchorNear(grid, pivot) ? toggleAnchor(grid, pivot) : grid
+  return editAt(base, ms, (zone) => {
+    const n = Math.round((ms - pivot) / periodOf(zone.bpm))
+    return n === 0 ? null : retempoGrid(zone, (60000 * n) / (ms - pivot), pivot)
+  })
+}

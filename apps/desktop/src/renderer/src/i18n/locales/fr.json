@@ -1016,7 +1016,8 @@
         "redo": "rétablir",
         "zoom": "zoom",
         "esc": "fermer le menu ouvert",
-        "grid": "Déplacer la grille"
+        "grid": "Déplacer la grille",
+        "pin": "épingler la grille sur le temps, avec ⇧ sur la tête de lecture"
       },
       "resetColour": "Réinitialiser",
       "saveShort": "Enregistrer",
@@ -1164,7 +1165,16 @@
         "surcoDraft": "Ces cues ont été posés sur la grille de Surco. Enregistre-les ou annule-les pour régler la grille",
         "anchorAdd": "Ancrer à la tête de lecture, commence une zone",
         "anchorRemove": "Retirer l’ancre à la tête de lecture",
-        "serato": "La grille de Serato vient de Serato et ne peut pas être modifiée ici"
+        "serato": "La grille de Serato vient de Serato et ne peut pas être modifiée ici",
+        "pin": "Épingler",
+        "pinHint": "Épingler le temps le plus proche de la tête de lecture (G). Avec ⇧, pile sur la tête de lecture",
+        "track": "Tout le morceau",
+        "trackFits": "Cale du début à la fin",
+        "trackOff_one": "{{count}} tronçon sur {{total}} décalé",
+        "trackOff_other": "{{count}} tronçons sur {{total}} décalés",
+        "unpin_one": "Retirer l’épingle",
+        "unpin_other": "Retirer les {{count}} épingles",
+        "window": "{{time}}, grille {{ms}}"
       },
       "offGrid": {
         "before": "{{ms}} ms en avance",

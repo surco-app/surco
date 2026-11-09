@@ -1016,7 +1016,8 @@
         "redo": "やり直す",
         "zoom": "ズーム",
         "esc": "開いているメニューを閉じる",
-        "grid": "グリッドを移動"
+        "grid": "グリッドを移動",
+        "pin": "グリッドを拍に固定、⇧ で再生位置に"
       },
       "resetColour": "リセット",
       "saveShort": "保存",
@@ -1164,7 +1165,16 @@
         "surcoDraft": "これらのキューはSurcoのグリッド上に置かれました。グリッドを調整するには保存するか破棄してください",
         "anchorAdd": "再生位置にアンカー（ゾーンを開始）",
         "anchorRemove": "再生位置のアンカーを削除",
-        "serato": "Serato のビートグリッドは Serato のもので、ここでは変更できません"
+        "serato": "Serato のビートグリッドは Serato のもので、ここでは変更できません",
+        "pin": "固定",
+        "pinHint": "再生位置に最も近い拍に固定 (G)。⇧ で再生位置ちょうどに",
+        "track": "トラック全体",
+        "trackFits": "最初から最後まで合っています",
+        "trackOff_one": "{{total}} 区間中 {{count}} 区間がずれています",
+        "trackOff_other": "{{total}} 区間中 {{count}} 区間がずれています",
+        "unpin_one": "ピンを外す",
+        "unpin_other": "{{count}} 個のピンを外す",
+        "window": "{{time}}、グリッド {{ms}}"
       },
       "offGrid": {
         "before": "{{ms}} ms 早い",

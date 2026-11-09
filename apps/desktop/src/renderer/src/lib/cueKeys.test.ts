@@ -7,6 +7,12 @@ const press = (
 ) => cueKeyAction({ key, shiftKey: false, metaKey: false, ctrlKey: false, altKey: false, ...mods })
 
 describe('cueKeyAction', () => {
+  it('pins the grid with G, on the detected kick, or right at the playhead with shift', () => {
+    expect(press('g')).toEqual({ type: 'pin', exact: false })
+    expect(press('G', { shiftKey: true })).toEqual({ type: 'pin', exact: true })
+    expect(press('g', { metaKey: true })).toBeNull()
+  })
+
   it('maps the keys of the spec table', () => {
     expect(press(' ')).toEqual({ type: 'play' })
     expect(press('ArrowRight')).toEqual({ type: 'jump', dir: 1 })

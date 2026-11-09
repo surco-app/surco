@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  detectedBeatNear,
   downbeatAt,
   type EditableGrid,
   editAt,
@@ -9,6 +10,7 @@ import {
   gridBeats,
   gridFingerprint,
   gridOffsets,
+  pinGrid,
   retempoGrid,
   sameGrid,
   scaleGrid,
@@ -367,5 +369,64 @@ describe('fitting the tempo from the drift along the track', () => {
     const { hereMs, endMs } = gridOffsets(drawn(fitted, 300000), drifting, 25000, 300000)
     expect(Math.abs(hereMs)).toBeLessThanOrEqual(1)
     expect(Math.abs(endMs)).toBeLessThanOrEqual(1)
+  })
+})
+
+describe('pinGrid', () => {
+  const TRUE_BPM = 150
+  const kick = (k: number) => 24 + (k * 60000) / TRUE_BPM
+  const nearest = (grid: EditableGrid, ms: number) =>
+    Math.min(...drawn(grid, 345000).map((b) => Math.abs(b - ms)))
+  const shifted = { bpm: 149.95, anchorMs: 24 + 46 }
+
+  // The usual bad grid is only shifted: one pin on a kick has to put the whole grid there
+  // without touching a tempo that was already right.
+  it('moves the whole grid onto the first pinned beat and keeps its tempo', () => {
+    const pinned = pinGrid(shifted, [], kick(75), true) as EditableGrid
+    expect(nearest(pinned, kick(75))).toBeLessThan(0.01)
+    expect(pinned.bpm).toBe(149.95)
+  })
+
+  // A wrong tempo opens the grid along the track. Counting the beats between two pins far
+  // apart gives the tempo exactly, so the DJ never nudges ±0.01 and checks the end again.
+  it('takes the tempo from the beats between two pins, so the grid lands on every kick between and beyond', () => {
+    const first = pinGrid(shifted, [], kick(75), true) as EditableGrid
+    const second = pinGrid(first, [kick(75)], kick(825), true) as EditableGrid
+    expect(second.bpm).toBeCloseTo(TRUE_BPM, 6)
+    for (const k of [0, 75, 400, 825, 850]) expect(nearest(second, kick(k))).toBeLessThan(0.01)
+  })
+
+  it('opens a zone at the last pin when a third one lands on another tempo, keeping the part already fixed', () => {
+    const first = pinGrid(shifted, [], kick(75), true) as EditableGrid
+    const second = pinGrid(first, [kick(75)], kick(825), true) as EditableGrid
+    const third = pinGrid(second, [kick(75), kick(825)], kick(825) + 20 * 405, true) as EditableGrid
+    expect(third.zones).toHaveLength(1)
+    expect(third.zones?.[0].fromMs).toBeCloseTo(kick(825), 6)
+    expect(third.zones?.[0].bpm).toBeCloseTo(60000 / 405, 6)
+    expect(third.bpm).toBeCloseTo(TRUE_BPM, 6)
+  })
+
+  it('keeps one tempo where the program has no zones, bending around the nearest pin instead', () => {
+    const first = pinGrid(shifted, [], kick(75), false) as EditableGrid
+    const second = pinGrid(first, [kick(75)], kick(825), false) as EditableGrid
+    const third = pinGrid(
+      second,
+      [kick(75), kick(825)],
+      kick(825) + 20 * 405,
+      false,
+    ) as EditableGrid
+    expect(third.zones).toBeUndefined()
+  })
+
+  it('refuses a second pin on the beat of the first, which gives no tempo', () => {
+    const first = pinGrid(shifted, [], kick(75), true) as EditableGrid
+    expect(pinGrid(first, [kick(75)], kick(75) + 3, true)).toBeNull()
+  })
+})
+
+describe('detectedBeatNear', () => {
+  it('gives the beat the detector heard nearest a moment, so a pin lands on the kick and not where the click fell', () => {
+    expect(detectedBeatNear({ bpm: 120, firstMs: 130 }, 10400)).toBe(10630)
+    expect(detectedBeatNear({ bpm: 120, firstMs: 130 }, 10100)).toBe(10130)
   })
 })

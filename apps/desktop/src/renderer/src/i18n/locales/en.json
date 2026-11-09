@@ -1016,7 +1016,8 @@
         "redo": "redo",
         "zoom": "zoom",
         "esc": "close the open menu",
-        "grid": "Move the grid"
+        "grid": "Move the grid",
+        "pin": "pin the grid to the beat, with ⇧ to the playhead"
       },
       "resetColour": "Reset",
       "saveShort": "Save",
@@ -1164,7 +1165,16 @@
         "surcoDraft": "These cues were set on the Surco grid. Save or discard them to adjust the grid",
         "anchorAdd": "Anchor at the playhead, starts a zone",
         "anchorRemove": "Remove the anchor at the playhead",
-        "serato": "Serato's beat grid comes from Serato and can't be changed here"
+        "serato": "Serato's beat grid comes from Serato and can't be changed here",
+        "pin": "Pin",
+        "pinHint": "Pin the beat nearest the playhead (G). With ⇧, right at the playhead",
+        "track": "Whole track",
+        "trackFits": "Fits from start to end",
+        "trackOff_one": "{{count}} of {{total}} stretches off",
+        "trackOff_other": "{{count}} of {{total}} stretches off",
+        "unpin_one": "Remove the pin",
+        "unpin_other": "Remove the {{count}} pins",
+        "window": "{{time}}, grid {{ms}}"
       },
       "offGrid": {
         "before": "{{ms}} ms early",

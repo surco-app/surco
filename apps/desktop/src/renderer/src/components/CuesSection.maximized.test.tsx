@@ -1725,6 +1725,56 @@ describe('CuesSection maximized grid', () => {
     expect(bars()).toContain(2004)
   })
 
+  describe('pinning', () => {
+    const pinned = async () => {
+      setup(null, READ, { rekordboxGridFit: fitAt(46) })
+      await maximize()
+      await screen.findByTestId('cues-grid-windows')
+      seek(30000)
+    }
+
+    // Aiming at the kick by eye was the slow part of fixing a grid: G puts the grid on the
+    // kick the detector heard nearest the playhead.
+    it('puts the grid on the kick nearest the playhead with G', async () => {
+      await pinned()
+      key('g')
+      expect(bars()).toContain(30046)
+      expect(bars()).not.toContain(30000)
+      expect(screen.getByTestId('cues-grid-unpin')).toHaveTextContent('Remove the pin')
+      expect(screen.getByTestId('cues-unsaved')).toBeInTheDocument()
+    })
+
+    it('pins with the button too, for whoever does not use the keyboard', async () => {
+      await pinned()
+      fireEvent.click(screen.getByTestId('cues-grid-pin'))
+      expect(bars()).toContain(30046)
+    })
+
+    it('pins right at the playhead with shift, for a beat the detector misheard', async () => {
+      await pinned()
+      key('G', { shiftKey: true })
+      expect(bars()).toContain(30000)
+      expect(screen.getByTestId('cues-grid-unpin')).toBeInTheDocument()
+    })
+
+    it('leaves ⌘G alone', async () => {
+      await pinned()
+      key('g', { metaKey: true })
+      expect(bars()).toContain(30000)
+      expect(screen.queryByTestId('cues-grid-unpin')).not.toBeInTheDocument()
+    })
+
+    // A pin left over from a grid that ⌘Z took back would pull the next pin's tempo
+    // from a beat that is no longer on the grid.
+    it('forgets the pins once the grid they made is undone', async () => {
+      await pinned()
+      key('g')
+      key('z', { metaKey: true })
+      expect(bars()).toContain(30000)
+      expect(screen.queryByTestId('cues-grid-unpin')).not.toBeInTheDocument()
+    })
+  })
+
   it('puts a moved grid back with ⌘Z', async () => {
     setup()
     await maximize()

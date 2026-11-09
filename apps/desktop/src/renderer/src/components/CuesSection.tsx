@@ -23,12 +23,15 @@ import { BEATS_PER_BAR, nearestBeat, SAME_POSITION_MS } from '../../../shared/cu
 import { type DjProgram, programOf } from '../../../shared/djProgram'
 import type { DropInput, DropProposal } from '../../../shared/dropDetect'
 import {
+  detectedBeatNear,
   type EditableGrid,
   editAt,
   editableGridOf,
   gridAnchors,
   gridBeats,
   gridOffsets,
+  pinGrid,
+  sameGrid,
   shiftGrid,
 } from '../../../shared/gridEdit'
 import { hotCueColor } from '../../../shared/rekordboxCueColors'
@@ -109,6 +112,7 @@ import { formatShortcut } from '../lib/shortcuts'
 import { claimKeys } from '../lib/spaceClaim'
 import { CueDeck, CueMoves, DeckDivider } from './CueDeck'
 import { CueGridControls } from './CueGridControls'
+import { CueGridStrip } from './CueGridStrip'
 import { CueOffGridBar } from './CueOffGridBar'
 import { CuePalette } from './CuePalette'
 import { CuePhraseBand } from './CuePhraseBand'
@@ -280,6 +284,7 @@ function CueKeys({
     [formatShortcut(['mod', 'z'], mac), tr('editor.cues.keys.undo')],
     [formatShortcut(['shift', 'mod', 'z'], mac), tr('editor.cues.keys.redo')],
     [`${alt}← ${alt}→`, tr('editor.cues.keys.grid')],
+    [`G ${shift}G`, tr('editor.cues.keys.pin')],
     ['+ −', tr('editor.cues.keys.zoom')],
     ['Esc', tr('editor.cues.keys.esc')],
   ]
@@ -526,6 +531,19 @@ function Editing({
   const needsFix =
     offsets !== null && Math.max(Math.abs(offsets.hereMs), Math.abs(offsets.endMs)) > tolerance
   const setGrid = (next: EditableGrid) => dispatch({ type: 'set-grid', grid: next })
+  const [pinned, setPinned] = useState<{ grid: EditableGrid; pins: number[] } | null>(null)
+  const pins = pinned && sameGrid(pinned.grid, state.grid) ? pinned.pins : []
+  const pin = (exact: boolean) => {
+    if (!state.grid || gridOff !== null) return
+    const detected = gridFit ? detectedBeatNear(gridFit, playheadMs) : playheadMs
+    const period = gridFit ? 60000 / gridFit.bpm : 0
+    const at = !exact && Math.abs(detected - playheadMs) <= period / 4 ? detected : playheadMs
+    if (pins.some((p) => Math.abs(p - at) < 1)) return
+    const next = pinGrid(state.grid, pins, at, rekordboxGrid)
+    if (!next) return
+    setGrid(next)
+    setPinned({ grid: next, pins: [...pins, at].sort((a, b) => a - b) })
+  }
   const fitGridTo = (next: EditableGrid) =>
     dispatch({
       type: 'fit-grid',
@@ -887,6 +905,7 @@ function Editing({
     else if (key.type === 'undo') dispatch({ type: 'undo' })
     else if (key.type === 'redo') dispatch({ type: 'redo' })
     else if (key.type === 'zoom') setZoom((z) => zoomStep(z, key.dir))
+    else if (key.type === 'pin') pin(key.exact)
     else if (key.type === 'grid-shift' && state.grid && gridOff === null)
       setGrid(editAt(state.grid, playheadMs, (zone) => shiftGrid(zone, key.ms)) ?? state.grid)
   }
@@ -1601,6 +1620,19 @@ function Editing({
             <CuePhraseBand sections={read.sections ?? []} durationMs={read.durationMs} />
           </div>
           {detail}
+          {gridFit && state.grid && gridOff === null && (
+            <CueGridStrip
+              source={source}
+              beats={ctx.beats}
+              fit={gridFit}
+              durationMs={read.durationMs}
+              tolerance={tolerance}
+              playheadMs={playheadMs}
+              pins={pins}
+              onSeek={seekTo}
+              onClearPins={() => setPinned(null)}
+            />
+          )}
           <TwinRows plans={twins} onOverwrite={overwriteTwin} />
         </>
       ) : (
@@ -1864,6 +1896,7 @@ function Editing({
                 onFit={fitGridTo}
                 onDone={focusEditor}
                 zones={rekordboxGrid}
+                onPin={pin}
               />
               <DeckDivider />
               <CueZoom

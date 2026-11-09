@@ -14,6 +14,7 @@ export type CueKey =
   | { type: 'zoom'; dir: 'in' | 'out' }
   | { type: 'swallow' }
   | { type: 'grid-shift'; ms: 1 | -1 | 5 | -5 }
+  | { type: 'pin'; exact: boolean }
 
 const LIST_KEYS = ['ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown']
 const TRACK_CHORDS = ['backspace', 'enter', 'e', 't']
@@ -56,6 +57,7 @@ export function cueKeyAction(e: {
   const lower = e.key.toLowerCase()
   if (lower === 'c') return { type: 'centre' }
   if (lower === 'm') return { type: 'memory' }
+  if (lower === 'g') return { type: 'pin', exact: e.shiftKey }
   if (/^[1-8]$/.test(e.key)) return { type: 'hot', kind: HOT_KINDS[Number(e.key) - 1] }
   if (e.key.length === 1) return { type: 'swallow' }
   return null

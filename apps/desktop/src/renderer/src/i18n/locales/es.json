@@ -1016,7 +1016,8 @@
         "redo": "rehacer",
         "zoom": "zoom",
         "esc": "cerrar el menú abierto",
-        "grid": "Mover la rejilla"
+        "grid": "Mover la rejilla",
+        "pin": "clavar la rejilla en el golpe, con ⇧ en el cabezal"
       },
       "resetColour": "Restablecer",
       "saveShort": "Guardar",
@@ -1164,7 +1165,16 @@
         "surcoDraft": "Estos cues se pusieron sobre la rejilla de Surco. Guárdalos o descártalos para ajustar la rejilla",
         "anchorAdd": "Ancla en el cabezal, empieza una zona",
         "anchorRemove": "Quitar el ancla del cabezal",
-        "serato": "La rejilla de Serato viene de Serato y no se puede cambiar aquí"
+        "serato": "La rejilla de Serato viene de Serato y no se puede cambiar aquí",
+        "pin": "Clavar",
+        "pinHint": "Clavar el golpe más cercano al cabezal (G). Con ⇧, justo en el cabezal",
+        "track": "Toda la pista",
+        "trackFits": "Cuadra de principio a fin",
+        "trackOff_one": "{{count}} de {{total}} tramos fuera",
+        "trackOff_other": "{{count}} de {{total}} tramos fuera",
+        "unpin_one": "Quitar el clavo",
+        "unpin_other": "Quitar los {{count}} clavos",
+        "window": "{{time}}, rejilla {{ms}}"
       },
       "offGrid": {
         "before": "{{ms}} ms antes",

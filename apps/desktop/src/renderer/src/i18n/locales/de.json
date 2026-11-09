@@ -1016,7 +1016,8 @@
         "redo": "wiederholen",
         "zoom": "Zoom",
         "esc": "das offene Menü schließen",
-        "grid": "Raster verschieben"
+        "grid": "Raster verschieben",
+        "pin": "Raster an den Schlag heften, mit ⇧ an den Abspielkopf"
       },
       "resetColour": "Zurücksetzen",
       "saveShort": "Speichern",
@@ -1164,7 +1165,16 @@
         "surcoDraft": "Diese Cues wurden auf dem Surco-Raster gesetzt. Speichere oder verwirf sie, um das Raster anzupassen",
         "anchorAdd": "Anker am Abspielkopf, beginnt eine Zone",
         "anchorRemove": "Anker am Abspielkopf entfernen",
-        "serato": "Das Raster von Serato kommt aus Serato und lässt sich hier nicht ändern"
+        "serato": "Das Raster von Serato kommt aus Serato und lässt sich hier nicht ändern",
+        "pin": "Anheften",
+        "pinHint": "Den Schlag am nächsten zum Abspielkopf anheften (G). Mit ⇧ genau am Abspielkopf",
+        "track": "Ganzer Track",
+        "trackFits": "Passt von Anfang bis Ende",
+        "trackOff_one": "{{count}} von {{total}} Abschnitten daneben",
+        "trackOff_other": "{{count}} von {{total}} Abschnitten daneben",
+        "unpin_one": "Nadel entfernen",
+        "unpin_other": "Die {{count}} Nadeln entfernen",
+        "window": "{{time}}, Raster {{ms}}"
       },
       "offGrid": {
         "before": "{{ms}} ms zu früh",

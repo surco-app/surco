@@ -1016,7 +1016,8 @@
         "redo": "refazer",
         "zoom": "zoom",
         "esc": "fechar o menu aberto",
-        "grid": "Mover a grade"
+        "grid": "Mover a grade",
+        "pin": "fixar a grade na batida, com ⇧ no cursor"
       },
       "resetColour": "Redefinir",
       "saveShort": "Salvar",
@@ -1164,7 +1165,16 @@
         "surcoDraft": "Estes cues foram colocados na grade do Surco. Salve ou descarte-os para ajustar a grade",
         "anchorAdd": "Âncora no cursor, começa uma zona",
         "anchorRemove": "Remover a âncora do cursor",
-        "serato": "A grade do Serato vem do Serato e não pode ser alterada aqui"
+        "serato": "A grade do Serato vem do Serato e não pode ser alterada aqui",
+        "pin": "Fixar",
+        "pinHint": "Fixar a batida mais próxima do cursor (G). Com ⇧, exatamente no cursor",
+        "track": "Faixa inteira",
+        "trackFits": "Encaixa do início ao fim",
+        "trackOff_one": "{{count}} de {{total}} trechos fora",
+        "trackOff_other": "{{count}} de {{total}} trechos fora",
+        "unpin_one": "Tirar o alfinete",
+        "unpin_other": "Tirar os {{count}} alfinetes",
+        "window": "{{time}}, grade {{ms}}"
       },
       "offGrid": {
         "before": "{{ms}} ms antes",

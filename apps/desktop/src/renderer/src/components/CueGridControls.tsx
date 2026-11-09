@@ -89,6 +89,7 @@ export function CueGridControls({
   onFit,
   onDone,
   zones = true,
+  onPin,
 }: {
   grid: EditableGrid | null
   disabledReason: string | null
@@ -99,6 +100,7 @@ export function CueGridControls({
   onFit: (grid: EditableGrid) => void
   onDone?: () => void
   zones?: boolean
+  onPin?: (exact: boolean) => void
 }): React.JSX.Element {
   const { t: tr, i18n } = useTranslation()
   const [menu, setMenu] = useState(false)
@@ -298,6 +300,22 @@ export function CueGridControls({
         </button>
       </GridGroup>
       <GridGroup testid="cues-grid-mark" label={tr('editor.cues.grid.groupMark')}>
+        {onPin && (
+          <button
+            type="button"
+            data-testid="cues-grid-pin"
+            disabled={off}
+            onClick={(e) => onPin(e.shiftKey)}
+            className="press flex h-7 items-center gap-1 rounded-md bg-[var(--color-panel-2)] px-2 text-xs font-medium text-fg transition-colors enabled:hover:bg-[var(--color-hover)] disabled:opacity-40"
+          >
+            {!disabledReason && <Tooltip label={tr('editor.cues.grid.pinHint')} />}
+            <svg width="12" height="16" viewBox="0 0 14 18" aria-hidden="true">
+              <path d="M4 1h6v6l2 3H2l2-3z" fill="currentColor" />
+              <path d="M7 10v7" stroke="currentColor" strokeWidth="1.6" />
+            </svg>
+            {tr('editor.cues.grid.pin')}
+          </button>
+        )}
         <button
           type="button"
           data-testid="cues-grid-downbeat"
