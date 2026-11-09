@@ -137,7 +137,16 @@ export function buildSession(
 
   const taste = (track: SessionTrack): number => tasteOf(track, maxPlays, options.tasteWeight)
 
+  const knownRoles = new Set(eligible.filter((track) => track.role !== 'any').map((t) => t.role))
+  const strict = options.alternate && knownRoles.has('base') && knownRoles.has('vocal')
+
   const roleFits = (track: SessionTrack): boolean =>
+    !options.alternate ||
+    expected === null ||
+    track.role === expected ||
+    (track.role === 'any' && !strict)
+
+  const roleOrNeutral = (track: SessionTrack): boolean =>
     !options.alternate || expected === null || track.role === 'any' || track.role === expected
 
   const take = (track: SessionTrack, why: SessionWhy): void => {
@@ -146,6 +155,7 @@ export function buildSession(
     total += secsOf(track, options.playSecs)
     if (track.role === 'base') expected = 'vocal'
     else if (track.role === 'vocal') expected = 'base'
+    else if (strict && expected !== null) expected = expected === 'base' ? 'vocal' : 'base'
   }
 
   const strongest = (): { from: SessionTrack; strength: number } | null => {
@@ -166,9 +176,10 @@ export function buildSession(
   }
 
   const nextByCombo = (current: SessionTrack): SessionItem | null => {
-    const targets = [...(combos.get(current.id) ?? [])].filter(([id]) => {
+    const targets = [...(combos.get(current.id) ?? [])].filter(([id, strength]) => {
       const track = byId.get(id)
-      return track !== undefined && !used.has(id) && roleFits(track)
+      if (track === undefined || used.has(id)) return false
+      return roleFits(track) || (strict && track.role === 'any' && strength >= 2)
     })
     if (targets.length === 0) return null
     const best = Math.max(...targets.map(([, strength]) => strength))
@@ -179,13 +190,12 @@ export function buildSession(
   const fitTier = (
     current: SessionTrack,
     list: readonly SessionTrack[],
-    respectRole = true,
+    fits: (track: SessionTrack) => boolean = roleFits,
     allowFar = false,
   ): { tier: SessionTrack[]; relaxed: boolean } => {
     const fitting = list.filter(
       (track) =>
-        (!respectRole || roleFits(track)) &&
-        harmonyAllows(options.harmony, camelotDistance(current.key, track.key)),
+        fits(track) && harmonyAllows(options.harmony, camelotDistance(current.key, track.key)),
     )
     const tight = fitting.filter((track) => {
       const gap = tempoGap(current, track)
@@ -222,8 +232,9 @@ export function buildSession(
       (track) =>
         !used.has(track.id) && !(onlyWithoutCombo && combos.get(current.id)?.has(track.id)),
     )
-    let fit = fitTier(current, open, true, true)
-    if (fit.tier.length === 0) fit = fitTier(current, open, false, true)
+    let fit = fitTier(current, open, roleFits, true)
+    if (fit.tier.length === 0) fit = fitTier(current, open, roleOrNeutral, true)
+    if (fit.tier.length === 0) fit = fitTier(current, open, () => true, true)
     const { tier, relaxed } = fit
     if (tier.length === 0) return null
     const best = Math.max(...tier.map(taste))
@@ -254,7 +265,8 @@ export function buildSession(
 
   if (eligible.length > 0) {
     const opening = options.preferCombos ? strongest() : null
-    take(opening ? opening.from : pickOne(richest(eligible)), { kind: 'start' })
+    const starters = strict ? eligible.filter((track) => track.role !== 'any') : eligible
+    take(opening ? opening.from : pickOne(richest(starters)), { kind: 'start' })
     while (total < target) {
       const current = items[items.length - 1].track
       const surpriseTurn = options.surprise && items.length % SURPRISE_EVERY === 0

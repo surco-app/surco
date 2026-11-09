@@ -108,3 +108,100 @@ describe('buildSession keeps the roles alternating before it keeps the tempo', (
     }
   })
 })
+
+const roleList = (ids: string[], role: 'base' | 'vocal' | 'any', prefix: string, bpm = 140) =>
+  ids.map((id) => track(`${prefix}${id}`, { role, bpm }))
+const six = ['0', '1', '2', '3', '4', '5']
+
+describe('buildSession while both bases and vocals are known', () => {
+  const pool = [
+    ...roleList(six, 'base', 'b'),
+    ...roleList(six, 'vocal', 'v'),
+    ...roleList([...six, '6', '7', '8', '9'], 'any', 'n'),
+  ]
+
+  it('leaves the tracks that have no role out of the plan, so the roles alternate all the way', () => {
+    for (const seed of SEEDS) {
+      const plan = buildSession(pool, none, options({ seed }))
+      const roles = plan.items.map((item) => item.track.role)
+      expect(
+        roles.every((role) => role !== 'any'),
+        `seed ${seed}`,
+      ).toBe(true)
+      for (let i = 1; i < roles.length; i++) expect(roles[i]).not.toBe(roles[i - 1])
+    }
+  })
+
+  it('starts from a track with a role', () => {
+    for (const seed of SEEDS) {
+      const plan = buildSession(pool, none, options({ seed }))
+      expect(plan.items[0].track.role).not.toBe('any')
+    }
+  })
+
+  it('brings in a track with no role, in the place of the missing role, before repeating the other one', () => {
+    const lean = [
+      ...roleList(['0', '1', '2', '3', '4', '5', '6', '7'], 'base', 'b'),
+      ...roleList(['0'], 'vocal', 'v'),
+      ...roleList(['0', '1', '2', '3', '4', '5', '6', '7'], 'any', 'n'),
+    ]
+    for (const seed of SEEDS) {
+      const plan = buildSession(lean, none, options({ seed, minutes: 120 }))
+      const roles = plan.items.map((item) => item.track.role)
+      for (let i = 1; i < roles.length; i++) {
+        expect(roles[i] === 'base' && roles[i - 1] === 'base', `seed ${seed} at ${i}`).toBe(false)
+      }
+    }
+  })
+
+  it('takes a track with no role when a combo seen in two sets says it goes next', () => {
+    const combos = new Map([['v0', new Map([['n0', 2]])]])
+    const plan = buildSession(pool, combos, options({ preferCombos: true, seed: 3 }))
+    const at = plan.items.findIndex((item) => item.track.id === 'v0')
+    if (at >= 0 && at < plan.items.length - 1) {
+      expect(plan.items[at + 1].track.id).toBe('n0')
+      expect(plan.items[at + 1].why).toEqual({ kind: 'combo', sets: 2 })
+    }
+  })
+
+  it('lets that track take the place of a base, so a vocal follows it', () => {
+    const combos = new Map([['v0', new Map([['n0', 2]])]])
+    for (const seed of SEEDS) {
+      const plan = buildSession(pool, combos, options({ preferCombos: true, seed }))
+      const at = plan.items.findIndex((item) => item.track.id === 'n0')
+      if (at > 0 && at < plan.items.length - 1) expect(plan.items[at + 1].track.role).toBe('vocal')
+    }
+  })
+
+  it('does not take a track with no role for a pair seen in a single set', () => {
+    const combos = new Map([['v0', new Map([['n0', 1]])]])
+    for (const seed of SEEDS) {
+      const plan = buildSession(pool, combos, options({ preferCombos: true, seed }))
+      expect(plan.items.some((item) => item.track.role === 'any')).toBe(false)
+    }
+  })
+})
+
+describe('buildSession when only one role is known', () => {
+  it('keeps using the tracks with no role as filler, as there is nothing to alternate', () => {
+    const pool = [...roleList(six, 'base', 'b'), ...roleList(six, 'any', 'n')]
+    const plan = buildSession(pool, none, options({ minutes: 60 }))
+    expect(plan.items.some((item) => item.track.role === 'any')).toBe(true)
+    expect(plan.items).toHaveLength(12)
+  })
+
+  it('keeps using them when alternating is off', () => {
+    const pool = [
+      ...roleList(six, 'base', 'b'),
+      ...roleList(six, 'vocal', 'v'),
+      ...roleList(six, 'any', 'n'),
+    ]
+    const used = new Set<string>()
+    for (const seed of SEEDS) {
+      for (const item of buildSession(pool, none, options({ alternate: false, seed, minutes: 80 }))
+        .items)
+        used.add(item.track.role)
+    }
+    expect(used.has('any')).toBe(true)
+  })
+})

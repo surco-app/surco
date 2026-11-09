@@ -172,7 +172,7 @@ describe('buildSession alternation, new tracks and surprise', () => {
     }
   })
 
-  it('does not let an any track change which role comes next', () => {
+  it('lets an any track reached by a proven combo take the place of the role that was due', () => {
     const pool = [
       track('b1', { role: 'base' }),
       track('x', { role: 'any' }),
@@ -181,10 +181,10 @@ describe('buildSession alternation, new tracks and surprise', () => {
     ]
     const plan = buildSession(
       pool,
-      combosOf(['b1', 'x', 1]),
+      combosOf(['b1', 'x', 2]),
       options({ alternate: true, minutes: 30 }),
     )
-    expect(ids(plan)).toEqual(['b1', 'x', 'v1', 'b2'])
+    expect(ids(plan)).toEqual(['b1', 'x', 'b2', 'v1'])
   })
 
   it('skips a combo that would break the alternation', () => {
