@@ -90,6 +90,34 @@ describe('PlaylistTree when nothing matches', () => {
   })
 })
 
+describe('PlaylistTree showing only some playlists', () => {
+  const control = (t: { id?: string }) => <button type="button" data-testid={`control-${t.id}`} />
+
+  it('lists only the playlists it was given, with their folders open', () => {
+    renderTree({ control, onlyIds: new Set(['b90']) })
+    expect(screen.getByTestId('control-b90')).toBeInTheDocument()
+    expect(screen.queryByTestId('control-mash')).toBeNull()
+  })
+
+  it('shows the whole tree again when no restriction is given', () => {
+    renderTree({ control })
+    expect(screen.getByTestId('control-mash')).toBeInTheDocument()
+    expect(screen.queryByTestId('control-b90')).toBeNull()
+  })
+
+  it('searches only among those it was given', () => {
+    renderTree({
+      control,
+      allowCreate: false,
+      onlyIds: new Set(['b90']),
+      emptyText: 'Nothing here',
+    })
+    fireEvent.change(screen.getByTestId('playlists-search'), { target: { value: 'mash' } })
+    expect(screen.queryByTestId('control-mash')).toBeNull()
+    expect(screen.getByTestId('playlists-empty')).toBeInTheDocument()
+  })
+})
+
 describe('PlaylistTree search label', () => {
   it('offers to search or create by default', () => {
     renderTree()

@@ -79,6 +79,7 @@ export function PlaylistTree({
   autoFocus = true,
   emptyText,
   searchLabel,
+  onlyIds,
 }: {
   tree: readonly SourceNode[]
   options: readonly PlaylistOption[]
@@ -90,6 +91,7 @@ export function PlaylistTree({
   autoFocus?: boolean
   emptyText?: string
   searchLabel?: string
+  onlyIds?: ReadonlySet<string>
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [query, setQuery] = useState('')
@@ -104,8 +106,11 @@ export function PlaylistTree({
 
   const stateOf = (target: RekordboxPlaylistTarget): Token['state'] | 'none' =>
     tokens.find((t) => targetKey(t.target) === targetKey(target))?.state ?? 'none'
-  const hits =
+  const matched =
     query.trim() === '' ? null : new Set(matchingOptions(options, query, []).map((o) => o.id))
+  const hits = onlyIds
+    ? new Set(matched ? [...matched].filter((id) => onlyIds.has(id)) : onlyIds)
+    : matched
   const rows: Row[] = [
     ...treeRows(tree, opened, hits),
     ...(hits
