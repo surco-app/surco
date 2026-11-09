@@ -3,6 +3,7 @@ import type { BpmResult, KeyResult, TrackMetadata } from '../shared/types'
 import { type BeatGridFit, fitBeatGrid } from './beatGrid'
 import { type FullScan, killScansFor, runChannelScan } from './channelScan'
 import { detectClicks } from './clickDetect'
+import { runCueWaveFine } from './cueWaveFine'
 import { runCueWaveWords } from './cueWaveWords'
 import { prependFlacId3 } from './flacFinderCover'
 import { readGenreFrame, setGenreFrame } from './genreFrame'
@@ -98,6 +99,14 @@ export type WorkerJob =
       sampleRate: number
       timeoutMs: number
     }
+  | {
+      type: 'cueWaveFine'
+      input: string
+      ffmpegPath: string
+      sampleRate: number
+      channels: number
+      timeoutMs: number
+    }
   | { type: 'setTagFields'; file: string; changes: TagFieldChange[] }
   | { type: 'setSeratoMarkers'; file: string; payload: Uint8Array }
   | {
@@ -129,6 +138,7 @@ export type WorkerJobResult =
   | { peaks: number[]; rms: number[] }
   | FullScan
   | Uint16Array
+  | Uint8Array
   | TagLibRead
   | TunedTaste
   | { cover: boolean; track: number; bpm: number }
@@ -147,6 +157,8 @@ export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJo
       )
     case 'cueWaveWords':
       return runCueWaveWords(job.input, job.ffmpegPath, job.sampleRate, job.timeoutMs)
+    case 'cueWaveFine':
+      return runCueWaveFine(job.input, job.ffmpegPath, job.sampleRate, job.channels, job.timeoutMs)
     case 'killChannelScan':
       killScansFor(job.input)
       return null

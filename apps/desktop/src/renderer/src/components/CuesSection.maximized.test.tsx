@@ -306,6 +306,16 @@ describe('CuesSection maximized', () => {
     expect(screen.queryByText('Chorus')).toBeNull()
   })
 
+  // Measuring the fine wave decodes the whole file, so it waits for the view where the DJ zooms.
+  it('asks for the fine wave once maximized, where the zoom needs it, and not in the folded section', async () => {
+    const fine = vi.fn<Api['rekordboxCueWaveFine']>(async () => null)
+    setup(null, READ, { rekordboxCueWaveFine: fine })
+    await ready()
+    expect(fine).not.toHaveBeenCalled()
+    await maximize()
+    await waitFor(() => expect(fine).toHaveBeenCalledWith('103'))
+  })
+
   it('starts below the macOS window controls, so the cover and title never sit under the traffic lights', async () => {
     setup()
     await maximize()

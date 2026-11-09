@@ -1,5 +1,6 @@
 import { parentPort } from 'node:worker_threads'
 import { killActiveScans } from './channelScan'
+import { killCueWaveFine } from './cueWaveFine'
 import { killCueWaveWords } from './cueWaveWords'
 import { runWorkerJob, type WorkerJob } from './workerJobs'
 
@@ -9,6 +10,7 @@ import { runWorkerJob, type WorkerJob } from './workerJobs'
 // the thread ends by — the pool terminating it, and the process going away underneath.
 process.on('exit', killActiveScans)
 process.on('exit', killCueWaveWords)
+process.on('exit', killCueWaveFine)
 
 // Worker-thread entry: a plain request/response loop over parentPort. All routing
 // logic lives in runWorkerJob so it stays testable outside a thread. The await handles

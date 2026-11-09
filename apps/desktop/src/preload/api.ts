@@ -27,6 +27,7 @@ import type {
   DockIconFrames,
   DuplicatePair,
   DuplicateReplaceOutcome,
+  FineWave,
   KeyResult,
   LibraryCopyInfo,
   LibraryStatus,
@@ -289,6 +290,7 @@ export interface Api {
   rekordboxQueueReady: () => Promise<void>
   rekordboxTrackCues: (contentId: string) => Promise<TrackCues | null>
   rekordboxCueWaveDetail: (contentId: string) => Promise<Uint16Array | null>
+  rekordboxCueWaveFine: (contentId: string) => Promise<FineWave | null>
   rekordboxCueDropInput: (contentId: string) => Promise<DropInput | null>
   rekordboxCueTwins: (file: string) => Promise<LibraryTracks>
   rekordboxAuditionLead: (contentId: string) => Promise<number>

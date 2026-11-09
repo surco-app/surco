@@ -3,6 +3,7 @@ import { readFile, stat } from 'node:fs/promises'
 import type { BrowserWindow } from 'electron'
 import { traktorKey } from '../shared/traktorContent'
 import type { CueQueue, CueSource } from './cueSource'
+import { CUE_WAVE_FINE_PER_SECOND } from './cueWaveFine'
 import { shiftedWords } from './cueWords'
 import { cachedGridVerdict } from './gridVerdictCache'
 import { keyOf } from './rekordboxPlaylistsIpc'
@@ -20,6 +21,7 @@ export function traktorCueSource(
     queue: CueQueue
     applyQuietly: (win: BrowserWindow | null) => void
     words: (file: string) => Promise<Uint16Array | null>
+    fine?: (file: string) => Promise<Uint8Array | null>
   },
   collection: () => string,
   beatGrid: BeatGridOf,
@@ -74,6 +76,16 @@ export function traktorCueSource(
     waveDetail: async (contentId) => {
       const file = await traktorFile(contentId)
       return file ? shiftedWordsOf(file) : null
+    },
+    fineWave: async (contentId) => {
+      const file = await traktorFile(contentId)
+      const levels = file && traktor.fine ? await traktor.fine(file) : null
+      if (!file || !levels) return null
+      return {
+        levels,
+        perSecond: CUE_WAVE_FINE_PER_SECOND,
+        startMs: (await leadOf(file)) ?? 0,
+      }
     },
     dropInput: async (contentId) => {
       const path = collection()

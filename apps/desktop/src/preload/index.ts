@@ -14,6 +14,7 @@ import type {
   CollectionTrack,
   DjProgram,
   DockIconFrames,
+  FineWave,
   KeyResult,
   LibraryTracks,
   LimiterGlimpse,
@@ -277,6 +278,8 @@ const api: Api = {
     ipcRenderer.invoke('rekordbox:trackCues', contentId),
   rekordboxCueWaveDetail: (contentId: string): Promise<Uint16Array | null> =>
     ipcRenderer.invoke('rekordbox:cueWaveDetail', contentId),
+  rekordboxCueWaveFine: (contentId: string): Promise<FineWave | null> =>
+    ipcRenderer.invoke('rekordbox:cueWaveFine', contentId),
   rekordboxCueDropInput: (contentId: string): Promise<DropInput | null> =>
     ipcRenderer.invoke('rekordbox:cueDropInput', contentId),
   rekordboxCueTwins: (file: string): Promise<LibraryTracks> =>

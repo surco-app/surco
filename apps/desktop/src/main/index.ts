@@ -110,6 +110,7 @@ import { installCrashGuards, logHandlerFailures, wireRendererRecovery } from './
 import { createCueTaste } from './cueTaste'
 import { registerCueTasteIpc } from './cueTasteIpc'
 import { createSharedEdits } from './cueTasteShared'
+import { cachedCueWaveFine } from './cueWaveFineCache'
 import { cachedCueWaveWords } from './cueWaveWordsCache'
 import { registerDamageIpc } from './damageIpc'
 import { damageDeps } from './damageWiring'
@@ -1424,6 +1425,7 @@ function registerIpc(): void {
     flow: () => activeCueFlow(getSettings()),
     beatGrid: cachedBeatGrid,
     words: cachedCueWaveWords,
+    fine: cachedCueWaveFine,
     provisional: provisionalCues,
     twins: (file) =>
       libraryTracksOf(

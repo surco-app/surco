@@ -301,7 +301,9 @@ export function CueWaveDetail({
     const width = Math.max(1, Math.round(stage.getBoundingClientRect().width))
     const height = Math.max(1, Math.round(canvas.getBoundingClientRect().height))
     const dpr = window.devicePixelRatio || 1
-    const data = source && ('words' in source ? source.words : source.wave)
+    const data =
+      source &&
+      ('words' in source ? source.words : 'fine' in source ? source.fine.levels : source.wave)
     const was = strip.current
     if (
       force ||

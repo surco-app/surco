@@ -43,6 +43,7 @@ import {
   useAuditionLead,
   useCueProfile,
   useCueWaveDetail,
+  useCueWaveFine,
   useGridFit,
   useQueuedCues,
   useSurcoGrid,
@@ -585,6 +586,7 @@ function Editing({
     [placing, hoverMs, state, ctx],
   )
   const { data: rekordboxWords } = useCueWaveDetail(cue.contentId, !provisional)
+  const fine = useCueWaveFine(cue.contentId, maximized)
   const words = provisional ? provisional.words : rekordboxWords
   const learnsFromEdits = settings.cueLearnFromEdits
   const outcome = useMemo(
@@ -850,11 +852,13 @@ function Editing({
         )
       : undefined
   const [zoom, setZoom] = useState<number>(DEFAULT_ZOOM_BARS)
-  const source: DetailSource | null = words
-    ? { words }
-    : read.wave
-      ? { wave: read.wave, durationMs: read.durationMs }
-      : null
+  const source: DetailSource | null = fine
+    ? { fine }
+    : words
+      ? { words }
+      : read.wave
+        ? { wave: read.wave, durationMs: read.durationMs }
+        : null
   const seekTo = (ms: number) => onPlayhead(Math.min(Math.max(ms, 0), read.durationMs))
   const pad = (kind: number) => {
     const existing = state.cues.find((c) => c.kind === kind)

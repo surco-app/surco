@@ -48,6 +48,7 @@ export function engineCueSource(
       return read && { ...read, clockLeadMs: leadOf(engineFile(contentId)) }
     },
     waveDetail: async () => null,
+    fineWave: async () => null,
     dropInput: async (contentId) => {
       const path = collection()
       return engineDropInput(contentId, {

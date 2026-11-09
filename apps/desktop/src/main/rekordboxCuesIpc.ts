@@ -7,6 +7,7 @@ import type { GridFit } from '../shared/gridEdit'
 import type { GridVerdict } from '../shared/gridVerdict'
 import type {
   CopyReason,
+  FineWave,
   LibraryTracks,
   QueuedCues,
   SaveCuesRequest,
@@ -33,6 +34,7 @@ export function registerRekordboxCuesIpc(host: {
   flow: () => CueFlow
   beatGrid: (file: string, priority?: 'high' | 'low') => Promise<BeatGridFit | null>
   words: (file: string) => Promise<Uint16Array | null>
+  fine?: (file: string) => Promise<Uint8Array | null>
   provisional: Pick<ProvisionalList, 'add'>
   // The same file in each program the editor writes cues to, for a flow to reach them all.
   twins: (file: string) => Promise<LibraryTracks>
@@ -58,10 +60,12 @@ export function registerRekordboxCuesIpc(host: {
 }): void {
   const writers: Record<CueProgram, CueSource | null> = {
     rekordbox: rekordboxCueSource(host),
-    traktor: host.traktor ? traktorCueSource(host.traktor, host.collection, host.beatGrid) : null,
+    traktor: host.traktor
+      ? traktorCueSource({ ...host.traktor, fine: host.fine }, host.collection, host.beatGrid)
+      : null,
     engine: host.engine ? engineCueSource(host.engine, host.collection, host.beatGrid) : null,
     serato: host.serato
-      ? seratoCueSource({ ...host.serato, words: host.words }, host.collection)
+      ? seratoCueSource({ ...host.serato, words: host.words, fine: host.fine }, host.collection)
       : null,
   }
   const sourceOf = (contentId: string) => writers[programOf(contentId)]
@@ -78,6 +82,13 @@ export function registerRekordboxCuesIpc(host: {
     async (_e, contentId: string): Promise<Uint16Array | null> => {
       const source = sourceOf(contentId)
       return source ? source.waveDetail(contentId) : null
+    },
+  )
+  ipcMain.handle(
+    'rekordbox:cueWaveFine',
+    async (_e, contentId: string): Promise<FineWave | null> => {
+      const source = sourceOf(contentId)
+      return source ? source.fineWave(contentId) : null
     },
   )
   ipcMain.handle(

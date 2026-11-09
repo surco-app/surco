@@ -1178,6 +1178,12 @@ export type PlaylistSource = 'appleMusic' | DjProgram
 // One row of a source's playlist tree. A playlist counts its real tracks, separators left
 // out, because that is the number the user sees in the list; a folder counts its direct
 // children, as rekordbox's own tree does.
+export interface FineWave {
+  levels: Uint8Array
+  perSecond: number
+  startMs: number
+}
+
 export interface SourceNode {
   id: string
   name: string

@@ -6,6 +6,7 @@ import { seratoFileOf } from '../shared/seratoContent'
 import type { SeratoCue, SeratoTempoMap } from '../shared/seratoMarkers'
 import type { TrackCueRow, TrackCues } from '../shared/types'
 import type { CueQueue, CueSource } from './cueSource'
+import { CUE_WAVE_FINE_PER_SECOND } from './cueWaveFine'
 import { rekordboxInput } from './engineDropInput'
 import { cueFingerprint } from './rekordboxCues'
 import { keyOf } from './rekordboxPlaylistsIpc'
@@ -73,6 +74,7 @@ export async function seratoTrackCuesOf(
 export function seratoCueSource(
   host: {
     words: (file: string) => Promise<Uint16Array | null>
+    fine?: (file: string) => Promise<Uint8Array | null>
     queue: CueQueue
     applyQuietly: () => void
   },
@@ -84,6 +86,10 @@ export function seratoCueSource(
       return track ? seratoTrackCuesOf(contentId, track) : null
     },
     waveDetail: async (contentId) => host.words(seratoFileOf(contentId)),
+    fineWave: async (contentId) => {
+      const levels = host.fine ? await host.fine(seratoFileOf(contentId)) : null
+      return levels ? { levels, perSecond: CUE_WAVE_FINE_PER_SECOND, startMs: 0 } : null
+    },
     dropInput: async (contentId) => {
       const read = await source.trackCues(contentId)
       if (!read?.analysed) return null

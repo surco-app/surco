@@ -1,6 +1,7 @@
 import type { GridFit } from '../shared/gridEdit'
 import { type BeatGridFit, provisionalGrid, REKORDBOX_BEAT_AFTER_RISE_MS } from './beatGrid'
 import type { CueQueue, CueSource } from './cueSource'
+import { CUE_WAVE_FINE_PER_SECOND } from './cueWaveFine'
 import { shiftedWords } from './cueWords'
 import { cachedGridVerdict } from './gridVerdictCache'
 import { rekordboxShareDir } from './rekordboxArtwork'
@@ -15,6 +16,7 @@ export function rekordboxCueSource(host: {
   applyQuietly: () => void
   beatGrid: (file: string, priority?: 'high' | 'low') => Promise<BeatGridFit | null>
   words: (file: string) => Promise<Uint16Array | null>
+  fine?: (file: string) => Promise<Uint8Array | null>
 }): CueSource {
   const audioRowOf = async (
     contentId: string,
@@ -70,6 +72,16 @@ export function rekordboxCueSource(host: {
         null,
         await keyOf(path),
       )
+    },
+    fineWave: async (contentId) => {
+      const row = await audioRowOf(contentId)
+      const levels = row && host.fine ? await host.fine(row.FolderPath) : null
+      if (!row || !levels) return null
+      return {
+        levels,
+        perSecond: CUE_WAVE_FINE_PER_SECOND,
+        startMs: await rekordboxShiftOfFile(row.FolderPath, row.SampleRate || 44100),
+      }
     },
     dropInput: async () => null,
     auditionLead: async (contentId) => {

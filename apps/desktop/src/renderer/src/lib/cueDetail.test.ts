@@ -51,6 +51,36 @@ describe('waveColumns', () => {
   })
 })
 
+describe('waveColumns on the fine wave Surco measures', () => {
+  const fine = (levels: Uint8Array, startMs = 0) => ({ fine: { levels, perSecond: 1000, startMs } })
+
+  // rekordbox's wave holds 150 levels a second, so a one-bar zoom showed steps tens of pixels
+  // wide. The fine wave puts a click in its own millisecond, on the program's clock.
+  it('puts each level at its millisecond, moved to the program clock by where the wave starts', () => {
+    const levels = new Uint8Array(1000)
+    levels[37] = 255
+    const columns = waveColumns(fine(levels, 51), 80, 100, 20)
+    expect(columns[8]?.peak).toBe(1)
+    expect(columns[7]?.peak).toBe(0)
+    expect(columns[9]?.peak).toBe(0)
+  })
+
+  it('keeps the body as loudness over the same span as on rekordbox wave, not over one millisecond', () => {
+    const lone = new Uint8Array(1000)
+    lone[500] = 255
+    const [click] = waveColumns(fine(lone), 500, 501, 1)
+    expect(click?.peak).toBe(1)
+    expect(click?.body).toBeLessThan(0.2)
+    const held = new Uint8Array(1000).fill(128)
+    const [solid] = waveColumns(fine(held), 500, 501, 1)
+    expect(solid?.body).toBeCloseTo(128 / 255)
+  })
+
+  it('leaves blank the time before the wave starts', () => {
+    expect(waveColumns(fine(new Uint8Array(1000).fill(200), 51), 0, 40, 2)).toEqual([null, null])
+  })
+})
+
 describe('paintWave', () => {
   it('paints each column one device pixel wide, the faint peak first and the accent body over it, centred', () => {
     const calls: [string, number, number, number, number][] = []

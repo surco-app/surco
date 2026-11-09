@@ -251,6 +251,7 @@ export function stubApi(over: Partial<Api> = {}): Api {
     rekordboxQueueReady: async () => {},
     rekordboxTrackCues: async () => null,
     rekordboxCueWaveDetail: async () => null,
+    rekordboxCueWaveFine: async () => null,
     rekordboxCueDropInput: async () => null,
     rekordboxCueTwins: async () => ({}),
     rekordboxAuditionLead: async () => 0,
@@ -259,7 +260,11 @@ export function stubApi(over: Partial<Api> = {}): Api {
     rekordboxGridVerdict: async () => null,
     rowWaves: async () => ({}),
     rekordboxCountCompletable: async () => 0,
-    cueProfile: async () => ({ profile: null, edits: { count: 0, sinceLearn: 0, corrected: 0 }, marked: 0 }),
+    cueProfile: async () => ({
+      profile: null,
+      edits: { count: 0, sinceLearn: 0, corrected: 0 },
+      marked: 0,
+    }),
     learnCueProfile: async () => {
       throw new Error('no collection to learn from')
     },

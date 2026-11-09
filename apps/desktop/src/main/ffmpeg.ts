@@ -4079,6 +4079,25 @@ export async function measureChannelScan(
   }
 }
 
+export async function measureCueWaveFine(input: string): Promise<Uint8Array | null> {
+  try {
+    const { sampleRate, channels } = await probeAudio(input)
+    if (!Number(sampleRate)) return null
+    const fine = await runInWorker<Uint8Array>({
+      type: 'cueWaveFine',
+      input,
+      ffmpegPath,
+      sampleRate: Number(sampleRate),
+      channels: Number(channels) || 2,
+      timeoutMs: ANALYSIS_TIMEOUT_MS,
+    })
+    return fine.length > 0 ? fine : null
+  } catch (err) {
+    log.warn(`cue wave fine failed for ${input}: ${String(err)}`)
+    return null
+  }
+}
+
 export async function measureCueWaveWords(input: string): Promise<Uint16Array | null> {
   try {
     const sampleRate = Number((await probeAudio(input)).sampleRate)

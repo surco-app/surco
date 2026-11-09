@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
 import type { CueProfileRead } from '../../../shared/cueProfile'
 import type { GridFit } from '../../../shared/gridEdit'
-import type { QueuedCues, SurcoGrid, TrackCues } from '../../../shared/types'
+import type { FineWave, QueuedCues, SurcoGrid, TrackCues } from '../../../shared/types'
 
 export const trackCuesQuery = (contentId: string) => ({
   queryKey: ['rekordbox-track-cues', contentId],
@@ -96,6 +96,16 @@ export function useCueWaveDetail(
 ): { data: Uint16Array | null | undefined } {
   const { data } = useQuery({ ...cueWaveDetailQuery(contentId), enabled })
   return { data }
+}
+
+export function useCueWaveFine(contentId: string, enabled: boolean): FineWave | null {
+  const { data } = useQuery({
+    queryKey: ['rekordbox-cue-wave-fine', contentId],
+    queryFn: () => window.api.rekordboxCueWaveFine(contentId),
+    enabled,
+    staleTime: Number.POSITIVE_INFINITY,
+  })
+  return data ?? null
 }
 
 export function useGridFit(contentId: string, enabled: boolean): GridFit | null {
