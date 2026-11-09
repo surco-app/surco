@@ -17,6 +17,46 @@ function install(over: Partial<Api>): Api {
 }
 
 describe('useSessionRows', () => {
+  it('does not reuse a read of the same id that belongs to another program', async () => {
+    const api = install({
+      loadRekordboxPlaylist: vi.fn(async () => rows('/m/rb.mp3')),
+      loadTraktorPlaylist: vi.fn(async () => rows('/m/tk.mp3')),
+    })
+    const { result, rerender } = renderHook(({ program }) => useSessionRows(program), {
+      initialProps: { program: 'rekordbox' as 'rekordbox' | 'traktor' },
+    })
+
+    await act(async () => {
+      await result.current.load(['1'])
+    })
+    rerender({ program: 'traktor' })
+    let loaded: Awaited<ReturnType<typeof result.current.load>> | undefined
+    await act(async () => {
+      loaded = await result.current.load(['1'])
+    })
+
+    expect(api.loadTraktorPlaylist).toHaveBeenCalledTimes(1)
+    expect(loaded?.get('1')?.[0].path).toBe('/m/tk.mp3')
+  })
+
+  it('does not carry a failure of one program over to another', async () => {
+    install({
+      loadSeratoPlaylist: vi.fn(async () => Promise.reject(new Error('gone'))),
+      loadRekordboxPlaylist: vi.fn(async () => rows('/m/a.mp3')),
+    })
+    const { result, rerender } = renderHook(({ program }) => useSessionRows(program), {
+      initialProps: { program: 'serato' as 'serato' | 'rekordbox' },
+    })
+    await act(async () => {
+      await result.current.load(['x'])
+    })
+    expect(result.current.failed).toEqual(['x'])
+
+    rerender({ program: 'rekordbox' })
+
+    expect(result.current.failed).toEqual([])
+  })
+
   it('reads a playlist once however many times it is asked for', async () => {
     const api = install({ loadRekordboxPlaylist: vi.fn(async () => rows('/m/a.mp3')) })
     const { result } = renderHook(() => useSessionRows('rekordbox'))

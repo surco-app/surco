@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import type { DjProgram } from '../../../shared/djProgram'
 import type { SourcePlaylistEntry } from '../../../shared/types'
 import { SOURCE_READ } from '../lib/sourcePrograms'
@@ -14,29 +14,26 @@ export interface SessionRows {
 export function useSessionRows(program: DjProgram): SessionRows {
   const cache = useRef(new Map<string, Promise<Rows | null>>())
   const [inFlight, setInFlight] = useState(0)
-  const [failed, setFailed] = useState<string[]>([])
-
-  useEffect(() => {
-    cache.current = new Map()
-    setFailed([])
-  }, [program])
+  const [failedKeys, setFailedKeys] = useState<string[]>([])
+  const prefix = `${program}:`
 
   const read = useCallback(
     (id: string): Promise<Rows | null> => {
-      const known = cache.current.get(id)
+      const key = `${prefix}${id}`
+      const known = cache.current.get(key)
       if (known) return known
       const started = SOURCE_READ[program].playlist(id).then(
         (rows) => rows,
         () => {
-          cache.current.delete(id)
-          setFailed((list) => (list.includes(id) ? list : [...list, id]))
+          cache.current.delete(key)
+          setFailedKeys((list) => (list.includes(key) ? list : [...list, key]))
           return null
         },
       )
-      cache.current.set(id, started)
+      cache.current.set(key, started)
       return started
     },
-    [program],
+    [program, prefix],
   )
 
   const load = useCallback(
@@ -52,6 +49,11 @@ export function useSessionRows(program: DjProgram): SessionRows {
       }
     },
     [read],
+  )
+
+  const failed = useMemo(
+    () => failedKeys.filter((key) => key.startsWith(prefix)).map((key) => key.slice(prefix.length)),
+    [failedKeys, prefix],
   )
 
   return { load, loading: inFlight > 0, failed }
