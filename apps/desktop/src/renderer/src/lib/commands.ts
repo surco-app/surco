@@ -183,8 +183,6 @@ export interface CommandDeps {
   // Undefined where the USB export does not exist (off macOS and Windows, or without a
   // rekordbox collection): not registered rather than shown disabled.
   openUsbExport?: () => void
-  // Undefined where no playlist can be written (Engine, Music, a read-only tree): not
-  // registered rather than shown disabled.
   openSessionWizard?: () => void
   selectAll: () => void
   askFillAll: () => void
