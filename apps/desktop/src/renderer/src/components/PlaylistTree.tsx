@@ -74,12 +74,18 @@ export function PlaylistTree({
   tokens,
   onToggle,
   onEscape,
+  control,
+  allowCreate = true,
+  autoFocus = true,
 }: {
   tree: readonly SourceNode[]
   options: readonly PlaylistOption[]
   tokens: readonly Token[]
   onToggle: (target: RekordboxPlaylistTarget, on: boolean) => void
-  onEscape: () => void
+  onEscape?: () => void
+  control?: (target: RekordboxPlaylistTarget) => React.ReactNode
+  allowCreate?: boolean
+  autoFocus?: boolean
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [query, setQuery] = useState('')
@@ -89,8 +95,8 @@ export function PlaylistTree({
   const searchRef = useRef<HTMLInputElement>(null)
   const rowRefs = useRef<(HTMLElement | null)[]>([])
   useEffect(() => {
-    searchRef.current?.focus()
-  }, [])
+    if (autoFocus) searchRef.current?.focus()
+  }, [autoFocus])
 
   const stateOf = (target: RekordboxPlaylistTarget): Token['state'] | 'none' =>
     tokens.find((t) => targetKey(t.target) === targetKey(target))?.state ?? 'none'
@@ -103,7 +109,8 @@ export function PlaylistTree({
       : tokens.flatMap((t): Row[] =>
           t.target.id ? [] : [{ kind: 'playlist', target: t.target, depth: 0 }],
         )),
-    ...(canCreate(
+    ...(allowCreate &&
+    canCreate(
       options,
       query,
       tokens.map((t) => t.target),
@@ -131,6 +138,7 @@ export function PlaylistTree({
     const at = rowRefs.current.indexOf(document.activeElement as HTMLElement)
     const row = at > 0 ? rows[at - 1] : undefined
     if (e.key === 'Escape') {
+      if (!onEscape) return
       e.preventDefault()
       e.stopPropagation()
       onEscape()
@@ -149,10 +157,10 @@ export function PlaylistTree({
     ) {
       e.preventDefault()
       setFolder(row.target.id, e.key === 'ArrowRight')
-    } else if (row?.kind === 'playlist' && e.key === ' ') {
+    } else if (row?.kind === 'playlist' && e.key === ' ' && !control) {
       e.preventDefault()
       toggle(row.target)
-    } else if (at === 0 && hits && e.key === 'Enter') {
+    } else if (at === 0 && hits && e.key === 'Enter' && !control) {
       const found = rows.flatMap((r) => (r.kind === 'playlist' && !r.context ? [r.target] : []))
       const offer = rows.find((r) => r.kind === 'create')
       if (found.length === 1) toggle(found[0])
@@ -212,7 +220,21 @@ export function PlaylistTree({
     }
     const state = stateOf(row.target)
     const pending = !row.target.id
-    const label = (
+    const label = control ? (
+      <div
+        key={targetKey(row.target)}
+        data-testid={`playlists-row-${targetKey(row.target)}`}
+        style={{ paddingLeft: 8 + row.depth * 18 }}
+        className={`${ROW} h-auto min-h-7 flex-wrap justify-between gap-y-1 py-1 ${state === 'none' ? 'text-fg-muted' : 'text-fg'}`}
+      >
+        <span className="w-3 shrink-0" />
+        <span className="min-w-0 flex-1 truncate">{row.target.name}</span>
+        {row.count !== undefined && (
+          <span className="shrink-0 text-[11px] tabular-nums text-fg-faint">{row.count}</span>
+        )}
+        {control(row.target)}
+      </div>
+    ) : (
       <label
         key={targetKey(row.target)}
         data-testid={`playlists-row-${targetKey(row.target)}`}
