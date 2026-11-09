@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { SourceNode } from './types'
-import { childNames, sessionDateLabel, uniqueName } from './sessionName'
+import { childNames, parentIdOf, sessionDateLabel, uniqueName } from './sessionName'
 
 const TREE: SourceNode[] = [
   {
@@ -62,5 +62,25 @@ describe('childNames', () => {
   it('is empty for a folder that is not in the tree, or for no tree', () => {
     expect(childNames(TREE, 'gone')).toEqual(new Set())
     expect(childNames(undefined, 'root')).toEqual(new Set())
+  })
+})
+
+describe('parentIdOf', () => {
+  it('names the folder a playlist sits in', () => {
+    expect(parentIdOf(TREE, 'a')).toBe('sets')
+  })
+
+  it('names a folder inside a folder by the outer one', () => {
+    expect(parentIdOf(TREE, 'inner')).toBe('sets')
+  })
+
+  it('answers root for what sits at the top of the tree', () => {
+    expect(parentIdOf(TREE, 'top')).toBe('root')
+    expect(parentIdOf(TREE, 'sets')).toBe('root')
+  })
+
+  it('answers nothing for an id that is not in the tree', () => {
+    expect(parentIdOf(TREE, 'gone')).toBeNull()
+    expect(parentIdOf(undefined, 'a')).toBeNull()
   })
 })
