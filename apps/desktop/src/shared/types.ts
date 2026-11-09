@@ -8,6 +8,7 @@ import type { DjProgram, LibraryProgram, WritableProgram } from './djProgram'
 import type { EditorSectionPref } from './editorSections'
 import type { ErrorKey } from './errorKeys'
 import type { EditableGrid } from './gridEdit'
+import type { PlaylistRole, SessionWizardSettings } from './sessionTypes'
 import type { Chord } from './shortcuts'
 import type { Verification } from './verification'
 
@@ -249,6 +250,8 @@ export interface Settings {
   cueFlowToSerato: boolean
   cueLearnFromEdits: boolean
   hiddenSources: PlaylistSource[]
+  sessionRoles: Record<string, PlaylistRole>
+  sessionWizard: SessionWizardSettings
   rekordboxPlaylistsFieldOffered: boolean
   traktorPlaylistsFieldOffered: boolean
   enginePlaylistsFieldOffered: boolean
@@ -1142,6 +1145,7 @@ export interface AppleMusicTrackMeta {
   // it computed itself (`rating kind: computed`), which is not an opinion to write into
   // anyone's files.
   rating?: number
+  playCount?: number
   // The cover Music holds for this track, for a file that carries none of its own.
   // Measured on a real library: 53% of the tracks are in that state, almost all of them
   // WAVs, and they imported with an empty cover slot even though Music had the picture.

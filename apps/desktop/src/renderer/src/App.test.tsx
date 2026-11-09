@@ -17,6 +17,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, type Mock, vi }
 import type { Api } from '../../preload/api'
 import { ALL_TRACKS_ID } from '../../shared/allTracks'
 import { DEFAULT_EDITOR_SECTIONS } from '../../shared/editorSections'
+import { DEFAULT_SESSION_WIZARD } from '../../shared/sessionSettings'
 import { emptyMetadata } from '../../shared/metadata'
 import { RECENTLY_ADDED_ID } from '../../shared/recentlyAdded'
 import type {
@@ -138,6 +139,8 @@ function settings(over: Partial<Settings> = {}): Settings {
     cueFlowToSerato: true,
     cueLearnFromEdits: true,
     hiddenSources: [],
+    sessionRoles: {},
+    sessionWizard: { ...DEFAULT_SESSION_WIZARD },
     language: 'system',
     discogsToken: '',
     beatportUsername: '',
@@ -10023,5 +10026,152 @@ describe('paste tracklist from the tree', () => {
     await waitFor(() => expect(edit).toHaveBeenCalledTimes(1))
     await act(async () => {})
     expect(edit).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('automatic session from the tree', () => {
+  const TREE = [
+    { id: 'sets', name: 'Sets', kind: 'folder' as const, count: 0, children: [] },
+    { id: 'f', name: 'Factory', kind: 'playlist' as const, count: 1 },
+  ]
+  const ROW = {
+    path: '/m/a.wav',
+    separator: false,
+    contentId: '41',
+    meta: { bpm: '140' },
+    preview: { title: 'Silent Tears', artist: 'Jessy', durationSec: 300, cues: [] },
+  }
+  function openRekordboxTree(over: Partial<Api> = {}) {
+    const edit = vi
+      .fn<Api['editRekordboxPlaylist']>()
+      .mockResolvedValueOnce({ applied: true, createdId: 'new' })
+      .mockResolvedValue({ applied: true })
+    setApi({
+      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
+      loadRekordboxTree: vi.fn<Api['loadRekordboxTree']>().mockResolvedValue(TREE),
+      loadRekordboxPlaylist: vi.fn<Api['loadRekordboxPlaylist']>().mockResolvedValue([ROW]),
+      djAppRunning: vi.fn<Api['djAppRunning']>().mockResolvedValue(false),
+      editRekordboxPlaylist: edit,
+      ...over,
+    })
+    return edit
+  }
+  async function openWizard(): Promise<void> {
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+    fireEvent.contextMenu(await screen.findByTestId('source-node-sets'))
+    fireEvent.click(screen.getByTestId('source-tree-session'))
+    await screen.findByTestId('session-wizard-dialog')
+  }
+  async function toBuild(): Promise<void> {
+    await openWizard()
+    fireEvent.click(screen.getByTestId('session-wizard-next'))
+    fireEvent.change(screen.getByTestId('session-wizard-search'), { target: { value: 'fact' } })
+    fireEvent.click(screen.getByTestId('session-wizard-hit-role-f-any'))
+    fireEvent.click(screen.getByTestId('session-wizard-next'))
+    await screen.findByTestId('session-wizard-fresh-search')
+    fireEvent.click(screen.getByTestId('session-wizard-next'))
+    await screen.findByTestId('session-wizard-build')
+  }
+
+  it('opens from the menu of a folder', async () => {
+    openRekordboxTree()
+    await openWizard()
+    expect(screen.getByTestId('session-wizard-dialog')).toBeInTheDocument()
+  })
+
+  it('opens from the command palette', async () => {
+    openRekordboxTree()
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+    await screen.findByTestId('source-node-sets')
+    fireEvent.keyDown(window, { key: 'k', metaKey: true })
+    const input = await screen.findByTestId('palette-input')
+    fireEvent.change(input, { target: { value: 'automatic session' } })
+    fireEvent.click(await screen.findByText('Automatic session…'))
+    expect(await screen.findByTestId('session-wizard-dialog')).toBeInTheDocument()
+  })
+
+  it('does not offer it from the palette where nothing can be written', async () => {
+    setApi({})
+    await renderApp()
+    fireEvent.keyDown(window, { key: 'k', metaKey: true })
+    const input = await screen.findByTestId('palette-input')
+    fireEvent.change(input, { target: { value: 'automatic session' } })
+    expect(screen.queryByText('Automatic session…')).not.toBeInTheDocument()
+  })
+
+  it('closes on Escape, like every other dialog', async () => {
+    openRekordboxTree()
+    await openWizard()
+    fireEvent.keyDown(window, { key: 'Escape' })
+    await waitFor(() =>
+      expect(screen.queryByTestId('session-wizard-dialog')).not.toBeInTheDocument(),
+    )
+  })
+
+  it('keeps the global shortcuts off the list while the wizard is open', async () => {
+    openRekordboxTree()
+    await openWizard()
+    fireEvent.keyDown(window, { key: 'k', metaKey: true })
+    expect(screen.queryByTestId('palette-input')).not.toBeInTheDocument()
+    expect(screen.getByTestId('session-wizard-dialog')).toBeInTheDocument()
+  })
+
+  it('writes the session into the folder it was opened on, tracks in order, once nothing is open', async () => {
+    const edit = openRekordboxTree()
+    await toBuild()
+    fireEvent.click(screen.getByTestId('session-wizard-build'))
+    await waitFor(() => expect(edit).toHaveBeenCalledTimes(2))
+    expect(edit.mock.calls[0][0]).toMatchObject({ kind: 'create', parentId: 'sets', folder: false })
+    expect(edit.mock.calls[1][0]).toEqual({
+      kind: 'add',
+      playlistId: 'new',
+      tracks: [{ contentId: '41', paths: ['/m/a.wav'] }],
+    })
+    await waitFor(() =>
+      expect(screen.queryByTestId('session-wizard-dialog')).not.toBeInTheDocument(),
+    )
+  })
+
+  it('reads the playlists again each time the wizard is opened, so edits made since are seen', async () => {
+    openRekordboxTree()
+    const read = vi.mocked(window.api.loadRekordboxPlaylist)
+    await openWizard()
+    fireEvent.click(screen.getByTestId('session-wizard-next'))
+    fireEvent.change(screen.getByTestId('session-wizard-search'), { target: { value: 'fact' } })
+    fireEvent.click(screen.getByTestId('session-wizard-hit-role-f-any'))
+    fireEvent.click(screen.getByTestId('session-wizard-next'))
+    await screen.findByTestId('session-wizard-fresh-search')
+    const first = read.mock.calls.length
+    fireEvent.keyDown(window, { key: 'Escape' })
+    await waitFor(() =>
+      expect(screen.queryByTestId('session-wizard-dialog')).not.toBeInTheDocument(),
+    )
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 300))
+    })
+    fireEvent.contextMenu(screen.getByTestId('source-node-sets'))
+    fireEvent.click(screen.getByTestId('source-tree-session'))
+    await screen.findByTestId('session-wizard-dialog')
+    fireEvent.click(screen.getByTestId('session-wizard-next'))
+    if (!screen.queryByTestId('session-wizard-chip-f')) {
+      fireEvent.change(screen.getByTestId('session-wizard-search'), { target: { value: 'fact' } })
+      fireEvent.click(screen.getByTestId('session-wizard-hit-role-f-any'))
+    }
+    fireEvent.click(screen.getByTestId('session-wizard-next'))
+    await screen.findByTestId('session-wizard-fresh-search')
+    expect(read.mock.calls.length).toBeGreaterThan(first)
+  })
+
+  it('writes nothing and asks to close the program when a DJ program is open', async () => {
+    const edit = openRekordboxTree({
+      djAppRunning: vi.fn<Api['djAppRunning']>().mockResolvedValue(true),
+    })
+    await toBuild()
+    fireEvent.click(screen.getByTestId('session-wizard-build'))
+    expect(await screen.findByTestId('session-wizard-closed')).toBeInTheDocument()
+    expect(edit).not.toHaveBeenCalled()
+    expect(screen.getByTestId('session-wizard-dialog')).toBeInTheDocument()
   })
 })

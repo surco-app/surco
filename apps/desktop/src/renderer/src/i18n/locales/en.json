@@ -18,6 +18,119 @@
     "description": "Combine text and metadata to build the file name.",
     "apply": "Apply"
   },
+  "sessions": {
+    "role": {
+      "title": "Role for sessions",
+      "base": "Bases",
+      "vocal": "Vocals",
+      "any": "Mixed",
+      "set": "Set"
+    },
+    "roleLetter": {
+      "base": "B",
+      "vocal": "V",
+      "any": "M",
+      "set": "S"
+    },
+    "wizard": {
+      "title": "Build a session",
+      "step": "Step {{current}} of {{total}}",
+      "steps": {
+        "duration": "Length",
+        "sources": "Playlists",
+        "fresh": "New tracks",
+        "character": "Feel"
+      },
+      "next": "Next",
+      "back": "Back",
+      "duration": {
+        "heading": "How long is the session?",
+        "m60": "60 min",
+        "m90": "90 min",
+        "h2": "2 h",
+        "h3": "3 h",
+        "other": "Other",
+        "customLabel": "Minutes",
+        "customInvalid": "Enter a whole number of minutes"
+      },
+      "sources": {
+        "heading": "Which playlists should the tracks come from?",
+        "hint": "Search a playlist and say what it holds. Surco keeps it on the playlist, so next time it is already here. You can also set it from each playlist's menu.",
+        "search": "Search among {{count}} playlists",
+        "noHits": "No playlist matches",
+        "none": "No playlist chosen yet",
+        "remove": "Remove {{name}}",
+        "tracks_one": "{{count}} track",
+        "tracks_other": "{{count}} tracks",
+        "upTo_one": "Up to {{count}} track to choose from",
+        "upTo_other": "Up to {{count}} tracks to choose from"
+      },
+      "fresh": {
+        "heading": "Want to try some new tracks?",
+        "hint": "New tracks have no history. Surco places them by key, tempo and whether they are base or vocal, after a track you already know.",
+        "search": "Search a playlist of new tracks",
+        "add": "Add",
+        "share": "New tracks in the session",
+        "shareValue": "{{percent}} %"
+      },
+      "character": {
+        "heading": "How do you want it?",
+        "alternate": "Alternate base and vocal",
+        "alternateHint": "Base, vocal, base, vocal",
+        "preferCombos": "Prefer proven combos",
+        "preferCombosHint": "What you have played together in your sets, first",
+        "tasteWeight": "What you like most",
+        "tasteWeightHint": "Stars and play count weigh in when picking",
+        "surprise": "Surprise me",
+        "surpriseHint": "Leaves room for pairs that were never played together",
+        "harmony": "Harmonic mixing",
+        "harmonyFree": "Free",
+        "harmonyNeighbours": "Neighbours",
+        "harmonySame": "Same key",
+        "noKeys": "None of the chosen tracks has a key, so harmonic mixing does not apply"
+      },
+      "loading": "Reading…",
+      "build": "Build session",
+      "loadFailed": "{{names}} could not be read and is left out",
+      "empty": "The chosen playlists have no track to build a session with",
+      "refused": "The session could not be written. Check the notice and try again"
+    },
+    "band": {
+      "title": "Session built by Surco",
+      "tracks_one": "{{count}} track",
+      "tracks_other": "{{count}} tracks",
+      "combos_one": "{{count}} combo",
+      "combos_other": "{{count}} combos",
+      "fresh_one": "{{count}} new",
+      "fresh_other": "{{count}} new",
+      "harmonic": "{{harmonic}}/{{total}} harmonic",
+      "redo": "Redo",
+      "adjust": "Adjust…",
+      "keep": "Keep it as is",
+      "short": "Only enough tracks for {{minutes}} min",
+      "assumed_one": "{{count}} track has no length and counts as 6 min",
+      "assumed_other": "{{count}} tracks have no length and count as 6 min each"
+    },
+    "playlistName": "Session {{date}}",
+    "closed": "Close your DJ program to build the session. With it open, the playlist would be left half written",
+    "why": {
+      "start": "Where the session starts",
+      "combo_one": "Proven combo in {{count}} set",
+      "combo_other": "Proven combo in {{count}} sets",
+      "harmonicSame": "{{from}} → {{to}}, same key",
+      "harmonicRing": "{{from}} → {{to}}, same ring",
+      "harmonicNeighbour": "{{from}} → {{to}}, neighbour",
+      "tasteRated": "Among the best rated that fit",
+      "tastePlayed": "Among the most played that fit",
+      "bpm": "Fits by tempo",
+      "bpmRelaxed": "Nothing else fit, so the tempo moves more than usual",
+      "freshKey": "New. Fits by key {{key}}",
+      "freshTempo": "New. Fits by tempo",
+      "chosen": "Chosen by you",
+      "change": "Change",
+      "pick": "Change to"
+    }
+  },
   "pasteTracklist": {
     "title": "Paste tracklist into “{{name}}”",
     "titleNew": "New playlist from tracklist",
@@ -491,6 +604,7 @@
     "musicDuplicates": "Show duplicates in Apple Music…",
     "listReview": "Review metadata…",
     "exportUsb": "Export to USB…",
+    "newSession": "Automatic session…",
     "goToSource": "Go to {{name}}",
     "newPlaylist": "New playlist in {{name}}",
     "convertEditOriginal": "Convert editing the original, just this once",
@@ -2541,6 +2655,7 @@
       "rename": "Rename",
       "pasteTracklist": "Paste tracklist…",
       "newPlaylistFromTracklist": "Playlist from tracklist…",
+      "newSession": "Automatic session…",
       "delete": "Delete",
       "menu": "Playlist actions",
       "deleteTitle": "Delete from rekordbox",

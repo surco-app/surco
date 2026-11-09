@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { BUNDLED_FLOWS } from '../../../shared/cueFlows'
 import { DEFAULT_EDITOR_SECTIONS } from '../../../shared/editorSections'
+import { DEFAULT_SESSION_WIZARD } from '../../../shared/sessionSettings'
 import type { Settings } from '../../../shared/types'
 import { buildSettingsPatch, type LocalDraft, pickSynced } from './settingsDraft'
 
@@ -97,6 +98,8 @@ const settings: Settings = {
   cueFlowToSerato: true,
   cueLearnFromEdits: true,
   hiddenSources: [],
+  sessionRoles: {},
+  sessionWizard: { ...DEFAULT_SESSION_WIZARD },
   hasSeenOnboarding: true,
   deezerProviderMigrated: true,
   musicbrainzProviderMigrated: true,

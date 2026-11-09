@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { BUNDLED_FLOWS } from '../../../shared/cueFlows'
 import { DEFAULT_EDITOR_SECTIONS, type EditorSectionId } from '../../../shared/editorSections'
+import { DEFAULT_SESSION_WIZARD } from '../../../shared/sessionSettings'
 import type { Settings } from '../../../shared/types'
 import {
   type AudioIntent,
@@ -34,6 +35,8 @@ const settings: Settings = {
   cueFlowToSerato: true,
   cueLearnFromEdits: true,
   hiddenSources: [],
+  sessionRoles: {},
+  sessionWizard: { ...DEFAULT_SESSION_WIZARD },
   language: 'system',
   discogsToken: '',
   beatportUsername: '',

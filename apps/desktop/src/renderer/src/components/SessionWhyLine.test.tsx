@@ -1,0 +1,136 @@
+// @vitest-environment jsdom
+import '@testing-library/jest-dom/vitest'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { SessionWhy } from '../../../shared/sessionBuild'
+import type { SessionTrack } from '../../../shared/sessionTypes'
+import i18n from '../i18n'
+import { SessionWhyLine } from './SessionWhyLine'
+
+afterEach(cleanup)
+
+const alt = (id: string, over: Partial<SessionTrack> = {}): SessionTrack => ({
+  id,
+  role: 'any',
+  key: '8A',
+  bpm: 140,
+  rating: 0,
+  plays: 0,
+  secs: 300,
+  fresh: false,
+  title: `Title ${id}`,
+  artist: `Artist ${id}`,
+  ...over,
+})
+
+function setup(
+  why: SessionWhy,
+  props: { selected?: boolean; busy?: boolean; alts?: SessionTrack[] } = {},
+) {
+  const onPick = vi.fn()
+  render(
+    <SessionWhyLine
+      why={why}
+      selected={props.selected ?? false}
+      busy={props.busy ?? false}
+      alternatives={props.alts ?? []}
+      onPick={onPick}
+    />,
+  )
+  return onPick
+}
+
+const line = () => screen.getByTestId('session-why')
+
+describe('SessionWhyLine text', () => {
+  it('says a combo was proven and in how many sets', () => {
+    setup({ kind: 'combo', sets: 5 })
+    expect(line()).toHaveTextContent(i18n.t('sessions.why.combo', { count: 5 }))
+  })
+
+  it('names the keys of a harmonic mix and how they relate', () => {
+    setup({ kind: 'harmonic', from: '8A', to: '8A', distance: 0 })
+    expect(line()).toHaveTextContent(i18n.t('sessions.why.harmonicSame', { from: '8A', to: '8A' }))
+    cleanup()
+    setup({ kind: 'harmonic', from: '8A', to: '8B', distance: 1 })
+    expect(line()).toHaveTextContent(i18n.t('sessions.why.harmonicRing', { from: '8A', to: '8B' }))
+    cleanup()
+    setup({ kind: 'harmonic', from: '8A', to: '9A', distance: 1 })
+    expect(line()).toHaveTextContent(
+      i18n.t('sessions.why.harmonicNeighbour', { from: '8A', to: '9A' }),
+    )
+  })
+
+  it('says a track was picked for its stars, or for its plays when it has none', () => {
+    setup({ kind: 'taste', plays: 40, rating: 100 })
+    expect(line()).toHaveTextContent(i18n.t('sessions.why.tasteRated'))
+    cleanup()
+    setup({ kind: 'taste', plays: 40, rating: 0 })
+    expect(line()).toHaveTextContent(i18n.t('sessions.why.tastePlayed'))
+  })
+
+  it('says it fit by tempo, and when it had to stretch the tempo', () => {
+    setup({ kind: 'bpm', relaxed: false })
+    expect(line()).toHaveTextContent(i18n.t('sessions.why.bpm'))
+    cleanup()
+    setup({ kind: 'bpm', relaxed: true })
+    expect(line()).toHaveTextContent(i18n.t('sessions.why.bpmRelaxed'))
+  })
+
+  it('calls a new track new and says what it fit by', () => {
+    setup({ kind: 'fresh', key: '10A', role: 'base' })
+    expect(line()).toHaveTextContent(i18n.t('sessions.why.freshKey', { key: '10A' }))
+    cleanup()
+    setup({ kind: 'fresh', key: null, role: 'any' })
+    expect(line()).toHaveTextContent(i18n.t('sessions.why.freshTempo'))
+  })
+
+  it('says where the session started and when the user chose the track', () => {
+    setup({ kind: 'start' })
+    expect(line()).toHaveTextContent(i18n.t('sessions.why.start'))
+    cleanup()
+    setup({ kind: 'chosen' })
+    expect(line()).toHaveTextContent(i18n.t('sessions.why.chosen'))
+  })
+})
+
+describe('SessionWhyLine swapping', () => {
+  it('offers no swap on a row that is not selected', () => {
+    setup({ kind: 'combo', sets: 2 }, { alts: [alt('x')] })
+    expect(screen.queryByTestId('session-why-change')).toBeNull()
+  })
+
+  it('offers no swap when nothing fits', () => {
+    setup({ kind: 'combo', sets: 2 }, { selected: true })
+    expect(screen.queryByTestId('session-why-change')).toBeNull()
+  })
+
+  it('opens the list of tracks that fit, with their artist and title', () => {
+    setup({ kind: 'combo', sets: 2 }, { selected: true, alts: [alt('x'), alt('y')] })
+    fireEvent.click(screen.getByTestId('session-why-change'))
+    expect(screen.getByTestId('session-why-alt-x')).toHaveTextContent('Artist x')
+    expect(screen.getByTestId('session-why-alt-x')).toHaveTextContent('Title x')
+    expect(screen.getByTestId('session-why-alt-y')).toBeInTheDocument()
+  })
+
+  it('hands the chosen track over and closes the list', () => {
+    const spare = alt('x')
+    const onPick = setup({ kind: 'combo', sets: 2 }, { selected: true, alts: [spare, alt('y')] })
+    fireEvent.click(screen.getByTestId('session-why-change'))
+    fireEvent.click(screen.getByTestId('session-why-alt-x'))
+    expect(onPick).toHaveBeenCalledExactlyOnceWith(spare)
+    expect(screen.queryByTestId('session-why-alt-x')).toBeNull()
+  })
+
+  it('shows the key and tempo of each track that fits when it has them', () => {
+    setup({ kind: 'combo', sets: 2 }, { selected: true, alts: [alt('x', { key: '9A', bpm: 142 })] })
+    fireEvent.click(screen.getByTestId('session-why-change'))
+    expect(screen.getByTestId('session-why-alt-x')).toHaveTextContent('9A')
+    expect(screen.getByTestId('session-why-alt-x')).toHaveTextContent('142')
+  })
+
+  it('blocks swapping while the playlist is being rewritten', () => {
+    setup({ kind: 'combo', sets: 2 }, { selected: true, busy: true, alts: [alt('x')] })
+    expect(screen.getByTestId('session-why-change')).toBeDisabled()
+  })
+})

@@ -29,6 +29,7 @@ export interface FixtureContent {
   ImagePath?: string
   StockDate?: string
   CreatedAt?: string
+  DJPlayCount?: number
 }
 
 export interface FixturePlaylist {
@@ -149,8 +150,8 @@ export function writeRekordboxPlaylistFixture(path: string, data: PlaylistFixtur
   const content = db.prepare(
     `INSERT INTO djmdContent (ID, FolderPath, FileNameL, FileType, FileSize, Title, Length, BPM,
        Rating, KeyID, UUID, AnalysisDataPath, Analysed, ArtistID, ImagePath, rb_local_deleted,
-       StockDate, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       StockDate, created_at, DJPlayCount)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   )
   for (const c of data.content) {
     content.run(
@@ -172,6 +173,7 @@ export function writeRekordboxPlaylistFixture(path: string, data: PlaylistFixtur
       c.deleted ? 1 : 0,
       c.StockDate ?? null,
       c.CreatedAt ?? null,
+      c.DJPlayCount ?? null,
     )
   }
   const device = data.device ?? { ID: '7', MasterDBID: '3216549870' }

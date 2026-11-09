@@ -18,6 +18,119 @@
     "description": "Combine du texte et des métadonnées pour composer le nom du fichier.",
     "apply": "Appliquer"
   },
+  "sessions": {
+    "role": {
+      "title": "Rôle pour les sessions",
+      "base": "Bases",
+      "vocal": "Voix",
+      "any": "Mixte",
+      "set": "Set"
+    },
+    "roleLetter": {
+      "base": "B",
+      "vocal": "V",
+      "any": "M",
+      "set": "S"
+    },
+    "wizard": {
+      "title": "Composer une session",
+      "step": "Étape {{current}} sur {{total}}",
+      "steps": {
+        "duration": "Durée",
+        "sources": "Playlists",
+        "fresh": "Nouveautés",
+        "character": "Ambiance"
+      },
+      "next": "Suivant",
+      "back": "Retour",
+      "duration": {
+        "heading": "Quelle est la durée de la session ?",
+        "m60": "60 min",
+        "m90": "90 min",
+        "h2": "2 h",
+        "h3": "3 h",
+        "other": "Autre",
+        "customLabel": "Minutes",
+        "customInvalid": "Saisis un nombre entier de minutes"
+      },
+      "sources": {
+        "heading": "De quelles playlists viennent les morceaux ?",
+        "hint": "Cherche une playlist et dis ce qu’elle contient. Surco le retient sur la playlist, donc la prochaine fois elle est déjà là. Tu peux aussi le définir depuis le menu de chaque playlist.",
+        "search": "Chercher parmi {{count}} playlists",
+        "noHits": "Aucune playlist ne correspond",
+        "none": "Aucune playlist choisie pour l’instant",
+        "remove": "Retirer {{name}}",
+        "tracks_one": "{{count}} morceau",
+        "tracks_other": "{{count}} morceaux",
+        "upTo_one": "Jusqu’à {{count}} morceau au choix",
+        "upTo_other": "Jusqu’à {{count}} morceaux au choix"
+      },
+      "fresh": {
+        "heading": "Envie d’essayer des nouveautés ?",
+        "hint": "Les nouveautés n’ont pas d’historique. Surco les place selon la tonalité, le tempo et leur rôle de base ou de voix, après un morceau que tu connais déjà.",
+        "search": "Chercher une playlist de nouveautés",
+        "add": "Ajouter",
+        "share": "Nouveautés dans la session",
+        "shareValue": "{{percent}} %"
+      },
+      "character": {
+        "heading": "Comment la veux-tu ?",
+        "alternate": "Alterner base et voix",
+        "alternateHint": "Base, voix, base, voix",
+        "preferCombos": "Privilégier les combos éprouvés",
+        "preferCombosHint": "Ce que tu as mixé ensemble dans tes sets, en premier",
+        "tasteWeight": "Ce que tu préfères",
+        "tasteWeightHint": "Les étoiles et les écoutes comptent dans le choix",
+        "surprise": "Surprends-moi",
+        "surpriseHint": "Laisse de la place à des paires jamais jouées ensemble",
+        "harmony": "Mix harmonique",
+        "harmonyFree": "Libre",
+        "harmonyNeighbours": "Voisins",
+        "harmonySame": "Même tonalité",
+        "noKeys": "Aucun morceau choisi n’a de tonalité, le mix harmonique ne s’applique donc pas"
+      },
+      "loading": "Lecture…",
+      "build": "Composer la session",
+      "loadFailed": "{{names}} n’a pas pu être lu et reste de côté",
+      "empty": "Les playlists choisies n’ont aucun morceau pour composer une session",
+      "refused": "La session n’a pas pu être écrite. Regarde l’avis et réessaie"
+    },
+    "band": {
+      "title": "Session composée par Surco",
+      "tracks_one": "{{count}} morceau",
+      "tracks_other": "{{count}} morceaux",
+      "combos_one": "{{count}} combo",
+      "combos_other": "{{count}} combos",
+      "fresh_one": "{{count}} nouveauté",
+      "fresh_other": "{{count}} nouveautés",
+      "harmonic": "{{harmonic}}/{{total}} harmoniques",
+      "redo": "Refaire",
+      "adjust": "Ajuster…",
+      "keep": "La garder telle quelle",
+      "short": "Il n’y a de morceaux que pour {{minutes}} min",
+      "assumed_one": "{{count}} morceau sans durée, compté pour 6 min",
+      "assumed_other": "{{count}} morceaux sans durée, comptés pour 6 min chacun"
+    },
+    "playlistName": "Session du {{date}}",
+    "closed": "Ferme ton logiciel DJ pour composer la session. Ouvert, il laisserait la playlist à moitié écrite",
+    "why": {
+      "start": "Là où la session démarre",
+      "combo_one": "Combo éprouvé dans {{count}} set",
+      "combo_other": "Combo éprouvé dans {{count}} sets",
+      "harmonicSame": "{{from}} → {{to}}, même tonalité",
+      "harmonicRing": "{{from}} → {{to}}, même anneau",
+      "harmonicNeighbour": "{{from}} → {{to}}, voisin",
+      "tasteRated": "Parmi les mieux notés qui conviennent",
+      "tastePlayed": "Parmi les plus écoutés qui conviennent",
+      "bpm": "Convient par le tempo",
+      "bpmRelaxed": "Rien d’autre ne convenait, le tempo varie donc plus que d’habitude",
+      "freshKey": "Nouveauté. Convient par la tonalité {{key}}",
+      "freshTempo": "Nouveauté. Convient par le tempo",
+      "chosen": "Choisi par toi",
+      "change": "Changer",
+      "pick": "Remplacer par"
+    }
+  },
   "pasteTracklist": {
     "title": "Coller la tracklist dans « {{name}} »",
     "titleNew": "Nouvelle playlist depuis une tracklist",
@@ -491,6 +604,7 @@
     "musicDuplicates": "Afficher les doublons dans Apple Music…",
     "listReview": "Vérifier les métadonnées…",
     "exportUsb": "Exporter vers USB…",
+    "newSession": "Session automatique…",
     "goToSource": "Aller à {{name}}",
     "newPlaylist": "Nouvelle playlist dans {{name}}",
     "convertEditOriginal": "Convertir en modifiant l’original, cette fois seulement",
@@ -2541,6 +2655,7 @@
       "rename": "Renommer",
       "pasteTracklist": "Coller une tracklist…",
       "newPlaylistFromTracklist": "Playlist depuis une tracklist…",
+      "newSession": "Session automatique…",
       "delete": "Supprimer",
       "menu": "Actions de la playlist",
       "deleteTitle": "Supprimer de rekordbox",

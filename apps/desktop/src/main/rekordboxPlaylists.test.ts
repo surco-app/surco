@@ -193,6 +193,50 @@ describe('readRekordboxPlaylist', () => {
   })
 })
 
+describe('play counts in playlist rows', () => {
+  let counted: NonNullable<ReturnType<typeof openRekordboxDb>>
+
+  beforeAll(async () => {
+    const path = join(await mkdtemp(join(tmpdir(), 'surco-rbpc-')), 'master.db')
+    writeRekordboxPlaylistFixture(path, {
+      content: [
+        { ...PLAY, ID: 'p1', FolderPath: '/m/played.wav', DJPlayCount: 41 },
+        { ...PLAY, ID: 'p2', FolderPath: '/m/never.wav', DJPlayCount: 0 },
+        { ...PLAY, ID: 'p3', FolderPath: '/m/unknown.wav' },
+      ],
+      keys: [{ ID: 'k2', ScaleName: '8A' }],
+      playlists: [{ ID: 'mix', Name: 'Mix', Attribute: 0, ParentID: 'root', Seq: 1 }],
+      links: [
+        { PlaylistID: 'mix', ContentID: 'p1', TrackNo: 1 },
+        { PlaylistID: 'mix', ContentID: 'p2', TrackNo: 2 },
+        { PlaylistID: 'mix', ContentID: 'p3', TrackNo: 3 },
+      ],
+    })
+    const opened = openRekordboxDb(path, { readonly: true })
+    if (!opened) throw new Error('fixture did not open')
+    counted = opened
+  })
+
+  afterAll(() => counted.close())
+
+  it('carries how many times rekordbox played a track', () => {
+    const [played] = readRekordboxPlaylist(counted, 'mix')
+    expect(played.meta.playCount).toBe(41)
+  })
+
+  it('leaves the count out for a track never played or with no count, so it is not read as a measurement', () => {
+    const [, never, unknown] = readRekordboxPlaylist(counted, 'mix')
+    expect(never.meta.playCount).toBeUndefined()
+    expect(unknown.meta.playCount).toBeUndefined()
+  })
+
+  it('keeps the duration the preview already gives, which sessions use to fill the time', () => {
+    const rows = readRekordboxPlaylistWithPreview(counted, '/share', 'mix')
+    expect(rows[0].preview?.durationSec).toBe(PLAY.Length)
+    expect(rows[0].meta.playCount).toBe(41)
+  })
+})
+
 describe('entryPath', () => {
   // rekordbox on Windows stores C:/... while a file dropped on Surco arrives as C:\...;
   // spelt differently, one file would load as two rows.

@@ -13,12 +13,14 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { useTranslation } from 'react-i18next'
 import { ALL_TRACKS_ID } from '../../../shared/allTracks'
 import { RECENTLY_ADDED_ID } from '../../../shared/recentlyAdded'
+import type { PlaylistRole } from '../../../shared/sessionTypes'
 import type { PlaylistSource, SourceNode } from '../../../shared/types'
 import type { NewPlaylist } from '../lib/commands'
 import { isPendingNode, subtreeCounts, subtreeIds } from '../lib/playlistEdits'
 import { carriesOnlyFiles, draggedRows, isTreeNodeDrag, TREE_NODE_TYPE } from '../lib/reorderDrag'
 import { ConfirmDialog } from './ConfirmDialog'
 import { ModalExit } from './ModalShell'
+import { PlaylistRolePicker } from './PlaylistRolePicker'
 import { Tooltip } from './Tooltip'
 
 const SKELETON_NAME_WIDTHS = ['42%', '28%', '55%', '36%', '47%', '31%', '51%', '24%']
@@ -62,6 +64,7 @@ export function SourceTree({
   fixed,
   onExportUsb,
   newPlaylistRef,
+  roles,
 }: {
   width: number
   title: string
@@ -81,6 +84,7 @@ export function SourceTree({
     onRename: (node: SourceNode, name: string) => void
     onDelete: (node: SourceNode) => void
     onPasteTracklist?: (node: SourceNode, create: boolean) => void
+    onSession?: (node: SourceNode) => void
     onMove?: (
       node: SourceNode,
       parentId: string,
@@ -95,6 +99,10 @@ export function SourceTree({
   // The USB export, offered where it exists: rekordbox's tree on macOS and Windows.
   onExportUsb?: () => void
   newPlaylistRef?: { current: NewPlaylist | null }
+  roles?: {
+    values: Readonly<Record<string, PlaylistRole>>
+    onChange: (node: SourceNode, role: PlaylistRole | null) => void
+  }
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [query, setQuery] = useState('')
@@ -486,6 +494,16 @@ export function SourceTree({
               />
             )}
             <span className="min-w-0 truncate">{node.name}</span>
+            {!isFolder && roles?.values[node.id] && (
+              <span
+                role="img"
+                data-testid={`source-tree-role-${node.id}`}
+                aria-label={tr(`sessions.role.${roles.values[node.id]}`)}
+                className="shrink-0 rounded border border-[var(--color-line-strong)] px-1 text-[10px] leading-[14px] text-fg-dim"
+              >
+                {tr(`sessions.roleLetter.${roles.values[node.id]}`)}
+              </span>
+            )}
             {trail && <span className="min-w-0 truncate text-xs text-fg-faint">{trail}</span>}
             {dropOn?.id === node.id ? (
               <span
@@ -748,6 +766,33 @@ export function SourceTree({
                     : 'sources.tree.pasteTracklist',
                 )}
               </button>
+            )}
+            {edit?.onSession && !menu.pasteOnly && (menu.node.kind === 'folder' || edit.crates) && (
+              <button
+                type="button"
+                role="menuitem"
+                data-testid="source-tree-session"
+                onClick={() => {
+                  edit.onSession?.(menu.node)
+                  setMenu(null)
+                }}
+                className="block w-full rounded-md px-3 py-1.5 text-left text-sm hover:bg-[var(--color-hover)]"
+              >
+                {tr('sources.tree.newSession')}
+              </button>
+            )}
+            {roles && menu.node.kind === 'playlist' && !menu.pasteOnly && (
+              <div className="px-3 pt-1.5 pb-1">
+                <div className="mb-1 text-[11px] text-fg-dim">{tr('sessions.role.title')}</div>
+                <PlaylistRolePicker
+                  value={roles.values[menu.node.id] ?? null}
+                  onChange={(role) => {
+                    roles.onChange(menu.node, role)
+                    setMenu(null)
+                  }}
+                  testIdPrefix="source-tree-role-pick"
+                />
+              </div>
             )}
             {!menu.pasteOnly && (
               <button

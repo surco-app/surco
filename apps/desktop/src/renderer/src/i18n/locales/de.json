@@ -18,6 +18,119 @@
     "description": "Kombiniere Text und Metadaten, um den Dateinamen zu erstellen.",
     "apply": "Anwenden"
   },
+  "sessions": {
+    "role": {
+      "title": "Rolle für Sessions",
+      "base": "Bases",
+      "vocal": "Gesang",
+      "any": "Gemischt",
+      "set": "Set"
+    },
+    "roleLetter": {
+      "base": "B",
+      "vocal": "G",
+      "any": "M",
+      "set": "S"
+    },
+    "wizard": {
+      "title": "Session zusammenstellen",
+      "step": "Schritt {{current}} von {{total}}",
+      "steps": {
+        "duration": "Dauer",
+        "sources": "Playlists",
+        "fresh": "Neue Tracks",
+        "character": "Stimmung"
+      },
+      "next": "Weiter",
+      "back": "Zurück",
+      "duration": {
+        "heading": "Wie lang soll die Session sein?",
+        "m60": "60 Min.",
+        "m90": "90 Min.",
+        "h2": "2 Std.",
+        "h3": "3 Std.",
+        "other": "Andere",
+        "customLabel": "Minuten",
+        "customInvalid": "Gib eine ganze Zahl in Minuten ein"
+      },
+      "sources": {
+        "heading": "Aus welchen Playlists sollen die Tracks kommen?",
+        "hint": "Suche eine Playlist und gib an, was sie enthält. Surco merkt es sich an der Playlist, beim nächsten Mal ist sie also schon hier. Du kannst es auch im Menü jeder Playlist festlegen.",
+        "search": "Unter {{count}} Playlists suchen",
+        "noHits": "Keine Playlist passt",
+        "none": "Noch keine Playlist ausgewählt",
+        "remove": "{{name}} entfernen",
+        "tracks_one": "{{count}} Track",
+        "tracks_other": "{{count}} Tracks",
+        "upTo_one": "Bis zu {{count}} Track zur Auswahl",
+        "upTo_other": "Bis zu {{count}} Tracks zur Auswahl"
+      },
+      "fresh": {
+        "heading": "Möchtest du neue Tracks ausprobieren?",
+        "hint": "Neue Tracks haben keinen Verlauf. Surco platziert sie nach Tonart, Tempo und danach, ob sie Base oder Gesang sind, hinter einem Track, den du schon kennst.",
+        "search": "Playlist mit neuen Tracks suchen",
+        "add": "Hinzufügen",
+        "share": "Neue Tracks in der Session",
+        "shareValue": "{{percent}} %"
+      },
+      "character": {
+        "heading": "Wie soll sie werden?",
+        "alternate": "Base und Gesang abwechseln",
+        "alternateHint": "Base, Gesang, Base, Gesang",
+        "preferCombos": "Bewährte Combos bevorzugen",
+        "preferCombosHint": "Was du in deinen Sets zusammen gespielt hast, zuerst",
+        "tasteWeight": "Was dir am besten gefällt",
+        "tasteWeightHint": "Sterne und Wiedergaben zählen bei der Auswahl",
+        "surprise": "Überrasch mich",
+        "surpriseHint": "Lässt Platz für Paare, die nie zusammen gespielt wurden",
+        "harmony": "Harmonisches Mixen",
+        "harmonyFree": "Frei",
+        "harmonyNeighbours": "Nachbarn",
+        "harmonySame": "Gleiche Tonart",
+        "noKeys": "Keiner der gewählten Tracks hat eine Tonart, daher entfällt das harmonische Mixen"
+      },
+      "loading": "Liest …",
+      "build": "Session erstellen",
+      "loadFailed": "{{names}} konnte nicht gelesen werden und bleibt draußen",
+      "empty": "Die gewählten Playlists enthalten keinen Track für eine Session",
+      "refused": "Die Session konnte nicht geschrieben werden. Prüfe die Meldung und versuche es erneut"
+    },
+    "band": {
+      "title": "Von Surco zusammengestellte Session",
+      "tracks_one": "{{count}} Track",
+      "tracks_other": "{{count}} Tracks",
+      "combos_one": "{{count}} Combo",
+      "combos_other": "{{count}} Combos",
+      "fresh_one": "{{count}} neu",
+      "fresh_other": "{{count}} neu",
+      "harmonic": "{{harmonic}}/{{total}} harmonisch",
+      "redo": "Neu würfeln",
+      "adjust": "Anpassen…",
+      "keep": "So behalten",
+      "short": "Nur genug Tracks für {{minutes}} Min.",
+      "assumed_one": "{{count}} Track ohne Länge, zählt als 6 Min.",
+      "assumed_other": "{{count}} Tracks ohne Länge, zählen je als 6 Min."
+    },
+    "playlistName": "Session vom {{date}}",
+    "closed": "Schließe dein DJ-Programm, um die Session zu erstellen. Bei geöffnetem Programm bliebe die Playlist unvollständig",
+    "why": {
+      "start": "Hier beginnt die Session",
+      "combo_one": "Bewährte Combo in {{count}} Set",
+      "combo_other": "Bewährte Combo in {{count}} Sets",
+      "harmonicSame": "{{from}} → {{to}}, gleiche Tonart",
+      "harmonicRing": "{{from}} → {{to}}, gleicher Ring",
+      "harmonicNeighbour": "{{from}} → {{to}}, Nachbar",
+      "tasteRated": "Unter den bestbewerteten, die passen",
+      "tastePlayed": "Unter den meistgespielten, die passen",
+      "bpm": "Passt vom Tempo her",
+      "bpmRelaxed": "Nichts anderes passte, daher ändert sich das Tempo stärker als üblich",
+      "freshKey": "Neu. Passt zur Tonart {{key}}",
+      "freshTempo": "Neu. Passt vom Tempo her",
+      "chosen": "Von dir gewählt",
+      "change": "Ändern",
+      "pick": "Ändern zu"
+    }
+  },
   "pasteTracklist": {
     "title": "Tracklist in „{{name}}“ einfügen",
     "titleNew": "Neue Playlist aus Tracklist",
@@ -491,6 +604,7 @@
     "musicDuplicates": "Duplikate in Apple Music anzeigen…",
     "listReview": "Metadaten prüfen…",
     "exportUsb": "Auf USB exportieren…",
+    "newSession": "Automatische Session…",
     "goToSource": "Zu {{name}} wechseln",
     "newPlaylist": "Neue Playlist in {{name}}",
     "convertEditOriginal": "Konvertieren und das Original bearbeiten, nur dieses Mal",
@@ -2541,6 +2655,7 @@
       "rename": "Umbenennen",
       "pasteTracklist": "Tracklist einfügen…",
       "newPlaylistFromTracklist": "Playlist aus Tracklist…",
+      "newSession": "Automatische Session…",
       "delete": "Löschen",
       "menu": "Playlist-Aktionen",
       "deleteTitle": "Aus rekordbox löschen",

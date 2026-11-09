@@ -183,6 +183,7 @@ export interface CommandDeps {
   // Undefined where the USB export does not exist (off macOS and Windows, or without a
   // rekordbox collection): not registered rather than shown disabled.
   openUsbExport?: () => void
+  openSessionWizard?: () => void
   selectAll: () => void
   askFillAll: () => void
   moveSelection: (delta: number) => void
@@ -348,6 +349,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     openMusicReview,
     openListReview,
     openUsbExport,
+    openSessionWizard,
     selectAll,
     askFillAll,
     moveSelection,
@@ -470,6 +472,18 @@ export function buildCommands(deps: CommandDeps): Command[] {
             hint: hintFor('export-usb'),
             enabled: true,
             run: openUsbExport,
+          },
+        ]
+      : []),
+    ...(openSessionWizard
+      ? [
+          {
+            id: 'new-session',
+            group: 'library' as const,
+            title: tr('commands.newSession'),
+            hint: hintFor('new-session'),
+            enabled: true,
+            run: openSessionWizard,
           },
         ]
       : []),

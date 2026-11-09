@@ -18,6 +18,119 @@
     "description": "Combine texto e metadados para gerar o nome do arquivo.",
     "apply": "Aplicar"
   },
+  "sessions": {
+    "role": {
+      "title": "Papel para sessões",
+      "base": "Bases",
+      "vocal": "Cantadas",
+      "any": "Misto",
+      "set": "Set"
+    },
+    "roleLetter": {
+      "base": "B",
+      "vocal": "C",
+      "any": "M",
+      "set": "S"
+    },
+    "wizard": {
+      "title": "Montar uma sessão",
+      "step": "Passo {{current}} de {{total}}",
+      "steps": {
+        "duration": "Duração",
+        "sources": "Playlists",
+        "fresh": "Novas",
+        "character": "Estilo"
+      },
+      "next": "Avançar",
+      "back": "Voltar",
+      "duration": {
+        "heading": "Quanto tempo dura a sessão?",
+        "m60": "60 min",
+        "m90": "90 min",
+        "h2": "2 h",
+        "h3": "3 h",
+        "other": "Outra",
+        "customLabel": "Minutos",
+        "customInvalid": "Digite um número inteiro de minutos"
+      },
+      "sources": {
+        "heading": "De quais playlists saem as faixas?",
+        "hint": "Busque uma playlist e diga o que há nela. O Surco guarda isso na playlist, então da próxima vez ela já estará aqui. Também dá para definir pelo menu de cada playlist.",
+        "search": "Buscar entre {{count}} playlists",
+        "noHits": "Nenhuma playlist corresponde",
+        "none": "Nenhuma playlist escolhida ainda",
+        "remove": "Remover {{name}}",
+        "tracks_one": "{{count}} faixa",
+        "tracks_other": "{{count}} faixas",
+        "upTo_one": "Até {{count}} faixa para escolher",
+        "upTo_other": "Até {{count}} faixas para escolher"
+      },
+      "fresh": {
+        "heading": "Quer experimentar faixas novas?",
+        "hint": "Faixas novas não têm histórico. O Surco as coloca por tom, BPM e por serem base ou cantada, depois de uma faixa que você já conhece.",
+        "search": "Buscar uma playlist de faixas novas",
+        "add": "Adicionar",
+        "share": "Faixas novas na sessão",
+        "shareValue": "{{percent}} %"
+      },
+      "character": {
+        "heading": "Como você quer?",
+        "alternate": "Alternar base e cantada",
+        "alternateHint": "Base, cantada, base, cantada",
+        "preferCombos": "Preferir combos comprovados",
+        "preferCombosHint": "O que você já tocou junto nos seus sets, primeiro",
+        "tasteWeight": "O que você mais gosta",
+        "tasteWeightHint": "Estrelas e reproduções pesam na escolha",
+        "surprise": "Surpreenda-me",
+        "surpriseHint": "Deixa espaço para pares que nunca tocaram juntos",
+        "harmony": "Mixagem harmônica",
+        "harmonyFree": "Livre",
+        "harmonyNeighbours": "Vizinhos",
+        "harmonySame": "Mesmo tom",
+        "noKeys": "Nenhuma das faixas escolhidas tem tom, então a mixagem harmônica não se aplica"
+      },
+      "loading": "Lendo…",
+      "build": "Montar sessão",
+      "loadFailed": "{{names}} não pôde ser lido e fica de fora",
+      "empty": "As playlists escolhidas não têm nenhuma faixa para montar uma sessão",
+      "refused": "Não foi possível gravar a sessão. Veja o aviso e tente de novo"
+    },
+    "band": {
+      "title": "Sessão montada pelo Surco",
+      "tracks_one": "{{count}} faixa",
+      "tracks_other": "{{count}} faixas",
+      "combos_one": "{{count}} combo",
+      "combos_other": "{{count}} combos",
+      "fresh_one": "{{count}} nova",
+      "fresh_other": "{{count}} novas",
+      "harmonic": "{{harmonic}}/{{total}} harmônicas",
+      "redo": "Refazer",
+      "adjust": "Ajustar…",
+      "keep": "Ficar assim",
+      "short": "Só há faixas para {{minutes}} min",
+      "assumed_one": "{{count}} faixa sem duração, conta como 6 min",
+      "assumed_other": "{{count}} faixas sem duração, contam como 6 min cada"
+    },
+    "playlistName": "Sessão de {{date}}",
+    "closed": "Feche seu programa de DJ para montar a sessão. Com ele aberto, a playlist ficaria pela metade",
+    "why": {
+      "start": "Onde a sessão começa",
+      "combo_one": "Combo comprovado em {{count}} set",
+      "combo_other": "Combo comprovado em {{count}} sets",
+      "harmonicSame": "{{from}} → {{to}}, mesmo tom",
+      "harmonicRing": "{{from}} → {{to}}, mesmo anel",
+      "harmonicNeighbour": "{{from}} → {{to}}, vizinho",
+      "tasteRated": "Entre as mais bem avaliadas que combinam",
+      "tastePlayed": "Entre as mais ouvidas que combinam",
+      "bpm": "Combina pelo andamento",
+      "bpmRelaxed": "Nenhuma outra combinava, então o andamento muda mais que o normal",
+      "freshKey": "Nova. Combina pelo tom {{key}}",
+      "freshTempo": "Nova. Combina pelo andamento",
+      "chosen": "Escolhida por você",
+      "change": "Trocar",
+      "pick": "Trocar por"
+    }
+  },
   "pasteTracklist": {
     "title": "Colar tracklist em “{{name}}”",
     "titleNew": "Nova playlist a partir de tracklist",
@@ -491,6 +604,7 @@
     "musicDuplicates": "Mostrar duplicatas no Apple Music…",
     "listReview": "Revisar metadados…",
     "exportUsb": "Exportar para USB…",
+    "newSession": "Sessão automática…",
     "goToSource": "Ir para {{name}}",
     "newPlaylist": "Nova playlist no {{name}}",
     "convertEditOriginal": "Converter editando o original, só desta vez",
@@ -2541,6 +2655,7 @@
       "rename": "Renomear",
       "pasteTracklist": "Colar tracklist…",
       "newPlaylistFromTracklist": "Playlist a partir de tracklist…",
+      "newSession": "Sessão automática…",
       "delete": "Apagar",
       "menu": "Ações da playlist",
       "deleteTitle": "Apagar do rekordbox",

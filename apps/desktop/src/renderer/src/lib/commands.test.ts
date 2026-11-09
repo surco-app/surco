@@ -174,6 +174,22 @@ describe('Music review commands', () => {
   })
 })
 
+describe('buildCommands automatic session', () => {
+  it('offers the automatic session only where a playlist can be written', () => {
+    expect(buildCommands(makeDeps()).some((c) => c.id === 'new-session')).toBe(false)
+    const open = vi.fn()
+    commandById(makeDeps({ openSessionWizard: open }), 'new-session').run()
+    expect(open).toHaveBeenCalledOnce()
+  })
+
+  it('files it with the library commands and keeps it enabled', () => {
+    const command = commandById(makeDeps({ openSessionWizard: vi.fn() }), 'new-session')
+    expect(command.group).toBe('library')
+    expect(command.enabled).toBe(true)
+    expect(commandGroups().get('new-session')).toBe('library')
+  })
+})
+
 describe('buildCommands library sources', () => {
   const ids = (deps: Partial<CommandDeps>) =>
     buildCommands(makeDeps(deps))

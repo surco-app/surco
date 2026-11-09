@@ -29,6 +29,9 @@ import {
 import { SAME_CLOCK_FILE } from '../../shared/gridEdit'
 import { emptyMetadata } from '../../shared/metadata'
 import { RECENTLY_ADDED_ID } from '../../shared/recentlyAdded'
+import { childNames, sessionDateLabel } from '../../shared/sessionName'
+import { answersFromSettings, wizardSettingsFrom } from '../../shared/sessionSettings'
+import type { PlaylistRole } from '../../shared/sessionTypes'
 import { resolveBindings } from '../../shared/shortcutDefaults'
 import { TRASH_MAX_BYTES, TRASH_RETENTION_DAYS } from '../../shared/trash'
 import type {
@@ -70,6 +73,9 @@ import { PasteTracklistModal } from './components/PasteTracklistModal'
 import { LivePlayer } from './components/Player'
 import { RekordboxQueuePill } from './components/RekordboxQueuePill'
 import { ResizeHandle } from './components/ResizeHandle'
+import { SessionBand } from './components/SessionBand'
+import { SessionWhyLine } from './components/SessionWhyLine'
+import { SessionWizard } from './components/SessionWizard'
 import { SourceRail } from './components/SourceRail'
 import { flattenPlaylists, SourceTree } from './components/SourceTree'
 import { ToastStack } from './components/ToastStack'
@@ -110,6 +116,10 @@ import { useLibraryAvailable, useOfferPlaylistFields } from './hooks/useRekordbo
 import { PROGRAM_QUEUES, useRekordboxQueue } from './hooks/useRekordboxQueue'
 import { useRetireSuperseded } from './hooks/useRetireSuperseded'
 import { useSessionPersistence } from './hooks/useSessionPersistence'
+import { useSessionRoles } from './hooks/useSessionRoles'
+import { useSessionRows } from './hooks/useSessionRows'
+import { type BuildResult, useSessionRun } from './hooks/useSessionRun'
+import { useSessionWrite } from './hooks/useSessionWrite'
 import { useSettings } from './hooks/useSettings'
 import { useSourceBrowser } from './hooks/useSourceBrowser'
 import { spectrogramOptions } from './hooks/useSpectrogram'
@@ -260,6 +270,8 @@ const SYNC_ISSUES: Record<
 }
 
 const inFiles = (t: TrackItem): boolean => !!t.inFiles
+
+const NO_ROLES: Record<string, PlaylistRole> = {}
 
 const SEEN_SETTLE_MS = 250
 
@@ -851,7 +863,7 @@ export default function App(): React.JSX.Element {
     }).data === true
   const editableSource =
     sourceEdit && (sourceEdit.gate === 'none' || traktorCanSave) ? sourceProgram : null
-  const editRekordbox = useRekordboxEdits(notifyEdit, editableSource ?? 'rekordbox')
+  const editRekordboxRaw = useRekordboxEdits(notifyEdit, editableSource ?? 'rekordbox')
   const dropDiscardedPlaylists = useStableCallback((paths: string[]) =>
     setTracks((prev) => discardPlaylistEdits(prev, paths)),
   )
@@ -1077,6 +1089,88 @@ export default function App(): React.JSX.Element {
     }
     browser.selectPlaylist(node, folders)
   })
+  const sessionProgram = editableSource
+  const sessionRoles = useSessionRoles(settings?.sessionRoles ?? NO_ROLES, sessionProgram, (next) =>
+    saveSettings({ sessionRoles: next }),
+  )
+  const sessionRows = useSessionRows(sessionProgram ?? 'rekordbox')
+  const sessionWriter = useSessionWrite(editRekordboxRaw)
+  const sessionRun = useSessionRun({
+    canWrite: async () => !(await window.api.djAppRunning()),
+    rows: sessionRows,
+    writer: sessionWriter,
+    namesIn: (parentId) => childNames(browser.tree, parentId),
+    nameFor: () => tr('sessions.playlistName', { date: sessionDateLabel(new Date()) }),
+    openPlaylist: (node) => selectPlaylist(node, []),
+    saveAnswers: (answers) => {
+      if (settings)
+        saveSettings({ sessionWizard: wizardSettingsFrom(answers, settings.sessionWizard) })
+    },
+    newSeed: () => Date.now() % 2_147_483_647,
+  })
+  const reportSession = useStableCallback(async (pending: Promise<BuildResult>): Promise<void> => {
+    if ((await pending) === 'closed') notifyEdit(tr('sessions.closed'), 'danger')
+  })
+  const editRekordbox = useStableCallback(
+    async (edit: Parameters<typeof editRekordboxRaw>[0], name: string) => {
+      const result = await editRekordboxRaw(edit, name)
+      if (result.applied && 'playlistId' in edit) sessionRun.noteEdit(edit.playlistId)
+      return result
+    },
+  )
+  const [sessionWizard, setSessionWizard] = useState<{ parentId: string; adjust: boolean } | null>(
+    null,
+  )
+  const openSessionAt = useStableCallback((parentId: string) => {
+    sessionRows.reset()
+    setSessionWizard({ parentId, adjust: false })
+  })
+  const openSessionAdjust = useStableCallback(() => {
+    sessionRows.reset()
+    setSessionWizard({ parentId: sessionRun.recent?.parentId ?? 'root', adjust: true })
+  })
+  const sessionRecent =
+    sessionRun.recent && browser.playlist?.id === sessionRun.recent.playlistId
+      ? sessionRun.recent
+      : null
+  const sessionIndexByPath = useMemo(() => {
+    const byPath = new Map<string, number>()
+    sessionRecent?.plan.items.forEach((item, index) => {
+      const path = sessionRecent.refsById.get(item.track.id)?.paths[0]
+      if (path) byPath.set(path.normalize('NFC'), index)
+    })
+    return byPath
+  }, [sessionRecent])
+  const {
+    busy: sessionBusy,
+    alternatives: sessionAlternatives,
+    swap: swapSessionTrack,
+  } = sessionRun
+  const sessionNoteOf = useCallback(
+    (track: TrackItem) => {
+      const index = sessionIndexByPath.get(track.inputPath.normalize('NFC'))
+      if (!sessionRecent || index === undefined) return undefined
+      const current = track.id === selectedId
+      return (
+        <SessionWhyLine
+          why={sessionRecent.plan.items[index].why}
+          selected={current}
+          busy={sessionBusy}
+          alternatives={current ? sessionAlternatives(index) : []}
+          onPick={(picked) => void reportSession(swapSessionTrack(index, picked))}
+        />
+      )
+    },
+    [
+      sessionRecent,
+      sessionIndexByPath,
+      selectedId,
+      sessionBusy,
+      sessionAlternatives,
+      swapSessionTrack,
+      reportSession,
+    ],
+  )
   const selectSource = useStableCallback((next: PlaylistSource | null) => {
     if (next === browser.source) return
     heldSelection.current = null
@@ -2797,6 +2891,7 @@ export default function App(): React.JSX.Element {
       onRename: renameInRekordbox,
       onDelete: deleteInRekordbox,
       onPasteTracklist: openPasteTracklist,
+      onSession: (node: SourceNode) => openSessionAt(node.id),
       onMove: moveInTree,
       ...(sourceProgram && SOURCE_PROGRAMS[sourceProgram].crates && { crates: true as const }),
     }),
@@ -2806,9 +2901,22 @@ export default function App(): React.JSX.Element {
       renameInRekordbox,
       deleteInRekordbox,
       openPasteTracklist,
+      openSessionAt,
       moveInTree,
       sourceProgram,
     ],
+  )
+  const { forProgram: programRoles, setRole: setPlaylistRole } = sessionRoles
+  const treeRoles = useMemo(
+    () =>
+      editableSource
+        ? {
+            values: programRoles,
+            onChange: (node: SourceNode, role: PlaylistRole | null) =>
+              setPlaylistRole(node.id, role),
+          }
+        : undefined,
+    [editableSource, programRoles, setPlaylistRole],
   )
   // Read at drop time, so a re-read landing mid-drag still names the dragged rows. A track
   // row stands for every row it has in the playlist (the list shows it once), so all of them
@@ -3117,6 +3225,7 @@ export default function App(): React.JSX.Element {
       openMusicReview: isMac ? (filter) => setReview({ source: 'music', filter }) : undefined,
       openListReview: () => openTargetReview('all'),
       openUsbExport: usbAvailable ? () => openUsbExport() : undefined,
+      openSessionWizard: sessionProgram ? () => openSessionAt('root') : undefined,
       selectAll,
       askFillAll: onFillAll,
       moveSelection,
@@ -3268,6 +3377,10 @@ export default function App(): React.JSX.Element {
       setPasteTracklist(null)
       return
     }
+    if (sessionWizard) {
+      if (!sessionRun.busy) setSessionWizard(null)
+      return
+    }
     if (review !== null) return
     // A maximized editor section is an overlay layer too: its own listener
     // restores it, and Escape must stop there — falling through would ALSO
@@ -3284,7 +3397,8 @@ export default function App(): React.JSX.Element {
     copiesOpen !== null ||
     review !== null ||
     usbModal !== null ||
-    pasteTracklist !== null
+    pasteTracklist !== null ||
+    sessionWizard !== null
   overlayOpenRef.current = overlayOpen
 
   useKeyboardShortcuts({
@@ -3586,6 +3700,7 @@ export default function App(): React.JSX.Element {
                       treeUsbProgram ? () => openUsbExport(null, treeUsbProgram) : undefined
                     }
                     newPlaylistRef={newPlaylistRef}
+                    roles={treeRoles}
                   />
                 )}
                 {/* Until there are rows the window is one screen: an empty column beside the
@@ -3710,6 +3825,16 @@ export default function App(): React.JSX.Element {
                               canReviewList ? () => openTargetReview('incomplete') : undefined
                             }
                           />
+                          {sessionRun.recent &&
+                            browser.playlist?.id === sessionRun.recent.playlistId && (
+                              <SessionBand
+                                plan={sessionRun.recent.plan}
+                                busy={sessionRun.busy}
+                                onRedo={() => void reportSession(sessionRun.redo())}
+                                onAdjust={openSessionAdjust}
+                                onKeep={sessionRun.keep}
+                              />
+                            )}
                           {crateOpen && !reorderEnabled && (
                             <p
                               data-testid="reorder-hint"
@@ -3767,6 +3892,7 @@ export default function App(): React.JSX.Element {
                               reorder={reorder}
                               outsideFilter={outsideFilterIds}
                               noteOf={gridNoteOf}
+                              sessionNoteOf={sessionRecent ? sessionNoteOf : undefined}
                               onVisible={onListRowVisible}
                               rowRegistry={rowEls}
                               revealRowRef={revealRowRef}
@@ -4043,6 +4169,29 @@ export default function App(): React.JSX.Element {
                   create={pasteTracklist.create}
                   onAdd={(tracks, newName) => void addPastedTracklist(tracks, newName)}
                   onClose={() => setPasteTracklist(null)}
+                />
+              )}
+            </ModalExit>
+            <ModalExit>
+              {sessionWizard && sessionProgram && settings && browser.tree && (
+                <SessionWizard
+                  tree={browser.tree}
+                  roles={programRoles}
+                  initial={
+                    sessionWizard.adjust && sessionRun.recent
+                      ? sessionRun.recent.answers
+                      : answersFromSettings(settings.sessionWizard)
+                  }
+                  rows={sessionRows}
+                  onRole={setPlaylistRole}
+                  onClose={() => setSessionWizard(null)}
+                  onBuild={async (answers, roles) => {
+                    const result = sessionWizard.adjust
+                      ? await sessionRun.adjust(answers, roles)
+                      : await sessionRun.build(sessionWizard.parentId, answers, roles)
+                    if (result === 'built') setSessionWizard(null)
+                    return result
+                  }}
                 />
               )}
             </ModalExit>
