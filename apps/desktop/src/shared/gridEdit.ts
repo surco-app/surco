@@ -285,7 +285,12 @@ function driftCorrectedBpm(fit: GridFit): number {
 const offbeatFolded = (offsetMs: number, period: number): number =>
   Math.abs(offsetMs) > period / 4 ? offsetMs - Math.sign(offsetMs) * (period / 2) : offsetMs
 
-export function fitGrid(grid: EditableGrid, fit: GridFit, atMs?: number): EditableGrid {
+export function fitGrid(
+  grid: EditableGrid,
+  fit: GridFit,
+  atMs?: number,
+  kicks: number[] = [],
+): EditableGrid {
   const first =
     atMs === undefined
       ? fit.firstMs
@@ -296,7 +301,11 @@ export function fitGrid(grid: EditableGrid, fit: GridFit, atMs?: number): Editab
     const tempo = sameTempo ? bpm : zone.bpm
     const at = atMs ?? first
     const heard = nearestOn(at, first, periodOf(fit.bpm))
-    const off = heard - nearestOn(heard, zone.anchorMs, periodOf(zone.bpm))
+    const off =
+      heard -
+      (kicks.length >= 2
+        ? nearestBeatMs(heard, kicks)
+        : nearestOn(heard, zone.anchorMs, periodOf(zone.bpm)))
     const beatAt = heard - off + offbeatFolded(off, periodOf(fit.bpm))
     return {
       bpm: tempo,
@@ -311,11 +320,11 @@ export function gridOffsets(
   fit: GridFit,
   playheadMs: number,
   durationMs: number,
+  kicks: number[] = beats,
 ): { hereMs: number; endMs: number } {
   const offsetAt = (ms: number): number => {
     const beat = nearestBeatMs(ms, beats)
-    const period = periodOf(fit.bpm)
-    return Math.round(offbeatFolded(beat - nearestOn(beat, phaseNear(fit, ms), period), period))
+    return Math.round(beat - detectedBeatNear(fit, beat, kicks))
   }
   return { hereMs: offsetAt(playheadMs), endMs: offsetAt(durationMs) }
 }

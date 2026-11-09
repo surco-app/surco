@@ -93,6 +93,7 @@ export function CueGridControls({
   onFit,
   onDone,
   zones = true,
+  kicks = [],
   onPin,
 }: {
   grid: EditableGrid | null
@@ -104,6 +105,7 @@ export function CueGridControls({
   onFit: (grid: EditableGrid) => void
   onDone?: () => void
   zones?: boolean
+  kicks?: number[]
   onPin?: (exact: boolean) => void
 }): React.JSX.Element {
   const { t: tr, i18n } = useTranslation()
@@ -226,7 +228,7 @@ export function CueGridControls({
           data-testid="cues-grid-auto"
           data-needs-fix={needsFix && !off ? 'true' : undefined}
           disabled={off || fit === null}
-          onClick={() => grid && fit && onFit(fitGrid(grid, fit, playheadMs))}
+          onClick={() => grid && fit && onFit(fitGrid(grid, fit, playheadMs, kicks))}
           className="press flex h-7 items-center rounded-md border border-[var(--color-line-strong)] px-2 text-xs font-medium text-fg-muted transition-colors hover:bg-[var(--color-hover)] disabled:opacity-40 data-[needs-fix=true]:border-[var(--color-accent)] data-[needs-fix=true]:bg-[var(--color-accent)] data-[needs-fix=true]:font-semibold data-[needs-fix=true]:text-[var(--color-on-accent)]"
         >
           {!disabledReason && <Tooltip label={tr('editor.cues.grid.autoHint')} />}

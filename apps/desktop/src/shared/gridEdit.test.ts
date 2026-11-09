@@ -525,3 +525,32 @@ describe('a detector locked on the offbeat', () => {
     expect(Math.abs(endMs)).toBeLessThanOrEqual(1)
   })
 })
+
+describe('telling the kick by the grid the program analysed', () => {
+  // Onirik (09/11): an earlier Auto left the draft half a beat off, on the offbeat. Folding the
+  // detector toward that draft kept the error and read it as 0 ms. The program's own grid is
+  // what tells kick from offbeat.
+  const period = 60000 / 140
+  const fit = {
+    bpm: 140,
+    firstMs: 3 + period / 2,
+    phases: Array.from({ length: 50 }, (_, i) => ({ ms: 6800 * (i + 1), firstMs: 3 + period / 2 })),
+  }
+  const program = drawn({ bpm: 140, anchorMs: 3 }, 300000)
+  const offbeatDraft = { bpm: 140, anchorMs: 3 + period / 2 }
+
+  it('puts a draft left on the offbeat back on the kick the program analysed', () => {
+    const fitted = fitGrid(offbeatDraft, fit, 0, program)
+    const phase = (((fitted.anchorMs - 3) % period) + period) % period
+    expect(Math.min(phase, period - phase)).toBeLessThan(0.01)
+  })
+
+  it('reads a draft on the offbeat as half a beat off, so Auto is offered', () => {
+    const { hereMs } = gridOffsets(drawn(offbeatDraft, 300000), fit, 30000, 300000, program)
+    expect(Math.abs(hereMs)).toBeGreaterThan(200)
+  })
+
+  it('pins on the kick the program analysed, not on the offbeat the draft follows', () => {
+    expect(detectedBeatNear(fit, 30000, program)).toBeCloseTo(3 + 70 * period, 6)
+  })
+})

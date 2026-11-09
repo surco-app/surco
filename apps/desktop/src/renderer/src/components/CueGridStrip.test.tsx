@@ -19,6 +19,7 @@ function setup(over: Partial<React.ComponentProps<typeof CueGridStrip>> = {}) {
   render(
     <CueGridStrip
       beats={beatsFrom(0)}
+      kicks={over.beats ?? beatsFrom(0)}
       fit={FIT}
       durationMs={DURATION}
       tolerance={10}
@@ -50,6 +51,13 @@ describe('CueGridStrip', () => {
     document.body.innerHTML = ''
     setup({ beats: beatsFrom(0) })
     expect(checks()[0]).toHaveAccessibleName('0:30, rejilla 0 ms')
+  })
+
+  // A draft an earlier Auto left on the offbeat must read as half a beat off, measured against
+  // the kick of the grid the program analysed, not as on the beat.
+  it('reads a draft left on the offbeat as half a beat off the kick of the program grid', () => {
+    setup({ beats: beatsFrom(240), kicks: beatsFrom(0), fit: { bpm: 120, firstMs: 250 } })
+    expect(checks()[0]).toHaveAccessibleName('0:30, rejilla +240 ms')
   })
 
   it('puts the playhead on the kick of a beat when it is clicked, ready to pin it', () => {

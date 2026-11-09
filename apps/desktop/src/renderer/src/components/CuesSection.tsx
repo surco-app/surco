@@ -459,6 +459,7 @@ function Editing({
   const flows = settings.cueFlows
   const active = activeCueFlow(settings)
   const quantize: CueQuantize = provisional ? 'beat' : settings.cueQuantize
+  const programBeats = useMemo(() => read.grid.map((b) => b.ms), [read.grid])
   const programGrid = useMemo(
     () => (provisional ? null : editableGridOf(read.grid)),
     [read, provisional],
@@ -526,7 +527,9 @@ function Editing({
             : null
   const gridFit = useGridFit(cue.contentId, maximized && gridOff === null)
   const offsets =
-    gridFit && state.grid ? gridOffsets(ctx.beats, gridFit, playheadMs, read.durationMs) : null
+    gridFit && state.grid
+      ? gridOffsets(ctx.beats, gridFit, playheadMs, read.durationMs, programBeats)
+      : null
   const tolerance = settings.cueGridTolerance
   const needsFix =
     offsets !== null && Math.max(Math.abs(offsets.hereMs), Math.abs(offsets.endMs)) > tolerance
@@ -535,7 +538,7 @@ function Editing({
   const pins = pinned && sameGrid(pinned.grid, state.grid) ? pinned.pins : []
   const pin = (exact: boolean) => {
     if (!state.grid || gridOff !== null) return
-    const detected = gridFit ? detectedBeatNear(gridFit, playheadMs, ctx.beats) : playheadMs
+    const detected = gridFit ? detectedBeatNear(gridFit, playheadMs, programBeats) : playheadMs
     const period = gridFit ? 60000 / gridFit.bpm : 0
     const at = !exact && Math.abs(detected - playheadMs) <= period / 4 ? detected : playheadMs
     if (pins.some((p) => Math.abs(p - at) < 1)) return
@@ -1623,6 +1626,7 @@ function Editing({
             {gridFit && state.grid && gridOff === null && (
               <CueGridStrip
                 beats={ctx.beats}
+                kicks={programBeats}
                 fit={gridFit}
                 durationMs={read.durationMs}
                 tolerance={tolerance}
@@ -1896,6 +1900,7 @@ function Editing({
                 onFit={fitGridTo}
                 onDone={focusEditor}
                 zones={rekordboxGrid}
+                kicks={programBeats}
                 onPin={pin}
               />
               <DeckDivider />

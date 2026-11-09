@@ -22,6 +22,7 @@ function PinGlyph(): React.JSX.Element {
 
 export function CueGridStrip({
   beats,
+  kicks,
   fit,
   durationMs,
   tolerance,
@@ -30,6 +31,7 @@ export function CueGridStrip({
   onSeek,
 }: {
   beats: number[]
+  kicks: number[]
   fit: GridFit
   durationMs: number
   tolerance: number
@@ -40,7 +42,7 @@ export function CueGridStrip({
   const { t } = useTranslation()
   const pct = (ms: number): string => `${(ms / durationMs) * 100}%`
   const checks = Array.from({ length: CHECKS }, (_, i) => {
-    const kickMs = detectedBeatNear(fit, (durationMs * (i + 0.5)) / CHECKS, beats)
+    const kickMs = detectedBeatNear(fit, (durationMs * (i + 0.5)) / CHECKS, kicks)
     return { kickMs, offsetMs: nearestBeatMs(kickMs, beats) - kickMs }
   })
   const onCheck = (ms: number) => checks.some((c) => Math.abs(c.kickMs - ms) < 1)
