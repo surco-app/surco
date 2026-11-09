@@ -1142,6 +1142,7 @@ export interface AppleMusicTrackMeta {
   // it computed itself (`rating kind: computed`), which is not an opinion to write into
   // anyone's files.
   rating?: number
+  playCount?: number
   // The cover Music holds for this track, for a file that carries none of its own.
   // Measured on a real library: 53% of the tracks are in that state, almost all of them
   // WAVs, and they imported with an empty cover slot even though Music had the picture.
