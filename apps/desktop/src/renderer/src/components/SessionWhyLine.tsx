@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { SessionWhy } from '../../../shared/sessionBuild'
 import type { SessionTrack } from '../../../shared/sessionTypes'
+import { Tooltip } from './Tooltip'
 
 interface Phrase {
   text: string
@@ -73,7 +74,8 @@ export function SessionWhyLine({
   return (
     <div data-testid="session-why" className="flex flex-col gap-1">
       <div className="flex items-center gap-2 text-[11px] leading-4">
-        <span title={phrase.text} className={`min-w-0 truncate ${phrase.tone}`}>
+        <span className={`relative min-w-0 truncate ${phrase.tone}`}>
+          <Tooltip label={phrase.text} />
           {phrase.text}
         </span>
         {canChange && (
