@@ -106,6 +106,7 @@
       "redo": "Refazer",
       "adjust": "Ajustar…",
       "keep": "Ficar assim",
+    "kept": "Mantida como playlist normal",
       "short": "Só há faixas para {{minutes}} min",
     "counted": "Contado a {{minutes}} min por faixa. Os arquivos somam {{audio}}.",
     "countedAtLeast": "Contado a {{minutes}} min por faixa. Os arquivos somam pelo menos {{audio}}.",

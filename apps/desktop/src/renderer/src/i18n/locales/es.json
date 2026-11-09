@@ -106,6 +106,7 @@
       "redo": "Rehacer",
       "adjust": "Ajustar…",
       "keep": "Quedármela así",
+    "kept": "Se queda como playlist normal",
       "short": "Solo hay pistas para {{minutes}} min",
     "counted": "Contado a {{minutes}} min por pista. Los ficheros suman {{audio}}.",
     "countedAtLeast": "Contado a {{minutes}} min por pista. Los ficheros suman al menos {{audio}}.",

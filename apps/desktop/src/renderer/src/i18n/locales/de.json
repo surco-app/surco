@@ -106,6 +106,7 @@
       "redo": "Neu würfeln",
       "adjust": "Anpassen…",
       "keep": "So behalten",
+    "kept": "Bleibt als normale Playlist erhalten",
       "short": "Nur genug Tracks für {{minutes}} Min.",
     "counted": "Gezählt mit {{minutes}} Min. pro Track. Die Dateien dauern zusammen {{audio}}.",
     "countedAtLeast": "Gezählt mit {{minutes}} Min. pro Track. Die Dateien dauern zusammen mindestens {{audio}}.",

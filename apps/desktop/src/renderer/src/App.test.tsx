@@ -10112,6 +10112,15 @@ describe('automatic session from the tree', () => {
       )
     })
 
+    it('says the session stays as a normal playlist when it is kept', async () => {
+      openRekordboxTree({}, WITH_EMPTIED)
+      await openFill()
+      fireEvent.click(screen.getByTestId('session-wizard-build'))
+      fireEvent.click(await screen.findByTestId('session-band-keep'))
+      expect(await screen.findByText('Kept as a normal playlist')).toBeInTheDocument()
+      expect(screen.queryByTestId('session-band')).not.toBeInTheDocument()
+    })
+
     it('shows the band over it, so it can be redone', async () => {
       openRekordboxTree({}, WITH_EMPTIED)
       await openFill()

@@ -1102,8 +1102,7 @@ export default function App(): React.JSX.Element {
     nameFor: () => tr('sessions.playlistName', { date: sessionDateLabel(new Date()) }),
     openPlaylist: (node) => selectPlaylist(node, []),
     saveAnswers: (answers) => {
-      if (settings)
-        saveSettings({ sessionWizard: wizardSettingsFrom(answers) })
+      if (settings) saveSettings({ sessionWizard: wizardSettingsFrom(answers) })
     },
     newSeed: () => Date.now() % 2_147_483_647,
   })
@@ -3849,7 +3848,10 @@ export default function App(): React.JSX.Element {
                                 preferCombos={sessionRun.recent.answers.preferCombos}
                                 onRedo={() => void reportSession(sessionRun.redo())}
                                 onAdjust={openSessionAdjust}
-                                onKeep={sessionRun.keep}
+                                onKeep={() => {
+                                  sessionRun.keep()
+                                  notifyEdit(tr('sessions.band.kept'), 'neutral')
+                                }}
                               />
                             )}
                           {crateOpen && !reorderEnabled && (

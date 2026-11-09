@@ -106,6 +106,7 @@
       "redo": "Redo",
       "adjust": "Adjust…",
       "keep": "Keep it as is",
+    "kept": "Kept as a normal playlist",
       "short": "Only enough tracks for {{minutes}} min",
     "counted": "Counted at {{minutes}} min a track. The files add up to {{audio}}.",
     "countedAtLeast": "Counted at {{minutes}} min a track. The files add up to at least {{audio}}.",
