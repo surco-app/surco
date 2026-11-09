@@ -104,6 +104,13 @@ describe('SessionBand', () => {
     expect(counted).toHaveTextContent('2 h 44 min')
   })
 
+  it('keeps the hours and the minutes of the files together, so the line never breaks inside them', () => {
+    setup({ audioSecs: 9840 })
+    expect(screen.getByTestId('session-band-counted').textContent).toContain(
+      '2\u00a0h\u00a044\u00a0min',
+    )
+  })
+
   it('gives the files in minutes when they last less than an hour', () => {
     setup({ secs: 1800, audioSecs: 2820 })
     expect(screen.getByTestId('session-band-counted')).toHaveTextContent('47 min')

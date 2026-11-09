@@ -13,8 +13,8 @@ function clock(secs: number): string {
 
 function audioLabel(secs: number): string {
   const minutes = Math.round(secs / 60)
-  if (minutes < 60) return `${minutes} min`
-  return `${Math.floor(minutes / 60)} h ${String(minutes % 60).padStart(2, '0')} min`
+  if (minutes < 60) return `${minutes}\u00a0min`
+  return `${Math.floor(minutes / 60)}\u00a0h\u00a0${String(minutes % 60).padStart(2, '0')}\u00a0min`
 }
 
 const UNKNOWN_MINUTES = 6
