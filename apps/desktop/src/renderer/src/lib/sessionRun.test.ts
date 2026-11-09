@@ -5,6 +5,7 @@ import { runSession, sessionOptionsOf } from './sessionRun'
 
 const ANSWERS: SessionAnswers = {
   minutes: 20,
+  playMinutes: 10,
   sources: [],
   fresh: [],
   freshShare: 0,
@@ -153,6 +154,7 @@ describe('runSession', () => {
       sessionOptionsOf({ ...ANSWERS, minutes: 45, surprise: true, harmony: 'same' }, 9),
     ).toEqual({
       minutes: 45,
+      playSecs: 600,
       preferCombos: true,
       harmony: 'same',
       tasteWeight: true,

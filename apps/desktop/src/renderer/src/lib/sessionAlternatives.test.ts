@@ -22,6 +22,7 @@ function track(id: string, over: Partial<SessionTrack> = {}): SessionTrack {
 
 const options: SessionOptions = {
   minutes: 15,
+  playSecs: 3600,
   preferCombos: true,
   harmony: 'free',
   tasteWeight: true,
@@ -33,7 +34,7 @@ const options: SessionOptions = {
 
 function planOf(...tracks: SessionTrack[]): SessionPlan {
   const items: SessionItem[] = tracks.map((t) => ({ track: t, why: { kind: 'chosen' } }))
-  return { items, summary: summarizeSession(items, 900) }
+  return { items, summary: summarizeSession(items, 900, 3600) }
 }
 
 const ids = (list: readonly SessionTrack[]): string[] => list.map((t) => t.id)

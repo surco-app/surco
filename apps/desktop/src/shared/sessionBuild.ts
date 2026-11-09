@@ -4,6 +4,7 @@ import type { SessionTrack, TrackRole } from './sessionTypes'
 
 export interface SessionOptions {
   minutes: number
+  playSecs: number
   preferCombos: boolean
   harmony: 'free' | 'neighbours' | 'same'
   tasteWeight: boolean
@@ -60,8 +61,8 @@ function seeded(seed: number): () => number {
   }
 }
 
-function secsOf(track: SessionTrack): number {
-  return track.secs > 0 ? track.secs : UNKNOWN_SECS
+function secsOf(track: SessionTrack, playSecs: number): number {
+  return Math.min(track.secs > 0 ? track.secs : UNKNOWN_SECS, playSecs)
 }
 
 function tempoGap(a: SessionTrack, b: SessionTrack): number | null {
@@ -123,7 +124,7 @@ export function buildSession(
 
   const averageSecs =
     eligible.length > 0
-      ? eligible.reduce((sum, track) => sum + secsOf(track), 0) / eligible.length
+      ? eligible.reduce((sum, track) => sum + secsOf(track, options.playSecs), 0) / eligible.length
       : UNKNOWN_SECS
   const estimated = Math.max(1, Math.ceil(target / averageSecs))
   const slots = freshSlots(
@@ -141,7 +142,7 @@ export function buildSession(
   const take = (track: SessionTrack, why: SessionWhy): void => {
     used.add(track.id)
     items.push({ track, why })
-    total += secsOf(track)
+    total += secsOf(track, options.playSecs)
     if (track.role === 'base') expected = 'vocal'
     else if (track.role === 'vocal') expected = 'base'
   }
@@ -236,7 +237,7 @@ export function buildSession(
     const { tier } = fitTier(current, open)
     if (tier.length === 0) return null
     const chosen = closestOf(current, tier)
-    if (total + secsOf(chosen) >= target) return null
+    if (total + secsOf(chosen, options.playSecs) >= target) return null
     return { track: chosen, why: { kind: 'fresh', key: chosen.key, role: chosen.role } }
   }
 
@@ -258,12 +259,13 @@ export function buildSession(
     }
   }
 
-  return { items, summary: summarizeSession(items, target) }
+  return { items, summary: summarizeSession(items, target, options.playSecs) }
 }
 
 export function summarizeSession(
   items: readonly SessionItem[],
   targetSecs: number,
+  playSecs: number,
 ): SessionSummary {
   let harmonic = 0
   let withKey = 0
@@ -273,7 +275,7 @@ export function summarizeSession(
     withKey++
     if (distance <= 1) harmonic++
   }
-  const secs = items.reduce((sum, item) => sum + secsOf(item.track), 0)
+  const secs = items.reduce((sum, item) => sum + secsOf(item.track, playSecs), 0)
   return {
     secs,
     tracks: items.length,
@@ -291,10 +293,11 @@ export function swapAt(
   index: number,
   track: SessionTrack,
   targetSecs: number,
+  playSecs: number,
 ): SessionPlan {
   if (index < 0 || index >= plan.items.length) return plan
   const items = plan.items.map((item, i) =>
     i === index ? { track, why: { kind: 'chosen' } as const } : item,
   )
-  return { items, summary: summarizeSession(items, targetSecs) }
+  return { items, summary: summarizeSession(items, targetSecs, playSecs) }
 }

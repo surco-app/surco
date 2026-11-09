@@ -1301,6 +1301,7 @@ describe('cue flows', () => {
     expect(getSettings().sessionRoles).toEqual({})
     expect(getSettings().sessionWizard).toEqual({
       minutes: 90,
+      playMinutes: 3,
       freshShare: 0.15,
       preferCombos: true,
       harmony: 'free',

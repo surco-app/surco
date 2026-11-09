@@ -6,6 +6,7 @@ export type SessionHarmony = 'free' | 'neighbours' | 'same'
 
 export interface SessionWizardSettings {
   minutes: number
+  playMinutes: number
   freshShare: number
   preferCombos: boolean
   harmony: SessionHarmony

@@ -29,6 +29,7 @@ const TREE: SourceNode[] = [
 
 const INITIAL: SessionAnswers = {
   minutes: 90,
+  playMinutes: 3,
   sources: [],
   fresh: [],
   freshShare: 0.15,
@@ -467,6 +468,7 @@ describe('SessionWizard character step', () => {
     expect(onBuild).toHaveBeenCalledExactlyOnceWith(
       {
         minutes: 120,
+        playMinutes: 3,
         sources: ['b90', 'c90'],
         fresh: [],
         freshShare: 0,

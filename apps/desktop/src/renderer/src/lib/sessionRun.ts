@@ -24,6 +24,7 @@ function freshRoleOf(role: PlaylistRole | undefined): TrackRole {
 export function sessionOptionsOf(answers: SessionAnswers, seed: number): SessionOptions {
   return {
     minutes: answers.minutes,
+    playSecs: answers.playMinutes * 60,
     preferCombos: answers.preferCombos,
     harmony: answers.harmony,
     tasteWeight: answers.tasteWeight,

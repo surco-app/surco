@@ -22,6 +22,7 @@ function track(id: string, over: Partial<SessionTrack> = {}): SessionTrack {
 
 const options = (over: Partial<SessionOptions> = {}): SessionOptions => ({
   minutes: 60,
+  playSecs: 3600,
   preferCombos: true,
   harmony: 'free',
   tasteWeight: true,

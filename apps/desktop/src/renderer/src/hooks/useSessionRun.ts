@@ -155,7 +155,13 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
 
   const swap = useStableCallback(async (index: number, track: SessionTrack) => {
     if (!recent) return 'refused'
-    const plan = swapAt(recent.plan, index, track, recent.answers.minutes * 60)
+    const plan = swapAt(
+      recent.plan,
+      index,
+      track,
+      recent.answers.minutes * 60,
+      recent.answers.playMinutes * 60,
+    )
     if (plan === recent.plan) return 'refused'
     return exclusive(async () => {
       const refs = plan.items.map((item) => recent.refsById.get(item.track.id) ?? { paths: [] })

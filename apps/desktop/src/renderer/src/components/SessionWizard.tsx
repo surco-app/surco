@@ -133,6 +133,7 @@ export function SessionWizard({
     const result = await onBuild(
       {
         minutes,
+        playMinutes: initial.playMinutes,
         sources,
         fresh,
         freshShare: fresh.length > 0 ? freshShare : 0,

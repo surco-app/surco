@@ -10,6 +10,7 @@ afterEach(cleanup)
 
 const ANSWERS: SessionAnswers = {
   minutes: 10,
+  playMinutes: 10,
   sources: ['s'],
   fresh: [],
   freshShare: 0,
@@ -482,6 +483,19 @@ describe('useSessionRun swapping a track', () => {
       track: { id: spare.id },
       why: { kind: 'chosen' },
     })
+  })
+
+  it('counts the swapped track for the time it plays, as the rest of the session does', async () => {
+    const { result } = setup()
+    await act(async () => {
+      await result.current.build('folder', { ...ANSWERS, minutes: 4, playMinutes: 2 }, ROLES)
+    })
+    expect(result.current.recent?.plan.summary.secs).toBe(240)
+    const spare = result.current.alternatives(1)[0]
+    await act(async () => {
+      await result.current.swap(1, spare)
+    })
+    expect(result.current.recent?.plan.summary.secs).toBe(240)
   })
 
   it('keeps the seed, so a redo goes on from where the draw was', async () => {

@@ -9,6 +9,7 @@ import {
 
 export const DEFAULT_SESSION_WIZARD: SessionWizardSettings = {
   minutes: 90,
+  playMinutes: 3,
   freshShare: 0.15,
   preferCombos: true,
   harmony: 'free',
@@ -21,6 +22,8 @@ const ROLES: readonly PlaylistRole[] = ['base', 'vocal', 'any', 'set']
 const HARMONIES: readonly SessionHarmony[] = ['free', 'neighbours', 'same']
 const KEY_PROGRAMS = ['rekordbox', 'traktor', 'engine', 'serato']
 const MAX_FRESH_SHARE = 0.4
+const MIN_PLAY_MINUTES = 1
+const MAX_PLAY_MINUTES = 10
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -50,6 +53,7 @@ export function wizardSettingsFrom(
 ): SessionWizardSettings {
   return {
     minutes: answers.minutes,
+    playMinutes: answers.playMinutes,
     freshShare: answers.fresh.length > 0 ? answers.freshShare : previous.freshShare,
     preferCombos: answers.preferCombos,
     harmony: answers.harmony,
@@ -92,11 +96,16 @@ export function normalizeSessionWizard(raw: unknown): SessionWizardSettings {
   const saved = isRecord(raw) ? raw : {}
   const minutes = saved.minutes
   const share = saved.freshShare
+  const play = saved.playMinutes
   return {
     minutes:
       typeof minutes === 'number' && Number.isFinite(minutes) && minutes > 0
         ? Math.round(minutes)
         : DEFAULT_SESSION_WIZARD.minutes,
+    playMinutes:
+      typeof play === 'number' && Number.isFinite(play)
+        ? Math.min(MAX_PLAY_MINUTES, Math.max(MIN_PLAY_MINUTES, Math.round(play)))
+        : DEFAULT_SESSION_WIZARD.playMinutes,
     freshShare:
       typeof share === 'number' && Number.isFinite(share)
         ? Math.min(MAX_FRESH_SHARE, Math.max(0, share))
