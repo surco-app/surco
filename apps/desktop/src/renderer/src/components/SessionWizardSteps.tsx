@@ -140,9 +140,10 @@ export function SourcesStep({
           emptyText={tr('sessions.wizard.sources.noHits')}
           searchLabel={tr('sessions.wizard.sources.search', { count: playlists.length })}
           onlyIds={onlyIds}
-          control={({ id }) =>
+          control={({ id, name }) =>
             id ? (
               <PlaylistRolePicker
+                name={name}
                 value={roles[id] ?? null}
                 onChange={(role) => onPick(id, role)}
                 testIdPrefix={`session-wizard-role-${id}`}
@@ -254,6 +255,7 @@ export function CharacterStep({
           step={1}
           value={playMinutes}
           data-testid="session-wizard-play"
+          aria-valuetext={tr('sessions.wizard.character.playValue', { minutes: playMinutes })}
           onChange={(e) => onPlayMinutes(Number(e.target.value))}
           className="accent-[var(--color-accent)]"
         />
@@ -276,6 +278,9 @@ export function CharacterStep({
             step={1}
             value={Math.round(freshShare * 100)}
             data-testid="session-wizard-fresh-share"
+            aria-valuetext={tr('sessions.wizard.fresh.shareValue', {
+              percent: Math.round(freshShare * 100),
+            })}
             onChange={(e) => onFreshShare(Number(e.target.value) / 100)}
             className="accent-[var(--color-accent)]"
           />

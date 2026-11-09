@@ -173,7 +173,7 @@ describe('SessionWizard sources step', () => {
     fireEvent.click(screen.getByTestId('playlists-folder-rem'))
     fireEvent.click(screen.getByTestId('session-wizard-role-b90-base'))
     expect(screen.getByTestId('session-wizard-summary')).toHaveTextContent(
-        i18n.t('sessions.wizard.sources.summary', { count: 1, tracks: 38 }),
+      i18n.t('sessions.wizard.sources.summary', { count: 1, tracks: 38 }),
     )
   })
 
@@ -212,7 +212,7 @@ describe('SessionWizard sources step', () => {
     fireEvent.change(screen.getByTestId('playlists-search'), { target: { value: 'mak' } })
     fireEvent.click(screen.getByTestId('session-wizard-role-mk97-base'))
     expect(screen.getByTestId('session-wizard-summary')).toHaveTextContent(
-        i18n.t('sessions.wizard.sources.summary', { count: 1, tracks: 22 }),
+      i18n.t('sessions.wizard.sources.summary', { count: 1, tracks: 22 }),
     )
   })
 
@@ -247,7 +247,7 @@ describe('SessionWizard sources step', () => {
     setup({ gone: 'base', b90: 'base' })
     toSources()
     expect(screen.getByTestId('session-wizard-summary')).toHaveTextContent(
-        i18n.t('sessions.wizard.sources.summary', { count: 1, tracks: 38 }),
+      i18n.t('sessions.wizard.sources.summary', { count: 1, tracks: 38 }),
     )
   })
 
@@ -584,6 +584,56 @@ describe('SessionWizard character step', () => {
   })
 })
 
+describe('SessionWizard for assistive technology', () => {
+  it('names the role buttons of every row after its playlist', () => {
+    setup()
+    toSources()
+    fireEvent.click(screen.getByTestId('playlists-folder-rem'))
+    expect(
+      screen.getByRole('group', { name: i18n.t('sessions.role.of', { name: 'Bases 90' }) }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('group', { name: i18n.t('sessions.role.of', { name: 'COMBOS' }) }),
+    ).toBeInTheDocument()
+  })
+
+  it('reads the time each track plays with its unit, not as a bare number', async () => {
+    setup({ b90: 'base' })
+    await toCharacter()
+    expect(screen.getByTestId('session-wizard-play')).toHaveAttribute(
+      'aria-valuetext',
+      i18n.t('sessions.wizard.character.playValue', { minutes: 3 }),
+    )
+  })
+
+  it('reads the share of new tracks as a percentage', async () => {
+    const today = new Date().toISOString().slice(0, 10)
+    setup(
+      { b90: 'base' },
+      INITIAL,
+      fakeRows({
+        b90: [
+          { path: '/m/k.mp3', separator: false, meta: { rating: 80, dateAdded: '2025-01-01' } },
+          { path: '/m/n.mp3', separator: false, meta: { dateAdded: today } },
+        ],
+      }),
+    )
+    await toCharacter()
+    expect(screen.getByTestId('session-wizard-fresh-share')).toHaveAttribute(
+      'aria-valuetext',
+      i18n.t('sessions.wizard.fresh.shareValue', { percent: 15 }),
+    )
+  })
+
+  it('announces a problem when building fails, without taking the focus', async () => {
+    const { onBuild } = setup({ b90: 'base' })
+    onBuild.mockResolvedValue('refused')
+    await toCharacter()
+    fireEvent.click(screen.getByTestId('session-wizard-build'))
+    expect(await screen.findByRole('status')).toHaveTextContent(i18n.t('sessions.wizard.refused'))
+  })
+})
+
 describe('SessionWizard playlists that are not playlists', () => {
   it('leaves out the playlists that are only a line of dashes, which DJs use as separators', () => {
     setup()
@@ -610,8 +660,7 @@ describe('SessionWizard keeping the view when going back', () => {
 })
 
 describe('SessionWizard keyboard', () => {
-  const commandEnter = () =>
-    fireEvent.keyDown(window, { key: 'Enter', metaKey: true })
+  const commandEnter = () => fireEvent.keyDown(window, { key: 'Enter', metaKey: true })
 
   it('goes on to the next step with Command and Enter', () => {
     setup({ b90: 'base' })

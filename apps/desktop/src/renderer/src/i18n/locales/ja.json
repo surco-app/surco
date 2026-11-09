@@ -21,6 +21,7 @@
   "sessions": {
     "role": {
       "title": "セッション用の役割",
+    "of": "{{name}} の役割",
       "base": "ベース",
       "vocal": "ボーカル",
       "any": "ミックス"

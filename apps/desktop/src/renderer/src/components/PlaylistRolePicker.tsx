@@ -14,14 +14,19 @@ export function PlaylistRolePicker({
   value,
   onChange,
   testIdPrefix,
+  name,
 }: {
   value: PlaylistRole | null
   onChange: (role: PlaylistRole | null) => void
   testIdPrefix: string
+  name?: string
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   return (
-    <fieldset aria-label={tr('sessions.role.title')} className="flex min-w-0 flex-wrap gap-1">
+    <fieldset
+      aria-label={name ? tr('sessions.role.of', { name }) : tr('sessions.role.title')}
+      className="flex min-w-0 flex-wrap gap-1"
+    >
       {ROLES.map((role) => (
         <button
           key={role}

@@ -21,6 +21,7 @@
   "sessions": {
     "role": {
       "title": "Papel para sessões",
+    "of": "Papel de {{name}}",
       "base": "Bases",
       "vocal": "Cantadas",
       "any": "Misto"

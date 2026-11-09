@@ -21,6 +21,7 @@
   "sessions": {
     "role": {
       "title": "Role for sessions",
+    "of": "Role of {{name}}",
       "base": "Bases",
       "vocal": "Vocals",
       "any": "Mixed"

@@ -47,4 +47,18 @@ describe('PlaylistRolePicker', () => {
     fireEvent.click(screen.getByTestId('pick-any'))
     expect(onChange).toHaveBeenCalledExactlyOnceWith(null)
   })
+
+  it('names its group after the playlist it belongs to, so a screen reader can tell them apart', () => {
+    render(
+      <PlaylistRolePicker value={null} onChange={vi.fn()} testIdPrefix="pick" name="Bases 90" />,
+    )
+    expect(
+      screen.getByRole('group', { name: i18n.t('sessions.role.of', { name: 'Bases 90' }) }),
+    ).toBeInTheDocument()
+  })
+
+  it('keeps the general name when it is not told which playlist it is for', () => {
+    setup(null)
+    expect(screen.getByRole('group', { name: i18n.t('sessions.role.title') })).toBeInTheDocument()
+  })
 })

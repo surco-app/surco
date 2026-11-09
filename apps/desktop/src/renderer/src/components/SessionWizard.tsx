@@ -292,7 +292,11 @@ export function SessionWizard({
         </p>
       )}
       {problem && (
-        <p data-testid={`session-wizard-${problem}`} className="mt-3 text-xs text-warn">
+        <p
+          data-testid={`session-wizard-${problem}`}
+          role="status"
+          className="mt-3 text-xs text-warn"
+        >
           {tr(PROBLEM_TEXT[problem])}
         </p>
       )}

@@ -66,10 +66,13 @@ export function SessionBand({
         )}
       </p>
       <p data-testid="session-band-counted" className="text-xs text-fg-dim">
-        {tr(summary.missingDurations > 0 ? 'sessions.band.countedAtLeast' : 'sessions.band.counted', {
-          minutes: playMinutes,
-          audio: audioLabel(summary.audioSecs),
-        })}
+        {tr(
+          summary.missingDurations > 0 ? 'sessions.band.countedAtLeast' : 'sessions.band.counted',
+          {
+            minutes: playMinutes,
+            audio: audioLabel(summary.audioSecs),
+          },
+        )}
       </p>
       {preferCombos && summary.combos === 0 && (
         <p data-testid="session-band-nocombos" className="text-xs text-fg-dim">
