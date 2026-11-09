@@ -106,6 +106,7 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
       const seed = deps.newSeed()
       const run = await produce(answers, roles, seed)
       if (run.refs.length === 0) return 'empty'
+      if (!(await deps.canWrite())) return 'closed'
       const name = deps.nameFor()
       const shown = uniqueName(name, deps.namesIn(parentId))
       const id = await deps.writer.create(parentId, shown, run.refs)
@@ -123,6 +124,7 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
       deps.rows.reset()
       const run = await produce(answers, roles, seed)
       if (run.refs.length === 0) return 'empty'
+      if (!(await deps.canWrite())) return 'closed'
       const shown = uniqueName(previous.name, deps.namesIn(previous.parentId))
       const id = await deps.writer.replace(previous.parentId, previous.playlistId, shown, run.refs)
       return id === null

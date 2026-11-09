@@ -355,6 +355,34 @@ describe('useSessionRun with the DJ program open', () => {
     expect(replace).not.toHaveBeenCalled()
   })
 
+  it('checks again right before writing, in case a program opened while the playlists were read', async () => {
+    const canWrite = vi
+      .fn<() => Promise<boolean>>()
+      .mockResolvedValueOnce(true)
+      .mockResolvedValue(false)
+    const { result } = setup({ canWrite })
+
+    let outcome: string | undefined
+    await act(async () => {
+      outcome = await result.current.build('folder', ANSWERS, ROLES)
+    })
+
+    expect(outcome).toBe('closed')
+    expect(canWrite).toHaveBeenCalledTimes(2)
+    expect(create).not.toHaveBeenCalled()
+  })
+
+  it('checks again before a redo writes as well', async () => {
+    let calls = 0
+    const { result } = await built({ canWrite: async () => ++calls <= 2 })
+    let outcome: string | undefined
+    await act(async () => {
+      outcome = await result.current.redo()
+    })
+    expect(outcome).toBe('closed')
+    expect(replace).not.toHaveBeenCalled()
+  })
+
   it('writes again once the program is closed', async () => {
     let open = true
     const { result } = setup({ canWrite: async () => !open })
