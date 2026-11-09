@@ -18,6 +18,21 @@
     "description": "Combina texto y metadatos para generar el nombre del archivo.",
     "apply": "Aplicar"
   },
+  "sessions": {
+    "role": {
+      "title": "Papel para sesiones",
+      "base": "Bases",
+      "vocal": "Cantaditas",
+      "any": "De todo",
+      "set": "Set"
+    },
+    "roleLetter": {
+      "base": "B",
+      "vocal": "C",
+      "any": "D",
+      "set": "S"
+    }
+  },
   "pasteTracklist": {
     "title": "Pegar tracklist en «{{name}}»",
     "titleNew": "Nueva playlist desde tracklist",

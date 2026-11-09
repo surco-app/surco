@@ -18,6 +18,21 @@
     "description": "Combine du texte et des métadonnées pour composer le nom du fichier.",
     "apply": "Appliquer"
   },
+  "sessions": {
+    "role": {
+      "title": "Rôle pour les sessions",
+      "base": "Bases",
+      "vocal": "Voix",
+      "any": "Mixte",
+      "set": "Set"
+    },
+    "roleLetter": {
+      "base": "B",
+      "vocal": "V",
+      "any": "M",
+      "set": "S"
+    }
+  },
   "pasteTracklist": {
     "title": "Coller la tracklist dans « {{name}} »",
     "titleNew": "Nouvelle playlist depuis une tracklist",

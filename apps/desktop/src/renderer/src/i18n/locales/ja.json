@@ -18,6 +18,21 @@
     "description": "テキストとメタデータを組み合わせてファイル名を作成します。",
     "apply": "適用"
   },
+  "sessions": {
+    "role": {
+      "title": "セッション用の役割",
+      "base": "ベース",
+      "vocal": "ボーカル",
+      "any": "ミックス",
+      "set": "セット"
+    },
+    "roleLetter": {
+      "base": "ベ",
+      "vocal": "ボ",
+      "any": "ミ",
+      "set": "セ"
+    }
+  },
   "pasteTracklist": {
     "title": "「{{name}}」にトラックリストを貼り付け",
     "titleNew": "トラックリストから新しいプレイリスト",

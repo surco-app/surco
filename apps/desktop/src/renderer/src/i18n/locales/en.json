@@ -18,6 +18,21 @@
     "description": "Combine text and metadata to build the file name.",
     "apply": "Apply"
   },
+  "sessions": {
+    "role": {
+      "title": "Role for sessions",
+      "base": "Bases",
+      "vocal": "Vocals",
+      "any": "Mixed",
+      "set": "Set"
+    },
+    "roleLetter": {
+      "base": "B",
+      "vocal": "V",
+      "any": "M",
+      "set": "S"
+    }
+  },
   "pasteTracklist": {
     "title": "Paste tracklist into “{{name}}”",
     "titleNew": "New playlist from tracklist",

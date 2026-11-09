@@ -18,6 +18,21 @@
     "description": "Kombiniere Text und Metadaten, um den Dateinamen zu erstellen.",
     "apply": "Anwenden"
   },
+  "sessions": {
+    "role": {
+      "title": "Rolle für Sessions",
+      "base": "Bases",
+      "vocal": "Gesang",
+      "any": "Gemischt",
+      "set": "Set"
+    },
+    "roleLetter": {
+      "base": "B",
+      "vocal": "G",
+      "any": "M",
+      "set": "S"
+    }
+  },
   "pasteTracklist": {
     "title": "Tracklist in „{{name}}“ einfügen",
     "titleNew": "Neue Playlist aus Tracklist",

@@ -29,6 +29,8 @@ import {
 import { SAME_CLOCK_FILE } from '../../shared/gridEdit'
 import { emptyMetadata } from '../../shared/metadata'
 import { RECENTLY_ADDED_ID } from '../../shared/recentlyAdded'
+import { rolesForProgram, withPlaylistRole } from '../../shared/sessionSettings'
+import type { PlaylistRole } from '../../shared/sessionTypes'
 import { resolveBindings } from '../../shared/shortcutDefaults'
 import { TRASH_MAX_BYTES, TRASH_RETENTION_DAYS } from '../../shared/trash'
 import type {
@@ -2810,6 +2812,24 @@ export default function App(): React.JSX.Element {
       sourceProgram,
     ],
   )
+  const treeRoles = useMemo(
+    () =>
+      editableSource && settings
+        ? {
+            values: rolesForProgram(settings.sessionRoles, editableSource),
+            onChange: (node: SourceNode, role: PlaylistRole | null) =>
+              saveSettings({
+                sessionRoles: withPlaylistRole(
+                  settings.sessionRoles,
+                  editableSource,
+                  node.id,
+                  role,
+                ),
+              }),
+          }
+        : undefined,
+    [editableSource, settings, saveSettings],
+  )
   // Read at drop time, so a re-read landing mid-drag still names the dragged rows. A track
   // row stands for every row it has in the playlist (the list shows it once), so all of them
   // move together; a separator key is its own link.
@@ -3586,6 +3606,7 @@ export default function App(): React.JSX.Element {
                       treeUsbProgram ? () => openUsbExport(null, treeUsbProgram) : undefined
                     }
                     newPlaylistRef={newPlaylistRef}
+                    roles={treeRoles}
                   />
                 )}
                 {/* Until there are rows the window is one screen: an empty column beside the

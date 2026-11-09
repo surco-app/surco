@@ -3,12 +3,52 @@ import {
   DEFAULT_SESSION_WIZARD,
   normalizeSessionRoles,
   normalizeSessionWizard,
+  rolesForProgram,
+  withPlaylistRole,
 } from './sessionSettings'
 import { sessionRoleKey } from './sessionTypes'
 
 describe('sessionRoleKey', () => {
   it('names a playlist by its program and id', () => {
     expect(sessionRoleKey('rekordbox', '12')).toBe('rekordbox:12')
+  })
+})
+
+describe('rolesForProgram', () => {
+  it('lists the roles of one program by playlist id and leaves the others out', () => {
+    expect(
+      rolesForProgram(
+        { 'rekordbox:1': 'base', 'rekordbox:Top/Mix': 'set', 'traktor:1': 'vocal' },
+        'rekordbox',
+      ),
+    ).toEqual({ '1': 'base', 'Top/Mix': 'set' })
+  })
+
+  it('keeps an id that itself holds a colon', () => {
+    expect(rolesForProgram({ 'serato:Sets:Friday': 'set' }, 'serato')).toEqual({
+      'Sets:Friday': 'set',
+    })
+  })
+})
+
+describe('withPlaylistRole', () => {
+  it('adds a role without touching the roles it was given', () => {
+    const before = { 'rekordbox:1': 'base' as const }
+    const after = withPlaylistRole(before, 'rekordbox', '2', 'set')
+    expect(after).toEqual({ 'rekordbox:1': 'base', 'rekordbox:2': 'set' })
+    expect(before).toEqual({ 'rekordbox:1': 'base' })
+  })
+
+  it('replaces the role of a playlist', () => {
+    expect(withPlaylistRole({ 'rekordbox:1': 'base' }, 'rekordbox', '1', 'vocal')).toEqual({
+      'rekordbox:1': 'vocal',
+    })
+  })
+
+  it('takes a role away with null', () => {
+    expect(
+      withPlaylistRole({ 'rekordbox:1': 'base', 'traktor:1': 'set' }, 'rekordbox', '1', null),
+    ).toEqual({ 'traktor:1': 'set' })
   })
 })
 
