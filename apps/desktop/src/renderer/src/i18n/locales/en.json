@@ -1275,12 +1275,6 @@
         "serato": "Serato's beat grid comes from Serato and can't be changed here",
         "pin": "Pin",
         "pinHint": "Pin the beat nearest the playhead (G). With ⇧, right at the playhead",
-        "track": "Whole track",
-        "trackFits": "Fits from start to end",
-        "trackOff_one": "{{count}} of {{total}} stretches off",
-        "trackOff_other": "{{count}} of {{total}} stretches off",
-        "unpin_one": "Remove the pin",
-        "unpin_other": "Remove the {{count}} pins",
         "window": "{{time}}, grid {{ms}}"
       },
       "offGrid": {

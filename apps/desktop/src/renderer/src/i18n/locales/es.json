@@ -1275,12 +1275,6 @@
         "serato": "La rejilla de Serato viene de Serato y no se puede cambiar aquí",
         "pin": "Clavar",
         "pinHint": "Clavar el golpe más cercano al cabezal (G). Con ⇧, justo en el cabezal",
-        "track": "Toda la pista",
-        "trackFits": "Cuadra de principio a fin",
-        "trackOff_one": "{{count}} de {{total}} tramos fuera",
-        "trackOff_other": "{{count}} de {{total}} tramos fuera",
-        "unpin_one": "Quitar el clavo",
-        "unpin_other": "Quitar los {{count}} clavos",
         "window": "{{time}}, rejilla {{ms}}"
       },
       "offGrid": {

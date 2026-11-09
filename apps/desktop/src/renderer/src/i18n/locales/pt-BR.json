@@ -1275,12 +1275,6 @@
         "serato": "A grade do Serato vem do Serato e não pode ser alterada aqui",
         "pin": "Fixar",
         "pinHint": "Fixar a batida mais próxima do cursor (G). Com ⇧, exatamente no cursor",
-        "track": "Faixa inteira",
-        "trackFits": "Encaixa do início ao fim",
-        "trackOff_one": "{{count}} de {{total}} trechos fora",
-        "trackOff_other": "{{count}} de {{total}} trechos fora",
-        "unpin_one": "Tirar o alfinete",
-        "unpin_other": "Tirar os {{count}} alfinetes",
         "window": "{{time}}, grade {{ms}}"
       },
       "offGrid": {

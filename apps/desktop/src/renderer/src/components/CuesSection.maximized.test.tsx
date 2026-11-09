@@ -286,25 +286,24 @@ describe('CuesSection maximized', () => {
     expect(screen.getByTestId('cues-deck').parentElement).toBe(screen.getByTestId('cues-editor'))
   })
 
-  it('lays rekordbox phrases in a band right under the overview in the full editor, and keeps the folded section without it', async () => {
-    setup(null, {
-      ...READ,
-      sections: [
-        { ms: 0, label: 'Intro', kind: 'intro' },
-        { ms: 32000, label: 'Chorus', kind: 'chorus' },
-      ],
-    })
-    await ready()
-    expect(screen.queryByTestId('cue-phrases')).toBeNull()
-    fireEvent.click(screen.getByTestId('section-maximize'))
-    await waitFor(() => expect(screen.getByTestId('cue-phrases')).toBeInTheDocument())
-    expect(screen.getAllByTestId('cue-phrase').map((l) => l.textContent)).toEqual([
-      'Intro',
-      'Chorus',
-    ])
-    expect(screen.getByTestId('cue-wave').nextElementSibling).toBe(
-      screen.getByTestId('cue-phrases'),
+  // The DJ reads the whole-track wave for where the grid sits, not rekordbox's phrase names,
+  // so the row under it shows how far the grid is from the kick across the track.
+  it('shows how the grid sits across the track right under the overview, in place of the phrase names', async () => {
+    setup(
+      null,
+      {
+        ...READ,
+        sections: [
+          { ms: 0, label: 'Intro', kind: 'intro' },
+          { ms: 32000, label: 'Chorus', kind: 'chorus' },
+        ],
+      },
+      { rekordboxGridFit: vi.fn<Api['rekordboxGridFit']>(async () => ({ bpm: 120, firstMs: 46 })) },
     )
+    await maximize()
+    const checks = await screen.findByTestId('cues-grid-windows')
+    expect(screen.getByTestId('cue-wave').nextElementSibling).toBe(checks)
+    expect(screen.queryByText('Chorus')).toBeNull()
   })
 
   it('starts below the macOS window controls, so the cover and title never sit under the traffic lights', async () => {
@@ -1740,7 +1739,7 @@ describe('CuesSection maximized grid', () => {
       key('g')
       expect(bars()).toContain(30046)
       expect(bars()).not.toContain(30000)
-      expect(screen.getByTestId('cues-grid-unpin')).toHaveTextContent('Remove the pin')
+      expect(screen.getByTestId('cues-grid-pin-30046')).toBeInTheDocument()
       expect(screen.getByTestId('cues-unsaved')).toBeInTheDocument()
     })
 
@@ -1754,14 +1753,14 @@ describe('CuesSection maximized grid', () => {
       await pinned()
       key('G', { shiftKey: true })
       expect(bars()).toContain(30000)
-      expect(screen.getByTestId('cues-grid-unpin')).toBeInTheDocument()
+      expect(screen.getByTestId('cues-grid-pin-30000')).toBeInTheDocument()
     })
 
     it('leaves ⌘G alone', async () => {
       await pinned()
       key('g', { metaKey: true })
       expect(bars()).toContain(30000)
-      expect(screen.queryByTestId('cues-grid-unpin')).not.toBeInTheDocument()
+      expect(screen.queryAllByTestId(/^cues-grid-pin-\d/)).toHaveLength(0)
     })
 
     // A pin left over from a grid that ⌘Z took back would pull the next pin's tempo
@@ -1771,7 +1770,7 @@ describe('CuesSection maximized grid', () => {
       key('g')
       key('z', { metaKey: true })
       expect(bars()).toContain(30000)
-      expect(screen.queryByTestId('cues-grid-unpin')).not.toBeInTheDocument()
+      expect(screen.queryAllByTestId(/^cues-grid-pin-\d/)).toHaveLength(0)
     })
   })
 

@@ -1275,12 +1275,6 @@
         "serato": "La grille de Serato vient de Serato et ne peut pas être modifiée ici",
         "pin": "Épingler",
         "pinHint": "Épingler le temps le plus proche de la tête de lecture (G). Avec ⇧, pile sur la tête de lecture",
-        "track": "Tout le morceau",
-        "trackFits": "Cale du début à la fin",
-        "trackOff_one": "{{count}} tronçon sur {{total}} décalé",
-        "trackOff_other": "{{count}} tronçons sur {{total}} décalés",
-        "unpin_one": "Retirer l’épingle",
-        "unpin_other": "Retirer les {{count}} épingles",
         "window": "{{time}}, grille {{ms}}"
       },
       "offGrid": {

@@ -65,13 +65,17 @@ function Bars({
   const width = times ? 24 : 22
   return (
     <svg width={width} height="12" viewBox={`0 0 ${width} 12`} aria-hidden="true">
-      <path d="M8 1v10M11 1v10M14 1v10" stroke="currentColor" strokeWidth="1.3" />
+      <path
+        d={times ? 'M2 1v10M5 1v10M8 1v10' : 'M8 1v10M11 1v10M14 1v10'}
+        stroke="currentColor"
+        strokeWidth="1.3"
+      />
       {left === 'in' && <path d="M1 6l4-3.5v7z" fill="currentColor" />}
       {left === 'out' && <path d="M5.5 6L1.5 2.5v7z" fill="currentColor" />}
       {right === 'out' && <path d="M21 6l-4-3.5v7z" fill="currentColor" />}
       {right === 'in' && <path d="M16.5 6l4-3.5v7z" fill="currentColor" />}
       {times && (
-        <text x="16" y="10" fontSize="8" fontWeight="700" fill="currentColor">
+        <text x="11" y="10" fontSize="9" fontWeight="700" fill="currentColor">
           {times}
         </text>
       )}

@@ -75,7 +75,7 @@ export function CueZoom({
       data-testid="cue-zoom"
       className={
         row
-          ? 'flex shrink-0 items-center gap-0.5'
+          ? 'flex h-7 shrink-0 items-center gap-0.5'
           : 'absolute top-0 right-full mr-1 flex flex-col gap-1'
       }
     >

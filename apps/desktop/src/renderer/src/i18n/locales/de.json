@@ -1275,12 +1275,6 @@
         "serato": "Das Raster von Serato kommt aus Serato und lässt sich hier nicht ändern",
         "pin": "Anheften",
         "pinHint": "Den Schlag am nächsten zum Abspielkopf anheften (G). Mit ⇧ genau am Abspielkopf",
-        "track": "Ganzer Track",
-        "trackFits": "Passt von Anfang bis Ende",
-        "trackOff_one": "{{count}} von {{total}} Abschnitten daneben",
-        "trackOff_other": "{{count}} von {{total}} Abschnitten daneben",
-        "unpin_one": "Nadel entfernen",
-        "unpin_other": "Die {{count}} Nadeln entfernen",
         "window": "{{time}}, Raster {{ms}}"
       },
       "offGrid": {

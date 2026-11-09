@@ -115,7 +115,6 @@ import { CueGridControls } from './CueGridControls'
 import { CueGridStrip } from './CueGridStrip'
 import { CueOffGridBar } from './CueOffGridBar'
 import { CuePalette } from './CuePalette'
-import { CuePhraseBand } from './CuePhraseBand'
 import { CueWave } from './CueWave'
 import { CueWaveDetail, CueZoom } from './CueWaveDetail'
 import { SectionBody } from './SectionBody'
@@ -1617,22 +1616,19 @@ function Editing({
           </div>
           <div className="flex shrink-0 flex-col gap-1">
             {strip}
-            <CuePhraseBand sections={read.sections ?? []} durationMs={read.durationMs} />
+            {gridFit && state.grid && gridOff === null && (
+              <CueGridStrip
+                beats={ctx.beats}
+                fit={gridFit}
+                durationMs={read.durationMs}
+                tolerance={tolerance}
+                playheadMs={playheadMs}
+                pins={pins}
+                onSeek={seekTo}
+              />
+            )}
           </div>
           {detail}
-          {gridFit && state.grid && gridOff === null && (
-            <CueGridStrip
-              source={source}
-              beats={ctx.beats}
-              fit={gridFit}
-              durationMs={read.durationMs}
-              tolerance={tolerance}
-              playheadMs={playheadMs}
-              pins={pins}
-              onSeek={seekTo}
-              onClearPins={() => setPinned(null)}
-            />
-          )}
           <TwinRows plans={twins} onOverwrite={overwriteTwin} />
         </>
       ) : (
