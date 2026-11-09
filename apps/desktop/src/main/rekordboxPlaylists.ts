@@ -77,6 +77,7 @@ export interface EntryRow {
   BPM: number | null
   Rating: number | null
   DJPlayCount: number | null
+  StockDate?: string | null
   ScaleName: string | null
   sep: number
 }
@@ -97,6 +98,8 @@ function metaOf(row: EntryRow): AppleMusicTrackMeta {
   if (row.Rating && row.Rating > 0) meta.rating = row.Rating * 20
   const plays = Number(row.DJPlayCount)
   if (plays > 0) meta.playCount = plays
+  const added = row.StockDate?.trim()
+  if (added) meta.dateAdded = added
   return meta
 }
 
@@ -113,7 +116,7 @@ export function entryPath(stored: string, impl: typeof path = path): string {
 export function readRekordboxPlaylist(db: RekordboxDb, id: string): SourcePlaylistEntry[] {
   const rows = db
     .prepare(
-      `SELECT s.ID AS linkId, c.ID AS contentId, c.FolderPath, c.FileType, c.BPM, c.Rating, c.DJPlayCount, k.ScaleName, ${IS_SEPARATOR} AS sep
+      `SELECT s.ID AS linkId, c.ID AS contentId, c.FolderPath, c.FileType, c.BPM, c.Rating, c.DJPlayCount, c.StockDate, k.ScaleName, ${IS_SEPARATOR} AS sep
          FROM djmdSongPlaylist s
          JOIN djmdContent c ON c.ID = s.ContentID
          LEFT JOIN djmdKey k ON k.ID = c.KeyID
@@ -142,7 +145,7 @@ function recentSince(now: Date): string {
 function readContent(db: RekordboxDb, where: string, params: string[]): SourcePlaylistEntry[] {
   const rows = db
     .prepare(
-      `SELECT c.ID AS linkId, c.ID AS contentId, c.FolderPath, c.FileType, c.BPM, c.Rating, c.DJPlayCount, k.ScaleName, 0 AS sep
+      `SELECT c.ID AS linkId, c.ID AS contentId, c.FolderPath, c.FileType, c.BPM, c.Rating, c.DJPlayCount, c.StockDate, k.ScaleName, 0 AS sep
          FROM djmdContent c
          LEFT JOIN djmdKey k ON k.ID = c.KeyID
         WHERE ${where}

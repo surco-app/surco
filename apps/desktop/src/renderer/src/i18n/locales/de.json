@@ -31,7 +31,6 @@
       "steps": {
         "duration": "Dauer",
         "sources": "Playlists",
-        "fresh": "Neue Tracks",
         "character": "Stimmung"
       },
       "next": "Weiter",
@@ -52,14 +51,13 @@
         "search": "Unter {{count}} Playlists suchen",
         "noHits": "Keine Playlist passt",
         "none": "Noch keine Playlist ausgewählt",
-        "remove": "{{name}} entfernen",
+        "onlyChosen": "Nur die gewählten zeigen",
+        "allPlaylists": "Alle Playlists zeigen",
         "summary_one": "{{count}} Playlist gewählt, bis zu {{tracks}} Tracks zur Auswahl",
         "summary_other": "{{count}} Playlists gewählt, bis zu {{tracks}} Tracks zur Auswahl"
       },
       "fresh": {
-        "heading": "Möchtest du neue Tracks ausprobieren?",
-        "hint": "Neue Tracks haben keinen Verlauf. Surco platziert sie nach Tonart, Tempo und danach, ob sie Base oder Gesang sind, hinter einem Track, den du schon kennst.",
-        "search": "Playlist mit neuen Tracks suchen",
+        "hint": "Neu sind Tracks, die in den letzten 30 Tagen hinzugekommen sind. Speichert das Programm keine Daten, sind es Tracks ohne Wiedergaben und Sterne.",
         "share": "Neue Tracks in der Session",
         "shareValue": "{{percent}} %"
       },

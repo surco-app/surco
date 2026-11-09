@@ -31,7 +31,6 @@ import { emptyMetadata } from '../../shared/metadata'
 import { RECENTLY_ADDED_ID } from '../../shared/recentlyAdded'
 import { childNames, parentIdOf, sessionDateLabel } from '../../shared/sessionName'
 import { answersFromSettings, wizardSettingsFrom } from '../../shared/sessionSettings'
-import type { PlaylistRole } from '../../shared/sessionTypes'
 import { resolveBindings } from '../../shared/shortcutDefaults'
 import { TRASH_MAX_BYTES, TRASH_RETENTION_DAYS } from '../../shared/trash'
 import type {
@@ -116,7 +115,6 @@ import { useLibraryAvailable, useOfferPlaylistFields } from './hooks/useRekordbo
 import { PROGRAM_QUEUES, useRekordboxQueue } from './hooks/useRekordboxQueue'
 import { useRetireSuperseded } from './hooks/useRetireSuperseded'
 import { useSessionPersistence } from './hooks/useSessionPersistence'
-import { useSessionRoles } from './hooks/useSessionRoles'
 import { useSessionRows } from './hooks/useSessionRows'
 import { type BuildResult, type FillTarget, useSessionRun } from './hooks/useSessionRun'
 import { useSessionWrite } from './hooks/useSessionWrite'
@@ -270,8 +268,6 @@ const SYNC_ISSUES: Record<
 }
 
 const inFiles = (t: TrackItem): boolean => !!t.inFiles
-
-const NO_ROLES: Record<string, PlaylistRole> = {}
 
 const SEEN_SETTLE_MS = 250
 
@@ -1090,9 +1086,6 @@ export default function App(): React.JSX.Element {
     browser.selectPlaylist(node, folders)
   })
   const sessionProgram = editableSource
-  const sessionRoles = useSessionRoles(settings?.sessionRoles ?? NO_ROLES, sessionProgram, (next) =>
-    saveSettings({ sessionRoles: next }),
-  )
   const sessionRows = useSessionRows(sessionProgram ?? 'rekordbox')
   const sessionWriter = useSessionWrite(editRekordboxRaw)
   const sessionRun = useSessionRun({
@@ -1104,7 +1097,7 @@ export default function App(): React.JSX.Element {
     openPlaylist: (node) => selectPlaylist(node, []),
     saveAnswers: (answers) => {
       if (settings)
-        saveSettings({ sessionWizard: wizardSettingsFrom(answers, settings.sessionWizard) })
+        saveSettings({ sessionWizard: wizardSettingsFrom(answers) })
     },
     newSeed: () => Date.now() % 2_147_483_647,
   })
@@ -2915,7 +2908,6 @@ export default function App(): React.JSX.Element {
       sourceProgram,
     ],
   )
-  const { forProgram: programRoles, setRole: setPlaylistRole } = sessionRoles
   // Read at drop time, so a re-read landing mid-drag still names the dragged rows. A track
   // row stands for every row it has in the playlist (the list shows it once), so all of them
   // move together; a separator key is its own link.
@@ -4173,14 +4165,13 @@ export default function App(): React.JSX.Element {
               {sessionWizard && sessionProgram && settings && browser.tree && (
                 <SessionWizard
                   tree={browser.tree}
-                  roles={programRoles}
+                  roles={sessionWizard.adjust ? sessionRun.recent?.roles : undefined}
                   initial={
                     sessionWizard.adjust && sessionRun.recent
                       ? sessionRun.recent.answers
                       : answersFromSettings(settings.sessionWizard)
                   }
                   rows={sessionRows}
-                  onRole={setPlaylistRole}
                   onClose={() => setSessionWizard(null)}
                   onBuild={async (answers, roles) => {
                     const result = sessionWizard.adjust

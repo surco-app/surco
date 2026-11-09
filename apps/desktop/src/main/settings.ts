@@ -27,7 +27,6 @@ import { DEFAULT_EDITOR_SECTIONS } from '../shared/editorSections'
 import { normalizeHiddenSources } from '../shared/hiddenSources'
 import {
   DEFAULT_SESSION_WIZARD,
-  normalizeSessionRoles,
   normalizeSessionWizard,
 } from '../shared/sessionSettings'
 import { FORMAT_SETTINGS } from '../shared/outputFormats'
@@ -101,7 +100,6 @@ export const defaults: Settings = {
   cueFlowToSerato: true,
   cueLearnFromEdits: true,
   hiddenSources: [],
-  sessionRoles: {},
   sessionWizard: DEFAULT_SESSION_WIZARD,
   rekordboxPlaylistsFieldOffered: false,
   traktorPlaylistsFieldOffered: false,
@@ -231,7 +229,6 @@ export const LOCAL_KEYS = [
   'beatportUsername',
   'beatportPassword',
   'analysisCacheGb',
-  'sessionRoles',
 ] as const satisfies readonly (keyof Settings)[]
 
 // Repairs any stored value into a valid format: a synced settings.json can carry an
@@ -389,7 +386,6 @@ function mergeSettings(base: Settings, patch: Partial<Settings>): Settings {
     cueFlowToSerato: (patch.cueFlowToSerato ?? base.cueFlowToSerato) !== false,
     cueLearnFromEdits: (patch.cueLearnFromEdits ?? base.cueLearnFromEdits) !== false,
     hiddenSources: normalizeHiddenSources(patch.hiddenSources ?? base.hiddenSources),
-    sessionRoles: normalizeSessionRoles(patch.sessionRoles ?? base.sessionRoles),
     sessionWizard: normalizeSessionWizard(patch.sessionWizard ?? base.sessionWizard),
   }
 }

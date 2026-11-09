@@ -1296,12 +1296,11 @@ describe('cue flows', () => {
     expect(getSettings().hiddenSources).toEqual(['appleMusic'])
   })
 
-  it('reads a settings file from before sessions as no roles and the stock wizard answers', () => {
+  it('reads a settings file from before sessions as the stock wizard answers', () => {
     writeFileSync(join(app.getPath('userData'), 'settings.json'), JSON.stringify({}))
-    expect(getSettings().sessionRoles).toEqual({})
     expect(getSettings().sessionWizard).toEqual({
       minutes: 90,
-      playMinutes: 3,
+      playMinutes: 2,
       freshShare: 0.15,
       preferCombos: true,
       harmony: 'free',
@@ -1311,34 +1310,23 @@ describe('cue flows', () => {
     })
   })
 
-  it('repairs playlist roles and wizard answers that came back wrong on every merge', () => {
+  it('repairs wizard answers that came back wrong on every merge', () => {
     writeFileSync(
       join(app.getPath('userData'), 'settings.json'),
-      JSON.stringify({
-        sessionRoles: { 'rekordbox:1': 'base', 'rekordbox:2': 'nonsense', x: 'set' },
-        sessionWizard: { minutes: -3, freshShare: 5 },
-      }),
+      JSON.stringify({ sessionWizard: { minutes: -3, freshShare: 5 } }),
     )
-    expect(getSettings().sessionRoles).toEqual({ 'rekordbox:1': 'base' })
     expect(getSettings().sessionWizard.minutes).toBe(90)
     expect(getSettings().sessionWizard.freshShare).toBe(0.4)
-    saveSettings({ sessionRoles: { 'traktor:a': 'set', bad: 'base' } as never })
-    expect(getSettings().sessionRoles).toEqual({ 'traktor:a': 'any' })
   })
 
-  it('keeps playlist roles on this Mac but carries the wizard answers to the others', () => {
+  it('carries the wizard answers to the other Macs', () => {
     writeFileSync(join(app.getPath('userData'), 'settings.json'), JSON.stringify({}))
     const dir = mkdtempSync(join(tmpdir(), 'surco-sync-'))
     writeFileSync(join(dir, 'settings.json'), JSON.stringify({}))
     setConfigDir(dir)
-    saveSettings({
-      sessionRoles: { 'rekordbox:1': 'base' },
-      sessionWizard: { ...getSettings().sessionWizard, minutes: 120 },
-    })
+    saveSettings({ sessionWizard: { ...getSettings().sessionWizard, minutes: 120 } })
     const synced = JSON.parse(readFileSync(join(dir, 'settings.json'), 'utf-8'))
-    expect(synced.sessionRoles).toBeUndefined()
     expect(synced.sessionWizard.minutes).toBe(120)
-    expect(getSettings().sessionRoles).toEqual({ 'rekordbox:1': 'base' })
     setConfigDir(null)
   })
 

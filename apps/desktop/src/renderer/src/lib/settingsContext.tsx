@@ -36,10 +36,9 @@ import {
 import { normalizeHiddenSources } from '../../../shared/hiddenSources'
 import {
   DEFAULT_SESSION_WIZARD,
-  normalizeSessionRoles,
   normalizeSessionWizard,
 } from '../../../shared/sessionSettings'
-import type { PlaylistRole, SessionWizardSettings } from '../../../shared/sessionTypes'
+import type { SessionWizardSettings } from '../../../shared/sessionTypes'
 import type {
   CustomField,
   DeclickConfig,
@@ -117,7 +116,6 @@ interface ResolvedSettings extends Record<DjAddKey, boolean> {
   cueFlowToSerato: boolean
   cueLearnFromEdits: boolean
   hiddenSources: PlaylistSource[]
-  sessionRoles: Record<string, PlaylistRole>
   sessionWizard: SessionWizardSettings
   // The collection.nml the DJ confirmed, the only one Traktor cues are written to.
   traktorNmlPath: string
@@ -180,7 +178,6 @@ const DEFAULTS: ResolvedSettings = {
   cueFlowToSerato: true,
   cueLearnFromEdits: true,
   hiddenSources: [],
-  sessionRoles: {},
   sessionWizard: DEFAULT_SESSION_WIZARD,
   traktorNmlPath: '',
   rekordboxDbPath: '',
@@ -243,7 +240,6 @@ function resolveSettings(settings: Partial<Settings> | null): ResolvedSettings {
     cueFlowToSerato: settings.cueFlowToSerato !== false,
     cueLearnFromEdits: settings.cueLearnFromEdits !== false,
     hiddenSources: normalizeHiddenSources(settings.hiddenSources),
-    sessionRoles: normalizeSessionRoles(settings.sessionRoles),
     sessionWizard: normalizeSessionWizard(settings.sessionWizard),
     traktorNmlPath: settings.traktorNmlPath ?? DEFAULTS.traktorNmlPath,
     rekordboxDbPath: settings.rekordboxDbPath ?? DEFAULTS.rekordboxDbPath,

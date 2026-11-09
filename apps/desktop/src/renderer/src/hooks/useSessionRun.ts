@@ -78,7 +78,7 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
     roles: Roles,
     seed: number,
   ): Promise<SessionRun> => {
-    const loaded = await deps.rows.load([...answers.sources, ...answers.fresh])
+    const loaded = await deps.rows.load([...answers.sources])
     return runSession({ answers, roles, rows: loaded, seed })
   }
 

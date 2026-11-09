@@ -1,11 +1,6 @@
 import { buildSession, type SessionOptions, type SessionPlan } from '../../../shared/sessionBuild'
 import { type Combos, mineCombos } from '../../../shared/sessionCombos'
-import type {
-  PlaylistRole,
-  SessionAnswers,
-  SessionTrack,
-  TrackRole,
-} from '../../../shared/sessionTypes'
+import type { PlaylistRole, SessionAnswers, SessionTrack } from '../../../shared/sessionTypes'
 import type { PlaylistTrackRef, SourcePlaylistEntry } from '../../../shared/types'
 import { mixedSequences, type SessionSource, toCandidates, trackIdOf } from './sessionCandidates'
 
@@ -17,10 +12,6 @@ export interface SessionRun {
   refsById: ReadonlyMap<string, PlaylistTrackRef>
   pool: SessionTrack[]
   combos: Combos
-}
-
-function freshRoleOf(role: PlaylistRole | undefined): TrackRole {
-  return role === 'base' || role === 'vocal' ? role : 'any'
 }
 
 export function sessionOptionsOf(answers: SessionAnswers, seed: number): SessionOptions {
@@ -44,14 +35,10 @@ export function runSession(input: {
   seed: number
 }): SessionRun {
   const { answers, roles, rows, seed } = input
-  const sources: SessionSource[] = [
-    ...answers.sources.map((id) => ({ role: roles[id] ?? 'any', entries: rows.get(id) ?? [] })),
-    ...answers.fresh.map((id) => ({
-      role: 'fresh' as const,
-      entries: rows.get(id) ?? [],
-      freshRole: freshRoleOf(roles[id]),
-    })),
-  ]
+  const sources: SessionSource[] = answers.sources.map((id) => ({
+    role: roles[id] ?? 'any',
+    entries: rows.get(id) ?? [],
+  }))
   const pool = toCandidates(sources)
   const combos = mineCombos(
     mixedSequences(sources),

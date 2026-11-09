@@ -7,7 +7,6 @@ const ANSWERS: SessionAnswers = {
   minutes: 20,
   playMinutes: 10,
   sources: [],
-  fresh: [],
   freshShare: 0,
   preferCombos: true,
   harmony: 'free',
@@ -120,25 +119,6 @@ describe('runSession', () => {
     const other = run(input, { s: 'any' }, { s: entries }, 6).plan.items.map((i) => i.track.id)
     expect(again).toEqual(first)
     expect(other).not.toEqual(first)
-  })
-
-  it('gives a new-track playlist the role it was marked with', () => {
-    const { pool } = run(
-      { sources: ['s'], fresh: ['new'] },
-      { s: 'any', new: 'vocal' },
-      { s: [row('/m/a.mp3')], new: [row('/m/n.mp3')] },
-    )
-    expect(pool.find((t) => t.id === '/m/n.mp3')).toMatchObject({ fresh: true, role: 'vocal' })
-  })
-
-  it('treats a new-track playlist with no role, or a Mixed role, as neutral', () => {
-    const { pool } = run(
-      { sources: ['s'], fresh: ['n1', 'n2'] },
-      { s: 'any', n2: 'any' },
-      { s: [row('/m/a.mp3')], n1: [row('/m/n1.mp3')], n2: [row('/m/n2.mp3')] },
-    )
-    expect(pool.find((t) => t.id === '/m/n1.mp3')?.role).toBe('any')
-    expect(pool.find((t) => t.id === '/m/n2.mp3')?.role).toBe('any')
   })
 
   it('does not break when a chosen playlist has no rows loaded', () => {

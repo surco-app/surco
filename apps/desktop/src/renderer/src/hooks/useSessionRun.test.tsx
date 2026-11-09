@@ -12,7 +12,6 @@ const ANSWERS: SessionAnswers = {
   minutes: 10,
   playMinutes: 10,
   sources: ['s'],
-  fresh: [],
   freshShare: 0,
   preferCombos: false,
   harmony: 'free',
@@ -85,9 +84,9 @@ describe('useSessionRun build', () => {
   it('reads the chosen playlists through the shared reader', async () => {
     const { deps, result } = setup()
     await act(async () => {
-      await result.current.build('folder', { ...ANSWERS, fresh: ['n'] }, ROLES)
+      await result.current.build('folder', ANSWERS, ROLES)
     })
-    expect(deps.rows.load).toHaveBeenCalledWith(['s', 'n'])
+    expect(deps.rows.load).toHaveBeenCalledWith(['s'])
   })
 
   it('reports a refused write and leaves no band behind', async () => {
