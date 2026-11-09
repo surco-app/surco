@@ -92,7 +92,8 @@
       "loading": "Lendo…",
       "build": "Montar sessão",
       "loadFailed": "{{names}} não pôde ser lido e fica de fora",
-      "empty": "As playlists escolhidas não têm nenhuma faixa para montar uma sessão"
+      "empty": "As playlists escolhidas não têm nenhuma faixa para montar uma sessão",
+      "refused": "Não foi possível gravar a sessão. Veja o aviso e tente de novo"
     },
     "band": {
       "title": "Sessão montada pelo Surco",

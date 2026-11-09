@@ -92,7 +92,8 @@
       "loading": "Lecture…",
       "build": "Composer la session",
       "loadFailed": "{{names}} n’a pas pu être lu et reste de côté",
-      "empty": "Les playlists choisies n’ont aucun morceau pour composer une session"
+      "empty": "Les playlists choisies n’ont aucun morceau pour composer une session",
+      "refused": "La session n’a pas pu être écrite. Regarde l’avis et réessaie"
     },
     "band": {
       "title": "Session composée par Surco",

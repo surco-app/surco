@@ -92,7 +92,8 @@
       "loading": "Reading…",
       "build": "Build session",
       "loadFailed": "{{names}} could not be read and is left out",
-      "empty": "The chosen playlists have no track to build a session with"
+      "empty": "The chosen playlists have no track to build a session with",
+      "refused": "The session could not be written. Check the notice and try again"
     },
     "band": {
       "title": "Session built by Surco",

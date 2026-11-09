@@ -92,7 +92,8 @@
       "loading": "Leyendo…",
       "build": "Montar sesión",
       "loadFailed": "{{names}} no se pudo leer y se deja fuera",
-      "empty": "Las playlists elegidas no tienen ninguna pista con la que montar una sesión"
+      "empty": "Las playlists elegidas no tienen ninguna pista con la que montar una sesión",
+      "refused": "No se pudo escribir la sesión. Mira el aviso y vuelve a intentarlo"
     },
     "band": {
       "title": "Sesión montada por Surco",

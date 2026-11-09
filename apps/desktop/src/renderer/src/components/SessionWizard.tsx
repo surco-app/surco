@@ -20,6 +20,12 @@ import { flattenPlaylists } from './SourceTree'
 
 const STEPS = ['duration', 'sources', 'fresh', 'character'] as const
 
+const PROBLEM_TEXT: Record<Exclude<BuildResult, 'built'>, string> = {
+  empty: 'sessions.wizard.empty',
+  closed: 'sessions.closed',
+  refused: 'sessions.wizard.refused',
+}
+
 type Options = Pick<
   SessionAnswers,
   'alternate' | 'preferCombos' | 'tasteWeight' | 'surprise' | 'harmony'
@@ -74,8 +80,7 @@ export function SessionWizard({
   )
   const [reading, setReading] = useState(false)
   const [building, setBuilding] = useState(false)
-  const [empty, setEmpty] = useState(false)
-  const [closed, setClosed] = useState(false)
+  const [problem, setProblem] = useState<Exclude<BuildResult, 'built'> | null>(null)
   const focusHeading = useCallback((el: HTMLHeadingElement | null) => el?.focus(), [])
 
   const pick = (id: string, role: PlaylistRole | null): void => {
@@ -119,8 +124,7 @@ export function SessionWizard({
 
   const build = async (): Promise<void> => {
     setBuilding(true)
-    setEmpty(false)
-    setClosed(false)
+    setProblem(null)
     const chosenRoles: Record<string, PlaylistRole> = {}
     for (const id of [...sources, ...fresh]) {
       const role = roles[id]
@@ -141,8 +145,7 @@ export function SessionWizard({
       chosenRoles,
     )
     setBuilding(false)
-    setEmpty(result === 'empty')
-    setClosed(result === 'closed')
+    setProblem(result === 'built' ? null : result)
   }
 
   return (
@@ -249,14 +252,9 @@ export function SessionWizard({
           onChange={(patch) => setOptions((prev) => ({ ...prev, ...patch }))}
         />
       )}
-      {closed && (
-        <p data-testid="session-wizard-closed" className="mt-3 text-xs text-warn">
-          {tr('sessions.closed')}
-        </p>
-      )}
-      {empty && (
-        <p data-testid="session-wizard-empty" className="mt-3 text-xs text-warn">
-          {tr('sessions.wizard.empty')}
+      {problem && (
+        <p data-testid={`session-wizard-${problem}`} className="mt-3 text-xs text-warn">
+          {tr(PROBLEM_TEXT[problem])}
         </p>
       )}
       <div className="mt-5 flex items-center justify-end gap-2">

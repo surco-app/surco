@@ -486,8 +486,23 @@ describe('SessionWizard while building', () => {
     fireEvent.click(screen.getByTestId('session-wizard-build'))
     await waitFor(() => expect(screen.getByTestId('session-wizard-build')).toBeEnabled())
     expect(screen.queryByTestId('session-wizard-empty')).toBeNull()
+    expect(screen.getByTestId('session-wizard-refused')).toHaveTextContent(
+      i18n.t('sessions.wizard.refused'),
+    )
     fireEvent.click(screen.getByTestId('session-wizard-build'))
     expect(onBuild).toHaveBeenCalledTimes(2)
+  })
+
+  it('shows one message at a time and clears it when the next try starts', async () => {
+    const { onBuild } = setup({ b90: 'base' })
+    onBuild.mockResolvedValueOnce('refused').mockResolvedValueOnce('empty')
+    await toCharacter()
+    fireEvent.click(screen.getByTestId('session-wizard-build'))
+    await screen.findByTestId('session-wizard-refused')
+    fireEvent.click(screen.getByTestId('session-wizard-build'))
+    await screen.findByTestId('session-wizard-empty')
+    expect(screen.queryByTestId('session-wizard-refused')).toBeNull()
+    expect(screen.queryByTestId('session-wizard-closed')).toBeNull()
   })
 
   it('asks to close the DJ program when it is open, and lets the user try again', async () => {
