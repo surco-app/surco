@@ -1984,11 +1984,11 @@ otra; por defecto 90). Playlists, elegidas en el mismo árbol del editor, cada u
 Bases, Cantaditas o Mezcladas (`PlaylistRole`, `shared/sessionTypes.ts:1`); una carpeta entera
 toma un papel de golpe, y las carpetas que se llaman como un papel (Bases, Cantaditas, Vocals,
 Sets, Tracklists, Combos, Bolos…) se ofrecen marcadas con un clic (`suggestRoles`,
-`lib/sessionTree.ts:32`). Las playlists separador no se listan. Carácter: alternar base y
+`lib/sessionTree.ts:29`). «Ver solo las elegidas» filtra el árbol a las marcadas, y vuelve a la lista entera si se desmarca la última. Las playlists separador no se listan. Carácter: alternar base y
 cantadita, preferir combos probados, pesar lo que más gusta (estrellas y escuchas), sorpréndeme,
 mezcla armónica Camelot (libre, vecinos o mismo tono), tiempo que suena cada pista (1 a 10 min,
 por defecto 2) y porcentaje de pistas nuevas (0 a 40 %, por defecto 15 %)
-(`DEFAULT_SESSION_WIZARD`, `shared/sessionSettings.ts:3`). Los ajustes de carácter se recuerdan;
+(`DEFAULT_SESSION_WIZARD`, `shared/sessionSettings.ts:3`). El último paso dice dónde se escribirá: el nombre y la carpeta de la playlist nueva, o la que rellena o sustituye (`SessionDestination`, `SessionWizard.tsx`), y mientras escribe el botón pasa a «Montando…». ⌘⏎ avanza de paso o monta. El asistente mantiene la misma altura en los tres pasos. Los ajustes de carácter se recuerdan;
 las playlists elegidas y sus papeles no, cada asistente empieza sin playlists.
 
 **Cómo elige** (`buildSession`, `shared/sessionBuild.ts`). La duración se cuenta con el tiempo
@@ -2009,11 +2009,11 @@ llenado falla, se borra la recién creada, y rehacer crea la nueva antes de borr
 (`useSessionWrite.ts`). Con un programa de DJ abierto no se escribe: se comprueba al montar y
 otra vez justo antes de escribir, y el asistente pide cerrarlo (`'closed'`,
 `hooks/useSessionRun.ts:68`; `sessions.closed`). La lista de la sesión lleva una banda con
-pistas, combos, nuevas y armónicas, y «Rehacer», «Ajustar…» y «Quedármela así»
+pistas, combos, nuevas y armónicas, la duración contada y lo que suman los ficheros (`audioSecs`, `summarizeSession`), y «Rehacer», «Ajustar…» y «Quedármela así»
 (`SessionBand.tsx`). Bajo cada pista una línea dice por qué está (arranque, combo en N sets,
 salto Camelot, estrellas o escuchas, tempo, nueva, elegida por ti) y «Cambiar» lista solo
 entonces las que encajan en ese hueco (`SessionWhyLine.tsx`, `lib/sessionAlternatives.ts`). Al
-quedársela queda como una playlist normal. Probado solo en tests; no hay medida de cuántas
+quedársela queda como una playlist normal y un aviso lo dice. Probado solo en tests; no hay medida de cuántas
 sesiones da por buenas un DJ.
 
 ### Editor de cues de rekordbox
