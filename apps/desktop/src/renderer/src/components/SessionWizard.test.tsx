@@ -489,6 +489,21 @@ describe('SessionWizard while building', () => {
     expect(onBuild).toHaveBeenCalledTimes(2)
   })
 
+  it('asks to close the DJ program when it is open, and lets the user try again', async () => {
+    const { onBuild } = setup({ b90: 'base' })
+    onBuild.mockResolvedValueOnce('closed')
+    await toCharacter()
+    fireEvent.click(screen.getByTestId('session-wizard-build'))
+    expect(await screen.findByTestId('session-wizard-closed')).toHaveTextContent(
+      i18n.t('sessions.closed'),
+    )
+    expect(screen.getByTestId('session-wizard-build')).toBeEnabled()
+    expect(screen.queryByTestId('session-wizard-empty')).toBeNull()
+    onBuild.mockResolvedValueOnce('refused')
+    fireEvent.click(screen.getByTestId('session-wizard-build'))
+    await waitFor(() => expect(screen.queryByTestId('session-wizard-closed')).toBeNull())
+  })
+
   it('says so when the chosen playlists have no track to build with', async () => {
     const { onBuild } = setup({ b90: 'base' })
     onBuild.mockResolvedValue('empty')

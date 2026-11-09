@@ -40,6 +40,7 @@ function setup(over: Partial<SessionRunDeps> = {}) {
   const deps: SessionRunDeps = {
     rows: { load: vi.fn(async () => ROWS), loading: false, failed: [] },
     writer: { create, replace },
+    canWrite: async () => true,
     nameFor: () => 'Sesión del 9/11',
     openPlaylist: vi.fn(),
     saveAnswers: vi.fn(),
@@ -202,6 +203,83 @@ describe('useSessionRun redo and adjust', () => {
     expect(deps.saveAnswers).toHaveBeenLastCalledWith(adjusted)
     expect(replace).toHaveBeenCalledOnce()
     expect(result.current.recent?.answers).toEqual(adjusted)
+  })
+})
+
+describe('useSessionRun with the DJ program open', () => {
+  it('writes nothing and says so when a DJ program is open, so no half-made playlist is queued', async () => {
+    const { deps, result } = setup({ canWrite: async () => false })
+
+    let outcome: string | undefined
+    await act(async () => {
+      outcome = await result.current.build('folder', ANSWERS, ROLES)
+    })
+
+    expect(outcome).toBe('closed')
+    expect(create).not.toHaveBeenCalled()
+    expect(deps.openPlaylist).not.toHaveBeenCalled()
+    expect(result.current.recent).toBeNull()
+  })
+
+  it('does not even read the playlists when it cannot write', async () => {
+    const { deps, result } = setup({ canWrite: async () => false })
+    await act(async () => {
+      await result.current.build('folder', ANSWERS, ROLES)
+    })
+    expect(deps.rows.load).not.toHaveBeenCalled()
+    expect(deps.saveAnswers).not.toHaveBeenCalled()
+  })
+
+  it('leaves the playlist and the band as they were when a redo finds the program open', async () => {
+    let open = false
+    const { result } = await built({ canWrite: async () => !open })
+    const before = result.current.recent
+    open = true
+
+    let outcome: string | undefined
+    await act(async () => {
+      outcome = await result.current.redo()
+    })
+
+    expect(outcome).toBe('closed')
+    expect(replace).not.toHaveBeenCalled()
+    expect(result.current.recent).toBe(before)
+  })
+
+  it('does the same for an adjust and for a swap', async () => {
+    let open = false
+    const { result } = await built({ canWrite: async () => !open })
+    const spare = result.current.alternatives(1)[0]
+    open = true
+
+    let adjusted: string | undefined
+    let swapped: string | undefined
+    await act(async () => {
+      adjusted = await result.current.adjust(ANSWERS, ROLES)
+      swapped = await result.current.swap(1, spare)
+    })
+
+    expect(adjusted).toBe('closed')
+    expect(swapped).toBe('closed')
+    expect(replace).not.toHaveBeenCalled()
+  })
+
+  it('writes again once the program is closed', async () => {
+    let open = true
+    const { result } = setup({ canWrite: async () => !open })
+    await act(async () => {
+      await result.current.build('folder', ANSWERS, ROLES)
+    })
+    expect(create).not.toHaveBeenCalled()
+    open = false
+
+    let outcome: string | undefined
+    await act(async () => {
+      outcome = await result.current.build('folder', ANSWERS, ROLES)
+    })
+
+    expect(outcome).toBe('built')
+    expect(create).toHaveBeenCalledOnce()
   })
 })
 

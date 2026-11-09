@@ -75,6 +75,7 @@ export function SessionWizard({
   const [reading, setReading] = useState(false)
   const [building, setBuilding] = useState(false)
   const [empty, setEmpty] = useState(false)
+  const [closed, setClosed] = useState(false)
   const focusHeading = useCallback((el: HTMLHeadingElement | null) => el?.focus(), [])
 
   const pick = (id: string, role: PlaylistRole | null): void => {
@@ -119,6 +120,7 @@ export function SessionWizard({
   const build = async (): Promise<void> => {
     setBuilding(true)
     setEmpty(false)
+    setClosed(false)
     const chosenRoles: Record<string, PlaylistRole> = {}
     for (const id of [...sources, ...fresh]) {
       const role = roles[id]
@@ -140,6 +142,7 @@ export function SessionWizard({
     )
     setBuilding(false)
     setEmpty(result === 'empty')
+    setClosed(result === 'closed')
   }
 
   return (
@@ -245,6 +248,11 @@ export function SessionWizard({
           hasKeys={hasKeys}
           onChange={(patch) => setOptions((prev) => ({ ...prev, ...patch }))}
         />
+      )}
+      {closed && (
+        <p data-testid="session-wizard-closed" className="mt-3 text-xs text-warn">
+          {tr('sessions.closed')}
+        </p>
       )}
       {empty && (
         <p data-testid="session-wizard-empty" className="mt-3 text-xs text-warn">

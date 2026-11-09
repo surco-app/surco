@@ -8,7 +8,7 @@ import type { SessionRows } from './useSessionRows'
 import type { SessionWriter } from './useSessionWrite'
 import { useStableCallback } from './useStableCallback'
 
-export type BuildResult = 'built' | 'empty' | 'refused'
+export type BuildResult = 'built' | 'empty' | 'refused' | 'closed'
 
 export interface RecentSession {
   playlistId: string
@@ -25,6 +25,7 @@ export interface RecentSession {
 type Roles = Readonly<Record<string, PlaylistRole>>
 
 export interface SessionRunDeps {
+  canWrite: () => Promise<boolean>
   rows: SessionRows
   writer: SessionWriter
   nameFor: () => string
@@ -55,6 +56,7 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
     working.current = true
     setBusy(true)
     try {
+      if (!(await deps.canWrite())) return 'closed'
       return await job()
     } finally {
       working.current = false

@@ -117,7 +117,7 @@ import { useRetireSuperseded } from './hooks/useRetireSuperseded'
 import { useSessionPersistence } from './hooks/useSessionPersistence'
 import { useSessionRoles } from './hooks/useSessionRoles'
 import { useSessionRows } from './hooks/useSessionRows'
-import { useSessionRun } from './hooks/useSessionRun'
+import { type BuildResult, useSessionRun } from './hooks/useSessionRun'
 import { useSessionWrite } from './hooks/useSessionWrite'
 import { useSettings } from './hooks/useSettings'
 import { useSourceBrowser } from './hooks/useSourceBrowser'
@@ -1095,6 +1095,7 @@ export default function App(): React.JSX.Element {
   const sessionRows = useSessionRows(sessionProgram ?? 'rekordbox')
   const sessionWriter = useSessionWrite(editRekordboxRaw)
   const sessionRun = useSessionRun({
+    canWrite: async () => !(await window.api.djAppRunning()),
     rows: sessionRows,
     writer: sessionWriter,
     nameFor: () =>
@@ -1107,6 +1108,9 @@ export default function App(): React.JSX.Element {
         saveSettings({ sessionWizard: wizardSettingsFrom(answers, settings.sessionWizard) })
     },
     newSeed: () => Date.now() % 2_147_483_647,
+  })
+  const reportSession = useStableCallback(async (pending: Promise<BuildResult>): Promise<void> => {
+    if ((await pending) === 'closed') notifyEdit(tr('sessions.closed'), 'danger')
   })
   const editRekordbox = useStableCallback(
     async (edit: Parameters<typeof editRekordboxRaw>[0], name: string) => {
@@ -1152,7 +1156,7 @@ export default function App(): React.JSX.Element {
           selected={current}
           busy={sessionBusy}
           alternatives={current ? sessionAlternatives(index) : []}
-          onPick={(picked) => void swapSessionTrack(index, picked)}
+          onPick={(picked) => void reportSession(swapSessionTrack(index, picked))}
         />
       )
     },
@@ -1163,6 +1167,7 @@ export default function App(): React.JSX.Element {
       sessionBusy,
       sessionAlternatives,
       swapSessionTrack,
+      reportSession,
     ],
   )
   const selectSource = useStableCallback((next: PlaylistSource | null) => {
@@ -3819,7 +3824,7 @@ export default function App(): React.JSX.Element {
                               <SessionBand
                                 plan={sessionRun.recent.plan}
                                 busy={sessionRun.busy}
-                                onRedo={() => void sessionRun.redo()}
+                                onRedo={() => void reportSession(sessionRun.redo())}
                                 onAdjust={openSessionAdjust}
                                 onKeep={sessionRun.keep}
                               />

@@ -111,6 +111,7 @@
       "assumed_other": "{{count}} pistas sin duración, se cuentan como 6 min cada una"
     },
     "playlistName": "Sesión del {{date}}",
+    "closed": "Cierra tu programa DJ para montar la sesión. Con él abierto, la playlist quedaría a medias",
     "why": {
       "start": "Donde arranca la sesión",
       "combo_one": "Combo probado, puesto junto en {{count}} set",

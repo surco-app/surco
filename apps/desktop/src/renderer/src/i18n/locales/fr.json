@@ -111,6 +111,7 @@
       "assumed_other": "{{count}} morceaux sans durée, comptés pour 6 min chacun"
     },
     "playlistName": "Session du {{date}}",
+    "closed": "Ferme ton logiciel DJ pour composer la session. Ouvert, il laisserait la playlist à moitié écrite",
     "why": {
       "start": "Là où la session démarre",
       "combo_one": "Combo éprouvé, joué ensemble dans {{count}} set",
