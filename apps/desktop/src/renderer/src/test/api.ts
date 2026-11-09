@@ -2,6 +2,7 @@ import type { Api } from '../../../preload/api'
 import { BUNDLED_FLOWS } from '../../../shared/cueFlows'
 import { DEFAULT_EDITOR_SECTIONS } from '../../../shared/editorSections'
 import { emptyMetadata } from '../../../shared/metadata'
+import { DEFAULT_SESSION_WIZARD } from '../../../shared/sessionSettings'
 import type { Settings } from '../../../shared/types'
 
 // A complete, valid Settings for tests that need one. Declared `: Settings` so a field
@@ -50,6 +51,8 @@ export const testSettings: Settings = {
   cueFlowToSerato: true,
   cueLearnFromEdits: true,
   hiddenSources: [],
+  sessionRoles: {},
+  sessionWizard: { ...DEFAULT_SESSION_WIZARD },
   rekordboxPlaylistsFieldOffered: false,
   traktorPlaylistsFieldOffered: false,
   enginePlaylistsFieldOffered: false,

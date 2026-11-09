@@ -25,6 +25,7 @@ vi.hoisted(() => {
 })
 
 import { DEFAULT_EDITOR_SECTIONS } from '../../../shared/editorSections'
+import { DEFAULT_SESSION_WIZARD } from '../../../shared/sessionSettings'
 import type { Settings } from '../../../shared/types'
 import i18n from '../i18n'
 import { FIELD_DEFS } from '../lib/fields'
@@ -48,6 +49,8 @@ const settings: Settings = {
   cueFlowToSerato: true,
   cueLearnFromEdits: true,
   hiddenSources: [],
+  sessionRoles: {},
+  sessionWizard: { ...DEFAULT_SESSION_WIZARD },
   language: 'system',
   discogsToken: '',
   beatportUsername: '',

@@ -17,6 +17,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, type Mock, vi }
 import type { Api } from '../../preload/api'
 import { ALL_TRACKS_ID } from '../../shared/allTracks'
 import { DEFAULT_EDITOR_SECTIONS } from '../../shared/editorSections'
+import { DEFAULT_SESSION_WIZARD } from '../../shared/sessionSettings'
 import { emptyMetadata } from '../../shared/metadata'
 import { RECENTLY_ADDED_ID } from '../../shared/recentlyAdded'
 import type {
@@ -138,6 +139,8 @@ function settings(over: Partial<Settings> = {}): Settings {
     cueFlowToSerato: true,
     cueLearnFromEdits: true,
     hiddenSources: [],
+    sessionRoles: {},
+    sessionWizard: { ...DEFAULT_SESSION_WIZARD },
     language: 'system',
     discogsToken: '',
     beatportUsername: '',
