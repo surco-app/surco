@@ -942,6 +942,9 @@ export async function runProcessTrack(
     const handedOver = musicOnly ? { tmpDir } : undefined
     const musicStep = shouldAddToAppleMusic(addToAppleMusic, deps.platform, format)
     if (musicStep) {
+      log.info(
+        `music step: input="${job.inputPath}" target="${target}" inPlace=${inPlace} outputIsInput=${outputIsInput} musicOnly=${musicOnly} pid=${job.musicPersistentId ?? '-'} replacesPath=${job.replacesPath ?? '-'} existingEntry=${existingMusicEntry?.persistentId ?? '-'}`,
+      )
       try {
         // Replacing a DIFFERENT file, not re-converting our own earlier output. Updating an
         // entry only rewrites its tags — Music offers no way to repoint one at another file
