@@ -1033,6 +1033,41 @@
         "shot": "tracklist-es.webp"
       },
       {
+        "id": "sesion",
+        "group": "out",
+        "title": "Monta una sesión automática",
+        "s": "Una playlist de la duración que quieras, con tus combos, tu gusto y mezcla armónica.",
+        "body": [
+          "Surco ordena las pistas de las playlists que elijas. Junta las parejas que repites en tus sets, encaja por tono y tempo, y deja hueco para lo nuevo."
+        ],
+        "steps": [
+          {
+            "lead": "Ábrela.",
+            "text": "Botón derecho sobre una carpeta y «Sesión automática…», o «Rellenar con una sesión…» sobre una playlist vacía."
+          },
+          {
+            "lead": "Elige duración y playlists.",
+            "text": "Marca cada una como Bases, Cantaditas o Mezcladas, o una carpeta entera. Las Mezcladas son tus sets, y de su orden salen los combos."
+          },
+          {
+            "lead": "Di cómo la quieres.",
+            "text": "Alternar base y cantadita, combos, gusto, Camelot, cuánto suena cada pista y pistas nuevas."
+          },
+          {
+            "lead": "Móntala y revísala.",
+            "text": "Cada pista dice por qué está y «Cambiar» ofrece otras. Rehaz, ajusta o quédatela como una playlist normal."
+          }
+        ],
+        "points": [
+          "Cada pista cuenta solo lo que suena en la mezcla, dos minutos por defecto. Un set real de 28 pistas duró una hora.",
+          "Un combo es una pareja que se repite en dos o más Mezcladas. Sin ellas no hay combos.",
+          "Nueva es la añadida en los últimos 30 días, o sin escuchas ni estrellas si no hay fechas.",
+          "Escribe en rekordbox, Traktor o Serato con el programa cerrado."
+        ],
+        "shotCaption": "La sesión montada, con su resumen, el porqué de cada pista y «Cambiar».",
+        "shot": "sesion-es.webp"
+      },
+      {
         "id": "usb",
         "group": "out",
         "title": "Lleva tus playlists a un USB",

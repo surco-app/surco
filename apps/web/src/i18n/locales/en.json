@@ -1033,6 +1033,41 @@
         "shot": "tracklist-en.webp"
       },
       {
+        "id": "sesion",
+        "group": "out",
+        "title": "Build an automatic session",
+        "s": "A playlist of the length you want, from your combos, your taste and harmonic mixing.",
+        "body": [
+          "Surco orders tracks from the playlists you choose. It joins pairs you repeat in your sets, fits by key and tempo, and leaves room for new tracks."
+        ],
+        "steps": [
+          {
+            "lead": "Open it.",
+            "text": "Right-click a folder and pick “Automatic session…”, or “Fill with a session…” on an empty playlist."
+          },
+          {
+            "lead": "Pick length and playlists.",
+            "text": "Mark each as Bases, Vocals or Mixed, or a whole folder. Mixed ones are your sets, and their order gives the combos."
+          },
+          {
+            "lead": "Say how you want it.",
+            "text": "Alternate base and vocal, combos, taste, Camelot, how long each track plays and new tracks."
+          },
+          {
+            "lead": "Build and review.",
+            "text": "Each track says why it is there and “Change” offers others. Redo, adjust or keep it as a normal playlist."
+          }
+        ],
+        "points": [
+          "Each track counts only the time it plays in the mix, two minutes by default. A real 28-track set lasted an hour.",
+          "A combo is a pair that repeats in two or more Mixed playlists. Without them there are none.",
+          "New means added in the last 30 days, or with no plays or stars if there are no dates.",
+          "It writes to rekordbox, Traktor or Serato with the program closed."
+        ],
+        "shotCaption": "The built session, with its summary, why each track is there and “Change”.",
+        "shot": "sesion-en.webp"
+      },
+      {
         "id": "usb",
         "group": "out",
         "title": "Take your playlists on a USB stick",
