@@ -63,21 +63,23 @@ function setup(
   initial: SessionAnswers = INITIAL,
   rows: SessionRows = fakeRows(),
 ) {
-  const onRole = vi.fn()
+  const handed = {
+    ...initial,
+    sources: initial.sources.length > 0 ? initial.sources : Object.keys(roles),
+  }
   const onClose = vi.fn()
   const onBuild = vi.fn()
   render(
     <SessionWizard
       tree={TREE}
       roles={roles}
-      initial={initial}
+      initial={handed}
       rows={rows}
-      onRole={onRole}
       onClose={onClose}
       onBuild={onBuild}
     />,
   )
-  return { onRole, onClose, onBuild, rows }
+  return { onClose, onBuild, rows }
 }
 
 const next = () => fireEvent.click(screen.getByTestId('session-wizard-next'))
@@ -166,12 +168,11 @@ describe('SessionWizard sources step', () => {
   })
 
   it('browses the folders without typing and gives a role from the row', () => {
-    const { onRole } = setup()
+    setup()
     toSources()
     expect(screen.queryByTestId('session-wizard-role-b90-base')).toBeNull()
     fireEvent.click(screen.getByTestId('playlists-folder-rem'))
     fireEvent.click(screen.getByTestId('session-wizard-role-b90-base'))
-    expect(onRole).toHaveBeenCalledExactlyOnceWith('b90', 'base')
     expect(screen.getByTestId('session-wizard-summary')).toHaveTextContent(
         i18n.t('sessions.wizard.sources.summary', { count: 1, tracks: 38 }),
     )
@@ -206,24 +207,22 @@ describe('SessionWizard sources step', () => {
     expect(screen.getByTestId('playlists-empty')).toBeInTheDocument()
   })
 
-  it('counts the playlist it was given a role in, in one line, and tells the app', () => {
-    const { onRole } = setup()
+  it('counts the playlist it was given a role in, in one line', () => {
+    setup()
     toSources()
     fireEvent.change(screen.getByTestId('playlists-search'), { target: { value: 'mak' } })
     fireEvent.click(screen.getByTestId('session-wizard-role-mk97-base'))
-    expect(onRole).toHaveBeenCalledExactlyOnceWith('mk97', 'base')
     expect(screen.getByTestId('session-wizard-summary')).toHaveTextContent(
         i18n.t('sessions.wizard.sources.summary', { count: 1, tracks: 22 }),
     )
   })
 
   it('takes the playlist away and clears the role when the active role is pressed again', () => {
-    const { onRole } = setup({ mk97: 'base' })
+    setup({ mk97: 'base' })
     toSources()
     fireEvent.change(screen.getByTestId('playlists-search'), { target: { value: 'mk97' } })
     fireEvent.change(screen.getByTestId('playlists-search'), { target: { value: 'bases 97' } })
     fireEvent.click(screen.getByTestId('session-wizard-role-mk97-base'))
-    expect(onRole).toHaveBeenCalledExactlyOnceWith('mk97', null)
     expect(screen.queryByTestId('session-wizard-summary')).toBeNull()
     expect(screen.getByTestId('session-wizard-none')).toBeInTheDocument()
   })
@@ -253,6 +252,22 @@ describe('SessionWizard sources step', () => {
     )
   })
 
+  it('opens with nothing chosen when no playlist was handed over, whatever roles are known', () => {
+    render(
+      <SessionWizard
+        tree={TREE}
+        roles={{ b90: 'base', c90: 'vocal' }}
+        initial={INITIAL}
+        rows={fakeRows()}
+        onClose={vi.fn()}
+        onBuild={vi.fn()}
+      />,
+    )
+    next()
+    expect(screen.getByTestId('session-wizard-none')).toBeInTheDocument()
+    expect(screen.getByTestId('session-wizard-next')).toBeDisabled()
+  })
+
   it('offers to see only the chosen playlists, and to see them all again', () => {
     setup({ b90: 'base', c90: 'vocal' })
     toSources()
@@ -269,11 +284,10 @@ describe('SessionWizard sources step', () => {
   })
 
   it('takes a playlist out of that view as soon as its role is unpressed', () => {
-    const { onRole } = setup({ b90: 'base', c90: 'vocal' })
+    setup({ b90: 'base', c90: 'vocal' })
     toSources()
     fireEvent.click(screen.getByTestId('session-wizard-only-chosen'))
     fireEvent.click(screen.getByTestId('session-wizard-role-b90-base'))
-    expect(onRole).toHaveBeenCalledExactlyOnceWith('b90', null)
     expect(screen.queryByTestId('playlists-row-b90')).toBeNull()
     expect(screen.getByTestId('playlists-row-c90')).toBeInTheDocument()
   })

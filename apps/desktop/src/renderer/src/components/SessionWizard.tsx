@@ -33,18 +33,16 @@ type Options = Pick<
 
 export function SessionWizard({
   tree,
-  roles: savedRoles,
+  roles: savedRoles = {},
   initial,
   rows,
-  onRole,
   onClose,
   onBuild,
 }: {
   tree: readonly SourceNode[]
-  roles: Readonly<Record<string, PlaylistRole>>
+  roles?: Readonly<Record<string, PlaylistRole>>
   initial: SessionAnswers
   rows: SessionRows
-  onRole: (id: string, role: PlaylistRole | null) => void
   onClose: () => void
   onBuild: (
     answers: SessionAnswers,
@@ -63,8 +61,7 @@ export function SessionWizard({
     [tree],
   )
   const [sources, setSources] = useState<string[]>(() => {
-    const wanted = initial.sources.length > 0 ? initial.sources : Object.keys(savedRoles)
-    return wanted.filter((id) => names.has(id) && savedRoles[id] !== undefined)
+    return initial.sources.filter((id) => names.has(id) && savedRoles[id] !== undefined)
   })
   const [fresh, setFresh] = useState<string[]>(() => initial.fresh.filter((id) => names.has(id)))
   const [freshShare, setFreshShare] = useState(initial.freshShare)
@@ -94,7 +91,6 @@ export function SessionWizard({
     setSources((prev) =>
       role ? (prev.includes(id) ? prev : [...prev, id]) : prev.filter((other) => other !== id),
     )
-    onRole(id, role)
   }
 
   const current = STEPS[step]
