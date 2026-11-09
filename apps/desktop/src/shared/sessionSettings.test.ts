@@ -20,15 +20,15 @@ describe('rolesForProgram', () => {
   it('lists the roles of one program by playlist id and leaves the others out', () => {
     expect(
       rolesForProgram(
-        { 'rekordbox:1': 'base', 'rekordbox:Top/Mix': 'set', 'traktor:1': 'vocal' },
+        { 'rekordbox:1': 'base', 'rekordbox:Top/Mix': 'any', 'traktor:1': 'vocal' },
         'rekordbox',
       ),
-    ).toEqual({ '1': 'base', 'Top/Mix': 'set' })
+    ).toEqual({ '1': 'base', 'Top/Mix': 'any' })
   })
 
   it('keeps an id that itself holds a colon', () => {
-    expect(rolesForProgram({ 'serato:Sets:Friday': 'set' }, 'serato')).toEqual({
-      'Sets:Friday': 'set',
+    expect(rolesForProgram({ 'serato:Sets:Friday': 'any' }, 'serato')).toEqual({
+      'Sets:Friday': 'any',
     })
   })
 })
@@ -36,8 +36,8 @@ describe('rolesForProgram', () => {
 describe('withPlaylistRole', () => {
   it('adds a role without touching the roles it was given', () => {
     const before = { 'rekordbox:1': 'base' as const }
-    const after = withPlaylistRole(before, 'rekordbox', '2', 'set')
-    expect(after).toEqual({ 'rekordbox:1': 'base', 'rekordbox:2': 'set' })
+    const after = withPlaylistRole(before, 'rekordbox', '2', 'any')
+    expect(after).toEqual({ 'rekordbox:1': 'base', 'rekordbox:2': 'any' })
     expect(before).toEqual({ 'rekordbox:1': 'base' })
   })
 
@@ -49,16 +49,22 @@ describe('withPlaylistRole', () => {
 
   it('takes a role away with null', () => {
     expect(
-      withPlaylistRole({ 'rekordbox:1': 'base', 'traktor:1': 'set' }, 'rekordbox', '1', null),
-    ).toEqual({ 'traktor:1': 'set' })
+      withPlaylistRole({ 'rekordbox:1': 'base', 'traktor:1': 'any' }, 'rekordbox', '1', null),
+    ).toEqual({ 'traktor:1': 'any' })
   })
 })
 
 describe('normalizeSessionRoles', () => {
+  it('reads a Set saved before the role went away as Mixed, so the choice is not lost', () => {
+    expect(
+      normalizeSessionRoles({ 'rekordbox:1': 'set', 'traktor:2': 'base' }),
+    ).toEqual({ 'rekordbox:1': 'any', 'traktor:2': 'base' })
+  })
+
   it('keeps valid roles', () => {
     expect(
-      normalizeSessionRoles({ 'rekordbox:1': 'base', 'traktor:Top/Mix': 'set', 'serato:c': 'any' }),
-    ).toEqual({ 'rekordbox:1': 'base', 'traktor:Top/Mix': 'set', 'serato:c': 'any' })
+      normalizeSessionRoles({ 'rekordbox:1': 'base', 'traktor:Top/Mix': 'any', 'serato:c': 'any' }),
+    ).toEqual({ 'rekordbox:1': 'base', 'traktor:Top/Mix': 'any', 'serato:c': 'any' })
   })
 
   it('drops a key without a known program and an id', () => {
@@ -74,9 +80,9 @@ describe('normalizeSessionRoles', () => {
 
   it('drops a value that is not one of the four roles', () => {
     expect(
-      normalizeSessionRoles({ 'rekordbox:1': 'bases', 'rekordbox:2': 3, 'rekordbox:3': 'set' }),
+      normalizeSessionRoles({ 'rekordbox:1': 'bases', 'rekordbox:2': 3, 'rekordbox:3': 'any' }),
     ).toEqual({
-      'rekordbox:3': 'set',
+      'rekordbox:3': 'any',
     })
   })
 

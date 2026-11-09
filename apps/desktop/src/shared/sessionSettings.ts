@@ -18,7 +18,8 @@ export const DEFAULT_SESSION_WIZARD: SessionWizardSettings = {
   surprise: false,
 }
 
-const ROLES: readonly PlaylistRole[] = ['base', 'vocal', 'any', 'set']
+const ROLES: readonly PlaylistRole[] = ['base', 'vocal', 'any']
+const LEGACY_ROLES: Readonly<Record<string, PlaylistRole>> = { set: 'any' }
 const HARMONIES: readonly SessionHarmony[] = ['free', 'neighbours', 'same']
 const KEY_PROGRAMS = ['rekordbox', 'traktor', 'engine', 'serato']
 const MAX_FRESH_SHARE = 0.4
@@ -38,7 +39,9 @@ export function normalizeSessionRoles(raw: unknown): Record<string, PlaylistRole
   if (!isRecord(raw)) return {}
   const roles: Record<string, PlaylistRole> = {}
   for (const [key, value] of Object.entries(raw)) {
-    if (validKey(key) && ROLES.includes(value as PlaylistRole)) roles[key] = value as PlaylistRole
+    if (!validKey(key)) continue
+    if (ROLES.includes(value as PlaylistRole)) roles[key] = value as PlaylistRole
+    else if (typeof value === 'string' && value in LEGACY_ROLES) roles[key] = LEGACY_ROLES[value]
   }
   return roles
 }

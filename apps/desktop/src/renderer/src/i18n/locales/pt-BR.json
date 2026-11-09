@@ -23,8 +23,7 @@
       "title": "Papel para sessões",
       "base": "Bases",
       "vocal": "Cantadas",
-      "any": "Misto",
-      "set": "Set"
+      "any": "Misto"
     },
     "wizard": {
       "title": "Montar uma sessão",

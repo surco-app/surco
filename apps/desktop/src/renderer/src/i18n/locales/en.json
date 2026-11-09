@@ -23,8 +23,7 @@
       "title": "Role for sessions",
       "base": "Bases",
       "vocal": "Vocals",
-      "any": "Mixed",
-      "set": "Set"
+      "any": "Mixed"
     },
     "wizard": {
       "title": "Build a session",

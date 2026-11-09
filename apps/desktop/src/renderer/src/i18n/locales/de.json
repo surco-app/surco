@@ -23,8 +23,7 @@
       "title": "Rolle für Sessions",
       "base": "Bases",
       "vocal": "Gesang",
-      "any": "Gemischt",
-      "set": "Set"
+      "any": "Gemischt"
     },
     "wizard": {
       "title": "Session zusammenstellen",

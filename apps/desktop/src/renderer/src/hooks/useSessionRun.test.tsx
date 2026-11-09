@@ -424,7 +424,7 @@ describe('useSessionRun roles', () => {
       await result.current.build(
         'folder',
         { ...ANSWERS, sources: ['s', 't'], preferCombos: true },
-        { s: 'set', t: 'set' },
+        { s: 'any', t: 'any' },
       )
     })
     expect(result.current.recent?.plan.items[0].track.id).toBe('/m/a.mp3')
@@ -439,13 +439,13 @@ describe('useSessionRun roles', () => {
       await result.current.build(
         'folder',
         { ...ANSWERS, sources: ['s', 't'], preferCombos: true },
-        { s: 'set', t: 'set' },
+        { s: 'any', t: 'any' },
       )
     })
     await act(async () => {
       await result.current.redo()
     })
-    expect(result.current.recent?.roles).toEqual({ s: 'set', t: 'set' })
+    expect(result.current.recent?.roles).toEqual({ s: 'any', t: 'any' })
     expect(result.current.recent?.plan.items[1].why).toEqual({ kind: 'combo', sets: 2 })
   })
 

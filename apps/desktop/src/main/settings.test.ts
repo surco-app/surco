@@ -1323,7 +1323,7 @@ describe('cue flows', () => {
     expect(getSettings().sessionWizard.minutes).toBe(90)
     expect(getSettings().sessionWizard.freshShare).toBe(0.4)
     saveSettings({ sessionRoles: { 'traktor:a': 'set', bad: 'base' } as never })
-    expect(getSettings().sessionRoles).toEqual({ 'traktor:a': 'set' })
+    expect(getSettings().sessionRoles).toEqual({ 'traktor:a': 'any' })
   })
 
   it('keeps playlist roles on this Mac but carries the wizard answers to the others', () => {

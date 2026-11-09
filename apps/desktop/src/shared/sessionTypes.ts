@@ -1,6 +1,6 @@
 import type { DjProgram } from './djProgram'
 
-export type PlaylistRole = 'base' | 'vocal' | 'any' | 'set'
+export type PlaylistRole = 'base' | 'vocal' | 'any'
 
 export type SessionHarmony = 'free' | 'neighbours' | 'same'
 

@@ -2,7 +2,7 @@ import type React from 'react'
 import { useTranslation } from 'react-i18next'
 import type { PlaylistRole } from '../../../shared/sessionTypes'
 
-const ROLES: readonly PlaylistRole[] = ['base', 'vocal', 'any', 'set']
+const ROLES: readonly PlaylistRole[] = ['base', 'vocal', 'any']
 
 const CHIP = 'press rounded-full border px-2.5 py-0.5 text-xs'
 const CHIP_ON =

@@ -50,7 +50,7 @@ export function toCandidates(sources: readonly SessionSource[]): SessionTrack[] 
       }
       if (source.role !== 'fresh') {
         seen.origin = true
-        seen.roles.add(source.role === 'set' ? 'any' : source.role)
+        seen.roles.add(source.role)
       }
       found.set(id, seen)
     }
@@ -72,10 +72,10 @@ export function toCandidates(sources: readonly SessionSource[]): SessionTrack[] 
   })
 }
 
-export function setSequences(sources: readonly SessionSource[]): string[][] {
+export function mixedSequences(sources: readonly SessionSource[]): string[][] {
   const sequences: string[][] = []
   for (const source of sources) {
-    if (source.role !== 'set') continue
+    if (source.role !== 'any') continue
     let run: string[] = []
     for (const entry of source.entries) {
       const id = trackIdOf(entry)

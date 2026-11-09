@@ -21,7 +21,7 @@ const PRESETS: readonly { minutes: number; key: string }[] = [
   { minutes: 180, key: 'h3' },
 ]
 
-const ROLES: readonly PlaylistRole[] = ['base', 'vocal', 'any', 'set']
+const ROLES: readonly PlaylistRole[] = ['base', 'vocal', 'any']
 const NO_TOGGLE = (): void => undefined
 
 export function isPresetMinutes(minutes: number): boolean {

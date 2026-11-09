@@ -55,23 +55,37 @@ describe('runSession', () => {
     expect(pool.find((t) => t.id === '/m/b.mp3')?.role).toBe('vocal')
   })
 
-  it('mines combos from Set playlists only, since only there the order means something', () => {
+  it('mines combos from Mixed playlists only, since only there the order means something', () => {
     const { combos } = run(
-      { sources: ['sets', 'bases'] },
-      { sets: 'set', bases: 'base' },
+      { sources: ['m1', 'm2', 'bases'] },
+      { m1: 'any', m2: 'any', bases: 'base' },
       {
-        sets: [row('/m/a.mp3'), row('/m/b.mp3'), row('/m/c.mp3')],
-        bases: [row('/m/x.mp3'), row('/m/y.mp3'), row('/m/z.mp3')],
+        m1: [row('/m/a.mp3'), row('/m/b.mp3'), row('/m/c.mp3')],
+        m2: [row('/m/q.mp3'), row('/m/a.mp3'), row('/m/b.mp3')],
+        bases: [row('/m/x.mp3'), row('/m/y.mp3'), row('/m/x2.mp3'), row('/m/y.mp3')],
       },
     )
-    expect(combos.get('/m/a.mp3')?.get('/m/b.mp3')).toBe(1)
+    expect(combos.get('/m/a.mp3')?.get('/m/b.mp3')).toBe(2)
     expect(combos.get('/m/x.mp3')).toBeUndefined()
+  })
+
+  it('does not take for a combo a pair that only one playlist holds, since nothing repeats it', () => {
+    const { combos } = run(
+      { sources: ['m1', 'm2'] },
+      { m1: 'any', m2: 'any' },
+      {
+        m1: [row('/m/a.mp3'), row('/m/b.mp3'), row('/m/c.mp3')],
+        m2: [row('/m/q.mp3'), row('/m/a.mp3'), row('/m/b.mp3')],
+      },
+    )
+    expect(combos.get('/m/b.mp3')?.get('/m/c.mp3')).toBeUndefined()
+    expect(combos.get('/m/q.mp3')).toBeUndefined()
   })
 
   it('starts from the strongest combo and says how many sets proved it', () => {
     const { plan } = run(
       { sources: ['s1', 's2'] },
-      { s1: 'set', s2: 'set' },
+      { s1: 'any', s2: 'any' },
       {
         s1: [row('/m/a.mp3'), row('/m/b.mp3'), row('/m/q.mp3')],
         s2: [row('/m/r.mp3'), row('/m/a.mp3'), row('/m/b.mp3')],
@@ -84,7 +98,7 @@ describe('runSession', () => {
   it('lists the tracks to write in session order, by content id when a row has one and path otherwise', () => {
     const { plan, refs } = run(
       { sources: ['s'], minutes: 5 },
-      { s: 'set' },
+      { s: 'any' },
       {
         s: [row('/m/a.mp3', { contentId: '7' }), row('/m/b.mp3')],
       },
@@ -117,10 +131,10 @@ describe('runSession', () => {
     expect(pool.find((t) => t.id === '/m/n.mp3')).toMatchObject({ fresh: true, role: 'vocal' })
   })
 
-  it('treats a new-track playlist with no role, or a Set role, as neutral', () => {
+  it('treats a new-track playlist with no role, or a Mixed role, as neutral', () => {
     const { pool } = run(
       { sources: ['s'], fresh: ['n1', 'n2'] },
-      { s: 'any', n2: 'set' },
+      { s: 'any', n2: 'any' },
       { s: [row('/m/a.mp3')], n1: [row('/m/n1.mp3')], n2: [row('/m/n2.mp3')] },
     )
     expect(pool.find((t) => t.id === '/m/n1.mp3')?.role).toBe('any')

@@ -227,7 +227,7 @@ describe('SessionWizard sources step', () => {
   })
 
   it('opens with the playlists already marked in the tree, each in its own group', () => {
-    setup({ b90: 'base', c90: 'vocal', combos: 'set' })
+    setup({ b90: 'base', c90: 'vocal', combos: 'any' })
     toSources()
     expect(
       within(screen.getByTestId('session-wizard-group-base')).getByTestId(
@@ -240,7 +240,7 @@ describe('SessionWizard sources step', () => {
       ),
     ).toBeInTheDocument()
     expect(
-      within(screen.getByTestId('session-wizard-group-set')).getByTestId(
+      within(screen.getByTestId('session-wizard-group-any')).getByTestId(
         'session-wizard-chip-combos',
       ),
     ).toBeInTheDocument()
@@ -525,7 +525,7 @@ describe('SessionWizard character step', () => {
     const { onBuild } = setup({ b90: 'base' })
     toSources()
     fireEvent.change(screen.getByTestId('playlists-search'), { target: { value: 'combos' } })
-    fireEvent.click(screen.getByTestId('session-wizard-role-combos-set'))
+    fireEvent.click(screen.getByTestId('session-wizard-role-combos-any'))
     fireEvent.change(screen.getByTestId('playlists-search'), {
       target: { value: 'cantaditas' },
     })
@@ -537,7 +537,7 @@ describe('SessionWizard character step', () => {
     fireEvent.click(screen.getByTestId('session-wizard-build'))
     expect(onBuild).toHaveBeenCalledExactlyOnceWith(
       expect.objectContaining({ sources: ['b90', 'combos', 'c90'] }),
-      { b90: 'base', combos: 'set', c90: 'vocal' },
+      { b90: 'base', combos: 'any', c90: 'vocal' },
     )
   })
 

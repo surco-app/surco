@@ -7,7 +7,9 @@ import type {
   TrackRole,
 } from '../../../shared/sessionTypes'
 import type { PlaylistTrackRef, SourcePlaylistEntry } from '../../../shared/types'
-import { type SessionSource, setSequences, toCandidates, trackIdOf } from './sessionCandidates'
+import { mixedSequences, type SessionSource, toCandidates, trackIdOf } from './sessionCandidates'
+
+const MIN_PLAYLISTS_PER_COMBO = 2
 
 export interface SessionRun {
   plan: SessionPlan
@@ -51,7 +53,11 @@ export function runSession(input: {
     })),
   ]
   const pool = toCandidates(sources)
-  const combos = mineCombos(setSequences(sources), new Set(pool.map((track) => track.id)))
+  const combos = mineCombos(
+    mixedSequences(sources),
+    new Set(pool.map((track) => track.id)),
+    MIN_PLAYLISTS_PER_COMBO,
+  )
   const plan = buildSession(pool, combos, sessionOptionsOf(answers, seed))
   const refsById = new Map<string, PlaylistTrackRef>()
   for (const source of sources) {

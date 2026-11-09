@@ -15,12 +15,12 @@ function setup(value: PlaylistRole | null) {
 }
 
 describe('PlaylistRolePicker', () => {
-  it('offers the four roles with their names', () => {
+  it('offers the three roles with their names', () => {
     setup(null)
     expect(screen.getByTestId('pick-base')).toHaveTextContent(i18n.t('sessions.role.base'))
     expect(screen.getByTestId('pick-vocal')).toHaveTextContent(i18n.t('sessions.role.vocal'))
     expect(screen.getByTestId('pick-any')).toHaveTextContent(i18n.t('sessions.role.any'))
-    expect(screen.getByTestId('pick-set')).toHaveTextContent(i18n.t('sessions.role.set'))
+    expect(screen.queryByTestId('pick-set')).toBeNull()
   })
 
   it('marks only the current role as pressed', () => {
@@ -31,20 +31,20 @@ describe('PlaylistRolePicker', () => {
 
   it('marks nothing when the playlist has no role', () => {
     setup(null)
-    for (const role of ['base', 'vocal', 'any', 'set']) {
+    for (const role of ['base', 'vocal', 'any']) {
       expect(screen.getByTestId(`pick-${role}`)).toHaveAttribute('aria-pressed', 'false')
     }
   })
 
   it('hands over the role that was pressed', () => {
     const onChange = setup('base')
-    fireEvent.click(screen.getByTestId('pick-set'))
-    expect(onChange).toHaveBeenCalledExactlyOnceWith('set')
+    fireEvent.click(screen.getByTestId('pick-any'))
+    expect(onChange).toHaveBeenCalledExactlyOnceWith('any')
   })
 
   it('takes the role away when the active one is pressed again', () => {
-    const onChange = setup('set')
-    fireEvent.click(screen.getByTestId('pick-set'))
+    const onChange = setup('any')
+    fireEvent.click(screen.getByTestId('pick-any'))
     expect(onChange).toHaveBeenCalledExactlyOnceWith(null)
   })
 })

@@ -27,14 +27,14 @@ describe('useSessionRoles', () => {
 
   it('saves the whole map with the new role added', () => {
     const { result, save } = setup({ 'rekordbox:1': 'base' })
-    act(() => result.current.setRole('2', 'set'))
-    expect(save).toHaveBeenCalledExactlyOnceWith({ 'rekordbox:1': 'base', 'rekordbox:2': 'set' })
+    act(() => result.current.setRole('2', 'any'))
+    expect(save).toHaveBeenCalledExactlyOnceWith({ 'rekordbox:1': 'base', 'rekordbox:2': 'any' })
   })
 
   it('takes a role away with null', () => {
-    const { result, save } = setup({ 'rekordbox:1': 'base', 'rekordbox:2': 'set' })
+    const { result, save } = setup({ 'rekordbox:1': 'base', 'rekordbox:2': 'any' })
     act(() => result.current.setRole('1', null))
-    expect(save).toHaveBeenCalledExactlyOnceWith({ 'rekordbox:2': 'set' })
+    expect(save).toHaveBeenCalledExactlyOnceWith({ 'rekordbox:2': 'any' })
   })
 
   it('keeps both roles when two are set before the settings have come back', () => {
@@ -48,9 +48,9 @@ describe('useSessionRoles', () => {
 
   it('goes on from the settings when they change from outside', () => {
     const { result, rerender, save } = setup({ 'rekordbox:1': 'base' })
-    rerender({ saved: { 'rekordbox:9': 'set' }, program: 'rekordbox' })
+    rerender({ saved: { 'rekordbox:9': 'any' }, program: 'rekordbox' })
     act(() => result.current.setRole('2', 'vocal'))
-    expect(save).toHaveBeenLastCalledWith({ 'rekordbox:9': 'set', 'rekordbox:2': 'vocal' })
+    expect(save).toHaveBeenLastCalledWith({ 'rekordbox:9': 'any', 'rekordbox:2': 'vocal' })
   })
 
   it('does nothing when no program is open', () => {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { AppleMusicTrackMeta, SourcePlaylistEntry } from '../../../shared/types'
-import { type SessionSource, setSequences, toCandidates, trackIdOf } from './sessionCandidates'
+import { mixedSequences, type SessionSource, toCandidates, trackIdOf } from './sessionCandidates'
 
 function entry(
   path: string | null,
@@ -72,8 +72,8 @@ describe('toCandidates', () => {
     expect(tracks[0]).toMatchObject({ fresh: false, role: 'base' })
   })
 
-  it('brings the tracks of a Set playlist in as neutral', () => {
-    const tracks = toCandidates([source('set', entry('/m/a.mp3'), entry('/m/b.mp3'))])
+  it('brings the tracks of a Mixed playlist in as neutral', () => {
+    const tracks = toCandidates([source('any', entry('/m/a.mp3'), entry('/m/b.mp3'))])
     expect(tracks.map((t) => t.role)).toEqual(['any', 'any'])
   })
 
@@ -107,18 +107,18 @@ describe('toCandidates', () => {
   })
 })
 
-describe('setSequences', () => {
-  it('lists the ids of each Set playlist in order and ignores other roles', () => {
-    const sequences = setSequences([
-      source('set', entry('/m/a.mp3'), entry('/m/b.mp3'), entry('/m/c.mp3')),
+describe('mixedSequences', () => {
+  it('lists the ids of each Mixed playlist in order and ignores other roles', () => {
+    const sequences = mixedSequences([
+      source('any', entry('/m/a.mp3'), entry('/m/b.mp3'), entry('/m/c.mp3')),
       source('base', entry('/m/x.mp3'), entry('/m/y.mp3')),
     ])
     expect(sequences).toEqual([['/m/a.mp3', '/m/b.mp3', '/m/c.mp3']])
   })
 
   it('cuts the sequence at a separator so the two sides are not taken as a pair', () => {
-    const sequences = setSequences([
-      source('set', entry('/m/a.mp3'), entry('/m/sep.mp3', { separator: true }), entry('/m/b.mp3')),
+    const sequences = mixedSequences([
+      source('any', entry('/m/a.mp3'), entry('/m/sep.mp3', { separator: true }), entry('/m/b.mp3')),
     ])
     expect(sequences).toEqual([['/m/a.mp3'], ['/m/b.mp3']])
   })
