@@ -1,8 +1,9 @@
 import { useRef, useState } from 'react'
-import type { SessionPlan } from '../../../shared/sessionBuild'
-import type { PlaylistRole, SessionAnswers } from '../../../shared/sessionTypes'
-import type { SourceNode } from '../../../shared/types'
-import { runSession, type SessionRun } from '../lib/sessionRun'
+import { type SessionPlan, swapAt } from '../../../shared/sessionBuild'
+import type { PlaylistRole, SessionAnswers, SessionTrack } from '../../../shared/sessionTypes'
+import type { PlaylistTrackRef, SourceNode } from '../../../shared/types'
+import { alternativesFor } from '../lib/sessionAlternatives'
+import { runSession, type SessionRun, sessionOptionsOf } from '../lib/sessionRun'
 import type { SessionRows } from './useSessionRows'
 import type { SessionWriter } from './useSessionWrite'
 import { useStableCallback } from './useStableCallback'
@@ -16,6 +17,8 @@ export interface RecentSession {
   answers: SessionAnswers
   seed: number
   plan: SessionPlan
+  pool: SessionTrack[]
+  refsById: ReadonlyMap<string, PlaylistTrackRef>
 }
 
 export interface SessionRunDeps {
@@ -34,6 +37,8 @@ export interface SessionRunner {
   build: (parentId: string, answers: SessionAnswers) => Promise<BuildResult>
   redo: () => Promise<BuildResult>
   adjust: (answers: SessionAnswers) => Promise<BuildResult>
+  swap: (index: number, track: SessionTrack) => Promise<BuildResult>
+  alternatives: (index: number) => SessionTrack[]
   keep: () => void
   noteEdit: (playlistId: string) => void
 }
@@ -69,7 +74,16 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
     run: SessionRun,
   ): BuildResult => {
     deps.openPlaylist({ id, name, kind: 'playlist', count: run.refs.length })
-    setRecent({ playlistId: id, parentId, name, answers, seed, plan: run.plan })
+    setRecent({
+      playlistId: id,
+      parentId,
+      name,
+      answers,
+      seed,
+      plan: run.plan,
+      pool: run.pool,
+      refsById: run.refsById,
+    })
     return 'built'
   }
 
@@ -111,11 +125,36 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
     return replaceWith(recent, answers)
   })
 
+  const alternatives = useStableCallback((index: number): SessionTrack[] =>
+    recent
+      ? alternativesFor(
+          recent.plan,
+          index,
+          recent.pool,
+          sessionOptionsOf(recent.answers, recent.seed),
+        )
+      : [],
+  )
+
+  const swap = useStableCallback(async (index: number, track: SessionTrack) => {
+    if (!recent) return 'refused'
+    const plan = swapAt(recent.plan, index, track, recent.answers.minutes * 60)
+    if (plan === recent.plan) return 'refused'
+    return exclusive(async () => {
+      const refs = plan.items.map((item) => recent.refsById.get(item.track.id) ?? { paths: [] })
+      const id = await deps.writer.replace(recent.parentId, recent.playlistId, recent.name, refs)
+      if (id === null) return 'refused'
+      deps.openPlaylist({ id, name: recent.name, kind: 'playlist', count: refs.length })
+      setRecent({ ...recent, playlistId: id, plan })
+      return 'built'
+    })
+  })
+
   const keep = useStableCallback(() => setRecent(null))
 
   const noteEdit = useStableCallback((playlistId: string) =>
     setRecent((current) => (current?.playlistId === playlistId ? null : current)),
   )
 
-  return { recent, busy, build, redo, adjust, keep, noteEdit }
+  return { recent, busy, build, redo, adjust, swap, alternatives, keep, noteEdit }
 }

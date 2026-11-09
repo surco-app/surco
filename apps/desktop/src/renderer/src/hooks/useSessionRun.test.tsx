@@ -204,6 +204,88 @@ describe('useSessionRun redo and adjust', () => {
   })
 })
 
+describe('useSessionRun swapping a track', () => {
+  it('offers the tracks that were left out of the session for a place', async () => {
+    const { result } = await built()
+    const inPlan = result.current.recent?.plan.items.map((item) => item.track.id) ?? []
+    const offered = result.current.alternatives(1)
+    expect(offered).toHaveLength(1)
+    expect(inPlan).not.toContain(offered[0].id)
+  })
+
+  it('offers nothing before a session was built', () => {
+    const { result } = setup()
+    expect(result.current.alternatives(0)).toEqual([])
+  })
+
+  it('swaps by replacing the playlist with the new order, marking the track as chosen by hand', async () => {
+    const { result } = await built()
+    const spare = result.current.alternatives(1)[0]
+
+    let outcome: string | undefined
+    await act(async () => {
+      outcome = await result.current.swap(1, spare)
+    })
+
+    expect(outcome).toBe('built')
+    const written = replace.mock.calls[0][3]
+    expect(written).toHaveLength(2)
+    expect(written[1]).toEqual({ contentId: undefined, paths: [spare.id] })
+    expect(result.current.recent?.playlistId).toBe('new2')
+    expect(result.current.recent?.plan.items[1]).toMatchObject({
+      track: { id: spare.id },
+      why: { kind: 'chosen' },
+    })
+  })
+
+  it('keeps the seed, so a redo goes on from where the draw was', async () => {
+    const { result } = await built()
+    const spare = result.current.alternatives(1)[0]
+    await act(async () => {
+      await result.current.swap(1, spare)
+    })
+    expect(result.current.recent?.seed).toBe(100)
+  })
+
+  it('keeps the plan and the old playlist when the swap is refused', async () => {
+    const { result } = await built({
+      writer: { create: vi.fn(async () => 'new1'), replace: vi.fn(async () => null) },
+    })
+    const before = result.current.recent?.plan
+    const spare = result.current.alternatives(1)[0]
+
+    let outcome: string | undefined
+    await act(async () => {
+      outcome = await result.current.swap(1, spare)
+    })
+
+    expect(outcome).toBe('refused')
+    expect(result.current.recent?.plan).toBe(before)
+    expect(result.current.recent?.playlistId).toBe('new1')
+  })
+
+  it('has nothing to swap before a session was built or for a place that does not exist', async () => {
+    const empty = setup()
+    let outcome: string | undefined
+    await act(async () => {
+      outcome = await empty.result.current.swap(0, {
+        id: 'z',
+        role: 'any',
+        key: null,
+        bpm: 0,
+        rating: 0,
+        plays: 0,
+        secs: 0,
+        fresh: false,
+        title: 'z',
+        artist: '',
+      })
+    })
+    expect(outcome).toBe('refused')
+    expect(replace).not.toHaveBeenCalled()
+  })
+})
+
 describe('useSessionRun keeping and editing', () => {
   it('drops the band when the session is kept, writing nothing', async () => {
     const { result } = await built()
