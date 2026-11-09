@@ -152,3 +152,122 @@ describe('buildSession core', () => {
     expect(plan.summary.tracks).toBe(0)
   })
 })
+
+describe('buildSession alternation, new tracks and surprise', () => {
+  it('never puts two tracks of the same role in a row and lets any stay neutral', () => {
+    const pool = [
+      ...Array.from({ length: 5 }, (_, i) => track(`b${i}`, { role: 'base' })),
+      ...Array.from({ length: 5 }, (_, i) => track(`v${i}`, { role: 'vocal' })),
+      track('x1', { role: 'any' }),
+      track('x2', { role: 'any' }),
+    ]
+    const plan = buildSession(pool, none, options({ alternate: true, minutes: 120, seed: 4 }))
+    expect(plan.items.length).toBeGreaterThan(3)
+    let last: string | null = null
+    for (const item of plan.items) {
+      if (item.track.role === 'any') continue
+      expect(item.track.role).not.toBe(last)
+      last = item.track.role
+    }
+  })
+
+  it('does not let an any track change which role comes next', () => {
+    const pool = [
+      track('b1', { role: 'base' }),
+      track('x', { role: 'any' }),
+      track('v1', { role: 'vocal' }),
+      track('b2', { role: 'base', rating: 100 }),
+    ]
+    const plan = buildSession(
+      pool,
+      combosOf(['b1', 'x', 1]),
+      options({ alternate: true, minutes: 30 }),
+    )
+    expect(ids(plan)).toEqual(['b1', 'x', 'v1', 'b2'])
+  })
+
+  it('skips a combo that would break the alternation', () => {
+    const pool = [
+      track('a', { role: 'base' }),
+      track('b', { role: 'base' }),
+      track('c', { role: 'vocal' }),
+    ]
+    const plan = buildSession(
+      pool,
+      combosOf(['a', 'b', 3]),
+      options({ alternate: true, minutes: 30 }),
+    )
+    expect(ids(plan)).toEqual(['a', 'c', 'b'])
+  })
+
+  it('places roughly the requested share of new tracks, never first or last', () => {
+    const normal = Array.from({ length: 30 }, (_, i) => track(`n${i}`))
+    const fresh = Array.from({ length: 6 }, (_, i) => track(`f${i}`, { fresh: true }))
+    const plan = buildSession(
+      [...normal, ...fresh],
+      none,
+      options({ minutes: 100, freshShare: 0.15, seed: 2 }),
+    )
+    const placed = plan.items.filter((item) => item.track.fresh).length
+    expect(placed).toBeGreaterThanOrEqual(1)
+    expect(placed).toBeLessThanOrEqual(4)
+    expect(plan.summary.fresh).toBe(placed)
+    expect(plan.items[0].track.fresh).toBe(false)
+    expect(plan.items[plan.items.length - 1].track.fresh).toBe(false)
+  })
+
+  it('places no new track when none is asked for', () => {
+    const pool = [track('a'), track('b'), track('f', { fresh: true })]
+    const plan = buildSession(pool, none, options({ freshShare: 0 }))
+    expect(plan.summary.fresh).toBe(0)
+    expect(ids(plan)).not.toContain('f')
+  })
+
+  it('lets a combo win the slot of a new track and moves the new one to the next slot', () => {
+    const pool = [
+      ...['a', 'b', 'c', 'd', 'e'].map((id) => track(id)),
+      track('f1', { fresh: true }),
+      track('f2', { fresh: true }),
+    ]
+    const plan = buildSession(
+      pool,
+      combosOf(['a', 'b', 1]),
+      options({ minutes: 20, freshShare: 0.4 }),
+    )
+    expect(plan.items[1].track.id).toBe('b')
+    expect(plan.items[1].why).toEqual({ kind: 'combo', sets: 1 })
+    expect(plan.items[2].track.fresh).toBe(true)
+    expect(plan.items[0].track.fresh).toBe(false)
+  })
+
+  it('fits a new track by role like any other track', () => {
+    const pool = [
+      track('a', { role: 'base' }),
+      track('x', { role: 'vocal' }),
+      track('fb', { role: 'base', fresh: true }),
+      track('fv', { role: 'vocal', fresh: true }),
+    ]
+    const plan = buildSession(
+      pool,
+      combosOf(['a', 'x', 1]),
+      options({ alternate: true, minutes: 20, freshShare: 0.5 }),
+    )
+    expect(ids(plan)).toEqual(['a', 'x', 'fb'])
+    expect(plan.items[2].why).toEqual({ kind: 'fresh', key: null, role: 'base' })
+  })
+
+  it('leaves room for a pair that never had a combo when surprise is on', () => {
+    const chain = Array.from({ length: 10 }, (_, i) => track(`t${i}`))
+    const links: Array<[string, string, number]> = chain
+      .slice(0, -1)
+      .map((t, i) => [t.id, chain[i + 1].id, i === 0 ? 2 : 1])
+    const plain = buildSession(chain, combosOf(...links), options({ minutes: 60 }))
+    const surprising = buildSession(
+      chain,
+      combosOf(...links),
+      options({ minutes: 60, surprise: true }),
+    )
+    expect(plain.summary.combos).toBe(plain.items.length - 1)
+    expect(surprising.summary.combos).toBeLessThan(surprising.items.length - 1)
+  })
+})

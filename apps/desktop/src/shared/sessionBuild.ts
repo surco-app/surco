@@ -46,6 +46,7 @@ const UNKNOWN_SECS = 360
 const TEMPO_TIGHT = 4
 const TEMPO_WIDE = 8
 const PLAYS_WEIGHT = 0.5
+const SURPRISE_EVERY = 4
 
 function seeded(seed: number): () => number {
   let state = seed >>> 0
@@ -71,6 +72,12 @@ function harmonyAllows(mode: SessionOptions['harmony'], distance: number | null)
   return mode === 'neighbours' ? distance <= 1 : distance === 0
 }
 
+function freshSlots(goal: number, estimated: number): number[] {
+  return Array.from({ length: goal }, (_, k) =>
+    Math.max(1, Math.round(((k + 1) * estimated) / (goal + 1))),
+  )
+}
+
 export function buildSession(
   pool: readonly SessionTrack[],
   combos: Combos,
@@ -78,12 +85,25 @@ export function buildSession(
 ): SessionPlan {
   const random = seeded(options.seed)
   const eligible = pool.filter((track) => !track.fresh)
+  const newcomers = pool.filter((track) => track.fresh)
   const byId = new Map(eligible.map((track) => [track.id, track]))
   const maxPlays = eligible.reduce((most, track) => Math.max(most, track.plays), 0)
   const target = options.minutes * 60
   const used = new Set<string>()
   const items: SessionItem[] = []
   let total = 0
+  let expected: TrackRole | null = null
+  let placedFresh = 0
+
+  const averageSecs =
+    eligible.length > 0
+      ? eligible.reduce((sum, track) => sum + secsOf(track), 0) / eligible.length
+      : UNKNOWN_SECS
+  const estimated = Math.max(1, Math.ceil(target / averageSecs))
+  const slots = freshSlots(
+    Math.min(newcomers.length, Math.round(options.freshShare * estimated)),
+    estimated,
+  )
 
   const pickOne = <T>(list: readonly T[]): T => list[Math.floor(random() * list.length)]
 
@@ -92,10 +112,15 @@ export function buildSession(
       ? track.rating / 100 + (maxPlays > 0 ? PLAYS_WEIGHT * (track.plays / maxPlays) : 0)
       : 0
 
+  const roleFits = (track: SessionTrack): boolean =>
+    !options.alternate || expected === null || track.role === 'any' || track.role === expected
+
   const take = (track: SessionTrack, why: SessionWhy): void => {
     used.add(track.id)
     items.push({ track, why })
     total += secsOf(track)
+    if (track.role === 'base') expected = 'vocal'
+    else if (track.role === 'vocal') expected = 'base'
   }
 
   const strongest = (): { from: SessionTrack; strength: number } | null => {
@@ -116,39 +141,54 @@ export function buildSession(
   }
 
   const nextByCombo = (current: SessionTrack): SessionItem | null => {
-    const targets = [...(combos.get(current.id) ?? [])].filter(
-      ([id]) => byId.has(id) && !used.has(id),
-    )
+    const targets = [...(combos.get(current.id) ?? [])].filter(([id]) => {
+      const track = byId.get(id)
+      return track !== undefined && !used.has(id) && roleFits(track)
+    })
     if (targets.length === 0) return null
     const best = Math.max(...targets.map(([, strength]) => strength))
     const [id, sets] = pickOne(targets.filter(([, strength]) => strength === best))
     return { track: byId.get(id) as SessionTrack, why: { kind: 'combo', sets } }
   }
 
-  const nextByFit = (current: SessionTrack): SessionItem | null => {
-    const open = eligible.filter((track) => !used.has(track.id))
-    const fitting = open.filter((track) =>
-      harmonyAllows(options.harmony, camelotDistance(current.key, track.key)),
+  const fitTier = (
+    current: SessionTrack,
+    list: readonly SessionTrack[],
+  ): { tier: SessionTrack[]; relaxed: boolean } => {
+    const fitting = list.filter(
+      (track) =>
+        roleFits(track) && harmonyAllows(options.harmony, camelotDistance(current.key, track.key)),
     )
     const tight = fitting.filter((track) => {
       const gap = tempoGap(current, track)
       return gap !== null && gap <= TEMPO_TIGHT
     })
-    const relaxed = tight.length === 0
-    const tier = relaxed
-      ? fitting.filter((track) => {
-          const gap = tempoGap(current, track)
-          return gap === null || gap <= TEMPO_WIDE
-        })
-      : tight
+    if (tight.length > 0) return { tier: tight, relaxed: false }
+    const wide = fitting.filter((track) => {
+      const gap = tempoGap(current, track)
+      return gap === null || gap <= TEMPO_WIDE
+    })
+    return { tier: wide, relaxed: true }
+  }
+
+  const closestOf = (current: SessionTrack, list: readonly SessionTrack[]): SessionTrack => {
+    const closest = Math.min(...list.map((track) => camelotDistance(current.key, track.key) ?? 1))
+    return pickOne(
+      list.filter((track) => (camelotDistance(current.key, track.key) ?? 1) === closest),
+    )
+  }
+
+  const nextByFit = (current: SessionTrack, onlyWithoutCombo: boolean): SessionItem | null => {
+    const open = eligible.filter(
+      (track) =>
+        !used.has(track.id) && !(onlyWithoutCombo && combos.get(current.id)?.has(track.id)),
+    )
+    const { tier, relaxed } = fitTier(current, open)
     if (tier.length === 0) return null
     const best = Math.max(...tier.map(taste))
-    const leaders = tier.filter((track) => taste(track) === best)
-    const closest = Math.min(
-      ...leaders.map((track) => camelotDistance(current.key, track.key) ?? 1),
-    )
-    const chosen = pickOne(
-      leaders.filter((track) => (camelotDistance(current.key, track.key) ?? 1) === closest),
+    const chosen = closestOf(
+      current,
+      tier.filter((track) => taste(track) === best),
     )
     if (relaxed) return { track: chosen, why: { kind: 'bpm', relaxed: true } }
     const distance = camelotDistance(current.key, chosen.key)
@@ -162,13 +202,29 @@ export function buildSession(
     return { track: chosen, why: { kind: 'bpm', relaxed: false } }
   }
 
+  const nextFresh = (current: SessionTrack): SessionItem | null => {
+    const open = newcomers.filter((track) => !used.has(track.id))
+    const { tier } = fitTier(current, open)
+    if (tier.length === 0) return null
+    const chosen = closestOf(current, tier)
+    if (total + secsOf(chosen) >= target) return null
+    return { track: chosen, why: { kind: 'fresh', key: chosen.key, role: chosen.role } }
+  }
+
   if (eligible.length > 0) {
     const opening = options.preferCombos ? strongest() : null
     take(opening ? opening.from : pickOne(eligible), { kind: 'start' })
     while (total < target) {
       const current = items[items.length - 1].track
-      const next = (options.preferCombos ? nextByCombo(current) : null) ?? nextByFit(current)
+      const surpriseTurn = options.surprise && items.length % SURPRISE_EVERY === 0
+      const slotOpen = placedFresh < slots.length && items.length >= slots[placedFresh]
+      const next =
+        (surpriseTurn ? nextByFit(current, true) : null) ??
+        (options.preferCombos ? nextByCombo(current) : null) ??
+        (slotOpen ? nextFresh(current) : null) ??
+        nextByFit(current, false)
       if (!next) break
+      if (next.why.kind === 'fresh') placedFresh++
       take(next.track, next.why)
     }
   }
