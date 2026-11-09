@@ -10136,19 +10136,16 @@ describe('automatic session from the tree', () => {
   })
 
   it('says in the last step that it will fill the emptied playlist', async () => {
-    openRekordboxTree(
-      {},
-      [
-        {
-          id: 'sets',
-          name: 'Sets',
-          kind: 'folder' as const,
-          count: 1,
-          children: [{ id: 'emptied', name: 'Session 11-9', kind: 'playlist' as const, count: 0 }],
-        },
-        { id: 'f', name: 'Factory', kind: 'playlist' as const, count: 1 },
-      ],
-    )
+    openRekordboxTree({}, [
+      {
+        id: 'sets',
+        name: 'Sets',
+        kind: 'folder' as const,
+        count: 1,
+        children: [{ id: 'emptied', name: 'Session 11-9', kind: 'playlist' as const, count: 0 }],
+      },
+      { id: 'f', name: 'Factory', kind: 'playlist' as const, count: 1 },
+    ])
     await renderApp()
     fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
     fireEvent.click(await screen.findByTestId('source-node-sets'))
@@ -10161,6 +10158,32 @@ describe('automatic session from the tree', () => {
     fireEvent.click(screen.getByTestId('session-wizard-next'))
     await screen.findByTestId('session-wizard-build')
     expect(screen.getByTestId('session-wizard-destination')).toHaveTextContent('Session 11-9')
+  })
+
+  it('starts reading in the background the playlists that say which tracks are bases and vocals, as soon as the wizard opens', async () => {
+    const tree = [
+      { id: 'sets', name: 'Sets', kind: 'folder' as const, count: 0, children: [] },
+      {
+        id: 'bases',
+        name: 'BASES',
+        kind: 'folder' as const,
+        count: 1,
+        children: [{ id: 'bt', name: 'Todas', kind: 'playlist' as const, count: 1 }],
+      },
+      { id: 'f', name: 'Factory', kind: 'playlist' as const, count: 1 },
+    ]
+    openRekordboxTree({}, tree)
+    const read = vi.mocked(window.api.loadRekordboxPlaylist)
+    await openWizard()
+    await waitFor(() => expect(read.mock.calls.some((call) => call[0] === 'bt')).toBe(true))
+  })
+
+  it('does not read playlists for roles when no folder is called like a role', async () => {
+    openRekordboxTree()
+    const read = vi.mocked(window.api.loadRekordboxPlaylist)
+    await openWizard()
+    await act(async () => {})
+    expect(read.mock.calls.some((call) => call[0] === 'bt')).toBe(false)
   })
 
   it('opens from the menu of a folder', async () => {

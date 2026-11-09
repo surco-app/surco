@@ -48,3 +48,13 @@ export function suggestedFolderNames(nodes: readonly SourceNode[], inherited = f
     ]
   })
 }
+
+export function libraryRoles(
+  nodes: readonly SourceNode[],
+): Record<string, Exclude<PlaylistRole, 'any'>> {
+  const roles: Record<string, Exclude<PlaylistRole, 'any'>> = {}
+  for (const [id, role] of Object.entries(suggestRoles(nodes))) {
+    if (role !== 'any') roles[id] = role
+  }
+  return roles
+}

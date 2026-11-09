@@ -155,6 +155,68 @@ async function built(over: Partial<SessionRunDeps> = {}) {
   return ctx
 }
 
+describe('useSessionRun reading the library roles', () => {
+  const withLibrary = (rows: Map<string, SourcePlaylistEntry[]>) => ({
+    rows: {
+      load: vi.fn(
+        async (ids: readonly string[]) => new Map([...rows].filter(([id]) => ids.includes(id))),
+      ),
+      reset: vi.fn(),
+      loading: false,
+      failed: [],
+    },
+    library: () => ({ lib: 'vocal' as const }),
+  })
+
+  it('reads the playlists the roles come from along with the chosen ones', async () => {
+    const deps = withLibrary(new Map([...ROWS, ['lib', [entry('/m/a.mp3')]]]))
+    const { result } = setup(deps)
+    await act(async () => {
+      await result.current.build('folder', ANSWERS, ROLES)
+    })
+    expect(deps.rows.load).toHaveBeenCalledWith(['s', 'lib'])
+  })
+
+  it('does not read a playlist twice when it is chosen and also gives roles', async () => {
+    const deps = {
+      ...withLibrary(new Map(ROWS)),
+      library: () => ({ s: 'base' as const }),
+    }
+    const { result } = setup(deps)
+    await act(async () => {
+      await result.current.build('folder', ANSWERS, ROLES)
+    })
+    expect(deps.rows.load).toHaveBeenCalledWith(['s'])
+  })
+
+  it('gives the tracks of the set the role those playlists say', async () => {
+    const deps = withLibrary(new Map([...ROWS, ['lib', [entry('/m/a.mp3')]]]))
+    const { result } = setup(deps)
+    await act(async () => {
+      await result.current.build('folder', ANSWERS, { s: 'any' })
+    })
+    expect(result.current.recent?.pool.find((t) => t.id === '/m/a.mp3')?.role).toBe('vocal')
+  })
+
+  it('goes on when a playlist that gives roles could not be read', async () => {
+    const deps = withLibrary(new Map(ROWS))
+    const { result } = setup(deps)
+    let outcome: string | undefined
+    await act(async () => {
+      outcome = await result.current.build('folder', ANSWERS, ROLES)
+    })
+    expect(outcome).toBe('built')
+  })
+
+  it('reads nothing more when there is no library', async () => {
+    const { deps, result } = setup()
+    await act(async () => {
+      await result.current.build('folder', ANSWERS, ROLES)
+    })
+    expect(deps.rows.load).toHaveBeenCalledWith(['s'])
+  })
+})
+
 describe('useSessionRun redo and adjust', () => {
   it('replaces the playlist with another draw of the same answers', async () => {
     const { deps, result } = await built()

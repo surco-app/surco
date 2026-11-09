@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { SourceNode } from '../../../shared/types'
-import { suggestRoles, withoutSeparators } from './sessionTree'
+import { libraryRoles, suggestRoles, withoutSeparators } from './sessionTree'
 
 const playlist = (id: string, name: string, count = 3): SourceNode => ({
   id,
@@ -97,5 +97,35 @@ describe('suggestRoles', () => {
   it('lets the outer folder decide when two nested folders disagree', () => {
     const tree = [folder('f', 'Bases', [folder('g', 'Cantaditas', [playlist('a', 'x')])])]
     expect(suggestRoles(tree)).toEqual({ a: 'base' })
+  })
+})
+
+describe('libraryRoles', () => {
+  const folder = (id: string, name: string, children: SourceNode[]): SourceNode => ({
+    id,
+    name,
+    kind: 'folder',
+    count: children.length,
+    children,
+  })
+
+  it('lists the playlists of the folders called Bases or Cantaditas with their role', () => {
+    const tree = [
+      folder('fb', 'BASES', [playlist('a', 'Todas')]),
+      folder('fc', 'CANTADITAS', [playlist('b', 'Fijas')]),
+    ]
+    expect(libraryRoles(tree)).toEqual({ a: 'base', b: 'vocal' })
+  })
+
+  it('leaves out the folders of sets and tracklists, which say nothing about a track', () => {
+    const tree = [
+      folder('fm', 'COMBOS', [playlist('m', 'Set')]),
+      folder('fb', 'BASES', [playlist('a', 'Todas')]),
+    ]
+    expect(libraryRoles(tree)).toEqual({ a: 'base' })
+  })
+
+  it('is empty when no folder is called like a role', () => {
+    expect(libraryRoles([folder('f', 'Remember', [playlist('a', 'x')])])).toEqual({})
   })
 })

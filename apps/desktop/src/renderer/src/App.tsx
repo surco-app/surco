@@ -226,6 +226,7 @@ import {
   type Selection,
 } from './lib/selection'
 import { hasStagedEdits } from './lib/sessionEdits'
+import { libraryRoles } from './lib/sessionTree'
 import { SettingsProvider } from './lib/settingsContext'
 import { formatShortcut } from './lib/shortcuts'
 import { isUsbProgram, SOURCE_PROGRAMS, SOURCE_READ } from './lib/sourcePrograms'
@@ -1105,6 +1106,7 @@ export default function App(): React.JSX.Element {
       if (settings) saveSettings({ sessionWizard: wizardSettingsFrom(answers) })
     },
     newSeed: () => Date.now() % 2_147_483_647,
+    library: () => libraryRoles(browser.tree ?? []),
   })
   const reportSession = useStableCallback(async (pending: Promise<BuildResult>): Promise<void> => {
     if ((await pending) === 'closed') notifyEdit(tr('sessions.closed'), 'danger')
@@ -1121,12 +1123,17 @@ export default function App(): React.JSX.Element {
     adjust: boolean
     fill?: FillTarget
   } | null>(null)
+  const readLibraryRoles = useStableCallback(() => {
+    void sessionRows.load(Object.keys(libraryRoles(browser.tree ?? [])))
+  })
   const openSessionAt = useStableCallback((parentId: string) => {
     sessionRows.reset()
+    readLibraryRoles()
     setSessionWizard({ parentId, adjust: false })
   })
   const openSessionFill = useStableCallback((node: SourceNode) => {
     sessionRows.reset()
+    readLibraryRoles()
     const parentId = parentIdOf(browser.tree, node.id) ?? 'root'
     setSessionWizard({ parentId, adjust: false, fill: { id: node.id, name: node.name, parentId } })
   })
@@ -1152,6 +1159,7 @@ export default function App(): React.JSX.Element {
   }
   const openSessionAdjust = useStableCallback(() => {
     sessionRows.reset()
+    readLibraryRoles()
     setSessionWizard({ parentId: sessionRun.recent?.parentId ?? 'root', adjust: true })
   })
   const sessionRecent =

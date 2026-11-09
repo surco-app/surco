@@ -33,13 +33,24 @@ export function runSession(input: {
   roles: Readonly<Record<string, PlaylistRole>>
   rows: ReadonlyMap<string, readonly SourcePlaylistEntry[]>
   seed: number
+  library?: Readonly<Record<string, 'base' | 'vocal'>>
 }): SessionRun {
-  const { answers, roles, rows, seed } = input
+  const { answers, roles, rows, seed, library = {} } = input
   const sources: SessionSource[] = answers.sources.map((id) => ({
     role: roles[id] ?? 'any',
     entries: rows.get(id) ?? [],
   }))
-  const pool = toCandidates(sources)
+  const evidence = new Map<string, Set<'base' | 'vocal'>>()
+  for (const [playlistId, role] of Object.entries(library)) {
+    for (const entry of rows.get(playlistId) ?? []) {
+      const id = trackIdOf(entry)
+      if (id === null) continue
+      const held = evidence.get(id) ?? new Set<'base' | 'vocal'>()
+      held.add(role)
+      evidence.set(id, held)
+    }
+  }
+  const pool = toCandidates(sources, new Date(), evidence)
   const sequences = mixedSequences(sources)
   const ids = new Set(pool.map((track) => track.id))
   const pairs = mineCombos(sequences, ids, 1)

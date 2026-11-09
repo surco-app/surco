@@ -34,6 +34,7 @@ export interface SessionRunDeps {
   openPlaylist: (node: SourceNode) => void
   saveAnswers: (answers: SessionAnswers) => void
   newSeed: () => number
+  library?: () => Readonly<Record<string, 'base' | 'vocal'>>
 }
 
 export interface FillTarget {
@@ -78,8 +79,11 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
     roles: Roles,
     seed: number,
   ): Promise<SessionRun> => {
-    const loaded = await deps.rows.load([...answers.sources])
-    return runSession({ answers, roles, rows: loaded, seed })
+    const library = deps.library?.() ?? {}
+    const chosen = new Set(answers.sources)
+    const given = Object.keys(library).filter((id) => !chosen.has(id))
+    const loaded = await deps.rows.load([...answers.sources, ...given])
+    return runSession({ answers, roles, rows: loaded, seed, library })
   }
 
   const settle = (

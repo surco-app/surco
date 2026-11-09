@@ -34,12 +34,14 @@ function run(
   roles: Record<string, PlaylistRole>,
   rows: Record<string, SourcePlaylistEntry[]>,
   seed = 1,
+  library: Record<string, 'base' | 'vocal'> = {},
 ) {
   return runSession({
     answers: { ...ANSWERS, ...over },
     roles,
     rows: new Map(Object.entries(rows)) as Rows,
     seed,
+    library,
   })
 }
 
@@ -96,6 +98,51 @@ describe('runSession', () => {
     expect(plan.items[1].track.id).toBe('/m/b.mp3')
     expect(plan.items[1].why).toEqual({ kind: 'partner' })
     expect(plan.summary.combos).toBe(0)
+  })
+
+  it('gives a track that is only in a set the role of the library playlist that holds it', () => {
+    const { pool } = run(
+      { sources: ['set'] },
+      { set: 'any' },
+      {
+        set: [row('/m/x.mp3'), row('/m/y.mp3'), row('/m/z.mp3')],
+        libBases: [row('/m/x.mp3')],
+        libVoices: [row('/m/y.mp3')],
+      },
+      1,
+      { libBases: 'base', libVoices: 'vocal' },
+    )
+    const roleOf = (id: string) => pool.find((t) => t.id === id)?.role
+    expect(roleOf('/m/x.mp3')).toBe('base')
+    expect(roleOf('/m/y.mp3')).toBe('vocal')
+    expect(roleOf('/m/z.mp3')).toBe('any')
+  })
+
+  it('does not bring in tracks that are only in the library playlists, which were not chosen', () => {
+    const { pool } = run(
+      { sources: ['set'] },
+      { set: 'any' },
+      { set: [row('/m/x.mp3')], libBases: [row('/m/x.mp3'), row('/m/other.mp3')] },
+      1,
+      { libBases: 'base' },
+    )
+    expect(pool.map((t) => t.id)).toEqual(['/m/x.mp3'])
+  })
+
+  it('reads a track as neutral when the library holds it as both a base and a vocal', () => {
+    const { pool } = run(
+      { sources: ['set'] },
+      { set: 'any' },
+      { set: [row('/m/x.mp3')], libBases: [row('/m/x.mp3')], libVoices: [row('/m/x.mp3')] },
+      1,
+      { libBases: 'base', libVoices: 'vocal' },
+    )
+    expect(pool[0].role).toBe('any')
+  })
+
+  it('works as before when there is no library', () => {
+    const { pool } = run({ sources: ['set'] }, { set: 'any' }, { set: [row('/m/x.mp3')] })
+    expect(pool[0].role).toBe('any')
   })
 
   it('starts from the strongest combo and says how many sets proved it', () => {

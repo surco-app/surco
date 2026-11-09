@@ -187,6 +187,58 @@ describe('toCandidates spotting new tracks', () => {
   })
 })
 
+describe('toCandidates with the roles the library already gives', () => {
+  const now = new Date('2026-11-09T12:00:00Z')
+  const evidence = (...pairs: Array<[string, Array<'base' | 'vocal'>]>) =>
+    new Map(pairs.map(([id, roles]) => [id, new Set(roles)]))
+
+  it('gives a track that is only in a Mixed playlist the role the library says', () => {
+    const tracks = toCandidates(
+      [source('any', entry('/m/x.mp3'))],
+      now,
+      evidence(['/m/x.mp3', ['vocal']]),
+    )
+    expect(tracks[0].role).toBe('vocal')
+  })
+
+  it('leaves it neutral when the library holds it as both a base and a vocal', () => {
+    const tracks = toCandidates(
+      [source('any', entry('/m/x.mp3'))],
+      now,
+      evidence(['/m/x.mp3', ['base', 'vocal']]),
+    )
+    expect(tracks[0].role).toBe('any')
+  })
+
+  it('leaves it neutral when the library says nothing about it', () => {
+    const tracks = toCandidates([source('any', entry('/m/x.mp3'))], now, evidence())
+    expect(tracks[0].role).toBe('any')
+  })
+
+  it('keeps the role the user gave the playlist over what the library says', () => {
+    const tracks = toCandidates(
+      [source('base', entry('/m/x.mp3'))],
+      now,
+      evidence(['/m/x.mp3', ['vocal']]),
+    )
+    expect(tracks[0].role).toBe('base')
+  })
+
+  it('keeps a track that is in both a bases and a vocals playlist neutral, as the user chose', () => {
+    const tracks = toCandidates(
+      [source('base', entry('/m/x.mp3')), source('vocal', entry('/m/x.mp3'))],
+      now,
+      evidence(['/m/x.mp3', ['base']]),
+    )
+    expect(tracks[0].role).toBe('any')
+  })
+
+  it('works as before when it gets nothing from the library', () => {
+    const tracks = toCandidates([source('any', entry('/m/x.mp3'))], now)
+    expect(tracks[0].role).toBe('any')
+  })
+})
+
 describe('mixedSequences', () => {
   it('lists the ids of each Mixed playlist in order and ignores other roles', () => {
     const sequences = mixedSequences([

@@ -41,14 +41,17 @@ function hasHistory(entry: SourcePlaylistEntry): boolean {
   return (entry.meta.playCount ?? 0) > 0 || (entry.meta.rating ?? 0) > 0
 }
 
-function roleOf(seen: Seen): TrackRole {
+function roleOf(seen: Seen, fromLibrary?: ReadonlySet<'base' | 'vocal'>): TrackRole {
   const concrete = [...seen.roles].filter((role) => role !== 'any')
-  return concrete.length === 1 ? concrete[0] : 'any'
+  if (concrete.length === 1) return concrete[0]
+  if (concrete.length === 0 && fromLibrary?.size === 1) return [...fromLibrary][0]
+  return 'any'
 }
 
 export function toCandidates(
   sources: readonly SessionSource[],
   now: Date = new Date(),
+  library: ReadonlyMap<string, ReadonlySet<'base' | 'vocal'>> = new Map(),
 ): SessionTrack[] {
   const found = new Map<string, Seen>()
   for (const source of sources) {
@@ -72,7 +75,7 @@ export function toCandidates(
     const { entry } = seen
     return {
       id,
-      role: roleOf(seen),
+      role: roleOf(seen, library.get(id)),
       key: camelotOf(entry.meta.key),
       bpm: tempoOf(entry.meta.bpm),
       rating: entry.meta.rating ?? 0,
