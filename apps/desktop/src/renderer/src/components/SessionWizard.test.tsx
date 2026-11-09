@@ -404,6 +404,45 @@ describe('SessionWizard new tracks step', () => {
   })
 })
 
+describe('SessionWizard minutes each track plays', () => {
+  it('starts from the saved minutes and shows them', async () => {
+    setup({ b90: 'base' }, { ...INITIAL, playMinutes: 4 })
+    await toCharacter()
+    expect(screen.getByTestId('session-wizard-play')).toHaveValue('4')
+    expect(screen.getByTestId('session-wizard-play-value')).toHaveTextContent(
+      i18n.t('sessions.wizard.character.playValue', { minutes: 4 }),
+    )
+  })
+
+  it('goes from 1 to 10 whole minutes', async () => {
+    setup({ b90: 'base' })
+    await toCharacter()
+    const slider = screen.getByTestId('session-wizard-play')
+    expect(slider).toHaveAttribute('min', '1')
+    expect(slider).toHaveAttribute('max', '10')
+    expect(slider).toHaveAttribute('step', '1')
+  })
+
+  it('explains that tracks are mixed and not played whole', async () => {
+    setup({ b90: 'base' })
+    await toCharacter()
+    expect(screen.getByTestId('session-wizard-play-hint')).toHaveTextContent(
+      i18n.t('sessions.wizard.character.playHint'),
+    )
+  })
+
+  it('hands over the minutes that were chosen when building', async () => {
+    const { onBuild } = setup({ b90: 'base' })
+    await toCharacter()
+    fireEvent.change(screen.getByTestId('session-wizard-play'), { target: { value: '5' } })
+    fireEvent.click(screen.getByTestId('session-wizard-build'))
+    expect(onBuild).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ playMinutes: 5 }),
+      expect.anything(),
+    )
+  })
+})
+
 describe('SessionWizard character step', () => {
   it('starts every option from the saved answers', async () => {
     setup(

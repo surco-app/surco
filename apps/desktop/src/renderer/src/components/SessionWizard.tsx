@@ -68,6 +68,7 @@ export function SessionWizard({
   })
   const [fresh, setFresh] = useState<string[]>(() => initial.fresh.filter((id) => names.has(id)))
   const [freshShare, setFreshShare] = useState(initial.freshShare)
+  const [playMinutes, setPlayMinutes] = useState(initial.playMinutes)
   const [options, setOptions] = useState<Options>({
     alternate: initial.alternate,
     preferCombos: initial.preferCombos,
@@ -133,7 +134,7 @@ export function SessionWizard({
     const result = await onBuild(
       {
         minutes,
-        playMinutes: initial.playMinutes,
+        playMinutes,
         sources,
         fresh,
         freshShare: fresh.length > 0 ? freshShare : 0,
@@ -250,6 +251,8 @@ export function SessionWizard({
         <CharacterStep
           options={options}
           hasKeys={hasKeys}
+          playMinutes={playMinutes}
+          onPlayMinutes={setPlayMinutes}
           onChange={(patch) => setOptions((prev) => ({ ...prev, ...patch }))}
         />
       )}

@@ -304,10 +304,14 @@ const HARMONIES: readonly { mode: SessionHarmony; label: string }[] = [
 export function CharacterStep({
   options,
   hasKeys,
+  playMinutes,
+  onPlayMinutes,
   onChange,
 }: {
   options: Record<CharacterKey, boolean> & { harmony: SessionHarmony }
   hasKeys: boolean
+  playMinutes: number
+  onPlayMinutes: (minutes: number) => void
   onChange: (patch: Partial<Record<CharacterKey, boolean> & { harmony: SessionHarmony }>) => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
@@ -330,6 +334,27 @@ export function CharacterStep({
           </span>
         </label>
       ))}
+      <label className="flex flex-col gap-1.5 text-sm">
+        <span className="flex justify-between">
+          {tr('sessions.wizard.character.play')}
+          <span data-testid="session-wizard-play-value" className="tabular-nums text-fg">
+            {tr('sessions.wizard.character.playValue', { minutes: playMinutes })}
+          </span>
+        </span>
+        <input
+          type="range"
+          min={1}
+          max={10}
+          step={1}
+          value={playMinutes}
+          data-testid="session-wizard-play"
+          onChange={(e) => onPlayMinutes(Number(e.target.value))}
+          className="accent-[var(--color-accent)]"
+        />
+        <span data-testid="session-wizard-play-hint" className="text-xs text-fg-dim">
+          {tr('sessions.wizard.character.playHint')}
+        </span>
+      </label>
       <div className="flex flex-col gap-1.5">
         <span className="text-sm">{tr('sessions.wizard.character.harmony')}</span>
         <div className="flex flex-wrap gap-2">
