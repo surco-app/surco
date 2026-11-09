@@ -91,7 +91,8 @@
       },
       "loading": "Lendo…",
       "build": "Montar sessão",
-      "loadFailed": "{{names}} não pôde ser lido e fica de fora"
+      "loadFailed": "{{names}} não pôde ser lido e fica de fora",
+      "empty": "As playlists escolhidas não têm nenhuma faixa para montar uma sessão"
     },
     "band": {
       "title": "Sessão montada pelo Surco",

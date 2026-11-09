@@ -91,7 +91,8 @@
       },
       "loading": "Liest …",
       "build": "Session erstellen",
-      "loadFailed": "{{names}} konnte nicht gelesen werden und bleibt draußen"
+      "loadFailed": "{{names}} konnte nicht gelesen werden und bleibt draußen",
+      "empty": "Die gewählten Playlists enthalten keinen Track für eine Session"
     },
     "band": {
       "title": "Von Surco zusammengestellte Session",

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { camelotOf } from '../../../shared/camelot'
 import type { PlaylistRole, SessionAnswers } from '../../../shared/sessionTypes'
 import type { SourceNode, SourcePlaylistEntry } from '../../../shared/types'
+import type { BuildResult } from '../hooks/useSessionRun'
 import type { SessionRows } from '../hooks/useSessionRows'
 import { ModalShell } from './ModalShell'
 import {
@@ -39,7 +40,7 @@ export function SessionWizard({
   rows: SessionRows
   onRole: (id: string, role: PlaylistRole | null) => void
   onClose: () => void
-  onBuild: (answers: SessionAnswers) => void
+  onBuild: (answers: SessionAnswers) => Promise<BuildResult>
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [step, setStep] = useState(0)
@@ -69,6 +70,8 @@ export function SessionWizard({
     new Map(),
   )
   const [reading, setReading] = useState(false)
+  const [building, setBuilding] = useState(false)
+  const [empty, setEmpty] = useState(false)
   const focusHeading = useCallback((el: HTMLHeadingElement | null) => el?.focus(), [])
 
   const pick = (id: string, role: PlaylistRole | null): void => {
@@ -110,8 +113,10 @@ export function SessionWizard({
     setStep((s) => s + 1)
   }
 
-  const build = (): void =>
-    onBuild({
+  const build = async (): Promise<void> => {
+    setBuilding(true)
+    setEmpty(false)
+    const result = await onBuild({
       minutes,
       sources,
       fresh,
@@ -122,6 +127,9 @@ export function SessionWizard({
       alternate: options.alternate,
       surprise: options.surprise,
     })
+    setBuilding(false)
+    setEmpty(result === 'empty')
+  }
 
   return (
     <ModalShell
@@ -227,6 +235,11 @@ export function SessionWizard({
           onChange={(patch) => setOptions((prev) => ({ ...prev, ...patch }))}
         />
       )}
+      {empty && (
+        <p data-testid="session-wizard-empty" className="mt-3 text-xs text-warn">
+          {tr('sessions.wizard.empty')}
+        </p>
+      )}
       <div className="mt-5 flex items-center justify-end gap-2">
         {step > 0 && (
           <button
@@ -242,6 +255,7 @@ export function SessionWizard({
           <button
             type="button"
             data-testid="session-wizard-build"
+            disabled={building}
             onClick={build}
             className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]"
           >

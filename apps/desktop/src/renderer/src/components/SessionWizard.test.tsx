@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { PlaylistRole, SessionAnswers } from '../../../shared/sessionTypes'
 import type { SourceNode, SourcePlaylistEntry } from '../../../shared/types'
 import type { SessionRows } from '../hooks/useSessionRows'
+import type { BuildResult } from '../hooks/useSessionRun'
 import i18n from '../i18n'
 import { SessionWizard } from './SessionWizard'
 
@@ -417,6 +418,39 @@ describe('SessionWizard character step', () => {
       alternate: true,
       surprise: true,
     })
+  })
+})
+
+describe('SessionWizard while building', () => {
+  it('blocks Build until the session is written, then lets the parent close it', async () => {
+    let finish: (result: BuildResult) => void = () => {}
+    const { onBuild } = setup({ b90: 'base' })
+    onBuild.mockImplementation(() => new Promise<BuildResult>((resolve) => (finish = resolve)))
+    await toCharacter()
+    fireEvent.click(screen.getByTestId('session-wizard-build'))
+    expect(screen.getByTestId('session-wizard-build')).toBeDisabled()
+    finish('built')
+    await waitFor(() => expect(screen.getByTestId('session-wizard-build')).toBeEnabled())
+    expect(screen.queryByTestId('session-wizard-empty')).toBeNull()
+  })
+
+  it('stays open and lets the user try again when the write was refused', async () => {
+    const { onBuild } = setup({ b90: 'base' })
+    onBuild.mockResolvedValue('refused')
+    await toCharacter()
+    fireEvent.click(screen.getByTestId('session-wizard-build'))
+    await waitFor(() => expect(screen.getByTestId('session-wizard-build')).toBeEnabled())
+    expect(screen.queryByTestId('session-wizard-empty')).toBeNull()
+    fireEvent.click(screen.getByTestId('session-wizard-build'))
+    expect(onBuild).toHaveBeenCalledTimes(2)
+  })
+
+  it('says so when the chosen playlists have no track to build with', async () => {
+    const { onBuild } = setup({ b90: 'base' })
+    onBuild.mockResolvedValue('empty')
+    await toCharacter()
+    fireEvent.click(screen.getByTestId('session-wizard-build'))
+    expect(await screen.findByTestId('session-wizard-empty')).toBeInTheDocument()
   })
 })
 
