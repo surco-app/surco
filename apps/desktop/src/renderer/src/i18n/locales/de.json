@@ -64,7 +64,34 @@
         "tracks_other": "{{count}} Tracks",
         "upTo_one": "Bis zu {{count}} Track zur Auswahl",
         "upTo_other": "Bis zu {{count}} Tracks zur Auswahl"
-      }
+      },
+      "fresh": {
+        "heading": "Möchtest du neue Tracks ausprobieren?",
+        "hint": "Neue Tracks haben keinen Verlauf. Surco platziert sie nach Tonart, Tempo und danach, ob sie Base oder Gesang sind, hinter einem Track, den du schon kennst.",
+        "search": "Playlist mit neuen Tracks suchen",
+        "add": "Hinzufügen",
+        "share": "Neue Tracks in der Session",
+        "shareValue": "{{percent}} %"
+      },
+      "character": {
+        "heading": "Wie soll sie werden?",
+        "alternate": "Base und Gesang abwechseln",
+        "alternateHint": "Base, Gesang, Base, Gesang",
+        "preferCombos": "Bewährte Combos bevorzugen",
+        "preferCombosHint": "Was du in deinen Sets zusammen gespielt hast, zuerst",
+        "tasteWeight": "Was dir am besten gefällt",
+        "tasteWeightHint": "Sterne und Wiedergaben zählen bei der Auswahl",
+        "surprise": "Überrasch mich",
+        "surpriseHint": "Lässt Platz für Paare, die nie zusammen gespielt wurden",
+        "harmony": "Harmonisches Mixen",
+        "harmonyFree": "Frei",
+        "harmonyNeighbours": "Nachbarn",
+        "harmonySame": "Gleiche Tonart",
+        "noKeys": "Keiner der gewählten Tracks hat eine Tonart, daher entfällt das harmonische Mixen"
+      },
+      "loading": "Liest …",
+      "build": "Session erstellen",
+      "loadFailed": "{{names}} konnte nicht gelesen werden und bleibt draußen"
     }
   },
   "pasteTracklist": {

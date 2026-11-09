@@ -64,7 +64,34 @@
         "tracks_other": "{{count}} トラック",
         "upTo_one": "最大 {{count}} トラックから選びます",
         "upTo_other": "最大 {{count}} トラックから選びます"
-      }
+      },
+      "fresh": {
+        "heading": "新曲を試しますか？",
+        "hint": "新曲には履歴がありません。Surco はキー、テンポ、ベースかボーカルかを見て、すでに知っている曲の後ろに置きます。",
+        "search": "新曲のプレイリストを検索",
+        "add": "追加",
+        "share": "セッション内の新曲",
+        "shareValue": "{{percent}} %"
+      },
+      "character": {
+        "heading": "どんな感じにしますか？",
+        "alternate": "ベースとボーカルを交互に",
+        "alternateHint": "ベース、ボーカル、ベース、ボーカル",
+        "preferCombos": "実績のあるコンボを優先",
+        "preferCombosHint": "自分のセットで一緒にかけた並びを先に",
+        "tasteWeight": "好みを重視",
+        "tasteWeightHint": "星と再生回数を選ぶときに考慮します",
+        "surprise": "おまかせ",
+        "surpriseHint": "一緒にかけたことのない組み合わせの余地を残します",
+        "harmony": "ハーモニックミックス",
+        "harmonyFree": "自由",
+        "harmonyNeighbours": "隣のキー",
+        "harmonySame": "同じキー",
+        "noKeys": "選んだ曲にキー情報がないため、ハーモニックミックスは使えません"
+      },
+      "loading": "読み込み中…",
+      "build": "セッションを作成",
+      "loadFailed": "{{names}} を読み込めなかったため除外します"
     }
   },
   "pasteTracklist": {

@@ -2,26 +2,41 @@ import { X } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { DjProgram } from '../../../shared/djProgram'
+import { camelotOf } from '../../../shared/camelot'
 import type { PlaylistRole, SessionAnswers } from '../../../shared/sessionTypes'
-import type { SourceNode } from '../../../shared/types'
+import type { SourceNode, SourcePlaylistEntry } from '../../../shared/types'
+import type { SessionRows } from '../hooks/useSessionRows'
 import { ModalShell } from './ModalShell'
+import {
+  CharacterStep,
+  DurationStep,
+  FreshStep,
+  isPresetMinutes,
+  SourcesStep,
+  wholeMinutes,
+} from './SessionWizardSteps'
 import { flattenPlaylists } from './SourceTree'
-import { DurationStep, isPresetMinutes, SourcesStep, wholeMinutes } from './SessionWizardSteps'
 
 const STEPS = ['duration', 'sources', 'fresh', 'character'] as const
+
+type Options = Pick<
+  SessionAnswers,
+  'alternate' | 'preferCombos' | 'tasteWeight' | 'surprise' | 'harmony'
+>
 
 export function SessionWizard({
   tree,
   roles: savedRoles,
   initial,
+  rows,
   onRole,
   onClose,
+  onBuild,
 }: {
-  program: DjProgram
   tree: readonly SourceNode[]
   roles: Readonly<Record<string, PlaylistRole>>
   initial: SessionAnswers
+  rows: SessionRows
   onRole: (id: string, role: PlaylistRole | null) => void
   onClose: () => void
   onBuild: (answers: SessionAnswers) => void
@@ -33,11 +48,27 @@ export function SessionWizard({
     isPresetMinutes(initial.minutes) ? null : String(initial.minutes),
   )
   const [roles, setRoles] = useState<Record<string, PlaylistRole>>({ ...savedRoles })
-  const inTree = useMemo(() => new Set(flattenPlaylists([...tree]).map((p) => p.node.id)), [tree])
+  const names = useMemo(
+    () => new Map(flattenPlaylists([...tree]).map((p) => [p.node.id, p.node.name])),
+    [tree],
+  )
   const [sources, setSources] = useState<string[]>(() => {
     const wanted = initial.sources.length > 0 ? initial.sources : Object.keys(savedRoles)
-    return wanted.filter((id) => inTree.has(id) && savedRoles[id] !== undefined)
+    return wanted.filter((id) => names.has(id) && savedRoles[id] !== undefined)
   })
+  const [fresh, setFresh] = useState<string[]>(() => initial.fresh.filter((id) => names.has(id)))
+  const [freshShare, setFreshShare] = useState(initial.freshShare)
+  const [options, setOptions] = useState<Options>({
+    alternate: initial.alternate,
+    preferCombos: initial.preferCombos,
+    tasteWeight: initial.tasteWeight,
+    surprise: initial.surprise,
+    harmony: initial.harmony,
+  })
+  const [loaded, setLoaded] = useState<ReadonlyMap<string, readonly SourcePlaylistEntry[]>>(
+    new Map(),
+  )
+  const [reading, setReading] = useState(false)
   const focusHeading = useCallback((el: HTMLHeadingElement | null) => el?.focus(), [])
 
   const pick = (id: string, role: PlaylistRole | null): void => {
@@ -53,13 +84,44 @@ export function SessionWizard({
     onRole(id, role)
   }
 
-  const minutesValid = custom === null || wholeMinutes(custom) !== null
   const current = STEPS[step]
   const last = step === STEPS.length - 1
+  const minutesValid = custom === null || wholeMinutes(custom) !== null
   const blocked =
-    last ||
+    reading ||
     (current === 'duration' && !minutesValid) ||
     (current === 'sources' && sources.length === 0)
+
+  const hasKeys = [...sources, ...fresh].some((id) =>
+    (loaded.get(id) ?? []).some((entry) => camelotOf(entry.meta.key) !== null),
+  )
+  const unreadable = [...sources, ...fresh]
+    .filter((id) => rows.failed.includes(id))
+    .map((id) => names.get(id) ?? id)
+
+  const advance = async (): Promise<void> => {
+    const ids = current === 'sources' ? sources : current === 'fresh' ? fresh : []
+    if (ids.length > 0) {
+      setReading(true)
+      const got = await rows.load(ids)
+      setLoaded((prev) => new Map([...prev, ...got]))
+      setReading(false)
+    }
+    setStep((s) => s + 1)
+  }
+
+  const build = (): void =>
+    onBuild({
+      minutes,
+      sources,
+      fresh,
+      freshShare: fresh.length > 0 ? freshShare : 0,
+      preferCombos: options.preferCombos,
+      harmony: hasKeys ? options.harmony : 'free',
+      tasteWeight: options.tasteWeight,
+      alternate: options.alternate,
+      surprise: options.surprise,
+    })
 
   return (
     <ModalShell
@@ -116,8 +178,13 @@ export function SessionWizard({
         tabIndex={-1}
         className="mb-3 text-sm font-semibold outline-none"
       >
-        {tr(`sessions.wizard.${current === 'duration' ? 'duration' : 'sources'}.heading`)}
+        {tr(`sessions.wizard.${current}.heading`)}
       </h3>
+      {step >= 2 && unreadable.length > 0 && (
+        <p data-testid="session-wizard-load-failed" className="mb-3 text-xs text-warn">
+          {tr('sessions.wizard.loadFailed', { names: unreadable.join(', ') })}
+        </p>
+      )}
       {current === 'duration' && (
         <DurationStep
           minutes={minutes}
@@ -143,6 +210,23 @@ export function SessionWizard({
           onDrop={(id) => setSources((prev) => prev.filter((other) => other !== id))}
         />
       )}
+      {current === 'fresh' && (
+        <FreshStep
+          tree={tree}
+          fresh={fresh}
+          share={freshShare}
+          onAdd={(id) => setFresh((prev) => (prev.includes(id) ? prev : [...prev, id]))}
+          onDrop={(id) => setFresh((prev) => prev.filter((other) => other !== id))}
+          onShare={setFreshShare}
+        />
+      )}
+      {current === 'character' && (
+        <CharacterStep
+          options={options}
+          hasKeys={hasKeys}
+          onChange={(patch) => setOptions((prev) => ({ ...prev, ...patch }))}
+        />
+      )}
       <div className="mt-5 flex items-center justify-end gap-2">
         {step > 0 && (
           <button
@@ -154,15 +238,26 @@ export function SessionWizard({
             {tr('sessions.wizard.back')}
           </button>
         )}
-        <button
-          type="button"
-          data-testid="session-wizard-next"
-          disabled={blocked}
-          onClick={() => setStep((s) => s + 1)}
-          className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
-        >
-          {tr('sessions.wizard.next')}
-        </button>
+        {last ? (
+          <button
+            type="button"
+            data-testid="session-wizard-build"
+            onClick={build}
+            className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]"
+          >
+            {tr('sessions.wizard.build')}
+          </button>
+        ) : (
+          <button
+            type="button"
+            data-testid="session-wizard-next"
+            disabled={blocked}
+            onClick={advance}
+            className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
+          >
+            {reading ? tr('sessions.wizard.loading') : tr('sessions.wizard.next')}
+          </button>
+        )}
       </div>
     </ModalShell>
   )

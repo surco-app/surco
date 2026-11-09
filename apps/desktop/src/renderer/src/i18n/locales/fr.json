@@ -64,7 +64,34 @@
         "tracks_other": "{{count}} morceaux",
         "upTo_one": "Jusqu’à {{count}} morceau au choix",
         "upTo_other": "Jusqu’à {{count}} morceaux au choix"
-      }
+      },
+      "fresh": {
+        "heading": "Envie d’essayer des nouveautés ?",
+        "hint": "Les nouveautés n’ont pas d’historique. Surco les place selon la tonalité, le tempo et leur rôle de base ou de voix, après un morceau que tu connais déjà.",
+        "search": "Chercher une playlist de nouveautés",
+        "add": "Ajouter",
+        "share": "Nouveautés dans la session",
+        "shareValue": "{{percent}} %"
+      },
+      "character": {
+        "heading": "Comment la veux-tu ?",
+        "alternate": "Alterner base et voix",
+        "alternateHint": "Base, voix, base, voix",
+        "preferCombos": "Privilégier les combos éprouvés",
+        "preferCombosHint": "Ce que tu as mixé ensemble dans tes sets, en premier",
+        "tasteWeight": "Ce que tu préfères",
+        "tasteWeightHint": "Les étoiles et les écoutes comptent dans le choix",
+        "surprise": "Surprends-moi",
+        "surpriseHint": "Laisse de la place à des paires jamais jouées ensemble",
+        "harmony": "Mix harmonique",
+        "harmonyFree": "Libre",
+        "harmonyNeighbours": "Voisins",
+        "harmonySame": "Même tonalité",
+        "noKeys": "Aucun morceau choisi n’a de tonalité, le mix harmonique ne s’applique donc pas"
+      },
+      "loading": "Lecture…",
+      "build": "Composer la session",
+      "loadFailed": "{{names}} n’a pas pu être lu et reste de côté"
     }
   },
   "pasteTracklist": {

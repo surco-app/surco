@@ -3,7 +3,8 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { PlaylistRole, SessionAnswers } from '../../../shared/sessionTypes'
-import type { SourceNode } from '../../../shared/types'
+import type { SourceNode, SourcePlaylistEntry } from '../../../shared/types'
+import type { SessionRows } from '../hooks/useSessionRows'
 import i18n from '../i18n'
 import { SessionWizard } from './SessionWizard'
 
@@ -37,26 +38,58 @@ const INITIAL: SessionAnswers = {
   surprise: false,
 }
 
-function setup(roles: Record<string, PlaylistRole> = {}, initial: SessionAnswers = INITIAL) {
+const entry = (path: string, key?: string): SourcePlaylistEntry => ({
+  path,
+  separator: false,
+  meta: key ? { key } : {},
+})
+
+function fakeRows(byId: Record<string, SourcePlaylistEntry[]> = {}, failed: string[] = []) {
+  const load = vi.fn(
+    async (ids: readonly string[]) =>
+      new Map(
+        ids
+          .filter((id) => !failed.includes(id))
+          .map((id) => [id, byId[id] ?? [entry(`/m/${id}.mp3`)]] as const),
+      ),
+  )
+  return { load, loading: false, failed }
+}
+
+function setup(
+  roles: Record<string, PlaylistRole> = {},
+  initial: SessionAnswers = INITIAL,
+  rows: SessionRows = fakeRows(),
+) {
   const onRole = vi.fn()
   const onClose = vi.fn()
   const onBuild = vi.fn()
   render(
     <SessionWizard
-      program="rekordbox"
       tree={TREE}
       roles={roles}
       initial={initial}
+      rows={rows}
       onRole={onRole}
       onClose={onClose}
       onBuild={onBuild}
     />,
   )
-  return { onRole, onClose, onBuild }
+  return { onRole, onClose, onBuild, rows }
 }
 
 const next = () => fireEvent.click(screen.getByTestId('session-wizard-next'))
 const toSources = () => next()
+const toFresh = async () => {
+  toSources()
+  next()
+  await screen.findByTestId('session-wizard-fresh-search')
+}
+const toCharacter = async () => {
+  await toFresh()
+  next()
+  await screen.findByTestId('session-wizard-build')
+}
 
 describe('SessionWizard duration step', () => {
   it('opens on the duration with the saved length marked', () => {
@@ -206,6 +239,184 @@ describe('SessionWizard sources step', () => {
     setup({ b90: 'base', c90: 'vocal' })
     toSources()
     expect(screen.getByTestId('session-wizard-eligible')).toHaveTextContent('99')
+  })
+})
+
+describe('SessionWizard reading the chosen playlists', () => {
+  it('reads the chosen source playlists when leaving the playlists step', async () => {
+    const { rows } = setup({ b90: 'base', c90: 'vocal' })
+    toSources()
+    next()
+    await screen.findByTestId('session-wizard-fresh-search')
+    expect(rows.load).toHaveBeenCalledTimes(1)
+    expect(rows.load).toHaveBeenCalledWith(['b90', 'c90'])
+  })
+
+  it('shows it is reading while the playlists load, and blocks pressing again', async () => {
+    type Loaded = ReadonlyMap<string, readonly SourcePlaylistEntry[]>
+    let release: (value: Loaded) => void = () => {}
+    const rows: SessionRows = {
+      load: vi.fn(() => new Promise<Loaded>((resolve) => (release = resolve))),
+      loading: false,
+      failed: [],
+    }
+    setup({ b90: 'base' }, INITIAL, rows)
+    toSources()
+    next()
+    expect(screen.getByTestId('session-wizard-next')).toBeDisabled()
+    expect(screen.getByTestId('session-wizard-next')).toHaveTextContent(
+      i18n.t('sessions.wizard.loading'),
+    )
+    release(new Map())
+    await screen.findByTestId('session-wizard-fresh-search')
+  })
+
+  it('also reads the new-track playlists when leaving that step', async () => {
+    const { rows } = setup({ b90: 'base' })
+    await toFresh()
+    fireEvent.change(screen.getByTestId('session-wizard-fresh-search'), {
+      target: { value: 'mak' },
+    })
+    fireEvent.click(screen.getByTestId('session-wizard-fresh-add-mak'))
+    next()
+    await screen.findByTestId('session-wizard-build')
+    expect(rows.load).toHaveBeenLastCalledWith(['mak'])
+  })
+
+  it('names a playlist that could not be read and goes on without it', async () => {
+    setup({ b90: 'base', c90: 'vocal' }, INITIAL, fakeRows({}, ['c90']))
+    toSources()
+    next()
+    expect(await screen.findByTestId('session-wizard-load-failed')).toHaveTextContent(
+      'Cantaditas 90',
+    )
+    expect(screen.getByTestId('session-wizard-next')).toBeEnabled()
+  })
+})
+
+describe('SessionWizard new tracks step', () => {
+  it('lets the step be skipped, leaving no new playlists and no share', async () => {
+    const { onBuild } = setup({ b90: 'base' })
+    await toCharacter()
+    fireEvent.click(screen.getByTestId('session-wizard-build'))
+    expect(onBuild).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ fresh: [], freshShare: 0, sources: ['b90'] }),
+    )
+  })
+
+  it('adds a playlist of new tracks and takes the share from the slider', async () => {
+    const { onBuild } = setup({ b90: 'base' })
+    await toFresh()
+    fireEvent.change(screen.getByTestId('session-wizard-fresh-search'), {
+      target: { value: 'xativa' },
+    })
+    fireEvent.click(screen.getByTestId('session-wizard-fresh-add-mak'))
+    expect(screen.getByTestId('session-wizard-fresh-chip-mak')).toBeInTheDocument()
+    fireEvent.change(screen.getByTestId('session-wizard-fresh-share'), { target: { value: '30' } })
+    next()
+    await screen.findByTestId('session-wizard-build')
+    fireEvent.click(screen.getByTestId('session-wizard-build'))
+    expect(onBuild).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ fresh: ['mak'], freshShare: 0.3 }),
+    )
+  })
+
+  it('keeps the share between 0 and 40 and off until a playlist is chosen', async () => {
+    setup({ b90: 'base' })
+    await toFresh()
+    const slider = screen.getByTestId('session-wizard-fresh-share')
+    expect(slider).toHaveAttribute('min', '0')
+    expect(slider).toHaveAttribute('max', '40')
+    expect(slider).toBeDisabled()
+    fireEvent.change(screen.getByTestId('session-wizard-fresh-search'), {
+      target: { value: 'mak' },
+    })
+    fireEvent.click(screen.getByTestId('session-wizard-fresh-add-mak'))
+    expect(slider).toBeEnabled()
+  })
+
+  it('takes a new-track playlist away with its cross', async () => {
+    setup({ b90: 'base' })
+    await toFresh()
+    fireEvent.change(screen.getByTestId('session-wizard-fresh-search'), {
+      target: { value: 'mak' },
+    })
+    fireEvent.click(screen.getByTestId('session-wizard-fresh-add-mak'))
+    fireEvent.click(screen.getByTestId('session-wizard-fresh-chip-remove-mak'))
+    expect(screen.queryByTestId('session-wizard-fresh-chip-mak')).toBeNull()
+  })
+})
+
+describe('SessionWizard character step', () => {
+  it('starts every option from the saved answers', async () => {
+    setup(
+      { b90: 'base' },
+      {
+        ...INITIAL,
+        alternate: false,
+        preferCombos: false,
+        tasteWeight: false,
+        surprise: true,
+        harmony: 'neighbours',
+      },
+      fakeRows({ b90: [entry('/m/a.mp3', '8A')] }),
+    )
+    await toCharacter()
+    expect(screen.getByTestId('session-wizard-opt-alternate')).not.toBeChecked()
+    expect(screen.getByTestId('session-wizard-opt-preferCombos')).not.toBeChecked()
+    expect(screen.getByTestId('session-wizard-opt-tasteWeight')).not.toBeChecked()
+    expect(screen.getByTestId('session-wizard-opt-surprise')).toBeChecked()
+    expect(screen.getByTestId('session-wizard-harmony-neighbours')).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+  })
+
+  it('turns harmony off and says why when no chosen track has a key', async () => {
+    setup({ b90: 'base' }, { ...INITIAL, harmony: 'neighbours' })
+    await toCharacter()
+    expect(screen.getByTestId('session-wizard-no-keys')).toBeInTheDocument()
+    for (const mode of ['free', 'neighbours', 'same']) {
+      expect(screen.getByTestId(`session-wizard-harmony-${mode}`)).toBeDisabled()
+    }
+  })
+
+  it('builds with free harmony when the saved mode needs keys nobody has', async () => {
+    const { onBuild } = setup({ b90: 'base' }, { ...INITIAL, harmony: 'same' })
+    await toCharacter()
+    fireEvent.click(screen.getByTestId('session-wizard-build'))
+    expect(onBuild).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ harmony: 'free' }))
+  })
+
+  it('offers the harmony modes when a chosen playlist has keys', async () => {
+    setup({ b90: 'base' }, INITIAL, fakeRows({ b90: [entry('/m/a.mp3', '8A')] }))
+    await toCharacter()
+    expect(screen.queryByTestId('session-wizard-no-keys')).toBeNull()
+    expect(screen.getByTestId('session-wizard-harmony-same')).toBeEnabled()
+  })
+
+  it('builds only when Build is pressed, once, with every answer', async () => {
+    const { onBuild } = setup(
+      { b90: 'base', c90: 'vocal' },
+      { ...INITIAL, minutes: 120 },
+      fakeRows({ b90: [entry('/m/a.mp3', '8A')] }),
+    )
+    await toCharacter()
+    expect(onBuild).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByTestId('session-wizard-harmony-neighbours'))
+    fireEvent.click(screen.getByTestId('session-wizard-opt-surprise'))
+    fireEvent.click(screen.getByTestId('session-wizard-build'))
+    expect(onBuild).toHaveBeenCalledExactlyOnceWith({
+      minutes: 120,
+      sources: ['b90', 'c90'],
+      fresh: [],
+      freshShare: 0,
+      preferCombos: true,
+      harmony: 'neighbours',
+      tasteWeight: true,
+      alternate: true,
+      surprise: true,
+    })
   })
 })
 

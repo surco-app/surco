@@ -64,7 +64,34 @@
         "tracks_other": "{{count}} pistas",
         "upTo_one": "Hasta {{count}} pista para elegir",
         "upTo_other": "Hasta {{count}} pistas para elegir"
-      }
+      },
+      "fresh": {
+        "heading": "¿Quieres probar pistas nuevas?",
+        "hint": "Las nuevas no tienen historial. Surco las coloca por tono, BPM y por si son base o cantadita, detrás de una pista que ya conoces.",
+        "search": "Buscar una playlist de pistas nuevas",
+        "add": "Añadir",
+        "share": "Pistas nuevas en la sesión",
+        "shareValue": "{{percent}} %"
+      },
+      "character": {
+        "heading": "¿Cómo la quieres?",
+        "alternate": "Alternar base y cantadita",
+        "alternateHint": "Base, cantadita, base, cantadita",
+        "preferCombos": "Preferir combos probados",
+        "preferCombosHint": "Lo que has pinchado junto en tus sets, primero",
+        "tasteWeight": "Lo que más te gusta",
+        "tasteWeightHint": "Estrellas y veces escuchada pesan al elegir",
+        "surprise": "Sorpréndeme",
+        "surpriseHint": "Deja un hueco a parejas que nunca se han puesto juntas",
+        "harmony": "Mezcla armónica",
+        "harmonyFree": "Libre",
+        "harmonyNeighbours": "Vecinos",
+        "harmonySame": "Mismo tono",
+        "noKeys": "Ninguna de las pistas elegidas trae tonalidad, así que la mezcla armónica no se aplica"
+      },
+      "loading": "Leyendo…",
+      "build": "Montar sesión",
+      "loadFailed": "{{names}} no se pudo leer y se deja fuera"
     }
   },
   "pasteTracklist": {

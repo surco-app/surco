@@ -64,7 +64,34 @@
         "tracks_other": "{{count}} tracks",
         "upTo_one": "Up to {{count}} track to choose from",
         "upTo_other": "Up to {{count}} tracks to choose from"
-      }
+      },
+      "fresh": {
+        "heading": "Want to try some new tracks?",
+        "hint": "New tracks have no history. Surco places them by key, tempo and whether they are base or vocal, after a track you already know.",
+        "search": "Search a playlist of new tracks",
+        "add": "Add",
+        "share": "New tracks in the session",
+        "shareValue": "{{percent}} %"
+      },
+      "character": {
+        "heading": "How do you want it?",
+        "alternate": "Alternate base and vocal",
+        "alternateHint": "Base, vocal, base, vocal",
+        "preferCombos": "Prefer proven combos",
+        "preferCombosHint": "What you have played together in your sets, first",
+        "tasteWeight": "What you like most",
+        "tasteWeightHint": "Stars and play count weigh in when picking",
+        "surprise": "Surprise me",
+        "surpriseHint": "Leaves room for pairs that were never played together",
+        "harmony": "Harmonic mixing",
+        "harmonyFree": "Free",
+        "harmonyNeighbours": "Neighbours",
+        "harmonySame": "Same key",
+        "noKeys": "None of the chosen tracks has a key, so harmonic mixing does not apply"
+      },
+      "loading": "Reading…",
+      "build": "Build session",
+      "loadFailed": "{{names}} could not be read and is left out"
     }
   },
   "pasteTracklist": {
