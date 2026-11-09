@@ -84,6 +84,7 @@ export function SourceTree({
     onRename: (node: SourceNode, name: string) => void
     onDelete: (node: SourceNode) => void
     onPasteTracklist?: (node: SourceNode, create: boolean) => void
+    onSession?: (node: SourceNode) => void
     onMove?: (
       node: SourceNode,
       parentId: string,
@@ -764,6 +765,20 @@ export function SourceTree({
                     ? 'sources.tree.newPlaylistFromTracklist'
                     : 'sources.tree.pasteTracklist',
                 )}
+              </button>
+            )}
+            {edit?.onSession && !menu.pasteOnly && (menu.node.kind === 'folder' || edit.crates) && (
+              <button
+                type="button"
+                role="menuitem"
+                data-testid="source-tree-session"
+                onClick={() => {
+                  edit.onSession?.(menu.node)
+                  setMenu(null)
+                }}
+                className="block w-full rounded-md px-3 py-1.5 text-left text-sm hover:bg-[var(--color-hover)]"
+              >
+                {tr('sources.tree.newSession')}
               </button>
             )}
             {roles && menu.node.kind === 'playlist' && !menu.pasteOnly && (
