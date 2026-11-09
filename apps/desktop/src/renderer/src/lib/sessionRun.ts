@@ -1,4 +1,4 @@
-import { buildSession, type SessionPlan } from '../../../shared/sessionBuild'
+import { buildSession, type SessionOptions, type SessionPlan } from '../../../shared/sessionBuild'
 import { type Combos, mineCombos } from '../../../shared/sessionCombos'
 import type {
   PlaylistRole,
@@ -12,12 +12,26 @@ import { type SessionSource, setSequences, toCandidates, trackIdOf } from './ses
 export interface SessionRun {
   plan: SessionPlan
   refs: PlaylistTrackRef[]
+  refsById: ReadonlyMap<string, PlaylistTrackRef>
   pool: SessionTrack[]
   combos: Combos
 }
 
 function freshRoleOf(role: PlaylistRole | undefined): TrackRole {
   return role === 'base' || role === 'vocal' ? role : 'any'
+}
+
+export function sessionOptionsOf(answers: SessionAnswers, seed: number): SessionOptions {
+  return {
+    minutes: answers.minutes,
+    preferCombos: answers.preferCombos,
+    harmony: answers.harmony,
+    tasteWeight: answers.tasteWeight,
+    alternate: answers.alternate,
+    freshShare: answers.freshShare,
+    surprise: answers.surprise,
+    seed,
+  }
 }
 
 export function runSession(input: {
@@ -37,26 +51,16 @@ export function runSession(input: {
   ]
   const pool = toCandidates(sources)
   const combos = mineCombos(setSequences(sources), new Set(pool.map((track) => track.id)))
-  const plan = buildSession(pool, combos, {
-    minutes: answers.minutes,
-    preferCombos: answers.preferCombos,
-    harmony: answers.harmony,
-    tasteWeight: answers.tasteWeight,
-    alternate: answers.alternate,
-    freshShare: answers.freshShare,
-    surprise: answers.surprise,
-    seed,
-  })
-  const entryOf = new Map<string, SourcePlaylistEntry>()
+  const plan = buildSession(pool, combos, sessionOptionsOf(answers, seed))
+  const refsById = new Map<string, PlaylistTrackRef>()
   for (const source of sources) {
     for (const entry of source.entries) {
       const id = trackIdOf(entry)
-      if (id !== null && !entryOf.has(id)) entryOf.set(id, entry)
+      if (id !== null && !refsById.has(id)) {
+        refsById.set(id, { contentId: entry.contentId, paths: entry.path ? [entry.path] : [] })
+      }
     }
   }
-  const refs = plan.items.map((item): PlaylistTrackRef => {
-    const entry = entryOf.get(item.track.id)
-    return { contentId: entry?.contentId, paths: entry?.path ? [entry.path] : [] }
-  })
-  return { plan, refs, pool, combos }
+  const refs = plan.items.map((item) => refsById.get(item.track.id) ?? { paths: [] })
+  return { plan, refs, refsById, pool, combos }
 }

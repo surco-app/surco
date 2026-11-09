@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { PlaylistRole, SessionAnswers } from '../../../shared/sessionTypes'
 import type { AppleMusicTrackMeta, SourcePlaylistEntry } from '../../../shared/types'
-import { runSession } from './sessionRun'
+import { runSession, sessionOptionsOf } from './sessionRun'
 
 const ANSWERS: SessionAnswers = {
   minutes: 20,
@@ -135,6 +135,32 @@ describe('runSession', () => {
       },
     )
     expect(plan.items.map((i) => i.track.id)).toEqual(['/m/a.mp3'])
+  })
+
+  it('keeps a reference for every track of the pool, so one that was swapped in can be written', () => {
+    const { pool, refsById } = run(
+      { sources: ['s'] },
+      { s: 'any' },
+      { s: [row('/m/a.mp3', { contentId: '7' }), row('/m/b.mp3')] },
+    )
+    expect(refsById.size).toBe(pool.length)
+    expect(refsById.get('7')).toEqual({ contentId: '7', paths: ['/m/a.mp3'] })
+    expect(refsById.get('/m/b.mp3')).toEqual({ contentId: undefined, paths: ['/m/b.mp3'] })
+  })
+
+  it('rebuilds the builder options from the answers and the seed', () => {
+    expect(
+      sessionOptionsOf({ ...ANSWERS, minutes: 45, surprise: true, harmony: 'same' }, 9),
+    ).toEqual({
+      minutes: 45,
+      preferCombos: true,
+      harmony: 'same',
+      tasteWeight: true,
+      alternate: false,
+      freshShare: 0,
+      surprise: true,
+      seed: 9,
+    })
   })
 
   it('passes the answers to the builder', () => {
