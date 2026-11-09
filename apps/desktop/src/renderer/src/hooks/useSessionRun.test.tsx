@@ -38,7 +38,7 @@ function setup(over: Partial<SessionRunDeps> = {}) {
   create = vi.fn<SessionWriter['create']>(async () => 'new1')
   replace = vi.fn<SessionWriter['replace']>(async () => 'new2')
   const deps: SessionRunDeps = {
-    rows: { load: vi.fn(async () => ROWS), loading: false, failed: [] },
+    rows: { load: vi.fn(async () => ROWS), reset: vi.fn(), loading: false, failed: [] },
     writer: { create, replace },
     canWrite: async () => true,
     namesIn: () => new Set<string>(),
@@ -104,7 +104,7 @@ describe('useSessionRun build', () => {
 
   it('writes nothing when there is not a single track to put in', async () => {
     const { result } = setup({
-      rows: { load: vi.fn(async () => new Map()), loading: false, failed: [] },
+      rows: { load: vi.fn(async () => new Map()), reset: vi.fn(), loading: false, failed: [] },
     })
 
     let outcome: string | undefined
@@ -204,6 +204,41 @@ describe('useSessionRun redo and adjust', () => {
     expect(deps.saveAnswers).toHaveBeenLastCalledWith(adjusted)
     expect(replace).toHaveBeenCalledOnce()
     expect(result.current.recent?.answers).toEqual(adjusted)
+  })
+})
+
+describe('useSessionRun reading fresh rows', () => {
+  it('reads the playlists again for a redo, so edits made since are seen', async () => {
+    const { deps, result } = await built()
+    await act(async () => {
+      await result.current.redo()
+    })
+    expect(deps.rows.reset).toHaveBeenCalledOnce()
+    const resetAt = vi.mocked(deps.rows.reset).mock.invocationCallOrder[0]
+    const secondLoadAt = vi.mocked(deps.rows.load).mock.invocationCallOrder[1]
+    expect(resetAt).toBeLessThan(secondLoadAt)
+  })
+
+  it('does the same for an adjust', async () => {
+    const { deps, result } = await built()
+    await act(async () => {
+      await result.current.adjust(ANSWERS, ROLES)
+    })
+    expect(deps.rows.reset).toHaveBeenCalledOnce()
+  })
+
+  it('does not reset for the first build, which comes straight after the wizard read them', async () => {
+    const { deps } = await built()
+    expect(deps.rows.reset).not.toHaveBeenCalled()
+  })
+
+  it('does not reset for a swap, which reads no playlist', async () => {
+    const { deps, result } = await built()
+    const spare = result.current.alternatives(1)[0]
+    await act(async () => {
+      await result.current.swap(1, spare)
+    })
+    expect(deps.rows.reset).not.toHaveBeenCalled()
   })
 })
 
@@ -347,7 +382,7 @@ describe('useSessionRun roles', () => {
 
   it('builds with the roles it is given, so a role just chosen counts before it is saved', async () => {
     const { result } = setup({
-      rows: { load: vi.fn(async () => SET_ROWS), loading: false, failed: [] },
+      rows: { load: vi.fn(async () => SET_ROWS), reset: vi.fn(), loading: false, failed: [] },
     })
     await act(async () => {
       await result.current.build(
@@ -362,7 +397,7 @@ describe('useSessionRun roles', () => {
 
   it('keeps those roles for the redo, whatever the settings say by then', async () => {
     const { result } = setup({
-      rows: { load: vi.fn(async () => SET_ROWS), loading: false, failed: [] },
+      rows: { load: vi.fn(async () => SET_ROWS), reset: vi.fn(), loading: false, failed: [] },
     })
     await act(async () => {
       await result.current.build(

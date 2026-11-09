@@ -16,6 +16,57 @@ function install(over: Partial<Api>): Api {
   return api
 }
 
+describe('useSessionRows reset', () => {
+  it('reads a playlist again after a reset, so edits made meanwhile are seen', async () => {
+    const api = install({ loadRekordboxPlaylist: vi.fn(async () => rows('/m/a.mp3')) })
+    const { result } = renderHook(() => useSessionRows('rekordbox'))
+    await act(async () => {
+      await result.current.load(['a'])
+    })
+    act(() => result.current.reset())
+    await act(async () => {
+      await result.current.load(['a'])
+    })
+    expect(api.loadRekordboxPlaylist).toHaveBeenCalledTimes(2)
+  })
+
+  it('forgets the playlists that failed to read', async () => {
+    install({ loadRekordboxPlaylist: vi.fn(async () => Promise.reject(new Error('gone'))) })
+    const { result } = renderHook(() => useSessionRows('rekordbox'))
+    await act(async () => {
+      await result.current.load(['bad'])
+    })
+    expect(result.current.failed).toEqual(['bad'])
+    act(() => result.current.reset())
+    expect(result.current.failed).toEqual([])
+  })
+
+  it('stops naming a playlist as failed once it reads fine', async () => {
+    const read = vi
+      .fn<Api['loadRekordboxPlaylist']>()
+      .mockRejectedValueOnce(new Error('gone'))
+      .mockResolvedValue(rows('/m/a.mp3'))
+    install({ loadRekordboxPlaylist: read })
+    const { result } = renderHook(() => useSessionRows('rekordbox'))
+    await act(async () => {
+      await result.current.load(['a'])
+    })
+    expect(result.current.failed).toEqual(['a'])
+    await act(async () => {
+      await result.current.load(['a'])
+    })
+    expect(result.current.failed).toEqual([])
+  })
+
+  it('keeps its function stable, so callers can depend on it', () => {
+    install({})
+    const { result, rerender } = renderHook(() => useSessionRows('rekordbox'))
+    const first = result.current.reset
+    rerender()
+    expect(result.current.reset).toBe(first)
+  })
+})
+
 describe('useSessionRows', () => {
   it('does not reuse a read of the same id that belongs to another program', async () => {
     const api = install({

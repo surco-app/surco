@@ -10133,6 +10133,36 @@ describe('automatic session from the tree', () => {
     )
   })
 
+  it('reads the playlists again each time the wizard is opened, so edits made since are seen', async () => {
+    openRekordboxTree()
+    const read = vi.mocked(window.api.loadRekordboxPlaylist)
+    await openWizard()
+    fireEvent.click(screen.getByTestId('session-wizard-next'))
+    fireEvent.change(screen.getByTestId('session-wizard-search'), { target: { value: 'fact' } })
+    fireEvent.click(screen.getByTestId('session-wizard-hit-role-f-any'))
+    fireEvent.click(screen.getByTestId('session-wizard-next'))
+    await screen.findByTestId('session-wizard-fresh-search')
+    const first = read.mock.calls.length
+    fireEvent.keyDown(window, { key: 'Escape' })
+    await waitFor(() =>
+      expect(screen.queryByTestId('session-wizard-dialog')).not.toBeInTheDocument(),
+    )
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 300))
+    })
+    fireEvent.contextMenu(screen.getByTestId('source-node-sets'))
+    fireEvent.click(screen.getByTestId('source-tree-session'))
+    await screen.findByTestId('session-wizard-dialog')
+    fireEvent.click(screen.getByTestId('session-wizard-next'))
+    if (!screen.queryByTestId('session-wizard-chip-f')) {
+      fireEvent.change(screen.getByTestId('session-wizard-search'), { target: { value: 'fact' } })
+      fireEvent.click(screen.getByTestId('session-wizard-hit-role-f-any'))
+    }
+    fireEvent.click(screen.getByTestId('session-wizard-next'))
+    await screen.findByTestId('session-wizard-fresh-search')
+    expect(read.mock.calls.length).toBeGreaterThan(first)
+  })
+
   it('writes nothing and asks to close the program when a DJ program is open', async () => {
     const edit = openRekordboxTree({
       djAppRunning: vi.fn<Api['djAppRunning']>().mockResolvedValue(true),

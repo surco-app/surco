@@ -54,7 +54,7 @@ function fakeRows(byId: Record<string, SourcePlaylistEntry[]> = {}, failed: stri
           .map((id) => [id, byId[id] ?? [entry(`/m/${id}.mp3`)]] as const),
       ),
   )
-  return { load, loading: false, failed }
+  return { load, reset: vi.fn(), loading: false, failed }
 }
 
 function setup(
@@ -258,6 +258,7 @@ describe('SessionWizard reading the chosen playlists', () => {
     let release: (value: Loaded) => void = () => {}
     const rows: SessionRows = {
       load: vi.fn(() => new Promise<Loaded>((resolve) => (release = resolve))),
+      reset: vi.fn(),
       loading: false,
       failed: [],
     }

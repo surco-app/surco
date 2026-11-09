@@ -7,6 +7,7 @@ type Rows = readonly SourcePlaylistEntry[]
 
 export interface SessionRows {
   load(ids: readonly string[]): Promise<ReadonlyMap<string, Rows>>
+  reset(): void
   loading: boolean
   failed: readonly string[]
 }
@@ -23,7 +24,10 @@ export function useSessionRows(program: DjProgram): SessionRows {
       const known = cache.current.get(key)
       if (known) return known
       const started = SOURCE_READ[program].playlist(id).then(
-        (rows) => rows,
+        (rows) => {
+          setFailedKeys((list) => (list.includes(key) ? list.filter((k) => k !== key) : list))
+          return rows
+        },
         () => {
           cache.current.delete(key)
           setFailedKeys((list) => (list.includes(key) ? list : [...list, key]))
@@ -51,10 +55,15 @@ export function useSessionRows(program: DjProgram): SessionRows {
     [read],
   )
 
+  const reset = useCallback(() => {
+    cache.current = new Map()
+    setFailedKeys([])
+  }, [])
+
   const failed = useMemo(
     () => failedKeys.filter((key) => key.startsWith(prefix)).map((key) => key.slice(prefix.length)),
     [failedKeys, prefix],
   )
 
-  return { load, loading: inFlight > 0, failed }
+  return { load, reset, loading: inFlight > 0, failed }
 }

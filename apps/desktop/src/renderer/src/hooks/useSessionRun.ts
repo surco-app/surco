@@ -120,6 +120,7 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
   ): Promise<BuildResult> =>
     exclusive(async () => {
       const seed = previous.seed + 1
+      deps.rows.reset()
       const run = await produce(answers, roles, seed)
       if (run.refs.length === 0) return 'empty'
       const shown = uniqueName(previous.name, deps.namesIn(previous.parentId))

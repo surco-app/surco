@@ -1121,12 +1121,14 @@ export default function App(): React.JSX.Element {
   const [sessionWizard, setSessionWizard] = useState<{ parentId: string; adjust: boolean } | null>(
     null,
   )
-  const openSessionAt = useStableCallback((parentId: string) =>
-    setSessionWizard({ parentId, adjust: false }),
-  )
-  const openSessionAdjust = useStableCallback(() =>
-    setSessionWizard({ parentId: sessionRun.recent?.parentId ?? 'root', adjust: true }),
-  )
+  const openSessionAt = useStableCallback((parentId: string) => {
+    sessionRows.reset()
+    setSessionWizard({ parentId, adjust: false })
+  })
+  const openSessionAdjust = useStableCallback(() => {
+    sessionRows.reset()
+    setSessionWizard({ parentId: sessionRun.recent?.parentId ?? 'root', adjust: true })
+  })
   const sessionRecent =
     sessionRun.recent && browser.playlist?.id === sessionRun.recent.playlistId
       ? sessionRun.recent
