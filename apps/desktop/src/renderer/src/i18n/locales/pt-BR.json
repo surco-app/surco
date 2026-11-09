@@ -52,6 +52,7 @@
         "search": "Buscar entre {{count}} playlists",
         "noHits": "Nenhuma playlist corresponde",
         "none": "Nenhuma playlist escolhida ainda",
+        "suggest": "Marcar pastas pelo nome ({{names}})",
         "onlyChosen": "Ver só as escolhidas",
         "allPlaylists": "Ver todas as playlists",
         "summary_one": "{{count}} playlist escolhida, até {{tracks}} faixas para escolher",

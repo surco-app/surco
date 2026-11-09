@@ -114,6 +114,24 @@ export function SessionWizard({
     )
   }
 
+  const pickMany = (picks: Readonly<Record<string, PlaylistRole | null>>): void => {
+    setRoles((prev) => {
+      const next = { ...prev }
+      for (const [id, role] of Object.entries(picks)) {
+        if (role) next[id] = role
+        else delete next[id]
+      }
+      return next
+    })
+    setSources((prev) => {
+      const kept = prev.filter((id) => picks[id] !== null)
+      const added = Object.entries(picks)
+        .filter(([id, role]) => role !== null && !kept.includes(id))
+        .map(([id]) => id)
+      return [...kept, ...added]
+    })
+  }
+
   const current = STEPS[step]
   const last = step === STEPS.length - 1
   const minutesValid = custom === null || wholeMinutes(custom) !== null
@@ -270,6 +288,7 @@ export function SessionWizard({
             roles={roles}
             sources={sources}
             onPick={pick}
+            onPickMany={pickMany}
             only={onlyChosen}
             onOnly={setOnlyChosen}
           />

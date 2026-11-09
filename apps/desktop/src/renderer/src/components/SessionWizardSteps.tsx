@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next'
 import type { PlaylistRole, SessionHarmony } from '../../../shared/sessionTypes'
 import type { SourceNode } from '../../../shared/types'
 import { playlistOptions } from '../lib/rekordboxPlaylists'
+import { suggestedFolderNames, suggestRoles } from '../lib/sessionTree'
+import { playlistIdsUnder } from './CheckTree'
 import { PlaylistRolePicker } from './PlaylistRolePicker'
 import { PlaylistTree } from './PlaylistTree'
 import { flattenPlaylists } from './SourceTree'
@@ -99,6 +101,7 @@ export function SourcesStep({
   roles,
   sources,
   onPick,
+  onPickMany,
   only,
   onOnly,
 }: {
@@ -106,6 +109,7 @@ export function SourcesStep({
   roles: Readonly<Record<string, PlaylistRole>>
   sources: readonly string[]
   onPick: (id: string, role: PlaylistRole | null) => void
+  onPickMany: (roles: Readonly<Record<string, PlaylistRole | null>>) => void
   only: boolean
   onOnly: (only: boolean) => void
 }): React.JSX.Element {
@@ -122,6 +126,8 @@ export function SourcesStep({
     [sources, byId],
   )
   const chosen = sources.filter((id) => byId.has(id))
+  const suggested = useMemo(() => suggestRoles(tree), [tree])
+  const suggestedNames = useMemo(() => suggestedFolderNames(tree), [tree])
   const onlyIds = only && chosen.length > 0 ? new Set(chosen) : undefined
   const eligible = chosen.reduce((sum, id) => sum + (byId.get(id)?.count ?? 0), 0)
   return (
@@ -129,6 +135,16 @@ export function SourcesStep({
       <p data-testid="session-wizard-sources-hint" className="text-xs text-fg-dim">
         {tr('sessions.wizard.sources.hint')}
       </p>
+      {chosen.length === 0 && suggestedNames.length > 0 && (
+        <button
+          type="button"
+          data-testid="session-wizard-suggest"
+          onClick={() => onPickMany(suggested)}
+          className="press self-start rounded-md border border-[var(--color-line-strong)] px-3 py-1.5 text-xs font-medium hover:bg-[var(--color-hover)]"
+        >
+          {tr('sessions.wizard.sources.suggest', { names: suggestedNames.join(', ') })}
+        </button>
+      )}
       <div className="flex flex-col overflow-hidden rounded-[10px] border border-[var(--color-line)] bg-[var(--color-field)]">
         <PlaylistTree
           tree={tree}
@@ -140,6 +156,19 @@ export function SourcesStep({
           emptyText={tr('sessions.wizard.sources.noHits')}
           searchLabel={tr('sessions.wizard.sources.search', { count: playlists.length })}
           onlyIds={onlyIds}
+          folderControl={(node) => {
+            const ids = playlistIdsUnder(node)
+            const first = ids.length > 0 ? roles[ids[0]] : undefined
+            const same = first !== undefined && ids.every((id) => roles[id] === first)
+            return ids.length > 0 ? (
+              <PlaylistRolePicker
+                name={node.name}
+                value={same ? first : null}
+                onChange={(role) => onPickMany(Object.fromEntries(ids.map((id) => [id, role])))}
+                testIdPrefix={`session-wizard-folder-role-${node.id}`}
+              />
+            ) : null
+          }}
           control={({ id, name }) =>
             id ? (
               <PlaylistRolePicker

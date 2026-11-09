@@ -118,6 +118,34 @@ describe('PlaylistTree showing only some playlists', () => {
   })
 })
 
+describe('PlaylistTree with a control on every folder', () => {
+  const folderControl = (node: { id: string }) => (
+    <button type="button" data-testid={`folder-control-${node.id}`} />
+  )
+
+  it('draws the control on the folder row, next to its name', () => {
+    renderTree({ folderControl })
+    expect(screen.getByTestId('folder-control-bases')).toBeInTheDocument()
+  })
+
+  it('does not open or close the folder when its control is pressed', () => {
+    renderTree({ folderControl, control: (t) => <i data-testid={`control-${t.id}`} /> })
+    fireEvent.click(screen.getByTestId('folder-control-bases'))
+    expect(screen.queryByTestId('control-b90')).toBeNull()
+  })
+
+  it('still opens the folder from its name', () => {
+    renderTree({ folderControl, control: (t) => <i data-testid={`control-${t.id}`} /> })
+    fireEvent.click(screen.getByTestId('playlists-folder-bases'))
+    expect(screen.getByTestId('control-b90')).toBeInTheDocument()
+  })
+
+  it('draws no folder control when none is given, as in the editor', () => {
+    renderTree()
+    expect(screen.queryByTestId('folder-control-bases')).toBeNull()
+  })
+})
+
 describe('PlaylistTree search label', () => {
   it('offers to search or create by default', () => {
     renderTree()

@@ -584,6 +584,154 @@ describe('SessionWizard character step', () => {
   })
 })
 
+describe('SessionWizard roles for a whole folder', () => {
+  const FOLDERS: SourceNode[] = [
+    {
+      id: 'fb',
+      name: 'BASES',
+      kind: 'folder',
+      count: 2,
+      children: [
+        { id: 'b1', name: 'Todas', kind: 'playlist', count: 10 },
+        { id: 'b2', name: 'Fijas', kind: 'playlist', count: 5 },
+      ],
+    },
+    {
+      id: 'fc',
+      name: 'CANTADITAS',
+      kind: 'folder',
+      count: 1,
+      children: [{ id: 'c1', name: 'Todas', kind: 'playlist', count: 7 }],
+    },
+    {
+      id: 'fo',
+      name: 'Remember',
+      kind: 'folder',
+      count: 1,
+      children: [{ id: 'o1', name: 'Otra', kind: 'playlist', count: 3 }],
+    },
+  ]
+  const renderFolders = (roles: Record<string, PlaylistRole> = {}, sources: string[] = []) => {
+    const onBuild = vi.fn()
+    render(
+      <SessionWizard
+        tree={FOLDERS}
+        roles={roles}
+        initial={{ ...INITIAL, sources }}
+        rows={fakeRows()}
+        destination={DESTINATION}
+        onClose={vi.fn()}
+        onBuild={onBuild}
+      />,
+    )
+    toSources()
+    return onBuild
+  }
+
+  it('gives every playlist of the folder the role with one press', () => {
+    renderFolders()
+    fireEvent.click(screen.getByTestId('session-wizard-folder-role-fb-base'))
+    expect(screen.getByTestId('session-wizard-summary')).toHaveTextContent(
+      i18n.t('sessions.wizard.sources.summary', { count: 2, tracks: 15 }),
+    )
+    expect(screen.getByTestId('playlists-folder-count-fb')).toHaveTextContent(
+      i18n.t('editor.playlists.ofTotal', { chosen: 2, total: 2 }),
+    )
+    fireEvent.click(screen.getByTestId('playlists-folder-fb'))
+    expect(screen.getByTestId('session-wizard-role-b1-base')).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    expect(screen.getByTestId('session-wizard-role-b2-base')).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+  })
+
+  it('leaves the playlists of the other folders alone', () => {
+    renderFolders()
+    fireEvent.click(screen.getByTestId('session-wizard-folder-role-fb-base'))
+    fireEvent.click(screen.getByTestId('playlists-folder-fc'))
+    expect(screen.getByTestId('session-wizard-role-c1-base')).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
+  })
+
+  it('shows the role as pressed on the folder only when all its playlists have it', () => {
+    renderFolders({ b1: 'base' }, ['b1'])
+    expect(screen.getByTestId('session-wizard-folder-role-fb-base')).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
+    fireEvent.click(screen.getByTestId('session-wizard-folder-role-fb-base'))
+    expect(screen.getByTestId('session-wizard-folder-role-fb-base')).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+  })
+
+  it('takes the role off every playlist of the folder when the pressed role is pressed again', () => {
+    renderFolders()
+    fireEvent.click(screen.getByTestId('session-wizard-folder-role-fb-base'))
+    fireEvent.click(screen.getByTestId('session-wizard-folder-role-fb-base'))
+    expect(screen.getByTestId('session-wizard-none')).toBeInTheDocument()
+  })
+
+  it('replaces a different role the playlists already had', () => {
+    renderFolders({ b1: 'vocal' }, ['b1'])
+    fireEvent.click(screen.getByTestId('session-wizard-folder-role-fb-base'))
+    expect(screen.getByTestId('session-wizard-role-b1-base')).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    expect(screen.getByTestId('session-wizard-role-b1-vocal')).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
+  })
+
+  it('hands the roles of the whole folder over when building', async () => {
+    const onBuild = renderFolders()
+    fireEvent.click(screen.getByTestId('session-wizard-folder-role-fb-base'))
+    next()
+    await screen.findByTestId('session-wizard-build')
+    fireEvent.click(screen.getByTestId('session-wizard-build'))
+    expect(onBuild).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ sources: ['b1', 'b2'] }),
+      { b1: 'base', b2: 'base' },
+    )
+  })
+
+  it('offers to mark the folders by their name when nothing is chosen yet', () => {
+    renderFolders()
+    const suggest = screen.getByTestId('session-wizard-suggest')
+    expect(suggest).toHaveTextContent('BASES')
+    expect(suggest).toHaveTextContent('CANTADITAS')
+    expect(suggest).not.toHaveTextContent('Remember')
+  })
+
+  it('marks them with one press and then stops offering', () => {
+    renderFolders()
+    fireEvent.click(screen.getByTestId('session-wizard-suggest'))
+    expect(screen.getByTestId('session-wizard-summary')).toHaveTextContent(
+      i18n.t('sessions.wizard.sources.summary', { count: 3, tracks: 22 }),
+    )
+    expect(screen.queryByTestId('session-wizard-suggest')).toBeNull()
+  })
+
+  it('does not offer it when something is already chosen', () => {
+    renderFolders({ o1: 'any' }, ['o1'])
+    expect(screen.queryByTestId('session-wizard-suggest')).toBeNull()
+  })
+
+  it('does not offer it when no folder is called like a role', () => {
+    setup()
+    toSources()
+    expect(screen.queryByTestId('session-wizard-suggest')).toBeNull()
+  })
+})
+
 describe('SessionWizard for assistive technology', () => {
   it('names the role buttons of every row after its playlist', () => {
     setup()

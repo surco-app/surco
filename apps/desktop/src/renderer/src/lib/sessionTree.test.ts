@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { SourceNode } from '../../../shared/types'
-import { withoutSeparators } from './sessionTree'
+import { suggestRoles, withoutSeparators } from './sessionTree'
 
 const playlist = (id: string, name: string, count = 3): SourceNode => ({
   id,
@@ -47,5 +47,55 @@ describe('withoutSeparators', () => {
 
   it('does not touch a name with nothing in it, which is an unnamed playlist and not a separator', () => {
     expect(withoutSeparators([playlist('n', '')])).toHaveLength(1)
+  })
+})
+
+describe('suggestRoles', () => {
+  const folder = (id: string, name: string, children: SourceNode[]): SourceNode => ({
+    id,
+    name,
+    kind: 'folder',
+    count: children.length,
+    children,
+  })
+
+  it('gives every playlist of a folder called Bases the role base', () => {
+    const tree = [folder('f', 'BASES', [playlist('a', 'Todas'), playlist('b', 'Fijas')])]
+    expect(suggestRoles(tree)).toEqual({ a: 'base', b: 'base' })
+  })
+
+  it('reads Cantaditas and Vocals as vocal, ignoring case and accents', () => {
+    const tree = [
+      folder('f', 'CANTADITAS', [playlist('a', 'Todas')]),
+      folder('g', 'Vocals', [playlist('b', 'Fijas')]),
+      folder('h', 'Acapellas', [playlist('c', 'Viejas')]),
+    ]
+    expect(suggestRoles(tree)).toEqual({ a: 'vocal', b: 'vocal', c: 'vocal' })
+  })
+
+  it('reads folders of tracklists, combos and sets as mixed, since their order is the point', () => {
+    const tree = [
+      folder('f', 'COMBOS', [playlist('a', '90s')]),
+      folder('g', 'BOLOS', [playlist('b', 'Bolo 1')]),
+      folder('h', 'TRACKLIST', [playlist('c', 'Set')]),
+    ]
+    expect(suggestRoles(tree)).toEqual({ a: 'any', b: 'any', c: 'any' })
+  })
+
+  it('reaches playlists nested in sub-folders and folders that are not at the top', () => {
+    const tree = [
+      folder('top', 'Music', [folder('f', 'Bases', [folder('g', '90s', [playlist('a', 'x')])])]),
+    ]
+    expect(suggestRoles(tree)).toEqual({ a: 'base' })
+  })
+
+  it('leaves every other folder and every loose playlist without a suggestion', () => {
+    const tree = [folder('f', 'Remember', [playlist('a', 'x')]), playlist('b', 'Bases')]
+    expect(suggestRoles(tree)).toEqual({})
+  })
+
+  it('lets the outer folder decide when two nested folders disagree', () => {
+    const tree = [folder('f', 'Bases', [folder('g', 'Cantaditas', [playlist('a', 'x')])])]
+    expect(suggestRoles(tree)).toEqual({ a: 'base' })
   })
 })

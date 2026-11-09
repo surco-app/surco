@@ -80,6 +80,7 @@ export function PlaylistTree({
   emptyText,
   searchLabel,
   onlyIds,
+  folderControl,
 }: {
   tree: readonly SourceNode[]
   options: readonly PlaylistOption[]
@@ -92,6 +93,7 @@ export function PlaylistTree({
   emptyText?: string
   searchLabel?: string
   onlyIds?: ReadonlySet<string>
+  folderControl?: (node: SourceNode) => React.ReactNode
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [query, setQuery] = useState('')
@@ -204,7 +206,7 @@ export function PlaylistTree({
       const ids = playlistIdsUnder(row.node)
       const k = ids.filter((id) => stateOf({ id, name: '' }) !== 'none').length
       const Chevron = row.open ? ChevronDown : ChevronRight
-      return (
+      const toggler = (
         <button
           key={row.node.id}
           ref={keep(i)}
@@ -225,6 +227,13 @@ export function PlaylistTree({
             {k > 0 ? tr('editor.playlists.ofTotal', { chosen: k, total: ids.length }) : ids.length}
           </span>
         </button>
+      )
+      if (!folderControl) return toggler
+      return (
+        <div key={row.node.id} className="flex items-center gap-2 pr-2">
+          <div className="min-w-0 flex-1">{toggler}</div>
+          {folderControl(row.node)}
+        </div>
       )
     }
     const state = stateOf(row.target)
