@@ -78,6 +78,7 @@ import { LivePlayer } from './components/Player'
 import { RekordboxQueuePill } from './components/RekordboxQueuePill'
 import { ResizeHandle } from './components/ResizeHandle'
 import { SessionBand } from './components/SessionBand'
+import { SessionWhyLine } from './components/SessionWhyLine'
 import { SessionWizard } from './components/SessionWizard'
 import { SourceRail } from './components/SourceRail'
 import { flattenPlaylists, SourceTree } from './components/SourceTree'
@@ -1119,6 +1120,47 @@ export default function App(): React.JSX.Element {
   )
   const openSessionAdjust = useStableCallback(() =>
     setSessionWizard({ parentId: sessionRun.recent?.parentId ?? 'root', adjust: true }),
+  )
+  const sessionRecent =
+    sessionRun.recent && browser.playlist?.id === sessionRun.recent.playlistId
+      ? sessionRun.recent
+      : null
+  const sessionIndexByPath = useMemo(() => {
+    const byPath = new Map<string, number>()
+    sessionRecent?.plan.items.forEach((item, index) => {
+      const path = sessionRecent.refsById.get(item.track.id)?.paths[0]
+      if (path) byPath.set(path.normalize('NFC'), index)
+    })
+    return byPath
+  }, [sessionRecent])
+  const {
+    busy: sessionBusy,
+    alternatives: sessionAlternatives,
+    swap: swapSessionTrack,
+  } = sessionRun
+  const sessionNoteOf = useCallback(
+    (track: TrackItem) => {
+      const index = sessionIndexByPath.get(track.inputPath.normalize('NFC'))
+      if (!sessionRecent || index === undefined) return undefined
+      const current = track.id === selectedId
+      return (
+        <SessionWhyLine
+          why={sessionRecent.plan.items[index].why}
+          selected={current}
+          busy={sessionBusy}
+          alternatives={current ? sessionAlternatives(index) : []}
+          onPick={(picked) => void swapSessionTrack(index, picked)}
+        />
+      )
+    },
+    [
+      sessionRecent,
+      sessionIndexByPath,
+      selectedId,
+      sessionBusy,
+      sessionAlternatives,
+      swapSessionTrack,
+    ],
   )
   const selectSource = useStableCallback((next: PlaylistSource | null) => {
     if (next === browser.source) return
@@ -3839,6 +3881,7 @@ export default function App(): React.JSX.Element {
                               reorder={reorder}
                               outsideFilter={outsideFilterIds}
                               noteOf={gridNoteOf}
+                              sessionNoteOf={sessionRecent ? sessionNoteOf : undefined}
                               onVisible={onListRowVisible}
                               rowRegistry={rowEls}
                               revealRowRef={revealRowRef}
