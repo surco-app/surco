@@ -2004,7 +2004,11 @@ que toca está a ±8 se toma la de tempo más cercano antes que repetir el rol (
 Bases y Cantaditas conocidas y «Alternar» activado la alternancia es estricta (`strict`): las
 pistas sin rol, que solo están en Mezcladas, no se usan de relleno, no arrancan la sesión ni se
 encadenan por un set. Entran como pareja de un combo repetido en dos sets, o cuando se acaba el
-rol que toca, y entonces ocupan su hueco. Nueva es una pista añadida
+rol que toca, y entonces ocupan su hueco. El rol de una pista que solo está en una Mezclada se saca de toda la biblioteca: las
+playlists de las carpetas llamadas Bases o Cantaditas se leen en segundo plano al abrir el
+asistente aunque no se hayan elegido (`libraryRoles`, `lib/sessionTree.ts`; `useSessionRun.ts`),
+y si la pista está solo en un rol allí, ese es el suyo; en los dos, o en ninguno, sigue sin rol.
+El rol que el usuario dio a una playlist elegida manda sobre el de la biblioteca. Nueva es una pista añadida
 en los últimos 30 días; si el programa no da fechas, una sin escuchas ni estrellas cuando otras
 sí las tienen (`isNew`, `lib/sessionCandidates.ts`). Fecha de alta y escuchas solo las trae
 rekordbox (`rekordboxPlaylists.ts:98-102`); Traktor da estrellas (`traktorPlaylists.ts:105`);
@@ -2024,7 +2028,9 @@ quedársela queda como una playlist normal y un aviso lo dice. Medido el 9-11 co
 carpetas Bases y Cantaditas: con las carpetas enteras, 0 de 880 parejas seguidas repiten rol.
 Con «Top» de Bases, «Top» de Cantaditas y la Mezclada «rockola-spook-2016», que antes repetían
 rol en un 26 a 40 % de las parejas con tramos de hasta 9, queda en 0 con 2 y 3 min por pista y en
-un 2,7 % con 1 min, solo al final, cuando se acaban las cantaditas. Se probó deducir el rol de
+un 2,7 % con 1 min, solo al final, cuando se acaban las cantaditas. Con los roles de la
+biblioteca queda en 0 también con 1 min, sin pistas sin rol, y las de rockola pasan de ser el 6 a
+7 % del plan al 40 a 52 %. Se probó deducir el rol de
 una pista sin rol por la vecina en el set y acierta un 51 %: los sets reales no alternan
 (`?BVBBVBVVVVBVVVBVBB…`), así que no se usa. No hay medida de cuántas
 sesiones da por buenas un DJ.
