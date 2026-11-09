@@ -73,6 +73,12 @@ function harmonyAllows(mode: SessionOptions['harmony'], distance: number | null)
   return mode === 'neighbours' ? distance <= 1 : distance === 0
 }
 
+function richest(tracks: readonly SessionTrack[]): SessionTrack[] {
+  const data = (track: SessionTrack): number => (track.bpm > 0 ? 1 : 0) + (track.key ? 1 : 0)
+  const most = Math.max(...tracks.map(data))
+  return tracks.filter((track) => data(track) === most)
+}
+
 export function tasteOf(track: SessionTrack, maxPlays: number, enabled: boolean): number {
   if (!enabled) return 0
   return track.rating / 100 + (maxPlays > 0 ? PLAYS_WEIGHT * (track.plays / maxPlays) : 0)
@@ -171,10 +177,12 @@ export function buildSession(
   const fitTier = (
     current: SessionTrack,
     list: readonly SessionTrack[],
+    respectRole = true,
   ): { tier: SessionTrack[]; relaxed: boolean } => {
     const fitting = list.filter(
       (track) =>
-        roleFits(track) && harmonyAllows(options.harmony, camelotDistance(current.key, track.key)),
+        (!respectRole || roleFits(track)) &&
+        harmonyAllows(options.harmony, camelotDistance(current.key, track.key)),
     )
     const tight = fitting.filter((track) => {
       const gap = tempoGap(current, track)
@@ -183,16 +191,18 @@ export function buildSession(
     if (tight.length > 0) return { tier: tight, relaxed: false }
     const wide = fitting.filter((track) => {
       const gap = tempoGap(current, track)
-      return gap === null || gap <= TEMPO_WIDE
+      return gap !== null && gap <= TEMPO_WIDE
     })
-    return { tier: wide, relaxed: true }
+    if (wide.length > 0) return { tier: wide, relaxed: true }
+    return { tier: fitting.filter((track) => tempoGap(current, track) === null), relaxed: true }
   }
 
+  const distanceOrLast = (from: SessionTrack, to: SessionTrack): number =>
+    camelotDistance(from.key, to.key) ?? Number.POSITIVE_INFINITY
+
   const closestOf = (current: SessionTrack, list: readonly SessionTrack[]): SessionTrack => {
-    const closest = Math.min(...list.map((track) => camelotDistance(current.key, track.key) ?? 1))
-    return pickOne(
-      list.filter((track) => (camelotDistance(current.key, track.key) ?? 1) === closest),
-    )
+    const closest = Math.min(...list.map((track) => distanceOrLast(current, track)))
+    return pickOne(list.filter((track) => distanceOrLast(current, track) === closest))
   }
 
   const nextByFit = (current: SessionTrack, onlyWithoutCombo: boolean): SessionItem | null => {
@@ -200,7 +210,9 @@ export function buildSession(
       (track) =>
         !used.has(track.id) && !(onlyWithoutCombo && combos.get(current.id)?.has(track.id)),
     )
-    const { tier, relaxed } = fitTier(current, open)
+    let fit = fitTier(current, open)
+    if (fit.tier.length === 0) fit = fitTier(current, open, false)
+    const { tier, relaxed } = fit
     if (tier.length === 0) return null
     const best = Math.max(...tier.map(taste))
     const chosen = closestOf(
@@ -230,7 +242,7 @@ export function buildSession(
 
   if (eligible.length > 0) {
     const opening = options.preferCombos ? strongest() : null
-    take(opening ? opening.from : pickOne(eligible), { kind: 'start' })
+    take(opening ? opening.from : pickOne(richest(eligible)), { kind: 'start' })
     while (total < target) {
       const current = items[items.length - 1].track
       const surpriseTurn = options.surprise && items.length % SURPRISE_EVERY === 0
