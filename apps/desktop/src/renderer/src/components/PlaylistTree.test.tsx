@@ -75,6 +75,21 @@ describe('PlaylistTree without creating playlists', () => {
   })
 })
 
+describe('PlaylistTree when nothing matches', () => {
+  it('says what it was told to say, only once something was typed', () => {
+    renderTree({ allowCreate: false, emptyText: 'Nothing here' })
+    expect(screen.queryByTestId('playlists-empty')).toBeNull()
+    fireEvent.change(screen.getByTestId('playlists-search'), { target: { value: 'zzz' } })
+    expect(screen.getByTestId('playlists-empty')).toHaveTextContent('Nothing here')
+  })
+
+  it('stays silent when a playlist matches', () => {
+    renderTree({ allowCreate: false, emptyText: 'Nothing here' })
+    fireEvent.change(screen.getByTestId('playlists-search'), { target: { value: 'mash' } })
+    expect(screen.queryByTestId('playlists-empty')).toBeNull()
+  })
+})
+
 describe('PlaylistTree focus', () => {
   it('puts the focus on the search by default', () => {
     renderTree()

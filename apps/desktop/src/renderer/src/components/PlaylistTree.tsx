@@ -77,6 +77,7 @@ export function PlaylistTree({
   control,
   allowCreate = true,
   autoFocus = true,
+  emptyText,
 }: {
   tree: readonly SourceNode[]
   options: readonly PlaylistOption[]
@@ -86,6 +87,7 @@ export function PlaylistTree({
   control?: (target: RekordboxPlaylistTarget) => React.ReactNode
   allowCreate?: boolean
   autoFocus?: boolean
+  emptyText?: string
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [query, setQuery] = useState('')
@@ -310,6 +312,11 @@ export function PlaylistTree({
       </label>
       <div className="max-h-[300px] min-h-0 flex-1 overflow-y-auto px-1.5 pb-2">
         {rows.map((row, i) => draw(row, i + 1))}
+        {hits && rows.length === 0 && emptyText && (
+          <p data-testid="playlists-empty" className="px-2 py-2 text-xs text-fg-dim">
+            {emptyText}
+          </p>
+        )}
       </div>
     </fieldset>
   )
