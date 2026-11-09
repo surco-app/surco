@@ -14,6 +14,11 @@ export interface SessionWizardSettings {
   surprise: boolean
 }
 
+export interface SessionAnswers extends SessionWizardSettings {
+  sources: string[]
+  fresh: string[]
+}
+
 export function sessionRoleKey(program: DjProgram, playlistId: string): string {
   return `${program}:${playlistId}`
 }

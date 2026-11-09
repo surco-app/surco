@@ -31,6 +31,40 @@
       "vocal": "ボ",
       "any": "ミ",
       "set": "セ"
+    },
+    "wizard": {
+      "title": "セッションを作成",
+      "step": "ステップ {{current}} / {{total}}",
+      "steps": {
+        "duration": "長さ",
+        "sources": "プレイリスト",
+        "fresh": "新曲",
+        "character": "雰囲気"
+      },
+      "next": "次へ",
+      "back": "戻る",
+      "duration": {
+        "heading": "セッションの長さは？",
+        "m60": "60分",
+        "m90": "90分",
+        "h2": "2時間",
+        "h3": "3時間",
+        "other": "その他",
+        "customLabel": "分",
+        "customInvalid": "分を整数で入力してください"
+      },
+      "sources": {
+        "heading": "どのプレイリストから曲を選びますか？",
+        "hint": "プレイリストを検索して、中身の種類を選びます。Surco はプレイリストに覚えさせるので、次回からは最初から並びます。各プレイリストのメニューからも設定できます。",
+        "search": "{{count}} 件のプレイリストから検索",
+        "noHits": "一致するプレイリストがありません",
+        "none": "まだプレイリストを選んでいません",
+        "remove": "{{name}} を外す",
+        "tracks_one": "{{count}} トラック",
+        "tracks_other": "{{count}} トラック",
+        "upTo_one": "最大 {{count}} トラックから選びます",
+        "upTo_other": "最大 {{count}} トラックから選びます"
+      }
     }
   },
   "pasteTracklist": {

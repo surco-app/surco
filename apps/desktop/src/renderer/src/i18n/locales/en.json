@@ -31,6 +31,40 @@
       "vocal": "V",
       "any": "M",
       "set": "S"
+    },
+    "wizard": {
+      "title": "Build a session",
+      "step": "Step {{current}} of {{total}}",
+      "steps": {
+        "duration": "Length",
+        "sources": "Playlists",
+        "fresh": "New tracks",
+        "character": "Feel"
+      },
+      "next": "Next",
+      "back": "Back",
+      "duration": {
+        "heading": "How long is the session?",
+        "m60": "60 min",
+        "m90": "90 min",
+        "h2": "2 h",
+        "h3": "3 h",
+        "other": "Other",
+        "customLabel": "Minutes",
+        "customInvalid": "Enter a whole number of minutes"
+      },
+      "sources": {
+        "heading": "Which playlists should the tracks come from?",
+        "hint": "Search a playlist and say what it holds. Surco keeps it on the playlist, so next time it is already here. You can also set it from each playlist's menu.",
+        "search": "Search among {{count}} playlists",
+        "noHits": "No playlist matches",
+        "none": "No playlist chosen yet",
+        "remove": "Remove {{name}}",
+        "tracks_one": "{{count}} track",
+        "tracks_other": "{{count}} tracks",
+        "upTo_one": "Up to {{count}} track to choose from",
+        "upTo_other": "Up to {{count}} tracks to choose from"
+      }
     }
   },
   "pasteTracklist": {

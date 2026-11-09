@@ -31,6 +31,40 @@
       "vocal": "V",
       "any": "M",
       "set": "S"
+    },
+    "wizard": {
+      "title": "Composer une session",
+      "step": "Étape {{current}} sur {{total}}",
+      "steps": {
+        "duration": "Durée",
+        "sources": "Playlists",
+        "fresh": "Nouveautés",
+        "character": "Ambiance"
+      },
+      "next": "Suivant",
+      "back": "Retour",
+      "duration": {
+        "heading": "Quelle est la durée de la session ?",
+        "m60": "60 min",
+        "m90": "90 min",
+        "h2": "2 h",
+        "h3": "3 h",
+        "other": "Autre",
+        "customLabel": "Minutes",
+        "customInvalid": "Saisis un nombre entier de minutes"
+      },
+      "sources": {
+        "heading": "De quelles playlists viennent les morceaux ?",
+        "hint": "Cherche une playlist et dis ce qu’elle contient. Surco le retient sur la playlist, donc la prochaine fois elle est déjà là. Tu peux aussi le définir depuis le menu de chaque playlist.",
+        "search": "Chercher parmi {{count}} playlists",
+        "noHits": "Aucune playlist ne correspond",
+        "none": "Aucune playlist choisie pour l’instant",
+        "remove": "Retirer {{name}}",
+        "tracks_one": "{{count}} morceau",
+        "tracks_other": "{{count}} morceaux",
+        "upTo_one": "Jusqu’à {{count}} morceau au choix",
+        "upTo_other": "Jusqu’à {{count}} morceaux au choix"
+      }
     }
   },
   "pasteTracklist": {

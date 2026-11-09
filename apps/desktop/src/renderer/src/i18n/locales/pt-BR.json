@@ -31,6 +31,40 @@
       "vocal": "C",
       "any": "M",
       "set": "S"
+    },
+    "wizard": {
+      "title": "Montar uma sessão",
+      "step": "Passo {{current}} de {{total}}",
+      "steps": {
+        "duration": "Duração",
+        "sources": "Playlists",
+        "fresh": "Novas",
+        "character": "Estilo"
+      },
+      "next": "Avançar",
+      "back": "Voltar",
+      "duration": {
+        "heading": "Quanto tempo dura a sessão?",
+        "m60": "60 min",
+        "m90": "90 min",
+        "h2": "2 h",
+        "h3": "3 h",
+        "other": "Outra",
+        "customLabel": "Minutos",
+        "customInvalid": "Digite um número inteiro de minutos"
+      },
+      "sources": {
+        "heading": "De quais playlists saem as faixas?",
+        "hint": "Busque uma playlist e diga o que há nela. O Surco guarda isso na playlist, então da próxima vez ela já estará aqui. Também dá para definir pelo menu de cada playlist.",
+        "search": "Buscar entre {{count}} playlists",
+        "noHits": "Nenhuma playlist corresponde",
+        "none": "Nenhuma playlist escolhida ainda",
+        "remove": "Remover {{name}}",
+        "tracks_one": "{{count}} faixa",
+        "tracks_other": "{{count}} faixas",
+        "upTo_one": "Até {{count}} faixa para escolher",
+        "upTo_other": "Até {{count}} faixas para escolher"
+      }
     }
   },
   "pasteTracklist": {

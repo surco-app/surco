@@ -31,6 +31,40 @@
       "vocal": "G",
       "any": "M",
       "set": "S"
+    },
+    "wizard": {
+      "title": "Session zusammenstellen",
+      "step": "Schritt {{current}} von {{total}}",
+      "steps": {
+        "duration": "Dauer",
+        "sources": "Playlists",
+        "fresh": "Neue Tracks",
+        "character": "Stimmung"
+      },
+      "next": "Weiter",
+      "back": "Zurück",
+      "duration": {
+        "heading": "Wie lang soll die Session sein?",
+        "m60": "60 Min.",
+        "m90": "90 Min.",
+        "h2": "2 Std.",
+        "h3": "3 Std.",
+        "other": "Andere",
+        "customLabel": "Minuten",
+        "customInvalid": "Gib eine ganze Zahl in Minuten ein"
+      },
+      "sources": {
+        "heading": "Aus welchen Playlists sollen die Tracks kommen?",
+        "hint": "Suche eine Playlist und gib an, was sie enthält. Surco merkt es sich an der Playlist, beim nächsten Mal ist sie also schon hier. Du kannst es auch im Menü jeder Playlist festlegen.",
+        "search": "Unter {{count}} Playlists suchen",
+        "noHits": "Keine Playlist passt",
+        "none": "Noch keine Playlist ausgewählt",
+        "remove": "{{name}} entfernen",
+        "tracks_one": "{{count}} Track",
+        "tracks_other": "{{count}} Tracks",
+        "upTo_one": "Bis zu {{count}} Track zur Auswahl",
+        "upTo_other": "Bis zu {{count}} Tracks zur Auswahl"
+      }
     }
   },
   "pasteTracklist": {
