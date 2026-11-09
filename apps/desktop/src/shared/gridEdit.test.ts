@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  carryOntoGrid,
   detectedBeatNear,
   downbeatAt,
   type EditableGrid,
@@ -238,9 +239,19 @@ describe('fitting around the playhead', () => {
     ],
   }
 
-  it('aligns the grid on the beats near the playhead, so a spliced intro can be fixed where its cues are', () => {
-    expect(fitGrid({ bpm: 150, anchorMs: 46 }, fit, 31000)).toEqual({ bpm: 150, anchorMs: 25 })
+  // Auto used to fit the five stretches nearest the playhead, so each press from another place
+  // gave another grid (Miracle, 09/11). One tempo gets one answer from the whole track; a
+  // spliced intro is fixed by opening a zone there and pressing Auto inside it.
+  it('gives a grid of one tempo the same answer wherever the playhead is', () => {
+    expect(fitGrid({ bpm: 150, anchorMs: 46 }, fit, 31000)).toEqual({ bpm: 150, anchorMs: 0 })
     expect(fitGrid({ bpm: 150, anchorMs: 46 }, fit, 199000)).toEqual({ bpm: 150, anchorMs: 0 })
+  })
+
+  it('fits a zone from the stretches inside it, so a spliced intro is fixed once a zone opens there', () => {
+    const zoned = toggleAnchor({ bpm: 150, anchorMs: 46 }, 63000)
+    const intro = fitGrid(zoned, fit, 31000)
+    expect(intro.anchorMs).toBe(25)
+    expect(fitGrid(intro, fit, 199000).zones?.[0].anchorMs).toBeCloseTo(0, 6)
   })
 
   it('ignores a stretch where the detector locked half a beat away, and uses the whole-track fit there', () => {
@@ -428,5 +439,46 @@ describe('detectedBeatNear', () => {
   it('gives the beat the detector heard nearest a moment, so a pin lands on the kick and not where the click fell', () => {
     expect(detectedBeatNear({ bpm: 120, firstMs: 130 }, 10400)).toBe(10630)
     expect(detectedBeatNear({ bpm: 120, firstMs: 130 }, 10100)).toBe(10130)
+  })
+})
+
+describe('Auto on a detector that hears two phases a few ms apart', () => {
+  const period = 60000 / 142
+  const phases = Array.from({ length: 56 }, (_, i) => ({
+    ms: 6762 * (i + 1),
+    firstMs: i % 3 === 0 ? 4.2 : period - 0.19,
+  }))
+  const fit = { bpm: 142, firstMs: period - 0.19, phases }
+
+  it('gives the same grid from every place in the track, so pressing it again changes nothing', () => {
+    const grid = { bpm: 142, anchorMs: 0 }
+    const answers = [0, 30000, 120000, 250000, 380000].map((ms) => fitGrid(grid, fit, ms))
+    for (const a of answers) expect(sameGrid(a, answers[0])).toBe(true)
+    expect(sameGrid(fitGrid(answers[0], fit, 200000), answers[0])).toBe(true)
+  })
+})
+
+describe('the first beat', () => {
+  // Auto put Miracle's first beat 0.19 ms before the track began. rekordbox keeps whole ms, so
+  // it is the beat at 0, and dropping it lost the line under hot cue A.
+  it('keeps a beat that falls less than half a millisecond before the start, at the start', () => {
+    const beats = gridBeats({ bpm: 142, anchorMs: -0.19 }, 10000)
+    expect(beats[0]).toEqual({ ms: 0, beat: 1 })
+    expect(beats[1].ms).toBeCloseTo(-0.19 + 60000 / 142, 6)
+  })
+
+  it('still leaves out a beat that is really before the start', () => {
+    expect(gridBeats({ bpm: 142, anchorMs: -3 }, 10000)[0].beat).toBe(2)
+  })
+})
+
+describe('carrying a cue on the first beat', () => {
+  // After Auto, Miracle's hot cue A went to −0.19 ms with its beat and stopped being drawn.
+  it('keeps a cue on the first beat at the start when that beat moves a fraction of a ms before it', () => {
+    expect(carryOntoGrid({ bpm: 142, anchorMs: 0 }, { bpm: 142, anchorMs: -0.19 }, 0, 20)).toBe(0)
+  })
+
+  it('does not carry a cue onto a beat that is really before the start', () => {
+    expect(carryOntoGrid({ bpm: 142, anchorMs: 0 }, { bpm: 142, anchorMs: -3 }, 0, 20)).toBeNull()
   })
 })

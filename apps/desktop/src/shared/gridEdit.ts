@@ -28,6 +28,7 @@ const ZONE_BREAK_MS = 3
 const MAX_ZONES = 8
 const MIN_ZONE_BEATS = 4
 const SAME_TEMPO_RATIO = 0.01
+const START_SLACK_MS = 0.5
 
 const periodOf = (bpm: number): number => 60000 / bpm
 const barBeat = (k: number): number => (((k % 4) + 4) % 4) + 1
@@ -123,7 +124,9 @@ export function carryOntoGrid(
   if (Math.abs(was.anchorMs + k * periodOf(was.bpm) - ms) > toleranceMs) return null
   const ratio = now.bpm / was.bpm
   const beat = k * (ratio > 1.5 ? 2 : ratio < 0.75 ? 0.5 : 1)
-  return Number.isInteger(beat) ? now.anchorMs + beat * periodOf(now.bpm) : null
+  if (!Number.isInteger(beat)) return null
+  const carried = now.anchorMs + beat * periodOf(now.bpm)
+  return carried < -START_SLACK_MS ? null : Math.max(0, carried)
 }
 
 export function anchorNear(grid: EditableGrid, ms: number): boolean {
@@ -171,10 +174,10 @@ export function gridBeats(grid: EditableGrid, durationMs: number): { ms: number;
   const out: { ms: number; beat: number }[] = []
   zones.forEach((zone, i) => {
     const period = periodOf(zone.bpm)
-    const from = i === 0 ? 0 : boundaryOf(zone)
+    const from = i === 0 ? -START_SLACK_MS : boundaryOf(zone)
     const to = i + 1 < zones.length ? boundaryOf(zones[i + 1]) : durationMs
     for (let k = Math.ceil((from - zone.anchorMs) / period); zone.anchorMs + k * period < to; k++)
-      out.push({ ms: zone.anchorMs + k * period, beat: barBeat(k) })
+      out.push({ ms: Math.max(0, zone.anchorMs + k * period), beat: barBeat(k) })
   })
   return out
 }
@@ -250,19 +253,40 @@ function phaseNear(fit: GridFit, ms: number): number {
   return fit.firstMs + median(near.map((p) => p.d))
 }
 
-function driftCorrectedBpm(fit: GridFit): number {
+function phaseIn(fit: GridFit, fromMs: number, toMs: number, atMs: number): number | null {
+  const inside = steadyStretches(fit).filter((p) => p.ms >= fromMs && p.ms < toMs)
+  if (inside.length < MIN_NEIGHBOUR_STRETCHES) return null
+  const slope = driftSlope(fit)
+  return fit.firstMs + median(inside.map((p) => p.d - slope * p.ms)) + slope * atMs
+}
+
+function zoneSpan(grid: EditableGrid, index: number): [number, number] {
+  const zones = zonesOf(grid)
+  return [
+    index === 0 ? Number.NEGATIVE_INFINITY : boundaryOf(zones[index]),
+    index + 1 < zones.length ? boundaryOf(zones[index + 1]) : Number.POSITIVE_INFINITY,
+  ]
+}
+
+function driftSlope(fit: GridFit): number {
   const steady = steadyStretches(fit)
-  if (steady.length < MIN_DRIFT_STRETCHES) return fit.bpm
+  if (steady.length < MIN_DRIFT_STRETCHES) return 0
   const slopes: number[] = []
   steady.forEach((a, i) => {
     for (const b of steady.slice(i + 1)) if (b.ms !== a.ms) slopes.push((b.d - a.d) / (b.ms - a.ms))
   })
-  if (slopes.length === 0) return fit.bpm
-  return fit.bpm / (1 + median(slopes))
+  return slopes.length === 0 ? 0 : median(slopes)
+}
+
+function driftCorrectedBpm(fit: GridFit): number {
+  return fit.bpm / (1 + driftSlope(fit))
 }
 
 export function fitGrid(grid: EditableGrid, fit: GridFit, atMs?: number): EditableGrid {
-  const first = atMs === undefined ? fit.firstMs : phaseNear(fit, atMs)
+  const first =
+    atMs === undefined
+      ? fit.firstMs
+      : (phaseIn(fit, ...zoneSpan(grid, zoneIndexAt(grid, atMs)), atMs) ?? phaseNear(fit, atMs))
   const bpm = driftCorrectedBpm(fit)
   const fitted = editAt(grid, atMs ?? 0, (zone) => {
     const sameTempo = Math.abs(bpm - zone.bpm) / zone.bpm < SAME_TEMPO_RATIO
