@@ -26,12 +26,6 @@
       "any": "Mixte",
       "set": "Set"
     },
-    "roleLetter": {
-      "base": "B",
-      "vocal": "V",
-      "any": "M",
-      "set": "S"
-    },
     "wizard": {
       "title": "Composer une session",
       "step": "Étape {{current}} sur {{total}}",
@@ -55,7 +49,7 @@
       },
       "sources": {
         "heading": "De quelles playlists viennent les morceaux ?",
-        "hint": "Cherche une playlist et dis ce qu’elle contient. Surco le retient sur la playlist, donc la prochaine fois elle est déjà là. Tu peux aussi le définir depuis le menu de chaque playlist.",
+        "hint": "Cherche une playlist et dis ce qu’elle contient. Surco le retient sur la playlist, donc la prochaine fois elle est déjà là.",
         "search": "Chercher parmi {{count}} playlists",
         "noHits": "Aucune playlist ne correspond",
         "none": "Aucune playlist choisie pour l’instant",

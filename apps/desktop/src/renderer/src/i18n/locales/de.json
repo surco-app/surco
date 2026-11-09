@@ -26,12 +26,6 @@
       "any": "Gemischt",
       "set": "Set"
     },
-    "roleLetter": {
-      "base": "B",
-      "vocal": "G",
-      "any": "M",
-      "set": "S"
-    },
     "wizard": {
       "title": "Session zusammenstellen",
       "step": "Schritt {{current}} von {{total}}",
@@ -55,7 +49,7 @@
       },
       "sources": {
         "heading": "Aus welchen Playlists sollen die Tracks kommen?",
-        "hint": "Suche eine Playlist und gib an, was sie enthält. Surco merkt es sich an der Playlist, beim nächsten Mal ist sie also schon hier. Du kannst es auch im Menü jeder Playlist festlegen.",
+        "hint": "Suche eine Playlist und gib an, was sie enthält. Surco merkt es sich an der Playlist, beim nächsten Mal ist sie also schon hier.",
         "search": "Unter {{count}} Playlists suchen",
         "noHits": "Keine Playlist passt",
         "none": "Noch keine Playlist ausgewählt",

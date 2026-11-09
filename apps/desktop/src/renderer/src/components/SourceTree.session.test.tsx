@@ -159,3 +159,13 @@ describe('SourceTree fill with a session item', () => {
     ])
   })
 })
+
+describe('SourceTree playlist menu without role tags', () => {
+  it('leaves the role to the wizard, so the menu of a playlist holds no tags', () => {
+    setup()
+    openMenu('house')
+    const menu = screen.getByTestId('source-tree-menu')
+    expect(within(menu).queryByRole('group')).toBeNull()
+    expect(menu.querySelector('[data-testid^="source-tree-role"]')).toBeNull()
+  })
+})

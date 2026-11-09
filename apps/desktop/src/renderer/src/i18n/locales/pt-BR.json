@@ -26,12 +26,6 @@
       "any": "Misto",
       "set": "Set"
     },
-    "roleLetter": {
-      "base": "B",
-      "vocal": "C",
-      "any": "M",
-      "set": "S"
-    },
     "wizard": {
       "title": "Montar uma sessão",
       "step": "Passo {{current}} de {{total}}",
@@ -55,7 +49,7 @@
       },
       "sources": {
         "heading": "De quais playlists saem as faixas?",
-        "hint": "Busque uma playlist e diga o que há nela. O Surco guarda isso na playlist, então da próxima vez ela já estará aqui. Também dá para definir pelo menu de cada playlist.",
+        "hint": "Busque uma playlist e diga o que há nela. O Surco guarda isso na playlist, então da próxima vez ela já estará aqui.",
         "search": "Buscar entre {{count}} playlists",
         "noHits": "Nenhuma playlist corresponde",
         "none": "Nenhuma playlist escolhida ainda",

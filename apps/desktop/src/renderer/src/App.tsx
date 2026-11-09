@@ -2916,17 +2916,6 @@ export default function App(): React.JSX.Element {
     ],
   )
   const { forProgram: programRoles, setRole: setPlaylistRole } = sessionRoles
-  const treeRoles = useMemo(
-    () =>
-      editableSource
-        ? {
-            values: programRoles,
-            onChange: (node: SourceNode, role: PlaylistRole | null) =>
-              setPlaylistRole(node.id, role),
-          }
-        : undefined,
-    [editableSource, programRoles, setPlaylistRole],
-  )
   // Read at drop time, so a re-read landing mid-drag still names the dragged rows. A track
   // row stands for every row it has in the playlist (the list shows it once), so all of them
   // move together; a separator key is its own link.
@@ -3709,7 +3698,6 @@ export default function App(): React.JSX.Element {
                       treeUsbProgram ? () => openUsbExport(null, treeUsbProgram) : undefined
                     }
                     newPlaylistRef={newPlaylistRef}
-                    roles={treeRoles}
                   />
                 )}
                 {/* Until there are rows the window is one screen: an empty column beside the

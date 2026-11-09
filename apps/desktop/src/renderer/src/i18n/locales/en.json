@@ -26,12 +26,6 @@
       "any": "Mixed",
       "set": "Set"
     },
-    "roleLetter": {
-      "base": "B",
-      "vocal": "V",
-      "any": "M",
-      "set": "S"
-    },
     "wizard": {
       "title": "Build a session",
       "step": "Step {{current}} of {{total}}",
@@ -55,7 +49,7 @@
       },
       "sources": {
         "heading": "Which playlists should the tracks come from?",
-        "hint": "Search a playlist and say what it holds. Surco keeps it on the playlist, so next time it is already here. You can also set it from each playlist's menu.",
+        "hint": "Search a playlist and say what it holds. Surco keeps it on the playlist, so next time it is already here.",
         "search": "Search among {{count}} playlists",
         "noHits": "No playlist matches",
         "none": "No playlist chosen yet",

@@ -26,12 +26,6 @@
       "any": "De todo",
       "set": "Set"
     },
-    "roleLetter": {
-      "base": "B",
-      "vocal": "C",
-      "any": "D",
-      "set": "S"
-    },
     "wizard": {
       "title": "Montar una sesión",
       "step": "Paso {{current}} de {{total}}",
@@ -55,7 +49,7 @@
       },
       "sources": {
         "heading": "¿De qué playlists salen las pistas?",
-        "hint": "Busca una playlist y di qué hay en ella. Surco lo guarda en la playlist, así que la próxima vez ya están aquí. También se marca desde el menú de cada playlist.",
+        "hint": "Busca una playlist y di qué hay en ella. Surco lo guarda en la playlist, así que la próxima vez ya están aquí.",
         "search": "Buscar entre {{count}} playlists",
         "noHits": "Ninguna playlist coincide",
         "none": "Aún no has elegido ninguna playlist",
