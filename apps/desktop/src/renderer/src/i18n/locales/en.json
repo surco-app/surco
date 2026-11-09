@@ -110,7 +110,24 @@
       "assumed_one": "{{count}} track has no length and counts as 6 min",
       "assumed_other": "{{count}} tracks have no length and count as 6 min each"
     },
-    "playlistName": "Session {{date}}"
+    "playlistName": "Session {{date}}",
+    "why": {
+      "start": "Where the session starts",
+      "combo_one": "Proven combo, played together in {{count}} set",
+      "combo_other": "Proven combo, played together in {{count}} sets",
+      "harmonicSame": "{{from}} → {{to}}, same key",
+      "harmonicRing": "{{from}} → {{to}}, same ring",
+      "harmonicNeighbour": "{{from}} → {{to}}, neighbour",
+      "tasteRated": "Among the best rated that fit",
+      "tastePlayed": "Among the most played that fit",
+      "bpm": "Fits by tempo",
+      "bpmRelaxed": "Nothing else fit, so the tempo moves more than usual",
+      "freshKey": "New. Fits by key {{key}}",
+      "freshTempo": "New. Fits by tempo",
+      "chosen": "Chosen by you",
+      "change": "Change",
+      "pick": "Change to"
+    }
   },
   "pasteTracklist": {
     "title": "Paste tracklist into “{{name}}”",

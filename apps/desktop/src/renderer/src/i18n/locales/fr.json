@@ -110,7 +110,24 @@
       "assumed_one": "{{count}} morceau sans durée, compté pour 6 min",
       "assumed_other": "{{count}} morceaux sans durée, comptés pour 6 min chacun"
     },
-    "playlistName": "Session du {{date}}"
+    "playlistName": "Session du {{date}}",
+    "why": {
+      "start": "Là où la session démarre",
+      "combo_one": "Combo éprouvé, joué ensemble dans {{count}} set",
+      "combo_other": "Combo éprouvé, joué ensemble dans {{count}} sets",
+      "harmonicSame": "{{from}} → {{to}}, même tonalité",
+      "harmonicRing": "{{from}} → {{to}}, même anneau",
+      "harmonicNeighbour": "{{from}} → {{to}}, voisin",
+      "tasteRated": "Parmi les mieux notés qui conviennent",
+      "tastePlayed": "Parmi les plus écoutés qui conviennent",
+      "bpm": "Convient par le tempo",
+      "bpmRelaxed": "Rien d’autre ne convenait, le tempo varie donc plus que d’habitude",
+      "freshKey": "Nouveauté. Convient par la tonalité {{key}}",
+      "freshTempo": "Nouveauté. Convient par le tempo",
+      "chosen": "Choisi par toi",
+      "change": "Changer",
+      "pick": "Remplacer par"
+    }
   },
   "pasteTracklist": {
     "title": "Coller la tracklist dans « {{name}} »",
