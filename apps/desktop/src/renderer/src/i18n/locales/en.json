@@ -71,6 +71,7 @@
         "tasteWeightHint": "Stars and play count weigh in when picking",
         "surprise": "Surprise me",
         "surpriseHint": "Leaves room for pairs that were never played together",
+        "noMixed": "No Mixed playlist is chosen, so there is no order to read for combos. Add one in the Playlists step.",
         "play": "Time each track plays",
         "playValue": "{{minutes}} min",
         "playHint": "Tracks are mixed, not played whole. This is how long each one counts toward the session.",

@@ -71,6 +71,7 @@
         "tasteWeightHint": "Les étoiles et les écoutes comptent dans le choix",
         "surprise": "Surprends-moi",
         "surpriseHint": "Laisse de la place à des paires jamais jouées ensemble",
+        "noMixed": "Aucune playlist mixte n’est choisie, donc aucun ordre à lire pour les combos. Ajoutes-en une à l’étape Playlists.",
         "play": "Durée de jeu de chaque morceau",
         "playValue": "{{minutes}} min",
         "playHint": "Les morceaux sont mixés, pas joués en entier. C'est ce que chacun compte dans la durée de la session.",

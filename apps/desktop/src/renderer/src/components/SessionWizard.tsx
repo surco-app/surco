@@ -1,7 +1,7 @@
 import { X } from 'lucide-react'
 import type { TFunction } from 'i18next'
 import type React from 'react'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { camelotOf } from '../../../shared/camelot'
 import type { PlaylistRole, SessionAnswers } from '../../../shared/sessionTypes'
@@ -9,6 +9,7 @@ import type { SourceNode, SourcePlaylistEntry } from '../../../shared/types'
 import type { BuildResult } from '../hooks/useSessionRun'
 import type { SessionRows } from '../hooks/useSessionRows'
 import { toCandidates } from '../lib/sessionCandidates'
+import { withoutSeparators } from '../lib/sessionTree'
 import { ModalShell } from './ModalShell'
 import {
   CharacterStep,
@@ -75,10 +76,12 @@ export function SessionWizard({
     isPresetMinutes(initial.minutes) ? null : String(initial.minutes),
   )
   const [roles, setRoles] = useState<Record<string, PlaylistRole>>({ ...savedRoles })
+  const usable = useMemo(() => withoutSeparators(tree), [tree])
   const names = useMemo(
-    () => new Map(flattenPlaylists([...tree]).map((p) => [p.node.id, p.node.name])),
-    [tree],
+    () => new Map(flattenPlaylists([...usable]).map((p) => [p.node.id, p.node.name])),
+    [usable],
   )
+  const [onlyChosen, setOnlyChosen] = useState(false)
   const [sources, setSources] = useState<string[]>(() => {
     return initial.sources.filter((id) => names.has(id) && savedRoles[id] !== undefined)
   })
@@ -170,6 +173,18 @@ export function SessionWizard({
     setProblem(result === 'built' ? null : result)
   }
 
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key !== 'Enter' || !(e.metaKey || e.ctrlKey)) return
+      e.preventDefault()
+      if (last) {
+        if (!building) void build()
+      } else if (!blocked) void advance()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  })
+
   return (
     <ModalShell
       onClose={onClose}
@@ -250,10 +265,12 @@ export function SessionWizard({
       )}
       {current === 'sources' && (
         <SourcesStep
-          tree={tree}
+          tree={usable}
           roles={roles}
           sources={sources}
           onPick={pick}
+          only={onlyChosen}
+          onOnly={setOnlyChosen}
         />
       )}
       {current === 'character' && (
@@ -263,6 +280,7 @@ export function SessionWizard({
           playMinutes={playMinutes}
           onPlayMinutes={setPlayMinutes}
           hasNew={hasNew}
+          hasMixed={sources.some((id) => roles[id] === 'any')}
           freshShare={freshShare}
           onFreshShare={setFreshShare}
           onChange={(patch) => setOptions((prev) => ({ ...prev, ...patch }))}

@@ -71,6 +71,7 @@
         "tasteWeightHint": "Sterne und Wiedergaben zählen bei der Auswahl",
         "surprise": "Überrasch mich",
         "surpriseHint": "Lässt Platz für Paare, die nie zusammen gespielt wurden",
+        "noMixed": "Es ist keine gemischte Playlist gewählt, also gibt es keine Reihenfolge für Combos. Füge im Schritt Playlists eine hinzu.",
         "play": "Spielzeit pro Track",
         "playValue": "{{minutes}} Min.",
         "playHint": "Tracks werden gemixt und nicht ganz gespielt. So lange zählt jeder für die Länge der Session.",

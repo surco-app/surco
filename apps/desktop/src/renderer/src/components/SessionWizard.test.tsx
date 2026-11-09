@@ -25,6 +25,7 @@ const TREE: SourceNode[] = [
     ],
   },
   { id: 'combos', name: 'COMBOS', kind: 'playlist', count: 24 },
+  { id: 'sep', name: '--------------------', kind: 'playlist', count: 0 },
 ]
 
 const INITIAL: SessionAnswers = {
@@ -580,6 +581,106 @@ describe('SessionWizard character step', () => {
     expect(onBuild).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ sources: ['b90'] }), {
       b90: 'base',
     })
+  })
+})
+
+describe('SessionWizard playlists that are not playlists', () => {
+  it('leaves out the playlists that are only a line of dashes, which DJs use as separators', () => {
+    setup()
+    toSources()
+    expect(screen.queryByTestId('playlists-row-sep')).toBeNull()
+    expect(screen.getByTestId('playlists-search')).toHaveAttribute(
+      'placeholder',
+      i18n.t('sessions.wizard.sources.search', { count: 5 }),
+    )
+  })
+})
+
+describe('SessionWizard keeping the view when going back', () => {
+  it('keeps the list of only the chosen playlists after going back from the last step', async () => {
+    setup({ b90: 'base', c90: 'vocal' })
+    toSources()
+    fireEvent.click(screen.getByTestId('session-wizard-only-chosen'))
+    next()
+    await screen.findByTestId('session-wizard-build')
+    fireEvent.click(screen.getByTestId('session-wizard-back'))
+    expect(screen.getByTestId('session-wizard-only-chosen')).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.queryByTestId('playlists-row-mak')).toBeNull()
+  })
+})
+
+describe('SessionWizard keyboard', () => {
+  const commandEnter = () =>
+    fireEvent.keyDown(window, { key: 'Enter', metaKey: true })
+
+  it('goes on to the next step with Command and Enter', () => {
+    setup({ b90: 'base' })
+    commandEnter()
+    expect(screen.getByTestId('session-wizard-step-title')).toHaveTextContent(
+      i18n.t('sessions.wizard.sources.heading'),
+    )
+  })
+
+  it('also takes Control and Enter, for Windows', () => {
+    setup({ b90: 'base' })
+    fireEvent.keyDown(window, { key: 'Enter', ctrlKey: true })
+    expect(screen.getByTestId('session-wizard-step-title')).toHaveTextContent(
+      i18n.t('sessions.wizard.sources.heading'),
+    )
+  })
+
+  it('does not go on while the step is blocked, like Next itself', () => {
+    setup()
+    toSources()
+    commandEnter()
+    expect(screen.getByTestId('session-wizard-step-title')).toHaveTextContent(
+      i18n.t('sessions.wizard.sources.heading'),
+    )
+  })
+
+  it('builds from the last step', async () => {
+    const { onBuild } = setup({ b90: 'base' })
+    await toCharacter()
+    commandEnter()
+    expect(onBuild).toHaveBeenCalledOnce()
+  })
+
+  it('does not build twice while it is already writing', async () => {
+    const { onBuild } = setup({ b90: 'base' })
+    onBuild.mockImplementation(() => new Promise<BuildResult>(() => {}))
+    await toCharacter()
+    commandEnter()
+    commandEnter()
+    expect(onBuild).toHaveBeenCalledOnce()
+  })
+
+  it('leaves a plain Enter alone, so typing in a field does not move the wizard', () => {
+    setup({ b90: 'base' })
+    fireEvent.keyDown(window, { key: 'Enter' })
+    expect(screen.getByTestId('session-wizard-duration-90')).toBeInTheDocument()
+  })
+})
+
+describe('SessionWizard combos without Mixed playlists', () => {
+  it('warns under Prefer combos when no Mixed playlist was chosen, since there is no order to read', async () => {
+    setup({ b90: 'base' })
+    await toCharacter()
+    expect(screen.getByTestId('session-wizard-combos-hint')).toHaveTextContent(
+      i18n.t('sessions.wizard.character.noMixed'),
+    )
+  })
+
+  it('says nothing when a Mixed playlist was chosen', async () => {
+    setup({ b90: 'base', combos: 'any' })
+    await toCharacter()
+    expect(screen.queryByTestId('session-wizard-combos-hint')).toBeNull()
+  })
+
+  it('says nothing once Prefer combos is switched off', async () => {
+    setup({ b90: 'base' })
+    await toCharacter()
+    fireEvent.click(screen.getByTestId('session-wizard-opt-preferCombos'))
+    expect(screen.queryByTestId('session-wizard-combos-hint')).toBeNull()
   })
 })
 
