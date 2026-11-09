@@ -10041,14 +10041,14 @@ describe('automatic session from the tree', () => {
     meta: { bpm: '140' },
     preview: { title: 'Silent Tears', artist: 'Jessy', durationSec: 300, cues: [] },
   }
-  function openRekordboxTree(over: Partial<Api> = {}) {
+  function openRekordboxTree(over: Partial<Api> = {}, tree: SourceNode[] = TREE) {
     const edit = vi
       .fn<Api['editRekordboxPlaylist']>()
       .mockResolvedValueOnce({ applied: true, createdId: 'new' })
       .mockResolvedValue({ applied: true })
     setApi({
       rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
-      loadRekordboxTree: vi.fn<Api['loadRekordboxTree']>().mockResolvedValue(TREE),
+      loadRekordboxTree: vi.fn<Api['loadRekordboxTree']>().mockResolvedValue(tree),
       loadRekordboxPlaylist: vi.fn<Api['loadRekordboxPlaylist']>().mockResolvedValue([ROW]),
       djAppRunning: vi.fn<Api['djAppRunning']>().mockResolvedValue(false),
       editRekordboxPlaylist: edit,
@@ -10073,6 +10073,57 @@ describe('automatic session from the tree', () => {
     fireEvent.click(screen.getByTestId('session-wizard-next'))
     await screen.findByTestId('session-wizard-build')
   }
+
+  describe('filling a playlist that was emptied', () => {
+    const WITH_EMPTIED = [
+      {
+        id: 'sets',
+        name: 'Sets',
+        kind: 'folder' as const,
+        count: 1,
+        children: [{ id: 'emptied', name: 'Session 11-9', kind: 'playlist' as const, count: 0 }],
+      },
+      { id: 'f', name: 'Factory', kind: 'playlist' as const, count: 1 },
+    ]
+
+    async function openFill(): Promise<void> {
+      await renderApp()
+      fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+      fireEvent.click(await screen.findByTestId('source-node-sets'))
+      fireEvent.contextMenu(await screen.findByTestId('source-node-emptied'))
+      fireEvent.click(screen.getByTestId('source-tree-fill-session'))
+      await screen.findByTestId('session-wizard-dialog')
+      fireEvent.click(screen.getByTestId('session-wizard-next'))
+      fireEvent.change(screen.getByTestId('playlists-search'), { target: { value: 'fact' } })
+      fireEvent.click(screen.getByTestId('session-wizard-role-f-any'))
+      fireEvent.click(screen.getByTestId('session-wizard-next'))
+      await screen.findByTestId('session-wizard-fresh')
+      fireEvent.click(screen.getByTestId('session-wizard-next'))
+      await screen.findByTestId('session-wizard-build')
+    }
+
+    it('writes the session into that playlist and creates no other', async () => {
+      const edit = openRekordboxTree({}, WITH_EMPTIED)
+      await openFill()
+      fireEvent.click(screen.getByTestId('session-wizard-build'))
+      await waitFor(() => expect(edit).toHaveBeenCalledTimes(1))
+      expect(edit.mock.calls[0][0]).toEqual({
+        kind: 'add',
+        playlistId: 'emptied',
+        tracks: [{ contentId: '41', paths: ['/m/a.wav'] }],
+      })
+      await waitFor(() =>
+        expect(screen.queryByTestId('session-wizard-dialog')).not.toBeInTheDocument(),
+      )
+    })
+
+    it('shows the band over it, so it can be redone', async () => {
+      openRekordboxTree({}, WITH_EMPTIED)
+      await openFill()
+      fireEvent.click(screen.getByTestId('session-wizard-build'))
+      expect(await screen.findByTestId('session-band')).toBeInTheDocument()
+    })
+  })
 
   it('opens from the menu of a folder', async () => {
     openRekordboxTree()

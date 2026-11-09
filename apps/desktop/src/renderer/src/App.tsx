@@ -29,7 +29,7 @@ import {
 import { SAME_CLOCK_FILE } from '../../shared/gridEdit'
 import { emptyMetadata } from '../../shared/metadata'
 import { RECENTLY_ADDED_ID } from '../../shared/recentlyAdded'
-import { childNames, sessionDateLabel } from '../../shared/sessionName'
+import { childNames, parentIdOf, sessionDateLabel } from '../../shared/sessionName'
 import { answersFromSettings, wizardSettingsFrom } from '../../shared/sessionSettings'
 import type { PlaylistRole } from '../../shared/sessionTypes'
 import { resolveBindings } from '../../shared/shortcutDefaults'
@@ -118,7 +118,7 @@ import { useRetireSuperseded } from './hooks/useRetireSuperseded'
 import { useSessionPersistence } from './hooks/useSessionPersistence'
 import { useSessionRoles } from './hooks/useSessionRoles'
 import { useSessionRows } from './hooks/useSessionRows'
-import { type BuildResult, useSessionRun } from './hooks/useSessionRun'
+import { type BuildResult, type FillTarget, useSessionRun } from './hooks/useSessionRun'
 import { useSessionWrite } from './hooks/useSessionWrite'
 import { useSettings } from './hooks/useSettings'
 import { useSourceBrowser } from './hooks/useSourceBrowser'
@@ -1118,12 +1118,19 @@ export default function App(): React.JSX.Element {
       return result
     },
   )
-  const [sessionWizard, setSessionWizard] = useState<{ parentId: string; adjust: boolean } | null>(
-    null,
-  )
+  const [sessionWizard, setSessionWizard] = useState<{
+    parentId: string
+    adjust: boolean
+    fill?: FillTarget
+  } | null>(null)
   const openSessionAt = useStableCallback((parentId: string) => {
     sessionRows.reset()
     setSessionWizard({ parentId, adjust: false })
+  })
+  const openSessionFill = useStableCallback((node: SourceNode) => {
+    sessionRows.reset()
+    const parentId = parentIdOf(browser.tree, node.id) ?? 'root'
+    setSessionWizard({ parentId, adjust: false, fill: { id: node.id, name: node.name, parentId } })
   })
   const openSessionAdjust = useStableCallback(() => {
     sessionRows.reset()
@@ -2892,6 +2899,7 @@ export default function App(): React.JSX.Element {
       onDelete: deleteInRekordbox,
       onPasteTracklist: openPasteTracklist,
       onSession: (node: SourceNode) => openSessionAt(node.id),
+      onFill: openSessionFill,
       onMove: moveInTree,
       ...(sourceProgram && SOURCE_PROGRAMS[sourceProgram].crates && { crates: true as const }),
     }),
@@ -2902,6 +2910,7 @@ export default function App(): React.JSX.Element {
       deleteInRekordbox,
       openPasteTracklist,
       openSessionAt,
+      openSessionFill,
       moveInTree,
       sourceProgram,
     ],
@@ -4188,7 +4197,9 @@ export default function App(): React.JSX.Element {
                   onBuild={async (answers, roles) => {
                     const result = sessionWizard.adjust
                       ? await sessionRun.adjust(answers, roles)
-                      : await sessionRun.build(sessionWizard.parentId, answers, roles)
+                      : sessionWizard.fill
+                        ? await sessionRun.fill(sessionWizard.fill, answers, roles)
+                        : await sessionRun.build(sessionWizard.parentId, answers, roles)
                     if (result === 'built') setSessionWizard(null)
                     return result
                   }}
