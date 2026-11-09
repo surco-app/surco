@@ -241,7 +241,7 @@ export function CharacterStep({
           )}
         </Fragment>
       ))}
-      <label className="flex flex-col gap-1.5 text-sm">
+      <label className="flex flex-col gap-1.5 border-t border-[var(--color-line)] pt-3 text-sm">
         <span className="flex justify-between">
           {tr('sessions.wizard.character.play')}
           <span data-testid="session-wizard-play-value" className="tabular-nums text-fg">
@@ -289,7 +289,7 @@ export function CharacterStep({
           </span>
         </label>
       )}
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-1.5 border-t border-[var(--color-line)] pt-3">
         <span data-testid="session-wizard-harmony-title" className="text-sm">
           {tr('sessions.wizard.character.harmony')}
         </span>

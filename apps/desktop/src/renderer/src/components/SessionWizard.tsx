@@ -247,50 +247,52 @@ export function SessionWizard({
           {tr('sessions.wizard.loadFailed', { names: unreadable.join(', ') })}
         </p>
       )}
-      {current === 'duration' && (
-        <DurationStep
-          minutes={minutes}
-          custom={custom}
-          onPreset={(value) => {
-            setMinutes(value)
-            setCustom(null)
-          }}
-          onCustomOpen={() => setCustom((text) => text ?? String(minutes))}
-          onCustomText={(text) => {
-            setCustom(text)
-            const value = wholeMinutes(text)
-            if (value !== null) setMinutes(value)
-          }}
-        />
-      )}
-      {current === 'sources' && (
-        <SourcesStep
-          tree={usable}
-          roles={roles}
-          sources={sources}
-          onPick={pick}
-          only={onlyChosen}
-          onOnly={setOnlyChosen}
-        />
-      )}
-      {current === 'character' && (
-        <CharacterStep
-          options={options}
-          hasKeys={hasKeys}
-          playMinutes={playMinutes}
-          onPlayMinutes={setPlayMinutes}
-          hasNew={hasNew}
-          hasMixed={sources.some((id) => roles[id] === 'any')}
-          freshShare={freshShare}
-          onFreshShare={setFreshShare}
-          onChange={(patch) => setOptions((prev) => ({ ...prev, ...patch }))}
-        />
-      )}
-      {last && (
-        <p data-testid="session-wizard-destination" className="mt-3 text-xs text-fg-dim">
-          {destinationText(destination, tr)}
-        </p>
-      )}
+      <div className="min-h-[480px]">
+        {current === 'duration' && (
+          <DurationStep
+            minutes={minutes}
+            custom={custom}
+            onPreset={(value) => {
+              setMinutes(value)
+              setCustom(null)
+            }}
+            onCustomOpen={() => setCustom((text) => text ?? String(minutes))}
+            onCustomText={(text) => {
+              setCustom(text)
+              const value = wholeMinutes(text)
+              if (value !== null) setMinutes(value)
+            }}
+          />
+        )}
+        {current === 'sources' && (
+          <SourcesStep
+            tree={usable}
+            roles={roles}
+            sources={sources}
+            onPick={pick}
+            only={onlyChosen}
+            onOnly={setOnlyChosen}
+          />
+        )}
+        {current === 'character' && (
+          <CharacterStep
+            options={options}
+            hasKeys={hasKeys}
+            playMinutes={playMinutes}
+            onPlayMinutes={setPlayMinutes}
+            hasNew={hasNew}
+            hasMixed={sources.some((id) => roles[id] === 'any')}
+            freshShare={freshShare}
+            onFreshShare={setFreshShare}
+            onChange={(patch) => setOptions((prev) => ({ ...prev, ...patch }))}
+          />
+        )}
+        {last && (
+          <p data-testid="session-wizard-destination" className="mt-3 text-xs text-fg-dim">
+            {destinationText(destination, tr)}
+          </p>
+        )}
+      </div>
       {problem && (
         <p
           data-testid={`session-wizard-${problem}`}
