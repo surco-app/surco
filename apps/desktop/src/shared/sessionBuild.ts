@@ -180,6 +180,7 @@ export function buildSession(
     current: SessionTrack,
     list: readonly SessionTrack[],
     respectRole = true,
+    allowFar = false,
   ): { tier: SessionTrack[]; relaxed: boolean } => {
     const fitting = list.filter(
       (track) =>
@@ -196,7 +197,16 @@ export function buildSession(
       return gap !== null && gap <= TEMPO_WIDE
     })
     if (wide.length > 0) return { tier: wide, relaxed: true }
-    return { tier: fitting.filter((track) => tempoGap(current, track) === null), relaxed: true }
+    const unknown = fitting.filter((track) => tempoGap(current, track) === null)
+    if (unknown.length > 0 || !allowFar || fitting.length === 0)
+      return { tier: unknown, relaxed: true }
+    const nearest = Math.min(
+      ...fitting.map((track) => tempoGap(current, track) ?? Number.POSITIVE_INFINITY),
+    )
+    return {
+      tier: fitting.filter((track) => tempoGap(current, track) === nearest),
+      relaxed: true,
+    }
   }
 
   const distanceOrLast = (from: SessionTrack, to: SessionTrack): number =>
@@ -212,8 +222,8 @@ export function buildSession(
       (track) =>
         !used.has(track.id) && !(onlyWithoutCombo && combos.get(current.id)?.has(track.id)),
     )
-    let fit = fitTier(current, open)
-    if (fit.tier.length === 0) fit = fitTier(current, open, false)
+    let fit = fitTier(current, open, true, true)
+    if (fit.tier.length === 0) fit = fitTier(current, open, false, true)
     const { tier, relaxed } = fit
     if (tier.length === 0) return null
     const best = Math.max(...tier.map(taste))
