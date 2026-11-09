@@ -107,6 +107,101 @@ describe('toCandidates', () => {
   })
 })
 
+describe('toCandidates spotting new tracks', () => {
+  const now = new Date('2026-11-09T12:00:00Z')
+  const known = { rating: 80, playCount: 12 }
+  const freshOf = (tracks: ReturnType<typeof toCandidates>, id: string): boolean | undefined =>
+    tracks.find((t) => t.id === id)?.fresh
+
+  it('calls a track new when it was added in the last thirty days', () => {
+    const tracks = toCandidates(
+      [
+        source(
+          'base',
+          entry('/m/old.mp3', {}, { ...known, dateAdded: '2025-01-10' }),
+          entry('/m/new.mp3', {}, { dateAdded: '2026-10-20' }),
+        ),
+      ],
+      now,
+    )
+    expect(freshOf(tracks, '/m/new.mp3')).toBe(true)
+    expect(freshOf(tracks, '/m/old.mp3')).toBe(false)
+  })
+
+  it('does not call a track new when it was added longer ago, even if nobody ever played it', () => {
+    const tracks = toCandidates(
+      [
+        source(
+          'base',
+          entry('/m/played.mp3', {}, { ...known, dateAdded: '2025-01-10' }),
+          entry('/m/unplayed.mp3', {}, { dateAdded: '2025-02-01' }),
+        ),
+      ],
+      now,
+    )
+    expect(freshOf(tracks, '/m/unplayed.mp3')).toBe(false)
+  })
+
+  it('with no date, calls a track new when it has no plays and no stars and others do', () => {
+    const tracks = toCandidates(
+      [source('base', entry('/m/played.mp3', {}, known), entry('/m/unplayed.mp3'))],
+      now,
+    )
+    expect(freshOf(tracks, '/m/unplayed.mp3')).toBe(true)
+    expect(freshOf(tracks, '/m/played.mp3')).toBe(false)
+  })
+
+  it('with no date, a track with only stars or only plays is not new', () => {
+    const tracks = toCandidates(
+      [
+        source(
+          'base',
+          entry('/m/stars.mp3', {}, { rating: 60 }),
+          entry('/m/plays.mp3', {}, { playCount: 3 }),
+          entry('/m/none.mp3'),
+        ),
+      ],
+      now,
+    )
+    expect(freshOf(tracks, '/m/stars.mp3')).toBe(false)
+    expect(freshOf(tracks, '/m/plays.mp3')).toBe(false)
+    expect(freshOf(tracks, '/m/none.mp3')).toBe(true)
+  })
+
+  it('marks nothing when no track has a date or any history, since nothing tells them apart', () => {
+    const tracks = toCandidates([source('base', entry('/m/a.mp3'), entry('/m/b.mp3'))], now)
+    expect(tracks.map((t) => t.fresh)).toEqual([false, false])
+  })
+
+  it('marks nothing when every track would be new, so there is always something known to start from', () => {
+    const tracks = toCandidates(
+      [
+        source(
+          'base',
+          entry('/m/a.mp3', {}, { dateAdded: '2026-11-01' }),
+          entry('/m/b.mp3', {}, { dateAdded: '2026-11-05' }),
+        ),
+      ],
+      now,
+    )
+    expect(tracks.map((t) => t.fresh)).toEqual([false, false])
+  })
+
+  it('keeps the role of the playlist a new track came from', () => {
+    const tracks = toCandidates(
+      [
+        source(
+          'vocal',
+          entry('/m/old.mp3', {}, { ...known, dateAdded: '2025-01-10' }),
+          entry('/m/new.mp3', {}, { dateAdded: '2026-11-01' }),
+        ),
+      ],
+      now,
+    )
+    expect(tracks.find((t) => t.id === '/m/new.mp3')).toMatchObject({ fresh: true, role: 'vocal' })
+  })
+})
+
 describe('mixedSequences', () => {
   it('lists the ids of each Mixed playlist in order and ignores other roles', () => {
     const sequences = mixedSequences([

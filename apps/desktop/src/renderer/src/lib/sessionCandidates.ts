@@ -31,12 +31,28 @@ function titleFromPath(path: string | null): string {
   return name.replace(/\.[^.]+$/, '')
 }
 
+const NEW_DAYS = 30
+const DAY_MS = 86_400_000
+
+function recencyOf(entry: SourcePlaylistEntry, now: Date): 'recent' | 'old' | 'unknown' {
+  const added = Date.parse(entry.meta.dateAdded ?? '')
+  if (Number.isNaN(added)) return 'unknown'
+  return now.getTime() - added <= NEW_DAYS * DAY_MS ? 'recent' : 'old'
+}
+
+function hasHistory(entry: SourcePlaylistEntry): boolean {
+  return (entry.meta.playCount ?? 0) > 0 || (entry.meta.rating ?? 0) > 0
+}
+
 function roleOf(seen: Seen): TrackRole {
   const concrete = [...seen.roles].filter((role) => role !== 'any')
   return concrete.length === 1 ? concrete[0] : 'any'
 }
 
-export function toCandidates(sources: readonly SessionSource[]): SessionTrack[] {
+export function toCandidates(
+  sources: readonly SessionSource[],
+  now: Date = new Date(),
+): SessionTrack[] {
   const found = new Map<string, Seen>()
   for (const source of sources) {
     for (const entry of source.entries) {
@@ -55,6 +71,14 @@ export function toCandidates(sources: readonly SessionSource[]): SessionTrack[] 
       found.set(id, seen)
     }
   }
+  const origins = [...found.values()].filter((seen) => seen.origin)
+  const anyHistory = origins.some((seen) => hasHistory(seen.entry))
+  const isNew = (seen: Seen): boolean => {
+    const recency = recencyOf(seen.entry, now)
+    if (recency !== 'unknown') return recency === 'recent'
+    return anyHistory && !hasHistory(seen.entry)
+  }
+  const everyNew = origins.length > 0 && origins.every(isNew)
   return [...found].map(([id, seen]) => {
     const { entry } = seen
     return {
@@ -65,7 +89,7 @@ export function toCandidates(sources: readonly SessionSource[]): SessionTrack[] 
       rating: entry.meta.rating ?? 0,
       plays: entry.meta.playCount ?? 0,
       secs: entry.preview?.durationSec ?? 0,
-      fresh: !seen.origin,
+      fresh: !seen.origin || (!everyNew && isNew(seen)),
       title: entry.preview?.title ?? titleFromPath(entry.path),
       artist: entry.preview?.artist ?? '',
     }
