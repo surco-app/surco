@@ -18,6 +18,11 @@ function phraseOf(why: SessionWhy, tr: TFunction): Phrase {
         text: tr('sessions.why.combo', { count: why.sets }),
         tone: 'text-[var(--color-accent)]',
       }
+    case 'partner':
+      return {
+        text: tr('sessions.why.partner'),
+        tone: 'text-[var(--color-accent)]',
+      }
     case 'harmonic': {
       const relation =
         why.distance === 0

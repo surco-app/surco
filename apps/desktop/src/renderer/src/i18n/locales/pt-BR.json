@@ -118,6 +118,7 @@
     "closed": "Feche seu programa de DJ para montar a sessão. Com ele aberto, a playlist ficaria pela metade",
     "why": {
       "start": "Onde a sessão começa",
+    "partner": "Tocou logo depois num set",
       "combo_one": "Combo comprovado em {{count}} set",
       "combo_other": "Combo comprovado em {{count}} sets",
       "harmonicSame": "{{from}} → {{to}}, mesmo tom",

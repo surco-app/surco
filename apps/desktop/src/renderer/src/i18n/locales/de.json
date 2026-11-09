@@ -118,6 +118,7 @@
     "closed": "Schließe dein DJ-Programm, um die Session zu erstellen. Bei geöffnetem Programm bliebe die Playlist unvollständig",
     "why": {
       "start": "Hier beginnt die Session",
+    "partner": "Lief in einem Set direkt danach",
       "combo_one": "Bewährte Combo in {{count}} Set",
       "combo_other": "Bewährte Combo in {{count}} Sets",
       "harmonicSame": "{{from}} → {{to}}, gleiche Tonart",

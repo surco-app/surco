@@ -40,12 +40,11 @@ export function runSession(input: {
     entries: rows.get(id) ?? [],
   }))
   const pool = toCandidates(sources)
-  const combos = mineCombos(
-    mixedSequences(sources),
-    new Set(pool.map((track) => track.id)),
-    MIN_PLAYLISTS_PER_COMBO,
-  )
-  const plan = buildSession(pool, combos, sessionOptionsOf(answers, seed))
+  const sequences = mixedSequences(sources)
+  const ids = new Set(pool.map((track) => track.id))
+  const pairs = mineCombos(sequences, ids, 1)
+  const combos = mineCombos(sequences, ids, MIN_PLAYLISTS_PER_COMBO)
+  const plan = buildSession(pool, pairs, sessionOptionsOf(answers, seed))
   const refsById = new Map<string, PlaylistTrackRef>()
   for (const source of sources) {
     for (const entry of source.entries) {

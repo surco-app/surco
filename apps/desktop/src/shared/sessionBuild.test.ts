@@ -232,11 +232,11 @@ describe('buildSession alternation, new tracks and surprise', () => {
     ]
     const plan = buildSession(
       pool,
-      combosOf(['a', 'b', 1]),
+      combosOf(['a', 'b', 2]),
       options({ minutes: 20, freshShare: 0.4 }),
     )
     expect(plan.items[1].track.id).toBe('b')
-    expect(plan.items[1].why).toEqual({ kind: 'combo', sets: 1 })
+    expect(plan.items[1].why).toEqual({ kind: 'combo', sets: 2 })
     expect(plan.items[2].track.fresh).toBe(true)
     expect(plan.items[0].track.fresh).toBe(false)
   })
@@ -268,7 +268,9 @@ describe('buildSession alternation, new tracks and surprise', () => {
       combosOf(...links),
       options({ minutes: 60, surprise: true }),
     )
-    expect(plain.summary.combos).toBe(plain.items.length - 1)
-    expect(surprising.summary.combos).toBeLessThan(surprising.items.length - 1)
+    const followed = (plan: typeof plain): number =>
+      plan.items.filter((item) => item.why.kind === 'combo' || item.why.kind === 'partner').length
+    expect(followed(plain)).toBe(plain.items.length - 1)
+    expect(followed(surprising)).toBeLessThan(surprising.items.length - 1)
   })
 })

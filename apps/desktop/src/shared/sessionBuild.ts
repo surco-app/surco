@@ -17,6 +17,7 @@ export interface SessionOptions {
 export type SessionWhy =
   | { kind: 'start' }
   | { kind: 'combo'; sets: number }
+  | { kind: 'partner' }
   | { kind: 'harmonic'; from: string; to: string; distance: number }
   | { kind: 'taste'; plays: number; rating: number }
   | { kind: 'bpm'; relaxed: boolean }
@@ -175,16 +176,26 @@ export function buildSession(
     return found.length > 0 ? { from: pickOne(found), strength: best } : null
   }
 
+  const partnerFits = (from: SessionTrack, to: SessionTrack): boolean => {
+    const gap = tempoGap(from, to)
+    return (
+      harmonyAllows(options.harmony, camelotDistance(from.key, to.key)) &&
+      (gap === null || gap <= TEMPO_WIDE)
+    )
+  }
+
   const nextByCombo = (current: SessionTrack): SessionItem | null => {
     const targets = [...(combos.get(current.id) ?? [])].filter(([id, strength]) => {
       const track = byId.get(id)
       if (track === undefined || used.has(id)) return false
-      return roleFits(track) || (strict && track.role === 'any' && strength >= 2)
+      if (strength >= 2) return roleFits(track) || (strict && track.role === 'any')
+      return roleFits(track) && partnerFits(current, track)
     })
     if (targets.length === 0) return null
     const best = Math.max(...targets.map(([, strength]) => strength))
     const [id, sets] = pickOne(targets.filter(([, strength]) => strength === best))
-    return { track: byId.get(id) as SessionTrack, why: { kind: 'combo', sets } }
+    const track = byId.get(id) as SessionTrack
+    return { track, why: sets >= 2 ? { kind: 'combo', sets } : { kind: 'partner' } }
   }
 
   const fitTier = (

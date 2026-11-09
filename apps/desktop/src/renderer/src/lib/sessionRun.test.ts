@@ -81,6 +81,23 @@ describe('runSession', () => {
     expect(combos.get('/m/q.mp3')).toBeUndefined()
   })
 
+  it('goes by a pair seen in a single set as a partner of the track it followed, without calling it a combo', () => {
+    const { plan, combos } = run(
+      { sources: ['bases', 'voices', 'set'], minutes: 30, preferCombos: true },
+      { bases: 'base', voices: 'vocal', set: 'any' },
+      {
+        bases: [row('/m/a.mp3'), row('/m/c.mp3')],
+        voices: [row('/m/b.mp3'), row('/m/d.mp3')],
+        set: [row('/m/a.mp3'), row('/m/b.mp3')],
+      },
+    )
+    expect(combos.size).toBe(0)
+    expect(plan.items[0].track.id).toBe('/m/a.mp3')
+    expect(plan.items[1].track.id).toBe('/m/b.mp3')
+    expect(plan.items[1].why).toEqual({ kind: 'partner' })
+    expect(plan.summary.combos).toBe(0)
+  })
+
   it('starts from the strongest combo and says how many sets proved it', () => {
     const { plan } = run(
       { sources: ['s1', 's2'] },

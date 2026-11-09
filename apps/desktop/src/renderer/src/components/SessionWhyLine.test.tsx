@@ -49,6 +49,12 @@ describe('SessionWhyLine text', () => {
     expect(line()).toHaveTextContent(i18n.t('sessions.why.combo', { count: 5 }))
   })
 
+  it('says a track played right after the one before it in a set', () => {
+    setup({ kind: 'partner' })
+    expect(line()).toHaveTextContent(i18n.t('sessions.why.partner'))
+    expect(line().textContent).not.toContain(i18n.t('sessions.why.start'))
+  })
+
   it('names the keys of a harmonic mix and how they relate', () => {
     setup({ kind: 'harmonic', from: '8A', to: '8A', distance: 0 })
     expect(line()).toHaveTextContent(i18n.t('sessions.why.harmonicSame', { from: '8A', to: '8A' }))
