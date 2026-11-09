@@ -2,7 +2,7 @@ import type { SessionAnswers, SessionHarmony, SessionWizardSettings } from './se
 
 export const DEFAULT_SESSION_WIZARD: SessionWizardSettings = {
   minutes: 90,
-  playMinutes: 3,
+  playMinutes: 2,
   freshShare: 0.15,
   preferCombos: true,
   harmony: 'free',

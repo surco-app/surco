@@ -50,7 +50,7 @@ describe('normalizeSessionWizard', () => {
     expect(normalizeSessionWizard(undefined)).toEqual(DEFAULT_SESSION_WIZARD)
     expect(DEFAULT_SESSION_WIZARD).toEqual({
       minutes: 90,
-      playMinutes: 3,
+      playMinutes: 2,
       freshShare: 0.15,
       preferCombos: true,
       harmony: 'free',
@@ -91,10 +91,10 @@ describe('normalizeSessionWizard', () => {
     expect(normalizeSessionWizard({ playMinutes: 3.6 }).playMinutes).toBe(4)
   })
 
-  it('goes back to 3 minutes a track when the saved value is not a number', () => {
-    expect(normalizeSessionWizard({ playMinutes: 'long' }).playMinutes).toBe(3)
-    expect(normalizeSessionWizard({ playMinutes: Number.NaN }).playMinutes).toBe(3)
-    expect(normalizeSessionWizard({}).playMinutes).toBe(3)
+  it('goes back to 2 minutes a track, what a real set of 28 tracks in an hour came to, when the saved value is not a number', () => {
+    expect(normalizeSessionWizard({ playMinutes: 'long' }).playMinutes).toBe(2)
+    expect(normalizeSessionWizard({ playMinutes: Number.NaN }).playMinutes).toBe(2)
+    expect(normalizeSessionWizard({}).playMinutes).toBe(2)
   })
 
   it('falls back to free harmony for an unknown mode', () => {

@@ -1300,7 +1300,7 @@ describe('cue flows', () => {
     writeFileSync(join(app.getPath('userData'), 'settings.json'), JSON.stringify({}))
     expect(getSettings().sessionWizard).toEqual({
       minutes: 90,
-      playMinutes: 3,
+      playMinutes: 2,
       freshShare: 0.15,
       preferCombos: true,
       harmony: 'free',
