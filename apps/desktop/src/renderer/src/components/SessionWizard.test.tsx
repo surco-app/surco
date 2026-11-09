@@ -583,6 +583,36 @@ describe('SessionWizard character step', () => {
   })
 })
 
+describe('SessionWizard wording', () => {
+  it('explains in the playlists step what Mixed is for, since the order of those playlists makes the combos', () => {
+    setup()
+    toSources()
+    expect(screen.getByTestId('session-wizard-sources-hint')).toHaveTextContent(
+      i18n.t('sessions.role.any'),
+    )
+  })
+
+  it('does not promise to remember playlists, since it opens empty every time', () => {
+    setup()
+    toSources()
+    const hint = i18n.t('sessions.wizard.sources.hint')
+    expect(hint).not.toMatch(/next time|próxima vez|nächsten Mal|prochaine fois|次回|próxima vez/i)
+  })
+
+  it('is called by the same name as the menu item that opens it', () => {
+    setup()
+    const menu = i18n.t('sources.tree.newSession')
+    expect(menu.startsWith(i18n.t('sessions.wizard.title'))).toBe(true)
+    expect(menu.startsWith(i18n.t('sessions.band.title'))).toBe(true)
+  })
+
+  it('says harmonic mixing is Camelot', async () => {
+    setup({ b90: 'base' })
+    await toCharacter()
+    expect(screen.getByTestId('session-wizard-harmony-title')).toHaveTextContent('Camelot')
+  })
+})
+
 describe('SessionWizard where it writes', () => {
   it('says the name and the folder of the playlist it is going to create, before building', async () => {
     setup({ b90: 'base' })

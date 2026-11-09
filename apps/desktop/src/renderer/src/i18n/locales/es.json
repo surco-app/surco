@@ -26,7 +26,7 @@
       "any": "Mezcladas"
     },
     "wizard": {
-      "title": "Montar una sesión",
+      "title": "Sesión automática",
       "step": "Paso {{current}} de {{total}}",
       "steps": {
         "duration": "Duración",
@@ -47,7 +47,7 @@
       },
       "sources": {
         "heading": "¿De qué playlists salen las pistas?",
-        "hint": "Busca una playlist y di qué hay en ella. Surco lo guarda en la playlist, así que la próxima vez ya están aquí.",
+        "hint": "Busca una playlist y di qué hay en ella. Usa Mezcladas para tracklists y sets, donde el orden importa. Surco lee ese orden para encontrar combos.",
         "search": "Buscar entre {{count}} playlists",
         "noHits": "Ninguna playlist coincide",
         "none": "Aún no has elegido ninguna playlist",
@@ -74,7 +74,7 @@
         "play": "Tiempo que suena cada pista",
         "playValue": "{{minutes}} min",
         "playHint": "Las pistas se mezclan, no suenan enteras. Es lo que cuenta cada una para la duración de la sesión.",
-        "harmony": "Mezcla armónica",
+        "harmony": "Mezcla armónica (Camelot)",
         "harmonyFree": "Libre",
         "harmonyNeighbours": "Vecinos",
         "harmonySame": "Mismo tono",
@@ -92,7 +92,7 @@
       "refused": "No se pudo escribir la sesión. Mira el aviso y vuelve a intentarlo"
     },
     "band": {
-      "title": "Sesión montada por Surco",
+      "title": "Sesión automática",
       "tracks_one": "{{count}} pista",
       "tracks_other": "{{count}} pistas",
       "combos_one": "{{count}} combo",

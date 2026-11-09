@@ -26,7 +26,7 @@
       "any": "Mixed"
     },
     "wizard": {
-      "title": "Build a session",
+      "title": "Automatic session",
       "step": "Step {{current}} of {{total}}",
       "steps": {
         "duration": "Length",
@@ -47,7 +47,7 @@
       },
       "sources": {
         "heading": "Which playlists should the tracks come from?",
-        "hint": "Search a playlist and say what it holds. Surco keeps it on the playlist, so next time it is already here.",
+        "hint": "Search a playlist and say what it holds. Use Mixed for tracklists and sets, where the order matters. Surco reads that order to find combos.",
         "search": "Search among {{count}} playlists",
         "noHits": "No playlist matches",
         "none": "No playlist chosen yet",
@@ -74,7 +74,7 @@
         "play": "Time each track plays",
         "playValue": "{{minutes}} min",
         "playHint": "Tracks are mixed, not played whole. This is how long each one counts toward the session.",
-        "harmony": "Harmonic mixing",
+        "harmony": "Harmonic mixing (Camelot)",
         "harmonyFree": "Free",
         "harmonyNeighbours": "Neighbours",
         "harmonySame": "Same key",
@@ -92,7 +92,7 @@
       "refused": "The session could not be written. Check the notice and try again"
     },
     "band": {
-      "title": "Session built by Surco",
+      "title": "Automatic session",
       "tracks_one": "{{count}} track",
       "tracks_other": "{{count}} tracks",
       "combos_one": "{{count}} combo",

@@ -26,7 +26,7 @@
       "any": "Gemischt"
     },
     "wizard": {
-      "title": "Session zusammenstellen",
+      "title": "Automatische Session",
       "step": "Schritt {{current}} von {{total}}",
       "steps": {
         "duration": "Dauer",
@@ -47,7 +47,7 @@
       },
       "sources": {
         "heading": "Aus welchen Playlists sollen die Tracks kommen?",
-        "hint": "Suche eine Playlist und gib an, was sie enthält. Surco merkt es sich an der Playlist, beim nächsten Mal ist sie also schon hier.",
+        "hint": "Suche eine Playlist und gib an, was sie enthält. Nimm Gemischt für Tracklists und Sets, bei denen die Reihenfolge zählt. Surco liest sie, um Combos zu finden.",
         "search": "Unter {{count}} Playlists suchen",
         "noHits": "Keine Playlist passt",
         "none": "Noch keine Playlist ausgewählt",
@@ -74,7 +74,7 @@
         "play": "Spielzeit pro Track",
         "playValue": "{{minutes}} Min.",
         "playHint": "Tracks werden gemixt und nicht ganz gespielt. So lange zählt jeder für die Länge der Session.",
-        "harmony": "Harmonisches Mixen",
+        "harmony": "Harmonisches Mixen (Camelot)",
         "harmonyFree": "Frei",
         "harmonyNeighbours": "Nachbarn",
         "harmonySame": "Gleiche Tonart",
@@ -92,7 +92,7 @@
       "refused": "Die Session konnte nicht geschrieben werden. Prüfe die Meldung und versuche es erneut"
     },
     "band": {
-      "title": "Von Surco zusammengestellte Session",
+      "title": "Automatische Session",
       "tracks_one": "{{count}} Track",
       "tracks_other": "{{count}} Tracks",
       "combos_one": "{{count}} Combo",

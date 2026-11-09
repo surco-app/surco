@@ -26,7 +26,7 @@
       "any": "Mixte"
     },
     "wizard": {
-      "title": "Composer une session",
+      "title": "Session automatique",
       "step": "Étape {{current}} sur {{total}}",
       "steps": {
         "duration": "Durée",
@@ -47,7 +47,7 @@
       },
       "sources": {
         "heading": "De quelles playlists viennent les morceaux ?",
-        "hint": "Cherche une playlist et dis ce qu’elle contient. Surco le retient sur la playlist, donc la prochaine fois elle est déjà là.",
+        "hint": "Cherche une playlist et dis ce qu’elle contient. Utilise Mixte pour les tracklists et les sets, où l’ordre compte. Surco le lit pour trouver des combos.",
         "search": "Chercher parmi {{count}} playlists",
         "noHits": "Aucune playlist ne correspond",
         "none": "Aucune playlist choisie pour l’instant",
@@ -74,7 +74,7 @@
         "play": "Durée de jeu de chaque morceau",
         "playValue": "{{minutes}} min",
         "playHint": "Les morceaux sont mixés, pas joués en entier. C'est ce que chacun compte dans la durée de la session.",
-        "harmony": "Mix harmonique",
+        "harmony": "Mix harmonique (Camelot)",
         "harmonyFree": "Libre",
         "harmonyNeighbours": "Voisins",
         "harmonySame": "Même tonalité",
@@ -92,7 +92,7 @@
       "refused": "La session n’a pas pu être écrite. Regarde l’avis et réessaie"
     },
     "band": {
-      "title": "Session composée par Surco",
+      "title": "Session automatique",
       "tracks_one": "{{count}} morceau",
       "tracks_other": "{{count}} morceaux",
       "combos_one": "{{count}} combo",

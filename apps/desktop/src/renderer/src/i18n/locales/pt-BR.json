@@ -26,7 +26,7 @@
       "any": "Misto"
     },
     "wizard": {
-      "title": "Montar uma sessão",
+      "title": "Sessão automática",
       "step": "Passo {{current}} de {{total}}",
       "steps": {
         "duration": "Duração",
@@ -47,7 +47,7 @@
       },
       "sources": {
         "heading": "De quais playlists saem as faixas?",
-        "hint": "Busque uma playlist e diga o que há nela. O Surco guarda isso na playlist, então da próxima vez ela já estará aqui.",
+        "hint": "Busque uma playlist e diga o que há nela. Use Misto para tracklists e sets, onde a ordem importa. O Surco lê essa ordem para achar combos.",
         "search": "Buscar entre {{count}} playlists",
         "noHits": "Nenhuma playlist corresponde",
         "none": "Nenhuma playlist escolhida ainda",
@@ -74,7 +74,7 @@
         "play": "Tempo que cada faixa toca",
         "playValue": "{{minutes}} min",
         "playHint": "As faixas são mixadas, não tocam inteiras. É o que cada uma conta para a duração da sessão.",
-        "harmony": "Mixagem harmônica",
+        "harmony": "Mixagem harmônica (Camelot)",
         "harmonyFree": "Livre",
         "harmonyNeighbours": "Vizinhos",
         "harmonySame": "Mesmo tom",
@@ -92,7 +92,7 @@
       "refused": "Não foi possível gravar a sessão. Veja o aviso e tente de novo"
     },
     "band": {
-      "title": "Sessão montada pelo Surco",
+      "title": "Sessão automática",
       "tracks_one": "{{count}} faixa",
       "tracks_other": "{{count}} faixas",
       "combos_one": "{{count}} combo",

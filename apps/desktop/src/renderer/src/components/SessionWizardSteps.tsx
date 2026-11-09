@@ -123,7 +123,9 @@ export function SourcesStep({
   const eligible = chosen.reduce((sum, id) => sum + (byId.get(id)?.count ?? 0), 0)
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-xs text-fg-dim">{tr('sessions.wizard.sources.hint')}</p>
+      <p data-testid="session-wizard-sources-hint" className="text-xs text-fg-dim">
+        {tr('sessions.wizard.sources.hint')}
+      </p>
       <div className="flex flex-col overflow-hidden rounded-[10px] border border-[var(--color-line)] bg-[var(--color-field)]">
         <PlaylistTree
           tree={tree}
@@ -269,7 +271,9 @@ export function CharacterStep({
         </label>
       )}
       <div className="flex flex-col gap-1.5">
-        <span className="text-sm">{tr('sessions.wizard.character.harmony')}</span>
+        <span data-testid="session-wizard-harmony-title" className="text-sm">
+          {tr('sessions.wizard.character.harmony')}
+        </span>
         <div className="flex flex-wrap gap-2">
           {HARMONIES.map(({ mode, label }) => (
             <button
