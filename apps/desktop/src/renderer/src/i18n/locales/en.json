@@ -114,8 +114,8 @@
     "closed": "Close your DJ program to build the session. With it open, the playlist would be left half written",
     "why": {
       "start": "Where the session starts",
-      "combo_one": "Proven combo, played together in {{count}} set",
-      "combo_other": "Proven combo, played together in {{count}} sets",
+      "combo_one": "Proven combo in {{count}} set",
+      "combo_other": "Proven combo in {{count}} sets",
       "harmonicSame": "{{from}} → {{to}}, same key",
       "harmonicRing": "{{from}} → {{to}}, same ring",
       "harmonicNeighbour": "{{from}} → {{to}}, neighbour",

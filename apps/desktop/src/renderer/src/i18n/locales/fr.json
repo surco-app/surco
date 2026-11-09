@@ -114,8 +114,8 @@
     "closed": "Ferme ton logiciel DJ pour composer la session. Ouvert, il laisserait la playlist à moitié écrite",
     "why": {
       "start": "Là où la session démarre",
-      "combo_one": "Combo éprouvé, joué ensemble dans {{count}} set",
-      "combo_other": "Combo éprouvé, joué ensemble dans {{count}} sets",
+      "combo_one": "Combo éprouvé dans {{count}} set",
+      "combo_other": "Combo éprouvé dans {{count}} sets",
       "harmonicSame": "{{from}} → {{to}}, même tonalité",
       "harmonicRing": "{{from}} → {{to}}, même anneau",
       "harmonicNeighbour": "{{from}} → {{to}}, voisin",

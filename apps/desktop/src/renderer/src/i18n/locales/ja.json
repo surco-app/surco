@@ -114,8 +114,8 @@
     "closed": "セッションを作るには DJ ソフトを閉じてください。開いたままだとプレイリストが中途半端になります",
     "why": {
       "start": "セッションの開始",
-      "combo_one": "実績のあるコンボ（{{count}} セットで連続）",
-      "combo_other": "実績のあるコンボ（{{count}} セットで連続）",
+      "combo_one": "実績のあるコンボ（{{count}} セット）",
+      "combo_other": "実績のあるコンボ（{{count}} セット）",
       "harmonicSame": "{{from}} → {{to}}、同じキー",
       "harmonicRing": "{{from}} → {{to}}、同じリング",
       "harmonicNeighbour": "{{from}} → {{to}}、隣のキー",

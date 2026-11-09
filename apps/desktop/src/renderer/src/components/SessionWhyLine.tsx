@@ -73,7 +73,9 @@ export function SessionWhyLine({
   return (
     <div data-testid="session-why" className="flex flex-col gap-1">
       <div className="flex items-center gap-2 text-[11px] leading-4">
-        <span className={`min-w-0 truncate ${phrase.tone}`}>{phrase.text}</span>
+        <span title={phrase.text} className={`min-w-0 truncate ${phrase.tone}`}>
+          {phrase.text}
+        </span>
         {canChange && (
           <button
             type="button"
