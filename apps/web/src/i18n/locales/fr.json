@@ -1033,6 +1033,41 @@
         "shot": "tracklist-fr.webp"
       },
       {
+        "id": "sesion",
+        "group": "out",
+        "title": "Monter une session automatique",
+        "s": "Une playlist de la durée voulue, avec tes combos, tes goûts et le mix harmonique.",
+        "body": [
+          "Surco ordonne les morceaux des playlists que tu choisis. Il réunit les paires que tu répètes dans tes sets, ajuste selon la tonalité et le tempo, et garde de la place pour les nouveautés."
+        ],
+        "steps": [
+          {
+            "lead": "Ouvre-la.",
+            "text": "Clic droit sur un dossier puis « Session automatique… », ou « Remplir avec une session… » sur une playlist vide."
+          },
+          {
+            "lead": "Choisis durée et playlists.",
+            "text": "Marque chacune comme Bases, Voix ou Mixte, ou un dossier entier. Les Mixtes sont tes sets, et leur ordre donne les combos."
+          },
+          {
+            "lead": "Dis comment tu la veux.",
+            "text": "Alterner base et voix, combos, goût, Camelot, temps de jeu de chaque morceau et nouveautés."
+          },
+          {
+            "lead": "Monte et vérifie.",
+            "text": "Chaque morceau dit pourquoi il est là et « Changer » en propose d’autres. Refais, ajuste ou garde-la comme une playlist normale."
+          }
+        ],
+        "points": [
+          "Chaque morceau ne compte que le temps où il joue dans le mix, deux minutes par défaut. Un vrai set de 28 morceaux a duré une heure.",
+          "Un combo est une paire qui se répète dans au moins deux playlists Mixtes. Sans elles, pas de combos.",
+          "Nouveau veut dire ajouté ces 30 derniers jours, ou sans lectures ni étoiles s’il n’y a pas de dates.",
+          "Il écrit dans rekordbox, Traktor ou Serato, programme fermé."
+        ],
+        "shotCaption": "La session montée, avec son résumé, la raison de chaque morceau et « Changer ».",
+        "shot": "sesion-fr.webp"
+      },
+      {
         "id": "usb",
         "group": "out",
         "title": "Emporte tes playlists sur une clé USB",

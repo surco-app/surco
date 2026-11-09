@@ -345,6 +345,29 @@ export const TRACKLIST_SCENE = {
   },
 }
 
+export const SESSION_SCENE = {
+  run: async (_app, page) => {
+    await page.click('[data-testid="source-rail-rekordbox"]')
+    await page.waitForTimeout(3000)
+    const folder = await page.evaluate(
+      () =>
+        [...document.querySelectorAll('[data-testid^="source-node-"]')].find((e) =>
+          /^COMBOS/.test(e.textContent.trim()),
+        )?.dataset.testid,
+    )
+    if (!folder) throw new Error('No folder called COMBOS in the rekordbox tree')
+    await page.click(`[data-testid="${folder}"]`, { button: 'right' })
+    await page.click('[data-testid="source-tree-session"]')
+    await page.click('[data-testid="session-wizard-next"]')
+    await page.click('[data-testid="session-wizard-suggest"]')
+    await page.click('[data-testid="session-wizard-next"]')
+    await page.locator('[data-testid="session-wizard-build"]').waitFor({ timeout: 300000 })
+    await page.click('[data-testid="session-wizard-build"]')
+    await page.locator('[data-testid="session-band"]').waitFor({ timeout: 300000 })
+    await wait(page, 15000)
+  },
+}
+
 async function shoot(app, page, lang, id, scene) {
   await scene.run(app, page)
   await save(page, `${id}-${lang}`)
@@ -397,6 +420,14 @@ async function main() {
       await settle(page)
       for (const [id, scene] of album) await shoot(app, page, lang, id, scene)
       await app.close()
+    }
+    if (want('sesion')) {
+      const clone = join(tmpdir(), 'surco-guide-rekordbox')
+      rmSync(clone, { recursive: true, force: true })
+      const { app, page } = await launch(lang, { rekordboxDbPath: rekordboxClone() })
+      await shoot(app, page, lang, 'sesion', SESSION_SCENE)
+      app.process().kill('SIGKILL')
+      rmSync(clone, { recursive: true, force: true })
     }
   }
 }

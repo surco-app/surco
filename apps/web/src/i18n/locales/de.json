@@ -1033,6 +1033,41 @@
         "shot": "tracklist-de.webp"
       },
       {
+        "id": "sesion",
+        "group": "out",
+        "title": "Eine automatische Session bauen",
+        "s": "Eine Playlist in der gewünschten Länge, aus deinen Combos, deinem Geschmack und harmonischem Mixen.",
+        "body": [
+          "Surco ordnet die Tracks der Playlists, die du wählst. Es verbindet Paare, die du in deinen Sets wiederholst, passt nach Tonart und Tempo an und lässt Platz für Neues."
+        ],
+        "steps": [
+          {
+            "lead": "Öffnen.",
+            "text": "Rechtsklick auf einen Ordner und „Automatische Session…“ wählen, oder „Mit einer Session füllen…“ auf einer leeren Playlist."
+          },
+          {
+            "lead": "Länge und Playlists wählen.",
+            "text": "Markiere jede als Bases, Gesang oder Gemischt, oder einen ganzen Ordner. Gemischt sind deine Sets, und aus ihrer Reihenfolge entstehen die Combos."
+          },
+          {
+            "lead": "Sag, wie sie sein soll.",
+            "text": "Bases und Gesang abwechseln, Combos, Geschmack, Camelot, wie lange jeder Track läuft und neue Tracks."
+          },
+          {
+            "lead": "Bauen und prüfen.",
+            "text": "Jeder Track nennt seinen Grund und „Ändern“ bietet andere an. Neu würfeln, anpassen oder als normale Playlist behalten."
+          }
+        ],
+        "points": [
+          "Jeder Track zählt nur die Zeit, die er im Mix läuft, standardmäßig zwei Minuten. Ein echtes Set mit 28 Tracks dauerte eine Stunde.",
+          "Eine Combo ist ein Paar, das sich in zwei oder mehr gemischten Playlists wiederholt. Ohne sie gibt es keine.",
+          "Neu heißt in den letzten 30 Tagen hinzugekommen, ohne Datum ohne Wiedergaben und Sterne.",
+          "Geschrieben wird in rekordbox, Traktor oder Serato bei geschlossenem Programm."
+        ],
+        "shotCaption": "Die gebaute Session mit ihrer Übersicht, dem Grund für jeden Track und „Ändern“.",
+        "shot": "sesion-de.webp"
+      },
+      {
         "id": "usb",
         "group": "out",
         "title": "Deine Playlists auf einen USB-Stick bringen",

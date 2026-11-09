@@ -1033,6 +1033,41 @@
         "shot": "tracklist-pt-BR.webp"
       },
       {
+        "id": "sesion",
+        "group": "out",
+        "title": "Monte uma sessão automática",
+        "s": "Uma playlist do tamanho que quiser, com seus combos, seu gosto e mixagem harmônica.",
+        "body": [
+          "O Surco ordena as faixas das playlists que você escolher. Junta os pares que você repete nos seus sets, encaixa por tom e andamento e deixa espaço para o que é novo."
+        ],
+        "steps": [
+          {
+            "lead": "Abra.",
+            "text": "Botão direito numa pasta e «Sessão automática…», ou «Preencher com uma sessão…» numa playlist vazia."
+          },
+          {
+            "lead": "Escolha duração e playlists.",
+            "text": "Marque cada uma como Bases, Cantadas ou Misto, ou uma pasta inteira. As Mistas são seus sets, e a ordem delas dá os combos."
+          },
+          {
+            "lead": "Diga como quer.",
+            "text": "Alternar base e cantada, combos, gosto, Camelot, quanto toca cada faixa e faixas novas."
+          },
+          {
+            "lead": "Monte e revise.",
+            "text": "Cada faixa diz por que está ali e «Trocar» oferece outras. Refaça, ajuste ou fique com ela como uma playlist normal."
+          }
+        ],
+        "points": [
+          "Cada faixa conta só o tempo que toca na mixagem, dois minutos por padrão. Um set real de 28 faixas durou uma hora.",
+          "Um combo é um par que se repete em duas ou mais playlists Mistas. Sem elas não há combos.",
+          "Nova é a faixa adicionada nos últimos 30 dias, ou sem reproduções nem estrelas se não houver datas.",
+          "Escreve no rekordbox, Traktor ou Serato com o programa fechado."
+        ],
+        "shotCaption": "A sessão montada, com seu resumo, o motivo de cada faixa e «Trocar».",
+        "shot": "sesion-pt-BR.webp"
+      },
+      {
         "id": "usb",
         "group": "out",
         "title": "Leve suas playlists para um USB",
