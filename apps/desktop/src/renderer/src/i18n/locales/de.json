@@ -82,6 +82,11 @@
       },
       "loading": "Liest …",
       "build": "Session erstellen",
+      "building": "Wird gebaut…",
+      "destinationNew": "Wird als „{{name}}“ angelegt.",
+      "destinationNewIn": "Wird als „{{name}}“ in {{where}} angelegt.",
+      "destinationFill": "„{{name}}“ wird mit der Session gefüllt.",
+      "destinationReplace": "Die Session ersetzt „{{name}}“.",
       "loadFailed": "{{names}} konnte nicht gelesen werden und bleibt draußen",
       "empty": "Die gewählten Playlists enthalten keinen Track für eine Session",
       "refused": "Die Session konnte nicht geschrieben werden. Prüfe die Meldung und versuche es erneut"

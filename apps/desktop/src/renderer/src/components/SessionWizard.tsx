@@ -1,4 +1,5 @@
 import { X } from 'lucide-react'
+import type { TFunction } from 'i18next'
 import type React from 'react'
 import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -31,11 +32,28 @@ type Options = Pick<
   'alternate' | 'preferCombos' | 'tasteWeight' | 'surprise' | 'harmony'
 >
 
+export interface SessionDestination {
+  kind: 'new' | 'fill' | 'replace'
+  name: string
+  where: string | null
+}
+
+function destinationText(destination: SessionDestination, tr: TFunction): string {
+  if (destination.kind === 'fill')
+    return tr('sessions.wizard.destinationFill', { name: destination.name })
+  if (destination.kind === 'replace')
+    return tr('sessions.wizard.destinationReplace', { name: destination.name })
+  return destination.where
+    ? tr('sessions.wizard.destinationNewIn', { name: destination.name, where: destination.where })
+    : tr('sessions.wizard.destinationNew', { name: destination.name })
+}
+
 export function SessionWizard({
   tree,
   roles: savedRoles = {},
   initial,
   rows,
+  destination,
   onClose,
   onBuild,
 }: {
@@ -43,6 +61,7 @@ export function SessionWizard({
   roles?: Readonly<Record<string, PlaylistRole>>
   initial: SessionAnswers
   rows: SessionRows
+  destination: SessionDestination
   onClose: () => void
   onBuild: (
     answers: SessionAnswers,
@@ -249,6 +268,11 @@ export function SessionWizard({
           onChange={(patch) => setOptions((prev) => ({ ...prev, ...patch }))}
         />
       )}
+      {last && (
+        <p data-testid="session-wizard-destination" className="mt-3 text-xs text-fg-dim">
+          {destinationText(destination, tr)}
+        </p>
+      )}
       {problem && (
         <p data-testid={`session-wizard-${problem}`} className="mt-3 text-xs text-warn">
           {tr(PROBLEM_TEXT[problem])}
@@ -270,10 +294,11 @@ export function SessionWizard({
             type="button"
             data-testid="session-wizard-build"
             disabled={building}
+            aria-busy={building}
             onClick={build}
             className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]"
           >
-            {tr('sessions.wizard.build')}
+            {tr(building ? 'sessions.wizard.building' : 'sessions.wizard.build')}
           </button>
         ) : (
           <button

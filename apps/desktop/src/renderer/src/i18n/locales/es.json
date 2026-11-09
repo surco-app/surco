@@ -82,6 +82,11 @@
       },
       "loading": "Leyendo…",
       "build": "Montar sesión",
+      "building": "Montando…",
+      "destinationNew": "Se creará como «{{name}}».",
+      "destinationNewIn": "Se creará como «{{name}}» en {{where}}.",
+      "destinationFill": "«{{name}}» se rellenará con la sesión.",
+      "destinationReplace": "La sesión sustituirá a «{{name}}».",
       "loadFailed": "{{names}} no se pudo leer y se deja fuera",
       "empty": "Las playlists elegidas no tienen ninguna pista con la que montar una sesión",
       "refused": "No se pudo escribir la sesión. Mira el aviso y vuelve a intentarlo"

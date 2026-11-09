@@ -20,6 +20,10 @@ function find(nodes: readonly SourceNode[], id: string): SourceNode | null {
   return null
 }
 
+export function nodeNameOf(tree: readonly SourceNode[] | undefined, id: string): string | null {
+  return tree ? (find(tree, id)?.name ?? null) : null
+}
+
 export function parentIdOf(tree: readonly SourceNode[] | undefined, id: string): string | null {
   if (!tree) return null
   const search = (nodes: readonly SourceNode[], parent: string): string | null => {

@@ -82,6 +82,11 @@
       },
       "loading": "Reading…",
       "build": "Build session",
+      "building": "Building…",
+      "destinationNew": "It will be created as “{{name}}”.",
+      "destinationNewIn": "It will be created as “{{name}}” in {{where}}.",
+      "destinationFill": "“{{name}}” will be filled with the session.",
+      "destinationReplace": "The session will replace “{{name}}”.",
       "loadFailed": "{{names}} could not be read and is left out",
       "empty": "The chosen playlists have no track to build a session with",
       "refused": "The session could not be written. Check the notice and try again"

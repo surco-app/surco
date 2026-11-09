@@ -82,6 +82,11 @@
       },
       "loading": "Lendo…",
       "build": "Montar sessão",
+      "building": "Montando…",
+      "destinationNew": "Será criada como “{{name}}”.",
+      "destinationNewIn": "Será criada como “{{name}}” em {{where}}.",
+      "destinationFill": "“{{name}}” será preenchida com a sessão.",
+      "destinationReplace": "A sessão substituirá “{{name}}”.",
       "loadFailed": "{{names}} não pôde ser lido e fica de fora",
       "empty": "As playlists escolhidas não têm nenhuma faixa para montar uma sessão",
       "refused": "Não foi possível gravar a sessão. Veja o aviso e tente de novo"

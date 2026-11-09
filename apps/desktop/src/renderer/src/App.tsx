@@ -29,7 +29,13 @@ import {
 import { SAME_CLOCK_FILE } from '../../shared/gridEdit'
 import { emptyMetadata } from '../../shared/metadata'
 import { RECENTLY_ADDED_ID } from '../../shared/recentlyAdded'
-import { childNames, parentIdOf, sessionDateLabel } from '../../shared/sessionName'
+import {
+  childNames,
+  nodeNameOf,
+  parentIdOf,
+  sessionDateLabel,
+  uniqueName,
+} from '../../shared/sessionName'
 import { answersFromSettings, wizardSettingsFrom } from '../../shared/sessionSettings'
 import { resolveBindings } from '../../shared/shortcutDefaults'
 import { TRASH_MAX_BYTES, TRASH_RETENTION_DAYS } from '../../shared/trash'
@@ -74,7 +80,7 @@ import { RekordboxQueuePill } from './components/RekordboxQueuePill'
 import { ResizeHandle } from './components/ResizeHandle'
 import { SessionBand } from './components/SessionBand'
 import { SessionWhyLine } from './components/SessionWhyLine'
-import { SessionWizard } from './components/SessionWizard'
+import { type SessionDestination, SessionWizard } from './components/SessionWizard'
 import { SourceRail } from './components/SourceRail'
 import { flattenPlaylists, SourceTree } from './components/SourceTree'
 import { ToastStack } from './components/ToastStack'
@@ -1125,6 +1131,26 @@ export default function App(): React.JSX.Element {
     const parentId = parentIdOf(browser.tree, node.id) ?? 'root'
     setSessionWizard({ parentId, adjust: false, fill: { id: node.id, name: node.name, parentId } })
   })
+  const sessionDestination = (
+    wizard: { parentId: string; adjust: boolean; fill?: FillTarget },
+    tree: SourceNode[],
+  ): SessionDestination => {
+    if (wizard.adjust && sessionRun.recent)
+      return {
+        kind: 'replace',
+        name: nodeNameOf(tree, sessionRun.recent.playlistId) ?? sessionRun.recent.name,
+        where: null,
+      }
+    if (wizard.fill) return { kind: 'fill', name: wizard.fill.name, where: null }
+    return {
+      kind: 'new',
+      name: uniqueName(
+        tr('sessions.playlistName', { date: sessionDateLabel(new Date()) }),
+        childNames(tree, wizard.parentId),
+      ),
+      where: nodeNameOf(tree, wizard.parentId),
+    }
+  }
   const openSessionAdjust = useStableCallback(() => {
     sessionRows.reset()
     setSessionWizard({ parentId: sessionRun.recent?.parentId ?? 'root', adjust: true })
@@ -4174,6 +4200,7 @@ export default function App(): React.JSX.Element {
                       : answersFromSettings(settings.sessionWizard)
                   }
                   rows={sessionRows}
+                  destination={sessionDestination(sessionWizard, browser.tree)}
                   onClose={() => setSessionWizard(null)}
                   onBuild={async (answers, roles) => {
                     const result = sessionWizard.adjust

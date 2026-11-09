@@ -7,7 +7,7 @@ import type { SourceNode, SourcePlaylistEntry } from '../../../shared/types'
 import type { SessionRows } from '../hooks/useSessionRows'
 import type { BuildResult } from '../hooks/useSessionRun'
 import i18n from '../i18n'
-import { SessionWizard } from './SessionWizard'
+import { SessionWizard, type SessionDestination } from './SessionWizard'
 
 afterEach(cleanup)
 
@@ -57,10 +57,13 @@ function fakeRows(byId: Record<string, SourcePlaylistEntry[]> = {}, failed: stri
   return { load, reset: vi.fn(), loading: false, failed }
 }
 
+const DESTINATION: SessionDestination = { kind: 'new', name: 'Session 11-9 (2)', where: 'COMBOS' }
+
 function setup(
   roles: Record<string, PlaylistRole> = {},
   initial: SessionAnswers = INITIAL,
   rows: SessionRows = fakeRows(),
+  destination: SessionDestination = DESTINATION,
 ) {
   const handed = {
     ...initial,
@@ -74,6 +77,7 @@ function setup(
       roles={roles}
       initial={handed}
       rows={rows}
+      destination={destination}
       onClose={onClose}
       onBuild={onBuild}
     />,
@@ -253,6 +257,7 @@ describe('SessionWizard sources step', () => {
         roles={{ b90: 'base', c90: 'vocal' }}
         initial={INITIAL}
         rows={fakeRows()}
+        destination={DESTINATION}
         onClose={vi.fn()}
         onBuild={vi.fn()}
       />,
@@ -575,6 +580,65 @@ describe('SessionWizard character step', () => {
     expect(onBuild).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ sources: ['b90'] }), {
       b90: 'base',
     })
+  })
+})
+
+describe('SessionWizard where it writes', () => {
+  it('says the name and the folder of the playlist it is going to create, before building', async () => {
+    setup({ b90: 'base' })
+    await toCharacter()
+    const line = screen.getByTestId('session-wizard-destination')
+    expect(line).toHaveTextContent('Session 11-9 (2)')
+    expect(line).toHaveTextContent('COMBOS')
+  })
+
+  it('names no folder when the playlist goes to the top of the tree', async () => {
+    setup({ b90: 'base' }, INITIAL, fakeRows(), { kind: 'new', name: 'Session 11-9', where: null })
+    await toCharacter()
+    const line = screen.getByTestId('session-wizard-destination')
+    expect(line).toHaveTextContent('Session 11-9')
+    expect(line.textContent).not.toContain('null')
+  })
+
+  it('says it will fill the playlist when it was opened on an empty one', async () => {
+    setup({ b90: 'base' }, INITIAL, fakeRows(), { kind: 'fill', name: 'Session 11-9', where: null })
+    await toCharacter()
+    expect(screen.getByTestId('session-wizard-destination')).toHaveTextContent(
+      i18n.t('sessions.wizard.destinationFill', { name: 'Session 11-9' }),
+    )
+  })
+
+  it('says it will replace the playlist when it was opened to adjust one', async () => {
+    setup({ b90: 'base' }, INITIAL, fakeRows(), {
+      kind: 'replace',
+      name: 'Session 11-9',
+      where: null,
+    })
+    await toCharacter()
+    expect(screen.getByTestId('session-wizard-destination')).toHaveTextContent(
+      i18n.t('sessions.wizard.destinationReplace', { name: 'Session 11-9' }),
+    )
+  })
+
+  it('keeps it out of the steps before the last one', () => {
+    setup({ b90: 'base' })
+    toSources()
+    expect(screen.queryByTestId('session-wizard-destination')).toBeNull()
+  })
+
+  it('turns the Build button into a Building label with the busy state while it writes', async () => {
+    let finish: (result: BuildResult) => void = () => {}
+    const { onBuild } = setup({ b90: 'base' })
+    onBuild.mockImplementation(() => new Promise<BuildResult>((resolve) => (finish = resolve)))
+    await toCharacter()
+    const button = screen.getByTestId('session-wizard-build')
+    expect(button).toHaveTextContent(i18n.t('sessions.wizard.build'))
+    expect(button).toHaveAttribute('aria-busy', 'false')
+    fireEvent.click(button)
+    expect(button).toHaveTextContent(i18n.t('sessions.wizard.building'))
+    expect(button).toHaveAttribute('aria-busy', 'true')
+    finish('refused')
+    await waitFor(() => expect(button).toHaveTextContent(i18n.t('sessions.wizard.build')))
   })
 })
 

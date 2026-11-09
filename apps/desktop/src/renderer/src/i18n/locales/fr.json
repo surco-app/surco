@@ -82,6 +82,11 @@
       },
       "loading": "Lecture…",
       "build": "Composer la session",
+      "building": "Montage…",
+      "destinationNew": "Elle sera créée sous le nom « {{name}} ».",
+      "destinationNewIn": "Elle sera créée sous le nom « {{name}} » dans {{where}}.",
+      "destinationFill": "« {{name}} » sera remplie avec la session.",
+      "destinationReplace": "La session remplacera « {{name}} ».",
       "loadFailed": "{{names}} n’a pas pu être lu et reste de côté",
       "empty": "Les playlists choisies n’ont aucun morceau pour composer une session",
       "refused": "La session n’a pas pu être écrite. Regarde l’avis et réessaie"

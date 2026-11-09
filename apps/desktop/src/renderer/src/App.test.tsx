@@ -10120,6 +10120,40 @@ describe('automatic session from the tree', () => {
     })
   })
 
+  it('says in the last step which folder the new playlist goes to', async () => {
+    openRekordboxTree()
+    await toBuild()
+    expect(screen.getByTestId('session-wizard-destination')).toHaveTextContent('Sets')
+  })
+
+  it('says in the last step that it will fill the emptied playlist', async () => {
+    openRekordboxTree(
+      {},
+      [
+        {
+          id: 'sets',
+          name: 'Sets',
+          kind: 'folder' as const,
+          count: 1,
+          children: [{ id: 'emptied', name: 'Session 11-9', kind: 'playlist' as const, count: 0 }],
+        },
+        { id: 'f', name: 'Factory', kind: 'playlist' as const, count: 1 },
+      ],
+    )
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+    fireEvent.click(await screen.findByTestId('source-node-sets'))
+    fireEvent.contextMenu(await screen.findByTestId('source-node-emptied'))
+    fireEvent.click(screen.getByTestId('source-tree-fill-session'))
+    await screen.findByTestId('session-wizard-dialog')
+    fireEvent.click(screen.getByTestId('session-wizard-next'))
+    fireEvent.change(screen.getByTestId('playlists-search'), { target: { value: 'fact' } })
+    fireEvent.click(screen.getByTestId('session-wizard-role-f-any'))
+    fireEvent.click(screen.getByTestId('session-wizard-next'))
+    await screen.findByTestId('session-wizard-build')
+    expect(screen.getByTestId('session-wizard-destination')).toHaveTextContent('Session 11-9')
+  })
+
   it('opens from the menu of a folder', async () => {
     openRekordboxTree()
     await openWizard()
