@@ -36,10 +36,17 @@ export interface SessionRunDeps {
   newSeed: () => number
 }
 
+export interface FillTarget {
+  id: string
+  name: string
+  parentId: string
+}
+
 export interface SessionRunner {
   recent: RecentSession | null
   busy: boolean
   build: (parentId: string, answers: SessionAnswers, roles: Roles) => Promise<BuildResult>
+  fill: (target: FillTarget, answers: SessionAnswers, roles: Roles) => Promise<BuildResult>
   redo: () => Promise<BuildResult>
   adjust: (answers: SessionAnswers, roles: Roles) => Promise<BuildResult>
   swap: (index: number, track: SessionTrack) => Promise<BuildResult>
@@ -114,6 +121,20 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
     }),
   )
 
+  const fill = useStableCallback((target: FillTarget, answers: SessionAnswers, roles: Roles) =>
+    exclusive(async () => {
+      deps.saveAnswers(answers)
+      const seed = deps.newSeed()
+      const run = await produce(answers, roles, seed)
+      if (run.refs.length === 0) return 'empty'
+      if (!(await deps.canWrite())) return 'closed'
+      const written = await deps.writer.fill(target.id, target.name, run.refs)
+      return written
+        ? settle(target.id, target.parentId, target.name, target.name, answers, roles, seed, run)
+        : 'refused'
+    }),
+  )
+
   const replaceWith = (
     previous: RecentSession,
     answers: SessionAnswers,
@@ -180,5 +201,5 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
     setRecent((current) => (current?.playlistId === playlistId ? null : current)),
   )
 
-  return { recent, busy, build, redo, adjust, swap, alternatives, keep, noteEdit }
+  return { recent, busy, build, fill, redo, adjust, swap, alternatives, keep, noteEdit }
 }

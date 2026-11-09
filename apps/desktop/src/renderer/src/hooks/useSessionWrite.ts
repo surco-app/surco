@@ -8,6 +8,7 @@ import type {
 type Edit = (edit: RekordboxPlaylistEdit, playlistName: string) => Promise<RekordboxEditResult>
 
 export interface SessionWriter {
+  fill(playlistId: string, name: string, tracks: PlaylistTrackRef[]): Promise<boolean>
   create(parentId: string, name: string, tracks: PlaylistTrackRef[]): Promise<string | null>
   replace(
     parentId: string,
@@ -42,6 +43,11 @@ export function useSessionWrite(edit: Edit): SessionWriter {
       await edit({ kind: 'delete', playlistId: oldId }, name)
       return id
     }
-    return { create, replace }
+    const fill = async (
+      playlistId: string,
+      name: string,
+      tracks: PlaylistTrackRef[],
+    ): Promise<boolean> => (await edit({ kind: 'add', playlistId, tracks }, name)).applied
+    return { create, replace, fill }
   }, [edit])
 }

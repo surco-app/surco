@@ -116,4 +116,25 @@ describe('useSessionWrite', () => {
       expect(await writer.replace('folder', 'old', 'Sesión', tracks)).toBe('new')
     })
   })
+
+  describe('fill', () => {
+    it('adds the tracks in session order to the playlist that already exists, and creates nothing', async () => {
+      const { edit, writer } = setup(() => applied())
+
+      const filled = await writer.fill('empty', 'Session 11-9', tracks)
+
+      expect(filled).toBe(true)
+      expect(edit).toHaveBeenCalledExactlyOnceWith(
+        { kind: 'add', playlistId: 'empty', tracks },
+        'Session 11-9',
+      )
+    })
+
+    it('says it could not when the program refuses, and never deletes the playlist', async () => {
+      const { edit, writer } = setup(() => refused)
+
+      expect(await writer.fill('empty', 'Session 11-9', tracks)).toBe(false)
+      expect(kinds(edit)).toEqual(['add'])
+    })
+  })
 })

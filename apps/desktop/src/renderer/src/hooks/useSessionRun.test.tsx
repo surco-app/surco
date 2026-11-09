@@ -34,13 +34,15 @@ const ROWS = new Map([['s', [entry('/m/a.mp3'), entry('/m/b.mp3'), entry('/m/c.m
 
 let create = vi.fn<SessionWriter['create']>()
 let replace = vi.fn<SessionWriter['replace']>()
+let fill = vi.fn<SessionWriter['fill']>()
 
 function setup(over: Partial<SessionRunDeps> = {}) {
   create = vi.fn<SessionWriter['create']>(async () => 'new1')
   replace = vi.fn<SessionWriter['replace']>(async () => 'new2')
+  fill = vi.fn<SessionWriter['fill']>(async () => true)
   const deps: SessionRunDeps = {
     rows: { load: vi.fn(async () => ROWS), reset: vi.fn(), loading: false, failed: [] },
-    writer: { create, replace },
+    writer: { create, replace, fill },
     canWrite: async () => true,
     namesIn: () => new Set<string>(),
     nameFor: () => 'Sesión del 9-11',
@@ -90,7 +92,11 @@ describe('useSessionRun build', () => {
 
   it('reports a refused write and leaves no band behind', async () => {
     const { deps, result } = setup({
-      writer: { create: vi.fn(async () => null), replace: vi.fn(async () => null) },
+      writer: {
+        create: vi.fn(async () => null),
+        replace: vi.fn(async () => null),
+        fill,
+      },
     })
 
     let outcome: string | undefined
@@ -120,7 +126,7 @@ describe('useSessionRun build', () => {
   it('is busy while the write is going and ignores a second build meanwhile', async () => {
     let release: (id: string | null) => void = () => {}
     const create = vi.fn(() => new Promise<string | null>((resolve) => (release = resolve)))
-    const { result } = setup({ writer: { create, replace: vi.fn(async () => null) } })
+    const { result } = setup({ writer: { create, replace: vi.fn(async () => null), fill } })
 
     let first: Promise<string> = Promise.resolve('')
     act(() => {
@@ -172,6 +178,7 @@ describe('useSessionRun redo and adjust', () => {
       writer: {
         create: vi.fn(async () => 'new1'),
         replace: vi.fn(async () => null),
+        fill,
       },
     })
 
@@ -509,7 +516,7 @@ describe('useSessionRun swapping a track', () => {
 
   it('keeps the plan and the old playlist when the swap is refused', async () => {
     const { result } = await built({
-      writer: { create: vi.fn(async () => 'new1'), replace: vi.fn(async () => null) },
+      writer: { create: vi.fn(async () => 'new1'), replace: vi.fn(async () => null), fill },
     })
     const before = result.current.recent?.plan
     const spare = result.current.alternatives(1)[0]
@@ -564,5 +571,91 @@ describe('useSessionRun keeping and editing', () => {
     const { result } = await built()
     act(() => result.current.noteEdit('other'))
     expect(result.current.recent).not.toBeNull()
+  })
+})
+
+const EMPTY = { id: 'empty', name: 'Session 11-9', parentId: 'folder' }
+
+describe('useSessionRun fill', () => {
+  it('puts the session into the playlist that already exists, without making another one', async () => {
+    const { deps, result } = setup()
+
+    let outcome: string | undefined
+    await act(async () => {
+      outcome = await result.current.fill(EMPTY, ANSWERS, ROLES)
+    })
+
+    expect(outcome).toBe('built')
+    expect(create).not.toHaveBeenCalled()
+    expect(fill).toHaveBeenCalledOnce()
+    const [id, name, refs] = fill.mock.calls[0] as unknown as [string, string, unknown[]]
+    expect(id).toBe('empty')
+    expect(name).toBe('Session 11-9')
+    expect(refs.length).toBeGreaterThan(0)
+    expect(deps.saveAnswers).toHaveBeenCalledExactlyOnceWith(ANSWERS)
+    expect(deps.openPlaylist).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ id: 'empty', name: 'Session 11-9', kind: 'playlist' }),
+    )
+  })
+
+  it('shows the band over that playlist, so it can be redone, adjusted or swapped', async () => {
+    const { result } = setup()
+    await act(async () => {
+      await result.current.fill(EMPTY, ANSWERS, ROLES)
+    })
+    expect(result.current.recent).toMatchObject({
+      playlistId: 'empty',
+      parentId: 'folder',
+      name: 'Session 11-9',
+      seed: 100,
+    })
+  })
+
+  it('redoes it by replacing that playlist, under the other name', async () => {
+    const { result } = setup({ namesIn: () => new Set(['Session 11-9']) })
+    await act(async () => {
+      await result.current.fill(EMPTY, ANSWERS, ROLES)
+    })
+    await act(async () => {
+      await result.current.redo()
+    })
+    expect(replace).toHaveBeenCalledOnce()
+    expect(replace.mock.calls[0].slice(0, 3)).toEqual(['folder', 'empty', 'Session 11-9 (2)'])
+  })
+
+  it('reports a refused write and leaves no band behind', async () => {
+    const { deps, result } = setup()
+    fill.mockResolvedValue(false)
+
+    let outcome: string | undefined
+    await act(async () => {
+      outcome = await result.current.fill(EMPTY, ANSWERS, ROLES)
+    })
+
+    expect(outcome).toBe('refused')
+    expect(result.current.recent).toBeNull()
+    expect(deps.openPlaylist).not.toHaveBeenCalled()
+  })
+
+  it('writes nothing when there is not a single track to put in', async () => {
+    const { result } = setup({
+      rows: { load: vi.fn(async () => new Map()), reset: vi.fn(), loading: false, failed: [] },
+    })
+    let outcome: string | undefined
+    await act(async () => {
+      outcome = await result.current.fill(EMPTY, ANSWERS, ROLES)
+    })
+    expect(outcome).toBe('empty')
+    expect(fill).not.toHaveBeenCalled()
+  })
+
+  it('writes nothing while a DJ program is open', async () => {
+    const { result } = setup({ canWrite: async () => false })
+    let outcome: string | undefined
+    await act(async () => {
+      outcome = await result.current.fill(EMPTY, ANSWERS, ROLES)
+    })
+    expect(outcome).toBe('closed')
+    expect(fill).not.toHaveBeenCalled()
   })
 })
