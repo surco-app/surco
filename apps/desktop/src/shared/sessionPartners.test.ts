@@ -117,6 +117,23 @@ describe('buildSession preferring the track that followed another in a set', () 
     }
   })
 
+  it('does not chain tracks with no role along a set, nor start from one', () => {
+    const withNeutrals = [
+      ...pool(),
+      track('n0', { role: 'any' }),
+      track('n1', { role: 'any' }),
+      track('n2', { role: 'any' }),
+      track('n3', { role: 'any' }),
+    ]
+    const chain = pairs(['n0', 'n1', 1], ['n1', 'n2', 1], ['n2', 'n3', 1])
+    for (const seed of SEEDS) {
+      const plan = buildSession(withNeutrals, chain, options({ seed }))
+      const roles = plan.items.map((item) => item.track.role)
+      expect(roles.includes('any'), `seed ${seed}`).toBe(false)
+      for (let i = 1; i < roles.length; i++) expect(roles[i]).not.toBe(roles[i - 1])
+    }
+  })
+
   it('leaves it alone when combos are not wanted', () => {
     for (const seed of SEEDS) {
       const plan = buildSession(

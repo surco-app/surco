@@ -141,11 +141,11 @@ export function buildSession(
   const knownRoles = new Set(eligible.filter((track) => track.role !== 'any').map((t) => t.role))
   const strict = options.alternate && knownRoles.has('base') && knownRoles.has('vocal')
 
-  const roleFits = (track: SessionTrack): boolean =>
-    !options.alternate ||
-    expected === null ||
-    track.role === expected ||
-    (track.role === 'any' && !strict)
+  const roleFits = (track: SessionTrack): boolean => {
+    if (!options.alternate) return true
+    if (track.role === 'any') return !strict
+    return expected === null || track.role === expected
+  }
 
   const roleOrNeutral = (track: SessionTrack): boolean =>
     !options.alternate || expected === null || track.role === 'any' || track.role === expected
@@ -164,7 +164,7 @@ export function buildSession(
     let found: SessionTrack[] = []
     for (const [fromId, targets] of combos) {
       const from = byId.get(fromId)
-      if (!from) continue
+      if (!from || (strict && from.role === 'any')) continue
       for (const [toId, strength] of targets) {
         if (!byId.has(toId)) continue
         if (strength > best) {
