@@ -47,7 +47,12 @@ export interface FillTarget {
 export interface SessionRunner {
   recent: RecentSession | null
   busy: boolean
-  build: (parentId: string, answers: SessionAnswers, roles: Roles) => Promise<BuildResult>
+  build: (
+    parentId: string,
+    answers: SessionAnswers,
+    roles: Roles,
+    startPath?: string,
+  ) => Promise<BuildResult>
   fill: (target: FillTarget, answers: SessionAnswers, roles: Roles) => Promise<BuildResult>
   redo: () => Promise<BuildResult>
   adjust: (answers: SessionAnswers, roles: Roles) => Promise<BuildResult>

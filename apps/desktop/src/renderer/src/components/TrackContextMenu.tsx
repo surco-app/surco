@@ -26,6 +26,7 @@ interface Props {
   onSearch: (id: string) => void
   onSearchWeb: (track: TrackItem) => void
   onStartOver: (track: TrackItem) => void
+  onStartSession?: (track: TrackItem) => void
   onCopyMeta: (track: TrackItem) => void
   onCopyPath: (track: TrackItem) => void
   onPasteMeta: (track: TrackItem) => void
@@ -97,6 +98,7 @@ export function TrackContextMenu({
   onSearch,
   onSearchWeb,
   onStartOver,
+  onStartSession,
   onCopyMeta,
   onCopyPath,
   onPasteMeta,
@@ -245,6 +247,13 @@ export function TrackContextMenu({
           label={tr('trackList.context.startOver')}
           onClick={() => run(() => onStartOver(track))}
         />
+        {onStartSession && (
+          <MenuItem
+            testid="track-menu-start-session"
+            label={tr('trackList.context.startSession')}
+            onClick={() => run(() => onStartSession(track))}
+          />
+        )}
         {playlist && (
           <>
             <hr className="my-1 h-px border-0 bg-[var(--color-line)]" />

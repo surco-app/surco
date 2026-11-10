@@ -328,3 +328,27 @@ describe('TrackContextMenu playlist submenu placement', () => {
     expect(sub).toHaveAttribute('data-side', 'left')
   })
 })
+
+describe('TrackContextMenu starting a session from the track', () => {
+  it('offers nothing when no DJ program can take a session', () => {
+    renderMenu()
+    expect(screen.queryByTestId('track-menu-start-session')).toBeNull()
+  })
+
+  it('starts a session from this track and closes the menu', () => {
+    const onStartSession = vi.fn()
+    const props = renderMenu({ onStartSession })
+    fireEvent.click(screen.getByTestId('track-menu-start-session'))
+    expect(onStartSession).toHaveBeenCalledExactlyOnceWith(track)
+    expect(props.onClose).toHaveBeenCalled()
+  })
+
+  it('sits with the metadata actions, before the file utilities', () => {
+    renderMenu({ onStartSession: vi.fn() })
+    const ids = screen
+      .getAllByRole('menuitem')
+      .map((el) => el.getAttribute('data-testid'))
+      .filter((id) => id !== 'track-menu-backdrop')
+    expect(ids.indexOf('track-menu-start-session')).toBe(ids.indexOf('track-menu-startover') + 1)
+  })
+})

@@ -1122,6 +1122,7 @@ export default function App(): React.JSX.Element {
     parentId: string
     adjust: boolean
     fill?: FillTarget
+    start?: { path: string; playlistId: string }
   } | null>(null)
   const readLibraryRoles = useStableCallback(() => {
     void sessionRows.load(Object.keys(libraryRoles(browser.tree ?? [])))
@@ -1130,6 +1131,14 @@ export default function App(): React.JSX.Element {
     sessionRows.reset()
     readLibraryRoles()
     setSessionWizard({ parentId, adjust: false })
+  })
+  const openSessionFromTrack = useStableCallback((track: TrackItem) => {
+    const playlistId = browser.playlist?.id
+    if (!playlistId) return
+    sessionRows.reset()
+    readLibraryRoles()
+    const parentId = parentIdOf(browser.tree, playlistId) ?? 'root'
+    setSessionWizard({ parentId, adjust: false, start: { path: track.inputPath, playlistId } })
   })
   const openSessionFill = useStableCallback((node: SourceNode) => {
     sessionRows.reset()
@@ -3043,6 +3052,7 @@ export default function App(): React.JSX.Element {
         onSearch={onSearchTrack}
         onSearchWeb={searchTrackWeb}
         onStartOver={startOverTrack}
+        onStartSession={sessionProgram && browser.playlist ? openSessionFromTrack : undefined}
         onCopyMeta={onCopyMeta}
         onCopyPath={onCopyPath}
         onPasteMeta={onPasteMeta}
@@ -4206,11 +4216,20 @@ export default function App(): React.JSX.Element {
               {sessionWizard && sessionProgram && settings && browser.tree && (
                 <SessionWizard
                   tree={browser.tree}
-                  roles={sessionWizard.adjust ? sessionRun.recent?.roles : undefined}
+                  roles={
+                    sessionWizard.adjust
+                      ? sessionRun.recent?.roles
+                      : sessionWizard.start
+                        ? { [sessionWizard.start.playlistId]: 'any' }
+                        : undefined
+                  }
                   initial={
                     sessionWizard.adjust && sessionRun.recent
                       ? sessionRun.recent.answers
-                      : answersFromSettings(settings.sessionWizard)
+                      : {
+                          ...answersFromSettings(settings.sessionWizard),
+                          ...(sessionWizard.start && { sources: [sessionWizard.start.playlistId] }),
+                        }
                   }
                   rows={sessionRows}
                   destination={sessionDestination(sessionWizard, browser.tree)}
@@ -4220,7 +4239,12 @@ export default function App(): React.JSX.Element {
                       ? await sessionRun.adjust(answers, roles)
                       : sessionWizard.fill
                         ? await sessionRun.fill(sessionWizard.fill, answers, roles)
-                        : await sessionRun.build(sessionWizard.parentId, answers, roles)
+                        : await sessionRun.build(
+                            sessionWizard.parentId,
+                            answers,
+                            roles,
+                            sessionWizard.start?.path,
+                          )
                     if (result === 'built') setSessionWizard(null)
                     return result
                   }}

@@ -10144,6 +10144,44 @@ describe('automatic session from the tree', () => {
     })
   })
 
+  describe('starting a session from a track', () => {
+    const rows = Array.from({ length: 8 }, (_, i) => ({
+      ...ROW,
+      path: `/m/${i}.wav`,
+      contentId: String(40 + i),
+      preview: { ...ROW.preview, title: `Track ${i}` },
+    }))
+
+    async function openFromTrack(index: number): Promise<void> {
+      await renderApp()
+      fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+      fireEvent.click(await screen.findByTestId('source-node-f'))
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(rows.length))
+      fireEvent.contextMenu(screen.getAllByTestId('track-row')[index])
+      fireEvent.click(await screen.findByTestId('track-menu-start-session'))
+      await screen.findByTestId('session-wizard-dialog')
+    }
+
+    it('writes the session starting with that track, taking its own playlist as already chosen', async () => {
+      const edit = openRekordboxTree({
+        loadRekordboxPlaylist: vi.fn<Api['loadRekordboxPlaylist']>().mockResolvedValue(rows),
+      })
+      await openFromTrack(rows.length - 1)
+      fireEvent.click(screen.getByTestId('session-wizard-next'))
+      fireEvent.click(await screen.findByTestId('session-wizard-next'))
+      fireEvent.click(await screen.findByTestId('session-wizard-build'))
+      await waitFor(() => expect(edit).toHaveBeenCalledTimes(2))
+      const added = edit.mock.calls[1][0] as { tracks: { contentId: string }[] }
+      expect(added.tracks[0].contentId).toBe(String(40 + rows.length - 1))
+    })
+
+    it('offers nothing before a playlist is open', async () => {
+      openRekordboxTree()
+      await renderApp()
+      expect(screen.queryByTestId('track-menu-start-session')).not.toBeInTheDocument()
+    })
+  })
+
   it('says in the last step which folder the new playlist goes to', async () => {
     openRekordboxTree()
     await toBuild()
