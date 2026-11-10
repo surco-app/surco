@@ -1157,7 +1157,9 @@ export function MusicReview({
         >
           <ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" />
           {t('musicReview.tracks')}
-          <kbd className="ml-auto font-sans text-[11px] font-normal text-fg-faint">esc</kbd>
+          <kbd className="ml-auto rounded border border-[var(--color-line-strong)] px-1 font-sans text-[11px] font-normal text-fg-faint">
+            esc
+          </kbd>
         </button>
         <div className="flex items-center gap-1.5 px-1.5 pt-2">
           <SearchInput

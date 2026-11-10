@@ -379,6 +379,13 @@ describe('MusicReview', () => {
     expect(onClose).toHaveBeenCalledOnce()
   })
 
+  it('draws its Escape hint as the same keycap the toolbar uses for its shortcut', () => {
+    render(<Panes review={review()} onClose={vi.fn()} />)
+    const key = screen.getByTestId('music-review-close').querySelector('kbd')
+    expect(key?.className).toMatch(/\bborder\b/)
+    expect(key?.className).toMatch(/\brounded\b/)
+  })
+
   it('goes back to the tracks with Escape', () => {
     const onClose = vi.fn()
     render(<Panes review={review()} onClose={onClose} />)
