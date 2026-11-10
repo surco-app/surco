@@ -3,7 +3,7 @@ import '@testing-library/jest-dom/vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import type { CollectionTrack, SourceNode } from '../../../shared/types'
@@ -139,6 +139,18 @@ describe('PasteTracklistModal review step', () => {
     expect(screen.getByTestId('paste-tracklist-add')).toHaveTextContent('Añadir 5 pistas')
   })
 
+  it('marks the mix that differs without amber, so the amber dot alone says which rows to check', async () => {
+    setup()
+    paste(SET1)
+    await review()
+    const row = screen
+      .getAllByTestId(/^paste-tracklist-row-\d+$/)
+      .find((r) => r.textContent?.includes('Head over heels (Radio Edit)'))
+    const mix = within(row as HTMLElement).getByTestId('paste-tracklist-mix-diff')
+    expect(mix).toHaveTextContent('(Extended)')
+    expect(mix.className).not.toMatch(/text-warn/)
+  })
+
   it('lets the user leave a found track out too, the one control every row shares', async () => {
     setup()
     paste(SET1)
@@ -153,7 +165,10 @@ describe('PasteTracklistModal review step', () => {
     paste(SET1)
     await review()
     fireEvent.click(screen.getByTestId('paste-tracklist-filter-doubtful'))
-    expect(screen.getByTestId('paste-tracklist-filter-doubtful')).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByTestId('paste-tracklist-filter-doubtful')).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
     expect(screen.getAllByTestId(/^paste-tracklist-row-\d+$/)).toHaveLength(2)
     fireEvent.click(screen.getByTestId('paste-tracklist-include-2'))
     expect(screen.getByTestId('paste-tracklist-add')).toHaveTextContent('Añadir 3 pistas')

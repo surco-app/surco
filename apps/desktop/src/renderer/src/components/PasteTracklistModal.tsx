@@ -49,7 +49,14 @@ function Candidate({ line, track }: { line: string; track: CollectionTrack }): R
     <>
       {track.artist && `${track.artist} - `}
       {head}
-      {differs && <em className="text-warn not-italic">({mix})</em>}
+      {differs && (
+        <em
+          data-testid="paste-tracklist-mix-diff"
+          className="not-italic text-fg underline decoration-dotted decoration-fg-faint underline-offset-2"
+        >
+          ({mix})
+        </em>
+      )}
     </>
   )
 }
