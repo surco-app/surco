@@ -258,7 +258,7 @@
           {
             "t": "Sessão automática",
             "s": "Monta uma sessão com suas playlists, seus combos, o que você mais curte e mixagem harmônica.",
-            "d": "Você abre pela paleta de comandos, pelo menu de uma pasta ou numa playlist vazia. Escolhe quanto ela dura e de quais playlists saem as faixas, e diz o que há em cada uma, Bases, Cantadas ou Misto, também para uma pasta inteira. O Surco junta os pares que você repete nos seus sets e tracklists, as faixas com mais estrelas e reproduções, mixagem harmônica Camelot se você quiser e um espaço para as novidades, e conta o tempo que cada faixa toca, não o arquivo inteiro. Embaixo de cada faixa você vê por que ela está ali e troca por outra que encaixe. No rekordbox, no Traktor e no Serato, com o programa fechado."
+            "d": "Você abre pela paleta de comandos, pelo menu de uma pasta ou numa playlist vazia. Escolhe quanto ela dura e de quais playlists saem as faixas, e diz o que há em cada uma, Instrumentais (bases), Com voz (cantadas) ou Misto, também para uma pasta inteira. O Surco junta os pares que você repete nos seus sets e tracklists, as faixas com mais estrelas e reproduções, mixagem harmônica Camelot se você quiser e um espaço para as novidades, e conta o tempo que cada faixa toca, não o arquivo inteiro. Embaixo de cada faixa você vê por que ela está ali e troca por outra que encaixe. No rekordbox, no Traktor e no Serato, com o programa fechado."
           },
           {
             "t": "Cues do rekordbox",
@@ -1047,11 +1047,11 @@
           },
           {
             "lead": "Escolha duração e playlists.",
-            "text": "Marque cada uma como Bases, Cantadas ou Misto, ou uma pasta inteira. As Mistas são seus sets, e a ordem delas dá os combos."
+            "text": "Marque cada uma como Instrumentais (bases), Com voz (cantadas) ou Misto, ou uma pasta inteira. As Mistas são seus sets, e a ordem delas dá os combos."
           },
           {
             "lead": "Diga como quer.",
-            "text": "Alternar base e cantada, combos, gosto, Camelot, quanto toca cada faixa e faixas novas."
+            "text": "Alternar instrumental e com voz, combos, gosto, Camelot, quanto toca cada faixa e faixas novas."
           },
           {
             "lead": "Monte e revise.",

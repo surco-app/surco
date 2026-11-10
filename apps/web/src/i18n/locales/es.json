@@ -258,7 +258,7 @@
           {
             "t": "Sesión automática",
             "s": "Monta una sesión con tus playlists, tus combos, lo que más te gusta y mezcla armónica.",
-            "d": "La abres desde la paleta de comandos, desde el menú de una carpeta o sobre una playlist vacía. Eliges cuánto dura y de qué playlists salen las pistas, y dices qué hay en cada una, Bases, Cantaditas o Mezcladas, también para una carpeta entera. Surco junta las parejas que repites en tus sets y tracklists, las pistas con más estrellas y escuchas, mezcla armónica Camelot si la quieres y un hueco para lo nuevo, y cuenta el tiempo que suena cada pista, no el archivo entero. Bajo cada pista ves por qué está y la cambias por otra que encaje. En rekordbox, Traktor y Serato, con el programa cerrado."
+            "d": "La abres desde la paleta de comandos, desde el menú de una carpeta o sobre una playlist vacía. Eliges cuánto dura y de qué playlists salen las pistas, y dices qué hay en cada una, Instrumentales (bases), Con voz (cantadas) o Mezcladas, también para una carpeta entera. Surco junta las parejas que repites en tus sets y tracklists, las pistas con más estrellas y escuchas, mezcla armónica Camelot si la quieres y un hueco para lo nuevo, y cuenta el tiempo que suena cada pista, no el archivo entero. Bajo cada pista ves por qué está y la cambias por otra que encaje. En rekordbox, Traktor y Serato, con el programa cerrado."
           },
           {
             "t": "Cues de rekordbox",
@@ -1047,11 +1047,11 @@
           },
           {
             "lead": "Elige duración y playlists.",
-            "text": "Marca cada una como Bases, Cantaditas o Mezcladas, o una carpeta entera. Las Mezcladas son tus sets, y de su orden salen los combos."
+            "text": "Marca cada una como Instrumentales (bases), Con voz (cantadas) o Mezcladas, o una carpeta entera. Las Mezcladas son tus sets, y de su orden salen los combos."
           },
           {
             "lead": "Di cómo la quieres.",
-            "text": "Alternar base y cantadita, combos, gusto, Camelot, cuánto suena cada pista y pistas nuevas."
+            "text": "Alternar instrumental y con voz, combos, gusto, Camelot, cuánto suena cada pista y pistas nuevas."
           },
           {
             "lead": "Móntala y revísala.",

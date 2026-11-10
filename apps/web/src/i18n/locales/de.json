@@ -258,7 +258,7 @@
           {
             "t": "Automatische Session",
             "s": "Baut eine Session aus deinen Playlists, deinen Combos, deinen Favoriten und harmonischem Mixen.",
-            "d": "Du öffnest sie über die Befehlspalette, über das Menü eines Ordners oder auf einer leeren Playlist. Du wählst, wie lange sie dauert und aus welchen Playlists die Tracks kommen, und sagst, was in jeder steckt, Bases, Gesang oder Gemischt, auch für einen ganzen Ordner. Surco bringt die Paare, die du in deinen Sets und Tracklists wiederholst, die Tracks mit den meisten Sternen und Wiedergaben, harmonisches Mixen nach Camelot, wenn du willst, und Platz für Neues zusammen, und zählt die Zeit, die jeder Track läuft, nicht die ganze Datei. Unter jedem Track siehst du, warum er dort ist, und tauschst ihn gegen einen anderen, der passt. In rekordbox, Traktor und Serato, bei geschlossenem Programm."
+            "d": "Du öffnest sie über die Befehlspalette, über das Menü eines Ordners oder auf einer leeren Playlist. Du wählst, wie lange sie dauert und aus welchen Playlists die Tracks kommen, und sagst, was in jeder steckt, Instrumentals, Gesang oder Gemischt, auch für einen ganzen Ordner. Surco bringt die Paare, die du in deinen Sets und Tracklists wiederholst, die Tracks mit den meisten Sternen und Wiedergaben, harmonisches Mixen nach Camelot, wenn du willst, und Platz für Neues zusammen, und zählt die Zeit, die jeder Track läuft, nicht die ganze Datei. Unter jedem Track siehst du, warum er dort ist, und tauschst ihn gegen einen anderen, der passt. In rekordbox, Traktor und Serato, bei geschlossenem Programm."
           },
           {
             "t": "rekordbox-Cues",
@@ -1047,11 +1047,11 @@
           },
           {
             "lead": "Länge und Playlists wählen.",
-            "text": "Markiere jede als Bases, Gesang oder Gemischt, oder einen ganzen Ordner. Gemischt sind deine Sets, und aus ihrer Reihenfolge entstehen die Combos."
+            "text": "Markiere jede als Instrumentals, Gesang oder Gemischt, oder einen ganzen Ordner. Gemischt sind deine Sets, und aus ihrer Reihenfolge entstehen die Combos."
           },
           {
             "lead": "Sag, wie sie sein soll.",
-            "text": "Bases und Gesang abwechseln, Combos, Geschmack, Camelot, wie lange jeder Track läuft und neue Tracks."
+            "text": "Instrumental und Gesang abwechseln, Combos, Geschmack, Camelot, wie lange jeder Track läuft und neue Tracks."
           },
           {
             "lead": "Bauen und prüfen.",

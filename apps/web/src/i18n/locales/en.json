@@ -258,7 +258,7 @@
           {
             "t": "Automatic session",
             "s": "Builds a session from your playlists, your combos, what you like most and harmonic mixing.",
-            "d": "Open it from the command palette, from a folder's menu or on an empty playlist. Choose how long it lasts and which playlists the tracks come from, and say what each one holds, Bases, Vocals or Mixed, for a whole folder too. Surco brings together the pairs you repeat in your sets and tracklists, the tracks with the most stars and plays, Camelot harmonic mixing if you want it and room for what's new, and it counts the time each track plays, not the whole file. Under each track you see why it is there and swap it for another that fits. In rekordbox, Traktor and Serato, with the program closed."
+            "d": "Open it from the command palette, from a folder's menu or on an empty playlist. Choose how long it lasts and which playlists the tracks come from, and say what each one holds, Instrumentals, Vocals or Mixed, for a whole folder too. Surco brings together the pairs you repeat in your sets and tracklists, the tracks with the most stars and plays, Camelot harmonic mixing if you want it and room for what's new, and it counts the time each track plays, not the whole file. Under each track you see why it is there and swap it for another that fits. In rekordbox, Traktor and Serato, with the program closed."
           },
           {
             "t": "rekordbox cues",
@@ -1047,11 +1047,11 @@
           },
           {
             "lead": "Pick length and playlists.",
-            "text": "Mark each as Bases, Vocals or Mixed, or a whole folder. Mixed ones are your sets, and their order gives the combos."
+            "text": "Mark each as Instrumentals, Vocals or Mixed, or a whole folder. Mixed ones are your sets, and their order gives the combos."
           },
           {
             "lead": "Say how you want it.",
-            "text": "Alternate base and vocal, combos, taste, Camelot, how long each track plays and new tracks."
+            "text": "Alternate instrumental and vocal, combos, taste, Camelot, how long each track plays and new tracks."
           },
           {
             "lead": "Build and review.",
