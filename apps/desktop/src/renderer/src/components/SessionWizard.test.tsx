@@ -7,7 +7,7 @@ import type { SourceNode, SourcePlaylistEntry } from '../../../shared/types'
 import type { SessionRows } from '../hooks/useSessionRows'
 import type { BuildResult } from '../hooks/useSessionRun'
 import i18n from '../i18n'
-import { SessionWizard, type SessionDestination } from './SessionWizard'
+import { type SessionDestination, SessionWizard } from './SessionWizard'
 
 afterEach(cleanup)
 
@@ -767,34 +767,6 @@ describe('SessionWizard roles for a whole folder', () => {
       expect.objectContaining({ sources: ['b1', 'b2'] }),
       { b1: 'base', b2: 'base' },
     )
-  })
-
-  it('offers to mark the folders by their name when nothing is chosen yet', () => {
-    renderFolders()
-    const suggest = screen.getByTestId('session-wizard-suggest')
-    expect(suggest).toHaveTextContent('BASES')
-    expect(suggest).toHaveTextContent('CANTADITAS')
-    expect(suggest).not.toHaveTextContent('Remember')
-  })
-
-  it('marks them with one press and then stops offering', () => {
-    renderFolders()
-    fireEvent.click(screen.getByTestId('session-wizard-suggest'))
-    expect(screen.getByTestId('session-wizard-summary')).toHaveTextContent(
-      i18n.t('sessions.wizard.sources.summary', { count: 3, tracks: 22 }),
-    )
-    expect(screen.queryByTestId('session-wizard-suggest')).toBeNull()
-  })
-
-  it('does not offer it when something is already chosen', () => {
-    renderFolders({ o1: 'any' }, ['o1'])
-    expect(screen.queryByTestId('session-wizard-suggest')).toBeNull()
-  })
-
-  it('does not offer it when no folder is called like a role', () => {
-    setup()
-    toSources()
-    expect(screen.queryByTestId('session-wizard-suggest')).toBeNull()
   })
 })
 

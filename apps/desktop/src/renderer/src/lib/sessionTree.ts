@@ -107,16 +107,6 @@ export function suggestRoles(
   return roles
 }
 
-export function suggestedFolderNames(nodes: readonly SourceNode[], inherited = false): string[] {
-  return nodes.flatMap((node) => {
-    const named = !inherited && roleOfFolderName(node) !== null
-    return [
-      ...(named ? [node.name] : []),
-      ...suggestedFolderNames(node.children ?? [], inherited || named),
-    ]
-  })
-}
-
 export function libraryRoles(
   nodes: readonly SourceNode[],
 ): Record<string, Exclude<PlaylistRole, 'any'>> {
