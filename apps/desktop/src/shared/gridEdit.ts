@@ -163,21 +163,28 @@ export function zoneAt(grid: EditableGrid, ms: number): EditableGrid {
   return { bpm: zone.bpm, anchorMs: zone.anchorMs }
 }
 
+const CARRY_REACH_MS = (4 * 60000) / GRID_BPM_MIN
+
+const nearestIndex = (beats: number[], ms: number): number =>
+  beats.reduce((best, b, i) => (Math.abs(b - ms) < Math.abs(beats[best] - ms) ? i : best), 0)
+
 export function carryOntoGrid(
   from: EditableGrid,
   to: EditableGrid,
   ms: number,
   toleranceMs: number,
 ): number | null {
-  const was = zoneAt(from, ms)
-  const now = zoneAt(to, ms)
-  const k = Math.round((ms - was.anchorMs) / periodOf(was.bpm))
-  if (Math.abs(was.anchorMs + k * periodOf(was.bpm) - ms) > toleranceMs) return null
-  const ratio = now.bpm / was.bpm
-  const beat = k * (ratio > 1.5 ? 2 : ratio < 0.75 ? 0.5 : 1)
+  const was = gridBeats(from, ms + CARRY_REACH_MS).map((b) => b.ms)
+  const now = gridBeats(to, ms + CARRY_REACH_MS).map((b) => b.ms)
+  if (was.length === 0 || now.length === 0) return null
+  const at = nearestIndex(was, ms)
+  if (Math.abs(was[at] - ms) > toleranceMs) return null
+  const counted = at - Math.round((from.anchorMs - was[0]) / periodOf(from.bpm))
+  const ratio = zoneAt(to, ms).bpm / zoneAt(from, ms).bpm
+  const beat = counted * (ratio > 1.5 ? 2 : ratio < 0.75 ? 0.5 : 1)
   if (!Number.isInteger(beat)) return null
-  const carried = now.anchorMs + beat * periodOf(now.bpm)
-  return carried < -START_SLACK_MS ? null : Math.max(0, carried)
+  const target = Math.round((to.anchorMs - now[0]) / periodOf(to.bpm)) + beat
+  return target >= 0 && target < now.length ? now[target] : null
 }
 
 export function anchorNear(grid: EditableGrid, ms: number): boolean {

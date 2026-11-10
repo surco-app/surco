@@ -812,4 +812,32 @@ describe('Auto on the fine measurements', () => {
     const auto = autoFitGrid({ bpm: BPM, anchorMs: 120 }, fit, 0, [], true)
     expect(offAt(auto, 201000, 20)).toBeLessThanOrEqual(3)
   })
+
+  it('carries every cue onto the beat beside it when Auto opens zones, never counting its beats from another anchor', () => {
+    const fit = fitOf(fineEvery(1000, 378000, (ms) => 10 * Math.sin((2 * Math.PI * ms) / 60000)))
+    const before = { bpm: BPM, anchorMs: 100 }
+    const auto = autoFitGrid(before, fit, 0, [], true)
+    expect(auto.zones?.length).toBeGreaterThan(1)
+    for (const ms of drawn(before, DURATION).filter((_, i) => i % 37 === 0)) {
+      const carried = carryOntoGrid(before, auto, ms, 20)
+      expect(Math.abs((carried ?? Number.NaN) - ms)).toBeLessThanOrEqual(15)
+    }
+  })
+
+  it('carries every cue onto the beat beside it from a grid read back with zones, so a second Auto never throws them minutes away', () => {
+    const fit = fitOf(fineEvery(1000, 378000, (ms) => 10 * Math.sin((2 * Math.PI * ms) / 60000)))
+    const auto = autoFitGrid({ bpm: BPM, anchorMs: 100 }, fit, 0, [], true)
+    const tempos = gridTempos(auto, DURATION)
+    const saved = gridBeats(auto, DURATION).map((b, i) => ({
+      ms: Math.round(b.ms),
+      beat: b.beat,
+      bpm: Math.round(tempos[i] * 100) / 100,
+    }))
+    const read = editableGridOf(saved) as EditableGrid
+    const again = autoFitGrid(read, fit, 0, [], true)
+    for (const b of saved.filter((_, i) => i % 37 === 0)) {
+      const carried = carryOntoGrid(read, again, b.ms, 20)
+      expect(Math.abs((carried ?? Number.NaN) - b.ms)).toBeLessThanOrEqual(15)
+    }
+  })
 })
