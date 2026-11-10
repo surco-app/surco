@@ -48,7 +48,7 @@
       },
       "sources": {
         "heading": "¿De qué playlists salen las pistas?",
-        "hint": "Busca una playlist y di qué hay en ella. Usa Mezcladas para tracklists y sets, donde el orden importa. Surco lee ese orden para encontrar combos. Con las flechas recorres la lista y 1, 2 y 3 marcan Bases, Vocales o Mezcladas.",
+        "hint": "Busca cada playlist y marca si tiene Bases, Vocales o Mezcladas. Mezcladas es para tus tracklists y sets, donde importa el orden. Ahí Surco busca combos, parejas como una base y una vocal que has puesto seguidas en dos o más mezclas. Para ir más rápido, recorre la lista con las flechas y pulsa 1 para Bases, 2 para Vocales o 3 para Mezcladas.",
         "search": "Buscar entre {{count}} playlists",
         "noHits": "Ninguna playlist coincide",
         "none": "Aún no has elegido ninguna playlist",
@@ -69,7 +69,7 @@
         "alternate": "Alternar bases y vocales",
         "alternateHint": "Base, vocal, base, vocal",
         "preferCombos": "Preferir combos probados",
-        "preferCombosHint": "Lo que has pinchado junto en tus sets, primero",
+        "preferCombosHint": "Las parejas que has puesto seguidas en dos o más de tus mezclas, primero",
         "tasteWeight": "Lo que más te gusta",
         "tasteWeightHint": "Estrellas y veces escuchada pesan al elegir",
         "surprise": "Sorpréndeme",

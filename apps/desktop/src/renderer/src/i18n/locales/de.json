@@ -48,7 +48,7 @@
       },
       "sources": {
         "heading": "Aus welchen Playlists sollen die Tracks kommen?",
-        "hint": "Suche eine Playlist und gib an, was sie enthält. Nimm Gemischt für Tracklists und Sets, bei denen die Reihenfolge zählt. Surco liest sie, um Combos zu finden. Mit den Pfeiltasten gehst du durch die Liste, 1, 2 und 3 markieren Instrumentals, Gesang oder Gemischt.",
+        "hint": "Suche jede Playlist und markiere, ob sie Instrumentals, Gesang oder Gemischt enthält. Gemischt ist für deine Tracklists und Sets, bei denen die Reihenfolge zählt. Dort sucht Surco nach Combos, also Paaren wie einem Instrumental und einem Gesangstrack, die du in zwei oder mehr Mixen direkt nacheinander gespielt hast. Schneller geht es mit den Pfeiltasten durch die Liste und 1 für Instrumentals, 2 für Gesang oder 3 für Gemischt.",
         "search": "Unter {{count}} Playlists suchen",
         "noHits": "Keine Playlist passt",
         "none": "Noch keine Playlist ausgewählt",
@@ -69,7 +69,7 @@
         "alternate": "Instrumental und Gesang abwechseln",
         "alternateHint": "Instrumental, Gesang, Instrumental, Gesang",
         "preferCombos": "Bewährte Combos bevorzugen",
-        "preferCombosHint": "Was du in deinen Sets zusammen gespielt hast, zuerst",
+        "preferCombosHint": "Paare, die du in zwei oder mehr deiner Mixe direkt nacheinander gespielt hast, zuerst",
         "tasteWeight": "Was dir am besten gefällt",
         "tasteWeightHint": "Sterne und Wiedergaben zählen bei der Auswahl",
         "surprise": "Überrasch mich",
