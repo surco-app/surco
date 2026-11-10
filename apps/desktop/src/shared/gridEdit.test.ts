@@ -766,4 +766,50 @@ describe('Auto on the fine measurements', () => {
     const read = editableGridOf(saved) as EditableGrid
     expect(read.zones?.length).toBeGreaterThanOrEqual(1)
   })
+
+  it('uses the long stretches where the beat is never clear enough for a fine one, so a tilt heard in the intro never bends the rest of the track', () => {
+    const fit = {
+      bpm: BPM,
+      firstMs: 100,
+      fine: fineEvery(1000, 55000, (ms) => (ms < 25000 ? 0 : 3)),
+      phases: Array.from({ length: 55 }, (_, i) => ({ ms: 7000 + i * 6857, firstMs: 100 })),
+    }
+    const auto = autoFitGrid({ bpm: BPM, anchorMs: 120 }, fit, 0, [], true)
+    const end = gridOffsets(drawn(auto, DURATION), fit, 370000, DURATION).hereMs
+    expect(Math.abs(end)).toBeLessThanOrEqual(3)
+  })
+
+  it('drops an intro the detector hears 36 ms early when the rest of the track agrees on the beat, as it does inside the track', () => {
+    const fit = fitOf(fineEvery(1000, 378000, (ms) => (ms < 27000 || ms > 360000 ? -36 : 0)))
+    const auto = autoFitGrid({ bpm: BPM, anchorMs: 120 }, fit, 0, [], true)
+    expect(auto.zones).toBeUndefined()
+    expect(worstAlong(auto, fit)).toBeLessThanOrEqual(1)
+  })
+
+  const offAt = (grid: EditableGrid, ms: number, phase: number) => {
+    const period = 60000 / BPM
+    const truth = 100 + phase + Math.round((ms - 100 - phase) / period) * period
+    return Math.min(...drawn(grid, DURATION).map((b) => Math.abs(b - truth)))
+  }
+
+  it('keeps a short stretch that carries on from the trusted part beside it, though a line across the gap says otherwise', () => {
+    const fit = fitOf([
+      ...fineEvery(1000, 200000, () => 0),
+      { ms: 250000, firstMs: 120 },
+      ...fineEvery(300000, 312000, () => 0),
+      ...fineEvery(330000, 378000, () => -40),
+    ])
+    const auto = autoFitGrid({ bpm: BPM, anchorMs: 120 }, fit, 0, [], true)
+    expect(offAt(auto, 306000, 0)).toBeLessThanOrEqual(2)
+  })
+
+  it('keeps a short stretch that sits on the way from one trusted part to the next, though neither neighbour agrees with it', () => {
+    const fit = fitOf([
+      ...fineEvery(1000, 150000, () => 0),
+      ...fineEvery(195000, 207000, () => 20),
+      ...fineEvery(250000, 378000, () => 40),
+    ])
+    const auto = autoFitGrid({ bpm: BPM, anchorMs: 120 }, fit, 0, [], true)
+    expect(offAt(auto, 201000, 20)).toBeLessThanOrEqual(3)
+  })
 })

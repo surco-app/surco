@@ -291,7 +291,12 @@ const median = (values: number[]): number => {
 
 function steadyStretches(fit: GridFit): { ms: number; d: number }[] {
   const period = periodOf(fit.bpm)
-  const measured = (fit.fine?.length ?? 0) >= MIN_FINE ? (fit.fine ?? []) : (fit.phases ?? [])
+  const fine = fit.fine ?? []
+  const reach = LONG_STRETCH_BEATS * period
+  const measured = [
+    ...fine,
+    ...(fit.phases ?? []).filter((p) => !fine.some((f) => Math.abs(f.ms - p.ms) < reach)),
+  ].sort((a, b) => a.ms - b.ms)
   return withoutExcursions(
     measured
       .map((p) => ({
@@ -302,7 +307,7 @@ function steadyStretches(fit: GridFit): { ms: number; d: number }[] {
   )
 }
 
-const MIN_FINE = 16
+const LONG_STRETCH_BEATS = 16
 const JUMP_MS = 7
 const MAX_EXCURSION_MS = 40000
 const MIN_HEARD_MS = 10000
@@ -320,15 +325,38 @@ function withoutExcursions(points: Stretch[]): Stretch[] {
   const kept = parts.map((part) => span(part) >= MIN_HEARD_MS)
   if (!kept.some(Boolean)) return points
   const trusted = kept.map((k, i) => k && span(parts[i]) >= MAX_EXCURSION_MS)
-  const returns = (i: number) => {
-    const before = kept.lastIndexOf(true, i - 1)
-    const after = kept.indexOf(true, i + 1)
-    if (before < 0 || after < 0) return true
-    const end = levelAt(parts[before].slice(-EDGE_STRETCHES))
-    const start = levelAt(parts[after].slice(0, EDGE_STRETCHES))
-    return Math.abs(end - start) <= JUMP_MS
+  const edges = parts.flatMap((part, i) => {
+    if (!trusted[i]) return []
+    const head = part.slice(0, EDGE_STRETCHES)
+    const tail = part.slice(-EDGE_STRETCHES)
+    return [
+      { ms: head[0].ms, d: levelAt(head) },
+      { ms: tail[tail.length - 1].ms, d: levelAt(tail) },
+    ]
+  })
+  const expected = (ms: number): number | null => {
+    if (edges.length === 0) return null
+    const after = edges.findIndex((e) => e.ms >= ms)
+    if (after === 0) return edges[0].d
+    if (after < 0) return edges[edges.length - 1].d
+    const a = edges[after - 1]
+    const b = edges[after]
+    return a.d + ((b.d - a.d) * (ms - a.ms)) / (b.ms - a.ms)
   }
-  return parts.filter((_, i) => kept[i] && (trusted[i] || !returns(i))).flat()
+  const agrees = (i: number) => {
+    const part = parts[i]
+    const level = levelAt(part)
+    const start = part[0].ms
+    const end = part[part.length - 1].ms
+    const before = edges.filter((e) => e.ms <= start).at(-1)
+    const after = edges.find((e) => e.ms >= end)
+    const want = expected((start + end) / 2)
+    if (want === null) return true
+    return [before?.d, after?.d, want].some(
+      (d) => d !== undefined && Math.abs(level - d) <= JUMP_MS,
+    )
+  }
+  return parts.filter((_, i) => kept[i] && (trusted[i] || agrees(i))).flat()
 }
 
 function phaseNear(fit: GridFit, ms: number): number {
