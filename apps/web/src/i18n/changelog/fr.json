@@ -1,5 +1,28 @@
 [
   {
+    "version": "1.32",
+    "date": "November 10, 2026",
+    "title": "Des sessions qui sonnent comme tes sets",
+    "items": [
+      {
+        "text": "« Refaire » donne maintenant une session vraiment différente à chaque fois. Elle ne commence plus toujours par le même morceau, et tes favoris reviennent toujours plus souvent, mais pas à chaque fois. Un morceau ne passe jamais deux fois, même si tu l’as dans deux fichiers, un artiste revient rarement deux fois de suite et deux nouveautés ne se suivent jamais.",
+        "in": "1.32.0"
+      },
+      {
+        "text": "Une session apprend de tes playlists mixées, jamais des sessions écrites par Surco, de combien tu changes d’habitude le tempo entre deux morceaux et à quel point la tonalité compte pour toi, et elle accélère doucement au fil du set. Les playlists qui portent le nom d’une partie du set (Échauffement, Clôture, Incontournables…) donnent cette partie à leurs morceaux. Ceux de clôture vont à la fin et ceux que tu passes toujours reviennent plus. Elle commence toujours par un morceau chanté s’il y en a un, et les deux groupes s’appellent maintenant Instrumentaux et Voix.",
+        "in": "1.32.0"
+      },
+      {
+        "text": "« Session à partir de ce morceau… », dans le menu d’un morceau, monte une session qui commence par lui. Chaque morceau d’une session a un cadenas. « Refaire » garde les morceaux fixés à leur place et tire le reste autour, et celui que tu choisis avec « Changer » reste fixé.",
+        "in": "1.32.0"
+      },
+      {
+        "text": "Avec une playlist rekordbox, Traktor ou Serato ouverte, retirer un morceau le retire toujours de cette playlist, depuis le menu, le bouton de l’en-tête, le clavier ou en le faisant glisser. Un morceau part en un clic et plusieurs demandent une confirmation.",
+        "in": "1.32.0"
+      }
+    ]
+  },
+  {
     "version": "1.31",
     "date": "November 9, 2026",
     "title": "Des sessions automatiques à partir de tes playlists",

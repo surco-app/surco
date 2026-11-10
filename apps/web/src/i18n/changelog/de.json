@@ -1,5 +1,28 @@
 [
   {
+    "version": "1.32",
+    "date": "November 10, 2026",
+    "title": "Sessions, die nach deinen Sets klingen",
+    "items": [
+      {
+        "text": "„Neu würfeln“ bringt jetzt jedes Mal eine wirklich andere Session. Sie beginnt nicht mehr immer mit demselben Track, und deine Favoriten kommen weiterhin öfter, aber nicht jedes Mal. Ein Song läuft nie zweimal, auch wenn du ihn in zwei Dateien hast, ein Artist kommt kaum zweimal hintereinander und zwei neue Tracks folgen nie direkt aufeinander.",
+        "in": "1.32.0"
+      },
+      {
+        "text": "Eine Session lernt aus deinen gemischten Playlists, nie aus den Sessions, die Surco geschrieben hat, wie weit du das Tempo zwischen Tracks meist veränderst und wie wichtig dir die Tonart ist, und sie wird im Verlauf langsam schneller. Playlists, die wie ein Teil des Sets heißen (Aufwärmen, Abschluss, Pflicht…), geben ihren Tracks diesen Teil. Abschluss-Tracks kommen ans Ende und die, die du immer spielst, kommen öfter. Sie beginnt immer mit einem Gesangstrack, wenn es einen gibt, und die zwei Gruppen heißen jetzt Instrumentals und Gesang.",
+        "in": "1.32.0"
+      },
+      {
+        "text": "„Session ab diesem Track…“ im Menü eines Tracks baut eine Session, die mit ihm beginnt. Jeder Track einer Session hat ein Schloss. „Neu würfeln“ behält die fixierten an ihrem Platz und lost den Rest um sie herum aus, und der Track, den du mit „Ändern“ wählst, bleibt fixiert.",
+        "in": "1.32.0"
+      },
+      {
+        "text": "Ist eine Playlist aus rekordbox, Traktor oder Serato geöffnet, nimmt das Entfernen eines Tracks ihn immer aus dieser Playlist, ob über das Menü, die Schaltfläche im Kopf, die Tastatur oder per Wischen. Ein Track geht mit einem Klick, bei mehreren wird vorher nachgefragt.",
+        "in": "1.32.0"
+      }
+    ]
+  },
+  {
     "version": "1.31",
     "date": "November 9, 2026",
     "title": "Automatische Sessions aus deinen Playlists",

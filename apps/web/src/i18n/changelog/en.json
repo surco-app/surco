@@ -1,5 +1,28 @@
 [
   {
+    "version": "1.32",
+    "date": "November 10, 2026",
+    "title": "Sessions that sound like your sets",
+    "items": [
+      {
+        "text": "“Redo” now brings a truly different session each time. It no longer always starts with the same track, and your favourites still come up more often, but not every time. A song never plays twice even if you have it in two files, an artist rarely plays twice in a row and two new tracks never go back to back.",
+        "in": "1.32.0"
+      },
+      {
+        "text": "A session learns from your Mixed playlists, never from the sessions Surco wrote, how far you usually move the tempo between tracks and how much the key matters to you, and it climbs gently in tempo as it goes. Playlists named like a part of the set (Warm Up, Closing, Essentials…) give their tracks that part. Closing tracks go to the end and the ones you always play come up more. It always opens with a vocal when there is one, and the two groups are now called Instrumentals and Vocals.",
+        "in": "1.32.0"
+      },
+      {
+        "text": "“Session from this track…”, in a track’s menu, builds a session that starts with it. Every track of a session has a lock. “Redo” keeps the locked ones in place and draws the rest around them, and the one you pick with “Change” stays locked.",
+        "in": "1.32.0"
+      },
+      {
+        "text": "With a rekordbox, Traktor or Serato playlist open, removing a track always takes it out of that playlist, from the menu, the header button, the keyboard or by swiping. One track goes in one click and several ask first.",
+        "in": "1.32.0"
+      }
+    ]
+  },
+  {
     "version": "1.31",
     "date": "November 9, 2026",
     "title": "Automatic sessions from your playlists",

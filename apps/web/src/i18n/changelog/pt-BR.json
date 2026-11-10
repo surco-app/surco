@@ -1,5 +1,28 @@
 [
   {
+    "version": "1.32",
+    "date": "November 10, 2026",
+    "title": "Sessões com a cara dos seus sets",
+    "items": [
+      {
+        "text": "“Refazer” agora traz uma sessão realmente diferente a cada vez. Ela não começa mais sempre pela mesma faixa, e suas favoritas continuam aparecendo mais, mas não sempre. Uma música nunca toca duas vezes, mesmo que você a tenha em dois arquivos, um artista quase nunca se repete em seguida e duas faixas novas nunca vêm uma atrás da outra.",
+        "in": "1.32.0"
+      },
+      {
+        "text": "A sessão aprende com suas playlists Mistas, nunca com as sessões que o Surco escreveu, quanto você costuma mudar o tempo entre faixas e quanto o tom importa para você, e vai subindo o tempo aos poucos. As playlists com nome de uma parte do set (Aquecimento, Encerramento, Essenciais…) dão essa parte às suas faixas. As de encerramento vão para o final e as que você sempre toca aparecem mais. Ela sempre abre com uma faixa com voz quando houver, e os dois grupos agora se chamam Instrumentais (bases) e Com voz (cantadas).",
+        "in": "1.32.0"
+      },
+      {
+        "text": "“Sessão a partir desta faixa…”, no menu de uma faixa, monta uma sessão que começa por ela. Cada faixa da sessão tem um cadeado. “Refazer” mantém as fixadas no lugar e sorteia o resto em volta delas, e a que você escolhe com “Trocar” fica fixada.",
+        "in": "1.32.0"
+      },
+      {
+        "text": "Com uma playlist do rekordbox, Traktor ou Serato aberta, remover uma faixa sempre a tira dessa playlist, pelo menu, pelo botão do cabeçalho, pelo teclado ou deslizando. Uma faixa sai com um clique e várias pedem confirmação antes.",
+        "in": "1.32.0"
+      }
+    ]
+  },
+  {
     "version": "1.31",
     "date": "November 9, 2026",
     "title": "Sessões automáticas a partir das suas playlists",

@@ -1,5 +1,28 @@
 [
   {
+    "version": "1.32",
+    "date": "10 de noviembre de 2026",
+    "title": "Sesiones que suenan a tus sets",
+    "items": [
+      {
+        "text": "«Rehacer» trae ahora una sesión distinta de verdad cada vez. Ya no arranca siempre con la misma pista, y tus favoritas siguen saliendo más a menudo, pero no siempre. Un tema no suena dos veces aunque lo tengas en dos archivos, un artista casi nunca se repite seguido y dos pistas nuevas nunca van una detrás de otra.",
+        "in": "1.32.0"
+      },
+      {
+        "text": "La sesión aprende de tus Mezcladas, nunca de las sesiones que escribió Surco, cuánto sueles mover el tempo entre pistas y cuánto te importa el tono, y sube poco a poco de tempo a medida que avanza. Las playlists que se llaman como una parte del set (Warm Up, Cierre, Fijas…) dan esa parte a sus pistas. Las de cierre van al final y las que siempre pinchas salen más. Siempre abre con un vocal si lo hay, y los dos grupos se llaman ahora Bases y Vocales.",
+        "in": "1.32.0"
+      },
+      {
+        "text": "«Sesión desde esta pista…», en el menú de una pista, monta una sesión que empieza por ella. Cada pista de la sesión lleva un candado. «Rehacer» conserva las fijadas en su sitio y sortea el resto a su alrededor, y la que eliges con «Cambiar» queda fijada.",
+        "in": "1.32.0"
+      },
+      {
+        "text": "Con una playlist abierta de rekordbox, Traktor o Serato, quitar una pista siempre la quita de esa playlist, desde el menú, el botón de la cabecera, el teclado o deslizándola. Una pista se va de un clic y varias piden confirmación antes.",
+        "in": "1.32.0"
+      }
+    ]
+  },
+  {
     "version": "1.31",
     "date": "9 de noviembre de 2026",
     "title": "Sesión automática a partir de tus playlists",
