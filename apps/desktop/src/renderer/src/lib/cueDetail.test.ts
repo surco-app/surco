@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { BODY_ENTRIES, paintWave, waveColumns } from './cueDetail'
+import { BODY_ENTRIES, detailSourceOf, paintWave, waveColumns } from './cueDetail'
 
 const word = (h: number) => (7 << 13) | (h << 2)
 
@@ -99,5 +99,34 @@ describe('paintWave', () => {
       ['ink', 0, 0, 1, 100],
       ['accent', 0, 25, 1, 50],
     ])
+  })
+})
+
+describe('detailSourceOf', () => {
+  const words = new Uint16Array(150).fill(word(8))
+  const wave = [{ h: 0.5, rgb: null }]
+  const fine = { levels: new Uint8Array([10]), perSecond: 1000, startMs: 0 }
+
+  it('draws the fine wave once it is in', () => {
+    expect(detailSourceOf({ fine, words, wave, durationMs: 1000 })).toEqual({ fine })
+  })
+
+  it('draws rekordbox wave while the fine one loads, which already matches its peaks', () => {
+    expect(detailSourceOf({ fine: undefined, words, wave, durationMs: 1000 })).toEqual({ words })
+  })
+
+  it('draws nothing while the fine wave loads and rekordbox has none, never the overview stretched to fill the zoom', () => {
+    expect(detailSourceOf({ fine: undefined, words: null, wave, durationMs: 1000 })).toBeNull()
+  })
+
+  it('falls back to the overview only when no finer wave will come', () => {
+    expect(detailSourceOf({ fine: null, words: null, wave, durationMs: 1000 })).toEqual({
+      wave,
+      durationMs: 1000,
+    })
+  })
+
+  it('keeps rekordbox wave where the fine wave is not asked for, as in the folded section', () => {
+    expect(detailSourceOf({ fine: null, words, wave, durationMs: 1000 })).toEqual({ words })
   })
 })

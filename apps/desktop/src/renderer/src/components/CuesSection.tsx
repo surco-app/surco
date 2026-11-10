@@ -51,7 +51,7 @@ import {
 } from '../hooks/useTrackCues'
 import type { CueActions } from '../lib/commands'
 import { dropsOnGrid, withoutCallInBar } from '../lib/cueAutoMark'
-import type { DetailSource } from '../lib/cueDetail'
+import { type DetailSource, detailSourceOf } from '../lib/cueDetail'
 import {
   type CueDraft,
   type DraftAction,
@@ -855,13 +855,12 @@ function Editing({
         )
       : undefined
   const [zoom, setZoom] = useState<number>(DEFAULT_ZOOM_BARS)
-  const source: DetailSource | null = fine
-    ? { fine }
-    : words
-      ? { words }
-      : read.wave
-        ? { wave: read.wave, durationMs: read.durationMs }
-        : null
+  const source: DetailSource | null = detailSourceOf({
+    fine,
+    words,
+    wave: read.wave,
+    durationMs: read.durationMs,
+  })
   const seekTo = (ms: number) => onPlayhead(Math.min(Math.max(ms, 0), read.durationMs))
   const pad = (kind: number) => {
     const existing = state.cues.find((c) => c.kind === kind)

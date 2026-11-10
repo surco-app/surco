@@ -50,6 +50,23 @@ function entries(source: DetailSource): {
   }
 }
 
+export function detailSourceOf({
+  fine,
+  words,
+  wave,
+  durationMs,
+}: {
+  fine: FineWave | null | undefined
+  words: Uint16Array | null | undefined
+  wave: CueWaveColumn[] | null
+  durationMs: number
+}): DetailSource | null {
+  if (fine) return { fine }
+  if (words) return { words }
+  if (fine === undefined) return null
+  return wave ? { wave, durationMs } : null
+}
+
 export function waveColumns(
   source: DetailSource,
   fromMs: number,
