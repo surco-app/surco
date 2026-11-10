@@ -724,7 +724,9 @@ describe('Auto on the fine measurements', () => {
     const read = editableGridOf(saved) as EditableGrid
     expect(read.zones?.length).toBe(auto.zones?.length)
     const again = drawn(read, DURATION)
-    saved.forEach((b, i) => expect(Math.abs(Math.round(again[i]) - b.ms)).toBeLessThanOrEqual(1))
+    for (const [i, b] of saved.entries()) {
+      expect(Math.abs(Math.round(again[i]) - b.ms)).toBeLessThanOrEqual(1)
+    }
   })
 
   it('tells two zones apart by the tempo stored on their beats when the beats alone bend too little to show it', () => {

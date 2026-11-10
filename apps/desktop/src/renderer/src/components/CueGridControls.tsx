@@ -29,14 +29,13 @@ function GridGroup({
   children: React.ReactNode
 }): React.JSX.Element {
   return (
-    <div
+    <fieldset
       data-testid={testid}
-      role="group"
       aria-label={label}
       className="flex shrink-0 items-center gap-0.5"
     >
       {children}
-    </div>
+    </fieldset>
   )
 }
 const ICON =
