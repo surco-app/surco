@@ -1823,7 +1823,7 @@
     "autoApplyFilename": "パターンを自動適用",
     "autoApplyFilenameHint": "「メタデータからファイル名を再生成」を押さなくても、エクスポート時にメタデータからファイル名を生成します。手動編集が常に優先されます。",
     "filenameFolderHint": "ファイルをフォルダーに分けるには \"/\" を使用します。例：",
-    "insertToken": "フィールドを挿入：",
+    "insertToken": "フィールドを挿入",
     "preview": "プレビュー：",
     "grouping": "グルーピング（カンマ区切り）",
     "groupingPlaceholder": "ベース, ボーカル",

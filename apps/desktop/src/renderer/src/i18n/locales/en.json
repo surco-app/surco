@@ -1823,7 +1823,7 @@
     "autoApplyFilename": "Apply the pattern automatically",
     "autoApplyFilenameHint": "Builds the name from metadata on export, without pressing \"Regenerate\". A manual edit always wins.",
     "filenameFolderHint": "Use \"/\" to sort files into folders, e.g.",
-    "insertToken": "Insert a field:",
+    "insertToken": "Insert a field",
     "preview": "Preview:",
     "grouping": "Grouping (comma-separated)",
     "groupingPlaceholder": "Bases, Vocals",

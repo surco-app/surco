@@ -1823,7 +1823,7 @@
     "autoApplyFilename": "Aplicar o padrão automaticamente",
     "autoApplyFilenameHint": "Gera o nome a partir dos metadados ao exportar, sem apertar “Regenerar”. Uma edição manual sempre prevalece.",
     "filenameFolderHint": "Use \"/\" para organizar os arquivos em pastas, ex.:",
-    "insertToken": "Inserir um campo:",
+    "insertToken": "Inserir um campo",
     "preview": "Prévia:",
     "grouping": "Agrupamento (separados por vírgula)",
     "groupingPlaceholder": "Bases, Vocais",

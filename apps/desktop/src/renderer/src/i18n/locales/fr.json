@@ -1823,7 +1823,7 @@
     "autoApplyFilename": "Appliquer le modèle automatiquement",
     "autoApplyFilenameHint": "Compose le nom depuis les métadonnées à l’export, sans appuyer sur « Régénérer ». Une modification manuelle gagne toujours.",
     "filenameFolderHint": "Utilise \"/\" pour ranger les fichiers en dossiers, p. ex.",
-    "insertToken": "Insérer un champ :",
+    "insertToken": "Insérer un champ",
     "preview": "Aperçu :",
     "grouping": "Regroupement (séparés par des virgules)",
     "groupingPlaceholder": "Instrus, Vocals",

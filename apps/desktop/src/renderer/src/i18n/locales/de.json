@@ -1823,7 +1823,7 @@
     "autoApplyFilename": "Muster automatisch anwenden",
     "autoApplyFilenameHint": "Erzeugt den Namen beim Export aus den Metadaten, ohne „Neu erzeugen“ zu drücken. Eine manuelle Änderung gewinnt immer.",
     "filenameFolderHint": "Nutz \"/\", um Dateien in Ordner zu sortieren, z. B.",
-    "insertToken": "Feld einfügen:",
+    "insertToken": "Feld einfügen",
     "preview": "Vorschau:",
     "grouping": "Gruppierung (kommagetrennt)",
     "groupingPlaceholder": "Beats, Vocals",
