@@ -322,7 +322,6 @@ describe('CuesSection on a Traktor track', () => {
     setup({ ...READ, clockLeadMs: 0 })
     await ready()
     fireEvent.click(screen.getByTestId('section-maximize'))
-    fireEvent.click(await screen.findByTestId('cues-grid-open'))
     await waitFor(() => expect(screen.getByTestId('cues-grid')).toBeInTheDocument())
     expect(screen.getByTestId('cues-grid')).toHaveAttribute('aria-disabled', 'false')
     expect(screen.getByTestId('cues-grid-right')).toBeEnabled()
@@ -335,7 +334,6 @@ describe('CuesSection on a Traktor track', () => {
     window.api.rekordboxGridFit = getGridFit
     await ready()
     fireEvent.click(screen.getByTestId('section-maximize'))
-    fireEvent.click(await screen.findByTestId('cues-grid-open'))
     await waitFor(() => expect(screen.getByTestId('cues-grid')).toBeInTheDocument())
     expect(screen.getByTestId('cues-grid')).toHaveAttribute('aria-disabled', 'true')
     expect(hoverTooltip(screen.getByTestId('cues-grid'))).toEqual(expect.stringMatching(/Surco/))
@@ -357,7 +355,6 @@ describe('CuesSection on a Traktor track', () => {
     )
     await ready()
     fireEvent.click(screen.getByTestId('section-maximize'))
-    fireEvent.click(await screen.findByTestId('cues-grid-open'))
     await waitFor(() => expect(screen.getByTestId('cues-grid-auto')).toBeEnabled())
     fireEvent.click(screen.getByTestId('cues-grid-auto'))
     fireEvent.click(screen.getByTestId('cues-save'))

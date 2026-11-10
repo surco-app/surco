@@ -111,7 +111,7 @@ import { cueLetter } from '../lib/rowCues'
 import { useAppSettings } from '../lib/settingsContext'
 import { formatShortcut } from '../lib/shortcuts'
 import { claimKeys } from '../lib/spaceClaim'
-import { CueDeck, CueMoves } from './CueDeck'
+import { CueDeck, CueMoves, DeckDivider } from './CueDeck'
 import { CueGridControls } from './CueGridControls'
 import { CueGridStrip } from './CueGridStrip'
 import { CueOffGridBar } from './CueOffGridBar'
@@ -1888,28 +1888,28 @@ function Editing({
           landsAs={settings.cueLettersByTime ? landsAs : undefined}
           onDone={focusEditor}
           gridControls={
-            <CueGridControls
-              grid={state.grid}
-              disabledReason={gridOff}
-              fit={gridFit}
-              needsFix={needsFix}
-              playheadMs={playheadMs}
-              onChange={setGrid}
-              onFit={fitGridTo}
-              onDone={focusEditor}
-              zones={rekordboxGrid}
-              kicks={programBeats}
-              onPin={pin}
-            />
-          }
-          gridNeedsFix={needsFix && gridOff === null}
-          zoom={
-            <CueZoom
-              row
-              bars={zoom}
-              onZoom={(dir) => setZoom((z) => zoomStep(z, dir))}
-              onReset={() => setZoom(DEFAULT_ZOOM_BARS)}
-            />
+            <>
+              <CueGridControls
+                grid={state.grid}
+                disabledReason={gridOff}
+                fit={gridFit}
+                needsFix={needsFix}
+                playheadMs={playheadMs}
+                onChange={setGrid}
+                onFit={fitGridTo}
+                onDone={focusEditor}
+                zones={rekordboxGrid}
+                kicks={programBeats}
+                onPin={pin}
+              />
+              <DeckDivider />
+              <CueZoom
+                row
+                bars={zoom}
+                onZoom={(dir) => setZoom((z) => zoomStep(z, dir))}
+                onReset={() => setZoom(DEFAULT_ZOOM_BARS)}
+              />
+            </>
           }
         />
       )}

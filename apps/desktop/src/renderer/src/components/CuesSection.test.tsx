@@ -1237,7 +1237,6 @@ describe('CuesSection on a track rekordbox has not analysed', () => {
     changeTrack({ contentId: '103', path: '/m/g.wav', label: 'Gowan' })
     await ready()
     await openFull()
-    fireEvent.click(screen.getByTestId('cues-grid-open'))
     expect(screen.getByTestId('cues-grid')).toHaveAttribute('aria-disabled', 'true')
     expect(hoverTooltip(screen.getByTestId('cues-grid'))).toEqual(
       expect.stringMatching(/Surco grid/),

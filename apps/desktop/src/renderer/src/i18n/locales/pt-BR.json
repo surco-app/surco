@@ -1280,8 +1280,6 @@
         "widen": "Abrir a grade, baixa o BPM",
         "narrow": "Fechar a grade, sobe o BPM",
         "downbeat": "Tempo 1 do compasso no cursor",
-        "open": "Grade",
-        "done": "Concluir",
         "auto": "Auto",
         "autoHint": "Ajustar a grade às batidas",
         "groupTempo": "Tempo",
