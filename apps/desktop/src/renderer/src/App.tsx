@@ -714,7 +714,6 @@ export default function App(): React.JSX.Element {
     completeTrackMeta,
     refreshTrackFromDisk,
     patchReviewedFields,
-    removeTrack,
     removeTracks,
     clearTracks,
   } = useTrackLibrary({
@@ -3002,7 +3001,10 @@ export default function App(): React.JSX.Element {
     if (!playlist) return
     const remove = () =>
       removeFromRekordbox(targets.flatMap((t) => playlistScope?.linksOf.get(t.id) ?? []))
-    if (targets.length <= 1) return remove()
+    if (targets.length <= 1) {
+      remove()
+      return
+    }
     overlays.openConfirm({
       title: tr('confirm.removeFromPlaylistTitle', { count: targets.length, name: playlist.name }),
       message: tr('confirm.removeFromPlaylistMessage'),
