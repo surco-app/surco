@@ -19,6 +19,18 @@
       {
         "text": "Com uma playlist do rekordbox, Traktor ou Serato aberta, remover uma faixa sempre a tira dessa playlist, pelo menu, pelo botão do cabeçalho, pelo teclado ou deslizando. Uma faixa sai com um clique e várias pedem confirmação antes.",
         "in": "1.32.0"
+      },
+      {
+        "text": "As sessões criadas na aba do Traktor ou do Engine DJ agora conhecem o tom de cada faixa, então “Mixagem harmônica (Camelot)” funciona lá também.",
+        "in": "1.32.1"
+      },
+      {
+        "text": "O “Auto” da grade ajusta a faixa inteira. No rekordbox ele abre um novo trecho onde o tempo muda de vez e acompanha um master cujo tempo respira, e uma intro limpa ou um break cheio de semicolcheias não o tiram mais do tempo. Uma grade do rekordbox salva em vários trechos volta a abrir com todos eles, e os cues continuam no seu tempo ao longo deles.",
+        "in": "1.32.1"
+      },
+      {
+        "text": "No editor completo de cues todos os botões, inclusive os da grade, cabem numa só linha mesmo numa janela pequena, e a onda ampliada aparece na hora enquanto a fina carrega.",
+        "in": "1.32.1"
       }
     ]
   },

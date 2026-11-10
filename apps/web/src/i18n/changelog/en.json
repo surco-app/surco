@@ -19,6 +19,18 @@
       {
         "text": "With a rekordbox, Traktor or Serato playlist open, removing a track always takes it out of that playlist, from the menu, the header button, the keyboard or by swiping. One track goes in one click and several ask first.",
         "in": "1.32.0"
+      },
+      {
+        "text": "Sessions built from the Traktor or Engine DJ tab now know each track's key, so “Harmonic mixing (Camelot)” works there too.",
+        "in": "1.32.1"
+      },
+      {
+        "text": "The grid's “Auto” fits the whole track. In rekordbox it opens a new stretch wherever the tempo changes for good and follows a master whose tempo breathes, and a clear intro or a break full of sixteenths no longer throws it off the beat. A rekordbox grid saved in several stretches opens again with all of them, and the cues stay on their beat across them.",
+        "in": "1.32.1"
+      },
+      {
+        "text": "In the full cue editor every button, the grid ones included, fits on one line even in a small window, and the zoomed wave shows straight away while the fine one loads.",
+        "in": "1.32.1"
       }
     ]
   },

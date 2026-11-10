@@ -19,6 +19,18 @@
       {
         "text": "Avec une playlist rekordbox, Traktor ou Serato ouverte, retirer un morceau le retire toujours de cette playlist, depuis le menu, le bouton de l’en-tête, le clavier ou en le faisant glisser. Un morceau part en un clic et plusieurs demandent une confirmation.",
         "in": "1.32.0"
+      },
+      {
+        "text": "Les sessions créées depuis l’onglet Traktor ou Engine DJ connaissent désormais la tonalité de chaque morceau, donc « Mix harmonique (Camelot) » fonctionne là aussi.",
+        "in": "1.32.1"
+      },
+      {
+        "text": "« Auto » de la grille ajuste le morceau entier. Dans rekordbox, il ouvre un nouveau segment là où le tempo change pour de bon et suit un master dont le tempo respire, et une intro claire ou un break plein de doubles croches ne le décalent plus du temps. Une grille rekordbox enregistrée en plusieurs segments se rouvre avec tous, et les cues restent sur leur temps d’un segment à l’autre.",
+        "in": "1.32.1"
+      },
+      {
+        "text": "Dans l’éditeur de cues complet, tous les boutons, ceux de la grille compris, tiennent sur une seule ligne même dans une petite fenêtre, et la forme d’onde zoomée s’affiche tout de suite pendant que la fine se charge.",
+        "in": "1.32.1"
       }
     ]
   },

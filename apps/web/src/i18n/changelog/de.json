@@ -19,6 +19,18 @@
       {
         "text": "Ist eine Playlist aus rekordbox, Traktor oder Serato geöffnet, nimmt das Entfernen eines Tracks ihn immer aus dieser Playlist, ob über das Menü, die Schaltfläche im Kopf, die Tastatur oder per Wischen. Ein Track geht mit einem Klick, bei mehreren wird vorher nachgefragt.",
         "in": "1.32.0"
+      },
+      {
+        "text": "Sessions aus dem Traktor- oder Engine-DJ-Tab kennen jetzt die Tonart jedes Tracks, also funktioniert „Harmonisches Mixen (Camelot)“ auch dort.",
+        "in": "1.32.1"
+      },
+      {
+        "text": "„Auto“ im Raster passt den ganzen Track an. In rekordbox öffnet es einen neuen Abschnitt, wo sich das Tempo dauerhaft ändert, und folgt einem Master, dessen Tempo atmet, und ein klares Intro oder ein Break voller Sechzehntel bringen es nicht mehr aus dem Takt. Ein in mehreren Abschnitten gespeichertes rekordbox-Raster öffnet sich wieder mit allen, und die Cues bleiben über sie hinweg auf ihrem Schlag.",
+        "in": "1.32.1"
+      },
+      {
+        "text": "Im vollständigen Cue-Editor passen alle Tasten, auch die des Rasters, in eine Zeile, selbst in einem kleinen Fenster, und die gezoomte Wellenform erscheint sofort, während die feine lädt.",
+        "in": "1.32.1"
       }
     ]
   },

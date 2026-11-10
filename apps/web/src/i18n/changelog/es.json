@@ -19,6 +19,18 @@
       {
         "text": "Con una playlist abierta de rekordbox, Traktor o Serato, quitar una pista siempre la quita de esa playlist, desde el menú, el botón de la cabecera, el teclado o deslizándola. Una pista se va de un clic y varias piden confirmación antes.",
         "in": "1.32.0"
+      },
+      {
+        "text": "Las sesiones que haces desde la pestaña de Traktor o de Engine DJ conocen ya la tonalidad de cada pista, así que «Mezcla armónica (Camelot)» funciona también ahí.",
+        "in": "1.32.1"
+      },
+      {
+        "text": "El «Auto» de la rejilla ajusta la pista entera. En rekordbox abre un tramo nuevo donde el tempo cambia de verdad y sigue un máster cuyo tempo respira, y una intro limpia o un break lleno de semicorcheas ya no la sacan del golpe. Una rejilla de rekordbox guardada en varios tramos se vuelve a abrir con todos ellos, y los cues siguen en su golpe a través de ellos.",
+        "in": "1.32.1"
+      },
+      {
+        "text": "En el editor completo de cues todos los botones, también los de la rejilla, caben en una sola línea aunque la ventana sea pequeña, y la onda ampliada aparece al momento mientras carga la fina.",
+        "in": "1.32.1"
       }
     ]
   },
