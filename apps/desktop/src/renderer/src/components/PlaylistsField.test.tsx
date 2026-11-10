@@ -88,6 +88,23 @@ describe('PlaylistsField for Traktor and Engine DJ', () => {
     expect(screen.getByTestId('playlists-popover')).toHaveAccessibleName('Traktor playlists')
   })
 
+  it('shows only the program beside the field, so the label fits one line, and keeps the full name for screen readers', () => {
+    render(
+      <PlaylistsField
+        library="engine"
+        label="Engine DJ playlists"
+        tree={TREE}
+        options={OPTIONS}
+        value={[]}
+        onChange={vi.fn()}
+      />,
+    )
+    const label = screen.getByTestId('playlists-field-label')
+    expect(label).toHaveTextContent(/^Engine DJ/)
+    expect(within(label).getByText('Engine DJ', { exact: true })).toBeVisible()
+    expect(screen.getByTestId('playlists-summary')).toHaveAccessibleName('Engine DJ playlists')
+  })
+
   it('stays in place but disabled until the Traktor collection is confirmed, and says where', () => {
     render(
       <PlaylistsField
