@@ -84,7 +84,7 @@ export function CueDeck({
     }
   }, [colouring, onDone])
   return (
-    <div data-testid="cues-deck" className="mt-3 flex shrink-0 flex-wrap items-end gap-x-3 gap-y-2">
+    <div data-testid="cues-deck" className="mt-3 flex shrink-0 items-center gap-x-2">
       <button
         type="button"
         data-testid="cues-play"
@@ -104,7 +104,7 @@ export function CueDeck({
         )}
       </button>
       <DeckDivider />
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1">
         {kinds.map((kind) => {
           const cue = cues.find((c) => c.kind === kind)
           const letter = cueLetter(kind)
@@ -222,7 +222,7 @@ export function CueDeck({
         </button>
       </div>
       {gridControls && (
-        <div data-testid="cues-deck-grid" className="flex items-end gap-3">
+        <div data-testid="cues-deck-grid" className="flex items-center gap-2">
           <DeckDivider />
           {gridControls}
         </div>
@@ -250,7 +250,7 @@ export function DeckDivider(): React.JSX.Element {
     <span
       data-testid="cues-deck-divider"
       aria-hidden="true"
-      className="mb-1 h-5 w-px shrink-0 bg-[var(--color-line)]"
+      className="h-5 w-px shrink-0 bg-[var(--color-line)]"
     />
   )
 }

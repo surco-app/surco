@@ -111,7 +111,7 @@ import { cueLetter } from '../lib/rowCues'
 import { useAppSettings } from '../lib/settingsContext'
 import { formatShortcut } from '../lib/shortcuts'
 import { claimKeys } from '../lib/spaceClaim'
-import { CueDeck, CueMoves, DeckDivider } from './CueDeck'
+import { CueDeck, CueMoves } from './CueDeck'
 import { CueGridControls } from './CueGridControls'
 import { CueGridStrip } from './CueGridStrip'
 import { CueOffGridBar } from './CueOffGridBar'
@@ -1902,7 +1902,6 @@ function Editing({
                 kicks={programBeats}
                 onPin={pin}
               />
-              <DeckDivider />
               <CueZoom
                 row
                 bars={zoom}

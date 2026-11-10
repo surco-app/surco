@@ -232,20 +232,15 @@ describe('CuesSection maximized', () => {
     expect(screen.getByTestId('cues-memory-remove').nextElementSibling).toBeNull()
   })
 
-  it('splits the deck line into play, pads, CALL, grid, zoom and Clear all with a divider between each', async () => {
+  it('splits the deck line into play, pads, CALL, grid with its zoom, and Clear all with a divider between each', async () => {
     setup()
     await maximize()
     const deck = screen.getByTestId('cues-deck')
-    const marks = [
-      'cues-play',
-      'cues-pad-A',
-      'cues-memory',
-      'cues-grid-bpm',
-      'cue-zoom-out',
-      'cues-clear-all',
-    ].map((id) => screen.getByTestId(id))
+    const marks = ['cues-play', 'cues-pad-A', 'cues-memory', 'cues-grid-bpm', 'cues-clear-all'].map(
+      (id) => screen.getByTestId(id),
+    )
     const dividers = within(deck).getAllByTestId('cues-deck-divider')
-    expect(dividers).toHaveLength(5)
+    expect(dividers).toHaveLength(4)
     dividers.forEach((divider, i) => {
       expect(
         marks[i].compareDocumentPosition(divider) & Node.DOCUMENT_POSITION_FOLLOWING,
