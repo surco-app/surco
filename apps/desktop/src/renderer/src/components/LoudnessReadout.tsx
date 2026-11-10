@@ -19,12 +19,12 @@ import { SectionSubhead } from './SectionSubhead'
 import { Tooltip } from './Tooltip'
 
 // Per-grade colour for the analysis rows, reusing the good/warn/danger tokens
-// (Tokyo Night). The mark is a solid status light; the value text carries the same
-// colour so the verdict reads at a glance. Colour is never the only carrier: each grade
+// (Tokyo Night) only where a figure needs a look: a good figure keeps its mark, faint and
+// neutral, so a red peak is not lost among greens. Colour is never the only carrier: each grade
 // also has its own shape (round, a warning triangle, a square), so the verdict survives
 // colour blindness, and its name rides along in text for screen readers.
 export const GRADE_MARK: Record<Grade, { shape: string; className: string }> = {
-  good: { shape: 'circle', className: 'h-1.5 w-1.5 rounded-full bg-good' },
+  good: { shape: 'circle', className: 'h-1.5 w-1.5 rounded-full bg-fg-faint/50' },
   warn: {
     shape: 'triangle',
     className: 'h-2 w-2 bg-warn [clip-path:polygon(50%_0,100%_100%,0_100%)]',
@@ -37,7 +37,7 @@ export const GRADE_NAME: Record<Grade, string> = {
   bad: 'editor.loudnessGradeBad',
 }
 const GRADE_TEXT: Record<Grade, string> = {
-  good: 'text-good',
+  good: 'text-fg',
   warn: 'text-warn',
   bad: 'text-danger',
 }
