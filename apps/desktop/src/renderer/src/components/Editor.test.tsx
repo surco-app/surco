@@ -2305,12 +2305,22 @@ describe('Editor scroll edge', () => {
     renderEditor({ id: 'a' })
     scrolledTo(screen.getByTestId('editor-scroll'), 0)
     expect(screen.getByTestId('editor-scroll')).toHaveAttribute('data-edge', 'true')
+    expect(screen.getByTestId('editor-scroll-fade')).toBeVisible()
   })
 
   it('clears the fade once the last section is in view', () => {
     renderEditor({ id: 'a' })
     scrolledTo(screen.getByTestId('editor-scroll'), 600)
     expect(screen.getByTestId('editor-scroll')).toHaveAttribute('data-edge', 'false')
+    expect(screen.getByTestId('editor-scroll-fade')).not.toBeVisible()
+  })
+
+  it('paints the fade as a layer beside the scroller, so a dialog opened inside it is never clipped', () => {
+    renderEditor({ id: 'a' })
+    scrolledTo(screen.getByTestId('editor-scroll'), 0)
+    expect(screen.getByTestId('editor-scroll')).not.toContainElement(
+      screen.getByTestId('editor-scroll-fade'),
+    )
   })
 })
 
