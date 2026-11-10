@@ -1,9 +1,17 @@
+import { vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import { BUNDLED_FLOWS } from '../../../shared/cueFlows'
+import type { DjApi } from '../../../shared/djApi'
+import type { DjProgram } from '../../../shared/djProgram'
 import { DEFAULT_EDITOR_SECTIONS } from '../../../shared/editorSections'
 import { emptyMetadata } from '../../../shared/metadata'
 import { DEFAULT_SESSION_WIZARD } from '../../../shared/sessionSettings'
-import type { Settings } from '../../../shared/types'
+import type {
+  CollectionTrack,
+  Settings,
+  SourceNode,
+  SourcePlaylistEntry,
+} from '../../../shared/types'
 
 // A complete, valid Settings for tests that need one. Declared `: Settings` so a field
 // added to the type fails here, once, instead of in every test that built its own literal.
@@ -124,6 +132,50 @@ export const testSettings: Settings = {
   lastSeenChangelogVersion: '',
 }
 
+export interface ProgramReads {
+  available(): Promise<boolean>
+  tree(): Promise<SourceNode[]>
+  recentCount(): Promise<number>
+  trackCount(): Promise<number>
+  playlist(id: string): Promise<SourcePlaylistEntry[]>
+  membership(paths: string[]): Promise<Record<string, string[]>>
+  collection(): Promise<CollectionTrack[]>
+}
+
+const EMPTY_READS: ProgramReads = {
+  available: async () => false,
+  tree: async () => [],
+  recentCount: async () => 0,
+  trackCount: async () => 0,
+  playlist: async () => [],
+  membership: async () => ({}),
+  collection: async () => [],
+}
+
+export type DjReads = Partial<Record<DjProgram, Partial<ProgramReads>>>
+
+const layersOf = new WeakMap<DjApi, DjReads[]>()
+
+export function djReads(...layers: (DjReads | DjApi | undefined)[]): DjApi {
+  const flat = layers.flatMap((layer) => {
+    if (!layer) return []
+    return layersOf.get(layer as DjApi) ?? [layer as DjReads]
+  })
+  const of = (p: DjProgram): ProgramReads =>
+    Object.assign({}, EMPTY_READS, ...flat.map((layer) => layer[p]))
+  const api: DjApi = {
+    available: vi.fn((p) => of(p).available()),
+    tree: vi.fn((p) => of(p).tree()),
+    recentCount: vi.fn((p) => of(p).recentCount()),
+    trackCount: vi.fn((p) => of(p).trackCount()),
+    playlist: vi.fn((p, id) => of(p).playlist(id)),
+    membership: vi.fn((p, paths) => of(p).membership(paths)),
+    collection: vi.fn((p) => of(p).collection()),
+  }
+  layersOf.set(api, flat)
+  return api
+}
+
 // A complete Api whose every method is an inert stub: no side effects, no invented data.
 // Tests spread their own behaviour over it — stubApi({ readTags: vi.fn(...) }) — so a test
 // states only what it actually exercises, and a method it never mentions cannot surprise
@@ -145,6 +197,7 @@ export function stubApi(over: Partial<Api> = {}): Api {
   const unsubscribe = () => noop
   return {
     platform: 'darwin',
+    dj: djReads(),
     storeBuild: false,
     version: '0.0.0-test',
     getPathForFile: () => '',
@@ -214,33 +267,10 @@ export function stubApi(over: Partial<Api> = {}): Api {
     onListRemovalPhase: unsubscribe,
     loadAppleMusicLibraryCached: async () => null,
     loadAppleMusicPlaylists: async () => [],
-    rekordboxAvailable: async () => false,
-    loadRekordboxTree: async () => [],
-    rekordboxRecentCount: async () => 0,
-    rekordboxTrackCount: async () => 0,
-    loadRekordboxCollection: async () => [],
-    loadRekordboxPlaylist: async () => [],
     rekordboxHasSeparator: async () => false,
     traktorHasSeparator: async () => false,
     editTraktorPlaylist: async () => ({ applied: false, reason: 'unreadable' }),
     editSeratoPlaylist: async () => ({ applied: false, reason: 'unreadable' }),
-    engineAvailable: async () => false,
-    loadEngineTree: async () => [],
-    engineRecentCount: async () => 0,
-    engineTrackCount: async () => 0,
-    loadEnginePlaylist: async () => [],
-    traktorAvailable: async () => false,
-    loadTraktorTree: async () => [],
-    traktorRecentCount: async () => 0,
-    traktorTrackCount: async () => 0,
-    loadTraktorCollection: async () => [],
-    loadTraktorPlaylist: async () => [],
-    seratoAvailable: async () => false,
-    loadSeratoTree: async () => [],
-    seratoRecentCount: async () => 0,
-    seratoTrackCount: async () => 0,
-    loadSeratoCollection: async () => [],
-    loadSeratoPlaylist: async () => [],
     seratoRunning: async () => false,
     djAppRunning: async () => false,
     holdsInLibrary: async () => true,
@@ -273,10 +303,6 @@ export function stubApi(over: Partial<Api> = {}): Api {
     saveRekordboxCues: async () => {},
     rekordboxQueuedCues: async () => null,
     undoRekordboxCues: async () => {},
-    rekordboxMembership: async () => ({}),
-    traktorMembership: async () => ({}),
-    seratoMembership: async () => ({}),
-    engineMembership: async () => ({}),
     onRekordboxQueueChanged: unsubscribe,
     onRekordboxQueueApplied: unsubscribe,
     engineCueQueue: async () => ({ tracks: 0, changes: 0, items: [] }),

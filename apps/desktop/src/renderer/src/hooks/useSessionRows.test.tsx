@@ -2,8 +2,9 @@
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
+import type { DjProgram } from '../../../shared/djProgram'
 import type { SourcePlaylistEntry } from '../../../shared/types'
-import { stubApi } from '../test/api'
+import { djReads, type ProgramReads, stubApi } from '../test/api'
 import { useSessionRows } from './useSessionRows'
 
 afterEach(cleanup)
@@ -16,9 +17,15 @@ function install(over: Partial<Api>): Api {
   return api
 }
 
+function playlistReads(api: Api, program: DjProgram) {
+  return vi.mocked(api.dj.playlist).mock.calls.filter(([p]) => p === program)
+}
+
 describe('useSessionRows reset', () => {
   it('reads a playlist again after a reset, so edits made meanwhile are seen', async () => {
-    const api = install({ loadRekordboxPlaylist: vi.fn(async () => rows('/m/a.mp3')) })
+    const api = install({
+      dj: djReads({ rekordbox: { playlist: vi.fn(async () => rows('/m/a.mp3')) } }),
+    })
     const { result } = renderHook(() => useSessionRows('rekordbox'))
     await act(async () => {
       await result.current.load(['a'])
@@ -27,11 +34,15 @@ describe('useSessionRows reset', () => {
     await act(async () => {
       await result.current.load(['a'])
     })
-    expect(api.loadRekordboxPlaylist).toHaveBeenCalledTimes(2)
+    expect(playlistReads(api, 'rekordbox')).toHaveLength(2)
   })
 
   it('forgets the playlists that failed to read', async () => {
-    install({ loadRekordboxPlaylist: vi.fn(async () => Promise.reject(new Error('gone'))) })
+    install({
+      dj: djReads({
+        rekordbox: { playlist: vi.fn(async () => Promise.reject(new Error('gone'))) },
+      }),
+    })
     const { result } = renderHook(() => useSessionRows('rekordbox'))
     await act(async () => {
       await result.current.load(['bad'])
@@ -43,10 +54,10 @@ describe('useSessionRows reset', () => {
 
   it('stops naming a playlist as failed once it reads fine', async () => {
     const read = vi
-      .fn<Api['loadRekordboxPlaylist']>()
+      .fn<ProgramReads['playlist']>()
       .mockRejectedValueOnce(new Error('gone'))
       .mockResolvedValue(rows('/m/a.mp3'))
-    install({ loadRekordboxPlaylist: read })
+    install({ dj: djReads({ rekordbox: { playlist: read } }) })
     const { result } = renderHook(() => useSessionRows('rekordbox'))
     await act(async () => {
       await result.current.load(['a'])
@@ -70,8 +81,10 @@ describe('useSessionRows reset', () => {
 describe('useSessionRows', () => {
   it('does not reuse a read of the same id that belongs to another program', async () => {
     const api = install({
-      loadRekordboxPlaylist: vi.fn(async () => rows('/m/rb.mp3')),
-      loadTraktorPlaylist: vi.fn(async () => rows('/m/tk.mp3')),
+      dj: djReads({
+        rekordbox: { playlist: vi.fn(async () => rows('/m/rb.mp3')) },
+        traktor: { playlist: vi.fn(async () => rows('/m/tk.mp3')) },
+      }),
     })
     const { result, rerender } = renderHook(({ program }) => useSessionRows(program), {
       initialProps: { program: 'rekordbox' as 'rekordbox' | 'traktor' },
@@ -86,14 +99,16 @@ describe('useSessionRows', () => {
       loaded = await result.current.load(['1'])
     })
 
-    expect(api.loadTraktorPlaylist).toHaveBeenCalledTimes(1)
+    expect(playlistReads(api, 'traktor')).toHaveLength(1)
     expect(loaded?.get('1')?.[0].path).toBe('/m/tk.mp3')
   })
 
   it('does not carry a failure of one program over to another', async () => {
     install({
-      loadSeratoPlaylist: vi.fn(async () => Promise.reject(new Error('gone'))),
-      loadRekordboxPlaylist: vi.fn(async () => rows('/m/a.mp3')),
+      dj: djReads({
+        serato: { playlist: vi.fn(async () => Promise.reject(new Error('gone'))) },
+        rekordbox: { playlist: vi.fn(async () => rows('/m/a.mp3')) },
+      }),
     })
     const { result, rerender } = renderHook(({ program }) => useSessionRows(program), {
       initialProps: { program: 'serato' as 'serato' | 'rekordbox' },
@@ -109,7 +124,9 @@ describe('useSessionRows', () => {
   })
 
   it('reads a playlist once however many times it is asked for', async () => {
-    const api = install({ loadRekordboxPlaylist: vi.fn(async () => rows('/m/a.mp3')) })
+    const api = install({
+      dj: djReads({ rekordbox: { playlist: vi.fn(async () => rows('/m/a.mp3')) } }),
+    })
     const { result } = renderHook(() => useSessionRows('rekordbox'))
 
     await act(async () => {
@@ -117,23 +134,25 @@ describe('useSessionRows', () => {
       await result.current.load(['a'])
     })
 
-    expect(api.loadRekordboxPlaylist).toHaveBeenCalledTimes(1)
+    expect(playlistReads(api, 'rekordbox')).toHaveLength(1)
   })
 
   it('shares one read between two asks that arrive together', async () => {
-    const api = install({ loadRekordboxPlaylist: vi.fn(async () => rows('/m/a.mp3')) })
+    const api = install({
+      dj: djReads({ rekordbox: { playlist: vi.fn(async () => rows('/m/a.mp3')) } }),
+    })
     const { result } = renderHook(() => useSessionRows('rekordbox'))
 
     await act(async () => {
       await Promise.all([result.current.load(['a']), result.current.load(['a'])])
     })
 
-    expect(api.loadRekordboxPlaylist).toHaveBeenCalledTimes(1)
+    expect(playlistReads(api, 'rekordbox')).toHaveLength(1)
   })
 
   it('reads each different playlist and returns them by id', async () => {
     install({
-      loadTraktorPlaylist: vi.fn(async (id: string) => rows(`/m/${id}.mp3`)),
+      dj: djReads({ traktor: { playlist: vi.fn(async (id: string) => rows(`/m/${id}.mp3`)) } }),
     })
     const { result } = renderHook(() => useSessionRows('traktor'))
 
@@ -148,9 +167,13 @@ describe('useSessionRows', () => {
 
   it('reports a playlist that fails to read without dropping the others', async () => {
     install({
-      loadSeratoPlaylist: vi.fn(async (id: string) => {
-        if (id === 'bad') throw new Error('gone')
-        return rows(`/m/${id}.mp3`)
+      dj: djReads({
+        serato: {
+          playlist: vi.fn(async (id: string) => {
+            if (id === 'bad') throw new Error('gone')
+            return rows(`/m/${id}.mp3`)
+          }),
+        },
       }),
     })
     const { result } = renderHook(() => useSessionRows('serato'))
@@ -166,7 +189,9 @@ describe('useSessionRows', () => {
   })
 
   it('names a failing playlist once even when asked again', async () => {
-    install({ loadSeratoPlaylist: vi.fn(async () => Promise.reject(new Error('gone'))) })
+    install({
+      dj: djReads({ serato: { playlist: vi.fn(async () => Promise.reject(new Error('gone'))) } }),
+    })
     const { result } = renderHook(() => useSessionRows('serato'))
 
     await act(async () => {
@@ -180,9 +205,13 @@ describe('useSessionRows', () => {
   it('is loading while a read is in flight and not after', async () => {
     let release: (value: SourcePlaylistEntry[]) => void = () => {}
     install({
-      loadRekordboxPlaylist: vi.fn(
-        () => new Promise<SourcePlaylistEntry[]>((resolve) => (release = resolve)),
-      ),
+      dj: djReads({
+        rekordbox: {
+          playlist: vi.fn(
+            () => new Promise<SourcePlaylistEntry[]>((resolve) => (release = resolve)),
+          ),
+        },
+      }),
     })
     const { result } = renderHook(() => useSessionRows('rekordbox'))
     expect(result.current.loading).toBe(false)

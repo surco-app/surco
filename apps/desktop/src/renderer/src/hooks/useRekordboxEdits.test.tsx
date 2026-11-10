@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { RekordboxEditResult, SourceNode, SourcePlaylistEntry } from '../../../shared/types'
 import '../i18n'
 import { takeOwnRemoval } from '../lib/ownRemovals'
+import { djReads } from '../test/api'
 import { useRekordboxEdits } from './useRekordboxEdits'
 
 afterEach(cleanup)
@@ -27,8 +28,7 @@ function setup(answer: Promise<RekordboxEditResult>) {
   const loadRekordboxPlaylist = vi.fn().mockResolvedValue(ORDER)
   const loadRekordboxTree = vi.fn().mockResolvedValue(TREE)
   ;(window as unknown as { api: unknown }).api = {
-    loadRekordboxPlaylist,
-    loadRekordboxTree,
+    dj: djReads({ rekordbox: { playlist: loadRekordboxPlaylist, tree: loadRekordboxTree } }),
     editRekordboxPlaylist: vi.fn(() => answer),
   }
   const notify = vi.fn()
@@ -41,12 +41,12 @@ function setup(answer: Promise<RekordboxEditResult>) {
       edit: useRekordboxEdits(notify),
       entries: useQuery({
         queryKey: ['source-playlist', 'rekordbox', 'f'],
-        queryFn: () => window.api.loadRekordboxPlaylist('f'),
+        queryFn: () => window.api.dj.playlist('rekordbox', 'f'),
         staleTime: Number.POSITIVE_INFINITY,
       }).data,
       tree: useQuery({
         queryKey: ['source-tree', 'rekordbox'],
-        queryFn: () => window.api.loadRekordboxTree(),
+        queryFn: () => window.api.dj.tree('rekordbox'),
         staleTime: Number.POSITIVE_INFINITY,
       }).data,
     }),

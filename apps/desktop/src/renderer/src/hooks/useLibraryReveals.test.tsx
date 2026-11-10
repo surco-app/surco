@@ -5,6 +5,7 @@ import type React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { RECENTLY_ADDED_ID } from '../../../shared/recentlyAdded'
 import type { PlaylistSource } from '../../../shared/types'
+import { djReads } from '../test/api'
 import type { TrackItem } from '../types'
 import { useLibraryReveals } from './useLibraryReveals'
 
@@ -27,7 +28,9 @@ function setup(
     .fn()
     .mockResolvedValue([{ path: '/out/Love Ya.aiff', separator: false, meta: {} }])
   if (first) loadRekordboxPlaylist.mockResolvedValueOnce(first)
-  ;(window as unknown as { api: unknown }).api = { loadRekordboxPlaylist }
+  ;(window as unknown as { api: unknown }).api = {
+    dj: djReads({ rekordbox: { playlist: loadRekordboxPlaylist } }),
+  }
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   const wrapper = ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={client}>{children}</QueryClientProvider>

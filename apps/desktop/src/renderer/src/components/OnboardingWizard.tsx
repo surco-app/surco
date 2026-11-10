@@ -13,8 +13,8 @@ import {
   buildAdoptedPatch,
   buildOnboardingPatch,
   programChoicePatch,
-  shouldShowOnboarding,
   seedAudioIntents,
+  shouldShowOnboarding,
 } from '../lib/onboarding'
 import { isMacOS } from '../lib/platform'
 import { formatKHz } from '../lib/quality'
@@ -101,9 +101,9 @@ export function OnboardingWizard({
   useEffect(() => {
     Promise.all([
       window.api.rekordboxCollection(),
-      window.api.engineAvailable(),
+      window.api.dj.available('engine'),
       window.api.detectTraktorNmlPath(),
-      window.api.seratoAvailable(),
+      window.api.dj.available('serato'),
     ])
       .then(([rekordbox, engine, traktor, serato]) =>
         detectedDjLibraries({

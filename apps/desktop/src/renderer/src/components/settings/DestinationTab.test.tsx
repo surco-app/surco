@@ -11,10 +11,11 @@ import i18n from '../../i18n'
 // must exist before the module loads — hence the dynamic import below.
 import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
+import { djReads } from '../../test/api'
 import { hoverTooltip } from '../../test/tooltip'
 ;(window as unknown as { api: unknown }).api = {
   platform: 'darwin',
-  seratoAvailable: async () => false,
+  dj: djReads({ serato: { available: async () => false } }),
 }
 const { DestinationTab, ProgramsTab } = await import('./DestinationTab')
 
@@ -172,7 +173,7 @@ describe('DestinationTab on Windows', () => {
     const mac = window.api
     ;(window as unknown as { api: Partial<Api> }).api = {
       platform: 'win32',
-      seratoAvailable: async () => false,
+      dj: djReads({ serato: { available: async () => false } }),
     }
     try {
       renderTab()
@@ -863,7 +864,7 @@ describe('complete on close', () => {
     const rekordboxCountCompletable = vi.fn<Api['rekordboxCountCompletable']>(async () => count)
     ;(window as unknown as { api: Partial<Api> }).api = {
       platform: 'darwin',
-      seratoAvailable: async () => false,
+      dj: djReads({ serato: { available: async () => false } }),
       rekordboxCountCompletable,
     }
     const patch = vi.fn()
@@ -918,7 +919,7 @@ describe('complete on close', () => {
     const logError = vi.fn<Api['logError']>()
     ;(window as unknown as { api: Partial<Api> }).api = {
       platform: 'darwin',
-      seratoAvailable: async () => false,
+      dj: djReads({ serato: { available: async () => false } }),
       rekordboxCountCompletable,
       logError,
     }
@@ -992,7 +993,7 @@ describe('DestinationTab Serato', () => {
     const before = window.api
     ;(window as unknown as { api: Partial<Api> }).api = {
       platform: 'darwin',
-      seratoAvailable: async () => available,
+      dj: djReads({ serato: { available: async () => available } }),
     }
     return () => {
       ;(window as unknown as { api: Api }).api = before
@@ -1026,7 +1027,7 @@ describe('DestinationTab Serato', () => {
     const restore = withSerato(false)
     try {
       const patch = renderPrograms({ syncSerato: true, addToSerato: true })
-      await waitFor(() => expect(window.api.seratoAvailable).toBeDefined())
+      await waitFor(() => expect(window.api.dj.available).toBeDefined())
       expect(screen.getByTestId('settings-reach-serato')).toBeEnabled()
       fireEvent.click(screen.getByTestId('settings-reach-serato-off'))
       expect(patch).toHaveBeenCalledWith('syncSerato', false)

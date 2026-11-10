@@ -4,15 +4,65 @@ import { act, cleanup, renderHook, waitFor } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ALL_TRACKS_ID } from '../../../shared/allTracks'
+import type { DjApi } from '../../../shared/djApi'
+import type { DjProgram } from '../../../shared/djProgram'
 import { RECENTLY_ADDED_ID } from '../../../shared/recentlyAdded'
 import type { PlaylistSource, SourceNode } from '../../../shared/types'
 import { markOwnRemovals, takeOwnRemoval } from '../lib/ownRemovals'
+import type { DjReads, ProgramReads } from '../test/api'
 import { useRekordboxMembership } from './useRekordboxPlaylists'
 import { useSourceBrowser } from './useSourceBrowser'
 
 afterEach(cleanup)
 afterEach(() => vi.unstubAllEnvs())
 afterEach(() => takeOwnRemoval('house'))
+
+function stubbedOnly(...layers: DjReads[]): DjApi {
+  const pick = <K extends keyof ProgramReads>(p: DjProgram, op: K): ProgramReads[K] => {
+    const found = layers.map((layer) => layer[p]?.[op]).findLast((fn) => fn !== undefined)
+    if (!found) throw new TypeError(`${p}.${op} is not stubbed`)
+    return found
+  }
+  return {
+    available: vi.fn((p) => pick(p, 'available')()),
+    tree: vi.fn((p) => pick(p, 'tree')()),
+    recentCount: vi.fn((p) => pick(p, 'recentCount')()),
+    trackCount: vi.fn((p) => pick(p, 'trackCount')()),
+    playlist: vi.fn((p, id) => pick(p, 'playlist')(id)),
+    membership: vi.fn((p, paths) => pick(p, 'membership')(paths)),
+    collection: vi.fn((p) => pick(p, 'collection')()),
+  }
+}
+
+const defaultReads = (): DjReads => ({
+  rekordbox: {
+    available: vi.fn().mockResolvedValue(true),
+    tree: vi.fn().mockResolvedValue([{ id: 'house', name: 'House', kind: 'playlist', count: 1 }]),
+    playlist: vi.fn().mockResolvedValue([{ path: '/m/a.wav', separator: false, meta: {} }]),
+  },
+  engine: {
+    available: vi.fn().mockResolvedValue(true),
+    tree: vi.fn().mockResolvedValue([{ id: '7', name: 'Friday', kind: 'playlist', count: 1 }]),
+    playlist: vi.fn().mockResolvedValue([{ path: '/m/e.wav', separator: false, meta: {} }]),
+  },
+  traktor: {
+    available: vi.fn().mockResolvedValue(false),
+    tree: vi.fn().mockResolvedValue([{ id: 'u1', name: 'Saturday', kind: 'playlist', count: 1 }]),
+    recentCount: vi.fn().mockResolvedValue(3),
+    playlist: vi.fn().mockResolvedValue([{ path: '/m/t.wav', separator: false, meta: {} }]),
+  },
+  serato: {
+    available: vi.fn().mockResolvedValue(false),
+    tree: vi.fn().mockResolvedValue([{ id: 'Sets', name: 'Sets', kind: 'playlist', count: 1 }]),
+    recentCount: vi.fn().mockResolvedValue(4),
+    trackCount: vi.fn().mockResolvedValue(9),
+    playlist: vi
+      .fn()
+      .mockResolvedValue([
+        { path: '/m/s.mp3', separator: false, meta: {}, contentId: 'serato:/m/s.mp3' },
+      ]),
+  },
+})
 
 function setup(
   api: Record<string, unknown>,
@@ -24,49 +74,17 @@ function setup(
   const state = { hidden: hiddenSources }
   ;(window as unknown as { api: unknown }).api = {
     platform,
-    rekordboxAvailable: vi.fn().mockResolvedValue(true),
-    loadRekordboxTree: vi
-      .fn()
-      .mockResolvedValue([{ id: 'house', name: 'House', kind: 'playlist', count: 1 }]),
-    loadRekordboxPlaylist: vi
-      .fn()
-      .mockResolvedValue([{ path: '/m/a.wav', separator: false, meta: {} }]),
     loadAppleMusicPlaylists: vi.fn().mockResolvedValue([]),
     loadAppleMusicPlaylistsCached: vi.fn().mockResolvedValue(null),
     loadAppleMusicPlaylistTracks: vi.fn(),
     loadAppleMusicLibraryPlaylistTracks: vi.fn().mockResolvedValue(null),
     loadAppleMusicPlaylistCached: vi.fn().mockResolvedValue(null),
-    engineAvailable: vi.fn().mockResolvedValue(true),
-    loadEngineTree: vi
-      .fn()
-      .mockResolvedValue([{ id: '7', name: 'Friday', kind: 'playlist', count: 1 }]),
-    loadEnginePlaylist: vi
-      .fn()
-      .mockResolvedValue([{ path: '/m/e.wav', separator: false, meta: {} }]),
-    traktorAvailable: vi.fn().mockResolvedValue(false),
-    loadTraktorTree: vi
-      .fn()
-      .mockResolvedValue([{ id: 'u1', name: 'Saturday', kind: 'playlist', count: 1 }]),
-    traktorRecentCount: vi.fn().mockResolvedValue(3),
-    loadTraktorPlaylist: vi
-      .fn()
-      .mockResolvedValue([{ path: '/m/t.wav', separator: false, meta: {} }]),
-    seratoAvailable: vi.fn().mockResolvedValue(false),
-    loadSeratoTree: vi
-      .fn()
-      .mockResolvedValue([{ id: 'Sets', name: 'Sets', kind: 'playlist', count: 1 }]),
-    seratoRecentCount: vi.fn().mockResolvedValue(4),
-    seratoTrackCount: vi.fn().mockResolvedValue(9),
-    loadSeratoPlaylist: vi
-      .fn()
-      .mockResolvedValue([
-        { path: '/m/s.mp3', separator: false, meta: {}, contentId: 'serato:/m/s.mp3' },
-      ]),
     onWindowFocus: vi.fn((cb: (f: boolean) => void) => {
       focus = cb
       return () => {}
     }),
     ...api,
+    dj: stubbedOnly(defaultReads(), (api.dj ?? {}) as DjReads),
   }
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   const wrapper = ({ children }: { children: React.ReactNode }) => (
@@ -119,7 +137,7 @@ describe('useSourceBrowser', () => {
 
   it('offers nothing when every source is hidden, so no rail is drawn', async () => {
     const { result } = setup({}, 'darwin', () => {}, ['appleMusic', 'rekordbox', 'engine'])
-    await waitFor(() => expect(window.api.rekordboxAvailable).toHaveBeenCalled())
+    await waitFor(() => expect(window.api.dj.available).toHaveBeenCalledWith('rekordbox'))
     expect(result.current.sources).toEqual([])
   })
 
@@ -138,19 +156,21 @@ describe('useSourceBrowser', () => {
   it('leaves Engine DJ out on a machine without its library, as rekordbox is left out without a collection, so no tab shows for an app the DJ does not have', async () => {
     const { result } = setup(
       {
-        rekordboxAvailable: vi.fn().mockResolvedValue(false),
-        engineAvailable: vi.fn().mockResolvedValue(false),
+        dj: {
+          rekordbox: { available: vi.fn().mockResolvedValue(false) },
+          engine: { available: vi.fn().mockResolvedValue(false) },
+        },
       },
       'win32',
     )
-    await waitFor(() => expect(window.api.engineAvailable).toHaveBeenCalled())
-    await waitFor(() => expect(window.api.rekordboxAvailable).toHaveBeenCalled())
+    await waitFor(() => expect(window.api.dj.available).toHaveBeenCalledWith('engine'))
+    await waitFor(() => expect(window.api.dj.available).toHaveBeenCalledWith('rekordbox'))
     expect(result.current.sources).toEqual([])
   })
 
   it('says the Engine DJ library is missing only while Engine DJ is open and its database is not there', async () => {
     const engineAvailable = vi.fn().mockResolvedValue(false)
-    const { result, focus } = setup({ engineAvailable })
+    const { result, focus } = setup({ dj: { engine: { available: engineAvailable } } })
     expect(result.current.libraryMissing).toBe(false)
     act(() => result.current.selectSource('engine'))
     await waitFor(() => expect(result.current.libraryMissing).toBe(true))
@@ -164,7 +184,12 @@ describe('useSourceBrowser', () => {
   it('only sends Engine DJ’s tab to the missing-library notice, since rekordbox and Traktor without a collection have no tab to show it in', async () => {
     const rekordboxAvailable = vi.fn().mockResolvedValue(false)
     const traktorAvailable = vi.fn().mockResolvedValue(false)
-    const { result } = setup({ rekordboxAvailable, traktorAvailable })
+    const { result } = setup({
+      dj: {
+        rekordbox: { available: rekordboxAvailable },
+        traktor: { available: traktorAvailable },
+      },
+    })
     await waitFor(() => expect(rekordboxAvailable).toHaveBeenCalled())
     await waitFor(() => expect(traktorAvailable).toHaveBeenCalled())
     act(() => result.current.selectSource('traktor'))
@@ -176,7 +201,7 @@ describe('useSourceBrowser', () => {
   })
 
   it('offers Traktor after the other libraries when its collection is found, so it shows only where Traktor is installed', async () => {
-    const { result } = setup({ traktorAvailable: vi.fn().mockResolvedValue(true) })
+    const { result } = setup({ dj: { traktor: { available: vi.fn().mockResolvedValue(true) } } })
     await waitFor(() =>
       expect(result.current.sources).toEqual(['appleMusic', 'rekordbox', 'engine', 'traktor']),
     )
@@ -184,8 +209,10 @@ describe('useSourceBrowser', () => {
 
   it('offers Serato after Traktor when a Serato library is found, so its tab comes last on the rail', async () => {
     const { result } = setup({
-      traktorAvailable: vi.fn().mockResolvedValue(true),
-      seratoAvailable: vi.fn().mockResolvedValue(true),
+      dj: {
+        traktor: { available: vi.fn().mockResolvedValue(true) },
+        serato: { available: vi.fn().mockResolvedValue(true) },
+      },
     })
     await waitFor(() =>
       expect(result.current.sources).toEqual([
@@ -200,7 +227,7 @@ describe('useSourceBrowser', () => {
 
   it('leaves Serato out on a machine without a Serato library, so no tab shows for an app the DJ does not have', async () => {
     const seratoAvailable = vi.fn().mockResolvedValue(false)
-    const { result, client } = setup({ seratoAvailable })
+    const { result, client } = setup({ dj: { serato: { available: seratoAvailable } } })
     await waitFor(() =>
       expect(client.getQueryState(['source-available', 'serato'])?.status).toBe('success'),
     )
@@ -213,9 +240,10 @@ describe('useSourceBrowser', () => {
     const rekordboxRecentCount = vi.fn().mockResolvedValue(1)
     const rekordboxTrackCount = vi.fn().mockResolvedValue(1)
     const { result } = setup({
-      seratoAvailable: vi.fn().mockResolvedValue(true),
-      rekordboxRecentCount,
-      rekordboxTrackCount,
+      dj: {
+        serato: { available: vi.fn().mockResolvedValue(true) },
+        rekordbox: { recentCount: rekordboxRecentCount, trackCount: rekordboxTrackCount },
+      },
     })
     await waitFor(() => expect(result.current.sources).toContain('serato'))
     act(() => result.current.selectSource('serato'))
@@ -227,14 +255,14 @@ describe('useSourceBrowser', () => {
       result.current.selectPlaylist({ id: 'Sets', name: 'Sets', kind: 'playlist', count: 1 }, []),
     )
     await waitFor(() => expect(result.current.entries).toHaveLength(1))
-    expect(window.api.loadSeratoPlaylist).toHaveBeenCalledWith('Sets')
+    expect(window.api.dj.playlist).toHaveBeenCalledWith('serato', 'Sets')
     expect(rekordboxRecentCount).not.toHaveBeenCalled()
     expect(rekordboxTrackCount).not.toHaveBeenCalled()
     expect(result.current.canInsertSeparator).toBe(false)
   })
 
   it('reads the Traktor tree, with Recently added first, and the picked playlist from the collection', async () => {
-    const { result } = setup({ traktorAvailable: vi.fn().mockResolvedValue(true) })
+    const { result } = setup({ dj: { traktor: { available: vi.fn().mockResolvedValue(true) } } })
     act(() => result.current.selectSource('traktor'))
     await waitFor(() => expect(result.current.tree).toHaveLength(2))
     expect(result.current.tree?.[0]).toMatchObject({ id: RECENTLY_ADDED_ID, count: 3 })
@@ -243,7 +271,7 @@ describe('useSourceBrowser', () => {
       result.current.selectPlaylist({ id: 'u1', name: 'Saturday', kind: 'playlist', count: 1 }, []),
     )
     await waitFor(() => expect(result.current.entries).toHaveLength(1))
-    expect(window.api.loadTraktorPlaylist).toHaveBeenCalledWith('u1')
+    expect(window.api.dj.playlist).toHaveBeenCalledWith('traktor', 'u1')
   })
 
   it('reads the Engine DJ tree and the picked playlist from the Engine library', async () => {
@@ -254,7 +282,7 @@ describe('useSourceBrowser', () => {
       result.current.selectPlaylist({ id: '7', name: 'Friday', kind: 'playlist', count: 1 }, []),
     )
     await waitFor(() => expect(result.current.entries).toHaveLength(1))
-    expect(window.api.loadEnginePlaylist).toHaveBeenCalledWith('7')
+    expect(window.api.dj.playlist).toHaveBeenCalledWith('engine', '7')
   })
 
   // Music only reports how many rows a playlist has, repeats included, while the list shows
@@ -498,12 +526,12 @@ describe('useSourceBrowser', () => {
       result.current.selectPlaylist({ id: 'house', name: 'House', kind: 'playlist', count: 1 }, []),
     )
     await waitFor(() => expect(result.current.entries).toHaveLength(1))
-    expect(window.api.loadRekordboxPlaylist).toHaveBeenCalledWith('house')
+    expect(window.api.dj.playlist).toHaveBeenCalledWith('rekordbox', 'house')
   })
 
   it('re-reads which playlists the tracks are in when Surco gets the focus back, so an edit starts from what rekordbox holds now', async () => {
     const rekordboxMembership = vi.fn().mockResolvedValue({ '/m/a.wav': ['3000'] })
-    const { focus } = setup({ rekordboxMembership })
+    const { focus } = setup({ dj: { rekordbox: { membership: rekordboxMembership } } })
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
     const wrapper = ({ children }: { children: React.ReactNode }) => (
       <QueryClientProvider client={client}>{children}</QueryClientProvider>
@@ -527,11 +555,11 @@ describe('useSourceBrowser', () => {
       result.current.selectPlaylist({ id: 'house', name: 'House', kind: 'playlist', count: 1 }, []),
     )
     await waitFor(() => expect(result.current.entries).toHaveLength(1))
-    const treeCalls = vi.mocked(window.api.loadRekordboxTree).mock.calls.length
+    const rekordboxTreeCalls = () =>
+      vi.mocked(window.api.dj.tree).mock.calls.filter(([program]) => program === 'rekordbox').length
+    const treeCalls = rekordboxTreeCalls()
     act(() => focus())
-    await waitFor(() =>
-      expect(vi.mocked(window.api.loadRekordboxTree).mock.calls.length).toBeGreaterThan(treeCalls),
-    )
+    await waitFor(() => expect(rekordboxTreeCalls()).toBeGreaterThan(treeCalls))
   })
 
   it('closes a playlist deleted in rekordbox once the refreshed tree no longer has it', async () => {
@@ -539,7 +567,7 @@ describe('useSourceBrowser', () => {
       .fn()
       .mockResolvedValueOnce([{ id: 'house', name: 'House', kind: 'playlist', count: 1 }])
       .mockResolvedValue([])
-    const { result, focus } = setup({ loadRekordboxTree })
+    const { result, focus } = setup({ dj: { rekordbox: { tree: loadRekordboxTree } } })
     act(() => result.current.selectSource('rekordbox'))
     await waitFor(() => expect(result.current.tree).toHaveLength(1))
     act(() =>
@@ -557,7 +585,11 @@ describe('useSourceBrowser', () => {
       .mockResolvedValueOnce([{ id: 'house', name: 'House', kind: 'playlist', count: 1 }])
       .mockResolvedValue([])
     const onPlaylistGone = vi.fn()
-    const { result, focus } = setup({ loadRekordboxTree }, 'darwin', onPlaylistGone)
+    const { result, focus } = setup(
+      { dj: { rekordbox: { tree: loadRekordboxTree } } },
+      'darwin',
+      onPlaylistGone,
+    )
     act(() => result.current.selectSource('rekordbox'))
     await waitFor(() => expect(result.current.tree).toHaveLength(1))
     act(() =>
@@ -575,7 +607,11 @@ describe('useSourceBrowser', () => {
       .mockResolvedValueOnce([{ id: 'house', name: 'House', kind: 'playlist', count: 1 }])
       .mockResolvedValue([])
     const onPlaylistGone = vi.fn()
-    const { result, focus } = setup({ loadRekordboxTree }, 'darwin', onPlaylistGone)
+    const { result, focus } = setup(
+      { dj: { rekordbox: { tree: loadRekordboxTree } } },
+      'darwin',
+      onPlaylistGone,
+    )
     act(() => result.current.selectSource('rekordbox'))
     await waitFor(() => expect(result.current.tree).toHaveLength(1))
     act(() =>
@@ -594,7 +630,7 @@ describe('useSourceBrowser', () => {
       .fn()
       .mockResolvedValueOnce([{ id: 'house', name: 'House', kind: 'playlist', count: 1 }])
       .mockRejectedValue(new Error('database is locked'))
-    const { result, focus } = setup({ loadRekordboxTree })
+    const { result, focus } = setup({ dj: { rekordbox: { tree: loadRekordboxTree } } })
     act(() => result.current.selectSource('rekordbox'))
     await waitFor(() => expect(result.current.tree).toHaveLength(1))
     act(() =>
@@ -622,7 +658,7 @@ describe('useSourceBrowser', () => {
   })
 
   it('puts Recently added first in rekordbox, above every playlist, with its count', async () => {
-    const { result } = setup({ rekordboxRecentCount: vi.fn().mockResolvedValue(12) })
+    const { result } = setup({ dj: { rekordbox: { recentCount: vi.fn().mockResolvedValue(12) } } })
     act(() => result.current.selectSource('rekordbox'))
     await waitFor(() => expect(result.current.tree).toHaveLength(2))
     expect(result.current.tree?.[0]).toEqual({
@@ -634,19 +670,16 @@ describe('useSourceBrowser', () => {
     expect(result.current.tree?.[1].id).toBe('house')
   })
 
-  it.each([
-    ['rekordbox', 'rekordboxTrackCount', 'loadRekordboxPlaylist'],
-    ['engine', 'engineTrackCount', 'loadEnginePlaylist'],
-    ['traktor', 'traktorTrackCount', 'loadTraktorPlaylist'],
-  ] as const)(
+  it.each(['rekordbox', 'engine', 'traktor'] as const)(
     'puts Recently added first in %s, the list reached for most, with All tracks right below counting the whole collection',
-    async (source, count, load) => {
-      const { result } = setup({
-        traktorAvailable: vi.fn().mockResolvedValue(true),
-        rekordboxRecentCount: vi.fn().mockResolvedValue(3),
-        engineRecentCount: vi.fn().mockResolvedValue(3),
-        [count]: vi.fn().mockResolvedValue(2078),
-      })
+    async (source) => {
+      const dj: DjReads = {
+        traktor: { available: vi.fn().mockResolvedValue(true) },
+        rekordbox: { recentCount: vi.fn().mockResolvedValue(3) },
+        engine: { recentCount: vi.fn().mockResolvedValue(3) },
+      }
+      dj[source] = { ...dj[source], trackCount: vi.fn().mockResolvedValue(2078) }
+      const { result } = setup({ dj })
       act(() => result.current.selectSource(source))
       await waitFor(() => expect(result.current.tree).toHaveLength(3))
       expect(result.current.tree?.[0].id).toBe(RECENTLY_ADDED_ID)
@@ -658,13 +691,13 @@ describe('useSourceBrowser', () => {
       })
       act(() => result.current.selectPlaylist(result.current.tree?.[1] as SourceNode, []))
       await waitFor(() => expect(result.current.entries).toHaveLength(1))
-      expect(window.api[load]).toHaveBeenCalledWith(ALL_TRACKS_ID)
+      expect(window.api.dj.playlist).toHaveBeenCalledWith(source, ALL_TRACKS_ID)
     },
   )
 
   it('re-counts All tracks whenever the tree is re-read, so a track just added shows up', async () => {
     const rekordboxTrackCount = vi.fn().mockResolvedValueOnce(1).mockResolvedValue(2)
-    const { result, focus } = setup({ rekordboxTrackCount })
+    const { result, focus } = setup({ dj: { rekordbox: { trackCount: rekordboxTrackCount } } })
     act(() => result.current.selectSource('rekordbox'))
     await waitFor(() => expect(result.current.tree?.[0].count).toBe(1))
     act(() => focus())
@@ -676,7 +709,7 @@ describe('useSourceBrowser', () => {
       .fn()
       .mockRejectedValueOnce(new Error('superseded'))
       .mockReturnValue(new Promise(() => {}))
-    const { result } = setup({ loadRekordboxPlaylist })
+    const { result } = setup({ dj: { rekordbox: { playlist: loadRekordboxPlaylist } } })
     act(() => result.current.selectSource('rekordbox'))
     await waitFor(() => expect(result.current.tree).toHaveLength(1))
     const house = result.current.tree?.[0] as SourceNode
@@ -695,7 +728,10 @@ describe('useSourceBrowser', () => {
       .fn()
       .mockResolvedValue([{ persistentId: 'P1', name: 'Friday', count: 4 }])
     const rekordboxTrackCount = vi.fn().mockResolvedValue(2078)
-    const { result } = setup({ rekordboxRecentCount, rekordboxTrackCount, loadAppleMusicPlaylists })
+    const { result } = setup({
+      dj: { rekordbox: { recentCount: rekordboxRecentCount, trackCount: rekordboxTrackCount } },
+      loadAppleMusicPlaylists,
+    })
     act(() => result.current.selectSource('appleMusic'))
     await waitFor(() => expect(result.current.tree).toHaveLength(1))
     expect(result.current.tree?.[0].id).toBe('P1')
@@ -704,17 +740,17 @@ describe('useSourceBrowser', () => {
   })
 
   it('opens Recently added through the playlist read, so its rows behave like any playlist', async () => {
-    const { result } = setup({ rekordboxRecentCount: vi.fn().mockResolvedValue(1) })
+    const { result } = setup({ dj: { rekordbox: { recentCount: vi.fn().mockResolvedValue(1) } } })
     act(() => result.current.selectSource('rekordbox'))
     await waitFor(() => expect(result.current.tree).toHaveLength(2))
     act(() => result.current.selectPlaylist(result.current.tree?.[0] as SourceNode, []))
     await waitFor(() => expect(result.current.entries).toHaveLength(1))
-    expect(window.api.loadRekordboxPlaylist).toHaveBeenCalledWith(RECENTLY_ADDED_ID)
+    expect(window.api.dj.playlist).toHaveBeenCalledWith('rekordbox', RECENTLY_ADDED_ID)
   })
 
   it('re-counts Recently added whenever the tree is re-read, so a track just added to rekordbox shows up', async () => {
     const rekordboxRecentCount = vi.fn().mockResolvedValueOnce(1).mockResolvedValue(2)
-    const { result, focus } = setup({ rekordboxRecentCount })
+    const { result, focus } = setup({ dj: { rekordbox: { recentCount: rekordboxRecentCount } } })
     act(() => result.current.selectSource('rekordbox'))
     await waitFor(() => expect(result.current.tree?.[0].count).toBe(1))
     act(() => focus())
@@ -722,7 +758,7 @@ describe('useSourceBrowser', () => {
   })
 
   it('puts Recently added first in Engine DJ too, above every playlist, with its count', async () => {
-    const { result } = setup({ engineRecentCount: vi.fn().mockResolvedValue(5) })
+    const { result } = setup({ dj: { engine: { recentCount: vi.fn().mockResolvedValue(5) } } })
     act(() => result.current.selectSource('engine'))
     await waitFor(() => expect(result.current.tree).toHaveLength(2))
     expect(result.current.tree?.[0]).toEqual({
@@ -736,8 +772,10 @@ describe('useSourceBrowser', () => {
 
   it('counts each library’s own Recently added, so switching sources never shows the other’s number', async () => {
     const { result } = setup({
-      rekordboxRecentCount: vi.fn().mockResolvedValue(12),
-      engineRecentCount: vi.fn().mockResolvedValue(5),
+      dj: {
+        rekordbox: { recentCount: vi.fn().mockResolvedValue(12) },
+        engine: { recentCount: vi.fn().mockResolvedValue(5) },
+      },
     })
     act(() => result.current.selectSource('rekordbox'))
     await waitFor(() => expect(result.current.tree?.[0].count).toBe(12))
@@ -746,56 +784,68 @@ describe('useSourceBrowser', () => {
     expect(result.current.tree?.[0].count).toBe(5)
   })
 
-  it.each([
-    ['traktor', 'traktorRecentCount', 'traktorTrackCount'],
-    ['engine', 'engineRecentCount', 'engineTrackCount'],
-  ] as const)(
+  it.each(['traktor', 'engine'] as const)(
     'counts %s from its own collection, never from rekordbox’s, so the tab shows the numbers of the library it is on',
-    async (source, recentCount, trackCount) => {
+    async (source) => {
       const counts = {
-        rekordboxRecentCount: vi.fn().mockResolvedValue(1),
-        rekordboxTrackCount: vi.fn().mockResolvedValue(1),
-        traktorRecentCount: vi.fn().mockResolvedValue(1),
-        traktorTrackCount: vi.fn().mockResolvedValue(1),
-        engineRecentCount: vi.fn().mockResolvedValue(1),
-        engineTrackCount: vi.fn().mockResolvedValue(1),
+        rekordbox: {
+          recentCount: vi.fn().mockResolvedValue(1),
+          trackCount: vi.fn().mockResolvedValue(1),
+        },
+        traktor: {
+          recentCount: vi.fn().mockResolvedValue(1),
+          trackCount: vi.fn().mockResolvedValue(1),
+        },
+        engine: {
+          recentCount: vi.fn().mockResolvedValue(1),
+          trackCount: vi.fn().mockResolvedValue(1),
+        },
       }
-      const { result } = setup({ ...counts, traktorAvailable: vi.fn().mockResolvedValue(true) })
+      const { result } = setup({
+        dj: {
+          ...counts,
+          traktor: { ...counts.traktor, available: vi.fn().mockResolvedValue(true) },
+        },
+      })
       act(() => result.current.selectSource(source))
       await waitFor(() => expect(result.current.tree).toHaveLength(3))
-      expect(counts[recentCount]).toHaveBeenCalled()
-      expect(counts[trackCount]).toHaveBeenCalled()
-      expect(counts.rekordboxRecentCount).not.toHaveBeenCalled()
-      expect(counts.rekordboxTrackCount).not.toHaveBeenCalled()
+      expect(counts[source].recentCount).toHaveBeenCalled()
+      expect(counts[source].trackCount).toHaveBeenCalled()
+      expect(counts.rekordbox.recentCount).not.toHaveBeenCalled()
+      expect(counts.rekordbox.trackCount).not.toHaveBeenCalled()
     },
   )
 
   it('asks no DJ program for a count while Music is open, since Music has no All tracks or Recently added of Surco’s', async () => {
     const counts = {
-      rekordboxRecentCount: vi.fn().mockResolvedValue(1),
-      rekordboxTrackCount: vi.fn().mockResolvedValue(1),
-      traktorRecentCount: vi.fn().mockResolvedValue(1),
-      traktorTrackCount: vi.fn().mockResolvedValue(1),
-      engineRecentCount: vi.fn().mockResolvedValue(1),
-      engineTrackCount: vi.fn().mockResolvedValue(1),
+      rekordbox: {
+        recentCount: vi.fn().mockResolvedValue(1),
+        trackCount: vi.fn().mockResolvedValue(1),
+      },
+      traktor: {
+        recentCount: vi.fn().mockResolvedValue(1),
+        trackCount: vi.fn().mockResolvedValue(1),
+      },
+      engine: {
+        recentCount: vi.fn().mockResolvedValue(1),
+        trackCount: vi.fn().mockResolvedValue(1),
+      },
     }
     const loadAppleMusicPlaylists = vi
       .fn()
       .mockResolvedValue([{ persistentId: 'P1', name: 'Friday', count: 4 }])
-    const { result } = setup({ ...counts, loadAppleMusicPlaylists })
+    const { result } = setup({ dj: counts, loadAppleMusicPlaylists })
     act(() => result.current.selectSource('appleMusic'))
     await waitFor(() => expect(result.current.tree).toHaveLength(1))
-    for (const count of Object.values(counts)) expect(count).not.toHaveBeenCalled()
+    for (const program of Object.values(counts))
+      for (const count of Object.values(program)) expect(count).not.toHaveBeenCalled()
   })
 
-  it.each([
-    ['traktor', 'traktorMembership'],
-    ['engine', 'engineMembership'],
-  ] as const)(
+  it.each(['traktor', 'engine'] as const)(
     're-reads which %s playlists the tracks are in when Surco gets the focus back',
-    async (library, method) => {
+    async (library) => {
       const membership = vi.fn().mockResolvedValue({ '/m/a.wav': ['1'] })
-      const { focus } = setup({ [method]: membership })
+      const { focus } = setup({ dj: { [library]: { membership } } })
       const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
       const wrapper = ({ children }: { children: React.ReactNode }) => (
         <QueryClientProvider client={client}>{children}</QueryClientProvider>
@@ -814,17 +864,17 @@ describe('useSourceBrowser', () => {
   )
 
   it('opens Engine DJ’s Recently added through the Engine playlist read', async () => {
-    const { result } = setup({ engineRecentCount: vi.fn().mockResolvedValue(1) })
+    const { result } = setup({ dj: { engine: { recentCount: vi.fn().mockResolvedValue(1) } } })
     act(() => result.current.selectSource('engine'))
     await waitFor(() => expect(result.current.tree).toHaveLength(2))
     act(() => result.current.selectPlaylist(result.current.tree?.[0] as SourceNode, []))
     await waitFor(() => expect(result.current.entries).toHaveLength(1))
-    expect(window.api.loadEnginePlaylist).toHaveBeenCalledWith(RECENTLY_ADDED_ID)
+    expect(window.api.dj.playlist).toHaveBeenCalledWith('engine', RECENTLY_ADDED_ID)
   })
 
   it('re-counts Engine DJ’s Recently added on focus, so a track just added in Engine shows up', async () => {
     const engineRecentCount = vi.fn().mockResolvedValueOnce(1).mockResolvedValue(2)
-    const { result, focus } = setup({ engineRecentCount })
+    const { result, focus } = setup({ dj: { engine: { recentCount: engineRecentCount } } })
     act(() => result.current.selectSource('engine'))
     await waitFor(() => expect(result.current.tree?.[0].count).toBe(1))
     act(() => focus())
@@ -835,7 +885,7 @@ describe('useSourceBrowser', () => {
   // so instead of failing after the user picked it.
   it('knows whether Traktor has a separator to copy', async () => {
     const { result } = setup({
-      traktorAvailable: vi.fn().mockResolvedValue(true),
+      dj: { traktor: { available: vi.fn().mockResolvedValue(true) } },
       traktorHasSeparator: vi.fn().mockResolvedValue(true),
     })
     act(() => result.current.selectSource('traktor'))

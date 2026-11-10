@@ -3,46 +3,50 @@ import { describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import { type DjProgram, RAIL_PROGRAMS } from '../../../shared/djProgram'
 import type { RekordboxPlaylistEdit, SourceNode } from '../../../shared/types'
-import { installApi } from '../test/api'
+import { djReads, installApi } from '../test/api'
 import { SOURCE_PROGRAMS, SOURCE_READ } from './sourcePrograms'
 
-describe('SOURCE_READ reads each DJ program’s tab from that program’s own bridge', () => {
+describe('SOURCE_READ reads each DJ program’s tab through window.api.dj, naming the program', () => {
   it.each([
-    ['rekordbox', 'available', 'rekordboxAvailable', []],
-    ['rekordbox', 'tree', 'loadRekordboxTree', []],
-    ['rekordbox', 'recentCount', 'rekordboxRecentCount', []],
-    ['rekordbox', 'trackCount', 'rekordboxTrackCount', []],
-    ['rekordbox', 'playlist', 'loadRekordboxPlaylist', ['house']],
-    ['rekordbox', 'membership', 'rekordboxMembership', [['/m/a.wav']]],
-    ['traktor', 'available', 'traktorAvailable', []],
-    ['traktor', 'tree', 'loadTraktorTree', []],
-    ['traktor', 'recentCount', 'traktorRecentCount', []],
-    ['traktor', 'trackCount', 'traktorTrackCount', []],
-    ['traktor', 'playlist', 'loadTraktorPlaylist', ['u1']],
-    ['traktor', 'membership', 'traktorMembership', [['/m/a.wav']]],
-    ['engine', 'available', 'engineAvailable', []],
-    ['engine', 'tree', 'loadEngineTree', []],
-    ['engine', 'recentCount', 'engineRecentCount', []],
-    ['engine', 'trackCount', 'engineTrackCount', []],
-    ['engine', 'playlist', 'loadEnginePlaylist', ['7']],
-    ['engine', 'membership', 'engineMembership', [['/m/a.wav']]],
-    ['serato', 'available', 'seratoAvailable', []],
-    ['serato', 'tree', 'loadSeratoTree', []],
-    ['serato', 'recentCount', 'seratoRecentCount', []],
-    ['serato', 'trackCount', 'seratoTrackCount', []],
-    ['serato', 'playlist', 'loadSeratoPlaylist', ['Sets%%Friday']],
-    ['serato', 'membership', 'seratoMembership', [['/m/a.wav']]],
-  ] as const)(
-    'reads %s’s %s through window.api.%s at call time',
-    async (program, read, method, args) => {
-      const answer = Symbol(method)
-      const spy = vi.fn(async () => answer)
-      installApi({ [method]: spy } as Partial<Api>)
-      const call = SOURCE_READ[program][read] as (...a: unknown[]) => Promise<unknown>
-      await expect(call(...args)).resolves.toBe(answer)
-      expect(spy).toHaveBeenCalledWith(...args)
-    },
-  )
+    ['rekordbox', 'available', []],
+    ['rekordbox', 'tree', []],
+    ['rekordbox', 'recentCount', []],
+    ['rekordbox', 'trackCount', []],
+    ['rekordbox', 'playlist', ['house']],
+    ['rekordbox', 'membership', [['/m/a.wav']]],
+    ['rekordbox', 'collection', []],
+    ['traktor', 'available', []],
+    ['traktor', 'tree', []],
+    ['traktor', 'recentCount', []],
+    ['traktor', 'trackCount', []],
+    ['traktor', 'playlist', ['u1']],
+    ['traktor', 'membership', [['/m/a.wav']]],
+    ['traktor', 'collection', []],
+    ['engine', 'available', []],
+    ['engine', 'tree', []],
+    ['engine', 'recentCount', []],
+    ['engine', 'trackCount', []],
+    ['engine', 'playlist', ['7']],
+    ['engine', 'membership', [['/m/a.wav']]],
+    ['serato', 'available', []],
+    ['serato', 'tree', []],
+    ['serato', 'recentCount', []],
+    ['serato', 'trackCount', []],
+    ['serato', 'playlist', ['Sets%%Friday']],
+    ['serato', 'membership', [['/m/a.wav']]],
+    ['serato', 'collection', []],
+  ] as const)('reads %s’s %s through window.api.dj at call time', async (program, read, args) => {
+    const answer = Symbol(read)
+    const spy = vi.fn(async () => answer)
+    installApi({ dj: { ...djReads(), [read]: spy } as unknown as Api['dj'] })
+    const call = SOURCE_READ[program][read] as (...a: unknown[]) => Promise<unknown>
+    await expect(call(...args)).resolves.toBe(answer)
+    expect(spy).toHaveBeenCalledWith(program, ...args)
+  })
+
+  it('leaves Engine DJ without a collection read, as it has none', () => {
+    expect(SOURCE_READ.engine.collection).toBeUndefined()
+  })
 })
 
 describe('RAIL_PROGRAMS', () => {

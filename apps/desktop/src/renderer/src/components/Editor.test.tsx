@@ -34,6 +34,7 @@ vi.hoisted(() => {
   ;(globalThis.window as unknown as { api: unknown }).api = { platform: 'win32' }
 })
 
+import { djReads, type ProgramReads } from '../test/api'
 import { Editor } from './Editor'
 
 afterEach(cleanup)
@@ -119,7 +120,9 @@ beforeEach(() => {
     // whether to show its paste button; default to empty and a no-op unsubscribe.
     hasClipboardImage: vi.fn().mockResolvedValue(false),
     onWindowFocus: vi.fn(() => () => {}),
-    rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(false),
+    dj: djReads({
+      rekordbox: { available: vi.fn<ProgramReads['available']>().mockResolvedValue(false) },
+    }),
   }
   // Section fold state persists in a module store across editor remounts; reset it so a
   // section a previous test toggled doesn't start the next one in the opposite state.
@@ -848,17 +851,19 @@ describe('Editor field edit after clear', () => {
 
 describe('Editor rekordbox Playlists field', () => {
   it('stays absent while the membership loads, so a token picked then cannot shrink the track playlists to itself', async () => {
-    rekordboxApiWith(vi.fn<Api['rekordboxMembership']>(() => new Promise(() => {})))
+    rekordboxApiWith(vi.fn<ProgramReads['membership']>(() => new Promise(() => {})))
     renderEditor({ id: 'a' }, 'wav', { visibleFields: ['rekordboxPlaylists'] })
-    await waitFor(() => expect(window.api.loadRekordboxTree).toHaveBeenCalled())
-    await waitFor(() => expect(window.api.rekordboxMembership).toHaveBeenCalled())
+    await waitFor(() => expect(window.api.dj.tree).toHaveBeenCalledWith('rekordbox'))
+    await waitFor(() =>
+      expect(window.api.dj.membership).toHaveBeenCalledWith('rekordbox', expect.anything()),
+    )
     await act(async () => {})
     expect(screen.queryByTestId('playlists-field')).toBeNull()
   })
 
   it('appears with the playlists the track already holds once options and membership resolve', async () => {
     rekordboxApiWith(
-      vi.fn<Api['rekordboxMembership']>().mockResolvedValue({ '/music/a.wav': ['3000'] }),
+      vi.fn<ProgramReads['membership']>().mockResolvedValue({ '/music/a.wav': ['3000'] }),
     )
     renderEditor({ id: 'a' }, 'wav', { visibleFields: ['rekordboxPlaylists'] })
     expect(await screen.findByTestId('playlists-field')).toBeInTheDocument()
@@ -866,7 +871,7 @@ describe('Editor rekordbox Playlists field', () => {
   })
 
   it('writes the picked playlist to the track as its chosen set', async () => {
-    rekordboxApiWith(vi.fn<Api['rekordboxMembership']>().mockResolvedValue({}))
+    rekordboxApiWith(vi.fn<ProgramReads['membership']>().mockResolvedValue({}))
     const { onChange } = renderEditor({ id: 'a' }, 'wav', {
       visibleFields: ['rekordboxPlaylists'],
     })
@@ -880,26 +885,32 @@ describe('Editor rekordbox Playlists field', () => {
 })
 
 describe('Editor Traktor and Engine DJ Playlists fields', () => {
-  function librariesWith(traktor: Api['traktorMembership'], engine: Api['engineMembership']) {
+  function librariesWith(traktor: ProgramReads['membership'], engine: ProgramReads['membership']) {
     Object.assign(window.api, {
-      traktorAvailable: vi.fn<Api['traktorAvailable']>().mockResolvedValue(true),
-      loadTraktorTree: vi
-        .fn<Api['loadTraktorTree']>()
-        .mockResolvedValue([{ id: 'fri', name: 'Friday', kind: 'playlist', count: 1 }]),
-      traktorMembership: traktor,
-      engineAvailable: vi.fn<Api['engineAvailable']>().mockResolvedValue(true),
-      loadEngineTree: vi
-        .fn<Api['loadEngineTree']>()
-        .mockResolvedValue([{ id: '7', name: 'House', kind: 'playlist', count: 1 }]),
-      engineMembership: engine,
+      dj: djReads({
+        traktor: {
+          available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+          tree: vi
+            .fn<ProgramReads['tree']>()
+            .mockResolvedValue([{ id: 'fri', name: 'Friday', kind: 'playlist', count: 1 }]),
+          membership: traktor,
+        },
+        engine: {
+          available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+          tree: vi
+            .fn<ProgramReads['tree']>()
+            .mockResolvedValue([{ id: '7', name: 'House', kind: 'playlist', count: 1 }]),
+          membership: engine,
+        },
+      }),
       traktorCanSave: vi.fn<Api['traktorCanSave']>().mockResolvedValue(true),
     })
   }
 
   it('writes a pick to that library alone, as the membership it was edited against', async () => {
     librariesWith(
-      vi.fn<Api['traktorMembership']>().mockResolvedValue({ '/music/a.wav': [] }),
-      vi.fn<Api['engineMembership']>().mockResolvedValue({ '/music/a.wav': ['7'] }),
+      vi.fn<ProgramReads['membership']>().mockResolvedValue({ '/music/a.wav': [] }),
+      vi.fn<ProgramReads['membership']>().mockResolvedValue({ '/music/a.wav': ['7'] }),
     )
     const { onChange } = renderEditor({ id: 'a' }, 'wav', {
       visibleFields: ['traktorPlaylists', 'enginePlaylists'],
@@ -917,8 +928,8 @@ describe('Editor Traktor and Engine DJ Playlists fields', () => {
 
   it('is offered for a track the library does not have yet, since converting adds it to the collection', async () => {
     librariesWith(
-      vi.fn<Api['traktorMembership']>().mockResolvedValue({}),
-      vi.fn<Api['engineMembership']>().mockResolvedValue({}),
+      vi.fn<ProgramReads['membership']>().mockResolvedValue({}),
+      vi.fn<ProgramReads['membership']>().mockResolvedValue({}),
     )
     renderEditor({ id: 'a' }, 'wav', { visibleFields: ['traktorPlaylists', 'enginePlaylists'] })
     for (const id of ['traktor-playlists-field', 'engine-playlists-field']) {
@@ -931,11 +942,15 @@ describe('Editor Traktor and Engine DJ Playlists fields', () => {
 describe('Editor Serato crates field', () => {
   it('picks a crate for a track Serato does not have yet', async () => {
     Object.assign(window.api, {
-      seratoAvailable: vi.fn<Api['seratoAvailable']>().mockResolvedValue(true),
-      loadSeratoTree: vi
-        .fn<Api['loadSeratoTree']>()
-        .mockResolvedValue([{ id: 'A', name: 'A', kind: 'playlist', count: 0 }]),
-      seratoMembership: vi.fn<Api['seratoMembership']>().mockResolvedValue({}),
+      dj: djReads({
+        serato: {
+          available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+          tree: vi
+            .fn<ProgramReads['tree']>()
+            .mockResolvedValue([{ id: 'A', name: 'A', kind: 'playlist', count: 0 }]),
+          membership: vi.fn<ProgramReads['membership']>().mockResolvedValue({}),
+        },
+      }),
     })
     const { onChange } = renderEditor({ id: 'a' }, 'wav', { visibleFields: ['seratoPlaylists'] })
     const field = await screen.findByTestId('serato-playlists-field')
@@ -951,13 +966,17 @@ describe('Editor Serato crates field', () => {
 describe('Editor Traktor Playlists field without a confirmed collection', () => {
   it('stays disabled and says where to choose the collection, since Surco writes only to that one', async () => {
     Object.assign(window.api, {
-      traktorAvailable: vi.fn<Api['traktorAvailable']>().mockResolvedValue(true),
-      loadTraktorTree: vi
-        .fn<Api['loadTraktorTree']>()
-        .mockResolvedValue([{ id: 'fri', name: 'Friday', kind: 'playlist', count: 1 }]),
-      traktorMembership: vi
-        .fn<Api['traktorMembership']>()
-        .mockResolvedValue({ '/music/a.wav': ['fri'] }),
+      dj: djReads({
+        traktor: {
+          available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+          tree: vi
+            .fn<ProgramReads['tree']>()
+            .mockResolvedValue([{ id: 'fri', name: 'Friday', kind: 'playlist', count: 1 }]),
+          membership: vi
+            .fn<ProgramReads['membership']>()
+            .mockResolvedValue({ '/music/a.wav': ['fri'] }),
+        },
+      }),
       traktorCanSave: vi.fn<Api['traktorCanSave']>().mockResolvedValue(false),
     })
     renderEditor({ id: 'a' }, 'wav', { visibleFields: ['traktorPlaylists'] })
@@ -1777,11 +1796,15 @@ describe('Editor multi-select sequential edits', () => {
 
 const rekordboxTree = [{ id: '3000', name: 'Makina', kind: 'playlist' as const, count: 1 }]
 
-function rekordboxApiWith(membership: Api['rekordboxMembership']): void {
+function rekordboxApiWith(membership: ProgramReads['membership']): void {
   Object.assign(window.api, {
-    rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
-    loadRekordboxTree: vi.fn<Api['loadRekordboxTree']>().mockResolvedValue(rekordboxTree),
-    rekordboxMembership: membership,
+    dj: djReads({
+      rekordbox: {
+        available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+        tree: vi.fn<ProgramReads['tree']>().mockResolvedValue(rekordboxTree),
+        membership: membership,
+      },
+    }),
   })
 }
 
@@ -1916,7 +1939,7 @@ describe('Editor multi-select', () => {
 
   it('completes a playlist only some of the tracks hold into per-track patches for all of them', async () => {
     rekordboxApiWith(
-      vi.fn<Api['rekordboxMembership']>().mockResolvedValue({ '/music/a.wav': ['3000'] }),
+      vi.fn<ProgramReads['membership']>().mockResolvedValue({ '/music/a.wav': ['3000'] }),
     )
     const { onChangeTracksPlaylists } = renderMulti({ visibleFields: ['rekordboxPlaylists'] })
     fireEvent.click(await screen.findByTestId('playlists-summary'))

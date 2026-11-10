@@ -4,6 +4,7 @@
 // mismatch — and the renderer (via index.d.ts) reads the very same shape.
 import type { PeekableAnalyses } from '../shared/audioIpcContract'
 import type { CueProfile, CueProfileRead, TasteTrack } from '../shared/cueProfile'
+import type { DjApi } from '../shared/djApi'
 import type { DropInput } from '../shared/dropDetect'
 import type { GridFit } from '../shared/gridEdit'
 import type { GridVerdict } from '../shared/gridVerdict'
@@ -16,7 +17,6 @@ import type {
   AppleMusicTrackMeta,
   AppleMusicUpdateJob,
   BpmResult,
-  CollectionTrack,
   CoverExportJob,
   CoverRead,
   DamageOutcome,
@@ -72,8 +72,6 @@ import type {
   SessionData,
   SessionEdit,
   Settings,
-  SourceNode,
-  SourcePlaylistEntry,
   SpectrumResult,
   SpectrumVerdict,
   SurcoGrid,
@@ -248,33 +246,7 @@ export interface Api {
   appleMusicArtwork: (
     persistentIds: string[],
   ) => Promise<Record<string, { coverPath: string; coverUrl: string }>>
-  // Whether this machine has a rekordbox collection Surco can read. False for a user
-  // without rekordbox, the normal case: the source then simply is not offered.
-  rekordboxAvailable: () => Promise<boolean>
-  // The collection's folder and playlist tree, read-only. Empty when unreadable.
-  loadRekordboxTree: () => Promise<SourceNode[]>
-  rekordboxRecentCount: () => Promise<number>
-  rekordboxTrackCount: () => Promise<number>
-  loadRekordboxCollection: () => Promise<CollectionTrack[]>
-  // One playlist's rows in order, separators and file-less rows included.
-  loadRekordboxPlaylist: (id: string) => Promise<SourcePlaylistEntry[]>
-  engineAvailable: () => Promise<boolean>
-  loadEngineTree: () => Promise<SourceNode[]>
-  engineRecentCount: () => Promise<number>
-  engineTrackCount: () => Promise<number>
-  loadEnginePlaylist: (id: string) => Promise<SourcePlaylistEntry[]>
-  traktorAvailable: () => Promise<boolean>
-  loadTraktorTree: () => Promise<SourceNode[]>
-  traktorRecentCount: () => Promise<number>
-  traktorTrackCount: () => Promise<number>
-  loadTraktorCollection: () => Promise<CollectionTrack[]>
-  loadTraktorPlaylist: (id: string) => Promise<SourcePlaylistEntry[]>
-  seratoAvailable: () => Promise<boolean>
-  loadSeratoTree: () => Promise<SourceNode[]>
-  seratoRecentCount: () => Promise<number>
-  seratoTrackCount: () => Promise<number>
-  loadSeratoCollection: () => Promise<CollectionTrack[]>
-  loadSeratoPlaylist: (id: string) => Promise<SourcePlaylistEntry[]>
+  dj: DjApi
   seratoRunning: () => Promise<boolean>
   djAppRunning: () => Promise<boolean>
   holdsInLibrary: (path: string, titles: string[]) => Promise<boolean>
@@ -306,10 +278,6 @@ export interface Api {
   saveRekordboxCues: (reqs: SaveCuesRequest[]) => Promise<void>
   rekordboxQueuedCues: (contentId: string) => Promise<QueuedCues | null>
   undoRekordboxCues: (contentId: string) => Promise<void>
-  rekordboxMembership: (paths: string[]) => Promise<Record<string, string[]>>
-  traktorMembership: (paths: string[]) => Promise<Record<string, string[]>>
-  seratoMembership: (paths: string[]) => Promise<Record<string, string[]>>
-  engineMembership: (paths: string[]) => Promise<Record<string, string[]>>
   onRekordboxQueueChanged: (cb: (state: RekordboxQueueState) => void) => () => void
   onRekordboxQueueApplied: (cb: (applied: RekordboxQueueApplied) => void) => () => void
   // Whether the collection has a separator track that can be copied into a playlist.

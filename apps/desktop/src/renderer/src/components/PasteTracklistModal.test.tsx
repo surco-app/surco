@@ -5,10 +5,9 @@ import { join } from 'node:path'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
-import type { Api } from '../../../preload/api'
 import type { CollectionTrack, SourceNode } from '../../../shared/types'
 import i18n from '../i18n'
-import { installApi } from '../test/api'
+import { djReads, installApi, type ProgramReads } from '../test/api'
 import { PasteTracklistModal } from './PasteTracklistModal'
 
 beforeAll(() => i18n.changeLanguage('es'))
@@ -51,9 +50,13 @@ const FOLDER: SourceNode = { id: 'sets', name: 'Sets', kind: 'folder', count: 1 
 
 function setup(over: { create?: boolean; collection?: () => Promise<CollectionTrack[]> } = {}) {
   installApi({
-    loadRekordboxCollection: vi
-      .fn<Api['loadRekordboxCollection']>()
-      .mockImplementation(over.collection ?? (async () => SMALL)),
+    dj: djReads({
+      rekordbox: {
+        collection: vi
+          .fn<ProgramReads['collection']>()
+          .mockImplementation(over.collection ?? (async () => SMALL)),
+      },
+    }),
   })
   const onAdd = vi.fn()
   const onClose = vi.fn()

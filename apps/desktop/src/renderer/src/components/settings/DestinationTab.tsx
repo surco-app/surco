@@ -620,7 +620,7 @@ function SeratoSection({
   const { t: tr } = useTranslation()
   const [found, setFound] = useState(false)
   useEffect(() => {
-    void window.api.seratoAvailable().then(setFound, () => {})
+    void window.api.dj.available('serato').then(setFound, () => {})
   }, [])
   return (
     <SettingsSection eyebrow={tr('settings.seratoSync')} searchId="seratoSync" first>
