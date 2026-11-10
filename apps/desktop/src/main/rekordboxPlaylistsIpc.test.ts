@@ -22,11 +22,11 @@ import { ORGANISE_FIXTURE, writeRekordboxPlaylistFixture } from './rekordboxPlay
 import {
   collectionAvailable,
   registerRekordboxPlaylistsIpc,
+  rekordboxRead,
   withCollection,
 } from './rekordboxPlaylistsIpc'
 import { applyRekordboxBatch } from './rekordboxPlaylistWrite'
 import { createRekordboxQueue, type RekordboxQueue } from './rekordboxQueue'
-import { registerRekordboxQueueIpc } from './rekordboxQueueIpc'
 
 describe('withCollection', () => {
   it('falls back when there is no collection, the normal case for a user without rekordbox', () => {
@@ -113,12 +113,12 @@ describe('registerRekordboxPlaylistsIpc', () => {
     const path = join(dir, 'master.db')
     writeRekordboxPlaylistFixture(path, ORGANISE_FIXTURE)
     const allowMedia = vi.fn()
-    registerRekordboxPlaylistsIpc(() => path, {
-      ensureClosed: vi.fn(async () => true),
-      queue: queueFor(path),
-      allowMedia,
-    })
-    const entries = (await handler('rekordbox:playlist')({}, '2000')) as SourcePlaylistEntry[]
+    const read = rekordboxRead(
+      () => path,
+      () => path,
+      { allowMedia },
+    )
+    const entries = (await read.playlist('2000')) as SourcePlaylistEntry[]
     const paths = entries.flatMap((e) => (e.path && !e.separator ? [e.path] : []))
     expect(paths.length).toBeGreaterThan(0)
     expect(entries.every((e) => e.separator || e.path === null || e.preview)).toBe(true)
@@ -128,12 +128,13 @@ describe('registerRekordboxPlaylistsIpc', () => {
   it('opens the playlist with the key already stretched, since stretching the passphrase on every open held the main process for 80 ms', async () => {
     const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')
     writeRekordboxPlaylistFixture(path, ORGANISE_FIXTURE)
-    registerRekordboxPlaylistsIpc(() => path, {
-      ensureClosed: vi.fn(async () => true),
-      queue: queueFor(path),
-    })
+    const read = rekordboxRead(
+      () => path,
+      () => path,
+      {},
+    )
     vi.mocked(openRekordboxDb).mockClear()
-    await handler('rekordbox:playlist')({}, '2000')
+    await read.playlist('2000')
     expect(openRekordboxDb).toHaveBeenCalledWith(path, {
       readonly: true,
       key: await rekordboxRawKey(path),
@@ -147,11 +148,16 @@ describe('registerRekordboxPlaylistsIpc', () => {
       ensureClosed: vi.fn(async () => true),
       queue: queueFor(path),
     })
+    const read = rekordboxRead(
+      () => path,
+      () => path,
+      {},
+    )
     const key = await rekordboxRawKey(path)
     vi.mocked(openRekordboxDb).mockClear()
-    await handler('rekordbox:tree')()
+    await read.tree()
     await handler('rekordbox:hasSeparator')()
-    await handler('rekordbox:recentCount')()
+    await read.recentCount()
     expect(vi.mocked(openRekordboxDb).mock.calls).toEqual([
       [path, { readonly: true, key }],
       [path, { readonly: true, key }],
@@ -162,7 +168,6 @@ describe('registerRekordboxPlaylistsIpc', () => {
   it('reads a track opened in the editor, its cues and its playlists, with the stretched key, since the two back to back held the main process for 210 ms', async () => {
     const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')
     writeRekordboxPlaylistFixture(path, ORGANISE_FIXTURE)
-    const queue = queueFor(path)
     registerRekordboxCuesIpc({
       collection: () => path,
       queue: { enqueue: vi.fn(), cuesOp: vi.fn(), drop: vi.fn() },
@@ -173,14 +178,15 @@ describe('registerRekordboxPlaylistsIpc', () => {
       provisional: { add: vi.fn() },
       twins: async () => ({}),
     })
-    registerRekordboxQueueIpc(queue, {
-      collection: () => path,
-      ensureClosed: vi.fn(async () => true),
-    })
+    const read = rekordboxRead(
+      () => path,
+      () => path,
+      {},
+    )
     const key = await rekordboxRawKey(path)
     vi.mocked(openRekordboxDb).mockClear()
     await Promise.resolve(handler('rekordbox:trackCues')({}, 'c1')).catch(() => null)
-    await Promise.resolve(handler('rekordbox:membership')({}, ['/m/a.wav'])).catch(() => null)
+    await Promise.resolve(read.membership(['/m/a.wav'])).catch(() => null)
     expect(vi.mocked(openRekordboxDb).mock.calls).toEqual([
       [path, { readonly: true, key }],
       [path, { readonly: true, key }],
@@ -243,11 +249,12 @@ describe('registerRekordboxPlaylistsIpc', () => {
       ...ORGANISE_FIXTURE,
       content: ORGANISE_FIXTURE.content.map((c, i) => (i < 2 ? { ...c, StockDate: today } : c)),
     })
-    registerRekordboxPlaylistsIpc(() => path, {
-      ensureClosed: vi.fn(async () => true),
-      queue: queueFor(path),
-    })
-    expect(await handler('rekordbox:recentCount')()).toBe(2)
+    const read = rekordboxRead(
+      () => path,
+      () => path,
+      {},
+    )
+    expect(await read.recentCount()).toBe(2)
   })
 
   // The write's transaction spans an await: two at once would fight over SQLite's busy
@@ -438,24 +445,26 @@ describe('registerRekordboxPlaylistsIpc', () => {
     const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')
     writeRekordboxPlaylistFixture(path, ORGANISE_FIXTURE)
     let configured = ''
-    registerRekordboxPlaylistsIpc(() => configured, {
-      ensureClosed: vi.fn(async () => true),
-      queue: queueFor(path),
-    })
-    expect(await handler('rekordbox:available')()).toBe(false)
+    const read = rekordboxRead(
+      () => configured,
+      () => configured,
+      {},
+    )
+    expect(await read.available()).toBe(false)
     configured = path
-    expect(await handler('rekordbox:available')()).toBe(true)
+    expect(await read.available()).toBe(true)
   })
 
   it('counts every track of the collection and lists it as rows to match against', async () => {
     const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')
     writeRekordboxPlaylistFixture(path, ORGANISE_FIXTURE)
-    registerRekordboxPlaylistsIpc(() => path, {
-      ensureClosed: vi.fn(async () => true),
-      queue: queueFor(path),
-    })
-    const rows = (await handler('rekordbox:collectionTracks')()) as CollectionTrack[]
-    expect(await handler('rekordbox:trackCount')()).toBeGreaterThan(0)
+    const read = rekordboxRead(
+      () => path,
+      () => path,
+      {},
+    )
+    const rows = (await read.collection?.()) as CollectionTrack[]
+    expect(await read.trackCount()).toBeGreaterThan(0)
     expect(rows.map((r) => r.title)).toContain('Night Train')
     expect(rows.find((r) => r.title === 'Night Train')?.path).toBe(
       '/Volumes/Public/Music/Night Train.aiff',
@@ -465,12 +474,22 @@ describe('registerRekordboxPlaylistsIpc', () => {
   it('answers which playlists hold each file of the collection, so the field can fill in', async () => {
     const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')
     writeRekordboxPlaylistFixture(path, ORGANISE_FIXTURE)
-    registerRekordboxQueueIpc(queueFor(path), {
-      collection: () => path,
-      ensureClosed: vi.fn(async () => true),
+    const read = rekordboxRead(
+      () => path,
+      () => path,
+      {},
+    )
+    expect(await read.membership(['/Volumes/Public/Music/Night Train.aiff'])).toEqual({
+      '/Volumes/Public/Music/Night Train.aiff': ['2000'],
     })
-    expect(
-      await handler('rekordbox:membership')({}, ['/Volumes/Public/Music/Night Train.aiff']),
-    ).toEqual({ '/Volumes/Public/Music/Night Train.aiff': ['2000'] })
+  })
+
+  it('answers no membership without a collection', async () => {
+    const read = rekordboxRead(
+      () => '',
+      () => '',
+      {},
+    )
+    expect(await read.membership(['/m/a.wav'])).toEqual({})
   })
 })

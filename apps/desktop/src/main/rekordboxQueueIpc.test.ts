@@ -73,7 +73,7 @@ describe('registerRekordboxQueueIpc', () => {
   it('applies now behind the close dialog and answers with the notice', async () => {
     const q = queue()
     const ensureClosed = vi.fn(async () => true)
-    registerRekordboxQueueIpc(q, { collection: () => '/c/master.db', ensureClosed })
+    registerRekordboxQueueIpc(q, { ensureClosed })
     expect(await handler('rekordbox:applyNow')({ sender: {} })).toEqual(appliedNotice(APPLIED))
     expect(ensureClosed).toHaveBeenCalledWith('window')
     expect(q.apply).toHaveBeenCalledWith(expect.any(Function), { manual: true })
@@ -88,7 +88,6 @@ describe('registerRekordboxQueueIpc', () => {
       return apply ? apply(...args) : APPLIED
     })
     registerRekordboxQueueIpc(q, {
-      collection: () => '/c/master.db',
       ensureClosed: vi.fn(async () => true),
       beginMoment: (r) => order.push(`begin:${r}`),
     })
@@ -99,7 +98,6 @@ describe('registerRekordboxQueueIpc', () => {
   it('starts the queue only once the window listens, so the startup apply is never announced to nobody', async () => {
     const onReady = vi.fn()
     registerRekordboxQueueIpc(queue(), {
-      collection: () => '/c/master.db',
       ensureClosed: vi.fn(async () => true),
       onReady,
     })
@@ -111,7 +109,6 @@ describe('registerRekordboxQueueIpc', () => {
   it('wakes the watcher when the apply is cancelled and the work keeps waiting', async () => {
     const onWaiting = vi.fn()
     registerRekordboxQueueIpc(queue({ status: 'refused', reason: 'cancelled' }), {
-      collection: () => '/c/master.db',
       ensureClosed: vi.fn(async () => false),
       onWaiting,
     })
@@ -122,7 +119,6 @@ describe('registerRekordboxQueueIpc', () => {
   it('does not wake the watcher after a refusal that retrying would only repeat', async () => {
     const onWaiting = vi.fn()
     registerRekordboxQueueIpc(queue({ status: 'refused', reason: 'backup-failed' }), {
-      collection: () => '/c/master.db',
       ensureClosed: vi.fn(async () => true),
       onWaiting,
     })
@@ -133,7 +129,6 @@ describe('registerRekordboxQueueIpc', () => {
   it('discards and reports the state', async () => {
     const q = queue()
     registerRekordboxQueueIpc(q, {
-      collection: () => '',
       ensureClosed: vi.fn(async () => true),
     })
     await handler('rekordbox:discardQueue')()
@@ -141,20 +136,11 @@ describe('registerRekordboxQueueIpc', () => {
     expect(handler('rekordbox:queue')()).toEqual({ tracks: 1, changes: 0, items: [] })
   })
 
-  it('answers no membership without a collection', async () => {
-    registerRekordboxQueueIpc(queue(), {
-      collection: () => '',
-      ensureClosed: vi.fn(async () => true),
-    })
-    expect(await handler('rekordbox:membership')({}, ['/m/a.wav'])).toEqual({})
-  })
-
   // The tracks a conversion left pending on this queue are checked once it applies by hand,
   // and an apply that throws or a discarded queue never leaves them pending.
   it('tells the verification how an apply by hand went', async () => {
     const onSettled = vi.fn()
     registerRekordboxQueueIpc(queue(), {
-      collection: () => '',
       ensureClosed: vi.fn(async () => true),
       onSettled,
     })
@@ -167,7 +153,6 @@ describe('registerRekordboxQueueIpc', () => {
     const q = queue()
     q.apply.mockRejectedValueOnce(new Error('disk gone'))
     registerRekordboxQueueIpc(q, {
-      collection: () => '',
       ensureClosed: vi.fn(async () => true),
       onSettled,
     })
@@ -179,7 +164,6 @@ describe('registerRekordboxQueueIpc', () => {
     const onDiscarded = vi.fn()
     const q = queue()
     registerRekordboxQueueIpc(q, {
-      collection: () => '',
       ensureClosed: vi.fn(async () => true),
       onDiscarded,
     })

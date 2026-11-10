@@ -1,8 +1,9 @@
 import { randomUUID } from 'node:crypto'
-import { existsSync } from 'node:fs'
+import { existsSync, realpathSync } from 'node:fs'
 import { realpath } from 'node:fs/promises'
 import { BrowserWindow, ipcMain } from 'electron'
 import log from 'electron-log/main'
+import type { DjReadMain } from '../shared/djApi'
 import { mediaPathFromUrl } from '../shared/media'
 import type { RekordboxEditResult, RekordboxPlaylistEdit } from '../shared/types'
 import { pathAliasesOf } from './libraryPathKey'
@@ -10,6 +11,7 @@ import { serialLibraryFlush } from './libraryTagSync'
 import { rekordboxShareDir } from './rekordboxArtwork'
 import { openRekordboxDb, rekordboxRawKey } from './rekordboxDb'
 import { readNodeStamps } from './rekordboxMasterXml'
+import { readMembership } from './rekordboxMembership'
 import { separatorContent } from './rekordboxPlaylistEdit'
 import {
   readRecentlyAddedCount,
@@ -75,45 +77,63 @@ export async function keyOf(path: string): Promise<string | undefined> {
   return path ? rekordboxRawKey(path).catch(() => undefined) : undefined
 }
 
+export function rekordboxRead(
+  collection: () => string,
+  membershipCollection: () => string,
+  host: Pick<PlaylistEditHost, 'allowMedia'>,
+): DjReadMain {
+  return {
+    available: () => collectionAvailable(collection()),
+    tree: async () => {
+      const path = collection()
+      return withCollection(path, readRekordboxTree, [], await keyOf(path))
+    },
+    recentCount: async () => {
+      const path = collection()
+      return withCollection(path, (db) => readRecentlyAddedCount(db), 0, await keyOf(path))
+    },
+    trackCount: async () => {
+      const path = collection()
+      return withCollection(path, readRekordboxTrackCount, 0, await keyOf(path))
+    },
+    collection: async () => {
+      const path = collection()
+      return withCollection(path, readRekordboxCollection, [], await keyOf(path))
+    },
+    playlist: async (id: string) => {
+      const path = collection()
+      const entries = withCollection(
+        path,
+        (db) => readRekordboxPlaylistWithPreview(db, rekordboxShareDir(path), id),
+        [],
+        await keyOf(path),
+      )
+      host.allowMedia?.(
+        entries.flatMap((e) => [
+          ...(e.path && !e.separator ? [e.path] : []),
+          ...(e.preview?.coverUrl ? [mediaPathFromUrl(e.preview.coverUrl)] : []),
+        ]),
+      )
+      return entries
+    },
+    membership: async (paths: string[]) => {
+      const path = membershipCollection()
+      return withCollection(
+        path,
+        (db) => readMembership(db, paths, { realPath: (p: string) => realpathSync(p) }),
+        {},
+        await keyOf(path),
+      )
+    },
+  }
+}
+
 // The collection path is resolved on every call, not captured once: the user can change
 // the override in Settings while Surco runs.
 export function registerRekordboxPlaylistsIpc(
   collection: () => string,
   host: PlaylistEditHost,
 ): void {
-  ipcMain.handle('rekordbox:available', () => collectionAvailable(collection()))
-  ipcMain.handle('rekordbox:tree', async () => {
-    const path = collection()
-    return withCollection(path, readRekordboxTree, [], await keyOf(path))
-  })
-  ipcMain.handle('rekordbox:recentCount', async () => {
-    const path = collection()
-    return withCollection(path, (db) => readRecentlyAddedCount(db), 0, await keyOf(path))
-  })
-  ipcMain.handle('rekordbox:trackCount', async () => {
-    const path = collection()
-    return withCollection(path, readRekordboxTrackCount, 0, await keyOf(path))
-  })
-  ipcMain.handle('rekordbox:collectionTracks', async () => {
-    const path = collection()
-    return withCollection(path, readRekordboxCollection, [], await keyOf(path))
-  })
-  ipcMain.handle('rekordbox:playlist', async (_e, id: string) => {
-    const path = collection()
-    const entries = withCollection(
-      path,
-      (db) => readRekordboxPlaylistWithPreview(db, rekordboxShareDir(path), id),
-      [],
-      await keyOf(path),
-    )
-    host.allowMedia?.(
-      entries.flatMap((e) => [
-        ...(e.path && !e.separator ? [e.path] : []),
-        ...(e.preview?.coverUrl ? [mediaPathFromUrl(e.preview.coverUrl)] : []),
-      ]),
-    )
-    return entries
-  })
   // Rows dragged out of the list and dropped back in come with the OS's spelling of their
   // files, which may be resolved through the symlinked music folder.
   ipcMain.handle('library:pathAliases', (_e, paths: unknown) =>

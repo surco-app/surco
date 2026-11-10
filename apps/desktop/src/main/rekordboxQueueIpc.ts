@@ -1,9 +1,6 @@
-import { realpathSync } from 'node:fs'
 import { BrowserWindow, ipcMain } from 'electron'
 import type { CopyReason, RekordboxQueueApplied } from '../shared/types'
 import { serialLibraryFlush } from './libraryTagSync'
-import { readMembership } from './rekordboxMembership'
-import { keyOf, withCollection } from './rekordboxPlaylistsIpc'
 import type { QueueApply, RekordboxQueue } from './rekordboxQueue'
 import { stillWaiting } from './rekordboxQueueWatch'
 
@@ -22,7 +19,6 @@ export function appliedNotice(result: QueueApply): RekordboxQueueApplied | null 
 }
 
 export interface QueueIpcHost {
-  collection: () => string
   ensureClosed: (win: BrowserWindow | null) => Promise<boolean>
   onWaiting?: () => void
   onReady?: () => void
@@ -57,13 +53,4 @@ export function registerRekordboxQueueIpc(queue: RekordboxQueue, host: QueueIpcH
     host.onDiscarded?.()
   })
   ipcMain.handle('rekordbox:queueReady', () => host.onReady?.())
-  ipcMain.handle('rekordbox:membership', async (_e, paths: string[]) => {
-    const path = host.collection()
-    return withCollection(
-      path,
-      (db) => readMembership(db, paths, { realPath: (p: string) => realpathSync(p) }),
-      {},
-      await keyOf(path),
-    )
-  })
 }

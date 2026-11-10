@@ -1,6 +1,6 @@
 import { existsSync, realpathSync } from 'node:fs'
-import { ipcMain } from 'electron'
 import log from 'electron-log/main'
+import type { DjReadMain } from '../shared/djApi'
 import { mediaPathFromUrl } from '../shared/media'
 import {
   type EngineDb,
@@ -36,39 +36,34 @@ export interface EnginePlaylistsHost {
   allowMedia?: (paths: string[]) => void
 }
 
-export function registerEnginePlaylistsIpc(
-  libraryDir: () => string,
-  host: EnginePlaylistsHost,
-): void {
-  ipcMain.handle('engine:available', () => {
-    const dir = libraryDir()
-    return dir !== '' && existsSync(engineDatabasePath(dir))
-  })
-  ipcMain.handle('engine:tree', () => withEngineLibrary(libraryDir(), readEngineTree, []))
-  ipcMain.handle('engine:recentCount', () =>
-    withEngineLibrary(libraryDir(), (db) => readEngineRecentCount(db), 0),
-  )
-  ipcMain.handle('engine:trackCount', () =>
-    withEngineLibrary(libraryDir(), readEngineTrackCount, 0),
-  )
-  ipcMain.handle('engine:playlist', (_e, id: string) => {
-    const dir = libraryDir()
-    const entries = withEngineLibrary(
-      dir,
-      (db) => readEnginePlaylist(db, dir, id, host.artDir()),
-      [],
-    )
-    host.allowMedia?.(
-      entries.flatMap((e) => [
-        ...(e.path ? [e.path] : []),
-        ...(e.preview?.coverUrl ? [mediaPathFromUrl(e.preview.coverUrl)] : []),
-      ]),
-    )
-    return entries
-  })
-  ipcMain.handle('engine:membership', (_e, paths: string[]) => {
-    const dir = libraryDir()
-    const key = pathKey({ realPath: (p: string) => realpathSync(p) })
-    return withEngineLibrary(dir, (db) => readEngineMembership(db, dir, paths, key), {})
-  })
+export function engineRead(libraryDir: () => string, host: EnginePlaylistsHost): DjReadMain {
+  return {
+    available: () => {
+      const dir = libraryDir()
+      return dir !== '' && existsSync(engineDatabasePath(dir))
+    },
+    tree: () => withEngineLibrary(libraryDir(), readEngineTree, []),
+    recentCount: () => withEngineLibrary(libraryDir(), (db) => readEngineRecentCount(db), 0),
+    trackCount: () => withEngineLibrary(libraryDir(), readEngineTrackCount, 0),
+    playlist: (id: string) => {
+      const dir = libraryDir()
+      const entries = withEngineLibrary(
+        dir,
+        (db) => readEnginePlaylist(db, dir, id, host.artDir()),
+        [],
+      )
+      host.allowMedia?.(
+        entries.flatMap((e) => [
+          ...(e.path ? [e.path] : []),
+          ...(e.preview?.coverUrl ? [mediaPathFromUrl(e.preview.coverUrl)] : []),
+        ]),
+      )
+      return entries
+    },
+    membership: (paths: string[]) => {
+      const dir = libraryDir()
+      const key = pathKey({ realPath: (p: string) => realpathSync(p) })
+      return withEngineLibrary(dir, (db) => readEngineMembership(db, dir, paths, key), {})
+    },
+  }
 }

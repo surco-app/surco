@@ -9,7 +9,7 @@ vi.mock('electron', () => ({ ipcMain: { handle: vi.fn() } }))
 import type { CollectionTrack, SourceNode, SourcePlaylistEntry } from '../shared/types'
 import { concat, frame, track, utf16be } from './seratoDatabaseFixture'
 import type { SeratoLibraryRoot } from './seratoLibrary'
-import { registerSeratoPlaylistsIpc } from './seratoPlaylistsIpc'
+import { registerSeratoPlaylistsIpc, seratoRead } from './seratoPlaylistsIpc'
 
 function handler(channel: string): (...args: unknown[]) => unknown {
   const call = [...vi.mocked(ipcMain.handle).mock.calls]
@@ -41,31 +41,31 @@ function library(): SeratoLibraryRoot {
   return { dir, root: '/' }
 }
 
-describe('registerSeratoPlaylistsIpc', () => {
+describe('seratoRead', () => {
   it('says Serato is there only while a library is found, so the tab shows only where Serato ran', () => {
     let roots: SeratoLibraryRoot[] = [library()]
-    registerSeratoPlaylistsIpc({ roots: () => roots })
-    expect(handler('serato:available')({})).toBe(true)
+    const read = seratoRead({ roots: () => roots })
+    expect(read.available()).toBe(true)
     roots = []
-    expect(handler('serato:available')({})).toBe(false)
+    expect(read.available()).toBe(false)
   })
 
   it('reads the libraries found now, since a drive can be plugged in while Surco runs', () => {
     let roots: SeratoLibraryRoot[] = []
-    registerSeratoPlaylistsIpc({ roots: () => roots })
-    expect(handler('serato:tree')({})).toEqual([])
-    expect(handler('serato:recentCount')({})).toBe(0)
-    expect(handler('serato:trackCount')({})).toBe(0)
+    const read = seratoRead({ roots: () => roots })
+    expect(read.tree()).toEqual([])
+    expect(read.recentCount()).toBe(0)
+    expect(read.trackCount()).toBe(0)
     roots = [library()]
-    expect((handler('serato:tree')({}) as SourceNode[]).map((n) => n.name)).toEqual(['Friday'])
-    expect(handler('serato:recentCount')({})).toBe(1)
-    expect(handler('serato:trackCount')({})).toBe(2)
+    expect((read.tree() as SourceNode[]).map((n) => n.name)).toEqual(['Friday'])
+    expect(read.recentCount()).toBe(1)
+    expect(read.trackCount()).toBe(2)
   })
 
   it('answers which crates hold each file', () => {
     const roots = [library()]
-    registerSeratoPlaylistsIpc({ roots: () => roots })
-    expect(handler('serato:membership')({}, ['/Music/a.mp3'])).toEqual({
+    const read = seratoRead({ roots: () => roots })
+    expect(read.membership(['/Music/a.mp3'])).toEqual({
       '/Music/a.mp3': ['Friday'],
     })
   })
@@ -73,8 +73,8 @@ describe('registerSeratoPlaylistsIpc', () => {
   it('grants the files of the crate it read, so the rows can play before any disk walk', () => {
     const roots = [library()]
     const allowMedia = vi.fn()
-    registerSeratoPlaylistsIpc({ roots: () => roots, allowMedia })
-    const entries = handler('serato:playlist')({}, 'Friday') as SourcePlaylistEntry[]
+    const read = seratoRead({ roots: () => roots, allowMedia })
+    const entries = read.playlist('Friday') as SourcePlaylistEntry[]
     expect(entries.map((e) => e.path)).toEqual(['/Music/a.mp3', '/Music/b.mp3'])
     expect(allowMedia).toHaveBeenCalledWith(['/Music/a.mp3', '/Music/b.mp3'])
   })
@@ -89,10 +89,10 @@ describe('registerSeratoPlaylistsIpc', () => {
 
   it('lists the whole collection as rows to match against, read from the libraries found now', () => {
     let roots: SeratoLibraryRoot[] = []
-    registerSeratoPlaylistsIpc({ roots: () => roots })
-    expect(handler('serato:collectionTracks')({})).toEqual([])
+    const read = seratoRead({ roots: () => roots })
+    expect(read.collection?.()).toEqual([])
     roots = [library()]
-    const rows = handler('serato:collectionTracks')({}) as CollectionTrack[]
+    const rows = read.collection?.() as CollectionTrack[]
     expect(rows.map((r) => r.path).sort()).toEqual(['/Music/a.mp3', '/Music/b.mp3'])
   })
 })

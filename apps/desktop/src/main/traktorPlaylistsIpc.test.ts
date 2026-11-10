@@ -1,21 +1,9 @@
 import { mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { ipcMain } from 'electron'
 import { describe, expect, it, vi } from 'vitest'
-
-vi.mock('electron', () => ({ ipcMain: { handle: vi.fn() } }))
-
 import type { CollectionTrack, SourceNode, SourcePlaylistEntry } from '../shared/types'
-import { registerTraktorPlaylistsIpc } from './traktorPlaylistsIpc'
-
-function handler(channel: string): (...args: unknown[]) => unknown {
-  const call = [...vi.mocked(ipcMain.handle).mock.calls]
-    .reverse()
-    .find(([name]) => name === channel)
-  if (!call) throw new Error(`${channel} not registered`)
-  return call[1] as (...args: unknown[]) => unknown
-}
+import { traktorRead } from './traktorPlaylistsIpc'
 
 const today = new Date()
 const imported = `${today.getFullYear()}/${today.getMonth() + 1}/${today.getDate()}`
@@ -36,45 +24,45 @@ async function collection(): Promise<string> {
   return file
 }
 
-describe('registerTraktorPlaylistsIpc', () => {
+describe('traktorRead', () => {
   it('says Traktor is there only while a collection is found, so the tab shows only where Traktor is installed', async () => {
     let found = await collection()
-    registerTraktorPlaylistsIpc(() => found, { bootVolume: () => 'HD' })
-    expect(handler('traktor:available')({})).toBe(true)
+    const read = traktorRead(() => found, { bootVolume: () => 'HD' })
+    expect(read.available()).toBe(true)
     found = ''
-    expect(handler('traktor:available')({})).toBe(false)
+    expect(read.available()).toBe(false)
   })
 
   it('reads the collection found now, since the DJ can change it in Settings while Surco runs', async () => {
     const file = await collection()
     let found = ''
-    registerTraktorPlaylistsIpc(() => found, { bootVolume: () => 'HD' })
-    expect(handler('traktor:tree')({})).toEqual([])
-    expect(handler('traktor:recentCount')({})).toBe(0)
+    const read = traktorRead(() => found, { bootVolume: () => 'HD' })
+    expect(read.tree()).toEqual([])
+    expect(read.recentCount()).toBe(0)
     found = file
-    expect((handler('traktor:tree')({}) as SourceNode[]).map((n) => n.name)).toEqual(['Friday'])
-    expect(handler('traktor:recentCount')({})).toBe(1)
+    expect((read.tree() as SourceNode[]).map((n) => n.name)).toEqual(['Friday'])
+    expect(read.recentCount()).toBe(1)
   })
 
   it('answers which playlists hold each file, and nothing without a collection, so the field can fill in', async () => {
     const file = await collection()
     let found = ''
-    registerTraktorPlaylistsIpc(() => found, { bootVolume: () => 'HD' })
-    expect(handler('traktor:membership')({}, ['/Music/a.mp3'])).toEqual({})
+    const read = traktorRead(() => found, { bootVolume: () => 'HD' })
+    expect(read.membership(['/Music/a.mp3'])).toEqual({})
     found = file
-    expect(handler('traktor:membership')({}, ['/Music/a.mp3'])).toEqual({ '/Music/a.mp3': ['u1'] })
+    expect(read.membership(['/Music/a.mp3'])).toEqual({ '/Music/a.mp3': ['u1'] })
   })
 
   it('fails on a collection it cannot read, so the tab says so instead of showing no playlists', async () => {
-    registerTraktorPlaylistsIpc(() => '/nowhere/collection.nml', { bootVolume: () => 'HD' })
-    expect(() => handler('traktor:tree')({})).toThrow()
+    const read = traktorRead(() => '/nowhere/collection.nml', { bootVolume: () => 'HD' })
+    expect(() => read.tree()).toThrow()
   })
 
   it('grants the files of the playlist it read, so the rows can play before any disk walk', async () => {
     const file = await collection()
     const allowMedia = vi.fn()
-    registerTraktorPlaylistsIpc(() => file, { bootVolume: () => 'HD', allowMedia })
-    const entries = handler('traktor:playlist')({}, 'u1') as SourcePlaylistEntry[]
+    const read = traktorRead(() => file, { bootVolume: () => 'HD', allowMedia })
+    const entries = read.playlist('u1') as SourcePlaylistEntry[]
     expect(entries.map((e) => e.path)).toEqual(['/Music/a.mp3', '/Music/b.mp3'])
     expect(allowMedia).toHaveBeenCalledWith(['/Music/a.mp3', '/Music/b.mp3'])
   })
@@ -82,10 +70,10 @@ describe('registerTraktorPlaylistsIpc', () => {
   it('lists the whole collection as rows to match against, and nothing without a collection', async () => {
     const file = await collection()
     let found = ''
-    registerTraktorPlaylistsIpc(() => found, { bootVolume: () => 'HD' })
-    expect(handler('traktor:collectionTracks')({})).toEqual([])
+    const read = traktorRead(() => found, { bootVolume: () => 'HD' })
+    expect(read.collection?.()).toEqual([])
     found = file
-    const rows = handler('traktor:collectionTracks')({}) as CollectionTrack[]
+    const rows = read.collection?.() as CollectionTrack[]
     expect(rows.map((r) => r.path).sort()).toEqual(['/Music/a.mp3', '/Music/b.mp3'])
   })
 })
