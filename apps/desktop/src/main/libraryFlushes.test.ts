@@ -254,7 +254,23 @@ describe('flushConversionBatch with Traktor open', () => {
         traktor,
       })
       expect(h.ensureTraktorClosed).not.toHaveBeenCalled()
-      expect(h.showBlockedDialog).not.toHaveBeenCalledWith('traktorSyncBlocked')
+      expect(h.showBlockedDialog).not.toHaveBeenCalled()
+      expect(traktor.enqueue).toHaveBeenCalledWith([], [expect.objectContaining({ patch })])
+    })
+  })
+
+  it('treats an unanswered check for Traktor as open and holds the run, because Traktor rewrites collection.nml when it quits', async () => {
+    await withTraktorOpen(async () => {
+      TRAKTOR_PROCESS.isTraktorRunning.mockRejectedValue(new Error('pgrep missing'))
+      EFFECTS.length = 0
+      const h = host()
+      const traktor = traktorQueue()
+      await flushConversionBatch(h, sessions, {
+        rekordbox: { enqueue: vi.fn(), applyQuietly: vi.fn() },
+        traktor,
+      })
+      expect(h.ensureTraktorClosed).not.toHaveBeenCalled()
+      expect(EFFECTS).not.toContain('traktor sync')
       expect(traktor.enqueue).toHaveBeenCalledWith([], [expect.objectContaining({ patch })])
     })
   })
