@@ -321,7 +321,12 @@ Inventario de partida (`grep -rnE "(===|!==) '(rekordbox|traktor|engine|serato)'
 
 ## Base medida
 
-(La rellena la Tarea 0.)
+Medida el 10/11 sobre `6b32bcc33` (main local `7ff5994be`).
+
+- Suite: 17686 pasan, 262 saltados, 1 fallo por tiempo (`App.test.tsx` "tells main which tracks hold unsaved cues…", 5009 ms bajo carga; el fichero solo pasa 445/445). Se trata como intermitente: si vuelve a fallar en una tarea, se repite el fichero solo.
+- Tipos: web, node y scenarios limpios.
+- Biome 2.6.3: 28 errores ya presentes en main (formato y orden de imports en 20 ficheros que este refactor no crea). Puerta de cada tarea: `biome check` sobre los ficheros que toca, sin errores nuevos.
+- Matriz: 131 pasan, 1 saltada, 4 fallos conocidos (K08, S-blindRekordboxCueMoved, S-blindRekordboxPlaylistLink, S-blindTraktorPlaylistKey). Celda a celda en `.superpowers/sdd/2026-11-10-programas-dj-interfaz/matriz-base.txt` (no versionado).
 
 ## Resultado de la prueba de fuego
 
