@@ -12,10 +12,18 @@ export async function sameClockFit(
   if (!file || leadMs === null) return null
   const fit = await beatGrid(file, priority)
   if (!fit) return null
-  const lead = leadMs + REKORDBOX_BEAT_AFTER_RISE_MS
+  return shiftedFit(fit, leadMs + REKORDBOX_BEAT_AFTER_RISE_MS)
+}
+
+export function shiftedFit(fit: BeatGridFit, lead: number): GridFit {
+  const shift = (p: { ms: number; firstMs: number }) => ({
+    ms: p.ms + lead,
+    firstMs: p.firstMs + lead,
+  })
   return {
     bpm: fit.bpm,
     firstMs: fit.firstMs + lead,
-    phases: fit.phases?.map((p) => ({ ms: p.ms + lead, firstMs: p.firstMs + lead })),
+    phases: fit.phases?.map(shift),
+    fine: fit.fine?.map(shift),
   }
 }

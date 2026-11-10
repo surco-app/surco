@@ -16,6 +16,7 @@ export interface GridFit {
   bpm: number
   firstMs: number
   phases?: { ms: number; firstMs: number }[]
+  fine?: { ms: number; firstMs: number }[]
 }
 
 export const SAME_CLOCK_FILE = /\.(wav|aif|aiff|flac)$/i

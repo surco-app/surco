@@ -108,3 +108,57 @@ describe('provisionalGrid', () => {
     expect(grid).toHaveLength(20)
   })
 })
+
+function wobblingTrack(
+  bpm: number,
+  seconds: number,
+  wobbleMs: (s: number) => number,
+  noiseFrom = Infinity,
+  noiseTo = Infinity,
+): Float32Array {
+  const pcm = new Float32Array(SR * seconds)
+  const period = 60 / bpm
+  let noise = 1
+  for (let i = 0; i < pcm.length; i++) {
+    const s = i / SR
+    noise = (noise * 16807) % 2147483647
+    const white = noise / 2147483647 - 0.5
+    if (s >= noiseFrom && s < noiseTo) {
+      pcm[i] = 0.4 * white
+      continue
+    }
+    const t = s - 0.25 - wobbleMs(s) / 1000
+    if (t < 0) continue
+    const inBeat = t % period
+    pcm[i] = 0.6 * Math.sin(2 * Math.PI * 55 * inBeat) * Math.exp(-inBeat * 40) + 0.02 * white
+  }
+  return pcm
+}
+
+describe('fine measurements along the track', () => {
+  const wobble = (s: number) => 10 * Math.sin((2 * Math.PI * s) / 60)
+
+  it('follows a master whose tempo breathes a few ms over a minute, which the long stretches average away', () => {
+    const fit = fitBeatGrid(wobblingTrack(140, 120, wobble), SR)
+    if (!fit?.fine) throw new Error('a clear kick must give fine measurements')
+    const period = 60000 / fit.bpm
+    const at = (p: { ms: number; firstMs: number }) => {
+      const d = p.firstMs - fit.firstMs
+      return d - Math.round(d / period) * period
+    }
+    const base = at(fit.fine[0]) - wobble(fit.fine[0].ms / 1000)
+    const misses = fit.fine.filter((p) => Math.abs(at(p) - base - wobble(p.ms / 1000)) > 4)
+    expect(fit.fine.length).toBeGreaterThan(40)
+    expect(misses.length).toBeLessThanOrEqual(fit.fine.length * 0.05)
+  })
+
+  it('gives no fine measurement where there is no beat to hear, so a noisy break cannot bend the grid', () => {
+    const fit = fitBeatGrid(
+      wobblingTrack(140, 120, () => 0, 50, 70),
+      SR,
+    )
+    if (!fit?.fine) throw new Error('a clear kick must give fine measurements')
+    expect(fit.fine.filter((p) => p.ms > 52000 && p.ms < 68000)).toEqual([])
+    expect(fit.fine.filter((p) => p.ms < 48000).length).toBeGreaterThan(15)
+  })
+})

@@ -9,6 +9,7 @@ import { readCueWaveDetail, readTrackCues } from './rekordboxCues'
 import { keyOf, withCollection } from './rekordboxPlaylistsIpc'
 import { queuedWanted } from './rekordboxPlaylistWrite'
 import { rekordboxLeadOfFile, rekordboxShiftOfFile } from './rekordboxTimeline'
+import { shiftedFit } from './sameClockGrid'
 
 export function rekordboxCueSource(host: {
   collection: () => string
@@ -48,11 +49,7 @@ export function rekordboxCueSource(host: {
     const lead =
       (await rekordboxShiftOfFile(row.FolderPath, row.SampleRate || 44100)) +
       REKORDBOX_BEAT_AFTER_RISE_MS
-    return {
-      bpm: fit.bpm,
-      firstMs: fit.firstMs + lead,
-      phases: fit.phases?.map((p) => ({ ms: p.ms + lead, firstMs: p.firstMs + lead })),
-    }
+    return shiftedFit(fit, lead)
   }
   return {
     trackCues: async (contentId) => {
