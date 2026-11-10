@@ -1207,6 +1207,7 @@ export default function App(): React.JSX.Element {
       if (!sessionRecent || index === undefined) return undefined
       return (
         <SessionWhyLine
+          track={sessionRecent.plan.items[index].track}
           why={sessionRecent.plan.items[index].why}
           canChange={sessionRecent.pool.length > sessionRecent.plan.items.length}
           busy={sessionBusy}

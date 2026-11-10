@@ -25,13 +25,20 @@ const alt = (id: string, over: Partial<SessionTrack> = {}): SessionTrack => ({
 
 function setup(
   why: SessionWhy,
-  props: { canChange?: boolean; busy?: boolean; alts?: SessionTrack[]; locked?: boolean } = {},
+  props: {
+    canChange?: boolean
+    busy?: boolean
+    alts?: SessionTrack[]
+    locked?: boolean
+    track?: SessionTrack
+  } = {},
 ) {
   const onPick = vi.fn()
   const onToggleLock = vi.fn()
   const alternatives = vi.fn(() => props.alts ?? [])
   render(
     <SessionWhyLine
+      track={props.track ?? alt('placed')}
       why={why}
       canChange={props.canChange ?? true}
       busy={props.busy ?? false}
@@ -123,6 +130,21 @@ describe('SessionWhyLine text', () => {
     cleanup()
     setup({ kind: 'chosen' })
     expect(line()).toHaveTextContent(i18n.t('sessions.why.chosen'))
+  })
+})
+
+describe('SessionWhyLine key and tempo', () => {
+  it('shows the key and tempo of the placed track whatever it was picked for, so the DJ can check the mix by ear', () => {
+    setup({ kind: 'combo', sets: 2 }, { track: alt('p', { key: '11A', bpm: 142.05 }) })
+    expect(screen.getByTestId('session-why-track')).toHaveTextContent('11A 142')
+    cleanup()
+    setup({ kind: 'taste', rating: 100, plays: 0 }, { track: alt('p', { key: '4B', bpm: 0 }) })
+    expect(screen.getByTestId('session-why-track')).toHaveTextContent(/^4B$/)
+  })
+
+  it('leaves the slot out when the track has neither key nor tempo', () => {
+    setup({ kind: 'start' }, { track: alt('p', { key: null, bpm: 0 }) })
+    expect(screen.queryByTestId('session-why-track')).toBeNull()
   })
 })
 
