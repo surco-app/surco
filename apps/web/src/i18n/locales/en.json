@@ -258,7 +258,7 @@
           {
             "t": "Automatic session",
             "s": "Builds a session from your playlists, your combos, what you like most and harmonic mixing.",
-            "d": "Open it from the command palette, from a folder's menu or on an empty playlist. Choose how long it lasts and which playlists the tracks come from, and say what each one holds, Instrumentals, Vocals or Mixed, for a whole folder too. Surco brings together the pairs you repeat in your sets and tracklists, the tracks with the most stars and plays, Camelot harmonic mixing if you want it and room for what's new, and it counts the time each track plays, not the whole file. Under each track you see why it is there and swap it for another that fits. In rekordbox, Traktor and Serato, with the program closed."
+            "d": "Open it from the command palette, from a folder's menu or on an empty playlist. Choose how long it lasts and which playlists the tracks come from, and say what each one holds, Instrumentals, Vocals or Mixed, for a whole folder too. Surco brings together the pairs you repeat in your sets and tracklists, the tracks with the most stars and plays, Camelot harmonic mixing if you want it and room for what's new, and it counts the time each track plays, not the whole file. Under each track you see why it is there and swap it for another that fits. It learns from your sets how far you move the tempo and how much the key matters to you, keeps your closing tracks for the end, plays the ones you always play more often and opens with a vocal. Lock the tracks you want to keep when you redo it, or start it from a track with its menu. In rekordbox, Traktor and Serato, with the program closed."
           },
           {
             "t": "rekordbox cues",
