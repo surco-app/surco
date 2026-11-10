@@ -199,89 +199,17 @@ export const Toolbar = memo(function Toolbar({
         </span>
         <span role="status">{analysisLabel || ''}</span>
       </div>
-      <div />
       <div
+        data-testid="toolbar-list-actions"
         className="flex items-center gap-2"
         style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
       >
-        {batchSummary && !batching && (
-          <span data-testid="batch-summary" role="status" className="text-sm text-fg-muted">
-            {[
-              // Leads the row so a cancelled run cannot be mistaken for one that finished
-              // on its own and skipped tracks for some other reason.
-              batchSummary.cancelled === true && tr('header.batchCancelled'),
-              tr('header.batchConverted', { count: batchSummary.converted }),
-            ]
-              .filter(Boolean)
-              .join(' · ')}
-            {/* The skip and failure counts are the segments worth acting on, so they're
-                buttons rather than text: each filters the list down to the rows it counts.
-                The counts used to point nowhere, leaving the user to find them by eye. */}
-            {batchSummary.skipped > 0 && (
-              <>
-                {' · '}
-                <button
-                  type="button"
-                  data-testid="batch-skipped-count"
-                  onClick={onShowSkipped}
-                  className="underline-offset-2 hover:underline"
-                >
-                  {tr('header.batchSkipped', { count: batchSummary.skipped })}
-                </button>
-              </>
-            )}
-            {batchSummary.failed > 0 && (
-              <>
-                {' · '}
-                <button
-                  type="button"
-                  data-testid="batch-failed-count"
-                  onClick={onShowFailed}
-                  className="text-danger underline-offset-2 hover:underline"
-                >
-                  {tr('header.batchFailed', { count: batchSummary.failed })}
-                </button>
-              </>
-            )}
-          </span>
-        )}
-        {usbPill}
-        {queuePill}
-        {importing && (
-          // A live pill matching the auto-match/analyze sweeps (accent text, spinning
-          // glyph, done/total), so a big drop reads as active work rather than a static
-          // line — and clicking it cancels, like the batch pill beside it. This was the
-          // one sweep with no way out: a folder dropped by mistake had to be waited out.
-          <button
-            type="button"
-            data-testid="import-progress"
-            onClick={onCancelImport}
-            aria-label={tr('header.cancelImport')}
-            className="press group relative flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium tabular-nums text-[var(--color-accent)] hover:bg-[var(--color-hover)]"
-          >
-            {/* FilePlus, not the shared Loader2: mid-conversion, a dropped folder painted
-                two identical spinning capsules. The other sweeps identify themselves by
-                glyph already; this is the import's, echoing the Add files button it
-                follows from. */}
-            <FilePlus className="h-4 w-4" aria-hidden="true" />
-            <SteadyWidth
-              testid="import-progress-sizer"
-              widest={tr('header.importingCount', {
-                done: importing.total,
-                total: importing.total,
-              })}
-            >
-              {tr('header.importingCount', { done: importing.done, total: importing.total })}
-            </SteadyWidth>
-            <Tooltip label={tr('header.cancelImport')} align="end" />
-          </button>
-        )}
         {trackCount > 0 && (
           <>
             {/* Analyze, auto-match and review are the crate-wide sweeps, in the order the work
-                happens. Add files
-                and the per-list edit tools (select/fill/find/clear) now live in the list's own
-                header, so the toolbar keeps only crate-wide sweeps and global actions. */}
+              happens. Add files
+              and the per-list edit tools (select/fill/find/clear) now live in the list's own
+              header, so the toolbar keeps only crate-wide sweeps and global actions. */}
             <button
               type="button"
               data-testid="analyze-quality"
@@ -369,7 +297,7 @@ export const Toolbar = memo(function Toolbar({
                 </SteadyWidth>
               )}
               {/* Auto-match on, token missing: name the gap inline so it reads without a
-                  hover — the tooltip alone was the invisible dead end this fixes. */}
+                hover — the tooltip alone was the invisible dead end this fixes. */}
               {!matching && needsToken && (
                 <>
                   <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-warn" />
@@ -411,6 +339,83 @@ export const Toolbar = memo(function Toolbar({
               <Tooltip label={tr('header.menu.review')} hint={hintFor('list-review')} align="end" />
             </button>
           </>
+        )}
+      </div>
+      <div
+        className="flex items-center gap-2"
+        style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+      >
+        {batchSummary && !batching && (
+          <span data-testid="batch-summary" role="status" className="text-sm text-fg-muted">
+            {[
+              // Leads the row so a cancelled run cannot be mistaken for one that finished
+              // on its own and skipped tracks for some other reason.
+              batchSummary.cancelled === true && tr('header.batchCancelled'),
+              tr('header.batchConverted', { count: batchSummary.converted }),
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+            {/* The skip and failure counts are the segments worth acting on, so they're
+                buttons rather than text: each filters the list down to the rows it counts.
+                The counts used to point nowhere, leaving the user to find them by eye. */}
+            {batchSummary.skipped > 0 && (
+              <>
+                {' · '}
+                <button
+                  type="button"
+                  data-testid="batch-skipped-count"
+                  onClick={onShowSkipped}
+                  className="underline-offset-2 hover:underline"
+                >
+                  {tr('header.batchSkipped', { count: batchSummary.skipped })}
+                </button>
+              </>
+            )}
+            {batchSummary.failed > 0 && (
+              <>
+                {' · '}
+                <button
+                  type="button"
+                  data-testid="batch-failed-count"
+                  onClick={onShowFailed}
+                  className="text-danger underline-offset-2 hover:underline"
+                >
+                  {tr('header.batchFailed', { count: batchSummary.failed })}
+                </button>
+              </>
+            )}
+          </span>
+        )}
+        {usbPill}
+        {queuePill}
+        {importing && (
+          // A live pill matching the auto-match/analyze sweeps (accent text, spinning
+          // glyph, done/total), so a big drop reads as active work rather than a static
+          // line — and clicking it cancels, like the batch pill beside it. This was the
+          // one sweep with no way out: a folder dropped by mistake had to be waited out.
+          <button
+            type="button"
+            data-testid="import-progress"
+            onClick={onCancelImport}
+            aria-label={tr('header.cancelImport')}
+            className="press group relative flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium tabular-nums text-[var(--color-accent)] hover:bg-[var(--color-hover)]"
+          >
+            {/* FilePlus, not the shared Loader2: mid-conversion, a dropped folder painted
+                two identical spinning capsules. The other sweeps identify themselves by
+                glyph already; this is the import's, echoing the Add files button it
+                follows from. */}
+            <FilePlus className="h-4 w-4" aria-hidden="true" />
+            <SteadyWidth
+              testid="import-progress-sizer"
+              widest={tr('header.importingCount', {
+                done: importing.total,
+                total: importing.total,
+              })}
+            >
+              {tr('header.importingCount', { done: importing.done, total: importing.total })}
+            </SteadyWidth>
+            <Tooltip label={tr('header.cancelImport')} align="end" />
+          </button>
         )}
         <div aria-hidden="true" className="w-2" />
         <button

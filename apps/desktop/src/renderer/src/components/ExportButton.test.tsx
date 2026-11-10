@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../i18n'
 import { ExportButton } from './ExportButton'
@@ -40,6 +40,13 @@ describe('ExportButton', () => {
     render(<ExportButton {...baseProps} incomplete={false} outputFolder="out" />)
     expect(screen.getByTestId('process-btn')).toHaveAccessibleName('Convert to AIFF')
     expect(screen.getByTestId('process-folder')).toHaveTextContent('out')
+  })
+
+  it('marks the output name as a folder, so a folder called Surco is not read as the app', () => {
+    render(<ExportButton {...baseProps} incomplete={false} outputFolder="Surco" />)
+    const folder = screen.getByTestId('process-folder')
+    expect(folder).not.toHaveTextContent('→')
+    expect(within(folder).getByTestId('process-folder-icon')).toBeInTheDocument()
   })
 
   it('names no folder when the file does not go to the output folder', () => {

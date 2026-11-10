@@ -1088,8 +1088,7 @@ export function TrimSection({
       : undefined,
   ].filter(Boolean)
   // The detection's finding, worn on the header like the quality section's verdict
-  // pill: the one convention for analysis results, readable without opening the
-  // section (once the wave has been decoded) and without hunting through the body.
+  // pill while the section is open; folded, the row sentence already says it.
   const detectedCut = suggestion ? cutAmounts(suggestion, durationSec) : undefined
   const detected = detectedCut
     ? [
@@ -1184,7 +1183,7 @@ export function TrimSection({
                 {`−${cutSeconds(rowStart + rowEnd, i18n.language)}`}
               </SectionPill>
             ) : undefined
-          ) : detected ? (
+          ) : detected && open ? (
             <SectionPill tone="neutral" testid="trim-detected-pill">
               {detected}
             </SectionPill>

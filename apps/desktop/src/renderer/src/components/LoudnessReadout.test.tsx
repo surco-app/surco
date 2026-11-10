@@ -147,6 +147,15 @@ describe('LoudnessReadout verdict without colour', () => {
     expect(shapes.every(Boolean)).toBe(true)
     expect(new Set(shapes).size).toBe(3)
   })
+
+  it('keeps colour for the figures that need a look, so a red peak is not lost among greens', () => {
+    render(<LoudnessReadout loudness={mixed} normalize={off} onShowHelp={vi.fn()} />)
+    const good = screen.getByTestId('loudness-pill-lufs')
+    expect(screen.getByTestId('loudness-grade-mark-lufs').className).not.toMatch(/bg-good/)
+    expect(within(good).getByText('-12.0 LUFS').className).not.toMatch(/text-good/)
+    expect(screen.getByTestId('loudness-grade-mark-peak').className).toMatch(/bg-warn/)
+    expect(screen.getByTestId('loudness-grade-mark-range').className).toMatch(/bg-danger/)
+  })
 })
 
 // The subhead above this table already says Loudness; a row under it labelled
