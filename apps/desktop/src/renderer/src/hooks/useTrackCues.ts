@@ -98,14 +98,15 @@ export function useCueWaveDetail(
   return { data }
 }
 
-export function useCueWaveFine(contentId: string, enabled: boolean): FineWave | null {
-  const { data } = useQuery({
+export function useCueWaveFine(contentId: string, enabled: boolean): FineWave | null | undefined {
+  const { data, isPending } = useQuery({
     queryKey: ['rekordbox-cue-wave-fine', contentId],
     queryFn: () => window.api.rekordboxCueWaveFine(contentId),
     enabled,
     staleTime: Number.POSITIVE_INFINITY,
   })
-  return data ?? null
+  if (!enabled) return null
+  return isPending ? undefined : (data ?? null)
 }
 
 export function useGridFit(contentId: string, enabled: boolean): GridFit | null {

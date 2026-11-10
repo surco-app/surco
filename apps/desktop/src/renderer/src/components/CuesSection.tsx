@@ -525,7 +525,8 @@ function Editing({
           : state.grid === null || (!rekordboxGrid && state.grid.zones)
             ? tr('editor.cues.grid.varying')
             : null
-  const gridFit = useGridFit(cue.contentId, maximized && gridOff === null)
+  const fine = useCueWaveFine(cue.contentId, maximized)
+  const gridFit = useGridFit(cue.contentId, maximized && gridOff === null && fine !== undefined)
   const offsets =
     gridFit && state.grid
       ? gridOffsets(ctx.beats, gridFit, playheadMs, read.durationMs, programBeats)
@@ -589,7 +590,6 @@ function Editing({
     [placing, hoverMs, state, ctx],
   )
   const { data: rekordboxWords } = useCueWaveDetail(cue.contentId, !provisional)
-  const fine = useCueWaveFine(cue.contentId, maximized)
   const words = provisional ? provisional.words : rekordboxWords
   const learnsFromEdits = settings.cueLearnFromEdits
   const outcome = useMemo(

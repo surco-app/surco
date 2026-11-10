@@ -316,6 +316,23 @@ describe('CuesSection maximized', () => {
     await waitFor(() => expect(fine).toHaveBeenCalledWith('103'))
   })
 
+  it('asks for the grid fit only once the fine wave is in, so the two never read the whole file off the NAS at once', async () => {
+    let release: (wave: null) => void = () => {}
+    const fine = vi.fn<Api['rekordboxCueWaveFine']>(
+      () =>
+        new Promise((resolve) => {
+          release = resolve
+        }),
+    )
+    const gridFit = vi.fn<Api['rekordboxGridFit']>(async () => null)
+    setup(null, READ, { rekordboxCueWaveFine: fine, rekordboxGridFit: gridFit })
+    await maximize()
+    await waitFor(() => expect(fine).toHaveBeenCalledWith('103'))
+    expect(gridFit).not.toHaveBeenCalled()
+    act(() => release(null))
+    await waitFor(() => expect(gridFit).toHaveBeenCalledWith('103'))
+  })
+
   it('starts below the macOS window controls, so the cover and title never sit under the traffic lights', async () => {
     setup()
     await maximize()
