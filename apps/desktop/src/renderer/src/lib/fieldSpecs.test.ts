@@ -482,6 +482,25 @@ describe('buildFieldSpecs (bulk mode)', () => {
     expect(onChangeAllMeta).toHaveBeenCalledWith({ trackTotal: '3' })
   })
 
+  it('offers Comment across a selection so a download-site note can be wiped from every track at once', () => {
+    const onChangeAllMeta = vi.fn()
+    const specs = buildFieldSpecs(
+      params({
+        isMulti: true,
+        selectedTracks: [
+          track('a', { comment: 'from site A' }),
+          track('b', { comment: 'from site B' }),
+        ],
+        visibleFields: ['comment'],
+        bulkOnChange: bulkOnChangeFrom(onChangeAllMeta),
+      }),
+    )
+    const comment = specs.find((s) => s.key === 'comment')
+    expect(comment?.mixed).toBe(true)
+    comment?.onChange('')
+    expect(onChangeAllMeta).toHaveBeenCalledWith({ comment: '' })
+  })
+
   it('honours the visible-fields setting and drops non-bulk fields', () => {
     const specs = buildFieldSpecs(
       params({
