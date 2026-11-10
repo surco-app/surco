@@ -90,33 +90,6 @@ describe('useSessionRun remembers the playlists it wrote', () => {
   })
 })
 
-describe('useSessionRun and the way this DJ mixes', () => {
-  async function placedOrOfferedWhenSetsJump(jump: number): Promise<string[]> {
-    const set = Array.from({ length: 40 }, (_, i) => ({
-      ...entry(`/m/s${i}.mp3`),
-      meta: { bpm: String(140 + (i % 2) * jump) },
-    }))
-    const loved = { ...entry('/m/a-three.mp3'), meta: { bpm: '143' } }
-    const rows = new Map([['s', [...set, loved]]])
-    const { result } = setup({
-      rows: { load: vi.fn(async () => rows), reset: vi.fn(), loading: false, failed: [] },
-    })
-    await act(async () => {
-      await result.current.build('folder', { ...ANSWERS, minutes: 30 }, ROLES)
-    })
-    const inPlan = result.current.recent?.plan.items.map((item) => item.track.id) ?? []
-    return [...inPlan, ...result.current.alternatives(1).map((track) => track.id)]
-  }
-
-  it('offers in Change only what fits the tempo window learned from the sets', async () => {
-    const offeredTight = await placedOrOfferedWhenSetsJump(1)
-    cleanup()
-    const offeredWide = await placedOrOfferedWhenSetsJump(6)
-    expect(offeredTight).not.toContain('/m/a-three.mp3')
-    expect(offeredWide).toContain('/m/a-three.mp3')
-  })
-})
-
 describe('useSessionRun build', () => {
   it('saves the answers, writes the session as a new playlist and opens it', async () => {
     const { deps, result } = setup()
@@ -323,18 +296,6 @@ describe('useSessionRun locking tracks', () => {
     expect(result.current.recent?.locked.size).toBe(0)
   })
 
-  it('locks the track that was put in by hand and frees the one it replaced', async () => {
-    const { result } = await built()
-    const replaced = idAt(result, 1)
-    act(() => result.current.toggleLock(replaced))
-    const spare = result.current.alternatives(1)[0]
-    await act(async () => {
-      await result.current.swap(1, spare)
-    })
-    expect(result.current.recent?.locked.has(spare.id)).toBe(true)
-    expect(result.current.recent?.locked.has(replaced)).toBe(false)
-  })
-
   it('lets go of the locks when the session is adjusted, since what was asked for changed', async () => {
     const { result } = await built()
     act(() => result.current.toggleLock(idAt(result, 1)))
@@ -486,15 +447,6 @@ describe('useSessionRun reading fresh rows', () => {
     const { deps } = await built()
     expect(deps.rows.reset).not.toHaveBeenCalled()
   })
-
-  it('does not reset for a swap, which reads no playlist', async () => {
-    const { deps, result } = await built()
-    const spare = result.current.alternatives(1)[0]
-    await act(async () => {
-      await result.current.swap(1, spare)
-    })
-    expect(deps.rows.reset).not.toHaveBeenCalled()
-  })
 })
 
 describe('useSessionRun naming', () => {
@@ -535,20 +487,6 @@ describe('useSessionRun naming', () => {
       await result.current.redo()
     })
     expect(replace.mock.calls[1][2]).toBe('Sesión del 9-11')
-  })
-
-  it('does the same when a track is swapped', async () => {
-    let existing = new Set<string>()
-    const { result } = setup({ namesIn: () => existing })
-    await act(async () => {
-      await result.current.build('folder', ANSWERS, ROLES)
-    })
-    existing = new Set(['Sesión del 9-11'])
-    const spare = result.current.alternatives(1)[0]
-    await act(async () => {
-      await result.current.swap(1, spare)
-    })
-    expect(replace.mock.calls[0][2]).toBe('Sesión del 9-11 (2)')
   })
 })
 
@@ -592,21 +530,17 @@ describe('useSessionRun with the DJ program open', () => {
     expect(result.current.recent).toBe(before)
   })
 
-  it('does the same for an adjust and for a swap', async () => {
+  it('writes nothing for an adjust either', async () => {
     let open = false
     const { result } = await built({ canWrite: async () => !open })
-    const spare = result.current.alternatives(1)[0]
     open = true
 
     let adjusted: string | undefined
-    let swapped: string | undefined
     await act(async () => {
       adjusted = await result.current.adjust(ANSWERS, ROLES)
-      swapped = await result.current.swap(1, spare)
     })
 
     expect(adjusted).toBe('closed')
-    expect(swapped).toBe('closed')
     expect(replace).not.toHaveBeenCalled()
   })
 
@@ -702,101 +636,6 @@ describe('useSessionRun roles', () => {
       await result.current.adjust(ANSWERS, { s: 'base' })
     })
     expect(result.current.recent?.roles).toEqual({ s: 'base' })
-  })
-})
-
-describe('useSessionRun swapping a track', () => {
-  it('offers the tracks that were left out of the session for a place', async () => {
-    const { result } = await built()
-    const inPlan = result.current.recent?.plan.items.map((item) => item.track.id) ?? []
-    const offered = result.current.alternatives(1)
-    expect(offered).toHaveLength(1)
-    expect(inPlan).not.toContain(offered[0].id)
-  })
-
-  it('offers nothing before a session was built', () => {
-    const { result } = setup()
-    expect(result.current.alternatives(0)).toEqual([])
-  })
-
-  it('swaps by replacing the playlist with the new order, marking the track as chosen by hand', async () => {
-    const { result } = await built()
-    const spare = result.current.alternatives(1)[0]
-
-    let outcome: string | undefined
-    await act(async () => {
-      outcome = await result.current.swap(1, spare)
-    })
-
-    expect(outcome).toBe('built')
-    const written = replace.mock.calls[0][3]
-    expect(written).toHaveLength(2)
-    expect(written[1]).toEqual({ contentId: undefined, paths: [spare.id] })
-    expect(result.current.recent?.playlistId).toBe('new2')
-    expect(result.current.recent?.plan.items[1]).toMatchObject({
-      track: { id: spare.id },
-      why: { kind: 'chosen' },
-    })
-  })
-
-  it('counts the swapped track for the time it plays, as the rest of the session does', async () => {
-    const { result } = setup()
-    await act(async () => {
-      await result.current.build('folder', { ...ANSWERS, minutes: 4, playMinutes: 2 }, ROLES)
-    })
-    expect(result.current.recent?.plan.summary.secs).toBe(240)
-    const spare = result.current.alternatives(1)[0]
-    await act(async () => {
-      await result.current.swap(1, spare)
-    })
-    expect(result.current.recent?.plan.summary.secs).toBe(240)
-  })
-
-  it('keeps the seed, so a redo goes on from where the draw was', async () => {
-    const { result } = await built()
-    const spare = result.current.alternatives(1)[0]
-    await act(async () => {
-      await result.current.swap(1, spare)
-    })
-    expect(result.current.recent?.seed).toBe(100)
-  })
-
-  it('keeps the plan and the old playlist when the swap is refused', async () => {
-    const { result } = await built({
-      writer: { create: vi.fn(async () => 'new1'), replace: vi.fn(async () => null), fill },
-    })
-    const before = result.current.recent?.plan
-    const spare = result.current.alternatives(1)[0]
-
-    let outcome: string | undefined
-    await act(async () => {
-      outcome = await result.current.swap(1, spare)
-    })
-
-    expect(outcome).toBe('refused')
-    expect(result.current.recent?.plan).toBe(before)
-    expect(result.current.recent?.playlistId).toBe('new1')
-  })
-
-  it('has nothing to swap before a session was built or for a place that does not exist', async () => {
-    const empty = setup()
-    let outcome: string | undefined
-    await act(async () => {
-      outcome = await empty.result.current.swap(0, {
-        id: 'z',
-        role: 'any',
-        key: null,
-        bpm: 0,
-        rating: 0,
-        plays: 0,
-        secs: 0,
-        fresh: false,
-        title: 'z',
-        artist: '',
-      })
-    })
-    expect(outcome).toBe('refused')
-    expect(replace).not.toHaveBeenCalled()
   })
 })
 

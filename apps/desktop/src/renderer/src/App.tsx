@@ -1195,12 +1195,7 @@ export default function App(): React.JSX.Element {
     })
     return byPath
   }, [sessionRecent])
-  const {
-    busy: sessionBusy,
-    alternatives: sessionAlternatives,
-    swap: swapSessionTrack,
-    toggleLock: toggleSessionLock,
-  } = sessionRun
+  const { busy: sessionBusy, toggleLock: toggleSessionLock } = sessionRun
   const sessionNoteOf = useCallback(
     (track: TrackItem) => {
       const index = sessionIndexByPath.get(track.inputPath.normalize('NFC'))
@@ -1209,24 +1204,13 @@ export default function App(): React.JSX.Element {
         <SessionWhyLine
           track={sessionRecent.plan.items[index].track}
           why={sessionRecent.plan.items[index].why}
-          canChange={sessionRecent.pool.length > sessionRecent.plan.items.length}
           busy={sessionBusy}
-          alternatives={() => sessionAlternatives(index)}
-          onPick={(picked) => void reportSession(swapSessionTrack(index, picked))}
           locked={sessionRecent.locked.has(sessionRecent.plan.items[index].track.id)}
           onToggleLock={() => toggleSessionLock(sessionRecent.plan.items[index].track.id)}
         />
       )
     },
-    [
-      sessionRecent,
-      sessionIndexByPath,
-      sessionBusy,
-      sessionAlternatives,
-      swapSessionTrack,
-      toggleSessionLock,
-      reportSession,
-    ],
+    [sessionRecent, sessionIndexByPath, sessionBusy, toggleSessionLock],
   )
   const selectSource = useStableCallback((next: PlaylistSource | null) => {
     if (next === browser.source) return

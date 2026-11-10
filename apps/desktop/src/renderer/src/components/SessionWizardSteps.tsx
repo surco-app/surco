@@ -276,7 +276,7 @@ export function CharacterStep({
             </span>
           </label>
           {key === 'preferCombos' && options.preferCombos && !hasMixed && (
-            <p data-testid="session-wizard-combos-hint" className="-mt-1.5 pl-7 text-xs text-warn">
+            <p data-testid="session-wizard-combos-hint" className="-mt-1.5 pl-7 text-xs text-fg-dim">
               {tr('sessions.wizard.character.noMixed')}
             </p>
           )}

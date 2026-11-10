@@ -29,7 +29,7 @@ export type SessionWhy =
   | { kind: 'bpm'; relaxed: boolean }
   | { kind: 'fresh'; key: string | null; role: TrackRole }
   | { kind: 'chosen' }
-  | { kind: 'phase'; phase: 'open' | 'close' | 'must' }
+  | { kind: 'phase'; phase: 'open' | 'close' }
 
 export interface SessionItem {
   track: SessionTrack
@@ -113,20 +113,6 @@ export function tasteOf(track: SessionTrack, maxPlays: number, enabled: boolean)
   return track.rating / 100 + (maxPlays > 0 ? PLAYS_WEIGHT * (track.plays / maxPlays) : 0)
 }
 
-export function transitionFits(
-  from: SessionTrack,
-  to: SessionTrack,
-  options: Pick<SessionOptions, 'harmony' | 'alternate'>,
-  tempoLimit: number,
-): boolean {
-  if (!harmonyAllows(options.harmony, camelotDistance(from.key, to.key))) return false
-  const gap = tempoGap(from, to)
-  if (gap !== null && gap > tempoLimit) return false
-  return !options.alternate || from.role === 'any' || to.role === 'any' || from.role !== to.role
-}
-
-export const TEMPO_LIMITS = { tight: TEMPO_TIGHT, wide: TEMPO_WIDE } as const
-
 function freshSlots(goal: number, estimated: number): number[] {
   return Array.from({ length: goal }, (_, k) =>
     Math.max(1, Math.round(((k + 1) * estimated) / (goal + 1))),
@@ -202,8 +188,9 @@ export function buildSession(
   }
 
   const phaseDue = (track: SessionTrack): SessionWhy | null => {
-    if (track.phase !== undefined && inPhase(track)) return { kind: 'phase', phase: track.phase }
-    return track.must ? { kind: 'phase', phase: 'must' } : null
+    return track.phase !== undefined && inPhase(track)
+      ? { kind: 'phase', phase: track.phase }
+      : null
   }
 
   const phaseWeight = (track: SessionTrack): number => {
@@ -333,6 +320,8 @@ export function buildSession(
       (track) => isOpen(track) && !(onlyWithoutCombo && combos.get(current.id)?.has(track.id)),
     )
     let fit = fitTier(current, open, roleFits, true, harmony)
+    if (fit.tier.length === 0 && options.alternate)
+      fit = fitTier(current, open, roleFits, true, 'free')
     if (fit.tier.length === 0) fit = fitTier(current, open, roleOrNeutral, true, harmony)
     if (fit.tier.length === 0) fit = fitTier(current, open, () => true, true, harmony)
     const { tier, relaxed } = fit
@@ -469,18 +458,4 @@ export function summarizeSession(
     missingDurations: items.filter((item) => item.track.secs <= 0).length,
     audioSecs: items.reduce((sum, item) => sum + Math.max(0, item.track.secs), 0),
   }
-}
-
-export function swapAt(
-  plan: SessionPlan,
-  index: number,
-  track: SessionTrack,
-  targetSecs: number,
-  playSecs: number,
-): SessionPlan {
-  if (index < 0 || index >= plan.items.length) return plan
-  const items = plan.items.map((item, i) =>
-    i === index ? { track, why: { kind: 'chosen' } as const } : item,
-  )
-  return { items, summary: summarizeSession(items, targetSecs, playSecs) }
 }

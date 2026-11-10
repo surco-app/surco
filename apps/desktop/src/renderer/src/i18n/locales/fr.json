@@ -69,12 +69,12 @@
         "alternate": "Alterner instrumental et voix",
         "alternateHint": "Instrumental, voix, instrumental, voix",
         "preferCombos": "Privilégier les combos éprouvés",
-        "preferCombosHint": "Les paires que tu as enchaînées dans deux de tes mixes ou plus, en premier",
+        "preferCombosHint": "Un combo, c’est un instrumental et une voix que tu as enchaînés dans deux de tes tracklists ou plus. Surco les remet ensemble",
         "tasteWeight": "Ce que tu préfères",
         "tasteWeightHint": "Les étoiles et les écoutes comptent dans le choix",
         "surprise": "Surprends-moi",
         "surpriseHint": "Laisse de la place à des paires jamais jouées ensemble",
-        "noMixed": "Aucune playlist mixte n’est choisie, donc aucun ordre à lire pour les combos. Ajoutes-en une à l’étape Playlists.",
+        "noMixed": "Pour trouver des combos, marque comme Mixte une playlist avec tes tracklists ou tes sets à l’étape Playlists.",
         "play": "Durée de jeu de chaque morceau",
         "playValue": "{{minutes}} min",
         "playHint": "Les morceaux sont mixés, pas joués en entier. C'est ce que chacun compte dans la durée de la session.",
@@ -137,12 +137,8 @@
       "chosen": "Choisi par toi",
       "phaseOpen": "Pour ouvrir, tiré de tes playlists d’ouverture",
       "phaseClose": "Pour finir, tiré de tes playlists de clôture",
-      "phaseMust": "Un morceau que tu passes toujours",
-      "change": "Changer",
-      "pick": "Remplacer par",
     "lock": "Fixer pour que Refaire la garde",
-    "unlock": "Libérer",
-    "noneFit": "Rien d’autre ne convient ici"
+    "unlock": "Libérer"
     }
   },
   "pasteTracklist": {

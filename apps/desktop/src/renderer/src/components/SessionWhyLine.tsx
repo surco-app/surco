@@ -1,13 +1,9 @@
 import type { TFunction } from 'i18next'
 import { Lock, LockOpen } from 'lucide-react'
 import type React from 'react'
-import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { keyIn } from '../../../shared/camelot'
 import type { SessionWhy } from '../../../shared/sessionBuild'
 import type { SessionTrack } from '../../../shared/sessionTypes'
-import type { KeyNotation } from '../../../shared/types'
-import { useAppSettings } from '../lib/settingsContext'
 import { Tooltip } from './Tooltip'
 
 interface Phrase {
@@ -63,49 +59,28 @@ function phraseOf(why: SessionWhy, tr: TFunction): Phrase {
       return { text: tr('sessions.why.chosen'), tone: 'text-fg-faint' }
     case 'phase':
       return {
-        text: tr(
-          why.phase === 'open'
-            ? 'sessions.why.phaseOpen'
-            : why.phase === 'close'
-              ? 'sessions.why.phaseClose'
-              : 'sessions.why.phaseMust',
-        ),
-        tone: why.phase === 'must' ? 'text-warn' : 'text-[var(--color-accent)]',
+        text: tr(why.phase === 'open' ? 'sessions.why.phaseOpen' : 'sessions.why.phaseClose'),
+        tone: 'text-[var(--color-accent)]',
       }
     default:
       return { text: tr('sessions.why.start'), tone: 'text-fg-faint' }
   }
 }
 
-function keyAndTempo(track: SessionTrack, notation: KeyNotation): string {
-  return [track.key && keyIn(track.key, notation), track.bpm > 0 ? Math.round(track.bpm) : null]
-    .filter((part) => part !== null)
-    .join(' ')
-}
-
 export function SessionWhyLine({
   track,
   why,
-  canChange,
   busy,
-  alternatives,
-  onPick,
   locked,
   onToggleLock,
 }: {
   track: SessionTrack
   why: SessionWhy
-  canChange: boolean
   busy: boolean
-  alternatives: () => SessionTrack[]
-  onPick: (track: SessionTrack) => void
   locked: boolean
   onToggleLock: () => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
-  const { keyNotation } = useAppSettings()
-  const [open, setOpen] = useState(false)
-  const [options, setOptions] = useState<SessionTrack[]>([])
   const phrase = phraseOf(why, tr)
   const placed = track.bpm > 0 ? String(Math.round(track.bpm)) : ''
   return (
@@ -144,59 +119,7 @@ export function SessionWhyLine({
             <LockOpen size={12} aria-hidden="true" />
           )}
         </button>
-        {canChange && (
-          <button
-            type="button"
-            data-testid="session-why-change"
-            disabled={busy}
-            aria-expanded={open}
-            onClick={(e) => {
-              e.stopPropagation()
-              if (!open) setOptions(alternatives())
-              setOpen((was) => !was)
-            }}
-            className="press shrink-0 text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] disabled:opacity-50"
-          >
-            {tr('sessions.why.change')} ▾
-          </button>
-        )}
       </div>
-      {canChange && open && options.length === 0 && (
-        <p data-testid="session-why-none" className="text-[11px] text-fg-dim">
-          {tr('sessions.why.noneFit')}
-        </p>
-      )}
-      {canChange && open && options.length > 0 && (
-        <ul
-          aria-label={tr('sessions.why.pick')}
-          className="overflow-hidden rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-field)]"
-        >
-          {options.map((track) => (
-            <li key={track.id} className="border-t border-[var(--color-line)] first:border-t-0">
-              <button
-                type="button"
-                data-testid={`session-why-alt-${track.id}`}
-                disabled={busy}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setOpen(false)
-                  onPick(track)
-                }}
-                className="flex w-full items-center justify-between gap-3 px-2.5 py-1.5 text-left text-xs hover:bg-[var(--color-hover)] disabled:opacity-50"
-              >
-                <span className="min-w-0 truncate">
-                  {track.artist}
-                  {track.artist && ' - '}
-                  {track.title}
-                </span>
-                <span className="shrink-0 font-mono text-[11px] text-fg-dim">
-                  {keyAndTempo(track, keyNotation)}
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
     </div>
   )
 }

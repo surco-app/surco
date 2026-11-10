@@ -69,12 +69,12 @@
         "alternate": "Alternate instrumental and vocal",
         "alternateHint": "Instrumental, vocal, instrumental, vocal",
         "preferCombos": "Prefer proven combos",
-        "preferCombosHint": "Pairs you have played back to back in two or more of your mixes, first",
+        "preferCombosHint": "A combo is an instrumental and a vocal you have played back to back in two or more of your tracklists. Surco puts them together again",
         "tasteWeight": "What you like most",
         "tasteWeightHint": "Stars and play count weigh in when picking",
         "surprise": "Surprise me",
         "surpriseHint": "Leaves room for pairs that were never played together",
-        "noMixed": "No Mixed playlist is chosen, so there is no order to read for combos. Add one in the Playlists step.",
+        "noMixed": "To find combos, mark a playlist with your tracklists or sets as Mixed in the Playlists step.",
         "play": "Time each track plays",
         "playValue": "{{minutes}} min",
         "playHint": "Tracks are mixed, not played whole. This is how long each one counts toward the session.",
@@ -137,12 +137,8 @@
       "chosen": "Chosen by you",
       "phaseOpen": "To open, from your warm-up playlists",
       "phaseClose": "To close, from your closing playlists",
-      "phaseMust": "One you always play",
-      "change": "Change",
-      "pick": "Change to",
     "lock": "Lock so Redo keeps it",
-    "unlock": "Unlock",
-    "noneFit": "Nothing else fits here"
+    "unlock": "Unlock"
     }
   },
   "pasteTracklist": {
