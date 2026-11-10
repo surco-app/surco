@@ -187,25 +187,15 @@ describe('SessionWizard sources step', () => {
     expect(screen.getByTestId('session-wizard-next')).toBeEnabled()
   })
 
-  it('fills a bar with how much of the length asked the chosen playlists cover, so the gap reads at a glance', () => {
-    setup()
-    toSources()
-    fireEvent.change(screen.getByTestId('playlists-search'), { target: { value: 'bases 97' } })
-    fireEvent.click(screen.getByTestId('session-wizard-role-mk97-any'))
-    const bar = screen.getByRole('meter')
-    expect(bar).toHaveAttribute('value', '66')
-    expect(bar).toHaveAttribute('max', '90')
-    expect(bar).toHaveAccessibleName(
-      i18n.t('sessions.wizard.sources.short', { minutes: 66, target: 90 }),
-    )
-  })
-
-  it('keeps the bar full when the playlists give more than the length asked', () => {
+  it('says how far the chosen playlists go beside the buttons, where the eye lands before pressing Next', () => {
     setup()
     toSources()
     fireEvent.click(screen.getByTestId('playlists-folder-rem'))
     fireEvent.click(screen.getByTestId('session-wizard-role-b90-base'))
-    expect(screen.getByRole('meter')).toHaveAttribute('value', '90')
+    const footer = screen.getByTestId('session-wizard-footer')
+    expect(footer).toContainElement(screen.getByTestId('session-wizard-summary'))
+    expect(footer).toContainElement(screen.getByTestId('session-wizard-length'))
+    expect(footer).toContainElement(screen.getByTestId('session-wizard-next'))
   })
 
   it('says the chosen playlists are enough once they reach the length asked', () => {
@@ -533,7 +523,6 @@ describe('SessionWizard minutes each track plays', () => {
       i18n.t('sessions.wizard.duration.tracks', { count: 23, minutes: 90 }),
     )
   })
-
 
   it('starts from the saved minutes and shows them', async () => {
     setup({ b90: 'base' }, { ...INITIAL, playMinutes: 4 })

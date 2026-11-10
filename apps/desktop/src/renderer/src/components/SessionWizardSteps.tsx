@@ -138,8 +138,6 @@ export function SourcesStep({
   onPickMany,
   only,
   onOnly,
-  minutes,
-  playMinutes,
 }: {
   tree: readonly SourceNode[]
   roles: Readonly<Record<string, PlaylistRole>>
@@ -148,8 +146,6 @@ export function SourcesStep({
   onPickMany: (roles: Readonly<Record<string, PlaylistRole | null>>) => void
   only: boolean
   onOnly: (only: boolean) => void
-  minutes: number
-  playMinutes: number
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const playlists = useMemo(() => flattenPlaylists([...tree]), [tree])
@@ -165,8 +161,6 @@ export function SourcesStep({
   )
   const chosen = sources.filter((id) => byId.has(id))
   const onlyIds = only && chosen.length > 0 ? new Set(chosen) : undefined
-  const eligible = chosen.reduce((sum, id) => sum + (byId.get(id)?.count ?? 0), 0)
-  const reach = eligible * playMinutes
   return (
     <div className="flex flex-col gap-3">
       <p data-testid="session-wizard-sources-hint" className="text-xs text-fg-dim">
@@ -216,52 +210,56 @@ export function SourcesStep({
           }
         />
       </div>
-      {chosen.length === 0 ? (
-        <p data-testid="session-wizard-none" className="text-xs text-fg-dim">
-          {tr('sessions.wizard.sources.none')}
-        </p>
-      ) : (
-        <div className="flex items-center justify-between gap-3 text-xs text-fg-dim">
-          <p data-testid="session-wizard-summary">
-            {tr('sessions.wizard.sources.summary', { count: chosen.length, tracks: eligible })}
-          </p>
-          <button
-            type="button"
-            data-testid="session-wizard-only-chosen"
-            aria-pressed={only}
-            onClick={() => onOnly(!only)}
-            className="press shrink-0 rounded-md px-2 py-1 text-[var(--color-accent)] hover:bg-[var(--color-hover)]"
-          >
-            {tr(
-              only ? 'sessions.wizard.sources.allPlaylists' : 'sessions.wizard.sources.onlyChosen',
-            )}
-          </button>
-        </div>
-      )}
       {chosen.length > 0 && (
-        <div className="flex flex-col gap-1.5">
-          <p
-            id="session-wizard-length"
-            data-testid="session-wizard-length"
-            className={`text-xs ${reach < minutes ? 'text-warn' : 'text-good'}`}
-          >
-            {reach < minutes
-              ? tr('sessions.wizard.sources.short', { minutes: reach, target: minutes })
-              : tr('sessions.wizard.sources.enough', { target: minutes })}
-          </p>
-          <meter
-            aria-labelledby="session-wizard-length"
-            min={0}
-            max={minutes}
-            value={Math.min(reach, minutes)}
-            className={`h-1.5 w-full appearance-none [&::-webkit-meter-bar]:h-1.5 [&::-webkit-meter-bar]:rounded-full [&::-webkit-meter-bar]:border-0 [&::-webkit-meter-bar]:bg-[var(--color-panel-2)] [&::-webkit-meter-optimum-value]:rounded-full ${
-              reach < minutes
-                ? '[&::-webkit-meter-optimum-value]:bg-warn'
-                : '[&::-webkit-meter-optimum-value]:bg-good'
-            }`}
-          />
-        </div>
+        <button
+          type="button"
+          data-testid="session-wizard-only-chosen"
+          aria-pressed={only}
+          onClick={() => onOnly(!only)}
+          className="press self-end rounded-md px-2 py-1 text-xs text-[var(--color-accent)] hover:bg-[var(--color-hover)]"
+        >
+          {tr(only ? 'sessions.wizard.sources.allPlaylists' : 'sessions.wizard.sources.onlyChosen')}
+        </button>
       )}
+    </div>
+  )
+}
+
+export function SourcesReach({
+  tree,
+  sources,
+  minutes,
+  playMinutes,
+}: {
+  tree: readonly SourceNode[]
+  sources: readonly string[]
+  minutes: number
+  playMinutes: number
+}): React.JSX.Element {
+  const { t: tr } = useTranslation()
+  const counts = useMemo(
+    () => new Map(flattenPlaylists([...tree]).map((p) => [p.node.id, p.node.count])),
+    [tree],
+  )
+  const chosen = sources.filter((id) => counts.has(id))
+  if (chosen.length === 0)
+    return (
+      <p data-testid="session-wizard-none" className="text-xs text-fg-dim">
+        {tr('sessions.wizard.sources.none')}
+      </p>
+    )
+  const eligible = chosen.reduce((sum, id) => sum + (counts.get(id) ?? 0), 0)
+  const reach = eligible * playMinutes
+  return (
+    <div className="flex min-w-0 flex-col gap-0.5 text-xs text-fg-dim">
+      <p data-testid="session-wizard-summary">
+        {tr('sessions.wizard.sources.summary', { count: chosen.length, tracks: eligible })}
+      </p>
+      <p data-testid="session-wizard-length" className={reach < minutes ? 'text-warn' : undefined}>
+        {reach < minutes
+          ? tr('sessions.wizard.sources.short', { minutes: reach, target: minutes })
+          : tr('sessions.wizard.sources.enough', { target: minutes })}
+      </p>
     </div>
   )
 }
