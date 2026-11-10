@@ -254,11 +254,11 @@ export function buildSession(
     else if (strict && expected !== null) expected = expected === 'base' ? 'vocal' : 'base'
   }
 
-  const comboOpening = (): SessionTrack | null => {
+  const comboOpening = (allowed: ReadonlySet<string>): SessionTrack | null => {
     const starts: { from: SessionTrack; strength: number }[] = []
     for (const [fromId, targets] of combos) {
       const from = byId.get(fromId)
-      if (!from || !isOpen(from) || (strict && from.role === 'any')) continue
+      if (!from || !allowed.has(fromId)) continue
       const strength = Math.max(0, ...[...targets].filter(([id]) => byId.has(id)).map(([, n]) => n))
       if (strength > 0) starts.push({ from, strength })
     }
@@ -393,10 +393,14 @@ export function buildSession(
     const open = (strict ? eligible.filter((track) => track.role !== 'any') : eligible).filter(
       isOpen,
     )
-    const start = options.preferCombos ? comboOpening() : null
+    const sung = open.filter((track) => track.role === 'vocal')
+    const starters = sung.length > 0 ? sung : open
+    const start = options.preferCombos
+      ? comboOpening(new Set(starters.map((track) => track.id)))
+      : null
     if (start) return start
-    return open.length > 0
-      ? pickWeighted(richest(open), (track) => arcWeight(track) * phaseWeight(track))
+    return starters.length > 0
+      ? pickWeighted(richest(starters), (track) => arcWeight(track) * phaseWeight(track))
       : null
   }
 

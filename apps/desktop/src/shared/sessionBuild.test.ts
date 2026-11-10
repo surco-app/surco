@@ -212,7 +212,7 @@ describe('buildSession alternation, new tracks and surprise', () => {
     const plan = buildSession(
       pool,
       combosOf(['b1', 'x', 2]),
-      options({ alternate: true, minutes: 30 }),
+      options({ alternate: true, minutes: 30, startWith: 'b1' }),
     )
     expect(ids(plan)).toEqual(['b1', 'x', 'b2', 'v1'])
   })
@@ -226,7 +226,7 @@ describe('buildSession alternation, new tracks and surprise', () => {
     const plan = buildSession(
       pool,
       combosOf(['a', 'b', 3]),
-      options({ alternate: true, minutes: 30 }),
+      options({ alternate: true, minutes: 30, startWith: 'a' }),
     )
     expect(ids(plan)).toEqual(['a', 'c', 'b'])
   })
@@ -281,7 +281,7 @@ describe('buildSession alternation, new tracks and surprise', () => {
     const plan = buildSession(
       pool,
       combosOf(['a', 'x', 1]),
-      options({ alternate: true, minutes: 20, freshShare: 0.5 }),
+      options({ alternate: true, minutes: 20, freshShare: 0.5, startWith: 'a' }),
     )
     expect(ids(plan)).toEqual(['a', 'x', 'fb'])
     expect(plan.items[2].why).toEqual({ kind: 'fresh', key: null, role: 'base' })

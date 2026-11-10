@@ -292,3 +292,36 @@ describe('buildSession gives each part of the set its tracks', () => {
     expect(counts.must / 10).toBeGreaterThan((1.5 * counts.plain) / 60)
   })
 })
+
+describe('buildSession opens with a song with voice', () => {
+  const bases = Array.from({ length: 20 }, (_, i) => track(`b${i}`, { role: 'base', rating: 100 }))
+  const vocals = Array.from({ length: 3 }, (_, i) => track(`v${i}`, { role: 'vocal' }))
+
+  it('always starts with a vocal track when there is one, since a sung track opens best', () => {
+    for (const seed of SEEDS.slice(0, 60)) {
+      const plan = buildSession([...bases, ...vocals], none, options({ alternate: false, seed }))
+      expect(plan.items[0].track.role, `seed ${seed}`).toBe('vocal')
+    }
+  })
+
+  it('starts from a vocal even when the strongest proven combo starts on a base', () => {
+    const combos = combosOf(['b0', 'b1', 5], ['v0', 'b2', 2])
+    for (const seed of SEEDS.slice(0, 60)) {
+      const plan = buildSession(
+        [...bases, ...vocals],
+        combos,
+        options({ preferCombos: true, alternate: true, seed }),
+      )
+      expect(plan.items[0].track.role, `seed ${seed}`).toBe('vocal')
+    }
+  })
+
+  it('keeps the track the DJ asked to start from, even a base', () => {
+    const plan = buildSession([...bases, ...vocals], none, options({ startWith: 'b3' }))
+    expect(plan.items[0].track.id).toBe('b3')
+  })
+
+  it('still opens when there is no vocal track at all', () => {
+    expect(buildSession(bases, none, options()).items.length).toBeGreaterThan(0)
+  })
+})

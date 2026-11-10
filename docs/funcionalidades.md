@@ -2011,8 +2011,10 @@ una sesión guardada en una carpeta de sets no se dé la razón a sí misma.
 **Sorteo, no la mejor.** Entre las que encajan, cada pista se sortea con un peso que suma el
 gusto (estrellas y escuchas, al cubo), la cercanía de tono, un tempo que sube poco a poco del
 cuarto más lento de las elegidas al cuarto más rápido (`arcWeight`) y la fase del set; el mismo
-artista seguido pesa un 30 % (`pickWeighted`, `liking`, `keyWeight`, `actWeight`). El arranque se
-sortea entre los combos, con más peso cuanto más probado. Un mismo tema no suena dos veces aunque
+artista seguido pesa un 30 % (`pickWeighted`, `liking`, `keyWeight`, `actWeight`). El arranque es
+siempre una cantada si las hay, porque una canción con voz abre mejor (lo pidió el DJ; 15 de sus
+23 bolos ya abren así), y se sortea entre los combos que salen de una cantada, con más peso cuanto
+más probado; «Sesión desde esta pista…» manda sobre esto. Un mismo tema no suena dos veces aunque
 esté en dos ficheros (`song`, `lib/sessionCandidates.ts`), y «Cambiar» no ofrece el otro fichero.
 La línea dice «de las mejores que cuadran» solo si la pista está en el cuarto con más gusto de las
 que cabían. Dos nuevas nunca van seguidas. Una pista fijada sigue en su posición aunque el hueco

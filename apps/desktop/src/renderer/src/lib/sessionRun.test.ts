@@ -163,6 +163,10 @@ describe('runSession', () => {
         voices: [row('/m/b.mp3'), row('/m/d.mp3')],
         set: [row('/m/a.mp3'), row('/m/b.mp3')],
       },
+      1,
+      {},
+      undefined,
+      '/m/a.mp3',
     )
     expect(combos.size).toBe(0)
     expect(plan.items[0].track.id).toBe('/m/a.mp3')
