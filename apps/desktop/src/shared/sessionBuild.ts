@@ -333,6 +333,8 @@ export function buildSession(
       (track) => isOpen(track) && !(onlyWithoutCombo && combos.get(current.id)?.has(track.id)),
     )
     let fit = fitTier(current, open, roleFits, true, harmony)
+    if (fit.tier.length === 0 && options.alternate)
+      fit = fitTier(current, open, roleFits, true, 'free')
     if (fit.tier.length === 0) fit = fitTier(current, open, roleOrNeutral, true, harmony)
     if (fit.tier.length === 0) fit = fitTier(current, open, () => true, true, harmony)
     const { tier, relaxed } = fit

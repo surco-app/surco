@@ -84,7 +84,7 @@ describe('buildSession keeps the roles alternating before it keeps the tempo', (
     }
   })
 
-  it('keeps the harmony the user asked for, even if that costs a repeated role', () => {
+  it('keeps the roles alternating before the harmony, since the DJ wants base and vocal in turn above all', () => {
     const pool = [
       track('start', { role: 'base', bpm: 140, key: '8A' }),
       track('wrongKey', { role: 'vocal', bpm: 140, key: '2A' }),
@@ -92,8 +92,8 @@ describe('buildSession keeps the roles alternating before it keeps the tempo', (
     ]
     for (const seed of SEEDS) {
       const plan = buildSession(pool, none, options({ minutes: 10, harmony: 'same', seed }))
-      const ids = plan.items.map((item) => item.track.id)
-      if (ids.includes('wrongKey')) expect(ids).toEqual(['wrongKey'])
+      const roles = plan.items.map((item) => item.track.role)
+      expect(roles.slice(0, 2)).toEqual(['vocal', 'base'])
     }
   })
 

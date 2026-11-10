@@ -202,6 +202,24 @@ describe('buildSession alternation, new tracks and surprise', () => {
     }
   })
 
+  it('keeps base, vocal, base, vocal when no base mixes by key, since the DJ asked for the alternation first', () => {
+    const vocalKeys = ['6A', '6B', '7A', '7B', '6A', '7A']
+    const pool = [
+      ...vocalKeys.map((key, i) => track(`v${i}`, { role: 'vocal', key, must: true })),
+      ...['1A', '1B', '12A', '12B', '2B', '11B'].map((key, i) =>
+        track(`b${i}`, { role: 'base', key }),
+      ),
+    ]
+    const plan = buildSession(
+      pool,
+      none,
+      options({ alternate: true, harmony: 'neighbours', minutes: 60, startWith: 'v0' }),
+    )
+    const roles = plan.items.map((item) => item.track.role)
+    for (let i = 1; i < roles.length; i++) expect(roles[i]).not.toBe(roles[i - 1])
+    expect(plan.items.length).toBe(12)
+  })
+
   it('lets an any track reached by a proven combo take the place of the role that was due', () => {
     const pool = [
       track('b1', { role: 'base' }),
