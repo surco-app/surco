@@ -22,8 +22,8 @@
     "role": {
       "title": "Papel para sessões",
     "of": "Papel de {{name}}",
-      "base": "Instrumentais (bases)",
-      "vocal": "Com voz (cantadas)",
+      "base": "Instrumentais",
+      "vocal": "Com voz",
       "any": "Misto"
     },
     "wizard": {
@@ -48,7 +48,7 @@
       },
       "sources": {
         "heading": "De quais playlists saem as faixas?",
-        "hint": "Busque cada playlist e marque se ela tem Instrumentais (bases), Com voz (cantadas) ou Misto. Misto é para suas tracklists e sets, onde a ordem importa. É ali que o Surco procura combos, pares como uma base e uma cantada que você tocou em sequência em duas ou mais mixagens. Para ir mais rápido, percorra a lista com as setas e aperte 1 para Instrumentais (bases), 2 para Com voz (cantadas) ou 3 para Misto.",
+        "hint": "Busque cada playlist e marque se ela tem Instrumentais, Com voz ou Misto. Misto é para suas tracklists e sets, onde a ordem importa. É ali que o Surco procura combos, pares como uma base e uma cantada que você tocou em sequência em duas ou mais mixagens. Para ir mais rápido, percorra a lista com as setas e aperte 1 para Instrumentais, 2 para Com voz ou 3 para Misto.",
         "search": "Buscar entre {{count}} playlists",
         "noHits": "Nenhuma playlist corresponde",
         "none": "Nenhuma playlist escolhida ainda",
