@@ -1989,7 +1989,7 @@ del árbol (`edit={editableSource ? treeEdit : undefined}`, `App.tsx`), así que
 
 **Tres pasos** (`SessionWizard.tsx`, `SessionWizardSteps.tsx`). Duración (60, 90 min, 2 h, 3 h u
 otra; por defecto 90). Playlists, elegidas en el mismo árbol del editor, cada una con su papel:
-«Instrumentales (bases)», «Con voz (cantadas)» o Mezcladas (`PlaylistRole`, `shared/sessionTypes.ts:1`); una carpeta entera
+«Bases», «Vocales» o Mezcladas (`PlaylistRole`, `shared/sessionTypes.ts:1`); una carpeta entera
 toma un papel de golpe, y las carpetas que se llaman como un papel (Bases, Cantaditas, Vocals,
 Sets, Tracklists, Combos, Bolos…) se ofrecen marcadas con un clic (`suggestRoles`,
 `lib/sessionTree.ts:29`). «Ver solo las elegidas» filtra el árbol a las marcadas, y vuelve a la lista entera si se desmarca la última. Las playlists separador no se listan. Carácter: alternar instrumental y
