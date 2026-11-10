@@ -1,13 +1,13 @@
-import { X } from 'lucide-react'
 import type { TFunction } from 'i18next'
+import { X } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { camelotOf } from '../../../shared/camelot'
 import type { PlaylistRole, SessionAnswers } from '../../../shared/sessionTypes'
 import type { SourceNode, SourcePlaylistEntry } from '../../../shared/types'
-import type { BuildResult } from '../hooks/useSessionRun'
 import type { SessionRows } from '../hooks/useSessionRows'
+import type { BuildResult } from '../hooks/useSessionRun'
 import { toCandidates } from '../lib/sessionCandidates'
 import { withoutSeparators } from '../lib/sessionTree'
 import { ModalShell } from './ModalShell'
@@ -15,6 +15,7 @@ import {
   CharacterStep,
   DurationStep,
   isPresetMinutes,
+  SourcesReach,
   SourcesStep,
   wholeMinutes,
 } from './SessionWizardSteps'
@@ -245,7 +246,18 @@ export function SessionWizard({
                       : 'bg-[var(--color-line-strong)]'
                 }`}
               />
-              {tr(`sessions.wizard.steps.${id}`)}
+              {i < step ? (
+                <button
+                  type="button"
+                  data-testid={`session-wizard-step-${id}`}
+                  onClick={() => setStep(i)}
+                  className="press rounded text-fg-dim underline-offset-2 hover:text-[var(--color-accent)] hover:underline"
+                >
+                  {tr(`sessions.wizard.steps.${id}`)}
+                </button>
+              ) : (
+                tr(`sessions.wizard.steps.${id}`)
+              )}
             </li>
           ))}
         </ol>
@@ -280,6 +292,8 @@ export function SessionWizard({
               const value = wholeMinutes(text)
               if (value !== null) setMinutes(value)
             }}
+            playMinutes={playMinutes}
+            onPlayMinutes={setPlayMinutes}
           />
         )}
         {current === 'sources' && (
@@ -291,16 +305,12 @@ export function SessionWizard({
             onPickMany={pickMany}
             only={onlyChosen}
             onOnly={setOnlyChosen}
-            minutes={minutes}
-            playMinutes={playMinutes}
           />
         )}
         {current === 'character' && (
           <CharacterStep
             options={options}
             hasKeys={hasKeys}
-            playMinutes={playMinutes}
-            onPlayMinutes={setPlayMinutes}
             hasNew={hasNew}
             hasMixed={sources.some((id) => roles[id] === 'any')}
             freshShare={freshShare}
@@ -323,39 +333,54 @@ export function SessionWizard({
           {tr(PROBLEM_TEXT[problem])}
         </p>
       )}
-      <div className="mt-5 flex items-center justify-end gap-2">
-        {step > 0 && (
-          <button
-            type="button"
-            data-testid="session-wizard-back"
-            onClick={() => setStep((s) => s - 1)}
-            className="press rounded-lg border border-[var(--color-line-strong)] px-4 py-2 text-sm font-medium hover:bg-[var(--color-hover)]"
-          >
-            {tr('sessions.wizard.back')}
-          </button>
-        )}
-        {last ? (
-          <button
-            type="button"
-            data-testid="session-wizard-build"
-            disabled={building}
-            aria-busy={building}
-            onClick={build}
-            className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]"
-          >
-            {tr(building ? 'sessions.wizard.building' : 'sessions.wizard.build')}
-          </button>
+      <div
+        data-testid="session-wizard-footer"
+        className="mt-5 flex items-center justify-between gap-4"
+      >
+        {current === 'sources' ? (
+          <SourcesReach
+            tree={usable}
+            sources={sources}
+            minutes={minutes}
+            playMinutes={playMinutes}
+          />
         ) : (
-          <button
-            type="button"
-            data-testid="session-wizard-next"
-            disabled={blocked}
-            onClick={advance}
-            className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
-          >
-            {reading ? tr('sessions.wizard.loading') : tr('sessions.wizard.next')}
-          </button>
+          <span />
         )}
+        <div className="flex shrink-0 items-center gap-2">
+          {step > 0 && (
+            <button
+              type="button"
+              data-testid="session-wizard-back"
+              onClick={() => setStep((s) => s - 1)}
+              className="press rounded-lg border border-[var(--color-line-strong)] px-4 py-2 text-sm font-medium hover:bg-[var(--color-hover)]"
+            >
+              {tr('sessions.wizard.back')}
+            </button>
+          )}
+          {last ? (
+            <button
+              type="button"
+              data-testid="session-wizard-build"
+              disabled={building}
+              aria-busy={building}
+              onClick={build}
+              className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]"
+            >
+              {tr(building ? 'sessions.wizard.building' : 'sessions.wizard.build')}
+            </button>
+          ) : (
+            <button
+              type="button"
+              data-testid="session-wizard-next"
+              disabled={blocked}
+              onClick={advance}
+              className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
+            >
+              {reading ? tr('sessions.wizard.loading') : tr('sessions.wizard.next')}
+            </button>
+          )}
+        </div>
       </div>
     </ModalShell>
   )

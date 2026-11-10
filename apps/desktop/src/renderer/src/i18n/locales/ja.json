@@ -44,7 +44,9 @@
         "h3": "3時間",
         "other": "その他",
         "customLabel": "分",
-        "customInvalid": "分を整数で入力してください"
+        "customInvalid": "分を整数で入力してください",
+        "tracks_one": "{{minutes}}分を埋めるのに約{{count}}曲",
+        "tracks_other": "{{minutes}}分を埋めるのに約{{count}}曲"
       },
       "sources": {
         "heading": "どのプレイリストから曲を選びますか？",
@@ -66,8 +68,10 @@
       },
       "character": {
         "heading": "どんな感じにしますか？",
+        "chain": "つなぎ方",
+        "pick": "選び方",
         "alternate": "インストとボーカルを交互に",
-        "alternateHint": "インスト、ボーカル、インスト、ボーカル",
+        "alternateHint": "ベース、ボーカル、ベース、ボーカル。両方が合わないときはハーモニックミックスより優先します",
         "preferCombos": "実績のあるコンボを優先",
         "preferCombosHint": "コンボとは、2つ以上のトラックリストで続けてかけたベースとボーカルの組み合わせです。Surco はそれをもう一度並べます",
         "tasteWeight": "好みを重視",

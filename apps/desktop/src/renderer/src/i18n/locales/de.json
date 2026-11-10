@@ -44,7 +44,9 @@
         "h3": "3 Std.",
         "other": "Andere",
         "customLabel": "Minuten",
-        "customInvalid": "Gib eine ganze Zahl in Minuten ein"
+        "customInvalid": "Gib eine ganze Zahl in Minuten ein",
+        "tracks_one": "Etwa {{count}} Track, um {{minutes}} Min. zu füllen",
+        "tracks_other": "Etwa {{count}} Tracks, um {{minutes}} Min. zu füllen"
       },
       "sources": {
         "heading": "Aus welchen Playlists sollen die Tracks kommen?",
@@ -66,8 +68,10 @@
       },
       "character": {
         "heading": "Wie soll sie werden?",
+        "chain": "Wie es verkettet",
+        "pick": "Was ausgewählt wird",
         "alternate": "Instrumental und Gesang abwechseln",
-        "alternateHint": "Instrumental, Gesang, Instrumental, Gesang",
+        "alternateHint": "Instrumental, Gesang, Instrumental, Gesang. Hat Vorrang vor dem harmonischen Mixen, wenn nicht beides passt",
         "preferCombos": "Bewährte Combos bevorzugen",
         "preferCombosHint": "Ein Combo ist ein Instrumental und ein Gesangstrack, die du in zwei oder mehr deiner Tracklists direkt nacheinander gespielt hast. Surco bringt sie wieder zusammen",
         "tasteWeight": "Was dir am besten gefällt",

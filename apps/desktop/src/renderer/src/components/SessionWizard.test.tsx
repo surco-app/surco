@@ -94,6 +94,22 @@ const toCharacter = async () => {
   await screen.findByTestId('session-wizard-build')
 }
 
+describe('SessionWizard steps', () => {
+  it('goes back to a step already done by pressing its name, without stepping back one by one', async () => {
+    setup({ b90: 'base' })
+    await toCharacter()
+    fireEvent.click(screen.getByTestId('session-wizard-step-duration'))
+    expect(screen.getByTestId('session-wizard-step-title')).toHaveTextContent(
+      i18n.t('sessions.wizard.duration.heading'),
+    )
+  })
+
+  it('does not let a step ahead be pressed, since it may need what comes before', () => {
+    setup()
+    expect(screen.queryByTestId('session-wizard-step-character')).toBeNull()
+  })
+})
+
 describe('SessionWizard duration step', () => {
   it('opens on the duration with the saved length marked', () => {
     setup({}, { ...INITIAL, minutes: 120 })
@@ -187,25 +203,15 @@ describe('SessionWizard sources step', () => {
     expect(screen.getByTestId('session-wizard-next')).toBeEnabled()
   })
 
-  it('fills a bar with how much of the length asked the chosen playlists cover, so the gap reads at a glance', () => {
-    setup()
-    toSources()
-    fireEvent.change(screen.getByTestId('playlists-search'), { target: { value: 'bases 97' } })
-    fireEvent.click(screen.getByTestId('session-wizard-role-mk97-any'))
-    const bar = screen.getByRole('meter')
-    expect(bar).toHaveAttribute('value', '66')
-    expect(bar).toHaveAttribute('max', '90')
-    expect(bar).toHaveAccessibleName(
-      i18n.t('sessions.wizard.sources.short', { minutes: 66, target: 90 }),
-    )
-  })
-
-  it('keeps the bar full when the playlists give more than the length asked', () => {
+  it('says how far the chosen playlists go beside the buttons, where the eye lands before pressing Next', () => {
     setup()
     toSources()
     fireEvent.click(screen.getByTestId('playlists-folder-rem'))
     fireEvent.click(screen.getByTestId('session-wizard-role-b90-base'))
-    expect(screen.getByRole('meter')).toHaveAttribute('value', '90')
+    const footer = screen.getByTestId('session-wizard-footer')
+    expect(footer).toContainElement(screen.getByTestId('session-wizard-summary'))
+    expect(footer).toContainElement(screen.getByTestId('session-wizard-length'))
+    expect(footer).toContainElement(screen.getByTestId('session-wizard-next'))
   })
 
   it('says the chosen playlists are enough once they reach the length asked', () => {
@@ -522,9 +528,20 @@ describe('SessionWizard new tracks', () => {
 })
 
 describe('SessionWizard minutes each track plays', () => {
+  it('sits on the duration step with the length, since together they decide how many tracks are needed', () => {
+    setup({ b90: 'base' }, { ...INITIAL, minutes: 90, playMinutes: 2 })
+    expect(screen.getByTestId('session-wizard-play')).toBeInTheDocument()
+    expect(screen.getByTestId('session-wizard-track-count')).toHaveTextContent(
+      i18n.t('sessions.wizard.duration.tracks', { count: 45, minutes: 90 }),
+    )
+    fireEvent.change(screen.getByTestId('session-wizard-play'), { target: { value: '4' } })
+    expect(screen.getByTestId('session-wizard-track-count')).toHaveTextContent(
+      i18n.t('sessions.wizard.duration.tracks', { count: 23, minutes: 90 }),
+    )
+  })
+
   it('starts from the saved minutes and shows them', async () => {
     setup({ b90: 'base' }, { ...INITIAL, playMinutes: 4 })
-    await toCharacter()
     expect(screen.getByTestId('session-wizard-play')).toHaveValue('4')
     expect(screen.getByTestId('session-wizard-play-value')).toHaveTextContent(
       i18n.t('sessions.wizard.character.playValue', { minutes: 4 }),
@@ -533,7 +550,6 @@ describe('SessionWizard minutes each track plays', () => {
 
   it('goes from 1 to 10 whole minutes', async () => {
     setup({ b90: 'base' })
-    await toCharacter()
     const slider = screen.getByTestId('session-wizard-play')
     expect(slider).toHaveAttribute('min', '1')
     expect(slider).toHaveAttribute('max', '10')
@@ -542,7 +558,6 @@ describe('SessionWizard minutes each track plays', () => {
 
   it('explains that tracks are mixed and not played whole', async () => {
     setup({ b90: 'base' })
-    await toCharacter()
     expect(screen.getByTestId('session-wizard-play-hint')).toHaveTextContent(
       i18n.t('sessions.wizard.character.playHint'),
     )
@@ -550,8 +565,8 @@ describe('SessionWizard minutes each track plays', () => {
 
   it('hands over the minutes that were chosen when building', async () => {
     const { onBuild } = setup({ b90: 'base' })
-    await toCharacter()
     fireEvent.change(screen.getByTestId('session-wizard-play'), { target: { value: '5' } })
+    await toCharacter()
     fireEvent.click(screen.getByTestId('session-wizard-build'))
     expect(onBuild).toHaveBeenCalledExactlyOnceWith(
       expect.objectContaining({ playMinutes: 5 }),
@@ -583,6 +598,24 @@ describe('SessionWizard character step', () => {
       'aria-pressed',
       'true',
     )
+  })
+
+  it('groups alternation with the key, since they decide what follows what and the role wins when they clash', async () => {
+    setup({ b90: 'base' }, INITIAL, fakeRows({ b90: [entry('/m/a.mp3', '8A')] }))
+    await toCharacter()
+    const chain = screen.getByRole('group', { name: i18n.t('sessions.wizard.character.chain') })
+    expect(chain).toContainElement(screen.getByTestId('session-wizard-opt-alternate'))
+    expect(chain).toContainElement(screen.getByTestId('session-wizard-harmony-same'))
+    expect(chain).not.toContainElement(screen.getByTestId('session-wizard-opt-preferCombos'))
+  })
+
+  it('groups what decides which tracks get in apart from the order', async () => {
+    setup({ b90: 'base' })
+    await toCharacter()
+    const pick = screen.getByRole('group', { name: i18n.t('sessions.wizard.character.pick') })
+    for (const key of ['preferCombos', 'tasteWeight', 'surprise'])
+      expect(pick).toContainElement(screen.getByTestId(`session-wizard-opt-${key}`))
+    expect(pick).not.toContainElement(screen.getByTestId('session-wizard-opt-alternate'))
   })
 
   it('turns harmony off and says why when no chosen track has a key', async () => {
@@ -804,9 +837,8 @@ describe('SessionWizard for assistive technology', () => {
     ).toBeInTheDocument()
   })
 
-  it('reads the time each track plays with its unit, not as a bare number', async () => {
+  it('reads the time each track plays with its unit, not as a bare number', () => {
     setup({ b90: 'base' })
-    await toCharacter()
     expect(screen.getByTestId('session-wizard-play')).toHaveAttribute(
       'aria-valuetext',
       i18n.t('sessions.wizard.character.playValue', { minutes: 3 }),
