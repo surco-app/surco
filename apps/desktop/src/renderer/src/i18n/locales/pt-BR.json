@@ -48,7 +48,7 @@
       },
       "sources": {
         "heading": "De quais playlists saem as faixas?",
-        "hint": "Busque uma playlist e diga o que há nela. Use Misto para tracklists e sets, onde a ordem importa. O Surco lê essa ordem para achar combos.",
+        "hint": "Busque uma playlist e diga o que há nela. Use Misto para tracklists e sets, onde a ordem importa. O Surco lê essa ordem para achar combos. Use as setas para percorrer a lista, e 1, 2 e 3 marcam Instrumentais (bases), Com voz (cantadas) ou Misto.",
         "search": "Buscar entre {{count}} playlists",
         "noHits": "Nenhuma playlist corresponde",
         "none": "Nenhuma playlist escolhida ainda",
@@ -56,7 +56,9 @@
         "onlyChosen": "Ver só as escolhidas",
         "allPlaylists": "Ver todas as playlists",
         "summary_one": "{{count}} playlist escolhida, até {{tracks}} faixas para escolher",
-        "summary_other": "{{count}} playlists escolhidas, até {{tracks}} faixas para escolher"
+        "summary_other": "{{count}} playlists escolhidas, até {{tracks}} faixas para escolher",
+        "short": "Dá para uns {{minutes}} min dos {{target}} que você pediu. Escolha outra playlist para chegar lá.",
+        "enough": "Dá para os {{target}} min que você pediu"
       },
       "fresh": {
         "hint": "Faixas novas são as adicionadas nos últimos 30 dias. Se o programa não guarda datas, as que não têm reproduções nem estrelas.",

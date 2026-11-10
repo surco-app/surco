@@ -48,7 +48,7 @@
       },
       "sources": {
         "heading": "Aus welchen Playlists sollen die Tracks kommen?",
-        "hint": "Suche eine Playlist und gib an, was sie enthält. Nimm Gemischt für Tracklists und Sets, bei denen die Reihenfolge zählt. Surco liest sie, um Combos zu finden.",
+        "hint": "Suche eine Playlist und gib an, was sie enthält. Nimm Gemischt für Tracklists und Sets, bei denen die Reihenfolge zählt. Surco liest sie, um Combos zu finden. Mit den Pfeiltasten gehst du durch die Liste, 1, 2 und 3 markieren Instrumentals, Gesang oder Gemischt.",
         "search": "Unter {{count}} Playlists suchen",
         "noHits": "Keine Playlist passt",
         "none": "Noch keine Playlist ausgewählt",
@@ -56,7 +56,9 @@
         "onlyChosen": "Nur die gewählten zeigen",
         "allPlaylists": "Alle Playlists zeigen",
         "summary_one": "{{count}} Playlist gewählt, bis zu {{tracks}} Tracks zur Auswahl",
-        "summary_other": "{{count}} Playlists gewählt, bis zu {{tracks}} Tracks zur Auswahl"
+        "summary_other": "{{count}} Playlists gewählt, bis zu {{tracks}} Tracks zur Auswahl",
+        "short": "Reicht für etwa {{minutes}} der gewünschten {{target}} Min. Wähle eine weitere Playlist, um sie zu erreichen.",
+        "enough": "Reicht für die gewünschten {{target}} Min."
       },
       "fresh": {
         "hint": "Neu sind Tracks, die in den letzten 30 Tagen hinzugekommen sind. Speichert das Programm keine Daten, sind es Tracks ohne Wiedergaben und Sterne.",

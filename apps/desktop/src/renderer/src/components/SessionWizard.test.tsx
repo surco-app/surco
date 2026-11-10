@@ -139,13 +139,12 @@ describe('SessionWizard duration step', () => {
 })
 
 describe('SessionWizard sources step', () => {
-  it('goes to the playlists step and moves the focus to its heading', () => {
+  it('goes to the playlists step', () => {
     setup()
     toSources()
     expect(screen.getByTestId('session-wizard-step-title')).toHaveTextContent(
       i18n.t('sessions.wizard.sources.heading'),
     )
-    expect(screen.getByTestId('session-wizard-step-title')).toHaveFocus()
   })
 
   it('comes back to the duration from the playlists step', () => {
@@ -177,6 +176,79 @@ describe('SessionWizard sources step', () => {
     )
   })
 
+  it('warns before building that the chosen playlists fall short of the length asked, so the DJ adds another instead of finding a short set at the end', () => {
+    setup()
+    toSources()
+    fireEvent.change(screen.getByTestId('playlists-search'), { target: { value: 'bases 97' } })
+    fireEvent.click(screen.getByTestId('session-wizard-role-mk97-any'))
+    expect(screen.getByTestId('session-wizard-length')).toHaveTextContent(
+      i18n.t('sessions.wizard.sources.short', { minutes: 66, target: 90 }),
+    )
+    expect(screen.getByTestId('session-wizard-next')).toBeEnabled()
+  })
+
+  it('says the chosen playlists are enough once they reach the length asked', () => {
+    setup()
+    toSources()
+    fireEvent.click(screen.getByTestId('playlists-folder-rem'))
+    fireEvent.click(screen.getByTestId('session-wizard-role-b90-base'))
+    expect(screen.getByTestId('session-wizard-length')).toHaveTextContent(
+      i18n.t('sessions.wizard.sources.enough', { target: 90 }),
+    )
+  })
+
+  it('lands in the search on the Playlists step, so the DJ types a name without reaching for the mouse first', () => {
+    setup()
+    toSources()
+    expect(screen.getByTestId('playlists-search')).toHaveFocus()
+  })
+
+  it('walks down to a playlist with the arrows and marks it with 1, 2 or 3, so the whole step works from the keyboard', () => {
+    setup()
+    toSources()
+    const press = (key: string) => fireEvent.keyDown(document.activeElement as Element, { key })
+    press('ArrowDown')
+    press('ArrowRight')
+    press('ArrowDown')
+    expect(screen.getByTestId('playlists-row-b90')).toHaveFocus()
+    press('1')
+    expect(screen.getByTestId('session-wizard-role-b90-base')).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    press('2')
+    expect(screen.getByTestId('session-wizard-role-b90-vocal')).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    press('2')
+    expect(screen.getByTestId('session-wizard-role-b90-vocal')).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
+  })
+
+  it('marks every playlist in a folder when 3 is pressed on the folder, like its own Mixed button', () => {
+    setup()
+    toSources()
+    fireEvent.keyDown(screen.getByTestId('playlists-search'), { key: 'ArrowDown' })
+    fireEvent.keyDown(screen.getByTestId('playlists-folder-rem'), { key: '3' })
+    expect(screen.getByTestId('session-wizard-folder-role-rem-any')).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    expect(screen.getByTestId('session-wizard-summary')).toHaveTextContent(
+      i18n.t('sessions.wizard.sources.summary', { count: 4, tracks: 168 }),
+    )
+  })
+
+  it('leaves numbers typed in the search to the search, since playlist names carry years', () => {
+    setup()
+    toSources()
+    fireEvent.keyDown(screen.getByTestId('playlists-search'), { key: '1' })
+    expect(screen.getByTestId('session-wizard-none')).toBeInTheDocument()
+  })
+
   it('invites to search the playlists and never to create one', () => {
     setup()
     toSources()
@@ -191,12 +263,6 @@ describe('SessionWizard sources step', () => {
     toSources()
     fireEvent.change(screen.getByTestId('playlists-search'), { target: { value: 'Algo nuevo' } })
     expect(screen.queryByTestId('playlists-create')).toBeNull()
-  })
-
-  it('keeps the focus on the heading instead of on the search', () => {
-    setup()
-    toSources()
-    expect(screen.getByTestId('playlists-search')).not.toHaveFocus()
   })
 
   it('says so when nothing matches', () => {

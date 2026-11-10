@@ -104,6 +104,8 @@ export function SourcesStep({
   onPickMany,
   only,
   onOnly,
+  minutes,
+  playMinutes,
 }: {
   tree: readonly SourceNode[]
   roles: Readonly<Record<string, PlaylistRole>>
@@ -112,6 +114,8 @@ export function SourcesStep({
   onPickMany: (roles: Readonly<Record<string, PlaylistRole | null>>) => void
   only: boolean
   onOnly: (only: boolean) => void
+  minutes: number
+  playMinutes: number
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const playlists = useMemo(() => flattenPlaylists([...tree]), [tree])
@@ -130,6 +134,7 @@ export function SourcesStep({
   const suggestedNames = useMemo(() => suggestedFolderNames(tree), [tree])
   const onlyIds = only && chosen.length > 0 ? new Set(chosen) : undefined
   const eligible = chosen.reduce((sum, id) => sum + (byId.get(id)?.count ?? 0), 0)
+  const reach = eligible * playMinutes
   return (
     <div className="flex flex-col gap-3">
       <p data-testid="session-wizard-sources-hint" className="text-xs text-fg-dim">
@@ -152,10 +157,18 @@ export function SourcesStep({
           tokens={tokens}
           onToggle={NO_TOGGLE}
           allowCreate={false}
-          autoFocus={false}
           emptyText={tr('sessions.wizard.sources.noHits')}
           searchLabel={tr('sessions.wizard.sources.search', { count: playlists.length })}
           onlyIds={onlyIds}
+          onRowKey={(key, row) => {
+            const role = KEY_ROLES[key]
+            if (!role) return false
+            const ids =
+              'node' in row ? playlistIdsUnder(row.node) : row.target.id ? [row.target.id] : []
+            const on = ids.length > 0 && ids.every((id) => roles[id] === role)
+            onPickMany(Object.fromEntries(ids.map((id) => [id, on ? null : role])))
+            return true
+          }}
           folderControl={(node) => {
             const ids = playlistIdsUnder(node)
             const first = ids.length > 0 ? roles[ids[0]] : undefined
@@ -203,9 +216,21 @@ export function SourcesStep({
           </button>
         </div>
       )}
+      {chosen.length > 0 && (
+        <p
+          data-testid="session-wizard-length"
+          className={`text-xs ${reach < minutes ? 'text-warn' : 'text-fg-dim'}`}
+        >
+          {reach < minutes
+            ? tr('sessions.wizard.sources.short', { minutes: reach, target: minutes })
+            : tr('sessions.wizard.sources.enough', { target: minutes })}
+        </p>
+      )}
     </div>
   )
 }
+
+const KEY_ROLES: Readonly<Record<string, PlaylistRole>> = { '1': 'base', '2': 'vocal', '3': 'any' }
 
 type CharacterKey = 'alternate' | 'preferCombos' | 'tasteWeight' | 'surprise'
 
