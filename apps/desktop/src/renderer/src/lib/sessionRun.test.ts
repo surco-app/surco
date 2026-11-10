@@ -37,6 +37,7 @@ function run(
   library: Record<string, 'base' | 'vocal'> = {},
   pins?: { pinned: { index: number; trackId: string }[]; length: number },
   startPath?: string,
+  made?: ReadonlySet<string>,
 ) {
   return runSession({
     answers: { ...ANSWERS, ...over },
@@ -46,10 +47,30 @@ function run(
     library,
     pins,
     startPath,
+    made,
   })
 }
 
 describe('runSession', () => {
+  it('learns no order from a session Surco made, so a session never proves its own pairs', () => {
+    const pairs = [row('/m/a.mp3'), row('/m/b.mp3'), row('/m/c.mp3')]
+    const { combos, plan } = run(
+      { sources: ['made1', 'made2'], minutes: 30 },
+      { made1: 'any', made2: 'any' },
+      { made1: pairs, made2: pairs },
+      1,
+      {},
+      undefined,
+      undefined,
+      new Set(['made1', 'made2']),
+    )
+    expect(combos.size).toBe(0)
+    expect(
+      plan.items.some((item) => item.why.kind === 'combo' || item.why.kind === 'partner'),
+    ).toBe(false)
+    expect(plan.items).toHaveLength(3)
+  })
+
   it('gives every track the role of the playlist it comes from', () => {
     const { pool } = run(
       { sources: ['bases', 'voices'] },

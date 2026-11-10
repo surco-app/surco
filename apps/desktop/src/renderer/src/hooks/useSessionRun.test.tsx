@@ -54,6 +54,42 @@ function setup(over: Partial<SessionRunDeps> = {}) {
   return { deps, result }
 }
 
+describe('useSessionRun remembers the playlists it wrote', () => {
+  it('notes the new playlist of a build, a redo and a fill as made by Surco', async () => {
+    const noteMade = vi.fn()
+    const { result } = setup({ noteMade })
+    await act(async () => {
+      await result.current.build('folder', ANSWERS, ROLES)
+    })
+    expect(noteMade).toHaveBeenLastCalledWith('new1')
+    await act(async () => {
+      await result.current.redo()
+    })
+    expect(noteMade).toHaveBeenLastCalledWith('new2')
+    await act(async () => {
+      await result.current.fill({ id: 'empty', name: 'Vacía', parentId: 'root' }, ANSWERS, ROLES)
+    })
+    expect(noteMade).toHaveBeenLastCalledWith('empty')
+  })
+
+  it('hands the sessions it made to the run so their order is not learned', async () => {
+    const made = () => new Set(['s'])
+    const twice = new Map([
+      ['s', [entry('/m/a.mp3'), entry('/m/b.mp3'), entry('/m/a.mp3'), entry('/m/b.mp3')]],
+    ])
+    const { result } = setup({
+      made,
+      rows: { load: vi.fn(async () => twice), reset: vi.fn(), loading: false, failed: [] },
+    })
+    await act(async () => {
+      await result.current.build('folder', { ...ANSWERS, preferCombos: true }, ROLES)
+    })
+    const kinds = result.current.recent?.plan.items.map((item) => item.why.kind) ?? []
+    expect(kinds).not.toContain('partner')
+    expect(kinds).not.toContain('combo')
+  })
+})
+
 describe('useSessionRun build', () => {
   it('saves the answers, writes the session as a new playlist and opens it', async () => {
     const { deps, result } = setup()

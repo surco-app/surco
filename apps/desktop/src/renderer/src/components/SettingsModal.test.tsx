@@ -50,6 +50,7 @@ const settings: Settings = {
   cueLearnFromEdits: true,
   hiddenSources: [],
   sessionWizard: { ...DEFAULT_SESSION_WIZARD },
+  sessionsMade: [],
   language: 'system',
   discogsToken: '',
   beatportUsername: '',

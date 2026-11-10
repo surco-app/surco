@@ -68,3 +68,14 @@ export function normalizeSessionWizard(raw: unknown): SessionWizardSettings {
     surprise: flag(saved.surprise, DEFAULT_SESSION_WIZARD.surprise),
   }
 }
+
+const MAX_SESSIONS_MADE = 200
+
+export function normalizeSessionsMade(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return []
+  return [...new Set(raw.filter((id): id is string => typeof id === 'string'))]
+}
+
+export function withSessionMade(made: readonly string[], id: string): string[] {
+  return [...made.filter((other) => other !== id), id].slice(-MAX_SESSIONS_MADE)
+}

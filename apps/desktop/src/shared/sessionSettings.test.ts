@@ -3,6 +3,8 @@ import {
   answersFromSettings,
   DEFAULT_SESSION_WIZARD,
   normalizeSessionWizard,
+  normalizeSessionsMade,
+  withSessionMade,
   wizardSettingsFrom,
 } from './sessionSettings'
 
@@ -97,5 +99,20 @@ describe('normalizeSessionWizard', () => {
     const merged = normalizeSessionWizard({ preferCombos: 'yes', surprise: 1 })
     expect(merged.preferCombos).toBe(true)
     expect(merged.surprise).toBe(false)
+  })
+})
+
+describe('the playlists Surco made as sessions', () => {
+  it('keeps only playlist ids from what was saved', () => {
+    expect(normalizeSessionsMade(['1', 2, null, '3', '1'])).toEqual(['1', '3'])
+    expect(normalizeSessionsMade('nope')).toEqual([])
+  })
+
+  it('adds a new one last and keeps the list from growing without end', () => {
+    expect(withSessionMade(['a', 'b'], 'a')).toEqual(['b', 'a'])
+    const long = Array.from({ length: 500 }, (_, i) => `p${i}`)
+    const next = withSessionMade(long, 'new')
+    expect(next.at(-1)).toBe('new')
+    expect(next.length).toBeLessThan(long.length)
   })
 })

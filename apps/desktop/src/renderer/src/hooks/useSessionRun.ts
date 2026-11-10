@@ -36,6 +36,8 @@ export interface SessionRunDeps {
   saveAnswers: (answers: SessionAnswers) => void
   newSeed: () => number
   library?: () => Readonly<Record<string, 'base' | 'vocal'>>
+  made?: () => ReadonlySet<string>
+  noteMade?: (playlistId: string) => void
 }
 
 export interface FillTarget {
@@ -92,7 +94,16 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
     const chosen = new Set(answers.sources)
     const given = Object.keys(library).filter((id) => !chosen.has(id))
     const loaded = await deps.rows.load([...answers.sources, ...given])
-    return runSession({ answers, roles, rows: loaded, seed, library, pins, startPath })
+    return runSession({
+      answers,
+      roles,
+      rows: loaded,
+      seed,
+      library,
+      pins,
+      startPath,
+      made: deps.made?.(),
+    })
   }
 
   const settle = (
@@ -106,6 +117,7 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
     run: SessionRun,
     locked: ReadonlySet<string> = new Set(),
   ): BuildResult => {
+    deps.noteMade?.(id)
     deps.openPlaylist({ id, name: shown, kind: 'playlist', count: run.refs.length })
     setRecent({
       playlistId: id,
@@ -233,6 +245,7 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
       const shown = uniqueName(recent.name, deps.namesIn(recent.parentId))
       const id = await deps.writer.replace(recent.parentId, recent.playlistId, shown, refs)
       if (id === null) return 'refused'
+      deps.noteMade?.(id)
       deps.openPlaylist({ id, name: shown, kind: 'playlist', count: refs.length })
       const locked = new Set(recent.locked)
       locked.delete(recent.plan.items[index].track.id)

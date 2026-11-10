@@ -251,6 +251,7 @@ export interface Settings {
   cueLearnFromEdits: boolean
   hiddenSources: PlaylistSource[]
   sessionWizard: SessionWizardSettings
+  sessionsMade: string[]
   rekordboxPlaylistsFieldOffered: boolean
   traktorPlaylistsFieldOffered: boolean
   enginePlaylistsFieldOffered: boolean

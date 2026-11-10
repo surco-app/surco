@@ -48,8 +48,9 @@ export function runSession(input: {
   library?: Readonly<Record<string, 'base' | 'vocal'>>
   pins?: SessionPins
   startPath?: string
+  made?: ReadonlySet<string>
 }): SessionRun {
-  const { answers, roles, rows, seed, library = {}, pins, startPath } = input
+  const { answers, roles, rows, seed, library = {}, pins, startPath, made = new Set() } = input
   const sources: SessionSource[] = answers.sources.map((id) => ({
     role: roles[id] ?? 'any',
     entries: rows.get(id) ?? [],
@@ -65,7 +66,7 @@ export function runSession(input: {
     }
   }
   const pool = toCandidates(sources, new Date(), evidence)
-  const sequences = mixedSequences(sources)
+  const sequences = mixedSequences(sources.filter((_, i) => !made.has(answers.sources[i])))
   const ids = new Set(pool.map((track) => track.id))
   const pairs = mineCombos(sequences, ids, 1)
   const combos = mineCombos(sequences, ids, MIN_PLAYLISTS_PER_COMBO)

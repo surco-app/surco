@@ -37,6 +37,7 @@ import { normalizeHiddenSources } from '../../../shared/hiddenSources'
 import {
   DEFAULT_SESSION_WIZARD,
   normalizeSessionWizard,
+  normalizeSessionsMade,
 } from '../../../shared/sessionSettings'
 import type { SessionWizardSettings } from '../../../shared/sessionTypes'
 import type {
@@ -117,6 +118,7 @@ interface ResolvedSettings extends Record<DjAddKey, boolean> {
   cueLearnFromEdits: boolean
   hiddenSources: PlaylistSource[]
   sessionWizard: SessionWizardSettings
+  sessionsMade: string[]
   // The collection.nml the DJ confirmed, the only one Traktor cues are written to.
   traktorNmlPath: string
   rekordboxDbPath: string
@@ -179,6 +181,7 @@ const DEFAULTS: ResolvedSettings = {
   cueLearnFromEdits: true,
   hiddenSources: [],
   sessionWizard: DEFAULT_SESSION_WIZARD,
+  sessionsMade: [],
   traktorNmlPath: '',
   rekordboxDbPath: '',
   engineLibraryDir: '',
@@ -241,6 +244,7 @@ function resolveSettings(settings: Partial<Settings> | null): ResolvedSettings {
     cueLearnFromEdits: settings.cueLearnFromEdits !== false,
     hiddenSources: normalizeHiddenSources(settings.hiddenSources),
     sessionWizard: normalizeSessionWizard(settings.sessionWizard),
+    sessionsMade: normalizeSessionsMade(settings.sessionsMade),
     traktorNmlPath: settings.traktorNmlPath ?? DEFAULTS.traktorNmlPath,
     rekordboxDbPath: settings.rekordboxDbPath ?? DEFAULTS.rekordboxDbPath,
     engineLibraryDir: settings.engineLibraryDir ?? DEFAULTS.engineLibraryDir,

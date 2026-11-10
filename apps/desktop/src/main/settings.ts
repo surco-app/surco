@@ -28,6 +28,7 @@ import { normalizeHiddenSources } from '../shared/hiddenSources'
 import {
   DEFAULT_SESSION_WIZARD,
   normalizeSessionWizard,
+  normalizeSessionsMade,
 } from '../shared/sessionSettings'
 import { FORMAT_SETTINGS } from '../shared/outputFormats'
 import { TRASH_MAX_BYTES, TRASH_RETENTION_DAYS } from '../shared/trash'
@@ -101,6 +102,7 @@ export const defaults: Settings = {
   cueLearnFromEdits: true,
   hiddenSources: [],
   sessionWizard: DEFAULT_SESSION_WIZARD,
+  sessionsMade: [],
   rekordboxPlaylistsFieldOffered: false,
   traktorPlaylistsFieldOffered: false,
   enginePlaylistsFieldOffered: false,
@@ -229,6 +231,8 @@ export const LOCAL_KEYS = [
   'beatportUsername',
   'beatportPassword',
   'analysisCacheGb',
+  // Playlist ids of this Mac's DJ library, the sessions Surco wrote there.
+  'sessionsMade',
 ] as const satisfies readonly (keyof Settings)[]
 
 // Repairs any stored value into a valid format: a synced settings.json can carry an
@@ -387,6 +391,7 @@ function mergeSettings(base: Settings, patch: Partial<Settings>): Settings {
     cueLearnFromEdits: (patch.cueLearnFromEdits ?? base.cueLearnFromEdits) !== false,
     hiddenSources: normalizeHiddenSources(patch.hiddenSources ?? base.hiddenSources),
     sessionWizard: normalizeSessionWizard(patch.sessionWizard ?? base.sessionWizard),
+    sessionsMade: normalizeSessionsMade(patch.sessionsMade ?? base.sessionsMade),
   }
 }
 

@@ -36,7 +36,11 @@ import {
   sessionDateLabel,
   uniqueName,
 } from '../../shared/sessionName'
-import { answersFromSettings, wizardSettingsFrom } from '../../shared/sessionSettings'
+import {
+  answersFromSettings,
+  withSessionMade,
+  wizardSettingsFrom,
+} from '../../shared/sessionSettings'
 import { resolveBindings } from '../../shared/shortcutDefaults'
 import { TRASH_MAX_BYTES, TRASH_RETENTION_DAYS } from '../../shared/trash'
 import type {
@@ -1107,6 +1111,11 @@ export default function App(): React.JSX.Element {
     },
     newSeed: () => Date.now() % 2_147_483_647,
     library: () => libraryRoles(browser.tree ?? []),
+    made: () => new Set(settings?.sessionsMade ?? []),
+    noteMade: (playlistId) => {
+      if (settings)
+        saveSettings({ sessionsMade: withSessionMade(settings.sessionsMade, playlistId) })
+    },
   })
   const reportSession = useStableCallback(async (pending: Promise<BuildResult>): Promise<void> => {
     if ((await pending) === 'closed') notifyEdit(tr('sessions.closed'), 'danger')

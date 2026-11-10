@@ -1319,6 +1319,15 @@ describe('cue flows', () => {
     expect(getSettings().sessionWizard.freshShare).toBe(0.4)
   })
 
+  it('keeps the sessions this Mac made on this Mac, since their ids belong to its own library', () => {
+    expect(LOCAL_KEYS).toContain('sessionsMade')
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({ sessionsMade: ['7', 8, '7'] }),
+    )
+    expect(getSettings().sessionsMade).toEqual(['7'])
+  })
+
   it('carries the wizard answers to the other Macs', () => {
     writeFileSync(join(app.getPath('userData'), 'settings.json'), JSON.stringify({}))
     const dir = mkdtempSync(join(tmpdir(), 'surco-sync-'))
