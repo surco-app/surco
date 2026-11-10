@@ -2024,7 +2024,12 @@ pistas, combos, nuevas y armónicas, la duración contada y lo que suman los fic
 (`SessionBand.tsx`). Bajo cada pista una línea dice por qué está (arranque, combo en N sets,
 salto Camelot, estrellas o escuchas, tempo, nueva, elegida por ti) y «Cambiar» lista solo
 entonces las que encajan en ese hueco (`SessionWhyLine.tsx`, `lib/sessionAlternatives.ts`). Al
-quedársela queda como una playlist normal y un aviso lo dice. Medido el 9-11 con la colección real, 20 sesiones por caso y el rol de cada pista según las
+quedársela queda como una playlist normal y un aviso lo dice. Cada pista lleva un candado
+(`session-why-lock`): «Rehacer» conserva las fijadas en su posición y sortea el resto alrededor
+(`SessionOptions.pinned` y `fixedLength`, `shared/sessionBuild.ts`; `RecentSession.locked`,
+`useSessionRun.ts`), y la banda dice cuántas hay fijadas. Una pista elegida con «Cambiar» queda
+fijada y la que sustituye se suelta; «Ajustar…» empieza de cero y las suelta todas. Las pistas
+fijadas dicen «elegida por ti» y cuentan para la alternancia de roles de las vecinas. Medido el 9-11 con la colección real, 20 sesiones por caso y el rol de cada pista según las
 carpetas Bases y Cantaditas: con las carpetas enteras, 0 de 880 parejas seguidas repiten rol.
 Con «Top» de Bases, «Top» de Cantaditas y la Mezclada «rockola-spook-2016», que antes repetían
 rol en un 26 a 40 % de las parejas con tramos de hasta 9, queda en 0 con 2 y 3 min por pista y en
