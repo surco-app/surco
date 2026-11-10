@@ -1,4 +1,4 @@
-import { ChevronDown, RotateCw } from 'lucide-react'
+import { ChevronDown, Folder, RotateCw } from 'lucide-react'
 import type React from 'react'
 import { useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -362,9 +362,14 @@ export function ExportButton({
       {!quiet && destination === 'folder' && outputFolder && (
         <span
           data-testid="process-folder"
-          className="max-w-[30%] shrink-0 truncate text-xs text-fg-dim"
+          className="flex max-w-[30%] shrink-0 items-center gap-1 text-xs text-fg-dim"
         >
-          → {outputFolder}
+          <Folder
+            data-testid="process-folder-icon"
+            className="h-3.5 w-3.5 shrink-0"
+            aria-hidden="true"
+          />
+          <span className="truncate">{outputFolder}</span>
         </span>
       )}
     </div>
