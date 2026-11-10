@@ -191,6 +191,13 @@ describe('ConvertFooter done footer stays on one line', () => {
     expect(screen.getByTestId('export-collection')).toHaveTextContent('Export to DJ app…')
   })
 
+  it('draws the menu button with the same corners as every other icon button, not as the one round control', () => {
+    render(footer(true))
+    const more = screen.getByTestId('done-more')
+    expect(more.className).not.toMatch(/rounded-full/)
+    expect(more.className).toMatch(/rounded-lg/)
+  })
+
   it('offers the file from the menu by name', () => {
     render(
       <ConvertFooter
