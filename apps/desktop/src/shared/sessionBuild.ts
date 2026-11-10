@@ -61,6 +61,7 @@ const ARC_TO = 0.75
 const ARC_SOFTNESS = 3
 const ARC_UNKNOWN = 0.5
 const SAME_ACT_WEIGHT = 0.3
+const TASTE_TOP_SHARE = 0.25
 
 function seeded(seed: number): () => number {
   let state = seed >>> 0
@@ -315,7 +316,8 @@ export function buildSession(
         track: chosen,
         why: { kind: 'harmonic', from: current.key, to: chosen.key, distance },
       }
-    if (taste(chosen) > 0)
+    const likedMore = tier.filter((track) => taste(track) > taste(chosen)).length
+    if (taste(chosen) > 0 && likedMore <= TASTE_TOP_SHARE * tier.length)
       return { track: chosen, why: { kind: 'taste', plays: chosen.plays, rating: chosen.rating } }
     return { track: chosen, why: { kind: 'bpm', relaxed: false } }
   }

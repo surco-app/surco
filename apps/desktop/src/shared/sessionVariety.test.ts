@@ -191,3 +191,20 @@ describe('buildSession plays each song once and spaces an artist', () => {
     expect(counts.get('other') ?? 0).toBeGreaterThan(2 * (counts.get('same') ?? 0))
   })
 })
+
+describe('buildSession says a track was picked for taste only when it was among the best', () => {
+  it('never calls a track one of the best liked when most of what fitted was liked more', () => {
+    const pool = [
+      track('start', { rating: 100, plays: 50 }),
+      track('meh', { plays: 1 }),
+      ...Array.from({ length: 3 }, (_, i) => track(`top${i}`, { rating: 100, plays: 40 + i })),
+    ]
+    const picked = SEEDS.flatMap((seed) =>
+      buildSession(pool, none, options({ minutes: 10, seed, startWith: 'start' })).items.filter(
+        (item) => item.track.id === 'meh',
+      ),
+    )
+    expect(picked.length).toBeGreaterThan(0)
+    for (const item of picked) expect(item.why.kind).not.toBe('taste')
+  })
+})
