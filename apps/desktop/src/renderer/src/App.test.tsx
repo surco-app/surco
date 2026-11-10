@@ -3212,6 +3212,46 @@ describe('App source playlists', () => {
     )
   })
 
+  // Inside a playlist, taking a track out of the list and out of the playlist were two actions
+  // and the DJ could not tell them apart; now every way to remove reaches the playlist.
+  it('removes from the open rekordbox playlist with the key and with the list button too', async () => {
+    const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({ applied: true })
+    await openFactory({ editRekordboxPlaylist: edit })
+    fireEvent.click(screen.getAllByTestId('track-row')[1])
+    fireEvent.keyDown(window, { key: 'Backspace', ctrlKey: true })
+    await waitFor(() =>
+      expect(edit).toHaveBeenLastCalledWith(
+        { kind: 'remove', playlistId: 'f', linkIds: ['l2'] },
+        'Factory',
+      ),
+    )
+    fireEvent.keyDown(screen.getAllByTestId('track-row')[0], { key: 'Backspace' })
+    await waitFor(() =>
+      expect(edit).toHaveBeenLastCalledWith(
+        { kind: 'remove', playlistId: 'f', linkIds: ['l1'] },
+        'Factory',
+      ),
+    )
+    fireEvent.click(screen.getAllByTestId('track-row')[1])
+    await waitFor(() =>
+      expect(screen.getByTestId('remove-selected')).toHaveAttribute(
+        'aria-label',
+        'Remove from “Factory”',
+      ),
+    )
+    edit.mockClear()
+    fireEvent.click(screen.getByTestId('remove-selected'))
+    await waitFor(() =>
+      expect(edit).toHaveBeenCalledWith(
+        { kind: 'remove', playlistId: 'f', linkIds: ['l2'] },
+        'Factory',
+      ),
+    )
+    fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+    await screen.findByTestId('track-menu-remove-from')
+    expect(screen.queryByTestId('track-menu-remove')).not.toBeInTheDocument()
+  })
+
   // The separator line's ✕ is mouse-only; the row menu is the keyboard's way to remove the
   // separator above a row, and a row with none above offers nothing.
   it('removes the separator above a row from its menu', async () => {

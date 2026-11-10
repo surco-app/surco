@@ -88,6 +88,7 @@ interface Props {
   onClearAll: () => void
   listCommands: () => Command[]
   onRemoveSelected: () => void
+  removeLabel?: string
   onTrashSelected: () => void
   onTrashSuspects: () => void
   onReviewIncomplete?: () => void
@@ -200,6 +201,7 @@ export function TrackListHeader({
   onClearAll,
   listCommands,
   onRemoveSelected,
+  removeLabel,
   onTrashSelected,
   onTrashSuspects,
   onReviewIncomplete,
@@ -381,11 +383,11 @@ export function TrackListHeader({
               data-testid="remove-selected"
               onClick={onRemoveSelected}
               disabled={!selectedId && selectedIds.length === 0}
-              aria-label={tr('trackList.context.remove')}
+              aria-label={removeLabel ?? tr('trackList.context.remove')}
               className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-fg disabled:opacity-40"
             >
               <ListMinus className="h-3.5 w-3.5" aria-hidden="true" />
-              <Tooltip label={tr('trackList.context.remove')} />
+              <Tooltip label={removeLabel ?? tr('trackList.context.remove')} />
             </button>
             <div ref={moreRef} className="shrink-0">
               <button

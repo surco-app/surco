@@ -247,7 +247,7 @@ describe('TrackContextMenu playlist actions', () => {
     expect(p.onRemove).toHaveBeenCalled()
   })
 
-  it('keeps the two actions that touch the library together at the end, after the harmless one', () => {
+  it('offers one way to take a row out of an open playlist, the one that reaches the playlist', () => {
     renderMenu({ playlist: playlist() })
     const ids = [...screen.getByTestId('track-menu').querySelectorAll('[data-testid]')]
       .map((el) => el.getAttribute('data-testid'))
@@ -257,7 +257,13 @@ describe('TrackContextMenu playlist actions', () => {
           id === 'track-menu-remove-from' ||
           id === 'track-menu-trash',
       )
-    expect(ids).toEqual(['track-menu-remove', 'track-menu-remove-from', 'track-menu-trash'])
+    expect(ids).toEqual(['track-menu-remove-from', 'track-menu-trash'])
+  })
+
+  it('removes from the list in Surco when no playlist is open', () => {
+    renderMenu({ playlist: playlist({ openName: null }) })
+    expect(screen.getByTestId('track-menu-remove')).toBeInTheDocument()
+    expect(screen.queryByTestId('track-menu-remove-from')).not.toBeInTheDocument()
   })
 
   it('offers only adding while no playlist is open', () => {

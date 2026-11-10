@@ -1663,7 +1663,11 @@ export default function App(): React.JSX.Element {
   )
 
   const removeFromList = useStableCallback((id: string): void => {
-    askRemoveFromList(menuTargets(id))
+    removeTargets(menuTargets(id))
+  })
+
+  const removeOne = useStableCallback((id: string): void => {
+    removeTargets(tracks.filter((t) => t.id === id))
   })
 
   const onTrashRow = useStableCallback((track: TrackItem): void => {
@@ -2412,7 +2416,7 @@ export default function App(): React.JSX.Element {
   // context menu, over the multi-selection or the single selected row.
   const onTrashSelected = useStableCallback(() => askTrash(editScope(selectedTracks, selected)))
   const onRemoveSelected = useStableCallback(() =>
-    askRemoveFromList(editScope(selectedTracks, selected)),
+    removeTargets(editScope(selectedTracks, selected)),
   )
   const onOpenPalette = useStableCallback(overlays.openPalette)
   const onOpenStats = useStableCallback(() => openSettings('stats'))
@@ -2990,6 +2994,28 @@ export default function App(): React.JSX.Element {
     )
   })
   const removeSeparator = useStableCallback((key: string) => removeFromRekordbox([key]))
+  const removablePlaylist = editableSource && crateOpen ? browser.playlist : null
+  // The DJ's playlist has no undo in Surco: one row goes in one click, as the list's own
+  // remove does, and several ask first, naming the playlist they leave.
+  const removeFromPlaylist = (targets: TrackItem[]): void => {
+    const playlist = removablePlaylist
+    if (!playlist) return
+    const remove = () =>
+      removeFromRekordbox(targets.flatMap((t) => playlistScope?.linksOf.get(t.id) ?? []))
+    if (targets.length <= 1) return remove()
+    overlays.openConfirm({
+      title: tr('confirm.removeFromPlaylistTitle', { count: targets.length, name: playlist.name }),
+      message: tr('confirm.removeFromPlaylistMessage'),
+      confirmLabel: tr('confirm.removeFromPlaylistConfirm'),
+      destructive: true,
+      onConfirm: remove,
+    })
+  }
+  // Inside a playlist the program can edit, taking a track out means out of that playlist,
+  // whichever way it is asked; the list in Surco is only a view of it.
+  const removeTargets = useStableCallback((targets: TrackItem[]): void =>
+    removablePlaylist ? removeFromPlaylist(targets) : askRemoveFromList(targets),
+  )
   // Reordering only means something in the playlist's own order with nothing hidden: under
   // another sort, a search or a filter, a drop would land among rows the user cannot see.
   const reorderEnabled = crateOpen && sortBy === 'import' && !search && !filterActive
@@ -3023,8 +3049,6 @@ export default function App(): React.JSX.Element {
           playlist.name,
         )
       },
-      // The DJ's playlist has no undo in Surco: one row goes in one click, as the list's own
-      // remove does, and several ask first, naming the playlist they leave.
       // Only where separators are drawn (the playlist's own order): under another sort the
       // one "above" is neither on screen nor above the row as shown.
       onRemoveSeparatorAbove:
@@ -3034,22 +3058,7 @@ export default function App(): React.JSX.Element {
               if (above?.length) removeSeparator(above[above.length - 1])
             }
           : undefined,
-      onRemove: () => {
-        const targets = menuTargets(track.id)
-        const remove = () =>
-          removeFromRekordbox(targets.flatMap((t) => playlistScope?.linksOf.get(t.id) ?? []))
-        if (targets.length <= 1 || !playlist) return remove()
-        overlays.openConfirm({
-          title: tr('confirm.removeFromPlaylistTitle', {
-            count: targets.length,
-            name: playlist.name,
-          }),
-          message: tr('confirm.removeFromPlaylistMessage'),
-          confirmLabel: tr('confirm.removeFromPlaylistConfirm'),
-          destructive: true,
-          onConfirm: remove,
-        })
-      },
+      onRemove: () => removeFromPlaylist(menuTargets(track.id)),
     }
   }
   // What the right-click menu offers is App's decision (its actions route through the
@@ -3294,7 +3303,7 @@ export default function App(): React.JSX.Element {
       cancelAutoMatch,
       enqueueAutoMatch: autoMatchTracks,
       addTrackToAppleMusic,
-      removeTrack,
+      removeTrack: removeOne,
       reveal: window.api.reveal,
       askClearAll: onClearAll,
       bulkTracks,
@@ -3866,6 +3875,11 @@ export default function App(): React.JSX.Element {
                             }
                             onClearAll={onClearAll}
                             onRemoveSelected={onRemoveSelected}
+                            removeLabel={
+                              removablePlaylist
+                                ? tr('sources.menu.removeFrom', { name: removablePlaylist.name })
+                                : undefined
+                            }
                             onTrashSelected={onTrashSelected}
                             onTrashSuspects={onTrashSuspects}
                             onReviewIncomplete={
@@ -3927,7 +3941,7 @@ export default function App(): React.JSX.Element {
                               onSelect={onSelectTrack}
                               onActivate={toggleTrack}
                               onRemove={removeFromList}
-                              onSwipeRemove={removeTrack}
+                              onSwipeRemove={removeOne}
                               onAcceptReview={acceptReviewRow}
                               onPrefetch={handlePrefetch}
                               renderMenu={renderTrackMenu}

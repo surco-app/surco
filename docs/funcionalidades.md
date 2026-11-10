@@ -1875,6 +1875,14 @@ menú de una pista se puede insertar un separador copiando uno que ya exista en 
 nunca borra pistas de la colección, porque una playlist solo enlaza entradas
 (`rekordboxPlaylistEdit.ts:3-6`). No se tocan las listas inteligentes, que no se leen.
 
+**Quitar, una sola acción** (10-11). Con una playlist editable abierta, en rekordbox, Traktor o
+Serato, quitar una pista siempre la quita de esa playlist, se pida desde el menú («Quitar de
+“…”»), con el botón de la cabecera, con ⌘⌫, con ⌫ sobre la fila o deslizándola
+(`removeTargets`, `App.tsx`). Antes había además «Quitar de Surco», que solo la sacaba de la
+vista y la dejaba en la playlist, y no se distinguía de la otra. Una fila se va de un clic y varias
+piden confirmar nombrando la playlist. Fuera de una playlist editable, quitar sigue sacándola
+solo de la lista de Surco.
+
 **Mover playlists y carpetas** (nuevo en v1.29.0). En el árbol de rekordbox, Traktor o Serato
 se coge una playlist o una carpeta y se suelta en la raíz (el hueco bajo el árbol), dentro de
 una carpeta o, en rekordbox y Traktor, entre dos hermanas, con una línea que marca dónde caerá
