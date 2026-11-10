@@ -19,9 +19,17 @@ export function alternativesFor(
   const item = plan.items[index]
   if (!item) return []
   const used = new Set(plan.items.map((other) => other.track.id))
+  const songs = new Set(
+    plan.items.filter((_, i) => i !== index).flatMap((other) => other.track.song ?? []),
+  )
   const before = plan.items[index - 1]?.track
   const after = plan.items[index + 1]?.track
-  const open = pool.filter((track) => !used.has(track.id) && track.fresh === item.track.fresh)
+  const open = pool.filter(
+    (track) =>
+      !used.has(track.id) &&
+      !(track.song !== undefined && songs.has(track.song)) &&
+      track.fresh === item.track.fresh,
+  )
   const fitting = (tempoLimit: number): SessionTrack[] =>
     open.filter(
       (track) =>

@@ -139,3 +139,19 @@ describe('alternativesFor', () => {
     expect(alternativesFor(plan, 3, [track('b')], options)).toEqual([])
   })
 })
+
+describe('alternativesFor and songs already in the session', () => {
+  it('does not offer another file of a song the session already plays', () => {
+    const plan = planOf(
+      track('a', { song: 's|a' }),
+      track('b', { song: 's|b' }),
+      track('c', { song: 's|c' }),
+    )
+    const pool = [
+      ...plan.items.map((item) => item.track),
+      track('a2', { song: 's|a' }),
+      track('d', { song: 's|d' }),
+    ]
+    expect(ids(alternativesFor(plan, 1, pool, options))).toEqual(['d'])
+  })
+})

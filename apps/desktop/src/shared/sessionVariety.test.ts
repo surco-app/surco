@@ -159,3 +159,35 @@ describe('buildSession warms up', () => {
     expect(mean(openings)).toBeLessThan(138)
   })
 })
+
+describe('buildSession plays each song once and spaces an artist', () => {
+  it('never plays the same song twice from two files', () => {
+    const pool = [
+      track('a.mp3', { song: 'x|pray', acts: ['x'] }),
+      track('a.flac', { song: 'x|pray', acts: ['x'] }),
+      track('b', { song: 'y|b', acts: ['y'] }),
+      track('c', { song: 'z|c', acts: ['z'] }),
+    ]
+    for (const seed of SEEDS.slice(0, 40)) {
+      const songs = buildSession(pool, none, options({ minutes: 60, seed })).items.map(
+        (item) => item.track.song,
+      )
+      expect(new Set(songs).size, `seed ${seed}`).toBe(songs.length)
+    }
+  })
+
+  it('puts the same artist twice in a row less often than another artist', () => {
+    const pool = [
+      track('start', { acts: ['solo'] }),
+      track('same', { acts: ['solo'] }),
+      track('other', { acts: ['else'] }),
+    ]
+    const seconds = SEEDS.map(
+      (seed) =>
+        buildSession(pool, none, options({ minutes: 10, seed, startWith: 'start' })).items[1].track
+          .id,
+    )
+    const counts = tally(seconds)
+    expect(counts.get('other') ?? 0).toBeGreaterThan(2 * (counts.get('same') ?? 0))
+  })
+})

@@ -30,4 +30,6 @@ export interface SessionTrack {
   fresh: boolean
   title: string
   artist: string
+  song?: string
+  acts?: readonly string[]
 }

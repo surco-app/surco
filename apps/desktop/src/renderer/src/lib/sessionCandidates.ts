@@ -1,6 +1,7 @@
 import { camelotOf } from '../../../shared/camelot'
 import type { PlaylistRole, SessionTrack, TrackRole } from '../../../shared/sessionTypes'
 import type { SourcePlaylistEntry } from '../../../shared/types'
+import { baseTitle, splitArtists } from './tracklistMatch'
 
 export interface SessionSource {
   role: PlaylistRole
@@ -73,6 +74,9 @@ export function toCandidates(
   const everyNew = origins.length > 0 && origins.every(isNew)
   return [...found].map(([id, seen]) => {
     const { entry } = seen
+    const title = entry.preview?.title ?? titleFromPath(entry.path)
+    const acts = splitArtists(entry.preview?.artist ?? '')
+    const named = baseTitle(title)
     return {
       id,
       role: roleOf(seen, library.get(id)),
@@ -82,8 +86,10 @@ export function toCandidates(
       plays: entry.meta.playCount ?? 0,
       secs: entry.preview?.durationSec ?? 0,
       fresh: !everyNew && isNew(seen),
-      title: entry.preview?.title ?? titleFromPath(entry.path),
+      title,
       artist: entry.preview?.artist ?? '',
+      ...(named && { song: `${acts[0] ?? ''}|${named}` }),
+      acts,
     }
   })
 }

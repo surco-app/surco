@@ -60,6 +60,7 @@ const ARC_FROM = 0.25
 const ARC_TO = 0.75
 const ARC_SOFTNESS = 3
 const ARC_UNKNOWN = 0.5
+const SAME_ACT_WEIGHT = 0.3
 
 function seeded(seed: number): () => number {
   let state = seed >>> 0
@@ -136,6 +137,9 @@ export function buildSession(
   }
   const fixed = pins.size > 0 ? (options.fixedLength ?? 0) : 0
   const used = new Set<string>([...pins.values()].map((track) => track.id))
+  const songs = new Set<string>([...pins.values()].flatMap((track) => track.song ?? []))
+  const isOpen = (track: SessionTrack): boolean =>
+    !used.has(track.id) && !(track.song !== undefined && songs.has(track.song))
   let avoid: TrackRole | null = null
   const items: SessionItem[] = []
   let total = 0
@@ -175,6 +179,9 @@ export function buildSession(
 
   const liking = (track: SessionTrack): number => (1 + taste(track)) ** TASTE_POWER
 
+  const actWeight = (from: SessionTrack, to: SessionTrack): number =>
+    (to.acts ?? []).some((act) => from.acts?.includes(act)) ? SAME_ACT_WEIGHT : 1
+
   const tempos = eligible
     .map((track) => track.bpm)
     .filter((bpm) => bpm > 0)
@@ -206,6 +213,7 @@ export function buildSession(
 
   const take = (track: SessionTrack, why: SessionWhy): void => {
     used.add(track.id)
+    if (track.song !== undefined) songs.add(track.song)
     items.push({ track, why })
     total += secsOf(track, options.playSecs)
     if (track.role === 'base') expected = 'vocal'
@@ -217,7 +225,7 @@ export function buildSession(
     const starts: { from: SessionTrack; strength: number }[] = []
     for (const [fromId, targets] of combos) {
       const from = byId.get(fromId)
-      if (!from || used.has(fromId) || (strict && from.role === 'any')) continue
+      if (!from || !isOpen(from) || (strict && from.role === 'any')) continue
       const strength = Math.max(0, ...[...targets].filter(([id]) => byId.has(id)).map(([, n]) => n))
       if (strength > 0) starts.push({ from, strength })
     }
@@ -239,7 +247,7 @@ export function buildSession(
   const nextByCombo = (current: SessionTrack): SessionItem | null => {
     const targets = [...(combos.get(current.id) ?? [])].filter(([id, strength]) => {
       const track = byId.get(id)
-      if (track === undefined || used.has(id)) return false
+      if (track === undefined || !isOpen(track)) return false
       if (strength >= 2) return roleFits(track) || (strict && track.role === 'any')
       return roleFits(track) && partnerFits(current, track)
     })
@@ -288,8 +296,7 @@ export function buildSession(
     harmony: SessionOptions['harmony'] = options.harmony,
   ): SessionItem | null => {
     const open = eligible.filter(
-      (track) =>
-        !used.has(track.id) && !(onlyWithoutCombo && combos.get(current.id)?.has(track.id)),
+      (track) => isOpen(track) && !(onlyWithoutCombo && combos.get(current.id)?.has(track.id)),
     )
     let fit = fitTier(current, open, roleFits, true, harmony)
     if (fit.tier.length === 0) fit = fitTier(current, open, roleOrNeutral, true, harmony)
@@ -298,7 +305,8 @@ export function buildSession(
     if (tier.length === 0) return null
     const chosen = pickWeighted(
       tier,
-      (track) => liking(track) * keyWeight(current, track) * arcWeight(track),
+      (track) =>
+        liking(track) * keyWeight(current, track) * arcWeight(track) * actWeight(current, track),
     )
     if (relaxed) return { track: chosen, why: { kind: 'bpm', relaxed: true } }
     const distance = camelotDistance(current.key, chosen.key)
@@ -313,10 +321,13 @@ export function buildSession(
   }
 
   const nextFresh = (current: SessionTrack): SessionItem | null => {
-    const open = newcomers.filter((track) => !used.has(track.id))
+    const open = newcomers.filter(isOpen)
     const { tier } = fitTier(current, open)
     if (tier.length === 0) return null
-    const chosen = pickWeighted(tier, (track) => keyWeight(current, track) * arcWeight(track))
+    const chosen = pickWeighted(
+      tier,
+      (track) => keyWeight(current, track) * arcWeight(track) * actWeight(current, track),
+    )
     if (total + secsOf(chosen, options.playSecs) >= target) return null
     return { track: chosen, why: { kind: 'fresh', key: chosen.key, role: chosen.role } }
   }
@@ -337,7 +348,7 @@ export function buildSession(
     const start = options.preferCombos ? comboOpening() : null
     if (start) return start
     const open = (strict ? eligible.filter((track) => track.role !== 'any') : eligible).filter(
-      (track) => !used.has(track.id),
+      isOpen,
     )
     return open.length > 0 ? pickWeighted(richest(open), arcWeight) : null
   }

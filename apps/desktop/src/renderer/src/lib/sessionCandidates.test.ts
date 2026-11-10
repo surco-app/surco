@@ -255,3 +255,54 @@ describe('mixedSequences', () => {
     expect(sequences).toEqual([['/m/a.mp3'], ['/m/b.mp3']])
   })
 })
+
+describe('toCandidates tells one song from another', () => {
+  const entryOf = (path: string, title: string, artist: string) => ({
+    path,
+    separator: false,
+    meta: {},
+    preview: { title, artist, durationSec: 300, cues: [] },
+  })
+
+  it('gives two files of the same recording the same song and keeps the artists apart', () => {
+    const [mp3, flac, other] = toCandidates([
+      {
+        role: 'any',
+        entries: [
+          entryOf('/m/a.mp3', 'Pray (W.I.P. In The Church Mix)', 'Tina Cousins'),
+          entryOf('/m/a.flac', 'Pray', 'Tina Cousins feat. Someone'),
+          entryOf('/m/b.mp3', 'Pray', 'Other Artist'),
+        ],
+      },
+    ])
+    expect(mp3.song).toBe(flac.song)
+    expect(other.song).not.toBe(mp3.song)
+    expect(flac.acts).toEqual(['tina cousins', 'someone'])
+  })
+})
+
+describe('toCandidates with no title to tell songs apart', () => {
+  it('leaves the song unknown rather than calling every untitled track the same song', () => {
+    const [first, second] = toCandidates([
+      {
+        role: 'any',
+        entries: [
+          {
+            path: '/m/1',
+            separator: false,
+            meta: {},
+            preview: { title: '', artist: '', durationSec: 300, cues: [] },
+          },
+          {
+            path: '/m/2',
+            separator: false,
+            meta: {},
+            preview: { title: '', artist: '', durationSec: 300, cues: [] },
+          },
+        ],
+      },
+    ])
+    expect(first.song).toBeUndefined()
+    expect(second.song).toBeUndefined()
+  })
+})
