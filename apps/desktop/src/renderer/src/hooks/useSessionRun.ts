@@ -4,7 +4,7 @@ import { uniqueName } from '../../../shared/sessionName'
 import type { PlaylistRole, SessionAnswers, SessionTrack } from '../../../shared/sessionTypes'
 import type { PlaylistTrackRef, SourceNode } from '../../../shared/types'
 import { alternativesFor } from '../lib/sessionAlternatives'
-import { runSession, type SessionRun, sessionOptionsOf } from '../lib/sessionRun'
+import { runSession, type SessionPins, type SessionRun, sessionOptionsOf } from '../lib/sessionRun'
 import type { SessionRows } from './useSessionRows'
 import type { SessionWriter } from './useSessionWrite'
 import { useStableCallback } from './useStableCallback'
@@ -21,6 +21,7 @@ export interface RecentSession {
   plan: SessionPlan
   pool: SessionTrack[]
   refsById: ReadonlyMap<string, PlaylistTrackRef>
+  locked: ReadonlySet<string>
 }
 
 type Roles = Readonly<Record<string, PlaylistRole>>
@@ -52,6 +53,7 @@ export interface SessionRunner {
   adjust: (answers: SessionAnswers, roles: Roles) => Promise<BuildResult>
   swap: (index: number, track: SessionTrack) => Promise<BuildResult>
   alternatives: (index: number) => SessionTrack[]
+  toggleLock: (trackId: string) => void
   keep: () => void
   noteEdit: (playlistId: string) => void
 }
@@ -78,12 +80,13 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
     answers: SessionAnswers,
     roles: Roles,
     seed: number,
+    pins?: SessionPins,
   ): Promise<SessionRun> => {
     const library = deps.library?.() ?? {}
     const chosen = new Set(answers.sources)
     const given = Object.keys(library).filter((id) => !chosen.has(id))
     const loaded = await deps.rows.load([...answers.sources, ...given])
-    return runSession({ answers, roles, rows: loaded, seed, library })
+    return runSession({ answers, roles, rows: loaded, seed, library, pins })
   }
 
   const settle = (
@@ -95,6 +98,7 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
     roles: Roles,
     seed: number,
     run: SessionRun,
+    locked: ReadonlySet<string> = new Set(),
   ): BuildResult => {
     deps.openPlaylist({ id, name: shown, kind: 'playlist', count: run.refs.length })
     setRecent({
@@ -107,6 +111,7 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
       plan: run.plan,
       pool: run.pool,
       refsById: run.refsById,
+      locked,
     })
     return 'built'
   }
@@ -143,28 +148,53 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
     previous: RecentSession,
     answers: SessionAnswers,
     roles: Roles,
+    keepLocks: boolean,
   ): Promise<BuildResult> =>
     exclusive(async () => {
       const seed = previous.seed + 1
       deps.rows.reset()
-      const run = await produce(answers, roles, seed)
+      const pinned = keepLocks
+        ? previous.plan.items.flatMap((item, index) =>
+            previous.locked.has(item.track.id) ? [{ index, trackId: item.track.id }] : [],
+          )
+        : []
+      const run = await produce(
+        answers,
+        roles,
+        seed,
+        pinned.length > 0 ? { pinned, length: previous.plan.items.length } : undefined,
+      )
       if (run.refs.length === 0) return 'empty'
       if (!(await deps.canWrite())) return 'closed'
       const shown = uniqueName(previous.name, deps.namesIn(previous.parentId))
       const id = await deps.writer.replace(previous.parentId, previous.playlistId, shown, run.refs)
       return id === null
         ? 'refused'
-        : settle(id, previous.parentId, previous.name, shown, answers, roles, seed, run)
+        : settle(
+            id,
+            previous.parentId,
+            previous.name,
+            shown,
+            answers,
+            roles,
+            seed,
+            run,
+            new Set(
+              pinned
+                .map((pin) => pin.trackId)
+                .filter((trackId) => run.plan.items.some((item) => item.track.id === trackId)),
+            ),
+          )
     })
 
   const redo = useStableCallback(async () =>
-    recent ? replaceWith(recent, recent.answers, recent.roles) : 'refused',
+    recent ? replaceWith(recent, recent.answers, recent.roles, true) : 'refused',
   )
 
   const adjust = useStableCallback(async (answers: SessionAnswers, roles: Roles) => {
     if (!recent) return 'refused'
     deps.saveAnswers(answers)
-    return replaceWith(recent, answers, roles)
+    return replaceWith(recent, answers, roles, false)
   })
 
   const alternatives = useStableCallback((index: number): SessionTrack[] =>
@@ -194,10 +224,22 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
       const id = await deps.writer.replace(recent.parentId, recent.playlistId, shown, refs)
       if (id === null) return 'refused'
       deps.openPlaylist({ id, name: shown, kind: 'playlist', count: refs.length })
-      setRecent({ ...recent, playlistId: id, plan })
+      const locked = new Set(recent.locked)
+      locked.delete(recent.plan.items[index].track.id)
+      locked.add(track.id)
+      setRecent({ ...recent, playlistId: id, plan, locked })
       return 'built'
     })
   })
+
+  const toggleLock = useStableCallback((trackId: string) =>
+    setRecent((current) => {
+      if (!current || !current.plan.items.some((item) => item.track.id === trackId)) return current
+      const locked = new Set(current.locked)
+      if (!locked.delete(trackId)) locked.add(trackId)
+      return { ...current, locked }
+    }),
+  )
 
   const keep = useStableCallback(() => setRecent(null))
 
@@ -205,5 +247,5 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
     setRecent((current) => (current?.playlistId === playlistId ? null : current)),
   )
 
-  return { recent, busy, build, fill, redo, adjust, swap, alternatives, keep, noteEdit }
+  return { recent, busy, build, fill, redo, adjust, swap, alternatives, toggleLock, keep, noteEdit }
 }
