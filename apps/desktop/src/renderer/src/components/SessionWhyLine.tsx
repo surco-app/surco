@@ -74,7 +74,14 @@ function phraseOf(why: SessionWhy, tr: TFunction): Phrase {
   }
 }
 
+function keyAndTempo(track: SessionTrack): string {
+  return [track.key, track.bpm > 0 ? Math.round(track.bpm) : null]
+    .filter((part) => part !== null)
+    .join(' ')
+}
+
 export function SessionWhyLine({
+  track,
   why,
   canChange,
   busy,
@@ -83,6 +90,7 @@ export function SessionWhyLine({
   locked,
   onToggleLock,
 }: {
+  track: SessionTrack
   why: SessionWhy
   canChange: boolean
   busy: boolean
@@ -95,9 +103,18 @@ export function SessionWhyLine({
   const [open, setOpen] = useState(false)
   const [options, setOptions] = useState<SessionTrack[]>([])
   const phrase = phraseOf(why, tr)
+  const placed = keyAndTempo(track)
   return (
     <div data-testid="session-why" className="flex flex-col gap-1">
       <div className="flex items-center gap-2 text-[11px] leading-4">
+        {placed && (
+          <span
+            data-testid="session-why-track"
+            className="shrink-0 font-mono text-[11px] text-fg-dim"
+          >
+            {placed}
+          </span>
+        )}
         <span className={`relative min-w-0 truncate ${phrase.tone}`}>
           <Tooltip label={phrase.text} />
           {phrase.text}
@@ -169,9 +186,7 @@ export function SessionWhyLine({
                   {track.title}
                 </span>
                 <span className="shrink-0 font-mono text-[11px] text-fg-dim">
-                  {[track.key, track.bpm > 0 ? Math.round(track.bpm) : null]
-                    .filter((part) => part !== null)
-                    .join(' ')}
+                  {keyAndTempo(track)}
                 </span>
               </button>
             </li>
