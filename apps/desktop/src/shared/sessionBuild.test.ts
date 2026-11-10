@@ -47,11 +47,17 @@ const ids = (plan: SessionPlan): string[] => plan.items.map((item) => item.track
 const none: Combos = new Map()
 
 describe('buildSession core', () => {
-  it('starts from the source of the strongest combo', () => {
+  it('starts from the source of a combo, most often the strongest', () => {
     const pool = [track('a'), track('b'), track('c'), track('d')]
-    const plan = buildSession(pool, combosOf(['a', 'b', 1], ['c', 'd', 3]), options())
-    expect(plan.items[0].track.id).toBe('c')
-    expect(plan.items[0].why).toEqual({ kind: 'start' })
+    const combos = combosOf(['a', 'b', 1], ['c', 'd', 3])
+    const openings = Array.from(
+      { length: 100 },
+      (_, seed) => buildSession(pool, combos, options({ seed })).items[0],
+    )
+    expect(openings.every((item) => item.why.kind === 'start')).toBe(true)
+    const fromStrongest = openings.filter((item) => item.track.id === 'c').length
+    expect(fromStrongest).toBeGreaterThan(70)
+    expect(openings.every((item) => item.track.id === 'a' || item.track.id === 'c')).toBe(true)
   })
 
   it('follows an unused combo and says how many sets proved it', () => {
@@ -116,13 +122,37 @@ describe('buildSession core', () => {
     expect(other).not.toEqual(first)
   })
 
-  it('prefers the better rated track among equals and breaks a tie by plays', () => {
-    const rated = [track('a'), track('b'), track('c', { rating: 20 }), track('d', { rating: 100 })]
-    const byRating = buildSession(rated, combosOf(['a', 'b', 1]), options({ minutes: 30 }))
-    expect(ids(byRating)).toEqual(['a', 'b', 'd', 'c'])
-    const played = [track('a'), track('b'), track('c', { plays: 5 }), track('d', { plays: 40 })]
-    const byPlays = buildSession(played, combosOf(['a', 'b', 1]), options({ minutes: 30 }))
-    expect(ids(byPlays)).toEqual(['a', 'b', 'd', 'c'])
+  it('picks the better rated or more played track more often, without always picking it', () => {
+    const third = (pool: SessionTrack[]): string[] =>
+      Array.from(
+        { length: 200 },
+        (_, seed) =>
+          ids(
+            buildSession(
+              pool,
+              combosOf(['a', 'b', 1]),
+              options({ minutes: 30, seed, startWith: 'a' }),
+            ),
+          )[2],
+      )
+    const rated = third([
+      track('a'),
+      track('b'),
+      track('c', { rating: 20 }),
+      track('d', { rating: 100 }),
+    ])
+    const played = third([
+      track('a'),
+      track('b'),
+      track('c', { plays: 5 }),
+      track('d', { plays: 40 }),
+    ])
+    for (const picks of [rated, played]) {
+      const d = picks.filter((id) => id === 'd').length
+      const c = picks.filter((id) => id === 'c').length
+      expect(d).toBeGreaterThan(c)
+      expect(c).toBeGreaterThan(0)
+    }
   })
 
   it('ends early and says how much is missing when the pool is too short', () => {
@@ -262,15 +292,18 @@ describe('buildSession alternation, new tracks and surprise', () => {
     const links: Array<[string, string, number]> = chain
       .slice(0, -1)
       .map((t, i) => [t.id, chain[i + 1].id, i === 0 ? 2 : 1])
-    const plain = buildSession(chain, combosOf(...links), options({ minutes: 60 }))
+    const plain = buildSession(chain, combosOf(...links), options({ minutes: 60, startWith: 't0' }))
     const surprising = buildSession(
       chain,
       combosOf(...links),
-      options({ minutes: 60, surprise: true }),
+      options({ minutes: 60, surprise: true, startWith: 't0' }),
     )
     const followed = (plan: typeof plain): number =>
-      plan.items.filter((item) => item.why.kind === 'combo' || item.why.kind === 'partner').length
-    expect(followed(plain)).toBe(plain.items.length - 1)
-    expect(followed(surprising)).toBeLessThan(surprising.items.length - 1)
+      plan.items.filter(
+        (item) =>
+          item.why.kind === 'combo' || item.why.kind === 'partner' || item.why.kind === 'chosen',
+      ).length
+    expect(followed(plain)).toBe(plain.items.length)
+    expect(followed(surprising)).toBeLessThan(surprising.items.length)
   })
 })

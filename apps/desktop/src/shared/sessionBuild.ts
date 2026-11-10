@@ -54,6 +54,8 @@ const TEMPO_TIGHT = 4
 const TEMPO_WIDE = 8
 const PLAYS_WEIGHT = 0.5
 const SURPRISE_EVERY = 4
+const TASTE_POWER = 3
+const KEY_WEIGHTS = { same: 1, neighbour: 0.85, far: 0.35, unknown: 0.3 } as const
 
 function seeded(seed: number): () => number {
   let state = seed >>> 0
@@ -148,7 +150,26 @@ export function buildSession(
 
   const pickOne = <T>(list: readonly T[]): T => list[Math.floor(random() * list.length)]
 
+  const pickWeighted = <T>(list: readonly T[], weight: (item: T) => number): T => {
+    const weights = list.map(weight)
+    let roll = random() * weights.reduce((sum, w) => sum + w, 0)
+    for (let i = 0; i < list.length; i++) {
+      roll -= weights[i]
+      if (roll < 0) return list[i]
+    }
+    return list[list.length - 1]
+  }
+
   const taste = (track: SessionTrack): number => tasteOf(track, maxPlays, options.tasteWeight)
+
+  const keyWeight = (from: SessionTrack, to: SessionTrack): number => {
+    const distance = camelotDistance(from.key, to.key)
+    if (distance === null) return KEY_WEIGHTS.unknown
+    if (distance === 0) return KEY_WEIGHTS.same
+    return distance === 1 ? KEY_WEIGHTS.neighbour : KEY_WEIGHTS.far
+  }
+
+  const liking = (track: SessionTrack): number => (1 + taste(track)) ** TASTE_POWER
 
   const knownRoles = new Set(eligible.filter((track) => track.role !== 'any').map((t) => t.role))
   const strict = options.alternate && knownRoles.has('base') && knownRoles.has('vocal')
@@ -174,21 +195,16 @@ export function buildSession(
     else if (strict && expected !== null) expected = expected === 'base' ? 'vocal' : 'base'
   }
 
-  const strongest = (): { from: SessionTrack; strength: number } | null => {
-    let best = 0
-    let found: SessionTrack[] = []
+  const comboOpening = (): SessionTrack | null => {
+    const starts: { from: SessionTrack; strength: number }[] = []
     for (const [fromId, targets] of combos) {
       const from = byId.get(fromId)
       if (!from || used.has(fromId) || (strict && from.role === 'any')) continue
-      for (const [toId, strength] of targets) {
-        if (!byId.has(toId)) continue
-        if (strength > best) {
-          best = strength
-          found = [from]
-        } else if (strength === best) found.push(from)
-      }
+      const strength = Math.max(0, ...[...targets].filter(([id]) => byId.has(id)).map(([, n]) => n))
+      if (strength > 0) starts.push({ from, strength })
     }
-    return found.length > 0 ? { from: pickOne(found), strength: best } : null
+    if (starts.length === 0) return null
+    return pickWeighted(starts, (start) => start.strength ** 2 * liking(start.from)).from
   }
 
   const partnerFits = (from: SessionTrack, to: SessionTrack): boolean => {
@@ -245,14 +261,6 @@ export function buildSession(
     }
   }
 
-  const distanceOrLast = (from: SessionTrack, to: SessionTrack): number =>
-    camelotDistance(from.key, to.key) ?? Number.POSITIVE_INFINITY
-
-  const closestOf = (current: SessionTrack, list: readonly SessionTrack[]): SessionTrack => {
-    const closest = Math.min(...list.map((track) => distanceOrLast(current, track)))
-    return pickOne(list.filter((track) => distanceOrLast(current, track) === closest))
-  }
-
   const nextByFit = (current: SessionTrack, onlyWithoutCombo: boolean): SessionItem | null => {
     const open = eligible.filter(
       (track) =>
@@ -263,11 +271,7 @@ export function buildSession(
     if (fit.tier.length === 0) fit = fitTier(current, open, () => true, true)
     const { tier, relaxed } = fit
     if (tier.length === 0) return null
-    const best = Math.max(...tier.map(taste))
-    const chosen = closestOf(
-      current,
-      tier.filter((track) => taste(track) === best),
-    )
+    const chosen = pickWeighted(tier, (track) => liking(track) * keyWeight(current, track))
     if (relaxed) return { track: chosen, why: { kind: 'bpm', relaxed: true } }
     const distance = camelotDistance(current.key, chosen.key)
     if (distance !== null && distance <= 1 && current.key !== null && chosen.key !== null)
@@ -275,7 +279,7 @@ export function buildSession(
         track: chosen,
         why: { kind: 'harmonic', from: current.key, to: chosen.key, distance },
       }
-    if (best > 0)
+    if (taste(chosen) > 0)
       return { track: chosen, why: { kind: 'taste', plays: chosen.plays, rating: chosen.rating } }
     return { track: chosen, why: { kind: 'bpm', relaxed: false } }
   }
@@ -284,7 +288,7 @@ export function buildSession(
     const open = newcomers.filter((track) => !used.has(track.id))
     const { tier } = fitTier(current, open)
     if (tier.length === 0) return null
-    const chosen = closestOf(current, tier)
+    const chosen = pickWeighted(tier, (track) => keyWeight(current, track))
     if (total + secsOf(chosen, options.playSecs) >= target) return null
     return { track: chosen, why: { kind: 'fresh', key: chosen.key, role: chosen.role } }
   }
@@ -301,8 +305,8 @@ export function buildSession(
   }
 
   const opening = (): SessionTrack | null => {
-    const start = options.preferCombos ? strongest() : null
-    if (start) return start.from
+    const start = options.preferCombos ? comboOpening() : null
+    if (start) return start
     const open = (strict ? eligible.filter((track) => track.role !== 'any') : eligible).filter(
       (track) => !used.has(track.id),
     )
