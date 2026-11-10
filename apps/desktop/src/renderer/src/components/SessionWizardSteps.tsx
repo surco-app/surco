@@ -1,3 +1,4 @@
+import { CircleAlert } from 'lucide-react'
 import type React from 'react'
 import { Fragment, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -206,8 +207,11 @@ export function SourcesStep({
       {chosen.length > 0 && (
         <p
           data-testid="session-wizard-length"
-          className={`text-xs ${reach < minutes ? 'text-warn' : 'text-fg-dim'}`}
+          className={`flex items-start gap-1.5 text-xs ${reach < minutes ? 'text-warn' : 'text-fg-dim'}`}
         >
+          {reach < minutes && (
+            <CircleAlert className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+          )}
           {reach < minutes
             ? tr('sessions.wizard.sources.short', { minutes: reach, target: minutes })
             : tr('sessions.wizard.sources.enough', { target: minutes })}
