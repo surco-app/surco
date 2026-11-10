@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../i18n'
@@ -59,6 +59,17 @@ function renderBar(over: Partial<Props> = {}): Props {
 }
 
 describe('Toolbar', () => {
+  it('keeps the list sweeps together above the list, apart from the app controls', () => {
+    renderBar({ trackCount: 3 })
+    const list = screen.getByTestId('toolbar-list-actions')
+    for (const id of ['analyze-quality', 'auto-match', 'toolbar-review']) {
+      expect(within(list).getByTestId(id)).toBeInTheDocument()
+    }
+    for (const id of ['open-palette', 'open-settings', 'open-help']) {
+      expect(within(list).queryByTestId(id)).toBeNull()
+    }
+  })
+
   // The number alone left the DJ guessing which track the batch skips; the button names
   // how many a missing required field keeps out and which fields, where the count is.
   it('says how many tracks the count leaves out and what they lack', () => {
