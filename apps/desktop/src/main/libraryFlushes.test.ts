@@ -90,7 +90,13 @@ vi.mock('./libraryFileUse', () => ({ djLibraryFileUse: FILE_USE.open }))
 
 const ENGINE_PROCESS = vi.hoisted(() => ({ isEngineDjRunning: vi.fn(async () => false) }))
 vi.mock('./engineProcess', () => ENGINE_PROCESS)
-vi.mock('./traktorProcess', () => ({ isTraktorRunning: vi.fn(async () => false) }))
+const TRAKTOR_PROCESS = vi.hoisted(() => ({ isTraktorRunning: vi.fn(async () => false) }))
+vi.mock('./traktorProcess', () => TRAKTOR_PROCESS)
+const REKORDBOX_PROCESS = vi.hoisted(() => ({ isRekordboxRunning: vi.fn(async () => true) }))
+vi.mock('./rekordboxProcess', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./rekordboxProcess')>()),
+  isRekordboxRunning: REKORDBOX_PROCESS.isRekordboxRunning,
+}))
 
 import { activity } from './activity'
 import { writeEngineLibraryFixture } from './enginePlaylistsFixture'
@@ -185,6 +191,98 @@ describe('flushConversionBatch with rekordbox open', () => {
     expect(h.showBlockedDialog).not.toHaveBeenCalled()
     expect(queue.enqueue).toHaveBeenCalledWith([], REPOINTS)
     expect(queue.applyQuietly).toHaveBeenCalled()
+  })
+})
+
+describe('flushConversionBatch with rekordbox open and its queue waiting', () => {
+  it('queues the repoints without asking to close rekordbox, since the queue applies them once it closes', async () => {
+    const h = host()
+    const queue = { enqueue: vi.fn(), applyQuietly: vi.fn() }
+    await flushConversionBatch(h, sessions, { rekordbox: queue })
+    expect(h.ensureRekordboxClosed).not.toHaveBeenCalled()
+    expect(queue.enqueue).toHaveBeenCalledWith([], REPOINTS)
+  })
+
+  it('treats an unanswered check for rekordbox as open and queues, because writing under a live rekordbox loses the library', async () => {
+    REKORDBOX_PROCESS.isRekordboxRunning.mockRejectedValueOnce(new Error('pgrep missing'))
+    WRITERS.repointTracks.mockClear()
+    const h = host({ ensureRekordboxClosed: vi.fn(async () => true) })
+    const queue = { enqueue: vi.fn(), applyQuietly: vi.fn() }
+    await flushConversionBatch(h, sessions, { rekordbox: queue })
+    expect(WRITERS.repointTracks).not.toHaveBeenCalled()
+    expect(queue.enqueue).toHaveBeenCalledWith([], REPOINTS)
+  })
+
+  it('repoints right away when rekordbox is closed', async () => {
+    REKORDBOX_PROCESS.isRekordboxRunning.mockResolvedValueOnce(false)
+    WRITERS.repointTracks.mockClear()
+    await flushConversionBatch(host(), sessions, {
+      rekordbox: { enqueue: vi.fn(), applyQuietly: vi.fn() },
+    })
+    expect(WRITERS.repointTracks).toHaveBeenCalled()
+  })
+})
+
+describe('flushConversionBatch with Traktor open', () => {
+  const patch = { volume: 'HD', dir: '/:m/:', file: 'a.aiff', newFile: 'a.flac' }
+  const traktorQueue = () => ({
+    enqueue: vi.fn(),
+    applyQuietly: vi.fn(),
+    state: () => ({ tracks: 0, changes: 0, items: [] }),
+  })
+  async function withTraktorOpen(run: () => Promise<void>) {
+    Object.assign(SETTINGS, { syncTraktor: true, traktorNmlPath: '/c/collection.nml' })
+    STATUS.traktor = { enabled: true, found: true }
+    TRAKTOR_PROCESS.isTraktorRunning.mockResolvedValue(true)
+    beginNmlBatch()
+    recordNmlPatch(patch)
+    try {
+      await run()
+    } finally {
+      TRAKTOR_PROCESS.isTraktorRunning.mockResolvedValue(false)
+      Object.assign(SETTINGS, { syncTraktor: false, traktorNmlPath: '' })
+      STATUS.traktor = { enabled: false, found: false }
+    }
+  }
+
+  it('holds the run in the Traktor queue without asking to close Traktor or showing the blocked dialog', async () => {
+    await withTraktorOpen(async () => {
+      const h = host()
+      const traktor = traktorQueue()
+      await flushConversionBatch(h, sessions, {
+        rekordbox: { enqueue: vi.fn(), applyQuietly: vi.fn() },
+        traktor,
+      })
+      expect(h.ensureTraktorClosed).not.toHaveBeenCalled()
+      expect(h.showBlockedDialog).not.toHaveBeenCalled()
+      expect(traktor.enqueue).toHaveBeenCalledWith([], [expect.objectContaining({ patch })])
+    })
+  })
+
+  it('treats an unanswered check for Traktor as open and holds the run, because Traktor rewrites collection.nml when it quits', async () => {
+    await withTraktorOpen(async () => {
+      TRAKTOR_PROCESS.isTraktorRunning.mockRejectedValue(new Error('pgrep missing'))
+      EFFECTS.length = 0
+      const h = host()
+      const traktor = traktorQueue()
+      await flushConversionBatch(h, sessions, {
+        rekordbox: { enqueue: vi.fn(), applyQuietly: vi.fn() },
+        traktor,
+      })
+      expect(h.ensureTraktorClosed).not.toHaveBeenCalled()
+      expect(EFFECTS).not.toContain('traktor sync')
+      expect(traktor.enqueue).toHaveBeenCalledWith([], [expect.objectContaining({ patch })])
+    })
+  })
+
+  it('still asks to close Traktor when there is no queue to hold the run', async () => {
+    await withTraktorOpen(async () => {
+      const h = host({ ensureTraktorClosed: vi.fn(async () => false) })
+      await flushConversionBatch(h, sessions, {
+        rekordbox: { enqueue: vi.fn(), applyQuietly: vi.fn() },
+      })
+      expect(h.ensureTraktorClosed).toHaveBeenCalled()
+    })
   })
 })
 
@@ -901,7 +999,8 @@ describe('flushConversionBatch outcome', () => {
   })
 
   it('says rekordbox was written once its repoint ran', async () => {
-    const h = host({ ensureRekordboxClosed: vi.fn(async () => true) })
+    REKORDBOX_PROCESS.isRekordboxRunning.mockResolvedValueOnce(false)
+    const h = host()
     const outcome = await flushConversionBatch(h, sessions, { rekordbox: quiet() })
     expect(outcome.rekordbox).toBe('written')
   })
@@ -910,7 +1009,8 @@ describe('flushConversionBatch outcome', () => {
     WRITERS.repointTracks.mockResolvedValueOnce([
       { written: false, reason: 'backup-failed' },
     ] as never)
-    const h = host({ ensureRekordboxClosed: vi.fn(async () => true) })
+    REKORDBOX_PROCESS.isRekordboxRunning.mockResolvedValueOnce(false)
+    const h = host()
     const outcome = await flushConversionBatch(h, sessions, { rekordbox: quiet() })
     expect(outcome.rekordbox).toBe('failed')
   })
@@ -1137,8 +1237,8 @@ describe('flushConversionBatch outcome', () => {
       await withTraktor(async () => {
         beginNmlBatch()
         recordNmlPatch(patch)
-        const h = host({ ensureTraktorClosed: vi.fn(async () => false) })
-        const outcome = await flushConversionBatch(h, sessions, {
+        TRAKTOR_PROCESS.isTraktorRunning.mockResolvedValueOnce(true)
+        const outcome = await flushConversionBatch(host(), sessions, {
           rekordbox: quiet(),
           traktor: traktorQueue(),
         })

@@ -1033,6 +1033,22 @@ describe('Editor convert button after choosing a DJ library in Settings', () => 
     await waitFor(() => expect(screen.getByTestId('process-btn')).toHaveTextContent('Engine DJ'))
   })
 
+  it('names Traktor as soon as the DJ confirms its collection.nml in Settings, without reopening the track', async () => {
+    const libraryStatus = vi.fn<Api['libraryStatus']>().mockResolvedValue(found(false, false))
+    Object.assign(window.api, { libraryStatus })
+    const { changeSettings } = renderEditor({ id: 'a' }, 'aiff', {
+      addToAppleMusic: false,
+      addToTraktor: true,
+    })
+    await waitFor(() => expect(libraryStatus).toHaveBeenCalled())
+    libraryStatus.mockResolvedValue({
+      ...found(false, false),
+      traktor: { enabled: true, found: true },
+    })
+    changeSettings({ traktorNmlPath: '/c/collection.nml' })
+    await waitFor(() => expect(screen.getByTestId('process-btn')).toHaveTextContent('Traktor'))
+  })
+
   it('names rekordbox as soon as the DJ points Settings at its master.db, without reopening the track', async () => {
     const libraryStatus = vi.fn<Api['libraryStatus']>().mockResolvedValue(found(false, false))
     Object.assign(window.api, { libraryStatus })
