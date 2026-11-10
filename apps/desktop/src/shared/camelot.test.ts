@@ -23,6 +23,14 @@ describe('camelotOf', () => {
     expect(camelotOf('am')).toBe('8A')
   })
 
+  it('reads a key written with major or minor in words, the way Beatport and other programs tag it', () => {
+    expect(camelotOf('Gbmin')).toBe('11A')
+    expect(camelotOf('Ab Major')).toBe('4B')
+    expect(camelotOf('A minor')).toBe('8A')
+    expect(camelotOf('F# maj')).toBe('2B')
+    expect(camelotOf('C#MIN')).toBe('12A')
+  })
+
   it('returns null for anything it cannot read, so a track without a key is never guessed', () => {
     expect(camelotOf('')).toBeNull()
     expect(camelotOf(undefined)).toBeNull()
