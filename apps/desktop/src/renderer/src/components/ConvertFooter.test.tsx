@@ -233,6 +233,16 @@ describe('ConvertFooter done footer stays on one line', () => {
     expect(screen.getByTestId('clean-up-previous')).toHaveTextContent('Clean up the previous file')
   })
 
+  it('ends the clean-up label in an ellipsis, since it asks where the file goes before touching it', () => {
+    render(
+      <ConvertFooter
+        {...footer(true).props}
+        status={{ ...status(true), canDeleteOriginal: true }}
+      />,
+    )
+    expect(screen.getByTestId('clean-up-previous')).toHaveAccessibleName(/…$/)
+  })
+
   // A replacement retires the file it replaced on its own, so a trash can beside it read as
   // that file still waiting to be removed.
   it('offers no clean-up once a track replaced another', () => {
