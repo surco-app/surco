@@ -12,6 +12,8 @@ export interface SessionOptions {
   freshShare: number
   surprise: boolean
   seed: number
+  pinned?: readonly { index: number; trackId: string }[]
+  fixedLength?: number
 }
 
 export type SessionWhy =
@@ -118,7 +120,16 @@ export function buildSession(
   const byId = new Map(eligible.map((track) => [track.id, track]))
   const maxPlays = eligible.reduce((most, track) => Math.max(most, track.plays), 0)
   const target = options.minutes * 60
-  const used = new Set<string>()
+  const poolById = new Map(pool.map((track) => [track.id, track]))
+  const pins = new Map<number, SessionTrack>()
+  for (const pin of options.pinned ?? []) {
+    const pinned = poolById.get(pin.trackId)
+    if (pinned && pin.index >= 0 && pin.index < (options.fixedLength ?? 0))
+      pins.set(pin.index, pinned)
+  }
+  const fixed = pins.size > 0 ? (options.fixedLength ?? 0) : 0
+  const used = new Set<string>([...pins.values()].map((track) => track.id))
+  let avoid: TrackRole | null = null
   const items: SessionItem[] = []
   let total = 0
   let expected: TrackRole | null = null
@@ -144,11 +155,14 @@ export function buildSession(
   const roleFits = (track: SessionTrack): boolean => {
     if (!options.alternate) return true
     if (track.role === 'any') return !strict
+    if (avoid !== null && track.role === avoid) return false
     return expected === null || track.role === expected
   }
 
   const roleOrNeutral = (track: SessionTrack): boolean =>
-    !options.alternate || expected === null || track.role === 'any' || track.role === expected
+    !options.alternate ||
+    track.role === 'any' ||
+    ((avoid === null || track.role !== avoid) && (expected === null || track.role === expected))
 
   const take = (track: SessionTrack, why: SessionWhy): void => {
     used.add(track.id)
@@ -164,7 +178,7 @@ export function buildSession(
     let found: SessionTrack[] = []
     for (const [fromId, targets] of combos) {
       const from = byId.get(fromId)
-      if (!from || (strict && from.role === 'any')) continue
+      if (!from || used.has(fromId) || (strict && from.role === 'any')) continue
       for (const [toId, strength] of targets) {
         if (!byId.has(toId)) continue
         if (strength > best) {
@@ -274,19 +288,53 @@ export function buildSession(
     return { track: chosen, why: { kind: 'fresh', key: chosen.key, role: chosen.role } }
   }
 
-  if (eligible.length > 0) {
-    const opening = options.preferCombos ? strongest() : null
-    const starters = strict ? eligible.filter((track) => track.role !== 'any') : eligible
-    take(opening ? opening.from : pickOne(richest(starters)), { kind: 'start' })
-    while (total < target) {
-      const current = items[items.length - 1].track
-      const surpriseTurn = options.surprise && items.length % SURPRISE_EVERY === 0
-      const slotOpen = placedFresh < slots.length && items.length >= slots[placedFresh]
-      const next =
-        (surpriseTurn ? nextByFit(current, true) : null) ??
-        (options.preferCombos ? nextByCombo(current) : null) ??
-        (slotOpen ? nextFresh(current) : null) ??
-        nextByFit(current, false)
+  const pickNext = (current: SessionTrack): SessionItem | null => {
+    const surpriseTurn = options.surprise && items.length % SURPRISE_EVERY === 0
+    const slotOpen = placedFresh < slots.length && items.length >= slots[placedFresh]
+    return (
+      (surpriseTurn ? nextByFit(current, true) : null) ??
+      (options.preferCombos ? nextByCombo(current) : null) ??
+      (slotOpen ? nextFresh(current) : null) ??
+      nextByFit(current, false)
+    )
+  }
+
+  const opening = (): SessionTrack | null => {
+    const start = options.preferCombos ? strongest() : null
+    if (start) return start.from
+    const open = (strict ? eligible.filter((track) => track.role !== 'any') : eligible).filter(
+      (track) => !used.has(track.id),
+    )
+    return open.length > 0 ? pickOne(richest(open)) : null
+  }
+
+  if (fixed > 0) {
+    for (let i = 0; i < fixed; i++) {
+      const pin = pins.get(i)
+      if (pin) {
+        take(pin, { kind: 'chosen' })
+        continue
+      }
+      const after = pins.get(i + 1)
+      avoid = options.alternate && after && after.role !== 'any' ? after.role : null
+      const current = items[items.length - 1]?.track
+      if (!current) {
+        const first = opening()
+        if (first) take(first, { kind: 'start' })
+      } else {
+        const next = pickNext(current)
+        if (next) {
+          if (next.why.kind === 'fresh') placedFresh++
+          take(next.track, next.why)
+        }
+      }
+      avoid = null
+    }
+  } else if (eligible.length > 0) {
+    const first = opening()
+    if (first) take(first, { kind: 'start' })
+    while (items.length > 0 && total < target) {
+      const next = pickNext(items[items.length - 1].track)
       if (!next) break
       if (next.why.kind === 'fresh') placedFresh++
       take(next.track, next.why)
