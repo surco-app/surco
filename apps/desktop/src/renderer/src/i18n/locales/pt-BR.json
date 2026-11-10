@@ -1856,7 +1856,7 @@
     "showEditorHints": "Explicações em linha",
     "showEditorHintsHint": "Explicações de uma linha sob os controles do editor: o que cada modo faz e o que é o teto de picos. Desative quando já souber de cor.",
     "keyNotation": "Notação do tom",
-    "keyNotationHint": "Como a sugestão de tom detectado aparece abaixo do campo Tom. Camelot é o que os programas de DJ usam para ordenar.",
+    "keyNotationHint": "Como o tom aparece na lista de faixas e na sugestão abaixo do campo Tom. Camelot é o que os programas de DJ usam para ordenar.",
     "sections": {
       "title": "Seções do editor",
       "hint": "Escolha quais seções começam abertas e a ordem delas abaixo do formulário de metadados.",

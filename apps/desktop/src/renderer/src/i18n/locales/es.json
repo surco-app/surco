@@ -1856,7 +1856,7 @@
     "showEditorHints": "Explicaciones en línea",
     "showEditorHintsHint": "Explicaciones de una línea bajo los controles del editor: qué hace cada modo y qué es el techo de picos. Desactívalas cuando te las sepas de memoria.",
     "keyNotation": "Notación de la tonalidad",
-    "keyNotationHint": "Cómo se muestra la sugerencia de tonalidad detectada bajo el campo Tonalidad. Camelot es la que usan los programas de DJ para ordenar.",
+    "keyNotationHint": "Cómo se muestra la tonalidad en la lista de pistas y en la sugerencia bajo el campo Tonalidad. Camelot es la que usan los programas de DJ para ordenar.",
     "sections": {
       "title": "Secciones del editor",
       "hint": "Elige qué secciones empiezan abiertas y su orden debajo del formulario de metadatos.",

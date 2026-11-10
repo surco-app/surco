@@ -25,6 +25,7 @@ import {
   useState,
 } from 'react'
 import { useTranslation } from 'react-i18next'
+import { keyIn } from '../../../shared/camelot'
 import { matchChord } from '../../../shared/shortcutDefaults'
 import { type Chord, eventToChord } from '../../../shared/shortcuts'
 import type { OutputFormat } from '../../../shared/types'
@@ -51,6 +52,7 @@ import {
 import { rowDisplay } from '../lib/rowDisplay'
 import type { ClickMods } from '../lib/selection'
 import { hasStagedEdits } from '../lib/sessionEdits'
+import { useAppSettings } from '../lib/settingsContext'
 import { sourceFormat, type TrackQuality, trackQuality, unanalysedIn } from '../lib/triage'
 import type { TrackItem } from '../types'
 import { CleanSpark } from './CleanSpark'
@@ -523,6 +525,8 @@ const TrackRow = memo(function TrackRow({
   const stage = t.status === 'processing' ? t.stage : undefined
   const converting = stage !== undefined
   const shown = rowDisplay(t)
+  const { keyNotation } = useAppSettings()
+  const key = t.meta.key ? keyIn(t.meta.key, keyNotation) : ''
   const unanalyzed = unanalysedIn(t)
   // Shared by each mark's hover tooltip and its sr-only twin, so what a screen reader
   // hears is the same sentence the pointer reveals.
@@ -760,6 +764,12 @@ const TrackRow = memo(function TrackRow({
                     <Tooltip label={rowTooltip(t, tr)} />
                     {shown.title}
                   </span>
+                </span>
+                <span
+                  data-testid="track-key-slot"
+                  className="min-w-[26px] shrink-0 whitespace-nowrap text-right font-mono text-[11px] text-fg-dim"
+                >
+                  {key && <span data-testid="track-key">{key}</span>}
                 </span>
                 <span data-testid="track-duration-slot" className={`min-w-[34px] ${ROW_TRAILING}`}>
                   {shown.duration !== undefined && (

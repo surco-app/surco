@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { camelotDistance, camelotOf } from './camelot'
+import { camelotDistance, camelotOf, keyIn } from './camelot'
 
 describe('camelotOf', () => {
   it('keeps a Camelot key and strips a leading zero', () => {
@@ -41,5 +41,20 @@ describe('camelotDistance', () => {
   it('is null when either side has no key', () => {
     expect(camelotDistance(null, '8A')).toBeNull()
     expect(camelotDistance('8A', null)).toBeNull()
+  })
+})
+
+describe('keyIn', () => {
+  it('writes the key the way the DJ chose in Settings, whichever way the tag spells it', () => {
+    expect(keyIn('Am', 'camelot')).toBe('8A')
+    expect(keyIn('08A', 'camelot')).toBe('8A')
+    expect(keyIn('8A', 'musical')).toBe('Am')
+    expect(keyIn('11b', 'musical')).toBe('A')
+    expect(keyIn(' F#m ', 'musical')).toBe('F#m')
+  })
+
+  it('shows a key it cannot read as the tag has it, so nothing on the row is made up', () => {
+    expect(keyIn('Abm', 'camelot')).toBe('Abm')
+    expect(keyIn(' 6m ', 'musical')).toBe('6m')
   })
 })
