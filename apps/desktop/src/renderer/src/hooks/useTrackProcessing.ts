@@ -25,7 +25,7 @@ import { mapWithConcurrency } from '../lib/concurrency'
 import { coverSourceOf } from '../lib/coverSource'
 import { type Destination, fromDestination } from '../lib/destination'
 import { exportedPatch } from '../lib/export'
-import { DEFAULT_REQUIRED_FIELDS, missingRequiredOf } from '../lib/fields'
+import { missingRequiredOf, requiredFieldsOf } from '../lib/fields'
 import { clearHiddenProvenance, sanitizeMeta } from '../lib/hygiene'
 import { cleanIpcError, errorKeyOf, isFileInUseMessage, mainErrorMessage } from '../lib/ipcError'
 import { autoNamesFile, renderOutputName } from '../lib/outputName'
@@ -297,7 +297,7 @@ export function useTrackProcessing({
       }
       const missing = missingRequiredOf(
         track,
-        settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS,
+        requiredFieldsOf(settings),
         settings?.customFields ?? [],
       )
       if (missing.length) {
@@ -705,7 +705,7 @@ export function useTrackProcessing({
       // so aren't marked failed) — they stay flagged in the list for the user to finish.
       const ids = eligibleForBatch(
         targets,
-        settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS,
+        requiredFieldsOf(settings),
         settings?.customFields,
         again,
       )

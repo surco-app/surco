@@ -15,7 +15,7 @@ import { eligibleForBatch } from '../lib/batch'
 import { deriveTagPatches } from '../lib/deriveTags'
 import type { Destination } from '../lib/destination'
 import { sourceTrashedPatch } from '../lib/export'
-import { DEFAULT_REQUIRED_FIELDS } from '../lib/fields'
+import { requiredFieldsOf } from '../lib/fields'
 import { jobAudio } from '../lib/reapply'
 import type { SupersededFile } from '../lib/selectionStatus'
 import { hasStagedEdits } from '../lib/sessionEdits'
@@ -507,7 +507,7 @@ export function useConfirmFlows({
       }
       const count = eligibleForBatch(
         targets,
-        settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS,
+        requiredFieldsOf(settings),
         settings?.customFields,
         again,
       ).length

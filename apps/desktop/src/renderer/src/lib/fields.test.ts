@@ -19,6 +19,7 @@ import {
   moveItem,
   PLAYLIST_FIELDS,
   REKORDBOX_PLAYLISTS_FIELD,
+  requiredFieldsOf,
   sortFieldsByGroup,
   withPlaylistField,
 } from './fields'
@@ -143,6 +144,25 @@ describe('missingRequired', () => {
 
   it('ignores fields that are not required even when empty', () => {
     expect(missingRequired(meta, [])).toEqual([])
+  })
+})
+
+describe('requiredFieldsOf', () => {
+  it('drops Quality while Surco fills it, so a required Quality never stops a conversion', () => {
+    expect(
+      requiredFieldsOf({ requiredFields: ['title', 'quality'], importFields: ['quality'] }),
+    ).toEqual(['title'])
+  })
+
+  it('keeps Quality required while its Auto is off, since only the user can fill it then', () => {
+    expect(requiredFieldsOf({ requiredFields: ['title', 'quality'], importFields: [] })).toEqual([
+      'title',
+      'quality',
+    ])
+  })
+
+  it('falls back to the default required fields before settings load', () => {
+    expect(requiredFieldsOf(null)).toEqual(['title', 'artist'])
   })
 })
 

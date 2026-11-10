@@ -176,7 +176,7 @@ import {
 import { deriveTagPatches } from './lib/deriveTags'
 import type { Destination } from './lib/destination'
 import { createDragDepth } from './lib/dragDepth'
-import { DEFAULT_REQUIRED_FIELDS, missingRequiredOf } from './lib/fields'
+import { missingRequiredOf, requiredFieldsOf } from './lib/fields'
 import { gridNote } from './lib/gridNote'
 import { pushImportNotice } from './lib/importNotices'
 import { mainErrorMessage } from './lib/ipcError'
@@ -1929,13 +1929,16 @@ export default function App(): React.JSX.Element {
   // While audio plays, the Dock icon's engraved wave animates (macOS only).
   useDockPlayingIndicator(audioRef)
 
+  const requiredFields = useMemo(
+    () =>
+      requiredFieldsOf({
+        requiredFields: settings?.requiredFields,
+        importFields: settings?.importFields,
+      }),
+    [settings?.requiredFields, settings?.importFields],
+  )
   const canProcessSelected =
-    !!selected &&
-    canProcessTrack(
-      selected,
-      settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS,
-      settings?.customFields,
-    )
+    !!selected && canProcessTrack(selected, requiredFields, settings?.customFields)
   // Which library the membership check reads — the conversion destination's (Apple
   // Music or the Engine DJ database), or none for folder/overwrite conversions.
   const librarySource = useMemo(() => librarySourceOf(settings, isMacOS()), [settings])
@@ -2123,11 +2126,7 @@ export default function App(): React.JSX.Element {
   const filterFacts = useMemo<FilterFacts>(
     () => ({
       incomplete: (t) =>
-        missingRequiredOf(
-          t,
-          settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS,
-          settings?.customFields ?? [],
-        ).length > 0,
+        missingRequiredOf(t, requiredFields, settings?.customFields ?? []).length > 0,
       unsaved: (t) => {
         const contentId = playlistScope?.contentOf.get(t.id)
         return hasStagedEdits(t) || (contentId !== undefined && unsavedCues.has(contentId))
@@ -2141,7 +2140,7 @@ export default function App(): React.JSX.Element {
     [
       gridVerdicts,
       libraryCopyVerdicts,
-      settings?.requiredFields,
+      requiredFields,
       settings?.customFields,
       settings?.cueGridTolerance,
       playlistScope,
@@ -2260,14 +2259,8 @@ export default function App(): React.JSX.Element {
   // the click does: over every loaded track it read "81" behind a filter showing 79. The
   // editor footer reads this same gate for a multi-selection, so the two buttons agree.
   const gate = useMemo(
-    () =>
-      convertGate(
-        convertTracks,
-        settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS,
-        settings?.customFields,
-        libraryIndex,
-      ),
-    [convertTracks, settings?.requiredFields, settings?.customFields, libraryIndex],
+    () => convertGate(convertTracks, requiredFields, settings?.customFields, libraryIndex),
+    [convertTracks, requiredFields, settings?.customFields, libraryIndex],
   )
   const eligibleCount = gate.ready.length
   // Keyboard / continuous-playback navigation over the visible list (move + scroll paging).
@@ -3523,7 +3516,7 @@ export default function App(): React.JSX.Element {
   const reviewMode = review?.source === 'music' ? review.scope?.mode : undefined
   const reviewSource = useMemo(() => {
     const incomplete = {
-      required: () => settingsRef.current?.requiredFields ?? DEFAULT_REQUIRED_FIELDS,
+      required: () => requiredFieldsOf(settingsRef.current),
       customFields: () => settingsRef.current?.customFields ?? [],
       suggest: (row: TrackItem) =>
         acceptReviewPatch(
