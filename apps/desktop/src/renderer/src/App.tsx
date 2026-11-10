@@ -3850,7 +3850,6 @@ export default function App(): React.JSX.Element {
                                 busy={sessionRun.busy}
                                 playMinutes={sessionRun.recent.answers.playMinutes}
                                 preferCombos={sessionRun.recent.answers.preferCombos}
-                                locked={sessionRun.recent.locked.size}
                                 onRedo={() => void reportSession(sessionRun.redo())}
                                 onAdjust={openSessionAdjust}
                                 onKeep={() => {

@@ -24,7 +24,6 @@ export function SessionBand({
   busy,
   playMinutes,
   preferCombos,
-  locked,
   onRedo,
   onAdjust,
   onKeep,
@@ -33,7 +32,6 @@ export function SessionBand({
   busy: boolean
   playMinutes: number
   preferCombos: boolean
-  locked: number
   onRedo: () => void
   onAdjust: () => void
   onKeep: () => void
@@ -79,11 +77,6 @@ export function SessionBand({
       {preferCombos && summary.combos === 0 && (
         <p data-testid="session-band-nocombos" className="text-xs text-fg-dim">
           {tr('sessions.band.noCombos')}
-        </p>
-      )}
-      {locked > 0 && (
-        <p data-testid="session-band-locked" className="text-xs text-fg-dim">
-          {tr('sessions.band.locked', { count: locked })}
         </p>
       )}
       {summary.shortBySecs > 0 && (

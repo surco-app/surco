@@ -107,8 +107,6 @@
       "redo": "Redo",
       "adjust": "Adjust…",
       "keep": "Keep it as is",
-    "locked_one": "{{count}} track locked, Redo keeps it",
-    "locked_other": "{{count}} tracks locked, Redo keeps them",
     "kept": "Kept as a normal playlist",
       "short": "Only enough tracks for {{minutes}} min",
     "counted": "Counted at {{minutes}} min a track. The files add up to {{audio}}.",

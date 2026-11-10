@@ -35,7 +35,6 @@ function run(
   rows: Record<string, SourcePlaylistEntry[]>,
   seed = 1,
   library: Record<string, 'base' | 'vocal'> = {},
-  pins?: { pinned: { index: number; trackId: string }[]; length: number },
   startPath?: string,
   made?: ReadonlySet<string>,
   phases?: Record<string, 'open' | 'close' | 'must'>,
@@ -46,7 +45,6 @@ function run(
     rows: new Map(Object.entries(rows)) as Rows,
     seed,
     library,
-    pins,
     startPath,
     made,
     phases,
@@ -65,7 +63,6 @@ describe('runSession', () => {
       },
       1,
       {},
-      undefined,
       undefined,
       undefined,
       { warm: 'open', fixed: 'must' },
@@ -92,7 +89,6 @@ describe('runSession', () => {
       1,
       {},
       undefined,
-      undefined,
       new Set(['made']),
     )
     expect(learned).toEqual({})
@@ -106,7 +102,6 @@ describe('runSession', () => {
       { made1: pairs, made2: pairs },
       1,
       {},
-      undefined,
       undefined,
       new Set(['made1', 'made2']),
     )
@@ -165,7 +160,6 @@ describe('runSession', () => {
       },
       1,
       {},
-      undefined,
       '/m/a.mp3',
     )
     expect(combos.size).toBe(0)
@@ -173,27 +167,6 @@ describe('runSession', () => {
     expect(plan.items[1].track.id).toBe('/m/b.mp3')
     expect(plan.items[1].why).toEqual({ kind: 'partner' })
     expect(plan.summary.combos).toBe(0)
-  })
-
-  it('keeps the pinned tracks at their positions when it draws the session again', () => {
-    const entries = Array.from({ length: 30 }, (_, i) => row(`/m/t${i}.mp3`))
-    const first = run(
-      { sources: ['s'], minutes: 60, preferCombos: false },
-      { s: 'any' },
-      { s: entries },
-    )
-    const ids = first.plan.items.map((item) => item.track.id)
-    const again = run(
-      { sources: ['s'], minutes: 60, preferCombos: false },
-      { s: 'any' },
-      { s: entries },
-      9,
-      {},
-      { pinned: [{ index: 2, trackId: ids[2] }], length: ids.length },
-    )
-    expect(again.plan.items[2].track.id).toBe(ids[2])
-    expect(again.plan.items).toHaveLength(ids.length)
-    expect(again.refs[2]).toEqual(first.refs[2])
   })
 
   it('gives a track that is only in a set the role its chosen playlists are named for', () => {
@@ -225,7 +198,6 @@ describe('runSession', () => {
       },
       1,
       {},
-      undefined,
       undefined,
       undefined,
       { warm: 'open', fixed: 'must' },
@@ -370,7 +342,6 @@ describe('runSession starting from a track', () => {
         rows,
         seed,
         {},
-        undefined,
         '/m/d.mp3',
       )
       expect(plan.items[0].track.id, `seed ${seed}`).toBe('/m/d.mp3')
@@ -387,7 +358,6 @@ describe('runSession starting from a track', () => {
       byContent,
       1,
       {},
-      undefined,
       '/m/c.mp3',
     )
     expect(plan.items[0].track.id).toBe('id2')
@@ -400,7 +370,6 @@ describe('runSession starting from a track', () => {
       rows,
       1,
       {},
-      undefined,
       '/m/zzz.mp3',
     )
     expect(plan.items.length).toBeGreaterThan(0)

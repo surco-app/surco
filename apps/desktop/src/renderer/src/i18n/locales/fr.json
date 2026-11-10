@@ -107,8 +107,6 @@
       "redo": "Refaire",
       "adjust": "Ajuster…",
       "keep": "La garder telle quelle",
-    "locked_one": "{{count}} morceau fixé, Refaire le garde",
-    "locked_other": "{{count}} morceaux fixés, Refaire les garde",
     "kept": "Conservée comme une playlist normale",
       "short": "Il n’y a de morceaux que pour {{minutes}} min",
     "counted": "Compté à {{minutes}} min par morceau. Les fichiers durent {{audio}} en tout.",
