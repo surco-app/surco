@@ -118,28 +118,7 @@
       "assumed_other": "{{count}} pistas sin duración, se cuentan como {{minutes}} min cada una"
     },
     "playlistName": "Sesión del {{date}}",
-    "closed": "Cierra tu programa DJ para montar la sesión. Con él abierto, la playlist quedaría a medias",
-    "why": {
-      "start": "Donde arranca la sesión",
-    "partner": "Sonó justo después en un set",
-      "combo_one": "Combo probado en {{count}} set",
-      "combo_other": "Combo probado en {{count}} sets",
-      "harmonicSame": "{{from}} → {{to}}, mismo tono",
-      "harmonicRing": "{{from}} → {{to}}, misma rueda",
-      "harmonicNeighbour": "{{from}} → {{to}}, vecino",
-      "tasteRated": "Valorada con {{stars}} de 5, de las mejores que cuadran",
-      "tastePlayed_one": "Escuchada {{count}} vez, de las más escuchadas que cuadran",
-    "tastePlayed_other": "Escuchada {{count}} veces, de las más escuchadas que cuadran",
-      "bpm": "Encaja por tempo",
-      "bpmRelaxed": "No había otra que encajara, así que el tempo cambia más de lo normal",
-      "freshKey": "Nueva. Encaja por tono {{key}}",
-      "freshTempo": "Nueva. Encaja por tempo",
-      "chosen": "Elegida por ti",
-      "phaseOpen": "Para abrir, de tus playlists de apertura",
-      "phaseClose": "Para cerrar, de tus playlists de cierre",
-    "lock": "Fijar para que Rehacer la conserve",
-    "unlock": "Soltar"
-    }
+    "closed": "Cierra tu programa DJ para montar la sesión. Con él abierto, la playlist quedaría a medias"
   },
   "pasteTracklist": {
     "title": "Pegar tracklist en «{{name}}»",

@@ -83,7 +83,6 @@ import { LivePlayer } from './components/Player'
 import { RekordboxQueuePill } from './components/RekordboxQueuePill'
 import { ResizeHandle } from './components/ResizeHandle'
 import { SessionBand } from './components/SessionBand'
-import { SessionWhyLine } from './components/SessionWhyLine'
 import { type SessionDestination, SessionWizard } from './components/SessionWizard'
 import { SourceRail } from './components/SourceRail'
 import { flattenPlaylists, SourceTree } from './components/SourceTree'
@@ -1183,35 +1182,6 @@ export default function App(): React.JSX.Element {
     readLibraryRoles()
     setSessionWizard({ parentId: sessionRun.recent?.parentId ?? 'root', adjust: true })
   })
-  const sessionRecent =
-    sessionRun.recent && browser.playlist?.id === sessionRun.recent.playlistId
-      ? sessionRun.recent
-      : null
-  const sessionIndexByPath = useMemo(() => {
-    const byPath = new Map<string, number>()
-    sessionRecent?.plan.items.forEach((item, index) => {
-      const path = sessionRecent.refsById.get(item.track.id)?.paths[0]
-      if (path) byPath.set(path.normalize('NFC'), index)
-    })
-    return byPath
-  }, [sessionRecent])
-  const { busy: sessionBusy, toggleLock: toggleSessionLock } = sessionRun
-  const sessionNoteOf = useCallback(
-    (track: TrackItem) => {
-      const index = sessionIndexByPath.get(track.inputPath.normalize('NFC'))
-      if (!sessionRecent || index === undefined) return undefined
-      return (
-        <SessionWhyLine
-          track={sessionRecent.plan.items[index].track}
-          why={sessionRecent.plan.items[index].why}
-          busy={sessionBusy}
-          locked={sessionRecent.locked.has(sessionRecent.plan.items[index].track.id)}
-          onToggleLock={() => toggleSessionLock(sessionRecent.plan.items[index].track.id)}
-        />
-      )
-    },
-    [sessionRecent, sessionIndexByPath, sessionBusy, toggleSessionLock],
-  )
   const selectSource = useStableCallback((next: PlaylistSource | null) => {
     if (next === browser.source) return
     heldSelection.current = null
@@ -3946,7 +3916,6 @@ export default function App(): React.JSX.Element {
                               reorder={reorder}
                               outsideFilter={outsideFilterIds}
                               noteOf={gridNoteOf}
-                              sessionNoteOf={sessionRecent ? sessionNoteOf : undefined}
                               onVisible={onListRowVisible}
                               rowRegistry={rowEls}
                               revealRowRef={revealRowRef}

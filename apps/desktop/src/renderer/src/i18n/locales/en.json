@@ -118,28 +118,7 @@
       "assumed_other": "{{count}} tracks have no length and count as {{minutes}} min each"
     },
     "playlistName": "Session {{date}}",
-    "closed": "Close your DJ program to build the session. With it open, the playlist would be left half written",
-    "why": {
-      "start": "Where the session starts",
-    "partner": "Played right after it in a set",
-      "combo_one": "Proven combo in {{count}} set",
-      "combo_other": "Proven combo in {{count}} sets",
-      "harmonicSame": "{{from}} → {{to}}, same key",
-      "harmonicRing": "{{from}} → {{to}}, same ring",
-      "harmonicNeighbour": "{{from}} → {{to}}, neighbour",
-      "tasteRated": "Rated {{stars}} of 5, among the best that fit",
-      "tastePlayed_one": "Played {{count}} time, among the most played that fit",
-    "tastePlayed_other": "Played {{count}} times, among the most played that fit",
-      "bpm": "Fits by tempo",
-      "bpmRelaxed": "Nothing else fit, so the tempo moves more than usual",
-      "freshKey": "New. Fits by key {{key}}",
-      "freshTempo": "New. Fits by tempo",
-      "chosen": "Chosen by you",
-      "phaseOpen": "To open, from your warm-up playlists",
-      "phaseClose": "To close, from your closing playlists",
-    "lock": "Lock so Redo keeps it",
-    "unlock": "Unlock"
-    }
+    "closed": "Close your DJ program to build the session. With it open, the playlist would be left half written"
   },
   "pasteTracklist": {
     "title": "Paste tracklist into “{{name}}”",

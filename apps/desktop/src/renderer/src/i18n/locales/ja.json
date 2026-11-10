@@ -118,28 +118,7 @@
       "assumed_other": "{{count}} トラックは長さ不明のため {{minutes}} 分として計算"
     },
     "playlistName": "{{date}} のセッション",
-    "closed": "セッションを作るには DJ ソフトを閉じてください。開いたままだとプレイリストが中途半端になります",
-    "why": {
-      "start": "セッションの開始",
-    "partner": "セットでこの曲の直後に流れた曲",
-      "combo_one": "実績のあるコンボ（{{count}} セット）",
-      "combo_other": "実績のあるコンボ（{{count}} セット）",
-      "harmonicSame": "{{from}} → {{to}}、同じキー",
-      "harmonicRing": "{{from}} → {{to}}、同じリング",
-      "harmonicNeighbour": "{{from}} → {{to}}、隣のキー",
-      "tasteRated": "評価は5段階中{{stars}}で、合う曲の中でも上位です",
-      "tastePlayed_one": "{{count}} 回再生しており、合う曲の中でも再生数が多い方です",
-    "tastePlayed_other": "{{count}} 回再生しており、合う曲の中でも再生数が多い方です",
-      "bpm": "テンポが合います",
-      "bpmRelaxed": "他に合う曲がなく、テンポの差が通常より大きくなります",
-      "freshKey": "新曲。キー {{key}} に合います",
-      "freshTempo": "新曲。テンポが合います",
-      "chosen": "あなたが選んだ曲",
-      "phaseOpen": "オープニング用のプレイリストから、序盤に",
-      "phaseClose": "クロージング用のプレイリストから、終盤に",
-    "lock": "固定して「やり直す」でも残す",
-    "unlock": "固定を外す"
-    }
+    "closed": "セッションを作るには DJ ソフトを閉じてください。開いたままだとプレイリストが中途半端になります"
   },
   "pasteTracklist": {
     "title": "「{{name}}」にトラックリストを貼り付け",

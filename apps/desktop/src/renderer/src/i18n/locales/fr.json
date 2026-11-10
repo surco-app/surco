@@ -118,28 +118,7 @@
       "assumed_other": "{{count}} morceaux sans durée, comptés pour {{minutes}} min chacun"
     },
     "playlistName": "Session du {{date}}",
-    "closed": "Ferme ton logiciel DJ pour composer la session. Ouvert, il laisserait la playlist à moitié écrite",
-    "why": {
-      "start": "Là où la session démarre",
-    "partner": "Joué juste après dans un set",
-      "combo_one": "Combo éprouvé dans {{count}} set",
-      "combo_other": "Combo éprouvé dans {{count}} sets",
-      "harmonicSame": "{{from}} → {{to}}, même tonalité",
-      "harmonicRing": "{{from}} → {{to}}, même anneau",
-      "harmonicNeighbour": "{{from}} → {{to}}, voisin",
-      "tasteRated": "Notée {{stars}} sur 5, parmi les meilleures qui conviennent",
-      "tastePlayed_one": "Jouée {{count}} fois, parmi les plus jouées qui conviennent",
-    "tastePlayed_other": "Jouée {{count}} fois, parmi les plus jouées qui conviennent",
-      "bpm": "Convient par le tempo",
-      "bpmRelaxed": "Rien d’autre ne convenait, le tempo varie donc plus que d’habitude",
-      "freshKey": "Nouveauté. Convient par la tonalité {{key}}",
-      "freshTempo": "Nouveauté. Convient par le tempo",
-      "chosen": "Choisi par toi",
-      "phaseOpen": "Pour ouvrir, tiré de tes playlists d’ouverture",
-      "phaseClose": "Pour finir, tiré de tes playlists de clôture",
-    "lock": "Fixer pour que Refaire la garde",
-    "unlock": "Libérer"
-    }
+    "closed": "Ferme ton logiciel DJ pour composer la session. Ouvert, il laisserait la playlist à moitié écrite"
   },
   "pasteTracklist": {
     "title": "Coller la tracklist dans « {{name}} »",

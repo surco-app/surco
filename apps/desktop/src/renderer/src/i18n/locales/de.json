@@ -118,28 +118,7 @@
       "assumed_other": "{{count}} Tracks ohne Länge, zählen je als {{minutes}} Min."
     },
     "playlistName": "Session vom {{date}}",
-    "closed": "Schließe dein DJ-Programm, um die Session zu erstellen. Bei geöffnetem Programm bliebe die Playlist unvollständig",
-    "why": {
-      "start": "Hier beginnt die Session",
-    "partner": "Lief in einem Set direkt danach",
-      "combo_one": "Bewährte Combo in {{count}} Set",
-      "combo_other": "Bewährte Combo in {{count}} Sets",
-      "harmonicSame": "{{from}} → {{to}}, gleiche Tonart",
-      "harmonicRing": "{{from}} → {{to}}, gleicher Ring",
-      "harmonicNeighbour": "{{from}} → {{to}}, Nachbar",
-      "tasteRated": "Mit {{stars}} von 5 bewertet, eine der besten, die passen",
-      "tastePlayed_one": "{{count}}-mal gespielt, einer der meistgespielten, die passen",
-    "tastePlayed_other": "{{count}}-mal gespielt, einer der meistgespielten, die passen",
-      "bpm": "Passt vom Tempo her",
-      "bpmRelaxed": "Nichts anderes passte, daher ändert sich das Tempo stärker als üblich",
-      "freshKey": "Neu. Passt zur Tonart {{key}}",
-      "freshTempo": "Neu. Passt vom Tempo her",
-      "chosen": "Von dir gewählt",
-      "phaseOpen": "Zum Einstieg, aus deinen Warm-up-Playlists",
-      "phaseClose": "Zum Schluss, aus deinen Abschluss-Playlists",
-    "lock": "Fixieren, damit Neu würfeln den Track behält",
-    "unlock": "Lösen"
-    }
+    "closed": "Schließe dein DJ-Programm, um die Session zu erstellen. Bei geöffnetem Programm bliebe die Playlist unvollständig"
   },
   "pasteTracklist": {
     "title": "Tracklist in „{{name}}“ einfügen",
