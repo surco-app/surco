@@ -584,6 +584,24 @@ describe('SessionWizard character step', () => {
     )
   })
 
+  it('groups alternation with the key, since they decide what follows what and the role wins when they clash', async () => {
+    setup({ b90: 'base' }, INITIAL, fakeRows({ b90: [entry('/m/a.mp3', '8A')] }))
+    await toCharacter()
+    const chain = screen.getByRole('group', { name: i18n.t('sessions.wizard.character.chain') })
+    expect(chain).toContainElement(screen.getByTestId('session-wizard-opt-alternate'))
+    expect(chain).toContainElement(screen.getByTestId('session-wizard-harmony-same'))
+    expect(chain).not.toContainElement(screen.getByTestId('session-wizard-opt-preferCombos'))
+  })
+
+  it('groups what decides which tracks get in apart from the order', async () => {
+    setup({ b90: 'base' })
+    await toCharacter()
+    const pick = screen.getByRole('group', { name: i18n.t('sessions.wizard.character.pick') })
+    for (const key of ['preferCombos', 'tasteWeight', 'surprise'])
+      expect(pick).toContainElement(screen.getByTestId(`session-wizard-opt-${key}`))
+    expect(pick).not.toContainElement(screen.getByTestId('session-wizard-opt-alternate'))
+  })
+
   it('turns harmony off and says why when no chosen track has a key', async () => {
     setup({ b90: 'base' }, { ...INITIAL, harmony: 'neighbours' })
     await toCharacter()

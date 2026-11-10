@@ -68,8 +68,10 @@
       },
       "character": {
         "heading": "¿Cómo la quieres?",
+        "chain": "Cómo encadena",
+        "pick": "Qué elige",
         "alternate": "Alternar bases y vocales",
-        "alternateHint": "Base, vocal, base, vocal",
+        "alternateHint": "Base, vocal, base, vocal. Manda sobre la mezcla armónica cuando no cuadran las dos",
         "preferCombos": "Preferir combos probados",
         "preferCombosHint": "Un combo es una base y una vocal que has puesto seguidas en dos o más de tus tracklists. Surco las vuelve a juntar",
         "tasteWeight": "Lo que más te gusta",

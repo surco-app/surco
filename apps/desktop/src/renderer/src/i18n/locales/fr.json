@@ -68,8 +68,10 @@
       },
       "character": {
         "heading": "Comment la veux-tu ?",
+        "chain": "Comment ça s’enchaîne",
+        "pick": "Ce qui est choisi",
         "alternate": "Alterner instrumental et voix",
-        "alternateHint": "Instrumental, voix, instrumental, voix",
+        "alternateHint": "Instrumental, voix, instrumental, voix. Passe avant le mix harmonique quand les deux ne collent pas",
         "preferCombos": "Privilégier les combos éprouvés",
         "preferCombosHint": "Un combo, c’est un instrumental et une voix que tu as enchaînés dans deux de tes tracklists ou plus. Surco les remet ensemble",
         "tasteWeight": "Ce que tu préfères",

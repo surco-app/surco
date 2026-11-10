@@ -68,8 +68,10 @@
       },
       "character": {
         "heading": "Como você quer?",
+        "chain": "Como encadeia",
+        "pick": "O que escolhe",
         "alternate": "Alternar instrumental e com voz",
-        "alternateHint": "Instrumental, com voz, instrumental, com voz",
+        "alternateHint": "Base, cantada, base, cantada. Vale mais que a mixagem harmônica quando as duas não cabem",
         "preferCombos": "Preferir combos comprovados",
         "preferCombosHint": "Um combo é uma base e uma cantada que você tocou em sequência em duas ou mais das suas tracklists. O Surco junta as duas de novo",
         "tasteWeight": "O que você mais gosta",

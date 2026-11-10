@@ -268,12 +268,7 @@ const KEY_ROLES: Readonly<Record<string, PlaylistRole>> = { '1': 'base', '2': 'v
 
 type CharacterKey = 'alternate' | 'preferCombos' | 'tasteWeight' | 'surprise'
 
-const CHARACTER_OPTIONS: readonly CharacterKey[] = [
-  'alternate',
-  'preferCombos',
-  'tasteWeight',
-  'surprise',
-]
+const PICK_OPTIONS: readonly CharacterKey[] = ['preferCombos', 'tasteWeight', 'surprise']
 
 const HARMONIES: readonly { mode: SessionHarmony; label: string }[] = [
   { mode: 'free', label: 'harmonyFree' },
@@ -299,85 +294,98 @@ export function CharacterStep({
   onChange: (patch: Partial<Record<CharacterKey, boolean> & { harmony: SessionHarmony }>) => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
+  const option = (key: CharacterKey): React.JSX.Element => (
+    <Fragment key={key}>
+      <label className="flex cursor-pointer items-start gap-3">
+        <input
+          type="checkbox"
+          data-testid={`session-wizard-opt-${key}`}
+          checked={options[key]}
+          onChange={(e) => onChange({ [key]: e.target.checked })}
+          className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--color-accent)]"
+        />
+        <span className="text-sm">
+          {tr(`sessions.wizard.character.${key}`)}
+          <span className="mt-0.5 block text-xs text-fg-dim">
+            {tr(`sessions.wizard.character.${key}Hint`)}
+          </span>
+        </span>
+      </label>
+      {key === 'preferCombos' && options.preferCombos && !hasMixed && (
+        <p data-testid="session-wizard-combos-hint" className="-mt-1.5 pl-7 text-xs text-fg-dim">
+          {tr('sessions.wizard.character.noMixed')}
+        </p>
+      )}
+    </Fragment>
+  )
   return (
-    <div className="flex flex-col gap-3">
-      {CHARACTER_OPTIONS.map((key) => (
-        <Fragment key={key}>
-          <label className="flex cursor-pointer items-start gap-3">
-            <input
-              type="checkbox"
-              data-testid={`session-wizard-opt-${key}`}
-              checked={options[key]}
-              onChange={(e) => onChange({ [key]: e.target.checked })}
-              className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--color-accent)]"
-            />
-            <span className="text-sm">
-              {tr(`sessions.wizard.character.${key}`)}
-              <span className="mt-0.5 block text-xs text-fg-dim">
-                {tr(`sessions.wizard.character.${key}Hint`)}
-              </span>
-            </span>
-          </label>
-          {key === 'preferCombos' && options.preferCombos && !hasMixed && (
-            <p
-              data-testid="session-wizard-combos-hint"
-              className="-mt-1.5 pl-7 text-xs text-fg-dim"
-            >
-              {tr('sessions.wizard.character.noMixed')}
+    <div className="flex flex-col gap-4">
+      <fieldset className="flex flex-col gap-3">
+        <legend className="mb-3 text-[11px] font-medium tracking-wide text-fg-faint uppercase">
+          {tr('sessions.wizard.character.chain')}
+        </legend>
+        {option('alternate')}
+        <div className="flex flex-col gap-1.5 pl-7">
+          <span data-testid="session-wizard-harmony-title" className="text-sm">
+            {tr('sessions.wizard.character.harmony')}
+          </span>
+          <div className="flex flex-wrap gap-2">
+            {HARMONIES.map(({ mode, label }) => (
+              <button
+                key={mode}
+                type="button"
+                data-testid={`session-wizard-harmony-${mode}`}
+                aria-pressed={hasKeys && options.harmony === mode}
+                disabled={!hasKeys}
+                onClick={() => onChange({ harmony: mode })}
+                className={`${CHIP} ${hasKeys && options.harmony === mode ? CHIP_ON : CHIP_OFF} disabled:opacity-50`}
+              >
+                {tr(`sessions.wizard.character.${label}`)}
+              </button>
+            ))}
+          </div>
+          {!hasKeys && (
+            <p data-testid="session-wizard-no-keys" className="text-xs text-fg-dim">
+              {tr('sessions.wizard.character.noKeys')}
             </p>
           )}
-        </Fragment>
-      ))}
-      {hasNew && (
-        <label className="flex flex-col gap-1.5 text-sm">
-          <span className="flex justify-between">
-            {tr('sessions.wizard.fresh.share')}
-            <span className="tabular-nums text-fg">
-              {tr('sessions.wizard.fresh.shareValue', { percent: Math.round(freshShare * 100) })}
-            </span>
-          </span>
-          <input
-            type="range"
-            min={0}
-            max={40}
-            step={1}
-            value={Math.round(freshShare * 100)}
-            data-testid="session-wizard-fresh-share"
-            aria-valuetext={tr('sessions.wizard.fresh.shareValue', {
-              percent: Math.round(freshShare * 100),
-            })}
-            onChange={(e) => onFreshShare(Number(e.target.value) / 100)}
-            className="accent-[var(--color-accent)]"
-          />
-          <span data-testid="session-wizard-fresh-hint" className="text-xs text-fg-dim">
-            {tr('sessions.wizard.fresh.hint')}
-          </span>
-        </label>
-      )}
-      <div className="flex flex-col gap-1.5 border-t border-[var(--color-line)] pt-3">
-        <span data-testid="session-wizard-harmony-title" className="text-sm">
-          {tr('sessions.wizard.character.harmony')}
-        </span>
-        <div className="flex flex-wrap gap-2">
-          {HARMONIES.map(({ mode, label }) => (
-            <button
-              key={mode}
-              type="button"
-              data-testid={`session-wizard-harmony-${mode}`}
-              aria-pressed={hasKeys && options.harmony === mode}
-              disabled={!hasKeys}
-              onClick={() => onChange({ harmony: mode })}
-              className={`${CHIP} ${hasKeys && options.harmony === mode ? CHIP_ON : CHIP_OFF} disabled:opacity-50`}
-            >
-              {tr(`sessions.wizard.character.${label}`)}
-            </button>
-          ))}
         </div>
-        {!hasKeys && (
-          <p data-testid="session-wizard-no-keys" className="text-xs text-fg-dim">
-            {tr('sessions.wizard.character.noKeys')}
-          </p>
-        )}
+      </fieldset>
+      <div className="border-t border-[var(--color-line)] pt-4">
+        <fieldset className="flex flex-col gap-3">
+          <legend className="mb-3 text-[11px] font-medium tracking-wide text-fg-faint uppercase">
+            {tr('sessions.wizard.character.pick')}
+          </legend>
+          {PICK_OPTIONS.map(option)}
+          {hasNew && (
+            <label className="flex flex-col gap-1.5 text-sm">
+              <span className="flex justify-between">
+                {tr('sessions.wizard.fresh.share')}
+                <span className="tabular-nums text-fg">
+                  {tr('sessions.wizard.fresh.shareValue', {
+                    percent: Math.round(freshShare * 100),
+                  })}
+                </span>
+              </span>
+              <input
+                type="range"
+                min={0}
+                max={40}
+                step={1}
+                value={Math.round(freshShare * 100)}
+                data-testid="session-wizard-fresh-share"
+                aria-valuetext={tr('sessions.wizard.fresh.shareValue', {
+                  percent: Math.round(freshShare * 100),
+                })}
+                onChange={(e) => onFreshShare(Number(e.target.value) / 100)}
+                className="accent-[var(--color-accent)]"
+              />
+              <span data-testid="session-wizard-fresh-hint" className="text-xs text-fg-dim">
+                {tr('sessions.wizard.fresh.hint')}
+              </span>
+            </label>
+          )}
+        </fieldset>
       </div>
     </div>
   )

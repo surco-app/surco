@@ -68,8 +68,10 @@
       },
       "character": {
         "heading": "How do you want it?",
+        "chain": "How it chains",
+        "pick": "What it picks",
         "alternate": "Alternate instrumental and vocal",
-        "alternateHint": "Instrumental, vocal, instrumental, vocal",
+        "alternateHint": "Instrumental, vocal, instrumental, vocal. It wins over harmonic mixing when both cannot hold",
         "preferCombos": "Prefer proven combos",
         "preferCombosHint": "A combo is an instrumental and a vocal you have played back to back in two or more of your tracklists. Surco puts them together again",
         "tasteWeight": "What you like most",
