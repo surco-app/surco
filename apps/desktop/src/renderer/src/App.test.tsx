@@ -4497,7 +4497,7 @@ describe('App multi-select field edit', () => {
 
 describe('App multi-select removal', () => {
   // The right-click row stays selected when it's already part of the selection, so the
-  // menu's list actions follow what's highlighted. "Remove from list" on one of several
+  // menu's list actions follow what's highlighted. "Remove from Surco" on one of several
   // selected rows must drop the whole selection, not just the clicked row — behind one
   // confirm, like Move to Trash below, because dropping rows also drops their staged edits.
   it('removes every selected track, not just the right-clicked one', async () => {
@@ -4601,7 +4601,7 @@ describe('App multi-select removal', () => {
 
   // The toolbar trash mirrors what's on screen, not the selection: with no filter every row is
   // visible, so it empties the whole list even when only some rows are multi-selected. Removing
-  // just a few rows is the right-click "Remove from list"; this button is not selection-scoped.
+  // just a few rows is the right-click "Remove from Surco"; this button is not selection-scoped.
   it('empties every visible row from the toolbar trash, ignoring the selection', async () => {
     setApi({
       pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
@@ -9613,7 +9613,7 @@ describe('App list header', () => {
   })
 
   // The visible button only drops rows from the list, so it must never reach the files and
-  // must go through the same confirm as the context menu's Remove from list.
+  // must go through the same confirm as the context menu's Remove from Surco.
   it('removes the selection from the list with the visible button, asking once and never trashing files', async () => {
     const trashFile = vi.fn().mockResolvedValue(undefined)
     setApi({

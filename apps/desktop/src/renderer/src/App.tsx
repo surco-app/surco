@@ -2364,7 +2364,7 @@ export default function App(): React.JSX.Element {
   // The toolbar bulk actions (fill, empty) act on the visible (filtered) rows — never the
   // whole list behind an active filter, and never scoped to the selection: the toolbar mirrors
   // what's on screen, so a click can't touch rows the user filtered out of view. Removing only
-  // a few rows is the right-click menu's "Remove from list".
+  // a few rows is the right-click menu's "Remove from Surco".
   const onFillAll = useStableCallback(() =>
     askFillAll(bulkTracksRef.current, { fromSelection: selectedTracks.length > 1 }),
   )
