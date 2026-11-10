@@ -155,6 +155,45 @@ async function built(over: Partial<SessionRunDeps> = {}) {
   return ctx
 }
 
+describe('useSessionRun starting from a track', () => {
+  const buildFrom = async (path: string) => {
+    const { result } = setup()
+    await act(async () => {
+      await result.current.build('folder', ANSWERS, ROLES, path)
+    })
+    return result
+  }
+
+  it('writes the session starting with that track', async () => {
+    const result = await buildFrom('/m/c.mp3')
+    const refs = create.mock.calls[0][2]
+    expect(refs[0].paths).toEqual(['/m/c.mp3'])
+    expect(result.current.recent?.plan.items[0].track.id).toBe('/m/c.mp3')
+  })
+
+  it('locks that track so redoing the session keeps it first', async () => {
+    const result = await buildFrom('/m/c.mp3')
+    expect([...(result.current.recent?.locked ?? [])]).toEqual(['/m/c.mp3'])
+    await act(async () => {
+      await result.current.redo()
+    })
+    expect(result.current.recent?.plan.items[0].track.id).toBe('/m/c.mp3')
+  })
+
+  it('locks nothing when the session is built the usual way', async () => {
+    const { result } = setup()
+    await act(async () => {
+      await result.current.build('folder', ANSWERS, ROLES)
+    })
+    expect(result.current.recent?.locked.size).toBe(0)
+  })
+
+  it('locks nothing when the track is not in the chosen playlists', async () => {
+    const result = await buildFrom('/m/zzz.mp3')
+    expect(result.current.recent?.locked.size).toBe(0)
+  })
+})
+
 describe('useSessionRun locking tracks', () => {
   const idAt = (
     result: { current: { recent: { plan: { items: { track: { id: string } }[] } } | null } },

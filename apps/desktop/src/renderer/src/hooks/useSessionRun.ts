@@ -81,12 +81,13 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
     roles: Roles,
     seed: number,
     pins?: SessionPins,
+    startPath?: string,
   ): Promise<SessionRun> => {
     const library = deps.library?.() ?? {}
     const chosen = new Set(answers.sources)
     const given = Object.keys(library).filter((id) => !chosen.has(id))
     const loaded = await deps.rows.load([...answers.sources, ...given])
-    return runSession({ answers, roles, rows: loaded, seed, library, pins })
+    return runSession({ answers, roles, rows: loaded, seed, library, pins, startPath })
   }
 
   const settle = (
@@ -116,18 +117,22 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
     return 'built'
   }
 
-  const build = useStableCallback((parentId: string, answers: SessionAnswers, roles: Roles) =>
-    exclusive(async () => {
-      deps.saveAnswers(answers)
-      const seed = deps.newSeed()
-      const run = await produce(answers, roles, seed)
-      if (run.refs.length === 0) return 'empty'
-      if (!(await deps.canWrite())) return 'closed'
-      const name = deps.nameFor()
-      const shown = uniqueName(name, deps.namesIn(parentId))
-      const id = await deps.writer.create(parentId, shown, run.refs)
-      return id === null ? 'refused' : settle(id, parentId, name, shown, answers, roles, seed, run)
-    }),
+  const build = useStableCallback(
+    (parentId: string, answers: SessionAnswers, roles: Roles, startPath?: string) =>
+      exclusive(async () => {
+        deps.saveAnswers(answers)
+        const seed = deps.newSeed()
+        const run = await produce(answers, roles, seed, undefined, startPath)
+        if (run.refs.length === 0) return 'empty'
+        if (!(await deps.canWrite())) return 'closed'
+        const name = deps.nameFor()
+        const shown = uniqueName(name, deps.namesIn(parentId))
+        const id = await deps.writer.create(parentId, shown, run.refs)
+        if (id === null) return 'refused'
+        const opening = run.plan.items[0]
+        const locked = new Set(opening?.why.kind === 'chosen' ? [opening.track.id] : [])
+        return settle(id, parentId, name, shown, answers, roles, seed, run, locked)
+      }),
   )
 
   const fill = useStableCallback((target: FillTarget, answers: SessionAnswers, roles: Roles) =>
