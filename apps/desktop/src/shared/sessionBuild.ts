@@ -14,6 +14,7 @@ export interface SessionOptions {
   seed: number
   pinned?: readonly { index: number; trackId: string }[]
   fixedLength?: number
+  startWith?: string
 }
 
 export type SessionWhy =
@@ -331,8 +332,9 @@ export function buildSession(
       avoid = null
     }
   } else if (eligible.length > 0) {
-    const first = opening()
-    if (first) take(first, { kind: 'start' })
+    const asked = options.startWith ? poolById.get(options.startWith) : undefined
+    const first = asked ?? opening()
+    if (first) take(first, asked ? { kind: 'chosen' } : { kind: 'start' })
     while (items.length > 0 && total < target) {
       const next = pickNext(items[items.length - 1].track)
       if (!next) break
