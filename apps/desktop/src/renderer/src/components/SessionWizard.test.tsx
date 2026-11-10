@@ -94,6 +94,22 @@ const toCharacter = async () => {
   await screen.findByTestId('session-wizard-build')
 }
 
+describe('SessionWizard steps', () => {
+  it('goes back to a step already done by pressing its name, without stepping back one by one', async () => {
+    setup({ b90: 'base' })
+    await toCharacter()
+    fireEvent.click(screen.getByTestId('session-wizard-step-duration'))
+    expect(screen.getByTestId('session-wizard-step-title')).toHaveTextContent(
+      i18n.t('sessions.wizard.duration.heading'),
+    )
+  })
+
+  it('does not let a step ahead be pressed, since it may need what comes before', () => {
+    setup()
+    expect(screen.queryByTestId('session-wizard-step-character')).toBeNull()
+  })
+})
+
 describe('SessionWizard duration step', () => {
   it('opens on the duration with the saved length marked', () => {
     setup({}, { ...INITIAL, minutes: 120 })

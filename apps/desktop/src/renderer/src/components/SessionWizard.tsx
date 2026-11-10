@@ -246,7 +246,18 @@ export function SessionWizard({
                       : 'bg-[var(--color-line-strong)]'
                 }`}
               />
-              {tr(`sessions.wizard.steps.${id}`)}
+              {i < step ? (
+                <button
+                  type="button"
+                  data-testid={`session-wizard-step-${id}`}
+                  onClick={() => setStep(i)}
+                  className="press rounded text-fg-dim underline-offset-2 hover:text-[var(--color-accent)] hover:underline"
+                >
+                  {tr(`sessions.wizard.steps.${id}`)}
+                </button>
+              ) : (
+                tr(`sessions.wizard.steps.${id}`)
+              )}
             </li>
           ))}
         </ol>
