@@ -166,7 +166,6 @@ describe('CuesSection on a Serato track', () => {
     setup({ ...READ, clockLeadMs: 0 })
     await ready()
     fireEvent.click(screen.getByTestId('section-maximize'))
-    fireEvent.click(await screen.findByTestId('cues-grid-open'))
     await waitFor(() => expect(screen.getByTestId('cues-grid')).toBeInTheDocument())
     expect(screen.getByTestId('cues-grid')).toHaveAttribute('aria-disabled', 'true')
     expect(hoverTooltip(screen.getByTestId('cues-grid'))).toEqual(

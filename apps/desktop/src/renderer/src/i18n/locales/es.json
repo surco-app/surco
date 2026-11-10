@@ -1280,8 +1280,6 @@
         "widen": "Abrir la rejilla, baja el BPM",
         "narrow": "Cerrar la rejilla, sube el BPM",
         "downbeat": "El 1 del compás en el cabezal",
-        "open": "Rejilla",
-        "done": "Hecho",
         "auto": "Auto",
         "autoHint": "Ajustar la rejilla a los golpes",
         "groupTempo": "Tempo",

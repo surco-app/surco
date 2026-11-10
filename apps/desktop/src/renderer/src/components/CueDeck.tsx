@@ -40,8 +40,6 @@ export function CueDeck({
   landsAs,
   onDone,
   gridControls,
-  gridNeedsFix = false,
-  zoom,
 }: {
   cues: DeckCue[]
   kinds?: number[]
@@ -62,12 +60,8 @@ export function CueDeck({
   landsAs?: (kind: number) => number | null
   onDone?: () => void
   gridControls?: React.ReactNode
-  gridNeedsFix?: boolean
-  zoom?: React.ReactNode
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
-  const [gridOpen, setGridOpen] = useState(false)
-  const editingGrid = gridOpen && gridControls !== undefined
   const [colouring, setColouring] = useState<string | null>(null)
   const [hovered, setHovered] = useState<string | null>(null)
   const popoverRef = useRef<HTMLDivElement>(null)
@@ -90,7 +84,7 @@ export function CueDeck({
     }
   }, [colouring, onDone])
   return (
-    <div data-testid="cues-deck" className="mt-3 flex shrink-0 items-center gap-x-3">
+    <div data-testid="cues-deck" className="mt-3 flex shrink-0 items-center gap-x-2">
       <button
         type="button"
         data-testid="cues-play"
@@ -110,174 +104,142 @@ export function CueDeck({
         )}
       </button>
       <DeckDivider />
-      {editingGrid ? (
-        <>
-          <div data-testid="cues-deck-grid" className="flex items-center gap-3">
-            {gridControls}
-          </div>
-          <span className="flex-1" />
-          {zoom}
-          <button
-            type="button"
-            data-testid="cues-grid-done"
-            onClick={() => {
-              setGridOpen(false)
-              onDone?.()
-            }}
-            className="press flex h-7 items-center rounded-md bg-[var(--color-accent)] px-3 text-xs font-semibold text-[var(--color-on-accent)]"
-          >
-            {tr('editor.cues.grid.done')}
-          </button>
-        </>
-      ) : (
-        <>
-          <div className="flex items-center gap-1.5">
-            {kinds.map((kind) => {
-              const cue = cues.find((c) => c.kind === kind)
-              const letter = cueLetter(kind)
-              const isSelected = cue !== undefined && cue.key === selected
-              const lands = !cue && landsAs ? landsAs(kind) : null
-              return (
-                <span key={kind} className="relative">
-                  <button
-                    type="button"
-                    data-testid={`cues-pad-${letter}`}
-                    data-set={cue ? 'true' : 'false'}
-                    aria-label={tr('editor.cues.selectedHot', { letter })}
-                    aria-pressed={isSelected}
-                    onClick={() => onPad(kind)}
-                    onMouseEnter={() => setHovered(cue?.key ?? null)}
-                    onMouseLeave={() => setHovered(null)}
-                    onKeyDown={(e) => {
-                      if (!cue || locked.includes(cue.key)) return
-                      if (e.key !== 'Backspace' && e.key !== 'Delete') return
-                      e.preventDefault()
-                      e.stopPropagation()
-                      onDelete?.(cue.key)
+      <div className="flex items-center gap-1">
+        {kinds.map((kind) => {
+          const cue = cues.find((c) => c.kind === kind)
+          const letter = cueLetter(kind)
+          const isSelected = cue !== undefined && cue.key === selected
+          const lands = !cue && landsAs ? landsAs(kind) : null
+          return (
+            <span key={kind} className="relative">
+              <button
+                type="button"
+                data-testid={`cues-pad-${letter}`}
+                data-set={cue ? 'true' : 'false'}
+                aria-label={tr('editor.cues.selectedHot', { letter })}
+                aria-pressed={isSelected}
+                onClick={() => onPad(kind)}
+                onMouseEnter={() => setHovered(cue?.key ?? null)}
+                onMouseLeave={() => setHovered(null)}
+                onKeyDown={(e) => {
+                  if (!cue || locked.includes(cue.key)) return
+                  if (e.key !== 'Backspace' && e.key !== 'Delete') return
+                  e.preventDefault()
+                  e.stopPropagation()
+                  onDelete?.(cue.key)
+                }}
+                onContextMenu={(e) => {
+                  e.preventDefault()
+                  if (cue && onRecolour && !locked.includes(cue.key)) setColouring(cue.key)
+                }}
+                style={
+                  cue
+                    ? { backgroundColor: hotCueColor(cue.color), color: PAD_LETTER_COLOR }
+                    : undefined
+                }
+                className={`press flex h-7 w-7 items-center justify-center rounded-[7px] text-xs font-bold ${
+                  cue ? '' : 'border border-dashed border-[var(--color-line-strong)] text-fg-faint'
+                } ${isSelected ? 'outline outline-2 outline-offset-2 outline-[var(--color-fg)]' : ''}`}
+              >
+                {lands !== null && (
+                  <Tooltip label={tr('editor.cues.padLands', { letter: cueLetter(lands) })} />
+                )}
+                {letter}
+              </button>
+              {cue && onDelete && hovered === cue.key && !locked.includes(cue.key) && (
+                <CueDeleteBadge
+                  testId={`cues-pad-${letter}-delete`}
+                  label={tr('editor.cues.deleteHot', { letter })}
+                  onDelete={() => onDelete(cue.key)}
+                  onMouseEnter={() => setHovered(cue.key)}
+                  onMouseLeave={() => setHovered(null)}
+                  className="-top-1 -right-1"
+                />
+              )}
+              {cue && colouring === cue.key && (
+                <div
+                  ref={popoverRef}
+                  data-testid="cues-pad-colours"
+                  className="absolute bottom-full left-1/2 z-20 mb-2 -translate-x-1/2 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-2.5 shadow-[var(--shadow-float)]"
+                >
+                  <CuePalette
+                    value={cue.color}
+                    onPick={(color) => {
+                      onRecolour?.(cue.key, color)
+                      setColouring(null)
+                      onDone?.()
                     }}
-                    onContextMenu={(e) => {
-                      e.preventDefault()
-                      if (cue && onRecolour && !locked.includes(cue.key)) setColouring(cue.key)
-                    }}
-                    style={
-                      cue
-                        ? { backgroundColor: hotCueColor(cue.color), color: PAD_LETTER_COLOR }
-                        : undefined
-                    }
-                    className={`press flex h-7 w-7 items-center justify-center rounded-[7px] text-xs font-bold ${
-                      cue
-                        ? ''
-                        : 'border border-dashed border-[var(--color-line-strong)] text-fg-faint'
-                    } ${isSelected ? 'outline outline-2 outline-offset-2 outline-[var(--color-fg)]' : ''}`}
-                  >
-                    {lands !== null && (
-                      <Tooltip label={tr('editor.cues.padLands', { letter: cueLetter(lands) })} />
-                    )}
-                    {letter}
-                  </button>
-                  {cue && onDelete && hovered === cue.key && !locked.includes(cue.key) && (
-                    <CueDeleteBadge
-                      testId={`cues-pad-${letter}-delete`}
-                      label={tr('editor.cues.deleteHot', { letter })}
-                      onDelete={() => onDelete(cue.key)}
-                      onMouseEnter={() => setHovered(cue.key)}
-                      onMouseLeave={() => setHovered(null)}
-                      className="-top-1 -right-1"
-                    />
-                  )}
-                  {cue && colouring === cue.key && (
-                    <div
-                      ref={popoverRef}
-                      data-testid="cues-pad-colours"
-                      className="absolute bottom-full left-1/2 z-20 mb-2 -translate-x-1/2 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-2.5 shadow-[var(--shadow-float)]"
-                    >
-                      <CuePalette
-                        value={cue.color}
-                        onPick={(color) => {
-                          onRecolour?.(cue.key, color)
-                          setColouring(null)
-                          onDone?.()
-                        }}
-                        label={(index) => tr('editor.cues.colour', { index })}
-                      />
-                    </div>
-                  )}
-                </span>
-              )
-            })}
-          </div>
+                    label={(index) => tr('editor.cues.colour', { index })}
+                  />
+                </div>
+              )}
+            </span>
+          )
+        })}
+      </div>
+      <DeckDivider />
+      <div className="flex items-center gap-0.5">
+        <button
+          type="button"
+          data-testid="cues-memory-prev"
+          aria-label={tr('editor.cues.memoryPrev')}
+          onClick={() => onMemoryStep(-1)}
+          className={STEP}
+        >
+          <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          data-testid="cues-memory"
+          aria-label={tr('editor.cues.addCall')}
+          onClick={onMemory}
+          className="press flex h-7 items-center gap-1 rounded-md border border-[var(--color-line)] bg-[var(--color-panel-2)] px-2 text-xs font-medium text-fg hover:bg-[var(--color-hover)]"
+        >
+          <Plus className="h-3 w-3" aria-hidden="true" />
+          {tr('editor.cues.selectedCall')}
+        </button>
+        <button
+          type="button"
+          data-testid="cues-memory-next"
+          aria-label={tr('editor.cues.memoryNext')}
+          onClick={() => onMemoryStep(1)}
+          className={STEP}
+        >
+          <ChevronRight className="h-4 w-4" aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          data-testid="cues-memory-remove"
+          aria-label={tr('editor.cues.deleteCall')}
+          aria-disabled={!canRemoveMemory}
+          onClick={() => {
+            if (canRemoveMemory) onMemoryRemove()
+          }}
+          className={`${STEP} aria-disabled:opacity-40`}
+        >
+          <Tooltip label={tr('editor.cues.deleteCall')} />
+          <X className="h-4 w-4" aria-hidden="true" />
+        </button>
+      </div>
+      {gridControls && (
+        <div data-testid="cues-deck-grid" className="flex items-center gap-2">
           <DeckDivider />
-          <div className="flex items-center gap-0.5">
-            <button
-              type="button"
-              data-testid="cues-memory-prev"
-              aria-label={tr('editor.cues.memoryPrev')}
-              onClick={() => onMemoryStep(-1)}
-              className={STEP}
-            >
-              <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-            </button>
-            <button
-              type="button"
-              data-testid="cues-memory"
-              aria-label={tr('editor.cues.addCall')}
-              onClick={onMemory}
-              className="press flex h-7 items-center gap-1 rounded-md border border-[var(--color-line)] bg-[var(--color-panel-2)] px-2 text-xs font-medium text-fg hover:bg-[var(--color-hover)]"
-            >
-              <Plus className="h-3 w-3" aria-hidden="true" />
-              {tr('editor.cues.selectedCall')}
-            </button>
-            <button
-              type="button"
-              data-testid="cues-memory-next"
-              aria-label={tr('editor.cues.memoryNext')}
-              onClick={() => onMemoryStep(1)}
-              className={STEP}
-            >
-              <ChevronRight className="h-4 w-4" aria-hidden="true" />
-            </button>
-            <button
-              type="button"
-              data-testid="cues-memory-remove"
-              aria-label={tr('editor.cues.deleteCall')}
-              aria-disabled={!canRemoveMemory}
-              onClick={() => {
-                if (canRemoveMemory) onMemoryRemove()
-              }}
-              className={`${STEP} aria-disabled:opacity-40`}
-            >
-              <Tooltip label={tr('editor.cues.deleteCall')} />
-              <X className="h-4 w-4" aria-hidden="true" />
-            </button>
-          </div>
-          <span className="flex-1" />
-          {gridControls !== undefined && (
-            <button
-              type="button"
-              data-testid="cues-grid-open"
-              data-needs-fix={gridNeedsFix ? 'true' : undefined}
-              onClick={() => setGridOpen(true)}
-              className="press flex h-7 items-center rounded-md border border-[var(--color-line-strong)] px-3 text-xs font-medium text-fg-muted transition-colors hover:bg-[var(--color-hover)] data-[needs-fix=true]:border-[var(--color-accent)] data-[needs-fix=true]:bg-[var(--color-accent)] data-[needs-fix=true]:font-semibold data-[needs-fix=true]:text-[var(--color-on-accent)]"
-            >
-              {tr('editor.cues.grid.open')}
-            </button>
-          )}
-          {zoom}
-          {onClearAll && <DeckDivider />}
-          {onClearAll && (
-            <button
-              type="button"
-              data-testid="cues-clear-all"
-              aria-label={tr('editor.cues.clearAll')}
-              disabled={!canClearAll}
-              onClick={onClearAll}
-              className={`${STEP} disabled:pointer-events-none disabled:opacity-40`}
-            >
-              <Tooltip label={tr('editor.cues.clearAll')} />
-              <Trash2 className="h-4 w-4" aria-hidden="true" />
-            </button>
-          )}
-        </>
+          {gridControls}
+        </div>
+      )}
+      {onClearAll && <DeckDivider />}
+      {onClearAll && (
+        <button
+          type="button"
+          data-testid="cues-clear-all"
+          aria-label={tr('editor.cues.clearAll')}
+          disabled={!canClearAll}
+          onClick={onClearAll}
+          className={`${STEP} disabled:pointer-events-none disabled:opacity-40`}
+        >
+          <Tooltip label={tr('editor.cues.clearAll')} />
+          <Trash2 className="h-4 w-4" aria-hidden="true" />
+        </button>
       )}
     </div>
   )
@@ -288,7 +250,7 @@ export function DeckDivider(): React.JSX.Element {
     <span
       data-testid="cues-deck-divider"
       aria-hidden="true"
-      className="mb-1 h-5 w-px shrink-0 bg-[var(--color-line)]"
+      className="h-5 w-px shrink-0 bg-[var(--color-line)]"
     />
   )
 }

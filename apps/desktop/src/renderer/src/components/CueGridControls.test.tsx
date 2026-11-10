@@ -42,7 +42,7 @@ function setup(over: Partial<React.ComponentProps<typeof CueGridControls>> = {})
 const lastGrid = (onChange: ReturnType<typeof setup>) => onChange.mock.calls.at(-1)?.[0]
 
 describe('CueGridControls', () => {
-  it('names each group of buttons so an icon is never the only clue to what it does', () => {
+  it('names each group of buttons for a screen reader without printing it, so the whole deck fits one line', () => {
     setup()
     const groups = {
       'cues-grid-tempo': 'Tempo',
@@ -51,7 +51,8 @@ describe('CueGridControls', () => {
       'cues-grid-mark': 'Marcar',
     }
     for (const [testid, label] of Object.entries(groups)) {
-      expect(screen.getByTestId(testid)).toHaveTextContent(label)
+      expect(screen.getByRole('group', { name: label })).toBe(screen.getByTestId(testid))
+      expect(screen.getByTestId(testid)).not.toHaveTextContent(label)
     }
   })
 

@@ -1888,28 +1888,27 @@ function Editing({
           landsAs={settings.cueLettersByTime ? landsAs : undefined}
           onDone={focusEditor}
           gridControls={
-            <CueGridControls
-              grid={state.grid}
-              disabledReason={gridOff}
-              fit={gridFit}
-              needsFix={needsFix}
-              playheadMs={playheadMs}
-              onChange={setGrid}
-              onFit={fitGridTo}
-              onDone={focusEditor}
-              zones={rekordboxGrid}
-              kicks={programBeats}
-              onPin={pin}
-            />
-          }
-          gridNeedsFix={needsFix && gridOff === null}
-          zoom={
-            <CueZoom
-              row
-              bars={zoom}
-              onZoom={(dir) => setZoom((z) => zoomStep(z, dir))}
-              onReset={() => setZoom(DEFAULT_ZOOM_BARS)}
-            />
+            <>
+              <CueGridControls
+                grid={state.grid}
+                disabledReason={gridOff}
+                fit={gridFit}
+                needsFix={needsFix}
+                playheadMs={playheadMs}
+                onChange={setGrid}
+                onFit={fitGridTo}
+                onDone={focusEditor}
+                zones={rekordboxGrid}
+                kicks={programBeats}
+                onPin={pin}
+              />
+              <CueZoom
+                row
+                bars={zoom}
+                onZoom={(dir) => setZoom((z) => zoomStep(z, dir))}
+                onReset={() => setZoom(DEFAULT_ZOOM_BARS)}
+              />
+            </>
           }
         />
       )}

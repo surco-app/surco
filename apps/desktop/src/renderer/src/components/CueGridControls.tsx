@@ -29,14 +29,18 @@ function GridGroup({
   children: React.ReactNode
 }): React.JSX.Element {
   return (
-    <div data-testid={testid} className="flex shrink-0 items-center gap-1">
-      <span className="text-[11px] leading-none text-fg-faint">{label}</span>
-      <div className="flex items-center gap-1">{children}</div>
+    <div
+      data-testid={testid}
+      role="group"
+      aria-label={label}
+      className="flex shrink-0 items-center gap-0.5"
+    >
+      {children}
     </div>
   )
 }
 const ICON =
-  'press flex h-7 w-8 items-center justify-center rounded-md bg-[var(--color-panel-2)] text-fg-muted transition-colors enabled:hover:bg-[var(--color-hover)] hover:text-fg disabled:opacity-40'
+  'press flex h-7 w-7 items-center justify-center rounded-md bg-[var(--color-panel-2)] text-fg-muted transition-colors enabled:hover:bg-[var(--color-hover)] hover:text-fg disabled:opacity-40'
 const MENU_ITEM =
   'press flex h-7 items-center rounded-md px-2 text-left text-xs text-fg hover:bg-[var(--color-hover)] disabled:opacity-40 disabled:hover:bg-transparent'
 const STEP_BPM = 0.01
@@ -161,7 +165,7 @@ export function CueGridControls({
   }
 
   return (
-    <div data-testid="cues-grid" aria-disabled={off} className="flex items-center gap-x-3">
+    <div data-testid="cues-grid" aria-disabled={off} className="flex shrink-0 items-center gap-x-2">
       {disabledReason && <Tooltip label={disabledReason} />}
       <GridGroup testid="cues-grid-tempo" label={tr('editor.cues.grid.groupTempo')}>
         <div ref={menuRoot} className="relative">
@@ -306,16 +310,16 @@ export function CueGridControls({
           <button
             type="button"
             data-testid="cues-grid-pin"
+            aria-label={tr('editor.cues.grid.pin')}
             disabled={off}
             onClick={(e) => onPin(e.shiftKey)}
-            className="press flex h-7 items-center gap-1 rounded-md bg-[var(--color-panel-2)] px-2 text-xs font-medium text-fg transition-colors enabled:hover:bg-[var(--color-hover)] disabled:opacity-40"
+            className={ICON}
           >
             {!disabledReason && <Tooltip label={tr('editor.cues.grid.pinHint')} />}
             <svg width="12" height="16" viewBox="0 0 14 18" aria-hidden="true">
               <path d="M4 1h6v6l2 3H2l2-3z" fill="currentColor" />
               <path d="M7 10v7" stroke="currentColor" strokeWidth="1.6" />
             </svg>
-            {tr('editor.cues.grid.pin')}
           </button>
         )}
         <button

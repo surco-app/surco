@@ -1280,8 +1280,6 @@
         "widen": "Élargir la grille, baisse le BPM",
         "narrow": "Resserrer la grille, monte le BPM",
         "downbeat": "Premier temps sur la tête de lecture",
-        "open": "Grille",
-        "done": "Terminé",
         "auto": "Auto",
         "autoHint": "Caler la grille sur les temps",
         "groupTempo": "Tempo",
