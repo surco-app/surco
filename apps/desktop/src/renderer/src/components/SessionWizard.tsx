@@ -280,6 +280,8 @@ export function SessionWizard({
               const value = wholeMinutes(text)
               if (value !== null) setMinutes(value)
             }}
+            playMinutes={playMinutes}
+            onPlayMinutes={setPlayMinutes}
           />
         )}
         {current === 'sources' && (
@@ -299,8 +301,6 @@ export function SessionWizard({
           <CharacterStep
             options={options}
             hasKeys={hasKeys}
-            playMinutes={playMinutes}
-            onPlayMinutes={setPlayMinutes}
             hasNew={hasNew}
             hasMixed={sources.some((id) => roles[id] === 'any')}
             freshShare={freshShare}

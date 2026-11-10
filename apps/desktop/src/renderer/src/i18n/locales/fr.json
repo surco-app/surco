@@ -44,7 +44,9 @@
         "h3": "3 h",
         "other": "Autre",
         "customLabel": "Minutes",
-        "customInvalid": "Saisis un nombre entier de minutes"
+        "customInvalid": "Saisis un nombre entier de minutes",
+        "tracks_one": "Environ {{count}} morceau pour remplir {{minutes}} min",
+        "tracks_other": "Environ {{count}} morceaux pour remplir {{minutes}} min"
       },
       "sources": {
         "heading": "De quelles playlists viennent les morceaux ?",

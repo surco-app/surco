@@ -44,7 +44,9 @@
         "h3": "3 h",
         "other": "Otra",
         "customLabel": "Minutos",
-        "customInvalid": "Escribe un número entero de minutos"
+        "customInvalid": "Escribe un número entero de minutos",
+        "tracks_one": "Unas {{count}} pista para llenar {{minutes}} min",
+        "tracks_other": "Unas {{count}} pistas para llenar {{minutes}} min"
       },
       "sources": {
         "heading": "¿De qué playlists salen las pistas?",

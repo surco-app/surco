@@ -44,7 +44,9 @@
         "h3": "3 h",
         "other": "Outra",
         "customLabel": "Minutos",
-        "customInvalid": "Digite um número inteiro de minutos"
+        "customInvalid": "Digite um número inteiro de minutos",
+        "tracks_one": "Cerca de {{count}} faixa para preencher {{minutes}} min",
+        "tracks_other": "Cerca de {{count}} faixas para preencher {{minutes}} min"
       },
       "sources": {
         "heading": "De quais playlists saem as faixas?",

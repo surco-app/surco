@@ -44,7 +44,9 @@
         "h3": "3時間",
         "other": "その他",
         "customLabel": "分",
-        "customInvalid": "分を整数で入力してください"
+        "customInvalid": "分を整数で入力してください",
+        "tracks_one": "{{minutes}}分を埋めるのに約{{count}}曲",
+        "tracks_other": "{{minutes}}分を埋めるのに約{{count}}曲"
       },
       "sources": {
         "heading": "どのプレイリストから曲を選びますか？",

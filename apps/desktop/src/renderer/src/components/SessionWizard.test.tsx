@@ -522,9 +522,21 @@ describe('SessionWizard new tracks', () => {
 })
 
 describe('SessionWizard minutes each track plays', () => {
+  it('sits on the duration step with the length, since together they decide how many tracks are needed', () => {
+    setup({ b90: 'base' }, { ...INITIAL, minutes: 90, playMinutes: 2 })
+    expect(screen.getByTestId('session-wizard-play')).toBeInTheDocument()
+    expect(screen.getByTestId('session-wizard-track-count')).toHaveTextContent(
+      i18n.t('sessions.wizard.duration.tracks', { count: 45, minutes: 90 }),
+    )
+    fireEvent.change(screen.getByTestId('session-wizard-play'), { target: { value: '4' } })
+    expect(screen.getByTestId('session-wizard-track-count')).toHaveTextContent(
+      i18n.t('sessions.wizard.duration.tracks', { count: 23, minutes: 90 }),
+    )
+  })
+
+
   it('starts from the saved minutes and shows them', async () => {
     setup({ b90: 'base' }, { ...INITIAL, playMinutes: 4 })
-    await toCharacter()
     expect(screen.getByTestId('session-wizard-play')).toHaveValue('4')
     expect(screen.getByTestId('session-wizard-play-value')).toHaveTextContent(
       i18n.t('sessions.wizard.character.playValue', { minutes: 4 }),
@@ -533,7 +545,6 @@ describe('SessionWizard minutes each track plays', () => {
 
   it('goes from 1 to 10 whole minutes', async () => {
     setup({ b90: 'base' })
-    await toCharacter()
     const slider = screen.getByTestId('session-wizard-play')
     expect(slider).toHaveAttribute('min', '1')
     expect(slider).toHaveAttribute('max', '10')
@@ -542,7 +553,6 @@ describe('SessionWizard minutes each track plays', () => {
 
   it('explains that tracks are mixed and not played whole', async () => {
     setup({ b90: 'base' })
-    await toCharacter()
     expect(screen.getByTestId('session-wizard-play-hint')).toHaveTextContent(
       i18n.t('sessions.wizard.character.playHint'),
     )
@@ -550,8 +560,8 @@ describe('SessionWizard minutes each track plays', () => {
 
   it('hands over the minutes that were chosen when building', async () => {
     const { onBuild } = setup({ b90: 'base' })
-    await toCharacter()
     fireEvent.change(screen.getByTestId('session-wizard-play'), { target: { value: '5' } })
+    await toCharacter()
     fireEvent.click(screen.getByTestId('session-wizard-build'))
     expect(onBuild).toHaveBeenCalledExactlyOnceWith(
       expect.objectContaining({ playMinutes: 5 }),
@@ -804,9 +814,8 @@ describe('SessionWizard for assistive technology', () => {
     ).toBeInTheDocument()
   })
 
-  it('reads the time each track plays with its unit, not as a bare number', async () => {
+  it('reads the time each track plays with its unit, not as a bare number', () => {
     setup({ b90: 'base' })
-    await toCharacter()
     expect(screen.getByTestId('session-wizard-play')).toHaveAttribute(
       'aria-valuetext',
       i18n.t('sessions.wizard.character.playValue', { minutes: 3 }),

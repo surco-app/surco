@@ -38,12 +38,16 @@ export function DurationStep({
   onPreset,
   onCustomOpen,
   onCustomText,
+  playMinutes,
+  onPlayMinutes,
 }: {
   minutes: number
   custom: string | null
   onPreset: (minutes: number) => void
   onCustomOpen: () => void
   onCustomText: (text: string) => void
+  playMinutes: number
+  onPlayMinutes: (minutes: number) => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const invalid = custom !== null && wholeMinutes(custom) === null
@@ -91,6 +95,37 @@ export function DurationStep({
           )}
         </label>
       )}
+      <label className="flex flex-col gap-1.5 mt-2 border-t border-[var(--color-line)] pt-4 text-sm">
+        <span className="flex justify-between">
+          {tr('sessions.wizard.character.play')}
+          <span data-testid="session-wizard-play-value" className="tabular-nums text-fg">
+            {tr('sessions.wizard.character.playValue', { minutes: playMinutes })}
+          </span>
+        </span>
+        <input
+          type="range"
+          min={1}
+          max={10}
+          step={1}
+          value={playMinutes}
+          data-testid="session-wizard-play"
+          aria-valuetext={tr('sessions.wizard.character.playValue', { minutes: playMinutes })}
+          onChange={(e) => onPlayMinutes(Number(e.target.value))}
+          className="accent-[var(--color-accent)]"
+        />
+        <span data-testid="session-wizard-play-hint" className="text-xs text-fg-dim">
+          {tr('sessions.wizard.character.playHint')}
+        </span>
+      </label>
+      <p
+        data-testid="session-wizard-track-count"
+        className="rounded-lg bg-[var(--color-panel-2)] px-3 py-2.5 text-xs text-fg-dim"
+      >
+        {tr('sessions.wizard.duration.tracks', {
+          count: Math.ceil(minutes / playMinutes),
+          minutes,
+        })}
+      </p>
     </div>
   )
 }
@@ -251,8 +286,6 @@ const HARMONIES: readonly { mode: SessionHarmony; label: string }[] = [
 export function CharacterStep({
   options,
   hasKeys,
-  playMinutes,
-  onPlayMinutes,
   hasNew,
   hasMixed,
   freshShare,
@@ -261,8 +294,6 @@ export function CharacterStep({
 }: {
   options: Record<CharacterKey, boolean> & { harmony: SessionHarmony }
   hasKeys: boolean
-  playMinutes: number
-  onPlayMinutes: (minutes: number) => void
   hasNew: boolean
   hasMixed: boolean
   freshShare: number
@@ -299,28 +330,6 @@ export function CharacterStep({
           )}
         </Fragment>
       ))}
-      <label className="flex flex-col gap-1.5 border-t border-[var(--color-line)] pt-3 text-sm">
-        <span className="flex justify-between">
-          {tr('sessions.wizard.character.play')}
-          <span data-testid="session-wizard-play-value" className="tabular-nums text-fg">
-            {tr('sessions.wizard.character.playValue', { minutes: playMinutes })}
-          </span>
-        </span>
-        <input
-          type="range"
-          min={1}
-          max={10}
-          step={1}
-          value={playMinutes}
-          data-testid="session-wizard-play"
-          aria-valuetext={tr('sessions.wizard.character.playValue', { minutes: playMinutes })}
-          onChange={(e) => onPlayMinutes(Number(e.target.value))}
-          className="accent-[var(--color-accent)]"
-        />
-        <span data-testid="session-wizard-play-hint" className="text-xs text-fg-dim">
-          {tr('sessions.wizard.character.playHint')}
-        </span>
-      </label>
       {hasNew && (
         <label className="flex flex-col gap-1.5 text-sm">
           <span className="flex justify-between">

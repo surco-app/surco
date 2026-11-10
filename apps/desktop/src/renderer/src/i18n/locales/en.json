@@ -44,7 +44,9 @@
         "h3": "3 h",
         "other": "Other",
         "customLabel": "Minutes",
-        "customInvalid": "Enter a whole number of minutes"
+        "customInvalid": "Enter a whole number of minutes",
+        "tracks_one": "About {{count}} track to fill {{minutes}} min",
+        "tracks_other": "About {{count}} tracks to fill {{minutes}} min"
       },
       "sources": {
         "heading": "Which playlists should the tracks come from?",
