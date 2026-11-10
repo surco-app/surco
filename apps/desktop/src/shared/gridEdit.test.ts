@@ -554,3 +554,34 @@ describe('telling the kick by the grid the program analysed', () => {
     expect(detectedBeatNear(fit, 30000, program)).toBeCloseTo(3 + 70 * period, 6)
   })
 })
+
+const BPM_142 = 142.104
+const P_142 = 60000 / BPM_142
+const stretchesEvery = (fromMs: number, toMs: number, phaseAt: (ms: number) => number) =>
+  Array.from({ length: Math.floor((toMs - fromMs) / 6757) + 1 }, (_, i) => {
+    const ms = fromMs + i * 6757
+    return { ms, firstMs: 244 + phaseAt(ms) }
+  })
+
+describe('a detector that hears sixteenths in a break', () => {
+  const fit = {
+    bpm: BPM_142,
+    firstMs: 244,
+    phases: [
+      ...stretchesEvery(6800, 196000, () => 0),
+      ...stretchesEvery(202700, 223000, () => -P_142 / 4 + 9),
+      ...stretchesEvery(229700, 257000, () => -P_142 / 2 + 13),
+      ...stretchesEvery(263500, 372000, () => 0),
+    ],
+  }
+
+  it('reads a grid on the kick as on the beat inside the break, so the readout does not ask to fix what is right', () => {
+    const { hereMs } = gridOffsets(
+      drawn({ bpm: BPM_142, anchorMs: 244 }, 381000),
+      fit,
+      220000,
+      381000,
+    )
+    expect(Math.abs(hereMs)).toBeLessThanOrEqual(13)
+  })
+})

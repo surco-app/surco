@@ -241,8 +241,11 @@ const median = (values: number[]): number => {
 function steadyStretches(fit: GridFit): { ms: number; d: number }[] {
   const period = periodOf(fit.bpm)
   return (fit.phases ?? [])
-    .map((p) => ({ ms: p.ms, d: p.firstMs - nearestOn(p.firstMs, fit.firstMs, period) }))
-    .filter((p) => Math.abs(p.d) <= period / 4)
+    .map((p) => ({
+      ms: p.ms,
+      d: offbeatFolded(p.firstMs - nearestOn(p.firstMs, fit.firstMs, period), period),
+    }))
+    .filter((p) => Math.abs(p.d) <= period / 8)
 }
 
 function phaseNear(fit: GridFit, ms: number): number {
