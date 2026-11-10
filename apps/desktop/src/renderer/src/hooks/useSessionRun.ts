@@ -96,11 +96,7 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
   ): Promise<SessionRun> => {
     const library = deps.library?.() ?? {}
     const phases = deps.phases?.() ?? {}
-    const chosen = new Set(answers.sources)
-    const given = [...new Set([...Object.keys(library), ...Object.keys(phases)])].filter(
-      (id) => !chosen.has(id),
-    )
-    const loaded = await deps.rows.load([...answers.sources, ...given])
+    const loaded = await deps.rows.load(answers.sources)
     return runSession({
       answers,
       roles,

@@ -54,10 +54,10 @@ function run(
 }
 
 describe('runSession', () => {
-  it('gives a track the part of the set its library playlists say, even when not chosen', () => {
+  it('gives a track the part of the set its chosen playlists say', () => {
     const { pool } = run(
-      { sources: ['set'] },
-      { set: 'any' },
+      { sources: ['set', 'warm', 'fixed'] },
+      { set: 'any', warm: 'any', fixed: 'any' },
       {
         set: [row('/m/a.mp3'), row('/m/b.mp3')],
         warm: [row('/m/a.mp3')],
@@ -196,10 +196,10 @@ describe('runSession', () => {
     expect(again.refs[2]).toEqual(first.refs[2])
   })
 
-  it('gives a track that is only in a set the role of the library playlist that holds it', () => {
+  it('gives a track that is only in a set the role its chosen playlists are named for', () => {
     const { pool } = run(
-      { sources: ['set'] },
-      { set: 'any' },
+      { sources: ['set', 'libBases', 'libVoices'] },
+      { set: 'any', libBases: 'any', libVoices: 'any' },
       {
         set: [row('/m/x.mp3'), row('/m/y.mp3'), row('/m/z.mp3')],
         libBases: [row('/m/x.mp3')],
@@ -212,6 +212,37 @@ describe('runSession', () => {
     expect(roleOf('/m/x.mp3')).toBe('base')
     expect(roleOf('/m/y.mp3')).toBe('vocal')
     expect(roleOf('/m/z.mp3')).toBe('any')
+  })
+
+  it("ignores the part of the set that playlists the DJ did not choose would give, since they may be a friend's", () => {
+    const { pool } = run(
+      { sources: ['set'] },
+      { set: 'any' },
+      {
+        set: [row('/m/a.mp3'), row('/m/b.mp3')],
+        warm: [row('/m/a.mp3')],
+        fixed: [row('/m/b.mp3')],
+      },
+      1,
+      {},
+      undefined,
+      undefined,
+      undefined,
+      { warm: 'open', fixed: 'must' },
+    )
+    expect(pool.find((t) => t.id === '/m/a.mp3')?.phase).toBeUndefined()
+    expect(pool.find((t) => t.id === '/m/b.mp3')?.must).toBeUndefined()
+  })
+
+  it("ignores the role that playlists the DJ did not choose would give, since they may be a friend's", () => {
+    const { pool } = run(
+      { sources: ['set'] },
+      { set: 'any' },
+      { set: [row('/m/x.mp3')], friendVoices: [row('/m/x.mp3')] },
+      1,
+      { friendVoices: 'vocal' },
+    )
+    expect(pool[0].role).toBe('any')
   })
 
   it('does not bring in tracks that are only in the library playlists, which were not chosen', () => {
@@ -227,8 +258,8 @@ describe('runSession', () => {
 
   it('reads a track as neutral when the library holds it as both a base and a vocal', () => {
     const { pool } = run(
-      { sources: ['set'] },
-      { set: 'any' },
+      { sources: ['set', 'libBases', 'libVoices'] },
+      { set: 'any', libBases: 'any', libVoices: 'any' },
       { set: [row('/m/x.mp3')], libBases: [row('/m/x.mp3')], libVoices: [row('/m/x.mp3')] },
       1,
       { libBases: 'base', libVoices: 'vocal' },

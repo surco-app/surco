@@ -69,8 +69,10 @@ export function runSession(input: {
     role: roles[id] ?? 'any',
     entries: rows.get(id) ?? [],
   }))
+  const chosen = new Set(answers.sources)
   const evidence = new Map<string, Set<'base' | 'vocal'>>()
   for (const [playlistId, role] of Object.entries(library)) {
+    if (!chosen.has(playlistId)) continue
     for (const entry of rows.get(playlistId) ?? []) {
       const id = trackIdOf(entry)
       if (id === null) continue
@@ -81,6 +83,7 @@ export function runSession(input: {
   }
   const marks = new Map<string, Set<SessionPhase>>()
   for (const [playlistId, phase] of Object.entries(phases)) {
+    if (!chosen.has(playlistId)) continue
     for (const entry of rows.get(playlistId) ?? []) {
       const id = trackIdOf(entry)
       if (id === null) continue
