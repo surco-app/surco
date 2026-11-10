@@ -14,7 +14,16 @@ export interface SessionRun {
   combos: Combos
 }
 
-export function sessionOptionsOf(answers: SessionAnswers, seed: number): SessionOptions {
+export interface SessionPins {
+  pinned: readonly { index: number; trackId: string }[]
+  length: number
+}
+
+export function sessionOptionsOf(
+  answers: SessionAnswers,
+  seed: number,
+  pins?: SessionPins,
+): SessionOptions {
   return {
     minutes: answers.minutes,
     playSecs: answers.playMinutes * 60,
@@ -25,6 +34,7 @@ export function sessionOptionsOf(answers: SessionAnswers, seed: number): Session
     freshShare: answers.freshShare,
     surprise: answers.surprise,
     seed,
+    ...(pins && { pinned: pins.pinned, fixedLength: pins.length }),
   }
 }
 
@@ -34,8 +44,9 @@ export function runSession(input: {
   rows: ReadonlyMap<string, readonly SourcePlaylistEntry[]>
   seed: number
   library?: Readonly<Record<string, 'base' | 'vocal'>>
+  pins?: SessionPins
 }): SessionRun {
-  const { answers, roles, rows, seed, library = {} } = input
+  const { answers, roles, rows, seed, library = {}, pins } = input
   const sources: SessionSource[] = answers.sources.map((id) => ({
     role: roles[id] ?? 'any',
     entries: rows.get(id) ?? [],
@@ -55,7 +66,7 @@ export function runSession(input: {
   const ids = new Set(pool.map((track) => track.id))
   const pairs = mineCombos(sequences, ids, 1)
   const combos = mineCombos(sequences, ids, MIN_PLAYLISTS_PER_COMBO)
-  const plan = buildSession(pool, pairs, sessionOptionsOf(answers, seed))
+  const plan = buildSession(pool, pairs, sessionOptionsOf(answers, seed, pins))
   const refsById = new Map<string, PlaylistTrackRef>()
   for (const source of sources) {
     for (const entry of source.entries) {
