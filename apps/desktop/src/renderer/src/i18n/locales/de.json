@@ -1856,7 +1856,7 @@
     "showEditorHints": "Erklärungen im Editor",
     "showEditorHintsHint": "Einzeilige Erklärungen unter den Editor-Reglern: was jeder Modus tut und was die Peak-Obergrenze ist. Ausschalten, wenn du sie auswendig kennst.",
     "keyNotation": "Tonart-Notation",
-    "keyNotationHint": "Wie der erkannte Tonart-Vorschlag unter dem Feld Tonart angezeigt wird. Camelot ist das, wonach DJ-Software sortiert.",
+    "keyNotationHint": "Wie die Tonart in der Titelliste und im Vorschlag unter dem Feld Tonart angezeigt wird. Camelot ist das, wonach DJ-Software sortiert.",
     "sections": {
       "title": "Editor-Abschnitte",
       "hint": "Wähle, welche Abschnitte geöffnet starten und ihre Reihenfolge unter dem Metadaten-Formular.",

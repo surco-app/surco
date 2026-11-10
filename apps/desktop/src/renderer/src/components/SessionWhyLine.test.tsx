@@ -133,17 +133,14 @@ describe('SessionWhyLine text', () => {
   })
 })
 
-describe('SessionWhyLine key and tempo', () => {
-  it('shows the key and tempo of the placed track whatever it was picked for, so the DJ can check the mix by ear', () => {
+describe('SessionWhyLine tempo', () => {
+  it('shows the tempo of the placed track whatever it was picked for, and leaves the key to the row above it', () => {
     setup({ kind: 'combo', sets: 2 }, { track: alt('p', { key: '11A', bpm: 142.05 }) })
-    expect(screen.getByTestId('session-why-track')).toHaveTextContent('11A 142')
-    cleanup()
-    setup({ kind: 'taste', rating: 100, plays: 0 }, { track: alt('p', { key: '4B', bpm: 0 }) })
-    expect(screen.getByTestId('session-why-track')).toHaveTextContent(/^4B$/)
+    expect(screen.getByTestId('session-why-track')).toHaveTextContent(/^142$/)
   })
 
-  it('leaves the slot out when the track has neither key nor tempo', () => {
-    setup({ kind: 'start' }, { track: alt('p', { key: null, bpm: 0 }) })
+  it('leaves the slot out when the track has no tempo', () => {
+    setup({ kind: 'start' }, { track: alt('p', { key: '4B', bpm: 0 }) })
     expect(screen.queryByTestId('session-why-track')).toBeNull()
   })
 })

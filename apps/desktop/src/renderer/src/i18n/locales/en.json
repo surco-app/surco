@@ -1856,7 +1856,7 @@
     "showEditorHints": "Inline explanations",
     "showEditorHintsHint": "One-line explanations under the editor controls: what each mode does and what the peak ceiling is. Turn off once you know them by heart.",
     "keyNotation": "Key notation",
-    "keyNotationHint": "How the detected key suggestion is shown under the Key field. Camelot is what DJ software sorts by.",
+    "keyNotationHint": "How the key is shown in the track list and in the suggestion under the Key field. Camelot is what DJ software sorts by.",
     "sections": {
       "title": "Editor sections",
       "hint": "Choose which sections start open and their order below the metadata form.",

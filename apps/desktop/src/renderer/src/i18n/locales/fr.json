@@ -1856,7 +1856,7 @@
     "showEditorHints": "Explications en ligne",
     "showEditorHintsHint": "Explications d’une ligne sous les contrôles de l’éditeur : ce que fait chaque mode et ce qu’est le plafond de crête. À désactiver une fois connues par cœur.",
     "keyNotation": "Notation de la tonalité",
-    "keyNotationHint": "Comment la suggestion de tonalité détectée s’affiche sous le champ Tonalité. Camelot est ce que les logiciels DJ utilisent pour trier.",
+    "keyNotationHint": "Comment la tonalité s’affiche dans la liste des morceaux et dans la suggestion sous le champ Tonalité. Camelot est ce que les logiciels DJ utilisent pour trier.",
     "sections": {
       "title": "Sections de l’éditeur",
       "hint": "Choisis les sections ouvertes au départ et leur ordre sous le formulaire de métadonnées.",
