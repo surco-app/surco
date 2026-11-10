@@ -5,31 +5,31 @@
     "title": "Sessions, die nach deinen Sets klingen",
     "items": [
       {
-        "text": "„Neu würfeln“ bringt jetzt jedes Mal eine wirklich andere Session. Sie beginnt nicht mehr immer mit demselben Track, und deine Favoriten kommen weiterhin öfter, aber nicht jedes Mal. Ein Song läuft nie zweimal, auch wenn du ihn in zwei Dateien hast, ein Artist kommt kaum zweimal hintereinander und zwei neue Tracks folgen nie direkt aufeinander.",
+        "text": "„Neu würfeln“ gibt dir jedes Mal eine wirklich andere Session. Deine Favoriten kommen weiter öfter, aber nicht immer, und sie beginnt nicht mehr immer mit demselben Track. Sie wiederholt nie einen Song, auch wenn du ihn in zwei Dateien hast, spielt kaum denselben Artist zweimal hintereinander und setzt nie zwei neue Tracks nebeneinander.",
         "in": "1.32.0"
       },
       {
-        "text": "Eine Session lernt aus deinen gemischten Playlists, nie aus den Sessions, die Surco geschrieben hat, wie weit du das Tempo zwischen Tracks meist veränderst und wie wichtig dir die Tonart ist, und sie wird im Verlauf langsam schneller. Playlists, die wie ein Teil des Sets heißen (Aufwärmen, Abschluss, Pflicht…), geben ihren Tracks diesen Teil. Abschluss-Tracks kommen ans Ende und die, die du immer spielst, kommen öfter. Sie beginnt immer mit einem Gesangstrack, wenn es einen gibt, und die zwei Gruppen heißen jetzt Instrumentals und Gesang.",
+        "text": "Eine Session klingt mehr nach deiner Art zu spielen. Sie lernt aus deinen gemischten Playlists, wie stark du das Tempo zwischen Tracks meist änderst und wie wichtig dir die Tonart ist, und wird nach und nach schneller. Heißt eine Playlist wie ein Teil des Sets (Aufwärmen, Abschluss, Pflicht…), kommen ihre Tracks in diesen Teil, also beenden Abschluss-Tracks die Session und deine Pflicht-Tracks kommen öfter. Sie beginnt mit einem Gesangstrack, wann immer es einen gibt, und die zwei Gruppen heißen jetzt Instrumentals und Gesang.",
         "in": "1.32.0"
       },
       {
-        "text": "„Session ab diesem Track…“ im Menü eines Tracks baut eine Session, die mit ihm beginnt. Jeder Track einer Session hat ein Schloss. „Neu würfeln“ behält die fixierten an ihrem Platz und lost den Rest um sie herum aus, und der Track, den du mit „Ändern“ wählst, bleibt fixiert.",
+        "text": "„Session ab diesem Track…“ im Menü eines Tracks baut eine Session, die mit ihm beginnt. Jeder Track einer Session hat ein Schloss. Die Tracks, die du sperrst, bleiben bei „Neu würfeln“ an ihrem Platz, und der Track, den du mit „Ändern“ wählst, sperrt sich von selbst.",
         "in": "1.32.0"
       },
       {
-        "text": "Ist eine Playlist aus rekordbox, Traktor oder Serato geöffnet, nimmt das Entfernen eines Tracks ihn immer aus dieser Playlist, ob über das Menü, die Schaltfläche im Kopf, die Tastatur oder per Wischen. Ein Track geht mit einem Klick, bei mehreren wird vorher nachgefragt.",
+        "text": "Ist eine Playlist aus rekordbox, Traktor oder Serato geöffnet, nimmt das Entfernen eines Tracks ihn aus dieser Playlist, egal wie du es machst. Ein Track geht mit einem Klick, bei mehreren wird vorher nachgefragt.",
         "in": "1.32.0"
       },
       {
-        "text": "Sessions aus dem Traktor- oder Engine-DJ-Tab kennen jetzt die Tonart jedes Tracks, also funktioniert „Harmonisches Mixen (Camelot)“ auch dort.",
+        "text": "Sessions, die du aus Traktor oder Engine DJ baust, berücksichtigen jetzt die Tonart, also funktioniert „Harmonisches Mixen (Camelot)“ auch dort.",
         "in": "1.32.1"
       },
       {
-        "text": "„Auto“ im Raster passt den ganzen Track an. In rekordbox öffnet es einen neuen Abschnitt, wo sich das Tempo dauerhaft ändert, und folgt einem Master, dessen Tempo atmet, und ein klares Intro oder ein Break voller Sechzehntel bringen es nicht mehr aus dem Takt. Ein in mehreren Abschnitten gespeichertes rekordbox-Raster öffnet sich wieder mit allen, und die Cues bleiben über sie hinweg auf ihrem Schlag.",
+        "text": "„Auto“ passt das Raster an den ganzen Track an, auch bei live gespielten Tracks oder mit Tempowechseln, und ein Intro oder ein Break bringt es nicht mehr aus dem Takt. rekordbox-Raster mit mehreren Tempi öffnen sich genau so, wie du sie gespeichert hast, und deine Cues bleiben, wo sie sind.",
         "in": "1.32.1"
       },
       {
-        "text": "Im vollständigen Cue-Editor passen alle Tasten, auch die des Rasters, in eine Zeile, selbst in einem kleinen Fenster, und die gezoomte Wellenform erscheint sofort, während die feine lädt.",
+        "text": "Der vollständige Cue-Editor passt auch in einem kleinen Fenster in eine Zeile, und die gezoomte Wellenform ist sofort da, wenn du ihn öffnest.",
         "in": "1.32.1"
       }
     ]
@@ -40,19 +40,19 @@
     "title": "Automatische Sessions aus deinen Playlists",
     "items": [
       {
-        "text": "„Automatische Session…“ baut eine Session in deinem DJ-Programm. Öffne sie über die Befehlspalette, über das Menü eines Ordners oder mit „Mit einer Session füllen…“ bei einer leeren Playlist. Du wählst, wie lange sie dauert und aus welchen Playlists die Tracks kommen, und markierst jede Playlist, oder einen ganzen Ordner, als Bases, Gesang oder Gemischt. Surco bringt die Combos, die du in deinen Sets am häufigsten wiederholst, deine Tracks mit den meisten Sternen und Wiedergaben, harmonisches Mixen nach Camelot, wenn du willst, und Platz für deine neuen Tracks zusammen.",
+        "text": "„Automatische Session…“ baut aus deinen Playlists eine Session in deinem DJ-Programm. Öffne sie über die Befehlspalette, über das Menü eines Ordners oder mit „Mit einer Session füllen…“ bei einer leeren Playlist. Du wählst, wie lange sie dauert und aus welchen Playlists die Tracks kommen, und markierst jede, oder einen ganzen Ordner, als Bases, Gesang oder Gemischt. Surco greift auf die Combos zurück, die du am häufigsten wiederholst, auf deine Tracks mit den meisten Sternen und Wiedergaben und, wenn du willst, auf harmonisches Mixen, und lässt Platz für deine neuen Tracks.",
         "in": "1.31.0"
       },
       {
-        "text": "Die Dauer zählt die Zeit, die jeder Track im Mix läuft, standardmäßig zwei Minuten, nicht die ganze Datei. Unter jedem Track sagt eine Zeile, warum er dort ist, ob bewährte Combo, Tonart, Sterne oder Wiedergaben, und „Ändern“ bietet dir die an, die an diese Stelle passen. Du kannst sie neu würfeln, anpassen oder als normale Playlist behalten, und ist dein DJ-Programm offen, bittet Surco dich, es vorher zu schließen, damit sie nie halb geschrieben bleibt.",
+        "text": "Die Dauer zählt, wie lange jeder Track im Mix läuft, standardmäßig zwei Minuten, nicht die ganze Datei. Unter jedem Track siehst du, warum er dort ist, und „Ändern“ schlägt dir andere vor, die an diese Stelle passen. Du kannst sie neu würfeln, anpassen oder als normale Playlist behalten. Ist dein DJ-Programm offen, bittet Surco dich, es vor dem Speichern zu schließen.",
         "in": "1.31.0"
       },
       {
-        "text": "„Anheften“ (G) setzt das Raster auf den Schlag, der dem Abspielkopf am nächsten ist, und unter der Wellenform des ganzen Tracks zeigen dir sechs über den Track verteilte Punkte, ob das Raster noch auf der Kick liegt. Auto verschiebt das Raster nicht mehr um einen halben Schlag bei Tracks, in denen Kick und Offbeat verwechselt wurden.",
+        "text": "„Anheften“ (G) setzt das Raster auf den Schlag, der dem Abspielkopf am nächsten ist. Unter der Wellenform des Tracks zeigen dir sechs Punkte auf einen Blick, ob das Raster im ganzen Track noch auf der Kick liegt. Und Auto lässt das Raster nicht mehr um einen halben Schlag versetzt bei Tracks, in denen es Kick und Offbeat verwechselt hat.",
         "in": "1.31.0"
       },
       {
-        "text": "Die vergrößerte Wellenform im Cue-Editor zeigt viel mehr Details, und Play spielt sofort, sobald der Editor offen ist.",
+        "text": "Die vergrößerte Wellenform im Cue-Editor zeigt viel mehr Details, und Play spielt sofort, sobald du ihn öffnest.",
         "in": "1.31.0"
       }
     ]

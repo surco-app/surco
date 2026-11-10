@@ -5,31 +5,31 @@
     "title": "Sessions that sound like your sets",
     "items": [
       {
-        "text": "“Redo” now brings a truly different session each time. It no longer always starts with the same track, and your favourites still come up more often, but not every time. A song never plays twice even if you have it in two files, an artist rarely plays twice in a row and two new tracks never go back to back.",
+        "text": "“Redo” gives you a truly different session every time. Your favourites still come up more, but not always, and it no longer always starts with the same track. It never repeats a song even if you have it in two files, rarely plays the same artist twice in a row and never puts two new tracks together.",
         "in": "1.32.0"
       },
       {
-        "text": "A session learns from your Mixed playlists, never from the sessions Surco wrote, how far you usually move the tempo between tracks and how much the key matters to you, and it climbs gently in tempo as it goes. Playlists named like a part of the set (Warm Up, Closing, Essentials…) give their tracks that part. Closing tracks go to the end and the ones you always play come up more. It always opens with a vocal when there is one, and the two groups are now called Instrumentals and Vocals.",
+        "text": "A session sounds more like the way you play. It learns from your Mixed playlists how much you usually change the tempo between tracks and how much the key matters to you, and it climbs in tempo little by little. If a playlist is named like a part of the set (Warm Up, Closing, Essentials…), its tracks go to that part, so closing tracks end the session and your essentials come up more. It opens with a vocal whenever there is one, and the two groups are now called Instrumentals and Vocals.",
         "in": "1.32.0"
       },
       {
-        "text": "“Session from this track…”, in a track’s menu, builds a session that starts with it. Every track of a session has a lock. “Redo” keeps the locked ones in place and draws the rest around them, and the one you pick with “Change” stays locked.",
+        "text": "“Session from this track…”, in a track’s menu, builds a session that starts with it. Every track of a session has a lock. The ones you lock stay in place when you press “Redo”, and the one you pick with “Change” locks itself.",
         "in": "1.32.0"
       },
       {
-        "text": "With a rekordbox, Traktor or Serato playlist open, removing a track always takes it out of that playlist, from the menu, the header button, the keyboard or by swiping. One track goes in one click and several ask first.",
+        "text": "With a rekordbox, Traktor or Serato playlist open, removing a track takes it out of that playlist, however you do it. One track goes in one click and several ask you first.",
         "in": "1.32.0"
       },
       {
-        "text": "Sessions built from the Traktor or Engine DJ tab now know each track's key, so “Harmonic mixing (Camelot)” works there too.",
+        "text": "Sessions you build from Traktor or Engine DJ now take the key into account, so “Harmonic mixing (Camelot)” works there too.",
         "in": "1.32.1"
       },
       {
-        "text": "The grid's “Auto” fits the whole track. In rekordbox it opens a new stretch wherever the tempo changes for good and follows a master whose tempo breathes, and a clear intro or a break full of sixteenths no longer throws it off the beat. A rekordbox grid saved in several stretches opens again with all of them, and the cues stay on their beat across them.",
+        "text": "“Auto” fits the grid to the whole track, including tracks played live or with tempo changes, and an intro or a break no longer pulls it off. rekordbox grids with several tempos open just as you saved them, and your cues stay where they are.",
         "in": "1.32.1"
       },
       {
-        "text": "In the full cue editor every button, the grid ones included, fits on one line even in a small window, and the zoomed wave shows straight away while the fine one loads.",
+        "text": "The full cue editor fits on one line even in a small window, and the zoomed wave shows up the moment you open it.",
         "in": "1.32.1"
       }
     ]
@@ -40,19 +40,19 @@
     "title": "Automatic sessions from your playlists",
     "items": [
       {
-        "text": "“Automatic session…” builds a session in your DJ program. Open it from the command palette, from a folder’s menu or with “Fill with a session…” on an empty playlist. You choose how long it lasts and which playlists the tracks come from, and you mark each playlist, or a whole folder, as Bases, Vocals or Mixed. Surco brings together the combos you repeat most in your sets, your tracks with the most stars and plays, Camelot harmonic mixing if you want it and room for your new tracks.",
+        "text": "“Automatic session…” builds a session in your DJ program from your playlists. Open it from the command palette, from a folder’s menu or with “Fill with a session…” on an empty playlist. You choose how long it lasts and which playlists the tracks come from, and you mark each one, or a whole folder, as Bases, Vocals or Mixed. Surco draws on the combos you repeat most, your tracks with the most stars and plays and, if you want, harmonic mixing, and leaves room for your new tracks.",
         "in": "1.31.0"
       },
       {
-        "text": "The length counts the time each track plays in the mix, two minutes by default, not the whole file. Under each track a line says why it is there, be it a proven combo, the key, the stars or the plays, and “Change” offers the ones that fit that slot. You can redo it, adjust it or keep it as a normal playlist, and if your DJ program is open Surco asks you to close it first, so it is never left half written.",
+        "text": "The length counts how long each track plays in the mix, two minutes by default, not the whole file. Under each track you see why it is there, and “Change” offers others that fit that slot. You can redo it, tweak it or keep it as a normal playlist. If your DJ program is open, Surco asks you to close it before saving.",
         "in": "1.31.0"
       },
       {
-        "text": "“Pin” (G) fixes the grid on the beat nearest the playhead, and under the whole-track wave six points spread across the track tell you whether the grid is still on the kick. Auto no longer shifts the grid half a beat on tracks where the kick and the offbeat got mixed up.",
+        "text": "“Pin” (G) puts the grid on the beat nearest the playhead. Under the track’s wave, six points tell you at a glance whether the grid is still on the kick all through the track. And Auto no longer leaves the grid half a beat off on tracks where it mixed up the kick and the offbeat.",
         "in": "1.31.0"
       },
       {
-        "text": "The zoomed wave in the cue editor has much more detail, and Play sounds at once as soon as the editor opens.",
+        "text": "The zoomed wave in the cue editor has much more detail, and Play sounds at once as soon as you open it.",
         "in": "1.31.0"
       }
     ]

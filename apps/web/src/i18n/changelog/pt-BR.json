@@ -5,31 +5,31 @@
     "title": "Sessões com a cara dos seus sets",
     "items": [
       {
-        "text": "“Refazer” agora traz uma sessão realmente diferente a cada vez. Ela não começa mais sempre pela mesma faixa, e suas favoritas continuam aparecendo mais, mas não sempre. Uma música nunca toca duas vezes, mesmo que você a tenha em dois arquivos, um artista quase nunca se repete em seguida e duas faixas novas nunca vêm uma atrás da outra.",
+        "text": "“Refazer” te dá uma sessão realmente diferente a cada vez. Suas favoritas continuam aparecendo mais, mas não sempre, e ela não começa mais sempre pela mesma faixa. Nunca repete uma música mesmo que você a tenha em dois arquivos, quase nunca põe o mesmo artista em seguida e nunca junta duas faixas novas.",
         "in": "1.32.0"
       },
       {
-        "text": "A sessão aprende com suas playlists Mistas, nunca com as sessões que o Surco escreveu, quanto você costuma mudar o tempo entre faixas e quanto o tom importa para você, e vai subindo o tempo aos poucos. As playlists com nome de uma parte do set (Aquecimento, Encerramento, Essenciais…) dão essa parte às suas faixas. As de encerramento vão para o final e as que você sempre toca aparecem mais. Ela sempre abre com uma faixa com voz quando houver, e os dois grupos agora se chamam Instrumentais (bases) e Com voz (cantadas).",
+        "text": "A sessão fica mais parecida com o seu jeito de tocar. Ela aprende com suas playlists Mistas quanto você costuma mudar o tempo entre faixas e quanto o tom importa para você, e vai subindo o tempo aos poucos. Se uma playlist tem nome de uma parte do set (Aquecimento, Encerramento, Essenciais…), as faixas dela vão para essa parte, então as de encerramento fecham a sessão e suas essenciais aparecem mais. Ela abre com uma faixa com voz sempre que houver, e os dois grupos agora se chamam Instrumentais (bases) e Com voz (cantadas).",
         "in": "1.32.0"
       },
       {
-        "text": "“Sessão a partir desta faixa…”, no menu de uma faixa, monta uma sessão que começa por ela. Cada faixa da sessão tem um cadeado. “Refazer” mantém as fixadas no lugar e sorteia o resto em volta delas, e a que você escolhe com “Trocar” fica fixada.",
+        "text": "“Sessão a partir desta faixa…”, no menu de uma faixa, monta uma sessão que começa por ela. Cada faixa da sessão tem um cadeado. As que você trava ficam no lugar quando você aperta “Refazer”, e a que você escolhe com “Trocar” se trava sozinha.",
         "in": "1.32.0"
       },
       {
-        "text": "Com uma playlist do rekordbox, Traktor ou Serato aberta, remover uma faixa sempre a tira dessa playlist, pelo menu, pelo botão do cabeçalho, pelo teclado ou deslizando. Uma faixa sai com um clique e várias pedem confirmação antes.",
+        "text": "Com uma playlist do rekordbox, Traktor ou Serato aberta, remover uma faixa a tira dessa playlist, seja qual for o jeito. Uma faixa sai com um clique e várias pedem confirmação.",
         "in": "1.32.0"
       },
       {
-        "text": "As sessões criadas na aba do Traktor ou do Engine DJ agora conhecem o tom de cada faixa, então “Mixagem harmônica (Camelot)” funciona lá também.",
+        "text": "As sessões que você monta a partir do Traktor ou do Engine DJ agora levam o tom em conta, então “Mixagem harmônica (Camelot)” funciona lá também.",
         "in": "1.32.1"
       },
       {
-        "text": "O “Auto” da grade ajusta a faixa inteira. No rekordbox ele abre um novo trecho onde o tempo muda de vez e acompanha um master cujo tempo respira, e uma intro limpa ou um break cheio de semicolcheias não o tiram mais do tempo. Uma grade do rekordbox salva em vários trechos volta a abrir com todos eles, e os cues continuam no seu tempo ao longo deles.",
+        "text": "O “Auto” ajusta a grade à faixa inteira, inclusive em faixas tocadas ao vivo ou com mudanças de tempo, e uma intro ou um break não a tiram mais do lugar. As grades do rekordbox com vários tempos abrem do jeito que você salvou, e seus cues ficam onde estão.",
         "in": "1.32.1"
       },
       {
-        "text": "No editor completo de cues todos os botões, inclusive os da grade, cabem numa só linha mesmo numa janela pequena, e a onda ampliada aparece na hora enquanto a fina carrega.",
+        "text": "O editor completo de cues cabe numa só linha mesmo numa janela pequena, e a onda ampliada aparece assim que você o abre.",
         "in": "1.32.1"
       }
     ]
@@ -40,19 +40,19 @@
     "title": "Sessões automáticas a partir das suas playlists",
     "items": [
       {
-        "text": "“Sessão automática…” monta uma sessão no seu programa de DJ. Abra pela paleta de comandos, pelo menu de uma pasta ou com “Preencher com uma sessão…” numa playlist vazia. Você escolhe quanto ela dura e de quais playlists saem as faixas, e marca cada playlist, ou uma pasta inteira, como Bases, Cantadas ou Misto. O Surco junta os combos que você mais repete nos seus sets, as faixas com mais estrelas e reproduções, mixagem harmônica Camelot se você quiser e um espaço para as suas faixas novas.",
+        "text": "“Sessão automática…” monta uma sessão no seu programa de DJ a partir das suas playlists. Abra pela paleta de comandos, pelo menu de uma pasta ou com “Preencher com uma sessão…” numa playlist vazia. Você escolhe quanto ela dura e de quais playlists saem as faixas, e marca cada uma, ou uma pasta inteira, como Bases, Cantadas ou Misto. O Surco usa os combos que você mais repete, suas faixas com mais estrelas e reproduções e, se você quiser, a mixagem harmônica, e deixa espaço para as suas faixas novas.",
         "in": "1.31.0"
       },
       {
-        "text": "A duração conta o tempo que cada faixa toca na mixagem, dois minutos por padrão, não o arquivo inteiro. Embaixo de cada faixa uma linha diz por que ela está ali, seja um combo testado, o tom, as estrelas ou as reproduções, e “Trocar” oferece as que cabem naquele lugar. Você pode refazer, ajustar ou mantê-la como uma playlist normal, e se o seu programa de DJ estiver aberto o Surco pede para fechá-lo antes, para nunca deixá-la pela metade.",
+        "text": "A duração conta quanto cada faixa toca na mixagem, dois minutos por padrão, não o arquivo inteiro. Embaixo de cada faixa você vê por que ela está ali, e “Trocar” sugere outras que cabem naquele lugar. Você pode refazer, ajustar ou mantê-la como uma playlist normal. Se o seu programa de DJ estiver aberto, o Surco pede para fechá-lo antes de salvar.",
         "in": "1.31.0"
       },
       {
-        "text": "“Fixar” (G) prende a grade na batida mais próxima do cursor, e embaixo da onda da faixa inteira seis pontos espalhados pela música dizem se a grade continua sobre o bumbo. O Auto não desloca mais a grade meio tempo em faixas onde o bumbo e o contratempo se confundiam.",
+        "text": "“Fixar” (G) põe a grade na batida mais próxima do cursor. Embaixo da onda da faixa, seis pontos mostram num relance se a grade continua sobre o bumbo na música toda. E o Auto não deixa mais a grade meio tempo deslocada em faixas onde confundia o bumbo com o contratempo.",
         "in": "1.31.0"
       },
       {
-        "text": "A onda ampliada do editor de cues tem muito mais detalhe, e o Play toca na hora assim que o editor abre.",
+        "text": "A onda ampliada do editor de cues tem muito mais detalhe, e o Play toca na hora assim que você o abre.",
         "in": "1.31.0"
       }
     ]

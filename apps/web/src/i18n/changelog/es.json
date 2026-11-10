@@ -5,31 +5,31 @@
     "title": "Sesiones que suenan a tus sets",
     "items": [
       {
-        "text": "«Rehacer» trae ahora una sesión distinta de verdad cada vez. Ya no arranca siempre con la misma pista, y tus favoritas siguen saliendo más a menudo, pero no siempre. Un tema no suena dos veces aunque lo tengas en dos archivos, un artista casi nunca se repite seguido y dos pistas nuevas nunca van una detrás de otra.",
+        "text": "«Rehacer» te da cada vez una sesión distinta de verdad. Tus favoritas siguen saliendo más, pero no siempre, y ya no arranca siempre por la misma pista. Nunca repite un tema aunque lo tengas en dos archivos, casi nunca pone seguido al mismo artista y no junta dos pistas nuevas.",
         "in": "1.32.0"
       },
       {
-        "text": "La sesión aprende de tus Mezcladas, nunca de las sesiones que escribió Surco, cuánto sueles mover el tempo entre pistas y cuánto te importa el tono, y sube poco a poco de tempo a medida que avanza. Las playlists que se llaman como una parte del set (Warm Up, Cierre, Fijas…) dan esa parte a sus pistas. Las de cierre van al final y las que siempre pinchas salen más. Siempre abre con un vocal si lo hay, y los dos grupos se llaman ahora Bases y Vocales.",
+        "text": "La sesión se parece más a cómo pinchas tú. Aprende de tus Mezcladas cuánto sueles cambiar de tempo entre pistas y cuánto te importa el tono, y va subiendo de tempo poco a poco. Si una playlist se llama como una parte del set (Warm Up, Cierre, Fijas…), sus pistas van a esa parte, así que las de cierre acaban la sesión y tus fijas salen más. Abre con un vocal siempre que lo haya, y los dos grupos se llaman ahora Bases y Vocales.",
         "in": "1.32.0"
       },
       {
-        "text": "«Sesión desde esta pista…», en el menú de una pista, monta una sesión que empieza por ella. Cada pista de la sesión lleva un candado. «Rehacer» conserva las fijadas en su sitio y sortea el resto a su alrededor, y la que eliges con «Cambiar» queda fijada.",
+        "text": "«Sesión desde esta pista…», en el menú de una pista, monta una sesión que empieza por ella. Cada pista de la sesión tiene un candado. Las que bloqueas se quedan en su sitio al pulsar «Rehacer», y la que eliges con «Cambiar» se bloquea sola.",
         "in": "1.32.0"
       },
       {
-        "text": "Con una playlist abierta de rekordbox, Traktor o Serato, quitar una pista siempre la quita de esa playlist, desde el menú, el botón de la cabecera, el teclado o deslizándola. Una pista se va de un clic y varias piden confirmación antes.",
+        "text": "Con una playlist de rekordbox, Traktor o Serato abierta, quitar una pista la quita de esa playlist, lo hagas como lo hagas. Una pista se quita de un clic y varias te piden confirmación.",
         "in": "1.32.0"
       },
       {
-        "text": "Las sesiones que haces desde la pestaña de Traktor o de Engine DJ conocen ya la tonalidad de cada pista, así que «Mezcla armónica (Camelot)» funciona también ahí.",
+        "text": "Las sesiones que montas desde Traktor o Engine DJ ya tienen en cuenta la tonalidad, así que «Mezcla armónica (Camelot)» también funciona ahí.",
         "in": "1.32.1"
       },
       {
-        "text": "El «Auto» de la rejilla ajusta la pista entera. En rekordbox abre un tramo nuevo donde el tempo cambia de verdad y sigue un máster cuyo tempo respira, y una intro limpia o un break lleno de semicorcheas ya no la sacan del golpe. Una rejilla de rekordbox guardada en varios tramos se vuelve a abrir con todos ellos, y los cues siguen en su golpe a través de ellos.",
+        "text": "«Auto» ajusta la rejilla a la pista entera, también en temas tocados en directo o con cambios de tempo, y ya no se tuerce por culpa de la intro o de un break. Las rejillas de rekordbox con varios tempos se abren tal como las guardaste, y los cues se quedan en su sitio.",
         "in": "1.32.1"
       },
       {
-        "text": "En el editor completo de cues todos los botones, también los de la rejilla, caben en una sola línea aunque la ventana sea pequeña, y la onda ampliada aparece al momento mientras carga la fina.",
+        "text": "El editor completo de cues cabe en una sola línea aunque la ventana sea pequeña, y la onda ampliada sale al momento al abrirlo.",
         "in": "1.32.1"
       }
     ]
@@ -40,19 +40,19 @@
     "title": "Sesión automática a partir de tus playlists",
     "items": [
       {
-        "text": "«Sesión automática…» monta una sesión en tu programa DJ. Ábrela desde la paleta de comandos, desde el menú de una carpeta o con «Rellenar con una sesión…» en una playlist vacía. Eliges cuánto dura y de qué playlists salen las pistas, y marcas cada playlist, o una carpeta entera, como Bases, Cantaditas o Mezcladas. Surco junta los combos que más repites en tus sets, las pistas con más estrellas y escuchas, mezcla armónica Camelot si la quieres y un hueco para tus pistas nuevas.",
+        "text": "«Sesión automática…» monta una sesión en tu programa DJ a partir de tus playlists. Ábrela desde la paleta de comandos, desde el menú de una carpeta o con «Rellenar con una sesión…» en una playlist vacía. Eliges cuánto dura y de qué playlists salen las pistas, y marcas cada una, o una carpeta entera, como Bases, Cantaditas o Mezcladas. Surco tira de los combos que más repites, de tus pistas con más estrellas y escuchas y, si quieres, de la mezcla armónica, y deja hueco para tus novedades.",
         "in": "1.31.0"
       },
       {
-        "text": "La duración cuenta el tiempo que suena cada pista en la mezcla, dos minutos por defecto, no el archivo entero. Bajo cada pista una línea dice por qué está ahí, sea un combo probado, el tono, las estrellas o las escuchas, y «Cambiar» te ofrece las que encajan en ese hueco. Puedes rehacerla, ajustarla o quedártela como una playlist normal, y si tu programa DJ está abierto Surco te pide cerrarlo antes, para no dejarla a medias.",
+        "text": "La duración cuenta lo que suena cada pista en la mezcla, dos minutos por defecto, no el archivo entero. Bajo cada pista ves por qué está ahí, y «Cambiar» te propone otras que encajan en ese hueco. Puedes rehacerla, retocarla o quedártela como una playlist normal. Si tu programa DJ está abierto, Surco te pide que lo cierres antes de guardarla.",
         "in": "1.31.0"
       },
       {
-        "text": "«Clavar» (G) fija la rejilla en el golpe más cercano al cabezal, y bajo la onda de toda la pista seis puntos repartidos por el tema te dicen si la rejilla sigue sobre el bombo. Auto ya no desplaza la rejilla medio tiempo en pistas donde se confundían el bombo y el contratiempo.",
+        "text": "«Clavar» (G) pone la rejilla en el golpe más cercano al cabezal. Bajo la onda de la pista, seis puntos te dicen de un vistazo si la rejilla sigue sobre el bombo en todo el tema. Y Auto ya no deja la rejilla desplazada medio tiempo en pistas donde confundía el bombo con el contratiempo.",
         "in": "1.31.0"
       },
       {
-        "text": "La onda ampliada del editor de cues tiene mucho más detalle, y Play suena al instante nada más abrir el editor.",
+        "text": "La onda ampliada del editor de cues tiene mucho más detalle, y Play suena al instante nada más abrirlo.",
         "in": "1.31.0"
       }
     ]

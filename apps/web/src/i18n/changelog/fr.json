@@ -5,31 +5,31 @@
     "title": "Des sessions qui sonnent comme tes sets",
     "items": [
       {
-        "text": "« Refaire » donne maintenant une session vraiment différente à chaque fois. Elle ne commence plus toujours par le même morceau, et tes favoris reviennent toujours plus souvent, mais pas à chaque fois. Un morceau ne passe jamais deux fois, même si tu l’as dans deux fichiers, un artiste revient rarement deux fois de suite et deux nouveautés ne se suivent jamais.",
+        "text": "« Refaire » te donne à chaque fois une session vraiment différente. Tes favoris reviennent toujours plus, mais pas à chaque fois, et elle ne commence plus toujours par le même morceau. Elle ne répète jamais un morceau même si tu l’as dans deux fichiers, enchaîne rarement deux fois le même artiste et ne met jamais deux nouveautés côte à côte.",
         "in": "1.32.0"
       },
       {
-        "text": "Une session apprend de tes playlists mixées, jamais des sessions écrites par Surco, de combien tu changes d’habitude le tempo entre deux morceaux et à quel point la tonalité compte pour toi, et elle accélère doucement au fil du set. Les playlists qui portent le nom d’une partie du set (Échauffement, Clôture, Incontournables…) donnent cette partie à leurs morceaux. Ceux de clôture vont à la fin et ceux que tu passes toujours reviennent plus. Elle commence toujours par un morceau chanté s’il y en a un, et les deux groupes s’appellent maintenant Instrumentaux et Voix.",
+        "text": "Une session ressemble davantage à ta façon de mixer. Elle apprend de tes playlists mixées de combien tu changes d’habitude le tempo entre deux morceaux et à quel point la tonalité compte pour toi, et elle accélère petit à petit. Si une playlist porte le nom d’une partie du set (Échauffement, Clôture, Incontournables…), ses morceaux vont dans cette partie, donc ceux de clôture finissent la session et tes incontournables reviennent plus. Elle commence par un morceau chanté dès qu’il y en a un, et les deux groupes s’appellent maintenant Instrumentaux et Voix.",
         "in": "1.32.0"
       },
       {
-        "text": "« Session à partir de ce morceau… », dans le menu d’un morceau, monte une session qui commence par lui. Chaque morceau d’une session a un cadenas. « Refaire » garde les morceaux fixés à leur place et tire le reste autour, et celui que tu choisis avec « Changer » reste fixé.",
+        "text": "« Session à partir de ce morceau… », dans le menu d’un morceau, monte une session qui commence par lui. Chaque morceau d’une session a un cadenas. Ceux que tu verrouilles restent à leur place quand tu appuies sur « Refaire », et celui que tu choisis avec « Changer » se verrouille tout seul.",
         "in": "1.32.0"
       },
       {
-        "text": "Avec une playlist rekordbox, Traktor ou Serato ouverte, retirer un morceau le retire toujours de cette playlist, depuis le menu, le bouton de l’en-tête, le clavier ou en le faisant glisser. Un morceau part en un clic et plusieurs demandent une confirmation.",
+        "text": "Avec une playlist rekordbox, Traktor ou Serato ouverte, retirer un morceau le retire de cette playlist, peu importe comment tu le fais. Un morceau part en un clic et plusieurs te demandent une confirmation.",
         "in": "1.32.0"
       },
       {
-        "text": "Les sessions créées depuis l’onglet Traktor ou Engine DJ connaissent désormais la tonalité de chaque morceau, donc « Mix harmonique (Camelot) » fonctionne là aussi.",
+        "text": "Les sessions que tu montes depuis Traktor ou Engine DJ tiennent désormais compte de la tonalité, donc « Mix harmonique (Camelot) » fonctionne là aussi.",
         "in": "1.32.1"
       },
       {
-        "text": "« Auto » de la grille ajuste le morceau entier. Dans rekordbox, il ouvre un nouveau segment là où le tempo change pour de bon et suit un master dont le tempo respire, et une intro claire ou un break plein de doubles croches ne le décalent plus du temps. Une grille rekordbox enregistrée en plusieurs segments se rouvre avec tous, et les cues restent sur leur temps d’un segment à l’autre.",
+        "text": "« Auto » cale la grille sur tout le morceau, y compris les morceaux joués en live ou avec des changements de tempo, et une intro ou un break ne la décale plus. Les grilles rekordbox à plusieurs tempos s’ouvrent telles que tu les as enregistrées, et tes cues restent à leur place.",
         "in": "1.32.1"
       },
       {
-        "text": "Dans l’éditeur de cues complet, tous les boutons, ceux de la grille compris, tiennent sur une seule ligne même dans une petite fenêtre, et la forme d’onde zoomée s’affiche tout de suite pendant que la fine se charge.",
+        "text": "L’éditeur de cues complet tient sur une seule ligne même dans une petite fenêtre, et l’onde agrandie apparaît dès que tu l’ouvres.",
         "in": "1.32.1"
       }
     ]
@@ -40,19 +40,19 @@
     "title": "Des sessions automatiques à partir de tes playlists",
     "items": [
       {
-        "text": "« Session automatique… » monte une session dans ton logiciel DJ. Ouvre-la depuis la palette de commandes, depuis le menu d'un dossier ou avec « Remplir avec une session… » sur une playlist vide. Tu choisis sa durée et les playlists d'où viennent les pistes, et tu marques chaque playlist, ou un dossier entier, comme Bases, Voix ou Mixte. Surco réunit les combos que tu répètes le plus dans tes sets, tes pistes avec le plus d'étoiles et d'écoutes, le mix harmonique Camelot si tu le veux et une place pour tes nouvelles pistes.",
+        "text": "« Session automatique… » monte une session dans ton logiciel DJ à partir de tes playlists. Ouvre-la depuis la palette de commandes, depuis le menu d'un dossier ou avec « Remplir avec une session… » sur une playlist vide. Tu choisis sa durée et les playlists d'où viennent les pistes, et tu marques chacune, ou un dossier entier, comme Bases, Voix ou Mixte. Surco s'appuie sur les combos que tu répètes le plus, tes pistes avec le plus d'étoiles et d'écoutes et, si tu veux, le mix harmonique, et garde de la place pour tes nouveautés.",
         "in": "1.31.0"
       },
       {
-        "text": "La durée compte le temps que chaque piste joue dans le mix, deux minutes par défaut, pas le fichier entier. Sous chaque piste, une ligne dit pourquoi elle est là, combo éprouvé, tonalité, étoiles ou écoutes, et « Changer » te propose celles qui vont à cette place. Tu peux la refaire, l'ajuster ou la garder comme une playlist normale, et si ton logiciel DJ est ouvert, Surco te demande de le fermer avant, pour ne jamais la laisser à moitié écrite.",
+        "text": "La durée compte combien de temps chaque piste joue dans le mix, deux minutes par défaut, pas le fichier entier. Sous chaque piste tu vois pourquoi elle est là, et « Changer » te propose d'autres pistes qui vont à cette place. Tu peux la refaire, la retoucher ou la garder comme une playlist normale. Si ton logiciel DJ est ouvert, Surco te demande de le fermer avant d'enregistrer.",
         "in": "1.31.0"
       },
       {
-        "text": "« Épingler » (G) fixe la grille sur le temps le plus proche de la tête de lecture, et sous l'onde de toute la piste, six points répartis sur le morceau te disent si la grille est toujours sur le kick. Auto ne décale plus la grille d'un demi-temps sur les pistes où le kick et le contretemps se confondaient.",
+        "text": "« Épingler » (G) pose la grille sur le temps le plus proche de la tête de lecture. Sous l'onde de la piste, six points te disent d'un coup d'œil si la grille est toujours sur le kick tout au long du morceau. Et Auto ne laisse plus la grille décalée d'un demi-temps sur les pistes où il confondait le kick et le contretemps.",
         "in": "1.31.0"
       },
       {
-        "text": "L'onde agrandie de l'éditeur de cues a beaucoup plus de détail, et Play joue tout de suite dès l'ouverture de l'éditeur.",
+        "text": "L'onde agrandie de l'éditeur de cues a beaucoup plus de détail, et Play joue tout de suite dès que tu l'ouvres.",
         "in": "1.31.0"
       }
     ]
