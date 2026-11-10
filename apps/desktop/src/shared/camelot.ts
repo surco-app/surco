@@ -1,17 +1,38 @@
-import { MAJOR_CAMELOT, MAJOR_NAMES, MINOR_CAMELOT, MINOR_NAMES } from './keyNames'
+import { ENHARMONIC, MAJOR_CAMELOT, MAJOR_NAMES, MINOR_CAMELOT, MINOR_NAMES } from './keyNames'
+import type { KeyNotation } from './types'
 
 const CAMELOT = /^0?([1-9]|1[0-2])([AB])$/i
+const WORDED = /^([a-g][#b]?)\s*(maj|major|min|minor)$/i
+
+const BY_NAME = new Map<string, string>()
+for (const [names, camelot, suffix] of [
+  [MAJOR_NAMES, MAJOR_CAMELOT, ''],
+  [MINOR_NAMES, MINOR_CAMELOT, 'm'],
+] as const) {
+  names.forEach((name, pitch) => {
+    BY_NAME.set(name.toLowerCase(), camelot[pitch])
+    for (const spelling of ENHARMONIC[pitch] ?? []) {
+      BY_NAME.set(`${spelling}${suffix}`.toLowerCase(), camelot[pitch])
+    }
+  })
+}
 
 export function camelotOf(key: string | undefined): string | null {
   const text = (key ?? '').trim()
   if (text === '') return null
   const direct = text.match(CAMELOT)
   if (direct) return `${direct[1]}${direct[2].toUpperCase()}`
-  const major = MAJOR_NAMES.indexOf(text)
-  if (major >= 0) return MAJOR_CAMELOT[major]
-  const minor = MINOR_NAMES.indexOf(text)
-  if (minor >= 0) return MINOR_CAMELOT[minor]
-  return null
+  const worded = text.match(WORDED)
+  const name = worded ? `${worded[1]}${/^mi/i.test(worded[2]) ? 'm' : ''}` : text
+  return BY_NAME.get(name.toLowerCase()) ?? null
+}
+
+export function keyIn(key: string, notation: KeyNotation): string {
+  const camelot = camelotOf(key)
+  if (camelot === null) return key.trim()
+  if (notation === 'camelot') return camelot
+  const major = MAJOR_CAMELOT.indexOf(camelot)
+  return major >= 0 ? MAJOR_NAMES[major] : MINOR_NAMES[MINOR_CAMELOT.indexOf(camelot)]
 }
 
 function parts(key: string): { n: number; letter: string } {

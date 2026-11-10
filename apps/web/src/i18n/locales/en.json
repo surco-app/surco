@@ -3040,9 +3040,9 @@
           {
             "tab": "Editor",
             "setting": "Key notation",
-            "value": "Camelot (8A)",
+            "value": "Alphanumeric (8A)",
             "optional": true,
-            "note": "Or “Musical (Am)”. It's how the key from Beatport will be written."
+            "note": "Or “Classic (Am)”. It's how the key from Beatport will be written."
           }
         ],
         "steps": [

@@ -46,3 +46,11 @@ export const MINOR_CAMELOT = [
   '3A',
   '10A',
 ]
+
+export const ENHARMONIC: Record<number, string[]> = {
+  1: ['C#', 'Db'],
+  3: ['D#', 'Eb'],
+  6: ['F#', 'Gb'],
+  8: ['G#', 'Ab'],
+  10: ['A#', 'Bb'],
+}

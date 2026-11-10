@@ -43,8 +43,8 @@ export function nmlPatchOf(queued: QueuedNmlPatch): NmlPatch {
 }
 
 // The queue as flushTraktorSync uses it. Held patches go out on the queue's next quiet
-// apply, which waits for Traktor to close instead of asking again: the user has just
-// declined. Only a conversion patch counts as waiting; saved cues in the same queue are
+// apply, which waits for Traktor to close instead of asking: a conversion run leaves its
+// patches here rather than interrupting the DJ. Only a conversion patch counts as waiting; saved cues in the same queue are
 // checked against the collection when written and do not depend on a run's order, and
 // patches held for another collection wait in that collection's own queue.
 export function holdInQueue(

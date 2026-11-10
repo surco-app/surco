@@ -81,6 +81,7 @@ export function PlaylistTree({
   searchLabel,
   onlyIds,
   folderControl,
+  onRowKey,
 }: {
   tree: readonly SourceNode[]
   options: readonly PlaylistOption[]
@@ -94,6 +95,10 @@ export function PlaylistTree({
   searchLabel?: string
   onlyIds?: ReadonlySet<string>
   folderControl?: (node: SourceNode) => React.ReactNode
+  onRowKey?: (
+    key: string,
+    row: { target: RekordboxPlaylistTarget } | { node: SourceNode },
+  ) => boolean
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [query, setQuery] = useState('')
@@ -168,6 +173,12 @@ export function PlaylistTree({
     ) {
       e.preventDefault()
       setFolder(row.target.id, e.key === 'ArrowRight')
+    } else if (
+      onRowKey &&
+      (row?.kind === 'playlist' || row?.kind === 'folder') &&
+      onRowKey(e.key, row.kind === 'playlist' ? { target: row.target } : { node: row.node })
+    ) {
+      e.preventDefault()
     } else if (row?.kind === 'playlist' && e.key === ' ' && !control) {
       e.preventDefault()
       toggle(row.target)
@@ -241,9 +252,11 @@ export function PlaylistTree({
     const label = control ? (
       <div
         key={targetKey(row.target)}
+        ref={keep(i)}
+        tabIndex={-1}
         data-testid={`playlists-row-${targetKey(row.target)}`}
         style={{ paddingLeft: 8 + row.depth * 18 }}
-        className={`${ROW} h-auto min-h-7 flex-wrap justify-between gap-y-1 py-1 ${state === 'none' ? 'text-fg-muted' : 'text-fg'}`}
+        className={`${ROW} h-auto min-h-7 flex-wrap justify-between gap-y-1 py-1 outline-none focus:bg-[var(--color-hover)] ${state === 'none' ? 'text-fg-muted' : 'text-fg'}`}
       >
         <span className="w-3 shrink-0" />
         <span className="min-w-0 flex-1 truncate">{row.target.name}</span>

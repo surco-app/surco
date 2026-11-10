@@ -175,7 +175,7 @@ export const Toolbar = memo(function Toolbar({
   const note = !leftOut || libraryIdle ? null : leftOutNote(leftOut, tr)
   return (
     <header
-      className="flex h-12 shrink-0 items-center justify-between border-b border-[var(--color-line)] pr-3 pl-20"
+      className="flex h-12 shrink-0 items-center justify-between border-b border-[var(--color-line)] pr-3 pl-24"
       style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
     >
       {/* The sweeps' counters, spoken. Outside the buttons because a button flattens what

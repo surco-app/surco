@@ -3040,9 +3040,9 @@
           {
             "tab": "Editor",
             "setting": "Notación de la tonalidad",
-            "value": "Camelot (8A)",
+            "value": "Alfanumérica (8A)",
             "optional": true,
-            "note": "O «Musical (Am)». Es como se escribirá la tonalidad que trae Beatport."
+            "note": "O «Clásica (Am)». Es como se escribirá la tonalidad que trae Beatport."
           }
         ],
         "steps": [

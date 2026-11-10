@@ -606,3 +606,41 @@ describe('moving a node', () => {
     })
   })
 })
+
+describe("two playlists sharing a UUID, as when a DJ imports a friend's NML twice", () => {
+  const TWINS = DOC.replace('UUID="dnb"', 'UUID="fri"')
+  const idOf = (name: string) => {
+    const walk = (nodes: ReturnType<typeof readTraktorTree>): string | undefined =>
+      nodes.map((n) => (n.name === name ? n.id : walk(n.children ?? []))).find(Boolean)
+    return walk(readTraktorTree(TWINS)) as string
+  }
+
+  it('gives each its own id, the first keeping the UUID so nothing chosen before moves', () => {
+    expect(idOf('Friday')).toBe('fri')
+    expect(idOf('Drum & Bass')).not.toBe('fri')
+  })
+
+  it('reads the tracks of the playlist asked for, never those of its twin', () => {
+    expect(rows(TWINS, idOf('Drum & Bass'))).toEqual([])
+    expect(rows(TWINS, idOf('Friday'))).toEqual(['a.mp3', '|', 'a.mp3'])
+  })
+
+  it('writes into the playlist asked for and leaves its twin as it was', () => {
+    const target = idOf('Drum & Bass')
+    const { nml } = applyTraktorEdits(
+      TWINS,
+      [
+        {
+          id: 'twin',
+          kind: 'edit',
+          edit: { kind: 'add', playlistId: target, tracks: [{ paths: ['/m/b.mp3'] }] },
+          stamps: { [target]: traktorStamps(TWINS)[target] },
+          label: 'x',
+        },
+      ],
+      'HD',
+    )
+    expect(rows(nml, idOf('Drum & Bass'))).toEqual(['b.mp3'])
+    expect(rows(nml, 'fri')).toEqual(['a.mp3', '|', 'a.mp3'])
+  })
+})

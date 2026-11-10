@@ -83,7 +83,6 @@ import { LivePlayer } from './components/Player'
 import { RekordboxQueuePill } from './components/RekordboxQueuePill'
 import { ResizeHandle } from './components/ResizeHandle'
 import { SessionBand } from './components/SessionBand'
-import { SessionWhyLine } from './components/SessionWhyLine'
 import { type SessionDestination, SessionWizard } from './components/SessionWizard'
 import { SourceRail } from './components/SourceRail'
 import { flattenPlaylists, SourceTree } from './components/SourceTree'
@@ -176,7 +175,7 @@ import {
 import { deriveTagPatches } from './lib/deriveTags'
 import type { Destination } from './lib/destination'
 import { createDragDepth } from './lib/dragDepth'
-import { DEFAULT_REQUIRED_FIELDS, missingRequiredOf } from './lib/fields'
+import { missingRequiredOf, requiredFieldsOf } from './lib/fields'
 import { gridNote } from './lib/gridNote'
 import { pushImportNotice } from './lib/importNotices'
 import { mainErrorMessage } from './lib/ipcError'
@@ -1183,50 +1182,6 @@ export default function App(): React.JSX.Element {
     readLibraryRoles()
     setSessionWizard({ parentId: sessionRun.recent?.parentId ?? 'root', adjust: true })
   })
-  const sessionRecent =
-    sessionRun.recent && browser.playlist?.id === sessionRun.recent.playlistId
-      ? sessionRun.recent
-      : null
-  const sessionIndexByPath = useMemo(() => {
-    const byPath = new Map<string, number>()
-    sessionRecent?.plan.items.forEach((item, index) => {
-      const path = sessionRecent.refsById.get(item.track.id)?.paths[0]
-      if (path) byPath.set(path.normalize('NFC'), index)
-    })
-    return byPath
-  }, [sessionRecent])
-  const {
-    busy: sessionBusy,
-    alternatives: sessionAlternatives,
-    swap: swapSessionTrack,
-    toggleLock: toggleSessionLock,
-  } = sessionRun
-  const sessionNoteOf = useCallback(
-    (track: TrackItem) => {
-      const index = sessionIndexByPath.get(track.inputPath.normalize('NFC'))
-      if (!sessionRecent || index === undefined) return undefined
-      return (
-        <SessionWhyLine
-          why={sessionRecent.plan.items[index].why}
-          canChange={sessionRecent.pool.length > sessionRecent.plan.items.length}
-          busy={sessionBusy}
-          alternatives={() => sessionAlternatives(index)}
-          onPick={(picked) => void reportSession(swapSessionTrack(index, picked))}
-          locked={sessionRecent.locked.has(sessionRecent.plan.items[index].track.id)}
-          onToggleLock={() => toggleSessionLock(sessionRecent.plan.items[index].track.id)}
-        />
-      )
-    },
-    [
-      sessionRecent,
-      sessionIndexByPath,
-      sessionBusy,
-      sessionAlternatives,
-      swapSessionTrack,
-      toggleSessionLock,
-      reportSession,
-    ],
-  )
   const selectSource = useStableCallback((next: PlaylistSource | null) => {
     if (next === browser.source) return
     heldSelection.current = null
@@ -1944,13 +1899,16 @@ export default function App(): React.JSX.Element {
   // While audio plays, the Dock icon's engraved wave animates (macOS only).
   useDockPlayingIndicator(audioRef)
 
+  const requiredFields = useMemo(
+    () =>
+      requiredFieldsOf({
+        requiredFields: settings?.requiredFields,
+        importFields: settings?.importFields,
+      }),
+    [settings?.requiredFields, settings?.importFields],
+  )
   const canProcessSelected =
-    !!selected &&
-    canProcessTrack(
-      selected,
-      settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS,
-      settings?.customFields,
-    )
+    !!selected && canProcessTrack(selected, requiredFields, settings?.customFields)
   // Which library the membership check reads — the conversion destination's (Apple
   // Music or the Engine DJ database), or none for folder/overwrite conversions.
   const librarySource = useMemo(() => librarySourceOf(settings, isMacOS()), [settings])
@@ -2138,11 +2096,7 @@ export default function App(): React.JSX.Element {
   const filterFacts = useMemo<FilterFacts>(
     () => ({
       incomplete: (t) =>
-        missingRequiredOf(
-          t,
-          settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS,
-          settings?.customFields ?? [],
-        ).length > 0,
+        missingRequiredOf(t, requiredFields, settings?.customFields ?? []).length > 0,
       unsaved: (t) => {
         const contentId = playlistScope?.contentOf.get(t.id)
         return hasStagedEdits(t) || (contentId !== undefined && unsavedCues.has(contentId))
@@ -2156,7 +2110,7 @@ export default function App(): React.JSX.Element {
     [
       gridVerdicts,
       libraryCopyVerdicts,
-      settings?.requiredFields,
+      requiredFields,
       settings?.customFields,
       settings?.cueGridTolerance,
       playlistScope,
@@ -2275,14 +2229,8 @@ export default function App(): React.JSX.Element {
   // the click does: over every loaded track it read "81" behind a filter showing 79. The
   // editor footer reads this same gate for a multi-selection, so the two buttons agree.
   const gate = useMemo(
-    () =>
-      convertGate(
-        convertTracks,
-        settings?.requiredFields ?? DEFAULT_REQUIRED_FIELDS,
-        settings?.customFields,
-        libraryIndex,
-      ),
-    [convertTracks, settings?.requiredFields, settings?.customFields, libraryIndex],
+    () => convertGate(convertTracks, requiredFields, settings?.customFields, libraryIndex),
+    [convertTracks, requiredFields, settings?.customFields, libraryIndex],
   )
   const eligibleCount = gate.ready.length
   // Keyboard / continuous-playback navigation over the visible list (move + scroll paging).
@@ -3538,7 +3486,7 @@ export default function App(): React.JSX.Element {
   const reviewMode = review?.source === 'music' ? review.scope?.mode : undefined
   const reviewSource = useMemo(() => {
     const incomplete = {
-      required: () => settingsRef.current?.requiredFields ?? DEFAULT_REQUIRED_FIELDS,
+      required: () => requiredFieldsOf(settingsRef.current),
       customFields: () => settingsRef.current?.customFields ?? [],
       suggest: (row: TrackItem) =>
         acceptReviewPatch(
@@ -3895,7 +3843,6 @@ export default function App(): React.JSX.Element {
                                 busy={sessionRun.busy}
                                 playMinutes={sessionRun.recent.answers.playMinutes}
                                 preferCombos={sessionRun.recent.answers.preferCombos}
-                                locked={sessionRun.recent.locked.size}
                                 onRedo={() => void reportSession(sessionRun.redo())}
                                 onAdjust={openSessionAdjust}
                                 onKeep={() => {
@@ -3961,7 +3908,6 @@ export default function App(): React.JSX.Element {
                               reorder={reorder}
                               outsideFilter={outsideFilterIds}
                               noteOf={gridNoteOf}
-                              sessionNoteOf={sessionRecent ? sessionNoteOf : undefined}
                               onVisible={onListRowVisible}
                               rowRegistry={rowEls}
                               revealRowRef={revealRowRef}

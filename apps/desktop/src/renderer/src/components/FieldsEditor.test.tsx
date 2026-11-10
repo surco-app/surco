@@ -262,6 +262,16 @@ describe('FieldsEditor', () => {
 // Discogs setting. It used to live in Settings → Search under a Discogs heading, which
 // both buried it and implied it only applied to Discogs; it governs every provider.
 describe('auto-fill toggle', () => {
+  it('leaves Quality out of Required while Surco fills it, since the user has nothing to type', () => {
+    setup({ visibleFields: ['quality'], requiredFields: [], importFields: ['quality'] })
+    expect(screen.getByTestId('field-required-quality')).toBeDisabled()
+  })
+
+  it('lets Quality be required while its Auto is off, when only the user fills it', () => {
+    setup({ visibleFields: ['quality'], requiredFields: [], importFields: [] })
+    expect(screen.getByTestId('field-required-quality')).toBeEnabled()
+  })
+
   it('turns auto-fill on for a field that is off', () => {
     const { onChangeImport } = setup({ importFields: ['title'] })
     fireEvent.click(screen.getByTestId('field-auto-artist'))

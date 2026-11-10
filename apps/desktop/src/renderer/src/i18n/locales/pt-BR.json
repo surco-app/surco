@@ -22,8 +22,8 @@
     "role": {
       "title": "Papel para sessões",
     "of": "Papel de {{name}}",
-      "base": "Instrumentais (bases)",
-      "vocal": "Com voz (cantadas)",
+      "base": "Instrumentais",
+      "vocal": "Com voz",
       "any": "Misto"
     },
     "wizard": {
@@ -44,19 +44,22 @@
         "h3": "3 h",
         "other": "Outra",
         "customLabel": "Minutos",
-        "customInvalid": "Digite um número inteiro de minutos"
+        "customInvalid": "Digite um número inteiro de minutos",
+        "tracks_one": "Cerca de {{count}} faixa para preencher {{minutes}} min",
+        "tracks_other": "Cerca de {{count}} faixas para preencher {{minutes}} min"
       },
       "sources": {
         "heading": "De quais playlists saem as faixas?",
-        "hint": "Busque uma playlist e diga o que há nela. Use Misto para tracklists e sets, onde a ordem importa. O Surco lê essa ordem para achar combos.",
+        "hint": "Busque cada playlist e marque se ela tem Instrumentais, Com voz ou Misto. Misto é para suas tracklists e sets, onde a ordem importa. É ali que o Surco procura combos, pares como uma base e uma cantada que você tocou em sequência em duas ou mais mixagens. Para ir mais rápido, percorra a lista com as setas e aperte 1 para Instrumentais, 2 para Com voz ou 3 para Misto.",
         "search": "Buscar entre {{count}} playlists",
         "noHits": "Nenhuma playlist corresponde",
         "none": "Nenhuma playlist escolhida ainda",
-        "suggest": "Marcar pastas pelo nome ({{names}})",
         "onlyChosen": "Ver só as escolhidas",
         "allPlaylists": "Ver todas as playlists",
         "summary_one": "{{count}} playlist escolhida, até {{tracks}} faixas para escolher",
-        "summary_other": "{{count}} playlists escolhidas, até {{tracks}} faixas para escolher"
+        "summary_other": "{{count}} playlists escolhidas, até {{tracks}} faixas para escolher",
+        "short": "Dá para uns {{minutes}} min dos {{target}} que você pediu. Escolha outra playlist para chegar lá.",
+        "enough": "Dá para os {{target}} min que você pediu"
       },
       "fresh": {
         "hint": "Faixas novas são as adicionadas nos últimos 30 dias. Se o programa não guarda datas, as que não têm reproduções nem estrelas.",
@@ -65,15 +68,17 @@
       },
       "character": {
         "heading": "Como você quer?",
+        "chain": "Como encadeia",
+        "pick": "O que escolhe",
         "alternate": "Alternar instrumental e com voz",
-        "alternateHint": "Instrumental, com voz, instrumental, com voz",
+        "alternateHint": "Base, cantada, base, cantada. Vale mais que a mixagem harmônica quando as duas não cabem",
         "preferCombos": "Preferir combos comprovados",
-        "preferCombosHint": "O que você já tocou junto nos seus sets, primeiro",
+        "preferCombosHint": "Um combo é uma base e uma cantada que você tocou em sequência em duas ou mais das suas tracklists. O Surco junta as duas de novo",
         "tasteWeight": "O que você mais gosta",
         "tasteWeightHint": "Estrelas e reproduções pesam na escolha",
         "surprise": "Surpreenda-me",
         "surpriseHint": "Deixa espaço para pares que nunca tocaram juntos",
-        "noMixed": "Nenhuma playlist Mista foi escolhida, então não há ordem para ler os combos. Adicione uma no passo Playlists.",
+        "noMixed": "Para achar combos, marque como Misto uma playlist com suas tracklists ou sets no passo Playlists.",
         "play": "Tempo que cada faixa toca",
         "playValue": "{{minutes}} min",
         "playHint": "As faixas são mixadas, não tocam inteiras. É o que cada uma conta para a duração da sessão.",
@@ -106,8 +111,6 @@
       "redo": "Refazer",
       "adjust": "Ajustar…",
       "keep": "Ficar assim",
-    "locked_one": "{{count}} faixa fixada, Refazer a mantém",
-    "locked_other": "{{count}} faixas fixadas, Refazer as mantém",
     "kept": "Mantida como playlist normal",
       "short": "Só há faixas para {{minutes}} min",
     "counted": "Contado a {{minutes}} min por faixa. Os arquivos somam {{audio}}.",
@@ -117,32 +120,7 @@
       "assumed_other": "{{count}} faixas sem duração, contam como {{minutes}} min cada"
     },
     "playlistName": "Sessão de {{date}}",
-    "closed": "Feche seu programa de DJ para montar a sessão. Com ele aberto, a playlist ficaria pela metade",
-    "why": {
-      "start": "Onde a sessão começa",
-    "partner": "Tocou logo depois num set",
-      "combo_one": "Combo comprovado em {{count}} set",
-      "combo_other": "Combo comprovado em {{count}} sets",
-      "harmonicSame": "{{from}} → {{to}}, mesmo tom",
-      "harmonicRing": "{{from}} → {{to}}, mesmo anel",
-      "harmonicNeighbour": "{{from}} → {{to}}, vizinho",
-      "tasteRated": "Avaliada com {{stars}} de 5, entre as melhores que combinam",
-      "tastePlayed_one": "Tocada {{count}} vez, entre as mais tocadas que combinam",
-    "tastePlayed_other": "Tocada {{count}} vezes, entre as mais tocadas que combinam",
-      "bpm": "Combina pelo andamento",
-      "bpmRelaxed": "Nenhuma outra combinava, então o andamento muda mais que o normal",
-      "freshKey": "Nova. Combina pelo tom {{key}}",
-      "freshTempo": "Nova. Combina pelo andamento",
-      "chosen": "Escolhida por você",
-      "phaseOpen": "Para abrir, das suas playlists de abertura",
-      "phaseClose": "Para fechar, das suas playlists de encerramento",
-      "phaseMust": "Uma que você sempre toca",
-      "change": "Trocar",
-      "pick": "Trocar por",
-    "lock": "Fixar para o Refazer manter",
-    "unlock": "Soltar",
-    "noneFit": "Nenhuma outra combina aqui"
-    }
+    "closed": "Feche seu programa de DJ para montar a sessão. Com ele aberto, a playlist ficaria pela metade"
   },
   "pasteTracklist": {
     "title": "Colar tracklist em “{{name}}”",
@@ -1856,7 +1834,7 @@
     "showEditorHints": "Explicações em linha",
     "showEditorHintsHint": "Explicações de uma linha sob os controles do editor: o que cada modo faz e o que é o teto de picos. Desative quando já souber de cor.",
     "keyNotation": "Notação do tom",
-    "keyNotationHint": "Como a sugestão de tom detectado aparece abaixo do campo Tom. Camelot é o que os programas de DJ usam para ordenar.",
+    "keyNotationHint": "Como o tom aparece na lista de faixas e na sugestão abaixo do campo Tom. A alfanumérica, ou Camelot, é o que os programas de DJ usam para ordenar.",
     "sections": {
       "title": "Seções do editor",
       "hint": "Escolha quais seções começam abertas e a ordem delas abaixo do formulário de metadados.",
@@ -1878,8 +1856,8 @@
       "openHint": "Abre esta seção expandida ao abrir uma faixa."
     },
     "keyNotations": {
-      "camelot": "Camelot (8A)",
-      "musical": "Musical (Am)"
+      "camelot": "Alfanumérica (8A)",
+      "musical": "Clássica (Am)"
     },
     "shown": "Visíveis",
     "hidden": "Ocultos",

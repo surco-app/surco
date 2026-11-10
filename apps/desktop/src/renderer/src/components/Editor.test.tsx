@@ -1052,6 +1052,22 @@ describe('Editor convert button after choosing a DJ library in Settings', () => 
     await waitFor(() => expect(screen.getByTestId('process-btn')).toHaveTextContent('Engine DJ'))
   })
 
+  it('names Traktor as soon as the DJ confirms its collection.nml in Settings, without reopening the track', async () => {
+    const libraryStatus = vi.fn<Api['libraryStatus']>().mockResolvedValue(found(false, false))
+    Object.assign(window.api, { libraryStatus })
+    const { changeSettings } = renderEditor({ id: 'a' }, 'aiff', {
+      addToAppleMusic: false,
+      addToTraktor: true,
+    })
+    await waitFor(() => expect(libraryStatus).toHaveBeenCalled())
+    libraryStatus.mockResolvedValue({
+      ...found(false, false),
+      traktor: { enabled: true, found: true },
+    })
+    changeSettings({ traktorNmlPath: '/c/collection.nml' })
+    await waitFor(() => expect(screen.getByTestId('process-btn')).toHaveTextContent('Traktor'))
+  })
+
   it('names rekordbox as soon as the DJ points Settings at its master.db, without reopening the track', async () => {
     const libraryStatus = vi.fn<Api['libraryStatus']>().mockResolvedValue(found(false, false))
     Object.assign(window.api, { libraryStatus })
@@ -2312,12 +2328,22 @@ describe('Editor scroll edge', () => {
     renderEditor({ id: 'a' })
     scrolledTo(screen.getByTestId('editor-scroll'), 0)
     expect(screen.getByTestId('editor-scroll')).toHaveAttribute('data-edge', 'true')
+    expect(screen.getByTestId('editor-scroll-fade')).toBeVisible()
   })
 
   it('clears the fade once the last section is in view', () => {
     renderEditor({ id: 'a' })
     scrolledTo(screen.getByTestId('editor-scroll'), 600)
     expect(screen.getByTestId('editor-scroll')).toHaveAttribute('data-edge', 'false')
+    expect(screen.getByTestId('editor-scroll-fade')).not.toBeVisible()
+  })
+
+  it('paints the fade as a layer beside the scroller, so a dialog opened inside it is never clipped', () => {
+    renderEditor({ id: 'a' })
+    scrolledTo(screen.getByTestId('editor-scroll'), 0)
+    expect(screen.getByTestId('editor-scroll')).not.toContainElement(
+      screen.getByTestId('editor-scroll-fade'),
+    )
   })
 })
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildSession, type SessionOptions, swapAt } from './sessionBuild'
+import { buildSession, type SessionOptions } from './sessionBuild'
 import type { SessionTrack } from './sessionTypes'
 
 function track(id: string, secs: number): SessionTrack {
@@ -63,13 +63,6 @@ describe('session length when tracks are mixed and not played whole', () => {
     const plan = buildSession(many(10, 360), new Map(), options())
     expect(plan.summary.secs).toBe(1800)
     expect(plan.summary.shortBySecs).toBe(1800)
-  })
-
-  it('keeps counting played time when a track is swapped', () => {
-    const plan = buildSession(many(60, 360), new Map(), options())
-    const swapped = swapAt(plan, 0, track('short', 90), 3600, 180)
-    expect(swapped.summary.secs).toBe(3600 - 180 + 90)
-    expect(swapped.summary.shortBySecs).toBe(90)
   })
 
   it('also adds up the real length of the files, which is more than the time counted', () => {

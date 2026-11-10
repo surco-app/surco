@@ -3,9 +3,10 @@ import type { TrackItem } from '../types'
 import { csvHas, splitCsv, toggleCsv } from './csv'
 
 // The release-level fields, the ones every track on an album shares, so setting one
-// across a multi-selection is meaningful. Per-track fields (title, trackNumber, bpm,
-// key, comment, remixArtist) are deliberately excluded: applying one value to all
-// would overwrite genuinely different data rather than fill in a shared blank.
+// across a multi-selection is meaningful, plus Comment, which a batch of downloads shares
+// as a site's note to wipe. Per-track fields (title, trackNumber, bpm, key, remixArtist)
+// are deliberately excluded: applying one value to all would overwrite genuinely
+// different data rather than fill in a shared blank.
 export const BULK_FIELDS: MetaTextKey[] = [
   'artist',
   'albumArtist',
@@ -20,6 +21,7 @@ export const BULK_FIELDS: MetaTextKey[] = [
   'catalogNumber',
   'discNumber',
   'trackTotal',
+  'comment',
 ]
 
 // The value every selected track shares for a field, or undefined when they disagree.

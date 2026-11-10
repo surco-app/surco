@@ -24,7 +24,6 @@ export function SessionBand({
   busy,
   playMinutes,
   preferCombos,
-  locked,
   onRedo,
   onAdjust,
   onKeep,
@@ -33,7 +32,6 @@ export function SessionBand({
   busy: boolean
   playMinutes: number
   preferCombos: boolean
-  locked: number
   onRedo: () => void
   onAdjust: () => void
   onKeep: () => void
@@ -44,7 +42,7 @@ export function SessionBand({
     <section
       data-testid="session-band"
       aria-label={tr('sessions.band.title')}
-      className="mx-3 mb-2 flex flex-col gap-2 rounded-[10px] border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-3"
+      className="mx-3 my-2 flex flex-col gap-2 rounded-[10px] border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-3"
     >
       <h2 className="flex items-center gap-2 text-[13px] font-semibold">
         <Sparkles className="h-3.5 w-3.5 text-[var(--color-accent)]" aria-hidden="true" />
@@ -79,11 +77,6 @@ export function SessionBand({
       {preferCombos && summary.combos === 0 && (
         <p data-testid="session-band-nocombos" className="text-xs text-fg-dim">
           {tr('sessions.band.noCombos')}
-        </p>
-      )}
-      {locked > 0 && (
-        <p data-testid="session-band-locked" className="text-xs text-fg-dim">
-          {tr('sessions.band.locked', { count: locked })}
         </p>
       )}
       {summary.shortBySecs > 0 && (

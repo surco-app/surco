@@ -44,19 +44,22 @@
         "h3": "3 Std.",
         "other": "Andere",
         "customLabel": "Minuten",
-        "customInvalid": "Gib eine ganze Zahl in Minuten ein"
+        "customInvalid": "Gib eine ganze Zahl in Minuten ein",
+        "tracks_one": "Etwa {{count}} Track, um {{minutes}} Min. zu füllen",
+        "tracks_other": "Etwa {{count}} Tracks, um {{minutes}} Min. zu füllen"
       },
       "sources": {
         "heading": "Aus welchen Playlists sollen die Tracks kommen?",
-        "hint": "Suche eine Playlist und gib an, was sie enthält. Nimm Gemischt für Tracklists und Sets, bei denen die Reihenfolge zählt. Surco liest sie, um Combos zu finden.",
+        "hint": "Suche jede Playlist und markiere, ob sie Instrumentals, Gesang oder Gemischt enthält. Gemischt ist für deine Tracklists und Sets, bei denen die Reihenfolge zählt. Dort sucht Surco nach Combos, also Paaren wie einem Instrumental und einem Gesangstrack, die du in zwei oder mehr Mixen direkt nacheinander gespielt hast. Schneller geht es mit den Pfeiltasten durch die Liste und 1 für Instrumentals, 2 für Gesang oder 3 für Gemischt.",
         "search": "Unter {{count}} Playlists suchen",
         "noHits": "Keine Playlist passt",
         "none": "Noch keine Playlist ausgewählt",
-        "suggest": "Ordner nach Namen markieren ({{names}})",
         "onlyChosen": "Nur die gewählten zeigen",
         "allPlaylists": "Alle Playlists zeigen",
         "summary_one": "{{count}} Playlist gewählt, bis zu {{tracks}} Tracks zur Auswahl",
-        "summary_other": "{{count}} Playlists gewählt, bis zu {{tracks}} Tracks zur Auswahl"
+        "summary_other": "{{count}} Playlists gewählt, bis zu {{tracks}} Tracks zur Auswahl",
+        "short": "Reicht für etwa {{minutes}} der gewünschten {{target}} Min. Wähle eine weitere Playlist, um sie zu erreichen.",
+        "enough": "Reicht für die gewünschten {{target}} Min."
       },
       "fresh": {
         "hint": "Neu sind Tracks, die in den letzten 30 Tagen hinzugekommen sind. Speichert das Programm keine Daten, sind es Tracks ohne Wiedergaben und Sterne.",
@@ -65,15 +68,17 @@
       },
       "character": {
         "heading": "Wie soll sie werden?",
+        "chain": "Wie es verkettet",
+        "pick": "Was ausgewählt wird",
         "alternate": "Instrumental und Gesang abwechseln",
-        "alternateHint": "Instrumental, Gesang, Instrumental, Gesang",
+        "alternateHint": "Instrumental, Gesang, Instrumental, Gesang. Hat Vorrang vor dem harmonischen Mixen, wenn nicht beides passt",
         "preferCombos": "Bewährte Combos bevorzugen",
-        "preferCombosHint": "Was du in deinen Sets zusammen gespielt hast, zuerst",
+        "preferCombosHint": "Ein Combo ist ein Instrumental und ein Gesangstrack, die du in zwei oder mehr deiner Tracklists direkt nacheinander gespielt hast. Surco bringt sie wieder zusammen",
         "tasteWeight": "Was dir am besten gefällt",
         "tasteWeightHint": "Sterne und Wiedergaben zählen bei der Auswahl",
         "surprise": "Überrasch mich",
         "surpriseHint": "Lässt Platz für Paare, die nie zusammen gespielt wurden",
-        "noMixed": "Es ist keine gemischte Playlist gewählt, also gibt es keine Reihenfolge für Combos. Füge im Schritt Playlists eine hinzu.",
+        "noMixed": "Um Combos zu finden, markiere im Schritt Playlists eine Playlist mit deinen Tracklists oder Sets als Gemischt.",
         "play": "Spielzeit pro Track",
         "playValue": "{{minutes}} Min.",
         "playHint": "Tracks werden gemixt und nicht ganz gespielt. So lange zählt jeder für die Länge der Session.",
@@ -106,8 +111,6 @@
       "redo": "Neu würfeln",
       "adjust": "Anpassen…",
       "keep": "So behalten",
-    "locked_one": "{{count}} Track fixiert, Neu würfeln behält ihn",
-    "locked_other": "{{count}} Tracks fixiert, Neu würfeln behält sie",
     "kept": "Bleibt als normale Playlist erhalten",
       "short": "Nur genug Tracks für {{minutes}} Min.",
     "counted": "Gezählt mit {{minutes}} Min. pro Track. Die Dateien dauern zusammen {{audio}}.",
@@ -117,32 +120,7 @@
       "assumed_other": "{{count}} Tracks ohne Länge, zählen je als {{minutes}} Min."
     },
     "playlistName": "Session vom {{date}}",
-    "closed": "Schließe dein DJ-Programm, um die Session zu erstellen. Bei geöffnetem Programm bliebe die Playlist unvollständig",
-    "why": {
-      "start": "Hier beginnt die Session",
-    "partner": "Lief in einem Set direkt danach",
-      "combo_one": "Bewährte Combo in {{count}} Set",
-      "combo_other": "Bewährte Combo in {{count}} Sets",
-      "harmonicSame": "{{from}} → {{to}}, gleiche Tonart",
-      "harmonicRing": "{{from}} → {{to}}, gleicher Ring",
-      "harmonicNeighbour": "{{from}} → {{to}}, Nachbar",
-      "tasteRated": "Mit {{stars}} von 5 bewertet, eine der besten, die passen",
-      "tastePlayed_one": "{{count}}-mal gespielt, einer der meistgespielten, die passen",
-    "tastePlayed_other": "{{count}}-mal gespielt, einer der meistgespielten, die passen",
-      "bpm": "Passt vom Tempo her",
-      "bpmRelaxed": "Nichts anderes passte, daher ändert sich das Tempo stärker als üblich",
-      "freshKey": "Neu. Passt zur Tonart {{key}}",
-      "freshTempo": "Neu. Passt vom Tempo her",
-      "chosen": "Von dir gewählt",
-      "phaseOpen": "Zum Einstieg, aus deinen Warm-up-Playlists",
-      "phaseClose": "Zum Schluss, aus deinen Abschluss-Playlists",
-      "phaseMust": "Einer, den du immer spielst",
-      "change": "Ändern",
-      "pick": "Ändern zu",
-    "lock": "Fixieren, damit Neu würfeln den Track behält",
-    "unlock": "Lösen",
-    "noneFit": "Hier passt sonst nichts"
-    }
+    "closed": "Schließe dein DJ-Programm, um die Session zu erstellen. Bei geöffnetem Programm bliebe die Playlist unvollständig"
   },
   "pasteTracklist": {
     "title": "Tracklist in „{{name}}“ einfügen",
@@ -1856,7 +1834,7 @@
     "showEditorHints": "Erklärungen im Editor",
     "showEditorHintsHint": "Einzeilige Erklärungen unter den Editor-Reglern: was jeder Modus tut und was die Peak-Obergrenze ist. Ausschalten, wenn du sie auswendig kennst.",
     "keyNotation": "Tonart-Notation",
-    "keyNotationHint": "Wie der erkannte Tonart-Vorschlag unter dem Feld Tonart angezeigt wird. Camelot ist das, wonach DJ-Software sortiert.",
+    "keyNotationHint": "Wie die Tonart in der Titelliste und im Vorschlag unter dem Feld Tonart angezeigt wird. Alphanumerisch, auch Camelot genannt, ist das, wonach DJ-Software sortiert.",
     "sections": {
       "title": "Editor-Abschnitte",
       "hint": "Wähle, welche Abschnitte geöffnet starten und ihre Reihenfolge unter dem Metadaten-Formular.",
@@ -1878,8 +1856,8 @@
       "openHint": "Öffnet diesen Abschnitt aufgeklappt, wenn du einen Track öffnest."
     },
     "keyNotations": {
-      "camelot": "Camelot (8A)",
-      "musical": "Musikalisch (Am)"
+      "camelot": "Alphanumerisch (8A)",
+      "musical": "Klassisch (Am)"
     },
     "shown": "Angezeigt",
     "hidden": "Ausgeblendet",

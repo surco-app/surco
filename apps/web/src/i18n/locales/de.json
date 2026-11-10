@@ -3040,9 +3040,9 @@
           {
             "tab": "Editor",
             "setting": "Tonart-Notation",
-            "value": "Camelot (8A)",
+            "value": "Alphanumerisch (8A)",
             "optional": true,
-            "note": "Oder „Musikalisch (Am)“. So wird die Tonart von Beatport geschrieben."
+            "note": "Oder „Klassisch (Am)“. So wird die Tonart von Beatport geschrieben."
           }
         ],
         "steps": [

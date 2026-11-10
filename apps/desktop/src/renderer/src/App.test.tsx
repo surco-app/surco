@@ -10423,21 +10423,6 @@ describe('automatic session from the tree', () => {
       expect(screen.queryByTestId('session-band')).not.toBeInTheDocument()
     })
 
-    it('locks a track from its row and says so in the band, and unlocks it with another press', async () => {
-      openRekordboxTree({}, WITH_EMPTIED)
-      await openFill()
-      fireEvent.click(screen.getByTestId('session-wizard-build'))
-      const lock = await screen.findByTestId('session-why-lock')
-      expect(screen.queryByTestId('session-band-locked')).not.toBeInTheDocument()
-      fireEvent.click(lock)
-      expect(await screen.findByTestId('session-band-locked')).toBeInTheDocument()
-      expect(screen.getByTestId('session-why-lock')).toHaveAttribute('aria-pressed', 'true')
-      fireEvent.click(screen.getByTestId('session-why-lock'))
-      await waitFor(() =>
-        expect(screen.queryByTestId('session-band-locked')).not.toBeInTheDocument(),
-      )
-    })
-
     it('shows the band over it, so it can be redone', async () => {
       openRekordboxTree({}, WITH_EMPTIED)
       await openFill()

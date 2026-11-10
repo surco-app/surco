@@ -34,6 +34,7 @@ import { replaceRekordboxDuplicates } from './rekordboxDuplicates'
 import { type FlushResult, flushRekordboxSync, REKORDBOX_KEYS } from './rekordboxFlush'
 import { repointTracks } from './rekordboxLibrary'
 import { findRekordboxCollection } from './rekordboxPath'
+import { isRekordboxRunning } from './rekordboxProcess'
 import type { RekordboxQueue } from './rekordboxQueue'
 import { libraryTrackOps, queueConversionRun, trackOpsFromRun } from './rekordboxQueueFromRun'
 import type { QueueOp } from './rekordboxQueueOps'
@@ -53,6 +54,7 @@ import {
 } from './traktorNmlLibrary'
 import { holdInQueue } from './traktorPatchQueue'
 import { traktorCollectionIndex } from './traktorPlaylists'
+import { isTraktorRunning } from './traktorProcess'
 import { flushTraktorSync } from './traktorSyncFlush'
 import { sourceRoot } from './usbExport'
 import { type FlushOutcome, type TraktorWrite, traktorPatchKey } from './verifyRegistry'
@@ -86,6 +88,10 @@ export type Sessions = Record<WritableProgram, SessionBackup>
 
 // A collection can live on an external drive. Gone because that drive is not mounted, it
 // comes back when the drive does, unlike one deleted from a disk that is there.
+function closedWithoutAsking(isRunning: () => Promise<boolean>): () => Promise<boolean> {
+  return async () => !(await isRunning().catch(() => true))
+}
+
 function onUnpluggedDrive(path: string): boolean {
   const root = path ? sourceRoot(path, process.platform) : null
   return root !== null && !existsSync(root)
@@ -391,6 +397,10 @@ function traktorConversionFlusher(
       let traktorLater = false
       await flushTraktorSync({
         ...traktorDeps,
+        ...(traktorHold && {
+          ensureTraktorClosed: closedWithoutAsking(isTraktorRunning),
+          showBlockedDialog: () => {},
+        }),
         endNmlBatch: () => {
           patches = endNmlBatch()
           traktorLater = nmlBatchOpen()
@@ -463,6 +473,7 @@ function rekordboxConversionFlusher(
         flushRepoints: async (list) => {
           const result = await flushRekordboxSync({
             ...rekordbox,
+            ensureClosed: closedWithoutAsking(isRekordboxRunning),
             unplugged: rekordboxUnplugged,
             showBlockedDialog: () => {},
             endBatch: () => list,
@@ -516,7 +527,7 @@ function engineConversionFlusher(
       const engineResult = await flushEngineSync({
         ...engineDeps,
         ...(engineQueue && {
-          ensureClosed: async () => !(await isEngineDjRunning().catch(() => true)),
+          ensureClosed: closedWithoutAsking(isEngineDjRunning),
           showBlockedDialog: () => {},
           unplugged: engineUnplugged,
         }),

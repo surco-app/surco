@@ -1,4 +1,8 @@
 import { effectiveMeta, fieldValue } from '../../../shared/customFields'
+import {
+  normalizeImportFields,
+  DEFAULT_REQUIRED_FIELDS as REQUIRED_BY_DEFAULT,
+} from '../../../shared/defaults'
 import type {
   CustomField,
   MetaTextKey,
@@ -168,6 +172,19 @@ export function withPlaylistField(
 ): string[] | null {
   if (!available || offered) return null
   return [...visibleFields.filter((k) => k !== field), field]
+}
+
+export function filledBySurco(key: string, importFields: readonly string[]): boolean {
+  return key === 'quality' && importFields.includes('quality')
+}
+
+export function requiredFieldsOf(
+  settings: { requiredFields?: string[]; importFields?: string[] } | null | undefined,
+): string[] {
+  const importFields = normalizeImportFields(settings?.importFields)
+  return (settings?.requiredFields ?? REQUIRED_BY_DEFAULT).filter(
+    (key) => !filledBySurco(key, importFields),
+  )
 }
 
 export function missingRequired(meta: TrackMetadata, requiredFields: string[]): string[] {

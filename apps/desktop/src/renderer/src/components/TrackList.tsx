@@ -25,6 +25,7 @@ import {
   useState,
 } from 'react'
 import { useTranslation } from 'react-i18next'
+import { keyIn } from '../../../shared/camelot'
 import { matchChord } from '../../../shared/shortcutDefaults'
 import { type Chord, eventToChord } from '../../../shared/shortcuts'
 import type { OutputFormat } from '../../../shared/types'
@@ -51,6 +52,7 @@ import {
 import { rowDisplay } from '../lib/rowDisplay'
 import type { ClickMods } from '../lib/selection'
 import { hasStagedEdits } from '../lib/sessionEdits'
+import { useAppSettings } from '../lib/settingsContext'
 import { sourceFormat, type TrackQuality, trackQuality, unanalysedIn } from '../lib/triage'
 import type { TrackItem } from '../types'
 import { CleanSpark } from './CleanSpark'
@@ -118,7 +120,6 @@ interface Props {
   // drawn dimmed so they read as handled until the next filter refresh drops them.
   outsideFilter?: ReadonlySet<string>
   noteOf?: (track: TrackItem) => GridNote | undefined
-  sessionNoteOf?: (track: TrackItem) => React.ReactNode
   // Rows a playlist breaks before (lib/playlistView), each separator under its own key and
   // drawn as a dashed line above the row. Only passed while the list shows a playlist in
   // its own order: under any other sort the breaks would land between unrelated rows.
@@ -371,7 +372,6 @@ interface RowProps {
   outsideFilter: boolean
   played: boolean
   note?: GridNote
-  sessionNote?: React.ReactNode
 }
 
 // Memoized so a progress event — which replaces only the updated track's object
@@ -407,7 +407,6 @@ const TrackRow = memo(function TrackRow({
   outsideFilter,
   played,
   note,
-  sessionNote,
 }: RowProps): React.JSX.Element {
   const { t: tr, i18n } = useTranslation()
   const quality = trackQuality(t)
@@ -523,6 +522,8 @@ const TrackRow = memo(function TrackRow({
   const stage = t.status === 'processing' ? t.stage : undefined
   const converting = stage !== undefined
   const shown = rowDisplay(t)
+  const { keyNotation } = useAppSettings()
+  const key = t.meta.key ? keyIn(t.meta.key, keyNotation) : ''
   const unanalyzed = unanalysedIn(t)
   // Shared by each mark's hover tooltip and its sr-only twin, so what a screen reader
   // hears is the same sentence the pointer reveals.
@@ -888,6 +889,14 @@ const TrackRow = memo(function TrackRow({
                 {/* A fixed slot, right-aligned under the duration, so the two read as one
                     trailing column and the review sparkle's place never moves. Wide enough for
                     the pill with its shape, so a tinted FLAC and a bare MP3 end on the same edge. */}
+                {key && (
+                  <span
+                    data-testid="track-key"
+                    className={`shrink-0 whitespace-nowrap rounded px-[5px] text-fg-dim ring-1 ring-[var(--color-line-strong)] ring-inset ${PILL_TEXT}`}
+                  >
+                    {key}
+                  </span>
+                )}
                 {quality !== 'unanalyzed' && quality !== 'good' && (
                   <span
                     data-testid="track-quality-word"
@@ -1070,7 +1079,6 @@ const TrackRow = memo(function TrackRow({
             {tr('trackList.remove')}
           </button>
         )}
-        {sessionNote && <div className="pr-3 pb-1.5 pl-[86px]">{sessionNote}</div>}
       </div>
     </div>
   )
@@ -1108,7 +1116,6 @@ export const TrackList = memo(function TrackList({
   duplicateRankById,
   outsideFilter,
   noteOf,
-  sessionNoteOf,
   separatorBefore,
   trailingSeparators,
   reorder,
@@ -1400,7 +1407,6 @@ export const TrackList = memo(function TrackList({
         outsideFilter={outsideFilter?.has(t.id) ?? false}
         played={playedPaths?.has(t.inputPath) ?? false}
         note={noteOf?.(t)}
-        sessionNote={sessionNoteOf?.(t)}
       />
     </Fragment>
   )

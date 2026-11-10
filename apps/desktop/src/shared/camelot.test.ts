@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { camelotDistance, camelotOf } from './camelot'
+import { camelotDistance, camelotOf, keyIn } from './camelot'
 
 describe('camelotOf', () => {
   it('keeps a Camelot key and strips a leading zero', () => {
@@ -12,6 +12,23 @@ describe('camelotOf', () => {
     expect(camelotOf('C')).toBe('8B')
     expect(camelotOf('F#')).toBe('2B')
     expect(camelotOf('Ebm')).toBe('2A')
+  })
+
+  it('reads either spelling of a key and any case, as the sort by key already does, so a tag from another program still mixes harmonically', () => {
+    expect(camelotOf('Abm')).toBe('1A')
+    expect(camelotOf('G#m')).toBe('1A')
+    expect(camelotOf('Db')).toBe('3B')
+    expect(camelotOf('C#')).toBe('3B')
+    expect(camelotOf('a#m')).toBe('3A')
+    expect(camelotOf('am')).toBe('8A')
+  })
+
+  it('reads a key written with major or minor in words, the way Beatport and other programs tag it', () => {
+    expect(camelotOf('Gbmin')).toBe('11A')
+    expect(camelotOf('Ab Major')).toBe('4B')
+    expect(camelotOf('A minor')).toBe('8A')
+    expect(camelotOf('F# maj')).toBe('2B')
+    expect(camelotOf('C#MIN')).toBe('12A')
   })
 
   it('returns null for anything it cannot read, so a track without a key is never guessed', () => {
@@ -41,5 +58,21 @@ describe('camelotDistance', () => {
   it('is null when either side has no key', () => {
     expect(camelotDistance(null, '8A')).toBeNull()
     expect(camelotDistance('8A', null)).toBeNull()
+  })
+})
+
+describe('keyIn', () => {
+  it('writes the key the way the DJ chose in Settings, whichever way the tag spells it', () => {
+    expect(keyIn('Am', 'camelot')).toBe('8A')
+    expect(keyIn('08A', 'camelot')).toBe('8A')
+    expect(keyIn('8A', 'musical')).toBe('Am')
+    expect(keyIn('11b', 'musical')).toBe('A')
+    expect(keyIn(' F#m ', 'musical')).toBe('F#m')
+    expect(keyIn('Abm', 'camelot')).toBe('1A')
+    expect(keyIn('Abm', 'musical')).toBe('G#m')
+  })
+
+  it('shows a key it cannot read as the tag has it, so nothing on the row is made up', () => {
+    expect(keyIn(' 6m ', 'musical')).toBe('6m')
   })
 })

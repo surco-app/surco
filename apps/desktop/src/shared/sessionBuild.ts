@@ -12,8 +12,6 @@ export interface SessionOptions {
   freshShare: number
   surprise: boolean
   seed: number
-  pinned?: readonly { index: number; trackId: string }[]
-  fixedLength?: number
   startWith?: string
   tempoTight?: number
   tempoWide?: number
@@ -29,7 +27,7 @@ export type SessionWhy =
   | { kind: 'bpm'; relaxed: boolean }
   | { kind: 'fresh'; key: string | null; role: TrackRole }
   | { kind: 'chosen' }
-  | { kind: 'phase'; phase: 'open' | 'close' | 'must' }
+  | { kind: 'phase'; phase: 'open' | 'close' }
 
 export interface SessionItem {
   track: SessionTrack
@@ -113,20 +111,6 @@ export function tasteOf(track: SessionTrack, maxPlays: number, enabled: boolean)
   return track.rating / 100 + (maxPlays > 0 ? PLAYS_WEIGHT * (track.plays / maxPlays) : 0)
 }
 
-export function transitionFits(
-  from: SessionTrack,
-  to: SessionTrack,
-  options: Pick<SessionOptions, 'harmony' | 'alternate'>,
-  tempoLimit: number,
-): boolean {
-  if (!harmonyAllows(options.harmony, camelotDistance(from.key, to.key))) return false
-  const gap = tempoGap(from, to)
-  if (gap !== null && gap > tempoLimit) return false
-  return !options.alternate || from.role === 'any' || to.role === 'any' || from.role !== to.role
-}
-
-export const TEMPO_LIMITS = { tight: TEMPO_TIGHT, wide: TEMPO_WIDE } as const
-
 function freshSlots(goal: number, estimated: number): number[] {
   return Array.from({ length: goal }, (_, k) =>
     Math.max(1, Math.round(((k + 1) * estimated) / (goal + 1))),
@@ -148,18 +132,10 @@ export function buildSession(
   const maxPlays = eligible.reduce((most, track) => Math.max(most, track.plays), 0)
   const target = options.minutes * 60
   const poolById = new Map(pool.map((track) => [track.id, track]))
-  const pins = new Map<number, SessionTrack>()
-  for (const pin of options.pinned ?? []) {
-    const pinned = poolById.get(pin.trackId)
-    if (pinned && pin.index >= 0 && pin.index < (options.fixedLength ?? 0))
-      pins.set(pin.index, pinned)
-  }
-  const fixed = pins.size > 0 ? (options.fixedLength ?? 0) : 0
-  const used = new Set<string>([...pins.values()].map((track) => track.id))
-  const songs = new Set<string>([...pins.values()].flatMap((track) => track.song ?? []))
+  const used = new Set<string>()
+  const songs = new Set<string>()
   const isOpen = (track: SessionTrack): boolean =>
     !used.has(track.id) && !(track.song !== undefined && songs.has(track.song))
-  let avoid: TrackRole | null = null
   const items: SessionItem[] = []
   let total = 0
   let expected: TrackRole | null = null
@@ -202,8 +178,9 @@ export function buildSession(
   }
 
   const phaseDue = (track: SessionTrack): SessionWhy | null => {
-    if (track.phase !== undefined && inPhase(track)) return { kind: 'phase', phase: track.phase }
-    return track.must ? { kind: 'phase', phase: 'must' } : null
+    return track.phase !== undefined && inPhase(track)
+      ? { kind: 'phase', phase: track.phase }
+      : null
   }
 
   const phaseWeight = (track: SessionTrack): number => {
@@ -235,14 +212,11 @@ export function buildSession(
   const roleFits = (track: SessionTrack): boolean => {
     if (!options.alternate) return true
     if (track.role === 'any') return !strict
-    if (avoid !== null && track.role === avoid) return false
     return expected === null || track.role === expected
   }
 
   const roleOrNeutral = (track: SessionTrack): boolean =>
-    !options.alternate ||
-    track.role === 'any' ||
-    ((avoid === null || track.role !== avoid) && (expected === null || track.role === expected))
+    !options.alternate || track.role === 'any' || expected === null || track.role === expected
 
   const take = (track: SessionTrack, why: SessionWhy): void => {
     used.add(track.id)
@@ -324,17 +298,15 @@ export function buildSession(
     }
   }
 
-  const nextByFit = (
-    current: SessionTrack,
-    onlyWithoutCombo: boolean,
-    harmony: SessionOptions['harmony'] = options.harmony,
-  ): SessionItem | null => {
+  const nextByFit = (current: SessionTrack, onlyWithoutCombo: boolean): SessionItem | null => {
     const open = eligible.filter(
       (track) => isOpen(track) && !(onlyWithoutCombo && combos.get(current.id)?.has(track.id)),
     )
-    let fit = fitTier(current, open, roleFits, true, harmony)
-    if (fit.tier.length === 0) fit = fitTier(current, open, roleOrNeutral, true, harmony)
-    if (fit.tier.length === 0) fit = fitTier(current, open, () => true, true, harmony)
+    let fit = fitTier(current, open, roleFits, true)
+    if (fit.tier.length === 0 && options.alternate)
+      fit = fitTier(current, open, roleFits, true, 'free')
+    if (fit.tier.length === 0) fit = fitTier(current, open, roleOrNeutral, true)
+    if (fit.tier.length === 0) fit = fitTier(current, open, () => true, true)
     const { tier, relaxed } = fit
     if (tier.length === 0) return null
     const chosen = pickWeighted(
@@ -407,29 +379,7 @@ export function buildSession(
   const openingWhy = (track: SessionTrack): SessionWhy =>
     track.phase === 'open' ? { kind: 'phase', phase: 'open' } : { kind: 'start' }
 
-  if (fixed > 0) {
-    for (let i = 0; i < fixed; i++) {
-      const pin = pins.get(i)
-      if (pin) {
-        take(pin, { kind: 'chosen' })
-        continue
-      }
-      const after = pins.get(i + 1)
-      avoid = options.alternate && after && after.role !== 'any' ? after.role : null
-      const current = items[items.length - 1]?.track
-      if (!current) {
-        const first = opening()
-        if (first) take(first, openingWhy(first))
-      } else {
-        const next = pickNext(current) ?? nextByFit(current, false, 'free')
-        if (next) {
-          if (next.why.kind === 'fresh') placedFresh++
-          take(next.track, next.why)
-        }
-      }
-      avoid = null
-    }
-  } else if (eligible.length > 0) {
+  if (eligible.length > 0) {
     const asked = options.startWith ? poolById.get(options.startWith) : undefined
     const first = asked ?? opening()
     if (first) take(first, asked ? { kind: 'chosen' } : openingWhy(first))
@@ -469,18 +419,4 @@ export function summarizeSession(
     missingDurations: items.filter((item) => item.track.secs <= 0).length,
     audioSecs: items.reduce((sum, item) => sum + Math.max(0, item.track.secs), 0),
   }
-}
-
-export function swapAt(
-  plan: SessionPlan,
-  index: number,
-  track: SessionTrack,
-  targetSecs: number,
-  playSecs: number,
-): SessionPlan {
-  if (index < 0 || index >= plan.items.length) return plan
-  const items = plan.items.map((item, i) =>
-    i === index ? { track, why: { kind: 'chosen' } as const } : item,
-  )
-  return { items, summary: summarizeSession(items, targetSecs, playSecs) }
 }

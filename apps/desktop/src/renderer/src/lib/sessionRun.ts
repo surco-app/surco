@@ -17,15 +17,9 @@ export interface SessionRun {
   learned: LearnedMixing
 }
 
-export interface SessionPins {
-  pinned: readonly { index: number; trackId: string }[]
-  length: number
-}
-
 export function sessionOptionsOf(
   answers: SessionAnswers,
   seed: number,
-  pins?: SessionPins,
   startWith?: string,
 ): SessionOptions {
   return {
@@ -38,7 +32,6 @@ export function sessionOptionsOf(
     freshShare: answers.freshShare,
     surprise: answers.surprise,
     seed,
-    ...(pins && { pinned: pins.pinned, fixedLength: pins.length }),
     ...(startWith && { startWith }),
   }
 }
@@ -49,7 +42,6 @@ export function runSession(input: {
   rows: ReadonlyMap<string, readonly SourcePlaylistEntry[]>
   seed: number
   library?: Readonly<Record<string, 'base' | 'vocal'>>
-  pins?: SessionPins
   startPath?: string
   made?: ReadonlySet<string>
   phases?: Readonly<Record<string, SessionPhase>>
@@ -60,7 +52,6 @@ export function runSession(input: {
     rows,
     seed,
     library = {},
-    pins,
     startPath,
     made = new Set(),
     phases = {},
@@ -69,8 +60,10 @@ export function runSession(input: {
     role: roles[id] ?? 'any',
     entries: rows.get(id) ?? [],
   }))
+  const chosen = new Set(answers.sources)
   const evidence = new Map<string, Set<'base' | 'vocal'>>()
   for (const [playlistId, role] of Object.entries(library)) {
+    if (!chosen.has(playlistId)) continue
     for (const entry of rows.get(playlistId) ?? []) {
       const id = trackIdOf(entry)
       if (id === null) continue
@@ -81,6 +74,7 @@ export function runSession(input: {
   }
   const marks = new Map<string, Set<SessionPhase>>()
   for (const [playlistId, phase] of Object.entries(phases)) {
+    if (!chosen.has(playlistId)) continue
     for (const entry of rows.get(playlistId) ?? []) {
       const id = trackIdOf(entry)
       if (id === null) continue
@@ -102,7 +96,7 @@ export function runSession(input: {
   const startWith = startEntry ? (trackIdOf(startEntry) ?? undefined) : undefined
   const learned = learnMixing(sequences, new Map(pool.map((track) => [track.id, track])))
   const plan = buildSession(pool, pairs, {
-    ...sessionOptionsOf(answers, seed, pins, startWith),
+    ...sessionOptionsOf(answers, seed, startWith),
     ...learned,
   })
   const refsById = new Map<string, PlaylistTrackRef>()

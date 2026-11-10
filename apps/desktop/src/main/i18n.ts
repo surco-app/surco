@@ -174,7 +174,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     engineOpenError: 'Cierra Engine DJ antes de convertir: tiene la biblioteca abierta.',
     traktorQuitMessage: 'Traktor está abierto',
     traktorQuitDetail:
-      'Surco necesita cerrarlo para escribir en collection.nml. Traktor se cerrará de forma segura; puedes volver a abrirlo cuando termine la conversión.',
+      'Surco necesita cerrarlo para escribir en collection.nml. Traktor se cerrará de forma segura y puedes volver a abrirlo enseguida.',
     traktorQuitDetailCues:
       'Surco necesita cerrarlo para guardar los cues en collection.nml. Traktor se cerrará de forma segura y puedes volver a abrirlo enseguida.',
     traktorQuitDetailPlaylists:
@@ -186,7 +186,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     traktorSyncBlocked: 'La colección de Traktor no se ha actualizado: Traktor sigue abierto.',
     rekordboxQuitMessage: 'rekordbox está abierto',
     rekordboxQuitDetail:
-      'Surco necesita cerrarlo para actualizar tu colección y que apunte al archivo nuevo. rekordbox se cerrará de forma segura; puedes volver a abrirlo cuando termine la conversión.',
+      'Surco necesita cerrarlo para actualizar tu colección. rekordbox se cerrará de forma segura y puedes volver a abrirlo enseguida.',
     rekordboxQuitDetailPlaylists:
       'Surco necesita cerrarlo para guardar el cambio en tus playlists. rekordbox se cerrará de forma segura y puedes volver a abrirlo enseguida.',
     rekordboxQuitDetailUsb:
@@ -291,7 +291,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     engineOpenError: 'Close Engine DJ before converting: it has the library open.',
     traktorQuitMessage: 'Traktor is open',
     traktorQuitDetail:
-      'Surco needs to close it to write into collection.nml. Traktor will quit safely; reopen it once the conversion finishes.',
+      'Surco needs to close it to write into collection.nml. Traktor will quit safely, and you can reopen it right away.',
     traktorQuitDetailCues:
       'Surco needs to close it to save the cues into collection.nml. Traktor will quit safely, and you can reopen it right away.',
     traktorQuitDetailPlaylists:
@@ -303,7 +303,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     traktorSyncBlocked: "Traktor's collection was not updated: Traktor is still open.",
     rekordboxQuitMessage: 'rekordbox is open',
     rekordboxQuitDetail:
-      'Surco needs to close it to update your collection so it points at the new file. rekordbox will be closed safely; you can reopen it once the conversion finishes.',
+      'Surco needs to close it to update your collection. rekordbox will be closed safely and you can reopen it right away.',
     rekordboxQuitDetailPlaylists:
       'Surco needs to close it to save the change to your playlists. rekordbox will be closed safely and you can reopen it right away.',
     rekordboxQuitDetailUsb:
@@ -409,7 +409,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     engineOpenError: 'Schließ Engine DJ vor dem Konvertieren: Es hat die Bibliothek geöffnet.',
     traktorQuitMessage: 'Traktor ist geöffnet',
     traktorQuitDetail:
-      'Surco muss es schließen, um in collection.nml zu schreiben. Traktor wird sicher beendet; du kannst es nach der Konvertierung wieder öffnen.',
+      'Surco muss es schließen, um in collection.nml zu schreiben. Traktor wird sicher beendet, und du kannst es gleich wieder öffnen.',
     traktorQuitDetailCues:
       'Surco muss es schließen, um die Cues in collection.nml zu speichern. Traktor wird sicher beendet, und du kannst es gleich wieder öffnen.',
     traktorQuitDetailPlaylists:
@@ -421,7 +421,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     traktorSyncBlocked: 'Die Traktor-Sammlung wurde nicht aktualisiert: Traktor ist noch geöffnet.',
     rekordboxQuitMessage: 'rekordbox ist geöffnet',
     rekordboxQuitDetail:
-      'Surco muss es schließen, um deine Sammlung zu aktualisieren, damit sie auf die neue Datei zeigt. rekordbox wird sicher geschlossen; du kannst es nach der Konvertierung wieder öffnen.',
+      'Surco muss es schließen, um deine Sammlung zu aktualisieren. rekordbox wird sicher geschlossen und du kannst es gleich wieder öffnen.',
     rekordboxQuitDetailPlaylists:
       'Surco muss es schließen, um die Änderung an deinen Playlists zu speichern. rekordbox wird sicher geschlossen und du kannst es gleich wieder öffnen.',
     rekordboxQuitDetailUsb:
@@ -528,7 +528,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     engineOpenError: 'Ferme Engine DJ avant de convertir : sa bibliothèque est ouverte.',
     traktorQuitMessage: 'Traktor est ouvert',
     traktorQuitDetail:
-      'Surco doit le fermer pour écrire dans collection.nml. Traktor sera fermé proprement ; tu pourras le rouvrir à la fin de la conversion.',
+      'Surco doit le fermer pour écrire dans collection.nml. Traktor sera fermé proprement et tu pourras le rouvrir tout de suite.',
     traktorQuitDetailCues:
       'Surco doit le fermer pour enregistrer les cues dans collection.nml. Traktor sera fermé proprement et tu pourras le rouvrir tout de suite.',
     traktorQuitDetailPlaylists:
@@ -541,7 +541,7 @@ const strings: Record<MenuLang, MenuStrings> = {
       "La collection Traktor n'a pas été mise à jour : Traktor est encore ouvert.",
     rekordboxQuitMessage: 'rekordbox est ouvert',
     rekordboxQuitDetail:
-      'Surco doit le fermer pour mettre à jour ta collection et la faire pointer vers le nouveau fichier. rekordbox sera fermé proprement ; tu pourras le rouvrir une fois la conversion terminée.',
+      'Surco doit le fermer pour mettre à jour ta collection. rekordbox sera fermé proprement et tu pourras le rouvrir tout de suite.',
     rekordboxQuitDetailPlaylists:
       'Surco doit le fermer pour enregistrer la modification de tes playlists. rekordbox sera fermé proprement et tu pourras le rouvrir tout de suite.',
     rekordboxQuitDetailUsb:
@@ -647,7 +647,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     engineOpenError: 'Feche o Engine DJ antes de converter: ele está com a biblioteca aberta.',
     traktorQuitMessage: 'O Traktor está aberto',
     traktorQuitDetail:
-      'O Surco precisa fechá-lo para escrever no collection.nml. O Traktor será fechado com segurança; você pode reabri-lo quando a conversão terminar.',
+      'O Surco precisa fechá-lo para escrever no collection.nml. O Traktor será fechado com segurança e você pode reabri-lo em seguida.',
     traktorQuitDetailCues:
       'O Surco precisa fechá-lo para salvar os cues no collection.nml. O Traktor será fechado com segurança e você pode reabri-lo em seguida.',
     traktorQuitDetailPlaylists:
@@ -659,7 +659,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     traktorSyncBlocked: 'A coleção do Traktor não foi atualizada: o Traktor ainda está aberto.',
     rekordboxQuitMessage: 'O rekordbox está aberto',
     rekordboxQuitDetail:
-      'O Surco precisa fechá-lo para atualizar a sua coleção e apontar para o arquivo novo. O rekordbox será fechado com segurança; você pode reabri-lo quando a conversão terminar.',
+      'O Surco precisa fechá-lo para atualizar a sua coleção. O rekordbox será fechado com segurança e você pode reabri-lo em seguida.',
     rekordboxQuitDetailPlaylists:
       'O Surco precisa fechá-lo para salvar a mudança nas suas playlists. O rekordbox será fechado com segurança e você pode reabri-lo em seguida.',
     rekordboxQuitDetailUsb:

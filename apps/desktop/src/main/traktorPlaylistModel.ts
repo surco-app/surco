@@ -108,17 +108,18 @@ function parseNode(nml: string, start: number, parent: ModelNode | null): ModelN
 
 // Folders are named by their path; a second sibling folder of the same name takes its
 // ordinal, so two "Sets" folders never share an id.
-function assignIds(node: ModelNode, path: string[]): void {
+function assignIds(node: ModelNode, path: string[], taken: Set<string>): void {
   const seen = new Map<string, number>()
   for (const child of node.children) {
     const n = (seen.get(child.name) ?? 0) + 1
     seen.set(child.name, n)
     const segment = n > 1 ? `${child.name}#${n}` : child.name
     const childPath = [...path, segment]
-    child.id =
-      child.kind === 'playlist' && child.uuid ? child.uuid : `folder:${childPath.join('/')}`
+    const own = child.kind === 'playlist' && child.uuid !== '' && !taken.has(child.uuid)
+    if (own) taken.add(child.uuid)
+    child.id = own ? child.uuid : `folder:${childPath.join('/')}`
     if (child.kind === 'smartlist') child.id = `smartlist:${childPath.join('/')}`
-    assignIds(child, childPath)
+    assignIds(child, childPath, taken)
   }
 }
 
@@ -130,7 +131,7 @@ export function parsePlaylists(nml: string): PlaylistModel | null {
   const root = parseNode(nml, start, null)
   if (!root) return null
   root.id = 'root'
-  assignIds(root, [])
+  assignIds(root, [], new Set())
   return { root, start, end: start + root.text.length, eol: nml.includes('\r\n') ? '\r\n' : '\n' }
 }
 

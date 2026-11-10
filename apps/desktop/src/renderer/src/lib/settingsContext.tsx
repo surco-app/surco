@@ -56,7 +56,7 @@ import type {
 import { seedEditorSections } from '../hooks/useEditorSections'
 import { DEFAULT_SEPARATOR } from './csv'
 import type { DjAddKey } from './djReach'
-import { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS } from './fields'
+import { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS, requiredFieldsOf } from './fields'
 
 // The slice of Settings the editor tree reads, resolved: settings arrive null for the
 // first frames, so every field carries its default here — in ONE place, instead of a
@@ -217,7 +217,7 @@ function resolveSettings(settings: Partial<Settings> | null): ResolvedSettings {
     fullReleaseDate: settings.fullReleaseDate ?? DEFAULTS.fullReleaseDate,
     visibleFields: settings.visibleFields ?? DEFAULTS.visibleFields,
     customFields: settings.customFields ?? DEFAULTS.customFields,
-    requiredFields: settings.requiredFields ?? DEFAULTS.requiredFields,
+    requiredFields: requiredFieldsOf(settings),
     importFields: normalizeImportFields(settings.importFields),
     discogsFormats: settings.discogsFormats ?? DEFAULTS.discogsFormats,
     discogsMaxResults: settings.discogsMaxResults ?? DEFAULTS.discogsMaxResults,

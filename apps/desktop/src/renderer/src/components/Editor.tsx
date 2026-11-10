@@ -1606,7 +1606,7 @@ export const Editor = memo(function Editor({
           onScroll={(e) => {
             editorPlace.scrollTop = e.currentTarget.scrollTop
           }}
-          className="min-h-0 flex-1 overflow-y-auto p-7 data-[edge=true]:[mask-image:linear-gradient(to_bottom,black_calc(100%-2.5rem),transparent)]"
+          className="min-h-0 flex-1 overflow-y-auto p-7"
         >
           {/* The pinned metadata form opens the "File" phase; the mapped sections
               below label "Audio" and "Output" as the group changes down the list. */}
@@ -1979,6 +1979,12 @@ export const Editor = memo(function Editor({
               })
           })()}
         </div>
+        <div
+          aria-hidden="true"
+          data-testid="editor-scroll-fade"
+          hidden={!moreBelow}
+          className="pointer-events-none relative z-10 -mt-10 h-10 shrink-0 bg-gradient-to-b from-transparent to-[var(--color-panel)]"
+        />
 
         <ConvertFooter
           item={item}

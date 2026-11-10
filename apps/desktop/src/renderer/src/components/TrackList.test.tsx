@@ -21,7 +21,7 @@ vi.hoisted(() => {
 import type { Api } from '../../../preload/api'
 import { resolveBindings } from '../../../shared/shortcutDefaults'
 import type { Chord } from '../../../shared/shortcuts'
-import type { TrackMetadata } from '../../../shared/types'
+import type { KeyNotation, TrackMetadata } from '../../../shared/types'
 import type { Verification } from '../../../shared/verification'
 import i18n from '../i18n'
 import type { AutoMark } from '../lib/cueSession'
@@ -29,6 +29,7 @@ import { trackSignature } from '../lib/dirty'
 import type { DuplicateRank } from '../lib/duplicateRanks'
 import { clearDraggedRows, draggedRows } from '../lib/reorderDrag'
 import { resetRowWaves } from '../lib/rowWaves'
+import { SettingsProvider } from '../lib/settingsContext'
 import * as triage from '../lib/triage'
 import { fakeDataTransfer, installDragEvent } from '../test/drag'
 import { hoverTooltip } from '../test/tooltip'
@@ -110,6 +111,7 @@ function renderList(
     unsavedCueIds,
     autoMarkById,
     playedPaths,
+    keyNotation,
   }: {
     canPasteMeta?: boolean
     bindings?: Map<string, Chord>
@@ -124,6 +126,7 @@ function renderList(
     unsavedCueIds?: ReadonlySet<string>
     autoMarkById?: ReadonlyMap<string, AutoMark>
     playedPaths?: ReadonlySet<string>
+    keyNotation?: KeyNotation
   } = {},
 ) {
   const onSelect = vi.fn()
@@ -181,6 +184,11 @@ function renderList(
         />
       )}
     />,
+    keyNotation && {
+      wrapper: ({ children }) => (
+        <SettingsProvider settings={{ keyNotation }}>{children}</SettingsProvider>
+      ),
+    },
   )
   return {
     onSelect,
@@ -449,6 +457,60 @@ describe('TrackList', () => {
     // mix); surfacing the duration on the row lets the user pick by time.
     renderList([track({ id: 'a', duration: 287 })])
     expect(screen.getByTestId('track-duration')).toHaveTextContent('4:47')
+  })
+
+  it('shows the key as a pill before the format, on the artist line, so it reads as part of the track and the title keeps its width', () => {
+    renderList([
+      track({
+        id: 'a',
+        inputPath: '/m/a.mp3',
+        duration: 287,
+        meta: { title: 'A', artist: 'B', key: ' 11A ' } as TrackMetadata,
+      }),
+    ])
+    const key = screen.getByTestId('track-key')
+    expect(key).toHaveTextContent(/^11A$/)
+    expect(screen.getByTestId('track-detail-line')).toContainElement(key)
+    expect(screen.getByTestId('track-title-line')).not.toContainElement(key)
+    expect(
+      key.compareDocumentPosition(screen.getByTestId('track-format-slot')) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+  })
+
+  it('writes the key in the notation chosen in Settings, so the list reads like the DJ software', () => {
+    renderList(
+      [
+        track({
+          id: 'a',
+          duration: 287,
+          meta: { title: 'A', artist: 'B', key: '8A' } as TrackMetadata,
+        }),
+      ],
+      null,
+      [],
+      { keyNotation: 'musical' },
+    )
+    expect(screen.getByTestId('track-key')).toHaveTextContent(/^Am$/)
+  })
+
+  it('draws no pill on a track without key, so an empty one never reads as a missing value', () => {
+    renderList([
+      track({
+        id: 'a',
+        inputPath: '/m/a.mp3',
+        duration: 287,
+        meta: { title: 'A', artist: 'B', key: '8A' } as TrackMetadata,
+      }),
+      track({
+        id: 'b',
+        inputPath: '/m/b.mp3',
+        duration: 300,
+        meta: { title: 'C', artist: 'D' } as TrackMetadata,
+      }),
+    ])
+    expect(screen.getAllByTestId('track-key')).toHaveLength(1)
+    expect(screen.queryByTestId('track-key-slot')).toBeNull()
   })
 
   it('gives the artist its own line under the title so it fits a narrow list, with the wave below and the cover beside all three', () => {
