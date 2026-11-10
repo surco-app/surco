@@ -186,14 +186,15 @@ describe('CuesSection maximized', () => {
     }
   })
 
-  it('puts the zoom on the deck line right after Auto, so checking a grid fix up close never sends the hand up to the toolbar', async () => {
+  it('keeps the zoom on the deck line in both modes and right after Auto in the grid one, so checking a fix up close never sends the hand up to the toolbar', async () => {
     setup()
     await maximize()
-    const toolbar = screen.getByTestId('cues-toolbar')
-    const deckGrid = screen.getByTestId('cues-deck-grid')
+    const deck = screen.getByTestId('cues-deck')
+    expect(deck).toContainElement(screen.getByTestId('cue-zoom-in'))
+    fireEvent.click(screen.getByTestId('cues-grid-open'))
     for (const id of ['cue-zoom-out', 'cue-zoom-reset', 'cue-zoom-in']) {
-      expect(deckGrid).toContainElement(screen.getByTestId(id))
-      expect(toolbar).not.toContainElement(screen.getByTestId(id))
+      expect(deck).toContainElement(screen.getByTestId(id))
+      expect(screen.getByTestId('cues-toolbar')).not.toContainElement(screen.getByTestId(id))
     }
     expect(
       screen
@@ -232,20 +233,15 @@ describe('CuesSection maximized', () => {
     expect(screen.getByTestId('cues-memory-remove').nextElementSibling).toBeNull()
   })
 
-  it('splits the deck line into play, pads, CALL, grid, zoom and Clear all with a divider between each', async () => {
+  it('splits the deck line into play, pads, CALL and Clear all with a divider between each', async () => {
     setup()
     await maximize()
     const deck = screen.getByTestId('cues-deck')
-    const marks = [
-      'cues-play',
-      'cues-pad-A',
-      'cues-memory',
-      'cues-grid-bpm',
-      'cue-zoom-out',
-      'cues-clear-all',
-    ].map((id) => screen.getByTestId(id))
+    const marks = ['cues-play', 'cues-pad-A', 'cues-memory', 'cues-clear-all'].map((id) =>
+      screen.getByTestId(id),
+    )
     const dividers = within(deck).getAllByTestId('cues-deck-divider')
-    expect(dividers).toHaveLength(5)
+    expect(dividers).toHaveLength(3)
     dividers.forEach((divider, i) => {
       expect(
         marks[i].compareDocumentPosition(divider) & Node.DOCUMENT_POSITION_FOLLOWING,
@@ -1731,6 +1727,7 @@ describe('CuesSection maximized grid', () => {
   it('moves the drawn grid with the grid row and carries the cues on its beats along', async () => {
     setup({ cueLettersByTime: false })
     await maximize()
+    fireEvent.click(await screen.findByTestId('cues-grid-open'))
     key('ArrowRight')
     key('m')
     expect(bars()).toContain(32000)
@@ -1772,6 +1769,7 @@ describe('CuesSection maximized grid', () => {
 
     it('pins with the button too, for whoever does not use the keyboard', async () => {
       await pinned()
+      fireEvent.click(screen.getByTestId('cues-grid-open'))
       fireEvent.click(screen.getByTestId('cues-grid-pin'))
       expect(bars()).toContain(30046)
     })
@@ -1804,6 +1802,7 @@ describe('CuesSection maximized grid', () => {
   it('puts a moved grid back with ⌘Z', async () => {
     setup()
     await maximize()
+    fireEvent.click(await screen.findByTestId('cues-grid-open'))
     fireEvent.click(screen.getByTestId('cues-grid-right'))
     key('z', { metaKey: true })
     expect(bars()).toContain(2000)
@@ -1816,6 +1815,7 @@ describe('CuesSection maximized grid', () => {
     ]
     setup(null, { ...READ, grid: twoTempos })
     await maximize()
+    fireEvent.click(await screen.findByTestId('cues-grid-open'))
     expect(screen.getByTestId('cues-grid')).toHaveAttribute('aria-disabled', 'false')
     expect(screen.getByTestId('cue-wave-anchor-200450')).toBeInTheDocument()
   })
@@ -1827,6 +1827,7 @@ describe('CuesSection maximized grid', () => {
     }))
     setup(null, { ...READ, grid: drifting })
     await maximize()
+    fireEvent.click(await screen.findByTestId('cues-grid-open'))
     expect(screen.getByTestId('cues-grid')).toHaveAttribute('aria-disabled', 'true')
     expect(hoverTooltip(screen.getByTestId('cues-grid'))).toEqual(expect.stringMatching(/tempo/i))
   })
@@ -1844,6 +1845,7 @@ describe('CuesSection maximized grid', () => {
       },
     )
     await maximize()
+    fireEvent.click(await screen.findByTestId('cues-grid-open'))
     expect(screen.getByTestId('cues-grid')).toHaveAttribute('aria-disabled', 'true')
     expect(hoverTooltip(screen.getByTestId('cues-grid'))).toEqual(expect.stringMatching(/analy/i))
   })
@@ -1862,6 +1864,7 @@ describe('CuesSection maximized grid', () => {
   it('shows how far the grid is from the beats here and at the end, and Auto fits it', async () => {
     setup(null, READ, { rekordboxGridFit: fitAt(454) })
     await maximize()
+    fireEvent.click(await screen.findByTestId('cues-grid-open'))
     await waitFor(() => expect(screen.getByTestId('cues-grid-here')).toHaveTextContent('+46 ms'))
     expect(screen.getByTestId('cues-grid-end')).toHaveTextContent('+46 ms')
     expect(screen.getByTestId('cues-grid-auto')).toHaveAttribute('data-needs-fix', 'true')
@@ -1873,6 +1876,7 @@ describe('CuesSection maximized grid', () => {
   it('carries the cues onto the beats Auto fits, since cues set on a late grid fire late in the booth', async () => {
     setup({ cueLettersByTime: false }, READ, { rekordboxGridFit: fitAt(454) })
     await maximize()
+    fireEvent.click(await screen.findByTestId('cues-grid-open'))
     key('ArrowRight')
     key('m')
     expect(screen.getByTestId('cue-wave-call-32000')).toBeInTheDocument()
@@ -1889,6 +1893,7 @@ describe('CuesSection maximized grid', () => {
   it('keeps Auto calm when the grid already sits within the tolerance', async () => {
     setup(null, READ, { rekordboxGridFit: fitAt(5) })
     await maximize()
+    fireEvent.click(await screen.findByTestId('cues-grid-open'))
     await waitFor(() => expect(screen.getByTestId('cues-grid-here')).toHaveTextContent('−5 ms'))
     expect(screen.getByTestId('cues-grid-auto')).not.toHaveAttribute('data-needs-fix')
   })
@@ -1917,6 +1922,7 @@ describe('CuesSection maximized grid', () => {
     )
     const { rerender } = render(tree('103'))
     await maximize()
+    fireEvent.click(await screen.findByTestId('cues-grid-open'))
     fireEvent.click(screen.getByTestId('cues-grid-right'))
     rerender(tree('104'))
     await waitFor(() => expect(bars()).toContain(2000))
@@ -1926,17 +1932,29 @@ describe('CuesSection maximized grid', () => {
     expect(bars()).toContain(2000)
   })
 
-  it('keeps the grid on the deck line beside the pads and how far it sits from the beats beside the time, so the deck fits one line', async () => {
+  it('puts the grid tools on the same deck line in place of the pads, and how far it sits from the beats beside the time, so the deck never wraps', async () => {
     setup(null, READ, { rekordboxGridFit: fitAt(454) })
     await maximize()
     await waitFor(() => expect(screen.getByTestId('cues-grid-here')).toBeInTheDocument())
     const deck = screen.getByTestId('cues-deck')
-    for (const id of ['cues-grid', 'cues-grid-bpm', 'cues-pad-A'])
+    expect(deck).toContainElement(screen.getByTestId('cues-pad-A'))
+    expect(screen.queryByTestId('cues-grid')).toBeNull()
+    fireEvent.click(screen.getByTestId('cues-grid-open'))
+    for (const id of ['cues-grid', 'cues-grid-bpm'])
       expect(deck).toContainElement(screen.getByTestId(id))
+    expect(screen.queryByTestId('cues-pad-A')).toBeNull()
     const toolbar = screen.getByTestId('cues-toolbar')
     for (const id of ['cues-grid-here', 'cues-grid-end'])
       expect(toolbar).toContainElement(screen.getByTestId(id))
     expect(screen.queryByTestId('cues-grid-strip')).toBeNull()
+  })
+
+  it('lights the Grid button when the grid misses the beats, since Auto sits behind it', async () => {
+    setup(null, READ, { rekordboxGridFit: fitAt(454) })
+    await maximize()
+    await waitFor(() =>
+      expect(screen.getByTestId('cues-grid-open')).toHaveAttribute('data-needs-fix', 'true'),
+    )
   })
 
   it('has no grid row in the small editor', async () => {
@@ -1978,9 +1996,10 @@ describe('CuesSection maximized grid', () => {
     )
     const { rerender } = render(tree('103'))
     await maximize()
+    fireEvent.click(await screen.findByTestId('cues-grid-open'))
     key('m')
     rerender(tree('104'))
-    await waitFor(() => expect(screen.getByTestId('cues-grid')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByTestId('cues-grid-open')).toBeInTheDocument())
     rekordboxTrackCues.mockImplementation(async (id) => ({
       ...READ,
       contentId: id,
@@ -1995,6 +2014,7 @@ describe('CuesSection maximized grid', () => {
   it('gives the keys back to the editor when the BPM menu closes, so Space plays at once', async () => {
     setup()
     await maximize()
+    fireEvent.click(await screen.findByTestId('cues-grid-open'))
     fireEvent.click(screen.getByTestId('cues-grid-bpm'))
     const input = screen.getByTestId('cues-grid-bpm-input')
     input.focus()
@@ -2007,6 +2027,7 @@ describe('CuesSection maximized grid', () => {
     const saveRekordboxCues = vi.fn<Api['saveRekordboxCues']>(async () => {})
     setup(null, { ...READ, gridFingerprint: 'g0' }, { saveRekordboxCues })
     await maximize()
+    fireEvent.click(await screen.findByTestId('cues-grid-open'))
     fireEvent.click(screen.getByTestId('cues-grid-right'))
     fireEvent.click(screen.getByTestId('cues-save'))
     await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
@@ -2152,6 +2173,7 @@ describe('CuesSection maximized grid', () => {
   it('opens a zone at the playhead and moves only that zone, flagging where it starts on both waves', async () => {
     setup()
     await maximize()
+    fireEvent.click(await screen.findByTestId('cues-grid-open'))
     key('ArrowRight')
     fireEvent.click(screen.getByTestId('cues-grid-anchor'))
     expect(screen.getByTestId('cue-wave-anchor-32000')).toBeInTheDocument()

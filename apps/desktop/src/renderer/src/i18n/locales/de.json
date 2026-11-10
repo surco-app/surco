@@ -1280,6 +1280,8 @@
         "widen": "Raster weiten, senkt die BPM",
         "narrow": "Raster verengen, erhöht die BPM",
         "downbeat": "Taktanfang auf den Abspielkopf",
+        "open": "Raster",
+        "done": "Fertig",
         "auto": "Auto",
         "autoHint": "Raster an die Beats anpassen",
         "groupTempo": "Tempo",

@@ -29,7 +29,7 @@ function GridGroup({
   children: React.ReactNode
 }): React.JSX.Element {
   return (
-    <div data-testid={testid} className="flex shrink-0 flex-col gap-1.5">
+    <div data-testid={testid} className="flex shrink-0 items-center gap-1">
       <span className="text-[11px] leading-none text-fg-faint">{label}</span>
       <div className="flex items-center gap-1">{children}</div>
     </div>
@@ -161,11 +161,7 @@ export function CueGridControls({
   }
 
   return (
-    <div
-      data-testid="cues-grid"
-      aria-disabled={off}
-      className="flex flex-wrap items-end gap-x-5 gap-y-2"
-    >
+    <div data-testid="cues-grid" aria-disabled={off} className="flex items-center gap-x-3">
       {disabledReason && <Tooltip label={disabledReason} />}
       <GridGroup testid="cues-grid-tempo" label={tr('editor.cues.grid.groupTempo')}>
         <div ref={menuRoot} className="relative">

@@ -1280,6 +1280,8 @@
         "widen": "Widen the grid, lowers the BPM",
         "narrow": "Narrow the grid, raises the BPM",
         "downbeat": "Downbeat at the playhead",
+        "open": "Grid",
+        "done": "Done",
         "auto": "Auto",
         "autoHint": "Fit the grid to the beats",
         "groupTempo": "Tempo",

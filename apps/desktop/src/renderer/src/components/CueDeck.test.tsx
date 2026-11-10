@@ -209,16 +209,39 @@ describe('CueDeck', () => {
     expect(play.querySelector('svg')).toHaveAttribute('fill', 'currentColor')
   })
 
-  it('puts the grid row in the same line as the cue pads, after the CALL controls', () => {
-    setup({ gridControls: <span data-testid="grid-slot" /> })
-    const slot = screen.getByTestId('grid-slot')
-    const remove = screen.getByTestId('cues-memory-remove')
-    expect(remove.compareDocumentPosition(slot) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(screen.getByTestId('cues-deck')).toContainElement(slot)
+  it('keeps the cue tools on the line and the grid behind one button, so the line never has to wrap', () => {
+    setup({
+      gridControls: <span data-testid="grid-slot" />,
+      zoom: <span data-testid="zoom-slot" />,
+    })
+    expect(screen.queryByTestId('grid-slot')).not.toBeInTheDocument()
+    expect(screen.getByTestId('cues-pad-A')).toBeInTheDocument()
+    expect(screen.getByTestId('cues-grid-open')).toHaveAccessibleName('Grid')
+    expect(screen.getByTestId('zoom-slot')).toBeInTheDocument()
   })
 
-  it('leaves the line as it was when there is no grid row, as in the small editor', () => {
+  it('swaps the same line to the grid tools and back with Done, keeping play and the zoom to check the fix', () => {
+    setup({
+      gridControls: <span data-testid="grid-slot" />,
+      zoom: <span data-testid="zoom-slot" />,
+    })
+    fireEvent.click(screen.getByTestId('cues-grid-open'))
+    expect(screen.getByTestId('cues-deck')).toContainElement(screen.getByTestId('grid-slot'))
+    expect(screen.queryByTestId('cues-pad-A')).not.toBeInTheDocument()
+    expect(screen.getByTestId('cues-play')).toBeInTheDocument()
+    expect(screen.getByTestId('zoom-slot')).toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('cues-grid-done'))
+    expect(screen.queryByTestId('grid-slot')).not.toBeInTheDocument()
+    expect(screen.getByTestId('cues-pad-A')).toBeInTheDocument()
+  })
+
+  it('lights the Grid button when the grid misses the beats, since Auto now sits behind it', () => {
+    setup({ gridControls: <span />, gridNeedsFix: true })
+    expect(screen.getByTestId('cues-grid-open')).toHaveAttribute('data-needs-fix', 'true')
+  })
+
+  it('shows no Grid button where there is no grid to edit, as in the small editor', () => {
     setup()
-    expect(screen.queryByTestId('cues-deck-grid')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('cues-grid-open')).not.toBeInTheDocument()
   })
 })

@@ -228,6 +228,7 @@ describe('a flow placed in the cue editor reaches the other DJ programs', () => 
     const { saveRekordboxCues } = setup()
     await ready()
     fireEvent.click(screen.getByTestId('section-maximize'))
+    fireEvent.click(await screen.findByTestId('cues-grid-open'))
     await waitFor(() => expect(screen.getByTestId('cues-grid-right')).toBeEnabled())
     fireEvent.click(screen.getByTestId('cues-grid-right'))
     markAt(bar(64))
