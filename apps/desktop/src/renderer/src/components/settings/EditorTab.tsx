@@ -33,7 +33,7 @@ export function EditorTab({ synced, patch }: Props): React.JSX.Element {
               value={synced.grouping}
               onChange={(e) => patch('grouping', e.target.value)}
               placeholder={tr('settings.groupingPlaceholder')}
-              className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
+              className="w-full rounded-lg border border-[var(--color-input-border)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
             />
           </SettingsField>
           <SettingsField
@@ -48,7 +48,7 @@ export function EditorTab({ synced, patch }: Props): React.JSX.Element {
               value={synced.genre}
               onChange={(e) => patch('genre', e.target.value)}
               placeholder={tr('settings.genrePlaceholder')}
-              className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
+              className="w-full rounded-lg border border-[var(--color-input-border)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
             />
           </SettingsField>
         </div>

@@ -6,7 +6,7 @@ import { mainErrorMessage } from '../lib/ipcError'
 import { SettingsLabel } from './settings/SettingsPrimitives'
 
 const INPUT =
-  'w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)] disabled:cursor-not-allowed'
+  'w-full rounded-lg border border-[var(--color-input-border)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)] disabled:cursor-not-allowed'
 const BUTTON =
   'press rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)] disabled:cursor-not-allowed disabled:opacity-50'
 

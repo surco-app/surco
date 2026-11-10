@@ -162,7 +162,7 @@ export function SearchTab({
               value={synced.searchIgnoreWords}
               onChange={(e) => patch('searchIgnoreWords', e.target.value)}
               placeholder="vinyl, rip"
-              className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
+              className="w-full rounded-lg border border-[var(--color-input-border)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
             />
           </div>
           <AutoMatchControl

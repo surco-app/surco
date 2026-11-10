@@ -39,7 +39,7 @@ export function ArtworkTab({ synced, patch }: Props): React.JSX.Element {
                 const max = parseInt(synced.coverMaxSize, 10)
                 if (!Number.isFinite(max) || max < 0) patch('coverMaxSize', '1200')
               }}
-              className="w-28 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
+              className="w-28 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
             />
             <span className="text-sm text-fg-dim">{tr('settings.coverMaxHint')}</span>
           </div>

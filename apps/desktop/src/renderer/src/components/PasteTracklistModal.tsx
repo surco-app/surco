@@ -157,7 +157,7 @@ export function PasteTracklistModal({
                 data-testid="paste-tracklist-name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
+                className="w-full rounded-lg border border-[var(--color-input-border)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
               />
             </label>
           )}
@@ -168,7 +168,7 @@ export function PasteTracklistModal({
             onChange={(e) => setText(e.target.value)}
             spellCheck={false}
             rows={12}
-            className="w-full resize-y rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 font-mono text-xs leading-relaxed outline-none focus:border-[var(--color-accent)]"
+            className="w-full resize-y rounded-lg border border-[var(--color-input-border)] bg-[var(--color-field)] px-3 py-2 font-mono text-xs leading-relaxed outline-none focus:border-[var(--color-accent)]"
           />
           <div className="mt-5 flex items-center gap-2">
             <span data-testid="paste-tracklist-count" className="mr-auto text-xs text-fg-dim">
