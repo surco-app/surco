@@ -1115,16 +1115,14 @@ describe('TrimSection', () => {
     expect(window.api.waveform).not.toHaveBeenCalled()
   })
 
-  it('says what silence was found once the wave is known', async () => {
+  it('says what silence was found once the wave is known, once and not twice when folded', async () => {
     const { rerender } = render(section())
     await screen.findByTestId('trim-apply-start', undefined, { timeout: 3000 })
     rerender(section({ open: false }))
     expect(screen.getByTestId('trim-row-sentence')).toHaveTextContent(
       '9.9 s of silence at the start and 9.9 s at the end',
     )
-    expect(screen.getByTestId('trim-detected-pill')).toHaveTextContent(
-      '9.9 s from the start · 9.9 s from the end',
-    )
+    expect(screen.queryByTestId('trim-detected-pill')).not.toBeInTheDocument()
   })
 
   it('says there is nothing to cut when the track starts and ends on music', async () => {
