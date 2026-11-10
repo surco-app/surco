@@ -318,6 +318,96 @@ export function fitGrid(
   return fitted ?? grid
 }
 
+const BREAK_MS = 10
+const BREAK_RUN = 3
+const MIN_RUN_STRETCHES = 4
+
+type Stretch = { ms: number; d: number }
+
+function lineOf(points: Stretch[]): { at: (ms: number) => number; sse: number } {
+  const meanMs = points.reduce((sum, p) => sum + p.ms, 0) / points.length
+  const meanD = points.reduce((sum, p) => sum + p.d, 0) / points.length
+  let num = 0
+  let den = 0
+  for (const p of points) {
+    num += (p.ms - meanMs) * (p.d - meanD)
+    den += (p.ms - meanMs) ** 2
+  }
+  const slope = den === 0 ? 0 : num / den
+  const at = (ms: number) => meanD + slope * (ms - meanMs)
+  return { at, sse: points.reduce((sum, p) => sum + (p.d - at(p.ms)) ** 2, 0) }
+}
+
+function awayFrom(line: (ms: number) => number, points: Stretch[]): boolean {
+  const sides = points.map((p) => {
+    const off = p.d - line(p.ms)
+    return Math.abs(off) > BREAK_MS ? Math.sign(off) : 0
+  })
+  return sides.length === BREAK_RUN && sides[0] !== 0 && sides.every((s) => s === sides[0])
+}
+
+function breaksAway(points: Stretch[]): boolean {
+  const { at } = lineOf(points)
+  return points.some((_, i) => awayFrom(at, points.slice(i, i + BREAK_RUN)))
+}
+
+function splitRuns(points: Stretch[], room: number): Stretch[][] {
+  if (room < 2 || points.length < 2 * MIN_RUN_STRETCHES || !breaksAway(points)) return [points]
+  let best = 0
+  let bestCost = Number.POSITIVE_INFINITY
+  for (let at = MIN_RUN_STRETCHES; at <= points.length - MIN_RUN_STRETCHES; at++) {
+    const cost = lineOf(points.slice(0, at)).sse + lineOf(points.slice(at)).sse
+    if (cost < bestCost) {
+      bestCost = cost
+      best = at
+    }
+  }
+  const left = points.slice(0, best)
+  const right = points.slice(best)
+  const lasts =
+    awayFrom(lineOf(left).at, right.slice(-BREAK_RUN)) &&
+    awayFrom(lineOf(right).at, left.slice(0, BREAK_RUN))
+  if (!lasts) return [points]
+  const runs = splitRuns(left, room - 1)
+  return [...runs, ...splitRuns(right, room - runs.length)]
+}
+
+export function autoFitGrid(
+  grid: EditableGrid,
+  fit: GridFit,
+  atMs: number,
+  kicks: number[],
+  zones: boolean,
+): EditableGrid {
+  const { zones: _, ...base } = grid
+  const runs = zones ? splitRuns(steadyStretches(fit), MAX_ZONES) : []
+  if (runs.length < 2)
+    return zones ? fitGrid(base, fit, atMs, kicks) : fitGrid(grid, fit, atMs, kicks)
+  const fitOf = (run: Stretch[]): GridFit => ({
+    ...fit,
+    phases: (fit.phases ?? []).filter((p) => p.ms >= run[0].ms && p.ms <= run[run.length - 1].ms),
+  })
+  const first = fitGrid(base, fitOf(runs[0]), runs[0][0].ms, kicks)
+  const out: GridZone[] = []
+  let previous: EditableGrid = first
+  runs.slice(1).forEach((run, i) => {
+    const startMs = (runs[i][runs[i].length - 1].ms + run[0].ms) / 2
+    const period = periodOf(previous.bpm)
+    const k = Math.round((startMs - previous.anchorMs) / period)
+    const beatMs = previous.anchorMs + k * period
+    const next = fitGrid(previous, fitOf(run), startMs)
+    const fromMs = nearestOn(beatMs, next.anchorMs, periodOf(next.bpm))
+    const zone = {
+      fromMs,
+      bpm: next.bpm,
+      anchorMs: fromMs - (barBeat(k) - 1) * periodOf(next.bpm),
+    }
+    out.push(zone)
+    previous = zone
+  })
+  return { ...first, zones: out }
+}
+
 export function gridOffsets(
   beats: number[],
   fit: GridFit,

@@ -3,10 +3,10 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   anchorNear,
+  autoFitGrid,
   downbeatAt,
   type EditableGrid,
   editAt,
-  fitGrid,
   GRID_BPM_MAX,
   GRID_BPM_MIN,
   type GridFit,
@@ -228,7 +228,7 @@ export function CueGridControls({
           data-testid="cues-grid-auto"
           data-needs-fix={needsFix && !off ? 'true' : undefined}
           disabled={off || fit === null}
-          onClick={() => grid && fit && onFit(fitGrid(grid, fit, playheadMs, kicks))}
+          onClick={() => grid && fit && onFit(autoFitGrid(grid, fit, playheadMs, kicks, zones))}
           className="press flex h-7 items-center rounded-md border border-[var(--color-line-strong)] px-2 text-xs font-medium text-fg-muted transition-colors hover:bg-[var(--color-hover)] disabled:opacity-40 data-[needs-fix=true]:border-[var(--color-accent)] data-[needs-fix=true]:bg-[var(--color-accent)] data-[needs-fix=true]:font-semibold data-[needs-fix=true]:text-[var(--color-on-accent)]"
         >
           {!disabledReason && <Tooltip label={tr('editor.cues.grid.autoHint')} />}

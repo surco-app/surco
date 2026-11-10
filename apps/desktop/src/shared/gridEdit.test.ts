@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  autoFitGrid,
   carryOntoGrid,
   detectedBeatNear,
   downbeatAt,
@@ -583,5 +584,82 @@ describe('a detector that hears sixteenths in a break', () => {
       381000,
     )
     expect(Math.abs(hereMs)).toBeLessThanOrEqual(13)
+  })
+})
+
+describe('Auto over the whole track', () => {
+  const DURATION = 381000
+  const steadyThenFaster = {
+    bpm: BPM_142,
+    firstMs: 244,
+    phases: stretchesEvery(6800, 372000, (ms) =>
+      ms < 264000 ? 0 : (-(ms - 264000) * 50) / 108000,
+    ),
+  }
+  const offsetsAlong = (grid: EditableGrid, fit: typeof steadyThenFaster) =>
+    [20000, 90000, 150000, 230000, 280000, 320000, 360000].map(
+      (ms) => gridOffsets(drawn(grid, DURATION), fit, ms, DURATION).hereMs,
+    )
+
+  it('opens a zone where the outro speeds up, so the grid stays on the kick to the very end', () => {
+    const auto = autoFitGrid({ bpm: 142.13, anchorMs: 270 }, steadyThenFaster, 0, [], true)
+    expect(auto.zones).toHaveLength(1)
+    expect(Math.abs((auto.zones?.[0].fromMs ?? 0) - 264000)).toBeLessThan(7000)
+    for (const off of offsetsAlong(auto, steadyThenFaster))
+      expect(Math.abs(off)).toBeLessThanOrEqual(3)
+  })
+
+  it('keeps the bars counting across the new zone, so the downbeats after it are still beat 1', () => {
+    for (const downbeat of [0, 1, 2, 3]) {
+      const grid = { bpm: 142.13, anchorMs: 270 + downbeat * P_142 }
+      const auto = autoFitGrid(grid, steadyThenFaster, 0, [], true)
+      const beats = gridBeats(auto, DURATION)
+      const at = beats.findIndex((b) => b.ms >= (auto.zones?.[0].fromMs ?? 0))
+      expect(beats.slice(at - 2, at + 2).map((b) => b.beat)).toEqual(
+        [0, 1, 2, 3].map((i) => ((beats[at - 2].beat - 1 + i) % 4) + 1),
+      )
+    }
+  })
+
+  it('leaves a track of one tempo in one zone, though each stretch reads a few ms either way', () => {
+    const jitter = {
+      bpm: BPM_142,
+      firstMs: 244,
+      phases: stretchesEvery(
+        6800,
+        372000,
+        (ms) => [4, -9, 0, 9, -4, 13, -9][Math.round(ms / 6757) % 7],
+      ),
+    }
+    expect(autoFitGrid({ bpm: 142.13, anchorMs: 270 }, jitter, 0, [], true).zones).toBeUndefined()
+  })
+
+  it('opens no zone for a stretch the detector hears early and then leaves, since a real change of tempo never comes back', () => {
+    const wandering = {
+      bpm: 140.015,
+      firstMs: 244,
+      phases: stretchesEvery(6800, 330000, (ms) =>
+        (ms > 180000 && ms < 220000) || (ms > 258000 && ms < 272000) ? -36 : 0,
+      ),
+    }
+    expect(
+      autoFitGrid({ bpm: 140.015, anchorMs: 250 }, wandering, 0, [], true).zones,
+    ).toBeUndefined()
+  })
+
+  it('keeps one tempo where the program has no zones', () => {
+    const auto = autoFitGrid({ bpm: 142.13, anchorMs: 270 }, steadyThenFaster, 0, [], false)
+    expect(auto.zones).toBeUndefined()
+  })
+
+  it('keeps the DJ downbeat in the first zone, since the detector cannot find the bar', () => {
+    const auto = autoFitGrid(
+      { bpm: 142.13, anchorMs: 270 + 2 * P_142 },
+      steadyThenFaster,
+      0,
+      [],
+      true,
+    )
+    expect(Math.abs(auto.anchorMs - (244 + 2 * P_142))).toBeLessThan(5)
   })
 })

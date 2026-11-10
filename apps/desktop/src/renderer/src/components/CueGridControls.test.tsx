@@ -254,6 +254,36 @@ describe('CueGridControls', () => {
     expect(onChange.onFit.mock.calls[0][0].anchorMs).toBe(25)
   })
 
+  it('finds a spliced intro on its own and gives it a zone, so one press fits the whole track', () => {
+    const fit = {
+      bpm: 150,
+      firstMs: 0,
+      phases: [
+        ...Array.from({ length: 19 }, (_, i) => ({ ms: 4000 + i * 6400, firstMs: 25 })),
+        ...Array.from({ length: 35 }, (_, i) => ({ ms: 126400 + i * 6400, firstMs: 0 })),
+      ],
+    }
+    const onChange = setup({ fit, needsFix: true, playheadMs: 200000 })
+    fireEvent.click(screen.getByTestId('cues-grid-auto'))
+    const fitted = onChange.onFit.mock.calls[0][0]
+    expect(fitted.anchorMs).toBeCloseTo(25, 0)
+    expect(fitted.zones).toHaveLength(1)
+  })
+
+  it('keeps one tempo with Auto where the program has no zones', () => {
+    const fit = {
+      bpm: 150,
+      firstMs: 0,
+      phases: [
+        ...Array.from({ length: 19 }, (_, i) => ({ ms: 4000 + i * 6400, firstMs: 25 })),
+        ...Array.from({ length: 35 }, (_, i) => ({ ms: 126400 + i * 6400, firstMs: 0 })),
+      ],
+    }
+    const onChange = setup({ fit, needsFix: true, zones: false })
+    fireEvent.click(screen.getByTestId('cues-grid-auto'))
+    expect(onChange.onFit.mock.calls[0][0].zones).toBeUndefined()
+  })
+
   it('opens a zone at the playhead with the anchor button, and closes it when pressed again there', () => {
     const onChange = setup({ playheadMs: 40010 })
     fireEvent.click(screen.getByTestId('cues-grid-anchor'))
