@@ -129,3 +129,75 @@ describe('libraryRoles', () => {
     expect(libraryRoles([folder('f', 'Remember', [playlist('a', 'x')])])).toEqual({})
   })
 })
+
+describe('suggestRoles reading folder names in other languages and with more words', () => {
+  const folder = (id: string, name: string): SourceNode => ({
+    id,
+    name,
+    kind: 'folder',
+    count: 1,
+    children: [playlist(`p-${id}`, 'x')],
+  })
+  const roleOfName = (name: string) => suggestRoles([folder('f', name)])['p-f']
+
+  it.each([
+    ['Instrumentals', 'base'],
+    ['Instrumentales', 'base'],
+    ['Instrumentais', 'base'],
+    ['Instrumentaux', 'base'],
+    ['ベース', 'base'],
+    ['インスト', 'base'],
+  ])('reads %s as %s', (name, role) => {
+    expect(roleOfName(name)).toBe(role)
+  })
+
+  it.each([
+    ['Cantadas', 'vocal'],
+    ['Vocales', 'vocal'],
+    ['Vocais', 'vocal'],
+    ['Voix', 'vocal'],
+    ['Chants', 'vocal'],
+    ['Gesang', 'vocal'],
+    ['ボーカル', 'vocal'],
+    ['ヴォーカル', 'vocal'],
+    ['Acapela', 'vocal'],
+  ])('reads %s as %s', (name, role) => {
+    expect(roleOfName(name)).toBe(role)
+  })
+
+  it.each([
+    ['Setlists', 'any'],
+    ['Gigs', 'any'],
+    ['Sesiones', 'any'],
+    ['Sessions', 'any'],
+    ['セット', 'any'],
+    ['トラックリスト', 'any'],
+  ])('reads %s as %s', (name, role) => {
+    expect(roleOfName(name)).toBe(role)
+  })
+
+  it('reads a folder whose name has the word among others', () => {
+    expect(roleOfName('Bases 90s')).toBe('base')
+    expect(roleOfName('Mis cantaditas')).toBe('vocal')
+    expect(roleOfName('Remember - Bases')).toBe('base')
+    expect(roleOfName('Set 2019')).toBe('any')
+  })
+
+  it('gives no role when the name holds words of two roles, since it cannot tell', () => {
+    expect(roleOfName('Bases y cantaditas')).toBeUndefined()
+  })
+
+  it('does not take a word that only starts or ends like a role word', () => {
+    expect(roleOfName('Basement')).toBeUndefined()
+    expect(roleOfName('Houses')).toBeUndefined()
+    expect(roleOfName('Offsets')).toBeUndefined()
+  })
+
+  it('still reads the plain names it read before', () => {
+    expect(roleOfName('BASES')).toBe('base')
+    expect(roleOfName('CANTADITAS')).toBe('vocal')
+    expect(roleOfName('COMBOS')).toBe('any')
+    expect(roleOfName('BOLOS')).toBe('any')
+    expect(roleOfName('TRACKLIST')).toBe('any')
+  })
+})
