@@ -2000,7 +2000,28 @@ secuencia. Sin Mezcladas no hay combos, y el asistente y la banda lo explican. U
 no es combo, pero si la segunda pista es del rol que toca y cabe en tempo y armonía se prefiere
 como «partner», «Sonó justo después en un set» (`nextByCombo`, `partnerFits`). El tempo se
 encaja con ±4 BPM y, si nada cabe, ±8 (`TEMPO_TIGHT`, `TEMPO_WIDE`); si ninguna pista del rol
-que toca está a ±8 se toma la de tempo más cercano antes que repetir el rol (`fitTier`). Con
+que toca está a ±8 se toma la de tempo más cercano antes que repetir el rol (`fitTier`). Desde
+el 10-11 esos dos márgenes se aprenden de las Mezcladas elegidas cuando dan al menos 30 saltos
+medidos: la mediana del salto de BPM y su percentil 80 (`learnMixing`, `shared/sessionLearn.ts`).
+De ahí sale también cuánto pesa el tono, según cuánto superan esos sets al azar en transiciones
+armónicas (`keyCare`); «Cambiar» usa los mismos márgenes. Las sesiones que escribió Surco en ese
+Mac no enseñan nada, ni combos ni márgenes: se recuerdan por id (`sessionsMade`, local) para que
+una sesión guardada en una carpeta de sets no se dé la razón a sí misma.
+
+**Sorteo, no la mejor.** Entre las que encajan, cada pista se sortea con un peso que suma el
+gusto (estrellas y escuchas, al cubo), la cercanía de tono, un tempo que sube poco a poco del
+cuarto más lento de las elegidas al cuarto más rápido (`arcWeight`) y la fase del set; el mismo
+artista seguido pesa un 30 % (`pickWeighted`, `liking`, `keyWeight`, `actWeight`). El arranque se
+sortea entre los combos, con más peso cuanto más probado. Un mismo tema no suena dos veces aunque
+esté en dos ficheros (`song`, `lib/sessionCandidates.ts`), y «Cambiar» no ofrece el otro fichero.
+La línea dice «de las mejores que cuadran» solo si la pista está en el cuarto con más gusto de las
+que cabían. Dos nuevas nunca van seguidas. Una pista fijada sigue en su posición aunque el hueco
+de antes no tenga ninguna en tono: se llena fuera de tono antes que correrla. **Fases**: las
+playlists que se llaman como una parte del set, en toda la biblioteca y en los seis idiomas (Warm
+Up, Comienzos, Cierre, Fijas, Himnos…), marcan sus pistas como apertura, cierre o fija
+(`libraryPhases`, `lib/sessionTree.ts`). Una de apertura pesa ×4 en el primer cuarto y ×0,15
+después; una de cierre, ×4 desde el 80 % y ×0,15 antes; una fija, ×2,5. La línea lo dice («Para
+abrir…», «Para cerrar…», «De las que siempre pinchas»). Con
 Bases y Cantaditas conocidas y «Alternar» activado la alternancia es estricta (`strict`): las
 pistas sin rol, que solo están en Mezcladas, no se usan de relleno, no arrancan la sesión ni se
 encadenan por un set. Entran como pareja de un combo repetido en dos sets, o cuando se acaba el
@@ -2042,8 +2063,15 @@ un 2,7 % con 1 min, solo al final, cuando se acaban las cantaditas. Con los role
 biblioteca queda en 0 también con 1 min, sin pistas sin rol, y las de rockola pasan de ser el 6 a
 7 % del plan al 40 a 52 %. Se probó deducir el rol de
 una pista sin rol por la vecina en el set y acierta un 51 %: los sets reales no alternan
-(`?BVBBVBVVVVBVVVBVBB…`), así que no se usa. No hay medida de cuántas
-sesiones da por buenas un DJ.
+(`?BVBBVBVVVVBVVVBVBB…`), así que no se usa. Medido el 10-11 con la misma colección, 20
+semillas por caso: antes del sorteo, con Mezcladas elegidas las 20 sesiones arrancaban con la misma
+pista y, sin ellas, «Rehacer» repetía el 82 a 89 % de las pistas; ahora salen de 13 a 20 arranques
+distintos y repite un 15 a 26 %. Las pistas distintas en 20 sesiones pasan de 172 a unas 300 de
+2035. Los 23 bolos del usuario son un 26 % armónicos (el azar da un 20 %) y las sesiones, con el
+tono aprendido, un 23 a 28 %. Esos bolos llevan un 66 % de pistas de sus Fijas, y las sesiones,
+un 60 a 65 %; ponen una de cierre en el último 20 % 5 veces más que antes (12 % frente a 2,5 %), y
+las sesiones, 4 veces. Solo 3 de los 23 bolos abren con una de apertura, por eso la apertura pesa
+y no obliga. No hay medida de cuántas sesiones da por buenas un DJ.
 
 ### Editor de cues de rekordbox
 
