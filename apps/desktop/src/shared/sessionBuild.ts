@@ -29,7 +29,7 @@ export type SessionWhy =
   | { kind: 'bpm'; relaxed: boolean }
   | { kind: 'fresh'; key: string | null; role: TrackRole }
   | { kind: 'chosen' }
-  | { kind: 'phase'; phase: 'open' | 'close' | 'must' }
+  | { kind: 'phase'; phase: 'open' | 'close' }
 
 export interface SessionItem {
   track: SessionTrack
@@ -202,8 +202,7 @@ export function buildSession(
   }
 
   const phaseDue = (track: SessionTrack): SessionWhy | null => {
-    if (track.phase !== undefined && inPhase(track)) return { kind: 'phase', phase: track.phase }
-    return track.must ? { kind: 'phase', phase: 'must' } : null
+    return track.phase !== undefined && inPhase(track) ? { kind: 'phase', phase: track.phase } : null
   }
 
   const phaseWeight = (track: SessionTrack): number => {

@@ -220,6 +220,12 @@ describe('buildSession alternation, new tracks and surprise', () => {
     expect(plan.items.length).toBe(12)
   })
 
+  it('says why a track the DJ always plays fits where it lands, not that it is one of those', () => {
+    const pool = [track('a', { key: '8A' }), track('b', { key: '9A', must: true })]
+    const plan = buildSession(pool, none, options({ minutes: 10, startWith: 'a' }))
+    expect(plan.items[1].why).toEqual({ kind: 'harmonic', from: '8A', to: '9A', distance: 1 })
+  })
+
   it('lets an any track reached by a proven combo take the place of the role that was due', () => {
     const pool = [
       track('b1', { role: 'base' }),
