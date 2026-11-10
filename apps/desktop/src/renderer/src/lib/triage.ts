@@ -1,6 +1,12 @@
 import { DEFAULT_CUE_GRID_TOLERANCE } from '../../../shared/cueGrid'
 import type { GridVerdict } from '../../../shared/gridVerdict'
-import { MAJOR_CAMELOT, MAJOR_NAMES, MINOR_CAMELOT, MINOR_NAMES } from '../../../shared/keyNames'
+import {
+  ENHARMONIC,
+  MAJOR_CAMELOT,
+  MAJOR_NAMES,
+  MINOR_CAMELOT,
+  MINOR_NAMES,
+} from '../../../shared/keyNames'
 import type { PlaylistSource } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import type { CopyVerdict } from './bestCopy'
@@ -444,13 +450,6 @@ function compareText(a: string | undefined, b: string | undefined, sign: number)
   return sign * collator.compare(aa, bb)
 }
 
-const ENHARMONIC: Record<number, string[]> = {
-  1: ['C#', 'Db'],
-  3: ['D#', 'Eb'],
-  6: ['F#', 'Gb'],
-  8: ['G#', 'Ab'],
-  10: ['A#', 'Bb'],
-}
 const keyRanks = new Map<string, number>()
 function rankKeys(names: string[], camelot: string[]): void {
   names.forEach((name, pitch) => {
