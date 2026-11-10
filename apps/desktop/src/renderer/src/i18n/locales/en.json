@@ -22,7 +22,7 @@
     "role": {
       "title": "Role for sessions",
     "of": "Role of {{name}}",
-      "base": "Bases",
+      "base": "Instrumentals",
       "vocal": "Vocals",
       "any": "Mixed"
     },
@@ -65,8 +65,8 @@
       },
       "character": {
         "heading": "How do you want it?",
-        "alternate": "Alternate base and vocal",
-        "alternateHint": "Base, vocal, base, vocal",
+        "alternate": "Alternate instrumental and vocal",
+        "alternateHint": "Instrumental, vocal, instrumental, vocal",
         "preferCombos": "Prefer proven combos",
         "preferCombosHint": "What you have played together in your sets, first",
         "tasteWeight": "What you like most",

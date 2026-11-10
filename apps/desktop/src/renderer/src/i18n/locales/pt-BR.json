@@ -22,8 +22,8 @@
     "role": {
       "title": "Papel para sessões",
     "of": "Papel de {{name}}",
-      "base": "Bases",
-      "vocal": "Cantadas",
+      "base": "Instrumentais (bases)",
+      "vocal": "Com voz (cantadas)",
       "any": "Misto"
     },
     "wizard": {
@@ -65,8 +65,8 @@
       },
       "character": {
         "heading": "Como você quer?",
-        "alternate": "Alternar base e cantada",
-        "alternateHint": "Base, cantada, base, cantada",
+        "alternate": "Alternar instrumental e com voz",
+        "alternateHint": "Instrumental, com voz, instrumental, com voz",
         "preferCombos": "Preferir combos comprovados",
         "preferCombosHint": "O que você já tocou junto nos seus sets, primeiro",
         "tasteWeight": "O que você mais gosta",

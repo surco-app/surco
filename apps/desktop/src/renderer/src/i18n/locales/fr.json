@@ -22,7 +22,7 @@
     "role": {
       "title": "Rôle pour les sessions",
     "of": "Rôle de {{name}}",
-      "base": "Bases",
+      "base": "Instrumentaux",
       "vocal": "Voix",
       "any": "Mixte"
     },
@@ -65,8 +65,8 @@
       },
       "character": {
         "heading": "Comment la veux-tu ?",
-        "alternate": "Alterner base et voix",
-        "alternateHint": "Base, voix, base, voix",
+        "alternate": "Alterner instrumental et voix",
+        "alternateHint": "Instrumental, voix, instrumental, voix",
         "preferCombos": "Privilégier les combos éprouvés",
         "preferCombosHint": "Ce que tu as mixé ensemble dans tes sets, en premier",
         "tasteWeight": "Ce que tu préfères",

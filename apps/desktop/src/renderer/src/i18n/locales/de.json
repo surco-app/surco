@@ -22,7 +22,7 @@
     "role": {
       "title": "Rolle für Sessions",
     "of": "Rolle von {{name}}",
-      "base": "Bases",
+      "base": "Instrumentals",
       "vocal": "Gesang",
       "any": "Gemischt"
     },
@@ -65,8 +65,8 @@
       },
       "character": {
         "heading": "Wie soll sie werden?",
-        "alternate": "Base und Gesang abwechseln",
-        "alternateHint": "Base, Gesang, Base, Gesang",
+        "alternate": "Instrumental und Gesang abwechseln",
+        "alternateHint": "Instrumental, Gesang, Instrumental, Gesang",
         "preferCombos": "Bewährte Combos bevorzugen",
         "preferCombosHint": "Was du in deinen Sets zusammen gespielt hast, zuerst",
         "tasteWeight": "Was dir am besten gefällt",

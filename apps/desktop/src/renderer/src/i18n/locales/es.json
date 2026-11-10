@@ -22,8 +22,8 @@
     "role": {
       "title": "Papel para sesiones",
     "of": "Papel de {{name}}",
-      "base": "Bases",
-      "vocal": "Cantaditas",
+      "base": "Instrumentales (bases)",
+      "vocal": "Con voz (cantadas)",
       "any": "Mezcladas"
     },
     "wizard": {
@@ -65,8 +65,8 @@
       },
       "character": {
         "heading": "¿Cómo la quieres?",
-        "alternate": "Alternar base y cantadita",
-        "alternateHint": "Base, cantadita, base, cantadita",
+        "alternate": "Alternar instrumental y con voz",
+        "alternateHint": "Instrumental, con voz, instrumental, con voz",
         "preferCombos": "Preferir combos probados",
         "preferCombosHint": "Lo que has pinchado junto en tus sets, primero",
         "tasteWeight": "Lo que más te gusta",

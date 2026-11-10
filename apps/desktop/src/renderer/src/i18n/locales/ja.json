@@ -22,7 +22,7 @@
     "role": {
       "title": "セッション用の役割",
     "of": "{{name}} の役割",
-      "base": "ベース",
+      "base": "インスト（ベース）",
       "vocal": "ボーカル",
       "any": "ミックス"
     },
@@ -65,8 +65,8 @@
       },
       "character": {
         "heading": "どんな感じにしますか？",
-        "alternate": "ベースとボーカルを交互に",
-        "alternateHint": "ベース、ボーカル、ベース、ボーカル",
+        "alternate": "インストとボーカルを交互に",
+        "alternateHint": "インスト、ボーカル、インスト、ボーカル",
         "preferCombos": "実績のあるコンボを優先",
         "preferCombosHint": "自分のセットで一緒にかけた並びを先に",
         "tasteWeight": "好みを重視",
