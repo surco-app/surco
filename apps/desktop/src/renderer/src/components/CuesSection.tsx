@@ -1540,25 +1540,35 @@ function Editing({
       </button>
     </div>
   )
-  const toolbar = (
-    <div data-testid="cues-toolbar" className="flex shrink-0 items-center gap-2">
-      <Select
-        testid="cues-flow"
-        portal
-        bare
-        lead={tr('editor.cues.flow')}
-        label={tr('editor.cues.flow')}
-        value={manual ? MANUAL_CUE_FLOW : shownFlow}
-        onChange={pickOption}
-        onClosed={focusEditor}
-        options={flowOptions}
+  const gridBand = (
+    <div
+      data-testid="cues-grid-band"
+      className="flex shrink-0 flex-wrap items-end gap-x-4 gap-y-2 rounded-lg bg-[var(--color-panel-2)] px-3 py-2"
+    >
+      <CueGridControls
+        grid={state.grid}
+        disabledReason={gridOff}
+        fit={gridFit}
+        needsFix={needsFix}
+        playheadMs={playheadMs}
+        onChange={setGrid}
+        onFit={fitGridTo}
+        onDone={focusEditor}
+        zones={rekordboxGrid}
+        kicks={programBeats}
+        onPin={pin}
       />
-      {autoControl}
-      <span className="flex-1" />
+      <DeckDivider />
+      <CueZoom
+        row
+        bars={zoom}
+        onZoom={(dir) => setZoom((z) => zoomStep(z, dir))}
+        onReset={() => setZoom(DEFAULT_ZOOM_BARS)}
+      />
       {offsets && (
         <span
           data-testid="cues-grid-offsets"
-          className="flex shrink-0 items-center gap-3 whitespace-nowrap text-xs text-fg-dim"
+          className="ml-auto flex h-7 shrink-0 items-center gap-3 whitespace-nowrap text-xs text-fg-dim"
         >
           <GridOffset
             testid="cues-grid-here"
@@ -1574,6 +1584,23 @@ function Editing({
           />
         </span>
       )}
+    </div>
+  )
+  const toolbar = (
+    <div data-testid="cues-toolbar" className="flex shrink-0 items-center gap-2">
+      <Select
+        testid="cues-flow"
+        portal
+        bare
+        lead={tr('editor.cues.flow')}
+        label={tr('editor.cues.flow')}
+        value={manual ? MANUAL_CUE_FLOW : shownFlow}
+        onChange={pickOption}
+        onClosed={focusEditor}
+        options={flowOptions}
+      />
+      {autoControl}
+      <span className="flex-1" />
       <span
         data-testid="cues-position"
         className="shrink-0 text-[13px] font-semibold tabular-nums text-fg"
@@ -1621,6 +1648,7 @@ function Editing({
             {reviewBar}
             {offGridBar}
           </div>
+          {gridBand}
           <div className="flex shrink-0 flex-col gap-1">
             {strip}
             {gridFit && state.grid && gridOff === null && (
@@ -1888,30 +1916,6 @@ function Editing({
           canClearAll={clearable}
           landsAs={settings.cueLettersByTime ? landsAs : undefined}
           onDone={focusEditor}
-          gridControls={
-            <>
-              <CueGridControls
-                grid={state.grid}
-                disabledReason={gridOff}
-                fit={gridFit}
-                needsFix={needsFix}
-                playheadMs={playheadMs}
-                onChange={setGrid}
-                onFit={fitGridTo}
-                onDone={focusEditor}
-                zones={rekordboxGrid}
-                kicks={programBeats}
-                onPin={pin}
-              />
-              <DeckDivider />
-              <CueZoom
-                row
-                bars={zoom}
-                onZoom={(dir) => setZoom((z) => zoomStep(z, dir))}
-                onReset={() => setZoom(DEFAULT_ZOOM_BARS)}
-              />
-            </>
-          }
         />
       )}
     </fieldset>
