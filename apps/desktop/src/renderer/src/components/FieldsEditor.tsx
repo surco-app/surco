@@ -21,6 +21,7 @@ import {
 import type { CustomField, MetaTextKey, PlaylistLibrary } from '../../../shared/types'
 import {
   AUTO_FIELDS,
+  filledBySurco,
   isPlaylistField,
   labeledFields,
   moveItem,
@@ -120,6 +121,8 @@ export function FieldsEditor({
   const libraryOf = (key: string): PlaylistLibrary | undefined =>
     playlistLibraries.find((l) => PLAYLIST_FIELDS[l] === key)
   const labelOf = (key: string): string => fields.find((f) => f.key === key)?.label ?? key
+  const isRequired = (key: string): boolean =>
+    requiredFields.includes(key) && !filledBySurco(key, importFields)
   const hidden = fields
     .filter((f) => !visibleFields.includes(f.key))
     .sort((a, b) => a.label.localeCompare(b.label))
@@ -392,7 +395,8 @@ export function FieldsEditor({
                 <button
                   type="button"
                   data-testid={`field-required-${key}`}
-                  aria-pressed={requiredFields.includes(key)}
+                  aria-pressed={isRequired(key)}
+                  disabled={filledBySurco(key, importFields)}
                   onClick={() =>
                     onChangeRequired(
                       requiredFields.includes(key)
@@ -401,9 +405,9 @@ export function FieldsEditor({
                     )
                   }
                   aria-label={tr('fields.rowRequired', { name: labelOf(key) })}
-                  className={`${TOGGLE_BOX} ${requiredFields.includes(key) ? TOGGLE_ON : TOGGLE_OFF}`}
+                  className={`${TOGGLE_BOX} ${isRequired(key) ? TOGGLE_ON : TOGGLE_OFF} disabled:opacity-25`}
                 >
-                  {requiredFields.includes(key) ? (
+                  {isRequired(key) ? (
                     <CircleCheck className="h-4 w-4" aria-hidden="true" />
                   ) : (
                     <CircleDashed className="h-4 w-4" aria-hidden="true" />

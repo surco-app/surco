@@ -1048,6 +1048,29 @@ describe('useTrackProcessing', () => {
     expect(await run([])).toEqual(['', 'Title'])
   })
 
+  it('converts a track whose required Quality is filled by Surco through its Auto', async () => {
+    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/a.aiff' })
+    setApi({ processTrack })
+    const updateTrack = vi.fn()
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [track({ id: 'a', meta: meta({ quality: '' }) })],
+          settings: {
+            importFields: ['quality'],
+            requiredFields: ['quality'],
+          } as unknown as Settings,
+          updateTrack,
+        }),
+      { wrapper: withClient(new QueryClient()) },
+    )
+    await act(async () => {
+      await result.current.processOne('a')
+    })
+    expect(processTrack).toHaveBeenCalledTimes(1)
+    expect(updateTrack).not.toHaveBeenCalledWith('a', expect.objectContaining({ status: 'error' }))
+  })
+
   // A per-track custom name (set via rename/regenerate) is normally honored, so the
   // export lands under the user's chosen file name rather than the source's.
   it('honors a custom output name when not overwriting', async () => {
