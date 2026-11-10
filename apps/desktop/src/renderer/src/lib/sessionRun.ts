@@ -1,5 +1,6 @@
 import { buildSession, type SessionOptions, type SessionPlan } from '../../../shared/sessionBuild'
 import { type Combos, mineCombos } from '../../../shared/sessionCombos'
+import { type LearnedMixing, learnMixing } from '../../../shared/sessionLearn'
 import type { PlaylistRole, SessionAnswers, SessionTrack } from '../../../shared/sessionTypes'
 import type { PlaylistTrackRef, SourcePlaylistEntry } from '../../../shared/types'
 import { mixedSequences, type SessionSource, toCandidates, trackIdOf } from './sessionCandidates'
@@ -12,6 +13,7 @@ export interface SessionRun {
   refsById: ReadonlyMap<string, PlaylistTrackRef>
   pool: SessionTrack[]
   combos: Combos
+  learned: LearnedMixing
 }
 
 export interface SessionPins {
@@ -76,7 +78,11 @@ export function runSession(input: {
         .find((entry) => entry.path?.normalize('NFC') === startPath.normalize('NFC'))
     : undefined
   const startWith = startEntry ? (trackIdOf(startEntry) ?? undefined) : undefined
-  const plan = buildSession(pool, pairs, sessionOptionsOf(answers, seed, pins, startWith))
+  const learned = learnMixing(sequences, new Map(pool.map((track) => [track.id, track])))
+  const plan = buildSession(pool, pairs, {
+    ...sessionOptionsOf(answers, seed, pins, startWith),
+    ...learned,
+  })
   const refsById = new Map<string, PlaylistTrackRef>()
   for (const source of sources) {
     for (const entry of source.entries) {
@@ -87,5 +93,5 @@ export function runSession(input: {
     }
   }
   const refs = plan.items.map((item) => refsById.get(item.track.id) ?? { paths: [] })
-  return { plan, refs, refsById, pool, combos }
+  return { plan, refs, refsById, pool, combos, learned }
 }

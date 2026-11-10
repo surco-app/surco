@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { type SessionPlan, swapAt } from '../../../shared/sessionBuild'
 import { uniqueName } from '../../../shared/sessionName'
 import type { PlaylistRole, SessionAnswers, SessionTrack } from '../../../shared/sessionTypes'
+import type { LearnedMixing } from '../../../shared/sessionLearn'
 import type { PlaylistTrackRef, SourceNode } from '../../../shared/types'
 import { alternativesFor } from '../lib/sessionAlternatives'
 import { runSession, type SessionPins, type SessionRun, sessionOptionsOf } from '../lib/sessionRun'
@@ -22,6 +23,7 @@ export interface RecentSession {
   pool: SessionTrack[]
   refsById: ReadonlyMap<string, PlaylistTrackRef>
   locked: ReadonlySet<string>
+  learned: LearnedMixing
 }
 
 type Roles = Readonly<Record<string, PlaylistRole>>
@@ -130,6 +132,7 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
       pool: run.pool,
       refsById: run.refsById,
       locked,
+      learned: run.learned,
     })
     return 'built'
   }
@@ -221,12 +224,10 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
 
   const alternatives = useStableCallback((index: number): SessionTrack[] =>
     recent
-      ? alternativesFor(
-          recent.plan,
-          index,
-          recent.pool,
-          sessionOptionsOf(recent.answers, recent.seed),
-        )
+      ? alternativesFor(recent.plan, index, recent.pool, {
+          ...sessionOptionsOf(recent.answers, recent.seed),
+          ...recent.learned,
+        })
       : [],
   )
 

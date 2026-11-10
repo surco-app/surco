@@ -208,3 +208,34 @@ describe('buildSession says a track was picked for taste only when it was among 
     for (const item of picked) expect(item.why.kind).not.toBe('taste')
   })
 })
+
+describe('buildSession mixes the way the DJ mixes', () => {
+  it('reads a jump past the learned usual window as a wider one', () => {
+    const pool = [track('a', { bpm: 140 }), track('b', { bpm: 143 })]
+    const stock = buildSession(pool, none, options({ minutes: 10, startWith: 'a' }))
+    const learned = buildSession(
+      pool,
+      none,
+      options({ minutes: 10, startWith: 'a', tempoTight: 2, tempoWide: 4 }),
+    )
+    expect(stock.items[1].why).not.toEqual({ kind: 'bpm', relaxed: true })
+    expect(learned.items[1].why).toEqual({ kind: 'bpm', relaxed: true })
+  })
+
+  it('lets the key weigh nothing for a DJ whose sets ignore it', () => {
+    const pool = [
+      track('start', { key: '8A' }),
+      track('near', { key: '8A' }),
+      track('clash', { key: '2B' }),
+    ]
+    const seconds = SEEDS.map(
+      (seed) =>
+        buildSession(pool, none, options({ minutes: 10, seed, startWith: 'start', keyCare: 0 }))
+          .items[1].track.id,
+    )
+    const counts = tally(seconds)
+    const ratio = (counts.get('near') ?? 0) / (counts.get('clash') ?? 1)
+    expect(ratio).toBeGreaterThan(0.7)
+    expect(ratio).toBeLessThan(1.4)
+  })
+})

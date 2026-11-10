@@ -155,3 +155,18 @@ describe('alternativesFor and songs already in the session', () => {
     expect(ids(alternativesFor(plan, 1, pool, options))).toEqual(['d'])
   })
 })
+
+describe('alternativesFor and the learned tempo window', () => {
+  it('offers only what fits the tempo window this DJ keeps', () => {
+    const plan = planOf(
+      track('a', { bpm: 140 }),
+      track('b', { bpm: 140 }),
+      track('c', { bpm: 140 }),
+    )
+    const pool = [...plan.items.map((item) => item.track), track('three', { bpm: 143 })]
+    expect(ids(alternativesFor(plan, 1, pool, options))).toEqual(['three'])
+    expect(
+      ids(alternativesFor(plan, 1, pool, { ...options, tempoTight: 1, tempoWide: 2 })),
+    ).toEqual([])
+  })
+})

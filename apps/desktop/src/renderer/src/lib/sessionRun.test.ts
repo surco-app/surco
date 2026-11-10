@@ -52,6 +52,30 @@ function run(
 }
 
 describe('runSession', () => {
+  it('learns from the Mixed playlists how far this DJ moves the tempo between tracks', () => {
+    const steady = Array.from({ length: 40 }, (_, i) =>
+      row(`/m/s${i}.mp3`, {}, { bpm: String(140 + (i % 2)) }),
+    )
+    const { learned } = run({ sources: ['set'] }, { set: 'any' }, { set: steady })
+    expect(learned.tempoTight).toBe(1)
+    expect(learned.tempoWide).toBe(2)
+  })
+
+  it('learns nothing from a session Surco made', () => {
+    const steady = Array.from({ length: 40 }, (_, i) => row(`/m/s${i}.mp3`))
+    const { learned } = run(
+      { sources: ['made'] },
+      { made: 'any' },
+      { made: steady },
+      1,
+      {},
+      undefined,
+      undefined,
+      new Set(['made']),
+    )
+    expect(learned).toEqual({})
+  })
+
   it('learns no order from a session Surco made, so a session never proves its own pairs', () => {
     const pairs = [row('/m/a.mp3'), row('/m/b.mp3'), row('/m/c.mp3')]
     const { combos, plan } = run(

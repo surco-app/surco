@@ -15,6 +15,9 @@ export interface SessionOptions {
   pinned?: readonly { index: number; trackId: string }[]
   fixedLength?: number
   startWith?: string
+  tempoTight?: number
+  tempoWide?: number
+  keyCare?: number
 }
 
 export type SessionWhy =
@@ -93,6 +96,12 @@ function richest(tracks: readonly SessionTrack[]): SessionTrack[] {
   return tracks.filter((track) => data(track) === most)
 }
 
+function stockKeyWeight(distance: number | null): number {
+  if (distance === null) return KEY_WEIGHTS.unknown
+  if (distance === 0) return KEY_WEIGHTS.same
+  return distance === 1 ? KEY_WEIGHTS.neighbour : KEY_WEIGHTS.far
+}
+
 export function tasteOf(track: SessionTrack, maxPlays: number, enabled: boolean): number {
   if (!enabled) return 0
   return track.rating / 100 + (maxPlays > 0 ? PLAYS_WEIGHT * (track.plays / maxPlays) : 0)
@@ -124,6 +133,9 @@ export function buildSession(
   options: SessionOptions,
 ): SessionPlan {
   const random = seeded(options.seed)
+  const tempoTight = options.tempoTight ?? TEMPO_TIGHT
+  const tempoWide = options.tempoWide ?? TEMPO_WIDE
+  const keyCare = options.keyCare ?? 1
   const eligible = pool.filter((track) => !track.fresh)
   const newcomers = pool.filter((track) => track.fresh)
   const byId = new Map(eligible.map((track) => [track.id, track]))
@@ -171,12 +183,8 @@ export function buildSession(
 
   const taste = (track: SessionTrack): number => tasteOf(track, maxPlays, options.tasteWeight)
 
-  const keyWeight = (from: SessionTrack, to: SessionTrack): number => {
-    const distance = camelotDistance(from.key, to.key)
-    if (distance === null) return KEY_WEIGHTS.unknown
-    if (distance === 0) return KEY_WEIGHTS.same
-    return distance === 1 ? KEY_WEIGHTS.neighbour : KEY_WEIGHTS.far
-  }
+  const keyWeight = (from: SessionTrack, to: SessionTrack): number =>
+    1 - keyCare * (1 - stockKeyWeight(camelotDistance(from.key, to.key)))
 
   const liking = (track: SessionTrack): number => (1 + taste(track)) ** TASTE_POWER
 
@@ -241,7 +249,7 @@ export function buildSession(
     const gap = tempoGap(from, to)
     return (
       harmonyAllows(options.harmony, camelotDistance(from.key, to.key)) &&
-      (gap === null || gap <= TEMPO_WIDE)
+      (gap === null || gap <= tempoWide)
     )
   }
 
@@ -271,12 +279,12 @@ export function buildSession(
     )
     const tight = fitting.filter((track) => {
       const gap = tempoGap(current, track)
-      return gap !== null && gap <= TEMPO_TIGHT
+      return gap !== null && gap <= tempoTight
     })
     if (tight.length > 0) return { tier: tight, relaxed: false }
     const wide = fitting.filter((track) => {
       const gap = tempoGap(current, track)
-      return gap !== null && gap <= TEMPO_WIDE
+      return gap !== null && gap <= tempoWide
     })
     if (wide.length > 0) return { tier: wide, relaxed: true }
     const unknown = fitting.filter((track) => tempoGap(current, track) === null)

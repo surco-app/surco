@@ -36,8 +36,8 @@ export function alternativesFor(
         (!before || transitionFits(before, track, options, tempoLimit)) &&
         (!after || transitionFits(track, after, options, tempoLimit)),
     )
-  const tight = fitting(TEMPO_LIMITS.tight)
-  const candidates = tight.length > 0 ? tight : fitting(TEMPO_LIMITS.wide)
+  const tight = fitting(options.tempoTight ?? TEMPO_LIMITS.tight)
+  const candidates = tight.length > 0 ? tight : fitting(options.tempoWide ?? TEMPO_LIMITS.wide)
   const maxPlays = pool.reduce((most, track) => Math.max(most, track.plays), 0)
   const apart = (track: SessionTrack): number =>
     (before ? (camelotDistance(before.key, track.key) ?? 1) : 0) +

@@ -90,6 +90,33 @@ describe('useSessionRun remembers the playlists it wrote', () => {
   })
 })
 
+describe('useSessionRun and the way this DJ mixes', () => {
+  async function placedOrOfferedWhenSetsJump(jump: number): Promise<string[]> {
+    const set = Array.from({ length: 40 }, (_, i) => ({
+      ...entry(`/m/s${i}.mp3`),
+      meta: { bpm: String(140 + (i % 2) * jump) },
+    }))
+    const loved = { ...entry('/m/a-three.mp3'), meta: { bpm: '143' } }
+    const rows = new Map([['s', [...set, loved]]])
+    const { result } = setup({
+      rows: { load: vi.fn(async () => rows), reset: vi.fn(), loading: false, failed: [] },
+    })
+    await act(async () => {
+      await result.current.build('folder', { ...ANSWERS, minutes: 30 }, ROLES)
+    })
+    const inPlan = result.current.recent?.plan.items.map((item) => item.track.id) ?? []
+    return [...inPlan, ...result.current.alternatives(1).map((track) => track.id)]
+  }
+
+  it('offers in Change only what fits the tempo window learned from the sets', async () => {
+    const offeredTight = await placedOrOfferedWhenSetsJump(1)
+    cleanup()
+    const offeredWide = await placedOrOfferedWhenSetsJump(6)
+    expect(offeredTight).not.toContain('/m/a-three.mp3')
+    expect(offeredWide).toContain('/m/a-three.mp3')
+  })
+})
+
 describe('useSessionRun build', () => {
   it('saves the answers, writes the session as a new playlist and opens it', async () => {
     const { deps, result } = setup()
