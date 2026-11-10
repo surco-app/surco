@@ -295,7 +295,8 @@ export function buildSession(
 
   const pickNext = (current: SessionTrack): SessionItem | null => {
     const surpriseTurn = options.surprise && items.length % SURPRISE_EVERY === 0
-    const slotOpen = placedFresh < slots.length && items.length >= slots[placedFresh]
+    const slotOpen =
+      placedFresh < slots.length && items.length >= slots[placedFresh] && !current.fresh
     return (
       (surpriseTurn ? nextByFit(current, true) : null) ??
       (options.preferCombos ? nextByCombo(current) : null) ??

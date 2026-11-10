@@ -110,3 +110,26 @@ describe('buildSession gives a different session each time it is redone', () => 
     expect(openings.get('a') ?? 0).toBeGreaterThan(openings.get('c') ?? 0)
   })
 })
+
+describe('buildSession spreads the new tracks', () => {
+  it('never plays two new tracks in a row when a run of combos kept their slots', () => {
+    const chain = Array.from({ length: 16 }, (_, i) => track(`k${i}`))
+    const links = chain
+      .slice(0, -1)
+      .map((t, i): [string, string, number] => [t.id, chain[i + 1].id, 2])
+    const rest = Array.from({ length: 20 }, (_, i) => track(`r${i}`))
+    const fresh = Array.from({ length: 10 }, (_, i) => track(`f${i}`, { fresh: true }))
+    for (const seed of SEEDS.slice(0, 40)) {
+      const plan = buildSession(
+        [...chain, ...rest, ...fresh],
+        combosOf(...links),
+        options({ minutes: 180, freshShare: 0.3, preferCombos: true, seed, startWith: 'k0' }),
+      )
+      for (let i = 1; i < plan.items.length; i++)
+        expect(
+          plan.items[i - 1].track.fresh && plan.items[i].track.fresh,
+          `seed ${seed} at ${i}`,
+        ).toBe(false)
+    }
+  })
+})
