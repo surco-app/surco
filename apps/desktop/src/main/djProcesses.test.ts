@@ -155,6 +155,7 @@ describe('createEnsureClosed', () => {
     engine: {
       convert: 'engineQuitDetail',
       cues: 'engineQuitDetailCues',
+      playlists: 'engineQuitDetailPlaylists',
       usb: 'engineQuitDetailUsb',
       restore: 'engineQuitDetailRestore',
     },
@@ -164,7 +165,7 @@ describe('createEnsureClosed', () => {
     expect(QUIT_REASONS).toEqual({
       rekordbox: ['convert', 'playlists', 'usb', 'restore'],
       traktor: ['convert', 'cues', 'playlists', 'restore'],
-      engine: ['convert', 'cues', 'usb', 'restore'],
+      engine: ['convert', 'cues', 'playlists', 'usb', 'restore'],
     })
   })
 

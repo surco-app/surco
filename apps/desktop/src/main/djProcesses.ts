@@ -14,7 +14,7 @@ export type QuitReason = 'convert' | 'cues' | 'playlists' | 'usb' | 'restore'
 export const QUIT_REASONS = {
   rekordbox: ['convert', 'playlists', 'usb', 'restore'],
   traktor: ['convert', 'cues', 'playlists', 'restore'],
-  engine: ['convert', 'cues', 'usb', 'restore'],
+  engine: ['convert', 'cues', 'playlists', 'usb', 'restore'],
 } as const satisfies { [P in WritableProgram]: readonly ['convert', ...QuitReason[]] }
 
 export type ReasonOf<P extends WritableProgram> = (typeof QUIT_REASONS)[P][number]
@@ -79,6 +79,7 @@ export const QUIT_TEXT: { [P in WritableProgram]: QuitText<P> } = {
     detail: {
       convert: 'engineQuitDetail',
       cues: 'engineQuitDetailCues',
+      playlists: 'engineQuitDetailPlaylists',
       usb: 'engineQuitDetailUsb',
       restore: 'engineQuitDetailRestore',
     },
