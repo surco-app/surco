@@ -56,7 +56,9 @@
         "onlyChosen": "Voir seulement les choisies",
         "allPlaylists": "Voir toutes les playlists",
         "summary_one": "{{count}} playlist choisie, jusqu’à {{tracks}} morceaux au choix",
-        "summary_other": "{{count}} playlists choisies, jusqu’à {{tracks}} morceaux au choix"
+        "summary_other": "{{count}} playlists choisies, jusqu’à {{tracks}} morceaux au choix",
+        "short": "De quoi tenir environ {{minutes}} min sur les {{target}} demandées. Choisissez une autre playlist pour y arriver.",
+        "enough": "De quoi tenir les {{target}} min demandées"
       },
       "fresh": {
         "hint": "Les nouveaux morceaux sont ceux ajoutés ces 30 derniers jours. Si le programme ne garde pas les dates, ceux sans lectures ni étoiles.",

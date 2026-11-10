@@ -56,7 +56,9 @@
         "onlyChosen": "See only the chosen",
         "allPlaylists": "See all playlists",
         "summary_one": "{{count}} playlist chosen, up to {{tracks}} tracks to pick from",
-        "summary_other": "{{count}} playlists chosen, up to {{tracks}} tracks to pick from"
+        "summary_other": "{{count}} playlists chosen, up to {{tracks}} tracks to pick from",
+        "short": "Enough for about {{minutes}} of the {{target}} min you asked for. Choose another playlist to get there.",
+        "enough": "Enough for the {{target}} min you asked for"
       },
       "fresh": {
         "hint": "New tracks are the ones added in the last 30 days. Where the program keeps no dates, the ones with no plays or stars.",

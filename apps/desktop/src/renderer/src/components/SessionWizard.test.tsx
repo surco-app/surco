@@ -177,6 +177,27 @@ describe('SessionWizard sources step', () => {
     )
   })
 
+  it('warns before building that the chosen playlists fall short of the length asked, so the DJ adds another instead of finding a short set at the end', () => {
+    setup()
+    toSources()
+    fireEvent.change(screen.getByTestId('playlists-search'), { target: { value: 'bases 97' } })
+    fireEvent.click(screen.getByTestId('session-wizard-role-mk97-any'))
+    expect(screen.getByTestId('session-wizard-length')).toHaveTextContent(
+      i18n.t('sessions.wizard.sources.short', { minutes: 66, target: 90 }),
+    )
+    expect(screen.getByTestId('session-wizard-next')).toBeEnabled()
+  })
+
+  it('says the chosen playlists are enough once they reach the length asked', () => {
+    setup()
+    toSources()
+    fireEvent.click(screen.getByTestId('playlists-folder-rem'))
+    fireEvent.click(screen.getByTestId('session-wizard-role-b90-base'))
+    expect(screen.getByTestId('session-wizard-length')).toHaveTextContent(
+      i18n.t('sessions.wizard.sources.enough', { target: 90 }),
+    )
+  })
+
   it('invites to search the playlists and never to create one', () => {
     setup()
     toSources()

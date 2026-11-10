@@ -291,6 +291,8 @@ export function SessionWizard({
             onPickMany={pickMany}
             only={onlyChosen}
             onOnly={setOnlyChosen}
+            minutes={minutes}
+            playMinutes={playMinutes}
           />
         )}
         {current === 'character' && (

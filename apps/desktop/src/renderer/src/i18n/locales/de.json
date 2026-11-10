@@ -56,7 +56,9 @@
         "onlyChosen": "Nur die gewählten zeigen",
         "allPlaylists": "Alle Playlists zeigen",
         "summary_one": "{{count}} Playlist gewählt, bis zu {{tracks}} Tracks zur Auswahl",
-        "summary_other": "{{count}} Playlists gewählt, bis zu {{tracks}} Tracks zur Auswahl"
+        "summary_other": "{{count}} Playlists gewählt, bis zu {{tracks}} Tracks zur Auswahl",
+        "short": "Reicht für etwa {{minutes}} der gewünschten {{target}} Min. Wähle eine weitere Playlist, um sie zu erreichen.",
+        "enough": "Reicht für die gewünschten {{target}} Min."
       },
       "fresh": {
         "hint": "Neu sind Tracks, die in den letzten 30 Tagen hinzugekommen sind. Speichert das Programm keine Daten, sind es Tracks ohne Wiedergaben und Sterne.",
