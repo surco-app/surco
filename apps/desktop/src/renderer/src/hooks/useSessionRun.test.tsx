@@ -215,100 +215,12 @@ describe('useSessionRun starting from a track', () => {
     expect(result.current.recent?.plan.items[0].track.id).toBe('/m/c.mp3')
   })
 
-  it('locks that track so redoing the session keeps it first', async () => {
+  it('keeps that track first when the session is redone, since the DJ chose where it starts', async () => {
     const result = await buildFrom('/m/c.mp3')
-    expect([...(result.current.recent?.locked ?? [])]).toEqual(['/m/c.mp3'])
     await act(async () => {
       await result.current.redo()
     })
     expect(result.current.recent?.plan.items[0].track.id).toBe('/m/c.mp3')
-  })
-
-  it('locks nothing when the session is built the usual way', async () => {
-    const { result } = setup()
-    await act(async () => {
-      await result.current.build('folder', ANSWERS, ROLES)
-    })
-    expect(result.current.recent?.locked.size).toBe(0)
-  })
-
-  it('locks nothing when the track is not in the chosen playlists', async () => {
-    const result = await buildFrom('/m/zzz.mp3')
-    expect(result.current.recent?.locked.size).toBe(0)
-  })
-})
-
-describe('useSessionRun locking tracks', () => {
-  const idAt = (
-    result: { current: { recent: { plan: { items: { track: { id: string } }[] } } | null } },
-    i: number,
-  ) => result.current.recent?.plan.items[i].track.id ?? ''
-
-  it('starts with nothing locked', async () => {
-    const { result } = await built()
-    expect(result.current.recent?.locked.size).toBe(0)
-  })
-
-  it('locks a track and unlocks it with the same call', async () => {
-    const { result } = await built()
-    const id = idAt(result, 1)
-    act(() => result.current.toggleLock(id))
-    expect(result.current.recent?.locked.has(id)).toBe(true)
-    act(() => result.current.toggleLock(id))
-    expect(result.current.recent?.locked.has(id)).toBe(false)
-  })
-
-  it('writes nothing when a track is locked, since the playlist does not change', async () => {
-    const { result } = await built()
-    act(() => result.current.toggleLock(idAt(result, 0)))
-    expect(replace).not.toHaveBeenCalled()
-  })
-
-  it('keeps the locked track at its place when it is redone', async () => {
-    const { result } = await built()
-    const id = idAt(result, 1)
-    const refs = result.current.recent?.refsById.get(id)
-    act(() => result.current.toggleLock(id))
-    await act(async () => {
-      await result.current.redo()
-    })
-    const written = replace.mock.calls[0][3]
-    expect(written[1]).toEqual(refs)
-    expect(result.current.recent?.plan.items[1].track.id).toBe(id)
-  })
-
-  it('goes on with the lock after redoing, so it can be redone again', async () => {
-    const { result } = await built()
-    const id = idAt(result, 1)
-    act(() => result.current.toggleLock(id))
-    await act(async () => {
-      await result.current.redo()
-    })
-    expect(result.current.recent?.locked.has(id)).toBe(true)
-  })
-
-  it('redoes as before when nothing is locked', async () => {
-    const { result } = await built()
-    await act(async () => {
-      await result.current.redo()
-    })
-    expect(replace).toHaveBeenCalledOnce()
-    expect(result.current.recent?.locked.size).toBe(0)
-  })
-
-  it('lets go of the locks when the session is adjusted, since what was asked for changed', async () => {
-    const { result } = await built()
-    act(() => result.current.toggleLock(idAt(result, 1)))
-    await act(async () => {
-      await result.current.adjust({ ...ANSWERS, minutes: 10 }, ROLES)
-    })
-    expect(result.current.recent?.locked.size).toBe(0)
-  })
-
-  it('ignores a lock on a track that is not in the session', async () => {
-    const { result } = await built()
-    act(() => result.current.toggleLock('/m/gone.mp3'))
-    expect(result.current.recent?.locked.has('/m/gone.mp3')).toBe(false)
   })
 })
 

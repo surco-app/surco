@@ -12,8 +12,6 @@ export interface SessionOptions {
   freshShare: number
   surprise: boolean
   seed: number
-  pinned?: readonly { index: number; trackId: string }[]
-  fixedLength?: number
   startWith?: string
   tempoTight?: number
   tempoWide?: number
@@ -134,18 +132,10 @@ export function buildSession(
   const maxPlays = eligible.reduce((most, track) => Math.max(most, track.plays), 0)
   const target = options.minutes * 60
   const poolById = new Map(pool.map((track) => [track.id, track]))
-  const pins = new Map<number, SessionTrack>()
-  for (const pin of options.pinned ?? []) {
-    const pinned = poolById.get(pin.trackId)
-    if (pinned && pin.index >= 0 && pin.index < (options.fixedLength ?? 0))
-      pins.set(pin.index, pinned)
-  }
-  const fixed = pins.size > 0 ? (options.fixedLength ?? 0) : 0
-  const used = new Set<string>([...pins.values()].map((track) => track.id))
-  const songs = new Set<string>([...pins.values()].flatMap((track) => track.song ?? []))
+  const used = new Set<string>()
+  const songs = new Set<string>()
   const isOpen = (track: SessionTrack): boolean =>
     !used.has(track.id) && !(track.song !== undefined && songs.has(track.song))
-  let avoid: TrackRole | null = null
   const items: SessionItem[] = []
   let total = 0
   let expected: TrackRole | null = null
@@ -222,14 +212,11 @@ export function buildSession(
   const roleFits = (track: SessionTrack): boolean => {
     if (!options.alternate) return true
     if (track.role === 'any') return !strict
-    if (avoid !== null && track.role === avoid) return false
     return expected === null || track.role === expected
   }
 
   const roleOrNeutral = (track: SessionTrack): boolean =>
-    !options.alternate ||
-    track.role === 'any' ||
-    ((avoid === null || track.role !== avoid) && (expected === null || track.role === expected))
+    !options.alternate || track.role === 'any' || expected === null || track.role === expected
 
   const take = (track: SessionTrack, why: SessionWhy): void => {
     used.add(track.id)
@@ -311,19 +298,15 @@ export function buildSession(
     }
   }
 
-  const nextByFit = (
-    current: SessionTrack,
-    onlyWithoutCombo: boolean,
-    harmony: SessionOptions['harmony'] = options.harmony,
-  ): SessionItem | null => {
+  const nextByFit = (current: SessionTrack, onlyWithoutCombo: boolean): SessionItem | null => {
     const open = eligible.filter(
       (track) => isOpen(track) && !(onlyWithoutCombo && combos.get(current.id)?.has(track.id)),
     )
-    let fit = fitTier(current, open, roleFits, true, harmony)
+    let fit = fitTier(current, open, roleFits, true)
     if (fit.tier.length === 0 && options.alternate)
       fit = fitTier(current, open, roleFits, true, 'free')
-    if (fit.tier.length === 0) fit = fitTier(current, open, roleOrNeutral, true, harmony)
-    if (fit.tier.length === 0) fit = fitTier(current, open, () => true, true, harmony)
+    if (fit.tier.length === 0) fit = fitTier(current, open, roleOrNeutral, true)
+    if (fit.tier.length === 0) fit = fitTier(current, open, () => true, true)
     const { tier, relaxed } = fit
     if (tier.length === 0) return null
     const chosen = pickWeighted(
@@ -396,29 +379,7 @@ export function buildSession(
   const openingWhy = (track: SessionTrack): SessionWhy =>
     track.phase === 'open' ? { kind: 'phase', phase: 'open' } : { kind: 'start' }
 
-  if (fixed > 0) {
-    for (let i = 0; i < fixed; i++) {
-      const pin = pins.get(i)
-      if (pin) {
-        take(pin, { kind: 'chosen' })
-        continue
-      }
-      const after = pins.get(i + 1)
-      avoid = options.alternate && after && after.role !== 'any' ? after.role : null
-      const current = items[items.length - 1]?.track
-      if (!current) {
-        const first = opening()
-        if (first) take(first, openingWhy(first))
-      } else {
-        const next = pickNext(current) ?? nextByFit(current, false, 'free')
-        if (next) {
-          if (next.why.kind === 'fresh') placedFresh++
-          take(next.track, next.why)
-        }
-      }
-      avoid = null
-    }
-  } else if (eligible.length > 0) {
+  if (eligible.length > 0) {
     const asked = options.startWith ? poolById.get(options.startWith) : undefined
     const first = asked ?? opening()
     if (first) take(first, asked ? { kind: 'chosen' } : openingWhy(first))

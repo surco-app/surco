@@ -107,8 +107,6 @@
       "redo": "Refazer",
       "adjust": "Ajustar…",
       "keep": "Ficar assim",
-    "locked_one": "{{count}} faixa fixada, Refazer a mantém",
-    "locked_other": "{{count}} faixas fixadas, Refazer as mantém",
     "kept": "Mantida como playlist normal",
       "short": "Só há faixas para {{minutes}} min",
     "counted": "Contado a {{minutes}} min por faixa. Os arquivos somam {{audio}}.",
@@ -118,28 +116,7 @@
       "assumed_other": "{{count}} faixas sem duração, contam como {{minutes}} min cada"
     },
     "playlistName": "Sessão de {{date}}",
-    "closed": "Feche seu programa de DJ para montar a sessão. Com ele aberto, a playlist ficaria pela metade",
-    "why": {
-      "start": "Onde a sessão começa",
-    "partner": "Tocou logo depois num set",
-      "combo_one": "Combo comprovado em {{count}} set",
-      "combo_other": "Combo comprovado em {{count}} sets",
-      "harmonicSame": "{{from}} → {{to}}, mesmo tom",
-      "harmonicRing": "{{from}} → {{to}}, mesmo anel",
-      "harmonicNeighbour": "{{from}} → {{to}}, vizinho",
-      "tasteRated": "Avaliada com {{stars}} de 5, entre as melhores que combinam",
-      "tastePlayed_one": "Tocada {{count}} vez, entre as mais tocadas que combinam",
-    "tastePlayed_other": "Tocada {{count}} vezes, entre as mais tocadas que combinam",
-      "bpm": "Combina pelo andamento",
-      "bpmRelaxed": "Nenhuma outra combinava, então o andamento muda mais que o normal",
-      "freshKey": "Nova. Combina pelo tom {{key}}",
-      "freshTempo": "Nova. Combina pelo andamento",
-      "chosen": "Escolhida por você",
-      "phaseOpen": "Para abrir, das suas playlists de abertura",
-      "phaseClose": "Para fechar, das suas playlists de encerramento",
-    "lock": "Fixar para o Refazer manter",
-    "unlock": "Soltar"
-    }
+    "closed": "Feche seu programa de DJ para montar a sessão. Com ele aberto, a playlist ficaria pela metade"
   },
   "pasteTracklist": {
     "title": "Colar tracklist em “{{name}}”",

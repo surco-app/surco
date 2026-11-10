@@ -4,7 +4,7 @@ import type { LearnedMixing } from '../../../shared/sessionLearn'
 import { uniqueName } from '../../../shared/sessionName'
 import type { PlaylistRole, SessionAnswers, SessionTrack } from '../../../shared/sessionTypes'
 import type { PlaylistTrackRef, SourceNode } from '../../../shared/types'
-import { runSession, type SessionPins, type SessionRun } from '../lib/sessionRun'
+import { runSession, type SessionRun } from '../lib/sessionRun'
 import type { SessionPhase } from '../lib/sessionTree'
 import type { SessionRows } from './useSessionRows'
 import type { SessionWriter } from './useSessionWrite'
@@ -22,7 +22,7 @@ export interface RecentSession {
   plan: SessionPlan
   pool: SessionTrack[]
   refsById: ReadonlyMap<string, PlaylistTrackRef>
-  locked: ReadonlySet<string>
+  startPath?: string
   learned: LearnedMixing
 }
 
@@ -61,7 +61,6 @@ export interface SessionRunner {
   fill: (target: FillTarget, answers: SessionAnswers, roles: Roles) => Promise<BuildResult>
   redo: () => Promise<BuildResult>
   adjust: (answers: SessionAnswers, roles: Roles) => Promise<BuildResult>
-  toggleLock: (trackId: string) => void
   keep: () => void
   noteEdit: (playlistId: string) => void
 }
@@ -88,7 +87,6 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
     answers: SessionAnswers,
     roles: Roles,
     seed: number,
-    pins?: SessionPins,
     startPath?: string,
   ): Promise<SessionRun> => {
     const library = deps.library?.() ?? {}
@@ -100,7 +98,6 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
       rows: loaded,
       seed,
       library,
-      pins,
       startPath,
       made: deps.made?.(),
       phases,
@@ -116,7 +113,7 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
     roles: Roles,
     seed: number,
     run: SessionRun,
-    locked: ReadonlySet<string> = new Set(),
+    startPath?: string,
   ): BuildResult => {
     deps.noteMade?.(id)
     deps.openPlaylist({ id, name: shown, kind: 'playlist', count: run.refs.length })
@@ -130,7 +127,7 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
       plan: run.plan,
       pool: run.pool,
       refsById: run.refsById,
-      locked,
+      startPath,
       learned: run.learned,
     })
     return 'built'
@@ -141,16 +138,15 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
       exclusive(async () => {
         deps.saveAnswers(answers)
         const seed = deps.newSeed()
-        const run = await produce(answers, roles, seed, undefined, startPath)
+        const run = await produce(answers, roles, seed, startPath)
         if (run.refs.length === 0) return 'empty'
         if (!(await deps.canWrite())) return 'closed'
         const name = deps.nameFor()
         const shown = uniqueName(name, deps.namesIn(parentId))
         const id = await deps.writer.create(parentId, shown, run.refs)
         if (id === null) return 'refused'
-        const opening = run.plan.items[0]
-        const locked = new Set(opening?.why.kind === 'chosen' ? [opening.track.id] : [])
-        return settle(id, parentId, name, shown, answers, roles, seed, run, locked)
+        const chosen = run.plan.items[0]?.why.kind === 'chosen' ? startPath : undefined
+        return settle(id, parentId, name, shown, answers, roles, seed, run, chosen)
       }),
   )
 
@@ -172,22 +168,13 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
     previous: RecentSession,
     answers: SessionAnswers,
     roles: Roles,
-    keepLocks: boolean,
+    keepStart: boolean,
   ): Promise<BuildResult> =>
     exclusive(async () => {
       const seed = previous.seed + 1
       deps.rows.reset()
-      const pinned = keepLocks
-        ? previous.plan.items.flatMap((item, index) =>
-            previous.locked.has(item.track.id) ? [{ index, trackId: item.track.id }] : [],
-          )
-        : []
-      const run = await produce(
-        answers,
-        roles,
-        seed,
-        pinned.length > 0 ? { pinned, length: previous.plan.items.length } : undefined,
-      )
+      const startPath = keepStart ? previous.startPath : undefined
+      const run = await produce(answers, roles, seed, startPath)
       if (run.refs.length === 0) return 'empty'
       if (!(await deps.canWrite())) return 'closed'
       const shown = uniqueName(previous.name, deps.namesIn(previous.parentId))
@@ -203,11 +190,7 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
             roles,
             seed,
             run,
-            new Set(
-              pinned
-                .map((pin) => pin.trackId)
-                .filter((trackId) => run.plan.items.some((item) => item.track.id === trackId)),
-            ),
+            run.plan.items[0]?.why.kind === 'chosen' ? startPath : undefined,
           )
     })
 
@@ -221,20 +204,11 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
     return replaceWith(recent, answers, roles, false)
   })
 
-  const toggleLock = useStableCallback((trackId: string) =>
-    setRecent((current) => {
-      if (!current?.plan.items.some((item) => item.track.id === trackId)) return current
-      const locked = new Set(current.locked)
-      if (!locked.delete(trackId)) locked.add(trackId)
-      return { ...current, locked }
-    }),
-  )
-
   const keep = useStableCallback(() => setRecent(null))
 
   const noteEdit = useStableCallback((playlistId: string) =>
     setRecent((current) => (current?.playlistId === playlistId ? null : current)),
   )
 
-  return { recent, busy, build, fill, redo, adjust, toggleLock, keep, noteEdit }
+  return { recent, busy, build, fill, redo, adjust, keep, noteEdit }
 }
