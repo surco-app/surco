@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({ ipcMain: { handle: vi.fn() } }))
 
-import type { SourceNode, SourcePlaylistEntry } from '../shared/types'
+import type { CollectionTrack, SourceNode, SourcePlaylistEntry } from '../shared/types'
 import { concat, frame, track, utf16be } from './seratoDatabaseFixture'
 import type { SeratoLibraryRoot } from './seratoLibrary'
 import { registerSeratoPlaylistsIpc } from './seratoPlaylistsIpc'
@@ -85,5 +85,14 @@ describe('registerSeratoPlaylistsIpc', () => {
     expect(await handler('serato:running')({})).toBe(true)
     open = false
     expect(await handler('serato:running')({})).toBe(false)
+  })
+
+  it('lists the whole collection as rows to match against, read from the libraries found now', () => {
+    let roots: SeratoLibraryRoot[] = []
+    registerSeratoPlaylistsIpc({ roots: () => roots })
+    expect(handler('serato:collectionTracks')({})).toEqual([])
+    roots = [library()]
+    const rows = handler('serato:collectionTracks')({}) as CollectionTrack[]
+    expect(rows.map((r) => r.path).sort()).toEqual(['/Music/a.mp3', '/Music/b.mp3'])
   })
 })

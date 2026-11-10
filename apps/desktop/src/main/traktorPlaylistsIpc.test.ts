@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({ ipcMain: { handle: vi.fn() } }))
 
-import type { SourceNode, SourcePlaylistEntry } from '../shared/types'
+import type { CollectionTrack, SourceNode, SourcePlaylistEntry } from '../shared/types'
 import { registerTraktorPlaylistsIpc } from './traktorPlaylistsIpc'
 
 function handler(channel: string): (...args: unknown[]) => unknown {
@@ -77,5 +77,15 @@ describe('registerTraktorPlaylistsIpc', () => {
     const entries = handler('traktor:playlist')({}, 'u1') as SourcePlaylistEntry[]
     expect(entries.map((e) => e.path)).toEqual(['/Music/a.mp3', '/Music/b.mp3'])
     expect(allowMedia).toHaveBeenCalledWith(['/Music/a.mp3', '/Music/b.mp3'])
+  })
+
+  it('lists the whole collection as rows to match against, and nothing without a collection', async () => {
+    const file = await collection()
+    let found = ''
+    registerTraktorPlaylistsIpc(() => found, { bootVolume: () => 'HD' })
+    expect(handler('traktor:collectionTracks')({})).toEqual([])
+    found = file
+    const rows = handler('traktor:collectionTracks')({}) as CollectionTrack[]
+    expect(rows.map((r) => r.path).sort()).toEqual(['/Music/a.mp3', '/Music/b.mp3'])
   })
 })

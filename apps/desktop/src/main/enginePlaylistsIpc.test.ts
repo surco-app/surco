@@ -105,4 +105,13 @@ describe('registerEnginePlaylistsIpc', () => {
     expect(paths).toHaveLength(2)
     expect(allowMedia).toHaveBeenCalledWith(expect.arrayContaining([...paths, cover]))
   })
+
+  it('counts every track of the library set now, and none without a library', async () => {
+    const dir = await library()
+    let configured = ''
+    registerEnginePlaylistsIpc(() => configured, { artDir: () => join(dir, 'art') })
+    expect(handler('engine:trackCount')({})).toBe(0)
+    configured = dir
+    expect(handler('engine:trackCount')({})).toBe(2)
+  })
 })

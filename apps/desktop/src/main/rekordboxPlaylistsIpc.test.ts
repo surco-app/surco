@@ -15,7 +15,7 @@ vi.mock('./rekordboxDb', async (importOriginal) => {
   return { ...real, openRekordboxDb: vi.fn(real.openRekordboxDb) }
 })
 
-import type { SourcePlaylistEntry } from '../shared/types'
+import type { CollectionTrack, SourcePlaylistEntry } from '../shared/types'
 import { registerRekordboxCuesIpc } from './rekordboxCuesIpc'
 import { openRekordboxDb, rekordboxRawKey } from './rekordboxDb'
 import { ORGANISE_FIXTURE, writeRekordboxPlaylistFixture } from './rekordboxPlaylistsFixture'
@@ -432,5 +432,45 @@ describe('registerRekordboxPlaylistsIpc', () => {
       { kind: 'rename', playlistId: '3000', name: 'House 26' },
     )
     expect(onWaiting).toHaveBeenCalledTimes(1)
+  })
+
+  it('says rekordbox is there from the file alone, so the tab shows without decrypting', async () => {
+    const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')
+    writeRekordboxPlaylistFixture(path, ORGANISE_FIXTURE)
+    let configured = ''
+    registerRekordboxPlaylistsIpc(() => configured, {
+      ensureClosed: vi.fn(async () => true),
+      queue: queueFor(path),
+    })
+    expect(await handler('rekordbox:available')()).toBe(false)
+    configured = path
+    expect(await handler('rekordbox:available')()).toBe(true)
+  })
+
+  it('counts every track of the collection and lists it as rows to match against', async () => {
+    const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')
+    writeRekordboxPlaylistFixture(path, ORGANISE_FIXTURE)
+    registerRekordboxPlaylistsIpc(() => path, {
+      ensureClosed: vi.fn(async () => true),
+      queue: queueFor(path),
+    })
+    const rows = (await handler('rekordbox:collectionTracks')()) as CollectionTrack[]
+    expect(await handler('rekordbox:trackCount')()).toBeGreaterThan(0)
+    expect(rows.map((r) => r.title)).toContain('Night Train')
+    expect(rows.find((r) => r.title === 'Night Train')?.path).toBe(
+      '/Volumes/Public/Music/Night Train.aiff',
+    )
+  })
+
+  it('answers which playlists hold each file of the collection, so the field can fill in', async () => {
+    const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')
+    writeRekordboxPlaylistFixture(path, ORGANISE_FIXTURE)
+    registerRekordboxQueueIpc(queueFor(path), {
+      collection: () => path,
+      ensureClosed: vi.fn(async () => true),
+    })
+    expect(
+      await handler('rekordbox:membership')({}, ['/Volumes/Public/Music/Night Train.aiff']),
+    ).toEqual({ '/Volumes/Public/Music/Night Train.aiff': ['2000'] })
   })
 })
