@@ -2,6 +2,7 @@ import { ENHARMONIC, MAJOR_CAMELOT, MAJOR_NAMES, MINOR_CAMELOT, MINOR_NAMES } fr
 import type { KeyNotation } from './types'
 
 const CAMELOT = /^0?([1-9]|1[0-2])([AB])$/i
+const WORDED = /^([a-g][#b]?)\s*(maj|major|min|minor)$/i
 
 const BY_NAME = new Map<string, string>()
 for (const [names, camelot, suffix] of [
@@ -21,7 +22,9 @@ export function camelotOf(key: string | undefined): string | null {
   if (text === '') return null
   const direct = text.match(CAMELOT)
   if (direct) return `${direct[1]}${direct[2].toUpperCase()}`
-  return BY_NAME.get(text.toLowerCase()) ?? null
+  const worded = text.match(WORDED)
+  const name = worded ? `${worded[1]}${/^mi/i.test(worded[2]) ? 'm' : ''}` : text
+  return BY_NAME.get(name.toLowerCase()) ?? null
 }
 
 export function keyIn(key: string, notation: KeyNotation): string {
