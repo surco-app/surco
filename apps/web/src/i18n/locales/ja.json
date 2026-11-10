@@ -3040,9 +3040,9 @@
           {
             "tab": "エディタ",
             "setting": "キー表記",
-            "value": "Camelot式（8A）",
+            "value": "英数字（8A）",
             "optional": true,
-            "note": "または「音名表記（Am）」。Beatportのキー表記方法です。"
+            "note": "または「クラシック（Am）」。Beatportのキー表記方法です。"
           }
         ],
         "steps": [

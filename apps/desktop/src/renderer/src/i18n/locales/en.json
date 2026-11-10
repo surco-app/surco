@@ -1858,7 +1858,7 @@
     "showEditorHints": "Inline explanations",
     "showEditorHintsHint": "One-line explanations under the editor controls: what each mode does and what the peak ceiling is. Turn off once you know them by heart.",
     "keyNotation": "Key notation",
-    "keyNotationHint": "How the key is shown in the track list and in the suggestion under the Key field. Camelot is what DJ software sorts by.",
+    "keyNotationHint": "How the key is shown in the track list and in the suggestion under the Key field. Alphanumeric, or Camelot, is what DJ software sorts by.",
     "sections": {
       "title": "Editor sections",
       "hint": "Choose which sections start open and their order below the metadata form.",
@@ -1880,8 +1880,8 @@
       "openHint": "Start this section unfolded when you open a track."
     },
     "keyNotations": {
-      "camelot": "Camelot (8A)",
-      "musical": "Musical (Am)"
+      "camelot": "Alphanumeric (8A)",
+      "musical": "Classic (Am)"
     },
     "shown": "Shown",
     "hidden": "Hidden",
