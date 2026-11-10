@@ -663,3 +663,51 @@ describe('Auto over the whole track', () => {
     expect(Math.abs(auto.anchorMs - (244 + 2 * P_142))).toBeLessThan(5)
   })
 })
+
+describe('Auto on the fine measurements', () => {
+  const BPM = 140
+  const DURATION = 380000
+  const fineEvery = (fromMs: number, toMs: number, phaseAt: (ms: number) => number) =>
+    Array.from({ length: Math.floor((toMs - fromMs) / 1714) + 1 }, (_, i) => {
+      const ms = fromMs + i * 1714
+      return { ms, firstMs: 100 + phaseAt(ms) }
+    })
+  const fitOf = (fine: { ms: number; firstMs: number }[]) => ({ bpm: BPM, firstMs: 100, fine })
+  const worstAlong = (grid: EditableGrid, fit: ReturnType<typeof fitOf>) =>
+    Math.max(
+      ...Array.from({ length: 36 }, (_, i) =>
+        Math.abs(gridOffsets(drawn(grid, DURATION), fit, 10000 + i * 10000, DURATION).hereMs),
+      ),
+    )
+
+  it('follows a master whose tempo breathes with as many zones as it takes, more than eight if it must', () => {
+    const fit = fitOf(fineEvery(1000, 378000, (ms) => 10 * Math.sin((2 * Math.PI * ms) / 60000)))
+    const auto = autoFitGrid({ bpm: BPM, anchorMs: 120 }, fit, 0, [], true)
+    expect(auto.zones?.length).toBeGreaterThan(8)
+    expect(worstAlong(auto, fit)).toBeLessThanOrEqual(5)
+  })
+
+  it('keeps one zone on a steady track whose readings wobble a bin either way', () => {
+    const fit = fitOf(
+      fineEvery(1000, 378000, (ms) => [0, 2.2, 0, -2.2, 2.2][Math.round(ms / 1714) % 5]),
+    )
+    expect(autoFitGrid({ bpm: BPM, anchorMs: 120 }, fit, 0, [], true).zones).toBeUndefined()
+  })
+
+  it('ignores a build the detector hears 12 ms late for twenty seconds and then leaves, since a tempo never jumps and jumps back', () => {
+    const fit = fitOf(fineEvery(1000, 378000, (ms) => (ms > 200000 && ms < 220000 ? 12 : 0)))
+    const auto = autoFitGrid({ bpm: BPM, anchorMs: 120 }, fit, 0, [], true)
+    expect(auto.zones).toBeUndefined()
+    expect(worstAlong(auto, fit)).toBeLessThanOrEqual(1)
+  })
+
+  it('reads the grid as on the beat through a run of scattered misreadings', () => {
+    const junk = [-18, 14, -44, 9, 15, -12, -8]
+    const fit = fitOf(
+      fineEvery(1000, 378000, (ms) =>
+        ms > 140000 && ms < 152000 ? junk[Math.round(ms / 1714) % junk.length] : 0,
+      ),
+    )
+    expect(worstAlong({ bpm: BPM, anchorMs: 100 }, fit)).toBeLessThanOrEqual(1)
+  })
+})

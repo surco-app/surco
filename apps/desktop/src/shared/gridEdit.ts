@@ -241,12 +241,44 @@ const median = (values: number[]): number => {
 
 function steadyStretches(fit: GridFit): { ms: number; d: number }[] {
   const period = periodOf(fit.bpm)
-  return (fit.phases ?? [])
-    .map((p) => ({
-      ms: p.ms,
-      d: offbeatFolded(p.firstMs - nearestOn(p.firstMs, fit.firstMs, period), period),
-    }))
-    .filter((p) => Math.abs(p.d) <= period / 8)
+  const measured = (fit.fine?.length ?? 0) >= MIN_FINE ? (fit.fine ?? []) : (fit.phases ?? [])
+  return withoutExcursions(
+    measured
+      .map((p) => ({
+        ms: p.ms,
+        d: offbeatFolded(p.firstMs - nearestOn(p.firstMs, fit.firstMs, period), period),
+      }))
+      .filter((p) => Math.abs(p.d) <= period / 8),
+  )
+}
+
+const MIN_FINE = 16
+const JUMP_MS = 7
+const MAX_EXCURSION_MS = 40000
+const MIN_HEARD_MS = 10000
+const EDGE_STRETCHES = 5
+
+function withoutExcursions(points: Stretch[]): Stretch[] {
+  if (points.length === 0) return points
+  const cuts = [0]
+  for (let i = 1; i < points.length; i++)
+    if (Math.abs(points[i].d - points[i - 1].d) > JUMP_MS) cuts.push(i)
+  cuts.push(points.length)
+  const parts = cuts.slice(1).map((end, i) => points.slice(cuts[i], end))
+  const span = (part: Stretch[]) => part[part.length - 1].ms - part[0].ms
+  const levelAt = (part: Stretch[]) => median(part.map((p) => p.d))
+  const kept = parts.map((part) => span(part) >= MIN_HEARD_MS)
+  if (!kept.some(Boolean)) return points
+  const trusted = kept.map((k, i) => k && span(parts[i]) >= MAX_EXCURSION_MS)
+  const returns = (i: number) => {
+    const before = kept.lastIndexOf(true, i - 1)
+    const after = kept.indexOf(true, i + 1)
+    if (before < 0 || after < 0) return true
+    const end = levelAt(parts[before].slice(-EDGE_STRETCHES))
+    const start = levelAt(parts[after].slice(0, EDGE_STRETCHES))
+    return Math.abs(end - start) <= JUMP_MS
+  }
+  return parts.filter((_, i) => kept[i] && (trusted[i] || !returns(i))).flat()
 }
 
 function phaseNear(fit: GridFit, ms: number): number {
@@ -319,13 +351,13 @@ export function fitGrid(
   return fitted ?? grid
 }
 
-const BREAK_MS = 10
+const BREAK_MS = 5
 const BREAK_RUN = 3
-const MIN_RUN_STRETCHES = 4
+const MIN_RUN_STRETCHES = 6
 
 type Stretch = { ms: number; d: number }
 
-function lineOf(points: Stretch[]): { at: (ms: number) => number; sse: number } {
+function lineOf(points: Stretch[]): { at: (ms: number) => number; slope: number; sse: number } {
   const meanMs = points.reduce((sum, p) => sum + p.ms, 0) / points.length
   const meanD = points.reduce((sum, p) => sum + p.d, 0) / points.length
   let num = 0
@@ -336,24 +368,23 @@ function lineOf(points: Stretch[]): { at: (ms: number) => number; sse: number } 
   }
   const slope = den === 0 ? 0 : num / den
   const at = (ms: number) => meanD + slope * (ms - meanMs)
-  return { at, sse: points.reduce((sum, p) => sum + (p.d - at(p.ms)) ** 2, 0) }
-}
-
-function awayFrom(line: (ms: number) => number, points: Stretch[]): boolean {
-  const sides = points.map((p) => {
-    const off = p.d - line(p.ms)
-    return Math.abs(off) > BREAK_MS ? Math.sign(off) : 0
-  })
-  return sides.length === BREAK_RUN && sides[0] !== 0 && sides.every((s) => s === sides[0])
+  return { at, slope, sse: points.reduce((sum, p) => sum + (p.d - at(p.ms)) ** 2, 0) }
 }
 
 function breaksAway(points: Stretch[]): boolean {
   const { at } = lineOf(points)
-  return points.some((_, i) => awayFrom(at, points.slice(i, i + BREAK_RUN)))
+  const sides = points.map((p) => {
+    const off = p.d - at(p.ms)
+    return Math.abs(off) > BREAK_MS ? Math.sign(off) : 0
+  })
+  return sides.some(
+    (side, i) =>
+      side !== 0 && sides.slice(i, i + BREAK_RUN).filter((s) => s === side).length === BREAK_RUN,
+  )
 }
 
-function splitRuns(points: Stretch[], room: number): Stretch[][] {
-  if (room < 2 || points.length < 2 * MIN_RUN_STRETCHES || !breaksAway(points)) return [points]
+function splitRuns(points: Stretch[]): Stretch[][] {
+  if (points.length < 2 * MIN_RUN_STRETCHES || !breaksAway(points)) return [points]
   let best = 0
   let bestCost = Number.POSITIVE_INFINITY
   for (let at = MIN_RUN_STRETCHES; at <= points.length - MIN_RUN_STRETCHES; at++) {
@@ -363,14 +394,7 @@ function splitRuns(points: Stretch[], room: number): Stretch[][] {
       best = at
     }
   }
-  const left = points.slice(0, best)
-  const right = points.slice(best)
-  const lasts =
-    awayFrom(lineOf(left).at, right.slice(-BREAK_RUN)) &&
-    awayFrom(lineOf(right).at, left.slice(0, BREAK_RUN))
-  if (!lasts) return [points]
-  const runs = splitRuns(left, room - 1)
-  return [...runs, ...splitRuns(right, room - runs.length)]
+  return [...splitRuns(points.slice(0, best)), ...splitRuns(points.slice(best))]
 }
 
 export function autoFitGrid(
@@ -381,27 +405,40 @@ export function autoFitGrid(
   zones: boolean,
 ): EditableGrid {
   const { zones: _, ...base } = grid
-  const runs = zones ? splitRuns(steadyStretches(fit), MAX_ZONES) : []
+  const sameTempo = Math.abs(fit.bpm - grid.bpm) / grid.bpm < SAME_TEMPO_RATIO
+  const runs = zones && sameTempo ? splitRuns(steadyStretches(fit)) : []
   if (runs.length < 2)
     return zones ? fitGrid(base, fit, atMs, kicks) : fitGrid(grid, fit, atMs, kicks)
-  const fitOf = (run: Stretch[]): GridFit => ({
-    ...fit,
-    phases: (fit.phases ?? []).filter((p) => p.ms >= run[0].ms && p.ms <= run[run.length - 1].ms),
+  const fitPeriod = periodOf(fit.bpm)
+  const lines = runs.map((run) => {
+    const { at, slope } = lineOf(run)
+    return { period: fitPeriod * (1 + slope), phaseAt: (ms: number) => fit.firstMs + at(ms) }
   })
-  const first = fitGrid(base, fitOf(runs[0]), runs[0][0].ms, kicks)
+  const firstMs = runs[0][0].ms
+  const heard = nearestOn(firstMs, lines[0].phaseAt(firstMs), fitPeriod)
+  const off =
+    heard -
+    (kicks.length >= 2
+      ? nearestBeatMs(heard, kicks)
+      : nearestOn(heard, grid.anchorMs, periodOf(grid.bpm)))
+  const beatAt = heard - off + offbeatFolded(off, fitPeriod)
+  const first = {
+    bpm: 60000 / lines[0].period,
+    anchorMs: nearestOn(grid.anchorMs, beatAt, lines[0].period),
+  }
   const out: GridZone[] = []
   let previous: EditableGrid = first
-  runs.slice(1).forEach((run, i) => {
-    const startMs = (runs[i][runs[i].length - 1].ms + run[0].ms) / 2
+  lines.slice(1).forEach((line, i) => {
+    const startMs = (runs[i][runs[i].length - 1].ms + runs[i + 1][0].ms) / 2
     const period = periodOf(previous.bpm)
     const k = Math.round((startMs - previous.anchorMs) / period)
     const beatMs = previous.anchorMs + k * period
-    const next = fitGrid(previous, fitOf(run), startMs)
-    const fromMs = nearestOn(beatMs, next.anchorMs, periodOf(next.bpm))
+    const near = nearestOn(beatMs, line.phaseAt(beatMs), fitPeriod)
+    const fromMs = beatMs + offbeatFolded(near - beatMs, fitPeriod)
     const zone = {
       fromMs,
-      bpm: next.bpm,
-      anchorMs: fromMs - (barBeat(k) - 1) * periodOf(next.bpm),
+      bpm: 60000 / line.period,
+      anchorMs: fromMs - (barBeat(k) - 1) * line.period,
     }
     out.push(zone)
     previous = zone
