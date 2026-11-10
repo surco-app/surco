@@ -56,6 +56,10 @@ const PLAYS_WEIGHT = 0.5
 const SURPRISE_EVERY = 4
 const TASTE_POWER = 3
 const KEY_WEIGHTS = { same: 1, neighbour: 0.85, far: 0.35, unknown: 0.3 } as const
+const ARC_FROM = 0.25
+const ARC_TO = 0.75
+const ARC_SOFTNESS = 3
+const ARC_UNKNOWN = 0.5
 
 function seeded(seed: number): () => number {
   let state = seed >>> 0
@@ -171,6 +175,20 @@ export function buildSession(
 
   const liking = (track: SessionTrack): number => (1 + taste(track)) ** TASTE_POWER
 
+  const tempos = eligible
+    .map((track) => track.bpm)
+    .filter((bpm) => bpm > 0)
+    .sort((a, b) => a - b)
+  const tempoAt = (share: number): number => tempos[Math.round(share * (tempos.length - 1))]
+
+  const arcWeight = (track: SessionTrack): number => {
+    if (tempos.length === 0) return 1
+    if (track.bpm <= 0) return ARC_UNKNOWN
+    const from = tempoAt(ARC_FROM)
+    const wanted = from + (tempoAt(ARC_TO) - from) * Math.min(1, total / target)
+    return 1 / (1 + Math.abs(track.bpm - wanted) / ARC_SOFTNESS)
+  }
+
   const knownRoles = new Set(eligible.filter((track) => track.role !== 'any').map((t) => t.role))
   const strict = options.alternate && knownRoles.has('base') && knownRoles.has('vocal')
 
@@ -204,7 +222,10 @@ export function buildSession(
       if (strength > 0) starts.push({ from, strength })
     }
     if (starts.length === 0) return null
-    return pickWeighted(starts, (start) => start.strength ** 2 * liking(start.from)).from
+    return pickWeighted(
+      starts,
+      (start) => start.strength ** 2 * liking(start.from) * arcWeight(start.from),
+    ).from
   }
 
   const partnerFits = (from: SessionTrack, to: SessionTrack): boolean => {
@@ -275,7 +296,10 @@ export function buildSession(
     if (fit.tier.length === 0) fit = fitTier(current, open, () => true, true, harmony)
     const { tier, relaxed } = fit
     if (tier.length === 0) return null
-    const chosen = pickWeighted(tier, (track) => liking(track) * keyWeight(current, track))
+    const chosen = pickWeighted(
+      tier,
+      (track) => liking(track) * keyWeight(current, track) * arcWeight(track),
+    )
     if (relaxed) return { track: chosen, why: { kind: 'bpm', relaxed: true } }
     const distance = camelotDistance(current.key, chosen.key)
     if (distance !== null && distance <= 1 && current.key !== null && chosen.key !== null)
@@ -292,7 +316,7 @@ export function buildSession(
     const open = newcomers.filter((track) => !used.has(track.id))
     const { tier } = fitTier(current, open)
     if (tier.length === 0) return null
-    const chosen = pickWeighted(tier, (track) => keyWeight(current, track))
+    const chosen = pickWeighted(tier, (track) => keyWeight(current, track) * arcWeight(track))
     if (total + secsOf(chosen, options.playSecs) >= target) return null
     return { track: chosen, why: { kind: 'fresh', key: chosen.key, role: chosen.role } }
   }
@@ -315,7 +339,7 @@ export function buildSession(
     const open = (strict ? eligible.filter((track) => track.role !== 'any') : eligible).filter(
       (track) => !used.has(track.id),
     )
-    return open.length > 0 ? pickOne(richest(open)) : null
+    return open.length > 0 ? pickWeighted(richest(open), arcWeight) : null
   }
 
   if (fixed > 0) {

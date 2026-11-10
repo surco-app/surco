@@ -133,3 +133,29 @@ describe('buildSession spreads the new tracks', () => {
     }
   })
 })
+
+describe('buildSession warms up', () => {
+  const pool = Array.from({ length: 120 }, (_, i) => track(`t${i}`, { bpm: 130 + (i % 21) }))
+  const mean = (values: number[]): number => values.reduce((sum, v) => sum + v, 0) / values.length
+
+  it('plays faster at the end than at the start, the way a set climbs', () => {
+    let rise = 0
+    for (const seed of SEEDS.slice(0, 40)) {
+      const bpms = buildSession(
+        pool,
+        none,
+        options({ minutes: 120, playSecs: 120, seed }),
+      ).items.map((item) => item.track.bpm)
+      const third = Math.floor(bpms.length / 3)
+      rise += mean(bpms.slice(-third)) - mean(bpms.slice(0, third))
+    }
+    expect(rise / 40).toBeGreaterThan(4)
+  })
+
+  it('opens near the slow end of what was chosen', () => {
+    const openings = SEEDS.slice(0, 40).map(
+      (seed) => buildSession(pool, none, options({ minutes: 30, seed })).items[0].track.bpm,
+    )
+    expect(mean(openings)).toBeLessThan(138)
+  })
+})
