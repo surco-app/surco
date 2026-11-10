@@ -200,12 +200,12 @@ describe('The self-check reads back what each library ended up pointing at', () 
     expect(surco.statuses('x.flac')).toEqual(['ok'])
   }, 60_000)
 
-  it('waits for Traktor when it is open and applies on close', async () => {
+  it('waits for Traktor when it is open, without asking to close it, and applies on close', async () => {
     vi.mocked(isTraktorRunning).mockResolvedValue(true)
     const { surco, nml } = await convertInTraktor('verify-traktor-open')
     expect(findEntries(readFileSync(nml, 'utf8'))[0]?.file).toBe('x.flac')
     expect(surco.verification('x.flac')?.status).toBe('pending')
-    expect(surco.errors).toContain('library sync blocked: traktorSyncBlocked')
+    expect(surco.errors).not.toContain('library sync blocked: traktorSyncBlocked')
     vi.mocked(isTraktorRunning).mockResolvedValue(false)
     await surco.traktorClosed()
     await surco.settled()
