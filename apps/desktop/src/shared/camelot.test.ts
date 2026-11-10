@@ -14,6 +14,15 @@ describe('camelotOf', () => {
     expect(camelotOf('Ebm')).toBe('2A')
   })
 
+  it('reads either spelling of a key and any case, as the sort by key already does, so a tag from another program still mixes harmonically', () => {
+    expect(camelotOf('Abm')).toBe('1A')
+    expect(camelotOf('G#m')).toBe('1A')
+    expect(camelotOf('Db')).toBe('3B')
+    expect(camelotOf('C#')).toBe('3B')
+    expect(camelotOf('a#m')).toBe('3A')
+    expect(camelotOf('am')).toBe('8A')
+  })
+
   it('returns null for anything it cannot read, so a track without a key is never guessed', () => {
     expect(camelotOf('')).toBeNull()
     expect(camelotOf(undefined)).toBeNull()
@@ -51,10 +60,11 @@ describe('keyIn', () => {
     expect(keyIn('8A', 'musical')).toBe('Am')
     expect(keyIn('11b', 'musical')).toBe('A')
     expect(keyIn(' F#m ', 'musical')).toBe('F#m')
+    expect(keyIn('Abm', 'camelot')).toBe('1A')
+    expect(keyIn('Abm', 'musical')).toBe('G#m')
   })
 
   it('shows a key it cannot read as the tag has it, so nothing on the row is made up', () => {
-    expect(keyIn('Abm', 'camelot')).toBe('Abm')
     expect(keyIn(' 6m ', 'musical')).toBe('6m')
   })
 })
