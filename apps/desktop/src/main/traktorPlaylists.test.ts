@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { ALL_TRACKS_ID } from '../shared/allTracks'
+import { camelotOf } from '../shared/camelot'
 import { HOT_KINDS } from '../shared/cueRules'
 import { RECENTLY_ADDED_ID } from '../shared/recentlyAdded'
 import { traktorContentId } from '../shared/traktorContent'
@@ -167,6 +168,27 @@ describe('readTraktorPlaylist', () => {
     }
     const [entry] = readTraktorPlaylist(nml([rated], [playlist('L', 'p1', [rated])]), 'p1', '')
     expect(entry.meta).toEqual({ bpm: '124', rating: 60 })
+  })
+
+  it('reads the key Traktor detected whatever notation it shows, so the session can mix harmonically', () => {
+    const keyed: Track = {
+      ...A,
+      info: ' KEY="6m"',
+      extra: '<MUSICAL_KEY VALUE="20"></MUSICAL_KEY>',
+    }
+    const major: Track = { ...B, info: ' KEY="7d"', extra: '<MUSICAL_KEY VALUE="6"></MUSICAL_KEY>' }
+    const rows = readTraktorPlaylist(
+      nml([keyed, major], [playlist('L', 'p1', [keyed, major])]),
+      'p1',
+      '',
+    )
+    expect(rows.map((row) => camelotOf(row.meta.key))).toEqual(['1A', '2B'])
+  })
+
+  it('falls back to the key text when Traktor never analysed it, as a key tag from Mixed In Key', () => {
+    const tagged: Track = { ...A, info: ' KEY="8A"' }
+    const [entry] = readTraktorPlaylist(nml([tagged], [playlist('L', 'p1', [tagged])]), 'p1', '')
+    expect(camelotOf(entry.meta.key)).toBe('8A')
   })
 
   it('gives the hot cues on the row the letters the editor uses, button 2 as A, and leaves button 1 out', () => {

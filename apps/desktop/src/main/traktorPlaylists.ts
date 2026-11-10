@@ -1,6 +1,7 @@
 import { ALL_TRACKS_ID } from '../shared/allTracks'
 import { cueGridDrift } from '../shared/cueGrid'
 import { HOT_KINDS } from '../shared/cueRules'
+import { MAJOR_NAMES, MINOR_NAMES } from '../shared/keyNames'
 import { RECENTLY_ADDED_ID } from '../shared/recentlyAdded'
 import {
   TRAKTOR_CUE_HEX,
@@ -101,9 +102,19 @@ function metaOf(block: string): AppleMusicTrackMeta {
   const meta: AppleMusicTrackMeta = {}
   const bpm = Number(attr(block.match(/<TEMPO\b[^>]*>/)?.[0] ?? '', 'BPM'))
   if (bpm > 0) meta.bpm = String(Number(bpm.toFixed(2)))
-  const ranking = Number(attr(block.match(/<INFO\b[^>]*>/)?.[0] ?? '', 'RANKING'))
+  const info = block.match(/<INFO\b[^>]*>/)?.[0] ?? ''
+  const ranking = Number(attr(info, 'RANKING'))
   if (ranking > 0) meta.rating = Math.round((ranking * 100) / 255)
+  const key = keyOf(block) ?? attr(info, 'KEY').trim()
+  if (key) meta.key = key
   return meta
+}
+
+function keyOf(block: string): string | null {
+  const value = attr(block.match(/<MUSICAL_KEY\b[^>]*>/)?.[0] ?? '', 'VALUE')
+  if (!/^\d+$/.test(value)) return null
+  const index = Number(value)
+  return (index < 12 ? MAJOR_NAMES[index] : MINOR_NAMES[index - 12]) ?? null
 }
 
 function cuesOf(block: string): RowCue[] {
