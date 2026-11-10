@@ -177,6 +177,16 @@ describe('ActivityPanel accessibility', () => {
     expect(rows[2]).toHaveAccessibleName(new RegExp(i18n.t('activity.statusError')))
   })
 
+  it('leaves a finished step uncoloured, so a failure is the colour the eye finds in a long feed', () => {
+    renderRows([
+      { id: 'b', kind: 'discogs', status: 'done', label: 'Loading release' },
+      { id: 'c', kind: 'cover', status: 'error', label: 'Downloading cover' },
+    ])
+    const [done, failed] = screen.getAllByTestId('activity-status-icon')
+    expect(done.getAttribute('class')).not.toMatch(/text-good/)
+    expect(failed.getAttribute('class')).toMatch(/text-danger/)
+  })
+
   it('speaks a step that ended with a warning', () => {
     renderRows([{ id: 'a', kind: 'applemusic', status: 'warn', label: 'Funk Freak' }])
     expect(screen.getByTestId('activity-row')).toHaveAccessibleName(

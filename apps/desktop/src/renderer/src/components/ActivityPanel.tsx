@@ -88,27 +88,43 @@ function StatusIcon({ status }: { status: ActivityRow['status'] }): React.JSX.El
   if (status === 'running')
     return (
       <>
-        <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-fg-muted" aria-hidden="true" />
+        <Loader2
+          data-testid="activity-status-icon"
+          className="h-3.5 w-3.5 shrink-0 animate-spin text-fg-muted"
+          aria-hidden="true"
+        />
         {word}
       </>
     )
   if (status === 'warn')
     return (
       <>
-        <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-warn" aria-hidden="true" />
+        <AlertTriangle
+          data-testid="activity-status-icon"
+          className="h-3.5 w-3.5 shrink-0 text-warn"
+          aria-hidden="true"
+        />
         {word}
       </>
     )
   if (status === 'error')
     return (
       <>
-        <AlertCircle className="h-3.5 w-3.5 shrink-0 text-danger" aria-hidden="true" />
+        <AlertCircle
+          data-testid="activity-status-icon"
+          className="h-3.5 w-3.5 shrink-0 text-danger"
+          aria-hidden="true"
+        />
         {word}
       </>
     )
   return (
     <>
-      <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-good" aria-hidden="true" />
+      <CheckCircle2
+        data-testid="activity-status-icon"
+        className="h-3.5 w-3.5 shrink-0 text-fg-faint"
+        aria-hidden="true"
+      />
       {word}
     </>
   )
