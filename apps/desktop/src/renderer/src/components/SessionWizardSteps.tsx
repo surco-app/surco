@@ -157,7 +157,6 @@ export function SourcesStep({
           tokens={tokens}
           onToggle={NO_TOGGLE}
           allowCreate={false}
-          autoFocus={false}
           emptyText={tr('sessions.wizard.sources.noHits')}
           searchLabel={tr('sessions.wizard.sources.search', { count: playlists.length })}
           onlyIds={onlyIds}

@@ -139,13 +139,12 @@ describe('SessionWizard duration step', () => {
 })
 
 describe('SessionWizard sources step', () => {
-  it('goes to the playlists step and moves the focus to its heading', () => {
+  it('goes to the playlists step', () => {
     setup()
     toSources()
     expect(screen.getByTestId('session-wizard-step-title')).toHaveTextContent(
       i18n.t('sessions.wizard.sources.heading'),
     )
-    expect(screen.getByTestId('session-wizard-step-title')).toHaveFocus()
   })
 
   it('comes back to the duration from the playlists step', () => {
@@ -198,6 +197,12 @@ describe('SessionWizard sources step', () => {
     )
   })
 
+  it('lands in the search on the Playlists step, so the DJ types a name without reaching for the mouse first', () => {
+    setup()
+    toSources()
+    expect(screen.getByTestId('playlists-search')).toHaveFocus()
+  })
+
   it('invites to search the playlists and never to create one', () => {
     setup()
     toSources()
@@ -212,12 +217,6 @@ describe('SessionWizard sources step', () => {
     toSources()
     fireEvent.change(screen.getByTestId('playlists-search'), { target: { value: 'Algo nuevo' } })
     expect(screen.queryByTestId('playlists-create')).toBeNull()
-  })
-
-  it('keeps the focus on the heading instead of on the search', () => {
-    setup()
-    toSources()
-    expect(screen.getByTestId('playlists-search')).not.toHaveFocus()
   })
 
   it('says so when nothing matches', () => {
