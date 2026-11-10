@@ -103,7 +103,7 @@ export function SessionWhyLine({
   const [open, setOpen] = useState(false)
   const [options, setOptions] = useState<SessionTrack[]>([])
   const phrase = phraseOf(why, tr)
-  const placed = keyAndTempo(track)
+  const placed = track.bpm > 0 ? String(Math.round(track.bpm)) : ''
   return (
     <div data-testid="session-why" className="flex flex-col gap-1">
       <div className="flex items-center gap-2 text-[11px] leading-4">
