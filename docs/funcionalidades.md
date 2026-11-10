@@ -1981,11 +1981,11 @@ del árbol (`edit={editableSource ? treeEdit : undefined}`, `App.tsx`), así que
 
 **Tres pasos** (`SessionWizard.tsx`, `SessionWizardSteps.tsx`). Duración (60, 90 min, 2 h, 3 h u
 otra; por defecto 90). Playlists, elegidas en el mismo árbol del editor, cada una con su papel:
-Bases, Cantaditas o Mezcladas (`PlaylistRole`, `shared/sessionTypes.ts:1`); una carpeta entera
+«Instrumentales (bases)», «Con voz (cantadas)» o Mezcladas (`PlaylistRole`, `shared/sessionTypes.ts:1`); una carpeta entera
 toma un papel de golpe, y las carpetas que se llaman como un papel (Bases, Cantaditas, Vocals,
 Sets, Tracklists, Combos, Bolos…) se ofrecen marcadas con un clic (`suggestRoles`,
-`lib/sessionTree.ts:29`). «Ver solo las elegidas» filtra el árbol a las marcadas, y vuelve a la lista entera si se desmarca la última. Las playlists separador no se listan. Carácter: alternar base y
-cantadita, preferir combos probados, pesar lo que más gusta (estrellas y escuchas), sorpréndeme,
+`lib/sessionTree.ts:29`). «Ver solo las elegidas» filtra el árbol a las marcadas, y vuelve a la lista entera si se desmarca la última. Las playlists separador no se listan. Carácter: alternar instrumental y
+con voz, preferir combos probados, pesar lo que más gusta (estrellas y escuchas), sorpréndeme,
 mezcla armónica Camelot (libre, vecinos o mismo tono), tiempo que suena cada pista (1 a 10 min,
 por defecto 2) y porcentaje de pistas nuevas (0 a 40 %, por defecto 15 %)
 (`DEFAULT_SESSION_WIZARD`, `shared/sessionSettings.ts:3`). El último paso dice dónde se escribirá: el nombre y la carpeta de la playlist nueva, o la que rellena o sustituye (`SessionDestination`, `SessionWizard.tsx`), y mientras escribe el botón pasa a «Montando…». ⌘⏎ avanza de paso o monta. El asistente mantiene la misma altura en los tres pasos. Los ajustes de carácter se recuerdan;
@@ -2029,7 +2029,12 @@ quedársela queda como una playlist normal y un aviso lo dice. Cada pista lleva 
 (`SessionOptions.pinned` y `fixedLength`, `shared/sessionBuild.ts`; `RecentSession.locked`,
 `useSessionRun.ts`), y la banda dice cuántas hay fijadas. Una pista elegida con «Cambiar» queda
 fijada y la que sustituye se suelta; «Ajustar…» empieza de cero y las suelta todas. Las pistas
-fijadas dicen «elegida por ti» y cuentan para la alternancia de roles de las vecinas. Medido el 9-11 con la colección real, 20 sesiones por caso y el rol de cada pista según las
+fijadas dicen «elegida por ti» y cuentan para la alternancia de roles de las vecinas. Con el menú de
+una pista de una playlist abierta, «Sesión desde esta pista…» (`track-menu-start-session`,
+`TrackContextMenu.tsx`) abre el asistente con esa playlist ya elegida como Mezclada y monta la
+sesión empezando por esa pista (`SessionOptions.startWith`, `runSession` la busca por ruta);
+queda fijada, así que «Rehacer» la conserva la primera. Si no está en las playlists que se
+acaban eligiendo, la sesión se monta como siempre. Medido el 9-11 con la colección real, 20 sesiones por caso y el rol de cada pista según las
 carpetas Bases y Cantaditas: con las carpetas enteras, 0 de 880 parejas seguidas repiten rol.
 Con «Top» de Bases, «Top» de Cantaditas y la Mezclada «rockola-spook-2016», que antes repetían
 rol en un 26 a 40 % de las parejas con tramos de hasta 9, queda en 0 con 2 y 3 min por pista y en
