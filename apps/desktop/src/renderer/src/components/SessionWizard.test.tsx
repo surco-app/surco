@@ -187,6 +187,27 @@ describe('SessionWizard sources step', () => {
     expect(screen.getByTestId('session-wizard-next')).toBeEnabled()
   })
 
+  it('fills a bar with how much of the length asked the chosen playlists cover, so the gap reads at a glance', () => {
+    setup()
+    toSources()
+    fireEvent.change(screen.getByTestId('playlists-search'), { target: { value: 'bases 97' } })
+    fireEvent.click(screen.getByTestId('session-wizard-role-mk97-any'))
+    const bar = screen.getByRole('meter')
+    expect(bar).toHaveAttribute('value', '66')
+    expect(bar).toHaveAttribute('max', '90')
+    expect(bar).toHaveAccessibleName(
+      i18n.t('sessions.wizard.sources.short', { minutes: 66, target: 90 }),
+    )
+  })
+
+  it('keeps the bar full when the playlists give more than the length asked', () => {
+    setup()
+    toSources()
+    fireEvent.click(screen.getByTestId('playlists-folder-rem'))
+    fireEvent.click(screen.getByTestId('session-wizard-role-b90-base'))
+    expect(screen.getByRole('meter')).toHaveAttribute('value', '90')
+  })
+
   it('says the chosen playlists are enough once they reach the length asked', () => {
     setup()
     toSources()

@@ -1,4 +1,3 @@
-import { CircleAlert } from 'lucide-react'
 import type React from 'react'
 import { Fragment, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -205,17 +204,28 @@ export function SourcesStep({
         </div>
       )}
       {chosen.length > 0 && (
-        <p
-          data-testid="session-wizard-length"
-          className={`flex items-start gap-1.5 text-xs ${reach < minutes ? 'text-warn' : 'text-fg-dim'}`}
-        >
-          {reach < minutes && (
-            <CircleAlert className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-          )}
-          {reach < minutes
-            ? tr('sessions.wizard.sources.short', { minutes: reach, target: minutes })
-            : tr('sessions.wizard.sources.enough', { target: minutes })}
-        </p>
+        <div className="flex flex-col gap-1.5">
+          <p
+            id="session-wizard-length"
+            data-testid="session-wizard-length"
+            className={`text-xs ${reach < minutes ? 'text-warn' : 'text-good'}`}
+          >
+            {reach < minutes
+              ? tr('sessions.wizard.sources.short', { minutes: reach, target: minutes })
+              : tr('sessions.wizard.sources.enough', { target: minutes })}
+          </p>
+          <meter
+            aria-labelledby="session-wizard-length"
+            min={0}
+            max={minutes}
+            value={Math.min(reach, minutes)}
+            className={`h-1.5 w-full appearance-none [&::-webkit-meter-bar]:h-1.5 [&::-webkit-meter-bar]:rounded-full [&::-webkit-meter-bar]:border-0 [&::-webkit-meter-bar]:bg-[var(--color-panel-2)] [&::-webkit-meter-optimum-value]:rounded-full ${
+              reach < minutes
+                ? '[&::-webkit-meter-optimum-value]:bg-warn'
+                : '[&::-webkit-meter-optimum-value]:bg-good'
+            }`}
+          />
+        </div>
       )}
     </div>
   )
@@ -280,7 +290,10 @@ export function CharacterStep({
             </span>
           </label>
           {key === 'preferCombos' && options.preferCombos && !hasMixed && (
-            <p data-testid="session-wizard-combos-hint" className="-mt-1.5 pl-7 text-xs text-fg-dim">
+            <p
+              data-testid="session-wizard-combos-hint"
+              className="-mt-1.5 pl-7 text-xs text-fg-dim"
+            >
               {tr('sessions.wizard.character.noMixed')}
             </p>
           )}
