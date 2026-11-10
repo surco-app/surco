@@ -3040,9 +3040,9 @@
           {
             "tab": "Editor",
             "setting": "Notação do tom",
-            "value": "Camelot (8A)",
+            "value": "Alfanumérica (8A)",
             "optional": true,
-            "note": "Ou “Musical (Am)”. É como o tom vindo do Beatport vai ser escrito."
+            "note": "Ou “Clássica (Am)”. É como o tom vindo do Beatport vai ser escrito."
           }
         ],
         "steps": [

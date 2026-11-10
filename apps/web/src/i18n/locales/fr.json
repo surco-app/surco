@@ -3040,9 +3040,9 @@
           {
             "tab": "Éditeur",
             "setting": "Notation de la tonalité",
-            "value": "Camelot (8A)",
+            "value": "Alphanumérique (8A)",
             "optional": true,
-            "note": "Ou « Musicale (Am) ». C’est ainsi que s’écrira la tonalité venue de Beatport."
+            "note": "Ou « Classique (Am) ». C’est ainsi que s’écrira la tonalité venue de Beatport."
           }
         ],
         "steps": [
