@@ -4,6 +4,7 @@ import { type LearnedMixing, learnMixing } from '../../../shared/sessionLearn'
 import type { PlaylistRole, SessionAnswers, SessionTrack } from '../../../shared/sessionTypes'
 import type { PlaylistTrackRef, SourcePlaylistEntry } from '../../../shared/types'
 import { mixedSequences, type SessionSource, toCandidates, trackIdOf } from './sessionCandidates'
+import type { SessionPhase } from './sessionTree'
 
 const MIN_PLAYLISTS_PER_COMBO = 2
 
@@ -51,8 +52,19 @@ export function runSession(input: {
   pins?: SessionPins
   startPath?: string
   made?: ReadonlySet<string>
+  phases?: Readonly<Record<string, SessionPhase>>
 }): SessionRun {
-  const { answers, roles, rows, seed, library = {}, pins, startPath, made = new Set() } = input
+  const {
+    answers,
+    roles,
+    rows,
+    seed,
+    library = {},
+    pins,
+    startPath,
+    made = new Set(),
+    phases = {},
+  } = input
   const sources: SessionSource[] = answers.sources.map((id) => ({
     role: roles[id] ?? 'any',
     entries: rows.get(id) ?? [],
@@ -67,7 +79,17 @@ export function runSession(input: {
       evidence.set(id, held)
     }
   }
-  const pool = toCandidates(sources, new Date(), evidence)
+  const marks = new Map<string, Set<SessionPhase>>()
+  for (const [playlistId, phase] of Object.entries(phases)) {
+    for (const entry of rows.get(playlistId) ?? []) {
+      const id = trackIdOf(entry)
+      if (id === null) continue
+      const held = marks.get(id) ?? new Set<SessionPhase>()
+      held.add(phase)
+      marks.set(id, held)
+    }
+  }
+  const pool = toCandidates(sources, new Date(), evidence, marks)
   const sequences = mixedSequences(sources.filter((_, i) => !made.has(answers.sources[i])))
   const ids = new Set(pool.map((track) => track.id))
   const pairs = mineCombos(sequences, ids, 1)

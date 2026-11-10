@@ -29,6 +29,7 @@ export type SessionWhy =
   | { kind: 'bpm'; relaxed: boolean }
   | { kind: 'fresh'; key: string | null; role: TrackRole }
   | { kind: 'chosen' }
+  | { kind: 'phase'; phase: 'open' | 'close' | 'must' }
 
 export interface SessionItem {
   track: SessionTrack
@@ -65,6 +66,11 @@ const ARC_SOFTNESS = 3
 const ARC_UNKNOWN = 0.5
 const SAME_ACT_WEIGHT = 0.3
 const TASTE_TOP_SHARE = 0.25
+const OPEN_UNTIL = 0.25
+const CLOSE_FROM = 0.8
+const PHASE_BOOST = 4
+const PHASE_OFF = 0.15
+const MUST_BOOST = 2.5
 
 function seeded(seed: number): () => number {
   let state = seed >>> 0
@@ -188,6 +194,24 @@ export function buildSession(
 
   const liking = (track: SessionTrack): number => (1 + taste(track)) ** TASTE_POWER
 
+  const progress = (): number => Math.min(1, total / target)
+
+  const inPhase = (track: SessionTrack): boolean => {
+    if (track.phase === 'open') return progress() < OPEN_UNTIL
+    return track.phase === 'close' && progress() >= CLOSE_FROM
+  }
+
+  const phaseDue = (track: SessionTrack): SessionWhy | null => {
+    if (track.phase !== undefined && inPhase(track)) return { kind: 'phase', phase: track.phase }
+    return track.must ? { kind: 'phase', phase: 'must' } : null
+  }
+
+  const phaseWeight = (track: SessionTrack): number => {
+    const must = track.must ? MUST_BOOST : 1
+    if (track.phase === undefined) return must
+    return must * (inPhase(track) ? PHASE_BOOST : PHASE_OFF)
+  }
+
   const actWeight = (from: SessionTrack, to: SessionTrack): number =>
     (to.acts ?? []).some((act) => from.acts?.includes(act)) ? SAME_ACT_WEIGHT : 1
 
@@ -241,7 +265,8 @@ export function buildSession(
     if (starts.length === 0) return null
     return pickWeighted(
       starts,
-      (start) => start.strength ** 2 * liking(start.from) * arcWeight(start.from),
+      (start) =>
+        start.strength ** 2 * liking(start.from) * arcWeight(start.from) * phaseWeight(start.from),
     ).from
   }
 
@@ -315,9 +340,15 @@ export function buildSession(
     const chosen = pickWeighted(
       tier,
       (track) =>
-        liking(track) * keyWeight(current, track) * arcWeight(track) * actWeight(current, track),
+        liking(track) *
+        keyWeight(current, track) *
+        arcWeight(track) *
+        actWeight(current, track) *
+        phaseWeight(track),
     )
     if (relaxed) return { track: chosen, why: { kind: 'bpm', relaxed: true } }
+    const due = phaseDue(chosen)
+    if (due) return { track: chosen, why: due }
     const distance = camelotDistance(current.key, chosen.key)
     if (distance !== null && distance <= 1 && current.key !== null && chosen.key !== null)
       return {
@@ -336,7 +367,11 @@ export function buildSession(
     if (tier.length === 0) return null
     const chosen = pickWeighted(
       tier,
-      (track) => keyWeight(current, track) * arcWeight(track) * actWeight(current, track),
+      (track) =>
+        keyWeight(current, track) *
+        arcWeight(track) *
+        actWeight(current, track) *
+        phaseWeight(track),
     )
     if (total + secsOf(chosen, options.playSecs) >= target) return null
     return { track: chosen, why: { kind: 'fresh', key: chosen.key, role: chosen.role } }
@@ -355,13 +390,18 @@ export function buildSession(
   }
 
   const opening = (): SessionTrack | null => {
-    const start = options.preferCombos ? comboOpening() : null
-    if (start) return start
     const open = (strict ? eligible.filter((track) => track.role !== 'any') : eligible).filter(
       isOpen,
     )
-    return open.length > 0 ? pickWeighted(richest(open), arcWeight) : null
+    const start = options.preferCombos ? comboOpening() : null
+    if (start) return start
+    return open.length > 0
+      ? pickWeighted(richest(open), (track) => arcWeight(track) * phaseWeight(track))
+      : null
   }
+
+  const openingWhy = (track: SessionTrack): SessionWhy =>
+    track.phase === 'open' ? { kind: 'phase', phase: 'open' } : { kind: 'start' }
 
   if (fixed > 0) {
     for (let i = 0; i < fixed; i++) {
@@ -375,7 +415,7 @@ export function buildSession(
       const current = items[items.length - 1]?.track
       if (!current) {
         const first = opening()
-        if (first) take(first, { kind: 'start' })
+        if (first) take(first, openingWhy(first))
       } else {
         const next = pickNext(current) ?? nextByFit(current, false, 'free')
         if (next) {
@@ -388,7 +428,7 @@ export function buildSession(
   } else if (eligible.length > 0) {
     const asked = options.startWith ? poolById.get(options.startWith) : undefined
     const first = asked ?? opening()
-    if (first) take(first, asked ? { kind: 'chosen' } : { kind: 'start' })
+    if (first) take(first, asked ? { kind: 'chosen' } : openingWhy(first))
     while (items.length > 0 && total < target) {
       const next = pickNext(items[items.length - 1].track)
       if (!next) break

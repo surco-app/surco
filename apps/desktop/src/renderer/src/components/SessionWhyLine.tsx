@@ -58,6 +58,17 @@ function phraseOf(why: SessionWhy, tr: TFunction): Phrase {
       }
     case 'chosen':
       return { text: tr('sessions.why.chosen'), tone: 'text-fg-faint' }
+    case 'phase':
+      return {
+        text: tr(
+          why.phase === 'open'
+            ? 'sessions.why.phaseOpen'
+            : why.phase === 'close'
+              ? 'sessions.why.phaseClose'
+              : 'sessions.why.phaseMust',
+        ),
+        tone: why.phase === 'must' ? 'text-warn' : 'text-[var(--color-accent)]',
+      }
     default:
       return { text: tr('sessions.why.start'), tone: 'text-fg-faint' }
   }

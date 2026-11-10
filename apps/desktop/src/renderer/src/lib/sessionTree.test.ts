@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { SourceNode } from '../../../shared/types'
-import { libraryRoles, suggestRoles, withoutSeparators } from './sessionTree'
+import { libraryPhases, libraryRoles, suggestRoles, withoutSeparators } from './sessionTree'
 
 const playlist = (id: string, name: string, count = 3): SourceNode => ({
   id,
@@ -199,5 +199,61 @@ describe('suggestRoles reading folder names in other languages and with more wor
     expect(roleOfName('COMBOS')).toBe('any')
     expect(roleOfName('BOLOS')).toBe('any')
     expect(roleOfName('TRACKLIST')).toBe('any')
+  })
+})
+
+describe('libraryPhases', () => {
+  const folder = (id: string, name: string, children: SourceNode[]): SourceNode => ({
+    id,
+    name,
+    kind: 'folder',
+    count: children.length,
+    children,
+  })
+
+  it('reads the part of the set a playlist is for from its name or its folder', () => {
+    const tree = [
+      folder('fw', 'WARM UP', [playlist('w1', 'Cantaditas'), playlist('w2', 'Bases')]),
+      folder('fc', 'CANTADITAS', [
+        playlist('c1', 'Cierre'),
+        playlist('c2', 'Fijas'),
+        playlist('c3', 'Top'),
+        playlist('c4', 'Warm Up'),
+      ]),
+      playlist('o', 'Comienzos'),
+    ]
+    expect(libraryPhases(tree)).toEqual({
+      w1: 'open',
+      w2: 'open',
+      c1: 'close',
+      c2: 'must',
+      c4: 'open',
+      o: 'open',
+    })
+  })
+
+  it('reads the same words in the other languages of the app', () => {
+    const tree = [
+      playlist('a', 'Opening'),
+      playlist('b', 'Closing tracks'),
+      playlist('c', 'Essentials'),
+      playlist('d', 'Abschluss'),
+      playlist('e', 'Incontournables'),
+      playlist('f', 'Aquecimento'),
+      playlist('g', 'クロージング'),
+    ]
+    expect(libraryPhases(tree)).toEqual({
+      a: 'open',
+      b: 'close',
+      c: 'must',
+      d: 'close',
+      e: 'must',
+      f: 'open',
+      g: 'close',
+    })
+  })
+
+  it('says nothing for a name that points at two parts of the set', () => {
+    expect(libraryPhases([playlist('a', 'Warm up y cierre')])).toEqual({})
   })
 })

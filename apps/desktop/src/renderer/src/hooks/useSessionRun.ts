@@ -4,6 +4,7 @@ import { uniqueName } from '../../../shared/sessionName'
 import type { PlaylistRole, SessionAnswers, SessionTrack } from '../../../shared/sessionTypes'
 import type { LearnedMixing } from '../../../shared/sessionLearn'
 import type { PlaylistTrackRef, SourceNode } from '../../../shared/types'
+import type { SessionPhase } from '../lib/sessionTree'
 import { alternativesFor } from '../lib/sessionAlternatives'
 import { runSession, type SessionPins, type SessionRun, sessionOptionsOf } from '../lib/sessionRun'
 import type { SessionRows } from './useSessionRows'
@@ -39,6 +40,7 @@ export interface SessionRunDeps {
   newSeed: () => number
   library?: () => Readonly<Record<string, 'base' | 'vocal'>>
   made?: () => ReadonlySet<string>
+  phases?: () => Readonly<Record<string, SessionPhase>>
   noteMade?: (playlistId: string) => void
 }
 
@@ -93,8 +95,11 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
     startPath?: string,
   ): Promise<SessionRun> => {
     const library = deps.library?.() ?? {}
+    const phases = deps.phases?.() ?? {}
     const chosen = new Set(answers.sources)
-    const given = Object.keys(library).filter((id) => !chosen.has(id))
+    const given = [...new Set([...Object.keys(library), ...Object.keys(phases)])].filter(
+      (id) => !chosen.has(id),
+    )
     const loaded = await deps.rows.load([...answers.sources, ...given])
     return runSession({
       answers,
@@ -105,6 +110,7 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
       pins,
       startPath,
       made: deps.made?.(),
+      phases,
     })
   }
 

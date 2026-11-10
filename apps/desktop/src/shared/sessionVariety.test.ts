@@ -239,3 +239,56 @@ describe('buildSession mixes the way the DJ mixes', () => {
     expect(ratio).toBeLessThan(1.4)
   })
 })
+
+describe('buildSession gives each part of the set its tracks', () => {
+  const plain = Array.from({ length: 60 }, (_, i) => track(`p${i}`))
+  const openers = Array.from({ length: 6 }, (_, i) => track(`o${i}`, { phase: 'open' }))
+  const closers = Array.from({ length: 6 }, (_, i) => track(`c${i}`, { phase: 'close' }))
+  const pool = [...plain, ...openers, ...closers]
+  const runs = SEEDS.slice(0, 60).map(
+    (seed) => buildSession(pool, none, options({ minutes: 60, playSecs: 120, seed })).items,
+  )
+
+  it('opens with a warm-up track more often than chance, without forcing it', () => {
+    const opened = runs.filter((items) => items[0].track.phase === 'open').length
+    const chance = openers.length / pool.length
+    expect(opened / runs.length).toBeGreaterThan(2 * chance)
+    expect(opened).toBeLessThan(runs.length)
+  })
+
+  it('keeps the closing tracks for the end and the warm-up ones for the start', () => {
+    let closingLate = 0
+    let closingEarly = 0
+    let openingLate = 0
+    for (const items of runs) {
+      const cut = Math.floor(items.length * 0.75)
+      closingLate += items.slice(cut).filter((item) => item.track.phase === 'close').length
+      closingEarly += items.slice(0, cut).filter((item) => item.track.phase === 'close').length
+      openingLate += items.slice(cut).filter((item) => item.track.phase === 'open').length
+    }
+    expect(closingLate).toBeGreaterThan(3 * closingEarly)
+    expect(openingLate).toBeLessThan(closingLate / 3)
+  })
+
+  it('says why a track opens or closes the set', () => {
+    const kinds = runs.flatMap((items) =>
+      items.filter((item) => item.track.phase === 'close').map((item) => item.why),
+    )
+    expect(kinds).toContainEqual({ kind: 'phase', phase: 'close' })
+  })
+
+  it('plays the tracks the DJ always plays more often than the rest', () => {
+    const must = Array.from({ length: 10 }, (_, i) => track(`m${i}`, { must: true }))
+    const counts = { must: 0, plain: 0 }
+    for (const seed of SEEDS.slice(0, 60)) {
+      for (const item of buildSession(
+        [...plain, ...must],
+        none,
+        options({ minutes: 30, playSecs: 120, seed }),
+      ).items)
+        if (item.track.must) counts.must++
+        else counts.plain++
+    }
+    expect(counts.must / 10).toBeGreaterThan((1.5 * counts.plain) / 60)
+  })
+})

@@ -1,6 +1,7 @@
 import { camelotOf } from '../../../shared/camelot'
 import type { PlaylistRole, SessionTrack, TrackRole } from '../../../shared/sessionTypes'
 import type { SourcePlaylistEntry } from '../../../shared/types'
+import type { SessionPhase } from './sessionTree'
 import { baseTitle, splitArtists } from './tracklistMatch'
 
 export interface SessionSource {
@@ -53,6 +54,7 @@ export function toCandidates(
   sources: readonly SessionSource[],
   now: Date = new Date(),
   library: ReadonlyMap<string, ReadonlySet<'base' | 'vocal'>> = new Map(),
+  phases: ReadonlyMap<string, ReadonlySet<SessionPhase>> = new Map(),
 ): SessionTrack[] {
   const found = new Map<string, Seen>()
   for (const source of sources) {
@@ -77,6 +79,9 @@ export function toCandidates(
     const title = entry.preview?.title ?? titleFromPath(entry.path)
     const acts = splitArtists(entry.preview?.artist ?? '')
     const named = baseTitle(title)
+    const marks = phases.get(id) ?? new Set<SessionPhase>()
+    const part =
+      marks.has('open') === marks.has('close') ? null : marks.has('open') ? 'open' : 'close'
     return {
       id,
       role: roleOf(seen, library.get(id)),
@@ -90,6 +95,8 @@ export function toCandidates(
       artist: entry.preview?.artist ?? '',
       ...(named && { song: `${acts[0] ?? ''}|${named}` }),
       acts,
+      ...(part && { phase: part }),
+      ...(marks.has('must') && { must: true }),
     }
   })
 }

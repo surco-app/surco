@@ -32,4 +32,6 @@ export interface SessionTrack {
   artist: string
   song?: string
   acts?: readonly string[]
+  phase?: 'open' | 'close'
+  must?: boolean
 }

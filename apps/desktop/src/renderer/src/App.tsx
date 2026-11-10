@@ -230,7 +230,7 @@ import {
   type Selection,
 } from './lib/selection'
 import { hasStagedEdits } from './lib/sessionEdits'
-import { libraryRoles } from './lib/sessionTree'
+import { libraryPhases, libraryRoles } from './lib/sessionTree'
 import { SettingsProvider } from './lib/settingsContext'
 import { formatShortcut } from './lib/shortcuts'
 import { isUsbProgram, SOURCE_PROGRAMS, SOURCE_READ } from './lib/sourcePrograms'
@@ -1112,6 +1112,7 @@ export default function App(): React.JSX.Element {
     newSeed: () => Date.now() % 2_147_483_647,
     library: () => libraryRoles(browser.tree ?? []),
     made: () => new Set(settings?.sessionsMade ?? []),
+    phases: () => libraryPhases(browser.tree ?? []),
     noteMade: (playlistId) => {
       if (settings)
         saveSettings({ sessionsMade: withSessionMade(settings.sessionsMade, playlistId) })
@@ -1134,7 +1135,10 @@ export default function App(): React.JSX.Element {
     start?: { path: string; playlistId: string }
   } | null>(null)
   const readLibraryRoles = useStableCallback(() => {
-    void sessionRows.load(Object.keys(libraryRoles(browser.tree ?? [])))
+    const tree = browser.tree ?? []
+    void sessionRows.load([
+      ...new Set([...Object.keys(libraryRoles(tree)), ...Object.keys(libraryPhases(tree))]),
+    ])
   })
   const openSessionAt = useStableCallback((parentId: string) => {
     sessionRows.reset()

@@ -144,6 +144,14 @@ describe('useSessionRun build', () => {
     })
   })
 
+  it('reads the warm-up, closing and must-play playlists of the library too', async () => {
+    const { deps, result } = setup({ phases: () => ({ warm: 'open', s: 'must' }) })
+    await act(async () => {
+      await result.current.build('folder', ANSWERS, ROLES)
+    })
+    expect(deps.rows.load).toHaveBeenCalledWith(['s', 'warm'])
+  })
+
   it('reads the chosen playlists through the shared reader', async () => {
     const { deps, result } = setup()
     await act(async () => {

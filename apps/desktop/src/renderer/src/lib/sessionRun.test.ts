@@ -38,6 +38,7 @@ function run(
   pins?: { pinned: { index: number; trackId: string }[]; length: number },
   startPath?: string,
   made?: ReadonlySet<string>,
+  phases?: Record<string, 'open' | 'close' | 'must'>,
 ) {
   return runSession({
     answers: { ...ANSWERS, ...over },
@@ -48,10 +49,31 @@ function run(
     pins,
     startPath,
     made,
+    phases,
   })
 }
 
 describe('runSession', () => {
+  it('gives a track the part of the set its library playlists say, even when not chosen', () => {
+    const { pool } = run(
+      { sources: ['set'] },
+      { set: 'any' },
+      {
+        set: [row('/m/a.mp3'), row('/m/b.mp3')],
+        warm: [row('/m/a.mp3')],
+        fixed: [row('/m/b.mp3')],
+      },
+      1,
+      {},
+      undefined,
+      undefined,
+      undefined,
+      { warm: 'open', fixed: 'must' },
+    )
+    expect(pool.find((t) => t.id === '/m/a.mp3')?.phase).toBe('open')
+    expect(pool.find((t) => t.id === '/m/b.mp3')?.must).toBe(true)
+  })
+
   it('learns from the Mixed playlists how far this DJ moves the tempo between tracks', () => {
     const steady = Array.from({ length: 40 }, (_, i) =>
       row(`/m/s${i}.mp3`, {}, { bpm: String(140 + (i % 2)) }),

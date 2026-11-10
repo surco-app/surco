@@ -126,3 +126,89 @@ export function libraryRoles(
   }
   return roles
 }
+
+export type SessionPhase = 'open' | 'close' | 'must'
+
+const PHASE_WORDS: Readonly<Record<SessionPhase, readonly string[]>> = {
+  open: [
+    'warm up',
+    'warmup',
+    'apertura',
+    'aperturas',
+    'opening',
+    'openings',
+    'opener',
+    'openers',
+    'calentamiento',
+    'comienzo',
+    'comienzos',
+    'inicio',
+    'aufwarmen',
+    'eroffnung',
+    'echauffement',
+    'ouverture',
+    'aquecimento',
+    'abertura',
+    'ウォームアップ',
+    'オープニング',
+  ],
+  close: [
+    'cierre',
+    'cierres',
+    'closing',
+    'closer',
+    'closers',
+    'final',
+    'finales',
+    'abschluss',
+    'schluss',
+    'cloture',
+    'fermeture',
+    'encerramento',
+    'fecho',
+    'クロージング',
+    'ラスト',
+  ],
+  must: [
+    'fijas',
+    'fijos',
+    'imprescindibles',
+    'esenciales',
+    'essentials',
+    'staples',
+    'himnos',
+    'anthems',
+    'pflicht',
+    'incontournables',
+    'indispensables',
+    'essenciais',
+    'hinos',
+    '定番',
+    '必須',
+  ],
+}
+
+const PHASE_PHRASES = (Object.entries(PHASE_WORDS) as [SessionPhase, readonly string[]][]).map(
+  ([phase, phrases]) => ({ phase, phrases: phrases.map((phrase) => wordsOf(phrase).join(' ')) }),
+)
+
+function phaseOfName(name: string): SessionPhase | null {
+  const words = ` ${wordsOf(name).join(' ')} `
+  const found = PHASE_PHRASES.filter(({ phrases }) =>
+    phrases.some((phrase) => words.includes(` ${phrase} `)),
+  )
+  return found.length === 1 ? found[0].phase : null
+}
+
+export function libraryPhases(
+  nodes: readonly SourceNode[],
+  inherited: SessionPhase | null = null,
+): Record<string, SessionPhase> {
+  const phases: Record<string, SessionPhase> = {}
+  for (const node of nodes) {
+    const phase = inherited ?? phaseOfName(node.name)
+    if (node.kind === 'playlist' && phase) phases[node.id] = phase
+    Object.assign(phases, libraryPhases(node.children ?? [], node.kind === 'folder' ? phase : null))
+  }
+  return phases
+}

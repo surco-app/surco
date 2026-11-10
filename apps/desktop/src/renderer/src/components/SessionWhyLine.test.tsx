@@ -47,6 +47,18 @@ function setup(
 const line = () => screen.getByTestId('session-why')
 
 describe('SessionWhyLine text', () => {
+  it('says the track opens, closes or is one the DJ always plays', () => {
+    setup({ kind: 'phase', phase: 'open' })
+    expect(line()).toHaveTextContent(i18n.t('sessions.why.phaseOpen'))
+    cleanup()
+    setup({ kind: 'phase', phase: 'close' })
+    expect(line()).toHaveTextContent(i18n.t('sessions.why.phaseClose'))
+    cleanup()
+    setup({ kind: 'phase', phase: 'must' })
+    expect(line()).toHaveTextContent(i18n.t('sessions.why.phaseMust'))
+    expect(line().textContent).not.toContain(i18n.t('sessions.why.start'))
+  })
+
   it('says a combo was proven and in how many sets', () => {
     setup({ kind: 'combo', sets: 5 })
     expect(line()).toHaveTextContent(i18n.t('sessions.why.combo', { count: 5 }))

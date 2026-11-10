@@ -306,3 +306,27 @@ describe('toCandidates with no title to tell songs apart', () => {
     expect(second.song).toBeUndefined()
   })
 })
+
+describe('toCandidates and the part of the set a track is for', () => {
+  const plain = (path: string) => ({ path, separator: false, meta: {} })
+
+  it('marks a track from warm-up or closing playlists and one the DJ always plays', () => {
+    const phases = new Map<string, ReadonlySet<'open' | 'close' | 'must'>>([
+      ['/m/w.mp3', new Set(['open'])],
+      ['/m/c.mp3', new Set(['close', 'must'])],
+      ['/m/both.mp3', new Set(['open', 'close'])],
+    ])
+    const pool = toCandidates(
+      [{ role: 'any', entries: ['/m/w.mp3', '/m/c.mp3', '/m/both.mp3', '/m/x.mp3'].map(plain) }],
+      new Date(),
+      new Map(),
+      phases,
+    )
+    const of = (id: string) => pool.find((track) => track.id === id)
+    expect(of('/m/w.mp3')).toMatchObject({ phase: 'open' })
+    expect(of('/m/w.mp3')?.must).toBeUndefined()
+    expect(of('/m/c.mp3')).toMatchObject({ phase: 'close', must: true })
+    expect(of('/m/both.mp3')?.phase).toBeUndefined()
+    expect(of('/m/x.mp3')?.phase).toBeUndefined()
+  })
+})
