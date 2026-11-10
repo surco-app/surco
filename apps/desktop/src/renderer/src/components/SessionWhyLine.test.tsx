@@ -4,7 +4,9 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { SessionWhy } from '../../../shared/sessionBuild'
 import type { SessionTrack } from '../../../shared/sessionTypes'
+import type { KeyNotation } from '../../../shared/types'
 import i18n from '../i18n'
+import { SettingsProvider } from '../lib/settingsContext'
 import { SessionWhyLine } from './SessionWhyLine'
 
 afterEach(cleanup)
@@ -31,6 +33,7 @@ function setup(
     alts?: SessionTrack[]
     locked?: boolean
     track?: SessionTrack
+    keyNotation?: KeyNotation
   } = {},
 ) {
   const onPick = vi.fn()
@@ -47,6 +50,13 @@ function setup(
       locked={props.locked ?? false}
       onToggleLock={onToggleLock}
     />,
+    props.keyNotation && {
+      wrapper: ({ children }) => (
+        <SettingsProvider settings={{ keyNotation: props.keyNotation }}>
+          {children}
+        </SettingsProvider>
+      ),
+    },
   )
   return Object.assign(onPick, { alternatives, onToggleLock })
 }
@@ -191,6 +201,15 @@ describe('SessionWhyLine swapping', () => {
     fireEvent.click(screen.getByTestId('session-why-change'))
     expect(screen.getByTestId('session-why-alt-x')).toHaveTextContent('9A')
     expect(screen.getByTestId('session-why-alt-x')).toHaveTextContent('142')
+  })
+
+  it('writes the key of each track that fits in the notation chosen in Settings, like the rows', () => {
+    setup(
+      { kind: 'combo', sets: 2 },
+      { alts: [alt('x', { key: '8A', bpm: 142 })], keyNotation: 'musical' },
+    )
+    fireEvent.click(screen.getByTestId('session-why-change'))
+    expect(screen.getByTestId('session-why-alt-x')).toHaveTextContent('Am 142')
   })
 
   it('blocks swapping while the playlist is being rewritten', () => {

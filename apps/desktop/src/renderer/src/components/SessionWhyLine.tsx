@@ -3,8 +3,11 @@ import { Lock, LockOpen } from 'lucide-react'
 import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { keyIn } from '../../../shared/camelot'
 import type { SessionWhy } from '../../../shared/sessionBuild'
 import type { SessionTrack } from '../../../shared/sessionTypes'
+import type { KeyNotation } from '../../../shared/types'
+import { useAppSettings } from '../lib/settingsContext'
 import { Tooltip } from './Tooltip'
 
 interface Phrase {
@@ -74,8 +77,8 @@ function phraseOf(why: SessionWhy, tr: TFunction): Phrase {
   }
 }
 
-function keyAndTempo(track: SessionTrack): string {
-  return [track.key, track.bpm > 0 ? Math.round(track.bpm) : null]
+function keyAndTempo(track: SessionTrack, notation: KeyNotation): string {
+  return [track.key && keyIn(track.key, notation), track.bpm > 0 ? Math.round(track.bpm) : null]
     .filter((part) => part !== null)
     .join(' ')
 }
@@ -100,6 +103,7 @@ export function SessionWhyLine({
   onToggleLock: () => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
+  const { keyNotation } = useAppSettings()
   const [open, setOpen] = useState(false)
   const [options, setOptions] = useState<SessionTrack[]>([])
   const phrase = phraseOf(why, tr)
@@ -186,7 +190,7 @@ export function SessionWhyLine({
                   {track.title}
                 </span>
                 <span className="shrink-0 font-mono text-[11px] text-fg-dim">
-                  {keyAndTempo(track)}
+                  {keyAndTempo(track, keyNotation)}
                 </span>
               </button>
             </li>
