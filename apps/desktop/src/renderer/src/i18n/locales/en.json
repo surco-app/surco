@@ -580,6 +580,7 @@
     "stripNumbering": "Remove numbering from title",
     "applyTitleFormat": "Apply the title format to the selection",
     "regenerateNames": "Regenerate the selection's file names from metadata",
+    "renameKeywords": "rename",
     "trimDetected": "Trim detected silence on the selection",
     "clearMeta": "Clear metadata",
     "undoMeta": "Undo last metadata edit",

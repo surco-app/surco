@@ -580,6 +580,7 @@
     "stripNumbering": "Supprimer la numérotation du titre",
     "applyTitleFormat": "Appliquer le format du titre à la sélection",
     "regenerateNames": "Régénérer les noms de fichiers de la sélection depuis les métadonnées",
+    "renameKeywords": "renommer",
     "trimDetected": "Rogner le silence détecté sur la sélection",
     "clearMeta": "Effacer les métadonnées",
     "undoMeta": "Annuler la dernière modification de métadonnées",

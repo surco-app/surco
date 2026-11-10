@@ -580,6 +580,7 @@
     "stripNumbering": "Quitar la numeración del título",
     "applyTitleFormat": "Aplicar el formato del título a la selección",
     "regenerateNames": "Regenerar los nombres de archivo de la selección con los metadatos",
+    "renameKeywords": "renombrar cambiar nombre",
     "trimDetected": "Recortar el silencio detectado en la selección",
     "clearMeta": "Borrar metadatos",
     "undoMeta": "Deshacer última edición de metadatos",

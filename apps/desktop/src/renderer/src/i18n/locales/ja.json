@@ -580,6 +580,7 @@
     "stripNumbering": "タイトルの番号付けを削除",
     "applyTitleFormat": "タイトル形式を選択範囲に適用",
     "regenerateNames": "メタデータから選択範囲のファイル名を再生成",
+    "renameKeywords": "名前を変更 リネーム",
     "trimDetected": "選択範囲の検出された無音部分をトリミング",
     "clearMeta": "メタデータをクリア",
     "undoMeta": "最後のメタデータ編集を元に戻す",
