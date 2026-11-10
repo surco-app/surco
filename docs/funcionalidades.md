@@ -2027,18 +2027,19 @@ esté en dos ficheros (`song`, `lib/sessionCandidates.ts`), y «Cambiar» no ofr
 La línea dice «de las mejores que cuadran» solo si la pista está en el cuarto con más gusto de las
 que cabían. Dos nuevas nunca van seguidas. Una pista fijada sigue en su posición aunque el hueco
 de antes no tenga ninguna en tono: se llena fuera de tono antes que correrla. **Fases**: las
-playlists que se llaman como una parte del set, en toda la biblioteca y en los seis idiomas (Warm
+playlists elegidas que se llaman como una parte del set, en los seis idiomas (Warm
 Up, Comienzos, Cierre, Fijas, Himnos…), marcan sus pistas como apertura, cierre o fija
-(`libraryPhases`, `lib/sessionTree.ts`). Una de apertura pesa ×4 en el primer cuarto y ×0,15
+(`libraryPhases`, `lib/sessionTree.ts`). Las que no se eligieron no cuentan, porque pueden ser
+playlists de amigos importadas de su NML (`runSession`, `lib/sessionRun.ts`). Una de apertura pesa ×4 en el primer cuarto y ×0,15
 después; una de cierre, ×4 desde el 80 % y ×0,15 antes; una fija, ×2,5. La línea lo dice («Para
 abrir…», «Para cerrar…», «De las que siempre pinchas»). Con
 Bases y Cantaditas conocidas y «Alternar» activado la alternancia es estricta (`strict`): las
 pistas sin rol, que solo están en Mezcladas, no se usan de relleno, no arrancan la sesión ni se
 encadenan por un set. Entran como pareja de un combo repetido en dos sets, o cuando se acaba el
-rol que toca, y entonces ocupan su hueco. El rol de una pista que solo está en una Mezclada se saca de toda la biblioteca: las
-playlists de las carpetas llamadas Bases o Cantaditas se leen en segundo plano al abrir el
-asistente aunque no se hayan elegido (`libraryRoles`, `lib/sessionTree.ts`; `useSessionRun.ts`),
-y si la pista está solo en un rol allí, ese es el suyo; en los dos, o en ninguno, sigue sin rol.
+rol que toca, y entonces ocupan su hueco. El rol de una pista que solo está en una Mezclada se saca
+de las otras playlists elegidas cuyo nombre dice Bases o Cantaditas (`libraryRoles`,
+`lib/sessionTree.ts`); si la pista está solo en un rol allí, ese es el suyo; en los dos, o en
+ninguno, sigue sin rol. Las playlists sin elegir no se leen ni dan rol.
 El rol que el usuario dio a una playlist elegida manda sobre el de la biblioteca. Nueva es una pista añadida
 en los últimos 30 días; si el programa no da fechas, una sin escuchas ni estrellas cuando otras
 sí las tienen (`isNew`, `lib/sessionCandidates.ts`). Fecha de alta y escuchas solo las trae

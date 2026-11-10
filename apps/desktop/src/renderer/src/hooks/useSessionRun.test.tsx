@@ -144,12 +144,12 @@ describe('useSessionRun build', () => {
     })
   })
 
-  it('reads the warm-up, closing and must-play playlists of the library too', async () => {
+  it('leaves unread the warm-up, closing and must-play playlists the DJ did not choose', async () => {
     const { deps, result } = setup({ phases: () => ({ warm: 'open', s: 'must' }) })
     await act(async () => {
       await result.current.build('folder', ANSWERS, ROLES)
     })
-    expect(deps.rows.load).toHaveBeenCalledWith(['s', 'warm'])
+    expect(deps.rows.load).toHaveBeenCalledWith(['s'])
   })
 
   it('reads the chosen playlists through the shared reader', async () => {
@@ -364,13 +364,13 @@ describe('useSessionRun reading the library roles', () => {
     library: () => ({ lib: 'vocal' as const }),
   })
 
-  it('reads the playlists the roles come from along with the chosen ones', async () => {
+  it('reads only the chosen playlists, not the ones whose names would give roles', async () => {
     const deps = withLibrary(new Map([...ROWS, ['lib', [entry('/m/a.mp3')]]]))
     const { result } = setup(deps)
     await act(async () => {
       await result.current.build('folder', ANSWERS, ROLES)
     })
-    expect(deps.rows.load).toHaveBeenCalledWith(['s', 'lib'])
+    expect(deps.rows.load).toHaveBeenCalledWith(['s'])
   })
 
   it('does not read a playlist twice when it is chosen and also gives roles', async () => {
@@ -385,23 +385,13 @@ describe('useSessionRun reading the library roles', () => {
     expect(deps.rows.load).toHaveBeenCalledWith(['s'])
   })
 
-  it('gives the tracks of the set the role those playlists say', async () => {
+  it("takes no role from a playlist the DJ did not choose, since it may be a friend's", async () => {
     const deps = withLibrary(new Map([...ROWS, ['lib', [entry('/m/a.mp3')]]]))
     const { result } = setup(deps)
     await act(async () => {
       await result.current.build('folder', ANSWERS, { s: 'any' })
     })
-    expect(result.current.recent?.pool.find((t) => t.id === '/m/a.mp3')?.role).toBe('vocal')
-  })
-
-  it('goes on when a playlist that gives roles could not be read', async () => {
-    const deps = withLibrary(new Map(ROWS))
-    const { result } = setup(deps)
-    let outcome: string | undefined
-    await act(async () => {
-      outcome = await result.current.build('folder', ANSWERS, ROLES)
-    })
-    expect(outcome).toBe('built')
+    expect(result.current.recent?.pool.find((t) => t.id === '/m/a.mp3')?.role).toBe('any')
   })
 
   it('reads nothing more when there is no library', async () => {
