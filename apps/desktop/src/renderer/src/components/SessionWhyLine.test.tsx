@@ -25,9 +25,10 @@ const alt = (id: string, over: Partial<SessionTrack> = {}): SessionTrack => ({
 
 function setup(
   why: SessionWhy,
-  props: { canChange?: boolean; busy?: boolean; alts?: SessionTrack[] } = {},
+  props: { canChange?: boolean; busy?: boolean; alts?: SessionTrack[]; locked?: boolean } = {},
 ) {
   const onPick = vi.fn()
+  const onToggleLock = vi.fn()
   const alternatives = vi.fn(() => props.alts ?? [])
   render(
     <SessionWhyLine
@@ -36,9 +37,11 @@ function setup(
       busy={props.busy ?? false}
       alternatives={alternatives}
       onPick={onPick}
+      locked={props.locked ?? false}
+      onToggleLock={onToggleLock}
     />,
   )
-  return Object.assign(onPick, { alternatives })
+  return Object.assign(onPick, { alternatives, onToggleLock })
 }
 
 const line = () => screen.getByTestId('session-why')
@@ -162,5 +165,43 @@ describe('SessionWhyLine swapping', () => {
   it('blocks swapping while the playlist is being rewritten', () => {
     setup({ kind: 'combo', sets: 2 }, { busy: true, alts: [alt('x')] })
     expect(screen.getByTestId('session-why-change')).toBeDisabled()
+  })
+})
+
+describe('SessionWhyLine locking', () => {
+  it('offers a lock on every row, not pressed until it is locked', () => {
+    setup({ kind: 'combo', sets: 2 })
+    const lock = screen.getByTestId('session-why-lock')
+    expect(lock).toHaveAttribute('aria-pressed', 'false')
+    expect(lock).toHaveAccessibleName(i18n.t('sessions.why.lock'))
+  })
+
+  it('offers it even when there is nothing to change the track for', () => {
+    setup({ kind: 'start' }, { canChange: false })
+    expect(screen.getByTestId('session-why-lock')).toBeInTheDocument()
+  })
+
+  it('hands the press over', () => {
+    const spy = setup({ kind: 'combo', sets: 2 })
+    fireEvent.click(screen.getByTestId('session-why-lock'))
+    expect(spy.onToggleLock).toHaveBeenCalledOnce()
+  })
+
+  it('shows it pressed, and offers to unlock, when the track is locked', () => {
+    setup({ kind: 'combo', sets: 2 }, { locked: true })
+    const lock = screen.getByTestId('session-why-lock')
+    expect(lock).toHaveAttribute('aria-pressed', 'true')
+    expect(lock).toHaveAccessibleName(i18n.t('sessions.why.unlock'))
+  })
+
+  it('blocks it while the playlist is being rewritten', () => {
+    setup({ kind: 'combo', sets: 2 }, { busy: true })
+    expect(screen.getByTestId('session-why-lock')).toBeDisabled()
+  })
+
+  it('does not open the list of tracks to change to', () => {
+    const spy = setup({ kind: 'combo', sets: 2 }, { alts: [alt('x')] })
+    fireEvent.click(screen.getByTestId('session-why-lock'))
+    expect(spy.alternatives).not.toHaveBeenCalled()
   })
 })

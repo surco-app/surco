@@ -106,6 +106,8 @@
       "redo": "Refazer",
       "adjust": "Ajustar…",
       "keep": "Ficar assim",
+    "locked_one": "{{count}} faixa fixada, Refazer a mantém",
+    "locked_other": "{{count}} faixas fixadas, Refazer as mantém",
     "kept": "Mantida como playlist normal",
       "short": "Só há faixas para {{minutes}} min",
     "counted": "Contado a {{minutes}} min por faixa. Os arquivos somam {{audio}}.",
@@ -134,6 +136,8 @@
       "chosen": "Escolhida por você",
       "change": "Trocar",
       "pick": "Trocar por",
+    "lock": "Fixar para o Refazer manter",
+    "unlock": "Soltar",
     "noneFit": "Nenhuma outra combina aqui"
     }
   },

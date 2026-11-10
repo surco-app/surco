@@ -1178,6 +1178,7 @@ export default function App(): React.JSX.Element {
     busy: sessionBusy,
     alternatives: sessionAlternatives,
     swap: swapSessionTrack,
+    toggleLock: toggleSessionLock,
   } = sessionRun
   const sessionNoteOf = useCallback(
     (track: TrackItem) => {
@@ -1190,6 +1191,8 @@ export default function App(): React.JSX.Element {
           busy={sessionBusy}
           alternatives={() => sessionAlternatives(index)}
           onPick={(picked) => void reportSession(swapSessionTrack(index, picked))}
+          locked={sessionRecent.locked.has(sessionRecent.plan.items[index].track.id)}
+          onToggleLock={() => toggleSessionLock(sessionRecent.plan.items[index].track.id)}
         />
       )
     },
@@ -1199,6 +1202,7 @@ export default function App(): React.JSX.Element {
       sessionBusy,
       sessionAlternatives,
       swapSessionTrack,
+      toggleSessionLock,
       reportSession,
     ],
   )
@@ -3852,6 +3856,7 @@ export default function App(): React.JSX.Element {
                                 busy={sessionRun.busy}
                                 playMinutes={sessionRun.recent.answers.playMinutes}
                                 preferCombos={sessionRun.recent.answers.preferCombos}
+                                locked={sessionRun.recent.locked.size}
                                 onRedo={() => void reportSession(sessionRun.redo())}
                                 onAdjust={openSessionAdjust}
                                 onKeep={() => {

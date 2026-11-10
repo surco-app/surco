@@ -106,6 +106,8 @@
       "redo": "Rehacer",
       "adjust": "Ajustar…",
       "keep": "Quedármela así",
+    "locked_one": "{{count}} pista fijada, Rehacer la conserva",
+    "locked_other": "{{count}} pistas fijadas, Rehacer las conserva",
     "kept": "Se queda como playlist normal",
       "short": "Solo hay pistas para {{minutes}} min",
     "counted": "Contado a {{minutes}} min por pista. Los ficheros suman {{audio}}.",
@@ -134,6 +136,8 @@
       "chosen": "Elegida por ti",
       "change": "Cambiar",
       "pick": "Cambiar por",
+    "lock": "Fijar para que Rehacer la conserve",
+    "unlock": "Soltar",
     "noneFit": "No hay otra que cuadre aquí"
     }
   },

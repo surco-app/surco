@@ -1,4 +1,5 @@
 import type { TFunction } from 'i18next'
+import { Lock, LockOpen } from 'lucide-react'
 import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -68,12 +69,16 @@ export function SessionWhyLine({
   busy,
   alternatives,
   onPick,
+  locked,
+  onToggleLock,
 }: {
   why: SessionWhy
   canChange: boolean
   busy: boolean
   alternatives: () => SessionTrack[]
   onPick: (track: SessionTrack) => void
+  locked: boolean
+  onToggleLock: () => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [open, setOpen] = useState(false)
@@ -86,6 +91,27 @@ export function SessionWhyLine({
           <Tooltip label={phrase.text} />
           {phrase.text}
         </span>
+        <button
+          type="button"
+          data-testid="session-why-lock"
+          aria-pressed={locked}
+          aria-label={tr(locked ? 'sessions.why.unlock' : 'sessions.why.lock')}
+          disabled={busy}
+          onClick={(e) => {
+            e.stopPropagation()
+            onToggleLock()
+          }}
+          className={`press relative ml-auto shrink-0 disabled:opacity-50 ${
+            locked ? 'text-[var(--color-accent)]' : 'text-fg-faint hover:text-fg'
+          }`}
+        >
+          <Tooltip label={tr(locked ? 'sessions.why.unlock' : 'sessions.why.lock')} />
+          {locked ? (
+            <Lock size={12} aria-hidden="true" />
+          ) : (
+            <LockOpen size={12} aria-hidden="true" />
+          )}
+        </button>
         {canChange && (
           <button
             type="button"
@@ -97,7 +123,7 @@ export function SessionWhyLine({
               if (!open) setOptions(alternatives())
               setOpen((was) => !was)
             }}
-            className="press ml-auto shrink-0 text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] disabled:opacity-50"
+            className="press shrink-0 text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] disabled:opacity-50"
           >
             {tr('sessions.why.change')} ▾
           </button>

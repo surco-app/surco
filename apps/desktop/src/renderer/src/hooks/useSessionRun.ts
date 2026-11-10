@@ -234,7 +234,7 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
 
   const toggleLock = useStableCallback((trackId: string) =>
     setRecent((current) => {
-      if (!current || !current.plan.items.some((item) => item.track.id === trackId)) return current
+      if (!current?.plan.items.some((item) => item.track.id === trackId)) return current
       const locked = new Set(current.locked)
       if (!locked.delete(trackId)) locked.add(trackId)
       return { ...current, locked }

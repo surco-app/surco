@@ -106,6 +106,8 @@
       "redo": "Neu würfeln",
       "adjust": "Anpassen…",
       "keep": "So behalten",
+    "locked_one": "{{count}} Track fixiert, Neu würfeln behält ihn",
+    "locked_other": "{{count}} Tracks fixiert, Neu würfeln behält sie",
     "kept": "Bleibt als normale Playlist erhalten",
       "short": "Nur genug Tracks für {{minutes}} Min.",
     "counted": "Gezählt mit {{minutes}} Min. pro Track. Die Dateien dauern zusammen {{audio}}.",
@@ -134,6 +136,8 @@
       "chosen": "Von dir gewählt",
       "change": "Ändern",
       "pick": "Ändern zu",
+    "lock": "Fixieren, damit Neu würfeln den Track behält",
+    "unlock": "Lösen",
     "noneFit": "Hier passt sonst nichts"
     }
   },

@@ -3,7 +3,7 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { SessionPlan, SessionSummary } from '../../../shared/sessionBuild'
-import '../i18n'
+import i18n from '../i18n'
 import { SessionBand } from './SessionBand'
 
 afterEach(cleanup)
@@ -23,7 +23,7 @@ const SUMMARY: SessionSummary = {
 function setup(
   summary: Partial<SessionSummary> = {},
   busy = false,
-  extra: { playMinutes?: number; preferCombos?: boolean } = {},
+  extra: { playMinutes?: number; preferCombos?: boolean; locked?: number } = {},
 ) {
   const plan: SessionPlan = { items: [], summary: { ...SUMMARY, ...summary } }
   const handlers = { onRedo: vi.fn(), onAdjust: vi.fn(), onKeep: vi.fn() }
@@ -33,6 +33,7 @@ function setup(
       busy={busy}
       playMinutes={extra.playMinutes ?? 2}
       preferCombos={extra.preferCombos ?? true}
+      locked={extra.locked ?? 0}
       {...handlers}
     />,
   )
@@ -143,5 +144,17 @@ describe('SessionBand', () => {
   it('counts a track with no length as six minutes at most', () => {
     setup({ missingDurations: 1 }, false, { playMinutes: 9 })
     expect(screen.getByTestId('session-band-assumed')).toHaveTextContent('6')
+  })
+
+  it('says how many tracks are locked and that redoing keeps them', () => {
+    setup({}, false, { locked: 2 })
+    expect(screen.getByTestId('session-band-locked')).toHaveTextContent(
+      i18n.t('sessions.band.locked', { count: 2 }),
+    )
+  })
+
+  it('says nothing about locks when none is locked', () => {
+    setup()
+    expect(screen.queryByTestId('session-band-locked')).toBeNull()
   })
 })
