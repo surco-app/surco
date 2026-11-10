@@ -1,12 +1,11 @@
 import { useRef, useState } from 'react'
-import { type SessionPlan, swapAt } from '../../../shared/sessionBuild'
+import type { SessionPlan } from '../../../shared/sessionBuild'
+import type { LearnedMixing } from '../../../shared/sessionLearn'
 import { uniqueName } from '../../../shared/sessionName'
 import type { PlaylistRole, SessionAnswers, SessionTrack } from '../../../shared/sessionTypes'
-import type { LearnedMixing } from '../../../shared/sessionLearn'
 import type { PlaylistTrackRef, SourceNode } from '../../../shared/types'
+import { runSession, type SessionPins, type SessionRun } from '../lib/sessionRun'
 import type { SessionPhase } from '../lib/sessionTree'
-import { alternativesFor } from '../lib/sessionAlternatives'
-import { runSession, type SessionPins, type SessionRun, sessionOptionsOf } from '../lib/sessionRun'
 import type { SessionRows } from './useSessionRows'
 import type { SessionWriter } from './useSessionWrite'
 import { useStableCallback } from './useStableCallback'
@@ -62,8 +61,6 @@ export interface SessionRunner {
   fill: (target: FillTarget, answers: SessionAnswers, roles: Roles) => Promise<BuildResult>
   redo: () => Promise<BuildResult>
   adjust: (answers: SessionAnswers, roles: Roles) => Promise<BuildResult>
-  swap: (index: number, track: SessionTrack) => Promise<BuildResult>
-  alternatives: (index: number) => SessionTrack[]
   toggleLock: (trackId: string) => void
   keep: () => void
   noteEdit: (playlistId: string) => void
@@ -224,40 +221,6 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
     return replaceWith(recent, answers, roles, false)
   })
 
-  const alternatives = useStableCallback((index: number): SessionTrack[] =>
-    recent
-      ? alternativesFor(recent.plan, index, recent.pool, {
-          ...sessionOptionsOf(recent.answers, recent.seed),
-          ...recent.learned,
-        })
-      : [],
-  )
-
-  const swap = useStableCallback(async (index: number, track: SessionTrack) => {
-    if (!recent) return 'refused'
-    const plan = swapAt(
-      recent.plan,
-      index,
-      track,
-      recent.answers.minutes * 60,
-      recent.answers.playMinutes * 60,
-    )
-    if (plan === recent.plan) return 'refused'
-    return exclusive(async () => {
-      const refs = plan.items.map((item) => recent.refsById.get(item.track.id) ?? { paths: [] })
-      const shown = uniqueName(recent.name, deps.namesIn(recent.parentId))
-      const id = await deps.writer.replace(recent.parentId, recent.playlistId, shown, refs)
-      if (id === null) return 'refused'
-      deps.noteMade?.(id)
-      deps.openPlaylist({ id, name: shown, kind: 'playlist', count: refs.length })
-      const locked = new Set(recent.locked)
-      locked.delete(recent.plan.items[index].track.id)
-      locked.add(track.id)
-      setRecent({ ...recent, playlistId: id, plan, locked })
-      return 'built'
-    })
-  })
-
   const toggleLock = useStableCallback((trackId: string) =>
     setRecent((current) => {
       if (!current?.plan.items.some((item) => item.track.id === trackId)) return current
@@ -273,5 +236,5 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
     setRecent((current) => (current?.playlistId === playlistId ? null : current)),
   )
 
-  return { recent, busy, build, fill, redo, adjust, swap, alternatives, toggleLock, keep, noteEdit }
+  return { recent, busy, build, fill, redo, adjust, toggleLock, keep, noteEdit }
 }

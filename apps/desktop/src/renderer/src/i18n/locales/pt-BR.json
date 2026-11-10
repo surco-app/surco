@@ -137,11 +137,8 @@
       "chosen": "Escolhida por você",
       "phaseOpen": "Para abrir, das suas playlists de abertura",
       "phaseClose": "Para fechar, das suas playlists de encerramento",
-      "change": "Trocar",
-      "pick": "Trocar por",
     "lock": "Fixar para o Refazer manter",
-    "unlock": "Soltar",
-    "noneFit": "Nenhuma outra combina aqui"
+    "unlock": "Soltar"
     }
   },
   "pasteTracklist": {

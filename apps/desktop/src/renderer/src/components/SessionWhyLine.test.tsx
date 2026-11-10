@@ -4,14 +4,12 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { SessionWhy } from '../../../shared/sessionBuild'
 import type { SessionTrack } from '../../../shared/sessionTypes'
-import type { KeyNotation } from '../../../shared/types'
 import i18n from '../i18n'
-import { SettingsProvider } from '../lib/settingsContext'
 import { SessionWhyLine } from './SessionWhyLine'
 
 afterEach(cleanup)
 
-const alt = (id: string, over: Partial<SessionTrack> = {}): SessionTrack => ({
+const placedTrack = (id: string, over: Partial<SessionTrack> = {}): SessionTrack => ({
   id,
   role: 'any',
   key: '8A',
@@ -27,38 +25,19 @@ const alt = (id: string, over: Partial<SessionTrack> = {}): SessionTrack => ({
 
 function setup(
   why: SessionWhy,
-  props: {
-    canChange?: boolean
-    busy?: boolean
-    alts?: SessionTrack[]
-    locked?: boolean
-    track?: SessionTrack
-    keyNotation?: KeyNotation
-  } = {},
+  props: { busy?: boolean; locked?: boolean; track?: SessionTrack } = {},
 ) {
-  const onPick = vi.fn()
   const onToggleLock = vi.fn()
-  const alternatives = vi.fn(() => props.alts ?? [])
   render(
     <SessionWhyLine
-      track={props.track ?? alt('placed')}
+      track={props.track ?? placedTrack('placed')}
       why={why}
-      canChange={props.canChange ?? true}
       busy={props.busy ?? false}
-      alternatives={alternatives}
-      onPick={onPick}
       locked={props.locked ?? false}
       onToggleLock={onToggleLock}
     />,
-    props.keyNotation && {
-      wrapper: ({ children }) => (
-        <SettingsProvider settings={{ keyNotation: props.keyNotation }}>
-          {children}
-        </SettingsProvider>
-      ),
-    },
   )
-  return Object.assign(onPick, { alternatives, onToggleLock })
+  return { onToggleLock }
 }
 
 const line = () => screen.getByTestId('session-why')
@@ -142,76 +121,13 @@ describe('SessionWhyLine text', () => {
 
 describe('SessionWhyLine tempo', () => {
   it('shows the tempo of the placed track whatever it was picked for, and leaves the key to the row above it', () => {
-    setup({ kind: 'combo', sets: 2 }, { track: alt('p', { key: '11A', bpm: 142.05 }) })
+    setup({ kind: 'combo', sets: 2 }, { track: placedTrack('p', { key: '11A', bpm: 142.05 }) })
     expect(screen.getByTestId('session-why-track')).toHaveTextContent(/^142$/)
   })
 
   it('leaves the slot out when the track has no tempo', () => {
-    setup({ kind: 'start' }, { track: alt('p', { key: '4B', bpm: 0 }) })
+    setup({ kind: 'start' }, { track: placedTrack('p', { key: '4B', bpm: 0 }) })
     expect(screen.queryByTestId('session-why-track')).toBeNull()
-  })
-})
-
-describe('SessionWhyLine swapping', () => {
-  it('offers the swap on every row, without having to select it first', () => {
-    setup({ kind: 'combo', sets: 2 }, { alts: [alt('x')] })
-    expect(screen.getByTestId('session-why-change')).toBeInTheDocument()
-  })
-
-  it('offers no swap when the session has no track left over', () => {
-    setup({ kind: 'combo', sets: 2 }, { canChange: false })
-    expect(screen.queryByTestId('session-why-change')).toBeNull()
-  })
-
-  it('looks for the tracks that fit only when the list is opened', () => {
-    const onPick = setup({ kind: 'combo', sets: 2 }, { alts: [alt('x')] })
-    expect(onPick.alternatives).not.toHaveBeenCalled()
-    fireEvent.click(screen.getByTestId('session-why-change'))
-    expect(onPick.alternatives).toHaveBeenCalledOnce()
-  })
-
-  it('says so when nothing fits that place', () => {
-    setup({ kind: 'combo', sets: 2 })
-    fireEvent.click(screen.getByTestId('session-why-change'))
-    expect(screen.getByTestId('session-why-none')).toHaveTextContent(i18n.t('sessions.why.noneFit'))
-  })
-
-  it('opens the list of tracks that fit, with their artist and title', () => {
-    setup({ kind: 'combo', sets: 2 }, { alts: [alt('x'), alt('y')] })
-    fireEvent.click(screen.getByTestId('session-why-change'))
-    expect(screen.getByTestId('session-why-alt-x')).toHaveTextContent('Artist x')
-    expect(screen.getByTestId('session-why-alt-x')).toHaveTextContent('Title x')
-    expect(screen.getByTestId('session-why-alt-y')).toBeInTheDocument()
-  })
-
-  it('hands the chosen track over and closes the list', () => {
-    const spare = alt('x')
-    const onPick = setup({ kind: 'combo', sets: 2 }, { alts: [spare, alt('y')] })
-    fireEvent.click(screen.getByTestId('session-why-change'))
-    fireEvent.click(screen.getByTestId('session-why-alt-x'))
-    expect(onPick).toHaveBeenCalledExactlyOnceWith(spare)
-    expect(screen.queryByTestId('session-why-alt-x')).toBeNull()
-  })
-
-  it('shows the key and tempo of each track that fits when it has them', () => {
-    setup({ kind: 'combo', sets: 2 }, { alts: [alt('x', { key: '9A', bpm: 142 })] })
-    fireEvent.click(screen.getByTestId('session-why-change'))
-    expect(screen.getByTestId('session-why-alt-x')).toHaveTextContent('9A')
-    expect(screen.getByTestId('session-why-alt-x')).toHaveTextContent('142')
-  })
-
-  it('writes the key of each track that fits in the notation chosen in Settings, like the rows', () => {
-    setup(
-      { kind: 'combo', sets: 2 },
-      { alts: [alt('x', { key: '8A', bpm: 142 })], keyNotation: 'musical' },
-    )
-    fireEvent.click(screen.getByTestId('session-why-change'))
-    expect(screen.getByTestId('session-why-alt-x')).toHaveTextContent('Am 142')
-  })
-
-  it('blocks swapping while the playlist is being rewritten', () => {
-    setup({ kind: 'combo', sets: 2 }, { busy: true, alts: [alt('x')] })
-    expect(screen.getByTestId('session-why-change')).toBeDisabled()
   })
 })
 
@@ -221,11 +137,6 @@ describe('SessionWhyLine locking', () => {
     const lock = screen.getByTestId('session-why-lock')
     expect(lock).toHaveAttribute('aria-pressed', 'false')
     expect(lock).toHaveAccessibleName(i18n.t('sessions.why.lock'))
-  })
-
-  it('offers it even when there is nothing to change the track for', () => {
-    setup({ kind: 'start' }, { canChange: false })
-    expect(screen.getByTestId('session-why-lock')).toBeInTheDocument()
   })
 
   it('hands the press over', () => {
@@ -244,11 +155,5 @@ describe('SessionWhyLine locking', () => {
   it('blocks it while the playlist is being rewritten', () => {
     setup({ kind: 'combo', sets: 2 }, { busy: true })
     expect(screen.getByTestId('session-why-lock')).toBeDisabled()
-  })
-
-  it('does not open the list of tracks to change to', () => {
-    const spy = setup({ kind: 'combo', sets: 2 }, { alts: [alt('x')] })
-    fireEvent.click(screen.getByTestId('session-why-lock'))
-    expect(spy.alternatives).not.toHaveBeenCalled()
   })
 })

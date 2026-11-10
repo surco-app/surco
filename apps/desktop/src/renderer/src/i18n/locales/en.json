@@ -137,11 +137,8 @@
       "chosen": "Chosen by you",
       "phaseOpen": "To open, from your warm-up playlists",
       "phaseClose": "To close, from your closing playlists",
-      "change": "Change",
-      "pick": "Change to",
     "lock": "Lock so Redo keeps it",
-    "unlock": "Unlock",
-    "noneFit": "Nothing else fits here"
+    "unlock": "Unlock"
     }
   },
   "pasteTracklist": {

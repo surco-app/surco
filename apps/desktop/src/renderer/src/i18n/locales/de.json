@@ -137,11 +137,8 @@
       "chosen": "Von dir gewählt",
       "phaseOpen": "Zum Einstieg, aus deinen Warm-up-Playlists",
       "phaseClose": "Zum Schluss, aus deinen Abschluss-Playlists",
-      "change": "Ändern",
-      "pick": "Ändern zu",
     "lock": "Fixieren, damit Neu würfeln den Track behält",
-    "unlock": "Lösen",
-    "noneFit": "Hier passt sonst nichts"
+    "unlock": "Lösen"
     }
   },
   "pasteTracklist": {

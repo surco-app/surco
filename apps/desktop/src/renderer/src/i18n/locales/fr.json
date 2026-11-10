@@ -137,11 +137,8 @@
       "chosen": "Choisi par toi",
       "phaseOpen": "Pour ouvrir, tiré de tes playlists d’ouverture",
       "phaseClose": "Pour finir, tiré de tes playlists de clôture",
-      "change": "Changer",
-      "pick": "Remplacer par",
     "lock": "Fixer pour que Refaire la garde",
-    "unlock": "Libérer",
-    "noneFit": "Rien d’autre ne convient ici"
+    "unlock": "Libérer"
     }
   },
   "pasteTracklist": {
