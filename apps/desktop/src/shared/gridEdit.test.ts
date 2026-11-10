@@ -12,6 +12,7 @@ import {
   gridBeats,
   gridFingerprint,
   gridOffsets,
+  gridTempos,
   pinGrid,
   retempoGrid,
   sameGrid,
@@ -709,5 +710,60 @@ describe('Auto on the fine measurements', () => {
       ),
     )
     expect(worstAlong({ bpm: BPM, anchorMs: 100 }, fit)).toBeLessThanOrEqual(1)
+  })
+
+  it('reads a grid saved with many zones back as those zones, so the next nudge does not flatten what Auto fitted', () => {
+    const fit = fitOf(fineEvery(1000, 378000, (ms) => 10 * Math.sin((2 * Math.PI * ms) / 60000)))
+    const auto = autoFitGrid({ bpm: BPM, anchorMs: 120 }, fit, 0, [], true)
+    const tempos = gridTempos(auto, DURATION)
+    const saved = gridBeats(auto, DURATION).map((b, i) => ({
+      ms: Math.round(b.ms),
+      beat: b.beat,
+      bpm: Math.round(tempos[i] * 100) / 100,
+    }))
+    const read = editableGridOf(saved) as EditableGrid
+    expect(read.zones?.length).toBe(auto.zones?.length)
+    const again = drawn(read, DURATION)
+    saved.forEach((b, i) => expect(Math.abs(Math.round(again[i]) - b.ms)).toBeLessThanOrEqual(1))
+  })
+
+  it('tells two zones apart by the tempo stored on their beats when the beats alone bend too little to show it', () => {
+    const two = editAt(toggleAnchor({ bpm: 140, anchorMs: 100 }, 190000), 300000, (z) =>
+      retempoGrid(z, 140.1, 190000),
+    ) as EditableGrid
+    const tempos = gridTempos(two, DURATION)
+    const saved = gridBeats(two, DURATION).map((b, i) => ({
+      ms: Math.round(b.ms),
+      beat: b.beat,
+      bpm: Math.round(tempos[i] * 100) / 100,
+    }))
+    const read = editableGridOf(saved) as EditableGrid
+    expect(read.zones).toHaveLength(1)
+    expect(read.zones?.[0].bpm).toBeCloseTo(140.1, 2)
+  })
+
+  it('still straightens a grid whose stored tempo changes every couple of beats, as a dynamic analysis leaves it, instead of refusing it', () => {
+    const dynamic = constantBeats(140, 100, 600).map((b, i) => ({
+      ...b,
+      bpm: Math.floor(i / 2) % 2 ? 140.01 : 139.99,
+    }))
+    expect(editableGridOf(dynamic)?.bpm).toBeCloseTo(140, 1)
+  })
+
+  it('keeps a grid editable after saving when two zones round to the same hundredth of a BPM, as rekordbox stores them', () => {
+    const first = toggleAnchor({ bpm: 141, anchorMs: 100 }, 100000)
+    const second = editAt(first, 150000, (z) => retempoGrid(z, 140.004, 100000)) as EditableGrid
+    const third = editAt(toggleAnchor(second, 190000), 300000, (z) =>
+      retempoGrid(z, 139.996, 190000),
+    ) as EditableGrid
+    const tempos = gridTempos(third, DURATION)
+    const saved = gridBeats(third, DURATION).map((b, i) => ({
+      ms: Math.round(b.ms),
+      beat: b.beat,
+      bpm: Math.round(tempos[i] * 100) / 100,
+    }))
+    expect(new Set(saved.map((b) => b.bpm))).toEqual(new Set([141, 140]))
+    const read = editableGridOf(saved) as EditableGrid
+    expect(read.zones?.length).toBeGreaterThanOrEqual(1)
   })
 })

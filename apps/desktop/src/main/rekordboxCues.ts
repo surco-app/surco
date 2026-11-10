@@ -74,7 +74,7 @@ function analyse(
   if (!insideShare(shareDir, datPath)) return null
   const dat = read(datPath)
   if (!dat) return null
-  const grid = beatGrid(dat).map((b) => ({ ms: b.ms, beat: b.beat }))
+  const grid = beatGrid(dat).map((b) => ({ ms: b.ms, beat: b.beat, bpm: b.bpm }))
   if (grid.length === 0) return null
   const ext = read(datPath.replace(/\.DAT$/, '.EXT'))
   const sections = ext ? phrases(ext) : null

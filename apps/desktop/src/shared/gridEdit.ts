@@ -26,7 +26,6 @@ export const GRID_BPM_MAX = 300
 
 const CONSTANT_TOLERANCE_MS = 2
 const ZONE_BREAK_MS = 3
-const MAX_ZONES = 8
 const MIN_ZONE_BEATS = 4
 const SAME_TEMPO_RATIO = 0.01
 const START_SLACK_MS = 0.5
@@ -34,7 +33,9 @@ const START_SLACK_MS = 0.5
 const periodOf = (bpm: number): number => 60000 / bpm
 const barBeat = (k: number): number => (((k % 4) + 4) % 4) + 1
 
-function fitRun(beats: { ms: number; beat: number }[], tolerance: number): EditableGrid | null {
+type StoredBeat = { ms: number; beat: number; bpm?: number }
+
+function fitRun(beats: StoredBeat[], tolerance: number): EditableGrid | null {
   const n = beats.length
   const meanI = (n - 1) / 2
   const meanMs = beats.reduce((sum, b) => sum + b.ms, 0) / n
@@ -53,11 +54,13 @@ function fitRun(beats: { ms: number; beat: number }[], tolerance: number): Edita
   return { bpm: periodOf(period), anchorMs }
 }
 
-function runsOf(beats: { ms: number; beat: number }[]): [number, number][] {
+function runsOf(beats: StoredBeat[], byTempo: boolean): [number, number][] {
   const runs: [number, number][] = []
   let start = 0
   for (let i = 1; i < beats.length; i++) {
-    const follows = beats[i].beat === (beats[i - 1].beat % 4) + 1
+    const follows =
+      beats[i].beat === (beats[i - 1].beat % 4) + 1 &&
+      (!byTempo || beats[i].bpm === beats[i - 1].bpm)
     const gap = beats[i].ms - beats[i - 1].ms
     const usual = i - start < 2 ? gap : (beats[i - 1].ms - beats[start].ms) / (i - 1 - start)
     if (follows && Math.abs(gap - usual) <= ZONE_BREAK_MS) continue
@@ -68,22 +71,69 @@ function runsOf(beats: { ms: number; beat: number }[]): [number, number][] {
   return runs
 }
 
-export function editableGridOf(beats: { ms: number; beat: number }[]): EditableGrid | null {
+const longEnough = (runs: [number, number][]): boolean =>
+  runs.every(([a, b]) => b - a >= MIN_ZONE_BEATS)
+
+function lineCost(ms: number[], from: number, to: number): number {
+  const n = to - from
+  const meanI = (n - 1) / 2
+  let meanMs = 0
+  for (let i = from; i < to; i++) meanMs += ms[i] / n
+  let num = 0
+  let den = 0
+  for (let i = from; i < to; i++) {
+    num += (i - from - meanI) * (ms[i] - meanMs)
+    den += (i - from - meanI) ** 2
+  }
+  const slope = den === 0 ? 0 : num / den
+  let cost = 0
+  for (let i = from; i < to; i++) cost += (ms[i] - meanMs - slope * (i - from - meanI)) ** 2
+  return cost
+}
+
+function fittedPieces(
+  beats: StoredBeat[],
+  tolerance: number,
+): { from: number; grid: EditableGrid }[] | null {
+  const whole = fitRun(beats, tolerance)
+  if (whole) return [{ from: 0, grid: whole }]
+  if (beats.length < 2 * MIN_ZONE_BEATS) return null
+  const ms = beats.map((b) => b.ms)
+  let best = MIN_ZONE_BEATS
+  let bestCost = Number.POSITIVE_INFINITY
+  for (let at = MIN_ZONE_BEATS; at <= beats.length - MIN_ZONE_BEATS; at++) {
+    const cost = lineCost(ms, 0, at) + lineCost(ms, at, beats.length)
+    if (cost < bestCost) {
+      bestCost = cost
+      best = at
+    }
+  }
+  const left = fittedPieces(beats.slice(0, best), tolerance)
+  const right = fittedPieces(beats.slice(best), tolerance)
+  if (!left || !right) return null
+  return [...left, ...right.map((piece) => ({ ...piece, from: piece.from + best }))]
+}
+
+export function editableGridOf(beats: StoredBeat[]): EditableGrid | null {
   if (beats.length < 2) return null
-  const runs = runsOf(beats)
-  if (runs.length > MAX_ZONES) return null
-  if (runs.length > 1 && runs.some(([a, b]) => b - a < MIN_ZONE_BEATS)) return null
+  const byTempo = runsOf(beats, true)
+  const runs = longEnough(byTempo) ? byTempo : runsOf(beats, false)
+  if (runs.length > 1 && !longEnough(runs)) return null
   const tolerance = runs.length === 1 ? Number.POSITIVE_INFINITY : CONSTANT_TOLERANCE_MS
-  const fits = runs.map(([a, b]) => fitRun(beats.slice(a, b), tolerance))
-  if (fits.some((f) => f === null)) return null
-  const [base, ...rest] = fits as EditableGrid[]
-  if (rest.length === 0) return base
+  const pieces: { from: number; grid: EditableGrid }[] = []
+  for (const [a, b] of runs) {
+    const fitted = fittedPieces(beats.slice(a, b), tolerance)
+    if (!fitted) return null
+    pieces.push(...fitted.map((piece) => ({ ...piece, from: piece.from + a })))
+  }
+  const [base, ...rest] = pieces
+  if (rest.length === 0) return base.grid
   return {
-    ...base,
-    zones: rest.map((z, i) => ({
-      fromMs: beats[runs[i + 1][0]].ms,
-      bpm: z.bpm,
-      anchorMs: z.anchorMs,
+    ...base.grid,
+    zones: rest.map((piece) => ({
+      fromMs: beats[piece.from].ms,
+      bpm: piece.grid.bpm,
+      anchorMs: piece.grid.anchorMs,
     })),
   }
 }

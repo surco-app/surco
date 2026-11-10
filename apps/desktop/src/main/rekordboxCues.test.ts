@@ -87,11 +87,11 @@ describe('readTrackCues', () => {
       wave: [{ h: 1, rgb: [255, 255, 255] }],
     })
     expect(read?.grid.slice(0, 5)).toEqual([
-      { ms: 0, beat: 1 },
-      { ms: 500, beat: 2 },
-      { ms: 1000, beat: 3 },
-      { ms: 1500, beat: 4 },
-      { ms: 2000, beat: 1 },
+      { ms: 0, beat: 1, bpm: 145 },
+      { ms: 500, beat: 2, bpm: 145 },
+      { ms: 1000, beat: 3, bpm: 145 },
+      { ms: 1500, beat: 4, bpm: 145 },
+      { ms: 2000, beat: 1, bpm: 145 },
     ])
     expect(read?.phrases).toEqual([
       { ms: 0, kind: 'intro' },

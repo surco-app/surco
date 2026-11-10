@@ -1931,7 +1931,7 @@ export interface TrackCueRow {
 export interface TrackCues {
   contentId: string
   analysed: boolean
-  grid: { ms: number; beat: number }[]
+  grid: { ms: number; beat: number; bpm?: number }[]
   strong: StrongPart[]
   phrases: FlowPhrase[]
   sections?: PhraseSection[]
