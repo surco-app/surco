@@ -52,7 +52,6 @@
         "search": "{{count}} 件のプレイリストから検索",
         "noHits": "一致するプレイリストがありません",
         "none": "まだプレイリストを選んでいません",
-        "suggest": "フォルダ名で自動設定 ({{names}})",
         "onlyChosen": "選択中のみ表示",
         "allPlaylists": "すべて表示",
         "summary_one": "{{count}} 件のプレイリストを選択中、最大 {{tracks}} 曲から選びます",

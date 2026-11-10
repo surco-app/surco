@@ -52,7 +52,6 @@
         "search": "Search among {{count}} playlists",
         "noHits": "No playlist matches",
         "none": "No playlist chosen yet",
-        "suggest": "Mark folders by name ({{names}})",
         "onlyChosen": "See only the chosen",
         "allPlaylists": "See all playlists",
         "summary_one": "{{count}} playlist chosen, up to {{tracks}} tracks to pick from",

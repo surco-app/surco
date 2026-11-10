@@ -345,6 +345,14 @@ export const TRACKLIST_SCENE = {
   },
 }
 
+const FOLDER_ROLES = {
+  BASES: 'base',
+  CANTADITAS: 'vocal',
+  COMBOS: 'any',
+  TRACKLIST: 'any',
+  BOLOS: 'any',
+}
+
 export const SESSION_SCENE = {
   run: async (_app, page) => {
     await page.click('[data-testid="source-rail-rekordbox"]')
@@ -359,7 +367,16 @@ export const SESSION_SCENE = {
     await page.click(`[data-testid="${folder}"]`, { button: 'right' })
     await page.click('[data-testid="source-tree-session"]')
     await page.click('[data-testid="session-wizard-next"]')
-    await page.click('[data-testid="session-wizard-suggest"]')
+    await page.evaluate((plan) => {
+      for (const [name, role] of Object.entries(plan)) {
+        const group = [...document.querySelectorAll('[aria-label]')].find(
+          (e) =>
+            e.querySelector('[data-testid^="session-wizard-folder-role-"]') &&
+            new RegExp(`(^|\\s)${name}(\\s|$)`).test(e.getAttribute('aria-label')),
+        )
+        group?.querySelector(`[data-testid$="-${role}"]`)?.click()
+      }
+    }, FOLDER_ROLES)
     await page.click('[data-testid="session-wizard-next"]')
     await page.locator('[data-testid="session-wizard-build"]').waitFor({ timeout: 300000 })
     await page.click('[data-testid="session-wizard-build"]')
