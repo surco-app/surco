@@ -48,7 +48,7 @@
       },
       "sources": {
         "heading": "Aus welchen Playlists sollen die Tracks kommen?",
-        "hint": "Suche eine Playlist und gib an, was sie enthält. Nimm Gemischt für Tracklists und Sets, bei denen die Reihenfolge zählt. Surco liest sie, um Combos zu finden.",
+        "hint": "Suche eine Playlist und gib an, was sie enthält. Nimm Gemischt für Tracklists und Sets, bei denen die Reihenfolge zählt. Surco liest sie, um Combos zu finden. Mit den Pfeiltasten gehst du durch die Liste, 1, 2 und 3 markieren Instrumentals, Gesang oder Gemischt.",
         "search": "Unter {{count}} Playlists suchen",
         "noHits": "Keine Playlist passt",
         "none": "Noch keine Playlist ausgewählt",

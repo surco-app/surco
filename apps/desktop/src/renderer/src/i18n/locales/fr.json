@@ -48,7 +48,7 @@
       },
       "sources": {
         "heading": "De quelles playlists viennent les morceaux ?",
-        "hint": "Cherche une playlist et dis ce qu’elle contient. Utilise Mixte pour les tracklists et les sets, où l’ordre compte. Surco le lit pour trouver des combos.",
+        "hint": "Cherche une playlist et dis ce qu’elle contient. Utilise Mixte pour les tracklists et les sets, où l’ordre compte. Surco le lit pour trouver des combos. Les flèches parcourent la liste, et 1, 2 et 3 marquent Instrumentaux, Voix ou Mixte.",
         "search": "Chercher parmi {{count}} playlists",
         "noHits": "Aucune playlist ne correspond",
         "none": "Aucune playlist choisie pour l’instant",

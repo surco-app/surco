@@ -160,6 +160,15 @@ export function SourcesStep({
           emptyText={tr('sessions.wizard.sources.noHits')}
           searchLabel={tr('sessions.wizard.sources.search', { count: playlists.length })}
           onlyIds={onlyIds}
+          onRowKey={(key, row) => {
+            const role = KEY_ROLES[key]
+            if (!role) return false
+            const ids =
+              'node' in row ? playlistIdsUnder(row.node) : row.target.id ? [row.target.id] : []
+            const on = ids.length > 0 && ids.every((id) => roles[id] === role)
+            onPickMany(Object.fromEntries(ids.map((id) => [id, on ? null : role])))
+            return true
+          }}
           folderControl={(node) => {
             const ids = playlistIdsUnder(node)
             const first = ids.length > 0 ? roles[ids[0]] : undefined
@@ -220,6 +229,8 @@ export function SourcesStep({
     </div>
   )
 }
+
+const KEY_ROLES: Readonly<Record<string, PlaylistRole>> = { '1': 'base', '2': 'vocal', '3': 'any' }
 
 type CharacterKey = 'alternate' | 'preferCombos' | 'tasteWeight' | 'surprise'
 

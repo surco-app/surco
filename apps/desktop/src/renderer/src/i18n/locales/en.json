@@ -48,7 +48,7 @@
       },
       "sources": {
         "heading": "Which playlists should the tracks come from?",
-        "hint": "Search a playlist and say what it holds. Use Mixed for tracklists and sets, where the order matters. Surco reads that order to find combos.",
+        "hint": "Search a playlist and say what it holds. Use Mixed for tracklists and sets, where the order matters. Surco reads that order to find combos. Move through the list with the arrows, and 1, 2 and 3 mark Instrumentals, Vocals or Mixed.",
         "search": "Search among {{count}} playlists",
         "noHits": "No playlist matches",
         "none": "No playlist chosen yet",
