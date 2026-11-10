@@ -31,6 +31,8 @@ function stubbedOnly(...layers: DjReads[]): DjApi {
     playlist: vi.fn((p, id) => pick(p, 'playlist')(id)),
     membership: vi.fn((p, paths) => pick(p, 'membership')(paths)),
     collection: vi.fn((p) => pick(p, 'collection')()),
+    editPlaylist: vi.fn((p, edit, label) => pick(p, 'editPlaylist')(edit, label)),
+    hasSeparator: vi.fn((p) => pick(p, 'hasSeparator')()),
   }
 }
 
@@ -885,15 +887,21 @@ describe('useSourceBrowser', () => {
   // so instead of failing after the user picked it.
   it('knows whether Traktor has a separator to copy', async () => {
     const { result } = setup({
-      dj: { traktor: { available: vi.fn().mockResolvedValue(true) } },
-      traktorHasSeparator: vi.fn().mockResolvedValue(true),
+      dj: {
+        traktor: {
+          available: vi.fn().mockResolvedValue(true),
+          hasSeparator: vi.fn().mockResolvedValue(true),
+        },
+      },
     })
     act(() => result.current.selectSource('traktor'))
     await waitFor(() => expect(result.current.canInsertSeparator).toBe(true))
   })
 
   it('knows whether rekordbox has a separator to copy', async () => {
-    const { result } = setup({ rekordboxHasSeparator: vi.fn().mockResolvedValue(true) })
+    const { result } = setup({
+      dj: { rekordbox: { hasSeparator: vi.fn().mockResolvedValue(true) } },
+    })
     expect(result.current.canInsertSeparator).toBe(false)
     act(() => result.current.selectSource('rekordbox'))
     await waitFor(() => expect(result.current.canInsertSeparator).toBe(true))
@@ -902,7 +910,12 @@ describe('useSourceBrowser', () => {
   it('asks no collection for a separator in Engine DJ, whose playlists have none', async () => {
     const rekordboxHasSeparator = vi.fn().mockResolvedValue(true)
     const traktorHasSeparator = vi.fn().mockResolvedValue(true)
-    const { result } = setup({ rekordboxHasSeparator, traktorHasSeparator })
+    const { result } = setup({
+      dj: {
+        rekordbox: { hasSeparator: rekordboxHasSeparator },
+        traktor: { hasSeparator: traktorHasSeparator },
+      },
+    })
     act(() => result.current.selectSource('engine'))
     await waitFor(() => expect(result.current.tree).toBeDefined())
     expect(rekordboxHasSeparator).not.toHaveBeenCalled()

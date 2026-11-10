@@ -665,6 +665,15 @@ function wiredRead<T>(program: DjProgram, op: string): Promise<T> {
   return Promise.resolve(answers[op] as T)
 }
 
+const WIRED_EDITING: DjProgram[] = ['rekordbox', 'traktor']
+
+function wiredEdit<T>(program: DjProgram, op: string, answer: T): Promise<T> {
+  if (!WIRED_EDITING.includes(program)) {
+    throw new Error(`scenario: window.api.dj.${op}('${program}') is not wired`)
+  }
+  return Promise.resolve(answer)
+}
+
 function wiredDj(): DjApi {
   return {
     available: (p) => wiredRead(p, 'available'),
@@ -674,6 +683,8 @@ function wiredDj(): DjApi {
     playlist: (p) => wiredRead(p, 'playlist'),
     membership: (p) => wiredRead(p, 'membership'),
     collection: (p) => wiredRead(p, 'collection'),
+    editPlaylist: (p) => wiredEdit(p, 'editPlaylist', { applied: false, reason: 'unreadable' }),
+    hasSeparator: (p) => wiredEdit(p, 'hasSeparator', false),
   }
 }
 
@@ -705,10 +716,6 @@ function scenarioApi(
     // No scenario has a rekordbox collection: the source rail stays without it, and the
     // queries App mounts get an answer instead of the proxy's "not wired" throw.
     dj: wiredDj(),
-    rekordboxHasSeparator: async () => false,
-    traktorHasSeparator: async () => false,
-    editTraktorPlaylist: async () => ({ applied: false, reason: 'unreadable' }),
-    editRekordboxPlaylist: async () => ({ applied: false, reason: 'unreadable' }),
     rekordboxQueue: async () => ({ tracks: 0, changes: 0, items: [] }),
     applyRekordboxQueue: async () => null,
     discardRekordboxQueue: async () => {},

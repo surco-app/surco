@@ -16,7 +16,11 @@ function handler(channel: string): (...args: unknown[]) => Promise<unknown> {
   return call[1] as (...args: unknown[]) => Promise<unknown>
 }
 
-function row(program: DjProgram, over: Partial<DjMainProgram['read']> = {}): DjMainProgram {
+function row(
+  program: DjProgram,
+  over: Partial<DjMainProgram['read']> = {},
+  edit?: DjMainProgram['edit'],
+): DjMainProgram {
   return {
     read: {
       available: () => true,
@@ -28,11 +32,15 @@ function row(program: DjProgram, over: Partial<DjMainProgram['read']> = {}): DjM
       collection: () => [],
       ...over,
     },
+    ...(edit ? { edit } : {}),
   }
 }
 
-function table(over: Partial<Record<DjProgram, Partial<DjMainProgram['read']>>> = {}): DjMainTable {
-  return Object.fromEntries(DJ_PROGRAMS.map((p) => [p, row(p, over[p])])) as DjMainTable
+function table(
+  over: Partial<Record<DjProgram, Partial<DjMainProgram['read']>>> = {},
+  edits: Partial<Record<DjProgram, DjMainProgram['edit']>> = {},
+): DjMainTable {
+  return Object.fromEntries(DJ_PROGRAMS.map((p) => [p, row(p, over[p], edits[p])])) as DjMainTable
 }
 
 describe('registerDjIpc', () => {
@@ -62,5 +70,33 @@ describe('registerDjIpc', () => {
     await expect(handler('dj:tree')({}, 'virtualdj')).rejects.toThrow(
       'unknown DJ program virtualdj',
     )
+  })
+
+  it('dispatches a playlist edit with its label to the program it names, with the window it came from', async () => {
+    const save = vi.fn(async () => ({ applied: true }) as const)
+    const other = vi.fn(async () => ({ applied: true }) as const)
+    registerDjIpc(table({}, { traktor: { save }, serato: { save: other } }))
+    const edit = { kind: 'delete', playlistId: 'p1' } as const
+    const sender = { id: 7 }
+    expect(await handler('dj:editPlaylist')({ sender }, 'traktor', edit, 'Friday')).toEqual({
+      applied: true,
+    })
+    expect(save).toHaveBeenCalledWith(edit, 'Friday', sender)
+    expect(other).not.toHaveBeenCalled()
+  })
+
+  it('asks the program whether it has a separator', async () => {
+    const hasSeparator = vi.fn(() => true)
+    registerDjIpc(
+      table({}, { rekordbox: { save: vi.fn(), hasSeparator } as unknown as DjMainProgram['edit'] }),
+    )
+    expect(await handler('dj:hasSeparator')({}, 'rekordbox')).toBe(true)
+  })
+
+  it('rejects an edit for a program that cannot edit, so Engine never answers as if it had saved', async () => {
+    registerDjIpc(table())
+    await expect(
+      handler('dj:editPlaylist')({ sender: {} }, 'engine', { kind: 'delete', playlistId: 'p' }),
+    ).rejects.toThrow('engine has no editPlaylist')
   })
 })

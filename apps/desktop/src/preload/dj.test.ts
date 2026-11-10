@@ -31,6 +31,14 @@ const OLD_READ_METHODS = [
   'loadSeratoCollection',
 ]
 
+const OLD_EDIT_METHODS = [
+  'editRekordboxPlaylist',
+  'editTraktorPlaylist',
+  'editSeratoPlaylist',
+  'rekordboxHasSeparator',
+  'traktorHasSeparator',
+]
+
 function fakeIpc() {
   return { invoke: vi.fn(async () => undefined), on: vi.fn(), removeListener: vi.fn() }
 }
@@ -44,6 +52,8 @@ describe('createDjApi', () => {
     ['playlist', 'dj:playlist', ['p1']],
     ['membership', 'dj:membership', [['/m/a.wav']]],
     ['collection', 'dj:collection', []],
+    ['editPlaylist', 'dj:editPlaylist', [{ kind: 'delete', playlistId: 'p' }, 'Friday']],
+    ['hasSeparator', 'dj:hasSeparator', []],
   ] as const)(
     'invokes the shared channel with the program first for %s, so one channel serves every program',
     async (op, channel, rest) => {
@@ -74,6 +84,7 @@ describe('the preload bridge', () => {
     await import('./index')
     const api = exposed.mock.calls[0][1] as Record<string, unknown>
     expect(Object.keys(api).filter((k) => OLD_READ_METHODS.includes(k))).toEqual([])
+    expect(Object.keys(api).filter((k) => OLD_EDIT_METHODS.includes(k))).toEqual([])
     expect(typeof api.dj).toBe('object')
     vi.doUnmock('electron')
   })

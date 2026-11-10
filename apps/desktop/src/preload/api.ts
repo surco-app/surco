@@ -51,8 +51,6 @@ import type {
   ProcessResult,
   ProgramCopies,
   QueuedCues,
-  RekordboxEditResult,
-  RekordboxPlaylistEdit,
   RekordboxQueueApplied,
   RekordboxQueueState,
   RekordboxSyncIssue,
@@ -250,12 +248,6 @@ export interface Api {
   seratoRunning: () => Promise<boolean>
   djAppRunning: () => Promise<boolean>
   holdsInLibrary: (path: string, titles: string[]) => Promise<boolean>
-  // Applies one organising edit to a rekordbox playlist. Asks to close rekordbox when it is
-  // open; the result says whether the edit was written, and why not.
-  editRekordboxPlaylist: (
-    edit: RekordboxPlaylistEdit,
-    label?: string,
-  ) => Promise<RekordboxEditResult>
   rekordboxQueue: () => Promise<RekordboxQueueState>
   applyRekordboxQueue: () => Promise<RekordboxQueueApplied | null>
   discardRekordboxQueue: () => Promise<void>
@@ -280,11 +272,6 @@ export interface Api {
   undoRekordboxCues: (contentId: string) => Promise<void>
   onRekordboxQueueChanged: (cb: (state: RekordboxQueueState) => void) => () => void
   onRekordboxQueueApplied: (cb: (applied: RekordboxQueueApplied) => void) => () => void
-  // Whether the collection has a separator track that can be copied into a playlist.
-  rekordboxHasSeparator: () => Promise<boolean>
-  editTraktorPlaylist: (edit: RekordboxPlaylistEdit, label?: string) => Promise<RekordboxEditResult>
-  editSeratoPlaylist: (edit: RekordboxPlaylistEdit, label?: string) => Promise<RekordboxEditResult>
-  traktorHasSeparator: () => Promise<boolean>
   engineCueQueue: () => Promise<RekordboxQueueState>
   applyEngineCueQueue: () => Promise<RekordboxQueueApplied | null>
   discardEngineCueQueue: () => Promise<void>

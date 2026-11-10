@@ -135,39 +135,38 @@ describe('SOURCE_PROGRAMS says what each DJ program allows in its tab', () => {
   })
 
   it('saves a Serato edit through editSeratoPlaylist with the crate name for the queue', async () => {
-    const editSeratoPlaylist = vi
-      .fn<Api['editSeratoPlaylist']>()
-      .mockResolvedValue({ applied: true })
-    installApi({ editSeratoPlaylist })
+    const editPlaylist = vi.fn<Api['dj']['editPlaylist']>().mockResolvedValue({ applied: true })
+    installApi({ dj: { ...djReads(), editPlaylist } as unknown as Api['dj'] })
     await SOURCE_PROGRAMS.serato.edit?.save({ kind: 'rename', playlistId: 'A', name: 'B' }, 'A')
-    expect(editSeratoPlaylist).toHaveBeenCalledWith(
+    expect(editPlaylist).toHaveBeenCalledWith(
+      'serato',
       { kind: 'rename', playlistId: 'A', name: 'B' },
       'A',
     )
   })
 
-  it.each([
-    ['rekordbox', 'rekordboxHasSeparator'],
-    ['traktor', 'traktorHasSeparator'],
-  ] as const)('asks %s for a separator through window.api.%s', async (program, method) => {
-    const spy = vi.fn(async () => true)
-    installApi({ [method]: spy } as Partial<Api>)
-    await expect(SOURCE_PROGRAMS[program].separator?.()).resolves.toBe(true)
-    expect(spy).toHaveBeenCalled()
-  })
+  it.each(['rekordbox', 'traktor'] as const)(
+    'asks %s for a separator through window.api.dj.hasSeparator naming it',
+    async (program) => {
+      const spy = vi.fn(async () => true)
+      installApi({ dj: { ...djReads(), hasSeparator: spy } as unknown as Api['dj'] })
+      await expect(SOURCE_PROGRAMS[program].separator?.()).resolves.toBe(true)
+      expect(spy).toHaveBeenCalledWith(program)
+    },
+  )
 
-  it.each([
-    ['rekordbox', 'editRekordboxPlaylist'],
-    ['traktor', 'editTraktorPlaylist'],
-  ] as const)('saves an edit to %s through window.api.%s', async (program, method) => {
-    const edit: RekordboxPlaylistEdit = { kind: 'rename', playlistId: 'p', name: 'B' }
-    const spy = vi.fn(async () => ({ applied: true as const }))
-    installApi({ [method]: spy } as Partial<Api>)
-    await expect(SOURCE_PROGRAMS[program].edit?.save(edit, 'A')).resolves.toEqual({
-      applied: true,
-    })
-    expect(spy).toHaveBeenCalledWith(edit, 'A')
-  })
+  it.each(['rekordbox', 'traktor'] as const)(
+    'saves an edit to %s through window.api.dj.editPlaylist naming it',
+    async (program) => {
+      const edit: RekordboxPlaylistEdit = { kind: 'rename', playlistId: 'p', name: 'B' }
+      const spy = vi.fn(async () => ({ applied: true as const }))
+      installApi({ dj: { ...djReads(), editPlaylist: spy } as unknown as Api['dj'] })
+      await expect(SOURCE_PROGRAMS[program].edit?.save(edit, 'A')).resolves.toEqual({
+        applied: true,
+      })
+      expect(spy).toHaveBeenCalledWith(program, edit, 'A')
+    },
+  )
 
   it.each([
     ['HISTORY', true, 'locked'],

@@ -28,8 +28,6 @@ import type {
   ProcessProgress,
   ProgramCopies,
   QueuedCues,
-  RekordboxEditResult,
-  RekordboxPlaylistEdit,
   RekordboxQueueApplied,
   RekordboxQueueState,
   RekordboxSyncIssue,
@@ -234,10 +232,6 @@ const api: Api = {
   djAppRunning: (): Promise<boolean> => ipcRenderer.invoke('djApps:running'),
   holdsInLibrary: (path: string, titles: string[]): Promise<boolean> =>
     ipcRenderer.invoke('library:holdsFile', path, titles),
-  editRekordboxPlaylist: (
-    edit: RekordboxPlaylistEdit,
-    label?: string,
-  ): Promise<RekordboxEditResult> => ipcRenderer.invoke('rekordbox:edit', edit, label),
   rekordboxQueue: (): Promise<RekordboxQueueState> => ipcRenderer.invoke('rekordbox:queue'),
   applyRekordboxQueue: (): Promise<RekordboxQueueApplied | null> =>
     ipcRenderer.invoke('rekordbox:applyNow'),
@@ -289,14 +283,6 @@ const api: Api = {
     ipcRenderer.on('rekordbox:queueApplied', listener)
     return () => ipcRenderer.removeListener('rekordbox:queueApplied', listener)
   },
-  rekordboxHasSeparator: (): Promise<boolean> => ipcRenderer.invoke('rekordbox:hasSeparator'),
-  editTraktorPlaylist: (
-    edit: RekordboxPlaylistEdit,
-    label?: string,
-  ): Promise<RekordboxEditResult> => ipcRenderer.invoke('traktor:edit', edit, label),
-  editSeratoPlaylist: (edit: RekordboxPlaylistEdit, label?: string): Promise<RekordboxEditResult> =>
-    ipcRenderer.invoke('serato:edit', edit, label),
-  traktorHasSeparator: (): Promise<boolean> => ipcRenderer.invoke('traktor:hasSeparator'),
   engineCueQueue: (): Promise<RekordboxQueueState> => ipcRenderer.invoke('engine:cueQueue'),
   applyEngineCueQueue: (): Promise<RekordboxQueueApplied | null> =>
     ipcRenderer.invoke('engine:applyCueQueue'),

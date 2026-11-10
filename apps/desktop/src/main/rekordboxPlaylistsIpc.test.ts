@@ -15,13 +15,16 @@ vi.mock('./rekordboxDb', async (importOriginal) => {
   return { ...real, openRekordboxDb: vi.fn(real.openRekordboxDb) }
 })
 
-import type { CollectionTrack, SourcePlaylistEntry } from '../shared/types'
+import type { WebContents } from 'electron'
+import type { DjEditMain } from '../shared/djApi'
+import type { CollectionTrack, RekordboxPlaylistEdit, SourcePlaylistEntry } from '../shared/types'
 import { registerRekordboxCuesIpc } from './rekordboxCuesIpc'
 import { openRekordboxDb, rekordboxRawKey } from './rekordboxDb'
 import { ORGANISE_FIXTURE, writeRekordboxPlaylistFixture } from './rekordboxPlaylistsFixture'
 import {
   collectionAvailable,
-  registerRekordboxPlaylistsIpc,
+  type PlaylistEditHost,
+  rekordboxEdit,
   rekordboxRead,
   withCollection,
 } from './rekordboxPlaylistsIpc'
@@ -107,7 +110,16 @@ function handler(channel: string): (...args: unknown[]) => unknown {
   return call[1] as (...args: unknown[]) => unknown
 }
 
-describe('registerRekordboxPlaylistsIpc', () => {
+let section: DjEditMain
+
+function register(collection: () => string, host: PlaylistEditHost): void {
+  section = rekordboxEdit(collection, host)
+}
+
+const save = (edit: RekordboxPlaylistEdit, label?: string) =>
+  section.save(edit, label, {} as WebContents)
+
+describe('rekordboxEdit', () => {
   it('grants the files and covers of the playlist it read, so the rows can play and paint before any disk walk', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'surco-rbipc-'))
     const path = join(dir, 'master.db')
@@ -144,7 +156,7 @@ describe('registerRekordboxPlaylistsIpc', () => {
   it('reads the tree and the separator check with the stretched key too, since both run back to back on every focus and held the main process for 226 ms', async () => {
     const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')
     writeRekordboxPlaylistFixture(path, ORGANISE_FIXTURE)
-    registerRekordboxPlaylistsIpc(() => path, {
+    register(() => path, {
       ensureClosed: vi.fn(async () => true),
       queue: queueFor(path),
     })
@@ -156,7 +168,7 @@ describe('registerRekordboxPlaylistsIpc', () => {
     const key = await rekordboxRawKey(path)
     vi.mocked(openRekordboxDb).mockClear()
     await read.tree()
-    await handler('rekordbox:hasSeparator')()
+    await section.hasSeparator?.()
     await read.recentCount()
     expect(vi.mocked(openRekordboxDb).mock.calls).toEqual([
       [path, { readonly: true, key }],
@@ -198,14 +210,16 @@ describe('registerRekordboxPlaylistsIpc', () => {
     const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')
     writeRekordboxPlaylistFixture(path, ORGANISE_FIXTURE)
     const ensureClosed = vi.fn(async () => true)
-    registerRekordboxPlaylistsIpc(() => path, {
+    register(() => path, {
       ensureClosed,
       queue: queueFor(path),
     })
-    const result = await handler('rekordbox:edit')(
-      { sender: {} },
-      { kind: 'move', playlistId: '2000', linkIds: ['f6'], beforeLinkId: 'f1' },
-    )
+    const result = await save({
+      kind: 'move',
+      playlistId: '2000',
+      linkIds: ['f6'],
+      beforeLinkId: 'f1',
+    })
     expect(ensureClosed).toHaveBeenCalledWith('window')
     expect(result).toEqual({ applied: true })
   })
@@ -220,26 +234,23 @@ describe('registerRekordboxPlaylistsIpc', () => {
       order.push('apply')
       return apply(...args)
     }
-    registerRekordboxPlaylistsIpc(() => path, {
+    register(() => path, {
       ensureClosed: vi.fn(async () => true),
       queue,
       beginLoose: (p) => order.push(`loose:${p}`),
     })
-    await handler('rekordbox:edit')(
-      { sender: {} },
-      { kind: 'move', playlistId: '2000', linkIds: ['f6'], beforeLinkId: 'f1' },
-    )
+    await save({ kind: 'move', playlistId: '2000', linkIds: ['f6'], beforeLinkId: 'f1' })
     expect(order).toEqual([`loose:${path}`, 'apply'])
   })
 
   it('says whether the collection has a separator to copy', async () => {
     const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')
     writeRekordboxPlaylistFixture(path, ORGANISE_FIXTURE)
-    registerRekordboxPlaylistsIpc(() => path, {
+    register(() => path, {
       ensureClosed: vi.fn(async () => true),
       queue: queueFor(path),
     })
-    expect(await handler('rekordbox:hasSeparator')()).toBe(true)
+    expect(await section.hasSeparator?.()).toBe(true)
   })
 
   it('counts the tracks added in the last 30 days, the number the tree shows beside Recently added', async () => {
@@ -273,19 +284,13 @@ describe('registerRekordboxPlaylistsIpc', () => {
       order.push(`end${n}`)
       return true
     })
-    registerRekordboxPlaylistsIpc(() => path, {
+    register(() => path, {
       ensureClosed,
       queue: queueFor(path),
     })
-    const edit = handler('rekordbox:edit')
-    const first = edit(
-      { sender: {} },
-      { kind: 'move', playlistId: '2000', linkIds: ['f6'], beforeLinkId: 'f1' },
-    )
-    const second = edit(
-      { sender: {} },
-      { kind: 'move', playlistId: '2000', linkIds: ['f5'], beforeLinkId: 'f1' },
-    )
+    const edit = save
+    const first = edit({ kind: 'move', playlistId: '2000', linkIds: ['f6'], beforeLinkId: 'f1' })
+    const second = edit({ kind: 'move', playlistId: '2000', linkIds: ['f5'], beforeLinkId: 'f1' })
     await new Promise((r) => setTimeout(r, 50))
     expect(order).toEqual(['start1'])
     release()
@@ -297,15 +302,11 @@ describe('registerRekordboxPlaylistsIpc', () => {
     const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')
     writeRekordboxPlaylistFixture(path, { ...ORGANISE_FIXTURE, xml: true })
     const queue = queueFor(path)
-    registerRekordboxPlaylistsIpc(() => path, {
+    register(() => path, {
       ensureClosed: vi.fn(async () => false),
       queue,
     })
-    const result = await handler('rekordbox:edit')(
-      { sender: {} },
-      { kind: 'rename', playlistId: '3000', name: 'House 26' },
-      'House',
-    )
+    const result = await save({ kind: 'rename', playlistId: '3000', name: 'House 26' }, 'House')
     expect(result).toEqual({ applied: false, reason: 'cancelled' })
     expect(queue.state().items).toEqual([
       {
@@ -325,13 +326,13 @@ describe('registerRekordboxPlaylistsIpc', () => {
       apply: vi.fn(async () => ({ status: 'refused', reason: 'backup-failed' }) as const),
       drop: vi.fn(),
     }
-    registerRekordboxPlaylistsIpc(() => path, {
+    register(() => path, {
       ensureClosed: vi.fn(async () => true),
       queue,
       onWaiting,
     })
-    const edit = { kind: 'rename', playlistId: '3000', name: 'House 26' }
-    expect(await handler('rekordbox:edit')({ sender: {} }, edit)).toEqual({
+    const edit: RekordboxPlaylistEdit = { kind: 'rename', playlistId: '3000', name: 'House 26' }
+    expect(await save(edit)).toEqual({
       applied: false,
       reason: 'backup-failed',
     })
@@ -356,13 +357,9 @@ describe('registerRekordboxPlaylistsIpc', () => {
         label: 'Factory',
       },
     ])
-    registerRekordboxPlaylistsIpc(() => path, { ensureClosed: vi.fn(async () => true), queue })
+    register(() => path, { ensureClosed: vi.fn(async () => true), queue })
     expect(
-      await handler('rekordbox:edit')(
-        { sender: {} },
-        { kind: 'create', parentId: 'root', name: 'Makina 2', folder: false },
-        'Makina 2',
-      ),
+      await save({ kind: 'create', parentId: 'root', name: 'Makina 2', folder: false }, 'Makina 2'),
     ).toEqual({ applied: false, reason: 'backup-failed' })
     expect(queue.state().items.map((i) => i.label)).toEqual(['Factory'])
   })
@@ -391,15 +388,12 @@ describe('registerRekordboxPlaylistsIpc', () => {
       })),
     }
     const onApplied = vi.fn()
-    registerRekordboxPlaylistsIpc(() => path, {
+    register(() => path, {
       ensureClosed: vi.fn(async () => true),
       queue,
       onApplied,
     })
-    await handler('rekordbox:edit')(
-      { sender: {} },
-      { kind: 'rename', playlistId: '3000', name: 'House 26' },
-    )
+    await save({ kind: 'rename', playlistId: '3000', name: 'House 26' })
     expect(onApplied).toHaveBeenCalledWith(
       expect.objectContaining({
         changes: 1,
@@ -413,15 +407,12 @@ describe('registerRekordboxPlaylistsIpc', () => {
     const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')
     writeRekordboxPlaylistFixture(path, { ...ORGANISE_FIXTURE, xml: true })
     const onApplied = vi.fn()
-    registerRekordboxPlaylistsIpc(() => path, {
+    register(() => path, {
       ensureClosed: vi.fn(async () => true),
       queue: queueFor(path),
       onApplied,
     })
-    await handler('rekordbox:edit')(
-      { sender: {} },
-      { kind: 'rename', playlistId: '3000', name: 'House 26' },
-    )
+    await save({ kind: 'rename', playlistId: '3000', name: 'House 26' })
     expect(onApplied).not.toHaveBeenCalled()
   })
 
@@ -429,15 +420,12 @@ describe('registerRekordboxPlaylistsIpc', () => {
     const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')
     writeRekordboxPlaylistFixture(path, { ...ORGANISE_FIXTURE, xml: true })
     const onWaiting = vi.fn()
-    registerRekordboxPlaylistsIpc(() => path, {
+    register(() => path, {
       ensureClosed: vi.fn(async () => false),
       queue: queueFor(path),
       onWaiting,
     })
-    await handler('rekordbox:edit')(
-      { sender: {} },
-      { kind: 'rename', playlistId: '3000', name: 'House 26' },
-    )
+    await save({ kind: 'rename', playlistId: '3000', name: 'House 26' })
     expect(onWaiting).toHaveBeenCalledTimes(1)
   })
 

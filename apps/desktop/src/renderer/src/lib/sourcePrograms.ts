@@ -68,9 +68,9 @@ export const SOURCE_PROGRAMS: {
   [P in DjProgram]: SourceProgram & { usb: P extends UsbProgram ? true : false }
 } = {
   rekordbox: {
-    separator: () => window.api.rekordboxHasSeparator(),
+    separator: () => window.api.dj.hasSeparator('rekordbox'),
     edit: {
-      save: (edit, label) => window.api.editRekordboxPlaylist(edit, label),
+      save: (edit, label) => window.api.dj.editPlaylist('rekordbox', edit, label),
       messagePrefix: 'sources.edit.',
       gate: 'none',
     },
@@ -86,9 +86,9 @@ export const SOURCE_PROGRAMS: {
     crates: false,
   },
   traktor: {
-    separator: () => window.api.traktorHasSeparator(),
+    separator: () => window.api.dj.hasSeparator('traktor'),
     edit: {
-      save: (edit, label) => window.api.editTraktorPlaylist(edit, label),
+      save: (edit, label) => window.api.dj.editPlaylist('traktor', edit, label),
       messagePrefix: 'sources.editTraktor.',
       gate: 'traktorCollection',
     },
@@ -125,7 +125,7 @@ export const SOURCE_PROGRAMS: {
   serato: {
     separator: null,
     edit: {
-      save: (edit, label) => window.api.editSeratoPlaylist(edit, label),
+      save: (edit, label) => window.api.dj.editPlaylist('serato', edit, label),
       messagePrefix: 'sources.editSerato.',
       gate: 'none',
     },

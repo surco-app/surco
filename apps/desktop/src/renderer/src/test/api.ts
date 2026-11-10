@@ -8,6 +8,8 @@ import { emptyMetadata } from '../../../shared/metadata'
 import { DEFAULT_SESSION_WIZARD } from '../../../shared/sessionSettings'
 import type {
   CollectionTrack,
+  RekordboxEditResult,
+  RekordboxPlaylistEdit,
   Settings,
   SourceNode,
   SourcePlaylistEntry,
@@ -140,6 +142,8 @@ export interface ProgramReads {
   playlist(id: string): Promise<SourcePlaylistEntry[]>
   membership(paths: string[]): Promise<Record<string, string[]>>
   collection(): Promise<CollectionTrack[]>
+  editPlaylist(edit: RekordboxPlaylistEdit, label?: string): Promise<RekordboxEditResult>
+  hasSeparator(): Promise<boolean>
 }
 
 const EMPTY_READS: ProgramReads = {
@@ -150,6 +154,8 @@ const EMPTY_READS: ProgramReads = {
   playlist: async () => [],
   membership: async () => ({}),
   collection: async () => [],
+  editPlaylist: async () => ({ applied: false, reason: 'unreadable' }),
+  hasSeparator: async () => false,
 }
 
 export type DjReads = Partial<Record<DjProgram, Partial<ProgramReads>>>
@@ -171,6 +177,8 @@ export function djReads(...layers: (DjReads | DjApi | undefined)[]): DjApi {
     playlist: vi.fn((p, id) => of(p).playlist(id)),
     membership: vi.fn((p, paths) => of(p).membership(paths)),
     collection: vi.fn((p) => of(p).collection()),
+    editPlaylist: vi.fn((p, edit, label) => of(p).editPlaylist(edit, label)),
+    hasSeparator: vi.fn((p) => of(p).hasSeparator()),
   }
   layersOf.set(api, flat)
   return api
@@ -267,14 +275,9 @@ export function stubApi(over: Partial<Api> = {}): Api {
     onListRemovalPhase: unsubscribe,
     loadAppleMusicLibraryCached: async () => null,
     loadAppleMusicPlaylists: async () => [],
-    rekordboxHasSeparator: async () => false,
-    traktorHasSeparator: async () => false,
-    editTraktorPlaylist: async () => ({ applied: false, reason: 'unreadable' }),
-    editSeratoPlaylist: async () => ({ applied: false, reason: 'unreadable' }),
     seratoRunning: async () => false,
     djAppRunning: async () => false,
     holdsInLibrary: async () => true,
-    editRekordboxPlaylist: async () => ({ applied: false, reason: 'unreadable' }),
     rekordboxQueue: async () => ({ tracks: 0, changes: 0, items: [] }),
     applyRekordboxQueue: async () => null,
     discardRekordboxQueue: async () => {},

@@ -327,10 +327,6 @@ function setApi(over: Record<string, unknown> = {}): void {
     saveLastSession: vi.fn().mockResolvedValue(undefined),
     expandPaths: vi.fn((paths: string[]) => Promise.resolve(paths)),
     pathAliases: vi.fn((paths: string[]) => Promise.resolve(paths)),
-    rekordboxHasSeparator: vi.fn<Api['rekordboxHasSeparator']>().mockResolvedValue(true),
-    editRekordboxPlaylist: vi
-      .fn<Api['editRekordboxPlaylist']>()
-      .mockResolvedValue({ applied: true }),
     rekordboxQueue: vi
       .fn<Api['rekordboxQueue']>()
       .mockResolvedValue({ tracks: 0, changes: 0, items: [] }),
@@ -422,6 +418,8 @@ function setApi(over: Record<string, unknown> = {}): void {
         rekordbox: {
           available: vi.fn<ProgramReads['available']>().mockResolvedValue(false),
           membership: vi.fn<ProgramReads['membership']>().mockResolvedValue({}),
+          hasSeparator: vi.fn<ProgramReads['hasSeparator']>().mockResolvedValue(true),
+          editPlaylist: vi.fn<ProgramReads['editPlaylist']>().mockResolvedValue({ applied: true }),
         },
         engine: { available: vi.fn<ProgramReads['available']>().mockResolvedValue(false) },
         traktor: { available: vi.fn<ProgramReads['available']>().mockResolvedValue(false) },
@@ -1058,6 +1056,15 @@ describe('App Serato crate move', () => {
       .mockResolvedValue([
         { path: '/m/a.wav', separator: false, meta: {}, contentId: 'serato:/m/a.wav' },
       ])
+    const editSerato = vi.fn<ProgramReads['editPlaylist']>(
+      () =>
+        new Promise((resolve) => {
+          settle = (result) => {
+            if (result.applied) tree = AFTER
+            resolve(result)
+          }
+        }),
+    )
     setApi({
       dj: djReads({
         serato: {
@@ -1065,17 +1072,9 @@ describe('App Serato crate move', () => {
           tree: vi.fn<ProgramReads['tree']>(async () => tree),
           recentCount: vi.fn<ProgramReads['recentCount']>().mockResolvedValue(0),
           playlist: loadSeratoPlaylist,
+          editPlaylist: editSerato,
         },
       }),
-      editSeratoPlaylist: vi.fn<Api['editSeratoPlaylist']>(
-        () =>
-          new Promise((resolve) => {
-            settle = (result) => {
-              if (result.applied) tree = AFTER
-              resolve(result)
-            }
-          }),
-      ),
     })
     await renderApp()
     fireEvent.click(await screen.findByTestId('source-rail-serato'))
@@ -1086,7 +1085,7 @@ describe('App Serato crate move', () => {
     fireEvent.dragStart(screen.getByTestId('source-node-A%%B'), { dataTransfer: dt })
     fireEvent.dragOver(screen.getByTestId('source-node-D'), { dataTransfer: dt })
     fireEvent.drop(screen.getByTestId('source-node-D'), { dataTransfer: dt })
-    await waitFor(() => expect(window.api.editSeratoPlaylist).toHaveBeenCalled())
+    await waitFor(() => expect(editSerato).toHaveBeenCalled())
     expect(loadSeratoPlaylist).not.toHaveBeenCalledWith('D%%B')
     await act(async () => settle(answer))
     return loadSeratoPlaylist
@@ -3047,7 +3046,7 @@ describe('App source playlists', () => {
   // order at once and keep it after rekordbox answers, even with the dragged row selected
   // (a held selection otherwise freezes the order on screen).
   it('reorders an open rekordbox playlist by dragging a row onto another', async () => {
-    const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({ applied: true })
+    const edit = vi.fn<ProgramReads['editPlaylist']>().mockResolvedValue({ applied: true })
     const load = vi
       .fn<ProgramReads['playlist']>()
       .mockResolvedValueOnce(FACTORY_ENTRIES)
@@ -3058,8 +3057,7 @@ describe('App source playlists', () => {
         FACTORY_ENTRIES[2],
       ])
     await openFactory({
-      editRekordboxPlaylist: edit,
-      dj: djReads({ rekordbox: { playlist: load } }),
+      dj: djReads({ rekordbox: { playlist: load, editPlaylist: edit } }),
       startTrackDrag: vi.fn(),
       getPathForFile: vi.fn((f: File) => `/m/${f.name}`),
     })
@@ -3142,11 +3140,11 @@ describe('App source playlists', () => {
         .map((r) => r.textContent)
 
     it('adds only the rows of the open playlist to another one', async () => {
-      const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({
+      const edit = vi.fn<ProgramReads['editPlaylist']>().mockResolvedValue({
         applied: true,
         report: { added: 2, already: 0, notInCollection: 0, ambiguous: 0 },
       })
-      await openThree({ editRekordboxPlaylist: edit })
+      await openThree({ dj: djReads({ rekordbox: { editPlaylist: edit } }) })
       const rows = screen.getAllByTestId('track-row')
       fireEvent.click(rows[0])
       fireEvent.click(rows[1], { metaKey: true })
@@ -3217,9 +3215,11 @@ describe('App source playlists', () => {
         .mockResolvedValue(after)
       await openFactory({
         dj: djReads({
-          rekordbox: { playlist: vi.fn(async (id: string) => (id === 'f' ? load(id) : [])) },
+          rekordbox: {
+            playlist: vi.fn(async (id: string) => (id === 'f' ? load(id) : [])),
+            editPlaylist: edit,
+          },
         }),
-        editRekordboxPlaylist: edit,
       })
       return edit
     }
@@ -3324,11 +3324,11 @@ describe('App source playlists', () => {
   // Copying between playlists names the exact rekordbox entry of a row read from a
   // playlist, so the symlinked twins copy instead of being refused.
   it('adds a row to another playlist from its menu, naming its rekordbox entry', async () => {
-    const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({
+    const edit = vi.fn<ProgramReads['editPlaylist']>().mockResolvedValue({
       applied: true,
       report: { added: 1, already: 0, notInCollection: 0, ambiguous: 0 },
     })
-    await openFactory({ editRekordboxPlaylist: edit })
+    await openFactory({ dj: djReads({ rekordbox: { editPlaylist: edit } }) })
     fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
     fireEvent.click(await screen.findByTestId('track-menu-add-to'))
     fireEvent.click(screen.getByTestId('track-menu-playlist-h'))
@@ -3348,11 +3348,10 @@ describe('App source playlists', () => {
   it('says the change waits and re-reads the playlist when rekordbox stays open', async () => {
     const load = vi.fn<ProgramReads['playlist']>().mockResolvedValue(FACTORY_ENTRIES)
     const edit = vi
-      .fn<Api['editRekordboxPlaylist']>()
+      .fn<ProgramReads['editPlaylist']>()
       .mockResolvedValue({ applied: false, reason: 'cancelled' })
     await openFactory({
-      dj: djReads({ rekordbox: { playlist: load } }),
-      editRekordboxPlaylist: edit,
+      dj: djReads({ rekordbox: { playlist: load, editPlaylist: edit } }),
     })
     const before = load.mock.calls.length
     fireEvent.contextMenu(screen.getAllByTestId('track-row')[1])
@@ -3371,8 +3370,8 @@ describe('App source playlists', () => {
   // Removing from the DJ's real playlist has no undo in Surco: one row goes in one click
   // like the list's own remove, several ask first and name the playlist they leave.
   it('asks before removing several rows from the rekordbox playlist', async () => {
-    const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({ applied: true })
-    await openFactory({ editRekordboxPlaylist: edit })
+    const edit = vi.fn<ProgramReads['editPlaylist']>().mockResolvedValue({ applied: true })
+    await openFactory({ dj: djReads({ rekordbox: { editPlaylist: edit } }) })
     const rows = screen.getAllByTestId('track-row')
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { metaKey: true })
@@ -3393,8 +3392,8 @@ describe('App source playlists', () => {
   // Inside a playlist, taking a track out of the list and out of the playlist were two actions
   // and the DJ could not tell them apart; now every way to remove reaches the playlist.
   it('removes from the open rekordbox playlist with the key and with the list button too', async () => {
-    const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({ applied: true })
-    await openFactory({ editRekordboxPlaylist: edit })
+    const edit = vi.fn<ProgramReads['editPlaylist']>().mockResolvedValue({ applied: true })
+    await openFactory({ dj: djReads({ rekordbox: { editPlaylist: edit } }) })
     fireEvent.click(screen.getAllByTestId('track-row')[1])
     fireEvent.keyDown(window, { key: 'Backspace', ctrlKey: true })
     await waitFor(() =>
@@ -3433,8 +3432,8 @@ describe('App source playlists', () => {
   // The separator line's ✕ is mouse-only; the row menu is the keyboard's way to remove the
   // separator above a row, and a row with none above offers nothing.
   it('removes the separator above a row from its menu', async () => {
-    const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({ applied: true })
-    await openFactory({ editRekordboxPlaylist: edit })
+    const edit = vi.fn<ProgramReads['editPlaylist']>().mockResolvedValue({ applied: true })
+    await openFactory({ dj: djReads({ rekordbox: { editPlaylist: edit } }) })
     fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
     await screen.findByTestId('track-menu-remove-from')
     expect(screen.queryByTestId('track-menu-remove-separator')).not.toBeInTheDocument()
@@ -3464,8 +3463,8 @@ describe('App source playlists', () => {
 
   // The separator lands above the right-clicked row, so the edit names that row's link.
   it('inserts a separator above the right-clicked row', async () => {
-    const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({ applied: true })
-    await openFactory({ editRekordboxPlaylist: edit })
+    const edit = vi.fn<ProgramReads['editPlaylist']>().mockResolvedValue({ applied: true })
+    await openFactory({ dj: djReads({ rekordbox: { editPlaylist: edit } }) })
     fireEvent.contextMenu(screen.getAllByTestId('track-row')[2])
     const insert = await screen.findByTestId('track-menu-insert-separator')
     await waitFor(() => expect(insert).toBeEnabled())
@@ -3530,8 +3529,8 @@ describe('App source playlists', () => {
     })
 
     it('copies its rows to a playlist by their rekordbox entry, like any open playlist', async () => {
-      const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({ applied: true })
-      await openRecent({ editRekordboxPlaylist: edit })
+      const edit = vi.fn<ProgramReads['editPlaylist']>().mockResolvedValue({ applied: true })
+      await openRecent({ dj: djReads({ rekordbox: { editPlaylist: edit } }) })
       fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
       fireEvent.click(await screen.findByTestId('track-menu-add-to'))
       fireEvent.click(screen.getByTestId('track-menu-playlist-h'))
@@ -3858,8 +3857,11 @@ describe('App source playlists', () => {
   // so they are added (by their rekordbox entry) even if the OS drag brings no files back
   // into Surco's window.
   it('adds rows dragged from the list onto a playlist in the tree, with or without files', async () => {
-    const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({ applied: true })
-    await openFactory({ editRekordboxPlaylist: edit, startTrackDrag: vi.fn() })
+    const edit = vi.fn<ProgramReads['editPlaylist']>().mockResolvedValue({ applied: true })
+    await openFactory({
+      dj: djReads({ rekordbox: { editPlaylist: edit } }),
+      startTrackDrag: vi.fn(),
+    })
     fireEvent.dragStart(rowWrapper(0), { dataTransfer: fakeDataTransfer() })
     const house = screen.getByTestId('source-node-h')
     fireEvent.dragOver(house, { dataTransfer: fakeDataTransfer() })
@@ -3884,9 +3886,9 @@ describe('App source playlists', () => {
 
   // A drop from Finder is files the list never dragged: they go by their paths.
   it('adds files dropped from Finder onto a playlist by their paths', async () => {
-    const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({ applied: true })
+    const edit = vi.fn<ProgramReads['editPlaylist']>().mockResolvedValue({ applied: true })
     await openFactory({
-      editRekordboxPlaylist: edit,
+      dj: djReads({ rekordbox: { editPlaylist: edit } }),
       getPathForFile: vi.fn((f: File) => `/Volumes/Public/Music/${f.name}`),
     })
     const house = screen.getByTestId('source-node-h')
@@ -3905,8 +3907,8 @@ describe('App source playlists', () => {
   })
 
   it('creates a playlist named in the tree', async () => {
-    const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({ applied: true })
-    await openFactory({ editRekordboxPlaylist: edit })
+    const edit = vi.fn<ProgramReads['editPlaylist']>().mockResolvedValue({ applied: true })
+    await openFactory({ dj: djReads({ rekordbox: { editPlaylist: edit } }) })
     fireEvent.click(screen.getByTestId('source-tree-new-playlist'))
     fireEvent.change(screen.getByTestId('source-tree-name'), { target: { value: 'Bolo' } })
     fireEvent.keyDown(screen.getByTestId('source-tree-name'), { key: 'Enter' })
@@ -3972,8 +3974,8 @@ describe('App source playlists', () => {
     })
 
     it('adds its own rows dropped on a tree playlist by their rekordbox entry', async () => {
-      const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({ applied: true })
-      await openResolved({ editRekordboxPlaylist: edit })
+      const edit = vi.fn<ProgramReads['editPlaylist']>().mockResolvedValue({ applied: true })
+      await openResolved({ dj: djReads({ rekordbox: { editPlaylist: edit } }) })
       fireEvent.dragStart(rowWrapper(0), { dataTransfer: fakeDataTransfer() })
       await act(async () => {})
       fireEvent.drop(screen.getByTestId('source-node-h'), {
@@ -4063,11 +4065,11 @@ describe('App source playlists', () => {
   // A track the playlist holds twice is one row: dragging it moves both of its rekordbox
   // rows, or the one left behind would decide where the row is shown after the re-read.
   it('moves every row of a track the playlist holds twice', async () => {
-    const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({ applied: true })
+    const edit = vi.fn<ProgramReads['editPlaylist']>().mockResolvedValue({ applied: true })
     await openFactory({
-      editRekordboxPlaylist: edit,
       dj: djReads({
         rekordbox: {
+          editPlaylist: edit,
           playlist: vi
             .fn<ProgramReads['playlist']>()
             .mockResolvedValue([...FACTORY_ENTRIES, linked('/m/a.wav', 'l4')]),
@@ -4093,11 +4095,11 @@ describe('App source playlists', () => {
   // rows it is named, so naming the first left the track in the playlist, shown again on
   // the re-read as if the remove had failed.
   it('removes every row of a track the playlist holds twice', async () => {
-    const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({ applied: true })
+    const edit = vi.fn<ProgramReads['editPlaylist']>().mockResolvedValue({ applied: true })
     await openFactory({
-      editRekordboxPlaylist: edit,
       dj: djReads({
         rekordbox: {
+          editPlaylist: edit,
           playlist: vi
             .fn<ProgramReads['playlist']>()
             .mockResolvedValue([...FACTORY_ENTRIES, linked('/m/a.wav', 'l4')]),
@@ -4115,9 +4117,9 @@ describe('App source playlists', () => {
   // The record of a drag-out can outlive it (an OS drag that ended elsewhere tells this
   // window nothing). A Finder drop that finds it must still add its own files.
   it('adds the dropped Finder files, not rows left from an earlier drag-out', async () => {
-    const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({ applied: true })
+    const edit = vi.fn<ProgramReads['editPlaylist']>().mockResolvedValue({ applied: true })
     await openFactory({
-      editRekordboxPlaylist: edit,
+      dj: djReads({ rekordbox: { editPlaylist: edit } }),
       startTrackDrag: vi.fn(),
       getPathForFile: vi.fn((f: File) => `/Volumes/Public/Music/${f.name}`),
     })
@@ -10199,35 +10201,31 @@ describe('paste tracklist from the tree', () => {
     { id: 'sets', name: 'Sets', kind: 'folder' as const, count: 1, children: [] },
     { id: 'f', name: 'Factory', kind: 'playlist' as const, count: 2 },
   ]
-  function openRekordboxTree(over: Partial<Api> = {}) {
-    const editRekordboxPlaylist =
-      (over.editRekordboxPlaylist as Mock<Api['editRekordboxPlaylist']> | undefined) ??
-      vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({
+  function openRekordboxTree(editOverride?: Mock<ProgramReads['editPlaylist']>) {
+    const editPlaylist =
+      editOverride ??
+      vi.fn<ProgramReads['editPlaylist']>().mockResolvedValue({
         applied: true,
         report: { added: 1, already: 0, notInCollection: 0, ambiguous: 0 },
       })
     setApi({
-      editRekordboxPlaylist,
-      ...over,
-      dj: djReads(
-        {
-          rekordbox: {
-            available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
-            tree: vi.fn<ProgramReads['tree']>().mockResolvedValue(TREE),
-            collection: vi.fn<ProgramReads['collection']>().mockResolvedValue([
-              {
-                contentId: '41',
-                path: '/m/a.wav',
-                title: 'Silent Tears (Extended Mix)',
-                artist: 'Jessy',
-              },
-            ]),
-          },
+      dj: djReads({
+        rekordbox: {
+          available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+          editPlaylist,
+          tree: vi.fn<ProgramReads['tree']>().mockResolvedValue(TREE),
+          collection: vi.fn<ProgramReads['collection']>().mockResolvedValue([
+            {
+              contentId: '41',
+              path: '/m/a.wav',
+              title: 'Silent Tears (Extended Mix)',
+              artist: 'Jessy',
+            },
+          ]),
         },
-        over.dj,
-      ),
+      }),
     })
-    return editRekordboxPlaylist
+    return editPlaylist
   }
   async function pasteAndAdd(nodeId: string, name?: string): Promise<void> {
     await renderApp()
@@ -10289,12 +10287,12 @@ describe('paste tracklist from the tree', () => {
   })
 
   it('creates the playlist inside the folder first, then adds to the new one', async () => {
-    const edit = openRekordboxTree({
-      editRekordboxPlaylist: vi
-        .fn<Api['editRekordboxPlaylist']>()
+    const edit = openRekordboxTree(
+      vi
+        .fn<ProgramReads['editPlaylist']>()
         .mockResolvedValueOnce({ applied: true, createdId: 'new' })
         .mockResolvedValue({ applied: true }),
-    })
+    )
     await pasteAndAdd('sets', 'Mi set')
     await waitFor(() => expect(edit).toHaveBeenCalledTimes(2))
     expect(edit.mock.calls[0][0]).toEqual({
@@ -10311,11 +10309,11 @@ describe('paste tracklist from the tree', () => {
   })
 
   it('adds nothing when the playlist could not be created', async () => {
-    const edit = openRekordboxTree({
-      editRekordboxPlaylist: vi
-        .fn<Api['editRekordboxPlaylist']>()
+    const edit = openRekordboxTree(
+      vi
+        .fn<ProgramReads['editPlaylist']>()
         .mockResolvedValue({ applied: false, reason: 'rekordbox-running' }),
-    })
+    )
     await pasteAndAdd('sets', 'Mi set')
     await waitFor(() => expect(edit).toHaveBeenCalledTimes(1))
     await act(async () => {})
@@ -10337,17 +10335,17 @@ describe('automatic session from the tree', () => {
   }
   function openRekordboxTree(over: Partial<Api> = {}, tree: SourceNode[] = TREE) {
     const edit = vi
-      .fn<Api['editRekordboxPlaylist']>()
+      .fn<ProgramReads['editPlaylist']>()
       .mockResolvedValueOnce({ applied: true, createdId: 'new' })
       .mockResolvedValue({ applied: true })
     setApi({
       djAppRunning: vi.fn<Api['djAppRunning']>().mockResolvedValue(false),
-      editRekordboxPlaylist: edit,
       ...over,
       dj: djReads(
         {
           rekordbox: {
             available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+            editPlaylist: edit,
             tree: vi.fn<ProgramReads['tree']>().mockResolvedValue(tree),
             playlist: vi.fn<ProgramReads['playlist']>().mockResolvedValue([ROW]),
           },

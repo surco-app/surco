@@ -1,9 +1,9 @@
 import { randomUUID } from 'node:crypto'
 import { existsSync, realpathSync } from 'node:fs'
 import { realpath } from 'node:fs/promises'
-import { BrowserWindow, ipcMain } from 'electron'
+import { BrowserWindow, ipcMain, type WebContents } from 'electron'
 import log from 'electron-log/main'
-import type { DjReadMain } from '../shared/djApi'
+import type { DjEditMain, DjReadMain } from '../shared/djApi'
 import { mediaPathFromUrl } from '../shared/media'
 import type { RekordboxEditResult, RekordboxPlaylistEdit } from '../shared/types'
 import { pathAliasesOf } from './libraryPathKey'
@@ -64,6 +64,9 @@ export interface PlaylistEditHost {
   onApplied?: (result: QueueApply) => void
   onWaiting?: () => void
   beginLoose?: (collectionPath: string) => void
+}
+
+export interface RekordboxReadHost {
   allowMedia?: (paths: string[]) => void
 }
 
@@ -80,7 +83,7 @@ export async function keyOf(path: string): Promise<string | undefined> {
 export function rekordboxRead(
   collection: () => string,
   membershipCollection: () => string,
-  host: Pick<PlaylistEditHost, 'allowMedia'>,
+  host: RekordboxReadHost,
 ): DjReadMain {
   return {
     available: () => collectionAvailable(collection()),
@@ -130,49 +133,50 @@ export function rekordboxRead(
 
 // The collection path is resolved on every call, not captured once: the user can change
 // the override in Settings while Surco runs.
-export function registerRekordboxPlaylistsIpc(
-  collection: () => string,
-  host: PlaylistEditHost,
-): void {
+export function rekordboxEdit(collection: () => string, host: PlaylistEditHost): DjEditMain {
+  return {
+    hasSeparator: async () => {
+      const path = collection()
+      return withCollection(path, (db) => separatorContent(db) !== null, false, await keyOf(path))
+    },
+    // Queued behind any other library write (a conversion's repoint, a review's sync): they
+    // touch the same master.db, and the write's transaction spans an await, so two at once
+    // would block each other on SQLite's busy timeout.
+    save: (edit: RekordboxPlaylistEdit, label: string | undefined, sender: WebContents) =>
+      serialLibraryFlush(async (): Promise<RekordboxEditResult> => {
+        const path = collection()
+        if (!path) return { applied: false, reason: 'unreadable' }
+        const op: EditOp = {
+          id: randomUUID(),
+          kind: 'edit',
+          edit,
+          stamps: editStamps(path, edit),
+          ...(label ? { label } : {}),
+        }
+        host.queue.enqueue([op])
+        host.beginLoose?.(path)
+        const result = await host.queue.apply(() =>
+          host.ensureClosed(BrowserWindow.fromWebContents(sender)),
+        )
+        if (result.status === 'applied') {
+          const others = withoutOp(result, op.id)
+          if (others.tracks > 0 || others.changes > 0 || others.notices.length > 0)
+            host.onApplied?.(others)
+        }
+        if (stillWaiting(result)) host.onWaiting?.()
+        else if (result.status === 'refused') host.queue.drop(op.id)
+        if (result.status === 'refused') return { applied: false, reason: result.reason }
+        const outcome =
+          result.status === 'applied' ? result.outcomes.find((o) => o.id === op.id) : undefined
+        return editResultOfOutcome(outcome)
+      }),
+  }
+}
+
+export function registerPathAliasesIpc(): void {
   // Rows dragged out of the list and dropped back in come with the OS's spelling of their
   // files, which may be resolved through the symlinked music folder.
   ipcMain.handle('library:pathAliases', (_e, paths: unknown) =>
     pathAliasesOf(paths, { realPath: (p: string) => realpath(p) }),
-  )
-  ipcMain.handle('rekordbox:hasSeparator', async () => {
-    const path = collection()
-    return withCollection(path, (db) => separatorContent(db) !== null, false, await keyOf(path))
-  })
-  // Queued behind any other library write (a conversion's repoint, a review's sync): they
-  // touch the same master.db, and the write's transaction spans an await, so two at once
-  // would block each other on SQLite's busy timeout.
-  ipcMain.handle('rekordbox:edit', (e, edit: RekordboxPlaylistEdit, label?: string) =>
-    serialLibraryFlush(async (): Promise<RekordboxEditResult> => {
-      const path = collection()
-      if (!path) return { applied: false, reason: 'unreadable' }
-      const op: EditOp = {
-        id: randomUUID(),
-        kind: 'edit',
-        edit,
-        stamps: editStamps(path, edit),
-        ...(label ? { label } : {}),
-      }
-      host.queue.enqueue([op])
-      host.beginLoose?.(path)
-      const result = await host.queue.apply(() =>
-        host.ensureClosed(BrowserWindow.fromWebContents(e.sender)),
-      )
-      if (result.status === 'applied') {
-        const others = withoutOp(result, op.id)
-        if (others.tracks > 0 || others.changes > 0 || others.notices.length > 0)
-          host.onApplied?.(others)
-      }
-      if (stillWaiting(result)) host.onWaiting?.()
-      else if (result.status === 'refused') host.queue.drop(op.id)
-      if (result.status === 'refused') return { applied: false, reason: result.reason }
-      const outcome =
-        result.status === 'applied' ? result.outcomes.find((o) => o.id === op.id) : undefined
-      return editResultOfOutcome(outcome)
-    }),
   )
 }

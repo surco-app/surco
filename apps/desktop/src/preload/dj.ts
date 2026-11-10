@@ -10,5 +10,7 @@ export function createDjApi(ipc: Pick<IpcRenderer, 'invoke' | 'on' | 'removeList
     playlist: (p, id) => ipc.invoke('dj:playlist', p, id),
     membership: (p, paths) => ipc.invoke('dj:membership', p, paths),
     collection: (p) => ipc.invoke('dj:collection', p),
+    editPlaylist: (p, edit, label) => ipc.invoke('dj:editPlaylist', p, edit, label),
+    hasSeparator: (p) => ipc.invoke('dj:hasSeparator', p),
   }
 }
