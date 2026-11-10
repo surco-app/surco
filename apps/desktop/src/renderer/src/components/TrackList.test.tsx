@@ -459,20 +459,21 @@ describe('TrackList', () => {
     expect(screen.getByTestId('track-duration')).toHaveTextContent('4:47')
   })
 
-  it('shows the key beside the length, so the DJ can pick the next track by key without opening it', () => {
+  it('shows the key as a pill before the format, on the artist line, so it reads as part of the track and the title keeps its width', () => {
     renderList([
       track({
         id: 'a',
+        inputPath: '/m/a.mp3',
         duration: 287,
         meta: { title: 'A', artist: 'B', key: ' 11A ' } as TrackMetadata,
       }),
     ])
-    const titleLine = screen.getByTestId('track-title-line')
     const key = screen.getByTestId('track-key')
     expect(key).toHaveTextContent(/^11A$/)
-    expect(titleLine).toContainElement(key)
+    expect(screen.getByTestId('track-detail-line')).toContainElement(key)
+    expect(screen.getByTestId('track-title-line')).not.toContainElement(key)
     expect(
-      key.compareDocumentPosition(screen.getByTestId('track-duration')) &
+      key.compareDocumentPosition(screen.getByTestId('track-format-slot')) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy()
   })
@@ -493,7 +494,7 @@ describe('TrackList', () => {
     expect(screen.getByTestId('track-key')).toHaveTextContent(/^Am$/)
   })
 
-  it('keeps the key slot on a track without key, so the lengths stay in one column', () => {
+  it('draws no pill on a track without key, so an empty one never reads as a missing value', () => {
     renderList([
       track({
         id: 'a',
@@ -508,8 +509,8 @@ describe('TrackList', () => {
         meta: { title: 'C', artist: 'D' } as TrackMetadata,
       }),
     ])
-    expect(screen.getAllByTestId('track-key-slot')).toHaveLength(2)
     expect(screen.getAllByTestId('track-key')).toHaveLength(1)
+    expect(screen.queryByTestId('track-key-slot')).toBeNull()
   })
 
   it('gives the artist its own line under the title so it fits a narrow list, with the wave below and the cover beside all three', () => {

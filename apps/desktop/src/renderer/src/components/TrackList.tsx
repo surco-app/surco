@@ -765,12 +765,6 @@ const TrackRow = memo(function TrackRow({
                     {shown.title}
                   </span>
                 </span>
-                <span
-                  data-testid="track-key-slot"
-                  className="min-w-[26px] shrink-0 whitespace-nowrap text-right font-mono text-[11px] text-fg-dim"
-                >
-                  {key && <span data-testid="track-key">{key}</span>}
-                </span>
                 <span data-testid="track-duration-slot" className={`min-w-[34px] ${ROW_TRAILING}`}>
                   {shown.duration !== undefined && (
                     <span data-testid="track-duration">{formatTime(shown.duration)}</span>
@@ -898,6 +892,14 @@ const TrackRow = memo(function TrackRow({
                 {/* A fixed slot, right-aligned under the duration, so the two read as one
                     trailing column and the review sparkle's place never moves. Wide enough for
                     the pill with its shape, so a tinted FLAC and a bare MP3 end on the same edge. */}
+                {key && (
+                  <span
+                    data-testid="track-key"
+                    className={`shrink-0 whitespace-nowrap rounded px-[5px] text-fg-dim ring-1 ring-[var(--color-line-strong)] ring-inset ${PILL_TEXT}`}
+                  >
+                    {key}
+                  </span>
+                )}
                 {quality !== 'unanalyzed' && quality !== 'good' && (
                   <span
                     data-testid="track-quality-word"
