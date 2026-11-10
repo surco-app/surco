@@ -5,6 +5,7 @@ import Database from 'better-sqlite3-multiple-ciphers'
 import { ALL_TRACKS_ID } from '../shared/allTracks'
 import { cueGridDrift } from '../shared/cueGrid'
 import { engineContentId } from '../shared/engineContent'
+import { MAJOR_CAMELOT, MAJOR_NAMES, MINOR_CAMELOT, MINOR_NAMES } from '../shared/keyNames'
 import { mediaUrl } from '../shared/media'
 import { RECENTLY_ADDED_ID } from '../shared/recentlyAdded'
 import type {
@@ -110,6 +111,7 @@ interface EntityRow extends Linked {
   bpm: number | null
   bpmAnalyzed: number | null
   rating: number | null
+  key: number | null
   albumArtId: number | null
 }
 
@@ -123,7 +125,17 @@ function metaOf(row: EntityRow): AppleMusicTrackMeta {
   const bpm = bpmText(row)
   if (bpm) meta.bpm = bpm
   if (row.rating && row.rating > 0) meta.rating = row.rating
+  const key = keyName(row.key)
+  if (key) meta.key = key
   return meta
+}
+
+function keyName(index: number | null): string | null {
+  if (index === null || !Number.isInteger(index) || index < 0 || index > 23) return null
+  const camelot = ((7 + Math.floor(index / 2)) % 12) + 1
+  return index % 2 === 0
+    ? MAJOR_NAMES[MAJOR_CAMELOT.indexOf(`${camelot}B`)]
+    : MINOR_NAMES[MINOR_CAMELOT.indexOf(`${camelot}A`)]
 }
 
 export function artworkFileName(hash: unknown): string | null {
@@ -171,7 +183,7 @@ function coverFiles(
 }
 
 const ROW_FIELDS =
-  't.id AS trackId, t.path, t.title, t.artist, t.length, t.bpm, t.bpmAnalyzed, t.rating, t.albumArtId'
+  't.id AS trackId, t.path, t.title, t.artist, t.length, t.bpm, t.bpmAnalyzed, t.rating, t.key, t.albumArtId'
 
 function recentSince(now: Date): number {
   return new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30).getTime() / 1000

@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { ALL_TRACKS_ID } from '../shared/allTracks'
+import { camelotOf } from '../shared/camelot'
 import { mediaPathFromUrl } from '../shared/media'
 import { RECENTLY_ADDED_ID } from '../shared/recentlyAdded'
 import { analysedTrack } from './enginePerformanceFixture'
@@ -221,6 +222,28 @@ describe('readEnginePlaylist', () => {
     })
     const cover = mediaPathFromUrl(row.preview?.coverUrl as string)
     expect(readFileSync(cover)).toEqual(Buffer.from(JPEG))
+    db.close()
+  })
+
+  it('reads the key Engine stores as its place on the circle of fifths, so the session can mix harmonically', async () => {
+    const dir = await library({
+      tracks: [
+        { id: 1, path: 'Music/c-major.aiff', key: 0 },
+        { id: 2, path: 'Music/f-sharp-minor.aiff', key: 7 },
+        { id: 3, path: 'Music/e-flat-major.aiff', key: 18 },
+        { id: 4, path: 'Music/unanalysed.aiff' },
+      ],
+      playlists: [{ id: 1, title: 'P', parentListId: 0, nextListId: 0 }],
+      entities: [
+        { id: 1, listId: 1, trackId: 1, nextEntityId: 2 },
+        { id: 2, listId: 1, trackId: 2, nextEntityId: 3 },
+        { id: 3, listId: 1, trackId: 3, nextEntityId: 4 },
+        { id: 4, listId: 1, trackId: 4, nextEntityId: 0 },
+      ],
+    })
+    const db = opened(dir)
+    const rows = readEnginePlaylist(db, dir, '1', join(dir, 'art'))
+    expect(rows.map((row) => camelotOf(row.meta.key))).toEqual(['8B', '11A', '5B', null])
     db.close()
   })
 
