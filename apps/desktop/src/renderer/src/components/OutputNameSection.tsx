@@ -96,7 +96,7 @@ export function OutputNameSection({
             data-testid="output-name"
             value={item.outputName ?? defaultOutputName}
             onChange={(e) => onChangeName(e.target.value)}
-            className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] py-2 pr-14 pl-3 text-sm outline-none focus:border-[var(--color-accent)]"
+            className="w-full rounded-lg border border-[var(--color-input-border)] bg-[var(--color-field)] py-2 pr-14 pl-3 text-sm outline-none focus:border-[var(--color-accent)]"
           />
           <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-sm text-fg-dim">
             .{formatExtension(format)}

@@ -539,7 +539,7 @@ function AddCustomField({
             onKeyDown={(e) => {
               if (e.key === 'Enter') add()
             }}
-            className="h-8 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-2.5 text-sm outline-none focus:border-[var(--color-accent)]"
+            className="h-8 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-field)] px-2.5 text-sm outline-none focus:border-[var(--color-accent)]"
           />
         </label>
         <label className="flex w-44 flex-col gap-1">
@@ -566,7 +566,7 @@ function AddCustomField({
             className={`h-8 rounded-lg border bg-[var(--color-field)] px-2.5 font-mono text-sm outline-none ${
               problem
                 ? 'border-[var(--color-danger)]'
-                : 'border-[var(--color-line)] focus:border-[var(--color-accent)]'
+                : 'border-[var(--color-input-border)] focus:border-[var(--color-accent)]'
             }`}
           />
         </label>

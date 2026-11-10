@@ -362,6 +362,11 @@ describe('filterCommands', () => {
     expect(filterCommands(cmds, 'formáto', {}).map((c) => c.id)).toEqual(['apply-title-format'])
   })
 
+  it('finds a command by the word people use for it, not only by its title', () => {
+    const cmds = [{ ...cmd('rename', 'Generar nombre del archivo…'), keywords: 'renombrar' }]
+    expect(filterCommands(cmds, 'renombrar', {}).map((c) => c.id)).toEqual(['rename'])
+  })
+
   it('returns every command when the query is empty, so the menu is browsable', () => {
     expect(filterCommands(commands, '').map((c) => c.id)).toEqual(['add', 'settings', 'all'])
   })

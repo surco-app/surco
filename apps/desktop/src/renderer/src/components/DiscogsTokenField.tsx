@@ -30,7 +30,7 @@ export function DiscogsTokenField({
         disabled={disabled}
         onChange={(e) => onChange(e.target.value)}
         placeholder={tr('settings.tokenPlaceholder')}
-        className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)] disabled:cursor-not-allowed"
+        className="w-full rounded-lg border border-[var(--color-input-border)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)] disabled:cursor-not-allowed"
       />
       <p className="mt-2 text-xs leading-relaxed text-fg-dim">
         {tr('settings.tokenWhy')} {tr('settings.tokenHelp')}{' '}

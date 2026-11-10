@@ -35,6 +35,7 @@ export const COMMAND_GROUP_ORDER: CommandGroup[] = [
 export interface Command {
   id: string
   title: string
+  keywords?: string
   hint?: string
   enabled: boolean
   // Which palette section the command lists under. Required on purpose: a new
@@ -43,7 +44,7 @@ export interface Command {
   run: () => void
 }
 
-// Filters commands by a case-insensitive substring of the title. With a non-empty query,
+// Filters commands by a case-insensitive substring of the title or its keywords. With a non-empty query,
 // matches are ordered by how often the user has run each (frecency), so a habitual choice
 // like "Clear the list" leads over an earlier-declared "Clear metadata". Ties keep the
 // declarative order (stable sort), and an empty query is left untouched so the browsable
@@ -64,7 +65,7 @@ export function filterCommands(
 ): Command[] {
   const q = fold(query.trim())
   if (!q) return commands
-  const matches = commands.filter((c) => fold(c.title).includes(q))
+  const matches = commands.filter((c) => fold(`${c.title} ${c.keywords ?? ''}`).includes(q))
   return matches
     .map((c, i) => ({ c, i }))
     .sort((a, b) => (usage[b.c.id] ?? 0) - (usage[a.c.id] ?? 0) || a.i - b.i)
@@ -972,6 +973,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
       id: 'rename',
       group: 'convert',
       title: tr('commands.rename'),
+      keywords: tr('commands.renameKeywords'),
       hint: hintFor('rename'),
       enabled: !!selected && selectedTracksCount <= 1,
       run: openRename,
@@ -983,6 +985,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
       id: 'regenerate-names',
       group: 'convert',
       title: tr('commands.regenerateNames'),
+      keywords: tr('commands.renameKeywords'),
       hint: hintFor('regenerate-names'),
       enabled: !!selected,
       run: regenerateNames,

@@ -117,7 +117,7 @@ function FormatField({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className="w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 pr-8 text-sm outline-none focus:border-[var(--color-accent)]"
+          className="w-full rounded-lg border border-[var(--color-input-border)] bg-[var(--color-field)] px-3 py-2 pr-8 text-sm outline-none focus:border-[var(--color-accent)]"
         />
         <FieldInsertMenu
           fieldName={id}

@@ -86,7 +86,7 @@ export function DoneMenu({
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        className="press relative flex h-8 w-8 items-center justify-center rounded-full border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] text-fg hover:bg-[var(--color-line-strong)] aria-expanded:bg-[var(--color-accent-soft)] aria-expanded:text-[var(--color-accent)]"
+        className="press relative flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] text-fg hover:bg-[var(--color-line-strong)] aria-expanded:bg-[var(--color-accent-soft)] aria-expanded:text-[var(--color-accent)]"
       >
         <Ellipsis className="h-3.5 w-3.5" aria-hidden="true" />
         <Tooltip label={tr('editor.moreActions')} />

@@ -83,7 +83,7 @@ export function DurationStep({
             value={custom}
             onChange={(e) => onCustomText(e.target.value)}
             aria-invalid={invalid}
-            className="w-28 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm text-fg outline-none focus:border-[var(--color-accent)]"
+            className="w-28 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-field)] px-3 py-2 text-sm text-fg outline-none focus:border-[var(--color-accent)]"
           />
           {invalid && (
             <span data-testid="session-wizard-custom-invalid" className="text-warn">

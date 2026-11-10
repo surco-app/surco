@@ -165,7 +165,7 @@ export function FindReplaceModal({
             className={`flex items-center rounded-lg border bg-[var(--color-field)] ${
               badRegex
                 ? 'border-danger focus-within:border-danger'
-                : 'border-[var(--color-line)] focus-within:border-[var(--color-accent)]'
+                : 'border-[var(--color-input-border)] focus-within:border-[var(--color-accent)]'
             }`}
           >
             {regex && (
@@ -210,7 +210,7 @@ export function FindReplaceModal({
             value={replace}
             onChange={(e) => setReplace(e.target.value)}
             spellCheck={false}
-            className={`w-full rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)] ${
+            className={`w-full rounded-lg border border-[var(--color-input-border)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)] ${
               regex ? 'font-mono' : ''
             }`}
           />

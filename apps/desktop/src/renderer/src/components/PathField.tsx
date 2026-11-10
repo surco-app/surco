@@ -35,7 +35,7 @@ export function PathField({
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   return (
-    <div className="flex rounded-lg border border-[var(--color-line)] bg-[var(--color-field)]">
+    <div className="flex rounded-lg border border-[var(--color-input-border)] bg-[var(--color-field)]">
       <div
         id={testid}
         data-testid={testid}
@@ -56,7 +56,7 @@ export function PathField({
         onClick={onChange}
         // The divider is the field's own border, so the two halves share one outline
         // instead of stacking a second one against it.
-        className="press shrink-0 rounded-r-lg border-[var(--color-line)] border-l px-3 py-2 text-sm text-fg-muted hover:bg-[var(--color-line)] hover:text-fg"
+        className="press shrink-0 rounded-r-lg border-[var(--color-input-border)] border-l px-3 py-2 text-sm text-fg-muted hover:bg-[var(--color-line)] hover:text-fg"
       >
         {tr('common.change')}
       </button>
