@@ -23,6 +23,7 @@ export function sessionOptionsOf(
   answers: SessionAnswers,
   seed: number,
   pins?: SessionPins,
+  startWith?: string,
 ): SessionOptions {
   return {
     minutes: answers.minutes,
@@ -35,6 +36,7 @@ export function sessionOptionsOf(
     surprise: answers.surprise,
     seed,
     ...(pins && { pinned: pins.pinned, fixedLength: pins.length }),
+    ...(startWith && { startWith }),
   }
 }
 
@@ -45,8 +47,9 @@ export function runSession(input: {
   seed: number
   library?: Readonly<Record<string, 'base' | 'vocal'>>
   pins?: SessionPins
+  startPath?: string
 }): SessionRun {
-  const { answers, roles, rows, seed, library = {}, pins } = input
+  const { answers, roles, rows, seed, library = {}, pins, startPath } = input
   const sources: SessionSource[] = answers.sources.map((id) => ({
     role: roles[id] ?? 'any',
     entries: rows.get(id) ?? [],
@@ -66,7 +69,13 @@ export function runSession(input: {
   const ids = new Set(pool.map((track) => track.id))
   const pairs = mineCombos(sequences, ids, 1)
   const combos = mineCombos(sequences, ids, MIN_PLAYLISTS_PER_COMBO)
-  const plan = buildSession(pool, pairs, sessionOptionsOf(answers, seed, pins))
+  const startEntry = startPath
+    ? sources
+        .flatMap((source) => source.entries)
+        .find((entry) => entry.path?.normalize('NFC') === startPath.normalize('NFC'))
+    : undefined
+  const startWith = startEntry ? (trackIdOf(startEntry) ?? undefined) : undefined
+  const plan = buildSession(pool, pairs, sessionOptionsOf(answers, seed, pins, startWith))
   const refsById = new Map<string, PlaylistTrackRef>()
   for (const source of sources) {
     for (const entry of source.entries) {

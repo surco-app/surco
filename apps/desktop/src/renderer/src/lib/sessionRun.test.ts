@@ -36,6 +36,7 @@ function run(
   seed = 1,
   library: Record<string, 'base' | 'vocal'> = {},
   pins?: { pinned: { index: number; trackId: string }[]; length: number },
+  startPath?: string,
 ) {
   return runSession({
     answers: { ...ANSWERS, ...over },
@@ -44,6 +45,7 @@ function run(
     seed,
     library,
     pins,
+    startPath,
   })
 }
 
@@ -250,5 +252,56 @@ describe('runSession', () => {
     const entries = [row('/m/a.mp3'), row('/m/b.mp3')]
     const { plan } = run({ sources: ['s'], minutes: 600 }, { s: 'any' }, { s: entries })
     expect(plan.summary.shortBySecs).toBe(600 * 60 - 600)
+  })
+})
+
+describe('runSession starting from a track', () => {
+  const rows = {
+    a: ['/m/a.mp3', '/m/b.mp3', '/m/c.mp3', '/m/d.mp3', '/m/e.mp3'].map((path) => row(path)),
+  }
+
+  it('opens the session with the track at that path', () => {
+    for (const seed of [1, 2, 3, 4]) {
+      const { plan } = run(
+        { sources: ['a'], minutes: 60, playMinutes: 2 },
+        {},
+        rows,
+        seed,
+        {},
+        undefined,
+        '/m/d.mp3',
+      )
+      expect(plan.items[0].track.id, `seed ${seed}`).toBe('/m/d.mp3')
+    }
+  })
+
+  it('finds the track by path when the program identifies tracks by content id', () => {
+    const byContent = {
+      a: ['/m/a.mp3', '/m/b.mp3', '/m/c.mp3'].map((path, i) => row(path, { contentId: `id${i}` })),
+    }
+    const { plan } = run(
+      { sources: ['a'], minutes: 60, playMinutes: 2 },
+      {},
+      byContent,
+      1,
+      {},
+      undefined,
+      '/m/c.mp3',
+    )
+    expect(plan.items[0].track.id).toBe('id2')
+  })
+
+  it('builds as usual when that track is not in the chosen playlists', () => {
+    const { plan } = run(
+      { sources: ['a'], minutes: 60, playMinutes: 2 },
+      {},
+      rows,
+      1,
+      {},
+      undefined,
+      '/m/zzz.mp3',
+    )
+    expect(plan.items.length).toBeGreaterThan(0)
+    expect(plan.items[0].why.kind).not.toBe('chosen')
   })
 })
