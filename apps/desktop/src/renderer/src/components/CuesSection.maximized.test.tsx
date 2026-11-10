@@ -186,13 +186,13 @@ describe('CuesSection maximized', () => {
     }
   })
 
-  it('puts the zoom in the grid band right after Auto, so checking a grid fix up close never sends the hand to another row', async () => {
+  it('puts the zoom on the deck line right after Auto, so checking a grid fix up close never sends the hand up to the toolbar', async () => {
     setup()
     await maximize()
     const toolbar = screen.getByTestId('cues-toolbar')
-    const band = screen.getByTestId('cues-grid-band')
+    const deckGrid = screen.getByTestId('cues-deck-grid')
     for (const id of ['cue-zoom-out', 'cue-zoom-reset', 'cue-zoom-in']) {
-      expect(band).toContainElement(screen.getByTestId(id))
+      expect(deckGrid).toContainElement(screen.getByTestId(id))
       expect(toolbar).not.toContainElement(screen.getByTestId(id))
     }
     expect(
@@ -217,7 +217,7 @@ describe('CuesSection maximized', () => {
     expect(screen.getByTestId('cues-clear-all')).toBeDisabled()
   })
 
-  it('puts Clear all alone at the far end of the deck line, so neither the ✕ of a CALL nor Auto mark sits beside it', async () => {
+  it('puts Clear all alone at the far end of the deck line, after the zoom, so neither the ✕ of a CALL nor Auto mark sits beside it', async () => {
     setup(null, { ...READ, cues: [{ id: 'h', ms: 64000, kind: 2, color: 1 }] })
     await maximize()
     const clear = screen.getByTestId('cues-clear-all')
@@ -226,21 +226,26 @@ describe('CuesSection maximized', () => {
     expect(screen.getByTestId('cues-deck')).toContainElement(clear)
     expect(clear).toHaveAccessibleName('Clear all cues')
     expect(
-      screen.getByTestId('cues-memory-remove').compareDocumentPosition(clear) &
+      screen.getByTestId('cue-zoom-in').compareDocumentPosition(clear) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy()
     expect(screen.getByTestId('cues-memory-remove').nextElementSibling).toBeNull()
   })
 
-  it('splits the deck line into play, pads, CALL and Clear all with a divider between each', async () => {
+  it('splits the deck line into play, pads, CALL, grid, zoom and Clear all with a divider between each', async () => {
     setup()
     await maximize()
     const deck = screen.getByTestId('cues-deck')
-    const marks = ['cues-play', 'cues-pad-A', 'cues-memory', 'cues-clear-all'].map((id) =>
-      screen.getByTestId(id),
-    )
+    const marks = [
+      'cues-play',
+      'cues-pad-A',
+      'cues-memory',
+      'cues-grid-bpm',
+      'cue-zoom-out',
+      'cues-clear-all',
+    ].map((id) => screen.getByTestId(id))
     const dividers = within(deck).getAllByTestId('cues-deck-divider')
-    expect(dividers).toHaveLength(3)
+    expect(dividers).toHaveLength(5)
     dividers.forEach((divider, i) => {
       expect(
         marks[i].compareDocumentPosition(divider) & Node.DOCUMENT_POSITION_FOLLOWING,
@@ -1904,27 +1909,16 @@ describe('CuesSection maximized grid', () => {
     expect(bars()).toContain(2000)
   })
 
-  it('puts the grid, its zoom and how far it sits from the beats in one band above the waveform, so the readout sits beside the button that fixes it', async () => {
+  it('keeps the grid on the deck line beside the pads and how far it sits from the beats beside the time, so the deck fits one line', async () => {
     setup(null, READ, { rekordboxGridFit: fitAt(454) })
     await maximize()
     await waitFor(() => expect(screen.getByTestId('cues-grid-here')).toBeInTheDocument())
-    const band = screen.getByTestId('cues-grid-band')
-    for (const id of [
-      'cues-grid',
-      'cues-grid-bpm',
-      'cues-grid-here',
-      'cues-grid-end',
-      'cue-zoom-in',
-    ])
-      expect(band).toContainElement(screen.getByTestId(id))
-    expect(screen.getByTestId('cues-deck')).not.toContainElement(screen.getByTestId('cues-grid'))
-    expect(screen.getByTestId('cues-toolbar')).not.toContainElement(
-      screen.getByTestId('cues-grid-here'),
-    )
-    expect(
-      band.compareDocumentPosition(screen.getAllByTestId('cue-wave')[0]) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy()
+    const deck = screen.getByTestId('cues-deck')
+    for (const id of ['cues-grid', 'cues-grid-bpm', 'cues-pad-A'])
+      expect(deck).toContainElement(screen.getByTestId(id))
+    const toolbar = screen.getByTestId('cues-toolbar')
+    for (const id of ['cues-grid-here', 'cues-grid-end'])
+      expect(toolbar).toContainElement(screen.getByTestId(id))
     expect(screen.queryByTestId('cues-grid-strip')).toBeNull()
   })
 

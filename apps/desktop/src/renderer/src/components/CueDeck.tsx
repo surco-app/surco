@@ -39,6 +39,7 @@ export function CueDeck({
   canClearAll = false,
   landsAs,
   onDone,
+  gridControls,
 }: {
   cues: DeckCue[]
   kinds?: number[]
@@ -58,6 +59,7 @@ export function CueDeck({
   canClearAll?: boolean
   landsAs?: (kind: number) => number | null
   onDone?: () => void
+  gridControls?: React.ReactNode
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [colouring, setColouring] = useState<string | null>(null)
@@ -219,6 +221,12 @@ export function CueDeck({
           <X className="h-4 w-4" aria-hidden="true" />
         </button>
       </div>
+      {gridControls && (
+        <div data-testid="cues-deck-grid" className="flex items-end gap-3">
+          <DeckDivider />
+          {gridControls}
+        </div>
+      )}
       {onClearAll && <DeckDivider />}
       {onClearAll && (
         <button
