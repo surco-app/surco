@@ -234,10 +234,10 @@ export function buildSession(
     list: readonly SessionTrack[],
     fits: (track: SessionTrack) => boolean = roleFits,
     allowFar = false,
+    harmony: SessionOptions['harmony'] = options.harmony,
   ): { tier: SessionTrack[]; relaxed: boolean } => {
     const fitting = list.filter(
-      (track) =>
-        fits(track) && harmonyAllows(options.harmony, camelotDistance(current.key, track.key)),
+      (track) => fits(track) && harmonyAllows(harmony, camelotDistance(current.key, track.key)),
     )
     const tight = fitting.filter((track) => {
       const gap = tempoGap(current, track)
@@ -261,14 +261,18 @@ export function buildSession(
     }
   }
 
-  const nextByFit = (current: SessionTrack, onlyWithoutCombo: boolean): SessionItem | null => {
+  const nextByFit = (
+    current: SessionTrack,
+    onlyWithoutCombo: boolean,
+    harmony: SessionOptions['harmony'] = options.harmony,
+  ): SessionItem | null => {
     const open = eligible.filter(
       (track) =>
         !used.has(track.id) && !(onlyWithoutCombo && combos.get(current.id)?.has(track.id)),
     )
-    let fit = fitTier(current, open, roleFits, true)
-    if (fit.tier.length === 0) fit = fitTier(current, open, roleOrNeutral, true)
-    if (fit.tier.length === 0) fit = fitTier(current, open, () => true, true)
+    let fit = fitTier(current, open, roleFits, true, harmony)
+    if (fit.tier.length === 0) fit = fitTier(current, open, roleOrNeutral, true, harmony)
+    if (fit.tier.length === 0) fit = fitTier(current, open, () => true, true, harmony)
     const { tier, relaxed } = fit
     if (tier.length === 0) return null
     const chosen = pickWeighted(tier, (track) => liking(track) * keyWeight(current, track))
@@ -328,7 +332,7 @@ export function buildSession(
         const first = opening()
         if (first) take(first, { kind: 'start' })
       } else {
-        const next = pickNext(current)
+        const next = pickNext(current) ?? nextByFit(current, false, 'free')
         if (next) {
           if (next.why.kind === 'fresh') placedFresh++
           take(next.track, next.why)

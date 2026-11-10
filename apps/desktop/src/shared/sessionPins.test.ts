@@ -172,3 +172,24 @@ describe('buildSession keeping the roles alternating around a pinned track', () 
     }
   })
 })
+
+describe('buildSession keeps pinned tracks in place when a slot has no track in key', () => {
+  it('fills the slot with a track out of key rather than moving the pinned one forward', () => {
+    const pool = [
+      track('a', { key: '8A' }),
+      track('b', { key: '1A' }),
+      track('c', { key: '5A' }),
+      track('d', { key: '3B' }),
+      track('e', { key: '8A' }),
+      track('f', { key: '10A' }),
+    ]
+    for (const seed of SEEDS) {
+      const plan = buildSession(
+        pool,
+        none,
+        options({ harmony: 'same', seed, pinned: [{ index: 3, trackId: 'd' }], fixedLength: 6 }),
+      )
+      expect(plan.items[3]?.track.id, `seed ${seed}`).toBe('d')
+    }
+  })
+})
