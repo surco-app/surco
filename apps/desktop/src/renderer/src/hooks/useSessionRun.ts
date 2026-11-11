@@ -3,19 +3,21 @@ import type { SessionPlan } from '../../../shared/sessionBuild'
 import type { LearnedMixing } from '../../../shared/sessionLearn'
 import { uniqueName } from '../../../shared/sessionName'
 import type { PlaylistRole, SessionAnswers, SessionTrack } from '../../../shared/sessionTypes'
-import type { PlaylistTrackRef, SourceNode } from '../../../shared/types'
+import type { PlaylistTrackRef, QueuedCreate, SourceNode } from '../../../shared/types'
 import { runSession, type SessionRun } from '../lib/sessionRun'
 import type { SessionPhase } from '../lib/sessionTree'
 import type { SessionRows } from './useSessionRows'
-import type { SessionWriter } from './useSessionWrite'
+import type { SessionWriter, SessionWritten } from './useSessionWrite'
 import { useStableCallback } from './useStableCallback'
 
-export type BuildResult = 'built' | 'empty' | 'refused' | 'closed'
+export type BuildResult = 'built' | 'queued' | 'empty' | 'refused'
 
 export interface RecentSession {
   playlistId: string
+  waiting?: string
   parentId: string
   name: string
+  shown: string
   answers: SessionAnswers
   roles: Readonly<Record<string, PlaylistRole>>
   seed: number
@@ -29,7 +31,6 @@ export interface RecentSession {
 type Roles = Readonly<Record<string, PlaylistRole>>
 
 export interface SessionRunDeps {
-  canWrite: () => Promise<boolean>
   rows: SessionRows
   writer: SessionWriter
   namesIn: (parentId: string) => ReadonlySet<string>
@@ -63,6 +64,7 @@ export interface SessionRunner {
   adjust: (answers: SessionAnswers, roles: Roles) => Promise<BuildResult>
   keep: () => void
   noteEdit: (playlistId: string) => void
+  noteCreated: (created: readonly QueuedCreate[]) => void
 }
 
 export function useSessionRun(deps: SessionRunDeps): SessionRunner {
@@ -75,7 +77,6 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
     working.current = true
     setBusy(true)
     try {
-      if (!(await deps.canWrite())) return 'closed'
       return await job()
     } finally {
       working.current = false
@@ -105,7 +106,7 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
   }
 
   const settle = (
-    id: string,
+    written: SessionWritten,
     parentId: string,
     name: string,
     shown: string,
@@ -114,13 +115,12 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
     seed: number,
     run: SessionRun,
     startPath?: string,
+    outcome: BuildResult = 'built',
   ): BuildResult => {
-    deps.noteMade?.(id)
-    deps.openPlaylist({ id, name: shown, kind: 'playlist', count: run.refs.length })
-    setRecent({
-      playlistId: id,
+    const session = {
       parentId,
       name,
+      shown,
       answers,
       roles,
       seed,
@@ -129,8 +129,15 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
       refsById: run.refsById,
       startPath,
       learned: run.learned,
-    })
-    return 'built'
+    }
+    if ('queued' in written) {
+      setRecent({ ...session, playlistId: '', waiting: written.queued })
+      return 'queued'
+    }
+    deps.noteMade?.(written.id)
+    deps.openPlaylist({ id: written.id, name: shown, kind: 'playlist', count: run.refs.length })
+    setRecent({ ...session, playlistId: written.id })
+    return outcome
   }
 
   const build = useStableCallback(
@@ -140,13 +147,12 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
         const seed = deps.newSeed()
         const run = await produce(answers, roles, seed, startPath)
         if (run.refs.length === 0) return 'empty'
-        if (!(await deps.canWrite())) return 'closed'
         const name = deps.nameFor()
         const shown = uniqueName(name, deps.namesIn(parentId))
-        const id = await deps.writer.create(parentId, shown, run.refs)
-        if (id === null) return 'refused'
+        const written = await deps.writer.create(parentId, shown, run.refs)
+        if (written === null) return 'refused'
         const chosen = run.plan.items[0]?.why.kind === 'chosen' ? startPath : undefined
-        return settle(id, parentId, name, shown, answers, roles, seed, run, chosen)
+        return settle(written, parentId, name, shown, answers, roles, seed, run, chosen)
       }),
   )
 
@@ -156,11 +162,20 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
       const seed = deps.newSeed()
       const run = await produce(answers, roles, seed)
       if (run.refs.length === 0) return 'empty'
-      if (!(await deps.canWrite())) return 'closed'
-      const written = await deps.writer.fill(target.id, target.name, run.refs)
-      return written
-        ? settle(target.id, target.parentId, target.name, target.name, answers, roles, seed, run)
-        : 'refused'
+      const filled = await deps.writer.fill(target.id, target.name, run.refs)
+      if (filled === 'refused') return 'refused'
+      return settle(
+        { id: target.id },
+        target.parentId,
+        target.name,
+        target.name,
+        answers,
+        roles,
+        seed,
+        run,
+        undefined,
+        filled === 'queued' ? 'queued' : 'built',
+      )
     }),
   )
 
@@ -176,13 +191,17 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
       const startPath = keepStart ? previous.startPath : undefined
       const run = await produce(answers, roles, seed, startPath)
       if (run.refs.length === 0) return 'empty'
-      if (!(await deps.canWrite())) return 'closed'
       const shown = uniqueName(previous.name, deps.namesIn(previous.parentId))
-      const id = await deps.writer.replace(previous.parentId, previous.playlistId, shown, run.refs)
-      return id === null
+      const written = await deps.writer.replace(
+        previous.parentId,
+        previous.playlistId,
+        shown,
+        run.refs,
+      )
+      return written === null
         ? 'refused'
         : settle(
-            id,
+            written,
             previous.parentId,
             previous.name,
             shown,
@@ -195,11 +214,11 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
     })
 
   const redo = useStableCallback(async () =>
-    recent ? replaceWith(recent, recent.answers, recent.roles, true) : 'refused',
+    recent && !recent.waiting ? replaceWith(recent, recent.answers, recent.roles, true) : 'refused',
   )
 
   const adjust = useStableCallback(async (answers: SessionAnswers, roles: Roles) => {
-    if (!recent) return 'refused'
+    if (!recent || recent.waiting) return 'refused'
     deps.saveAnswers(answers)
     return replaceWith(recent, answers, roles, false)
   })
@@ -210,5 +229,18 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
     setRecent((current) => (current?.playlistId === playlistId ? null : current)),
   )
 
-  return { recent, busy, build, fill, redo, adjust, keep, noteEdit }
+  const noteCreated = useStableCallback((created: readonly QueuedCreate[]) => {
+    const made = recent?.waiting && created.find((c) => c.opId === recent.waiting)
+    if (!recent || !made) return
+    deps.noteMade?.(made.createdId)
+    deps.openPlaylist({
+      id: made.createdId,
+      name: recent.shown,
+      kind: 'playlist',
+      count: recent.refsById.size,
+    })
+    setRecent({ ...recent, playlistId: made.createdId, waiting: undefined })
+  })
+
+  return { recent, busy, build, fill, redo, adjust, keep, noteEdit, noteCreated }
 }

@@ -7,6 +7,7 @@ import { DEFAULT_EDITOR_SECTIONS } from '../../../shared/editorSections'
 import { emptyMetadata } from '../../../shared/metadata'
 import { DEFAULT_SESSION_WIZARD } from '../../../shared/sessionSettings'
 import type {
+  PlaylistEditMode,
   CollectionTrack,
   RekordboxEditResult,
   RekordboxPlaylistEdit,
@@ -144,7 +145,11 @@ export interface ProgramReads {
   playlist(id: string): Promise<SourcePlaylistEntry[]>
   membership(paths: string[]): Promise<Record<string, string[]>>
   collection(): Promise<CollectionTrack[]>
-  editPlaylist(edit: RekordboxPlaylistEdit, label?: string): Promise<RekordboxEditResult>
+  editPlaylist(
+    edit: RekordboxPlaylistEdit,
+    label?: string,
+    mode?: PlaylistEditMode,
+  ): Promise<RekordboxEditResult>
   hasSeparator(): Promise<boolean>
   cueQueue(): Promise<RekordboxQueueState>
   applyCueQueue(): Promise<RekordboxQueueApplied | null>
@@ -191,7 +196,9 @@ export function djReads(...layers: (DjReads | DjApi | undefined)[]): DjApi {
     playlist: vi.fn((p, id) => of(p).playlist(id)),
     membership: vi.fn((p, paths) => of(p).membership(paths)),
     collection: vi.fn((p) => of(p).collection()),
-    editPlaylist: vi.fn((p, edit, label) => of(p).editPlaylist(edit, label)),
+    editPlaylist: vi.fn((p, ...args: Parameters<ProgramReads['editPlaylist']>) =>
+      of(p).editPlaylist(...args),
+    ),
     hasSeparator: vi.fn((p) => of(p).hasSeparator()),
     cueQueue: vi.fn((p) => of(p).cueQueue()),
     applyCueQueue: vi.fn((p) => of(p).applyCueQueue()),

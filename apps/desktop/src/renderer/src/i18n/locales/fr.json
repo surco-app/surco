@@ -119,8 +119,7 @@
       "assumed_one": "{{count}} morceau sans durée, compté pour {{minutes}} min",
       "assumed_other": "{{count}} morceaux sans durée, comptés pour {{minutes}} min chacun"
     },
-    "playlistName": "Session du {{date}}",
-    "closed": "Ferme ton logiciel DJ pour composer la session. Ouvert, il laisserait la playlist à moitié écrite"
+    "playlistName": "Session du {{date}}"
   },
   "pasteTracklist": {
     "title": "Coller la tracklist dans « {{name}} »",
@@ -2627,6 +2626,29 @@
         "noSeparator": "Ta collection n’a aucun séparateur à copier",
         "writeUnknown": "La modification n’a pu être ni enregistrée ni annulée, la collection a donc peut-être changé. Avant d’ouvrir Traktor, remplace collection.nml par la copie collection.nml.surco-backup que tu trouveras dans Réglages → Avancé → Sauvegardes des collections",
         "badName": "Ce nom ne convient pas pour une playlist. Il ne peut pas être vide ni en double"
+      }
+    },
+    "editEngine": {
+      "added_one": "{{count}} morceau ajouté à « {{name}} »",
+      "added_other": "{{count}} morceaux ajoutés à « {{name}} »",
+      "noneAdded": "Aucun morceau ajouté à « {{name}} »",
+      "already_one": "{{count}} était déjà dans la playlist",
+      "already_other": "{{count}} étaient déjà dans la playlist",
+      "notInCollection_one": "{{count}} n’est pas dans la collection Engine DJ",
+      "notInCollection_other": "{{count}} ne sont pas dans la collection Engine DJ",
+      "ambiguous_one": "{{count}} est deux fois dans la collection et Surco ne sait pas laquelle utiliser",
+      "ambiguous_other": "{{count}} sont deux fois dans la collection et Surco ne sait pas lesquelles utiliser",
+      "refused": {
+        "cancelled": "Engine DJ est encore ouvert. Le changement s’appliquera à sa fermeture",
+        "running": "Engine DJ s’est ouvert avant l’enregistrement. Le changement s’appliquera à sa fermeture",
+        "unreadable": "Surco ne peut pas modifier les fichiers de la collection Engine DJ pour le moment, rien n’a changé",
+        "backupFailed": "Impossible de sauvegarder la collection avant, rien n’a changé",
+        "writeFailed": "Impossible d’enregistrer la modification. La collection est restée telle quelle",
+        "readOnly": "La collection Engine DJ est en lecture seule, rien n’a changé",
+        "stale": "La playlist a changé dans Engine DJ. Vérifie-la et réessaie",
+        "noSeparator": "Ta collection n’a aucun séparateur à copier",
+        "writeUnknown": "La modification n’a pu être ni enregistrée ni annulée, la collection a donc peut-être changé. Avant d’ouvrir Engine DJ, remplace m.db par la copie m.db.surco-backup que tu trouveras dans Réglages → Avancé → Sauvegardes des collections",
+        "badName": "Ce nom ne convient pas pour une playlist Engine DJ. Il ne peut pas être vide ni répéter un nom du même dossier"
       }
     },
     "tree": {

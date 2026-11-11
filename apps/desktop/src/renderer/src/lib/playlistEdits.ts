@@ -82,6 +82,8 @@ export function editMessage(
   messagePrefix: EditMessagePrefix = 'sources.edit.',
 ): { text: string; tone: 'neutral' | 'danger' } | null {
   const own = (key: string): string => key.replace('sources.edit.', messagePrefix)
+  if (!result.applied && 'queued' in result)
+    return { text: tr(own(REFUSED.cancelled)), tone: 'neutral' }
   if (!result.applied && result.reason !== 'nothing-to-add')
     return {
       text: tr(own(REFUSED[result.reason])),

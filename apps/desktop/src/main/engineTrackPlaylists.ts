@@ -20,7 +20,7 @@ interface List {
   parent: number
 }
 
-function trackRows(db: Database): { id: number; path: string }[] {
+export function trackRows(db: Database): { id: number; path: string }[] {
   return (db.exec('SELECT id, path FROM Track WHERE path IS NOT NULL')[0]?.values ?? []).map(
     ([id, path]) => ({ id: Number(id), path: String(path) }),
   )
@@ -68,7 +68,7 @@ function parentOf(db: Database, listId: number): number {
 }
 
 // Every folder above the lists, deepest first, so a folder is counted after the ones in it.
-function foldersAbove(db: Database, lists: number[]): number[] {
+export function foldersAbove(db: Database, lists: number[]): number[] {
   const depth = new Map<number, number>()
   for (const list of lists) {
     const chain: number[] = []
@@ -82,7 +82,7 @@ function foldersAbove(db: Database, lists: number[]): number[] {
 
 // Engine DJ files a track in each folder above its lists too, with membershipReference
 // counting how many of the folder's lists hold it: the same count the USB export keeps.
-function recountFolder(db: Database, folder: number, trackId: number, uuid: string): void {
+export function recountFolder(db: Database, folder: number, trackId: number, uuid: string): void {
   const ref = Number(
     db.exec(
       `SELECT count(*) FROM Playlist c WHERE c.parentListId = ? AND EXISTS

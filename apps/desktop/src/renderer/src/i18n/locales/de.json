@@ -119,8 +119,7 @@
       "assumed_one": "{{count}} Track ohne Länge, zählt als {{minutes}} Min.",
       "assumed_other": "{{count}} Tracks ohne Länge, zählen je als {{minutes}} Min."
     },
-    "playlistName": "Session vom {{date}}",
-    "closed": "Schließe dein DJ-Programm, um die Session zu erstellen. Bei geöffnetem Programm bliebe die Playlist unvollständig"
+    "playlistName": "Session vom {{date}}"
   },
   "pasteTracklist": {
     "title": "Tracklist in „{{name}}“ einfügen",
@@ -2627,6 +2626,29 @@
         "noSeparator": "Deine Sammlung hat keinen Trenner zum Kopieren",
         "writeUnknown": "Die Änderung konnte weder gespeichert noch rückgängig gemacht werden, die Sammlung könnte sich also geändert haben. Ersetze vor dem Öffnen von Traktor collection.nml durch die Kopie collection.nml.surco-backup unter Einstellungen → Erweitert → Sicherungen der Sammlungen",
         "badName": "Dieser Name ist für eine Playlist nicht zulässig. Er darf nicht leer sein und nicht doppelt vorkommen"
+      }
+    },
+    "editEngine": {
+      "added_one": "{{count}} Track zu „{{name}}“ hinzugefügt",
+      "added_other": "{{count}} Tracks zu „{{name}}“ hinzugefügt",
+      "noneAdded": "Keine Tracks zu „{{name}}“ hinzugefügt",
+      "already_one": "{{count}} war schon in der Playlist",
+      "already_other": "{{count}} waren schon in der Playlist",
+      "notInCollection_one": "{{count}} ist nicht in der Engine DJ-Sammlung",
+      "notInCollection_other": "{{count}} sind nicht in der Engine DJ-Sammlung",
+      "ambiguous_one": "{{count}} ist doppelt in der Sammlung und Surco weiß nicht, welcher gilt",
+      "ambiguous_other": "{{count}} sind doppelt in der Sammlung und Surco weiß nicht, welche gelten",
+      "refused": {
+        "cancelled": "Engine DJ ist noch geöffnet. Die Änderung wird beim Schließen angewendet",
+        "running": "Engine DJ wurde vor dem Speichern geöffnet. Die Änderung wird beim Schließen angewendet",
+        "unreadable": "Surco kann die Dateien der Engine DJ-Sammlung gerade nicht ändern, daher wurde nichts geändert",
+        "backupFailed": "Die Sammlung konnte vorher nicht gesichert werden, daher wurde nichts geändert",
+        "writeFailed": "Die Änderung konnte nicht gespeichert werden. Die Sammlung ist unverändert",
+        "readOnly": "Die Engine DJ-Sammlung ist schreibgeschützt, daher wurde nichts geändert",
+        "stale": "Die Playlist hat sich in Engine DJ geändert. Prüfe sie und versuche es erneut",
+        "noSeparator": "Deine Sammlung hat keinen Trenner zum Kopieren",
+        "writeUnknown": "Die Änderung konnte weder gespeichert noch rückgängig gemacht werden, die Sammlung könnte sich also geändert haben. Ersetze vor dem Öffnen von Engine DJ m.db durch die Kopie m.db.surco-backup unter Einstellungen → Erweitert → Sicherungen der Sammlungen",
+        "badName": "Dieser Name passt nicht für eine Engine-DJ-Playlist. Er darf nicht leer sein und sich im selben Ordner nicht wiederholen"
       }
     },
     "tree": {

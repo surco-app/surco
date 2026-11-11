@@ -1259,7 +1259,7 @@ export type RekordboxPlaylistEdit =
   | { kind: 'remove'; playlistId: string; linkIds: string[] }
   | { kind: 'insertSeparator'; playlistId: string; beforeLinkId: string }
   // parentId 'root' is the top of the tree, as rekordbox spells it.
-  | { kind: 'create'; parentId: string; name: string; folder: boolean }
+  | { kind: 'create'; parentId: string; name: string; folder: boolean; tracks?: PlaylistTrackRef[] }
   | { kind: 'rename'; playlistId: string; name: string }
   | { kind: 'delete'; playlistId: string }
   | { kind: 'moveNode'; playlistId: string; parentId: string; beforeId: string | null }
@@ -1291,6 +1291,14 @@ export interface PlaylistAddReport {
 export type RekordboxEditResult =
   | { applied: true; createdId?: string; report?: PlaylistAddReport }
   | { applied: false; reason: RekordboxEditRefusal; report?: PlaylistAddReport }
+  | { applied: false; queued: true; opId: string }
+
+export type PlaylistEditMode = 'ask' | 'queue'
+
+export interface QueuedCreate {
+  opId: string
+  createdId: string
+}
 
 export type RekordboxQueueNotice =
   | {
@@ -1911,6 +1919,7 @@ export type RekordboxQueueApplied =
       changes: number
       notices: RekordboxQueueNotice[]
       written: RekordboxQueueWritten[]
+      created?: QueuedCreate[]
     }
   | { refused: RekordboxEditRefusal }
 

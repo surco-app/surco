@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import type { DjEditMain } from '../shared/djApi'
-import type { RekordboxEditResult, RekordboxPlaylistEdit } from '../shared/types'
+import type { PlaylistEditMode, RekordboxEditResult, RekordboxPlaylistEdit } from '../shared/types'
 import { serialLibraryFlush } from './libraryTagSync'
 import { type QueueApply, type RekordboxQueue, withoutOp } from './rekordboxQueue'
 import { type EditOp, editResultOfOutcome } from './rekordboxQueueOps'
@@ -24,7 +24,12 @@ export function seratoEdit(host: {
   onWaiting?: () => void
 }): DjEditMain {
   return {
-    save: (edit: RekordboxPlaylistEdit, label: string | undefined) =>
+    save: (
+      edit: RekordboxPlaylistEdit,
+      label: string | undefined,
+      _sender?: unknown,
+      mode: PlaylistEditMode = 'ask',
+    ) =>
       serialLibraryFlush(async (): Promise<RekordboxEditResult> => {
         const roots = host.roots()
         if (badName(edit, roots)) return { applied: false, reason: 'bad-name' }
@@ -43,8 +48,10 @@ export function seratoEdit(host: {
           if (others.tracks > 0 || others.changes > 0 || others.notices.length > 0)
             host.onApplied?.(others)
         }
-        if (stillWaiting(result)) host.onWaiting?.()
-        else if (result.status === 'refused') host.queue.drop(op.id)
+        if (stillWaiting(result)) {
+          host.onWaiting?.()
+          if (mode === 'queue') return { applied: false, queued: true, opId: op.id }
+        } else if (result.status === 'refused') host.queue.drop(op.id)
         if (result.status === 'refused') return { applied: false, reason: result.reason }
         const outcome =
           result.status === 'applied' ? result.outcomes.find((o) => o.id === op.id) : undefined

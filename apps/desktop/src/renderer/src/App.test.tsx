@@ -25,6 +25,7 @@ import type {
   ActivityEvent,
   ProgramCopies,
   RekordboxEditResult,
+  RekordboxQueueApplied,
   RekordboxSyncIssue,
   Release,
   RestoreResult,
@@ -624,14 +625,37 @@ describe('App Engine DJ cues', () => {
     await waitFor(() => expect(chips()).toEqual([null, '2 proposals']))
   })
 
-  it('offers no playlist editing in Engine DJ, whose library Surco only reads', async () => {
+  it('offers in Engine DJ only what Surco can write there: new playlists and delete, no folders or rename', async () => {
     openEngine()
     await renderApp()
     fireEvent.click(await screen.findByTestId('source-rail-engine'))
     await screen.findByTestId('source-node-7')
-    expect(screen.queryByTestId('source-tree-new-playlist')).not.toBeInTheDocument()
+    expect(screen.getByTestId('source-tree-new-playlist')).toBeInTheDocument()
+    expect(screen.queryByTestId('source-tree-new-folder')).not.toBeInTheDocument()
     fireEvent.contextMenu(screen.getByTestId('source-node-7'))
-    expect(screen.queryByTestId('source-tree-menu')).not.toBeInTheDocument()
+    expect(screen.getByTestId('source-tree-delete')).toBeInTheDocument()
+    expect(screen.queryByTestId('source-tree-rename')).not.toBeInTheDocument()
+  })
+
+  it('lets an Engine DJ row go to another playlist but never offers removing it from the open one', async () => {
+    openEngine({
+      dj: djReads({
+        engine: {
+          tree: vi.fn<ProgramReads['tree']>().mockResolvedValue([
+            { id: '7', name: 'Friday', kind: 'playlist', count: 2 },
+            { id: '8', name: 'Saturday', kind: 'playlist', count: 0 },
+          ]),
+        },
+      }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-engine'))
+    fireEvent.click(await screen.findByTestId('source-node-7'))
+    const rows = await screen.findAllByTestId('track-row')
+    fireEvent.contextMenu(rows[0])
+    expect(await screen.findByTestId('track-menu-add-to')).toBeInTheDocument()
+    expect(screen.queryByTestId('track-menu-remove-from')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('track-menu-insert-separator')).not.toBeInTheDocument()
   })
 
   it('turns the open Engine DJ tab into the missing-library notice when its database goes, with no USB export from it', async () => {
@@ -10447,9 +10471,9 @@ describe('automatic session from the tree', () => {
       fireEvent.click(screen.getByTestId('session-wizard-next'))
       fireEvent.click(await screen.findByTestId('session-wizard-next'))
       fireEvent.click(await screen.findByTestId('session-wizard-build'))
-      await waitFor(() => expect(edit).toHaveBeenCalledTimes(2))
-      const added = edit.mock.calls[1][0] as { tracks: { contentId: string }[] }
-      expect(added.tracks[0].contentId).toBe(String(40 + rows.length - 1))
+      await waitFor(() => expect(edit).toHaveBeenCalledOnce())
+      const made = edit.mock.calls[0][0] as { tracks: { contentId: string }[] }
+      expect(made.tracks[0].contentId).toBe(String(40 + rows.length - 1))
     })
 
     it('offers nothing before a playlist is open', async () => {
@@ -10570,11 +10594,11 @@ describe('automatic session from the tree', () => {
     const edit = openRekordboxTree()
     await toBuild()
     fireEvent.click(screen.getByTestId('session-wizard-build'))
-    await waitFor(() => expect(edit).toHaveBeenCalledTimes(2))
-    expect(edit.mock.calls[0][0]).toMatchObject({ kind: 'create', parentId: 'sets', folder: false })
-    expect(edit.mock.calls[1][0]).toEqual({
-      kind: 'add',
-      playlistId: 'new',
+    await waitFor(() => expect(edit).toHaveBeenCalledOnce())
+    expect(edit.mock.calls[0][0]).toMatchObject({
+      kind: 'create',
+      parentId: 'sets',
+      folder: false,
       tracks: [{ contentId: '41', paths: ['/m/a.wav'] }],
     })
     await waitFor(() =>
@@ -10613,14 +10637,59 @@ describe('automatic session from the tree', () => {
     )
   })
 
-  it('writes nothing and asks to close the program when a DJ program is open', async () => {
-    const edit = openRekordboxTree({
+  it('opens the session once rekordbox closes and the queue writes it, with its band', async () => {
+    let applied: (a: RekordboxQueueApplied) => void = () => {}
+    openRekordboxTree(
+      {
+        dj: djReads({
+          rekordbox: {
+            editPlaylist: vi
+              .fn<ProgramReads['editPlaylist']>()
+              .mockResolvedValue({ applied: false, queued: true, opId: 'op1' }),
+            onCueQueueApplied: (cb) => {
+              applied = cb
+              return () => {}
+            },
+          },
+        }),
+      },
+      [...TREE, { id: 'new', name: 'Session', kind: 'playlist' as const, count: 1 }],
+    )
+    await toBuild()
+    fireEvent.click(screen.getByTestId('session-wizard-build'))
+    await waitFor(() =>
+      expect(screen.queryByTestId('session-wizard-dialog')).not.toBeInTheDocument(),
+    )
+    expect(screen.queryByTestId('session-band')).toBeNull()
+    act(() =>
+      applied({
+        tracks: 0,
+        changes: 1,
+        notices: [],
+        written: [],
+        created: [{ opId: 'op1', createdId: 'new' }],
+      }),
+    )
+    expect(await screen.findByTestId('session-band')).toBeInTheDocument()
+  })
+
+  it('builds while the DJ program is open, sending the session to wait for it to close', async () => {
+    const edit = vi
+      .fn<ProgramReads['editPlaylist']>()
+      .mockResolvedValue({ applied: false, queued: true, opId: 'op1' })
+    openRekordboxTree({
       djAppRunning: vi.fn<Api['djAppRunning']>().mockResolvedValue(true),
+      dj: djReads({ rekordbox: { editPlaylist: edit } }),
     })
     await toBuild()
     fireEvent.click(screen.getByTestId('session-wizard-build'))
-    expect(await screen.findByTestId('session-wizard-closed')).toBeInTheDocument()
-    expect(edit).not.toHaveBeenCalled()
-    expect(screen.getByTestId('session-wizard-dialog')).toBeInTheDocument()
+    await waitFor(() =>
+      expect(screen.queryByTestId('session-wizard-dialog')).not.toBeInTheDocument(),
+    )
+    expect(edit).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: 'create', tracks: expect.any(Array) }),
+      expect.any(String),
+      'queue',
+    )
   })
 })

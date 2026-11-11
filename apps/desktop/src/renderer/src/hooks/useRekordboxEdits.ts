@@ -3,6 +3,7 @@ import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { DJ_PROGRAMS, type DjProgram } from '../../../shared/djProgram'
 import type {
+  PlaylistEditMode,
   RekordboxEditResult,
   RekordboxPlaylistEdit,
   SourceNode,
@@ -20,12 +21,18 @@ import { SOURCE_PROGRAMS } from '../lib/sourcePrograms'
 export function useRekordboxEdits(
   notify: (text: string, tone: 'neutral' | 'danger') => void,
   source: DjProgram = 'rekordbox',
-): (edit: RekordboxPlaylistEdit, playlistName: string) => Promise<RekordboxEditResult> {
+): (
+  edit: RekordboxPlaylistEdit,
+  playlistName: string,
+  mode?: PlaylistEditMode,
+) => Promise<RekordboxEditResult> {
   const queryClient = useQueryClient()
   const { t: tr } = useTranslation()
   return useCallback(
-    async (edit, playlistName) => {
+    async (edit, playlistName, mode) => {
       const sourceEdit = SOURCE_PROGRAMS[source].edit
+      if (sourceEdit?.kinds && !sourceEdit.kinds.has(edit.kind))
+        return { applied: false, reason: 'read-only' }
       if (edit.kind === 'move') {
         const key = ['source-playlist', source, edit.playlistId]
         // A re-read already in flight (a refocus) carries the order from before the move
@@ -51,7 +58,9 @@ export function useRekordboxEdits(
       let result: RekordboxEditResult
       try {
         result = sourceEdit
-          ? await sourceEdit.save(edit, playlistName)
+          ? await (mode
+              ? sourceEdit.save(edit, playlistName, mode)
+              : sourceEdit.save(edit, playlistName))
           : { applied: false, reason: 'read-only' }
       } catch {
         result = { applied: false, reason: 'write-failed' }

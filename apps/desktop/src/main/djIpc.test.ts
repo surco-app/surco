@@ -86,8 +86,17 @@ describe('registerDjIpc', () => {
     expect(await handler('dj:editPlaylist')({ sender }, 'traktor', edit, 'Friday')).toEqual({
       applied: true,
     })
-    expect(save).toHaveBeenCalledWith(edit, 'Friday', sender)
+    expect(save).toHaveBeenCalledWith(edit, 'Friday', sender, undefined)
     expect(other).not.toHaveBeenCalled()
+  })
+
+  it('passes the queue mode on, so a session can wait for the program to close without a dialog', async () => {
+    const save = vi.fn(async () => ({ applied: true }) as const)
+    registerDjIpc(table({}, { rekordbox: { save } }))
+    const edit = { kind: 'delete', playlistId: 'p1' } as const
+    const sender = { id: 7 }
+    await handler('dj:editPlaylist')({ sender }, 'rekordbox', edit, 'Friday', 'queue')
+    expect(save).toHaveBeenCalledWith(edit, 'Friday', sender, 'queue')
   })
 
   it('asks the program whether it has a separator', async () => {

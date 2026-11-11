@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { PlaylistRole, SessionAnswers } from '../../../shared/sessionTypes'
 import type { SourcePlaylistEntry } from '../../../shared/types'
 import { type SessionRunDeps, useSessionRun } from './useSessionRun'
-import type { SessionWriter } from './useSessionWrite'
+import type { SessionWriter, SessionWritten } from './useSessionWrite'
 
 afterEach(cleanup)
 
@@ -36,13 +36,12 @@ let replace = vi.fn<SessionWriter['replace']>()
 let fill = vi.fn<SessionWriter['fill']>()
 
 function setup(over: Partial<SessionRunDeps> = {}) {
-  create = vi.fn<SessionWriter['create']>(async () => 'new1')
-  replace = vi.fn<SessionWriter['replace']>(async () => 'new2')
-  fill = vi.fn<SessionWriter['fill']>(async () => true)
+  create = vi.fn<SessionWriter['create']>(async () => ({ id: 'new1' }))
+  replace = vi.fn<SessionWriter['replace']>(async () => ({ id: 'new2' }))
+  fill = vi.fn<SessionWriter['fill']>(async () => 'written')
   const deps: SessionRunDeps = {
     rows: { load: vi.fn(async () => ROWS), reset: vi.fn(), loading: false, failed: [] },
     writer: { create, replace, fill },
-    canWrite: async () => true,
     namesIn: () => new Set<string>(),
     nameFor: () => 'Sesión del 9-11',
     openPlaylist: vi.fn(),
@@ -167,8 +166,8 @@ describe('useSessionRun build', () => {
   })
 
   it('is busy while the write is going and ignores a second build meanwhile', async () => {
-    let release: (id: string | null) => void = () => {}
-    const create = vi.fn(() => new Promise<string | null>((resolve) => (release = resolve)))
+    let release: (written: SessionWritten | null) => void = () => {}
+    const create = vi.fn(() => new Promise<SessionWritten | null>((resolve) => (release = resolve)))
     const { result } = setup({ writer: { create, replace: vi.fn(async () => null), fill } })
 
     let first: Promise<string> = Promise.resolve('')
@@ -184,7 +183,7 @@ describe('useSessionRun build', () => {
     expect(create).toHaveBeenCalledOnce()
 
     await act(async () => {
-      release('new1')
+      release({ id: 'new1' })
       await first
     })
     expect(result.current.busy).toBe(false)
@@ -296,7 +295,7 @@ describe('useSessionRun redo and adjust', () => {
   it('keeps the band and the old playlist when the replacement is refused', async () => {
     const { result } = await built({
       writer: {
-        create: vi.fn(async () => 'new1'),
+        create: vi.fn(async () => ({ id: 'new1' })),
         replace: vi.fn(async () => null),
         fill,
       },
@@ -402,104 +401,63 @@ describe('useSessionRun naming', () => {
   })
 })
 
-describe('useSessionRun with the DJ program open', () => {
-  it('writes nothing and says so when a DJ program is open, so no half-made playlist is queued', async () => {
-    const { deps, result } = setup({ canWrite: async () => false })
-
+describe('useSessionRun while the DJ program is open', () => {
+  const queuedBuild = async (over: Partial<SessionRunDeps> = {}) => {
+    const ctx = setup(over)
+    create.mockResolvedValue({ queued: 'op1' })
     let outcome: string | undefined
     await act(async () => {
-      outcome = await result.current.build('folder', ANSWERS, ROLES)
+      outcome = await ctx.result.current.build('folder', ANSWERS, ROLES)
     })
+    return { ...ctx, outcome }
+  }
 
-    expect(outcome).toBe('closed')
-    expect(create).not.toHaveBeenCalled()
-    expect(deps.openPlaylist).not.toHaveBeenCalled()
-    expect(result.current.recent).toBeNull()
-  })
-
-  it('does not even read the playlists when it cannot write', async () => {
-    const { deps, result } = setup({ canWrite: async () => false })
-    await act(async () => {
-      await result.current.build('folder', ANSWERS, ROLES)
-    })
-    expect(deps.rows.load).not.toHaveBeenCalled()
-    expect(deps.saveAnswers).not.toHaveBeenCalled()
-  })
-
-  it('leaves the playlist and the band as they were when a redo finds the program open', async () => {
-    let open = false
-    const { result } = await built({ canWrite: async () => !open })
-    const before = result.current.recent
-    open = true
-
-    let outcome: string | undefined
-    await act(async () => {
-      outcome = await result.current.redo()
-    })
-
-    expect(outcome).toBe('closed')
-    expect(replace).not.toHaveBeenCalled()
-    expect(result.current.recent).toBe(before)
-  })
-
-  it('writes nothing for an adjust either', async () => {
-    let open = false
-    const { result } = await built({ canWrite: async () => !open })
-    open = true
-
-    let adjusted: string | undefined
-    await act(async () => {
-      adjusted = await result.current.adjust(ANSWERS, ROLES)
-    })
-
-    expect(adjusted).toBe('closed')
-    expect(replace).not.toHaveBeenCalled()
-  })
-
-  it('checks again right before writing, in case a program opened while the playlists were read', async () => {
-    const canWrite = vi
-      .fn<() => Promise<boolean>>()
-      .mockResolvedValueOnce(true)
-      .mockResolvedValue(false)
-    const { result } = setup({ canWrite })
-
-    let outcome: string | undefined
-    await act(async () => {
-      outcome = await result.current.build('folder', ANSWERS, ROLES)
-    })
-
-    expect(outcome).toBe('closed')
-    expect(canWrite).toHaveBeenCalledTimes(2)
-    expect(create).not.toHaveBeenCalled()
-  })
-
-  it('checks again before a redo writes as well', async () => {
-    let calls = 0
-    const { result } = await built({ canWrite: async () => ++calls <= 2 })
-    let outcome: string | undefined
-    await act(async () => {
-      outcome = await result.current.redo()
-    })
-    expect(outcome).toBe('closed')
-    expect(replace).not.toHaveBeenCalled()
-  })
-
-  it('writes again once the program is closed', async () => {
-    let open = true
-    const { result } = setup({ canWrite: async () => !open })
-    await act(async () => {
-      await result.current.build('folder', ANSWERS, ROLES)
-    })
-    expect(create).not.toHaveBeenCalled()
-    open = false
-
-    let outcome: string | undefined
-    await act(async () => {
-      outcome = await result.current.build('folder', ANSWERS, ROLES)
-    })
-
-    expect(outcome).toBe('built')
+  it('sends the session to wait for the program to close instead of refusing it', async () => {
+    const { deps, result, outcome } = await queuedBuild()
+    expect(outcome).toBe('queued')
     expect(create).toHaveBeenCalledOnce()
+    expect(deps.openPlaylist).not.toHaveBeenCalled()
+    expect(result.current.recent).toMatchObject({ waiting: 'op1' })
+  })
+
+  it('opens the playlist and notes it as made once the program closes and the queue writes it', async () => {
+    const noteMade = vi.fn()
+    const { deps, result } = await queuedBuild({ noteMade })
+    act(() => result.current.noteCreated([{ opId: 'op1', createdId: 'real' }]))
+    expect(result.current.recent).toMatchObject({ playlistId: 'real', waiting: undefined })
+    expect(deps.openPlaylist).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ id: 'real', name: 'Sesión del 9-11' }),
+    )
+    expect(noteMade).toHaveBeenCalledExactlyOnceWith('real')
+  })
+
+  it('ignores a playlist the queue made for another edit', async () => {
+    const { deps, result } = await queuedBuild()
+    act(() => result.current.noteCreated([{ opId: 'other', createdId: 'x' }]))
+    expect(result.current.recent).toMatchObject({ waiting: 'op1' })
+    expect(deps.openPlaylist).not.toHaveBeenCalled()
+  })
+
+  it('does not redo a session still waiting, so closing the program never leaves two playlists', async () => {
+    const { result } = await queuedBuild()
+    let outcome: string | undefined
+    await act(async () => {
+      outcome = await result.current.redo()
+    })
+    expect(outcome).toBe('refused')
+    expect(replace).not.toHaveBeenCalled()
+  })
+
+  it('fills an existing playlist even while the program is open, since its id is already known', async () => {
+    const { deps, result } = setup()
+    fill.mockResolvedValue('queued')
+    let outcome: string | undefined
+    await act(async () => {
+      outcome = await result.current.fill(EMPTY, ANSWERS, ROLES)
+    })
+    expect(outcome).toBe('queued')
+    expect(result.current.recent).toMatchObject({ playlistId: 'empty' })
+    expect(deps.openPlaylist).toHaveBeenCalledOnce()
   })
 })
 
@@ -623,7 +581,7 @@ describe('useSessionRun fill', () => {
 
   it('reports a refused write and leaves no band behind', async () => {
     const { deps, result } = setup()
-    fill.mockResolvedValue(false)
+    fill.mockResolvedValue('refused')
 
     let outcome: string | undefined
     await act(async () => {
@@ -644,16 +602,6 @@ describe('useSessionRun fill', () => {
       outcome = await result.current.fill(EMPTY, ANSWERS, ROLES)
     })
     expect(outcome).toBe('empty')
-    expect(fill).not.toHaveBeenCalled()
-  })
-
-  it('writes nothing while a DJ program is open', async () => {
-    const { result } = setup({ canWrite: async () => false })
-    let outcome: string | undefined
-    await act(async () => {
-      outcome = await result.current.fill(EMPTY, ANSWERS, ROLES)
-    })
-    expect(outcome).toBe('closed')
     expect(fill).not.toHaveBeenCalled()
   })
 })

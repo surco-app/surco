@@ -113,6 +113,9 @@ export function editResultOfOutcome(outcome: OpOutcome | undefined): RekordboxEd
       ? { applied: false, reason, report: outcome.report }
       : { applied: false, reason }
   }
-  if (outcome.report) return { applied: true, report: outcome.report }
-  return outcome.createdId ? { applied: true, createdId: outcome.createdId } : { applied: true }
+  return {
+    applied: true,
+    ...(outcome.createdId ? { createdId: outcome.createdId } : {}),
+    ...(outcome.report ? { report: outcome.report } : {}),
+  }
 }

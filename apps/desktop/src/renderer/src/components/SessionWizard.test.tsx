@@ -1095,22 +1095,15 @@ describe('SessionWizard while building', () => {
     fireEvent.click(screen.getByTestId('session-wizard-build'))
     await screen.findByTestId('session-wizard-empty')
     expect(screen.queryByTestId('session-wizard-refused')).toBeNull()
-    expect(screen.queryByTestId('session-wizard-closed')).toBeNull()
   })
 
-  it('asks to close the DJ program when it is open, and lets the user try again', async () => {
+  it('shows no problem when the session waits for the DJ program to close, since it will be written', async () => {
     const { onBuild } = setup({ b90: 'base' })
-    onBuild.mockResolvedValueOnce('closed')
+    onBuild.mockResolvedValueOnce('queued')
     await toCharacter()
     fireEvent.click(screen.getByTestId('session-wizard-build'))
-    expect(await screen.findByTestId('session-wizard-closed')).toHaveTextContent(
-      i18n.t('sessions.closed'),
-    )
-    expect(screen.getByTestId('session-wizard-build')).toBeEnabled()
-    expect(screen.queryByTestId('session-wizard-empty')).toBeNull()
-    onBuild.mockResolvedValueOnce('refused')
-    fireEvent.click(screen.getByTestId('session-wizard-build'))
-    await waitFor(() => expect(screen.queryByTestId('session-wizard-closed')).toBeNull())
+    await waitFor(() => expect(onBuild).toHaveBeenCalledOnce())
+    expect(screen.queryByRole('status')).toBeNull()
   })
 
   it('says so when the chosen playlists have no track to build with', async () => {

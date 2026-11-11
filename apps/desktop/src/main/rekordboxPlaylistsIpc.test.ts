@@ -224,6 +224,26 @@ describe('rekordboxEdit', () => {
     expect(result).toEqual({ applied: true })
   })
 
+  it('in queue mode leaves the edit waiting for rekordbox to close without asking, and names it so its result can be matched later', async () => {
+    const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')
+    writeRekordboxPlaylistFixture(path, ORGANISE_FIXTURE)
+    const ensureClosed = vi.fn(async () => true)
+    const queue = queueFor(path)
+    const enqueue = vi.spyOn(queue, 'enqueue')
+    const onWaiting = vi.fn()
+    register(() => path, { ensureClosed, isRunning: async () => true, queue, onWaiting })
+    const result = await section.save(
+      { kind: 'create', parentId: 'root', name: 'Sesion', folder: false, tracks: [] },
+      'Sesion',
+      {} as WebContents,
+      'queue',
+    )
+    const opId = (enqueue.mock.calls[0][0][0] as { id: string }).id
+    expect(result).toEqual({ applied: false, queued: true, opId })
+    expect(ensureClosed).not.toHaveBeenCalled()
+    expect(onWaiting).toHaveBeenCalledOnce()
+  })
+
   it('a playlist edit is a small change of its collection, marked before the queue applies', async () => {
     const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')
     writeRekordboxPlaylistFixture(path, ORGANISE_FIXTURE)

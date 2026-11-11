@@ -216,6 +216,11 @@ function planEdit(probe: Db, xml: string | null, op: EditOp, find: FindOptions):
       return refused('nothing-to-add', { added: 0, already, ...unresolved })
     return { op, contentIds: resolved.contentIds, unresolved }
   }
+  if (edit.kind === 'create' && edit.tracks) {
+    const resolved = resolveTracks(probe, edit.tracks, find)
+    const unresolved = { notInCollection: resolved.notInCollection, ambiguous: resolved.ambiguous }
+    return { op, contentIds: resolved.contentIds, unresolved }
+  }
   return { op }
 }
 
@@ -392,7 +397,12 @@ function writeEdit(db: Db, draft: XmlDraft, planned: Planned, now: Date): OpOutc
         timestamp: draft.now,
       })
     draft.taken.add(hexId(created.id))
-    return done({ createdId: created.id })
+    if (!planned.contentIds) return done({ createdId: created.id })
+    const counts = addToPlaylist(db, created.id, planned.contentIds, ctx)
+    return done({
+      createdId: created.id,
+      report: { ...counts, notInCollection: 0, ambiguous: 0, ...planned.unresolved },
+    })
   }
   if (edit.kind === 'rename') {
     renameNode(db, edit.playlistId, edit.name, ctx)

@@ -107,6 +107,35 @@ describe('useRekordboxEdits', () => {
     )
   })
 
+  it('refuses on Engine DJ an edit its writer cannot do, without sending it', async () => {
+    const dj = djReads()
+    ;(window as unknown as { api: unknown }).api = { dj }
+    const client = new QueryClient()
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    )
+    const { result } = renderHook(() => useRekordboxEdits(vi.fn(), 'engine'), { wrapper })
+    let answer: RekordboxEditResult | undefined
+    await act(async () => {
+      answer = await result.current({ kind: 'rename', playlistId: '7', name: 'X' }, 'Sesion')
+    })
+    expect(answer).toEqual({ applied: false, reason: 'read-only' })
+    expect(dj.editPlaylist).not.toHaveBeenCalled()
+  })
+
+  it('passes the queue mode on, so a session can wait for the program to close without a dialog', async () => {
+    const { result } = setup(Promise.resolve({ applied: true }))
+    await act(async () => {
+      await result.current.edit({ kind: 'delete', playlistId: 'f' }, 'Factory', 'queue')
+    })
+    expect(window.api.dj.editPlaylist).toHaveBeenCalledWith(
+      'rekordbox',
+      { kind: 'delete', playlistId: 'f' },
+      'Factory',
+      'queue',
+    )
+  })
+
   it('re-reads the membership after an edit, since a deleted playlist changes the dots', async () => {
     const { result, client } = setup(Promise.resolve({ applied: true }))
     const invalidate = vi.spyOn(client, 'invalidateQueries')
@@ -375,7 +404,7 @@ describe('useRekordboxEdits on Traktor', () => {
     )
   })
 
-  it('re-reads which rekordbox and Traktor playlists hold each track after an edit, and leaves Engine DJ’s alone since no edit reaches it', async () => {
+  it('re-reads which rekordbox, Traktor and Engine DJ playlists hold each track after an edit, since any of them may have changed', async () => {
     const { edit, client } = traktorEdits({ applied: true })
     for (const p of ['rekordbox', 'traktor', 'engine'])
       client.setQueryData([`${p}-membership`, ['/m/a.wav']], {})
@@ -386,7 +415,7 @@ describe('useRekordboxEdits on Traktor', () => {
       client.getQueryState([`${p}-membership`, ['/m/a.wav']])?.isInvalidated
     expect(invalidated('rekordbox')).toBe(true)
     expect(invalidated('traktor')).toBe(true)
-    expect(invalidated('engine')).toBe(false)
+    expect(invalidated('engine')).toBe(true)
   })
 })
 

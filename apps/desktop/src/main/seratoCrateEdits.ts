@@ -86,8 +86,7 @@ export function seratoNameTaken(
       .filter((id) => !family.includes(id))
       .map(lower),
   )
-  if (edit.kind === 'moveNode')
-    return family.some((f) => taken.has(lower(movedCrateId(f, edit))))
+  if (edit.kind === 'moveNode') return family.some((f) => taken.has(lower(movedCrateId(f, edit))))
   const name = edit.name.trim()
   if (edit.kind === 'create') return taken.has(lower(crateIdOf(edit.parentId, name)))
   return family.some((f) => taken.has(lower(renamedCrateId(f, edit.playlistId, name))))
@@ -95,7 +94,10 @@ export function seratoNameTaken(
 
 const crateName = (id: string): string => id.split('%%').pop() ?? id
 
-function movedCrateId(id: string, edit: Extract<RekordboxPlaylistEdit, { kind: 'moveNode' }>): string {
+function movedCrateId(
+  id: string,
+  edit: Extract<RekordboxPlaylistEdit, { kind: 'moveNode' }>,
+): string {
   return crateIdOf(edit.parentId, crateName(edit.playlistId)) + id.slice(edit.playlistId.length)
 }
 
@@ -343,7 +345,10 @@ export function applySeratoEdit(
     if (seratoNameTaken(draft, edit, roots)) return refused('bad-name')
     for (const r of targets)
       draft.write(crateFileOf(r, id), buildSeratoCrate([], crateFileOf(r, id)))
-    return done({ createdId: id })
+    if (!edit.tracks) return done({ createdId: id })
+    const filled = addTracks(draft, { kind: 'add', playlistId: id, tracks: edit.tracks }, roots)
+    if ('refused' in filled && filled.refused !== 'nothing-to-add') return refused(filled.refused)
+    return done({ createdId: id, ...(filled.report && { report: filled.report }) })
   }
   if (edit.kind === 'add' || edit.kind === 'move' || edit.kind === 'remove') {
     const result = editTracks(draft, edit, roots)

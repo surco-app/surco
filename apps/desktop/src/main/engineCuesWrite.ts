@@ -19,6 +19,7 @@ import {
   quickCueSlotBytes,
 } from './engineBlobs'
 import { type EnginePerformance, engineCuesOf } from './engineCues'
+import { applyEngineEdit, type EngineEditDone } from './engineEdits'
 import { assertEngineClosed, withEngineDatabase } from './engineLibrary'
 import { engineDatabasePath } from './enginePlaylists'
 import { planEngineTrackPlaylists } from './engineTrackPlaylists'
@@ -75,7 +76,7 @@ function withHotCues(
 
 interface Planned {
   op: QueueOp
-  write: (db: Database) => void
+  write: (db: Database) => EngineEditDone | undefined
   notices: RekordboxQueueNotice[]
 }
 
@@ -107,13 +108,33 @@ function plan(db: Database, op: QueueOp, libraryDir: string): Plan {
         },
       }
     if (!lists.write) return { outcome: { id: op.id, applied: true, notices: lists.notices } }
-    return { op, write: lists.write, notices: lists.notices }
+    const write = lists.write
+    return {
+      op,
+      write: (target) => {
+        write(target)
+        return undefined
+      },
+      notices: lists.notices,
+    }
+  }
+  if (op.kind === 'edit') {
+    const key = pathKey({ realPath: (p: string) => realpathSync(p) })
+    db.exec('SAVEPOINT engine_edit')
+    let done: EngineEditDone
+    try {
+      done = applyEngineEdit(db, op.edit, libraryDir, key)
+    } finally {
+      db.exec('ROLLBACK TO engine_edit; RELEASE engine_edit')
+    }
+    if (!done.applied) return { outcome: { id: op.id, notices: [], ...done } }
+    return { op, write: (target) => applyEngineEdit(target, op.edit, libraryDir, key), notices: [] }
   }
   const refused = (code: 'cues-changed' | 'cues-invalid'): Plan => ({
     outcome: {
       id: op.id,
       applied: false,
-      notices: [{ code, track: op.kind === 'edit' ? '' : op.label }],
+      notices: [{ code, track: op.label }],
     },
   })
   if (op.kind !== 'cues') return refused('cues-invalid')
@@ -162,6 +183,7 @@ function plan(db: Database, op: QueueOp, libraryDir: string): Plan {
           [Math.round(gridWrite.bpm), gridWrite.bpm, trackId],
         )
       }
+      return undefined
     },
     notices,
   }
@@ -260,7 +282,7 @@ async function writeEngineCuesBatch(
       log.warn(`Engine DJ cues: backup failed: ${(e as Error).message}`)
       return { ok: false, reason: 'backup-failed' }
     }
-    for (const p of planned) p.write(db)
+    const done = new Map(planned.map((p) => [p.op.id, p.write(db)]))
     try {
       await assertEngineClosed(dbPath)
     } catch {
@@ -276,7 +298,12 @@ async function writeEngineCuesBatch(
       return { ok: false, reason: 'write-failed' }
     }
     for (const p of planned)
-      outcomes.set(p.op.id, { id: p.op.id, applied: true, notices: p.notices })
+      outcomes.set(p.op.id, {
+        id: p.op.id,
+        applied: true,
+        notices: p.notices,
+        ...done.get(p.op.id),
+      })
     return { ok: true, wrote: true, outcomes: inOrder(outcomes) }
   } finally {
     db.close()

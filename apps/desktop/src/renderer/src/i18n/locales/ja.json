@@ -119,8 +119,7 @@
       "assumed_one": "{{count}} トラックは長さ不明のため {{minutes}} 分として計算",
       "assumed_other": "{{count}} トラックは長さ不明のため {{minutes}} 分として計算"
     },
-    "playlistName": "{{date}} のセッション",
-    "closed": "セッションを作るには DJ ソフトを閉じてください。開いたままだとプレイリストが中途半端になります"
+    "playlistName": "{{date}} のセッション"
   },
   "pasteTracklist": {
     "title": "「{{name}}」にトラックリストを貼り付け",
@@ -2627,6 +2626,29 @@
         "noSeparator": "コレクションにコピーできる区切り線がありません",
         "writeUnknown": "変更を保存も取り消しもできなかったため、コレクションが変更されている可能性があります。Traktor を開く前に、設定 → 詳細 → コレクションのバックアップ にあるコピー collection.nml.surco-backup で collection.nml を置き換えてください",
         "badName": "この名前はプレイリストには使えません。空にすることも、重複させることもできません"
+      }
+    },
+    "editEngine": {
+      "added_one": "「{{name}}」に {{count}} 件のトラックを追加しました",
+      "added_other": "「{{name}}」に {{count}} 件のトラックを追加しました",
+      "noneAdded": "「{{name}}」にトラックは追加されませんでした",
+      "already_one": "{{count}} 件はすでにプレイリストにありました",
+      "already_other": "{{count}} 件はすでにプレイリストにありました",
+      "notInCollection_one": "{{count}} 件は Engine DJ コレクションにありません",
+      "notInCollection_other": "{{count}} 件は Engine DJ コレクションにありません",
+      "ambiguous_one": "{{count}} 件はコレクションに重複して存在し、Surco はどちらを使うか判断できません",
+      "ambiguous_other": "{{count}} 件はコレクションに重複して存在し、Surco はどちらを使うか判断できません",
+      "refused": {
+        "cancelled": "Engine DJ がまだ開いています。閉じたときに変更が適用されます",
+        "running": "保存前に Engine DJ が開かれました。閉じたときに変更が適用されます",
+        "unreadable": "現在 Surco は Engine DJ のコレクションファイルを変更できないため、何も変更されていません",
+        "backupFailed": "先にコレクションをバックアップできなかったため、何も変更されていません",
+        "writeFailed": "変更を保存できませんでした。コレクションは元のままです",
+        "readOnly": "Engine DJ コレクションは読み取り専用のため、何も変更されていません",
+        "stale": "Engine DJ でプレイリストが変更されました。確認してもう一度お試しください",
+        "noSeparator": "コレクションにコピーできる区切り線がありません",
+        "writeUnknown": "変更を保存も取り消しもできなかったため、コレクションが変更されている可能性があります。Engine DJ を開く前に、設定 → 詳細 → コレクションのバックアップ にあるコピー m.db.surco-backup で m.db を置き換えてください",
+        "badName": "この名前は Engine DJ のプレイリストには使えません。空にしたり、同じフォルダ内の名前と重ねたりはできません"
       }
     },
     "tree": {
