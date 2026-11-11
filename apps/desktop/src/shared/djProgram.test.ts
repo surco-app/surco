@@ -76,6 +76,7 @@ describe('writableInOrder', () => {
       usb: false,
       reach: false,
       windows: false,
+      saveCues: false,
     })
     expect(WRITABLE_PROGRAMS).not.toContain('virtualdj')
     expect(USB_PROGRAMS).not.toContain('virtualdj')

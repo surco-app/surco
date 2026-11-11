@@ -1200,7 +1200,7 @@
         "waiting": "Serato est ouvert. Tes changements seront enregistrés quand tu le fermeras"
       },
       "virtualdj": {
-        "unreadable": "Surco ne lit pas encore les cues de VirtualDJ",
+        "unreadable": "Impossible de lire les cues de VirtualDJ",
         "save": "Enregistrer dans VirtualDJ",
         "unanalysed": "VirtualDJ n’a pas encore analysé ce morceau",
         "queuedStale": "L’enregistrement en attente date d’avant le changement du morceau dans VirtualDJ et n’est plus valable. Tu vois ce qu’a VirtualDJ maintenant.",
@@ -1208,7 +1208,10 @@
         "autoUnreadable": "Surco n’a pas pu lire l’audio de ce morceau",
         "saveAll_one": "Enregistrer {{count}} morceau dans VirtualDJ",
         "saveAll_other": "Enregistrer {{count}} morceaux dans VirtualDJ",
-        "waiting": "VirtualDJ est ouvert. Ses listes peuvent changer quand tu le fermeras"
+        "waiting": "VirtualDJ est ouvert. Ce que tu vois peut changer quand tu le fermeras",
+        "readOnly": "Surco lit seulement les cues de VirtualDJ. Pour les modifier, fais-le dans VirtualDJ",
+        "none": "Ce morceau n’a ni hot cues ni boucles dans VirtualDJ",
+        "loop": "Boucle"
       },
       "traktor": {
         "save": "Enregistrer dans Traktor",

@@ -2740,7 +2740,7 @@ export default function App(): React.JSX.Element {
     enabled: runningNote !== null,
     staleTime: 0,
   })
-  const cuesMarkable = cuesOpen && sourceProgram !== null
+  const cuesMarkable = cuesOpen && sourceProgram !== null && PROGRAM_CAN[sourceProgram].saveCues
   const crateOpen =
     editableOpen &&
     browser.playlist?.id !== RECENTLY_ADDED_ID &&

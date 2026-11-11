@@ -956,7 +956,7 @@ describe('App VirtualDJ tab', () => {
     expect(screen.queryByTestId('source-rail-virtualdj')).toBeNull()
   })
 
-  it('tells the DJ in the VirtualDJ tab that its lists may change while VirtualDJ is open', async () => {
+  it('tells the DJ in the VirtualDJ tab that what it shows may change while VirtualDJ is open', async () => {
     openVirtualdj({
       dj: djReads({
         virtualdj: { running: vi.fn<ProgramReads['running']>().mockResolvedValue(true) },
@@ -965,8 +965,24 @@ describe('App VirtualDJ tab', () => {
     await renderApp()
     fireEvent.click(await screen.findByTestId('source-rail-virtualdj'))
     expect(await screen.findByTestId('source-tree-notice')).toHaveTextContent(
-      'VirtualDJ is open. Its lists may change when you close it',
+      'VirtualDJ is open. What you see may change when you close it',
     )
+  })
+
+  it('offers no Auto mark over several VirtualDJ rows, since Surco cannot save cues there', async () => {
+    openVirtualdj({
+      cues: { trackCues: vi.fn<Api['cues']['trackCues']>().mockResolvedValue(null) },
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-virtualdj'))
+    fireEvent.click(await screen.findByTestId('source-node-Carpeta'))
+    fireEvent.click(await screen.findByTestId('source-node-Carpeta/Dentro'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[0])
+    fireEvent.click(rows[1], { metaKey: true })
+    await waitFor(() => expect(screen.getByTestId('cues-single-only')).toBeInTheDocument())
+    expect(screen.queryByTestId('cues-auto-mark-all')).toBeNull()
   })
 })
 

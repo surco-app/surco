@@ -33,6 +33,7 @@ import type { CuesOp } from './rekordboxQueueOps'
 import { seratoCueSource } from './seratoCueSource'
 import { traktorCueSource } from './traktorCueSource'
 import { readTraktorTrackCues } from './traktorCues'
+import { virtualdjCueSource } from './virtualdjCueSource'
 
 function registerWithSources(host: {
   collection: () => string
@@ -48,6 +49,7 @@ function registerWithSources(host: {
   engine?: Parameters<typeof engineCueSource>[0]
   traktor?: Omit<Parameters<typeof traktorCueSource>[0], 'fine'>
   serato?: Omit<Parameters<typeof seratoCueSource>[0], 'words' | 'fine'>
+  virtualdjDir?: string
 }): void {
   registerCuesIpc({
     collection: host.collection,
@@ -64,7 +66,12 @@ function registerWithSources(host: {
       serato: host.serato
         ? seratoCueSource({ ...host.serato, words: host.words, fine: host.fine }, host.collection)
         : null,
-      virtualdj: null,
+      virtualdj: host.virtualdjDir
+        ? virtualdjCueSource(
+            { dir: () => host.virtualdjDir ?? '', words: host.words },
+            host.collection,
+          )
+        : null,
     },
   })
 }
@@ -434,6 +441,38 @@ describe('registerCuesIpc', () => {
     expect(applyQuietly).not.toHaveBeenCalled()
     expect(beginMoment).not.toHaveBeenCalled()
     expect(add).not.toHaveBeenCalled()
+  })
+
+  it('refuses to save cues on a VirtualDJ track even with its cue source wired, since Surco only reads VirtualDJ, and writes nothing else from the call', async () => {
+    const enqueue = vi.fn<RekordboxQueue['enqueue']>(() => true)
+    const applyQuietly = quietly()
+    const beginMoment = vi.fn()
+    registerWithSources({
+      collection: () => '/c/master.db',
+      queue: queue({ enqueue }),
+      applyQuietly,
+      beginMoment,
+      flow: () => MY_FLOW,
+      beatGrid: async () => null,
+      words: async () => null,
+      provisional: { add: vi.fn() },
+      twins: async () => ({}),
+      virtualdjDir: join(__dirname, 'virtualdjFixtures'),
+    })
+    const vdj = 'virtualdj:/Music/VirtualDJ Pruebas/Pray.mp3'
+    expect((await handler('cues:trackCues')({}, vdj)) as TrackCues).toMatchObject({
+      contentId: vdj,
+    })
+    const wanted = [{ ms: 1000, kind: 0, color: null }]
+    await expect(
+      handler('cues:save')({}, [
+        { contentId: '103', path: '/m/a.wav', label: 'a', wanted, fingerprint: 'f' },
+        { contentId: vdj, path: '/m/v.mp3', label: 'v', wanted, fingerprint: 'f' },
+      ]),
+    ).rejects.toThrow('virtualdj cues are read only')
+    expect(enqueue).not.toHaveBeenCalled()
+    expect(applyQuietly).not.toHaveBeenCalled()
+    expect(beginMoment).not.toHaveBeenCalled()
   })
 
   it('queues several tracks together and applies once, so master.db is written in one batch', async () => {

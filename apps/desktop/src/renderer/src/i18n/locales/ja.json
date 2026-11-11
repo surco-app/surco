@@ -1200,7 +1200,7 @@
         "waiting": "Serato が開いています。変更は Serato を閉じたときに保存されます"
       },
       "virtualdj": {
-        "unreadable": "Surco はまだ VirtualDJ のキューを読み取れません",
+        "unreadable": "VirtualDJ からキューを読み取れませんでした",
         "save": "VirtualDJ に保存",
         "unanalysed": "VirtualDJ はまだこのトラックを解析していません",
         "queuedStale": "保留中の保存は VirtualDJ でトラックが変更される前のもので、すでに古くなっています。現在 VirtualDJ にある内容を表示しています。",
@@ -1208,7 +1208,10 @@
         "autoUnreadable": "Surco はこのトラックの音声を読み取れませんでした",
         "saveAll_one": "{{count}} トラックを VirtualDJ に保存",
         "saveAll_other": "{{count}} トラックを VirtualDJ に保存",
-        "waiting": "VirtualDJ が開いています。閉じるとリストが変わることがあります"
+        "waiting": "VirtualDJ が開いています。閉じると表示内容が変わることがあります",
+        "readOnly": "Surco は VirtualDJ のキューを読むだけです。変更は VirtualDJ で行ってください",
+        "none": "このトラックには VirtualDJ のホットキューもループもありません",
+        "loop": "ループ"
       },
       "traktor": {
         "save": "Traktor に保存",

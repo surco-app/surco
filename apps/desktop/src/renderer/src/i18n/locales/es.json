@@ -1200,7 +1200,7 @@
         "waiting": "Serato está abierto. Tus cambios se guardarán cuando lo cierres"
       },
       "virtualdj": {
-        "unreadable": "Surco aún no lee los cues de VirtualDJ",
+        "unreadable": "No se pudieron leer los cues de VirtualDJ",
         "save": "Guardar en VirtualDJ",
         "unanalysed": "VirtualDJ aún no ha analizado esta pista",
         "queuedStale": "El guardado pendiente se hizo antes de que la pista cambiara en VirtualDJ y ya no vale. Ves lo que tiene VirtualDJ ahora.",
@@ -1208,7 +1208,10 @@
         "autoUnreadable": "Surco no ha podido leer el audio de esta pista",
         "saveAll_one": "Guardar {{count}} pista en VirtualDJ",
         "saveAll_other": "Guardar {{count}} pistas en VirtualDJ",
-        "waiting": "VirtualDJ está abierto. Sus listas pueden cambiar cuando lo cierres"
+        "waiting": "VirtualDJ está abierto. Lo que ves puede cambiar cuando lo cierres",
+        "readOnly": "Surco solo lee los cues de VirtualDJ. Para cambiarlos, hazlo en VirtualDJ",
+        "none": "Esta pista no tiene hot cues ni loops en VirtualDJ",
+        "loop": "Loop"
       },
       "traktor": {
         "save": "Guardar en Traktor",

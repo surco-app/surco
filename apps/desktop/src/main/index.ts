@@ -279,6 +279,7 @@ import {
 } from './verifyMusic'
 import type { FlushOutcome, TraktorWrite } from './verifyRegistry'
 import { withRecordedRun } from './verifyRun'
+import { virtualdjCueSource } from './virtualdjCueSource'
 import { virtualdjRead } from './virtualdjPlaylistsIpc'
 import { onWatchedFilesChanged } from './watchedFiles'
 import { dirRoots, FolderWatcher } from './watcher'
@@ -1552,7 +1553,10 @@ function registerIpc(): void {
         },
         rekordboxCollectionPath,
       ),
-      virtualdj: null,
+      virtualdj: virtualdjCueSource(
+        { dir: virtualdjDir, words: cachedCueWaveWords, fine: cachedCueWaveFine },
+        rekordboxCollectionPath,
+      ),
     },
   })
   registerCueTasteIpc({

@@ -6,13 +6,19 @@ import { isVirtualdjContent } from './virtualdjContent'
 export type DjProgram = 'rekordbox' | 'traktor' | 'engine' | 'serato' | 'virtualdj'
 
 export const PROGRAM_CAN = {
-  rekordbox: { write: true, usb: true, reach: true, windows: true },
-  traktor: { write: true, usb: true, reach: true, windows: true },
-  engine: { write: true, usb: true, reach: true, windows: true },
-  serato: { write: false, usb: true, reach: true, windows: true },
-  virtualdj: { write: false, usb: false, reach: false, windows: false },
+  rekordbox: { write: true, usb: true, reach: true, windows: true, saveCues: true },
+  traktor: { write: true, usb: true, reach: true, windows: true, saveCues: true },
+  engine: { write: true, usb: true, reach: true, windows: true, saveCues: true },
+  serato: { write: false, usb: true, reach: true, windows: true, saveCues: true },
+  virtualdj: { write: false, usb: false, reach: false, windows: false, saveCues: false },
 } as const satisfies {
-  [P in DjProgram]: { write: boolean; usb: boolean; reach: boolean; windows: boolean }
+  [P in DjProgram]: {
+    write: boolean
+    usb: boolean
+    reach: boolean
+    windows: boolean
+    saveCues: boolean
+  }
 }
 
 type ProgramsThatCan<K extends 'write' | 'usb' | 'reach'> = {

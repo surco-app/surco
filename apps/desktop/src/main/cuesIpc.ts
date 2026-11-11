@@ -1,7 +1,13 @@
 import { randomUUID } from 'node:crypto'
 import { BrowserWindow, ipcMain } from 'electron'
 import type { CueFlow } from '../shared/cueFlows'
-import { CUE_PROGRAMS, type CueProgram, isWritable, programOf } from '../shared/djProgram'
+import {
+  CUE_PROGRAMS,
+  type CueProgram,
+  isWritable,
+  PROGRAM_CAN,
+  programOf,
+} from '../shared/djProgram'
 import type { DropInput } from '../shared/dropDetect'
 import type { GridFit } from '../shared/gridEdit'
 import type { GridVerdict } from '../shared/gridVerdict'
@@ -94,6 +100,7 @@ export function registerCuesIpc(host: {
     for (const req of reqs) {
       const program = programOf(req.contentId)
       if (!host.sources[program]) throw new Error(`${program} has no cue source`)
+      if (!PROGRAM_CAN[program].saveCues) throw new Error(`${program} cues are read only`)
     }
     const targets = CUE_PROGRAMS.flatMap((program) => {
       const target = host.sources[program]
