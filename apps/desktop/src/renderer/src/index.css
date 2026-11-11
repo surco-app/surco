@@ -1321,3 +1321,9 @@ button:hover > .process-fill {
     outline-offset: -2px;
   }
 }
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--duration-state);
+  animation-timing-function: var(--ease-standard);
+}
