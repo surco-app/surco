@@ -17,6 +17,7 @@ import {
 } from '../lib/rekordboxPlaylists'
 import { SOURCE_PROGRAMS, SOURCE_READ } from '../lib/sourcePrograms'
 import type { TrackItem } from '../types'
+import { useProgramsAvailable } from './useProgramsAvailable'
 
 const OFFERED = {
   rekordbox: 'rekordboxPlaylistsFieldOffered',
@@ -26,12 +27,7 @@ const OFFERED = {
 } as const satisfies Record<LibraryProgram, keyof Settings>
 
 export function useLibraryAvailable(library: PlaylistLibrary): boolean {
-  const { data = false } = useQuery({
-    queryKey: ['source-available', library],
-    queryFn: SOURCE_READ[library].available,
-    staleTime: Number.POSITIVE_INFINITY,
-  })
-  return data
+  return useProgramsAvailable()[library] ?? false
 }
 
 export function useRekordboxPlaylistTree(

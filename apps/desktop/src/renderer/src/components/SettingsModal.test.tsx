@@ -39,10 +39,10 @@ import { FIELD_DEFS } from '../lib/fields'
 import { SETTINGS_SEARCH_INDEX } from '../lib/settingsSearchIndex'
 import { SETTINGS_TABS, type SettingsTab } from '../lib/settingsTabs'
 
+import { DONATE_URL, SettingsModal } from './SettingsModal'
+
 const render = (ui: ReactElement) =>
   renderPlain(<QueryClientProvider client={new QueryClient()}>{ui}</QueryClientProvider>)
-
-import { DONATE_URL, SettingsModal } from './SettingsModal'
 
 afterEach(cleanup)
 
@@ -1506,7 +1506,9 @@ describe('SettingsModal search tab layout', () => {
   it('puts no line under a title that only repeats it', () => {
     openSearch(['discogs'])
     expect(screen.queryByText('Catalogs the editor searches.')).toBeNull()
-    expect(screen.queryByText('Limit Discogs and MusicBrainz results to these formats.')).toBeNull()
+    expect(
+      screen.queryByText('Limit Discogs and MusicBrainz results to these formats.'),
+    ).toBeNull()
     expect(screen.queryByText(/How many search results to show/)).toBeNull()
     expect(screen.getByText(i18n.t('settings.maxResultsHint'))).toBeInTheDocument()
   })

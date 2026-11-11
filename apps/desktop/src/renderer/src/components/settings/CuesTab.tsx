@@ -77,7 +77,7 @@ export function CuesTab({
   }, [renaming])
   // The rules serve every library, but CALLs only exist in rekordbox and Traktor paints a
   // cue by its type: where Engine DJ or Traktor is installed, the tab says what reaches them.
-  const available = useProgramsAvailable()
+  const available = useProgramsAvailable({ refetchOnMount: 'always' })
   const foundBy = Object.fromEntries(DJ_PROGRAMS.map((p) => [p, available[p] ?? false])) as Record<
     DjProgram,
     boolean

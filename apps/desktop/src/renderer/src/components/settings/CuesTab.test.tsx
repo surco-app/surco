@@ -214,6 +214,29 @@ describe('CuesTab', () => {
     expect(screen.getByTestId('settings-cue-flow-to-serato-missing')).toBeInTheDocument()
   })
 
+  it('probes the destinations again each time the tab opens, so a library saved in Settings shows as found', async () => {
+    const traktor = vi.fn<ProgramReads['available']>(async () => false)
+    installApi({ dj: djReads({ traktor: { available: traktor } }) })
+    const client = new QueryClient()
+    const tab = () => (
+      <QueryClientProvider client={client}>
+        <CuesTab
+          synced={{ cueFlows: KEPT, activeCueFlow: 'mine' } as unknown as SyncedDraft}
+          patch={() => {}}
+          rekordboxCollection=""
+        />
+      </QueryClientProvider>
+    )
+    const first = render(tab())
+    expect(await screen.findByTestId('settings-cue-flow-to-traktor-missing')).toBeInTheDocument()
+    first.unmount()
+    traktor.mockImplementation(async () => true)
+    render(tab())
+    await waitFor(() =>
+      expect(screen.queryByTestId('settings-cue-flow-to-traktor-missing')).not.toBeInTheDocument(),
+    )
+  })
+
   it('marks the point with a CALL by default and lets a DJ who does not mark it turn that off, the preview following', () => {
     render(<Harness />)
     expect(screen.getByTestId('cue-flow-mark-point')).toBeChecked()
