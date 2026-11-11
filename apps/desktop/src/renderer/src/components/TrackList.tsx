@@ -133,6 +133,8 @@ interface Props {
     onMove: (keys: string[], beforeKey: string | null) => void
     onRemoveSeparator: (key: string) => void
   }
+  // Rows let go on the list while reordering is off, so the reason is told when it is wanted.
+  onReorderBlocked?: () => void
 }
 
 export type MenuState = { track: TrackItem; x: number; y: number }
@@ -1119,6 +1121,7 @@ export const TrackList = memo(function TrackList({
   separatorBefore,
   trailingSeparators,
   reorder,
+  onReorderBlocked,
 }: Props): React.JSX.Element {
   const [menu, setMenu] = useState<MenuState | null>(null)
   // The keyboard ✕ (plain ⌫/Supr on a focused row). Removal deselects, which would
@@ -1191,7 +1194,11 @@ export const TrackList = memo(function TrackList({
     )
   }
   const onReorderDrop = (e: React.DragEvent): void => {
-    if (!reorder) return
+    if (!reorder) {
+      if (onReorderBlocked && ownRowsDropped(e, (id) => tracks.find((t) => t.id === id)?.inputPath))
+        onReorderBlocked()
+      return
+    }
     const separator = isReorderDrag(e) ? e.dataTransfer.getData(REORDER_TYPE) : null
     // Only the dragged rows coming back count: Finder files let go here after a drag-out
     // that ended elsewhere are an import, left to the window.

@@ -3011,6 +3011,12 @@ describe('App source playlists', () => {
     fireEvent.dragOver(row, { dataTransfer: fakeDataTransfer(), clientY: -1 })
     expect(screen.queryByTestId('reorder-line')).not.toBeInTheDocument()
   }
+  const tryToReorder = () => {
+    const dt = fakeDataTransfer()
+    fireEvent.dragStart(rowWrapper(0), { dataTransfer: dt })
+    fireEvent.dragOver(rowWrapper(0), { dataTransfer: dt, clientY: 1 })
+    fireEvent.drop(rowWrapper(0), { dataTransfer: dt })
+  }
 
   async function openFactory(over: Record<string, unknown> = {}) {
     setApi({
@@ -3115,13 +3121,16 @@ describe('App source playlists', () => {
   })
 
   // Sorted by artist, a drop between two rows means nothing in the playlist's own order.
-  it('does not reorder and says why when the list is not in playlist order', async () => {
+  // The reason is told when a drop is tried, not pinned above every sorted list: a DJ who
+  // sorts to look, not to reorder, never needs it.
+  it('does not reorder and says why only when a drop is tried out of playlist order', async () => {
     await openFactory()
     fireEvent.click(screen.getByTestId('track-sort'))
     fireEvent.click(screen.getByTestId('track-sort-option-artist'))
-    await screen.findByTestId('reorder-hint')
     expectNoReorderLine()
-    expect(screen.getByTestId('reorder-hint')).toHaveTextContent(
+    expect(screen.queryByTestId('reorder-hint')).not.toBeInTheDocument()
+    tryToReorder()
+    expect(await screen.findByTestId('reorder-hint')).toHaveTextContent(
       'To reorder, sort by “Order” and clear the search and filters',
     )
   })
@@ -3477,7 +3486,6 @@ describe('App source playlists', () => {
     await openFactory()
     fireEvent.click(screen.getByTestId('track-sort'))
     fireEvent.click(screen.getByTestId('track-sort-option-artist'))
-    await screen.findByTestId('reorder-hint')
     const bravo = screen
       .getAllByTestId('track-row')
       .find((r) => r.textContent?.includes('Bravo')) as HTMLElement
@@ -3825,8 +3833,10 @@ describe('App source playlists', () => {
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
     fireEvent.click(screen.getByTestId('quality-filter-section-format'))
     fireEvent.click(screen.getByTestId('quality-filter-ext:MP3'))
-    await screen.findByTestId('reorder-hint')
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
     expectNoReorderLine()
+    tryToReorder()
+    await screen.findByTestId('reorder-hint')
   })
 
   // Music is read-only: its rows offer no playlist edits and its tree no create buttons,
@@ -4083,7 +4093,7 @@ describe('App source playlists', () => {
   it('does not reorder while a search narrows the playlist', async () => {
     await openFactory()
     fireEvent.change(screen.getByTestId('track-search'), { target: { value: 'Alpha' } })
-    await screen.findByTestId('reorder-hint')
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
     expectNoReorderLine()
   })
 

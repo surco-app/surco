@@ -2993,6 +2993,15 @@ export default function App(): React.JSX.Element {
       reorderEnabled ? { onMove: moveInRekordbox, onRemoveSeparator: removeSeparator } : undefined,
     [reorderEnabled, moveInRekordbox, removeSeparator],
   )
+  const tellReorderBlocked = useStableCallback((): void => {
+    pushToast(store, {
+      key: 'reorder-hint',
+      tone: 'neutral',
+      message: tr('sources.reorder.hint'),
+      duration: 5000,
+      testid: 'reorder-hint',
+    })
+  })
   // The right-clicked row acts with the selection it belongs to through App's existing
   // menuTargets (the one remove and trash use). Added tracks therefore go in working-list
   // order, which is the order they were loaded in.
@@ -3867,14 +3876,6 @@ export default function App(): React.JSX.Element {
                                 }}
                               />
                             )}
-                          {crateOpen && !reorderEnabled && (
-                            <p
-                              data-testid="reorder-hint"
-                              className="px-4 pt-1 text-label text-fg-faint"
-                            >
-                              {tr('sources.reorder.hint')}
-                            </p>
-                          )}
                           {visibleTracks.length === 0 ? (
                             <div className="flex flex-col items-center gap-3 p-6 text-center">
                               <p className="text-xs text-fg-faint">{tr('sidebar.search.empty')}</p>
@@ -3922,6 +3923,11 @@ export default function App(): React.JSX.Element {
                                   : undefined
                               }
                               reorder={reorder}
+                              onReorderBlocked={
+                                crateOpen && editCan('move') && !reorderEnabled
+                                  ? tellReorderBlocked
+                                  : undefined
+                              }
                               outsideFilter={outsideFilterIds}
                               noteOf={gridNoteOf}
                               onVisible={onListRowVisible}
