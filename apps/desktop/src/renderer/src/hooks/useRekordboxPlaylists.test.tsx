@@ -5,7 +5,7 @@ import type React from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import type { Settings } from '../../../shared/types'
-import { installApi } from '../test/api'
+import { djReads, installApi, type ProgramReads } from '../test/api'
 import type { TrackItem } from '../types'
 import {
   useLibraryAvailable,
@@ -23,15 +23,19 @@ const wrapper = ({ children }: { children: React.ReactNode }) => (
 describe('useRekordboxPlaylists', () => {
   it('turns the tree into options with their folder paths', async () => {
     installApi({
-      loadRekordboxTree: vi.fn<Api['loadRekordboxTree']>(async () => [
-        {
-          id: '1',
-          name: 'BOLOS',
-          kind: 'folder',
-          count: 1,
-          children: [{ id: '2', name: 'Verano', kind: 'playlist', count: 3 }],
+      dj: djReads({
+        rekordbox: {
+          tree: vi.fn<ProgramReads['tree']>(async () => [
+            {
+              id: '1',
+              name: 'BOLOS',
+              kind: 'folder',
+              count: 1,
+              children: [{ id: '2', name: 'Verano', kind: 'playlist', count: 3 }],
+            },
+          ]),
         },
-      ]),
+      }),
     })
     const { result } = renderHook(() => useRekordboxPlaylistOptions(true), { wrapper })
     await waitFor(() =>
@@ -49,24 +53,28 @@ describe('useRekordboxPlaylists', () => {
         children: [{ id: '2', name: 'Verano', kind: 'playlist' as const, count: 3 }],
       },
     ]
-    installApi({ loadRekordboxTree: vi.fn<Api['loadRekordboxTree']>(async () => tree) })
+    installApi({
+      dj: djReads({ rekordbox: { tree: vi.fn<ProgramReads['tree']>(async () => tree) } }),
+    })
     const { result } = renderHook(() => useRekordboxPlaylistTree(true), { wrapper })
     await waitFor(() => expect(result.current).toEqual(tree))
   })
 
   it('has no options while the tree has not arrived, so the field is not drawn half-known', () => {
     installApi({
-      loadRekordboxTree: vi.fn<Api['loadRekordboxTree']>(() => new Promise(() => {})),
+      dj: djReads({
+        rekordbox: { tree: vi.fn<ProgramReads['tree']>(() => new Promise(() => {})) },
+      }),
     })
     const { result } = renderHook(() => useRekordboxPlaylistOptions(true), { wrapper })
     expect(result.current).toBeUndefined()
   })
 
   it('asks main once for every path, sorted and without repeats, never one read per row', async () => {
-    const rekordboxMembership = vi.fn<Api['rekordboxMembership']>(async () => ({
+    const rekordboxMembership = vi.fn<ProgramReads['membership']>(async () => ({
       '/m/a.wav': ['3000'],
     }))
-    installApi({ rekordboxMembership })
+    installApi({ dj: djReads({ rekordbox: { membership: rekordboxMembership } }) })
     const { result } = renderHook(
       () => useRekordboxMembership(['/m/b.wav', '/m/a.wav', '/m/b.wav'], true),
       { wrapper },
@@ -77,8 +85,8 @@ describe('useRekordboxPlaylists', () => {
   })
 
   it('asks nothing while disabled', () => {
-    const rekordboxMembership = vi.fn<Api['rekordboxMembership']>(async () => ({}))
-    installApi({ rekordboxMembership })
+    const rekordboxMembership = vi.fn<ProgramReads['membership']>(async () => ({}))
+    installApi({ dj: djReads({ rekordbox: { membership: rekordboxMembership } }) })
     const { result } = renderHook(() => useRekordboxMembership(['/m/a.wav'], false), { wrapper })
     expect(rekordboxMembership).not.toHaveBeenCalled()
     expect(result.current).toBeUndefined()
@@ -131,12 +139,17 @@ describe('useRekordboxPlaylists', () => {
 
 describe('the Traktor and Engine DJ playlists', () => {
   it('reads each library from its own app', async () => {
-    const loadTraktorTree = vi.fn<Api['loadTraktorTree']>(async () => [
+    const loadTraktorTree = vi.fn<ProgramReads['tree']>(async () => [
       { id: 'fri', name: 'Friday', kind: 'playlist', count: 1 },
     ])
-    const engineMembership = vi.fn<Api['engineMembership']>(async () => ({ '/m/a.wav': ['7'] }))
-    const traktorAvailable = vi.fn<Api['traktorAvailable']>(async () => true)
-    installApi({ loadTraktorTree, engineMembership, traktorAvailable })
+    const engineMembership = vi.fn<ProgramReads['membership']>(async () => ({ '/m/a.wav': ['7'] }))
+    const traktorAvailable = vi.fn<ProgramReads['available']>(async () => true)
+    installApi({
+      dj: djReads({
+        traktor: { tree: loadTraktorTree, available: traktorAvailable },
+        engine: { membership: engineMembership },
+      }),
+    })
     const options = renderHook(() => useRekordboxPlaylistOptions(true, 'traktor'), { wrapper })
     const membership = renderHook(() => useRekordboxMembership(['/m/a.wav'], true, 'engine'), {
       wrapper,
@@ -230,17 +243,23 @@ describe('usePlaylistsSpec', () => {
   const fresh = { id: 't1', inputPath: '/m/new.flac', meta: {} } as TrackItem
   function spec(library: 'engine' | 'traktor', canSave = true) {
     installApi({
-      engineAvailable: vi.fn<Api['engineAvailable']>(async () => true),
-      traktorAvailable: vi.fn<Api['traktorAvailable']>(async () => true),
+      dj: djReads({
+        engine: {
+          available: vi.fn<ProgramReads['available']>(async () => true),
+          tree: vi.fn<ProgramReads['tree']>(async () => [
+            { id: '7', name: 'Friday', kind: 'playlist', count: 1 },
+          ]),
+          membership: vi.fn<ProgramReads['membership']>(async () => ({})),
+        },
+        traktor: {
+          available: vi.fn<ProgramReads['available']>(async () => true),
+          tree: vi.fn<ProgramReads['tree']>(async () => [
+            { id: 'u1', name: 'Friday', kind: 'playlist', count: 1 },
+          ]),
+          membership: vi.fn<ProgramReads['membership']>(async () => ({})),
+        },
+      }),
       traktorCanSave: vi.fn<Api['traktorCanSave']>(async () => canSave),
-      loadEngineTree: vi.fn<Api['loadEngineTree']>(async () => [
-        { id: '7', name: 'Friday', kind: 'playlist', count: 1 },
-      ]),
-      loadTraktorTree: vi.fn<Api['loadTraktorTree']>(async () => [
-        { id: 'u1', name: 'Friday', kind: 'playlist', count: 1 },
-      ]),
-      engineMembership: vi.fn<Api['engineMembership']>(async () => ({})),
-      traktorMembership: vi.fn<Api['traktorMembership']>(async () => ({})),
     })
     return renderHook(
       () =>

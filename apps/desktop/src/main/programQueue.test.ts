@@ -45,7 +45,6 @@ function setup(over: Partial<ProgramQueueSpec<RekordboxRepoint>> = {}) {
   }
   const spec: ProgramQueueSpec<RekordboxRepoint> = {
     program: 'engine',
-    appliedChannel: 'engine:cueQueueApplied',
     queue: {
       store: { read: () => null, write: () => {}, setAside: () => {} },
       collection: () => collection.path,
@@ -61,7 +60,7 @@ function setup(over: Partial<ProgramQueueSpec<RekordboxRepoint>> = {}) {
 }
 
 const appliedBroadcasts = (broadcast: ReturnType<typeof setup>['deps']['broadcast']) =>
-  broadcast.mock.calls.filter(([channel]) => channel === 'engine:cueQueueApplied')
+  broadcast.mock.calls.filter(([channel]) => channel === 'dj:cueQueueApplied')
 
 beforeEach(() => vi.useFakeTimers())
 afterEach(() => vi.useRealTimers())
@@ -130,12 +129,13 @@ describe('createProgramQueue', () => {
     expect(deps.settled).toHaveBeenCalledTimes(1)
   })
 
-  it("announces on the program's own channel and settles the program's checks with the result", () => {
+  it("announces on the shared channel under the program's name and settles the program's checks with the result", () => {
     const { pq, deps } = setup()
     const result = { status: 'refused', reason: 'write-failed' } as const
     pq.announceApplied(result)
-    expect(deps.broadcast).toHaveBeenCalledWith('engine:cueQueueApplied', {
-      refused: 'write-failed',
+    expect(deps.broadcast).toHaveBeenCalledWith('dj:cueQueueApplied', {
+      program: 'engine',
+      value: { refused: 'write-failed' },
     })
     expect(deps.settled).toHaveBeenCalledWith('engine', result)
   })
@@ -175,13 +175,16 @@ describe('createProgramQueue', () => {
   })
 
   it('files everything under the program its spec names, so one queue never answers for another', async () => {
-    const { pq, deps } = setup({ program: 'traktor', appliedChannel: 'traktor:cueQueueApplied' })
+    const { pq, deps } = setup({ program: 'traktor' })
     expect(pq.program).toBe('traktor')
     pq.queue.enqueue([], [REPOINT])
     pq.watch.poke()
     await vi.advanceTimersByTimeAsync(0)
     expect(deps.moments.begin).toHaveBeenCalledWith('queue', ['traktor'])
-    expect(deps.broadcast).toHaveBeenCalledWith('traktor:cueQueueApplied', expect.anything())
+    expect(deps.broadcast).toHaveBeenCalledWith('dj:cueQueueApplied', {
+      program: 'traktor',
+      value: expect.anything(),
+    })
     expect(deps.settled).toHaveBeenCalledWith(
       'traktor',
       expect.objectContaining({ status: 'applied' }),
@@ -214,7 +217,6 @@ describe('createProgramQueue', () => {
     })
     const { pq, deps, running } = setup({
       program: 'serato',
-      appliedChannel: 'serato:cueQueueApplied',
       queue: {
         store: { read: () => null, write: () => {}, setAside: () => {} },
         collection: () => '/Users/dj/Music/_Serato_',
@@ -242,10 +244,10 @@ describe('createProgramQueue', () => {
     running.now = false
     await vi.advanceTimersByTimeAsync(5000)
     expect(pq.queue.isEmpty()).toBe(true)
-    expect(deps.broadcast).toHaveBeenCalledWith(
-      'serato:cueQueueApplied',
-      expect.objectContaining({ tracks: 1 }),
-    )
+    expect(deps.broadcast).toHaveBeenCalledWith('dj:cueQueueApplied', {
+      program: 'serato',
+      value: expect.objectContaining({ tracks: 1 }),
+    })
     expect(deps.moments.begin).not.toHaveBeenCalled()
     expect(deps.settled).not.toHaveBeenCalled()
     expect(deps.processes.engine.isRunning).not.toHaveBeenCalled()

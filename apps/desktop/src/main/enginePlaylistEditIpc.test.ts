@@ -1,4 +1,4 @@
-import { BrowserWindow, ipcMain } from 'electron'
+import { BrowserWindow, type WebContents } from 'electron'
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({
@@ -7,16 +7,10 @@ vi.mock('electron', () => ({
 }))
 
 import type { PlaylistEditMode, RekordboxPlaylistEdit } from '../shared/types'
-import { registerEnginePlaylistEditIpc } from './enginePlaylistEditIpc'
+import { engineEdit } from './enginePlaylistEditIpc'
 import { engineDatabasePath } from './enginePlaylists'
 import type { QueueApply, RekordboxQueue } from './rekordboxQueue'
 import type { EditOp, QueueOp } from './rekordboxQueueOps'
-
-function handler(channel: string): (...args: unknown[]) => unknown {
-  const call = [...vi.mocked(ipcMain.handle).mock.calls].reverse().find(([n]) => n === channel)
-  if (!call) throw new Error(`${channel} not registered`)
-  return call[1] as (...args: unknown[]) => unknown
-}
 
 const created = (op: QueueOp, closed: boolean): QueueApply =>
   closed
@@ -60,9 +54,9 @@ function registerWith({
     onWaiting: vi.fn(),
     beginLoose: vi.fn(),
   }
-  registerEnginePlaylistEditIpc(host)
-  const handle = (edit: RekordboxPlaylistEdit, label?: string, mode?: PlaylistEditMode) =>
-    handler('engine:edit')({ sender: 'sender' }, edit, label, mode)
+  const edit = engineEdit(host)
+  const handle = (e: RekordboxPlaylistEdit, label?: string, mode?: PlaylistEditMode) =>
+    edit.save(e, label, 'sender' as unknown as WebContents, mode)
   return { handle, queue, queued, host }
 }
 
@@ -73,7 +67,7 @@ const CREATE: RekordboxPlaylistEdit = {
   folder: false,
 }
 
-describe('registerEnginePlaylistEditIpc', () => {
+describe('engineEdit', () => {
   it('in queue mode leaves the edit waiting for Engine DJ to close without asking, and names the waiting op so its result can be matched later', async () => {
     const { handle, queue, queued, host } = registerWith({ running: true })
     const answer = await handle(CREATE, 'Session', 'queue')

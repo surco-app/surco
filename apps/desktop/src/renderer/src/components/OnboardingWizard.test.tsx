@@ -5,21 +5,22 @@ import { act, cleanup, fireEvent, render, screen, within } from '@testing-librar
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 // OnboardingWizard's tree reads window.api.platform at module load, so stub it first.
-vi.hoisted(() => {
+const detected = vi.hoisted(() => {
+  const found: Record<string, () => Promise<boolean>> = {}
   ;(globalThis.window as unknown as { api: unknown }).api = {
     platform: 'darwin',
     // The wizard asks both on mount to decide whether the collections step exists at all.
     rekordboxCollection: async () => '',
     detectTraktorNmlPath: async () => null,
-    seratoAvailable: async () => false,
-    engineAvailable: async () => false,
+    dj: { available: async (program: string) => (found[program] ?? (async () => false))() },
   }
+  return found
 })
 
 import { SEARCH_PROVIDERS } from '../../../shared/defaults'
 import { DEFAULT_EDITOR_SECTIONS } from '../../../shared/editorSections'
-import { DEFAULT_SESSION_WIZARD } from '../../../shared/sessionSettings'
 import { FORMAT_SETTINGS } from '../../../shared/outputFormats'
+import { DEFAULT_SESSION_WIZARD } from '../../../shared/sessionSettings'
 import type { Settings } from '../../../shared/types'
 import i18n from '../i18n'
 import { OnboardingWizard } from './OnboardingWizard'
@@ -347,17 +348,16 @@ describe('OnboardingWizard destination', () => {
   // to reject unhandled, which the app reports as a red error over the very first screen.
   // A failed probe just means no collections step.
   it('treats a failed library detection as no collections found', async () => {
-    const api = window as unknown as { api: { engineAvailable: () => Promise<boolean> } }
     const unhandled = vi.fn()
     process.on('unhandledRejection', unhandled)
-    api.api.engineAvailable = () => Promise.reject(new Error('EACCES'))
+    detected.engine = () => Promise.reject(new Error('EACCES'))
     try {
       render(<OnboardingWizard settings={settings} onFinish={vi.fn()} />)
       await new Promise((r) => setTimeout(r, 0))
       expect(unhandled).not.toHaveBeenCalled()
       expect(screen.getByText(i18n.t('onboarding.step', { current: 1, total: 5 }))).toBeVisible()
     } finally {
-      api.api.engineAvailable = async () => false
+      detected.engine = async () => false
       process.off('unhandledRejection', unhandled)
     }
   })
@@ -442,8 +442,7 @@ describe('OnboardingWizard destination', () => {
   )
 
   it('asks for the Engine library and the folder for an update-only Engine user', async () => {
-    const api = window as unknown as { api: { engineAvailable: () => Promise<boolean> } }
-    api.api.engineAvailable = async () => true
+    detected.engine = async () => true
     try {
       render(
         <OnboardingWizard
@@ -458,7 +457,7 @@ describe('OnboardingWizard destination', () => {
       expect(await screen.findByTestId('onboarding-engine-library')).toBeInTheDocument()
       expect(screen.getByTestId('onboarding-dj-folder')).toHaveTextContent('/out')
     } finally {
-      api.api.engineAvailable = async () => false
+      detected.engine = async () => false
     }
   })
 
@@ -557,11 +556,10 @@ describe('OnboardingWizard destination', () => {
     const api = window as unknown as {
       api: {
         rekordboxCollection: () => Promise<string>
-        engineAvailable: () => Promise<boolean>
       }
     }
     api.api.rekordboxCollection = async () => ''
-    api.api.engineAvailable = async () => true
+    detected.engine = async () => true
     try {
       const onFinish = vi.fn()
       render(<OnboardingWizard settings={settings} onFinish={onFinish} />)
@@ -580,7 +578,7 @@ describe('OnboardingWizard destination', () => {
       finishWizard()
       expect(onFinish).toHaveBeenCalledWith(expect.objectContaining({ syncEngineDj: true }))
     } finally {
-      api.api.engineAvailable = async () => false
+      detected.engine = async () => false
     }
   })
 
@@ -631,9 +629,9 @@ describe('OnboardingWizard destination', () => {
 
   it('asks for the Engine library under Engine', async () => {
     const api = window as unknown as {
-      api: { engineAvailable: () => Promise<boolean>; pickEngineLibraryDir?: () => Promise<string> }
+      api: { pickEngineLibraryDir?: () => Promise<string> }
     }
-    api.api.engineAvailable = async () => true
+    detected.engine = async () => true
     api.api.pickEngineLibraryDir = vi.fn(async () => '/Volumes/USB/Engine Library')
     try {
       const onFinish = vi.fn()
@@ -656,7 +654,7 @@ describe('OnboardingWizard destination', () => {
         }),
       )
     } finally {
-      api.api.engineAvailable = async () => false
+      detected.engine = async () => false
     }
   })
 
@@ -893,23 +891,21 @@ describe('OnboardingWizard DJ software', () => {
   type DetectionApi = {
     api: {
       rekordboxCollection: () => Promise<string>
-      engineAvailable: () => Promise<boolean>
-      seratoAvailable: () => Promise<boolean>
     }
   }
   const api = window as unknown as DetectionApi
   afterEach(() => {
     api.api.rekordboxCollection = async () => ''
-    api.api.engineAvailable = async () => false
-    api.api.seratoAvailable = async () => false
+    detected.engine = async () => false
+    detected.serato = async () => false
   })
 
   // Writing into Engine DJ or Serato is opted into, since the DJ cannot rebuild those
   // libraries: found, they are offered but left for the DJ to tick.
   it('leaves Engine DJ and Serato unticked on a first run, and shows Serato without a path', async () => {
     api.api.rekordboxCollection = async () => '/Users/dj/Library/Pioneer/rekordbox/master.db'
-    api.api.engineAvailable = async () => true
-    api.api.seratoAvailable = async () => true
+    detected.engine = async () => true
+    detected.serato = async () => true
     render(<OnboardingWizard settings={settings} onFinish={vi.fn()} />)
     expect(
       await screen.findByText(i18n.t('onboarding.step', { current: 1, total: 5 })),

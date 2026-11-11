@@ -1,4 +1,5 @@
 import { ipcMain } from 'electron'
+import type { DjReadMain } from '../shared/djApi'
 import {
   readSeratoLibrary,
   type SeratoLibraryRoot,
@@ -16,18 +17,23 @@ export interface SeratoPlaylistsHost {
   running?: () => Promise<boolean>
 }
 
-export function registerSeratoPlaylistsIpc(host: SeratoPlaylistsHost): void {
+export function seratoRead(host: SeratoPlaylistsHost): DjReadMain {
   const library = () => readSeratoLibrary(host.roots())
-  ipcMain.handle('serato:available', () => host.roots().length > 0)
-  ipcMain.handle('serato:tree', () => seratoTree(library()))
-  ipcMain.handle('serato:recentCount', () => seratoRecentCount(library()))
-  ipcMain.handle('serato:trackCount', () => seratoTrackCount(library()))
-  ipcMain.handle('serato:collectionTracks', () => seratoCollection(library()))
-  ipcMain.handle('serato:playlist', (_e, id: string) => {
-    const entries = seratoPlaylist(library(), id)
-    host.allowMedia?.(entries.flatMap((e) => (e.path ? [e.path] : [])))
-    return entries
-  })
+  return {
+    available: () => host.roots().length > 0,
+    tree: () => seratoTree(library()),
+    recentCount: () => seratoRecentCount(library()),
+    trackCount: () => seratoTrackCount(library()),
+    collection: () => seratoCollection(library()),
+    playlist: (id: string) => {
+      const entries = seratoPlaylist(library(), id)
+      host.allowMedia?.(entries.flatMap((e) => (e.path ? [e.path] : [])))
+      return entries
+    },
+    membership: (paths: string[]) => seratoMembership(library(), paths),
+  }
+}
+
+export function registerSeratoPlaylistsIpc(host: SeratoPlaylistsHost): void {
   ipcMain.handle('serato:running', async () => (await host.running?.()) ?? false)
-  ipcMain.handle('serato:membership', (_e, paths: string[]) => seratoMembership(library(), paths))
 }

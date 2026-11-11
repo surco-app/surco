@@ -1,8 +1,9 @@
 import { randomUUID } from 'node:crypto'
-import { existsSync } from 'node:fs'
+import { existsSync, realpathSync } from 'node:fs'
 import { realpath } from 'node:fs/promises'
-import { BrowserWindow, ipcMain } from 'electron'
+import { BrowserWindow, ipcMain, type WebContents } from 'electron'
 import log from 'electron-log/main'
+import type { DjEditMain, DjReadMain } from '../shared/djApi'
 import { mediaPathFromUrl } from '../shared/media'
 import type { PlaylistEditMode, RekordboxEditResult, RekordboxPlaylistEdit } from '../shared/types'
 import { pathAliasesOf } from './libraryPathKey'
@@ -10,6 +11,7 @@ import { serialLibraryFlush } from './libraryTagSync'
 import { rekordboxShareDir } from './rekordboxArtwork'
 import { openRekordboxDb, rekordboxRawKey } from './rekordboxDb'
 import { readNodeStamps } from './rekordboxMasterXml'
+import { readMembership } from './rekordboxMembership'
 import { separatorContent } from './rekordboxPlaylistEdit'
 import {
   readRecentlyAddedCount,
@@ -63,6 +65,9 @@ export interface PlaylistEditHost {
   onApplied?: (result: QueueApply) => void
   onWaiting?: () => void
   beginLoose?: (collectionPath: string) => void
+}
+
+export interface RekordboxReadHost {
   allowMedia?: (paths: string[]) => void
 }
 
@@ -76,60 +81,74 @@ export async function keyOf(path: string): Promise<string | undefined> {
   return path ? rekordboxRawKey(path).catch(() => undefined) : undefined
 }
 
+export function rekordboxRead(
+  collection: () => string,
+  membershipCollection: () => string,
+  host: RekordboxReadHost,
+): DjReadMain {
+  return {
+    available: () => collectionAvailable(collection()),
+    tree: async () => {
+      const path = collection()
+      return withCollection(path, readRekordboxTree, [], await keyOf(path))
+    },
+    recentCount: async () => {
+      const path = collection()
+      return withCollection(path, (db) => readRecentlyAddedCount(db), 0, await keyOf(path))
+    },
+    trackCount: async () => {
+      const path = collection()
+      return withCollection(path, readRekordboxTrackCount, 0, await keyOf(path))
+    },
+    collection: async () => {
+      const path = collection()
+      return withCollection(path, readRekordboxCollection, [], await keyOf(path))
+    },
+    playlist: async (id: string) => {
+      const path = collection()
+      const entries = withCollection(
+        path,
+        (db) => readRekordboxPlaylistWithPreview(db, rekordboxShareDir(path), id),
+        [],
+        await keyOf(path),
+      )
+      host.allowMedia?.(
+        entries.flatMap((e) => [
+          ...(e.path && !e.separator ? [e.path] : []),
+          ...(e.preview?.coverUrl ? [mediaPathFromUrl(e.preview.coverUrl)] : []),
+        ]),
+      )
+      return entries
+    },
+    membership: async (paths: string[]) => {
+      const path = membershipCollection()
+      return withCollection(
+        path,
+        (db) => readMembership(db, paths, { realPath: (p: string) => realpathSync(p) }),
+        {},
+        await keyOf(path),
+      )
+    },
+  }
+}
+
 // The collection path is resolved on every call, not captured once: the user can change
 // the override in Settings while Surco runs.
-export function registerRekordboxPlaylistsIpc(
-  collection: () => string,
-  host: PlaylistEditHost,
-): void {
-  ipcMain.handle('rekordbox:available', () => collectionAvailable(collection()))
-  ipcMain.handle('rekordbox:tree', async () => {
-    const path = collection()
-    return withCollection(path, readRekordboxTree, [], await keyOf(path))
-  })
-  ipcMain.handle('rekordbox:recentCount', async () => {
-    const path = collection()
-    return withCollection(path, (db) => readRecentlyAddedCount(db), 0, await keyOf(path))
-  })
-  ipcMain.handle('rekordbox:trackCount', async () => {
-    const path = collection()
-    return withCollection(path, readRekordboxTrackCount, 0, await keyOf(path))
-  })
-  ipcMain.handle('rekordbox:collectionTracks', async () => {
-    const path = collection()
-    return withCollection(path, readRekordboxCollection, [], await keyOf(path))
-  })
-  ipcMain.handle('rekordbox:playlist', async (_e, id: string) => {
-    const path = collection()
-    const entries = withCollection(
-      path,
-      (db) => readRekordboxPlaylistWithPreview(db, rekordboxShareDir(path), id),
-      [],
-      await keyOf(path),
-    )
-    host.allowMedia?.(
-      entries.flatMap((e) => [
-        ...(e.path && !e.separator ? [e.path] : []),
-        ...(e.preview?.coverUrl ? [mediaPathFromUrl(e.preview.coverUrl)] : []),
-      ]),
-    )
-    return entries
-  })
-  // Rows dragged out of the list and dropped back in come with the OS's spelling of their
-  // files, which may be resolved through the symlinked music folder.
-  ipcMain.handle('library:pathAliases', (_e, paths: unknown) =>
-    pathAliasesOf(paths, { realPath: (p: string) => realpath(p) }),
-  )
-  ipcMain.handle('rekordbox:hasSeparator', async () => {
-    const path = collection()
-    return withCollection(path, (db) => separatorContent(db) !== null, false, await keyOf(path))
-  })
-  // Queued behind any other library write (a conversion's repoint, a review's sync): they
-  // touch the same master.db, and the write's transaction spans an await, so two at once
-  // would block each other on SQLite's busy timeout.
-  ipcMain.handle(
-    'rekordbox:edit',
-    (e, edit: RekordboxPlaylistEdit, label?: string, mode: PlaylistEditMode = 'ask') =>
+export function rekordboxEdit(collection: () => string, host: PlaylistEditHost): DjEditMain {
+  return {
+    hasSeparator: async () => {
+      const path = collection()
+      return withCollection(path, (db) => separatorContent(db) !== null, false, await keyOf(path))
+    },
+    // Queued behind any other library write (a conversion's repoint, a review's sync): they
+    // touch the same master.db, and the write's transaction spans an await, so two at once
+    // would block each other on SQLite's busy timeout.
+    save: (
+      edit: RekordboxPlaylistEdit,
+      label: string | undefined,
+      sender: WebContents,
+      mode: PlaylistEditMode = 'ask',
+    ) =>
       serialLibraryFlush(async (): Promise<RekordboxEditResult> => {
         const path = collection()
         if (!path) return { applied: false, reason: 'unreadable' }
@@ -145,7 +164,7 @@ export function registerRekordboxPlaylistsIpc(
         const result = await host.queue.apply(
           mode === 'queue' && host.isRunning
             ? async () => !(await host.isRunning?.())
-            : () => host.ensureClosed(BrowserWindow.fromWebContents(e.sender)),
+            : () => host.ensureClosed(BrowserWindow.fromWebContents(sender)),
         )
         if (result.status === 'applied') {
           const others = withoutOp(result, op.id)
@@ -161,5 +180,13 @@ export function registerRekordboxPlaylistsIpc(
           result.status === 'applied' ? result.outcomes.find((o) => o.id === op.id) : undefined
         return editResultOfOutcome(outcome)
       }),
+  }
+}
+
+export function registerPathAliasesIpc(): void {
+  // Rows dragged out of the list and dropped back in come with the OS's spelling of their
+  // files, which may be resolved through the symlinked music folder.
+  ipcMain.handle('library:pathAliases', (_e, paths: unknown) =>
+    pathAliasesOf(paths, { realPath: (p: string) => realpath(p) }),
   )
 }

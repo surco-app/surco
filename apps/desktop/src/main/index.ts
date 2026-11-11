@@ -114,6 +114,7 @@ import { cachedCueWaveFine } from './cueWaveFineCache'
 import { cachedCueWaveWords } from './cueWaveWordsCache'
 import { registerDamageIpc } from './damageIpc'
 import { damageDeps } from './damageWiring'
+import { registerDjIpc } from './djIpc'
 import {
   anyDjProgramRunning,
   createEnsureClosed,
@@ -122,12 +123,12 @@ import {
 } from './djProcesses'
 import { parseDockFrames } from './dockFrames'
 import { type ReplacePair, replaceDuplicates } from './duplicateReplace'
-import { registerEngineCueQueueIpc } from './engineCueQueueIpc'
+import { engineCueQueueSection } from './engineCueQueueIpc'
 import { applyEngineCuesBatch } from './engineCuesWrite'
 import { addToEngineLibrary, dumpEngineLibrary, withEngineDatabase } from './engineLibrary'
-import { registerEnginePlaylistEditIpc } from './enginePlaylistEditIpc'
+import { engineEdit } from './enginePlaylistEditIpc'
 import { engineDatabasePath } from './enginePlaylists'
-import { registerEnginePlaylistsIpc } from './enginePlaylistsIpc'
+import { engineRead } from './enginePlaylistsIpc'
 import { engineSizeFollower } from './engineSizeFollow'
 import { expandPaths } from './expand'
 import { registerExportIpc } from './exportIpc'
@@ -190,20 +191,25 @@ import { registerRekordboxCuesIpc } from './rekordboxCuesIpc'
 import { markedTracks, readCollectionMarksAt } from './rekordboxLearnFlow'
 import { playlistXmlPath, readNodeStamps } from './rekordboxMasterXml'
 import { findRekordboxCollection } from './rekordboxPath'
-import { keyOf, registerRekordboxPlaylistsIpc } from './rekordboxPlaylistsIpc'
+import {
+  keyOf,
+  registerPathAliasesIpc,
+  rekordboxEdit,
+  rekordboxRead,
+} from './rekordboxPlaylistsIpc'
 import { applyRekordboxBatch } from './rekordboxPlaylistWrite'
 import { adjustProvisional, createProvisionalList } from './rekordboxProvisional'
 import { fileStore } from './rekordboxQueue'
-import { registerRekordboxQueueIpc } from './rekordboxQueueIpc'
+import { rekordboxQueueSection } from './rekordboxQueueIpc'
 import { stillWaiting } from './rekordboxQueueWatch'
 import { createSessionBackup } from './rekordboxSessionBackup'
 import { registerRowWavesIpc } from './rowWavesIpc'
 import { applySeratoBatch } from './seratoBatch'
-import { registerSeratoCueQueueIpc } from './seratoCueQueueIpc'
+import { seratoCueQueueSection } from './seratoCueQueueIpc'
 import { seratoLibraryRoots } from './seratoLibrary'
 import { recoverSeratoTemps } from './seratoLibraryWrite'
-import { registerSeratoPlaylistEditIpc } from './seratoPlaylistEditIpc'
-import { registerSeratoPlaylistsIpc } from './seratoPlaylistsIpc'
+import { seratoEdit } from './seratoPlaylistEditIpc'
+import { registerSeratoPlaylistsIpc, seratoRead } from './seratoPlaylistsIpc'
 import { loadLastSession, saveLastSession } from './session'
 import {
   configDirHasSettings,
@@ -228,7 +234,7 @@ import { createStickyConflict } from './stickyConflict'
 import { createSurcoTrash } from './surcoTrash'
 import { snapshotTagsInWorker, tagChangeDetail } from './tagChanges'
 import { createTmpManifest } from './tmpManifest'
-import { registerTraktorCueQueueIpc } from './traktorCueQueueIpc'
+import { traktorCueQueueSection } from './traktorCueQueueIpc'
 import { applyTraktorBatch } from './traktorCuesWrite'
 import { bootVolumeName, syncCollection } from './traktorNmlLibrary'
 import {
@@ -238,9 +244,9 @@ import {
   sameCollection,
 } from './traktorNmlPath'
 import { type QueuedNmlPatch, syncQueuedPatches } from './traktorPatchQueue'
-import { registerTraktorPlaylistEditIpc } from './traktorPlaylistEditIpc'
+import { traktorEdit } from './traktorPlaylistEditIpc'
 import { nmlPath } from './traktorPlaylists'
-import { registerTraktorPlaylistsIpc } from './traktorPlaylistsIpc'
+import { traktorRead } from './traktorPlaylistsIpc'
 import { registerTrashIpc } from './trashIpc'
 import { wireUpdateDelivery } from './updateDelivery'
 import { classifyUpdateError, isFeedStillUploading, summarizeUpdateError } from './updateErrors'
@@ -452,9 +458,9 @@ const programQueues = {
           return results
         },
         nodeStamps: async (collectionPath) => readNodeStamps(collectionPath),
-        onChange: (state) => broadcast('rekordbox:queueChanged', state),
+        onChange: (state) =>
+          broadcast('dj:cueQueueChanged', { program: 'rekordbox', value: state }),
       },
-      appliedChannel: 'rekordbox:queueApplied',
       alwaysWatch: () => getSettings().completeCuesOnClose || provisionalCues.all().length > 0,
       onClosed: () => {
         completeOnClose({
@@ -487,11 +493,10 @@ const programQueues = {
           return results
         },
         nodeStamps: async () => ({}),
-        onChange: (state) => broadcast('engine:cueQueueChanged', state),
+        onChange: (state) => broadcast('dj:cueQueueChanged', { program: 'engine', value: state }),
         addsTracks: false,
         stack: stackRepoint,
       },
-      appliedChannel: 'engine:cueQueueApplied',
     },
     programQueueDeps,
   ),
@@ -520,10 +525,9 @@ const programQueues = {
           return results
         },
         nodeStamps: async () => ({}),
-        onChange: (state) => broadcast('traktor:cueQueueChanged', state),
+        onChange: (state) => broadcast('dj:cueQueueChanged', { program: 'traktor', value: state }),
         addsTracks: false,
       },
-      appliedChannel: 'traktor:cueQueueApplied',
     },
     programQueueDeps,
   ),
@@ -548,10 +552,9 @@ const programQueues = {
           }),
         repoint: async () => [],
         nodeStamps: async () => ({}),
-        onChange: (state) => broadcast('serato:cueQueueChanged', state),
+        onChange: (state) => broadcast('dj:cueQueueChanged', { program: 'serato', value: state }),
         addsTracks: false,
       },
-      appliedChannel: 'serato:cueQueueApplied',
     },
     programQueueDeps,
   ),
@@ -1385,39 +1388,92 @@ function registerIpc(): void {
     untrackTmp: tmpManifest.untrack,
     followEngineSize,
   })
-  registerRekordboxPlaylistsIpc(
-    () => findRekordboxCollection({ configured: getSettings().rekordboxDbPath }),
-    {
-      ensureClosed: (win) => ensureClosed('rekordbox', win, 'playlists'),
-      isRunning: DJ_PROCESSES.rekordbox.isRunning,
-      queue: rekordboxQueue,
-      onApplied: announceApplied,
-      onWaiting: rekordboxQueueWatch.poke,
-      beginLoose: moments.beginLoose,
-      allowMedia: (paths) => mediaAccess.allowAll(paths),
-    },
-  )
-  registerEnginePlaylistsIpc(() => getSettings().engineLibraryDir, {
-    artDir: () => join(app.getPath('userData'), 'engine-artwork'),
-    allowMedia: (paths) => mediaAccess.allowAll(paths),
-  })
-  registerTraktorPlaylistsIpc(traktorReadPath, {
-    bootVolume: () => bootVolumeName(),
-    allowMedia: (paths) => mediaAccess.allowAll(paths),
-  })
+  const allowMedia = (paths: string[]) => mediaAccess.allowAll(paths)
+  const rekordboxCollectionNow = () =>
+    findRekordboxCollection({ configured: getSettings().rekordboxDbPath })
+  registerPathAliasesIpc()
   registerSeratoPlaylistsIpc({
     roots: seratoRoots,
-    allowMedia: (paths) => mediaAccess.allowAll(paths),
     running: DJ_PROCESSES.serato.isRunning,
   })
-  registerRekordboxQueueIpc(rekordboxQueue, {
-    collection: rekordboxCollectionPath,
-    ensureClosed: (win) => ensureClosed('rekordbox', win, 'playlists'),
-    onWaiting: rekordboxQueueWatch.poke,
-    onReady: () => void adjustProvisionalCuesOnLaunch(),
-    beginMoment: (reason) => moments.begin(reason, ['rekordbox']),
-    onSettled: (result) => queueChecks.settled('rekordbox', result),
-    onDiscarded: () => queueChecks.discarded('rekordbox'),
+  registerDjIpc({
+    rekordbox: {
+      read: rekordboxRead(rekordboxCollectionNow, rekordboxCollectionPath, { allowMedia }),
+      edit: rekordboxEdit(rekordboxCollectionNow, {
+        ensureClosed: (win) => ensureClosed('rekordbox', win, 'playlists'),
+        isRunning: DJ_PROCESSES.rekordbox.isRunning,
+        queue: rekordboxQueue,
+        onApplied: announceApplied,
+        onWaiting: rekordboxQueueWatch.poke,
+        beginLoose: moments.beginLoose,
+      }),
+      cueQueue: rekordboxQueueSection(rekordboxQueue, {
+        ensureClosed: (win) => ensureClosed('rekordbox', win, 'playlists'),
+        onWaiting: rekordboxQueueWatch.poke,
+        onReady: () => void adjustProvisionalCuesOnLaunch(),
+        beginMoment: (reason) => moments.begin(reason, ['rekordbox']),
+        onSettled: (result) => queueChecks.settled('rekordbox', result),
+        onDiscarded: () => queueChecks.discarded('rekordbox'),
+      }),
+    },
+    engine: {
+      read: engineRead(() => getSettings().engineLibraryDir, {
+        artDir: () => join(app.getPath('userData'), 'engine-artwork'),
+        allowMedia,
+      }),
+      edit: engineEdit({
+        libraryDir: engineLibraryPath,
+        queue: engineCueQueue,
+        isRunning: DJ_PROCESSES.engine.isRunning,
+        ensureClosed: (win) => ensureClosed('engine', win, 'playlists'),
+        onApplied: programQueues.engine.announceApplied,
+        onWaiting: engineCueQueueWatch.poke,
+        beginLoose: moments.beginLoose,
+      }),
+      cueQueue: engineCueQueueSection(engineCueQueue, {
+        ensureClosed: (win) => ensureClosed('engine', win, 'cues'),
+        onWaiting: engineCueQueueWatch.poke,
+        onReady: engineCueQueueWatch.poke,
+        beginMoment: (reason) => moments.begin(reason, ['engine']),
+        onSettled: (result) => queueChecks.settled('engine', result),
+        onDiscarded: () => queueChecks.discarded('engine'),
+      }),
+    },
+    traktor: {
+      read: traktorRead(traktorReadPath, { bootVolume: () => bootVolumeName(), allowMedia }),
+      edit: traktorEdit({
+        collection: traktorWritePath,
+        queue: traktorCueQueue,
+        ensureClosed: (win) => ensureClosed('traktor', win, 'playlists'),
+        isRunning: DJ_PROCESSES.traktor.isRunning,
+        onApplied: announceTraktorApplied,
+        onWaiting: traktorCueQueueWatch.poke,
+        beginLoose: moments.beginLoose,
+      }),
+      cueQueue: traktorCueQueueSection(traktorCueQueue, {
+        ensureClosed: (win) => ensureClosed('traktor', win, 'cues'),
+        onWaiting: traktorCueQueueWatch.poke,
+        onReady: traktorCueQueueWatch.poke,
+        beginMoment: (reason) => moments.begin(reason, ['traktor']),
+        onSettled: (result) => queueChecks.settled('traktor', result),
+        onDiscarded: () => queueChecks.discarded('traktor'),
+      }),
+    },
+    serato: {
+      read: seratoRead({ roots: seratoRoots, allowMedia }),
+      edit: seratoEdit({
+        roots: seratoRoots,
+        queue: seratoCueQueue,
+        isRunning: DJ_PROCESSES.serato.isRunning,
+        onApplied: programQueues.serato.announceApplied,
+        onWaiting: seratoCueQueueWatch.poke,
+      }),
+      cueQueue: seratoCueQueueSection(seratoCueQueue, {
+        isRunning: DJ_PROCESSES.serato.isRunning,
+        onWaiting: seratoCueQueueWatch.poke,
+        onReady: seratoCueQueueWatch.poke,
+      }),
+    },
   })
   registerRekordboxCuesIpc({
     collection: rekordboxCollectionPath,
@@ -1463,53 +1519,7 @@ function registerIpc(): void {
     marked: markedRekordboxTracks,
     learnFromEdits: () => getSettings().cueLearnFromEdits,
   })
-  registerEngineCueQueueIpc(engineCueQueue, {
-    ensureClosed: (win) => ensureClosed('engine', win, 'cues'),
-    onWaiting: engineCueQueueWatch.poke,
-    onReady: engineCueQueueWatch.poke,
-    beginMoment: (reason) => moments.begin(reason, ['engine']),
-    onSettled: (result) => queueChecks.settled('engine', result),
-    onDiscarded: () => queueChecks.discarded('engine'),
-  })
-  registerEnginePlaylistEditIpc({
-    libraryDir: engineLibraryPath,
-    queue: engineCueQueue,
-    isRunning: DJ_PROCESSES.engine.isRunning,
-    ensureClosed: (win) => ensureClosed('engine', win, 'playlists'),
-    onApplied: programQueues.engine.announceApplied,
-    onWaiting: engineCueQueueWatch.poke,
-    beginLoose: moments.beginLoose,
-  })
-  registerTraktorCueQueueIpc(traktorCueQueue, {
-    ensureClosed: (win) => ensureClosed('traktor', win, 'cues'),
-    onWaiting: traktorCueQueueWatch.poke,
-    onReady: traktorCueQueueWatch.poke,
-    beginMoment: (reason) => moments.begin(reason, ['traktor']),
-    onSettled: (result) => queueChecks.settled('traktor', result),
-    onDiscarded: () => queueChecks.discarded('traktor'),
-  })
-  registerSeratoCueQueueIpc(seratoCueQueue, {
-    isRunning: DJ_PROCESSES.serato.isRunning,
-    onWaiting: seratoCueQueueWatch.poke,
-    onReady: seratoCueQueueWatch.poke,
-  })
-  registerSeratoPlaylistEditIpc({
-    roots: seratoRoots,
-    queue: seratoCueQueue,
-    isRunning: DJ_PROCESSES.serato.isRunning,
-    onApplied: programQueues.serato.announceApplied,
-    onWaiting: seratoCueQueueWatch.poke,
-  })
   ipcMain.handle('traktor:canSave', () => traktorWritePath() !== '')
-  registerTraktorPlaylistEditIpc({
-    collection: traktorWritePath,
-    queue: traktorCueQueue,
-    ensureClosed: (win) => ensureClosed('traktor', win, 'playlists'),
-    isRunning: DJ_PROCESSES.traktor.isRunning,
-    onApplied: announceTraktorApplied,
-    onWaiting: traktorCueQueueWatch.poke,
-    beginLoose: moments.beginLoose,
-  })
   registerRowWavesIpc(rekordboxCollectionPath)
   usbExport = registerUsbExportIpc({
     collection: () => findRekordboxCollection({ configured: getSettings().rekordboxDbPath }),

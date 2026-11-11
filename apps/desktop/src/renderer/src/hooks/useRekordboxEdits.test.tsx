@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { RekordboxEditResult, SourceNode, SourcePlaylistEntry } from '../../../shared/types'
 import '../i18n'
 import { takeOwnRemoval } from '../lib/ownRemovals'
+import { djReads, type ProgramReads } from '../test/api'
 import { useRekordboxEdits } from './useRekordboxEdits'
 
 afterEach(cleanup)
@@ -27,9 +28,13 @@ function setup(answer: Promise<RekordboxEditResult>) {
   const loadRekordboxPlaylist = vi.fn().mockResolvedValue(ORDER)
   const loadRekordboxTree = vi.fn().mockResolvedValue(TREE)
   ;(window as unknown as { api: unknown }).api = {
-    loadRekordboxPlaylist,
-    loadRekordboxTree,
-    editRekordboxPlaylist: vi.fn(() => answer),
+    dj: djReads({
+      rekordbox: {
+        playlist: loadRekordboxPlaylist,
+        tree: loadRekordboxTree,
+        editPlaylist: vi.fn(() => answer),
+      },
+    }),
   }
   const notify = vi.fn()
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -41,12 +46,12 @@ function setup(answer: Promise<RekordboxEditResult>) {
       edit: useRekordboxEdits(notify),
       entries: useQuery({
         queryKey: ['source-playlist', 'rekordbox', 'f'],
-        queryFn: () => window.api.loadRekordboxPlaylist('f'),
+        queryFn: () => window.api.dj.playlist('rekordbox', 'f'),
         staleTime: Number.POSITIVE_INFINITY,
       }).data,
       tree: useQuery({
         queryKey: ['source-tree', 'rekordbox'],
-        queryFn: () => window.api.loadRekordboxTree(),
+        queryFn: () => window.api.dj.tree('rekordbox'),
         staleTime: Number.POSITIVE_INFINITY,
       }).data,
     }),
@@ -95,15 +100,16 @@ describe('useRekordboxEdits', () => {
     await act(async () => {
       await result.current.edit({ kind: 'rename', playlistId: 'f', name: 'Factory 26' }, 'Factory')
     })
-    expect(window.api.editRekordboxPlaylist).toHaveBeenCalledWith(
+    expect(window.api.dj.editPlaylist).toHaveBeenCalledWith(
+      'rekordbox',
       { kind: 'rename', playlistId: 'f', name: 'Factory 26' },
       'Factory',
     )
   })
 
   it('refuses on Engine DJ an edit its writer cannot do, without sending it', async () => {
-    const editEnginePlaylist = vi.fn()
-    ;(window as unknown as { api: unknown }).api = { editEnginePlaylist }
+    const dj = djReads()
+    ;(window as unknown as { api: unknown }).api = { dj }
     const client = new QueryClient()
     const wrapper = ({ children }: { children: React.ReactNode }) => (
       <QueryClientProvider client={client}>{children}</QueryClientProvider>
@@ -114,7 +120,7 @@ describe('useRekordboxEdits', () => {
       answer = await result.current({ kind: 'rename', playlistId: '7', name: 'X' }, 'Sesion')
     })
     expect(answer).toEqual({ applied: false, reason: 'read-only' })
-    expect(editEnginePlaylist).not.toHaveBeenCalled()
+    expect(dj.editPlaylist).not.toHaveBeenCalled()
   })
 
   it('passes the queue mode on, so a session can wait for the program to close without a dialog', async () => {
@@ -122,7 +128,8 @@ describe('useRekordboxEdits', () => {
     await act(async () => {
       await result.current.edit({ kind: 'delete', playlistId: 'f' }, 'Factory', 'queue')
     })
-    expect(window.api.editRekordboxPlaylist).toHaveBeenCalledWith(
+    expect(window.api.dj.editPlaylist).toHaveBeenCalledWith(
+      'rekordbox',
       { kind: 'delete', playlistId: 'f' },
       'Factory',
       'queue',
@@ -343,9 +350,12 @@ describe('useRekordboxEdits on Traktor', () => {
       applied: true as const,
       report: { added: 1, already: 0, notInCollection: 1, ambiguous: 0 },
     }))
+    const editRekordboxPlaylist = vi.fn<ProgramReads['editPlaylist']>()
     ;(window as unknown as { api: unknown }).api = {
-      editRekordboxPlaylist: vi.fn(),
-      editTraktorPlaylist,
+      dj: djReads({
+        rekordbox: { editPlaylist: editRekordboxPlaylist },
+        traktor: { editPlaylist: editTraktorPlaylist },
+      }),
     }
     const notify = vi.fn()
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -360,7 +370,7 @@ describe('useRekordboxEdits on Traktor', () => {
       )
     })
     expect(editTraktorPlaylist).toHaveBeenCalled()
-    expect(window.api.editRekordboxPlaylist).not.toHaveBeenCalled()
+    expect(editRekordboxPlaylist).not.toHaveBeenCalled()
     expect(notify).toHaveBeenCalledWith(
       '1 track added to “Friday”. 1 is not in the Traktor collection',
       'neutral',
@@ -369,8 +379,10 @@ describe('useRekordboxEdits on Traktor', () => {
 
   function traktorEdits(answer: RekordboxEditResult) {
     ;(window as unknown as { api: unknown }).api = {
-      editRekordboxPlaylist: vi.fn(),
-      editTraktorPlaylist: vi.fn(async () => answer),
+      dj: djReads({
+        rekordbox: { editPlaylist: vi.fn() },
+        traktor: { editPlaylist: vi.fn(async () => answer) },
+      }),
     }
     const notify = vi.fn()
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -409,9 +421,13 @@ describe('useRekordboxEdits on Traktor', () => {
 
 describe('useRekordboxEdits on Serato', () => {
   function seratoEdits(answer: RekordboxEditResult) {
+    const editRekordboxPlaylist = vi.fn<ProgramReads['editPlaylist']>()
+    const editSeratoPlaylist = vi.fn<ProgramReads['editPlaylist']>(async () => answer)
     ;(window as unknown as { api: unknown }).api = {
-      editRekordboxPlaylist: vi.fn(),
-      editSeratoPlaylist: vi.fn(async () => answer),
+      dj: djReads({
+        rekordbox: { editPlaylist: editRekordboxPlaylist },
+        serato: { editPlaylist: editSeratoPlaylist },
+      }),
     }
     const notify = vi.fn()
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -419,11 +435,11 @@ describe('useRekordboxEdits on Serato', () => {
       <QueryClientProvider client={client}>{children}</QueryClientProvider>
     )
     const { result } = renderHook(() => useRekordboxEdits(notify, 'serato'), { wrapper })
-    return { edit: result, notify, client }
+    return { edit: result, notify, client, editRekordboxPlaylist, editSeratoPlaylist }
   }
 
   it('sends the edit to Serato and names Serato and its crate in what it reports', async () => {
-    const { edit, notify } = seratoEdits({
+    const { edit, notify, editRekordboxPlaylist, editSeratoPlaylist } = seratoEdits({
       applied: true,
       report: { added: 1, already: 0, notInCollection: 1, ambiguous: 0 },
     })
@@ -433,8 +449,8 @@ describe('useRekordboxEdits on Serato', () => {
         'Friday',
       )
     })
-    expect(window.api.editSeratoPlaylist).toHaveBeenCalled()
-    expect(window.api.editRekordboxPlaylist).not.toHaveBeenCalled()
+    expect(editSeratoPlaylist).toHaveBeenCalled()
+    expect(editRekordboxPlaylist).not.toHaveBeenCalled()
     expect(notify).toHaveBeenCalledWith(
       '1 track added to “Friday”. 1 is on another drive or no longer exists',
       'neutral',

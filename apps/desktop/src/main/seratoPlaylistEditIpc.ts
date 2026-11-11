@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { ipcMain } from 'electron'
+import type { DjEditMain } from '../shared/djApi'
 import type { PlaylistEditMode, RekordboxEditResult, RekordboxPlaylistEdit } from '../shared/types'
 import { serialLibraryFlush } from './libraryTagSync'
 import { type QueueApply, type RekordboxQueue, withoutOp } from './rekordboxQueue'
@@ -16,16 +16,20 @@ function badName(edit: RekordboxPlaylistEdit, roots: SeratoLibraryRoot[]): boole
   return !validCrateName(edit.name.trim()) || seratoNameTaken(createSeratoDraft(), edit, roots)
 }
 
-export function registerSeratoPlaylistEditIpc(host: {
+export function seratoEdit(host: {
   roots: () => SeratoLibraryRoot[]
   queue: Pick<RekordboxQueue, 'apply' | 'drop'> & { enqueue: (ops: EditOp[]) => void }
   isRunning: () => Promise<boolean>
   onApplied?: (result: QueueApply) => void
   onWaiting?: () => void
-}): void {
-  ipcMain.handle(
-    'serato:edit',
-    (_e, edit: RekordboxPlaylistEdit, label?: string, mode: PlaylistEditMode = 'ask') =>
+}): DjEditMain {
+  return {
+    save: (
+      edit: RekordboxPlaylistEdit,
+      label: string | undefined,
+      _sender?: unknown,
+      mode: PlaylistEditMode = 'ask',
+    ) =>
       serialLibraryFlush(async (): Promise<RekordboxEditResult> => {
         const roots = host.roots()
         if (badName(edit, roots)) return { applied: false, reason: 'bad-name' }
@@ -53,5 +57,5 @@ export function registerSeratoPlaylistEditIpc(host: {
           result.status === 'applied' ? result.outcomes.find((o) => o.id === op.id) : undefined
         return editResultOfOutcome(outcome)
       }),
-  )
+  }
 }

@@ -754,9 +754,7 @@ describe('SessionWizard roles for a whole folder', () => {
     expect(screen.getByTestId('session-wizard-summary')).toHaveTextContent(
       i18n.t('sessions.wizard.sources.summary', { count: 2, tracks: 15 }),
     )
-    expect(screen.getByTestId('playlists-folder-count-fb')).toHaveTextContent(
-      i18n.t('editor.playlists.ofTotal', { chosen: 2, total: 2 }),
-    )
+    expect(screen.getByTestId('playlists-folder-fb')).toHaveTextContent(/^\D*$/)
     fireEvent.click(screen.getByTestId('playlists-folder-fb'))
     expect(screen.getByTestId('session-wizard-role-b1-base')).toHaveAttribute(
       'aria-pressed',

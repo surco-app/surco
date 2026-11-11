@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs'
-import { ipcMain } from 'electron'
+import type { DjReadMain } from '../shared/djApi'
 import {
   readTraktorCollection,
   readTraktorMembership,
@@ -14,27 +14,23 @@ export interface TraktorPlaylistsHost {
   allowMedia?: (paths: string[]) => void
 }
 
-export function registerTraktorPlaylistsIpc(
-  collection: () => string,
-  host: TraktorPlaylistsHost,
-): void {
+export function traktorRead(collection: () => string, host: TraktorPlaylistsHost): DjReadMain {
   const read = <T>(use: (nml: string) => T, fallback: T): T => {
     const file = collection()
     return file === '' ? fallback : use(readFileSync(file, 'utf8'))
   }
-  ipcMain.handle('traktor:available', () => collection() !== '')
-  ipcMain.handle('traktor:tree', () => read(readTraktorTree, []))
-  ipcMain.handle('traktor:recentCount', () => read((nml) => readTraktorRecentCount(nml), 0))
-  ipcMain.handle('traktor:trackCount', () => read(readTraktorTrackCount, 0))
-  ipcMain.handle('traktor:collectionTracks', () =>
-    read((nml) => readTraktorCollection(nml, host.bootVolume()), []),
-  )
-  ipcMain.handle('traktor:playlist', (_e, id: string) => {
-    const entries = read((nml) => readTraktorPlaylist(nml, id, host.bootVolume()), [])
-    host.allowMedia?.(entries.flatMap((e) => (e.path ? [e.path] : [])))
-    return entries
-  })
-  ipcMain.handle('traktor:membership', (_e, paths: string[]) =>
-    read((nml) => readTraktorMembership(nml, paths, host.bootVolume()), {}),
-  )
+  return {
+    available: () => collection() !== '',
+    tree: () => read(readTraktorTree, []),
+    recentCount: () => read((nml) => readTraktorRecentCount(nml), 0),
+    trackCount: () => read(readTraktorTrackCount, 0),
+    collection: () => read((nml) => readTraktorCollection(nml, host.bootVolume()), []),
+    playlist: (id: string) => {
+      const entries = read((nml) => readTraktorPlaylist(nml, id, host.bootVolume()), [])
+      host.allowMedia?.(entries.flatMap((e) => (e.path ? [e.path] : [])))
+      return entries
+    },
+    membership: (paths: string[]) =>
+      read((nml) => readTraktorMembership(nml, paths, host.bootVolume()), {}),
+  }
 }

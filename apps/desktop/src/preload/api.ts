@@ -4,6 +4,7 @@
 // mismatch — and the renderer (via index.d.ts) reads the very same shape.
 import type { PeekableAnalyses } from '../shared/audioIpcContract'
 import type { CueProfile, CueProfileRead, TasteTrack } from '../shared/cueProfile'
+import type { DjApi } from '../shared/djApi'
 import type { DropInput } from '../shared/dropDetect'
 import type { GridFit } from '../shared/gridEdit'
 import type { GridVerdict } from '../shared/gridVerdict'
@@ -16,7 +17,6 @@ import type {
   AppleMusicTrackMeta,
   AppleMusicUpdateJob,
   BpmResult,
-  CollectionTrack,
   CoverExportJob,
   CoverRead,
   DamageOutcome,
@@ -46,16 +46,11 @@ import type {
   MusicFixProgress,
   MusicReviewEntry,
   PairFacts,
-  PlaylistEditMode,
   ProcessJob,
   ProcessProgress,
   ProcessResult,
   ProgramCopies,
   QueuedCues,
-  RekordboxEditResult,
-  RekordboxPlaylistEdit,
-  RekordboxQueueApplied,
-  RekordboxQueueState,
   RekordboxSyncIssue,
   Release,
   RememberedAutoMatch,
@@ -73,8 +68,6 @@ import type {
   SessionData,
   SessionEdit,
   Settings,
-  SourceNode,
-  SourcePlaylistEntry,
   SpectrumResult,
   SpectrumVerdict,
   SurcoGrid,
@@ -249,47 +242,10 @@ export interface Api {
   appleMusicArtwork: (
     persistentIds: string[],
   ) => Promise<Record<string, { coverPath: string; coverUrl: string }>>
-  // Whether this machine has a rekordbox collection Surco can read. False for a user
-  // without rekordbox, the normal case: the source then simply is not offered.
-  rekordboxAvailable: () => Promise<boolean>
-  // The collection's folder and playlist tree, read-only. Empty when unreadable.
-  loadRekordboxTree: () => Promise<SourceNode[]>
-  rekordboxRecentCount: () => Promise<number>
-  rekordboxTrackCount: () => Promise<number>
-  loadRekordboxCollection: () => Promise<CollectionTrack[]>
-  // One playlist's rows in order, separators and file-less rows included.
-  loadRekordboxPlaylist: (id: string) => Promise<SourcePlaylistEntry[]>
-  engineAvailable: () => Promise<boolean>
-  loadEngineTree: () => Promise<SourceNode[]>
-  engineRecentCount: () => Promise<number>
-  engineTrackCount: () => Promise<number>
-  loadEnginePlaylist: (id: string) => Promise<SourcePlaylistEntry[]>
-  traktorAvailable: () => Promise<boolean>
-  loadTraktorTree: () => Promise<SourceNode[]>
-  traktorRecentCount: () => Promise<number>
-  traktorTrackCount: () => Promise<number>
-  loadTraktorCollection: () => Promise<CollectionTrack[]>
-  loadTraktorPlaylist: (id: string) => Promise<SourcePlaylistEntry[]>
-  seratoAvailable: () => Promise<boolean>
-  loadSeratoTree: () => Promise<SourceNode[]>
-  seratoRecentCount: () => Promise<number>
-  seratoTrackCount: () => Promise<number>
-  loadSeratoCollection: () => Promise<CollectionTrack[]>
-  loadSeratoPlaylist: (id: string) => Promise<SourcePlaylistEntry[]>
+  dj: DjApi
   seratoRunning: () => Promise<boolean>
   djAppRunning: () => Promise<boolean>
   holdsInLibrary: (path: string, titles: string[]) => Promise<boolean>
-  // Applies one organising edit to a rekordbox playlist. Asks to close rekordbox when it is
-  // open; the result says whether the edit was written, and why not.
-  editRekordboxPlaylist: (
-    edit: RekordboxPlaylistEdit,
-    label?: string,
-    mode?: PlaylistEditMode,
-  ) => Promise<RekordboxEditResult>
-  rekordboxQueue: () => Promise<RekordboxQueueState>
-  applyRekordboxQueue: () => Promise<RekordboxQueueApplied | null>
-  discardRekordboxQueue: () => Promise<void>
-  rekordboxQueueReady: () => Promise<void>
   rekordboxTrackCues: (contentId: string) => Promise<TrackCues | null>
   rekordboxCueWaveDetail: (contentId: string) => Promise<Uint16Array | null>
   rekordboxCueWaveFine: (contentId: string) => Promise<FineWave | null>
@@ -308,48 +264,6 @@ export interface Api {
   saveRekordboxCues: (reqs: SaveCuesRequest[]) => Promise<void>
   rekordboxQueuedCues: (contentId: string) => Promise<QueuedCues | null>
   undoRekordboxCues: (contentId: string) => Promise<void>
-  rekordboxMembership: (paths: string[]) => Promise<Record<string, string[]>>
-  traktorMembership: (paths: string[]) => Promise<Record<string, string[]>>
-  seratoMembership: (paths: string[]) => Promise<Record<string, string[]>>
-  engineMembership: (paths: string[]) => Promise<Record<string, string[]>>
-  onRekordboxQueueChanged: (cb: (state: RekordboxQueueState) => void) => () => void
-  onRekordboxQueueApplied: (cb: (applied: RekordboxQueueApplied) => void) => () => void
-  // Whether the collection has a separator track that can be copied into a playlist.
-  rekordboxHasSeparator: () => Promise<boolean>
-  editTraktorPlaylist: (
-    edit: RekordboxPlaylistEdit,
-    label?: string,
-    mode?: PlaylistEditMode,
-  ) => Promise<RekordboxEditResult>
-  editSeratoPlaylist: (
-    edit: RekordboxPlaylistEdit,
-    label?: string,
-    mode?: PlaylistEditMode,
-  ) => Promise<RekordboxEditResult>
-  editEnginePlaylist: (
-    edit: RekordboxPlaylistEdit,
-    label?: string,
-    mode?: PlaylistEditMode,
-  ) => Promise<RekordboxEditResult>
-  traktorHasSeparator: () => Promise<boolean>
-  engineCueQueue: () => Promise<RekordboxQueueState>
-  applyEngineCueQueue: () => Promise<RekordboxQueueApplied | null>
-  discardEngineCueQueue: () => Promise<void>
-  engineCueQueueReady: () => Promise<void>
-  onEngineCueQueueChanged: (cb: (state: RekordboxQueueState) => void) => () => void
-  onEngineCueQueueApplied: (cb: (applied: RekordboxQueueApplied) => void) => () => void
-  traktorCueQueue: () => Promise<RekordboxQueueState>
-  applyTraktorCueQueue: () => Promise<RekordboxQueueApplied | null>
-  discardTraktorCueQueue: () => Promise<void>
-  traktorCueQueueReady: () => Promise<void>
-  onTraktorCueQueueChanged: (cb: (state: RekordboxQueueState) => void) => () => void
-  onTraktorCueQueueApplied: (cb: (applied: RekordboxQueueApplied) => void) => () => void
-  seratoCueQueue: () => Promise<RekordboxQueueState>
-  applySeratoCueQueue: () => Promise<RekordboxQueueApplied | null>
-  discardSeratoCueQueue: () => Promise<void>
-  seratoCueQueueReady: () => Promise<void>
-  onSeratoCueQueueChanged: (cb: (state: RekordboxQueueState) => void) => () => void
-  onSeratoCueQueueApplied: (cb: (applied: RekordboxQueueApplied) => void) => () => void
   traktorCanSave: () => Promise<boolean>
   // The USB export (macOS and Windows). Volumes come by stable identifier; the event feeds
   // the progress list and the toolbar pill, also with the modal closed.

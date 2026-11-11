@@ -1060,7 +1060,6 @@
       "count_one": "Dans {{count}} playlist",
       "count_other": "Dans {{count}} playlists",
       "search": "Chercher ou créer une playlist",
-      "ofTotal": "{{chosen}} sur {{total}}",
       "create": "Créer la playlist « {{name}} »",
       "pending": "Créée à l’écriture du morceau",
       "some": "Seulement sur certains morceaux. Clique pour l’ajouter à tous",

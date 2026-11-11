@@ -355,7 +355,6 @@ describe('a Serato save whose cues changed meanwhile', () => {
     const pq = createProgramQueue(
       {
         program: 'serato',
-        appliedChannel: 'serato:cueQueueApplied',
         queue: {
           store: { read: () => null, write: () => {}, setAside: () => {} },
           collection: () => '/Users/dj/Music/_Serato_',
@@ -377,11 +376,14 @@ describe('a Serato save whose cues changed meanwhile', () => {
     pq.queue.enqueue([op(file, read, moved(read), { fingerprint: 'stale' })])
     pq.applyQuietly()
     await vi.waitFor(() =>
-      expect(broadcast).toHaveBeenCalledWith('serato:cueQueueApplied', {
-        tracks: 0,
-        changes: 0,
-        notices: [{ code: 'cues-changed', track: 'Pray' }],
-        written: [],
+      expect(broadcast).toHaveBeenCalledWith('dj:cueQueueApplied', {
+        program: 'serato',
+        value: {
+          tracks: 0,
+          changes: 0,
+          notices: [{ code: 'cues-changed', track: 'Pray' }],
+          written: [],
+        },
       }),
     )
     expect(pq.queue.isEmpty()).toBe(true)
@@ -400,7 +402,6 @@ describe('a Serato save for a file Surco is converting', () => {
     const pq = createProgramQueue(
       {
         program: 'serato',
-        appliedChannel: 'serato:cueQueueApplied',
         queue: {
           store: { read: () => null, write: () => {}, setAside: () => {} },
           collection: () => '/Users/dj/Music/_Serato_',
@@ -446,7 +447,6 @@ describe('a Serato save for a file Surco is converting', () => {
     const pq = createProgramQueue(
       {
         program: 'serato',
-        appliedChannel: 'serato:cueQueueApplied',
         queue: {
           store: { read: () => null, write: () => {}, setAside: () => {} },
           collection: () => '/Users/dj/Music/_Serato_',

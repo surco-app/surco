@@ -1,16 +1,17 @@
-import { ipcMain } from 'electron'
+import type { WebContents } from 'electron'
 import { describe, expect, it, vi } from 'vitest'
 
-vi.mock('electron', () => ({ ipcMain: { handle: vi.fn() } }))
+vi.mock('electron', () => ({ BrowserWindow: { fromWebContents: vi.fn(() => 'window') } }))
 
+import type { DjCueQueueMain } from '../shared/djApi'
 import type { QueueApply, RekordboxQueue } from './rekordboxQueue'
 import { appliedNotice } from './rekordboxQueueIpc'
-import { registerSeratoCueQueueIpc } from './seratoCueQueueIpc'
+import { seratoCueQueueSection } from './seratoCueQueueIpc'
 
-function handler(channel: string): (...args: unknown[]) => unknown {
-  const call = [...vi.mocked(ipcMain.handle).mock.calls].reverse().find(([n]) => n === channel)
-  if (!call) throw new Error(`${channel} not registered`)
-  return call[1] as (...args: unknown[]) => unknown
+let section: DjCueQueueMain
+
+function register(...args: Parameters<typeof seratoCueQueueSection>): void {
+  section = seratoCueQueueSection(...args)
 }
 
 const APPLIED: QueueApply = {
@@ -32,39 +33,39 @@ function queue() {
   }
 }
 
-describe('registerSeratoCueQueueIpc', () => {
+describe('seratoCueQueueSection', () => {
   it('shows what waits for Serato to close', () => {
-    registerSeratoCueQueueIpc(queue(), { isRunning: vi.fn(async () => false) })
-    expect(handler('serato:cueQueue')()).toEqual({ tracks: 1, changes: 0, items: [] })
+    register(queue(), { isRunning: vi.fn(async () => false) })
+    expect(section.read()).toEqual({ tracks: 1, changes: 0, items: [] })
   })
 
   it('writes now when Serato is closed and answers with what landed', async () => {
     const q = queue()
-    registerSeratoCueQueueIpc(q, { isRunning: vi.fn(async () => false) })
-    expect(await handler('serato:applyCueQueue')({ sender: {} })).toEqual(appliedNotice(APPLIED))
+    register(q, { isRunning: vi.fn(async () => false) })
+    expect(await section.apply({} as WebContents)).toEqual(appliedNotice(APPLIED))
     expect(q.apply).toHaveBeenCalledWith(expect.any(Function), { manual: true })
   })
 
   it('never writes while Serato is open, and keeps watching so the save lands once it closes', async () => {
     const onWaiting = vi.fn()
     const isRunning = vi.fn(async () => true)
-    registerSeratoCueQueueIpc(queue(), { isRunning, onWaiting })
-    expect(await handler('serato:applyCueQueue')({ sender: {} })).toBeNull()
+    register(queue(), { isRunning, onWaiting })
+    expect(await section.apply({} as WebContents)).toBeNull()
     expect(isRunning).toHaveBeenCalled()
     expect(onWaiting).toHaveBeenCalled()
   })
 
   it('throws away what waits when the DJ discards it', () => {
     const q = queue()
-    registerSeratoCueQueueIpc(q, { isRunning: vi.fn(async () => false) })
-    handler('serato:discardCueQueue')()
+    register(q, { isRunning: vi.fn(async () => false) })
+    section.discard()
     expect(q.discard).toHaveBeenCalled()
   })
 
   it('starts the queue only once the window listens', () => {
     const onReady = vi.fn()
-    registerSeratoCueQueueIpc(queue(), { isRunning: vi.fn(async () => false), onReady })
-    handler('serato:cueQueueReady')()
+    register(queue(), { isRunning: vi.fn(async () => false), onReady })
+    section.ready()
     expect(onReady).toHaveBeenCalled()
   })
 })

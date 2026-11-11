@@ -16,12 +16,15 @@ import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
 // before it renders.
 ;(window as unknown as { api: unknown }).api = {
   platform: 'darwin',
-  rekordboxAvailable: () => Promise.resolve(true),
-  engineAvailable: () => Promise.resolve(true),
-  traktorAvailable: () => Promise.resolve(true),
-  seratoAvailable: () => Promise.resolve(false),
+  dj: djReads({
+    rekordbox: { available: () => Promise.resolve(true) },
+    engine: { available: () => Promise.resolve(true) },
+    traktor: { available: () => Promise.resolve(true) },
+    serato: { available: () => Promise.resolve(false) },
+  }),
 }
 
+import { djReads } from '../../test/api'
 import { GeneralTab } from './GeneralTab'
 
 afterEach(cleanup)
@@ -164,10 +167,12 @@ describe('GeneralTab sources', () => {
   ) {
     Object.assign((window as unknown as { api: object }).api, {
       platform,
-      rekordboxAvailable: () => Promise.resolve(rekordbox),
-      engineAvailable: () => Promise.resolve(engine),
-      traktorAvailable: () => Promise.resolve(traktor),
-      seratoAvailable: () => Promise.resolve(serato),
+      dj: djReads({
+        rekordbox: { available: () => Promise.resolve(rekordbox) },
+        engine: { available: () => Promise.resolve(engine) },
+        traktor: { available: () => Promise.resolve(traktor) },
+        serato: { available: () => Promise.resolve(serato) },
+      }),
     })
     const patch = vi.fn<(key: 'hiddenSources', value: PlaylistSource[]) => void>()
     render(

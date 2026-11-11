@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
-import { BrowserWindow, ipcMain } from 'electron'
+import { BrowserWindow, type WebContents } from 'electron'
+import type { DjEditMain } from '../shared/djApi'
 import type { PlaylistEditMode, RekordboxEditResult, RekordboxPlaylistEdit } from '../shared/types'
 import { engineDatabasePath } from './enginePlaylists'
 import { serialLibraryFlush } from './libraryTagSync'
@@ -7,7 +8,7 @@ import { type QueueApply, type RekordboxQueue, withoutOp } from './rekordboxQueu
 import { type EditOp, editResultOfOutcome } from './rekordboxQueueOps'
 import { stillWaiting } from './rekordboxQueueWatch'
 
-export function registerEnginePlaylistEditIpc(host: {
+export function engineEdit(host: {
   libraryDir: () => string
   queue: Pick<RekordboxQueue, 'apply' | 'drop'> & { enqueue: (ops: EditOp[]) => void }
   isRunning: () => Promise<boolean>
@@ -15,10 +16,14 @@ export function registerEnginePlaylistEditIpc(host: {
   onApplied?: (result: QueueApply) => void
   onWaiting?: () => void
   beginLoose?: (collectionPath: string) => void
-}): void {
-  ipcMain.handle(
-    'engine:edit',
-    (e, edit: RekordboxPlaylistEdit, label?: string, mode: PlaylistEditMode = 'ask') =>
+}): DjEditMain {
+  return {
+    save: (
+      edit: RekordboxPlaylistEdit,
+      label: string | undefined,
+      sender: WebContents,
+      mode: PlaylistEditMode = 'ask',
+    ) =>
       serialLibraryFlush(async (): Promise<RekordboxEditResult> => {
         const dir = host.libraryDir()
         if (!dir) return { applied: false, reason: 'unreadable' }
@@ -34,7 +39,7 @@ export function registerEnginePlaylistEditIpc(host: {
         const result = await host.queue.apply(
           mode === 'queue'
             ? async () => !(await host.isRunning())
-            : () => host.ensureClosed(BrowserWindow.fromWebContents(e.sender)),
+            : () => host.ensureClosed(BrowserWindow.fromWebContents(sender)),
         )
         if (result.status === 'applied') {
           const others = withoutOp(result, op.id)
@@ -50,5 +55,5 @@ export function registerEnginePlaylistEditIpc(host: {
           result.status === 'applied' ? result.outcomes.find((o) => o.id === op.id) : undefined
         return editResultOfOutcome(outcome)
       }),
-  )
+  }
 }

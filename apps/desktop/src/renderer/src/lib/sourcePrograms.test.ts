@@ -3,46 +3,50 @@ import { describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import { type DjProgram, RAIL_PROGRAMS } from '../../../shared/djProgram'
 import type { RekordboxPlaylistEdit, SourceNode } from '../../../shared/types'
-import { installApi } from '../test/api'
+import { djReads, installApi } from '../test/api'
 import { SOURCE_PROGRAMS, SOURCE_READ } from './sourcePrograms'
 
-describe('SOURCE_READ reads each DJ program’s tab from that program’s own bridge', () => {
+describe('SOURCE_READ reads each DJ program’s tab through window.api.dj, naming the program', () => {
   it.each([
-    ['rekordbox', 'available', 'rekordboxAvailable', []],
-    ['rekordbox', 'tree', 'loadRekordboxTree', []],
-    ['rekordbox', 'recentCount', 'rekordboxRecentCount', []],
-    ['rekordbox', 'trackCount', 'rekordboxTrackCount', []],
-    ['rekordbox', 'playlist', 'loadRekordboxPlaylist', ['house']],
-    ['rekordbox', 'membership', 'rekordboxMembership', [['/m/a.wav']]],
-    ['traktor', 'available', 'traktorAvailable', []],
-    ['traktor', 'tree', 'loadTraktorTree', []],
-    ['traktor', 'recentCount', 'traktorRecentCount', []],
-    ['traktor', 'trackCount', 'traktorTrackCount', []],
-    ['traktor', 'playlist', 'loadTraktorPlaylist', ['u1']],
-    ['traktor', 'membership', 'traktorMembership', [['/m/a.wav']]],
-    ['engine', 'available', 'engineAvailable', []],
-    ['engine', 'tree', 'loadEngineTree', []],
-    ['engine', 'recentCount', 'engineRecentCount', []],
-    ['engine', 'trackCount', 'engineTrackCount', []],
-    ['engine', 'playlist', 'loadEnginePlaylist', ['7']],
-    ['engine', 'membership', 'engineMembership', [['/m/a.wav']]],
-    ['serato', 'available', 'seratoAvailable', []],
-    ['serato', 'tree', 'loadSeratoTree', []],
-    ['serato', 'recentCount', 'seratoRecentCount', []],
-    ['serato', 'trackCount', 'seratoTrackCount', []],
-    ['serato', 'playlist', 'loadSeratoPlaylist', ['Sets%%Friday']],
-    ['serato', 'membership', 'seratoMembership', [['/m/a.wav']]],
-  ] as const)(
-    'reads %s’s %s through window.api.%s at call time',
-    async (program, read, method, args) => {
-      const answer = Symbol(method)
-      const spy = vi.fn(async () => answer)
-      installApi({ [method]: spy } as Partial<Api>)
-      const call = SOURCE_READ[program][read] as (...a: unknown[]) => Promise<unknown>
-      await expect(call(...args)).resolves.toBe(answer)
-      expect(spy).toHaveBeenCalledWith(...args)
-    },
-  )
+    ['rekordbox', 'available', []],
+    ['rekordbox', 'tree', []],
+    ['rekordbox', 'recentCount', []],
+    ['rekordbox', 'trackCount', []],
+    ['rekordbox', 'playlist', ['house']],
+    ['rekordbox', 'membership', [['/m/a.wav']]],
+    ['rekordbox', 'collection', []],
+    ['traktor', 'available', []],
+    ['traktor', 'tree', []],
+    ['traktor', 'recentCount', []],
+    ['traktor', 'trackCount', []],
+    ['traktor', 'playlist', ['u1']],
+    ['traktor', 'membership', [['/m/a.wav']]],
+    ['traktor', 'collection', []],
+    ['engine', 'available', []],
+    ['engine', 'tree', []],
+    ['engine', 'recentCount', []],
+    ['engine', 'trackCount', []],
+    ['engine', 'playlist', ['7']],
+    ['engine', 'membership', [['/m/a.wav']]],
+    ['serato', 'available', []],
+    ['serato', 'tree', []],
+    ['serato', 'recentCount', []],
+    ['serato', 'trackCount', []],
+    ['serato', 'playlist', ['Sets%%Friday']],
+    ['serato', 'membership', [['/m/a.wav']]],
+    ['serato', 'collection', []],
+  ] as const)('reads %s’s %s through window.api.dj at call time', async (program, read, args) => {
+    const answer = Symbol(read)
+    const spy = vi.fn(async () => answer)
+    installApi({ dj: { ...djReads(), [read]: spy } as unknown as Api['dj'] })
+    const call = SOURCE_READ[program][read] as (...a: unknown[]) => Promise<unknown>
+    await expect(call(...args)).resolves.toBe(answer)
+    expect(spy).toHaveBeenCalledWith(program, ...args)
+  })
+
+  it('leaves Engine DJ without a collection read, as it has none', () => {
+    expect(SOURCE_READ.engine.collection).toBeUndefined()
+  })
 })
 
 describe('RAIL_PROGRAMS', () => {
@@ -123,13 +127,16 @@ describe('SOURCE_PROGRAMS says what each DJ program allows in its tab', () => {
     }
   })
 
-  it('saves an Engine DJ edit through editEnginePlaylist, passing the queue mode on', async () => {
-    const editEnginePlaylist = vi
-      .fn<Api['editEnginePlaylist']>()
-      .mockResolvedValue({ applied: true })
-    installApi({ editEnginePlaylist })
+  it('saves an Engine DJ edit through window.api.dj, passing the queue mode on', async () => {
+    const editPlaylist = vi.fn<Api['dj']['editPlaylist']>().mockResolvedValue({ applied: true })
+    installApi({ dj: { ...djReads(), editPlaylist } as unknown as Api['dj'] })
     await SOURCE_PROGRAMS.engine.edit?.save({ kind: 'delete', playlistId: '7' }, 'Sesion', 'queue')
-    expect(editEnginePlaylist).toHaveBeenCalledWith({ kind: 'delete', playlistId: '7' }, 'Sesion', 'queue')
+    expect(editPlaylist).toHaveBeenCalledWith(
+      'engine',
+      { kind: 'delete', playlistId: '7' },
+      'Sesion',
+      'queue',
+    )
   })
 
   it('lets the Serato tab edit crates with no separator, no folders and no gate, and export to USB', () => {
@@ -150,39 +157,38 @@ describe('SOURCE_PROGRAMS says what each DJ program allows in its tab', () => {
   })
 
   it('saves a Serato edit through editSeratoPlaylist with the crate name for the queue', async () => {
-    const editSeratoPlaylist = vi
-      .fn<Api['editSeratoPlaylist']>()
-      .mockResolvedValue({ applied: true })
-    installApi({ editSeratoPlaylist })
+    const editPlaylist = vi.fn<Api['dj']['editPlaylist']>().mockResolvedValue({ applied: true })
+    installApi({ dj: { ...djReads(), editPlaylist } as unknown as Api['dj'] })
     await SOURCE_PROGRAMS.serato.edit?.save({ kind: 'rename', playlistId: 'A', name: 'B' }, 'A')
-    expect(editSeratoPlaylist).toHaveBeenCalledWith(
+    expect(editPlaylist).toHaveBeenCalledWith(
+      'serato',
       { kind: 'rename', playlistId: 'A', name: 'B' },
       'A',
     )
   })
 
-  it.each([
-    ['rekordbox', 'rekordboxHasSeparator'],
-    ['traktor', 'traktorHasSeparator'],
-  ] as const)('asks %s for a separator through window.api.%s', async (program, method) => {
-    const spy = vi.fn(async () => true)
-    installApi({ [method]: spy } as Partial<Api>)
-    await expect(SOURCE_PROGRAMS[program].separator?.()).resolves.toBe(true)
-    expect(spy).toHaveBeenCalled()
-  })
+  it.each(['rekordbox', 'traktor'] as const)(
+    'asks %s for a separator through window.api.dj.hasSeparator naming it',
+    async (program) => {
+      const spy = vi.fn(async () => true)
+      installApi({ dj: { ...djReads(), hasSeparator: spy } as unknown as Api['dj'] })
+      await expect(SOURCE_PROGRAMS[program].separator?.()).resolves.toBe(true)
+      expect(spy).toHaveBeenCalledWith(program)
+    },
+  )
 
-  it.each([
-    ['rekordbox', 'editRekordboxPlaylist'],
-    ['traktor', 'editTraktorPlaylist'],
-  ] as const)('saves an edit to %s through window.api.%s', async (program, method) => {
-    const edit: RekordboxPlaylistEdit = { kind: 'rename', playlistId: 'p', name: 'B' }
-    const spy = vi.fn(async () => ({ applied: true as const }))
-    installApi({ [method]: spy } as Partial<Api>)
-    await expect(SOURCE_PROGRAMS[program].edit?.save(edit, 'A')).resolves.toEqual({
-      applied: true,
-    })
-    expect(spy).toHaveBeenCalledWith(edit, 'A')
-  })
+  it.each(['rekordbox', 'traktor'] as const)(
+    'saves an edit to %s through window.api.dj.editPlaylist naming it',
+    async (program) => {
+      const edit: RekordboxPlaylistEdit = { kind: 'rename', playlistId: 'p', name: 'B' }
+      const spy = vi.fn(async () => ({ applied: true as const }))
+      installApi({ dj: { ...djReads(), editPlaylist: spy } as unknown as Api['dj'] })
+      await expect(SOURCE_PROGRAMS[program].edit?.save(edit, 'A')).resolves.toEqual({
+        applied: true,
+      })
+      expect(spy).toHaveBeenCalledWith(program, edit, 'A')
+    },
+  )
 
   it.each([
     ['HISTORY', true, 'locked'],

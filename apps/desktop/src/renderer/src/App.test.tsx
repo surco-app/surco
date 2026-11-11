@@ -16,10 +16,11 @@ import type React from 'react'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, type Mock, vi } from 'vitest'
 import type { Api } from '../../preload/api'
 import { ALL_TRACKS_ID } from '../../shared/allTracks'
+import type { DjApi } from '../../shared/djApi'
 import { DEFAULT_EDITOR_SECTIONS } from '../../shared/editorSections'
-import { DEFAULT_SESSION_WIZARD } from '../../shared/sessionSettings'
 import { emptyMetadata } from '../../shared/metadata'
 import { RECENTLY_ADDED_ID } from '../../shared/recentlyAdded'
+import { DEFAULT_SESSION_WIZARD } from '../../shared/sessionSettings'
 import type {
   ActivityEvent,
   ProgramCopies,
@@ -45,6 +46,7 @@ import { spellingGroups } from './lib/musicSpelling'
 import { createQueryClient } from './lib/queryClient'
 import { clearDraggedRows, draggedRows, TREE_NODE_TYPE } from './lib/reorderDrag'
 import { usbExportStore } from './lib/usbExportStore'
+import { djReads, type ProgramReads } from './test/api'
 import { fakeDataTransfer, installDragEvent } from './test/drag'
 
 // Pass-through triage that counts sort runs, so the derived-list stability test can
@@ -326,49 +328,8 @@ function setApi(over: Record<string, unknown> = {}): void {
     saveLastSession: vi.fn().mockResolvedValue(undefined),
     expandPaths: vi.fn((paths: string[]) => Promise.resolve(paths)),
     pathAliases: vi.fn((paths: string[]) => Promise.resolve(paths)),
-    rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(false),
-    engineAvailable: vi.fn<Api['engineAvailable']>().mockResolvedValue(false),
-    traktorAvailable: vi.fn<Api['traktorAvailable']>().mockResolvedValue(false),
-    seratoAvailable: vi.fn<Api['seratoAvailable']>().mockResolvedValue(false),
-    rekordboxHasSeparator: vi.fn<Api['rekordboxHasSeparator']>().mockResolvedValue(true),
-    rekordboxMembership: vi.fn<Api['rekordboxMembership']>().mockResolvedValue({}),
-    editRekordboxPlaylist: vi
-      .fn<Api['editRekordboxPlaylist']>()
-      .mockResolvedValue({ applied: true }),
-    rekordboxQueue: vi
-      .fn<Api['rekordboxQueue']>()
-      .mockResolvedValue({ tracks: 0, changes: 0, items: [] }),
-    applyRekordboxQueue: vi.fn<Api['applyRekordboxQueue']>().mockResolvedValue(null),
-    discardRekordboxQueue: vi.fn<Api['discardRekordboxQueue']>().mockResolvedValue(undefined),
-    rekordboxQueueReady: vi.fn<Api['rekordboxQueueReady']>().mockResolvedValue(undefined),
-    onRekordboxQueueChanged: vi.fn<Api['onRekordboxQueueChanged']>(() => () => {}),
     onVerifyUpdate: vi.fn<Api['onVerifyUpdate']>(() => () => {}),
     retryVerification: vi.fn<Api['retryVerification']>().mockResolvedValue('rechecked'),
-    onRekordboxQueueApplied: vi.fn<Api['onRekordboxQueueApplied']>(() => () => {}),
-    engineCueQueue: vi
-      .fn<Api['engineCueQueue']>()
-      .mockResolvedValue({ tracks: 0, changes: 0, items: [] }),
-    applyEngineCueQueue: vi.fn<Api['applyEngineCueQueue']>().mockResolvedValue(null),
-    discardEngineCueQueue: vi.fn<Api['discardEngineCueQueue']>().mockResolvedValue(undefined),
-    engineCueQueueReady: vi.fn<Api['engineCueQueueReady']>().mockResolvedValue(undefined),
-    onEngineCueQueueChanged: vi.fn<Api['onEngineCueQueueChanged']>(() => () => {}),
-    onEngineCueQueueApplied: vi.fn<Api['onEngineCueQueueApplied']>(() => () => {}),
-    traktorCueQueue: vi
-      .fn<Api['traktorCueQueue']>()
-      .mockResolvedValue({ tracks: 0, changes: 0, items: [] }),
-    applyTraktorCueQueue: vi.fn<Api['applyTraktorCueQueue']>().mockResolvedValue(null),
-    discardTraktorCueQueue: vi.fn<Api['discardTraktorCueQueue']>().mockResolvedValue(undefined),
-    traktorCueQueueReady: vi.fn<Api['traktorCueQueueReady']>().mockResolvedValue(undefined),
-    onTraktorCueQueueChanged: vi.fn<Api['onTraktorCueQueueChanged']>(() => () => {}),
-    onTraktorCueQueueApplied: vi.fn<Api['onTraktorCueQueueApplied']>(() => () => {}),
-    seratoCueQueue: vi
-      .fn<Api['seratoCueQueue']>()
-      .mockResolvedValue({ tracks: 0, changes: 0, items: [] }),
-    applySeratoCueQueue: vi.fn<Api['applySeratoCueQueue']>().mockResolvedValue(null),
-    discardSeratoCueQueue: vi.fn<Api['discardSeratoCueQueue']>().mockResolvedValue(undefined),
-    seratoCueQueueReady: vi.fn<Api['seratoCueQueueReady']>().mockResolvedValue(undefined),
-    onSeratoCueQueueChanged: vi.fn<Api['onSeratoCueQueueChanged']>(() => () => {}),
-    onSeratoCueQueueApplied: vi.fn<Api['onSeratoCueQueueApplied']>(() => () => {}),
     copiesStatus: vi.fn<Api['copiesStatus']>().mockResolvedValue([]),
     onCopiesChanged: vi.fn<Api['onCopiesChanged']>(() => () => {}),
     traktorCanSave: vi.fn<Api['traktorCanSave']>().mockResolvedValue(true),
@@ -421,6 +382,20 @@ function setApi(over: Record<string, unknown> = {}): void {
     cancelJob: vi.fn(),
     reportUnsavedCues: vi.fn<Api['reportUnsavedCues']>(),
     ...over,
+    dj: djReads(
+      {
+        rekordbox: {
+          available: vi.fn<ProgramReads['available']>().mockResolvedValue(false),
+          membership: vi.fn<ProgramReads['membership']>().mockResolvedValue({}),
+          hasSeparator: vi.fn<ProgramReads['hasSeparator']>().mockResolvedValue(true),
+          editPlaylist: vi.fn<ProgramReads['editPlaylist']>().mockResolvedValue({ applied: true }),
+        },
+        engine: { available: vi.fn<ProgramReads['available']>().mockResolvedValue(false) },
+        traktor: { available: vi.fn<ProgramReads['available']>().mockResolvedValue(false) },
+        serato: { available: vi.fn<ProgramReads['available']>().mockResolvedValue(false) },
+      },
+      over.dj as DjApi | undefined,
+    ),
   }
 }
 
@@ -507,11 +482,15 @@ describe('App unsaved cues', () => {
   })
 
   it('forgets a draft built on a queued save once the queue changes under it, so quitting no longer asks for it', async () => {
-    let pushQueue: Parameters<Api['onRekordboxQueueChanged']>[0] = () => {}
+    let pushQueue: Parameters<ProgramReads['onCueQueueChanged']>[0] = () => {}
     setApi({
-      onRekordboxQueueChanged: vi.fn<Api['onRekordboxQueueChanged']>((cb) => {
-        pushQueue = cb
-        return () => {}
+      dj: djReads({
+        rekordbox: {
+          onCueQueueChanged: vi.fn<ProgramReads['onCueQueueChanged']>((cb) => {
+            pushQueue = cb
+            return () => {}
+          }),
+        },
       }),
       rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>(async () => ({
         contentId: '103',
@@ -548,16 +527,23 @@ describe('App Engine DJ cues', () => {
   function openEngine(over: Partial<Api> = {}) {
     setApi({
       pickFiles: vi.fn().mockResolvedValue(['/m/a.wav', '/m/b.wav']),
-      engineAvailable: vi.fn<Api['engineAvailable']>().mockResolvedValue(true),
-      loadEngineTree: vi
-        .fn<Api['loadEngineTree']>()
-        .mockResolvedValue([{ id: '7', name: 'Friday', kind: 'playlist', count: 2 }]),
-      engineRecentCount: vi.fn<Api['engineRecentCount']>().mockResolvedValue(0),
-      loadEnginePlaylist: vi.fn<Api['loadEnginePlaylist']>().mockResolvedValue([
-        { path: '/m/a.wav', separator: false, meta: {}, contentId: 'engine:11' },
-        { path: '/m/b.wav', separator: false, meta: {}, contentId: 'engine:12' },
-      ]),
       ...over,
+      dj: djReads(
+        {
+          engine: {
+            available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+            tree: vi
+              .fn<ProgramReads['tree']>()
+              .mockResolvedValue([{ id: '7', name: 'Friday', kind: 'playlist', count: 2 }]),
+            recentCount: vi.fn<ProgramReads['recentCount']>().mockResolvedValue(0),
+            playlist: vi.fn<ProgramReads['playlist']>().mockResolvedValue([
+              { path: '/m/a.wav', separator: false, meta: {}, contentId: 'engine:11' },
+              { path: '/m/b.wav', separator: false, meta: {}, contentId: 'engine:12' },
+            ]),
+          },
+        },
+        over.dj,
+      ),
     })
   }
 
@@ -653,10 +639,14 @@ describe('App Engine DJ cues', () => {
 
   it('lets an Engine DJ row go to another playlist but never offers removing it from the open one', async () => {
     openEngine({
-      loadEngineTree: vi.fn<Api['loadEngineTree']>().mockResolvedValue([
-        { id: '7', name: 'Friday', kind: 'playlist', count: 2 },
-        { id: '8', name: 'Saturday', kind: 'playlist', count: 0 },
-      ]),
+      dj: djReads({
+        engine: {
+          tree: vi.fn<ProgramReads['tree']>().mockResolvedValue([
+            { id: '7', name: 'Friday', kind: 'playlist', count: 2 },
+            { id: '8', name: 'Saturday', kind: 'playlist', count: 0 },
+          ]),
+        },
+      }),
     })
     await renderApp()
     fireEvent.click(await screen.findByTestId('source-rail-engine'))
@@ -675,10 +665,14 @@ describe('App Engine DJ cues', () => {
         focusListeners.push(cb)
         return () => {}
       },
-      engineAvailable: vi
-        .fn<Api['engineAvailable']>()
-        .mockResolvedValueOnce(true)
-        .mockResolvedValue(false),
+      dj: djReads({
+        engine: {
+          available: vi
+            .fn<ProgramReads['available']>()
+            .mockResolvedValueOnce(true)
+            .mockResolvedValue(false),
+        },
+      }),
     })
     await renderApp()
     fireEvent.click(await screen.findByTestId('source-rail-engine'))
@@ -694,10 +688,14 @@ describe('App Engine DJ cues', () => {
 
   it('shows what waits for Engine DJ to close beside rekordbox’s queue', async () => {
     openEngine({
-      engineCueQueue: vi.fn<Api['engineCueQueue']>().mockResolvedValue({
-        tracks: 1,
-        changes: 0,
-        items: [{ key: 'track:/m/a.wav', label: 'a', parts: [{ kind: 'cues' }] }],
+      dj: djReads({
+        engine: {
+          cueQueue: vi.fn<ProgramReads['cueQueue']>().mockResolvedValue({
+            tracks: 1,
+            changes: 0,
+            items: [{ key: 'track:/m/a.wav', label: 'a', parts: [{ kind: 'cues' }] }],
+          }),
+        },
       }),
     })
     await renderApp()
@@ -709,10 +707,12 @@ describe('App Engine DJ cues', () => {
   it('lines the waiting queues up as rekordbox, Engine DJ, Traktor and Serato, the order of the source rail', async () => {
     const waiting = { tracks: 1, changes: 0, items: [] }
     openEngine({
-      rekordboxQueue: vi.fn<Api['rekordboxQueue']>().mockResolvedValue(waiting),
-      engineCueQueue: vi.fn<Api['engineCueQueue']>().mockResolvedValue(waiting),
-      traktorCueQueue: vi.fn<Api['traktorCueQueue']>().mockResolvedValue(waiting),
-      seratoCueQueue: vi.fn<Api['seratoCueQueue']>().mockResolvedValue(waiting),
+      dj: djReads({
+        rekordbox: { cueQueue: vi.fn<ProgramReads['cueQueue']>().mockResolvedValue(waiting) },
+        engine: { cueQueue: vi.fn<ProgramReads['cueQueue']>().mockResolvedValue(waiting) },
+        traktor: { cueQueue: vi.fn<ProgramReads['cueQueue']>().mockResolvedValue(waiting) },
+        serato: { cueQueue: vi.fn<ProgramReads['cueQueue']>().mockResolvedValue(waiting) },
+      }),
     })
     await renderApp()
     await screen.findByTestId('serato-queue-pill')
@@ -751,16 +751,23 @@ describe('App Traktor cues', () => {
   function openTraktor(over: Partial<Api> = {}) {
     setApi({
       pickFiles: vi.fn().mockResolvedValue(['/m/a.wav', '/m/b.wav']),
-      traktorAvailable: vi.fn<Api['traktorAvailable']>().mockResolvedValue(true),
-      loadTraktorTree: vi
-        .fn<Api['loadTraktorTree']>()
-        .mockResolvedValue([{ id: 'u1', name: 'Saturday', kind: 'playlist', count: 2 }]),
-      traktorRecentCount: vi.fn<Api['traktorRecentCount']>().mockResolvedValue(0),
-      loadTraktorPlaylist: vi.fn<Api['loadTraktorPlaylist']>().mockResolvedValue([
-        { path: '/m/a.wav', separator: false, meta: {}, contentId: 'traktor:HD/:m/:a.wav' },
-        { path: '/m/b.wav', separator: false, meta: {}, contentId: 'traktor:HD/:m/:b.wav' },
-      ]),
       ...over,
+      dj: djReads(
+        {
+          traktor: {
+            available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+            tree: vi
+              .fn<ProgramReads['tree']>()
+              .mockResolvedValue([{ id: 'u1', name: 'Saturday', kind: 'playlist', count: 2 }]),
+            recentCount: vi.fn<ProgramReads['recentCount']>().mockResolvedValue(0),
+            playlist: vi.fn<ProgramReads['playlist']>().mockResolvedValue([
+              { path: '/m/a.wav', separator: false, meta: {}, contentId: 'traktor:HD/:m/:a.wav' },
+              { path: '/m/b.wav', separator: false, meta: {}, contentId: 'traktor:HD/:m/:b.wav' },
+            ]),
+          },
+        },
+        over.dj,
+      ),
     })
   }
 
@@ -788,12 +795,16 @@ describe('App Traktor cues', () => {
   it('keeps Traktor’s HISTORY closed to tracks and its built-in lists to tracks only, so Surco never breaks what Traktor manages', async () => {
     openTraktor({
       traktorCanSave: vi.fn<Api['traktorCanSave']>().mockResolvedValue(true),
-      loadTraktorTree: vi.fn<Api['loadTraktorTree']>().mockResolvedValue([
-        { id: 'prep', name: 'Preparation', kind: 'playlist', count: 0 },
-        { id: 'hist', name: 'HISTORY', kind: 'playlist', count: 0 },
-        { id: 'u2', name: 'Sunday', kind: 'playlist', count: 0 },
-        { id: 'u1', name: 'Saturday', kind: 'playlist', count: 2 },
-      ]),
+      dj: djReads({
+        traktor: {
+          tree: vi.fn<ProgramReads['tree']>().mockResolvedValue([
+            { id: 'prep', name: 'Preparation', kind: 'playlist', count: 0 },
+            { id: 'hist', name: 'HISTORY', kind: 'playlist', count: 0 },
+            { id: 'u2', name: 'Sunday', kind: 'playlist', count: 0 },
+            { id: 'u1', name: 'Saturday', kind: 'playlist', count: 2 },
+          ]),
+        },
+      }),
     })
     await renderApp()
     fireEvent.click(await screen.findByTestId('source-rail-traktor'))
@@ -847,10 +858,14 @@ describe('App Traktor cues', () => {
 
   it('shows what waits for Traktor to close beside the other queues', async () => {
     openTraktor({
-      traktorCueQueue: vi.fn<Api['traktorCueQueue']>().mockResolvedValue({
-        tracks: 1,
-        changes: 0,
-        items: [{ key: 'track:/m/a.wav', label: 'a', parts: [{ kind: 'cues' }] }],
+      dj: djReads({
+        traktor: {
+          cueQueue: vi.fn<ProgramReads['cueQueue']>().mockResolvedValue({
+            tracks: 1,
+            changes: 0,
+            items: [{ key: 'track:/m/a.wav', label: 'a', parts: [{ kind: 'cues' }] }],
+          }),
+        },
       }),
     })
     await renderApp()
@@ -865,16 +880,23 @@ describe('App Serato cues', () => {
 
   function openSerato(over: Partial<Api> = {}) {
     setApi({
-      seratoAvailable: vi.fn<Api['seratoAvailable']>().mockResolvedValue(true),
-      loadSeratoTree: vi
-        .fn<Api['loadSeratoTree']>()
-        .mockResolvedValue([{ id: 'Friday', name: 'Friday', kind: 'playlist', count: 2 }]),
-      seratoRecentCount: vi.fn<Api['seratoRecentCount']>().mockResolvedValue(0),
-      loadSeratoPlaylist: vi.fn<Api['loadSeratoPlaylist']>().mockResolvedValue([
-        { path: '/m/a.wav', separator: false, meta: {}, contentId: 'serato:/m/a.wav' },
-        { path: '/m/b.wav', separator: false, meta: {}, contentId: 'serato:/m/b.wav' },
-      ]),
       ...over,
+      dj: djReads(
+        {
+          serato: {
+            available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+            tree: vi
+              .fn<ProgramReads['tree']>()
+              .mockResolvedValue([{ id: 'Friday', name: 'Friday', kind: 'playlist', count: 2 }]),
+            recentCount: vi.fn<ProgramReads['recentCount']>().mockResolvedValue(0),
+            playlist: vi.fn<ProgramReads['playlist']>().mockResolvedValue([
+              { path: '/m/a.wav', separator: false, meta: {}, contentId: 'serato:/m/a.wav' },
+              { path: '/m/b.wav', separator: false, meta: {}, contentId: 'serato:/m/b.wav' },
+            ]),
+          },
+        },
+        over.dj,
+      ),
     })
   }
 
@@ -947,11 +969,15 @@ describe('App Serato cues', () => {
   it('keeps the Serato warning off another program’s tab, even while Serato is still open', async () => {
     openSerato({
       seratoRunning: vi.fn<Api['seratoRunning']>().mockResolvedValue(true),
-      traktorAvailable: vi.fn<Api['traktorAvailable']>().mockResolvedValue(true),
-      loadTraktorTree: vi
-        .fn<Api['loadTraktorTree']>()
-        .mockResolvedValue([{ id: 'u1', name: 'Saturday', kind: 'playlist', count: 0 }]),
-      traktorRecentCount: vi.fn<Api['traktorRecentCount']>().mockResolvedValue(0),
+      dj: djReads({
+        traktor: {
+          available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+          tree: vi
+            .fn<ProgramReads['tree']>()
+            .mockResolvedValue([{ id: 'u1', name: 'Saturday', kind: 'playlist', count: 0 }]),
+          recentCount: vi.fn<ProgramReads['recentCount']>().mockResolvedValue(0),
+        },
+      }),
     })
     await renderApp()
     fireEvent.click(await screen.findByTestId('source-rail-serato'))
@@ -986,10 +1012,14 @@ describe('App Serato cues', () => {
 
   it('marks a Serato row whose cues wait for Serato to close', async () => {
     openSerato({
-      seratoCueQueue: vi.fn<Api['seratoCueQueue']>().mockResolvedValue({
-        tracks: 1,
-        changes: 0,
-        items: [{ key: 'track:/m/a.wav', label: 'a', parts: [{ kind: 'cues' }] }],
+      dj: djReads({
+        serato: {
+          cueQueue: vi.fn<ProgramReads['cueQueue']>().mockResolvedValue({
+            tracks: 1,
+            changes: 0,
+            items: [{ key: 'track:/m/a.wav', label: 'a', parts: [{ kind: 'cues' }] }],
+          }),
+        },
       }),
     })
     await openFriday()
@@ -1000,13 +1030,17 @@ describe('App Serato cues', () => {
   })
 
   it('watches the Serato queue from the start and shows what waits for Serato to close', async () => {
-    const seratoCueQueueReady = vi.fn<Api['seratoCueQueueReady']>().mockResolvedValue(undefined)
+    const seratoCueQueueReady = vi.fn<ProgramReads['cueQueueReady']>().mockResolvedValue(undefined)
     openSerato({
-      seratoCueQueueReady,
-      seratoCueQueue: vi.fn<Api['seratoCueQueue']>().mockResolvedValue({
-        tracks: 1,
-        changes: 0,
-        items: [{ key: 'track:/m/a.wav', label: 'a', parts: [{ kind: 'cues' }] }],
+      dj: djReads({
+        serato: {
+          cueQueueReady: seratoCueQueueReady,
+          cueQueue: vi.fn<ProgramReads['cueQueue']>().mockResolvedValue({
+            tracks: 1,
+            changes: 0,
+            items: [{ key: 'track:/m/a.wav', label: 'a', parts: [{ kind: 'cues' }] }],
+          }),
+        },
       }),
     })
     await renderApp()
@@ -1032,24 +1066,29 @@ describe('App Serato crate move', () => {
     let settle: (result: RekordboxEditResult) => void = () => {}
     let tree = BEFORE
     const loadSeratoPlaylist = vi
-      .fn<Api['loadSeratoPlaylist']>()
+      .fn<ProgramReads['playlist']>()
       .mockResolvedValue([
         { path: '/m/a.wav', separator: false, meta: {}, contentId: 'serato:/m/a.wav' },
       ])
+    const editSerato = vi.fn<ProgramReads['editPlaylist']>(
+      () =>
+        new Promise((resolve) => {
+          settle = (result) => {
+            if (result.applied) tree = AFTER
+            resolve(result)
+          }
+        }),
+    )
     setApi({
-      seratoAvailable: vi.fn<Api['seratoAvailable']>().mockResolvedValue(true),
-      loadSeratoTree: vi.fn<Api['loadSeratoTree']>(async () => tree),
-      seratoRecentCount: vi.fn<Api['seratoRecentCount']>().mockResolvedValue(0),
-      loadSeratoPlaylist,
-      editSeratoPlaylist: vi.fn<Api['editSeratoPlaylist']>(
-        () =>
-          new Promise((resolve) => {
-            settle = (result) => {
-              if (result.applied) tree = AFTER
-              resolve(result)
-            }
-          }),
-      ),
+      dj: djReads({
+        serato: {
+          available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+          tree: vi.fn<ProgramReads['tree']>(async () => tree),
+          recentCount: vi.fn<ProgramReads['recentCount']>().mockResolvedValue(0),
+          playlist: loadSeratoPlaylist,
+          editPlaylist: editSerato,
+        },
+      }),
     })
     await renderApp()
     fireEvent.click(await screen.findByTestId('source-rail-serato'))
@@ -1060,7 +1099,7 @@ describe('App Serato crate move', () => {
     fireEvent.dragStart(screen.getByTestId('source-node-A%%B'), { dataTransfer: dt })
     fireEvent.dragOver(screen.getByTestId('source-node-D'), { dataTransfer: dt })
     fireEvent.drop(screen.getByTestId('source-node-D'), { dataTransfer: dt })
-    await waitFor(() => expect(window.api.editSeratoPlaylist).toHaveBeenCalled())
+    await waitFor(() => expect(editSerato).toHaveBeenCalled())
     expect(loadSeratoPlaylist).not.toHaveBeenCalledWith('D%%B')
     await act(async () => settle(answer))
     return loadSeratoPlaylist
@@ -1191,16 +1230,23 @@ describe('App results column fold', () => {
     )
     setApi({
       saveSettings,
-      engineAvailable: vi.fn<Api['engineAvailable']>().mockResolvedValue(true),
-      loadEngineTree: vi
-        .fn<Api['loadEngineTree']>()
-        .mockResolvedValue([{ id: '7', name: 'Friday', kind: 'playlist', count: 2 }]),
-      engineRecentCount: vi.fn<Api['engineRecentCount']>().mockResolvedValue(0),
-      loadEnginePlaylist: vi.fn<Api['loadEnginePlaylist']>().mockResolvedValue([
-        { path: '/m/a.wav', separator: false, meta: {}, contentId: 'engine:11' },
-        { path: '/m/b.wav', separator: false, meta: {}, contentId: 'engine:12' },
-      ]),
       ...over,
+      dj: djReads(
+        {
+          engine: {
+            available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+            tree: vi
+              .fn<ProgramReads['tree']>()
+              .mockResolvedValue([{ id: '7', name: 'Friday', kind: 'playlist', count: 2 }]),
+            recentCount: vi.fn<ProgramReads['recentCount']>().mockResolvedValue(0),
+            playlist: vi.fn<ProgramReads['playlist']>().mockResolvedValue([
+              { path: '/m/a.wav', separator: false, meta: {}, contentId: 'engine:11' },
+              { path: '/m/b.wav', separator: false, meta: {}, contentId: 'engine:12' },
+            ]),
+          },
+        },
+        over.dj,
+      ),
     })
     return saveSettings
   }
@@ -1287,15 +1333,19 @@ describe('App auto-match in a DJ library tab', () => {
       readDuration: vi.fn().mockResolvedValue(180),
       search,
       getRelease: vi.fn<Api['getRelease']>().mockResolvedValue(release),
-      engineAvailable: vi.fn<Api['engineAvailable']>().mockResolvedValue(true),
-      loadEngineTree: vi
-        .fn<Api['loadEngineTree']>()
-        .mockResolvedValue([{ id: '7', name: 'Friday', kind: 'playlist', count: 2 }]),
-      engineRecentCount: vi.fn<Api['engineRecentCount']>().mockResolvedValue(0),
-      loadEnginePlaylist: vi.fn<Api['loadEnginePlaylist']>().mockResolvedValue([
-        { path: '/m/a.wav', separator: false, meta: {}, contentId: 'engine:11' },
-        { path: '/m/b.wav', separator: false, meta: {}, contentId: 'engine:12' },
-      ]),
+      dj: djReads({
+        engine: {
+          available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+          tree: vi
+            .fn<ProgramReads['tree']>()
+            .mockResolvedValue([{ id: '7', name: 'Friday', kind: 'playlist', count: 2 }]),
+          recentCount: vi.fn<ProgramReads['recentCount']>().mockResolvedValue(0),
+          playlist: vi.fn<ProgramReads['playlist']>().mockResolvedValue([
+            { path: '/m/a.wav', separator: false, meta: {}, contentId: 'engine:11' },
+            { path: '/m/b.wav', separator: false, meta: {}, contentId: 'engine:12' },
+          ]),
+        },
+      }),
     })
   }
 
@@ -1810,10 +1860,14 @@ describe('App USB export', () => {
       event?: (e: UsbExportEvent) => void
     } = {}
     setApi({
-      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
-      loadRekordboxTree: vi
-        .fn<Api['loadRekordboxTree']>()
-        .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 1 }]),
+      dj: djReads({
+        rekordbox: {
+          available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+          tree: vi
+            .fn<ProgramReads['tree']>()
+            .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 1 }]),
+        },
+      }),
       usbVolumes: vi
         .fn<Api['usbVolumes']>()
         .mockResolvedValue({ volumes: [stick('A', 'surco')], lastKey: null }),
@@ -1905,15 +1959,21 @@ describe('App USB export', () => {
       .fn<Api['usbPlan']>()
       .mockResolvedValue({ ok: false, reason: 'nothing-selected' })
     setApi({
-      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
-      loadRekordboxTree: vi
-        .fn<Api['loadRekordboxTree']>()
-        .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 1 }]),
-      engineAvailable: vi.fn<Api['engineAvailable']>().mockResolvedValue(true),
-      loadEngineTree: vi
-        .fn<Api['loadEngineTree']>()
-        .mockResolvedValue([{ id: '7', name: 'Friday', kind: 'playlist', count: 2 }]),
-      engineRecentCount: vi.fn<Api['engineRecentCount']>().mockResolvedValue(0),
+      dj: djReads({
+        rekordbox: {
+          available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+          tree: vi
+            .fn<ProgramReads['tree']>()
+            .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 1 }]),
+        },
+        engine: {
+          available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+          tree: vi
+            .fn<ProgramReads['tree']>()
+            .mockResolvedValue([{ id: '7', name: 'Friday', kind: 'playlist', count: 2 }]),
+          recentCount: vi.fn<ProgramReads['recentCount']>().mockResolvedValue(0),
+        },
+      }),
       usbVolumes: vi
         .fn<Api['usbVolumes']>()
         .mockResolvedValue({ volumes: [stick('A', 'empty')], lastKey: null }),
@@ -1940,11 +2000,15 @@ describe('App USB export', () => {
       .fn<Api['usbPlan']>()
       .mockResolvedValue({ ok: false, reason: 'nothing-selected' })
     setApi({
-      engineAvailable: vi.fn<Api['engineAvailable']>().mockResolvedValue(true),
-      loadEngineTree: vi
-        .fn<Api['loadEngineTree']>()
-        .mockResolvedValue([{ id: '7', name: 'Friday', kind: 'playlist', count: 2 }]),
-      engineRecentCount: vi.fn<Api['engineRecentCount']>().mockResolvedValue(0),
+      dj: djReads({
+        engine: {
+          available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+          tree: vi
+            .fn<ProgramReads['tree']>()
+            .mockResolvedValue([{ id: '7', name: 'Friday', kind: 'playlist', count: 2 }]),
+          recentCount: vi.fn<ProgramReads['recentCount']>().mockResolvedValue(0),
+        },
+      }),
       usbVolumes: vi
         .fn<Api['usbVolumes']>()
         .mockResolvedValue({ volumes: [stick('A', 'empty')], lastKey: null }),
@@ -1970,11 +2034,15 @@ describe('App USB export', () => {
 describe('App source rail', () => {
   it('offers Engine DJ only on a machine with its library, as rekordbox only with a collection', async () => {
     await renderApp()
-    await waitFor(() => expect(window.api.engineAvailable).toHaveBeenCalled())
+    await waitFor(() => expect(window.api.dj.available).toHaveBeenCalledWith('engine'))
     await act(async () => {})
     expect(screen.queryByTestId('source-rail-engine')).not.toBeInTheDocument()
     cleanup()
-    setApi({ engineAvailable: vi.fn<Api['engineAvailable']>().mockResolvedValue(true) })
+    setApi({
+      dj: djReads({
+        engine: { available: vi.fn<ProgramReads['available']>().mockResolvedValue(true) },
+      }),
+    })
     await renderApp()
     expect(await screen.findByTestId('source-rail-engine')).toBeInTheDocument()
     expect(screen.queryByTestId('source-rail-rekordbox')).not.toBeInTheDocument()
@@ -1985,12 +2053,16 @@ describe('App source rail', () => {
   it('appears once the rekordbox collection turns out to exist', async () => {
     let answer: (found: boolean) => void = () => {}
     setApi({
-      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>(
-        () => new Promise((resolve) => (answer = resolve)),
-      ),
+      dj: djReads({
+        rekordbox: {
+          available: vi.fn<ProgramReads['available']>(
+            () => new Promise((resolve) => (answer = resolve)),
+          ),
+        },
+      }),
     })
     await renderApp()
-    await waitFor(() => expect(window.api.rekordboxAvailable).toHaveBeenCalled())
+    await waitFor(() => expect(window.api.dj.available).toHaveBeenCalledWith('rekordbox'))
     expect(screen.queryByTestId('source-rail-rekordbox')).not.toBeInTheDocument()
     await act(async () => answer(true))
     expect(await screen.findByTestId('source-rail-rekordbox')).toBeInTheDocument()
@@ -1999,10 +2071,12 @@ describe('App source rail', () => {
   it('the rail and Copias show even without any DJ program', async () => {
     setApi({
       getSettings: vi.fn().mockResolvedValue(settings({ hiddenSources: ['rekordbox', 'engine'] })),
-      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
+      dj: djReads({
+        rekordbox: { available: vi.fn<ProgramReads['available']>().mockResolvedValue(true) },
+      }),
     })
     await renderApp()
-    await waitFor(() => expect(window.api.rekordboxAvailable).toHaveBeenCalled())
+    await waitFor(() => expect(window.api.dj.available).toHaveBeenCalledWith('rekordbox'))
     await act(async () => {})
     expect(screen.getByTestId('source-rail')).toBeInTheDocument()
     expect(screen.queryByTestId('source-rail-rekordbox')).not.toBeInTheDocument()
@@ -2023,7 +2097,9 @@ describe('App source rail', () => {
     const saveSettings = vi.fn((patch: Partial<Settings>) => Promise.resolve({ ...base, ...patch }))
     setApi({
       saveSettings,
-      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
+      dj: djReads({
+        rekordbox: { available: vi.fn<ProgramReads['available']>().mockResolvedValue(true) },
+      }),
     })
     await renderApp()
     fireEvent.contextMenu(await screen.findByTestId('source-rail-rekordbox'))
@@ -2039,11 +2115,15 @@ describe('App source rail', () => {
   // the column is back before they have even loaded.
   it('keeps the tree beside the single empty screen until a playlist is picked', async () => {
     setApi({
-      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
-      loadRekordboxTree: vi
-        .fn<Api['loadRekordboxTree']>()
-        .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 1 }]),
-      loadRekordboxPlaylist: vi.fn<Api['loadRekordboxPlaylist']>(() => new Promise(() => {})),
+      dj: djReads({
+        rekordbox: {
+          available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+          tree: vi
+            .fn<ProgramReads['tree']>()
+            .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 1 }]),
+          playlist: vi.fn<ProgramReads['playlist']>(() => new Promise(() => {})),
+        },
+      }),
     })
     await renderApp()
     fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
@@ -2098,13 +2178,17 @@ describe('App source rail', () => {
         title: { '/m/a.wav': 'Alpha', '/m/b.wav': 'Bravo', '/m/c.wav': 'Charlie' }[path],
         artist: 'DJ',
       })),
-      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
-      loadRekordboxTree: vi
-        .fn<Api['loadRekordboxTree']>()
-        .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 2 }]),
-      loadRekordboxPlaylist: vi
-        .fn<Api['loadRekordboxPlaylist']>()
-        .mockResolvedValue([entry('/m/c.wav'), entry('/m/b.wav')]),
+      dj: djReads({
+        rekordbox: {
+          available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+          tree: vi
+            .fn<ProgramReads['tree']>()
+            .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 2 }]),
+          playlist: vi
+            .fn<ProgramReads['playlist']>()
+            .mockResolvedValue([entry('/m/c.wav'), entry('/m/b.wav')]),
+        },
+      }),
     })
     await renderApp()
     const titles = () => screen.getAllByTestId('track-row').map((r) => r.textContent)
@@ -2147,11 +2231,18 @@ describe('App source rail', () => {
   function rekordboxWithFactory(over: Record<string, unknown> = {}): void {
     setApi({
       readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'DJ' }),
-      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
-      loadRekordboxTree: vi
-        .fn<Api['loadRekordboxTree']>()
-        .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 1 }]),
       ...over,
+      dj: djReads(
+        {
+          rekordbox: {
+            available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+            tree: vi
+              .fn<ProgramReads['tree']>()
+              .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 1 }]),
+          },
+        },
+        over.dj as DjApi | undefined,
+      ),
     })
   }
 
@@ -2199,9 +2290,13 @@ describe('App source rail', () => {
   it('counts the open playlist’s rows in the list header, not the whole working list', async () => {
     rekordboxWithFactory({
       pickFiles: vi.fn().mockResolvedValue(['/m/a.wav', '/m/b.wav']),
-      loadRekordboxPlaylist: vi
-        .fn<Api['loadRekordboxPlaylist']>()
-        .mockResolvedValue([{ path: '/m/a.wav', separator: false, meta: {} }]),
+      dj: djReads({
+        rekordbox: {
+          playlist: vi
+            .fn<ProgramReads['playlist']>()
+            .mockResolvedValue([{ path: '/m/a.wav', separator: false, meta: {} }]),
+        },
+      }),
     })
     await renderApp()
     await addTwoTracks()
@@ -2216,7 +2311,9 @@ describe('App source rail', () => {
   // the playlist having nothing in it.
   it('says the playlist is loading while its entries are read', async () => {
     rekordboxWithFactory({
-      loadRekordboxPlaylist: vi.fn<Api['loadRekordboxPlaylist']>(() => new Promise(() => {})),
+      dj: djReads({
+        rekordbox: { playlist: vi.fn<ProgramReads['playlist']>(() => new Promise(() => {})) },
+      }),
     })
     await renderApp()
     await addTwoTracks()
@@ -2231,7 +2328,9 @@ describe('App source rail', () => {
 
   it('draws placeholder rows in the shape of the tracks to come while the playlist is read', async () => {
     rekordboxWithFactory({
-      loadRekordboxPlaylist: vi.fn<Api['loadRekordboxPlaylist']>(() => new Promise(() => {})),
+      dj: djReads({
+        rekordbox: { playlist: vi.fn<ProgramReads['playlist']>(() => new Promise(() => {})) },
+      }),
     })
     await renderApp()
     await addTwoTracks()
@@ -2260,21 +2359,25 @@ describe('App source rail', () => {
         foreignTags: [],
         partial: true,
       }),
-      loadRekordboxPlaylist: vi.fn<Api['loadRekordboxPlaylist']>().mockResolvedValue([
-        {
-          path: '/m/c.wav',
-          separator: false,
-          meta: {},
-          contentId: 'c',
-          preview: {
-            title: 'Charlie',
-            artist: 'DJ',
-            durationSec: 200,
-            cues: [],
-            coverUrl: 'surco://media/rekordbox-art.jpg',
-          },
+      dj: djReads({
+        rekordbox: {
+          playlist: vi.fn<ProgramReads['playlist']>().mockResolvedValue([
+            {
+              path: '/m/c.wav',
+              separator: false,
+              meta: {},
+              contentId: 'c',
+              preview: {
+                title: 'Charlie',
+                artist: 'DJ',
+                durationSec: 200,
+                cues: [],
+                coverUrl: 'surco://media/rekordbox-art.jpg',
+              },
+            },
+          ]),
         },
-      ]),
+      }),
     })
     await renderApp()
     fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
@@ -2291,9 +2394,13 @@ describe('App source rail', () => {
   // A read that failed is not an empty playlist either: it says why, as the tree does.
   it('says the playlist could not be read when reading its entries fails', async () => {
     rekordboxWithFactory({
-      loadRekordboxPlaylist: vi
-        .fn<Api['loadRekordboxPlaylist']>()
-        .mockRejectedValue(new Error('database is locked')),
+      dj: djReads({
+        rekordbox: {
+          playlist: vi
+            .fn<ProgramReads['playlist']>()
+            .mockRejectedValue(new Error('database is locked')),
+        },
+      }),
     })
     await renderApp()
     await addTwoTracks()
@@ -2325,18 +2432,22 @@ describe('App source playlists', () => {
         }[path],
         artist: 'DJ',
       })),
-      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
-      loadRekordboxTree: vi
-        .fn<Api['loadRekordboxTree']>()
-        .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 3 }]),
-      loadRekordboxPlaylist: vi
-        .fn<Api['loadRekordboxPlaylist']>()
-        .mockResolvedValue([
-          entry('/m/a.wav'),
-          entry('/m/_.mp3', true),
-          entry('/m/b.wav'),
-          entry('/m/c.wav'),
-        ]),
+      dj: djReads({
+        rekordbox: {
+          available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+          tree: vi
+            .fn<ProgramReads['tree']>()
+            .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 3 }]),
+          playlist: vi
+            .fn<ProgramReads['playlist']>()
+            .mockResolvedValue([
+              entry('/m/a.wav'),
+              entry('/m/_.mp3', true),
+              entry('/m/b.wav'),
+              entry('/m/c.wav'),
+            ]),
+        },
+      }),
     })
     await renderApp()
     fireEvent.click(await screen.findByTestId('add-files'))
@@ -2461,14 +2572,21 @@ describe('App source playlists', () => {
         title: path === '/m/a.wav' ? 'Alpha' : 'Bravo',
         artist: 'DJ',
       })),
-      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
-      loadRekordboxTree: vi
-        .fn<Api['loadRekordboxTree']>()
-        .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 1 }]),
-      loadRekordboxPlaylist: vi
-        .fn<Api['loadRekordboxPlaylist']>()
-        .mockResolvedValue([{ path: '/m/a.wav', separator: false, meta: {} }]),
       ...over,
+      dj: djReads(
+        {
+          rekordbox: {
+            available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+            tree: vi
+              .fn<ProgramReads['tree']>()
+              .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 1 }]),
+            playlist: vi
+              .fn<ProgramReads['playlist']>()
+              .mockResolvedValue([{ path: '/m/a.wav', separator: false, meta: {} }]),
+          },
+        },
+        over.dj as DjApi | undefined,
+      ),
     })
   }
 
@@ -2558,13 +2676,17 @@ describe('App source playlists', () => {
     setApi({
       readTags: vi.fn(async () => ({ title: 'Alpha', artist: 'DJ' })),
       expandPaths: vi.fn(async (paths: string[]) => paths.filter((p) => p !== '/m/gone.wav')),
-      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
-      loadRekordboxTree: vi
-        .fn<Api['loadRekordboxTree']>()
-        .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 2 }]),
-      loadRekordboxPlaylist: vi
-        .fn<Api['loadRekordboxPlaylist']>()
-        .mockResolvedValue([entry('/m/a.wav'), entry('/m/gone.wav')]),
+      dj: djReads({
+        rekordbox: {
+          available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+          tree: vi
+            .fn<ProgramReads['tree']>()
+            .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 2 }]),
+          playlist: vi
+            .fn<ProgramReads['playlist']>()
+            .mockResolvedValue([entry('/m/a.wav'), entry('/m/gone.wav')]),
+        },
+      }),
     })
     await renderApp()
     fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
@@ -2609,12 +2731,16 @@ describe('App source playlists', () => {
         focusListeners.push(cb)
         return () => {}
       },
-      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
-      loadRekordboxTree: vi
-        .fn<Api['loadRekordboxTree']>()
-        .mockResolvedValueOnce([{ id: 'f', name: 'Factory', kind: 'playlist', count: 0 }])
-        .mockResolvedValue([]),
-      loadRekordboxPlaylist: vi.fn<Api['loadRekordboxPlaylist']>().mockResolvedValue([]),
+      dj: djReads({
+        rekordbox: {
+          available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+          tree: vi
+            .fn<ProgramReads['tree']>()
+            .mockResolvedValueOnce([{ id: 'f', name: 'Factory', kind: 'playlist', count: 0 }])
+            .mockResolvedValue([]),
+          playlist: vi.fn<ProgramReads['playlist']>().mockResolvedValue([]),
+        },
+      }),
     })
     await renderApp()
     fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
@@ -2632,10 +2758,14 @@ describe('App source playlists', () => {
   it('starts the rekordbox tree fresh after browsing Music', async () => {
     setApi({
       platform: 'darwin',
-      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
-      loadRekordboxTree: vi
-        .fn<Api['loadRekordboxTree']>()
-        .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 0 }]),
+      dj: djReads({
+        rekordbox: {
+          available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+          tree: vi
+            .fn<ProgramReads['tree']>()
+            .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 0 }]),
+        },
+      }),
     })
     await renderApp()
     fireEvent.click(await screen.findByTestId('source-rail-appleMusic'))
@@ -2653,13 +2783,17 @@ describe('App source playlists', () => {
     setApi({
       pickFiles: vi.fn().mockResolvedValue(['/m/a.wav', '/m/b.mp3']),
       readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'DJ' }),
-      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
-      loadRekordboxTree: vi
-        .fn<Api['loadRekordboxTree']>()
-        .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 1 }]),
-      loadRekordboxPlaylist: vi
-        .fn<Api['loadRekordboxPlaylist']>()
-        .mockResolvedValue([{ path: '/m/a.wav', separator: false, meta: {} }]),
+      dj: djReads({
+        rekordbox: {
+          available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+          tree: vi
+            .fn<ProgramReads['tree']>()
+            .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 1 }]),
+          playlist: vi
+            .fn<ProgramReads['playlist']>()
+            .mockResolvedValue([{ path: '/m/a.wav', separator: false, meta: {} }]),
+        },
+      }),
     })
     await renderApp()
     fireEvent.click(await screen.findByTestId('add-files'))
@@ -2671,7 +2805,9 @@ describe('App source playlists', () => {
 
     fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
     fireEvent.click(await screen.findByTestId('source-node-f'))
-    await waitFor(() => expect(window.api.loadRekordboxPlaylist).toHaveBeenCalled())
+    await waitFor(() =>
+      expect(window.api.dj.playlist).toHaveBeenCalledWith('rekordbox', expect.anything()),
+    )
     await new Promise((r) => setTimeout(r, 0))
     fireEvent.click(screen.getByTestId('source-rail-tracks'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
@@ -2694,12 +2830,16 @@ describe('App source playlists', () => {
         title: { '/m/a.wav': 'Alpha', '/m/b.wav': 'Bravo', '/m/c.wav': 'Charlie' }[path],
         artist: 'DJ',
       })),
-      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
-      loadRekordboxTree: vi.fn<Api['loadRekordboxTree']>().mockResolvedValue([
-        { id: 'f', name: 'Todas', kind: 'playlist', count: 3 },
-        { id: 'g', name: 'Top', kind: 'playlist', count: 3 },
-      ]),
-      loadRekordboxPlaylist: vi.fn<Api['loadRekordboxPlaylist']>(async (id) => playlists[id]),
+      dj: djReads({
+        rekordbox: {
+          available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+          tree: vi.fn<ProgramReads['tree']>().mockResolvedValue([
+            { id: 'f', name: 'Todas', kind: 'playlist', count: 3 },
+            { id: 'g', name: 'Top', kind: 'playlist', count: 3 },
+          ]),
+          playlist: vi.fn<ProgramReads['playlist']>(async (id) => playlists[id]),
+        },
+      }),
     })
     await renderApp()
     fireEvent.click(await screen.findByTestId('add-files'))
@@ -2738,17 +2878,23 @@ describe('App source playlists', () => {
       readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'DJ' }),
       search: vi.fn(pending),
       spectrogram: vi.fn(pending),
-      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
-      loadRekordboxTree: vi
-        .fn<Api['loadRekordboxTree']>()
-        .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 1 }]),
-      loadRekordboxPlaylist: vi.fn<Api['loadRekordboxPlaylist']>(() => new Promise(() => {})),
+      dj: djReads({
+        rekordbox: {
+          available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+          tree: vi
+            .fn<ProgramReads['tree']>()
+            .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 1 }]),
+          playlist: vi.fn<ProgramReads['playlist']>(() => new Promise(() => {})),
+        },
+      }),
     })
     await renderApp()
     await addTwoTracks()
     fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
     fireEvent.click(await screen.findByTestId('source-node-f'))
-    await waitFor(() => expect(window.api.loadRekordboxPlaylist).toHaveBeenCalled())
+    await waitFor(() =>
+      expect(window.api.dj.playlist).toHaveBeenCalledWith('rekordbox', expect.anything()),
+    )
 
     expect(screen.queryAllByTestId('track-row')).toHaveLength(0)
     expect(screen.getByTestId('auto-match')).toBeDisabled()
@@ -2777,12 +2923,16 @@ describe('App source playlists', () => {
           await gate
           return spectrum
         }),
-        rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
-        loadRekordboxTree: vi.fn<Api['loadRekordboxTree']>().mockResolvedValue([
-          { id: 'a', name: 'Warm up', kind: 'playlist', count: 5 },
-          { id: 'b', name: 'Peak', kind: 'playlist', count: 1 },
-        ]),
-        loadRekordboxPlaylist: vi.fn<Api['loadRekordboxPlaylist']>(async (id) => playlists[id]),
+        dj: djReads({
+          rekordbox: {
+            available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+            tree: vi.fn<ProgramReads['tree']>().mockResolvedValue([
+              { id: 'a', name: 'Warm up', kind: 'playlist', count: 5 },
+              { id: 'b', name: 'Peak', kind: 'playlist', count: 1 },
+            ]),
+            playlist: vi.fn<ProgramReads['playlist']>(async (id) => playlists[id]),
+          },
+        }),
       })
       return { analyzed, release: () => release() }
     }
@@ -2855,16 +3005,21 @@ describe('App source playlists', () => {
     setApi({
       pickFiles: vi.fn().mockResolvedValue(['/m/a.wav', '/m/b.wav', '/m/c.wav']),
       readTags: vi.fn(async (path: string) => ({ title: TITLES[path], artist: 'DJ' })),
-      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
-      loadRekordboxTree: vi.fn<Api['loadRekordboxTree']>().mockResolvedValue([
-        { id: 'f', name: 'Factory', kind: 'playlist', count: 3 },
-        { id: 'h', name: 'House', kind: 'playlist', count: 0 },
-      ]),
-      loadRekordboxPlaylist: vi
-        .fn<Api['loadRekordboxPlaylist']>()
-        .mockResolvedValue(FACTORY_ENTRIES),
       startTrackDrag: vi.fn(),
       ...over,
+      dj: djReads(
+        {
+          rekordbox: {
+            available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+            tree: vi.fn<ProgramReads['tree']>().mockResolvedValue([
+              { id: 'f', name: 'Factory', kind: 'playlist', count: 3 },
+              { id: 'h', name: 'House', kind: 'playlist', count: 0 },
+            ]),
+            playlist: vi.fn<ProgramReads['playlist']>().mockResolvedValue(FACTORY_ENTRIES),
+          },
+        },
+        over.dj as DjApi | undefined,
+      ),
     })
     await renderApp()
     fireEvent.click(await screen.findByTestId('add-files'))
@@ -2905,9 +3060,9 @@ describe('App source playlists', () => {
   // order at once and keep it after rekordbox answers, even with the dragged row selected
   // (a held selection otherwise freezes the order on screen).
   it('reorders an open rekordbox playlist by dragging a row onto another', async () => {
-    const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({ applied: true })
+    const edit = vi.fn<ProgramReads['editPlaylist']>().mockResolvedValue({ applied: true })
     const load = vi
-      .fn<Api['loadRekordboxPlaylist']>()
+      .fn<ProgramReads['playlist']>()
       .mockResolvedValueOnce(FACTORY_ENTRIES)
       .mockResolvedValue([
         FACTORY_ENTRIES[3],
@@ -2916,8 +3071,7 @@ describe('App source playlists', () => {
         FACTORY_ENTRIES[2],
       ])
     await openFactory({
-      editRekordboxPlaylist: edit,
-      loadRekordboxPlaylist: load,
+      dj: djReads({ rekordbox: { playlist: load, editPlaylist: edit } }),
       startTrackDrag: vi.fn(),
       getPathForFile: vi.fn((f: File) => `/m/${f.name}`),
     })
@@ -2969,15 +3123,22 @@ describe('App source playlists', () => {
     const HOUSE_ENTRIES = [linked('/m/b.wav', 'h2'), linked('/m/c.wav', 'h3')]
     const openThree = async (over: Record<string, unknown> = {}) => {
       await openFactory({
-        loadRekordboxTree: vi.fn<Api['loadRekordboxTree']>().mockResolvedValue([
-          { id: 'f', name: 'Factory', kind: 'playlist', count: 3 },
-          { id: 'h', name: 'House', kind: 'playlist', count: 2 },
-          { id: 'g', name: 'Gym', kind: 'playlist', count: 0 },
-        ]),
-        loadRekordboxPlaylist: vi.fn(async (id: string) =>
-          id === 'h' ? HOUSE_ENTRIES : id === 'g' ? [] : FACTORY_ENTRIES,
-        ),
         ...over,
+        dj: djReads(
+          {
+            rekordbox: {
+              tree: vi.fn<ProgramReads['tree']>().mockResolvedValue([
+                { id: 'f', name: 'Factory', kind: 'playlist', count: 3 },
+                { id: 'h', name: 'House', kind: 'playlist', count: 2 },
+                { id: 'g', name: 'Gym', kind: 'playlist', count: 0 },
+              ]),
+              playlist: vi.fn(async (id: string) =>
+                id === 'h' ? HOUSE_ENTRIES : id === 'g' ? [] : FACTORY_ENTRIES,
+              ),
+            },
+          },
+          over.dj as DjApi | undefined,
+        ),
       })
     }
     // The rows of the new playlist can paint a commit before the selection carried over to
@@ -2993,11 +3154,11 @@ describe('App source playlists', () => {
         .map((r) => r.textContent)
 
     it('adds only the rows of the open playlist to another one', async () => {
-      const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({
+      const edit = vi.fn<ProgramReads['editPlaylist']>().mockResolvedValue({
         applied: true,
         report: { added: 2, already: 0, notInCollection: 0, ambiguous: 0 },
       })
-      await openThree({ editRekordboxPlaylist: edit })
+      await openThree({ dj: djReads({ rekordbox: { editPlaylist: edit } }) })
       const rows = screen.getAllByTestId('track-row')
       fireEvent.click(rows[0])
       fireEvent.click(rows[1], { metaKey: true })
@@ -3063,12 +3224,16 @@ describe('App source playlists', () => {
     const openWithReread = async (after: typeof FACTORY_ENTRIES, edit = vi.fn()) => {
       edit.mockResolvedValue({ applied: true })
       const load = vi
-        .fn<Api['loadRekordboxPlaylist']>()
+        .fn<ProgramReads['playlist']>()
         .mockResolvedValueOnce(FACTORY_ENTRIES)
         .mockResolvedValue(after)
       await openFactory({
-        loadRekordboxPlaylist: vi.fn(async (id: string) => (id === 'f' ? load(id) : [])),
-        editRekordboxPlaylist: edit,
+        dj: djReads({
+          rekordbox: {
+            playlist: vi.fn(async (id: string) => (id === 'f' ? load(id) : [])),
+            editPlaylist: edit,
+          },
+        }),
       })
       return edit
     }
@@ -3128,12 +3293,12 @@ describe('App source playlists', () => {
   })
 
   it('reads the open playlist again after a conversion moved a file, so rekordbox’s repoint shows', async () => {
-    const load = vi.fn<Api['loadRekordboxPlaylist']>().mockResolvedValue(FACTORY_ENTRIES)
+    const load = vi.fn<ProgramReads['playlist']>().mockResolvedValue(FACTORY_ENTRIES)
     const processTrack = vi.fn<Api['processTrack']>().mockResolvedValue({
       outputPath: '/m/a.aiff',
       inPlace: true,
     })
-    await openFactory({ processTrack, loadRekordboxPlaylist: load })
+    await openFactory({ processTrack, dj: djReads({ rekordbox: { playlist: load } }) })
     const reads = load.mock.calls.length
     fireEvent.click(screen.getAllByTestId('track-row')[0])
     fireEvent.click(await screen.findByTestId('process-btn'))
@@ -3150,10 +3315,14 @@ describe('App source playlists', () => {
       getSettings: vi
         .fn()
         .mockResolvedValue(settings({ visibleFields: ['title', 'artist', 'bpm'] })),
-      loadRekordboxPlaylist: vi
-        .fn<Api['loadRekordboxPlaylist']>()
-        .mockResolvedValueOnce(withBpm)
-        .mockResolvedValue(withBpm.filter((e) => !e.separator)),
+      dj: djReads({
+        rekordbox: {
+          playlist: vi
+            .fn<ProgramReads['playlist']>()
+            .mockResolvedValueOnce(withBpm)
+            .mockResolvedValue(withBpm.filter((e) => !e.separator)),
+        },
+      }),
     })
     fireEvent.click(screen.getAllByTestId('track-row')[0])
     const bpm = await screen.findByTestId('field-bpm')
@@ -3169,11 +3338,11 @@ describe('App source playlists', () => {
   // Copying between playlists names the exact rekordbox entry of a row read from a
   // playlist, so the symlinked twins copy instead of being refused.
   it('adds a row to another playlist from its menu, naming its rekordbox entry', async () => {
-    const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({
+    const edit = vi.fn<ProgramReads['editPlaylist']>().mockResolvedValue({
       applied: true,
       report: { added: 1, already: 0, notInCollection: 0, ambiguous: 0 },
     })
-    await openFactory({ editRekordboxPlaylist: edit })
+    await openFactory({ dj: djReads({ rekordbox: { editPlaylist: edit } }) })
     fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
     fireEvent.click(await screen.findByTestId('track-menu-add-to'))
     fireEvent.click(screen.getByTestId('track-menu-playlist-h'))
@@ -3191,11 +3360,13 @@ describe('App source playlists', () => {
   })
 
   it('says the change waits and re-reads the playlist when rekordbox stays open', async () => {
-    const load = vi.fn<Api['loadRekordboxPlaylist']>().mockResolvedValue(FACTORY_ENTRIES)
+    const load = vi.fn<ProgramReads['playlist']>().mockResolvedValue(FACTORY_ENTRIES)
     const edit = vi
-      .fn<Api['editRekordboxPlaylist']>()
+      .fn<ProgramReads['editPlaylist']>()
       .mockResolvedValue({ applied: false, reason: 'cancelled' })
-    await openFactory({ loadRekordboxPlaylist: load, editRekordboxPlaylist: edit })
+    await openFactory({
+      dj: djReads({ rekordbox: { playlist: load, editPlaylist: edit } }),
+    })
     const before = load.mock.calls.length
     fireEvent.contextMenu(screen.getAllByTestId('track-row')[1])
     fireEvent.click(await screen.findByTestId('track-menu-remove-from'))
@@ -3213,8 +3384,8 @@ describe('App source playlists', () => {
   // Removing from the DJ's real playlist has no undo in Surco: one row goes in one click
   // like the list's own remove, several ask first and name the playlist they leave.
   it('asks before removing several rows from the rekordbox playlist', async () => {
-    const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({ applied: true })
-    await openFactory({ editRekordboxPlaylist: edit })
+    const edit = vi.fn<ProgramReads['editPlaylist']>().mockResolvedValue({ applied: true })
+    await openFactory({ dj: djReads({ rekordbox: { editPlaylist: edit } }) })
     const rows = screen.getAllByTestId('track-row')
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { metaKey: true })
@@ -3235,8 +3406,8 @@ describe('App source playlists', () => {
   // Inside a playlist, taking a track out of the list and out of the playlist were two actions
   // and the DJ could not tell them apart; now every way to remove reaches the playlist.
   it('removes from the open rekordbox playlist with the key and with the list button too', async () => {
-    const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({ applied: true })
-    await openFactory({ editRekordboxPlaylist: edit })
+    const edit = vi.fn<ProgramReads['editPlaylist']>().mockResolvedValue({ applied: true })
+    await openFactory({ dj: djReads({ rekordbox: { editPlaylist: edit } }) })
     fireEvent.click(screen.getAllByTestId('track-row')[1])
     fireEvent.keyDown(window, { key: 'Backspace', ctrlKey: true })
     await waitFor(() =>
@@ -3275,8 +3446,8 @@ describe('App source playlists', () => {
   // The separator line's ✕ is mouse-only; the row menu is the keyboard's way to remove the
   // separator above a row, and a row with none above offers nothing.
   it('removes the separator above a row from its menu', async () => {
-    const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({ applied: true })
-    await openFactory({ editRekordboxPlaylist: edit })
+    const edit = vi.fn<ProgramReads['editPlaylist']>().mockResolvedValue({ applied: true })
+    await openFactory({ dj: djReads({ rekordbox: { editPlaylist: edit } }) })
     fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
     await screen.findByTestId('track-menu-remove-from')
     expect(screen.queryByTestId('track-menu-remove-separator')).not.toBeInTheDocument()
@@ -3306,8 +3477,8 @@ describe('App source playlists', () => {
 
   // The separator lands above the right-clicked row, so the edit names that row's link.
   it('inserts a separator above the right-clicked row', async () => {
-    const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({ applied: true })
-    await openFactory({ editRekordboxPlaylist: edit })
+    const edit = vi.fn<ProgramReads['editPlaylist']>().mockResolvedValue({ applied: true })
+    await openFactory({ dj: djReads({ rekordbox: { editPlaylist: edit } }) })
     fireEvent.contextMenu(screen.getAllByTestId('track-row')[2])
     const insert = await screen.findByTestId('track-menu-insert-separator')
     await waitFor(() => expect(insert).toBeEnabled())
@@ -3334,13 +3505,20 @@ describe('App source playlists', () => {
 
     async function openRecent(over: Record<string, unknown> = {}) {
       await openFactory({
-        rekordboxRecentCount: vi.fn<Api['rekordboxRecentCount']>().mockResolvedValue(2),
-        loadRekordboxPlaylist: vi
-          .fn<Api['loadRekordboxPlaylist']>()
-          .mockImplementation(async (id) =>
-            id === RECENTLY_ADDED_ID ? RECENT_ENTRIES : FACTORY_ENTRIES,
-          ),
         ...over,
+        dj: djReads(
+          {
+            rekordbox: {
+              recentCount: vi.fn<ProgramReads['recentCount']>().mockResolvedValue(2),
+              playlist: vi
+                .fn<ProgramReads['playlist']>()
+                .mockImplementation(async (id) =>
+                  id === RECENTLY_ADDED_ID ? RECENT_ENTRIES : FACTORY_ENTRIES,
+                ),
+            },
+          },
+          over.dj as DjApi | undefined,
+        ),
       })
       fireEvent.click(screen.getByTestId(`source-node-${RECENTLY_ADDED_ID}`))
       await waitFor(() =>
@@ -3365,8 +3543,8 @@ describe('App source playlists', () => {
     })
 
     it('copies its rows to a playlist by their rekordbox entry, like any open playlist', async () => {
-      const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({ applied: true })
-      await openRecent({ editRekordboxPlaylist: edit })
+      const edit = vi.fn<ProgramReads['editPlaylist']>().mockResolvedValue({ applied: true })
+      await openRecent({ dj: djReads({ rekordbox: { editPlaylist: edit } }) })
       fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
       fireEvent.click(await screen.findByTestId('track-menu-add-to'))
       fireEvent.click(screen.getByTestId('track-menu-playlist-h'))
@@ -3378,7 +3556,9 @@ describe('App source playlists', () => {
 
     it('is never offered as a playlist to add tracks to', async () => {
       await openFactory({
-        rekordboxRecentCount: vi.fn<Api['rekordboxRecentCount']>().mockResolvedValue(2),
+        dj: djReads({
+          rekordbox: { recentCount: vi.fn<ProgramReads['recentCount']>().mockResolvedValue(2) },
+        }),
       })
       await screen.findByTestId(`source-node-${RECENTLY_ADDED_ID}`)
       fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
@@ -3392,15 +3572,19 @@ describe('App source playlists', () => {
     it('shows Engine DJ’s first with the same clock, opening read-only rows like rekordbox’s', async () => {
       setApi({
         readTags: vi.fn(async (path: string) => ({ title: TITLES[path], artist: 'DJ' })),
-        engineAvailable: vi.fn<Api['engineAvailable']>().mockResolvedValue(true),
-        loadEngineTree: vi
-          .fn<Api['loadEngineTree']>()
-          .mockResolvedValue([{ id: '7', name: 'Friday', kind: 'playlist', count: 3 }]),
-        engineRecentCount: vi.fn<Api['engineRecentCount']>().mockResolvedValue(2),
-        engineTrackCount: vi.fn<Api['engineTrackCount']>().mockResolvedValue(40),
-        loadEnginePlaylist: vi
-          .fn<Api['loadEnginePlaylist']>()
-          .mockImplementation(async (id) => (id === RECENTLY_ADDED_ID ? RECENT_ENTRIES : [])),
+        dj: djReads({
+          engine: {
+            available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+            tree: vi
+              .fn<ProgramReads['tree']>()
+              .mockResolvedValue([{ id: '7', name: 'Friday', kind: 'playlist', count: 3 }]),
+            recentCount: vi.fn<ProgramReads['recentCount']>().mockResolvedValue(2),
+            trackCount: vi.fn<ProgramReads['trackCount']>().mockResolvedValue(40),
+            playlist: vi
+              .fn<ProgramReads['playlist']>()
+              .mockImplementation(async (id) => (id === RECENTLY_ADDED_ID ? RECENT_ENTRIES : [])),
+          },
+        }),
         startTrackDrag: vi.fn(),
       })
       await renderApp()
@@ -3440,10 +3624,16 @@ describe('App source playlists', () => {
     // itself: a reorder, removal or separator would name a playlist rekordbox does not have.
     it('opens the whole collection with no reorder, removal or separator on its rows', async () => {
       await openFactory({
-        rekordboxTrackCount: vi.fn<Api['rekordboxTrackCount']>().mockResolvedValue(2078),
-        loadRekordboxPlaylist: vi
-          .fn<Api['loadRekordboxPlaylist']>()
-          .mockImplementation(async (id) => (id === ALL_TRACKS_ID ? ALL_ENTRIES : FACTORY_ENTRIES)),
+        dj: djReads({
+          rekordbox: {
+            trackCount: vi.fn<ProgramReads['trackCount']>().mockResolvedValue(2078),
+            playlist: vi
+              .fn<ProgramReads['playlist']>()
+              .mockImplementation(async (id) =>
+                id === ALL_TRACKS_ID ? ALL_ENTRIES : FACTORY_ENTRIES,
+              ),
+          },
+        }),
       })
       const all = screen.getByTestId(`source-node-${ALL_TRACKS_ID}`)
       expect(all).toHaveTextContent('2078')
@@ -3464,7 +3654,9 @@ describe('App source playlists', () => {
 
     it('is never offered as a playlist to add tracks to', async () => {
       await openFactory({
-        rekordboxTrackCount: vi.fn<Api['rekordboxTrackCount']>().mockResolvedValue(2078),
+        dj: djReads({
+          rekordbox: { trackCount: vi.fn<ProgramReads['trackCount']>().mockResolvedValue(2078) },
+        }),
       })
       await screen.findByTestId(`source-node-${ALL_TRACKS_ID}`)
       fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
@@ -3483,14 +3675,18 @@ describe('App source playlists', () => {
         contentId: `e${i}`,
       }))
       const collection = {
-        rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
-        loadRekordboxTree: vi
-          .fn<Api['loadRekordboxTree']>()
-          .mockResolvedValue([{ id: 'h', name: 'House', kind: 'playlist', count: 1 }]),
-        rekordboxTrackCount: vi.fn<Api['rekordboxTrackCount']>().mockResolvedValue(4),
-        loadRekordboxPlaylist: vi
-          .fn<Api['loadRekordboxPlaylist']>()
-          .mockImplementation(async (id) => (id === ALL_TRACKS_ID ? ENTRIES : [ENTRIES[0]])),
+        dj: djReads({
+          rekordbox: {
+            available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+            tree: vi
+              .fn<ProgramReads['tree']>()
+              .mockResolvedValue([{ id: 'h', name: 'House', kind: 'playlist', count: 1 }]),
+            trackCount: vi.fn<ProgramReads['trackCount']>().mockResolvedValue(4),
+            playlist: vi
+              .fn<ProgramReads['playlist']>()
+              .mockImplementation(async (id) => (id === ALL_TRACKS_ID ? ENTRIES : [ENTRIES[0]])),
+          },
+        }),
         rekordboxGridVerdict: vi.fn<Api['rekordboxGridVerdict']>().mockResolvedValue(null),
       }
 
@@ -3543,8 +3739,12 @@ describe('App source playlists', () => {
         })
         setApi({
           ...collection,
-          rekordboxTrackCount: vi.fn<Api['rekordboxTrackCount']>().mockResolvedValue(10),
-          loadRekordboxPlaylist: vi.fn<Api['loadRekordboxPlaylist']>().mockResolvedValue(many),
+          dj: djReads(collection.dj, {
+            rekordbox: {
+              trackCount: vi.fn<ProgramReads['trackCount']>().mockResolvedValue(10),
+              playlist: vi.fn<ProgramReads['playlist']>().mockResolvedValue(many),
+            },
+          }),
           readMeta: read as unknown as Api['readMeta'],
           readMetaLight: read as unknown as Api['readMetaLight'],
         })
@@ -3591,13 +3791,17 @@ describe('App source playlists', () => {
     setApi({
       pickFiles: vi.fn().mockResolvedValue(['/m/a.wav', '/m/b.wav', '/m/c.wav', '/m/d.mp3']),
       readTags: vi.fn(async (path: string) => ({ title: TITLES[path] ?? 'Delta', artist: 'DJ' })),
-      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
-      loadRekordboxTree: vi
-        .fn<Api['loadRekordboxTree']>()
-        .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 4 }]),
-      loadRekordboxPlaylist: vi
-        .fn<Api['loadRekordboxPlaylist']>()
-        .mockResolvedValue([...FACTORY_ENTRIES, linked('/m/d.mp3', 'l4')]),
+      dj: djReads({
+        rekordbox: {
+          available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+          tree: vi
+            .fn<ProgramReads['tree']>()
+            .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 4 }]),
+          playlist: vi
+            .fn<ProgramReads['playlist']>()
+            .mockResolvedValue([...FACTORY_ENTRIES, linked('/m/d.mp3', 'l4')]),
+        },
+      }),
       startTrackDrag: vi.fn(),
     })
     await renderApp()
@@ -3621,10 +3825,14 @@ describe('App source playlists', () => {
       platform: 'darwin',
       pickFiles: vi.fn().mockResolvedValue(['/m/a.wav']),
       readTags: vi.fn(async () => ({ title: 'Alpha', artist: 'DJ' })),
-      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
-      loadRekordboxTree: vi
-        .fn<Api['loadRekordboxTree']>()
-        .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 1 }]),
+      dj: djReads({
+        rekordbox: {
+          available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+          tree: vi
+            .fn<ProgramReads['tree']>()
+            .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 1 }]),
+        },
+      }),
       loadAppleMusicPlaylists: vi.fn().mockResolvedValue([
         { persistentId: 'P1', name: 'Friday', folder: null, count: 1 },
         { persistentId: 'P2', name: 'Saturday', folder: null, count: 0 },
@@ -3663,8 +3871,11 @@ describe('App source playlists', () => {
   // so they are added (by their rekordbox entry) even if the OS drag brings no files back
   // into Surco's window.
   it('adds rows dragged from the list onto a playlist in the tree, with or without files', async () => {
-    const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({ applied: true })
-    await openFactory({ editRekordboxPlaylist: edit, startTrackDrag: vi.fn() })
+    const edit = vi.fn<ProgramReads['editPlaylist']>().mockResolvedValue({ applied: true })
+    await openFactory({
+      dj: djReads({ rekordbox: { editPlaylist: edit } }),
+      startTrackDrag: vi.fn(),
+    })
     fireEvent.dragStart(rowWrapper(0), { dataTransfer: fakeDataTransfer() })
     const house = screen.getByTestId('source-node-h')
     fireEvent.dragOver(house, { dataTransfer: fakeDataTransfer() })
@@ -3689,9 +3900,9 @@ describe('App source playlists', () => {
 
   // A drop from Finder is files the list never dragged: they go by their paths.
   it('adds files dropped from Finder onto a playlist by their paths', async () => {
-    const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({ applied: true })
+    const edit = vi.fn<ProgramReads['editPlaylist']>().mockResolvedValue({ applied: true })
     await openFactory({
-      editRekordboxPlaylist: edit,
+      dj: djReads({ rekordbox: { editPlaylist: edit } }),
       getPathForFile: vi.fn((f: File) => `/Volumes/Public/Music/${f.name}`),
     })
     const house = screen.getByTestId('source-node-h')
@@ -3710,8 +3921,8 @@ describe('App source playlists', () => {
   })
 
   it('creates a playlist named in the tree', async () => {
-    const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({ applied: true })
-    await openFactory({ editRekordboxPlaylist: edit })
+    const edit = vi.fn<ProgramReads['editPlaylist']>().mockResolvedValue({ applied: true })
+    await openFactory({ dj: djReads({ rekordbox: { editPlaylist: edit } }) })
     fireEvent.click(screen.getByTestId('source-tree-new-playlist'))
     fireEvent.change(screen.getByTestId('source-tree-name'), { target: { value: 'Bolo' } })
     fireEvent.keyDown(screen.getByTestId('source-tree-name'), { key: 'Enter' })
@@ -3777,8 +3988,8 @@ describe('App source playlists', () => {
     })
 
     it('adds its own rows dropped on a tree playlist by their rekordbox entry', async () => {
-      const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({ applied: true })
-      await openResolved({ editRekordboxPlaylist: edit })
+      const edit = vi.fn<ProgramReads['editPlaylist']>().mockResolvedValue({ applied: true })
+      await openResolved({ dj: djReads({ rekordbox: { editPlaylist: edit } }) })
       fireEvent.dragStart(rowWrapper(0), { dataTransfer: fakeDataTransfer() })
       await act(async () => {})
       fireEvent.drop(screen.getByTestId('source-node-h'), {
@@ -3868,12 +4079,16 @@ describe('App source playlists', () => {
   // A track the playlist holds twice is one row: dragging it moves both of its rekordbox
   // rows, or the one left behind would decide where the row is shown after the re-read.
   it('moves every row of a track the playlist holds twice', async () => {
-    const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({ applied: true })
+    const edit = vi.fn<ProgramReads['editPlaylist']>().mockResolvedValue({ applied: true })
     await openFactory({
-      editRekordboxPlaylist: edit,
-      loadRekordboxPlaylist: vi
-        .fn<Api['loadRekordboxPlaylist']>()
-        .mockResolvedValue([...FACTORY_ENTRIES, linked('/m/a.wav', 'l4')]),
+      dj: djReads({
+        rekordbox: {
+          editPlaylist: edit,
+          playlist: vi
+            .fn<ProgramReads['playlist']>()
+            .mockResolvedValue([...FACTORY_ENTRIES, linked('/m/a.wav', 'l4')]),
+        },
+      }),
     })
     const dt = fakeDataTransfer()
     fireEvent.dragStart(rowWrapper(0), { dataTransfer: dt })
@@ -3894,12 +4109,16 @@ describe('App source playlists', () => {
   // rows it is named, so naming the first left the track in the playlist, shown again on
   // the re-read as if the remove had failed.
   it('removes every row of a track the playlist holds twice', async () => {
-    const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({ applied: true })
+    const edit = vi.fn<ProgramReads['editPlaylist']>().mockResolvedValue({ applied: true })
     await openFactory({
-      editRekordboxPlaylist: edit,
-      loadRekordboxPlaylist: vi
-        .fn<Api['loadRekordboxPlaylist']>()
-        .mockResolvedValue([...FACTORY_ENTRIES, linked('/m/a.wav', 'l4')]),
+      dj: djReads({
+        rekordbox: {
+          editPlaylist: edit,
+          playlist: vi
+            .fn<ProgramReads['playlist']>()
+            .mockResolvedValue([...FACTORY_ENTRIES, linked('/m/a.wav', 'l4')]),
+        },
+      }),
     })
     fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
     fireEvent.click(await screen.findByTestId('track-menu-remove-from'))
@@ -3912,9 +4131,9 @@ describe('App source playlists', () => {
   // The record of a drag-out can outlive it (an OS drag that ended elsewhere tells this
   // window nothing). A Finder drop that finds it must still add its own files.
   it('adds the dropped Finder files, not rows left from an earlier drag-out', async () => {
-    const edit = vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({ applied: true })
+    const edit = vi.fn<ProgramReads['editPlaylist']>().mockResolvedValue({ applied: true })
     await openFactory({
-      editRekordboxPlaylist: edit,
+      dj: djReads({ rekordbox: { editPlaylist: edit } }),
       startTrackDrag: vi.fn(),
       getPathForFile: vi.fn((f: File) => `/Volumes/Public/Music/${f.name}`),
     })
@@ -4728,14 +4947,18 @@ describe('App background measuring', () => {
     const rekordboxGridVerdict = vi.fn<Api['rekordboxGridVerdict']>().mockResolvedValue(null)
     setApi({
       getSettings: vi.fn().mockResolvedValue(settings({ autoAnalyze })),
-      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
-      loadRekordboxTree: vi
-        .fn<Api['loadRekordboxTree']>()
-        .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 2 }]),
-      loadRekordboxPlaylist: vi.fn<Api['loadRekordboxPlaylist']>().mockResolvedValue([
-        { path: '/m/a.wav', separator: false, meta: {}, contentId: '41' },
-        { path: '/m/b.wav', separator: false, meta: {}, contentId: '42' },
-      ]),
+      dj: djReads({
+        rekordbox: {
+          available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+          tree: vi
+            .fn<ProgramReads['tree']>()
+            .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 2 }]),
+          playlist: vi.fn<ProgramReads['playlist']>().mockResolvedValue([
+            { path: '/m/a.wav', separator: false, meta: {}, contentId: '41' },
+            { path: '/m/b.wav', separator: false, meta: {}, contentId: '42' },
+          ]),
+        },
+      }),
       rekordboxGridVerdict,
     })
     return rekordboxGridVerdict
@@ -4855,10 +5078,14 @@ describe('App row playback', () => {
     setApi({
       platform: 'darwin',
       readTags: vi.fn(async () => ({ title: 'Bravo', artist: 'DJ' })),
-      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
-      loadRekordboxTree: vi
-        .fn<Api['loadRekordboxTree']>()
-        .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 1 }]),
+      dj: djReads({
+        rekordbox: {
+          available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+          tree: vi
+            .fn<ProgramReads['tree']>()
+            .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 1 }]),
+        },
+      }),
       loadAppleMusicPlaylists: vi
         .fn<Api['loadAppleMusicPlaylists']>()
         .mockResolvedValue([{ persistentId: 'p1', name: 'Friday', count: 1 }]),
@@ -5085,7 +5312,9 @@ describe('App open with', () => {
         return () => {}
       },
       readTags: vi.fn().mockResolvedValue({ title: 'Live', artist: 'Artist' }),
-      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
+      dj: djReads({
+        rekordbox: { available: vi.fn<ProgramReads['available']>().mockResolvedValue(true) },
+      }),
     })
     await renderApp()
     fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
@@ -6886,7 +7115,9 @@ describe('App offers the rekordbox Playlists field', () => {
         .mockResolvedValue(
           settings({ rekordboxPlaylistsFieldOffered: false, visibleFields: ['title'] }),
         ),
-      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
+      dj: djReads({
+        rekordbox: { available: vi.fn<ProgramReads['available']>().mockResolvedValue(true) },
+      }),
       saveSettings,
     })
     await renderApp()
@@ -6906,11 +7137,13 @@ describe('App offers the rekordbox Playlists field', () => {
         .mockResolvedValue(
           settings({ hasSeenOnboarding: false, rekordboxPlaylistsFieldOffered: false }),
         ),
-      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
+      dj: djReads({
+        rekordbox: { available: vi.fn<ProgramReads['available']>().mockResolvedValue(true) },
+      }),
       saveSettings,
     })
     await renderApp()
-    await waitFor(() => expect(window.api.rekordboxAvailable).toHaveBeenCalled())
+    await waitFor(() => expect(window.api.dj.available).toHaveBeenCalledWith('rekordbox'))
     await act(async () => {})
     expect(saveSettings).not.toHaveBeenCalledWith(
       expect.objectContaining({ rekordboxPlaylistsFieldOffered: true }),
@@ -6986,14 +7219,18 @@ describe('App Apple Music library filter', () => {
       getSettings: vi.fn().mockResolvedValue(settings({ addToAppleMusic: true })),
       readTags: vi.fn().mockResolvedValue({ artist: 'deadmau5', title: 'Strobe' }),
       loadAppleMusicLibrary: vi.fn().mockResolvedValue([{ title: 'Strobe', artist: 'deadmau5' }]),
-      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
-      loadRekordboxTree: vi
-        .fn<Api['loadRekordboxTree']>()
-        .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 2 }]),
-      loadRekordboxPlaylist: vi.fn<Api['loadRekordboxPlaylist']>().mockResolvedValue([
-        { path: '/m/c.wav', separator: false, meta: {}, contentId: '41' },
-        { path: '/m/d.wav', separator: false, meta: {}, contentId: '42' },
-      ]),
+      dj: djReads({
+        rekordbox: {
+          available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+          tree: vi
+            .fn<ProgramReads['tree']>()
+            .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 2 }]),
+          playlist: vi.fn<ProgramReads['playlist']>().mockResolvedValue([
+            { path: '/m/c.wav', separator: false, meta: {}, contentId: '41' },
+            { path: '/m/d.wav', separator: false, meta: {}, contentId: '42' },
+          ]),
+        },
+      }),
       rekordboxGridVerdict: vi.fn<Api['rekordboxGridVerdict']>().mockResolvedValue(null),
     })
   }
@@ -8869,14 +9106,18 @@ describe('App list review', () => {
     vi.resetModules()
     const entry = (path: string) => ({ path, separator: false, meta: {} })
     listApi({
-      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
-      loadRekordboxTree: vi.fn<Api['loadRekordboxTree']>().mockResolvedValue([
-        { id: 'f', name: 'Factory', kind: 'playlist', count: 2 },
-        { id: 'g', name: 'Closing', kind: 'playlist', count: 1 },
-      ]),
-      loadRekordboxPlaylist: vi.fn<Api['loadRekordboxPlaylist']>(async (id) =>
-        id === 'f' ? [entry('/music/a.wav'), entry('/music/b.wav')] : [entry('/music/c.wav')],
-      ),
+      dj: djReads({
+        rekordbox: {
+          available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+          tree: vi.fn<ProgramReads['tree']>().mockResolvedValue([
+            { id: 'f', name: 'Factory', kind: 'playlist', count: 2 },
+            { id: 'g', name: 'Closing', kind: 'playlist', count: 1 },
+          ]),
+          playlist: vi.fn<ProgramReads['playlist']>(async (id) =>
+            id === 'f' ? [entry('/music/a.wav'), entry('/music/b.wav')] : [entry('/music/c.wav')],
+          ),
+        },
+      }),
     })
     await renderApp()
     await addThree()
@@ -9183,13 +9424,15 @@ describe('App list toolbar leaves opening Music to the rail', () => {
     const entry = (path: string) => ({ path, separator: false, meta: {} })
     setApi({
       platform: 'darwin',
-      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
-      loadRekordboxTree: vi
-        .fn<Api['loadRekordboxTree']>()
-        .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 1 }]),
-      loadRekordboxPlaylist: vi
-        .fn<Api['loadRekordboxPlaylist']>()
-        .mockResolvedValue([entry('/m/c.wav')]),
+      dj: djReads({
+        rekordbox: {
+          available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+          tree: vi
+            .fn<ProgramReads['tree']>()
+            .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 1 }]),
+          playlist: vi.fn<ProgramReads['playlist']>().mockResolvedValue([entry('/m/c.wav')]),
+        },
+      }),
       loadAppleMusicPlaylists: vi
         .fn<Api['loadAppleMusicPlaylists']>()
         .mockResolvedValue([{ persistentId: 'p1', name: 'Warm up', count: 1 }]),
@@ -9972,28 +10215,31 @@ describe('paste tracklist from the tree', () => {
     { id: 'sets', name: 'Sets', kind: 'folder' as const, count: 1, children: [] },
     { id: 'f', name: 'Factory', kind: 'playlist' as const, count: 2 },
   ]
-  function openRekordboxTree(over: Partial<Api> = {}) {
-    const editRekordboxPlaylist =
-      (over.editRekordboxPlaylist as Mock<Api['editRekordboxPlaylist']> | undefined) ??
-      vi.fn<Api['editRekordboxPlaylist']>().mockResolvedValue({
+  function openRekordboxTree(editOverride?: Mock<ProgramReads['editPlaylist']>) {
+    const editPlaylist =
+      editOverride ??
+      vi.fn<ProgramReads['editPlaylist']>().mockResolvedValue({
         applied: true,
         report: { added: 1, already: 0, notInCollection: 0, ambiguous: 0 },
       })
     setApi({
-      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
-      loadRekordboxTree: vi.fn<Api['loadRekordboxTree']>().mockResolvedValue(TREE),
-      loadRekordboxCollection: vi.fn<Api['loadRekordboxCollection']>().mockResolvedValue([
-        {
-          contentId: '41',
-          path: '/m/a.wav',
-          title: 'Silent Tears (Extended Mix)',
-          artist: 'Jessy',
+      dj: djReads({
+        rekordbox: {
+          available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+          editPlaylist,
+          tree: vi.fn<ProgramReads['tree']>().mockResolvedValue(TREE),
+          collection: vi.fn<ProgramReads['collection']>().mockResolvedValue([
+            {
+              contentId: '41',
+              path: '/m/a.wav',
+              title: 'Silent Tears (Extended Mix)',
+              artist: 'Jessy',
+            },
+          ]),
         },
-      ]),
-      editRekordboxPlaylist,
-      ...over,
+      }),
     })
-    return editRekordboxPlaylist
+    return editPlaylist
   }
   async function pasteAndAdd(nodeId: string, name?: string): Promise<void> {
     await renderApp()
@@ -10055,12 +10301,12 @@ describe('paste tracklist from the tree', () => {
   })
 
   it('creates the playlist inside the folder first, then adds to the new one', async () => {
-    const edit = openRekordboxTree({
-      editRekordboxPlaylist: vi
-        .fn<Api['editRekordboxPlaylist']>()
+    const edit = openRekordboxTree(
+      vi
+        .fn<ProgramReads['editPlaylist']>()
         .mockResolvedValueOnce({ applied: true, createdId: 'new' })
         .mockResolvedValue({ applied: true }),
-    })
+    )
     await pasteAndAdd('sets', 'Mi set')
     await waitFor(() => expect(edit).toHaveBeenCalledTimes(2))
     expect(edit.mock.calls[0][0]).toEqual({
@@ -10077,11 +10323,11 @@ describe('paste tracklist from the tree', () => {
   })
 
   it('adds nothing when the playlist could not be created', async () => {
-    const edit = openRekordboxTree({
-      editRekordboxPlaylist: vi
-        .fn<Api['editRekordboxPlaylist']>()
+    const edit = openRekordboxTree(
+      vi
+        .fn<ProgramReads['editPlaylist']>()
         .mockResolvedValue({ applied: false, reason: 'rekordbox-running' }),
-    })
+    )
     await pasteAndAdd('sets', 'Mi set')
     await waitFor(() => expect(edit).toHaveBeenCalledTimes(1))
     await act(async () => {})
@@ -10103,16 +10349,23 @@ describe('automatic session from the tree', () => {
   }
   function openRekordboxTree(over: Partial<Api> = {}, tree: SourceNode[] = TREE) {
     const edit = vi
-      .fn<Api['editRekordboxPlaylist']>()
+      .fn<ProgramReads['editPlaylist']>()
       .mockResolvedValueOnce({ applied: true, createdId: 'new' })
       .mockResolvedValue({ applied: true })
     setApi({
-      rekordboxAvailable: vi.fn<Api['rekordboxAvailable']>().mockResolvedValue(true),
-      loadRekordboxTree: vi.fn<Api['loadRekordboxTree']>().mockResolvedValue(tree),
-      loadRekordboxPlaylist: vi.fn<Api['loadRekordboxPlaylist']>().mockResolvedValue([ROW]),
       djAppRunning: vi.fn<Api['djAppRunning']>().mockResolvedValue(false),
-      editRekordboxPlaylist: edit,
       ...over,
+      dj: djReads(
+        {
+          rekordbox: {
+            available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+            editPlaylist: edit,
+            tree: vi.fn<ProgramReads['tree']>().mockResolvedValue(tree),
+            playlist: vi.fn<ProgramReads['playlist']>().mockResolvedValue([ROW]),
+          },
+        },
+        over.dj,
+      ),
     })
     return edit
   }
@@ -10210,7 +10463,9 @@ describe('automatic session from the tree', () => {
 
     it('writes the session starting with that track, taking its own playlist as already chosen', async () => {
       const edit = openRekordboxTree({
-        loadRekordboxPlaylist: vi.fn<Api['loadRekordboxPlaylist']>().mockResolvedValue(rows),
+        dj: djReads({
+          rekordbox: { playlist: vi.fn<ProgramReads['playlist']>().mockResolvedValue(rows) },
+        }),
       })
       await openFromTrack(rows.length - 1)
       fireEvent.click(screen.getByTestId('session-wizard-next'))
@@ -10272,17 +10527,23 @@ describe('automatic session from the tree', () => {
       { id: 'f', name: 'Factory', kind: 'playlist' as const, count: 1 },
     ]
     openRekordboxTree({}, tree)
-    const read = vi.mocked(window.api.loadRekordboxPlaylist)
+    const read = vi.mocked(window.api.dj.playlist)
     await openWizard()
-    await waitFor(() => expect(read.mock.calls.some((call) => call[0] === 'bt')).toBe(true))
+    await waitFor(() =>
+      expect(read.mock.calls.some(([program, id]) => program === 'rekordbox' && id === 'bt')).toBe(
+        true,
+      ),
+    )
   })
 
   it('does not read playlists for roles when no folder is called like a role', async () => {
     openRekordboxTree()
-    const read = vi.mocked(window.api.loadRekordboxPlaylist)
+    const read = vi.mocked(window.api.dj.playlist)
     await openWizard()
     await act(async () => {})
-    expect(read.mock.calls.some((call) => call[0] === 'bt')).toBe(false)
+    expect(read.mock.calls.some(([program, id]) => program === 'rekordbox' && id === 'bt')).toBe(
+      false,
+    )
   })
 
   it('opens from the menu of a folder', async () => {
@@ -10347,14 +10608,14 @@ describe('automatic session from the tree', () => {
 
   it('reads the playlists again each time the wizard is opened, so edits made since are seen', async () => {
     openRekordboxTree()
-    const read = vi.mocked(window.api.loadRekordboxPlaylist)
+    const read = vi.mocked(window.api.dj.playlist)
     await openWizard()
     fireEvent.click(screen.getByTestId('session-wizard-next'))
     fireEvent.change(screen.getByTestId('playlists-search'), { target: { value: 'fact' } })
     fireEvent.click(screen.getByTestId('session-wizard-role-f-any'))
     fireEvent.click(screen.getByTestId('session-wizard-next'))
     await screen.findByTestId('session-wizard-build')
-    const first = read.mock.calls.length
+    const first = read.mock.calls.filter(([program]) => program === 'rekordbox').length
     fireEvent.keyDown(window, { key: 'Escape' })
     await waitFor(() =>
       expect(screen.queryByTestId('session-wizard-dialog')).not.toBeInTheDocument(),
@@ -10371,20 +10632,26 @@ describe('automatic session from the tree', () => {
     fireEvent.click(screen.getByTestId('session-wizard-role-f-any'))
     fireEvent.click(screen.getByTestId('session-wizard-next'))
     await screen.findByTestId('session-wizard-build')
-    expect(read.mock.calls.length).toBeGreaterThan(first)
+    expect(read.mock.calls.filter(([program]) => program === 'rekordbox').length).toBeGreaterThan(
+      first,
+    )
   })
 
   it('opens the session once rekordbox closes and the queue writes it, with its band', async () => {
     let applied: (a: RekordboxQueueApplied) => void = () => {}
     openRekordboxTree(
       {
-        editRekordboxPlaylist: vi
-          .fn<Api['editRekordboxPlaylist']>()
-          .mockResolvedValue({ applied: false, queued: true, opId: 'op1' }),
-        onRekordboxQueueApplied: (cb) => {
-          applied = cb
-          return () => {}
-        },
+        dj: djReads({
+          rekordbox: {
+            editPlaylist: vi
+              .fn<ProgramReads['editPlaylist']>()
+              .mockResolvedValue({ applied: false, queued: true, opId: 'op1' }),
+            onCueQueueApplied: (cb) => {
+              applied = cb
+              return () => {}
+            },
+          },
+        }),
       },
       [...TREE, { id: 'new', name: 'Session', kind: 'playlist' as const, count: 1 }],
     )
@@ -10408,11 +10675,11 @@ describe('automatic session from the tree', () => {
 
   it('builds while the DJ program is open, sending the session to wait for it to close', async () => {
     const edit = vi
-      .fn<Api['editRekordboxPlaylist']>()
+      .fn<ProgramReads['editPlaylist']>()
       .mockResolvedValue({ applied: false, queued: true, opId: 'op1' })
     openRekordboxTree({
       djAppRunning: vi.fn<Api['djAppRunning']>().mockResolvedValue(true),
-      editRekordboxPlaylist: edit,
+      dj: djReads({ rekordbox: { editPlaylist: edit } }),
     })
     await toBuild()
     fireEvent.click(screen.getByTestId('session-wizard-build'))

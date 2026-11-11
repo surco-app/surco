@@ -887,8 +887,8 @@ const TrackRow = memo(function TrackRow({
                   </span>
                 )}
                 {/* A fixed slot, right-aligned under the duration, so the two read as one
-                    trailing column and the review sparkle's place never moves. Wide enough for
-                    the pill with its shape, so a tinted FLAC and a bare MP3 end on the same edge. */}
+                    trailing column and the review sparkle's place never moves. The pill fills the
+                    slot, so a narrow WAV leaves no gap before the key and every key sits in one column. */}
                 {key && (
                   <span
                     data-testid="track-key"
@@ -909,7 +909,7 @@ const TrackRow = memo(function TrackRow({
                 )}
                 <span
                   data-testid="track-format-slot"
-                  className="flex w-[50px] shrink-0 justify-end"
+                  className="flex w-[50px] shrink-0 text-center [&>*]:w-full [&>*]:justify-center"
                 >
                   {quality !== 'unanalyzed' ? (
                     <QualityPill

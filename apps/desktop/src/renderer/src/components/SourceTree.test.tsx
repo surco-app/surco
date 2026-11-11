@@ -122,7 +122,12 @@ describe('SourceTree', () => {
   })
 
   it('offers only what Engine DJ can write: no folder to create and no rename, but delete stays', () => {
-    const edit = { onCreate: vi.fn(), onDropTracks: vi.fn(), onDelete: vi.fn(), folders: false as const }
+    const edit = {
+      onCreate: vi.fn(),
+      onDropTracks: vi.fn(),
+      onDelete: vi.fn(),
+      folders: false as const,
+    }
     render(
       <SourceTree
         width={236}

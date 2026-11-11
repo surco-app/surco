@@ -20,7 +20,7 @@ import type { CueQuantize } from '../../../../shared/cueQuantize'
 import i18n from '../../i18n'
 import { EXAMPLE_DROP } from '../../lib/cueExample'
 import type { SyncedDraft } from '../../lib/settingsDraft'
-import { installApi } from '../../test/api'
+import { djReads, installApi, type ProgramReads } from '../../test/api'
 import { CuesTab } from './CuesTab'
 
 let afterTest: (() => unknown) | null = null
@@ -136,29 +136,46 @@ describe('CuesTab', () => {
   })
 
   it('says under the rules what reaches Engine DJ, Traktor and Serato, only where they are installed', async () => {
-    installApi({ traktorAvailable: async () => true, engineAvailable: async () => false })
+    installApi({
+      dj: djReads({
+        traktor: { available: async () => true },
+        engine: { available: async () => false },
+      }),
+    })
     render(<Harness />)
     expect(await screen.findByTestId('cue-flow-library-note')).toHaveTextContent(
       'CALLs only exist in rekordbox. Engine DJ, Traktor and Serato get the hot cues only. In Traktor these cues show in blue, since Traktor colours each cue by its type',
     )
     cleanup()
-    installApi({ traktorAvailable: async () => false, engineAvailable: async () => true })
-    render(<Harness />)
-    expect(await screen.findByTestId('cue-flow-library-note')).toHaveTextContent(
-      /^CALLs only exist in rekordbox\. Engine DJ, Traktor and Serato get the hot cues only$/,
-    )
-    cleanup()
     installApi({
-      traktorAvailable: async () => false,
-      engineAvailable: async () => false,
-      seratoAvailable: vi.fn<Api['seratoAvailable']>(async () => true),
+      dj: djReads({
+        traktor: { available: async () => false },
+        engine: { available: async () => true },
+      }),
     })
     render(<Harness />)
     expect(await screen.findByTestId('cue-flow-library-note')).toHaveTextContent(
       /^CALLs only exist in rekordbox\. Engine DJ, Traktor and Serato get the hot cues only$/,
     )
     cleanup()
-    installApi({ traktorAvailable: async () => false, engineAvailable: async () => false })
+    installApi({
+      dj: djReads({
+        traktor: { available: async () => false },
+        engine: { available: async () => false },
+        serato: { available: vi.fn<ProgramReads['available']>(async () => true) },
+      }),
+    })
+    render(<Harness />)
+    expect(await screen.findByTestId('cue-flow-library-note')).toHaveTextContent(
+      /^CALLs only exist in rekordbox\. Engine DJ, Traktor and Serato get the hot cues only$/,
+    )
+    cleanup()
+    installApi({
+      dj: djReads({
+        traktor: { available: async () => false },
+        engine: { available: async () => false },
+      }),
+    })
     render(<Harness />)
     await screen.findByTestId('cue-flow-mark-point')
     expect(screen.queryByTestId('cue-flow-library-note')).not.toBeInTheDocument()
@@ -727,7 +744,12 @@ describe('CuesTab', () => {
   })
 
   it('shows a program missing on this Mac unticked as well as off, since nothing goes there', async () => {
-    installApi({ traktorAvailable: async () => false, engineAvailable: async () => false })
+    installApi({
+      dj: djReads({
+        traktor: { available: async () => false },
+        engine: { available: async () => false },
+      }),
+    })
     render(<Harness collection="/c/master.db" />)
     expect(screen.getByTestId('settings-cue-flow-to-traktor')).toBeDisabled()
     expect(screen.getByTestId('settings-cue-flow-to-traktor')).not.toBeChecked()
@@ -736,7 +758,12 @@ describe('CuesTab', () => {
 
   // A flow placed in one program goes to the same file in the others the DJ keeps here.
   it('lets the DJ choose which programs a flow also reaches, each one always shown', async () => {
-    installApi({ traktorAvailable: async () => true, engineAvailable: async () => false })
+    installApi({
+      dj: djReads({
+        traktor: { available: async () => true },
+        engine: { available: async () => false },
+      }),
+    })
     render(<Harness collection="/c/master.db" />)
     const traktor = screen.getByTestId('settings-cue-flow-to-traktor')
     await waitFor(() => expect(traktor).toBeEnabled())
@@ -764,7 +791,9 @@ describe('CuesTab', () => {
   })
 
   it('lets the DJ take Serato out of the flows once its library is found', async () => {
-    installApi({ seratoAvailable: vi.fn<Api['seratoAvailable']>(async () => true) })
+    installApi({
+      dj: djReads({ serato: { available: vi.fn<ProgramReads['available']>(async () => true) } }),
+    })
     render(<Harness collection="/c/master.db" />)
     const serato = screen.getByTestId('settings-cue-flow-to-serato')
     await waitFor(() => expect(serato).toBeEnabled())
@@ -778,7 +807,9 @@ describe('CuesTab', () => {
   })
 
   it('names Serato when its library is not on this computer and leaves its box unticked', () => {
-    installApi({ seratoAvailable: vi.fn<Api['seratoAvailable']>(async () => false) })
+    installApi({
+      dj: djReads({ serato: { available: vi.fn<ProgramReads['available']>(async () => false) } }),
+    })
     render(<Harness collection="/c/master.db" />)
     expect(screen.getByTestId('settings-cue-flow-to-serato')).toBeDisabled()
     expect(screen.getByTestId('settings-cue-flow-to-serato')).not.toBeChecked()
@@ -786,7 +817,12 @@ describe('CuesTab', () => {
   })
 
   it('leaves the rekordbox box unticked and says so while no collection is set', () => {
-    installApi({ traktorAvailable: async () => false, engineAvailable: async () => false })
+    installApi({
+      dj: djReads({
+        traktor: { available: async () => false },
+        engine: { available: async () => false },
+      }),
+    })
     render(<Harness collection="" />)
     expect(screen.getByTestId('settings-cue-flow-to-rekordbox')).toBeDisabled()
     expect(screen.getByTestId('settings-cue-flow-to-rekordbox')).not.toBeChecked()
@@ -796,7 +832,12 @@ describe('CuesTab', () => {
   })
 
   it('names Engine DJ and Traktor when they are missing, and ticks each box only where found', async () => {
-    installApi({ traktorAvailable: async () => false, engineAvailable: async () => true })
+    installApi({
+      dj: djReads({
+        traktor: { available: async () => false },
+        engine: { available: async () => true },
+      }),
+    })
     render(<Harness collection="/c/master.db" />)
     await waitFor(() => expect(screen.getByTestId('settings-cue-flow-to-engine')).toBeEnabled())
     expect(screen.getByTestId('settings-cue-flow-to-engine')).toBeChecked()

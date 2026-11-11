@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { readFileSync } from 'node:fs'
-import { BrowserWindow, ipcMain } from 'electron'
+import { BrowserWindow, type WebContents } from 'electron'
+import type { DjEditMain } from '../shared/djApi'
 import type { PlaylistEditMode, RekordboxEditResult, RekordboxPlaylistEdit } from '../shared/types'
 import { serialLibraryFlush } from './libraryTagSync'
 import { type QueueApply, type RekordboxQueue, withoutOp } from './rekordboxQueue'
@@ -9,10 +10,10 @@ import { stillWaiting } from './rekordboxQueueWatch'
 import { traktorStamps, traktorSubtreeStamps } from './traktorPlaylistModel'
 import { traktorSeparatorKey } from './traktorPlaylists'
 
-// The twin of rekordbox:edit for Traktor: the edit joins the Traktor queue, applies at once
+// The twin of the rekordbox edit for Traktor: the edit joins the Traktor queue, applies at once
 // when Traktor is closed, and otherwise waits for it to close. The collection is the one
 // the DJ confirmed in Settings; without one there is nothing to edit.
-export function registerTraktorPlaylistEditIpc(host: {
+export function traktorEdit(host: {
   collection: () => string
   queue: Pick<RekordboxQueue, 'apply' | 'drop'> & { enqueue: (ops: EditOp[]) => void }
   ensureClosed: (win: BrowserWindow | null) => Promise<boolean>
@@ -20,14 +21,18 @@ export function registerTraktorPlaylistEditIpc(host: {
   onApplied?: (result: QueueApply) => void
   onWaiting?: () => void
   beginLoose?: (collectionPath: string) => void
-}): void {
-  ipcMain.handle('traktor:hasSeparator', () => {
-    const path = host.collection()
-    return path !== '' && traktorSeparatorKey(readFileSync(path, 'utf8')) !== null
-  })
-  ipcMain.handle(
-    'traktor:edit',
-    (e, edit: RekordboxPlaylistEdit, label?: string, mode: PlaylistEditMode = 'ask') =>
+}): DjEditMain {
+  return {
+    hasSeparator: () => {
+      const path = host.collection()
+      return path !== '' && traktorSeparatorKey(readFileSync(path, 'utf8')) !== null
+    },
+    save: (
+      edit: RekordboxPlaylistEdit,
+      label: string | undefined,
+      sender: WebContents,
+      mode: PlaylistEditMode = 'ask',
+    ) =>
       serialLibraryFlush(async (): Promise<RekordboxEditResult> => {
         const path = host.collection()
         if (!path) return { applied: false, reason: 'unreadable' }
@@ -54,7 +59,7 @@ export function registerTraktorPlaylistEditIpc(host: {
         const result = await host.queue.apply(
           mode === 'queue'
             ? async () => !(await host.isRunning())
-            : () => host.ensureClosed(BrowserWindow.fromWebContents(e.sender)),
+            : () => host.ensureClosed(BrowserWindow.fromWebContents(sender)),
         )
         if (result.status === 'applied') {
           const others = withoutOp(result, op.id)
@@ -70,5 +75,5 @@ export function registerTraktorPlaylistEditIpc(host: {
           result.status === 'applied' ? result.outcomes.find((o) => o.id === op.id) : undefined
         return editResultOfOutcome(outcome)
       }),
-  )
+  }
 }

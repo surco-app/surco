@@ -80,9 +80,9 @@ export function CuesTab({
   const [engineFound, setEngineFound] = useState(false)
   const [seratoFound, setSeratoFound] = useState(false)
   useEffect(() => {
-    void window.api.traktorAvailable().then(setTraktorFound, () => {})
-    void window.api.engineAvailable().then(setEngineFound, () => {})
-    void window.api.seratoAvailable().then(setSeratoFound, () => {})
+    void window.api.dj.available('traktor').then(setTraktorFound, () => {})
+    void window.api.dj.available('engine').then(setEngineFound, () => {})
+    void window.api.dj.available('serato').then(setSeratoFound, () => {})
   }, [])
   const foundBy: Record<DjProgram, boolean> = {
     rekordbox: rekordboxCollection !== '',

@@ -1,19 +1,19 @@
-import { ipcMain } from 'electron'
+import type { WebContents } from 'electron'
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({
-  ipcMain: { handle: vi.fn() },
   BrowserWindow: { fromWebContents: vi.fn(() => 'window') },
 }))
 
+import type { DjCueQueueMain } from '../shared/djApi'
 import type { QueueApply, RekordboxQueue } from './rekordboxQueue'
 import { appliedNotice } from './rekordboxQueueIpc'
-import { registerTraktorCueQueueIpc } from './traktorCueQueueIpc'
+import { traktorCueQueueSection } from './traktorCueQueueIpc'
 
-function handler(channel: string): (...args: unknown[]) => unknown {
-  const call = [...vi.mocked(ipcMain.handle).mock.calls].reverse().find(([n]) => n === channel)
-  if (!call) throw new Error(`${channel} not registered`)
-  return call[1] as (...args: unknown[]) => unknown
+let section: DjCueQueueMain
+
+function register(...args: Parameters<typeof traktorCueQueueSection>): void {
+  section = traktorCueQueueSection(...args)
 }
 
 const APPLIED: QueueApply = {
@@ -36,17 +36,17 @@ function queue(result: QueueApply = APPLIED) {
   }
 }
 
-describe('registerTraktorCueQueueIpc', () => {
+describe('traktorCueQueueSection', () => {
   it('shows what waits for Traktor to close', () => {
-    registerTraktorCueQueueIpc(queue(), { ensureClosed: vi.fn(async () => true) })
-    expect(handler('traktor:cueQueue')()).toEqual({ tracks: 1, changes: 0, items: [] })
+    register(queue(), { ensureClosed: vi.fn(async () => true) })
+    expect(section.read()).toEqual({ tracks: 1, changes: 0, items: [] })
   })
 
   it('applies now behind the dialog that closes Traktor and answers with what landed', async () => {
     const q = queue()
     const ensureClosed = vi.fn(async () => true)
-    registerTraktorCueQueueIpc(q, { ensureClosed })
-    expect(await handler('traktor:applyCueQueue')({ sender: {} })).toEqual(appliedNotice(APPLIED))
+    register(q, { ensureClosed })
+    expect(await section.apply({} as WebContents)).toEqual(appliedNotice(APPLIED))
     expect(ensureClosed).toHaveBeenCalledWith('window')
     expect(q.apply).toHaveBeenCalledWith(expect.any(Function), { manual: true })
   })
@@ -59,35 +59,35 @@ describe('registerTraktorCueQueueIpc', () => {
       order.push('apply')
       return apply ? apply(...args) : APPLIED
     })
-    registerTraktorCueQueueIpc(q, {
+    register(q, {
       ensureClosed: vi.fn(async () => true),
       beginMoment: (r) => order.push(`begin:${r}`),
     })
-    await handler('traktor:applyCueQueue')({ sender: {} })
+    await section.apply({} as WebContents)
     expect(order).toEqual(['begin:queue', 'apply'])
   })
 
   it('keeps watching when the DJ leaves Traktor open, so the save lands once it closes', async () => {
     const onWaiting = vi.fn()
-    registerTraktorCueQueueIpc(queue({ status: 'refused', reason: 'cancelled' }), {
+    register(queue({ status: 'refused', reason: 'cancelled' }), {
       ensureClosed: vi.fn(async () => false),
       onWaiting,
     })
-    expect(await handler('traktor:applyCueQueue')({ sender: {} })).toBeNull()
+    expect(await section.apply({} as WebContents)).toBeNull()
     expect(onWaiting).toHaveBeenCalled()
   })
 
   it('throws away what waits when the DJ discards it', () => {
     const q = queue()
-    registerTraktorCueQueueIpc(q, { ensureClosed: vi.fn(async () => true) })
-    handler('traktor:discardCueQueue')()
+    register(q, { ensureClosed: vi.fn(async () => true) })
+    section.discard()
     expect(q.discard).toHaveBeenCalled()
   })
 
   it('starts the queue only once the window listens', () => {
     const onReady = vi.fn()
-    registerTraktorCueQueueIpc(queue(), { ensureClosed: vi.fn(async () => true), onReady })
-    handler('traktor:cueQueueReady')()
+    register(queue(), { ensureClosed: vi.fn(async () => true), onReady })
+    section.ready()
     expect(onReady).toHaveBeenCalled()
   })
 
@@ -95,8 +95,8 @@ describe('registerTraktorCueQueueIpc', () => {
   // and an apply that throws or a discarded queue never leaves them pending.
   it('tells the verification how an apply by hand went', async () => {
     const onSettled = vi.fn()
-    registerTraktorCueQueueIpc(queue(), { ensureClosed: vi.fn(async () => true), onSettled })
-    await handler('traktor:applyCueQueue')({ sender: {} })
+    register(queue(), { ensureClosed: vi.fn(async () => true), onSettled })
+    await section.apply({} as WebContents)
     expect(onSettled).toHaveBeenCalledWith(APPLIED)
   })
 
@@ -104,16 +104,16 @@ describe('registerTraktorCueQueueIpc', () => {
     const onSettled = vi.fn()
     const q = queue()
     q.apply.mockRejectedValueOnce(new Error('disk gone'))
-    registerTraktorCueQueueIpc(q, { ensureClosed: vi.fn(async () => true), onSettled })
-    await expect(handler('traktor:applyCueQueue')({ sender: {} })).rejects.toThrow('disk gone')
+    register(q, { ensureClosed: vi.fn(async () => true), onSettled })
+    await expect(section.apply({} as WebContents)).rejects.toThrow('disk gone')
     expect(onSettled).toHaveBeenCalledWith('threw')
   })
 
   it('tells the verification the queue was discarded', async () => {
     const onDiscarded = vi.fn()
     const q = queue()
-    registerTraktorCueQueueIpc(q, { ensureClosed: vi.fn(async () => true), onDiscarded })
-    await handler('traktor:discardCueQueue')()
+    register(q, { ensureClosed: vi.fn(async () => true), onDiscarded })
+    await section.discard()
     expect(q.discard).toHaveBeenCalled()
     expect(onDiscarded).toHaveBeenCalled()
   })

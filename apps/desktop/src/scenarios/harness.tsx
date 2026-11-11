@@ -120,7 +120,8 @@ import { detectTrim } from '../renderer/src/lib/trim'
 import type { TrackItem } from '../renderer/src/types'
 import { trashLimits } from '../shared/backupPolicy'
 import { normalizeImportFields } from '../shared/defaults'
-import type { WritableProgram } from '../shared/djProgram'
+import type { DjApi } from '../shared/djApi'
+import type { DjProgram, WritableProgram } from '../shared/djProgram'
 import { resolveJobFormat } from '../shared/format'
 import type {
   FormatSetting,
@@ -643,6 +644,56 @@ async function judgedFlush(
     verify.checks.settled(place, await start().catch(() => 'threw' as const))
 }
 
+const WIRED_READS: Partial<Record<DjProgram, Record<string, unknown>>> = {
+  rekordbox: {
+    available: false,
+    tree: [],
+    recentCount: 0,
+    trackCount: 0,
+    playlist: [],
+    membership: {},
+  },
+  engine: { available: false, membership: {} },
+  traktor: { available: false, membership: {} },
+}
+
+function wiredRead<T>(program: DjProgram, op: string): Promise<T> {
+  const answers = WIRED_READS[program]
+  if (!answers || !(op in answers)) {
+    throw new Error(`scenario: window.api.dj.${op}('${program}') is not wired`)
+  }
+  return Promise.resolve(answers[op] as T)
+}
+
+const WIRED_EDITING: DjProgram[] = ['rekordbox', 'traktor']
+
+function wiredEdit<T>(program: DjProgram, op: string, answer: T): Promise<T> {
+  if (!WIRED_EDITING.includes(program)) {
+    throw new Error(`scenario: window.api.dj.${op}('${program}') is not wired`)
+  }
+  return Promise.resolve(answer)
+}
+
+function wiredDj(): DjApi {
+  return {
+    available: (p) => wiredRead(p, 'available'),
+    tree: (p) => wiredRead(p, 'tree'),
+    recentCount: (p) => wiredRead(p, 'recentCount'),
+    trackCount: (p) => wiredRead(p, 'trackCount'),
+    playlist: (p) => wiredRead(p, 'playlist'),
+    membership: (p) => wiredRead(p, 'membership'),
+    collection: (p) => wiredRead(p, 'collection'),
+    editPlaylist: (p) => wiredEdit(p, 'editPlaylist', { applied: false, reason: 'unreadable' }),
+    hasSeparator: (p) => wiredEdit(p, 'hasSeparator', false),
+    cueQueue: async () => ({ tracks: 0, changes: 0, items: [] }),
+    applyCueQueue: async () => null,
+    discardCueQueue: async () => {},
+    cueQueueReady: async () => {},
+    onCueQueueChanged: () => () => {},
+    onCueQueueApplied: () => () => {},
+  }
+}
+
 function scenarioApi(
   options: ScenarioOptions,
   errors: string[],
@@ -670,21 +721,7 @@ function scenarioApi(
     platform: process.platform,
     // No scenario has a rekordbox collection: the source rail stays without it, and the
     // queries App mounts get an answer instead of the proxy's "not wired" throw.
-    rekordboxAvailable: async () => false,
-    engineAvailable: async () => false,
-    traktorAvailable: async () => false,
-    loadRekordboxTree: async () => [],
-    rekordboxRecentCount: async () => 0,
-    rekordboxTrackCount: async () => 0,
-    loadRekordboxPlaylist: async () => [],
-    rekordboxHasSeparator: async () => false,
-    traktorHasSeparator: async () => false,
-    editTraktorPlaylist: async () => ({ applied: false, reason: 'unreadable' }),
-    editRekordboxPlaylist: async () => ({ applied: false, reason: 'unreadable' }),
-    rekordboxQueue: async () => ({ tracks: 0, changes: 0, items: [] }),
-    applyRekordboxQueue: async () => null,
-    discardRekordboxQueue: async () => {},
-    rekordboxQueueReady: async () => {},
+    dj: wiredDj(),
     rekordboxTrackCues: async () => null,
     rekordboxCueWaveDetail: async () => null,
     rekordboxCueDropInput: async () => null,
@@ -705,10 +742,6 @@ function scenarioApi(
     saveRekordboxCues: async () => {},
     rekordboxQueuedCues: async () => null,
     undoRekordboxCues: async () => {},
-    rekordboxMembership: async () => ({}),
-    traktorMembership: async () => ({}),
-    engineMembership: async () => ({}),
-    onRekordboxQueueChanged: () => () => {},
     onVerifyUpdate: (listener) => listen('verify:update', listener),
     ...(verify && {
       retryVerification: async (trackId) => {
@@ -717,25 +750,6 @@ function scenarioApi(
         return answer
       },
     }),
-    onRekordboxQueueApplied: () => () => {},
-    engineCueQueue: async () => ({ tracks: 0, changes: 0, items: [] }),
-    applyEngineCueQueue: async () => null,
-    discardEngineCueQueue: async () => {},
-    engineCueQueueReady: async () => {},
-    onEngineCueQueueChanged: () => () => {},
-    onEngineCueQueueApplied: () => () => {},
-    traktorCueQueue: async () => ({ tracks: 0, changes: 0, items: [] }),
-    applyTraktorCueQueue: async () => null,
-    discardTraktorCueQueue: async () => {},
-    traktorCueQueueReady: async () => {},
-    onTraktorCueQueueChanged: () => () => {},
-    onTraktorCueQueueApplied: () => () => {},
-    seratoCueQueue: async () => ({ tracks: 0, changes: 0, items: [] }),
-    applySeratoCueQueue: async () => null,
-    discardSeratoCueQueue: async () => {},
-    seratoCueQueueReady: async () => {},
-    onSeratoCueQueueChanged: () => () => {},
-    onSeratoCueQueueApplied: () => () => {},
     copiesStatus: async () => [],
     onCopiesChanged: () => () => {},
     traktorCanSave: async () => false,

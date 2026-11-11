@@ -1,19 +1,19 @@
-import { ipcMain } from 'electron'
+import type { WebContents } from 'electron'
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({
-  ipcMain: { handle: vi.fn() },
   BrowserWindow: { fromWebContents: vi.fn(() => 'window') },
 }))
 
-import { registerEngineCueQueueIpc } from './engineCueQueueIpc'
+import type { DjCueQueueMain } from '../shared/djApi'
+import { engineCueQueueSection } from './engineCueQueueIpc'
 import type { QueueApply, RekordboxQueue } from './rekordboxQueue'
 import { appliedNotice } from './rekordboxQueueIpc'
 
-function handler(channel: string): (...args: unknown[]) => unknown {
-  const call = [...vi.mocked(ipcMain.handle).mock.calls].reverse().find(([n]) => n === channel)
-  if (!call) throw new Error(`${channel} not registered`)
-  return call[1] as (...args: unknown[]) => unknown
+let section: DjCueQueueMain
+
+function register(...args: Parameters<typeof engineCueQueueSection>): void {
+  section = engineCueQueueSection(...args)
 }
 
 const APPLIED: QueueApply = {
@@ -36,17 +36,17 @@ function queue(result: QueueApply = APPLIED) {
   }
 }
 
-describe('registerEngineCueQueueIpc', () => {
+describe('engineCueQueueSection', () => {
   it('shows what waits for Engine DJ to close', () => {
-    registerEngineCueQueueIpc(queue(), { ensureClosed: vi.fn(async () => true) })
-    expect(handler('engine:cueQueue')()).toEqual({ tracks: 1, changes: 0, items: [] })
+    register(queue(), { ensureClosed: vi.fn(async () => true) })
+    expect(section.read()).toEqual({ tracks: 1, changes: 0, items: [] })
   })
 
   it('applies now behind the dialog that closes Engine DJ and answers with what landed', async () => {
     const q = queue()
     const ensureClosed = vi.fn(async () => true)
-    registerEngineCueQueueIpc(q, { ensureClosed })
-    expect(await handler('engine:applyCueQueue')({ sender: {} })).toEqual(appliedNotice(APPLIED))
+    register(q, { ensureClosed })
+    expect(await section.apply({} as WebContents)).toEqual(appliedNotice(APPLIED))
     expect(ensureClosed).toHaveBeenCalledWith('window')
     expect(q.apply).toHaveBeenCalledWith(expect.any(Function), { manual: true })
   })
@@ -59,35 +59,35 @@ describe('registerEngineCueQueueIpc', () => {
       order.push('apply')
       return apply ? apply(...args) : APPLIED
     })
-    registerEngineCueQueueIpc(q, {
+    register(q, {
       ensureClosed: vi.fn(async () => true),
       beginMoment: (r) => order.push(`begin:${r}`),
     })
-    await handler('engine:applyCueQueue')({ sender: {} })
+    await section.apply({} as WebContents)
     expect(order).toEqual(['begin:queue', 'apply'])
   })
 
   it('keeps watching when the DJ leaves Engine DJ open, so the save lands once it closes', async () => {
     const onWaiting = vi.fn()
-    registerEngineCueQueueIpc(queue({ status: 'refused', reason: 'cancelled' }), {
+    register(queue({ status: 'refused', reason: 'cancelled' }), {
       ensureClosed: vi.fn(async () => false),
       onWaiting,
     })
-    expect(await handler('engine:applyCueQueue')({ sender: {} })).toBeNull()
+    expect(await section.apply({} as WebContents)).toBeNull()
     expect(onWaiting).toHaveBeenCalled()
   })
 
   it('throws away what waits when the DJ discards it', () => {
     const q = queue()
-    registerEngineCueQueueIpc(q, { ensureClosed: vi.fn(async () => true) })
-    handler('engine:discardCueQueue')()
+    register(q, { ensureClosed: vi.fn(async () => true) })
+    section.discard()
     expect(q.discard).toHaveBeenCalled()
   })
 
   it('starts the queue only once the window listens', () => {
     const onReady = vi.fn()
-    registerEngineCueQueueIpc(queue(), { ensureClosed: vi.fn(async () => true), onReady })
-    handler('engine:cueQueueReady')()
+    register(queue(), { ensureClosed: vi.fn(async () => true), onReady })
+    section.ready()
     expect(onReady).toHaveBeenCalled()
   })
 
@@ -95,8 +95,8 @@ describe('registerEngineCueQueueIpc', () => {
   // and an apply that throws or a discarded queue never leaves them pending.
   it('tells the verification how an apply by hand went', async () => {
     const onSettled = vi.fn()
-    registerEngineCueQueueIpc(queue(), { ensureClosed: vi.fn(async () => true), onSettled })
-    await handler('engine:applyCueQueue')({ sender: {} })
+    register(queue(), { ensureClosed: vi.fn(async () => true), onSettled })
+    await section.apply({} as WebContents)
     expect(onSettled).toHaveBeenCalledWith(APPLIED)
   })
 
@@ -104,16 +104,16 @@ describe('registerEngineCueQueueIpc', () => {
     const onSettled = vi.fn()
     const q = queue()
     q.apply.mockRejectedValueOnce(new Error('disk gone'))
-    registerEngineCueQueueIpc(q, { ensureClosed: vi.fn(async () => true), onSettled })
-    await expect(handler('engine:applyCueQueue')({ sender: {} })).rejects.toThrow('disk gone')
+    register(q, { ensureClosed: vi.fn(async () => true), onSettled })
+    await expect(section.apply({} as WebContents)).rejects.toThrow('disk gone')
     expect(onSettled).toHaveBeenCalledWith('threw')
   })
 
   it('tells the verification the queue was discarded', async () => {
     const onDiscarded = vi.fn()
     const q = queue()
-    registerEngineCueQueueIpc(q, { ensureClosed: vi.fn(async () => true), onDiscarded })
-    await handler('engine:discardCueQueue')()
+    register(q, { ensureClosed: vi.fn(async () => true), onDiscarded })
+    await section.discard()
     expect(q.discard).toHaveBeenCalled()
     expect(onDiscarded).toHaveBeenCalled()
   })

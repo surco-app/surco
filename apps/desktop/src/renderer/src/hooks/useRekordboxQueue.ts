@@ -32,49 +32,23 @@ export interface QueueSource {
   words: QueueWords
 }
 
-export const REKORDBOX_QUEUE: QueueSource = {
-  name: 'rekordbox queue',
-  read: () => window.api.rekordboxQueue(),
-  onChanged: (cb) => window.api.onRekordboxQueueChanged(cb),
-  onApplied: (cb) => window.api.onRekordboxQueueApplied(cb),
-  ready: () => window.api.rekordboxQueueReady(),
-  applyNow: () => window.api.applyRekordboxQueue(),
-  discard: () => window.api.discardRekordboxQueue(),
-  words: REKORDBOX_QUEUE_WORDS,
+function queueSource(p: CueProgram, name: string, words: QueueWords): QueueSource {
+  return {
+    name,
+    read: () => window.api.dj.cueQueue(p),
+    onChanged: (cb) => window.api.dj.onCueQueueChanged(p, cb),
+    onApplied: (cb) => window.api.dj.onCueQueueApplied(p, cb),
+    ready: () => window.api.dj.cueQueueReady(p),
+    applyNow: () => window.api.dj.applyCueQueue(p),
+    discard: () => window.api.dj.discardCueQueue(p),
+    words,
+  }
 }
 
-export const ENGINE_CUE_QUEUE: QueueSource = {
-  name: 'Engine DJ cue queue',
-  read: () => window.api.engineCueQueue(),
-  onChanged: (cb) => window.api.onEngineCueQueueChanged(cb),
-  onApplied: (cb) => window.api.onEngineCueQueueApplied(cb),
-  ready: () => window.api.engineCueQueueReady(),
-  applyNow: () => window.api.applyEngineCueQueue(),
-  discard: () => window.api.discardEngineCueQueue(),
-  words: ENGINE_QUEUE_WORDS,
-}
-
-export const TRAKTOR_CUE_QUEUE: QueueSource = {
-  name: 'Traktor cue queue',
-  read: () => window.api.traktorCueQueue(),
-  onChanged: (cb) => window.api.onTraktorCueQueueChanged(cb),
-  onApplied: (cb) => window.api.onTraktorCueQueueApplied(cb),
-  ready: () => window.api.traktorCueQueueReady(),
-  applyNow: () => window.api.applyTraktorCueQueue(),
-  discard: () => window.api.discardTraktorCueQueue(),
-  words: TRAKTOR_QUEUE_WORDS,
-}
-
-export const SERATO_CUE_QUEUE: QueueSource = {
-  name: 'Serato cue queue',
-  read: () => window.api.seratoCueQueue(),
-  onChanged: (cb) => window.api.onSeratoCueQueueChanged(cb),
-  onApplied: (cb) => window.api.onSeratoCueQueueApplied(cb),
-  ready: () => window.api.seratoCueQueueReady(),
-  applyNow: () => window.api.applySeratoCueQueue(),
-  discard: () => window.api.discardSeratoCueQueue(),
-  words: SERATO_QUEUE_WORDS,
-}
+export const REKORDBOX_QUEUE = queueSource('rekordbox', 'rekordbox queue', REKORDBOX_QUEUE_WORDS)
+export const ENGINE_CUE_QUEUE = queueSource('engine', 'Engine DJ cue queue', ENGINE_QUEUE_WORDS)
+export const TRAKTOR_CUE_QUEUE = queueSource('traktor', 'Traktor cue queue', TRAKTOR_QUEUE_WORDS)
+export const SERATO_CUE_QUEUE = queueSource('serato', 'Serato cue queue', SERATO_QUEUE_WORDS)
 
 export const PROGRAM_QUEUES: Record<CueProgram, { source: QueueSource; testid: string }> = {
   rekordbox: { source: REKORDBOX_QUEUE, testid: 'rekordbox-queue' },

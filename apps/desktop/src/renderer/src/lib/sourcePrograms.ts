@@ -21,42 +21,23 @@ export interface SourceRead {
   collection?(): Promise<CollectionTrack[]>
 }
 
+function sourceRead(p: DjProgram, has: { collection: boolean }): SourceRead {
+  return {
+    available: () => window.api.dj.available(p),
+    tree: () => window.api.dj.tree(p),
+    recentCount: () => window.api.dj.recentCount(p),
+    trackCount: () => window.api.dj.trackCount(p),
+    playlist: (id) => window.api.dj.playlist(p, id),
+    membership: (paths) => window.api.dj.membership(p, paths),
+    ...(has.collection && { collection: () => window.api.dj.collection(p) }),
+  }
+}
+
 export const SOURCE_READ: Record<DjProgram, SourceRead> = {
-  rekordbox: {
-    available: () => window.api.rekordboxAvailable(),
-    tree: () => window.api.loadRekordboxTree(),
-    recentCount: () => window.api.rekordboxRecentCount(),
-    trackCount: () => window.api.rekordboxTrackCount(),
-    playlist: (id) => window.api.loadRekordboxPlaylist(id),
-    membership: (paths) => window.api.rekordboxMembership(paths),
-    collection: () => window.api.loadRekordboxCollection(),
-  },
-  traktor: {
-    available: () => window.api.traktorAvailable(),
-    tree: () => window.api.loadTraktorTree(),
-    recentCount: () => window.api.traktorRecentCount(),
-    trackCount: () => window.api.traktorTrackCount(),
-    playlist: (id) => window.api.loadTraktorPlaylist(id),
-    membership: (paths) => window.api.traktorMembership(paths),
-    collection: () => window.api.loadTraktorCollection(),
-  },
-  engine: {
-    available: () => window.api.engineAvailable(),
-    tree: () => window.api.loadEngineTree(),
-    recentCount: () => window.api.engineRecentCount(),
-    trackCount: () => window.api.engineTrackCount(),
-    playlist: (id) => window.api.loadEnginePlaylist(id),
-    membership: (paths) => window.api.engineMembership(paths),
-  },
-  serato: {
-    available: () => window.api.seratoAvailable(),
-    tree: () => window.api.loadSeratoTree(),
-    recentCount: () => window.api.seratoRecentCount(),
-    trackCount: () => window.api.seratoTrackCount(),
-    playlist: (id) => window.api.loadSeratoPlaylist(id),
-    membership: (paths) => window.api.seratoMembership(paths),
-    collection: () => window.api.loadSeratoCollection(),
-  },
+  rekordbox: sourceRead('rekordbox', { collection: true }),
+  traktor: sourceRead('traktor', { collection: true }),
+  engine: sourceRead('engine', { collection: false }),
+  serato: sourceRead('serato', { collection: true }),
 }
 
 export type EditMessagePrefix =
@@ -98,9 +79,9 @@ export const SOURCE_PROGRAMS: {
   [P in DjProgram]: SourceProgram & { usb: P extends UsbProgram ? true : false }
 } = {
   rekordbox: {
-    separator: () => window.api.rekordboxHasSeparator(),
+    separator: () => window.api.dj.hasSeparator('rekordbox'),
     edit: {
-      save: (...args) => window.api.editRekordboxPlaylist(...args),
+      save: (...args) => window.api.dj.editPlaylist('rekordbox', ...args),
       messagePrefix: 'sources.edit.',
       gate: 'none',
     },
@@ -116,9 +97,9 @@ export const SOURCE_PROGRAMS: {
     crates: false,
   },
   traktor: {
-    separator: () => window.api.traktorHasSeparator(),
+    separator: () => window.api.dj.hasSeparator('traktor'),
     edit: {
-      save: (...args) => window.api.editTraktorPlaylist(...args),
+      save: (...args) => window.api.dj.editPlaylist('traktor', ...args),
       messagePrefix: 'sources.editTraktor.',
       gate: 'traktorCollection',
     },
@@ -141,7 +122,7 @@ export const SOURCE_PROGRAMS: {
   engine: {
     separator: null,
     edit: {
-      save: (...args) => window.api.editEnginePlaylist(...args),
+      save: (...args) => window.api.dj.editPlaylist('engine', ...args),
       messagePrefix: 'sources.editEngine.',
       gate: 'none',
       kinds: new Set(['create', 'add', 'delete']),
@@ -161,7 +142,7 @@ export const SOURCE_PROGRAMS: {
   serato: {
     separator: null,
     edit: {
-      save: (...args) => window.api.editSeratoPlaylist(...args),
+      save: (...args) => window.api.dj.editPlaylist('serato', ...args),
       messagePrefix: 'sources.editSerato.',
       gate: 'none',
     },

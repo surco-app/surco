@@ -11,7 +11,6 @@ import type {
   AppleMusicPlaylistTracks,
   AppleMusicTrackMeta,
   BpmResult,
-  CollectionTrack,
   DjProgram,
   DockIconFrames,
   FineWave,
@@ -26,14 +25,9 @@ import type {
   MusicFixProgress,
   MusicReviewEntry,
   PairFacts,
-  PlaylistEditMode,
   ProcessProgress,
   ProgramCopies,
   QueuedCues,
-  RekordboxEditResult,
-  RekordboxPlaylistEdit,
-  RekordboxQueueApplied,
-  RekordboxQueueState,
   RekordboxSyncIssue,
   RememberedAutoMatch,
   RestoreResult,
@@ -46,8 +40,6 @@ import type {
   SearchProviderId,
   SessionData,
   SessionEdit,
-  SourceNode,
-  SourcePlaylistEntry,
   SpectrumVerdict,
   SurcoGrid,
   TrackCues,
@@ -65,6 +57,7 @@ import type {
 } from '../shared/types'
 import type { Verification } from '../shared/verification'
 import type { Api } from './api'
+import { createDjApi } from './dj'
 
 // The renderer half of shared/audioIpcContract.ts: every analysis invoke goes
 // through here, so its channel name, arguments and promised result stay welded
@@ -232,50 +225,11 @@ const api: Api = {
     persistentIds: string[],
   ): Promise<Record<string, { coverPath: string; coverUrl: string }>> =>
     ipcRenderer.invoke('applemusic:artwork', persistentIds),
-  rekordboxAvailable: (): Promise<boolean> => ipcRenderer.invoke('rekordbox:available'),
-  loadRekordboxTree: (): Promise<SourceNode[]> => ipcRenderer.invoke('rekordbox:tree'),
-  rekordboxRecentCount: (): Promise<number> => ipcRenderer.invoke('rekordbox:recentCount'),
-  rekordboxTrackCount: (): Promise<number> => ipcRenderer.invoke('rekordbox:trackCount'),
-  loadRekordboxCollection: (): Promise<CollectionTrack[]> =>
-    ipcRenderer.invoke('rekordbox:collectionTracks'),
-  loadRekordboxPlaylist: (id: string): Promise<SourcePlaylistEntry[]> =>
-    ipcRenderer.invoke('rekordbox:playlist', id),
-  engineAvailable: (): Promise<boolean> => ipcRenderer.invoke('engine:available'),
-  loadEngineTree: (): Promise<SourceNode[]> => ipcRenderer.invoke('engine:tree'),
-  engineRecentCount: (): Promise<number> => ipcRenderer.invoke('engine:recentCount'),
-  engineTrackCount: (): Promise<number> => ipcRenderer.invoke('engine:trackCount'),
-  loadEnginePlaylist: (id: string): Promise<SourcePlaylistEntry[]> =>
-    ipcRenderer.invoke('engine:playlist', id),
-  traktorAvailable: (): Promise<boolean> => ipcRenderer.invoke('traktor:available'),
-  loadTraktorTree: (): Promise<SourceNode[]> => ipcRenderer.invoke('traktor:tree'),
-  traktorRecentCount: (): Promise<number> => ipcRenderer.invoke('traktor:recentCount'),
-  traktorTrackCount: (): Promise<number> => ipcRenderer.invoke('traktor:trackCount'),
-  loadTraktorCollection: (): Promise<CollectionTrack[]> =>
-    ipcRenderer.invoke('traktor:collectionTracks'),
-  loadTraktorPlaylist: (id: string): Promise<SourcePlaylistEntry[]> =>
-    ipcRenderer.invoke('traktor:playlist', id),
-  seratoAvailable: (): Promise<boolean> => ipcRenderer.invoke('serato:available'),
-  loadSeratoTree: (): Promise<SourceNode[]> => ipcRenderer.invoke('serato:tree'),
-  seratoRecentCount: (): Promise<number> => ipcRenderer.invoke('serato:recentCount'),
-  seratoTrackCount: (): Promise<number> => ipcRenderer.invoke('serato:trackCount'),
-  loadSeratoCollection: (): Promise<CollectionTrack[]> =>
-    ipcRenderer.invoke('serato:collectionTracks'),
-  loadSeratoPlaylist: (id: string): Promise<SourcePlaylistEntry[]> =>
-    ipcRenderer.invoke('serato:playlist', id),
+  dj: createDjApi(ipcRenderer),
   seratoRunning: (): Promise<boolean> => ipcRenderer.invoke('serato:running'),
   djAppRunning: (): Promise<boolean> => ipcRenderer.invoke('djApps:running'),
   holdsInLibrary: (path: string, titles: string[]): Promise<boolean> =>
     ipcRenderer.invoke('library:holdsFile', path, titles),
-  editRekordboxPlaylist: (
-    edit: RekordboxPlaylistEdit,
-    label?: string,
-    mode?: PlaylistEditMode,
-  ): Promise<RekordboxEditResult> => ipcRenderer.invoke('rekordbox:edit', edit, label, mode),
-  rekordboxQueue: (): Promise<RekordboxQueueState> => ipcRenderer.invoke('rekordbox:queue'),
-  applyRekordboxQueue: (): Promise<RekordboxQueueApplied | null> =>
-    ipcRenderer.invoke('rekordbox:applyNow'),
-  discardRekordboxQueue: (): Promise<void> => ipcRenderer.invoke('rekordbox:discardQueue'),
-  rekordboxQueueReady: (): Promise<void> => ipcRenderer.invoke('rekordbox:queueReady'),
   rekordboxTrackCues: (contentId: string): Promise<TrackCues | null> =>
     ipcRenderer.invoke('rekordbox:trackCues', contentId),
   rekordboxCueWaveDetail: (contentId: string): Promise<Uint16Array | null> =>
@@ -312,86 +266,6 @@ const api: Api = {
     ipcRenderer.invoke('rekordbox:undoCues', contentId),
   saveRekordboxCues: (reqs: SaveCuesRequest[]): Promise<void> =>
     ipcRenderer.invoke('rekordbox:saveCues', reqs),
-  rekordboxMembership: (paths: string[]): Promise<Record<string, string[]>> =>
-    ipcRenderer.invoke('rekordbox:membership', paths),
-  traktorMembership: (paths: string[]): Promise<Record<string, string[]>> =>
-    ipcRenderer.invoke('traktor:membership', paths),
-  seratoMembership: (paths: string[]): Promise<Record<string, string[]>> =>
-    ipcRenderer.invoke('serato:membership', paths),
-  engineMembership: (paths: string[]): Promise<Record<string, string[]>> =>
-    ipcRenderer.invoke('engine:membership', paths),
-  onRekordboxQueueChanged: (cb: (state: RekordboxQueueState) => void) => {
-    const listener = (_e: unknown, state: RekordboxQueueState): void => cb(state)
-    ipcRenderer.on('rekordbox:queueChanged', listener)
-    return () => ipcRenderer.removeListener('rekordbox:queueChanged', listener)
-  },
-  onRekordboxQueueApplied: (cb: (applied: RekordboxQueueApplied) => void) => {
-    const listener = (_e: unknown, applied: RekordboxQueueApplied): void => cb(applied)
-    ipcRenderer.on('rekordbox:queueApplied', listener)
-    return () => ipcRenderer.removeListener('rekordbox:queueApplied', listener)
-  },
-  rekordboxHasSeparator: (): Promise<boolean> => ipcRenderer.invoke('rekordbox:hasSeparator'),
-  editTraktorPlaylist: (
-    edit: RekordboxPlaylistEdit,
-    label?: string,
-    mode?: PlaylistEditMode,
-  ): Promise<RekordboxEditResult> => ipcRenderer.invoke('traktor:edit', edit, label, mode),
-  editSeratoPlaylist: (
-    edit: RekordboxPlaylistEdit,
-    label?: string,
-    mode?: PlaylistEditMode,
-  ): Promise<RekordboxEditResult> => ipcRenderer.invoke('serato:edit', edit, label, mode),
-  editEnginePlaylist: (
-    edit: RekordboxPlaylistEdit,
-    label?: string,
-    mode?: PlaylistEditMode,
-  ): Promise<RekordboxEditResult> => ipcRenderer.invoke('engine:edit', edit, label, mode),
-  traktorHasSeparator: (): Promise<boolean> => ipcRenderer.invoke('traktor:hasSeparator'),
-  engineCueQueue: (): Promise<RekordboxQueueState> => ipcRenderer.invoke('engine:cueQueue'),
-  applyEngineCueQueue: (): Promise<RekordboxQueueApplied | null> =>
-    ipcRenderer.invoke('engine:applyCueQueue'),
-  discardEngineCueQueue: (): Promise<void> => ipcRenderer.invoke('engine:discardCueQueue'),
-  engineCueQueueReady: (): Promise<void> => ipcRenderer.invoke('engine:cueQueueReady'),
-  onEngineCueQueueChanged: (cb: (state: RekordboxQueueState) => void) => {
-    const listener = (_e: unknown, state: RekordboxQueueState): void => cb(state)
-    ipcRenderer.on('engine:cueQueueChanged', listener)
-    return () => ipcRenderer.removeListener('engine:cueQueueChanged', listener)
-  },
-  onEngineCueQueueApplied: (cb: (applied: RekordboxQueueApplied) => void) => {
-    const listener = (_e: unknown, applied: RekordboxQueueApplied): void => cb(applied)
-    ipcRenderer.on('engine:cueQueueApplied', listener)
-    return () => ipcRenderer.removeListener('engine:cueQueueApplied', listener)
-  },
-  traktorCueQueue: (): Promise<RekordboxQueueState> => ipcRenderer.invoke('traktor:cueQueue'),
-  applyTraktorCueQueue: (): Promise<RekordboxQueueApplied | null> =>
-    ipcRenderer.invoke('traktor:applyCueQueue'),
-  discardTraktorCueQueue: (): Promise<void> => ipcRenderer.invoke('traktor:discardCueQueue'),
-  traktorCueQueueReady: (): Promise<void> => ipcRenderer.invoke('traktor:cueQueueReady'),
-  onTraktorCueQueueChanged: (cb: (state: RekordboxQueueState) => void) => {
-    const listener = (_e: unknown, state: RekordboxQueueState): void => cb(state)
-    ipcRenderer.on('traktor:cueQueueChanged', listener)
-    return () => ipcRenderer.removeListener('traktor:cueQueueChanged', listener)
-  },
-  onTraktorCueQueueApplied: (cb: (applied: RekordboxQueueApplied) => void) => {
-    const listener = (_e: unknown, applied: RekordboxQueueApplied): void => cb(applied)
-    ipcRenderer.on('traktor:cueQueueApplied', listener)
-    return () => ipcRenderer.removeListener('traktor:cueQueueApplied', listener)
-  },
-  seratoCueQueue: (): Promise<RekordboxQueueState> => ipcRenderer.invoke('serato:cueQueue'),
-  applySeratoCueQueue: (): Promise<RekordboxQueueApplied | null> =>
-    ipcRenderer.invoke('serato:applyCueQueue'),
-  discardSeratoCueQueue: (): Promise<void> => ipcRenderer.invoke('serato:discardCueQueue'),
-  seratoCueQueueReady: (): Promise<void> => ipcRenderer.invoke('serato:cueQueueReady'),
-  onSeratoCueQueueChanged: (cb: (state: RekordboxQueueState) => void) => {
-    const listener = (_e: unknown, state: RekordboxQueueState): void => cb(state)
-    ipcRenderer.on('serato:cueQueueChanged', listener)
-    return () => ipcRenderer.removeListener('serato:cueQueueChanged', listener)
-  },
-  onSeratoCueQueueApplied: (cb: (applied: RekordboxQueueApplied) => void) => {
-    const listener = (_e: unknown, applied: RekordboxQueueApplied): void => cb(applied)
-    ipcRenderer.on('serato:cueQueueApplied', listener)
-    return () => ipcRenderer.removeListener('serato:cueQueueApplied', listener)
-  },
   traktorCanSave: (): Promise<boolean> => ipcRenderer.invoke('traktor:canSave'),
   usbVolumes: (): Promise<UsbVolumeList> => ipcRenderer.invoke('usb:volumes'),
   onUsbVolumesChanged: (cb: (list: UsbVolumeList) => void) => {
