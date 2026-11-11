@@ -204,7 +204,18 @@ function ProgramSection({
             testId={`copies-state-${program}`}
             className={STATE_TONE[state]}
           >
-            {tr(`copies.state.${state}`, { count: entry.pending, program: name })}
+            {state === 'ok' ? (
+              <>
+                <span
+                  data-testid={`copies-state-ok-${program}`}
+                  aria-hidden="true"
+                  className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--color-good)] align-middle"
+                />
+                <span className="sr-only">{tr('copies.state.ok')}</span>
+              </>
+            ) : (
+              tr(`copies.state.${state}`, { count: entry.pending, program: name })
+            )}
             {state === 'untouched' && (
               <button
                 type="button"

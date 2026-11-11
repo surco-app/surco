@@ -105,6 +105,8 @@ const latest = copy({ id: 'new' })
 const older = copy({ id: 'old', takenAt: new Date(2026, 9, 28, 23, 12).getTime(), reason: 'cues' })
 
 describe('CopiesScreen', () => {
+  // An up-to-date program is the calm case: a green dot says it at a glance and the words
+  // stay for a screen reader, so only a program that needs attention reads as a sentence.
   it("shows each program's state, last copy and how many of five are kept", () => {
     renderScreen([
       program('rekordbox', { copies: [latest, older] }),
@@ -123,6 +125,10 @@ describe('CopiesScreen', () => {
     expect(screen.getByTestId('copies-state-rekordbox')).toHaveTextContent(
       i18n.t('copies.state.ok'),
     )
+    expect(
+      within(screen.getByTestId('copies-state-rekordbox')).getByTestId('copies-state-ok-rekordbox'),
+    ).toBeInTheDocument()
+    expect(screen.queryByTestId('copies-state-ok-traktor')).not.toBeInTheDocument()
     expect(screen.getByTestId('copies-last-rekordbox')).toHaveTextContent(when(latest.takenAt))
     expect(screen.getByTestId('copies-kept-rekordbox')).toHaveTextContent(
       i18n.t('copies.kept', { count: 2, max: 5 }),
