@@ -19,6 +19,8 @@ export type WritableProgram = ProgramsThatCan<'write'>
 
 export type UsbProgram = ProgramsThatCan<'usb'>
 
+export type ReadOnlyProgram = Exclude<DjProgram, WritableProgram>
+
 export type CueProgram = DjProgram
 
 export type LibraryProgram = DjProgram
@@ -36,6 +38,10 @@ export const WRITABLE_PROGRAMS = writableInOrder(['rekordbox', 'traktor', 'engin
 
 export const USB_PROGRAMS: readonly UsbProgram[] = DJ_PROGRAMS.filter(
   (program): program is UsbProgram => PROGRAM_CAN[program].usb,
+)
+
+export const READ_ONLY_PROGRAMS: readonly ReadOnlyProgram[] = DJ_PROGRAMS.filter(
+  (program): program is ReadOnlyProgram => !PROGRAM_CAN[program].write,
 )
 
 export const RAIL_PROGRAMS = programsInOrder(['rekordbox', 'engine', 'traktor', 'serato'])

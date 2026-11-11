@@ -7,6 +7,8 @@ import {
   programOf,
   programsInOrder,
   RAIL_PROGRAMS,
+  READ_ONLY_PROGRAMS,
+  type ReadOnlyProgram,
   USB_PROGRAMS,
   type UsbProgram,
   WRITABLE_PROGRAMS,
@@ -94,6 +96,10 @@ describe('PROGRAM_CAN', () => {
       .map(([program]) => program)
     expect([...USB_PROGRAMS].sort()).toEqual(usb.sort())
     expect([...USB_PROGRAMS].sort()).toEqual(['engine', 'rekordbox', 'serato', 'traktor'])
+  })
+  it('names as read only every library Surco cannot write, so each is still asked before a file it plays goes', () => {
+    expect([...READ_ONLY_PROGRAMS]).toEqual(['serato'])
+    expectTypeOf<ReadOnlyProgram>().toEqualTypeOf<'serato'>()
   })
   it('types the writable and USB programs as exactly the rows marked true', () => {
     expectTypeOf<WritableProgram>().toEqualTypeOf<'rekordbox' | 'traktor' | 'engine'>()

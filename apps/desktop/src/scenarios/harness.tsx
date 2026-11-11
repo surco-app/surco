@@ -308,7 +308,10 @@ function processTrackInMain(
       refreshAppleMusicEntry: (pid: string) => appleMusic.refreshAppleMusicEntry(pid),
     }),
     librariesKeepingOriginal: (path, target) =>
-      librariesKeepingOriginal(path, target, { traktorRead: traktorWritePath }),
+      librariesKeepingOriginal(path, target, {
+        traktorRead: traktorWritePath,
+        readOnlyLibraries: () => ({ serato: [] }),
+      }),
     isEngineDjRunning,
     addToEngineDj: (target, meta, coverPath, replaces) => {
       const s = getSettings()
@@ -858,7 +861,7 @@ function scenarioApi(
       removeMusicDuplicate: (request) => invokeMain('applemusic:removeDuplicate', request),
       replaceDuplicatesInLibraries: (pairs) =>
         replaceDuplicates(pairs, {
-          ...duplicateLibraryDeps(libraryHost(errors), sessions, () => []),
+          ...duplicateLibraryDeps(libraryHost(errors), sessions, () => ({ serato: [] })),
           trash: (path) => trashRecoverably(path),
           log: { track: activity.track, copyOf: musicReviewLog.copyOf },
         }),
@@ -996,6 +999,7 @@ export function bootMain(options: ScenarioOptions): MainBoot {
     registerShellIpc(mediaAccess, (path, titles) =>
       usedByAnyLibrary(path, titles, {
         traktorRead: traktorWritePath,
+        readOnlyLibraries: () => ({ serato: [] }),
         ...(drivesMusic(options) && { musicEntries: musicReaders.entriesForFile }),
         fileTitle: async (file) => (await readTags(file)).title,
         fileLike: fileLikeForMusic,
@@ -1010,7 +1014,7 @@ export function bootMain(options: ScenarioOptions): MainBoot {
         hostFor: () => libraryHost(errors),
         sessions,
         followEngineSize,
-        seratoRoots: () => [],
+        readOnlyLibraries: () => ({ serato: [] }),
       }),
     )
     registerDamageIpc(

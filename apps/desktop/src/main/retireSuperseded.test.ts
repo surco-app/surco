@@ -9,11 +9,11 @@ import { beforeAll, describe, expect, it, vi } from 'vitest'
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
 vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 
-import { djLibraryFileUse, type SyncedLibraries } from './libraryFileUse'
+import { djLibraryFileUse, type LibraryLocations } from './libraryFileUse'
 import { REKORDBOX_KEY } from './rekordboxDb'
 import { type RetireDeps, retireSuperseded } from './retireSuperseded'
 
-const NONE: SyncedLibraries = { rekordbox: '', engine: '', traktor: '' }
+const NONE: LibraryLocations = { rekordbox: '', engine: '', traktor: '', serato: [] }
 let root: string
 
 beforeAll(async () => {
@@ -61,7 +61,7 @@ async function traktorWith(volume: string, dir: string, file: string): Promise<s
   return path
 }
 
-function setup(libraries: SyncedLibraries, over: Partial<RetireDeps> = {}) {
+function setup(libraries: LibraryLocations, over: Partial<RetireDeps> = {}) {
   const trash = vi.fn<RetireDeps['trash']>(async () => undefined)
   const deps: RetireDeps = {
     usedByLibrary: djLibraryFileUse(libraries, { realPath: (p) => p }),

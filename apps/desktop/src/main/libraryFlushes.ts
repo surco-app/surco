@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import log from 'electron-log/main'
 import {
   type DjProgram,
+  READ_ONLY_PROGRAMS,
   WRITABLE_PROGRAMS,
   type WritableProgram,
   writableInOrder,
@@ -22,7 +23,13 @@ import { engineBitrateKbps, engineRowFinder, repointEngineTracks } from './engin
 import { ENGINE_KEYS, flushEngineSync } from './engineSyncFlush'
 import { updateEngineTags } from './engineTags'
 import { probeAudio, probeDuration, probeProperties, toNmlLocation } from './ffmpeg'
-import { djLibraryFileUse, type SyncedLibraries, usedByDjLibrary } from './libraryFileUse'
+import {
+  djLibraryFileUse,
+  type LibraryLocations,
+  type ReadOnlyLibraries,
+  type SyncedLibraries,
+  usedByDjLibrary,
+} from './libraryFileUse'
 import { pathKey } from './libraryPathKey'
 import { flushLibraryRepoints, type LibraryRepointResult } from './libraryRepointFlush'
 import { libraryStatus } from './libraryStatus'
@@ -108,10 +115,12 @@ export function rekordboxCollectionPath(): string {
     : ''
 }
 
+const NO_LIBRARIES: LibraryLocations = { rekordbox: '', engine: '', traktor: '', serato: [] }
+
 export async function librariesKeepingOriginal(
   path: string,
   target: string,
-  deps: { traktorRead: () => string; seratoRoots?: () => SeratoLibraryRoot[] },
+  deps: { traktorRead: () => string; readOnlyLibraries: () => ReadOnlyLibraries },
 ): Promise<DjProgram[]> {
   const settings = getSettings()
   const status = currentLibraryStatus()
@@ -126,27 +135,25 @@ export async function librariesKeepingOriginal(
   const held: DjProgram[] = []
   for (const program of WRITABLE_PROGRAMS) {
     if (!locations[program]) continue
-    const only = { rekordbox: '', engine: '', traktor: '', [program]: locations[program] }
+    const only = { ...NO_LIBRARIES, [program]: locations[program] }
     if (await djLibraryFileUse(only, { realPath: (p: string) => realpathSync(p) })(path))
       held.push(program)
   }
   const nml = settings.syncTraktor ? deps.traktorRead() : ''
   if (nml) {
     const traktor = djLibraryFileUse(
-      { rekordbox: '', engine: '', traktor: nml },
+      { ...NO_LIBRARIES, traktor: nml },
       { realPath: (p: string) => realpathSync(p) },
     )
     if ((await traktor(path)) && (await traktor(target))) held.push('traktor')
   }
-  const serato = deps.seratoRoots?.() ?? []
-  if (
-    serato.length > 0 &&
-    (await djLibraryFileUse(
-      { rekordbox: '', engine: '', traktor: '', serato },
-      { realPath: (p: string) => realpathSync(p) },
-    )(path))
-  )
-    held.push('serato')
+  const readOnly = deps.readOnlyLibraries()
+  for (const program of READ_ONLY_PROGRAMS) {
+    if (readOnly[program].length === 0) continue
+    const only = { ...NO_LIBRARIES, [program]: readOnly[program] }
+    if (await djLibraryFileUse(only, { realPath: (p: string) => realpathSync(p) })(path))
+      held.push(program)
+  }
   return held
 }
 
@@ -161,7 +168,7 @@ export async function usedByAnyLibrary(
   titles: string[],
   deps: {
     traktorRead: () => string
-    seratoRoots?: () => SeratoLibraryRoot[]
+    readOnlyLibraries: () => ReadOnlyLibraries
     musicEntries?: (
       path: string,
       titles: string[],
@@ -183,7 +190,7 @@ export async function usedByAnyLibrary(
           : '',
       engine: settings.syncEngineDj || status.engine.found ? settings.engineLibraryDir : '',
       traktor: (settings.syncTraktor && settings.traktorNmlPath) || deps.traktorRead(),
-      serato: deps.seratoRoots?.(),
+      ...deps.readOnlyLibraries(),
     },
     { realPath: (p: string) => realpathSync(p) },
   )
@@ -762,7 +769,7 @@ export function syncTagsInLibraries(
 export function duplicateLibraryDeps(
   host: LibraryHost,
   sessions: Sessions,
-  seratoRoots: () => SeratoLibraryRoot[],
+  readOnlyLibraries: () => ReadOnlyLibraries,
 ): Omit<ReplaceDuplicatesDeps, 'trash' | 'musicStep' | 'log'> {
   const realPath = (p: string) => realpathSync(p)
   const rekordbox = rekordboxFlushDeps(host)
@@ -834,7 +841,7 @@ export function duplicateLibraryDeps(
         rekordbox: rekordbox.collectionPath,
         engine: engine.collectionPath,
         traktor: traktor.traktorNmlPath,
-        serato: seratoRoots(),
+        ...readOnlyLibraries(),
       },
       { realPath },
     ),

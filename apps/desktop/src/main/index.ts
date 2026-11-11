@@ -142,7 +142,7 @@ import { createFileSignatures } from './fileSignatures'
 import { createMenuT, resolveMenuLocale } from './i18n'
 import { fileIdentity, isSameFile, removeRenamedOriginal } from './inplace'
 import { setLibraryBackupRoot } from './libraryBackups'
-import { libraryCopyInfo, libraryTracksOf } from './libraryFileUse'
+import { libraryCopyInfo, libraryTracksOf, type ReadOnlyLibraries } from './libraryFileUse'
 import {
   currentLibraryStatus,
   duplicateLibraryDeps,
@@ -362,6 +362,7 @@ function seratoRoots() {
     return seratoLibraryRoots(app.getPath('home'), [])
   }
 }
+const readOnlyLibraries = (): ReadOnlyLibraries => ({ serato: seratoRoots() })
 
 let endConversionBatch: ((sender: WebContents) => Promise<void>) | undefined
 
@@ -415,7 +416,7 @@ const traktorReadPath = (): string =>
 const holdsInAnyLibrary = (path: string, titles: string[]): Promise<boolean> =>
   usedByAnyLibrary(path, titles, {
     traktorRead: traktorReadPath,
-    seratoRoots,
+    readOnlyLibraries,
     ...(process.platform === 'darwin' && { musicEntries: musicReaders.entriesForFile }),
     fileTitle: async (file) => (await readTags(file)).title,
     fileLike: fileLikeForMusic,
@@ -424,7 +425,7 @@ const holdsInAnyLibrary = (path: string, titles: string[]): Promise<boolean> =>
 const holdsForConversion = (path: string, titles: string[]): Promise<boolean> =>
   usedByAnyLibrary(path, titles, {
     traktorRead: traktorReadPath,
-    seratoRoots,
+    readOnlyLibraries,
     ...(process.platform === 'darwin' && {
       musicEntries: musicEntriesIfOpen,
       musicHolds: () => musicIsOpen(),
@@ -1497,7 +1498,7 @@ function registerIpc(): void {
           rekordbox: rekordboxCollectionPath(),
           engine: getSettings().engineLibraryDir,
           traktor: traktorReadPath(),
-          serato: seratoRoots(),
+          ...readOnlyLibraries(),
         },
         { realPath: (p: string) => realpathSync(p) },
       ),
@@ -1738,7 +1739,7 @@ function registerIpc(): void {
         ...duplicateLibraryDeps(
           hostFor(BrowserWindow.fromWebContents(e.sender), e.sender),
           sessions,
-          seratoRoots,
+          readOnlyLibraries,
         ),
         trash: (path) => trashRecoverably(path),
         log: { track: activity.track, copyOf: musicReviewLog.copyOf },
@@ -1753,7 +1754,7 @@ function registerIpc(): void {
       hostFor: (sender) => hostFor(BrowserWindow.fromWebContents(sender), sender),
       sessions,
       followEngineSize,
-      seratoRoots,
+      readOnlyLibraries,
     }),
     beginMoment: moments.begin,
   })
@@ -1906,7 +1907,7 @@ function registerIpc(): void {
         )
       },
       librariesKeepingOriginal: (path, target) =>
-        librariesKeepingOriginal(path, target, { traktorRead: traktorReadPath, seratoRoots }),
+        librariesKeepingOriginal(path, target, { traktorRead: traktorReadPath, readOnlyLibraries }),
       refreshAppleMusicEntry: (persistentId) =>
         appleMusicLimiter.run(() => refreshAppleMusicEntry(persistentId)),
       relinkAppleMusicEntry: (persistentId, path) =>

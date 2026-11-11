@@ -32,7 +32,7 @@ import { REKORDBOX_KEY } from './rekordboxDb'
 import { concat, frame, track, utf16be } from './seratoDatabaseFixture'
 import { type SeratoLibraryRoot, seratoLibraryRoots } from './seratoLibrary'
 
-const OFF = { rekordbox: '', engine: '', traktor: '' }
+const OFF = { rekordbox: '', engine: '', traktor: '', serato: [] }
 let root: string
 
 beforeAll(async () => {
@@ -148,7 +148,7 @@ describe('usedByDjLibrary', () => {
     const dir = await engine('../../music/a.mp3')
     const nml = await traktor('M', '/:Music/:', 'a.mp3')
     const collection = await rekordbox('/Volumes/M/a.mp3')
-    const used = djLibraryFileUse({ rekordbox: collection, engine: dir, traktor: nml })
+    const used = djLibraryFileUse({ rekordbox: collection, engine: dir, traktor: nml, serato: [] })
     reads.length = 0
     const open = vi.spyOn(rekordboxDb, 'openRekordboxDb')
 
@@ -176,9 +176,9 @@ describe('usedByDjLibrary', () => {
       expect(await usedByDjLibrary(file, { ...OFF, ...one })).toBe(true)
 
     reads.length = 0
-    expect(await usedByDjLibrary(file, { rekordbox: collection, engine: dir, traktor: nml })).toBe(
-      true,
-    )
+    expect(
+      await usedByDjLibrary(file, { rekordbox: collection, engine: dir, traktor: nml, serato: [] }),
+    ).toBe(true)
     expect(reads.filter((p) => p.endsWith('m.db') || p === nml)).toEqual([])
 
     reads.length = 0
@@ -199,6 +199,7 @@ describe('usedByDjLibrary', () => {
         rekordbox: junk,
         engine: dir,
         traktor: nml,
+        serato: [],
       }),
     ).rejects.toThrow('rekordbox collection unreadable')
     expect(reads.filter((p) => p.endsWith('m.db') || p === nml)).toEqual([])
@@ -399,6 +400,7 @@ describe('libraryTracksOf', () => {
         rekordbox: collection,
         engine: dir,
         traktor: nml,
+        serato: [],
       }),
     ).toEqual({ rekordbox: '1', engine: 'engine:2', traktor: 'traktor:M/:Music/:a.mp3' })
   })
@@ -428,6 +430,7 @@ describe('libraryTracksOf', () => {
         rekordbox: collection,
         engine: join(root, 'no-engine'),
         traktor: join(root, 'missing.nml'),
+        serato: [],
       }),
     ).toEqual({ rekordbox: '1' })
   })
