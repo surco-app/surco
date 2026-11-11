@@ -1,5 +1,52 @@
 [
   {
+    "version": "1.33",
+    "date": "November 11, 2026",
+    "title": "Raster gesammelt korrigieren",
+    "items": [
+      {
+        "text": "Wähle mehrere Tracks und das Cues-Panel zeigt dir, bei wie vielen das Raster neben den Beats liegt. „Anpassen“ korrigiert nur diese, und Cues und CALLs wandern mit dem Raster. Gespeichert wird erst, wenn du Speichern drückst.",
+        "in": "1.33.0"
+      },
+      {
+        "text": "Wenn die Korrektur die Cues eines Tracks verschieben könnte, lässt Surco ihn, wie er ist, und sagt dir warum, damit du ihn selbst öffnest. „Raster falsch“ findet jetzt jeden Track mit verschobenem Raster, auch die, die es früher übersehen hat.",
+        "in": "1.33.0"
+      },
+      {
+        "text": "„Raster anpassen“ gibt es auch im kleinen Cue-Editor, vor „Auto-Markieren“, und es leuchtet auf, wenn der Track es braucht.",
+        "in": "1.33.0"
+      },
+      {
+        "text": "Konvertiere Tracks aus rekordbox oder Traktor, ohne das Programm zu schließen. Surco merkt sich die Änderungen und schreibt sie, sobald du es schließt.",
+        "in": "1.33.0"
+      },
+      {
+        "text": "Erstelle eine Session oder bearbeite Playlists, während rekordbox, Traktor, Serato oder Engine DJ offen ist. Die Änderung wartet und wird geschrieben, wenn du das Programm schließt. In Engine DJ kannst du jetzt auch Playlists erstellen, Tracks hinzufügen und Playlists löschen.",
+        "in": "1.33.0"
+      },
+      {
+        "text": "Jeder Track in der Liste zeigt seine Tonart neben der Länge, in der „Tonart-Notation“, die du in den Einstellungen wählst, jetzt Alphanumerisch und Klassisch genannt. Auch anders geschriebene Tonarten wie Abm oder Ab Major werden gelesen, damit sie in einer Session richtig erscheinen und mischen.",
+        "in": "1.33.0"
+      },
+      {
+        "text": "Eine Session sieht jetzt aus wie jede Playlist, mit Tonart und Tempo jedes Tracks. „Neu würfeln“ baut die ganze Session neu und behält nur den Track, mit dem du angefangen hast. Bases und Vocals wechseln sich weiter ab, auch wenn die Tonarten nicht passen.",
+        "in": "1.33.0"
+      },
+      {
+        "text": "Mit „Feedback senden“ schreibst du uns, ohne Surco zu verlassen, und es ist überall da, wo du es brauchen könntest, auch wenn eine Konvertierung scheitert. Gib deine E-Mail an, damit wir antworten können. Lässt es sich nicht senden, kannst du es erneut versuchen oder kopieren.",
+        "in": "1.33.0"
+      },
+      {
+        "text": "Mit mehreren ausgewählten Tracks kannst du „Kommentar“ bei allen auf einmal bearbeiten oder leeren.",
+        "in": "1.33.0"
+      },
+      {
+        "text": "Eine ruhigere Oberfläche, mit weniger wiederholten Zahlen, weicheren Bewegungen und einer sanften Überblendung, wenn das Design zwischen hell und dunkel wechselt.",
+        "in": "1.33.0"
+      }
+    ]
+  },
+  {
     "version": "1.32",
     "date": "November 10, 2026",
     "title": "Sessions, die nach deinen Sets klingen",
