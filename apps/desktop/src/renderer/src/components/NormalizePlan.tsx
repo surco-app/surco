@@ -76,7 +76,7 @@ export function NormalizePlan({
       }`}
     >
       <div className="flex items-start justify-between gap-2">
-        <p className="text-[11px] font-medium text-fg-dim">{tr('normalize.plan.head')}</p>
+        <p className="text-label font-medium text-fg-dim">{tr('normalize.plan.head')}</p>
         {onDismiss && (
           <button
             type="button"
@@ -93,13 +93,13 @@ export function NormalizePlan({
       <p className="mt-1 text-xs leading-relaxed text-fg tabular-nums">
         {tr(`normalize.plan.${headKey}`, values)}
       </p>
-      <p className="mt-0.5 text-[11px] text-fg-muted tabular-nums">
+      <p className="mt-0.5 text-label text-fg-muted tabular-nums">
         {tr(`normalize.plan.${subKey}`, values)}
       </p>
       {format === 'mp3' && normalize.mode === 'loudness' && (
         <p
           data-testid="normalize-plan-mp3"
-          className="mt-0.5 text-[11px] text-fg-muted tabular-nums"
+          className="mt-0.5 text-label text-fg-muted tabular-nums"
         >
           {tr('normalize.plan.mp3Ceiling', {
             ceiling: formatDb(Math.min(0, Math.max(-9, normalize.truePeakDb)), i18n.language),
@@ -110,7 +110,7 @@ export function NormalizePlan({
       {format !== 'mp3' && predicted.limited && normalize.mode === 'loudness' && (
         <p
           data-testid="normalize-plan-limiter"
-          className="mt-0.5 text-[11px] text-fg-muted tabular-nums"
+          className="mt-0.5 text-label text-fg-muted tabular-nums"
         >
           {tr('normalize.plan.limiterCeiling', {
             ceiling: formatDb(Math.min(0, Math.max(-9, normalize.truePeakDb)), i18n.language),

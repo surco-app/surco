@@ -145,7 +145,7 @@ function MenuAction({
           <span
             id={detailId}
             data-testid={`${testid}-detail`}
-            className="text-[11px] text-fg-faint"
+            className="text-label text-fg-faint"
           >
             {detail}
           </span>

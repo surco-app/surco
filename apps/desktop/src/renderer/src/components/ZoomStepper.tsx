@@ -75,7 +75,7 @@ export function ZoomStepper({
         aria-label={labels.reset}
         disabled={resetDisabled}
         onClick={onReset}
-        className={`${chrome} ${h} -mx-px min-w-12 px-1.5 text-[11px] tabular-nums`}
+        className={`${chrome} ${h} -mx-px min-w-12 px-1.5 text-label tabular-nums`}
       >
         {label}
         <Tooltip label={labels.reset} />

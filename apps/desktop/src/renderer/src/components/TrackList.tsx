@@ -902,7 +902,7 @@ const TrackRow = memo(function TrackRow({
                     data-testid="track-quality-word"
                     data-tone={qualityTone[quality]}
                     aria-hidden="true"
-                    className={`shrink-0 text-[11px] font-medium leading-4 ${wordClass[qualityTone[quality] as Exclude<RowTone, 'good'>]}`}
+                    className={`shrink-0 text-label font-medium leading-4 ${wordClass[qualityTone[quality] as Exclude<RowTone, 'good'>]}`}
                   >
                     {tr(qualityWord[quality])}
                   </span>
@@ -923,7 +923,7 @@ const TrackRow = memo(function TrackRow({
                       className="group/dot relative flex h-4 animate-pulse items-center rounded px-[5px] text-fg-faint ring-1 ring-current ring-inset"
                     >
                       {format ? (
-                        <span className="text-[11px] font-semibold leading-4">{format}</span>
+                        <span className="text-label font-semibold leading-4">{format}</span>
                       ) : (
                         <span className="h-2 w-2 rounded-full ring-[1.5px] ring-current ring-inset" />
                       )}
@@ -933,7 +933,7 @@ const TrackRow = memo(function TrackRow({
                     format && (
                       <span
                         data-testid="track-format"
-                        className="text-[11px] font-medium leading-4 text-fg-dim"
+                        className="text-label font-medium leading-4 text-fg-dim"
                       >
                         {format}
                       </span>
@@ -995,7 +995,7 @@ const TrackRow = memo(function TrackRow({
                   {autoMark?.kind === 'proposed' ? (
                     <span
                       data-testid="track-auto-mark"
-                      className="shrink-0 whitespace-nowrap rounded-full border border-dashed border-[var(--color-accent)] px-1.5 text-[11px] font-semibold leading-4 text-[var(--color-accent)]"
+                      className="shrink-0 whitespace-nowrap rounded-full border border-dashed border-[var(--color-accent)] px-1.5 text-label font-semibold leading-4 text-[var(--color-accent)]"
                     >
                       {tr('trackList.autoMark.proposed', { count: autoMark.proposals.length })}
                     </span>
@@ -1073,7 +1073,7 @@ const TrackRow = memo(function TrackRow({
               width: Math.max(swipe - SWIPE_GAP_PX, 0),
               ...(tracking ? { transition: 'none' } : {}),
             }}
-            className="absolute inset-y-1 right-0 flex flex-col items-center justify-center gap-0.5 overflow-hidden rounded-lg bg-[var(--color-swipe-action)] transition-[width,scale] duration-200 ease-out motion-safe:active:scale-[0.97] text-[11px] font-semibold whitespace-nowrap text-[var(--color-on-swipe-action)]"
+            className="absolute inset-y-1 right-0 flex flex-col items-center justify-center gap-0.5 overflow-hidden rounded-lg bg-[var(--color-swipe-action)] transition-[width,scale] duration-200 ease-out motion-safe:active:scale-[0.97] text-label font-semibold whitespace-nowrap text-[var(--color-on-swipe-action)]"
           >
             <X className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             {tr('trackList.remove')}
@@ -1226,7 +1226,7 @@ export const TrackList = memo(function TrackList({
           e.dataTransfer.effectAllowed = 'move'
           e.dataTransfer.setData(REORDER_TYPE, key)
         }}
-        className="group mx-4 flex h-[22px] items-center gap-2 text-[11px] text-fg-faint before:flex-1 before:border-t before:border-dashed before:border-line-strong before:content-[''] after:flex-1 after:border-t after:border-dashed after:border-line-strong after:content-['']"
+        className="group mx-4 flex h-[22px] items-center gap-2 text-label text-fg-faint before:flex-1 before:border-t before:border-dashed before:border-line-strong before:content-[''] after:flex-1 after:border-t after:border-dashed after:border-line-strong after:content-['']"
       >
         {reorder && (
           <button

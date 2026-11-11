@@ -149,7 +149,7 @@ export function PasteTracklistModal({
         <>
           {create && (
             <label className="mb-3 block">
-              <span className="mb-1 block text-[11px] text-fg-dim">
+              <span className="mb-1 block text-label text-fg-dim">
                 {tr('pasteTracklist.name')}
               </span>
               <input
@@ -247,14 +247,14 @@ export function PasteTracklistModal({
                       {hasTimes && (
                         <span
                           data-testid={`paste-tracklist-at-${i}`}
-                          className="font-mono text-[11px] leading-[18px] text-fg-faint tabular-nums"
+                          className="font-mono text-label leading-[18px] text-fg-faint tabular-nums"
                         >
                           {match.line.at ?? ''}
                         </span>
                       )}
                       <span className={`mt-[5px] size-2 rounded-full ${DOT[level]}`} />
                       <div className="min-w-0">
-                        <div className="truncate text-[13px]">
+                        <div className="truncate text-section">
                           {match.line.raw}
                           {match.line.suggested && (
                             <small className="ml-1.5 text-fg-faint">

@@ -5,6 +5,14 @@
    that resolves to var(--color-*) flips automatically. The active theme is set
    on <html> from the user's setting (system resolves to the OS preference). */
 @theme {
+  --text-label: 11px;
+  --text-label--letter-spacing: 0.01em;
+  --text-section: 13px;
+  --text-base--letter-spacing: -0.01em;
+  --text-xl--letter-spacing: -0.015em;
+  --text-figure: 40px;
+  --text-figure--letter-spacing: -0.035em;
+
   --color-ink: #16161e;
   --color-panel: #1a1b26;
   --color-panel-2: #292e42;

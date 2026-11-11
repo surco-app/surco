@@ -544,7 +544,7 @@ export function CueWaveDetail({
                     ...(gone.has(h.key) ? { opacity: GONE_OPACITY } : {}),
                     ...(movable?.includes(h.key) && onMoveMark ? { cursor: 'ew-resize' } : {}),
                   }}
-                  className={`absolute z-10 h-3.5 w-3.5 rounded-[3px] text-center text-[11px] font-bold leading-[14px] ${
+                  className={`absolute z-10 h-3.5 w-3.5 rounded-[3px] text-center text-label font-semibold leading-[14px] ${
                     selected === h.key
                       ? 'ring-2 ring-[var(--color-fg)]'
                       : offGrid?.includes(h.key)
@@ -583,7 +583,7 @@ export function CueWaveDetail({
                 borderStyle: 'solid',
                 borderWidth: '1.5px',
               }}
-              className="pointer-events-none absolute z-10 h-3.5 w-3.5 rounded-[3px] text-center text-[11px] font-bold leading-[11px] text-[var(--color-fg)]"
+              className="pointer-events-none absolute z-10 h-3.5 w-3.5 rounded-[3px] text-center text-label font-semibold leading-[11px] text-[var(--color-fg)]"
             >
               {h.letter}
             </span>
@@ -628,7 +628,7 @@ export function CueWaveDetail({
                       : { left: pct(ms) }),
                     top: `${WAVE_MARK_LANE_PX + 4}px`,
                   }}
-                  className={`absolute z-20 flex cursor-default items-center gap-1 whitespace-nowrap rounded-full border border-[var(--color-accent)] bg-[var(--color-panel)] py-0.5 pr-0.5 pl-2 text-[11px] font-semibold text-[var(--color-accent)] ${
+                  className={`absolute z-20 flex cursor-default items-center gap-1 whitespace-nowrap rounded-full border border-[var(--color-accent)] bg-[var(--color-panel)] py-0.5 pr-0.5 pl-2 text-label font-semibold text-[var(--color-accent)] ${
                     sure ? '' : 'border-dashed'
                   } ${ms - fromMs > span / 2 ? 'mr-1.5' : 'ml-1.5'}`}
                 >

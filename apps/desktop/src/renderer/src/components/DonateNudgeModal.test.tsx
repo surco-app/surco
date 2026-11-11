@@ -30,7 +30,7 @@ describe('DonateNudgeModal', () => {
 
   it('tightens the tracking of the headline count', () => {
     render(<DonateNudgeModal conversionCount={120} onClose={vi.fn()} />)
-    expect(screen.getByTestId('donate-nudge-count')).toHaveClass('tracking-[-0.035em]')
+    expect(screen.getByTestId('donate-nudge-count')).toHaveClass('text-figure')
   })
 
   it('links the donate button to the PayPal page in an external tab', () => {

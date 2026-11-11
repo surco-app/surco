@@ -255,7 +255,7 @@ export function PlaylistTree({
         <span className="w-3 shrink-0" />
         <span className="min-w-0 flex-1 truncate">{row.target.name}</span>
         {row.count !== undefined && (
-          <span className="shrink-0 text-[11px] tabular-nums text-fg-faint">{row.count}</span>
+          <span className="shrink-0 text-label tabular-nums text-fg-faint">{row.count}</span>
         )}
         {control(row.target)}
       </div>
@@ -286,7 +286,7 @@ export function PlaylistTree({
           {row.target.name}
         </span>
         {row.count !== undefined && (
-          <span className="shrink-0 text-[11px] tabular-nums text-fg-faint">{row.count}</span>
+          <span className="shrink-0 text-label tabular-nums text-fg-faint">{row.count}</span>
         )}
       </label>
     )

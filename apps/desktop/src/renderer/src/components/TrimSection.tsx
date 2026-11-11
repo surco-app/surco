@@ -128,7 +128,7 @@ function TrimPlan({
       data-testid="trim-plan"
       className="mt-3 rounded-lg border border-[var(--color-line)] border-l-[3px] border-l-[var(--color-accent)] bg-[var(--color-field)] px-3 py-2.5"
     >
-      <p className="text-[11px] font-medium text-fg-dim">{tr('trim.planHead')}</p>
+      <p className="text-label font-medium text-fg-dim">{tr('trim.planHead')}</p>
       <p className="mt-1 text-xs leading-relaxed text-fg tabular-nums">
         {tr(`trim.plan${side ?? 'Start'}`, {
           start: cutSeconds(startCut, i18n.language),
@@ -137,7 +137,7 @@ function TrimPlan({
           to: formatTime(Math.max(0, durationSec - startCut - endCut)),
         })}
       </p>
-      <p className="mt-0.5 text-[11px] text-fg-muted">{tr('trim.planCues')}</p>
+      <p className="mt-0.5 text-label text-fg-muted">{tr('trim.planCues')}</p>
     </div>
   )
 }
@@ -373,7 +373,7 @@ function Lane({
                 onKeyStep(e.shiftKey ? -COARSE_STEP_SEC : -fineStepSec)
               }
             }}
-            className="h-7 w-[72px] shrink-0 rounded-md border border-[var(--color-input-border)] bg-transparent px-1.5 text-center text-[11px] tabular-nums text-fg-muted outline-none focus:border-accent focus:text-fg"
+            className="h-7 w-[72px] shrink-0 rounded-md border border-[var(--color-input-border)] bg-transparent px-1.5 text-center text-label tabular-nums text-fg-muted outline-none focus:border-accent focus:text-fg"
           />
           <button
             type="button"
@@ -1198,7 +1198,7 @@ export function TrimSection({
                 {shown ? (
                   <span
                     data-testid="trim-cuts"
-                    className="min-w-0 truncate text-[11px] tabular-nums text-fg-dim"
+                    className="min-w-0 truncate text-label tabular-nums text-fg-dim"
                   >
                     <span className="font-medium">{tr('trim.cutsLabel')}</span>
                     {` ${cuts.join(' · ')}`}
@@ -1208,7 +1208,7 @@ export function TrimSection({
                   !suggestion && (
                     <span
                       data-testid="trim-detected"
-                      className="min-w-0 truncate text-[11px] text-fg-dim"
+                      className="min-w-0 truncate text-label text-fg-dim"
                     >
                       {tr('trim.nothing')}
                     </span>
@@ -1249,7 +1249,7 @@ export function TrimSection({
                 losesTraktorCues(format) && (
                   <p
                     data-testid="trim-cue-warning"
-                    className="relative mt-2 inline-flex items-center gap-1.5 text-[11px] text-warn"
+                    className="relative mt-2 inline-flex items-center gap-1.5 text-label text-warn"
                   >
                     <TriangleAlert className="h-3 w-3 shrink-0" aria-hidden="true" />
                     {tr('trim.cueWarningShort')}

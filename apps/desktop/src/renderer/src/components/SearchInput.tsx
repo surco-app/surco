@@ -65,7 +65,7 @@ export function SearchInput({
         <span
           data-testid={`${testid}-scope`}
           aria-hidden="true"
-          className="ml-1 flex h-6 shrink-0 items-center gap-1 rounded-md bg-[var(--color-panel)] px-1.5 text-[11px] font-medium text-fg-dim"
+          className="ml-1 flex h-6 shrink-0 items-center gap-1 rounded-md bg-[var(--color-panel)] px-1.5 text-label font-medium text-fg-dim"
         >
           {icon}
           {scope}

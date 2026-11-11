@@ -415,7 +415,7 @@ export const Toolbar = memo(function Toolbar({
           <Command className="h-3.5 w-3.5" aria-hidden="true" />
           <span>{tr('header.paletteLabel')}</span>
           {hintFor('palette') && (
-            <kbd className="rounded border border-[var(--color-line-strong)] px-1 font-sans text-[11px] text-fg-faint">
+            <kbd className="rounded border border-[var(--color-line-strong)] px-1 font-sans text-label text-fg-faint">
               {hintFor('palette')}
             </kbd>
           )}

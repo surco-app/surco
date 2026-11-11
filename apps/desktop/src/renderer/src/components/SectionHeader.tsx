@@ -154,7 +154,7 @@ export function SectionHeader({
               aria-expanded={open}
               aria-controls={bodyId}
               aria-describedby={status ? statusId : undefined}
-              className="-my-1.5 flex min-w-0 flex-1 items-center gap-1.5 py-1.5 text-left text-[13px] font-semibold text-fg-muted hover:text-fg disabled:opacity-40 disabled:hover:text-fg-muted"
+              className="-my-1.5 flex min-w-0 flex-1 items-center gap-1.5 py-1.5 text-left text-section font-semibold text-fg-muted hover:text-fg disabled:opacity-40 disabled:hover:text-fg-muted"
             >
               <ChevronRight
                 aria-hidden="true"

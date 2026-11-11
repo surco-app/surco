@@ -230,7 +230,7 @@ export function SessionWizard({
         </div>
         <ol
           aria-label={tr('sessions.wizard.step', { current: step + 1, total: STEPS.length })}
-          className="mt-2 flex items-center gap-3 text-[11px] text-fg-faint"
+          className="mt-2 flex items-center gap-3 text-label text-fg-faint"
         >
           {STEPS.map((id, i) => (
             <li

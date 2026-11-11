@@ -42,7 +42,7 @@ export function FormatDestinationMenu({
       className={className}
     >
       <fieldset aria-labelledby={formatHeadingId} className="min-w-0">
-        <p id={formatHeadingId} className="px-3 pt-1 pb-0.5 text-[11px] font-medium text-fg-dim">
+        <p id={formatHeadingId} className="px-3 pt-1 pb-0.5 text-label font-medium text-fg-dim">
           {tr('editor.menuFormat')}
         </p>
         {/* "Same as source" only means something over several files at once — a single
@@ -70,7 +70,7 @@ export function FormatDestinationMenu({
       <fieldset aria-labelledby={destinationHeadingId} className="min-w-0">
         <p
           id={destinationHeadingId}
-          className="mt-1 border-t border-[var(--color-line)] px-3 pt-2 pb-0.5 text-[11px] font-medium text-fg-dim"
+          className="mt-1 border-t border-[var(--color-line)] px-3 pt-2 pb-0.5 text-label font-medium text-fg-dim"
         >
           {tr('editor.menuDestination')}
         </p>
@@ -91,7 +91,7 @@ export function FormatDestinationMenu({
             {d === 'overwrite' ? (
               <span className="flex flex-col">
                 {tr(`settings.destinations.${d}`)}
-                <span className="text-[11px] font-normal text-warn">
+                <span className="text-label font-normal text-warn">
                   {tr('editor.menuOverwriteNote')}
                 </span>
               </span>

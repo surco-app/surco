@@ -79,7 +79,7 @@ function MenuItem({
       }`}
     >
       {label}
-      {hint && <span className="block text-[11px] text-fg-faint">{hint}</span>}
+      {hint && <span className="block text-label text-fg-faint">{hint}</span>}
     </button>
   )
 }

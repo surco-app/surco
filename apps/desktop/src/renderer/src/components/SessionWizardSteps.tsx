@@ -284,7 +284,7 @@ function GroupLegend({
   testId: string
 }): React.JSX.Element {
   return (
-    <legend className="mb-3 flex items-center gap-1.5 text-[11px] font-medium tracking-wide text-fg-faint uppercase">
+    <legend className="mb-3 flex items-center gap-1.5 text-label font-medium tracking-wide text-fg-faint uppercase">
       <span id={`${id}-title`}>{title}</span>
       <span
         data-testid={testId}

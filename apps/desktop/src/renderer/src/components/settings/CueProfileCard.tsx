@@ -79,7 +79,7 @@ function Fact({
       data-testid={testid}
       className="flex min-w-0 flex-col gap-1 bg-[var(--color-panel)] px-3 py-2.5"
     >
-      <span className="text-[11px] text-fg-faint">{label}</span>
+      <span className="text-label text-fg-faint">{label}</span>
       <span className="text-sm text-fg">{children}</span>
       {sub && <span className="text-xs text-fg-dim">{sub}</span>}
     </div>
@@ -182,7 +182,7 @@ export function CueProfileCard({ read, onLearned, synced, patch }: Props): React
     >
       <div className="flex flex-wrap items-center gap-3">
         <div className="min-w-0 flex-1">
-          <h3 className="text-[13px] font-semibold text-fg-muted">
+          <h3 className="text-section font-semibold text-fg-muted">
             {profile ? tr('settings.cueProfile.title') : tr('settings.cueProfile.firstTitle')}
           </h3>
           {profile ? (

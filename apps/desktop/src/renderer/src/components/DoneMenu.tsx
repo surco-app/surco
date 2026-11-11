@@ -119,7 +119,7 @@ export function DoneMenu({
           <fieldset aria-labelledby={formatHeadingId} className="min-w-0">
             <p
               id={formatHeadingId}
-              className="mt-1 border-t border-[var(--color-line)] px-3 pt-2 pb-0.5 text-[11px] font-medium text-fg-dim"
+              className="mt-1 border-t border-[var(--color-line)] px-3 pt-2 pb-0.5 text-label font-medium text-fg-dim"
             >
               {tr('editor.menuFormat')}
             </p>
@@ -143,7 +143,7 @@ export function DoneMenu({
           <fieldset aria-labelledby={destinationHeadingId} className="min-w-0">
             <p
               id={destinationHeadingId}
-              className="mt-1 border-t border-[var(--color-line)] px-3 pt-2 pb-0.5 text-[11px] font-medium text-fg-dim"
+              className="mt-1 border-t border-[var(--color-line)] px-3 pt-2 pb-0.5 text-label font-medium text-fg-dim"
             >
               {tr('editor.menuDestination')}
             </p>

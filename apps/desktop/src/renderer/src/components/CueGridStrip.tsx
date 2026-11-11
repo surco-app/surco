@@ -64,7 +64,7 @@ export function CueGridStrip({
               ms: signedMs(offsetMs),
             })}
             style={{ left: pct(kickMs), color: ok ? 'var(--color-good)' : 'var(--color-warn)' }}
-            className={`press absolute inset-y-0 flex -translate-x-1/2 items-center gap-1 whitespace-nowrap rounded-[3px] px-1.5 text-[11px] font-semibold tabular-nums hover:bg-[var(--color-hover)] ${
+            className={`press absolute inset-y-0 flex -translate-x-1/2 items-center gap-1 whitespace-nowrap rounded-[3px] px-1.5 text-label font-semibold tabular-nums hover:bg-[var(--color-hover)] ${
               current ? 'bg-[var(--color-panel-2)]' : ''
             }`}
           >

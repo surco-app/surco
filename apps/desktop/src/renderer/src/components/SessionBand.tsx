@@ -44,7 +44,7 @@ export function SessionBand({
       aria-label={tr('sessions.band.title')}
       className="mx-3 my-2 flex flex-col gap-2 rounded-[10px] border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-3"
     >
-      <h2 className="flex items-center gap-2 text-[13px] font-semibold">
+      <h2 className="flex items-center gap-2 text-section font-semibold">
         <Sparkles className="h-3.5 w-3.5 text-[var(--color-accent)]" aria-hidden="true" />
         {tr('sessions.band.title')}
       </h2>

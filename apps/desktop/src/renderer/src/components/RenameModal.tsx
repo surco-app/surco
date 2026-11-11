@@ -105,7 +105,7 @@ export function RenameModal({
         <div key={id}>
           <p
             data-testid={`rename-group-${id}`}
-            className="mt-2 mb-1 text-[11px] font-medium text-fg-faint"
+            className="mt-2 mb-1 text-label font-medium text-fg-faint"
           >
             {label}
           </p>
@@ -116,7 +116,7 @@ export function RenameModal({
                 type="button"
                 data-testid={`rename-token-${f.key}`}
                 onClick={() => addToken(f.key)}
-                className="press group relative rounded-full border border-[var(--color-line-strong)] px-2.5 py-0.5 text-[11px] text-fg-muted hover:bg-[var(--color-hover)] hover:text-fg"
+                className="press group relative rounded-full border border-[var(--color-line-strong)] px-2.5 py-0.5 text-label text-fg-muted hover:bg-[var(--color-hover)] hover:text-fg"
               >
                 {f.label}
                 <Tooltip label={`{${f.key}}`} />
@@ -131,7 +131,7 @@ export function RenameModal({
           data-testid="rename-more-fields"
           aria-expanded={moreOpen}
           onClick={() => setMoreOpen((v) => !v)}
-          className="press mt-2.5 rounded-full border border-dashed border-[var(--color-line-strong)] px-2.5 py-0.5 text-[11px] text-[var(--color-accent)] hover:bg-[var(--color-hover)]"
+          className="press mt-2.5 rounded-full border border-dashed border-[var(--color-line-strong)] px-2.5 py-0.5 text-label text-[var(--color-accent)] hover:bg-[var(--color-hover)]"
         >
           {moreOpen ? tr('rename.fewerFields') : tr('rename.moreFields', { count: rare.length })}
         </button>

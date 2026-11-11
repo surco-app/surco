@@ -201,7 +201,7 @@ export function Select({
       {heading && (
         <div
           aria-hidden="true"
-          className="whitespace-nowrap px-2 pt-1 pb-1.5 text-[11px] text-fg-faint"
+          className="whitespace-nowrap px-2 pt-1 pb-1.5 text-label text-fg-faint"
         >
           {label}
         </div>

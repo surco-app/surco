@@ -370,7 +370,7 @@ export function SettingsModal({
             onKeyDown={onSearchKeyDown}
             placeholder={tr('settings.searchField.placeholder')}
             aria-label={tr('settings.searchField.placeholder')}
-            className="min-w-0 flex-1 bg-transparent text-[13px] text-fg outline-none focus-visible:shadow-none placeholder:text-fg-faint"
+            className="min-w-0 flex-1 bg-transparent text-section text-fg outline-none focus-visible:shadow-none placeholder:text-fg-faint"
           />
         </label>
         {searching && (
@@ -411,7 +411,7 @@ export function SettingsModal({
               {group.heading && (
                 <p
                   role="presentation"
-                  className="mt-3 mb-1 px-3 text-[11px] font-medium text-fg-faint"
+                  className="mt-3 mb-1 px-3 text-label font-medium text-fg-faint"
                 >
                   {tr(`settings.tabGroups.${group.heading}`)}
                 </p>
@@ -462,7 +462,7 @@ export function SettingsModal({
 
       <div className="flex min-w-0 flex-1 flex-col px-6 pb-6">
         <div className="-mr-3 flex h-13 shrink-0 items-center justify-between gap-3">
-          <h2 className="truncate text-[15px] font-semibold text-fg">
+          <h2 className="truncate text-base font-semibold text-fg">
             {tr(entry.tabs.length > 1 ? `settings.entries.${entry.id}` : `settings.tabs.${tab}`)}
           </h2>
           <button

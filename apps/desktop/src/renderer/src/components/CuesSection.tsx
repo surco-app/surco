@@ -163,7 +163,7 @@ function ProvisionalMark({ bpm }: { bpm: number }): React.JSX.Element {
   return (
     <span
       data-testid="cues-provisional"
-      className="shrink-0 whitespace-nowrap rounded-full bg-[var(--color-accent-soft)] px-2 py-0.5 text-[11px] font-semibold text-fg"
+      className="shrink-0 whitespace-nowrap rounded-full bg-[var(--color-accent-soft)] px-2 py-0.5 text-label font-semibold text-fg"
     >
       {tr('editor.cues.provisional.chip', { bpm: formatFixed(bpm, 2, i18n.language) })}
     </span>
@@ -312,7 +312,7 @@ function CueKeys({
         >
           {keys.map(([chord, what]) => (
             <li key={chord} className="flex items-center gap-1.5">
-              <kbd className="rounded border border-b-2 border-[var(--color-line-strong)] px-1.5 font-mono text-[11px] text-fg">
+              <kbd className="rounded border border-b-2 border-[var(--color-line-strong)] px-1.5 font-mono text-label text-fg">
                 {chord}
               </kbd>
               {what}
@@ -1183,7 +1183,7 @@ function Editing({
         >
           <Tooltip label={acceptLabel} />
           {tr('editor.cues.auto.acceptSave')}
-          <kbd className="rounded border border-[var(--color-on-accent)]/40 px-1 font-sans text-[11px]">
+          <kbd className="rounded border border-[var(--color-on-accent)]/40 px-1 font-sans text-label">
             ↵
           </kbd>
         </button>
@@ -1496,7 +1496,7 @@ function Editing({
         />
       )}
       <div className="flex min-w-0 flex-col gap-0.5">
-        <div className="truncate text-[15px] font-semibold text-fg">
+        <div className="truncate text-base font-semibold text-fg">
           {track?.title || cue.label}
         </div>
         <div className="flex min-w-0 items-center gap-1.5 text-xs">
@@ -1575,7 +1575,7 @@ function Editing({
       )}
       <span
         data-testid="cues-position"
-        className="shrink-0 text-[13px] font-semibold tabular-nums text-fg"
+        className="shrink-0 text-section font-semibold tabular-nums text-fg"
       >
         {cueClock(playheadMs)}
       </span>

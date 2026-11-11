@@ -97,7 +97,7 @@ export function SourceRail({
       {dot}
       <span
         data-testid={`source-rail-label-${key}`}
-        className="max-w-full truncate px-0.5 text-[11px] leading-tight"
+        className="max-w-full truncate px-0.5 text-label leading-tight"
       >
         {label}
       </span>

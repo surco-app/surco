@@ -178,7 +178,7 @@ export function CommandPalette({
                 id={headerId}
                 role="presentation"
                 data-testid="palette-group-header"
-                className="px-3 pt-2 pb-1 text-[11px] font-medium text-fg-dim"
+                className="px-3 pt-2 pb-1 text-label font-medium text-fg-dim"
               >
                 {group === 'tracks' ? t('palette.tracks') : t(`palette.groups.${group}`)}
               </p>
