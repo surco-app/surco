@@ -108,7 +108,9 @@ const namesAt = (d: ListsDraft, level: string): string[] =>
     .filter((file) => dirname(file) === level && file.endsWith(EXT))
     .map((file) => basename(file).slice(0, -EXT.length))
 
-const fold = (name: string): string => name.normalize('NFC').toLowerCase()
+const nfc = (name: string): string => name.normalize('NFC')
+
+const fold = (name: string): string => nfc(name).toLowerCase()
 
 const taken = (d: ListsDraft, level: string, name: string, own?: string): boolean =>
   namesAt(d, level).some((n) => n !== own && fold(n) === fold(name))
@@ -116,11 +118,11 @@ const taken = (d: ListsDraft, level: string, name: string, own?: string): boolea
 function orderAt(d: ListsDraft, level: string): string[] {
   const lines = (textOf(d, join(level, ORDER)) ?? '').split('\n').map((l) => l.replace(/\r$/, ''))
   if (lines.at(-1) === '') lines.pop()
-  const listed = new Set(lines)
+  const listed = new Set(lines.map(nfc))
   return [
     ...lines,
     ...namesAt(d, level)
-      .filter((n) => !listed.has(n))
+      .filter((n) => !listed.has(nfc(n)))
       .sort(),
   ]
 }
@@ -420,7 +422,7 @@ function applyTreeEdit(
   }
   const node = nodeOf(d, edit.playlistId)
   if (!node) return 'stale'
-  const order = orderAt(d, node.level).filter((n) => n !== node.name)
+  const order = orderAt(d, node.level).filter((n) => nfc(n) !== nfc(node.name))
   if (edit.kind === 'delete') {
     removeNode(d, node)
     setOrder(d, node.level, order)
@@ -430,7 +432,7 @@ function applyTreeEdit(
     const name = edit.name.trim()
     if (!validVirtualdjListName(name) || taken(d, node.level, name, node.name)) return 'bad-name'
     if (name === node.name) return {}
-    const named = orderAt(d, node.level).map((n) => (n === node.name ? name : n))
+    const named = orderAt(d, node.level).map((n) => (nfc(n) === nfc(node.name) ? name : n))
     moveNode(d, node, node.level, name)
     setOrder(d, node.level, named)
     return {}
@@ -440,7 +442,8 @@ function applyTreeEdit(
   const same = level === node.level
   if (!same && taken(d, level, node.name)) return 'bad-name'
   const base = same ? order : orderAt(d, level)
-  const before = edit.beforeId === null ? -1 : base.indexOf(edit.beforeId.split('/').at(-1) ?? '')
+  const beforeName = nfc(edit.beforeId?.split('/').at(-1) ?? '')
+  const before = edit.beforeId === null ? -1 : base.findIndex((n) => nfc(n) === beforeName)
   const placed =
     before === -1
       ? [...base, node.name]

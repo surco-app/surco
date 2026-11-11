@@ -196,6 +196,25 @@ describe('applyVirtualdjListOps', () => {
     expect(existsSync(lib.at('Carpeta.subfolders'))).toBe(false)
   })
 
+  it('matches an order line written in another Unicode form, so deleting a list drops its line and adds none', async () => {
+    const lib = library()
+    const nfc = 'Caf\u00e9'
+    const nfd = 'Cafe\u0301'
+    writeFileSync(lib.at(`${nfc}.vdjfolder`), original('Surco escrita.vdjfolder'))
+    writeFileSync(lib.at('order'), `Carpeta\n${nfd}\nSurco prueba\nSurco escrita\n`)
+    await lib.run({ kind: 'delete', playlistId: nfc })
+    expect(lib.text('order')).toBe('Carpeta\nSurco prueba\nSurco escrita\n')
+  })
+
+  it('does not list a name twice in order when its line is in another Unicode form', async () => {
+    const lib = library()
+    const nfc = 'Caf\u00e9'
+    writeFileSync(lib.at(`${nfc}.vdjfolder`), original('Surco escrita.vdjfolder'))
+    writeFileSync(lib.at('order'), 'Carpeta\nCafe\u0301\nSurco prueba\nSurco escrita\n')
+    await lib.run({ kind: 'create', parentId: 'root', name: 'Nueva', folder: false })
+    expect(lib.text('order')).toBe('Carpeta\nCafe\u0301\nSurco prueba\nSurco escrita\nNueva\n')
+  })
+
   it('adds a track at the end with the next idx, keeps the rows already there and counts what it skipped', async () => {
     const lib = library()
     const c = lib.track('c.mp3', 'abcd')
