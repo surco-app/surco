@@ -669,6 +669,11 @@ const followEngineSize = engineSizeFollower({
   enqueue: engineCueQueue.enqueue,
   apply: () => applyEngineCueQueueQuietly(),
 })
+const followVirtualdjSize = engineSizeFollower({
+  enabled: () => getSettings().syncVirtualdj,
+  enqueue: virtualdjCueQueue.enqueue,
+  apply: () => programQueues.virtualdj.applyQuietly(),
+})
 // A save from the editor asks to close Traktor, as a playlist edit does; declined, it stays
 // queued and lands when Traktor closes.
 const applyTraktorCueQueueAsking = (win: BrowserWindow | null): void => {
@@ -1826,6 +1831,7 @@ function registerIpc(): void {
       beginMoment: () => moments.begin('review'),
       backups: () => surcoTrash.list(),
       followEngineSize,
+      followVirtualdjSize,
       traktorQueue: {
         enqueue: traktorCueQueue.enqueue,
         state: traktorCueQueue.state,

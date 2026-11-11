@@ -19,6 +19,33 @@ vi.mock('./libraryFlushes', async (original) => ({
   engineFlushDeps: () => ({ collectionPath: '' }),
 }))
 
+const REWRITES = vi.hoisted(() => ({
+  rewriteTagFields: vi.fn(
+    async (
+      file: string,
+      _changes: unknown,
+      _tmp: unknown,
+      rewritten?: (f: string, b: number) => void,
+    ) => {
+      rewritten?.(file, 100)
+      return { written: true }
+    },
+  ),
+  rewriteCueTree: vi.fn(
+    async (
+      file: string,
+      _addMs: number,
+      _expected: number[],
+      _tmp: unknown,
+      rewritten?: (f: string, b: number) => void,
+    ) => {
+      rewritten?.(file, 200)
+      return { written: true }
+    },
+  ),
+}))
+vi.mock('./musicFieldWrite', () => REWRITES)
+
 import { damageDeps } from './damageWiring'
 import type { LibraryHost } from './libraryFlushes'
 
@@ -43,5 +70,31 @@ describe('damageDeps with Traktor open', () => {
     deps.traktor?.showBlockedDialog()
     expect(host.ensureClosed).not.toHaveBeenCalled()
     expect(host.showBlockedDialog).not.toHaveBeenCalled()
+  })
+})
+
+// A repair that rewrites the file on its own path changes its size, and VirtualDJ keeps the
+// size in its song and in every list row, as Engine DJ keeps it in its row.
+describe('damageDeps rewriting a file', () => {
+  it('tells VirtualDJ of the new size, as it tells Engine DJ, for a genre and for a cue tree', async () => {
+    const followEngineSize = vi.fn()
+    const followVirtualdjSize = vi.fn()
+    const deps = damageDeps({
+      mediaAccess: { isAllowed: () => true } as never,
+      tmp: { track: () => {}, untrack: () => {} },
+      hostFor: () => ({}) as LibraryHost,
+      sessions: { traktor: {}, engine: {}, rekordbox: {} } as never,
+      beginMoment: () => {},
+      backups: async () => [],
+      followEngineSize,
+      followVirtualdjSize,
+    }).repairDeps({} as never)
+    await deps.genre.rewrite('/m/a.mp3', [])
+    await deps.rewriteTree?.('/m/b.mp3', 25, [])
+    expect(followVirtualdjSize.mock.calls).toEqual([
+      ['/m/a.mp3', 100],
+      ['/m/b.mp3', 200],
+    ])
+    expect(followEngineSize.mock.calls).toEqual(followVirtualdjSize.mock.calls)
   })
 })

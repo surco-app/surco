@@ -147,6 +147,33 @@ describe('repointVirtualdjTracks', () => {
     expect(songBlock(once, path)).toContain('Pos="19.973878" Num="1"')
   })
 
+  it('follows a file a repair rewrote on its own path to its new size, in the song and in its list rows, cues where they were', async () => {
+    const lib = library()
+    const path = join(lib.base, 'Music', 'Pray.mp3')
+    writeFileSync(
+      join(lib.dir, 'database.xml'),
+      FIXTURE_XML.replace(`FilePath="${FROM}"`, `FilePath="${path}"`),
+    )
+    for (const file of ['Surco prueba.vdjfolder', join('Carpeta.subfolders', 'Dentro.vdjfolder')])
+      writeFileSync(
+        join(lib.lists, file),
+        readFileSync(join(lib.lists, file), 'utf8').replace(`path="${FROM}"`, `path="${path}"`),
+      )
+    lib.track('Pray.mp3', 'retagged')
+    const before = songBlock(lib.database(), path)
+    expect(
+      await repointVirtualdjTracks([{ from: path, to: path, fromBytes: 17138984 }], lib.deps),
+    ).toEqual([{ written: true }])
+    expect(songBlock(lib.database(), path)).toBe(
+      before
+        .replace('FileSize="17138984"', 'FileSize="8"')
+        .replace(/SongLength="[^"]*"/, 'SongLength="100.0"'),
+    )
+    expect(readFileSync(join(lib.lists, 'Surco prueba.vdjfolder'), 'utf8')).toContain(
+      `path="${path}" size="8"`,
+    )
+  })
+
   it('leaves both songs as they are when the new file already has its own song', async () => {
     const lib = library()
     const to = '/Music/VirtualDJ Pruebas/Pray.wav'
