@@ -83,6 +83,12 @@ describe('StripNumberingModal', () => {
     expect(preview).toHaveTextContent('Shake It')
   })
 
+  it('leaves the count of changing titles to the apply button instead of repeating it above', () => {
+    renderModal([track('a', '1. Shake It'), track('b', 'Already Clean')])
+    expect(screen.getByTestId('strip-numbering-apply')).toHaveTextContent('Remove on 1')
+    expect(screen.getByTestId('strip-numbering-preview')).not.toHaveTextContent('will change')
+  })
+
   it('disables apply when no title carries numbering, instead of a silent no-op', () => {
     const { onApply } = renderModal([track('a', 'Already Clean'), track('b', '1999')])
     const apply = screen.getByTestId('strip-numbering-apply')

@@ -15,7 +15,6 @@
     "moreFields": "Plus de champs ({{count}})",
     "fewerFields": "Moins de champs",
     "title": "Composer le nom du fichier",
-    "description": "Combine du texte et des métadonnées pour composer le nom du fichier.",
     "apply": "Appliquer"
   },
   "sessions": {
@@ -56,10 +55,7 @@
         "none": "Aucune playlist choisie pour l’instant",
         "onlyChosen": "Voir seulement les choisies",
         "allPlaylists": "Voir toutes les playlists",
-        "summary_one": "{{count}} playlist choisie, jusqu’à {{tracks}} morceaux au choix",
-        "summary_other": "{{count}} playlists choisies, jusqu’à {{tracks}} morceaux au choix",
-        "short": "De quoi tenir environ {{minutes}} min sur les {{target}} demandées. Choisissez une autre playlist pour y arriver.",
-        "enough": "De quoi tenir les {{target}} min demandées"
+        "short": "De quoi tenir environ {{minutes}} min sur les {{target}} demandées. Choisissez une autre playlist pour y arriver."
       },
       "fresh": {
         "hint": "Les nouveaux morceaux sont ceux ajoutés ces 30 derniers jours. Si le programme ne garde pas les dates, ceux sans lectures ni étoiles.",
@@ -73,11 +69,8 @@
         "alternate": "Alterner instrumental et voix",
         "alternateHint": "Instrumental, voix, instrumental, voix. Passe avant le mix harmonique quand les deux ne collent pas",
         "preferCombos": "Privilégier les combos éprouvés",
-        "preferCombosHint": "Un combo, c’est un instrumental et une voix que tu as enchaînés dans deux de tes tracklists ou plus. Surco les remet ensemble",
         "tasteWeight": "Ce que tu préfères",
-        "tasteWeightHint": "Les étoiles et les écoutes comptent dans le choix",
         "surprise": "Surprends-moi",
-        "surpriseHint": "Laisse de la place à des paires jamais jouées ensemble",
         "noMixed": "Pour trouver des combos, marque comme Mixte une playlist avec tes tracklists ou tes sets à l’étape Playlists.",
         "play": "Durée de jeu de chaque morceau",
         "playValue": "{{minutes}} min",
@@ -86,7 +79,8 @@
         "harmonyFree": "Libre",
         "harmonyNeighbours": "Voisins",
         "harmonySame": "Même tonalité",
-        "noKeys": "Aucun morceau choisi n’a de tonalité, le mix harmonique ne s’applique donc pas"
+        "noKeys": "Aucun morceau choisi n’a de tonalité, le mix harmonique ne s’applique donc pas",
+        "pickHint": "« Privilégier les combos éprouvés » remet ensemble un instrumental et une voix que tu as enchaînés dans deux de tes tracklists ou plus. « Ce que tu préfères » tient compte des étoiles et des écoutes. « Surprends-moi » laisse de la place à des paires jamais jouées ensemble."
       },
       "loading": "Lecture…",
       "build": "Composer la session",
@@ -130,7 +124,6 @@
     "gaps_one": "{{count}} trou",
     "gaps_other": "{{count}} trous",
     "search": "Chercher dans {{program}}",
-    "reviewHint": "{{have}} sur {{total}} sont dans la collection.",
     "total_one": "{{count}} au total",
     "total_other": "{{count}} au total",
     "found_one": "{{count}} trouvé",
@@ -139,14 +132,12 @@
     "doubtful_other": "{{count}} douteux",
     "similar_one": "{{count}} proche",
     "similar_other": "{{count}} proches",
-    "absent_one": "{{count}} autre est ignoré.",
-    "absent_other": "{{count}} autres sont ignorés.",
+    "absent_one": "{{count}} ligne n’est pas dans la collection et est ignorée.",
+    "absent_other": "{{count}} lignes ne sont pas dans la collection et sont ignorées.",
     "rules": "Trouvé est le même artiste et le même titre. Douteux est un autre mix ou l’un de plusieurs candidats et entre sauf si tu le décoches. Proche a le titre mais pas l’artiste et reste dehors sauf si tu le coches.",
     "include": "Ajouter {{line}}",
     "otherArtist": "même titre, autre artiste",
     "suggestedMark": "(?) dans la tracklist",
-    "summary_one": "{{count}} morceau sera ajouté à « {{name}} »",
-    "summary_other": "{{count}} morceaux seront ajoutés à « {{name}} »",
     "back": "Retour",
     "add_one": "Ajouter {{count}} morceau",
     "add_other": "Ajouter {{count}} morceaux",
@@ -2254,18 +2245,14 @@
     "hint": "Tape quelque chose à chercher dans leurs tags.",
     "invalidRegex": "Expression régulière invalide",
     "noMatches": "Aucune correspondance dans aucun morceau.",
-    "summary": "{{fields}} dans {{tracks}}",
     "fieldCount_one": "{{count}} champ",
     "fieldCount_other": "{{count}} champs",
-    "trackCount_one": "{{count}} morceau",
-    "trackCount_other": "{{count}} morceaux",
     "apply": "Remplacer dans {{count}}"
   },
   "stripNumbering": {
     "title": "Supprimer la numérotation du titre",
     "hint": "Retire le numéro de piste au début du titre (« 1. », « A1 - »).",
     "noMatches": "Aucun titre ne porte de numérotation.",
-    "summary": "{{count}} titres sur {{total}} seront modifiés",
     "apply": "Supprimer sur {{count}}"
   },
   "donateNudge": {
@@ -2798,7 +2785,6 @@
         "musicOnly_other": "{{count}} seulement dans Music",
         "fileFailed_one": "{{count}} en erreur",
         "fileFailed_other": "{{count}} en erreur",
-        "off": "non synchronisé",
         "missing": "collection introuvable",
         "skipped": "non touché, il était ouvert ou illisible",
         "replaceFailed": "n’a pas pu être mis à jour",
@@ -2808,8 +2794,6 @@
         "replaced_other": "{{count}} copies remplacées par celles que tu gardes",
         "held_one": "{{count}} reste dans la collection, hors des playlists",
         "held_other": "{{count}} restent dans la collection, hors des playlists",
-        "none": "n’avait pas ces copies",
-        "nothing": "aucun changement",
         "trashed_one": "{{count}} fichier",
         "trashed_other": "{{count}} fichiers",
         "kept_one": "{{count}} reste sur le disque car rekordbox, Engine DJ ou Traktor l’utilisent",
@@ -2817,7 +2801,6 @@
         "updated_one": "{{count}} morceau mis à jour",
         "updated_other": "{{count}} morceaux mis à jour",
         "open": "non touché, il était ouvert",
-        "noMatch": "n’avait pas ces morceaux",
         "queued": "sera enregistré à la fermeture de Serato"
       },
       "undoTitle": "Changements annulés",
@@ -3324,8 +3307,6 @@
       "last": "Dernière sauvegarde",
       "kept": "Conservées"
     },
-    "kept": "{{count}} sur {{max}}",
-    "none": "Pas encore de sauvegarde",
     "reason": {
       "run": "Avant la conversion",
       "cues": "Avant l’enregistrement des cues",
@@ -3366,7 +3347,6 @@
       "show": "Voir les fichiers",
       "hide": "Masquer les fichiers",
       "expires": "Ils s’effacent d’eux-mêmes après {{days}} jours, ou plus tôt s’ils dépassent {{size}}.",
-      "stateEmpty": "Rien de conservé",
       "renamedTo": "Renommé par une conversion en « {{name}} »",
       "replacedBy": "Remplacé par « {{name}} » lors d’une conversion"
     },

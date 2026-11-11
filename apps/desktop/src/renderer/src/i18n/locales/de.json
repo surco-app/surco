@@ -15,7 +15,6 @@
     "moreFields": "Mehr Felder ({{count}})",
     "fewerFields": "Weniger Felder",
     "title": "Dateinamen erstellen",
-    "description": "Kombiniere Text und Metadaten, um den Dateinamen zu erstellen.",
     "apply": "Anwenden"
   },
   "sessions": {
@@ -56,10 +55,7 @@
         "none": "Noch keine Playlist ausgewählt",
         "onlyChosen": "Nur die gewählten zeigen",
         "allPlaylists": "Alle Playlists zeigen",
-        "summary_one": "{{count}} Playlist gewählt, bis zu {{tracks}} Tracks zur Auswahl",
-        "summary_other": "{{count}} Playlists gewählt, bis zu {{tracks}} Tracks zur Auswahl",
-        "short": "Reicht für etwa {{minutes}} der gewünschten {{target}} Min. Wähle eine weitere Playlist, um sie zu erreichen.",
-        "enough": "Reicht für die gewünschten {{target}} Min."
+        "short": "Reicht für etwa {{minutes}} der gewünschten {{target}} Min. Wähle eine weitere Playlist, um sie zu erreichen."
       },
       "fresh": {
         "hint": "Neu sind Tracks, die in den letzten 30 Tagen hinzugekommen sind. Speichert das Programm keine Daten, sind es Tracks ohne Wiedergaben und Sterne.",
@@ -73,11 +69,8 @@
         "alternate": "Instrumental und Gesang abwechseln",
         "alternateHint": "Instrumental, Gesang, Instrumental, Gesang. Hat Vorrang vor dem harmonischen Mixen, wenn nicht beides passt",
         "preferCombos": "Bewährte Combos bevorzugen",
-        "preferCombosHint": "Ein Combo ist ein Instrumental und ein Gesangstrack, die du in zwei oder mehr deiner Tracklists direkt nacheinander gespielt hast. Surco bringt sie wieder zusammen",
         "tasteWeight": "Was dir am besten gefällt",
-        "tasteWeightHint": "Sterne und Wiedergaben zählen bei der Auswahl",
         "surprise": "Überrasch mich",
-        "surpriseHint": "Lässt Platz für Paare, die nie zusammen gespielt wurden",
         "noMixed": "Um Combos zu finden, markiere im Schritt Playlists eine Playlist mit deinen Tracklists oder Sets als Gemischt.",
         "play": "Spielzeit pro Track",
         "playValue": "{{minutes}} Min.",
@@ -86,7 +79,8 @@
         "harmonyFree": "Frei",
         "harmonyNeighbours": "Nachbarn",
         "harmonySame": "Gleiche Tonart",
-        "noKeys": "Keiner der gewählten Tracks hat eine Tonart, daher entfällt das harmonische Mixen"
+        "noKeys": "Keiner der gewählten Tracks hat eine Tonart, daher entfällt das harmonische Mixen",
+        "pickHint": "„Bewährte Combos bevorzugen“ bringt ein Instrumental und einen Gesangstrack wieder zusammen, die du in zwei oder mehr deiner Tracklists direkt nacheinander gespielt hast. „Was dir am besten gefällt“ berücksichtigt Sterne und Wiedergaben. „Überrasch mich“ lässt Platz für Paare, die nie zusammen gespielt wurden."
       },
       "loading": "Liest …",
       "build": "Session erstellen",
@@ -130,7 +124,6 @@
     "gaps_one": "{{count}} Lücke",
     "gaps_other": "{{count}} Lücken",
     "search": "In {{program}} suchen",
-    "reviewHint": "{{have}} von {{total}} sind in der Sammlung.",
     "total_one": "{{count}} insgesamt",
     "total_other": "{{count}} insgesamt",
     "found_one": "{{count}} gefunden",
@@ -139,14 +132,12 @@
     "doubtful_other": "{{count}} zweifelhaft",
     "similar_one": "{{count}} ähnlich",
     "similar_other": "{{count}} ähnlich",
-    "absent_one": "{{count}} weiterer wird übersprungen.",
-    "absent_other": "{{count}} weitere werden übersprungen.",
+    "absent_one": "{{count}} Zeile ist nicht in der Sammlung und wird übersprungen.",
+    "absent_other": "{{count}} Zeilen sind nicht in der Sammlung und werden übersprungen.",
     "rules": "Gefunden ist derselbe Künstler und Titel. Zweifelhaft ist ein anderer Mix oder einer von mehreren Kandidaten und kommt rein, außer du hakst ihn ab. Ähnlich hat denselben Titel, aber einen anderen Künstler, und bleibt draußen, außer du hakst ihn an.",
     "include": "{{line}} hinzufügen",
     "otherArtist": "gleicher Titel, anderer Künstler",
     "suggestedMark": "(?) in der Tracklist",
-    "summary_one": "{{count}} Track wird zu „{{name}}“ hinzugefügt",
-    "summary_other": "{{count}} Tracks werden zu „{{name}}“ hinzugefügt",
     "back": "Zurück",
     "add_one": "{{count}} Track hinzufügen",
     "add_other": "{{count}} Tracks hinzufügen",
@@ -2254,18 +2245,14 @@
     "hint": "Tipp etwas ein, um in ihren Tags zu suchen.",
     "invalidRegex": "Ungültiger regulärer Ausdruck",
     "noMatches": "Keine Treffer in irgendeinem Track.",
-    "summary": "{{fields}} in {{tracks}}",
     "fieldCount_one": "{{count}} Feld",
     "fieldCount_other": "{{count}} Felder",
-    "trackCount_one": "{{count}} Track",
-    "trackCount_other": "{{count}} Tracks",
     "apply": "In {{count}} ersetzen"
   },
   "stripNumbering": {
     "title": "Nummerierung aus dem Titel entfernen",
     "hint": "Entfernt die Tracknummer am Anfang des Titels („1.“, „A1 -“).",
     "noMatches": "Kein Titel trägt eine Nummerierung.",
-    "summary": "{{count}} von {{total}} Titeln werden geändert",
     "apply": "Bei {{count}} entfernen"
   },
   "donateNudge": {
@@ -2798,7 +2785,6 @@
         "musicOnly_other": "{{count}} nur in Music",
         "fileFailed_one": "{{count}} mit Fehler",
         "fileFailed_other": "{{count}} mit Fehler",
-        "off": "nicht synchronisiert",
         "missing": "Sammlung nicht gefunden",
         "skipped": "nicht angefasst, war geöffnet oder nicht lesbar",
         "replaceFailed": "konnte nicht aktualisiert werden",
@@ -2808,8 +2794,6 @@
         "replaced_other": "{{count}} Kopien durch die behaltenen ersetzt",
         "held_one": "{{count}} noch in der Sammlung, außerhalb der Playlists",
         "held_other": "{{count}} noch in der Sammlung, außerhalb der Playlists",
-        "none": "hatte diese Kopien nicht",
-        "nothing": "keine Änderungen",
         "trashed_one": "{{count}} Datei",
         "trashed_other": "{{count}} Dateien",
         "kept_one": "{{count}} bleibt auf der Festplatte, weil rekordbox, Engine DJ oder Traktor sie nutzen",
@@ -2817,7 +2801,6 @@
         "updated_one": "{{count}} Track aktualisiert",
         "updated_other": "{{count}} Tracks aktualisiert",
         "open": "nicht angefasst, war geöffnet",
-        "noMatch": "hatte diese Tracks nicht",
         "queued": "wird beim Schließen von Serato gespeichert"
       },
       "undoTitle": "Änderungen rückgängig gemacht",
@@ -3324,8 +3307,6 @@
       "last": "Letztes Backup",
       "kept": "Gespeichert"
     },
-    "kept": "{{count}} von {{max}}",
-    "none": "Noch keine Backups",
     "reason": {
       "run": "Vor dem Konvertieren",
       "cues": "Vor dem Speichern von Cues",
@@ -3366,7 +3347,6 @@
       "show": "Dateien anzeigen",
       "hide": "Dateien ausblenden",
       "expires": "Werden nach {{days}} Tagen von selbst gelöscht, oder früher, wenn sie {{size}} überschreiten.",
-      "stateEmpty": "Nichts gespeichert",
       "renamedTo": "Durch eine Konvertierung umbenannt in „{{name}}“",
       "replacedBy": "Bei einer Konvertierung durch „{{name}}“ ersetzt"
     },

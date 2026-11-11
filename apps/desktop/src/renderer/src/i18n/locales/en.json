@@ -15,7 +15,6 @@
     "moreFields": "More fields ({{count}})",
     "fewerFields": "Fewer fields",
     "title": "Build file name",
-    "description": "Combine text and metadata to build the file name.",
     "apply": "Apply"
   },
   "sessions": {
@@ -56,10 +55,7 @@
         "none": "No playlist chosen yet",
         "onlyChosen": "See only the chosen",
         "allPlaylists": "See all playlists",
-        "summary_one": "{{count}} playlist chosen, up to {{tracks}} tracks to pick from",
-        "summary_other": "{{count}} playlists chosen, up to {{tracks}} tracks to pick from",
-        "short": "Enough for about {{minutes}} of the {{target}} min you asked for. Choose another playlist to get there.",
-        "enough": "Enough for the {{target}} min you asked for"
+        "short": "Enough for about {{minutes}} of the {{target}} min you asked for. Choose another playlist to get there."
       },
       "fresh": {
         "hint": "New tracks are the ones added in the last 30 days. Where the program keeps no dates, the ones with no plays or stars.",
@@ -73,11 +69,8 @@
         "alternate": "Alternate instrumental and vocal",
         "alternateHint": "Instrumental, vocal, instrumental, vocal. It wins over harmonic mixing when both cannot hold",
         "preferCombos": "Prefer proven combos",
-        "preferCombosHint": "A combo is an instrumental and a vocal you have played back to back in two or more of your tracklists. Surco puts them together again",
         "tasteWeight": "What you like most",
-        "tasteWeightHint": "Stars and play count weigh in when picking",
         "surprise": "Surprise me",
-        "surpriseHint": "Leaves room for pairs that were never played together",
         "noMixed": "To find combos, mark a playlist with your tracklists or sets as Mixed in the Playlists step.",
         "play": "Time each track plays",
         "playValue": "{{minutes}} min",
@@ -86,7 +79,8 @@
         "harmonyFree": "Free",
         "harmonyNeighbours": "Neighbours",
         "harmonySame": "Same key",
-        "noKeys": "None of the chosen tracks has a key, so harmonic mixing does not apply"
+        "noKeys": "None of the chosen tracks has a key, so harmonic mixing does not apply",
+        "pickHint": "“Prefer proven combos” brings back together an instrumental and a vocal you have played back to back in two or more of your tracklists. “What you like most” weighs stars and play count. “Surprise me” leaves room for pairs that were never played together."
       },
       "loading": "Reading…",
       "build": "Build session",
@@ -130,7 +124,6 @@
     "gaps_one": "{{count}} gap",
     "gaps_other": "{{count}} gaps",
     "search": "Search in {{program}}",
-    "reviewHint": "{{have}} of {{total}} are in the collection.",
     "total_one": "{{count}} total",
     "total_other": "{{count}} total",
     "found_one": "{{count}} found",
@@ -139,14 +132,12 @@
     "doubtful_other": "{{count}} doubtful",
     "similar_one": "{{count}} similar",
     "similar_other": "{{count}} similar",
-    "absent_one": "The other {{count}} is skipped.",
-    "absent_other": "The other {{count}} are skipped.",
+    "absent_one": "{{count}} line isn't in the collection and is skipped.",
+    "absent_other": "{{count}} lines aren't in the collection and are skipped.",
     "rules": "Found is the same artist and title. Doubtful is another mix or one of several candidates and goes in unless you untick it. Similar shares the title but not the artist and stays out unless you tick it.",
     "include": "Add {{line}}",
     "otherArtist": "same title, other artist",
     "suggestedMark": "(?) in the tracklist",
-    "summary_one": "{{count}} track will be added to “{{name}}”",
-    "summary_other": "{{count}} tracks will be added to “{{name}}”",
     "back": "Back",
     "add_one": "Add {{count}} track",
     "add_other": "Add {{count}} tracks",
@@ -2254,18 +2245,14 @@
     "hint": "Type something to find in their tags.",
     "invalidRegex": "Invalid regular expression",
     "noMatches": "No matches in any track.",
-    "summary": "{{fields}} in {{tracks}}",
     "fieldCount_one": "{{count}} field",
     "fieldCount_other": "{{count}} fields",
-    "trackCount_one": "{{count}} track",
-    "trackCount_other": "{{count}} tracks",
     "apply": "Replace in {{count}}"
   },
   "stripNumbering": {
     "title": "Remove numbering from title",
     "hint": "Strips the track number from the front of the title (\"1.\", \"A1 -\").",
     "noMatches": "No title carries numbering.",
-    "summary": "{{count}} of {{total}} titles will change",
     "apply": "Remove on {{count}}"
   },
   "donateNudge": {
@@ -2798,7 +2785,6 @@
         "musicOnly_other": "{{count}} in Music only",
         "fileFailed_one": "{{count}} failed",
         "fileFailed_other": "{{count}} failed",
-        "off": "not synced",
         "missing": "collection not found",
         "skipped": "untouched, it was open or couldn't be read",
         "replaceFailed": "couldn't be updated",
@@ -2808,8 +2794,6 @@
         "replaced_other": "{{count}} copies replaced by the kept ones",
         "held_one": "{{count}} still in the collection, out of the playlists",
         "held_other": "{{count}} still in the collection, out of the playlists",
-        "none": "didn't have these copies",
-        "nothing": "no changes",
         "trashed_one": "{{count}} file",
         "trashed_other": "{{count}} files",
         "kept_one": "{{count}} stays on disk because rekordbox, Engine DJ or Traktor use it",
@@ -2817,7 +2801,6 @@
         "updated_one": "{{count}} track updated",
         "updated_other": "{{count}} tracks updated",
         "open": "untouched, it was open",
-        "noMatch": "didn't have these tracks",
         "queued": "will save when Serato closes"
       },
       "undoTitle": "Changes undone",
@@ -3324,8 +3307,6 @@
       "last": "Last backup",
       "kept": "Saved"
     },
-    "kept": "{{count}} of {{max}}",
-    "none": "No backups yet",
     "reason": {
       "run": "Before converting",
       "cues": "Before saving cues",
@@ -3366,7 +3347,6 @@
       "show": "Show files",
       "hide": "Hide files",
       "expires": "They delete themselves after {{days}} days, or sooner if they go over {{size}}.",
-      "stateEmpty": "Nothing saved",
       "renamedTo": "Renamed by a conversion to “{{name}}”",
       "replacedBy": "Replaced by “{{name}}” in a conversion"
     },

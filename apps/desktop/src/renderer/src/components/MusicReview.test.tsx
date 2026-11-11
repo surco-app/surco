@@ -283,13 +283,17 @@ describe('MusicReview', () => {
   })
 
   // A staged group is a change not applied yet, which the track list marks with the amber
-  // ring on the cover.
+  // ring on the cover. The ring is the visible mark, so the detail line does not repeat it;
+  // the words stay beside the ring for a screen reader.
   it('marks a row staged from the detail with the pending ring and says it is still to apply', () => {
     render(<Panes review={review({ spelling: [group, other] })} />)
     expect(rows()[0]).not.toHaveTextContent('to apply')
     expect(within(rows()[0]).queryByTestId('music-review-row-staged')).toBeNull()
     fireEvent.click(screen.getByTestId('music-review-stage'))
     expect(rows()[0]).toHaveTextContent('to apply')
+    expect(within(rows()[0]).getByTestId('music-review-row-detail')).not.toHaveTextContent(
+      'to apply',
+    )
     expect(rows()[0]).toHaveAttribute('data-staged', 'true')
     expect(within(rows()[0]).getByTestId('music-review-row-staged')).toHaveAttribute(
       'data-tone',
@@ -736,7 +740,26 @@ describe('MusicReview', () => {
     })
 
     it('lists the DJ libraries after the run as rekordbox, Engine DJ and Traktor, in that order', () => {
-      render(<Panes review={{ ...done(run({ outcomes: [written] })), libraries: status() }} />)
+      const updated = { outcome: 'updated', count: 1 } as const
+      render(
+        <Panes
+          review={{
+            ...done(
+              run({
+                outcomes: [written],
+                librarySync: 'ok',
+                tagSync: {
+                  rekordbox: updated,
+                  engine: updated,
+                  traktor: updated,
+                  serato: { outcome: 'nothing' },
+                },
+              }),
+            ),
+            libraries: status(),
+          }}
+        />,
+      )
       expect(
         screen
           .getAllByTestId(/^music-review-done-dest-(rekordbox|engine|traktor)$/)
@@ -784,7 +807,9 @@ describe('MusicReview', () => {
       expect(detailOf('rekordbox')).toBe("untouched, it was open or couldn't be read")
     })
 
-    it('marks a library whose sync is off as not synced', () => {
+    // A row saying "not synced" stated what did not happen; the sheet lists where the change
+    // went, and a library that took no part has no row.
+    it('leaves out a library whose sync is off', () => {
       render(
         <Panes
           review={{
@@ -793,9 +818,7 @@ describe('MusicReview', () => {
           }}
         />,
       )
-      expect(dest('engine')).toHaveAttribute('data-state', 'off')
-      expect(iconOf('engine')).toBe('–')
-      expect(detailOf('engine')).toBe('not synced')
+      expect(screen.queryByTestId('music-review-done-dest-engine')).toBeNull()
     })
 
     // Music already held the value and only the file took it: the track is fixed all the same.
@@ -804,6 +827,14 @@ describe('MusicReview', () => {
       expect(screen.getByTestId('music-review-done-stat-corrected')).toHaveTextContent(
         '1track corrected',
       )
+    })
+
+    // A tile reading 0 states what did not happen; the sheet shows only what was done, and
+    // no tiles at all when nothing was.
+    it('leaves out a stat tile whose count is zero', () => {
+      render(<Panes review={done(run({ outcomes: [written] }))} />)
+      expect(screen.getByTestId('music-review-done-stat-corrected')).toHaveTextContent('1')
+      expect(screen.queryByTestId('music-review-done-stat-removed')).toBeNull()
     })
 
     // The summary says what was done; what is still left to review is the list behind it.
@@ -895,8 +926,9 @@ describe('MusicReview', () => {
     }
 
     // The user's run: rekordbox sync on, one track changed only in Music, and the sheet had
-    // no rekordbox row at all while it said the changes were in every library.
-    it('gives every synced library a row saying what reached it', () => {
+    // no rekordbox row at all while it said the changes were in every library. A library
+    // that had none of the tracks, or is not synced, got nothing and has no row.
+    it('gives every library the change reached a row saying what reached it', () => {
       render(
         <Panes
           review={{
@@ -913,10 +945,8 @@ describe('MusicReview', () => {
       )
       expect(dest('rekordbox')).toHaveAttribute('data-state', 'ok')
       expect(detailOf('rekordbox')).toBe('1 track updated')
-      expect(dest('engine')).toHaveAttribute('data-state', 'off')
-      expect(iconOf('engine')).toBe('–')
-      expect(detailOf('engine')).toBe("didn't have these tracks")
-      expect(detailOf('traktor')).toBe('not synced')
+      expect(screen.queryByTestId('music-review-done-dest-engine')).toBeNull()
+      expect(screen.queryByTestId('music-review-done-dest-traktor')).toBeNull()
     })
 
     it('shows Serato in the done sheet when its sync is on', () => {
@@ -996,7 +1026,7 @@ describe('MusicReview', () => {
       expect(detailOf('serato')).toBe('collection not found')
     })
 
-    it('still gives a synced library a row when nothing was sent to it', () => {
+    it('leaves out a synced library when nothing was sent to it', () => {
       render(
         <Panes
           review={{
@@ -1009,7 +1039,20 @@ describe('MusicReview', () => {
           }}
         />,
       )
-      expect(detailOf('rekordbox')).toBe('no changes')
+      expect(screen.queryByTestId('music-review-done-dest-rekordbox')).toBeNull()
+    })
+
+    it('leaves out Music and the files when the run left both as they were', () => {
+      const { backupId: _, ...noBackup } = written
+      const untouched = {
+        ...noBackup,
+        music: ['held' as const],
+        file: 'unchanged' as const,
+        written: [],
+      }
+      render(<Panes review={done(run({ outcomes: [untouched] }))} />)
+      expect(screen.queryByTestId('music-review-done-dest-music')).toBeNull()
+      expect(screen.queryByTestId('music-review-done-dest-files')).toBeNull()
     })
 
     it.each([
@@ -1093,7 +1136,7 @@ describe('MusicReview', () => {
         'The changes are already in your files and libraries.',
       )
       expect(screen.queryByTestId('music-review-done-warnings')).toBeNull()
-      expect(dest('traktor')).toHaveAttribute('data-state', 'off')
+      expect(screen.queryByTestId('music-review-done-dest-traktor')).toBeNull()
     })
 
     it('keeps the full promise when every file and library got the change', () => {
@@ -1121,7 +1164,7 @@ describe('MusicReview', () => {
       )
       expect(dest('rekordbox')).toHaveAttribute('data-state', 'warn')
       expect(detailOf('engine')).toBe('unconfirmed, check Activity')
-      expect(dest('traktor')).toHaveAttribute('data-state', 'off')
+      expect(screen.queryByTestId('music-review-done-dest-traktor')).toBeNull()
     })
 
     it('keeps the note that removed copies stay removed above the footer', () => {
@@ -1323,7 +1366,7 @@ describe('MusicReview', () => {
         )}
       />,
     )
-    expect(screen.getByTestId('music-review-done-stat-corrected')).toHaveTextContent('0')
+    expect(screen.queryByTestId('music-review-done-stat-corrected')).toBeNull()
     expect(screen.getByTestId('music-review-done-stat-removed')).toHaveTextContent('1copy removed')
     expect(warnings()).toEqual(['3 could not be changed'])
   })
@@ -2687,7 +2730,7 @@ describe('list review', () => {
       expect(detailOf('trash')).toBe(
         '1 file stays on disk because Apple Music still uses it · 1 entry left Apple Music, but its file stays because another entry still uses it',
       )
-      expect(screen.getByTestId('music-review-done-stat-removed')).toHaveTextContent('0')
+      expect(screen.queryByTestId('music-review-done-stat-removed')).toBeNull()
       // The entry that left Music does not come back with Undo either.
       expect(screen.getByTestId('music-review-done-note')).toBeInTheDocument()
     })
@@ -2777,7 +2820,7 @@ describe('list review', () => {
 
     // A list fix reaches the libraries from the file, Music or not: each synced library
     // says what it got, as in the Music review.
-    it('gives every synced library a row saying what reached it', () => {
+    it('gives a row to every synced library the change reached or missed', () => {
       withLibraries(
         run({
           outcomes: [outcome('/m/a.aiff', 'written', 'none')],
@@ -2791,7 +2834,7 @@ describe('list review', () => {
         }),
       )
       expect(detailOf('rekordbox')).toBe('1 track updated')
-      expect(dest('engine')).toHaveAttribute('data-state', 'off')
+      expect(screen.queryByTestId('music-review-done-dest-engine')).toBeNull()
       expect(dest('traktor')).toHaveAttribute('data-state', 'warn')
       expect(warnings()).toEqual(["Traktor wasn't updated because it was open."])
       expect(subtitle()).toHaveTextContent(
@@ -3082,6 +3125,8 @@ describe('incomplete tracks', () => {
     expect(screen.getByTestId('music-review-filter-incomplete')).toHaveTextContent('Incomplete2')
   })
 
+  // A row with no proposal has nothing to offer beyond its missing fields, so it carries no
+  // pill; "No proposal" on every such row was noise beside the ones that do have one.
   it('names what each track lacks and where its proposal comes from', () => {
     render(<Panes review={incompleteReview()} />)
     const [a, b] = rows()
@@ -3090,8 +3135,7 @@ describe('incomplete tracks', () => {
     )
     expect(within(a).getByTestId('incomplete-row-source')).toHaveTextContent('From file name')
     expect(within(a).getByTestId('music-review-row-pill')).toHaveAttribute('data-tone', 'good')
-    expect(within(b).getByTestId('incomplete-row-source')).toHaveTextContent('No proposal')
-    expect(within(b).getByTestId('music-review-row-pill')).toHaveAttribute('data-tone', 'warn')
+    expect(within(b).queryByTestId('music-review-row-pill')).toBeNull()
   })
 
   // A value the user wrote or copied is what gets written: the row must not still say none.

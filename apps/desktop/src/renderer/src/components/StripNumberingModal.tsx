@@ -66,20 +66,15 @@ export function StripNumberingModal({ tracks, onApply, onClose }: Props): React.
         {patches.length === 0 ? (
           <p className="text-fg-faint">{tr('stripNumbering.noMatches')}</p>
         ) : (
-          <>
-            <p className="mb-1.5 text-fg-dim">
-              {tr('stripNumbering.summary', { count: patches.length, total: tracks.length })}
-            </p>
-            <ul className="flex flex-col gap-1">
-              {examples.map((ex) => (
-                <li key={ex.id} className="flex items-center gap-2 truncate">
-                  <span className="truncate text-fg-dim line-through">{ex.before}</span>
-                  <ArrowRight className="h-3.5 w-3.5 shrink-0 text-fg-faint" aria-hidden="true" />
-                  <span className="truncate text-fg">{ex.meta.title}</span>
-                </li>
-              ))}
-            </ul>
-          </>
+          <ul className="flex flex-col gap-1">
+            {examples.map((ex) => (
+              <li key={ex.id} className="flex items-center gap-2 truncate">
+                <span className="truncate text-fg-dim line-through">{ex.before}</span>
+                <ArrowRight className="h-3.5 w-3.5 shrink-0 text-fg-faint" aria-hidden="true" />
+                <span className="truncate text-fg">{ex.meta.title}</span>
+              </li>
+            ))}
+          </ul>
         )}
       </div>
 

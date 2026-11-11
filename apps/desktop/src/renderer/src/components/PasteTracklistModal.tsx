@@ -141,15 +141,7 @@ export function PasteTracklistModal({
             ? tr('pasteTracklist.hint')
             : collection.isError
               ? tr('pasteTracklist.failed')
-              : [
-                  tr('pasteTracklist.reviewHint', {
-                    have: review?.length ?? 0,
-                    total: parsed.lines.length,
-                  }),
-                  count('absent') > 0 && tr('pasteTracklist.absent', { count: count('absent') }),
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
+              : count('absent') > 0 && tr('pasteTracklist.absent', { count: count('absent') })}
         </p>
       </div>
 
@@ -317,11 +309,7 @@ export function PasteTracklistModal({
               </ul>
             </>
           )}
-          <div className="mt-5 flex items-center gap-2">
-            <span className="mr-auto text-xs text-fg-dim">
-              {settled &&
-                tr('pasteTracklist.summary', { count: chosen.length, name: playlistName })}
-            </span>
+          <div className="mt-5 flex items-center justify-end gap-2">
             <button
               type="button"
               data-testid="paste-tracklist-back"

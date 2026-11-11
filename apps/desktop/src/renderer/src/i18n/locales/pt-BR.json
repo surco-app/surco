@@ -15,7 +15,6 @@
     "moreFields": "Mais campos ({{count}})",
     "fewerFields": "Menos campos",
     "title": "Gerar nome do arquivo",
-    "description": "Combine texto e metadados para gerar o nome do arquivo.",
     "apply": "Aplicar"
   },
   "sessions": {
@@ -56,10 +55,7 @@
         "none": "Nenhuma playlist escolhida ainda",
         "onlyChosen": "Ver só as escolhidas",
         "allPlaylists": "Ver todas as playlists",
-        "summary_one": "{{count}} playlist escolhida, até {{tracks}} faixas para escolher",
-        "summary_other": "{{count}} playlists escolhidas, até {{tracks}} faixas para escolher",
-        "short": "Dá para uns {{minutes}} min dos {{target}} que você pediu. Escolha outra playlist para chegar lá.",
-        "enough": "Dá para os {{target}} min que você pediu"
+        "short": "Dá para uns {{minutes}} min dos {{target}} que você pediu. Escolha outra playlist para chegar lá."
       },
       "fresh": {
         "hint": "Faixas novas são as adicionadas nos últimos 30 dias. Se o programa não guarda datas, as que não têm reproduções nem estrelas.",
@@ -73,11 +69,8 @@
         "alternate": "Alternar instrumental e com voz",
         "alternateHint": "Base, cantada, base, cantada. Vale mais que a mixagem harmônica quando as duas não cabem",
         "preferCombos": "Preferir combos comprovados",
-        "preferCombosHint": "Um combo é uma base e uma cantada que você tocou em sequência em duas ou mais das suas tracklists. O Surco junta as duas de novo",
         "tasteWeight": "O que você mais gosta",
-        "tasteWeightHint": "Estrelas e reproduções pesam na escolha",
         "surprise": "Surpreenda-me",
-        "surpriseHint": "Deixa espaço para pares que nunca tocaram juntos",
         "noMixed": "Para achar combos, marque como Misto uma playlist com suas tracklists ou sets no passo Playlists.",
         "play": "Tempo que cada faixa toca",
         "playValue": "{{minutes}} min",
@@ -86,7 +79,8 @@
         "harmonyFree": "Livre",
         "harmonyNeighbours": "Vizinhos",
         "harmonySame": "Mesmo tom",
-        "noKeys": "Nenhuma das faixas escolhidas tem tom, então a mixagem harmônica não se aplica"
+        "noKeys": "Nenhuma das faixas escolhidas tem tom, então a mixagem harmônica não se aplica",
+        "pickHint": "“Preferir combos comprovados” junta de novo uma base e uma cantada que você tocou em sequência em duas ou mais das suas tracklists. “O que você mais gosta” leva em conta estrelas e reproduções. “Surpreenda-me” deixa espaço para pares que nunca tocaram juntos."
       },
       "loading": "Lendo…",
       "build": "Montar sessão",
@@ -130,7 +124,6 @@
     "gaps_one": "{{count}} lacuna",
     "gaps_other": "{{count}} lacunas",
     "search": "Buscar no {{program}}",
-    "reviewHint": "{{have}} de {{total}} estão na coleção.",
     "total_one": "{{count}} no total",
     "total_other": "{{count}} no total",
     "found_one": "{{count}} encontrada",
@@ -139,14 +132,12 @@
     "doubtful_other": "{{count}} duvidosas",
     "similar_one": "{{count}} parecida",
     "similar_other": "{{count}} parecidas",
-    "absent_one": "A outra {{count}} é ignorada.",
-    "absent_other": "As outras {{count}} são ignoradas.",
+    "absent_one": "{{count}} linha não está na coleção e é ignorada.",
+    "absent_other": "{{count}} linhas não estão na coleção e são ignoradas.",
     "rules": "Encontrada é o mesmo artista e título. Duvidosa é outro mix ou uma de várias candidatas e entra a menos que você a desmarque. Parecida tem o título mas outro artista e fica de fora a menos que você a marque.",
     "include": "Adicionar {{line}}",
     "otherArtist": "mesmo título, outro artista",
     "suggestedMark": "(?) no tracklist",
-    "summary_one": "{{count}} faixa será adicionada a “{{name}}”",
-    "summary_other": "{{count}} faixas serão adicionadas a “{{name}}”",
     "back": "Voltar",
     "add_one": "Adicionar {{count}} faixa",
     "add_other": "Adicionar {{count}} faixas",
@@ -2254,18 +2245,14 @@
     "hint": "Digite algo para buscar nas tags delas.",
     "invalidRegex": "Expressão regular inválida",
     "noMatches": "Nenhuma associação em faixa alguma.",
-    "summary": "{{fields}} em {{tracks}}",
     "fieldCount_one": "{{count}} campo",
     "fieldCount_other": "{{count}} campos",
-    "trackCount_one": "{{count}} faixa",
-    "trackCount_other": "{{count}} faixas",
     "apply": "Substituir em {{count}}"
   },
   "stripNumbering": {
     "title": "Remover a numeração do título",
     "hint": "Remove o número da faixa do início do título (\"1.\", \"A1 -\").",
     "noMatches": "Nenhum título tem numeração.",
-    "summary": "{{count}} de {{total}} títulos serão alterados",
     "apply": "Remover em {{count}}"
   },
   "donateNudge": {
@@ -2798,7 +2785,6 @@
         "musicOnly_other": "{{count}} só no Music",
         "fileFailed_one": "{{count}} com erro",
         "fileFailed_other": "{{count}} com erro",
-        "off": "sem sincronizar",
         "missing": "coleção não encontrada",
         "skipped": "intocado, estava aberto ou não pôde ser lido",
         "replaceFailed": "não pôde ser atualizado",
@@ -2808,8 +2794,6 @@
         "replaced_other": "{{count}} cópias trocadas pelas que ficam",
         "held_one": "{{count}} continua na coleção, fora das playlists",
         "held_other": "{{count}} continuam na coleção, fora das playlists",
-        "none": "não tinha estas cópias",
-        "nothing": "sem alterações",
         "trashed_one": "{{count}} arquivo",
         "trashed_other": "{{count}} arquivos",
         "kept_one": "{{count}} fica no disco porque o rekordbox, o Engine DJ ou o Traktor o usam",
@@ -2817,7 +2801,6 @@
         "updated_one": "{{count}} faixa atualizada",
         "updated_other": "{{count}} faixas atualizadas",
         "open": "intocado, estava aberto",
-        "noMatch": "não tinha estas faixas",
         "queued": "será salvo ao fechar o Serato"
       },
       "undoTitle": "Alterações desfeitas",
@@ -3324,8 +3307,6 @@
       "last": "Última cópia",
       "kept": "Guardadas"
     },
-    "kept": "{{count}} de {{max}}",
-    "none": "Ainda não há cópias",
     "reason": {
       "run": "Antes de converter",
       "cues": "Antes de salvar cues",
@@ -3366,7 +3347,6 @@
       "show": "Ver arquivos",
       "hide": "Ocultar arquivos",
       "expires": "São apagados sozinhos após {{days}} dias, ou antes se passarem de {{size}}.",
-      "stateEmpty": "Nada guardado",
       "renamedTo": "Renomeado por uma conversão para “{{name}}”",
       "replacedBy": "Substituído por “{{name}}” em uma conversão"
     },

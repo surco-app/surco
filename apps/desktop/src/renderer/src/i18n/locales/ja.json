@@ -15,7 +15,6 @@
     "moreFields": "その他のフィールド ({{count}})",
     "fewerFields": "フィールドを減らす",
     "title": "ファイル名を作成",
-    "description": "テキストとメタデータを組み合わせてファイル名を作成します。",
     "apply": "適用"
   },
   "sessions": {
@@ -56,10 +55,7 @@
         "none": "まだプレイリストを選んでいません",
         "onlyChosen": "選択中のみ表示",
         "allPlaylists": "すべて表示",
-        "summary_one": "{{count}} 件のプレイリストを選択中、最大 {{tracks}} 曲から選びます",
-        "summary_other": "{{count}} 件のプレイリストを選択中、最大 {{tracks}} 曲から選びます",
-        "short": "選んだプレイリストでは約 {{minutes}} 分で、希望の {{target}} 分に届きません。別のプレイリストも選んでください。",
-        "enough": "希望の {{target}} 分に足ります"
+        "short": "選んだプレイリストでは約 {{minutes}} 分で、希望の {{target}} 分に届きません。別のプレイリストも選んでください。"
       },
       "fresh": {
         "hint": "新曲とは直近30日に追加された曲です。日付を持たないプログラムでは、再生回数も星もない曲になります。",
@@ -73,11 +69,8 @@
         "alternate": "インストとボーカルを交互に",
         "alternateHint": "ベース、ボーカル、ベース、ボーカル。両方が合わないときはハーモニックミックスより優先します",
         "preferCombos": "実績のあるコンボを優先",
-        "preferCombosHint": "コンボとは、2つ以上のトラックリストで続けてかけたベースとボーカルの組み合わせです。Surco はそれをもう一度並べます",
         "tasteWeight": "好みを重視",
-        "tasteWeightHint": "星と再生回数を選ぶときに考慮します",
         "surprise": "おまかせ",
-        "surpriseHint": "一緒にかけたことのない組み合わせの余地を残します",
         "noMixed": "コンボを探すには、「プレイリスト」の手順でトラックリストやセットのプレイリストを「ミックス」にしてください。",
         "play": "1曲あたりの再生時間",
         "playValue": "{{minutes}} 分",
@@ -86,7 +79,8 @@
         "harmonyFree": "自由",
         "harmonyNeighbours": "隣のキー",
         "harmonySame": "同じキー",
-        "noKeys": "選んだ曲にキー情報がないため、ハーモニックミックスは使えません"
+        "noKeys": "選んだ曲にキー情報がないため、ハーモニックミックスは使えません",
+        "pickHint": "「実績のあるコンボを優先」は、2つ以上のトラックリストで続けてかけたベースとボーカルをもう一度並べます。「好みを重視」は星と再生回数を考慮します。「おまかせ」は一緒にかけたことのない組み合わせの余地を残します。"
       },
       "loading": "読み込み中…",
       "build": "セッションを作成",
@@ -130,7 +124,6 @@
     "gaps_one": "空白{{count}}件",
     "gaps_other": "空白{{count}}件",
     "search": "{{program}}で検索",
-    "reviewHint": "{{total}}トラック中{{have}}トラックがコレクションにあります。",
     "total_one": "合計 {{count}}",
     "total_other": "合計 {{count}}",
     "found_one": "マッチ {{count}}",
@@ -139,14 +132,12 @@
     "doubtful_other": "要確認 {{count}}",
     "similar_one": "類似 {{count}}",
     "similar_other": "類似 {{count}}",
-    "absent_one": "残りの{{count}}トラックは無視されます。",
-    "absent_other": "残りの{{count}}トラックは無視されます。",
+    "absent_one": "{{count}}行はコレクションにないため無視されます。",
+    "absent_other": "{{count}}行はコレクションにないため無視されます。",
     "rules": "「マッチ」はアーティストもタイトルも同じです。「要確認」は別ミックスか複数候補のひとつで、チェックを外さない限り追加されます。「類似」はタイトルは同じでアーティストが違い、チェックしない限り追加されません。",
     "include": "{{line}}を追加",
     "otherArtist": "同じタイトル、別アーティスト",
     "suggestedMark": "トラックリストでは (?)",
-    "summary_one": "「{{name}}」に{{count}}トラックを追加します",
-    "summary_other": "「{{name}}」に{{count}}トラックを追加します",
     "back": "戻る",
     "add_one": "{{count}}トラックを追加",
     "add_other": "{{count}}トラックを追加",
@@ -2254,18 +2245,14 @@
     "hint": "タグ内で検索するテキストを入力してください。",
     "invalidRegex": "無効な正規表現",
     "noMatches": "どのトラックにも一致しません。",
-    "summary": "{{tracks}}の{{fields}}",
     "fieldCount_one": "{{count}} フィールド",
     "fieldCount_other": "{{count}} フィールド",
-    "trackCount_one": "{{count}} トラック",
-    "trackCount_other": "{{count}} トラック",
     "apply": "{{count}} を置換"
   },
   "stripNumbering": {
     "title": "タイトルの番号付けを削除",
     "hint": "タイトルの先頭からトラック番号を削除します（「1.」、「A1 -」など）",
     "noMatches": "番号付けされたタイトルはありません",
-    "summary": "{{total}} 件中 {{count}} 件のタイトルが変わります",
     "apply": "{{count}} を削除"
   },
   "donateNudge": {
@@ -2798,7 +2785,6 @@
         "musicOnly_other": "{{count}} は Music のみで実行しました",
         "fileFailed_one": "{{count}} 失敗",
         "fileFailed_other": "{{count}} 失敗",
-        "off": "同期されていません",
         "missing": "コレクションが見つかりません",
         "skipped": "未変更、開いていたか読み取れませんでした",
         "replaceFailed": "更新できませんでした",
@@ -2808,8 +2794,6 @@
         "replaced_other": "{{count}} 件のコピーが保持したものに置き換えられました",
         "held_one": "{{count}} はコレクションに残っており、プレイリストには含まれていません",
         "held_other": "{{count}} はコレクションに残っており、プレイリストには含まれていません",
-        "none": "これらのコピーはありませんでした",
-        "nothing": "変更なし",
         "trashed_one": "{{count}} 件のファイル",
         "trashed_other": "{{count}} 件のファイル",
         "kept_one": "{{count}} は rekordbox、Engine DJ、Traktor が使用しているため、ディスクに残ります",
@@ -2817,7 +2801,6 @@
         "updated_one": "{{count}} トラックが更新されました",
         "updated_other": "{{count}} トラックが更新されました",
         "open": "未変更、開いていました",
-        "noMatch": "これらのトラックはありませんでした",
         "queued": "Serato を閉じると保存されます"
       },
       "undoTitle": "変更を取り消しました",
@@ -3324,8 +3307,6 @@
       "last": "最後のバックアップ",
       "kept": "保存数"
     },
-    "kept": "{{count}} / {{max}}",
-    "none": "バックアップはまだありません",
     "reason": {
       "run": "変換の前",
       "cues": "キューを保存する前",
@@ -3366,7 +3347,6 @@
       "show": "ファイルを表示",
       "hide": "ファイルを隠す",
       "expires": "{{days}}日後、または{{size}}を超えるとそれより早く自動で削除されます。",
-      "stateEmpty": "保存なし",
       "renamedTo": "変換により「{{name}}」に名前が変更されました",
       "replacedBy": "変換により「{{name}}」に置き換えられました"
     },
