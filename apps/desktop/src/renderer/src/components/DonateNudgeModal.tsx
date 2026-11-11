@@ -34,10 +34,7 @@ export function DonateNudgeModal({ conversionCount, onClose }: Props): React.JSX
         </h2>
 
         <div className="mt-6 flex flex-col items-center text-center">
-          <p
-            data-testid="donate-nudge-count"
-            className="text-figure font-semibold tabular-nums"
-          >
+          <p data-testid="donate-nudge-count" className="text-figure font-semibold tabular-nums">
             {formatCount(conversionCount, i18n.language)}
           </p>
           <p className="mt-1 text-sm text-fg-muted">{tr('settings.stats.count')}</p>

@@ -1496,9 +1496,7 @@ function Editing({
         />
       )}
       <div className="flex min-w-0 flex-col gap-0.5">
-        <div className="truncate text-base font-semibold text-fg">
-          {track?.title || cue.label}
-        </div>
+        <div className="truncate text-base font-semibold text-fg">{track?.title || cue.label}</div>
         <div className="flex min-w-0 items-center gap-1.5 text-xs">
           {track?.artist && <span className="truncate text-fg-dim">{track.artist}</span>}
           <div

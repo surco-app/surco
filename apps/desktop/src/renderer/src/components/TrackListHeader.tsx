@@ -142,11 +142,7 @@ function MenuAction({
       <span className="flex min-w-0 flex-1 flex-col">
         <span>{label}</span>
         {detail && (
-          <span
-            id={detailId}
-            data-testid={`${testid}-detail`}
-            className="text-label text-fg-faint"
-          >
+          <span id={detailId} data-testid={`${testid}-detail`} className="text-label text-fg-faint">
             {detail}
           </span>
         )}

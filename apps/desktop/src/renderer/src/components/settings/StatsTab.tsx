@@ -137,10 +137,7 @@ export function StatsTab({ settings }: Props): React.JSX.Element {
     <div className="flex min-h-[280px] flex-col items-center justify-center text-center">
       {conversionCount > 0 && (
         <>
-          <p
-            data-testid="stats-count"
-            className="text-figure font-semibold tabular-nums text-fg"
-          >
+          <p data-testid="stats-count" className="text-figure font-semibold tabular-nums text-fg">
             {formatCount(conversionCount, i18n.language)}
           </p>
           <p className="mt-0.5 text-sm text-fg-muted">{tr('settings.stats.count')}</p>

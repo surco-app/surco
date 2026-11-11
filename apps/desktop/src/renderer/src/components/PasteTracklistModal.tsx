@@ -149,9 +149,7 @@ export function PasteTracklistModal({
         <>
           {create && (
             <label className="mb-3 block">
-              <span className="mb-1 block text-label text-fg-dim">
-                {tr('pasteTracklist.name')}
-              </span>
+              <span className="mb-1 block text-label text-fg-dim">{tr('pasteTracklist.name')}</span>
               <input
                 data-testid="paste-tracklist-name"
                 value={name}
