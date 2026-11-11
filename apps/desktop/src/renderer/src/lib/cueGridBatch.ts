@@ -2,15 +2,15 @@ import type { QueryClient } from '@tanstack/react-query'
 import { programOf } from '../../../shared/djProgram'
 import { editableGridOf, gridBeats } from '../../../shared/gridEdit'
 import { gridFitQuery, queuedCuesQuery, trackCuesQuery } from '../hooks/useTrackCues'
+import { appliedGrid } from './appliedGrid'
 import type { AutoMarkSettings, AutoMarkTarget } from './cueAutoMark'
-import { draftGridChanged, startDraft } from './cueDraft'
+import { startDraft } from './cueDraft'
 import { cueProgramOf } from './cuePrograms'
 import {
   cueDraftKey,
   type GridAdjust,
   keepDraft,
   keepGridAdjust,
-  keptDraftOn,
   keptOnSurcoGrid,
 } from './cueSession'
 import { quantizePoints } from './cueWave'
@@ -30,22 +30,21 @@ async function adjustOne(
   const fit = await client.fetchQuery(gridFitQuery(contentId)).catch(() => null)
   if (!fit) return { kind: 'unmeasured' }
   const queued = await client.fetchQuery(queuedCuesQuery(contentId))
-  const fresh = queued !== null && queued.fingerprint === read.fingerprint
+  const programGrid = editableGridOf(read.grid)
+  const applied = appliedGrid(contentId, read, queued, programGrid)
+  const fresh = queued !== null && applied.fresh
   const baseline = fresh
     ? queued.wanted
     : read.cues.map(({ id, ms, kind, color }) => ({ id, ms, kind, color }))
-  const programGrid = editableGridOf(read.grid)
-  const before = keptDraftOn(contentId, read, queued) ?? null
+  const before = applied.kept ?? null
   const draft =
     before ??
     startDraft(
       baseline,
       settings.activeCueFlow,
       read.cues.filter((c) => c.loop).map((c) => c.id),
-      fresh && queued.grid ? queued.grid : programGrid,
-      fresh && queued.grid
-        ? (queued.gridFingerprint ?? read.gridFingerprint)
-        : read.gridFingerprint,
+      applied.grid,
+      applied.gridFingerprint,
       programGrid,
     )
   const key = gridGate({
@@ -57,7 +56,7 @@ async function adjustOne(
   if (key !== null) return { kind: 'review', reason: { kind: 'gate', key } }
   if (draft.grid === null) return { kind: 'unmeasured' }
   const gridded = { ...draft, grid: draft.grid }
-  const grid = draftGridChanged(gridded) ? gridBeats(gridded.grid, read.durationMs) : read.grid
+  const grid = applied.changed ? gridBeats(gridded.grid, read.durationMs) : read.grid
   const result = adjustGrid({
     draft: gridded,
     ctx: {

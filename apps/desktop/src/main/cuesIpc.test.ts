@@ -553,7 +553,7 @@ describe('registerCuesIpc', () => {
     expect(out.firstMs).toBeCloseTo(100 + ((1152 + 576 + 529) / 44100) * 1000 + 2, 3)
   })
 
-  it('measures the grid fit for the editor and Auto ahead of background analysis', async () => {
+  it('measures for the bad-grid filter behind whatever the DJ opens, and for Auto ahead of it', async () => {
     const path = await completableCollection()
     const beatGrid = vi.fn(async () => ({ bpm: 120, firstMs: 0 }))
     registerWithSources({
@@ -566,6 +566,8 @@ describe('registerCuesIpc', () => {
       provisional: { add: vi.fn() },
       twins: async () => ({}),
     })
+    await handler('cues:gridFit')({}, '101', 'low')
+    expect(beatGrid).toHaveBeenLastCalledWith(expect.any(String), 'low')
     await handler('cues:gridFit')({}, '101')
     expect(beatGrid).toHaveBeenLastCalledWith(expect.any(String), 'high')
   })
@@ -1073,6 +1075,12 @@ describe('registerCuesIpc for Traktor tracks', () => {
       expect(await handler('cues:gridFit')({}, ID)).toMatchObject({ bpm: 120, firstMs: 102 })
       expect(beatGrid).toHaveBeenLastCalledWith(expect.stringMatching(/t\.aiff$/), 'high')
       expect(await handler('cues:gridFit')({}, 'engine:4')).toBeNull()
+    })
+
+    it('fits the grid of an uncompressed Traktor file for the bad-grid filter at low priority', async () => {
+      const { beatGrid } = await registerAll()
+      await handler('cues:gridFit')({}, ID, 'low')
+      expect(beatGrid).toHaveBeenLastCalledWith(expect.stringMatching(/t\.aiff$/), 'low')
     })
 
     it('builds no Surco grid for a Traktor or Engine track', async () => {

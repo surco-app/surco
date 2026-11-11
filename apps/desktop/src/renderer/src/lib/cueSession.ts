@@ -79,9 +79,9 @@ export function keepDraft(
   target: CueSaveTarget,
   base: QueuedCues | null = null,
 ): void {
-  const fresh = !drafts.has(contentId)
+  const previous = drafts.get(contentId)
   drafts.set(contentId, { draftKey, value, target, base })
-  if (fresh) changed()
+  if (!previous || previous.value.grid !== value.grid) changed()
 }
 
 export function keptOnSurcoGrid(contentId: string): boolean {

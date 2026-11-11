@@ -60,9 +60,9 @@ export function engineCueSource(
     },
     auditionLead: async () => 0,
     surcoGrid: async () => null,
-    gridFit: async (contentId) => {
+    gridFit: async (contentId, priority) => {
       const file = engineFile(contentId)
-      return sameClockFit(file, beatGrid, 'high', leadOf(file))
+      return sameClockFit(file, beatGrid, priority, leadOf(file))
     },
     queuedWanted: async () => [],
     queue: engine.queue,

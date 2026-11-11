@@ -1,18 +1,32 @@
 import { type QueryClient, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useRef, useSyncExternalStore } from 'react'
 import { checkGrid, type GridCheck } from '../../../shared/gridCheck'
-import { editableGridOf, type GridFit, gridBeats } from '../../../shared/gridEdit'
-import type { TrackCues } from '../../../shared/types'
-import { draftGridChanged } from '../lib/cueDraft'
+import {
+  type EditableGrid,
+  editableGridOf,
+  type GridFit,
+  gridBeats,
+} from '../../../shared/gridEdit'
+import type { QueuedCues, TrackCues } from '../../../shared/types'
+import { appliedGrid } from '../lib/appliedGrid'
 import { cueProgramOf } from '../lib/cuePrograms'
-import { keptDrafts, keptOnSurcoGrid, subscribeCueDrafts } from '../lib/cueSession'
+import { keptOnSurcoGrid, subscribeCueDrafts } from '../lib/cueSession'
 import { gridGate } from '../lib/gridGate'
-import { gridFitQuery, trackCuesQuery } from './useTrackCues'
+import { gridFitQuery, queuedCuesQuery, trackCuesQuery } from './useTrackCues'
 
 const WORKERS = 2
 
+interface Memo {
+  programGrid: EditableGrid | null
+  fit?: GridFit
+  grid?: EditableGrid
+  check?: GridCheck
+}
+
 const reads = new Map<string, TrackCues | null>()
 const fits = new Map<string, GridFit | null>()
+const queues = new Map<string, QueuedCues | null>()
+const memos = new WeakMap<TrackCues, Memo>()
 const pending = new Set<string>()
 const stale: string[] = []
 let draining = false
@@ -34,9 +48,18 @@ function subscribe(listener: () => void): () => void {
 export function resetGridChecks(): void {
   reads.clear()
   fits.clear()
+  queues.clear()
   pending.clear()
   stale.length = 0
   notify()
+}
+
+function memoOf(read: TrackCues): Memo {
+  const kept = memos.get(read)
+  if (kept) return kept
+  const memo: Memo = { programGrid: editableGridOf(read.grid) }
+  memos.set(read, memo)
+  return memo
 }
 
 function checkOfContent(contentId: string): GridCheck | null | undefined {
@@ -44,24 +67,42 @@ function checkOfContent(contentId: string): GridCheck | null | undefined {
   if (read === undefined) return undefined
   const fit = fits.get(contentId)
   if (!read || !fit) return null
-  const draft = keptDrafts().find((d) => d.contentId === contentId)?.draft
-  const grid = draft ? draft.grid : editableGridOf(read.grid)
+  const memo = memoOf(read)
+  const { grid, changed } = appliedGrid(
+    contentId,
+    read,
+    queues.get(contentId) ?? null,
+    memo.programGrid,
+  )
   const gate = gridGate({ contentId, read, grid, onSurcoGrid: keptOnSurcoGrid(contentId) })
   if (gate !== null || grid === null) return null
-  const beats = draft && draftGridChanged(draft) ? gridBeats(grid, read.durationMs) : read.grid
-  return checkGrid({
+  if (memo.check && memo.fit === fit && memo.grid === grid) return memo.check
+  const beats = changed ? gridBeats(grid, read.durationMs) : read.grid
+  const check = checkGrid({
     beats: beats.map((b) => b.ms),
     kicks: read.grid.map((b) => b.ms),
     fit,
     atMs: 0,
     durationMs: read.durationMs,
   })
+  Object.assign(memo, { fit, grid, check })
+  return check
 }
 
 async function measure(client: QueryClient, contentId: string): Promise<void> {
   const read = await client.fetchQuery(trackCuesQuery(contentId)).catch(() => null)
+  const queued = read ? await client.fetchQuery(queuedCuesQuery(contentId)) : null
   if (read?.analysed && !cueProgramOf(contentId).fixedGrid && !fits.has(contentId))
-    fits.set(contentId, await client.fetchQuery(gridFitQuery(contentId)).catch(() => null))
+    fits.set(
+      contentId,
+      await client
+        .fetchQuery({
+          ...gridFitQuery(contentId),
+          queryFn: () => window.api.cues.gridFit(contentId, 'low'),
+        })
+        .catch(() => null),
+    )
+  queues.set(contentId, queued)
   reads.set(contentId, read)
   notify()
 }
@@ -99,7 +140,8 @@ export function useGridChecks(entries: [string, string][], active: boolean): Gri
       client.getQueryCache().subscribe((event) => {
         const [kind, contentId] = event.query.queryKey
         if (event.type !== 'updated' || event.action.type !== 'invalidate') return
-        if (kind !== trackCuesQuery('').queryKey[0] || typeof contentId !== 'string') return
+        const watched = [trackCuesQuery('').queryKey[0], queuedCuesQuery('').queryKey[0]]
+        if (!watched.includes(String(kind)) || typeof contentId !== 'string') return
         if (reads.has(contentId)) void remeasure(client, contentId)
       }),
     [client],

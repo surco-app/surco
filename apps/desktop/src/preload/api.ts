@@ -94,7 +94,7 @@ export interface CuesApi {
   twins: (file: string) => Promise<LibraryTracks>
   auditionLead: (contentId: string) => Promise<number>
   surcoGrid: (contentId: string) => Promise<SurcoGrid | null>
-  gridFit: (contentId: string) => Promise<GridFit | null>
+  gridFit: (contentId: string, priority?: 'high' | 'low') => Promise<GridFit | null>
   queued: (contentId: string) => Promise<QueuedCues | null>
   undo: (contentId: string) => Promise<void>
   save: (reqs: SaveCuesRequest[]) => Promise<void>

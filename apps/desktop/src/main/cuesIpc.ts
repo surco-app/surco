@@ -56,10 +56,13 @@ export function registerCuesIpc(host: {
     const source = sourceOf(contentId)
     return source ? source.surcoGrid(contentId) : null
   })
-  ipcMain.handle('cues:gridFit', async (_e, contentId: string): Promise<GridFit | null> => {
-    const source = sourceOf(contentId)
-    return source ? source.gridFit(contentId) : null
-  })
+  ipcMain.handle(
+    'cues:gridFit',
+    async (_e, contentId: string, priority: 'high' | 'low' = 'high'): Promise<GridFit | null> => {
+      const source = sourceOf(contentId)
+      return source ? source.gridFit(contentId, priority) : null
+    },
+  )
   ipcMain.handle('rekordbox:countCompletable', () => {
     const path = host.collection()
     return withCollection(

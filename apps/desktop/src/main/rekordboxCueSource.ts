@@ -37,10 +37,13 @@ export function rekordboxCueSource(host: {
       await keyOf(path),
     )
   }
-  const gridFit = async (contentId: string): Promise<GridFit | null> => {
+  const gridFit = async (
+    contentId: string,
+    priority: 'high' | 'low' = 'high',
+  ): Promise<GridFit | null> => {
     const row = await audioRowOf(contentId)
     if (!row) return null
-    const fit = await host.beatGrid(row.FolderPath, 'high')
+    const fit = await host.beatGrid(row.FolderPath, priority)
     if (!fit) return null
     const lead =
       (await rekordboxShiftOfFile(row.FolderPath, row.SampleRate || 44100)) +
@@ -107,7 +110,7 @@ export function rekordboxCueSource(host: {
         words: words && shiftedWords(words, shiftMs),
       }
     },
-    gridFit: (contentId) => gridFit(contentId),
+    gridFit: (contentId, priority) => gridFit(contentId, priority),
     queuedWanted: async (contentId, op) => {
       const path = host.collection()
       const read = withCollection(

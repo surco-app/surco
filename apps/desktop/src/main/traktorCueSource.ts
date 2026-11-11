@@ -99,9 +99,9 @@ export function traktorCueSource(
     },
     auditionLead: async (contentId) => (await leadOf(await traktorFile(contentId))) ?? 0,
     surcoGrid: async () => null,
-    gridFit: async (contentId) => {
+    gridFit: async (contentId, priority) => {
       const file = await traktorFile(contentId)
-      return sameClockFit(file, beatGrid, 'high', await leadOf(file))
+      return sameClockFit(file, beatGrid, priority, await leadOf(file))
     },
     queuedWanted: async () => [],
     queue: traktor.queue,

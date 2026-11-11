@@ -17,7 +17,7 @@ export interface CueReader {
   dropInput(contentId: string): Promise<DropInput | null>
   auditionLead(contentId: string): Promise<number>
   surcoGrid(contentId: string): Promise<SurcoGrid | null>
-  gridFit(contentId: string): Promise<GridFit | null>
+  gridFit(contentId: string, priority: 'high' | 'low'): Promise<GridFit | null>
 }
 
 export interface CueSource extends CueReader {

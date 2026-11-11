@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, renderHook, waitFor } from '@testing-library/react'
-import { createElement, type ReactNode } from 'react'
+import { createElement, type ReactNode, useMemo } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import { needsGridFix } from '../../../shared/gridCheck'
@@ -48,9 +48,12 @@ const readOn = (contentId: string, anchorMs: number): TrackCues => ({
 
 const ANCHORS: Record<string, number> = { '101': 7, '102': 102, '103': 15 }
 
-function setup(trackCues = vi.fn<Api['cues']['trackCues']>(async (id) => readOn(id, ANCHORS[id]))) {
+function setup(
+  trackCues = vi.fn<Api['cues']['trackCues']>(async (id) => readOn(id, ANCHORS[id])),
+  queued = vi.fn<Api['cues']['queued']>(async () => null),
+) {
   const gridFit = vi.fn<Api['cues']['gridFit']>(async () => ON_KICKS)
-  installApi({ cues: { trackCues, gridFit } })
+  installApi({ cues: { trackCues, gridFit, queued } })
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   const wrapper = ({ children }: { children: ReactNode }) =>
     createElement(QueryClientProvider, { client }, children)
@@ -153,6 +156,69 @@ describe('useGridChecks', () => {
       })
     })
     expect(needsFix(result.current.checkOf('t2'))).toBe(false)
+  })
+
+  it('measures the grid a fresh queued save already holds, so a track adjusted while the program was open leaves the filter', async () => {
+    const { wrapper } = setup(
+      undefined,
+      vi.fn<Api['cues']['queued']>(async (id) =>
+        id === '102'
+          ? { wanted: [], fingerprint: 'f0', grid: { bpm: BPM, anchorMs: 0 }, gridFingerprint: 'q' }
+          : null,
+      ),
+    )
+    const { result } = renderHook(() => useGridChecks(ENTRIES, true), { wrapper })
+    await waitFor(() => expect(result.current.done).toBe(3))
+    expect(needsFix(result.current.checkOf('t2'))).toBe(false)
+  })
+
+  it('ignores a draft kept for cues the library no longer holds, as the batch does', async () => {
+    const { wrapper } = setup()
+    const read = readOn('102', 102)
+    const programGrid = editableGridOf(read.grid) as EditableGrid
+    const adjusted = startDraft([], 'f', [], { bpm: BPM, anchorMs: 0 }, 'g0', programGrid)
+    keepDraft('102', cueDraftKey('102', 'older', null), adjusted, {
+      path: '/m/102.mp3',
+      label: '102',
+      fingerprint: 'older',
+    })
+    const { result } = renderHook(() => useGridChecks(ENTRIES, true), { wrapper })
+    await waitFor(() => expect(result.current.done).toBe(3))
+    expect(needsFix(result.current.checkOf('t2'))).toBe(true)
+  })
+
+  it('recounts when the grid of a draft already kept is fitted in the editor', async () => {
+    const { wrapper } = setup()
+    const read = readOn('102', 102)
+    const programGrid = editableGridOf(read.grid) as EditableGrid
+    const target = { path: '/m/102.mp3', label: '102', fingerprint: 'f0' }
+    const draftKey = cueDraftKey('102', 'f0', null)
+    const original = startDraft([], 'f', [], programGrid, 'g0', programGrid)
+    keepDraft('102', draftKey, original, target)
+    const { result } = renderHook(
+      () => {
+        const { checkOfContent, done } = useGridChecks(ENTRIES, true)
+        const bad = useMemo(
+          () => ENTRIES.filter(([, id]) => needsFix(checkOfContent(id))).length,
+          [checkOfContent],
+        )
+        return { bad, done }
+      },
+      { wrapper },
+    )
+    await waitFor(() => expect(result.current.done).toBe(3))
+    expect(result.current.bad).toBe(2)
+    act(() => {
+      keepDraft('102', draftKey, { ...original, grid: { bpm: BPM, anchorMs: 0 } }, target)
+    })
+    expect(result.current.bad).toBe(1)
+  })
+
+  it('measures behind whatever the DJ opens, asking for the fit at low priority', async () => {
+    const { gridFit, wrapper } = setup()
+    const { result } = renderHook(() => useGridChecks(ENTRIES, true), { wrapper })
+    await waitFor(() => expect(result.current.done).toBe(3))
+    expect(gridFit).toHaveBeenCalledWith('102', 'low')
   })
 
   it('recounts when tolerance changes without asking for the fit again', async () => {
