@@ -51,9 +51,6 @@ interface ExportButtonProps {
   // tags" instead of a conversion.
   tagsOnly?: boolean
   sameFormat?: boolean
-  // When set, the button converts the whole selection in the chosen format and labels
-  // itself "Convert all (N)" instead of the single-track convert; the format menu works
-  // the same, it just applies to every selected track.
   count?: number
   // The export phase the track is in while processing. With it, the button mirrors the
   // track list's row: the stage as its label and a fill at that phase's progress mark.

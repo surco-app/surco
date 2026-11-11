@@ -23,14 +23,11 @@ export interface ExportLabelState {
   // audio. Only then can an in-place or stale export be a tag update; otherwise it is a
   // real conversion.
   tagsOnly?: boolean
-  // Whether the output keeps the format of the input file, which turns an in-place or
-  // stale export that is not tags only into an update of the audio instead of a conversion.
   sameFormat?: boolean
 }
 
 // Which label the convert split-button wears, as an i18n key plus its params. The
-// order IS the precedence — an in-flight conversion beats everything, the quiet
-// re-export variant beats the batch count, and so on down to the plain convert.
+// order IS the precedence — an in-flight conversion beats everything.
 // Early returns instead of a nested ternary so adding a seventh state can't
 // silently change which existing state wins.
 export function exportButtonLabel(state: ExportLabelState): {

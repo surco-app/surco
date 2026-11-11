@@ -30,8 +30,6 @@ describe('exportButtonLabel', () => {
     expect(exportButtonLabel(state).key).toBe(key)
   })
 
-  // Where the file lands is the line's job; a button that also named it made the same
-  // click read differently depending on which libraries were switched on.
   it('never names a destination', () => {
     for (const [state] of rows) {
       expect(exportButtonLabel(state).key).not.toMatch(/Music|To|Beside|Overwrite|All/)

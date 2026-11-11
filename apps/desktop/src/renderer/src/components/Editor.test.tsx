@@ -2735,8 +2735,6 @@ describe('Editor export control', () => {
     expect(screen.getByTestId('process-btn')).toHaveTextContent('Update tags')
   })
 
-  // A staged normalize, click repair or trim re-renders the audio even when the format
-  // matches, so "Update tags" would undersell what it does and the button says audio too.
   it.each<[string, Parameters<typeof renderEditor>]>([
     [
       'normalize',
@@ -2772,13 +2770,10 @@ describe('Editor export control', () => {
   it('labels an overwrite into another format as a conversion', () => {
     renderEditor({ id: 'a', inputPath: '/music/a.wav' }, 'aiff', { overwriteOriginal: true })
     const button = screen.getByTestId('process-btn')
-    expect(button).toHaveTextContent('AIFF')
+    expect(button).toHaveTextContent('Convert to AIFF')
     expect(button).not.toHaveTextContent('Update tags')
   })
 
-  // Reported 01/10: a FLAC converted to AIFF and added to Music, then given another cover,
-  // offered "Convert to AIFF + Apple Music", which reads as a second add. The button now
-  // names only the action, so it never says Music at all.
   it('keeps Apple Music off the button when a track already in Music is edited', () => {
     ;(window as unknown as { api: { platform: string } }).api.platform = 'darwin'
     renderEditor(
