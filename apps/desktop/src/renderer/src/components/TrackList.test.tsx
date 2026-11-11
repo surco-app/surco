@@ -564,9 +564,10 @@ describe('TrackList', () => {
       track({ id: 'done', fromEngine: true, sourcePreview: preview }),
     ])
     const rows = screen.getAllByTestId('track-wave-line')
-    expect(within(rows[0]).getByTestId('track-unanalyzed')).toHaveTextContent(
-      'Not analyzed in Engine DJ',
-    )
+    expect(within(rows[0]).getByTestId('track-unanalyzed')).toBeInTheDocument()
+    expect(
+      within(rows[0]).getByRole('img', { name: 'Not analyzed in Engine DJ' }),
+    ).toBeInTheDocument()
     expect(within(rows[1]).queryByTestId('track-unanalyzed')).toBeNull()
   })
 
