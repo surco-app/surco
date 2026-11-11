@@ -2099,9 +2099,6 @@
     },
     "mp3Choice": {
       "320": "320 kbps CBR, the DJ-pool standard.",
-      "256": "256 kbps CBR.",
-      "192": "192 kbps CBR.",
-      "160": "160 kbps CBR.",
       "128": "128 kbps CBR, the smallest.",
       "v0": "VBR, smaller files at transparent quality.",
       "v2": "VBR, smaller still."
@@ -2109,13 +2106,9 @@
     "bitDepthChoice": {
       "source": "Keeps each file's exact depth, padding included.",
       "16": "Writes 16-bit, with dither when it reduces.",
-      "24": "Writes 24-bit.",
       "corrected": "A file that only carries 16-bit audio is written as true 16-bit, losslessly. A 32-bit file is written at 24 bits."
     },
     "sampleRateChoice": {
-      "source": "Never resamples.",
-      "44100": "Every file at 44.1 kHz, for gear that expects it.",
-      "48000": "Every file at 48 kHz, for gear that expects it.",
       "corrected": "Files measured as upsampled from 44.1 kHz go back to 44.1. Real hi-res keeps its rate."
     }
   },

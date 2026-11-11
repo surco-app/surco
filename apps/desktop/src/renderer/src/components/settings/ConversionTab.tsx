@@ -68,7 +68,7 @@ export function ConversionTab({ synced, patch }: Props): React.JSX.Element {
             <AppliesHint
               testid="settings-mp3-quality-applies"
               applies={tr('settings.mp3QualityApplies')}
-              hint={tr(`settings.mp3Choice.${synced.mp3Quality}`)}
+              hint={tr(`settings.mp3Choice.${synced.mp3Quality}`, { defaultValue: '' })}
             />
           }
           info={tr('settings.mp3QualityHint')}
@@ -90,7 +90,7 @@ export function ConversionTab({ synced, patch }: Props): React.JSX.Element {
             <AppliesHint
               testid="settings-bit-depth-applies"
               applies={tr('settings.bitDepthApplies')}
-              hint={tr(`settings.bitDepthChoice.${synced.outputBitDepth}`)}
+              hint={tr(`settings.bitDepthChoice.${synced.outputBitDepth}`, { defaultValue: '' })}
             />
           }
           info={tr('settings.bitDepthHint')}
@@ -107,7 +107,7 @@ export function ConversionTab({ synced, patch }: Props): React.JSX.Element {
 
         <SettingsField
           label={tr('settings.sampleRate')}
-          hint={tr(`settings.sampleRateChoice.${synced.outputSampleRate}`)}
+          hint={tr(`settings.sampleRateChoice.${synced.outputSampleRate}`, { defaultValue: '' })}
           info={tr('settings.sampleRateHint')}
           searchId="sampleRate"
         >
