@@ -1393,16 +1393,17 @@ describe('CuesSection maximized over the rest of the editor', () => {
     expect(screen.queryByTestId('cue-wave-hot-B')).toBeNull()
   })
 
-  it('shows the ✕ beside a hot cue and a CALL in the zoomed wave on hover and deletes only that mark', async () => {
+  it('deletes only the right-clicked mark of the zoomed wave from its menu, with no ✕ over the wave', async () => {
     setup()
     await maximize()
     seek(64000)
     fireEvent.click(screen.getByTestId('cues-pad-A'))
     seek(120000)
     fireEvent.click(screen.getByTestId('cues-memory'))
-    expect(screen.queryByTestId('cue-detail-delete')).toBeNull()
     fireEvent.mouseEnter(screen.getByTestId('cue-detail-call-120000'))
-    fireEvent.click(screen.getByTestId('cue-detail-delete'))
+    expect(screen.queryByTestId('cue-detail-delete')).toBeNull()
+    fireEvent.contextMenu(screen.getByTestId('cue-detail-call-120000'), { clientX: 200, clientY: 5 })
+    fireEvent.click(screen.getByTestId('cues-menu-delete'))
     expect(screen.queryByTestId('cue-wave-call-120000')).toBeNull()
     expect(screen.getByTestId('cue-wave-hot-A')).toBeInTheDocument()
   })
@@ -1838,15 +1839,11 @@ describe('CuesSection maximized point corrections', () => {
     expect(position()).toBe('3:20.0')
   })
 
-  it('takes the point’s flow away with its CALL from the ✕, from ⌫ and from the menu, leaving nothing behind', async () => {
+  it('takes the point’s flow away with its CALL from ⌫ and from the menu, leaving nothing behind', async () => {
     setup()
     await maximize()
     seek(128000)
     const remove = [
-      () => {
-        fireEvent.mouseEnter(screen.getByTestId('cue-detail-call-128000'))
-        fireEvent.click(screen.getByTestId('cue-detail-delete'))
-      },
       () => {
         fireEvent.click(screen.getByTestId('cue-wave-call-128000'))
         editor().focus()

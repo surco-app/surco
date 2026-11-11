@@ -1350,7 +1350,6 @@ function Editing({
       ghost={ghost}
       onMarkMenu={openMarkMenu}
       onMenu={maximized ? openMenuAt : undefined}
-      onDeleteMark={(key) => dispatch(removeOf(key))}
       movable={[
         ...points,
         ...state.cues

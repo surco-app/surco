@@ -27,7 +27,6 @@ import {
 } from '../lib/cuePlayhead'
 import { barLines, quantizePoints } from '../lib/cueWave'
 import { formatTime } from '../lib/duration'
-import { CueDeleteBadge } from './CueDeleteBadge'
 import type { WaveCue } from './CueWave'
 import { Tooltip } from './Tooltip'
 
@@ -112,7 +111,6 @@ export function CueWaveDetail({
   onHover,
   onMarkMenu,
   onMenu,
-  onDeleteMark,
   ghost: rawGhost,
   movable,
   offGrid,
@@ -137,7 +135,6 @@ export function CueWaveDetail({
   onHover?: (ms: number | null) => void
   onMarkMenu?: (at: { key: string; clientX: number; clientY: number }) => void
   onMenu?: (at: { ms: number; clientX: number; clientY: number }) => void
-  onDeleteMark?: (key: string) => void
   ghost?: CueGhost
   movable?: string[]
   offGrid?: string[]
@@ -377,29 +374,6 @@ export function CueWaveDetail({
         span,
       )
     : null
-  const [hovered, setHovered] = useState<string | null>(null)
-  const lockedKeys = new Set(cues.filter((c) => c.locked).map((c) => c.key))
-  const hover = (key: string) => ({
-    onMouseEnter: () => setHovered(key),
-    onMouseLeave: () => setHovered(null),
-  })
-  const badge = (key: string, at: number, label: string, offsetPx: number) =>
-    hovered === key &&
-    !lockedKeys.has(key) &&
-    onDeleteMark && (
-      <CueDeleteBadge
-        key={`x${key}`}
-        testId="cue-detail-delete"
-        label={label}
-        onDelete={() => {
-          setHovered(null)
-          onDeleteMark(key)
-        }}
-        className="top-0"
-        style={{ ...markStyle(at), transform: `translateX(calc(-50% + ${offsetPx}px))` }}
-        {...hover(key)}
-      />
-    )
   const markMenu = (key: string, e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
@@ -507,63 +481,57 @@ export function CueWaveDetail({
             className="pointer-events-none absolute bottom-0 left-1/2 w-px bg-[var(--color-fg)]"
           />
           {calls.map((c) => (
-            <Fragment key={`c${c.key}`}>
-              <span
-                role="img"
-                data-testid={`cue-detail-call-${c.ms + fromMs}`}
-                data-mark="true"
-                data-off-grid={offGrid?.includes(c.key) ? 'true' : 'false'}
-                data-gone={gone.has(c.key) ? 'true' : 'false'}
-                data-pending={pendingOf.get(c.key) ? 'true' : 'false'}
-                aria-hidden="true"
-                onContextMenu={(e) => markMenu(c.key, e)}
-                {...hover(c.key)}
-                {...grab(c.key)}
-                style={{
-                  ...markStyle(c.at),
-                  borderTopColor: offGrid?.includes(c.key) ? 'var(--color-warn)' : MEMORY_CUE_COLOR,
-                  ...(movable?.includes(c.key) && onMoveMark ? { cursor: 'ew-resize' } : {}),
-                  ...(gone.has(c.key) ? { opacity: GONE_OPACITY } : {}),
-                }}
-                className="absolute z-10 h-0 w-0 border-x-[5px] border-x-transparent border-t-[7px]"
-              />
-              {badge(c.key, c.at, t('editor.cues.deleteCallMark'), 9)}
-            </Fragment>
+            <span
+              key={`c${c.key}`}
+              role="img"
+              data-testid={`cue-detail-call-${c.ms + fromMs}`}
+              data-mark="true"
+              data-off-grid={offGrid?.includes(c.key) ? 'true' : 'false'}
+              data-gone={gone.has(c.key) ? 'true' : 'false'}
+              data-pending={pendingOf.get(c.key) ? 'true' : 'false'}
+              aria-hidden="true"
+              onContextMenu={(e) => markMenu(c.key, e)}
+              {...grab(c.key)}
+              style={{
+                ...markStyle(c.at),
+                borderTopColor: offGrid?.includes(c.key) ? 'var(--color-warn)' : MEMORY_CUE_COLOR,
+                ...(movable?.includes(c.key) && onMoveMark ? { cursor: 'ew-resize' } : {}),
+                ...(gone.has(c.key) ? { opacity: GONE_OPACITY } : {}),
+              }}
+              className="absolute z-10 h-0 w-0 border-x-[5px] border-x-transparent border-t-[7px]"
+            />
           ))}
           {hot.map((h) => {
             return (
-              <Fragment key={`h${h.key}`}>
-                <span
-                  role="img"
-                  data-testid={`cue-detail-hot-${h.letter}`}
-                  data-mark="true"
-                  data-off-grid={offGrid?.includes(h.key) ? 'true' : 'false'}
-                  data-gone={gone.has(h.key) ? 'true' : 'false'}
-                  data-pending={pendingOf.get(h.key) ? 'true' : 'false'}
-                  data-selected={selected === h.key ? 'true' : 'false'}
-                  aria-hidden="true"
-                  onContextMenu={(e) => markMenu(h.key, e)}
-                  {...hover(h.key)}
-                  {...grab(h.key)}
-                  style={{
-                    ...markStyle(h.at),
-                    backgroundColor: h.colour,
-                    color: '#000',
-                    ...(gone.has(h.key) ? { opacity: GONE_OPACITY } : {}),
-                    ...(movable?.includes(h.key) && onMoveMark ? { cursor: 'ew-resize' } : {}),
-                  }}
-                  className={`absolute z-10 h-3.5 w-3.5 rounded-[3px] text-center text-label font-semibold leading-[14px] ${
-                    selected === h.key
-                      ? 'ring-2 ring-[var(--color-fg)]'
-                      : offGrid?.includes(h.key)
-                        ? 'ring-2 ring-[var(--color-warn)]'
-                        : ''
-                  }`}
-                >
-                  {h.letter}
-                </span>
-                {badge(h.key, h.at, t('editor.cues.deleteHot', { letter: h.letter }), 11)}
-              </Fragment>
+              <span
+                key={`h${h.key}`}
+                role="img"
+                data-testid={`cue-detail-hot-${h.letter}`}
+                data-mark="true"
+                data-off-grid={offGrid?.includes(h.key) ? 'true' : 'false'}
+                data-gone={gone.has(h.key) ? 'true' : 'false'}
+                data-pending={pendingOf.get(h.key) ? 'true' : 'false'}
+                data-selected={selected === h.key ? 'true' : 'false'}
+                aria-hidden="true"
+                onContextMenu={(e) => markMenu(h.key, e)}
+                {...grab(h.key)}
+                style={{
+                  ...markStyle(h.at),
+                  backgroundColor: h.colour,
+                  color: '#000',
+                  ...(gone.has(h.key) ? { opacity: GONE_OPACITY } : {}),
+                  ...(movable?.includes(h.key) && onMoveMark ? { cursor: 'ew-resize' } : {}),
+                }}
+                className={`absolute z-10 h-3.5 w-3.5 rounded-[3px] text-center text-label font-semibold leading-[14px] ${
+                  selected === h.key
+                    ? 'ring-2 ring-[var(--color-fg)]'
+                    : offGrid?.includes(h.key)
+                      ? 'ring-2 ring-[var(--color-warn)]'
+                      : ''
+                }`}
+              >
+                {h.letter}
+              </span>
             )
           })}
           {ghostMarks?.calls.map((c) => (
