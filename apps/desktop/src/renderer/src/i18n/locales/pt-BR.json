@@ -1908,6 +1908,7 @@
     "seratoSync": "Serato",
     "virtualdjLibrary": "VirtualDJ",
     "virtualdjLibraryDir": "Pasta do VirtualDJ",
+    "virtualdjLibraryDirEmpty": "Nenhuma pasta escolhida",
     "virtualdjLibraryDirHint": "A pasta onde o VirtualDJ guarda o database.xml e o MyLists. Por enquanto o Surco só a lê e não muda nada nela.",
     "syncSerato": "Biblioteca do Serato",
     "syncSeratoHint": "O Surco escreve no Serato quando você o fecha. Atualizar leva as mudanças de tags da revisão, e Adicionar coloca também o que você converte",

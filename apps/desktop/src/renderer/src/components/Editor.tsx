@@ -1003,11 +1003,11 @@ export const Editor = memo(function Editor({
     ? leftOutNote(convertGate(multiTracks, requiredFields, customFields, libraryIndex, true), tr)
     : null
   const blockedBy = isMulti ? undefined : readOnlyProgramsOf(item)[0]
-  const seratoRows = blockedBy !== undefined
-  const missing = isMulti || seratoRows ? [] : missingRequired(resolvedMeta, requiredFields)
+  const readOnlyRows = blockedBy !== undefined
+  const missing = isMulti || readOnlyRows ? [] : missingRequired(resolvedMeta, requiredFields)
   const firstMissing = (multiGate?.missing.fields ?? missing)[0]
-  const incomplete = isMulti ? againLeftOut !== null : seratoRows || missing.length > 0
-  const seratoReason = blockedBy ? [tr(`errors.${READ_ONLY_BLOCKED[blockedBy]}`)] : []
+  const incomplete = isMulti ? againLeftOut !== null : readOnlyRows || missing.length > 0
+  const readOnlyReason = blockedBy ? [tr(`errors.${READ_ONLY_BLOCKED[blockedBy]}`)] : []
   const otherReason = missing.length
     ? tr('editor.missingRequired', {
         fields: missing.map((key) => tr(`fields.${key}`)).join(', '),
@@ -1015,7 +1015,7 @@ export const Editor = memo(function Editor({
     : undefined
   const incompleteReason = isMulti
     ? (againLeftOut ?? undefined)
-    : [...seratoReason, ...(otherReason ? [otherReason] : [])].join(' · ') || undefined
+    : [...readOnlyReason, ...(otherReason ? [otherReason] : [])].join(' · ') || undefined
   const otherSummary = missing.length
     ? missingSummary(
         missing.map((key) => tr(`fields.${key}`)),
@@ -1994,7 +1994,7 @@ export const Editor = memo(function Editor({
           incomplete={incomplete}
           incompleteReason={incompleteReason}
           incompleteSummary={
-            [...seratoReason, ...(otherSummary ? [otherSummary] : [])].join(' · ') || undefined
+            [...readOnlyReason, ...(otherSummary ? [otherSummary] : [])].join(' · ') || undefined
           }
           leftOut={leftOut ?? undefined}
           onBlockedPress={() => {

@@ -1908,6 +1908,7 @@
     "seratoSync": "Serato",
     "virtualdjLibrary": "VirtualDJ",
     "virtualdjLibraryDir": "Dossier VirtualDJ",
+    "virtualdjLibraryDirEmpty": "Aucun dossier choisi",
     "virtualdjLibraryDirHint": "Le dossier où VirtualDJ garde database.xml et MyLists. Pour l’instant Surco le lit seulement et n’y change rien.",
     "syncSerato": "Bibliothèque Serato",
     "syncSeratoHint": "Surco écrit dans Serato quand tu le fermes. Mettre à jour reprend les changements de tags de la vérification, et Ajouter y met en plus ce que tu convertis",

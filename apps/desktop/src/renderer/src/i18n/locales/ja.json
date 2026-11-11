@@ -1908,6 +1908,7 @@
     "seratoSync": "Serato",
     "virtualdjLibrary": "VirtualDJ",
     "virtualdjLibraryDir": "VirtualDJ フォルダー",
+    "virtualdjLibraryDirEmpty": "フォルダー未選択",
     "virtualdjLibraryDirHint": "VirtualDJ が database.xml と MyLists を保存しているフォルダーです。現在 Surco は読み取るだけで、何も変更しません。",
     "syncSerato": "Serato ライブラリ",
     "syncSeratoHint": "Serato を閉じたときに Surco が書き込みます。更新はレビューのタグ変更を反映し、追加は変換したトラックも加えます",

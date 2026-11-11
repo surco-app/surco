@@ -1099,6 +1099,14 @@ describe('DestinationTab VirtualDJ', () => {
     }
   })
 
+  it('says no folder is chosen in its own words when the VirtualDJ folder is empty', () => {
+    renderPrograms({}, { virtualdjLibraryDir: '' })
+    fireEvent.click(screen.getByTestId('settings-programs-virtualdj'))
+    expect(screen.getByTestId('settings-virtualdj-dir')).toHaveTextContent(
+      i18n.t('settings.virtualdjLibraryDirEmpty'),
+    )
+  })
+
   it('asks for another folder through the picker the modal owns', () => {
     const onChangeVirtualdjDir = vi.fn()
     render(

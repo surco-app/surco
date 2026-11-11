@@ -1,4 +1,5 @@
 import { type DjProgram, isWritable, type LibraryProgram, type ReadOnlyProgram } from './djProgram'
+import type { ErrorKey } from './errorKeys'
 import type { RekordboxPlaylistTarget } from './types'
 
 export interface TrackOrigin {
@@ -20,7 +21,7 @@ export function readOnlyProgramsOf(t: TrackOrigin): ReadOnlyProgram[] {
   return (t.programs ?? []).filter((p): p is ReadOnlyProgram => !isWritable(p))
 }
 
-export const READ_ONLY_BLOCKED: Record<ReadOnlyProgram, 'seratoBlocked' | 'virtualdjBlocked'> = {
+export const READ_ONLY_BLOCKED: Record<ReadOnlyProgram, ErrorKey> = {
   serato: 'seratoBlocked',
   virtualdj: 'virtualdjBlocked',
 }

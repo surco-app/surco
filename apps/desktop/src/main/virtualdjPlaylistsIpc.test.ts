@@ -55,10 +55,13 @@ describe('virtualdjRead', () => {
     const dir = copy()
     const read = virtualdjRead({ dir: () => dir })
     vi.useFakeTimers({ now: new Date(2026, 11, 1) })
-    expect(read.recentCount()).toBe(6)
-    vi.setSystemTime(new Date(2027, 1, 1))
-    expect(read.recentCount()).toBe(0)
-    vi.useRealTimers()
+    try {
+      expect(read.recentCount()).toBe(6)
+      vi.setSystemTime(new Date(2027, 1, 1))
+      expect(read.recentCount()).toBe(0)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('grants the files of the list it read, so the rows can play before any disk walk', () => {

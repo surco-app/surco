@@ -522,7 +522,7 @@ function OutputSettings({
                     value={local.virtualdjLibraryDir}
                     onChange={onChangeVirtualdjDir}
                     testid="settings-virtualdj-dir"
-                    emptyLabel={tr('settings.traktorNmlPathEmpty')}
+                    emptyLabel={tr('settings.virtualdjLibraryDirEmpty')}
                   />
                 </div>
                 <SettingsHint className="mt-2">
