@@ -845,6 +845,19 @@ function Editing({
       palette: false,
     })
   }
+  const openMenuAt = ({
+    ms,
+    clientX,
+    clientY,
+  }: {
+    ms: number
+    clientX: number
+    clientY: number
+  }) => {
+    const rect = editorRef.current?.getBoundingClientRect()
+    setMarkMenu(null)
+    setMenu({ ms, x: clientX - (rect?.left ?? 0), y: clientY - (rect?.top ?? 0) })
+  }
   const fromMarkMenu = (action: DraftAction) => {
     dispatch(action)
     setMarkMenu(null)
@@ -1316,6 +1329,7 @@ function Editing({
       onZoom={(dir) => setZoom((z) => zoomStep(z, dir))}
       ghost={ghost}
       onMarkMenu={openMarkMenu}
+      onMenu={maximized ? openMenuAt : undefined}
       onDeleteMark={(key) => dispatch(removeOf(key))}
       movable={[
         ...points,

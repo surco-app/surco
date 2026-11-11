@@ -134,6 +134,8 @@ describe('CuesSection maximized', () => {
     await ready()
     fireEvent.contextMenu(screen.getByTestId('cue-wave'), { clientX: 100 })
     expect(screen.queryByTestId('cues-menu')).toBeNull()
+    fireEvent.contextMenu(screen.getByTestId('cue-detail'), { clientX: 200, clientY: 40 })
+    expect(screen.queryByTestId('cues-menu')).toBeNull()
   })
 
   it('opens the full editor with the track header, the zoomed wave and the deck', async () => {
@@ -1474,6 +1476,36 @@ describe('CuesSection maximized over the rest of the editor', () => {
     fireEvent.contextMenu(screen.getByTestId('cue-detail-hot-A'), { clientX: 200, clientY: 5 })
     fireEvent.click(screen.getByTestId('cues-menu-delete'))
     expect(screen.queryByTestId('cue-wave-hot-A')).toBeNull()
+  })
+
+  it('puts a hot cue on the beat nearest the right-click on the zoomed wave, so a cue goes in without leaving the wave for the pads', async () => {
+    setup()
+    await maximize()
+    seek(64000)
+    fireEvent.contextMenu(screen.getByTestId('cue-detail'), { clientX: 203, clientY: 40 })
+    expect(screen.queryByTestId('cues-menu-delete')).toBeNull()
+    fireEvent.click(screen.getByTestId('cues-menu-add-hot'))
+    expect(screen.getByTestId('cue-wave-hot-A').style.left).toContain('16%')
+    expect(screen.queryByTestId('cues-menu')).toBeNull()
+  })
+
+  it('puts a CALL on the beat nearest the right-click on the zoomed wave', async () => {
+    setup()
+    await maximize()
+    seek(64000)
+    fireEvent.contextMenu(screen.getByTestId('cue-detail'), { clientX: 203, clientY: 40 })
+    fireEvent.click(screen.getByTestId('cues-menu-add-call'))
+    expect(screen.getByTestId('cue-wave-call-64000')).toBeInTheDocument()
+  })
+
+  it('opens the cue menu, not the add menu, when the right-click on the zoomed wave lands on a cue', async () => {
+    setup()
+    await maximize()
+    seek(64000)
+    fireEvent.click(screen.getByTestId('cues-pad-A'))
+    fireEvent.contextMenu(screen.getByTestId('cue-detail-hot-A'), { clientX: 200, clientY: 5 })
+    expect(screen.getByTestId('cues-menu-delete')).toBeInTheDocument()
+    expect(screen.queryByTestId('cues-menu-add-hot')).toBeNull()
   })
 
   it('closes the mark menu with Escape without restoring the maximized section', async () => {

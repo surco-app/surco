@@ -111,6 +111,7 @@ export function CueWaveDetail({
   onPlace,
   onHover,
   onMarkMenu,
+  onMenu,
   onDeleteMark,
   ghost: rawGhost,
   movable,
@@ -135,6 +136,7 @@ export function CueWaveDetail({
   onPlace?: (ms: number) => void
   onHover?: (ms: number | null) => void
   onMarkMenu?: (at: { key: string; clientX: number; clientY: number }) => void
+  onMenu?: (at: { ms: number; clientX: number; clientY: number }) => void
   onDeleteMark?: (key: string) => void
   ghost?: CueGhost
   movable?: string[]
@@ -434,6 +436,12 @@ export function CueWaveDetail({
             onHover?.(snapAt(e.clientX, rect))
           }}
           onMouseLeave={() => onHover?.(null)}
+          onContextMenu={(e) => {
+            const rect = stageRef.current?.getBoundingClientRect()
+            if (!onMenu || !rect || rect.width <= 0) return
+            e.preventDefault()
+            onMenu({ ms: snapAt(e.clientX, rect), clientX: e.clientX, clientY: e.clientY })
+          }}
           style={{
             cursor: onPlace ? 'crosshair' : 'grab',
             ...(compact
