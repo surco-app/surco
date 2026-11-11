@@ -79,7 +79,7 @@ import type { FlushOutcome, TraktorWrite } from '../main/verifyRegistry'
 import { withRecordedRun } from '../main/verifyRun'
 import { onWatchedFilesChanged } from '../main/watchedFiles'
 import { dirRoots, FolderWatcher } from '../main/watcher'
-import type { Api } from '../preload/api'
+import type { Api, CuesApi } from '../preload/api'
 import { AlbumMatchRows } from '../renderer/src/components/AlbumMatchRows'
 import { FindReplaceModal } from '../renderer/src/components/FindReplaceModal'
 import { useAppleMusicFill } from '../renderer/src/hooks/useAppleMusicFill'
@@ -694,6 +694,27 @@ function wiredDj(): DjApi {
   }
 }
 
+function notWiredCues(op: string): never {
+  throw new Error(`scenario: window.api.cues.${op} is not wired`)
+}
+
+function wiredCues(): CuesApi {
+  return {
+    trackCues: async () => null,
+    waveDetail: async () => null,
+    waveFine: () => notWiredCues('waveFine'),
+    dropInput: async () => null,
+    twins: () => notWiredCues('twins'),
+    auditionLead: async () => 0,
+    surcoGrid: async () => null,
+    gridFit: () => notWiredCues('gridFit'),
+    gridVerdict: () => notWiredCues('gridVerdict'),
+    queued: async () => null,
+    undo: async () => {},
+    save: async () => {},
+  }
+}
+
 function scenarioApi(
   options: ScenarioOptions,
   errors: string[],
@@ -722,11 +743,7 @@ function scenarioApi(
     // No scenario has a rekordbox collection: the source rail stays without it, and the
     // queries App mounts get an answer instead of the proxy's "not wired" throw.
     dj: wiredDj(),
-    rekordboxTrackCues: async () => null,
-    rekordboxCueWaveDetail: async () => null,
-    rekordboxCueDropInput: async () => null,
-    rekordboxAuditionLead: async () => 0,
-    rekordboxSurcoGrid: async () => null,
+    cues: wiredCues(),
     rowWaves: async () => ({}),
     rekordboxCountCompletable: async () => 0,
     cueProfile: async () => ({
@@ -739,9 +756,6 @@ function scenarioApi(
     },
     recordCueEdit: async () => {},
     onCueProfileChanged: () => () => {},
-    saveRekordboxCues: async () => {},
-    rekordboxQueuedCues: async () => null,
-    undoRekordboxCues: async () => {},
     onVerifyUpdate: (listener) => listen('verify:update', listener),
     ...(verify && {
       retryVerification: async (trackId) => {

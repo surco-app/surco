@@ -107,6 +107,7 @@ import { createCoverMemo, hasCoverSource, prepareProcessedCover } from './cover'
 import { downloadCover, imageExt } from './coverDownload'
 import { coverThumbPathOf, pruneCoverThumbs } from './coverThumbs'
 import { installCrashGuards, logHandlerFailures, wireRendererRecovery } from './crashGuards'
+import { registerCuesIpc } from './cuesIpc'
 import { createCueTaste } from './cueTaste'
 import { registerCueTasteIpc } from './cueTasteIpc'
 import { createSharedEdits } from './cueTasteShared'
@@ -124,6 +125,7 @@ import {
 import { parseDockFrames } from './dockFrames'
 import { type ReplacePair, replaceDuplicates } from './duplicateReplace'
 import { engineCueQueueSection } from './engineCueQueueIpc'
+import { engineCueSource } from './engineCueSource'
 import { applyEngineCuesBatch } from './engineCuesWrite'
 import { addToEngineLibrary, dumpEngineLibrary, withEngineDatabase } from './engineLibrary'
 import { engineDatabasePath } from './enginePlaylists'
@@ -186,7 +188,7 @@ import {
   stackRepoint,
 } from './rekordboxBatch'
 import { completeOnClose } from './rekordboxCompleteOnClose'
-import { registerRekordboxCuesIpc } from './rekordboxCuesIpc'
+import { rekordboxCueSource } from './rekordboxCueSource'
 import { markedTracks, readCollectionMarksAt } from './rekordboxLearnFlow'
 import { playlistXmlPath, readNodeStamps } from './rekordboxMasterXml'
 import { findRekordboxCollection } from './rekordboxPath'
@@ -205,6 +207,7 @@ import { createSessionBackup } from './rekordboxSessionBackup'
 import { registerRowWavesIpc } from './rowWavesIpc'
 import { applySeratoBatch } from './seratoBatch'
 import { seratoCueQueueSection } from './seratoCueQueueIpc'
+import { seratoCueSource } from './seratoCueSource'
 import { seratoLibraryRoots } from './seratoLibrary'
 import { recoverSeratoTemps } from './seratoLibraryWrite'
 import { seratoEdit } from './seratoPlaylistEditIpc'
@@ -234,6 +237,7 @@ import { createSurcoTrash } from './surcoTrash'
 import { snapshotTagsInWorker, tagChangeDetail } from './tagChanges'
 import { createTmpManifest } from './tmpManifest'
 import { traktorCueQueueSection } from './traktorCueQueueIpc'
+import { traktorCueSource } from './traktorCueSource'
 import { applyTraktorBatch } from './traktorCuesWrite'
 import { bootVolumeName, syncCollection } from './traktorNmlLibrary'
 import {
@@ -1463,15 +1467,16 @@ function registerIpc(): void {
       }),
     },
   })
-  registerRekordboxCuesIpc({
+  const cueSourceHost = {
     collection: rekordboxCollectionPath,
-    queue: rekordboxQueue,
-    applyQuietly: () => applyRekordboxQueueQuietly(),
-    beginMoment: moments.begin,
-    flow: () => activeCueFlow(getSettings()),
     beatGrid: cachedBeatGrid,
     words: cachedCueWaveWords,
     fine: cachedCueWaveFine,
+  }
+  registerCuesIpc({
+    collection: rekordboxCollectionPath,
+    beginMoment: moments.begin,
+    flow: () => activeCueFlow(getSettings()),
     provisional: provisionalCues,
     twins: (file) =>
       libraryTracksOf(
@@ -1484,22 +1489,43 @@ function registerIpc(): void {
         },
         { realPath: (p: string) => realpathSync(p) },
       ),
-    engine: {
-      libraryDir: () => getSettings().engineLibraryDir,
-      queue: engineCueQueue,
-      applyQuietly: () => applyEngineCueQueueQuietly(),
-      words: cachedCueWaveWords,
-    },
-    traktor: {
-      nml: traktorReadPath,
-      bootVolume: () => bootVolumeName(),
-      queue: traktorCueQueue,
-      applyQuietly: applyTraktorCueQueueAsking,
-      words: cachedCueWaveWords,
-    },
-    serato: {
-      queue: seratoCueQueue,
-      applyQuietly: () => programQueues.serato.applyQuietly(),
+    sources: {
+      rekordbox: rekordboxCueSource({
+        ...cueSourceHost,
+        queue: rekordboxQueue,
+        applyQuietly: () => applyRekordboxQueueQuietly(),
+      }),
+      engine: engineCueSource(
+        {
+          libraryDir: () => getSettings().engineLibraryDir,
+          queue: engineCueQueue,
+          applyQuietly: () => applyEngineCueQueueQuietly(),
+          words: cachedCueWaveWords,
+        },
+        rekordboxCollectionPath,
+        cachedBeatGrid,
+      ),
+      traktor: traktorCueSource(
+        {
+          nml: traktorReadPath,
+          bootVolume: () => bootVolumeName(),
+          queue: traktorCueQueue,
+          applyQuietly: applyTraktorCueQueueAsking,
+          words: cachedCueWaveWords,
+          fine: cachedCueWaveFine,
+        },
+        rekordboxCollectionPath,
+        cachedBeatGrid,
+      ),
+      serato: seratoCueSource(
+        {
+          queue: seratoCueQueue,
+          applyQuietly: () => programQueues.serato.applyQuietly(),
+          words: cachedCueWaveWords,
+          fine: cachedCueWaveFine,
+        },
+        rekordboxCollectionPath,
+      ),
     },
   })
   registerCueTasteIpc({

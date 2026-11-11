@@ -988,7 +988,7 @@ function Editing({
   }))
   const [saveFailed, setSaveFailed] = useState(false)
   const send = async (reqs: SaveCuesRequest[]): Promise<boolean> => {
-    const saved = await window.api.saveRekordboxCues(reqs).then(
+    const saved = await window.api.cues.save(reqs).then(
       () => true,
       () => false,
     )
@@ -2082,8 +2082,8 @@ export function CuesSection({
           forgetDraft(cue.contentId)
           setRound((n) => n + 1)
           if (queued !== null)
-            void window.api
-              .undoRekordboxCues(cue.contentId)
+            void window.api.cues
+              .undo(cue.contentId)
               .then(() => queryClient.invalidateQueries({ queryKey: ['rekordbox-queued-cues'] }))
         }}
       />

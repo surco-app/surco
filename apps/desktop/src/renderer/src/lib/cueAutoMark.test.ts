@@ -73,17 +73,15 @@ function setup({
   profile?: CueProfile | null
 } = {}) {
   const api = installApi({
-    rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>(async (id) =>
-      id in reads ? reads[id] : { ...READ, contentId: id },
-    ),
-    rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async (id) => queued[id] ?? null),
-    rekordboxCueWaveDetail: vi.fn<Api['rekordboxCueWaveDetail']>(async (id) =>
-      id in words ? words[id] : WORDS,
-    ),
-    rekordboxCueDropInput: vi.fn<Api['rekordboxCueDropInput']>(
-      async (id) => dropInputs[id] ?? null,
-    ),
-    saveRekordboxCues: vi.fn<Api['saveRekordboxCues']>(async () => {}),
+    cues: {
+      trackCues: vi.fn<Api['cues']['trackCues']>(async (id) =>
+        id in reads ? reads[id] : { ...READ, contentId: id },
+      ),
+      queued: vi.fn<Api['cues']['queued']>(async (id) => queued[id] ?? null),
+      waveDetail: vi.fn<Api['cues']['waveDetail']>(async (id) => (id in words ? words[id] : WORDS)),
+      dropInput: vi.fn<Api['cues']['dropInput']>(async (id) => dropInputs[id] ?? null),
+      save: vi.fn<Api['cues']['save']>(async () => {}),
+    },
     cueProfile: vi.fn<Api['cueProfile']>(async () => ({
       profile,
       edits: { count: 0, sinceLearn: 0, corrected: 0 },
@@ -102,7 +100,7 @@ describe('Auto marcar over several tracks', () => {
     expect(autoMarkOf('103')).toEqual(proposed(bar(64)))
     expect(autoMarkOf('104')).toEqual(proposed(bar(32), bar(96)))
     expect([...unsavedCueTracks()]).toEqual([])
-    expect(api.saveRekordboxCues).not.toHaveBeenCalled()
+    expect(api.cues.save).not.toHaveBeenCalled()
   })
 
   it('reads each track’s grid, phrases and detailed wave, as the editor’s button does', async () => {
@@ -253,7 +251,7 @@ describe('accepting Auto marcar over several tracks', () => {
     expect(saved['104'].wanted).toEqual(editorAccept(MIX_IN.id, [bar(32), bar(96)]))
     expect(saved['103']).toMatchObject({ path: '/m/103.wav', label: '103', fingerprint: 'f0' })
     expect(autoMarkOf('103')).toBeUndefined()
-    expect(api.saveRekordboxCues).not.toHaveBeenCalled()
+    expect(api.cues.save).not.toHaveBeenCalled()
   })
 
   it('places the cues of the flow picked for the batch, not a fixed one', async () => {
@@ -317,7 +315,7 @@ describe('Auto marcar over several Engine DJ tracks', () => {
     })
     await autoMarkTracks(client, ['engine:4'])
     expect(dropProposals).toHaveBeenCalledWith(REKORDBOX_INPUT, DROP_MODEL)
-    expect(api.rekordboxCueWaveDetail).not.toHaveBeenCalled()
+    expect(api.cues.waveDetail).not.toHaveBeenCalled()
   })
 
   it('moves each proposal onto the nearest Engine beat, where the cue will be saved, even when Engine counts its bars from another beat', async () => {
@@ -348,6 +346,6 @@ describe('Auto marcar over a Traktor track', () => {
     })
     await autoMarkTracks(client, ['traktor:HD/:m/:t.wav'])
     expect(dropProposals).toHaveBeenCalledWith(input, DROP_MODEL)
-    expect(api.rekordboxCueWaveDetail).not.toHaveBeenCalled()
+    expect(api.cues.waveDetail).not.toHaveBeenCalled()
   })
 })

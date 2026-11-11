@@ -18,7 +18,8 @@ vi.mock('./rekordboxDb', async (importOriginal) => {
 import type { WebContents } from 'electron'
 import type { DjEditMain } from '../shared/djApi'
 import type { CollectionTrack, RekordboxPlaylistEdit, SourcePlaylistEntry } from '../shared/types'
-import { registerRekordboxCuesIpc } from './rekordboxCuesIpc'
+import { registerCuesIpc } from './cuesIpc'
+import { rekordboxCueSource } from './rekordboxCueSource'
 import { openRekordboxDb, rekordboxRawKey } from './rekordboxDb'
 import { ORGANISE_FIXTURE, writeRekordboxPlaylistFixture } from './rekordboxPlaylistsFixture'
 import {
@@ -180,15 +181,23 @@ describe('rekordboxEdit', () => {
   it('reads a track opened in the editor, its cues and its playlists, with the stretched key, since the two back to back held the main process for 210 ms', async () => {
     const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')
     writeRekordboxPlaylistFixture(path, ORGANISE_FIXTURE)
-    registerRekordboxCuesIpc({
+    registerCuesIpc({
       collection: () => path,
-      queue: { enqueue: vi.fn(), cuesOp: vi.fn(), drop: vi.fn() },
-      applyQuietly: vi.fn(),
       flow: () => MY_FLOW,
-      beatGrid: async () => null,
-      words: async () => null,
       provisional: { add: vi.fn() },
       twins: async () => ({}),
+      sources: {
+        rekordbox: rekordboxCueSource({
+          collection: () => path,
+          queue: { enqueue: vi.fn(), cuesOp: vi.fn(), drop: vi.fn() },
+          applyQuietly: vi.fn(),
+          beatGrid: async () => null,
+          words: async () => null,
+        }),
+        engine: null,
+        traktor: null,
+        serato: null,
+      },
     })
     const read = rekordboxRead(
       () => path,
@@ -197,7 +206,7 @@ describe('rekordboxEdit', () => {
     )
     const key = await rekordboxRawKey(path)
     vi.mocked(openRekordboxDb).mockClear()
-    await Promise.resolve(handler('rekordbox:trackCues')({}, 'c1')).catch(() => null)
+    await Promise.resolve(handler('cues:trackCues')({}, 'c1')).catch(() => null)
     await Promise.resolve(read.membership(['/m/a.wav'])).catch(() => null)
     expect(vi.mocked(openRekordboxDb).mock.calls).toEqual([
       [path, { readonly: true, key }],

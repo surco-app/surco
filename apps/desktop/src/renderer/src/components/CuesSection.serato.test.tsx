@@ -11,7 +11,7 @@ import { resetEditorSections } from '../hooks/useEditorSections'
 import '../i18n'
 import { resetCueSession } from '../lib/cueSession'
 import { SettingsProvider } from '../lib/settingsContext'
-import { installApi } from '../test/api'
+import { type ApiOverrides, installApi } from '../test/api'
 import { hoverTooltip } from '../test/tooltip'
 import { CuesSection } from './CuesSection'
 
@@ -51,18 +51,21 @@ const READ: TrackCues = {
   gridFingerprint: '',
 }
 
-function setup(read: TrackCues | null | Error = READ, running = false, over: Partial<Api> = {}) {
-  const saveRekordboxCues = vi.fn<Api['saveRekordboxCues']>(async () => {})
+function setup(read: TrackCues | null | Error = READ, running = false, over: ApiOverrides = {}) {
+  const saveRekordboxCues = vi.fn<Api['cues']['save']>(async () => {})
   const seratoRunning = vi.fn<Api['seratoRunning']>(async () => running)
   installApi({
-    rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>(async () => {
-      if (read instanceof Error) throw read
-      return read
-    }),
-    rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async () => null),
-    saveRekordboxCues,
     seratoRunning,
     ...over,
+    cues: {
+      trackCues: vi.fn<Api['cues']['trackCues']>(async () => {
+        if (read instanceof Error) throw read
+        return read
+      }),
+      queued: vi.fn<Api['cues']['queued']>(async () => null),
+      save: saveRekordboxCues,
+      ...over.cues,
+    },
   })
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   render(
@@ -133,10 +136,12 @@ describe('CuesSection on a Serato track', () => {
 
   it('warns while Serato is open over edits already waiting in the queue', async () => {
     setup(READ, true, {
-      rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async () => ({
-        wanted: [{ ms: bar(64), kind: HOT_KINDS[1], color: 1 }],
-        fingerprint: 'f0',
-      })),
+      cues: {
+        queued: vi.fn<Api['cues']['queued']>(async () => ({
+          wanted: [{ ms: bar(64), kind: HOT_KINDS[1], color: 1 }],
+          fingerprint: 'f0',
+        })),
+      },
     })
     expect(await screen.findByTestId('cues-serato-waiting')).toBeInTheDocument()
   })
@@ -209,9 +214,11 @@ describe('CuesSection on a Serato track', () => {
 
   it('says in Serato’s words when the save did not go through', async () => {
     setup(READ, false, {
-      saveRekordboxCues: vi.fn<Api['saveRekordboxCues']>(async () => {
-        throw new Error('ipc down')
-      }),
+      cues: {
+        save: vi.fn<Api['cues']['save']>(async () => {
+          throw new Error('ipc down')
+        }),
+      },
     })
     await ready()
     markAt(bar(64))
@@ -224,10 +231,12 @@ describe('CuesSection on a Serato track', () => {
 
   it('says a queued save is out of date once the track changed in Serato', async () => {
     setup(READ, false, {
-      rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async () => ({
-        wanted: [{ ms: bar(64), kind: HOT_KINDS[1], color: 1 }],
-        fingerprint: 'older',
-      })),
+      cues: {
+        queued: vi.fn<Api['cues']['queued']>(async () => ({
+          wanted: [{ ms: bar(64), kind: HOT_KINDS[1], color: 1 }],
+          fingerprint: 'older',
+        })),
+      },
     })
     expect(await screen.findByTestId('cues-queued-stale')).toHaveTextContent(
       'The queued save was made before the track changed in Serato and is out of date. You see what Serato holds now.',
@@ -236,7 +245,9 @@ describe('CuesSection on a Serato track', () => {
 
   it('says Surco could not read the audio when Auto mark has nothing to detect on', async () => {
     setup(READ, false, {
-      rekordboxCueDropInput: vi.fn<Api['rekordboxCueDropInput']>(async () => null),
+      cues: {
+        dropInput: vi.fn<Api['cues']['dropInput']>(async () => null),
+      },
     })
     await ready()
     fireEvent.click(screen.getByTestId('cues-auto-mark'))

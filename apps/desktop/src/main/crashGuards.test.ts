@@ -80,11 +80,11 @@ describe('logHandlerFailures', () => {
     const logger = { error: vi.fn() }
     logHandlerFailures(ipc, logger)
     const boom = new Error('boom')
-    ipc.handle('rekordbox:saveCues', () => {
+    ipc.handle('cues:save', () => {
       throw boom
     })
-    await expect(ipc.call('rekordbox:saveCues')).rejects.toBe(boom)
-    expect(logger.error).toHaveBeenCalledWith('ipc rekordbox:saveCues failed', boom)
+    await expect(ipc.call('cues:save')).rejects.toBe(boom)
+    expect(logger.error).toHaveBeenCalledWith('ipc cues:save failed', boom)
   })
 
   // A read the user walked away from is cancelled on purpose: logging it put a stack trace

@@ -19,7 +19,7 @@ import i18n from '../i18n'
 import { startDraft } from '../lib/cueDraft'
 import { autoMarkOf, keepDraft, resetCueSession } from '../lib/cueSession'
 import { SettingsProvider } from '../lib/settingsContext'
-import { installApi } from '../test/api'
+import { type ApiOverrides, installApi } from '../test/api'
 import { saveAllItem } from '../test/cueSaveAll'
 import { hoverTooltip } from '../test/tooltip'
 import { CuesSection } from './CuesSection'
@@ -69,21 +69,24 @@ beforeEach(() => {
 function setup(
   read: TrackCues | null | Error = READ,
   contentId = 'engine:4',
-  dropInput: Api['rekordboxCueDropInput'] = async () => null,
-  over: Partial<Api> = {},
+  dropInput: Api['cues']['dropInput'] = async () => null,
+  over: ApiOverrides = {},
   traktorNmlPath = '',
   path = '/m/e.wav',
 ) {
-  const saveRekordboxCues = vi.fn<Api['saveRekordboxCues']>(async () => {})
+  const saveRekordboxCues = vi.fn<Api['cues']['save']>(async () => {})
   installApi({
-    rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>(async () => {
-      if (read instanceof Error) throw read
-      return read
-    }),
-    rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async () => null),
-    rekordboxCueDropInput: vi.fn(dropInput),
-    saveRekordboxCues,
     ...over,
+    cues: {
+      trackCues: vi.fn<Api['cues']['trackCues']>(async () => {
+        if (read instanceof Error) throw read
+        return read
+      }),
+      queued: vi.fn<Api['cues']['queued']>(async () => null),
+      dropInput: vi.fn(dropInput),
+      save: saveRekordboxCues,
+      ...over.cues,
+    },
   })
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   render(
@@ -111,7 +114,7 @@ describe('CuesSection on an Engine DJ track', () => {
   })
 
   it('reads nothing for Auto marcar until the DJ asks, so opening an Engine track never decodes it', async () => {
-    const dropInput = vi.fn<Api['rekordboxCueDropInput']>(async () => null)
+    const dropInput = vi.fn<Api['cues']['dropInput']>(async () => null)
     setup(READ, 'engine:4', dropInput)
     await ready()
     expect(screen.getByTestId('cues-auto-mark')).toBeEnabled()
@@ -292,9 +295,9 @@ describe('CuesSection on an Engine DJ track', () => {
   })
 
   it('greys out the grid row of a file whose clock in this program is not measured yet', async () => {
-    const getGridFit = vi.fn<Api['rekordboxGridFit']>(async () => ({ bpm: 120, firstMs: 0 }))
+    const getGridFit = vi.fn<Api['cues']['gridFit']>(async () => ({ bpm: 120, firstMs: 0 }))
     setup(READ, undefined, undefined, {}, '', '/m/e.mp3')
-    window.api.rekordboxGridFit = getGridFit
+    window.api.cues.gridFit = getGridFit
     await ready()
     fireEvent.click(screen.getByTestId('section-maximize'))
     await waitFor(() => expect(screen.getByTestId('cues-grid')).toBeInTheDocument())
@@ -305,7 +308,7 @@ describe('CuesSection on an Engine DJ track', () => {
 
   it('saves to Engine DJ the cues Auto carried onto the fitted beats, as in rekordbox', async () => {
     const cues = [{ id: 'h1', ms: bar(16), kind: 1, color: 1 }]
-    const rekordboxGridFit = vi.fn<Api['rekordboxGridFit']>(async () => ({
+    const rekordboxGridFit = vi.fn<Api['cues']['gridFit']>(async () => ({
       bpm: 120,
       firstMs: 454,
     }))
@@ -313,7 +316,7 @@ describe('CuesSection on an Engine DJ track', () => {
       { ...READ, clockLeadMs: 0, cues },
       READ.contentId,
       async () => null,
-      { rekordboxGridFit },
+      { cues: { gridFit: rekordboxGridFit } },
     )
     await ready()
     fireEvent.click(screen.getByTestId('section-maximize'))

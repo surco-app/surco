@@ -55,17 +55,19 @@ function setup(
   twins: Record<string, LibraryTracks> = { '/m/g.wav': { traktor: TRAKTOR } },
   reads: Record<string, Partial<TrackCues>> = {},
 ) {
-  const saveRekordboxCues = vi.fn<Api['saveRekordboxCues']>(async () => {})
-  const rekordboxCueTwins = vi.fn<Api['rekordboxCueTwins']>(async (file) => twins[file] ?? {})
+  const saveRekordboxCues = vi.fn<Api['cues']['save']>(async () => {})
+  const rekordboxCueTwins = vi.fn<Api['cues']['twins']>(async (file) => twins[file] ?? {})
   installApi({
-    rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>(async (id) => ({
-      ...READ,
-      contentId: id,
-      ...reads[id],
-    })),
-    rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async () => null),
-    rekordboxCueTwins,
-    saveRekordboxCues,
+    cues: {
+      trackCues: vi.fn<Api['cues']['trackCues']>(async (id) => ({
+        ...READ,
+        contentId: id,
+        ...reads[id],
+      })),
+      queued: vi.fn<Api['cues']['queued']>(async () => null),
+      twins: rekordboxCueTwins,
+      save: saveRekordboxCues,
+    },
   })
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   const tree = (over: Partial<Settings>) => (

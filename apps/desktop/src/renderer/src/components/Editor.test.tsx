@@ -120,6 +120,7 @@ beforeEach(() => {
     // whether to show its paste button; default to empty and a no-op unsubscribe.
     hasClipboardImage: vi.fn().mockResolvedValue(false),
     onWindowFocus: vi.fn(() => () => {}),
+    cues: {},
     dj: djReads({
       rekordbox: { available: vi.fn<ProgramReads['available']>().mockResolvedValue(false) },
     }),
@@ -339,10 +340,12 @@ function renderEditor(
 
 describe('Editor cues section', () => {
   beforeEach(() => {
+    Object.assign((window as unknown as { api: { cues: object } }).api.cues, {
+      trackCues: vi.fn<Api['cues']['trackCues']>().mockResolvedValue(null),
+      queued: vi.fn<Api['cues']['queued']>().mockResolvedValue(null),
+      waveDetail: vi.fn<Api['cues']['waveDetail']>().mockResolvedValue(null),
+    })
     Object.assign((window as unknown as { api: object }).api, {
-      rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>().mockResolvedValue(null),
-      rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>().mockResolvedValue(null),
-      rekordboxCueWaveDetail: vi.fn<Api['rekordboxCueWaveDetail']>().mockResolvedValue(null),
       cueProfile: vi.fn<Api['cueProfile']>().mockResolvedValue({
         profile: null,
         edits: { count: 0, sinceLearn: 0, corrected: 0 },
@@ -354,8 +357,8 @@ describe('Editor cues section', () => {
 
   it('maximizes into the full cue editor with the track title, artist, BPM and key', async () => {
     const grid = Array.from({ length: 800 }, (_, i) => ({ ms: i * 500, beat: (i % 4) + 1 }))
-    Object.assign((window as unknown as { api: object }).api, {
-      rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>().mockResolvedValue({
+    Object.assign((window as unknown as { api: { cues: object } }).api.cues, {
+      trackCues: vi.fn<Api['cues']['trackCues']>().mockResolvedValue({
         contentId: '103',
         analysed: true,
         grid,
@@ -387,8 +390,8 @@ describe('Editor cues section', () => {
 
   it('heads the full cue editor with the rekordbox artwork when the file carries none, as the list row does', async () => {
     const grid = Array.from({ length: 800 }, (_, i) => ({ ms: i * 500, beat: (i % 4) + 1 }))
-    Object.assign((window as unknown as { api: object }).api, {
-      rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>().mockResolvedValue({
+    Object.assign((window as unknown as { api: { cues: object } }).api.cues, {
+      trackCues: vi.fn<Api['cues']['trackCues']>().mockResolvedValue({
         contentId: '103',
         analysed: true,
         grid,

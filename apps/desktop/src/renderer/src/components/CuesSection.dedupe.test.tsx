@@ -44,10 +44,12 @@ const READ: TrackCues = {
 
 describe('CuesSection drops', () => {
   it('keeps one drop when the same position is added twice', async () => {
-    const saveRekordboxCues = vi.fn<Api['saveRekordboxCues']>(async () => {})
+    const saveRekordboxCues = vi.fn<Api['cues']['save']>(async () => {})
     installApi({
-      rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>(async () => READ),
-      saveRekordboxCues,
+      cues: {
+        trackCues: vi.fn<Api['cues']['trackCues']>(async () => READ),
+        save: saveRekordboxCues,
+      },
     })
     render(
       <QueryClientProvider client={new QueryClient()}>

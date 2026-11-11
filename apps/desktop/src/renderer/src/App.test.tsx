@@ -45,7 +45,7 @@ import { spellingGroups } from './lib/musicSpelling'
 import { createQueryClient } from './lib/queryClient'
 import { clearDraggedRows, draggedRows, TREE_NODE_TYPE } from './lib/reorderDrag'
 import { usbExportStore } from './lib/usbExportStore'
-import { djReads, type ProgramReads } from './test/api'
+import { type ApiOverrides, djReads, type ProgramReads } from './test/api'
 import { fakeDataTransfer, installDragEvent } from './test/drag'
 
 // Pass-through triage that counts sort runs, so the derived-list stability test can
@@ -491,19 +491,21 @@ describe('App unsaved cues', () => {
           }),
         },
       }),
-      rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>(async () => ({
-        contentId: '103',
-        analysed: true,
-        grid: [],
-        strong: [],
-        phrases: [],
-        cues: [],
-        wave: null,
-        durationMs: 1000,
-        fingerprint: 'f0',
-        gridFingerprint: '',
-      })),
-      rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async () => null),
+      cues: {
+        trackCues: vi.fn<Api['cues']['trackCues']>(async () => ({
+          contentId: '103',
+          analysed: true,
+          grid: [],
+          strong: [],
+          phrases: [],
+          cues: [],
+          wave: null,
+          durationMs: 1000,
+          fingerprint: 'f0',
+          gridFingerprint: '',
+        })),
+        queued: vi.fn<Api['cues']['queued']>(async () => null),
+      },
     })
     await renderApp()
     const queued = { wanted: [], fingerprint: 'f0' }
@@ -523,7 +525,7 @@ describe('App unsaved cues', () => {
 describe('App Engine DJ cues', () => {
   afterEach(resetCueSession)
 
-  function openEngine(over: Partial<Api> = {}) {
+  function openEngine(over: ApiOverrides = {}) {
     setApi({
       pickFiles: vi.fn().mockResolvedValue(['/m/a.wav', '/m/b.wav']),
       ...over,
@@ -547,8 +549,8 @@ describe('App Engine DJ cues', () => {
   }
 
   it('opens the cue editor on a row of an Engine DJ playlist, reading the cues of its Engine track', async () => {
-    const read = vi.fn<Api['rekordboxTrackCues']>().mockResolvedValue(null)
-    openEngine({ rekordboxTrackCues: read })
+    const read = vi.fn<Api['cues']['trackCues']>().mockResolvedValue(null)
+    openEngine({ cues: { trackCues: read } })
     await renderApp()
     fireEvent.click(await screen.findByTestId('add-files'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
@@ -575,7 +577,9 @@ describe('App Engine DJ cues', () => {
   it('converts only the picked rows of a library playlist, and nothing when none is picked', async () => {
     const processTrack = vi.fn().mockResolvedValue({ outputPath: '/m/a.aiff', inPlace: false })
     openEngine({
-      rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>().mockResolvedValue(null),
+      cues: {
+        trackCues: vi.fn<Api['cues']['trackCues']>().mockResolvedValue(null),
+      },
       readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
       processTrack,
     })
@@ -594,10 +598,12 @@ describe('App Engine DJ cues', () => {
   })
 
   it('runs Auto marcar over the selected rows of an Engine DJ playlist by their Engine track', async () => {
-    const dropInput = vi.fn<Api['rekordboxCueDropInput']>().mockResolvedValue(null)
+    const dropInput = vi.fn<Api['cues']['dropInput']>().mockResolvedValue(null)
     openEngine({
-      rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>().mockResolvedValue(null),
-      rekordboxCueDropInput: dropInput,
+      cues: {
+        trackCues: vi.fn<Api['cues']['trackCues']>().mockResolvedValue(null),
+        dropInput: dropInput,
+      },
     })
     await openFriday()
     const rows = screen.getAllByTestId('track-row')
@@ -724,7 +730,7 @@ const stick = (uuid: string, by: UsbVolume['holder']['by']): UsbVolume => ({
 describe('App Traktor cues', () => {
   afterEach(resetCueSession)
 
-  function openTraktor(over: Partial<Api> = {}) {
+  function openTraktor(over: ApiOverrides = {}) {
     setApi({
       pickFiles: vi.fn().mockResolvedValue(['/m/a.wav', '/m/b.wav']),
       ...over,
@@ -748,8 +754,8 @@ describe('App Traktor cues', () => {
   }
 
   it('opens the cue editor on a row of a Traktor playlist, reading the cues of its collection entry', async () => {
-    const read = vi.fn<Api['rekordboxTrackCues']>().mockResolvedValue(null)
-    openTraktor({ rekordboxTrackCues: read })
+    const read = vi.fn<Api['cues']['trackCues']>().mockResolvedValue(null)
+    openTraktor({ cues: { trackCues: read } })
     await renderApp()
     fireEvent.click(await screen.findByTestId('add-files'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
@@ -854,7 +860,7 @@ describe('App Traktor cues', () => {
 describe('App Serato cues', () => {
   afterEach(resetCueSession)
 
-  function openSerato(over: Partial<Api> = {}) {
+  function openSerato(over: ApiOverrides = {}) {
     setApi({
       ...over,
       dj: djReads(
@@ -884,7 +890,7 @@ describe('App Serato cues', () => {
   }
 
   it('opens the cue editor on a row of a Serato crate in Serato’s words, and keeps the track from being converted', async () => {
-    const read = vi.fn<Api['rekordboxTrackCues']>().mockResolvedValue({
+    const read = vi.fn<Api['cues']['trackCues']>().mockResolvedValue({
       contentId: 'serato:/m/b.wav',
       analysed: false,
       grid: [],
@@ -897,8 +903,10 @@ describe('App Serato cues', () => {
       gridFingerprint: '',
     })
     openSerato({
-      rekordboxTrackCues: read,
-      rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>().mockResolvedValue(null),
+      cues: {
+        trackCues: read,
+        queued: vi.fn<Api['cues']['queued']>().mockResolvedValue(null),
+      },
     })
     await openFriday()
     fireEvent.click(screen.getAllByTestId('track-row')[1])
@@ -978,7 +986,7 @@ describe('App Serato cues', () => {
   })
 
   it('offers Auto mark over several Serato rows, as over any other program’s', async () => {
-    openSerato({ rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>().mockResolvedValue(null) })
+    openSerato({ cues: { trackCues: vi.fn<Api['cues']['trackCues']>().mockResolvedValue(null) } })
     await openFriday()
     const rows = screen.getAllByTestId('track-row')
     fireEvent.click(rows[0])
@@ -1200,7 +1208,7 @@ describe('App column widths', () => {
 })
 
 describe('App results column fold', () => {
-  function withEngine(over: Partial<Api> = {}): ReturnType<typeof vi.fn> {
+  function withEngine(over: ApiOverrides = {}): ReturnType<typeof vi.fn> {
     const saveSettings = vi.fn((patch: Partial<Settings>) =>
       Promise.resolve({ ...settings(), ...patch }),
     )
@@ -3006,8 +3014,8 @@ describe('App source playlists', () => {
   }
 
   it('runs Auto marcar over the selected rows of the open playlist by their rekordbox entry', async () => {
-    const read = vi.fn<Api['rekordboxTrackCues']>().mockResolvedValue(null)
-    await openFactory({ rekordboxTrackCues: read })
+    const read = vi.fn<Api['cues']['trackCues']>().mockResolvedValue(null)
+    await openFactory({ cues: { trackCues: read } })
     const rows = screen.getAllByTestId('track-row')
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { metaKey: true })
@@ -3663,7 +3671,7 @@ describe('App source playlists', () => {
               .mockImplementation(async (id) => (id === ALL_TRACKS_ID ? ENTRIES : [ENTRIES[0]])),
           },
         }),
-        rekordboxGridVerdict: vi.fn<Api['rekordboxGridVerdict']>().mockResolvedValue(null),
+        cues: { gridVerdict: vi.fn<Api['cues']['gridVerdict']>().mockResolvedValue(null) },
       }
 
       function scrollPast(rows: HTMLElement[]): void {
@@ -4920,7 +4928,7 @@ describe('App background measuring', () => {
   // the rest: with Analyze on import it runs by itself, without the user having to know that
   // picking the filter is what starts it.
   function openRekordbox(autoAnalyze: boolean) {
-    const rekordboxGridVerdict = vi.fn<Api['rekordboxGridVerdict']>().mockResolvedValue(null)
+    const rekordboxGridVerdict = vi.fn<Api['cues']['gridVerdict']>().mockResolvedValue(null)
     setApi({
       getSettings: vi.fn().mockResolvedValue(settings({ autoAnalyze })),
       dj: djReads({
@@ -4935,7 +4943,9 @@ describe('App background measuring', () => {
           ]),
         },
       }),
-      rekordboxGridVerdict,
+      cues: {
+        gridVerdict: rekordboxGridVerdict,
+      },
     })
     return rekordboxGridVerdict
   }
@@ -7207,7 +7217,9 @@ describe('App Apple Music library filter', () => {
           ]),
         },
       }),
-      rekordboxGridVerdict: vi.fn<Api['rekordboxGridVerdict']>().mockResolvedValue(null),
+      cues: {
+        gridVerdict: vi.fn<Api['cues']['gridVerdict']>().mockResolvedValue(null),
+      },
     })
   }
 
@@ -10323,7 +10335,7 @@ describe('automatic session from the tree', () => {
     meta: { bpm: '140' },
     preview: { title: 'Silent Tears', artist: 'Jessy', durationSec: 300, cues: [] },
   }
-  function openRekordboxTree(over: Partial<Api> = {}, tree: SourceNode[] = TREE) {
+  function openRekordboxTree(over: ApiOverrides = {}, tree: SourceNode[] = TREE) {
     const edit = vi
       .fn<ProgramReads['editPlaylist']>()
       .mockResolvedValueOnce({ applied: true, createdId: 'new' })

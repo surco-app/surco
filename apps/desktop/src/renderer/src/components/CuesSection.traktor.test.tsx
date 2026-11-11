@@ -14,7 +14,7 @@ import { resetEditorSections } from '../hooks/useEditorSections'
 import { startDraft } from '../lib/cueDraft'
 import { cueDraftKey, keepDraft, resetCueSession } from '../lib/cueSession'
 import { SettingsProvider } from '../lib/settingsContext'
-import { installApi } from '../test/api'
+import { type ApiOverrides, installApi } from '../test/api'
 import { saveAllItem } from '../test/cueSaveAll'
 import { hoverTooltip } from '../test/tooltip'
 import { CuesSection } from './CuesSection'
@@ -64,22 +64,25 @@ beforeEach(() => {
 function setup(
   read: TrackCues | null | Error = READ,
   contentId = 'traktor:HD/:m/:e.wav',
-  dropInput: Api['rekordboxCueDropInput'] = async () => null,
+  dropInput: Api['cues']['dropInput'] = async () => null,
   canSave = true,
-  over: Partial<Api> = {},
+  over: ApiOverrides = {},
   path = '/m/e.wav',
 ) {
-  const saveRekordboxCues = vi.fn<Api['saveRekordboxCues']>(async () => {})
+  const saveRekordboxCues = vi.fn<Api['cues']['save']>(async () => {})
   installApi({
-    rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>(async () => {
-      if (read instanceof Error) throw read
-      return read
-    }),
-    rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async () => null),
-    rekordboxCueDropInput: vi.fn(dropInput),
-    saveRekordboxCues,
     traktorCanSave: async () => canSave,
     ...over,
+    cues: {
+      trackCues: vi.fn<Api['cues']['trackCues']>(async () => {
+        if (read instanceof Error) throw read
+        return read
+      }),
+      queued: vi.fn<Api['cues']['queued']>(async () => null),
+      dropInput: vi.fn(dropInput),
+      save: saveRekordboxCues,
+      ...over.cues,
+    },
   })
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   render(
@@ -101,23 +104,23 @@ const markAt = (ms: number) => {
 
 describe('CuesSection on a Traktor track', () => {
   it("measures Surco's own grid when Traktor has not analysed the track, as it does for rekordbox", async () => {
-    const rekordboxSurcoGrid = vi.fn<Api['rekordboxSurcoGrid']>(async () => null)
+    const rekordboxSurcoGrid = vi.fn<Api['cues']['surcoGrid']>(async () => null)
     setup({ ...READ, analysed: false, grid: [] }, 'traktor:HD/:m/:e.wav', async () => null, true, {
-      rekordboxSurcoGrid,
+      cues: {
+        surcoGrid: rekordboxSurcoGrid,
+      },
     })
     await waitFor(() => expect(rekordboxSurcoGrid).toHaveBeenCalledWith('traktor:HD/:m/:e.wav'))
   })
 
   it("never measures Surco's grid for an Engine DJ track Engine has not analysed", async () => {
-    const rekordboxSurcoGrid = vi.fn<Api['rekordboxSurcoGrid']>(async () => null)
+    const rekordboxSurcoGrid = vi.fn<Api['cues']['surcoGrid']>(async () => null)
     setup(
       { ...READ, contentId: 'engine:4', analysed: false, grid: [] },
       'engine:4',
       async () => null,
       true,
-      {
-        rekordboxSurcoGrid,
-      },
+      { cues: { surcoGrid: rekordboxSurcoGrid } },
     )
     await waitFor(() => expect(screen.getByTestId('cues-unanalysed')).toBeInTheDocument())
     expect(rekordboxSurcoGrid).not.toHaveBeenCalled()
@@ -130,7 +133,7 @@ describe('CuesSection on a Traktor track', () => {
   })
 
   it('asks main for what to detect on, since Traktor keeps no phrases', async () => {
-    const dropInput = vi.fn<Api['rekordboxCueDropInput']>(async () => null)
+    const dropInput = vi.fn<Api['cues']['dropInput']>(async () => null)
     setup(READ, 'traktor:HD/:m/:e.wav', dropInput)
     await ready()
     fireEvent.click(screen.getByTestId('cues-auto-mark'))
@@ -163,8 +166,10 @@ describe('CuesSection on a Traktor track', () => {
     const other = '/Users/dj/Traktor 4.0.2/collection.nml'
     const asked = vi.fn(async (path: string) => (path === chosen ? other : null))
     installApi({
-      rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>(async () => READ),
-      rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async () => null),
+      cues: {
+        trackCues: vi.fn<Api['cues']['trackCues']>(async () => READ),
+        queued: vi.fn<Api['cues']['queued']>(async () => null),
+      },
       traktorCanSave: async () => true,
       traktorCollectionInUse: asked,
     })
@@ -189,8 +194,10 @@ describe('CuesSection on a Traktor track', () => {
   it('lets the DJ save as soon as the collection is confirmed in Settings, without restarting', async () => {
     let confirmed = false
     installApi({
-      rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>(async () => READ),
-      rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async () => null),
+      cues: {
+        trackCues: vi.fn<Api['cues']['trackCues']>(async () => READ),
+        queued: vi.fn<Api['cues']['queued']>(async () => null),
+      },
       traktorCanSave: vi.fn(async () => confirmed),
     })
     const client = new QueryClient({
@@ -329,9 +336,9 @@ describe('CuesSection on a Traktor track', () => {
   })
 
   it('greys out the grid row of a file whose clock in this program is not measured yet', async () => {
-    const getGridFit = vi.fn<Api['rekordboxGridFit']>(async () => ({ bpm: 120, firstMs: 0 }))
+    const getGridFit = vi.fn<Api['cues']['gridFit']>(async () => ({ bpm: 120, firstMs: 0 }))
     setup(READ, undefined, undefined, true, {}, '/m/e.mp3')
-    window.api.rekordboxGridFit = getGridFit
+    window.api.cues.gridFit = getGridFit
     await ready()
     fireEvent.click(screen.getByTestId('section-maximize'))
     await waitFor(() => expect(screen.getByTestId('cues-grid')).toBeInTheDocument())
@@ -342,7 +349,7 @@ describe('CuesSection on a Traktor track', () => {
 
   it('saves to Traktor the cues Auto carried onto the fitted beats, as in rekordbox', async () => {
     const cues = [{ id: 'h1', ms: bar(16), kind: 1, color: 1 }]
-    const rekordboxGridFit = vi.fn<Api['rekordboxGridFit']>(async () => ({
+    const rekordboxGridFit = vi.fn<Api['cues']['gridFit']>(async () => ({
       bpm: 120,
       firstMs: 454,
     }))
@@ -351,7 +358,7 @@ describe('CuesSection on a Traktor track', () => {
       READ.contentId,
       async () => null,
       true,
-      { rekordboxGridFit },
+      { cues: { gridFit: rekordboxGridFit } },
     )
     await ready()
     fireEvent.click(screen.getByTestId('section-maximize'))

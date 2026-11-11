@@ -21,14 +21,52 @@ import { flowOutcome } from '../shared/cueRules'
 import type { DropInput } from '../shared/dropDetect'
 import type { TrackCues } from '../shared/types'
 import { anlzFile, pqtzSection, pwv5Section } from './anlzFixture'
+import { registerCuesIpc } from './cuesIpc'
+import { engineCueSource } from './engineCueSource'
 import { analysedTrack } from './enginePerformanceFixture'
 import { writeEngineLibraryFixture } from './enginePlaylistsFixture'
-import { registerRekordboxCuesIpc } from './rekordboxCuesIpc'
+import { rekordboxCueSource } from './rekordboxCueSource'
 import { openRekordboxDb } from './rekordboxDb'
 import { ORGANISE_FIXTURE, writeRekordboxPlaylistFixture } from './rekordboxPlaylistsFixture'
 import type { RekordboxQueue } from './rekordboxQueue'
 import type { CuesOp } from './rekordboxQueueOps'
+import { seratoCueSource } from './seratoCueSource'
+import { traktorCueSource } from './traktorCueSource'
 import { readTraktorTrackCues } from './traktorCues'
+
+function registerWithSources(host: {
+  collection: () => string
+  queue: Parameters<typeof rekordboxCueSource>[0]['queue']
+  applyQuietly: () => void
+  beginMoment?: Parameters<typeof registerCuesIpc>[0]['beginMoment']
+  flow: Parameters<typeof registerCuesIpc>[0]['flow']
+  beatGrid: Parameters<typeof rekordboxCueSource>[0]['beatGrid']
+  words: Parameters<typeof rekordboxCueSource>[0]['words']
+  fine?: Parameters<typeof rekordboxCueSource>[0]['fine']
+  provisional: Parameters<typeof registerCuesIpc>[0]['provisional']
+  twins: Parameters<typeof registerCuesIpc>[0]['twins']
+  engine?: Parameters<typeof engineCueSource>[0]
+  traktor?: Omit<Parameters<typeof traktorCueSource>[0], 'fine'>
+  serato?: Omit<Parameters<typeof seratoCueSource>[0], 'words' | 'fine'>
+}): void {
+  registerCuesIpc({
+    collection: host.collection,
+    beginMoment: host.beginMoment,
+    flow: host.flow,
+    provisional: host.provisional,
+    twins: host.twins,
+    sources: {
+      rekordbox: rekordboxCueSource(host),
+      traktor: host.traktor
+        ? traktorCueSource({ ...host.traktor, fine: host.fine }, host.collection, host.beatGrid)
+        : null,
+      engine: host.engine ? engineCueSource(host.engine, host.collection, host.beatGrid) : null,
+      serato: host.serato
+        ? seratoCueSource({ ...host.serato, words: host.words, fine: host.fine }, host.collection)
+        : null,
+    },
+  })
+}
 
 function handler(channel: string): (...args: unknown[]) => unknown {
   const call = [...vi.mocked(ipcMain.handle).mock.calls].reverse().find(([n]) => n === channel)
@@ -101,7 +139,7 @@ async function completableCollection(): Promise<string> {
 
 const BEATS = Array.from({ length: 800 }, (_, i) => i * 500)
 
-describe('registerRekordboxCuesIpc', () => {
+describe('registerCuesIpc', () => {
   async function detailCollection(withWave: boolean): Promise<string> {
     const dir = await mkdtemp(join(tmpdir(), 'surco-rbdetail-'))
     const path = join(dir, 'master.db')
@@ -130,7 +168,7 @@ describe('registerRekordboxCuesIpc', () => {
     const path = await detailCollection(true)
     const before = readFileSync(path)
     vi.mocked(openRekordboxDb).mockClear()
-    registerRekordboxCuesIpc({
+    registerWithSources({
       collection: () => path,
       queue: queue(),
       applyQuietly: quietly(),
@@ -140,7 +178,7 @@ describe('registerRekordboxCuesIpc', () => {
       provisional: { add: vi.fn() },
       twins: async () => ({}),
     })
-    const words = (await handler('rekordbox:cueWaveDetail')({}, '101')) as Uint16Array
+    const words = (await handler('cues:waveDetail')({}, '101')) as Uint16Array
     expect([...words]).toEqual([(7 << 13) | (31 << 2), (7 << 7) | (16 << 2)])
     expect(vi.mocked(openRekordboxDb)).toHaveBeenCalled()
     expect(vi.mocked(openRekordboxDb).mock.calls.every(([, o]) => o?.readonly === true)).toBe(true)
@@ -158,7 +196,7 @@ describe('registerRekordboxCuesIpc', () => {
     })
     mkdirSync(join(dir, 'share'), { recursive: true })
     writeFileSync(join(dir, 'x.EXT'), anlzFile(pwv5Section([{ r: 7, g: 0, b: 0, h: 31 }])))
-    registerRekordboxCuesIpc({
+    registerWithSources({
       collection: () => path,
       queue: queue(),
       applyQuietly: quietly(),
@@ -168,12 +206,12 @@ describe('registerRekordboxCuesIpc', () => {
       provisional: { add: vi.fn() },
       twins: async () => ({}),
     })
-    expect(await handler('rekordbox:cueWaveDetail')({}, '101')).toBeNull()
+    expect(await handler('cues:waveDetail')({}, '101')).toBeNull()
   })
 
   it('has no detail for a track without PWV5, an unknown track or no collection', async () => {
     const path = await detailCollection(false)
-    registerRekordboxCuesIpc({
+    registerWithSources({
       collection: () => path,
       queue: queue(),
       applyQuietly: quietly(),
@@ -183,9 +221,9 @@ describe('registerRekordboxCuesIpc', () => {
       provisional: { add: vi.fn() },
       twins: async () => ({}),
     })
-    expect(await handler('rekordbox:cueWaveDetail')({}, '101')).toBeNull()
-    expect(await handler('rekordbox:cueWaveDetail')({}, '999')).toBeNull()
-    registerRekordboxCuesIpc({
+    expect(await handler('cues:waveDetail')({}, '101')).toBeNull()
+    expect(await handler('cues:waveDetail')({}, '999')).toBeNull()
+    registerWithSources({
       collection: () => '',
       queue: queue(),
       applyQuietly: quietly(),
@@ -195,7 +233,7 @@ describe('registerRekordboxCuesIpc', () => {
       provisional: { add: vi.fn() },
       twins: async () => ({}),
     })
-    expect(await handler('rekordbox:cueWaveDetail')({}, '101')).toBeNull()
+    expect(await handler('cues:waveDetail')({}, '101')).toBeNull()
   })
 
   it('counts what the active flow would complete, none with Solo CALL', async () => {
@@ -210,16 +248,16 @@ describe('registerRekordboxCuesIpc', () => {
       provisional: { add: vi.fn() },
       twins: async () => ({}),
     })
-    registerRekordboxCuesIpc(host(() => MY_FLOW))
+    registerWithSources(host(() => MY_FLOW))
     expect(await handler('rekordbox:countCompletable')({})).toBe(1)
-    registerRekordboxCuesIpc(host(() => CALLS_ONLY))
+    registerWithSources(host(() => CALLS_ONLY))
     expect(await handler('rekordbox:countCompletable')({})).toBe(0)
   })
 
   it('queues the cues and applies quietly, since "Guardar en rekordbox" never asks', async () => {
     const enqueue = vi.fn<RekordboxQueue['enqueue']>(() => true)
     const applyQuietly = quietly()
-    registerRekordboxCuesIpc({
+    registerWithSources({
       collection: () => '/c/master.db',
       queue: queue({ enqueue }),
       applyQuietly,
@@ -236,7 +274,7 @@ describe('registerRekordboxCuesIpc', () => {
       wanted: [{ ms: 1000, kind: 0, color: null }],
       fingerprint: 'f',
     }
-    await handler('rekordbox:saveCues')({}, [req])
+    await handler('cues:save')({}, [req])
     expect(enqueue).toHaveBeenCalledWith([expect.objectContaining({ kind: 'cues', ...req })])
     expect(applyQuietly).toHaveBeenCalled()
   })
@@ -248,7 +286,7 @@ describe('registerRekordboxCuesIpc', () => {
       order.push('enqueue')
       return true
     })
-    registerRekordboxCuesIpc({
+    registerWithSources({
       collection: () => '/c/master.db',
       queue: queue({ enqueue }),
       applyQuietly: quietly(),
@@ -259,7 +297,7 @@ describe('registerRekordboxCuesIpc', () => {
       provisional: { add: vi.fn() },
       twins: async () => ({}),
     })
-    await handler('rekordbox:saveCues')({}, [
+    await handler('cues:save')({}, [
       {
         contentId: '103',
         path: '/m/a.wav',
@@ -274,7 +312,7 @@ describe('registerRekordboxCuesIpc', () => {
 
   it('a cue save starts a momento only in the programs it writes, so the others keep theirs', async () => {
     const beginMoment = vi.fn()
-    registerRekordboxCuesIpc({
+    registerWithSources({
       collection: () => '/c/master.db',
       queue: queue(),
       applyQuietly: quietly(),
@@ -291,7 +329,7 @@ describe('registerRekordboxCuesIpc', () => {
         words: async () => null,
       },
     })
-    await handler('rekordbox:saveCues')({}, [
+    await handler('cues:save')({}, [
       {
         contentId: 'engine:4',
         path: '/m/e.mp3',
@@ -306,7 +344,7 @@ describe('registerRekordboxCuesIpc', () => {
   it('never queues an Engine track’s cues on rekordbox when Engine is not wired', async () => {
     const enqueue = vi.fn<RekordboxQueue['enqueue']>(() => true)
     const beginMoment = vi.fn()
-    registerRekordboxCuesIpc({
+    registerWithSources({
       collection: () => '/c/master.db',
       queue: queue({ enqueue }),
       applyQuietly: quietly(),
@@ -317,7 +355,7 @@ describe('registerRekordboxCuesIpc', () => {
       provisional: { add: vi.fn() },
       twins: async () => ({}),
     })
-    await handler('rekordbox:saveCues')({}, [
+    await handler('cues:save')({}, [
       {
         contentId: 'engine:4',
         path: '/m/e.mp3',
@@ -333,7 +371,7 @@ describe('registerRekordboxCuesIpc', () => {
   it('never queues a Traktor track’s cues on rekordbox when Traktor is not wired', async () => {
     const enqueue = vi.fn<RekordboxQueue['enqueue']>(() => true)
     const beginMoment = vi.fn()
-    registerRekordboxCuesIpc({
+    registerWithSources({
       collection: () => '/c/master.db',
       queue: queue({ enqueue }),
       applyQuietly: quietly(),
@@ -344,7 +382,7 @@ describe('registerRekordboxCuesIpc', () => {
       provisional: { add: vi.fn() },
       twins: async () => ({}),
     })
-    await handler('rekordbox:saveCues')({}, [
+    await handler('cues:save')({}, [
       {
         contentId: 'traktor:HD/:Music/:t.aiff',
         path: '/Music/t.aiff',
@@ -360,7 +398,7 @@ describe('registerRekordboxCuesIpc', () => {
   it('queues several tracks together and applies once, so master.db is written in one batch', async () => {
     const enqueue = vi.fn<RekordboxQueue['enqueue']>(() => true)
     const applyQuietly = quietly()
-    registerRekordboxCuesIpc({
+    registerWithSources({
       collection: () => '/c/master.db',
       queue: queue({ enqueue }),
       applyQuietly,
@@ -377,7 +415,7 @@ describe('registerRekordboxCuesIpc', () => {
       wanted: [{ ms: 1000, kind: 0, color: null }],
       fingerprint: 'f',
     })
-    await handler('rekordbox:saveCues')({}, [req('103'), req('104')])
+    await handler('cues:save')({}, [req('103'), req('104')])
     expect(enqueue).toHaveBeenCalledTimes(1)
     const [ops] = enqueue.mock.calls[0]
     expect(ops.map((o) => (o.kind === 'cues' ? o.contentId : null))).toEqual(['103', '104'])
@@ -387,7 +425,7 @@ describe('registerRekordboxCuesIpc', () => {
 
   it('tells the editor how far rekordbox runs ahead of what it plays on a LAME MP3, so a cue set by ear lands where it was heard', async () => {
     const path = await collectionWithMp3('LAME')
-    registerRekordboxCuesIpc({
+    registerWithSources({
       collection: () => path,
       queue: queue(),
       applyQuietly: quietly(),
@@ -397,12 +435,12 @@ describe('registerRekordboxCuesIpc', () => {
       provisional: { add: vi.fn() },
       twins: async () => ({}),
     })
-    expect(await handler('rekordbox:auditionLead')({}, '101')).toBeCloseTo((1152 / 44100) * 1000, 3)
+    expect(await handler('cues:auditionLead')({}, '101')).toBeCloseTo((1152 / 44100) * 1000, 3)
   })
 
   it('gives no lead for an MP3 the editor already plays in step with rekordbox', async () => {
     const path = await collectionWithMp3('Lavc')
-    registerRekordboxCuesIpc({
+    registerWithSources({
       collection: () => path,
       queue: queue(),
       applyQuietly: quietly(),
@@ -412,12 +450,12 @@ describe('registerRekordboxCuesIpc', () => {
       provisional: { add: vi.fn() },
       twins: async () => ({}),
     })
-    expect(await handler('rekordbox:auditionLead')({}, '101')).toBe(0)
+    expect(await handler('cues:auditionLead')({}, '101')).toBe(0)
   })
 
   it('gives no lead for a track the collection does not hold', async () => {
     const path = await collectionWithMp3('LAME')
-    registerRekordboxCuesIpc({
+    registerWithSources({
       collection: () => path,
       queue: queue(),
       applyQuietly: quietly(),
@@ -427,13 +465,13 @@ describe('registerRekordboxCuesIpc', () => {
       provisional: { add: vi.fn() },
       twins: async () => ({}),
     })
-    expect(await handler('rekordbox:auditionLead')({}, '999')).toBe(0)
+    expect(await handler('cues:auditionLead')({}, '999')).toBe(0)
   })
 
   it('lays a grid of its own on a track rekordbox has not analysed, in rekordbox time, so the editor can place cues without opening rekordbox', async () => {
     const path = await collectionWithMp3('LAME')
     const beatGrid = vi.fn(async () => ({ bpm: 120, firstMs: 100 }))
-    registerRekordboxCuesIpc({
+    registerWithSources({
       collection: () => path,
       queue: queue(),
       applyQuietly: quietly(),
@@ -443,7 +481,7 @@ describe('registerRekordboxCuesIpc', () => {
       provisional: { add: vi.fn() },
       twins: async () => ({}),
     })
-    const out = (await handler('rekordbox:surcoGrid')({}, '101')) as {
+    const out = (await handler('cues:surcoGrid')({}, '101')) as {
       bpm: number
       grid: { ms: number; beat: number }[]
       words: Uint16Array | null
@@ -465,7 +503,7 @@ describe('registerRekordboxCuesIpc', () => {
         c.ID === '101' ? { ...c, FolderPath: join(dir, 'track.wav') } : c,
       ),
     })
-    registerRekordboxCuesIpc({
+    registerWithSources({
       collection: () => path,
       queue: queue(),
       applyQuietly: quietly(),
@@ -475,12 +513,12 @@ describe('registerRekordboxCuesIpc', () => {
       provisional: { add: vi.fn() },
       twins: async () => ({}),
     })
-    expect(await handler('rekordbox:gridFit')({}, '101')).toEqual({ bpm: 150, firstMs: 12 })
+    expect(await handler('cues:gridFit')({}, '101')).toEqual({ bpm: 150, firstMs: 12 })
   })
 
   it('moves the phases measured along the track onto rekordbox time too, so the offset near the playhead is in its clock', async () => {
     const path = await collectionWithMp3('LAME')
-    registerRekordboxCuesIpc({
+    registerWithSources({
       collection: () => path,
       queue: queue(),
       applyQuietly: quietly(),
@@ -490,7 +528,7 @@ describe('registerRekordboxCuesIpc', () => {
       provisional: { add: vi.fn() },
       twins: async () => ({}),
     })
-    const out = (await handler('rekordbox:gridFit')({}, '101')) as {
+    const out = (await handler('cues:gridFit')({}, '101')) as {
       phases: { ms: number; firstMs: number }[]
     }
     const lead = ((1152 + 576 + 529) / 44100) * 1000 + 2
@@ -500,7 +538,7 @@ describe('registerRekordboxCuesIpc', () => {
 
   it('moves the fit of a LAME MP3 by the frames rekordbox skips, so Auto lands on its beats and not 51 ms early', async () => {
     const path = await collectionWithMp3('LAME')
-    registerRekordboxCuesIpc({
+    registerWithSources({
       collection: () => path,
       queue: queue(),
       applyQuietly: quietly(),
@@ -510,7 +548,7 @@ describe('registerRekordboxCuesIpc', () => {
       provisional: { add: vi.fn() },
       twins: async () => ({}),
     })
-    const out = (await handler('rekordbox:gridFit')({}, '101')) as { bpm: number; firstMs: number }
+    const out = (await handler('cues:gridFit')({}, '101')) as { bpm: number; firstMs: number }
     expect(out.bpm).toBe(120)
     expect(out.firstMs).toBeCloseTo(100 + ((1152 + 576 + 529) / 44100) * 1000 + 2, 3)
   })
@@ -518,7 +556,7 @@ describe('registerRekordboxCuesIpc', () => {
   it('measures for the bad-grid filter behind whatever the DJ opens, and for Auto ahead of it', async () => {
     const path = await completableCollection()
     const beatGrid = vi.fn(async () => ({ bpm: 120, firstMs: 0 }))
-    registerRekordboxCuesIpc({
+    registerWithSources({
       collection: () => path,
       queue: queue(),
       applyQuietly: quietly(),
@@ -528,16 +566,16 @@ describe('registerRekordboxCuesIpc', () => {
       provisional: { add: vi.fn() },
       twins: async () => ({}),
     })
-    await handler('rekordbox:gridVerdict')({}, '101')
+    await handler('cues:gridVerdict')({}, '101')
     expect(beatGrid).toHaveBeenLastCalledWith(expect.any(String), 'low')
-    await handler('rekordbox:gridFit')({}, '101')
+    await handler('cues:gridFit')({}, '101')
     expect(beatGrid).toHaveBeenLastCalledWith(expect.any(String), 'high')
   })
 
   it('judges the rekordbox grid of a track against the beats Surco measured, for the filter of bad grids', async () => {
     const path = await completableCollection()
     const phases = Array.from({ length: 40 }, (_, i) => ({ ms: 3200 + i * 6400, firstMs: 90 }))
-    registerRekordboxCuesIpc({
+    registerWithSources({
       collection: () => path,
       queue: queue(),
       applyQuietly: quietly(),
@@ -547,14 +585,14 @@ describe('registerRekordboxCuesIpc', () => {
       provisional: { add: vi.fn() },
       twins: async () => ({}),
     })
-    expect(await handler('rekordbox:gridVerdict')({}, '101')).toEqual({ kind: 'shifted', ms: -92 })
-    expect(await handler('rekordbox:gridVerdict')({}, 'engine:4')).toBeNull()
+    expect(await handler('cues:gridVerdict')({}, '101')).toEqual({ kind: 'shifted', ms: -92 })
+    expect(await handler('cues:gridVerdict')({}, 'engine:4')).toBeNull()
   })
 
   it('fits nothing when Surco hears no beat or the track is not in the collection', async () => {
     const path = await collectionWithMp3('LAME')
     const beatGrid = vi.fn(async () => null)
-    registerRekordboxCuesIpc({
+    registerWithSources({
       collection: () => path,
       queue: queue(),
       applyQuietly: quietly(),
@@ -564,14 +602,14 @@ describe('registerRekordboxCuesIpc', () => {
       provisional: { add: vi.fn() },
       twins: async () => ({}),
     })
-    expect(await handler('rekordbox:gridFit')({}, '101')).toBeNull()
-    expect(await handler('rekordbox:gridFit')({}, '999')).toBeNull()
+    expect(await handler('cues:gridFit')({}, '101')).toBeNull()
+    expect(await handler('cues:gridFit')({}, '999')).toBeNull()
     expect(beatGrid).toHaveBeenCalledTimes(1)
   })
 
   it('draws the wave Surco measured, moved into rekordbox time so the kick sits on its beat line', async () => {
     const path = await collectionWithMp3('LAME')
-    registerRekordboxCuesIpc({
+    registerWithSources({
       collection: () => path,
       queue: queue(),
       applyQuietly: quietly(),
@@ -581,14 +619,14 @@ describe('registerRekordboxCuesIpc', () => {
       provisional: { add: vi.fn() },
       twins: async () => ({}),
     })
-    const out = (await handler('rekordbox:surcoGrid')({}, '101')) as { words: Uint16Array }
+    const out = (await handler('cues:surcoGrid')({}, '101')) as { words: Uint16Array }
     const lead = Math.round((((1152 + 576 + 529) / 44100) * 1000 * 150) / 1000)
     expect(Array.from(out.words)).toEqual([...Array(lead).fill(0), 7, 8, 9])
   })
 
   it('offers no grid for a track Surco hears no beat in', async () => {
     const path = await collectionWithMp3('LAME')
-    registerRekordboxCuesIpc({
+    registerWithSources({
       collection: () => path,
       queue: queue(),
       applyQuietly: quietly(),
@@ -598,13 +636,13 @@ describe('registerRekordboxCuesIpc', () => {
       provisional: { add: vi.fn() },
       twins: async () => ({}),
     })
-    expect(await handler('rekordbox:surcoGrid')({}, '101')).toBeNull()
+    expect(await handler('cues:surcoGrid')({}, '101')).toBeNull()
   })
 
   it('offers no grid for a track the collection does not hold, without decoding anything', async () => {
     const path = await collectionWithMp3('LAME')
     const beatGrid = vi.fn(async () => ({ bpm: 120, firstMs: 100 }))
-    registerRekordboxCuesIpc({
+    registerWithSources({
       collection: () => path,
       queue: queue(),
       applyQuietly: quietly(),
@@ -614,13 +652,13 @@ describe('registerRekordboxCuesIpc', () => {
       provisional: { add: vi.fn() },
       twins: async () => ({}),
     })
-    expect(await handler('rekordbox:surcoGrid')({}, '999')).toBeNull()
+    expect(await handler('cues:surcoGrid')({}, '999')).toBeNull()
     expect(beatGrid).not.toHaveBeenCalled()
   })
 
   it("remembers a save made on Surco's grid, so the cues can be moved onto rekordbox's once it analyses the track", () => {
     const add = vi.fn()
-    registerRekordboxCuesIpc({
+    registerWithSources({
       collection: () => '/c/master.db',
       queue: queue({ enqueue: vi.fn(() => true) }),
       applyQuietly: quietly(),
@@ -631,7 +669,7 @@ describe('registerRekordboxCuesIpc', () => {
       twins: async () => ({}),
     })
     const wanted = [{ ms: 1000, kind: 0, color: null }]
-    handler('rekordbox:saveCues')({}, [
+    handler('cues:save')({}, [
       {
         contentId: '103',
         path: '/m/a.wav',
@@ -647,7 +685,7 @@ describe('registerRekordboxCuesIpc', () => {
   })
 
   it('reads nothing without a collection', async () => {
-    registerRekordboxCuesIpc({
+    registerWithSources({
       collection: () => '',
       queue: queue(),
       applyQuietly: quietly(),
@@ -657,15 +695,15 @@ describe('registerRekordboxCuesIpc', () => {
       provisional: { add: vi.fn() },
       twins: async () => ({}),
     })
-    expect(await handler('rekordbox:trackCues')({}, '103')).toBeNull()
+    expect(await handler('cues:trackCues')({}, '103')).toBeNull()
     expect(handler('rekordbox:countCompletable')({})).toBe(0)
-    expect(await handler('rekordbox:auditionLead')({}, '103')).toBe(0)
+    expect(await handler('cues:auditionLead')({}, '103')).toBe(0)
   })
 
   it('reports the cues queued for a track with the fingerprint they were built on, or null when nothing waits', () => {
     const wanted = [{ ms: 1000, kind: 0, color: null }]
     const queued = savedOp({ wanted })
-    registerRekordboxCuesIpc({
+    registerWithSources({
       collection: () => '/c/master.db',
       queue: queue({ cuesOp: (id) => (id === '103' ? queued : undefined) }),
       applyQuietly: quietly(),
@@ -676,11 +714,11 @@ describe('registerRekordboxCuesIpc', () => {
       twins: async () => ({}),
     })
     return Promise.all([
-      expect(handler('rekordbox:queuedCues')({}, '103')).resolves.toEqual({
+      expect(handler('cues:queued')({}, '103')).resolves.toEqual({
         wanted,
         fingerprint: 'F1',
       }),
-      expect(handler('rekordbox:queuedCues')({}, '104')).resolves.toBeNull(),
+      expect(handler('cues:queued')({}, '104')).resolves.toBeNull(),
     ])
   })
 
@@ -688,7 +726,7 @@ describe('registerRekordboxCuesIpc', () => {
     const wanted = [{ ms: 1000, kind: 0, color: null }]
     const grid = { bpm: 120.5, anchorMs: 40 }
     const queued = savedOp({ wanted, grid, gridFingerprint: 'g0' })
-    registerRekordboxCuesIpc({
+    registerWithSources({
       collection: () => '/c/master.db',
       queue: queue({ cuesOp: (id) => (id === '103' ? queued : undefined) }),
       applyQuietly: quietly(),
@@ -698,7 +736,7 @@ describe('registerRekordboxCuesIpc', () => {
       provisional: { add: vi.fn() },
       twins: async () => ({}),
     })
-    expect(await handler('rekordbox:queuedCues')({}, '103')).toEqual({
+    expect(await handler('cues:queued')({}, '103')).toEqual({
       wanted,
       fingerprint: 'F1',
       grid,
@@ -718,8 +756,8 @@ describe('registerRekordboxCuesIpc', () => {
       provisional: { add: vi.fn() },
       twins: async () => ({}),
     })
-    registerRekordboxCuesIpc(host(() => undefined))
-    const read = (await handler('rekordbox:trackCues')({}, '101')) as TrackCues
+    registerWithSources(host(() => undefined))
+    const read = (await handler('cues:trackCues')({}, '101')) as TrackCues
     const legacy = savedOp({
       id: 'c2',
       contentId: '101',
@@ -727,7 +765,7 @@ describe('registerRekordboxCuesIpc', () => {
       previousDrops: [128000],
       fingerprint: read.fingerprint,
     })
-    registerRekordboxCuesIpc(host(() => legacy))
+    registerWithSources(host(() => legacy))
     const out = flowOutcome({
       existing: read.cues,
       drops: [128000],
@@ -738,14 +776,14 @@ describe('registerRekordboxCuesIpc', () => {
       flow: MY_FLOW,
     })
     if (out.status !== 'plan') throw new Error('the legacy save must plan')
-    expect(await handler('rekordbox:queuedCues')({}, '101')).toEqual({
+    expect(await handler('cues:queued')({}, '101')).toEqual({
       wanted: out.wanted,
       fingerprint: read.fingerprint,
     })
   })
 
   it('reports no queued save for an operation with neither a wanted set nor drops, which apply refuses', async () => {
-    registerRekordboxCuesIpc({
+    registerWithSources({
       collection: () => '/c/master.db',
       queue: queue({ cuesOp: () => savedOp() }),
       applyQuietly: quietly(),
@@ -755,12 +793,12 @@ describe('registerRekordboxCuesIpc', () => {
       provisional: { add: vi.fn() },
       twins: async () => ({}),
     })
-    expect(await handler('rekordbox:queuedCues')({}, '103')).toBeNull()
+    expect(await handler('cues:queued')({}, '103')).toBeNull()
   })
 
   it('takes a queued save back by dropping its operation', () => {
     const drop = vi.fn<RekordboxQueue['drop']>()
-    registerRekordboxCuesIpc({
+    registerWithSources({
       collection: () => '/c/master.db',
       queue: queue({ cuesOp: () => savedOp({ drops: [1000] }), drop }),
       applyQuietly: quietly(),
@@ -770,13 +808,13 @@ describe('registerRekordboxCuesIpc', () => {
       provisional: { add: vi.fn() },
       twins: async () => ({}),
     })
-    handler('rekordbox:undoCues')({}, '103')
+    handler('cues:undo')({}, '103')
     expect(drop).toHaveBeenCalledWith('c1')
   })
 
   it('does nothing when no save waits for the track', () => {
     const drop = vi.fn<RekordboxQueue['drop']>()
-    registerRekordboxCuesIpc({
+    registerWithSources({
       collection: () => '/c/master.db',
       queue: queue({ drop }),
       applyQuietly: quietly(),
@@ -786,12 +824,12 @@ describe('registerRekordboxCuesIpc', () => {
       provisional: { add: vi.fn() },
       twins: async () => ({}),
     })
-    handler('rekordbox:undoCues')({}, '103')
+    handler('cues:undo')({}, '103')
     expect(drop).not.toHaveBeenCalled()
   })
 })
 
-describe('registerRekordboxCuesIpc for Engine DJ tracks', () => {
+describe('registerCuesIpc for Engine DJ tracks', () => {
   async function engineLibrary(): Promise<string> {
     const dir = await mkdtemp(join(tmpdir(), 'surco-enginecuesipc-'))
     writeEngineLibraryFixture(dir, {
@@ -811,7 +849,7 @@ describe('registerRekordboxCuesIpc for Engine DJ tracks', () => {
   ) {
     const applyRekordbox = quietly()
     const applyEngine = quietly()
-    registerRekordboxCuesIpc({
+    registerWithSources({
       collection: () => '/c/master.db',
       queue: rekordbox,
       applyQuietly: applyRekordbox,
@@ -827,20 +865,20 @@ describe('registerRekordboxCuesIpc for Engine DJ tracks', () => {
 
   it('reads an Engine row’s cues from the Engine DJ library, so the editor opens on Engine tracks too', async () => {
     register(await engineLibrary())
-    const read = (await handler('rekordbox:trackCues')({}, 'engine:4')) as TrackCues
+    const read = (await handler('cues:trackCues')({}, 'engine:4')) as TrackCues
     expect(read.cues).toEqual([{ id: '0', ms: 8000, kind: 1, color: 22 }])
     expect(read.analysed).toBe(true)
   })
 
   it('has no detailed wave for an Engine track, since Engine keeps only a coarse overview', async () => {
     register(await engineLibrary())
-    expect(await handler('rekordbox:cueWaveDetail')({}, 'engine:4')).toBeNull()
+    expect(await handler('cues:waveDetail')({}, 'engine:4')).toBeNull()
   })
 
   it('gives Auto marcar an Engine track’s structure to detect on, from Surco’s own words when rekordbox lacks the file', async () => {
     const dir = await engineLibrary()
     const { words } = register(dir)
-    const input = (await handler('rekordbox:cueDropInput')({}, 'engine:4')) as DropInput
+    const input = (await handler('cues:dropInput')({}, 'engine:4')) as DropInput
     expect(words).toHaveBeenCalledWith(join(dir, '../Music/e.mp3'))
     expect([...input.words]).toEqual([4, 8])
     expect(input.phrases).toEqual([])
@@ -848,7 +886,7 @@ describe('registerRekordboxCuesIpc for Engine DJ tracks', () => {
 
   it('has no drop input for a rekordbox track, whose words the editor already reads', async () => {
     const { words } = register(await engineLibrary())
-    expect(await handler('rekordbox:cueDropInput')({}, '103')).toBeNull()
+    expect(await handler('cues:dropInput')({}, '103')).toBeNull()
     expect(words).not.toHaveBeenCalled()
   })
 
@@ -863,7 +901,7 @@ describe('registerRekordboxCuesIpc for Engine DJ tracks', () => {
       wanted: [],
       fingerprint: 'F',
     })
-    await handler('rekordbox:saveCues')({}, [req('103'), req('engine:4')])
+    await handler('cues:save')({}, [req('103'), req('engine:4')])
     expect(
       vi.mocked(rekordbox.enqueue).mock.calls[0][0].map((o) => (o as CuesOp).contentId),
     ).toEqual(['103'])
@@ -882,16 +920,16 @@ describe('registerRekordboxCuesIpc for Engine DJ tracks', () => {
       drop,
     })
     register(await engineLibrary(), queue(), engine)
-    expect(await handler('rekordbox:queuedCues')({}, 'engine:4')).toEqual({
+    expect(await handler('cues:queued')({}, 'engine:4')).toEqual({
       wanted,
       fingerprint: 'F1',
     })
-    handler('rekordbox:undoCues')({}, 'engine:4')
+    handler('cues:undo')({}, 'engine:4')
     expect(drop).toHaveBeenCalledWith('c1')
   })
 })
 
-describe('registerRekordboxCuesIpc for Traktor tracks', () => {
+describe('registerCuesIpc for Traktor tracks', () => {
   const ID = 'traktor:HD/:Music/:t.aiff'
   const NML = `<NML VERSION="20"><COLLECTION ENTRIES="1"><ENTRY TITLE="t"><LOCATION DIR="/:Music/:" FILE="t.aiff" VOLUME="HD" VOLUMEID="v"></LOCATION><INFO PLAYTIME_FLOAT="60.0"></INFO><CUE_V2 NAME="AutoGrid" TYPE="4" START="0.000000" LEN="0" REPEATS="-1" HOTCUE="-1"><GRID BPM="120.000000"></GRID></CUE_V2><CUE_V2 NAME="n.n." TYPE="0" START="8000.000000" LEN="0" REPEATS="-1" HOTCUE="1"></CUE_V2></ENTRY></COLLECTION></NML>`
 
@@ -908,7 +946,7 @@ describe('registerRekordboxCuesIpc for Traktor tracks', () => {
     words = vi.fn(async (_file: string) => new Uint16Array([4, 8])),
   ) {
     const applyTraktor = quietly()
-    registerRekordboxCuesIpc({
+    registerWithSources({
       collection: () => '',
       queue: rekordbox,
       applyQuietly: quietly(),
@@ -930,20 +968,20 @@ describe('registerRekordboxCuesIpc for Traktor tracks', () => {
 
   it('reads a Traktor row’s cues from the collection the tab reads, so the editor opens on Traktor tracks', async () => {
     register(await collectionFile())
-    const read = (await handler('rekordbox:trackCues')({}, ID)) as TrackCues
+    const read = (await handler('cues:trackCues')({}, ID)) as TrackCues
     expect(read.cues).toEqual([{ id: '1', ms: 8000, kind: 1, color: expect.any(Number) }])
     expect(read.analysed).toBe(true)
   })
 
   it('draws the zoomed wave from the audio of the file, since Traktor keeps none Surco can read', async () => {
     const { words } = register(await collectionFile())
-    expect([...((await handler('rekordbox:cueWaveDetail')({}, ID)) as Uint16Array)]).toEqual([4, 8])
+    expect([...((await handler('cues:waveDetail')({}, ID)) as Uint16Array)]).toEqual([4, 8])
     expect(words).toHaveBeenCalledWith('/Music/t.aiff')
   })
 
   it('gives Auto mark the Traktor grid and the audio words when rekordbox lacks the file', async () => {
     register(await collectionFile())
-    const input = (await handler('rekordbox:cueDropInput')({}, ID)) as DropInput
+    const input = (await handler('cues:dropInput')({}, ID)) as DropInput
     expect(input.phrases).toEqual([])
     expect(input.grid[1]).toEqual({ ms: 500, beat: 2 })
   })
@@ -955,7 +993,7 @@ describe('registerRekordboxCuesIpc for Traktor tracks', () => {
     const traktor = queue()
     const { applyTraktor } = register(await collectionFile(), rekordbox, traktor)
     const req = { contentId: ID, path: '/Music/t.aiff', label: 't', wanted: [], fingerprint: 'F' }
-    await handler('rekordbox:saveCues')({ sender: {} }, [req])
+    await handler('cues:save')({ sender: {} }, [req])
     expect(vi.mocked(traktor.enqueue).mock.calls[0][0].map((o) => (o as CuesOp).contentId)).toEqual(
       [ID],
     )
@@ -971,8 +1009,8 @@ describe('registerRekordboxCuesIpc for Traktor tracks', () => {
       drop,
     })
     register(await collectionFile(), queue(), traktor)
-    expect(await handler('rekordbox:queuedCues')({}, ID)).toEqual({ wanted, fingerprint: 'F1' })
-    handler('rekordbox:undoCues')({}, ID)
+    expect(await handler('cues:queued')({}, ID)).toEqual({ wanted, fingerprint: 'F1' })
+    handler('cues:undo')({}, ID)
     expect(drop).toHaveBeenCalledWith('c1')
   })
 
@@ -993,7 +1031,7 @@ describe('registerRekordboxCuesIpc for Traktor tracks', () => {
       const traktorWords = vi.fn(async (_file: string) => new Uint16Array([4, 8]))
       const engineWords = vi.fn(async (_file: string) => new Uint16Array([1, 2]))
       const beatGrid = vi.fn(over.beatGrid ?? (async () => ({ bpm: 120, firstMs: 100 })))
-      registerRekordboxCuesIpc({
+      registerWithSources({
         collection: () => '/no/master.db',
         queue: over.rekordbox ?? queue(),
         applyQuietly: quietly(),
@@ -1021,7 +1059,7 @@ describe('registerRekordboxCuesIpc for Traktor tracks', () => {
 
     it('reads a Traktor track’s cues from the NML, not from rekordbox', async () => {
       const { nml } = await registerAll()
-      const read = await handler('rekordbox:trackCues')({}, ID)
+      const read = await handler('cues:trackCues')({}, ID)
       expect(read).not.toBeNull()
       expect(read).toEqual({
         ...readTraktorTrackCues(readFileSync(nml, 'utf8'), ID),
@@ -1031,31 +1069,29 @@ describe('registerRekordboxCuesIpc for Traktor tracks', () => {
 
     it('draws a Traktor track’s detailed wave from its file', async () => {
       const { traktorWords, engineWords } = await registerAll()
-      expect([...((await handler('rekordbox:cueWaveDetail')({}, ID)) as Uint16Array)]).toEqual([
-        4, 8,
-      ])
+      expect([...((await handler('cues:waveDetail')({}, ID)) as Uint16Array)]).toEqual([4, 8])
       expect(traktorWords).toHaveBeenCalledWith('/Music/t.aiff')
       expect(engineWords).not.toHaveBeenCalled()
     })
 
     it('gives a rekordbox track no drop input', async () => {
       const { traktorWords, engineWords } = await registerAll()
-      expect(await handler('rekordbox:cueDropInput')({}, '123')).toBeNull()
+      expect(await handler('cues:dropInput')({}, '123')).toBeNull()
       expect(traktorWords).not.toHaveBeenCalled()
       expect(engineWords).not.toHaveBeenCalled()
     })
 
     it('leads no audition for a Traktor or Engine track', async () => {
       await registerAll()
-      expect(await handler('rekordbox:auditionLead')({}, ID)).toBe(0)
-      expect(await handler('rekordbox:auditionLead')({}, 'engine:4')).toBe(0)
+      expect(await handler('cues:auditionLead')({}, ID)).toBe(0)
+      expect(await handler('cues:auditionLead')({}, 'engine:4')).toBe(0)
     })
 
     it('fits the grid of an uncompressed Traktor file on the clock Surco draws, as rekordbox does for PCM', async () => {
       const { beatGrid } = await registerAll()
-      expect(await handler('rekordbox:gridFit')({}, ID)).toMatchObject({ bpm: 120, firstMs: 102 })
+      expect(await handler('cues:gridFit')({}, ID)).toMatchObject({ bpm: 120, firstMs: 102 })
       expect(beatGrid).toHaveBeenLastCalledWith(expect.stringMatching(/t\.aiff$/), 'high')
-      expect(await handler('rekordbox:gridFit')({}, 'engine:4')).toBeNull()
+      expect(await handler('cues:gridFit')({}, 'engine:4')).toBeNull()
     })
 
     it('judges the grid of an uncompressed Traktor file for the bad-grid filter, measuring at low priority', async () => {
@@ -1063,14 +1099,14 @@ describe('registerRekordboxCuesIpc for Traktor tracks', () => {
       const { beatGrid } = await registerAll({
         beatGrid: async () => ({ bpm: 120, firstMs: 0, phases }),
       })
-      await handler('rekordbox:gridVerdict')({}, ID)
+      await handler('cues:gridVerdict')({}, ID)
       expect(beatGrid).toHaveBeenLastCalledWith(expect.stringMatching(/t\.aiff$/), 'low')
     })
 
     it('builds no Surco grid for a Traktor or Engine track', async () => {
       const { beatGrid } = await registerAll()
-      expect(await handler('rekordbox:surcoGrid')({}, ID)).toBeNull()
-      expect(await handler('rekordbox:surcoGrid')({}, 'engine:4')).toBeNull()
+      expect(await handler('cues:surcoGrid')({}, ID)).toBeNull()
+      expect(await handler('cues:surcoGrid')({}, 'engine:4')).toBeNull()
       expect(beatGrid).not.toHaveBeenCalled()
     })
 
@@ -1085,11 +1121,11 @@ describe('registerRekordboxCuesIpc for Traktor tracks', () => {
             : undefined,
       })
       await registerAll({ traktor, engine })
-      expect(await handler('rekordbox:queuedCues')({}, ID)).toEqual({
+      expect(await handler('cues:queued')({}, ID)).toEqual({
         wanted: [],
         fingerprint: 'F1',
       })
-      expect(await handler('rekordbox:queuedCues')({}, 'engine:4')).toEqual({
+      expect(await handler('cues:queued')({}, 'engine:4')).toEqual({
         wanted: [],
         fingerprint: 'F2',
       })
@@ -1102,7 +1138,7 @@ describe('registerRekordboxCuesIpc for Traktor tracks', () => {
         cuesOp: (id) => (id === ID ? savedOp({ contentId: ID, drops: [1000] }) : undefined),
       })
       await registerAll({ rekordbox, engine, traktor })
-      handler('rekordbox:undoCues')({}, ID)
+      handler('cues:undo')({}, ID)
       expect(traktor.drop).toHaveBeenCalledWith('c1')
       expect(rekordbox.drop).not.toHaveBeenCalled()
       expect(engine.drop).not.toHaveBeenCalled()
@@ -1110,10 +1146,10 @@ describe('registerRekordboxCuesIpc for Traktor tracks', () => {
   })
 })
 
-describe('rekordbox:cueTwins', () => {
+describe('cues:twins', () => {
   it('answers with the same file in each program the cue editor writes to', async () => {
     const twins = vi.fn(async (_file: string) => ({ rekordbox: '101', traktor: 'traktor:k' }))
-    registerRekordboxCuesIpc({
+    registerWithSources({
       collection: () => '',
       queue: queue(),
       applyQuietly: quietly(),
@@ -1123,7 +1159,7 @@ describe('rekordbox:cueTwins', () => {
       provisional: { add: vi.fn() },
       twins,
     })
-    expect(await handler('rekordbox:cueTwins')({}, '/m/a.aiff')).toEqual({
+    expect(await handler('cues:twins')({}, '/m/a.aiff')).toEqual({
       rekordbox: '101',
       traktor: 'traktor:k',
     })
@@ -1131,7 +1167,7 @@ describe('rekordbox:cueTwins', () => {
   })
 })
 
-describe('registerRekordboxCuesIpc for Serato tracks', () => {
+describe('registerCuesIpc for Serato tracks', () => {
   const ID = 'serato:/Music/gone/s.mp3'
   const saveOf = (contentId: string) => ({
     contentId,
@@ -1156,7 +1192,7 @@ describe('registerRekordboxCuesIpc for Serato tracks', () => {
     const beginMoment = vi.fn()
     const applySerato = quietly()
     const words = vi.fn(async () => new Uint16Array([5, 6]))
-    registerRekordboxCuesIpc({
+    registerWithSources({
       collection: () => '/c/master.db',
       queue: queues.rekordbox,
       applyQuietly: quietly(),
@@ -1186,18 +1222,18 @@ describe('registerRekordboxCuesIpc for Serato tracks', () => {
 
   it('reads a Serato row from its own file, answering nothing when the file is gone', async () => {
     register()
-    expect(await handler('rekordbox:trackCues')({}, ID)).toBeNull()
+    expect(await handler('cues:trackCues')({}, ID)).toBeNull()
   })
 
   it('draws a Serato track’s zoomed wave from the audio of its file', async () => {
     const { words } = register()
-    expect([...((await handler('rekordbox:cueWaveDetail')({}, ID)) as Uint16Array)]).toEqual([5, 6])
+    expect([...((await handler('cues:waveDetail')({}, ID)) as Uint16Array)]).toEqual([5, 6])
     expect(words).toHaveBeenCalledWith('/Music/gone/s.mp3')
   })
 
   it('queues a Serato track’s cues on the Serato queue and writes them quietly, with no library copy moment, since the file keeps its own original', async () => {
     const { queues, beginMoment, applySerato } = register()
-    await handler('rekordbox:saveCues')({ sender: {} }, [saveOf(ID)])
+    await handler('cues:save')({ sender: {} }, [saveOf(ID)])
     expect(
       vi.mocked(queues.serato.enqueue).mock.calls[0][0].map((o) => (o as CuesOp).contentId),
     ).toEqual([ID])
@@ -1209,7 +1245,7 @@ describe('registerRekordboxCuesIpc for Serato tracks', () => {
 
   it('saves Serato after the other programs in one Save all, and opens the copy moment only for those with a library', async () => {
     const { order, beginMoment } = register()
-    await handler('rekordbox:saveCues')({ sender: {} }, [saveOf(ID), saveOf('103')])
+    await handler('cues:save')({ sender: {} }, [saveOf(ID), saveOf('103')])
     expect(order).toEqual(['rekordbox', 'serato'])
     expect(beginMoment).toHaveBeenCalledWith('cues', ['rekordbox'])
   })
@@ -1223,8 +1259,8 @@ describe('registerRekordboxCuesIpc for Serato tracks', () => {
         drop,
       }),
     )
-    expect(await handler('rekordbox:queuedCues')({}, ID)).toEqual({ wanted, fingerprint: 'F1' })
-    await handler('rekordbox:undoCues')({}, ID)
+    expect(await handler('cues:queued')({}, ID)).toEqual({ wanted, fingerprint: 'F1' })
+    await handler('cues:undo')({}, ID)
     expect(drop).toHaveBeenCalledWith('s1')
     expect(queues.rekordbox.drop).not.toHaveBeenCalled()
   })

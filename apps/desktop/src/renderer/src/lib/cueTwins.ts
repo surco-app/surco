@@ -192,7 +192,7 @@ export async function twinPlans(
   const twins = await client
     .fetchQuery({
       queryKey: ['cue-twins', source.path],
-      queryFn: () => window.api.rekordboxCueTwins(source.path),
+      queryFn: () => window.api.cues.twins(source.path),
       staleTime: Number.POSITIVE_INFINITY,
     })
     .catch((): LibraryTracks => ({}))

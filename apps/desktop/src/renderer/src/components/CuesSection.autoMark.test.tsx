@@ -98,15 +98,17 @@ function setup({
   settings?: Partial<Settings>
   actionsRef?: { current: CueActions | null }
 } = {}) {
-  const saveRekordboxCues = vi.fn<Api['saveRekordboxCues']>(async () => {})
+  const saveRekordboxCues = vi.fn<Api['cues']['save']>(async () => {})
   installApi({
-    rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>(async (id) => ({
-      ...read,
-      contentId: id,
-    })),
-    rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async () => null),
-    rekordboxCueWaveDetail: vi.fn<Api['rekordboxCueWaveDetail']>(async () => words),
-    saveRekordboxCues,
+    cues: {
+      trackCues: vi.fn<Api['cues']['trackCues']>(async (id) => ({
+        ...read,
+        contentId: id,
+      })),
+      queued: vi.fn<Api['cues']['queued']>(async () => null),
+      waveDetail: vi.fn<Api['cues']['waveDetail']>(async () => words),
+      save: saveRekordboxCues,
+    },
     cueProfile: vi.fn<Api['cueProfile']>(async () => ({
       profile,
       edits: { count: 0, sinceLearn: 0, corrected: 0 },

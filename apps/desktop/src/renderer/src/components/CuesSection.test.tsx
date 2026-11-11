@@ -14,7 +14,7 @@ import '../i18n'
 import { resetEditorSections } from '../hooks/useEditorSections'
 import { focusCue, resetCueSession } from '../lib/cueSession'
 import { SettingsProvider } from '../lib/settingsContext'
-import { installApi } from '../test/api'
+import { type ApiOverrides, installApi } from '../test/api'
 import { hoverTooltip } from '../test/tooltip'
 import { CuesSection } from './CuesSection'
 
@@ -55,26 +55,29 @@ function setup(
   read: TrackCues | null | Error = READ,
   queued: QueuedCues | null | Error = null,
   settings?: Partial<Settings>,
-  api: Partial<Api> = {},
+  api: ApiOverrides = {},
 ) {
   const logError = vi.fn<Api['logError']>()
   const onFlow = vi.fn<(id: string) => void>()
-  const saveRekordboxCues = vi.fn<Api['saveRekordboxCues']>(async () => {})
-  const undoRekordboxCues = vi.fn<Api['undoRekordboxCues']>(async () => {})
-  const rekordboxTrackCues = vi.fn<Api['rekordboxTrackCues']>(async () => {
+  const saveRekordboxCues = vi.fn<Api['cues']['save']>(async () => {})
+  const undoRekordboxCues = vi.fn<Api['cues']['undo']>(async () => {})
+  const rekordboxTrackCues = vi.fn<Api['cues']['trackCues']>(async () => {
     if (read instanceof Error) throw read
     return read
   })
-  const rekordboxQueuedCues = vi.fn<Api['rekordboxQueuedCues']>(async () => {
+  const rekordboxQueuedCues = vi.fn<Api['cues']['queued']>(async () => {
     if (queued instanceof Error) throw queued
     return queued
   })
   installApi({
     ...api,
-    rekordboxTrackCues,
-    rekordboxQueuedCues,
-    saveRekordboxCues,
-    undoRekordboxCues,
+    cues: {
+      ...api.cues,
+      trackCues: rekordboxTrackCues,
+      queued: rekordboxQueuedCues,
+      save: saveRekordboxCues,
+      undo: undoRekordboxCues,
+    },
     logError,
   })
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -1168,11 +1171,13 @@ describe('CuesSection on a track rekordbox has not analysed', () => {
     words: null,
   }
   const surcoGrid = (grid: SurcoGrid | null = SURCO) =>
-    vi.fn<Api['rekordboxSurcoGrid']>(async () => grid)
+    vi.fn<Api['cues']['surcoGrid']>(async () => grid)
 
   it("lets the cues go on Surco's own grid, so they can be set without opening rekordbox", async () => {
     const { saveRekordboxCues } = setup(UNANALYSED, null, undefined, {
-      rekordboxSurcoGrid: surcoGrid(),
+      cues: {
+        surcoGrid: surcoGrid(),
+      },
     })
     await ready()
     markAt(bar(64))
@@ -1188,7 +1193,9 @@ describe('CuesSection on a track rekordbox has not analysed', () => {
   // the cues would stay off rekordbox's grid without a word.
   it("still moves the cues onto rekordbox's grid when rekordbox analyses the track before the save", async () => {
     const { saveRekordboxCues, rekordboxTrackCues, client } = setup(UNANALYSED, null, undefined, {
-      rekordboxSurcoGrid: surcoGrid(),
+      cues: {
+        surcoGrid: surcoGrid(),
+      },
     })
     await ready()
     markAt(bar(64))
@@ -1207,7 +1214,7 @@ describe('CuesSection on a track rekordbox has not analysed', () => {
       UNANALYSED,
       null,
       undefined,
-      { rekordboxSurcoGrid: surcoGrid() },
+      { cues: { surcoGrid: surcoGrid() } },
     )
     await ready()
     markAt(bar(64))
@@ -1226,7 +1233,9 @@ describe('CuesSection on a track rekordbox has not analysed', () => {
 
   it("keeps the grid row off on a draft marked on Surco's grid after rekordbox analysed the track, and says why", async () => {
     const { rekordboxTrackCues, changeTrack, client } = setup(UNANALYSED, null, undefined, {
-      rekordboxSurcoGrid: surcoGrid(),
+      cues: {
+        surcoGrid: surcoGrid(),
+      },
     })
     await ready()
     markAt(bar(64))
@@ -1244,34 +1253,36 @@ describe('CuesSection on a track rekordbox has not analysed', () => {
   })
 
   it("says the grid is Surco's and shows the tempo it measured", async () => {
-    setup(UNANALYSED, null, undefined, { rekordboxSurcoGrid: surcoGrid() })
+    setup(UNANALYSED, null, undefined, { cues: { surcoGrid: surcoGrid() } })
     await ready()
     expect(screen.getByTestId('cues-provisional')).toHaveTextContent('Surco grid · 140.00 BPM')
   })
 
   it("explains once, in the section help, that the cues will move onto rekordbox's grid when it analyses the track", async () => {
-    setup(UNANALYSED, null, undefined, { rekordboxSurcoGrid: surcoGrid() })
+    setup(UNANALYSED, null, undefined, { cues: { surcoGrid: surcoGrid() } })
     await ready()
     expect(screen.getByTestId('section-help')).toHaveTextContent(/rekordbox has not analysed/)
   })
 
   it('says Surco is measuring while it decodes, instead of claiming nothing can be done', async () => {
     setup(UNANALYSED, null, undefined, {
-      rekordboxSurcoGrid: vi.fn<Api['rekordboxSurcoGrid']>(() => new Promise(() => {})),
+      cues: {
+        surcoGrid: vi.fn<Api['cues']['surcoGrid']>(() => new Promise(() => {})),
+      },
     })
     await waitFor(() => expect(screen.getByTestId('cues-measuring')).toBeInTheDocument())
     expect(screen.queryByTestId('cues-unanalysed')).toBeNull()
   })
 
   it('falls back to saying rekordbox has not analysed it when Surco hears no beat either', async () => {
-    setup(UNANALYSED, null, undefined, { rekordboxSurcoGrid: surcoGrid(null) })
+    setup(UNANALYSED, null, undefined, { cues: { surcoGrid: surcoGrid(null) } })
     await waitFor(() => expect(screen.getByTestId('cues-unanalysed')).toBeInTheDocument())
     expect(screen.queryByTestId('cue-wave')).toBeNull()
   })
 
   it('never decodes a track rekordbox already analysed', async () => {
     const rekordboxSurcoGrid = surcoGrid()
-    setup(READ, null, undefined, { rekordboxSurcoGrid })
+    setup(READ, null, undefined, { cues: { surcoGrid: rekordboxSurcoGrid } })
     await ready()
     expect(rekordboxSurcoGrid).not.toHaveBeenCalled()
     expect(screen.queryByTestId('cues-provisional')).toBeNull()

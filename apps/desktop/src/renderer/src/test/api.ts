@@ -1,5 +1,5 @@
 import { vi } from 'vitest'
-import type { Api } from '../../../preload/api'
+import type { Api, CuesApi } from '../../../preload/api'
 import { BUNDLED_FLOWS } from '../../../shared/cueFlows'
 import type { DjApi } from '../../../shared/djApi'
 import type { DjProgram } from '../../../shared/djProgram'
@@ -220,12 +220,30 @@ export function djReads(...layers: (DjReads | DjApi | undefined)[]): DjApi {
 // "nothing happened" value (Release and ProcessResult are both required shapes), and
 // inventing one would let a test that forgot to stub them quietly assert against fiction.
 // Throwing names the missing stub instead.
-export function stubApi(over: Partial<Api> = {}): Api {
+export type ApiOverrides = Omit<Partial<Api>, 'cues'> & { cues?: Partial<CuesApi> }
+
+const NO_CUES: CuesApi = {
+  trackCues: async () => null,
+  waveDetail: async () => null,
+  waveFine: async () => null,
+  dropInput: async () => null,
+  twins: async () => ({}),
+  auditionLead: async () => 0,
+  surcoGrid: async () => null,
+  gridFit: async () => null,
+  gridVerdict: async () => null,
+  queued: async () => null,
+  undo: async () => {},
+  save: async () => {},
+}
+
+export function stubApi({ cues, ...over }: ApiOverrides = {}): Api {
   const noop = (): void => {}
   const unsubscribe = () => noop
   return {
     platform: 'darwin',
     dj: djReads(),
+    cues: { ...NO_CUES, ...cues },
     storeBuild: false,
     version: '0.0.0-test',
     getPathForFile: () => '',
@@ -298,15 +316,6 @@ export function stubApi(over: Partial<Api> = {}): Api {
     seratoRunning: async () => false,
     djAppRunning: async () => false,
     holdsInLibrary: async () => true,
-    rekordboxTrackCues: async () => null,
-    rekordboxCueWaveDetail: async () => null,
-    rekordboxCueWaveFine: async () => null,
-    rekordboxCueDropInput: async () => null,
-    rekordboxCueTwins: async () => ({}),
-    rekordboxAuditionLead: async () => 0,
-    rekordboxSurcoGrid: async () => null,
-    rekordboxGridFit: async () => null,
-    rekordboxGridVerdict: async () => null,
     rowWaves: async () => ({}),
     rekordboxCountCompletable: async () => 0,
     cueProfile: async () => ({
@@ -319,9 +328,6 @@ export function stubApi(over: Partial<Api> = {}): Api {
     },
     recordCueEdit: async () => {},
     onCueProfileChanged: () => () => {},
-    saveRekordboxCues: async () => {},
-    rekordboxQueuedCues: async () => null,
-    undoRekordboxCues: async () => {},
     traktorCanSave: async () => true,
     usbVolumes: async () => ({ volumes: [], lastKey: null }),
     onUsbVolumesChanged: unsubscribe,
@@ -459,7 +465,7 @@ export function stubApi(over: Partial<Api> = {}): Api {
 // window.api is declared non-optional, so there is no honest way to replace it — but the
 // VALUE comes from stubApi and is therefore fully checked: the cast only moves an
 // already-typed object into place, which is the opposite of casting an untyped literal.
-export function installApi(over: Partial<Api> = {}): Api {
+export function installApi(over: ApiOverrides = {}): Api {
   const api = stubApi(over)
   ;(globalThis.window as unknown as { api: Api }).api = api
   return api

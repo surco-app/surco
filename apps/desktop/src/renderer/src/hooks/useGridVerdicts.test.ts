@@ -14,10 +14,10 @@ const ENTRIES: [string, string][] = [
 ]
 
 function api() {
-  const rekordboxGridVerdict = vi.fn<Api['rekordboxGridVerdict']>(async (id) =>
+  const rekordboxGridVerdict = vi.fn<Api['cues']['gridVerdict']>(async (id) =>
     id === '102' ? { kind: 'shifted', ms: -92 } : null,
   )
-  installApi({ rekordboxGridVerdict })
+  installApi({ cues: { gridVerdict: rekordboxGridVerdict } })
   return rekordboxGridVerdict
 }
 
@@ -51,13 +51,13 @@ describe('useGridVerdicts', () => {
 
   it('stops measuring when the filter is turned off', async () => {
     let release: () => void = () => {}
-    const rekordboxGridVerdict = vi.fn<Api['rekordboxGridVerdict']>(
+    const rekordboxGridVerdict = vi.fn<Api['cues']['gridVerdict']>(
       () =>
         new Promise((resolve) => {
           release = () => resolve(null)
         }),
     )
-    installApi({ rekordboxGridVerdict })
+    installApi({ cues: { gridVerdict: rekordboxGridVerdict } })
     const { rerender } = renderHook(({ on }) => useGridVerdicts(ENTRIES, on), {
       initialProps: { on: true },
     })
@@ -70,13 +70,13 @@ describe('useGridVerdicts', () => {
 
   it('keeps measuring while the list is re-read around it, as rekordbox rows arrive, without losing or repeating a track', async () => {
     let release: (() => void)[] = []
-    const rekordboxGridVerdict = vi.fn<Api['rekordboxGridVerdict']>(
+    const rekordboxGridVerdict = vi.fn<Api['cues']['gridVerdict']>(
       () =>
         new Promise((resolve) => {
           release.push(() => resolve(null))
         }),
     )
-    installApi({ rekordboxGridVerdict })
+    installApi({ cues: { gridVerdict: rekordboxGridVerdict } })
     const { result, rerender } = renderHook(({ list }) => useGridVerdicts(list, true), {
       initialProps: { list: ENTRIES.map((e) => [...e] as [string, string]) },
     })

@@ -37,13 +37,15 @@ function setup(
   cues: TrackCues['cues'] = [],
 ) {
   installApi({
-    rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>(async (id) => ({
-      ...READ,
-      contentId: id,
-      fingerprint,
-      cues,
-    })),
-    rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async (id) => queued[id] ?? null),
+    cues: {
+      trackCues: vi.fn<Api['cues']['trackCues']>(async (id) => ({
+        ...READ,
+        contentId: id,
+        fingerprint,
+        cues,
+      })),
+      queued: vi.fn<Api['cues']['queued']>(async (id) => queued[id] ?? null),
+    },
   })
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   client.setQueryData(['rekordbox-queued-cues', '103'], Q1)

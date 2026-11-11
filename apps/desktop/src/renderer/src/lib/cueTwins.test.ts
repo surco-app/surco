@@ -67,11 +67,13 @@ afterEach(resetCueSession)
 
 function setup(twins: LibraryTracks = ALL, reads: Record<string, TrackCues | null> = {}) {
   const api = installApi({
-    rekordboxCueTwins: vi.fn<Api['rekordboxCueTwins']>(async () => twins),
-    rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>(async (id) =>
-      id in reads ? reads[id] : { ...READ, contentId: id },
-    ),
-    rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async () => null),
+    cues: {
+      twins: vi.fn<Api['cues']['twins']>(async () => twins),
+      trackCues: vi.fn<Api['cues']['trackCues']>(async (id) =>
+        id in reads ? reads[id] : { ...READ, contentId: id },
+      ),
+      queued: vi.fn<Api['cues']['queued']>(async () => null),
+    },
   })
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return { api, client }
@@ -199,7 +201,7 @@ describe('placing a flow in the other DJ programs', () => {
   it('asks nothing when no break was marked with a flow', async () => {
     const { api, client } = setup()
     expect(await twinPlans(client, { ...SOURCE, breaks: [] }, settings())).toEqual([])
-    expect(api.rekordboxCueTwins).not.toHaveBeenCalled()
+    expect(api.cues.twins).not.toHaveBeenCalled()
   })
 })
 
@@ -272,7 +274,7 @@ describe('placing the flows of several drafts in the other programs', () => {
   it('plans each draft’s marked breaks on its file in the other programs', async () => {
     const { api, client } = setup({ traktor: TRAKTOR })
     const plans = await twinPlansOf(client, [draftOf('103', [bar(64)])], settings())
-    expect(api.rekordboxCueTwins).toHaveBeenCalledWith('/m/103.wav')
+    expect(api.cues.twins).toHaveBeenCalledWith('/m/103.wav')
     expect(plans).toEqual(
       await twinPlans(client, { ...SOURCE, path: '/m/103.wav', label: '103' }, settings()),
     )

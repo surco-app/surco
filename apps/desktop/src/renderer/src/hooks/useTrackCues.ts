@@ -6,14 +6,14 @@ import type { FineWave, QueuedCues, SurcoGrid, TrackCues } from '../../../shared
 
 export const trackCuesQuery = (contentId: string) => ({
   queryKey: ['rekordbox-track-cues', contentId],
-  queryFn: () => window.api.rekordboxTrackCues(contentId),
+  queryFn: () => window.api.cues.trackCues(contentId),
   staleTime: Number.POSITIVE_INFINITY,
 })
 
 export const queuedCuesQuery = (contentId: string) => ({
   queryKey: ['rekordbox-queued-cues', contentId],
   queryFn: () =>
-    window.api.rekordboxQueuedCues(contentId).catch((e: unknown) => {
+    window.api.cues.queued(contentId).catch((e: unknown) => {
       window.api.logError(
         `rekordbox cues: queued save unreadable (${e instanceof Error ? e.message : String(e)})`,
       )
@@ -24,13 +24,13 @@ export const queuedCuesQuery = (contentId: string) => ({
 
 export const cueWaveDetailQuery = (contentId: string) => ({
   queryKey: ['rekordbox-cue-wave-detail', contentId],
-  queryFn: () => window.api.rekordboxCueWaveDetail(contentId),
+  queryFn: () => window.api.cues.waveDetail(contentId),
   staleTime: Number.POSITIVE_INFINITY,
 })
 
 export const cueDropInputQuery = (contentId: string) => ({
   queryKey: ['rekordbox-cue-drop-input', contentId],
-  queryFn: () => window.api.rekordboxCueDropInput(contentId),
+  queryFn: () => window.api.cues.dropInput(contentId),
   staleTime: Number.POSITIVE_INFINITY,
 })
 
@@ -74,7 +74,7 @@ export function useSurcoGrid(
 ): { data: SurcoGrid | null | undefined } {
   const { data, isError } = useQuery({
     queryKey: ['rekordbox-surco-grid', contentId],
-    queryFn: () => window.api.rekordboxSurcoGrid(contentId),
+    queryFn: () => window.api.cues.surcoGrid(contentId),
     enabled,
     staleTime: Number.POSITIVE_INFINITY,
   })
@@ -84,7 +84,7 @@ export function useSurcoGrid(
 export function useAuditionLead(contentId: string): number {
   const { data } = useQuery({
     queryKey: ['rekordbox-audition-lead', contentId],
-    queryFn: () => window.api.rekordboxAuditionLead(contentId),
+    queryFn: () => window.api.cues.auditionLead(contentId),
     staleTime: Number.POSITIVE_INFINITY,
   })
   return data ?? 0
@@ -101,7 +101,7 @@ export function useCueWaveDetail(
 export function useCueWaveFine(contentId: string, enabled: boolean): FineWave | null | undefined {
   const { data, isPending } = useQuery({
     queryKey: ['rekordbox-cue-wave-fine', contentId],
-    queryFn: () => window.api.rekordboxCueWaveFine(contentId),
+    queryFn: () => window.api.cues.waveFine(contentId),
     enabled,
     staleTime: Number.POSITIVE_INFINITY,
   })
@@ -112,7 +112,7 @@ export function useCueWaveFine(contentId: string, enabled: boolean): FineWave | 
 export function useGridFit(contentId: string, enabled: boolean): GridFit | null {
   const { data } = useQuery({
     queryKey: ['rekordbox-grid-fit', contentId],
-    queryFn: () => window.api.rekordboxGridFit(contentId),
+    queryFn: () => window.api.cues.gridFit(contentId),
     enabled,
     staleTime: Number.POSITIVE_INFINITY,
   })

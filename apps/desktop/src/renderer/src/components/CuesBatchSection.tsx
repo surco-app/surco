@@ -142,7 +142,7 @@ export function CuesBatchSection({
           p.status === 'planned' && savable(p.contentId) ? [p.request] : [],
         ),
       ]
-      const saved = await window.api.saveRekordboxCues(reqs).then(
+      const saved = await window.api.cues.save(reqs).then(
         () => true,
         () => false,
       )

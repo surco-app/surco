@@ -1,9 +1,6 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type { AudioAnalysisIpc, PeekableAnalyses } from '../shared/audioIpcContract'
 import type { CueProfile, CueProfileRead, TasteTrack } from '../shared/cueProfile'
-import type { DropInput } from '../shared/dropDetect'
-import type { GridFit } from '../shared/gridEdit'
-import type { GridVerdict } from '../shared/gridVerdict'
 import type {
   ActivityEvent,
   AppleMusicLookupCandidate,
@@ -13,9 +10,7 @@ import type {
   BpmResult,
   DjProgram,
   DockIconFrames,
-  FineWave,
   KeyResult,
-  LibraryTracks,
   LimiterGlimpse,
   ListFixRequest,
   ListRemoval,
@@ -27,13 +22,11 @@ import type {
   PairFacts,
   ProcessProgress,
   ProgramCopies,
-  QueuedCues,
   RekordboxSyncIssue,
   RememberedAutoMatch,
   RestoreResult,
   ReviewWriteField,
   RowWaveRequest,
-  SaveCuesRequest,
   ScanVerdict,
   SearchHints,
   SearchPriority,
@@ -41,8 +34,6 @@ import type {
   SessionData,
   SessionEdit,
   SpectrumVerdict,
-  SurcoGrid,
-  TrackCues,
   TrackProperties,
   TrashEntry,
   UsbExportEvent,
@@ -57,6 +48,7 @@ import type {
 } from '../shared/types'
 import type { Verification } from '../shared/verification'
 import type { Api } from './api'
+import { createCuesApi } from './cues'
 import { createDjApi } from './dj'
 
 // The renderer half of shared/audioIpcContract.ts: every analysis invoke goes
@@ -226,28 +218,11 @@ const api: Api = {
   ): Promise<Record<string, { coverPath: string; coverUrl: string }>> =>
     ipcRenderer.invoke('applemusic:artwork', persistentIds),
   dj: createDjApi(ipcRenderer),
+  cues: createCuesApi(ipcRenderer),
   seratoRunning: (): Promise<boolean> => ipcRenderer.invoke('serato:running'),
   djAppRunning: (): Promise<boolean> => ipcRenderer.invoke('djApps:running'),
   holdsInLibrary: (path: string, titles: string[]): Promise<boolean> =>
     ipcRenderer.invoke('library:holdsFile', path, titles),
-  rekordboxTrackCues: (contentId: string): Promise<TrackCues | null> =>
-    ipcRenderer.invoke('rekordbox:trackCues', contentId),
-  rekordboxCueWaveDetail: (contentId: string): Promise<Uint16Array | null> =>
-    ipcRenderer.invoke('rekordbox:cueWaveDetail', contentId),
-  rekordboxCueWaveFine: (contentId: string): Promise<FineWave | null> =>
-    ipcRenderer.invoke('rekordbox:cueWaveFine', contentId),
-  rekordboxCueDropInput: (contentId: string): Promise<DropInput | null> =>
-    ipcRenderer.invoke('rekordbox:cueDropInput', contentId),
-  rekordboxCueTwins: (file: string): Promise<LibraryTracks> =>
-    ipcRenderer.invoke('rekordbox:cueTwins', file),
-  rekordboxAuditionLead: (contentId: string): Promise<number> =>
-    ipcRenderer.invoke('rekordbox:auditionLead', contentId),
-  rekordboxSurcoGrid: (contentId: string): Promise<SurcoGrid | null> =>
-    ipcRenderer.invoke('rekordbox:surcoGrid', contentId),
-  rekordboxGridFit: (contentId: string): Promise<GridFit | null> =>
-    ipcRenderer.invoke('rekordbox:gridFit', contentId),
-  rekordboxGridVerdict: (contentId: string): Promise<GridVerdict | null> =>
-    ipcRenderer.invoke('rekordbox:gridVerdict', contentId),
   rowWaves: (requests: RowWaveRequest[]): Promise<Record<string, number[]>> =>
     ipcRenderer.invoke('list:rowWaves', requests),
   rekordboxCountCompletable: (): Promise<number> =>
@@ -260,12 +235,6 @@ const api: Api = {
     ipcRenderer.on('cues:profileChanged', listener)
     return () => ipcRenderer.removeListener('cues:profileChanged', listener)
   },
-  rekordboxQueuedCues: (contentId: string): Promise<QueuedCues | null> =>
-    ipcRenderer.invoke('rekordbox:queuedCues', contentId),
-  undoRekordboxCues: (contentId: string): Promise<void> =>
-    ipcRenderer.invoke('rekordbox:undoCues', contentId),
-  saveRekordboxCues: (reqs: SaveCuesRequest[]): Promise<void> =>
-    ipcRenderer.invoke('rekordbox:saveCues', reqs),
   traktorCanSave: (): Promise<boolean> => ipcRenderer.invoke('traktor:canSave'),
   usbVolumes: (): Promise<UsbVolumeList> => ipcRenderer.invoke('usb:volumes'),
   onUsbVolumesChanged: (cb: (list: UsbVolumeList) => void) => {

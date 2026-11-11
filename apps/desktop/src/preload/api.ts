@@ -87,6 +87,21 @@ import type {
 } from '../shared/types'
 import type { Verification } from '../shared/verification'
 
+export interface CuesApi {
+  trackCues: (contentId: string) => Promise<TrackCues | null>
+  waveDetail: (contentId: string) => Promise<Uint16Array | null>
+  waveFine: (contentId: string) => Promise<FineWave | null>
+  dropInput: (contentId: string) => Promise<DropInput | null>
+  twins: (file: string) => Promise<LibraryTracks>
+  auditionLead: (contentId: string) => Promise<number>
+  surcoGrid: (contentId: string) => Promise<SurcoGrid | null>
+  gridFit: (contentId: string) => Promise<GridFit | null>
+  gridVerdict: (contentId: string) => Promise<GridVerdict | null>
+  queued: (contentId: string) => Promise<QueuedCues | null>
+  undo: (contentId: string) => Promise<void>
+  save: (reqs: SaveCuesRequest[]) => Promise<void>
+}
+
 export interface Api {
   platform: NodeJS.Platform
   // True when this copy runs from its Microsoft Store package, which updates through the
@@ -243,27 +258,16 @@ export interface Api {
     persistentIds: string[],
   ) => Promise<Record<string, { coverPath: string; coverUrl: string }>>
   dj: DjApi
+  cues: CuesApi
   seratoRunning: () => Promise<boolean>
   djAppRunning: () => Promise<boolean>
   holdsInLibrary: (path: string, titles: string[]) => Promise<boolean>
-  rekordboxTrackCues: (contentId: string) => Promise<TrackCues | null>
-  rekordboxCueWaveDetail: (contentId: string) => Promise<Uint16Array | null>
-  rekordboxCueWaveFine: (contentId: string) => Promise<FineWave | null>
-  rekordboxCueDropInput: (contentId: string) => Promise<DropInput | null>
-  rekordboxCueTwins: (file: string) => Promise<LibraryTracks>
-  rekordboxAuditionLead: (contentId: string) => Promise<number>
-  rekordboxSurcoGrid: (contentId: string) => Promise<SurcoGrid | null>
-  rekordboxGridFit: (contentId: string) => Promise<GridFit | null>
-  rekordboxGridVerdict: (contentId: string) => Promise<GridVerdict | null>
   rowWaves: (requests: RowWaveRequest[]) => Promise<Record<string, number[]>>
   rekordboxCountCompletable: () => Promise<number>
   cueProfile: () => Promise<CueProfileRead>
   learnCueProfile: () => Promise<CueProfile>
   recordCueEdit: (track: TasteTrack) => Promise<void>
   onCueProfileChanged: (cb: () => void) => () => void
-  saveRekordboxCues: (reqs: SaveCuesRequest[]) => Promise<void>
-  rekordboxQueuedCues: (contentId: string) => Promise<QueuedCues | null>
-  undoRekordboxCues: (contentId: string) => Promise<void>
   traktorCanSave: () => Promise<boolean>
   // The USB export (macOS and Windows). Volumes come by stable identifier; the event feeds
   // the progress list and the toolbar pill, also with the modal closed.

@@ -98,14 +98,16 @@ beforeEach(() => {
   })
 })
 
-const rekordboxCueWaveDetail = vi.fn<Api['rekordboxCueWaveDetail']>(async () => null)
+const rekordboxCueWaveDetail = vi.fn<Api['cues']['waveDetail']>(async () => null)
 
 function setup(settings: Partial<Settings> = {}) {
   rekordboxCueWaveDetail.mockClear()
   installApi({
-    rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>(async () => READ),
-    rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async () => null),
-    rekordboxCueWaveDetail,
+    cues: {
+      trackCues: vi.fn<Api['cues']['trackCues']>(async () => READ),
+      queued: vi.fn<Api['cues']['queued']>(async () => null),
+      waveDetail: rekordboxCueWaveDetail,
+    },
   })
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   const tree = (cue = { contentId: '103', path: '/m/g.wav', label: 'Gowan' }) => (

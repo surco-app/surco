@@ -49,15 +49,17 @@ afterEach(() => {
 })
 
 function setup(twins: Record<string, LibraryTracks> = {}, targets = TARGETS) {
-  const saveRekordboxCues = vi.fn<Api['saveRekordboxCues']>(async () => {})
+  const saveRekordboxCues = vi.fn<Api['cues']['save']>(async () => {})
   installApi({
-    rekordboxCueTwins: vi.fn<Api['rekordboxCueTwins']>(async (file) => twins[file] ?? {}),
-    rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>(async (id) => ({
-      ...READ,
-      contentId: id,
-    })),
-    rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async () => null),
-    saveRekordboxCues,
+    cues: {
+      twins: vi.fn<Api['cues']['twins']>(async (file) => twins[file] ?? {}),
+      trackCues: vi.fn<Api['cues']['trackCues']>(async (id) => ({
+        ...READ,
+        contentId: id,
+      })),
+      queued: vi.fn<Api['cues']['queued']>(async () => null),
+      save: saveRekordboxCues,
+    },
   })
   const onMark = vi.fn()
   const onFlow = vi.fn()
@@ -362,15 +364,17 @@ describe('Cues over several selected tracks', () => {
         startDraft([{ ms: bar(8), kind: 1, color: 1 }], 'mine'),
         { path: t.path, label: t.label, fingerprint: 'f0' },
       )
-    const saveRekordboxCues = vi.fn<Api['saveRekordboxCues']>(async () => {})
+    const saveRekordboxCues = vi.fn<Api['cues']['save']>(async () => {})
     installApi({
-      rekordboxCueTwins: vi.fn<Api['rekordboxCueTwins']>(async () => ({})),
-      rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>(async (id) => ({
-        ...READ,
-        contentId: id,
-      })),
-      rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async () => null),
-      saveRekordboxCues,
+      cues: {
+        twins: vi.fn<Api['cues']['twins']>(async () => ({})),
+        trackCues: vi.fn<Api['cues']['trackCues']>(async (id) => ({
+          ...READ,
+          contentId: id,
+        })),
+        queued: vi.fn<Api['cues']['queued']>(async () => null),
+        save: saveRekordboxCues,
+      },
       traktorCanSave: async () => false,
     })
     render(

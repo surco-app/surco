@@ -36,7 +36,9 @@ function setup() {
   const recordCueEdit = vi.fn<Api['recordCueEdit']>(async () => {})
   installApi({
     recordCueEdit,
-    rekordboxCueWaveDetail: vi.fn<Api['rekordboxCueWaveDetail']>(async () => WORDS),
+    cues: {
+      waveDetail: vi.fn<Api['cues']['waveDetail']>(async () => WORDS),
+    },
   })
   return { recordCueEdit, client: new QueryClient() }
 }
@@ -80,7 +82,7 @@ describe('recordCueEdits', () => {
       { contentId: '104', draft: drafted([{ ms: bar(32), kind: 0 }]) },
     ])
     expect(recordCueEdit).not.toHaveBeenCalled()
-    expect(window.api.rekordboxCueWaveDetail).not.toHaveBeenCalled()
+    expect(window.api.cues.waveDetail).not.toHaveBeenCalled()
   })
 
   describe('what Auto proposed against what the DJ kept', () => {

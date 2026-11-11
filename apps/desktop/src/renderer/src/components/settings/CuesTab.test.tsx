@@ -107,18 +107,20 @@ describe('CuesTab', () => {
   // rekordbox: CALLs (only rekordbox has them) and colours (Traktor paints by cue type).
   it('previews the flow on the track selected in the list, read from its library', async () => {
     installApi({
-      rekordboxTrackCues: async () => ({
-        contentId: 'rb:1',
-        analysed: true,
-        grid: Array.from({ length: 800 }, (_, i) => ({ ms: i * 500, beat: (i % 4) + 1 })),
-        strong: [],
-        phrases: [],
-        cues: [{ id: 'mark', ms: 128000, kind: 0, color: null }],
-        wave: null,
-        durationMs: 400000,
-        fingerprint: 'f',
-        gridFingerprint: 'g',
-      }),
+      cues: {
+        trackCues: async () => ({
+          contentId: 'rb:1',
+          analysed: true,
+          grid: Array.from({ length: 800 }, (_, i) => ({ ms: i * 500, beat: (i % 4) + 1 })),
+          strong: [],
+          phrases: [],
+          cues: [{ id: 'mark', ms: 128000, kind: 0, color: null }],
+          wave: null,
+          durationMs: 400000,
+          fingerprint: 'f',
+          gridFingerprint: 'g',
+        }),
+      },
     })
     render(
       <QueryClientProvider client={new QueryClient()}>

@@ -26,7 +26,7 @@ import type { Command, CueActions } from '../lib/commands'
 import { autoMarkOf, resetCueSession } from '../lib/cueSession'
 import { SettingsProvider } from '../lib/settingsContext'
 import { claimKeys, runKeyClaim } from '../lib/spaceClaim'
-import { installApi } from '../test/api'
+import { type ApiOverrides, installApi } from '../test/api'
 import { hoverTooltip } from '../test/tooltip'
 import { CuesSection } from './CuesSection'
 
@@ -71,15 +71,18 @@ beforeEach(() => {
 function setup(
   settings: Partial<Settings> | null = null,
   read: TrackCues = READ,
-  api: Partial<Api> = {},
+  api: ApiOverrides = {},
   actionsRef?: { current: CueActions | null },
 ) {
-  const rekordboxCueWaveDetail = vi.fn<Api['rekordboxCueWaveDetail']>(async () => null)
+  const rekordboxCueWaveDetail = vi.fn<Api['cues']['waveDetail']>(async () => null)
   installApi({
-    rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>(async () => read),
-    rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async () => null),
-    rekordboxCueWaveDetail,
     ...api,
+    cues: {
+      trackCues: vi.fn<Api['cues']['trackCues']>(async () => read),
+      queued: vi.fn<Api['cues']['queued']>(async () => null),
+      waveDetail: rekordboxCueWaveDetail,
+      ...api.cues,
+    },
   })
   const onJumpBars = vi.fn<(bars: CueJumpBars) => void>()
   const onQuantize = vi.fn<(unit: CueQuantize) => void>()
@@ -293,7 +296,7 @@ describe('CuesSection maximized', () => {
           { ms: 32000, label: 'Chorus', kind: 'chorus' },
         ],
       },
-      { rekordboxGridFit: vi.fn<Api['rekordboxGridFit']>(async () => ({ bpm: 120, firstMs: 46 })) },
+      { cues: { gridFit: vi.fn<Api['cues']['gridFit']>(async () => ({ bpm: 120, firstMs: 46 })) } },
     )
     await maximize()
     const checks = await screen.findByTestId('cues-grid-windows')
@@ -303,8 +306,8 @@ describe('CuesSection maximized', () => {
 
   // Measuring the fine wave decodes the whole file, so it waits for the view where the DJ zooms.
   it('asks for the fine wave once maximized, where the zoom needs it, and not in the folded section', async () => {
-    const fine = vi.fn<Api['rekordboxCueWaveFine']>(async () => null)
-    setup(null, READ, { rekordboxCueWaveFine: fine })
+    const fine = vi.fn<Api['cues']['waveFine']>(async () => null)
+    setup(null, READ, { cues: { waveFine: fine } })
     await ready()
     expect(fine).not.toHaveBeenCalled()
     await maximize()
@@ -313,14 +316,14 @@ describe('CuesSection maximized', () => {
 
   it('asks for the grid fit only once the fine wave is in, so the two never read the whole file off the NAS at once', async () => {
     let release: (wave: null) => void = () => {}
-    const fine = vi.fn<Api['rekordboxCueWaveFine']>(
+    const fine = vi.fn<Api['cues']['waveFine']>(
       () =>
         new Promise((resolve) => {
           release = resolve
         }),
     )
-    const gridFit = vi.fn<Api['rekordboxGridFit']>(async () => null)
-    setup(null, READ, { rekordboxCueWaveFine: fine, rekordboxGridFit: gridFit })
+    const gridFit = vi.fn<Api['cues']['gridFit']>(async () => null)
+    setup(null, READ, { cues: { waveFine: fine, gridFit: gridFit } })
     await maximize()
     await waitFor(() => expect(fine).toHaveBeenCalledWith('103'))
     expect(gridFit).not.toHaveBeenCalled()
@@ -904,8 +907,8 @@ describe('CuesSection maximized keys', () => {
 
   it('plays a LAME MP3 from the sound rekordbox places under the playhead, not one frame later', async () => {
     stubSound()
-    const rekordboxAuditionLead = vi.fn<Api['rekordboxAuditionLead']>(async () => 26)
-    setup(null, READ, { rekordboxAuditionLead })
+    const rekordboxAuditionLead = vi.fn<Api['cues']['auditionLead']>(async () => 26)
+    setup(null, READ, { cues: { auditionLead: rekordboxAuditionLead } })
     await maximize()
     await waitFor(() => expect(rekordboxAuditionLead).toHaveBeenCalledWith('103'))
     seek(64000)
@@ -1183,12 +1186,14 @@ describe('CuesSection maximized over the rest of the editor', () => {
   it('keeps the draft and the full editor when ↓ goes to the next track and ↑ comes back', async () => {
     const tracks = ['103', '104']
     installApi({
-      rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>(async (contentId) => ({
-        ...READ,
-        contentId,
-      })),
-      rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async () => null),
-      rekordboxCueWaveDetail: vi.fn<Api['rekordboxCueWaveDetail']>(async () => null),
+      cues: {
+        trackCues: vi.fn<Api['cues']['trackCues']>(async (contentId) => ({
+          ...READ,
+          contentId,
+        })),
+        queued: vi.fn<Api['cues']['queued']>(async () => null),
+        waveDetail: vi.fn<Api['cues']['waveDetail']>(async () => null),
+      },
     })
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
     function Player(): React.JSX.Element {
@@ -1673,9 +1678,7 @@ describe("CuesSection maximized on Surco's grid", () => {
     setup(
       settings,
       { ...READ, analysed: false, grid: [] },
-      {
-        rekordboxSurcoGrid: vi.fn<Api['rekordboxSurcoGrid']>(async () => SURCO),
-      },
+      { cues: { surcoGrid: vi.fn<Api['cues']['surcoGrid']>(async () => SURCO) } },
     )
 
   it('keeps Bar in the quantize menu but off, since only rekordbox can tell where a bar starts', async () => {
@@ -1696,9 +1699,7 @@ describe("CuesSection maximized on Surco's grid", () => {
     setup(
       null,
       { ...READ, analysed: false, grid: [] },
-      {
-        rekordboxSurcoGrid: vi.fn<Api['rekordboxSurcoGrid']>(async () => ({ ...SURCO, words })),
-      },
+      { cues: { surcoGrid: vi.fn<Api['cues']['surcoGrid']>(async () => ({ ...SURCO, words })) } },
     )
     await maximize()
     expect(screen.getByTestId('cues-auto-mark')).toBeEnabled()
@@ -1721,7 +1722,7 @@ describe("CuesSection maximized on Surco's grid", () => {
 describe('CuesSection maximized grid', () => {
   const bars = () => screen.getAllByTestId('cue-detail-bar').map((b) => Number(b.dataset.ms))
   const fitAt = (firstMs: number) =>
-    vi.fn<Api['rekordboxGridFit']>(async () => ({ bpm: 120, firstMs }))
+    vi.fn<Api['cues']['gridFit']>(async () => ({ bpm: 120, firstMs }))
 
   it('moves the drawn grid with the grid row and carries the cues on its beats along', async () => {
     setup({ cueLettersByTime: false })
@@ -1748,7 +1749,7 @@ describe('CuesSection maximized grid', () => {
 
   describe('pinning', () => {
     const pinned = async () => {
-      setup(null, READ, { rekordboxGridFit: fitAt(46) })
+      setup(null, READ, { cues: { gridFit: fitAt(46) } })
       await maximize()
       await screen.findByTestId('cues-grid-windows')
       seek(30000)
@@ -1831,11 +1832,13 @@ describe('CuesSection maximized grid', () => {
       null,
       { ...READ, analysed: false, grid: [] },
       {
-        rekordboxSurcoGrid: vi.fn<Api['rekordboxSurcoGrid']>(async () => ({
-          bpm: 120,
-          grid: GRID.map((b) => ({ ...b, beat: 0 })),
-          words: null,
-        })),
+        cues: {
+          surcoGrid: vi.fn<Api['cues']['surcoGrid']>(async () => ({
+            bpm: 120,
+            grid: GRID.map((b) => ({ ...b, beat: 0 })),
+            words: null,
+          })),
+        },
       },
     )
     await maximize()
@@ -1844,7 +1847,7 @@ describe('CuesSection maximized grid', () => {
   })
 
   it('gives each grid offset a fixed width, so a value going from +1 ms to −12 ms never shoves the grid buttons sideways', async () => {
-    setup(null, READ, { rekordboxGridFit: fitAt(454) })
+    setup(null, READ, { cues: { gridFit: fitAt(454) } })
     await maximize()
     await waitFor(() => expect(screen.getByTestId('cues-grid-here')).toBeInTheDocument())
     for (const id of ['cues-grid-here', 'cues-grid-end']) {
@@ -1855,7 +1858,7 @@ describe('CuesSection maximized grid', () => {
   })
 
   it('shows how far the grid is from the beats here and at the end, and Auto fits it', async () => {
-    setup(null, READ, { rekordboxGridFit: fitAt(454) })
+    setup(null, READ, { cues: { gridFit: fitAt(454) } })
     await maximize()
     await waitFor(() => expect(screen.getByTestId('cues-grid-here')).toHaveTextContent('+46 ms'))
     expect(screen.getByTestId('cues-grid-end')).toHaveTextContent('+46 ms')
@@ -1866,7 +1869,7 @@ describe('CuesSection maximized grid', () => {
   })
 
   it('carries the cues onto the beats Auto fits, since cues set on a late grid fire late in the booth', async () => {
-    setup({ cueLettersByTime: false }, READ, { rekordboxGridFit: fitAt(454) })
+    setup({ cueLettersByTime: false }, READ, { cues: { gridFit: fitAt(454) } })
     await maximize()
     key('ArrowRight')
     key('m')
@@ -1882,7 +1885,7 @@ describe('CuesSection maximized grid', () => {
   })
 
   it('keeps Auto calm when the grid already sits within the tolerance', async () => {
-    setup(null, READ, { rekordboxGridFit: fitAt(5) })
+    setup(null, READ, { cues: { gridFit: fitAt(5) } })
     await maximize()
     await waitFor(() => expect(screen.getByTestId('cues-grid-here')).toHaveTextContent('−5 ms'))
     expect(screen.getByTestId('cues-grid-auto')).not.toHaveAttribute('data-needs-fix')
@@ -1890,12 +1893,14 @@ describe('CuesSection maximized grid', () => {
 
   it('keeps a moved grid while another track is open and undoes it on return', async () => {
     installApi({
-      rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>(async (id) => ({
-        ...READ,
-        contentId: id,
-      })),
-      rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async () => null),
-      rekordboxCueWaveDetail: vi.fn<Api['rekordboxCueWaveDetail']>(async () => null),
+      cues: {
+        trackCues: vi.fn<Api['cues']['trackCues']>(async (id) => ({
+          ...READ,
+          contentId: id,
+        })),
+        queued: vi.fn<Api['cues']['queued']>(async () => null),
+        waveDetail: vi.fn<Api['cues']['waveDetail']>(async () => null),
+      },
     })
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
     const tree = (contentId: string) => (
@@ -1922,7 +1927,7 @@ describe('CuesSection maximized grid', () => {
   })
 
   it('keeps the grid on the deck line beside the pads and how far it sits from the beats beside the time, so the deck fits one line', async () => {
-    setup(null, READ, { rekordboxGridFit: fitAt(454) })
+    setup(null, READ, { cues: { gridFit: fitAt(454) } })
     await maximize()
     await waitFor(() => expect(screen.getByTestId('cues-grid-here')).toBeInTheDocument())
     const deck = screen.getByTestId('cues-deck')
@@ -1949,14 +1954,16 @@ describe('CuesSection maximized grid', () => {
   })
 
   it('shows the grid rekordbox has now when the DJ comes back to a track with only cue changes, never the old one', async () => {
-    const rekordboxTrackCues = vi.fn<Api['rekordboxTrackCues']>(async (id) => ({
+    const rekordboxTrackCues = vi.fn<Api['cues']['trackCues']>(async (id) => ({
       ...READ,
       contentId: id,
     }))
     installApi({
-      rekordboxTrackCues,
-      rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async () => null),
-      rekordboxCueWaveDetail: vi.fn<Api['rekordboxCueWaveDetail']>(async () => null),
+      cues: {
+        trackCues: rekordboxTrackCues,
+        queued: vi.fn<Api['cues']['queued']>(async () => null),
+        waveDetail: vi.fn<Api['cues']['waveDetail']>(async () => null),
+      },
     })
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
     const tree = (contentId: string) => (
@@ -1999,8 +2006,8 @@ describe('CuesSection maximized grid', () => {
   })
 
   it('saves the moved grid with the fingerprint of the grid it was read from', async () => {
-    const saveRekordboxCues = vi.fn<Api['saveRekordboxCues']>(async () => {})
-    setup(null, { ...READ, gridFingerprint: 'g0' }, { saveRekordboxCues })
+    const saveRekordboxCues = vi.fn<Api['cues']['save']>(async () => {})
+    setup(null, { ...READ, gridFingerprint: 'g0' }, { cues: { save: saveRekordboxCues } })
     await maximize()
     fireEvent.click(screen.getByTestId('cues-grid-right'))
     fireEvent.click(screen.getByTestId('cues-save'))
@@ -2012,8 +2019,8 @@ describe('CuesSection maximized grid', () => {
   })
 
   it('saves a cue-only change without any grid', async () => {
-    const saveRekordboxCues = vi.fn<Api['saveRekordboxCues']>(async () => {})
-    setup(null, { ...READ, gridFingerprint: 'g0' }, { saveRekordboxCues })
+    const saveRekordboxCues = vi.fn<Api['cues']['save']>(async () => {})
+    setup(null, { ...READ, gridFingerprint: 'g0' }, { cues: { save: saveRekordboxCues } })
     await maximize()
     key('m')
     fireEvent.click(screen.getByTestId('cues-save'))
@@ -2023,11 +2030,13 @@ describe('CuesSection maximized grid', () => {
 
   it('shows the grid waiting in the queue for rekordbox to close, as the grid it will write, without calling it unsaved', async () => {
     setup(null, READ, {
-      rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async () => ({
-        wanted: [],
-        fingerprint: READ.fingerprint,
-        grid: { bpm: 120, anchorMs: 1 },
-      })),
+      cues: {
+        queued: vi.fn<Api['cues']['queued']>(async () => ({
+          wanted: [],
+          fingerprint: READ.fingerprint,
+          grid: { bpm: 120, anchorMs: 1 },
+        })),
+      },
     })
     await maximize()
     await waitFor(() => expect(bars()).toContain(2001))
@@ -2035,18 +2044,20 @@ describe('CuesSection maximized grid', () => {
   })
 
   it('re-sends a queued grid with the fingerprint it was queued on, so a grid moved in rekordbox since is still refused', async () => {
-    const saveRekordboxCues = vi.fn<Api['saveRekordboxCues']>(async () => {})
+    const saveRekordboxCues = vi.fn<Api['cues']['save']>(async () => {})
     setup(
       null,
       { ...READ, gridFingerprint: 'g-now' },
       {
-        saveRekordboxCues,
-        rekordboxQueuedCues: vi.fn<Api['rekordboxQueuedCues']>(async () => ({
-          wanted: [],
-          fingerprint: READ.fingerprint,
-          grid: { bpm: 120, anchorMs: 1 },
-          gridFingerprint: 'g-queued',
-        })),
+        cues: {
+          save: saveRekordboxCues,
+          queued: vi.fn<Api['cues']['queued']>(async () => ({
+            wanted: [],
+            fingerprint: READ.fingerprint,
+            grid: { bpm: 120, anchorMs: 1 },
+            gridFingerprint: 'g-queued',
+          })),
+        },
       },
     )
     await maximize()

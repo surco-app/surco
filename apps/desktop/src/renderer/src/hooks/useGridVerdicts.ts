@@ -49,7 +49,7 @@ export function useGridVerdicts(entries: [string, string][], active: boolean): G
         const contentId = next()
         if (contentId === undefined) return
         pending.add(contentId)
-        const verdict = await window.api.rekordboxGridVerdict(contentId).catch(() => null)
+        const verdict = await window.api.cues.gridVerdict(contentId).catch(() => null)
         pending.delete(contentId)
         known.set(contentId, verdict)
         notify()
