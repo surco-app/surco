@@ -1266,6 +1266,7 @@
         "downbeat": "Taktanfang auf den Abspielkopf",
         "auto": "Auto",
         "autoHint": "Raster an die Beats anpassen",
+        "fit": "Raster anpassen",
         "groupTempo": "Tempo",
         "groupMove": "Verschieben",
         "groupWidth": "Öffnen und schließen",

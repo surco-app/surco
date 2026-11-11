@@ -324,11 +324,29 @@ describe('CuesSection maximized', () => {
     )
     const gridFit = vi.fn<Api['cues']['gridFit']>(async () => null)
     setup(null, READ, { cues: { waveFine: fine, gridFit: gridFit } })
+    await waitFor(() => expect(gridFit).toHaveBeenCalledTimes(1))
     await maximize()
     await waitFor(() => expect(fine).toHaveBeenCalledWith('103'))
-    expect(gridFit).not.toHaveBeenCalled()
     act(() => release(null))
+    await waitFor(() => expect(screen.getByTestId('cues-editor')).toBeInTheDocument())
+    expect(gridFit).toHaveBeenCalledTimes(1)
+  })
+
+  it('holds the fine wave while the folded view still measures the grid, so full screen never reads the file twice at once', async () => {
+    let finish: (fit: null) => void = () => {}
+    const gridFit = vi.fn<Api['cues']['gridFit']>(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve
+        }),
+    )
+    const fine = vi.fn<Api['cues']['waveFine']>(async () => null)
+    setup(null, READ, { cues: { waveFine: fine, gridFit: gridFit } })
     await waitFor(() => expect(gridFit).toHaveBeenCalledWith('103'))
+    await maximize()
+    expect(fine).not.toHaveBeenCalled()
+    act(() => finish(null))
+    await waitFor(() => expect(fine).toHaveBeenCalledWith('103'))
   })
 
   it('starts below the macOS window controls, so the cover and title never sit under the traffic lights', async () => {

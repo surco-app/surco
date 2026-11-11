@@ -1266,6 +1266,7 @@
         "downbeat": "Premier temps sur la tête de lecture",
         "auto": "Auto",
         "autoHint": "Caler la grille sur les temps",
+        "fit": "Ajuster la grille",
         "groupTempo": "Tempo",
         "groupMove": "Décaler",
         "groupWidth": "Ouvrir et fermer",

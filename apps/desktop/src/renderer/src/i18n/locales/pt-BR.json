@@ -1266,6 +1266,7 @@
         "downbeat": "Tempo 1 do compasso no cursor",
         "auto": "Auto",
         "autoHint": "Ajustar a grade às batidas",
+        "fit": "Ajustar grade",
         "groupTempo": "Tempo",
         "groupMove": "Mover",
         "groupWidth": "Abrir e fechar",

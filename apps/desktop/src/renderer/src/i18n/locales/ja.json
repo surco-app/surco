@@ -1266,6 +1266,7 @@
         "downbeat": "再生位置を小節の1拍目に",
         "auto": "自動",
         "autoHint": "グリッドを拍に合わせる",
+        "fit": "グリッドを調整",
         "groupTempo": "テンポ",
         "groupMove": "移動",
         "groupWidth": "開く・閉じる",

@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useIsFetching, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Check,
   ChevronDown,
@@ -24,6 +24,7 @@ import { type DjProgram, programOf } from '../../../shared/djProgram'
 import type { DropInput, DropProposal } from '../../../shared/dropDetect'
 import { checkGrid, needsGridFix } from '../../../shared/gridCheck'
 import {
+  autoFitGrid,
   detectedBeatNear,
   type EditableGrid,
   editAt,
@@ -40,6 +41,7 @@ import { type CueAudition, useCueAudition } from '../hooks/useCueAudition'
 import { useMaximizedSection } from '../hooks/useEditorSections'
 import {
   cueDropInputQuery,
+  gridFitQuery,
   useAuditionLead,
   useCueProfile,
   useCueWaveDetail,
@@ -521,8 +523,9 @@ function Editing({
     onSurcoGrid,
   })
   const gridOff = gate === null ? null : tr(gate)
-  const fine = useCueWaveFine(cue.contentId, maximized)
-  const gridFit = useGridFit(cue.contentId, maximized && gridOff === null && fine !== undefined)
+  const fitting = useIsFetching({ queryKey: gridFitQuery(cue.contentId).queryKey }) > 0
+  const fine = useCueWaveFine(cue.contentId, maximized && !fitting)
+  const gridFit = useGridFit(cue.contentId, gridOff === null && (!maximized || fine !== undefined))
   const offsets =
     gridFit && state.grid
       ? checkGrid({
@@ -1221,6 +1224,23 @@ function Editing({
       {readingAudio ? tr('editor.cues.engine.autoReading') : tr('editor.cues.auto.button')}
     </button>
   )
+  const fitGridControl = (
+    <button
+      type="button"
+      data-testid="cues-fit-grid"
+      data-needs-fix={needsFix ? 'true' : undefined}
+      disabled={!state.grid || !gridFit}
+      onClick={() =>
+        state.grid &&
+        gridFit &&
+        fitGridTo(autoFitGrid(state.grid, gridFit, playheadMs, programBeats, rekordboxGrid))
+      }
+      className={`press flex shrink-0 items-center gap-1.5 whitespace-nowrap border border-[var(--color-line-strong)] text-xs font-medium text-fg-muted hover:bg-[var(--color-hover)] disabled:opacity-40 data-[needs-fix=true]:border-[var(--color-accent)] data-[needs-fix=true]:bg-[var(--color-accent)] data-[needs-fix=true]:font-semibold data-[needs-fix=true]:text-[var(--color-on-accent)] ${autoHeight}`}
+    >
+      <Tooltip label={gridOff ?? tr('editor.cues.grid.autoHint')} />
+      {tr('editor.cues.grid.fit')}
+    </button>
+  )
   const actions = (
     <div data-testid="cues-actions" className="flex shrink-0 items-center gap-1">
       {!unchanged && <UnsavedMark />}
@@ -1325,6 +1345,7 @@ function Editing({
         onChange={pickOption}
         options={flowOptions}
       />
+      {fitGridControl}
       {autoControl}
     </span>
   )

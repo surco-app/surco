@@ -1266,6 +1266,7 @@
         "downbeat": "El 1 del compás en el cabezal",
         "auto": "Auto",
         "autoHint": "Ajustar la rejilla a los golpes",
+        "fit": "Ajustar rejilla",
         "groupTempo": "Tempo",
         "groupMove": "Desplazar",
         "groupWidth": "Abrir y cerrar",

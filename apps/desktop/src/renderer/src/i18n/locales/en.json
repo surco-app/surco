@@ -1266,6 +1266,7 @@
         "downbeat": "Downbeat at the playhead",
         "auto": "Auto",
         "autoHint": "Fit the grid to the beats",
+        "fit": "Fit grid",
         "groupTempo": "Tempo",
         "groupMove": "Move",
         "groupWidth": "Open and close",
