@@ -284,12 +284,12 @@ describe('NormalizeSection layout', () => {
     expect(screen.getByTestId('normalize-row-sentence')).toHaveTextContent('Levels to -14 LUFS')
   })
 
-  // The mode badge sat on the folded header before the sentence came, and stays beside it.
-  it('badges the active mode while folded', () => {
+  // The folded sentence already names the target in LUFS or dBFS, which says the mode, so
+  // a mode badge beside it only repeated it.
+  it('lets the folded sentence alone say the active mode', () => {
     renderWith({ open: false, value: loud })
-    expect(screen.getByTestId('normalize-active-badge')).toHaveTextContent(
-      i18n.t('normalize.mode.loudness'),
-    )
+    expect(screen.getByTestId('normalize-row-sentence')).toHaveTextContent('LUFS')
+    expect(screen.queryByTestId('normalize-active-badge')).toBeNull()
   })
 
   // The folded header always carried the true-peak ceiling next to the target; the

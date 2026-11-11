@@ -1090,16 +1090,16 @@ describe('TrimSection', () => {
     expect(onChange).toHaveBeenLastCalledWith({ startSec: 9.699, endSec: 90.3 })
   })
 
-  // The badge with the total cut was on the folded header before the sentence came; it
-  // stays beside it, the total at a glance next to the per-side detail.
-  it('states the staged cut in words beside its total', () => {
+  // The sentence already says how much goes from each end, so a total badge beside it
+  // only repeated the same cut as one number.
+  it('states the staged cut in words alone, without a total badge', () => {
     const { rerender } = render(
       section({ value: { startSec: 9.7, endSec: 90.3 }, open: false, durationSec: 100 }),
     )
     expect(screen.getByTestId('trim-row-sentence')).toHaveTextContent(
       'Removes 9.7 s at the start and 9.7 s at the end',
     )
-    expect(screen.getByTestId('trim-active-badge')).toHaveTextContent('−19.4 s')
+    expect(screen.queryByTestId('trim-active-badge')).toBeNull()
     // A staged cut is wherever the user put it, often into the music up to the first
     // beat, so it is not called silence: only what the detection found is.
     rerender(section({ value: { endSec: 96.4 }, open: false, durationSec: 100 }))
