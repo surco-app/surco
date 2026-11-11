@@ -95,6 +95,7 @@ interface ConvertFooterProps {
   upToDate: boolean
   inMusic: boolean
   musicHoldsFile: boolean
+  musicPending?: boolean
   djHolds: DjLibraryId[]
   replacedFormat: string
   addToAppleMusic: boolean
@@ -169,6 +170,7 @@ export function ConvertFooter({
   upToDate,
   inMusic,
   musicHoldsFile,
+  musicPending = false,
   djHolds,
   replacedFormat,
   addToAppleMusic,
@@ -320,7 +322,7 @@ export function ConvertFooter({
     (!inMusicLibraryOnly || hasMusicCopy)
   const line = destinationLine({
     destination,
-    withAppleMusic: isMacOS() && format !== 'flac' && addToAppleMusic,
+    withAppleMusic: isMacOS() && format !== 'flac' && addToAppleMusic && !musicPending,
     djTargets,
     djHolds,
     openSource,
