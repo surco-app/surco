@@ -6,7 +6,7 @@ import { isRekordboxRunning, quitRekordbox } from './rekordboxProcess'
 import { isSeratoRunning } from './seratoProcess'
 import { sharedPrompt } from './sharedPrompt'
 import { isTraktorRunning, quitTraktor } from './traktorProcess'
-import { isVirtualdjRunning } from './virtualdjProcess'
+import { isVirtualdjRunning, waitForVirtualdjExit } from './virtualdjProcess'
 
 type MenuKey = Parameters<ReturnType<typeof createMenuT>>[0]
 
@@ -33,7 +33,7 @@ export const DJ_PROCESSES: {
   traktor: { isRunning: isTraktorRunning, quit: quitTraktor },
   engine: { isRunning: isEngineDjRunning, quit: quitEngineDj },
   serato: { isRunning: isSeratoRunning },
-  virtualdj: { isRunning: isVirtualdjRunning, quit: async () => !(await isVirtualdjRunning()) },
+  virtualdj: { isRunning: isVirtualdjRunning, quit: () => waitForVirtualdjExit() },
 }
 
 export async function anyDjProgramRunning(

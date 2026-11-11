@@ -1,5 +1,11 @@
 import type { BrowserWindow } from 'electron'
 import { describe, expect, it, vi } from 'vitest'
+
+vi.mock('./virtualdjProcess', async (original) => ({
+  ...(await original<typeof import('./virtualdjProcess')>()),
+  waitForVirtualdjExit: vi.fn(async () => true),
+}))
+
 import type { WritableProgram } from '../shared/djProgram'
 import {
   anyDjProgramRunning,
@@ -10,7 +16,7 @@ import {
   type QUIT_TEXT,
   reasonOfDetail,
 } from './djProcesses'
-import { isVirtualdjRunning } from './virtualdjProcess'
+import { isVirtualdjRunning, waitForVirtualdjExit } from './virtualdjProcess'
 
 function deferred<T>() {
   let resolve: (v: T) => void = () => {}
@@ -293,6 +299,11 @@ describe('anyDjProgramRunning', () => {
         virtualdj: open,
       }),
     ).toBe(true)
+  })
+
+  it('waits for VirtualDJ to exit once the DJ says it closed it, as the others wait for theirs', async () => {
+    expect(await DJ_PROCESSES.virtualdj.quit()).toBe(true)
+    expect(waitForVirtualdjExit).toHaveBeenCalledTimes(1)
   })
 
   it('asks the VirtualDJ process whether VirtualDJ is open', () => {
