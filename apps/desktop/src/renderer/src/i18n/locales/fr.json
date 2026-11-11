@@ -15,7 +15,6 @@
     "moreFields": "Plus de champs ({{count}})",
     "fewerFields": "Moins de champs",
     "title": "Composer le nom du fichier",
-    "description": "Combine du texte et des métadonnées pour composer le nom du fichier.",
     "apply": "Appliquer"
   },
   "sessions": {
@@ -2260,18 +2259,14 @@
     "hint": "Tape quelque chose à chercher dans leurs tags.",
     "invalidRegex": "Expression régulière invalide",
     "noMatches": "Aucune correspondance dans aucun morceau.",
-    "summary": "{{fields}} dans {{tracks}}",
     "fieldCount_one": "{{count}} champ",
     "fieldCount_other": "{{count}} champs",
-    "trackCount_one": "{{count}} morceau",
-    "trackCount_other": "{{count}} morceaux",
     "apply": "Remplacer dans {{count}}"
   },
   "stripNumbering": {
     "title": "Supprimer la numérotation du titre",
     "hint": "Retire le numéro de piste au début du titre (« 1. », « A1 - »).",
     "noMatches": "Aucun titre ne porte de numérotation.",
-    "summary": "{{count}} titres sur {{total}} seront modifiés",
     "apply": "Supprimer sur {{count}}"
   },
   "donateNudge": {

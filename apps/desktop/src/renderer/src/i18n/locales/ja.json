@@ -15,7 +15,6 @@
     "moreFields": "その他のフィールド ({{count}})",
     "fewerFields": "フィールドを減らす",
     "title": "ファイル名を作成",
-    "description": "テキストとメタデータを組み合わせてファイル名を作成します。",
     "apply": "適用"
   },
   "sessions": {
@@ -2260,18 +2259,14 @@
     "hint": "タグ内で検索するテキストを入力してください。",
     "invalidRegex": "無効な正規表現",
     "noMatches": "どのトラックにも一致しません。",
-    "summary": "{{tracks}}の{{fields}}",
     "fieldCount_one": "{{count}} フィールド",
     "fieldCount_other": "{{count}} フィールド",
-    "trackCount_one": "{{count}} トラック",
-    "trackCount_other": "{{count}} トラック",
     "apply": "{{count}} を置換"
   },
   "stripNumbering": {
     "title": "タイトルの番号付けを削除",
     "hint": "タイトルの先頭からトラック番号を削除します（「1.」、「A1 -」など）",
     "noMatches": "番号付けされたタイトルはありません",
-    "summary": "{{total}} 件中 {{count}} 件のタイトルが変わります",
     "apply": "{{count}} を削除"
   },
   "donateNudge": {

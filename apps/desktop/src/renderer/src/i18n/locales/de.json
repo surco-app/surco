@@ -15,7 +15,6 @@
     "moreFields": "Mehr Felder ({{count}})",
     "fewerFields": "Weniger Felder",
     "title": "Dateinamen erstellen",
-    "description": "Kombiniere Text und Metadaten, um den Dateinamen zu erstellen.",
     "apply": "Anwenden"
   },
   "sessions": {
@@ -2260,18 +2259,14 @@
     "hint": "Tipp etwas ein, um in ihren Tags zu suchen.",
     "invalidRegex": "Ungültiger regulärer Ausdruck",
     "noMatches": "Keine Treffer in irgendeinem Track.",
-    "summary": "{{fields}} in {{tracks}}",
     "fieldCount_one": "{{count}} Feld",
     "fieldCount_other": "{{count}} Felder",
-    "trackCount_one": "{{count}} Track",
-    "trackCount_other": "{{count}} Tracks",
     "apply": "In {{count}} ersetzen"
   },
   "stripNumbering": {
     "title": "Nummerierung aus dem Titel entfernen",
     "hint": "Entfernt die Tracknummer am Anfang des Titels („1.“, „A1 -“).",
     "noMatches": "Kein Titel trägt eine Nummerierung.",
-    "summary": "{{count}} von {{total}} Titeln werden geändert",
     "apply": "Bei {{count}} entfernen"
   },
   "donateNudge": {

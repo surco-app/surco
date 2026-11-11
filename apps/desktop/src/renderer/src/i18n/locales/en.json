@@ -15,7 +15,6 @@
     "moreFields": "More fields ({{count}})",
     "fewerFields": "Fewer fields",
     "title": "Build file name",
-    "description": "Combine text and metadata to build the file name.",
     "apply": "Apply"
   },
   "sessions": {
@@ -2260,18 +2259,14 @@
     "hint": "Type something to find in their tags.",
     "invalidRegex": "Invalid regular expression",
     "noMatches": "No matches in any track.",
-    "summary": "{{fields}} in {{tracks}}",
     "fieldCount_one": "{{count}} field",
     "fieldCount_other": "{{count}} fields",
-    "trackCount_one": "{{count}} track",
-    "trackCount_other": "{{count}} tracks",
     "apply": "Replace in {{count}}"
   },
   "stripNumbering": {
     "title": "Remove numbering from title",
     "hint": "Strips the track number from the front of the title (\"1.\", \"A1 -\").",
     "noMatches": "No title carries numbering.",
-    "summary": "{{count}} of {{total}} titles will change",
     "apply": "Remove on {{count}}"
   },
   "donateNudge": {
