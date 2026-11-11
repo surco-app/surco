@@ -560,8 +560,8 @@ export function FilterBar({
           data-testid={`${testid}-trigger`}
           aria-haspopup="listbox"
           aria-expanded={open}
-          // Carries the filter and count it shows: a fixed "Filter" hid which view the list
-          // is in and didn't match the words on screen.
+          // Carries the filter it shows and the count the list's counter shows: a fixed "Filter"
+          // hid which view the list is in and didn't match the words on screen.
           aria-label={tr('sidebar.filter.current', { filter: trigger.label, count: trigger.count })}
           onClick={toggle}
           className="flex h-8 w-full min-w-0 items-center gap-1.5 rounded-md pr-1.5 pl-2 text-xs font-medium text-fg-dim outline-none hover:bg-[var(--color-hover)] hover:text-fg"
@@ -576,7 +576,6 @@ export function FilterBar({
             )}
           </span>
           <span className="min-w-0 truncate text-left">{trigger.label}</span>
-          <span className="shrink-0 tabular-nums opacity-70">{trigger.count}</span>
           <ChevronDown aria-hidden="true" className="size-3.5 shrink-0" />
         </button>
         {open &&

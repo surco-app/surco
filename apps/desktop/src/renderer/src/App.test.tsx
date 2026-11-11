@@ -2261,8 +2261,8 @@ describe('App source rail', () => {
     expect(screen.getByTestId('source-rail-tracks')).toHaveAttribute('aria-pressed', 'true')
   })
 
-  // The filter's "All" count is the size of the list on screen: inside a playlist that is
-  // its rows, not every track the working list has gathered.
+  // The list's count is the size of the list on screen: inside a playlist that is its rows,
+  // not every track the working list has gathered.
   it('counts the open playlist’s rows in the list header, not the whole working list', async () => {
     rekordboxWithFactory({
       pickFiles: vi.fn().mockResolvedValue(['/m/a.wav', '/m/b.wav']),
@@ -2280,7 +2280,8 @@ describe('App source rail', () => {
     fireEvent.click(await screen.findByTestId('source-node-f'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
 
-    expect(screen.getByTestId('quality-filter-trigger')).toHaveTextContent(/^All1$/)
+    expect(screen.getByTestId('track-position')).toHaveTextContent('‒/1')
+    expect(screen.getByTestId('quality-filter-trigger')).toHaveTextContent(/^All$/)
   })
 
   // A playlist still being read is not an empty result: "No tracks match" there read as

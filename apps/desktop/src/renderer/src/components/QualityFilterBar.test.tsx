@@ -752,40 +752,50 @@ describe('QualityFilterBar', () => {
     expect(onChange).toHaveBeenCalledWith(sel())
   })
 
-  // Counts stay the point of the bar — at-a-glance triage — so each menu row carries its own
-  // count, and a single active axis surfaces its count on the trigger.
-  it('shows the active bucket count on the trigger and every bucket count in the menu', () => {
+  // Counts stay the point of the menu — at-a-glance triage — so each menu row carries its own
+  // count, while the closed trigger shows only the bucket: the list total is read once, at the
+  // counter on the right edge, and screen readers still hear the count in the trigger's name.
+  it('keeps the active bucket count in the trigger name but not on screen, and every bucket count in the menu', () => {
     renderBar({ value: sel({ conversion: 'unconverted' }), tally: tally({ unconverted: 459 }) })
-    expect(screen.getByTestId('quality-filter-trigger')).toHaveTextContent('459')
+    const trigger = screen.getByTestId('quality-filter-trigger')
+    expect(trigger).not.toHaveTextContent('459')
+    expect(trigger).toHaveAccessibleName(expect.stringContaining('459'))
     openMenu()
     expect(screen.getByTestId('quality-filter-unconverted')).toHaveTextContent('459')
   })
 
   // The trigger is the only thing on screen once the menu closes; with just a retouch bucket
   // active it read "All" over the whole crate while the list showed a handful of rows.
-  it('names an active retouch bucket and its count on the trigger', () => {
+  it('names an active retouch bucket on the trigger, its count only in the accessible name', () => {
     renderBar({ value: sel({ attention: 'clipping' }), tally: tally({ clipping: 4 }) })
     const trigger = screen.getByTestId('quality-filter-trigger')
-    expect(trigger).toHaveTextContent('Clipping')
-    expect(trigger).toHaveTextContent('4')
-    expect(trigger).not.toHaveTextContent('498')
+    expect(trigger).toHaveTextContent(/^Clipping$/)
+    expect(trigger).toHaveAccessibleName(expect.stringContaining('4'))
+    expect(trigger).not.toHaveAccessibleName(expect.stringContaining('498'))
   })
 
-  // With nothing filtered the trigger reads "All" over the whole crate.
-  it('shows the full track count on the trigger when nothing is filtered', () => {
-    renderBar({ value: sel(), trackCount: 498 })
-    expect(screen.getByTestId('quality-filter-trigger')).toHaveTextContent('498')
+  // With nothing filtered the trigger reads just "All"; the crate size sits in the right-edge
+  // counter, so repeating it on the trigger would show the same number twice.
+  it('shows no track count on the trigger when nothing is filtered, leaving it to the counter', () => {
+    renderBar({ value: sel(), trackCount: 498, visibleCount: 498 })
+    const trigger = screen.getByTestId('quality-filter-trigger')
+    expect(trigger).toHaveTextContent(/^All$/)
+    expect(trigger).toHaveAccessibleName(expect.stringContaining('498'))
+    expect(screen.getByTestId('track-position')).toHaveTextContent('‒/498')
   })
 
   // With several axes active no single per-axis count describes the intersection, so the
-  // trigger collapses to a generic "Filters" badge counting the surviving tracks.
-  it('shows the visible count on the trigger when more than one axis is active', () => {
+  // trigger collapses to a generic "Filters" label; the surviving tracks are counted only in
+  // its accessible name and the right-edge counter.
+  it('keeps the visible count off the trigger when more than one axis is active', () => {
     renderBar({
       value: sel({ quality: 'good', conversion: 'unconverted' }),
       tally: tally({ good: 11, unconverted: 459 }),
       visibleCount: 7,
     })
-    expect(screen.getByTestId('quality-filter-trigger')).toHaveTextContent('7')
+    const trigger = screen.getByTestId('quality-filter-trigger')
+    expect(trigger).not.toHaveTextContent('7')
+    expect(trigger).toHaveAccessibleName(expect.stringContaining('7'))
   })
 
   // Per-format buckets carry their own count so a DJ can isolate "just the MP3s" before
@@ -862,8 +872,8 @@ describe('QualityFilterBar', () => {
   it('surfaces the active format on the trigger when it is the only axis', () => {
     renderBar({ value: sel({ format: 'WAV' }), formats: [{ format: 'WAV', count: 5 }] })
     const trigger = screen.getByTestId('quality-filter-trigger')
-    expect(trigger).toHaveTextContent('WAV')
-    expect(trigger).toHaveTextContent('5')
+    expect(trigger).toHaveTextContent(/^WAV$/)
+    expect(trigger).toHaveAccessibleName(expect.stringContaining('5'))
   })
 
   it('draws the library buckets with their own glyph, so the selection tick is never mistaken for one', () => {
