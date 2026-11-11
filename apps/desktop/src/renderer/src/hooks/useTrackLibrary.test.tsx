@@ -727,6 +727,7 @@ describe('useTrackLibrary read coalescing across IPC replies', () => {
   // re-rendered the whole App) once per file while a big import loaded. Replies arriving
   // close together must share one write.
   it('renders once for reads that land in separate tasks moments apart', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'performance'] })
     const pending: (() => void)[] = []
     setApi({
       readMeta: vi.fn<Api['readMeta']>(
@@ -754,7 +755,7 @@ describe('useTrackLibrary read coalescing across IPC replies', () => {
     })
     await act(async () => {
       void result.current.addPaths(Array.from({ length: 6 }, (_, i) => `/m/${i}.wav`))
-      await new Promise((r) => setTimeout(r, 0))
+      await vi.advanceTimersByTimeAsync(0)
     })
     const tracksBefore = renders
 
@@ -762,11 +763,12 @@ describe('useTrackLibrary read coalescing across IPC replies', () => {
     // fold the renders together whatever the hook does. Real IPC replies get no such help.
     for (const release of pending.splice(0)) {
       release()
-      await new Promise((r) => setTimeout(r, 0))
+      await vi.advanceTimersByTimeAsync(0)
     }
     await act(async () => {
-      await new Promise((r) => setTimeout(r, 100))
+      await vi.advanceTimersByTimeAsync(100)
     })
+    vi.useRealTimers()
 
     expect(result.current.tracks.every((t) => !t.loadingMeta)).toBe(true)
     expect(renders - tracksBefore).toBeLessThanOrEqual(2)
