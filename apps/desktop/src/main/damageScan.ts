@@ -21,6 +21,7 @@ const LIBRARY_NAMES: Record<Exclude<GenreSource, 'info'>, string> = {
   rekordbox: 'rekordbox',
   traktor: 'Traktor',
   engine: 'Engine DJ',
+  virtualdj: 'VirtualDJ',
 }
 
 const sec = (ms: number) => Math.round(ms * 100) / 100000
@@ -222,6 +223,7 @@ type LibraryScan = (
 
 const LIBRARY_SCANS: { [P in WritableProgram]: P extends ScannedProgram ? LibraryScan : null } = {
   rekordbox: null,
+  virtualdj: null,
   traktor: async (deps, library) => (await library(deps.traktor)).map(traktorFinding),
   engine: async (deps, library) => (await library(deps.engine)).map(engineFinding),
 }

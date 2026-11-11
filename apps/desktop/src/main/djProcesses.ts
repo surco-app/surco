@@ -16,6 +16,7 @@ export const QUIT_REASONS = {
   rekordbox: ['convert', 'playlists', 'usb', 'restore'],
   traktor: ['convert', 'cues', 'playlists', 'restore'],
   engine: ['convert', 'cues', 'playlists', 'usb', 'restore'],
+  virtualdj: ['convert'],
 } as const satisfies { [P in WritableProgram]: readonly ['convert', ...QuitReason[]] }
 
 export type ReasonOf<P extends WritableProgram> = (typeof QUIT_REASONS)[P][number]
@@ -32,7 +33,7 @@ export const DJ_PROCESSES: {
   traktor: { isRunning: isTraktorRunning, quit: quitTraktor },
   engine: { isRunning: isEngineDjRunning, quit: quitEngineDj },
   serato: { isRunning: isSeratoRunning },
-  virtualdj: { isRunning: isVirtualdjRunning },
+  virtualdj: { isRunning: isVirtualdjRunning, quit: async () => !(await isVirtualdjRunning()) },
 }
 
 export async function anyDjProgramRunning(
@@ -51,7 +52,7 @@ export interface QuitText<P extends WritableProgram = WritableProgram> {
   detail: Record<ReasonOf<P>, DetailKeyOf<P>>
 }
 
-export const QUIT_TEXT: { [P in WritableProgram]: QuitText<P> } = {
+export const QUIT_TEXT: { [P in WritableProgram]: QuitText<P> | null } = {
   rekordbox: {
     message: 'rekordboxQuitMessage',
     confirm: 'rekordboxQuitConfirm',
@@ -86,6 +87,7 @@ export const QUIT_TEXT: { [P in WritableProgram]: QuitText<P> } = {
       restore: 'engineQuitDetailRestore',
     },
   },
+  virtualdj: null,
 }
 
 export type DetailKeyOf<P extends WritableProgram> = Extract<MenuKey, `${P}QuitDetail${string}`>
@@ -94,7 +96,9 @@ export function reasonOfDetail<P extends WritableProgram>(
   program: P,
   key: DetailKeyOf<P>,
 ): ReasonOf<P> {
-  const detail: Record<ReasonOf<P>, MenuKey> = QUIT_TEXT[program].detail
+  const text: QuitText<P> | null = QUIT_TEXT[program]
+  if (!text) throw new Error(`${program} is never asked to quit`)
+  const detail: Record<ReasonOf<P>, MenuKey> = text.detail
   const reason = (QUIT_REASONS[program] as readonly ReasonOf<P>[]).find((r) => detail[r] === key)
   if (reason === undefined) throw new Error(`No ${program} quit reason for ${key}`)
   return reason
@@ -104,6 +108,7 @@ export const QUIT_PROMPT_SHARING: Record<WritableProgram, 'once' | 'perReason'> 
   rekordbox: 'perReason',
   traktor: 'once',
   engine: 'once',
+  virtualdj: 'once',
 }
 
 export function createEnsureClosed(deps: {
@@ -120,7 +125,8 @@ export function createEnsureClosed(deps: {
     win: BrowserWindow | null,
     reason: ReasonOf<P>,
   ): Promise<boolean> {
-    const text: QuitText<P> = QUIT_TEXT[program]
+    const text: QuitText<P> | null = QUIT_TEXT[program]
+    if (!text) return false
     const response = await deps.ask(win, {
       type: 'warning',
       message: deps.t(text.message),
@@ -155,6 +161,7 @@ export function createEnsureClosed(deps: {
     rekordbox: closer('rekordbox'),
     traktor: closer('traktor'),
     engine: closer('engine'),
+    virtualdj: closer('virtualdj'),
   }
 
   return <P extends WritableProgram>(

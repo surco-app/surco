@@ -190,8 +190,6 @@
     "leftOutMissing_other": "{{count}} faixas ficam de fora porque falta {{fields}}",
     "leftOutSerato_one": "{{count}} faixa fica de fora, o Serato a perderia com seus cues",
     "leftOutSerato_other": "{{count}} faixas ficam de fora, o Serato as perderia com seus cues",
-    "leftOutVirtualdj_one": "{{count}} faixa fica de fora, o VirtualDJ a perderia com seus cues",
-    "leftOutVirtualdj_other": "{{count}} faixas ficam de fora, o VirtualDJ as perderia com seus cues",
     "convertSelected_one": "Converter {{count}} selecionada",
     "convertSelected_other": "Converter {{count}} selecionadas",
     "convertSomeSelected": "Converter {{ready}} de {{total}} selecionadas",
@@ -358,7 +356,6 @@
     "conversionCancelled": "Conversão cancelada.",
     "verifyUnknownTrack": "Esta verificação não existe mais. Converta a faixa de novo para refazê-la.",
     "seratoBlocked": "O Serato perderia a faixa e seus cues",
-    "virtualdjBlocked": "O VirtualDJ perderia a faixa e seus cues",
     "sourceTagsUnread": "As tags deste arquivo não puderam ser lidas, então ele ficou como estava: convertê-lo apagaria as que ele tem. Carregue-o de novo e tente outra vez.",
     "coverDownloadFailed": "Não foi possível baixar a capa.",
     "coverNotImage": "Esse endereço não leva a uma imagem.",
@@ -2999,7 +2996,6 @@
     "loading": "Lendo a lista…",
     "empty": "Nenhuma faixa da lista teve as tags lidas.",
     "emptySerato": "Todas as faixas da lista são do Serato e ficam de fora para o Serato mantê-las.",
-    "emptyVirtualdj": "Todas as faixas da lista são do VirtualDJ e ficam de fora para o VirtualDJ mantê-las.",
     "emptyReadOnly": "Todas as faixas da lista são de um programa de DJ que as perderia, então todas ficam de fora.",
     "error": "Não foi possível preparar a revisão da lista.",
     "scope_one": "{{count}} faixa da lista",
@@ -3008,8 +3004,6 @@
     "skipped_other": "{{count}} não lidas, fora da revisão",
     "seratoLeftOut_one": "{{count}} do Serato, deixada de fora para o Serato mantê-la",
     "seratoLeftOut_other": "{{count}} do Serato, deixadas de fora para o Serato mantê-las",
-    "virtualdjLeftOut_one": "{{count}} do VirtualDJ, deixada de fora para o VirtualDJ mantê-la",
-    "virtualdjLeftOut_other": "{{count}} do VirtualDJ, deixadas de fora para o VirtualDJ mantê-las",
     "musicUnchecked": "O Apple Music não foi consultado porque está fechado.",
     "where": {
       "music": "Apple Music"
@@ -3622,7 +3616,8 @@
       "traktorCuesChanged": "Os cues mudaram no Traktor",
       "traktorNameStale": "O Traktor ainda mostra “{{value}}”",
       "traktorPlaylistMissing": "A faixa não está na playlist {{playlist}} do Traktor",
-      "traktorUnreadable": "Não foi possível verificar o Traktor"
+      "traktorUnreadable": "Não foi possível verificar o Traktor",
+      "virtualdjUnreadable": "Não foi possível verificar o VirtualDJ"
     },
     "retry": "Tentar de novo",
     "sourceGoneKeptLine": "O original não existe mais, há uma cópia em <0>{{panel}}</0>",

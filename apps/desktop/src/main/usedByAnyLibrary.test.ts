@@ -66,7 +66,7 @@ describe('usedByAnyLibrary', () => {
     expect(
       await usedByAnyLibrary(FILE, [], {
         traktorRead: () => SETTINGS.traktorNmlPath,
-        readOnlyLibraries: noReadOnly,
+        rootLibraries: noReadOnly,
       }),
     ).toBe(true)
   })
@@ -75,7 +75,7 @@ describe('usedByAnyLibrary', () => {
     SETTINGS.engineLibraryDir = join(root, 'Engine Library')
     STATUS.engine.found = true
     await expect(
-      usedByAnyLibrary(FILE, [], { traktorRead: noTraktor, readOnlyLibraries: noReadOnly }),
+      usedByAnyLibrary(FILE, [], { traktorRead: noTraktor, rootLibraries: noReadOnly }),
     ).rejects.toThrow()
   })
 
@@ -84,7 +84,7 @@ describe('usedByAnyLibrary', () => {
     expect(
       await usedByAnyLibrary(FILE, [], {
         traktorRead: () => detected,
-        readOnlyLibraries: noReadOnly,
+        rootLibraries: noReadOnly,
       }),
     ).toBe(true)
   })
@@ -93,13 +93,13 @@ describe('usedByAnyLibrary', () => {
     SETTINGS.syncTraktor = true
     SETTINGS.traktorNmlPath = join(root, 'gone.nml')
     await expect(
-      usedByAnyLibrary(FILE, [], { traktorRead: noTraktor, readOnlyLibraries: noReadOnly }),
+      usedByAnyLibrary(FILE, [], { traktorRead: noTraktor, rootLibraries: noReadOnly }),
     ).rejects.toThrow()
     Object.assign(SETTINGS, settingsBefore)
     SETTINGS.syncEngineDj = true
     SETTINGS.engineLibraryDir = join(root, 'gone')
     await expect(
-      usedByAnyLibrary(FILE, [], { traktorRead: noTraktor, readOnlyLibraries: noReadOnly }),
+      usedByAnyLibrary(FILE, [], { traktorRead: noTraktor, rootLibraries: noReadOnly }),
     ).rejects.toThrow()
   })
 
@@ -113,14 +113,12 @@ describe('usedByAnyLibrary', () => {
         track({ pfil: FILE.slice(1) }),
       ]),
     )
-    const readOnlyLibraries = () => ({ serato: seratoLibraryRoots(home, []), virtualdj: [] })
-    expect(await usedByAnyLibrary(FILE, [], { traktorRead: noTraktor, readOnlyLibraries })).toBe(
-      true,
-    )
+    const rootLibraries = () => ({ serato: seratoLibraryRoots(home, []), virtualdj: [] })
+    expect(await usedByAnyLibrary(FILE, [], { traktorRead: noTraktor, rootLibraries })).toBe(true)
     expect(
       await usedByAnyLibrary('/Volumes/Public/Music/T/B.mp3', [], {
         traktorRead: noTraktor,
-        readOnlyLibraries,
+        rootLibraries,
       }),
     ).toBe(false)
   })
@@ -143,7 +141,7 @@ describe('usedByAnyLibrary', () => {
         usedByLibrary: (p) =>
           usedByAnyLibrary(p, [], {
             traktorRead: noTraktor,
-            readOnlyLibraries: () => ({ serato: seratoLibraryRoots(home, []), virtualdj: [] }),
+            rootLibraries: () => ({ serato: seratoLibraryRoots(home, []), virtualdj: [] }),
           }),
         exists: () => true,
         keepsTrash: () => true,
@@ -156,7 +154,7 @@ describe('usedByAnyLibrary', () => {
 
   it('says no when no library is found and none has its sync on', async () => {
     expect(
-      await usedByAnyLibrary(FILE, [], { traktorRead: noTraktor, readOnlyLibraries: noReadOnly }),
+      await usedByAnyLibrary(FILE, [], { traktorRead: noTraktor, rootLibraries: noReadOnly }),
     ).toBe(false)
   })
 
@@ -165,7 +163,7 @@ describe('usedByAnyLibrary', () => {
     expect(
       await usedByAnyLibrary(FILE, ['A', 'A.mp3'], {
         traktorRead: noTraktor,
-        readOnlyLibraries: noReadOnly,
+        rootLibraries: noReadOnly,
         musicEntries,
         fileTitle: async () => 'A',
         fileLike: async () => ({ durationSec: 241.5, size: 4096 }),
@@ -184,7 +182,7 @@ describe('usedByAnyLibrary', () => {
     expect(
       await usedByAnyLibrary(FILE, ['A (Extended Mix)'], {
         traktorRead: noTraktor,
-        readOnlyLibraries: noReadOnly,
+        rootLibraries: noReadOnly,
         musicEntries,
         fileTitle: async () => 'A (Original Mix)',
         fileLike: async () => ({ durationSec: 241.5, size: 4096 }),
@@ -207,7 +205,7 @@ describe('usedByAnyLibrary', () => {
       expect(
         await usedByAnyLibrary(FILE, ['A'], {
           traktorRead: noTraktor,
-          readOnlyLibraries: noReadOnly,
+          rootLibraries: noReadOnly,
           musicEntries,
           musicHolds,
           fileTitle,
@@ -221,7 +219,7 @@ describe('usedByAnyLibrary', () => {
     expect(
       await usedByAnyLibrary(FILE, ['A'], {
         traktorRead: noTraktor,
-        readOnlyLibraries: noReadOnly,
+        rootLibraries: noReadOnly,
         musicEntries: async () => [],
         musicHolds: async () => false,
         fileTitle: async () => '',
@@ -233,7 +231,7 @@ describe('usedByAnyLibrary', () => {
     await expect(
       usedByAnyLibrary(FILE, ['A'], {
         traktorRead: noTraktor,
-        readOnlyLibraries: noReadOnly,
+        rootLibraries: noReadOnly,
         musicEntries: async () => [],
         musicHolds: async () => {
           throw new Error('osascript timed out')
@@ -244,7 +242,7 @@ describe('usedByAnyLibrary', () => {
     expect(
       await usedByAnyLibrary(FILE, ['A'], {
         traktorRead: noTraktor,
-        readOnlyLibraries: noReadOnly,
+        rootLibraries: noReadOnly,
         musicEntries: async () => [],
         fileTitle: async () => '',
       }),
@@ -258,7 +256,7 @@ describe('usedByAnyLibrary', () => {
     await expect(
       usedByAnyLibrary(FILE, ['A'], {
         traktorRead: noTraktor,
-        readOnlyLibraries: noReadOnly,
+        rootLibraries: noReadOnly,
         musicEntries,
         fileTitle: async () => 'A',
         fileLike: async () => ({ durationSec: 241.5, size: 4096 }),
@@ -275,7 +273,7 @@ describe('usedByAnyLibrary', () => {
     expect(
       await usedByAnyLibrary(FILE, ['A'], {
         traktorRead: noTraktor,
-        readOnlyLibraries: noReadOnly,
+        rootLibraries: noReadOnly,
         musicEntries,
         fileTitle: async () => 'A',
         fileLike: async () => ({ durationSec: 241.5, size: 4096 }),
@@ -288,7 +286,7 @@ describe('usedByAnyLibrary', () => {
     expect(
       await usedByAnyLibrary(FILE, ['A'], {
         traktorRead: noTraktor,
-        readOnlyLibraries: noReadOnly,
+        rootLibraries: noReadOnly,
         musicEntries,
         fileTitle: async () => 'A',
         fileLike: async () => null,
@@ -297,7 +295,7 @@ describe('usedByAnyLibrary', () => {
     expect(
       await usedByAnyLibrary(FILE, ['A'], {
         traktorRead: noTraktor,
-        readOnlyLibraries: noReadOnly,
+        rootLibraries: noReadOnly,
         musicEntries,
         fileTitle: async () => 'A',
         fileLike: async () => {
@@ -312,7 +310,7 @@ describe('usedByAnyLibrary', () => {
     expect(
       await usedByAnyLibrary(FILE, ['A'], {
         traktorRead: noTraktor,
-        readOnlyLibraries: noReadOnly,
+        rootLibraries: noReadOnly,
         musicEntries,
         fileTitle: async () => 'A',
         fileLike: async () => ({ durationSec: 241.5, size: 4096 }),
@@ -340,35 +338,31 @@ describe('a file only Serato uses', () => {
   const OTHER = '/Volumes/Public/Music/T/B.mp3'
 
   it('is kept from the trash, as the original of a rename and as a removed duplicate, since a crate still plays it', async () => {
-    const readOnlyLibraries = await seratoHome(listing(FILE))
-    const replace = duplicateLibraryDeps({} as LibraryHost, {} as Sessions, readOnlyLibraries)
+    const rootLibraries = await seratoHome(listing(FILE))
+    const replace = duplicateLibraryDeps({} as LibraryHost, {} as Sessions, rootLibraries)
 
-    expect(await usedByAnyLibrary(FILE, [], { traktorRead: noTraktor, readOnlyLibraries })).toBe(
-      true,
-    )
+    expect(await usedByAnyLibrary(FILE, [], { traktorRead: noTraktor, rootLibraries })).toBe(true)
     expect(
-      await librariesKeepingOriginal(FILE, OTHER, { traktorRead: noTraktor, readOnlyLibraries }),
+      await librariesKeepingOriginal(FILE, OTHER, { traktorRead: noTraktor, rootLibraries }),
     ).toEqual(['serato'])
     expect(await replace.usedByLibrary(FILE)).toBe(true)
 
-    expect(await usedByAnyLibrary(OTHER, [], { traktorRead: noTraktor, readOnlyLibraries })).toBe(
-      false,
-    )
+    expect(await usedByAnyLibrary(OTHER, [], { traktorRead: noTraktor, rootLibraries })).toBe(false)
     expect(
-      await librariesKeepingOriginal(OTHER, FILE, { traktorRead: noTraktor, readOnlyLibraries }),
+      await librariesKeepingOriginal(OTHER, FILE, { traktorRead: noTraktor, rootLibraries }),
     ).toEqual([])
     expect(await replace.usedByLibrary(OTHER)).toBe(false)
   })
 
   it('is kept on every path when the Serato library cannot be read, since it may list the file', async () => {
-    const readOnlyLibraries = await seratoHome(unreadable)
-    const replace = duplicateLibraryDeps({} as LibraryHost, {} as Sessions, readOnlyLibraries)
+    const rootLibraries = await seratoHome(unreadable)
+    const replace = duplicateLibraryDeps({} as LibraryHost, {} as Sessions, rootLibraries)
 
     await expect(
-      usedByAnyLibrary(FILE, [], { traktorRead: noTraktor, readOnlyLibraries }),
+      usedByAnyLibrary(FILE, [], { traktorRead: noTraktor, rootLibraries }),
     ).rejects.toThrow()
     await expect(
-      librariesKeepingOriginal(FILE, OTHER, { traktorRead: noTraktor, readOnlyLibraries }),
+      librariesKeepingOriginal(FILE, OTHER, { traktorRead: noTraktor, rootLibraries }),
     ).rejects.toThrow()
     await expect(replace.usedByLibrary(FILE)).rejects.toThrow()
   })

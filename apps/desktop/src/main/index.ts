@@ -137,12 +137,12 @@ import { engineSizeFollower } from './engineSizeFollow'
 import { expandPaths } from './expand'
 import { collectionExporters, registerExportIpc } from './exportIpc'
 import { registerFeedbackIpc } from './feedback'
-import { convertAudio, readMeta, readTags, toNmlLocation } from './ffmpeg'
+import { convertAudio, probeDuration, readMeta, readTags, toNmlLocation } from './ffmpeg'
 import { createFileSignatures } from './fileSignatures'
 import { createMenuT, resolveMenuLocale } from './i18n'
 import { fileIdentity, isSameFile, removeRenamedOriginal } from './inplace'
 import { setLibraryBackupRoot } from './libraryBackups'
-import { libraryCopyInfo, libraryTracksOf, type ReadOnlyLibraries } from './libraryFileUse'
+import { libraryCopyInfo, libraryTracksOf, type RootLibraries } from './libraryFileUse'
 import {
   currentLibraryStatus,
   duplicateLibraryDeps,
@@ -283,6 +283,7 @@ import { virtualdjCueSource } from './virtualdjCueSource'
 import { virtualdjLibraryRoots } from './virtualdjLibrary'
 import { virtualdjEdit } from './virtualdjPlaylistEditIpc'
 import { virtualdjRead } from './virtualdjPlaylistsIpc'
+import { repointVirtualdjTracks } from './virtualdjTrackWrite'
 import { waitingCueQueueSection } from './waitingCueQueueIpc'
 import { onWatchedFilesChanged } from './watchedFiles'
 import { dirRoots, FolderWatcher } from './watcher'
@@ -359,6 +360,7 @@ const rekordboxSessionBackup = createSessionBackup({
 // The same for the Engine DJ library, which a run can repoint as well.
 const engineSessionBackup = createSessionBackup({ take: takeCopyAndAnnounce })
 const traktorSessionBackup = createSessionBackup({ take: takeCopyAndAnnounce })
+const virtualdjSessionBackup = createSessionBackup({ take: takeCopyAndAnnounce })
 function seratoRoots() {
   try {
     const volumes = readdirSync('/Volumes').map((name) => join('/Volumes', name))
@@ -371,7 +373,7 @@ const virtualdjDir = (): string => getSettings().virtualdjLibraryDir
 const virtualdjLibrary = (): string =>
   existsSync(join(virtualdjDir(), 'database.xml')) ? virtualdjDir() : ''
 const virtualdjRoots = () => virtualdjLibraryRoots(virtualdjDir(), '/Volumes')
-const readOnlyLibraries = (): ReadOnlyLibraries => ({
+const rootLibraries = (): RootLibraries => ({
   serato: seratoRoots(),
   virtualdj: virtualdjRoots(),
 })
@@ -382,6 +384,7 @@ const sessions = {
   rekordbox: rekordboxSessionBackup,
   traktor: traktorSessionBackup,
   engine: engineSessionBackup,
+  virtualdj: virtualdjSessionBackup,
 }
 const moments = createMoments(sessions)
 const broadcast = (channel: string, payload: unknown): void => {
@@ -428,7 +431,7 @@ const traktorReadPath = (): string =>
 const holdsInAnyLibrary = (path: string, titles: string[]): Promise<boolean> =>
   usedByAnyLibrary(path, titles, {
     traktorRead: traktorReadPath,
-    readOnlyLibraries,
+    rootLibraries,
     ...(process.platform === 'darwin' && { musicEntries: musicReaders.entriesForFile }),
     fileTitle: async (file) => (await readTags(file)).title,
     fileLike: fileLikeForMusic,
@@ -437,7 +440,7 @@ const holdsInAnyLibrary = (path: string, titles: string[]): Promise<boolean> =>
 const holdsForConversion = (path: string, titles: string[]): Promise<boolean> =>
   usedByAnyLibrary(path, titles, {
     traktorRead: traktorReadPath,
-    readOnlyLibraries,
+    rootLibraries,
     ...(process.platform === 'darwin' && {
       musicEntries: musicEntriesIfOpen,
       musicHolds: () => musicIsOpen(),
@@ -592,11 +595,21 @@ const programQueues = {
             stillQueued,
             virtualdjOpen: DJ_PROCESSES.virtualdj.isRunning,
           }),
-        repoint: async () => [],
+        repoint: async (_library, list) => {
+          const results = await repointVirtualdjTracks(list, {
+            roots: virtualdjRoots,
+            backupDir: join(app.getPath('userData'), 'virtualdj-backups'),
+            virtualdjOpen: DJ_PROCESSES.virtualdj.isRunning,
+            lengthOf: async (path) => (await probeDuration(path)) ?? undefined,
+          })
+          queueChecks.repointed('virtualdj', results)
+          return results
+        },
         nodeStamps: async () => ({}),
         onChange: (state) =>
           broadcast(DJ_CUE_QUEUE_CHANGED, { program: 'virtualdj', value: state }),
         addsTracks: false,
+        stack: stackRepoint,
       },
     },
     programQueueDeps,
@@ -700,6 +713,12 @@ const verifyRegistry = appVerifyRegistry({
       apply: () => applyTraktorCueQueueQuietly(),
       at: traktorWritePath,
       holds: traktorCueQueue.holdsRepoint,
+    },
+    virtualdj: {
+      enqueue: virtualdjCueQueue.enqueue,
+      apply: () => programQueues.virtualdj.applyQuietly(),
+      at: virtualdjLibrary,
+      holds: virtualdjCueQueue.holdsRepoint,
     },
   },
 })
@@ -1557,7 +1576,7 @@ function registerIpc(): void {
           rekordbox: rekordboxCollectionPath(),
           engine: getSettings().engineLibraryDir,
           traktor: traktorReadPath(),
-          ...readOnlyLibraries(),
+          ...rootLibraries(),
         },
         { realPath: (p: string) => realpathSync(p) },
       ),
@@ -1686,7 +1705,10 @@ function registerIpc(): void {
 
   const hostFor = (win: BrowserWindow | null, sender: WebContents): LibraryHost => ({
     ensureClosed: (program) => ensureClosed(program, win),
-    showBlockedDialog: (program) => showSyncBlockedDialog(win, SYNC_BLOCKED_KEY[program]),
+    showBlockedDialog: (program) => {
+      const key = SYNC_BLOCKED_KEY[program]
+      if (key) showSyncBlockedDialog(win, key)
+    },
     reportIssue: (program, issue) => {
       if (SYNC_ISSUE_PROGRAMS.has(program) && !sender.isDestroyed())
         sender.send(DJ_SYNC_ISSUE, { program, value: issue })
@@ -1704,7 +1726,12 @@ function registerIpc(): void {
   endConversionBatch = (sender) => {
     const upTo = verifyRegistry.cut()
     return moments.runFlush(serialLibraryFlush, rekordboxBatchOpen, async (later) => {
-      let outcome: FlushOutcome = { rekordbox: 'failed', engine: 'failed', traktor: 'failed' }
+      let outcome: FlushOutcome = {
+        rekordbox: 'failed',
+        engine: 'failed',
+        traktor: 'failed',
+        virtualdj: 'failed',
+      }
       try {
         outcome = await flushConversionBatch(
           hostFor(BrowserWindow.fromWebContents(sender), sender),
@@ -1778,6 +1805,7 @@ function registerIpc(): void {
         rekordbox: rekordboxFlushDeps(hostFor(win, e.sender)).collectionPath,
         engine: engineFlushDeps(hostFor(win, e.sender)).collectionPath,
         traktor: traktorFlushDeps(hostFor(win, e.sender), sessions.traktor).traktorNmlPath,
+        virtualdj: getSettings().syncVirtualdj ? virtualdjRoots() : [],
       },
       { realPath: (p: string) => realpathSync(p) },
     )
@@ -1821,7 +1849,7 @@ function registerIpc(): void {
         ...duplicateLibraryDeps(
           hostFor(BrowserWindow.fromWebContents(e.sender), e.sender),
           sessions,
-          readOnlyLibraries,
+          rootLibraries,
         ),
         trash: (path) => trashRecoverably(path),
         log: { track: activity.track, copyOf: musicReviewLog.copyOf },
@@ -1836,7 +1864,7 @@ function registerIpc(): void {
       hostFor: (sender) => hostFor(BrowserWindow.fromWebContents(sender), sender),
       sessions,
       followEngineSize,
-      readOnlyLibraries,
+      rootLibraries,
     }),
     beginMoment: moments.begin,
   })
@@ -1989,7 +2017,7 @@ function registerIpc(): void {
         )
       },
       librariesKeepingOriginal: (path, target) =>
-        librariesKeepingOriginal(path, target, { traktorRead: traktorReadPath, readOnlyLibraries }),
+        librariesKeepingOriginal(path, target, { traktorRead: traktorReadPath, rootLibraries }),
       refreshAppleMusicEntry: (persistentId) =>
         appleMusicLimiter.run(() => refreshAppleMusicEntry(persistentId)),
       relinkAppleMusicEntry: (persistentId, path) =>
@@ -2306,6 +2334,17 @@ function registerIpc(): void {
         pendingLog: enginePendingLog,
         exclusive: withEngineDatabase,
         onDiscarded: () => queueChecks.discarded('engine'),
+      },
+      virtualdj: {
+        collectionPath: () => null,
+        untouched: () => !getSettings().syncVirtualdj,
+        session: virtualdjSessionBackup,
+        queue: virtualdjCueQueue,
+        ensureClosed: (win) => ensureClosed('virtualdj', win),
+        isRunning: DJ_PROCESSES.virtualdj.isRunning,
+        pendingLog: () => false,
+        exclusive: (_path, task) => task(),
+        onDiscarded: () => queueChecks.discarded('virtualdj'),
       },
     },
     broadcast,

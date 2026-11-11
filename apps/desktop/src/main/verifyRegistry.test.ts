@@ -115,7 +115,12 @@ function setup(over: Partial<ReturnType<typeof mocks>> = {}) {
   return { deps, registry: createVerifyRegistry(deps) }
 }
 
-const written = { rekordbox: 'written', engine: 'written', traktor: 'off' } as const
+const written = {
+  rekordbox: 'written',
+  engine: 'written',
+  traktor: 'off',
+  virtualdj: 'off',
+} as const
 
 const stateOf = (v: Verification | undefined, place: VerifyPlace) =>
   v?.checks.find((c) => c.place === place)?.state
@@ -622,7 +627,7 @@ describe('verify registry', () => {
     ])
     expect(stateOf(registry.get('b'), 'rekordbox')).toBe('checking')
 
-    await registry.afterFlush({ rekordbox: 'off', engine: 'off', traktor: 'off' })
+    await registry.afterFlush({ rekordbox: 'off', engine: 'off', traktor: 'off', virtualdj: 'off' })
     expect(stateOf(registry.get('a'), 'rekordbox')).toBe('ok')
     expect(stateOf(registry.get('b'), 'rekordbox')).toBeUndefined()
   })
@@ -631,7 +636,12 @@ describe('verify registry', () => {
   it('a flush that left a library for a later end keeps its tracks checking for it', async () => {
     const { deps, registry } = setup()
     registry.register(entry('a'))
-    await registry.afterFlush({ rekordbox: 'later', engine: 'later', traktor: 'later' })
+    await registry.afterFlush({
+      rekordbox: 'later',
+      engine: 'later',
+      traktor: 'later',
+      virtualdj: 'off',
+    })
     expect(deps.readRekordbox).not.toHaveBeenCalled()
     expect(stateOf(registry.get('a'), 'rekordbox')).toBe('checking')
 
@@ -731,7 +741,7 @@ describe('verify registry', () => {
         entry('e', { places: new Set(['file', 'engine']), engine: 'absent', engineStep: true }),
       )
 
-      await registry.afterFlush({ rekordbox: 'off', engine, traktor: 'off' })
+      await registry.afterFlush({ rekordbox: 'off', engine, traktor: 'off', virtualdj: 'off' })
 
       expect(deps.readEngine).toHaveBeenCalledWith([expect.objectContaining({ trackId: 'e' })])
       expect(registry.get('e')).toEqual({
@@ -753,7 +763,7 @@ describe('verify registry', () => {
       }),
     )
 
-    await registry.afterFlush({ rekordbox: 'off', engine: 'off', traktor: 'off' })
+    await registry.afterFlush({ rekordbox: 'off', engine: 'off', traktor: 'off', virtualdj: 'off' })
 
     expect(deps.readRekordbox).not.toHaveBeenCalled()
     expect(deps.readTraktor).not.toHaveBeenCalled()
@@ -790,6 +800,7 @@ describe('verify registry', () => {
       rekordbox: 'written',
       engine: 'written',
       traktor: { before: new Map([[traktorPatchKey(p), 'b.aiff']]) },
+      virtualdj: 'off',
     })
 
     expect(deps.readRekordbox.mock.calls.map((c) => c[0].map((e) => e.trackId))).toEqual([

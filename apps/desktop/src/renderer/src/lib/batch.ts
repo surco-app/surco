@@ -87,7 +87,6 @@ export type ConvertGate = {
 
 const LEFT_OUT_KEY: Record<ReadOnlyProgram, string> = {
   serato: 'header.leftOutSerato',
-  virtualdj: 'header.leftOutVirtualdj',
 }
 
 export function convertGate(

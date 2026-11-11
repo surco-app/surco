@@ -1,4 +1,3 @@
-import type { WritableProgram } from '../../shared/djProgram'
 import type { OutputFormat, Settings } from '../../shared/types'
 import type { VerifyDetailKey } from '../../shared/verification'
 
@@ -14,7 +13,11 @@ export type Origin =
   | 'mp3n'
   | 'mp3j'
 export type FileDest = 'folder' | 'beside' | 'overwrite' | 'appleMusic' | 'appleMusicCopy'
-export type Programs = WritableProgram | 'music' | 'all'
+export const MATRIX_PROGRAMS = ['rekordbox', 'engine', 'traktor'] as const
+
+export type MatrixProgram = (typeof MATRIX_PROGRAMS)[number]
+
+export type Programs = MatrixProgram | 'music' | 'all'
 export type CellState = 'closed' | 'open' | 'retry'
 export type Quality = 'source' | 'rate48' | 'bits16' | 'normalize' | 'trim'
 export type InvariantName =
@@ -359,7 +362,7 @@ const K_ROWS: Row[] = [
 
 const LAYER_K: Cell[] = K_ROWS.map((row) => cell('K', row))
 
-const SABOTAGE_BASE: Record<'file' | 'music' | WritableProgram, Row> = {
+const SABOTAGE_BASE: Record<'file' | 'music' | MatrixProgram, Row> = {
   file: {
     id: '',
     origin: 'flac',

@@ -36,8 +36,8 @@ import {
 import { normalizeHiddenSources } from '../../../shared/hiddenSources'
 import {
   DEFAULT_SESSION_WIZARD,
-  normalizeSessionWizard,
   normalizeSessionsMade,
+  normalizeSessionWizard,
 } from '../../../shared/sessionSettings'
 import type { SessionWizardSettings } from '../../../shared/sessionTypes'
 import type {
@@ -124,6 +124,7 @@ interface ResolvedSettings extends Record<DjAddKey, boolean> {
   traktorNmlPath: string
   rekordboxDbPath: string
   engineLibraryDir: string
+  virtualdjLibraryDir: string
 }
 
 // One frozen default per field (not fresh objects per call): the provider memoizes on
@@ -188,6 +189,7 @@ const DEFAULTS: ResolvedSettings = {
   traktorNmlPath: '',
   rekordboxDbPath: '',
   engineLibraryDir: '',
+  virtualdjLibraryDir: '',
 }
 
 function resolveSettings(settings: Partial<Settings> | null): ResolvedSettings {
@@ -253,6 +255,7 @@ function resolveSettings(settings: Partial<Settings> | null): ResolvedSettings {
     traktorNmlPath: settings.traktorNmlPath ?? DEFAULTS.traktorNmlPath,
     rekordboxDbPath: settings.rekordboxDbPath ?? DEFAULTS.rekordboxDbPath,
     engineLibraryDir: settings.engineLibraryDir ?? DEFAULTS.engineLibraryDir,
+    virtualdjLibraryDir: settings.virtualdjLibraryDir ?? DEFAULTS.virtualdjLibraryDir,
   }
 }
 

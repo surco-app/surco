@@ -196,6 +196,7 @@ export function libraryRequeue(queues: {
   rekordbox: RequeueTarget<Move>
   engine: RequeueTarget<Move>
   traktor: RequeueTarget<ReturnType<typeof queuedNmlPatch>>
+  virtualdj: RequeueTarget<Move>
 }): VerifyRegistryDeps['requeue'] {
   const move = (queue: RequeueTarget<Move>) => (e: VerifyEntry) => {
     if (!queue.holds(e.from))
@@ -233,6 +234,7 @@ export function libraryRequeue(queues: {
         })
       if (queued && !queues.traktor.holds(queued.from)) queues.traktor.enqueue([], [queued])
     },
+    virtualdj: move(queues.virtualdj),
   }
   return (place, e) => {
     handAgain[place](e)

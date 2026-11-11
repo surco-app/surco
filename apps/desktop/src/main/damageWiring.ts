@@ -54,6 +54,7 @@ export function damageDeps(env: DamageEnv): DamageIpcDeps {
         rekordbox: rekordboxFlushDeps(host).collectionPath,
         engine: engineFlushDeps(host).collectionPath,
         traktor: traktorFlushDeps(host, env.sessions.traktor).traktorNmlPath,
+        virtualdj: [],
       }
       return {
         isAllowed: env.mediaAccess.isAllowed,

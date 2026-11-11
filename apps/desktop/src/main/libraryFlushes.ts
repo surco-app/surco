@@ -27,7 +27,7 @@ import { probeAudio, probeDuration, probeProperties, toNmlLocation } from './ffm
 import {
   djLibraryFileUse,
   type LibraryLocations,
-  type ReadOnlyLibraries,
+  type RootLibraries,
   type SyncedLibraries,
   usedByDjLibrary,
 } from './libraryFileUse'
@@ -68,20 +68,22 @@ import { sourceRoot } from './usbExport'
 import { type FlushOutcome, type TraktorWrite, traktorPatchKey } from './verifyRegistry'
 import type { VirtualdjRoot } from './virtualdjLibrary'
 import { syncVirtualdjTags } from './virtualdjTagSync'
-import { virtualdjLibraryHas } from './virtualdjTrackWrite'
+import { virtualdjHeld, virtualdjLibraryHas } from './virtualdjTrackWrite'
 
 export type SyncBlockedKey = 'traktorSyncBlocked' | 'rekordboxSyncBlocked' | 'engineSyncBlocked'
 
-export const SYNC_BLOCKED_KEY: Record<WritableProgram, SyncBlockedKey> = {
+export const SYNC_BLOCKED_KEY: Record<WritableProgram, SyncBlockedKey | null> = {
   rekordbox: 'rekordboxSyncBlocked',
   traktor: 'traktorSyncBlocked',
   engine: 'engineSyncBlocked',
+  virtualdj: null,
 }
 
 const REPORTS_SYNC_ISSUES: Record<WritableProgram, boolean> = {
   rekordbox: true,
   traktor: false,
   engine: true,
+  virtualdj: false,
 }
 
 export const SYNC_ISSUE_PROGRAMS: ReadonlySet<WritableProgram> = new Set(
@@ -137,7 +139,7 @@ function onlyLibrary<P extends LibraryProgram>(
 export async function librariesKeepingOriginal(
   path: string,
   target: string,
-  deps: { traktorRead: () => string; readOnlyLibraries: () => ReadOnlyLibraries },
+  deps: { traktorRead: () => string; rootLibraries: () => RootLibraries },
 ): Promise<DjProgram[]> {
   const settings = getSettings()
   const status = currentLibraryStatus()
@@ -148,10 +150,11 @@ export async function librariesKeepingOriginal(
         : '',
     engine: !settings.syncEngineDj && status.engine.found ? settings.engineLibraryDir : '',
     traktor: settings.syncTraktor ? '' : deps.traktorRead(),
+    virtualdj: settings.syncVirtualdj ? [] : deps.rootLibraries().virtualdj,
   }
   const held: DjProgram[] = []
   for (const program of WRITABLE_PROGRAMS) {
-    if (!locations[program]) continue
+    if (locations[program].length === 0) continue
     const only = onlyLibrary(program, locations[program])
     if (await djLibraryFileUse(only, { realPath: (p: string) => realpathSync(p) })(path))
       held.push(program)
@@ -164,7 +167,7 @@ export async function librariesKeepingOriginal(
     )
     if ((await traktor(path)) && (await traktor(target))) held.push('traktor')
   }
-  const readOnly = deps.readOnlyLibraries()
+  const readOnly = deps.rootLibraries()
   for (const program of READ_ONLY_PROGRAMS) {
     if (readOnly[program].length === 0) continue
     const only = onlyLibrary(program, readOnly[program])
@@ -185,7 +188,7 @@ export async function usedByAnyLibrary(
   titles: string[],
   deps: {
     traktorRead: () => string
-    readOnlyLibraries: () => ReadOnlyLibraries
+    rootLibraries: () => RootLibraries
     musicEntries?: (
       path: string,
       titles: string[],
@@ -207,7 +210,7 @@ export async function usedByAnyLibrary(
           : '',
       engine: settings.syncEngineDj || status.engine.found ? settings.engineLibraryDir : '',
       traktor: (settings.syncTraktor && settings.traktorNmlPath) || deps.traktorRead(),
-      ...deps.readOnlyLibraries(),
+      ...deps.rootLibraries(),
     },
     { realPath: (p: string) => realpathSync(p) },
   )
@@ -328,7 +331,7 @@ export type ConversionQueues = {
   }
 }
 
-export const FLUSH_ORDER = writableInOrder(['traktor', 'rekordbox', 'engine'])
+export const FLUSH_ORDER = writableInOrder(['traktor', 'rekordbox', 'engine', 'virtualdj'])
 
 // A convert-all run ends (however it ended — finished, cancelled, or failed, the
 // renderer calls this from its finally block): flush whatever Traktor cue patches the
@@ -366,6 +369,7 @@ export async function flushConversionBatch(
       enqueue: noting('rekordbox', queues.rekordbox.enqueue),
     }),
     engine: engineConversionFlusher(host, sessions, queues.engine),
+    virtualdj: virtualdjConversionFlusher(queues.virtualdj),
   }
   for (const program of FLUSH_ORDER) await flushers[program].before()
   // The run's repoints, taken once: rekordbox and Engine DJ each apply the same list to
@@ -384,30 +388,41 @@ export async function flushConversionBatch(
     } catch (err) {
       log.warn(`serato: queueing the converted tracks failed: ${String(err)}`)
     }
-  if (queues.virtualdj)
-    try {
-      queueVirtualdjRun(queues.virtualdj, run)
-    } catch (err) {
-      log.warn(`virtualdj: queueing the converted tracks failed: ${String(err)}`)
-    }
   return { ...(outcome as FlushOutcome), added }
 }
 
-function queueVirtualdjRun(
-  queue: NonNullable<ConversionQueues['virtualdj']>,
-  run: ConversionRun,
-): void {
-  const addToVirtualdj = getSettings().addToVirtualdj
-  const ops = libraryTrackOps(
-    run.repoints,
-    'virtualdj',
-    undefined,
-    addToVirtualdj,
-    addToVirtualdj && run.addable ? virtualdjLibraryHas(queue.roots()) : undefined,
-  )
-  if (ops.length === 0) return
-  queue.enqueue(ops)
-  queue.applyQuietly()
+function virtualdjConversionFlusher(
+  queue: ConversionQueues['virtualdj'],
+): ConversionFlusher<'virtualdj'> {
+  return {
+    before: async () => {},
+    after: async ({ repoints, later, addable }) => {
+      if (later) return 'later'
+      if (!queue) return 'off'
+      try {
+        const { addToVirtualdj, syncVirtualdj } = getSettings()
+        const roots = queue.roots()
+        const held = syncVirtualdj ? virtualdjHeld(roots) : () => false
+        const moves = repoints.filter(
+          (r) => (r.from !== r.to || r.fromBytes !== undefined) && held(r.from),
+        )
+        const ops = libraryTrackOps(
+          repoints,
+          'virtualdj',
+          undefined,
+          addToVirtualdj,
+          addToVirtualdj && addable ? virtualdjLibraryHas(roots) : undefined,
+        )
+        if (ops.length + moves.length === 0) return 'off'
+        queue.enqueue(ops, moves)
+        queue.applyQuietly()
+        return 'queued'
+      } catch (err) {
+        log.warn(`virtualdj: queueing the converted tracks failed: ${String(err)}`)
+        return 'failed'
+      }
+    },
+  }
 }
 
 function queueSeratoRun(queue: NonNullable<ConversionQueues['serato']>, run: ConversionRun): void {
@@ -823,7 +838,7 @@ type DuplicateSteps = {
 export function duplicateLibraryDeps(
   host: LibraryHost,
   sessions: Sessions,
-  readOnlyLibraries: () => ReadOnlyLibraries,
+  rootLibraries: () => RootLibraries,
 ): Omit<ReplaceDuplicatesDeps, 'trash' | 'musicStep' | 'log'> {
   const realPath = (p: string) => realpathSync(p)
   const rekordbox = rekordboxFlushDeps(host)
@@ -889,6 +904,7 @@ export function duplicateLibraryDeps(
                 replaceDuplicatesInCollection(nmlPath, pairs, sessions.traktor),
             })
         : undefined,
+    virtualdj: undefined,
   }
   const libraries: ReplaceDuplicatesDeps['libraries'] = {}
   for (const program of WRITABLE_PROGRAMS) if (steps[program]) libraries[program] = steps[program]
@@ -899,7 +915,7 @@ export function duplicateLibraryDeps(
         rekordbox: rekordbox.collectionPath,
         engine: engine.collectionPath,
         traktor: traktor.traktorNmlPath,
-        ...readOnlyLibraries(),
+        ...rootLibraries(),
       },
       { realPath },
     ),

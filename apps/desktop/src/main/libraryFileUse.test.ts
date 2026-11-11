@@ -782,6 +782,7 @@ describe('libraryGenresOf', () => {
       rekordbox: await rekordboxWithGenre(PATH, 'House; Deep House'),
       engine: await engineWithGenre(PATH, 'House; Deep House'),
       traktor: await traktorWithGenre('a.mp3', 'House; Deep House'),
+      virtualdj: [],
     }
     expect(await libraryGenresOf([PATH], libraries)).toEqual({
       [PATH]: [

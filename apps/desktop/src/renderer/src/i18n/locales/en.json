@@ -190,8 +190,6 @@
     "leftOutMissing_other": "{{count}} tracks left out, they have no {{fields}}",
     "leftOutSerato_one": "{{count}} track left out, Serato would lose it and its cues",
     "leftOutSerato_other": "{{count}} tracks left out, Serato would lose them and their cues",
-    "leftOutVirtualdj_one": "{{count}} track left out, VirtualDJ would lose it and its cues",
-    "leftOutVirtualdj_other": "{{count}} tracks left out, VirtualDJ would lose them and their cues",
     "convertSelected_one": "Convert {{count}} selected",
     "convertSelected_other": "Convert {{count}} selected",
     "convertSomeSelected": "Convert {{ready}} of {{total}} selected",
@@ -358,7 +356,6 @@
     "conversionCancelled": "Conversion cancelled.",
     "verifyUnknownTrack": "This check is no longer available. Convert the track again to repeat it.",
     "seratoBlocked": "Serato would lose the track and its cues",
-    "virtualdjBlocked": "VirtualDJ would lose the track and its cues",
     "sourceTagsUnread": "This file's tags could not be read, so it was left alone: converting it would have wiped the ones it has. Load it again and retry.",
     "coverDownloadFailed": "The artwork couldn't be downloaded.",
     "coverNotImage": "That address doesn't point to an image.",
@@ -2999,7 +2996,6 @@
     "loading": "Reading the list…",
     "empty": "No track in the list has its tags read.",
     "emptySerato": "Every track in the list is from Serato and is left out so Serato keeps it.",
-    "emptyVirtualdj": "Every track in the list is from VirtualDJ and is left out so VirtualDJ keeps it.",
     "emptyReadOnly": "Every track in the list is from a DJ program that would lose it, so all of them are left out.",
     "error": "Couldn't prepare the list review.",
     "scope_one": "{{count}} track in the list",
@@ -3008,8 +3004,6 @@
     "skipped_other": "{{count}} not read yet, left out",
     "seratoLeftOut_one": "{{count}} from Serato, left out so Serato keeps it",
     "seratoLeftOut_other": "{{count}} from Serato, left out so Serato keeps them",
-    "virtualdjLeftOut_one": "{{count}} from VirtualDJ, left out so VirtualDJ keeps it",
-    "virtualdjLeftOut_other": "{{count}} from VirtualDJ, left out so VirtualDJ keeps them",
     "musicUnchecked": "Apple Music was not checked because it is closed.",
     "where": {
       "music": "Apple Music"
@@ -3622,7 +3616,8 @@
       "traktorCuesChanged": "The cues changed in Traktor",
       "traktorNameStale": "Traktor still shows “{{value}}”",
       "traktorPlaylistMissing": "The track is not in the {{playlist}} playlist in Traktor",
-      "traktorUnreadable": "Could not check Traktor"
+      "traktorUnreadable": "Could not check Traktor",
+      "virtualdjUnreadable": "Could not check VirtualDJ"
     },
     "retry": "Try again",
     "sourceGoneKeptLine": "The original is gone, but a copy is in <0>{{panel}}</0>",

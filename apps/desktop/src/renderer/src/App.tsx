@@ -285,6 +285,7 @@ const SYNC_ISSUES: Record<
   },
   traktor: null,
   engine: { listen: (cb) => window.api.dj.onSyncIssue('engine', cb), messages: 'engineIssue' },
+  virtualdj: null,
 }
 
 const inFiles = (t: TrackItem): boolean => !!t.inFiles

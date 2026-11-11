@@ -52,7 +52,6 @@ export const ERROR_KEYS = [
   'conversionCancelled',
   'verifyUnknownTrack',
   'seratoBlocked',
-  'virtualdjBlocked',
 ] as const
 
 export type ErrorKey = (typeof ERROR_KEYS)[number]

@@ -564,6 +564,50 @@ function applyListTrack(d: ListsDraft, op: TrackOp): OpOutcome {
   return { id: op.id, applied: true, notices }
 }
 
+export interface VirtualdjRowMove {
+  from: string
+  to: string
+  size: number
+}
+
+const withRowAttr = (text: string, name: string, value: string): string =>
+  text.replace(new RegExp(`(\\s${name}=")[^"]*(")`), (_m, open, close) => `${open}${value}${close}`)
+
+function movedRows(d: ListsDraft, moves: VirtualdjRowMove[]): void {
+  const byFrom = new Map(moves.map((m) => [nfc(m.from), m]))
+  for (const file of listFiles(d)) {
+    const xml = textOf(d, file)
+    if (xml === null) continue
+    const spans = lineSpans(xml)
+    if (!spans.some((s) => byFrom.has(nfc(s.path)))) continue
+    const rows = spans.map((s): Row => {
+      const move = byFrom.get(nfc(s.path))
+      if (!move) return s
+      return {
+        text: withRowAttr(withRowAttr(s.text, 'path', escapeXml(move.to)), 'size', `${move.size}`),
+      }
+    })
+    const next = rewrittenList(xml, rows)
+    if (next !== null) put(d, file, next)
+    else log.warn(`VirtualDJ list ${file} left on the old files, its rows could not be read`)
+  }
+}
+
+export async function moveVirtualdjListRows(
+  moves: VirtualdjRowMove[],
+  deps: VirtualdjCommitDeps,
+): Promise<VirtualdjCommit> {
+  for (let attempt = 0; attempt < ATTEMPTS; attempt++) {
+    const lists = virtualdjListsDir(deps.roots())
+    if (!lists) return 'nothing'
+    const d = createListsDraft(lists)
+    movedRows(d, moves)
+    const written = await commitLists(d, deps)
+    if (written !== 'changed') return written
+  }
+  return 'cancelled'
+}
+
 type Step = { run: () => void; undo: () => void; files: string[] }
 
 async function commitLists(d: ListsDraft, deps: VirtualdjCommitDeps): Promise<VirtualdjCommit> {

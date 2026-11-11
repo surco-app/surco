@@ -15,7 +15,7 @@ import type { NmlLocation } from './traktorNml'
 import type { DuplicateCollectionResult } from './traktorNmlLibrary'
 import { logKeptOpen, TRAKTOR_SYNC_SKIP_KEYS } from './traktorSyncFlush'
 
-const LIBRARY_ORDER = writableInOrder(['traktor', 'rekordbox', 'engine'])
+const LIBRARY_ORDER = writableInOrder(['traktor', 'rekordbox', 'engine', 'virtualdj'])
 
 // After the review removes duplicate copies from Music, each DJ library with its sync on
 // moves to the copy the user kept, and only then does a removed copy's file go to the
@@ -68,6 +68,7 @@ const RUNNING_REASON: Record<WritableProgram, string> = {
   rekordbox: 'rekordbox-running',
   engine: 'engine-running',
   traktor: 'traktor-running',
+  virtualdj: 'virtualdj-running',
 }
 const SKIPPED = new Set([
   ...Object.values(RUNNING_REASON),

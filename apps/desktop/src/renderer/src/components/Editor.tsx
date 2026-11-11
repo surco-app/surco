@@ -130,8 +130,8 @@ import { SpectrumGlimpse } from './SpectrumGlimpse'
 import { Tooltip } from './Tooltip'
 import { TrimSection } from './TrimSection'
 
-const LIBRARY_ORDER = writableInOrder(['rekordbox', 'engine', 'traktor'])
-const COLLECTION_PATH_ORDER = writableInOrder(['traktor', 'rekordbox', 'engine'])
+const LIBRARY_ORDER = writableInOrder(['rekordbox', 'engine', 'traktor', 'virtualdj'])
+const COLLECTION_PATH_ORDER = writableInOrder(['traktor', 'rekordbox', 'engine', 'virtualdj'])
 
 interface Props {
   item: TrackItem

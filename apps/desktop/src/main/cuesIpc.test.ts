@@ -450,7 +450,7 @@ describe('registerCuesIpc', () => {
     expect(add).not.toHaveBeenCalled()
   })
 
-  it('routes a mixed rekordbox and VirtualDJ save to each program’s own queue, and opens a copy moment only for rekordbox', async () => {
+  it('routes a mixed rekordbox and VirtualDJ save to each program’s own queue, and opens the copy moment for both', async () => {
     const enqueue = vi.fn<RekordboxQueue['enqueue']>(() => true)
     const applyQuietly = quietly()
     const vdjEnqueue = vi.fn<RekordboxQueue['enqueue']>(() => true)
@@ -491,7 +491,7 @@ describe('registerCuesIpc', () => {
     ])
     expect(vdjApply).toHaveBeenCalledTimes(1)
     expect(applyQuietly).toHaveBeenCalledTimes(1)
-    expect(beginMoment).toHaveBeenCalledWith('cues', ['rekordbox'])
+    expect(beginMoment).toHaveBeenCalledWith('cues', ['rekordbox', 'virtualdj'])
   })
 
   it('queues several tracks together and applies once, so master.db is written in one batch', async () => {

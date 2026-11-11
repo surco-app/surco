@@ -65,6 +65,7 @@ export const VERIFY_DETAIL_KEYS = [
   'traktorNameStale',
   'traktorPlaylistMissing',
   'traktorUnreadable',
+  'virtualdjUnreadable',
 ] as const
 
 export type VerifyDetailKey = (typeof VERIFY_DETAIL_KEYS)[number]
@@ -95,7 +96,7 @@ export interface Verification {
   originalHeld?: HeldOriginal
 }
 
-export const PLACE_PROGRAMS = writableInOrder(['rekordbox', 'engine', 'traktor'])
+export const PLACE_PROGRAMS = writableInOrder(['rekordbox', 'engine', 'traktor', 'virtualdj'])
 
 export const PLACE_ORDER: VerifyPlace[] = ['file', 'appleMusic', ...PLACE_PROGRAMS]
 

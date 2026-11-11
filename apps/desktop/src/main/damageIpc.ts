@@ -31,6 +31,7 @@ type QueuedChecks = {
 
 const QUEUED_FOR: QueuedChecks & Record<Exclude<WritableProgram, RepairedProgram>, null> = {
   rekordbox: null,
+  virtualdj: null,
   engine: (r, queued) =>
     queued.engine.some(
       (q) =>

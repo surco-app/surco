@@ -35,6 +35,7 @@ function setup(
     rekordbox: overrides.rekordbox ?? fakeProcess(true),
     traktor: overrides.traktor ?? fakeProcess(true),
     engine: overrides.engine ?? fakeProcess(true),
+    virtualdj: overrides.virtualdj ?? fakeProcess(true),
   } satisfies Record<WritableProgram, ProgramProcess>
   const askSpy = vi.fn(ask)
   const t = (key: string) => `t:${key}`
@@ -168,11 +169,22 @@ describe('createEnsureClosed', () => {
       rekordbox: ['convert', 'playlists', 'usb', 'restore'],
       traktor: ['convert', 'cues', 'playlists', 'restore'],
       engine: ['convert', 'cues', 'playlists', 'usb', 'restore'],
+      virtualdj: ['convert'],
     })
   })
 
+  it('never asks VirtualDJ to quit, since its writes wait in its queue until it closes', async () => {
+    const virtualdj = fakeProcess(true)
+    const { ask, ensureClosed } = setup({ virtualdj })
+    expect(await ensureClosed('virtualdj', win)).toBe(false)
+    expect(ask).not.toHaveBeenCalled()
+    expect(virtualdj.quit).not.toHaveBeenCalled()
+    virtualdj.isRunning.mockResolvedValue(false)
+    expect(await ensureClosed('virtualdj', win)).toBe(true)
+  })
+
   it.each(
-    (Object.keys(words) as WritableProgram[]).flatMap((program) =>
+    (Object.keys(words) as (keyof typeof words)[]).flatMap((program) =>
       Object.entries(words[program]).map(([reason, detail]) => [program, reason, detail] as const),
     ),
   )("uses each program's own words: %s %s", async (program, reason, detail) => {

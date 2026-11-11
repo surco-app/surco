@@ -8,9 +8,12 @@ export const LIBRARY_NAME: Record<DjProgram, string> = {
   virtualdj: 'VirtualDJ',
 }
 
-export const REVIEW_LIBRARIES = writableInOrder(['rekordbox', 'engine', 'traktor']).map(
-  (library) => [library, LIBRARY_NAME[library]] as const,
-)
+export const REVIEW_LIBRARIES = writableInOrder([
+  'rekordbox',
+  'engine',
+  'traktor',
+  'virtualdj',
+]).map((library) => [library, LIBRARY_NAME[library]] as const)
 
 export const TAG_LIBRARIES = programsInOrder([
   'rekordbox',

@@ -16,9 +16,6 @@ import { traktorFileOf } from './traktorPlaylists'
 import { readVirtualdjLibrary, type VirtualdjRoot } from './virtualdjLibrary'
 import type { VirtualdjNode } from './virtualdjLists'
 
-// Each library's location, or '' when its sync is off.
-export type SyncedLibraries = Record<WritableProgram, string>
-
 interface LocationOf {
   rekordbox: string
   engine: string
@@ -29,9 +26,16 @@ interface LocationOf {
 
 export type LibraryLocations = { [P in LibraryProgram]: LocationOf[P] }
 
-export type ReadOnlyLibraries = Omit<LibraryLocations, WritableProgram>
+// Each library's location, or an empty one when its sync is off.
+export type SyncedLibraries = Pick<LibraryLocations, WritableProgram>
 
-const LIBRARY_ORDER = writableInOrder(['rekordbox', 'engine', 'traktor'])
+type RootProgram = {
+  [P in LibraryProgram]: LocationOf[P] extends string ? never : P
+}[LibraryProgram]
+
+export type RootLibraries = Pick<LibraryLocations, RootProgram>
+
+const LIBRARY_ORDER = writableInOrder(['rekordbox', 'engine', 'traktor', 'virtualdj'])
 
 const PROGRAM_ORDER = programsInOrder(['rekordbox', 'engine', 'traktor', 'serato', 'virtualdj'])
 
@@ -226,20 +230,59 @@ async function engineInfo(
   }
 }
 
-const COPY_INFO: Record<
-  WritableProgram,
-  (
-    location: string,
+function virtualdjInfo(
+  roots: VirtualdjRoot[],
+  paths: string[],
+  options: PathMatchOptions,
+): LibraryCopyPresence[] {
+  const library = readVirtualdjLibrary(roots)
+  const find = fileFinder(
+    library.songs.map((s) => s.path),
+    options,
+  )
+  const lists = listsOf(library.lists)
+  return paths.map((path) => {
+    const at = find(path)
+    const song = at && library.songs.find((s) => s.path === at)
+    if (!song) return null
+    const file = song.path.normalize('NFC')
+    return {
+      cues: song.pois.filter((p) => p.kind === 'cue' && (p.num ?? 0) >= 1 && (p.num ?? 0) <= 8)
+        .length,
+      playlists: lists.filter((n) => n.paths.some((p) => p.normalize('NFC') === file)).length,
+    }
+  })
+}
+
+function listsOf(nodes: VirtualdjNode[]): VirtualdjNode[] {
+  return nodes.flatMap((n) => (n.kind === 'playlist' ? [n] : listsOf(n.children ?? [])))
+}
+
+type CopyInfoOf = {
+  [P in WritableProgram]: (
+    location: SyncedLibraries[P],
     paths: string[],
     options: PathMatchOptions,
   ) => LibraryCopyPresence[] | Promise<LibraryCopyPresence[]>
-> = {
+}
+
+const COPY_INFO: CopyInfoOf = {
   rekordbox: rekordboxInfo,
   engine: engineInfo,
   traktor: async (nmlPath, paths) => {
     const nml = await readFile(nmlPath, 'utf8')
     return paths.map((p) => nmlCopyInfo(nml, toNmlLocation(p)))
   },
+  virtualdj: virtualdjInfo,
+}
+
+function copyInfoOf<P extends WritableProgram>(
+  program: P,
+  libraries: SyncedLibraries,
+  paths: string[],
+  options: PathMatchOptions,
+) {
+  return COPY_INFO[program](libraries[program], paths, options)
 }
 
 // Read only, for the duplicate detail: what each enabled library holds for each copy. A
@@ -255,9 +298,9 @@ export async function libraryCopyInfo(
       info[p][library] = found[i]
     })
   for (const library of LIBRARY_ORDER) {
-    if (!libraries[library]) continue
+    if (libraries[library].length === 0) continue
     try {
-      fill(library, await COPY_INFO[library](libraries[library], paths, options))
+      fill(library, await copyInfoOf(library, libraries, paths, options))
     } catch {}
   }
   return info

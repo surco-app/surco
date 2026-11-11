@@ -346,6 +346,7 @@ describe('libraryRequeue', () => {
       at: () => '/t/collection.nml',
       holds,
     },
+    virtualdj: { enqueue: vi.fn(), apply: vi.fn(), at: () => '', holds },
   })
 
   // The run's repoint still queued carries its tags, artwork, grid or stars: a bare move by
@@ -621,7 +622,12 @@ describe('queueVerification', () => {
     const q = queueVerification(registry)
     const rekordboxOf = () => registry.get('a')?.checks.find((c) => c.place === 'rekordbox')
     registry.register(entry())
-    await registry.afterFlush({ rekordbox: 'written', engine: 'off', traktor: 'off' })
+    await registry.afterFlush({
+      rekordbox: 'written',
+      engine: 'off',
+      traktor: 'off',
+      virtualdj: 'off',
+    })
     await registry.retry('a')
     expect(rekordboxOf()?.state).toBe('checking')
 
@@ -696,6 +702,7 @@ describe('appVerifyRegistry', () => {
         rekordbox: { enqueue: vi.fn(), apply: vi.fn(), at: () => path, holds: () => false },
         engine: { enqueue: vi.fn(), apply: vi.fn(), at: () => '', holds: () => false },
         traktor: { enqueue: vi.fn(), apply: vi.fn(), at: () => '', holds: () => false },
+        virtualdj: { enqueue: vi.fn(), apply: vi.fn(), at: () => '', holds: () => false },
       },
       emit,
       readMusic: vi.fn<VerifyRegistryDeps['readMusic']>(),
@@ -711,7 +718,12 @@ describe('appVerifyRegistry', () => {
       } as Partial<VerifyEntry>),
     )
 
-    await registry.afterFlush({ rekordbox: 'written', engine: 'off', traktor: 'off' })
+    await registry.afterFlush({
+      rekordbox: 'written',
+      engine: 'off',
+      traktor: 'off',
+      virtualdj: 'off',
+    })
 
     expect(emit.mock.lastCall?.[1].status).toBe('ok')
     expect(emit.mock.lastCall?.[1].checks).toContainEqual(

@@ -41,11 +41,9 @@ import { libraryBackupRoot } from '../../main/libraryBackups'
 import { openRekordboxDb } from '../../main/rekordboxDb'
 import { defaults } from '../../main/settings'
 import { readTraktorCueStart, storedTree } from '../../main/traktor4Fixture'
-import type { WritableProgram } from '../../shared/djProgram'
-import { writableInOrder } from '../../shared/djProgram'
 import type { OutputFormat } from '../../shared/types'
 import { music } from '../fakeMusic'
-import type { Cell, InvariantName } from './cells'
+import { type Cell, type InvariantName, MATRIX_PROGRAMS, type MatrixProgram } from './cells'
 import {
   analysisDataPathOf,
   bystanderRows,
@@ -63,7 +61,7 @@ import {
 } from './libraries'
 import { SEEDED_CUES_MS, type SourceTrack, type TrickyTags } from './sources'
 
-const PROGRAM_ORDER = writableInOrder(['rekordbox', 'engine', 'traktor'])
+const PROGRAM_ORDER = MATRIX_PROGRAMS
 
 const FF = ffmpegStatic as unknown as string
 const PROBE = ffprobeInstaller.path
@@ -1075,13 +1073,13 @@ function programBroken(program: Program, set: LibrarySet, t: SeededTrack, e: Exp
   return set.music ? musicBroken(t, e) : []
 }
 
-const PROGRAM_NAME: Record<WritableProgram, string> = {
+const PROGRAM_NAME: Record<MatrixProgram, string> = {
   rekordbox: 'rekordbox',
   engine: 'Engine',
   traktor: 'Traktor',
 }
 
-function libraryFile(set: LibrarySet, program: WritableProgram): string | undefined {
+function libraryFile(set: LibrarySet, program: MatrixProgram): string | undefined {
   if (program === 'rekordbox') return set.rekordboxDb
   if (program === 'engine') return set.engineDir && engineDbPath(set.engineDir)
   return set.traktorNml
@@ -1139,7 +1137,7 @@ function diskBroken(e: Expected): Found[] {
   return found
 }
 
-function libraryPathOf(program: WritableProgram, set: LibrarySet, t: SeededTrack): string | null {
+function libraryPathOf(program: MatrixProgram, set: LibrarySet, t: SeededTrack): string | null {
   if (program === 'rekordbox' && set.rekordboxDb && t.rekordboxId) {
     const db = openRekordboxDb(set.rekordboxDb, { readonly: true })
     if (!db) return null
@@ -1187,7 +1185,7 @@ function reachableBroken(cell: Cell, set: LibrarySet, t: SeededTrack): Found[] {
   })
 }
 
-function libraryTitleOf(program: WritableProgram, set: LibrarySet, t: SeededTrack): string | null {
+function libraryTitleOf(program: MatrixProgram, set: LibrarySet, t: SeededTrack): string | null {
   if (program === 'rekordbox' && set.rekordboxDb && t.rekordboxId) {
     const db = openRekordboxDb(set.rekordboxDb, { readonly: true })
     if (!db) return null
@@ -1224,7 +1222,7 @@ function namesBroken(cell: Cell, set: LibrarySet, t: SeededTrack): Found[] {
   const title = cell.edit?.title
   if (!title) return []
   return syncedPrograms(cell.programs)
-    .filter((p): p is WritableProgram => p !== 'music')
+    .filter((p): p is MatrixProgram => p !== 'music')
     .flatMap((program): Found[] => {
       const got = libraryTitleOf(program, set, t)
       return got !== null && got.normalize('NFC') !== title.normalize('NFC')

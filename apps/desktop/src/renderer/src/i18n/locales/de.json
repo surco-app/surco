@@ -190,8 +190,6 @@
     "leftOutMissing_other": "{{count}} Tracks bleiben draußen, ihnen fehlt {{fields}}",
     "leftOutSerato_one": "{{count}} Track bleibt draußen, Serato würde ihn und seine Cues verlieren",
     "leftOutSerato_other": "{{count}} Tracks bleiben draußen, Serato würde sie und ihre Cues verlieren",
-    "leftOutVirtualdj_one": "{{count}} Track bleibt draußen, VirtualDJ würde ihn und seine Cues verlieren",
-    "leftOutVirtualdj_other": "{{count}} Tracks bleiben draußen, VirtualDJ würde sie und ihre Cues verlieren",
     "convertSelected_one": "{{count}} ausgewählten Track konvertieren",
     "convertSelected_other": "{{count}} ausgewählte Tracks konvertieren",
     "convertSomeSelected": "{{ready}} von {{total}} ausgewählten Tracks konvertieren",
@@ -358,7 +356,6 @@
     "conversionCancelled": "Konvertierung abgebrochen.",
     "verifyUnknownTrack": "Diese Prüfung gibt es nicht mehr. Konvertiere den Track erneut, um sie zu wiederholen.",
     "seratoBlocked": "Serato würde den Track und seine Cues verlieren",
-    "virtualdjBlocked": "VirtualDJ würde den Track und seine Cues verlieren",
     "sourceTagsUnread": "Die Tags dieser Datei konnten nicht gelesen werden, daher wurde sie nicht angerührt: eine Konvertierung hätte die vorhandenen gelöscht. Lade sie erneut und versuche es noch einmal.",
     "coverDownloadFailed": "Das Cover konnte nicht heruntergeladen werden.",
     "coverNotImage": "Diese Adresse führt zu keinem Bild.",
@@ -2999,7 +2996,6 @@
     "loading": "Liste wird gelesen…",
     "empty": "Bei keinem Track der Liste wurden die Tags gelesen.",
     "emptySerato": "Alle Tracks der Liste stammen aus Serato und bleiben draußen, damit Serato sie behält.",
-    "emptyVirtualdj": "Alle Tracks der Liste stammen aus VirtualDJ und bleiben draußen, damit VirtualDJ sie behält.",
     "emptyReadOnly": "Alle Tracks der Liste stammen aus einem DJ-Programm, das sie verlieren würde, deshalb bleiben alle draußen.",
     "error": "Die Prüfung der Liste konnte nicht vorbereitet werden.",
     "scope_one": "{{count}} Track der Liste",
@@ -3008,8 +3004,6 @@
     "skipped_other": "{{count}} nicht gelesen, nicht geprüft",
     "seratoLeftOut_one": "{{count}} aus Serato, ausgelassen, damit Serato sie behält",
     "seratoLeftOut_other": "{{count}} aus Serato, ausgelassen, damit Serato sie behält",
-    "virtualdjLeftOut_one": "{{count}} aus VirtualDJ, ausgelassen, damit VirtualDJ sie behält",
-    "virtualdjLeftOut_other": "{{count}} aus VirtualDJ, ausgelassen, damit VirtualDJ sie behält",
     "musicUnchecked": "Apple Music wurde nicht abgefragt, weil es geschlossen ist.",
     "where": {
       "music": "Apple Music"
@@ -3622,7 +3616,8 @@
       "traktorCuesChanged": "Die Cues haben sich in Traktor geändert",
       "traktorNameStale": "Traktor zeigt noch „{{value}}“",
       "traktorPlaylistMissing": "Der Track fehlt in Traktor in der Playlist {{playlist}}",
-      "traktorUnreadable": "Traktor konnte nicht geprüft werden"
+      "traktorUnreadable": "Traktor konnte nicht geprüft werden",
+      "virtualdjUnreadable": "VirtualDJ konnte nicht geprüft werden"
     },
     "retry": "Erneut versuchen",
     "sourceGoneKeptLine": "Das Original ist weg, eine Kopie liegt in <0>{{panel}}</0>",

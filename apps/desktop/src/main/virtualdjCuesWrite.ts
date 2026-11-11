@@ -39,7 +39,7 @@ export function songIn(
   draft: VirtualdjDraft,
   roots: VirtualdjRoot[],
   path: string,
-): { file: string; xml: string; song: VirtualdjSong } | null {
+): { root: VirtualdjRoot; file: string; xml: string; song: VirtualdjSong } | null {
   const wanted = path.normalize('NFC')
   for (const root of roots) {
     const file = virtualdjDatabaseOf(root)
@@ -49,7 +49,7 @@ export function songIn(
       parseVirtualdjDatabase(xml).find(
         (s) => virtualdjPathOf(root, s.path).normalize('NFC') === wanted,
       )
-    if (xml && song) return { file, xml, song }
+    if (xml && song) return { root, file, xml, song }
   }
   return null
 }

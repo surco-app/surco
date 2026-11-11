@@ -953,7 +953,7 @@ describe('App VirtualDJ tab', () => {
     expect(window.api.dj.playlist).toHaveBeenCalledWith('virtualdj', 'Carpeta/Dentro')
   })
 
-  it('keeps a track of a VirtualDJ list from being converted, naming VirtualDJ as the reason', async () => {
+  it('holds a track of a VirtualDJ list back only for what it lacks, not for coming from VirtualDJ, since VirtualDJ follows it to the new file', async () => {
     openVirtualdj()
     await renderApp()
     fireEvent.click(await screen.findByTestId('source-rail-virtualdj'))
@@ -963,10 +963,9 @@ describe('App VirtualDJ tab', () => {
     fireEvent.click(screen.getAllByTestId('track-row')[1])
     await waitFor(() =>
       expect(screen.getByTestId('process-btn')).toHaveAccessibleDescription(
-        'VirtualDJ would lose the track and its cues',
+        'Missing required fields: Artist',
       ),
     )
-    expect(screen.getByTestId('process-btn')).toHaveAttribute('aria-disabled', 'true')
   })
 
   it('leaves VirtualDJ out of the rail where its library is not found', async () => {

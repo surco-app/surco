@@ -310,7 +310,7 @@ function processTrackInMain(
     librariesKeepingOriginal: (path, target) =>
       librariesKeepingOriginal(path, target, {
         traktorRead: traktorWritePath,
-        readOnlyLibraries: () => ({ serato: [], virtualdj: [] }),
+        rootLibraries: () => ({ serato: [], virtualdj: [] }),
       }),
     isEngineDjRunning,
     addToEngineDj: (target, meta, coverPath, replaces) => {
@@ -402,6 +402,7 @@ const sessions = {
   rekordbox: createSessionBackup({}),
   traktor: createSessionBackup({}),
   engine: createSessionBackup({}),
+  virtualdj: createSessionBackup({}),
 }
 
 function libraryHost(errors: string[]): LibraryHost {
@@ -503,6 +504,18 @@ function traktorQueueInMemory(checks: { current?: QueueChecks }): RekordboxQueue
   })
 }
 
+function virtualdjQueueInMemory(): RekordboxQueue {
+  return createRekordboxQueue({
+    store: storeInMemory(),
+    collection: () => '',
+    applyBatch: async () => ({ ok: false, reason: 'unreadable' }),
+    repoint: async () => [],
+    nodeStamps: async () => ({}),
+    onChange: () => {},
+    addsTracks: false,
+  })
+}
+
 function rekordboxQueueInMemory(checks: { current?: QueueChecks }): RekordboxQueue {
   return createRekordboxQueue({
     store: storeInMemory(),
@@ -529,18 +542,21 @@ interface Queues {
   rekordbox: RekordboxQueue
   engine: RekordboxQueue
   traktor: RekordboxQueue<QueuedNmlPatch>
+  virtualdj: RekordboxQueue
 }
 
 const libraryAt: Record<Library, () => string> = {
   rekordbox: rekordboxCollectionPath,
   engine: engineLibraryPath,
   traktor: traktorWritePath,
+  virtualdj: () => '',
 }
 
 const programClosed: Record<Library, () => Promise<boolean>> = {
   rekordbox: async () => !(await isRekordboxRunning()),
   engine: async () => !(await isEngineDjRunning()),
   traktor: async () => !(await isTraktorRunning()),
+  virtualdj: async () => true,
 }
 
 const applyQueue = (queues: Queues, place: Library): Promise<QueueApply> =>
@@ -611,6 +627,12 @@ function verifyWiring(queues: Queues, checks: { current?: QueueChecks }): Verify
         at: libraryAt.traktor,
         holds: queues.traktor.holdsRepoint,
       },
+      virtualdj: {
+        enqueue: queues.virtualdj.enqueue,
+        apply: () => applyQuietly(verify, queues, 'virtualdj'),
+        at: libraryAt.virtualdj,
+        holds: queues.virtualdj.holdsRepoint,
+      },
     },
   })
   const wired = queueVerification({
@@ -636,7 +658,12 @@ async function judgedFlush(
   sabotage: Sabotage | undefined,
 ): Promise<void> {
   const upTo = verify.registry.cut()
-  let outcome: FlushOutcome = { rekordbox: 'failed', engine: 'failed', traktor: 'failed' }
+  let outcome: FlushOutcome = {
+    rekordbox: 'failed',
+    engine: 'failed',
+    traktor: 'failed',
+    virtualdj: 'failed',
+  }
   try {
     outcome = await flush()
   } finally {
@@ -1002,7 +1029,7 @@ export function bootMain(options: ScenarioOptions): MainBoot {
     registerShellIpc(mediaAccess, (path, titles) =>
       usedByAnyLibrary(path, titles, {
         traktorRead: traktorWritePath,
-        readOnlyLibraries: () => ({ serato: [], virtualdj: [] }),
+        rootLibraries: () => ({ serato: [], virtualdj: [] }),
         ...(drivesMusic(options) && { musicEntries: musicReaders.entriesForFile }),
         fileTitle: async (file) => (await readTags(file)).title,
         fileLike: fileLikeForMusic,
@@ -1017,7 +1044,7 @@ export function bootMain(options: ScenarioOptions): MainBoot {
         hostFor: () => libraryHost(errors),
         sessions,
         followEngineSize,
-        readOnlyLibraries: () => ({ serato: [], virtualdj: [] }),
+        rootLibraries: () => ({ serato: [], virtualdj: [] }),
       }),
     )
     registerDamageIpc(
@@ -1040,6 +1067,7 @@ export function bootMain(options: ScenarioOptions): MainBoot {
     rekordbox: rekordboxQueueInMemory(checks),
     engine: engineQueueInMemory(checks),
     traktor: traktorQueueInMemory(checks),
+    virtualdj: virtualdjQueueInMemory(),
   }
   engineQueueNow = queues.engine
   const verify = options.verify ? verifyWiring(queues, checks) : undefined

@@ -33,12 +33,12 @@ describe('createActiveConversions', () => {
   it('hands every check of library use the Serato libraries', () => {
     const source = readFileSync(join(__dirname, 'index.ts'), 'utf-8')
     expect(source).toMatch(
-      /usedByAnyLibrary\(path, titles, \{\s+traktorRead: traktorReadPath,\s+readOnlyLibraries,/,
+      /usedByAnyLibrary\(path, titles, \{\s+traktorRead: traktorReadPath,\s+rootLibraries,/,
     )
     expect(source).toMatch(
-      /duplicateLibraryDeps\(\s+hostFor\([^)]*\), e\.sender\),\s+sessions,\s+readOnlyLibraries,\s+\)/,
+      /duplicateLibraryDeps\(\s+hostFor\([^)]*\), e\.sender\),\s+sessions,\s+rootLibraries,\s+\)/,
     )
-    expect(source).toMatch(/listReviewDeps\(\{[^}]*readOnlyLibraries,\s+\}\)/)
+    expect(source).toMatch(/listReviewDeps\(\{[^}]*rootLibraries,\s+\}\)/)
   })
 
   it('keeps the case apart where the disk does', () => {

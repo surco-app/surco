@@ -11,7 +11,7 @@ afterEach(cleanup)
 type Props = React.ComponentProps<typeof Toolbar>
 
 function leftOut(over: Partial<NonNullable<Props['leftOut']>> = {}): NonNullable<Props['leftOut']> {
-  return { missing: { count: 0, fields: [] }, serato: 0, virtualdj: 0, mixed: false, ...over }
+  return { missing: { count: 0, fields: [] }, serato: 0, mixed: false, ...over }
 }
 
 function renderBar(over: Partial<Props> = {}): Props {
@@ -91,13 +91,6 @@ describe('Toolbar', () => {
   // Serato rows are kept out so Serato keeps the track, but the header said "10 of 12" and
   // nothing else, while the footer refused the whole selection for them (06/11). The same
   // gate feeds both now, and the header names them like it names a missing field.
-  it('names the VirtualDJ rows the count leaves out, not Serato', () => {
-    renderBar({ convertibleCount: 10, batchSize: 12, leftOut: leftOut({ virtualdj: 2 }) })
-    expect(screen.getByTestId('convert-all')).toHaveAccessibleName(
-      'Convert 10 of 12 · 2 tracks left out, VirtualDJ would lose them and their cues',
-    )
-  })
-
   it('names the Serato rows the count leaves out', () => {
     renderBar({ convertibleCount: 10, batchSize: 12, leftOut: leftOut({ serato: 2 }) })
     expect(screen.getByTestId('convert-all')).toHaveAccessibleName(

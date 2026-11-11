@@ -8,7 +8,7 @@ import {
   setAppleMusicField,
   transferPlaylists,
 } from './applemusic'
-import type { ReadOnlyLibraries } from './libraryFileUse'
+import type { RootLibraries } from './libraryFileUse'
 import { duplicateLibraryDeps, type LibraryHost, type Sessions } from './libraryFlushes'
 import type { ListReviewIpcDeps } from './listReviewIpc'
 import type { MediaAccess } from './mediaAccess'
@@ -23,7 +23,7 @@ export interface ListReviewEnv {
   hostFor: (sender: WebContents) => LibraryHost
   sessions: Sessions
   followEngineSize?: Rewritten
-  readOnlyLibraries: () => ReadOnlyLibraries
+  rootLibraries: () => RootLibraries
 }
 
 export function listReviewDeps(env: ListReviewEnv): ListReviewIpcDeps {
@@ -43,7 +43,7 @@ export function listReviewDeps(env: ListReviewEnv): ListReviewIpcDeps {
     },
     isAllowed: (path) => env.mediaAccess.isAllowed(path),
     removal: (sender) => ({
-      replace: duplicateLibraryDeps(env.hostFor(sender), env.sessions, env.readOnlyLibraries),
+      replace: duplicateLibraryDeps(env.hostFor(sender), env.sessions, env.rootLibraries),
       realpath: (path) => realpath(path).catch(() => null),
       identity: (path) =>
         stat(path, { bigint: true }).then(

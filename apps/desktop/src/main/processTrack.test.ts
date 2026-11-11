@@ -366,14 +366,11 @@ describe('runProcessTrack — a file Serato cues are being written to', () => {
 })
 
 describe('runProcessTrack — a row opened from VirtualDJ', () => {
-  it('refuses it naming VirtualDJ, since Surco cannot point VirtualDJ at the new file yet', async () => {
+  it('converts it, since VirtualDJ follows the track to the new file', async () => {
     const deps = makeDeps()
-    const err = await runProcessTrack(job({ programs: ['virtualdj'] }), deps).catch(
-      (e: unknown) => e,
-    )
-    expect(errorKeyOf((err as Error).message)).toBe('virtualdjBlocked')
-    expect(deps.beginJob).not.toHaveBeenCalled()
-    expect(deps.convertAudio).not.toHaveBeenCalled()
+    const result = await runProcessTrack(job({ programs: ['virtualdj'] }), deps)
+    expect(deps.convertAudio).toHaveBeenCalled()
+    expect(result.outputPath).not.toBe('')
   })
 })
 

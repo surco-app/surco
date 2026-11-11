@@ -50,8 +50,8 @@ describe('programsInOrder', () => {
     // @ts-expect-error
     programsInOrder(['rekordbox', 'traktor', 'engine'])
   })
-  it('keeps rekordbox, Traktor and Engine as the canonical order of the programs Surco writes to', () => {
-    expect(WRITABLE_PROGRAMS).toEqual(['rekordbox', 'traktor', 'engine'])
+  it('keeps rekordbox, Traktor, Engine and then VirtualDJ as the canonical order of the programs Surco writes to', () => {
+    expect(WRITABLE_PROGRAMS).toEqual(['rekordbox', 'traktor', 'engine', 'virtualdj'])
   })
   it('lists Serato and then VirtualDJ after the others among every program it reads', () => {
     expect(DJ_PROGRAMS).toEqual(['rekordbox', 'traktor', 'engine', 'serato', 'virtualdj'])
@@ -70,14 +70,14 @@ describe('writableInOrder', () => {
   it('leaves Serato out of the programs Surco writes to, so no write path can reach a Serato track', () => {
     expect(WRITABLE_PROGRAMS).not.toContain('serato')
   })
-  it('leaves VirtualDJ out of the programs Surco writes to and of USB, while it adds to and syncs tags with it', () => {
+  it('writes to VirtualDJ, so a VirtualDJ track can be converted, while it stays out of USB', () => {
     expect(PROGRAM_CAN.virtualdj).toEqual({
-      write: false,
+      write: true,
       usb: false,
       reach: true,
       windows: false,
     })
-    expect(WRITABLE_PROGRAMS).not.toContain('virtualdj')
+    expect(WRITABLE_PROGRAMS).toContain('virtualdj')
     expect(USB_PROGRAMS).not.toContain('virtualdj')
   })
   it('lets Surco add to and sync tags with every program, VirtualDJ included', () => {
@@ -96,7 +96,7 @@ describe('RAIL_PROGRAMS', () => {
 
 describe('isWritable', () => {
   it('answers yes for the programs Surco writes to and no for Serato', () => {
-    expect(DJ_PROGRAMS.filter(isWritable)).toEqual(['rekordbox', 'traktor', 'engine'])
+    expect(DJ_PROGRAMS.filter(isWritable)).toEqual(['rekordbox', 'traktor', 'engine', 'virtualdj'])
   })
 })
 
@@ -121,11 +121,13 @@ describe('PROGRAM_CAN', () => {
     expect([...USB_PROGRAMS].sort()).toEqual(['engine', 'rekordbox', 'serato', 'traktor'])
   })
   it('names as read only every library Surco cannot write, so each is still asked before a file it plays goes', () => {
-    expect([...READ_ONLY_PROGRAMS]).toEqual(['serato', 'virtualdj'])
-    expectTypeOf<ReadOnlyProgram>().toEqualTypeOf<'serato' | 'virtualdj'>()
+    expect([...READ_ONLY_PROGRAMS]).toEqual(['serato'])
+    expectTypeOf<ReadOnlyProgram>().toEqualTypeOf<'serato'>()
   })
   it('types the writable and USB programs as exactly the rows marked true', () => {
-    expectTypeOf<WritableProgram>().toEqualTypeOf<'rekordbox' | 'traktor' | 'engine'>()
+    expectTypeOf<WritableProgram>().toEqualTypeOf<
+      'rekordbox' | 'traktor' | 'engine' | 'virtualdj'
+    >()
     expectTypeOf<UsbProgram>().toEqualTypeOf<'rekordbox' | 'traktor' | 'engine' | 'serato'>()
   })
 })

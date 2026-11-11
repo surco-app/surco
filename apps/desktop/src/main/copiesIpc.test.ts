@@ -64,6 +64,7 @@ function programs(over: Partial<Record<WritableProgram, Partial<CopiesProgram>>>
     rekordbox: program(over.rekordbox),
     traktor: program(over.traktor),
     engine: program(over.engine),
+    virtualdj: program({ collectionPath: () => null, ...over.virtualdj }),
   }
 }
 

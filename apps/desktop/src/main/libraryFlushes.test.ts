@@ -141,6 +141,7 @@ function host(overrides: Partial<Closers & LibraryHost> = {}) {
     traktor: ensureTraktorClosed,
     rekordbox: ensureRekordboxClosed,
     engine: ensureEngineDjClosed,
+    virtualdj: vi.fn(async () => true),
   }
   return {
     ensureClosed: (program) => byProgram[program](),
@@ -184,6 +185,7 @@ const sessions = {
     endRun: vi.fn(),
     failed: () => new Set<string>(),
   },
+  virtualdj: fakeSession(),
 }
 
 describe('flushConversionBatch with rekordbox open', () => {
@@ -981,9 +983,10 @@ describe('flushConversionBatch with a converted track VirtualDJ does not have', 
     const virtualdj = { enqueue: vi.fn(), applyQuietly: vi.fn(), roots: () => roots }
     await withRun(true, async () => {
       await flush(virtualdj)
-      expect(virtualdj.enqueue).toHaveBeenCalledWith([
-        expect.objectContaining({ kind: 'track', add: true, path: '/m/a.flac' }),
-      ])
+      expect(virtualdj.enqueue).toHaveBeenCalledWith(
+        [expect.objectContaining({ kind: 'track', add: true, path: '/m/a.flac' })],
+        [],
+      )
       expect(virtualdj.applyQuietly).toHaveBeenCalled()
     })
     virtualdj.enqueue.mockClear()
@@ -1019,8 +1022,84 @@ describe('flushConversionBatch with a converted track VirtualDJ does not have', 
       const without = await flushConversionBatch(host(), sessions, {
         rekordbox: { enqueue: vi.fn(), applyQuietly: vi.fn() },
       })
-      await expect(flush(virtualdj)).resolves.toEqual(without)
+      await expect(flush(virtualdj)).resolves.toEqual({ ...without, virtualdj: 'failed' })
       expect(virtualdj.enqueue).not.toHaveBeenCalled()
+    })
+  })
+})
+
+describe('flushConversionBatch with a converted track VirtualDJ has', () => {
+  const home = (paths: string[]): VirtualdjRoot[] => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-flush-virtualdj-'))
+    writeFileSync(
+      join(dir, 'database.xml'),
+      `<?xml version="1.0" encoding="UTF-8"?>\r\n<VirtualDJ_Database Version="2026">\r\n${paths.map((p) => ` <Song FilePath="${p}" FileSize="3" Flag="268435456">\r\n </Song>\r\n`).join('')}</VirtualDJ_Database>\r\n`,
+    )
+    return [{ dir, root: '/' }]
+  }
+  const withSync = async (on: boolean, run: () => Promise<void>) => {
+    Object.assign(SETTINGS, { syncVirtualdj: on })
+    try {
+      await run()
+    } finally {
+      Object.assign(SETTINGS, { syncVirtualdj: false })
+    }
+  }
+
+  it('hands VirtualDJ the move of the song it holds, only with its sync on', async () => {
+    const roots = home(['/m/a.mp3'])
+    const virtualdj = { enqueue: vi.fn(), applyQuietly: vi.fn(), roots: () => roots }
+    await withSync(true, async () => {
+      const outcome = await flushConversionBatch(host(), sessions, {
+        rekordbox: { enqueue: vi.fn(), applyQuietly: vi.fn() },
+        virtualdj,
+      })
+      expect(virtualdj.enqueue).toHaveBeenCalledWith([], REPOINTS)
+      expect(virtualdj.applyQuietly).toHaveBeenCalled()
+      expect(outcome.virtualdj).toBe('queued')
+    })
+    virtualdj.enqueue.mockClear()
+    await withSync(false, async () => {
+      await flushConversionBatch(host(), sessions, {
+        rekordbox: { enqueue: vi.fn(), applyQuietly: vi.fn() },
+        virtualdj,
+      })
+      expect(virtualdj.enqueue).not.toHaveBeenCalled()
+    })
+  })
+
+  it('moves a track rekordbox and VirtualDJ both hold in each of them', async () => {
+    REKORDBOX_PROCESS.isRekordboxRunning.mockResolvedValueOnce(false)
+    WRITERS.repointTracks.mockClear()
+    const roots = home(['/m/a.mp3'])
+    const virtualdj = { enqueue: vi.fn(), applyQuietly: vi.fn(), roots: () => roots }
+    await withSync(true, async () => {
+      await flushConversionBatch(host(), sessions, {
+        rekordbox: { enqueue: vi.fn(), applyQuietly: vi.fn() },
+        virtualdj,
+      })
+    })
+    expect(WRITERS.repointTracks).toHaveBeenCalledWith(
+      '/c/master.db',
+      [expect.objectContaining({ from: '/m/a.mp3', to: '/m/a.flac' })],
+      expect.anything(),
+    )
+    expect(virtualdj.enqueue).toHaveBeenCalledWith(
+      [],
+      [expect.objectContaining({ from: '/m/a.mp3', to: '/m/a.flac' })],
+    )
+  })
+
+  it('hands VirtualDJ no move for a track it does not have, so its queue never waits on it', async () => {
+    const roots = home(['/m/other.mp3'])
+    const virtualdj = { enqueue: vi.fn(), applyQuietly: vi.fn(), roots: () => roots }
+    await withSync(true, async () => {
+      const outcome = await flushConversionBatch(host(), sessions, {
+        rekordbox: { enqueue: vi.fn(), applyQuietly: vi.fn() },
+        virtualdj,
+      })
+      expect(virtualdj.enqueue).not.toHaveBeenCalled()
+      expect(outcome.virtualdj).toBe('off')
     })
   })
 })
@@ -1496,7 +1575,8 @@ function recordingHost() {
       return true
     },
     showBlockedDialog: (program) => {
-      blocked.push(SYNC_BLOCKED_KEY[program])
+      const key = SYNC_BLOCKED_KEY[program]
+      if (key) blocked.push(key)
     },
     reportIssue: (program) => {
       if (SYNC_ISSUE_PROGRAMS.has(program)) channels.push(program)
@@ -1552,7 +1632,7 @@ describe('librariesKeepingOriginal', () => {
     try {
       const held = await librariesKeepingOriginal('/m/a.mp3', '/m/b.mp3', {
         traktorRead: () => '/t/collection.nml',
-        readOnlyLibraries: () => ({ serato: [], virtualdj: [] }),
+        rootLibraries: () => ({ serato: [], virtualdj: [] }),
       })
 
       expect(held).toEqual(['rekordbox', 'traktor'])
@@ -1578,7 +1658,7 @@ describe('librariesKeepingOriginal', () => {
     try {
       const held = await librariesKeepingOriginal('/m/a.mp3', '/m/b.mp3', {
         traktorRead: () => '/t/collection.nml',
-        readOnlyLibraries: () => ({ serato: [], virtualdj: [] }),
+        rootLibraries: () => ({ serato: [], virtualdj: [] }),
       })
 
       expect(held).toEqual(['traktor'])
@@ -1597,7 +1677,7 @@ describe('librariesKeepingOriginal', () => {
     try {
       const held = await librariesKeepingOriginal('/m/a.mp3', '/m/b.mp3', {
         traktorRead: () => '/t/collection.nml',
-        readOnlyLibraries: () => ({ serato: [], virtualdj: [] }),
+        rootLibraries: () => ({ serato: [], virtualdj: [] }),
       })
 
       expect(held).toEqual([])
@@ -1614,7 +1694,7 @@ describe('librariesKeepingOriginal', () => {
     try {
       const held = await librariesKeepingOriginal('/m/a.mp3', '/m/b.mp3', {
         traktorRead: () => '',
-        readOnlyLibraries: () => ({ serato: roots, virtualdj: [] }),
+        rootLibraries: () => ({ serato: roots, virtualdj: [] }),
       })
 
       expect(held).toContain('serato')
@@ -1627,13 +1707,13 @@ describe('librariesKeepingOriginal', () => {
     }
   })
 
-  it('keeps the original for VirtualDJ, which Surco cannot point at the new file yet', async () => {
+  it('keeps the original for VirtualDJ while its sync is off, since VirtualDJ still plays it', async () => {
     FILE_USE.open.mockClear()
     FILE_USE.check.mockImplementation(async () => true)
     try {
       const held = await librariesKeepingOriginal('/m/a.mp3', '/m/b.mp3', {
         traktorRead: () => '',
-        readOnlyLibraries: () => ({
+        rootLibraries: () => ({
           serato: [],
           virtualdj: [{ dir: '/Users/dj/VirtualDJ', root: '/' }],
         }),
@@ -1655,11 +1735,30 @@ describe('librariesKeepingOriginal', () => {
     }
   })
 
+  it('lets the original go for VirtualDJ with its sync on, since its song follows the new file', async () => {
+    FILE_USE.open.mockClear()
+    FILE_USE.check.mockImplementation(async () => true)
+    Object.assign(SETTINGS, { syncVirtualdj: true })
+    try {
+      const held = await librariesKeepingOriginal('/m/a.mp3', '/m/b.mp3', {
+        traktorRead: () => '',
+        rootLibraries: () => ({
+          serato: [],
+          virtualdj: [{ dir: '/Users/dj/VirtualDJ', root: '/' }],
+        }),
+      })
+      expect(held).toEqual([])
+    } finally {
+      Object.assign(SETTINGS, { syncVirtualdj: false })
+      FILE_USE.check.mockImplementation(async () => false)
+    }
+  })
+
   it('asks nothing of a library whose sync is on, since it follows the rename itself', async () => {
     FILE_USE.open.mockClear()
     const held = await librariesKeepingOriginal('/m/a.mp3', '/m/b.mp3', {
       traktorRead: () => '',
-      readOnlyLibraries: () => ({ serato: [], virtualdj: [] }),
+      rootLibraries: () => ({ serato: [], virtualdj: [] }),
     })
 
     expect(held).toEqual([])

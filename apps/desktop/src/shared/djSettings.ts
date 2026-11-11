@@ -16,9 +16,10 @@ export const DJ_REACH_SETTINGS: Record<
 
 export const DJ_COLLECTION_PATH: Record<
   WritableProgram,
-  'rekordboxDbPath' | 'traktorNmlPath' | 'engineLibraryDir'
+  'rekordboxDbPath' | 'traktorNmlPath' | 'engineLibraryDir' | 'virtualdjLibraryDir'
 > = {
   rekordbox: 'rekordboxDbPath',
   engine: 'engineLibraryDir',
   traktor: 'traktorNmlPath',
+  virtualdj: 'virtualdjLibraryDir',
 }

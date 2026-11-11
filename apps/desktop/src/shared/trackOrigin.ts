@@ -23,7 +23,6 @@ export function readOnlyProgramsOf(t: TrackOrigin): ReadOnlyProgram[] {
 
 export const READ_ONLY_BLOCKED: Record<ReadOnlyProgram, ErrorKey> = {
   serato: 'seratoBlocked',
-  virtualdj: 'virtualdjBlocked',
 }
 
 export function withPrograms(t: TrackOrigin, ps: readonly DjProgram[]): DjProgram[] {

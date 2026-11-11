@@ -1,11 +1,28 @@
 import { existsSync, readFileSync, statSync } from 'node:fs'
+import log from 'electron-log/main'
+import type { LibraryRepointResult } from './libraryRepointFlush'
+import type { RekordboxRepoint } from './rekordboxBatch'
 import type { OpOutcome, TagsOp, TrackOp } from './rekordboxQueueOps'
 import type { SeratoTagField } from './seratoDatabaseWrite'
 import { songIn } from './virtualdjCuesWrite'
 import { parseVirtualdjDatabase } from './virtualdjDatabase'
-import { withVirtualdjSongAdded, withVirtualdjTags } from './virtualdjDatabaseWrite'
+import {
+  withVirtualdjSongAdded,
+  withVirtualdjSongMoved,
+  withVirtualdjTags,
+} from './virtualdjDatabaseWrite'
 import { type VirtualdjRoot, virtualdjPathOf, virtualdjStoredPath } from './virtualdjLibrary'
-import { type VirtualdjDraft, virtualdjDatabaseOf } from './virtualdjLibraryWrite'
+import {
+  commitVirtualdjDraft,
+  createVirtualdjDraft,
+  type VirtualdjCommit,
+  type VirtualdjCommitDeps,
+  type VirtualdjDraft,
+  virtualdjDatabaseOf,
+} from './virtualdjLibraryWrite'
+import { moveVirtualdjListRows } from './virtualdjListsWrite'
+
+const ATTEMPTS = 3
 
 export function virtualdjRootFor(path: string, roots: VirtualdjRoot[]): VirtualdjRoot | null {
   return (
@@ -124,4 +141,91 @@ export function applyVirtualdjTags(
   if (next === null) return refused('tags-not-in-library')
   draft.write(file, next)
   return { id: op.id, applied: true, notices: [] }
+}
+
+export interface VirtualdjRepointFacts {
+  size: number | null
+  lengthSeconds?: number
+}
+
+function movedSong(
+  draft: VirtualdjDraft,
+  repoint: RekordboxRepoint,
+  facts: VirtualdjRepointFacts,
+  roots: VirtualdjRoot[],
+): LibraryRepointResult {
+  if (facts.size === null) return { written: false, reason: 'output-missing' }
+  const found = songIn(draft, roots, repoint.from)
+  if (!found) return { written: false, reason: 'no-match' }
+  const { root, file, xml, song } = found
+  if (
+    repoint.from === repoint.to &&
+    (repoint.fromBytes === undefined || song.size !== repoint.fromBytes)
+  )
+    return { written: false, reason: 'no-match' }
+  if (virtualdjRootFor(repoint.to, roots) !== root)
+    return { written: false, reason: 'other-volume' }
+  const path = virtualdjStoredPath(root, repoint.to, xml)
+  const shift = repoint.engineShift
+  const moved = withVirtualdjSongMoved(
+    xml,
+    song.path,
+    { path, size: facts.size, lengthSeconds: facts.lengthSeconds },
+    -(shift?.trimmedMs ?? 0) / 1000,
+    shift ? (facts.lengthSeconds ?? null) : null,
+  )
+  if (moved === null) return { written: false, reason: 'occupied' }
+  const names = repoint.names ?? {}
+  const named = Object.values(names).some(Boolean)
+    ? withVirtualdjTags(moved, path, {
+        Title: names.title?.to,
+        Author: names.artist?.to,
+        Album: names.album?.to,
+        Genre: names.genre?.to,
+      })
+    : moved
+  draft.write(file, named ?? moved)
+  return { written: true }
+}
+
+const QUEUE_REASON: Partial<Record<VirtualdjCommit, string>> = {
+  cancelled: 'rekordbox-running',
+  'write-unknown': 'write-failed',
+}
+
+export async function repointVirtualdjTracks(
+  repoints: RekordboxRepoint[],
+  deps: VirtualdjCommitDeps & { lengthOf: (path: string) => Promise<number | undefined> },
+): Promise<LibraryRepointResult[]> {
+  const facts = await Promise.all(
+    repoints.map(async (r): Promise<VirtualdjRepointFacts> => {
+      const size = sizeOf(r.to)
+      if (size === null) return { size }
+      const lengthSeconds = await deps.lengthOf(r.to).catch(() => undefined)
+      return lengthSeconds === undefined ? { size } : { size, lengthSeconds }
+    }),
+  )
+  for (let attempt = 0; attempt < ATTEMPTS; attempt++) {
+    const draft = createVirtualdjDraft()
+    const roots = deps.roots()
+    const results = repoints.map((r, i) => movedSong(draft, r, facts[i], roots))
+    const written = await commitVirtualdjDraft(draft, deps)
+    if (written === 'changed') continue
+    if (written !== 'written' && written !== 'nothing') {
+      const reason = QUEUE_REASON[written] ?? written
+      return repoints.map(() => ({ written: false, reason }))
+    }
+    const moves = repoints.flatMap((r, i) => {
+      const size = facts[i].size
+      return results[i].written && size !== null ? [{ from: r.from, to: r.to, size }] : []
+    })
+    if (moves.length > 0) {
+      const lists = await moveVirtualdjListRows(moves, deps)
+      if (lists !== 'written' && lists !== 'nothing')
+        log.warn(`VirtualDJ lists not moved to the converted files: ${lists}`)
+    }
+    return results
+  }
+  log.info('VirtualDJ database kept changing while Surco moved its songs, nothing written')
+  return repoints.map(() => ({ written: false, reason: 'rekordbox-running' }))
 }

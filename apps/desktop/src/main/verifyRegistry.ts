@@ -74,6 +74,7 @@ export interface FlushOutcome {
   rekordbox: 'written' | 'queued' | 'off' | 'failed' | 'later'
   engine: 'written' | 'queued' | 'off' | 'failed' | 'later'
   traktor: TraktorWrite | 'queued' | 'off' | 'later'
+  virtualdj: 'written' | 'queued' | 'off' | 'failed' | 'later'
   added?: Partial<Record<'rekordbox' | 'traktor', string[]>>
 }
 
@@ -101,6 +102,7 @@ const PROGRAM: Record<Library, string> = {
   rekordbox: 'rekordbox',
   engine: 'Engine DJ',
   traktor: 'Traktor',
+  virtualdj: 'VirtualDJ',
 }
 
 const pending = (place: Library): PlaceCheck => ({
@@ -137,6 +139,10 @@ const LISTED: Record<
   },
   traktor: {
     touches: (e) => e.traktorPatch !== undefined || inPlaylists(e, 'traktor'),
+    byJob: () => false,
+  },
+  virtualdj: {
+    touches: () => false,
     byJob: () => false,
   },
 }
@@ -180,6 +186,7 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
     rekordbox: new Set(),
     engine: new Set(),
     traktor: new Set(),
+    virtualdj: new Set(),
   }
   // Tracks no flush has judged yet, by library, with the order they were registered in: a
   // flush judges only what was registered before its batch ended, and leaves a library it
@@ -188,6 +195,7 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
     rekordbox: new Set(),
     engine: new Set(),
     traktor: new Set(),
+    virtualdj: new Set(),
   }
   const order = new WeakMap<VerifyEntry, number>()
   let registered = 0
@@ -324,6 +332,7 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
     rekordbox: checkRow('rekordbox', (list) => deps.readRekordbox(list)),
     engine: checkRow('engine', (list) => deps.readEngine(list)),
     traktor: checkTraktor,
+    virtualdj: async () => {},
   }
 
   return {

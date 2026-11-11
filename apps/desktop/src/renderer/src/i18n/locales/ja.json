@@ -190,8 +190,6 @@
     "leftOutMissing_other": "{{count}}件は{{fields}}がないため対象外",
     "leftOutSerato_one": "{{count}}件は対象外、Serato でトラックとキューが失われます",
     "leftOutSerato_other": "{{count}}件は対象外、Serato でトラックとキューが失われます",
-    "leftOutVirtualdj_one": "{{count}}件は対象外、VirtualDJ でトラックとキューが失われます",
-    "leftOutVirtualdj_other": "{{count}}件は対象外、VirtualDJ でトラックとキューが失われます",
     "convertSelected_one": "選択した {{count}} 件を変換",
     "convertSelected_other": "選択した {{count}} 件を変換",
     "convertSomeSelected": "選択した {{total}} 件のうち {{ready}} 件を変換",
@@ -358,7 +356,6 @@
     "conversionCancelled": "変換をキャンセルしました。",
     "verifyUnknownTrack": "この確認はもう行えません。もう一度確認するには、トラックを再変換してください。",
     "seratoBlocked": "Serato でトラックとそのキューが失われます",
-    "virtualdjBlocked": "VirtualDJ でトラックとそのキューが失われます",
     "sourceTagsUnread": "このファイルのタグを読み取れなかったため、変換せずにそのままにしました：変換すると既存のタグが削除されます。再度読み込み直してやり直してください。",
     "coverDownloadFailed": "アートワークのダウンロードに失敗しました。",
     "coverNotImage": "そのアドレスは画像を示していません。",
@@ -2999,7 +2996,6 @@
     "loading": "リストを読み取り中…",
     "empty": "リスト内のトラックのタグが読み取れませんでした。",
     "emptySerato": "リスト内のトラックはすべて Serato のもので、Serato のために除外しています。",
-    "emptyVirtualdj": "リスト内のトラックはすべて VirtualDJ のもので、VirtualDJ のために除外しています。",
     "emptyReadOnly": "リスト内のトラックはすべて、失われるおそれのある DJ ソフトのもので、すべて除外しています。",
     "error": "リストのレビューを準備できませんでした。",
     "scope_one": "{{count}} トラックがリストにあります",
@@ -3008,8 +3004,6 @@
     "skipped_other": "{{count}} 件は未読み取りのため除外",
     "seratoLeftOut_one": "Serato の {{count}} トラックは Serato のために除外",
     "seratoLeftOut_other": "Serato の {{count}} トラックは Serato のために除外",
-    "virtualdjLeftOut_one": "VirtualDJ の {{count}} トラックは VirtualDJ のために除外",
-    "virtualdjLeftOut_other": "VirtualDJ の {{count}} トラックは VirtualDJ のために除外",
     "musicUnchecked": "Apple Music が閉じているため、チェックできませんでした。",
     "where": {
       "music": "Apple Music"
@@ -3622,7 +3616,8 @@
       "traktorCuesChanged": "Traktorのキューが変わりました",
       "traktorNameStale": "Traktorにはまだ「{{value}}」と表示されています",
       "traktorPlaylistMissing": "トラックがTraktorのプレイリスト{{playlist}}にありません",
-      "traktorUnreadable": "Traktorを確認できませんでした"
+      "traktorUnreadable": "Traktorを確認できませんでした",
+      "virtualdjUnreadable": "VirtualDJを確認できませんでした"
     },
     "retry": "再試行",
     "sourceGoneKeptLine": "オリジナルはもうありません。コピーは<0>{{panel}}</0>にあります",

@@ -287,12 +287,10 @@ const DESTINATION_ICON: Record<DestinationState, string> = { ok: '✓', warn: '!
 
 const LEFT_OUT_KEY: Record<ReadOnlyProgram, string> = {
   serato: 'listReview.seratoLeftOut',
-  virtualdj: 'listReview.virtualdjLeftOut',
 }
 
 const ALL_LEFT_OUT_KEY: Record<ReadOnlyProgram, string> = {
   serato: 'listReview.emptySerato',
-  virtualdj: 'listReview.emptyVirtualdj',
 }
 
 function emptyListKey(leftOut: Record<ReadOnlyProgram, number> | undefined, empty: string): string {

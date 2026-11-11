@@ -10,7 +10,7 @@ export const PROGRAM_CAN = {
   traktor: { write: true, usb: true, reach: true, windows: true },
   engine: { write: true, usb: true, reach: true, windows: true },
   serato: { write: false, usb: true, reach: true, windows: true },
-  virtualdj: { write: false, usb: false, reach: true, windows: false },
+  virtualdj: { write: true, usb: false, reach: true, windows: false },
 } as const satisfies {
   [P in DjProgram]: {
     write: boolean
@@ -52,7 +52,7 @@ export const LIBRARY_PROGRAMS: readonly LibraryProgram[] = programsInOrder([
   'virtualdj',
 ])
 
-export const WRITABLE_PROGRAMS = writableInOrder(['rekordbox', 'traktor', 'engine'])
+export const WRITABLE_PROGRAMS = writableInOrder(['rekordbox', 'traktor', 'engine', 'virtualdj'])
 
 export const USB_PROGRAMS: readonly UsbProgram[] = DJ_PROGRAMS.filter(
   (program): program is UsbProgram => PROGRAM_CAN[program].usb,

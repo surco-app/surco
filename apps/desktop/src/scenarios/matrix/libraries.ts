@@ -15,15 +15,13 @@ import { engineDbPath, writeEngineLibraryFixture } from '../../main/enginePlayli
 import { toNmlLocation } from '../../main/ffmpeg'
 import { openRekordboxDb } from '../../main/rekordboxDb'
 import { bootVolumeName } from '../../main/traktorNmlLibrary'
-import type { WritableProgram } from '../../shared/djProgram'
-import { writableInOrder } from '../../shared/djProgram'
 import type { Settings } from '../../shared/types'
 import { music } from '../fakeMusic'
 import { makeRekordbox } from '../rekordboxFixture'
-import type { Programs } from './cells'
+import { MATRIX_PROGRAMS, type MatrixProgram, type Programs } from './cells'
 import { makeSource, SEEDED_CUES_MS, type SourceTrack, TRICKY } from './sources'
 
-const ALL_PROGRAMS = writableInOrder(['rekordbox', 'engine', 'traktor'])
+const ALL_PROGRAMS = MATRIX_PROGRAMS
 
 export interface EnginePerf {
   trackData: Buffer | null
@@ -56,13 +54,13 @@ export interface LibrarySet {
   bystander: SeededTrack
   tracks: SeededTrack[]
   settings: Partial<Settings>
-  sha1Before: Record<WritableProgram, string | null>
-  bystanderRows: Partial<Record<WritableProgram, string>>
+  sha1Before: Record<MatrixProgram, string | null>
+  bystanderRows: Partial<Record<MatrixProgram, string>>
   traktorEntries: Record<string, string>
   knownRekordboxIds?: string[]
 }
 
-export type Program = WritableProgram | 'music'
+export type Program = MatrixProgram | 'music'
 
 export function syncedPrograms(programs: Programs): Program[] {
   if (programs === 'all') return [...ALL_PROGRAMS]

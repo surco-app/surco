@@ -236,12 +236,13 @@ type LibraryRepairs = {
 
 const LIBRARY_REPAIRS: LibraryRepairs & Record<Exclude<WritableProgram, RepairedProgram>, null> = {
   rekordbox: null,
+  virtualdj: null,
   engine: async (engine, deps) =>
     deps.engine ? await repairEngine(engine, deps.engine) : unsupported(engine),
   traktor: repairTraktor,
 }
 
-const REPAIR_ORDER = writableInOrder(['rekordbox', 'engine', 'traktor'])
+const REPAIR_ORDER = writableInOrder(['rekordbox', 'engine', 'traktor', 'virtualdj'])
 
 const repaired = (program: WritableProgram): program is RepairedProgram =>
   LIBRARY_REPAIRS[program] !== null
