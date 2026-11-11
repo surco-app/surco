@@ -1,5 +1,5 @@
-import { readFileSync, statSync } from 'node:fs'
-import { join } from 'node:path'
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
+import { join, posix } from 'node:path'
 import { ALL_TRACKS_ID } from '../shared/allTracks'
 import { RECENTLY_ADDED_ID } from '../shared/recentlyAdded'
 import type {
@@ -17,9 +17,40 @@ export interface VirtualdjLibrary {
   lists: VirtualdjNode[]
 }
 
+export interface VirtualdjRoot {
+  dir: string
+  root: string
+}
+
+export function virtualdjLibraryRoots(dir: string, volumesRoot: string): VirtualdjRoot[] {
+  let volumes: string[] = []
+  try {
+    volumes = readdirSync(volumesRoot).map((name) => join(volumesRoot, name))
+  } catch {}
+  return [
+    { dir, root: '/' },
+    ...volumes.map((volume) => ({ dir: join(volume, 'VirtualDJ'), root: volume })),
+  ].filter((r) => existsSync(join(r.dir, 'database.xml')))
+}
+
+const DRIVE = /^[A-Za-z]:\//
+
+export function virtualdjPathOf(root: VirtualdjRoot, filePath: string): string {
+  return root.root !== '/' && DRIVE.test(filePath)
+    ? posix.join(root.root, filePath.slice(3))
+    : filePath
+}
+
+export function virtualdjStoredPath(root: VirtualdjRoot, path: string, xml: string): string {
+  if (root.root === '/') return path
+  const letter = xml.match(/FilePath="([A-Za-z]):\//)?.[1] ?? 'D'
+  return `${letter}:/${posix.relative(root.root, path)}`
+}
+
 const parsed = new Map<string, { mtimeMs: number; size: number; songs: VirtualdjSong[] }>()
 
-function readSongs(file: string): VirtualdjSong[] {
+function readSongs(root: VirtualdjRoot): VirtualdjSong[] {
+  const file = join(root.dir, 'database.xml')
   let stat: { mtimeMs: number; size: number }
   try {
     stat = statSync(file)
@@ -28,19 +59,32 @@ function readSongs(file: string): VirtualdjSong[] {
   }
   const hit = parsed.get(file)
   if (hit && hit.mtimeMs === stat.mtimeMs && hit.size === stat.size) return hit.songs
-  const songs = parseVirtualdjDatabase(readFileSync(file, 'utf8'))
+  const songs = parseVirtualdjDatabase(readFileSync(file, 'utf8')).map((s) => ({
+    ...s,
+    path: virtualdjPathOf(root, s.path),
+  }))
   parsed.set(file, { mtimeMs: stat.mtimeMs, size: stat.size, songs })
   return songs
 }
 
-export function readVirtualdjSongs(dir: string): VirtualdjSong[] {
-  return readSongs(join(dir, 'database.xml'))
+let combined: { parts: VirtualdjSong[][]; songs: VirtualdjSong[] } | undefined
+
+export function readVirtualdjSongs(roots: VirtualdjRoot[]): VirtualdjSong[] {
+  const parts = roots.map(readSongs)
+  if (
+    !combined ||
+    combined.parts.length !== parts.length ||
+    combined.parts.some((p, i) => p !== parts[i])
+  )
+    combined = { parts, songs: parts.flat() }
+  return combined.songs
 }
 
-export function readVirtualdjLibrary(dir: string): VirtualdjLibrary {
+export function readVirtualdjLibrary(roots: VirtualdjRoot[]): VirtualdjLibrary {
+  const home = roots.find((r) => r.root === '/')
   return {
-    songs: readVirtualdjSongs(dir),
-    lists: readVirtualdjLists(join(dir, 'MyLists')),
+    songs: readVirtualdjSongs(roots),
+    lists: home ? readVirtualdjLists(join(home.dir, 'MyLists')) : [],
   }
 }
 

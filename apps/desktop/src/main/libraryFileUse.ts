@@ -13,7 +13,7 @@ import { findTrackByPath, isAmbiguous, openRekordboxDb, rekordboxRawKey } from '
 import { readSeratoLibrary, type SeratoLibraryRoot } from './seratoLibrary'
 import { attr, findEntries, nmlCopyInfo } from './traktorNml'
 import { traktorFileOf } from './traktorPlaylists'
-import { readVirtualdjLibrary } from './virtualdjLibrary'
+import { readVirtualdjLibrary, type VirtualdjRoot } from './virtualdjLibrary'
 import type { VirtualdjNode } from './virtualdjLists'
 
 // Each library's location, or '' when its sync is off.
@@ -24,7 +24,7 @@ interface LocationOf {
   engine: string
   traktor: string
   serato: SeratoLibraryRoot[]
-  virtualdj: string
+  virtualdj: VirtualdjRoot[]
 }
 
 export type LibraryLocations = { [P in LibraryProgram]: LocationOf[P] }
@@ -100,11 +100,11 @@ const FILE_USE: FileUseOf = {
       return seratoFile(path) !== undefined
     }
   },
-  virtualdj: (dir, options) => {
+  virtualdj: (roots, options) => {
     let virtualdjFile: ((path: string) => string | undefined) | undefined
     return async (path) => {
       if (!virtualdjFile) {
-        const library = readVirtualdjLibrary(dir)
+        const library = readVirtualdjLibrary(roots)
         virtualdjFile = fileFinder(
           [...library.songs.map((s) => s.path), ...listPaths(library.lists)],
           options,
@@ -406,9 +406,9 @@ const TRACK_OF: TrackOf = {
     )(path)
     return found ? `serato:${found}` : undefined
   },
-  virtualdj: async (dir, path, options) => {
+  virtualdj: async (roots, path, options) => {
     const found = fileFinder(
-      readVirtualdjLibrary(dir).songs.map((s) => s.path),
+      readVirtualdjLibrary(roots).songs.map((s) => s.path),
       options,
     )(path)
     return found ? `virtualdj:${found}` : undefined

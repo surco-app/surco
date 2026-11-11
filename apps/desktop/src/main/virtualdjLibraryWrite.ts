@@ -11,11 +11,7 @@ import {
 import { basename, dirname, join, relative, resolve } from 'node:path'
 import log from 'electron-log/main'
 import { backupFolderName, type FileStamp, fileStampOf } from './seratoLibraryWrite'
-
-export interface VirtualdjRoot {
-  dir: string
-  root: string
-}
+import type { VirtualdjRoot } from './virtualdjLibrary'
 
 export const virtualdjDatabaseOf = (root: VirtualdjRoot): string => join(root.dir, 'database.xml')
 

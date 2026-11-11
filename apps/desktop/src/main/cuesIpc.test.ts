@@ -49,7 +49,7 @@ function registerWithSources(host: {
   engine?: Parameters<typeof engineCueSource>[0]
   traktor?: Omit<Parameters<typeof traktorCueSource>[0], 'fine'>
   serato?: Omit<Parameters<typeof seratoCueSource>[0], 'words' | 'fine'>
-  virtualdj?: Omit<Parameters<typeof virtualdjCueSource>[0], 'dir' | 'words'> & { dir: string }
+  virtualdj?: Omit<Parameters<typeof virtualdjCueSource>[0], 'roots' | 'words'> & { dir: string }
 }): void {
   registerCuesIpc({
     collection: host.collection,
@@ -68,7 +68,11 @@ function registerWithSources(host: {
         : null,
       virtualdj: host.virtualdj
         ? virtualdjCueSource(
-            { ...host.virtualdj, dir: () => host.virtualdj?.dir ?? '', words: host.words },
+            {
+              ...host.virtualdj,
+              roots: () => [{ dir: host.virtualdj?.dir ?? '', root: '/' }],
+              words: host.words,
+            },
             host.collection,
           )
         : null,

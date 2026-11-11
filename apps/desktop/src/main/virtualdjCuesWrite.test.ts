@@ -1,6 +1,13 @@
-import { mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  writeFileSync,
+} from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import { HOT_KINDS, type WantedCue } from '../shared/cueRules'
 import { hotCueArgb } from '../shared/rekordboxCueColors'
@@ -10,6 +17,7 @@ import type { CuesOp } from './rekordboxQueueOps'
 import { virtualdjCueSource } from './virtualdjCueSource'
 import { applyVirtualdjCuesBatch } from './virtualdjCuesWrite'
 import { parseVirtualdjDatabase } from './virtualdjDatabase'
+import { virtualdjLibraryRoots } from './virtualdjLibrary'
 
 const fixture = readFileSync(join(__dirname, 'virtualdjFixtures', 'database.xml'), 'utf8')
 const MP3 = '/Music/VirtualDJ Pruebas/Pray.mp3'
@@ -31,7 +39,7 @@ function library(xml = fixture) {
   }
   const reader = virtualdjCueSource(
     {
-      dir: () => dir,
+      roots: () => [{ dir, root: '/' }],
       words: async () => null,
       queue: { enqueue: vi.fn(), cuesOp: vi.fn(), drop: vi.fn() },
       applyQuietly: vi.fn(),
@@ -78,6 +86,38 @@ const songOf = (xml: string, path: string) =>
   parseVirtualdjDatabase(xml).find((s) => s.path === path)
 
 describe('applyVirtualdjCuesBatch', () => {
+  it("writes a drive track's cues into that drive's database and leaves the home one alone", async () => {
+    const { dir, database, deps } = library()
+    const volumes = join(dirname(dir), 'Volumes')
+    const driveDir = join(volumes, 'Public', 'VirtualDJ')
+    mkdirSync(driveDir, { recursive: true })
+    mkdirSync(join(volumes, 'Bare'))
+    const driveDatabase = join(driveDir, 'database.xml')
+    const driveXml = `<?xml version="1.0" encoding="UTF-8"?>\r\n<VirtualDJ_Database Version="2026">\r\n <Song FilePath="D:/Musica/It&apos;s Mine.flac" FileSize="100" Flag="268435456">\r\n  <Infos SongLength="200.0" />\r\n  <Poi Name="Surco" Pos="30.0" Num="1" Type="cue" />\r\n </Song>\r\n</VirtualDJ_Database>\r\n`
+    writeFileSync(driveDatabase, driveXml)
+    const roots = () => virtualdjLibraryRoots(dir, volumes)
+    const reader = virtualdjCueSource(
+      {
+        roots,
+        words: async () => null,
+        queue: { enqueue: vi.fn(), cuesOp: vi.fn(), drop: vi.fn() },
+        applyQuietly: vi.fn(),
+      },
+      () => '',
+    )
+    const file = join(volumes, 'Public', 'Musica', "It's Mine.flac")
+    const before = (await reader.trackCues(`virtualdj:${file}`)) as TrackCues
+    expect(before.cues.map((c) => c.ms)).toEqual([30000])
+    const result = await applyVirtualdjCuesBatch(
+      [op(file, before, [{ ...wantedOf(before)[0], ms: 31000 }])],
+      { ...deps, roots },
+    )
+    expect(result).toMatchObject({ ok: true, wrote: true })
+    expect(readFileSync(database, 'utf8')).toBe(fixture)
+    expect(readFileSync(driveDatabase, 'utf8')).toBe(driveXml.replace('Pos="30.0"', 'Pos="31.0"'))
+    expect(existsSync(join(volumes, 'Bare', 'VirtualDJ'))).toBe(false)
+  })
+
   it('writes the moved and added hot cues with VirtualDJ closed, and they read back as saved', async () => {
     const { database, deps, read, backups } = library()
     const before = await read(MP3)

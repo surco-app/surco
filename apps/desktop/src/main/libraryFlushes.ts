@@ -121,7 +121,7 @@ const NO_LIBRARIES: LibraryLocations = {
   engine: '',
   traktor: '',
   serato: [],
-  virtualdj: '',
+  virtualdj: [],
 }
 
 function onlyLibrary<P extends LibraryProgram>(

@@ -280,6 +280,7 @@ import type { FlushOutcome, TraktorWrite } from './verifyRegistry'
 import { withRecordedRun } from './verifyRun'
 import { virtualdjCueSource } from './virtualdjCueSource'
 import { applyVirtualdjCuesBatch } from './virtualdjCuesWrite'
+import { virtualdjLibraryRoots } from './virtualdjLibrary'
 import { virtualdjRead } from './virtualdjPlaylistsIpc'
 import { waitingCueQueueSection } from './waitingCueQueueIpc'
 import { onWatchedFilesChanged } from './watchedFiles'
@@ -368,10 +369,10 @@ function seratoRoots() {
 const virtualdjDir = (): string => getSettings().virtualdjLibraryDir
 const virtualdjLibrary = (): string =>
   existsSync(join(virtualdjDir(), 'database.xml')) ? virtualdjDir() : ''
-const virtualdjRoots = () => (virtualdjLibrary() ? [{ dir: virtualdjLibrary(), root: '/' }] : [])
+const virtualdjRoots = () => virtualdjLibraryRoots(virtualdjDir(), '/Volumes')
 const readOnlyLibraries = (): ReadOnlyLibraries => ({
   serato: seratoRoots(),
-  virtualdj: virtualdjLibrary(),
+  virtualdj: virtualdjRoots(),
 })
 
 let endConversionBatch: ((sender: WebContents) => Promise<void>) | undefined
@@ -1518,7 +1519,7 @@ function registerIpc(): void {
       }),
     },
     virtualdj: {
-      read: virtualdjRead({ dir: virtualdjDir, allowMedia }),
+      read: virtualdjRead({ roots: virtualdjRoots, allowMedia }),
       running: DJ_PROCESSES.virtualdj.isRunning,
       pickLibraryPath: pickLibraryPath('dialogVirtualdjLibrary', {
         properties: ['openDirectory'],
@@ -1591,7 +1592,7 @@ function registerIpc(): void {
       ),
       virtualdj: virtualdjCueSource(
         {
-          dir: virtualdjDir,
+          roots: virtualdjRoots,
           words: cachedCueWaveWords,
           fine: cachedCueWaveFine,
           queue: virtualdjCueQueue,

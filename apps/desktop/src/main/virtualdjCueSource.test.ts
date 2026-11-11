@@ -30,7 +30,7 @@ function source(
 ) {
   return virtualdjCueSource(
     {
-      dir: () => dir,
+      roots: () => [{ dir, root: '/' }],
       words,
       fine,
       queue: { enqueue: vi.fn(), cuesOp: vi.fn(), drop: vi.fn() },

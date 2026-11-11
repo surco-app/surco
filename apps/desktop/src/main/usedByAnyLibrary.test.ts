@@ -57,7 +57,7 @@ async function nmlWith(file: string): Promise<string> {
 }
 
 const noTraktor = () => ''
-const noReadOnly = () => ({ serato: [], virtualdj: '' })
+const noReadOnly = () => ({ serato: [], virtualdj: [] })
 
 describe('usedByAnyLibrary', () => {
   it('asks a library the DJ only reads from, since it still loses the track when the file goes', async () => {
@@ -113,7 +113,7 @@ describe('usedByAnyLibrary', () => {
         track({ pfil: FILE.slice(1) }),
       ]),
     )
-    const readOnlyLibraries = () => ({ serato: seratoLibraryRoots(home, []), virtualdj: '' })
+    const readOnlyLibraries = () => ({ serato: seratoLibraryRoots(home, []), virtualdj: [] })
     expect(await usedByAnyLibrary(FILE, [], { traktorRead: noTraktor, readOnlyLibraries })).toBe(
       true,
     )
@@ -143,7 +143,7 @@ describe('usedByAnyLibrary', () => {
         usedByLibrary: (p) =>
           usedByAnyLibrary(p, [], {
             traktorRead: noTraktor,
-            readOnlyLibraries: () => ({ serato: seratoLibraryRoots(home, []), virtualdj: '' }),
+            readOnlyLibraries: () => ({ serato: seratoLibraryRoots(home, []), virtualdj: [] }),
           }),
         exists: () => true,
         keepsTrash: () => true,
@@ -326,7 +326,7 @@ describe('a file only Serato uses', () => {
     const home = await mkdtemp(join(root, 'serato-only-'))
     await mkdir(join(home, 'Music', '_Serato_'), { recursive: true })
     await database(join(home, 'Music', '_Serato_', 'database V2'))
-    return () => ({ serato: seratoLibraryRoots(home, []), virtualdj: '' })
+    return () => ({ serato: seratoLibraryRoots(home, []), virtualdj: [] })
   }
   const listing = (file: string) => (path: string) =>
     writeFile(

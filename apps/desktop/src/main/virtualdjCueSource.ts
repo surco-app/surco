@@ -11,7 +11,7 @@ import { cueFingerprint } from './rekordboxCues'
 import { keyOf } from './rekordboxPlaylistsIpc'
 import { tempoGrid } from './seratoCueSource'
 import type { VirtualdjSong } from './virtualdjDatabase'
-import { readVirtualdjSongs } from './virtualdjLibrary'
+import { readVirtualdjSongs, type VirtualdjRoot } from './virtualdjLibrary'
 
 export function virtualdjCueRows(song: VirtualdjSong): TrackCueRow[] {
   return song.pois.flatMap((p) =>
@@ -71,7 +71,7 @@ export function virtualdjTrackCuesOf(contentId: string, song: VirtualdjSong): Tr
 
 export function virtualdjCueSource(
   host: {
-    dir: () => string
+    roots: () => VirtualdjRoot[]
     words: (file: string) => Promise<Uint16Array | null>
     fine?: (file: string) => Promise<Uint8Array | null>
     queue: CueQueue
@@ -81,7 +81,7 @@ export function virtualdjCueSource(
 ): CueSource {
   const byPath = new WeakMap<VirtualdjSong[], Map<string, VirtualdjSong>>()
   const songOf = (contentId: string) => {
-    const songs = readVirtualdjSongs(host.dir())
+    const songs = readVirtualdjSongs(host.roots())
     let paths = byPath.get(songs)
     if (!paths) {
       paths = new Map()

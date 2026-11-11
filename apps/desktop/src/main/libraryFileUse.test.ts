@@ -32,7 +32,7 @@ import { REKORDBOX_KEY } from './rekordboxDb'
 import { concat, frame, track, utf16be } from './seratoDatabaseFixture'
 import { type SeratoLibraryRoot, seratoLibraryRoots } from './seratoLibrary'
 
-const OFF = { rekordbox: '', engine: '', traktor: '', serato: [], virtualdj: '' }
+const OFF = { rekordbox: '', engine: '', traktor: '', serato: [], virtualdj: [] }
 let root: string
 
 beforeAll(async () => {
@@ -200,7 +200,7 @@ describe('usedByDjLibrary', () => {
         engine: dir,
         traktor: nml,
         serato: [],
-        virtualdj: '',
+        virtualdj: [],
       }),
     ).rejects.toThrow('rekordbox collection unreadable')
     expect(reads.filter((p) => p.endsWith('m.db') || p === nml)).toEqual([])
@@ -402,7 +402,7 @@ describe('libraryTracksOf', () => {
         engine: dir,
         traktor: nml,
         serato: [],
-        virtualdj: '',
+        virtualdj: [],
       }),
     ).toEqual({ rekordbox: '1', engine: 'engine:2', traktor: 'traktor:M/:Music/:a.mp3' })
   })
@@ -433,7 +433,7 @@ describe('libraryTracksOf', () => {
         engine: join(root, 'no-engine'),
         traktor: join(root, 'missing.nml'),
         serato: [],
-        virtualdj: '',
+        virtualdj: [],
       }),
     ).toEqual({ rekordbox: '1' })
   })
@@ -614,7 +614,10 @@ describe('libraryTracksOf in Serato', () => {
 })
 
 describe('VirtualDJ', () => {
-  async function virtualdj(songs: string[], lists: Record<string, string[]> = {}): Promise<string> {
+  async function virtualdj(
+    songs: string[],
+    lists: Record<string, string[]> = {},
+  ): Promise<{ dir: string; root: string }[]> {
     const dir = await mkdtemp(join(root, 'vdj-'))
     await writeFile(
       join(dir, 'database.xml'),
@@ -626,8 +629,36 @@ describe('VirtualDJ', () => {
         join(dir, 'MyLists', `${name}.vdjfolder`),
         `<VirtualFolder>\r\n${paths.map((p, i) => `<song path="${p}" idx="${i}" />`).join('\r\n')}\r\n</VirtualFolder>`,
       )
-    return dir
+    return [{ dir, root: '/' }]
   }
+
+  async function drive(songs: string[]): Promise<{ dir: string; root: string }> {
+    const volume = await mkdtemp(join(root, 'vdj-drive-'))
+    const dir = join(volume, 'VirtualDJ')
+    await mkdir(dir)
+    await writeFile(
+      join(dir, 'database.xml'),
+      `<VirtualDJ_Database Version="2026">\r\n${songs.map((p) => `<Song FilePath="${p}" />\r\n`).join('')}</VirtualDJ_Database>\r\n`,
+    )
+    return { dir, root: volume }
+  }
+
+  it("counts a file only a drive's own VirtualDJ database has as used", async () => {
+    const home = await virtualdj(['/Music/a.mp3'])
+    const public_ = await drive(['D:/Musica/It&apos;s.flac'])
+    const roots = [...home, public_]
+    const file = join(public_.root, 'Musica', "It's.flac")
+    expect(await usedByDjLibrary(file, { ...OFF, virtualdj: roots })).toBe(true)
+    expect(await usedByDjLibrary(file, { ...OFF, virtualdj: home })).toBe(false)
+  })
+
+  it('gives a drive track the id of its file on that drive, so the editor writes its cues there', async () => {
+    const public_ = await drive(['D:/Musica/x.flac'])
+    const file = join(public_.root, 'Musica', 'x.flac')
+    expect(
+      await libraryTracksOf(file, { ...OFF, virtualdj: [...(await virtualdj([])), public_] }),
+    ).toEqual({ virtualdj: `virtualdj:${file}` })
+  })
 
   it('counts a file VirtualDJ has as used, so Surco never trashes a track VirtualDJ still plays', async () => {
     const dir = await virtualdj(['/Volumes/M/Music/b.mp3', '/Volumes/M/Music/a.mp3'])
@@ -641,13 +672,14 @@ describe('VirtualDJ', () => {
   })
 
   it('counts a file only a list inside a folder names as used', async () => {
-    const dir = await virtualdj([], { Gigs: [] })
+    const roots = await virtualdj([], { Gigs: [] })
+    const [{ dir }] = roots
     await mkdir(join(dir, 'MyLists', 'Gigs.subfolders'))
     await writeFile(
       join(dir, 'MyLists', 'Gigs.subfolders', 'Friday.vdjfolder'),
       '<VirtualFolder>\r\n<song path="/Volumes/M/Music/a.mp3" idx="0" />\r\n</VirtualFolder>',
     )
-    expect(await usedByDjLibrary('/Volumes/M/Music/a.mp3', { ...OFF, virtualdj: dir })).toBe(true)
+    expect(await usedByDjLibrary('/Volumes/M/Music/a.mp3', { ...OFF, virtualdj: roots })).toBe(true)
   })
 
   it('matches the file spelled another way, as for the other programs', async () => {
@@ -661,12 +693,12 @@ describe('VirtualDJ', () => {
     const dir = await mkdtemp(join(root, 'vdj-unreadable-'))
     await mkdir(join(dir, 'database.xml'))
     await expect(
-      usedByDjLibrary('/Volumes/M/Music/a.mp3', { ...OFF, virtualdj: dir }),
+      usedByDjLibrary('/Volumes/M/Music/a.mp3', { ...OFF, virtualdj: [{ dir, root: '/' }] }),
     ).rejects.toThrow()
   })
 
   it('asks nothing of VirtualDJ while it has no folder', async () => {
-    expect(await usedByDjLibrary('/Volumes/M/Music/a.mp3', { ...OFF, virtualdj: '' })).toBe(false)
+    expect(await usedByDjLibrary('/Volumes/M/Music/a.mp3', { ...OFF, virtualdj: [] })).toBe(false)
   })
 
   it('names the VirtualDJ song that holds the file by its own path, for the cue editor', async () => {

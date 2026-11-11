@@ -8,6 +8,7 @@ import type { BatchResult, OpOutcome, QueueOp } from './rekordboxQueueOps'
 import { virtualdjCueRows } from './virtualdjCueSource'
 import { parseVirtualdjDatabase, type VirtualdjPoi, type VirtualdjSong } from './virtualdjDatabase'
 import { type VirtualdjCueWrite, withVirtualdjCues } from './virtualdjDatabaseWrite'
+import { type VirtualdjRoot, virtualdjPathOf } from './virtualdjLibrary'
 import {
   commitVirtualdjDraft,
   createVirtualdjDraft,
@@ -39,19 +40,24 @@ function cueOf(wanted: WantedCue, song: VirtualdjSong): VirtualdjCueWrite {
 
 function songIn(
   draft: VirtualdjDraft,
-  files: string[],
+  roots: VirtualdjRoot[],
   path: string,
 ): { file: string; xml: string; song: VirtualdjSong } | null {
   const wanted = path.normalize('NFC')
-  for (const file of files) {
+  for (const root of roots) {
+    const file = virtualdjDatabaseOf(root)
     const xml = draft.read(file)
-    const song = xml && parseVirtualdjDatabase(xml).find((s) => s.path.normalize('NFC') === wanted)
+    const song =
+      xml &&
+      parseVirtualdjDatabase(xml).find(
+        (s) => virtualdjPathOf(root, s.path).normalize('NFC') === wanted,
+      )
     if (xml && song) return { file, xml, song }
   }
   return null
 }
 
-function applyVirtualdjOp(draft: VirtualdjDraft, op: QueueOp, files: string[]): OpOutcome {
+function applyVirtualdjOp(draft: VirtualdjDraft, op: QueueOp, roots: VirtualdjRoot[]): OpOutcome {
   const refused = (
     code: 'cues-changed' | 'cues-invalid' | 'cues-write-failed' | 'not-in-library',
   ): OpOutcome => ({
@@ -60,7 +66,7 @@ function applyVirtualdjOp(draft: VirtualdjDraft, op: QueueOp, files: string[]): 
     notices: [{ code, track: op.kind === 'edit' ? '' : op.label }],
   })
   if (op.kind !== 'cues' || op.wanted === undefined || op.grid) return refused('cues-invalid')
-  const found = songIn(draft, files, virtualdjFileOf(op.contentId))
+  const found = songIn(draft, roots, virtualdjFileOf(op.contentId))
   if (!found) return refused('not-in-library')
   const { file, xml, song } = found
   const rows = virtualdjCueRows(song)
@@ -90,12 +96,12 @@ export async function applyVirtualdjCuesBatch(
   for (let attempt = 0; attempt < ATTEMPTS; attempt++) {
     if (!(await deps.ensureClosed())) return { ok: false, reason: 'cancelled' }
     const draft = createVirtualdjDraft()
-    const files = deps.roots().map(virtualdjDatabaseOf)
+    const roots = deps.roots()
     const outcomes = ops.map(
       (op): OpOutcome =>
         deps.stillQueued && !deps.stillQueued(op.id)
           ? { id: op.id, applied: false, reason: 'cancelled', notices: [] }
-          : applyVirtualdjOp(draft, op, files),
+          : applyVirtualdjOp(draft, op, roots),
     )
     const written = await commitVirtualdjDraft(draft, deps)
     if (written === 'changed') continue

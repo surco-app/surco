@@ -601,7 +601,7 @@ describe('rekordbox writes while the queue is held after a write left the collec
 
   it('hands the duplicate writer the hold, and keeps rekordbox in the step so the removed copy is not trashed', async () => {
     WRITERS.replaceRekordboxDuplicates.mockClear()
-    const deps = duplicateLibraryDeps(held(), sessions, () => ({ serato: [], virtualdj: '' }))
+    const deps = duplicateLibraryDeps(held(), sessions, () => ({ serato: [], virtualdj: [] }))
     await deps.libraries.rekordbox?.([{ from: '/m/a.mp3', to: '/m/b.mp3' }])
     const [, , options] = WRITERS.replaceRekordboxDuplicates.mock.calls[0] as unknown as [
       string,
@@ -617,7 +617,7 @@ describe('duplicateLibraryDeps', () => {
   // re-read Engine's database and the whole collection.nml every time.
   it('checks every removed copy against the libraries loaded once for the run', async () => {
     FILE_USE.open.mockClear()
-    const deps = duplicateLibraryDeps(host(), sessions, () => ({ serato: [], virtualdj: '' }))
+    const deps = duplicateLibraryDeps(host(), sessions, () => ({ serato: [], virtualdj: [] }))
     await deps.usedByLibrary('/m/a.mp3')
     await deps.usedByLibrary('/m/b.mp3')
     expect(FILE_USE.open).toHaveBeenCalledTimes(1)
@@ -629,7 +629,7 @@ describe('duplicateLibraryDeps', () => {
     const status = structuredClone(STATUS)
     const steps = () =>
       Object.keys(
-        duplicateLibraryDeps(host(), sessions, () => ({ serato: [], virtualdj: '' })).libraries,
+        duplicateLibraryDeps(host(), sessions, () => ({ serato: [], virtualdj: [] })).libraries,
       ).sort()
     try {
       Object.assign(SETTINGS, {
@@ -662,7 +662,7 @@ describe('duplicateLibraryDeps', () => {
   it('asks Serato too, so a removed copy a crate still plays is not trashed', () => {
     FILE_USE.open.mockClear()
     const roots = [{ dir: '/Users/v/Music/_Serato_', root: '/' }]
-    duplicateLibraryDeps(host(), sessions, () => ({ serato: roots, virtualdj: '' }))
+    duplicateLibraryDeps(host(), sessions, () => ({ serato: roots, virtualdj: [] }))
     expect(FILE_USE.open).toHaveBeenCalledWith(
       expect.objectContaining({ serato: roots }),
       expect.anything(),
@@ -1441,16 +1441,16 @@ describe('librariesKeepingOriginal', () => {
     try {
       const held = await librariesKeepingOriginal('/m/a.mp3', '/m/b.mp3', {
         traktorRead: () => '/t/collection.nml',
-        readOnlyLibraries: () => ({ serato: [], virtualdj: '' }),
+        readOnlyLibraries: () => ({ serato: [], virtualdj: [] }),
       })
 
       expect(held).toEqual(['rekordbox', 'traktor'])
       expect(FILE_USE.open).toHaveBeenCalledWith(
-        { rekordbox: '/c/master.db', engine: '', traktor: '', serato: [], virtualdj: '' },
+        { rekordbox: '/c/master.db', engine: '', traktor: '', serato: [], virtualdj: [] },
         expect.anything(),
       )
       expect(FILE_USE.open).toHaveBeenCalledWith(
-        { rekordbox: '', engine: '', traktor: '/t/collection.nml', serato: [], virtualdj: '' },
+        { rekordbox: '', engine: '', traktor: '/t/collection.nml', serato: [], virtualdj: [] },
         expect.anything(),
       )
     } finally {
@@ -1467,7 +1467,7 @@ describe('librariesKeepingOriginal', () => {
     try {
       const held = await librariesKeepingOriginal('/m/a.mp3', '/m/b.mp3', {
         traktorRead: () => '/t/collection.nml',
-        readOnlyLibraries: () => ({ serato: [], virtualdj: '' }),
+        readOnlyLibraries: () => ({ serato: [], virtualdj: [] }),
       })
 
       expect(held).toEqual(['traktor'])
@@ -1486,7 +1486,7 @@ describe('librariesKeepingOriginal', () => {
     try {
       const held = await librariesKeepingOriginal('/m/a.mp3', '/m/b.mp3', {
         traktorRead: () => '/t/collection.nml',
-        readOnlyLibraries: () => ({ serato: [], virtualdj: '' }),
+        readOnlyLibraries: () => ({ serato: [], virtualdj: [] }),
       })
 
       expect(held).toEqual([])
@@ -1503,12 +1503,12 @@ describe('librariesKeepingOriginal', () => {
     try {
       const held = await librariesKeepingOriginal('/m/a.mp3', '/m/b.mp3', {
         traktorRead: () => '',
-        readOnlyLibraries: () => ({ serato: roots, virtualdj: '' }),
+        readOnlyLibraries: () => ({ serato: roots, virtualdj: [] }),
       })
 
       expect(held).toContain('serato')
       expect(FILE_USE.open).toHaveBeenCalledWith(
-        { rekordbox: '', engine: '', traktor: '', serato: roots, virtualdj: '' },
+        { rekordbox: '', engine: '', traktor: '', serato: roots, virtualdj: [] },
         expect.anything(),
       )
     } finally {
@@ -1522,12 +1522,21 @@ describe('librariesKeepingOriginal', () => {
     try {
       const held = await librariesKeepingOriginal('/m/a.mp3', '/m/b.mp3', {
         traktorRead: () => '',
-        readOnlyLibraries: () => ({ serato: [], virtualdj: '/Users/dj/VirtualDJ' }),
+        readOnlyLibraries: () => ({
+          serato: [],
+          virtualdj: [{ dir: '/Users/dj/VirtualDJ', root: '/' }],
+        }),
       })
 
       expect(held).toEqual(['virtualdj'])
       expect(FILE_USE.open).toHaveBeenCalledWith(
-        { rekordbox: '', engine: '', traktor: '', serato: [], virtualdj: '/Users/dj/VirtualDJ' },
+        {
+          rekordbox: '',
+          engine: '',
+          traktor: '',
+          serato: [],
+          virtualdj: [{ dir: '/Users/dj/VirtualDJ', root: '/' }],
+        },
         expect.anything(),
       )
     } finally {
@@ -1539,7 +1548,7 @@ describe('librariesKeepingOriginal', () => {
     FILE_USE.open.mockClear()
     const held = await librariesKeepingOriginal('/m/a.mp3', '/m/b.mp3', {
       traktorRead: () => '',
-      readOnlyLibraries: () => ({ serato: [], virtualdj: '' }),
+      readOnlyLibraries: () => ({ serato: [], virtualdj: [] }),
     })
 
     expect(held).toEqual([])
