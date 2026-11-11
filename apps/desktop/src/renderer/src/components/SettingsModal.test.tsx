@@ -275,10 +275,10 @@ describe('SettingsModal tablist', () => {
     expect(general).toHaveAttribute('aria-selected', 'true')
     general.focus()
     fireEvent.keyDown(general, { key: 'ArrowDown' })
-    const search = screen.getByTestId('settings-tab-search')
-    expect(search).toHaveAttribute('aria-selected', 'true')
-    expect(search).toHaveFocus()
-    fireEvent.keyDown(search, { key: 'Home' })
+    const shortcuts = screen.getByTestId('settings-tab-shortcuts')
+    expect(shortcuts).toHaveAttribute('aria-selected', 'true')
+    expect(shortcuts).toHaveFocus()
+    fireEvent.keyDown(shortcuts, { key: 'Home' })
     expect(screen.getByTestId('settings-tab-general')).toHaveFocus()
     // Up from the first tab wraps to the last.
     fireEvent.keyDown(screen.getByTestId('settings-tab-general'), { key: 'ArrowUp' })
@@ -304,10 +304,10 @@ describe('SettingsModal tablist', () => {
   // group lands on the first of the next.
   it('crosses group boundaries with the arrow keys', () => {
     open()
-    const search = screen.getByTestId('settings-tab-search')
-    search.focus()
-    fireEvent.keyDown(search, { key: 'ArrowDown' })
-    expect(screen.getByTestId('settings-tab-editor')).toHaveFocus()
+    const shortcuts = screen.getByTestId('settings-tab-shortcuts')
+    shortcuts.focus()
+    fireEvent.keyDown(shortcuts, { key: 'ArrowDown' })
+    expect(screen.getByTestId('settings-tab-search')).toHaveFocus()
   })
 
   it('heads the panel with the open tab, the level above the sections inside it, and follows tab switches', () => {
@@ -1120,6 +1120,33 @@ describe('SettingsModal grouped tabs', () => {
     expect(screen.getAllByRole('tab')).toHaveLength(11)
     expect(screen.queryByTestId('settings-tab-processing')).toBeNull()
     expect(screen.getByTestId('settings-tab-conversion')).toHaveTextContent('Audio')
+  })
+
+  // The sidebar follows the work. Everyday app preferences first, then finding and editing
+  // the tags (Sources is only used to fill them), then everything applied when converting,
+  // and the app's own corner with maintenance last, as on macOS. "Output" named both a group
+  // and a tab inside Files, so the group is named for what its rows share, the conversion.
+  it('orders the sidebar by the work, with Advanced last', () => {
+    open()
+    const sidebar = screen.getByRole('tablist')
+    const rows = within(sidebar)
+      .getAllByRole('tab')
+      .map((t) => t.dataset.testid?.replace('settings-tab-', ''))
+    expect(rows).toEqual([
+      'general',
+      'shortcuts',
+      'search',
+      'editor',
+      'artwork',
+      'cues',
+      'conversion',
+      'naming',
+      'programs',
+      'stats',
+      'advanced',
+    ])
+    expect(sidebar).toHaveTextContent('Conversion')
+    expect(sidebar).not.toHaveTextContent('Output')
   })
 
   it('offers the joined tabs as a switcher above the panel', () => {
