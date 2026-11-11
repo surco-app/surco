@@ -527,6 +527,16 @@ describe('DestinationTab Traktor collection', () => {
     expect(onChangeRekordboxDbPath).toHaveBeenCalled()
   })
 
+  // The field is already titled "rekordbox collection", so the line under it opens with
+  // what that title cannot say: that it is found on its own and when to change it.
+  it('explains the rekordbox collection field without naming it again', () => {
+    renderPrograms()
+    expect(screen.queryByText(/The rekordbox collection to write into/)).toBeNull()
+    expect(
+      screen.getByText('It is found automatically; change it only if yours lives elsewhere.'),
+    ).toBeInTheDocument()
+  })
+
   // Nothing configured means nothing to clear, and a live button that does nothing reads
   it('keeps the cue offset usable with no collection configured', () => {
     render(

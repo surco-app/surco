@@ -1528,7 +1528,7 @@
       "recording": "Appuie sur les touches…",
       "unbound": "Non assigné",
       "reset": "Rétablir la valeur par défaut",
-      "resetAll": "Tout réinitialiser ({{count}})",
+      "resetAll": "Tout réinitialiser",
       "resetAllConfirm_one": "Réinitialiser {{count}} raccourci ?",
       "resetAllConfirm_other": "Réinitialiser {{count}} raccourcis ?",
       "conflict": "Deux commandes partagent un raccourci. Résous-le pour enregistrer.",
@@ -1542,15 +1542,11 @@
       "groupEditor": "Éditeur",
       "groupEditorHint": "Naviguer entre les sections",
       "groupTags": "Tags",
-      "groupTagsHint": "Métadonnées du morceau",
       "groupConvert": "Convertir",
-      "groupConvertHint": "Convertir et exporter",
       "groupLibrary": "Bibliothèque",
       "groupLibraryHint": "Fichiers et rangement",
       "groupPlayback": "Lecture",
-      "groupPlaybackHint": "Écouter le morceau",
       "groupNavigate": "Naviguer",
-      "groupNavigateHint": "Se déplacer dans l’app",
       "groupApp": "Application",
       "groupAppHint": "Réglages et fenêtres"
     },
@@ -1816,13 +1812,11 @@
     "keyNotationHint": "Comment la tonalité s’affiche dans la liste des morceaux et dans la suggestion sous le champ Tonalité. L’alphanumérique, ou Camelot, est ce que les logiciels DJ utilisent pour trier.",
     "sections": {
       "title": "Sections de l’éditeur",
-      "hint": "Choisis les sections ouvertes au départ et leur ordre sous le formulaire de métadonnées.",
       "form": "Métadonnées",
       "otherTags": "Autres métadonnées",
       "properties": "Propriétés",
       "quality": "Qualité audio",
       "cues": "Cues",
-      "cuesOnly": "Uniquement dans rekordbox",
       "output": "Nom de sortie",
       "trim": "Rognage du silence",
       "declick": "Réparation des clics de vinyle",
@@ -1871,7 +1865,7 @@
     "syncRekordboxIdle": "Aucune collection rekordbox n’a été trouvée sur cette machine.",
     "rekordboxSync": "Collection rekordbox",
     "rekordboxDbPath": "Collection rekordbox",
-    "rekordboxDbPathHint": "La collection rekordbox dans laquelle écrire. Elle est détectée automatiquement ; ne la change que si la tienne est ailleurs.",
+    "rekordboxDbPathHint": "Elle est détectée automatiquement ; ne la change que si la tienne est ailleurs.",
     "traktorNmlPathEmpty": "Pas encore choisi",
     "originalBackup": "Ce qui est conservé",
     "originalBackupPolicies": {
@@ -2100,9 +2094,6 @@
     },
     "mp3Choice": {
       "320": "320 kbps CBR, le standard des pools DJ.",
-      "256": "256 kbps CBR.",
-      "192": "192 kbps CBR.",
-      "160": "160 kbps CBR.",
       "128": "128 kbps CBR, le plus léger.",
       "v0": "VBR, fichiers plus légers en qualité transparente.",
       "v2": "VBR, encore plus légers."
@@ -2110,13 +2101,9 @@
     "bitDepthChoice": {
       "source": "Garde la profondeur exacte de chaque fichier, remplissage compris.",
       "16": "Écrit en 16 bits, avec dither quand il réduit.",
-      "24": "Écrit en 24 bits.",
       "corrected": "Un fichier qui ne contient que de l’audio 16 bits est écrit en vrai 16 bits, sans perte. Un fichier 32 bits est écrit en 24 bits."
     },
     "sampleRateChoice": {
-      "source": "Ne rééchantillonne jamais.",
-      "44100": "Tous les fichiers à 44,1 kHz, pour le matériel qui l’attend.",
-      "48000": "Tous les fichiers à 48 kHz, pour le matériel qui l’attend.",
       "corrected": "Ce qui a été mesuré comme suréchantillonné depuis 44,1 kHz revient à 44,1. Le vrai hi-res garde sa fréquence."
     }
   },

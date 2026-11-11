@@ -226,8 +226,8 @@ describe('ConversionTab explanations', () => {
     ],
     [
       'sampleRate',
-      { outputSampleRate: '48000' },
-      'settings.sampleRateChoice.48000',
+      { outputSampleRate: 'corrected' },
+      'settings.sampleRateChoice.corrected',
       'settings.sampleRateHint',
     ],
   ] as const)(
@@ -241,4 +241,33 @@ describe('ConversionTab explanations', () => {
       expect(field.textContent?.replace(info.textContent ?? '', '')).not.toContain(i18n.t(full))
     },
   )
+
+  // A line that only says the picked option again ("256 kbps CBR." under 256, "Writes
+  // 24-bit." under 24-bit) is read for nothing, so those options carry no line at all and
+  // only the ones that add something (320 is the DJ-pool standard, Corrected only touches
+  // upsampled files) keep theirs.
+  it.each([
+    ['mp3Quality', { mp3Quality: '256' }, '256 kbps CBR.'],
+    ['mp3Quality', { mp3Quality: '192' }, '192 kbps CBR.'],
+    ['mp3Quality', { mp3Quality: '160' }, '160 kbps CBR.'],
+    ['bitDepth', { outputBitDepth: '24' }, 'Writes 24-bit.'],
+    ['sampleRate', { outputSampleRate: 'source' }, 'Never resamples.'],
+    [
+      'sampleRate',
+      { outputSampleRate: '44100' },
+      'Every file at 44.1 kHz, for gear that expects it.',
+    ],
+    [
+      'sampleRate',
+      { outputSampleRate: '48000' },
+      'Every file at 48 kHz, for gear that expects it.',
+    ],
+  ] as const)('puts no line under a %s option that would only restate it', (id, over, line) => {
+    renderTab(over)
+    const field = document.querySelector(`[data-search-id="${id}"]`) as HTMLElement
+    const info = screen.getByTestId(`settings-info-${id}`)
+    const visible = field.textContent?.replace(info.textContent ?? '', '') ?? ''
+    expect(visible).not.toContain(line)
+    expect(visible).not.toMatch(/Choice/)
+  })
 })

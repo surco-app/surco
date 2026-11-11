@@ -1528,7 +1528,7 @@
       "recording": "Pressione as teclas…",
       "unbound": "Sem atribuição",
       "reset": "Restaurar o padrão",
-      "resetAll": "Redefinir tudo ({{count}})",
+      "resetAll": "Redefinir tudo",
       "resetAllConfirm_one": "Restaurar {{count}} atalho?",
       "resetAllConfirm_other": "Restaurar {{count}} atalhos?",
       "conflict": "Dois comandos compartilham um atalho. Resolva para salvar.",
@@ -1542,15 +1542,11 @@
       "groupEditor": "Editor",
       "groupEditorHint": "Navegando entre seções",
       "groupTags": "Tags",
-      "groupTagsHint": "Metadados da faixa",
       "groupConvert": "Converter",
-      "groupConvertHint": "Converter e exportar",
       "groupLibrary": "Biblioteca",
       "groupLibraryHint": "Arquivos e organização",
       "groupPlayback": "Reprodução",
-      "groupPlaybackHint": "Ouvir a faixa",
       "groupNavigate": "Navegar",
-      "groupNavigateHint": "Mover-se pelo app",
       "groupApp": "App",
       "groupAppHint": "Ajustes e janelas"
     },
@@ -1816,13 +1812,11 @@
     "keyNotationHint": "Como o tom aparece na lista de faixas e na sugestão abaixo do campo Tom. A alfanumérica, ou Camelot, é o que os programas de DJ usam para ordenar.",
     "sections": {
       "title": "Seções do editor",
-      "hint": "Escolha quais seções começam abertas e a ordem delas abaixo do formulário de metadados.",
       "form": "Metadados",
       "otherTags": "Outros metadados",
       "properties": "Propriedades",
       "quality": "Qualidade de áudio",
       "cues": "Cues",
-      "cuesOnly": "Só no rekordbox",
       "output": "Nome de saída",
       "trim": "Corte de silêncio",
       "declick": "Reparo de cliques de vinil",
@@ -1871,7 +1865,7 @@
     "syncRekordboxIdle": "Nenhuma coleção do rekordbox foi encontrada neste computador.",
     "rekordboxSync": "Coleção do rekordbox",
     "rekordboxDbPath": "Coleção do rekordbox",
-    "rekordboxDbPathHint": "A coleção do rekordbox em que gravar. Ela é detectada sozinha; troque apenas se a sua estiver em outro lugar.",
+    "rekordboxDbPathHint": "Ela é detectada sozinha; troque apenas se a sua estiver em outro lugar.",
     "traktorNmlPathEmpty": "Ainda não escolhido",
     "originalBackup": "O que é guardado",
     "originalBackupPolicies": {
@@ -2100,9 +2094,6 @@
     },
     "mp3Choice": {
       "320": "320 kbps CBR, o padrão dos pools de DJ.",
-      "256": "256 kbps CBR.",
-      "192": "192 kbps CBR.",
-      "160": "160 kbps CBR.",
       "128": "128 kbps CBR, o menor.",
       "v0": "VBR, arquivos menores com qualidade transparente.",
       "v2": "VBR, menores ainda."
@@ -2110,13 +2101,9 @@
     "bitDepthChoice": {
       "source": "Mantém a profundidade exata de cada arquivo, preenchimento incluído.",
       "16": "Grava em 16 bits, com dither quando reduz.",
-      "24": "Grava em 24 bits.",
       "corrected": "Um arquivo que só tem áudio de 16 bits é gravado como 16 bits reais, sem perda. Um de 32 bits é gravado em 24."
     },
     "sampleRateChoice": {
-      "source": "Nunca reamostra.",
-      "44100": "Todos os arquivos em 44,1 kHz, para equipamentos que pedem isso.",
-      "48000": "Todos os arquivos em 48 kHz, para equipamentos que pedem isso.",
       "corrected": "O que foi medido como reamostrado a partir de 44,1 kHz volta para 44,1. O hi-res real mantém sua taxa."
     }
   },
