@@ -29,7 +29,7 @@
         "in": "1.33.0"
       },
       {
-        "text": "A session now looks like any playlist, with the key and tempo of each track. “Redo” draws the whole session again and keeps only the track you started from. Bases and vocals keep alternating even when the keys don’t match.",
+        "text": "A session now looks like any playlist, with the key of each track. “Redo” draws the whole session again and keeps only the track you started from. Bases and vocals keep alternating even when the keys don’t match.",
         "in": "1.33.0"
       },
       {
