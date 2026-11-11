@@ -1810,6 +1810,20 @@ describe('Editor multi-select sequential edits', () => {
   })
 })
 
+describe('Editor multi-select bulk actions', () => {
+  // The header already reads "Editing 2 tracks", so a button that counts them again only
+  // repeats the number a line above it.
+  it('names the bulk rename and trim without repeating the selection count', () => {
+    renderWithQuery(<MultiHarness />, { visibleFields: ['title'] })
+    expect(screen.getByTestId('regenerate-output-names-all')).toHaveTextContent(
+      'Regenerate file names from metadata',
+    )
+    expect(screen.getByTestId('trim-detect-all')).toHaveTextContent(
+      'Trim detected silence on every track',
+    )
+  })
+})
+
 const rekordboxTree = [{ id: '3000', name: 'Makina', kind: 'playlist' as const, count: 1 }]
 
 function rekordboxApiWith(membership: ProgramReads['membership']): void {

@@ -131,7 +131,7 @@ export function NormalizeSection({
               while the batch applies one shared value to every selected track. */}
           {isMulti && (
             <p data-testid="normalize-scope" className="mb-3 text-xs text-fg-dim">
-              {tr('normalize.appliesToSelection', { count: selectedCount })}
+              {tr('normalize.appliesToSelection')}
             </p>
           )}
           {/* The cue warning renders once, below the wave: inline it sat between the

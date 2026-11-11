@@ -410,9 +410,13 @@ describe('NormalizeSection measured figures', () => {
   // per-track value. The section hid its waveform and said nothing else, so a user tuning
   // what looked like this track's loudness was silently setting it for all forty.
   describe('scope of a multi-selection', () => {
-    it('says how many tracks the settings will apply to', () => {
+    // The editor title already says "Editing 40 tracks", so the scope line names the
+    // selection without counting it a second time.
+    it('says the settings apply to the whole selection without repeating its count', () => {
       renderSection(track(), 40)
-      expect(screen.getByTestId('normalize-scope')).toHaveTextContent('40')
+      expect(screen.getByTestId('normalize-scope')).toHaveTextContent(
+        'These settings apply to all selected tracks.',
+      )
     })
 
     it('says nothing about scope for a single track', () => {

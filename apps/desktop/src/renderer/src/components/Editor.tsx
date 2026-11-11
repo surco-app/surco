@@ -1813,7 +1813,7 @@ export const Editor = memo(function Editor({
                             testid="output-multi"
                             buttonTestid="regenerate-output-names-all"
                             title={tr('editor.outputName')}
-                            label={tr('editor.regenerateAll', { count: multiTracks.length })}
+                            label={tr('editor.regenerateAll')}
                             icon={RefreshCw}
                             onClick={onRegenerateName}
                           />
@@ -1851,7 +1851,7 @@ export const Editor = memo(function Editor({
                             testid="trim-multi"
                             buttonTestid="trim-detect-all"
                             title={tr('trim.title')}
-                            label={tr('trim.applyAll', { count: multiTracks.length })}
+                            label={tr('trim.applyAll')}
                             icon={Scissors}
                             onClick={onTrimDetectedAll}
                           />
