@@ -1,6 +1,7 @@
 import type { DjReadMain } from '../shared/djApi'
 import { PROGRAM_CAN } from '../shared/djProgram'
 import {
+  isVirtualdjHome,
   readVirtualdjLibrary,
   type VirtualdjRoot,
   virtualdjCollection,
@@ -21,7 +22,7 @@ export function virtualdjRead(host: VirtualdjPlaylistsHost): DjReadMain {
   return {
     available: () =>
       (process.platform !== 'win32' || PROGRAM_CAN.virtualdj.windows) &&
-      host.roots().some((r) => r.root === '/'),
+      host.roots().some(isVirtualdjHome),
     tree: () => virtualdjTree(library()),
     recentCount: () => virtualdjRecentCount(library()),
     trackCount: () => virtualdjTrackCount(library()),

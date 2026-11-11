@@ -31,6 +31,7 @@ import * as rekordboxDb from './rekordboxDb'
 import { REKORDBOX_KEY } from './rekordboxDb'
 import { concat, frame, track, utf16be } from './seratoDatabaseFixture'
 import { type SeratoLibraryRoot, seratoLibraryRoots } from './seratoLibrary'
+import { virtualdjLibraryRoots } from './virtualdjLibrary'
 
 const OFF = { rekordbox: '', engine: '', traktor: '', serato: [], virtualdj: [] }
 let root: string
@@ -642,6 +643,19 @@ describe('VirtualDJ', () => {
     )
     return { dir, root: volume }
   }
+
+  it("counts a drive file as used when Settings points VirtualDJ at that drive's folder", async () => {
+    const volumes = await mkdtemp(join(root, 'vdj-volumes-'))
+    const dir = join(volumes, 'Public', 'VirtualDJ')
+    await mkdir(dir, { recursive: true })
+    await writeFile(
+      join(dir, 'database.xml'),
+      '<VirtualDJ_Database Version="2026">\r\n<Song FilePath="D:/Musica/a.flac" />\r\n</VirtualDJ_Database>\r\n',
+    )
+    const roots = virtualdjLibraryRoots(dir, volumes)
+    const file = join(volumes, 'Public', 'Musica', 'a.flac')
+    expect(await usedByDjLibrary(file, { ...OFF, virtualdj: roots })).toBe(true)
+  })
 
   it("counts a file only a drive's own VirtualDJ database has as used", async () => {
     const home = await virtualdj(['/Music/a.mp3'])

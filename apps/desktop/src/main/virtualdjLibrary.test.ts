@@ -318,6 +318,34 @@ describe('virtualdjLibraryRoots', () => {
 })
 
 describe("a drive's VirtualDJ database", () => {
+  it('reads the drive folder once, as that drive, when Settings points VirtualDJ at it', () => {
+    const { volumes } = drives({ Public: ['D:/Musica/a.flac'] })
+    const setting = join(volumes, 'Public', 'VirtualDJ')
+    mkdirSync(join(setting, 'MyLists'))
+    writeFileSync(join(setting, 'MyLists', 'order'), 'Gigs')
+    writeFileSync(
+      join(setting, 'MyLists', 'Gigs.vdjfolder'),
+      '<VirtualFolder>\r\n<song path="D:/Musica/a.flac" idx="0" />\r\n</VirtualFolder>',
+    )
+    const roots = virtualdjLibraryRoots(`${setting}/`, volumes)
+    expect(roots).toHaveLength(1)
+    const lib = readVirtualdjLibrary(roots)
+    expect(virtualdjCollection(lib).map((t) => t.path)).toEqual([
+      join(volumes, 'Public', 'Musica', 'a.flac'),
+    ])
+    expect(virtualdjTree(lib).map((n) => n.name)).toEqual(['Gigs'])
+  })
+
+  it('translates a database by the root it is read as, whatever root read it before', () => {
+    const { volumes } = drives({ Public: ['D:/Musica/a.flac'] })
+    const dir = join(volumes, 'Public', 'VirtualDJ')
+    readVirtualdjLibrary([{ dir, root: '/' }])
+    const lib = readVirtualdjLibrary([{ dir, root: join(volumes, 'Public') }])
+    expect(virtualdjCollection(lib).map((t) => t.path)).toEqual([
+      join(volumes, 'Public', 'Musica', 'a.flac'),
+    ])
+  })
+
   it('reads its drive letter paths as files on that drive, with the entities decoded', () => {
     const { home, volumes } = drives({ Public: ['D:/Musica/It&apos;s Mine.flac', 'E:/Otra/b.mp3'] })
     const lib = readVirtualdjLibrary(virtualdjLibraryRoots(home, volumes))
