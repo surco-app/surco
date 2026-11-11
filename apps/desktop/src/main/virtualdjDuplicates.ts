@@ -12,7 +12,7 @@ import {
   type VirtualdjDraft,
 } from './virtualdjLibraryWrite'
 import { moveVirtualdjListRows } from './virtualdjListsWrite'
-import { virtualdjRootFor } from './virtualdjTrackWrite'
+import { type VirtualdjAudio, virtualdjRootFor } from './virtualdjTrackWrite'
 
 const ATTEMPTS = 3
 const RUNNING = 'virtualdj-running'
@@ -31,6 +31,7 @@ function replacedSong(
   pair: DuplicatePair,
   roots: VirtualdjRoot[],
   size: number | null,
+  bitrateKbps: number | undefined,
 ): DuplicateReplaceResult | null {
   const found = songIn(draft, roots, pair.from)
   if (!found) return null
@@ -48,7 +49,7 @@ function replacedSong(
   const moved = withVirtualdjSongMoved(
     xml,
     song.path,
-    { path: virtualdjStoredPath(root, pair.to, xml), size },
+    { path: virtualdjStoredPath(root, pair.to, xml), size, bitrateKbps: bitrateKbps ?? null },
     0,
     null,
   )
@@ -59,11 +60,14 @@ function replacedSong(
 
 export async function replaceVirtualdjDuplicates(
   pairs: DuplicatePair[],
-  deps: VirtualdjCommitDeps,
+  deps: VirtualdjCommitDeps & { audioOf?: (path: string) => Promise<VirtualdjAudio> },
 ): Promise<DuplicateReplaceResult[]> {
   const all = (reason: string): DuplicateReplaceResult[] =>
     pairs.map(() => ({ written: false, reason }))
   const sizes = pairs.map((p) => sizeOf(p.to))
+  const bitrates = await Promise.all(
+    pairs.map(async (p) => (await deps.audioOf?.(p.to).catch(() => undefined))?.bitrateKbps),
+  )
   for (let attempt = 0; attempt < ATTEMPTS; attempt++) {
     const draft = createVirtualdjDraft()
     const roots = deps.roots()
@@ -74,7 +78,7 @@ export async function replaceVirtualdjDuplicates(
           : (n.children ?? []).flatMap(paths)
       }),
     )
-    const songs = pairs.map((p, i) => replacedSong(draft, p, roots, sizes[i]))
+    const songs = pairs.map((p, i) => replacedSong(draft, p, roots, sizes[i], bitrates[i]))
     const written = await commitVirtualdjDraft(draft, deps)
     if (written === 'changed') continue
     if (written === 'cancelled') return all(RUNNING)

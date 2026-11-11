@@ -74,7 +74,12 @@ import { replaceVirtualdjDuplicates } from './virtualdjDuplicates'
 import type { VirtualdjRoot } from './virtualdjLibrary'
 import { isVirtualdjRunning } from './virtualdjProcess'
 import { syncVirtualdjTags } from './virtualdjTagSync'
-import { virtualdjCannotFollow, virtualdjHeld, virtualdjLibraryHas } from './virtualdjTrackWrite'
+import {
+  virtualdjBitrateKbps,
+  virtualdjCannotFollow,
+  virtualdjHeld,
+  virtualdjLibraryHas,
+} from './virtualdjTrackWrite'
 
 export type SyncBlockedKey = 'traktorSyncBlocked' | 'rekordboxSyncBlocked' | 'engineSyncBlocked'
 
@@ -938,6 +943,9 @@ export function duplicateLibraryDeps(
                   virtualdjOpen: isVirtualdjRunning,
                   sessionBackup: () =>
                     sessions.virtualdj.ensure(virtualdjCopyKey(rootLibraries().virtualdj)),
+                  audioOf: async (path) => ({
+                    bitrateKbps: virtualdjBitrateKbps(await probeAudio(path)),
+                  }),
                 }),
             })
         : undefined,

@@ -58,14 +58,34 @@ describe('replaceVirtualdjDuplicates', () => {
     const xml = lib.database()
     expect(xml).not.toContain(`FilePath="${FROM}"`)
     expect(songBlock(xml, lib.kept)).toBe(
-      before.replace(
-        `FilePath="${FROM}" FileSize="17138984"`,
-        `FilePath="${lib.kept}" FileSize="8"`,
-      ),
+      before
+        .replace(`FilePath="${FROM}" FileSize="17138984"`, `FilePath="${lib.kept}" FileSize="8"`)
+        .replace(' Bitrate="320"', ''),
     )
     expect(lib.list('Surco prueba')[0]).toBe(lib.kept)
     expect(lib.list('Carpeta/Dentro')).toContain(lib.kept)
     expect(lib.list('Carpeta/Dentro')).not.toContain(FROM)
+  })
+
+  it('gives the moved song the kept file’s bitrate and keeps its length, as a conversion move does without a decoded length', async () => {
+    const lib = library()
+    const audioOf = vi.fn(async () => ({ bitrateKbps: 1411 }))
+    await replaceVirtualdjDuplicates([{ from: FROM, to: lib.kept }], { ...lib.deps, audioOf })
+    expect(audioOf).toHaveBeenCalledWith(lib.kept)
+    const infos = songBlock(lib.database(), lib.kept).split('\r\n')[2]
+    expect(infos).toBe(
+      songBlock(FIXTURE_XML, FROM).split('\r\n')[2].replace('Bitrate="320"', 'Bitrate="1411"'),
+    )
+  })
+
+  it('drops the removed copy’s bitrate when the kept file’s cannot be told, so VirtualDJ reads it again', async () => {
+    const lib = library()
+    await replaceVirtualdjDuplicates([{ from: FROM, to: lib.kept }], {
+      ...lib.deps,
+      audioOf: async () => ({}),
+    })
+    const infos = songBlock(lib.database(), lib.kept).split('\r\n')[2]
+    expect(infos).toBe(songBlock(FIXTURE_XML, FROM).split('\r\n')[2].replace(' Bitrate="320"', ''))
   })
 
   it('drops the removed copy’s song when the kept file has its own, and its list rows go to the kept copy', async () => {
