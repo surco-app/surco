@@ -3085,6 +3085,8 @@ describe('incomplete tracks', () => {
     expect(screen.getByTestId('music-review-filter-incomplete')).toHaveTextContent('Incomplete2')
   })
 
+  // A row with no proposal has nothing to offer beyond its missing fields, so it carries no
+  // pill; "No proposal" on every such row was noise beside the ones that do have one.
   it('names what each track lacks and where its proposal comes from', () => {
     render(<Panes review={incompleteReview()} />)
     const [a, b] = rows()
@@ -3093,8 +3095,7 @@ describe('incomplete tracks', () => {
     )
     expect(within(a).getByTestId('incomplete-row-source')).toHaveTextContent('From file name')
     expect(within(a).getByTestId('music-review-row-pill')).toHaveAttribute('data-tone', 'good')
-    expect(within(b).getByTestId('incomplete-row-source')).toHaveTextContent('No proposal')
-    expect(within(b).getByTestId('music-review-row-pill')).toHaveAttribute('data-tone', 'warn')
+    expect(within(b).queryByTestId('music-review-row-pill')).toBeNull()
   })
 
   // A value the user wrote or copied is what gets written: the row must not still say none.

@@ -1068,16 +1068,15 @@ function IncompleteRow({
           <span data-testid="music-review-row-detail" className={ROW_DETAIL}>
             {missingLabel(t, card)}
           </span>
-          <span className="flex shrink-0 justify-end">
-            <TonePill
-              testid="music-review-row-pill"
-              tone={source && source !== 'editor' ? 'good' : 'warn'}
-            >
-              <span data-testid="incomplete-row-source" className={PILL_TEXT}>
-                {t(`musicReview.incomplete.source.${source ?? 'none'}`)}
-              </span>
-            </TonePill>
-          </span>
+          {source && (
+            <span className="flex shrink-0 justify-end">
+              <TonePill testid="music-review-row-pill" tone={source !== 'editor' ? 'good' : 'warn'}>
+                <span data-testid="incomplete-row-source" className={PILL_TEXT}>
+                  {t(`musicReview.incomplete.source.${source}`)}
+                </span>
+              </TonePill>
+            </span>
+          )}
         </span>
       </span>
     </div>
