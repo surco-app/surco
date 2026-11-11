@@ -120,6 +120,16 @@ describe('restoreVirtualdjCopy', () => {
     expect(lib.lists()).toEqual(before)
   })
 
+  it('keeps an empty folder a folder, since its copy holds only files', async () => {
+    const lib = library()
+    writeFileSync(join(lib.dir, 'MyLists', 'Vacía.vdjfolder'), '<VirtualFolder />\r\n')
+    mkdirSync(join(lib.dir, 'MyLists', 'Vacía.subfolders'))
+    await lib.convert()
+    const copy = listVirtualdjCopies(lib.deps).copies.find((c) => c.reason === 'lists')
+    expect(await restoreVirtualdjCopy(copy?.id ?? '', lib.restoreDeps())).toEqual({ ok: true })
+    expect(existsSync(join(lib.dir, 'MyLists', 'Vacía.subfolders'))).toBe(true)
+  })
+
   it('changes nothing and keeps the queue while VirtualDJ stays open', async () => {
     const lib = library()
     await lib.convert()

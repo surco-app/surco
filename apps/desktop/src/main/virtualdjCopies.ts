@@ -5,7 +5,6 @@ import {
   readdirSync,
   readFileSync,
   renameSync,
-  rmdirSync,
   rmSync,
   writeFileSync,
 } from 'node:fs'
@@ -106,23 +105,9 @@ function filesUnder(dir: string): string[] {
   return out
 }
 
-function dirsUnder(dir: string): string[] {
-  const out: string[] = []
-  const walk = (at: string) => {
-    for (const entry of readdirSync(at, { withFileTypes: true }))
-      if (entry.isDirectory()) {
-        out.push(join(at, entry.name))
-        walk(join(at, entry.name))
-      }
-  }
-  if (existsSync(dir)) walk(dir)
-  return out
-}
-
 interface Plan {
   writes: { target: string; bytes: Buffer }[]
   removals: string[]
-  emptied: string[]
   current: { target: string; label: string }[]
 }
 
@@ -139,7 +124,6 @@ function planOf(part: Part, folder: string, roots: VirtualdjRoot[]): Plan | null
     return {
       writes,
       removals: [],
-      emptied: [],
       current: writes.map((w) => {
         const root = roots.find((r) => join(r.dir, 'database.xml') === w.target) as VirtualdjRoot
         return { target: w.target, label: join(labelOf(root), 'database.xml') }
@@ -152,16 +136,12 @@ function planOf(part: Part, folder: string, roots: VirtualdjRoot[]): Plan | null
   const lists = join(home.dir, 'MyLists')
   const wanted = filesUnder(source)
   const present = filesUnder(lists)
-  const keptDirs = new Set(dirsUnder(source).map((d) => join(lists, relative(source, d))))
   return {
     writes: wanted.map((file) => ({
       target: join(lists, file),
       bytes: readFileSync(join(source, file)),
     })),
     removals: present.filter((file) => !wanted.includes(file)).map((file) => join(lists, file)),
-    emptied: dirsUnder(lists)
-      .filter((d) => !keptDirs.has(d))
-      .sort((a, b) => b.length - a.length),
     current: present.map((file) => ({
       target: join(lists, file),
       label: join(labelOf(home), 'MyLists', file),
@@ -241,7 +221,6 @@ export async function restoreVirtualdjCopy(
       renameSync(tmp, target)
     }),
     ...plan.removals.map((target) => () => rmSync(target, { force: true })),
-    ...plan.emptied.map((dir) => () => rmdirSync(dir)),
   ]
   let slotKept = false
   let replaced = false
