@@ -1486,6 +1486,19 @@ describe('SettingsModal search tab layout', () => {
     expect(within(beatport).getByTestId('beatport-username')).toBeInTheDocument()
   })
 
+  // A line under a title that only says the title again is read for nothing: "Search
+  // sources" needs no "Catalogs the editor searches." and "Show only these formats" no
+  // "Limit results to these formats". Maximum results keeps the half that says why.
+  it('puts no line under a title that only repeats it', () => {
+    openSearch(['discogs'])
+    expect(screen.queryByText('Catalogs the editor searches.')).toBeNull()
+    expect(
+      screen.queryByText('Limit Discogs and MusicBrainz results to these formats.'),
+    ).toBeNull()
+    expect(screen.queryByText(/How many search results to show/)).toBeNull()
+    expect(screen.getByText(i18n.t('settings.maxResultsHint'))).toBeInTheDocument()
+  })
+
   // The long paragraph naming what every catalog brings is split into one line per row,
   // so what a source adds is read where it is switched on.
   it('describes what each source brings in its own row', () => {
