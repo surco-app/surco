@@ -215,9 +215,10 @@ export function SessionWizard({
 
   useEffect(() => {
     if (!leaving) return
-    const ms = Number.parseFloat(
-      getComputedStyle(document.documentElement).getPropertyValue('--duration-panel'),
-    )
+    const token = getComputedStyle(document.documentElement)
+      .getPropertyValue('--duration-panel')
+      .trim()
+    const ms = Number.parseFloat(token) * (token.endsWith('ms') ? 1 : 1000) || 0
     const timer = setTimeout(() => setLeaving(null), ms)
     return () => clearTimeout(timer)
   }, [leaving])

@@ -210,6 +210,18 @@ describe('SessionWizard steps', () => {
       expect(leaving()).toBeNull()
     })
 
+    it('reads the panel duration in seconds too, as the built stylesheet writes it, so the copy is not dropped at once', () => {
+      allowMotion()
+      document.documentElement.style.setProperty('--duration-panel', '.24s')
+      vi.useFakeTimers()
+      setup()
+      toSources()
+      act(() => vi.advanceTimersByTime(239))
+      expect(leaving()).not.toBeNull()
+      act(() => vi.advanceTimersByTime(1))
+      expect(leaving()).toBeNull()
+    })
+
     it('leaves no copy of the old step behind when the OS asks for reduced motion, only the fade in', () => {
       allowMotion(true)
       setup()
