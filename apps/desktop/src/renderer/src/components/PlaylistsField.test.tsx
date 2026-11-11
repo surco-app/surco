@@ -175,12 +175,12 @@ describe('PlaylistsField open', () => {
     expect(screen.queryByTestId('playlists-check-bt')).toBeNull()
   })
 
-  it('tells how many playlists of each folder hold the track, counting the ones in subfolders', () => {
+  it('counts tracks only on playlists, never playlists on a folder, so every number in the tree means tracks', () => {
     render(<Harness />)
     open()
-    expect(screen.getByTestId('playlists-folder-count-bolos').textContent).toBe('5 of 20')
-    expect(screen.getByTestId('playlists-folder-count-can').textContent).toBe('1 of 3')
-    expect(screen.getByTestId('playlists-folder-count-bases').textContent).toBe('1')
+    expect(screen.getByTestId('playlists-folder-bolos')).toHaveTextContent(/^\D*$/)
+    expect(screen.getByTestId('playlists-folder-can')).toHaveTextContent(/^\D*$/)
+    expect(screen.getByTestId('playlists-folder-bases')).toHaveTextContent(/^\D*$/)
   })
 
   it('shows each playlist ticked when the track is in it, with its track count', () => {
