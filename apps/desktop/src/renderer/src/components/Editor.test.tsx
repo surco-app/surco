@@ -2770,7 +2770,7 @@ describe('Editor export control', () => {
   it('labels an overwrite into another format as a conversion', () => {
     renderEditor({ id: 'a', inputPath: '/music/a.wav' }, 'aiff', { overwriteOriginal: true })
     const button = screen.getByTestId('process-btn')
-    expect(button).toHaveTextContent('Convert to AIFF')
+    expect(button).toHaveAccessibleName('Convert to AIFF')
     expect(button).not.toHaveTextContent('Update tags')
   })
 
