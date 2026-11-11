@@ -36,6 +36,10 @@ describe('parseVirtualdjDatabase', () => {
     })
   })
 
+  it('reads when VirtualDJ first saw the song, in Unix seconds, so recently added can be listed', () => {
+    expect(byPath('/Music/Serato Pruebas/Pray.flac').firstSeen).toBe(1794393662)
+  })
+
   it('takes the grid from Scan as seconds per beat, never as beats per minute', () => {
     const song = byPath('/Music/VirtualDJ Pruebas/Pray.mp3')
     expect(song.secondsPerBeat).toBe(0.447778)
@@ -106,6 +110,7 @@ describe('parseVirtualdjDatabase', () => {
       year: '',
       key: '',
       lengthSeconds: null,
+      firstSeen: null,
       secondsPerBeat: null,
       phaseSeconds: null,
       pois: [],

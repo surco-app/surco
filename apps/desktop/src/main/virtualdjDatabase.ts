@@ -20,6 +20,7 @@ export interface VirtualdjSong {
   year: string
   key: string
   lengthSeconds: number | null
+  firstSeen: number | null
   secondsPerBeat: number | null
   phaseSeconds: number | null
   pois: VirtualdjPoi[]
@@ -78,6 +79,7 @@ function parseSong(open: string, body: string): VirtualdjSong | null {
     year: attr(tags, 'Year'),
     key: attr(tags, 'Key'),
     lengthSeconds: number(attr(infos, 'SongLength')),
+    firstSeen: number(attr(infos, 'FirstSeen')),
     secondsPerBeat: number(attr(scan, 'Bpm')) ?? number(attr(tags, 'Bpm')),
     phaseSeconds: number(attr(scan, 'Phase')),
     pois,
