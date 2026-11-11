@@ -4,6 +4,7 @@ import {
   ChevronDown,
   CircleAlert,
   Keyboard,
+  Loader2,
   Minimize2,
   Pause,
   Play,
@@ -525,6 +526,7 @@ function Editing({
   const gridOff = gate === null ? null : tr(gate)
   const fitting = useIsFetching({ queryKey: gridFitQuery(cue.contentId).queryKey }) > 0
   const fine = useCueWaveFine(cue.contentId, maximized && !fitting)
+  const fitPending = gridOff === null && fitting
   const gridFit = useGridFit(cue.contentId, gridOff === null && (!maximized || fine !== undefined))
   const offsets =
     gridFit && state.grid
@@ -1263,6 +1265,7 @@ function Editing({
       type="button"
       data-testid="cues-fit-grid"
       data-needs-fix={needsFix ? 'true' : undefined}
+      aria-busy={fitPending || undefined}
       disabled={!state.grid || !gridFit}
       onClick={() =>
         state.grid &&
@@ -1272,6 +1275,13 @@ function Editing({
       className={`press flex shrink-0 items-center gap-1.5 whitespace-nowrap border border-[var(--color-line-strong)] text-xs font-medium text-fg-muted hover:bg-[var(--color-hover)] disabled:opacity-40 data-[needs-fix=true]:border-[var(--color-accent)] data-[needs-fix=true]:bg-[var(--color-accent)] data-[needs-fix=true]:font-semibold data-[needs-fix=true]:text-[var(--color-on-accent)] ${autoHeight}`}
     >
       <Tooltip label={gridOff ?? tr('editor.cues.grid.autoHint')} />
+      {fitPending && (
+        <Loader2
+          data-testid="cues-fit-grid-spinner"
+          className="h-3 w-3 animate-spin text-fg-faint"
+          aria-hidden="true"
+        />
+      )}
       {tr('editor.cues.grid.fit')}
     </button>
   )

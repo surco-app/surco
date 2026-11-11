@@ -66,7 +66,7 @@ beforeEach(() => {
   })
 })
 
-function setup(fit: GridFit | null, read: TrackCues = READ) {
+function setup(fit: GridFit | null | Promise<GridFit | null>, read: TrackCues = READ) {
   const gridFit = vi.fn<Api['cues']['gridFit']>(async () => fit)
   installApi({
     cues: {
@@ -122,6 +122,27 @@ describe('Ajustar rejilla in the folded section', () => {
     await ready()
     await waitFor(() => expect(fitButton()).toBeEnabled())
     expect(fitButton()).not.toHaveAttribute('data-needs-fix')
+  })
+
+  it('spins inside the button while Surco still reads the file, so a disabled Fit grid reads as waiting and not as broken', async () => {
+    let finish: (fit: GridFit | null) => void = () => {}
+    setup(new Promise<GridFit | null>((resolve) => (finish = resolve)))
+    await ready()
+    expect(fitButton()).toBeDisabled()
+    expect(fitButton()).toHaveAttribute('aria-busy', 'true')
+    expect(screen.getByTestId('cues-fit-grid-spinner')).toBeInTheDocument()
+    finish(LATE)
+    await waitFor(() => expect(fitButton()).toBeEnabled())
+    expect(screen.queryByTestId('cues-fit-grid-spinner')).toBeNull()
+    expect(fitButton()).not.toHaveAttribute('aria-busy')
+  })
+
+  it('stops spinning when the read finds no beats, so the wait never looks endless', async () => {
+    const { gridFit } = setup(null)
+    await ready()
+    await waitFor(() => expect(gridFit).toHaveBeenCalledWith('103'))
+    await waitFor(() => expect(screen.queryByTestId('cues-fit-grid-spinner')).toBeNull())
+    expect(fitButton()).toBeDisabled()
   })
 
   it('stays visible but disabled when Surco finds no beats to fit, instead of vanishing', async () => {
