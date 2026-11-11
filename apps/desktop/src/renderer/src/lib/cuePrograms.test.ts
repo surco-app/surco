@@ -17,6 +17,7 @@ describe('CUE_PROGRAMS keeps what the cue editor does for each DJ program', () =
       runningNote: null,
       saveAllKey: 'editor.cues.saveAll',
       fixedGrid: null,
+      takesFlows: true,
     })
   })
 
@@ -33,6 +34,7 @@ describe('CUE_PROGRAMS keeps what the cue editor does for each DJ program', () =
       runningNote: null,
       saveAllKey: 'editor.cues.traktor.saveAll',
       fixedGrid: null,
+      takesFlows: true,
     })
   })
 
@@ -49,6 +51,7 @@ describe('CUE_PROGRAMS keeps what the cue editor does for each DJ program', () =
       runningNote: null,
       saveAllKey: 'editor.cues.engine.saveAll',
       fixedGrid: null,
+      takesFlows: true,
     })
   })
 
@@ -65,11 +68,16 @@ describe('CUE_PROGRAMS keeps what the cue editor does for each DJ program', () =
       runningNote: { key: 'editor.cues.serato.waiting', testId: 'cues-serato-waiting' },
       saveAllKey: 'editor.cues.serato.saveAll',
       fixedGrid: 'editor.cues.grid.serato',
+      takesFlows: true,
     })
   })
 })
 
 describe('cueProgramOf picks the entry by the track’s program', () => {
+  it('lets a cue flow reach every program but VirtualDJ, whose cues Surco does not save yet', () => {
+    expect(CUE_PROGRAMS.virtualdj.takesFlows).toBe(false)
+  })
+
   it('gives a Traktor track the Traktor slots', () => {
     expect(cueProgramOf('traktor:x').slots).toBe(TRAKTOR_SLOTS)
   })

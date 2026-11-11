@@ -187,6 +187,14 @@ describe('CuesTab', () => {
     expect(screen.queryByTestId('cue-flow-library-note')).not.toBeInTheDocument()
   })
 
+  it('leaves the hot cues note out when only VirtualDJ is found, since no flow reaches VirtualDJ', async () => {
+    installApi({ dj: djReads({ virtualdj: { available: async () => true } }) })
+    render(<Harness />)
+    await screen.findByTestId('cue-flow-mark-point')
+    await act(async () => {})
+    expect(screen.queryByTestId('cue-flow-library-note')).not.toBeInTheDocument()
+  })
+
   it('shows a destination as missing only for the programs that are not installed', async () => {
     installApi({
       dj: djReads({
@@ -218,7 +226,12 @@ describe('CuesTab', () => {
   it('says under VirtualDJ that Surco does not save cues there yet, so a found VirtualDJ never looks like a flow reaches it', async () => {
     installApi({ dj: djReads({ virtualdj: { available: async () => true } }) })
     render(<Harness />)
-    await waitFor(() => expect(screen.getByTestId('settings-cue-flow-to-virtualdj')).toBeEnabled())
+    await waitFor(() =>
+      expect(screen.getByTestId('settings-cue-flow-to-rekordbox')).toBeInTheDocument(),
+    )
+    await act(async () => {})
+    expect(screen.getByTestId('settings-cue-flow-to-virtualdj')).toBeDisabled()
+    expect(screen.getByTestId('settings-cue-flow-to-virtualdj')).not.toBeChecked()
     expect(
       within(screen.getByTestId('cue-flow-targets')).getByText(
         i18n.t('settings.cueFlows.targets.virtualdj'),

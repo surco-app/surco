@@ -17,6 +17,7 @@ import { CUE_QUANTIZE } from '../../../../shared/cueQuantize'
 import { DJ_PROGRAMS, type DjProgram } from '../../../../shared/djProgram'
 import { useProgramsAvailable } from '../../hooks/useProgramsAvailable'
 import { flowName } from '../../lib/cueFlowName'
+import { CUE_PROGRAMS } from '../../lib/cuePrograms'
 import { FLOW_TO } from '../../lib/cueTwins'
 import { LIBRARY_NAME } from '../../lib/reviewLibraries'
 import type { SyncedDraft } from '../../lib/settingsDraft'
@@ -436,14 +437,15 @@ export function CuesTab({
             const name = LIBRARY_NAME[library]
             const key = FLOW_TO[library]
             const found = foundBy[library]
+            const reached = found && CUE_PROGRAMS[library].takesFlows
             return (
               <div key={library} className="px-3.5 py-2.5">
                 <CheckboxRow
                   testid={`settings-cue-flow-to-${library}`}
-                  checked={found && synced[key]}
+                  checked={reached && synced[key]}
                   onChange={(v) => patch(key, v)}
                   label={name}
-                  disabled={!found}
+                  disabled={!reached}
                 />
                 <SettingsHint
                   data-testid={found ? undefined : `settings-cue-flow-to-${library}-missing`}
