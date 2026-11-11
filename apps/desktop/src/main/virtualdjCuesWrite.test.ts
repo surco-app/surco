@@ -189,6 +189,27 @@ describe('applyVirtualdjCuesBatch', () => {
     })
   })
 
+  it('still says the CALL was dropped when the set is applied again after the first try was cut short', async () => {
+    const { deps, read } = library()
+    const before = await read(MP3)
+    const wanted = [
+      { ...wantedOf(before)[0], ms: 31000 },
+      { ms: 90000, kind: 0, color: null },
+    ]
+    await applyVirtualdjCuesBatch([op(MP3, before, wanted)], deps)
+    const again = await applyVirtualdjCuesBatch([op(MP3, before, wanted)], deps)
+    expect(again).toMatchObject({
+      ok: true,
+      wrote: false,
+      outcomes: [
+        {
+          applied: true,
+          notices: [{ code: 'cues-calls-dropped', track: 'Pray', calls: [90000] }],
+        },
+      ],
+    })
+  })
+
   it('keeps pads above 8, loops and the rest of the song, which the editor never shows', async () => {
     const xml = fixture.replace(
       '  <Poi Name="Surco" Pos="29.973878" Num="1" Color="4278190335" Type="cue" />\r\n',

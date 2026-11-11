@@ -88,18 +88,18 @@ export function applyVirtualdjCueOp(
   if (!found) return refused('not-in-library')
   const { file, xml, song } = found
   const rows = virtualdjCueRows(song)
+  const calls = op.wanted.filter((c) => c.kind === 0).map((c) => c.ms)
+  const notices: RekordboxQueueNotice[] =
+    calls.length > 0 ? [{ code: 'cues-calls-dropped', track: op.label, calls }] : []
   if (cueFingerprint(rows) !== op.fingerprint)
     return holdsWanted(rows, op.wanted)
-      ? { id: op.id, applied: true, notices: [] }
+      ? { id: op.id, applied: true, notices }
       : refused('cues-changed')
   const valid = validWantedSet(op.wanted, rows)
   if (!valid.ok) {
     log.warn(`VirtualDJ cues: refused the queued set for ${op.contentId} (${valid.reason})`)
     return refused('cues-invalid')
   }
-  const calls = op.wanted.filter((c) => c.kind === 0).map((c) => c.ms)
-  const notices: RekordboxQueueNotice[] =
-    calls.length > 0 ? [{ code: 'cues-calls-dropped', track: op.label, calls }] : []
   const cues = op.wanted.filter((c) => c.kind !== 0).map((c) => cueOf(c, song))
   const next = withVirtualdjCues(xml, song.path, cues)
   if (next === null) return refused('cues-write-failed')
