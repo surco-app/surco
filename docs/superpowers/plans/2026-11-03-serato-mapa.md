@@ -55,6 +55,62 @@ Sigue pendiente (fase c):
 - Nombre del proceso de Serato en Windows sin medir.
 - Un crate con subcrates se ve como carpeta; sus pistas propias solo por All tracks. Una pista en dos bases de datos cuenta doble.
 
+## Tras el refactor del 10/11
+
+Medido el 11/11 (Tarea 12) con `grep -rnE "(===|!==) '(rekordbox|traktor|engine|serato)'|case '(rekordbox|traktor|engine|serato)'"`, las comparaciones con `programOf(`, `isFrom(x, '<programa>')` y las listas literales de programas, fuera de tests. Cada sitio es (a) una capacidad que otro programa podría tener, y pasa a fila de tabla, o (b) de verdad de un solo programa, y se queda con el motivo.
+
+### Comparaciones a mano
+
+| Sitio | | Motivo | Tabla o por qué se queda |
+|---|---|---|---|
+| `App.tsx` `cuesOpen` (`engine \|\| traktor \|\| serato`) | a | Abrir el editor de cues desde la playlist abierta de una pestaña. rekordbox ya entraba por `editableOpen`, así que la lista equivale a «cualquier programa». | `CUE_PROGRAMS` (`cuePrograms.ts`) es `Record<DjProgram, …>`: todo programa tiene editor de cues. La condición pasa a `sourceProgram !== null`. |
+| `App.tsx` consulta `serato-running` y aviso del árbol (`browser.source === 'serato' && seratoRunning`) | a | La pestaña avisa mientras el programa está abierto, porque sus cambios esperan a que se cierre. | `CUE_PROGRAMS.runningNote` (misma fila que el editor de cues: el aviso es el mismo texto). |
+| `CuesSection.tsx` consulta `running('serato')` y aviso `cues-serato-waiting` | a | El editor de cues avisa mientras el programa está abierto. | `CUE_PROGRAMS.runningNote` `{ key, testId }`, como `callsNote`. |
+| `CuesSection.tsx` `collectionGate === 'traktor'` (`blocked`, `traktorCollectionInUse`) | a, ya hecha | Programa con colección que confirmar antes de guardar. | Ya es fila (`CUE_PROGRAMS.collectionGate`, bloque 4). La comparación es con la clase de puerta, no con el programa: sus consultas (`traktorCanSave`, `traktorCollectionInUse`, `traktorNmlPath`) son de Traktor y no se generalizan (restricción global). Un segundo programa con colección añade su valor a la unión y sus consultas. |
+| `CuesSection.tsx` `rekordboxGrid = programOf(…) === 'rekordbox'` | b | La rejilla propia de rekordbox: sus cues no necesitan `clockLeadMs` medido y sus zonas no cuentan como rejilla variable. | Regla de un solo programa. |
+| `CuesSection.tsx` `saveAllKey`, `rekordboxAndEngine` | b | El resto de la etiqueta ya sale de `CUE_PROGRAMS.saveAllKey`; queda el texto `editor.cues.saveAllBoth`, que nombra exactamente la pareja «rekordbox y Engine DJ». Cualquier otra mezcla (también con Serato) da `saveAllMixed`. | Clave de traducción con dos programas en el texto. |
+| `App.tsx` `gridEntries` (`programOf === 'rekordbox'`, Traktor y `.mp3`) | b | Qué pistas tienen rejilla que comparar: la de rekordbox, y la regla de reloj de Traktor en MP3. | Reglas medidas por programa (rejilla de rekordbox, reloj de Traktor). |
+| `App.tsx` `useUsbVolumes(usbAvailable \|\| usbModal.source !== 'rekordbox')` | b | `usbAvailable` es solo de rekordbox (píldora y avisos de conexión, ver USB 6j); el resto pide volúmenes solo con el modal abierto. | Atado a `usbAvailable`. |
+| `Editor.tsx` `reachable` (`id !== 'traktor' \|\| traktorNmlPath !== ''`) | b | La regla de ruta de Traktor. | Regla de un solo programa. |
+| `OnboardingWizard.tsx` ruta de Traktor al activarlo y al adoptar carpeta, `PRESELECTED` | b | Solo Traktor rellena su ruta desde la detección; los preseleccionados son una decisión de producto (un programa ausente queda sin preseleccionar, que es lo seguro). | Asistente de bienvenida (ver Ajustes 8). |
+| `OnboardingWizard.tsx` `library.id === 'engine'` | b | Selector de carpeta de Engine (`EngineLibraryFields`). | Asistente de bienvenida. |
+| `RowWave.tsx` `unanalyzed === 'engine'` | b | Elige el texto de `unanalysedIn`, que solo devuelve `'rekordbox' \| 'engine'`. | Sigue a `unanalysedIn`. |
+| `triage.ts` `unanalysedIn`, `attentionOffered`, `matches`, recuento | b | Señales de análisis de cada programa (rekordbox sin `analysisPath`, Engine con `unanalysed`); los ids de filtro `unanalysedRekordbox`/`unanalysedEngine` son de ajustes guardados. | Ids de ajustes guardados. |
+| `revealCue.ts` `revealStep` (`view.source !== 'rekordbox'`) | b | Revela por `contentId` de rekordbox (sin prefijo) en su Recently Added; los demás programas usan `revealTrackStep`, que ya recibe el programa. | Ids de rekordbox. |
+| `main/damageRepair.ts` `allowed` (`target !== 'traktor'`) | b | La regla de `treeFile` de Traktor (ver 7). | Ya apuntada. |
+| `main/verifyRegistry.ts` `neverWritten` (`place === 'traktor'`) | b | La comprobación de Traktor se basa en parches (ver 7). | Ya apuntada. |
+| `main/usbExport.ts` `holder.by === 'rekordbox'` | b | Aviso `rekordboxExport`: el USB lo exportó rekordbox mismo. | Aviso de un solo programa. |
+| `main/usbExportIpc.ts` `from === 'engine'` | b | La memoria de Engine en `usb:pickFolder` (ver USB 6j). | Ya apuntada. |
+| `isFrom(x, 'serato')` en `processTrack.ts`, `useTrackProcessing.ts`, `batch.ts`, `listReviewSource.ts`, `Editor.tsx` | b | Serato no convierte (`seratoBlocked`, recuento `serato` de `batch.ts`). | Consecuencia de `WritableProgram = Exclude<DjProgram, 'serato'>`, hueco que la spec deja fuera («Serato sin `WritableProgram`»). Se van al escribir Serato. |
+| `scenarios/` (`harness.tsx`, `matrix/oracle.ts`, `matrix/run.ts`) | b | El arnés lee la base real de cada programa para comprobar. | Código de pruebas, no de la app. |
+| `main/libraryFlushes.ts` `SYNC_ISSUE_PROGRAMS` (`new Set(['rekordbox', 'engine'])`) | b, apunte | Lista de quién emite avisos de sincronización (bloque 5). El compilador no la exige, pero su ausencia es lo seguro (sin evento); la tabla del renderer (`SYNC_ISSUES` de `App.tsx`) sí es `Record`. | Fuera del inventario de esta tarea. |
+
+Las demás listas literales de programas pasan por `programsInOrder`/`writableInOrder`, que exigen a todos. `LEGACY_PLAYLIST_ORDER` (`sessionLegacy.ts`) es la forma antigua, congelada a propósito.
+
+### `programOf` (Paso 3)
+
+Se queda el caso por defecto a `'rekordbox'`: los ids de rekordbox no llevan prefijo, así que quitarlo exigiría reconocerlos por forma o devolver `undefined`, y cualquier id sin prefijo (también uno raro) cambiaría de resultado. Un programa nuevo añade su `is<Programa>Content` antes del caso por defecto.
+
+### La lista «Añadidos a mano», entrada por entrada
+
+| Entrada | Estado |
+|---|---|
+| `programOf` caso por defecto | Se queda (Paso 3). |
+| `PLACE_ORDER` | Resuelta: `['file', 'appleMusic', ...PLACE_PROGRAMS]` con `writableInOrder`. |
+| `saveAllKey` | Resuelta salvo la pareja `saveAllBoth` (b, arriba). |
+| `collectionGate` con consultas de Traktor | Fila de tabla; las consultas se quedan (restricción global). |
+| USB `useUsbVolumes(... === 'engine')` | Hoy `!== 'rekordbox'`, atada a `usbAvailable` (b, arriba). La fuente del modal ya va por `UsbProgram`. |
+| Banderas `from*`, campos `*Playlists(Base)` | Resueltas en el bloque 6 (`programs`/`playlists`, `isFrom`); la forma antigua solo vive en `sessionLegacy.ts`. |
+| Ajustes `*PlaylistsFieldOffered` | Claves guardadas (no se renombran); las reparten `OFFERED` y `PLAYLISTS_FIELD_OFFERED` con `satisfies Record<LibraryProgram, …>`. |
+| `useTrackLibrary` bandera de filas nuevas | Resuelta: `SOURCE_PROGRAMS.marksOrigin`. |
+| Invalidaciones de membership | Resueltas: `SOURCE_PROGRAMS.membershipKey`. Las claves `rekordbox-track-cues`/`rekordbox-queued-cues` son de las cues de todos los programas (nombre heredado). |
+| `cuesOpen` en `App.tsx` | Resuelta en esta tarea (a, arriba). |
+| Claves de traducción por plantilla | Se quedan (no objetivo de la spec). `keys.test.ts` compara es/en; una clave que falte para un programa nuevo solo se ve en pantalla. |
+| `repointEngineQueued` y `'rekordbox-running'` | `repointEngineQueued` ya no existe; cada vaciado declara su `runningReason` (`libraryRepointFlush.ts`). `'rekordbox-running'` sigue siendo un motivo de rechazo compartido con nombre heredado (`traktorCuesWrite.ts` traduce `traktor-running` a él). |
+| `ConversionQueues` con claves fijas | Se queda: `traktor?`, `engine?`, `serato?` son opcionales y el compilador no exige al programa nuevo. Es escritura al convertir, hueco que la spec deja fuera. |
+| Añadir durante el trabajo (solo Engine), `libraryGenresOf` | Se quedan (escritura al convertir; un programa que lo necesite añade su paso). |
+| Renderer tras convertir (6h-6i), USB (6j), Comprobación (7), Ajustes (8) | Sin cambios: siguen siendo de un programa por los motivos ya escritos; los sitios que el grep vuelve a encontrar están en la tabla de arriba. |
+
 ## Errores del compilador
 
 ```
