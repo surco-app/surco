@@ -27,7 +27,7 @@ export interface VirtualdjSong {
 }
 
 const TAG = `(?:"[^"]*"|[^>"])*`
-export const SONG_OPEN_RE = new RegExp(`<Song\\b(${TAG})>`, 'g')
+export const songOpenRe = () => new RegExp(`<Song\\b(${TAG})>`, 'g')
 export const poiRe = () => new RegExp(`<Poi\\b${TAG}>`, 'g')
 export const tagRe = (name: string) => new RegExp(`<${name}\\b${TAG}>`)
 
@@ -88,7 +88,7 @@ function parseSong(open: string, body: string): VirtualdjSong | null {
 
 export function parseVirtualdjDatabase(xml: string): VirtualdjSong[] {
   const songs: VirtualdjSong[] = []
-  for (const m of xml.matchAll(SONG_OPEN_RE)) {
+  for (const m of xml.matchAll(songOpenRe())) {
     const selfClosing = m[1].trimEnd().endsWith('/')
     const start = m.index + m[0].length
     const end = selfClosing ? start : xml.indexOf('</Song>', start)

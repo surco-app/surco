@@ -258,3 +258,113 @@ describe('withVirtualdjSongAdded', () => {
     expect(withVirtualdjSongAdded(fixture, { ...song, path: FLAC })).toBeNull()
   })
 })
+
+describe('values VirtualDJ could not read back', () => {
+  const blue = 0xff000000 | 0x0000ff
+  const flacWith = (first: Partial<{ seconds: number; color: number }>) =>
+    withVirtualdjCues(
+      fixture,
+      FLAC,
+      flacCues.map((c) => (c.num === 1 ? { ...c, ...first } : c)),
+    )
+
+  it('writes the ARGB color unsigned, because JS makes 0xFF000000 | rgb negative and VirtualDJ stores 4278190335', () => {
+    expect(blue).toBeLessThan(0)
+    expect(flacWith({ color: blue })).toBe(fixture)
+    const out = withVirtualdjCues(fixture, M4A, [{ num: 1, seconds: 1, color: blue }]) ?? ''
+    expect(out).toContain('<Poi Pos="1.0" Num="1" Color="4278190335" Type="cue" />')
+    const loop =
+      withVirtualdjCues(fixture, M4A, [], [{ slot: 1, seconds: 2, sizeBeats: 4, color: blue }]) ??
+      ''
+    expect(loop).toContain(' Color="4278190335" Type="loop"')
+  })
+
+  it('compares colors unsigned, so a signed ARGB from the caller does not rewrite an unchanged cue', () => {
+    const signed = [
+      { num: 1, seconds: 7.444, color: 0xff000000 | 0xcc0000 },
+      { num: 2, seconds: 12.756, color: 0xff000000 | 0xcc8800 },
+      { num: 3, seconds: 19.019, color: 0xff000000 | 0x0000cc },
+    ]
+    expect(signed.every((c) => c.color < 0)).toBe(true)
+    expect(withVirtualdjCues(fixture, M4A, signed)).toBe(fixture)
+  })
+
+  it('refuses a cue it cannot place, so the caller never loses one silently', () => {
+    expect(flacWith({ seconds: Number.NaN })).toBeNull()
+    expect(flacWith({ seconds: Number.POSITIVE_INFINITY })).toBeNull()
+    expect(flacWith({ seconds: -0.001 })).toBeNull()
+    expect(flacWith({ seconds: 1e21 })).toBeNull()
+    expect(
+      withVirtualdjCues(fixture, M4A, [], [{ slot: 1, seconds: 2, sizeBeats: Number.NaN }]),
+    ).toBeNull()
+    expect(withVirtualdjCues(fixture, M4A, [], [{ slot: 1, seconds: 2, sizeBeats: -1 }])).toBeNull()
+    expect(withVirtualdjCues(fixture, M4A, [], [{ slot: 1, seconds: -1, sizeBeats: 4 }])).toBeNull()
+  })
+
+  it('writes a position that rounds to zero as 0.0, never -0.0', () => {
+    expect(flacWith({ seconds: -0 })).toContain('<Poi Name="Surco" Pos="0.0" Num="1"')
+    expect(flacWith({ seconds: -0.0000001 })).toContain('<Poi Name="Surco" Pos="0.0" Num="1"')
+  })
+
+  it('never writes a number in exponent notation', () => {
+    expect(flacWith({ seconds: 1e-7 })).toContain('<Poi Name="Surco" Pos="0.0" Num="1"')
+    const out = flacWith({ seconds: 123456789.5 }) ?? ''
+    expect(out).toContain('Pos="123456789.5"')
+    expect(out).not.toMatch(/Pos="[^"]*e/)
+  })
+
+  it('refuses hot cues outside 1 to 8, the only ones the editor owns', () => {
+    expect(withVirtualdjCues(fixture, FLAC, [{ num: 9, seconds: 1 }])).toBeNull()
+    expect(withVirtualdjCues(fixture, FLAC, [{ num: 0, seconds: 1 }])).toBeNull()
+    expect(withVirtualdjCues(fixture, FLAC, [{ num: 1.5, seconds: 1 }])).toBeNull()
+  })
+
+  it('does not wrap a grid a whole beat when the shift lands exactly on zero after rounding', () => {
+    const xml = fixture.replaceAll('Phase="57.559502"', 'Phase="0.3"')
+    const out =
+      withVirtualdjSongMoved(xml, FLAC, { path: '/x.flac', size: 1 }, -(0.1 + 0.2), null) ?? ''
+    expect(out).toContain(' Phase="0.0" ')
+  })
+
+  it('refuses to move onto a song written as a self-closing tag, the same test adding uses', () => {
+    const xml = fixture.replace(
+      '</VirtualDJ_Database>',
+      ' <Song FilePath="/self.mp3" FileSize="1" />\r\n</VirtualDJ_Database>',
+    )
+    expect(
+      withVirtualdjSongAdded(xml, {
+        path: '/self.mp3',
+        size: 1,
+        title: '',
+        artist: '',
+        album: '',
+        genre: '',
+      }),
+    ).toBeNull()
+    expect(withVirtualdjSongMoved(xml, FLAC, { path: '/self.mp3', size: 1 }, 0, null)).toBeNull()
+  })
+
+  it('refuses every write on a database without CRLF, which VirtualDJ would take as corrupted', () => {
+    const lf = fixture.replace(/\r\n/g, '\n')
+    const song = { path: '/n.mp3', size: 1, title: 't', artist: '', album: '', genre: '' }
+    expect(withVirtualdjCues(lf, FLAC, flacCues)).toBeNull()
+    expect(withVirtualdjSongMoved(lf, FLAC, { path: '/x.flac', size: 1 }, 0, null)).toBeNull()
+    expect(withVirtualdjTags(lf, FLAC, { Title: 'x' })).toBeNull()
+    expect(withVirtualdjSongAdded(lf, song)).toBeNull()
+  })
+
+  it('writes the converted file length when it is given, so VirtualDJ shows the new duration', () => {
+    const out =
+      withVirtualdjSongMoved(
+        fixture,
+        FLAC,
+        { path: '/x.flac', size: 1, lengthSeconds: 427.2 },
+        0,
+        null,
+      ) ?? ''
+    expect(songOf(out, '/x.flac').lengthSeconds).toBe(427.2)
+    expect(out).toContain('<Infos SongLength="427.2" LastModified="1794393812"')
+    const kept = withVirtualdjSongMoved(fixture, FLAC, { path: '/x.flac', size: 1 }, 0, null) ?? ''
+    expect(songOf(kept, '/x.flac').lengthSeconds).toBe(428.253333)
+  })
+})

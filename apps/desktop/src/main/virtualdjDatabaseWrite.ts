@@ -1,6 +1,6 @@
 import { escapeXml } from '../shared/xml'
 import { attr, withAttr } from './traktorNml'
-import { parsePoi, SONG_OPEN_RE, tagRe, type VirtualdjPoi } from './virtualdjDatabase'
+import { parsePoi, songOpenRe, tagRe, type VirtualdjPoi } from './virtualdjDatabase'
 
 export type VirtualdjArgb = number
 export type VirtualdjCueWrite = {
@@ -27,8 +27,14 @@ interface SongSpan {
   bodyEnd: number
 }
 
+function hasSong(xml: string, path: string): boolean {
+  for (const m of xml.matchAll(songOpenRe())) if (attr(m[1], 'FilePath') === path) return true
+  return false
+}
+
 function findSong(xml: string, path: string): SongSpan | null {
-  for (const m of xml.matchAll(SONG_OPEN_RE)) {
+  if (!xml.includes(NL)) return null
+  for (const m of xml.matchAll(songOpenRe())) {
     if (m[1].trimEnd().endsWith('/') || attr(m[1], 'FilePath') !== path) continue
     const openEnd = m.index + m[0].length
     const bodyEnd = xml.indexOf(SONG_CLOSE, openEnd)
@@ -44,17 +50,21 @@ function withBody(xml: string, path: string, edit: (lines: string[]) => string[]
   return `${xml.slice(0, span.openEnd)}${body}${xml.slice(span.bodyEnd)}`
 }
 
+const round6 = (n: number) => Number(n.toFixed(6))
+const placeable = (n: number) => Number.isFinite(n) && n < 1e21 && round6(n) >= 0
+
 function decimal(n: number): string {
-  const s = n.toFixed(6).replace(/0+$/, '')
+  const s = round6(n).toFixed(6).replace(/0+$/, '')
   return s.endsWith('.') ? `${s}0` : s
 }
 
 const isTag = (line: string, name: string) => line.trimStart().startsWith(`<${name} `)
 const poiOf = (line: string) => (isTag(line, 'Poi') ? parsePoi(line) : null)
 const nameAttr = (name?: string) => (name ? ` Name="${escapeXml(name)}"` : '')
-const colorAttr = (color?: number) => (color === undefined ? '' : ` Color="${color}"`)
+const unsigned = (color?: number) => (color === undefined ? undefined : color >>> 0)
+const colorAttr = (color?: number) => (color === undefined ? '' : ` Color="${unsigned(color)}"`)
 const sameLabel = (poi: VirtualdjPoi, item: { name?: string; color?: number }) =>
-  (poi.name ?? '') === (item.name ?? '') && poi.color === item.color
+  (poi.name ?? '') === (item.name ?? '') && unsigned(poi.color) === unsigned(item.color)
 
 const cueLine = (c: VirtualdjCueWrite) =>
   `  <Poi${nameAttr(c.name)} Pos="${decimal(c.seconds)}" Num="${c.num}"${colorAttr(c.color)} Type="cue" />`
@@ -93,6 +103,11 @@ export function withVirtualdjCues(
   cues: VirtualdjCueWrite[],
   loops?: VirtualdjLoopWrite[],
 ): string | null {
+  const cuesOk = cues.every(
+    (c) => Number.isInteger(c.num) && c.num >= 1 && c.num <= 8 && placeable(c.seconds),
+  )
+  const loopsOk = (loops ?? []).every((l) => placeable(l.seconds) && placeable(l.sizeBeats))
+  if (!cuesOk || !loopsOk) return null
   return withBody(xml, path, (lines) => {
     const withCues = replacePois(
       lines,
@@ -100,7 +115,7 @@ export function withVirtualdjCues(
         poi.kind === 'cue' && poi.num !== null && poi.num >= 1 && poi.num <= 8 ? poi.num : null,
       cues,
       (c) => c.num,
-      (poi, c) => poi.seconds === Number(decimal(c.seconds)) && sameLabel(poi, c),
+      (poi, c) => poi.seconds === round6(c.seconds) && sameLabel(poi, c),
       cueLine,
     )
     if (loops === undefined) return withCues
@@ -110,8 +125,8 @@ export function withVirtualdjCues(
       loops,
       (l) => l.slot,
       (poi, l) =>
-        poi.seconds === Number(decimal(l.seconds)) &&
-        poi.sizeBeats === Number(decimal(l.sizeBeats)) &&
+        poi.seconds === round6(l.seconds) &&
+        poi.sizeBeats === round6(l.sizeBeats) &&
         sameLabel(poi, l),
       loopLine,
     )
@@ -127,7 +142,7 @@ function secondsPerBeat(lines: string[]): number {
 function withPhaseShifted(scan: string, shiftSeconds: number, beat: number): string {
   const phase = attr(scan, 'Phase')
   if (phase === '') return scan
-  const shifted = Number(phase) + shiftSeconds
+  const shifted = round6(Number(phase) + shiftSeconds)
   const beats = shifted < 0 && beat > 0 ? Math.ceil(-shifted / beat) : 0
   return withAttr(scan, 'Phase', decimal(shifted + beats * beat))
 }
@@ -135,12 +150,14 @@ function withPhaseShifted(scan: string, shiftSeconds: number, beat: number): str
 export function withVirtualdjSongMoved(
   xml: string,
   from: string,
-  to: { path: string; size: number },
+  to: { path: string; size: number; lengthSeconds?: number },
   shiftSeconds: number,
   keepUntilSeconds: number | null,
 ): string | null {
+  if (!Number.isFinite(shiftSeconds)) return null
+  if (to.lengthSeconds !== undefined && !placeable(to.lengthSeconds)) return null
   const span = findSong(xml, from)
-  if (!span || (to.path !== from && findSong(xml, to.path))) return null
+  if (!span || (to.path !== from && hasSong(xml, to.path))) return null
   const open = setAttr(
     setAttr(xml.slice(span.openStart, span.openEnd), 'FilePath', to.path),
     'FileSize',
@@ -149,11 +166,13 @@ export function withVirtualdjSongMoved(
   const lines = xml.slice(span.openEnd, span.bodyEnd).split(NL)
   const beat = secondsPerBeat(lines)
   const moved = lines.flatMap((line) => {
+    if (to.lengthSeconds !== undefined && isTag(line, 'Infos'))
+      return [setAttr(line, 'SongLength', decimal(to.lengthSeconds))]
     if (shiftSeconds !== 0 && isTag(line, 'Scan'))
       return [withPhaseShifted(line, shiftSeconds, beat)]
     const poi = poiOf(line)
     if (!poi) return [line]
-    const start = Number(decimal(poi.seconds + shiftSeconds))
+    const start = round6(poi.seconds + shiftSeconds)
     const end = start + (poi.kind === 'loop' ? (poi.sizeBeats ?? 0) * beat : 0)
     if (start < 0) return []
     if (keepUntilSeconds !== null && (start >= keepUntilSeconds || end > keepUntilSeconds))
@@ -192,7 +211,7 @@ export function withVirtualdjSongAdded(
   xml: string,
   song: { path: string; size: number; title: string; artist: string; album: string; genre: string },
 ): string | null {
-  for (const m of xml.matchAll(SONG_OPEN_RE)) if (attr(m[1], 'FilePath') === song.path) return null
+  if (!xml.includes(NL) || hasSong(xml, song.path)) return null
   const at = xml.lastIndexOf(DATABASE_CLOSE)
   if (at < 0) return null
   const tags = (
