@@ -169,7 +169,7 @@ describe('readVirtualdjExportSelection', () => {
     expect(xml).toContain(
       '<POSITION_MARK Name="loop" Type="4" Start="278.333" End="280.124" Num="-1"/>',
     )
-    expect(xml).toContain('<TEMPO Inizio="0.270" Bpm="133.99" Metro="4/4" Battito="1"/>')
+    expect(xml).toContain('<TEMPO Inizio="0.270" Bpm="133.994971" Metro="4/4" Battito="1"/>')
   })
 })
 
@@ -201,7 +201,7 @@ describe('the VirtualDJ export staged to a folder', () => {
     expect(stage.missing).toHaveLength(2)
     const xml = readFileSync(stage.xml, 'utf8')
     const mp3 = xml.slice(xml.indexOf('Pray.mp3'), xml.indexOf('</TRACK>', xml.indexOf('Pray.mp3')))
-    expect(mp3).toContain('<TEMPO Inizio="0.270" Bpm="133.99" Metro="4/4" Battito="1"/>')
+    expect(mp3).toContain('<TEMPO Inizio="0.270" Bpm="133.994971" Metro="4/4" Battito="1"/>')
     expect(mp3).toContain('<POSITION_MARK Name="Surco" Type="0" Start="30.000" Num="0"/>')
     expect(mp3).toContain(
       '<POSITION_MARK Name="loop" Type="4" Start="278.333" End="280.124" Num="-1"/>',

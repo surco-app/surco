@@ -156,6 +156,39 @@ describe('buildBakenXml', () => {
     expect(xml.match(/<TEMPO /g)).toHaveLength(2)
   })
 
+  it('keeps a foreign grid on its beats to the end of a long track', () => {
+    const bpm = 60 / 0.447778
+    const firstMs = 269.994
+    const grid = [0, 1, 2].map((k) => ({ beat: k + 1, bpm, ms: firstMs + (k * 60000) / bpm }))
+    const long = buildBakenXml(
+      {
+        playlists: [
+          { id: 'p', name: 'P', folders: [], folderIds: [], updatedAt: 0, trackIds: ['7'] },
+        ],
+        tracks: [track({ id: '7' })],
+      },
+      new Map([['7', { size: 1, grid }]]),
+      'darwin',
+    )
+    const tempo = long.match(/<TEMPO Inizio="([^"]+)" Bpm="([^"]+)"/)
+    const derivedMs = Number(tempo?.[1]) * 1000 + (4000 * 60000) / Number(tempo?.[2])
+    expect(Math.abs(derivedMs - (firstMs + (4000 * 60000) / bpm))).toBeLessThan(1)
+  })
+
+  it('writes a tempo rekordbox analysed as rekordbox writes it', () => {
+    const rb = buildBakenXml(
+      {
+        playlists: [
+          { id: 'p', name: 'P', folders: [], folderIds: [], updatedAt: 0, trackIds: ['8'] },
+        ],
+        tracks: [track({ id: '8' })],
+      },
+      new Map([['8', { size: 1, grid: [{ beat: 1, bpm: 13399 / 100, ms: 270 }] }]]),
+      'darwin',
+    )
+    expect(rb).toContain('<TEMPO Inizio="0.270" Bpm="133.99" Metro="4/4" Battito="1"/>')
+  })
+
   // No colour on hot cues: patched baken writes rekordbox's default for the letter.
   it('writes memory cues, loops and hot cue letters without colour', () => {
     expect(xml).toContain('<POSITION_MARK Name="Intro" Type="0" Start="1.000" Num="-1"/>')
