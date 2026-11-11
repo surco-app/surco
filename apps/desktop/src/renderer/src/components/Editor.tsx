@@ -1090,6 +1090,8 @@ export const Editor = memo(function Editor({
     tagsOnlyExport &&
     item.diskSignature !== undefined &&
     !hasStagedEdits(item) &&
+    item.fillSignature !== item.diskSignature &&
+    !(item.notInFile?.signature === item.diskSignature && item.notInFile.fields.length > 0) &&
     (item.outputName?.trim() || defaultOutputName) === item.fileName
 
   // One onChange per possible key, built once (setField/onChangeAllMeta never

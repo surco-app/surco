@@ -554,15 +554,13 @@ export function useTrackLibrary({
       // edit above: a later start-over must rebuild from the file alone.
       const fromMusic = appleMusicMeta.current.get(path)
       appleMusicMeta.current.delete(path)
-      const readMeta: TrackMetadata = fillFromAppleMusic(
-        {
-          ...base.meta,
-          ...tags,
-          title: s.title,
-          artist: s.artist,
-        },
-        fromMusic ?? {},
-      )
+      const ownMeta: TrackMetadata = {
+        ...base.meta,
+        ...tags,
+        title: s.title,
+        artist: s.artist,
+      }
+      const readMeta: TrackMetadata = fillFromAppleMusic(ownMeta, fromMusic ?? {})
       const patch: Partial<TrackItem> = {
         query: s.query,
         queryTyped: false,
@@ -602,6 +600,7 @@ export function useTrackLibrary({
       )
       if (notInFile.length > 0 && patch.diskSignature)
         patch.notInFile = { signature: patch.diskSignature, fields: notInFile }
+      if (readMeta !== ownMeta && patch.diskSignature) patch.fillSignature = patch.diskSignature
       if (saved) Object.assign(patch, restoredPatch(saved))
       // The row paints from embeddedCover, so a cover restored from the session has to
       // land there too — otherwise reopening showed the placeholder in the crate while the
@@ -973,10 +972,11 @@ export function useTrackLibrary({
         mapTracks((t) => {
           if (!touched.has(t.id)) return t
           const fill = gaps(t)
+          const diskSignature = t.diskSignature && withSignatureMeta(t.diskSignature, fill)
           return {
             ...t,
             meta: fill(t.meta),
-            ...(t.diskSignature && { diskSignature: withSignatureMeta(t.diskSignature, fill) }),
+            ...(diskSignature && { diskSignature, fillSignature: diskSignature }),
             ...(t.processedSignature && {
               processedSignature: withSignatureMeta(t.processedSignature, fill),
             }),

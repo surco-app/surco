@@ -2469,6 +2469,34 @@ describe('Editor export control', () => {
       expect(screen.queryByTestId('process-btn')).toBeNull()
     })
 
+    it('offers the update when it shows values a library filled in that the file lacks', () => {
+      renderEditor({ id: 'a', meta: read, diskSignature, fillSignature: diskSignature })
+      expect(screen.getByTestId('process-btn')).toHaveTextContent('Update tags')
+      expect(screen.queryByTestId('convert-up-to-date')).toBeNull()
+    })
+
+    it('offers the update when it shows a title the file does not hold', () => {
+      renderEditor({
+        id: 'a',
+        meta: read,
+        diskSignature,
+        notInFile: { signature: diskSignature, fields: ['title'] },
+      })
+      expect(screen.getByTestId('process-btn')).toHaveTextContent('Update tags')
+      expect(screen.queryByTestId('convert-up-to-date')).toBeNull()
+    })
+
+    it('goes quiet again once a conversion wrote those values', () => {
+      renderEditor({
+        id: 'a',
+        meta: read,
+        diskSignature,
+        fillSignature: 'an earlier read',
+        notInFile: { signature: 'an earlier read', fields: ['title'] },
+      })
+      expect(screen.getByTestId('convert-up-to-date')).toBeInTheDocument()
+    })
+
     it('offers the update while an edit is staged', () => {
       renderEditor({ id: 'a', meta: { genre: 'House' }, diskSignature })
       expect(screen.getByTestId('process-btn')).toHaveTextContent('Update tags')
