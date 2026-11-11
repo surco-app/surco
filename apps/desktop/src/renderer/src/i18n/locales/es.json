@@ -1527,7 +1527,7 @@
       "recording": "Pulsa las teclas…",
       "unbound": "Sin asignar",
       "reset": "Restablecer al valor por defecto",
-      "resetAll": "Restablecer todo ({{count}})",
+      "resetAll": "Restablecer todo",
       "resetAllConfirm_one": "¿Restablecer {{count}} atajo?",
       "resetAllConfirm_other": "¿Restablecer {{count}} atajos?",
       "conflict": "Dos comandos comparten un atajo. Resuélvelo para guardar.",

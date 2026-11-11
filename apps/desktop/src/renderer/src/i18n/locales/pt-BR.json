@@ -1527,7 +1527,7 @@
       "recording": "Pressione as teclas…",
       "unbound": "Sem atribuição",
       "reset": "Restaurar o padrão",
-      "resetAll": "Redefinir tudo ({{count}})",
+      "resetAll": "Redefinir tudo",
       "resetAllConfirm_one": "Restaurar {{count}} atalho?",
       "resetAllConfirm_other": "Restaurar {{count}} atalhos?",
       "conflict": "Dois comandos compartilham um atalho. Resolva para salvar.",

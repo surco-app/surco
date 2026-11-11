@@ -181,9 +181,7 @@ export function ShortcutsTab({ synced, patch, bindings, conflictIds }: Props): R
               onClick={() => setConfirmResetAll(true)}
               className="press shrink-0 text-xs text-fg-muted hover:text-fg"
             >
-              {tr('settings.shortcuts.resetAll', {
-                count: Object.keys(synced.shortcutOverrides).length,
-              })}
+              {tr('settings.shortcuts.resetAll')}
             </button>
           ))}
       </div>

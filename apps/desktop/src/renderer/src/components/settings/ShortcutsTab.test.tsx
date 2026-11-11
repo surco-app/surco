@@ -171,3 +171,25 @@ it('graba una combinación con control', () => {
     expect.objectContaining({ play: ['ctrl', 'e'] }),
   )
 })
+
+// The count already sits in the confirmation ("Reset 2 shortcuts?"), the one place it
+// decides anything; on the idle button it was a number to read for nothing.
+describe('ShortcutsTab reset all', () => {
+  it('names the action without a count until it asks to confirm', () => {
+    const overrides = { add: ['mod', 'shift', 'x'], play: ['mod', 'p'] }
+    const bindings = resolveBindings(overrides)
+    render(
+      <ShortcutsTab
+        synced={{ shortcutOverrides: overrides } as unknown as SyncedDraft}
+        patch={vi.fn()}
+        bindings={bindings}
+        conflictIds={new Set(findConflicts(bindings).flat())}
+      />,
+    )
+    expect(screen.getByTestId('shortcuts-reset-all')).toHaveTextContent(/^Reset all$/)
+    fireEvent.click(screen.getByTestId('shortcuts-reset-all'))
+    expect(screen.getByTestId('shortcuts-reset-all-confirm')).toHaveTextContent(
+      'Reset 2 shortcuts?',
+    )
+  })
+})

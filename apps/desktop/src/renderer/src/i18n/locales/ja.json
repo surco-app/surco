@@ -1527,7 +1527,7 @@
       "recording": "キーを押す…",
       "unbound": "未割り当て",
       "reset": "デフォルトにリセット",
-      "resetAll": "すべてリセット ({{count}})",
+      "resetAll": "すべてリセット",
       "resetAllConfirm_one": "{{count}} 件のショートカットをリセットしますか？",
       "resetAllConfirm_other": "{{count}} 件のショートカットをリセットしますか？",
       "conflict": "二つのコマンドがショートカットを共有しています。解決して保存してください。",

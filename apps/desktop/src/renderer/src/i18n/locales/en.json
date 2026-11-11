@@ -1527,7 +1527,7 @@
       "recording": "Press keys…",
       "unbound": "Unassigned",
       "reset": "Reset to default",
-      "resetAll": "Reset all ({{count}})",
+      "resetAll": "Reset all",
       "resetAllConfirm_one": "Reset {{count}} shortcut?",
       "resetAllConfirm_other": "Reset {{count}} shortcuts?",
       "conflict": "Two commands share a shortcut. Resolve it to save.",

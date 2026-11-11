@@ -1527,7 +1527,7 @@
       "recording": "Tasten drücken…",
       "unbound": "Nicht belegt",
       "reset": "Auf Standard zurücksetzen",
-      "resetAll": "Alle zurücksetzen ({{count}})",
+      "resetAll": "Alle zurücksetzen",
       "resetAllConfirm_one": "{{count}} Kürzel zurücksetzen?",
       "resetAllConfirm_other": "{{count}} Kürzel zurücksetzen?",
       "conflict": "Zwei Befehle teilen sich ein Kürzel. Lös den Konflikt, um zu speichern.",
