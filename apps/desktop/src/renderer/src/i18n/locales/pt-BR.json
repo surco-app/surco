@@ -2629,6 +2629,29 @@
         "badName": "Esse nome não serve para uma playlist. Não pode ficar vazio nem repetido"
       }
     },
+    "editEngine": {
+      "added_one": "{{count}} faixa adicionada a “{{name}}”",
+      "added_other": "{{count}} faixas adicionadas a “{{name}}”",
+      "noneAdded": "Nenhuma faixa adicionada a “{{name}}”",
+      "already_one": "{{count}} já estava na playlist",
+      "already_other": "{{count}} já estavam na playlist",
+      "notInCollection_one": "{{count}} não está na coleção do Engine DJ",
+      "notInCollection_other": "{{count}} não estão na coleção do Engine DJ",
+      "ambiguous_one": "{{count}} está duas vezes na coleção e o Surco não sabe qual usar",
+      "ambiguous_other": "{{count}} estão duas vezes na coleção e o Surco não sabe quais usar",
+      "refused": {
+        "cancelled": "O Engine DJ continua aberto. A mudança será aplicada ao fechá-lo",
+        "running": "O Engine DJ abriu antes de salvar. A mudança será aplicada ao fechá-lo",
+        "unreadable": "O Surco não consegue alterar os arquivos da coleção do Engine DJ agora e nada mudou",
+        "backupFailed": "Não foi possível copiar a coleção antes e nada mudou",
+        "writeFailed": "Não foi possível salvar a mudança. A coleção continua como estava",
+        "readOnly": "A coleção do Engine DJ é somente leitura e nada mudou",
+        "stale": "A playlist mudou no Engine DJ. Confira e tente de novo",
+        "noSeparator": "Sua coleção não tem nenhum separador para copiar",
+        "writeUnknown": "Não foi possível salvar nem desfazer a alteração, então a coleção pode ter mudado. Antes de abrir o Engine DJ, substitua m.db pelo backup m.db.surco-backup que está em Ajustes → Avançado → Cópias das coleções",
+        "badName": "Esse nome não serve para uma playlist do Engine DJ. Não pode ficar vazio nem repetir outro da mesma pasta"
+      }
+    },
     "tree": {
       "newPlaylist": "Nova playlist",
       "newFolder": "Nova pasta",

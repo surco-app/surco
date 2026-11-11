@@ -51,6 +51,7 @@ import type {
   PlaylistSource,
   PlaylistTrackRef,
   QueuedCreate,
+  RekordboxPlaylistEdit,
   RekordboxQueueState,
   RekordboxQueueWritten,
   RekordboxSyncIssue,
@@ -861,6 +862,8 @@ export default function App(): React.JSX.Element {
     saveSettings({ foldedResults: { ...settings?.foldedResults, [resultsTab]: folded } }),
   )
   const sourceEdit = sourceProgram && SOURCE_PROGRAMS[sourceProgram].edit
+  const editCan = (kind: RekordboxPlaylistEdit['kind']): boolean =>
+    !sourceEdit?.kinds || sourceEdit.kinds.has(kind)
   const traktorCanSave =
     useQuery({
       queryKey: ['traktor-can-save', settings?.traktorNmlPath ?? ''],
@@ -2896,17 +2899,21 @@ export default function App(): React.JSX.Element {
         browser.selectPlaylist({ ...node, id: movedCrateId(node.id, parentId) }, folders)
     },
   )
+  const canRename = editCan('rename')
+  const canMoveNode = editCan('moveNode')
+  const noFolders = sourceEdit?.folders === false
   const treeEdit = useMemo(
     () => ({
       onCreate: createInRekordbox,
       onDropTracks: dropOnRekordbox,
-      onRename: renameInRekordbox,
+      ...(canRename && { onRename: renameInRekordbox }),
       onDelete: deleteInRekordbox,
       onPasteTracklist: openPasteTracklist,
       onSession: (node: SourceNode) => openSessionAt(node.id),
       onFill: openSessionFill,
-      onMove: moveInTree,
+      ...(canMoveNode && { onMove: moveInTree }),
       ...(sourceProgram && SOURCE_PROGRAMS[sourceProgram].crates && { crates: true as const }),
+      ...(noFolders && { folders: false as const }),
     }),
     [
       createInRekordbox,
@@ -2918,6 +2925,9 @@ export default function App(): React.JSX.Element {
       openSessionFill,
       moveInTree,
       sourceProgram,
+      canRename,
+      canMoveNode,
+      noFolders,
     ],
   )
   // Read at drop time, so a re-read landing mid-drag still names the dragged rows. A track
@@ -2945,7 +2955,8 @@ export default function App(): React.JSX.Element {
     )
   })
   const removeSeparator = useStableCallback((key: string) => removeFromRekordbox([key]))
-  const removablePlaylist = editableSource && crateOpen ? browser.playlist : null
+  const removablePlaylist =
+    editableSource && crateOpen && editCan('remove') ? browser.playlist : null
   // The DJ's playlist has no undo in Surco: one row goes in one click, as the list's own
   // remove does, and several ask first, naming the playlist they leave.
   const removeFromPlaylist = (targets: TrackItem[]): void => {
@@ -2972,7 +2983,8 @@ export default function App(): React.JSX.Element {
   )
   // Reordering only means something in the playlist's own order with nothing hidden: under
   // another sort, a search or a filter, a drop would land among rows the user cannot see.
-  const reorderEnabled = crateOpen && sortBy === 'import' && !search && !filterActive
+  const reorderEnabled =
+    crateOpen && sortBy === 'import' && !search && !filterActive && editCan('move')
   const reorder = useMemo(
     () =>
       reorderEnabled ? { onMove: moveInRekordbox, onRemoveSeparator: removeSeparator } : undefined,
@@ -2992,8 +3004,8 @@ export default function App(): React.JSX.Element {
           h.node.id !== ALL_TRACKS_ID &&
           fixed?.(h.node) !== 'locked',
       ),
-      openName: crateOpen && playlist ? playlist.name : null,
-      canInsertSeparator: browser.canInsertSeparator,
+      openName: crateOpen && playlist && editCan('remove') ? playlist.name : null,
+      canInsertSeparator: browser.canInsertSeparator && editCan('insertSeparator'),
       onAddTo: (node) => addToRekordbox(node, menuTargets(track.id)),
       onInsertSeparator: () => {
         const beforeLinkId = playlistScope?.linkOf.get(track.id)
@@ -3006,7 +3018,9 @@ export default function App(): React.JSX.Element {
       // Only where separators are drawn (the playlist's own order): under another sort the
       // one "above" is neither on screen nor above the row as shown.
       onRemoveSeparatorAbove:
-        sortBy === 'import' && playlistScope?.separatorBefore.get(track.id)?.length
+        sortBy === 'import' &&
+        editCan('remove') &&
+        playlistScope?.separatorBefore.get(track.id)?.length
           ? () => {
               const above = playlistScope.separatorBefore.get(track.id)
               if (above?.length) removeSeparator(above[above.length - 1])

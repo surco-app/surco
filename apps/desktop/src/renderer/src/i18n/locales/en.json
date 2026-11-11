@@ -2629,6 +2629,29 @@
         "badName": "That name won't work for a playlist. It can't be empty or repeated"
       }
     },
+    "editEngine": {
+      "added_one": "{{count}} track added to “{{name}}”",
+      "added_other": "{{count}} tracks added to “{{name}}”",
+      "noneAdded": "No tracks added to “{{name}}”",
+      "already_one": "{{count}} was already in the playlist",
+      "already_other": "{{count}} were already in the playlist",
+      "notInCollection_one": "{{count}} is not in the Engine DJ collection",
+      "notInCollection_other": "{{count}} are not in the Engine DJ collection",
+      "ambiguous_one": "{{count}} is in the collection twice and Surco can't tell which to use",
+      "ambiguous_other": "{{count}} are in the collection twice and Surco can't tell which to use",
+      "refused": {
+        "cancelled": "Engine DJ is still open. The change will apply when you close it",
+        "running": "Engine DJ opened before saving. The change will apply when you close it",
+        "unreadable": "Surco can't change the Engine DJ collection files right now, so nothing changed",
+        "backupFailed": "Couldn't back up the collection first, so nothing changed",
+        "writeFailed": "Couldn't save the change. The collection is as it was",
+        "readOnly": "The Engine DJ collection is read-only, so nothing changed",
+        "stale": "The playlist changed in Engine DJ. Check it and try again",
+        "noSeparator": "Your collection has no separator to copy",
+        "writeUnknown": "The change could not be saved or undone, so the collection may have changed. Before opening Engine DJ, replace m.db with the copy m.db.surco-backup you will find in Settings → Advanced → Collection backups",
+        "badName": "That name won't do for an Engine DJ playlist. It can't be empty or repeat one in the same folder"
+      }
+    },
     "tree": {
       "newPlaylist": "New playlist",
       "newFolder": "New folder",

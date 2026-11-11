@@ -78,7 +78,7 @@ export function SourceTree({
   edit?: {
     onCreate: (parentId: string, name: string, folder: boolean) => void
     onDropTracks: (node: SourceNode, files: File[]) => void
-    onRename: (node: SourceNode, name: string) => void
+    onRename?: (node: SourceNode, name: string) => void
     onDelete: (node: SourceNode) => void
     onPasteTracklist?: (node: SourceNode, create: boolean) => void
     onSession?: (node: SourceNode) => void
@@ -90,6 +90,7 @@ export function SourceTree({
       folders: string[],
     ) => void
     crates?: true
+    folders?: false
   }
   // Playlists the library keeps for itself (Traktor's Preparation, HISTORY…): 'tracks-only'
   // takes tracks but is never renamed or deleted; 'locked' takes nothing.
@@ -170,7 +171,7 @@ export function SourceTree({
     renameTarget.current = null
     setRenaming(null)
     const name = value.trim()
-    if (name && name !== node.name) edit?.onRename(node, name)
+    if (name && name !== node.name) edit?.onRename?.(node, name)
   }
   const cancelRename = (): void => {
     renameTarget.current = null
@@ -625,7 +626,7 @@ export function SourceTree({
                     label={tr(edit.crates ? 'sources.tree.newCrate' : 'sources.tree.newPlaylist')}
                   />
                 </button>
-                {!edit.crates && (
+                {!edit.crates && edit.folders !== false && (
                   <button
                     type="button"
                     data-testid="source-tree-new-folder"
@@ -720,7 +721,7 @@ export function SourceTree({
                     edit?.crates ? 'sources.tree.newCrateInside' : 'sources.tree.newPlaylistInside',
                   )}
                 </button>
-                {!edit?.crates && (
+                {!edit?.crates && edit?.folders !== false && (
                   <button
                     type="button"
                     role="menuitem"
@@ -782,7 +783,7 @@ export function SourceTree({
                   {tr('sources.tree.fillSession')}
                 </button>
               )}
-            {!menu.pasteOnly && (
+            {!menu.pasteOnly && edit?.onRename && (
               <button
                 type="button"
                 role="menuitem"

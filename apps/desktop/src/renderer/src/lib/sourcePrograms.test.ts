@@ -96,10 +96,10 @@ describe('SOURCE_PROGRAMS says what each DJ program allows in its tab', () => {
     })
   })
 
-  it('only reads Engine DJ, exports it to USB and says when its library is missing', () => {
+  it('lets Engine DJ make playlists, fill and delete them, export to USB and say when its library is missing', () => {
     expect(shape('engine')).toEqual({
       separator: false,
-      edit: null,
+      edit: { messagePrefix: 'sources.editEngine.', gate: 'none' },
       fixedNode: false,
       usb: true,
       missingLibraryCheck: true,
@@ -108,9 +108,28 @@ describe('SOURCE_PROGRAMS says what each DJ program allows in its tab', () => {
       addsUncollected: false,
       fieldTestIdPrefix: 'engine-',
       membershipKey: 'engine-membership',
-      invalidatesOnEdit: false,
+      invalidatesOnEdit: true,
       crates: false,
     })
+  })
+
+  it('offers on Engine DJ only the edits its writer can do, so no menu leads to a refusal', () => {
+    const edit = SOURCE_PROGRAMS.engine.edit
+    expect(edit && [...(edit.kinds ?? [])].sort()).toEqual(['add', 'create', 'delete'])
+    expect(edit?.folders).toBe(false)
+    for (const program of ['rekordbox', 'traktor', 'serato'] as const) {
+      expect(SOURCE_PROGRAMS[program].edit?.kinds).toBeUndefined()
+      expect(SOURCE_PROGRAMS[program].edit?.folders).toBeUndefined()
+    }
+  })
+
+  it('saves an Engine DJ edit through editEnginePlaylist, passing the queue mode on', async () => {
+    const editEnginePlaylist = vi
+      .fn<Api['editEnginePlaylist']>()
+      .mockResolvedValue({ applied: true })
+    installApi({ editEnginePlaylist })
+    await SOURCE_PROGRAMS.engine.edit?.save({ kind: 'delete', playlistId: '7' }, 'Sesion', 'queue')
+    expect(editEnginePlaylist).toHaveBeenCalledWith({ kind: 'delete', playlistId: '7' }, 'Sesion', 'queue')
   })
 
   it('lets the Serato tab edit crates with no separator, no folders and no gate, and export to USB', () => {

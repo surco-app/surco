@@ -31,6 +31,8 @@ export function useRekordboxEdits(
   return useCallback(
     async (edit, playlistName, mode) => {
       const sourceEdit = SOURCE_PROGRAMS[source].edit
+      if (sourceEdit?.kinds && !sourceEdit.kinds.has(edit.kind))
+        return { applied: false, reason: 'read-only' }
       if (edit.kind === 'move') {
         const key = ['source-playlist', source, edit.playlistId]
         // A re-read already in flight (a refocus) carries the order from before the move

@@ -639,14 +639,33 @@ describe('App Engine DJ cues', () => {
     await waitFor(() => expect(chips()).toEqual([null, '2 proposals']))
   })
 
-  it('offers no playlist editing in Engine DJ, whose library Surco only reads', async () => {
+  it('offers in Engine DJ only what Surco can write there: new playlists and delete, no folders or rename', async () => {
     openEngine()
     await renderApp()
     fireEvent.click(await screen.findByTestId('source-rail-engine'))
     await screen.findByTestId('source-node-7')
-    expect(screen.queryByTestId('source-tree-new-playlist')).not.toBeInTheDocument()
+    expect(screen.getByTestId('source-tree-new-playlist')).toBeInTheDocument()
+    expect(screen.queryByTestId('source-tree-new-folder')).not.toBeInTheDocument()
     fireEvent.contextMenu(screen.getByTestId('source-node-7'))
-    expect(screen.queryByTestId('source-tree-menu')).not.toBeInTheDocument()
+    expect(screen.getByTestId('source-tree-delete')).toBeInTheDocument()
+    expect(screen.queryByTestId('source-tree-rename')).not.toBeInTheDocument()
+  })
+
+  it('lets an Engine DJ row go to another playlist but never offers removing it from the open one', async () => {
+    openEngine({
+      loadEngineTree: vi.fn<Api['loadEngineTree']>().mockResolvedValue([
+        { id: '7', name: 'Friday', kind: 'playlist', count: 2 },
+        { id: '8', name: 'Saturday', kind: 'playlist', count: 0 },
+      ]),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-engine'))
+    fireEvent.click(await screen.findByTestId('source-node-7'))
+    const rows = await screen.findAllByTestId('track-row')
+    fireEvent.contextMenu(rows[0])
+    expect(await screen.findByTestId('track-menu-add-to')).toBeInTheDocument()
+    expect(screen.queryByTestId('track-menu-remove-from')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('track-menu-insert-separator')).not.toBeInTheDocument()
   })
 
   it('turns the open Engine DJ tab into the missing-library notice when its database goes, with no USB export from it', async () => {

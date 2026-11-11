@@ -59,7 +59,11 @@ export const SOURCE_READ: Record<DjProgram, SourceRead> = {
   },
 }
 
-export type EditMessagePrefix = 'sources.edit.' | 'sources.editTraktor.' | 'sources.editSerato.'
+export type EditMessagePrefix =
+  | 'sources.edit.'
+  | 'sources.editTraktor.'
+  | 'sources.editSerato.'
+  | 'sources.editEngine.'
 
 export interface SourceEdit {
   save(
@@ -69,6 +73,8 @@ export interface SourceEdit {
   ): Promise<RekordboxEditResult>
   messagePrefix: EditMessagePrefix
   gate: 'none' | 'traktorCollection'
+  kinds?: ReadonlySet<RekordboxPlaylistEdit['kind']>
+  folders?: false
 }
 
 export type FixedNode = 'locked' | 'tracks-only' | null
@@ -134,7 +140,13 @@ export const SOURCE_PROGRAMS: {
   },
   engine: {
     separator: null,
-    edit: null,
+    edit: {
+      save: (...args) => window.api.editEnginePlaylist(...args),
+      messagePrefix: 'sources.editEngine.',
+      gate: 'none',
+      kinds: new Set(['create', 'add', 'delete']),
+      folders: false,
+    },
     fixedNode: null,
     usb: true,
     missingLibraryCheck: true,
@@ -143,7 +155,7 @@ export const SOURCE_PROGRAMS: {
     addsUncollected: false,
     fieldTestIdPrefix: 'engine-',
     membershipKey: 'engine-membership',
-    invalidatesOnEdit: false,
+    invalidatesOnEdit: true,
     crates: false,
   },
   serato: {
