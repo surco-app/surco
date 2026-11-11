@@ -2260,7 +2260,7 @@
     "email": "メールアドレス",
     "emailHint": "（返信のため）",
     "attach": "技術レポートを添付",
-    "attachHint": "Surco のバージョン、システム、ログの最新エラー（フォルダー名は含みません）。",
+    "attachHint": "Surco のバージョン、システム、ログの最新エラー。",
     "preview": "送信内容を見る",
     "previewHide": "送信内容を隠す",
     "github": "GitHub で Issue を作成する",
