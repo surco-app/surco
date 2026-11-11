@@ -223,9 +223,11 @@ describe('CuesTab', () => {
       }),
     })
     render(<Harness />)
-    expect(await screen.findByTestId('settings-cue-flow-to-traktor-missing')).toBeInTheDocument()
-    expect(screen.queryByTestId('settings-cue-flow-to-engine-missing')).not.toBeInTheDocument()
-    expect(screen.queryByTestId('settings-cue-flow-to-serato-missing')).not.toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.queryByTestId('settings-cue-flow-to-engine-missing')).not.toBeInTheDocument()
+      expect(screen.queryByTestId('settings-cue-flow-to-serato-missing')).not.toBeInTheDocument()
+    })
+    expect(screen.getByTestId('settings-cue-flow-to-traktor-missing')).toBeInTheDocument()
     cleanup()
     installApi({
       dj: djReads({
@@ -236,10 +238,10 @@ describe('CuesTab', () => {
     })
     render(<Harness />)
     expect(await screen.findByTestId('settings-cue-flow-to-engine-missing')).toBeInTheDocument()
-    await waitFor(() =>
-      expect(screen.queryByTestId('settings-cue-flow-to-traktor-missing')).not.toBeInTheDocument(),
-    )
-    expect(screen.getByTestId('settings-cue-flow-to-serato-missing')).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.queryByTestId('settings-cue-flow-to-traktor-missing')).not.toBeInTheDocument()
+      expect(screen.getByTestId('settings-cue-flow-to-serato-missing')).toBeInTheDocument()
+    })
   })
 
   it('lets the DJ send the flows to a found VirtualDJ and says it gets the hot cues only, saved when VirtualDJ closes', async () => {
