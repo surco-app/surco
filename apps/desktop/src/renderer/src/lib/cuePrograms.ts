@@ -11,6 +11,7 @@ export interface CueProgram {
   colourHelp: string | null
   collectionGate: 'traktor' | null
   callsNote: { key: string; testId: string } | null
+  runningNote: { key: string; testId: string } | null
   saveAllKey: string
   fixedGrid: string | null
 }
@@ -25,6 +26,7 @@ export const CUE_PROGRAMS: Record<DjProgram, CueProgram> = {
     colourHelp: null,
     collectionGate: null,
     callsNote: null,
+    runningNote: null,
     saveAllKey: 'editor.cues.saveAll',
     fixedGrid: null,
   },
@@ -37,6 +39,7 @@ export const CUE_PROGRAMS: Record<DjProgram, CueProgram> = {
     colourHelp: 'editor.cues.traktor.colours',
     collectionGate: 'traktor',
     callsNote: { key: 'editor.cues.traktor.calls', testId: 'cues-traktor-calls' },
+    runningNote: null,
     saveAllKey: 'editor.cues.traktor.saveAll',
     fixedGrid: null,
   },
@@ -49,6 +52,7 @@ export const CUE_PROGRAMS: Record<DjProgram, CueProgram> = {
     colourHelp: null,
     collectionGate: null,
     callsNote: { key: 'editor.cues.engine.calls', testId: 'cues-engine-calls' },
+    runningNote: null,
     saveAllKey: 'editor.cues.engine.saveAll',
     fixedGrid: null,
   },
@@ -61,6 +65,7 @@ export const CUE_PROGRAMS: Record<DjProgram, CueProgram> = {
     colourHelp: null,
     collectionGate: null,
     callsNote: { key: 'editor.cues.serato.calls', testId: 'cues-serato-calls' },
+    runningNote: { key: 'editor.cues.serato.waiting', testId: 'cues-serato-waiting' },
     saveAllKey: 'editor.cues.serato.saveAll',
     fixedGrid: 'editor.cues.grid.serato',
   },

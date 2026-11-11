@@ -599,7 +599,9 @@ function Editing({
         : null,
     [learnsFromEdits, words, queryClient, cue.contentId, state.cues, state.locked],
   )
-  const { readsAudio, fixedColour, collectionGate, callsNote } = cueProgramOf(cue.contentId)
+  const { readsAudio, fixedColour, collectionGate, callsNote, runningNote } = cueProgramOf(
+    cue.contentId,
+  )
   const unsavedSet = useUnsavedCueTracks()
   const { data: canSave = true } = useQuery({
     queryKey: ['traktor-can-save', settings.traktorNmlPath],
@@ -615,10 +617,10 @@ function Editing({
     queryFn: () => window.api.traktorCollectionInUse(settings.traktorNmlPath),
     enabled: collectionGate === 'traktor' && settings.traktorNmlPath !== '',
   })
-  const { data: seratoOpen = false } = useQuery({
-    queryKey: ['serato-running', cue.contentId],
-    queryFn: () => window.api.dj.running('serato'),
-    enabled: programOf(cue.contentId) === 'serato',
+  const { data: programOpen = false } = useQuery({
+    queryKey: [`${programOf(cue.contentId)}-running`, cue.contentId],
+    queryFn: () => window.api.dj.running(programOf(cue.contentId)),
+    enabled: runningNote !== null,
     staleTime: 0,
     refetchInterval: 5000,
   })
@@ -1817,9 +1819,9 @@ function Editing({
           {tr('editor.cues.traktor.noCollection')}
         </p>
       )}
-      {seratoOpen && (!unchanged || queued !== null) && (
-        <p data-testid="cues-serato-waiting" className="mt-2 text-xs text-warn">
-          {tr('editor.cues.serato.waiting')}
+      {runningNote && programOpen && (!unchanged || queued !== null) && (
+        <p data-testid={runningNote.testId} className="mt-2 text-xs text-warn">
+          {tr(runningNote.key)}
         </p>
       )}
       {otherCollection && (

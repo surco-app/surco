@@ -6,6 +6,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import { CALLS_ONLY, type CueFlow, MY_FLOW, ONE_AT_32 } from '../../../shared/cueFlows'
 import { HOT_KINDS } from '../../../shared/cueRules'
+import { engineContentId } from '../../../shared/engineContent'
+import { traktorContentId } from '../../../shared/traktorContent'
 import type { TrackCues } from '../../../shared/types'
 import { resetEditorSections } from '../hooks/useEditorSections'
 import '../i18n'
@@ -166,6 +168,47 @@ describe('CuesSection on a Serato track', () => {
       vi.useRealTimers()
     }
   })
+
+  it.each([
+    ['rekordbox', '123'],
+    ['Traktor', traktorContentId('/Music/s.mp3')],
+    ['Engine DJ', engineContentId(7)],
+  ])(
+    'keeps quiet on a %s track while that program is open, since its saves wait in its own queue',
+    async (_name, contentId) => {
+      const running = vi.fn<ProgramReads['running']>(async () => true)
+      installApi({
+        dj: djReads({
+          rekordbox: { running },
+          traktor: { running },
+          engine: { running },
+          serato: { running },
+        }),
+        cues: {
+          trackCues: vi.fn<Api['cues']['trackCues']>(async () => ({ ...READ, contentId })),
+          queued: vi.fn<Api['cues']['queued']>(async () => null),
+        },
+      })
+      render(
+        <QueryClientProvider
+          client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+        >
+          <SettingsProvider settings={{ cueFlows: KEPT, activeCueFlow: 'mine' }}>
+            <CuesSection
+              cue={{ contentId, path: '/Music/s.mp3', label: 'S' }}
+              open
+              onToggle={vi.fn()}
+            />
+          </SettingsProvider>
+        </QueryClientProvider>,
+      )
+      await ready()
+      markAt(bar(64))
+      await waitFor(() => expect(screen.getByTestId('cues-save')).toBeEnabled())
+      expect(screen.queryAllByTestId(/^cues-.*-waiting$/)).toEqual([])
+      expect(running).not.toHaveBeenCalled()
+    },
+  )
 
   it('keeps Serato’s beat grid as Serato has it and says why', async () => {
     setup({ ...READ, clockLeadMs: 0 })

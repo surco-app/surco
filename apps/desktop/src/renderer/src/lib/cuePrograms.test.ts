@@ -14,6 +14,7 @@ describe('CUE_PROGRAMS keeps what the cue editor does for each DJ program', () =
       colourHelp: null,
       collectionGate: null,
       callsNote: null,
+      runningNote: null,
       saveAllKey: 'editor.cues.saveAll',
       fixedGrid: null,
     })
@@ -29,6 +30,7 @@ describe('CUE_PROGRAMS keeps what the cue editor does for each DJ program', () =
       colourHelp: 'editor.cues.traktor.colours',
       collectionGate: 'traktor',
       callsNote: { key: 'editor.cues.traktor.calls', testId: 'cues-traktor-calls' },
+      runningNote: null,
       saveAllKey: 'editor.cues.traktor.saveAll',
       fixedGrid: null,
     })
@@ -44,12 +46,13 @@ describe('CUE_PROGRAMS keeps what the cue editor does for each DJ program', () =
       colourHelp: null,
       collectionGate: null,
       callsNote: { key: 'editor.cues.engine.calls', testId: 'cues-engine-calls' },
+      runningNote: null,
       saveAllKey: 'editor.cues.engine.saveAll',
       fixedGrid: null,
     })
   })
 
-  it('gives Serato its eight hot cues and a free colour, reads the audio, keeps Serato’s grid and warns its CALLs are not kept', () => {
+  it('gives Serato its eight hot cues and a free colour, reads the audio, keeps Serato’s grid, warns its CALLs are not kept and that changes wait while Serato is open', () => {
     expect(CUE_PROGRAMS.serato).toEqual({
       slots: { kinds: HOT_KINDS, pairCalls: false },
       readsAudio: true,
@@ -59,6 +62,7 @@ describe('CUE_PROGRAMS keeps what the cue editor does for each DJ program', () =
       colourHelp: null,
       collectionGate: null,
       callsNote: { key: 'editor.cues.serato.calls', testId: 'cues-serato-calls' },
+      runningNote: { key: 'editor.cues.serato.waiting', testId: 'cues-serato-waiting' },
       saveAllKey: 'editor.cues.serato.saveAll',
       fixedGrid: 'editor.cues.grid.serato',
     })
