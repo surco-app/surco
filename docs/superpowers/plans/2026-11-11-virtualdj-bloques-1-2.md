@@ -185,4 +185,9 @@ La hace el controlador, no un implementador. Cada medida: copia de `~/Library/Ap
 
 ## Base medida
 
-(La rellena la Tarea 0.)
+Medida el 11/11 sobre `32672ab9a` (main local `381ea5575`).
+
+- Suite: 17890 pasan, 262 saltados, 0 fallos.
+- Tipos: web, node y scenarios limpios.
+- Biome: 23 errores ya presentes en main. Puerta: sin errores nuevos en lo tocado.
+- Matriz: 131 pasan, 1 saltada, 4 fallos conocidos (K08, S-blindRekordboxCueMoved, S-blindRekordboxPlaylistLink, S-blindTraktorPlaylistKey). Celda a celda en `.superpowers/sdd/2026-11-11-virtualdj-bloques-1-2/matriz-base.txt`.
