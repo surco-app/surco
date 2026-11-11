@@ -141,6 +141,37 @@ describe('repointVirtualdjTracks', () => {
     expect(songBlock(lib.database(), path)).toContain('Bitrate="320"')
   })
 
+  it('writes the length the conversion decoded, not the MP3 container’s, which counts the encoder delay', async () => {
+    const lib = library()
+    const to = lib.track('Pray B4.mp3')
+    const repoint = {
+      from: '/Music/Serato Pruebas/Pray.flac',
+      to,
+      engineShift: { trimmedMs: 200, sampleCount: 18_877_152 },
+    }
+    await repointVirtualdjTracks([repoint], {
+      ...lib.deps,
+      lengthOf: async () => 428.094694,
+      audioOf: async () => ({ sampleRate: 44100, bitrateKbps: 320 }),
+    })
+    expect(songBlock(lib.database(), to)).toMatch(/<Infos SongLength="428.053333" /)
+  })
+
+  it('takes the resampled rate for the decoded length when the conversion changed it', async () => {
+    const lib = library()
+    const to = lib.track('Pray.aiff')
+    await repointVirtualdjTracks(
+      [
+        {
+          ...trimmed(to),
+          engineShift: { trimmedMs: 0, sampleRateHz: 48000, sampleCount: 4_800_000 },
+        },
+      ],
+      { ...lib.deps, lengthOf: async () => 99.5, audioOf: async () => ({}) },
+    )
+    expect(songBlock(lib.database(), to)).toMatch(/<Infos SongLength="100.0" /)
+  })
+
   it('points every list row of the old file at the new one, keeping the rest of each row and each list', async () => {
     const lib = library()
     const to = lib.track('Pray.aiff')

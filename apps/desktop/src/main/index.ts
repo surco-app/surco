@@ -630,9 +630,13 @@ const programQueues = {
             virtualdjOpen: DJ_PROCESSES.virtualdj.isRunning,
             sessionBackup: virtualdjSessionCopy,
             lengthOf: async (path) => (await probeDuration(path)) ?? undefined,
-            audioOf: async (path) => ({
-              bitrateKbps: virtualdjBitrateKbps(await probeAudio(path)),
-            }),
+            audioOf: async (path) => {
+              const audio = await probeAudio(path)
+              return {
+                sampleRate: Number(audio.sampleRate) || undefined,
+                bitrateKbps: virtualdjBitrateKbps(audio),
+              }
+            },
           })
           queueChecks.repointed('virtualdj', results)
           return results

@@ -176,6 +176,7 @@ export interface VirtualdjRepointFacts {
 }
 
 export interface VirtualdjAudio {
+  sampleRate?: number
   bitrateKbps?: number
 }
 
@@ -254,10 +255,13 @@ export async function repointVirtualdjTracks(
     repoints.map(async (r): Promise<VirtualdjRepointFacts> => {
       const size = sizeOf(r.to)
       if (size === null) return { size }
-      const [lengthSeconds, audio] = await Promise.all([
+      const [probed, audio] = await Promise.all([
         deps.lengthOf(r.to).catch(() => undefined),
         deps.audioOf?.(r.to).catch(() => undefined),
       ])
+      const samples = r.engineShift?.sampleCount
+      const rate = r.engineShift?.sampleRateHz ?? audio?.sampleRate
+      const lengthSeconds = samples && rate ? samples / rate : probed
       return {
         size,
         ...(lengthSeconds === undefined ? {} : { lengthSeconds }),
