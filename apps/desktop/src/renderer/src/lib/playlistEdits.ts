@@ -116,6 +116,28 @@ function walkIds(node: SourceNode): string[] {
   return [node.id, ...(node.children ?? []).flatMap(walkIds)]
 }
 
+export function reopenedPlaylist(
+  open: { id: string; name: string; folders: string[] } | null,
+  node: SourceNode,
+  to: { id: string; name: string; folders: string[] },
+  join: string,
+): { node: SourceNode; folders: string[] } | null {
+  if (!open) return null
+  if (open.id === node.id)
+    return { node: { ...node, id: to.id, name: to.name }, folders: to.folders }
+  if (!open.id.startsWith(`${node.id}${join}`)) return null
+  const depth = node.id.split(join).length - 1
+  return {
+    node: {
+      id: to.id + open.id.slice(node.id.length),
+      name: open.name,
+      kind: 'playlist',
+      count: 0,
+    },
+    folders: [...to.folders, to.name, ...open.folders.slice(depth + 1)],
+  }
+}
+
 export function movedCrateId(id: string, parentId: string): string {
   const name = id.split('%%').at(-1) ?? id
   return parentId === 'root' ? name : `${parentId}%%${name}`

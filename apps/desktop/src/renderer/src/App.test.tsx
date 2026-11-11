@@ -1023,6 +1023,81 @@ describe('App VirtualDJ tab', () => {
     expect(screen.getByTestId('source-tree-rename')).toBeInTheDocument()
   })
 
+  async function renameInVirtualdj(nodeId: string, name: string, after: SourceNode[]) {
+    let tree: SourceNode[] = [
+      {
+        id: 'Carpeta',
+        name: 'Carpeta',
+        kind: 'folder',
+        count: 1,
+        children: [{ id: 'Carpeta/Dentro', name: 'Dentro', kind: 'playlist', count: 2 }],
+      },
+    ]
+    const playlist = vi
+      .fn<ProgramReads['playlist']>()
+      .mockResolvedValue([
+        { path: '/m/a.wav', separator: false, meta: {}, contentId: 'virtualdj:/m/a.wav' },
+      ])
+    const editPlaylist = vi.fn<ProgramReads['editPlaylist']>(async () => {
+      tree = after
+      return { applied: true }
+    })
+    openVirtualdj({
+      dj: djReads({
+        virtualdj: { tree: vi.fn<ProgramReads['tree']>(async () => tree), playlist, editPlaylist },
+      }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-virtualdj'))
+    fireEvent.click(await screen.findByTestId('source-node-Carpeta'))
+    fireEvent.click(await screen.findByTestId('source-node-Carpeta/Dentro'))
+    await waitFor(() => expect(playlist).toHaveBeenCalledWith('Carpeta/Dentro'))
+    fireEvent.contextMenu(screen.getByTestId(`source-node-${nodeId}`))
+    fireEvent.click(screen.getByTestId('source-tree-rename'))
+    const field = await screen.findByTestId('source-tree-rename-field')
+    fireEvent.change(field, { target: { value: name } })
+    fireEvent.keyDown(field, { key: 'Enter' })
+    await waitFor(() => expect(editPlaylist).toHaveBeenCalled())
+    return playlist
+  }
+
+  it('keeps the open VirtualDJ list open under its new name once it is renamed', async () => {
+    const playlist = await renameInVirtualdj('Carpeta/Dentro', 'Fuera', [
+      {
+        id: 'Carpeta',
+        name: 'Carpeta',
+        kind: 'folder',
+        count: 1,
+        children: [{ id: 'Carpeta/Fuera', name: 'Fuera', kind: 'playlist', count: 2 }],
+      },
+    ])
+    await waitFor(() =>
+      expect(screen.getByTestId('source-node-Carpeta/Fuera')).toHaveAttribute(
+        'aria-current',
+        'true',
+      ),
+    )
+    expect(playlist).toHaveBeenCalledWith('Carpeta/Fuera')
+  })
+
+  it('keeps the open VirtualDJ list open when the folder holding it is renamed', async () => {
+    await renameInVirtualdj('Carpeta', 'Cajón', [
+      {
+        id: 'Cajón',
+        name: 'Cajón',
+        kind: 'folder',
+        count: 1,
+        children: [{ id: 'Cajón/Dentro', name: 'Dentro', kind: 'playlist', count: 2 }],
+      },
+    ])
+    await waitFor(() =>
+      expect(screen.getByTestId('source-node-Cajón/Dentro')).toHaveAttribute(
+        'aria-current',
+        'true',
+      ),
+    )
+  })
+
   it('sends a list made from the VirtualDJ tab to VirtualDJ', async () => {
     const editPlaylist = vi
       .fn<ProgramReads['editPlaylist']>()

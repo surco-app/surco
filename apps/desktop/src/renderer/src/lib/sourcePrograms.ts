@@ -74,6 +74,7 @@ export interface SourceProgram {
   membershipKey: string
   invalidatesOnEdit: boolean
   crates: boolean
+  idJoin: string | null
 }
 
 export const SOURCE_PROGRAMS: {
@@ -96,6 +97,7 @@ export const SOURCE_PROGRAMS: {
     membershipKey: 'rekordbox-membership',
     invalidatesOnEdit: true,
     crates: false,
+    idJoin: null,
   },
   traktor: {
     separator: () => window.api.dj.hasSeparator('traktor'),
@@ -119,6 +121,7 @@ export const SOURCE_PROGRAMS: {
     membershipKey: 'traktor-membership',
     invalidatesOnEdit: true,
     crates: false,
+    idJoin: null,
   },
   engine: {
     separator: null,
@@ -139,6 +142,7 @@ export const SOURCE_PROGRAMS: {
     membershipKey: 'engine-membership',
     invalidatesOnEdit: true,
     crates: false,
+    idJoin: null,
   },
   serato: {
     separator: null,
@@ -157,6 +161,7 @@ export const SOURCE_PROGRAMS: {
     membershipKey: 'serato-membership',
     invalidatesOnEdit: true,
     crates: true,
+    idJoin: '%%',
   },
   virtualdj: {
     separator: null,
@@ -175,6 +180,7 @@ export const SOURCE_PROGRAMS: {
     membershipKey: 'virtualdj-membership',
     invalidatesOnEdit: true,
     crates: false,
+    idJoin: '/',
   },
 }
 

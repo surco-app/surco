@@ -195,7 +195,7 @@ import { outputNamePatches, renderOutputName, titleFormatSummary } from './lib/o
 import { clampPanelGeometry } from './lib/panelGeometry'
 import { flushPendingEdits } from './lib/pendingEdits'
 import { isMacOS } from './lib/platform'
-import { movedCrateId } from './lib/playlistEdits'
+import { reopenedPlaylist } from './lib/playlistEdits'
 import { playlistMembership, playlistView } from './lib/playlistView'
 import { needsDiscogsPrefetch } from './lib/prefetch'
 import { topBarProgress } from './lib/progress'
@@ -2886,8 +2886,25 @@ export default function App(): React.JSX.Element {
   const createInRekordbox = useStableCallback((parentId: string, name: string, folder: boolean) => {
     void editRekordbox({ kind: 'create', parentId, name, folder }, name)
   })
-  const renameInRekordbox = useStableCallback((node: SourceNode, name: string) => {
-    void editRekordbox({ kind: 'rename', playlistId: node.id, name }, node.name)
+  const idJoin = sourceProgram ? SOURCE_PROGRAMS[sourceProgram].idJoin : null
+  const reopenAt = (
+    open: typeof browser.playlist,
+    node: SourceNode,
+    to: { id: string; name: string; folders: string[] },
+  ) => {
+    const reopened = idJoin ? reopenedPlaylist(open, node, to, idJoin) : null
+    if (reopened) browser.selectPlaylist(reopened.node, reopened.folders)
+  }
+  const renameInRekordbox = useStableCallback(async (node: SourceNode, name: string) => {
+    const open = browser.playlist
+    const result = await editRekordbox({ kind: 'rename', playlistId: node.id, name }, node.name)
+    if (!result.applied || !idJoin || !open) return
+    const above = node.id.split(idJoin).slice(0, -1)
+    reopenAt(open, node, {
+      id: [...above, name].join(idJoin),
+      name,
+      folders: open.folders.slice(0, above.length),
+    })
   })
   const deleteInRekordbox = useStableCallback((node: SourceNode) => {
     void editRekordbox({ kind: 'delete', playlistId: node.id }, node.name)
@@ -2925,13 +2942,17 @@ export default function App(): React.JSX.Element {
   )
   const moveInTree = useStableCallback(
     async (node: SourceNode, parentId: string, beforeId: string | null, folders: string[]) => {
-      const wasOpen = browser.playlist?.id === node.id
+      const open = browser.playlist
       const result = await editRekordbox(
         { kind: 'moveNode', playlistId: node.id, parentId, beforeId },
         node.name,
       )
-      if (result.applied && wasOpen && sourceProgram && SOURCE_PROGRAMS[sourceProgram].crates)
-        browser.selectPlaylist({ ...node, id: movedCrateId(node.id, parentId) }, folders)
+      if (result.applied && idJoin)
+        reopenAt(open, node, {
+          id: parentId === 'root' ? node.name : `${parentId}${idJoin}${node.name}`,
+          name: node.name,
+          folders,
+        })
     },
   )
   const canRename = editCan('rename')

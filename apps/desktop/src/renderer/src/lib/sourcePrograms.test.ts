@@ -87,6 +87,7 @@ describe('SOURCE_PROGRAMS says what each DJ program allows in its tab', () => {
       membershipKey: 'rekordbox-membership',
       invalidatesOnEdit: true,
       crates: false,
+      idJoin: null,
     })
   })
 
@@ -104,6 +105,7 @@ describe('SOURCE_PROGRAMS says what each DJ program allows in its tab', () => {
       membershipKey: 'traktor-membership',
       invalidatesOnEdit: true,
       crates: false,
+      idJoin: null,
     })
   })
 
@@ -121,6 +123,7 @@ describe('SOURCE_PROGRAMS says what each DJ program allows in its tab', () => {
       membershipKey: 'engine-membership',
       invalidatesOnEdit: true,
       crates: false,
+      idJoin: null,
     })
   })
 
@@ -160,6 +163,7 @@ describe('SOURCE_PROGRAMS says what each DJ program allows in its tab', () => {
       membershipKey: 'serato-membership',
       invalidatesOnEdit: true,
       crates: true,
+      idJoin: '%%',
     })
   })
 
@@ -177,6 +181,7 @@ describe('SOURCE_PROGRAMS says what each DJ program allows in its tab', () => {
       membershipKey: 'virtualdj-membership',
       invalidatesOnEdit: true,
       crates: false,
+      idJoin: '/',
     })
   })
 
