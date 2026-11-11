@@ -166,7 +166,7 @@ export function FeedbackModal({ error, stack, onClose }: Props): React.JSX.Eleme
         <h2 id="feedback-title" className="text-base font-semibold">
           {tr(error ? 'feedback.titleError' : 'feedback.title')}
         </h2>
-        <p className="text-pretty text-sm leading-relaxed text-fg-muted">
+        <p className="text-balance text-sm leading-relaxed text-fg-muted">
           {tr(error ? 'feedback.ledeError' : 'feedback.lede')}
         </p>
       </div>
