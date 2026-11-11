@@ -211,8 +211,6 @@
     "autoMatchLabel": "Match",
     "addToken": "Add token",
     "autoMatchingCount": "Auto-matching… {{done}}/{{total}}",
-    "cleanedCount_one": "{{count}} cleaned",
-    "cleanedCount_other": "{{count}} cleaned",
     "moreActions": "More actions",
     "menu": {
       "review": "Review metadata",

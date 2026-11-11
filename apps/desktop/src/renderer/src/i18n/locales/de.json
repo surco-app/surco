@@ -211,8 +211,6 @@
     "autoMatchLabel": "Abgleichen",
     "addToken": "Token hinzufügen",
     "autoMatchingCount": "Automatischer Abgleich… {{done}}/{{total}}",
-    "cleanedCount_one": "{{count}} bereinigt",
-    "cleanedCount_other": "{{count}} bereinigt",
     "moreActions": "Weitere Aktionen",
     "menu": {
       "review": "Metadaten prüfen",

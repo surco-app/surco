@@ -9989,17 +9989,19 @@ describe('App clean-up on load', () => {
     await renderApp()
     await load(2)
     await act(async () => {})
-    expect(screen.queryByTestId('auto-clean-count')).not.toBeInTheDocument()
     expect(screen.queryByTestId('track-cleaned')).not.toBeInTheDocument()
     expect(screen.getByTestId('field-title')).toHaveValue('Alpha  Mix')
   })
 
-  it('stages the clean value, marks the row and counts it, writing nothing', async () => {
+  // The row's spark is the whole signal: a toolbar tally of cleaned rows only repeated what
+  // the marked rows already show, beside controls that do something.
+  it('stages the clean value and marks the row, writing nothing and tallying nothing in the toolbar', async () => {
     vi.resetModules()
     cleanApi({ autoCleanSpacing: true }, spaced)
     await renderApp()
     await load(2)
-    expect(await screen.findByTestId('auto-clean-count')).toHaveTextContent('1 cleaned')
+    await waitFor(() => expect(screen.getAllByTestId('track-cleaned')).toHaveLength(1))
+    expect(screen.queryByTestId('auto-clean-count')).not.toBeInTheDocument()
     const [first, second] = screen.getAllByTestId('track-row')
     expect(within(first).getByTestId('track-cleaned')).toBeInTheDocument()
     expect(within(second).queryByTestId('track-cleaned')).not.toBeInTheDocument()
@@ -10018,7 +10020,7 @@ describe('App clean-up on load', () => {
     fireEvent.click(screen.getByTestId('field-cleaned-undo-title'))
     await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Alpha  Mix'))
     expect(screen.queryByTestId('field-cleaned-title')).not.toBeInTheDocument()
-    expect(screen.queryByTestId('auto-clean-count')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('track-cleaned')).not.toBeInTheDocument()
   })
 
   it('writes a name the way most of the list does only when the majority is clear', async () => {
@@ -10034,7 +10036,7 @@ describe('App clean-up on load', () => {
     )
     await renderApp()
     await load(4)
-    expect(await screen.findByTestId('auto-clean-count')).toHaveTextContent('1 cleaned')
+    await waitFor(() => expect(screen.getAllByTestId('track-cleaned')).toHaveLength(1))
     expect(screen.getByTestId('field-artist')).toHaveValue('DJ Lara')
   })
 
@@ -10044,7 +10046,7 @@ describe('App clean-up on load', () => {
     await renderApp()
     await addThree()
     expect(await screen.findByTestId('list-review-notice')).toBeInTheDocument()
-    expect(screen.queryByTestId('auto-clean-count')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('track-cleaned')).not.toBeInTheDocument()
   })
 })
 

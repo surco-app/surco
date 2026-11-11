@@ -211,8 +211,6 @@
     "autoMatchLabel": "Emparejar",
     "addToken": "Añadir token",
     "autoMatchingCount": "Auto-emparejando… {{done}}/{{total}}",
-    "cleanedCount_one": "{{count}} limpiada",
-    "cleanedCount_other": "{{count}} limpiadas",
     "moreActions": "Más acciones",
     "menu": {
       "review": "Revisar metadatos",

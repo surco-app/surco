@@ -211,8 +211,6 @@
     "autoMatchLabel": "マッチ",
     "addToken": "トークンを追加",
     "autoMatchingCount": "自動マッチング中… {{done}}/{{total}}",
-    "cleanedCount_one": "{{count}} をクリーンアップ",
-    "cleanedCount_other": "{{count}} をクリーンアップ",
     "moreActions": "その他の操作",
     "menu": {
       "review": "メタデータを確認",

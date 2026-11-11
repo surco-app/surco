@@ -32,7 +32,6 @@ function renderBar(over: Partial<Props> = {}): Props {
     allAnalyzed: false,
     batchProgress: { done: 0, total: 0 },
     matching: null,
-    cleanedCount: 0,
     canAutoMatch: true,
     needsToken: false,
     tokenMissing: false,
@@ -115,17 +114,6 @@ describe('Toolbar', () => {
   it('places the USB export pill it is given', () => {
     renderBar({ usbPill: <span data-testid="pill-slot">USB 7/12</span> })
     expect(screen.getByTestId('pill-slot')).toHaveTextContent('USB 7/12')
-  })
-
-  // Nothing to click: unlike the auto-match pill there is no run to cancel, only staged edits.
-  it('counts the tracks holding a load-time clean-up, and stays out of the way at zero', () => {
-    renderBar({ cleanedCount: 3 })
-    const count = screen.getByTestId('auto-clean-count')
-    expect(count).toHaveTextContent('3 cleaned')
-    expect(count.closest('button')).toBeNull()
-    cleanup()
-    renderBar({ cleanedCount: 0 })
-    expect(screen.queryByTestId('auto-clean-count')).toBeNull()
   })
 
   it('keeps Convert quiet when the list holds one track, since the editor footer already carries the accented convert for it', () => {

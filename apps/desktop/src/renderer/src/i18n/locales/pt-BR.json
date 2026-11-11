@@ -211,8 +211,6 @@
     "autoMatchLabel": "Associar",
     "addToken": "Adicionar token",
     "autoMatchingCount": "Auto-associando… {{done}}/{{total}}",
-    "cleanedCount_one": "{{count}} limpa",
-    "cleanedCount_other": "{{count}} limpas",
     "moreActions": "Mais ações",
     "menu": {
       "review": "Revisar metadados",
