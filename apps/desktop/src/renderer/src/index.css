@@ -596,47 +596,6 @@ textarea {
   }
 }
 
-/* A session wizard step coming in: forward from the trailing side, back from the leading
-   side, so each step keeps its place in the row. Only the incoming step moves and the old
-   one is gone at once, so Back or Next pressed mid-slide answers straight away. Reduced
-   motion keeps the fade and drops the travel. */
-@keyframes step-forward-in {
-  from {
-    opacity: 0;
-    transform: translateX(16px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-@keyframes step-back-in {
-  from {
-    opacity: 0;
-    transform: translateX(-16px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-.animate-step-forward {
-  animation: step-forward-in var(--duration-panel) var(--ease-standard);
-}
-
-.animate-step-back {
-  animation: step-back-in var(--duration-panel) var(--ease-standard);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .animate-step-forward,
-  .animate-step-back {
-    animation: overlay-in var(--duration-state) var(--ease-standard);
-  }
-}
-
 /* The convert button's two faces. Blocked, it names the missing field on a neutral
    ground, with the amber dot as the only warning; once the field is filled the accent
    fades in and the action rolls down into place. The fade has no direction on purpose: a left-to-right sweep read as
@@ -1250,6 +1209,45 @@ button:hover > .process-fill {
 
 @media (prefers-reduced-motion: reduce) {
   .copies-feedback {
+    transition: opacity var(--duration-state) var(--ease-standard);
+  }
+}
+
+/* Session wizard steps are a row the DJ walks along. Forward, the step being left slides
+   out toward the leading side while the next comes in from the trailing side; back, the
+   other way round. Transitions rather than keyframes, so Back or Next pressed mid-slide
+   turns both steps around from where they are. The leaving copy is inert and only exists
+   while motion is allowed, so reduced motion keeps the fade of the new step alone. */
+.wizard-step {
+  transition:
+    transform var(--duration-panel) var(--ease-standard),
+    opacity var(--duration-panel) var(--ease-standard);
+}
+
+.wizard-step[data-exit="leading"] {
+  opacity: 0;
+  transform: translateX(-16px);
+}
+
+.wizard-step[data-exit="trailing"] {
+  opacity: 0;
+  transform: translateX(16px);
+}
+
+@starting-style {
+  .wizard-step[data-enter="trailing"] {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+
+  .wizard-step[data-enter="leading"] {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wizard-step {
     transition: opacity var(--duration-state) var(--ease-standard);
   }
 }
