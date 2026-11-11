@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isFrom, type TrackOrigin, withPrograms } from './trackOrigin'
+import { fromReadOnlyProgram, isFrom, type TrackOrigin, withPrograms } from './trackOrigin'
 
 describe('isFrom', () => {
   it('is true only for the programs the track arrived from, so a Serato row blocks and a loose file does not', () => {
@@ -13,6 +13,15 @@ describe('isFrom', () => {
   it('is false for a track with no programs at all', () => {
     expect(isFrom({}, 'rekordbox')).toBe(false)
     expect(isFrom({ programs: [] }, 'serato')).toBe(false)
+  })
+})
+
+describe('fromReadOnlyProgram', () => {
+  it('is true when any program the track came from cannot be written, so its file is never rewritten behind that program', () => {
+    expect(fromReadOnlyProgram({ programs: ['rekordbox', 'serato'] })).toBe(true)
+    expect(fromReadOnlyProgram({ programs: ['rekordbox', 'traktor', 'engine'] })).toBe(false)
+    expect(fromReadOnlyProgram({ programs: [] })).toBe(false)
+    expect(fromReadOnlyProgram({})).toBe(false)
   })
 })
 

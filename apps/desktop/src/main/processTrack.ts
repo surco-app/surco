@@ -19,7 +19,7 @@ import {
 } from '../shared/errorKeys'
 import { foldAccents } from '../shared/foldAccents'
 import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../shared/format'
-import { isFrom } from '../shared/trackOrigin'
+import { fromReadOnlyProgram } from '../shared/trackOrigin'
 import type {
   DeclickConfig,
   MusicOp,
@@ -539,7 +539,7 @@ export async function runProcessTrack(
   // Before any side effect: metadata that never came from the file (see ProcessJob.metaUnread)
   // would be written empty over whatever the file still carries.
   if (job.metaUnread) throw errorWithKey('sourceTagsUnread', job.inputPath)
-  if (isFrom(job, 'serato')) throw errorWithKey('seratoBlocked', job.inputPath)
+  if (fromReadOnlyProgram(job)) throw errorWithKey('seratoBlocked', job.inputPath)
   const { settings } = deps
   const stage = (s: ProcessStage): void => deps.sendProgress(s)
   if (deps.isAllowed && !deps.isAllowed(job.inputPath)) throw errorWithKey('pathNotAllowed')
