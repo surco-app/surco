@@ -45,6 +45,7 @@ export type EditMessagePrefix =
   | 'sources.editTraktor.'
   | 'sources.editSerato.'
   | 'sources.editEngine.'
+  | 'sources.editVirtualdj.'
 
 export interface SourceEdit {
   save(
@@ -159,7 +160,11 @@ export const SOURCE_PROGRAMS: {
   },
   virtualdj: {
     separator: null,
-    edit: null,
+    edit: {
+      save: (...args) => window.api.dj.editPlaylist('virtualdj', ...args),
+      messagePrefix: 'sources.editVirtualdj.',
+      gate: 'none',
+    },
     fixedNode: null,
     usb: false,
     missingLibraryCheck: false,

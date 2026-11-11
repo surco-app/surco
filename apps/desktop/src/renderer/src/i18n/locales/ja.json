@@ -2718,6 +2718,28 @@
       "removeFrom": "「{{name}}」から削除",
       "removeSeparatorAbove": "上の区切り線を削除"
     },
+    "editVirtualdj": {
+      "added_one": "「{{name}}」に {{count}} 件のトラックを追加しました",
+      "added_other": "「{{name}}」に {{count}} 件のトラックを追加しました",
+      "noneAdded": "「{{name}}」にトラックは追加されませんでした",
+      "already_one": "{{count}} 件はすでにリストにありました",
+      "already_other": "{{count}} 件はすでにリストにありました",
+      "notInCollection_one": "{{count}} 件はすでに存在しません",
+      "notInCollection_other": "{{count}} 件はすでに存在しません",
+      "ambiguous_one": "{{count}} 件はライブラリに重複して存在し、Surco はどちらを使うか判断できません",
+      "ambiguous_other": "{{count}} 件はライブラリに重複して存在し、Surco はどちらを使うか判断できません",
+      "refused": {
+        "cancelled": "VirtualDJ がまだ開いています。閉じたときに変更が適用されます",
+        "running": "保存前に VirtualDJ が開かれました。閉じたときに変更が適用されます",
+        "unreadable": "現在 Surco は VirtualDJ のリストを変更できないため、何も変更されていません",
+        "backupFailed": "先にリストをバックアップできなかったため、何も変更されていません",
+        "writeFailed": "変更を保存できませんでした。リストは元のままです",
+        "readOnly": "VirtualDJ のリストは読み取り専用のため、何も変更されていません",
+        "stale": "VirtualDJ でリストが変更されました。確認してもう一度お試しください",
+        "writeUnknown": "変更を保存も取り消しもできなかったため、リストが変更されている可能性があります。VirtualDJ を開く前に、Surco のデータ内の virtualdj-backups フォルダーにある最新のコピーから MyLists フォルダーを復元してください",
+        "badName": "この名前はリストには使えません。空にすることも、重複させることも、/ や : を含めることもできません"
+      }
+    },
     "editSerato": {
       "added_one": "「{{name}}」に {{count}} 件のトラックを追加しました",
       "added_other": "「{{name}}」に {{count}} 件のトラックを追加しました",

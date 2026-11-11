@@ -2718,6 +2718,28 @@
       "removeFrom": "Remove from “{{name}}”",
       "removeSeparatorAbove": "Remove separator above"
     },
+    "editVirtualdj": {
+      "added_one": "{{count}} track added to “{{name}}”",
+      "added_other": "{{count}} tracks added to “{{name}}”",
+      "noneAdded": "No tracks added to “{{name}}”",
+      "already_one": "{{count}} was already in the list",
+      "already_other": "{{count}} were already in the list",
+      "notInCollection_one": "{{count}} no longer exists",
+      "notInCollection_other": "{{count}} no longer exist",
+      "ambiguous_one": "{{count}} is in the library twice and Surco can't tell which to use",
+      "ambiguous_other": "{{count}} are in the library twice and Surco can't tell which to use",
+      "refused": {
+        "cancelled": "VirtualDJ is still open. The change will apply when you close it",
+        "running": "VirtualDJ opened before saving. The change will apply when you close it",
+        "unreadable": "Surco can't change the VirtualDJ lists right now, so nothing changed",
+        "backupFailed": "Couldn't back up the lists first, so nothing changed",
+        "writeFailed": "Couldn't save the change. The lists are as they were",
+        "readOnly": "The VirtualDJ lists are read-only, so nothing changed",
+        "stale": "The list changed in VirtualDJ. Check it and try again",
+        "writeUnknown": "The change could not be saved or undone, so the lists may have changed. Before opening VirtualDJ, restore the MyLists folder from the most recent copy in the virtualdj-backups folder in Surco's data",
+        "badName": "That name won't work for a list. It can't be empty, repeated or contain / or :"
+      }
+    },
     "editSerato": {
       "added_one": "{{count}} track added to “{{name}}”",
       "added_other": "{{count}} tracks added to “{{name}}”",

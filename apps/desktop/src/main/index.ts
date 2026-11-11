@@ -278,9 +278,10 @@ import {
 } from './verifyMusic'
 import type { FlushOutcome, TraktorWrite } from './verifyRegistry'
 import { withRecordedRun } from './verifyRun'
+import { applyVirtualdjBatch } from './virtualdjBatch'
 import { virtualdjCueSource } from './virtualdjCueSource'
-import { applyVirtualdjCuesBatch } from './virtualdjCuesWrite'
 import { virtualdjLibraryRoots } from './virtualdjLibrary'
+import { virtualdjEdit } from './virtualdjPlaylistEditIpc'
 import { virtualdjRead } from './virtualdjPlaylistsIpc'
 import { waitingCueQueueSection } from './waitingCueQueueIpc'
 import { onWatchedFilesChanged } from './watchedFiles'
@@ -584,7 +585,7 @@ const programQueues = {
         collection: virtualdjLibrary,
         configured: virtualdjDir,
         applyBatch: (_library, ops, ensureClosed, stillQueued) =>
-          applyVirtualdjCuesBatch(ops, {
+          applyVirtualdjBatch(ops, {
             roots: virtualdjRoots,
             backupDir: join(app.getPath('userData'), 'virtualdj-backups'),
             ensureClosed,
@@ -1520,6 +1521,13 @@ function registerIpc(): void {
     },
     virtualdj: {
       read: virtualdjRead({ roots: virtualdjRoots, allowMedia }),
+      edit: virtualdjEdit({
+        roots: virtualdjRoots,
+        queue: virtualdjCueQueue,
+        isRunning: DJ_PROCESSES.virtualdj.isRunning,
+        onApplied: programQueues.virtualdj.announceApplied,
+        onWaiting: virtualdjCueQueueWatch.poke,
+      }),
       running: DJ_PROCESSES.virtualdj.isRunning,
       pickLibraryPath: pickLibraryPath('dialogVirtualdjLibrary', {
         properties: ['openDirectory'],

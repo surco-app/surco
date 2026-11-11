@@ -2718,6 +2718,28 @@
       "removeFrom": "Retirer de « {{name}} »",
       "removeSeparatorAbove": "Retirer le séparateur au-dessus"
     },
+    "editVirtualdj": {
+      "added_one": "{{count}} morceau ajouté à « {{name}} »",
+      "added_other": "{{count}} morceaux ajoutés à « {{name}} »",
+      "noneAdded": "Aucun morceau ajouté à « {{name}} »",
+      "already_one": "{{count}} était déjà dans la liste",
+      "already_other": "{{count}} étaient déjà dans la liste",
+      "notInCollection_one": "{{count}} n’existe plus",
+      "notInCollection_other": "{{count}} n’existent plus",
+      "ambiguous_one": "{{count}} est deux fois dans la bibliothèque et Surco ne sait pas laquelle utiliser",
+      "ambiguous_other": "{{count}} sont deux fois dans la bibliothèque et Surco ne sait pas lesquelles utiliser",
+      "refused": {
+        "cancelled": "VirtualDJ est encore ouvert. Le changement s’appliquera à sa fermeture",
+        "running": "VirtualDJ s’est ouvert avant l’enregistrement. Le changement s’appliquera à sa fermeture",
+        "unreadable": "Surco ne peut pas modifier les listes de VirtualDJ pour le moment, rien n’a changé",
+        "backupFailed": "Impossible de sauvegarder les listes avant, rien n’a changé",
+        "writeFailed": "Impossible d’enregistrer la modification. Les listes sont restées telles quelles",
+        "readOnly": "Les listes de VirtualDJ sont en lecture seule, rien n’a changé",
+        "stale": "La liste a changé dans VirtualDJ. Vérifie-la et réessaie",
+        "writeUnknown": "Le changement n’a pu être ni enregistré ni annulé, les listes ont donc pu changer. Avant d’ouvrir VirtualDJ, restaure le dossier MyLists depuis la copie la plus récente dans le dossier virtualdj-backups des données de Surco",
+        "badName": "Ce nom ne convient pas pour une liste. Il ne peut pas être vide, en double ni contenir / ou :"
+      }
+    },
     "editSerato": {
       "added_one": "{{count}} morceau ajouté à « {{name}} »",
       "added_other": "{{count}} morceaux ajoutés à « {{name}} »",

@@ -76,7 +76,7 @@ function backupPathOf(file: string, roots: VirtualdjRoot[]): string {
   return join(root.root === '/' ? 'Local' : basename(root.root), relative(root.dir, file))
 }
 
-function takeBackups(files: string[], deps: VirtualdjCommitDeps): Map<string, string> {
+export function takeBackups(files: string[], deps: VirtualdjCommitDeps): Map<string, string> {
   const name = backupFolderName(deps.now?.() ?? new Date())
   let folder = join(deps.backupDir, name)
   for (let n = 1; existsSync(folder); n++) folder = join(deps.backupDir, `${name}-${n}`)

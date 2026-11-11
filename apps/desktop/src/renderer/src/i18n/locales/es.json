@@ -2718,6 +2718,28 @@
       "removeFrom": "Quitar de «{{name}}»",
       "removeSeparatorAbove": "Quitar el separador de encima"
     },
+    "editVirtualdj": {
+      "added_one": "{{count}} pista añadida a «{{name}}»",
+      "added_other": "{{count}} pistas añadidas a «{{name}}»",
+      "noneAdded": "Ninguna pista añadida a «{{name}}»",
+      "already_one": "{{count}} ya estaba en la lista",
+      "already_other": "{{count}} ya estaban en la lista",
+      "notInCollection_one": "{{count}} ya no existe",
+      "notInCollection_other": "{{count}} ya no existen",
+      "ambiguous_one": "{{count}} está dos veces en la biblioteca y no se sabe cuál usar",
+      "ambiguous_other": "{{count}} están dos veces en la biblioteca y no se sabe cuáles usar",
+      "refused": {
+        "cancelled": "VirtualDJ sigue abierto. El cambio se aplicará al cerrarlo",
+        "running": "VirtualDJ se abrió antes de guardar. El cambio se aplicará al cerrarlo",
+        "unreadable": "Surco no puede cambiar las listas de VirtualDJ ahora y no se cambió nada",
+        "backupFailed": "No se pudieron copiar las listas antes de cambiarlas y no se cambió nada",
+        "writeFailed": "No se pudo guardar el cambio. Las listas siguen como estaban",
+        "readOnly": "Las listas de VirtualDJ son de solo lectura y no se cambió nada",
+        "stale": "La lista cambió en VirtualDJ. Revísala y vuelve a intentarlo",
+        "writeUnknown": "No se pudo guardar el cambio ni deshacerlo, así que las listas pueden haber cambiado. Antes de abrir VirtualDJ, recupera la carpeta MyLists de la copia más reciente en la carpeta virtualdj-backups de los datos de Surco",
+        "badName": "Ese nombre no vale para una lista. No puede estar vacío, repetirse ni llevar / o :"
+      }
+    },
     "editSerato": {
       "added_one": "{{count}} pista añadida a «{{name}}»",
       "added_other": "{{count}} pistas añadidas a «{{name}}»",

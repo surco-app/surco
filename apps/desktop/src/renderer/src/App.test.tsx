@@ -1012,6 +1012,36 @@ describe('App VirtualDJ tab', () => {
     await screen.findByTestId('palette-input')
     expect(document.getElementById('palette-option-cues-auto-mark-selected')).not.toBeNull()
   })
+
+  it('offers Pegar tracklist and Sesión automática on a VirtualDJ folder, now that its lists can be edited', async () => {
+    openVirtualdj()
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-virtualdj'))
+    fireEvent.contextMenu(await screen.findByTestId('source-node-Carpeta'))
+    expect(screen.getByTestId('source-tree-paste-tracklist')).toBeInTheDocument()
+    expect(screen.getByTestId('source-tree-session')).toBeInTheDocument()
+    expect(screen.getByTestId('source-tree-rename')).toBeInTheDocument()
+  })
+
+  it('sends a list made from the VirtualDJ tab to VirtualDJ', async () => {
+    const editPlaylist = vi
+      .fn<ProgramReads['editPlaylist']>()
+      .mockResolvedValue({ applied: true, createdId: 'Carpeta/Nueva' })
+    openVirtualdj({ dj: djReads({ virtualdj: { editPlaylist } }) })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-virtualdj'))
+    fireEvent.contextMenu(await screen.findByTestId('source-node-Carpeta'))
+    fireEvent.click(screen.getByTestId('source-tree-new-playlist-inside'))
+    const input = await screen.findByTestId('source-tree-name')
+    fireEvent.change(input, { target: { value: 'Nueva' } })
+    fireEvent.keyDown(input, { key: 'Enter' })
+    await waitFor(() =>
+      expect(editPlaylist).toHaveBeenCalledWith(
+        { kind: 'create', parentId: 'Carpeta', name: 'Nueva', folder: false },
+        'Nueva',
+      ),
+    )
+  })
 })
 
 describe('App Serato cues', () => {

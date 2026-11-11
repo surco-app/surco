@@ -2718,6 +2718,28 @@
       "removeFrom": "Aus „{{name}}“ entfernen",
       "removeSeparatorAbove": "Trenner darüber entfernen"
     },
+    "editVirtualdj": {
+      "added_one": "{{count}} Track zu „{{name}}“ hinzugefügt",
+      "added_other": "{{count}} Tracks zu „{{name}}“ hinzugefügt",
+      "noneAdded": "Keine Tracks zu „{{name}}“ hinzugefügt",
+      "already_one": "{{count}} war schon in der Liste",
+      "already_other": "{{count}} waren schon in der Liste",
+      "notInCollection_one": "{{count}} existiert nicht mehr",
+      "notInCollection_other": "{{count}} existieren nicht mehr",
+      "ambiguous_one": "{{count}} ist doppelt in der Bibliothek und Surco weiß nicht, welcher gilt",
+      "ambiguous_other": "{{count}} sind doppelt in der Bibliothek und Surco weiß nicht, welche gelten",
+      "refused": {
+        "cancelled": "VirtualDJ ist noch geöffnet. Die Änderung wird beim Schließen angewendet",
+        "running": "VirtualDJ wurde vor dem Speichern geöffnet. Die Änderung wird beim Schließen angewendet",
+        "unreadable": "Surco kann die VirtualDJ-Listen gerade nicht ändern, daher wurde nichts geändert",
+        "backupFailed": "Die Listen konnten vorher nicht gesichert werden, daher wurde nichts geändert",
+        "writeFailed": "Die Änderung konnte nicht gespeichert werden. Die Listen sind unverändert",
+        "readOnly": "Die VirtualDJ-Listen sind schreibgeschützt, daher wurde nichts geändert",
+        "stale": "Die Liste hat sich in VirtualDJ geändert. Prüfe sie und versuche es erneut",
+        "writeUnknown": "Die Änderung ließ sich weder speichern noch rückgängig machen, die Listen können sich also geändert haben. Stelle vor dem Öffnen von VirtualDJ den Ordner MyLists aus der neuesten Kopie im Ordner virtualdj-backups in den Surco-Daten wieder her",
+        "badName": "Dieser Name ist für eine Liste nicht zulässig. Er darf nicht leer sein, nicht doppelt vorkommen und weder / noch : enthalten"
+      }
+    },
     "editSerato": {
       "added_one": "{{count}} Track zu „{{name}}“ hinzugefügt",
       "added_other": "{{count}} Tracks zu „{{name}}“ hinzugefügt",

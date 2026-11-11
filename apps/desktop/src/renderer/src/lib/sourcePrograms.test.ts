@@ -163,10 +163,10 @@ describe('SOURCE_PROGRAMS says what each DJ program allows in its tab', () => {
     })
   })
 
-  it('lets the VirtualDJ tab only read, marking its tracks so none is converted, with no USB yet', () => {
+  it('lets the VirtualDJ tab edit its lists and folders with no separator and no gate, marking its tracks so none is converted, with no USB yet', () => {
     expect(shape('virtualdj')).toEqual({
       separator: false,
-      edit: null,
+      edit: { messagePrefix: 'sources.editVirtualdj.', gate: 'none' },
       fixedNode: false,
       usb: false,
       missingLibraryCheck: false,
