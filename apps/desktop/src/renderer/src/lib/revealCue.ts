@@ -1,3 +1,4 @@
+import { RAIL_PROGRAMS } from '../../../shared/djProgram'
 import { RECENTLY_ADDED_ID } from '../../../shared/recentlyAdded'
 import type { PlaylistSource, SourcePlaylistEntry } from '../../../shared/types'
 import type { TrackItem } from '../types'
@@ -43,13 +44,6 @@ export function revealTrackStep(
   return view.shown.includes(trackId) ? { do: 'select', id: trackId } : { do: 'give-up' }
 }
 
-const PICKED: Partial<Record<PlaylistSource, (track: TrackItem) => boolean>> = {
-  rekordbox: (t) => (t.playlists?.rekordbox?.targets?.length ?? 0) > 0,
-  engine: (t) => (t.playlists?.engine?.targets?.length ?? 0) > 0,
-  traktor: (t) => (t.playlists?.traktor?.targets?.length ?? 0) > 0,
-  serato: (t) => (t.playlists?.serato?.targets?.length ?? 0) > 0,
-}
-
 export function revealableIn(
   track: TrackItem,
   recent: Partial<Record<PlaylistSource, readonly SourcePlaylistEntry[]>>,
@@ -61,5 +55,5 @@ export function revealableIn(
 }
 
 export function pickedLibraries(track: TrackItem): PlaylistSource[] {
-  return (Object.keys(PICKED) as PlaylistSource[]).filter((source) => PICKED[source]?.(track))
+  return RAIL_PROGRAMS.filter((program) => (track.playlists?.[program]?.targets?.length ?? 0) > 0)
 }
