@@ -329,6 +329,26 @@ describe('Field required state', () => {
 // Across a selection, "Multiple values" was only the placeholder, which a screen reader
 // drops as soon as the field is focused, so an empty field read as "no value on any track"
 // and typing into it looked harmless while it overwrites every track's own value.
+describe('Field cleaned note', () => {
+  // The spark already marks the cleanup and the reason says what changed; «Cleaned» beside
+  // them only named the spark. A screen reader cannot see the spark, so it keeps the word.
+  it('lets the spark speak for «Cleaned» and keeps the reason and its undo', () => {
+    render(
+      <Field
+        name="title"
+        label="Title"
+        value="Alpha"
+        onChange={vi.fn()}
+        cleaned={{ reasons: 'removed a trailing space', onUndo: vi.fn() }}
+      />,
+    )
+    expect(screen.getByText('Cleaned')).toHaveClass('sr-only')
+    expect(screen.getByTestId('field-cleaned-title')).toHaveTextContent(
+      'Cleaned removed a trailing space · Undo',
+    )
+  })
+})
+
 describe('Field mixed values', () => {
   it('describes a field whose tracks disagree as holding multiple values', () => {
     render(<Field name="genre" label="Genre" value="" onChange={() => {}} mixed />)
@@ -462,6 +482,23 @@ describe('Field audio-derived suggestion', () => {
 })
 
 describe('Field previous value', () => {
+  // The strike-through already says the value is the old one; the word only spoke for it.
+  // A screen reader cannot hear a strike, so the word stays for it alone.
+  it('strikes the replaced value without a visible «Before:»', () => {
+    render(
+      <Field
+        name="title"
+        label="Title"
+        value="Release Title"
+        onChange={vi.fn()}
+        previous={{ value: 'My Title', onRestore: vi.fn() }}
+      />,
+    )
+    expect(screen.getByText('Before:')).toHaveClass('sr-only')
+    expect(screen.getByText('My Title')).toBeInTheDocument()
+    expect(screen.getByTestId('field-previous-restore-title')).toHaveTextContent('Restore')
+  })
+
   it('brings the value a release replaced back from its restore button', () => {
     const onRestore = vi.fn()
     render(

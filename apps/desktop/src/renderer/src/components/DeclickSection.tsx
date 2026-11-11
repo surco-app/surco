@@ -330,7 +330,7 @@ export function DeclickSection({
               left this looking exactly like the single-track case. */}
           {isMulti && (
             <p data-testid="declick-scope" className="mb-3 text-xs text-fg-dim">
-              {tr('declick.appliesToSelection', { count: selectedCount })}
+              {tr('declick.appliesToSelection')}
             </p>
           )}
           {/* Side by side when the panel has the room, one under the other when it does

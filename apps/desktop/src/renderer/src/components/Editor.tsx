@@ -1527,15 +1527,6 @@ export const Editor = memo(function Editor({
           )}
         </SectionPill>
       )}
-      {!isMulti && inLibrary === 'no' && (
-        <SectionPill
-          tone="neutral"
-          testid="apple-music-status"
-          icon={<Music className="h-3.5 w-3.5" aria-hidden="true" />}
-        >
-          {tr(librarySource === 'engineDj' ? 'editor.notInLibraryEngine' : 'editor.notInLibrary')}
-        </SectionPill>
-      )}
     </>
   )
 
@@ -1822,7 +1813,7 @@ export const Editor = memo(function Editor({
                             testid="output-multi"
                             buttonTestid="regenerate-output-names-all"
                             title={tr('editor.outputName')}
-                            label={tr('editor.regenerateAll', { count: multiTracks.length })}
+                            label={tr('editor.regenerateAll')}
                             icon={RefreshCw}
                             onClick={onRegenerateName}
                           />
@@ -1860,7 +1851,7 @@ export const Editor = memo(function Editor({
                             testid="trim-multi"
                             buttonTestid="trim-detect-all"
                             title={tr('trim.title')}
-                            label={tr('trim.applyAll', { count: multiTracks.length })}
+                            label={tr('trim.applyAll')}
                             icon={Scissors}
                             onClick={onTrimDetectedAll}
                           />
