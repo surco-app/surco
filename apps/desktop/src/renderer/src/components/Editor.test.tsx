@@ -1001,7 +1001,7 @@ describe('Editor Traktor Playlists field without a confirmed collection', () => 
     renderEditor({ id: 'a' }, 'wav', { visibleFields: ['traktorPlaylists'] })
     const field = await screen.findByTestId('traktor-playlists-field')
     await waitFor(() =>
-      expect(field).toHaveTextContent('Choose the collection in Settings → Output → Traktor'),
+      expect(field).toHaveTextContent('Choose the collection in Settings → DJ software → Traktor'),
     )
     expect(within(field).getByTestId('playlists-summary')).toBeDisabled()
   })

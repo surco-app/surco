@@ -1046,7 +1046,7 @@
       "pending": "Se creará al escribir la pista",
       "some": "Solo en algunas pistas. Haz clic para ponerla en todas",
       "options": "Playlists de {{app}}",
-      "unconfirmed": "Elige la colección en Ajustes → Destino → Traktor"
+      "unconfirmed": "Elige la colección en Ajustes → Programas de DJ → Traktor"
     },
     "cues": {
       "title": "Cues",
@@ -1229,10 +1229,10 @@
         "autoUnreadable": "Surco no ha podido leer el audio de esta pista",
         "saveAll_one": "Guardar {{count}} pista en Traktor",
         "saveAll_other": "Guardar {{count}} pistas en Traktor",
-        "noCollection": "Elige tu collection.nml en Ajustes → Destino → Traktor para que Surco pueda guardar",
+        "noCollection": "Elige tu collection.nml en Ajustes → Programas de DJ → Traktor para que Surco pueda guardar",
         "colours": "Traktor colorea cada cue según su tipo. Surco los guarda como cues normales, en azul, y deja el botón 1 para el AutoGrid de Traktor",
         "calls": "Traktor no tiene CALL, así que no se guardan. Solo llegan a Traktor los hot cues",
-        "otherCollection": "Traktor usa otra colección, {{path}}. Lo que guardes aquí no le llegará. Cámbiala en Ajustes → Destino → Traktor"
+        "otherCollection": "Traktor usa otra colección, {{path}}. Lo que guardes aquí no le llegará. Cámbiala en Ajustes → Programas de DJ → Traktor"
       },
       "provisional": {
         "chip": "Rejilla de Surco · {{bpm}} BPM",
@@ -2582,7 +2582,7 @@
       "serato": "No se pudo leer la biblioteca de Serato. Si acabas de cambiar algo, vuelve a Surco en unos segundos."
     },
     "notFound": {
-      "engine": "Surco no encuentra una biblioteca de Engine DJ. Indica su carpeta, la que contiene Database2, en Engine DJ dentro de Ajustes → Destino.",
+      "engine": "Surco no encuentra una biblioteca de Engine DJ. Indica su carpeta, la que contiene Database2, en Engine DJ dentro de Ajustes → Programas de DJ.",
       "serato": "Surco no encuentra una biblioteca de Serato. La busca en la carpeta _Serato_ de Música y de cada disco conectado."
     },
     "empty": "No hay playlists.",

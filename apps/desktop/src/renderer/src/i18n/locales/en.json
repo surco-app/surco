@@ -1046,7 +1046,7 @@
       "pending": "Created when the track is written",
       "some": "Only on some tracks. Click to add it to all",
       "options": "{{app}} playlists",
-      "unconfirmed": "Choose the collection in Settings → Output → Traktor"
+      "unconfirmed": "Choose the collection in Settings → DJ software → Traktor"
     },
     "cues": {
       "title": "Cues",
@@ -1229,10 +1229,10 @@
         "autoUnreadable": "Surco could not read the audio of this track",
         "saveAll_one": "Save {{count}} track to Traktor",
         "saveAll_other": "Save {{count}} tracks to Traktor",
-        "noCollection": "Choose your collection.nml in Settings → Output → Traktor so Surco can save",
+        "noCollection": "Choose your collection.nml in Settings → DJ software → Traktor so Surco can save",
         "colours": "Traktor colours each cue by its type. Surco saves them as normal cues, in blue, and leaves button 1 to Traktor's AutoGrid",
         "calls": "Traktor has no CALLs, so they are not saved. Only the hot cues reach Traktor",
-        "otherCollection": "Traktor uses another collection, {{path}}. What you save here will not reach it. Change it in Settings → Output → Traktor"
+        "otherCollection": "Traktor uses another collection, {{path}}. What you save here will not reach it. Change it in Settings → DJ software → Traktor"
       },
       "provisional": {
         "chip": "Surco grid · {{bpm}} BPM",
@@ -2582,7 +2582,7 @@
       "serato": "Couldn't read the Serato library. If you just changed something, come back to Surco in a few seconds."
     },
     "notFound": {
-      "engine": "Surco can't find an Engine DJ library. Set its folder, the one that holds Database2, under Engine DJ in Settings → Output.",
+      "engine": "Surco can't find an Engine DJ library. Set its folder, the one that holds Database2, under Engine DJ in Settings → DJ software.",
       "serato": "Surco can't find a Serato library. It looks for the _Serato_ folder in Music and on each connected drive."
     },
     "empty": "No playlists.",
