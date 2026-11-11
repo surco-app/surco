@@ -76,12 +76,14 @@ export const defaults: Settings = {
   addToRekordbox: false,
   addToTraktor: false,
   addToSerato: false,
+  addToVirtualdj: false,
   // Engine DJ's default library location on both macOS and Windows.
   engineLibraryDir: join(app.getPath('music'), 'Engine Library'),
   // Traktor's collection folder varies by version and user preference (Traktor 4.4.1, 4.5.0, …
   // often kept outside the standard location), so no reliable default — empty means the feature
   // is off until the user points Surco at their collection.nml.
   traktorNmlPath: '',
+  virtualdjLibraryDir: join(app.getPath('home'), 'Library', 'Application Support', 'VirtualDJ'),
   // Off by default, both of them: writing into a collection the user cannot rebuild is a
   // bigger step than converting a file, so it is opted into rather than out of. A user
   // already syncing with Traktor before these toggles existed keeps syncing — see
@@ -99,6 +101,7 @@ export const defaults: Settings = {
   cueFlowToTraktor: true,
   cueFlowToEngine: true,
   cueFlowToSerato: true,
+  cueFlowToVirtualdj: true,
   cueLearnFromEdits: true,
   hiddenSources: [],
   sessionWizard: DEFAULT_SESSION_WIZARD,
@@ -107,8 +110,10 @@ export const defaults: Settings = {
   traktorPlaylistsFieldOffered: false,
   enginePlaylistsFieldOffered: false,
   seratoPlaylistsFieldOffered: false,
+  virtualdjPlaylistsFieldOffered: false,
   syncEngineDj: false,
   syncSerato: false,
+  syncVirtualdj: false,
   // Empty means "look where rekordbox keeps it", which is one fixed place per platform —
   // unlike Traktor's collection, whose folder varies by version and user preference and
   // so has to be pointed at by hand. This is only an override for a collection kept
@@ -208,6 +213,7 @@ export const LOCAL_KEYS = [
   'traktorNmlPath',
   // Same for the rekordbox collection override.
   'rekordboxDbPath',
+  'virtualdjLibraryDir',
   'completeCuesOnClose',
   'hasSeenOnboarding',
   'conversionCount',
@@ -388,6 +394,7 @@ function mergeSettings(base: Settings, patch: Partial<Settings>): Settings {
     cueFlowToTraktor: (patch.cueFlowToTraktor ?? base.cueFlowToTraktor) !== false,
     cueFlowToEngine: (patch.cueFlowToEngine ?? base.cueFlowToEngine) !== false,
     cueFlowToSerato: (patch.cueFlowToSerato ?? base.cueFlowToSerato) !== false,
+    cueFlowToVirtualdj: (patch.cueFlowToVirtualdj ?? base.cueFlowToVirtualdj) !== false,
     cueLearnFromEdits: (patch.cueLearnFromEdits ?? base.cueLearnFromEdits) !== false,
     hiddenSources: normalizeHiddenSources(patch.hiddenSources ?? base.hiddenSources),
     sessionWizard: normalizeSessionWizard(patch.sessionWizard ?? base.sessionWizard),
@@ -570,6 +577,7 @@ const MACHINE_PATH_KEYS = [
   'engineLibraryDir',
   'traktorNmlPath',
   'rekordboxDbPath',
+  'virtualdjLibraryDir',
 ] as const satisfies readonly (keyof Settings)[]
 
 export function replaceSettings(imported: Partial<Settings>): Settings {

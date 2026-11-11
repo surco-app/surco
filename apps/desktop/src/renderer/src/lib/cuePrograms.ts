@@ -69,6 +69,19 @@ export const CUE_PROGRAMS: Record<DjProgram, CueProgram> = {
     saveAllKey: 'editor.cues.serato.saveAll',
     fixedGrid: 'editor.cues.grid.serato',
   },
+  virtualdj: {
+    slots: { kinds: HOT_KINDS, pairCalls: false },
+    readsAudio: true,
+    surcoGrid: false,
+    writesCalls: false,
+    fixedColour: null,
+    colourHelp: null,
+    collectionGate: null,
+    callsNote: null,
+    runningNote: { key: 'editor.cues.virtualdj.waiting', testId: 'cues-virtualdj-waiting' },
+    saveAllKey: 'editor.cues.virtualdj.saveAll',
+    fixedGrid: null,
+  },
 }
 
 export const cueProgramOf = (contentId: string): CueProgram => CUE_PROGRAMS[programOf(contentId)]

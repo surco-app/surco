@@ -35,6 +35,7 @@ export interface SyncedDraft extends Record<DjAddKey | DjSyncKey, boolean> {
   cueFlowToTraktor: boolean
   cueFlowToEngine: boolean
   cueFlowToSerato: boolean
+  cueFlowToVirtualdj: boolean
   cueLearnFromEdits: boolean
   hiddenSources: PlaylistSource[]
   filenameFormat: string
@@ -88,6 +89,7 @@ export interface LocalDraft {
   engineLibraryDir: string
   traktorNmlPath: string
   rekordboxDbPath: string
+  virtualdjLibraryDir: string
   betaUpdates: boolean
   autoMatch: boolean
   beatportUsername: string
@@ -104,6 +106,7 @@ export function pickLocal(s: Settings): LocalDraft {
     engineLibraryDir: s.engineLibraryDir,
     traktorNmlPath: s.traktorNmlPath,
     rekordboxDbPath: s.rekordboxDbPath,
+    virtualdjLibraryDir: s.virtualdjLibraryDir,
     betaUpdates: s.betaUpdates,
     autoMatch: s.autoMatch,
     beatportUsername: s.beatportUsername,
@@ -135,6 +138,7 @@ export function pickSynced(s: Settings): SyncedDraft {
     addToRekordbox: s.addToRekordbox,
     addToTraktor: s.addToTraktor,
     addToSerato: s.addToSerato,
+    addToVirtualdj: s.addToVirtualdj,
     syncTraktor: s.syncTraktor,
     syncRekordbox: s.syncRekordbox,
     completeCuesOnClose: s.completeCuesOnClose,
@@ -148,10 +152,12 @@ export function pickSynced(s: Settings): SyncedDraft {
     cueFlowToTraktor: s.cueFlowToTraktor,
     cueFlowToEngine: s.cueFlowToEngine,
     cueFlowToSerato: s.cueFlowToSerato,
+    cueFlowToVirtualdj: s.cueFlowToVirtualdj,
     cueLearnFromEdits: s.cueLearnFromEdits,
     hiddenSources: s.hiddenSources,
     syncEngineDj: s.syncEngineDj,
     syncSerato: s.syncSerato,
+    syncVirtualdj: s.syncVirtualdj,
     filenameFormat: s.filenameFormat,
     titleFormat: s.titleFormat,
     autoApplyFilename: s.autoApplyFilename,

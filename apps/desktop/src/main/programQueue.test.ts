@@ -42,6 +42,7 @@ function setup(over: Partial<ProgramQueueSpec<RekordboxRepoint>> = {}) {
       traktor: { isRunning: async () => false },
       engine: { isRunning: vi.fn(async () => running.now) },
       serato: { isRunning: vi.fn(async () => running.now) },
+      virtualdj: { isRunning: async () => false },
     } satisfies ProgramQueueDeps['processes'],
   }
   const spec: ProgramQueueSpec<RekordboxRepoint> = {

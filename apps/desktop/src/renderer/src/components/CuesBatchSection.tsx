@@ -24,12 +24,13 @@ import { useAppSettings } from '../lib/settingsContext'
 import { saveAllKey } from './CuesSection'
 import { Select } from './Select'
 
-const LIBRARIES = programsInOrder(['rekordbox', 'traktor', 'engine', 'serato'])
+const LIBRARIES = programsInOrder(['rekordbox', 'traktor', 'engine', 'serato', 'virtualdj'])
 const LIBRARY_NAME: Record<CueLibrary, string> = {
   rekordbox: 'rekordbox',
   traktor: 'Traktor',
   engine: 'Engine DJ',
   serato: 'Serato',
+  virtualdj: 'VirtualDJ',
 }
 
 const BUTTON =
@@ -75,6 +76,7 @@ export function CuesBatchSection({
       settings.cueFlowToTraktor,
       settings.cueFlowToEngine,
       settings.cueFlowToSerato,
+      settings.cueFlowToVirtualdj,
     ],
     queryFn: () => twinPlansOf(queryClient, drafts, settings),
     enabled: drafts.length > 0,

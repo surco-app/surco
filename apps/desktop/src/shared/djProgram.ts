@@ -1,14 +1,16 @@
 import { isEngineContent } from './engineContent'
 import { isSeratoContent } from './seratoContent'
 import { isTraktorContent } from './traktorContent'
+import { isVirtualdjContent } from './virtualdjContent'
 
-export type DjProgram = 'rekordbox' | 'traktor' | 'engine' | 'serato'
+export type DjProgram = 'rekordbox' | 'traktor' | 'engine' | 'serato' | 'virtualdj'
 
 export const PROGRAM_CAN = {
   rekordbox: { write: true, usb: true },
   traktor: { write: true, usb: true },
   engine: { write: true, usb: true },
   serato: { write: false, usb: true },
+  virtualdj: { write: false, usb: false },
 } as const satisfies { [P in DjProgram]: { write: boolean; usb: boolean } }
 
 type ProgramsThatCan<K extends 'write' | 'usb'> = {
@@ -25,13 +27,20 @@ export type CueProgram = DjProgram
 
 export type LibraryProgram = DjProgram
 
-export const DJ_PROGRAMS = programsInOrder(['rekordbox', 'traktor', 'engine', 'serato'])
+export const DJ_PROGRAMS = programsInOrder([
+  'rekordbox',
+  'traktor',
+  'engine',
+  'serato',
+  'virtualdj',
+])
 
 export const LIBRARY_PROGRAMS: readonly LibraryProgram[] = programsInOrder([
   'rekordbox',
   'traktor',
   'engine',
   'serato',
+  'virtualdj',
 ])
 
 export const WRITABLE_PROGRAMS = writableInOrder(['rekordbox', 'traktor', 'engine'])
@@ -44,13 +53,20 @@ export const READ_ONLY_PROGRAMS: readonly ReadOnlyProgram[] = DJ_PROGRAMS.filter
   (program): program is ReadOnlyProgram => !PROGRAM_CAN[program].write,
 )
 
-export const RAIL_PROGRAMS = programsInOrder(['rekordbox', 'engine', 'traktor', 'serato'])
+export const RAIL_PROGRAMS = programsInOrder([
+  'rekordbox',
+  'engine',
+  'traktor',
+  'serato',
+  'virtualdj',
+])
 
 export const CUE_PROGRAMS: readonly CueProgram[] = programsInOrder([
   'rekordbox',
   'engine',
   'traktor',
   'serato',
+  'virtualdj',
 ])
 
 type AllOf<T extends readonly DjProgram[]> = [Exclude<DjProgram, T[number]>] extends [never]
@@ -83,6 +99,7 @@ const CONTENT_OF: Record<Exclude<DjProgram, 'rekordbox'>, (contentId: string) =>
   traktor: isTraktorContent,
   engine: isEngineContent,
   serato: isSeratoContent,
+  virtualdj: isVirtualdjContent,
 }
 
 export function programOf(contentId: string): DjProgram {

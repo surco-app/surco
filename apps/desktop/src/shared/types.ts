@@ -227,12 +227,14 @@ export interface Settings {
   addToRekordbox: boolean
   addToTraktor: boolean
   addToSerato: boolean
+  addToVirtualdj: boolean
   // The Engine DJ library folder whose Database2/m.db conversions are registered in.
   // Machine-local like outputDir — a filesystem path means nothing on another machine.
   engineLibraryDir: string
   // Traktor's collection.nml path. Machine-local — the folder doesn't exist on another Mac.
   // Empty by default: the feature is off until the user points Surco at their collection.
   traktorNmlPath: string
+  virtualdjLibraryDir: string
   // Whether a conversion writes back into each DJ collection. Separate from the paths
   // below: a path says WHERE the collection is, never whether to touch it.
   syncTraktor: boolean
@@ -249,6 +251,7 @@ export interface Settings {
   cueFlowToTraktor: boolean
   cueFlowToEngine: boolean
   cueFlowToSerato: boolean
+  cueFlowToVirtualdj: boolean
   cueLearnFromEdits: boolean
   hiddenSources: PlaylistSource[]
   sessionWizard: SessionWizardSettings
@@ -257,8 +260,10 @@ export interface Settings {
   traktorPlaylistsFieldOffered: boolean
   enginePlaylistsFieldOffered: boolean
   seratoPlaylistsFieldOffered: boolean
+  virtualdjPlaylistsFieldOffered: boolean
   syncEngineDj: boolean
   syncSerato: boolean
+  syncVirtualdj: boolean
   // Override for the rekordbox collection; empty means the standard location is used.
   rekordboxDbPath: string
   // Milliseconds every carried cue is nudged by, on top of the route calibration

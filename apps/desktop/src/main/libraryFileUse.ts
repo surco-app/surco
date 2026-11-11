@@ -10,9 +10,11 @@ import { engineRowFinder } from './engineRepoint'
 import { toNmlLocation } from './ffmpeg'
 import { type PathMatchOptions, pathKey } from './libraryPathKey'
 import { findTrackByPath, isAmbiguous, openRekordboxDb, rekordboxRawKey } from './rekordboxDb'
-import { readSeratoLibrary, type SeratoLibrary, type SeratoLibraryRoot } from './seratoLibrary'
+import { readSeratoLibrary, type SeratoLibraryRoot } from './seratoLibrary'
 import { attr, findEntries, nmlCopyInfo } from './traktorNml'
 import { traktorFileOf } from './traktorPlaylists'
+import { readVirtualdjLibrary } from './virtualdjLibrary'
+import type { VirtualdjNode } from './virtualdjLists'
 
 // Each library's location, or '' when its sync is off.
 export type SyncedLibraries = Record<WritableProgram, string>
@@ -22,6 +24,7 @@ interface LocationOf {
   engine: string
   traktor: string
   serato: SeratoLibraryRoot[]
+  virtualdj: string
 }
 
 export type LibraryLocations = { [P in LibraryProgram]: LocationOf[P] }
@@ -30,7 +33,7 @@ export type ReadOnlyLibraries = Omit<LibraryLocations, WritableProgram>
 
 const LIBRARY_ORDER = writableInOrder(['rekordbox', 'engine', 'traktor'])
 
-const PROGRAM_ORDER = programsInOrder(['rekordbox', 'engine', 'traktor', 'serato'])
+const PROGRAM_ORDER = programsInOrder(['rekordbox', 'engine', 'traktor', 'serato', 'virtualdj'])
 
 // Read only, and it throws when a library it should look in cannot be read: the caller
 // keeps the file then, since that library may still use it.
@@ -89,11 +92,31 @@ const FILE_USE: FileUseOf = {
         const library = readSeratoLibrary(roots)
         if (library.unreadable.length > 0)
           throw new Error(`Serato library unreadable: ${library.unreadable.join(', ')}`)
-        seratoFile = seratoFileFinder(library, options)
+        seratoFile = fileFinder(
+          library.tracks.map((t) => t.file),
+          options,
+        )
       }
       return seratoFile(path) !== undefined
     }
   },
+  virtualdj: (dir, options) => {
+    let virtualdjFile: ((path: string) => string | undefined) | undefined
+    return async (path) => {
+      if (!virtualdjFile) {
+        const library = readVirtualdjLibrary(dir)
+        virtualdjFile = fileFinder(
+          [...library.songs.map((s) => s.path), ...listPaths(library.lists)],
+          options,
+        )
+      }
+      return virtualdjFile(path) !== undefined
+    }
+  },
+}
+
+function listPaths(nodes: VirtualdjNode[]): string[] {
+  return nodes.flatMap((n) => [...n.paths, ...listPaths(n.children ?? [])])
 }
 
 function fileUseOf<P extends LibraryProgram>(
@@ -377,22 +400,32 @@ const TRACK_OF: TrackOf = {
       : undefined
   },
   serato: async (roots, path, options) => {
-    const found = seratoFileFinder(readSeratoLibrary(roots), options)(path)
+    const found = fileFinder(
+      readSeratoLibrary(roots).tracks.map((t) => t.file),
+      options,
+    )(path)
     return found ? `serato:${found}` : undefined
+  },
+  virtualdj: async (dir, path, options) => {
+    const found = fileFinder(
+      readVirtualdjLibrary(dir).songs.map((s) => s.path),
+      options,
+    )(path)
+    return found ? `virtualdj:${found}` : undefined
   },
 }
 
-function seratoFileFinder(
-  library: SeratoLibrary,
+function fileFinder(
+  files: string[],
   options: PathMatchOptions,
 ): (path: string) => string | undefined {
   const key = pathKey(options)
   return (path) => {
     const wanted = key(path)
     const name = basename(path.normalize('NFC')).toLowerCase()
-    return library.tracks.find(
-      (t) => basename(t.file.normalize('NFC')).toLowerCase() === name && key(t.file) === wanted,
-    )?.file
+    return files.find(
+      (file) => basename(file.normalize('NFC')).toLowerCase() === name && key(file) === wanted,
+    )
   }
 }
 

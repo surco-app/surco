@@ -14,7 +14,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { BrowserWindow, dialog, ipcMain } from 'electron'
 import log from 'electron-log/main'
-import type { DjProgram } from '../shared/djProgram'
+import type { UsbProgram } from '../shared/djProgram'
 import type { UsbExportRequest, UsbFolderPick, UsbVolumeList } from '../shared/types'
 import type { DetailKeyOf } from './djProcesses'
 import { isEngineDjRunning } from './engineProcess'
@@ -310,7 +310,7 @@ export function registerUsbExportIpc(opts: {
   })
   ipcMain.handle(
     'usb:pickFolder',
-    async (e, from?: Exclude<DjProgram, 'rekordbox'>): Promise<UsbFolderPick | null> => {
+    async (e, from?: Exclude<UsbProgram, 'rekordbox'>): Promise<UsbFolderPick | null> => {
       const w = BrowserWindow.fromWebContents(e.sender)
       const options = {
         properties: ['openDirectory', 'createDirectory'] as Array<

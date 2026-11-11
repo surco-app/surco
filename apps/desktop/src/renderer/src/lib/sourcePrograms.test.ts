@@ -35,6 +35,13 @@ describe('SOURCE_READ reads each DJ program’s tab through window.api.dj, namin
     ['serato', 'playlist', ['Sets%%Friday']],
     ['serato', 'membership', [['/m/a.wav']]],
     ['serato', 'collection', []],
+    ['virtualdj', 'available', []],
+    ['virtualdj', 'tree', []],
+    ['virtualdj', 'recentCount', []],
+    ['virtualdj', 'trackCount', []],
+    ['virtualdj', 'playlist', ['Carpeta/Dentro']],
+    ['virtualdj', 'membership', [['/m/a.wav']]],
+    ['virtualdj', 'collection', []],
   ] as const)('reads %s’s %s through window.api.dj at call time', async (program, read, args) => {
     const answer = Symbol(read)
     const spy = vi.fn(async () => answer)
@@ -50,8 +57,8 @@ describe('SOURCE_READ reads each DJ program’s tab through window.api.dj, namin
 })
 
 describe('RAIL_PROGRAMS', () => {
-  it('draws rekordbox, then Engine DJ, then Traktor, after Music, as the rail always has, and Serato last', () => {
-    expect(RAIL_PROGRAMS).toEqual(['rekordbox', 'engine', 'traktor', 'serato'])
+  it('draws rekordbox, then Engine DJ, then Traktor, after Music, as the rail always has, then Serato and VirtualDJ last', () => {
+    expect(RAIL_PROGRAMS).toEqual(['rekordbox', 'engine', 'traktor', 'serato', 'virtualdj'])
   })
 })
 
@@ -153,6 +160,23 @@ describe('SOURCE_PROGRAMS says what each DJ program allows in its tab', () => {
       membershipKey: 'serato-membership',
       invalidatesOnEdit: true,
       crates: true,
+    })
+  })
+
+  it('lets the VirtualDJ tab only read, marking its tracks so none is converted, with no USB yet', () => {
+    expect(shape('virtualdj')).toEqual({
+      separator: false,
+      edit: null,
+      fixedNode: false,
+      usb: false,
+      missingLibraryCheck: false,
+      marksOrigin: true,
+      fillsLoaded: false,
+      addsUncollected: true,
+      fieldTestIdPrefix: 'virtualdj-',
+      membershipKey: 'virtualdj-membership',
+      invalidatesOnEdit: true,
+      crates: false,
     })
   })
 

@@ -276,6 +276,11 @@ export function SettingsModal({
     setRekordboxCollection(path)
   }
 
+  async function changeVirtualdjDir(): Promise<void> {
+    const path = await window.api.dj.pickLibraryPath('virtualdj')
+    if (path) patchLocal('virtualdjLibraryDir', path)
+  }
+
   // Where settings.json lives — null is the app default. Loaded on open because it
   // isn't part of Settings (it's the pointer that says where Settings are read from).
   const [configDir, setConfigDir] = useState<string | null>(null)
@@ -541,6 +546,7 @@ export function SettingsModal({
                 onChangeTraktorNmlPath={changeTraktorNmlPath}
                 rekordboxCollection={rekordboxCollection}
                 onChangeRekordboxDbPath={() => void changeRekordboxDbPath()}
+                onChangeVirtualdjDir={() => void changeVirtualdjDir()}
                 detectedNmlPath={detectedNmlPath}
                 onAcceptDetectedNmlPath={acceptDetectedNmlPath}
               />
@@ -555,6 +561,7 @@ export function SettingsModal({
                 onChangeTraktorNmlPath={changeTraktorNmlPath}
                 rekordboxCollection={rekordboxCollection}
                 onChangeRekordboxDbPath={() => void changeRekordboxDbPath()}
+                onChangeVirtualdjDir={() => void changeVirtualdjDir()}
                 detectedNmlPath={detectedNmlPath}
                 onAcceptDetectedNmlPath={acceptDetectedNmlPath}
                 searchAnchor={selectedTab === 'programs' ? selectedAnchor : undefined}

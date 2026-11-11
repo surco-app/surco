@@ -4,11 +4,13 @@ import type { WritableProgram } from '../shared/djProgram'
 import {
   anyDjProgramRunning,
   createEnsureClosed,
+  DJ_PROCESSES,
   type ProgramProcess,
   QUIT_REASONS,
   type QUIT_TEXT,
   reasonOfDetail,
 } from './djProcesses'
+import { isVirtualdjRunning } from './virtualdjProcess'
 
 function deferred<T>() {
   let resolve: (v: T) => void = () => {}
@@ -240,15 +242,32 @@ describe('anyDjProgramRunning', () => {
   // when a DJ program is open, the one moment ffmpeg could steal CPU from a set.
   const stopped = { isRunning: async () => false }
   const open = { isRunning: async () => true }
-  it('is true when any of the four programs is open', async () => {
+  it('is true when any of the programs is open', async () => {
     expect(
       await anyDjProgramRunning({
         rekordbox: stopped,
         traktor: stopped,
         engine: stopped,
         serato: open,
+        virtualdj: stopped,
       }),
     ).toBe(true)
+  })
+
+  it('is true when only VirtualDJ is open, since a set in VirtualDJ needs the CPU as much', async () => {
+    expect(
+      await anyDjProgramRunning({
+        rekordbox: stopped,
+        traktor: stopped,
+        engine: stopped,
+        serato: stopped,
+        virtualdj: open,
+      }),
+    ).toBe(true)
+  })
+
+  it('asks the VirtualDJ process whether VirtualDJ is open', () => {
+    expect(DJ_PROCESSES.virtualdj.isRunning).toBe(isVirtualdjRunning)
   })
 
   it('is false when none is open', async () => {
@@ -258,6 +277,7 @@ describe('anyDjProgramRunning', () => {
         traktor: stopped,
         engine: stopped,
         serato: stopped,
+        virtualdj: stopped,
       }),
     ).toBe(false)
   })

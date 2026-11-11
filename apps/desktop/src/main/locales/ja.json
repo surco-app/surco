@@ -85,6 +85,7 @@
   "dialogPickTracks": "トラックを選択",
   "dialogOutputDir": "出力フォルダー",
   "dialogEngineLibrary": "Engine DJ ライブラリ",
+  "dialogVirtualdjLibrary": "VirtualDJ フォルダー",
   "dialogTraktorCollection": "Traktor コレクション",
   "dialogRekordboxCollection": "rekordbox コレクション",
   "dialogExportCover": "アートワークをエクスポート",

@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import log from 'electron-log/main'
 import {
   type DjProgram,
+  type LibraryProgram,
   READ_ONLY_PROGRAMS,
   WRITABLE_PROGRAMS,
   type WritableProgram,
@@ -115,7 +116,20 @@ export function rekordboxCollectionPath(): string {
     : ''
 }
 
-const NO_LIBRARIES: LibraryLocations = { rekordbox: '', engine: '', traktor: '', serato: [] }
+const NO_LIBRARIES: LibraryLocations = {
+  rekordbox: '',
+  engine: '',
+  traktor: '',
+  serato: [],
+  virtualdj: '',
+}
+
+function onlyLibrary<P extends LibraryProgram>(
+  program: P,
+  location: LibraryLocations[P],
+): LibraryLocations {
+  return { ...NO_LIBRARIES, [program]: location }
+}
 
 export async function librariesKeepingOriginal(
   path: string,
@@ -135,7 +149,7 @@ export async function librariesKeepingOriginal(
   const held: DjProgram[] = []
   for (const program of WRITABLE_PROGRAMS) {
     if (!locations[program]) continue
-    const only = { ...NO_LIBRARIES, [program]: locations[program] }
+    const only = onlyLibrary(program, locations[program])
     if (await djLibraryFileUse(only, { realPath: (p: string) => realpathSync(p) })(path))
       held.push(program)
   }
@@ -150,7 +164,7 @@ export async function librariesKeepingOriginal(
   const readOnly = deps.readOnlyLibraries()
   for (const program of READ_ONLY_PROGRAMS) {
     if (readOnly[program].length === 0) continue
-    const only = { ...NO_LIBRARIES, [program]: readOnly[program] }
+    const only = onlyLibrary(program, readOnly[program])
     if (await djLibraryFileUse(only, { realPath: (p: string) => realpathSync(p) })(path))
       held.push(program)
   }
@@ -759,6 +773,7 @@ export function syncTagsInLibraries(
       serato
         ? syncSeratoTags(updates, { ...serato, enabled: getSettings().syncSerato })
         : { outcome: 'nothing' },
+    virtualdj: async () => ({ outcome: 'nothing' }),
     warn: (library, error) => log.warn(`library:syncTags ${library} failed`, error),
     ...(updates.length > 0 && { begin: beginMoment }),
   })

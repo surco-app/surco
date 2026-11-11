@@ -115,6 +115,7 @@ interface ResolvedSettings extends Record<DjAddKey, boolean> {
   cueFlowToTraktor: boolean
   cueFlowToEngine: boolean
   cueFlowToSerato: boolean
+  cueFlowToVirtualdj: boolean
   cueLearnFromEdits: boolean
   hiddenSources: PlaylistSource[]
   sessionWizard: SessionWizardSettings
@@ -140,6 +141,7 @@ const DEFAULTS: ResolvedSettings = {
   addToRekordbox: false,
   addToTraktor: false,
   addToSerato: false,
+  addToVirtualdj: false,
   overwriteOriginal: false,
   backupPolicy: 'audioChanges',
   convertBesideOriginal: false,
@@ -178,6 +180,7 @@ const DEFAULTS: ResolvedSettings = {
   cueFlowToTraktor: true,
   cueFlowToEngine: true,
   cueFlowToSerato: true,
+  cueFlowToVirtualdj: true,
   cueLearnFromEdits: true,
   hiddenSources: [],
   sessionWizard: DEFAULT_SESSION_WIZARD,
@@ -203,6 +206,7 @@ function resolveSettings(settings: Partial<Settings> | null): ResolvedSettings {
     addToRekordbox: settings.addToRekordbox ?? DEFAULTS.addToRekordbox,
     addToTraktor: settings.addToTraktor ?? DEFAULTS.addToTraktor,
     addToSerato: settings.addToSerato ?? DEFAULTS.addToSerato,
+    addToVirtualdj: settings.addToVirtualdj ?? DEFAULTS.addToVirtualdj,
     overwriteOriginal: settings.overwriteOriginal ?? DEFAULTS.overwriteOriginal,
     backupPolicy: settings.backupPolicy ?? DEFAULTS.backupPolicy,
     convertBesideOriginal: settings.convertBesideOriginal ?? DEFAULTS.convertBesideOriginal,
@@ -241,6 +245,7 @@ function resolveSettings(settings: Partial<Settings> | null): ResolvedSettings {
     cueFlowToTraktor: settings.cueFlowToTraktor !== false,
     cueFlowToEngine: settings.cueFlowToEngine !== false,
     cueFlowToSerato: settings.cueFlowToSerato !== false,
+    cueFlowToVirtualdj: settings.cueFlowToVirtualdj !== false,
     cueLearnFromEdits: settings.cueLearnFromEdits !== false,
     hiddenSources: normalizeHiddenSources(settings.hiddenSources),
     sessionWizard: normalizeSessionWizard(settings.sessionWizard),

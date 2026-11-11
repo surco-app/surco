@@ -37,6 +37,7 @@ export const SOURCE_READ: Record<DjProgram, SourceRead> = {
   traktor: sourceRead('traktor', { collection: true }),
   engine: sourceRead('engine', { collection: false }),
   serato: sourceRead('serato', { collection: true }),
+  virtualdj: sourceRead('virtualdj', { collection: true }),
 }
 
 export type EditMessagePrefix =
@@ -155,6 +156,20 @@ export const SOURCE_PROGRAMS: {
     membershipKey: 'serato-membership',
     invalidatesOnEdit: true,
     crates: true,
+  },
+  virtualdj: {
+    separator: null,
+    edit: null,
+    fixedNode: null,
+    usb: false,
+    missingLibraryCheck: false,
+    marksOrigin: true,
+    fillsLoaded: false,
+    addsUncollected: true,
+    fieldTestIdPrefix: 'virtualdj-',
+    membershipKey: 'virtualdj-membership',
+    invalidatesOnEdit: true,
+    crates: false,
   },
 }
 

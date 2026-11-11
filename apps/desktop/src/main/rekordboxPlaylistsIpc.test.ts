@@ -197,6 +197,7 @@ describe('rekordboxEdit', () => {
         engine: null,
         traktor: null,
         serato: null,
+        virtualdj: null,
       },
     })
     const read = rekordboxRead(

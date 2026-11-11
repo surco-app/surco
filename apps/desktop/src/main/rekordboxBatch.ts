@@ -173,6 +173,7 @@ export const REPOINT_PLAYLISTS: Record<
   traktor: (r) => r.traktorPlaylists,
   engine: (r) => r.enginePlaylists,
   serato: (r) => r.seratoPlaylists,
+  virtualdj: () => undefined,
 }
 
 const ATTACH_PLAYLISTS: Record<
@@ -196,6 +197,7 @@ const ATTACH_PLAYLISTS: Record<
     ...repoint,
     seratoPlaylists: { wanted, base: base ?? [] },
   }),
+  virtualdj: (repoint) => repoint,
 }
 
 export function attachPlaylists(to: string, program: LibraryProgram, choice: PlaylistChoice): void {

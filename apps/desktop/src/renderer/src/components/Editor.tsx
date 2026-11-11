@@ -27,7 +27,7 @@ import { effectiveMeta, fieldValue, isCustomTag } from '../../../shared/customFi
 import { WRITABLE_PROGRAMS, writableInOrder } from '../../../shared/djProgram'
 import { EDITOR_SECTION_GROUP } from '../../../shared/editorSections'
 import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../../../shared/format'
-import { fromReadOnlyProgram } from '../../../shared/trackOrigin'
+import { READ_ONLY_BLOCKED, readOnlyProgramsOf } from '../../../shared/trackOrigin'
 import type {
   DeclickConfig,
   FormatSetting,
@@ -1002,11 +1002,12 @@ export const Editor = memo(function Editor({
   const againLeftOut = isMulti
     ? leftOutNote(convertGate(multiTracks, requiredFields, customFields, libraryIndex, true), tr)
     : null
-  const seratoRows = !isMulti && fromReadOnlyProgram(item)
+  const blockedBy = isMulti ? undefined : readOnlyProgramsOf(item)[0]
+  const seratoRows = blockedBy !== undefined
   const missing = isMulti || seratoRows ? [] : missingRequired(resolvedMeta, requiredFields)
   const firstMissing = (multiGate?.missing.fields ?? missing)[0]
   const incomplete = isMulti ? againLeftOut !== null : seratoRows || missing.length > 0
-  const seratoReason = seratoRows ? [tr('errors.seratoBlocked')] : []
+  const seratoReason = blockedBy ? [tr(`errors.${READ_ONLY_BLOCKED[blockedBy]}`)] : []
   const otherReason = missing.length
     ? tr('editor.missingRequired', {
         fields: missing.map((key) => tr(`fields.${key}`)).join(', '),
@@ -1182,6 +1183,7 @@ export const Editor = memo(function Editor({
       traktor: traktorPlaylists,
       engine: enginePlaylists,
       serato: seratoPlaylists,
+      virtualdj: undefined,
     }),
     [rekordboxPlaylists, traktorPlaylists, enginePlaylists, seratoPlaylists],
   )

@@ -190,6 +190,8 @@
     "leftOutMissing_other": "{{count}}件は{{fields}}がないため対象外",
     "leftOutSerato_one": "{{count}}件は対象外、Serato でトラックとキューが失われます",
     "leftOutSerato_other": "{{count}}件は対象外、Serato でトラックとキューが失われます",
+    "leftOutVirtualdj_one": "{{count}}件は対象外、VirtualDJ でトラックとキューが失われます",
+    "leftOutVirtualdj_other": "{{count}}件は対象外、VirtualDJ でトラックとキューが失われます",
     "convertSelected_one": "選択した {{count}} 件を変換",
     "convertSelected_other": "選択した {{count}} 件を変換",
     "convertSomeSelected": "選択した {{total}} 件のうち {{ready}} 件を変換",
@@ -356,6 +358,7 @@
     "conversionCancelled": "変換をキャンセルしました。",
     "verifyUnknownTrack": "この確認はもう行えません。もう一度確認するには、トラックを再変換してください。",
     "seratoBlocked": "Serato でトラックとそのキューが失われます",
+    "virtualdjBlocked": "VirtualDJ でトラックとそのキューが失われます",
     "sourceTagsUnread": "このファイルのタグを読み取れなかったため、変換せずにそのままにしました：変換すると既存のタグが削除されます。再度読み込み直してやり直してください。",
     "coverDownloadFailed": "アートワークのダウンロードに失敗しました。",
     "coverNotImage": "そのアドレスは画像を示していません。",
@@ -1196,6 +1199,17 @@
         "calls": "Serato には CALL がないため、保存されません。Serato に反映されるのはホットキューのみです",
         "waiting": "Serato が開いています。変更は Serato を閉じたときに保存されます"
       },
+      "virtualdj": {
+        "unreadable": "Surco はまだ VirtualDJ のキューを読み取れません",
+        "save": "VirtualDJ に保存",
+        "unanalysed": "VirtualDJ はまだこのトラックを解析していません",
+        "queuedStale": "保留中の保存は VirtualDJ でトラックが変更される前のもので、すでに古くなっています。現在 VirtualDJ にある内容を表示しています。",
+        "saveFailed": "VirtualDJ に保存できませんでした。キューはまだ保存されていません",
+        "autoUnreadable": "Surco はこのトラックの音声を読み取れませんでした",
+        "saveAll_one": "{{count}} トラックを VirtualDJ に保存",
+        "saveAll_other": "{{count}} トラックを VirtualDJ に保存",
+        "waiting": "VirtualDJ が開いています。閉じるとリストが変わることがあります"
+      },
       "traktor": {
         "save": "Traktor に保存",
         "unanalysed": "Traktor はまだこのトラックを解析していません",
@@ -1328,7 +1342,8 @@
     "rekordboxPlaylists": "rekordbox プレイリスト",
     "traktorPlaylists": "Traktor プレイリスト",
     "enginePlaylists": "Engine DJ プレイリスト",
-    "seratoPlaylists": "Serato クレート"
+    "seratoPlaylists": "Serato クレート",
+    "virtualdjPlaylists": "VirtualDJ リスト"
   },
   "declick": {
     "cueWarning": "ALACはTraktorのキューやビートグリッドを保持しません：変換すると失われます。",
@@ -1604,13 +1619,15 @@
       "rekordbox": "rekordbox",
       "engine": "Engine DJ",
       "traktor": "Traktor",
-      "serato": "Serato"
+      "serato": "Serato",
+      "virtualdj": "VirtualDJ"
     },
     "sourceAppleMusicUnavailable": "macOS でのみ利用できます",
     "sourceRekordboxUnavailable": "rekordbox コレクションが見つかりませんでした",
     "sourceEngineUnavailable": "Engine DJ ライブラリが見つかりませんでした",
     "sourceTraktorUnavailable": "Traktor コレクションが見つかりませんでした",
     "sourceSeratoUnavailable": "Serato ライブラリが見つかりませんでした",
+    "sourceVirtualdjUnavailable": "VirtualDJ ライブラリが見つかりませんでした",
     "sourcesHint": "ライブラリを非表示にしてもサイドバーから消えるだけで、変換時の同期には影響しません。",
     "updates": "アップデート",
     "betaUpdates": "ベータ版を取得",
@@ -1889,6 +1906,9 @@
     "syncEngineDj": "変換時にEngine DJライブラリを更新する",
     "syncEngineDjHint": "Engine DJライブラリにあるトラックを変換すると、そのエントリは新しいファイルに従い、プレイリストやキューポイントを保持します。すぐ上で選択したライブラリを使用します。書き込み前にSurcoは実行全体のバックアップと各書き込みのバックアップをバックアップフォルダー（設定 → 詳細）に保存し、Engine DJが開いている間は書き込みを行いません。",
     "seratoSync": "Serato",
+    "virtualdjLibrary": "VirtualDJ",
+    "virtualdjLibraryDir": "VirtualDJ フォルダー",
+    "virtualdjLibraryDirHint": "VirtualDJ が database.xml と MyLists を保存しているフォルダーです。現在 Surco は読み取るだけで、何も変更しません。",
     "syncSerato": "Serato ライブラリ",
     "syncSeratoHint": "Serato を閉じたときに Surco が書き込みます。更新はレビューのタグ変更を反映し、追加は変換したトラックも加えます",
     "syncSeratoIdle": "Surco は Serato ライブラリを見つけられません",
@@ -2029,6 +2049,7 @@
         "traktor": "ホットキューのみ（青、A から G まで）。Traktor は起動時にコレクションを読み込むため、保存時に Surco が Traktor を閉じるよう求めます。",
         "engine": "ホットキューのみ。Engine DJ には CALL がありません。",
         "serato": "ホットキューのみ（A から H）。Serato には CALL がありません。Serato が開いている場合は、閉じたときに Surco が保存します。",
+        "virtualdj": "Surco はまだ VirtualDJ にキューを保存しないため、フローは VirtualDJ を変更しません。",
         "missing": "このコンピュータで {{program}} が見つかりません"
       }
     },
@@ -2165,7 +2186,9 @@
       "traktor": "Traktor",
       "traktorBody": "変換時にプレイリストとキューを含めてコレクションを同期し、新しいトラックも追加します。",
       "serato": "Serato",
-      "seratoBody": "変換時にライブラリを同期し、新しいトラックも追加します。"
+      "seratoBody": "変換時にライブラリを同期し、新しいトラックも追加します。",
+      "virtualdj": "VirtualDJ",
+      "virtualdjBody": "リストを Surco に表示します。現在 Surco は VirtualDJ を読み取るだけで、何も変更しません。"
     },
     "djLibraryNone": "使っていない（ファイルのタグ付けだけ）",
     "destinationKeepsCollection": "DJソフトやApple Musicにすでにあるトラックはその場で更新され、コレクション内の位置が保たれます。",
@@ -2539,7 +2562,8 @@
       "rekordbox": "rekordbox を非表示",
       "engine": "Engine DJ を非表示",
       "traktor": "Traktor を非表示",
-      "serato": "Serato を非表示"
+      "serato": "Serato を非表示",
+      "virtualdj": "VirtualDJ を非表示"
     },
     "workingList": "トラック",
     "appleMusic": "Music",
@@ -2547,6 +2571,7 @@
     "engine": "Engine DJ",
     "traktor": "Traktor",
     "serato": "Serato",
+    "virtualdj": "VirtualDJ",
     "allTracks": "すべてのトラック",
     "recentlyAdded": "最近追加した項目",
     "search": "プレイリストを検索",
@@ -2556,11 +2581,13 @@
       "rekordbox": "コレクションを読み込めませんでした。変更した直後の場合は、数秒後に Surco に戻ってください。",
       "engine": "Engine DJ ライブラリを読み込めませんでした。変更した直後の場合は、数秒後に Surco に戻ってください。",
       "traktor": "Traktor コレクションを読み込めませんでした。変更した直後の場合は、数秒後に Surco に戻ってください。",
-      "serato": "Serato ライブラリを読み込めませんでした。変更した直後の場合は、数秒後に Surco に戻ってください。"
+      "serato": "Serato ライブラリを読み込めませんでした。変更した直後の場合は、数秒後に Surco に戻ってください。",
+      "virtualdj": "VirtualDJ ライブラリを読み込めませんでした。変更した直後の場合は、数秒後に Surco に戻ってください。"
     },
     "notFound": {
       "engine": "Engine DJ ライブラリが見つかりません。設定 → 出力 の Engine DJ で、Database2 を含むフォルダーを指定してください。",
-      "serato": "Serato ライブラリが見つかりません。ミュージックと接続中の各ドライブにある _Serato_ フォルダーを探します。"
+      "serato": "Serato ライブラリが見つかりません。ミュージックと接続中の各ドライブにある _Serato_ フォルダーを探します。",
+      "virtualdj": "VirtualDJ ライブラリが見つかりません。選択した VirtualDJ フォルダーにある database.xml を探します。"
     },
     "empty": "プレイリストがありません。",
     "noMatch": "一致するプレイリストがありません。",
@@ -2571,7 +2598,8 @@
       "rekordbox": "「{{name}}」は rekordbox にもうありません",
       "engine": "「{{name}}」は Engine DJ にもうありません",
       "traktor": "「{{name}}」は Traktor にもうありません",
-      "serato": "「{{name}}」は Serato にもうありません"
+      "serato": "「{{name}}」は Serato にもうありません",
+      "virtualdj": "「{{name}}」は VirtualDJ にもうありません"
     },
     "missing_one": "「{{name}}」の {{count}} 件のトラックはディスク上にファイルがありません",
     "missing_other": "「{{name}}」の {{count}} 件のトラックはディスク上にファイルがありません",
@@ -2942,6 +2970,7 @@
     "loading": "リストを読み取り中…",
     "empty": "リスト内のトラックのタグが読み取れませんでした。",
     "emptySerato": "リスト内のトラックはすべて Serato のもので、Serato のために除外しています。",
+    "emptyVirtualdj": "リスト内のトラックはすべて VirtualDJ のもので、VirtualDJ のために除外しています。",
     "error": "リストのレビューを準備できませんでした。",
     "scope_one": "{{count}} トラックがリストにあります",
     "scope_other": "{{count}} トラックがリストにあります",
@@ -2949,6 +2978,8 @@
     "skipped_other": "{{count}} 件は未読み取りのため除外",
     "seratoLeftOut_one": "Serato の {{count}} トラックは Serato のために除外",
     "seratoLeftOut_other": "Serato の {{count}} トラックは Serato のために除外",
+    "virtualdjLeftOut_one": "VirtualDJ の {{count}} トラックは VirtualDJ のために除外",
+    "virtualdjLeftOut_other": "VirtualDJ の {{count}} トラックは VirtualDJ のために除外",
     "musicUnchecked": "Apple Music が閉じているため、チェックできませんでした。",
     "where": {
       "music": "Apple Music"

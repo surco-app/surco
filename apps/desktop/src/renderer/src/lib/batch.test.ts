@@ -109,6 +109,18 @@ describe('convertGate', () => {
     expect(gate.mixed).toBe(false)
   })
 
+  it('counts the VirtualDJ rows apart from the Serato ones, so the note names the program that would lose each', () => {
+    const tracks = [
+      { ...track('s', 'idle', { title: 'T', artist: 'A' }), programs: ['serato' as const] },
+      { ...track('v', 'idle', { title: 'T', artist: 'A' }), programs: ['virtualdj' as const] },
+      { ...track('w', 'idle', { title: 'T', artist: 'A' }), programs: ['virtualdj' as const] },
+    ]
+    const gate = convertGate(tracks, ['title', 'artist'])
+    expect(gate.ready).toEqual([])
+    expect(gate.serato).toBe(1)
+    expect(gate.virtualdj).toBe(2)
+  })
+
   // A batch that would replace a library copy for some rows and add the others cannot be
   // honestly done by one click, so nothing is ready and the reason is the mix itself.
   it('holds the whole selection back when it mixes replacing a library copy with adding', () => {

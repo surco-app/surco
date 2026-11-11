@@ -190,6 +190,8 @@
     "leftOutMissing_other": "{{count}} Tracks bleiben draußen, ihnen fehlt {{fields}}",
     "leftOutSerato_one": "{{count}} Track bleibt draußen, Serato würde ihn und seine Cues verlieren",
     "leftOutSerato_other": "{{count}} Tracks bleiben draußen, Serato würde sie und ihre Cues verlieren",
+    "leftOutVirtualdj_one": "{{count}} Track bleibt draußen, VirtualDJ würde ihn und seine Cues verlieren",
+    "leftOutVirtualdj_other": "{{count}} Tracks bleiben draußen, VirtualDJ würde sie und ihre Cues verlieren",
     "convertSelected_one": "{{count}} ausgewählten Track konvertieren",
     "convertSelected_other": "{{count}} ausgewählte Tracks konvertieren",
     "convertSomeSelected": "{{ready}} von {{total}} ausgewählten Tracks konvertieren",
@@ -356,6 +358,7 @@
     "conversionCancelled": "Konvertierung abgebrochen.",
     "verifyUnknownTrack": "Diese Prüfung gibt es nicht mehr. Konvertiere den Track erneut, um sie zu wiederholen.",
     "seratoBlocked": "Serato würde den Track und seine Cues verlieren",
+    "virtualdjBlocked": "VirtualDJ würde den Track und seine Cues verlieren",
     "sourceTagsUnread": "Die Tags dieser Datei konnten nicht gelesen werden, daher wurde sie nicht angerührt: eine Konvertierung hätte die vorhandenen gelöscht. Lade sie erneut und versuche es noch einmal.",
     "coverDownloadFailed": "Das Cover konnte nicht heruntergeladen werden.",
     "coverNotImage": "Diese Adresse führt zu keinem Bild.",
@@ -1196,6 +1199,17 @@
         "calls": "Serato kennt keine CALLs, sie werden nicht gespeichert. Nur die Hot Cues landen in Serato",
         "waiting": "Serato ist geöffnet. Deine Änderungen werden gespeichert, wenn du es schließt"
       },
+      "virtualdj": {
+        "unreadable": "Surco liest noch keine Cues aus VirtualDJ",
+        "save": "In VirtualDJ speichern",
+        "unanalysed": "VirtualDJ hat diesen Track noch nicht analysiert",
+        "queuedStale": "Das wartende Speichern entstand, bevor sich der Track in VirtualDJ geändert hat, und gilt nicht mehr. Du siehst, was VirtualDJ jetzt hat.",
+        "saveFailed": "Speichern in VirtualDJ fehlgeschlagen. Die Cues sind weiterhin nicht gespeichert",
+        "autoUnreadable": "Surco konnte das Audio dieses Tracks nicht lesen",
+        "saveAll_one": "{{count}} Track in VirtualDJ speichern",
+        "saveAll_other": "{{count}} Tracks in VirtualDJ speichern",
+        "waiting": "VirtualDJ ist geöffnet. Seine Listen können sich ändern, wenn du es schließt"
+      },
       "traktor": {
         "save": "In Traktor speichern",
         "unanalysed": "Traktor hat diesen Track noch nicht analysiert",
@@ -1328,7 +1342,8 @@
     "rekordboxPlaylists": "rekordbox-Playlists",
     "traktorPlaylists": "Traktor-Playlists",
     "enginePlaylists": "Playlists in Engine DJ",
-    "seratoPlaylists": "Serato-Crates"
+    "seratoPlaylists": "Serato-Crates",
+    "virtualdjPlaylists": "VirtualDJ-Listen"
   },
   "declick": {
     "cueWarning": "ALAC speichert keine Traktor-Cues und kein Beatgrid: Beim Konvertieren gehen sie verloren.",
@@ -1604,13 +1619,15 @@
       "rekordbox": "rekordbox",
       "engine": "Engine DJ",
       "traktor": "Traktor",
-      "serato": "Serato"
+      "serato": "Serato",
+      "virtualdj": "VirtualDJ"
     },
     "sourceAppleMusicUnavailable": "Nur unter macOS verfügbar",
     "sourceRekordboxUnavailable": "Es wurde keine rekordbox-Sammlung gefunden",
     "sourceEngineUnavailable": "Es wurde keine Engine-DJ-Bibliothek gefunden",
     "sourceTraktorUnavailable": "Es wurde keine Traktor-Sammlung gefunden",
     "sourceSeratoUnavailable": "Es wurde keine Serato-Bibliothek gefunden",
+    "sourceVirtualdjUnavailable": "Es wurde keine VirtualDJ-Bibliothek gefunden",
     "sourcesHint": "Das Ausblenden einer Bibliothek entfernt sie nur aus der Seitenleiste und ändert nichts daran, ob Konvertierungen mit ihr synchronisiert werden.",
     "updates": "Updates",
     "betaUpdates": "Beta-Versionen erhalten",
@@ -1889,6 +1906,9 @@
     "syncEngineDj": "Engine-DJ-Bibliothek beim Konvertieren aktualisieren",
     "syncEngineDjHint": "Wenn du einen Track konvertierst, der in deiner Engine-DJ-Bibliothek liegt, folgt sein Eintrag der neuen Datei und behält Playlists und Cue-Points. Verwendet wird die direkt darüber gewählte Bibliothek. Vor dem Schreiben legt Surco in seinem Backup-Ordner (Einstellungen → Erweitert) ein Backup des gesamten Durchlaufs an, dazu eines je Schreibvorgang, und schreibt nie, während Engine DJ geöffnet ist.",
     "seratoSync": "Serato",
+    "virtualdjLibrary": "VirtualDJ",
+    "virtualdjLibraryDir": "VirtualDJ-Ordner",
+    "virtualdjLibraryDirHint": "Der Ordner, in dem VirtualDJ database.xml und MyLists ablegt. Vorerst liest Surco ihn nur und ändert darin nichts.",
     "syncSerato": "Serato-Bibliothek",
     "syncSeratoHint": "Surco schreibt in Serato, wenn du es schließt. Aktualisieren übernimmt die Tag-Änderungen der Prüfung, und Hinzufügen nimmt zusätzlich auf, was du konvertierst",
     "syncSeratoIdle": "Surco findet keine Serato-Bibliothek",
@@ -2029,6 +2049,7 @@
         "traktor": "Nur Hot Cues, in Blau, von A bis G. Traktor liest seine Sammlung beim Start, deshalb bittet Surco dich beim Speichern, es zu schließen.",
         "engine": "Nur Hot Cues. Engine DJ hat keine CALLs.",
         "serato": "Nur Hot Cues, von A bis H. Serato hat keine CALLs. Ist Serato geöffnet, speichert Surco sie, wenn du es schließt.",
+        "virtualdj": "Surco speichert noch keine Cues in VirtualDJ, ein Ablauf lässt VirtualDJ also unverändert.",
         "missing": "Surco findet {{program}} auf diesem Computer nicht"
       }
     },
@@ -2165,7 +2186,9 @@
       "traktor": "Traktor",
       "traktorBody": "Die Sammlung beim Konvertieren aktuell halten, mit Playlists und Cues, und neue Tracks hinzufügen.",
       "serato": "Serato",
-      "seratoBody": "Die Bibliothek beim Konvertieren aktuell halten und neue Tracks hinzufügen."
+      "seratoBody": "Die Bibliothek beim Konvertieren aktuell halten und neue Tracks hinzufügen.",
+      "virtualdj": "VirtualDJ",
+      "virtualdjBody": "Seine Listen in Surco anzeigen. Vorerst liest Surco VirtualDJ nur und ändert darin nichts."
     },
     "djLibraryNone": "Keine, ich tagge nur Dateien",
     "destinationKeepsCollection": "Tracks, die schon in deiner DJ-Software oder in Apple Music sind, werden an Ort und Stelle aktualisiert und behalten so ihren Platz in deiner Sammlung.",
@@ -2539,7 +2562,8 @@
       "rekordbox": "rekordbox ausblenden",
       "engine": "Engine DJ ausblenden",
       "traktor": "Traktor ausblenden",
-      "serato": "Serato ausblenden"
+      "serato": "Serato ausblenden",
+      "virtualdj": "VirtualDJ ausblenden"
     },
     "workingList": "Tracks",
     "appleMusic": "Music",
@@ -2547,6 +2571,7 @@
     "engine": "Engine DJ",
     "traktor": "Traktor",
     "serato": "Serato",
+    "virtualdj": "VirtualDJ",
     "allTracks": "Alle Tracks",
     "recentlyAdded": "Zuletzt hinzugefügt",
     "search": "Playlist suchen",
@@ -2556,11 +2581,13 @@
       "rekordbox": "Die Sammlung konnte nicht gelesen werden. Wenn du gerade etwas geändert hast, kehre in ein paar Sekunden zu Surco zurück.",
       "engine": "Die Engine-DJ-Bibliothek konnte nicht gelesen werden. Wenn du gerade etwas geändert hast, kehre in ein paar Sekunden zu Surco zurück.",
       "traktor": "Die Traktor-Sammlung konnte nicht gelesen werden. Wenn du gerade etwas geändert hast, kehre in ein paar Sekunden zu Surco zurück.",
-      "serato": "Die Serato-Bibliothek konnte nicht gelesen werden. Wenn du gerade etwas geändert hast, kehre in ein paar Sekunden zu Surco zurück."
+      "serato": "Die Serato-Bibliothek konnte nicht gelesen werden. Wenn du gerade etwas geändert hast, kehre in ein paar Sekunden zu Surco zurück.",
+      "virtualdj": "Die VirtualDJ-Bibliothek konnte nicht gelesen werden. Wenn du gerade etwas geändert hast, kehre in ein paar Sekunden zu Surco zurück."
     },
     "notFound": {
       "engine": "Surco findet keine Engine-DJ-Bibliothek. Lege ihren Ordner, den mit Database2, unter Engine DJ in Einstellungen → Ausgabe fest.",
-      "serato": "Surco findet keine Serato-Bibliothek. Gesucht wird der Ordner _Serato_ in Musik und auf jedem angeschlossenen Laufwerk."
+      "serato": "Surco findet keine Serato-Bibliothek. Gesucht wird der Ordner _Serato_ in Musik und auf jedem angeschlossenen Laufwerk.",
+      "virtualdj": "Surco findet keine VirtualDJ-Bibliothek. Gesucht wird database.xml im gewählten VirtualDJ-Ordner."
     },
     "empty": "Keine Playlists.",
     "noMatch": "Keine Playlist passt.",
@@ -2571,7 +2598,8 @@
       "rekordbox": "„{{name}}“ ist nicht mehr in rekordbox",
       "engine": "„{{name}}“ ist nicht mehr in Engine DJ",
       "traktor": "„{{name}}“ ist nicht mehr in Traktor",
-      "serato": "„{{name}}“ ist nicht mehr in Serato"
+      "serato": "„{{name}}“ ist nicht mehr in Serato",
+      "virtualdj": "„{{name}}“ ist nicht mehr in VirtualDJ"
     },
     "missing_one": "{{count}} Track aus „{{name}}“ hat keine Datei auf der Festplatte",
     "missing_other": "{{count}} Tracks aus „{{name}}“ haben keine Datei auf der Festplatte",
@@ -2942,6 +2970,7 @@
     "loading": "Liste wird gelesen…",
     "empty": "Bei keinem Track der Liste wurden die Tags gelesen.",
     "emptySerato": "Alle Tracks der Liste stammen aus Serato und bleiben draußen, damit Serato sie behält.",
+    "emptyVirtualdj": "Alle Tracks der Liste stammen aus VirtualDJ und bleiben draußen, damit VirtualDJ sie behält.",
     "error": "Die Prüfung der Liste konnte nicht vorbereitet werden.",
     "scope_one": "{{count}} Track der Liste",
     "scope_other": "{{count}} Tracks der Liste",
@@ -2949,6 +2978,8 @@
     "skipped_other": "{{count}} nicht gelesen, nicht geprüft",
     "seratoLeftOut_one": "{{count}} aus Serato, ausgelassen, damit Serato sie behält",
     "seratoLeftOut_other": "{{count}} aus Serato, ausgelassen, damit Serato sie behält",
+    "virtualdjLeftOut_one": "{{count}} aus VirtualDJ, ausgelassen, damit VirtualDJ sie behält",
+    "virtualdjLeftOut_other": "{{count}} aus VirtualDJ, ausgelassen, damit VirtualDJ sie behält",
     "musicUnchecked": "Apple Music wurde nicht abgefragt, weil es geschlossen ist.",
     "where": {
       "music": "Apple Music"

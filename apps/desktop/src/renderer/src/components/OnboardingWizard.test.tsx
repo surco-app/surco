@@ -39,6 +39,7 @@ const settings: Settings = {
   cueFlowToTraktor: true,
   cueFlowToEngine: true,
   cueFlowToSerato: true,
+  cueFlowToVirtualdj: true,
   cueLearnFromEdits: true,
   hiddenSources: [],
   sessionWizard: { ...DEFAULT_SESSION_WIZARD },
@@ -78,9 +79,13 @@ const settings: Settings = {
   traktorPlaylistsFieldOffered: false,
   enginePlaylistsFieldOffered: false,
   seratoPlaylistsFieldOffered: false,
+  virtualdjPlaylistsFieldOffered: false,
+  virtualdjLibraryDir: '/Users/dj/Library/Application Support/VirtualDJ',
   syncEngineDj: false,
   addToSerato: false,
   syncSerato: false,
+  addToVirtualdj: false,
+  syncVirtualdj: false,
   betaUpdates: false,
   traktorCueOffsetMs: 0,
   filenameFormat: '',
@@ -911,6 +916,7 @@ describe('OnboardingWizard DJ software', () => {
     api.api.rekordboxCollection = async () => ''
     detected.engine = async () => false
     detected.serato = async () => false
+    detected.virtualdj = async () => false
   })
 
   // Writing into Engine DJ or Serato is opted into, since the DJ cannot rebuild those
@@ -941,7 +947,56 @@ describe('OnboardingWizard DJ software', () => {
     ).toBeInTheDocument()
     finishWizard()
     const patch = onFinish.mock.calls[0][0] as Partial<Settings>
-    expect(patch.hiddenSources).toEqual(['traktor', 'engine', 'serato'])
+    expect(patch.hiddenSources).toEqual(['traktor', 'engine', 'serato', 'virtualdj'])
+  })
+
+  it('offers VirtualDJ with its folder, unticked, and keeps its tab only when the DJ picks it', async () => {
+    detected.virtualdj = async () => true
+    const onFinish = vi.fn()
+    render(<OnboardingWizard settings={settings} onFinish={onFinish} />)
+    expect(
+      await screen.findByText(i18n.t('onboarding.step', { current: 1, total: 5 })),
+    ).toBeInTheDocument()
+    goTo('programs')
+    expect(screen.getByTestId('onboarding-sync-virtualdj')).not.toBeChecked()
+    expect(screen.getByTestId('onboarding-djlibrary-virtualdj')).toHaveTextContent(
+      settings.virtualdjLibraryDir,
+    )
+    fireEvent.click(screen.getByTestId('onboarding-sync-virtualdj'))
+    expect(screen.getByTestId('onboarding-sync-virtualdj')).toBeChecked()
+    expect(screen.getByTestId('onboarding-sync-none')).not.toBeChecked()
+    finishWizard()
+    const patch = onFinish.mock.calls[0][0] as Partial<Settings>
+    expect(patch.hiddenSources).not.toContain('virtualdj')
+    expect(patch.hiddenSources).toContain('serato')
+  })
+
+  it('never turns on writing to VirtualDJ from the wizard, since Surco only reads it for now', async () => {
+    detected.virtualdj = async () => true
+    const onFinish = vi.fn()
+    render(<OnboardingWizard settings={settings} onFinish={onFinish} />)
+    expect(
+      await screen.findByText(i18n.t('onboarding.step', { current: 1, total: 5 })),
+    ).toBeInTheDocument()
+    goTo('programs')
+    fireEvent.click(screen.getByTestId('onboarding-sync-virtualdj'))
+    finishWizard()
+    const patch = onFinish.mock.calls[0][0] as Partial<Settings>
+    expect(patch.syncVirtualdj ?? false).toBe(false)
+    expect(patch.addToVirtualdj ?? false).toBe(false)
+  })
+
+  it('unticks VirtualDJ with None too', async () => {
+    detected.virtualdj = async () => true
+    render(<OnboardingWizard settings={settings} onFinish={vi.fn()} />)
+    expect(
+      await screen.findByText(i18n.t('onboarding.step', { current: 1, total: 5 })),
+    ).toBeInTheDocument()
+    goTo('programs')
+    fireEvent.click(screen.getByTestId('onboarding-sync-virtualdj'))
+    fireEvent.click(screen.getByTestId('onboarding-sync-none'))
+    expect(screen.getByTestId('onboarding-sync-virtualdj')).not.toBeChecked()
+    expect(screen.getByTestId('onboarding-sync-none')).toBeChecked()
   })
 
   it('unticks every program with None', async () => {

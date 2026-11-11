@@ -64,6 +64,7 @@ function registerWithSources(host: {
       serato: host.serato
         ? seratoCueSource({ ...host.serato, words: host.words, fine: host.fine }, host.collection)
         : null,
+      virtualdj: null,
     },
   })
 }

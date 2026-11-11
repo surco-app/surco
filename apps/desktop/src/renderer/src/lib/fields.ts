@@ -158,6 +158,7 @@ export const PLAYLIST_FIELDS: Record<PlaylistLibrary, string> = {
   traktor: 'traktorPlaylists',
   engine: 'enginePlaylists',
   serato: 'seratoPlaylists',
+  virtualdj: 'virtualdjPlaylists',
 }
 
 export function isPlaylistField(key: string): boolean {

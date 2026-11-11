@@ -78,6 +78,7 @@ function Harness({
     cueFlowToTraktor: true,
     cueFlowToEngine: true,
     cueFlowToSerato: true,
+    cueFlowToVirtualdj: true,
     cueLearnFromEdits: true,
   })
   const [client] = useState(() => new QueryClient())
@@ -212,6 +213,17 @@ describe('CuesTab', () => {
       expect(screen.queryByTestId('settings-cue-flow-to-traktor-missing')).not.toBeInTheDocument(),
     )
     expect(screen.getByTestId('settings-cue-flow-to-serato-missing')).toBeInTheDocument()
+  })
+
+  it('says under VirtualDJ that Surco does not save cues there yet, so a found VirtualDJ never looks like a flow reaches it', async () => {
+    installApi({ dj: djReads({ virtualdj: { available: async () => true } }) })
+    render(<Harness />)
+    await waitFor(() => expect(screen.getByTestId('settings-cue-flow-to-virtualdj')).toBeEnabled())
+    expect(
+      within(screen.getByTestId('cue-flow-targets')).getByText(
+        i18n.t('settings.cueFlows.targets.virtualdj'),
+      ),
+    ).toBeInTheDocument()
   })
 
   it('probes the destinations again each time the tab opens, so a library saved in Settings shows as found', async () => {
@@ -839,7 +851,7 @@ describe('CuesTab', () => {
     expect(last?.cueFlowToRekordbox).toBe(true)
   })
 
-  it('lists the targets as rekordbox, Traktor, Engine DJ and Serato, in that order', () => {
+  it('lists the targets as rekordbox, Traktor, Engine DJ, Serato and VirtualDJ, in that order', () => {
     installApi()
     render(<Harness collection="/c/master.db" />)
     const rows = within(screen.getByTestId('cue-flow-targets')).getAllByRole('checkbox')
@@ -848,9 +860,10 @@ describe('CuesTab', () => {
       'settings-cue-flow-to-traktor',
       'settings-cue-flow-to-engine',
       'settings-cue-flow-to-serato',
+      'settings-cue-flow-to-virtualdj',
     ])
     expect(screen.getByTestId('cue-flow-targets')).toHaveTextContent(
-      /rekordbox.*Traktor.*Engine DJ.*Serato/s,
+      /rekordbox.*Traktor.*Engine DJ.*Serato.*VirtualDJ/s,
     )
   })
 

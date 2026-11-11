@@ -47,6 +47,7 @@ export function GeneralTab({
     engine: found.engine !== true,
     traktor: found.traktor !== true,
     serato: found.serato !== true,
+    virtualdj: found.virtualdj !== true,
   }
   const reason: Record<PlaylistSource, string | undefined> = {
     appleMusic: unavailable.appleMusic ? tr('settings.sourceAppleMusicUnavailable') : undefined,
@@ -54,6 +55,7 @@ export function GeneralTab({
     engine: found.engine === false ? tr('settings.sourceEngineUnavailable') : undefined,
     traktor: found.traktor === false ? tr('settings.sourceTraktorUnavailable') : undefined,
     serato: found.serato === false ? tr('settings.sourceSeratoUnavailable') : undefined,
+    virtualdj: found.virtualdj === false ? tr('settings.sourceVirtualdjUnavailable') : undefined,
   }
 
   return (

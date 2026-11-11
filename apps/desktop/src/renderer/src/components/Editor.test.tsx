@@ -998,6 +998,7 @@ describe('Editor convert button with Traktor taking new tracks', () => {
       engine: { enabled: false, found: false },
       traktor: { enabled: true, found: traktorFound },
       serato: { enabled: false, found: false },
+      virtualdj: { enabled: false, found: false },
     })
 
   it('does not name Traktor when its collection is not found, since nothing would be added there', async () => {
@@ -1038,6 +1039,7 @@ describe('Editor convert button after choosing a DJ library in Settings', () => 
     engine: { enabled: true, found: engine },
     traktor: { enabled: false, found: false },
     serato: { enabled: false, found: false },
+    virtualdj: { enabled: false, found: false },
   })
 
   it('names Engine DJ as soon as the DJ points Settings at its library, without reopening the track', async () => {
@@ -1091,6 +1093,7 @@ describe('Editor convert button after choosing a DJ library in Settings', () => 
       engine: { enabled: false, found: false },
       traktor: { enabled: true, found },
       serato: { enabled: false, found: false },
+      virtualdj: { enabled: false, found: false },
     })
     const libraryStatus = vi.fn<Api['libraryStatus']>().mockResolvedValue(traktor(false))
     Object.assign(window.api, { libraryStatus })

@@ -511,6 +511,17 @@ describe('listReviewSource damage', () => {
     expect(api.scanDamage).toHaveBeenCalledWith(['/m/a.mp3'])
   })
 
+  it('counts a VirtualDJ row apart from the Serato ones and keeps it out of the review', async () => {
+    const load = await source([
+      row('/m/a.aiff', 'A'),
+      row('/m/s.aiff', 'A', { programs: ['serato'] }),
+      row('/m/v.aiff', 'A', { programs: ['virtualdj'] }),
+      row('/m/w.aiff', 'A', { programs: ['virtualdj'] }),
+    ]).load()
+    expect(load.entries.map((e) => e.id)).toEqual(['/m/a.aiff'])
+    expect(load).toMatchObject({ seratoLeftOut: 1, virtualdjLeftOut: 2 })
+  })
+
   describe('a track opened from Serato', () => {
     const serato = () => row('/m/s.aiff', 'A', { programs: ['serato'] })
 

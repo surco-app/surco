@@ -1239,7 +1239,8 @@ describe('cue flows', () => {
       s.cueFlowToTraktor,
       s.cueFlowToEngine,
       s.cueFlowToSerato,
-    ]).toEqual([true, true, true, true])
+      s.cueFlowToVirtualdj,
+    ]).toEqual([true, true, true, true, true])
   })
 
   it('keeps a program the DJ took out of the flows, and repairs a value that is not a boolean', () => {
@@ -1289,7 +1290,7 @@ describe('cue flows', () => {
   it('repairs a hidden-sources value with unknown or repeated entries on every merge', () => {
     writeFileSync(
       join(app.getPath('userData'), 'settings.json'),
-      JSON.stringify({ hiddenSources: ['rekordbox', 'virtualdj', 'rekordbox'] }),
+      JSON.stringify({ hiddenSources: ['rekordbox', 'djotron', 'rekordbox'] }),
     )
     expect(getSettings().hiddenSources).toEqual(['rekordbox'])
     saveSettings({ hiddenSources: ['appleMusic', 'appleMusic', 'x'] as never })
@@ -1510,6 +1511,29 @@ describe('cue flows', () => {
     writeFileSync(join(app.getPath('userData'), 'settings.json'), JSON.stringify({}))
     saveSettings({ activeCueFlow: 'manual' })
     expect(getSettings().activeCueFlow).toBe('manual')
+  })
+})
+
+describe('the VirtualDJ library folder', () => {
+  it('starts where VirtualDJ keeps it on a Mac and is turned off nowhere, with everything else as Serato starts', () => {
+    writeFileSync(join(app.getPath('userData'), 'settings.json'), JSON.stringify({}))
+    expect(getSettings()).toMatchObject({
+      virtualdjLibraryDir: join(app.getPath('home'), 'Library', 'Application Support', 'VirtualDJ'),
+      addToVirtualdj: false,
+      syncVirtualdj: false,
+      cueFlowToVirtualdj: true,
+      virtualdjPlaylistsFieldOffered: false,
+    })
+  })
+
+  it('never travels between machines, since the folder lives on this Mac only', () => {
+    expect(LOCAL_KEYS).toContain('virtualdjLibraryDir')
+  })
+
+  it('keeps this Mac folder when a backup names one that does not exist here', () => {
+    saveSettings({ virtualdjLibraryDir: app.getPath('userData') })
+    replaceSettings({ virtualdjLibraryDir: '/nowhere/at/all/VirtualDJ' })
+    expect(getSettings().virtualdjLibraryDir).toBe(app.getPath('userData'))
   })
 })
 

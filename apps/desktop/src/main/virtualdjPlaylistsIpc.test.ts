@@ -23,6 +23,18 @@ describe('virtualdjRead', () => {
     expect(read.available()).toBe(false)
   })
 
+  it('says VirtualDJ is not there on Windows, where nothing of it is measured yet', () => {
+    const dir = copy()
+    const read = virtualdjRead({ dir: () => dir })
+    const original = Object.getOwnPropertyDescriptor(process, 'platform')
+    Object.defineProperty(process, 'platform', { value: 'win32', configurable: true })
+    try {
+      expect(read.available()).toBe(false)
+    } finally {
+      if (original) Object.defineProperty(process, 'platform', original)
+    }
+  })
+
   it('reads the folder Settings names now, since the DJ can point Surco elsewhere while it runs', () => {
     let dir = join(tmpdir(), 'surco-vdjipc-nowhere')
     const read = virtualdjRead({ dir: () => dir })

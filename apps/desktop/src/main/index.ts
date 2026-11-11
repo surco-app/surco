@@ -279,6 +279,7 @@ import {
 } from './verifyMusic'
 import type { FlushOutcome, TraktorWrite } from './verifyRegistry'
 import { withRecordedRun } from './verifyRun'
+import { virtualdjRead } from './virtualdjPlaylistsIpc'
 import { onWatchedFilesChanged } from './watchedFiles'
 import { dirRoots, FolderWatcher } from './watcher'
 import { loadWindowState, resolveWindowBounds, saveWindowState } from './windowState'
@@ -362,7 +363,11 @@ function seratoRoots() {
     return seratoLibraryRoots(app.getPath('home'), [])
   }
 }
-const readOnlyLibraries = (): ReadOnlyLibraries => ({ serato: seratoRoots() })
+const virtualdjDir = (): string => getSettings().virtualdjLibraryDir
+const readOnlyLibraries = (): ReadOnlyLibraries => ({
+  serato: seratoRoots(),
+  virtualdj: existsSync(join(virtualdjDir(), 'database.xml')) ? virtualdjDir() : '',
+})
 
 let endConversionBatch: ((sender: WebContents) => Promise<void>) | undefined
 
@@ -565,7 +570,8 @@ const programQueues = {
     },
     programQueueDeps,
   ),
-} satisfies { [P in CueProgram]: { program: P } }
+  virtualdj: null,
+} satisfies { [P in CueProgram]: { program: P } | null }
 const rekordboxQueue = programQueues.rekordbox.queue
 const announceApplied = programQueues.rekordbox.announceApplied
 const rekordboxQueueWatch = programQueues.rekordbox.watch
@@ -1479,6 +1485,13 @@ function registerIpc(): void {
         onReady: seratoCueQueueWatch.poke,
       }),
     },
+    virtualdj: {
+      read: virtualdjRead({ dir: virtualdjDir, allowMedia }),
+      running: DJ_PROCESSES.virtualdj.isRunning,
+      pickLibraryPath: pickLibraryPath('dialogVirtualdjLibrary', {
+        properties: ['openDirectory'],
+      }),
+    },
   })
   const cueSourceHost = {
     collection: rekordboxCollectionPath,
@@ -1539,6 +1552,7 @@ function registerIpc(): void {
         },
         rekordboxCollectionPath,
       ),
+      virtualdj: null,
     },
   })
   registerCueTasteIpc({

@@ -24,6 +24,7 @@ const OFFERED = {
   traktor: 'traktorPlaylistsFieldOffered',
   engine: 'enginePlaylistsFieldOffered',
   serato: 'seratoPlaylistsFieldOffered',
+  virtualdj: 'virtualdjPlaylistsFieldOffered',
 } as const satisfies Record<LibraryProgram, keyof Settings>
 
 export function useLibraryAvailable(library: PlaylistLibrary): boolean {

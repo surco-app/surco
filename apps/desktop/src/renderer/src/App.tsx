@@ -459,7 +459,10 @@ export default function App(): React.JSX.Element {
   })
   const programsAvailable = useProgramsAvailable()
   const playlistLibrariesFound = Object.fromEntries(
-    LIBRARY_PROGRAMS.map((l) => [l, programsAvailable[l] ?? false]),
+    LIBRARY_PROGRAMS.map((l) => [
+      l,
+      (programsAvailable[l] ?? false) && SOURCE_PROGRAMS[l].edit !== null,
+    ]),
   ) as Record<LibraryProgram, boolean>
   const playlistLibraries = LIBRARY_PROGRAMS.filter((l) => playlistLibrariesFound[l])
   const saveSettingsStable = useStableCallback(saveSettings)
@@ -941,7 +944,11 @@ export default function App(): React.JSX.Element {
   const queuePill = useMemo(() => {
     const queues: Record<
       CueProgram,
-      { state: RekordboxQueueState; applyNow: () => Promise<void>; discard: () => Promise<void> }
+      {
+        state: RekordboxQueueState
+        applyNow: () => Promise<void>
+        discard: () => Promise<void>
+      } | null
     > = {
       rekordbox: { state: rekordboxQueue.state, applyNow: applyQueueNow, discard: discardQueue },
       engine: {
@@ -959,19 +966,25 @@ export default function App(): React.JSX.Element {
         applyNow: applySeratoQueueNow,
         discard: discardSeratoQueue,
       },
+      virtualdj: null,
     }
     return (
       <>
-        {QUEUE_PILL_ORDER.map((program) => (
-          <RekordboxQueuePill
-            key={program}
-            state={queues[program].state}
-            onApplyNow={() => void queues[program].applyNow()}
-            onDiscard={() => void queues[program].discard()}
-            words={PROGRAM_QUEUES[program].source.words}
-            testid={PROGRAM_QUEUES[program].testid}
-          />
-        ))}
+        {QUEUE_PILL_ORDER.map((program) => {
+          const queue = queues[program]
+          const pill = PROGRAM_QUEUES[program]
+          if (!queue || !pill) return null
+          return (
+            <RekordboxQueuePill
+              key={program}
+              state={queue.state}
+              onApplyNow={() => void queue.applyNow()}
+              onDiscard={() => void queue.discard()}
+              words={pill.source.words}
+              testid={pill.testid}
+            />
+          )
+        })}
       </>
     )
   }, [
@@ -3983,6 +3996,7 @@ export default function App(): React.JSX.Element {
                           engine: settings?.syncEngineDj ?? false,
                           traktor: settings?.syncTraktor ?? false,
                           serato: settings?.syncSerato ?? false,
+                          virtualdj: settings?.syncVirtualdj ?? false,
                         }}
                         onClose={() => setReview(null)}
                         onOpenTrack={(rowId) => {

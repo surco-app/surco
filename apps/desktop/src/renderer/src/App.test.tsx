@@ -141,6 +141,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     cueFlowToTraktor: true,
     cueFlowToEngine: true,
     cueFlowToSerato: true,
+    cueFlowToVirtualdj: true,
     cueLearnFromEdits: true,
     hiddenSources: [],
     sessionWizard: { ...DEFAULT_SESSION_WIZARD },
@@ -180,9 +181,13 @@ function settings(over: Partial<Settings> = {}): Settings {
     traktorPlaylistsFieldOffered: true,
     enginePlaylistsFieldOffered: true,
     seratoPlaylistsFieldOffered: false,
+    virtualdjPlaylistsFieldOffered: false,
     syncEngineDj: false,
     addToSerato: false,
     syncSerato: false,
+    addToVirtualdj: false,
+    syncVirtualdj: false,
+    virtualdjLibraryDir: '',
     betaUpdates: false,
     traktorCueOffsetMs: 0,
     filenameFormat: '{artist} - {title}',
@@ -876,6 +881,91 @@ describe('App Traktor cues', () => {
     await renderApp()
     expect(await screen.findByTestId('traktor-queue-pill')).toHaveTextContent(
       '1 track waits for you to close Traktor',
+    )
+  })
+})
+
+describe('App VirtualDJ tab', () => {
+  afterEach(resetCueSession)
+
+  function openVirtualdj(over: ApiOverrides = {}) {
+    setApi({
+      ...over,
+      dj: djReads(
+        {
+          virtualdj: {
+            available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+            tree: vi.fn<ProgramReads['tree']>().mockResolvedValue([
+              {
+                id: 'Carpeta',
+                name: 'Carpeta',
+                kind: 'folder',
+                count: 1,
+                children: [{ id: 'Carpeta/Dentro', name: 'Dentro', kind: 'playlist', count: 2 }],
+              },
+            ]),
+            recentCount: vi.fn<ProgramReads['recentCount']>().mockResolvedValue(0),
+            trackCount: vi.fn<ProgramReads['trackCount']>().mockResolvedValue(6),
+            playlist: vi.fn<ProgramReads['playlist']>().mockResolvedValue([
+              { path: '/m/a.wav', separator: false, meta: {}, contentId: 'virtualdj:/m/a.wav' },
+              { path: '/m/b.wav', separator: false, meta: {}, contentId: 'virtualdj:/m/b.wav' },
+            ]),
+          },
+        },
+        over.dj,
+      ),
+    })
+  }
+
+  it('shows VirtualDJ in the rail with its folders and lists the tracks of a list', async () => {
+    openVirtualdj()
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-virtualdj'))
+    expect(await screen.findByTestId(`source-node-${ALL_TRACKS_ID}`)).toBeInTheDocument()
+    fireEvent.click(await screen.findByTestId('source-node-Carpeta'))
+    fireEvent.click(await screen.findByTestId('source-node-Carpeta/Dentro'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    expect(window.api.dj.playlist).toHaveBeenCalledWith('virtualdj', 'Carpeta/Dentro')
+  })
+
+  it('keeps a track of a VirtualDJ list from being converted, naming VirtualDJ as the reason', async () => {
+    openVirtualdj()
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-virtualdj'))
+    fireEvent.click(await screen.findByTestId('source-node-Carpeta'))
+    fireEvent.click(await screen.findByTestId('source-node-Carpeta/Dentro'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    fireEvent.click(screen.getAllByTestId('track-row')[1])
+    await waitFor(() =>
+      expect(screen.getByTestId('process-btn')).toHaveAccessibleDescription(
+        'VirtualDJ would lose the track and its cues',
+      ),
+    )
+    expect(screen.getByTestId('process-btn')).toHaveAttribute('aria-disabled', 'true')
+  })
+
+  it('leaves VirtualDJ out of the rail where its library is not found', async () => {
+    setApi({
+      dj: djReads({
+        rekordbox: { available: vi.fn<ProgramReads['available']>().mockResolvedValue(true) },
+      }),
+    })
+    await renderApp()
+    await screen.findByTestId('source-rail-rekordbox')
+    await waitFor(() => expect(window.api.dj.available).toHaveBeenCalledWith('virtualdj'))
+    expect(screen.queryByTestId('source-rail-virtualdj')).toBeNull()
+  })
+
+  it('tells the DJ in the VirtualDJ tab that its lists may change while VirtualDJ is open', async () => {
+    openVirtualdj({
+      dj: djReads({
+        virtualdj: { running: vi.fn<ProgramReads['running']>().mockResolvedValue(true) },
+      }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-virtualdj'))
+    expect(await screen.findByTestId('source-tree-notice')).toHaveTextContent(
+      'VirtualDJ is open. Its lists may change when you close it',
     )
   })
 })
@@ -7202,6 +7292,37 @@ describe('App offers the rekordbox Playlists field', () => {
     await act(async () => {})
     expect(saveSettings).not.toHaveBeenCalledWith(
       expect.objectContaining({ rekordboxPlaylistsFieldOffered: true }),
+    )
+  })
+})
+
+describe('App leaves out the playlists field of a program whose lists Surco only reads', () => {
+  it('never offers the VirtualDJ lists field, since choosing a list there would change nothing', async () => {
+    const saveSettings = vi.fn().mockResolvedValue(settings())
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(
+        settings({
+          rekordboxPlaylistsFieldOffered: false,
+          virtualdjPlaylistsFieldOffered: false,
+          visibleFields: ['title'],
+        }),
+      ),
+      dj: djReads({
+        rekordbox: { available: vi.fn<ProgramReads['available']>().mockResolvedValue(true) },
+        virtualdj: { available: vi.fn<ProgramReads['available']>().mockResolvedValue(true) },
+      }),
+      saveSettings,
+    })
+    await renderApp()
+    await waitFor(() =>
+      expect(saveSettings).toHaveBeenCalledWith({
+        visibleFields: ['title', 'rekordboxPlaylists'],
+        rekordboxPlaylistsFieldOffered: true,
+      }),
+    )
+    expect(window.api.dj.available).toHaveBeenCalledWith('virtualdj')
+    expect(saveSettings).not.toHaveBeenCalledWith(
+      expect.objectContaining({ virtualdjPlaylistsFieldOffered: true }),
     )
   })
 })

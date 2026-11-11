@@ -1242,6 +1242,9 @@ export function MusicReview({
               ...(review.seratoLeftOut
                 ? [t('listReview.seratoLeftOut', { count: review.seratoLeftOut })]
                 : []),
+              ...(review.virtualdjLeftOut
+                ? [t('listReview.virtualdjLeftOut', { count: review.virtualdjLeftOut })]
+                : []),
               ...(review.musicConsulted === false ? [t('listReview.musicUnchecked')] : []),
               ...review.damageUnread.map((library) =>
                 t('damage.unread', { library: LIBRARY_NAME[library] }),
@@ -1273,7 +1276,9 @@ export function MusicReview({
             {t(
               review.kind === 'list' && review.skipped === 0 && review.seratoLeftOut
                 ? 'listReview.emptySerato'
-                : copy.empty,
+                : review.kind === 'list' && review.skipped === 0 && review.virtualdjLeftOut
+                  ? 'listReview.emptyVirtualdj'
+                  : copy.empty,
             )}
           </p>
         )}

@@ -74,6 +74,8 @@ const SETTINGS_IDS: [SettingsTab, string[]][] = [
       'completeCues',
       'engineSync',
       'seratoSync',
+      'virtualdjLibrary',
+      'virtualdjLibraryDir',
     ],
   ],
   ['advanced', ['configDir', 'backup', 'backups', 'cache', 'log']],

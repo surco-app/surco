@@ -35,6 +35,7 @@ export interface TwinSettings {
   cueFlowToTraktor: boolean
   cueFlowToEngine: boolean
   cueFlowToSerato: boolean
+  cueFlowToVirtualdj: boolean
 }
 
 export type TwinPlan =
@@ -54,12 +55,17 @@ const LIBRARIES = DJ_PROGRAMS
 
 export const FLOW_TO: Record<
   DjProgram,
-  'cueFlowToRekordbox' | 'cueFlowToTraktor' | 'cueFlowToEngine' | 'cueFlowToSerato'
+  | 'cueFlowToRekordbox'
+  | 'cueFlowToTraktor'
+  | 'cueFlowToEngine'
+  | 'cueFlowToSerato'
+  | 'cueFlowToVirtualdj'
 > = {
   rekordbox: 'cueFlowToRekordbox',
   traktor: 'cueFlowToTraktor',
   engine: 'cueFlowToEngine',
   serato: 'cueFlowToSerato',
+  virtualdj: 'cueFlowToVirtualdj',
 }
 
 const wanted = (library: DjProgram, settings: TwinSettings): boolean => settings[FLOW_TO[library]]

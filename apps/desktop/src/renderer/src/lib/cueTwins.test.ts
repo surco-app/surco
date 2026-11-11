@@ -37,6 +37,7 @@ const settings = (over: Partial<Record<string, boolean>> = {}) => ({
   cueFlowToTraktor: true,
   cueFlowToEngine: true,
   cueFlowToSerato: true,
+  cueFlowToVirtualdj: true,
   cueLearnFromEdits: true,
   ...over,
 })

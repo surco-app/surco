@@ -19,7 +19,7 @@ import {
 } from '../shared/errorKeys'
 import { foldAccents } from '../shared/foldAccents'
 import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../shared/format'
-import { fromReadOnlyProgram } from '../shared/trackOrigin'
+import { READ_ONLY_BLOCKED, readOnlyProgramsOf } from '../shared/trackOrigin'
 import type {
   DeclickConfig,
   MusicOp,
@@ -530,6 +530,7 @@ export const JOB_PLAYLISTS: Record<
   traktor: jobChoice('traktor', true),
   engine: jobChoice('engine', true),
   serato: jobChoice('serato', true),
+  virtualdj: () => undefined,
 }
 
 export async function runProcessTrack(
@@ -539,7 +540,8 @@ export async function runProcessTrack(
   // Before any side effect: metadata that never came from the file (see ProcessJob.metaUnread)
   // would be written empty over whatever the file still carries.
   if (job.metaUnread) throw errorWithKey('sourceTagsUnread', job.inputPath)
-  if (fromReadOnlyProgram(job)) throw errorWithKey('seratoBlocked', job.inputPath)
+  const readOnly = readOnlyProgramsOf(job)[0]
+  if (readOnly) throw errorWithKey(READ_ONLY_BLOCKED[readOnly], job.inputPath)
   const { settings } = deps
   const stage = (s: ProcessStage): void => deps.sendProgress(s)
   if (deps.isAllowed && !deps.isAllowed(job.inputPath)) throw errorWithKey('pathNotAllowed')

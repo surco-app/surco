@@ -13,7 +13,7 @@ import { djLibraryFileUse, type LibraryLocations } from './libraryFileUse'
 import { REKORDBOX_KEY } from './rekordboxDb'
 import { type RetireDeps, retireSuperseded } from './retireSuperseded'
 
-const NONE: LibraryLocations = { rekordbox: '', engine: '', traktor: '', serato: [] }
+const NONE: LibraryLocations = { rekordbox: '', engine: '', traktor: '', serato: [], virtualdj: '' }
 let root: string
 
 beforeAll(async () => {

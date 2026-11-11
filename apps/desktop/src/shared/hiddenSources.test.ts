@@ -12,7 +12,11 @@ describe('normalizeHiddenSources', () => {
   })
 
   it('drops what a hand-edited or newer file holds, so the rail never waits on a source this version lacks', () => {
-    expect(normalizeHiddenSources(['virtualdj', 3, null, 'appleMusic'])).toEqual(['appleMusic'])
+    expect(normalizeHiddenSources(['djotron', 3, null, 'appleMusic'])).toEqual(['appleMusic'])
+  })
+
+  it('keeps VirtualDJ hidden once the DJ hid it, now that it has a tab', () => {
+    expect(normalizeHiddenSources(['virtualdj'])).toEqual(['virtualdj'])
   })
 
   it('lists a source once however many times it was stored', () => {

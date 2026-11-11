@@ -1,5 +1,6 @@
 import type { TFunction } from 'i18next'
-import { fromReadOnlyProgram } from '../../../shared/trackOrigin'
+import { READ_ONLY_PROGRAMS, type ReadOnlyProgram } from '../../../shared/djProgram'
+import { fromReadOnlyProgram, isFrom } from '../../../shared/trackOrigin'
 import type { CustomField } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import type { AppleMusicIndex } from './appleMusicLibrary'
@@ -78,11 +79,15 @@ export function leftOutForMissing(
 // all 12, 06/11). `ready` is what a click converts; the rest says why the others stay out.
 // A selection that mixes replacing a library copy with adding has no honest subset, so it
 // holds everything back; a single track is never mixed.
-export interface ConvertGate {
+export type ConvertGate = {
   ready: TrackItem[]
   missing: { count: number; fields: string[] }
-  serato: number
   mixed: boolean
+} & Record<ReadOnlyProgram, number>
+
+const LEFT_OUT_KEY: Record<ReadOnlyProgram, string> = {
+  serato: 'header.leftOutSerato',
+  virtualdj: 'header.leftOutVirtualdj',
 }
 
 export function convertGate(
@@ -98,7 +103,12 @@ export function convertGate(
       ? []
       : tracks.filter((t) => canProcessTrack(t, requiredFields, customFields, again)),
     missing: leftOutForMissing(tracks, requiredFields, customFields, again),
-    serato: tracks.filter((t) => inScope(t, again) && fromReadOnlyProgram(t)).length,
+    ...(Object.fromEntries(
+      READ_ONLY_PROGRAMS.map((p) => [
+        p,
+        tracks.filter((t) => inScope(t, again) && isFrom(t, p)).length,
+      ]),
+    ) as Record<ReadOnlyProgram, number>),
     mixed,
   }
 }
@@ -114,7 +124,9 @@ export function leftOutNote(gate: Omit<ConvertGate, 'ready'>, tr: TFunction): st
           fields: gate.missing.fields.map((key) => tr(`fields.${key}`)).join(', '),
         })
       : null,
-    gate.serato > 0 ? tr('header.leftOutSerato', { count: gate.serato }) : null,
+    ...READ_ONLY_PROGRAMS.map((p) =>
+      gate[p] > 0 ? tr(LEFT_OUT_KEY[p], { count: gate[p] }) : null,
+    ),
   ].filter((note) => note !== null)
   return notes.length ? notes.join(' · ') : null
 }

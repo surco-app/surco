@@ -286,6 +286,7 @@ describe('GeneralTab sources', () => {
       'settings-source-engine',
       'settings-source-traktor',
       'settings-source-serato',
+      'settings-source-virtualdj',
     ])
   })
 

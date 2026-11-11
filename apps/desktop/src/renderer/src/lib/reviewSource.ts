@@ -24,6 +24,7 @@ export interface ReviewLoad {
   entries: ReviewEntry[]
   skipped: number
   seratoLeftOut?: number
+  virtualdjLeftOut?: number
   // Undefined where there is no Music; false when it was closed and not opened to ask.
   musicConsulted?: boolean
   incomplete?: IncompleteFinding[]

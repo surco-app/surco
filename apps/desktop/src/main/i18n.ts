@@ -96,6 +96,7 @@ interface MenuStrings {
   dialogPickTracks: string
   dialogOutputDir: string
   dialogEngineLibrary: string
+  dialogVirtualdjLibrary: string
   dialogTraktorCollection: string
   dialogRekordboxCollection: string
   dialogExportCover: string
@@ -218,6 +219,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     dialogPickTracks: 'Selecciona pistas',
     dialogOutputDir: 'Carpeta de salida',
     dialogEngineLibrary: 'Biblioteca de Engine DJ',
+    dialogVirtualdjLibrary: 'Carpeta de VirtualDJ',
     dialogTraktorCollection: 'Colección de Traktor',
     dialogRekordboxCollection: 'Colección de rekordbox',
     dialogExportCover: 'Exporta la carátula',
@@ -337,6 +339,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     dialogPickTracks: 'Choose tracks',
     dialogOutputDir: 'Output folder',
     dialogEngineLibrary: 'Engine DJ library',
+    dialogVirtualdjLibrary: 'VirtualDJ folder',
     dialogTraktorCollection: 'Traktor collection',
     dialogRekordboxCollection: 'rekordbox collection',
     dialogExportCover: 'Export the artwork',
@@ -458,6 +461,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     dialogPickTracks: 'Tracks auswählen',
     dialogOutputDir: 'Ausgabeordner',
     dialogEngineLibrary: 'Engine-DJ-Bibliothek',
+    dialogVirtualdjLibrary: 'VirtualDJ-Ordner',
     dialogTraktorCollection: 'Traktor-Sammlung',
     dialogRekordboxCollection: 'rekordbox-Sammlung',
     dialogExportCover: 'Cover exportieren',
@@ -580,6 +584,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     dialogPickTracks: 'Choisis des morceaux',
     dialogOutputDir: 'Dossier de sortie',
     dialogEngineLibrary: 'Bibliothèque Engine DJ',
+    dialogVirtualdjLibrary: 'Dossier VirtualDJ',
     dialogTraktorCollection: 'Collection Traktor',
     dialogRekordboxCollection: 'Collection rekordbox',
     dialogExportCover: 'Exporter la pochette',
@@ -699,6 +704,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     dialogPickTracks: 'Escolha faixas',
     dialogOutputDir: 'Pasta de saída',
     dialogEngineLibrary: 'Biblioteca do Engine DJ',
+    dialogVirtualdjLibrary: 'Pasta do VirtualDJ',
     dialogTraktorCollection: 'Coleção do Traktor',
     dialogRekordboxCollection: 'Coleção do rekordbox',
     dialogExportCover: 'Exportar a capa',

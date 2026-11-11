@@ -85,6 +85,7 @@ interface Props {
   // somewhere else had no way to say so.
   rekordboxCollection: string
   onChangeRekordboxDbPath: () => void
+  onChangeVirtualdjDir: () => void
 }
 
 // Where a conversion ends up: the output folder, the destination radio (folder /
@@ -111,6 +112,7 @@ function OutputSettings({
   onAcceptDetectedNmlPath,
   rekordboxCollection,
   onChangeRekordboxDbPath,
+  onChangeVirtualdjDir,
   searchAnchor,
 }: Props & { part: 'output' | 'programs' }): React.JSX.Element {
   const { t: tr } = useTranslation()
@@ -505,6 +507,26 @@ function OutputSettings({
           <div {...panel('serato')}>
             <SeratoSection synced={synced} patch={patch} />
           </div>
+          <div {...panel('virtualdj')}>
+            <SettingsSection
+              eyebrow={tr('settings.virtualdjLibrary')}
+              searchId="virtualdjLibrary"
+              first
+            >
+              <SettingsLabel searchId="virtualdjLibraryDir">
+                {tr('settings.virtualdjLibraryDir')}
+              </SettingsLabel>
+              <div className="mt-2">
+                <PathField
+                  value={local.virtualdjLibraryDir}
+                  onChange={onChangeVirtualdjDir}
+                  testid="settings-virtualdj-dir"
+                  emptyLabel={tr('settings.traktorNmlPathEmpty')}
+                />
+              </div>
+              <SettingsHint className="mt-2">{tr('settings.virtualdjLibraryDirHint')}</SettingsHint>
+            </SettingsSection>
+          </div>
         </>
       )}
       {part === 'output' && (
@@ -640,7 +662,7 @@ function SeratoSection({
 
 const DJ_REACHES: readonly DjReach[] = ['off', 'update', 'add']
 
-const PROGRAM_TABS = programsInOrder(['traktor', 'rekordbox', 'engine', 'serato'])
+const PROGRAM_TABS = programsInOrder(['traktor', 'rekordbox', 'engine', 'serato', 'virtualdj'])
 
 const PROGRAM_OF_ANCHOR: Record<string, DjProgram> = {
   traktorSync: 'traktor',
@@ -651,6 +673,8 @@ const PROGRAM_OF_ANCHOR: Record<string, DjProgram> = {
   completeCues: 'rekordbox',
   engineSync: 'engine',
   seratoSync: 'serato',
+  virtualdjLibrary: 'virtualdj',
+  virtualdjLibraryDir: 'virtualdj',
 }
 
 function DjReachRow({

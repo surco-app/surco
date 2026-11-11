@@ -169,6 +169,7 @@ const PLAYLISTS_FIELD_OFFERED = {
   traktor: 'traktorPlaylistsFieldOffered',
   engine: 'enginePlaylistsFieldOffered',
   serato: 'seratoPlaylistsFieldOffered',
+  virtualdj: 'virtualdjPlaylistsFieldOffered',
 } as const satisfies Record<LibraryProgram, keyof Settings>
 
 export function programChoicePatch(

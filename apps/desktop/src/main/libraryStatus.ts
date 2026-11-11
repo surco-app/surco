@@ -15,11 +15,16 @@ interface SeratoStatusSettings {
   syncSerato: boolean
 }
 
+interface VirtualdjStatusSettings {
+  syncVirtualdj: boolean
+  virtualdjLibraryDir: string
+}
+
 // A toggle only grants permission; whether the library can be written is a separate
 // question, because a configured path outlives the folder it pointed at. Told apart so
 // the review can say "not found" instead of promising a sync that cannot happen.
 export function libraryStatus(
-  settings: StatusSettings & SeratoStatusSettings,
+  settings: StatusSettings & SeratoStatusSettings & VirtualdjStatusSettings,
   exists: (path: string) => boolean,
   seratoFound: boolean,
 ): LibraryStatus {
@@ -38,5 +43,9 @@ export function libraryStatus(
       found: settings.traktorNmlPath !== '' && exists(settings.traktorNmlPath),
     },
     serato: { enabled: settings.syncSerato, found: seratoFound },
+    virtualdj: {
+      enabled: settings.syncVirtualdj,
+      found: exists(join(settings.virtualdjLibraryDir, 'database.xml')),
+    },
   }
 }

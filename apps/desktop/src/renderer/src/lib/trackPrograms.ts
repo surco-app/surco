@@ -25,6 +25,10 @@ export const TRACK_PROGRAMS: Record<PlaylistLibrary, TrackProgram> = {
     signatureTag: null,
     rereadAfterMove: false,
   },
+  virtualdj: {
+    signatureTag: null,
+    rereadAfterMove: false,
+  },
 }
 
 export function mergedOrigin(onto: TrackOrigin, from: TrackOrigin): TrackOrigin {

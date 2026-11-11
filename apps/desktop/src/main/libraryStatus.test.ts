@@ -9,6 +9,8 @@ const base = {
   syncTraktor: true,
   traktorNmlPath: '/lib/traktor/collection.nml',
   syncSerato: false,
+  syncVirtualdj: false,
+  virtualdjLibraryDir: '/lib/vdj',
 }
 
 describe('libraryStatus', () => {
@@ -18,6 +20,7 @@ describe('libraryStatus', () => {
       engine: { enabled: true, found: true },
       traktor: { enabled: true, found: true },
       serato: { enabled: false, found: true },
+      virtualdj: { enabled: false, found: true },
     })
   })
 
@@ -47,6 +50,19 @@ describe('libraryStatus', () => {
 
   it('reports Serato enabled and found apart', () => {
     expect(libraryStatus({ ...base, syncSerato: true }, () => false, false).serato).toEqual({
+      enabled: true,
+      found: false,
+    })
+  })
+
+  it('finds VirtualDJ by its database in the folder Settings names, not just the folder', () => {
+    const status = libraryStatus(base, (p) => p === '/lib/vdj/database.xml', false)
+    expect(status.virtualdj).toEqual({ enabled: false, found: true })
+    expect(libraryStatus(base, (p) => p === '/lib/vdj', false).virtualdj.found).toBe(false)
+  })
+
+  it('reports VirtualDJ enabled and found apart', () => {
+    expect(libraryStatus({ ...base, syncVirtualdj: true }, () => false, false).virtualdj).toEqual({
       enabled: true,
       found: false,
     })

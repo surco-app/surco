@@ -142,6 +142,7 @@ export interface MusicReview {
   // Rows the list could not review because their file was not read.
   skipped: number
   seratoLeftOut?: number
+  virtualdjLeftOut?: number
   musicConsulted?: boolean
   inMusic: (id: string) => boolean
   facts: (id: string) => TrackItem | undefined
@@ -309,6 +310,7 @@ export function useMusicReview({
   const [loaded, setLoaded] = useState<{
     skipped: number
     seratoLeftOut?: number
+    virtualdjLeftOut?: number
     musicConsulted?: boolean
   }>({
     skipped: 0,
@@ -327,6 +329,7 @@ export function useMusicReview({
     setLoaded({
       skipped: result.skipped,
       seratoLeftOut: result.seratoLeftOut,
+      virtualdjLeftOut: result.virtualdjLeftOut,
       musicConsulted: consulted(result.musicConsulted),
     })
     return result.entries
@@ -954,6 +957,7 @@ export function useMusicReview({
       reviewed: entries.length,
       skipped: loaded.skipped,
       seratoLeftOut: loaded.seratoLeftOut,
+      virtualdjLeftOut: loaded.virtualdjLeftOut,
       musicConsulted: loaded.musicConsulted,
       inMusic,
       facts,

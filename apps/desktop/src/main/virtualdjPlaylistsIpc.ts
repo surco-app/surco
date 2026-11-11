@@ -19,7 +19,7 @@ export interface VirtualdjPlaylistsHost {
 export function virtualdjRead(host: VirtualdjPlaylistsHost): DjReadMain {
   const library = () => readVirtualdjLibrary(host.dir())
   return {
-    available: () => existsSync(join(host.dir(), 'database.xml')),
+    available: () => process.platform !== 'win32' && existsSync(join(host.dir(), 'database.xml')),
     tree: () => virtualdjTree(library()),
     recentCount: () => virtualdjRecentCount(library()),
     trackCount: () => virtualdjTrackCount(library()),

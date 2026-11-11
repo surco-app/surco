@@ -38,6 +38,7 @@ describe('DJ_REACH_SETTINGS', () => {
       engine: { sync: 'syncEngineDj', add: 'addToEngineDj' },
       traktor: { sync: 'syncTraktor', add: 'addToTraktor' },
       serato: { sync: 'syncSerato', add: 'addToSerato' },
+      virtualdj: { sync: 'syncVirtualdj', add: 'addToVirtualdj' },
     })
   })
 })
@@ -50,6 +51,7 @@ describe('reachedPrograms', () => {
         addToTraktor: true,
         addToEngineDj: true,
         addToSerato: false,
+        addToVirtualdj: false,
       }),
     ).toEqual(['rekordbox', 'engine', 'traktor'])
     expect(
@@ -58,6 +60,7 @@ describe('reachedPrograms', () => {
         addToTraktor: true,
         addToEngineDj: false,
         addToSerato: false,
+        addToVirtualdj: false,
       }),
     ).toEqual(['traktor'])
     expect(
@@ -66,6 +69,7 @@ describe('reachedPrograms', () => {
         addToTraktor: false,
         addToEngineDj: false,
         addToSerato: false,
+        addToVirtualdj: false,
       }),
     ).toEqual([])
   })
@@ -76,6 +80,7 @@ describe('reachedPrograms', () => {
       addToTraktor: true,
       addToEngineDj: false,
       addToSerato: false,
+      addToVirtualdj: false,
     }
     expect(reachedPrograms(s, new Set(['rekordbox']))).toEqual([])
     expect(reachedPrograms(s)).toEqual(['traktor'])
