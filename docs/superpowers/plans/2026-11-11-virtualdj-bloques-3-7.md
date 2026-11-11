@@ -142,6 +142,19 @@
 
 ## Bloque 7. Cierre
 
+### Task 18b: La web y la tabla de programas
+
+Pedido por el usuario el 11/11. Va después de la Tarea 18, antes de la 19, para describir lo que de verdad funciona.
+
+**Files:**
+- Modify: `apps/web/src/i18n/locales/*.json` (6 idiomas), `apps/web/src/App.tsx` (lista de marcas), la página de funciones, `docs/funcionalidades.md`.
+
+- [ ] **Step 1:** Recorrer cada texto de la web que nombra los programas de DJ (descripción, meta, funciones, FAQ, guía) y añadir VirtualDJ donde ya funciona. No afirmar nada que no haya pasado la prueba real.
+- [ ] **Step 2:** Tabla nueva en la página de funciones: una fila por función (pestaña y playlists, editar playlists, pegar tracklist, sesión automática, editor de cues, flujos y gemelas, rejilla, añadir convertidas, sincronizar etiquetas, sustituir, USB, copias, Windows) y una columna por programa (rekordbox, Traktor, Engine DJ, Serato, VirtualDJ), con las salvedades reales (p. ej. Engine DJ sin CALL). Antes de escribirla, el controlador enseña al usuario un boceto dibujado (artifact) y espera su visto bueno.
+- [ ] **Step 3:** Test de la web que fije las celdas de la tabla contra una tabla de datos única, y build/prerender en verde en los 6 idiomas; captura con Brave contra vite preview.
+- [ ] **Step 4:** `docs/funcionalidades.md` con VirtualDJ y la fecha de revisión.
+- [ ] **Step 5:** Commits `Mention VirtualDJ across the website` y `Show which features each DJ program supports on the features page`.
+
 ### Task 19: Prueba final, skill y merge
 
 - [ ] **Step 1:** Suite, tipos, Biome, matriz y batería en verde.
