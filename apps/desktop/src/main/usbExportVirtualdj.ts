@@ -5,8 +5,7 @@ import { rekordboxShiftOfFileIfKnown } from './rekordboxTimeline'
 import { foreignExportTrack, foreignMarks, foreignSelection, unixDate } from './usbExportForeign'
 import { type ExportSelection, selectedPlaylists } from './usbExportSource'
 import { virtualdjTrackCuesOf } from './virtualdjCueSource'
-import type { VirtualdjSong } from './virtualdjDatabase'
-import { type VirtualdjLibrary, virtualdjTree } from './virtualdjLibrary'
+import { type VirtualdjLibrary, virtualdjSongsByPath, virtualdjTree } from './virtualdjLibrary'
 import type { VirtualdjNode } from './virtualdjLists'
 
 const DEFAULT_SAMPLE_RATE = 44100
@@ -52,11 +51,7 @@ export async function readVirtualdjExportSelection(
 ): Promise<ExportSelection> {
   const picked = selectedPlaylists(virtualdjTree(library), new Set(ids))
   const rows = picked.map(({ node }) => listOf(library.lists, node.id)?.paths ?? [])
-  const known = new Map<string, VirtualdjSong>()
-  for (const s of library.songs) {
-    const key = s.path.normalize('NFC')
-    if (!known.has(key)) known.set(key, s)
-  }
+  const known = virtualdjSongsByPath(library.songs)
   return foreignSelection(
     picked,
     rows,

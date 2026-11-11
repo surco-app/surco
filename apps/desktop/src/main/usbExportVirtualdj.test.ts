@@ -9,7 +9,7 @@ import {
   type VirtualdjClock,
   virtualdjExportClock,
 } from './usbExportVirtualdj'
-import { readVirtualdjLibrary, type VirtualdjLibrary } from './virtualdjLibrary'
+import { readVirtualdjLibrary, type VirtualdjLibrary, virtualdjPlaylist } from './virtualdjLibrary'
 
 const fixture = join(__dirname, 'virtualdjFixtures')
 const MP3 = '/Music/Serato Pruebas/Pray.mp3'
@@ -139,6 +139,15 @@ describe('readVirtualdjExportSelection', () => {
     })
     expect(sel.tracks[0]).toMatchObject({ path: MP3, cues: [], grid: [] })
     expect(sel.tracks[0].cuesLeftOut).toBeFalsy()
+  })
+
+  it('takes the same song the VirtualDJ tab shows when two songs share a path, so the stick never gets a key the tab does not show', async () => {
+    const twin = (key: string) =>
+      ` <Song FilePath="/m/a.wav" FileSize="1">\r\n  <Tags Key="${key}" Bpm="0.5" />\r\n </Song>\r\n`
+    const lib = made(`${twin('8A')}${twin('9A')}`, ['/m/a.wav'])
+    const sel = await readVirtualdjExportSelection(lib, ['Set'], { clockOf })
+    expect(virtualdjPlaylist(lib, 'Set')[0].meta.key).toBe('8A')
+    expect(sel.tracks[0].key).toBe('8A')
   })
 
   it('names a list row VirtualDJ has no song for after its file', async () => {

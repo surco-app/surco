@@ -100,6 +100,12 @@ export function readVirtualdjLibrary(roots: VirtualdjRoot[]): VirtualdjLibrary {
 
 const nfc = (path: string) => path.normalize('NFC')
 
+export function virtualdjSongsByPath(songs: VirtualdjSong[]): Map<string, VirtualdjSong> {
+  const byPath = new Map<string, VirtualdjSong>()
+  for (const s of songs) if (!byPath.has(nfc(s.path))) byPath.set(nfc(s.path), s)
+  return byPath
+}
+
 function playlists(nodes: VirtualdjNode[]): VirtualdjNode[] {
   return nodes.flatMap((n) => (n.kind === 'playlist' ? [n] : playlists(n.children ?? [])))
 }
@@ -173,7 +179,7 @@ export function virtualdjPlaylist(
   if (id === ALL_TRACKS_ID) return newestFirst(library.songs).map((s) => entryOf(s.path, s))
   const list = playlists(library.lists).find((n) => n.id === id)
   if (!list) return []
-  const byPath = new Map(library.songs.map((s) => [nfc(s.path), s]))
+  const byPath = virtualdjSongsByPath(library.songs)
   return list.paths.map((path, i) => ({
     ...entryOf(path, byPath.get(nfc(path))),
     linkId: virtualdjLinkId(i, path),
