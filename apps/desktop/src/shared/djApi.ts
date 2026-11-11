@@ -4,6 +4,8 @@ import type {
   CollectionTrack,
   RekordboxEditResult,
   RekordboxPlaylistEdit,
+  RekordboxQueueApplied,
+  RekordboxQueueState,
   SourceNode,
   SourcePlaylistEntry,
 } from './types'
@@ -29,9 +31,17 @@ export interface DjEditMain {
   hasSeparator?(): Awaitable<boolean>
 }
 
+export interface DjCueQueueMain {
+  read(): Awaitable<RekordboxQueueState>
+  apply(sender: WebContents): Promise<RekordboxQueueApplied | null>
+  discard(): Promise<void> | void
+  ready(): Awaitable<void>
+}
+
 export interface DjMainProgram {
   read: DjReadMain
   edit?: DjEditMain
+  cueQueue?: DjCueQueueMain
 }
 
 export type DjMainTable = Record<DjProgram, DjMainProgram>

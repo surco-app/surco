@@ -20,6 +20,7 @@ function row(
   program: DjProgram,
   over: Partial<DjMainProgram['read']> = {},
   edit?: DjMainProgram['edit'],
+  cueQueue?: DjMainProgram['cueQueue'],
 ): DjMainProgram {
   return {
     read: {
@@ -33,14 +34,18 @@ function row(
       ...over,
     },
     ...(edit ? { edit } : {}),
+    ...(cueQueue ? { cueQueue } : {}),
   }
 }
 
 function table(
   over: Partial<Record<DjProgram, Partial<DjMainProgram['read']>>> = {},
   edits: Partial<Record<DjProgram, DjMainProgram['edit']>> = {},
+  queues: Partial<Record<DjProgram, DjMainProgram['cueQueue']>> = {},
 ): DjMainTable {
-  return Object.fromEntries(DJ_PROGRAMS.map((p) => [p, row(p, over[p], edits[p])])) as DjMainTable
+  return Object.fromEntries(
+    DJ_PROGRAMS.map((p) => [p, row(p, over[p], edits[p], queues[p])]),
+  ) as DjMainTable
 }
 
 describe('registerDjIpc', () => {
@@ -98,5 +103,39 @@ describe('registerDjIpc', () => {
     await expect(
       handler('dj:editPlaylist')({ sender: {} }, 'engine', { kind: 'delete', playlistId: 'p' }),
     ).rejects.toThrow('engine has no editPlaylist')
+  })
+
+  it('serves each cue queue operation from the row of the program it names, so no program answers for another queue', async () => {
+    const state = { tracks: 2, changes: 1, items: [] }
+    const applied = { tracks: 2, changes: 1, notices: [], written: [] }
+    const queue = (name: string) => ({
+      read: vi.fn(() => ({ ...state, tracks: name.length })),
+      apply: vi.fn(async () => applied),
+      discard: vi.fn(async () => {}),
+      ready: vi.fn(),
+    })
+    const engine = queue('engine')
+    const serato = queue('serato')
+    registerDjIpc(table({}, {}, { engine, serato }))
+    const sender = { id: 3 }
+    expect(await handler('dj:cueQueue')({}, 'engine')).toEqual({ ...state, tracks: 6 })
+    expect(await handler('dj:applyCueQueue')({ sender }, 'engine')).toEqual(applied)
+    expect(engine.apply).toHaveBeenCalledWith(sender)
+    await handler('dj:discardCueQueue')({}, 'engine')
+    await handler('dj:cueQueueReady')({}, 'engine')
+    expect(engine.discard).toHaveBeenCalled()
+    expect(engine.ready).toHaveBeenCalled()
+    expect(serato.read).not.toHaveBeenCalled()
+    expect(serato.apply).not.toHaveBeenCalled()
+    expect(serato.discard).not.toHaveBeenCalled()
+    expect(serato.ready).not.toHaveBeenCalled()
+  })
+
+  it('rejects a cue queue operation for a program without a queue', async () => {
+    registerDjIpc(table())
+    await expect(handler('dj:cueQueue')({}, 'engine')).rejects.toThrow('engine has no cueQueue')
+    await expect(handler('dj:applyCueQueue')({ sender: {} }, 'engine')).rejects.toThrow(
+      'engine has no applyCueQueue',
+    )
   })
 })

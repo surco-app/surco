@@ -1,11 +1,12 @@
-import { BrowserWindow, ipcMain } from 'electron'
+import { BrowserWindow } from 'electron'
+import type { DjCueQueueMain } from '../shared/djApi'
 import type { CopyReason } from '../shared/types'
 import { serialLibraryFlush } from './libraryTagSync'
 import type { QueueApply, RekordboxQueue } from './rekordboxQueue'
 import { appliedNotice } from './rekordboxQueueIpc'
 import { stillWaiting } from './rekordboxQueueWatch'
 
-export function registerEngineCueQueueIpc(
+export function engineCueQueueSection(
   queue: Pick<RekordboxQueue, 'state' | 'discard' | 'apply'>,
   host: {
     ensureClosed: (win: BrowserWindow | null) => Promise<boolean>
@@ -16,29 +17,30 @@ export function registerEngineCueQueueIpc(
     onSettled?: (result: QueueApply | 'threw') => void
     onDiscarded?: () => void
   },
-): void {
-  ipcMain.handle('engine:cueQueue', () => queue.state())
-  ipcMain.handle('engine:applyCueQueue', (e) =>
-    serialLibraryFlush(async () => {
-      host.beginMoment?.('queue')
-      let result: QueueApply
-      try {
-        result = await queue.apply(
-          () => host.ensureClosed(BrowserWindow.fromWebContents(e.sender)),
-          { manual: true },
-        )
-      } catch (err) {
-        host.onSettled?.('threw')
-        throw err
-      }
-      host.onSettled?.(result)
-      if (stillWaiting(result)) host.onWaiting?.()
-      return appliedNotice(result)
-    }),
-  )
-  ipcMain.handle('engine:discardCueQueue', () => {
-    queue.discard()
-    host.onDiscarded?.()
-  })
-  ipcMain.handle('engine:cueQueueReady', () => host.onReady?.())
+): DjCueQueueMain {
+  return {
+    read: () => queue.state(),
+    apply: (sender) =>
+      serialLibraryFlush(async () => {
+        host.beginMoment?.('queue')
+        let result: QueueApply
+        try {
+          result = await queue.apply(
+            () => host.ensureClosed(BrowserWindow.fromWebContents(sender)),
+            { manual: true },
+          )
+        } catch (err) {
+          host.onSettled?.('threw')
+          throw err
+        }
+        host.onSettled?.(result)
+        if (stillWaiting(result)) host.onWaiting?.()
+        return appliedNotice(result)
+      }),
+    discard: async () => {
+      queue.discard()
+      host.onDiscarded?.()
+    },
+    ready: () => host.onReady?.(),
+  }
 }

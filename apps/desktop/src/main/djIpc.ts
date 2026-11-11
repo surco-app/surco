@@ -41,6 +41,13 @@ function registerSave(table: DjMainTable): void {
   )
 }
 
+function registerApplyCueQueue(table: DjMainTable): void {
+  ipcMain.handle('dj:applyCueQueue', async (event, program: DjProgram) => {
+    const { target, run } = resolveOperation(table, program, 'cueQueue', 'apply', 'applyCueQueue')
+    return run.call(target, event.sender)
+  })
+}
+
 export function registerDjIpc(table: DjMainTable): void {
   registerOperation(table, 'read', 'available')
   registerOperation(table, 'read', 'tree')
@@ -51,4 +58,8 @@ export function registerDjIpc(table: DjMainTable): void {
   registerOperation(table, 'read', 'collection')
   registerSave(table)
   registerOperation(table, 'edit', 'hasSeparator')
+  registerOperation(table, 'cueQueue', 'read', 'cueQueue')
+  registerApplyCueQueue(table)
+  registerOperation(table, 'cueQueue', 'discard', 'discardCueQueue')
+  registerOperation(table, 'cueQueue', 'ready', 'cueQueueReady')
 }

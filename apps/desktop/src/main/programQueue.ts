@@ -19,7 +19,6 @@ export interface ProgramQueueSpec<
 > {
   program: P
   queue: QueueDeps<R>
-  appliedChannel: string
   alwaysWatch?: () => boolean
   onClosed?: () => void
 }
@@ -55,7 +54,7 @@ export function createProgramQueue<
   }
   const announceApplied = (result: QueueApply): void => {
     const notice = appliedNotice(result)
-    if (notice) deps.broadcast(spec.appliedChannel, notice)
+    if (notice) deps.broadcast('dj:cueQueueApplied', { program, value: notice })
     settled(result)
   }
   const watch = watchRekordboxQueue({
