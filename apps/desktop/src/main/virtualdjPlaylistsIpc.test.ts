@@ -8,7 +8,10 @@ import { virtualdjLibraryRoots } from './virtualdjLibrary'
 import { virtualdjRead } from './virtualdjPlaylistsIpc'
 
 const fixture = join(__dirname, 'virtualdjFixtures')
-const NO_DRIVES = join(tmpdir(), 'surco-vdjipc-no-drives')
+function homeOnly(dir: () => string) {
+  const volumes = mkdtempSync(join(tmpdir(), 'surco-vdjipc-volumes-'))
+  return () => virtualdjLibraryRoots(dir(), volumes)
+}
 
 function copy(): string {
   const dir = join(mkdtempSync(join(tmpdir(), 'surco-vdjipc-')), 'VirtualDJ')
@@ -19,7 +22,7 @@ function copy(): string {
 describe('virtualdjRead', () => {
   it('says VirtualDJ is there only while its database is, so the tab shows only where VirtualDJ ran', () => {
     const dir = copy()
-    const read = virtualdjRead({ roots: () => virtualdjLibraryRoots(dir, NO_DRIVES) })
+    const read = virtualdjRead({ roots: homeOnly(() => dir) })
     expect(read.available()).toBe(true)
     rmSync(join(dir, 'database.xml'))
     expect(read.available()).toBe(false)
@@ -27,7 +30,7 @@ describe('virtualdjRead', () => {
 
   it('says VirtualDJ is not there on Windows, where nothing of it is measured yet', () => {
     const dir = copy()
-    const read = virtualdjRead({ roots: () => virtualdjLibraryRoots(dir, NO_DRIVES) })
+    const read = virtualdjRead({ roots: homeOnly(() => dir) })
     const original = Object.getOwnPropertyDescriptor(process, 'platform')
     Object.defineProperty(process, 'platform', { value: 'win32', configurable: true })
     try {
@@ -39,7 +42,7 @@ describe('virtualdjRead', () => {
 
   it('reads the folder Settings names now, since the DJ can point Surco elsewhere while it runs', () => {
     let dir = join(tmpdir(), 'surco-vdjipc-nowhere')
-    const read = virtualdjRead({ roots: () => virtualdjLibraryRoots(dir, NO_DRIVES) })
+    const read = virtualdjRead({ roots: homeOnly(() => dir) })
     expect(read.available()).toBe(false)
     expect(read.tree()).toEqual([])
     expect(read.trackCount()).toBe(0)
@@ -55,7 +58,7 @@ describe('virtualdjRead', () => {
 
   it('counts as recently added what VirtualDJ first saw in the last 30 days', () => {
     const dir = copy()
-    const read = virtualdjRead({ roots: () => virtualdjLibraryRoots(dir, NO_DRIVES) })
+    const read = virtualdjRead({ roots: homeOnly(() => dir) })
     vi.useFakeTimers({ now: new Date(2026, 11, 1) })
     try {
       expect(read.recentCount()).toBe(6)
@@ -69,7 +72,7 @@ describe('virtualdjRead', () => {
   it('grants the files of the list it read, so the rows can play before any disk walk', () => {
     const dir = copy()
     const allowMedia = vi.fn()
-    const read = virtualdjRead({ roots: () => virtualdjLibraryRoots(dir, NO_DRIVES), allowMedia })
+    const read = virtualdjRead({ roots: homeOnly(() => dir), allowMedia })
     const entries = read.playlist('Carpeta/Dentro') as SourcePlaylistEntry[]
     expect(entries.map((e) => e.contentId)).toEqual(['virtualdj:/Music/Serato Pruebas/Pray.mp3'])
     expect(allowMedia).toHaveBeenCalledWith(['/Music/Serato Pruebas/Pray.mp3'])
@@ -77,13 +80,13 @@ describe('virtualdjRead', () => {
 
   it('opens All tracks with every song of the database', () => {
     const dir = copy()
-    const read = virtualdjRead({ roots: () => virtualdjLibraryRoots(dir, NO_DRIVES) })
+    const read = virtualdjRead({ roots: homeOnly(() => dir) })
     expect((read.playlist(ALL_TRACKS_ID) as SourcePlaylistEntry[]).length).toBe(6)
   })
 
   it('answers which lists hold each file', () => {
     const dir = copy()
-    const read = virtualdjRead({ roots: () => virtualdjLibraryRoots(dir, NO_DRIVES) })
+    const read = virtualdjRead({ roots: homeOnly(() => dir) })
     expect(read.membership(['/Music/VirtualDJ Pruebas/Pray.flac'])).toEqual({
       '/Music/VirtualDJ Pruebas/Pray.flac': ['Surco escrita'],
     })
@@ -91,7 +94,7 @@ describe('virtualdjRead', () => {
 
   it('lists the whole collection as rows to match a pasted tracklist against', () => {
     const dir = copy()
-    const read = virtualdjRead({ roots: () => virtualdjLibraryRoots(dir, NO_DRIVES) })
+    const read = virtualdjRead({ roots: homeOnly(() => dir) })
     const rows = read.collection?.() as CollectionTrack[]
     expect(rows).toHaveLength(6)
     expect(rows.every((r) => r.contentId === `virtualdj:${r.path}`)).toBe(true)
