@@ -3360,7 +3360,6 @@
       "show": "Ver archivos",
       "hide": "Ocultar archivos",
       "expires": "Se borran solos a los {{days}} días, o antes si pasan de {{size}}.",
-      "stateEmpty": "Nada guardado",
       "renamedTo": "Renombrado por una conversión a «{{name}}»",
       "replacedBy": "Sustituido por «{{name}}» en una conversión"
     },

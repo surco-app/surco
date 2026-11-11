@@ -140,11 +140,6 @@ describe('CopiesScreen', () => {
     expect(screen.getByTestId('copies-kept-engine')).toHaveTextContent(
       i18n.t('copies.kept', { count: 0, max: 5 }),
     )
-    expect(screen.getByTestId('copies-state-music')).toBeInTheDocument()
-    expect(screen.getByTestId('copies-last-music')).toHaveTextContent(i18n.t('copies.none'))
-    expect(screen.getByTestId('copies-kept-music')).toHaveTextContent(
-      i18n.t('copies.music.summary', { count: 0, size: '0 B', max: '10 GB' }),
-    )
   })
 
   it('offers no buttons for a program with nothing to show or restore, so none of them is dead', () => {
@@ -676,14 +671,13 @@ describe('CopiesScreen music files', () => {
     expect(screen.queryByTestId('trash-list')).not.toBeInTheDocument()
   })
 
-  it('never says originals are kept when none is, and says what will land here', () => {
+  // Status, last backup and "0 files · 0 B" all said "nothing yet" three times over the
+  // sentence that says what will land here; that sentence alone answers it.
+  it('never says originals are kept when none is, and only says what will land here', () => {
     renderMusic([])
-    expect(screen.getByTestId('copies-state-music')).toHaveTextContent(
-      i18n.t('copies.music.stateEmpty'),
-    )
-    expect(screen.getByTestId('copies-state-music')).not.toHaveTextContent(
-      i18n.t('copies.music.state'),
-    )
+    expect(screen.queryByTestId('copies-state-music')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('copies-last-music')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('copies-kept-music')).not.toBeInTheDocument()
     expect(screen.getByTestId('copies-music-empty')).toHaveTextContent(i18n.t('trash.emptyBody'))
   })
 

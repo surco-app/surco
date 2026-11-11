@@ -556,25 +556,27 @@ function MusicSection({
       </div>
       <div className="min-w-0">
         <h2 className="text-[14.5px] font-semibold text-fg">{tr('copies.music.title')}</h2>
-        <div className={FACTS}>
-          <Fact
-            label={tr('copies.facts.state')}
-            testId="copies-state-music"
-            className={entries.length > 0 ? 'text-[var(--color-good)]' : 'text-fg-faint'}
-          >
-            {tr(entries.length > 0 ? 'copies.music.state' : 'copies.music.stateEmpty')}
-          </Fact>
-          <Fact label={tr('copies.facts.last')} testId="copies-last-music">
-            {entries.length > 0 ? when(last) : tr('copies.none')}
-          </Fact>
-          <Fact label={tr('copies.music.kept')} testId="copies-kept-music">
-            {tr('copies.music.summary', {
-              count: entries.length,
-              size: formatBytes(total, i18n.language),
-              max: formatBytes(trash.maxBytes, i18n.language),
-            })}
-          </Fact>
-        </div>
+        {entries.length > 0 && (
+          <div className={FACTS}>
+            <Fact
+              label={tr('copies.facts.state')}
+              testId="copies-state-music"
+              className="text-[var(--color-good)]"
+            >
+              {tr('copies.music.state')}
+            </Fact>
+            <Fact label={tr('copies.facts.last')} testId="copies-last-music">
+              {when(last)}
+            </Fact>
+            <Fact label={tr('copies.music.kept')} testId="copies-kept-music">
+              {tr('copies.music.summary', {
+                count: entries.length,
+                size: formatBytes(total, i18n.language),
+                max: formatBytes(trash.maxBytes, i18n.language),
+              })}
+            </Fact>
+          </div>
+        )}
       </div>
       <div className="flex gap-2">
         {entries.length > 0 && (

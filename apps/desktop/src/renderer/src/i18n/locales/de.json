@@ -3360,7 +3360,6 @@
       "show": "Dateien anzeigen",
       "hide": "Dateien ausblenden",
       "expires": "Werden nach {{days}} Tagen von selbst gelöscht, oder früher, wenn sie {{size}} überschreiten.",
-      "stateEmpty": "Nichts gespeichert",
       "renamedTo": "Durch eine Konvertierung umbenannt in „{{name}}“",
       "replacedBy": "Bei einer Konvertierung durch „{{name}}“ ersetzt"
     },

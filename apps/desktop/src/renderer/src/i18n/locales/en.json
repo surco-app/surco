@@ -3360,7 +3360,6 @@
       "show": "Show files",
       "hide": "Hide files",
       "expires": "They delete themselves after {{days}} days, or sooner if they go over {{size}}.",
-      "stateEmpty": "Nothing saved",
       "renamedTo": "Renamed by a conversion to “{{name}}”",
       "replacedBy": "Replaced by “{{name}}” in a conversion"
     },
