@@ -86,7 +86,6 @@ describe('CuesSection on a VirtualDJ track', () => {
   it('opens the normal cue editor on the wave and saves the marks to VirtualDJ under the track’s VirtualDJ id', async () => {
     const { save } = setup()
     await ready()
-    expect(screen.queryByTestId('cues-read-only')).toBeNull()
     expect(screen.getByTestId('cues-save')).toHaveAccessibleName(
       i18n.t('editor.cues.virtualdj.save'),
     )

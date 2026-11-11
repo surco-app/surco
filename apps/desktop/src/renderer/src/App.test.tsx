@@ -1007,7 +1007,6 @@ describe('App VirtualDJ tab', () => {
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { metaKey: true })
     expect(await screen.findByTestId('cues-auto-mark-all')).toBeEnabled()
-    expect(screen.queryByTestId('cues-batch-read-only')).toBeNull()
     expect(screen.queryByTestId('cues-single-only')).toBeNull()
     fireEvent.keyDown(document.body, { key: 'k', ctrlKey: true })
     await screen.findByTestId('palette-input')

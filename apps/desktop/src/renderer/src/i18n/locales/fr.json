@@ -1161,7 +1161,6 @@
         "acceptSave_other": "Accepter les {{count}} propositions et enregistrer"
       },
       "batch": {
-        "readOnly": "Surco lit seulement les cues de certains programmes de cette sélection. Pour les modifier, fais-le dans chaque programme",
         "mark_one": "Marquage auto de {{count}} morceau",
         "mark_other": "Marquage auto de {{count}} morceaux",
         "withProposals": "Avec propositions",

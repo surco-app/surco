@@ -25,7 +25,6 @@ import {
   type LibraryProgram,
   PROGRAM_CAN,
   programOf,
-  readsCuesOnly,
   WRITABLE_PROGRAMS,
   type WritableProgram,
 } from '../../shared/djProgram'
@@ -3356,7 +3355,6 @@ export default function App(): React.JSX.Element {
         rekordboxCue &&
         selectedTracks.length > 1 &&
         cuesMarkable &&
-        !cueTargets.some((t) => readsCuesOnly(programOf(t.contentId))) &&
         !settings?.editorSections.some((s) => s.id === 'cues' && s.hidden)
           ? autoMarkSelected
           : undefined,

@@ -20,12 +20,7 @@ import { offGridCues } from '../../../shared/cueGrid'
 import type { CueJumpBars } from '../../../shared/cueJump'
 import type { CueQuantize } from '../../../shared/cueQuantize'
 import { BEATS_PER_BAR, nearestBeat, SAME_POSITION_MS } from '../../../shared/cueRules'
-import {
-  type DjProgram,
-  programOf,
-  type ReadOnlyCueProgram,
-  readsCuesOnly,
-} from '../../../shared/djProgram'
+import { type DjProgram, programOf } from '../../../shared/djProgram'
 import type { DropInput, DropProposal } from '../../../shared/dropDetect'
 import {
   detectedBeatNear,
@@ -200,18 +195,6 @@ const VIRTUALDJ_COPY: typeof REKORDBOX_COPY = {
   queuedStale: 'editor.cues.virtualdj.queuedStale',
   saveFailed: 'editor.cues.virtualdj.saveFailed',
   autoUnanalysed: 'editor.cues.virtualdj.autoUnreadable',
-}
-
-interface ReadOnlyCopy {
-  readOnly: string
-  none: string
-  loop: string
-}
-
-const READ_ONLY_COPY: Record<ReadOnlyCueProgram, ReadOnlyCopy> = {}
-
-export function readOnlyCopy(program: ReadOnlyCueProgram): ReadOnlyCopy {
-  return READ_ONLY_COPY[program]
 }
 
 const COPY: Record<DjProgram, typeof REKORDBOX_COPY> = {
@@ -1944,78 +1927,6 @@ function Editing({
   )
 }
 
-function ReadOnlyCues({
-  contentId,
-  program,
-  read,
-}: {
-  contentId: string
-  program: ReadOnlyCueProgram
-  read: TrackCues
-}): React.JSX.Element {
-  const { t: tr } = useTranslation()
-  const copy = readOnlyCopy(program)
-  const { runningNote } = cueProgramOf(contentId)
-  const { data: programOpen = false } = useQuery({
-    queryKey: [`${program}-running`, contentId],
-    queryFn: () => window.api.dj.running(program),
-    enabled: runningNote !== null,
-    staleTime: 0,
-    refetchInterval: 5000,
-  })
-  const loops = read.loops ?? []
-  return (
-    <div data-testid="cues-read-only" className="grid gap-2">
-      {read.cues.length === 0 && loops.length === 0 ? (
-        <p data-testid="cues-read-only-none" className="text-xs text-fg-dim">
-          {tr(copy.none)}
-        </p>
-      ) : (
-        <ul className="grid gap-1 text-xs">
-          {read.cues.map((c) => {
-            const letter = cueLetter(c.kind)
-            return (
-              <li
-                key={c.id}
-                data-testid={`cues-read-only-${letter}`}
-                className="flex min-w-0 items-center gap-2"
-              >
-                <span
-                  style={{ backgroundColor: hotCueColor(c.color), color: '#000' }}
-                  className="flex h-4 w-4 shrink-0 items-center justify-center rounded-[3px] text-label font-semibold"
-                >
-                  {letter}
-                </span>
-                <span className="shrink-0 tabular-nums text-fg">{cueClock(c.ms)}</span>
-                {c.name && <span className="min-w-0 truncate text-fg-dim">{c.name}</span>}
-              </li>
-            )
-          })}
-          {loops.map((l) => (
-            <li
-              key={l.id}
-              data-testid={`cues-read-only-loop-${l.id}`}
-              className="flex min-w-0 items-center gap-2"
-            >
-              <span className="shrink-0 text-fg-dim">{tr(copy.loop)}</span>
-              <span className="shrink-0 tabular-nums text-fg">
-                {cueClock(l.startMs)} – {cueClock(l.endMs)}
-              </span>
-              {l.name && <span className="min-w-0 truncate text-fg-dim">{l.name}</span>}
-            </li>
-          ))}
-        </ul>
-      )}
-      <p className="text-xs text-fg-dim">{tr(copy.readOnly)}</p>
-      {runningNote && programOpen && (
-        <p data-testid={runningNote.testId} className="text-xs text-warn">
-          {tr(runningNote.key)}
-        </p>
-      )}
-    </div>
-  )
-}
-
 const signedMs = (ms: number): string => `${ms > 0 ? '+' : ms < 0 ? '−' : ''}${Math.abs(ms)} ms`
 
 function GridOffset({
@@ -2145,14 +2056,11 @@ export function CuesSection({
     shown.analysed &&
     shown.grid.length > 0
   const full = maximized && editable
-  const program = programOf(cue.contentId)
   const body =
     isError || shown === null ? (
       <p data-testid="cues-unreadable" className="text-xs text-fg-dim">
         {tr(copyOf(cue.contentId).unreadable)}
       </p>
-    ) : shown !== undefined && readsCuesOnly(program) ? (
-      <ReadOnlyCues contentId={cue.contentId} program={program} read={shown} />
     ) : shown === undefined || queued === undefined ? null : wantsSurcoGrid &&
       surco === undefined ? (
       <p data-testid="cues-measuring" className="text-xs text-fg-dim">

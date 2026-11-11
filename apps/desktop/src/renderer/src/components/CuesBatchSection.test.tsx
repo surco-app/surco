@@ -412,13 +412,11 @@ describe('Cues over several selected tracks of the programs Surco saves cues to'
     expect(mark).toBeEnabled()
     fireEvent.click(mark)
     expect(onMark).toHaveBeenCalled()
-    expect(screen.queryByTestId('cues-batch-read-only')).toBeNull()
   })
 
   it('leaves Auto mark enabled for a selection that mixes VirtualDJ and rekordbox rows', () => {
     setup({}, [TARGETS[0], VDJ[0]])
     expect(screen.getByTestId('cues-auto-mark-all')).toBeEnabled()
-    expect(screen.queryByTestId('cues-batch-read-only')).toBeNull()
   })
 
   it('leaves Auto mark enabled on Serato rows, which Surco saves', () => {
@@ -427,6 +425,5 @@ describe('Cues over several selected tracks of the programs Surco saves cues to'
       { contentId: 'serato:/m/b.mp3', path: '/m/b.mp3', label: 'B' },
     ])
     expect(screen.getByTestId('cues-auto-mark-all')).toBeEnabled()
-    expect(screen.queryByTestId('cues-batch-read-only')).toBeNull()
   })
 })

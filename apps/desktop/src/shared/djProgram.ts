@@ -6,23 +6,22 @@ import { isVirtualdjContent } from './virtualdjContent'
 export type DjProgram = 'rekordbox' | 'traktor' | 'engine' | 'serato' | 'virtualdj'
 
 export const PROGRAM_CAN = {
-  rekordbox: { write: true, usb: true, reach: true, windows: true, saveCues: true },
-  traktor: { write: true, usb: true, reach: true, windows: true, saveCues: true },
-  engine: { write: true, usb: true, reach: true, windows: true, saveCues: true },
-  serato: { write: false, usb: true, reach: true, windows: true, saveCues: true },
-  virtualdj: { write: false, usb: false, reach: false, windows: false, saveCues: true },
+  rekordbox: { write: true, usb: true, reach: true, windows: true },
+  traktor: { write: true, usb: true, reach: true, windows: true },
+  engine: { write: true, usb: true, reach: true, windows: true },
+  serato: { write: false, usb: true, reach: true, windows: true },
+  virtualdj: { write: false, usb: false, reach: false, windows: false },
 } as const satisfies {
   [P in DjProgram]: {
     write: boolean
     usb: boolean
     reach: boolean
     windows: boolean
-    saveCues: boolean
   }
 }
 
-type ProgramsThatCan<K extends 'write' | 'usb' | 'reach' | 'saveCues', V extends boolean = true> = {
-  [P in DjProgram]: (typeof PROGRAM_CAN)[P][K] extends V ? P : never
+type ProgramsThatCan<K extends 'write' | 'usb' | 'reach'> = {
+  [P in DjProgram]: (typeof PROGRAM_CAN)[P][K] extends true ? P : never
 }[DjProgram]
 
 export type WritableProgram = ProgramsThatCan<'write'>
@@ -32,12 +31,6 @@ export type UsbProgram = ProgramsThatCan<'usb'>
 export type ReachProgram = ProgramsThatCan<'reach'>
 
 export type ReadOnlyProgram = Exclude<DjProgram, WritableProgram>
-
-export type ReadOnlyCueProgram = ProgramsThatCan<'saveCues', false>
-
-export function readsCuesOnly(program: DjProgram): program is ReadOnlyCueProgram {
-  return !PROGRAM_CAN[program].saveCues
-}
 
 export type CueProgram = DjProgram
 

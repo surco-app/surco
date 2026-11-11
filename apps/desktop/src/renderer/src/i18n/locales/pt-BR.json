@@ -1161,7 +1161,6 @@
         "acceptSave_other": "Aceitar as {{count}} sugestões e salvar"
       },
       "batch": {
-        "readOnly": "O Surco só lê os cues de alguns programas desta seleção. Para mudá-los, faça isso em cada programa",
         "mark_one": "Marcar automático em {{count}} faixa",
         "mark_other": "Marcar automático em {{count}} faixas",
         "withProposals": "Com propostas",

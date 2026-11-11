@@ -1161,7 +1161,6 @@
         "acceptSave_other": "{{count}} 件の提案を採用して保存"
       },
       "batch": {
-        "readOnly": "この選択には Surco がキューを読むだけのプログラムがあります。変更はそれぞれのプログラムで行ってください",
         "mark_one": "{{count}} トラックを自動マーク",
         "mark_other": "{{count}} トラックを自動マーク",
         "withProposals": "提案あり",
