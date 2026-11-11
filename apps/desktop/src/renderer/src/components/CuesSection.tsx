@@ -22,6 +22,7 @@ import type { CueQuantize } from '../../../shared/cueQuantize'
 import { BEATS_PER_BAR, nearestBeat, SAME_POSITION_MS } from '../../../shared/cueRules'
 import { type DjProgram, programOf } from '../../../shared/djProgram'
 import type { DropInput, DropProposal } from '../../../shared/dropDetect'
+import { checkGrid, needsGridFix } from '../../../shared/gridCheck'
 import {
   detectedBeatNear,
   type EditableGrid,
@@ -29,7 +30,6 @@ import {
   editableGridOf,
   gridAnchors,
   gridBeats,
-  gridOffsets,
   pinGrid,
   sameGrid,
   shiftGrid,
@@ -529,11 +529,16 @@ function Editing({
   const gridFit = useGridFit(cue.contentId, maximized && gridOff === null && fine !== undefined)
   const offsets =
     gridFit && state.grid
-      ? gridOffsets(ctx.beats, gridFit, playheadMs, read.durationMs, programBeats)
+      ? checkGrid({
+          beats: ctx.beats,
+          kicks: programBeats,
+          fit: gridFit,
+          atMs: playheadMs,
+          durationMs: read.durationMs,
+        })
       : null
   const tolerance = settings.cueGridTolerance
-  const needsFix =
-    offsets !== null && Math.max(Math.abs(offsets.hereMs), Math.abs(offsets.endMs)) > tolerance
+  const needsFix = offsets !== null && needsGridFix(offsets, tolerance)
   const setGrid = (next: EditableGrid) => dispatch({ type: 'set-grid', grid: next })
   const [pinned, setPinned] = useState<{ grid: EditableGrid; pins: number[] } | null>(null)
   const pins = pinned && sameGrid(pinned.grid, state.grid) ? pinned.pins : []
