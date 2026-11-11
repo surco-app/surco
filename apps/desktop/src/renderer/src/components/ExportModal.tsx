@@ -33,14 +33,14 @@ export function ExportModal({ tracks, scope = 'visible', onClose }: Props): Reac
       label: 'rekordbox',
       ext: '.xml',
       hint: tr('export.rekordboxHint'),
-      run: () => window.api.exportRekordbox(buildRekordboxXml(tracks)),
+      run: () => window.api.dj.exportCollection('rekordbox', buildRekordboxXml(tracks)),
     },
     {
       id: 'traktor',
       label: 'Traktor',
       ext: '.nml',
       hint: tr('export.traktorHint'),
-      run: () => window.api.exportTraktor(buildTraktorNml(tracks)),
+      run: () => window.api.dj.exportCollection('traktor', buildTraktorNml(tracks)),
     },
     {
       id: 'serato',
@@ -50,7 +50,8 @@ export function ExportModal({ tracks, scope = 'visible', onClose }: Props): Reac
       // Main builds the crate bytes: Serato paths are relative to the volume the crate
       // is saved on, which only the save dialog knows.
       run: () =>
-        window.api.exportSerato(
+        window.api.dj.exportCollection(
+          'serato',
           tracks.map((t) => ({ inputPath: t.inputPath, outputPath: t.outputPath })),
         ),
     },

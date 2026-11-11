@@ -17,7 +17,7 @@ vi.mock('electron', () => ({
 }))
 vi.mock('./settings', () => ({ defaults: {}, getSettings: () => ({}), replaceSettings: vi.fn() }))
 
-import { registerExportIpc } from './exportIpc'
+import { collectionExporters, registerExportIpc } from './exportIpc'
 import { createMenuT } from './i18n'
 
 beforeEach(() => {
@@ -27,7 +27,14 @@ beforeEach(() => {
 })
 
 async function titleOf(channel: string, ...args: unknown[]): Promise<string | undefined> {
-  await handlers.get(channel)?.({}, ...args)
+  const exporters: Record<string, ((arg: never) => Promise<unknown>) | undefined> = {
+    'dialog:exportRekordbox': collectionExporters(() => createMenuT('en')).rekordbox,
+    'dialog:exportTraktor': collectionExporters(() => createMenuT('en')).traktor,
+    'dialog:exportSerato': collectionExporters(() => createMenuT('en')).serato,
+  }
+  const exporter = exporters[channel]
+  if (exporter) await exporter(args[0] as never)
+  else await handlers.get(channel)?.({}, ...args)
   return (showSaveDialog.mock.calls[0] ?? showOpenDialog.mock.calls[0])?.[0].title
 }
 

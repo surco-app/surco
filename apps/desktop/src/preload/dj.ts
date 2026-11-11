@@ -31,5 +31,9 @@ export function createDjApi(ipc: DjIpc): DjApi {
     cueQueueReady: (p) => ipc.invoke('dj:cueQueueReady', p),
     onCueQueueChanged: (p, cb) => subscribe(ipc, 'dj:cueQueueChanged', p, cb),
     onCueQueueApplied: (p, cb) => subscribe(ipc, 'dj:cueQueueApplied', p, cb),
+    exportCollection: (p, payload) => ipc.invoke('dj:exportCollection', p, payload),
+    pickLibraryPath: (p) => ipc.invoke('dj:pickLibraryPath', p),
+    running: (p) => ipc.invoke('dj:running', p),
+    onSyncIssue: (p, cb) => subscribe(ipc, 'dj:syncIssue', p, cb),
   }
 }

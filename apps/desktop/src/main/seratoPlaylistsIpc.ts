@@ -1,4 +1,3 @@
-import { ipcMain } from 'electron'
 import type { DjReadMain } from '../shared/djApi'
 import {
   readSeratoLibrary,
@@ -14,7 +13,6 @@ import {
 export interface SeratoPlaylistsHost {
   roots: () => SeratoLibraryRoot[]
   allowMedia?: (paths: string[]) => void
-  running?: () => Promise<boolean>
 }
 
 export function seratoRead(host: SeratoPlaylistsHost): DjReadMain {
@@ -32,8 +30,4 @@ export function seratoRead(host: SeratoPlaylistsHost): DjReadMain {
     },
     membership: (paths: string[]) => seratoMembership(library(), paths),
   }
-}
-
-export function registerSeratoPlaylistsIpc(host: SeratoPlaylistsHost): void {
-  ipcMain.handle('serato:running', async () => (await host.running?.()) ?? false)
 }

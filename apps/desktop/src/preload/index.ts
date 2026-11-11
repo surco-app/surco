@@ -22,7 +22,6 @@ import type {
   PairFacts,
   ProcessProgress,
   ProgramCopies,
-  RekordboxSyncIssue,
   RememberedAutoMatch,
   RestoreResult,
   ReviewWriteField,
@@ -120,9 +119,6 @@ const api: Api = {
   pickConfigDir: (): Promise<string | null> => ipcRenderer.invoke('dialog:pickConfigDir'),
   pickFiles: () => ipcRenderer.invoke('dialog:pickFiles'),
   pickOutputDir: () => ipcRenderer.invoke('dialog:pickOutputDir'),
-  pickEngineLibraryDir: () => ipcRenderer.invoke('dialog:pickEngineLibraryDir'),
-  pickTraktorNmlPath: () => ipcRenderer.invoke('dialog:pickTraktorNmlPath'),
-  pickRekordboxDbPath: () => ipcRenderer.invoke('dialog:pickRekordboxDbPath'),
   detectTraktorNmlPath: () => ipcRenderer.invoke('traktor:detectNmlPath'),
   traktorCollectionInUse: (path: string): Promise<string | null> =>
     ipcRenderer.invoke('traktor:collectionInUse', path),
@@ -134,12 +130,6 @@ const api: Api = {
     persistentIds: string[],
   ): Promise<AppleMusicTrackMeta | null> =>
     ipcRenderer.invoke('applemusic:entryMeta', path, persistentIds),
-  exportRekordbox: (xml: string): Promise<string | null> =>
-    ipcRenderer.invoke('dialog:exportRekordbox', xml),
-  exportTraktor: (nml: string): Promise<string | null> =>
-    ipcRenderer.invoke('dialog:exportTraktor', nml),
-  exportSerato: (tracks: { inputPath: string; outputPath?: string }[]): Promise<string | null> =>
-    ipcRenderer.invoke('dialog:exportSerato', tracks),
   exportM3u: (m3u: string): Promise<string | null> => ipcRenderer.invoke('dialog:exportM3u', m3u),
   exportSettings: (): Promise<string | null> => ipcRenderer.invoke('dialog:exportSettings'),
   importSettings: () => ipcRenderer.invoke('dialog:importSettings'),
@@ -219,7 +209,6 @@ const api: Api = {
     ipcRenderer.invoke('applemusic:artwork', persistentIds),
   dj: createDjApi(ipcRenderer),
   cues: createCuesApi(ipcRenderer),
-  seratoRunning: (): Promise<boolean> => ipcRenderer.invoke('serato:running'),
   djAppRunning: (): Promise<boolean> => ipcRenderer.invoke('djApps:running'),
   holdsInLibrary: (path: string, titles: string[]): Promise<boolean> =>
     ipcRenderer.invoke('library:holdsFile', path, titles),
@@ -401,16 +390,6 @@ const api: Api = {
     const listener = (_e: unknown, version: string): void => cb(version)
     ipcRenderer.on('update:downloaded', listener)
     return () => ipcRenderer.removeListener('update:downloaded', listener)
-  },
-  onRekordboxSyncIssue: (cb: (issue: RekordboxSyncIssue) => void) => {
-    const listener = (_e: unknown, issue: RekordboxSyncIssue): void => cb(issue)
-    ipcRenderer.on('rekordbox:sync-issue', listener)
-    return () => ipcRenderer.removeListener('rekordbox:sync-issue', listener)
-  },
-  onEngineSyncIssue: (cb: (issue: RekordboxSyncIssue) => void) => {
-    const listener = (_e: unknown, issue: RekordboxSyncIssue): void => cb(issue)
-    ipcRenderer.on('engine:sync-issue', listener)
-    return () => ipcRenderer.removeListener('engine:sync-issue', listener)
   },
   onUpdateError: (cb: (message: string) => void) => {
     const listener = (_e: unknown, message: string): void => cb(message)

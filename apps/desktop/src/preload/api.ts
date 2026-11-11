@@ -51,7 +51,6 @@ import type {
   ProcessResult,
   ProgramCopies,
   QueuedCues,
-  RekordboxSyncIssue,
   Release,
   RememberedAutoMatch,
   RemoveCopyResult,
@@ -151,10 +150,6 @@ export interface Api {
   pickConfigDir: () => Promise<string | null>
   pickFiles: () => Promise<string[]>
   pickOutputDir: () => Promise<string | null>
-  pickEngineLibraryDir: () => Promise<string | null>
-  pickTraktorNmlPath: () => Promise<string | null>
-  // The rekordbox collection, for a library kept outside the standard location.
-  pickRekordboxDbPath: () => Promise<string | null>
   // Proposes a collection.nml to offer in Settings; the caller must have the user
   // confirm it before saving — see traktorNmlPath.ts.
   detectTraktorNmlPath: () => Promise<string | null>
@@ -259,7 +254,6 @@ export interface Api {
   ) => Promise<Record<string, { coverPath: string; coverUrl: string }>>
   dj: DjApi
   cues: CuesApi
-  seratoRunning: () => Promise<boolean>
   djAppRunning: () => Promise<boolean>
   holdsInLibrary: (path: string, titles: string[]) => Promise<boolean>
   rowWaves: (requests: RowWaveRequest[]) => Promise<Record<string, number[]>>
@@ -317,9 +311,6 @@ export interface Api {
   cancelJob: (jobId: string) => void
   reportUnsavedCues: (contentIds: string[]) => void
   exportCover: (job: CoverExportJob) => Promise<string | null>
-  exportRekordbox: (xml: string) => Promise<string | null>
-  exportTraktor: (nml: string) => Promise<string | null>
-  exportSerato: (tracks: { inputPath: string; outputPath?: string }[]) => Promise<string | null>
   exportM3u: (m3u: string) => Promise<string | null>
   exportSettings: () => Promise<string | null>
   importSettings: () => Promise<
@@ -458,10 +449,6 @@ export interface Api {
   installUpdate: () => Promise<void>
   onUpdateDownloaded: (cb: (version: string) => void) => () => void
   onUpdateError: (cb: (message: string) => void) => () => void
-  // What a run's rekordbox repoint could not do, sent once after the run ends.
-  onRekordboxSyncIssue: (cb: (issue: RekordboxSyncIssue) => void) => () => void
-  // The same for the Engine DJ library, which shares the issue shape.
-  onEngineSyncIssue: (cb: (issue: RekordboxSyncIssue) => void) => () => void
   checkForUpdates: () => Promise<void>
   onUpdateCheckFailed: (cb: (status: number | null) => void) => () => void
   onWindowFocus: (cb: (focused: boolean) => void) => () => void

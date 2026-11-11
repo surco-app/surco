@@ -1,7 +1,7 @@
 import { vi } from 'vitest'
 import type { Api, CuesApi } from '../../../preload/api'
 import { BUNDLED_FLOWS } from '../../../shared/cueFlows'
-import type { DjApi } from '../../../shared/djApi'
+import type { DjApi, DjExportPayload, ExportProgram } from '../../../shared/djApi'
 import type { DjProgram } from '../../../shared/djProgram'
 import { DEFAULT_EDITOR_SECTIONS } from '../../../shared/editorSections'
 import { emptyMetadata } from '../../../shared/metadata'
@@ -13,6 +13,7 @@ import type {
   RekordboxPlaylistEdit,
   RekordboxQueueApplied,
   RekordboxQueueState,
+  RekordboxSyncIssue,
   Settings,
   SourceNode,
   SourcePlaylistEntry,
@@ -157,6 +158,10 @@ export interface ProgramReads {
   cueQueueReady(): Promise<void>
   onCueQueueChanged(cb: (state: RekordboxQueueState) => void): () => void
   onCueQueueApplied(cb: (applied: RekordboxQueueApplied) => void): () => void
+  exportCollection(payload: DjExportPayload[ExportProgram]): Promise<string | null>
+  pickLibraryPath(): Promise<string | null>
+  running(): Promise<boolean>
+  onSyncIssue(cb: (issue: RekordboxSyncIssue) => void): () => void
 }
 
 const EMPTY_READS: ProgramReads = {
@@ -175,6 +180,10 @@ const EMPTY_READS: ProgramReads = {
   cueQueueReady: async () => {},
   onCueQueueChanged: () => () => {},
   onCueQueueApplied: () => () => {},
+  exportCollection: async () => null,
+  pickLibraryPath: async () => null,
+  running: async () => false,
+  onSyncIssue: () => () => {},
 }
 
 export type DjReads = Partial<Record<DjProgram, Partial<ProgramReads>>>
@@ -206,6 +215,10 @@ export function djReads(...layers: (DjReads | DjApi | undefined)[]): DjApi {
     cueQueueReady: vi.fn((p) => of(p).cueQueueReady()),
     onCueQueueChanged: vi.fn((p, cb) => of(p).onCueQueueChanged(cb)),
     onCueQueueApplied: vi.fn((p, cb) => of(p).onCueQueueApplied(cb)),
+    exportCollection: vi.fn((p, payload) => of(p).exportCollection(payload)),
+    pickLibraryPath: vi.fn((p) => of(p).pickLibraryPath()),
+    running: vi.fn((p) => of(p).running()),
+    onSyncIssue: vi.fn((p, cb) => of(p).onSyncIssue(cb)),
   }
   layersOf.set(api, flat)
   return api
@@ -280,9 +293,6 @@ export function stubApi({ cues, ...over }: ApiOverrides = {}): Api {
     pickConfigDir: async () => null,
     pickFiles: async () => [],
     pickOutputDir: async () => null,
-    pickEngineLibraryDir: async () => null,
-    pickTraktorNmlPath: async () => null,
-    pickRekordboxDbPath: async () => null,
     detectTraktorNmlPath: async () => null,
     traktorCollectionInUse: async () => null,
     rekordboxCollection: async () => '',
@@ -320,7 +330,6 @@ export function stubApi({ cues, ...over }: ApiOverrides = {}): Api {
     onListRemovalPhase: unsubscribe,
     loadAppleMusicLibraryCached: async () => null,
     loadAppleMusicPlaylists: async () => [],
-    seratoRunning: async () => false,
     djAppRunning: async () => false,
     holdsInLibrary: async () => true,
     rowWaves: async () => ({}),
@@ -369,9 +378,6 @@ export function stubApi({ cues, ...over }: ApiOverrides = {}): Api {
     cancelJob: noop,
     reportUnsavedCues: noop,
     exportCover: async () => null,
-    exportRekordbox: async () => null,
-    exportTraktor: async () => null,
-    exportSerato: async () => null,
     exportM3u: async () => null,
     exportSettings: async () => null,
     importSettings: async () => null,
@@ -457,8 +463,6 @@ export function stubApi({ cues, ...over }: ApiOverrides = {}): Api {
     installUpdate: async () => {},
     onUpdateDownloaded: unsubscribe,
     onUpdateError: unsubscribe,
-    onRekordboxSyncIssue: unsubscribe,
-    onEngineSyncIssue: unsubscribe,
     checkForUpdates: async () => {},
     onUpdateCheckFailed: unsubscribe,
     onWindowFocus: unsubscribe,

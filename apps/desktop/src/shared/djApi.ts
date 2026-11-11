@@ -7,6 +7,7 @@ import type {
   RekordboxPlaylistEdit,
   RekordboxQueueApplied,
   RekordboxQueueState,
+  RekordboxSyncIssue,
   SourceNode,
   SourcePlaylistEntry,
 } from './types'
@@ -40,10 +41,21 @@ export interface DjCueQueueMain {
   ready(): Awaitable<void>
 }
 
+export interface DjExportPayload {
+  rekordbox: string
+  traktor: string
+  serato: { inputPath: string; outputPath?: string }[]
+}
+
+export type ExportProgram = keyof DjExportPayload
+
 export interface DjMainProgram {
   read: DjReadMain
   edit?: DjEditMain
   cueQueue?: DjCueQueueMain
+  exportCollection?(payload: never): Promise<string | null>
+  pickLibraryPath?(): Promise<string | null>
+  running?(): Promise<boolean>
 }
 
 export type DjMainTable = Record<DjProgram, DjMainProgram>
@@ -74,4 +86,11 @@ export interface DjApi {
   cueQueueReady(p: DjProgram): Promise<void>
   onCueQueueChanged(p: DjProgram, cb: (state: RekordboxQueueState) => void): () => void
   onCueQueueApplied(p: DjProgram, cb: (applied: RekordboxQueueApplied) => void): () => void
+  exportCollection<P extends ExportProgram>(
+    p: P,
+    payload: DjExportPayload[P],
+  ): Promise<string | null>
+  pickLibraryPath(p: DjProgram): Promise<string | null>
+  running(p: DjProgram): Promise<boolean>
+  onSyncIssue(p: DjProgram, cb: (issue: RekordboxSyncIssue) => void): () => void
 }

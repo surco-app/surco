@@ -6,10 +6,15 @@ import i18n from '../i18n'
 import type { TrackItem } from '../types'
 import { ExportModal } from './ExportModal'
 
+const exported = {
+  rekordbox: vi.fn().mockResolvedValue('/out/rekordbox.xml'),
+  traktor: vi.fn().mockResolvedValue('/out/collection.nml'),
+  serato: vi.fn().mockResolvedValue('/out/Surco.crate'),
+}
 const api = {
-  exportRekordbox: vi.fn().mockResolvedValue('/out/rekordbox.xml'),
-  exportTraktor: vi.fn().mockResolvedValue('/out/collection.nml'),
-  exportSerato: vi.fn().mockResolvedValue('/out/Surco.crate'),
+  dj: {
+    exportCollection: vi.fn((p: keyof typeof exported, payload: unknown) => exported[p](payload)),
+  },
   exportM3u: vi.fn().mockResolvedValue('/out/surco.m3u8'),
 }
 
@@ -56,7 +61,7 @@ describe('ExportModal', () => {
   // closing silently reads as "the file was written" when it wasn't. The save-dialog
   // cancel resolves quietly, so only real failures surface.
   it('keeps the modal open and shows the error when the export fails', async () => {
-    api.exportTraktor.mockRejectedValueOnce(new Error('disk full'))
+    exported.traktor.mockRejectedValueOnce(new Error('disk full'))
     const onClose = vi.fn()
     render(<ExportModal tracks={[track()]} onClose={onClose} />)
     fireEvent.click(screen.getByTestId('export-traktor'))
@@ -69,15 +74,15 @@ describe('ExportModal', () => {
   it('writes a Traktor NML when Traktor is chosen', () => {
     render(<ExportModal tracks={[track()]} onClose={vi.fn()} />)
     fireEvent.click(screen.getByTestId('export-traktor'))
-    expect(api.exportTraktor).toHaveBeenCalledTimes(1)
-    expect(api.exportTraktor.mock.calls[0][0]).toContain('<NML VERSION="19">')
+    expect(exported.traktor).toHaveBeenCalledTimes(1)
+    expect(exported.traktor.mock.calls[0][0]).toContain('<NML VERSION="19">')
   })
 
   it('writes a rekordbox XML when rekordbox is chosen', () => {
     render(<ExportModal tracks={[track()]} onClose={vi.fn()} />)
     fireEvent.click(screen.getByTestId('export-rekordbox'))
-    expect(api.exportRekordbox).toHaveBeenCalledTimes(1)
-    expect(api.exportRekordbox.mock.calls[0][0]).toContain('<DJ_PLAYLISTS')
+    expect(exported.rekordbox).toHaveBeenCalledTimes(1)
+    expect(exported.rekordbox.mock.calls[0][0]).toContain('<DJ_PLAYLISTS')
   })
 
   // Serato paths are relative to the volume the crate is saved on, which only main's
@@ -86,8 +91,8 @@ describe('ExportModal', () => {
   it('hands the track paths to main when Serato is chosen', () => {
     render(<ExportModal tracks={[track()]} onClose={vi.fn()} />)
     fireEvent.click(screen.getByTestId('export-serato'))
-    expect(api.exportSerato).toHaveBeenCalledTimes(1)
-    expect(api.exportSerato.mock.calls[0][0]).toEqual([
+    expect(exported.serato).toHaveBeenCalledTimes(1)
+    expect(exported.serato.mock.calls[0][0]).toEqual([
       { inputPath: track().inputPath, outputPath: track().outputPath },
     ])
   })

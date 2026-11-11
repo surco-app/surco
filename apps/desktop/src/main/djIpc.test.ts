@@ -38,6 +38,11 @@ function row(
   }
 }
 
+function withProgramOps(t: DjMainTable, ops: Partial<Record<DjProgram, Partial<DjMainProgram>>>) {
+  for (const p of DJ_PROGRAMS) Object.assign(t[p], ops[p])
+  return t
+}
+
 function table(
   over: Partial<Record<DjProgram, Partial<DjMainProgram['read']>>> = {},
   edits: Partial<Record<DjProgram, DjMainProgram['edit']>> = {},
@@ -146,5 +151,51 @@ describe('registerDjIpc', () => {
     await expect(handler('dj:applyCueQueue')({ sender: {} }, 'engine')).rejects.toThrow(
       'engine has no applyCueQueue',
     )
+  })
+
+  it('dispatches an export to the program it names with its payload, so each collection format reaches its own writer', async () => {
+    const rekordbox = vi.fn(async () => '/out/rekordbox.xml')
+    const traktor = vi.fn(async () => '/out/collection.nml')
+    registerDjIpc(
+      withProgramOps(table(), {
+        rekordbox: { exportCollection: rekordbox },
+        traktor: { exportCollection: traktor },
+      }),
+    )
+    expect(await handler('dj:exportCollection')({}, 'traktor', '<NML/>')).toBe(
+      '/out/collection.nml',
+    )
+    expect(traktor).toHaveBeenCalledWith('<NML/>')
+    expect(rekordbox).not.toHaveBeenCalled()
+  })
+
+  it('rejects an export for a program that cannot export', async () => {
+    registerDjIpc(table())
+    await expect(handler('dj:exportCollection')({}, 'engine', 'x')).rejects.toThrow(
+      'engine has no exportCollection',
+    )
+  })
+
+  it('dispatches a library path pick to the program it names', async () => {
+    const pickEngine = vi.fn(async () => '/Volumes/USB/Engine Library')
+    const pickTraktor = vi.fn(async () => null)
+    registerDjIpc(
+      withProgramOps(table(), {
+        engine: { pickLibraryPath: pickEngine },
+        traktor: { pickLibraryPath: pickTraktor },
+      }),
+    )
+    expect(await handler('dj:pickLibraryPath')({}, 'engine')).toBe('/Volumes/USB/Engine Library')
+    expect(pickTraktor).not.toHaveBeenCalled()
+    await expect(handler('dj:pickLibraryPath')({}, 'serato')).rejects.toThrow(
+      'serato has no pickLibraryPath',
+    )
+  })
+
+  it('asks only the named program whether it is running, and rejects one that cannot say', async () => {
+    const running = vi.fn(async () => true)
+    registerDjIpc(withProgramOps(table(), { serato: { running } }))
+    expect(await handler('dj:running')({}, 'serato')).toBe(true)
+    await expect(handler('dj:running')({}, 'rekordbox')).rejects.toThrow('rekordbox has no running')
   })
 })

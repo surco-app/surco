@@ -53,6 +53,18 @@ const OLD_QUEUE_METHODS = ['rekordbox', 'engine', 'traktor', 'serato'].flatMap((
   ]
 })
 
+const OLD_PROGRAM_METHODS = [
+  'exportRekordbox',
+  'exportTraktor',
+  'exportSerato',
+  'pickEngineLibraryDir',
+  'pickTraktorNmlPath',
+  'pickRekordboxDbPath',
+  'seratoRunning',
+  'onRekordboxSyncIssue',
+  'onEngineSyncIssue',
+]
+
 function fakeIpc() {
   return { invoke: vi.fn(async () => undefined), on: vi.fn(), removeListener: vi.fn() }
 }
@@ -72,6 +84,9 @@ describe('createDjApi', () => {
     ['applyCueQueue', 'dj:applyCueQueue', []],
     ['discardCueQueue', 'dj:discardCueQueue', []],
     ['cueQueueReady', 'dj:cueQueueReady', []],
+    ['exportCollection', 'dj:exportCollection', ['<xml/>']],
+    ['pickLibraryPath', 'dj:pickLibraryPath', []],
+    ['running', 'dj:running', []],
   ] as const)(
     'invokes the shared channel with the program first for %s, so one channel serves every program',
     async (op, channel, rest) => {
@@ -87,6 +102,7 @@ describe('createDjApi', () => {
 describe.each([
   ['onCueQueueChanged', 'dj:cueQueueChanged'],
   ['onCueQueueApplied', 'dj:cueQueueApplied'],
+  ['onSyncIssue', 'dj:syncIssue'],
 ] as const)('%s', (op, channel) => {
   function subscribed() {
     const listeners = new Set<(e: unknown, p: unknown) => void>()
@@ -150,6 +166,7 @@ describe('the preload bridge', () => {
     expect(Object.keys(api).filter((k) => OLD_READ_METHODS.includes(k))).toEqual([])
     expect(Object.keys(api).filter((k) => OLD_EDIT_METHODS.includes(k))).toEqual([])
     expect(Object.keys(api).filter((k) => OLD_QUEUE_METHODS.includes(k))).toEqual([])
+    expect(Object.keys(api).filter((k) => OLD_PROGRAM_METHODS.includes(k))).toEqual([])
     expect(typeof api.dj).toBe('object')
     vi.doUnmock('electron')
   })

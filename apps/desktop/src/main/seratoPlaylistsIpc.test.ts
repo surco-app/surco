@@ -1,23 +1,12 @@
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { ipcMain } from 'electron'
 import { describe, expect, it, vi } from 'vitest'
-
-vi.mock('electron', () => ({ ipcMain: { handle: vi.fn() } }))
 
 import type { CollectionTrack, SourceNode, SourcePlaylistEntry } from '../shared/types'
 import { concat, frame, track, utf16be } from './seratoDatabaseFixture'
 import type { SeratoLibraryRoot } from './seratoLibrary'
-import { registerSeratoPlaylistsIpc, seratoRead } from './seratoPlaylistsIpc'
-
-function handler(channel: string): (...args: unknown[]) => unknown {
-  const call = [...vi.mocked(ipcMain.handle).mock.calls]
-    .reverse()
-    .find(([name]) => name === channel)
-  if (!call) throw new Error(`${channel} not registered`)
-  return call[1] as (...args: unknown[]) => unknown
-}
+import { seratoRead } from './seratoPlaylistsIpc'
 
 const now = String(Math.floor(Date.now() / 1000))
 
@@ -77,14 +66,6 @@ describe('seratoRead', () => {
     const entries = read.playlist('Friday') as SourcePlaylistEntry[]
     expect(entries.map((e) => e.path)).toEqual(['/Music/a.mp3', '/Music/b.mp3'])
     expect(allowMedia).toHaveBeenCalledWith(['/Music/a.mp3', '/Music/b.mp3'])
-  })
-
-  it('says whether Serato is open, so the editor can warn its cues may be out of date', async () => {
-    let open = true
-    registerSeratoPlaylistsIpc({ roots: () => [], running: async () => open })
-    expect(await handler('serato:running')({})).toBe(true)
-    open = false
-    expect(await handler('serato:running')({})).toBe(false)
   })
 
   it('lists the whole collection as rows to match against, read from the libraries found now', () => {

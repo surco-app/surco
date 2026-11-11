@@ -109,7 +109,7 @@ import {
   rekordboxFlushDeps,
   repointEngineQueued,
   SYNC_BLOCKED_KEY,
-  SYNC_ISSUE_CHANNEL,
+  SYNC_ISSUE_PROGRAMS,
   syncTagsInLibraries,
   traktorFlushDeps,
 } from './libraryFlushes'
@@ -1353,8 +1353,7 @@ function recordingHost() {
       blocked.push(SYNC_BLOCKED_KEY[program])
     },
     reportIssue: (program) => {
-      const channel = SYNC_ISSUE_CHANNEL[program]
-      if (channel) channels.push(channel)
+      if (SYNC_ISSUE_PROGRAMS.has(program)) channels.push(program)
     },
     rekordboxHeld: () => false,
   }
@@ -1379,7 +1378,7 @@ describe('what each program closes, shows and reports through the library host',
     deps.reportIssue({} as never)
     expect(h.closed).toEqual(['rekordbox'])
     expect(h.blocked).toEqual(['rekordboxSyncBlocked'])
-    expect(h.channels).toEqual(['rekordbox:sync-issue'])
+    expect(h.channels).toEqual(['rekordbox'])
   })
 
   it('closes Engine DJ, shows its blocked message and reports on its channel', async () => {
@@ -1390,7 +1389,7 @@ describe('what each program closes, shows and reports through the library host',
     deps.reportIssue({} as never)
     expect(h.closed).toEqual(['engine'])
     expect(h.blocked).toEqual(['engineSyncBlocked'])
-    expect(h.channels).toEqual(['engine:sync-issue'])
+    expect(h.channels).toEqual(['engine'])
   })
 })
 

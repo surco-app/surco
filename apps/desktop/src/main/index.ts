@@ -32,6 +32,7 @@ import {
   Menu,
   type NativeImage,
   nativeImage,
+  type OpenDialogOptions,
   protocol,
   screen,
   session,
@@ -133,7 +134,7 @@ import { engineDatabasePath } from './enginePlaylists'
 import { engineRead } from './enginePlaylistsIpc'
 import { engineSizeFollower } from './engineSizeFollow'
 import { expandPaths } from './expand'
-import { registerExportIpc } from './exportIpc'
+import { collectionExporters, registerExportIpc } from './exportIpc'
 import { registerFeedbackIpc } from './feedback'
 import { convertAudio, readMeta, readTags, toNmlLocation } from './ffmpeg'
 import { createFileSignatures } from './fileSignatures'
@@ -153,7 +154,7 @@ import {
   repointEngineQueued,
   repointRekordbox,
   SYNC_BLOCKED_KEY,
-  SYNC_ISSUE_CHANNEL,
+  SYNC_ISSUE_PROGRAMS,
   syncTagsInLibraries,
   traktorFlushDeps,
   traktorWrite,
@@ -212,7 +213,7 @@ import { seratoCueSource } from './seratoCueSource'
 import { seratoLibraryRoots } from './seratoLibrary'
 import { recoverSeratoTemps } from './seratoLibraryWrite'
 import { seratoEdit } from './seratoPlaylistEditIpc'
-import { registerSeratoPlaylistsIpc, seratoRead } from './seratoPlaylistsIpc'
+import { seratoRead } from './seratoPlaylistsIpc'
 import { loadLastSession, saveLastSession } from './session'
 import {
   configDirHasSettings,
@@ -1287,35 +1288,6 @@ function registerIpc(): void {
     return canceled ? null : filePaths[0]
   })
 
-  ipcMain.handle('dialog:pickEngineLibraryDir', async () => {
-    const { canceled, filePaths } = await dialog.showOpenDialog({
-      title: createMenuT(menuLocale())('dialogEngineLibrary'),
-      properties: ['openDirectory', 'createDirectory'],
-    })
-    return canceled ? null : filePaths[0]
-  })
-
-  ipcMain.handle('dialog:pickTraktorNmlPath', async () => {
-    const { canceled, filePaths } = await dialog.showOpenDialog({
-      title: createMenuT(menuLocale())('dialogTraktorCollection'),
-      properties: ['openFile'],
-      filters: [{ name: 'Traktor Collection', extensions: ['nml'] }],
-    })
-    return canceled ? null : filePaths[0]
-  })
-
-  // The rekordbox counterpart. Its collection is always named master.db, so the filter
-  // names that rather than a generic .db — picking the wrong database would point Surco at
-  // something it would then refuse to open.
-  ipcMain.handle('dialog:pickRekordboxDbPath', async () => {
-    const { canceled, filePaths } = await dialog.showOpenDialog({
-      title: createMenuT(menuLocale())('dialogRekordboxCollection'),
-      properties: ['openFile'],
-      filters: [{ name: 'rekordbox master.db', extensions: ['db'] }],
-    })
-    return canceled ? null : filePaths[0]
-  })
-
   // Proposes, never imposes (see traktorNmlPath.ts): only paths that actually exist
   // are worth offering, since the version folder itself is what changes on every
   // Traktor update — an ipcMain.handle can't take fs as a dependency, so existsSync
@@ -1396,10 +1368,19 @@ function registerIpc(): void {
   const rekordboxCollectionNow = () =>
     findRekordboxCollection({ configured: getSettings().rekordboxDbPath })
   registerPathAliasesIpc()
-  registerSeratoPlaylistsIpc({
-    roots: seratoRoots,
-    running: DJ_PROCESSES.serato.isRunning,
-  })
+  const exporters = collectionExporters(() => createMenuT(menuLocale()))
+  const pickLibraryPath =
+    (
+      title: Parameters<ReturnType<typeof createMenuT>>[0],
+      options: Pick<OpenDialogOptions, 'properties' | 'filters'>,
+    ) =>
+    async (): Promise<string | null> => {
+      const { canceled, filePaths } = await dialog.showOpenDialog({
+        title: createMenuT(menuLocale())(title),
+        ...options,
+      })
+      return canceled ? null : filePaths[0]
+    }
   registerDjIpc({
     rekordbox: {
       read: rekordboxRead(rekordboxCollectionNow, rekordboxCollectionPath, { allowMedia }),
@@ -1410,6 +1391,14 @@ function registerIpc(): void {
         onApplied: announceApplied,
         onWaiting: rekordboxQueueWatch.poke,
         beginLoose: moments.beginLoose,
+      }),
+      exportCollection: exporters.rekordbox,
+      // The rekordbox counterpart. Its collection is always named master.db, so the filter
+      // names that rather than a generic .db — picking the wrong database would point Surco at
+      // something it would then refuse to open.
+      pickLibraryPath: pickLibraryPath('dialogRekordboxCollection', {
+        properties: ['openFile'],
+        filters: [{ name: 'rekordbox master.db', extensions: ['db'] }],
       }),
       cueQueue: rekordboxQueueSection(rekordboxQueue, {
         ensureClosed: (win) => ensureClosed('rekordbox', win, 'playlists'),
@@ -1434,6 +1423,9 @@ function registerIpc(): void {
         onWaiting: engineCueQueueWatch.poke,
         beginLoose: moments.beginLoose,
       }),
+      pickLibraryPath: pickLibraryPath('dialogEngineLibrary', {
+        properties: ['openDirectory', 'createDirectory'],
+      }),
       cueQueue: engineCueQueueSection(engineCueQueue, {
         ensureClosed: (win) => ensureClosed('engine', win, 'cues'),
         onWaiting: engineCueQueueWatch.poke,
@@ -1454,6 +1446,11 @@ function registerIpc(): void {
         onWaiting: traktorCueQueueWatch.poke,
         beginLoose: moments.beginLoose,
       }),
+      exportCollection: exporters.traktor,
+      pickLibraryPath: pickLibraryPath('dialogTraktorCollection', {
+        properties: ['openFile'],
+        filters: [{ name: 'Traktor Collection', extensions: ['nml'] }],
+      }),
       cueQueue: traktorCueQueueSection(traktorCueQueue, {
         ensureClosed: (win) => ensureClosed('traktor', win, 'cues'),
         onWaiting: traktorCueQueueWatch.poke,
@@ -1472,6 +1469,8 @@ function registerIpc(): void {
         onApplied: programQueues.serato.announceApplied,
         onWaiting: seratoCueQueueWatch.poke,
       }),
+      exportCollection: exporters.serato,
+      running: DJ_PROCESSES.serato.isRunning,
       cueQueue: seratoCueQueueSection(seratoCueQueue, {
         isRunning: DJ_PROCESSES.serato.isRunning,
         onWaiting: seratoCueQueueWatch.poke,
@@ -1617,8 +1616,8 @@ function registerIpc(): void {
     ensureClosed: (program) => ensureClosed(program, win),
     showBlockedDialog: (program) => showSyncBlockedDialog(win, SYNC_BLOCKED_KEY[program]),
     reportIssue: (program, issue) => {
-      const channel = SYNC_ISSUE_CHANNEL[program]
-      if (channel && !sender.isDestroyed()) sender.send(channel, issue)
+      if (SYNC_ISSUE_PROGRAMS.has(program) && !sender.isDestroyed())
+        sender.send('dj:syncIssue', { program, value: issue })
     },
     rekordboxHeld: () => rekordboxQueue.state().halted === true,
   })

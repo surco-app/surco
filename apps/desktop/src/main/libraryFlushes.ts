@@ -67,14 +67,7 @@ export const SYNC_BLOCKED_KEY: Record<WritableProgram, SyncBlockedKey> = {
   engine: 'engineSyncBlocked',
 }
 
-export const SYNC_ISSUE_CHANNEL: Record<
-  WritableProgram,
-  'rekordbox:sync-issue' | 'engine:sync-issue' | null
-> = {
-  rekordbox: 'rekordbox:sync-issue',
-  traktor: null,
-  engine: 'engine:sync-issue',
-}
+export const SYNC_ISSUE_PROGRAMS: ReadonlySet<WritableProgram> = new Set(['rekordbox', 'engine'])
 
 export interface LibraryHost {
   ensureClosed: (program: WritableProgram) => Promise<boolean>

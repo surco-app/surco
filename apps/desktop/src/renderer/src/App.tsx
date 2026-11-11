@@ -274,9 +274,12 @@ const SYNC_ISSUES: Record<
     messages: 'rekordboxIssue' | 'engineIssue'
   } | null
 > = {
-  rekordbox: { listen: (cb) => window.api.onRekordboxSyncIssue(cb), messages: 'rekordboxIssue' },
+  rekordbox: {
+    listen: (cb) => window.api.dj.onSyncIssue('rekordbox', cb),
+    messages: 'rekordboxIssue',
+  },
   traktor: null,
-  engine: { listen: (cb) => window.api.onEngineSyncIssue(cb), messages: 'engineIssue' },
+  engine: { listen: (cb) => window.api.dj.onSyncIssue('engine', cb), messages: 'engineIssue' },
 }
 
 const inFiles = (t: TrackItem): boolean => !!t.inFiles
@@ -2722,7 +2725,7 @@ export default function App(): React.JSX.Element {
       playlistScope !== null)
   const { data: seratoRunning = false } = useQuery({
     queryKey: ['serato-running'],
-    queryFn: () => window.api.seratoRunning(),
+    queryFn: () => window.api.dj.running('serato'),
     enabled: browser.source === 'serato',
     staleTime: 0,
   })

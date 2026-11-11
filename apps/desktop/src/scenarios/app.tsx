@@ -81,8 +81,6 @@ function shellApi(errors: string[], openFiles: { current?: (paths: string[]) => 
     onUpdateDownloaded: () => () => {},
     onUpdateError: () => () => {},
     onUpdateCheckFailed: () => () => {},
-    onRekordboxSyncIssue: () => () => {},
-    onEngineSyncIssue: () => () => {},
     checkForUpdates: async () => {},
     hasClipboardImage: async () => false,
     prepareCoverDrag: async () => null,

@@ -28,56 +28,59 @@ export function applyImportedSettings(raw: unknown): Settings {
   return replaceSettings(raw as Partial<Settings>)
 }
 
+type MenuT = () => ReturnType<typeof createMenuT>
+
 // The panels are the main process's own windows, out of the renderer's i18next reach, so
 // their titles resolve through the menu strings in the language Surco is set to.
-export function registerExportIpc(menuT: () => ReturnType<typeof createMenuT>): void {
-  // Writes a rekordbox collection XML the user can import (File ▸ Import Collection).
-  // Returns the saved path, or null when the save dialog is cancelled.
-  ipcMain.handle('dialog:exportRekordbox', async (_e, xml: string) => {
-    const { canceled, filePath } = await dialog.showSaveDialog({
-      title: menuT()('dialogExportRekordbox'),
-      defaultPath: 'rekordbox.xml',
-      filters: [{ name: 'rekordbox XML', extensions: ['xml'] }],
-    })
-    if (canceled || !filePath) return null
-    // Wrap only the write, not the dialog: the user's think-time is not work.
-    await activity.track(
-      'export',
-      'activity.exportRekordbox',
-      () => writeFile(filePath, xml, 'utf8'),
-      {
-        detail: filePath,
-      },
-    )
-    return filePath
-  })
+export function collectionExporters(menuT: MenuT) {
+  return {
+    // Writes a rekordbox collection XML the user can import (File ▸ Import Collection).
+    // Returns the saved path, or null when the save dialog is cancelled.
+    rekordbox: async (xml: string): Promise<string | null> => {
+      const { canceled, filePath } = await dialog.showSaveDialog({
+        title: menuT()('dialogExportRekordbox'),
+        defaultPath: 'rekordbox.xml',
+        filters: [{ name: 'rekordbox XML', extensions: ['xml'] }],
+      })
+      if (canceled || !filePath) return null
+      // Wrap only the write, not the dialog: the user's think-time is not work.
+      await activity.track(
+        'export',
+        'activity.exportRekordbox',
+        () => writeFile(filePath, xml, 'utf8'),
+        {
+          detail: filePath,
+        },
+      )
+      return filePath
+    },
 
-  // Writes a Traktor collection the user can import (File ▸ Import Collection). Returns
-  // the saved path, or null when cancelled — same shape as the rekordbox export.
-  ipcMain.handle('dialog:exportTraktor', async (_e, nml: string) => {
-    const { canceled, filePath } = await dialog.showSaveDialog({
-      title: menuT()('dialogExportTraktor'),
-      defaultPath: 'collection.nml',
-      filters: [{ name: 'Traktor NML', extensions: ['nml'] }],
-    })
-    if (canceled || !filePath) return null
-    await activity.track(
-      'export',
-      'activity.exportTraktor',
-      () => writeFile(filePath, nml, 'utf8'),
-      {
-        detail: filePath,
-      },
-    )
-    return filePath
-  })
+    // Writes a Traktor collection the user can import (File ▸ Import Collection). Returns
+    // the saved path, or null when cancelled — same shape as the rekordbox export.
+    traktor: async (nml: string): Promise<string | null> => {
+      const { canceled, filePath } = await dialog.showSaveDialog({
+        title: menuT()('dialogExportTraktor'),
+        defaultPath: 'collection.nml',
+        filters: [{ name: 'Traktor NML', extensions: ['nml'] }],
+      })
+      if (canceled || !filePath) return null
+      await activity.track(
+        'export',
+        'activity.exportTraktor',
+        () => writeFile(filePath, nml, 'utf8'),
+        {
+          detail: filePath,
+        },
+      )
+      return filePath
+    },
 
-  // Writes a Serato DJ crate (binary) into the DJ's _Serato_/Subcrates folder. The bytes
-  // are built HERE, after the dialog: crate paths are relative to the volume the crate
-  // lands on, so the save location has to be known before the paths can be rendered.
-  ipcMain.handle(
-    'dialog:exportSerato',
-    async (_e, tracks: { inputPath: string; outputPath?: string }[]) => {
+    // Writes a Serato DJ crate (binary) into the DJ's _Serato_/Subcrates folder. The bytes
+    // are built HERE, after the dialog: crate paths are relative to the volume the crate
+    // lands on, so the save location has to be known before the paths can be rendered.
+    serato: async (
+      tracks: { inputPath: string; outputPath?: string }[],
+    ): Promise<string | null> => {
       const { canceled, filePath } = await dialog.showSaveDialog({
         title: menuT()('dialogExportSerato'),
         defaultPath: 'Surco.crate',
@@ -92,8 +95,10 @@ export function registerExportIpc(menuT: () => ReturnType<typeof createMenuT>): 
       )
       return filePath
     },
-  )
+  }
+}
 
+export function registerExportIpc(menuT: MenuT): void {
   // Writes the shareable audio-quality report the renderer composed (a PNG data URL):
   // the spectrogram with its verdict, ready to drop in a forum thread. Returns the saved
   // path, or null when cancelled — same shape as the other exports.

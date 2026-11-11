@@ -20,7 +20,7 @@ export function EngineLibraryFields({
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   async function change(): Promise<void> {
-    const dir = await window.api.pickEngineLibraryDir()
+    const dir = await window.api.dj.pickLibraryPath('engine')
     if (dir) onLibraryDirChange(dir)
   }
   return (

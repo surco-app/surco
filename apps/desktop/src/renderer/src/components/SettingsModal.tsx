@@ -232,7 +232,7 @@ export function SettingsModal({
   }
 
   async function changeTraktorNmlPath(): Promise<void> {
-    const path = await window.api.pickTraktorNmlPath()
+    const path = await window.api.dj.pickLibraryPath('traktor')
     if (path) patchLocal('traktorNmlPath', path)
   }
 
@@ -270,7 +270,7 @@ export function SettingsModal({
   // location had no way to say so. The chosen path is staged like any other local setting
   // and shown straight away, so the field does not keep displaying the detected one.
   async function changeRekordboxDbPath(): Promise<void> {
-    const path = await window.api.pickRekordboxDbPath()
+    const path = await window.api.dj.pickLibraryPath('rekordbox')
     if (!path) return
     patchLocal('rekordboxDbPath', path)
     setRekordboxCollection(path)

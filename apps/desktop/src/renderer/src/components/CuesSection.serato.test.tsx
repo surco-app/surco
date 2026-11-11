@@ -11,7 +11,7 @@ import { resetEditorSections } from '../hooks/useEditorSections'
 import '../i18n'
 import { resetCueSession } from '../lib/cueSession'
 import { SettingsProvider } from '../lib/settingsContext'
-import { type ApiOverrides, installApi } from '../test/api'
+import { type ApiOverrides, djReads, installApi, type ProgramReads } from '../test/api'
 import { hoverTooltip } from '../test/tooltip'
 import { CuesSection } from './CuesSection'
 
@@ -53,9 +53,9 @@ const READ: TrackCues = {
 
 function setup(read: TrackCues | null | Error = READ, running = false, over: ApiOverrides = {}) {
   const saveRekordboxCues = vi.fn<Api['cues']['save']>(async () => {})
-  const seratoRunning = vi.fn<Api['seratoRunning']>(async () => running)
+  const seratoRunning = vi.fn<ProgramReads['running']>(async () => running)
   installApi({
-    seratoRunning,
+    dj: djReads({ serato: { running: seratoRunning } }),
     ...over,
     cues: {
       trackCues: vi.fn<Api['cues']['trackCues']>(async () => {
@@ -150,10 +150,10 @@ describe('CuesSection on a Serato track', () => {
     vi.useFakeTimers({ shouldAdvanceTime: true })
     try {
       const seratoRunning = vi
-        .fn<Api['seratoRunning']>()
+        .fn<ProgramReads['running']>()
         .mockResolvedValueOnce(false)
         .mockResolvedValue(true)
-      setup(READ, false, { seratoRunning })
+      setup(READ, false, { dj: djReads({ serato: { running: seratoRunning } }) })
       await ready()
       markAt(bar(64))
       await waitFor(() => expect(seratoRunning).toHaveBeenCalledTimes(1))

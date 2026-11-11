@@ -32,7 +32,7 @@ import {
   repointEngineQueued,
   repointRekordbox,
   SYNC_BLOCKED_KEY,
-  SYNC_ISSUE_CHANNEL,
+  SYNC_ISSUE_PROGRAMS,
   syncTagsInLibraries,
   traktorWrite,
   usedByAnyLibrary,
@@ -413,8 +413,8 @@ function libraryHost(errors: string[]): LibraryHost {
     showBlockedDialog: (program) =>
       errors.push(`library sync blocked: ${SYNC_BLOCKED_KEY[program]}`),
     reportIssue: (program, issue) => {
-      const channel = SYNC_ISSUE_CHANNEL[program]
-      if (channel) errors.push(`${channel}: ${JSON.stringify(issue)}`)
+      if (SYNC_ISSUE_PROGRAMS.has(program))
+        errors.push(`${program}:sync-issue: ${JSON.stringify(issue)}`)
     },
     rekordboxHeld: () => false,
   }
@@ -674,6 +674,10 @@ function wiredEdit<T>(program: DjProgram, op: string, answer: T): Promise<T> {
   return Promise.resolve(answer)
 }
 
+function notWiredDj(op: string, program: DjProgram): never {
+  throw new Error(`scenario: window.api.dj.${op}('${program}') is not wired`)
+}
+
 function wiredDj(): DjApi {
   return {
     available: (p) => wiredRead(p, 'available'),
@@ -691,6 +695,10 @@ function wiredDj(): DjApi {
     cueQueueReady: async () => {},
     onCueQueueChanged: () => () => {},
     onCueQueueApplied: () => () => {},
+    exportCollection: (p) => notWiredDj('exportCollection', p),
+    pickLibraryPath: (p) => notWiredDj('pickLibraryPath', p),
+    running: (p) => notWiredDj('running', p),
+    onSyncIssue: () => () => {},
   }
 }
 

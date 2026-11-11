@@ -617,7 +617,7 @@ function Editing({
   })
   const { data: seratoOpen = false } = useQuery({
     queryKey: ['serato-running', cue.contentId],
-    queryFn: () => window.api.seratoRunning(),
+    queryFn: () => window.api.dj.running('serato'),
     enabled: programOf(cue.contentId) === 'serato',
     staleTime: 0,
     refetchInterval: 5000,

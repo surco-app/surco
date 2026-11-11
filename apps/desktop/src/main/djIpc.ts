@@ -31,6 +31,18 @@ function registerOperation<S extends keyof DjMainProgram, O extends keyof Sectio
   })
 }
 
+type ProgramOperation = 'exportCollection' | 'pickLibraryPath' | 'running'
+
+function registerProgramOperation(table: DjMainTable, operation: ProgramOperation): void {
+  ipcMain.handle(`dj:${operation}`, async (_event, program: DjProgram, ...args: unknown[]) => {
+    const row = table[program]
+    if (!row) throw new Error(`unknown DJ program ${program}`)
+    const run = row[operation]
+    if (typeof run !== 'function') throw new Error(`${program} has no ${operation}`)
+    return (run as (...a: unknown[]) => unknown).apply(row, args)
+  })
+}
+
 function registerSave(table: DjMainTable): void {
   ipcMain.handle(
     'dj:editPlaylist',
@@ -62,4 +74,7 @@ export function registerDjIpc(table: DjMainTable): void {
   registerApplyCueQueue(table)
   registerOperation(table, 'cueQueue', 'discard', 'discardCueQueue')
   registerOperation(table, 'cueQueue', 'ready', 'cueQueueReady')
+  registerProgramOperation(table, 'exportCollection')
+  registerProgramOperation(table, 'pickLibraryPath')
+  registerProgramOperation(table, 'running')
 }

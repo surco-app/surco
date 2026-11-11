@@ -629,10 +629,10 @@ describe('OnboardingWizard destination', () => {
 
   it('asks for the Engine library under Engine', async () => {
     const api = window as unknown as {
-      api: { pickEngineLibraryDir?: () => Promise<string> }
+      api: { dj: { pickLibraryPath?: () => Promise<string> } }
     }
     detected.engine = async () => true
-    api.api.pickEngineLibraryDir = vi.fn(async () => '/Volumes/USB/Engine Library')
+    api.api.dj.pickLibraryPath = vi.fn(async () => '/Volumes/USB/Engine Library')
     try {
       const onFinish = vi.fn()
       await openDjStep(settings, onFinish)

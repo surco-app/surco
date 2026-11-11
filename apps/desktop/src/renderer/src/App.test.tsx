@@ -312,8 +312,6 @@ function setApi(over: Record<string, unknown> = {}): void {
     onActivity: () => () => {},
     onUpdateDownloaded: () => () => {},
     onUpdateError: () => () => {},
-    onRekordboxSyncIssue: () => () => {},
-    onEngineSyncIssue: () => () => {},
     onUpdateCheckFailed: () => () => {},
     checkForUpdates: vi.fn().mockResolvedValue(undefined),
     onOpenFiles: () => () => {},
@@ -966,7 +964,11 @@ describe('App Serato cues', () => {
   })
 
   it('tells the DJ in the Serato tab that the changes wait for Serato to close', async () => {
-    openSerato({ seratoRunning: vi.fn<Api['seratoRunning']>().mockResolvedValue(true) })
+    openSerato({
+      dj: djReads({
+        serato: { running: vi.fn<ProgramReads['running']>().mockResolvedValue(true) },
+      }),
+    })
     await renderApp()
     fireEvent.click(await screen.findByTestId('source-rail-serato'))
     expect(await screen.findByTestId('source-tree-notice')).toHaveTextContent(
@@ -976,8 +978,8 @@ describe('App Serato cues', () => {
 
   it('keeps the Serato warning off another program’s tab, even while Serato is still open', async () => {
     openSerato({
-      seratoRunning: vi.fn<Api['seratoRunning']>().mockResolvedValue(true),
       dj: djReads({
+        serato: { running: vi.fn<ProgramReads['running']>().mockResolvedValue(true) },
         traktor: {
           available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
           tree: vi
@@ -997,10 +999,10 @@ describe('App Serato cues', () => {
 
   it('shows no warning in the Serato tab once Serato answers it is closed', async () => {
     let answer: (running: boolean) => void = () => {}
-    const seratoRunning = vi.fn<Api['seratoRunning']>(
+    const seratoRunning = vi.fn<ProgramReads['running']>(
       () => new Promise<boolean>((resolve) => (answer = resolve)),
     )
-    openSerato({ seratoRunning })
+    openSerato({ dj: djReads({ serato: { running: seratoRunning } }) })
     await renderApp()
     fireEvent.click(await screen.findByTestId('source-rail-serato'))
     await screen.findByTestId('source-node-Friday')
@@ -6895,10 +6897,14 @@ describe('App rekordbox sync notice', () => {
   async function raise(issue: RekordboxSyncIssue): Promise<HTMLElement> {
     let send: ((issue: RekordboxSyncIssue) => void) | undefined
     setApi({
-      onRekordboxSyncIssue: (cb: (issue: RekordboxSyncIssue) => void) => {
-        send = cb
-        return () => {}
-      },
+      dj: djReads({
+        rekordbox: {
+          onSyncIssue: (cb) => {
+            send = cb
+            return () => {}
+          },
+        },
+      }),
     })
     await renderApp()
     act(() => send?.(issue))
@@ -6921,10 +6927,14 @@ describe('App Engine DJ sync notice', () => {
   async function raise(issue: RekordboxSyncIssue): Promise<HTMLElement> {
     let send: ((issue: RekordboxSyncIssue) => void) | undefined
     setApi({
-      onEngineSyncIssue: (cb: (issue: RekordboxSyncIssue) => void) => {
-        send = cb
-        return () => {}
-      },
+      dj: djReads({
+        engine: {
+          onSyncIssue: (cb) => {
+            send = cb
+            return () => {}
+          },
+        },
+      }),
     })
     await renderApp()
     act(() => send?.(issue))
