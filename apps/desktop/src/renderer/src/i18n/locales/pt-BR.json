@@ -2736,7 +2736,7 @@
         "writeFailed": "Não foi possível salvar a mudança. As listas continuam como estavam",
         "readOnly": "As listas do VirtualDJ são somente leitura e nada mudou",
         "stale": "A lista mudou no VirtualDJ. Confira e tente de novo",
-        "writeUnknown": "Não foi possível salvar nem desfazer a mudança, então as listas podem ter mudado. Antes de abrir o VirtualDJ, recupere a pasta MyLists da cópia mais recente na pasta virtualdj-backups dos dados do Surco",
+        "writeUnknown": "Não foi possível salvar nem desfazer a mudança, então as listas podem ter mudado. Antes de abrir o VirtualDJ, recupere a pasta MyLists da cópia mais recente na pasta virtualdj-backups/lists dos dados do Surco",
         "badName": "Esse nome não serve para uma lista. Não pode ficar vazio, repetido nem conter / ou :"
       }
     },

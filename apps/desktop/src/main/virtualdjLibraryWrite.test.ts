@@ -206,6 +206,19 @@ describe('commitVirtualdjDraft', () => {
     expect(kept[0]).toBe('2026-11-11T09-00-02-000Z')
   })
 
+  it('never prunes the MyLists copies kept beside the database ones', async () => {
+    const { database, backupDir, deps } = library()
+    mkdirSync(join(backupDir, 'lists'), { recursive: true })
+    for (let i = 0; i < 22; i++) {
+      const draft = createVirtualdjDraft()
+      draft.write(database, `${draft.read(database)}\r\n`)
+      await commitVirtualdjDraft(draft, deps({ now: () => new Date(T0 + i * 1000) }))
+    }
+    const kept = readdirSync(backupDir).sort()
+    expect(kept).toContain('lists')
+    expect(kept.filter((n) => n !== 'lists')).toHaveLength(20)
+  })
+
   it('refuses to write when the copy cannot be taken, so no write ever lands without one', async () => {
     const { database, backupDir, deps } = library()
     writeFileSync(backupDir, 'not a folder')

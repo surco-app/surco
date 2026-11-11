@@ -2736,7 +2736,7 @@
         "writeFailed": "Impossible d’enregistrer la modification. Les listes sont restées telles quelles",
         "readOnly": "Les listes de VirtualDJ sont en lecture seule, rien n’a changé",
         "stale": "La liste a changé dans VirtualDJ. Vérifie-la et réessaie",
-        "writeUnknown": "Le changement n’a pu être ni enregistré ni annulé, les listes ont donc pu changer. Avant d’ouvrir VirtualDJ, restaure le dossier MyLists depuis la copie la plus récente dans le dossier virtualdj-backups des données de Surco",
+        "writeUnknown": "Le changement n’a pu être ni enregistré ni annulé, les listes ont donc pu changer. Avant d’ouvrir VirtualDJ, restaure le dossier MyLists depuis la copie la plus récente dans le dossier virtualdj-backups/lists des données de Surco",
         "badName": "Ce nom ne convient pas pour une liste. Il ne peut pas être vide, en double ni contenir / ou :"
       }
     },

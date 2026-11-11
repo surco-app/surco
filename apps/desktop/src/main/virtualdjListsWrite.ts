@@ -23,7 +23,7 @@ import type { BatchResult, CrateStamp, EditOp, OpOutcome, QueueOp } from './reko
 import { type FileStamp, fileStampOf } from './seratoLibraryWrite'
 import { isVirtualdjHome, type VirtualdjRoot } from './virtualdjLibrary'
 import type { VirtualdjCommit, VirtualdjCommitDeps } from './virtualdjLibraryWrite'
-import { takeBackups } from './virtualdjLibraryWrite'
+import { LIST_BACKUPS, takeBackups } from './virtualdjLibraryWrite'
 import { EXT, parseVirtualdjLinkId, SUB, virtualdjListRows } from './virtualdjLists'
 
 const XML_HEAD = '<?xml version="1.0" encoding="UTF-8"?>\r\n'
@@ -501,7 +501,11 @@ async function commitLists(d: ListsDraft, deps: VirtualdjCommitDeps): Promise<Vi
     }
   if (await deps.virtualdjOpen()) return 'cancelled'
   try {
-    if (d.disk.files.size > 0) takeBackups([...d.disk.files.keys()], deps)
+    if (d.disk.files.size > 0)
+      takeBackups([...d.disk.files.keys()], {
+        ...deps,
+        backupDir: join(deps.backupDir, LIST_BACKUPS),
+      })
   } catch (e) {
     log.warn('VirtualDJ lists backup failed', e)
     return 'backup-failed'

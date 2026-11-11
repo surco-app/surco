@@ -2736,7 +2736,7 @@
         "writeFailed": "Die Änderung konnte nicht gespeichert werden. Die Listen sind unverändert",
         "readOnly": "Die VirtualDJ-Listen sind schreibgeschützt, daher wurde nichts geändert",
         "stale": "Die Liste hat sich in VirtualDJ geändert. Prüfe sie und versuche es erneut",
-        "writeUnknown": "Die Änderung ließ sich weder speichern noch rückgängig machen, die Listen können sich also geändert haben. Stelle vor dem Öffnen von VirtualDJ den Ordner MyLists aus der neuesten Kopie im Ordner virtualdj-backups in den Surco-Daten wieder her",
+        "writeUnknown": "Die Änderung ließ sich weder speichern noch rückgängig machen, die Listen können sich also geändert haben. Stelle vor dem Öffnen von VirtualDJ den Ordner MyLists aus der neuesten Kopie im Ordner virtualdj-backups/lists in den Surco-Daten wieder her",
         "badName": "Dieser Name ist für eine Liste nicht zulässig. Er darf nicht leer sein, nicht doppelt vorkommen und weder / noch : enthalten"
       }
     },

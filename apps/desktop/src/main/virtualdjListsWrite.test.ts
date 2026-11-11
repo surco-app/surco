@@ -55,7 +55,8 @@ function library() {
   const at = (rel: string) => join(lists, rel)
   const bytes = (rel: string) => readFileSync(at(rel))
   const text = (rel: string) => readFileSync(at(rel), 'utf8')
-  const backups = () => (existsSync(backupDir) ? readdirSync(backupDir) : [])
+  const backups = () =>
+    existsSync(join(backupDir, 'lists')) ? readdirSync(join(backupDir, 'lists')) : []
   const links = (id: string) =>
     virtualdjPlaylist(readVirtualdjLibrary(roots()), id).map((e) => e.linkId as string)
   return {
@@ -393,11 +394,27 @@ describe('applyVirtualdjListOps', () => {
     const lib = library()
     await lib.run({ kind: 'delete', playlistId: 'Carpeta' })
     const [folder] = lib.backups()
-    const copy = join(lib.deps.backupDir, folder, 'Local', 'MyLists')
+    const copy = join(lib.deps.backupDir, 'lists', folder, 'Local', 'MyLists')
     expect(readFileSync(join(copy, 'Carpeta.subfolders', 'Dentro.vdjfolder'))).toEqual(
       original('Carpeta.subfolders/Dentro.vdjfolder'),
     )
     expect(readFileSync(join(copy, 'order'))).toEqual(original('order'))
+  })
+
+  it('keeps the MyLists copies in their own 20, so a run of list edits never pushes out the database copies', async () => {
+    const lib = library()
+    const database = join(lib.deps.backupDir, '2026-01-01T00-00-00-000Z')
+    mkdirSync(join(database, 'Local'), { recursive: true })
+    writeFileSync(join(database, 'Local', 'database.xml'), 'copy')
+    for (let i = 0; i < 22; i++)
+      await lib.run({
+        kind: 'moveNode',
+        playlistId: 'Surco escrita',
+        parentId: 'root',
+        beforeId: i % 2 === 0 ? 'Carpeta' : null,
+      })
+    expect(readFileSync(join(database, 'Local', 'database.xml'), 'utf8')).toBe('copy')
+    expect(lib.backups()).toHaveLength(20)
   })
 
   it('writes nothing when VirtualDJ opens after the backup, right before the rename', async () => {

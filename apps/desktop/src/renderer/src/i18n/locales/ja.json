@@ -2736,7 +2736,7 @@
         "writeFailed": "変更を保存できませんでした。リストは元のままです",
         "readOnly": "VirtualDJ のリストは読み取り専用のため、何も変更されていません",
         "stale": "VirtualDJ でリストが変更されました。確認してもう一度お試しください",
-        "writeUnknown": "変更を保存も取り消しもできなかったため、リストが変更されている可能性があります。VirtualDJ を開く前に、Surco のデータ内の virtualdj-backups フォルダーにある最新のコピーから MyLists フォルダーを復元してください",
+        "writeUnknown": "変更を保存も取り消しもできなかったため、リストが変更されている可能性があります。VirtualDJ を開く前に、Surco のデータ内の virtualdj-backups/lists フォルダーにある最新のコピーから MyLists フォルダーを復元してください",
         "badName": "この名前はリストには使えません。空にすることも、重複させることも、/ や : を含めることもできません"
       }
     },
