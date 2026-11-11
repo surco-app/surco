@@ -1868,7 +1868,7 @@
     "syncRekordboxIdle": "このマシンに rekordbox コレクションが見つかりませんでした。",
     "rekordboxSync": "rekordbox コレクション",
     "rekordboxDbPath": "rekordbox コレクション",
-    "rekordboxDbPathHint": "書き込む rekordbox コレクションです。自動的に検出されます。別の場所にある場合のみ変更してください。",
+    "rekordboxDbPathHint": "自動的に検出されます。別の場所にある場合のみ変更してください。",
     "traktorNmlPathEmpty": "未選択",
     "originalBackup": "保持されるもの",
     "originalBackupPolicies": {

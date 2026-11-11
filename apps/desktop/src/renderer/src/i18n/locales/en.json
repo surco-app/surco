@@ -1868,7 +1868,7 @@
     "syncRekordboxIdle": "No rekordbox collection was found on this machine.",
     "rekordboxSync": "rekordbox collection",
     "rekordboxDbPath": "rekordbox collection",
-    "rekordboxDbPathHint": "The rekordbox collection to write into. It is found automatically; change it only if yours lives elsewhere.",
+    "rekordboxDbPathHint": "It is found automatically; change it only if yours lives elsewhere.",
     "traktorNmlPathEmpty": "Not chosen yet",
     "originalBackup": "What gets kept",
     "originalBackupPolicies": {

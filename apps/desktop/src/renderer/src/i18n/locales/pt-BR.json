@@ -1868,7 +1868,7 @@
     "syncRekordboxIdle": "Nenhuma coleção do rekordbox foi encontrada neste computador.",
     "rekordboxSync": "Coleção do rekordbox",
     "rekordboxDbPath": "Coleção do rekordbox",
-    "rekordboxDbPathHint": "A coleção do rekordbox em que gravar. Ela é detectada sozinha; troque apenas se a sua estiver em outro lugar.",
+    "rekordboxDbPathHint": "Ela é detectada sozinha; troque apenas se a sua estiver em outro lugar.",
     "traktorNmlPathEmpty": "Ainda não escolhido",
     "originalBackup": "O que é guardado",
     "originalBackupPolicies": {

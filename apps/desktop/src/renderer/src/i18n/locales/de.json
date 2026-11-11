@@ -1868,7 +1868,7 @@
     "syncRekordboxIdle": "Auf diesem Rechner wurde keine rekordbox-Sammlung gefunden.",
     "rekordboxSync": "rekordbox-Sammlung",
     "rekordboxDbPath": "rekordbox-Sammlung",
-    "rekordboxDbPathHint": "Die rekordbox-Sammlung, in die geschrieben wird. Sie wird automatisch gefunden; ändere sie nur, wenn deine woanders liegt.",
+    "rekordboxDbPathHint": "Sie wird automatisch gefunden; ändere sie nur, wenn deine woanders liegt.",
     "traktorNmlPathEmpty": "Noch nicht gewählt",
     "originalBackup": "Was aufbewahrt wird",
     "originalBackupPolicies": {
