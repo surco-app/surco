@@ -5,11 +5,11 @@ import type { Api } from '../../../preload/api'
 import { MANUAL_CUE_FLOW, MIX_IN, MIX_IN_32, normalizeCueFlows } from '../../../shared/cueFlows'
 import { ALL_SLOTS, HOT_KINDS } from '../../../shared/cueRules'
 import { TRAKTOR_SLOTS } from '../../../shared/traktorContent'
-import type { LibraryTracks, TrackCues } from '../../../shared/types'
+import type { LibraryTracks, SurcoGrid, TrackCues } from '../../../shared/types'
 import { installApi } from '../test/api'
 import { type DraftContext, reduceDraft, startDraft, wantedOfDraft } from './cueDraft'
 import { keepDraft, resetCueSession } from './cueSession'
-import { carriedBreaks, twinPlans, twinPlansOf } from './cueTwins'
+import { carriedBreaks, type TwinPlan, twinPlans, twinPlansOf } from './cueTwins'
 import { quantizePoints } from './cueWave'
 
 const GRID = Array.from({ length: 800 }, (_, i) => ({ ms: i * 500, beat: (i % 4) + 1 }))
@@ -66,7 +66,11 @@ const placed = (drops: number[], slots = ALL_SLOTS, start = startDraft([], MIX_I
 
 afterEach(resetCueSession)
 
-function setup(twins: LibraryTracks = ALL, reads: Record<string, TrackCues | null> = {}) {
+function setup(
+  twins: LibraryTracks = ALL,
+  reads: Record<string, TrackCues | null> = {},
+  surco: SurcoGrid | null = null,
+) {
   const api = installApi({
     cues: {
       twins: vi.fn<Api['cues']['twins']>(async () => twins),
@@ -74,6 +78,7 @@ function setup(twins: LibraryTracks = ALL, reads: Record<string, TrackCues | nul
         id in reads ? reads[id] : { ...READ, contentId: id },
       ),
       queued: vi.fn<Api['cues']['queued']>(async () => null),
+      surcoGrid: vi.fn<Api['cues']['surcoGrid']>(async () => surco),
     },
   })
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -246,6 +251,88 @@ describe('placing a flow in Serato and from it', () => {
     const { client } = withSerato({ analysed: false, grid: [] })
     const plans = await twinPlans(client, SOURCE, settings())
     expect(plans.map((p) => p.contentId)).toEqual([TRAKTOR, ENGINE])
+  })
+})
+
+describe('placing a flow in VirtualDJ and from it', () => {
+  const VDJ = 'virtualdj:/m/a.wav'
+  const SERATO = 'serato:/m/a.wav'
+  const VDJ_GRID = GRID.map((b) => ({ ...b, ms: b.ms + 20 }))
+  const SURCO: SurcoGrid = {
+    bpm: 120,
+    grid: GRID.map((b) => ({ ms: b.ms + 40, beat: 0 })),
+    words: null,
+  }
+  const unread = (contentId: string): TrackCues => ({
+    ...READ,
+    contentId,
+    analysed: false,
+    grid: [],
+  })
+  const hotMs = (plan: TwinPlan | undefined) =>
+    plan?.status === 'planned'
+      ? plan.request.wanted.filter((c) => c.kind !== 0).map((c) => c.ms)
+      : []
+  const flowHotMs = (shift: number) =>
+    wantedOfDraft(placed([bar(64)]).cues)
+      .filter((c) => c.kind !== 0)
+      .map((c) => c.ms + shift)
+
+  it('plans the flow marked in rekordbox on the same file in VirtualDJ, on VirtualDJ’s own beats, with hot cues A to H and no CALLs', async () => {
+    const { client } = setup(
+      { virtualdj: VDJ },
+      { [VDJ]: { ...READ, contentId: VDJ, grid: VDJ_GRID } },
+    )
+    const plans = await twinPlans(client, SOURCE, settings())
+    expect(plans.map((p) => p.library)).toEqual(['virtualdj'])
+    const [vdj] = plans
+    expect(vdj.status === 'planned' && vdj.request).toMatchObject({
+      contentId: VDJ,
+      path: '/m/a.wav',
+      fingerprint: 'f0',
+    })
+    expect(hotMs(vdj)).toEqual(flowHotMs(20))
+    expect(vdj.status === 'planned' && vdj.calls).toBe(0)
+    const kinds = vdj.status === 'planned' ? vdj.request.wanted.map((c) => c.kind) : []
+    expect(kinds.filter((k) => k !== 0)).toEqual(HOT_KINDS.slice(0, flowHotMs(0).length))
+  })
+
+  it('carries a flow marked in VirtualDJ to the same file in Serato', async () => {
+    const { client } = setup({ virtualdj: VDJ, serato: SERATO })
+    const plans = await twinPlans(client, { ...SOURCE, contentId: VDJ }, settings())
+    expect(plans.map((p) => p.contentId)).toEqual([SERATO])
+    expect(hotMs(plans[0])).toEqual(flowHotMs(0))
+  })
+
+  it('places the flow on Surco’s measured grid in a VirtualDJ track with no Scan', async () => {
+    const { client } = setup({ virtualdj: VDJ }, { [VDJ]: unread(VDJ) }, SURCO)
+    const plans = await twinPlans(client, SOURCE, settings())
+    expect(plans.map((p) => p.library)).toEqual(['virtualdj'])
+    expect(hotMs(plans[0])).toEqual(flowHotMs(40))
+  })
+
+  it('skips a VirtualDJ track with no Scan when Surco has no grid for it either', async () => {
+    const { client } = setup({ virtualdj: VDJ }, { [VDJ]: unread(VDJ) })
+    expect(await twinPlans(client, SOURCE, settings())).toEqual([])
+  })
+
+  it('still skips a track the other programs have not analysed, with Surco’s grid at hand', async () => {
+    const { client } = setup(
+      { rekordbox: '103', traktor: TRAKTOR, engine: ENGINE, serato: SERATO, virtualdj: VDJ },
+      {
+        '103': unread('103'),
+        [TRAKTOR]: unread(TRAKTOR),
+        [ENGINE]: unread(ENGINE),
+        [SERATO]: unread(SERATO),
+      },
+      SURCO,
+    )
+    expect(await twinPlans(client, { ...SOURCE, contentId: VDJ }, settings())).toEqual([])
+  })
+
+  it('leaves VirtualDJ out when the DJ took it out of the flows', async () => {
+    const { client } = setup({ virtualdj: VDJ })
+    expect(await twinPlans(client, SOURCE, settings({ cueFlowToVirtualdj: false }))).toEqual([])
   })
 })
 

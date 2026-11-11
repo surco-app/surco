@@ -722,6 +722,13 @@ describe('VirtualDJ', () => {
     })
   })
 
+  it('names the VirtualDJ twin of a file whose name VirtualDJ spells in another Unicode form, so a flow reaches it', async () => {
+    const dir = await virtualdj(['/Volumes/M/Music/Cafe\u0301.mp3'])
+    expect(await libraryTracksOf('/Volumes/M/Music/Café.mp3', { ...OFF, virtualdj: dir })).toEqual({
+      virtualdj: 'virtualdj:/Volumes/M/Music/Cafe\u0301.mp3',
+    })
+  })
+
   it('names no VirtualDJ track for a file only a list names, since there is no song to give cues to', async () => {
     const dir = await virtualdj([], { Friday: ['/Volumes/M/Music/a.mp3'] })
     expect(await libraryTracksOf('/Volumes/M/Music/a.mp3', { ...OFF, virtualdj: dir })).toEqual({})

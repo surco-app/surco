@@ -2044,7 +2044,7 @@
       "lettersByTimeHint": "A は常にトラックの最初のキューになります。各文字を固定のパッドとして使っている場合はオフにしてください。",
       "markPoint": "マークした位置に CALL を置く",
       "traktorColours": "Traktor はキューの種類ごとに色を付けるため、これらのキューは青で表示されます",
-      "callsOnlyRekordbox": "CALL は rekordbox にのみ存在します。Engine DJ、Traktor、Serato にはホットキューのみが設定されます",
+      "callsOnlyRekordbox": "CALL は rekordbox にのみ存在します。Engine DJ、Traktor、Serato、VirtualDJ にはホットキューのみが設定されます",
       "targets": {
         "title": "フローを次にも配置",
         "hint": "マークしたプログラムには常にキューが設定されます。Surco はファイルをもとに他のプログラムで同じトラックを見つけ、そこにあるグリッドとキューに合わせてフローを配置します。手動で置いたキューは、置いたプログラムにのみ残ります。",
@@ -2052,7 +2052,7 @@
         "traktor": "ホットキューのみ（青、A から G まで）。Traktor は起動時にコレクションを読み込むため、保存時に Surco が Traktor を閉じるよう求めます。",
         "engine": "ホットキューのみ。Engine DJ には CALL がありません。",
         "serato": "ホットキューのみ（A から H）。Serato には CALL がありません。Serato が開いている場合は、閉じたときに Surco が保存します。",
-        "virtualdj": "Surco はまだ VirtualDJ にフローを適用しないため、フローは VirtualDJ を変更しません。",
+        "virtualdj": "ホットキューのみ（A から H）。VirtualDJ には CALL がありません。VirtualDJ が開いている場合は、閉じたときに Surco が保存します。",
         "missing": "このコンピュータで {{program}} が見つかりません"
       }
     },

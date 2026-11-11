@@ -2044,7 +2044,7 @@
       "lettersByTimeHint": "A é sempre o primeiro cue da faixa. Desligue se cada letra for um pad fixo para você.",
       "markPoint": "Colocar um CALL onde você marca",
       "traktorColours": "No Traktor estes cues aparecem em azul, porque o Traktor colore cada cue pelo tipo",
-      "callsOnlyRekordbox": "Os CALL só existem no rekordbox. O Engine DJ, o Traktor e o Serato recebem só os hot cues",
+      "callsOnlyRekordbox": "Os CALL só existem no rekordbox. O Engine DJ, o Traktor, o Serato e o VirtualDJ recebem só os hot cues",
       "targets": {
         "title": "Aplicar os fluxos também em",
         "hint": "O programa em que você marca sempre recebe os cues. O Surco procura a mesma faixa nos outros pelo arquivo e coloca o fluxo com a grade e os cues que ela já tem lá. Os cues que você coloca à mão ficam no programa onde você os marca.",
@@ -2052,7 +2052,7 @@
         "traktor": "Só hot cues, em azul, de A a G. O Traktor lê a coleção ao abrir, então ao salvar o Surco vai pedir que você o feche.",
         "engine": "Só hot cues. O Engine DJ não tem CALL.",
         "serato": "Só hot cues, de A a H. O Serato não tem CALL. Se o Serato estiver aberto, o Surco os salva quando você fechá-lo.",
-        "virtualdj": "O Surco ainda não leva os fluxos ao VirtualDJ, então um fluxo deixa o VirtualDJ como está.",
+        "virtualdj": "Só hot cues, de A a H. O VirtualDJ não tem CALL. Se o VirtualDJ estiver aberto, o Surco os salva quando você fechá-lo.",
         "missing": "O Surco não encontra o {{program}} neste computador"
       }
     },

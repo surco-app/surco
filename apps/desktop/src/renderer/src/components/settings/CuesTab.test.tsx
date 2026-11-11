@@ -43,6 +43,7 @@ let last: Pick<
   | 'cueFlowToTraktor'
   | 'cueFlowToEngine'
   | 'cueFlowToSerato'
+  | 'cueFlowToVirtualdj'
 > | null = null
 
 const KEPT: CueFlow[] = [MIX_IN, MY_FLOW, ONE_AT_32, CALLS_ONLY]
@@ -150,7 +151,7 @@ describe('CuesTab', () => {
     })
     render(<Harness />)
     expect(await screen.findByTestId('cue-flow-library-note')).toHaveTextContent(
-      'CALLs only exist in rekordbox. Engine DJ, Traktor and Serato get the hot cues only. In Traktor these cues show in blue, since Traktor colours each cue by its type',
+      'CALLs only exist in rekordbox. Engine DJ, Traktor, Serato and VirtualDJ get the hot cues only. In Traktor these cues show in blue, since Traktor colours each cue by its type',
     )
     cleanup()
     installApi({
@@ -161,7 +162,7 @@ describe('CuesTab', () => {
     })
     render(<Harness />)
     expect(await screen.findByTestId('cue-flow-library-note')).toHaveTextContent(
-      /^CALLs only exist in rekordbox\. Engine DJ, Traktor and Serato get the hot cues only$/,
+      /^CALLs only exist in rekordbox\. Engine DJ, Traktor, Serato and VirtualDJ get the hot cues only$/,
     )
     cleanup()
     installApi({
@@ -173,7 +174,7 @@ describe('CuesTab', () => {
     })
     render(<Harness />)
     expect(await screen.findByTestId('cue-flow-library-note')).toHaveTextContent(
-      /^CALLs only exist in rekordbox\. Engine DJ, Traktor and Serato get the hot cues only$/,
+      /^CALLs only exist in rekordbox\. Engine DJ, Traktor, Serato and VirtualDJ get the hot cues only$/,
     )
     cleanup()
     installApi({
@@ -194,12 +195,12 @@ describe('CuesTab', () => {
     expect(screen.queryByTestId('settings-cue-flow-to-virtualdj')).toBeNull()
   })
 
-  it('leaves the hot cues note out when only rekordbox and VirtualDJ are found, since rekordbox keeps CALLs and no flow reaches VirtualDJ', async () => {
+  it('says the hot cues note when only rekordbox and VirtualDJ are found, since a flow reaches VirtualDJ without its CALLs', async () => {
     installApi({ dj: djReads({ virtualdj: { available: async () => true } }) })
     render(<Harness collection="/c/master.db" />)
-    await screen.findByTestId('cue-flow-mark-point')
-    await act(async () => {})
-    expect(screen.queryByTestId('cue-flow-library-note')).not.toBeInTheDocument()
+    expect(await screen.findByTestId('cue-flow-library-note')).toHaveTextContent(
+      /^CALLs only exist in rekordbox\. Engine DJ, Traktor, Serato and VirtualDJ get the hot cues only$/,
+    )
   })
 
   it('shows a destination as missing only for the programs that are not installed', async () => {
@@ -230,20 +231,17 @@ describe('CuesTab', () => {
     expect(screen.getByTestId('settings-cue-flow-to-serato-missing')).toBeInTheDocument()
   })
 
-  it('says under VirtualDJ that Surco does not save cues there yet, so a found VirtualDJ never looks like a flow reaches it', async () => {
+  it('lets the DJ send the flows to a found VirtualDJ and says it gets the hot cues only, saved when VirtualDJ closes', async () => {
     installApi({ dj: djReads({ virtualdj: { available: async () => true } }) })
     render(<Harness />)
-    await waitFor(() =>
-      expect(screen.getByTestId('settings-cue-flow-to-rekordbox')).toBeInTheDocument(),
+    await waitFor(() => expect(screen.getByTestId('settings-cue-flow-to-virtualdj')).toBeEnabled())
+    expect(screen.getByTestId('settings-cue-flow-to-virtualdj')).toBeChecked()
+    expect(screen.getByTestId('cue-flow-targets')).toHaveTextContent(
+      'Hot cues only, from A to H. VirtualDJ has no CALLs. If VirtualDJ is open, Surco saves them when you close it.',
     )
-    await act(async () => {})
-    expect(screen.getByTestId('settings-cue-flow-to-virtualdj')).toBeDisabled()
-    expect(screen.getByTestId('settings-cue-flow-to-virtualdj')).not.toBeChecked()
-    expect(
-      within(screen.getByTestId('cue-flow-targets')).getByText(
-        i18n.t('settings.cueFlows.targets.virtualdj'),
-      ),
-    ).toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('settings-cue-flow-to-virtualdj'))
+    expect(last?.cueFlowToVirtualdj).toBe(false)
+    expect(last?.cueFlowToSerato).toBe(true)
   })
 
   it('probes the destinations again each time the tab opens, so a library saved in Settings shows as found', async () => {

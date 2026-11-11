@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import { HOT_KINDS } from '../shared/cueRules'
 import { nearestHotCueColor } from '../shared/rekordboxCueColors'
+import type { BeatGridFit } from './beatGrid'
 import { virtualdjCueSource } from './virtualdjCueSource'
 
 const { lists } = vi.hoisted(() => ({ lists: { reads: 0 } }))
@@ -27,12 +28,14 @@ function source(
   dir = fixture,
   words: (file: string) => Promise<Uint16Array | null> = async () => null,
   fine?: (file: string) => Promise<Uint8Array | null>,
+  beatGrid: (file: string) => Promise<BeatGridFit | null> = async () => null,
 ) {
   return virtualdjCueSource(
     {
       roots: () => [{ dir, root: '/' }],
       words,
       fine,
+      beatGrid,
       queue: { enqueue: vi.fn(), cuesOp: vi.fn(), drop: vi.fn() },
       applyQuietly: vi.fn(),
     },
@@ -130,6 +133,33 @@ describe('virtualdjCueSource', () => {
     expect(read?.analysed).toBe(false)
     expect(read?.grid).toEqual([])
     expect(read?.cues).toHaveLength(1)
+  })
+
+  it('measures Surco’s grid for a song VirtualDJ has not scanned, on Surco’s clock with no lead, so a flow can still land on its beats', async () => {
+    const dir = library(song('/m/a.wav', ''))
+    const words = new Uint16Array([3, 9])
+    const beatGrid = vi.fn(async (_file: string) => ({ bpm: 120, firstMs: 100 }))
+    const grid = await source(dir, async () => words, undefined, beatGrid).surcoGrid(
+      'virtualdj:/m/a.wav',
+    )
+    expect(beatGrid).toHaveBeenCalledWith('/m/a.wav')
+    expect(grid?.bpm).toBe(120)
+    expect(grid?.words).toBe(words)
+    expect(grid?.grid.slice(0, 3)).toEqual([
+      { ms: 102, beat: 0 },
+      { ms: 602, beat: 0 },
+      { ms: 1102, beat: 0 },
+    ])
+    expect(grid?.grid).toHaveLength(20)
+  })
+
+  it('has no Surco grid for a song Surco cannot measure or the database does not hold', async () => {
+    const dir = library(song('/m/a.wav', ''))
+    const measured = async () => ({ bpm: 120, firstMs: 100 })
+    expect(await source(dir).surcoGrid('virtualdj:/m/a.wav')).toBeNull()
+    expect(
+      await source(dir, undefined, undefined, measured).surcoGrid('virtualdj:/m/missing.wav'),
+    ).toBeNull()
   })
 
   it('ends a saved loop Size beats after its start, since VirtualDJ keeps the length in beats', async () => {

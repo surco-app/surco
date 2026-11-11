@@ -2044,7 +2044,7 @@
       "lettersByTimeHint": "A est toujours le premier cue du morceau. Désactive-le si chaque lettre est un pad fixe pour toi.",
       "markPoint": "Mettre un CALL là où tu marques",
       "traktorColours": "Dans Traktor ces cues s’affichent en bleu, car Traktor colore chaque cue selon son type",
-      "callsOnlyRekordbox": "Les CALL n’existent que dans rekordbox. Engine DJ, Traktor et Serato ne reçoivent que les hot cues",
+      "callsOnlyRekordbox": "Les CALL n’existent que dans rekordbox. Engine DJ, Traktor, Serato et VirtualDJ ne reçoivent que les hot cues",
       "targets": {
         "title": "Appliquer aussi les flux dans",
         "hint": "Le logiciel dans lequel tu marques reçoit toujours les cues. Surco cherche le même morceau dans les autres par son fichier et y place le flux avec la grille et les cues qu’il a déjà. Les cues placés à la main restent dans le logiciel où tu les places.",
@@ -2052,7 +2052,7 @@
         "traktor": "Hot cues seulement, en bleu, de A à G. Traktor lit sa collection au démarrage, donc Surco te demandera de le fermer à l’enregistrement.",
         "engine": "Hot cues seulement. Engine DJ n’a pas de CALL.",
         "serato": "Hot cues seulement, de A à H. Serato n’a pas de CALL. Si Serato est ouvert, Surco les enregistre quand tu le fermes.",
-        "virtualdj": "Surco n’applique pas encore les flux dans VirtualDJ, un flux laisse donc VirtualDJ tel quel.",
+        "virtualdj": "Hot cues seulement, de A à H. VirtualDJ n’a pas de CALL. Si VirtualDJ est ouvert, Surco les enregistre quand tu le fermes.",
         "missing": "Surco ne trouve pas {{program}} sur cet ordinateur"
       }
     },

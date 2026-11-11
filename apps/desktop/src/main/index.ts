@@ -1595,6 +1595,7 @@ function registerIpc(): void {
           roots: virtualdjRoots,
           words: cachedCueWaveWords,
           fine: cachedCueWaveFine,
+          beatGrid: cachedBeatGrid,
           queue: virtualdjCueQueue,
           applyQuietly: () => programQueues.virtualdj.applyQuietly(),
         },

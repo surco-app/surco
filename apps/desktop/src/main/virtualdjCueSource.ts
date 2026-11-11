@@ -4,11 +4,13 @@ import { gridFingerprint } from '../shared/gridEdit'
 import { nearestHotCueColor } from '../shared/rekordboxCueColors'
 import type { TrackCueRow, TrackCues } from '../shared/types'
 import { virtualdjFileOf } from '../shared/virtualdjContent'
+import { provisionalGrid } from './beatGrid'
 import type { CueQueue, CueSource } from './cueSource'
 import { CUE_WAVE_FINE_PER_SECOND } from './cueWaveFine'
 import { rekordboxInput } from './engineDropInput'
 import { cueFingerprint } from './rekordboxCues'
 import { keyOf } from './rekordboxPlaylistsIpc'
+import type { BeatGridOf } from './sameClockGrid'
 import { tempoGrid } from './seratoCueSource'
 import type { VirtualdjSong } from './virtualdjDatabase'
 import { readVirtualdjSongs, type VirtualdjRoot } from './virtualdjLibrary'
@@ -74,6 +76,7 @@ export function virtualdjCueSource(
     roots: () => VirtualdjRoot[]
     words: (file: string) => Promise<Uint16Array | null>
     fine?: (file: string) => Promise<Uint8Array | null>
+    beatGrid: BeatGridOf
     queue: CueQueue
     applyQuietly: CueSource['applyQuietly']
   },
@@ -116,7 +119,18 @@ export function virtualdjCueSource(
       return words ? { grid: read.grid, phrases: [], words } : null
     },
     auditionLead: async () => 0,
-    surcoGrid: async () => null,
+    surcoGrid: async (contentId) => {
+      const song = songOf(contentId)
+      if (!song) return null
+      const file = virtualdjFileOf(contentId)
+      const fit = await host.beatGrid(file)
+      if (!fit) return null
+      return {
+        bpm: fit.bpm,
+        grid: provisionalGrid(fit, 0, (song.lengthSeconds ?? 0) * 1000),
+        words: await host.words(file),
+      }
+    },
     gridFit: async () => null,
     gridVerdict: async () => null,
     queuedWanted: async () => [],

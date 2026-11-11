@@ -2044,7 +2044,7 @@
       "lettersByTimeHint": "A is always the first cue of the track. Turn it off if each letter is a fixed pad for you.",
       "markPoint": "Put a CALL where you mark",
       "traktorColours": "In Traktor these cues show in blue, since Traktor colours each cue by its type",
-      "callsOnlyRekordbox": "CALLs only exist in rekordbox. Engine DJ, Traktor and Serato get the hot cues only",
+      "callsOnlyRekordbox": "CALLs only exist in rekordbox. Engine DJ, Traktor, Serato and VirtualDJ get the hot cues only",
       "targets": {
         "title": "Also place the flows in",
         "hint": "The program you mark in always gets the cues. Surco finds the same track in the others by its file and places the flow on the grid and cues it already has there. Cues you place by hand stay in the program where you place them.",
@@ -2052,7 +2052,7 @@
         "traktor": "Hot cues only, in blue, from A to G. Traktor reads its collection when it starts, so Surco will ask you to close it when you save.",
         "engine": "Hot cues only. Engine DJ has no CALLs.",
         "serato": "Hot cues only, from A to H. Serato has no CALLs. If Serato is open, Surco saves them when you close it.",
-        "virtualdj": "Surco does not take flows to VirtualDJ yet, so a flow leaves VirtualDJ as it is.",
+        "virtualdj": "Hot cues only, from A to H. VirtualDJ has no CALLs. If VirtualDJ is open, Surco saves them when you close it.",
         "missing": "Surco cannot find {{program}} on this computer"
       }
     },

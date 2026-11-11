@@ -41,6 +41,7 @@ function library(xml = fixture) {
     {
       roots: () => [{ dir, root: '/' }],
       words: async () => null,
+      beatGrid: async () => null,
       queue: { enqueue: vi.fn(), cuesOp: vi.fn(), drop: vi.fn() },
       applyQuietly: vi.fn(),
     },
@@ -100,6 +101,7 @@ describe('applyVirtualdjCuesBatch', () => {
       {
         roots,
         words: async () => null,
+        beatGrid: async () => null,
         queue: { enqueue: vi.fn(), cuesOp: vi.fn(), drop: vi.fn() },
         applyQuietly: vi.fn(),
       },
