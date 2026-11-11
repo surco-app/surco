@@ -27,6 +27,7 @@ export interface CopiesProgram {
       copyId: string,
       deps: Pick<RestoreDeps, 'ensureClosed' | 'isRunning' | 'discardQueue' | 'busy'>,
     ) => Promise<RestoreResult>
+    recover: () => void
   }
 }
 
@@ -45,7 +46,12 @@ export function registerCopiesIpc(
     )
   for (const program of ORDER) {
     const collectionPath = programs[program].collectionPath()
-    if (collectionPath && !programs[program].history) void recover(program, collectionPath)
+    const history = programs[program].history
+    if (history)
+      void serialLibraryFlush(async () => history.recover()).catch((err) =>
+        log.warn(`${program} copies could not be recovered: ${String(err)}`),
+      )
+    else if (collectionPath) void recover(program, collectionPath)
   }
   ipcMain.handle('copies:status', async (): Promise<ProgramCopies[]> => {
     const found: ProgramCopies[] = []
@@ -53,8 +59,13 @@ export function registerCopiesIpc(
       const deps = programs[program]
       const collectionPath = deps.collectionPath()
       if (!collectionPath) continue
+      if (deps.history) {
+        const history = deps.history
+        await serialLibraryFlush(async () => history.recover()).catch((err) =>
+          log.warn(`${program} copies could not be recovered: ${String(err)}`),
+        )
+      } else await recover(program, collectionPath)
       const own = deps.history?.list()
-      if (!own) await recover(program, collectionPath)
       const queue = deps.queue.state()
       found.push({
         program,

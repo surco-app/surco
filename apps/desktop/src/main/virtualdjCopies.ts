@@ -308,3 +308,24 @@ export async function restoreVirtualdjCopy(
   deps.discardQueue()
   return { ok: true }
 }
+
+export function recoverVirtualdjCopies(deps: VirtualdjCopiesDeps): void {
+  const history = historyDir(deps)
+  for (const name of names(history).filter((n) => n.endsWith(PARTIAL)))
+    rmSync(join(history, name), { recursive: true, force: true })
+  const roots = deps.roots()
+  for (const root of roots) rmSync(join(root.dir, `database.xml${WRITING}`), { force: true })
+  const home = homeOf(roots)
+  if (!home) return
+  const lists = join(home.dir, LISTS)
+  const leftovers: string[] = []
+  const visit = (at: string) => {
+    for (const entry of readdirSync(at, { withFileTypes: true })) {
+      const path = join(at, entry.name)
+      if (entry.isDirectory()) visit(path)
+      else if (entry.name.endsWith(WRITING)) leftovers.push(path)
+    }
+  }
+  if (existsSync(lists)) visit(lists)
+  for (const file of leftovers) rmSync(file, { force: true })
+}

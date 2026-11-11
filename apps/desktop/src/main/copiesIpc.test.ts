@@ -262,6 +262,7 @@ describe('VirtualDJ copies', () => {
           history: {
             list: () => ({ copies: [copy], restore: null }),
             restore: vi.fn(),
+            recover: vi.fn(),
           },
           queue: { state: () => ({ tracks: 2, changes: 1 }), discardCurrent: vi.fn() },
         },
@@ -284,6 +285,24 @@ describe('VirtualDJ copies', () => {
     expect(events).toEqual([])
   })
 
+  it('recovers what a VirtualDJ restore cut short left, at launch and before each listing', async () => {
+    const recover = vi.fn()
+    registerCopiesIpc(
+      programs({
+        virtualdj: {
+          collectionPath: () => '/VirtualDJ/database.xml',
+          history: { list: () => ({ copies: [copy], restore: null }), restore: vi.fn(), recover },
+        },
+      }),
+      broadcast,
+      () => false,
+    )
+    await serialLibraryFlush(async () => {})
+    expect(recover).toHaveBeenCalledTimes(1)
+    await status()
+    expect(recover).toHaveBeenCalledTimes(2)
+  })
+
   it('restores through VirtualDJ, asking it closed and dropping only its queue', async () => {
     const order: string[] = []
     const restore = vi.fn<NonNullable<CopiesProgram['history']>['restore']>(async (_id, deps) => {
@@ -300,7 +319,7 @@ describe('VirtualDJ copies', () => {
         },
         virtualdj: {
           collectionPath: () => '/VirtualDJ/database.xml',
-          history: { list: () => ({ copies: [copy], restore: null }), restore },
+          history: { list: () => ({ copies: [copy], restore: null }), restore, recover: vi.fn() },
           ensureClosed: async () => {
             order.push('close')
             return true

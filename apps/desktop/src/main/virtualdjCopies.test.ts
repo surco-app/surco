@@ -14,6 +14,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { createSessionBackup } from './rekordboxSessionBackup'
 import {
   listVirtualdjCopies,
+  recoverVirtualdjCopies,
   restoreVirtualdjCopy,
   takeVirtualdjCopy,
   virtualdjCopyKey,
@@ -228,6 +229,27 @@ describe('VirtualDJ copies on the screen', () => {
     expect(copies.length + (restore ? 1 : 0)).toBe(5)
     expect(restore?.reason).toBe('restore')
     expect(copies.map((c) => c.reason)).toEqual(['queue', 'queue', 'queue', 'tracks'])
+  })
+})
+
+describe('recoverVirtualdjCopies', () => {
+  it('clears what a restore or a copy cut short by a crash left, keeping the copies and the library', async () => {
+    const lib = library()
+    await lib.convertInMoment()
+    const database = lib.database()
+    const lists = lib.lists()
+    const history = join(lib.deps.backupDir, 'history')
+    const [copy] = listVirtualdjCopies(lib.deps).copies
+    mkdirSync(join(history, '2026-11-11T11-00-00-000Z.partial', 'Local'), { recursive: true })
+    writeFileSync(join(lib.dir, 'database.xml.surco-write'), 'half')
+    writeFileSync(join(lib.dir, 'MyLists', 'Surco prueba.vdjfolder.surco-write'), 'half')
+    recoverVirtualdjCopies(lib.deps)
+    expect(readdirSync(history).filter((n) => n.endsWith('.partial'))).toEqual([])
+    expect(existsSync(join(lib.dir, 'database.xml.surco-write'))).toBe(false)
+    expect(existsSync(join(lib.dir, 'MyLists', 'Surco prueba.vdjfolder.surco-write'))).toBe(false)
+    expect(lib.database()).toBe(database)
+    expect(lib.lists()).toEqual(lists)
+    expect(listVirtualdjCopies(lib.deps).copies).toEqual([copy])
   })
 })
 

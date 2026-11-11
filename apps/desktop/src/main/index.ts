@@ -281,6 +281,7 @@ import { withRecordedRun } from './verifyRun'
 import { applyVirtualdjBatch } from './virtualdjBatch'
 import {
   listVirtualdjCopies,
+  recoverVirtualdjCopies,
   restoreVirtualdjCopy,
   takeVirtualdjCopy,
   virtualdjCopyKey,
@@ -2381,6 +2382,7 @@ function registerIpc(): void {
         onDiscarded: () => queueChecks.discarded('virtualdj'),
         history: {
           list: () => listVirtualdjCopies(virtualdjCopies()),
+          recover: () => recoverVirtualdjCopies(virtualdjCopies()),
           restore: (copyId, deps) =>
             restoreVirtualdjCopy(copyId, { ...virtualdjCopies(), ...deps }),
         },
