@@ -116,6 +116,7 @@ describe('readVirtualdjLibrary', () => {
       separator: false,
       meta: { bpm: '133.99', key: 'Ebm' },
       contentId: 'virtualdj:/Music/Serato Pruebas/Pray.flac',
+      linkId: '1:%2FMusic%2FSerato%20Pruebas%2FPray.flac',
     })
   })
 
@@ -138,6 +139,7 @@ describe('readVirtualdjLibrary', () => {
       separator: false,
       meta: {},
       contentId: 'virtualdj:/Music/VirtualDJ Pruebas/Pray.flac',
+      linkId: '0:%2FMusic%2FVirtualDJ%20Pruebas%2FPray.flac',
     })
   })
 
@@ -151,6 +153,7 @@ describe('readVirtualdjLibrary', () => {
         separator: false,
         meta: { bpm: '120', key: '8A' },
         contentId: `virtualdj:${nfc}`,
+        linkId: `0:${encodeURIComponent(nfd)}`,
       },
     ])
   })

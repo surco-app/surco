@@ -10,7 +10,7 @@ import type {
 } from '../shared/types'
 import { recentSince } from './traktorPlaylists'
 import { parseVirtualdjDatabase, type VirtualdjSong } from './virtualdjDatabase'
-import { readVirtualdjLists, type VirtualdjNode } from './virtualdjLists'
+import { readVirtualdjLists, type VirtualdjNode, virtualdjLinkId } from './virtualdjLists'
 
 export interface VirtualdjLibrary {
   songs: VirtualdjSong[]
@@ -174,7 +174,10 @@ export function virtualdjPlaylist(
   const list = playlists(library.lists).find((n) => n.id === id)
   if (!list) return []
   const byPath = new Map(library.songs.map((s) => [nfc(s.path), s]))
-  return list.paths.map((path) => entryOf(path, byPath.get(nfc(path))))
+  return list.paths.map((path, i) => ({
+    ...entryOf(path, byPath.get(nfc(path))),
+    linkId: virtualdjLinkId(i, path),
+  }))
 }
 
 export function virtualdjMembership(

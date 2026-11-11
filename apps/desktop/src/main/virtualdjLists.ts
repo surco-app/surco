@@ -10,8 +10,8 @@ export interface VirtualdjNode {
   children?: VirtualdjNode[]
 }
 
-const EXT = '.vdjfolder'
-const SUB = '.subfolders'
+export const EXT = '.vdjfolder'
+export const SUB = '.subfolders'
 const SONG_RE = /<song\b((?:"[^"]*"|[^>"])*)>/g
 
 function readText(file: string): string {
@@ -22,16 +22,45 @@ function readText(file: string): string {
   }
 }
 
-function readPaths(file: string): string[] {
-  const entries = [...readText(file).matchAll(SONG_RE)].map((m, at) => {
+export interface VirtualdjListRow {
+  path: string
+  start: number
+  end: number
+}
+
+export function virtualdjListRows(xml: string): VirtualdjListRow[] {
+  const entries = [...xml.matchAll(SONG_RE)].map((m, at) => {
     const idx = Number.parseInt(attr(m[1], 'idx'), 10)
-    return { path: attr(m[1], 'path'), idx: Number.isNaN(idx) ? null : idx, at }
+    const start = m.index
+    return {
+      path: attr(m[1], 'path'),
+      idx: Number.isNaN(idx) ? null : idx,
+      at,
+      start,
+      end: start + m[0].length,
+    }
   })
   const withPath = entries.filter((e) => e.path)
-  if (withPath.some((e) => e.idx === null)) return withPath.map((e) => e.path)
-  return withPath
-    .sort((a, b) => (a.idx as number) - (b.idx as number) || a.at - b.at)
-    .map((e) => e.path)
+  const ordered = withPath.some((e) => e.idx === null)
+    ? withPath
+    : withPath.sort((a, b) => (a.idx as number) - (b.idx as number) || a.at - b.at)
+  return ordered.map(({ path, start, end }) => ({ path, start, end }))
+}
+
+const readPaths = (file: string): string[] => virtualdjListRows(readText(file)).map((r) => r.path)
+
+export function virtualdjLinkId(index: number, path: string): string {
+  return `${index}:${encodeURIComponent(path)}`
+}
+
+export function parseVirtualdjLinkId(linkId: string): { index: number; path: string } | null {
+  const match = linkId.match(/^(\d+):(.+)$/)
+  if (!match) return null
+  try {
+    return { index: Number(match[1]), path: decodeURIComponent(match[2]) }
+  } catch {
+    return null
+  }
 }
 
 function isDir(path: string): boolean {
