@@ -1215,6 +1215,8 @@
       "added": "✓ {{count}} トラックが Apple Music に追加されました"
     },
     "heroFree": "無料。macOS、Windows、Linux。アカウント不要。",
+    "heroStatsTotal": "<n>{{total}}</n> ダウンロード",
+    "heroStatsWeek": "7 日間で Mac <n>{{count}}</n>",
     "closeTitle": "すべてを一つのウィンドウで。",
     "closeNote": "クラウドなし、制限なし、登録不要。自動で更新されます。",
     "closeSafety": "元のファイルはそのまま残ります：フォーマットを変更するとコピーは別のフォルダーに保存されます。同じフォーマットで再エクスポートした場合にのみファイルを書き換えるため、再エンコードせずにタグを更新できます。Appleによる公証済み。",

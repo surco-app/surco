@@ -1215,6 +1215,8 @@
       "added": "✓ {{count}} morceaux ajoutés à Apple Music"
     },
     "heroFree": "Gratuit. macOS, Windows et Linux. Sans compte.",
+    "heroStatsTotal": "<n>{{total}}</n> téléchargements",
+    "heroStatsWeek": "<n>{{count}}</n> sur Mac en 7 jours",
     "closeTitle": "Tout ça, dans une seule fenêtre.",
     "closeNote": "Pas de cloud, pas de limites, aucune inscription. Il se met à jour tout seul.",
     "closeSafety": "Tes originaux restent intacts : si tu changes de format, la copie va dans un dossier à part. Il ne réécrit le fichier lui-même que si tu réexportes dans le même format, c’est ainsi qu’il met à jour les tags sans réencoder. Notarisé par Apple.",

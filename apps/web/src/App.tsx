@@ -5,6 +5,7 @@ import Footer from './components/Footer'
 import Header from './components/Header'
 import HeroAnchors from './components/HeroAnchors'
 import HeroApp from './components/HeroApp'
+import HeroStats from './components/HeroStats'
 import LatestRelease from './components/LatestRelease'
 import LibraryReview from './components/LibraryReview'
 import Reveal from './components/Reveal'
@@ -76,6 +77,7 @@ export default function App() {
             <div id="hero-download">
               <DownloadButton location="hero" note={t('home.heroFree')} center />
             </div>
+            <HeroStats />
           </Reveal>
           <Reveal eager delay={220}>
             <div className="relative isolate mx-auto mt-8 max-w-5xl text-left">

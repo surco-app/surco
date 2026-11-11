@@ -1215,6 +1215,8 @@
       "added": "✓ {{count}} Tracks zu Apple Music hinzugefügt"
     },
     "heroFree": "Kostenlos. macOS, Windows und Linux. Ohne Konto.",
+    "heroStatsTotal": "<n>{{total}}</n> Downloads",
+    "heroStatsWeek": "<n>{{count}}</n> auf dem Mac in 7 Tagen",
     "closeTitle": "Alles in einem Fenster.",
     "closeNote": "Keine Cloud, keine Limits, keine Anmeldung. Es aktualisiert sich selbst.",
     "closeSafety": "Deine Originale bleiben unangetastet: Wechselst du das Format, landet die Kopie in einem eigenen Ordner. Die Datei selbst wird nur überschrieben, wenn du erneut ins selbe Format exportierst. So aktualisiert Surco Tags, ohne neu zu kodieren. Von Apple notarisiert.",
