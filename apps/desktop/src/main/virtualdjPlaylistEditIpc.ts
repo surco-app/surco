@@ -10,7 +10,7 @@ import { badVirtualdjName, virtualdjEditFiles } from './virtualdjListsWrite'
 
 export function virtualdjEdit(host: {
   roots: () => VirtualdjRoot[]
-  queue: Pick<RekordboxQueue, 'apply' | 'drop' | 'settled'> & { enqueue: (ops: EditOp[]) => void }
+  queue: Pick<RekordboxQueue, 'apply' | 'drop' | 'outcomeOf'> & { enqueue: (ops: EditOp[]) => void }
   isRunning: () => Promise<boolean>
   onApplied?: (result: QueueApply) => void
   onWaiting?: () => void
@@ -33,7 +33,6 @@ export function virtualdjEdit(host: {
           files: virtualdjEditFiles(edit, roots),
           ...(label ? { label } : {}),
         }
-        await host.queue.settled()
         host.queue.enqueue([op])
         const result = await host.queue.apply(async () => !(await host.isRunning()))
         if (result.status === 'applied') {
@@ -46,9 +45,10 @@ export function virtualdjEdit(host: {
           if (mode === 'queue') return { applied: false, queued: true, opId: op.id }
         } else if (result.status === 'refused') host.queue.drop(op.id)
         if (result.status === 'refused') return { applied: false, reason: result.reason }
+        const written = host.queue.outcomeOf(op.id)
         const outcome =
           result.status === 'applied' ? result.outcomes.find((o) => o.id === op.id) : undefined
-        return editResultOfOutcome(outcome)
+        return editResultOfOutcome(outcome ?? written)
       }),
   }
 }

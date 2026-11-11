@@ -48,7 +48,7 @@ function registerWith({
       result(queued[queued.length - 1], await ensureClosed()),
     ),
     drop: vi.fn<RekordboxQueue['drop']>(),
-    settled: vi.fn<RekordboxQueue['settled']>(async () => {}),
+    outcomeOf: vi.fn<RekordboxQueue['outcomeOf']>(),
   }
   const host = {
     roots: () => roots,

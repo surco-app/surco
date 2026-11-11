@@ -356,7 +356,7 @@ describe('rekordboxEdit', () => {
       enqueue: vi.fn(),
       apply: vi.fn(async () => ({ status: 'refused', reason: 'backup-failed' }) as const),
       drop: vi.fn(),
-      settled: vi.fn(async () => {}),
+      outcomeOf: vi.fn(),
     }
     register(() => path, {
       ensureClosed: vi.fn(async () => true),
@@ -406,7 +406,7 @@ describe('rekordboxEdit', () => {
     const queue = {
       enqueue,
       drop: vi.fn(),
-      settled: vi.fn(async () => {}),
+      outcomeOf: vi.fn(),
       apply: vi.fn(async () => ({
         status: 'applied' as const,
         tracks: 0,

@@ -1043,4 +1043,13 @@ describe('cues in the queue', () => {
     expect(await q.apply(closed)).toEqual({ status: 'refused', reason: 'write-unknown' })
     expect(d.applyBatch).not.toHaveBeenCalled()
   })
+
+  it('keeps the outcome of an edit for whoever asks by its id, even when another apply wrote it, and only once', async () => {
+    const q = createRekordboxQueue(deps())
+    q.enqueue([rename])
+    await q.apply(async () => true)
+    expect(await q.apply(async () => true)).toEqual({ status: 'empty' })
+    expect(q.outcomeOf('e1')).toEqual({ id: 'e1', applied: true, notices: [] })
+    expect(q.outcomeOf('e1')).toBeUndefined()
+  })
 })

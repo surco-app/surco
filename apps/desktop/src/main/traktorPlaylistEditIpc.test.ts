@@ -40,7 +40,7 @@ function setup(path: string, result: (op: QueueOp) => QueueApply) {
       return result(queued[queued.length - 1])
     }),
     drop: vi.fn<RekordboxQueue['drop']>(),
-    settled: vi.fn<RekordboxQueue['settled']>(async () => {}),
+    outcomeOf: vi.fn<RekordboxQueue['outcomeOf']>(),
   }
   const host = {
     collection: () => path,

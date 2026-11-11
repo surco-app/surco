@@ -102,6 +102,7 @@ export interface RekordboxQueue<R extends QueuedRepoint = RekordboxRepoint> {
   holdsRepoint: (from: string) => boolean
   queuedRepoints: () => R[]
   queuedOps: () => QueueOp[]
+  outcomeOf: (id: string) => OpOutcome | undefined
   busy: () => boolean
   settled: () => Promise<void>
   apply: (ensureClosed: () => Promise<boolean>, opts?: { manual?: boolean }) => Promise<QueueApply>
@@ -212,6 +213,7 @@ export function createRekordboxQueue<R extends QueuedRepoint = RekordboxRepoint>
   // The repoints an apply has read and is writing: a later one for the same file waits on
   // its own, measured from what that write leaves, instead of stacking onto it.
   const writing = new Set<R>()
+  const editOutcomes = new Map<string, OpOutcome>()
 
   // The collection in use, or the one the settings name while its drive is unplugged. A
   // queue made while no collection was known belongs to whichever is found.
@@ -387,6 +389,7 @@ export function createRekordboxQueue<R extends QueuedRepoint = RekordboxRepoint>
         return { ...o, notices: [{ code: 'edit-changed', playlist: op.label ?? '' }] }
       return o
     })
+    for (const o of outcomes) if (byId.get(o.id)?.kind === 'edit') editOutcomes.set(o.id, o)
     const notices = [...repointNotices, ...outcomes.flatMap((o) => o.notices)]
     const appliedOps = outcomes.filter((o) => o.applied).map((o) => byId.get(o.id))
     const tracks = new Set([
@@ -447,6 +450,11 @@ export function createRekordboxQueue<R extends QueuedRepoint = RekordboxRepoint>
     holdsRepoint: (from) => queueFor(here())?.repoints.some((r) => r.from === from) ?? false,
     queuedRepoints: () => [...(queueFor(here())?.repoints ?? [])],
     queuedOps: () => [...(queueFor(here())?.ops ?? [])],
+    outcomeOf: (id) => {
+      const outcome = editOutcomes.get(id)
+      editOutcomes.delete(id)
+      return outcome
+    },
     busy: () => pending > 0,
     settled: () => chain.then(() => undefined),
     apply(ensureClosed, opts) {
