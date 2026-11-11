@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import type { RekordboxQueueApplied, RekordboxQueueState } from '../../../shared/types'
 import '../i18n'
-import { installApi } from '../test/api'
+import { djReads, installApi, type ProgramReads } from '../test/api'
 import { ENGINE_CUE_QUEUE, SERATO_CUE_QUEUE, useRekordboxQueue } from './useRekordboxQueue'
 
 afterEach(cleanup)
@@ -17,20 +17,25 @@ const WAITING: RekordboxQueueState = {
   items: [{ key: 'track:/m/a.wav', label: 'a', parts: [{ kind: 'collection' }] }],
 }
 
-function setup(over: Partial<Api> = {}) {
+function setup(over: Partial<ProgramReads> = {}, apiOver: Partial<Api> = {}) {
   let changed: (s: RekordboxQueueState) => void = () => {}
   let applied: (a: RekordboxQueueApplied) => void = () => {}
   const api = installApi({
-    rekordboxQueue: vi.fn<Api['rekordboxQueue']>(async () => WAITING),
-    onRekordboxQueueChanged: (cb) => {
-      changed = cb
-      return () => {}
-    },
-    onRekordboxQueueApplied: (cb) => {
-      applied = cb
-      return () => {}
-    },
-    ...over,
+    dj: djReads({
+      rekordbox: {
+        cueQueue: vi.fn<ProgramReads['cueQueue']>(async () => WAITING),
+        onCueQueueChanged: (cb) => {
+          changed = cb
+          return () => {}
+        },
+        onCueQueueApplied: (cb) => {
+          applied = cb
+          return () => {}
+        },
+        ...over,
+      },
+    }),
+    ...apiOver,
   })
   const client = new QueryClient()
   const invalidate = vi.spyOn(client, 'invalidateQueries')
@@ -57,12 +62,12 @@ describe('useRekordboxQueue', () => {
   it('tells main it listens only after subscribing to what lands, so the startup apply reaches the window', async () => {
     let listening = false
     const seen: boolean[] = []
-    const rekordboxQueueReady = vi.fn<Api['rekordboxQueueReady']>(async () => {
+    const cueQueueReady = vi.fn<ProgramReads['cueQueueReady']>(async () => {
       seen.push(listening)
     })
     setup({
-      rekordboxQueueReady,
-      onRekordboxQueueApplied: () => {
+      cueQueueReady,
+      onCueQueueApplied: () => {
         listening = true
         return () => {}
       },
@@ -118,17 +123,17 @@ describe('useRekordboxQueue', () => {
   })
 
   it('hands back the discarded tracks so their edits go back to rekordbox', async () => {
-    const discardRekordboxQueue = vi.fn<Api['discardRekordboxQueue']>(async () => {})
-    const { hook, onDiscarded } = setup({ discardRekordboxQueue })
+    const discardCueQueue = vi.fn<ProgramReads['discardCueQueue']>(async () => {})
+    const { hook, onDiscarded } = setup({ discardCueQueue })
     await waitFor(() => expect(hook.result.current.state).toEqual(WAITING))
     await act(() => hook.result.current.discard())
-    expect(discardRekordboxQueue).toHaveBeenCalled()
+    expect(discardCueQueue).toHaveBeenCalled()
     expect(onDiscarded).toHaveBeenCalledWith(['/m/a.wav'])
   })
 
   it('announces the answer of Apply now', async () => {
     const { hook, notify } = setup({
-      applyRekordboxQueue: vi.fn<Api['applyRekordboxQueue']>(async () => ({
+      applyCueQueue: vi.fn<ProgramReads['applyCueQueue']>(async () => ({
         tracks: 1,
         changes: 0,
         notices: [],
@@ -142,7 +147,7 @@ describe('useRekordboxQueue', () => {
   it('keeps the pushed state when the first read answers late with an older one', async () => {
     let answer: (s: RekordboxQueueState) => void = () => {}
     const { hook, changed } = setup({
-      rekordboxQueue: vi.fn<Api['rekordboxQueue']>(
+      cueQueue: vi.fn<ProgramReads['cueQueue']>(
         () =>
           new Promise((resolve) => {
             answer = resolve
@@ -156,7 +161,7 @@ describe('useRekordboxQueue', () => {
 
   it('says so instead of rejecting when applying now fails', async () => {
     const { hook, notify } = setup({
-      applyRekordboxQueue: vi.fn<Api['applyRekordboxQueue']>(async () => {
+      applyCueQueue: vi.fn<ProgramReads['applyCueQueue']>(async () => {
         throw new Error('ipc')
       }),
     })
@@ -166,7 +171,7 @@ describe('useRekordboxQueue', () => {
 
   it('keeps the edits when discarding fails, because nothing was discarded', async () => {
     const { hook, notify, onDiscarded } = setup({
-      discardRekordboxQueue: vi.fn<Api['discardRekordboxQueue']>(async () => {
+      discardCueQueue: vi.fn<ProgramReads['discardCueQueue']>(async () => {
         throw new Error('ipc')
       }),
     })
@@ -178,12 +183,14 @@ describe('useRekordboxQueue', () => {
 
   it('logs a first read that fails instead of swallowing it', async () => {
     const logError = vi.fn<Api['logError']>()
-    setup({
-      logError,
-      rekordboxQueue: vi.fn<Api['rekordboxQueue']>(async () => {
-        throw new Error('ipc down')
-      }),
-    })
+    setup(
+      {
+        cueQueue: vi.fn<ProgramReads['cueQueue']>(async () => {
+          throw new Error('ipc down')
+        }),
+      },
+      { logError },
+    )
     await waitFor(() => expect(logError).toHaveBeenCalledWith(expect.stringContaining('ipc down')))
   })
 })
@@ -191,14 +198,18 @@ describe('useRekordboxQueue', () => {
 describe('useRekordboxQueue on the Engine DJ cue queue', () => {
   it('follows the Engine queue and announces what landed in Engine DJ’s words, re-reading the cues', async () => {
     let applied: (a: RekordboxQueueApplied) => void = () => {}
-    const engineCueQueueReady = vi.fn<Api['engineCueQueueReady']>(async () => {})
+    const engineCueQueueReady = vi.fn<ProgramReads['cueQueueReady']>(async () => {})
     installApi({
-      engineCueQueue: vi.fn<Api['engineCueQueue']>(async () => WAITING),
-      onEngineCueQueueApplied: (cb) => {
-        applied = cb
-        return () => {}
-      },
-      engineCueQueueReady,
+      dj: djReads({
+        engine: {
+          cueQueue: vi.fn<ProgramReads['cueQueue']>(async () => WAITING),
+          onCueQueueApplied: (cb) => {
+            applied = cb
+            return () => {}
+          },
+          cueQueueReady: engineCueQueueReady,
+        },
+      }),
     })
     const client = new QueryClient()
     const invalidate = vi.spyOn(client, 'invalidateQueries')
@@ -217,10 +228,15 @@ describe('useRekordboxQueue on the Engine DJ cue queue', () => {
   })
 
   it('applies and discards through the Engine queue, never rekordbox’s', async () => {
-    const applyEngineCueQueue = vi.fn<Api['applyEngineCueQueue']>(async () => null)
-    const discardEngineCueQueue = vi.fn<Api['discardEngineCueQueue']>(async () => {})
-    const applyRekordboxQueue = vi.fn<Api['applyRekordboxQueue']>(async () => null)
-    installApi({ applyEngineCueQueue, discardEngineCueQueue, applyRekordboxQueue })
+    const applyEngineCueQueue = vi.fn<ProgramReads['applyCueQueue']>(async () => null)
+    const discardEngineCueQueue = vi.fn<ProgramReads['discardCueQueue']>(async () => {})
+    const applyRekordboxQueue = vi.fn<ProgramReads['applyCueQueue']>(async () => null)
+    installApi({
+      dj: djReads({
+        engine: { applyCueQueue: applyEngineCueQueue, discardCueQueue: discardEngineCueQueue },
+        rekordbox: { applyCueQueue: applyRekordboxQueue },
+      }),
+    })
     const client = new QueryClient()
     const wrapper = ({ children }: { children: React.ReactNode }) => (
       <QueryClientProvider client={client}>{children}</QueryClientProvider>
@@ -240,18 +256,22 @@ describe('useRekordboxQueue on the Serato cue queue', () => {
   it('watches a Serato queue left from the last session and tells the DJ which track it could not write', async () => {
     let applied: (a: RekordboxQueueApplied) => void = () => {}
     let changed: (s: RekordboxQueueState) => void = () => {}
-    const seratoCueQueueReady = vi.fn<Api['seratoCueQueueReady']>(async () => {})
+    const seratoCueQueueReady = vi.fn<ProgramReads['cueQueueReady']>(async () => {})
     installApi({
-      seratoCueQueue: vi.fn<Api['seratoCueQueue']>(async () => WAITING),
-      onSeratoCueQueueChanged: (cb) => {
-        changed = cb
-        return () => {}
-      },
-      onSeratoCueQueueApplied: (cb) => {
-        applied = cb
-        return () => {}
-      },
-      seratoCueQueueReady,
+      dj: djReads({
+        serato: {
+          cueQueue: vi.fn<ProgramReads['cueQueue']>(async () => WAITING),
+          onCueQueueChanged: (cb) => {
+            changed = cb
+            return () => {}
+          },
+          onCueQueueApplied: (cb) => {
+            applied = cb
+            return () => {}
+          },
+          cueQueueReady: seratoCueQueueReady,
+        },
+      }),
     })
     const client = new QueryClient()
     const invalidate = vi.spyOn(client, 'invalidateQueries')
@@ -282,10 +302,15 @@ describe('useRekordboxQueue on the Serato cue queue', () => {
   })
 
   it('applies and discards through the Serato queue, never rekordbox’s', async () => {
-    const applySeratoCueQueue = vi.fn<Api['applySeratoCueQueue']>(async () => null)
-    const discardSeratoCueQueue = vi.fn<Api['discardSeratoCueQueue']>(async () => {})
-    const applyRekordboxQueue = vi.fn<Api['applyRekordboxQueue']>(async () => null)
-    installApi({ applySeratoCueQueue, discardSeratoCueQueue, applyRekordboxQueue })
+    const applySeratoCueQueue = vi.fn<ProgramReads['applyCueQueue']>(async () => null)
+    const discardSeratoCueQueue = vi.fn<ProgramReads['discardCueQueue']>(async () => {})
+    const applyRekordboxQueue = vi.fn<ProgramReads['applyCueQueue']>(async () => null)
+    installApi({
+      dj: djReads({
+        serato: { applyCueQueue: applySeratoCueQueue, discardCueQueue: discardSeratoCueQueue },
+        rekordbox: { applyCueQueue: applyRekordboxQueue },
+      }),
+    })
     const client = new QueryClient()
     const wrapper = ({ children }: { children: React.ReactNode }) => (
       <QueryClientProvider client={client}>{children}</QueryClientProvider>

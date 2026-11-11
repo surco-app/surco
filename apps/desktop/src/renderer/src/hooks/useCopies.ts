@@ -12,9 +12,9 @@ export function useCopies(): { programs: ProgramCopies[]; refresh: () => void } 
     refresh()
     const offs = [
       window.api.onCopiesChanged(refresh),
-      window.api.onRekordboxQueueChanged(refresh),
-      window.api.onEngineCueQueueChanged(refresh),
-      window.api.onTraktorCueQueueChanged(refresh),
+      window.api.dj.onCueQueueChanged('rekordbox', refresh),
+      window.api.dj.onCueQueueChanged('engine', refresh),
+      window.api.dj.onCueQueueChanged('traktor', refresh),
     ]
     return () => {
       for (const off of offs) off()

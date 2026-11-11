@@ -327,40 +327,8 @@ function setApi(over: Record<string, unknown> = {}): void {
     saveLastSession: vi.fn().mockResolvedValue(undefined),
     expandPaths: vi.fn((paths: string[]) => Promise.resolve(paths)),
     pathAliases: vi.fn((paths: string[]) => Promise.resolve(paths)),
-    rekordboxQueue: vi
-      .fn<Api['rekordboxQueue']>()
-      .mockResolvedValue({ tracks: 0, changes: 0, items: [] }),
-    applyRekordboxQueue: vi.fn<Api['applyRekordboxQueue']>().mockResolvedValue(null),
-    discardRekordboxQueue: vi.fn<Api['discardRekordboxQueue']>().mockResolvedValue(undefined),
-    rekordboxQueueReady: vi.fn<Api['rekordboxQueueReady']>().mockResolvedValue(undefined),
-    onRekordboxQueueChanged: vi.fn<Api['onRekordboxQueueChanged']>(() => () => {}),
     onVerifyUpdate: vi.fn<Api['onVerifyUpdate']>(() => () => {}),
     retryVerification: vi.fn<Api['retryVerification']>().mockResolvedValue('rechecked'),
-    onRekordboxQueueApplied: vi.fn<Api['onRekordboxQueueApplied']>(() => () => {}),
-    engineCueQueue: vi
-      .fn<Api['engineCueQueue']>()
-      .mockResolvedValue({ tracks: 0, changes: 0, items: [] }),
-    applyEngineCueQueue: vi.fn<Api['applyEngineCueQueue']>().mockResolvedValue(null),
-    discardEngineCueQueue: vi.fn<Api['discardEngineCueQueue']>().mockResolvedValue(undefined),
-    engineCueQueueReady: vi.fn<Api['engineCueQueueReady']>().mockResolvedValue(undefined),
-    onEngineCueQueueChanged: vi.fn<Api['onEngineCueQueueChanged']>(() => () => {}),
-    onEngineCueQueueApplied: vi.fn<Api['onEngineCueQueueApplied']>(() => () => {}),
-    traktorCueQueue: vi
-      .fn<Api['traktorCueQueue']>()
-      .mockResolvedValue({ tracks: 0, changes: 0, items: [] }),
-    applyTraktorCueQueue: vi.fn<Api['applyTraktorCueQueue']>().mockResolvedValue(null),
-    discardTraktorCueQueue: vi.fn<Api['discardTraktorCueQueue']>().mockResolvedValue(undefined),
-    traktorCueQueueReady: vi.fn<Api['traktorCueQueueReady']>().mockResolvedValue(undefined),
-    onTraktorCueQueueChanged: vi.fn<Api['onTraktorCueQueueChanged']>(() => () => {}),
-    onTraktorCueQueueApplied: vi.fn<Api['onTraktorCueQueueApplied']>(() => () => {}),
-    seratoCueQueue: vi
-      .fn<Api['seratoCueQueue']>()
-      .mockResolvedValue({ tracks: 0, changes: 0, items: [] }),
-    applySeratoCueQueue: vi.fn<Api['applySeratoCueQueue']>().mockResolvedValue(null),
-    discardSeratoCueQueue: vi.fn<Api['discardSeratoCueQueue']>().mockResolvedValue(undefined),
-    seratoCueQueueReady: vi.fn<Api['seratoCueQueueReady']>().mockResolvedValue(undefined),
-    onSeratoCueQueueChanged: vi.fn<Api['onSeratoCueQueueChanged']>(() => () => {}),
-    onSeratoCueQueueApplied: vi.fn<Api['onSeratoCueQueueApplied']>(() => () => {}),
     copiesStatus: vi.fn<Api['copiesStatus']>().mockResolvedValue([]),
     onCopiesChanged: vi.fn<Api['onCopiesChanged']>(() => () => {}),
     traktorCanSave: vi.fn<Api['traktorCanSave']>().mockResolvedValue(true),
@@ -513,11 +481,15 @@ describe('App unsaved cues', () => {
   })
 
   it('forgets a draft built on a queued save once the queue changes under it, so quitting no longer asks for it', async () => {
-    let pushQueue: Parameters<Api['onRekordboxQueueChanged']>[0] = () => {}
+    let pushQueue: Parameters<ProgramReads['onCueQueueChanged']>[0] = () => {}
     setApi({
-      onRekordboxQueueChanged: vi.fn<Api['onRekordboxQueueChanged']>((cb) => {
-        pushQueue = cb
-        return () => {}
+      dj: djReads({
+        rekordbox: {
+          onCueQueueChanged: vi.fn<ProgramReads['onCueQueueChanged']>((cb) => {
+            pushQueue = cb
+            return () => {}
+          }),
+        },
       }),
       rekordboxTrackCues: vi.fn<Api['rekordboxTrackCues']>(async () => ({
         contentId: '103',
@@ -692,10 +664,14 @@ describe('App Engine DJ cues', () => {
 
   it('shows what waits for Engine DJ to close beside rekordbox’s queue', async () => {
     openEngine({
-      engineCueQueue: vi.fn<Api['engineCueQueue']>().mockResolvedValue({
-        tracks: 1,
-        changes: 0,
-        items: [{ key: 'track:/m/a.wav', label: 'a', parts: [{ kind: 'cues' }] }],
+      dj: djReads({
+        engine: {
+          cueQueue: vi.fn<ProgramReads['cueQueue']>().mockResolvedValue({
+            tracks: 1,
+            changes: 0,
+            items: [{ key: 'track:/m/a.wav', label: 'a', parts: [{ kind: 'cues' }] }],
+          }),
+        },
       }),
     })
     await renderApp()
@@ -707,10 +683,12 @@ describe('App Engine DJ cues', () => {
   it('lines the waiting queues up as rekordbox, Engine DJ, Traktor and Serato, the order of the source rail', async () => {
     const waiting = { tracks: 1, changes: 0, items: [] }
     openEngine({
-      rekordboxQueue: vi.fn<Api['rekordboxQueue']>().mockResolvedValue(waiting),
-      engineCueQueue: vi.fn<Api['engineCueQueue']>().mockResolvedValue(waiting),
-      traktorCueQueue: vi.fn<Api['traktorCueQueue']>().mockResolvedValue(waiting),
-      seratoCueQueue: vi.fn<Api['seratoCueQueue']>().mockResolvedValue(waiting),
+      dj: djReads({
+        rekordbox: { cueQueue: vi.fn<ProgramReads['cueQueue']>().mockResolvedValue(waiting) },
+        engine: { cueQueue: vi.fn<ProgramReads['cueQueue']>().mockResolvedValue(waiting) },
+        traktor: { cueQueue: vi.fn<ProgramReads['cueQueue']>().mockResolvedValue(waiting) },
+        serato: { cueQueue: vi.fn<ProgramReads['cueQueue']>().mockResolvedValue(waiting) },
+      }),
     })
     await renderApp()
     await screen.findByTestId('serato-queue-pill')
@@ -856,10 +834,14 @@ describe('App Traktor cues', () => {
 
   it('shows what waits for Traktor to close beside the other queues', async () => {
     openTraktor({
-      traktorCueQueue: vi.fn<Api['traktorCueQueue']>().mockResolvedValue({
-        tracks: 1,
-        changes: 0,
-        items: [{ key: 'track:/m/a.wav', label: 'a', parts: [{ kind: 'cues' }] }],
+      dj: djReads({
+        traktor: {
+          cueQueue: vi.fn<ProgramReads['cueQueue']>().mockResolvedValue({
+            tracks: 1,
+            changes: 0,
+            items: [{ key: 'track:/m/a.wav', label: 'a', parts: [{ kind: 'cues' }] }],
+          }),
+        },
       }),
     })
     await renderApp()
@@ -1006,10 +988,14 @@ describe('App Serato cues', () => {
 
   it('marks a Serato row whose cues wait for Serato to close', async () => {
     openSerato({
-      seratoCueQueue: vi.fn<Api['seratoCueQueue']>().mockResolvedValue({
-        tracks: 1,
-        changes: 0,
-        items: [{ key: 'track:/m/a.wav', label: 'a', parts: [{ kind: 'cues' }] }],
+      dj: djReads({
+        serato: {
+          cueQueue: vi.fn<ProgramReads['cueQueue']>().mockResolvedValue({
+            tracks: 1,
+            changes: 0,
+            items: [{ key: 'track:/m/a.wav', label: 'a', parts: [{ kind: 'cues' }] }],
+          }),
+        },
       }),
     })
     await openFriday()
@@ -1020,13 +1006,17 @@ describe('App Serato cues', () => {
   })
 
   it('watches the Serato queue from the start and shows what waits for Serato to close', async () => {
-    const seratoCueQueueReady = vi.fn<Api['seratoCueQueueReady']>().mockResolvedValue(undefined)
+    const seratoCueQueueReady = vi.fn<ProgramReads['cueQueueReady']>().mockResolvedValue(undefined)
     openSerato({
-      seratoCueQueueReady,
-      seratoCueQueue: vi.fn<Api['seratoCueQueue']>().mockResolvedValue({
-        tracks: 1,
-        changes: 0,
-        items: [{ key: 'track:/m/a.wav', label: 'a', parts: [{ kind: 'cues' }] }],
+      dj: djReads({
+        serato: {
+          cueQueueReady: seratoCueQueueReady,
+          cueQueue: vi.fn<ProgramReads['cueQueue']>().mockResolvedValue({
+            tracks: 1,
+            changes: 0,
+            items: [{ key: 'track:/m/a.wav', label: 'a', parts: [{ kind: 'cues' }] }],
+          }),
+        },
       }),
     })
     await renderApp()

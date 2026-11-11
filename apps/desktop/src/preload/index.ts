@@ -28,8 +28,6 @@ import type {
   ProcessProgress,
   ProgramCopies,
   QueuedCues,
-  RekordboxQueueApplied,
-  RekordboxQueueState,
   RekordboxSyncIssue,
   RememberedAutoMatch,
   RestoreResult,
@@ -232,11 +230,6 @@ const api: Api = {
   djAppRunning: (): Promise<boolean> => ipcRenderer.invoke('djApps:running'),
   holdsInLibrary: (path: string, titles: string[]): Promise<boolean> =>
     ipcRenderer.invoke('library:holdsFile', path, titles),
-  rekordboxQueue: (): Promise<RekordboxQueueState> => ipcRenderer.invoke('rekordbox:queue'),
-  applyRekordboxQueue: (): Promise<RekordboxQueueApplied | null> =>
-    ipcRenderer.invoke('rekordbox:applyNow'),
-  discardRekordboxQueue: (): Promise<void> => ipcRenderer.invoke('rekordbox:discardQueue'),
-  rekordboxQueueReady: (): Promise<void> => ipcRenderer.invoke('rekordbox:queueReady'),
   rekordboxTrackCues: (contentId: string): Promise<TrackCues | null> =>
     ipcRenderer.invoke('rekordbox:trackCues', contentId),
   rekordboxCueWaveDetail: (contentId: string): Promise<Uint16Array | null> =>
@@ -273,61 +266,6 @@ const api: Api = {
     ipcRenderer.invoke('rekordbox:undoCues', contentId),
   saveRekordboxCues: (reqs: SaveCuesRequest[]): Promise<void> =>
     ipcRenderer.invoke('rekordbox:saveCues', reqs),
-  onRekordboxQueueChanged: (cb: (state: RekordboxQueueState) => void) => {
-    const listener = (_e: unknown, state: RekordboxQueueState): void => cb(state)
-    ipcRenderer.on('rekordbox:queueChanged', listener)
-    return () => ipcRenderer.removeListener('rekordbox:queueChanged', listener)
-  },
-  onRekordboxQueueApplied: (cb: (applied: RekordboxQueueApplied) => void) => {
-    const listener = (_e: unknown, applied: RekordboxQueueApplied): void => cb(applied)
-    ipcRenderer.on('rekordbox:queueApplied', listener)
-    return () => ipcRenderer.removeListener('rekordbox:queueApplied', listener)
-  },
-  engineCueQueue: (): Promise<RekordboxQueueState> => ipcRenderer.invoke('engine:cueQueue'),
-  applyEngineCueQueue: (): Promise<RekordboxQueueApplied | null> =>
-    ipcRenderer.invoke('engine:applyCueQueue'),
-  discardEngineCueQueue: (): Promise<void> => ipcRenderer.invoke('engine:discardCueQueue'),
-  engineCueQueueReady: (): Promise<void> => ipcRenderer.invoke('engine:cueQueueReady'),
-  onEngineCueQueueChanged: (cb: (state: RekordboxQueueState) => void) => {
-    const listener = (_e: unknown, state: RekordboxQueueState): void => cb(state)
-    ipcRenderer.on('engine:cueQueueChanged', listener)
-    return () => ipcRenderer.removeListener('engine:cueQueueChanged', listener)
-  },
-  onEngineCueQueueApplied: (cb: (applied: RekordboxQueueApplied) => void) => {
-    const listener = (_e: unknown, applied: RekordboxQueueApplied): void => cb(applied)
-    ipcRenderer.on('engine:cueQueueApplied', listener)
-    return () => ipcRenderer.removeListener('engine:cueQueueApplied', listener)
-  },
-  traktorCueQueue: (): Promise<RekordboxQueueState> => ipcRenderer.invoke('traktor:cueQueue'),
-  applyTraktorCueQueue: (): Promise<RekordboxQueueApplied | null> =>
-    ipcRenderer.invoke('traktor:applyCueQueue'),
-  discardTraktorCueQueue: (): Promise<void> => ipcRenderer.invoke('traktor:discardCueQueue'),
-  traktorCueQueueReady: (): Promise<void> => ipcRenderer.invoke('traktor:cueQueueReady'),
-  onTraktorCueQueueChanged: (cb: (state: RekordboxQueueState) => void) => {
-    const listener = (_e: unknown, state: RekordboxQueueState): void => cb(state)
-    ipcRenderer.on('traktor:cueQueueChanged', listener)
-    return () => ipcRenderer.removeListener('traktor:cueQueueChanged', listener)
-  },
-  onTraktorCueQueueApplied: (cb: (applied: RekordboxQueueApplied) => void) => {
-    const listener = (_e: unknown, applied: RekordboxQueueApplied): void => cb(applied)
-    ipcRenderer.on('traktor:cueQueueApplied', listener)
-    return () => ipcRenderer.removeListener('traktor:cueQueueApplied', listener)
-  },
-  seratoCueQueue: (): Promise<RekordboxQueueState> => ipcRenderer.invoke('serato:cueQueue'),
-  applySeratoCueQueue: (): Promise<RekordboxQueueApplied | null> =>
-    ipcRenderer.invoke('serato:applyCueQueue'),
-  discardSeratoCueQueue: (): Promise<void> => ipcRenderer.invoke('serato:discardCueQueue'),
-  seratoCueQueueReady: (): Promise<void> => ipcRenderer.invoke('serato:cueQueueReady'),
-  onSeratoCueQueueChanged: (cb: (state: RekordboxQueueState) => void) => {
-    const listener = (_e: unknown, state: RekordboxQueueState): void => cb(state)
-    ipcRenderer.on('serato:cueQueueChanged', listener)
-    return () => ipcRenderer.removeListener('serato:cueQueueChanged', listener)
-  },
-  onSeratoCueQueueApplied: (cb: (applied: RekordboxQueueApplied) => void) => {
-    const listener = (_e: unknown, applied: RekordboxQueueApplied): void => cb(applied)
-    ipcRenderer.on('serato:cueQueueApplied', listener)
-    return () => ipcRenderer.removeListener('serato:cueQueueApplied', listener)
-  },
   traktorCanSave: (): Promise<boolean> => ipcRenderer.invoke('traktor:canSave'),
   usbVolumes: (): Promise<UsbVolumeList> => ipcRenderer.invoke('usb:volumes'),
   onUsbVolumesChanged: (cb: (list: UsbVolumeList) => void) => {

@@ -685,6 +685,12 @@ function wiredDj(): DjApi {
     collection: (p) => wiredRead(p, 'collection'),
     editPlaylist: (p) => wiredEdit(p, 'editPlaylist', { applied: false, reason: 'unreadable' }),
     hasSeparator: (p) => wiredEdit(p, 'hasSeparator', false),
+    cueQueue: async () => ({ tracks: 0, changes: 0, items: [] }),
+    applyCueQueue: async () => null,
+    discardCueQueue: async () => {},
+    cueQueueReady: async () => {},
+    onCueQueueChanged: () => () => {},
+    onCueQueueApplied: () => () => {},
   }
 }
 
@@ -716,10 +722,6 @@ function scenarioApi(
     // No scenario has a rekordbox collection: the source rail stays without it, and the
     // queries App mounts get an answer instead of the proxy's "not wired" throw.
     dj: wiredDj(),
-    rekordboxQueue: async () => ({ tracks: 0, changes: 0, items: [] }),
-    applyRekordboxQueue: async () => null,
-    discardRekordboxQueue: async () => {},
-    rekordboxQueueReady: async () => {},
     rekordboxTrackCues: async () => null,
     rekordboxCueWaveDetail: async () => null,
     rekordboxCueDropInput: async () => null,
@@ -740,7 +742,6 @@ function scenarioApi(
     saveRekordboxCues: async () => {},
     rekordboxQueuedCues: async () => null,
     undoRekordboxCues: async () => {},
-    onRekordboxQueueChanged: () => () => {},
     onVerifyUpdate: (listener) => listen('verify:update', listener),
     ...(verify && {
       retryVerification: async (trackId) => {
@@ -749,25 +750,6 @@ function scenarioApi(
         return answer
       },
     }),
-    onRekordboxQueueApplied: () => () => {},
-    engineCueQueue: async () => ({ tracks: 0, changes: 0, items: [] }),
-    applyEngineCueQueue: async () => null,
-    discardEngineCueQueue: async () => {},
-    engineCueQueueReady: async () => {},
-    onEngineCueQueueChanged: () => () => {},
-    onEngineCueQueueApplied: () => () => {},
-    traktorCueQueue: async () => ({ tracks: 0, changes: 0, items: [] }),
-    applyTraktorCueQueue: async () => null,
-    discardTraktorCueQueue: async () => {},
-    traktorCueQueueReady: async () => {},
-    onTraktorCueQueueChanged: () => () => {},
-    onTraktorCueQueueApplied: () => () => {},
-    seratoCueQueue: async () => ({ tracks: 0, changes: 0, items: [] }),
-    applySeratoCueQueue: async () => null,
-    discardSeratoCueQueue: async () => {},
-    seratoCueQueueReady: async () => {},
-    onSeratoCueQueueChanged: () => () => {},
-    onSeratoCueQueueApplied: () => () => {},
     copiesStatus: async () => [],
     onCopiesChanged: () => () => {},
     traktorCanSave: async () => false,

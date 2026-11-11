@@ -2,7 +2,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import type { ProgramCopies, RekordboxQueueState } from '../../../shared/types'
-import { installApi } from '../test/api'
+import { djReads, installApi } from '../test/api'
 import { useCopies } from './useCopies'
 
 const rekordbox = (pending: number): ProgramCopies => ({
@@ -28,9 +28,11 @@ describe('useCopies', () => {
     installApi({
       copiesStatus,
       onCopiesChanged: listen,
-      onRekordboxQueueChanged: listen,
-      onEngineCueQueueChanged: listen,
-      onTraktorCueQueueChanged: listen,
+      dj: djReads({
+        rekordbox: { onCueQueueChanged: listen },
+        engine: { onCueQueueChanged: listen },
+        traktor: { onCueQueueChanged: listen },
+      }),
     })
     const { result } = renderHook(() => useCopies())
     await waitFor(() => expect(result.current.programs).toEqual([rekordbox(0)]))

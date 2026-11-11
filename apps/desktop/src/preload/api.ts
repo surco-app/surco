@@ -51,8 +51,6 @@ import type {
   ProcessResult,
   ProgramCopies,
   QueuedCues,
-  RekordboxQueueApplied,
-  RekordboxQueueState,
   RekordboxSyncIssue,
   Release,
   RememberedAutoMatch,
@@ -248,10 +246,6 @@ export interface Api {
   seratoRunning: () => Promise<boolean>
   djAppRunning: () => Promise<boolean>
   holdsInLibrary: (path: string, titles: string[]) => Promise<boolean>
-  rekordboxQueue: () => Promise<RekordboxQueueState>
-  applyRekordboxQueue: () => Promise<RekordboxQueueApplied | null>
-  discardRekordboxQueue: () => Promise<void>
-  rekordboxQueueReady: () => Promise<void>
   rekordboxTrackCues: (contentId: string) => Promise<TrackCues | null>
   rekordboxCueWaveDetail: (contentId: string) => Promise<Uint16Array | null>
   rekordboxCueWaveFine: (contentId: string) => Promise<FineWave | null>
@@ -270,26 +264,6 @@ export interface Api {
   saveRekordboxCues: (reqs: SaveCuesRequest[]) => Promise<void>
   rekordboxQueuedCues: (contentId: string) => Promise<QueuedCues | null>
   undoRekordboxCues: (contentId: string) => Promise<void>
-  onRekordboxQueueChanged: (cb: (state: RekordboxQueueState) => void) => () => void
-  onRekordboxQueueApplied: (cb: (applied: RekordboxQueueApplied) => void) => () => void
-  engineCueQueue: () => Promise<RekordboxQueueState>
-  applyEngineCueQueue: () => Promise<RekordboxQueueApplied | null>
-  discardEngineCueQueue: () => Promise<void>
-  engineCueQueueReady: () => Promise<void>
-  onEngineCueQueueChanged: (cb: (state: RekordboxQueueState) => void) => () => void
-  onEngineCueQueueApplied: (cb: (applied: RekordboxQueueApplied) => void) => () => void
-  traktorCueQueue: () => Promise<RekordboxQueueState>
-  applyTraktorCueQueue: () => Promise<RekordboxQueueApplied | null>
-  discardTraktorCueQueue: () => Promise<void>
-  traktorCueQueueReady: () => Promise<void>
-  onTraktorCueQueueChanged: (cb: (state: RekordboxQueueState) => void) => () => void
-  onTraktorCueQueueApplied: (cb: (applied: RekordboxQueueApplied) => void) => () => void
-  seratoCueQueue: () => Promise<RekordboxQueueState>
-  applySeratoCueQueue: () => Promise<RekordboxQueueApplied | null>
-  discardSeratoCueQueue: () => Promise<void>
-  seratoCueQueueReady: () => Promise<void>
-  onSeratoCueQueueChanged: (cb: (state: RekordboxQueueState) => void) => () => void
-  onSeratoCueQueueApplied: (cb: (applied: RekordboxQueueApplied) => void) => () => void
   traktorCanSave: () => Promise<boolean>
   // The USB export (macOS and Windows). Volumes come by stable identifier; the event feeds
   // the progress list and the toolbar pill, also with the modal closed.

@@ -65,4 +65,10 @@ export interface DjApi {
     label?: string,
   ): Promise<RekordboxEditResult>
   hasSeparator(p: DjProgram): Promise<boolean>
+  cueQueue(p: DjProgram): Promise<RekordboxQueueState>
+  applyCueQueue(p: DjProgram): Promise<RekordboxQueueApplied | null>
+  discardCueQueue(p: DjProgram): Promise<void>
+  cueQueueReady(p: DjProgram): Promise<void>
+  onCueQueueChanged(p: DjProgram, cb: (state: RekordboxQueueState) => void): () => void
+  onCueQueueApplied(p: DjProgram, cb: (applied: RekordboxQueueApplied) => void): () => void
 }

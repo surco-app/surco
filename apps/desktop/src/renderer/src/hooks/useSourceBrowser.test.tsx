@@ -33,6 +33,12 @@ function stubbedOnly(...layers: DjReads[]): DjApi {
     collection: vi.fn((p) => pick(p, 'collection')()),
     editPlaylist: vi.fn((p, edit, label) => pick(p, 'editPlaylist')(edit, label)),
     hasSeparator: vi.fn((p) => pick(p, 'hasSeparator')()),
+    cueQueue: vi.fn((p) => pick(p, 'cueQueue')()),
+    applyCueQueue: vi.fn((p) => pick(p, 'applyCueQueue')()),
+    discardCueQueue: vi.fn((p) => pick(p, 'discardCueQueue')()),
+    cueQueueReady: vi.fn((p) => pick(p, 'cueQueueReady')()),
+    onCueQueueChanged: vi.fn((p, cb) => pick(p, 'onCueQueueChanged')(cb)),
+    onCueQueueApplied: vi.fn((p, cb) => pick(p, 'onCueQueueApplied')(cb)),
   }
 }
 

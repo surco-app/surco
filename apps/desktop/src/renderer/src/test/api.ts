@@ -10,6 +10,8 @@ import type {
   CollectionTrack,
   RekordboxEditResult,
   RekordboxPlaylistEdit,
+  RekordboxQueueApplied,
+  RekordboxQueueState,
   Settings,
   SourceNode,
   SourcePlaylistEntry,
@@ -144,6 +146,12 @@ export interface ProgramReads {
   collection(): Promise<CollectionTrack[]>
   editPlaylist(edit: RekordboxPlaylistEdit, label?: string): Promise<RekordboxEditResult>
   hasSeparator(): Promise<boolean>
+  cueQueue(): Promise<RekordboxQueueState>
+  applyCueQueue(): Promise<RekordboxQueueApplied | null>
+  discardCueQueue(): Promise<void>
+  cueQueueReady(): Promise<void>
+  onCueQueueChanged(cb: (state: RekordboxQueueState) => void): () => void
+  onCueQueueApplied(cb: (applied: RekordboxQueueApplied) => void): () => void
 }
 
 const EMPTY_READS: ProgramReads = {
@@ -156,6 +164,12 @@ const EMPTY_READS: ProgramReads = {
   collection: async () => [],
   editPlaylist: async () => ({ applied: false, reason: 'unreadable' }),
   hasSeparator: async () => false,
+  cueQueue: async () => ({ tracks: 0, changes: 0, items: [] }),
+  applyCueQueue: async () => null,
+  discardCueQueue: async () => {},
+  cueQueueReady: async () => {},
+  onCueQueueChanged: () => () => {},
+  onCueQueueApplied: () => () => {},
 }
 
 export type DjReads = Partial<Record<DjProgram, Partial<ProgramReads>>>
@@ -179,6 +193,12 @@ export function djReads(...layers: (DjReads | DjApi | undefined)[]): DjApi {
     collection: vi.fn((p) => of(p).collection()),
     editPlaylist: vi.fn((p, edit, label) => of(p).editPlaylist(edit, label)),
     hasSeparator: vi.fn((p) => of(p).hasSeparator()),
+    cueQueue: vi.fn((p) => of(p).cueQueue()),
+    applyCueQueue: vi.fn((p) => of(p).applyCueQueue()),
+    discardCueQueue: vi.fn((p) => of(p).discardCueQueue()),
+    cueQueueReady: vi.fn((p) => of(p).cueQueueReady()),
+    onCueQueueChanged: vi.fn((p, cb) => of(p).onCueQueueChanged(cb)),
+    onCueQueueApplied: vi.fn((p, cb) => of(p).onCueQueueApplied(cb)),
   }
   layersOf.set(api, flat)
   return api
@@ -278,10 +298,6 @@ export function stubApi(over: Partial<Api> = {}): Api {
     seratoRunning: async () => false,
     djAppRunning: async () => false,
     holdsInLibrary: async () => true,
-    rekordboxQueue: async () => ({ tracks: 0, changes: 0, items: [] }),
-    applyRekordboxQueue: async () => null,
-    discardRekordboxQueue: async () => {},
-    rekordboxQueueReady: async () => {},
     rekordboxTrackCues: async () => null,
     rekordboxCueWaveDetail: async () => null,
     rekordboxCueWaveFine: async () => null,
@@ -306,26 +322,6 @@ export function stubApi(over: Partial<Api> = {}): Api {
     saveRekordboxCues: async () => {},
     rekordboxQueuedCues: async () => null,
     undoRekordboxCues: async () => {},
-    onRekordboxQueueChanged: unsubscribe,
-    onRekordboxQueueApplied: unsubscribe,
-    engineCueQueue: async () => ({ tracks: 0, changes: 0, items: [] }),
-    applyEngineCueQueue: async () => null,
-    discardEngineCueQueue: async () => {},
-    engineCueQueueReady: async () => {},
-    onEngineCueQueueChanged: unsubscribe,
-    onEngineCueQueueApplied: unsubscribe,
-    traktorCueQueue: async () => ({ tracks: 0, changes: 0, items: [] }),
-    applyTraktorCueQueue: async () => null,
-    discardTraktorCueQueue: async () => {},
-    traktorCueQueueReady: async () => {},
-    onTraktorCueQueueChanged: unsubscribe,
-    onTraktorCueQueueApplied: unsubscribe,
-    seratoCueQueue: async () => ({ tracks: 0, changes: 0, items: [] }),
-    applySeratoCueQueue: async () => null,
-    discardSeratoCueQueue: async () => {},
-    seratoCueQueueReady: async () => {},
-    onSeratoCueQueueChanged: unsubscribe,
-    onSeratoCueQueueApplied: unsubscribe,
     traktorCanSave: async () => true,
     usbVolumes: async () => ({ volumes: [], lastKey: null }),
     onUsbVolumesChanged: unsubscribe,
