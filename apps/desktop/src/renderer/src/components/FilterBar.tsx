@@ -341,12 +341,13 @@ export function FilterPanes({
               >
                 <span className="min-w-0 flex-1 truncate">{s.label}</span>
                 {picked > 0 ? (
-                  <span
-                    data-testid={`${testid}-section-${s.key}-picked`}
-                    className="grid h-4 min-w-4 place-items-center rounded-full bg-[var(--color-accent)] px-1 text-[10px] font-bold tabular-nums text-[var(--color-on-accent)]"
-                  >
-                    {picked}
-                  </span>
+                  <>
+                    <span
+                      data-testid={`${testid}-section-${s.key}-picked`}
+                      className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-accent)]"
+                    />
+                    <span className="sr-only">{picked}</span>
+                  </>
                 ) : measuring ? (
                   <ProgressRing
                     testid={`${testid}-section-${s.key}-progress`}

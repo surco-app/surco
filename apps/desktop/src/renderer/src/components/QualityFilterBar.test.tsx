@@ -298,15 +298,19 @@ describe('QualityFilterBar sections', () => {
   })
 
   // A pick from another section layers onto the first, so the menu has to tell at a glance
-  // which sections hold one: a count on the section, and the amber dot where work waits.
-  it('counts the picked filters on their section and flags the sections with work waiting', () => {
+  // which sections hold one: a quiet accent dot on the section (the count is only spoken, a
+  // digit there just repeated the ticked rows), and the amber dot where work waits.
+  it('marks the sections holding a pick with a dot, the count only spoken, and flags the sections with work waiting', () => {
     renderBar({
       value: sel({ quality: 'good', conversion: 'matchedDiscogs' }),
       tally: tally({ good: 3, matchedDiscogs: 2, clipping: 4 }),
     })
     openMenu()
-    expect(screen.getByTestId('quality-filter-section-quality-picked')).toHaveTextContent('1')
-    expect(screen.getByTestId('quality-filter-section-match-picked')).toHaveTextContent('1')
+    expect(screen.getByTestId('quality-filter-section-quality-picked')).toBeEmptyDOMElement()
+    expect(screen.getByTestId('quality-filter-section-match-picked')).toBeEmptyDOMElement()
+    expect(screen.getByTestId('quality-filter-section-quality')).toHaveAccessibleName(
+      expect.stringContaining('1'),
+    )
     expect(screen.queryByTestId('quality-filter-section-status-picked')).toBeNull()
     expect(screen.getByTestId('quality-filter-section-attention-dot')).toBeInTheDocument()
     expect(screen.queryByTestId('quality-filter-section-tags-dot')).toBeNull()
@@ -536,7 +540,7 @@ describe('QualityFilterBar', () => {
     })
     openMenu()
     expect(screen.queryByTestId('quality-filter-section-attention-progress')).toBeNull()
-    expect(screen.getByTestId('quality-filter-section-attention-picked')).toHaveTextContent('1')
+    expect(screen.getByTestId('quality-filter-section-attention-picked')).toBeInTheDocument()
   })
 
   it('offers the better-than-the-library filter among the library buckets, since picking it is what starts the measuring', () => {
