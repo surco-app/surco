@@ -1,9 +1,11 @@
 import { readFile } from 'node:fs/promises'
-import { app, ipcMain, shell } from 'electron'
+import { app, ipcMain, net, shell } from 'electron'
 import log from 'electron-log/main'
+import type { FeedbackForm, FeedbackOutcome } from '../shared/feedback'
 import { recentErrorLines } from './errorReport'
 
 const ISSUE_URL = 'https://github.com/surco-app/surco/issues/new'
+export const FEEDBACK_ENDPOINT = 'https://getsurco.app/api/feedback'
 
 // GitHub answers 414 past roughly 8 KB of URL and the user gets a browser error page
 // instead of the issue form, so the body is trimmed to fit rather than risk the whole
@@ -98,11 +100,74 @@ export async function openFeedbackReport(
   }
 }
 
+export function buildReportText({
+  version,
+  platform,
+  error,
+  stack,
+  logLines,
+}: FeedbackContext): string {
+  const sections = [`Surco ${version} · ${OS_LABEL[platform] ?? platform}`]
+  if (error) sections.push(error)
+  if (stack) sections.push(stack)
+  if (logLines?.length) sections.push(logLines.join('\n'))
+  return sections.join('\n\n')
+}
+
+type Post = (url: string, init: RequestInit) => Promise<Response>
+
+async function readErrorsOrNone(readErrors: () => Promise<string[]>): Promise<string[]> {
+  try {
+    return await readErrors()
+  } catch (err) {
+    log.warn('feedback: could not read the log', err)
+    return []
+  }
+}
+
+export async function sendFeedback(
+  { email, message, attachReport, error, stack }: FeedbackForm,
+  { version, platform }: { version: string; platform: string },
+  post: Post = (url, init) => net.fetch(url, init),
+  readErrors: () => Promise<string[]> = readRecentErrors,
+): Promise<FeedbackOutcome> {
+  const report = attachReport
+    ? { version, platform, error, stack, logLines: await readErrorsOrNone(readErrors) }
+    : {}
+  try {
+    const res = await post(FEEDBACK_ENDPOINT, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email, message, ...report }),
+    })
+    return res.ok ? 'sent' : 'failed'
+  } catch (err) {
+    log.warn('feedback: could not send', err)
+    return 'failed'
+  }
+}
+
+async function reportText(error?: string, stack?: string): Promise<string> {
+  return buildReportText({
+    version: app.getVersion(),
+    platform: process.platform,
+    error,
+    stack,
+    logLines: await readErrorsOrNone(readRecentErrors),
+  })
+}
+
 // The renderer names only the error text and stack, never the URL, so the navigation
 // guard stays strict: version and platform are read here and a compromised renderer
 // has no way to point this at a scheme of its choosing.
 export function registerFeedbackIpc(): void {
   ipcMain.handle('feedback:open', (_e, error?: string, stack?: string) =>
     openFeedbackReport({ version: app.getVersion(), platform: process.platform, error, stack }),
+  )
+  ipcMain.handle('feedback:report', (_e, error?: string, stack?: string) =>
+    reportText(error, stack),
+  )
+  ipcMain.handle('feedback:send', (_e, form: FeedbackForm) =>
+    sendFeedback(form, { version: app.getVersion(), platform: process.platform }),
   )
 }

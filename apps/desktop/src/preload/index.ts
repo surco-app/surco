@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type { AudioAnalysisIpc, PeekableAnalyses } from '../shared/audioIpcContract'
 import type { CueProfile, CueProfileRead, TasteTrack } from '../shared/cueProfile'
+import type { FeedbackForm, FeedbackOutcome } from '../shared/feedback'
 import type {
   ActivityEvent,
   AppleMusicLookupCandidate,
@@ -310,6 +311,10 @@ const api: Api = {
   },
   openFeedback: (error?: string, stack?: string): Promise<void> =>
     ipcRenderer.invoke('feedback:open', error, stack),
+  sendFeedback: (form: FeedbackForm): Promise<FeedbackOutcome> =>
+    ipcRenderer.invoke('feedback:send', form),
+  feedbackReport: (error?: string, stack?: string): Promise<string> =>
+    ipcRenderer.invoke('feedback:report', error, stack),
   spectrogram: (path: string, priority: 'high' | 'low' = 'low') =>
     invokeAudio('audio:spectrogram', path, priority),
   loadCachedAnalyses: (

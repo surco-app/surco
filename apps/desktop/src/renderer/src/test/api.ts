@@ -412,6 +412,8 @@ export function stubApi({ cues, ...over }: ApiOverrides = {}): Api {
     restoreCopy: async () => ({ ok: true }),
     onCopiesChanged: () => () => {},
     openFeedback: async () => {},
+    sendFeedback: async () => 'sent',
+    feedbackReport: async () => '',
     // No null to fall back on (SpectrumResult is a required shape), so the inert value is
     // an empty render: no image, and a null cutoff, which the UI already reads as "no
     // verdict" rather than a good or bad one.
