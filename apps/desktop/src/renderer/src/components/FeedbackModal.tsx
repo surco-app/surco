@@ -13,7 +13,7 @@ const FIELD =
 const SECONDARY =
   'press rounded-lg border border-[var(--color-line-strong)] px-4 py-2 text-sm font-medium hover:bg-[var(--color-hover)]'
 const PRIMARY =
-  'press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-50 disabled:hover:bg-[var(--color-accent)]'
+  'press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40 disabled:hover:bg-[var(--color-accent)]'
 
 interface Props {
   error?: string
@@ -237,7 +237,7 @@ export function FeedbackModal({ error, stack, onClose }: Props): React.JSX.Eleme
           {previewOpen && report !== null && (
             <pre
               data-testid="feedback-preview"
-              className="mt-1 max-h-40 w-full overflow-auto rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] p-2.5 font-mono text-[11px] leading-relaxed whitespace-pre-wrap break-words text-fg-dim"
+              className="mt-1 max-h-40 w-full overflow-auto rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] p-2.5 font-mono text-label leading-relaxed whitespace-pre-wrap break-words text-fg-dim"
             >
               {report}
             </pre>
