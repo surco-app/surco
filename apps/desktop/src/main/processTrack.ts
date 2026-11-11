@@ -5,8 +5,8 @@ import log from 'electron-log/main'
 import { tagsOnly as tagsOnlyExport } from '../shared/audioProcessing'
 import {
   type DjProgram,
-  LIBRARY_PROGRAMS,
-  type LibraryProgram,
+  REACH_PROGRAMS,
+  type ReachProgram,
   WRITABLE_PROGRAMS,
   type WritableProgram,
 } from '../shared/djProgram'
@@ -145,7 +145,7 @@ export interface ProcessTrackDeps {
   isAllowed?: (path: string) => boolean
   // Marks a written file as streamable through surco://.
   allowMedia: (path: string) => void
-  attachPlaylists?: (to: string, program: LibraryProgram, choice: PlaylistChoice) => void
+  attachPlaylists?: (to: string, program: ReachProgram, choice: PlaylistChoice) => void
   existsSync: (path: string) => boolean
   // Device+inode identity, so an in-place edit can tell "the target is the source
   // being rewritten" (fine) from "the target is an unrelated file" (a collision).
@@ -515,23 +515,20 @@ const checking = (place: VerifyPlace): PlaceCheck => ({
 })
 
 const jobChoice =
-  (program: LibraryProgram, emptyBase: boolean) =>
+  (program: ReachProgram, emptyBase: boolean) =>
   (job: ProcessJob): PlaylistChoice | undefined => {
     const staged = job.playlists?.[program]
     if (!staged?.targets) return undefined
     return { wanted: staged.targets, base: emptyBase ? (staged.base ?? []) : staged.base }
   }
 
-export const JOB_PLAYLISTS: Record<
-  LibraryProgram,
-  (job: ProcessJob) => PlaylistChoice | undefined
-> = {
-  rekordbox: jobChoice('rekordbox', false),
-  traktor: jobChoice('traktor', true),
-  engine: jobChoice('engine', true),
-  serato: jobChoice('serato', true),
-  virtualdj: () => undefined,
-}
+export const JOB_PLAYLISTS: Record<ReachProgram, (job: ProcessJob) => PlaylistChoice | undefined> =
+  {
+    rekordbox: jobChoice('rekordbox', false),
+    traktor: jobChoice('traktor', true),
+    engine: jobChoice('engine', true),
+    serato: jobChoice('serato', true),
+  }
 
 export async function runProcessTrack(
   job: ProcessJob,
@@ -818,7 +815,7 @@ export async function runProcessTrack(
     }
     await deps.noteWritten?.(target).catch(() => undefined)
     const outputIdentity = musicOnly ? undefined : await deps.fileIdentity(target)
-    for (const program of LIBRARY_PROGRAMS) {
+    for (const program of REACH_PROGRAMS) {
       const choice = JOB_PLAYLISTS[program](job)
       if (choice) deps.attachPlaylists?.(target, program, choice)
     }

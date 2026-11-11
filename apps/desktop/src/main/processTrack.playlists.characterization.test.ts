@@ -47,11 +47,7 @@ describe('JOB_PLAYLISTS', () => {
       expect(JOB_PLAYLISTS[program](job({}))).toBeUndefined()
   })
 
-  it('queues no VirtualDJ playlist work, since Surco does not write VirtualDJ lists yet', () => {
-    expect(
-      JOB_PLAYLISTS.virtualdj(
-        job({ playlists: { virtualdj: { targets: [{ id: 'x', name: 'X' }] } } }),
-      ),
-    ).toBeUndefined()
+  it('has no VirtualDJ row, since Surco does not write VirtualDJ lists yet', () => {
+    expect(Object.keys(JOB_PLAYLISTS)).toEqual(['rekordbox', 'traktor', 'engine', 'serato'])
   })
 })

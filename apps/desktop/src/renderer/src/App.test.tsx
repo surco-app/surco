@@ -7297,6 +7297,28 @@ describe('App offers the rekordbox Playlists field', () => {
 })
 
 describe('App leaves out the playlists field of a program whose lists Surco only reads', () => {
+  it('offers the Serato crates field once Serato is found, since Surco adds converted tracks to its crates', async () => {
+    const saveSettings = vi.fn().mockResolvedValue(settings())
+    setApi({
+      getSettings: vi
+        .fn()
+        .mockResolvedValue(
+          settings({ seratoPlaylistsFieldOffered: false, visibleFields: ['title'] }),
+        ),
+      dj: djReads({
+        serato: { available: vi.fn<ProgramReads['available']>().mockResolvedValue(true) },
+      }),
+      saveSettings,
+    })
+    await renderApp()
+    await waitFor(() =>
+      expect(saveSettings).toHaveBeenCalledWith({
+        visibleFields: ['title', 'seratoPlaylists'],
+        seratoPlaylistsFieldOffered: true,
+      }),
+    )
+  })
+
   it('never offers the VirtualDJ lists field, since choosing a list there would change nothing', async () => {
     const saveSettings = vi.fn().mockResolvedValue(settings())
     setApi({

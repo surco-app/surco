@@ -7,7 +7,9 @@ import {
   programOf,
   programsInOrder,
   RAIL_PROGRAMS,
+  REACH_PROGRAMS,
   READ_ONLY_PROGRAMS,
+  type ReachProgram,
   type ReadOnlyProgram,
   USB_PROGRAMS,
   type UsbProgram,
@@ -69,9 +71,13 @@ describe('writableInOrder', () => {
     expect(WRITABLE_PROGRAMS).not.toContain('serato')
   })
   it('leaves VirtualDJ out of the programs Surco writes to and of USB until it can write to it', () => {
-    expect(PROGRAM_CAN.virtualdj).toEqual({ write: false, usb: false })
+    expect(PROGRAM_CAN.virtualdj).toEqual({ write: false, usb: false, reach: false })
     expect(WRITABLE_PROGRAMS).not.toContain('virtualdj')
     expect(USB_PROGRAMS).not.toContain('virtualdj')
+  })
+  it('lets Surco add to and sync tags with Serato and the programs it writes to, but not VirtualDJ yet', () => {
+    expect([...REACH_PROGRAMS]).toEqual(['rekordbox', 'traktor', 'engine', 'serato'])
+    expectTypeOf<ReachProgram>().toEqualTypeOf<'rekordbox' | 'traktor' | 'engine' | 'serato'>()
   })
 })
 

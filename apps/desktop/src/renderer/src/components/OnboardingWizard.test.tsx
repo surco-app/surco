@@ -971,6 +971,20 @@ describe('OnboardingWizard DJ software', () => {
     expect(patch.hiddenSources).toContain('serato')
   })
 
+  it('turns Serato on for update and add when the DJ ticks it, as for the programs Surco writes to', async () => {
+    detected.serato = async () => true
+    const onFinish = vi.fn()
+    render(<OnboardingWizard settings={settings} onFinish={onFinish} />)
+    expect(
+      await screen.findByText(i18n.t('onboarding.step', { current: 1, total: 5 })),
+    ).toBeInTheDocument()
+    goTo('programs')
+    fireEvent.click(screen.getByTestId('onboarding-sync-serato'))
+    expect(screen.getByTestId('onboarding-sync-serato')).toBeChecked()
+    finishWizard()
+    expect(onFinish.mock.calls[0][0]).toMatchObject({ syncSerato: true, addToSerato: true })
+  })
+
   it('never turns on writing to VirtualDJ from the wizard, since Surco only reads it for now', async () => {
     detected.virtualdj = async () => true
     const onFinish = vi.fn()

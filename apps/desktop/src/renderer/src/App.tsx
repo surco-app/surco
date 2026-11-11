@@ -23,6 +23,7 @@ import {
   type CueProgram,
   LIBRARY_PROGRAMS,
   type LibraryProgram,
+  PROGRAM_CAN,
   programOf,
   WRITABLE_PROGRAMS,
   type WritableProgram,
@@ -459,10 +460,7 @@ export default function App(): React.JSX.Element {
   })
   const programsAvailable = useProgramsAvailable()
   const playlistLibrariesFound = Object.fromEntries(
-    LIBRARY_PROGRAMS.map((l) => [
-      l,
-      (programsAvailable[l] ?? false) && SOURCE_PROGRAMS[l].edit !== null,
-    ]),
+    LIBRARY_PROGRAMS.map((l) => [l, (programsAvailable[l] ?? false) && PROGRAM_CAN[l].reach]),
   ) as Record<LibraryProgram, boolean>
   const playlistLibraries = LIBRARY_PROGRAMS.filter((l) => playlistLibrariesFound[l])
   const saveSettingsStable = useStableCallback(saveSettings)

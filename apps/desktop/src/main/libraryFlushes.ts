@@ -773,7 +773,6 @@ export function syncTagsInLibraries(
       serato
         ? syncSeratoTags(updates, { ...serato, enabled: getSettings().syncSerato })
         : { outcome: 'nothing' },
-    virtualdj: async () => ({ outcome: 'nothing' }),
     warn: (library, error) => log.warn(`library:syncTags ${library} failed`, error),
     ...(updates.length > 0 && { begin: beginMoment }),
   })

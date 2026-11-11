@@ -25,7 +25,7 @@ export interface RekordboxRepoint {
   seratoPlaylists?: LibraryPlaylistChoice
 }
 
-import type { LibraryProgram } from '../shared/djProgram'
+import type { ReachProgram } from '../shared/djProgram'
 import type { LibraryPlaylistChoice, RekordboxPlaylistTarget, TagChange } from '../shared/types'
 import type { EngineShift } from './engineRepoint'
 import type { RekordboxMeta } from './rekordboxMetadata'
@@ -166,18 +166,17 @@ export interface PlaylistChoice {
 }
 
 export const REPOINT_PLAYLISTS: Record<
-  LibraryProgram,
+  ReachProgram,
   (r: RekordboxRepoint) => PlaylistChoice | undefined
 > = {
   rekordbox: (r) => (r.playlists ? { wanted: r.playlists, base: r.playlistsBase } : undefined),
   traktor: (r) => r.traktorPlaylists,
   engine: (r) => r.enginePlaylists,
   serato: (r) => r.seratoPlaylists,
-  virtualdj: () => undefined,
 }
 
 const ATTACH_PLAYLISTS: Record<
-  LibraryProgram,
+  ReachProgram,
   (repoint: RekordboxRepoint, choice: PlaylistChoice) => RekordboxRepoint
 > = {
   rekordbox: (repoint, { wanted, base }) => ({
@@ -197,10 +196,9 @@ const ATTACH_PLAYLISTS: Record<
     ...repoint,
     seratoPlaylists: { wanted, base: base ?? [] },
   }),
-  virtualdj: (repoint) => repoint,
 }
 
-export function attachPlaylists(to: string, program: LibraryProgram, choice: PlaylistChoice): void {
+export function attachPlaylists(to: string, program: ReachProgram, choice: PlaylistChoice): void {
   const index = repoints.findIndex((r) => r.to === to)
   if (index !== -1) repoints[index] = ATTACH_PLAYLISTS[program](repoints[index], choice)
 }

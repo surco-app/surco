@@ -6,20 +6,22 @@ import { isVirtualdjContent } from './virtualdjContent'
 export type DjProgram = 'rekordbox' | 'traktor' | 'engine' | 'serato' | 'virtualdj'
 
 export const PROGRAM_CAN = {
-  rekordbox: { write: true, usb: true },
-  traktor: { write: true, usb: true },
-  engine: { write: true, usb: true },
-  serato: { write: false, usb: true },
-  virtualdj: { write: false, usb: false },
-} as const satisfies { [P in DjProgram]: { write: boolean; usb: boolean } }
+  rekordbox: { write: true, usb: true, reach: true },
+  traktor: { write: true, usb: true, reach: true },
+  engine: { write: true, usb: true, reach: true },
+  serato: { write: false, usb: true, reach: true },
+  virtualdj: { write: false, usb: false, reach: false },
+} as const satisfies { [P in DjProgram]: { write: boolean; usb: boolean; reach: boolean } }
 
-type ProgramsThatCan<K extends 'write' | 'usb'> = {
+type ProgramsThatCan<K extends 'write' | 'usb' | 'reach'> = {
   [P in DjProgram]: (typeof PROGRAM_CAN)[P][K] extends true ? P : never
 }[DjProgram]
 
 export type WritableProgram = ProgramsThatCan<'write'>
 
 export type UsbProgram = ProgramsThatCan<'usb'>
+
+export type ReachProgram = ProgramsThatCan<'reach'>
 
 export type ReadOnlyProgram = Exclude<DjProgram, WritableProgram>
 
@@ -48,6 +50,14 @@ export const WRITABLE_PROGRAMS = writableInOrder(['rekordbox', 'traktor', 'engin
 export const USB_PROGRAMS: readonly UsbProgram[] = DJ_PROGRAMS.filter(
   (program): program is UsbProgram => PROGRAM_CAN[program].usb,
 )
+
+export const REACH_PROGRAMS: readonly ReachProgram[] = DJ_PROGRAMS.filter(
+  (program): program is ReachProgram => PROGRAM_CAN[program].reach,
+)
+
+export function canReach(program: DjProgram): program is ReachProgram {
+  return PROGRAM_CAN[program].reach
+}
 
 export const READ_ONLY_PROGRAMS: readonly ReadOnlyProgram[] = DJ_PROGRAMS.filter(
   (program): program is ReadOnlyProgram => !PROGRAM_CAN[program].write,

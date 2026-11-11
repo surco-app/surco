@@ -2,7 +2,7 @@ import { AudioLines } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { LIBRARY_PROGRAMS, type LibraryProgram } from '../../../shared/djProgram'
+import { LIBRARY_PROGRAMS, type LibraryProgram, PROGRAM_CAN } from '../../../shared/djProgram'
 import type { Settings } from '../../../shared/types'
 import { useStableCallback } from '../hooks/useStableCallback'
 import { type DESTINATIONS, fromDestination, toDestination } from '../lib/destination'
@@ -19,7 +19,6 @@ import {
 import { isMacOS } from '../lib/platform'
 import { formatKHz } from '../lib/quality'
 import { type LocalDraft, pickLocal, pickSynced, type SyncedDraft } from '../lib/settingsDraft'
-import { SOURCE_PROGRAMS } from '../lib/sourcePrograms'
 import { AutoMatchControl } from './AutoMatchControl'
 import { DestinationPicker } from './DestinationPicker'
 import { DiscogsTokenField } from './DiscogsTokenField'
@@ -48,7 +47,7 @@ const STEP_TITLES: Record<Exclude<Step, 'mac' | 'thisMac' | 'welcome'>, string> 
 }
 const PRESELECTED = new Set<DetectedDjLibrary['id']>(['rekordbox', 'traktor'])
 
-const onlyRead = (library: DetectedDjLibrary): boolean => SOURCE_PROGRAMS[library.id].edit === null
+const onlyRead = (library: DetectedDjLibrary): boolean => !PROGRAM_CAN[library.id].reach
 const WIZARD_DESTINATIONS = ['folder', 'beside', 'appleMusic'] as const
 
 interface Props {
