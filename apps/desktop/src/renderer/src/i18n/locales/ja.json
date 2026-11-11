@@ -15,7 +15,6 @@
     "moreFields": "その他のフィールド ({{count}})",
     "fewerFields": "フィールドを減らす",
     "title": "ファイル名を作成",
-    "description": "テキストとメタデータを組み合わせてファイル名を作成します。",
     "apply": "適用"
   },
   "sessions": {
@@ -56,10 +55,7 @@
         "none": "まだプレイリストを選んでいません",
         "onlyChosen": "選択中のみ表示",
         "allPlaylists": "すべて表示",
-        "summary_one": "{{count}} 件のプレイリストを選択中、最大 {{tracks}} 曲から選びます",
-        "summary_other": "{{count}} 件のプレイリストを選択中、最大 {{tracks}} 曲から選びます",
-        "short": "選んだプレイリストでは約 {{minutes}} 分で、希望の {{target}} 分に届きません。別のプレイリストも選んでください。",
-        "enough": "希望の {{target}} 分に足ります"
+        "short": "選んだプレイリストでは約 {{minutes}} 分で、希望の {{target}} 分に届きません。別のプレイリストも選んでください。"
       },
       "fresh": {
         "hint": "新曲とは直近30日に追加された曲です。日付を持たないプログラムでは、再生回数も星もない曲になります。",
@@ -73,11 +69,8 @@
         "alternate": "インストとボーカルを交互に",
         "alternateHint": "ベース、ボーカル、ベース、ボーカル。両方が合わないときはハーモニックミックスより優先します",
         "preferCombos": "実績のあるコンボを優先",
-        "preferCombosHint": "コンボとは、2つ以上のトラックリストで続けてかけたベースとボーカルの組み合わせです。Surco はそれをもう一度並べます",
         "tasteWeight": "好みを重視",
-        "tasteWeightHint": "星と再生回数を選ぶときに考慮します",
         "surprise": "おまかせ",
-        "surpriseHint": "一緒にかけたことのない組み合わせの余地を残します",
         "noMixed": "コンボを探すには、「プレイリスト」の手順でトラックリストやセットのプレイリストを「ミックス」にしてください。",
         "play": "1曲あたりの再生時間",
         "playValue": "{{minutes}} 分",
@@ -86,7 +79,8 @@
         "harmonyFree": "自由",
         "harmonyNeighbours": "隣のキー",
         "harmonySame": "同じキー",
-        "noKeys": "選んだ曲にキー情報がないため、ハーモニックミックスは使えません"
+        "noKeys": "選んだ曲にキー情報がないため、ハーモニックミックスは使えません",
+        "pickHint": "「実績のあるコンボを優先」は、2つ以上のトラックリストで続けてかけたベースとボーカルをもう一度並べます。「好みを重視」は星と再生回数を考慮します。「おまかせ」は一緒にかけたことのない組み合わせの余地を残します。"
       },
       "loading": "読み込み中…",
       "build": "セッションを作成",
@@ -101,8 +95,6 @@
     },
     "band": {
       "title": "自動セッション",
-      "tracks_one": "{{count}} トラック",
-      "tracks_other": "{{count}} トラック",
       "combos_one": "{{count}} コンボ",
       "combos_other": "{{count}} コンボ",
       "fresh_one": "新曲 {{count}}",
@@ -119,8 +111,7 @@
       "assumed_one": "{{count}} トラックは長さ不明のため {{minutes}} 分として計算",
       "assumed_other": "{{count}} トラックは長さ不明のため {{minutes}} 分として計算"
     },
-    "playlistName": "{{date}} のセッション",
-    "closed": "セッションを作るには DJ ソフトを閉じてください。開いたままだとプレイリストが中途半端になります"
+    "playlistName": "{{date}} のセッション"
   },
   "pasteTracklist": {
     "title": "「{{name}}」にトラックリストを貼り付け",
@@ -132,7 +123,6 @@
     "gaps_one": "空白{{count}}件",
     "gaps_other": "空白{{count}}件",
     "search": "{{program}}で検索",
-    "reviewHint": "{{total}}トラック中{{have}}トラックがコレクションにあります。",
     "total_one": "合計 {{count}}",
     "total_other": "合計 {{count}}",
     "found_one": "マッチ {{count}}",
@@ -141,14 +131,12 @@
     "doubtful_other": "要確認 {{count}}",
     "similar_one": "類似 {{count}}",
     "similar_other": "類似 {{count}}",
-    "absent_one": "残りの{{count}}トラックは無視されます。",
-    "absent_other": "残りの{{count}}トラックは無視されます。",
+    "absent_one": "{{count}}行はコレクションにないため無視されます。",
+    "absent_other": "{{count}}行はコレクションにないため無視されます。",
     "rules": "「マッチ」はアーティストもタイトルも同じです。「要確認」は別ミックスか複数候補のひとつで、チェックを外さない限り追加されます。「類似」はタイトルは同じでアーティストが違い、チェックしない限り追加されません。",
     "include": "{{line}}を追加",
     "otherArtist": "同じタイトル、別アーティスト",
     "suggestedMark": "トラックリストでは (?)",
-    "summary_one": "「{{name}}」に{{count}}トラックを追加します",
-    "summary_other": "「{{name}}」に{{count}}トラックを追加します",
     "back": "戻る",
     "add_one": "{{count}}トラックを追加",
     "add_other": "{{count}}トラックを追加",
@@ -211,8 +199,6 @@
     "autoMatchLabel": "マッチ",
     "addToken": "トークンを追加",
     "autoMatchingCount": "自動マッチング中… {{done}}/{{total}}",
-    "cleanedCount_one": "{{count}} をクリーンアップ",
-    "cleanedCount_other": "{{count}} をクリーンアップ",
     "moreActions": "その他の操作",
     "menu": {
       "review": "メタデータを確認",
@@ -295,7 +281,6 @@
         "repeats": "重複"
       },
       "clear": "フィルターを解除",
-      "shown": "{{total}} トラック中 {{visible}} トラック",
       "oneFormat": "すべてのトラックが同じ形式です",
       "remove": "{{filter}} を解除",
       "searching": "「{{query}}」を含むフィルター",
@@ -754,7 +739,6 @@
     "propSampleRate": "サンプルレート",
     "propBitDepth": "ビット深度",
     "propBitDepthValue": "{{bits}} ビット",
-    "propChannels": "チャンネル",
     "propChannelMode": "チャンネルモード",
     "channelModeMono": "モノ",
     "channelModeStereo": "ステレオ",
@@ -879,7 +863,7 @@
     "overwriteLossyHint": "この機能はロスレスオリジナルを 320 kbps MP3 にその場で置き換えます。マスターは失われ復元できません。設定 → 出力でオフにしてください",
     "overwriteLossyHintBackup": "これは、ロスレス元ファイルを 320 kbps MP3 に置き換えます。Surco は元ファイルのバックアップを最初に保持しており、トラックから復元できます。",
     "regenerate": "メタデータからファイル名を再生成",
-    "regenerateAll_other": "メタデータから {{count}} 件のファイル名を再生成",
+    "regenerateAll": "メタデータからファイル名を再生成",
     "regenerateHint": "設定 → 命名パターンを使用して、上記メタデータからファイル名を再構築",
     "regenerateCustom": "このトラックのファイル名パターンをカスタマイズ…",
     "convert": "{{format}} + Apple Music に変換",
@@ -943,8 +927,6 @@
     "reportError": "レポート",
     "inLibrary": "Apple Music に登録済み",
     "inLibraryEngine": "Engine DJ に登録済み",
-    "notInLibrary": "Apple Music に未登録",
-    "notInLibraryEngine": "Engine DJ に未登録",
     "libraryCheckFailed": "Apple Music ライブラリを読み取れなかったため、トラックがすでに含まれているかマークできません。ウィンドウに戻ったときに Surco が再試行します。",
     "libraryCheckFailedEngine": "Engine DJ ライブラリを読み取れなかったため、トラックがすでに登録されているかマークできません。ウィンドウに戻ったときに Surco が再試行します。",
     "convertAll": "変換 ({{count}}) · {{format}}",
@@ -957,7 +939,7 @@
     "valuesCount_one": "{{count}} 件の値",
     "valuesCount_other": "{{count}} 件の値",
     "groupingAllTracks": "すべてのトラック",
-    "groupingPerTrack": "トラックごと · {{count}}",
+    "groupingPerTrack": "トラックごと",
     "groupingVarying_one": "{{count}} 件のタグが異なります",
     "groupingVarying_other": "{{count}} 件のタグが異なります",
     "groupingSame": "違いはありません",
@@ -1050,7 +1032,6 @@
     "searching": "検索中…",
     "bestMatch": "最有力候補",
     "lastApplied": "最後に適用されたアルバム",
-    "searchProgress": "{{total}} ソース中 {{answered}} が応答",
     "heldResults": "{{providers}} からさらに {{count}} 件 · 表示",
     "stillSearching": "{{providers}} を検索中…",
     "resultsCount_one": "{{count}} 件の結果",
@@ -1061,7 +1042,6 @@
       "count_one": "{{count}} 個のプレイリストに登録",
       "count_other": "{{count}} 個のプレイリストに登録",
       "search": "プレイリストを検索または作成",
-      "ofTotal": "{{chosen}} / {{total}}",
       "create": "プレイリスト「{{name}}」を作成",
       "pending": "トラックの書き込み時に作成されます",
       "some": "一部のトラックのみ。クリックするとすべてに追加します",
@@ -1395,7 +1375,7 @@
     "hearingOriginal": "元の音声",
     "abHint": "音声を停止せずに元と修復済みトラックを切り替え、クリックが除去されたか、そして音楽が鈍くなっていないかを聴いて確認できます。",
     "nextClick": "次のクリック",
-    "appliesToSelection": "この設定は選択したすべての {{count}} トラックに適用されます。",
+    "appliesToSelection": "この設定は選択したすべてのトラックに適用されます。",
     "row": {
       "off": "オフ",
       "soft": "弱めの修復",
@@ -1426,7 +1406,7 @@
     "clearSide": "このカットをクリア",
     "applyStart": "先頭から {{seconds}} をカット",
     "applyEnd": "末尾から {{seconds}} をカット",
-    "applyAll_other": "{{count}} トラックの無音をトリミング",
+    "applyAll": "すべてのトラックの無音をトリミング",
     "cueWarning": "音声を再エンコードします。Traktor のキューとビートグリッドは MP3、AIFF、FLAC、WAV のカットに再アンカーされます。ALAC は失われます。",
     "cueWarningShort": "音声を再エンコードします · ALAC はキューを失います",
     "planHead": "カットの後",
@@ -1484,7 +1464,7 @@
       "broadcast": "テレビとラジオのレベル。ストリーミングより静かで、ヘッドルームが十分にあります。",
       "custom": "独自の目標。波形下のプレビューでトラックがどこに着地するかが表示されます。"
     },
-    "appliesToSelection": "これらの設定は選択されたすべての {{count}} トラックに適用されます。",
+    "appliesToSelection": "これらの設定は選択されたすべてのトラックに適用されます。",
     "truePeakCaption": "安全リミットであり、二次的な目標ではありません：ピークがそれに達した場合にのみ機能します。",
     "modeLine": {
       "loudness": "すべてのトラックは同等の音量で出力されます：ゲインはそれぞれを目標値に合わせます。",
@@ -1679,17 +1659,15 @@
     "autoCleanCase": "ライブラリと大文字・アクセントを統一",
     "autoCleanCaseHint": "リスト内で表記が明らかに一つに定まっている場合（例：DJ Lara が 11 回、Dj Lara が 1 回）はその表記にそろえます。同数の場合は変更しません。",
     "discogsFormats": "これらのフォーマットのみ表示",
-    "discogsFormatsHint": "DiscogsとMusicBrainzの結果をこれらのフォーマットに限定します。",
     "discogsFormatsDisabledHint": "上記のDiscogsまたはMusicBrainzを有効にしてフォーマットでフィルタリングします。",
     "maxResults": "最大結果数",
-    "maxResultsHint": "表示する検索結果の件数。少ないほど正しいリリースが画面に残り、コンピレーションや再発の長いテールを防げます。",
+    "maxResultsHint": "少ないほど正しいリリースが画面に残り、コンピレーションや再発の長いテールを防げます。",
     "searchIgnoreWords": "検索時に無視する語句",
     "searchIgnoreWordsHint": "カンマ区切りの語句やフレーズ（リップスタンプ、ウォーターマーク）をタイトルから除外して検索・マッチングします。タグは変更されません。",
     "searchByAlbumFirst": "アルバム優先で検索",
     "searchByAlbumFirstHint": "タグにアルバムがあれば、まずアルバム名とアーティスト名で検索し、見つからなければトラック名で検索します。",
     "searchProviders": "検索ソース",
     "searchProvidersHint": "エディタが検索するカタログ。Discogsはキュレーション、Bandcampはセルフリリース素材、Deezerは商業デジタルリリース、BeatportはBPM・キー・ミックス、MusicBrainzはコミュニティが管理するオープンカタログです。",
-    "searchSourcesIntro": "エディタが検索するカタログ。",
     "searchResultsSection": "結果",
     "searchMatchingSection": "マッチング",
     "providerDescription": {
@@ -2264,18 +2242,14 @@
     "hint": "タグ内で検索するテキストを入力してください。",
     "invalidRegex": "無効な正規表現",
     "noMatches": "どのトラックにも一致しません。",
-    "summary": "{{tracks}}の{{fields}}",
     "fieldCount_one": "{{count}} フィールド",
     "fieldCount_other": "{{count}} フィールド",
-    "trackCount_one": "{{count}} トラック",
-    "trackCount_other": "{{count}} トラック",
     "apply": "{{count}} を置換"
   },
   "stripNumbering": {
     "title": "タイトルの番号付けを削除",
     "hint": "タイトルの先頭からトラック番号を削除します（「1.」、「A1 -」など）",
     "noMatches": "番号付けされたタイトルはありません",
-    "summary": "{{total}} 件中 {{count}} 件のタイトルが変わります",
     "apply": "{{count}} を削除"
   },
   "donateNudge": {
@@ -2574,7 +2548,6 @@
     "noMatch": "一致するプレイリストがありません。",
     "pickPlaylist": "プレイリストを選ぶとトラックが表示されます",
     "loadingPlaylist": "プレイリストを読み込み中…",
-    "separator": "区切り線",
     "gone": {
       "appleMusic": "「{{name}}」は Music にもうありません",
       "rekordbox": "「{{name}}」は rekordbox にもうありません",
@@ -2630,13 +2603,35 @@
         "badName": "この名前はプレイリストには使えません。空にすることも、重複させることもできません"
       }
     },
+    "editEngine": {
+      "added_one": "「{{name}}」に {{count}} 件のトラックを追加しました",
+      "added_other": "「{{name}}」に {{count}} 件のトラックを追加しました",
+      "noneAdded": "「{{name}}」にトラックは追加されませんでした",
+      "already_one": "{{count}} 件はすでにプレイリストにありました",
+      "already_other": "{{count}} 件はすでにプレイリストにありました",
+      "notInCollection_one": "{{count}} 件は Engine DJ コレクションにありません",
+      "notInCollection_other": "{{count}} 件は Engine DJ コレクションにありません",
+      "ambiguous_one": "{{count}} 件はコレクションに重複して存在し、Surco はどちらを使うか判断できません",
+      "ambiguous_other": "{{count}} 件はコレクションに重複して存在し、Surco はどちらを使うか判断できません",
+      "refused": {
+        "cancelled": "Engine DJ がまだ開いています。閉じたときに変更が適用されます",
+        "running": "保存前に Engine DJ が開かれました。閉じたときに変更が適用されます",
+        "unreadable": "現在 Surco は Engine DJ のコレクションファイルを変更できないため、何も変更されていません",
+        "backupFailed": "先にコレクションをバックアップできなかったため、何も変更されていません",
+        "writeFailed": "変更を保存できませんでした。コレクションは元のままです",
+        "readOnly": "Engine DJ コレクションは読み取り専用のため、何も変更されていません",
+        "stale": "Engine DJ でプレイリストが変更されました。確認してもう一度お試しください",
+        "noSeparator": "コレクションにコピーできる区切り線がありません",
+        "writeUnknown": "変更を保存も取り消しもできなかったため、コレクションが変更されている可能性があります。Engine DJ を開く前に、設定 → 詳細 → コレクションのバックアップ にあるコピー m.db.surco-backup で m.db を置き換えてください",
+        "badName": "この名前は Engine DJ のプレイリストには使えません。空にしたり、同じフォルダ内の名前と重ねたりはできません"
+      }
+    },
     "tree": {
       "newPlaylist": "新規プレイリスト",
       "newFolder": "新規フォルダー",
       "newPlaylistInside": "新規プレイリスト",
       "newFolderInside": "新規フォルダー",
       "name": "名前",
-      "dropCount": "ドロップで +{{count}}",
       "folderMenu": "フォルダーの操作",
       "exportUsb": "USB にエクスポート",
       "rename": "名前を変更",
@@ -2810,7 +2805,6 @@
         "musicOnly_other": "{{count}} は Music のみで実行しました",
         "fileFailed_one": "{{count}} 失敗",
         "fileFailed_other": "{{count}} 失敗",
-        "off": "同期されていません",
         "missing": "コレクションが見つかりません",
         "skipped": "未変更、開いていたか読み取れませんでした",
         "replaceFailed": "更新できませんでした",
@@ -2820,8 +2814,6 @@
         "replaced_other": "{{count}} 件のコピーが保持したものに置き換えられました",
         "held_one": "{{count}} はコレクションに残っており、プレイリストには含まれていません",
         "held_other": "{{count}} はコレクションに残っており、プレイリストには含まれていません",
-        "none": "これらのコピーはありませんでした",
-        "nothing": "変更なし",
         "trashed_one": "{{count}} 件のファイル",
         "trashed_other": "{{count}} 件のファイル",
         "kept_one": "{{count}} は rekordbox、Engine DJ、Traktor が使用しているため、ディスクに残ります",
@@ -2829,7 +2821,6 @@
         "updated_one": "{{count}} トラックが更新されました",
         "updated_other": "{{count}} トラックが更新されました",
         "open": "未変更、開いていました",
-        "noMatch": "これらのトラックはありませんでした",
         "queued": "Serato を閉じると保存されます"
       },
       "undoTitle": "変更を取り消しました",
@@ -3336,8 +3327,6 @@
       "last": "最後のバックアップ",
       "kept": "保存数"
     },
-    "kept": "{{count}} / {{max}}",
-    "none": "バックアップはまだありません",
     "reason": {
       "run": "変換の前",
       "cues": "キューを保存する前",
@@ -3378,7 +3367,6 @@
       "show": "ファイルを表示",
       "hide": "ファイルを隠す",
       "expires": "{{days}}日後、または{{size}}を超えるとそれより早く自動で削除されます。",
-      "stateEmpty": "保存なし",
       "renamedTo": "変換により「{{name}}」に名前が変更されました",
       "replacedBy": "変換により「{{name}}」に置き換えられました"
     },

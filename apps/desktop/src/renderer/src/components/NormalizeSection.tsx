@@ -15,7 +15,6 @@ import { NormalizeControls } from './NormalizeControls'
 import { NormalizePlan } from './NormalizePlan'
 import { SectionBody } from './SectionBody'
 import { SectionHeader } from './SectionHeader'
-import { SectionPill } from './SectionPill'
 import { Tooltip } from './Tooltip'
 import { WaveformCompare, WaveformSolo } from './WaveformCompare'
 
@@ -124,13 +123,6 @@ export function NormalizeSection({
         }
         summaryTestId="normalize-row-sentence"
         summaryMuted={value.mode === 'none'}
-        right={
-          value.mode !== 'none' && !open ? (
-            <SectionPill tone="accent" testid="normalize-active-badge">
-              {tr(`normalize.mode.${value.mode}`)}
-            </SectionPill>
-          ) : undefined
-        }
       />
       <SectionBody open={open}>
         <div className="mt-4">
@@ -139,7 +131,7 @@ export function NormalizeSection({
               while the batch applies one shared value to every selected track. */}
           {isMulti && (
             <p data-testid="normalize-scope" className="mb-3 text-xs text-fg-dim">
-              {tr('normalize.appliesToSelection', { count: selectedCount })}
+              {tr('normalize.appliesToSelection')}
             </p>
           )}
           {/* The cue warning renders once, below the wave: inline it sat between the

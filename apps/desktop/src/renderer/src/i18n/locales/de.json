@@ -15,7 +15,6 @@
     "moreFields": "Mehr Felder ({{count}})",
     "fewerFields": "Weniger Felder",
     "title": "Dateinamen erstellen",
-    "description": "Kombiniere Text und Metadaten, um den Dateinamen zu erstellen.",
     "apply": "Anwenden"
   },
   "sessions": {
@@ -56,10 +55,7 @@
         "none": "Noch keine Playlist ausgewählt",
         "onlyChosen": "Nur die gewählten zeigen",
         "allPlaylists": "Alle Playlists zeigen",
-        "summary_one": "{{count}} Playlist gewählt, bis zu {{tracks}} Tracks zur Auswahl",
-        "summary_other": "{{count}} Playlists gewählt, bis zu {{tracks}} Tracks zur Auswahl",
-        "short": "Reicht für etwa {{minutes}} der gewünschten {{target}} Min. Wähle eine weitere Playlist, um sie zu erreichen.",
-        "enough": "Reicht für die gewünschten {{target}} Min."
+        "short": "Reicht für etwa {{minutes}} der gewünschten {{target}} Min. Wähle eine weitere Playlist, um sie zu erreichen."
       },
       "fresh": {
         "hint": "Neu sind Tracks, die in den letzten 30 Tagen hinzugekommen sind. Speichert das Programm keine Daten, sind es Tracks ohne Wiedergaben und Sterne.",
@@ -73,11 +69,8 @@
         "alternate": "Instrumental und Gesang abwechseln",
         "alternateHint": "Instrumental, Gesang, Instrumental, Gesang. Hat Vorrang vor dem harmonischen Mixen, wenn nicht beides passt",
         "preferCombos": "Bewährte Combos bevorzugen",
-        "preferCombosHint": "Ein Combo ist ein Instrumental und ein Gesangstrack, die du in zwei oder mehr deiner Tracklists direkt nacheinander gespielt hast. Surco bringt sie wieder zusammen",
         "tasteWeight": "Was dir am besten gefällt",
-        "tasteWeightHint": "Sterne und Wiedergaben zählen bei der Auswahl",
         "surprise": "Überrasch mich",
-        "surpriseHint": "Lässt Platz für Paare, die nie zusammen gespielt wurden",
         "noMixed": "Um Combos zu finden, markiere im Schritt Playlists eine Playlist mit deinen Tracklists oder Sets als Gemischt.",
         "play": "Spielzeit pro Track",
         "playValue": "{{minutes}} Min.",
@@ -86,7 +79,8 @@
         "harmonyFree": "Frei",
         "harmonyNeighbours": "Nachbarn",
         "harmonySame": "Gleiche Tonart",
-        "noKeys": "Keiner der gewählten Tracks hat eine Tonart, daher entfällt das harmonische Mixen"
+        "noKeys": "Keiner der gewählten Tracks hat eine Tonart, daher entfällt das harmonische Mixen",
+        "pickHint": "„Bewährte Combos bevorzugen“ bringt ein Instrumental und einen Gesangstrack wieder zusammen, die du in zwei oder mehr deiner Tracklists direkt nacheinander gespielt hast. „Was dir am besten gefällt“ berücksichtigt Sterne und Wiedergaben. „Überrasch mich“ lässt Platz für Paare, die nie zusammen gespielt wurden."
       },
       "loading": "Liest …",
       "build": "Session erstellen",
@@ -101,8 +95,6 @@
     },
     "band": {
       "title": "Automatische Session",
-      "tracks_one": "{{count}} Track",
-      "tracks_other": "{{count}} Tracks",
       "combos_one": "{{count}} Combo",
       "combos_other": "{{count}} Combos",
       "fresh_one": "{{count}} neu",
@@ -119,8 +111,7 @@
       "assumed_one": "{{count}} Track ohne Länge, zählt als {{minutes}} Min.",
       "assumed_other": "{{count}} Tracks ohne Länge, zählen je als {{minutes}} Min."
     },
-    "playlistName": "Session vom {{date}}",
-    "closed": "Schließe dein DJ-Programm, um die Session zu erstellen. Bei geöffnetem Programm bliebe die Playlist unvollständig"
+    "playlistName": "Session vom {{date}}"
   },
   "pasteTracklist": {
     "title": "Tracklist in „{{name}}“ einfügen",
@@ -132,7 +123,6 @@
     "gaps_one": "{{count}} Lücke",
     "gaps_other": "{{count}} Lücken",
     "search": "In {{program}} suchen",
-    "reviewHint": "{{have}} von {{total}} sind in der Sammlung.",
     "total_one": "{{count}} insgesamt",
     "total_other": "{{count}} insgesamt",
     "found_one": "{{count}} gefunden",
@@ -141,14 +131,12 @@
     "doubtful_other": "{{count}} zweifelhaft",
     "similar_one": "{{count}} ähnlich",
     "similar_other": "{{count}} ähnlich",
-    "absent_one": "{{count}} weiterer wird übersprungen.",
-    "absent_other": "{{count}} weitere werden übersprungen.",
+    "absent_one": "{{count}} Zeile ist nicht in der Sammlung und wird übersprungen.",
+    "absent_other": "{{count}} Zeilen sind nicht in der Sammlung und werden übersprungen.",
     "rules": "Gefunden ist derselbe Künstler und Titel. Zweifelhaft ist ein anderer Mix oder einer von mehreren Kandidaten und kommt rein, außer du hakst ihn ab. Ähnlich hat denselben Titel, aber einen anderen Künstler, und bleibt draußen, außer du hakst ihn an.",
     "include": "{{line}} hinzufügen",
     "otherArtist": "gleicher Titel, anderer Künstler",
     "suggestedMark": "(?) in der Tracklist",
-    "summary_one": "{{count}} Track wird zu „{{name}}“ hinzugefügt",
-    "summary_other": "{{count}} Tracks werden zu „{{name}}“ hinzugefügt",
     "back": "Zurück",
     "add_one": "{{count}} Track hinzufügen",
     "add_other": "{{count}} Tracks hinzufügen",
@@ -211,8 +199,6 @@
     "autoMatchLabel": "Abgleichen",
     "addToken": "Token hinzufügen",
     "autoMatchingCount": "Automatischer Abgleich… {{done}}/{{total}}",
-    "cleanedCount_one": "{{count}} bereinigt",
-    "cleanedCount_other": "{{count}} bereinigt",
     "moreActions": "Weitere Aktionen",
     "menu": {
       "review": "Metadaten prüfen",
@@ -295,7 +281,6 @@
         "repeats": "Doppelte"
       },
       "clear": "Filter entfernen",
-      "shown": "{{visible}} von {{total}} Tracks",
       "oneFormat": "Alle Tracks haben dasselbe Format",
       "remove": "{{filter}} entfernen",
       "searching": "Filter mit „{{query}}“",
@@ -754,7 +739,6 @@
     "propSampleRate": "Abtastrate",
     "propBitDepth": "Bittiefe",
     "propBitDepthValue": "{{bits}} Bit",
-    "propChannels": "Kanäle",
     "propChannelMode": "Kanalmodus",
     "channelModeMono": "Mono",
     "channelModeStereo": "Stereo",
@@ -879,7 +863,7 @@
     "overwriteLossyHint": "Das verlustfreie Original wird direkt durch eine 320-kbps-MP3 ersetzt. Das Master ist verloren und nicht wiederherstellbar. Abschaltbar unter Einstellungen → Ausgabe.",
     "overwriteLossyHintBackup": "Das verlustfreie Original wird direkt durch eine 320-kbps-MP3 ersetzt. Vorher legt Surco eine Sicherungskopie des Originals an, die du über den Track wiederherstellen kannst.",
     "regenerate": "Dateinamen aus den Metadaten neu erzeugen",
-    "regenerateAll_other": "{{count}} Dateinamen aus den Metadaten neu erzeugen",
+    "regenerateAll": "Dateinamen aus den Metadaten neu erzeugen",
     "regenerateHint": "Baut den Dateinamen aus den Metadaten oben neu, mit deinem Muster aus Einstellungen → Benennung",
     "regenerateCustom": "Dateinamen-Muster für diesen Track anpassen…",
     "convert": "In {{format}} konvertieren + Apple Music",
@@ -943,8 +927,6 @@
     "reportError": "Melden",
     "inLibrary": "In Apple Music",
     "inLibraryEngine": "In Engine DJ",
-    "notInLibrary": "Nicht in Apple Music",
-    "notInLibraryEngine": "Nicht in Engine DJ",
     "libraryCheckFailed": "Deine Apple-Music-Mediathek konnte nicht gelesen werden, daher werden Tracks nicht als bereits enthalten markiert. Surco versucht es erneut, wenn du zum Fenster zurückkehrst.",
     "libraryCheckFailedEngine": "Deine Engine-DJ-Bibliothek konnte nicht gelesen werden, daher werden Tracks nicht als bereits enthalten markiert. Surco versucht es erneut, wenn du zum Fenster zurückkehrst.",
     "convertAll": "Konvertieren ({{count}}) · {{format}}",
@@ -957,7 +939,7 @@
     "valuesCount_one": "{{count}} Wert",
     "valuesCount_other": "{{count}} Werte",
     "groupingAllTracks": "alle Tracks",
-    "groupingPerTrack": "Pro Track · {{count}}",
+    "groupingPerTrack": "Pro Track",
     "groupingVarying_one": "{{count}} Tag unterscheidet sich",
     "groupingVarying_other": "{{count}} Tags unterscheiden sich",
     "groupingSame": "keine Unterschiede",
@@ -1050,7 +1032,6 @@
     "searching": "Suche läuft…",
     "bestMatch": "Beste Übereinstimmung",
     "lastApplied": "Zuletzt übernommenes Album",
-    "searchProgress": "{{answered}} von {{total}} Quellen haben geantwortet",
     "heldResults": "{{count}} weitere von {{providers}} · Anzeigen",
     "stillSearching": "Sucht noch in {{providers}}…",
     "resultsCount_one": "{{count}} Ergebnis",
@@ -1061,7 +1042,6 @@
       "count_one": "In {{count}} Playlist",
       "count_other": "In {{count}} Playlists",
       "search": "Playlist suchen oder erstellen",
-      "ofTotal": "{{chosen}} von {{total}}",
       "create": "Playlist „{{name}}“ erstellen",
       "pending": "Wird beim Schreiben des Tracks erstellt",
       "some": "Nur bei einigen Tracks. Klicken, um sie allen hinzuzufügen",
@@ -1395,7 +1375,7 @@
     "hearingOriginal": "Zu hören: Original",
     "abHint": "Wechselt zwischen Original und repariertem Track, ohne das Audio anzuhalten. So hörst du, ob die Reparatur die Knackser entfernt und ob sie die Musik dumpf gemacht hat.",
     "nextClick": "Nächster Knackser",
-    "appliesToSelection": "Diese Einstellung gilt für alle {{count}} ausgewählten Tracks.",
+    "appliesToSelection": "Diese Einstellung gilt für alle ausgewählten Tracks.",
     "row": {
       "off": "Aus",
       "soft": "Sanfte Reparatur",
@@ -1426,7 +1406,7 @@
     "clearSide": "Diesen Schnitt entfernen",
     "applyStart": "{{seconds}} am Anfang abschneiden",
     "applyEnd": "{{seconds}} am Ende abschneiden",
-    "applyAll_other": "Erkannte Stille in {{count}} Tracks abschneiden",
+    "applyAll": "Erkannte Stille in allen Tracks abschneiden",
     "cueWarning": "Kodiert das Audio neu. In der Datei gespeicherte Traktor-Cues und das Beatgrid werden bei MP3, AIFF, FLAC und WAV an den Schnitt angepasst; bei ALAC gehen sie verloren.",
     "cueWarningShort": "Kodiert das Audio neu · bei ALAC gehen die Cues verloren",
     "planHead": "Nach dem Schnitt",
@@ -1484,7 +1464,7 @@
       "broadcast": "Der TV- und Radiopegel. Leiser als Streaming, mit viel Headroom.",
       "custom": "Dein eigenes Ziel. Die Vorschau unter der Wellenform zeigt, wo der Track landet."
     },
-    "appliesToSelection": "Diese Einstellungen gelten für alle {{count}} ausgewählten Tracks.",
+    "appliesToSelection": "Diese Einstellungen gelten für alle ausgewählten Tracks.",
     "truePeakCaption": "Eine Sicherheitsgrenze, kein zweites Ziel: sie greift nur, wenn die Peaks sie erreichen.",
     "modeLine": {
       "loudness": "Alle Tracks kommen gleich laut heraus: die Verstärkung bringt jeden auf das Ziel.",
@@ -1679,17 +1659,15 @@
     "autoCleanCase": "Groß-/Kleinschreibung und Akzente an deine Bibliothek angleichen",
     "autoCleanCaseHint": "Schreibt die Liste einen Namen eindeutig auf eine Weise (DJ Lara 11-mal, Dj Lara einmal), wird diese übernommen. Bei Gleichstand ändert sich nichts.",
     "discogsFormats": "Nur diese Formate zeigen",
-    "discogsFormatsHint": "Beschränkt die Discogs- und MusicBrainz-Ergebnisse auf diese Formate.",
     "discogsFormatsDisabledHint": "Aktiviere Discogs oder MusicBrainz oben, um nach Format zu filtern.",
     "maxResults": "Maximale Ergebnisse",
-    "maxResultsHint": "Wie viele Suchergebnisse angezeigt werden. Weniger hält das richtige Release im Blick statt einer langen Liste von Compilations und Neuauflagen.",
+    "maxResultsHint": "Mit weniger bleibt das richtige Release im Blick statt einer langen Liste von Compilations und Neuauflagen.",
     "searchIgnoreWords": "Bei der Suche zu ignorierende Wörter",
     "searchIgnoreWordsHint": "Kommagetrennte Wörter oder Phrasen (Rip-Signaturen, Wasserzeichen), die beim Suchen und Abgleichen aus den Titeln entfernt werden. Deine Tags bleiben unverändert.",
     "searchByAlbumFirst": "Zuerst nach Album suchen",
     "searchByAlbumFirstHint": "Wenn die Tags ein Album enthalten, wird es mit dem Künstler vor dem Track gesucht. Findet sich nichts, wird der Track gesucht.",
     "searchProviders": "Suchquellen",
     "searchProvidersHint": "Kataloge, die der Editor durchsucht. Discogs ist kuratiert, Bandcamp ergänzt selbstveröffentlichtes Material, Deezer deckt kommerzielle digitale Releases ab, Beatport liefert BPM, Tonart und Mix, und MusicBrainz ist ein offener, von seiner Community gepflegter Katalog.",
-    "searchSourcesIntro": "Kataloge, die der Editor durchsucht.",
     "searchResultsSection": "Ergebnisse",
     "searchMatchingSection": "Abgleich",
     "providerDescription": {
@@ -2264,18 +2242,14 @@
     "hint": "Tipp etwas ein, um in ihren Tags zu suchen.",
     "invalidRegex": "Ungültiger regulärer Ausdruck",
     "noMatches": "Keine Treffer in irgendeinem Track.",
-    "summary": "{{fields}} in {{tracks}}",
     "fieldCount_one": "{{count}} Feld",
     "fieldCount_other": "{{count}} Felder",
-    "trackCount_one": "{{count}} Track",
-    "trackCount_other": "{{count}} Tracks",
     "apply": "In {{count}} ersetzen"
   },
   "stripNumbering": {
     "title": "Nummerierung aus dem Titel entfernen",
     "hint": "Entfernt die Tracknummer am Anfang des Titels („1.“, „A1 -“).",
     "noMatches": "Kein Titel trägt eine Nummerierung.",
-    "summary": "{{count}} von {{total}} Titeln werden geändert",
     "apply": "Bei {{count}} entfernen"
   },
   "donateNudge": {
@@ -2574,7 +2548,6 @@
     "noMatch": "Keine Playlist passt.",
     "pickPlaylist": "Wähle eine Playlist, um ihre Tracks zu sehen",
     "loadingPlaylist": "Playlist wird gelesen…",
-    "separator": "Trenner",
     "gone": {
       "appleMusic": "„{{name}}“ ist nicht mehr in Music",
       "rekordbox": "„{{name}}“ ist nicht mehr in rekordbox",
@@ -2630,13 +2603,35 @@
         "badName": "Dieser Name ist für eine Playlist nicht zulässig. Er darf nicht leer sein und nicht doppelt vorkommen"
       }
     },
+    "editEngine": {
+      "added_one": "{{count}} Track zu „{{name}}“ hinzugefügt",
+      "added_other": "{{count}} Tracks zu „{{name}}“ hinzugefügt",
+      "noneAdded": "Keine Tracks zu „{{name}}“ hinzugefügt",
+      "already_one": "{{count}} war schon in der Playlist",
+      "already_other": "{{count}} waren schon in der Playlist",
+      "notInCollection_one": "{{count}} ist nicht in der Engine DJ-Sammlung",
+      "notInCollection_other": "{{count}} sind nicht in der Engine DJ-Sammlung",
+      "ambiguous_one": "{{count}} ist doppelt in der Sammlung und Surco weiß nicht, welcher gilt",
+      "ambiguous_other": "{{count}} sind doppelt in der Sammlung und Surco weiß nicht, welche gelten",
+      "refused": {
+        "cancelled": "Engine DJ ist noch geöffnet. Die Änderung wird beim Schließen angewendet",
+        "running": "Engine DJ wurde vor dem Speichern geöffnet. Die Änderung wird beim Schließen angewendet",
+        "unreadable": "Surco kann die Dateien der Engine DJ-Sammlung gerade nicht ändern, daher wurde nichts geändert",
+        "backupFailed": "Die Sammlung konnte vorher nicht gesichert werden, daher wurde nichts geändert",
+        "writeFailed": "Die Änderung konnte nicht gespeichert werden. Die Sammlung ist unverändert",
+        "readOnly": "Die Engine DJ-Sammlung ist schreibgeschützt, daher wurde nichts geändert",
+        "stale": "Die Playlist hat sich in Engine DJ geändert. Prüfe sie und versuche es erneut",
+        "noSeparator": "Deine Sammlung hat keinen Trenner zum Kopieren",
+        "writeUnknown": "Die Änderung konnte weder gespeichert noch rückgängig gemacht werden, die Sammlung könnte sich also geändert haben. Ersetze vor dem Öffnen von Engine DJ m.db durch die Kopie m.db.surco-backup unter Einstellungen → Erweitert → Sicherungen der Sammlungen",
+        "badName": "Dieser Name passt nicht für eine Engine-DJ-Playlist. Er darf nicht leer sein und sich im selben Ordner nicht wiederholen"
+      }
+    },
     "tree": {
       "newPlaylist": "Neue Playlist",
       "newFolder": "Neuer Ordner",
       "newPlaylistInside": "Neue Playlist",
       "newFolderInside": "Neuer Ordner",
       "name": "Name",
-      "dropCount": "+{{count}} beim Loslassen",
       "folderMenu": "Ordneraktionen",
       "exportUsb": "Auf USB exportieren",
       "rename": "Umbenennen",
@@ -2810,7 +2805,6 @@
         "musicOnly_other": "{{count}} nur in Music",
         "fileFailed_one": "{{count}} mit Fehler",
         "fileFailed_other": "{{count}} mit Fehler",
-        "off": "nicht synchronisiert",
         "missing": "Sammlung nicht gefunden",
         "skipped": "nicht angefasst, war geöffnet oder nicht lesbar",
         "replaceFailed": "konnte nicht aktualisiert werden",
@@ -2820,8 +2814,6 @@
         "replaced_other": "{{count}} Kopien durch die behaltenen ersetzt",
         "held_one": "{{count}} noch in der Sammlung, außerhalb der Playlists",
         "held_other": "{{count}} noch in der Sammlung, außerhalb der Playlists",
-        "none": "hatte diese Kopien nicht",
-        "nothing": "keine Änderungen",
         "trashed_one": "{{count}} Datei",
         "trashed_other": "{{count}} Dateien",
         "kept_one": "{{count}} bleibt auf der Festplatte, weil rekordbox, Engine DJ oder Traktor sie nutzen",
@@ -2829,7 +2821,6 @@
         "updated_one": "{{count}} Track aktualisiert",
         "updated_other": "{{count}} Tracks aktualisiert",
         "open": "nicht angefasst, war geöffnet",
-        "noMatch": "hatte diese Tracks nicht",
         "queued": "wird beim Schließen von Serato gespeichert"
       },
       "undoTitle": "Änderungen rückgängig gemacht",
@@ -3336,8 +3327,6 @@
       "last": "Letztes Backup",
       "kept": "Gespeichert"
     },
-    "kept": "{{count}} von {{max}}",
-    "none": "Noch keine Backups",
     "reason": {
       "run": "Vor dem Konvertieren",
       "cues": "Vor dem Speichern von Cues",
@@ -3378,7 +3367,6 @@
       "show": "Dateien anzeigen",
       "hide": "Dateien ausblenden",
       "expires": "Werden nach {{days}} Tagen von selbst gelöscht, oder früher, wenn sie {{size}} überschreiten.",
-      "stateEmpty": "Nichts gespeichert",
       "renamedTo": "Durch eine Konvertierung umbenannt in „{{name}}“",
       "replacedBy": "Bei einer Konvertierung durch „{{name}}“ ersetzt"
     },

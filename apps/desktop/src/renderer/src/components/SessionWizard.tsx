@@ -23,9 +23,10 @@ import { flattenPlaylists } from './SourceTree'
 
 const STEPS = ['duration', 'sources', 'character'] as const
 
-const PROBLEM_TEXT: Record<Exclude<BuildResult, 'built'>, string> = {
+type Problem = Exclude<BuildResult, 'built' | 'queued'>
+
+const PROBLEM_TEXT: Record<Problem, string> = {
   empty: 'sessions.wizard.empty',
-  closed: 'sessions.closed',
   refused: 'sessions.wizard.refused',
 }
 
@@ -100,7 +101,7 @@ export function SessionWizard({
   )
   const [reading, setReading] = useState(false)
   const [building, setBuilding] = useState(false)
-  const [problem, setProblem] = useState<Exclude<BuildResult, 'built'> | null>(null)
+  const [problem, setProblem] = useState<Problem | null>(null)
   const focusHeading = useCallback((el: HTMLHeadingElement | null) => el?.focus(), [])
 
   const pick = (id: string, role: PlaylistRole | null): void => {
@@ -189,7 +190,7 @@ export function SessionWizard({
       chosenRoles,
     )
     setBuilding(false)
-    setProblem(result === 'built' ? null : result)
+    setProblem(result === 'built' || result === 'queued' ? null : result)
   }
 
   useEffect(() => {

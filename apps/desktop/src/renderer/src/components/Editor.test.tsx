@@ -1813,6 +1813,20 @@ describe('Editor multi-select sequential edits', () => {
   })
 })
 
+describe('Editor multi-select bulk actions', () => {
+  // The header already reads "Editing 2 tracks", so a button that counts them again only
+  // repeats the number a line above it.
+  it('names the bulk rename and trim without repeating the selection count', () => {
+    renderWithQuery(<MultiHarness />, { visibleFields: ['title'] })
+    expect(screen.getByTestId('regenerate-output-names-all')).toHaveTextContent(
+      'Regenerate file names from metadata',
+    )
+    expect(screen.getByTestId('trim-detect-all')).toHaveTextContent(
+      'Trim detected silence on every track',
+    )
+  })
+})
+
 const rekordboxTree = [{ id: '3000', name: 'Makina', kind: 'playlist' as const, count: 1 }]
 
 function rekordboxApiWith(membership: ProgramReads['membership']): void {
@@ -4275,13 +4289,14 @@ describe('Editor Apple Music library badge', () => {
     expect(screen.getByTestId('apple-music-status')).toHaveTextContent('In Engine DJ')
   })
 
-  // The complement: a song not found in the snapshot reassures the user it's safe to add.
-  it('flags a track that is not in the library', () => {
+  // The complement: a song not found in the snapshot shows nothing, because the editor
+  // only speaks about what the track has, never about what it lacks.
+  it('shows no badge for a track that is not in the library', () => {
     setApi('darwin')
     renderEditor({ id: 'a', meta: { title: 'Unknown', artist: 'Nobody' } }, 'wav', {
       libraryIndex: owned,
     })
-    expect(screen.getByTestId('apple-music-status')).toHaveTextContent('Not in Apple Music')
+    expect(screen.queryByTestId('apple-music-status')).toBeNull()
   })
 
   // A track Surco itself added carries its library copy's persistent ID, so it reads as
@@ -4784,10 +4799,8 @@ describe('Editor Apple Music library badge', () => {
           { title: 'Other', artist: 'Someone', persistentId: 'FEDCBA9876543210' },
         ]),
       })
-      await waitFor(() =>
-        expect(screen.getByTestId('apple-music-status')).toHaveTextContent('Not in Apple Music'),
-      )
       await settle()
+      expect(screen.queryByTestId('apple-music-status')).toBeNull()
       expect(screen.queryByTestId('copy-verdict')).toBeNull()
       expect(api.comparePair).not.toHaveBeenCalled()
     })
@@ -4870,8 +4883,8 @@ describe('Editor Apple Music badge via the Discogs suggestion', () => {
         libraryIndex: owned,
       },
     )
-    // The file's own artist tag isn't in the library, so the badge starts negative.
-    expect(screen.getByTestId('apple-music-status')).toHaveTextContent('Not in Apple Music')
+    // The file's own artist tag isn't in the library, so there is no badge yet.
+    expect(screen.queryByTestId('apple-music-status')).toBeNull()
     fireEvent.change(screen.getByTestId('discogs-query'), { target: { value: 'some album' } })
     fireEvent.keyDown(screen.getByTestId('discogs-query'), { key: 'Enter' })
     const result = await screen.findByTestId('discogs-result')
@@ -4883,8 +4896,8 @@ describe('Editor Apple Music badge via the Discogs suggestion', () => {
   })
 
   // The suggestion must not manufacture a false positive: an owned-looking release whose
-  // canonical name still isn't in the library leaves the badge negative.
-  it('keeps the badge negative when the suggestion is not in the library either', async () => {
+  // canonical name still isn't in the library leaves the badge off.
+  it('keeps the badge off when the suggestion is not in the library either', async () => {
     setApi()
     const owned = buildLibraryIndex([{ title: 'Something Else', artist: 'Nobody' }])
     renderEditor(
@@ -4899,13 +4912,12 @@ describe('Editor Apple Music badge via the Discogs suggestion', () => {
     const result = await screen.findByTestId('discogs-result')
     if (result.getAttribute('aria-expanded') !== 'true') fireEvent.click(result)
     await screen.findAllByTestId('discogs-track')
-    expect(screen.getByTestId('apple-music-status')).toHaveTextContent('Not in Apple Music')
+    expect(screen.queryByTestId('apple-music-status')).toBeNull()
   })
 
-  // Reported 25/09: the badge waited on the whole Discogs cascade (tens of seconds) before
-  // saying anything, for the very tracks the user doesn't own. The library answer is
-  // local and instant, so it is shown at once; Discogs may still flip it to owned later.
-  it('answers from the library at once while Discogs is still searching', async () => {
+  // A track the library lacks shows no badge while Discogs is still searching; Discogs may
+  // still flip it to owned later.
+  it('shows no badge while Discogs is still searching for a track the library lacks', async () => {
     setApi()
     let release_: () => void = () => {}
     const gate = new Promise<unknown[]>((res) => {
@@ -4924,12 +4936,12 @@ describe('Editor Apple Music badge via the Discogs suggestion', () => {
     )
     fireEvent.keyDown(screen.getByTestId('discogs-query'), { key: 'Enter' })
     await waitFor(() => expect(window.api.search).toHaveBeenCalled())
-    expect(screen.getByTestId('apple-music-status')).toHaveTextContent('Not in Apple Music')
+    expect(screen.queryByTestId('apple-music-status')).toBeNull()
     release_()
   })
 
-  // Once the search settles with no owning match, the negative stays put.
-  it('stays negative once the search settles without an owning match', async () => {
+  // Once the search settles with no owning match, the badge stays off.
+  it('stays off once the search settles without an owning match', async () => {
     setApi()
     const owned = buildLibraryIndex([{ title: 'Something Else', artist: 'Nobody' }])
     renderEditor(
@@ -4942,9 +4954,8 @@ describe('Editor Apple Music badge via the Discogs suggestion', () => {
     fireEvent.change(screen.getByTestId('discogs-query'), { target: { value: 'some album' } })
     fireEvent.keyDown(screen.getByTestId('discogs-query'), { key: 'Enter' })
     await screen.findByTestId('discogs-result')
-    await waitFor(() =>
-      expect(screen.getByTestId('apple-music-status')).toHaveTextContent('Not in Apple Music'),
-    )
+    await new Promise((r) => setTimeout(r, 50))
+    expect(screen.queryByTestId('apple-music-status')).toBeNull()
   })
 })
 

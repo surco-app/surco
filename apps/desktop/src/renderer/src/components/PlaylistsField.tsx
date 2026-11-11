@@ -31,9 +31,8 @@ function whereParts(
   const ids = chosenIdsOf(tokens)
   const folders = tree.flatMap((node) => {
     if (!node.children?.length) return []
-    const k = playlistIdsUnder(node).filter((id) => ids.has(id)).length
-    if (k === 0) return []
-    return [{ key: node.id, text: k > 1 ? `${node.name} (${k})` : node.name, pending: false }]
+    if (!playlistIdsUnder(node).some((id) => ids.has(id))) return []
+    return [{ key: node.id, text: node.name, pending: false }]
   })
   const roots = tree.flatMap((node) =>
     node.kind === 'playlist' && !node.children?.length && ids.has(node.id)

@@ -34,9 +34,9 @@ function registerOperation<S extends keyof DjMainProgram, O extends keyof Sectio
 function registerSave(table: DjMainTable): void {
   ipcMain.handle(
     'dj:editPlaylist',
-    async (event, program: DjProgram, edit: unknown, label: unknown) => {
+    async (event, program: DjProgram, edit: unknown, label: unknown, mode: unknown) => {
       const { target, run } = resolveOperation(table, program, 'edit', 'save', 'editPlaylist')
-      return run.call(target, edit, label, event.sender)
+      return run.call(target, edit, label, event.sender, mode)
     },
   )
 }

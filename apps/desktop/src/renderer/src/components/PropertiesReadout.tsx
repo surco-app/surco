@@ -41,6 +41,7 @@ export function PropertiesReadout({
       .slice(0, Math.max(inputPath.lastIndexOf('/'), inputPath.lastIndexOf('\\')))
       .split(/[/\\]/)
       .pop() || inputPath
+  const kind = p.container.toUpperCase()
   const modeKey = p.channels <= 1 ? 'Mono' : p.channels === 2 ? 'Stereo' : 'Multi'
   const fmtDate = (ms: number | null): string =>
     ms === null
@@ -61,8 +62,8 @@ export function PropertiesReadout({
       id: 'audio',
       label: tr('editor.propertiesGroupAudio'),
       rows: [
-        row('kind', tr('editor.propKind'), p.container.toUpperCase()),
-        row('codec', tr('editor.propCodec'), p.codec),
+        row('kind', tr('editor.propKind'), kind),
+        row('codec', tr('editor.propCodec'), p.codec.toUpperCase() === kind ? '' : p.codec),
         row(
           'sampleRate',
           tr('editor.propSampleRate'),
@@ -73,7 +74,6 @@ export function PropertiesReadout({
           tr('editor.propBitDepth'),
           p.bitDepth !== null ? tr('editor.propBitDepthValue', { bits: p.bitDepth }) : '',
         ),
-        row('channels', tr('editor.propChannels'), p.channels ? String(p.channels) : ''),
         row(
           'channelMode',
           tr('editor.propChannelMode'),
@@ -99,7 +99,7 @@ export function PropertiesReadout({
       // (name, folder) span the full width at the end — interleaving a wide row between
       // the shorts would leave a half-empty cell whenever the shorts fell odd.
       rows: [
-        row('extension', tr('editor.propExtension'), ext),
+        row('extension', tr('editor.propExtension'), ext === kind ? '' : ext),
         row('size', tr('editor.propSize'), formatFileSize(p.sizeBytes, i18n.language)),
         row('created', tr('editor.propCreated'), fmtDate(p.createdMs)),
         row('modified', tr('editor.propModified'), fmtDate(p.modifiedMs)),

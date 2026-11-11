@@ -125,17 +125,17 @@ describe('PlaylistsField for Traktor and Engine DJ', () => {
 })
 
 describe('PlaylistsField closed', () => {
-  it('fits nine playlists on one line by counting them and naming each top folder once', () => {
+  it('fits nine playlists on one line by counting them once and naming each top folder bare, since the total already counts them', () => {
     render(<Harness />)
     expect(screen.getByTestId('playlists-count')).toHaveTextContent('In 7 playlists')
-    expect(screen.getByTestId('playlists-where').textContent).toBe('BOLOS (5) · CANTADITAS · House')
+    expect(screen.getByTestId('playlists-where').textContent).toBe('BOLOS · CANTADITAS · House')
     expect(screen.queryByTestId('playlists-popover')).toBeNull()
   })
 
   it('reads the count and where to a screen reader, since the label alone only names the field', () => {
     render(<Harness />)
     expect(summary()).toHaveAccessibleName('rekordbox playlists')
-    expect(summary()).toHaveAccessibleDescription('In 7 playlists BOLOS (5) · CANTADITAS · House')
+    expect(summary()).toHaveAccessibleDescription('In 7 playlists BOLOS · CANTADITAS · House')
     cleanup()
     render(<Harness initial={[]} />)
     expect(summary()).toHaveAccessibleDescription('Add to a playlist')
@@ -175,12 +175,12 @@ describe('PlaylistsField open', () => {
     expect(screen.queryByTestId('playlists-check-bt')).toBeNull()
   })
 
-  it('tells how many playlists of each folder hold the track, counting the ones in subfolders', () => {
+  it('counts tracks only on playlists, never playlists on a folder, so every number in the tree means tracks', () => {
     render(<Harness />)
     open()
-    expect(screen.getByTestId('playlists-folder-count-bolos').textContent).toBe('5 of 20')
-    expect(screen.getByTestId('playlists-folder-count-can').textContent).toBe('1 of 3')
-    expect(screen.getByTestId('playlists-folder-count-bases').textContent).toBe('1')
+    expect(screen.getByTestId('playlists-folder-bolos')).toHaveTextContent(/^\D*$/)
+    expect(screen.getByTestId('playlists-folder-can')).toHaveTextContent(/^\D*$/)
+    expect(screen.getByTestId('playlists-folder-bases')).toHaveTextContent(/^\D*$/)
   })
 
   it('shows each playlist ticked when the track is in it, with its track count', () => {
@@ -455,9 +455,9 @@ describe('PlaylistsField on a Serato crate that holds subcrates', () => {
     expect(spy).toHaveBeenLastCalledWith([crate('House%%Tech')])
   })
 
-  it('names the parent crate once in the summary, counting the subcrates chosen in it', () => {
+  it('names the parent crate once in the summary without a second count beside the total', () => {
     render(<Crates initial={[crate('House'), crate('House%%Deep'), crate('Friday')]} />)
-    expect(screen.getByTestId('playlists-where').textContent).toBe('House (2) · Friday')
+    expect(screen.getByTestId('playlists-where').textContent).toBe('House · Friday')
   })
 })
 

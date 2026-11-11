@@ -2,6 +2,7 @@ import type { DjProgram } from '../../../shared/djProgram'
 import { TRAKTOR_BUILT_IN, TRAKTOR_HISTORY } from '../../../shared/traktorContent'
 import type {
   CollectionTrack,
+  PlaylistEditMode,
   RekordboxEditResult,
   RekordboxPlaylistEdit,
   SourceNode,
@@ -39,12 +40,22 @@ export const SOURCE_READ: Record<DjProgram, SourceRead> = {
   serato: sourceRead('serato', { collection: true }),
 }
 
-export type EditMessagePrefix = 'sources.edit.' | 'sources.editTraktor.' | 'sources.editSerato.'
+export type EditMessagePrefix =
+  | 'sources.edit.'
+  | 'sources.editTraktor.'
+  | 'sources.editSerato.'
+  | 'sources.editEngine.'
 
 export interface SourceEdit {
-  save(edit: RekordboxPlaylistEdit, label?: string): Promise<RekordboxEditResult>
+  save(
+    edit: RekordboxPlaylistEdit,
+    label?: string,
+    mode?: PlaylistEditMode,
+  ): Promise<RekordboxEditResult>
   messagePrefix: EditMessagePrefix
   gate: 'none' | 'traktorCollection'
+  kinds?: ReadonlySet<RekordboxPlaylistEdit['kind']>
+  folders?: false
 }
 
 export type FixedNode = 'locked' | 'tracks-only' | null
@@ -70,7 +81,7 @@ export const SOURCE_PROGRAMS: {
   rekordbox: {
     separator: () => window.api.dj.hasSeparator('rekordbox'),
     edit: {
-      save: (edit, label) => window.api.dj.editPlaylist('rekordbox', edit, label),
+      save: (...args) => window.api.dj.editPlaylist('rekordbox', ...args),
       messagePrefix: 'sources.edit.',
       gate: 'none',
     },
@@ -88,7 +99,7 @@ export const SOURCE_PROGRAMS: {
   traktor: {
     separator: () => window.api.dj.hasSeparator('traktor'),
     edit: {
-      save: (edit, label) => window.api.dj.editPlaylist('traktor', edit, label),
+      save: (...args) => window.api.dj.editPlaylist('traktor', ...args),
       messagePrefix: 'sources.editTraktor.',
       gate: 'traktorCollection',
     },
@@ -110,7 +121,13 @@ export const SOURCE_PROGRAMS: {
   },
   engine: {
     separator: null,
-    edit: null,
+    edit: {
+      save: (...args) => window.api.dj.editPlaylist('engine', ...args),
+      messagePrefix: 'sources.editEngine.',
+      gate: 'none',
+      kinds: new Set(['create', 'add', 'delete']),
+      folders: false,
+    },
     fixedNode: null,
     usb: true,
     missingLibraryCheck: true,
@@ -119,13 +136,13 @@ export const SOURCE_PROGRAMS: {
     addsUncollected: false,
     fieldTestIdPrefix: 'engine-',
     membershipKey: 'engine-membership',
-    invalidatesOnEdit: false,
+    invalidatesOnEdit: true,
     crates: false,
   },
   serato: {
     separator: null,
     edit: {
-      save: (edit, label) => window.api.dj.editPlaylist('serato', edit, label),
+      save: (...args) => window.api.dj.editPlaylist('serato', ...args),
       messagePrefix: 'sources.editSerato.',
       gate: 'none',
     },

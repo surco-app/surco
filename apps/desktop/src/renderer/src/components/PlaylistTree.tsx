@@ -231,12 +231,6 @@ export function PlaylistTree({
         >
           <Chevron size={12} className="shrink-0 text-fg-faint" aria-hidden="true" />
           <span className="min-w-0 flex-1 truncate font-medium">{row.node.name}</span>
-          <span
-            data-testid={`playlists-folder-count-${row.node.id}`}
-            className="shrink-0 text-[11px] tabular-nums text-fg-faint"
-          >
-            {k > 0 ? tr('editor.playlists.ofTotal', { chosen: k, total: ids.length }) : ids.length}
-          </span>
         </button>
       )
       if (!folderControl) return toggler

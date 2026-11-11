@@ -526,7 +526,6 @@ export function QualityFilterBar({
           testid="quality-filter"
           sections={sections(close)}
           sectionsLabel={tr('sidebar.filter.label')}
-          shown={tr('sidebar.filter.shown', { visible: visibleCount, total: trackCount })}
           clearLabel={tr('sidebar.filter.clear')}
           canClear={activeChips.length > 0}
           onClear={() => clearAll(close)}

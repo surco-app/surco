@@ -18,6 +18,13 @@ describe('editResultOfOutcome', () => {
     })
   })
 
+  it('answers a create that carried tracks with both the new playlist and its report, so the caller can open what it made', () => {
+    const report = { added: 2, already: 0, notInCollection: 1, ambiguous: 0 }
+    expect(
+      editResultOfOutcome({ id: 'e', applied: true, createdId: '7', report, notices: [] }),
+    ).toEqual({ applied: true, createdId: '7', report })
+  })
+
   it('answers a refused outcome with its reason', () => {
     expect(editResultOfOutcome({ id: 'e', applied: false, reason: 'stale', notices: [] })).toEqual({
       applied: false,

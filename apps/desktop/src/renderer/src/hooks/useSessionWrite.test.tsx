@@ -2,6 +2,7 @@
 import { cleanup, renderHook } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type {
+  PlaylistEditMode,
   PlaylistTrackRef,
   RekordboxEditResult,
   RekordboxPlaylistEdit,
@@ -16,9 +17,14 @@ const tracks: PlaylistTrackRef[] = [
 ]
 
 const applied = (createdId?: string): RekordboxEditResult => ({ applied: true, createdId })
-const refused: RekordboxEditResult = { applied: false, reason: 'rekordbox-running' }
+const queued = (opId: string): RekordboxEditResult => ({ applied: false, queued: true, opId })
+const refused: RekordboxEditResult = { applied: false, reason: 'write-failed' }
 
-type Edit = (edit: RekordboxPlaylistEdit, name: string) => Promise<RekordboxEditResult>
+type Edit = (
+  edit: RekordboxPlaylistEdit,
+  name: string,
+  mode?: PlaylistEditMode,
+) => Promise<RekordboxEditResult>
 
 function setup(script: (edit: RekordboxPlaylistEdit) => RekordboxEditResult) {
   const edit = vi.fn<Edit>(async (e) => script(e))
@@ -36,84 +42,54 @@ describe('useSessionWrite', () => {
   })
 
   describe('create', () => {
-    it('makes the playlist and adds the tracks in session order, then names it', async () => {
-      const { edit, writer } = setup((e) => (e.kind === 'create' ? applied('new') : applied()))
+    it('makes the playlist with its tracks in one edit that may wait for the program to close', async () => {
+      const { edit, writer } = setup(() => applied('new'))
 
-      const id = await writer.create('folder', 'Sesión del 9/11', tracks)
-
-      expect(id).toBe('new')
-      expect(edit.mock.calls[0][0]).toEqual({
-        kind: 'create',
-        parentId: 'folder',
-        name: 'Sesión del 9/11',
-        folder: false,
-      })
-      expect(edit.mock.calls[1][0]).toEqual({ kind: 'add', playlistId: 'new', tracks })
-    })
-
-    it('adds nothing when the playlist could not be created', async () => {
-      const { edit, writer } = setup(() => refused)
-
-      const id = await writer.create('folder', 'S', tracks)
-
-      expect(id).toBeNull()
-      expect(kinds(edit)).toEqual(['create'])
-    })
-
-    it('removes the empty playlist it made when the tracks could not be added', async () => {
-      const { edit, writer } = setup((e) =>
-        e.kind === 'create' ? applied('new') : e.kind === 'add' ? refused : applied(),
+      expect(await writer.create('folder', 'Sesión del 9/11', tracks)).toEqual({ id: 'new' })
+      expect(edit).toHaveBeenCalledExactlyOnceWith(
+        { kind: 'create', parentId: 'folder', name: 'Sesión del 9/11', folder: false, tracks },
+        'Sesión del 9/11',
+        'queue',
       )
+    })
 
-      const id = await writer.create('folder', 'S', tracks)
+    it('says the playlist waits in the queue while the program is open', async () => {
+      const { writer } = setup(() => queued('op1'))
+      expect(await writer.create('folder', 'S', tracks)).toEqual({ queued: 'op1' })
+    })
 
-      expect(id).toBeNull()
-      expect(kinds(edit)).toEqual(['create', 'add', 'delete'])
-      expect(edit.mock.calls[2][0]).toEqual({ kind: 'delete', playlistId: 'new' })
+    it('says it could not when the program refuses', async () => {
+      const { writer } = setup(() => refused)
+      expect(await writer.create('folder', 'S', tracks)).toBeNull()
     })
   })
 
   describe('replace', () => {
-    it('builds the new playlist first and only then deletes the old one', async () => {
+    it('builds the new playlist first and only then deletes the old one, both able to wait', async () => {
       const { edit, writer } = setup((e) => (e.kind === 'create' ? applied('new') : applied()))
 
-      const id = await writer.replace('folder', 'old', 'Sesión', tracks)
+      expect(await writer.replace('folder', 'old', 'Sesión', tracks)).toEqual({ id: 'new' })
+      expect(kinds(edit)).toEqual(['create', 'delete'])
+      expect(edit.mock.calls[1]).toEqual([{ kind: 'delete', playlistId: 'old' }, 'Sesión', 'queue'])
+    })
 
-      expect(id).toBe('new')
-      expect(kinds(edit)).toEqual(['create', 'add', 'delete'])
-      expect(edit.mock.calls[2][0]).toEqual({ kind: 'delete', playlistId: 'old' })
+    it('queues the delete behind the new playlist when the program is open', async () => {
+      const { edit, writer } = setup((e) => (e.kind === 'create' ? queued('op1') : queued('op2')))
+
+      expect(await writer.replace('folder', 'old', 'Sesión', tracks)).toEqual({ queued: 'op1' })
+      expect(kinds(edit)).toEqual(['create', 'delete'])
     })
 
     it('leaves the old playlist alone when the new one cannot be created', async () => {
       const { edit, writer } = setup(() => refused)
 
-      const id = await writer.replace('folder', 'old', 'Sesión', tracks)
-
-      expect(id).toBeNull()
-      expect(edit.mock.calls.some(([e]) => e.kind === 'delete')).toBe(false)
-    })
-
-    it('leaves the old playlist alone when the new one cannot be filled', async () => {
-      const { edit, writer } = setup((e) =>
-        e.kind === 'create' ? applied('new') : e.kind === 'add' ? refused : applied(),
-      )
-
-      const id = await writer.replace('folder', 'old', 'Sesión', tracks)
-
-      expect(id).toBeNull()
-      const deleted = edit.mock.calls
-        .map(([e]) => e)
-        .filter((e) => e.kind === 'delete')
-        .map((e) => (e.kind === 'delete' ? e.playlistId : ''))
-      expect(deleted).toEqual(['new'])
+      expect(await writer.replace('folder', 'old', 'Sesión', tracks)).toBeNull()
+      expect(kinds(edit)).toEqual(['create'])
     })
 
     it('still hands over the new playlist when the old one could not be deleted', async () => {
-      const { writer } = setup((e) =>
-        e.kind === 'create' ? applied('new') : e.kind === 'delete' ? refused : applied(),
-      )
-
-      expect(await writer.replace('folder', 'old', 'Sesión', tracks)).toBe('new')
+      const { writer } = setup((e) => (e.kind === 'create' ? applied('new') : refused))
+      expect(await writer.replace('folder', 'old', 'Sesión', tracks)).toEqual({ id: 'new' })
     })
   })
 
@@ -121,19 +97,23 @@ describe('useSessionWrite', () => {
     it('adds the tracks in session order to the playlist that already exists, and creates nothing', async () => {
       const { edit, writer } = setup(() => applied())
 
-      const filled = await writer.fill('empty', 'Session 11-9', tracks)
-
-      expect(filled).toBe(true)
+      expect(await writer.fill('empty', 'Session 11-9', tracks)).toBe('written')
       expect(edit).toHaveBeenCalledExactlyOnceWith(
         { kind: 'add', playlistId: 'empty', tracks },
         'Session 11-9',
+        'queue',
       )
+    })
+
+    it('says the tracks wait in the queue while the program is open', async () => {
+      const { writer } = setup(() => queued('op1'))
+      expect(await writer.fill('empty', 'Session 11-9', tracks)).toBe('queued')
     })
 
     it('says it could not when the program refuses, and never deletes the playlist', async () => {
       const { edit, writer } = setup(() => refused)
 
-      expect(await writer.fill('empty', 'Session 11-9', tracks)).toBe(false)
+      expect(await writer.fill('empty', 'Session 11-9', tracks)).toBe('refused')
       expect(kinds(edit)).toEqual(['add'])
     })
   })

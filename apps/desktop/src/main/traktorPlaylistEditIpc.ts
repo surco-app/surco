@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { BrowserWindow, type WebContents } from 'electron'
 import type { DjEditMain } from '../shared/djApi'
-import type { RekordboxEditResult, RekordboxPlaylistEdit } from '../shared/types'
+import type { PlaylistEditMode, RekordboxEditResult, RekordboxPlaylistEdit } from '../shared/types'
 import { serialLibraryFlush } from './libraryTagSync'
 import { type QueueApply, type RekordboxQueue, withoutOp } from './rekordboxQueue'
 import { type EditOp, editResultOfOutcome } from './rekordboxQueueOps'
@@ -17,6 +17,7 @@ export function traktorEdit(host: {
   collection: () => string
   queue: Pick<RekordboxQueue, 'apply' | 'drop'> & { enqueue: (ops: EditOp[]) => void }
   ensureClosed: (win: BrowserWindow | null) => Promise<boolean>
+  isRunning: () => Promise<boolean>
   onApplied?: (result: QueueApply) => void
   onWaiting?: () => void
   beginLoose?: (collectionPath: string) => void
@@ -26,7 +27,12 @@ export function traktorEdit(host: {
       const path = host.collection()
       return path !== '' && traktorSeparatorKey(readFileSync(path, 'utf8')) !== null
     },
-    save: (edit: RekordboxPlaylistEdit, label: string | undefined, sender: WebContents) =>
+    save: (
+      edit: RekordboxPlaylistEdit,
+      label: string | undefined,
+      sender: WebContents,
+      mode: PlaylistEditMode = 'ask',
+    ) =>
       serialLibraryFlush(async (): Promise<RekordboxEditResult> => {
         const path = host.collection()
         if (!path) return { applied: false, reason: 'unreadable' }
@@ -50,16 +56,20 @@ export function traktorEdit(host: {
         }
         host.queue.enqueue([op])
         host.beginLoose?.(path)
-        const result = await host.queue.apply(() =>
-          host.ensureClosed(BrowserWindow.fromWebContents(sender)),
+        const result = await host.queue.apply(
+          mode === 'queue'
+            ? async () => !(await host.isRunning())
+            : () => host.ensureClosed(BrowserWindow.fromWebContents(sender)),
         )
         if (result.status === 'applied') {
           const others = withoutOp(result, op.id)
           if (others.tracks > 0 || others.changes > 0 || others.notices.length > 0)
             host.onApplied?.(others)
         }
-        if (stillWaiting(result)) host.onWaiting?.()
-        else if (result.status === 'refused') host.queue.drop(op.id)
+        if (stillWaiting(result)) {
+          host.onWaiting?.()
+          if (mode === 'queue') return { applied: false, queued: true, opId: op.id }
+        } else if (result.status === 'refused') host.queue.drop(op.id)
         if (result.status === 'refused') return { applied: false, reason: result.reason }
         const outcome =
           result.status === 'applied' ? result.outcomes.find((o) => o.id === op.id) : undefined

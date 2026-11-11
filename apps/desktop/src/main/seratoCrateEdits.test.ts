@@ -48,6 +48,27 @@ describe('creating a crate', () => {
     expect(crateTrackPaths(readFileSync(crateFileOf(roots[0], 'A%%Sub')))).toEqual([])
   })
 
+  it('creates a crate already holding its tracks, so a queued session never lands empty', async () => {
+    const { base, roots, deps } = twoRoots({ internal: [] })
+    const a = join(base, 'home', 'dj', 'a.mp3')
+    const b = join(base, 'home', 'dj', 'b.mp3')
+    onDisk(a)
+    onDisk(b)
+    const outcome = await apply(roots, deps, {
+      ...create('root', 'Sesion'),
+      tracks: [{ paths: [a] }, { paths: [b] }, { paths: [join(base, 'nowhere.mp3')] }],
+    } as RekordboxPlaylistEdit)
+    expect(outcome).toMatchObject({
+      applied: true,
+      createdId: 'Sesion',
+      report: { added: 2, notInCollection: 1 },
+    })
+    expect(crateTrackPaths(readFileSync(crateFileOf(roots[0], 'Sesion')))).toEqual([
+      a.slice(1),
+      b.slice(1),
+    ])
+  })
+
   it('creates a root crate on the first library when there is no internal one', async () => {
     const { roots, deps } = twoRoots({ gig: ['A'] })
     const gigOnly = { ...deps, roots: () => [roots[1]] }

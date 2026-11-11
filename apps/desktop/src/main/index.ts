@@ -128,6 +128,7 @@ import { engineCueQueueSection } from './engineCueQueueIpc'
 import { engineCueSource } from './engineCueSource'
 import { applyEngineCuesBatch } from './engineCuesWrite'
 import { addToEngineLibrary, dumpEngineLibrary, withEngineDatabase } from './engineLibrary'
+import { engineEdit } from './enginePlaylistEditIpc'
 import { engineDatabasePath } from './enginePlaylists'
 import { engineRead } from './enginePlaylistsIpc'
 import { engineSizeFollower } from './engineSizeFollow'
@@ -1404,6 +1405,7 @@ function registerIpc(): void {
       read: rekordboxRead(rekordboxCollectionNow, rekordboxCollectionPath, { allowMedia }),
       edit: rekordboxEdit(rekordboxCollectionNow, {
         ensureClosed: (win) => ensureClosed('rekordbox', win, 'playlists'),
+        isRunning: DJ_PROCESSES.rekordbox.isRunning,
         queue: rekordboxQueue,
         onApplied: announceApplied,
         onWaiting: rekordboxQueueWatch.poke,
@@ -1423,6 +1425,15 @@ function registerIpc(): void {
         artDir: () => join(app.getPath('userData'), 'engine-artwork'),
         allowMedia,
       }),
+      edit: engineEdit({
+        libraryDir: engineLibraryPath,
+        queue: engineCueQueue,
+        isRunning: DJ_PROCESSES.engine.isRunning,
+        ensureClosed: (win) => ensureClosed('engine', win, 'playlists'),
+        onApplied: programQueues.engine.announceApplied,
+        onWaiting: engineCueQueueWatch.poke,
+        beginLoose: moments.beginLoose,
+      }),
       cueQueue: engineCueQueueSection(engineCueQueue, {
         ensureClosed: (win) => ensureClosed('engine', win, 'cues'),
         onWaiting: engineCueQueueWatch.poke,
@@ -1438,6 +1449,7 @@ function registerIpc(): void {
         collection: traktorWritePath,
         queue: traktorCueQueue,
         ensureClosed: (win) => ensureClosed('traktor', win, 'playlists'),
+        isRunning: DJ_PROCESSES.traktor.isRunning,
         onApplied: announceTraktorApplied,
         onWaiting: traktorCueQueueWatch.poke,
         beginLoose: moments.beginLoose,

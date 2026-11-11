@@ -42,16 +42,21 @@ function setup(over: Partial<ProgramReads> = {}, apiOver: Partial<Api> = {}) {
   const notify = vi.fn()
   const onDiscarded = vi.fn()
   const onWritten = vi.fn()
+  const onCreated = vi.fn()
   const wrapper = ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={client}>{children}</QueryClientProvider>
   )
-  const hook = renderHook(() => useRekordboxQueue(notify, onDiscarded, onWritten), { wrapper })
+  const hook = renderHook(
+    () => useRekordboxQueue(notify, onDiscarded, onWritten, undefined, onCreated),
+    { wrapper },
+  )
   return {
     hook,
     api,
     notify,
     onDiscarded,
     onWritten,
+    onCreated,
     invalidate,
     changed: (s: RekordboxQueueState) => changed(s),
     applied: (a: RekordboxQueueApplied) => applied(a),
@@ -120,6 +125,13 @@ describe('useRekordboxQueue', () => {
     const written = [{ path: '/m/a.wav', wanted: [{ name: 'Surco prueba A' }] }]
     act(() => applied({ tracks: 1, changes: 0, notices: [], written }))
     expect(onWritten).toHaveBeenCalledWith(written)
+  })
+
+  it('hands back the playlists a queued create made, so a session waiting on one can open it', async () => {
+    const { onCreated, applied } = setup()
+    const created = [{ opId: 'op1', createdId: '9001' }]
+    act(() => applied({ tracks: 0, changes: 1, notices: [], written: [], created }))
+    expect(onCreated).toHaveBeenCalledWith(created)
   })
 
   it('hands back the discarded tracks so their edits go back to rekordbox', async () => {

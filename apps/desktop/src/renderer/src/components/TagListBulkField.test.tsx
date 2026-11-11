@@ -149,12 +149,16 @@ describe('TagListBulkField', () => {
 
   // WHY: four tracks already cost a third of the column in chips; a twelve-cut release
   // would push every field below out of sight. The summary row stays put and says how
-  // many tags differ, and the per-track rows open only when the user asks.
+  // many tags differ, and the per-track rows open only when the user asks. The editor
+  // title already counts the tracks, so the toggle does not count them again.
   it('starts folded, with the summary row visible and a count of the tags that vary', () => {
     renderField()
     expect(screen.getByTestId('chip-Cantaditas')).toBeInTheDocument()
     expect(screen.queryByTestId('grouping-track-a1')).toBeNull()
     expect(screen.getByTestId('grouping-per-track-toggle')).toHaveTextContent(
+      'editor.groupingPerTrack',
+    )
+    expect(screen.getByTestId('grouping-per-track-toggle')).not.toHaveTextContent(
       'editor.groupingPerTrack:3',
     )
     expect(screen.getByTestId('grouping-per-track-toggle')).toHaveTextContent(

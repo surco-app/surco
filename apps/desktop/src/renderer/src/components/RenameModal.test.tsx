@@ -74,6 +74,11 @@ describe('RenameModal', () => {
     expect(screen.getByRole('dialog')).toHaveAccessibleName()
   })
 
+  it('lets the title and the token groups explain the dialog without a subtitle restating them', () => {
+    renderModal()
+    expect(screen.queryByText(/Combine text and metadata/)).toBeNull()
+  })
+
   // The pattern field is the whole dialog; with only a placeholder a screen reader
   // announced a bare "edit text" and the placeholder vanished as soon as it was typed in.
   it('names the format field for assistive tech', () => {

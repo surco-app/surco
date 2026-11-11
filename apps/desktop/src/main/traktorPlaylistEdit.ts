@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto'
 import { statSync } from 'node:fs'
 import { TRAKTOR_BUILT_IN, TRAKTOR_HISTORY, traktorKey } from '../shared/traktorContent'
-import type { PlaylistAddReport, RekordboxEditRefusal } from '../shared/types'
+import type { PlaylistAddReport, PlaylistTrackRef, RekordboxEditRefusal } from '../shared/types'
 import type { RekordboxMeta } from './rekordboxMetadata'
 import { type EditOp, type OpOutcome, opRank, type TrackOp } from './rekordboxQueueOps'
 import { attr, escapeAttr, withAttr } from './traktorNml'
@@ -107,6 +107,28 @@ interface Sources {
   eol: string
 }
 
+function resolveKeys(
+  tracks: readonly PlaylistTrackRef[],
+  rows: readonly { key: string }[],
+  src: Sources,
+): { keys: string[]; report: PlaylistAddReport } {
+  const report: PlaylistAddReport = { added: 0, already: 0, notInCollection: 0, ambiguous: 0 }
+  const present = new Set(rows.map((r) => r.key))
+  const keys: string[] = []
+  for (const t of tracks) {
+    const byId = t.contentId ? traktorKey(t.contentId) : null
+    const found =
+      byId && src.index.keys.has(byId)
+        ? [byId]
+        : [...new Set(t.paths.flatMap((p) => src.index.byPath.get(p.normalize('NFC')) ?? []))]
+    if (found.length > 1) report.ambiguous++
+    else if (found.length === 0) report.notInCollection++
+    else if (present.has(found[0]) || keys.includes(found[0])) report.already++
+    else keys.push(found[0])
+  }
+  return { keys, report }
+}
+
 function apply(r: Resolved, src: Sources): OpOutcome {
   const { op } = r
   const node = r.node as ModelNode
@@ -131,7 +153,11 @@ function apply(r: Resolved, src: Sources): OpOutcome {
     const child = newNode(node, name, edit.folder)
     node.children.push(child)
     node.dirty = true
-    return done(edit.folder ? {} : { createdId: child.uuid })
+    if (edit.folder) return done()
+    if (!edit.tracks) return done({ createdId: child.uuid })
+    const { keys, report } = resolveKeys(edit.tracks, child.rows, src)
+    child.rows.push(...keys.map((key) => ({ key, text: rowText(key, src.eol) })))
+    return done({ createdId: child.uuid, report: { ...report, added: keys.length } })
   }
   if (edit.kind === 'rename') {
     const name = edit.name.trim()
@@ -169,20 +195,7 @@ function apply(r: Resolved, src: Sources): OpOutcome {
   }
   if (!playlist) return refused('stale')
   if (edit.kind === 'add') {
-    const report: PlaylistAddReport = { added: 0, already: 0, notInCollection: 0, ambiguous: 0 }
-    const present = new Set(node.rows.map((r) => r.key))
-    const keys: string[] = []
-    for (const t of edit.tracks) {
-      const byId = t.contentId ? traktorKey(t.contentId) : null
-      const found =
-        byId && src.index.keys.has(byId)
-          ? [byId]
-          : [...new Set(t.paths.flatMap((p) => src.index.byPath.get(p.normalize('NFC')) ?? []))]
-      if (found.length > 1) report.ambiguous++
-      else if (found.length === 0) report.notInCollection++
-      else if (present.has(found[0]) || keys.includes(found[0])) report.already++
-      else keys.push(found[0])
-    }
+    const { keys, report } = resolveKeys(edit.tracks, node.rows, src)
     if (keys.length === 0) return refused('nothing-to-add', report)
     node.rows.push(...keys.map((key) => ({ key, text: rowText(key, src.eol) })))
     node.dirty = true

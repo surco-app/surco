@@ -53,9 +53,8 @@ export function SessionBand({
         className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-fg-dim"
       >
         <b className="font-semibold text-fg tabular-nums">{clock(summary.secs)}</b>
-        <span>{tr('sessions.band.tracks', { count: summary.tracks })}</span>
-        <span>{tr('sessions.band.combos', { count: summary.combos })}</span>
-        <span>{tr('sessions.band.fresh', { count: summary.fresh })}</span>
+        {summary.combos > 0 && <span>{tr('sessions.band.combos', { count: summary.combos })}</span>}
+        {summary.fresh > 0 && <span>{tr('sessions.band.fresh', { count: summary.fresh })}</span>}
         {summary.withKey > 0 && (
           <span>
             {tr('sessions.band.harmonic', {

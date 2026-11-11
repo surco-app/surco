@@ -576,9 +576,12 @@ describe('DiscogsPanel stable results', () => {
     { provider: 'deezer', id: 5, title: 'Javier Fig - Other' },
   ] as unknown as DiscogsBrowser['results']
 
-  it('says how many catalogs answered while the list waits for them', () => {
+  // The divider above already fills as the catalogs answer, so a written count on top of
+  // the skeleton would only say it twice.
+  it('waits on skeleton rows alone, leaving the count to the divider', () => {
     renderPanel(browser({ query: 'x', busy: true, searchProgress: { answered: 2, total: 5 } }))
-    expect(screen.getByTestId('discogs-progress')).toHaveTextContent('2 of 5 sources answered')
+    expect(screen.queryByTestId('discogs-progress')).toBeNull()
+    expect(screen.queryByText('2 of 5 sources answered')).toBeNull()
     expect(screen.getByTestId('discogs-skeleton')).toBeInTheDocument()
   })
 

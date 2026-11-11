@@ -2,6 +2,7 @@ import type { WebContents } from 'electron'
 import type { DjProgram } from './djProgram'
 import type {
   CollectionTrack,
+  PlaylistEditMode,
   RekordboxEditResult,
   RekordboxPlaylistEdit,
   RekordboxQueueApplied,
@@ -27,6 +28,7 @@ export interface DjEditMain {
     edit: RekordboxPlaylistEdit,
     label: string | undefined,
     sender: WebContents,
+    mode?: PlaylistEditMode,
   ): Promise<RekordboxEditResult>
   hasSeparator?(): Awaitable<boolean>
 }
@@ -63,6 +65,7 @@ export interface DjApi {
     p: DjProgram,
     edit: RekordboxPlaylistEdit,
     label?: string,
+    mode?: PlaylistEditMode,
   ): Promise<RekordboxEditResult>
   hasSeparator(p: DjProgram): Promise<boolean>
   cueQueue(p: DjProgram): Promise<RekordboxQueueState>

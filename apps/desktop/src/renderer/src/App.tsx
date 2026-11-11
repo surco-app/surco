@@ -50,6 +50,8 @@ import type {
   NormalizeConfig,
   PlaylistSource,
   PlaylistTrackRef,
+  QueuedCreate,
+  RekordboxPlaylistEdit,
   RekordboxQueueState,
   RekordboxQueueWritten,
   RekordboxSyncIssue,
@@ -125,7 +127,7 @@ import { PROGRAM_QUEUES, useRekordboxQueue } from './hooks/useRekordboxQueue'
 import { useRetireSuperseded } from './hooks/useRetireSuperseded'
 import { useSessionPersistence } from './hooks/useSessionPersistence'
 import { useSessionRows } from './hooks/useSessionRows'
-import { type BuildResult, type FillTarget, useSessionRun } from './hooks/useSessionRun'
+import { type FillTarget, useSessionRun } from './hooks/useSessionRun'
 import { useSessionWrite } from './hooks/useSessionWrite'
 import { useSettings } from './hooks/useSettings'
 import { useSourceBrowser } from './hooks/useSourceBrowser'
@@ -142,7 +144,7 @@ import { nextLocale } from './i18n/locale'
 import { removeAnalysisQueries, seedCachedAnalyses } from './lib/analysisQueries'
 import type { AppleMusicIndex } from './lib/appleMusicLibrary'
 import { type AppError, type AppStore, createAppStore, useAppStore } from './lib/appStore'
-import { activeCleanups, cleanupPatcher, planAutoClean } from './lib/autoClean'
+import { cleanupPatcher, planAutoClean } from './lib/autoClean'
 import {
   acceptReviewOf,
   acceptReviewPatch,
@@ -860,6 +862,8 @@ export default function App(): React.JSX.Element {
     saveSettings({ foldedResults: { ...settings?.foldedResults, [resultsTab]: folded } }),
   )
   const sourceEdit = sourceProgram && SOURCE_PROGRAMS[sourceProgram].edit
+  const editCan = (kind: RekordboxPlaylistEdit['kind']): boolean =>
+    !sourceEdit?.kinds || sourceEdit.kinds.has(kind)
   const traktorCanSave =
     useQuery({
       queryKey: ['traktor-can-save', settings?.traktorNmlPath ?? ''],
@@ -875,11 +879,15 @@ export default function App(): React.JSX.Element {
   const dropWrittenPlaylists = useStableCallback((written: RekordboxQueueWritten[]) =>
     setTracks((prev) => clearWrittenPlaylists(prev, written)),
   )
+  const noteSessionCreated = useStableCallback((created: QueuedCreate[]) =>
+    sessionRun.noteCreated(created),
+  )
   const rekordboxQueue = useRekordboxQueue(
     notifyEdit,
     dropDiscardedPlaylists,
     dropWrittenPlaylists,
     PROGRAM_QUEUES.rekordbox.source,
+    noteSessionCreated,
   )
   const { applyNow: applyQueueNow, discard: discardQueue } = rekordboxQueue
   const dropDiscardedEngine = useStableCallback((paths: string[]) =>
@@ -893,6 +901,7 @@ export default function App(): React.JSX.Element {
     dropDiscardedEngine,
     dropWrittenEngine,
     PROGRAM_QUEUES.engine.source,
+    noteSessionCreated,
   )
   const { applyNow: applyEngineQueueNow, discard: discardEngineQueue } = engineCueQueue
   const dropDiscardedTraktor = useStableCallback((paths: string[]) =>
@@ -906,6 +915,7 @@ export default function App(): React.JSX.Element {
     dropDiscardedTraktor,
     dropWrittenTraktor,
     PROGRAM_QUEUES.traktor.source,
+    noteSessionCreated,
   )
   const { applyNow: applyTraktorQueueNow, discard: discardTraktorQueue } = traktorCueQueue
   const dropDiscardedSerato = useStableCallback((paths: string[]) =>
@@ -919,6 +929,7 @@ export default function App(): React.JSX.Element {
     dropDiscardedSerato,
     dropWrittenSerato,
     PROGRAM_QUEUES.serato.source,
+    noteSessionCreated,
   )
   const { applyNow: applySeratoQueueNow, discard: discardSeratoQueue } = seratoCueQueue
   const queuePill = useMemo(() => {
@@ -1098,7 +1109,6 @@ export default function App(): React.JSX.Element {
   const sessionRows = useSessionRows(sessionProgram ?? 'rekordbox')
   const sessionWriter = useSessionWrite(editRekordboxRaw)
   const sessionRun = useSessionRun({
-    canWrite: async () => !(await window.api.djAppRunning()),
     rows: sessionRows,
     writer: sessionWriter,
     namesIn: (parentId) => childNames(browser.tree, parentId),
@@ -1115,9 +1125,6 @@ export default function App(): React.JSX.Element {
       if (settings)
         saveSettings({ sessionsMade: withSessionMade(settings.sessionsMade, playlistId) })
     },
-  })
-  const reportSession = useStableCallback(async (pending: Promise<BuildResult>): Promise<void> => {
-    if ((await pending) === 'closed') notifyEdit(tr('sessions.closed'), 'danger')
   })
   const editRekordbox = useStableCallback(
     async (edit: Parameters<typeof editRekordboxRaw>[0], name: string) => {
@@ -2892,17 +2899,21 @@ export default function App(): React.JSX.Element {
         browser.selectPlaylist({ ...node, id: movedCrateId(node.id, parentId) }, folders)
     },
   )
+  const canRename = editCan('rename')
+  const canMoveNode = editCan('moveNode')
+  const noFolders = sourceEdit?.folders === false
   const treeEdit = useMemo(
     () => ({
       onCreate: createInRekordbox,
       onDropTracks: dropOnRekordbox,
-      onRename: renameInRekordbox,
+      ...(canRename && { onRename: renameInRekordbox }),
       onDelete: deleteInRekordbox,
       onPasteTracklist: openPasteTracklist,
       onSession: (node: SourceNode) => openSessionAt(node.id),
       onFill: openSessionFill,
-      onMove: moveInTree,
+      ...(canMoveNode && { onMove: moveInTree }),
       ...(sourceProgram && SOURCE_PROGRAMS[sourceProgram].crates && { crates: true as const }),
+      ...(noFolders && { folders: false as const }),
     }),
     [
       createInRekordbox,
@@ -2914,6 +2925,9 @@ export default function App(): React.JSX.Element {
       openSessionFill,
       moveInTree,
       sourceProgram,
+      canRename,
+      canMoveNode,
+      noFolders,
     ],
   )
   // Read at drop time, so a re-read landing mid-drag still names the dragged rows. A track
@@ -2941,7 +2955,8 @@ export default function App(): React.JSX.Element {
     )
   })
   const removeSeparator = useStableCallback((key: string) => removeFromRekordbox([key]))
-  const removablePlaylist = editableSource && crateOpen ? browser.playlist : null
+  const removablePlaylist =
+    editableSource && crateOpen && editCan('remove') ? browser.playlist : null
   // The DJ's playlist has no undo in Surco: one row goes in one click, as the list's own
   // remove does, and several ask first, naming the playlist they leave.
   const removeFromPlaylist = (targets: TrackItem[]): void => {
@@ -2968,7 +2983,8 @@ export default function App(): React.JSX.Element {
   )
   // Reordering only means something in the playlist's own order with nothing hidden: under
   // another sort, a search or a filter, a drop would land among rows the user cannot see.
-  const reorderEnabled = crateOpen && sortBy === 'import' && !search && !filterActive
+  const reorderEnabled =
+    crateOpen && sortBy === 'import' && !search && !filterActive && editCan('move')
   const reorder = useMemo(
     () =>
       reorderEnabled ? { onMove: moveInRekordbox, onRemoveSeparator: removeSeparator } : undefined,
@@ -2988,8 +3004,8 @@ export default function App(): React.JSX.Element {
           h.node.id !== ALL_TRACKS_ID &&
           fixed?.(h.node) !== 'locked',
       ),
-      openName: crateOpen && playlist ? playlist.name : null,
-      canInsertSeparator: browser.canInsertSeparator,
+      openName: crateOpen && playlist && editCan('remove') ? playlist.name : null,
+      canInsertSeparator: browser.canInsertSeparator && editCan('insertSeparator'),
       onAddTo: (node) => addToRekordbox(node, menuTargets(track.id)),
       onInsertSeparator: () => {
         const beforeLinkId = playlistScope?.linkOf.get(track.id)
@@ -3002,7 +3018,9 @@ export default function App(): React.JSX.Element {
       // Only where separators are drawn (the playlist's own order): under another sort the
       // one "above" is neither on screen nor above the row as shown.
       onRemoveSeparatorAbove:
-        sortBy === 'import' && playlistScope?.separatorBefore.get(track.id)?.length
+        sortBy === 'import' &&
+        editCan('remove') &&
+        playlistScope?.separatorBefore.get(track.id)?.length
           ? () => {
               const above = playlistScope.separatorBefore.get(track.id)
               if (above?.length) removeSeparator(above[above.length - 1])
@@ -3456,10 +3474,6 @@ export default function App(): React.JSX.Element {
         true,
       )
   })
-  const cleanedCount = useMemo(
-    () => tracks.filter((t) => activeCleanups(t).length > 0).length,
-    [tracks],
-  )
   const { watchLoad, onPathsAdded: noticeOnPathsAdded } = useListReviewNotice({
     store,
     tr,
@@ -3616,7 +3630,6 @@ export default function App(): React.JSX.Element {
                   analysisSlowed={analysisSlowed}
                   allAnalyzed={allAnalyzed}
                   matching={matching}
-                  cleanedCount={cleanedCount}
                   canAutoMatch={!!settings && autoMatchAvailable(settings)}
                   needsToken={needsToken}
                   tokenMissing={tokenMissing}
@@ -3843,7 +3856,7 @@ export default function App(): React.JSX.Element {
                                 busy={sessionRun.busy}
                                 playMinutes={sessionRun.recent.answers.playMinutes}
                                 preferCombos={sessionRun.recent.answers.preferCombos}
-                                onRedo={() => void reportSession(sessionRun.redo())}
+                                onRedo={() => void sessionRun.redo()}
                                 onAdjust={openSessionAdjust}
                                 onKeep={() => {
                                   sessionRun.keep()
@@ -4220,7 +4233,7 @@ export default function App(): React.JSX.Element {
                             roles,
                             sessionWizard.start?.path,
                           )
-                    if (result === 'built') setSessionWizard(null)
+                    if (result === 'built' || result === 'queued') setSessionWizard(null)
                     return result
                   }}
                 />

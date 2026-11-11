@@ -258,9 +258,13 @@ describe('DeclickSection', () => {
   // open this control is not the anchor track's setting — it is all of them. Hiding the
   // waveform was the only thing that changed, which left the control looking exactly as
   // it does for a single track.
-  it('says how many tracks the setting will apply to', () => {
+  // The editor title already says "Editing 40 tracks", so the scope line names the
+  // selection without counting it a second time.
+  it('says the setting applies to the whole selection without repeating its count', () => {
     render(section({ selectedCount: 40 }))
-    expect(screen.getByTestId('declick-scope')).toHaveTextContent('40')
+    expect(screen.getByTestId('declick-scope')).toHaveTextContent(
+      'This setting applies to all selected tracks.',
+    )
   })
 
   it('says nothing about scope for a single track', () => {

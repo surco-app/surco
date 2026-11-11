@@ -124,6 +124,28 @@ describe('editRekordboxPlaylist', () => {
     expect(linkIds(path, '3000')).toHaveLength(3)
   })
 
+  it('creates a playlist already holding its tracks in one write, so a queued session never lands empty', async () => {
+    const path = await collection()
+    const d = deps()
+    const result = await editRekordboxPlaylist(
+      path,
+      {
+        ...CREATE,
+        tracks: [
+          { paths: ['/Users/dj/Music/Music/Gowan.wav'] },
+          { paths: ['/Volumes/Public/Music/Ekkah.wav'] },
+          { paths: ['/Volumes/Public/Music/new.wav'] },
+          { paths: ['/Volumes/Public/Music/Play This Song.wav'] },
+        ],
+      },
+      d,
+    )
+    if (!result.applied || !result.createdId) throw new Error(JSON.stringify(result))
+    expect(result.report).toEqual({ added: 2, already: 0, notInCollection: 1, ambiguous: 1 })
+    expect(linkIds(path, result.createdId)).toHaveLength(2)
+    expect(d.ensureClosed).toHaveBeenCalledOnce()
+  })
+
   // Closing rekordbox is a cost to the user; an add that can change nothing must not ask
   // for it, nor leave a backup behind as if something had been written.
   it('asks nothing and writes nothing when none of the tracks can be added', async () => {

@@ -1177,13 +1177,7 @@ export function TrimSection({
         summaryTestId="trim-row-sentence"
         summaryMuted={!value}
         right={
-          value ? (
-            !open ? (
-              <SectionPill tone="accent" testid="trim-active-badge">
-                {`−${cutSeconds(rowStart + rowEnd, i18n.language)}`}
-              </SectionPill>
-            ) : undefined
-          ) : detected && open ? (
+          !value && detected && open ? (
             <SectionPill tone="neutral" testid="trim-detected-pill">
               {detected}
             </SectionPill>

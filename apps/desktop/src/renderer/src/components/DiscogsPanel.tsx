@@ -732,16 +732,8 @@ export const DiscogsPanel = memo(function DiscogsPanel({
           )}
           {busy && listed.length === 0 ? (
             // The list waits for every catalog before it shows, so nothing appears only to
-            // move: skeleton rows mirror the result-row shape, and the count says the wait
-            // is going somewhere.
-            <>
-              {searchProgress && searchProgress.total > 1 && (
-                <p data-testid="discogs-progress" className="px-3 pt-2 text-[11px] text-fg-faint">
-                  {tr('editor.searchProgress', searchProgress)}
-                </p>
-              )}
-              <SkeletonRows testid="discogs-skeleton" count={4} />
-            </>
+            // move: skeleton rows mirror the result-row shape.
+            <SkeletonRows testid="discogs-skeleton" count={4} />
           ) : noResults ? (
             <div
               data-testid="discogs-no-results"

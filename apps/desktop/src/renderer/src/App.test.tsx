@@ -25,6 +25,7 @@ import type {
   ActivityEvent,
   ProgramCopies,
   RekordboxEditResult,
+  RekordboxQueueApplied,
   RekordboxSyncIssue,
   Release,
   RestoreResult,
@@ -630,14 +631,37 @@ describe('App Engine DJ cues', () => {
     await waitFor(() => expect(chips()).toEqual([null, '2 proposals']))
   })
 
-  it('offers no playlist editing in Engine DJ, whose library Surco only reads', async () => {
+  it('offers in Engine DJ only what Surco can write there: new playlists and delete, no folders or rename', async () => {
     openEngine()
     await renderApp()
     fireEvent.click(await screen.findByTestId('source-rail-engine'))
     await screen.findByTestId('source-node-7')
-    expect(screen.queryByTestId('source-tree-new-playlist')).not.toBeInTheDocument()
+    expect(screen.getByTestId('source-tree-new-playlist')).toBeInTheDocument()
+    expect(screen.queryByTestId('source-tree-new-folder')).not.toBeInTheDocument()
     fireEvent.contextMenu(screen.getByTestId('source-node-7'))
-    expect(screen.queryByTestId('source-tree-menu')).not.toBeInTheDocument()
+    expect(screen.getByTestId('source-tree-delete')).toBeInTheDocument()
+    expect(screen.queryByTestId('source-tree-rename')).not.toBeInTheDocument()
+  })
+
+  it('lets an Engine DJ row go to another playlist but never offers removing it from the open one', async () => {
+    openEngine({
+      dj: djReads({
+        engine: {
+          tree: vi.fn<ProgramReads['tree']>().mockResolvedValue([
+            { id: '7', name: 'Friday', kind: 'playlist', count: 2 },
+            { id: '8', name: 'Saturday', kind: 'playlist', count: 0 },
+          ]),
+        },
+      }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-engine'))
+    fireEvent.click(await screen.findByTestId('source-node-7'))
+    const rows = await screen.findAllByTestId('track-row')
+    fireEvent.contextMenu(rows[0])
+    expect(await screen.findByTestId('track-menu-add-to')).toBeInTheDocument()
+    expect(screen.queryByTestId('track-menu-remove-from')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('track-menu-insert-separator')).not.toBeInTheDocument()
   })
 
   it('turns the open Engine DJ tab into the missing-library notice when its database goes, with no USB export from it', async () => {
@@ -2269,8 +2293,8 @@ describe('App source rail', () => {
     expect(screen.getByTestId('source-rail-tracks')).toHaveAttribute('aria-pressed', 'true')
   })
 
-  // The filter's "All" count is the size of the list on screen: inside a playlist that is
-  // its rows, not every track the working list has gathered.
+  // The list's count is the size of the list on screen: inside a playlist that is its rows,
+  // not every track the working list has gathered.
   it('counts the open playlist’s rows in the list header, not the whole working list', async () => {
     rekordboxWithFactory({
       pickFiles: vi.fn().mockResolvedValue(['/m/a.wav', '/m/b.wav']),
@@ -2288,7 +2312,8 @@ describe('App source rail', () => {
     fireEvent.click(await screen.findByTestId('source-node-f'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
 
-    expect(screen.getByTestId('quality-filter-trigger')).toHaveTextContent(/^All1$/)
+    expect(screen.getByTestId('track-position')).toHaveTextContent('‒/1')
+    expect(screen.getByTestId('quality-filter-trigger')).toHaveTextContent(/^All$/)
   })
 
   // A playlist still being read is not an empty result: "No tracks match" there read as
@@ -9743,7 +9768,17 @@ describe('App Copias music files', () => {
   it('shows the retention and size cap the user chose', async () => {
     setApi({
       getSettings: vi.fn().mockResolvedValue(settings({ backupRetentionDays: 3, backupMaxGb: 2 })),
-      trashList: vi.fn().mockResolvedValue([]),
+      trashList: vi.fn().mockResolvedValue([
+        {
+          id: 'e1',
+          name: 'a.wav',
+          originalPath: '/music/a.wav',
+          storedPath: '/ud/trash/items/e1-a.wav',
+          bytes: 1024,
+          trashedAt: Date.now(),
+          reason: 'replaced',
+        },
+      ]),
     })
     await renderApp()
     act(() => menuListener?.('backups'))
@@ -10000,17 +10035,19 @@ describe('App clean-up on load', () => {
     await renderApp()
     await load(2)
     await act(async () => {})
-    expect(screen.queryByTestId('auto-clean-count')).not.toBeInTheDocument()
     expect(screen.queryByTestId('track-cleaned')).not.toBeInTheDocument()
     expect(screen.getByTestId('field-title')).toHaveValue('Alpha  Mix')
   })
 
-  it('stages the clean value, marks the row and counts it, writing nothing', async () => {
+  // The row's spark is the whole signal: a toolbar tally of cleaned rows only repeated what
+  // the marked rows already show, beside controls that do something.
+  it('stages the clean value and marks the row, writing nothing and tallying nothing in the toolbar', async () => {
     vi.resetModules()
     cleanApi({ autoCleanSpacing: true }, spaced)
     await renderApp()
     await load(2)
-    expect(await screen.findByTestId('auto-clean-count')).toHaveTextContent('1 cleaned')
+    await waitFor(() => expect(screen.getAllByTestId('track-cleaned')).toHaveLength(1))
+    expect(screen.queryByTestId('auto-clean-count')).not.toBeInTheDocument()
     const [first, second] = screen.getAllByTestId('track-row')
     expect(within(first).getByTestId('track-cleaned')).toBeInTheDocument()
     expect(within(second).queryByTestId('track-cleaned')).not.toBeInTheDocument()
@@ -10024,12 +10061,12 @@ describe('App clean-up on load', () => {
     await renderApp()
     await load(2)
     expect(await screen.findByTestId('field-cleaned-title')).toHaveTextContent(
-      'Cleaned · joined repeated spaces',
+      'Cleaned joined repeated spaces',
     )
     fireEvent.click(screen.getByTestId('field-cleaned-undo-title'))
     await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Alpha  Mix'))
     expect(screen.queryByTestId('field-cleaned-title')).not.toBeInTheDocument()
-    expect(screen.queryByTestId('auto-clean-count')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('track-cleaned')).not.toBeInTheDocument()
   })
 
   it('writes a name the way most of the list does only when the majority is clear', async () => {
@@ -10045,7 +10082,7 @@ describe('App clean-up on load', () => {
     )
     await renderApp()
     await load(4)
-    expect(await screen.findByTestId('auto-clean-count')).toHaveTextContent('1 cleaned')
+    await waitFor(() => expect(screen.getAllByTestId('track-cleaned')).toHaveLength(1))
     expect(screen.getByTestId('field-artist')).toHaveValue('DJ Lara')
   })
 
@@ -10055,7 +10092,7 @@ describe('App clean-up on load', () => {
     await renderApp()
     await addThree()
     expect(await screen.findByTestId('list-review-notice')).toBeInTheDocument()
-    expect(screen.queryByTestId('auto-clean-count')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('track-cleaned')).not.toBeInTheDocument()
   })
 })
 
@@ -10100,7 +10137,7 @@ describe('App clean-up of a space the read already trimmed', () => {
     await renderApp()
     await load()
     expect(await screen.findByTestId('field-cleaned-title')).toHaveTextContent(
-      'Cleaned · removed a leading space · Undo',
+      'Cleaned removed a leading space · Undo',
     )
     await waitFor(
       () =>
@@ -10459,9 +10496,9 @@ describe('automatic session from the tree', () => {
       fireEvent.click(screen.getByTestId('session-wizard-next'))
       fireEvent.click(await screen.findByTestId('session-wizard-next'))
       fireEvent.click(await screen.findByTestId('session-wizard-build'))
-      await waitFor(() => expect(edit).toHaveBeenCalledTimes(2))
-      const added = edit.mock.calls[1][0] as { tracks: { contentId: string }[] }
-      expect(added.tracks[0].contentId).toBe(String(40 + rows.length - 1))
+      await waitFor(() => expect(edit).toHaveBeenCalledOnce())
+      const made = edit.mock.calls[0][0] as { tracks: { contentId: string }[] }
+      expect(made.tracks[0].contentId).toBe(String(40 + rows.length - 1))
     })
 
     it('offers nothing before a playlist is open', async () => {
@@ -10582,11 +10619,11 @@ describe('automatic session from the tree', () => {
     const edit = openRekordboxTree()
     await toBuild()
     fireEvent.click(screen.getByTestId('session-wizard-build'))
-    await waitFor(() => expect(edit).toHaveBeenCalledTimes(2))
-    expect(edit.mock.calls[0][0]).toMatchObject({ kind: 'create', parentId: 'sets', folder: false })
-    expect(edit.mock.calls[1][0]).toEqual({
-      kind: 'add',
-      playlistId: 'new',
+    await waitFor(() => expect(edit).toHaveBeenCalledOnce())
+    expect(edit.mock.calls[0][0]).toMatchObject({
+      kind: 'create',
+      parentId: 'sets',
+      folder: false,
       tracks: [{ contentId: '41', paths: ['/m/a.wav'] }],
     })
     await waitFor(() =>
@@ -10625,14 +10662,59 @@ describe('automatic session from the tree', () => {
     )
   })
 
-  it('writes nothing and asks to close the program when a DJ program is open', async () => {
-    const edit = openRekordboxTree({
+  it('opens the session once rekordbox closes and the queue writes it, with its band', async () => {
+    let applied: (a: RekordboxQueueApplied) => void = () => {}
+    openRekordboxTree(
+      {
+        dj: djReads({
+          rekordbox: {
+            editPlaylist: vi
+              .fn<ProgramReads['editPlaylist']>()
+              .mockResolvedValue({ applied: false, queued: true, opId: 'op1' }),
+            onCueQueueApplied: (cb) => {
+              applied = cb
+              return () => {}
+            },
+          },
+        }),
+      },
+      [...TREE, { id: 'new', name: 'Session', kind: 'playlist' as const, count: 1 }],
+    )
+    await toBuild()
+    fireEvent.click(screen.getByTestId('session-wizard-build'))
+    await waitFor(() =>
+      expect(screen.queryByTestId('session-wizard-dialog')).not.toBeInTheDocument(),
+    )
+    expect(screen.queryByTestId('session-band')).toBeNull()
+    act(() =>
+      applied({
+        tracks: 0,
+        changes: 1,
+        notices: [],
+        written: [],
+        created: [{ opId: 'op1', createdId: 'new' }],
+      }),
+    )
+    expect(await screen.findByTestId('session-band')).toBeInTheDocument()
+  })
+
+  it('builds while the DJ program is open, sending the session to wait for it to close', async () => {
+    const edit = vi
+      .fn<ProgramReads['editPlaylist']>()
+      .mockResolvedValue({ applied: false, queued: true, opId: 'op1' })
+    openRekordboxTree({
       djAppRunning: vi.fn<Api['djAppRunning']>().mockResolvedValue(true),
+      dj: djReads({ rekordbox: { editPlaylist: edit } }),
     })
     await toBuild()
     fireEvent.click(screen.getByTestId('session-wizard-build'))
-    expect(await screen.findByTestId('session-wizard-closed')).toBeInTheDocument()
-    expect(edit).not.toHaveBeenCalled()
-    expect(screen.getByTestId('session-wizard-dialog')).toBeInTheDocument()
+    await waitFor(() =>
+      expect(screen.queryByTestId('session-wizard-dialog')).not.toBeInTheDocument(),
+    )
+    expect(edit).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: 'create', tracks: expect.any(Array) }),
+      expect.any(String),
+      'queue',
+    )
   })
 })

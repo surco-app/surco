@@ -40,7 +40,6 @@ export function SearchTab({
   return (
     <>
       <SettingsSection first eyebrow={tr('settings.searchProviders')} searchId="searchProviders">
-        <SettingsHint className="-mt-1.5 mb-3">{tr('settings.searchSourcesIntro')}</SettingsHint>
         <SearchProvidersControl
           value={synced.searchProviders}
           onChange={(value) => patch('searchProviders', value)}
@@ -83,7 +82,6 @@ export function SearchTab({
           <SettingsLabel className="mb-2" searchId="discogsFormats">
             {tr('settings.discogsFormats')}
           </SettingsLabel>
-          <SettingsHint className="mb-3">{tr('settings.discogsFormatsHint')}</SettingsHint>
           <div className="flex flex-wrap gap-x-5 gap-y-2" data-testid="settings-discogs-formats">
             {DISCOGS_FORMATS.map((f) => (
               <label

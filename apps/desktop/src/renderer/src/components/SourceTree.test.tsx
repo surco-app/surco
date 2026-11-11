@@ -121,6 +121,33 @@ describe('SourceTree', () => {
     expect(screen.getByTestId('source-tree-menu')).toBeInTheDocument()
   })
 
+  it('offers only what Engine DJ can write: no folder to create and no rename, but delete stays', () => {
+    const edit = {
+      onCreate: vi.fn(),
+      onDropTracks: vi.fn(),
+      onDelete: vi.fn(),
+      folders: false as const,
+    }
+    render(
+      <SourceTree
+        width={236}
+        title="Engine DJ"
+        source="engine"
+        nodes={NODES}
+        failed={false}
+        selectedId={null}
+        onSelect={vi.fn()}
+        edit={edit}
+      />,
+    )
+    expect(screen.getByTestId('source-tree-new-playlist')).toBeInTheDocument()
+    expect(screen.queryByTestId('source-tree-new-folder')).not.toBeInTheDocument()
+    fireEvent.contextMenu(screen.getByTestId('source-node-cant'))
+    expect(screen.queryByTestId('source-tree-new-folder-inside')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('source-tree-rename')).not.toBeInTheDocument()
+    expect(screen.getByTestId('source-tree-delete')).toBeInTheDocument()
+  })
+
   it('takes the width the window layout hands it instead of a fixed one', () => {
     render(
       <SourceTree
@@ -423,13 +450,14 @@ describe('SourceTree organising', () => {
     expect(edit.onCreate).toHaveBeenCalledTimes(1)
   })
 
-  it('lights a playlist under a file drag and says how many will land in it', () => {
+  // The drag itself says the tracks go in on drop; the badge only needs the number.
+  it('lights a playlist under a file drag and shows a bare +count of what will land in it', () => {
     const { edit } = setup(null, true)
     const house = screen.getByTestId('source-node-house')
     const dt = files('a.wav', 'b.wav')
     fireEvent.dragOver(house, { dataTransfer: dt })
     expect(house).toHaveAttribute('data-drop-target')
-    expect(screen.getByTestId('source-drop-count')).toHaveTextContent('+2 on drop')
+    expect(screen.getByTestId('source-drop-count')).toHaveTextContent(/^\+2$/)
     fireEvent.drop(house, { dataTransfer: dt })
     expect(edit.onDropTracks).toHaveBeenCalledWith(NODES[2], dt.files)
     expect(house).not.toHaveAttribute('data-drop-target')
@@ -443,7 +471,7 @@ describe('SourceTree organising', () => {
     const house = screen.getByTestId('source-node-house')
     const dt = fakeDataTransfer()
     fireEvent.dragOver(house, { dataTransfer: dt })
-    expect(screen.getByTestId('source-drop-count')).toHaveTextContent('+3 on drop')
+    expect(screen.getByTestId('source-drop-count')).toHaveTextContent(/^\+3$/)
     fireEvent.drop(house, { dataTransfer: dt })
     expect(edit.onDropTracks).toHaveBeenCalledWith(NODES[2], [])
   })
@@ -467,7 +495,7 @@ describe('SourceTree organising', () => {
     setup(null, true)
     setDraggedRows(['a', 'b', 'c'])
     fireEvent.dragOver(screen.getByTestId('source-node-house'), { dataTransfer: files('x.wav') })
-    expect(screen.getByTestId('source-drop-count')).toHaveTextContent('+1 on drop')
+    expect(screen.getByTestId('source-drop-count')).toHaveTextContent(/^\+1$/)
   })
 
   // A folder holds playlists, not tracks; a drop there must neither write anything nor
@@ -546,7 +574,7 @@ describe('SourceTree organising', () => {
     const dt = files('a.wav', 'b.wav')
     dt.items = [{ kind: 'file' }, { kind: 'file' }, { kind: 'string' }]
     fireEvent.dragOver(house, { dataTransfer: dt })
-    expect(screen.getByTestId('source-drop-count')).toHaveTextContent('+2 on drop')
+    expect(screen.getByTestId('source-drop-count')).toHaveTextContent(/^\+2$/)
   })
 })
 

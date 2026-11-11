@@ -59,6 +59,7 @@ interface MenuStrings {
   engineQuitMessage: string
   engineQuitDetail: string
   engineQuitDetailCues: string
+  engineQuitDetailPlaylists: string
   engineQuitDetailUsb: string
   engineQuitDetailRestore: string
   engineQuitConfirm: string
@@ -165,6 +166,8 @@ const strings: Record<MenuLang, MenuStrings> = {
       'Surco necesita cerrarlo para escribir en su biblioteca. Engine DJ se cerrará de forma segura; puedes volver a abrirlo cuando termine la conversión.',
     engineQuitDetailCues:
       'Surco necesita cerrarlo para guardar los cues en su biblioteca. Engine DJ se cerrará de forma segura y puedes volver a abrirlo enseguida.',
+    engineQuitDetailPlaylists:
+      'Surco necesita cerrarlo para guardar el cambio en tus playlists. Engine DJ se cerrará de forma segura y puedes volver a abrirlo enseguida.',
     engineQuitDetailUsb:
       'Surco necesita cerrarlo para exportar tus playlists al USB. Engine DJ se cerrará de forma segura y puedes volver a abrirlo cuando termine la exportación al USB.',
     engineQuitDetailRestore:
@@ -282,6 +285,8 @@ const strings: Record<MenuLang, MenuStrings> = {
       'Surco needs to close it to write into its library. Engine DJ will quit safely; reopen it once the conversion finishes.',
     engineQuitDetailCues:
       'Surco needs to close it to save the cues into its library. Engine DJ will quit safely, and you can reopen it right away.',
+    engineQuitDetailPlaylists:
+      'Surco needs to close it to save the change to your playlists. Engine DJ will quit safely, and you can reopen it right away.',
     engineQuitDetailUsb:
       'Surco needs to close it to export your playlists to the USB drive. Engine DJ will quit safely and you can reopen it once the export to the USB drive finishes.',
     engineQuitDetailRestore:
@@ -400,6 +405,8 @@ const strings: Record<MenuLang, MenuStrings> = {
       'Surco muss es schließen, um in seine Bibliothek zu schreiben. Engine DJ wird sicher beendet; du kannst es nach der Konvertierung wieder öffnen.',
     engineQuitDetailCues:
       'Surco muss es schließen, um die Cues in seiner Bibliothek zu speichern. Engine DJ wird sicher beendet, und du kannst es gleich wieder öffnen.',
+    engineQuitDetailPlaylists:
+      'Surco muss es schließen, um die Änderung an deinen Playlists zu speichern. Engine DJ wird sicher beendet, und du kannst es gleich wieder öffnen.',
     engineQuitDetailUsb:
       'Surco muss es schließen, um deine Playlists auf den USB-Stick zu exportieren. Engine DJ wird sicher beendet und du kannst es wieder öffnen, sobald der Export auf den USB-Stick fertig ist.',
     engineQuitDetailRestore:
@@ -519,6 +526,8 @@ const strings: Record<MenuLang, MenuStrings> = {
       'Surco doit le fermer pour écrire dans sa bibliothèque. Engine DJ sera fermé proprement ; tu pourras le rouvrir à la fin de la conversion.',
     engineQuitDetailCues:
       'Surco doit le fermer pour enregistrer les cues dans sa bibliothèque. Engine DJ sera fermé proprement et tu pourras le rouvrir tout de suite.',
+    engineQuitDetailPlaylists:
+      'Surco doit le fermer pour enregistrer la modification de tes playlists. Engine DJ sera fermé proprement et tu pourras le rouvrir tout de suite.',
     engineQuitDetailUsb:
       "Surco doit le fermer pour exporter tes playlists sur la clé USB. Engine DJ sera fermé proprement et tu pourras le rouvrir une fois l'export sur la clé USB terminé.",
     engineQuitDetailRestore:
@@ -638,6 +647,8 @@ const strings: Record<MenuLang, MenuStrings> = {
       'O Surco precisa fechá-lo para escrever na biblioteca dele. O Engine DJ será fechado com segurança; você pode reabri-lo quando a conversão terminar.',
     engineQuitDetailCues:
       'O Surco precisa fechá-lo para salvar os cues na biblioteca dele. O Engine DJ será fechado com segurança e você pode reabri-lo em seguida.',
+    engineQuitDetailPlaylists:
+      'O Surco precisa fechá-lo para salvar a alteração nas suas playlists. O Engine DJ será fechado com segurança e você pode reabri-lo em seguida.',
     engineQuitDetailUsb:
       'O Surco precisa fechá-lo para exportar as suas playlists para o pendrive USB. O Engine DJ será fechado com segurança e você pode reabri-lo quando a exportação para o USB terminar.',
     engineQuitDetailRestore:
