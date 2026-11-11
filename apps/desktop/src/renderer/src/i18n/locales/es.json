@@ -3405,7 +3405,8 @@
       "tagsChanged": "{{track}} cambió en VirtualDJ y sus etiquetas no se cambiaron",
       "repointOtherVolume": "{{track}} está en otro disco, así que VirtualDJ sigue con el archivo original y Surco también lo guarda",
       "repointSongTaken": "VirtualDJ ya tiene una canción para {{track}}, así que sigue con el archivo original y Surco también lo guarda",
-      "repointUnwritable": "VirtualDJ no puede guardar la duración de {{track}}, así que sigue con el archivo original y Surco también lo guarda"
+      "repointUnwritable": "VirtualDJ no puede guardar la duración de {{track}}, así que sigue con el archivo original y Surco también lo guarda",
+      "repointSongTakenGone": "VirtualDJ ya tenía una canción para {{track}}, así que la antigua sigue en el archivo original, que ya no está en su carpeta"
     }
   },
   "cueWave": {

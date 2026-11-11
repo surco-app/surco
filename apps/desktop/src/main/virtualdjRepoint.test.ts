@@ -188,8 +188,13 @@ describe('repointVirtualdjTracks', () => {
       join(lib.dir, 'database.xml'),
       FIXTURE_XML.replace('FilePath="/Music/VirtualDJ Pruebas/Pray.wav"', `FilePath="${there}"`),
     )
+    const original = lib.track('Pray.mp3')
+    writeFileSync(
+      join(lib.dir, 'database.xml'),
+      lib.database().replace(`FilePath="${FROM}"`, `FilePath="${original}"`),
+    )
     const before = lib.database()
-    expect(await repointVirtualdjTracks([{ from: FROM, to: there }], lib.deps)).toEqual([
+    expect(await repointVirtualdjTracks([{ from: original, to: there }], lib.deps)).toEqual([
       { written: false, reason: 'song-taken' },
     ])
     expect(lib.database()).toBe(before)
@@ -239,6 +244,34 @@ describe('repointVirtualdjTracks', () => {
   it('says so when the new file already has its own song in VirtualDJ', async () => {
     const lib = library()
     const there = lib.track('Pray.wav')
+    const original = lib.track('Pray.mp3')
+    writeFileSync(
+      join(lib.dir, 'database.xml'),
+      FIXTURE_XML.replace(
+        'FilePath="/Music/VirtualDJ Pruebas/Pray.wav"',
+        `FilePath="${there}"`,
+      ).replace(`FilePath="${FROM}"`, `FilePath="${original}"`),
+    )
+    const queue = createRekordboxQueue({
+      store: { read: () => null, write: () => {}, setAside: () => {} },
+      collection: () => lib.dir,
+      applyBatch: (_c, ops, ensureClosed, stillQueued) =>
+        applyVirtualdjBatch(ops, { ...lib.deps, ensureClosed, stillQueued }),
+      repoint: (_c, list) => repointVirtualdjTracks(list, lib.deps),
+      nodeStamps: async () => ({}),
+      onChange: () => {},
+      addsTracks: false,
+    })
+    queue.enqueue([], [{ from: original, to: there }])
+    expect(await queue.apply(async () => true)).toMatchObject({
+      status: 'applied',
+      notices: [{ code: 'repoint-song-taken', track: 'Pray.wav' }],
+    })
+  })
+
+  it('says the original is gone, not kept, when the new file got its own song after Surco retired the original', async () => {
+    const lib = library()
+    const there = lib.track('Pray.wav')
     writeFileSync(
       join(lib.dir, 'database.xml'),
       FIXTURE_XML.replace('FilePath="/Music/VirtualDJ Pruebas/Pray.wav"', `FilePath="${there}"`),
@@ -256,7 +289,7 @@ describe('repointVirtualdjTracks', () => {
     queue.enqueue([], [{ from: FROM, to: there }])
     expect(await queue.apply(async () => true)).toMatchObject({
       status: 'applied',
-      notices: [{ code: 'repoint-song-taken', track: 'Pray.wav' }],
+      notices: [{ code: 'repoint-song-taken-gone', track: 'Pray.wav' }],
     })
   })
 

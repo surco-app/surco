@@ -199,7 +199,8 @@ function movedSong(
   const taken = parseVirtualdjDatabase(xml).some(
     (s) => s.path !== song.path && virtualdjPathOf(root, s.path).normalize('NFC') === wanted,
   )
-  if (taken) return { written: false, reason: 'song-taken' }
+  if (taken)
+    return { written: false, reason: existsSync(repoint.from) ? 'song-taken' : 'song-taken-gone' }
   const path = virtualdjStoredPath(root, repoint.to, xml)
   const shift = repoint.engineShift
   const moved = withVirtualdjSongMoved(

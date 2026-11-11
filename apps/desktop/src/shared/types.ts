@@ -1303,6 +1303,7 @@ export type RekordboxQueueNotice =
         | 'tags-changed'
         | 'repoint-other-volume'
         | 'repoint-song-taken'
+        | 'repoint-song-taken-gone'
         | 'repoint-unwritable'
       track: string
     }
