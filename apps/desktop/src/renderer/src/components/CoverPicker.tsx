@@ -544,7 +544,7 @@ export function CoverPicker({
                   <span
                     data-testid="cover-image-count"
                     aria-hidden="true"
-                    className="text-[11px] tabular-nums text-fg-dim"
+                    className="text-label tabular-nums text-fg-dim"
                   >
                     {`${pos}/${total}`}
                   </span>
@@ -594,7 +594,7 @@ export function CoverPicker({
         {displayCover && coverDims && (
           <div
             data-testid="cover-resolution"
-            className="flex items-center gap-1.5 text-[11px] @[26rem]:mt-1.5 @[26rem]:justify-center"
+            className="flex items-center gap-1.5 text-label @[26rem]:mt-1.5 @[26rem]:justify-center"
           >
             <span
               data-testid="cover-quality-dot"

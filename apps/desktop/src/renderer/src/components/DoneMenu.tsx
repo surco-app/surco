@@ -106,7 +106,7 @@ export function DoneMenu({
             aria-disabled={incomplete || undefined}
             aria-describedby={incomplete && incompleteReason ? reasonId : undefined}
             onClick={incomplete ? undefined : () => run(() => onProcess(outputFormat))}
-            className={`${SPLIT_ITEM} justify-start gap-2 font-medium aria-disabled:cursor-not-allowed aria-disabled:opacity-50`}
+            className={`${SPLIT_ITEM} justify-start gap-2 font-medium aria-disabled:cursor-not-allowed aria-disabled:opacity-40`}
           >
             <RotateCw className={ITEM_ICON} aria-hidden="true" />
             {tr(again.key, again.options)}
@@ -119,7 +119,7 @@ export function DoneMenu({
           <fieldset aria-labelledby={formatHeadingId} className="min-w-0">
             <p
               id={formatHeadingId}
-              className="mt-1 border-t border-[var(--color-line)] px-3 pt-2 pb-0.5 text-[11px] font-medium text-fg-dim"
+              className="mt-1 border-t border-[var(--color-line)] px-3 pt-2 pb-0.5 text-label font-medium text-fg-dim"
             >
               {tr('editor.menuFormat')}
             </p>
@@ -143,7 +143,7 @@ export function DoneMenu({
           <fieldset aria-labelledby={destinationHeadingId} className="min-w-0">
             <p
               id={destinationHeadingId}
-              className="mt-1 border-t border-[var(--color-line)] px-3 pt-2 pb-0.5 text-[11px] font-medium text-fg-dim"
+              className="mt-1 border-t border-[var(--color-line)] px-3 pt-2 pb-0.5 text-label font-medium text-fg-dim"
             >
               {tr('editor.menuDestination')}
             </p>
@@ -156,7 +156,7 @@ export function DoneMenu({
                 aria-checked={d === destination}
                 disabled={d === 'appleMusic' && outputFormat === 'flac'}
                 onClick={() => onSelectDestination(d)}
-                className={`${SPLIT_ITEM} disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent ${
+                className={`${SPLIT_ITEM} disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent ${
                   d === destination ? 'font-medium text-[var(--color-accent)]' : ''
                 }`}
               >

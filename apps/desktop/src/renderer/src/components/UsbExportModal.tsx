@@ -282,7 +282,7 @@ export function UsbExportModal({
       backdropTestId="usb-export-backdrop"
       dialogTestId="usb-export-modal"
       labelledBy="usb-export-title"
-      className="flex w-[760px] max-w-[94vw] flex-col rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-panel)]"
+      className="flex w-[760px] max-w-[94vw] flex-col rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)]"
     >
       <h2
         id="usb-export-title"

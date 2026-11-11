@@ -172,7 +172,7 @@ describe('StatsTab', () => {
         settings={withStats({ conversionCount: 29215, stats: { ...zeroStats, imported: 3071 } })}
       />,
     )
-    expect(screen.getByTestId('stats-count')).toHaveClass('tracking-[-0.035em]')
+    expect(screen.getByTestId('stats-count')).toHaveClass('text-figure')
     expect(screen.getByText('3,071')).toHaveClass('tracking-[-0.02em]')
   })
 

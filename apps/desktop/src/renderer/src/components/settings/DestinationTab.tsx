@@ -256,7 +256,7 @@ function OutputSettings({
                     type="button"
                     data-testid="settings-traktor-nml-use-detected"
                     onClick={onAcceptDetectedNmlPath}
-                    className="press shrink-0 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)]"
+                    className="press shrink-0 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)]"
                   >
                     {tr('settings.traktorNmlPathUseDetected')}
                   </button>
@@ -280,7 +280,7 @@ function OutputSettings({
                       type="button"
                       data-testid="settings-traktor-nml-use-traktor"
                       onClick={onAcceptDetectedNmlPath}
-                      className="press shrink-0 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)]"
+                      className="press shrink-0 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)]"
                     >
                       {tr('settings.traktorNmlPathUseTraktor')}
                     </button>
@@ -567,7 +567,7 @@ function OutputSettings({
                     value={synced.backupRetentionDays}
                     disabled={backupOff}
                     onCommit={(n) => patch('backupRetentionDays', n)}
-                    className="w-20 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-2.5 py-1.5 text-sm text-fg tabular-nums disabled:opacity-50"
+                    className="w-20 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-2.5 py-1.5 text-sm text-fg tabular-nums disabled:opacity-40"
                   />
                   <span className="text-xs text-fg-dim">
                     {tr('settings.originalBackupDaysUnit')}
@@ -592,7 +592,7 @@ function OutputSettings({
                     value={synced.backupMaxGb}
                     disabled={backupOff}
                     onCommit={(n) => patch('backupMaxGb', n)}
-                    className="w-20 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-2.5 py-1.5 text-sm text-fg tabular-nums disabled:opacity-50"
+                    className="w-20 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] px-2.5 py-1.5 text-sm text-fg tabular-nums disabled:opacity-40"
                   />
                   <span className="text-xs text-fg-dim">GB</span>
                 </div>
@@ -673,7 +673,7 @@ function DjReachRow({
     <fieldset
       data-testid={`settings-reach-${program}`}
       disabled={disabled}
-      className="min-w-0 disabled:cursor-not-allowed disabled:opacity-50"
+      className="min-w-0 disabled:cursor-not-allowed disabled:opacity-40"
     >
       <SettingsLabel className="mb-2">{label}</SettingsLabel>
       <SegmentedControl

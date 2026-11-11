@@ -302,7 +302,7 @@ export function Player({
 
         <div className="flex min-w-0 flex-1 flex-col">
           <span data-testid="player-title" className="min-w-0">
-            <MarqueeText className="font-semibold text-[15px] leading-tight">
+            <MarqueeText className="font-semibold text-base leading-tight">
               {track.meta.title || track.fileName}
             </MarqueeText>
           </span>
@@ -320,7 +320,7 @@ export function Player({
               <Tooltip label={track.meta.artist} />
               {track.meta.artist}
             </span>
-            <span data-testid="player-time" className="shrink-0 text-[11px] tabular-nums">
+            <span data-testid="player-time" className="shrink-0 text-label tabular-nums">
               {formatTime(currentTime)} / {formatTime(duration)}
             </span>
           </div>

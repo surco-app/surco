@@ -22,7 +22,7 @@ export const DIALOG_PANEL =
 export const DIALOG_CANCEL =
   'press rounded-lg border border-[var(--color-line-strong)] px-4 py-2 text-sm font-medium hover:bg-[var(--color-hover)]'
 export const DIALOG_BUTTON =
-  'press rounded-lg px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] disabled:opacity-50'
+  'press rounded-lg px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] disabled:opacity-40'
 export const DIALOG_OK = 'bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)]'
 
 // A plain confirm/cancel dialog for consequential bulk actions (e.g. overwriting tags

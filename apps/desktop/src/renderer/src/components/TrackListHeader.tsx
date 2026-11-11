@@ -134,7 +134,7 @@ function MenuAction({
       onClick={onClick}
       aria-label={label}
       aria-describedby={detail ? detailId : undefined}
-      className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs hover:bg-[var(--color-hover)] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent ${
+      className={`flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs hover:bg-[var(--color-hover)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent ${
         danger ? 'text-danger' : 'text-fg'
       }`}
     >
@@ -142,11 +142,7 @@ function MenuAction({
       <span className="flex min-w-0 flex-1 flex-col">
         <span>{label}</span>
         {detail && (
-          <span
-            id={detailId}
-            data-testid={`${testid}-detail`}
-            className="text-[11px] text-fg-faint"
-          >
+          <span id={detailId} data-testid={`${testid}-detail`} className="text-label text-fg-faint">
             {detail}
           </span>
         )}

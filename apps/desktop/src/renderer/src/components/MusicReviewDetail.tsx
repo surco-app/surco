@@ -295,7 +295,7 @@ function Where({
         <span
           key={p.name}
           data-testid={p.missing ? 'music-review-where-missing' : `music-review-where-${p.id}`}
-          className={`rounded bg-[var(--color-panel-2)] px-1.5 text-[11px] whitespace-nowrap text-fg-dim ${p.missing ? 'line-through opacity-60' : ''}`}
+          className={`rounded bg-[var(--color-panel-2)] px-1.5 text-label whitespace-nowrap text-fg-dim ${p.missing ? 'line-through opacity-60' : ''}`}
         >
           {p.missing && <Tooltip label={t('musicReview.where.notFound')} />}
           {p.name}
@@ -369,7 +369,7 @@ function SpellingDetail({
                     <Marked value={v.value} />
                   </span>
                   {chosen === v.value && (
-                    <span className="shrink-0 text-[11px] font-semibold text-[var(--color-accent)]">
+                    <span className="shrink-0 text-label font-semibold text-[var(--color-accent)]">
                       {t('musicReview.keeps')}
                     </span>
                   )}
@@ -683,14 +683,14 @@ function DuplicateDetail({
                       {sameFile && (
                         <span
                           data-testid="music-review-same-file"
-                          className="rounded bg-[var(--color-panel-2)] px-1.5 text-[11px] text-fg-dim"
+                          className="rounded bg-[var(--color-panel-2)] px-1.5 text-label text-fg-dim"
                         >
                           {t('musicReview.detail.sameFile')}
                         </span>
                       )}
                       <span
                         data-differs={differs((c) => formats[c.id] ?? '') || undefined}
-                        className={`ml-auto rounded bg-[var(--color-panel-2)] px-1.5 text-[11px] ${differs((c) => formats[c.id] ?? '') ? 'text-[var(--color-warn)]' : 'text-fg-dim'}`}
+                        className={`ml-auto rounded bg-[var(--color-panel-2)] px-1.5 text-label ${differs((c) => formats[c.id] ?? '') ? 'text-[var(--color-warn)]' : 'text-fg-dim'}`}
                       >
                         {formats[e.id] ?? ''}
                       </span>
@@ -741,7 +741,7 @@ function DuplicateDetail({
                     {list && review.inMusic(e.id) && (
                       <span
                         data-testid="list-review-copy-music"
-                        className="w-fit rounded bg-[var(--color-panel-2)] px-1.5 text-[11px] text-fg-dim"
+                        className="w-fit rounded bg-[var(--color-panel-2)] px-1.5 text-label text-fg-dim"
                       >
                         {t('listReview.where.music')}
                       </span>

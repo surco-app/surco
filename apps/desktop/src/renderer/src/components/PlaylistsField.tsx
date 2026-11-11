@@ -161,7 +161,7 @@ function TreeField({
           aria-describedby={tokens.length > 0 ? `${countId} ${whereId}` : countId}
           disabled={disabled !== undefined}
           onClick={() => setOpen((v) => !v)}
-          className={`flex h-[34px] w-full items-center gap-2 rounded-lg border bg-[var(--color-panel-2)]/30 px-3 text-left text-sm outline-none focus-visible:border-[var(--color-accent)] disabled:cursor-not-allowed disabled:opacity-50 ${
+          className={`flex h-[34px] w-full items-center gap-2 rounded-lg border bg-[var(--color-panel-2)]/30 px-3 text-left text-sm outline-none focus-visible:border-[var(--color-accent)] disabled:cursor-not-allowed disabled:opacity-40 ${
             open ? 'border-[var(--color-accent)]' : 'border-[var(--color-line-strong)]'
           }`}
         >

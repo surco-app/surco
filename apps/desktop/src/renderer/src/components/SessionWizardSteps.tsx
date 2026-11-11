@@ -284,7 +284,7 @@ function GroupLegend({
   testId: string
 }): React.JSX.Element {
   return (
-    <legend className="mb-3 flex items-center gap-1.5 text-[11px] font-medium tracking-wide text-fg-faint uppercase">
+    <legend className="mb-3 flex items-center gap-1.5 text-label font-medium tracking-wide text-fg-faint uppercase">
       <span id={`${id}-title`}>{title}</span>
       <span
         data-testid={testId}
@@ -367,7 +367,7 @@ export function CharacterStep({
                 aria-pressed={hasKeys && options.harmony === mode}
                 disabled={!hasKeys}
                 onClick={() => onChange({ harmony: mode })}
-                className={`${CHIP} ${hasKeys && options.harmony === mode ? CHIP_ON : CHIP_OFF} disabled:opacity-50`}
+                className={`${CHIP} ${hasKeys && options.harmony === mode ? CHIP_ON : CHIP_OFF} disabled:opacity-40`}
               >
                 {tr(`sessions.wizard.character.${label}`)}
               </button>

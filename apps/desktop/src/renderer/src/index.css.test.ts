@@ -337,7 +337,7 @@ describe('Copias list fold', () => {
     const body = rule.slice(0, rule.indexOf('}'))
     expect(body).toContain('grid-template-rows: 0fr')
     expect(body).toMatch(
-      /transition:\s*grid-template-rows 200ms cubic-bezier\(0\.23, 1, 0\.32, 1\),\s*opacity 200ms/,
+      /transition:\s*grid-template-rows var\(--duration-state\) var\(--ease-standard\),\s*opacity var\(--duration-state\)/,
     )
     expect(body).not.toMatch(/transition:\s*all/)
   })
@@ -349,7 +349,9 @@ describe('Copias outcome line', () => {
     expect(start.slice(0, start.indexOf('}\n}'))).toMatch(
       /\.copies-feedback\s*\{[^}]*opacity: 0;[^}]*transform: translateY\(4px\)/,
     )
-    expect(css).toMatch(/\.copies-feedback\s*\{[^}]*transition:[^}]*opacity 180ms ease-out/)
+    expect(css).toMatch(
+      /\.copies-feedback\s*\{[^}]*transition:[^}]*opacity var\(--duration-state\) var\(--ease-standard\)/,
+    )
   })
 })
 

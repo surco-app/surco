@@ -92,7 +92,7 @@ export function ToastStack({
         <div
           key={toast.key ?? toast.id}
           data-testid="toast-slot"
-          className={`grid transition-[grid-template-rows] duration-200 ease-out motion-reduce:transition-none ${
+          className={`grid transition-[grid-template-rows] duration-200 ease-standard motion-reduce:transition-none ${
             leaving ? 'grid-rows-[0fr]' : 'grid-rows-[1fr] starting:grid-rows-[0fr]'
           }`}
         >

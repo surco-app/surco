@@ -322,7 +322,7 @@ export function SourceTree({
             if (!document.hasFocus()) return
             commit(e.currentTarget.value)
           }}
-          className="h-[27px] w-full rounded-md border border-[var(--color-accent)] bg-[var(--color-field)] px-2 text-[11.5px] outline-none"
+          className="h-[27px] w-full rounded-md border border-[var(--color-accent)] bg-[var(--color-field)] px-2 text-xs outline-none"
         />
       </li>
     )
@@ -420,7 +420,7 @@ export function SourceTree({
                 if (!document.hasFocus()) return
                 commitRename(node, e.currentTarget.value)
               }}
-              className="h-[27px] w-full rounded-md border border-[var(--color-accent)] bg-[var(--color-field)] px-2 text-[11.5px] outline-none"
+              className="h-[27px] w-full rounded-md border border-[var(--color-accent)] bg-[var(--color-field)] px-2 text-xs outline-none"
             />
           </div>
         ) : (
@@ -458,7 +458,7 @@ export function SourceTree({
             }}
             onDrop={drop}
             style={{ paddingLeft: 10 + depth * 18 }}
-            className={`flex h-[28px] w-full items-center gap-1.5 rounded-md pr-2.5 text-left text-[13px] ${
+            className={`flex h-[28px] w-full items-center gap-1.5 rounded-md pr-2.5 text-left text-section ${
               selected
                 ? 'bg-[var(--color-row-selected)] text-[var(--color-on-row-selected)]'
                 : `${isFolder ? 'text-fg' : 'text-fg-muted'} hover:bg-[var(--color-hover)]`
@@ -648,7 +648,7 @@ export function SourceTree({
           {notice}
         </p>
       )}
-      <label className="mx-2.5 mb-2 flex h-[30px] items-center gap-1.5 rounded-md border border-[var(--color-input-border)] bg-[var(--color-field)] px-2 text-[13px]">
+      <label className="mx-2.5 mb-2 flex h-[30px] items-center gap-1.5 rounded-md border border-[var(--color-input-border)] bg-[var(--color-field)] px-2 text-section">
         <Search size={13} className="text-fg-faint" aria-hidden="true" />
         <input
           data-testid="source-tree-search"
@@ -715,7 +715,7 @@ export function SourceTree({
                   role="menuitem"
                   data-testid="source-tree-new-playlist-inside"
                   onClick={() => createInside(menu.node, false)}
-                  className="block w-full rounded-md px-3 py-1.5 text-left text-sm hover:bg-[var(--color-hover)]"
+                  className="block w-full rounded px-3 py-1.5 text-left text-sm hover:bg-[var(--color-hover)]"
                 >
                   {tr(
                     edit?.crates ? 'sources.tree.newCrateInside' : 'sources.tree.newPlaylistInside',
@@ -727,7 +727,7 @@ export function SourceTree({
                     role="menuitem"
                     data-testid="source-tree-new-folder-inside"
                     onClick={() => createInside(menu.node, true)}
-                    className="block w-full rounded-md px-3 py-1.5 text-left text-sm hover:bg-[var(--color-hover)]"
+                    className="block w-full rounded px-3 py-1.5 text-left text-sm hover:bg-[var(--color-hover)]"
                   >
                     {tr('sources.tree.newFolderInside')}
                   </button>
@@ -743,7 +743,7 @@ export function SourceTree({
                   edit.onPasteTracklist?.(menu.node, menu.node.kind === 'folder')
                   setMenu(null)
                 }}
-                className="block w-full rounded-md px-3 py-1.5 text-left text-sm hover:bg-[var(--color-hover)]"
+                className="block w-full rounded px-3 py-1.5 text-left text-sm hover:bg-[var(--color-hover)]"
               >
                 {tr(
                   menu.node.kind === 'folder'
@@ -761,7 +761,7 @@ export function SourceTree({
                   edit.onSession?.(menu.node)
                   setMenu(null)
                 }}
-                className="block w-full rounded-md px-3 py-1.5 text-left text-sm hover:bg-[var(--color-hover)]"
+                className="block w-full rounded px-3 py-1.5 text-left text-sm hover:bg-[var(--color-hover)]"
               >
                 {tr('sources.tree.newSession')}
               </button>
@@ -778,7 +778,7 @@ export function SourceTree({
                     edit.onFill?.(menu.node)
                     setMenu(null)
                   }}
-                  className="block w-full rounded-md px-3 py-1.5 text-left text-sm hover:bg-[var(--color-hover)]"
+                  className="block w-full rounded px-3 py-1.5 text-left text-sm hover:bg-[var(--color-hover)]"
                 >
                   {tr('sources.tree.fillSession')}
                 </button>
@@ -789,7 +789,7 @@ export function SourceTree({
                 role="menuitem"
                 data-testid="source-tree-rename"
                 onClick={() => startRename(menu.node)}
-                className="block w-full rounded-md px-3 py-1.5 text-left text-sm hover:bg-[var(--color-hover)]"
+                className="block w-full rounded px-3 py-1.5 text-left text-sm hover:bg-[var(--color-hover)]"
               >
                 {tr('sources.tree.rename')}
               </button>
@@ -803,7 +803,7 @@ export function SourceTree({
                   setDeleting(menu.node)
                   setMenu(null)
                 }}
-                className="block w-full rounded-md px-3 py-1.5 text-left text-sm text-danger hover:bg-[var(--color-hover)]"
+                className="block w-full rounded px-3 py-1.5 text-left text-sm text-danger hover:bg-[var(--color-hover)]"
               >
                 {tr('sources.tree.delete')}
               </button>

@@ -230,7 +230,7 @@ export function SessionWizard({
         </div>
         <ol
           aria-label={tr('sessions.wizard.step', { current: step + 1, total: STEPS.length })}
-          className="mt-2 flex items-center gap-3 text-[11px] text-fg-faint"
+          className="mt-2 flex items-center gap-3 text-label text-fg-faint"
         >
           {STEPS.map((id, i) => (
             <li
@@ -376,7 +376,7 @@ export function SessionWizard({
               data-testid="session-wizard-next"
               disabled={blocked}
               onClick={advance}
-              className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
+              className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
             >
               {reading ? tr('sessions.wizard.loading') : tr('sessions.wizard.next')}
             </button>

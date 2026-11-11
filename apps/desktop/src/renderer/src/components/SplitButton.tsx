@@ -6,15 +6,15 @@ import { useEffect, useRef, useState } from 'react'
 
 export const FOOTER_BAR = 'border-t border-[var(--color-line)] bg-[var(--color-ink)] px-6 py-3.5'
 export const SPLIT_BODY =
-  'press relative flex-1 overflow-hidden rounded-l-lg bg-[var(--color-panel-2)] py-2.5 text-sm font-medium disabled:pointer-events-none disabled:opacity-50'
+  'press relative flex-1 overflow-hidden rounded-l-lg bg-[var(--color-panel-2)] py-2.5 text-sm font-medium disabled:pointer-events-none disabled:opacity-40'
 export const SPLIT_BODY_READY =
-  'text-[var(--color-on-accent)] aria-disabled:pointer-events-none aria-disabled:opacity-50'
+  'text-[var(--color-on-accent)] aria-disabled:pointer-events-none aria-disabled:opacity-40'
 export const SPLIT_TOGGLE =
   'press relative flex w-10 items-center justify-center overflow-hidden rounded-r-lg border-l bg-[var(--color-panel-2)] disabled:pointer-events-none'
 export const SPLIT_BODY_QUIET = 'text-fg-muted'
 export const SPLIT_TOGGLE_QUIET = 'border-[var(--color-line-strong)] text-fg-faint'
 export const SPLIT_TOGGLE_READY =
-  'border-on-scrim/20 text-[var(--color-on-accent)] disabled:opacity-50'
+  'border-on-scrim/20 text-[var(--color-on-accent)] disabled:opacity-40'
 export const SPLIT_MENU =
   'animate-pop-flat absolute right-0 bottom-full z-50 mb-2 w-56 origin-bottom-right overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-panel-2)] py-1 shadow-[var(--shadow-float)]'
 export const SPLIT_ITEM =

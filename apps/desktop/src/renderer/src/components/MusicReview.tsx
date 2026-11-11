@@ -616,7 +616,7 @@ function Done({
           data-testid="music-review-done-badge"
           data-tone={tone}
           aria-hidden="true"
-          className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-sm font-bold ${tone === 'neutral' ? 'bg-fg-faint/15 text-fg-dim' : PILL_TONE[tone]}`}
+          className={`grid h-8 w-8 shrink-0 place-items-center rounded-full text-sm font-semibold ${tone === 'neutral' ? 'bg-fg-faint/15 text-fg-dim' : PILL_TONE[tone]}`}
         >
           {{ warn: '!', neutral: '–', good: '✓' }[tone]}
         </span>
@@ -702,7 +702,7 @@ function Done({
         <>
           <h4
             data-testid="music-review-done-where"
-            className="text-[13px] font-semibold text-fg-muted"
+            className="text-section font-semibold text-fg-muted"
           >
             {t('musicReview.done.where.title')}
           </h4>
@@ -1157,9 +1157,9 @@ export function MusicReview({
           disabled={applying}
           onClick={onClose}
         >
-          <ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" />
+          <ChevronLeft className="h-3 w-3" aria-hidden="true" />
           {t('musicReview.tracks')}
-          <kbd className="ml-auto rounded border border-[var(--color-line-strong)] px-1 font-sans text-[11px] font-normal text-fg-faint">
+          <kbd className="ml-auto rounded border border-[var(--color-line-strong)] px-1 font-sans text-label font-normal text-fg-faint">
             esc
           </kbd>
         </button>

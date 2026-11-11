@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import type { SessionPlan } from '../../../shared/sessionBuild'
 
 const BUTTON =
-  'press rounded-lg border border-[var(--color-line-strong)] px-3 py-1.5 text-xs font-medium hover:bg-[var(--color-hover)] disabled:opacity-50'
+  'press rounded-lg border border-[var(--color-line-strong)] px-3 py-1.5 text-xs font-medium hover:bg-[var(--color-hover)] disabled:opacity-40'
 
 function clock(secs: number): string {
   const minutes = Math.floor(secs / 60)
@@ -44,7 +44,7 @@ export function SessionBand({
       aria-label={tr('sessions.band.title')}
       className="mx-3 my-2 flex flex-col gap-2 rounded-[10px] border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-3"
     >
-      <h2 className="flex items-center gap-2 text-[13px] font-semibold">
+      <h2 className="flex items-center gap-2 text-section font-semibold">
         <Sparkles className="h-3.5 w-3.5 text-[var(--color-accent)]" aria-hidden="true" />
         {tr('sessions.band.title')}
       </h2>
@@ -115,7 +115,7 @@ export function SessionBand({
           data-testid="session-band-keep"
           disabled={busy}
           onClick={onKeep}
-          className="press px-2 py-1.5 text-xs font-medium text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] disabled:opacity-50"
+          className="press px-2 py-1.5 text-xs font-medium text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] disabled:opacity-40"
         >
           {tr('sessions.band.keep')}
         </button>

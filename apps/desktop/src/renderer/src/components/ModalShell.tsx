@@ -5,9 +5,9 @@ import { useExitPresence } from '../hooks/useExitPresence'
 import { lastInputWasKeyboard } from '../lib/inputModality'
 import { useFocusTrap } from './useFocusTrap'
 
-// Shorter than the 220 ms entrance and accelerating out: leaving needs no ceremony.
-// .animate-pop-out in index.css runs for the same time.
-export const MODAL_EXIT_MS = 150
+// The fast duration, shorter than the panel-length entrance: leaving needs no ceremony.
+// .animate-pop-out in index.css runs for the same time (--duration-fast).
+export const MODAL_EXIT_MS = 120
 
 const ModalLeaving = createContext(false)
 

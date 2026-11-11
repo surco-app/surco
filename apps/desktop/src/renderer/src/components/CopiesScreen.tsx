@@ -64,9 +64,9 @@ const STATE_TONE: Record<ProgramState, string> = {
 }
 
 const BUTTON =
-  'press flex items-center gap-1 whitespace-nowrap rounded-lg border border-[var(--color-line-strong)] px-3 py-1.5 text-[12.5px] text-fg hover:bg-[var(--color-hover)] disabled:opacity-40 disabled:hover:bg-transparent'
+  'press flex items-center gap-1 whitespace-nowrap rounded-lg border border-[var(--color-line-strong)] px-3 py-1.5 text-section text-fg hover:bg-[var(--color-hover)] disabled:opacity-40 disabled:hover:bg-transparent'
 const PRIMARY =
-  'press whitespace-nowrap rounded-lg bg-[var(--color-accent)] px-3 py-1.5 text-[12.5px] font-semibold text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40 disabled:hover:bg-[var(--color-accent)]'
+  'press whitespace-nowrap rounded-lg bg-[var(--color-accent)] px-3 py-1.5 text-section font-semibold text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40 disabled:hover:bg-[var(--color-accent)]'
 const SECTION =
   'grid grid-cols-[44px_1fr_auto] items-center gap-x-3.5 border-t border-[var(--color-line)] py-4.5 first:border-t-0'
 const BADGE =
@@ -139,8 +139,8 @@ function Fact({
 }): React.JSX.Element {
   return (
     <div>
-      <div className="text-[11px] tracking-wide text-fg-faint uppercase">{label}</div>
-      <div data-testid={testId} className={`text-[13px] ${className}`}>
+      <div className="text-label tracking-wide text-fg-faint uppercase">{label}</div>
+      <div data-testid={testId} className={`text-section ${className}`}>
         {children}
       </div>
     </div>
@@ -197,7 +197,7 @@ function ProgramSection({
         <Icon size={22} />
       </div>
       <div className="min-w-0">
-        <h2 className="text-[14.5px] font-semibold text-fg">{name}</h2>
+        <h2 className="text-sm font-semibold text-fg">{name}</h2>
         <div className={FACTS}>
           <Fact
             label={tr('copies.facts.state')}
@@ -221,7 +221,7 @@ function ProgramSection({
                 type="button"
                 data-testid={`copies-settings-${program}`}
                 onClick={() => openSettings('programs')}
-                className="press mt-0.5 block text-[12.5px] text-[var(--color-accent)] hover:underline"
+                className="press mt-0.5 block text-section text-[var(--color-accent)] hover:underline"
               >
                 {tr('copies.changeInSettings')}
               </button>
@@ -271,7 +271,7 @@ function ProgramSection({
         <p
           role="status"
           data-testid={`copies-refused-${program}`}
-          className="copies-feedback col-span-2 col-start-2 mt-2 text-[13px] text-[var(--color-danger)]"
+          className="copies-feedback col-span-2 col-start-2 mt-2 text-section text-[var(--color-danger)]"
         >
           {tr(`copies.refused.${outcome.reason}`, { program: name })}
         </p>
@@ -280,7 +280,7 @@ function ProgramSection({
         <p
           role="status"
           data-testid={`copies-restored-${program}`}
-          className="copies-feedback col-span-2 col-start-2 mt-2 text-[13px] text-[var(--color-good)]"
+          className="copies-feedback col-span-2 col-start-2 mt-2 text-section text-[var(--color-good)]"
         >
           {tr('copies.restored', { program: name, when: whenInSentence(outcome.takenAt) })}
         </p>
@@ -295,8 +295,8 @@ function ProgramSection({
                 className="flex items-center justify-between gap-3 border-t border-[var(--color-line)] py-2.5 first:border-t-0"
               >
                 <div>
-                  <div className="text-[13px] text-fg">{when(c.takenAt)}</div>
-                  <div className="text-[12.5px] text-fg-faint">
+                  <div className="text-section text-fg">{when(c.takenAt)}</div>
+                  <div className="text-section text-fg-faint">
                     {tr(`copies.reason.${c.reason}`)}
                   </div>
                 </div>
@@ -370,7 +370,7 @@ function MusicFiles({
               data-testid={`trash-filter-${id}`}
               aria-pressed={filter === id}
               onClick={() => setFilter(id)}
-              className={`press rounded-full border px-2.5 py-0.5 text-[12px] ${
+              className={`press rounded-full border px-2.5 py-0.5 text-xs ${
                 filter === id
                   ? 'border-transparent bg-[var(--color-accent-soft)] text-fg'
                   : 'border-[var(--color-line-strong)] text-fg-muted hover:text-fg'
@@ -388,14 +388,14 @@ function MusicFiles({
               onChange={(e) => setQuery(e.target.value)}
               aria-label={tr('trash.search')}
               placeholder={tr('trash.search')}
-              className="min-w-0 flex-1 bg-transparent text-[12.5px] text-fg outline-none placeholder:text-fg-faint"
+              className="min-w-0 flex-1 bg-transparent text-section text-fg outline-none placeholder:text-fg-faint"
             />
           </div>
         </div>
       )}
       <div className={LIST}>
         {rows.length === 0 ? (
-          <p data-testid="trash-no-matches" className="py-2.5 text-[12.5px] text-fg-faint">
+          <p data-testid="trash-no-matches" className="py-2.5 text-section text-fg-faint">
             {tr('trash.noMatches')}
           </p>
         ) : (
@@ -411,11 +411,11 @@ function MusicFiles({
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline gap-1.5">
-                      <span className="truncate text-[13px] text-fg">
+                      <span className="truncate text-section text-fg">
                         <Tooltip label={entry.name} />
                         {entry.name}
                       </span>
-                      <span className="shrink-0 text-[12.5px] text-fg-faint tabular-nums">
+                      <span className="shrink-0 text-section text-fg-faint tabular-nums">
                         · {formatBytes(entry.bytes, lng)}
                       </span>
                     </div>
@@ -424,7 +424,7 @@ function MusicFiles({
                       to find out which file took the original's place. */}
                     <div
                       data-testid="trash-reason"
-                      className="text-pretty text-[12.5px] text-fg-faint first-letter:uppercase"
+                      className="text-pretty text-section text-fg-faint first-letter:uppercase"
                     >
                       {replacement && entry.reason === 'renamed'
                         ? tr('copies.music.renamedTo', { name: replacement })
@@ -432,7 +432,7 @@ function MusicFiles({
                           ? tr('copies.music.replacedBy', { name: replacement })
                           : tr(`trash.reason.${entry.reason}`)}
                     </div>
-                    <div className="truncate text-[11.5px] text-fg-faint">
+                    <div className="truncate text-xs text-fg-faint">
                       <Tooltip label={folderOf(entry.originalPath)} />
                       {folderOf(entry.originalPath)}
                     </div>
@@ -447,7 +447,7 @@ function MusicFiles({
                     {left <= EXPIRING_SOON_DAYS && (
                       <span
                         data-testid="trash-expiring"
-                        className="whitespace-nowrap rounded-full bg-[color-mix(in_srgb,var(--color-warn)_12%,transparent)] px-2 py-0.5 text-[11.5px] text-[var(--color-warn)]"
+                        className="whitespace-nowrap rounded-full bg-[color-mix(in_srgb,var(--color-warn)_12%,transparent)] px-2 py-0.5 text-xs text-[var(--color-warn)]"
                       >
                         {tr('trash.expiring', { count: left })}
                       </span>
@@ -472,7 +472,7 @@ function MusicFiles({
                         onRemove(entry)
                       }}
                       data-testid="trash-remove-confirm"
-                      className="press shrink-0 whitespace-nowrap rounded-lg bg-[var(--color-danger)] px-2.5 py-1.5 text-[12.5px] font-medium text-[var(--color-on-accent)]"
+                      className="press shrink-0 whitespace-nowrap rounded-lg bg-[var(--color-danger)] px-2.5 py-1.5 text-section font-medium text-[var(--color-on-accent)]"
                     >
                       {tr('trash.removeConfirm')}
                     </button>
@@ -497,7 +497,7 @@ function MusicFiles({
           data-testid="trash-footer"
           className="flex items-center justify-between gap-4 border-t border-[var(--color-line)] pt-2.5 pb-1.5"
         >
-          <span className="text-[12.5px] text-fg-faint">
+          <span className="text-section text-fg-faint">
             {tr('copies.music.expires', { days: retentionDays, size: formatBytes(maxBytes, lng) })}
           </span>
           <span className="flex items-center gap-4.5">
@@ -505,7 +505,7 @@ function MusicFiles({
               type="button"
               onClick={onReveal}
               data-testid="trash-reveal"
-              className="press text-[12.5px] text-[var(--color-accent)] hover:underline"
+              className="press text-section text-[var(--color-accent)] hover:underline"
             >
               {tr('trash.reveal')}
             </button>
@@ -520,7 +520,7 @@ function MusicFiles({
                   onEmpty()
                 }}
                 data-testid="trash-empty-confirm"
-                className="press whitespace-nowrap rounded-lg bg-[var(--color-danger)] px-2.5 py-1 text-[12.5px] font-medium text-[var(--color-on-accent)]"
+                className="press whitespace-nowrap rounded-lg bg-[var(--color-danger)] px-2.5 py-1 text-section font-medium text-[var(--color-on-accent)]"
               >
                 {tr('trash.emptyConfirm', { count: entries.length })}
               </button>
@@ -529,7 +529,7 @@ function MusicFiles({
                 type="button"
                 onClick={() => setConfirmEmpty(true)}
                 data-testid="trash-empty-button"
-                className="press text-[12.5px] text-[var(--color-danger)] hover:underline"
+                className="press text-section text-[var(--color-danger)] hover:underline"
               >
                 {tr('trash.empty')}
               </button>
@@ -566,7 +566,7 @@ function MusicSection({
         <FileAudio className="h-5.5 w-5.5" strokeWidth={1.6} aria-hidden="true" />
       </div>
       <div className="min-w-0">
-        <h2 className="text-[14.5px] font-semibold text-fg">{tr('copies.music.title')}</h2>
+        <h2 className="text-sm font-semibold text-fg">{tr('copies.music.title')}</h2>
         {entries.length > 0 && (
           <div className={FACTS}>
             <Fact
@@ -614,7 +614,7 @@ function MusicSection({
       ) : (
         <p
           data-testid="copies-music-empty"
-          className="col-span-2 col-start-2 mt-2 text-pretty text-[12.5px] text-fg-faint"
+          className="col-span-2 col-start-2 mt-2 text-pretty text-section text-fg-faint"
         >
           {tr('trash.emptyBody')}
         </p>
@@ -689,8 +689,8 @@ export function CopiesScreen({
     >
       <div className="max-w-[920px]">
         <header>
-          <h1 className="text-[17px] font-semibold text-fg">{tr('copies.title')}</h1>
-          <p className="mt-0.5 text-[12.5px] text-fg-faint">{tr('copies.intro')}</p>
+          <h1 className="text-base font-semibold text-fg">{tr('copies.title')}</h1>
+          <p className="mt-0.5 text-section text-fg-faint">{tr('copies.intro')}</p>
         </header>
         <div className="mt-2.5">
           {sorted.map((entry) => (
@@ -705,14 +705,14 @@ export function CopiesScreen({
           <MusicSection trash={trash} openMusic={openMusic} />
         </div>
         <footer className="mt-1.5 flex items-center justify-between gap-4 border-t border-[var(--color-line)] pt-3.5">
-          <span className="text-[12.5px] text-fg-faint">
+          <span className="text-section text-fg-faint">
             {tr('copies.footer', { days: trash.retentionDays })}
           </span>
           <button
             type="button"
             data-testid="copies-reveal"
             onClick={onReveal}
-            className="press text-[12.5px] text-[var(--color-accent)] hover:underline"
+            className="press text-section text-[var(--color-accent)] hover:underline"
           >
             {tr(isWindows() ? 'copies.revealWin' : 'copies.reveal')}
           </button>

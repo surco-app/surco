@@ -71,12 +71,12 @@ export function CueFlowPreview({
         readOnly
       />
       {!onTrack && (
-        <p className="mt-1 text-[11px] text-fg-dim">
+        <p className="mt-1 text-label text-fg-dim">
           {tr('settings.cueFlows.previewHint', { bar: EXAMPLE_POINT_BAR })}
         </p>
       )}
       {track && real !== null && !marked && (
-        <p data-testid="cue-preview-no-mark" className="mt-1 text-[11px] text-fg-dim">
+        <p data-testid="cue-preview-no-mark" className="mt-1 text-label text-fg-dim">
           {tr('settings.cueFlows.noMark', { label: track.label })}
         </p>
       )}

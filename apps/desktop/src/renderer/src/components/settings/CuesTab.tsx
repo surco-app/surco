@@ -46,7 +46,7 @@ const NEW_RULE: CueRule = {
   color: { fixed: 1 },
 }
 
-const HEADING = 'text-[13px] font-semibold text-fg-muted'
+const HEADING = 'text-section font-semibold text-fg-muted'
 const ICON_BUTTON =
   'press flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] text-fg hover:bg-[var(--color-line-strong)] aria-expanded:bg-[var(--color-accent-soft)] aria-expanded:text-[var(--color-accent)]'
 const DROP_MENU =
@@ -317,7 +317,7 @@ export function CuesTab({
                     more.setOpen(false)
                     patch('activeCueFlow', flow.id)
                   }}
-                  className={`${SPLIT_ITEM} disabled:cursor-not-allowed disabled:opacity-50`}
+                  className={`${SPLIT_ITEM} disabled:cursor-not-allowed disabled:opacity-40`}
                 >
                   {tr('settings.cueFlows.use')}
                 </button>

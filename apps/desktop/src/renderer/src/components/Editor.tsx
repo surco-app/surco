@@ -1264,7 +1264,7 @@ export const Editor = memo(function Editor({
       onClick={clearAllMeta}
       className="press group relative flex h-7 items-center gap-1.5 rounded-md px-2 text-xs text-fg-dim hover:bg-[var(--color-hover)] hover:text-danger"
     >
-      <Eraser className="h-3.5 w-3.5" aria-hidden="true" />
+      <Eraser className="h-3 w-3" aria-hidden="true" />
       {tr('editor.clearMetaShort')}
       <Tooltip label={tr('editor.clearMetaHint')} align="end" />
     </button>
@@ -1279,7 +1279,7 @@ export const Editor = memo(function Editor({
       onClick={deriveFromNames}
       className="press group relative flex h-7 items-center gap-1.5 rounded-md px-2 text-xs text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg"
     >
-      <Tag className="h-3.5 w-3.5" aria-hidden="true" />
+      <Tag className="h-3 w-3" aria-hidden="true" />
       {tr('editor.deriveFromName')}
       <Tooltip label={tr('editor.deriveFromNameHint')} align="end" />
     </button>
