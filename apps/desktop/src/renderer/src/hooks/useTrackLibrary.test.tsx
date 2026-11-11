@@ -12,6 +12,7 @@ import { useTrackLibrary } from './useTrackLibrary'
 
 afterEach(() => {
   cleanup()
+  vi.useRealTimers()
   vi.restoreAllMocks()
 })
 
@@ -768,7 +769,6 @@ describe('useTrackLibrary read coalescing across IPC replies', () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(100)
     })
-    vi.useRealTimers()
 
     expect(result.current.tracks.every((t) => !t.loadingMeta)).toBe(true)
     expect(renders - tracksBefore).toBeLessThanOrEqual(2)
