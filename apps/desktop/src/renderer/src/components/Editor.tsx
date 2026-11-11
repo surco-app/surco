@@ -1087,7 +1087,8 @@ export const Editor = memo(function Editor({
     willEditInPlace &&
     tagsOnlyExport &&
     item.diskSignature !== undefined &&
-    !hasStagedEdits(item)
+    !hasStagedEdits(item) &&
+    (item.outputName?.trim() || defaultOutputName) === item.fileName
 
   // One onChange per possible key, built once (setField/onChangeAllMeta never
   // change identity) and reused by every fieldSpecs rebuild below. Field.tsx is

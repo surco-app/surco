@@ -2341,6 +2341,32 @@ describe('Editor export control', () => {
       renderEditor({ id: 'a', meta: { genre: 'Techno' }, diskSignature })
       expect(screen.getByTestId('convert-up-to-date')).toBeInTheDocument()
     })
+
+    it('never goes quiet while the pattern would rename the file', () => {
+      const named = { artist: 'Halo', title: 'Sunrise' }
+      renderEditor(
+        { id: 'a', meta: named, diskSignature: trackSignature(item({ id: 'a', meta: named })) },
+        'wav',
+        { autoApplyFilename: true, filenameFormat: '{artist} - {title}' },
+      )
+      expect(screen.queryByTestId('convert-up-to-date')).toBeNull()
+      expect(screen.getByTestId('process-btn')).toHaveTextContent('Update tags')
+    })
+
+    it('goes quiet with the pattern on when it names the file as it already is', () => {
+      const named = { artist: 'Halo', title: 'Sunrise' }
+      renderEditor(
+        {
+          id: 'a',
+          fileName: 'Halo - Sunrise',
+          meta: named,
+          diskSignature: trackSignature(item({ id: 'a', fileName: 'Halo - Sunrise', meta: named })),
+        },
+        'wav',
+        { autoApplyFilename: true, filenameFormat: '{artist} - {title}' },
+      )
+      expect(screen.getByTestId('convert-up-to-date')).toBeInTheDocument()
+    })
   })
 
   // The original bug: once a track was done its export button vanished, so a user
