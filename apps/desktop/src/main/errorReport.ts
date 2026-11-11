@@ -16,11 +16,21 @@ export function stripPaths(line: string): string {
 
 // electron-log writes one line per entry, prefixed "[timestamp] [level]".
 const ERROR_LINE = /^\[[^\]]+\]\s+\[error\]/
+const ENTRY_START = /^\[[^\]]+\]\s+\[\w+\]/
+const STACK_FRAME = /^\s+at /
 
 export function recentErrorLines(log: string, limit: number): string[] {
-  return log
-    .split('\n')
-    .filter((line) => ERROR_LINE.test(line))
+  const entries: string[][] = []
+  let current: string[] | null = null
+  for (const line of log.split('\n')) {
+    if (ENTRY_START.test(line)) {
+      current = ERROR_LINE.test(line) ? [line] : null
+      if (current) entries.push(current)
+    } else if (current && line.trim() && !STACK_FRAME.test(line)) {
+      current.push(line)
+    }
+  }
+  return entries
     .slice(-limit)
-    .map((line) => stripPaths(line.trimEnd()))
+    .map((entry) => entry.map((line) => stripPaths(line.trimEnd())).join('\n'))
 }

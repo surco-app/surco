@@ -356,7 +356,7 @@
     "conversionCancelled": "Conversão cancelada.",
     "verifyUnknownTrack": "Esta verificação não existe mais. Converta a faixa de novo para refazê-la.",
     "seratoBlocked": "O Serato perderia a faixa e seus cues",
-    "sourceTagsUnread": "As tags deste arquivo não puderam ser lidas, então ele ficou como estava: convertê-lo apagaria as que ele tem. Carregue-o de novo e tente outra vez.",
+    "sourceTagsUnread": "Não foi possível ler este arquivo, então ele ficou como estava: convertê-lo apagaria as tags que ele tem. Ele pode estar danificado ou em um formato que o Surco não consegue abrir.",
     "coverDownloadFailed": "Não foi possível baixar a capa.",
     "coverNotImage": "Esse endereço não leva a uma imagem.",
     "bandcampUnavailable": "O Bandcamp não respondeu direito. Tente de novo daqui a pouco.",

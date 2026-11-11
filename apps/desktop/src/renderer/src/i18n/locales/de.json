@@ -356,7 +356,7 @@
     "conversionCancelled": "Konvertierung abgebrochen.",
     "verifyUnknownTrack": "Diese Prüfung gibt es nicht mehr. Konvertiere den Track erneut, um sie zu wiederholen.",
     "seratoBlocked": "Serato würde den Track und seine Cues verlieren",
-    "sourceTagsUnread": "Die Tags dieser Datei konnten nicht gelesen werden, daher wurde sie nicht angerührt: eine Konvertierung hätte die vorhandenen gelöscht. Lade sie erneut und versuche es noch einmal.",
+    "sourceTagsUnread": "Diese Datei konnte nicht gelesen werden, daher wurde sie nicht angerührt: eine Konvertierung hätte ihre vorhandenen Tags gelöscht. Möglicherweise ist sie beschädigt oder in einem Format, das Surco nicht öffnen kann.",
     "coverDownloadFailed": "Das Cover konnte nicht heruntergeladen werden.",
     "coverNotImage": "Diese Adresse führt zu keinem Bild.",
     "bandcampUnavailable": "Bandcamp hat nicht richtig geantwortet. Versuche es gleich noch einmal.",
