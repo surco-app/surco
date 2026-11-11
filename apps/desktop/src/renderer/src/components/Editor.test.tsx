@@ -5250,7 +5250,7 @@ describe('Editor insert from field', () => {
 })
 
 describe('Editor Discogs format filter hint', () => {
-  // When a format filter is active (Settings → Search), the Discogs column flags it with a
+  // When a format filter is active (Settings → Sources), the Discogs column flags it with a
   // discreet funnel icon, so a thinned or empty result list reads as the filter at work
   // rather than a broken search — without a line of text repeating a setting the user chose.
   it('flags an active format filter with the funnel control, naming the formats on hover', async () => {
@@ -5265,7 +5265,7 @@ describe('Editor Discogs format filter hint', () => {
 
   // The filter is a Settings preference, so the control takes the user to where it's
   // changed rather than clearing it from under them.
-  it('opens Settings → Search when the filter control is clicked', () => {
+  it('opens Settings → Sources when the filter control is clicked', () => {
     const { onOpenSettings } = renderEditor({ id: 'a' }, 'wav', { discogsFormats: ['Vinyl'] })
     fireEvent.click(screen.getByTestId('discogs-format-filter'))
     expect(onOpenSettings).toHaveBeenCalledWith('search')

@@ -152,7 +152,7 @@ describe('useDiscogsBrowser', () => {
     expect(result.current.results.some((r) => r.provider === 'bandcamp')).toBe(true)
   })
 
-  // The cap is the user's Settings → Search "Maximum results" choice, threaded in so a DJ
+  // The cap is the user's Settings → Sources "Maximum results" choice, threaded in so a DJ
   // who wants a tighter list (less compilation/reissue noise) gets exactly that.
   it('caps the displayed list to the configured maximum', async () => {
     const many = Array.from({ length: 40 }, (_, i) => ({
