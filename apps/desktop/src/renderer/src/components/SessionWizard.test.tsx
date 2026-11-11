@@ -107,6 +107,41 @@ describe('SessionWizard steps', () => {
     )
   })
 
+  // The steps are a row the DJ walks along: forward the next one comes in from the right,
+  // back the earlier one comes in from the left, so where a step sits never changes.
+  it('brings the next step in from the trailing side and an earlier one from the leading side', async () => {
+    setup({ b90: 'base' })
+    toSources()
+    expect(screen.getByTestId('session-wizard-page')).toHaveClass('animate-step-forward')
+    fireEvent.click(screen.getByTestId('session-wizard-back'))
+    expect(screen.getByTestId('session-wizard-page')).toHaveClass('animate-step-back')
+    await toCharacter()
+    expect(screen.getByTestId('session-wizard-page')).toHaveClass('animate-step-forward')
+    fireEvent.click(screen.getByTestId('session-wizard-step-sources'))
+    expect(screen.getByTestId('session-wizard-page')).toHaveClass('animate-step-back')
+  })
+
+  // The window itself is popping in, so a first step sliding too would be two motions for
+  // one thing happening.
+  it('opens on the first step without sliding it in', () => {
+    setup()
+    expect(screen.getByTestId('session-wizard-page')).not.toHaveClass(
+      'animate-step-forward',
+      'animate-step-back',
+    )
+  })
+
+  // A DJ who changes their mind mid-slide turns around at once; nothing waits for the
+  // animation, which jsdom never finishes.
+  it('goes back at once while the next step is still sliding in', () => {
+    setup()
+    toSources()
+    fireEvent.click(screen.getByTestId('session-wizard-back'))
+    expect(screen.getByTestId('session-wizard-step-title')).toHaveTextContent(
+      i18n.t('sessions.wizard.duration.heading'),
+    )
+  })
+
   it('does not let a step ahead be pressed, since it may need what comes before', () => {
     setup()
     expect(screen.queryByTestId('session-wizard-step-character')).toBeNull()
