@@ -395,7 +395,7 @@ export function SettingsModal({
             <div
               data-testid="settings-tab-indicator"
               aria-hidden="true"
-              className="pointer-events-none absolute top-0 right-0 left-0 -z-10 rounded-lg bg-[var(--color-row-selected)] transition-[transform,height] duration-200 ease-[cubic-bezier(0.645,0.045,0.355,1)] motion-reduce:transition-none"
+              className="pointer-events-none absolute top-0 right-0 left-0 -z-10 rounded-lg bg-[var(--color-row-selected)] transition-[transform,height] duration-200 ease-standard motion-reduce:transition-none"
               style={{ transform: `translateY(${pill.top}px)`, height: pill.height }}
             />
           )}

@@ -869,7 +869,7 @@ function CollapsibleTracks({
 
   return (
     <div
-      className={`grid transition-[grid-template-rows] duration-200 ease-out ${
+      className={`grid transition-[grid-template-rows] duration-200 ease-standard ${
         open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
       }`}
     >

@@ -21,7 +21,7 @@ export function TopProgressBar({ fraction }: Props): React.JSX.Element {
       <div
         className={`h-full bg-[var(--color-accent)] ${
           determinate
-            ? 'w-full origin-left transition-transform duration-200 ease-out'
+            ? 'w-full origin-left transition-transform duration-200 ease-standard'
             : 'w-1/3 animate-top-progress'
         }`}
         style={

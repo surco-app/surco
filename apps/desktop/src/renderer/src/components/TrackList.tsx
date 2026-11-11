@@ -158,7 +158,7 @@ const SWIPE_REMOVE_MIN_PX = SWIPE_ACTION_PX * 2
 const SWIPE_SETTLE_MS = 160
 const SWIPE_RESISTANCE = 0.35
 // The exit: the row slides off to the edge while its gap closes, both over these 200 ms, so
-// the rows below rise instead of jumping up in one frame. The same ease-out as a toast's
+// the rows below rise instead of jumping up in one frame. The same ease-standard as a toast's
 // collapse, so the app always closes a gap the same way.
 const SWIPE_EXIT_MS = 200
 
@@ -556,7 +556,7 @@ const TrackRow = memo(function TrackRow({
     <div
       data-testid="track-row-slot"
       data-removing={removing || undefined}
-      className={`grid grid-cols-[minmax(0,1fr)] transition-[grid-template-rows,opacity] duration-200 ease-out ${
+      className={`grid grid-cols-[minmax(0,1fr)] transition-[grid-template-rows,opacity] duration-200 ease-standard ${
         removing ? 'grid-rows-[0fr] opacity-0' : 'grid-rows-[1fr]'
       }`}
     >
@@ -725,7 +725,7 @@ const TrackRow = memo(function TrackRow({
                 // which, combined with content-visibility below, lands mid-scroll and janks.
                 loading="lazy"
                 decoding="async"
-                className={`h-16 w-16 object-cover outline outline-1 -outline-offset-1 outline-on-scrim/10 transition-[border-radius] duration-150 ${
+                className={`h-16 w-16 object-cover outline outline-1 -outline-offset-1 outline-on-scrim/10 transition-[border-radius] duration-120 ${
                   converting ? 'rounded-full' : 'rounded-md'
                 }`}
               />
@@ -1073,7 +1073,7 @@ const TrackRow = memo(function TrackRow({
               width: Math.max(swipe - SWIPE_GAP_PX, 0),
               ...(tracking ? { transition: 'none' } : {}),
             }}
-            className="absolute inset-y-1 right-0 flex flex-col items-center justify-center gap-0.5 overflow-hidden rounded-lg bg-[var(--color-swipe-action)] transition-[width,scale] duration-200 ease-out motion-safe:active:scale-[0.97] text-label font-semibold whitespace-nowrap text-[var(--color-on-swipe-action)]"
+            className="absolute inset-y-1 right-0 flex flex-col items-center justify-center gap-0.5 overflow-hidden rounded-lg bg-[var(--color-swipe-action)] transition-[width,scale] duration-200 ease-standard motion-safe:active:scale-[0.97] text-label font-semibold whitespace-nowrap text-[var(--color-on-swipe-action)]"
           >
             <X className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             {tr('trackList.remove')}

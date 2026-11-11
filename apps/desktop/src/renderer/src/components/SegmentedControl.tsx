@@ -167,7 +167,7 @@ export function SegmentedControl<T extends string>({
         // segment's row too.
         className={`absolute inset-0 ${grid ? 'grid' : 'flex flex-wrap'} gap-0.5 p-[3px] motion-reduce:transition-none ${
           settled
-            ? 'transition-[clip-path] duration-200 ease-[cubic-bezier(0.645,0.045,0.355,1)]'
+            ? 'transition-[clip-path] duration-200 ease-standard'
             : ''
         }`}
         style={
