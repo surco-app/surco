@@ -167,6 +167,7 @@ import { railAlert } from './lib/copiesView'
 import { revokeCoverUrl, revokeCoverUrlIfUnused, revokeDisplacedCovers } from './lib/coverUrl'
 import { autoMarkTracks } from './lib/cueAutoMark'
 import { forgetStaleDrafts } from './lib/cueDrafts'
+import { CUE_PROGRAMS as CUE_EDITORS } from './lib/cuePrograms'
 import {
   type AutoMark,
   focusCue,
@@ -2725,10 +2726,11 @@ export default function App(): React.JSX.Element {
     ((browser.source === 'engine' || browser.source === 'traktor' || browser.source === 'serato') &&
       browser.playlist !== null &&
       playlistScope !== null)
-  const { data: seratoRunning = false } = useQuery({
-    queryKey: ['serato-running'],
-    queryFn: () => window.api.dj.running('serato'),
-    enabled: browser.source === 'serato',
+  const runningNote = sourceProgram && CUE_EDITORS[sourceProgram].runningNote
+  const { data: programRunning = false } = useQuery({
+    queryKey: [`${sourceProgram}-running`],
+    queryFn: async () => sourceProgram !== null && window.api.dj.running(sourceProgram),
+    enabled: runningNote !== null,
     staleTime: 0,
   })
   const cuesMarkable = cuesOpen && sourceProgram !== null
@@ -3722,11 +3724,7 @@ export default function App(): React.JSX.Element {
                     nodes={browser.tree}
                     failed={browser.treeFailed}
                     missing={browser.libraryMissing}
-                    notice={
-                      browser.source === 'serato' && seratoRunning
-                        ? tr('editor.cues.serato.waiting')
-                        : undefined
-                    }
+                    notice={runningNote && programRunning ? tr(runningNote.key) : undefined}
                     selectedId={browser.playlist?.id ?? null}
                     onSelect={selectPlaylist}
                     edit={editableSource ? treeEdit : undefined}

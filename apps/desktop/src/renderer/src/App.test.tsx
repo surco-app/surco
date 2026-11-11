@@ -998,6 +998,28 @@ describe('App Serato cues', () => {
     expect(screen.queryByTestId('source-tree-notice')).toBeNull()
   })
 
+  it('says nothing in Traktor’s tab while Traktor is open, since its changes wait in its own queue', async () => {
+    const traktorRunning = vi.fn<ProgramReads['running']>().mockResolvedValue(true)
+    openSerato({
+      dj: djReads({
+        serato: { running: vi.fn<ProgramReads['running']>().mockResolvedValue(true) },
+        traktor: {
+          running: traktorRunning,
+          available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+          tree: vi
+            .fn<ProgramReads['tree']>()
+            .mockResolvedValue([{ id: 'u1', name: 'Saturday', kind: 'playlist', count: 0 }]),
+          recentCount: vi.fn<ProgramReads['recentCount']>().mockResolvedValue(0),
+        },
+      }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-traktor'))
+    await screen.findByTestId('source-node-u1')
+    expect(screen.queryByTestId('source-tree-notice')).toBeNull()
+    expect(traktorRunning).not.toHaveBeenCalled()
+  })
+
   it('shows no warning in the Serato tab once Serato answers it is closed', async () => {
     let answer: (running: boolean) => void = () => {}
     const seratoRunning = vi.fn<ProgramReads['running']>(
