@@ -8,7 +8,7 @@ import {
   TriangleAlert,
 } from 'lucide-react'
 import type React from 'react'
-import { useLayoutEffect, useRef, useState } from 'react'
+import { Fragment, useLayoutEffect, useRef, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import type {
   FormatSetting,
@@ -22,6 +22,7 @@ import { PLACE_ORDER, type PlaceCheck } from '../../../shared/verification'
 import { type CleanupOffer, cleanupCount } from '../hooks/useConfirmFlows'
 import type { StaleLibraryCopy } from '../lib/appleMusicLibrary'
 import type { Destination } from '../lib/destination'
+import { destinationLine } from '../lib/destinationLine'
 import type { DjLibraryId } from '../lib/djLibraries'
 import { openFeedback } from '../lib/feedback'
 import { formatUpTo } from '../lib/numberFormat'
@@ -90,6 +91,12 @@ interface ConvertFooterProps {
   onBlockedPress?: () => void
   willEditInPlace: boolean
   tagsOnly: boolean
+  sameFormat: boolean
+  upToDate: boolean
+  inMusic: boolean
+  musicHoldsFile: boolean
+  djHolds: DjLibraryId[]
+  replacedFormat: string
   addToAppleMusic: boolean
   djTargets: DjLibraryId[]
   openSource: PlaylistSource | null
@@ -158,6 +165,12 @@ export function ConvertFooter({
   onBlockedPress,
   willEditInPlace,
   tagsOnly,
+  sameFormat,
+  upToDate,
+  inMusic,
+  musicHoldsFile,
+  djHolds,
+  replacedFormat,
   addToAppleMusic,
   djTargets,
   openSource,
@@ -305,6 +318,19 @@ export function ConvertFooter({
     !musicAdded &&
     (musicExt !== 'flac' || hasMusicCopy) &&
     (!inMusicLibraryOnly || hasMusicCopy)
+  const line = destinationLine({
+    destination,
+    withAppleMusic: isMacOS() && format !== 'flac' && addToAppleMusic,
+    djTargets,
+    djHolds,
+    openSource,
+    inPlace: willEditInPlace,
+    inMusic: hasMusicCopy || musicHoldsFile || (inMusic && willEditInPlace),
+    replaces: !!replaces && !musicHoldsFile,
+    libraryBetter: !!libraryBetter,
+    replacedFormat,
+    outputFolder,
+  })
   const lossyToLossless =
     !isMulti &&
     isLosslessContainer(format) &&
@@ -344,7 +370,9 @@ export function ConvertFooter({
     if (!refocus.current) return
     refocus.current = false
     footerRef.current
-      ?.querySelector<HTMLButtonElement>('[data-testid="process-btn"], [data-testid="done-more"]')
+      ?.querySelector<HTMLButtonElement>(
+        '[data-testid="process-btn"], [data-testid="convert-update-anyway"], [data-testid="done-more"]',
+      )
       ?.focus()
   })
   const batchLine = batch && batchReread && (
@@ -704,34 +732,52 @@ export function ConvertFooter({
                 onSelectDestination={onSelectDestination}
               />
             ) : (
-              <ExportButton
-                status={isMulti ? 'idle' : item.status}
-                stage={isMulti ? undefined : item.stage}
-                stale={!isMulti && stale}
-                replaces={!isMulti && replaces}
-                libraryBetter={!isMulti && libraryBetter}
-                done={!isMulti && done}
-                outputFormat={format}
-                exportedFormat={isMulti ? null : exportedFormat}
-                withAppleMusic={isMacOS() && format !== 'flac' && addToAppleMusic}
-                djTargets={djTargets}
-                openSource={openSource}
-                incomplete={incomplete}
-                incompleteReason={incompleteReason}
-                blockedLabel={incompleteSummary}
-                onBlockedPress={onBlockedPress}
-                inPlace={!isMulti && willEditInPlace}
-                tagsOnly={tagsOnly}
-                inMusic={hasMusicCopy}
-                destination={destination}
-                destinations={destinations}
-                outputFolder={outputFolder}
-                count={isMulti ? selectedCount : undefined}
-                onProcess={onProcess}
-                onCancel={onCancel}
-                onSelectFormat={onSelectFormat}
-                onSelectDestination={onSelectDestination}
-              />
+              <>
+                {!upToDate && line.parts.length > 0 && (
+                  <p
+                    data-testid="convert-destination-line"
+                    className="text-center text-xs text-fg-dim"
+                  >
+                    {line.parts.map((part, i) => (
+                      <Fragment key={part.key}>
+                        {i > 0 && ' · '}
+                        <span
+                          data-testid="convert-destination-part"
+                          data-tone={part.warn ? 'warn' : 'dim'}
+                          className={part.warn ? 'text-warn' : undefined}
+                        >
+                          {tr(part.key, part.options)}
+                        </span>
+                      </Fragment>
+                    ))}
+                  </p>
+                )}
+                <ExportButton
+                  status={isMulti ? 'idle' : item.status}
+                  stage={isMulti ? undefined : item.stage}
+                  stale={!isMulti && stale}
+                  replaces={!isMulti && replaces}
+                  libraryBetter={!isMulti && libraryBetter}
+                  done={!isMulti && done}
+                  outputFormat={format}
+                  exportedFormat={isMulti ? null : exportedFormat}
+                  incomplete={incomplete}
+                  incompleteReason={incompleteReason}
+                  blockedLabel={incompleteSummary}
+                  onBlockedPress={onBlockedPress}
+                  inPlace={!isMulti && willEditInPlace}
+                  tagsOnly={tagsOnly}
+                  sameFormat={sameFormat}
+                  upToDate={upToDate}
+                  destination={destination}
+                  destinations={destinations}
+                  count={isMulti ? selectedCount : undefined}
+                  onProcess={onProcess}
+                  onCancel={onCancel}
+                  onSelectFormat={onSelectFormat}
+                  onSelectDestination={onSelectDestination}
+                />
+              </>
             )}
           </>
         )}

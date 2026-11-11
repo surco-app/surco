@@ -3,8 +3,8 @@ import type React from 'react'
 import { useTranslation } from 'react-i18next'
 import type { FormatSetting, PlaylistSource } from '../../../shared/types'
 import type { Destination } from '../lib/destination'
+import { destinationLine } from '../lib/destinationLine'
 import type { DjLibraryId } from '../lib/djLibraries'
-import { programNames } from '../lib/exportLabel'
 import { FormatDestinationMenu } from './FormatDestinationMenu'
 import { useSplitMenu } from './SplitButton'
 
@@ -36,10 +36,23 @@ export function BatchPlan({
   const { t: tr } = useTranslation()
   const { open, setOpen, ref, toggleRef, menuRef, onMenuKeyDown } = useSplitMenu()
   const formatLabel = format === 'source' ? tr('settings.formats.source') : format.toUpperCase()
-  const programs = programNames(
-    withAppleMusic && destination !== 'appleMusic' && openSource !== 'appleMusic',
-    djTargets.filter((id) => id !== openSource),
-  )
+  const programs = destinationLine({
+    destination,
+    withAppleMusic: withAppleMusic && destination !== 'appleMusic',
+    djTargets,
+    djHolds: [],
+    openSource: openSource ?? null,
+    inPlace: false,
+    inMusic: false,
+    replaces: false,
+    libraryBetter: false,
+    replacedFormat: '',
+    outputFolder: '',
+  })
+    .parts.filter((part) =>
+      ['editor.lineAdds', 'editor.lineUpdates', 'editor.lineSyncs'].includes(part.key),
+    )
+    .map((part) => tr(part.key, part.options))
   return (
     <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
       {leftOut && (
@@ -59,7 +72,7 @@ export function BatchPlan({
           format: formatLabel,
           destination: tr(`settings.destinations.${destination}`),
         })}
-        {programs && ` + ${programs}`}
+        {programs.map((program) => ` · ${program}`).join('')}
       </span>
       <div ref={ref} className="relative">
         <button

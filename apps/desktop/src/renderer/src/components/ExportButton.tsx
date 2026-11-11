@@ -1,16 +1,10 @@
-import { ChevronDown, Folder, RotateCw } from 'lucide-react'
+import { ChevronDown, RotateCw } from 'lucide-react'
 import type React from 'react'
 import { useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { OUTPUT_FORMATS } from '../../../shared/outputFormats'
-import type {
-  FormatSetting,
-  OutputFormat,
-  PlaylistSource,
-  ProcessStage,
-} from '../../../shared/types'
+import type { FormatSetting, OutputFormat, ProcessStage } from '../../../shared/types'
 import type { Destination } from '../lib/destination'
-import type { DjLibraryId } from '../lib/djLibraries'
 import { exportButtonLabel } from '../lib/exportLabel'
 import { STAGE_PROGRESS } from '../lib/progress'
 import type { TrackItem } from '../types'
@@ -39,9 +33,6 @@ interface ExportButtonProps {
   done: boolean
   outputFormat: FormatSetting
   exportedFormat: OutputFormat | null
-  withAppleMusic: boolean
-  djTargets: DjLibraryId[]
-  openSource?: PlaylistSource | null
   incomplete: boolean
   // The reason the convert is blocked (the empty required fields), shown as a tooltip on
   // the disabled button so it explains itself. Only meaningful while incomplete.
@@ -59,12 +50,8 @@ interface ExportButtonProps {
   // Only then is an in-place or stale export a tag update, so the button offers "Update
   // tags" instead of a conversion.
   tagsOnly?: boolean
-  // True when the track already has a copy Surco added to Music, so converting an edit
-  // offers to update that copy rather than reading as a second add.
-  inMusic?: boolean
-  // When set, the button converts the whole selection in the chosen format and labels
-  // itself "Convert all (N)" instead of the single-track convert; the format menu works
-  // the same, it just applies to every selected track.
+  sameFormat?: boolean
+  upToDate?: boolean
   count?: number
   // The export phase the track is in while processing. With it, the button mirrors the
   // track list's row: the stage as its label and a fill at that phase's progress mark.
@@ -79,8 +66,6 @@ interface ExportButtonProps {
   // Like the format, picking one only relabels the button for this track.
   destination: Destination
   destinations: readonly Destination[]
-  // The output folder's own name, named beside the button when the file goes there.
-  outputFolder?: string
   onProcess: (format: FormatSetting) => void
   // When given, the button stays live while converting: clicking it cancels the in-flight
   // job instead of firing another convert. Single-only — multi cancels via the toolbar
@@ -105,21 +90,18 @@ export function ExportButton({
   stage,
   outputFormat,
   exportedFormat,
-  withAppleMusic,
-  djTargets,
-  openSource,
   incomplete,
   incompleteReason,
   blockedLabel,
   onBlockedPress,
   inPlace,
   tagsOnly = false,
-  inMusic,
+  sameFormat = false,
+  upToDate = false,
   count,
   quiet,
   destination,
   destinations,
-  outputFolder,
   onProcess,
   onCancel,
   onSelectFormat,
@@ -144,20 +126,15 @@ export function ExportButton({
   const labelSpec = exportButtonLabel({
     processing,
     quiet,
-    count,
     inPlace,
     tagsOnly,
-    inMusic,
+    sameFormat,
     stale,
     replaces,
     libraryBetter,
     done,
-    withAppleMusic,
-    djTargets,
-    openSource,
     format: formatLabel,
     exportedFormat: exportedFormat?.toUpperCase() ?? null,
-    destination,
   })
   // The in-flight view mirrors the track list's row: the stage names what's
   // happening, the fill below marks where in the pipeline it is (same keys, same
@@ -197,6 +174,60 @@ export function ExportButton({
   function pickDestination(d: Destination): void {
     setOpen(false)
     onSelectDestination(d)
+  }
+
+  if (upToDate && !processing && !quiet) {
+    return (
+      <div key="up-to-date" className="animate-footer-swap flex h-10 items-center gap-3">
+        <span
+          data-testid="convert-up-to-date"
+          className="flex flex-1 items-center justify-center gap-1.5 text-sm text-fg-dim"
+        >
+          <span aria-hidden="true" className="text-good">
+            ✓
+          </span>
+          {tr('editor.upToDate')}
+        </span>
+        <button
+          type="button"
+          data-testid="convert-update-anyway"
+          onClick={() => onProcess(outputFormat)}
+          className="press h-8 shrink-0 rounded-lg border border-[var(--color-line-strong)] px-3 text-xs text-fg-dim hover:bg-[var(--color-hover)]"
+        >
+          {tr('editor.updateAnyway')}
+        </button>
+        <div ref={ref} className="relative">
+          <button
+            type="button"
+            data-testid="process-format-toggle"
+            aria-label={tr('editor.chooseFormat')}
+            aria-expanded={open}
+            ref={toggleRef}
+            aria-haspopup="menu"
+            onClick={() => setOpen((v) => !v)}
+            className="press flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-line-strong)] text-fg-dim hover:bg-[var(--color-hover)]"
+          >
+            <ChevronDown
+              aria-hidden="true"
+              className={`h-3 w-3 transition-transform ${open ? 'rotate-180' : ''}`}
+            />
+          </button>
+          {open && (
+            <FormatDestinationMenu
+              menuRef={menuRef}
+              onMenuKeyDown={onMenuKeyDown}
+              offerSource={count !== undefined}
+              outputFormat={outputFormat}
+              exportedFormat={exportedFormat}
+              destination={destination}
+              destinations={destinations}
+              onPickFormat={pick}
+              onPickDestination={pickDestination}
+            />
+          )}
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -359,19 +390,6 @@ export function ExportButton({
           />
         )}
       </div>
-      {!quiet && destination === 'folder' && outputFolder && (
-        <span
-          data-testid="process-folder"
-          className="flex max-w-[30%] shrink-0 items-center gap-1 text-xs text-fg-dim"
-        >
-          <Folder
-            data-testid="process-folder-icon"
-            className="h-3.5 w-3.5 shrink-0"
-            aria-hidden="true"
-          />
-          <span className="truncate">{outputFolder}</span>
-        </span>
-      )}
     </div>
   )
 }

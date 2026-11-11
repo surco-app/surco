@@ -4677,7 +4677,7 @@ describe('App per-track format pick', () => {
     fireEvent.click((await screen.findAllByTestId('track-row'))[0])
     await openFormatMenu()
     fireEvent.click(screen.getByTestId('process-destination-overwrite'))
-    fireEvent.click(screen.getByTestId('process-btn'))
+    fireEvent.click(screen.getByTestId('convert-update-anyway'))
     fireEvent.click(await screen.findByTestId('confirm-ok'))
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(1))
     const [job] = processTrack.mock.calls[0]
@@ -5713,7 +5713,7 @@ describe('App convert all format with a track open', () => {
     fireEvent.click(await screen.findByTestId('add-files'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
     fireEvent.click(screen.getAllByTestId('track-row')[0])
-    await screen.findByTestId('process-btn')
+    await screen.findByTestId('convert-all')
     if (pick) {
       fireEvent.click(screen.getByTestId('process-format-toggle'))
       fireEvent.click(screen.getByTestId(`process-format-${pick}`))
@@ -5929,7 +5929,9 @@ describe('App Default format x input extension matrix', () => {
       await renderApp()
       const rows = await addOneTrack()
       fireEvent.click(rows[0])
-      const convert = await screen.findByTestId('process-btn')
+      const convert = await screen.findByTestId(
+        settingFormat === inputExt ? 'convert-update-anyway' : 'process-btn',
+      )
       fireEvent.click(convert)
       await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(1))
       expect(processTrack.mock.calls[0][0].format).toBe(expectedFormat)
@@ -6010,7 +6012,7 @@ describe('App editor format/destination reseed', () => {
     const rows = await addOneTrack()
     fireEvent.click(rows[0])
     // Same format as the source .flac: the button offers to update it in place.
-    expect(await screen.findByTestId('process-btn')).toHaveTextContent('Update tags')
+    expect(await screen.findByTestId('convert-up-to-date')).toHaveTextContent('No changes')
 
     fireEvent.click(screen.getByTestId('open-settings'))
     fireEvent.click(await screen.findByTestId('settings-tab-conversion'))
@@ -6018,7 +6020,7 @@ describe('App editor format/destination reseed', () => {
     fireEvent.click(screen.getByTestId('settings-close'))
 
     await waitFor(() =>
-      expect(screen.getByTestId('process-btn')).toHaveTextContent('Convert to AIFF + Apple Music'),
+      expect(screen.getByTestId('process-btn')).toHaveTextContent('Convert to AIFF'),
     )
     fireEvent.click(screen.getByTestId('process-btn'))
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(1))
@@ -6051,9 +6053,6 @@ describe('App editor format/destination reseed', () => {
     fireEvent.click(screen.getByTestId('settings-destination-appleMusic'))
     fireEvent.click(screen.getByTestId('settings-close'))
 
-    await waitFor(() =>
-      expect(screen.getByTestId('process-btn')).toHaveTextContent('Convert to AIFF + Apple Music'),
-    )
     fireEvent.click(screen.getByTestId('process-btn'))
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(1))
     expect(processTrack.mock.calls[0][0].addToAppleMusic).toBe(true)
@@ -6322,7 +6321,7 @@ describe('App on Windows', () => {
       fireEvent.click((await addTwoTracks())[0])
 
       expect(await screen.findByTestId('process-btn')).toHaveTextContent('Convert to AIFF')
-      expect(screen.getByTestId('process-folder')).toHaveTextContent('out')
+      expect(screen.getByTestId('convert-destination-line')).toHaveTextContent('Saves to out')
     })
 
     it('checks the output folder in Settings instead of leaving no destination picked', async () => {

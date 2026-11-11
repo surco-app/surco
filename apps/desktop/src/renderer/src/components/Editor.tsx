@@ -28,7 +28,7 @@ import { WRITABLE_PROGRAMS, writableInOrder } from '../../../shared/djProgram'
 import { EDITOR_SECTION_GROUP } from '../../../shared/editorSections'
 import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../../../shared/format'
 import type { GridCheck } from '../../../shared/gridCheck'
-import { fromReadOnlyProgram } from '../../../shared/trackOrigin'
+import { fromReadOnlyProgram, isFrom } from '../../../shared/trackOrigin'
 import type {
   DeclickConfig,
   FormatSetting,
@@ -101,6 +101,7 @@ import {
 import { replacePatch } from '../lib/replaceBeforeConvert'
 import { replaceWarning } from '../lib/replaceWarning'
 import { selectionStatus } from '../lib/selectionStatus'
+import { hasStagedEdits } from '../lib/sessionEdits'
 import { useAppSettings } from '../lib/settingsContext'
 import { matchStatKey } from '../lib/stats'
 import { supersededFile } from '../lib/supersededFile'
@@ -1079,6 +1080,16 @@ export const Editor = memo(function Editor({
       formatMatchesInput(format, item.inputPath),
       jobAudio(item, normalizeCfg, declickCfg, { normalize, declick }),
     )
+  const djTargets = reachedPrograms(appSettings, reachable)
+  const upToDate =
+    !isMulti &&
+    !incomplete &&
+    item.status === 'idle' &&
+    willEditInPlace &&
+    tagsOnlyExport &&
+    item.diskSignature !== undefined &&
+    !hasStagedEdits(item) &&
+    (item.outputName?.trim() || defaultOutputName) === item.fileName
 
   // One onChange per possible key, built once (setField/onChangeAllMeta never
   // change identity) and reused by every fieldSpecs rebuild below. Field.tsx is
@@ -2011,8 +2022,14 @@ export const Editor = memo(function Editor({
           }}
           willEditInPlace={willEditInPlace}
           tagsOnly={tagsOnlyExport}
+          sameFormat={formatMatchesInput(format, item.inputPath)}
+          upToDate={upToDate}
+          inMusic={librarySource === 'appleMusic' && inLibrary === 'yes'}
+          musicHoldsFile={!!replacedCopyPath && !comparedCopyPath}
+          djHolds={djTargets.filter((id) => openSource === id || isFrom(item, id))}
+          replacedFormat={replacedCopyPath ? fileExtension(replacedCopyPath) : ''}
           addToAppleMusic={picked.addToAppleMusic}
-          djTargets={reachedPrograms(appSettings, reachable)}
+          djTargets={djTargets}
           openSource={openSource}
           destination={destination}
           destinations={destinationChoices}

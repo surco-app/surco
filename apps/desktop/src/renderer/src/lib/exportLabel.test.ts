@@ -6,36 +6,44 @@ const base: ExportLabelState = {
   inPlace: false,
   stale: false,
   done: false,
-  withAppleMusic: false,
-  djTargets: [],
   format: 'AIFF',
   tagsOnly: true,
 }
 
+const rows: [ExportLabelState, string][] = [
+  [{ ...base, processing: true, quiet: true, done: true }, 'editor.processing'],
+  [{ ...base, inPlace: true }, 'editor.update'],
+  [{ ...base, stale: true, done: true }, 'editor.update'],
+  [{ ...base, inPlace: true, tagsOnly: false, sameFormat: true }, 'editor.updateAudio'],
+  [{ ...base, stale: true, tagsOnly: false, sameFormat: true }, 'editor.updateAudio'],
+  [{ ...base, inPlace: true, tagsOnly: false, sameFormat: false }, 'editor.convertAction'],
+  [{ ...base, done: true }, 'editor.exportAgain'],
+  [{ ...base, tagsOnly: false, replaces: true }, 'editor.replaceAction'],
+  [{ ...base, tagsOnly: false, replaces: true, libraryBetter: true }, 'editor.libraryHasBetter'],
+  [{ ...base, tagsOnly: false }, 'editor.convertAction'],
+]
+
 describe('exportButtonLabel', () => {
   // The label is a precedence chain; each row pins which state wins when several
   // apply, so adding a new state can't silently reshuffle the existing ones.
-  it.each([
-    [{ ...base, processing: true, quiet: true, count: 2, done: true }, 'editor.processing'],
-    [{ ...base, quiet: true, count: 2, inPlace: true }, 'editor.updateAgain'],
-    [{ ...base, quiet: true, count: 2 }, 'editor.reexport'],
-    [{ ...base, count: 2, inPlace: true, withAppleMusic: true }, 'editor.convertAllMusic'],
-    [{ ...base, count: 2, inPlace: true }, 'editor.convertAll'],
-    [{ ...base, inPlace: true, stale: true, withAppleMusic: true }, 'editor.updateMusic'],
-    [{ ...base, inPlace: true, stale: true }, 'editor.update'],
-    [{ ...base, stale: true, done: true }, 'editor.update'],
-    [{ ...base, done: true }, 'editor.exportAgain'],
-    [{ ...base, withAppleMusic: true }, 'editor.convert'],
-    [base, 'editor.convertNoMusic'],
-  ])('resolves %o to %s', (state, key) => {
+  it.each(rows)('resolves %o to %s', (state, key) => {
     expect(exportButtonLabel(state).key).toBe(key)
   })
 
-  it('hands the batch count and format through for interpolation', () => {
-    expect(exportButtonLabel({ ...base, count: 3 }).options).toEqual({
-      count: 3,
+  it('never names a destination', () => {
+    for (const [state] of rows) {
+      expect(exportButtonLabel(state).key).not.toMatch(/Music|To|Beside|Overwrite|All/)
+    }
+  })
+
+  it('hands the format through for the convert, replace and replace anyway labels', () => {
+    expect(exportButtonLabel({ ...base, tagsOnly: false }).options).toEqual({ format: 'AIFF' })
+    expect(exportButtonLabel({ ...base, tagsOnly: false, replaces: true }).options).toEqual({
       format: 'AIFF',
     })
+    expect(
+      exportButtonLabel({ ...base, tagsOnly: false, replaces: true, libraryBetter: true }).options,
+    ).toEqual({ format: 'AIFF' })
   })
 
   // After an export, picking a different format from the menu only relabels the button —
@@ -61,264 +69,5 @@ describe('exportButtonLabel', () => {
     expect(
       exportButtonLabel({ ...base, quiet: true, format: 'WAV', exportedFormat: 'WAV' }).key,
     ).toBe('editor.reexport')
-  })
-
-  // Reported 14/09: a FLAC loaded from a download folder, whose song is already in the
-  // library as an MP3, offered "Convert to AIFF + Apple Music" — an add, leaving the user
-  // holding both copies. When Surco knows which copy the file would supersede, the button
-  // says so instead, and names it so the swap can be checked before it happens.
-  it('offers to replace the library copy a loaded file supersedes', () => {
-    expect(
-      exportButtonLabel({
-        processing: false,
-        inPlace: false,
-        stale: false,
-        done: false,
-        withAppleMusic: true,
-        djTargets: [],
-        format: 'AIFF',
-        tagsOnly: true,
-        replaces: true,
-      }),
-    ).toEqual({ key: 'editor.replaceMusic', options: { format: 'AIFF' } })
-  })
-
-  // Replacing a copy that measured better pushes the worse file into the library. The
-  // button still names what pressing it does, and the "anyway" says it goes against the
-  // verdict the pill shows.
-  it('offers the replace as a deliberate one when Apple Music has the better copy', () => {
-    expect(
-      exportButtonLabel({
-        ...base,
-        replaces: true,
-        libraryBetter: true,
-        withAppleMusic: true,
-        format: 'AIFF',
-      }),
-    ).toEqual({ key: 'editor.libraryHasBetter', options: { format: 'AIFF' } })
-  })
-
-  // The flag only speaks to the replace offer; with nothing to supersede the plain label
-  // stands.
-  it('ignores a better library copy when there is nothing to replace', () => {
-    expect(exportButtonLabel({ ...base, libraryBetter: true, withAppleMusic: true }).key).toBe(
-      'editor.convert',
-    )
-  })
-
-  // An in-place edit is already an update of the file itself; it must keep saying so
-  // rather than claiming to replace a library copy.
-  it('keeps the in-place update label over the replace offer', () => {
-    expect(
-      exportButtonLabel({
-        processing: false,
-        inPlace: true,
-        stale: false,
-        done: false,
-        withAppleMusic: true,
-        djTargets: [],
-        format: 'AIFF',
-        tagsOnly: true,
-        replaces: true,
-      }),
-    ).toEqual({ key: 'editor.updateMusic' })
-  })
-
-  // Nothing to supersede is the ordinary case, and the plain convert label stands.
-  it('falls back to the convert label when there is nothing to replace', () => {
-    expect(
-      exportButtonLabel({
-        processing: false,
-        inPlace: false,
-        stale: false,
-        done: false,
-        withAppleMusic: true,
-        djTargets: [],
-        format: 'AIFF',
-        tagsOnly: true,
-      }),
-    ).toEqual({ key: 'editor.convert', options: { format: 'AIFF' } })
-  })
-
-  // "Update tags" promises the audio is left alone. Overwriting a WAV with an AIFF is a
-  // full conversion that happens to land on the original's path, and so is re-running a
-  // done WAV→AIFF track: naming either a tag update undersells what the click does.
-  it.each([
-    [{ ...base, inPlace: true, tagsOnly: false }, 'editor.convertNoMusic'],
-    [{ ...base, inPlace: true, tagsOnly: false, withAppleMusic: true }, 'editor.convert'],
-    [{ ...base, stale: true, tagsOnly: false }, 'editor.convertNoMusic'],
-  ])('labels %o as a conversion, not a tag update', (state, key) => {
-    expect(exportButtonLabel(state)).toEqual({ key, options: { format: 'AIFF' } })
-  })
-
-  // Reported 01/10: a FLAC converted to AIFF and added to Music, then given another cover,
-  // offered "Convert to AIFF + Apple Music", which reads as a second add. The click syncs
-  // the edit onto the copy already in the library, so the label says that instead.
-  it('offers to update the library copy of an edited track Surco already added', () => {
-    expect(
-      exportButtonLabel({
-        ...base,
-        stale: true,
-        tagsOnly: false,
-        withAppleMusic: true,
-        inMusic: true,
-      }),
-    ).toEqual({ key: 'editor.appleMusicUpdate' })
-  })
-
-  // Without Music as the destination the click never touches the library copy, so the
-  // update offer would promise a sync that does not happen.
-  it('keeps the convert label for an edited track when Music is not the destination', () => {
-    expect(exportButtonLabel({ ...base, stale: true, tagsOnly: false, inMusic: true })).toEqual({
-      key: 'editor.convertNoMusic',
-      options: { format: 'AIFF' },
-    })
-  })
-
-  // Beside the original and over the original both read "Convert to AIFF", so where the
-  // file lands was only found out after it failed on an unplugged NAS. The button names the
-  // place the way it names Apple Music.
-  it.each([
-    [{ ...base, destination: 'beside' }, 'editor.convertBeside'],
-    [
-      { ...base, destination: 'overwrite', inPlace: true, tagsOnly: false },
-      'editor.convertOverwrite',
-    ],
-    [{ ...base, count: 2, destination: 'beside' }, 'editor.convertAllBeside'],
-    [{ ...base, count: 2, destination: 'overwrite' }, 'editor.convertAllOverwrite'],
-  ] as const)('names where %o lands as %s', (state, key) => {
-    expect(exportButtonLabel(state).key).toBe(key)
-  })
-
-  // "Convert to AIFF in out" glued the folder's name onto the verb; the button names the
-  // action and the folder rides beside it as secondary text.
-  it('leaves the output folder off the convert label', () => {
-    expect(exportButtonLabel({ ...base, destination: 'folder' })).toEqual({
-      key: 'editor.convertNoMusic',
-      options: { format: 'AIFF' },
-    })
-    expect(exportButtonLabel({ ...base, count: 2, destination: 'folder' })).toEqual({
-      key: 'editor.convertAll',
-      options: { count: 2, format: 'AIFF' },
-    })
-  })
-
-  it('names every DJ program a conversion adds to', () => {
-    expect(exportButtonLabel({ ...base, djTargets: ['rekordbox', 'traktor'] })).toEqual({
-      key: 'editor.convertTo',
-      options: { format: 'AIFF', programs: 'rekordbox + Traktor' },
-    })
-    expect(exportButtonLabel({ ...base, count: 3, djTargets: ['rekordbox', 'traktor'] })).toEqual({
-      key: 'editor.convertAllTo',
-      options: { count: 3, format: 'AIFF', programs: 'rekordbox + Traktor' },
-    })
-  })
-
-  it('names Apple Music beside the DJ programs it also reaches', () => {
-    expect(exportButtonLabel({ ...base, withAppleMusic: true, djTargets: ['engine'] })).toEqual({
-      key: 'editor.convertTo',
-      options: { format: 'AIFF', programs: 'Apple Music + Engine DJ' },
-    })
-  })
-
-  it.each<[ExportLabelState, string]>([
-    [{ ...base, djTargets: ['engine'], destination: 'beside' }, 'editor.convertBesideTo'],
-    [
-      { ...base, djTargets: ['engine'], destination: 'overwrite', inPlace: true, tagsOnly: false },
-      'editor.convertOverwriteTo',
-    ],
-  ])('names where %o lands as well as the programs it reaches, as %s', (state, key) => {
-    expect(exportButtonLabel(state)).toEqual({
-      key,
-      options: { format: 'AIFF', programs: 'Engine DJ' },
-    })
-  })
-
-  it.each<[ExportLabelState, string]>([
-    [
-      { ...base, count: 2, djTargets: ['rekordbox'], destination: 'beside' },
-      'editor.convertAllBesideTo',
-    ],
-    [
-      { ...base, count: 2, djTargets: ['rekordbox'], destination: 'overwrite' },
-      'editor.convertAllOverwriteTo',
-    ],
-  ])('names where a batch %o lands as well as the programs it reaches, as %s', (state, key) => {
-    expect(exportButtonLabel(state)).toEqual({
-      key,
-      options: { count: 2, format: 'AIFF', programs: 'rekordbox' },
-    })
-  })
-
-  // Apple Music already names the place, and a FLAC pinned off Music lands in the folder,
-  // so the library suffix wins over the destination.
-  it('keeps the library suffix over the destination', () => {
-    expect(
-      exportButtonLabel({ ...base, withAppleMusic: true, destination: 'appleMusic' }).key,
-    ).toBe('editor.convert')
-  })
-})
-
-describe('exportButtonLabel inside a library tab', () => {
-  it.each([
-    [{ ...base, withAppleMusic: true, openSource: 'appleMusic' as const }, 'editor.convertNoMusic'],
-    [
-      { ...base, inPlace: true, withAppleMusic: true, openSource: 'appleMusic' as const },
-      'editor.update',
-    ],
-    [
-      { ...base, count: 2, withAppleMusic: true, openSource: 'appleMusic' as const },
-      'editor.convertAll',
-    ],
-  ])('leaves Apple Music unnamed when the track is already in Music: %o → %s', (state, key) => {
-    expect(exportButtonLabel(state).key).toBe(key)
-  })
-
-  it('keeps the place unnamed in Music, where the file still lands in the library and not beside the original', () => {
-    expect(
-      exportButtonLabel({
-        ...base,
-        withAppleMusic: true,
-        destination: 'beside',
-        openSource: 'appleMusic',
-      }).key,
-    ).toBe('editor.convertNoMusic')
-  })
-
-  it('still names a second library the conversion reaches, since that one is not where the user is', () => {
-    expect(
-      exportButtonLabel({
-        ...base,
-        withAppleMusic: true,
-        djTargets: ['rekordbox'],
-        openSource: 'appleMusic',
-      }),
-    ).toEqual({ key: 'editor.convertTo', options: { format: 'AIFF', programs: 'rekordbox' } })
-  })
-
-  it('leaves the DJ library of the open tab unnamed and names the rest', () => {
-    expect(
-      exportButtonLabel({
-        ...base,
-        withAppleMusic: true,
-        djTargets: ['rekordbox', 'traktor'],
-        openSource: 'rekordbox',
-      }),
-    ).toEqual({
-      key: 'editor.convertTo',
-      options: { format: 'AIFF', programs: 'Apple Music + Traktor' },
-    })
-  })
-
-  it('drops to the plain label when the open tab is the only library it reaches', () => {
-    expect(exportButtonLabel({ ...base, djTargets: ['engine'], openSource: 'engine' }).key).toBe(
-      'editor.convertNoMusic',
-    )
-  })
-
-  it('names Apple Music in Tracks, where adding to it is a choice the button has to state', () => {
-    expect(exportButtonLabel({ ...base, withAppleMusic: true, openSource: null }).key).toBe(
-      'editor.convert',
-    )
   })
 })
