@@ -313,6 +313,7 @@
       "quality": "品質",
       "ascending": "昇順",
       "descending": "降順",
+      "directionNeedsField": "項目で並べ替えると順序を選べます",
       "rating": "星"
     },
     "position": "トラック {{current}} / {{total}}",

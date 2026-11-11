@@ -313,6 +313,7 @@
       "quality": "Qualité",
       "ascending": "Ordre croissant",
       "descending": "Ordre décroissant",
+      "directionNeedsField": "Triez par un champ pour choisir le sens",
       "rating": "Étoiles"
     },
     "position": "Morceau {{current}} sur {{total}}",

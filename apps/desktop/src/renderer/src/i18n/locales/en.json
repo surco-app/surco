@@ -313,6 +313,7 @@
       "quality": "Quality",
       "ascending": "Ascending order",
       "descending": "Descending order",
+      "directionNeedsField": "Sort by a field to choose the direction",
       "rating": "Stars"
     },
     "position": "Track {{current}} of {{total}}",

@@ -48,6 +48,7 @@ import { clearDraggedRows, draggedRows, TREE_NODE_TYPE } from './lib/reorderDrag
 import { usbExportStore } from './lib/usbExportStore'
 import { type ApiOverrides, djReads, type ProgramReads } from './test/api'
 import { fakeDataTransfer, installDragEvent } from './test/drag'
+import { hoverTooltip } from './test/tooltip'
 
 // Pass-through triage that counts sort runs, so the derived-list stability test can
 // assert renders without track changes skip the whole filter+sort pipeline.
@@ -6603,16 +6604,17 @@ describe('App sort direction', () => {
     await waitFor(() => expect(screen.getAllByTestId('track-row')[0]).toHaveTextContent('First'))
   })
 
-  // The drop order ('Default') has no direction to flip, so the toggle stays hidden until
-  // an actual sort key is chosen — otherwise it would imply reversing a non-existent order.
-  it('hides the direction toggle for the default drop order and shows it once a sort is picked', async () => {
+  // The playlist's own order has no direction to flip. A toggle that came and went with the
+  // sort shifted the bar under the pointer; it holds its place, off, and says when it applies.
+  it('keeps the direction toggle in place but off for the playlist order, saying why', async () => {
     await renderApp()
     await addTwoTracks()
-    expect(screen.queryByTestId('track-sort-direction')).toBeNull()
+    const toggle = screen.getByTestId('track-sort-direction')
+    expect(toggle).toBeDisabled()
+    expect(hoverTooltip(toggle)).toBe(i18n.t('sidebar.sort.directionNeedsField'))
     fireEvent.click(screen.getByTestId('track-sort'))
     fireEvent.click(screen.getByTestId('track-sort-option-name'))
-    const toggle = screen.getByTestId('track-sort-direction')
-    expect(toggle).toBeInTheDocument()
+    expect(toggle).toBeEnabled()
     // The hint comes from the themed Tooltip, not a native title — so the control reads
     // the same as the rest of the app and tracks the theme.
     expect(toggle).not.toHaveAttribute('title')

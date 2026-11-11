@@ -313,6 +313,7 @@
       "quality": "Qualidade",
       "ascending": "Ordem crescente",
       "descending": "Ordem decrescente",
+      "directionNeedsField": "Ordene por um campo para escolher a direção",
       "rating": "Estrelas"
     },
     "position": "Faixa {{current}} de {{total}}",
