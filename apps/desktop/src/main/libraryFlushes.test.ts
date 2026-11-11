@@ -83,6 +83,10 @@ vi.mock('./rekordboxTags', () => ({ updateRekordboxTags: WRITERS.updateRekordbox
 vi.mock('./rekordboxDuplicates', () => ({
   replaceRekordboxDuplicates: WRITERS.replaceRekordboxDuplicates,
 }))
+const VIRTUALDJ_DUPLICATES = vi.hoisted(() => ({
+  replaceVirtualdjDuplicates: vi.fn(async () => [{ written: true, outcome: 'repointed' }]),
+}))
+vi.mock('./virtualdjDuplicates', () => VIRTUALDJ_DUPLICATES)
 
 const FILE_USE = vi.hoisted(() => {
   const check = vi.fn(async (_path: string) => false)
@@ -689,6 +693,33 @@ describe('duplicateLibraryDeps', () => {
     } finally {
       Object.assign(SETTINGS, settings)
       Object.assign(STATUS, status)
+    }
+  })
+
+  it('moves VirtualDJ to the kept copy when its sync is on, with its own copies folder', async () => {
+    const roots = [{ dir: '/Users/v/Library/Application Support/VirtualDJ', root: '/' }]
+    const ask = host()
+    const settings = { ...SETTINGS }
+    try {
+      expect(
+        duplicateLibraryDeps(ask, sessions, () => ({ serato: [], virtualdj: roots })).libraries
+          .virtualdj,
+      ).toBeUndefined()
+      Object.assign(SETTINGS, { syncVirtualdj: true })
+      expect(
+        duplicateLibraryDeps(ask, sessions, () => ({ serato: [], virtualdj: [] })).libraries
+          .virtualdj,
+      ).toBeUndefined()
+      const step = duplicateLibraryDeps(ask, sessions, () => ({ serato: [], virtualdj: roots }))
+        .libraries.virtualdj
+      expect(await step?.([{ from: '/m/a.mp3', to: '/m/b.mp3' }])).toEqual(['repointed'])
+      const [pairs, deps] = VIRTUALDJ_DUPLICATES.replaceVirtualdjDuplicates.mock
+        .lastCall as unknown as [unknown, { backupDir: string; roots: () => unknown }]
+      expect(pairs).toEqual([{ from: '/m/a.mp3', to: '/m/b.mp3' }])
+      expect(deps.backupDir).toBe(join('/tmp', 'virtualdj-backups'))
+      expect(deps.roots()).toBe(roots)
+    } finally {
+      Object.assign(SETTINGS, settings)
     }
   })
 

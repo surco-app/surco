@@ -1,6 +1,7 @@
 import { existsSync, realpathSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import { app } from 'electron'
 import log from 'electron-log/main'
 import {
   type DjProgram,
@@ -14,6 +15,7 @@ import type { LibraryStatus, LibraryTagUpdate, RekordboxSyncIssue } from '../sha
 import { activity } from './activity'
 import {
   libraryOutcomes,
+  outcomeOf,
   type ReplaceDuplicatesDeps,
   traktorDuplicateStep,
 } from './duplicateReplace'
@@ -66,7 +68,9 @@ import { isTraktorRunning } from './traktorProcess'
 import { flushTraktorSync } from './traktorSyncFlush'
 import { sourceRoot } from './usbExport'
 import { type FlushOutcome, type TraktorWrite, traktorPatchKey } from './verifyRegistry'
+import { replaceVirtualdjDuplicates } from './virtualdjDuplicates'
 import type { VirtualdjRoot } from './virtualdjLibrary'
+import { isVirtualdjRunning } from './virtualdjProcess'
 import { syncVirtualdjTags } from './virtualdjTagSync'
 import { virtualdjCannotFollow, virtualdjHeld, virtualdjLibraryHas } from './virtualdjTrackWrite'
 
@@ -907,7 +911,17 @@ export function duplicateLibraryDeps(
                 replaceDuplicatesInCollection(nmlPath, pairs, sessions.traktor),
             })
         : undefined,
-    virtualdj: undefined,
+    virtualdj:
+      getSettings().syncVirtualdj && rootLibraries().virtualdj.length > 0
+        ? async (list) =>
+            (
+              await replaceVirtualdjDuplicates(list, {
+                backupDir: join(app.getPath('userData'), 'virtualdj-backups'),
+                roots: () => rootLibraries().virtualdj,
+                virtualdjOpen: isVirtualdjRunning,
+              })
+            ).map(outcomeOf)
+        : undefined,
   }
   const libraries: ReplaceDuplicatesDeps['libraries'] = {}
   for (const program of WRITABLE_PROGRAMS) if (steps[program]) libraries[program] = steps[program]

@@ -207,6 +207,17 @@ export function withVirtualdjTags(
   )
 }
 
+export function withVirtualdjSongRemoved(xml: string, path: string): string | null {
+  const span = findSong(xml, path)
+  if (!span) return null
+  const line = xml.lastIndexOf(NL, span.openStart)
+  if (line < 0) return null
+  const close = span.bodyEnd + SONG_CLOSE.length
+  const padded = close + (xml.slice(close).match(/^ */)?.[0].length ?? 0)
+  const end = xml.startsWith(NL, padded) ? padded + NL.length : close
+  return `${xml.slice(0, line + NL.length)}${xml.slice(end)}`
+}
+
 export function withVirtualdjSongAdded(
   xml: string,
   song: { path: string; size: number; title: string; artist: string; album: string; genre: string },
