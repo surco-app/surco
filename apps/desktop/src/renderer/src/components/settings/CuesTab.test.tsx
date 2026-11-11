@@ -187,9 +187,9 @@ describe('CuesTab', () => {
     expect(screen.queryByTestId('cue-flow-library-note')).not.toBeInTheDocument()
   })
 
-  it('leaves the hot cues note out when only VirtualDJ is found, since no flow reaches VirtualDJ', async () => {
+  it('leaves the hot cues note out when only rekordbox and VirtualDJ are found, since rekordbox keeps CALLs and no flow reaches VirtualDJ', async () => {
     installApi({ dj: djReads({ virtualdj: { available: async () => true } }) })
-    render(<Harness />)
+    render(<Harness collection="/c/master.db" />)
     await screen.findByTestId('cue-flow-mark-point')
     await act(async () => {})
     expect(screen.queryByTestId('cue-flow-library-note')).not.toBeInTheDocument()

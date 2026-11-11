@@ -84,7 +84,9 @@ export function CuesTab({
     boolean
   >
   foundBy.rekordbox = rekordboxCollection !== ''
-  const { engine: engineFound, traktor: traktorFound, serato: seratoFound } = foundBy
+  const hotCuesOnlyFound = DJ_PROGRAMS.some(
+    (p) => foundBy[p] && CUE_PROGRAMS[p].takesFlows && !CUE_PROGRAMS[p].writesCalls,
+  )
   const flows = synced.cueFlows
   const flow = flows.find((f) => f.id === current) ?? activeCueFlow(synced)
   const put = (next: CueFlow) =>
@@ -407,11 +409,11 @@ export function CuesTab({
             />
           </div>
         </div>
-        {(engineFound || traktorFound || seratoFound) && (
+        {hotCuesOnlyFound && (
           <SettingsHint data-testid="cue-flow-library-note">
             {[
               tr('settings.cueFlows.callsOnlyRekordbox'),
-              ...(traktorFound ? [tr('settings.cueFlows.traktorColours')] : []),
+              ...(foundBy.traktor ? [tr('settings.cueFlows.traktorColours')] : []),
             ].join('. ')}
           </SettingsHint>
         )}
