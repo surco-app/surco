@@ -3544,7 +3544,8 @@
       "appleMusic": "Apple Music",
       "rekordbox": "rekordbox",
       "engine": "Engine DJ",
-      "traktor": "Traktor"
+      "traktor": "Traktor",
+      "virtualdj": "VirtualDJ"
     },
     "detail": {
       "pending": "保留中、{{program}}の終了時に反映",
@@ -3619,6 +3620,12 @@
       "traktorNameStale": "Traktorにはまだ「{{value}}」と表示されています",
       "traktorPlaylistMissing": "トラックがTraktorのプレイリスト{{playlist}}にありません",
       "traktorUnreadable": "Traktorを確認できませんでした",
+      "virtualdjOk": "{{format}}を参照",
+      "virtualdjOkPlaylists": "{{format}}を参照 · {{playlists}}に収録",
+      "virtualdjStillOld": "VirtualDJはまだ{{format}}を参照しています",
+      "virtualdjMissing": "トラックがVirtualDJにありません",
+      "virtualdjSizeDiffers": "VirtualDJのサイズが新しいファイルと違います",
+      "virtualdjPlaylistMissing": "トラックがVirtualDJのリスト{{playlist}}にありません",
       "virtualdjUnreadable": "VirtualDJを確認できませんでした"
     },
     "retry": "再試行",

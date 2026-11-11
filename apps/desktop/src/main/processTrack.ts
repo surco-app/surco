@@ -63,6 +63,7 @@ import type { FileExpect } from './verifyFile'
 import type { MusicExpect } from './verifyMusic'
 import type { VerifyEntry } from './verifyRegistry'
 import type { RekordboxBefore } from './verifyRekordbox'
+import type { VirtualdjBefore } from './verifyVirtualdj'
 
 // The conversion workflow, lifted out of the process:track IPC handler so it can be
 // unit-tested without booting Electron. Every collaborator that touches Electron, the
@@ -211,7 +212,7 @@ export interface ProcessTrackDeps {
   // play are keyed; a read that fails is 'unreadable'.
   snapshotLibraries?: (
     from: string,
-  ) => Promise<{ rekordbox?: RekordboxBefore; engine?: EngineBefore }>
+  ) => Promise<{ rekordbox?: RekordboxBefore; engine?: EngineBefore; virtualdj?: VirtualdjBefore }>
   // Re-read the written file and the Music entry before the job reports back. The signal is
   // the job's cancel; a cancelled read rejects with conversionCancelled, and the job still
   // returns what it converted with that place unreadable.
@@ -546,7 +547,7 @@ export async function runProcessTrack(
   // The libraries follow the file this conversion supersedes, the same one the repoint names.
   const libraryFrom = job.replacesPath ?? job.inputPath
   // A snapshot that failed is not a library without the track: both read as unreadable.
-  const before =
+  const before: Awaited<ReturnType<NonNullable<ProcessTrackDeps['snapshotLibraries']>>> =
     (await deps.snapshotLibraries?.(libraryFrom).catch((e) => {
       log.warn('process:track could not read the libraries before converting', e)
       return { rekordbox: 'unreadable' as const, engine: 'unreadable' as const }
@@ -1249,11 +1250,14 @@ export async function runProcessTrack(
         : { place, state: 'unreadable', detail: { key: `${place}Unreadable` } }
     const rekordboxListed =
       (before.rekordbox && before.rekordbox !== 'absent') || !!playlists.rekordbox
+    const virtualdjListed =
+      (before.virtualdj && before.virtualdj !== 'absent') || !!playlists.virtualdj
     const places = new Set<VerifyPlace>(['file'])
     if (musicCheck) places.add('appleMusic')
     if (followed && (before.rekordbox || playlists.rekordbox)) places.add('rekordbox')
     if (followed && (before.engine || addedToEngineDj || playlists.engine)) places.add('engine')
     if (followed && traktor) places.add('traktor')
+    if (followed && (before.virtualdj || playlists.virtualdj)) places.add('virtualdj')
     // Named per conversion, not per track: a track converted again starts its own count.
     const checked = withChecks({ status: 'checking', checks: [] }, [
       fileCheck,
@@ -1261,6 +1265,7 @@ export async function runProcessTrack(
       ...(rekordboxListed ? [library('rekordbox')] : []),
       ...(engineListed ? [library('engine')] : []),
       ...(traktor ? [library('traktor')] : []),
+      ...(virtualdjListed ? [library('virtualdj')] : []),
     ])
     const heldOriginal = claimHeldOriginal(finalPath)
     const originalHeld = settleHeldOriginal(heldOriginal, checked.status)
@@ -1282,6 +1287,7 @@ export async function runProcessTrack(
       music: musicExpect,
       rekordbox: before.rekordbox,
       engine: before.engine,
+      virtualdj: before.virtualdj,
       engineStep: addedToEngineDj,
       ...(Object.keys(playlists).length > 0 ? { playlists } : {}),
       heldOriginal,

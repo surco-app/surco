@@ -3544,7 +3544,8 @@
       "appleMusic": "Apple Music",
       "rekordbox": "rekordbox",
       "engine": "Engine DJ",
-      "traktor": "Traktor"
+      "traktor": "Traktor",
+      "virtualdj": "VirtualDJ"
     },
     "detail": {
       "pending": "Pendiente, se aplica al cerrar {{program}}",
@@ -3619,6 +3620,12 @@
       "traktorNameStale": "Traktor sigue mostrando «{{value}}»",
       "traktorPlaylistMissing": "La pista no está en la playlist {{playlist}} de Traktor",
       "traktorUnreadable": "No se pudo comprobar Traktor",
+      "virtualdjOk": "Apunta al {{format}}",
+      "virtualdjOkPlaylists": "Apunta al {{format}} · en {{playlists}}",
+      "virtualdjStillOld": "VirtualDJ sigue en el {{format}}",
+      "virtualdjMissing": "La pista no está en VirtualDJ",
+      "virtualdjSizeDiffers": "VirtualDJ tiene otro tamaño para el archivo nuevo",
+      "virtualdjPlaylistMissing": "La pista no está en la lista {{playlist}} de VirtualDJ",
       "virtualdjUnreadable": "No se pudo comprobar VirtualDJ"
     },
     "retry": "Reintentar",

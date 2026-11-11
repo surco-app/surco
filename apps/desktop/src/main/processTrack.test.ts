@@ -3885,6 +3885,43 @@ describe('runProcessTrack — checking what it wrote', () => {
     expect([...entry.places]).toContain('engine')
   })
 
+  it('lists VirtualDJ for a song it held, and for one it never had only when the job asked for its lists', async () => {
+    const registerVerification = vi.fn<NonNullable<ProcessTrackDeps['registerVerification']>>()
+    const held = { lists: [{ id: 'Sets', name: 'Sets' }] }
+    const deps = makeDeps({
+      snapshotLibraries: vi.fn<NonNullable<ProcessTrackDeps['snapshotLibraries']>>(async () => ({
+        virtualdj: held,
+      })),
+      registerVerification,
+    })
+
+    const result = await runProcessTrack(job(), deps)
+
+    expect(result.verification?.checks.map((c) => [c.place, c.state])).toEqual([
+      ['file', 'ok'],
+      ['virtualdj', 'checking'],
+    ])
+    expect(registerVerification.mock.calls[0][0].virtualdj).toEqual(held)
+    expect([...registerVerification.mock.calls[0][0].places]).toContain('virtualdj')
+
+    const absent = makeDeps({
+      snapshotLibraries: vi.fn<NonNullable<ProcessTrackDeps['snapshotLibraries']>>(async () => ({
+        virtualdj: 'absent',
+      })),
+      registerVerification,
+    })
+    expect((await runProcessTrack(job(), absent)).verification?.checks.map((c) => c.place)).toEqual(
+      ['file'],
+    )
+    const wanted = [{ name: 'Peak time' }]
+    const picked = await runProcessTrack(
+      job({ playlists: { virtualdj: { targets: wanted } } }),
+      absent,
+    )
+    expect(picked.verification?.checks.map((c) => c.place)).toEqual(['file', 'virtualdj'])
+    expect(registerVerification.mock.lastCall?.[0].playlists).toEqual({ virtualdj: wanted })
+  })
+
   it('hands the check the Traktor playlists the job asked for', async () => {
     const registerVerification = vi.fn<NonNullable<ProcessTrackDeps['registerVerification']>>()
     const deps = makeDeps({

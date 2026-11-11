@@ -21,6 +21,8 @@ import {
 } from './verifyRegistry'
 import { checkRekordbox, type RekordboxBefore, snapshotRekordboxRow } from './verifyRekordbox'
 import { checkTraktor } from './verifyTraktor'
+import { checkVirtualdj, snapshotVirtualdjSong, type VirtualdjBefore } from './verifyVirtualdj'
+import type { VirtualdjRoot } from './virtualdjLibrary'
 
 // Every open window hears how a conversion's check went, as (trackId, verification): the
 // preload hands both to the renderer the way the progress events do.
@@ -76,10 +78,11 @@ const openRekordboxReadOnly = (key: string | undefined) => (path: string) =>
 // path is a library not in play. Never rejects: a library it cannot read is unreadable.
 export async function snapshotLibraries(
   from: string,
-  at: { rekordbox: string; engine: string },
+  at: { rekordbox: string; engine: string; virtualdj?: VirtualdjRoot[] },
   realPath: (p: string) => string,
-): Promise<{ rekordbox?: RekordboxBefore; engine?: EngineBefore }> {
-  const out: { rekordbox?: RekordboxBefore; engine?: EngineBefore } = {}
+): Promise<{ rekordbox?: RekordboxBefore; engine?: EngineBefore; virtualdj?: VirtualdjBefore }> {
+  const out: { rekordbox?: RekordboxBefore; engine?: EngineBefore; virtualdj?: VirtualdjBefore } =
+    {}
   if (at.rekordbox) {
     const open = openRekordboxReadOnly(await rekordboxKey(at.rekordbox))
     out.rekordbox = withDb(at.rekordbox, open, (db) =>
@@ -96,6 +99,13 @@ export async function snapshotLibraries(
       out.engine = 'unreadable'
     }
   }
+  if (at.virtualdj && at.virtualdj.length > 0) {
+    try {
+      out.virtualdj = snapshotVirtualdjSong(at.virtualdj, from)
+    } catch {
+      out.virtualdj = 'unreadable'
+    }
+  }
   return out
 }
 
@@ -109,9 +119,14 @@ interface ReaderOptions {
 
 // One read of each library for a whole batch, after its flush or its queue applied.
 export function libraryReaders(
-  paths: { rekordbox: () => string; engine: () => string; traktor: () => string },
+  paths: {
+    rekordbox: () => string
+    engine: () => string
+    traktor: () => string
+    virtualdj?: () => VirtualdjRoot[]
+  },
   options: ReaderOptions,
-): Pick<VerifyRegistryDeps, 'readRekordbox' | 'readEngine' | 'readTraktor'> {
+): Pick<VerifyRegistryDeps, 'readRekordbox' | 'readEngine' | 'readTraktor' | 'readVirtualdj'> {
   const find: FindOptions = { realPath: options.realPath, quiet: true }
   const key = pathKey({ realPath: options.realPath })
   const openEngine = options.openEngine ?? openEngineDb
@@ -165,6 +180,21 @@ export function libraryReaders(
       const path = paths.traktor()
       if (!path) return 'unreadable'
       return checkTraktor(await readFile(path, 'utf8'), list, options.bootVolume())
+    },
+    readVirtualdj: async (list) => {
+      const size = await sizes(list)
+      const roots = paths.virtualdj?.() ?? []
+      if (roots.length === 0) return 'unreadable'
+      return checkVirtualdj(
+        roots,
+        list.map((e, i) => ({
+          from: e.from,
+          to: e.to,
+          before: e.virtualdj ?? 'unreadable',
+          size: size[i],
+          ...(e.playlists?.virtualdj ? { playlists: e.playlists.virtualdj } : {}),
+        })),
+      )
     },
   }
 }
@@ -280,7 +310,7 @@ export function queueVerification(registry: {
 }
 
 export interface AppVerifyOptions {
-  paths: { rekordbox: () => string; engine: () => string; traktor: () => string }
+  paths: Parameters<typeof libraryReaders>[0]
   queues: Parameters<typeof libraryRequeue>[0]
   emit: VerifyRegistryDeps['emit']
   readMusic: VerifyRegistryDeps['readMusic']

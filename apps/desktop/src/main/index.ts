@@ -687,6 +687,7 @@ const verifyRegistry = appVerifyRegistry({
     rekordbox: rekordboxCollectionPath,
     engine: engineLibraryPath,
     traktor: traktorWritePath,
+    virtualdj: virtualdjRoots,
   },
   realPath: (p) => realpathSync(p),
   bootVolume: () => bootVolumeName(),
@@ -2137,6 +2138,7 @@ function registerIpc(): void {
           {
             rekordbox: s.syncRekordbox ? rekordboxCollectionPath() : '',
             engine: s.syncEngineDj ? engineLibraryPath() : '',
+            virtualdj: s.syncVirtualdj ? virtualdjRoots() : [],
           },
           (p) => realpathSync(p),
         )

@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, statSync, writeFileSync } from 'node:fs'
+import { cpSync, mkdirSync, mkdtempSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
@@ -56,6 +56,8 @@ import {
   verifyUpdateSender,
 } from './verifyIpc'
 import { createVerifyRegistry, type VerifyEntry, type VerifyRegistryDeps } from './verifyRegistry'
+import { virtualdjLibraryRoots } from './virtualdjLibrary'
+import { repointVirtualdjTracks } from './virtualdjTrackWrite'
 
 function handlerFor(channel: string): (e: unknown, ...args: unknown[]) => Promise<unknown> {
   const call = vi.mocked(ipcMain.handle).mock.calls.findLast(([ch]) => ch === channel)
@@ -308,6 +310,75 @@ describe('library readers', () => {
 
     expect(seen.map((e) => (e as { fromBytes?: number }).fromBytes)).toEqual([100, undefined])
     expect(seen.map((e) => (e as { names?: unknown }).names)).toEqual([names, undefined])
+  })
+})
+
+const VIRTUALDJ_FROM = '/Music/Serato Pruebas/Pray.mp3'
+
+function virtualdjLibrary() {
+  const base = mkdtempSync(join(tmpdir(), 'surco-verifyipc-vdj-'))
+  cpSync(join(__dirname, 'virtualdjFixtures'), join(base, 'VirtualDJ'), { recursive: true })
+  mkdirSync(join(base, 'Volumes'))
+  const to = join(base, 'Pray.aiff')
+  writeFileSync(to, 'aiffdata')
+  const roots = () => virtualdjLibraryRoots(join(base, 'VirtualDJ'), join(base, 'Volumes'))
+  return { base, roots, to }
+}
+
+describe('VirtualDJ in the checks', () => {
+  it('takes the lists that held the source from the VirtualDJ in play, before anything writes', async () => {
+    const lib = virtualdjLibrary()
+    const before = await snapshotLibraries(
+      VIRTUALDJ_FROM,
+      { rekordbox: '', engine: '', virtualdj: lib.roots() },
+      realPath,
+    )
+    expect(before).toEqual({
+      virtualdj: {
+        lists: [
+          { id: 'Carpeta/Dentro', name: 'Dentro' },
+          { id: 'Surco prueba', name: 'Surco prueba' },
+        ],
+      },
+    })
+  })
+
+  it('reads VirtualDJ at the roots it is handed, against the size of the written file', async () => {
+    const lib = virtualdjLibrary()
+    const before = await snapshotLibraries(
+      VIRTUALDJ_FROM,
+      { rekordbox: '', engine: '', virtualdj: lib.roots() },
+      realPath,
+    )
+    await repointVirtualdjTracks([{ from: VIRTUALDJ_FROM, to: lib.to }], {
+      backupDir: join(lib.base, 'virtualdj-backups'),
+      roots: lib.roots,
+      virtualdjOpen: async () => false,
+      lengthOf: async () => 400,
+    })
+    const readers = libraryReaders(
+      { rekordbox: () => '', engine: () => '', traktor: () => '', virtualdj: lib.roots },
+      { realPath, bootVolume: () => 'Macintosh HD' },
+    )
+    expect(
+      await readers.readVirtualdj([
+        entry({ from: VIRTUALDJ_FROM, to: lib.to, virtualdj: before.virtualdj }),
+      ]),
+    ).toEqual([
+      {
+        place: 'virtualdj',
+        state: 'ok',
+        detail: { key: 'virtualdjOk', params: { format: 'AIFF' } },
+      },
+    ])
+  })
+
+  it('reads a VirtualDJ with no database as unreadable', async () => {
+    const readers = libraryReaders(
+      { rekordbox: () => '', engine: () => '', traktor: () => '' },
+      { realPath, bootVolume: () => 'Macintosh HD' },
+    )
+    expect(await readers.readVirtualdj([entry()])).toBe('unreadable')
   })
 })
 
@@ -614,6 +685,7 @@ describe('queueVerification', () => {
       readRekordbox,
       readEngine: vi.fn<VerifyRegistryDeps['readEngine']>(),
       readTraktor: vi.fn<VerifyRegistryDeps['readTraktor']>(),
+      readVirtualdj: vi.fn<VerifyRegistryDeps['readVirtualdj']>(),
       readFile: vi.fn<VerifyRegistryDeps['readFile']>(),
       readMusic: vi.fn<VerifyRegistryDeps['readMusic']>(),
       requeue: vi.fn<VerifyRegistryDeps['requeue']>(() => false),

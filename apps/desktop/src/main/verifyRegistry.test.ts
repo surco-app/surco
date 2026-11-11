@@ -101,6 +101,9 @@ const mocks = () => ({
   readTraktor: vi.fn<VerifyRegistryDeps['readTraktor']>(async (list) =>
     list.map(() => libraryOk('traktor')),
   ),
+  readVirtualdj: vi.fn<VerifyRegistryDeps['readVirtualdj']>(async (list) =>
+    list.map(() => ok('virtualdj', 'virtualdjOk')),
+  ),
   readFile: vi.fn<VerifyRegistryDeps['readFile']>(async () => ok('file', 'fileIdentical')),
   readMusic: vi.fn<VerifyRegistryDeps['readMusic']>(async () => ok('appleMusic', 'musicOne')),
   requeue: vi.fn<VerifyRegistryDeps['requeue']>(() => true),
@@ -126,6 +129,33 @@ const stateOf = (v: Verification | undefined, place: VerifyPlace) =>
   v?.checks.find((c) => c.place === place)?.state
 
 describe('verify registry', () => {
+  it('reads VirtualDJ back once its queue moved the song, and says it waits while VirtualDJ is open', async () => {
+    const { deps, registry } = setup()
+    registry.register(
+      entry('a', {
+        places: new Set(['file', 'virtualdj']),
+        rekordbox: undefined,
+        virtualdj: { lists: [{ id: 'Sets', name: 'Sets' }] },
+      }),
+    )
+    registry.register(
+      entry('b', {
+        places: new Set(['file', 'virtualdj']),
+        rekordbox: undefined,
+        virtualdj: 'absent',
+      }),
+    )
+    await registry.afterFlush({ ...written, rekordbox: 'off', engine: 'off', virtualdj: 'queued' })
+    expect(stateOf(registry.get('a'), 'virtualdj')).toBe('pending')
+    expect(stateOf(registry.get('b'), 'virtualdj')).toBeUndefined()
+    await registry.afterQueueApplied('virtualdj', 'written')
+    expect(deps.readVirtualdj.mock.calls.map((c) => c[0].map((e) => e.trackId))).toEqual([['a']])
+    expect(registry.get('a')).toEqual({
+      status: 'ok',
+      checks: [ok('file', 'fileIdentical'), ok('virtualdj', 'virtualdjOk')],
+    })
+  })
+
   it('after a written flush each registered track gets its library checks and one emit', async () => {
     const { deps, registry } = setup()
     registry.register(entry('a'))

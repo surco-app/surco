@@ -610,7 +610,7 @@ function verifyWiring(queues: Queues, checks: { current?: QueueChecks }): Verify
       statuses.set(trackId, [...(statuses.get(trackId) ?? []), verification.status])
       sender.send('verify:update', trackId, verification)
     },
-    paths: libraryAt,
+    paths: { rekordbox: libraryAt.rekordbox, engine: libraryAt.engine, traktor: libraryAt.traktor },
     realPath: (p) => realpathSync(p),
     bootVolume: () => bootVolumeName(),
     readMusic: async () => ({

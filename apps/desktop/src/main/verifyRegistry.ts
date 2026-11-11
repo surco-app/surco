@@ -17,6 +17,7 @@ import type { FileExpect } from './verifyFile'
 import type { MusicExpect } from './verifyMusic'
 import type { RekordboxBefore } from './verifyRekordbox'
 import type { TraktorAddExpect, TraktorExpect } from './verifyTraktor'
+import type { VirtualdjBefore } from './verifyVirtualdj'
 
 type Library = WritableProgram
 
@@ -36,6 +37,7 @@ export interface VerifyEntry {
   music?: MusicExpect
   rekordbox?: RekordboxBefore
   engine?: EngineBefore
+  virtualdj?: VirtualdjBefore
   traktorPatch?: NmlPatch
   engineStep?: boolean
   // The playlists the job asked each library to put the track in, written by the queue apply
@@ -88,6 +90,7 @@ export interface VerifyRegistryDeps {
   readRekordbox: (list: VerifyEntry[]) => Read<PlaceCheck>
   readEngine: (list: VerifyEntry[]) => Read<PlaceCheck>
   readTraktor: (list: (TraktorExpect | TraktorAddExpect)[]) => Read<PlaceCheck | null>
+  readVirtualdj: (list: VerifyEntry[]) => Read<PlaceCheck>
   readFile: (e: FileExpect) => Promise<PlaceCheck>
   readMusic: (e: MusicExpect) => Promise<PlaceCheck>
   // True when the library is not there to take the repoint now: it waits in the queue until
@@ -142,7 +145,8 @@ const LISTED: Record<
     byJob: () => false,
   },
   virtualdj: {
-    touches: () => false,
+    touches: (e) =>
+      (e.virtualdj !== undefined && e.virtualdj !== 'absent') || inPlaylists(e, 'virtualdj'),
     byJob: () => false,
   },
 }
@@ -332,7 +336,7 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
     rekordbox: checkRow('rekordbox', (list) => deps.readRekordbox(list)),
     engine: checkRow('engine', (list) => deps.readEngine(list)),
     traktor: checkTraktor,
-    virtualdj: async () => {},
+    virtualdj: checkRow('virtualdj', (list) => deps.readVirtualdj(list)),
   }
 
   return {

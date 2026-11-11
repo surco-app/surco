@@ -65,6 +65,11 @@ export const VERIFY_DETAIL_KEYS = [
   'traktorNameStale',
   'traktorPlaylistMissing',
   'traktorUnreadable',
+  'virtualdjOk',
+  'virtualdjStillOld',
+  'virtualdjMissing',
+  'virtualdjSizeDiffers',
+  'virtualdjPlaylistMissing',
   'virtualdjUnreadable',
 ] as const
 
