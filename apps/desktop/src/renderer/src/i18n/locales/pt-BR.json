@@ -3447,7 +3447,9 @@
       "queue": "Antes de aplicar as alterações que estavam esperando",
       "duplicates": "Antes de substituir duplicatas",
       "playlists": "Antes das suas alterações de playlists de hoje",
-      "restore": "Antes de restaurar"
+      "restore": "Antes de restaurar",
+      "tracks": "Antes de mudar as faixas ou os cues",
+      "lists": "Antes de mudar as listas"
     },
     "show": "Ver cópias",
     "hide": "Ocultar cópias",

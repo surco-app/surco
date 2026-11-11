@@ -70,6 +70,7 @@ export type VirtualdjCommit =
 
 const KEPT_BACKUPS = 20
 export const LIST_BACKUPS = 'lists'
+export const RESTORE_BACKUP = 'restore'
 const WRITING = '.surco-write'
 
 function backupPathOf(file: string, roots: VirtualdjRoot[]): string {
@@ -92,7 +93,7 @@ export function takeBackups(files: string[], deps: VirtualdjCommitDeps): Map<str
     copies.set(file, copy)
   }
   const older = readdirSync(deps.backupDir)
-    .filter((n) => n !== basename(folder) && n !== LIST_BACKUPS)
+    .filter((n) => n !== basename(folder) && n !== LIST_BACKUPS && !n.startsWith(RESTORE_BACKUP))
     .sort()
   for (const old of older.slice(0, Math.max(0, older.length + 1 - KEPT_BACKUPS)))
     rmSync(join(deps.backupDir, old), { recursive: true, force: true })

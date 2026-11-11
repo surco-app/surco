@@ -245,6 +245,86 @@ describe('copies:status', () => {
   })
 })
 
+describe('VirtualDJ copies', () => {
+  const copy = {
+    id: 'tracks/2026-11-11T10-01-00-000Z',
+    collectionPath: '/VirtualDJ/database.xml',
+    takenAt: 1000,
+    reason: 'tracks' as const,
+    files: [],
+  }
+
+  it('lists the copies VirtualDJ keeps itself, with its waiting changes', async () => {
+    registerCopiesIpc(
+      programs({
+        virtualdj: {
+          collectionPath: () => '/VirtualDJ/database.xml',
+          history: {
+            list: () => ({ copies: [copy], restore: null }),
+            restore: vi.fn(),
+          },
+          queue: { state: () => ({ tracks: 2, changes: 1 }), discardCurrent: vi.fn() },
+        },
+      }),
+      broadcast,
+      () => false,
+    )
+    expect(await status()).toEqual([
+      {
+        program: 'virtualdj',
+        collectionPath: '/VirtualDJ/database.xml',
+        copies: [copy],
+        restore: null,
+        pending: 3,
+        halted: false,
+        copyFailed: false,
+        untouched: false,
+      },
+    ])
+    expect(events).toEqual([])
+  })
+
+  it('restores through VirtualDJ, asking it closed and dropping only its queue', async () => {
+    const order: string[] = []
+    const restore = vi.fn<NonNullable<CopiesProgram['history']>['restore']>(async (_id, deps) => {
+      if (!(await deps.ensureClosed())) return { ok: false, reason: 'running' }
+      deps.discardQueue()
+      return { ok: true }
+    })
+    const traktorDiscard = vi.fn()
+    registerCopiesIpc(
+      programs({
+        traktor: {
+          collectionPath: () => collection('collection.nml'),
+          queue: { state: () => ({ tracks: 0, changes: 0 }), discardCurrent: traktorDiscard },
+        },
+        virtualdj: {
+          collectionPath: () => '/VirtualDJ/database.xml',
+          history: { list: () => ({ copies: [copy], restore: null }), restore },
+          ensureClosed: async () => {
+            order.push('close')
+            return true
+          },
+          queue: {
+            state: () => ({ tracks: 0, changes: 0 }),
+            discardCurrent: () => order.push('discard'),
+          },
+          onDiscarded: () => order.push('settled'),
+        },
+      }),
+      broadcast,
+      () => false,
+    )
+    expect(await handlerFor('copies:restore')({ sender: {} }, 'virtualdj', copy.id)).toEqual({
+      ok: true,
+    })
+    expect(restore.mock.calls[0][0]).toBe(copy.id)
+    expect(order).toEqual(['close', 'discard', 'settled'])
+    expect(traktorDiscard).not.toHaveBeenCalled()
+    expect(broadcast).toHaveBeenCalledWith('copies:changed', null)
+  })
+})
+
 describe('copies:restore', () => {
   it('restoring broadcasts copies:changed so the screen refreshes', async () => {
     const path = collection('collection.nml')

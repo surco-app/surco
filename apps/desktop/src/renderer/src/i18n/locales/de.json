@@ -3447,7 +3447,9 @@
       "queue": "Vor dem Anwenden der wartenden Änderungen",
       "duplicates": "Vor dem Ersetzen von Duplikaten",
       "playlists": "Vor deinen Playlist-Änderungen von heute",
-      "restore": "Vor dem Wiederherstellen"
+      "restore": "Vor dem Wiederherstellen",
+      "tracks": "Vor dem Ändern der Tracks oder Cues",
+      "lists": "Vor dem Ändern der Listen"
     },
     "show": "Backups anzeigen",
     "hide": "Backups ausblenden",

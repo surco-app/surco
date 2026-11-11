@@ -3447,7 +3447,9 @@
       "queue": "Avant l’application des modifications en attente",
       "duplicates": "Avant le remplacement des doublons",
       "playlists": "Avant tes changements de playlists d’aujourd’hui",
-      "restore": "Avant la restauration"
+      "restore": "Avant la restauration",
+      "tracks": "Avant la modification des morceaux ou des cues",
+      "lists": "Avant la modification des listes"
     },
     "show": "Voir les sauvegardes",
     "hide": "Masquer les sauvegardes",

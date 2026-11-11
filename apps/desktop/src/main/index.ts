@@ -279,6 +279,7 @@ import {
 import type { FlushOutcome, TraktorWrite } from './verifyRegistry'
 import { withRecordedRun } from './verifyRun'
 import { applyVirtualdjBatch } from './virtualdjBatch'
+import { listVirtualdjCopies, restoreVirtualdjCopy } from './virtualdjCopies'
 import { virtualdjCueSource } from './virtualdjCueSource'
 import { virtualdjLibraryRoots } from './virtualdjLibrary'
 import { virtualdjEdit } from './virtualdjPlaylistEditIpc'
@@ -373,6 +374,10 @@ const virtualdjDir = (): string => getSettings().virtualdjLibraryDir
 const virtualdjLibrary = (): string =>
   existsSync(join(virtualdjDir(), 'database.xml')) ? virtualdjDir() : ''
 const virtualdjRoots = () => virtualdjLibraryRoots(virtualdjDir(), '/Volumes')
+const virtualdjCopies = () => ({
+  backupDir: join(app.getPath('userData'), 'virtualdj-backups'),
+  roots: virtualdjRoots,
+})
 const rootLibraries = (): RootLibraries => ({
   serato: seratoRoots(),
   virtualdj: virtualdjRoots(),
@@ -2338,15 +2343,23 @@ function registerIpc(): void {
         onDiscarded: () => queueChecks.discarded('engine'),
       },
       virtualdj: {
-        collectionPath: () => null,
+        collectionPath: () => {
+          const dir = virtualdjLibrary()
+          return dir ? join(dir, 'database.xml') : null
+        },
         untouched: () => !getSettings().syncVirtualdj,
         session: virtualdjSessionBackup,
         queue: virtualdjCueQueue,
-        ensureClosed: (win) => ensureClosed('virtualdj', win),
+        ensureClosed: (win) => ensureClosed('virtualdj', win, 'restore'),
         isRunning: DJ_PROCESSES.virtualdj.isRunning,
         pendingLog: () => false,
         exclusive: (_path, task) => task(),
         onDiscarded: () => queueChecks.discarded('virtualdj'),
+        history: {
+          list: () => listVirtualdjCopies(virtualdjCopies()),
+          restore: (copyId, deps) =>
+            restoreVirtualdjCopy(copyId, { ...virtualdjCopies(), ...deps }),
+        },
       },
     },
     broadcast,

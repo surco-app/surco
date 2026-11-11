@@ -1978,6 +1978,8 @@ export type CopyReason =
   | 'duplicates'
   | 'playlists'
   | 'restore'
+  | 'tracks'
+  | 'lists'
 
 export interface LibraryCopy {
   id: string

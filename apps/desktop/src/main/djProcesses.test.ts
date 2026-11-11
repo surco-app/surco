@@ -169,8 +169,23 @@ describe('createEnsureClosed', () => {
       rekordbox: ['convert', 'playlists', 'usb', 'restore'],
       traktor: ['convert', 'cues', 'playlists', 'restore'],
       engine: ['convert', 'cues', 'playlists', 'usb', 'restore'],
-      virtualdj: ['convert'],
+      virtualdj: ['convert', 'restore'],
     })
+  })
+
+  it('asks the DJ to close VirtualDJ before a restore, and only checks that it closed', async () => {
+    const virtualdj = fakeProcess(true, false)
+    const { ask, ensureClosed } = setup({ virtualdj })
+    expect(await ensureClosed('virtualdj', win, 'restore')).toBe(false)
+    expect(ask).toHaveBeenCalledWith(win, {
+      type: 'warning',
+      message: 't:virtualdjQuitMessage',
+      detail: 't:virtualdjQuitDetailRestore',
+      buttons: ['t:virtualdjQuitConfirm', 't:virtualdjQuitCancel'],
+      defaultId: 0,
+      cancelId: 1,
+    })
+    expect(virtualdj.quit).toHaveBeenCalledTimes(1)
   })
 
   it('never asks VirtualDJ to quit, since its writes wait in its queue until it closes', async () => {
@@ -228,6 +243,7 @@ describe('reasonOfDetail', () => {
     ['engine', 'engineQuitDetailRestore', 'restore'],
     ['traktor', 'traktorQuitDetailCues', 'cues'],
     ['traktor', 'traktorQuitDetailPlaylists', 'playlists'],
+    ['virtualdj', 'virtualdjQuitDetailRestore', 'restore'],
   ] as const)(
     'keeps the words a %s caller passes by asking for the reason behind %s',
     (program, key, reason) => {

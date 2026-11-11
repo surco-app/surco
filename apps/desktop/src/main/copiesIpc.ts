@@ -1,9 +1,9 @@
 import { BrowserWindow, type IpcMainInvokeEvent, ipcMain } from 'electron'
 import log from 'electron-log/main'
 import { WRITABLE_PROGRAMS } from '../shared/djProgram'
-import type { ProgramCopies, RestoreResult, WritableProgram } from '../shared/types'
+import type { LibraryCopy, ProgramCopies, RestoreResult, WritableProgram } from '../shared/types'
 import { listCopies, recoverRestoreSlot, restoreSlot } from './libraryHistory'
-import { restoreCopy } from './libraryRestore'
+import { type RestoreDeps, restoreCopy } from './libraryRestore'
 import { serialLibraryFlush } from './libraryTagSync'
 import type { SessionBackup } from './rekordboxSessionBackup'
 
@@ -21,6 +21,13 @@ export interface CopiesProgram {
   exclusive: <T>(collectionPath: string, task: () => Promise<T>) => Promise<T>
   // The waiting queue a restore discarded, for the tracks held pending on it.
   onDiscarded?: () => void
+  history?: {
+    list: () => { copies: LibraryCopy[]; restore: LibraryCopy | null }
+    restore: (
+      copyId: string,
+      deps: Pick<RestoreDeps, 'ensureClosed' | 'isRunning' | 'discardQueue' | 'busy'>,
+    ) => Promise<RestoreResult>
+  }
 }
 
 const ORDER = WRITABLE_PROGRAMS
@@ -38,7 +45,7 @@ export function registerCopiesIpc(
     )
   for (const program of ORDER) {
     const collectionPath = programs[program].collectionPath()
-    if (collectionPath) void recover(program, collectionPath)
+    if (collectionPath && !programs[program].history) void recover(program, collectionPath)
   }
   ipcMain.handle('copies:status', async (): Promise<ProgramCopies[]> => {
     const found: ProgramCopies[] = []
@@ -46,13 +53,14 @@ export function registerCopiesIpc(
       const deps = programs[program]
       const collectionPath = deps.collectionPath()
       if (!collectionPath) continue
-      await recover(program, collectionPath)
+      const own = deps.history?.list()
+      if (!own) await recover(program, collectionPath)
       const queue = deps.queue.state()
       found.push({
         program,
         collectionPath,
-        copies: await listCopies(collectionPath),
-        restore: await restoreSlot(collectionPath),
+        copies: own ? own.copies : await listCopies(collectionPath),
+        restore: own ? own.restore : await restoreSlot(collectionPath),
         pending: queue.tracks + queue.changes,
         halted: queue.halted === true,
         copyFailed: deps.session.failed().has(collectionPath),
@@ -71,17 +79,28 @@ export function registerCopiesIpc(
         if (!deps || !collectionPath) return { ok: false, reason: 'not-found' }
         if (converting()) return { ok: false, reason: 'busy' }
         const win = BrowserWindow.fromWebContents(e.sender)
+        const discardQueue = () => {
+          deps.queue.discardCurrent()
+          deps.onDiscarded?.()
+        }
+        const history = deps.history
         try {
+          if (history)
+            return await deps.exclusive(collectionPath, () =>
+              history.restore(copyId, {
+                ensureClosed: () => deps.ensureClosed(win),
+                isRunning: deps.isRunning,
+                discardQueue,
+                busy: converting,
+              }),
+            )
           return await restoreCopy(
             { collectionPath, copyId },
             {
               ensureClosed: () => deps.ensureClosed(win),
               isRunning: deps.isRunning,
               pendingLog: deps.pendingLog,
-              discardQueue: () => {
-                deps.queue.discardCurrent()
-                deps.onDiscarded?.()
-              },
+              discardQueue,
               busy: converting,
               exclusive: (task) => deps.exclusive(collectionPath, task),
             },

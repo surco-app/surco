@@ -16,7 +16,7 @@ export const QUIT_REASONS = {
   rekordbox: ['convert', 'playlists', 'usb', 'restore'],
   traktor: ['convert', 'cues', 'playlists', 'restore'],
   engine: ['convert', 'cues', 'playlists', 'usb', 'restore'],
-  virtualdj: ['convert'],
+  virtualdj: ['convert', 'restore'],
 } as const satisfies { [P in WritableProgram]: readonly ['convert', ...QuitReason[]] }
 
 export type ReasonOf<P extends WritableProgram> = (typeof QUIT_REASONS)[P][number]
@@ -49,7 +49,7 @@ export interface QuitText<P extends WritableProgram = WritableProgram> {
   message: Extract<MenuKey, `${P}QuitMessage`>
   confirm: Extract<MenuKey, `${P}QuitConfirm`>
   cancel: Extract<MenuKey, `${P}QuitCancel`>
-  detail: Record<ReasonOf<P>, DetailKeyOf<P>>
+  detail: Record<ReasonOf<P>, DetailKeyOf<P> | null>
 }
 
 export const QUIT_TEXT: { [P in WritableProgram]: QuitText<P> | null } = {
@@ -87,7 +87,15 @@ export const QUIT_TEXT: { [P in WritableProgram]: QuitText<P> | null } = {
       restore: 'engineQuitDetailRestore',
     },
   },
-  virtualdj: null,
+  virtualdj: {
+    message: 'virtualdjQuitMessage',
+    confirm: 'virtualdjQuitConfirm',
+    cancel: 'virtualdjQuitCancel',
+    detail: {
+      convert: null,
+      restore: 'virtualdjQuitDetailRestore',
+    },
+  },
 }
 
 export type DetailKeyOf<P extends WritableProgram> = Extract<MenuKey, `${P}QuitDetail${string}`>
@@ -98,7 +106,7 @@ export function reasonOfDetail<P extends WritableProgram>(
 ): ReasonOf<P> {
   const text: QuitText<P> | null = QUIT_TEXT[program]
   if (!text) throw new Error(`${program} is never asked to quit`)
-  const detail: Record<ReasonOf<P>, MenuKey> = text.detail
+  const detail: Record<ReasonOf<P>, MenuKey | null> = text.detail
   const reason = (QUIT_REASONS[program] as readonly ReasonOf<P>[]).find((r) => detail[r] === key)
   if (reason === undefined) throw new Error(`No ${program} quit reason for ${key}`)
   return reason
@@ -126,11 +134,12 @@ export function createEnsureClosed(deps: {
     reason: ReasonOf<P>,
   ): Promise<boolean> {
     const text: QuitText<P> | null = QUIT_TEXT[program]
-    if (!text) return false
+    const detail = text?.detail[reason]
+    if (!text || !detail) return false
     const response = await deps.ask(win, {
       type: 'warning',
       message: deps.t(text.message),
-      detail: deps.t(text.detail[reason]),
+      detail: deps.t(detail),
       buttons: [deps.t(text.confirm), deps.t(text.cancel)],
       defaultId: 0,
       cancelId: 1,

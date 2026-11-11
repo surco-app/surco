@@ -80,6 +80,10 @@ interface MenuStrings {
   rekordboxQuitDetailRestore: string
   rekordboxQuitConfirm: string
   rekordboxQuitCancel: string
+  virtualdjQuitMessage: string
+  virtualdjQuitDetailRestore: string
+  virtualdjQuitConfirm: string
+  virtualdjQuitCancel: string
   rekordboxSyncBlocked: string
   engineSyncBlocked: string
   quitBusyMessage: string
@@ -199,6 +203,11 @@ const strings: Record<MenuLang, MenuStrings> = {
       'Surco necesita cerrarlo para restaurar tu colección. rekordbox se cerrará de forma segura; no lo vuelvas a abrir hasta que Surco termine de restaurar.',
     rekordboxQuitConfirm: 'Cerrar rekordbox',
     rekordboxQuitCancel: 'Cancelar',
+    virtualdjQuitMessage: 'VirtualDJ está abierto',
+    virtualdjQuitDetailRestore:
+      'Surco no cierra VirtualDJ por ti. Ciérralo tú para restaurar su biblioteca y no lo vuelvas a abrir hasta que Surco termine de restaurar.',
+    virtualdjQuitConfirm: 'Ya lo he cerrado',
+    virtualdjQuitCancel: 'Cancelar',
     rekordboxSyncBlocked:
       'La colección de rekordbox no se ha actualizado: rekordbox sigue abierto. Ciérralo y vuelve a convertir para que apunte al archivo nuevo.',
     engineSyncBlocked:
@@ -319,6 +328,11 @@ const strings: Record<MenuLang, MenuStrings> = {
       'Surco needs to close it to restore your collection. rekordbox will be closed safely; keep it closed until Surco finishes restoring.',
     rekordboxQuitConfirm: 'Close rekordbox',
     rekordboxQuitCancel: 'Cancel',
+    virtualdjQuitMessage: 'VirtualDJ is open',
+    virtualdjQuitDetailRestore:
+      'Surco does not close VirtualDJ for you. Close it yourself to restore its library, and keep it closed until Surco finishes restoring.',
+    virtualdjQuitConfirm: 'I closed it',
+    virtualdjQuitCancel: 'Cancel',
     rekordboxSyncBlocked:
       "rekordbox's collection was not updated: rekordbox is still open. Close it and convert again so it points at the new file.",
     engineSyncBlocked:
@@ -440,6 +454,11 @@ const strings: Record<MenuLang, MenuStrings> = {
       'Surco muss es schließen, um deine Sammlung wiederherzustellen. rekordbox wird sicher geschlossen; lass es geschlossen, bis Surco mit dem Wiederherstellen fertig ist.',
     rekordboxQuitConfirm: 'rekordbox schließen',
     rekordboxQuitCancel: 'Abbrechen',
+    virtualdjQuitMessage: 'VirtualDJ ist geöffnet',
+    virtualdjQuitDetailRestore:
+      'Surco schließt VirtualDJ nicht für dich. Schließe es selbst, um seine Bibliothek wiederherzustellen, und lass es geschlossen, bis Surco mit dem Wiederherstellen fertig ist.',
+    virtualdjQuitConfirm: 'Ich habe es geschlossen',
+    virtualdjQuitCancel: 'Abbrechen',
     rekordboxSyncBlocked:
       'Die rekordbox-Sammlung wurde nicht aktualisiert: rekordbox ist noch geöffnet. Schließe es und konvertiere erneut, damit es auf die neue Datei zeigt.',
     engineSyncBlocked:
@@ -563,6 +582,11 @@ const strings: Record<MenuLang, MenuStrings> = {
       'Surco doit le fermer pour restaurer ta collection. rekordbox sera fermé proprement ; ne le rouvre pas avant que Surco ait fini la restauration.',
     rekordboxQuitConfirm: 'Fermer rekordbox',
     rekordboxQuitCancel: 'Annuler',
+    virtualdjQuitMessage: 'VirtualDJ est ouvert',
+    virtualdjQuitDetailRestore:
+      'Surco ne ferme pas VirtualDJ à ta place. Ferme-le toi-même pour restaurer sa bibliothèque, et ne le rouvre pas avant que Surco ait fini de restaurer.',
+    virtualdjQuitConfirm: 'Je l’ai fermé',
+    virtualdjQuitCancel: 'Annuler',
     rekordboxSyncBlocked:
       "La collection rekordbox n'a pas été mise à jour : rekordbox est encore ouvert. Ferme-le et relance la conversion pour qu'il pointe vers le nouveau fichier.",
     engineSyncBlocked:
@@ -684,6 +708,11 @@ const strings: Record<MenuLang, MenuStrings> = {
       'O Surco precisa fechá-lo para restaurar sua coleção. O rekordbox será fechado com segurança; não o abra de novo até o Surco terminar de restaurar.',
     rekordboxQuitConfirm: 'Fechar o rekordbox',
     rekordboxQuitCancel: 'Cancelar',
+    virtualdjQuitMessage: 'O VirtualDJ está aberto',
+    virtualdjQuitDetailRestore:
+      'O Surco não fecha o VirtualDJ por você. Feche-o você mesmo para restaurar a biblioteca dele e não o abra de novo até o Surco terminar de restaurar.',
+    virtualdjQuitConfirm: 'Já fechei',
+    virtualdjQuitCancel: 'Cancelar',
     rekordboxSyncBlocked:
       'A coleção do rekordbox não foi atualizada: o rekordbox ainda está aberto. Feche-o e converta de novo para que aponte para o arquivo novo.',
     engineSyncBlocked:
