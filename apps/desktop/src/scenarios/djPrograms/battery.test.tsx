@@ -62,6 +62,7 @@ import type {
 } from '../../shared/types'
 import { makeTrack, scenarioDir } from '../fixtures'
 import { invokeMain, openSurco, type Scenario } from '../harness'
+import { CONVERSION_MOVE_MS, type ConvertedFormat } from './clocks'
 import { registerDoor } from './door'
 import { TEST_LIBRARIES } from './libraries'
 import type { BatteryFormat, BatteryTrack } from './testLibrary'
@@ -71,10 +72,8 @@ const LIST = 'Batería'
 const CUE_MS = 3000
 const CLOCK_TOLERANCE_MS = 2
 const FORMATS: BatteryFormat[] = ['wav', 'aiff', 'flac', 'mp3', 'm4a']
-const CONVERTED: BatteryFormat[] = ['mp3', 'flac']
+const CONVERTED: ConvertedFormat[] = ['mp3', 'flac']
 const QUALITY: Partial<Settings> = { keepMp3Sources: false }
-const LOSSLESS: ReadonlySet<BatteryFormat> = new Set(['wav', 'aiff', 'flac'])
-const MAX_FORMAT_LEAD_MS = 60
 const RETAGGED: BatteryFormat = 'wav'
 const NEW_TITLE = 'Pista wav retitulada'
 
@@ -301,13 +300,9 @@ describe('Convertir', () => {
       const after = await afterOf(format)
       expect(after?.cues).toHaveLength(1)
       const moved = (after?.cues[0]?.ms ?? 0) - (was.cues[0]?.ms ?? 0)
-      const leads = [was.clockLeadMs, after?.clockLeadMs]
-      if (LOSSLESS.has(format)) expect(Math.abs(moved)).toBeLessThanOrEqual(CLOCK_TOLERANCE_MS)
-      else if (leads.every((lead) => typeof lead === 'number'))
-        expect(
-          Math.abs(moved - ((after?.clockLeadMs ?? 0) - (was.clockLeadMs ?? 0))),
-        ).toBeLessThanOrEqual(CLOCK_TOLERANCE_MS)
-      else expect(Math.abs(moved)).toBeLessThanOrEqual(MAX_FORMAT_LEAD_MS)
+      expect(Math.abs(moved - CONVERSION_MOVE_MS[program][format])).toBeLessThanOrEqual(
+        CLOCK_TOLERANCE_MS,
+      )
     })
 
     it.skipIf(!PROGRAM_CAN[program].write)('repunta la lista al fichero nuevo', async () => {
