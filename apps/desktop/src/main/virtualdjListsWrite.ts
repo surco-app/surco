@@ -276,6 +276,9 @@ function rewrittenList(xml: string, rows: Row[]): string | null {
   let tail: string
   let indent = '\t'
   if (spans.length > 0) {
+    const placed = [...spans].sort((a, b) => a.start - b.start)
+    if (placed.some((s, i) => i > 0 && xml.slice(placed[i - 1].end, s.start).trim() !== ''))
+      return null
     head = xml.slice(0, Math.min(...spans.map((s) => s.start)))
     tail = xml.slice(Math.max(...spans.map((s) => s.end)))
     indent = spans[0].text.slice(0, spans[0].text.indexOf('<'))

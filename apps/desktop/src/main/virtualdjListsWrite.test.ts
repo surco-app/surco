@@ -345,6 +345,16 @@ describe('applyVirtualdjListOps', () => {
     expect(lib.text('Surco escrita.vdjfolder')).toBe(added)
   })
 
+  it('refuses to rewrite a list holding anything between its rows that Surco does not know, so nothing in it is lost', async () => {
+    const lib = library()
+    const odd = `${LIST_HEAD}\t<song path="/a.mp3" idx="0" />\r\n\t<song idx="1" />\r\n\t<song path="/b.mp3" idx="2" />\r\n</VirtualFolder>\r\n`
+    writeFileSync(lib.at('Surco escrita.vdjfolder'), odd)
+    const [first] = lib.links('Surco escrita')
+    const result = await lib.run({ kind: 'remove', playlistId: 'Surco escrita', linkIds: [first] })
+    expect(result).toMatchObject({ ok: true, outcomes: [{ applied: false, reason: 'unreadable' }] })
+    expect(lib.text('Surco escrita.vdjfolder')).toBe(odd)
+  })
+
   it('moves a list into a folder before a sibling, in both order files', async () => {
     const lib = library()
     await lib.run({
