@@ -1235,10 +1235,4 @@ describe('ConvertFooter destination line', () => {
     expect(screen.getByTestId('convert-up-to-date')).toBeInTheDocument()
     expect(screen.queryByTestId('convert-destination-line')).toBeNull()
   })
-
-  it('never reads a new normalization as no changes', () => {
-    render(cloneElement(idle, { willEditInPlace: true, tagsOnly: false, sameFormat: true }))
-    expect(screen.queryByTestId('convert-up-to-date')).toBeNull()
-    expect(screen.getByTestId('process-btn')).toHaveTextContent('Update tags and audio')
-  })
 })

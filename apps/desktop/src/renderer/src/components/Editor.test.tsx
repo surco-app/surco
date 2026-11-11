@@ -2321,6 +2321,20 @@ describe('Editor export control', () => {
       expect(screen.queryByTestId('convert-up-to-date')).toBeNull()
     })
 
+    it('shows the blocked face instead when a required tag is missing', () => {
+      renderEditor({ id: 'a', meta: read, diskSignature }, 'wav', { requiredFields: ['artist'] })
+      expect(screen.queryByTestId('convert-up-to-date')).toBeNull()
+      expect(screen.getByTestId('process-btn')).toHaveAttribute('aria-disabled', 'true')
+    })
+
+    it('never reads a new normalization as no changes', () => {
+      renderEditor({ id: 'a', meta: read, diskSignature }, 'wav', {
+        normalize: { mode: 'loudness', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
+      })
+      expect(screen.queryByTestId('convert-up-to-date')).toBeNull()
+      expect(screen.getByTestId('process-btn')).toHaveAccessibleName('Update tags and audio')
+    })
+
     it('goes quiet again once an edit is undone back to the read values', () => {
       renderEditor({ id: 'a', meta: { genre: 'House' }, diskSignature })
       cleanup()

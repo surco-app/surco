@@ -196,6 +196,36 @@ export function ExportButton({
         >
           {tr('editor.updateAnyway')}
         </button>
+        <div ref={ref} className="relative">
+          <button
+            type="button"
+            data-testid="process-format-toggle"
+            aria-label={tr('editor.chooseFormat')}
+            aria-expanded={open}
+            ref={toggleRef}
+            aria-haspopup="menu"
+            onClick={() => setOpen((v) => !v)}
+            className="press flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-line-strong)] text-fg-dim hover:bg-[var(--color-hover)]"
+          >
+            <ChevronDown
+              aria-hidden="true"
+              className={`h-3 w-3 transition-transform ${open ? 'rotate-180' : ''}`}
+            />
+          </button>
+          {open && (
+            <FormatDestinationMenu
+              menuRef={menuRef}
+              onMenuKeyDown={onMenuKeyDown}
+              offerSource={count !== undefined}
+              outputFormat={outputFormat}
+              exportedFormat={exportedFormat}
+              destination={destination}
+              destinations={destinations}
+              onPickFormat={pick}
+              onPickDestination={pickDestination}
+            />
+          )}
+        </div>
       </div>
     )
   }

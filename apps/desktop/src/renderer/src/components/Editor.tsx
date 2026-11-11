@@ -1082,6 +1082,7 @@ export const Editor = memo(function Editor({
     )
   const upToDate =
     !isMulti &&
+    !incomplete &&
     item.status === 'idle' &&
     willEditInPlace &&
     tagsOnlyExport &&

@@ -51,6 +51,12 @@ describe('ExportButton', () => {
     expect(onProcess).toHaveBeenCalledWith('aiff')
   })
 
+  it('keeps the format menu on the quiet face', () => {
+    render(<ExportButton {...baseProps} incomplete={false} inPlace tagsOnly sameFormat upToDate />)
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    expect(screen.getByTestId('process-format-mp3')).toBeInTheDocument()
+  })
+
   it('brings the accent button back with an edit', () => {
     const props = {
       ...baseProps,
