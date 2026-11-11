@@ -46,6 +46,15 @@ export function GridBatchBlock({
   const count = checks.filter((c) => c && needsGridFix(c, settings.cueGridTolerance)).length
   const unmeasurable = checks.filter((c) => c === null).length
   const rest = targets.length - count - unmeasurable
+  const summary =
+    count === 0 && unmeasurable === 0
+      ? tr('editor.cues.gridBatch.allFine')
+      : [
+          ...(count > 0
+            ? [tr('editor.cues.gridBatch.needs', { count, total: targets.length })]
+            : []),
+          ...(rest > 0 ? [tr('editor.cues.gridBatch.alreadyFine', { count: rest })] : []),
+        ].join(' ')
   const adjustOf = (contentId: string) => adjusts.get(contentId)
   const ofKind = (kind: GridAdjust['kind']) =>
     targets.filter((t) => adjustOf(t.contentId)?.kind === kind).length
@@ -94,16 +103,11 @@ export function GridBatchBlock({
           {tr('editor.cues.gridBatch.measuring', { done, total: targets.length })}
         </p>
       ) : (
-        <p data-testid="grid-batch-summary" className="mt-2 text-xs text-fg-dim">
-          {count === 0 && unmeasurable === 0
-            ? tr('editor.cues.gridBatch.allFine')
-            : [
-                ...(count > 0
-                  ? [tr('editor.cues.gridBatch.needs', { count, total: targets.length })]
-                  : []),
-                ...(rest > 0 ? [tr('editor.cues.gridBatch.rest', { count: rest })] : []),
-              ].join(' ')}
-        </p>
+        summary && (
+          <p data-testid="grid-batch-summary" className="mt-2 text-xs text-fg-dim">
+            {summary}
+          </p>
+        )
       )}
       {!measuring && unmeasurable > 0 && (
         <p data-testid="grid-batch-unmeasurable" className="mt-1 text-xs text-fg-dim">

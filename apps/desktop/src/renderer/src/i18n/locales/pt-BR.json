@@ -20,7 +20,7 @@
   "sessions": {
     "role": {
       "title": "Papel para sessões",
-      "of": "Papel de {{name}}",
+    "of": "Papel de {{name}}",
       "base": "Instrumentais",
       "vocal": "Com voz",
       "any": "Misto"
@@ -103,11 +103,11 @@
       "redo": "Refazer",
       "adjust": "Ajustar…",
       "keep": "Ficar assim",
-      "kept": "Mantida como playlist normal",
+    "kept": "Mantida como playlist normal",
       "short": "Só há faixas para {{minutes}} min",
-      "counted": "Contado a {{minutes}} min por faixa. Os arquivos somam {{audio}}.",
-      "countedAtLeast": "Contado a {{minutes}} min por faixa. Os arquivos somam pelo menos {{audio}}.",
-      "noCombos": "Sem combos, porque nenhum par se repete em duas ou mais das playlists Mistas escolhidas.",
+    "counted": "Contado a {{minutes}} min por faixa. Os arquivos somam {{audio}}.",
+    "countedAtLeast": "Contado a {{minutes}} min por faixa. Os arquivos somam pelo menos {{audio}}.",
+    "noCombos": "Sem combos, porque nenhum par se repete em duas ou mais das playlists Mistas escolhidas.",
       "assumed_one": "{{count}} faixa sem duração, conta como {{minutes}} min",
       "assumed_other": "{{count}} faixas sem duração, contam como {{minutes}} min cada"
     },
@@ -1178,8 +1178,8 @@
         "measuring": "Medindo a grade… {{done}} de {{total}}",
         "needs_one": "{{count}} de {{total}} não bate com as batidas.",
         "needs_other": "{{count}} de {{total}} não batem com as batidas.",
-        "rest_one": "A outra já está certa e não é mexida.",
-        "rest_other": "As outras {{count}} já estão certas e não são mexidas.",
+        "alreadyFine_one": "{{count}} já bate com as batidas e não é mexida.",
+        "alreadyFine_other": "{{count}} já batem com as batidas e não são mexidas.",
         "allFine": "Todas batem com as batidas.",
         "adjust_one": "Ajustar {{count}} faixa",
         "adjust_other": "Ajustar {{count}} faixas",

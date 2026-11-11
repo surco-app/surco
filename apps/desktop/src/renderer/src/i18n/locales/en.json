@@ -20,7 +20,7 @@
   "sessions": {
     "role": {
       "title": "Role for sessions",
-      "of": "Role of {{name}}",
+    "of": "Role of {{name}}",
       "base": "Instrumentals",
       "vocal": "Vocals",
       "any": "Mixed"
@@ -103,11 +103,11 @@
       "redo": "Redo",
       "adjust": "Adjust…",
       "keep": "Keep it as is",
-      "kept": "Kept as a normal playlist",
+    "kept": "Kept as a normal playlist",
       "short": "Only enough tracks for {{minutes}} min",
-      "counted": "Counted at {{minutes}} min a track. The files add up to {{audio}}.",
-      "countedAtLeast": "Counted at {{minutes}} min a track. The files add up to at least {{audio}}.",
-      "noCombos": "No combos found, because no pair repeats in two or more of the Mixed playlists you chose.",
+    "counted": "Counted at {{minutes}} min a track. The files add up to {{audio}}.",
+    "countedAtLeast": "Counted at {{minutes}} min a track. The files add up to at least {{audio}}.",
+    "noCombos": "No combos found, because no pair repeats in two or more of the Mixed playlists you chose.",
       "assumed_one": "{{count}} track has no length and counts as {{minutes}} min",
       "assumed_other": "{{count}} tracks have no length and count as {{minutes}} min each"
     },
@@ -1178,8 +1178,8 @@
         "measuring": "Measuring the grid… {{done}} of {{total}}",
         "needs_one": "{{count}} of {{total}} is off the beats.",
         "needs_other": "{{count}} of {{total}} are off the beats.",
-        "rest_one": "The other one is already fine and stays as it is.",
-        "rest_other": "The other {{count}} are already fine and stay as they are.",
+        "alreadyFine_one": "{{count}} already sits on the beats and is left alone.",
+        "alreadyFine_other": "{{count}} already sit on the beats and are left alone.",
         "allFine": "They all sit on the beats.",
         "adjust_one": "Adjust {{count}} track",
         "adjust_other": "Adjust {{count}} tracks",

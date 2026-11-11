@@ -124,4 +124,28 @@ describe('adjustGrid', () => {
     expect(after.get('c1')).toBe(before.get('c1'))
     expect(after.get('c0')).not.toBe(before.get('c0'))
   })
+
+  it('sets a cue aside when the old grid has too few beats to size half a beat', () => {
+    const shortMs = 300
+    const grid = { bpm: BPM, anchorMs: 102 }
+    const draft = startDraft(
+      [{ id: 'c0', ms: 102, kind: HOT_KINDS[0], color: null }],
+      MY_FLOW.id,
+      [],
+      grid,
+    )
+    const gridded = { ...draft, grid }
+    const beats = gridBeats(grid, shortMs).map((b) => b.ms)
+    const result = adjustGrid({
+      draft: gridded,
+      ctx: { beats, snapTo: beats, strong: [], phrases: [], flows: [MY_FLOW] },
+      fit: { bpm: BPM, firstMs: 0 },
+      kicks: beatsOf(BPM, 0),
+      durationMs: shortMs,
+      toleranceMs: TOLERANCE_MS,
+      zones: true,
+    })
+    expect(beats.length).toBeLessThan(2)
+    expect(result.kind).not.toBe('adjusted')
+  })
 })

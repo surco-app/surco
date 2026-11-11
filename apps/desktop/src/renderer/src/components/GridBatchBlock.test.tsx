@@ -81,7 +81,7 @@ describe('Grid over several selected tracks', () => {
     setup()
     expect(screen.getByTestId('grid-batch-adjust')).toHaveTextContent('Ajustar 1 pista')
     expect(screen.getByTestId('grid-batch-summary')).toHaveTextContent(
-      '1 de 3 no va con los golpes. Las otras 2 ya están bien y no se tocan.',
+      '1 de 3 no va con los golpes. 2 ya van con los golpes y no se tocan.',
     )
   })
 
@@ -185,7 +185,7 @@ describe('Grid over several selected tracks', () => {
   it('counts the tracks with no beats to measure apart from the ones already fine', () => {
     setup({ checks: { '201': LATE, '202': null, '203': ON_BEATS } })
     expect(screen.getByTestId('grid-batch-summary')).toHaveTextContent(
-      '1 de 3 no va con los golpes. La otra ya está bien y no se toca.',
+      '1 de 3 no va con los golpes. 1 ya va con los golpes y no se toca.',
     )
     expect(screen.getByTestId('grid-batch-unmeasurable')).toHaveTextContent(
       '1 sin golpes que medir',
@@ -201,6 +201,35 @@ describe('Grid over several selected tracks', () => {
       '1 sin golpes que medir',
     )
     expect(screen.queryByTestId('grid-batch-adjust')).not.toBeInTheDocument()
+  })
+
+  it('says on its own that the measured tracks are fine when others cannot be measured', () => {
+    setup({ checks: { '201': ON_BEATS, '202': null, '203': ON_BEATS } })
+    expect(screen.getByTestId('grid-batch-summary')).toHaveTextContent(
+      '2 ya van con los golpes y no se tocan.',
+    )
+    expect(screen.getByTestId('grid-batch-summary')).not.toHaveTextContent('Todas')
+    expect(screen.getByTestId('grid-batch-unmeasurable')).toHaveTextContent(
+      '1 sin golpes que medir',
+    )
+  })
+
+  it('shows only the unmeasurable line when no track could be measured', () => {
+    setup({ checks: { '201': null, '202': null, '203': null } })
+    expect(screen.queryByTestId('grid-batch-summary')).not.toBeInTheDocument()
+    expect(screen.getByTestId('grid-batch-unmeasurable')).toHaveTextContent(
+      '3 sin golpes que medir',
+    )
+  })
+
+  it('tells apart the tracks to adjust, the fine ones and the unmeasurable ones', () => {
+    setup({ checks: { '201': LATE, '202': null, '203': ON_BEATS } })
+    expect(screen.getByTestId('grid-batch-summary')).toHaveTextContent(
+      '1 de 3 no va con los golpes. 1 ya va con los golpes y no se toca.',
+    )
+    expect(screen.getByTestId('grid-batch-unmeasurable')).toHaveTextContent(
+      '1 sin golpes que medir',
+    )
   })
 
   it('stays out of a selection whose grids all come from Serato', () => {

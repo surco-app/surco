@@ -124,12 +124,10 @@ export interface GridChecks {
   checkOfContent: (contentId: string) => GridCheck | null | undefined
   done: number
   total: number
-  measured: number
 }
 
 export function useGridChecks(entries: [string, string][], active: boolean): GridChecks {
   const client = useQueryClient()
-  const seen = useSyncExternalStore(subscribe, () => version)
   const checkContent = useSyncExternalStore(subscribe, () => checker)
   const ids = useMemo(() => entries.map(([, contentId]) => contentId).join('\n'), [entries])
   const latest = useRef(entries)
@@ -178,7 +176,6 @@ export function useGridChecks(entries: [string, string][], active: boolean): Gri
       checkOfContent: checkContent,
       done: entries.filter(([, id]) => reads.has(id)).length,
       total: entries.length,
-      measured: seen,
     }
-  }, [entries, seen, checkContent])
+  }, [entries, checkContent])
 }

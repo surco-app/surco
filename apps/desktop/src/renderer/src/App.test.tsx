@@ -658,9 +658,7 @@ describe('App Engine DJ cues', () => {
     expect(await screen.findByTestId('grid-batch-unmeasurable')).toHaveTextContent(
       i18n.t('editor.cues.gridBatch.unmeasurable', { count: 2 }),
     )
-    expect(screen.getByTestId('grid-batch-summary')).not.toHaveTextContent(
-      i18n.t('editor.cues.gridBatch.allFine'),
-    )
+    expect(screen.queryByTestId('grid-batch-summary')).not.toBeInTheDocument()
     expect(screen.queryByTestId('grid-batch-measuring')).not.toBeInTheDocument()
   })
 

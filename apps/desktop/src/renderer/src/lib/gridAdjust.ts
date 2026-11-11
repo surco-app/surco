@@ -48,7 +48,7 @@ export function adjustGrid(input: {
       const ms = from.get(c.key) ?? c.ms
       return { ms: c.ms - ms, half: halfBeatAt(was, ms) }
     })
-    .filter((j) => Math.abs(j.ms) > j.half)
+    .filter((j) => !(Math.abs(j.ms) <= j.half))
   if (jumps.length > 0) {
     const programBpm = draft.grid.bpm
     if (Math.abs(fit.bpm - programBpm) / programBpm >= SAME_TEMPO_RATIO)

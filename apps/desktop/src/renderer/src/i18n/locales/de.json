@@ -20,7 +20,7 @@
   "sessions": {
     "role": {
       "title": "Rolle für Sessions",
-      "of": "Rolle von {{name}}",
+    "of": "Rolle von {{name}}",
       "base": "Instrumentals",
       "vocal": "Gesang",
       "any": "Gemischt"
@@ -103,11 +103,11 @@
       "redo": "Neu würfeln",
       "adjust": "Anpassen…",
       "keep": "So behalten",
-      "kept": "Bleibt als normale Playlist erhalten",
+    "kept": "Bleibt als normale Playlist erhalten",
       "short": "Nur genug Tracks für {{minutes}} Min.",
-      "counted": "Gezählt mit {{minutes}} Min. pro Track. Die Dateien dauern zusammen {{audio}}.",
-      "countedAtLeast": "Gezählt mit {{minutes}} Min. pro Track. Die Dateien dauern zusammen mindestens {{audio}}.",
-      "noCombos": "Keine Combos gefunden, weil sich kein Paar in zwei oder mehr der gewählten gemischten Playlists wiederholt.",
+    "counted": "Gezählt mit {{minutes}} Min. pro Track. Die Dateien dauern zusammen {{audio}}.",
+    "countedAtLeast": "Gezählt mit {{minutes}} Min. pro Track. Die Dateien dauern zusammen mindestens {{audio}}.",
+    "noCombos": "Keine Combos gefunden, weil sich kein Paar in zwei oder mehr der gewählten gemischten Playlists wiederholt.",
       "assumed_one": "{{count}} Track ohne Länge, zählt als {{minutes}} Min.",
       "assumed_other": "{{count}} Tracks ohne Länge, zählen je als {{minutes}} Min."
     },
@@ -1178,8 +1178,8 @@
         "measuring": "Raster wird gemessen… {{done}} von {{total}}",
         "needs_one": "{{count}} von {{total}} liegt nicht auf den Beats.",
         "needs_other": "{{count}} von {{total}} liegen nicht auf den Beats.",
-        "rest_one": "Der andere passt schon und bleibt, wie er ist.",
-        "rest_other": "Die anderen {{count}} passen schon und bleiben, wie sie sind.",
+        "alreadyFine_one": "{{count}} liegt schon auf den Beats und bleibt unberührt.",
+        "alreadyFine_other": "{{count}} liegen schon auf den Beats und bleiben unberührt.",
         "allFine": "Alle liegen auf den Beats.",
         "adjust_one": "{{count}} Track anpassen",
         "adjust_other": "{{count}} Tracks anpassen",

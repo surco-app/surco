@@ -20,7 +20,7 @@
   "sessions": {
     "role": {
       "title": "Papel para sesiones",
-      "of": "Papel de {{name}}",
+    "of": "Papel de {{name}}",
       "base": "Bases",
       "vocal": "Vocales",
       "any": "Mezcladas"
@@ -103,11 +103,11 @@
       "redo": "Rehacer",
       "adjust": "Ajustar…",
       "keep": "Quedármela así",
-      "kept": "Se queda como playlist normal",
+    "kept": "Se queda como playlist normal",
       "short": "Solo hay pistas para {{minutes}} min",
-      "counted": "Contado a {{minutes}} min por pista. Los ficheros suman {{audio}}.",
-      "countedAtLeast": "Contado a {{minutes}} min por pista. Los ficheros suman al menos {{audio}}.",
-      "noCombos": "Sin combos, porque ninguna pareja se repite en dos o más de las playlists Mezcladas que elegiste.",
+    "counted": "Contado a {{minutes}} min por pista. Los ficheros suman {{audio}}.",
+    "countedAtLeast": "Contado a {{minutes}} min por pista. Los ficheros suman al menos {{audio}}.",
+    "noCombos": "Sin combos, porque ninguna pareja se repite en dos o más de las playlists Mezcladas que elegiste.",
       "assumed_one": "{{count}} pista sin duración, se cuenta como {{minutes}} min",
       "assumed_other": "{{count}} pistas sin duración, se cuentan como {{minutes}} min cada una"
     },
@@ -1178,8 +1178,8 @@
         "measuring": "Midiendo la rejilla… {{done}} de {{total}}",
         "needs_one": "{{count}} de {{total}} no va con los golpes.",
         "needs_other": "{{count}} de {{total}} no van con los golpes.",
-        "rest_one": "La otra ya está bien y no se toca.",
-        "rest_other": "Las otras {{count}} ya están bien y no se tocan.",
+        "alreadyFine_one": "{{count}} ya va con los golpes y no se toca.",
+        "alreadyFine_other": "{{count}} ya van con los golpes y no se tocan.",
         "allFine": "Todas van con los golpes.",
         "adjust_one": "Ajustar {{count}} pista",
         "adjust_other": "Ajustar {{count}} pistas",
