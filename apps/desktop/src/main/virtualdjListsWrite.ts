@@ -10,7 +10,7 @@ import {
   statSync,
   writeFileSync,
 } from 'node:fs'
-import { basename, dirname, join } from 'node:path'
+import { basename, dirname, join, relative } from 'node:path'
 import log from 'electron-log/main'
 import type {
   PlaylistAddReport,
@@ -174,15 +174,62 @@ function listFileOf(lists: string, id: string): string {
   return join(lists, ...names.map((n) => `${n}${SUB}`), `${name}${EXT}`)
 }
 
+const rowsOf = (bytes: Buffer): CrateStamp => ({
+  tracks: virtualdjListRows(bytes.toString('utf8')).map((r) => r.path),
+})
+
+const sameTracks = (a: string[], b: string[]): boolean =>
+  a.length === b.length && a.every((t, i) => t === b[i])
+
+function listingOf(snap: Snapshot, sub: string): string[] {
+  return [...snap.files.keys(), ...[...snap.dirs].filter((dir) => dir !== sub)]
+    .filter((path) => inside(path, sub))
+    .map((path) => relative(sub, path))
+    .sort()
+}
+
+function stampNode(snap: Snapshot, file: string, files: Record<string, CrateStamp | null>): void {
+  const bytes = snap.files.get(file)
+  if (!bytes) return
+  files[file] = rowsOf(bytes)
+  const sub = `${file.slice(0, -EXT.length)}${SUB}`
+  if (!snap.dirs.has(sub)) return
+  files[sub] = { tracks: listingOf(snap, sub) }
+  for (const [path, inner] of snap.files)
+    if (inside(path, sub) && path.endsWith(EXT)) files[path] = rowsOf(inner)
+}
+
+const childId = (parentId: string, name: string): string =>
+  parentId === 'root' ? name : `${parentId}/${name}`
+
 export function virtualdjEditFiles(
   edit: RekordboxPlaylistEdit,
   roots: VirtualdjRoot[],
 ): Record<string, CrateStamp | null> {
   const lists = virtualdjListsDir(roots)
-  if (!lists || (edit.kind !== 'add' && edit.kind !== 'move' && edit.kind !== 'remove')) return {}
-  const file = listFileOf(lists, edit.playlistId)
-  if (!existsSync(file)) return {}
-  return { [file]: { tracks: virtualdjListRows(readFileSync(file, 'utf8')).map((r) => r.path) } }
+  if (!lists || edit.kind === 'insertSeparator') return {}
+  const snap = snapshotOf(lists)
+  const files: Record<string, CrateStamp | null> = {}
+  if (edit.kind === 'create') {
+    files[listFileOf(lists, childId(edit.parentId, edit.name.trim()))] = null
+    return files
+  }
+  const own = listFileOf(lists, edit.playlistId)
+  if (edit.kind === 'add' || edit.kind === 'move' || edit.kind === 'remove') {
+    const bytes = snap.files.get(own)
+    if (bytes) files[own] = rowsOf(bytes)
+    return files
+  }
+  stampNode(snap, own, files)
+  const name = basename(own).slice(0, -EXT.length)
+  const target =
+    edit.kind === 'rename'
+      ? join(dirname(own), `${edit.name.trim()}${EXT}`)
+      : edit.kind === 'moveNode'
+        ? listFileOf(lists, childId(edit.parentId, name))
+        : own
+  if (fold(target) !== fold(own)) files[target] = null
+  return files
 }
 
 export function badVirtualdjName(edit: RekordboxPlaylistEdit, roots: VirtualdjRoot[]): boolean {
@@ -334,12 +381,15 @@ function editRows(
 
 function staleList(d: ListsDraft, op: EditOp): boolean {
   for (const [file, seen] of Object.entries(op.files ?? {})) {
+    if (file.endsWith(SUB)) {
+      const there = d.disk.dirs.has(file)
+      if (seen === null && !there) continue
+      if (seen === null || !there || !sameTracks(listingOf(d.disk, file), seen.tracks)) return true
+      continue
+    }
     const bytes = d.disk.files.get(file)
     if (seen === null && !bytes) continue
-    if (seen === null || !bytes) return true
-    const tracks = virtualdjListRows(bytes.toString('utf8')).map((r) => r.path)
-    if (tracks.length !== seen.tracks.length || tracks.some((t, i) => t !== seen.tracks[i]))
-      return true
+    if (seen === null || !bytes || !sameTracks(rowsOf(bytes).tracks, seen.tracks)) return true
   }
   return false
 }

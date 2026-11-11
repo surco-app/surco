@@ -260,6 +260,71 @@ describe('applyVirtualdjListOps', () => {
     ])
   })
 
+  it('refuses a queued folder delete when a list was added inside it in VirtualDJ meanwhile, so that list is not wiped', async () => {
+    const lib = library()
+    const op = lib.op({ kind: 'delete', playlistId: 'Carpeta' })
+    writeFileSync(lib.at('Carpeta.subfolders/Nueva.vdjfolder'), `${LIST_HEAD}</VirtualFolder>\r\n`)
+    const result = await applyVirtualdjListOps([op], lib.deps)
+    expect(result).toMatchObject({
+      ok: true,
+      outcomes: [{ applied: false, reason: 'stale', notices: [{ code: 'edit-changed' }] }],
+    })
+    expect(existsSync(lib.at('Carpeta.subfolders/Nueva.vdjfolder'))).toBe(true)
+    expect(lib.bytes('Carpeta.vdjfolder')).toEqual(FOLDER)
+  })
+
+  it('refuses a queued folder rename when a list inside it gained tracks in VirtualDJ meanwhile', async () => {
+    const lib = library()
+    const op = lib.op({ kind: 'rename', playlistId: 'Carpeta', name: 'Otra' })
+    const grown = original('Carpeta.subfolders/Dentro.vdjfolder')
+      .toString()
+      .replace(
+        '</VirtualFolder>',
+        '\t<song path="/Music/otra.mp3" size="1" idx="1" />\r\n</VirtualFolder>',
+      )
+    writeFileSync(lib.at('Carpeta.subfolders/Dentro.vdjfolder'), grown)
+    const result = await applyVirtualdjListOps([op], lib.deps)
+    expect(result).toMatchObject({ ok: true, outcomes: [{ applied: false, reason: 'stale' }] })
+    expect(lib.text('Carpeta.subfolders/Dentro.vdjfolder')).toBe(grown)
+    expect(existsSync(lib.at('Otra.vdjfolder'))).toBe(false)
+  })
+
+  it('refuses a queued list delete or move when the list gained tracks in VirtualDJ meanwhile', async () => {
+    const lib = library()
+    const ops = [
+      lib.op({ kind: 'delete', playlistId: 'Surco escrita' }, 'del'),
+      lib.op(
+        { kind: 'moveNode', playlistId: 'Surco escrita', parentId: 'Carpeta', beforeId: null },
+        'mv',
+      ),
+    ]
+    const grown = original('Surco escrita.vdjfolder')
+      .toString()
+      .replace(
+        '</VirtualFolder>',
+        '\t<song path="/Music/otra.mp3" size="1" idx="1" />\r\n</VirtualFolder>',
+      )
+    writeFileSync(lib.at('Surco escrita.vdjfolder'), grown)
+    const result = await applyVirtualdjListOps(ops, lib.deps)
+    expect(result).toMatchObject({
+      ok: true,
+      outcomes: [
+        { applied: false, reason: 'stale' },
+        { applied: false, reason: 'stale' },
+      ],
+    })
+    expect(lib.text('Surco escrita.vdjfolder')).toBe(grown)
+  })
+
+  it('refuses a queued create when VirtualDJ made a list of that name meanwhile', async () => {
+    const lib = library()
+    const op = lib.op({ kind: 'create', parentId: 'root', name: 'Nueva', folder: false })
+    writeFileSync(lib.at('Nueva.vdjfolder'), original('Surco escrita.vdjfolder'))
+    const result = await applyVirtualdjListOps([op], lib.deps)
+    expect(result).toMatchObject({ ok: true, outcomes: [{ applied: false, reason: 'stale' }] })
+    expect(lib.bytes('Nueva.vdjfolder')).toEqual(original('Surco escrita.vdjfolder'))
+  })
+
   it('refuses a row edit on a list that changed in VirtualDJ since it was read, even when the rows it names are still in place', async () => {
     const lib = library()
     const links = lib.links('Surco escrita')
