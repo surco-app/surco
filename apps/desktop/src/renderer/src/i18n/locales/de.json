@@ -69,11 +69,8 @@
         "alternate": "Instrumental und Gesang abwechseln",
         "alternateHint": "Instrumental, Gesang, Instrumental, Gesang. Hat Vorrang vor dem harmonischen Mixen, wenn nicht beides passt",
         "preferCombos": "Bewährte Combos bevorzugen",
-        "preferCombosHint": "Ein Combo ist ein Instrumental und ein Gesangstrack, die du in zwei oder mehr deiner Tracklists direkt nacheinander gespielt hast. Surco bringt sie wieder zusammen",
         "tasteWeight": "Was dir am besten gefällt",
-        "tasteWeightHint": "Sterne und Wiedergaben zählen bei der Auswahl",
         "surprise": "Überrasch mich",
-        "surpriseHint": "Lässt Platz für Paare, die nie zusammen gespielt wurden",
         "noMixed": "Um Combos zu finden, markiere im Schritt Playlists eine Playlist mit deinen Tracklists oder Sets als Gemischt.",
         "play": "Spielzeit pro Track",
         "playValue": "{{minutes}} Min.",
@@ -82,7 +79,8 @@
         "harmonyFree": "Frei",
         "harmonyNeighbours": "Nachbarn",
         "harmonySame": "Gleiche Tonart",
-        "noKeys": "Keiner der gewählten Tracks hat eine Tonart, daher entfällt das harmonische Mixen"
+        "noKeys": "Keiner der gewählten Tracks hat eine Tonart, daher entfällt das harmonische Mixen",
+        "pickHint": "„Bewährte Combos bevorzugen“ bringt ein Instrumental und einen Gesangstrack wieder zusammen, die du in zwei oder mehr deiner Tracklists direkt nacheinander gespielt hast. „Was dir am besten gefällt“ berücksichtigt Sterne und Wiedergaben. „Überrasch mich“ lässt Platz für Paare, die nie zusammen gespielt wurden."
       },
       "loading": "Liest …",
       "build": "Session erstellen",

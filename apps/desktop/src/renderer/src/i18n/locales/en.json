@@ -69,11 +69,8 @@
         "alternate": "Alternate instrumental and vocal",
         "alternateHint": "Instrumental, vocal, instrumental, vocal. It wins over harmonic mixing when both cannot hold",
         "preferCombos": "Prefer proven combos",
-        "preferCombosHint": "A combo is an instrumental and a vocal you have played back to back in two or more of your tracklists. Surco puts them together again",
         "tasteWeight": "What you like most",
-        "tasteWeightHint": "Stars and play count weigh in when picking",
         "surprise": "Surprise me",
-        "surpriseHint": "Leaves room for pairs that were never played together",
         "noMixed": "To find combos, mark a playlist with your tracklists or sets as Mixed in the Playlists step.",
         "play": "Time each track plays",
         "playValue": "{{minutes}} min",
@@ -82,7 +79,8 @@
         "harmonyFree": "Free",
         "harmonyNeighbours": "Neighbours",
         "harmonySame": "Same key",
-        "noKeys": "None of the chosen tracks has a key, so harmonic mixing does not apply"
+        "noKeys": "None of the chosen tracks has a key, so harmonic mixing does not apply",
+        "pickHint": "“Prefer proven combos” brings back together an instrumental and a vocal you have played back to back in two or more of your tracklists. “What you like most” weighs stars and play count. “Surprise me” leaves room for pairs that were never played together."
       },
       "loading": "Reading…",
       "build": "Build session",

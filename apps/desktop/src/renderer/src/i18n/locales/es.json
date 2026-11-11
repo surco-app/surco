@@ -69,11 +69,8 @@
         "alternate": "Alternar bases y vocales",
         "alternateHint": "Base, vocal, base, vocal. Manda sobre la mezcla armónica cuando no cuadran las dos",
         "preferCombos": "Preferir combos probados",
-        "preferCombosHint": "Un combo es una base y una vocal que has puesto seguidas en dos o más de tus tracklists. Surco las vuelve a juntar",
         "tasteWeight": "Lo que más te gusta",
-        "tasteWeightHint": "Estrellas y veces escuchada pesan al elegir",
         "surprise": "Sorpréndeme",
-        "surpriseHint": "Deja un hueco a parejas que nunca se han puesto juntas",
         "noMixed": "Para encontrar combos, marca como Mezclada alguna playlist con tus tracklists o sets en el paso Playlists.",
         "play": "Tiempo que suena cada pista",
         "playValue": "{{minutes}} min",
@@ -82,7 +79,8 @@
         "harmonyFree": "Libre",
         "harmonyNeighbours": "Vecinos",
         "harmonySame": "Mismo tono",
-        "noKeys": "Ninguna de las pistas elegidas trae tonalidad, así que la mezcla armónica no se aplica"
+        "noKeys": "Ninguna de las pistas elegidas trae tonalidad, así que la mezcla armónica no se aplica",
+        "pickHint": "«Preferir combos probados» vuelve a juntar una base y una vocal que has puesto seguidas en dos o más de tus tracklists. «Lo que más te gusta» tiene en cuenta las estrellas y las veces escuchada. «Sorpréndeme» deja un hueco a parejas que nunca se han puesto juntas."
       },
       "loading": "Leyendo…",
       "build": "Montar sesión",

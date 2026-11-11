@@ -1,5 +1,6 @@
+import { Info } from 'lucide-react'
 import type React from 'react'
-import { Fragment, useMemo } from 'react'
+import { Fragment, useId, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { PlaylistRole, SessionHarmony } from '../../../shared/sessionTypes'
 import type { SourceNode } from '../../../shared/types'
@@ -8,6 +9,7 @@ import { playlistIdsUnder } from './CheckTree'
 import { PlaylistRolePicker } from './PlaylistRolePicker'
 import { PlaylistTree } from './PlaylistTree'
 import { flattenPlaylists } from './SourceTree'
+import { Tooltip } from './Tooltip'
 
 const CHIP = 'press rounded-full border px-3 py-1 text-sm'
 const CHIP_ON =
@@ -270,6 +272,35 @@ const HARMONIES: readonly { mode: SessionHarmony; label: string }[] = [
   { mode: 'same', label: 'harmonySame' },
 ]
 
+function GroupLegend({
+  id,
+  title,
+  help,
+  testId,
+}: {
+  id: string
+  title: string
+  help: string
+  testId: string
+}): React.JSX.Element {
+  return (
+    <legend className="mb-3 flex items-center gap-1.5 text-[11px] font-medium tracking-wide text-fg-faint uppercase">
+      <span id={`${id}-title`}>{title}</span>
+      <span
+        data-testid={testId}
+        role="note"
+        className="relative -my-1 flex h-5 w-5 items-center justify-center text-fg-dim normal-case after:absolute after:-inset-0.5 after:content-[''] hover:text-fg-muted"
+      >
+        <Info className="h-3 w-3" aria-hidden="true" />
+        <span id={`${id}-help`} className="sr-only">
+          {help}
+        </span>
+        <Tooltip label={help} />
+      </span>
+    </legend>
+  )
+}
+
 export function CharacterStep({
   options,
   hasKeys,
@@ -288,6 +319,8 @@ export function CharacterStep({
   onChange: (patch: Partial<Record<CharacterKey, boolean> & { harmony: SessionHarmony }>) => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
+  const chainId = useId()
+  const pickId = useId()
   const option = (key: CharacterKey): React.JSX.Element => (
     <Fragment key={key}>
       <label className="flex cursor-pointer items-start gap-3">
@@ -298,12 +331,7 @@ export function CharacterStep({
           onChange={(e) => onChange({ [key]: e.target.checked })}
           className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--color-accent)]"
         />
-        <span className="text-sm">
-          {tr(`sessions.wizard.character.${key}`)}
-          <span className="mt-0.5 block text-xs text-fg-dim">
-            {tr(`sessions.wizard.character.${key}Hint`)}
-          </span>
-        </span>
+        <span className="text-sm">{tr(`sessions.wizard.character.${key}`)}</span>
       </label>
       {key === 'preferCombos' && options.preferCombos && !hasMixed && (
         <p data-testid="session-wizard-combos-hint" className="-mt-1.5 pl-7 text-xs text-fg-dim">
@@ -314,10 +342,17 @@ export function CharacterStep({
   )
   return (
     <div className="flex flex-col gap-4">
-      <fieldset className="flex flex-col gap-3">
-        <legend className="mb-3 text-[11px] font-medium tracking-wide text-fg-faint uppercase">
-          {tr('sessions.wizard.character.chain')}
-        </legend>
+      <fieldset
+        aria-labelledby={`${chainId}-title`}
+        aria-describedby={`${chainId}-help`}
+        className="flex flex-col gap-3"
+      >
+        <GroupLegend
+          id={chainId}
+          title={tr('sessions.wizard.character.chain')}
+          help={tr('sessions.wizard.character.alternateHint')}
+          testId="session-wizard-chain-help"
+        />
         {option('alternate')}
         <div className="flex flex-col gap-1.5 pl-7">
           <span data-testid="session-wizard-harmony-title" className="text-sm">
@@ -346,10 +381,17 @@ export function CharacterStep({
         </div>
       </fieldset>
       <div className="border-t border-[var(--color-line)] pt-4">
-        <fieldset className="flex flex-col gap-3">
-          <legend className="mb-3 text-[11px] font-medium tracking-wide text-fg-faint uppercase">
-            {tr('sessions.wizard.character.pick')}
-          </legend>
+        <fieldset
+          aria-labelledby={`${pickId}-title`}
+          aria-describedby={`${pickId}-help`}
+          className="flex flex-col gap-3"
+        >
+          <GroupLegend
+            id={pickId}
+            title={tr('sessions.wizard.character.pick')}
+            help={tr('sessions.wizard.character.pickHint')}
+            testId="session-wizard-pick-help"
+          />
           {PICK_OPTIONS.map(option)}
           {hasNew && (
             <label className="flex flex-col gap-1.5 text-sm">

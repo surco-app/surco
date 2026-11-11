@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { PlaylistRole, SessionAnswers } from '../../../shared/sessionTypes'
 import type { SourceNode, SourcePlaylistEntry } from '../../../shared/types'
@@ -607,6 +607,21 @@ describe('SessionWizard character step', () => {
     for (const key of ['preferCombos', 'tasteWeight', 'surprise'])
       expect(pick).toContainElement(screen.getByTestId(`session-wizard-opt-${key}`))
     expect(pick).not.toContainElement(screen.getByTestId('session-wizard-opt-alternate'))
+  })
+
+  it('explains each group once behind an (i) so the checkboxes read as their names alone', async () => {
+    setup({ b90: 'base' })
+    await toCharacter()
+    const chain = screen.getByRole('group', { name: i18n.t('sessions.wizard.character.chain') })
+    const pick = screen.getByRole('group', { name: i18n.t('sessions.wizard.character.pick') })
+    expect(chain).toHaveAccessibleDescription(i18n.t('sessions.wizard.character.alternateHint'))
+    expect(pick).toHaveAccessibleDescription(i18n.t('sessions.wizard.character.pickHint'))
+    expect(within(chain).getByTestId('session-wizard-chain-help')).toHaveAttribute('role', 'note')
+    expect(within(pick).getByTestId('session-wizard-pick-help')).toHaveAttribute('role', 'note')
+    for (const key of ['alternate', 'preferCombos', 'tasteWeight', 'surprise'])
+      expect(screen.getByTestId(`session-wizard-opt-${key}`)).toHaveAccessibleName(
+        i18n.t(`sessions.wizard.character.${key}`),
+      )
   })
 
   it('turns harmony off and says why when no chosen track has a key', async () => {

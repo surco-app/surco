@@ -69,11 +69,8 @@
         "alternate": "Alternar instrumental e com voz",
         "alternateHint": "Base, cantada, base, cantada. Vale mais que a mixagem harmônica quando as duas não cabem",
         "preferCombos": "Preferir combos comprovados",
-        "preferCombosHint": "Um combo é uma base e uma cantada que você tocou em sequência em duas ou mais das suas tracklists. O Surco junta as duas de novo",
         "tasteWeight": "O que você mais gosta",
-        "tasteWeightHint": "Estrelas e reproduções pesam na escolha",
         "surprise": "Surpreenda-me",
-        "surpriseHint": "Deixa espaço para pares que nunca tocaram juntos",
         "noMixed": "Para achar combos, marque como Misto uma playlist com suas tracklists ou sets no passo Playlists.",
         "play": "Tempo que cada faixa toca",
         "playValue": "{{minutes}} min",
@@ -82,7 +79,8 @@
         "harmonyFree": "Livre",
         "harmonyNeighbours": "Vizinhos",
         "harmonySame": "Mesmo tom",
-        "noKeys": "Nenhuma das faixas escolhidas tem tom, então a mixagem harmônica não se aplica"
+        "noKeys": "Nenhuma das faixas escolhidas tem tom, então a mixagem harmônica não se aplica",
+        "pickHint": "“Preferir combos comprovados” junta de novo uma base e uma cantada que você tocou em sequência em duas ou mais das suas tracklists. “O que você mais gosta” leva em conta estrelas e reproduções. “Surpreenda-me” deixa espaço para pares que nunca tocaram juntos."
       },
       "loading": "Lendo…",
       "build": "Montar sessão",

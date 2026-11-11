@@ -69,11 +69,8 @@
         "alternate": "Alterner instrumental et voix",
         "alternateHint": "Instrumental, voix, instrumental, voix. Passe avant le mix harmonique quand les deux ne collent pas",
         "preferCombos": "Privilégier les combos éprouvés",
-        "preferCombosHint": "Un combo, c’est un instrumental et une voix que tu as enchaînés dans deux de tes tracklists ou plus. Surco les remet ensemble",
         "tasteWeight": "Ce que tu préfères",
-        "tasteWeightHint": "Les étoiles et les écoutes comptent dans le choix",
         "surprise": "Surprends-moi",
-        "surpriseHint": "Laisse de la place à des paires jamais jouées ensemble",
         "noMixed": "Pour trouver des combos, marque comme Mixte une playlist avec tes tracklists ou tes sets à l’étape Playlists.",
         "play": "Durée de jeu de chaque morceau",
         "playValue": "{{minutes}} min",
@@ -82,7 +79,8 @@
         "harmonyFree": "Libre",
         "harmonyNeighbours": "Voisins",
         "harmonySame": "Même tonalité",
-        "noKeys": "Aucun morceau choisi n’a de tonalité, le mix harmonique ne s’applique donc pas"
+        "noKeys": "Aucun morceau choisi n’a de tonalité, le mix harmonique ne s’applique donc pas",
+        "pickHint": "« Privilégier les combos éprouvés » remet ensemble un instrumental et une voix que tu as enchaînés dans deux de tes tracklists ou plus. « Ce que tu préfères » tient compte des étoiles et des écoutes. « Surprends-moi » laisse de la place à des paires jamais jouées ensemble."
       },
       "loading": "Lecture…",
       "build": "Composer la session",
