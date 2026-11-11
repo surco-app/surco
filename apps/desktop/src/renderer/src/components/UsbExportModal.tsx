@@ -92,7 +92,7 @@ function pioneerViewFrom(source: 'serato' | 'traktor' | 'virtualdj'): UsbProgram
   }
 }
 
-const USB_PROGRAM_VIEW: Record<UsbProgram, UsbProgramView> = {
+export const USB_PROGRAM_VIEW: Record<UsbProgram, UsbProgramView> = {
   rekordbox: {
     holder: (v) => v.holder,
     ticks: tickedFor,

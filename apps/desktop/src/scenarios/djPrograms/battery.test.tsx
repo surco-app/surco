@@ -1,0 +1,419 @@
+// @vitest-environment jsdom
+import { existsSync, mkdirSync, realpathSync } from 'node:fs'
+import { basename, join } from 'node:path'
+import { app } from 'electron'
+import { beforeAll, describe, expect, it, vi } from 'vitest'
+
+const usb = vi.hoisted(() => ({ stick: '', volume: null as unknown, events: [] as unknown[] }))
+
+vi.mock('electron', async () => ({
+  ...(await import('../electronFake')).electronFake(),
+  BrowserWindow: {
+    fromWebContents: () => null,
+    getAllWindows: () => [
+      {
+        webContents: {
+          isDestroyed: () => false,
+          send: (channel: string, payload: unknown) => {
+            if (channel === 'usb:event') usb.events.push(payload)
+          },
+        },
+      },
+    ],
+  },
+  dialog: { showOpenDialog: async () => ({ canceled: true, filePaths: [] }) },
+}))
+vi.mock('../../main/usbVolumes', () => ({
+  systemVolumeSource: () => ({ idAt: async () => 'BATTERY-STICK' }),
+  readVolumes: async () => [usb.volume],
+  watchVolumes: () => {},
+  stickHolder: async () => ({ by: 'empty', at: null }),
+}))
+vi.mock('../../main/rekordboxProcess', () => ({ isRekordboxRunning: vi.fn(async () => false) }))
+vi.mock('../../main/engineProcess', () => ({ isEngineDjRunning: vi.fn(async () => false) }))
+vi.mock('../../main/traktorProcess', () => ({ isTraktorRunning: vi.fn(async () => false) }))
+vi.mock('../../main/seratoProcess', () => ({ isSeratoRunning: vi.fn(async () => false) }))
+vi.mock('../../main/virtualdjProcess', () => ({
+  isVirtualdjRunning: vi.fn(async () => false),
+  waitForVirtualdjExit: vi.fn(async () => true),
+}))
+
+import { USB_PROGRAM_VIEW } from '../../renderer/src/components/UsbExportModal'
+import { fromDestination } from '../../renderer/src/lib/destination'
+import { SOURCE_PROGRAMS, SOURCE_READ } from '../../renderer/src/lib/sourcePrograms'
+import { HOT_KINDS } from '../../shared/cueRules'
+import {
+  DJ_PROGRAMS,
+  type DjProgram,
+  PROGRAM_CAN,
+  USB_PROGRAMS,
+  type UsbProgram,
+} from '../../shared/djProgram'
+import type {
+  CollectionTrack,
+  RekordboxEditResult,
+  RekordboxPlaylistEdit,
+  SaveCuesRequest,
+  Settings,
+  SourceNode,
+  SourcePlaylistEntry,
+  TrackCues,
+  UsbExportEvent,
+} from '../../shared/types'
+import { makeTrack, scenarioDir } from '../fixtures'
+import { invokeMain, openSurco, type Scenario } from '../harness'
+import { registerDoor } from './door'
+import { TEST_LIBRARIES } from './libraries'
+import type { BatteryFormat, BatteryTrack } from './testLibrary'
+import { registerUsb, STICK_FORMAT, sticks, stickVolume } from './usb'
+
+const LIST = 'Batería'
+const CUE_MS = 3000
+const CLOCK_TOLERANCE_MS = 2
+const FORMATS: BatteryFormat[] = ['wav', 'aiff', 'flac', 'mp3', 'm4a']
+const CONVERTED: BatteryFormat[] = ['mp3', 'flac']
+const QUALITY: Partial<Settings> = { keepMp3Sources: false }
+const LOSSLESS: ReadonlySet<BatteryFormat> = new Set(['wav', 'aiff', 'flac'])
+const MAX_FORMAT_LEAD_MS = 60
+const RETAGGED: BatteryFormat = 'wav'
+const NEW_TITLE = 'Pista wav retitulada'
+
+let root = ''
+let output = ''
+let tracks: Record<BatteryFormat, BatteryTrack>
+let fresh: BatteryTrack
+let settings: Partial<Settings> = {}
+let surco: Scenario
+let door: ReturnType<typeof registerDoor>
+
+const dj = <T,>(op: string, program: DjProgram, ...args: unknown[]) =>
+  invokeMain<T>(`dj:${op}`, program, ...args)
+
+function makeBatteryTrack(dir: string, stem: string, format: BatteryFormat): BatteryTrack {
+  const path = makeTrack(join(dir, `${stem}.${format}`), {
+    title: stem,
+    artist: 'Surco Batería',
+    signal: 'kick',
+  })
+  return { format, path, title: stem, artist: 'Surco Batería', durationSec: 8 }
+}
+
+async function open(extra: Partial<Settings>): Promise<void> {
+  surco?.close()
+  surco = await openSurco({ settings: { ...settings, outputDir: output, ...extra } })
+}
+
+function flat(nodes: SourceNode[]): SourceNode[] {
+  return nodes.flatMap((n) => [n, ...flat(n.children ?? [])])
+}
+
+async function nodeNamed(program: DjProgram, name: string): Promise<SourceNode | undefined> {
+  return flat(await dj<SourceNode[]>('tree', program)).find((n) => n.name === name)
+}
+
+async function listId(program: DjProgram): Promise<string> {
+  const node = await nodeNamed(program, LIST)
+  if (!node) throw new Error(`${program} has no ${LIST} list`)
+  return node.id
+}
+
+async function entries(program: DjProgram, id: string): Promise<SourcePlaylistEntry[]> {
+  return dj<SourcePlaylistEntry[]>('playlist', program, id)
+}
+
+async function contentIdOf(program: DjProgram, path: string): Promise<string> {
+  const entry = (await entries(program, await listId(program))).find((e) => e.path === path)
+  if (entry?.contentId) return entry.contentId
+  if (SOURCE_READ[program].collection) {
+    const track = (await dj<CollectionTrack[]>('collection', program)).find((t) => t.path === path)
+    if (track) return track.contentId
+  }
+  throw new Error(`${program} has no content id for ${path}`)
+}
+
+async function cuesOf(program: DjProgram, path: string): Promise<TrackCues | null> {
+  return invokeMain<TrackCues | null>('cues:trackCues', await contentIdOf(program, path))
+}
+
+async function save(program: DjProgram, edit: RekordboxPlaylistEdit): Promise<RekordboxEditResult> {
+  return dj<RekordboxEditResult>('editPlaylist', program, edit, 'Batería')
+}
+
+const editKinds = (program: DjProgram): ReadonlySet<RekordboxPlaylistEdit['kind']> | null => {
+  const edit = SOURCE_PROGRAMS[program].edit
+  if (!edit) return new Set()
+  return edit.kinds ?? null
+}
+
+const canEdit = (program: DjProgram, kind: RekordboxPlaylistEdit['kind']): boolean => {
+  const kinds = editKinds(program)
+  return kinds === null || kinds.has(kind)
+}
+
+beforeAll(async () => {
+  root = realpathSync(scenarioDir('dj-programs'))
+  output = join(root, 'Salida')
+  mkdirSync(output, { recursive: true })
+  const music = join(root, 'Música')
+  tracks = Object.fromEntries(
+    FORMATS.map((format) => [format, makeBatteryTrack(music, `Pista ${format}`, format)]),
+  ) as Record<BatteryFormat, BatteryTrack>
+  fresh = makeBatteryTrack(join(root, 'Nuevas'), 'Pista nueva', 'flac')
+  const home = app.getPath('home')
+  for (const program of DJ_PROGRAMS)
+    settings = {
+      ...settings,
+      ...TEST_LIBRARIES[program].build(
+        { root: join(root, program), home },
+        Object.values(tracks),
+        LIST,
+      ),
+    }
+  await open(fromDestination('folder'))
+  door = registerDoor(() => surco.queues)
+}, 120_000)
+
+describe.each(DJ_PROGRAMS)('%s, por la puerta común', (program) => {
+  it('lee el árbol, la lista, la colección y la pertenencia', async () => {
+    const id = await listId(program)
+    const paths = (await entries(program, id)).map((e) => e.path)
+    expect(paths.sort()).toEqual(
+      Object.values(tracks)
+        .map((t) => t.path)
+        .sort(),
+    )
+    if (SOURCE_READ[program].collection) {
+      const collection = await dj<CollectionTrack[]>('collection', program)
+      expect(collection.map((t) => t.path).sort()).toEqual(paths.sort())
+    }
+    const membership = await dj<Record<string, string[]>>('membership', program, [tracks.wav.path])
+    expect(Object.values(membership).flat()).toContain(id)
+  })
+
+  it.skipIf(!SOURCE_PROGRAMS[program].edit)(
+    'crea, renombra, añade, quita y borra una lista donde el programa edita',
+    async () => {
+      const created = await save(program, {
+        kind: 'create',
+        parentId: 'root',
+        name: 'Batería nueva',
+        folder: false,
+      })
+      expect(created).toMatchObject({ applied: true })
+      let id = (await nodeNamed(program, 'Batería nueva'))?.id
+      expect(id).toBeDefined()
+      expect(
+        await save(program, {
+          kind: 'add',
+          playlistId: id as string,
+          tracks: [{ paths: [tracks.aiff.path] }],
+        }),
+      ).toMatchObject({ applied: true })
+      expect((await entries(program, id as string)).map((e) => e.path)).toEqual([tracks.aiff.path])
+      if (canEdit(program, 'rename')) {
+        expect(
+          await save(program, { kind: 'rename', playlistId: id as string, name: 'Batería otra' }),
+        ).toMatchObject({ applied: true })
+        id = (await nodeNamed(program, 'Batería otra'))?.id
+        expect(id).toBeDefined()
+        expect(await nodeNamed(program, 'Batería nueva')).toBeUndefined()
+      }
+      if (canEdit(program, 'remove')) {
+        const [row] = await entries(program, id as string)
+        expect(
+          await save(program, {
+            kind: 'remove',
+            playlistId: id as string,
+            linkIds: [row.linkId as string],
+          }),
+        ).toMatchObject({ applied: true })
+        expect(await entries(program, id as string)).toEqual([])
+      }
+      expect(await save(program, { kind: 'delete', playlistId: id as string })).toMatchObject({
+        applied: true,
+      })
+      expect(flat(await dj<SourceNode[]>('tree', program)).map((n) => n.id)).not.toContain(id)
+    },
+  )
+
+  it.each(FORMATS)('guarda un cue en %s y lo lee en el mismo sitio del reloj', async (format) => {
+    const path = tracks[format].path
+    const before = await cuesOf(program, path)
+    expect(before).not.toBeNull()
+    const request: SaveCuesRequest = {
+      contentId: await contentIdOf(program, path),
+      path,
+      label: basename(path),
+      wanted: [{ ms: CUE_MS, kind: HOT_KINDS[0], color: null }],
+      fingerprint: (before as TrackCues).fingerprint,
+    }
+    await invokeMain('cues:save', [request])
+    await door.settled()
+    const after = await cuesOf(program, path)
+    expect(after?.cues.map((c) => c.ms)).toHaveLength(1)
+    expect(Math.abs((after?.cues[0]?.ms ?? 0) - CUE_MS)).toBeLessThanOrEqual(CLOCK_TOLERANCE_MS)
+  })
+})
+
+describe('Convertir', () => {
+  const converted = (format: BatteryFormat) => tracks[format].path.replace(/\.[^.]+$/, '.aiff')
+  const before = new Map<string, { id: string; cues: TrackCues }>()
+  const key = (program: DjProgram, format: BatteryFormat) => `${program} ${format}`
+
+  beforeAll(async () => {
+    for (const program of DJ_PROGRAMS)
+      for (const format of CONVERTED) {
+        const id = await contentIdOf(program, tracks[format].path)
+        const cues = await invokeMain<TrackCues | null>('cues:trackCues', id)
+        if (cues) before.set(key(program, format), { id, cues })
+      }
+    await open({
+      ...fromDestination('beside'),
+      ...QUALITY,
+      outputFormat: 'aiff',
+      autoApplyFilename: false,
+    })
+    await surco.drop(...CONVERTED.map((f) => tracks[f].path))
+    await surco.convertAll('confirm', 'aiff')
+    await door.settled()
+  }, 120_000)
+
+  it('sin errores que vea el usuario', () => {
+    expect(surco.errors).toEqual([])
+  })
+
+  describe.each(DJ_PROGRAMS)('%s', (program) => {
+    const afterOf = async (format: BatteryFormat): Promise<TrackCues | null> => {
+      const was = before.get(key(program, format))
+      if (!was) throw new Error(`${program} had no cues for ${format} before converting`)
+      if (PROGRAM_CAN[program].write)
+        return invokeMain<TrackCues | null>(
+          'cues:trackCues',
+          await contentIdOf(program, converted(format)),
+        )
+      const carried = was.id.replace(tracks[format].path, converted(format))
+      expect(carried).not.toBe(was.id)
+      return invokeMain<TrackCues | null>('cues:trackCues', carried)
+    }
+
+    it.each(CONVERTED)('lleva el cue de %s al fichero nuevo', async (format) => {
+      const was = before.get(key(program, format))?.cues as TrackCues
+      const after = await afterOf(format)
+      expect(after?.cues).toHaveLength(1)
+      const moved = (after?.cues[0]?.ms ?? 0) - (was.cues[0]?.ms ?? 0)
+      const leads = [was.clockLeadMs, after?.clockLeadMs]
+      if (LOSSLESS.has(format)) expect(Math.abs(moved)).toBeLessThanOrEqual(CLOCK_TOLERANCE_MS)
+      else if (leads.every((lead) => typeof lead === 'number'))
+        expect(
+          Math.abs(moved - ((after?.clockLeadMs ?? 0) - (was.clockLeadMs ?? 0))),
+        ).toBeLessThanOrEqual(CLOCK_TOLERANCE_MS)
+      else expect(Math.abs(moved)).toBeLessThanOrEqual(MAX_FORMAT_LEAD_MS)
+    })
+
+    it.skipIf(!PROGRAM_CAN[program].write)('repunta la lista al fichero nuevo', async () => {
+      const paths = (await entries(program, await listId(program))).map((e) => e.path)
+      for (const format of CONVERTED) {
+        expect(paths).toContain(converted(format))
+        expect(paths).not.toContain(tracks[format].path)
+      }
+    })
+
+    it.skipIf(PROGRAM_CAN[program].write)(
+      'deja la lista en el original, que Surco conserva',
+      async () => {
+        const paths = (await entries(program, await listId(program))).map((e) => e.path)
+        for (const format of CONVERTED) {
+          expect(paths).toContain(tracks[format].path)
+          expect(existsSync(tracks[format].path)).toBe(true)
+        }
+      },
+    )
+  })
+})
+
+describe('Etiquetas y añadir', () => {
+  const titleOf = async (program: DjProgram, path: string): Promise<string | undefined> => {
+    if (SOURCE_READ[program].collection)
+      return (await dj<CollectionTrack[]>('collection', program)).find((t) => t.path === path)
+        ?.title
+    return (await entries(program, await listId(program))).find((e) => e.path === path)?.preview
+      ?.title
+  }
+  const counts: Partial<Record<DjProgram, number>> = {}
+
+  beforeAll(async () => {
+    await open(fromDestination('folder'))
+    await window.api.syncLibraryTags([
+      {
+        path: tracks[RETAGGED].path,
+        fields: { title: { from: tracks[RETAGGED].title, to: NEW_TITLE } },
+      },
+    ])
+    await door.settled()
+    for (const program of DJ_PROGRAMS) counts[program] = await dj<number>('trackCount', program)
+    await open({ ...fromDestination('folder'), outputFormat: 'aiff', autoApplyFilename: false })
+    await surco.drop(fresh.path)
+    await surco.convertAll('confirm', 'aiff')
+    await door.settled()
+  }, 120_000)
+
+  it('sin errores que vea el usuario', () => {
+    expect(surco.errors).toEqual([])
+  })
+
+  describe.each(DJ_PROGRAMS)('%s', (program) => {
+    it.skipIf(!PROGRAM_CAN[program].reach)('lleva el título nuevo a la biblioteca', async () => {
+      expect(await titleOf(program, tracks[RETAGGED].path)).toBe(NEW_TITLE)
+    })
+
+    it.skipIf(!PROGRAM_CAN[program].reach)('añade la pista convertida', async () => {
+      expect(await dj<number>('trackCount', program)).toBe((counts[program] ?? 0) + 1)
+      if (SOURCE_READ[program].collection)
+        expect((await dj<CollectionTrack[]>('collection', program)).map((t) => t.path)).toContain(
+          join(output, 'Pista nueva.aiff'),
+        )
+    })
+  })
+})
+
+describe('USB', () => {
+  const stickOf = (program: UsbProgram) =>
+    sticks(usb.events as UsbExportEvent[])[STICK_FORMAT[program]]
+
+  beforeAll(() => {
+    usb.stick = join(root, 'USB')
+    usb.volume = stickVolume(usb.stick)
+    mkdirSync(usb.stick, { recursive: true })
+    registerUsb(root)
+  })
+
+  describe.each(USB_PROGRAMS)('%s', (program) => {
+    it('lleva la lista al USB con cada pista y su cue donde el programa lo tiene', async () => {
+      const id = await listId(program)
+      const stick = stickOf(program)
+      const leftOut = await stick.write(
+        USB_PROGRAM_VIEW[program].request(
+          [id],
+          { kind: 'volume', uuid: 'BATTERY-STICK' },
+          { prune: false, settings: false },
+        ),
+      )
+      const list = await stick.read(usb.stick, LIST)
+      const library = (await entries(program, id)).map((e) => e.path ?? '')
+      expect(list?.tracks.map((t) => t.file)).toEqual(library.map((path) => basename(path)))
+      for (const [i, track] of (list?.tracks ?? []).entries()) {
+        if (leftOut.includes(track.title)) {
+          expect(track.cuesMs, track.file).toEqual([])
+          continue
+        }
+        expect(track.cuesMs, track.file).toHaveLength(1)
+        if (!/\.(wav|aiff|flac)$/i.test(track.file)) continue
+        const cues = await cuesOf(program, library[i])
+        expect(
+          Math.abs(track.cuesMs[0] - (cues?.cues[0]?.ms ?? 0)),
+          track.file,
+        ).toBeLessThanOrEqual(CLOCK_TOLERANCE_MS)
+      }
+    })
+  })
+})
