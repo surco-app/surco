@@ -110,6 +110,16 @@
 - [ ] **Step 1:** Tests rojos: con `addToVirtualdj` una conversión nueva entra como `<Song>` y en las listas elegidas; con `syncVirtualdj` la revisión lleva título, artista, álbum y género; convertir una pista de la pestaña VirtualDJ repunta su `<Song>` y las listas, desplaza los cues y quita los que caen fuera; la conversión ya no se rechaza (`READ_ONLY_BLOCKED` sin VirtualDJ).
 - [ ] **Step 2:** Implementar. Commit por capacidad (`Add converted tracks to VirtualDJ`, `Carry tag changes to VirtualDJ`, `Follow a converted VirtualDJ track to its new file`).
 
+### Task 16b: Comprobación, Copias, duplicados y daños
+
+Salió en la revisión de la Tarea 16: las filas de VirtualDJ en estas tablas no hacen nada, y el usuario pidió VirtualDJ "completo, como el resto".
+
+**Files:** las tablas de comprobación tras convertir, la pantalla Copias (restaurar `database.xml` y `MyLists` desde `virtualdj-backups` y `virtualdj-backups/lists`), la sustitución de duplicados y la reparación de daños, siguiendo a Serato en cada una.
+
+- [ ] **Step 1:** Tests rojos por capacidad: tras convertir, Surco relee VirtualDJ y confirma la pista; Copias lista las copias de VirtualDJ y restaura una (con VirtualDJ cerrado, copia de cómo estaba antes, solo descarta la cola de VirtualDJ); quitar un duplicado pasa sus listas y su `<Song>` a la copia que se queda; la reparación de daños llega a VirtualDJ como a los otros.
+- [ ] **Step 2:** Implementar. Ojo: `reasonOfDetail` lanza con VirtualDJ y `ensureClosed('virtualdj')` devuelve false sin diálogo; Copias necesita pedir que se cierre.
+- [ ] **Step 3:** Un commit por capacidad.
+
 **Cierre del bloque 4:** matriz; con VirtualDJ real por el controlador: crear, renombrar y borrar una lista y una carpeta desde Surco; pegar un tracklist en una lista; convertir Pray.flac de la pestaña VirtualDJ a MP3; abrir VirtualDJ y comprobar en pantalla y en ficheros la lista, la pista repuntada y sus cues; cerrar.
 
 ## Bloque 5. USB
