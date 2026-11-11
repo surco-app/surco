@@ -269,7 +269,7 @@ const missingLibraries = (review: Review) =>
     return status?.enabled && !status.found
   }).map(([, name]) => name)
 
-type DestinationState = 'ok' | 'warn' | 'off'
+type DestinationState = 'ok' | 'warn'
 
 interface Destination {
   id: string
@@ -278,11 +278,10 @@ interface Destination {
   detail: string
 }
 
-const DESTINATION_ICON: Record<DestinationState, string> = { ok: '✓', warn: '!', off: '–' }
+const DESTINATION_ICON: Record<DestinationState, string> = { ok: '✓', warn: '!' }
 const DESTINATION_TONE: Record<DestinationState, string> = {
   ok: 'text-good',
   warn: 'text-warn',
-  off: 'text-fg-faint',
 }
 
 const joined = (parts: (string | false)[]) => parts.filter(Boolean).join(' · ')
@@ -462,8 +461,9 @@ function Done({
   const inMusic =
     run.outcomes.some((o) => o.musicId !== undefined) ||
     run.replaced.some((r) => r.music !== undefined && r.music !== 'none')
-  // Every library with its sync on gets a row: a library left out read as one that got
-  // the change, which is what hid a rekordbox that got nothing.
+  // A library the change reached, or should have and missed, gets a row; one that is off or
+  // had nothing to take is left out. A miss always shows, which is what hid a rekordbox that
+  // got nothing.
   const libraryRow = (
     library: (typeof TAG_LIBRARIES)[number][0],
     name: (typeof TAG_LIBRARIES)[number][1],
@@ -475,7 +475,7 @@ function Done({
       state,
       detail,
     })
-    if (status && !status.enabled) return row('off', t('musicReview.done.where.off'))
+    if (status && !status.enabled) return null
     if (missing.includes(name)) return row('warn', t('musicReview.done.where.missing'))
     const outcomes = replacedIn(library).filter((o) => o !== undefined)
     const count = (o: string) => outcomes.filter((x) => x === o).length
@@ -492,17 +492,12 @@ function Done({
     const moved = count('replaced') + count('repointed')
     const held = isWritable(library) && KEEPS_REPLACED[library] ? count('replaced') : 0
     const updated = tags?.outcome === 'updated' ? tags.count : 0
-    if (tags?.outcome === 'nothing' && !outcomes.length)
-      return row('off', t('musicReview.done.where.noMatch'))
-    return row(
-      'ok',
-      joined([
-        updated > 0 && t('musicReview.done.where.updated', { count: updated }),
-        moved > 0 && t('musicReview.done.where.replaced', { count: moved }),
-        held > 0 && t('musicReview.done.where.held', { count: held }),
-      ]) ||
-        (outcomes.length ? t('musicReview.done.where.none') : t('musicReview.done.where.nothing')),
-    )
+    const detail = joined([
+      updated > 0 && t('musicReview.done.where.updated', { count: updated }),
+      moved > 0 && t('musicReview.done.where.replaced', { count: moved }),
+      held > 0 && t('musicReview.done.where.held', { count: held }),
+    ])
+    return detail ? row('ok', detail) : null
   }
   const written = run.outcomes.filter((o) => o.file === 'written').length
   const backups = run.outcomes.filter((o) => o.backupId !== undefined).length
@@ -510,14 +505,32 @@ function Done({
   const libraryRepairs = (run.damage ?? []).some(
     (d) => !d.id.startsWith('genre-') && (d.state === 'repaired' || d.state === 'pending'),
   )
+  const musicDetail =
+    !list && run.applyError !== undefined
+      ? t('musicReview.done.where.notApplied')
+      : joined([
+          musicSet > 0 && t('musicReview.done.where.tracks', { count: musicSet }),
+          !list && removed > 0 && t('musicReview.done.where.removed', { count: removed }),
+          leftMusic > 0 && t('listReview.done.musicRemoved', { count: leftMusic }),
+          musicPlaylists > 0 && t('listReview.done.where.playlists', { count: musicPlaylists }),
+          musicMismatch > 0 && t('listReview.done.musicMismatch', { count: musicMismatch }),
+          musicFailed > 0 && t('musicReview.done.where.failed', { count: musicFailed }),
+          musicUnchecked > 0 && t('listReview.done.where.unchecked', { count: musicUnchecked }),
+        ])
+  const filesDetail =
+    list && run.applyError !== undefined
+      ? t('musicReview.done.where.notApplied')
+      : joined([
+          written > 0 && t('musicReview.done.where.written', { count: written }),
+          backups > 0 && t('musicReview.done.where.backups', { count: backups }),
+          partial > 0 && t(copy.partial, { count: partial }),
+          fileFailed > 0 && t('musicReview.done.where.fileFailed', { count: fileFailed }),
+        ])
   const destinations: Destination[] = undone
     ? []
     : [
-        ...((
-          list
-            ? inMusic
-            : run.outcomes.length || run.removed.length || run.applyError !== undefined
-        )
+        ...(musicDetail &&
+        (list ? inMusic : run.outcomes.length || run.removed.length || run.applyError !== undefined)
           ? [
               {
                 id: 'music',
@@ -526,43 +539,17 @@ function Done({
                   (!list && run.applyError !== undefined) || musicFailed || musicUnchecked
                     ? 'warn'
                     : 'ok',
-                detail:
-                  !list && run.applyError !== undefined
-                    ? t('musicReview.done.where.notApplied')
-                    : joined([
-                        musicSet > 0 && t('musicReview.done.where.tracks', { count: musicSet }),
-                        !list &&
-                          removed > 0 &&
-                          t('musicReview.done.where.removed', { count: removed }),
-                        leftMusic > 0 && t('listReview.done.musicRemoved', { count: leftMusic }),
-                        musicPlaylists > 0 &&
-                          t('listReview.done.where.playlists', { count: musicPlaylists }),
-                        musicMismatch > 0 &&
-                          t('listReview.done.musicMismatch', { count: musicMismatch }),
-                        musicFailed > 0 &&
-                          t('musicReview.done.where.failed', { count: musicFailed }),
-                        musicUnchecked > 0 &&
-                          t('listReview.done.where.unchecked', { count: musicUnchecked }),
-                      ]) || t('musicReview.done.where.nothing'),
+                detail: musicDetail,
               } as const,
             ]
           : []),
-        ...(run.outcomes.length || (list && run.applyError !== undefined)
+        ...(filesDetail && (run.outcomes.length || (list && run.applyError !== undefined))
           ? [
               {
                 id: 'files',
                 label: t('musicReview.done.where.files'),
                 state: fileFailed || (list && run.applyError !== undefined) ? 'warn' : 'ok',
-                detail:
-                  list && run.applyError !== undefined
-                    ? t('musicReview.done.where.notApplied')
-                    : joined([
-                        written > 0 && t('musicReview.done.where.written', { count: written }),
-                        backups > 0 && t('musicReview.done.where.backups', { count: backups }),
-                        partial > 0 && t(copy.partial, { count: partial }),
-                        fileFailed > 0 &&
-                          t('musicReview.done.where.fileFailed', { count: fileFailed }),
-                      ]) || t('musicReview.done.where.nothing'),
+                detail: filesDetail,
               } as const,
             ]
           : []),
@@ -736,13 +723,13 @@ function Done({
                 </span>
                 <span
                   data-testid="music-review-done-dest-label"
-                  className={`shrink-0 text-sm font-medium ${d.state === 'off' ? 'text-fg-faint' : ''}`}
+                  className="shrink-0 text-sm font-medium"
                 >
                   {d.label}
                 </span>
                 <span
                   data-testid="music-review-done-dest-detail"
-                  className={`min-w-0 flex-1 text-right text-xs tabular-nums ${d.state === 'off' ? 'text-fg-faint' : 'text-fg-dim'}`}
+                  className="min-w-0 flex-1 text-right text-xs tabular-nums text-fg-dim"
                 >
                   {d.detail}
                 </span>
