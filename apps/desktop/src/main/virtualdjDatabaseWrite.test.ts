@@ -158,6 +158,28 @@ describe('withVirtualdjSongMoved', () => {
   })
 })
 
+describe('withVirtualdjSongMoved grid and collisions', () => {
+  const phaseOf = (xml: string, path: string) => songOf(xml, path).phaseSeconds
+
+  it('shifts the grid with the cues, because Phase is a beat position on the same clock', () => {
+    const out =
+      withVirtualdjSongMoved(fixture, FLAC, { path: '/x.flac', size: 1 }, 0.25, null) ?? ''
+    expect(phaseOf(out, '/x.flac')).toBe(57.809502)
+    expect(out).toContain(' Phase="57.809502" ')
+  })
+
+  it('wraps a grid that would start before the file onto the next whole beat so it stays a valid anchor', () => {
+    const out = withVirtualdjSongMoved(fixture, FLAC, { path: '/x.flac', size: 1 }, -58, null) ?? ''
+    expect(phaseOf(out, '/x.flac')).toBe(Number((57.559502 - 58 + 0.447778).toFixed(6)))
+    const far = withVirtualdjSongMoved(fixture, FLAC, { path: '/x.flac', size: 1 }, -59, null) ?? ''
+    expect(phaseOf(far, '/x.flac')).toBe(Number((57.559502 - 59 + 4 * 0.447778).toFixed(6)))
+  })
+
+  it('refuses to move onto a path that is already another song, or VirtualDJ would hold it twice', () => {
+    expect(withVirtualdjSongMoved(fixture, FLAC, { path: SERATO_MP3, size: 1 }, 0, null)).toBeNull()
+  })
+})
+
 describe('withVirtualdjTags', () => {
   it('changes only the given attributes, escaped, and keeps the order of the others', () => {
     const out = withVirtualdjTags(fixture, M4A, { Title: 'Pray & "Remix"', Genre: 'Trance' }) ?? ''
@@ -174,6 +196,20 @@ describe('withVirtualdjTags', () => {
     const noAlbum =
       withVirtualdjTags(fixture.replace(' Album="Pray" Bpm', ' Bpm'), wav, { Album: 'New' }) ?? ''
     expect(songOf(noAlbum, wav).album).toBe('New')
+  })
+
+  it('creates the Tags element as the first child when the song has none, so the edit is not lost', () => {
+    const bare = fixture.replace(
+      /(<Song FilePath="\/Music\/VirtualDJ Pruebas\/Pray\.wav"[^>]*>\r\n) {2}<Tags [^\r]*\r\n/,
+      '$1',
+    )
+    const wav = '/Music/VirtualDJ Pruebas/Pray.wav'
+    const out = withVirtualdjTags(bare, wav, { Title: 'A & B' }) ?? ''
+    expect(out).toContain(
+      '<Song FilePath="/Music/VirtualDJ Pruebas/Pray.wav" FileSize="75550522">\r\n  <Tags Title="A &amp; B" />\r\n  <Infos ',
+    )
+    expect(songOf(out, wav).title).toBe('A & B')
+    noBareLf(out)
   })
 
   it('keeps the bytes when the values are already the stored ones', () => {

@@ -124,6 +124,14 @@ function secondsPerBeat(lines: string[]): number {
   return of('Scan') || of('Tags')
 }
 
+function withPhaseShifted(scan: string, shiftSeconds: number, beat: number): string {
+  const phase = attr(scan, 'Phase')
+  if (phase === '') return scan
+  const shifted = Number(phase) + shiftSeconds
+  const beats = shifted < 0 && beat > 0 ? Math.ceil(-shifted / beat) : 0
+  return withAttr(scan, 'Phase', decimal(shifted + beats * beat))
+}
+
 export function withVirtualdjSongMoved(
   xml: string,
   from: string,
@@ -132,7 +140,7 @@ export function withVirtualdjSongMoved(
   keepUntilSeconds: number | null,
 ): string | null {
   const span = findSong(xml, from)
-  if (!span) return null
+  if (!span || (to.path !== from && findSong(xml, to.path))) return null
   const open = setAttr(
     setAttr(xml.slice(span.openStart, span.openEnd), 'FilePath', to.path),
     'FileSize',
@@ -141,6 +149,8 @@ export function withVirtualdjSongMoved(
   const lines = xml.slice(span.openEnd, span.bodyEnd).split(NL)
   const beat = secondsPerBeat(lines)
   const moved = lines.flatMap((line) => {
+    if (shiftSeconds !== 0 && isTag(line, 'Scan'))
+      return [withPhaseShifted(line, shiftSeconds, beat)]
     const poi = poiOf(line)
     if (!poi) return [line]
     const start = Number(decimal(poi.seconds + shiftSeconds))
@@ -165,14 +175,16 @@ export function withVirtualdjTags(
   path: string,
   tags: Partial<Record<'Title' | 'Author' | 'Album' | 'Genre', string>>,
 ): string | null {
+  const withTags = (line: string) => {
+    let out = line
+    for (const [name, value] of Object.entries(tags))
+      if (value !== undefined) out = setAttr(out, name, value)
+    return out
+  }
   return withBody(xml, path, (lines) =>
-    lines.map((line) => {
-      if (!isTag(line, 'Tags')) return line
-      let out = line
-      for (const [name, value] of Object.entries(tags))
-        if (value !== undefined) out = setAttr(out, name, value)
-      return out
-    }),
+    lines.some((line) => isTag(line, 'Tags'))
+      ? lines.map((line) => (isTag(line, 'Tags') ? withTags(line) : line))
+      : [lines[0], withTags('  <Tags />'), ...lines.slice(1)],
   )
 }
 
