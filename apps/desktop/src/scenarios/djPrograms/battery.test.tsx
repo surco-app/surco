@@ -81,6 +81,15 @@ const CONVERTED: ConvertedFormat[] = ['mp3', 'flac']
 const QUALITY: Partial<Settings> = { keepMp3Sources: false }
 const RETAGGED: BatteryFormat = 'wav'
 const NEW_TITLE = 'Pista wav retitulada'
+const UPDATED: BatteryFormat = 'aiff'
+const UPDATED_TITLE = 'Pista aiff actualizada'
+const UPDATE_CARRIES_TITLE: Record<DjProgram, boolean> = {
+  rekordbox: true,
+  traktor: true,
+  engine: true,
+  serato: false,
+  virtualdj: true,
+}
 
 let root = ''
 let output = ''
@@ -366,6 +375,11 @@ describe('Etiquetas y añadir', () => {
       },
     ])
     await door.settled()
+    await open({ ...fromDestination('overwrite'), outputFormat: 'aiff', autoApplyFilename: false })
+    await surco.drop(tracks[UPDATED].path)
+    surco.editMeta(basename(tracks[UPDATED].path), { title: UPDATED_TITLE })
+    await surco.convertAll('confirm', 'aiff')
+    await door.settled()
     for (const program of DJ_PROGRAMS) counts[program] = await dj<number>('trackCount', program)
     await open({ ...fromDestination('folder'), outputFormat: 'aiff', autoApplyFilename: false })
     await surco.drop(fresh.path)
@@ -381,6 +395,17 @@ describe('Etiquetas y añadir', () => {
     it.skipIf(!PROGRAM_CAN[program].reach)('lleva el título nuevo a la biblioteca', async () => {
       expect(await titleOf(program, tracks[RETAGGED].path)).toBe(NEW_TITLE)
     })
+
+    it(
+      UPDATE_CARRIES_TITLE[program]
+        ? 'lleva a la biblioteca el título de un Actualizar en su sitio'
+        : 'deja el título de un Actualizar en su sitio fuera de la biblioteca, que solo lo toma de la revisión',
+      async () => {
+        expect(await titleOf(program, tracks[UPDATED].path)).toBe(
+          UPDATE_CARRIES_TITLE[program] ? UPDATED_TITLE : tracks[UPDATED].title,
+        )
+      },
+    )
 
     it.skipIf(!PROGRAM_CAN[program].reach)('añade la pista convertida', async () => {
       expect(await dj<number>('trackCount', program)).toBe((counts[program] ?? 0) + 1)
