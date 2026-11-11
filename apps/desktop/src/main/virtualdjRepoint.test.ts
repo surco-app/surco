@@ -165,8 +165,21 @@ describe('repointVirtualdjTracks', () => {
     )
     const before = lib.database()
     expect(await repointVirtualdjTracks([{ from: FROM, to: there }], lib.deps)).toEqual([
-      { written: false, reason: 'occupied' },
+      { written: false, reason: 'song-taken' },
     ])
+    expect(lib.database()).toBe(before)
+  })
+
+  it('names a length it cannot write as the reason, not a song already on the new file', async () => {
+    const lib = library()
+    const to = lib.track('Pray.aiff')
+    const before = lib.database()
+    expect(
+      await repointVirtualdjTracks([trimmed(to)], {
+        ...lib.deps,
+        lengthOf: async () => Number.NaN,
+      }),
+    ).toEqual([{ written: false, reason: 'unwritable' }])
     expect(lib.database()).toBe(before)
   })
 

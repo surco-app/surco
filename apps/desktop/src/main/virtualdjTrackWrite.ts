@@ -165,6 +165,11 @@ function movedSong(
     return { written: false, reason: 'no-match' }
   if (virtualdjRootFor(repoint.to, roots) !== root)
     return { written: false, reason: 'other-volume' }
+  const wanted = repoint.to.normalize('NFC')
+  const taken = parseVirtualdjDatabase(xml).some(
+    (s) => s.path !== song.path && virtualdjPathOf(root, s.path).normalize('NFC') === wanted,
+  )
+  if (taken) return { written: false, reason: 'song-taken' }
   const path = virtualdjStoredPath(root, repoint.to, xml)
   const shift = repoint.engineShift
   const moved = withVirtualdjSongMoved(
@@ -174,7 +179,7 @@ function movedSong(
     -(shift?.trimmedMs ?? 0) / 1000,
     shift ? (facts.lengthSeconds ?? null) : null,
   )
-  if (moved === null) return { written: false, reason: 'occupied' }
+  if (moved === null) return { written: false, reason: 'unwritable' }
   const names = repoint.names ?? {}
   const named = Object.values(names).some(Boolean)
     ? withVirtualdjTags(moved, path, {
