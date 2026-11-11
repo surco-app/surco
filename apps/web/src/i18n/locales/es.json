@@ -258,7 +258,7 @@
           {
             "t": "Sesión automática",
             "s": "Monta una sesión con tus playlists, tus combos, lo que más te gusta y mezcla armónica.",
-            "d": "La abres desde la paleta de comandos, desde el menú de una carpeta o sobre una playlist vacía. Eliges cuánto dura y de qué playlists salen las pistas, y dices qué hay en cada una, Bases, Vocales o Mezcladas, también para una carpeta entera. Surco junta las parejas que repites en tus sets y tracklists, las pistas con más estrellas y escuchas, mezcla armónica Camelot si la quieres y un hueco para lo nuevo, y cuenta el tiempo que suena cada pista, no el archivo entero. Bajo cada pista ves por qué está y la cambias por otra que encaje. Aprende de tus sets cuánto mueves el tempo y cuánto te importa el tono, deja tus cierres para el final, saca más tus fijas y abre con un vocal. Fija las pistas que quieras conservar al rehacerla, o empiézala desde una pista con su menú. En rekordbox, Traktor y Serato, con el programa cerrado."
+            "d": "La abres desde la paleta de comandos, desde el menú de una carpeta o sobre una playlist vacía. Eliges cuánto dura y de qué playlists salen las pistas, y dices qué hay en cada una, Bases, Vocales o Mezcladas, también para una carpeta entera. Surco junta las parejas que repites en tus sets y tracklists, las pistas con más estrellas y escuchas, mezcla armónica Camelot si la quieres y un hueco para lo nuevo, y cuenta el tiempo que suena cada pista, no el archivo entero. Se ve como cualquier playlist, con la tonalidad de cada pista. Aprende de tus sets cuánto mueves el tempo y cuánto te importa el tono, deja tus cierres para el final, saca más tus fijas y abre con un vocal. «Rehacer» la vuelve a montar entera, o empiézala desde una pista con su menú. En rekordbox, Traktor, Serato y Engine DJ. Si el programa está abierto, espera a que lo cierres."
           },
           {
             "t": "Cues de rekordbox",
@@ -273,7 +273,7 @@
           {
             "t": "La rejilla, en su sitio",
             "s": "Corrige la rejilla de una pista a mano o con Auto, y el filtro «Rejilla mal» te dice cuáles.",
-            "d": "Con la sección de cues maximizada mueves la rejilla, cambias el BPM, pones el primer tiempo en el cabezal o das a «Auto», que la cuadra con los golpes, y ves cuánto se desvía aquí y al final de la pista. «Clavar» (G) la fija en el golpe más cercano al cabezal, o justo en el cabezal con ⇧. Un segundo clavo lejos del primero cuenta los golpes entre los dos y saca el BPM exacto, y en rekordbox un tercero abre un tramo con su propio tempo. Seis comprobaciones bajo la onda de toda la pista te dicen si sigue sobre el bombo a lo largo del tema, y al pulsar una el cabezal va a ese golpe. Auto da la misma respuesta desde cualquier punto de la pista y toma el bombo de la rejilla que analizó tu programa, así que nunca la corre medio tiempo hacia el contratiempo. Se guarda en rekordbox, Traktor y Engine DJ, y en rekordbox también por tramos con su propio tempo. El filtro «Rejilla mal» saca las pistas cuya rejilla no cae en los golpes. En Traktor y Engine DJ, de momento, para WAV, AIFF y FLAC, y en Traktor también para los MP3 creados con iTunes. Surco deja bloqueada la rejilla que guarda, y también guarda sobre una que ya estuviera bloqueada en el programa."
+            "d": "Con la sección de cues maximizada mueves la rejilla, cambias el BPM, pones el primer tiempo en el cabezal o das a «Auto», que la cuadra con los golpes, y ves cuánto se desvía aquí y al final de la pista. «Clavar» (G) la fija en el golpe más cercano al cabezal, o justo en el cabezal con ⇧. Un segundo clavo lejos del primero cuenta los golpes entre los dos y saca el BPM exacto, y en rekordbox un tercero abre un tramo con su propio tempo. Seis comprobaciones bajo la onda de toda la pista te dicen si sigue sobre el bombo a lo largo del tema, y al pulsar una el cabezal va a ese golpe. Auto da la misma respuesta desde cualquier punto de la pista y toma el bombo de la rejilla que analizó tu programa, así que nunca la corre medio tiempo hacia el contratiempo. Se guarda en rekordbox, Traktor y Engine DJ, y en rekordbox también por tramos con su propio tempo. El filtro «Rejilla mal» saca las pistas cuya rejilla no cae en los golpes. En Traktor y Engine DJ, de momento, para WAV, AIFF y FLAC, y en Traktor también para los MP3 creados con iTunes. Surco deja bloqueada la rejilla que guarda, y también guarda sobre una que ya estuviera bloqueada en el programa. Con varias pistas seleccionadas, «Ajustar» arregla de una vez las que tienen la rejilla fuera, y «Ajustar rejilla» también está en el editor de cues pequeño."
           },
           {
             "t": "Tu colección de rekordbox",
@@ -1055,16 +1055,16 @@
           },
           {
             "lead": "Móntala y revísala.",
-            "text": "Cada pista dice por qué está y «Cambiar» ofrece otras. Rehaz, ajusta o quédatela como una playlist normal."
+            "text": "Se ve como cualquier playlist. Rehazla, ajústala o quédatela tal cual."
           }
         ],
         "points": [
           "Cada pista cuenta solo lo que suena en la mezcla, dos minutos por defecto. Un set real de 28 pistas duró una hora.",
           "Un combo es una pareja que se repite en dos o más Mezcladas. Sin ellas no hay combos.",
           "Nueva es la añadida en los últimos 30 días, o sin escuchas ni estrellas si no hay fechas.",
-          "Escribe en rekordbox, Traktor o Serato con el programa cerrado."
+          "Escribe en rekordbox, Traktor, Serato o Engine DJ. Con el programa abierto, espera a que lo cierres."
         ],
-        "shotCaption": "La sesión montada, con su resumen, el porqué de cada pista y «Cambiar».",
+        "shotCaption": "La sesión montada en tu programa de DJ.",
         "shot": "sesion-es.webp"
       },
       {
