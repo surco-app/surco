@@ -2971,6 +2971,7 @@
     "empty": "Bei keinem Track der Liste wurden die Tags gelesen.",
     "emptySerato": "Alle Tracks der Liste stammen aus Serato und bleiben draußen, damit Serato sie behält.",
     "emptyVirtualdj": "Alle Tracks der Liste stammen aus VirtualDJ und bleiben draußen, damit VirtualDJ sie behält.",
+    "emptyReadOnly": "Alle Tracks der Liste stammen aus einem DJ-Programm, das sie verlieren würde, deshalb bleiben alle draußen.",
     "error": "Die Prüfung der Liste konnte nicht vorbereitet werden.",
     "scope_one": "{{count}} Track der Liste",
     "scope_other": "{{count}} Tracks der Liste",

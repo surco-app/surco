@@ -2971,6 +2971,7 @@
     "empty": "Aucun morceau de la liste n’a ses tags lus.",
     "emptySerato": "Tous les morceaux de la liste viennent de Serato et sont laissés de côté pour que Serato les garde.",
     "emptyVirtualdj": "Tous les morceaux de la liste viennent de VirtualDJ et sont laissés de côté pour que VirtualDJ les garde.",
+    "emptyReadOnly": "Tous les morceaux de la liste viennent d’un logiciel de DJ qui les perdrait, ils sont donc tous laissés de côté.",
     "error": "Impossible de préparer la vérification de la liste.",
     "scope_one": "{{count}} morceau de la liste",
     "scope_other": "{{count}} morceaux de la liste",

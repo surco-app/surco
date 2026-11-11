@@ -2971,6 +2971,7 @@
     "empty": "No track in the list has its tags read.",
     "emptySerato": "Every track in the list is from Serato and is left out so Serato keeps it.",
     "emptyVirtualdj": "Every track in the list is from VirtualDJ and is left out so VirtualDJ keeps it.",
+    "emptyReadOnly": "Every track in the list is from a DJ program that would lose it, so all of them are left out.",
     "error": "Couldn't prepare the list review.",
     "scope_one": "{{count}} track in the list",
     "scope_other": "{{count}} tracks in the list",

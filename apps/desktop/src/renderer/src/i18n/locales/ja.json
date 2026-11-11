@@ -2971,6 +2971,7 @@
     "empty": "リスト内のトラックのタグが読み取れませんでした。",
     "emptySerato": "リスト内のトラックはすべて Serato のもので、Serato のために除外しています。",
     "emptyVirtualdj": "リスト内のトラックはすべて VirtualDJ のもので、VirtualDJ のために除外しています。",
+    "emptyReadOnly": "リスト内のトラックはすべて、失われるおそれのある DJ ソフトのもので、すべて除外しています。",
     "error": "リストのレビューを準備できませんでした。",
     "scope_one": "{{count}} トラックがリストにあります",
     "scope_other": "{{count}} トラックがリストにあります",

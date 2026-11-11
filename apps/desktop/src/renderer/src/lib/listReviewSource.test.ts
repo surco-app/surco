@@ -519,7 +519,7 @@ describe('listReviewSource damage', () => {
       row('/m/w.aiff', 'A', { programs: ['virtualdj'] }),
     ]).load()
     expect(load.entries.map((e) => e.id)).toEqual(['/m/a.aiff'])
-    expect(load).toMatchObject({ seratoLeftOut: 1, virtualdjLeftOut: 2 })
+    expect(load).toMatchObject({ leftOut: { serato: 1, virtualdj: 2 } })
   })
 
   describe('a track opened from Serato', () => {
@@ -528,7 +528,7 @@ describe('listReviewSource damage', () => {
     it('stays out of the review and is counted apart, so no fix or removal can touch a file Serato points at', async () => {
       const load = await source([row('/m/a.aiff', 'A'), serato()]).load()
       expect(load.entries.map((e) => e.id)).toEqual(['/m/a.aiff'])
-      expect(load).toMatchObject({ skipped: 0, seratoLeftOut: 1 })
+      expect(load).toMatchObject({ skipped: 0, leftOut: { serato: 1, virtualdj: 0 } })
     })
 
     it('is never listed as missing a field, whose fill would be written to its file', async () => {

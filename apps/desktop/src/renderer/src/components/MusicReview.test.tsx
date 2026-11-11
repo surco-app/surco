@@ -2372,7 +2372,11 @@ describe('list review', () => {
   it('says how many Serato tracks it left out, so the DJ knows why they are not reviewed', () => {
     render(
       <MusicReview
-        review={listReview({ reviewed: 1, seratoLeftOut: 2, musicConsulted: true })}
+        review={listReview({
+          reviewed: 1,
+          leftOut: { serato: 2, virtualdj: 0 },
+          musicConsulted: true,
+        })}
         {...columnProps}
       />,
     )
@@ -2384,7 +2388,11 @@ describe('list review', () => {
   it('says how many VirtualDJ tracks it left out, naming VirtualDJ', () => {
     render(
       <MusicReview
-        review={listReview({ reviewed: 1, virtualdjLeftOut: 2, musicConsulted: true })}
+        review={listReview({
+          reviewed: 1,
+          leftOut: { serato: 0, virtualdj: 2 },
+          musicConsulted: true,
+        })}
         {...columnProps}
       />,
     )
@@ -2393,10 +2401,38 @@ describe('list review', () => {
     )
   })
 
+  it('names both programs when tracks from Serato and VirtualDJ were left out', () => {
+    render(
+      <MusicReview
+        review={listReview({
+          reviewed: 1,
+          leftOut: { serato: 1, virtualdj: 2 },
+          musicConsulted: true,
+        })}
+        {...columnProps}
+      />,
+    )
+    expect(screen.getByTestId('list-review-scope')).toHaveTextContent(
+      '1 track in the list · 1 from Serato, left out so Serato keeps it · 2 from VirtualDJ, left out so VirtualDJ keeps them',
+    )
+  })
+
+  it('says every track is from a program that would lose it when the left-out tracks come from more than one', () => {
+    render(
+      <MusicReview
+        review={listReview({ status: 'empty', reviewed: 0, leftOut: { serato: 1, virtualdj: 2 } })}
+        {...columnProps}
+      />,
+    )
+    expect(screen.getByTestId('music-review-empty')).toHaveTextContent(
+      'Every track in the list is from a DJ program that would lose it, so all of them are left out.',
+    )
+  })
+
   it('says the list holds only VirtualDJ tracks when that is why nothing is reviewed', () => {
     render(
       <MusicReview
-        review={listReview({ status: 'empty', reviewed: 0, virtualdjLeftOut: 2 })}
+        review={listReview({ status: 'empty', reviewed: 0, leftOut: { serato: 0, virtualdj: 2 } })}
         {...columnProps}
       />,
     )
@@ -2420,7 +2456,7 @@ describe('list review', () => {
   it('says the list holds only Serato tracks when that is why nothing is reviewed, not that no tags were read', () => {
     render(
       <MusicReview
-        review={listReview({ status: 'empty', reviewed: 0, seratoLeftOut: 2 })}
+        review={listReview({ status: 'empty', reviewed: 0, leftOut: { serato: 2, virtualdj: 0 } })}
         {...columnProps}
       />,
     )

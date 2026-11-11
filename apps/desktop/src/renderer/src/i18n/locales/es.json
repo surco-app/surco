@@ -2971,6 +2971,7 @@
     "empty": "Ninguna pista de la lista tiene sus etiquetas leídas.",
     "emptySerato": "Todas las pistas de la lista son de Serato y quedan fuera para que Serato las conserve.",
     "emptyVirtualdj": "Todas las pistas de la lista son de VirtualDJ y quedan fuera para que VirtualDJ las conserve.",
+    "emptyReadOnly": "Todas las pistas de la lista son de un programa de DJ que las perdería, así que quedan todas fuera.",
     "error": "No se pudo preparar la revisión de la lista.",
     "scope_one": "{{count}} pista de la lista",
     "scope_other": "{{count}} pistas de la lista",

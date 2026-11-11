@@ -1,4 +1,4 @@
-import type { ReadOnlyProgram } from '../../../shared/djProgram'
+import { READ_ONLY_PROGRAMS, type ReadOnlyProgram } from '../../../shared/djProgram'
 import { fromReadOnlyProgram, isFrom } from '../../../shared/trackOrigin'
 import type {
   DuplicateReplaceOutcome,
@@ -61,8 +61,10 @@ export function listReviewSource(deps: ListSourceDeps): ReviewSource {
     load: async () => {
       const read = {
         ...listReviewEntries(reviewable()),
-        seratoLeftOut: leftOutOf('serato'),
-        virtualdjLeftOut: leftOutOf('virtualdj'),
+        leftOut: Object.fromEntries(READ_ONLY_PROGRAMS.map((p) => [p, leftOutOf(p)])) as Record<
+          ReadOnlyProgram,
+          number
+        >,
       }
       const entries = withListChanges(read.entries, changes, gone)
       titles = new Map(entries.map((e) => [e.id, e.title]))
@@ -79,8 +81,7 @@ export function listReviewSource(deps: ListSourceDeps): ReviewSource {
         return {
           entries,
           skipped: read.skipped,
-          seratoLeftOut: read.seratoLeftOut,
-          virtualdjLeftOut: read.virtualdjLeftOut,
+          leftOut: read.leftOut,
           ...found,
         }
       lookup = { consulted: false, entries: {} }
@@ -119,8 +120,7 @@ export function listReviewSource(deps: ListSourceDeps): ReviewSource {
           return dateAdded ? { ...e, dateAdded } : e
         }),
         skipped: read.skipped,
-        seratoLeftOut: read.seratoLeftOut,
-        virtualdjLeftOut: read.virtualdjLeftOut,
+        leftOut: read.leftOut,
         musicConsulted: lookup.consulted,
         ...found,
       }

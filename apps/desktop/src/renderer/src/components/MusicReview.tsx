@@ -15,7 +15,12 @@ import {
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { isWritable, type LibraryProgram } from '../../../shared/djProgram'
+import {
+  isWritable,
+  type LibraryProgram,
+  READ_ONLY_PROGRAMS,
+  type ReadOnlyProgram,
+} from '../../../shared/djProgram'
 import { KEEPS_REPLACED } from '../../../shared/keepsReplaced'
 import type { DamageFinding, DamageNote, DamageOutcome, ListMusicStep } from '../../../shared/types'
 import {
@@ -279,6 +284,22 @@ interface Destination {
 }
 
 const DESTINATION_ICON: Record<DestinationState, string> = { ok: '✓', warn: '!' }
+
+const LEFT_OUT_KEY: Record<ReadOnlyProgram, string> = {
+  serato: 'listReview.seratoLeftOut',
+  virtualdj: 'listReview.virtualdjLeftOut',
+}
+
+const ALL_LEFT_OUT_KEY: Record<ReadOnlyProgram, string> = {
+  serato: 'listReview.emptySerato',
+  virtualdj: 'listReview.emptyVirtualdj',
+}
+
+function emptyListKey(leftOut: Record<ReadOnlyProgram, number> | undefined, empty: string): string {
+  const from = READ_ONLY_PROGRAMS.filter((p) => (leftOut?.[p] ?? 0) > 0)
+  if (from.length === 1) return ALL_LEFT_OUT_KEY[from[0]]
+  return from.length > 1 ? 'listReview.emptyReadOnly' : empty
+}
 const DESTINATION_TONE: Record<DestinationState, string> = {
   ok: 'text-good',
   warn: 'text-warn',
@@ -1239,12 +1260,9 @@ export function MusicReview({
                 ? t('listReview.scope', { count: review.reviewed })
                 : t('listReview.scopePlaylist', { count: review.reviewed, name: scopeName }),
               ...(review.skipped > 0 ? [t('listReview.skipped', { count: review.skipped })] : []),
-              ...(review.seratoLeftOut
-                ? [t('listReview.seratoLeftOut', { count: review.seratoLeftOut })]
-                : []),
-              ...(review.virtualdjLeftOut
-                ? [t('listReview.virtualdjLeftOut', { count: review.virtualdjLeftOut })]
-                : []),
+              ...READ_ONLY_PROGRAMS.flatMap((p) =>
+                review.leftOut?.[p] ? [t(LEFT_OUT_KEY[p], { count: review.leftOut[p] })] : [],
+              ),
               ...(review.musicConsulted === false ? [t('listReview.musicUnchecked')] : []),
               ...review.damageUnread.map((library) =>
                 t('damage.unread', { library: LIBRARY_NAME[library] }),
@@ -1274,11 +1292,9 @@ export function MusicReview({
         {review.status === 'empty' && (
           <p data-testid="music-review-empty" className="p-1.5 text-xs text-fg-faint">
             {t(
-              review.kind === 'list' && review.skipped === 0 && review.seratoLeftOut
-                ? 'listReview.emptySerato'
-                : review.kind === 'list' && review.skipped === 0 && review.virtualdjLeftOut
-                  ? 'listReview.emptyVirtualdj'
-                  : copy.empty,
+              review.kind === 'list' && review.skipped === 0
+                ? emptyListKey(review.leftOut, copy.empty)
+                : copy.empty,
             )}
           </p>
         )}

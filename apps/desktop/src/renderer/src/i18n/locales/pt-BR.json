@@ -2971,6 +2971,7 @@
     "empty": "Nenhuma faixa da lista teve as tags lidas.",
     "emptySerato": "Todas as faixas da lista são do Serato e ficam de fora para o Serato mantê-las.",
     "emptyVirtualdj": "Todas as faixas da lista são do VirtualDJ e ficam de fora para o VirtualDJ mantê-las.",
+    "emptyReadOnly": "Todas as faixas da lista são de um programa de DJ que as perderia, então todas ficam de fora.",
     "error": "Não foi possível preparar a revisão da lista.",
     "scope_one": "{{count}} faixa da lista",
     "scope_other": "{{count}} faixas da lista",

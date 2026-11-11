@@ -1718,14 +1718,18 @@ describe('with the list as source', () => {
     listApi()
     const { result } = listHook([...LARA, row('/m/d.aiff', 'X', 'Td', { programs: ['serato'] })])
     await waitFor(() => expect(result.current.status).toBe('ready'))
-    expect(result.current).toMatchObject({ reviewed: 3, skipped: 0, seratoLeftOut: 1 })
+    expect(result.current).toMatchObject({
+      reviewed: 3,
+      skipped: 0,
+      leftOut: { serato: 1, virtualdj: 0 },
+    })
   })
 
   it('says how many VirtualDJ rows it left out of the review', async () => {
     listApi()
     const { result } = listHook([...LARA, row('/m/d.aiff', 'X', 'Td', { programs: ['virtualdj'] })])
     await waitFor(() => expect(result.current.status).toBe('ready'))
-    expect(result.current).toMatchObject({ reviewed: 3, virtualdjLeftOut: 1 })
+    expect(result.current).toMatchObject({ reviewed: 3, leftOut: { serato: 0, virtualdj: 1 } })
   })
 
   it('says how many rows it reviewed, how many it left out and whether Music answered', async () => {
