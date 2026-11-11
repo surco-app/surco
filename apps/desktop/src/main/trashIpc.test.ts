@@ -72,3 +72,51 @@ describe('trash:restore', () => {
     expect(followEngineSize).not.toHaveBeenCalled()
   })
 })
+
+// VirtualDJ keeps the file's size in its song and in every list row, and its cues sit on the
+// audio the conversion cut, so its song follows the restore as Engine DJ's row does, under its
+// own check of the file set aside.
+describe('trash:restore with VirtualDJ', () => {
+  const restore = vi.fn()
+  const followEngineSize = vi.fn()
+  const followVirtualdjSize = vi.fn()
+
+  beforeEach(() => {
+    handlers.clear()
+    followEngineSize.mockReset()
+    followVirtualdjSize.mockReset()
+    registerTrashIpc({ restore } as unknown as SurcoTrash, { allow: vi.fn() } as never, {
+      followEngineSize,
+      followVirtualdjSize,
+    })
+  })
+
+  it('tells VirtualDJ the size of the file the original was restored over', async () => {
+    restore.mockResolvedValue({ restoredTo: '/m/c.aiff', displaced })
+    await handlers.get('trash:restore')?.(null, 'b1', 'undo')
+    expect(followVirtualdjSize).toHaveBeenCalledWith('/m/c.aiff', 5678)
+  })
+
+  it('hands VirtualDJ the way back an original was kept with', async () => {
+    const shift = { trimmedMs: -1900, sampleCount: 882000 }
+    restore.mockResolvedValue({
+      restoredTo: '/m/c.aiff',
+      displaced,
+      engine: { shift, over: 5678, undo: { trimmedMs: 1900 } },
+    })
+    await handlers.get('trash:restore')?.(null, 'b1')
+    expect(followVirtualdjSize).toHaveBeenCalledWith('/m/c.aiff', 5678, shift)
+  })
+
+  it('leaves VirtualDJ alone when the file set aside is not the one the way back was for, or the path was empty', async () => {
+    restore.mockResolvedValue({
+      restoredTo: '/m/c.aiff',
+      displaced,
+      engine: { shift: { trimmedMs: -1900 }, over: 4000, undo: { trimmedMs: 1900 } },
+    })
+    await handlers.get('trash:restore')?.(null, 'b1')
+    restore.mockResolvedValue({ restoredTo: '/m/c.aiff', displaced: null })
+    await handlers.get('trash:restore')?.(null, 'b2')
+    expect(followVirtualdjSize).not.toHaveBeenCalled()
+  })
+})

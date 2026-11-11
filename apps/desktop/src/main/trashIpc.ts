@@ -13,7 +13,7 @@ import type { SurcoTrash } from './surcoTrash'
 export function registerTrashIpc(
   trash: SurcoTrash,
   mediaAccess: MediaAccess,
-  deps: { followEngineSize?: Rewritten } = {},
+  deps: { followEngineSize?: Rewritten; followVirtualdjSize?: Rewritten } = {},
 ): void {
   ipcMain.handle('trash:list', () => trash.list())
   ipcMain.handle('trash:restore', async (_e, id: string, from?: 'undo') => {
@@ -34,6 +34,13 @@ export function registerTrashIpc(
     else if (displaced)
       log.warn(
         `restore of ${result.restoredTo} left Engine DJ's row: the file set aside is not the one its move was for`,
+      )
+    if (displaced && !result.engine) deps.followVirtualdjSize?.(result.restoredTo, displaced.bytes)
+    else if (displaced && result.engine?.over === displaced.bytes)
+      deps.followVirtualdjSize?.(result.restoredTo, displaced.bytes, result.engine.shift)
+    else if (displaced && deps.followVirtualdjSize)
+      log.warn(
+        `restore of ${result.restoredTo} left VirtualDJ's song: the file set aside is not the one its move was for`,
       )
     return result
   })

@@ -133,7 +133,7 @@ import { addToEngineLibrary, dumpEngineLibrary, withEngineDatabase } from './eng
 import { engineEdit } from './enginePlaylistEditIpc'
 import { engineDatabasePath } from './enginePlaylists'
 import { engineRead } from './enginePlaylistsIpc'
-import { engineSizeFollower } from './engineSizeFollow'
+import { engineSizeFollower, followingAll } from './engineSizeFollow'
 import { expandPaths } from './expand'
 import { collectionExporters, registerExportIpc } from './exportIpc'
 import { registerFeedbackIpc } from './feedback'
@@ -588,7 +588,7 @@ const programQueues = {
               activeConversions.isConverting(file) || outputReservations.holds(file),
             writing: seratoWriting,
             tracking: tmpManifest,
-            rewritten: followEngineSize,
+            rewritten: followLibrarySize,
             seratoOpen: DJ_PROCESSES.serato.isRunning,
           }),
         repoint: async () => [],
@@ -690,6 +690,7 @@ const followVirtualdjSize = engineSizeFollower({
   enqueue: virtualdjCueQueue.enqueue,
   apply: () => programQueues.virtualdj.applyQuietly(),
 })
+const followLibrarySize = followingAll(followEngineSize, followVirtualdjSize)
 // A save from the editor asks to close Traktor, as a playlist edit does; declined, it stays
 // queued and lands when Traktor closes.
 const applyTraktorCueQueueAsking = (win: BrowserWindow | null): void => {
@@ -1450,7 +1451,7 @@ function registerIpc(): void {
   registerAppleMusicIpc({
     trackTmp: tmpManifest.track,
     untrackTmp: tmpManifest.untrack,
-    followEngineSize,
+    followEngineSize: followLibrarySize,
   })
   const allowMedia = (paths: string[]) => mediaAccess.allowAll(paths)
   const rekordboxCollectionNow = () =>
@@ -1891,7 +1892,7 @@ function registerIpc(): void {
       tmp: tmpManifest,
       hostFor: (sender) => hostFor(BrowserWindow.fromWebContents(sender), sender),
       sessions,
-      followEngineSize,
+      followEngineSize: followLibrarySize,
       rootLibraries,
     }),
     beginMoment: moments.begin,
@@ -2117,7 +2118,7 @@ function registerIpc(): void {
           (s) => s.size,
           () => undefined,
         ),
-      followEngineSize,
+      followEngineSize: followLibrarySize,
       // The conflict prompt is the one Electron-bound branch: build the same warning
       // box as before and map its buttons back to the decision runProcessTrack expects.
       confirmConflict: (outputName, reservedOnly) =>
@@ -2388,7 +2389,7 @@ function registerIpc(): void {
     broadcast,
     rekordboxBatchOpen,
   )
-  registerTrashIpc(surcoTrash, mediaAccess, { followEngineSize })
+  registerTrashIpc(surcoTrash, mediaAccess, { followEngineSize, followVirtualdjSize })
   registerFeedbackIpc()
 
   // Restarts into the already-downloaded update. Paired with the update:downloaded
