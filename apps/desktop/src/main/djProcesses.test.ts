@@ -169,7 +169,7 @@ describe('createEnsureClosed', () => {
       rekordbox: ['convert', 'playlists', 'usb', 'restore'],
       traktor: ['convert', 'cues', 'playlists', 'restore'],
       engine: ['convert', 'cues', 'playlists', 'usb', 'restore'],
-      virtualdj: ['convert', 'restore'],
+      virtualdj: ['convert', 'restore', 'duplicates'],
     })
   })
 
@@ -244,6 +244,7 @@ describe('reasonOfDetail', () => {
     ['traktor', 'traktorQuitDetailCues', 'cues'],
     ['traktor', 'traktorQuitDetailPlaylists', 'playlists'],
     ['virtualdj', 'virtualdjQuitDetailRestore', 'restore'],
+    ['virtualdj', 'virtualdjQuitDetailDuplicates', 'duplicates'],
   ] as const)(
     'keeps the words a %s caller passes by asking for the reason behind %s',
     (program, key, reason) => {

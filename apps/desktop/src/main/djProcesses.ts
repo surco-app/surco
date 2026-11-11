@@ -10,13 +10,13 @@ import { isVirtualdjRunning } from './virtualdjProcess'
 
 type MenuKey = Parameters<ReturnType<typeof createMenuT>>[0]
 
-export type QuitReason = 'convert' | 'cues' | 'playlists' | 'usb' | 'restore'
+export type QuitReason = 'convert' | 'cues' | 'playlists' | 'usb' | 'restore' | 'duplicates'
 
 export const QUIT_REASONS = {
   rekordbox: ['convert', 'playlists', 'usb', 'restore'],
   traktor: ['convert', 'cues', 'playlists', 'restore'],
   engine: ['convert', 'cues', 'playlists', 'usb', 'restore'],
-  virtualdj: ['convert', 'restore'],
+  virtualdj: ['convert', 'restore', 'duplicates'],
 } as const satisfies { [P in WritableProgram]: readonly ['convert', ...QuitReason[]] }
 
 export type ReasonOf<P extends WritableProgram> = (typeof QUIT_REASONS)[P][number]
@@ -94,6 +94,7 @@ export const QUIT_TEXT: { [P in WritableProgram]: QuitText<P> | null } = {
     detail: {
       convert: null,
       restore: 'virtualdjQuitDetailRestore',
+      duplicates: 'virtualdjQuitDetailDuplicates',
     },
   },
 }

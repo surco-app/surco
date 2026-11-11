@@ -148,6 +148,42 @@ export async function traktorDuplicateStep(
   return result.outcomes
 }
 
+const VIRTUALDJ_SKIP_KEYS: Record<string, string> = {
+  'virtualdj-running': 'activity.virtualdjSyncRunning',
+  'backup-failed': 'activity.virtualdjSyncBackupFailed',
+}
+
+export async function virtualdjDuplicateStep(
+  pairs: DuplicatePair[],
+  deps: {
+    ensureClosed: () => Promise<boolean>
+    track: Activity['track']
+    replace: (pairs: DuplicatePair[]) => Promise<DuplicateReplaceResult[]>
+  },
+): Promise<LibraryReplaceOutcome[]> {
+  const running = { detailKey: VIRTUALDJ_SKIP_KEYS['virtualdj-running'], status: 'warn' as const }
+  if (!(await deps.ensureClosed())) {
+    await deps.track('export', 'activity.virtualdjSync', async () => undefined, {
+      summary: () => running,
+    })
+    return pairs.map(() => 'skipped')
+  }
+  const results = await deps.track('export', 'activity.virtualdjSync', () => deps.replace(pairs), {
+    summary: (r: DuplicateReplaceResult[]) => {
+      const moved = r.filter((x) => x.written).length
+      if (moved > 0)
+        return { detailKey: 'activity.duplicatesReplaced', detailParams: { count: moved } }
+      const refused = r.find((x) => !x.written && x.reason !== 'no-match')
+      if (!refused || refused.written) return { detailKey: 'activity.virtualdjSyncNothing' }
+      return {
+        detailKey: VIRTUALDJ_SKIP_KEYS[refused.reason] ?? 'activity.duplicatesUnsettled',
+        status: 'warn' as const,
+      }
+    },
+  })
+  return results.map(outcomeOf)
+}
+
 export function replaceDuplicates(
   pairs: ReplacePair[],
   deps: ReplaceDuplicatesDeps,

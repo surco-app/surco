@@ -13,11 +13,12 @@ import {
 } from '../shared/djProgram'
 import type { LibraryStatus, LibraryTagUpdate, RekordboxSyncIssue } from '../shared/types'
 import { activity } from './activity'
+import type { ReasonOf } from './djProcesses'
 import {
   libraryOutcomes,
-  outcomeOf,
   type ReplaceDuplicatesDeps,
   traktorDuplicateStep,
+  virtualdjDuplicateStep,
 } from './duplicateReplace'
 import { loadSqlJs } from './engine'
 import { replaceEngineDuplicates } from './engineDuplicates'
@@ -96,7 +97,7 @@ export const SYNC_ISSUE_PROGRAMS: ReadonlySet<WritableProgram> = new Set(
 )
 
 export interface LibraryHost {
-  ensureClosed: (program: WritableProgram) => Promise<boolean>
+  ensureClosed: <P extends WritableProgram>(program: P, reason?: ReasonOf<P>) => Promise<boolean>
   showBlockedDialog: (program: WritableProgram) => void
   reportIssue: (program: WritableProgram, issue: RekordboxSyncIssue) => void
   rekordboxHeld: () => boolean
@@ -921,16 +922,19 @@ export function duplicateLibraryDeps(
         : undefined,
     virtualdj:
       getSettings().syncVirtualdj && rootLibraries().virtualdj.length > 0
-        ? async (list) =>
-            (
-              await replaceVirtualdjDuplicates(list, {
-                backupDir: join(app.getPath('userData'), 'virtualdj-backups'),
-                roots: () => rootLibraries().virtualdj,
-                virtualdjOpen: isVirtualdjRunning,
-                sessionBackup: () =>
-                  sessions.virtualdj.ensure(virtualdjCopyKey(rootLibraries().virtualdj)),
-              })
-            ).map(outcomeOf)
+        ? (list) =>
+            virtualdjDuplicateStep(list, {
+              ensureClosed: () => host.ensureClosed('virtualdj', 'duplicates'),
+              track: activity.track.bind(activity),
+              replace: (pairs) =>
+                replaceVirtualdjDuplicates(pairs, {
+                  backupDir: join(app.getPath('userData'), 'virtualdj-backups'),
+                  roots: () => rootLibraries().virtualdj,
+                  virtualdjOpen: isVirtualdjRunning,
+                  sessionBackup: () =>
+                    sessions.virtualdj.ensure(virtualdjCopyKey(rootLibraries().virtualdj)),
+                }),
+            })
         : undefined,
   }
   const libraries: ReplaceDuplicatesDeps['libraries'] = {}

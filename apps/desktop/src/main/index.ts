@@ -1732,7 +1732,7 @@ function registerIpc(): void {
   )
 
   const hostFor = (win: BrowserWindow | null, sender: WebContents): LibraryHost => ({
-    ensureClosed: (program) => ensureClosed(program, win),
+    ensureClosed: (program, reason) => ensureClosed(program, win, reason),
     showBlockedDialog: (program) => {
       const key = SYNC_BLOCKED_KEY[program]
       if (key) showSyncBlockedDialog(win, key)

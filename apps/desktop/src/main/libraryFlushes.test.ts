@@ -710,9 +710,11 @@ describe('duplicateLibraryDeps', () => {
         duplicateLibraryDeps(ask, sessions, () => ({ serato: [], virtualdj: [] })).libraries
           .virtualdj,
       ).toBeUndefined()
+      const closing = vi.spyOn(ask, 'ensureClosed')
       const step = duplicateLibraryDeps(ask, sessions, () => ({ serato: [], virtualdj: roots }))
         .libraries.virtualdj
       expect(await step?.([{ from: '/m/a.mp3', to: '/m/b.mp3' }])).toEqual(['repointed'])
+      expect(closing).toHaveBeenCalledWith('virtualdj', 'duplicates')
       const [pairs, deps] = VIRTUALDJ_DUPLICATES.replaceVirtualdjDuplicates.mock
         .lastCall as unknown as [unknown, { backupDir: string; roots: () => unknown }]
       expect(pairs).toEqual([{ from: '/m/a.mp3', to: '/m/b.mp3' }])

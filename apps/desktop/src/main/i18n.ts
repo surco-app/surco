@@ -82,6 +82,7 @@ interface MenuStrings {
   rekordboxQuitCancel: string
   virtualdjQuitMessage: string
   virtualdjQuitDetailRestore: string
+  virtualdjQuitDetailDuplicates: string
   virtualdjQuitConfirm: string
   virtualdjQuitCancel: string
   rekordboxSyncBlocked: string
@@ -206,6 +207,8 @@ const strings: Record<MenuLang, MenuStrings> = {
     virtualdjQuitMessage: 'VirtualDJ está abierto',
     virtualdjQuitDetailRestore:
       'Surco no cierra VirtualDJ por ti. Ciérralo tú para restaurar su biblioteca y no lo vuelvas a abrir hasta que Surco termine de restaurar.',
+    virtualdjQuitDetailDuplicates:
+      'Surco no cierra VirtualDJ por ti. Ciérralo tú para que las copias que quitaste pasen a las que te quedas, y no lo vuelvas a abrir hasta que Surco termine.',
     virtualdjQuitConfirm: 'Ya lo he cerrado',
     virtualdjQuitCancel: 'Cancelar',
     rekordboxSyncBlocked:
@@ -331,6 +334,8 @@ const strings: Record<MenuLang, MenuStrings> = {
     virtualdjQuitMessage: 'VirtualDJ is open',
     virtualdjQuitDetailRestore:
       'Surco does not close VirtualDJ for you. Close it yourself to restore its library, and keep it closed until Surco finishes restoring.',
+    virtualdjQuitDetailDuplicates:
+      'Surco does not close VirtualDJ for you. Close it yourself so the copies you removed move to the ones you kept, and keep it closed until Surco finishes.',
     virtualdjQuitConfirm: 'I closed it',
     virtualdjQuitCancel: 'Cancel',
     rekordboxSyncBlocked:
@@ -457,6 +462,8 @@ const strings: Record<MenuLang, MenuStrings> = {
     virtualdjQuitMessage: 'VirtualDJ ist geöffnet',
     virtualdjQuitDetailRestore:
       'Surco schließt VirtualDJ nicht für dich. Schließe es selbst, um seine Bibliothek wiederherzustellen, und lass es geschlossen, bis Surco mit dem Wiederherstellen fertig ist.',
+    virtualdjQuitDetailDuplicates:
+      'Surco schließt VirtualDJ nicht für dich. Schließe es selbst, damit die entfernten Kopien auf die behaltenen wechseln, und lass es geschlossen, bis Surco fertig ist.',
     virtualdjQuitConfirm: 'Ich habe es geschlossen',
     virtualdjQuitCancel: 'Abbrechen',
     rekordboxSyncBlocked:
@@ -585,6 +592,8 @@ const strings: Record<MenuLang, MenuStrings> = {
     virtualdjQuitMessage: 'VirtualDJ est ouvert',
     virtualdjQuitDetailRestore:
       'Surco ne ferme pas VirtualDJ à ta place. Ferme-le toi-même pour restaurer sa bibliothèque, et ne le rouvre pas avant que Surco ait fini de restaurer.',
+    virtualdjQuitDetailDuplicates:
+      'Surco ne ferme pas VirtualDJ à ta place. Ferme-le toi-même pour que les copies retirées passent à celles que tu gardes, et ne le rouvre pas avant que Surco ait fini.',
     virtualdjQuitConfirm: 'Je l’ai fermé',
     virtualdjQuitCancel: 'Annuler',
     rekordboxSyncBlocked:
@@ -711,6 +720,8 @@ const strings: Record<MenuLang, MenuStrings> = {
     virtualdjQuitMessage: 'O VirtualDJ está aberto',
     virtualdjQuitDetailRestore:
       'O Surco não fecha o VirtualDJ por você. Feche-o você mesmo para restaurar a biblioteca dele e não o abra de novo até o Surco terminar de restaurar.',
+    virtualdjQuitDetailDuplicates:
+      'O Surco não fecha o VirtualDJ por você. Feche-o você mesmo para que as cópias removidas passem para as que você manteve e não o abra de novo até o Surco terminar.',
     virtualdjQuitConfirm: 'Já fechei',
     virtualdjQuitCancel: 'Cancelar',
     rekordboxSyncBlocked:

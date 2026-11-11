@@ -12,6 +12,7 @@ import {
   type ReplacePair,
   replaceDuplicates,
   traktorDuplicateStep,
+  virtualdjDuplicateStep,
 } from './duplicateReplace'
 
 const PAIR: ReplacePair = { from: '/m/old.aiff', to: '/m/keep.aiff', shared: false }
@@ -489,5 +490,67 @@ describe('replaceDuplicates in Activity', () => {
       replace: vi.fn().mockResolvedValue({ written: false, outcomes: ['failed'] }),
     })
     expect(events.at(-1)).toMatchObject({ detailKey: 'activity.duplicatesUnsettled' })
+  })
+})
+
+describe('virtualdjDuplicateStep', () => {
+  const events = () => {
+    const activity = createActivity()
+    const seen: ActivityEvent[] = []
+    activity.subscribe((e) => seen.push(e))
+    return { track: activity.track, seen }
+  }
+
+  it('asks to close VirtualDJ first, and leaves a warning row and the file when the DJ keeps it open', async () => {
+    const { track, seen } = events()
+    const replace = vi.fn()
+    const ensureClosed = vi.fn(async () => false)
+    expect(await virtualdjDuplicateStep([PAIR], { ensureClosed, track, replace })).toEqual([
+      'skipped',
+    ])
+    expect(ensureClosed).toHaveBeenCalledTimes(1)
+    expect(replace).not.toHaveBeenCalled()
+    expect(seen.at(-1)).toMatchObject({
+      phase: 'warn',
+      labelKey: 'activity.virtualdjSync',
+      detailKey: 'activity.virtualdjSyncRunning',
+    })
+  })
+
+  it('moves VirtualDJ to the kept copies as an Activity step that counts them', async () => {
+    const { track, seen } = events()
+    const replace = vi.fn(async () => [
+      { written: true as const, outcome: 'replaced' as const },
+      { written: false as const, reason: 'no-match' },
+    ])
+    expect(
+      await virtualdjDuplicateStep([PAIR, PAIR], {
+        ensureClosed: async () => true,
+        track,
+        replace,
+      }),
+    ).toEqual(['replaced', 'none'])
+    expect(seen.at(-1)).toMatchObject({
+      phase: 'done',
+      labelKey: 'activity.virtualdjSync',
+      detailKey: 'activity.duplicatesReplaced',
+      detailParams: { count: 1 },
+    })
+  })
+
+  it('says why VirtualDJ was left as it was when its write could not happen', async () => {
+    const outcomes = async (reason: string) => {
+      const { track, seen } = events()
+      await virtualdjDuplicateStep([PAIR], {
+        ensureClosed: async () => true,
+        track,
+        replace: async () => [{ written: false, reason }],
+      })
+      return [seen.at(-1)?.phase, seen.at(-1)?.detailKey]
+    }
+    expect(await outcomes('virtualdj-running')).toEqual(['warn', 'activity.virtualdjSyncRunning'])
+    expect(await outcomes('backup-failed')).toEqual(['warn', 'activity.virtualdjSyncBackupFailed'])
+    expect(await outcomes('other-volume')).toEqual(['warn', 'activity.duplicatesUnsettled'])
+    expect(await outcomes('no-match')).toEqual(['done', 'activity.virtualdjSyncNothing'])
   })
 })
