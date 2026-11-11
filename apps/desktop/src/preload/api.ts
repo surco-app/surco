@@ -46,6 +46,7 @@ import type {
   MusicFixProgress,
   MusicReviewEntry,
   PairFacts,
+  PlaylistEditMode,
   ProcessJob,
   ProcessProgress,
   ProcessResult,
@@ -316,6 +317,11 @@ export interface Api {
   rekordboxHasSeparator: () => Promise<boolean>
   editTraktorPlaylist: (edit: RekordboxPlaylistEdit, label?: string) => Promise<RekordboxEditResult>
   editSeratoPlaylist: (edit: RekordboxPlaylistEdit, label?: string) => Promise<RekordboxEditResult>
+  editEnginePlaylist: (
+    edit: RekordboxPlaylistEdit,
+    label?: string,
+    mode?: PlaylistEditMode,
+  ) => Promise<RekordboxEditResult>
   traktorHasSeparator: () => Promise<boolean>
   engineCueQueue: () => Promise<RekordboxQueueState>
   applyEngineCueQueue: () => Promise<RekordboxQueueApplied | null>

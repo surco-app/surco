@@ -125,6 +125,7 @@ import { type ReplacePair, replaceDuplicates } from './duplicateReplace'
 import { registerEngineCueQueueIpc } from './engineCueQueueIpc'
 import { applyEngineCuesBatch } from './engineCuesWrite'
 import { addToEngineLibrary, dumpEngineLibrary, withEngineDatabase } from './engineLibrary'
+import { registerEnginePlaylistEditIpc } from './enginePlaylistEditIpc'
 import { engineDatabasePath } from './enginePlaylists'
 import { registerEnginePlaylistsIpc } from './enginePlaylistsIpc'
 import { engineSizeFollower } from './engineSizeFollow'
@@ -1468,6 +1469,15 @@ function registerIpc(): void {
     beginMoment: (reason) => moments.begin(reason, ['engine']),
     onSettled: (result) => queueChecks.settled('engine', result),
     onDiscarded: () => queueChecks.discarded('engine'),
+  })
+  registerEnginePlaylistEditIpc({
+    libraryDir: engineLibraryPath,
+    queue: engineCueQueue,
+    isRunning: DJ_PROCESSES.engine.isRunning,
+    ensureClosed: (win) => ensureClosed('engine', win, 'playlists'),
+    onApplied: programQueues.engine.announceApplied,
+    onWaiting: engineCueQueueWatch.poke,
+    beginLoose: moments.beginLoose,
   })
   registerTraktorCueQueueIpc(traktorCueQueue, {
     ensureClosed: (win) => ensureClosed('traktor', win, 'cues'),
