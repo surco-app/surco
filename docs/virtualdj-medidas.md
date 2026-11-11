@@ -69,8 +69,23 @@ los cinco formatos.
 - Carpeta: `<n>.vdjfolder` con `<VirtualFolder />` más `<n>.subfolders/` con sus listas y su `order`.
 - `order` (LF): un nombre por línea, en el orden del panel.
 
-## Sin medir todavía
+## Disco externo (medido el 11/11 con una pista de `/Volumes/Public`)
 
-- Base de datos por disco externo: no se añadió ninguna pista de `/Volumes/Public` y no hay
-  `/Volumes/Public/VirtualDJ`.
-- Qué hace con una pista cuyo fichero ha desaparecido.
+- VirtualDJ crea en la raíz del volumen `VirtualDJ/database.xml` (CRLF, mismo formato), más `extra.db`
+  (SQLite) y `Cache/`. La pista del disco externo no entra en la base de `~/Library/...`.
+- La ruta se guarda con una letra de unidad al estilo Windows, relativa al volumen:
+  `FilePath="D:/Musica/Sonido Chocolate/Axel Force - It&apos;s My Life (Japan Mix).flac"` para
+  `/Volumes/Public/Musica/...`. Qué letra corresponde a cada volumen no está medido con dos discos.
+- Las entidades XML van en las rutas (`&apos;`).
+- Copia en `.superpowers/vdj-medidas/public-database.xml` (fuera del repo, ruta personal).
+
+## Pista desaparecida
+
+- Con el fichero renombrado, VirtualDJ abre sin avisos y conserva el `<Song>` igual (mismo `Flag`).
+  Las pistas que faltan siguen en la base.
+
+## `extra.db`
+
+- SQLite junto a cada `database.xml` (`~/Library/...` y el disco externo), con tablas `lyrics`,
+  `related_tracks` y `track_data (id, sid, file, filesize, artist, title, remix)`. No guarda cues ni listas.
+  Surco no lo lee ni lo escribe.
