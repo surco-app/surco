@@ -18,7 +18,7 @@ function badName(edit: RekordboxPlaylistEdit, roots: SeratoLibraryRoot[]): boole
 
 export function seratoEdit(host: {
   roots: () => SeratoLibraryRoot[]
-  queue: Pick<RekordboxQueue, 'apply' | 'drop'> & { enqueue: (ops: EditOp[]) => void }
+  queue: Pick<RekordboxQueue, 'apply' | 'drop' | 'settled'> & { enqueue: (ops: EditOp[]) => void }
   isRunning: () => Promise<boolean>
   onApplied?: (result: QueueApply) => void
   onWaiting?: () => void
@@ -41,6 +41,7 @@ export function seratoEdit(host: {
           files: seratoEditFiles(edit, roots),
           ...(label ? { label } : {}),
         }
+        await host.queue.settled()
         host.queue.enqueue([op])
         const result = await host.queue.apply(async () => !(await host.isRunning()))
         if (result.status === 'applied') {

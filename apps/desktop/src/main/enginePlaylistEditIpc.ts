@@ -10,7 +10,7 @@ import { stillWaiting } from './rekordboxQueueWatch'
 
 export function engineEdit(host: {
   libraryDir: () => string
-  queue: Pick<RekordboxQueue, 'apply' | 'drop'> & { enqueue: (ops: EditOp[]) => void }
+  queue: Pick<RekordboxQueue, 'apply' | 'drop' | 'settled'> & { enqueue: (ops: EditOp[]) => void }
   isRunning: () => Promise<boolean>
   ensureClosed: (win: BrowserWindow | null) => Promise<boolean>
   onApplied?: (result: QueueApply) => void
@@ -34,6 +34,7 @@ export function engineEdit(host: {
           stamps: {},
           ...(label ? { label } : {}),
         }
+        await host.queue.settled()
         host.queue.enqueue([op])
         host.beginLoose?.(engineDatabasePath(dir))
         const result = await host.queue.apply(

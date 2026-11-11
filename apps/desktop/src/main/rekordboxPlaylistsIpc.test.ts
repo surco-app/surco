@@ -19,6 +19,7 @@ import type { WebContents } from 'electron'
 import type { DjEditMain } from '../shared/djApi'
 import type { CollectionTrack, RekordboxPlaylistEdit, SourcePlaylistEntry } from '../shared/types'
 import { registerCuesIpc } from './cuesIpc'
+import { queueWithApplyInFlight } from './editRaceFixture'
 import { rekordboxCueSource } from './rekordboxCueSource'
 import { openRekordboxDb, rekordboxRawKey } from './rekordboxDb'
 import { ORGANISE_FIXTURE, writeRekordboxPlaylistFixture } from './rekordboxPlaylistsFixture'
@@ -355,6 +356,7 @@ describe('rekordboxEdit', () => {
       enqueue: vi.fn(),
       apply: vi.fn(async () => ({ status: 'refused', reason: 'backup-failed' }) as const),
       drop: vi.fn(),
+      settled: vi.fn(async () => {}),
     }
     register(() => path, {
       ensureClosed: vi.fn(async () => true),
@@ -404,6 +406,7 @@ describe('rekordboxEdit', () => {
     const queue = {
       enqueue,
       drop: vi.fn(),
+      settled: vi.fn(async () => {}),
       apply: vi.fn(async () => ({
         status: 'applied' as const,
         tracks: 0,
@@ -509,5 +512,21 @@ describe('rekordboxEdit', () => {
       {},
     )
     expect(await read.membership(['/m/a.wav'])).toEqual({})
+  })
+})
+
+describe('rekordboxEdit with an apply already running', () => {
+  it('says the edit was written when that apply wrote it, not that it failed', async () => {
+    const race = queueWithApplyInFlight('Nueva')
+    const saving = rekordboxEdit(() => '/library/master.db', {
+      ensureClosed: async () => true,
+      queue: race.queue,
+    }).save(
+      { kind: 'create', parentId: 'root', name: 'Nueva', folder: false },
+      'Nueva',
+      {} as WebContents,
+    )
+    await race.release()
+    expect(await saving).toEqual({ applied: true, createdId: 'Nueva' })
   })
 })

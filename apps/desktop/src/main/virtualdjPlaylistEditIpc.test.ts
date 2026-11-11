@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import type { WebContents } from 'electron'
 import { describe, expect, it, vi } from 'vitest'
 import type { RekordboxPlaylistEdit } from '../shared/types'
+import { queueWithApplyInFlight } from './editRaceFixture'
 import type { QueueApply, RekordboxQueue } from './rekordboxQueue'
 import type { EditOp, QueueOp } from './rekordboxQueueOps'
 import { virtualdjEditFiles } from './virtualdjListsWrite'
@@ -42,6 +43,7 @@ function registerWith({
       result(queued[queued.length - 1], await ensureClosed()),
     ),
     drop: vi.fn<RekordboxQueue['drop']>(),
+    settled: vi.fn<RekordboxQueue['settled']>(async () => {}),
   }
   const host = {
     roots: () => roots,
@@ -122,5 +124,17 @@ describe('virtualdjEdit', () => {
     })
     expect(await handle(create('Nueva'))).toEqual({ applied: false, reason: 'write-failed' })
     expect(queue.drop).toHaveBeenCalledWith(queued[0].id)
+  })
+
+  it('says the edit was written when an apply already running wrote it, not that it failed', async () => {
+    const { roots } = registerWith({ running: false })
+    const race = queueWithApplyInFlight('Nueva')
+    const saving = virtualdjEdit({
+      roots: () => roots,
+      queue: race.queue,
+      isRunning: async () => false,
+    }).save(create('Nueva'), 'Nueva', {} as WebContents)
+    await race.release()
+    expect(await saving).toEqual({ applied: true, createdId: 'Nueva' })
   })
 })

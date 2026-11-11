@@ -61,7 +61,7 @@ export interface PlaylistEditHost {
   // The "rekordbox is open" dialog, over the window the edit came from.
   ensureClosed: (win: BrowserWindow | null) => Promise<boolean>
   isRunning?: () => Promise<boolean>
-  queue: Pick<RekordboxQueue, 'enqueue' | 'apply' | 'drop'>
+  queue: Pick<RekordboxQueue, 'enqueue' | 'apply' | 'drop' | 'settled'>
   onApplied?: (result: QueueApply) => void
   onWaiting?: () => void
   beginLoose?: (collectionPath: string) => void
@@ -159,6 +159,7 @@ export function rekordboxEdit(collection: () => string, host: PlaylistEditHost):
           stamps: editStamps(path, edit),
           ...(label ? { label } : {}),
         }
+        await host.queue.settled()
         host.queue.enqueue([op])
         host.beginLoose?.(path)
         const result = await host.queue.apply(
