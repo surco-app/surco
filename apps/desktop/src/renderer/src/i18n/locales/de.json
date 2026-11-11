@@ -3144,6 +3144,10 @@
       "traktor": {
         "no-collection": "Die Traktor-Sammlung wurde nicht gefunden.",
         "unreadable": "Die Traktor-Sammlung konnte nicht gelesen werden."
+      },
+      "virtualdj": {
+        "no-collection": "Die VirtualDJ-Bibliothek wurde nicht gefunden.",
+        "unreadable": "Die VirtualDJ-Bibliothek konnte nicht gelesen werden."
       }
     },
     "trackFailure": {

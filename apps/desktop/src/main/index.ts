@@ -1698,6 +1698,7 @@ function registerIpc(): void {
     engineLibrary: engineLibraryPath,
     serato: process.platform === 'darwin' ? { roots: seratoRoots } : undefined,
     traktor: { nml: traktorReadPath, bootVolume: () => bootVolumeName() },
+    virtualdj: process.platform === 'darwin' ? { roots: virtualdjRoots } : undefined,
   })
 
   // Reaches an encode already in flight: cancelBatch's own flag only stops jobs

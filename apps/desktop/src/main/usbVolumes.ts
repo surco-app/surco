@@ -271,7 +271,7 @@ export async function readVolumes(
   syncText: (root: string) => Promise<string | null> = (root) =>
     readFile(join(root, 'PIONEER', 'rekordbox', 'playlists3.sync'), 'utf8').catch(() => null),
   engine?: { memory: UsbMemory; holder: (root: string) => Promise<UsbHolder> },
-  bySource?: Partial<Record<'serato' | 'traktor', UsbMemory>>,
+  bySource?: Partial<Record<'serato' | 'traktor' | 'virtualdj', UsbMemory>>,
   surco?: Partial<Record<UsbPioneerProgram, UsbMemory>>,
 ): Promise<UsbVolume[]> {
   const out: UsbVolume[] = []

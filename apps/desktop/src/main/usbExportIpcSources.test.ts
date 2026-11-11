@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { basename, dirname, join } from 'node:path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -31,6 +31,10 @@ vi.mock('./usbExportTraktor', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./usbExportTraktor')>()),
   traktorExportDelta: vi.fn(async () => null),
 }))
+vi.mock('./usbExportVirtualdj', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./usbExportVirtualdj')>()),
+  virtualdjExportClock: vi.fn(async () => null),
+}))
 
 const made = vi.hoisted(() => ({
   pioneer: [] as unknown[],
@@ -57,6 +61,7 @@ import { readSeratoLibrary } from './seratoLibrary'
 import { registerUsbExportIpc } from './usbExportIpc'
 import { seratoExportMarks } from './usbExportSerato'
 import { traktorExportDelta } from './usbExportTraktor'
+import { virtualdjExportClock } from './usbExportVirtualdj'
 import { readVolumes } from './usbVolumes'
 
 function handlerFor(channel: string): (e: unknown, ...args: unknown[]) => unknown {
@@ -93,14 +98,18 @@ const ENTRY = {
 
 let userData = ''
 
-function register(sources: Pick<Parameters<typeof registerUsbExportIpc>[0], 'serato' | 'traktor'>) {
+const ensureClosed = vi.fn(async () => true)
+
+function register(
+  sources: Pick<Parameters<typeof registerUsbExportIpc>[0], 'serato' | 'traktor' | 'virtualdj'>,
+) {
   registerUsbExportIpc({
     collection: () => '/rb/master.db',
     userData,
     home: '/home',
     appData: '/appdata',
     baken: () => null,
-    ensureClosed: vi.fn(async () => true),
+    ensureClosed,
     engineLibrary: () => '/engine',
     ...sources,
   })
@@ -253,5 +262,72 @@ describe('registerUsbExportIpc with Serato and Traktor', () => {
     expect(serato.plan).toHaveBeenCalledWith({ ...req(), source: 'serato' })
     expect(traktor.start).toHaveBeenCalledWith({ ...req(), source: 'traktor' })
     expect(rekordbox.plan).toHaveBeenCalledWith(loud)
+  })
+})
+
+describe('registerUsbExportIpc with VirtualDJ', () => {
+  function vdjHome(paths: string[]) {
+    const dir = join(userData, 'VirtualDJ')
+    mkdirSync(join(dir, 'MyLists'), { recursive: true })
+    writeFileSync(
+      join(dir, 'database.xml'),
+      '<VirtualDJ_Database Version="2026">\r\n</VirtualDJ_Database>\r\n',
+    )
+    writeFileSync(
+      join(dir, 'MyLists', 'Set.vdjfolder'),
+      `<VirtualFolder>\r\n${paths.map((p, i) => `<song path="${p}" idx="${i}" />\r\n`).join('')}</VirtualFolder>\r\n`,
+    )
+    return { dir, root: '/' }
+  }
+
+  it('builds the VirtualDJ exporter with its own memory and no rekordbox pieces, and never asks VirtualDJ to close since it only reads', async () => {
+    const home = vdjHome([])
+    const { pioneer } = register({ virtualdj: { roots: () => [home] } })
+    const virtualdj = pioneer[0]
+    expect(virtualdj.collection()).toBe(home.dir)
+    expect(virtualdj.identity('', [])).toBeNull()
+    expect(await virtualdj.rekordboxRunning()).toBe(false)
+    expect(await virtualdj.ensureRekordboxClosed()).toBe(true)
+    expect(ensureClosed).not.toHaveBeenCalled()
+    virtualdj.memory.remember('volume:U', ENTRY)
+    expect(existsSync(join(userData, 'usb-virtualdj-exports.json'))).toBe(true)
+    expect(existsSync(join(userData, 'usb-exports.json'))).toBe(false)
+  })
+
+  it('has no VirtualDJ library to export without a VirtualDJ home folder, even with one on a drive', () => {
+    const { pioneer } = register({
+      virtualdj: { roots: () => [{ dir: '/Volumes/D/VirtualDJ', root: '/Volumes/D' }] },
+    })
+    expect(pioneer[0].collection()).toBe('')
+  })
+
+  it('sends a VirtualDJ request to the VirtualDJ exporter', async () => {
+    const home = vdjHome([])
+    const { exporters } = register({ virtualdj: { roots: () => [home] } })
+    await handlerFor('usb:plan')({}, { ...req(), source: 'virtualdj' })
+    expect(exporters.at(0)?.plan).toHaveBeenCalledWith({ ...req(), source: 'virtualdj' })
+    expect(exporters.at(-1)?.plan).not.toHaveBeenCalled()
+  })
+
+  it('reads the clock of an unchanged VirtualDJ track once across summaries', async () => {
+    const file = join(userData, 'a.mp3')
+    writeFileSync(file, 'x')
+    const home = vdjHome([file])
+    const { pioneer } = register({ virtualdj: { roots: () => [home] } })
+    const first = await pioneer[0].readSelection(home.dir, ['Set'])
+    await pioneer[0].readSelection(home.dir, ['Set'])
+    expect(first).toMatchObject({ tracks: [{ path: file }] })
+    expect(virtualdjExportClock).toHaveBeenCalledOnce()
+  })
+
+  it('lets the other Pioneer tabs see what the VirtualDJ tab wrote to a stick', async () => {
+    const home = vdjHome([])
+    const { pioneer } = register({ virtualdj: { roots: () => [home] } })
+    const [virtualdj, rekordbox] = pioneer
+    await virtualdj.volumes()
+    expect(vi.mocked(readVolumes).mock.calls[0][6]).toEqual({
+      rekordbox: rekordbox.memory,
+      virtualdj: virtualdj.memory,
+    })
   })
 })

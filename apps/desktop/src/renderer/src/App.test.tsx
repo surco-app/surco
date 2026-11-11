@@ -980,6 +980,27 @@ describe('App VirtualDJ tab', () => {
     expect(screen.queryByTestId('source-rail-virtualdj')).toBeNull()
   })
 
+  it('opens the USB export from the VirtualDJ tree on its lists and asks for a VirtualDJ export', async () => {
+    const usbPlan = vi
+      .fn<Api['usbPlan']>()
+      .mockResolvedValue({ ok: false, reason: 'nothing-selected' })
+    openVirtualdj({
+      usbVolumes: vi
+        .fn<Api['usbVolumes']>()
+        .mockResolvedValue({ volumes: [stick('A', 'empty')], lastKey: null }),
+      usbPlan,
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-virtualdj'))
+    fireEvent.click(await screen.findByTestId('source-tree-export-usb'))
+    fireEvent.click(await screen.findByTestId('check-node-Carpeta'))
+    await waitFor(() =>
+      expect(usbPlan).toHaveBeenCalledWith(
+        expect.objectContaining({ playlistIds: ['Carpeta/Dentro'], source: 'virtualdj' }),
+      ),
+    )
+  })
+
   it('tells the DJ in the VirtualDJ tab that the changes will be saved once VirtualDJ is closed', async () => {
     openVirtualdj({
       dj: djReads({

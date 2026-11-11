@@ -70,15 +70,15 @@ describe('writableInOrder', () => {
   it('leaves Serato out of the programs Surco writes to, so no write path can reach a Serato track', () => {
     expect(WRITABLE_PROGRAMS).not.toContain('serato')
   })
-  it('writes to VirtualDJ, so a VirtualDJ track can be converted, while it stays out of USB', () => {
+  it('writes to VirtualDJ, so a VirtualDJ track can be converted, and exports its lists to a USB', () => {
     expect(PROGRAM_CAN.virtualdj).toEqual({
       write: true,
-      usb: false,
+      usb: true,
       reach: true,
       windows: false,
     })
     expect(WRITABLE_PROGRAMS).toContain('virtualdj')
-    expect(USB_PROGRAMS).not.toContain('virtualdj')
+    expect(USB_PROGRAMS).toContain('virtualdj')
   })
   it('lets Surco add to and sync tags with every program, VirtualDJ included', () => {
     expect([...REACH_PROGRAMS]).toEqual(['rekordbox', 'traktor', 'engine', 'serato', 'virtualdj'])
@@ -118,7 +118,13 @@ describe('PROGRAM_CAN', () => {
       .filter(([, can]) => can.usb)
       .map(([program]) => program)
     expect([...USB_PROGRAMS].sort()).toEqual(usb.sort())
-    expect([...USB_PROGRAMS].sort()).toEqual(['engine', 'rekordbox', 'serato', 'traktor'])
+    expect([...USB_PROGRAMS].sort()).toEqual([
+      'engine',
+      'rekordbox',
+      'serato',
+      'traktor',
+      'virtualdj',
+    ])
   })
   it('names as read only every library Surco cannot write, so each is still asked before a file it plays goes', () => {
     expect([...READ_ONLY_PROGRAMS]).toEqual(['serato'])
@@ -128,6 +134,8 @@ describe('PROGRAM_CAN', () => {
     expectTypeOf<WritableProgram>().toEqualTypeOf<
       'rekordbox' | 'traktor' | 'engine' | 'virtualdj'
     >()
-    expectTypeOf<UsbProgram>().toEqualTypeOf<'rekordbox' | 'traktor' | 'engine' | 'serato'>()
+    expectTypeOf<UsbProgram>().toEqualTypeOf<
+      'rekordbox' | 'traktor' | 'engine' | 'serato' | 'virtualdj'
+    >()
   })
 })

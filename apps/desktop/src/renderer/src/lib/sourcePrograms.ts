@@ -171,7 +171,7 @@ export const SOURCE_PROGRAMS: {
       gate: 'none',
     },
     fixedNode: null,
-    usb: false,
+    usb: true,
     missingLibraryCheck: false,
     marksOrigin: true,
     fillsLoaded: false,

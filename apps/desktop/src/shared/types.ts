@@ -1737,7 +1737,10 @@ export interface UsbVolume {
   stickPlaylists: string[] | null
   engine?: { holder: UsbHolder; remembered: UsbRemembered | null }
   bySource?: Partial<
-    Record<'serato' | 'traktor', { holder: UsbHolder; remembered: UsbRemembered | null }>
+    Record<
+      'serato' | 'traktor' | 'virtualdj',
+      { holder: UsbHolder; remembered: UsbRemembered | null }
+    >
   >
 }
 
