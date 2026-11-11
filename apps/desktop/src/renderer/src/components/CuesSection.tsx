@@ -102,7 +102,7 @@ import {
   useCueFocus,
   useUnsavedCueTracks,
 } from '../lib/cueSession'
-import { cueOutcomeOf, recordCueEdits } from '../lib/cueTasteEdits'
+import { recordCueEdits } from '../lib/cueTasteEdits'
 import { type TwinPlan, twinPlansOf } from '../lib/cueTwins'
 import { quantizePoints } from '../lib/cueWave'
 import { formatTime } from '../lib/duration'
@@ -600,14 +600,6 @@ function Editing({
   )
   const { data: rekordboxWords } = useCueWaveDetail(cue.contentId, !provisional)
   const words = provisional ? provisional.words : rekordboxWords
-  const learnsFromEdits = settings.cueLearnFromEdits
-  const outcome = useMemo(
-    () =>
-      learnsFromEdits && words
-        ? cueOutcomeOf(queryClient, cue.contentId, { cues: state.cues, locked: state.locked })
-        : null,
-    [learnsFromEdits, words, queryClient, cue.contentId, state.cues, state.locked],
-  )
   const { readsAudio, fixedColour, collectionGate, callsNote, runningNote } = cueProgramOf(
     cue.contentId,
   )
@@ -1962,11 +1954,6 @@ function Editing({
       {autoNote === 'marked' && (
         <p data-testid="cues-auto-marked" className="mt-2 text-xs text-fg-dim">
           {tr('editor.cues.auto.marked')}
-        </p>
-      )}
-      {(outcome === 'corrected' || outcome === 'manual') && (
-        <p data-testid="cues-auto-outcome" className="mt-2 text-xs text-fg-dim">
-          {tr(outcome === 'corrected' ? 'editor.cues.auto.changed' : 'editor.cues.auto.own')}
         </p>
       )}
       {state.notice === 'too-many' && (

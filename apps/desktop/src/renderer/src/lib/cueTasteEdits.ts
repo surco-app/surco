@@ -1,7 +1,7 @@
 import type { QueryClient } from '@tanstack/react-query'
 import type { CueProfileRead } from '../../../shared/cueProfile'
 import type { DropInput } from '../../../shared/dropDetect'
-import { modelWithTaste, type TasteOutcome, tasteTrackOf } from '../../../shared/dropTaste'
+import { modelWithTaste, tasteTrackOf } from '../../../shared/dropTaste'
 import type { TrackCues } from '../../../shared/types'
 import {
   cueDropInputQuery,
@@ -22,18 +22,6 @@ function inputOf(client: QueryClient, contentId: string): DropInput | null {
 
 const tasteOf = (client: QueryClient) =>
   client.getQueryData<CueProfileRead>(cueProfileQuery.queryKey)?.profile?.taste ?? null
-
-export function cueOutcomeOf(
-  client: QueryClient,
-  contentId: string,
-  draft: Pick<CueDraft, 'cues' | 'locked'>,
-): TasteOutcome | null {
-  const input = inputOf(client, contentId)
-  const track =
-    input &&
-    tasteTrackOf(input, draftDrops(draft.cues, draft.locked), modelWithTaste(tasteOf(client)))
-  return track?.outcome ?? null
-}
 
 export function recordCueEdits(
   client: QueryClient,
