@@ -634,6 +634,19 @@ describe('Editor metadata header', () => {
     }
   })
 
+  // The overflow menu closes the row like everywhere else, so the named actions read first and
+  // the ⋯ is where the eye looks for "the rest"; wedged before Fill it split the named pair.
+  it('puts the overflow menu at the end of the header, after Clear', () => {
+    renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } }, 'wav')
+    const more = screen.getByTestId('meta-more')
+    const lastAction = more.parentElement?.parentElement?.lastElementChild
+    expect(lastAction).toContainElement(more)
+    expect(
+      screen.getByTestId('clear-meta-btn').compareDocumentPosition(more) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+  })
+
   it('closes the menu once an action in it has run', () => {
     renderEditor({ id: 'a' })
     openMore()

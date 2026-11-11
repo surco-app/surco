@@ -1262,7 +1262,7 @@ export const Editor = memo(function Editor({
     ],
   )
 
-  // One-click "empty every tag", set apart at the end of the header so a reach for fill
+  // One-click "empty every tag", set apart from fill by a divider so a reach for fill
   // never lands on it. Named in the header so the eraser is never taken for a neighbour.
   const clearButton = (
     <button
@@ -1636,10 +1636,9 @@ export const Editor = memo(function Editor({
             status={hasLibraryMarks ? libraryMarks : undefined}
             right={
               // Fill and Clear stay in the header with their names; every other glyph that
-              // used to ride this line waits in the menu. Clear sits last, set apart by a
-              // divider, so a reach for fill never lands on it.
+              // used to ride this line waits in the menu, which closes the row. Clear is set
+              // apart from Fill by a divider, so a reach for fill never lands on it.
               <div className="flex items-center gap-1">
-                {formOpen && <MetaMoreMenu items={moreItems} />}
                 {formOpen && deriveButton}
                 {formOpen && (
                   <>
@@ -1650,6 +1649,7 @@ export const Editor = memo(function Editor({
                     {clearButton}
                   </>
                 )}
+                {formOpen && <MetaMoreMenu items={moreItems} />}
               </div>
             }
           />
