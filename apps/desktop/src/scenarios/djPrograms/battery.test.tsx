@@ -146,6 +146,11 @@ async function save(program: DjProgram, edit: RekordboxPlaylistEdit): Promise<Re
   return dj<RekordboxEditResult>('editPlaylist', program, edit, 'Batería')
 }
 
+const formatsIntact = (): void => {
+  for (const program of DJ_PROGRAMS)
+    expect(TEST_LIBRARIES[program].formatProblems(settings), program).toEqual([])
+}
+
 const editKinds = (program: DjProgram): ReadonlySet<RekordboxPlaylistEdit['kind']> | null => {
   const edit = SOURCE_PROGRAMS[program].edit
   if (!edit) return new Set()
@@ -260,6 +265,10 @@ describe.each(DJ_PROGRAMS)('%s, por la puerta común', (program) => {
     expect(after?.cues.map((c) => c.ms)).toHaveLength(1)
     expect(Math.abs((after?.cues[0]?.ms ?? 0) - CUE_MS)).toBeLessThanOrEqual(CLOCK_TOLERANCE_MS)
   })
+
+  it('deja cada biblioteca en su formato de fichero tras leer, editar y guardar cues', () => {
+    formatsIntact()
+  })
 })
 
 describe('Convertir', () => {
@@ -332,6 +341,10 @@ describe('Convertir', () => {
       },
     )
   })
+
+  it('deja cada biblioteca en su formato de fichero', () => {
+    formatsIntact()
+  })
 })
 
 describe('Etiquetas y añadir', () => {
@@ -377,6 +390,10 @@ describe('Etiquetas y añadir', () => {
         )
     })
   })
+
+  it('deja cada biblioteca en su formato de fichero', () => {
+    formatsIntact()
+  })
 })
 
 describe('USB', () => {
@@ -421,5 +438,9 @@ describe('USB', () => {
         ).toBeLessThanOrEqual(CLOCK_TOLERANCE_MS)
       }
     })
+  })
+
+  it('deja cada biblioteca en su formato de fichero', () => {
+    formatsIntact()
   })
 })

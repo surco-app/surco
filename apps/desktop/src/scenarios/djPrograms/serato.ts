@@ -29,4 +29,5 @@ export const seratoLibrary: TestLibrary = {
     )
     return { syncSerato: true, addToSerato: true }
   },
+  formatProblems: () => [],
 }

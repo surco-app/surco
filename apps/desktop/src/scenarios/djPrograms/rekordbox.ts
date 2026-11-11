@@ -31,4 +31,5 @@ export const rekordboxLibrary: TestLibrary = {
     })
     return { syncRekordbox: true, addToRekordbox: true, rekordboxDbPath: path }
   },
+  formatProblems: () => [],
 }

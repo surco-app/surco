@@ -55,4 +55,5 @@ export const engineLibrary: TestLibrary = {
     }
     return { syncEngineDj: true, addToEngineDj: true, engineLibraryDir: dir }
   },
+  formatProblems: () => [],
 }

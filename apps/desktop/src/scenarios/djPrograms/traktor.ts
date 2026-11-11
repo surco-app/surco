@@ -47,4 +47,5 @@ ${keys.join('\n')}
     )
     return { syncTraktor: true, addToTraktor: true, traktorNmlPath: nml, traktorCueOffsetMs: 0 }
   },
+  formatProblems: () => [],
 }

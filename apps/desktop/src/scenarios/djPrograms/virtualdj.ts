@@ -1,5 +1,5 @@
-import { mkdirSync, statSync, writeFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
+import { basename, join } from 'node:path'
 import type { TestLibrary } from './testLibrary'
 
 const attr = (value: string): string =>
@@ -44,5 +44,26 @@ export const virtualdjLibrary: TestLibrary = {
     )
     writeFileSync(join(dir, 'MyLists', 'order'), `${listName}\n`)
     return { syncVirtualdj: true, addToVirtualdj: true, virtualdjLibraryDir: dir }
+  },
+  formatProblems: ({ virtualdjLibraryDir }) => {
+    const dir = virtualdjLibraryDir ?? ''
+    const lists = join(dir, 'MyLists')
+    const crlfFiles = [
+      join(dir, 'database.xml'),
+      ...readdirSync(lists, { recursive: true, encoding: 'utf8' })
+        .filter((name) => name.endsWith('.vdjfolder'))
+        .map((name) => join(lists, name)),
+    ]
+    const orders = readdirSync(lists, { recursive: true, encoding: 'utf8' })
+      .filter((name) => basename(name) === 'order')
+      .map((name) => join(lists, name))
+    return [
+      ...crlfFiles
+        .filter((file) => /(^|[^\r])\n/.test(readFileSync(file, 'utf8')))
+        .map((file) => `${file} has a bare LF`),
+      ...orders
+        .filter((file) => readFileSync(file, 'utf8').includes('\r'))
+        .map((file) => `${file} has a CR`),
+    ]
   },
 }
