@@ -1,3 +1,4 @@
+import type { TrackOrigin } from '../../shared/trackOrigin'
 import type {
   AppliedRelease,
   DeclickConfig,
@@ -7,7 +8,6 @@ import type {
   NormalizeConfig,
   OutputFormat,
   ProcessStage,
-  RekordboxPlaylistTarget,
   Release,
   ReleaseTrack,
   ReviewRawFields,
@@ -39,7 +39,7 @@ export interface CopiedTags {
   coverPath?: string
 }
 
-export interface TrackItem {
+export interface TrackItem extends TrackOrigin {
   id: string
   inputPath: string
   fileName: string
@@ -223,24 +223,12 @@ export interface TrackItem {
   // Music already filled the gaps the file left, once, when the editor first showed the
   // track (see useAppleMusicFill). An empty field after that is the DJ's own choice.
   appleMusicFilled?: boolean
-  fromRekordbox?: boolean
-  fromEngine?: boolean
-  fromTraktor?: boolean
-  fromSerato?: boolean
   // The file on disk that a replacement supersedes, resolved from the library copy this
   // track would replace. Stamped alongside musicPersistentId just before the convert runs:
   // rekordbox indexes that path, and the file being converted may live anywhere.
   replacesPath?: string
   // The name Music showed for that copy, which retiring it is verified against.
   replacesLabel?: string
-  rekordboxPlaylists?: RekordboxPlaylistTarget[]
-  rekordboxPlaylistsBase?: string[]
-  traktorPlaylists?: RekordboxPlaylistTarget[]
-  traktorPlaylistsBase?: string[]
-  enginePlaylists?: RekordboxPlaylistTarget[]
-  enginePlaylistsBase?: string[]
-  seratoPlaylists?: RekordboxPlaylistTarget[]
-  seratoPlaylistsBase?: string[]
   // Set when a conversion registered this track in the Engine DJ library — the Engine
   // counterpart of musicPersistentId's "Surco itself added it, owned by definition",
   // so the row reads in-library before the Engine snapshot refreshes.

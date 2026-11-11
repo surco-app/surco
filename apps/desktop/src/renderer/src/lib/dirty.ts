@@ -2,17 +2,11 @@ import { sameDeclick } from '../../../shared/declick'
 import { LIBRARY_PROGRAMS } from '../../../shared/djProgram'
 import type { DeclickConfig, NormalizeConfig } from '../../../shared/types'
 import type { TrackItem } from '../types'
-import { TRACK_PROGRAMS, type TrackProgram } from './trackPrograms'
+import { TRACK_PROGRAMS } from './trackPrograms'
 
 type SignatureFields = Pick<
   TrackItem,
-  | 'meta'
-  | 'outputName'
-  | 'coverUrl'
-  | 'coverPath'
-  | 'trim'
-  | 'foreignRemoved'
-  | TrackProgram['playlists']
+  'meta' | 'outputName' | 'coverUrl' | 'coverPath' | 'trim' | 'foreignRemoved' | 'playlists'
 >
 
 // A change-detecting proxy for the cover, never the cover itself. An embedded cover is a
@@ -43,8 +37,8 @@ export function trackSignature(track: SignatureFields): string {
     // identically, like the trim above.
     track.foreignRemoved ?? [],
     ...LIBRARY_PROGRAMS.flatMap((program) => {
-      const { playlists, signatureTag } = TRACK_PROGRAMS[program]
-      const wanted = track[playlists]
+      const { signatureTag } = TRACK_PROGRAMS[program]
+      const wanted = track.playlists?.[program]?.targets
       if (!wanted) return []
       return [signatureTag ? [signatureTag, wanted] : wanted]
     }),

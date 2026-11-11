@@ -881,8 +881,7 @@ describe('Editor rekordbox Playlists field', () => {
     fireEvent.click(await screen.findByTestId('playlists-summary'))
     fireEvent.click(screen.getByTestId('playlists-check-3000'))
     expect(onChange).toHaveBeenCalledWith({
-      rekordboxPlaylists: [{ id: '3000', name: 'Makina' }],
-      rekordboxPlaylistsBase: [],
+      playlists: { rekordbox: { targets: [{ id: '3000', name: 'Makina' }], base: [] } },
     })
   })
 })
@@ -924,8 +923,7 @@ describe('Editor Traktor and Engine DJ Playlists fields', () => {
     fireEvent.click(within(traktor).getByTestId('playlists-summary'))
     fireEvent.click(screen.getByTestId('playlists-check-fri'))
     expect(onChange).toHaveBeenCalledWith({
-      traktorPlaylists: [{ id: 'fri', name: 'Friday' }],
-      traktorPlaylistsBase: [],
+      playlists: { traktor: { targets: [{ id: 'fri', name: 'Friday' }], base: [] } },
     })
   })
 
@@ -961,7 +959,9 @@ describe('Editor Serato crates field', () => {
     fireEvent.click(within(field).getByTestId('playlists-summary'))
     fireEvent.click(screen.getByTestId('playlists-check-A'))
     expect(onChange).toHaveBeenLastCalledWith(
-      expect.objectContaining({ seratoPlaylists: [{ id: 'A', name: 'A' }] }),
+      expect.objectContaining({
+        playlists: { serato: expect.objectContaining({ targets: [{ id: 'A', name: 'A' }] }) },
+      }),
     )
   })
 })
@@ -1879,7 +1879,7 @@ describe('Editor multi-select', () => {
       outputPath: opts.done ? '/out/a.aiff' : undefined,
       meta: { title: 'A', album: 'Shared', ...opts.metaA },
       spectrum: { cutoffHz: null, sampleRateHz: 44100, processed: false },
-      ...(opts.fromSeratoA && { fromSerato: true }),
+      ...(opts.fromSeratoA && { programs: ['serato'] }),
     })
     const b = item({
       id: 'b',
@@ -1980,10 +1980,12 @@ describe('Editor multi-select', () => {
     expect(onChangeTracksPlaylists).toHaveBeenCalledWith([
       {
         id: 'a',
-        rekordboxPlaylists: [{ id: '3000', name: 'Makina' }],
-        rekordboxPlaylistsBase: ['3000'],
+        playlists: { rekordbox: { targets: [{ id: '3000', name: 'Makina' }], base: ['3000'] } },
       },
-      { id: 'b', rekordboxPlaylists: [{ id: '3000', name: 'Makina' }], rekordboxPlaylistsBase: [] },
+      {
+        id: 'b',
+        playlists: { rekordbox: { targets: [{ id: '3000', name: 'Makina' }], base: [] } },
+      },
     ])
   })
 
@@ -3247,7 +3249,7 @@ describe('Editor metadata section wiring', () => {
 
 describe('Editor on a track opened from Serato', () => {
   it('blocks converting it, in place or not, and says Serato would lose the track and its cues', () => {
-    renderEditor({ id: 'a', fromSerato: true })
+    renderEditor({ id: 'a', programs: ['serato'] })
     expect(screen.getByTestId('process-btn')).toHaveAttribute('aria-disabled', 'true')
     expect(screen.getByTestId('process-format-toggle')).toBeDisabled()
     expect(screen.getByTestId('process-btn')).toHaveAccessibleDescription(
@@ -3256,7 +3258,7 @@ describe('Editor on a track opened from Serato', () => {
   })
 
   it('does not send the DJ to an empty field when the press is blocked by Serato, since filling it would not help', () => {
-    renderEditor({ id: 'a', fromSerato: true, meta: { artist: '' } }, 'wav', {
+    renderEditor({ id: 'a', programs: ['serato'], meta: { artist: '' } }, 'wav', {
       requiredFields: ['artist'],
       visibleFields: ['artist'],
     })
@@ -3268,7 +3270,7 @@ describe('Editor on a track opened from Serato', () => {
   })
 
   it('leaves converting a rekordbox track as it was', () => {
-    renderEditor({ id: 'a', fromRekordbox: true })
+    renderEditor({ id: 'a', programs: ['rekordbox'] })
     expect(screen.getByTestId('process-btn')).not.toHaveAttribute('aria-disabled')
     expect(screen.getByTestId('process-format-toggle')).toBeEnabled()
   })

@@ -1,80 +1,51 @@
-import { type DjProgram, LIBRARY_PROGRAMS, programsInOrder } from '../../../shared/djProgram'
+import { LIBRARY_PROGRAMS } from '../../../shared/djProgram'
+import { type TrackOrigin, withPrograms } from '../../../shared/trackOrigin'
 import type { PlaylistLibrary } from '../../../shared/types'
 import type { TrackItem } from '../types'
 
 export interface TrackProgram {
-  flag: 'fromRekordbox' | 'fromTraktor' | 'fromEngine' | 'fromSerato'
-  playlists: 'rekordboxPlaylists' | 'traktorPlaylists' | 'enginePlaylists' | 'seratoPlaylists'
-  playlistsBase:
-    | 'rekordboxPlaylistsBase'
-    | 'traktorPlaylistsBase'
-    | 'enginePlaylistsBase'
-    | 'seratoPlaylistsBase'
   signatureTag: 'traktor' | 'engine' | null
   rereadAfterMove: boolean
 }
 
-export type TrackFlag = TrackProgram['flag']
-export type PlaylistKey = TrackProgram['playlists'] | TrackProgram['playlistsBase']
-
-export const TRACK_PROGRAMS: {
-  [P in DjProgram]: P extends PlaylistLibrary ? TrackProgram : Pick<TrackProgram, 'flag'>
-} = {
+export const TRACK_PROGRAMS: Record<PlaylistLibrary, TrackProgram> = {
   rekordbox: {
-    flag: 'fromRekordbox',
-    playlists: 'rekordboxPlaylists',
-    playlistsBase: 'rekordboxPlaylistsBase',
     signatureTag: null,
     rereadAfterMove: true,
   },
   traktor: {
-    flag: 'fromTraktor',
-    playlists: 'traktorPlaylists',
-    playlistsBase: 'traktorPlaylistsBase',
     signatureTag: 'traktor',
     rereadAfterMove: false,
   },
   engine: {
-    flag: 'fromEngine',
-    playlists: 'enginePlaylists',
-    playlistsBase: 'enginePlaylistsBase',
     signatureTag: 'engine',
     rereadAfterMove: false,
   },
   serato: {
-    flag: 'fromSerato',
-    playlists: 'seratoPlaylists',
-    playlistsBase: 'seratoPlaylistsBase',
     signatureTag: null,
     rereadAfterMove: false,
   },
 }
 
-type LibraryFields = Partial<Pick<TrackItem, TrackFlag | PlaylistKey>>
-
-const FLAG_ORDER = programsInOrder(['rekordbox', 'engine', 'traktor', 'serato'])
-
-export function copyFlags(from: LibraryFields, to: LibraryFields): void {
-  for (const program of FLAG_ORDER) {
-    const { flag } = TRACK_PROGRAMS[program]
-    if (from[flag]) to[flag] = true
+export function mergedOrigin(onto: TrackOrigin, from: TrackOrigin): TrackOrigin {
+  const merged: TrackOrigin = {}
+  const programs = withPrograms(onto, from.programs ?? [])
+  if (programs.length > 0) merged.programs = programs
+  const playlists: NonNullable<TrackOrigin['playlists']> = {}
+  for (const program of LIBRARY_PROGRAMS) {
+    const targets = from.playlists?.[program]?.targets ?? onto.playlists?.[program]?.targets
+    const base = from.playlists?.[program]?.base ?? onto.playlists?.[program]?.base
+    if (targets || base) playlists[program] = { ...(targets && { targets }), ...(base && { base }) }
   }
+  if (Object.keys(playlists).length > 0) merged.playlists = playlists
+  return merged
 }
 
-export function copyPlaylists(from: LibraryFields, to: LibraryFields): void {
-  for (const program of LIBRARY_PROGRAMS) {
-    const { playlists, playlistsBase } = TRACK_PROGRAMS[program]
-    if (from[playlists]) to[playlists] = from[playlists]
-    if (from[playlistsBase]) to[playlistsBase] = from[playlistsBase]
-  }
+export function patchedTrack(t: TrackItem, patch: Partial<TrackItem>): TrackItem {
+  if (!patch.playlists) return { ...t, ...patch }
+  return { ...t, ...patch, playlists: { ...t.playlists, ...patch.playlists } }
 }
 
-export function jobPlaylists(track: LibraryFields): Pick<LibraryFields, PlaylistKey> {
-  const job: LibraryFields = {}
-  for (const program of LIBRARY_PROGRAMS) {
-    const { playlists, playlistsBase } = TRACK_PROGRAMS[program]
-    job[playlists] = track[playlists]
-    job[playlistsBase] = track[playlistsBase]
-  }
-  return job
+export function jobPlaylists(track: TrackOrigin): Pick<TrackOrigin, 'playlists'> {
+  return { playlists: track.playlists }
 }

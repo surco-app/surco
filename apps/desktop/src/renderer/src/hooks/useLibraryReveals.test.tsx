@@ -16,7 +16,7 @@ const converted = {
   status: 'done',
   inputPath: '/in/Love Ya.flac',
   outputPath: '/out/Love Ya.aiff',
-  rekordboxPlaylists: [{ id: 'p1', name: 'Bases' }],
+  playlists: { rekordbox: { targets: [{ id: 'p1', name: 'Bases' }] } },
 } as TrackItem
 
 function setup(

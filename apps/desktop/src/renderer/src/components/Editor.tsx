@@ -27,6 +27,7 @@ import { effectiveMeta, fieldValue, isCustomTag } from '../../../shared/customFi
 import { WRITABLE_PROGRAMS, writableInOrder } from '../../../shared/djProgram'
 import { EDITOR_SECTION_GROUP } from '../../../shared/editorSections'
 import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../../../shared/format'
+import { isFrom } from '../../../shared/trackOrigin'
 import type {
   DeclickConfig,
   FormatSetting,
@@ -1001,7 +1002,7 @@ export const Editor = memo(function Editor({
   const againLeftOut = isMulti
     ? leftOutNote(convertGate(multiTracks, requiredFields, customFields, libraryIndex, true), tr)
     : null
-  const seratoRows = !isMulti && item.fromSerato === true
+  const seratoRows = !isMulti && isFrom(item, 'serato')
   const missing = isMulti || seratoRows ? [] : missingRequired(resolvedMeta, requiredFields)
   const firstMissing = (multiGate?.missing.fields ?? missing)[0]
   const incomplete = isMulti ? againLeftOut !== null : seratoRows || missing.length > 0

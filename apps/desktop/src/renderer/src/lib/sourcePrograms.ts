@@ -9,7 +9,6 @@ import type {
   SourcePlaylistEntry,
   UsbProgram,
 } from '../../../shared/types'
-import type { TrackFlag } from './trackPrograms'
 
 export interface SourceRead {
   available(): Promise<boolean>
@@ -66,7 +65,7 @@ export interface SourceProgram {
   fixedNode: ((node: SourceNode, atRoot: boolean) => FixedNode) | null
   usb: boolean
   missingLibraryCheck: boolean
-  trackFlag: TrackFlag | null
+  marksOrigin: boolean
   fillsLoaded: boolean
   addsUncollected: boolean
   fieldTestIdPrefix: string
@@ -88,7 +87,7 @@ export const SOURCE_PROGRAMS: {
     fixedNode: null,
     usb: true,
     missingLibraryCheck: false,
-    trackFlag: 'fromRekordbox',
+    marksOrigin: true,
     fillsLoaded: true,
     addsUncollected: true,
     fieldTestIdPrefix: '',
@@ -111,7 +110,7 @@ export const SOURCE_PROGRAMS: {
           : 'tracks-only',
     usb: true,
     missingLibraryCheck: false,
-    trackFlag: 'fromTraktor',
+    marksOrigin: true,
     fillsLoaded: false,
     addsUncollected: false,
     fieldTestIdPrefix: 'traktor-',
@@ -131,7 +130,7 @@ export const SOURCE_PROGRAMS: {
     fixedNode: null,
     usb: true,
     missingLibraryCheck: true,
-    trackFlag: null,
+    marksOrigin: false,
     fillsLoaded: false,
     addsUncollected: false,
     fieldTestIdPrefix: 'engine-',
@@ -149,7 +148,7 @@ export const SOURCE_PROGRAMS: {
     fixedNode: null,
     usb: true,
     missingLibraryCheck: false,
-    trackFlag: 'fromSerato',
+    marksOrigin: true,
     fillsLoaded: false,
     addsUncollected: true,
     fieldTestIdPrefix: 'serato-',

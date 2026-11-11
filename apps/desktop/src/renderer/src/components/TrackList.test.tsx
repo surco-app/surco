@@ -560,8 +560,8 @@ describe('TrackList', () => {
   it('says which Engine DJ tracks Engine has not analysed yet, in Engine’s name', () => {
     const preview = { title: 'A', artist: '', durationSec: 200, cues: [] }
     renderList([
-      track({ id: 'new', fromEngine: true, sourcePreview: { ...preview, unanalysed: true } }),
-      track({ id: 'done', fromEngine: true, sourcePreview: preview }),
+      track({ id: 'new', programs: ['engine'], sourcePreview: { ...preview, unanalysed: true } }),
+      track({ id: 'done', programs: ['engine'], sourcePreview: preview }),
     ])
     const rows = screen.getAllByTestId('track-wave-line')
     expect(within(rows[0]).getByTestId('track-unanalyzed')).toHaveTextContent(
@@ -573,10 +573,10 @@ describe('TrackList', () => {
   it('says which rekordbox tracks still need analysing, and says nothing for files outside rekordbox', () => {
     const preview = { title: 'A', artist: '', durationSec: 200, cues: [] }
     renderList([
-      track({ id: 'new', fromRekordbox: true, sourcePreview: preview }),
+      track({ id: 'new', programs: ['rekordbox'], sourcePreview: preview }),
       track({
         id: 'done',
-        fromRekordbox: true,
+        programs: ['rekordbox'],
         sourcePreview: { ...preview, analysisPath: '/share/ANLZ0000.DAT' },
       }),
       track({ id: 'file' }),

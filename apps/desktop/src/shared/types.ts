@@ -10,6 +10,7 @@ import type { ErrorKey } from './errorKeys'
 import type { EditableGrid } from './gridEdit'
 import type { SessionWizardSettings } from './sessionTypes'
 import type { Chord } from './shortcuts'
+import type { TrackOrigin } from './trackOrigin'
 import type { Verification } from './verification'
 
 export type ThemePref = 'system' | 'light' | 'dark'
@@ -601,7 +602,7 @@ export interface AppliedRelease {
 // forced quit never loses metadata the user staged but hadn't converted yet. Keyed
 // by the track's source path in the session file and overlaid onto the fresh file
 // read when the next launch reopens the session.
-export interface SessionEdit {
+export interface SessionEdit extends TrackOrigin {
   meta: TrackMetadata
   outputName?: string
   // Only display URLs that survive a relaunch are stored: https release art. blob:
@@ -616,10 +617,6 @@ export interface SessionEdit {
   // a second one, and still keeps the source's own format.
   musicPersistentId?: string
   fromAppleMusic?: boolean
-  fromRekordbox?: boolean
-  fromEngine?: boolean
-  fromTraktor?: boolean
-  fromSerato?: boolean
   // Rides along so a restored "cleared" track still wipes its rating on convert.
   metaCleared?: boolean
   // The per-tag inspector deletes, so a restored track still drops them on convert.
@@ -640,14 +637,6 @@ export interface SessionEdit {
   // track: without them a reopened session converted with the Settings defaults.
   normalize?: NormalizeConfig
   declick?: DeclickConfig
-  rekordboxPlaylists?: RekordboxPlaylistTarget[]
-  rekordboxPlaylistsBase?: string[]
-  traktorPlaylists?: RekordboxPlaylistTarget[]
-  traktorPlaylistsBase?: string[]
-  enginePlaylists?: RekordboxPlaylistTarget[]
-  enginePlaylistsBase?: string[]
-  seratoPlaylists?: RekordboxPlaylistTarget[]
-  seratoPlaylistsBase?: string[]
 }
 
 // What the session store round-trips: the loaded source paths (the reopen offer)
@@ -787,7 +776,7 @@ export interface MetaRead {
   failed?: true
 }
 
-export interface ProcessJob {
+export interface ProcessJob extends TrackOrigin {
   id: string
   inputPath: string
   outputName: string
@@ -853,15 +842,6 @@ export interface ProcessJob {
   // checked against this name, never against the new tags: the copy was matched by score,
   // so the two rarely spell the same.
   replacesLabel?: string
-  rekordboxPlaylists?: RekordboxPlaylistTarget[]
-  rekordboxPlaylistsBase?: string[]
-  traktorPlaylists?: RekordboxPlaylistTarget[]
-  traktorPlaylistsBase?: string[]
-  enginePlaylists?: RekordboxPlaylistTarget[]
-  enginePlaylistsBase?: string[]
-  seratoPlaylists?: RekordboxPlaylistTarget[]
-  seratoPlaylistsBase?: string[]
-  fromSerato?: boolean
 }
 
 export interface CoverExportJob {

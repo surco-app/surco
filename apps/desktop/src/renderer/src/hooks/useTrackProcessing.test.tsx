@@ -670,7 +670,7 @@ describe('useTrackProcessing', () => {
     const { result } = renderHook(
       () =>
         useTrackProcessing({
-          tracks: [track({ id: 'a', fromSerato: true })],
+          tracks: [track({ id: 'a', programs: ['serato'] })],
           settings: null,
           updateTrack: vi.fn(),
         }),
@@ -1317,7 +1317,7 @@ describe('useTrackProcessing', () => {
     const { result } = renderHook(
       () =>
         useTrackProcessing({
-          tracks: [track({ id: 'a', fromRekordbox: true })],
+          tracks: [track({ id: 'a', programs: ['rekordbox'] })],
           settings: {
             overwriteOriginal: false,
             autoApplyFilename: true,
@@ -2871,12 +2871,11 @@ describe('useTrackProcessing reading a track patched in the same tick', () => {
       current: [
         track({
           id: 'a',
-          rekordboxPlaylists: [{ name: 'Cierre' }],
-          rekordboxPlaylistsBase: ['3000'],
-          traktorPlaylists: [{ id: 'fri', name: 'Friday' }],
-          traktorPlaylistsBase: ['old'],
-          enginePlaylists: [],
-          enginePlaylistsBase: ['7'],
+          playlists: {
+            rekordbox: { targets: [{ name: 'Cierre' }], base: ['3000'] },
+            traktor: { targets: [{ id: 'fri', name: 'Friday' }], base: ['old'] },
+            engine: { targets: [], base: ['7'] },
+          },
         }),
       ],
     }
@@ -2895,12 +2894,11 @@ describe('useTrackProcessing reading a track patched in the same tick', () => {
     })
     expect(processTrack).toHaveBeenCalledWith(
       expect.objectContaining({
-        rekordboxPlaylists: [{ name: 'Cierre' }],
-        rekordboxPlaylistsBase: ['3000'],
-        traktorPlaylists: [{ id: 'fri', name: 'Friday' }],
-        traktorPlaylistsBase: ['old'],
-        enginePlaylists: [],
-        enginePlaylistsBase: ['7'],
+        playlists: {
+          rekordbox: { targets: [{ name: 'Cierre' }], base: ['3000'] },
+          traktor: { targets: [{ id: 'fri', name: 'Friday' }], base: ['old'] },
+          engine: { targets: [], base: ['7'] },
+        },
       }),
     )
   })

@@ -7,6 +7,7 @@ import {
   MINOR_CAMELOT,
   MINOR_NAMES,
 } from '../../../shared/keyNames'
+import { isFrom } from '../../../shared/trackOrigin'
 import type { PlaylistSource } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import type { CopyVerdict } from './bestCopy'
@@ -311,9 +312,9 @@ function matchesTags(track: TrackItem, filter: TagsFilter, facts: FilterFacts): 
 // The DJ program still to analyse this row. rekordbox ships no wave file for a track it has
 // not analysed; Engine DJ says so in the row it reads. Traktor's rows carry neither.
 export function unanalysedIn(track: TrackItem): 'rekordbox' | 'engine' | undefined {
-  if (track.fromRekordbox && track.sourcePreview && !track.sourcePreview.analysisPath)
+  if (isFrom(track, 'rekordbox') && track.sourcePreview && !track.sourcePreview.analysisPath)
     return 'rekordbox'
-  if (track.fromEngine && track.sourcePreview?.unanalysed) return 'engine'
+  if (isFrom(track, 'engine') && track.sourcePreview?.unanalysed) return 'engine'
   return undefined
 }
 

@@ -228,22 +228,27 @@ describe('isDeclickStale', () => {
 describe('trackSignature with rekordbox playlists', () => {
   it('reads the same as before for a track whose playlists were never touched, so no converted track turns stale on upgrade', () => {
     const t = converted()
-    expect(trackSignature(t)).toBe(trackSignature({ ...t, rekordboxPlaylists: undefined }))
+    expect(trackSignature(t)).toBe(trackSignature({ ...t, playlists: undefined }))
     expect(JSON.parse(trackSignature(t))).toHaveLength(6)
   })
 
   it('changes when the wanted playlists change, because that brings Actualizar back and is how they are written', () => {
     const t = converted()
-    expect(trackSignature({ ...t, rekordboxPlaylists: [{ id: '3000', name: 'Makina' }] })).not.toBe(
-      trackSignature(t),
-    )
+    expect(
+      trackSignature({
+        ...t,
+        playlists: { rekordbox: { targets: [{ id: '3000', name: 'Makina' }] } },
+      }),
+    ).not.toBe(trackSignature(t))
   })
 
   it('writes rekordbox’s wanted playlists bare and Traktor’s and Engine’s under their names, so every signature saved before still matches its track', () => {
     const t = converted({
-      rekordboxPlaylists: [{ id: '3000', name: 'Makina' }],
-      traktorPlaylists: [{ id: 'fri', name: 'Friday' }],
-      enginePlaylists: [{ name: 'Cierre' }],
+      playlists: {
+        rekordbox: { targets: [{ id: '3000', name: 'Makina' }] },
+        traktor: { targets: [{ id: 'fri', name: 'Friday' }] },
+        engine: { targets: [{ name: 'Cierre' }] },
+      },
     })
     expect(JSON.parse(trackSignature(t)).slice(6)).toEqual([
       [{ id: '3000', name: 'Makina' }],
@@ -252,7 +257,10 @@ describe('trackSignature with rekordbox playlists', () => {
     ])
     expect(
       JSON.parse(
-        trackSignature({ ...t, rekordboxPlaylists: undefined, traktorPlaylists: [] }),
+        trackSignature({
+          ...t,
+          playlists: { traktor: { targets: [] }, engine: { targets: [{ name: 'Cierre' }] } },
+        }),
       ).slice(6),
     ).toEqual([
       ['traktor', []],
@@ -264,9 +272,9 @@ describe('trackSignature with rekordbox playlists', () => {
 describe('trackSignature with Serato crates', () => {
   it('changes when a crate is picked, so a converted track goes stale and Update comes back', () => {
     const t = converted({})
-    expect(trackSignature({ ...t, seratoPlaylists: [{ id: 'A', name: 'A' }] })).not.toBe(
-      trackSignature(t),
-    )
+    expect(
+      trackSignature({ ...t, playlists: { serato: { targets: [{ id: 'A', name: 'A' }] } } }),
+    ).not.toBe(trackSignature(t))
   })
 })
 

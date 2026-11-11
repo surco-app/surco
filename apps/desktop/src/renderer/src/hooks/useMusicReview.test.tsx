@@ -1714,7 +1714,7 @@ describe('with the list as source', () => {
 
   it('says how many Serato rows it left out of the review', async () => {
     listApi()
-    const { result } = listHook([...LARA, row('/m/d.aiff', 'X', 'Td', { fromSerato: true })])
+    const { result } = listHook([...LARA, row('/m/d.aiff', 'X', 'Td', { programs: ['serato'] })])
     await waitFor(() => expect(result.current.status).toBe('ready'))
     expect(result.current).toMatchObject({ reviewed: 3, skipped: 0, seratoLeftOut: 1 })
   })

@@ -272,10 +272,14 @@ describe('The self-check reads back the rekordbox playlists the DJ asked for', (
     })
     await surco.drop(join(root, 'Downloads'))
     surco.patchTrack('x.flac', {
-      rekordboxPlaylists: [
-        { id: 'p1', name: 'House' },
-        { id: 'p2', name: 'Peak time' },
-      ],
+      playlists: {
+        rekordbox: {
+          targets: [
+            { id: 'p1', name: 'House' },
+            { id: 'p2', name: 'Peak time' },
+          ],
+        },
+      },
     })
     await surco.convertAll()
     await surco.settled()
@@ -330,10 +334,14 @@ describe('The self-check reads back the Engine DJ playlists the DJ asked for', (
     })
     await surco.drop(join(root, 'Downloads'))
     surco.patchTrack('x.flac', {
-      enginePlaylists: [
-        { id: '10', name: 'House' },
-        { id: '11', name: 'Peak time' },
-      ],
+      playlists: {
+        engine: {
+          targets: [
+            { id: '10', name: 'House' },
+            { id: '11', name: 'Peak time' },
+          ],
+        },
+      },
     })
     await surco.convertAll()
     await surco.settled()
@@ -385,7 +393,7 @@ describe('The self-check reads back the Traktor playlists the DJ asked for', () 
     })
     await surco.drop(join(root, 'Downloads'))
     surco.patchTrack('x.flac', {
-      traktorPlaylists: tree.map((n) => ({ id: n.id, name: n.name })),
+      playlists: { traktor: { targets: tree.map((n) => ({ id: n.id, name: n.name })) } },
     })
     await surco.convertAll()
     await surco.settled()

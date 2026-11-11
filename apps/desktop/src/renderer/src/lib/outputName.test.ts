@@ -376,18 +376,18 @@ describe('autoNamesFile', () => {
   })
 
   it('never renames a rekordbox track, whose collection points at the file by its name', () => {
-    expect(autoNamesFile(true, { fromRekordbox: true })).toBe(false)
+    expect(autoNamesFile(true, { programs: ['rekordbox'] })).toBe(false)
   })
 
   it('never renames an Engine DJ track, whose library points at the file by its path', () => {
-    expect(autoNamesFile(true, { fromEngine: true })).toBe(false)
+    expect(autoNamesFile(true, { programs: ['engine'] })).toBe(false)
   })
 
   it('never renames a Traktor track, whose collection points at the file by its path', () => {
-    expect(autoNamesFile(true, { fromTraktor: true })).toBe(false)
+    expect(autoNamesFile(true, { programs: ['traktor'] })).toBe(false)
   })
 
   it('never renames a Serato track, whose crates point at the file by its path', () => {
-    expect(autoNamesFile(true, { fromSerato: true })).toBe(false)
+    expect(autoNamesFile(true, { programs: ['serato'] })).toBe(false)
   })
 })

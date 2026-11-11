@@ -3,6 +3,7 @@ import { act, cleanup, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import { emptyMetadata } from '../../../shared/metadata'
+import { isFrom } from '../../../shared/trackOrigin'
 import type { Release, TrackMetadata } from '../../../shared/types'
 import { coverSourceOf, keepCoverArg } from '../lib/coverSource'
 import { trackSignature } from '../lib/dirty'
@@ -370,7 +371,7 @@ describe('opening a source playlist', () => {
     await act(async () => {
       await result.current.openSourcePlaylist(entries(['/m/a.aiff', '/m/b.aiff']), 'rekordbox')
     })
-    expect(result.current.tracks.map((t) => [t.inputPath, t.fromRekordbox])).toEqual([
+    expect(result.current.tracks.map((t) => [t.inputPath, isFrom(t, 'rekordbox')])).toEqual([
       ['/m/a.aiff', true],
       ['/m/b.aiff', true],
     ])
@@ -384,7 +385,7 @@ describe('opening a source playlist', () => {
     await act(async () => {
       await result.current.openSourcePlaylist(entries(['/m/a.aiff', '/m/b.aiff']), 'traktor')
     })
-    expect(result.current.tracks.map((t) => [t.inputPath, t.fromTraktor])).toEqual([
+    expect(result.current.tracks.map((t) => [t.inputPath, isFrom(t, 'traktor')])).toEqual([
       ['/m/a.aiff', true],
       ['/m/b.aiff', true],
     ])
@@ -553,8 +554,12 @@ describe('opening a rekordbox playlist with previews', () => {
       await result.current.openSourcePlaylist([entry('/m/e.aiff', 'E')], 'engine')
     })
     expect(
-      result.current.tracks.map((t) => [t.sourcePreview?.title, t.fromRekordbox, t.fromEngine]),
-    ).toEqual([['E', undefined, true]])
+      result.current.tracks.map((t) => [
+        t.sourcePreview?.title,
+        isFrom(t, 'rekordbox'),
+        isFrom(t, 'engine'),
+      ]),
+    ).toEqual([['E', false, true]])
   })
 
   it('paints a Traktor row from what the collection holds while its file is read, marked as Traktor’s', async () => {
@@ -564,8 +569,12 @@ describe('opening a rekordbox playlist with previews', () => {
       await result.current.openSourcePlaylist([entry('/m/t.aiff', 'T')], 'traktor')
     })
     expect(
-      result.current.tracks.map((t) => [t.sourcePreview?.title, t.fromEngine, t.fromTraktor]),
-    ).toEqual([['T', undefined, true]])
+      result.current.tracks.map((t) => [
+        t.sourcePreview?.title,
+        isFrom(t, 'engine'),
+        isFrom(t, 'traktor'),
+      ]),
+    ).toEqual([['T', false, true]])
   })
 
   it('drops the row of a file the disk lacks and counts it once, as missing and not as unreadable', async () => {
@@ -769,7 +778,7 @@ describe('an Engine DJ playlist over rows already loaded', () => {
       )
     })
     const row = result.current.tracks[0]
-    expect(row.fromEngine).toBeUndefined()
+    expect(isFrom(row, 'engine')).toBe(false)
     expect(row.sourcePreview).toBeUndefined()
   })
 

@@ -19,6 +19,7 @@ import {
 } from '../shared/errorKeys'
 import { foldAccents } from '../shared/foldAccents'
 import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../shared/format'
+import { isFrom } from '../shared/trackOrigin'
 import type {
   DeclickConfig,
   MusicOp,
@@ -513,26 +514,22 @@ const checking = (place: VerifyPlace): PlaceCheck => ({
   detail: { key: 'checking' },
 })
 
+const jobChoice =
+  (program: LibraryProgram, emptyBase: boolean) =>
+  (job: ProcessJob): PlaylistChoice | undefined => {
+    const staged = job.playlists?.[program]
+    if (!staged?.targets) return undefined
+    return { wanted: staged.targets, base: emptyBase ? (staged.base ?? []) : staged.base }
+  }
+
 export const JOB_PLAYLISTS: Record<
   LibraryProgram,
   (job: ProcessJob) => PlaylistChoice | undefined
 > = {
-  rekordbox: (job) =>
-    job.rekordboxPlaylists
-      ? { wanted: job.rekordboxPlaylists, base: job.rekordboxPlaylistsBase }
-      : undefined,
-  traktor: (job) =>
-    job.traktorPlaylists
-      ? { wanted: job.traktorPlaylists, base: job.traktorPlaylistsBase ?? [] }
-      : undefined,
-  engine: (job) =>
-    job.enginePlaylists
-      ? { wanted: job.enginePlaylists, base: job.enginePlaylistsBase ?? [] }
-      : undefined,
-  serato: (job) =>
-    job.seratoPlaylists
-      ? { wanted: job.seratoPlaylists, base: job.seratoPlaylistsBase ?? [] }
-      : undefined,
+  rekordbox: jobChoice('rekordbox', false),
+  traktor: jobChoice('traktor', true),
+  engine: jobChoice('engine', true),
+  serato: jobChoice('serato', true),
 }
 
 export async function runProcessTrack(
@@ -542,7 +539,7 @@ export async function runProcessTrack(
   // Before any side effect: metadata that never came from the file (see ProcessJob.metaUnread)
   // would be written empty over whatever the file still carries.
   if (job.metaUnread) throw errorWithKey('sourceTagsUnread', job.inputPath)
-  if (job.fromSerato) throw errorWithKey('seratoBlocked', job.inputPath)
+  if (isFrom(job, 'serato')) throw errorWithKey('seratoBlocked', job.inputPath)
   const { settings } = deps
   const stage = (s: ProcessStage): void => deps.sendProgress(s)
   if (deps.isAllowed && !deps.isAllowed(job.inputPath)) throw errorWithKey('pathNotAllowed')

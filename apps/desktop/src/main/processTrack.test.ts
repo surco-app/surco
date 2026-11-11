@@ -233,7 +233,7 @@ describe('runProcessTrack — plain conversion', () => {
   it('attaches the job playlists to the file it wrote so the rekordbox batch can queue them', async () => {
     const attachPlaylists = vi.fn()
     const result = await runProcessTrack(
-      job({ rekordboxPlaylists: [{ id: '3000', name: 'Makina' }] }),
+      job({ playlists: { rekordbox: { targets: [{ id: '3000', name: 'Makina' }] } } }),
       makeDeps({ attachPlaylists }),
     )
     expect(attachPlaylists).toHaveBeenCalledWith(result.outputPath, 'rekordbox', {
@@ -246,8 +246,7 @@ describe('runProcessTrack — plain conversion', () => {
     const attachPlaylists = vi.fn()
     const result = await runProcessTrack(
       job({
-        rekordboxPlaylists: [{ id: '3000', name: 'Makina' }],
-        rekordboxPlaylistsBase: ['2000'],
+        playlists: { rekordbox: { targets: [{ id: '3000', name: 'Makina' }], base: ['2000'] } },
       }),
       makeDeps({ attachPlaylists }),
     )
@@ -261,9 +260,10 @@ describe('runProcessTrack — plain conversion', () => {
     const attachPlaylists = vi.fn()
     const result = await runProcessTrack(
       job({
-        traktorPlaylists: [{ id: 'fri', name: 'Friday' }],
-        traktorPlaylistsBase: ['old'],
-        enginePlaylists: [{ id: '7', name: 'House' }],
+        playlists: {
+          traktor: { targets: [{ id: 'fri', name: 'Friday' }], base: ['old'] },
+          engine: { targets: [{ id: '7', name: 'House' }] },
+        },
       }),
       makeDeps({ attachPlaylists }),
     )
@@ -280,7 +280,7 @@ describe('runProcessTrack — plain conversion', () => {
   it('attaches an empty membership for Traktor when the job carries none, unlike rekordbox which leaves it unset', async () => {
     const attachPlaylists = vi.fn()
     const result = await runProcessTrack(
-      job({ traktorPlaylists: [{ id: 'fri', name: 'Friday' }] }),
+      job({ playlists: { traktor: { targets: [{ id: 'fri', name: 'Friday' }] } } }),
       makeDeps({ attachPlaylists }),
     )
     expect(attachPlaylists).toHaveBeenCalledWith(result.outputPath, 'traktor', {
@@ -292,7 +292,7 @@ describe('runProcessTrack — plain conversion', () => {
   it('attaches the Serato crates the conversion chose, so the Serato queue can file the new file there', async () => {
     const attachPlaylists = vi.fn()
     const result = await runProcessTrack(
-      job({ seratoPlaylists: [{ id: 'A', name: 'A' }], seratoPlaylistsBase: [] }),
+      job({ playlists: { serato: { targets: [{ id: 'A', name: 'A' }], base: [] } } }),
       makeDeps({ attachPlaylists }),
     )
     expect(attachPlaylists).toHaveBeenCalledWith(result.outputPath, 'serato', {
@@ -354,7 +354,7 @@ describe('runProcessTrack — a file Serato cues are being written to', () => {
 describe('runProcessTrack — a row opened from Serato', () => {
   it('refuses it before touching anything, with the reason the editor gives, since Serato would lose the track and its cues', async () => {
     const deps = makeDeps()
-    const err = await runProcessTrack(job({ fromSerato: true }), deps).catch((e: unknown) => e)
+    const err = await runProcessTrack(job({ programs: ['serato'] }), deps).catch((e: unknown) => e)
     expect(err).toBeInstanceOf(Error)
     expect(errorKeyOf((err as Error).message)).toBe('seratoBlocked')
     expect(deps.beginJob).not.toHaveBeenCalled()
@@ -3827,7 +3827,10 @@ describe('runProcessTrack — checking what it wrote', () => {
     })
     const wanted = [{ id: '3000', name: 'Makina' }, { name: 'Peak time' }]
 
-    const result = await runProcessTrack(job({ rekordboxPlaylists: wanted }), deps)
+    const result = await runProcessTrack(
+      job({ playlists: { rekordbox: { targets: wanted } } }),
+      deps,
+    )
 
     expect(result.verification?.checks.map((c) => [c.place, c.state])).toEqual([
       ['file', 'ok'],
@@ -3848,7 +3851,7 @@ describe('runProcessTrack — checking what it wrote', () => {
     })
     const wanted = [{ id: '10', name: 'House' }]
 
-    const result = await runProcessTrack(job({ enginePlaylists: wanted }), deps)
+    const result = await runProcessTrack(job({ playlists: { engine: { targets: wanted } } }), deps)
 
     expect(result.verification?.checks.map((c) => [c.place, c.state])).toEqual([
       ['file', 'ok'],
@@ -3867,7 +3870,7 @@ describe('runProcessTrack — checking what it wrote', () => {
     })
     const wanted = [{ id: 'u1', name: 'House' }]
 
-    await runProcessTrack(job({ traktorPlaylists: wanted }), deps)
+    await runProcessTrack(job({ playlists: { traktor: { targets: wanted } } }), deps)
 
     expect(registerVerification.mock.calls[0][0].playlists).toEqual({ traktor: wanted })
   })

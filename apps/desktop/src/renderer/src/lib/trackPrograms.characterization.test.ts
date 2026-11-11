@@ -3,6 +3,7 @@ import { act, cleanup, renderHook } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { DjProgram } from '../../../shared/djProgram'
 import { emptyMetadata } from '../../../shared/metadata'
+import type { LegacyOrigin } from '../../../shared/sessionLegacy'
 import type { SessionEdit } from '../../../shared/types'
 import { useTrackLibrary } from '../hooks/useTrackLibrary'
 import type { TrackItem } from '../types'
@@ -48,15 +49,10 @@ const FLAG_OF: Record<DjProgram, (typeof FLAG_KEYS)[number]> = {
   serato: 'fromSerato',
 }
 
-function trackWith({ origins = [], falseOrigins = [], playlists = {} }: Staged = {}): TrackItem {
-  const fields: Record<string, unknown> = {}
-  for (const p of origins) fields[FLAG_OF[p]] = true
-  for (const p of falseOrigins) fields[FLAG_OF[p]] = false
-  for (const p of LIBRARIES) {
-    const entry = playlists[p]
-    if (entry?.targets) fields[`${p}Playlists`] = entry.targets
-    if (entry?.base) fields[`${p}PlaylistsBase`] = entry.base
-  }
+function trackWith({ origins = [], playlists }: Staged = {}): TrackItem {
+  const fields: Partial<TrackItem> = {}
+  if (origins.length > 0) fields.programs = origins
+  if (playlists) fields.playlists = playlists
   return {
     id: 'id-1',
     inputPath: PATH,
@@ -237,7 +233,7 @@ describe('reopening a saved session', () => {
   })
 
   it('restores a literal session written today with every origin, a rekordbox target, a Traktor empty base and a Serato base alone', async () => {
-    const saved: SessionEdit = {
+    const saved: SessionEdit & LegacyOrigin = {
       meta: { ...emptyMetadata(), title: 'Restored' },
       fromRekordbox: true,
       fromEngine: true,
@@ -257,20 +253,15 @@ describe('reopening a saved session', () => {
 })
 
 describe('jobPlaylists', () => {
-  const NONE = Object.fromEntries(PLAYLIST_KEYS.map((k) => [k, undefined]))
-
   it('sends the base of a program without targets, leaving main to decide it is not wanted', () => {
     expect(jobPlaylists(trackWith({ playlists: { engine: { base: ['7'] } } }))).toEqual({
-      ...NONE,
-      enginePlaylistsBase: ['7'],
+      playlists: { engine: { base: ['7'] } },
     })
   })
 
   it('sends empty lists as they are, so leaving every playlist reaches main', () => {
     expect(jobPlaylists(trackWith({ playlists: { traktor: { targets: [], base: [] } } }))).toEqual({
-      ...NONE,
-      traktorPlaylists: [],
-      traktorPlaylistsBase: [],
+      playlists: { traktor: { targets: [], base: [] } },
     })
   })
 
@@ -286,19 +277,17 @@ describe('jobPlaylists', () => {
       }),
     )
     expect(job).toEqual({
-      rekordboxPlaylists: [{ name: 'R' }],
-      rekordboxPlaylistsBase: ['1'],
-      traktorPlaylists: [{ id: 't', name: 'T' }],
-      traktorPlaylistsBase: undefined,
-      enginePlaylists: [{ id: 'e', name: 'E' }],
-      enginePlaylistsBase: ['2'],
-      seratoPlaylists: [{ id: 's', name: 'S' }],
-      seratoPlaylistsBase: undefined,
+      playlists: {
+        rekordbox: { targets: [{ name: 'R' }], base: ['1'] },
+        traktor: { targets: [{ id: 't', name: 'T' }], base: undefined },
+        engine: { targets: [{ id: 'e', name: 'E' }], base: ['2'] },
+        serato: { targets: [{ id: 's', name: 'S' }], base: undefined },
+      },
     })
   })
 
   it('never carries any origin into the job', () => {
     const keys = Object.keys(jobPlaylists(trackWith({ origins: PROGRAMS })))
-    for (const flag of FLAG_KEYS) expect(keys).not.toContain(flag)
+    expect(keys).not.toContain('programs')
   })
 })

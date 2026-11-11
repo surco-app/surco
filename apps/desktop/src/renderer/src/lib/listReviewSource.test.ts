@@ -512,7 +512,7 @@ describe('listReviewSource damage', () => {
   })
 
   describe('a track opened from Serato', () => {
-    const serato = () => row('/m/s.aiff', 'A', { fromSerato: true })
+    const serato = () => row('/m/s.aiff', 'A', { programs: ['serato'] })
 
     it('stays out of the review and is counted apart, so no fix or removal can touch a file Serato points at', async () => {
       const load = await source([row('/m/a.aiff', 'A'), serato()]).load()

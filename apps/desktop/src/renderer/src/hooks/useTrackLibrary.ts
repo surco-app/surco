@@ -1,5 +1,7 @@
 import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { fromLegacy } from '../../../shared/sessionLegacy'
+import { isFrom, withPrograms } from '../../../shared/trackOrigin'
 import type {
   AppleMusicTrackMeta,
   PlaylistSource,
@@ -24,7 +26,7 @@ import { searchFromTags } from '../lib/search'
 import { deselect, type Selection } from '../lib/selection'
 import { hasStagedEdits } from '../lib/sessionEdits'
 import { SOURCE_PROGRAMS } from '../lib/sourcePrograms'
-import { copyFlags, copyPlaylists, TRACK_PROGRAMS } from '../lib/trackPrograms'
+import { mergedOrigin, patchedTrack } from '../lib/trackPrograms'
 import type { TrackItem } from '../types'
 import { clearMaximizedSection } from './useEditorSections'
 import { useStableCallback } from './useStableCallback'
@@ -497,6 +499,7 @@ export function useTrackLibrary({
       return { inFiles: true }
     return {
       ...restoredPatch(saved),
+      ...mergedOrigin(t, fromLegacy(saved)),
       ...(!t.embeddedCover && saved.coverUrl && { embeddedCover: saved.coverUrl }),
       meta: saved.meta,
       inFiles: true,
@@ -516,7 +519,6 @@ export function useTrackLibrary({
     // and the conversion stops honouring the source's own format.
     if (saved.musicPersistentId) patch.musicPersistentId = saved.musicPersistentId
     if (saved.fromAppleMusic) patch.fromAppleMusic = true
-    copyFlags(saved, patch)
     if (saved.coverRemoved) patch.coverRemoved = true
     if (saved.metaCleared) patch.metaCleared = true
     if (saved.foreignRemoved) patch.foreignRemoved = saved.foreignRemoved
@@ -527,7 +529,6 @@ export function useTrackLibrary({
     if (saved.matchProvider) patch.matchProvider = saved.matchProvider
     if (saved.appliedRelease) patch.appliedRelease = saved.appliedRelease
     if (saved.trim) patch.trim = saved.trim
-    copyPlaylists(saved, patch)
     if (saved.normalize) patch.normalize = saved.normalize
     if (saved.declick) patch.declick = saved.declick
     return patch
@@ -539,6 +540,7 @@ export function useTrackLibrary({
     // the file alone, not resurrect the restored edit.
     const saved = restoredEdits.current.get(path)
     restoredEdits.current.delete(path)
+    const savedOrigin = saved && fromLegacy(saved)
     try {
       // The light read leaves the cover out because the library painted it already; a row
       // the library holds no art for needs the file's own, or it shows a placeholder until
@@ -615,10 +617,16 @@ export function useTrackLibrary({
       // a field the user typed into meanwhile keeps the user's value, and the read
       // fills only what was left untouched. Queued into the shared flush rather than
       // written on its own, so a batch of reads costs one array rewrite, not one each.
-      loadedPending.current.push({ ...base, ...patch, meta: finalMeta })
+      loadedPending.current.push({
+        ...base,
+        ...patch,
+        ...(savedOrigin && mergedOrigin(base, savedOrigin)),
+        meta: finalMeta,
+      })
       enqueueMetaPatch(base.id, (t) => ({
         ...t,
         ...patch,
+        ...(savedOrigin && mergedOrigin(t, savedOrigin)),
         // A read that succeeded clears the mark a failed one left; a degraded read sets
         // it, so the row says so instead of looking like a file with no tags.
         ...(failed ? { metaReadFailed: true } : t.metaReadFailed ? { metaReadFailed: false } : {}),
@@ -643,6 +651,7 @@ export function useTrackLibrary({
       enqueueMetaPatch(base.id, (t) => ({
         ...t,
         ...patch,
+        ...(savedOrigin && mergedOrigin(t, savedOrigin)),
         meta: saved ? mergeReadMeta(base.meta, t.meta, saved.meta) : t.meta,
       }))
       return false
@@ -908,8 +917,7 @@ export function useTrackLibrary({
     // The library behind the rows, for the ones that point at the file by path: rows it
     // lists keep their file name, and their preview follows what the library now holds.
     const program = source === 'appleMusic' ? null : SOURCE_PROGRAMS[source]
-    const libraryFlag = program?.trackFlag
-    if (libraryFlag) {
+    if (source !== 'appleMusic' && SOURCE_PROGRAMS[source].marksOrigin) {
       const previewOf = new Map(
         entries.flatMap((e) =>
           e.path && !e.separator && e.preview ? [[same(e.path), e.preview] as const] : [],
@@ -930,10 +938,10 @@ export function useTrackLibrary({
         mapTracks((t) => (stale.has(t.id) ? { ...t, sourcePreview: nextPreview(t) } : t))
       const listed = new Set(entries.flatMap((e) => (e.path && !e.separator ? [same(e.path)] : [])))
       const unmarked = new Set(
-        tracksRef.current.filter((t) => !t[libraryFlag] && listedIn(listed, t)).map((t) => t.id),
+        tracksRef.current.filter((t) => !isFrom(t, source) && listedIn(listed, t)).map((t) => t.id),
       )
       if (unmarked.size > 0)
-        mapTracks((t) => (unmarked.has(t.id) ? { ...t, [libraryFlag]: true } : t))
+        mapTracks((t) => (unmarked.has(t.id) ? { ...t, programs: withPrograms(t, [source]) } : t))
     }
     const fresh = entries.filter(
       (e): e is SourcePlaylistEntry & { path: string } =>
@@ -987,7 +995,7 @@ export function useTrackLibrary({
       }
       if (source !== 'appleMusic')
         pendingSeed.current.set(e.path, {
-          [TRACK_PROGRAMS[source].flag]: true,
+          programs: [source],
           ...(e.preview && { sourcePreview: e.preview }),
         })
     }
@@ -1023,8 +1031,8 @@ export function useTrackLibrary({
   // converts immediately — and without this the conversion ran against the unstamped
   // track, adding a second Apple Music entry and leaving rekordbox on the old file.
   const updateTrack = useCallback((id: string, patch: Partial<TrackItem>): void => {
-    tracksRef.current = tracksRef.current.map((t) => (t.id === id ? { ...t, ...patch } : t))
-    setTracks((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)))
+    tracksRef.current = tracksRef.current.map((t) => (t.id === id ? patchedTrack(t, patch) : t))
+    setTracks((prev) => prev.map((t) => (t.id === id ? patchedTrack(t, patch) : t)))
   }, [])
 
   // The same ref-then-state publish as updateTrack, for a patch that depends on each row.
@@ -1048,7 +1056,7 @@ export function useTrackLibrary({
   const patchTracks = useCallback(
     (ids: string[], patch: Partial<TrackItem>): void => {
       const targets = new Set(ids)
-      mapTracks((t) => (targets.has(t.id) ? { ...t, ...patch } : t))
+      mapTracks((t) => (targets.has(t.id) ? patchedTrack(t, patch) : t))
     },
     [mapTracks],
   )

@@ -1,3 +1,4 @@
+import { isFrom } from '../../../shared/trackOrigin'
 import type {
   DuplicateReplaceOutcome,
   ListRemoval,
@@ -35,9 +36,9 @@ export function listReviewSource(deps: ListSourceDeps): ReviewSource {
     for (const key of answered.keys())
       if (paths.some((path) => key.startsWith(answerKey(path, '')))) answered.delete(key)
   }
-  const reviewable = () => deps.rows().filter((row) => !row.fromSerato)
+  const reviewable = () => deps.rows().filter((row) => !isFrom(row, 'serato'))
   const seratoLeftOut = () =>
-    new Set(deps.rows().flatMap((row) => (row.fromSerato ? [row.inputPath] : []))).size
+    new Set(deps.rows().flatMap((row) => (isFrom(row, 'serato') ? [row.inputPath] : []))).size
   const music = (id: string) => lookup?.entries[id] ?? []
   const only = (id: string) => (music(id).length === 1 ? music(id)[0] : undefined)
   // An absent ref sends the copy to main's own read of every Music location before the

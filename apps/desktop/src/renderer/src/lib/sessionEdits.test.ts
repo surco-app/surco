@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { isFrom } from '../../../shared/trackOrigin'
 import type { TrackItem } from '../types'
 import { trackSignature } from './dirty'
 import { sessionEdits } from './sessionEdits'
@@ -154,23 +155,23 @@ describe('sessionEdits', () => {
   })
 
   it('remembers that a track came from rekordbox, so a reopened row keeps its file name', () => {
-    const edits = sessionEdits([track({ fromRekordbox: true })])
-    expect(edits['/music/a.wav'].fromRekordbox).toBe(true)
+    const edits = sessionEdits([track({ programs: ['rekordbox'] })])
+    expect(isFrom(edits['/music/a.wav'], 'rekordbox')).toBe(true)
   })
 
   it('remembers that a track came from Engine DJ, so a reopened row keeps its file name', () => {
-    const edits = sessionEdits([track({ fromEngine: true })])
-    expect(edits['/music/a.wav'].fromEngine).toBe(true)
+    const edits = sessionEdits([track({ programs: ['engine'] })])
+    expect(isFrom(edits['/music/a.wav'], 'engine')).toBe(true)
   })
 
   it('remembers that a track came from Traktor, so a reopened row keeps its file name', () => {
-    const edits = sessionEdits([track({ fromTraktor: true })])
-    expect(edits['/music/a.wav'].fromTraktor).toBe(true)
+    const edits = sessionEdits([track({ programs: ['traktor'] })])
+    expect(isFrom(edits['/music/a.wav'], 'traktor')).toBe(true)
   })
 
   it('remembers that a track came from Serato, so a reopened row stays out of a convert that would lose it', () => {
-    const edits = sessionEdits([track({ fromSerato: true })])
-    expect(edits['/music/a.wav'].fromSerato).toBe(true)
+    const edits = sessionEdits([track({ programs: ['serato'] })])
+    expect(isFrom(edits['/music/a.wav'], 'serato')).toBe(true)
   })
 
   // A loose file has neither, and storing absent flags would only bloat the file.
@@ -197,38 +198,36 @@ it('keeps the wanted rekordbox playlists of a staged track, so switching source 
     id: 'a',
     inputPath: '/m/a.wav',
     diskSignature: 'x',
-    rekordboxPlaylists: [{ name: 'Cierre' }],
-    rekordboxPlaylistsBase: ['3000'],
-    traktorPlaylists: [{ id: 'fri', name: 'Friday' }],
-    traktorPlaylistsBase: ['old'],
-    enginePlaylists: [],
-    enginePlaylistsBase: ['7'],
+    playlists: {
+      rekordbox: { targets: [{ name: 'Cierre' }], base: ['3000'] },
+      traktor: { targets: [{ id: 'fri', name: 'Friday' }], base: ['old'] },
+      engine: { targets: [], base: ['7'] },
+    },
   })
-  expect(sessionEdits([t])['/m/a.wav'].rekordboxPlaylists).toEqual([{ name: 'Cierre' }])
-  expect(sessionEdits([t])['/m/a.wav'].rekordboxPlaylistsBase).toEqual(['3000'])
+  expect(sessionEdits([t])['/m/a.wav'].playlists?.rekordbox?.targets).toEqual([{ name: 'Cierre' }])
+  expect(sessionEdits([t])['/m/a.wav'].playlists?.rekordbox?.base).toEqual(['3000'])
   expect(sessionEdits([t])['/m/a.wav']).toMatchObject({
-    traktorPlaylists: [{ id: 'fri', name: 'Friday' }],
-    traktorPlaylistsBase: ['old'],
-    enginePlaylists: [],
-    enginePlaylistsBase: ['7'],
+    playlists: {
+      traktor: { targets: [{ id: 'fri', name: 'Friday' }], base: ['old'] },
+      engine: { targets: [], base: ['7'] },
+    },
   })
 })
 
 it('writes the library flags and the three programs’ playlists in the order the session file has always had, so an unchanged track saves the same bytes', () => {
   const t = track({
     diskSignature: 'x',
-    fromTraktor: true,
-    fromEngine: true,
-    fromRekordbox: true,
-    enginePlaylistsBase: ['7'],
-    enginePlaylists: [],
-    traktorPlaylistsBase: ['old'],
-    traktorPlaylists: [{ id: 'fri', name: 'Friday' }],
-    rekordboxPlaylistsBase: ['3000'],
-    rekordboxPlaylists: [{ name: 'Cierre' }],
+    programs: ['traktor', 'engine', 'rekordbox'],
+    playlists: {
+      engine: { base: ['7'], targets: [] },
+      traktor: { base: ['old'], targets: [{ id: 'fri', name: 'Friday' }] },
+      rekordbox: { base: ['3000'], targets: [{ name: 'Cierre' }] },
+    },
   })
   expect(Object.keys(sessionEdits([t])['/music/a.wav'])).toEqual([
     'meta',
+    'programs',
+    'playlists',
     'fromRekordbox',
     'fromEngine',
     'fromTraktor',
@@ -239,6 +238,17 @@ it('writes the library flags and the three programs’ playlists in the order th
     'enginePlaylists',
     'enginePlaylistsBase',
   ])
+  const sameStaged = track({
+    diskSignature: 'x',
+    programs: ['traktor', 'engine', 'rekordbox'],
+    playlists: {
+      rekordbox: { targets: [{ name: 'Cierre' }], base: ['3000'] },
+      traktor: { targets: [{ id: 'fri', name: 'Friday' }], base: ['old'] },
+      engine: { targets: [], base: ['7'] },
+    },
+  })
+  expect(JSON.stringify(sessionEdits([sameStaged]))).toBe(JSON.stringify(sessionEdits([t])))
+  expect(JSON.stringify(sessionEdits([t]))).toBe(JSON.stringify(sessionEdits([t])))
 })
 
 // Without it a relaunch between a wrong release and the right one leaves the wrong

@@ -3,7 +3,11 @@ import { act, cleanup, renderHook } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import { emptyMetadata } from '../../../shared/metadata'
+import type { LegacyOrigin } from '../../../shared/sessionLegacy'
+import { isFrom } from '../../../shared/trackOrigin'
+import type { SessionEdit } from '../../../shared/types'
 import { isStale, trackSignature } from '../lib/dirty'
+import { discardPlaylistEdits, playlistsEdit } from '../lib/rekordboxPlaylists'
 import { useTrackLibrary } from './useTrackLibrary'
 
 afterEach(() => {
@@ -1165,27 +1169,24 @@ describe('useTrackLibrary foreign tags', () => {
         onMetaReadFailed: vi.fn(),
       }),
     )
-    await act(() =>
-      result.current.addPaths(['/m/a.wav'], {
-        '/m/a.wav': {
-          meta: { title: 'Restored' } as never,
-          rekordboxPlaylists: [{ name: 'Fijas' }],
-          rekordboxPlaylistsBase: ['3000'],
-          traktorPlaylists: [{ id: 'fri', name: 'Friday' }],
-          traktorPlaylistsBase: ['old'],
-          enginePlaylists: [],
-          enginePlaylistsBase: ['7'],
-        },
-      }),
-    )
-
-    expect(result.current.tracks[0]?.rekordboxPlaylists).toEqual([{ name: 'Fijas' }])
-    expect(result.current.tracks[0]?.rekordboxPlaylistsBase).toEqual(['3000'])
-    expect(result.current.tracks[0]).toMatchObject({
+    const saved: SessionEdit & LegacyOrigin = {
+      meta: { title: 'Restored' } as never,
+      rekordboxPlaylists: [{ name: 'Fijas' }],
+      rekordboxPlaylistsBase: ['3000'],
       traktorPlaylists: [{ id: 'fri', name: 'Friday' }],
       traktorPlaylistsBase: ['old'],
       enginePlaylists: [],
       enginePlaylistsBase: ['7'],
+    }
+    await act(() => result.current.addPaths(['/m/a.wav'], { '/m/a.wav': saved }))
+
+    expect(result.current.tracks[0]?.playlists?.rekordbox?.targets).toEqual([{ name: 'Fijas' }])
+    expect(result.current.tracks[0]?.playlists?.rekordbox?.base).toEqual(['3000'])
+    expect(result.current.tracks[0]).toMatchObject({
+      playlists: {
+        traktor: { targets: [{ id: 'fri', name: 'Friday' }], base: ['old'] },
+        engine: { targets: [], base: ['7'] },
+      },
     })
   })
 
@@ -1241,20 +1242,17 @@ describe('useTrackLibrary foreign tags', () => {
         onMetaReadFailed: vi.fn(),
       }),
     )
-    await act(() =>
-      result.current.addPaths(['/m/a.wav'], {
-        '/m/a.wav': {
-          meta: { title: 'Restored' } as never,
-          fromRekordbox: true,
-          fromEngine: true,
-          fromTraktor: true,
-        },
-      }),
-    )
+    const saved: SessionEdit & LegacyOrigin = {
+      meta: { title: 'Restored' } as never,
+      fromRekordbox: true,
+      fromEngine: true,
+      fromTraktor: true,
+    }
+    await act(() => result.current.addPaths(['/m/a.wav'], { '/m/a.wav': saved }))
 
-    expect(result.current.tracks[0]?.fromRekordbox).toBe(true)
-    expect(result.current.tracks[0]?.fromEngine).toBe(true)
-    expect(result.current.tracks[0]?.fromTraktor).toBe(true)
+    expect(isFrom(result.current.tracks[0] ?? {}, 'rekordbox')).toBe(true)
+    expect(isFrom(result.current.tracks[0] ?? {}, 'engine')).toBe(true)
+    expect(isFrom(result.current.tracks[0] ?? {}, 'traktor')).toBe(true)
   })
 
   it('restores which library copy a track belongs to', async () => {
@@ -2100,4 +2098,60 @@ describe('useTrackLibrary bulk edits', () => {
       clearExtrasTracks: [true, true],
     })
   })
+})
+
+describe('a playlist pick built from an earlier render', () => {
+  function library() {
+    setApi({
+      readMeta: vi.fn().mockResolvedValue({
+        tags: { title: '', artist: '' },
+        duration: 180,
+        cover: null,
+        foreignTags: [],
+      }),
+    })
+    return renderHook(() =>
+      useTrackLibrary({
+        setSelection: vi.fn(),
+        onForget: vi.fn(),
+        onRemove: vi.fn(),
+        onClear: vi.fn(),
+        onMetaLoaded: vi.fn(),
+        onDuplicatesSkipped: vi.fn(),
+        onNoAudioFound: vi.fn(),
+        onMetaReadFailed: vi.fn(),
+      }),
+    ).result
+  }
+
+  it.each(['patchTracks', 'updateTrack'] as const)(
+    'via %s, never brings back the Traktor playlists its queue cleared meanwhile, and still sets rekordbox’s',
+    async (apply) => {
+      const result = library()
+      await act(() => result.current.addPaths(['/m/a.wav']))
+      const id = result.current.tracks[0].id
+      act(() =>
+        result.current.patchTracks(
+          [id],
+          playlistsEdit(result.current.tracks[0], {}, [{ id: 'fri', name: 'Friday' }], 'traktor'),
+        ),
+      )
+      const rendered = result.current.tracks[0]
+      act(() =>
+        result.current.setTracks((prev) => discardPlaylistEdits(prev, ['/m/a.wav'], 'traktor')),
+      )
+      const pick = playlistsEdit(rendered, {}, [{ name: 'Cierre' }], 'rekordbox')
+      act(() =>
+        apply === 'patchTracks'
+          ? result.current.patchTracks([id], pick)
+          : result.current.updateTrack(id, pick),
+      )
+
+      expect(result.current.tracks[0].playlists?.traktor).toBeUndefined()
+      expect(result.current.tracks[0].playlists?.rekordbox).toEqual({
+        targets: [{ name: 'Cierre' }],
+        base: [],
+      })
+    },
+  )
 })

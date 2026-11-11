@@ -7,6 +7,7 @@ import { DEFAULT_FIELDS } from '../../../shared/defaults'
 import { type DjProgram, WRITABLE_PROGRAMS } from '../../../shared/djProgram'
 import { splitNameLeftMarked } from '../../../shared/errorKeys'
 import { batchKeepMp3, hasFormatEquivalent, resolveJobFormat } from '../../../shared/format'
+import { isFrom } from '../../../shared/trackOrigin'
 import type {
   DeclickConfig,
   FormatSetting,
@@ -249,7 +250,7 @@ export function useTrackProcessing({
       // running batch had queued, or vice versa. A second job would write the same
       // output path at the same time — whoever started first owns the conversion.
       if (track.status === 'processing') return 'skipped'
-      if (track.fromSerato) return 'skipped'
+      if (isFrom(track, 'serato')) return 'skipped'
       // A read that failed must never become a write (see Params.rereadTrackMeta). The row
       // is re-resolved after the read because the library patches it in place; a row still
       // flagged afterwards, or with no re-read available, is refused rather than written.
@@ -454,7 +455,7 @@ export function useTrackProcessing({
           replacesPath: track.replacesPath,
           replacesLabel: track.replacesLabel,
           ...jobPlaylists(track),
-          fromSerato: track.fromSerato,
+          programs: track.programs,
         })
         // The user declined to overwrite a conflicting file: nothing was written, so
         // leave the track convertible (idle) rather than marking it done or failed.

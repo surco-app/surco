@@ -1,7 +1,8 @@
+import { withLegacy } from '../../../shared/sessionLegacy'
 import type { SessionEdit } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { trackSignature } from './dirty'
-import { copyFlags, copyPlaylists } from './trackPrograms'
+import { mergedOrigin } from './trackPrograms'
 
 // The editable state worth surviving a crash: everything the user can change in the
 // editor before converting, keyed by the source path (track ids are minted fresh
@@ -41,7 +42,7 @@ function sessionEdit(track: TrackItem): SessionEdit {
   // conversion stops honouring the source's own format.
   if (track.musicPersistentId) edit.musicPersistentId = track.musicPersistentId
   if (track.fromAppleMusic) edit.fromAppleMusic = true
-  copyFlags(track, edit)
+  Object.assign(edit, mergedOrigin({}, track))
   if (track.coverRemoved) edit.coverRemoved = true
   if (track.metaCleared) edit.metaCleared = true
   if (track.foreignRemoved?.length) edit.foreignRemoved = track.foreignRemoved
@@ -53,6 +54,5 @@ function sessionEdit(track: TrackItem): SessionEdit {
   if (track.trim) edit.trim = track.trim
   if (track.normalize) edit.normalize = track.normalize
   if (track.declick) edit.declick = track.declick
-  copyPlaylists(track, edit)
-  return edit
+  return withLegacy(edit)
 }

@@ -99,7 +99,7 @@ describe('convertGate', () => {
     const tracks = [
       track('a', 'idle', { title: 'T', artist: 'A' }),
       track('b', 'idle', { title: 'T' }),
-      { ...track('c', 'idle', { title: 'T', artist: 'A' }), fromSerato: true },
+      { ...track('c', 'idle', { title: 'T', artist: 'A' }), programs: ['serato' as const] },
       track('d', 'done', { title: 'T', artist: 'A' }),
     ]
     const gate = convertGate(tracks, ['title', 'artist'])
@@ -229,16 +229,18 @@ describe('summarizeBatch', () => {
 
 describe('a Serato track', () => {
   it('is never converted, since Serato would lose the track and its cues', () => {
-    const serato = { ...track('s', 'idle'), fromSerato: true }
+    const serato = { ...track('s', 'idle'), programs: ['serato' as const] }
     expect(canProcessTrack(serato, [])).toBe(false)
   })
 
   it('is left out of a batch while the other tracks of the selection still convert', () => {
-    const tracks = [{ ...track('s', 'idle'), fromSerato: true }, track('a', 'idle')]
+    const tracks = [{ ...track('s', 'idle'), programs: ['serato' as const] }, track('a', 'idle')]
     expect(eligibleForBatch(tracks, [])).toEqual(['a'])
   })
 
   it('leaves a rekordbox track converting as before', () => {
-    expect(canProcessTrack({ ...track('r', 'idle'), fromRekordbox: true }, [])).toBe(true)
+    expect(canProcessTrack({ ...track('r', 'idle'), programs: ['rekordbox' as const] }, [])).toBe(
+      true,
+    )
   })
 })

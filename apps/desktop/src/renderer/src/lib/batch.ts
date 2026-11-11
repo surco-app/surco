@@ -1,4 +1,5 @@
 import type { TFunction } from 'i18next'
+import { isFrom } from '../../../shared/trackOrigin'
 import type { CustomField } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import type { AppleMusicIndex } from './appleMusicLibrary'
@@ -32,7 +33,7 @@ export function canProcessTrack(
 ): boolean {
   return (
     inScope(track, again) &&
-    !track.fromSerato &&
+    !isFrom(track, 'serato') &&
     missingRequiredOf(track, requiredFields, customFields).length === 0
   )
 }
@@ -62,7 +63,7 @@ export function leftOutForMissing(
   const missing = new Set<string>()
   let count = 0
   for (const track of tracks) {
-    if (!inScope(track, again) || track.fromSerato) continue
+    if (!inScope(track, again) || isFrom(track, 'serato')) continue
     const fields = missingRequiredOf(track, requiredFields, customFields)
     if (fields.length === 0) continue
     count += 1
@@ -97,7 +98,7 @@ export function convertGate(
       ? []
       : tracks.filter((t) => canProcessTrack(t, requiredFields, customFields, again)),
     missing: leftOutForMissing(tracks, requiredFields, customFields, again),
-    serato: tracks.filter((t) => inScope(t, again) && t.fromSerato).length,
+    serato: tracks.filter((t) => inScope(t, again) && isFrom(t, 'serato')).length,
     mixed,
   }
 }

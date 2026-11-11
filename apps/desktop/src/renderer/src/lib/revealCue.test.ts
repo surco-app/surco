@@ -137,7 +137,7 @@ describe('revealableIn', () => {
       id: 't1',
       inputPath: '/in/Love Ya.flac',
       outputPath: '/out/Love Ya.aiff',
-      rekordboxPlaylists: [{ id: 'p1', name: 'Bases' }],
+      playlists: { rekordbox: { targets: [{ id: 'p1', name: 'Bases' }] } },
       ...over,
     }) as TrackItem
   const entry = (path: string): SourcePlaylistEntry => ({ path, separator: false, meta: {} })
@@ -155,8 +155,8 @@ describe('revealableIn', () => {
 
   it('offers nothing when no rekordbox playlist was picked, since then the DJ did not ask for rekordbox', () => {
     const recent = { rekordbox: [entry('/out/Love Ya.aiff')] }
-    expect(revealableIn(track({ rekordboxPlaylists: undefined }), recent)).toEqual([])
-    expect(revealableIn(track({ rekordboxPlaylists: [] }), recent)).toEqual([])
+    expect(revealableIn(track({ playlists: undefined }), recent)).toEqual([])
+    expect(revealableIn(track({ playlists: { rekordbox: { targets: [] } } }), recent)).toEqual([])
   })
 
   it('offers Engine DJ and Traktor by the same rule, each by its own playlists field', () => {
@@ -166,25 +166,34 @@ describe('revealableIn', () => {
       traktor: [entry('/out/Love Ya.aiff')],
     }
     const picked = [{ id: 'x', name: 'Friday' }]
+    expect(revealableIn(track({ playlists: { engine: { targets: picked } } }), recent)).toEqual([
+      'engine',
+    ])
+    expect(revealableIn(track({ playlists: { traktor: { targets: picked } } }), recent)).toEqual([
+      'traktor',
+    ])
     expect(
-      revealableIn(track({ rekordboxPlaylists: undefined, enginePlaylists: picked }), recent),
-    ).toEqual(['engine'])
-    expect(
-      revealableIn(track({ rekordboxPlaylists: undefined, traktorPlaylists: picked }), recent),
-    ).toEqual(['traktor'])
-    expect(
-      revealableIn(track({ enginePlaylists: picked, traktorPlaylists: picked }), {
-        traktor: recent.traktor,
-      }),
+      revealableIn(
+        track({
+          playlists: {
+            rekordbox: { targets: [{ id: 'p1', name: 'Bases' }] },
+            engine: { targets: picked },
+            traktor: { targets: picked },
+          },
+        }),
+        {
+          traktor: recent.traktor,
+        },
+      ),
     ).toEqual(['traktor'])
   })
 
   it('offers Serato by its own crates field once the converted file is among its recently added', () => {
     const picked = [{ id: 'A', name: 'A' }]
     const recent = { serato: [entry('/out/Love Ya.aiff')] }
-    expect(
-      revealableIn(track({ rekordboxPlaylists: undefined, seratoPlaylists: picked }), recent),
-    ).toEqual(['serato'])
-    expect(revealableIn(track({ rekordboxPlaylists: undefined }), recent)).toEqual([])
+    expect(revealableIn(track({ playlists: { serato: { targets: picked } } }), recent)).toEqual([
+      'serato',
+    ])
+    expect(revealableIn(track({ playlists: undefined }), recent)).toEqual([])
   })
 })

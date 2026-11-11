@@ -399,10 +399,14 @@ describe('unanalysed in a DJ library filter', () => {
     ...extra,
   })
   const tracks = [
-    { id: 'rb-analysed', fromRekordbox: true, sourcePreview: preview({ analysisPath: '/a.DAT' }) },
-    { id: 'rb-bare', fromRekordbox: true, sourcePreview: preview({}) },
-    { id: 'engine-bare', fromEngine: true, sourcePreview: preview({ unanalysed: true }) },
-    { id: 'engine-analysed', fromEngine: true, sourcePreview: preview({}) },
+    {
+      id: 'rb-analysed',
+      programs: ['rekordbox'],
+      sourcePreview: preview({ analysisPath: '/a.DAT' }),
+    },
+    { id: 'rb-bare', programs: ['rekordbox'], sourcePreview: preview({}) },
+    { id: 'engine-bare', programs: ['engine'], sourcePreview: preview({ unanalysed: true }) },
+    { id: 'engine-analysed', programs: ['engine'], sourcePreview: preview({}) },
     { id: 'loose-file' },
   ] as TrackItem[]
 
