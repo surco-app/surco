@@ -513,8 +513,8 @@ export function Player({
   )
 }
 
-// Volume as a permanent strip at the left of the transport row: speaker, slider, percentage,
-// all on screen at all times. Two earlier shapes failed the way the DJ actually works —
+// Volume as a permanent strip at the left of the transport row: speaker and slider, both on
+// screen at all times. Two earlier shapes failed the way the DJ actually works —
 // floating it over the waveform stole the clicks meant for scrubbing the opening seconds, and
 // popping it out on hover covered the title and the artwork. Fixed here it can cover nothing,
 // and it leaves the title line entirely to the title, which is what a long remix name needs.
@@ -573,14 +573,6 @@ function VolumeControl({
         onChange={(e) => onSetVolume(Number(e.target.value))}
         className="player-volume-range h-1 w-16 cursor-pointer"
       />
-
-      {/* Tabular so the strip doesn't twitch as the digits change under a drag. */}
-      <span
-        data-testid="player-volume"
-        className="w-8 shrink-0 text-[11px] text-fg-dim leading-none tabular-nums"
-      >
-        {Math.round(volume * 100)}%
-      </span>
     </span>
   )
 }
