@@ -184,6 +184,27 @@ describe('VirtualDJ copies of a whole moment', () => {
   })
 })
 
+describe('Before restoring copies', () => {
+  it('never prunes a moment copy, so restoring the oldest of five keeps it', async () => {
+    const lib = library()
+    for (let i = 0; i < 5; i++) takeVirtualdjCopy(lib.deps, 'queue')
+    const history = join(lib.deps.backupDir, 'history')
+    const oldest = readdirSync(history)
+      .filter((n) => n !== 'since.json')
+      .sort()[0]
+    expect(await restoreVirtualdjCopy(`history/${oldest}`, lib.restoreDeps())).toEqual({ ok: true })
+    const left = readdirSync(history).filter((n) => n !== 'since.json')
+    expect(left).toContain(oldest)
+    expect(left).toHaveLength(6)
+    for (let i = 0; i < 6; i++) await restoreVirtualdjCopy(`history/${oldest}`, lib.restoreDeps())
+    const reasons = readdirSync(history)
+      .filter((n) => n !== 'since.json')
+      .map((n) => JSON.parse(readFileSync(join(history, n, 'copy.json'), 'utf8')).reason)
+    expect(reasons.filter((r) => r === 'queue')).toHaveLength(5)
+    expect(reasons.filter((r) => r === 'restore')).toHaveLength(5)
+  })
+})
+
 describe('VirtualDJ copies from before whole copies', () => {
   it('still lists the separate database and lists copies and restores each, saying what it holds', async () => {
     const lib = library()

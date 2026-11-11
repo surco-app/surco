@@ -125,14 +125,21 @@ export function takeVirtualdjCopy(deps: VirtualdjCopiesDeps, reason: CopyReason)
       for (const file of lists.files)
         copyIn(join(home.dir, LISTS, file), join(partial, labelOf(home), LISTS, file))
     mkdirSync(partial, { recursive: true })
-    const manifest: Manifest = { reason, takenAt: now.getTime(), dirs: lists.dirs }
+    const manifest: Manifest = {
+      reason,
+      takenAt: now.getTime(),
+      dirs: lists.dirs,
+    }
     writeFileSync(join(partial, MANIFEST), JSON.stringify(manifest))
     renameSync(partial, folder)
   } catch (e) {
     rmSync(partial, { recursive: true, force: true })
     throw e
   }
-  for (const old of historyNames(deps).slice(0, -HISTORY_KEEP))
+  const rotation = historyNames(deps).filter(
+    (n) => (readManifest(join(history, n))?.reason === 'restore') === (reason === 'restore'),
+  )
+  for (const old of rotation.slice(0, -HISTORY_KEEP))
     rmSync(join(history, old), { recursive: true, force: true })
   return {
     id: `${HISTORY_BACKUPS}/${basename(folder)}`,
