@@ -4,7 +4,20 @@ import { isTraktorContent } from './traktorContent'
 
 export type DjProgram = 'rekordbox' | 'traktor' | 'engine' | 'serato'
 
-export type WritableProgram = Exclude<DjProgram, 'serato'>
+export const PROGRAM_CAN = {
+  rekordbox: { write: true, usb: true },
+  traktor: { write: true, usb: true },
+  engine: { write: true, usb: true },
+  serato: { write: false, usb: true },
+} as const satisfies { [P in DjProgram]: { write: boolean; usb: boolean } }
+
+type ProgramsThatCan<K extends 'write' | 'usb'> = {
+  [P in DjProgram]: (typeof PROGRAM_CAN)[P][K] extends true ? P : never
+}[DjProgram]
+
+export type WritableProgram = ProgramsThatCan<'write'>
+
+export type UsbProgram = ProgramsThatCan<'usb'>
 
 export type CueProgram = DjProgram
 
@@ -20,6 +33,10 @@ export const LIBRARY_PROGRAMS: readonly LibraryProgram[] = programsInOrder([
 ])
 
 export const WRITABLE_PROGRAMS = writableInOrder(['rekordbox', 'traktor', 'engine'])
+
+export const USB_PROGRAMS: readonly UsbProgram[] = DJ_PROGRAMS.filter(
+  (program): program is UsbProgram => PROGRAM_CAN[program].usb,
+)
 
 export const RAIL_PROGRAMS = programsInOrder(['rekordbox', 'engine', 'traktor', 'serato'])
 

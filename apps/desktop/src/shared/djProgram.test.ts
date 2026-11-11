@@ -1,12 +1,16 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, expectTypeOf, it } from 'vitest'
 import {
   CUE_PROGRAMS,
   DJ_PROGRAMS,
   isWritable,
+  PROGRAM_CAN,
   programOf,
   programsInOrder,
   RAIL_PROGRAMS,
+  USB_PROGRAMS,
+  type UsbProgram,
   WRITABLE_PROGRAMS,
+  type WritableProgram,
   writableInOrder,
 } from './djProgram'
 
@@ -74,5 +78,25 @@ describe('isWritable', () => {
 describe('CUE_PROGRAMS', () => {
   it('saves cues to rekordbox, Engine, Traktor and then Serato, the four Surco writes cues to', () => {
     expect(CUE_PROGRAMS).toEqual(['rekordbox', 'engine', 'traktor', 'serato'])
+  })
+})
+
+describe('PROGRAM_CAN', () => {
+  it('derives the writable programs from the table, so a program is writable by one row and not by an edit to a type', () => {
+    const writable = Object.entries(PROGRAM_CAN)
+      .filter(([, can]) => can.write)
+      .map(([program]) => program)
+    expect([...WRITABLE_PROGRAMS].sort()).toEqual(writable.sort())
+  })
+  it('derives the USB programs from the table', () => {
+    const usb = Object.entries(PROGRAM_CAN)
+      .filter(([, can]) => can.usb)
+      .map(([program]) => program)
+    expect([...USB_PROGRAMS].sort()).toEqual(usb.sort())
+    expect([...USB_PROGRAMS].sort()).toEqual(['engine', 'rekordbox', 'serato', 'traktor'])
+  })
+  it('types the writable and USB programs as exactly the rows marked true', () => {
+    expectTypeOf<WritableProgram>().toEqualTypeOf<'rekordbox' | 'traktor' | 'engine'>()
+    expectTypeOf<UsbProgram>().toEqualTypeOf<'rekordbox' | 'traktor' | 'engine' | 'serato'>()
   })
 })

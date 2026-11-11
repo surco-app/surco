@@ -4,7 +4,7 @@ import type { CueGridTolerance } from './cueGrid'
 import type { CueJumpBars } from './cueJump'
 import type { CueQuantize } from './cueQuantize'
 import type { StrongPart, WantedCue } from './cueRules'
-import type { DjProgram, LibraryProgram, WritableProgram } from './djProgram'
+import type { DjProgram, LibraryProgram, UsbProgram, WritableProgram } from './djProgram'
 import type { EditorSectionPref } from './editorSections'
 import type { ErrorKey } from './errorKeys'
 import type { EditableGrid } from './gridEdit'
@@ -1778,7 +1778,7 @@ export interface UsbPlan {
   warnings: UsbWarning[]
 }
 
-export type UsbProgram = DjProgram
+export type { UsbProgram }
 
 export interface UsbExportRequest {
   playlistIds: string[]
