@@ -355,15 +355,17 @@ describe('registerCuesIpc', () => {
       provisional: { add: vi.fn() },
       twins: async () => ({}),
     })
-    await handler('cues:save')({}, [
-      {
-        contentId: 'engine:4',
-        path: '/m/e.mp3',
-        label: 'e',
-        wanted: [{ ms: 1000, kind: 0, color: null }],
-        fingerprint: 'f',
-      },
-    ])
+    await expect(
+      handler('cues:save')({}, [
+        {
+          contentId: 'engine:4',
+          path: '/m/e.mp3',
+          label: 'e',
+          wanted: [{ ms: 1000, kind: 0, color: null }],
+          fingerprint: 'f',
+        },
+      ]),
+    ).rejects.toThrow('engine has no cue source')
     expect(enqueue).not.toHaveBeenCalled()
     expect(beginMoment).not.toHaveBeenCalled()
   })
@@ -382,17 +384,55 @@ describe('registerCuesIpc', () => {
       provisional: { add: vi.fn() },
       twins: async () => ({}),
     })
-    await handler('cues:save')({}, [
-      {
-        contentId: 'traktor:HD/:Music/:t.aiff',
-        path: '/Music/t.aiff',
-        label: 't',
-        wanted: [{ ms: 1000, kind: 0, color: null }],
-        fingerprint: 'f',
-      },
-    ])
+    await expect(
+      handler('cues:save')({}, [
+        {
+          contentId: 'traktor:HD/:Music/:t.aiff',
+          path: '/Music/t.aiff',
+          label: 't',
+          wanted: [{ ms: 1000, kind: 0, color: null }],
+          fingerprint: 'f',
+        },
+      ]),
+    ).rejects.toThrow('traktor has no cue source')
     expect(enqueue).not.toHaveBeenCalled()
     expect(beginMoment).not.toHaveBeenCalled()
+  })
+
+  it('refuses a save that mixes a program with no cue source and a wired one, so nothing from the call is written', async () => {
+    const enqueue = vi.fn<RekordboxQueue['enqueue']>(() => true)
+    const applyQuietly = quietly()
+    const beginMoment = vi.fn()
+    const add = vi.fn()
+    registerWithSources({
+      collection: () => '/c/master.db',
+      queue: queue({ enqueue }),
+      applyQuietly,
+      beginMoment,
+      flow: () => MY_FLOW,
+      beatGrid: async () => null,
+      words: async () => null,
+      provisional: { add },
+      twins: async () => ({}),
+    })
+    const wanted = [{ ms: 1000, kind: 0, color: null }]
+    await expect(
+      handler('cues:save')({}, [
+        {
+          contentId: '103',
+          path: '/m/a.wav',
+          label: 'a',
+          wanted,
+          fingerprint: 'f',
+          provisional: true,
+        },
+        { contentId: 'engine:4', path: '/m/e.mp3', label: 'e', wanted, fingerprint: 'f' },
+      ]),
+    ).rejects.toThrow('engine has no cue source')
+    expect(enqueue).not.toHaveBeenCalled()
+    expect(applyQuietly).not.toHaveBeenCalled()
+    expect(beginMoment).not.toHaveBeenCalled()
+    expect(add).not.toHaveBeenCalled()
   })
 
   it('queues several tracks together and applies once, so master.db is written in one batch', async () => {
