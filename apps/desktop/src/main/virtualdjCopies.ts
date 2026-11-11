@@ -187,9 +187,11 @@ export function listVirtualdjCopies(deps: VirtualdjCopiesDeps): {
       .sort((a, b) => b.takenAt - a.takenAt)
       .slice(0, HISTORY_KEEP),
   )
-  const all = [...whole, ...legacy].sort((a, b) => b.takenAt - a.takenAt).slice(0, HISTORY_KEEP)
-  const restore = all.find((c) => c.reason === 'restore') ?? null
-  return { copies: all.filter((c) => c !== restore), restore }
+  const all = [...whole, ...legacy].sort((a, b) => b.takenAt - a.takenAt)
+  const moments = all.filter((c) => c.reason !== 'restore').slice(0, HISTORY_KEEP)
+  const [restore = null, ...restores] = all.filter((c) => c.reason === 'restore')
+  const copies = [...moments, ...restores].sort((a, b) => b.takenAt - a.takenAt)
+  return { copies, restore }
 }
 
 interface Plan {

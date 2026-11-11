@@ -203,6 +203,20 @@ describe('Before restoring copies', () => {
     expect(reasons.filter((r) => r === 'queue')).toHaveLength(5)
     expect(reasons.filter((r) => r === 'restore')).toHaveLength(5)
   })
+
+  it('lists the five moment copies after five restores in a row, so they can still be restored from Copias', async () => {
+    const lib = library()
+    for (let i = 0; i < 5; i++) takeVirtualdjCopy(lib.deps, 'queue')
+    const [newest] = listVirtualdjCopies(lib.deps).copies
+    for (let i = 0; i < 5; i++) await restoreVirtualdjCopy(newest.id, lib.restoreDeps())
+    const { copies, restore } = listVirtualdjCopies(lib.deps)
+    expect(restore?.reason).toBe('restore')
+    expect(copies.filter((c) => c.reason === 'queue')).toHaveLength(5)
+    expect(copies.filter((c) => c.reason === 'restore')).toHaveLength(4)
+    expect(copies.map((c) => c.takenAt)).toEqual(
+      [...copies.map((c) => c.takenAt)].sort((a, b) => b - a),
+    )
+  })
 })
 
 describe('a whole copy taken with only a drive library', () => {
@@ -272,7 +286,7 @@ describe('VirtualDJ copies from before whole copies', () => {
 })
 
 describe('VirtualDJ copies on the screen', () => {
-  it('shows five at most, whole copies and older separate ones together, as the footer says for every program', async () => {
+  it('shows the five newest moment copies, whole and older separate ones together, with Before restoring kept apart as every program does', async () => {
     const lib = library()
     await lib.convert()
     await lib.convert()
@@ -282,9 +296,8 @@ describe('VirtualDJ copies on the screen', () => {
     for (let i = 0; i < 3; i++) takeVirtualdjCopy(lib.deps, 'queue')
     takeVirtualdjCopy(lib.deps, 'restore')
     const { copies, restore } = listVirtualdjCopies(lib.deps)
-    expect(copies.length + (restore ? 1 : 0)).toBe(5)
     expect(restore?.reason).toBe('restore')
-    expect(copies.map((c) => c.reason)).toEqual(['queue', 'queue', 'queue', 'tracks'])
+    expect(copies.map((c) => c.reason)).toEqual(['queue', 'queue', 'queue', 'tracks', 'tracks'])
   })
 })
 
