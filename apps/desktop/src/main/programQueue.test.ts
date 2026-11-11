@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { DJ_CUE_QUEUE_APPLIED } from '../shared/djApi'
 import type { LibraryRepointResult } from './libraryRepointFlush'
 import { createProgramQueue, type ProgramQueueDeps, type ProgramQueueSpec } from './programQueue'
 import type { RekordboxRepoint } from './rekordboxBatch'
@@ -60,7 +61,7 @@ function setup(over: Partial<ProgramQueueSpec<RekordboxRepoint>> = {}) {
 }
 
 const appliedBroadcasts = (broadcast: ReturnType<typeof setup>['deps']['broadcast']) =>
-  broadcast.mock.calls.filter(([channel]) => channel === 'dj:cueQueueApplied')
+  broadcast.mock.calls.filter(([channel]) => channel === DJ_CUE_QUEUE_APPLIED)
 
 beforeEach(() => vi.useFakeTimers())
 afterEach(() => vi.useRealTimers())
@@ -133,7 +134,7 @@ describe('createProgramQueue', () => {
     const { pq, deps } = setup()
     const result = { status: 'refused', reason: 'write-failed' } as const
     pq.announceApplied(result)
-    expect(deps.broadcast).toHaveBeenCalledWith('dj:cueQueueApplied', {
+    expect(deps.broadcast).toHaveBeenCalledWith(DJ_CUE_QUEUE_APPLIED, {
       program: 'engine',
       value: { refused: 'write-failed' },
     })
@@ -181,7 +182,7 @@ describe('createProgramQueue', () => {
     pq.watch.poke()
     await vi.advanceTimersByTimeAsync(0)
     expect(deps.moments.begin).toHaveBeenCalledWith('queue', ['traktor'])
-    expect(deps.broadcast).toHaveBeenCalledWith('dj:cueQueueApplied', {
+    expect(deps.broadcast).toHaveBeenCalledWith(DJ_CUE_QUEUE_APPLIED, {
       program: 'traktor',
       value: expect.anything(),
     })
@@ -244,7 +245,7 @@ describe('createProgramQueue', () => {
     running.now = false
     await vi.advanceTimersByTimeAsync(5000)
     expect(pq.queue.isEmpty()).toBe(true)
-    expect(deps.broadcast).toHaveBeenCalledWith('dj:cueQueueApplied', {
+    expect(deps.broadcast).toHaveBeenCalledWith(DJ_CUE_QUEUE_APPLIED, {
       program: 'serato',
       value: expect.objectContaining({ tracks: 1 }),
     })

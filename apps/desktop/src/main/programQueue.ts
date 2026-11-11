@@ -1,3 +1,4 @@
+import { DJ_CUE_QUEUE_APPLIED } from '../shared/djApi'
 import { type CueProgram, isWritable, type WritableProgram } from '../shared/djProgram'
 import type { CopyReason } from '../shared/types'
 import type { RekordboxRepoint } from './rekordboxBatch'
@@ -54,7 +55,7 @@ export function createProgramQueue<
   }
   const announceApplied = (result: QueueApply): void => {
     const notice = appliedNotice(result)
-    if (notice) deps.broadcast('dj:cueQueueApplied', { program, value: notice })
+    if (notice) deps.broadcast(DJ_CUE_QUEUE_APPLIED, { program, value: notice })
     settled(result)
   }
   const watch = watchRekordboxQueue({

@@ -20,6 +20,7 @@ vi.mock('electron', () => ({ app: { isPackaged: false } }))
 vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 
 import { HOT_KINDS, type WantedCue } from '../shared/cueRules'
+import { DJ_CUE_QUEUE_APPLIED } from '../shared/djApi'
 import { hotCueArgb } from '../shared/rekordboxCueColors'
 import { seratoGeobBody, withSeratoCues } from '../shared/seratoMarkers'
 import {
@@ -376,7 +377,7 @@ describe('a Serato save whose cues changed meanwhile', () => {
     pq.queue.enqueue([op(file, read, moved(read), { fingerprint: 'stale' })])
     pq.applyQuietly()
     await vi.waitFor(() =>
-      expect(broadcast).toHaveBeenCalledWith('dj:cueQueueApplied', {
+      expect(broadcast).toHaveBeenCalledWith(DJ_CUE_QUEUE_APPLIED, {
         program: 'serato',
         value: {
           tracks: 0,

@@ -1,5 +1,11 @@
 import type { IpcRenderer } from 'electron'
-import type { DjApi, DjEvent } from '../shared/djApi'
+import {
+  DJ_CUE_QUEUE_APPLIED,
+  DJ_CUE_QUEUE_CHANGED,
+  DJ_SYNC_ISSUE,
+  type DjApi,
+  type DjEvent,
+} from '../shared/djApi'
 import type { DjProgram } from '../shared/djProgram'
 
 type DjIpc = Pick<IpcRenderer, 'invoke' | 'on' | 'removeListener'>
@@ -29,11 +35,11 @@ export function createDjApi(ipc: DjIpc): DjApi {
     applyCueQueue: (p) => ipc.invoke('dj:applyCueQueue', p),
     discardCueQueue: (p) => ipc.invoke('dj:discardCueQueue', p),
     cueQueueReady: (p) => ipc.invoke('dj:cueQueueReady', p),
-    onCueQueueChanged: (p, cb) => subscribe(ipc, 'dj:cueQueueChanged', p, cb),
-    onCueQueueApplied: (p, cb) => subscribe(ipc, 'dj:cueQueueApplied', p, cb),
+    onCueQueueChanged: (p, cb) => subscribe(ipc, DJ_CUE_QUEUE_CHANGED, p, cb),
+    onCueQueueApplied: (p, cb) => subscribe(ipc, DJ_CUE_QUEUE_APPLIED, p, cb),
     exportCollection: (p, payload) => ipc.invoke('dj:exportCollection', p, payload),
     pickLibraryPath: (p) => ipc.invoke('dj:pickLibraryPath', p),
     running: (p) => ipc.invoke('dj:running', p),
-    onSyncIssue: (p, cb) => subscribe(ipc, 'dj:syncIssue', p, cb),
+    onSyncIssue: (p, cb) => subscribe(ipc, DJ_SYNC_ISSUE, p, cb),
   }
 }

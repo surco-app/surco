@@ -44,6 +44,7 @@ import electronUpdater from 'electron-updater'
 import { cacheBytesOf } from '../shared/analysisCacheSize'
 import { trashLimits } from '../shared/backupPolicy'
 import { activeCueFlow } from '../shared/cueFlows'
+import { DJ_CUE_QUEUE_CHANGED, DJ_SYNC_ISSUE } from '../shared/djApi'
 import type { CueProgram } from '../shared/djProgram'
 import type { TunedTaste } from '../shared/dropTaste'
 import { errorWithKey } from '../shared/errorKeys'
@@ -464,7 +465,7 @@ const programQueues = {
         },
         nodeStamps: async (collectionPath) => readNodeStamps(collectionPath),
         onChange: (state) =>
-          broadcast('dj:cueQueueChanged', { program: 'rekordbox', value: state }),
+          broadcast(DJ_CUE_QUEUE_CHANGED, { program: 'rekordbox', value: state }),
       },
       alwaysWatch: () => getSettings().completeCuesOnClose || provisionalCues.all().length > 0,
       onClosed: () => {
@@ -498,7 +499,7 @@ const programQueues = {
           return results
         },
         nodeStamps: async () => ({}),
-        onChange: (state) => broadcast('dj:cueQueueChanged', { program: 'engine', value: state }),
+        onChange: (state) => broadcast(DJ_CUE_QUEUE_CHANGED, { program: 'engine', value: state }),
         addsTracks: false,
         stack: stackRepoint,
       },
@@ -530,7 +531,7 @@ const programQueues = {
           return results
         },
         nodeStamps: async () => ({}),
-        onChange: (state) => broadcast('dj:cueQueueChanged', { program: 'traktor', value: state }),
+        onChange: (state) => broadcast(DJ_CUE_QUEUE_CHANGED, { program: 'traktor', value: state }),
         addsTracks: false,
       },
     },
@@ -557,7 +558,7 @@ const programQueues = {
           }),
         repoint: async () => [],
         nodeStamps: async () => ({}),
-        onChange: (state) => broadcast('dj:cueQueueChanged', { program: 'serato', value: state }),
+        onChange: (state) => broadcast(DJ_CUE_QUEUE_CHANGED, { program: 'serato', value: state }),
         addsTracks: false,
       },
     },
@@ -1617,7 +1618,7 @@ function registerIpc(): void {
     showBlockedDialog: (program) => showSyncBlockedDialog(win, SYNC_BLOCKED_KEY[program]),
     reportIssue: (program, issue) => {
       if (SYNC_ISSUE_PROGRAMS.has(program) && !sender.isDestroyed())
-        sender.send('dj:syncIssue', { program, value: issue })
+        sender.send(DJ_SYNC_ISSUE, { program, value: issue })
     },
     rekordboxHeld: () => rekordboxQueue.state().halted === true,
   })

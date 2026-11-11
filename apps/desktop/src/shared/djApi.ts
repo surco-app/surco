@@ -60,6 +60,10 @@ export interface DjMainProgram {
 
 export type DjMainTable = Record<DjProgram, DjMainProgram>
 
+export const DJ_CUE_QUEUE_CHANGED = 'dj:cueQueueChanged'
+export const DJ_CUE_QUEUE_APPLIED = 'dj:cueQueueApplied'
+export const DJ_SYNC_ISSUE = 'dj:syncIssue'
+
 export interface DjEvent<T> {
   program: DjProgram
   value: T

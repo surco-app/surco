@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import { DJ_CUE_QUEUE_APPLIED, DJ_CUE_QUEUE_CHANGED, DJ_SYNC_ISSUE } from '../shared/djApi'
 import { createDjApi } from './dj'
 
 const OLD_READ_METHODS = [
@@ -100,9 +101,9 @@ describe('createDjApi', () => {
 })
 
 describe.each([
-  ['onCueQueueChanged', 'dj:cueQueueChanged'],
-  ['onCueQueueApplied', 'dj:cueQueueApplied'],
-  ['onSyncIssue', 'dj:syncIssue'],
+  ['onCueQueueChanged', DJ_CUE_QUEUE_CHANGED],
+  ['onCueQueueApplied', DJ_CUE_QUEUE_APPLIED],
+  ['onSyncIssue', DJ_SYNC_ISSUE],
 ] as const)('%s', (op, channel) => {
   function subscribed() {
     const listeners = new Set<(e: unknown, p: unknown) => void>()
