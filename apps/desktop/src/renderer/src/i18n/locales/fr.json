@@ -2631,7 +2631,6 @@
       "newPlaylistInside": "Nouvelle playlist",
       "newFolderInside": "Nouveau dossier",
       "name": "Nom",
-      "dropCount": "+{{count}} au dépôt",
       "folderMenu": "Actions du dossier",
       "exportUsb": "Exporter vers USB",
       "rename": "Renommer",

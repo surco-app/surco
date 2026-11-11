@@ -2631,7 +2631,6 @@
       "newPlaylistInside": "Nova playlist",
       "newFolderInside": "Nova pasta",
       "name": "Nome",
-      "dropCount": "+{{count}} ao soltar",
       "folderMenu": "Ações da pasta",
       "exportUsb": "Exportar para USB",
       "rename": "Renomear",

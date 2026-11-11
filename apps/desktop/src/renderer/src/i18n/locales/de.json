@@ -2631,7 +2631,6 @@
       "newPlaylistInside": "Neue Playlist",
       "newFolderInside": "Neuer Ordner",
       "name": "Name",
-      "dropCount": "+{{count}} beim Loslassen",
       "folderMenu": "Ordneraktionen",
       "exportUsb": "Auf USB exportieren",
       "rename": "Umbenennen",

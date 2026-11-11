@@ -2631,7 +2631,6 @@
       "newPlaylistInside": "新規プレイリスト",
       "newFolderInside": "新規フォルダー",
       "name": "名前",
-      "dropCount": "ドロップで +{{count}}",
       "folderMenu": "フォルダーの操作",
       "exportUsb": "USB にエクスポート",
       "rename": "名前を変更",
