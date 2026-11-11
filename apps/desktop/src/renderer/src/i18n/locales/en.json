@@ -1047,7 +1047,6 @@
     "searching": "Searching…",
     "bestMatch": "Best match",
     "lastApplied": "Last applied album",
-    "searchProgress": "{{answered}} of {{total}} sources answered",
     "heldResults": "{{count}} more from {{providers}} · Show",
     "stillSearching": "Still searching {{providers}}…",
     "resultsCount_one": "{{count}} result",

@@ -1047,7 +1047,6 @@
     "searching": "Buscando…",
     "bestMatch": "Melhor associação",
     "lastApplied": "Último álbum aplicado",
-    "searchProgress": "{{answered}} de {{total}} fontes responderam",
     "heldResults": "Mais {{count}} de {{providers}} · Mostrar",
     "stillSearching": "Ainda buscando em {{providers}}…",
     "resultsCount_one": "{{count}} resultado",

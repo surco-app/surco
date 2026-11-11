@@ -1047,7 +1047,6 @@
     "searching": "Suche läuft…",
     "bestMatch": "Beste Übereinstimmung",
     "lastApplied": "Zuletzt übernommenes Album",
-    "searchProgress": "{{answered}} von {{total}} Quellen haben geantwortet",
     "heldResults": "{{count}} weitere von {{providers}} · Anzeigen",
     "stillSearching": "Sucht noch in {{providers}}…",
     "resultsCount_one": "{{count}} Ergebnis",

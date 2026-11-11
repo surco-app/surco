@@ -1047,7 +1047,6 @@
     "searching": "検索中…",
     "bestMatch": "最有力候補",
     "lastApplied": "最後に適用されたアルバム",
-    "searchProgress": "{{total}} ソース中 {{answered}} が応答",
     "heldResults": "{{providers}} からさらに {{count}} 件 · 表示",
     "stillSearching": "{{providers}} を検索中…",
     "resultsCount_one": "{{count}} 件の結果",
