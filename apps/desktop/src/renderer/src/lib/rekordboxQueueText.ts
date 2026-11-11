@@ -65,6 +65,7 @@ export const REKORDBOX_QUEUE_WORDS: QueueWords = {
     'tags-changed': 'seratoQueue.notice.tagsChanged',
     'repoint-other-volume': 'virtualdjQueue.notice.repointOtherVolume',
     'repoint-song-taken': 'virtualdjQueue.notice.repointSongTaken',
+    'repoint-unwritable': 'virtualdjQueue.notice.repointUnwritable',
   },
 }
 

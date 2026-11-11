@@ -3404,7 +3404,8 @@
       "tagsNotInLibrary": "{{track}} はもう VirtualDJ にないため、タグは変更されませんでした",
       "tagsChanged": "{{track}} は VirtualDJ で変更されたため、タグは変更されませんでした",
       "repointOtherVolume": "{{track}} は別のディスクにあるため、VirtualDJ は元のファイルのままで、Surco も元のファイルを残します",
-      "repointSongTaken": "VirtualDJ には {{track}} の曲がすでにあるため、元のファイルのままで、Surco も元のファイルを残します"
+      "repointSongTaken": "VirtualDJ には {{track}} の曲がすでにあるため、元のファイルのままで、Surco も元のファイルを残します",
+      "repointUnwritable": "VirtualDJ は {{track}} の長さを保存できないため、元のファイルのままで、Surco も元のファイルを残します"
     }
   },
   "cueWave": {

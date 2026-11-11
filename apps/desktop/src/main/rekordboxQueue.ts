@@ -318,6 +318,8 @@ export function createRekordboxQueue<R extends QueuedRepoint = RekordboxRepoint>
           repointNotices.push({ code: 'repoint-other-volume', track: basename(repoints[i].to) })
         else if (r.reason === 'song-taken')
           repointNotices.push({ code: 'repoint-song-taken', track: basename(repoints[i].to) })
+        else if (r.reason === 'unwritable')
+          repointNotices.push({ code: 'repoint-unwritable', track: basename(repoints[i].to) })
         else if (r.reason === 'no-match')
           log.info(`rekordbox repoint found no match for ${basename(repoints[i].to)}`)
       }

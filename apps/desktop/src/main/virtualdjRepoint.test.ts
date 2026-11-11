@@ -260,6 +260,28 @@ describe('repointVirtualdjTracks', () => {
     })
   })
 
+  it('says so when VirtualDJ cannot take the converted file’s length, leaving the song as it was', async () => {
+    const lib = library()
+    const to = lib.track('Pray.aiff')
+    const deps = { ...lib.deps, lengthOf: async () => Number.NaN }
+    const queue = createRekordboxQueue({
+      store: { read: () => null, write: () => {}, setAside: () => {} },
+      collection: () => lib.dir,
+      applyBatch: (_c, ops, ensureClosed, stillQueued) =>
+        applyVirtualdjBatch(ops, { ...deps, ensureClosed, stillQueued }),
+      repoint: (_c, list) => repointVirtualdjTracks(list, deps),
+      nodeStamps: async () => ({}),
+      onChange: () => {},
+      addsTracks: false,
+    })
+    queue.enqueue([], [trimmed(to)])
+    expect(await queue.apply(async () => true)).toMatchObject({
+      status: 'applied',
+      notices: [{ code: 'repoint-unwritable', track: 'Pray.aiff' }],
+    })
+    expect(lib.database()).toBe(FIXTURE_XML)
+  })
+
   it('moves a song on a drive inside that drive database, with the drive letter', async () => {
     const lib = library()
     const volume = join(lib.volumes, 'Public')

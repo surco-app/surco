@@ -1818,6 +1818,32 @@ describe('librariesKeepingOriginal', () => {
     }
   })
 
+  it('keeps the original for VirtualDJ when the converted file has a length VirtualDJ cannot take, as the move would refuse it', async () => {
+    const base = mkdtempSync(join(tmpdir(), 'surco-keep-virtualdj-length-'))
+    const dir = join(base, 'VirtualDJ')
+    mkdirSync(dir, { recursive: true })
+    writeFileSync(
+      join(dir, 'database.xml'),
+      `<?xml version="1.0" encoding="UTF-8"?>\r\n<VirtualDJ_Database Version="2026">\r\n <Song FilePath="/m/a.mp3" FileSize="3" Flag="268435456">\r\n </Song>\r\n</VirtualDJ_Database>\r\n`,
+    )
+    const keeps = (path: string, length: number | undefined) =>
+      librariesKeepingOriginal(path, '/m/a.flac', {
+        traktorRead: () => '',
+        rootLibraries: () => ({ serato: [], virtualdj: [{ dir, root: '/' }] }),
+        lengthOf: async () => length,
+      })
+    Object.assign(SETTINGS, { syncVirtualdj: true })
+    try {
+      expect(await keeps('/m/a.mp3', Number.NaN)).toEqual(['virtualdj'])
+      expect(await keeps('/m/a.mp3', -1)).toEqual(['virtualdj'])
+      expect(await keeps('/m/a.mp3', 300)).toEqual([])
+      expect(await keeps('/m/a.mp3', undefined)).toEqual([])
+      expect(await keeps('/m/other.mp3', Number.NaN)).toEqual([])
+    } finally {
+      Object.assign(SETTINGS, { syncVirtualdj: false })
+    }
+  })
+
   it('asks nothing of a library whose sync is on, since it follows the rename itself', async () => {
     FILE_USE.open.mockClear()
     const held = await librariesKeepingOriginal('/m/a.mp3', '/m/b.mp3', {

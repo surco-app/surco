@@ -2029,7 +2029,11 @@ function registerIpc(): void {
         )
       },
       librariesKeepingOriginal: (path, target) =>
-        librariesKeepingOriginal(path, target, { traktorRead: traktorReadPath, rootLibraries }),
+        librariesKeepingOriginal(path, target, {
+          traktorRead: traktorReadPath,
+          rootLibraries,
+          lengthOf: async (p) => (await probeDuration(p)) ?? undefined,
+        }),
       refreshAppleMusicEntry: (persistentId) =>
         appleMusicLimiter.run(() => refreshAppleMusicEntry(persistentId)),
       relinkAppleMusicEntry: (persistentId, path) =>

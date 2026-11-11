@@ -143,7 +143,11 @@ function onlyLibrary<P extends LibraryProgram>(
 export async function librariesKeepingOriginal(
   path: string,
   target: string,
-  deps: { traktorRead: () => string; rootLibraries: () => RootLibraries },
+  deps: {
+    traktorRead: () => string
+    rootLibraries: () => RootLibraries
+    lengthOf?: (path: string) => Promise<number | undefined>
+  },
 ): Promise<DjProgram[]> {
   const settings = getSettings()
   const status = currentLibraryStatus()
@@ -172,7 +176,10 @@ export async function librariesKeepingOriginal(
     )
     if ((await traktor(path)) && (await traktor(target))) held.push('traktor')
   }
-  if (settings.syncVirtualdj && virtualdjCannotFollow(virtualdjRoots, path, target))
+  if (
+    settings.syncVirtualdj &&
+    (await virtualdjCannotFollow(virtualdjRoots, path, target, deps.lengthOf))
+  )
     held.push('virtualdj')
   const readOnly = deps.rootLibraries()
   for (const program of READ_ONLY_PROGRAMS) {

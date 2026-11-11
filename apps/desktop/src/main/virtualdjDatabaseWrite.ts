@@ -53,6 +53,8 @@ function withBody(xml: string, path: string, edit: (lines: string[]) => string[]
 const round6 = (n: number) => Number(n.toFixed(6))
 const placeable = (n: number) => Number.isFinite(n) && n < 1e21 && round6(n) >= 0
 
+export const virtualdjLengthWritable = placeable
+
 function decimal(n: number): string {
   const s = round6(n).toFixed(6).replace(/0+$/, '')
   return s.endsWith('.') ? `${s}0` : s

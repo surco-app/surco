@@ -7,6 +7,7 @@ import type { SeratoTagField } from './seratoDatabaseWrite'
 import { songIn } from './virtualdjCuesWrite'
 import { parseVirtualdjDatabase } from './virtualdjDatabase'
 import {
+  virtualdjLengthWritable,
   withVirtualdjSongAdded,
   withVirtualdjSongMoved,
   withVirtualdjTags,
@@ -53,7 +54,12 @@ export function virtualdjLibraryHas(
     !virtualdjRootFor(path, roots) || has(path) || (from !== undefined && has(from))
 }
 
-export function virtualdjCannotFollow(roots: VirtualdjRoot[], from: string, to: string): boolean {
+export async function virtualdjCannotFollow(
+  roots: VirtualdjRoot[],
+  from: string,
+  to: string,
+  lengthOf?: (path: string) => Promise<number | undefined>,
+): Promise<boolean> {
   const key = (p: string) => p.normalize('NFC')
   for (const root of roots) {
     const file = virtualdjDatabaseOf(root)
@@ -62,9 +68,10 @@ export function virtualdjCannotFollow(roots: VirtualdjRoot[], from: string, to: 
       key(virtualdjPathOf(root, s.path)),
     )
     if (!paths.includes(key(from))) continue
-    return (
-      virtualdjRootFor(to, roots) !== root || (key(to) !== key(from) && paths.includes(key(to)))
-    )
+    if (virtualdjRootFor(to, roots) !== root || (key(to) !== key(from) && paths.includes(key(to))))
+      return true
+    const length = await lengthOf?.(to).catch(() => undefined)
+    return length !== undefined && !virtualdjLengthWritable(length)
   }
   return false
 }
