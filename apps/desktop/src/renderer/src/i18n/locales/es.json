@@ -3318,8 +3318,6 @@
       "last": "Última copia",
       "kept": "Guardadas"
     },
-    "kept": "{{count}} de {{max}}",
-    "none": "Aún no hay copias",
     "reason": {
       "run": "Antes de convertir",
       "cues": "Antes de guardar cues",

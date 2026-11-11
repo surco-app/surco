@@ -107,7 +107,7 @@ const older = copy({ id: 'old', takenAt: new Date(2026, 9, 28, 23, 12).getTime()
 describe('CopiesScreen', () => {
   // An up-to-date program is the calm case: a green dot says it at a glance and the words
   // stay for a screen reader, so only a program that needs attention reads as a sentence.
-  it("shows each program's state, last copy and how many of five are kept", () => {
+  it("shows each program's state, last copy and how many are kept, leaving the limit of five to the footer", () => {
     renderScreen([
       program('rekordbox', { copies: [latest, older] }),
       program('traktor', { pending: 3, copies: [latest] }),
@@ -130,22 +130,20 @@ describe('CopiesScreen', () => {
     ).toBeInTheDocument()
     expect(screen.queryByTestId('copies-state-ok-traktor')).not.toBeInTheDocument()
     expect(screen.getByTestId('copies-last-rekordbox')).toHaveTextContent(when(latest.takenAt))
-    expect(screen.getByTestId('copies-kept-rekordbox')).toHaveTextContent(
-      i18n.t('copies.kept', { count: 2, max: 5 }),
-    )
+    expect(screen.getByTestId('copies-kept-rekordbox')).toHaveTextContent(/^2$/)
     expect(screen.getByTestId('copies-state-traktor')).toHaveTextContent(
       i18n.t('copies.state.pending', { count: 3, program: i18n.t('sources.traktor') }),
     )
-    expect(screen.getByTestId('copies-last-engine')).toHaveTextContent(i18n.t('copies.none'))
+    expect(screen.queryByTestId('copies-last-engine')).not.toBeInTheDocument()
   })
 
-  it('every section answers the same three questions, even before its first copy', () => {
+  // "Last backup: No backups yet" beside "Saved: 0" said the same thing twice; before its
+  // first copy a program keeps its state and count and drops the date it does not have.
+  it('drops the last backup row of a program before its first copy', () => {
     renderScreen([program('engine')], { trash: { ...musicTrash(), entries: [] } })
     expect(screen.getByTestId('copies-state-engine')).toBeInTheDocument()
-    expect(screen.getByTestId('copies-last-engine')).toHaveTextContent(i18n.t('copies.none'))
-    expect(screen.getByTestId('copies-kept-engine')).toHaveTextContent(
-      i18n.t('copies.kept', { count: 0, max: 5 }),
-    )
+    expect(screen.queryByTestId('copies-last-engine')).not.toBeInTheDocument()
+    expect(screen.getByTestId('copies-kept-engine')).toHaveTextContent(/^0$/)
   })
 
   it('offers no buttons for a program with nothing to show or restore, so none of them is dead', () => {
@@ -172,7 +170,6 @@ describe('CopiesScreen', () => {
     })
     renderScreen([program('traktor', { restore: before })])
     expect(screen.getByTestId('copies-last-traktor')).toHaveTextContent(when(before.takenAt))
-    expect(screen.getByTestId('copies-last-traktor')).not.toHaveTextContent(i18n.t('copies.none'))
     expect(screen.getByTestId('copies-kept-traktor')).toHaveTextContent(
       i18n.t('copies.reason.restore'),
     )
@@ -188,7 +185,7 @@ describe('CopiesScreen', () => {
     renderScreen([program('traktor', { restore: before, copies: [newer] })])
     expect(screen.getByTestId('copies-last-traktor')).toHaveTextContent(when(newer.takenAt))
     expect(screen.getByTestId('copies-kept-traktor')).toHaveTextContent(
-      `${i18n.t('copies.kept', { count: 1, max: 5 })} · ${i18n.t('copies.reason.restore')}`,
+      `1 · ${i18n.t('copies.reason.restore')}`,
     )
   })
 
@@ -272,9 +269,7 @@ describe('CopiesScreen', () => {
       i18n.t('copies.refused.running', { program: i18n.t('sources.rekordbox') }),
     )
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
-    expect(screen.getByTestId('copies-kept-rekordbox')).toHaveTextContent(
-      i18n.t('copies.kept', { count: 1, max: 5 }),
-    )
+    expect(screen.getByTestId('copies-kept-rekordbox')).toHaveTextContent(/^1$/)
   })
 
   it('the confirmation names the time the library goes back to', () => {

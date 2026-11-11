@@ -3318,8 +3318,6 @@
       "last": "Letztes Backup",
       "kept": "Gespeichert"
     },
-    "kept": "{{count}} von {{max}}",
-    "none": "Noch keine Backups",
     "reason": {
       "run": "Vor dem Konvertieren",
       "cues": "Vor dem Speichern von Cues",

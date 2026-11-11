@@ -1,7 +1,5 @@
 import type { ProgramCopies } from '../../../shared/types'
 
-export const COPIES_KEEP = 5
-
 export type ProgramState = 'halted' | 'failed' | 'pending' | 'untouched' | 'ok'
 
 export function programState(p: ProgramCopies): ProgramState {

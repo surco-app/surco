@@ -3318,8 +3318,6 @@
       "last": "Dernière sauvegarde",
       "kept": "Conservées"
     },
-    "kept": "{{count}} sur {{max}}",
-    "none": "Pas encore de sauvegarde",
     "reason": {
       "run": "Avant la conversion",
       "cues": "Avant l’enregistrement des cues",

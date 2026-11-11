@@ -12,7 +12,7 @@ import type {
   WritableProgram,
 } from '../../../shared/types'
 import { baseName } from '../lib/baseName'
-import { COPIES_KEEP, type ProgramState, programState } from '../lib/copiesView'
+import { type ProgramState, programState } from '../lib/copiesView'
 import { useOpenSettings } from '../lib/openSettingsContext'
 import { isWindows } from '../lib/platform'
 import {
@@ -227,13 +227,13 @@ function ProgramSection({
               </button>
             )}
           </Fact>
-          <Fact label={tr('copies.facts.last')} testId={`copies-last-${program}`}>
-            {listed.length > 0
-              ? when(Math.max(...listed.map((c) => c.takenAt)))
-              : tr('copies.none')}
-          </Fact>
+          {listed.length > 0 && (
+            <Fact label={tr('copies.facts.last')} testId={`copies-last-${program}`}>
+              {when(Math.max(...listed.map((c) => c.takenAt)))}
+            </Fact>
+          )}
           <Fact label={tr('copies.facts.kept')} testId={`copies-kept-${program}`}>
-            {tr('copies.kept', { count: copies.length, max: COPIES_KEEP })}
+            {copies.length}
             {entry.restore && ` · ${tr('copies.reason.restore')}`}
           </Fact>
         </div>
