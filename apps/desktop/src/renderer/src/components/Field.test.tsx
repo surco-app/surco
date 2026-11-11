@@ -558,6 +558,16 @@ describe('Field mixed values', () => {
     expect(screen.getByRole('listbox')).toHaveAttribute('data-menu')
   })
 
+  // The list hangs below the field with the chevron at its right edge, so it has to scale
+  // out of that corner; growing from its centre makes it look detached from the chevron.
+  it('grows the values list out of the corner that touches its chevron', () => {
+    render(
+      <Field name="artist" label="Artist" value="" mixed mixedValues={values} onChange={vi.fn()} />,
+    )
+    fireEvent.click(screen.getByTestId('field-values-artist'))
+    expect(screen.getByRole('listbox')).toHaveClass('origin-top-right')
+  })
+
   it('writes the picked value and closes the list', () => {
     const onChange = vi.fn()
     render(
