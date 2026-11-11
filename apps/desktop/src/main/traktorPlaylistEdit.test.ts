@@ -70,6 +70,24 @@ describe('applyTraktorEdits', () => {
     expect(nml).toContain('<NODE TYPE="FOLDER" NAME="Gigs &amp; &quot;More&quot; &lt;2026&gt;">')
   })
 
+  it('creates a playlist already holding its tracks, so a queued session never lands empty', () => {
+    const { nml, outcomes } = run(
+      op({
+        kind: 'create',
+        parentId: 'root',
+        name: 'Sesion',
+        folder: false,
+        tracks: [{ paths: ['/m/a.mp3'] }, { paths: ['/m/b.mp3'] }, { paths: ['/elsewhere/z.mp3'] }],
+      }),
+    )
+    const outcome = [...outcomes.values()][0]
+    expect(outcome).toMatchObject({
+      applied: true,
+      report: { added: 2, already: 0, notInCollection: 1, ambiguous: 0 },
+    })
+    expect(rows(nml, outcome.createdId as string)).toEqual(['a.mp3', 'b.mp3'])
+  })
+
   it('renames and deletes a folder with everything inside it', () => {
     const { nml } = run(
       op({ kind: 'rename', playlistId: 'dnb', name: 'DnB' }),
