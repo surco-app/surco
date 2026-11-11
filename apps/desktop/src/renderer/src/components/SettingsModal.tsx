@@ -614,7 +614,7 @@ export function SettingsModal({
             type="button"
             data-testid="settings-shortcut-clash"
             onClick={() => setTab('shortcuts')}
-            className="mt-4 shrink-0 self-start text-left text-xs text-warn underline-offset-2 hover:underline"
+            className="press mt-4 shrink-0 self-start text-left text-xs text-warn underline-offset-2 hover:underline"
           >
             {tr('settings.shortcuts.conflictElsewhere')}
           </button>

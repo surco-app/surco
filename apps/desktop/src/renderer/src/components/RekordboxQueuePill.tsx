@@ -106,7 +106,7 @@ export function RekordboxQueuePill({
                   type="button"
                   data-testid={`${testid}-discard-no`}
                   onClick={() => setConfirming(false)}
-                  className="rounded px-2 py-1 text-fg-muted hover:bg-[var(--color-hover)]"
+                  className="press rounded px-2 py-1 text-fg-muted hover:bg-[var(--color-hover)]"
                 >
                   {tr('rekordboxQueue.discardNo')}
                 </button>
@@ -118,7 +118,7 @@ export function RekordboxQueuePill({
                     setConfirming(false)
                     onDiscard()
                   }}
-                  className="rounded px-2 py-1 text-danger hover:bg-[var(--color-hover)]"
+                  className="press rounded px-2 py-1 text-danger hover:bg-[var(--color-hover)]"
                 >
                   {tr('rekordboxQueue.discardYes')}
                 </button>
@@ -130,7 +130,7 @@ export function RekordboxQueuePill({
                 type="button"
                 data-testid={`${testid}-discard`}
                 onClick={() => setConfirming(true)}
-                className="rounded px-2 py-1 text-fg-muted hover:bg-[var(--color-hover)]"
+                className="press rounded px-2 py-1 text-fg-muted hover:bg-[var(--color-hover)]"
               >
                 {tr('rekordboxQueue.discard')}
               </button>
@@ -142,7 +142,7 @@ export function RekordboxQueuePill({
                     setOpen(false)
                     onApplyNow()
                   }}
-                  className="rounded bg-[var(--color-accent-soft)] px-2 py-1 text-fg hover:bg-[var(--color-hover)]"
+                  className="press rounded bg-[var(--color-accent-soft)] px-2 py-1 text-fg hover:bg-[var(--color-hover)]"
                 >
                   {tr('rekordboxQueue.applyNow')}
                 </button>

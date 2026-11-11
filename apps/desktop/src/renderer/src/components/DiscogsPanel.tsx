@@ -630,7 +630,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                 type="button"
                 data-testid="discogs-retry"
                 onClick={retrySearch}
-                className="ml-2 underline underline-offset-2 hover:no-underline"
+                className="press ml-2 underline underline-offset-2 hover:no-underline"
               >
                 {tr('editor.retry')}
               </button>
@@ -645,7 +645,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                 type="button"
                 data-testid="discogs-retry-failed"
                 onClick={retrySearch}
-                className="ml-2 underline underline-offset-2 hover:no-underline"
+                className="press ml-2 underline underline-offset-2 hover:no-underline"
               >
                 {tr('editor.retry')}
               </button>

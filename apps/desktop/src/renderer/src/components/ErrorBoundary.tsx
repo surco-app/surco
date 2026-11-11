@@ -50,7 +50,7 @@ export class ErrorBoundary extends Component<Props, State> {
             type="button"
             data-testid="error-retry"
             onClick={() => this.setState({ error: null, info: '', reporting: false })}
-            className="rounded-lg bg-[var(--color-accent)] px-4 py-2 font-medium text-[var(--color-on-accent)] hover:brightness-110"
+            className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 font-medium text-[var(--color-on-accent)] hover:brightness-110"
           >
             {i18n.t('errorBoundary.retry')}
           </button>
@@ -58,7 +58,7 @@ export class ErrorBoundary extends Component<Props, State> {
             type="button"
             data-testid="report-crash"
             onClick={() => this.setState({ reporting: true })}
-            className="rounded-lg border border-[var(--color-line)] px-4 py-2 font-medium text-fg-muted hover:bg-[var(--color-panel)]"
+            className="press rounded-lg border border-[var(--color-line)] px-4 py-2 font-medium text-fg-muted hover:bg-[var(--color-panel)]"
           >
             {i18n.t('errorBoundary.report')}
           </button>
@@ -66,7 +66,7 @@ export class ErrorBoundary extends Component<Props, State> {
             type="button"
             data-testid="reveal-log"
             onClick={() => window.api.revealLog()}
-            className="rounded-lg border border-[var(--color-line)] px-4 py-2 font-medium text-fg-muted hover:bg-[var(--color-panel)]"
+            className="press rounded-lg border border-[var(--color-line)] px-4 py-2 font-medium text-fg-muted hover:bg-[var(--color-panel)]"
           >
             {i18n.t('errorBoundary.revealLog')}
           </button>

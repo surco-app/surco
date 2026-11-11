@@ -30,7 +30,7 @@ export function BulkActionSection({
         type="button"
         data-testid={buttonTestid}
         onClick={onClick}
-        className="mt-3 inline-flex items-center gap-2 rounded-lg border border-[var(--color-line-strong)] px-3 py-1.5 text-xs text-fg-muted transition-colors hover:text-fg"
+        className="press mt-3 inline-flex items-center gap-2 rounded-lg border border-[var(--color-line-strong)] px-3 py-1.5 text-xs text-fg-muted transition-colors hover:text-fg"
       >
         <Icon className="h-3 w-3" aria-hidden="true" />
         {label}

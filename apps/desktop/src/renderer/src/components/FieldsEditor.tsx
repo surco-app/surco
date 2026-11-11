@@ -144,7 +144,7 @@ export function FieldsEditor({
         data-testid={`field-delete-${key}`}
         aria-label={tr('settings.customFieldDeleteLabel', { name: labelOf(key) })}
         onClick={() => deleteCustom(key)}
-        className="ml-auto rounded px-1.5 py-0.5 text-xs text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg"
+        className="press ml-auto rounded px-1.5 py-0.5 text-xs text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg"
       >
         {tr('settings.customFieldDelete')}
       </button>
@@ -293,7 +293,7 @@ export function FieldsEditor({
             data-testid="auto-organize-fields"
             aria-describedby={organizeHintId}
             onClick={autoOrganize}
-            className={`flex items-center gap-1 rounded px-2 py-0.5 text-xs transition-colors ${
+            className={`press flex items-center gap-1 rounded px-2 py-0.5 text-xs transition-colors ${
               organized
                 ? 'text-[var(--color-accent)]'
                 : 'text-fg-muted hover:bg-[var(--color-hover)] hover:text-fg'
@@ -419,7 +419,7 @@ export function FieldsEditor({
                 data-arrow={`up-${key}`}
                 onClick={() => move(i, -1)}
                 disabled={i === 0}
-                className="rounded px-1.5 text-fg-muted hover:text-fg disabled:opacity-40"
+                className="press rounded px-1.5 text-fg-muted hover:text-fg disabled:opacity-40"
                 aria-label={tr('fields.rowMoveUp', { name: labelOf(key) })}
               >
                 <ChevronUp className="h-4 w-4" aria-hidden="true" />
@@ -429,7 +429,7 @@ export function FieldsEditor({
                 data-arrow={`down-${key}`}
                 onClick={() => move(i, 1)}
                 disabled={i === shownFields.length - 1}
-                className="rounded px-1.5 text-fg-muted hover:text-fg disabled:opacity-40"
+                className="press rounded px-1.5 text-fg-muted hover:text-fg disabled:opacity-40"
                 aria-label={tr('fields.rowMoveDown', { name: labelOf(key) })}
               >
                 <ChevronDown className="h-4 w-4" aria-hidden="true" />

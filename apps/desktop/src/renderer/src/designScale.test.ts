@@ -185,3 +185,100 @@ describe('an icon is as big as the text it sits beside, so neither shouts over t
     ).toEqual([])
   })
 })
+
+const PRESS = /(?<![\w:-])press(?![\w-])/
+const NOT_A_BUTTON_ROLE = /\brole="(?:menuitem\w*|option|tab)"/
+const ROW_BUTTONS = new Set([
+  'components/ActivityPanel.tsx: data-testid="activity-child"',
+  'components/ActivityPanel.tsx: data-testid="activity-row"',
+  'components/DiscogsPanel.tsx: data-testid="discogs-track"',
+  'components/HelpModal.tsx: data-testid={`help-q-*`}',
+  'components/PlaylistTree.tsx: data-testid="playlists-create"',
+  'components/PlaylistTree.tsx: data-testid={`playlists-folder-*`}',
+  'components/SectionHeader.tsx: onClick={onToggle}',
+  'components/SourceTree.tsx: data-testid={`source-node-*`}',
+  'components/TagListBulkField.tsx: data-testid={`*-per-track-toggle`}',
+])
+const FIELD_WIDE_TRIGGERS = new Set([
+  'components/FilterBar.tsx: data-testid={`*-trigger`}',
+  'components/PlaylistsField.tsx: data-testid="playlists-summary"',
+  'components/Select.tsx: data-testid={testid}',
+])
+const HIGHLIGHT_PAINTED_ABOVE = new Set(['components/SegmentedControl.tsx: data-testid={`*-*`}'])
+const ALREADY_TRANSFORMED = new Set([
+  "components/CueWave.tsx: aria-label={t('cueWave.call', { time: formatTime(c.ms / 1000) })}",
+  "components/CueWave.tsx: aria-label={t('cueWave.hotCue', { letter: h.letter })}",
+  'components/DeclickSection.tsx: data-testid="declick-mark"',
+  'components/FieldInsertMenu.tsx: data-testid={`field-insert-*`}',
+  "components/TrackList.tsx: aria-label={tr('player.play')}",
+  'components/TrackList.tsx: onClick={() => {',
+])
+const BACKDROPS = new Set([
+  'components/FieldInsertMenu.tsx: data-testid="field-insert-backdrop"',
+  'components/FilterBar.tsx: data-testid={`*-backdrop`}',
+  'components/ModalShell.tsx: data-testid={backdropTestId}',
+  'components/Select.tsx: data-testid={`*-backdrop`}',
+  'components/SourceRail.tsx: data-testid="source-rail-menu-backdrop"',
+  "components/SourceTree.tsx: aria-label={tr('common.close')}",
+  'components/TrackContextMenu.tsx: data-testid="track-menu-backdrop"',
+])
+const COVER_AREAS = new Set([
+  'components/CoverPicker.tsx: data-testid="cover-zoom"',
+  'components/CoverPicker.tsx: data-testid="cover-pick"',
+])
+const WORDS_IN_A_SENTENCE = new Set([
+  'components/ActivityPanel.tsx: onClick={() => openUrl(part)}',
+  'components/ConvertFooter.tsx: data-testid="verify-open-originals"',
+  "components/DiscogsPanel.tsx: onClick={() => onOpenSettings('search')}",
+])
+const UNPRESSED = [
+  ROW_BUTTONS,
+  FIELD_WIDE_TRIGGERS,
+  HIGHLIGHT_PAINTED_ABOVE,
+  ALREADY_TRANSFORMED,
+  BACKDROPS,
+  COVER_AREAS,
+  WORDS_IN_A_SENTENCE,
+]
+
+const CLASS_STRING = /\bconst (\w+) =\s*(['"`])([\s\S]*?)\2/g
+const EXPORTED_CLASS_STRING = /\bexport const (\w+) =\s*(['"`])([\s\S]*?)\2/g
+const exportedClasses = new Map(
+  (readdirSync(root, { recursive: true }) as string[])
+    .filter((f) => /\.tsx?$/.test(f) && !/\.test\.tsx?$/.test(f))
+    .flatMap((f) => [...readFileSync(join(root, f), 'utf8').matchAll(EXPORTED_CLASS_STRING)])
+    .map((m) => [m[1], m[3]]),
+)
+
+function carriesPress(text: string, local: Map<string, string>, seen = new Set<string>()): boolean {
+  if (PRESS.test(text)) return true
+  return [...text.matchAll(/\b[A-Za-z_]\w*\b/g)].some(([name]) => {
+    if (seen.has(name)) return false
+    seen.add(name)
+    const value = local.get(name) ?? exportedClasses.get(name)
+    return value !== undefined && carriesPress(value, local, seen)
+  })
+}
+
+function buttonName(tag: string): string | undefined {
+  return /\b(?:data-testid|aria-label|onClick)=(?:"[^"]*"|\{[^\n]*)/
+    .exec(tag)?.[0]
+    .replace(/\$\{[^}]*\}/g, '*')
+}
+
+describe('a button gives way the instant it is pressed, so the app answers on pointer-down instead of on release', () => {
+  it('scales every compact button in the components with press, outside the listed rows, backdrops and transformed marks', () => {
+    const unpressed = sources
+      .filter((file) => file.startsWith('components/'))
+      .flatMap((file) => {
+        const code = readFileSync(join(root, file), 'utf8')
+        const local = new Map([...code.matchAll(CLASS_STRING)].map((m) => [m[1], m[3]]))
+        return openingTags(code, '<button')
+          .filter((tag) => /^<button\s/.test(tag) && !NOT_A_BUTTON_ROLE.test(tag))
+          .filter((tag) => !carriesPress(tag, local))
+          .map((tag) => `${file}: ${buttonName(tag)}`)
+          .filter((key) => !UNPRESSED.some((list) => list.has(key)))
+      })
+    expect(unpressed).toEqual([])
+  })
+})

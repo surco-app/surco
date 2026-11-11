@@ -361,7 +361,7 @@ export function UsbExportModal({
                 type="button"
                 data-testid="usb-other"
                 onClick={() => void pickFolder()}
-                className="self-start text-xs text-[var(--color-accent)] hover:underline"
+                className="press self-start text-xs text-[var(--color-accent)] hover:underline"
               >
                 {target?.kind === 'folder' ? target.path : tr('usbExport.choose.other')}
               </button>
@@ -442,7 +442,7 @@ export function UsbExportModal({
                 type="button"
                 data-testid="usb-cancel-choose"
                 onClick={onClose}
-                className="rounded-md px-3 py-1.5 text-sm hover:bg-[var(--color-hover)]"
+                className="press rounded-md px-3 py-1.5 text-sm hover:bg-[var(--color-hover)]"
               >
                 {tr('usbExport.choose.cancel')}
               </button>
@@ -451,7 +451,7 @@ export function UsbExportModal({
                 data-testid="usb-export"
                 disabled={!req || !plan || loading || blocked || starting}
                 onClick={start}
-                className="rounded-md bg-[var(--color-accent)] px-4 py-1.5 text-sm text-[var(--color-on-accent)] disabled:opacity-40"
+                className="press rounded-md bg-[var(--color-accent)] px-4 py-1.5 text-sm text-[var(--color-on-accent)] disabled:opacity-40"
               >
                 {tr('usbExport.choose.export')}
               </button>

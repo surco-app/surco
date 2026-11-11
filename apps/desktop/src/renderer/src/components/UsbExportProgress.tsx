@@ -120,7 +120,7 @@ export function UsbExportProgress({
               type="button"
               data-testid="usb-cancel"
               onClick={onCancel}
-              className="rounded-md px-3 py-1.5 text-sm hover:bg-[var(--color-hover)]"
+              className="press rounded-md px-3 py-1.5 text-sm hover:bg-[var(--color-hover)]"
             >
               {tr('usbExport.progress.cancel')}
             </button>
@@ -140,7 +140,7 @@ export function UsbExportProgress({
               type="button"
               data-testid="usb-background"
               onClick={onBackground}
-              className="rounded-md bg-[var(--color-hover)] px-3 py-1.5 text-sm"
+              className="press rounded-md bg-[var(--color-hover)] px-3 py-1.5 text-sm"
             >
               {tr('usbExport.progress.background')}
             </button>
@@ -149,7 +149,7 @@ export function UsbExportProgress({
               type="button"
               data-testid="usb-close"
               onClick={onClose}
-              className="rounded-md bg-[var(--color-accent)] px-3 py-1.5 text-sm text-[var(--color-on-accent)]"
+              className="press rounded-md bg-[var(--color-accent)] px-3 py-1.5 text-sm text-[var(--color-on-accent)]"
             >
               {tr('usbExport.progress.close')}
             </button>

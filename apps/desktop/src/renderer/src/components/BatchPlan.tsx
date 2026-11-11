@@ -47,7 +47,7 @@ export function BatchPlan({
           type="button"
           data-testid="batch-plan-blocked"
           onClick={onBlockedPress}
-          className="mr-auto flex items-center gap-1.5 text-xs text-fg-dim hover:text-fg"
+          className="press mr-auto flex items-center gap-1.5 text-xs text-fg-dim hover:text-fg"
         >
           <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-warn" />
           {leftOut}

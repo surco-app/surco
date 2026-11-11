@@ -354,7 +354,7 @@ export const Toolbar = memo(function Toolbar({
                   type="button"
                   data-testid="batch-skipped-count"
                   onClick={onShowSkipped}
-                  className="underline-offset-2 hover:underline"
+                  className="press underline-offset-2 hover:underline"
                 >
                   {tr('header.batchSkipped', { count: batchSummary.skipped })}
                 </button>
@@ -367,7 +367,7 @@ export const Toolbar = memo(function Toolbar({
                   type="button"
                   data-testid="batch-failed-count"
                   onClick={onShowFailed}
-                  className="text-danger underline-offset-2 hover:underline"
+                  className="press text-danger underline-offset-2 hover:underline"
                 >
                   {tr('header.batchFailed', { count: batchSummary.failed })}
                 </button>
