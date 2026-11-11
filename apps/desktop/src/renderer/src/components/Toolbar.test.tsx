@@ -527,6 +527,12 @@ describe('Toolbar', () => {
     expect(palette).toHaveTextContent('⌘K')
   })
 
+  // The chord already shows ⌘; a ⌘ glyph before the word said it twice in one button.
+  it('says ⌘ once on the palette button, in its chord', () => {
+    renderBar({ hintFor: (id) => (id === 'palette' ? '⌘K' : '') })
+    expect(screen.getByTestId('open-palette').querySelector('svg')).toBeNull()
+  })
+
   // It acts on the list, which doesn't exist until the crate has tracks.
   it('hides the convert button when the list is empty', () => {
     renderBar({ trackCount: 0 })

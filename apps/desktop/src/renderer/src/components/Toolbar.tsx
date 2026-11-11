@@ -2,7 +2,6 @@ import {
   ArrowRightLeft,
   ChartColumn,
   CircleQuestionMark,
-  Command,
   FilePlus,
   Gauge,
   Loader2,
@@ -412,7 +411,6 @@ export const Toolbar = memo(function Toolbar({
           className="press group relative flex h-8 items-center gap-1.5 rounded-lg border border-[var(--color-line-strong)] pr-1.5 pl-2.5 text-xs font-medium text-fg-muted hover:bg-[var(--color-hover)] hover:text-fg"
           aria-label={tr('header.palette')}
         >
-          <Command className="h-3.5 w-3.5" aria-hidden="true" />
           <span>{tr('header.paletteLabel')}</span>
           {hintFor('palette') && (
             <kbd className="rounded border border-[var(--color-line-strong)] px-1 font-sans text-label text-fg-faint">
