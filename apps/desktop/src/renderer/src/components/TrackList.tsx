@@ -992,19 +992,19 @@ const TrackRow = memo(function TrackRow({
                       </span>
                     )}
                   </span>
-                  {autoMark && (
+                  {autoMark?.kind === 'proposed' ? (
                     <span
                       data-testid="track-auto-mark"
-                      className={`shrink-0 whitespace-nowrap rounded-full border px-1.5 text-[11px] leading-4 ${
-                        autoMark.kind === 'proposed'
-                          ? 'border-dashed border-[var(--color-accent)] font-semibold text-[var(--color-accent)]'
-                          : 'border-[var(--color-line-strong)] text-fg-dim'
-                      }`}
+                      className="shrink-0 whitespace-nowrap rounded-full border border-dashed border-[var(--color-accent)] px-1.5 text-[11px] font-semibold leading-4 text-[var(--color-accent)]"
                     >
-                      {autoMark.kind === 'proposed'
-                        ? tr('trackList.autoMark.proposed', { count: autoMark.proposals.length })
-                        : tr(`trackList.autoMark.${autoMark.kind}`)}
+                      {tr('trackList.autoMark.proposed', { count: autoMark.proposals.length })}
                     </span>
+                  ) : (
+                    autoMark && (
+                      <span data-testid="track-auto-mark-status" className="sr-only">
+                        {tr(`trackList.autoMark.${autoMark.kind}`)}
+                      </span>
+                    )
                   )}
                 </span>
               )}

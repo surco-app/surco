@@ -624,7 +624,10 @@ describe('TrackList', () => {
     expect(within(rows[1]).getByTestId('track-played')).toHaveTextContent('Played')
   })
 
-  it('says on each row what Auto marcar left for it, so the DJ sees which tracks still need a look', () => {
+  // Only proposals are something to act on, so only they take a visible chip; "no analysis",
+  // "already marked" and "no proposals" are nothing to do, and printing them on every row
+  // buried the rows that need a look. They stay spoken for a screen reader.
+  it('shows a chip only on rows with proposals to look at, and only speaks what Auto marcar left on the rest', () => {
     renderList(
       ['a', 'b', 'c', 'd', 'e'].map((id) => track({ id, duration: 200 })),
       null,
@@ -647,11 +650,14 @@ describe('TrackList', () => {
     const chips = screen
       .getAllByTestId('track-wave-line')
       .map((row) => within(row).queryByTestId('track-auto-mark')?.textContent ?? null)
-    expect(chips).toEqual(['2 proposals', 'No analysis', 'Already marked', 'No proposals', null])
-    const [proposed, unanalysed] = screen.getAllByTestId('track-auto-mark')
+    expect(chips).toEqual(['2 proposals', null, null, null, null])
+    const spoken = screen
+      .getAllByTestId('track-wave-line')
+      .map((row) => within(row).queryByTestId('track-auto-mark-status')?.textContent ?? null)
+    expect(spoken).toEqual([null, 'No analysis', 'Already marked', 'No proposals', null])
+    const [proposed] = screen.getAllByTestId('track-auto-mark')
     expect(proposed.className).toContain('border-dashed')
     expect(proposed.className).toContain('text-[var(--color-accent)]')
-    expect(unanalysed.className).toContain('text-fg-dim')
   })
 
   it('keeps the unsaved dot next to the chip once some proposals are accepted', () => {
