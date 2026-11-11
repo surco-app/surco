@@ -142,9 +142,7 @@ describe('repointVirtualdjTracks', () => {
     const repoint = { ...trimmed(path), from: path, fromBytes: 17138984 }
     expect(await repointVirtualdjTracks([repoint], lib.deps)).toEqual([{ written: true }])
     const once = lib.database()
-    expect(await repointVirtualdjTracks([repoint], lib.deps)).toEqual([
-      { written: false, reason: 'no-match' },
-    ])
+    expect(await repointVirtualdjTracks([repoint], lib.deps)).toEqual([{ written: true }])
     expect(lib.database()).toBe(once)
     expect(songBlock(once, path)).toContain('Pos="19.973878" Num="1"')
   })
@@ -260,6 +258,41 @@ describe('repointVirtualdjTracks', () => {
         )
         .replace('Pos="12.5"', 'Pos="10.0"'),
     )
+  })
+
+  it('keeps the move queued when the lists could not be written after the database, and moves the rows on the next apply', async () => {
+    const lib = library()
+    const to = lib.track('Pray.aiff')
+    let blockLists = true
+    const deps = {
+      ...lib.deps,
+      virtualdjOpen: vi.fn(async () => blockLists && lib.database().includes(to)),
+    }
+    const queue = createRekordboxQueue({
+      store: { read: () => null, write: () => {}, setAside: () => {} },
+      collection: () => lib.dir,
+      applyBatch: (_c, ops, ensureClosed, stillQueued) =>
+        applyVirtualdjBatch(ops, { ...deps, ensureClosed, stillQueued }),
+      repoint: (_c, list) => repointVirtualdjTracks(list, deps),
+      nodeStamps: async () => ({}),
+      onChange: () => {},
+      addsTracks: false,
+    })
+    queue.enqueue([], [trimmed(to)])
+    expect(await queue.apply(async () => true)).toEqual({
+      status: 'refused',
+      reason: 'rekordbox-running',
+    })
+    expect(lib.database()).toContain(`FilePath="${to}"`)
+    expect(lib.list('Carpeta/Dentro')).toEqual([FROM])
+    expect(queue.queuedRepoints()).toHaveLength(1)
+    blockLists = false
+    const moved = lib.database()
+    expect(await queue.apply(async () => true)).toMatchObject({ status: 'applied', tracks: 1 })
+    expect(lib.list('Carpeta/Dentro')).toEqual([to])
+    expect(lib.list('Surco prueba')[0]).toBe(to)
+    expect(lib.database()).toBe(moved)
+    expect(queue.queuedRepoints()).toEqual([])
   })
 
   it('waits while VirtualDJ is open and moves the song and its rows once VirtualDJ closes', async () => {

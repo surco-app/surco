@@ -172,13 +172,17 @@ function movedSong(
 ): LibraryRepointResult {
   if (facts.size === null) return { written: false, reason: 'output-missing' }
   const found = songIn(draft, roots, repoint.from)
-  if (!found) return { written: false, reason: 'no-match' }
+  const landed = (): LibraryRepointResult =>
+    songIn(draft, roots, repoint.to)?.song.size === facts.size
+      ? { written: true }
+      : { written: false, reason: 'no-match' }
+  if (!found) return landed()
   const { root, file, xml, song } = found
   if (
     repoint.from === repoint.to &&
     (repoint.fromBytes === undefined || song.size !== repoint.fromBytes)
   )
-    return { written: false, reason: 'no-match' }
+    return landed()
   if (virtualdjRootFor(repoint.to, roots) !== root)
     return { written: false, reason: 'other-volume' }
   const wanted = repoint.to.normalize('NFC')
@@ -242,8 +246,11 @@ export async function repointVirtualdjTracks(
     })
     if (moves.length > 0) {
       const lists = await moveVirtualdjListRows(moves, deps)
-      if (lists !== 'written' && lists !== 'nothing')
-        log.warn(`VirtualDJ lists not moved to the converted files: ${lists}`)
+      if (lists !== 'written' && lists !== 'nothing') {
+        log.warn(`VirtualDJ lists not moved to the converted files yet: ${lists}`)
+        const reason = lists === 'cancelled' ? 'rekordbox-running' : 'write-failed'
+        return repoints.map(() => ({ written: false, reason }))
+      }
     }
     return results
   }
