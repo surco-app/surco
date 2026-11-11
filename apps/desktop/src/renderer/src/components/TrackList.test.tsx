@@ -2125,6 +2125,19 @@ describe('TrackList reorder', () => {
     expect(reorder.onRemoveSeparator).toHaveBeenCalledWith('s1')
   })
 
+  // The line was drawn in two halves around the ✕, so every editable playlist showed its
+  // breaks with a hole in the middle even with the ✕ hidden. One line runs end to end and
+  // the ✕ is laid over it.
+  it('draws a separator as one unbroken line with its remove button laid over it', () => {
+    renderList(abc(), null, [], {
+      reorder: reorderSpy(),
+      separatorBefore: new Map([['b', ['s1']]]),
+    })
+    const separator = screen.getByTestId('track-separator-s1')
+    expect(within(separator).getAllByTestId('separator-line-s1')).toHaveLength(1)
+    expect(within(separator).getByTestId('separator-remove-s1')).toBeInTheDocument()
+  })
+
   // The ✕ is a bare glyph on a dashed line; hovering it has to say what it removes.
   it('names the separator remove button in a tooltip on hover', () => {
     vi.useFakeTimers()

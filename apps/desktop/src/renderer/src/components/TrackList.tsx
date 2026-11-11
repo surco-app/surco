@@ -1233,8 +1233,12 @@ export const TrackList = memo(function TrackList({
           e.dataTransfer.effectAllowed = 'move'
           e.dataTransfer.setData(REORDER_TYPE, key)
         }}
-        className="group mx-4 flex h-[22px] items-center gap-2 text-label text-fg-faint before:flex-1 before:border-t before:border-dashed before:border-line-strong before:content-[''] after:flex-1 after:border-t after:border-dashed after:border-line-strong after:content-['']"
+        className="group relative mx-4 flex h-[22px] items-center justify-center text-label text-fg-faint"
       >
+        <span
+          data-testid={`separator-line-${key}`}
+          className="absolute inset-x-0 top-1/2 border-t border-dashed border-line-strong"
+        />
         {reorder && (
           <button
             type="button"
@@ -1244,7 +1248,7 @@ export const TrackList = memo(function TrackList({
             tabIndex={-1}
             aria-label={tr('sources.reorder.removeSeparator')}
             onClick={() => reorder.onRemoveSeparator(key)}
-            className="rounded opacity-0 group-hover:opacity-100 hover:text-fg focus-visible:opacity-100"
+            className="relative rounded bg-[var(--color-ink)] px-1 opacity-0 group-hover:opacity-100 hover:text-fg focus-visible:opacity-100"
           >
             <X size={11} aria-hidden="true" />
             <Tooltip label={tr('sources.reorder.removeSeparator')} />
