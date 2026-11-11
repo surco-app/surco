@@ -53,6 +53,22 @@ export function virtualdjLibraryHas(
     !virtualdjRootFor(path, roots) || has(path) || (from !== undefined && has(from))
 }
 
+export function virtualdjCannotFollow(roots: VirtualdjRoot[], from: string, to: string): boolean {
+  const key = (p: string) => p.normalize('NFC')
+  for (const root of roots) {
+    const file = virtualdjDatabaseOf(root)
+    if (!existsSync(file)) continue
+    const paths = parseVirtualdjDatabase(readFileSync(file, 'utf8')).map((s) =>
+      key(virtualdjPathOf(root, s.path)),
+    )
+    if (!paths.includes(key(from))) continue
+    return (
+      virtualdjRootFor(to, roots) !== root || (key(to) !== key(from) && paths.includes(key(to)))
+    )
+  }
+  return false
+}
+
 function sizeOf(path: string): number | null {
   try {
     const stat = statSync(path)

@@ -1754,6 +1754,39 @@ describe('librariesKeepingOriginal', () => {
     }
   })
 
+  it('keeps the original for VirtualDJ with its sync on when its song cannot follow to another disk or onto a song already there', async () => {
+    const base = mkdtempSync(join(tmpdir(), 'surco-keep-virtualdj-'))
+    const dir = join(base, 'VirtualDJ')
+    const volume = join(base, 'Volumes', 'Public')
+    mkdirSync(dir, { recursive: true })
+    mkdirSync(join(volume, 'VirtualDJ'), { recursive: true })
+    const song = (p: string) =>
+      ` <Song FilePath="${p}" FileSize="3" Flag="268435456">\r\n </Song>\r\n`
+    const db = (songs: string[]) =>
+      `<?xml version="1.0" encoding="UTF-8"?>\r\n<VirtualDJ_Database Version="2026">\r\n${songs.map(song).join('')}</VirtualDJ_Database>\r\n`
+    writeFileSync(join(dir, 'database.xml'), db(['/m/a.mp3', '/m/taken.flac']))
+    writeFileSync(join(volume, 'VirtualDJ', 'database.xml'), db(['D:/x.mp3']))
+    const roots = [
+      { dir, root: '/' },
+      { dir: join(volume, 'VirtualDJ'), root: volume },
+    ]
+    const keeps = (path: string, target: string) =>
+      librariesKeepingOriginal(path, target, {
+        traktorRead: () => '',
+        rootLibraries: () => ({ serato: [], virtualdj: roots }),
+      })
+    Object.assign(SETTINGS, { syncVirtualdj: true })
+    try {
+      expect(await keeps('/m/a.mp3', join(volume, 'a.flac'))).toEqual(['virtualdj'])
+      expect(await keeps(join(volume, 'x.mp3'), '/m/x.flac')).toEqual(['virtualdj'])
+      expect(await keeps('/m/a.mp3', '/m/taken.flac')).toEqual(['virtualdj'])
+      expect(await keeps('/m/a.mp3', '/m/a.flac')).toEqual([])
+      expect(await keeps('/m/other.mp3', join(volume, 'other.flac'))).toEqual([])
+    } finally {
+      Object.assign(SETTINGS, { syncVirtualdj: false })
+    }
+  })
+
   it('asks nothing of a library whose sync is on, since it follows the rename itself', async () => {
     FILE_USE.open.mockClear()
     const held = await librariesKeepingOriginal('/m/a.mp3', '/m/b.mp3', {

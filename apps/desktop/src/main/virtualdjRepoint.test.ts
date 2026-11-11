@@ -183,6 +183,58 @@ describe('repointVirtualdjTracks', () => {
     expect(lib.database()).toBe(before)
   })
 
+  it('leaves the song on the original when the converted file lands on another disk, and the queue says so', async () => {
+    const lib = library()
+    const volume = join(lib.volumes, 'Public')
+    mkdirSync(join(volume, 'VirtualDJ'), { recursive: true })
+    writeFileSync(
+      join(volume, 'VirtualDJ', 'database.xml'),
+      `<?xml version="1.0" encoding="UTF-8"?>\r\n<VirtualDJ_Database Version="2026">\r\n${CLOSE}`,
+    )
+    const to = join(volume, 'Pray.aiff')
+    writeFileSync(to, 'abcd')
+    const queue = createRekordboxQueue({
+      store: { read: () => null, write: () => {}, setAside: () => {} },
+      collection: () => lib.dir,
+      applyBatch: (_c, ops, ensureClosed, stillQueued) =>
+        applyVirtualdjBatch(ops, { ...lib.deps, ensureClosed, stillQueued }),
+      repoint: (_c, list) => repointVirtualdjTracks(list, lib.deps),
+      nodeStamps: async () => ({}),
+      onChange: () => {},
+      addsTracks: false,
+    })
+    queue.enqueue([], [{ from: FROM, to }])
+    expect(await queue.apply(async () => true)).toMatchObject({
+      status: 'applied',
+      notices: [{ code: 'repoint-other-volume', track: 'Pray.aiff' }],
+    })
+    expect(lib.database()).toBe(FIXTURE_XML)
+  })
+
+  it('says so when the new file already has its own song in VirtualDJ', async () => {
+    const lib = library()
+    const there = lib.track('Pray.wav')
+    writeFileSync(
+      join(lib.dir, 'database.xml'),
+      FIXTURE_XML.replace('FilePath="/Music/VirtualDJ Pruebas/Pray.wav"', `FilePath="${there}"`),
+    )
+    const queue = createRekordboxQueue({
+      store: { read: () => null, write: () => {}, setAside: () => {} },
+      collection: () => lib.dir,
+      applyBatch: (_c, ops, ensureClosed, stillQueued) =>
+        applyVirtualdjBatch(ops, { ...lib.deps, ensureClosed, stillQueued }),
+      repoint: (_c, list) => repointVirtualdjTracks(list, lib.deps),
+      nodeStamps: async () => ({}),
+      onChange: () => {},
+      addsTracks: false,
+    })
+    queue.enqueue([], [{ from: FROM, to: there }])
+    expect(await queue.apply(async () => true)).toMatchObject({
+      status: 'applied',
+      notices: [{ code: 'repoint-song-taken', track: 'Pray.wav' }],
+    })
+  })
+
   it('moves a song on a drive inside that drive database, with the drive letter', async () => {
     const lib = library()
     const volume = join(lib.volumes, 'Public')

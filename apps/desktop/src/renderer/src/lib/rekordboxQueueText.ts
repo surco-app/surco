@@ -63,6 +63,8 @@ export const REKORDBOX_QUEUE_WORDS: QueueWords = {
     'not-in-library': 'rekordboxQueue.notice.notInLibrary',
     'tags-not-in-library': 'seratoQueue.notice.tagsNotInLibrary',
     'tags-changed': 'seratoQueue.notice.tagsChanged',
+    'repoint-other-volume': 'virtualdjQueue.notice.repointOtherVolume',
+    'repoint-song-taken': 'virtualdjQueue.notice.repointSongTaken',
   },
 }
 

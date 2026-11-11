@@ -1301,6 +1301,8 @@ export type RekordboxQueueNotice =
         | 'not-in-library'
         | 'tags-not-in-library'
         | 'tags-changed'
+        | 'repoint-other-volume'
+        | 'repoint-song-taken'
       track: string
     }
   | {

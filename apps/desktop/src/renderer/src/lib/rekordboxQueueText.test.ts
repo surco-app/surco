@@ -507,6 +507,12 @@ describe('VirtualDJ queue text', () => {
     expect(say({ code: 'tags-changed', track: 'Pray' })).toBe(
       'Pray changed in VirtualDJ and its tags were not changed',
     )
+    expect(say({ code: 'repoint-other-volume', track: 'Pray.aiff' })).toBe(
+      'Pray.aiff is on another disk, so VirtualDJ keeps the original file and Surco keeps it too',
+    )
+    expect(say({ code: 'repoint-song-taken', track: 'Pray.aiff' })).toBe(
+      'VirtualDJ already has a song for Pray.aiff, so it keeps the original file and Surco keeps it too',
+    )
     expect(partText(tr, { kind: 'collection' }, VIRTUALDJ_QUEUE_WORDS)).toBe('added to the library')
     expect(partText(tr, { kind: 'playlists', names: [] }, VIRTUALDJ_QUEUE_WORDS)).toBe(
       'out of its lists',

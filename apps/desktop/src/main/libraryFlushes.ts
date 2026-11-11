@@ -68,7 +68,7 @@ import { sourceRoot } from './usbExport'
 import { type FlushOutcome, type TraktorWrite, traktorPatchKey } from './verifyRegistry'
 import type { VirtualdjRoot } from './virtualdjLibrary'
 import { syncVirtualdjTags } from './virtualdjTagSync'
-import { virtualdjHeld, virtualdjLibraryHas } from './virtualdjTrackWrite'
+import { virtualdjCannotFollow, virtualdjHeld, virtualdjLibraryHas } from './virtualdjTrackWrite'
 
 export type SyncBlockedKey = 'traktorSyncBlocked' | 'rekordboxSyncBlocked' | 'engineSyncBlocked'
 
@@ -143,6 +143,7 @@ export async function librariesKeepingOriginal(
 ): Promise<DjProgram[]> {
   const settings = getSettings()
   const status = currentLibraryStatus()
+  const virtualdjRoots = deps.rootLibraries().virtualdj
   const locations: SyncedLibraries = {
     rekordbox:
       !settings.syncRekordbox && status.rekordbox.found
@@ -150,7 +151,7 @@ export async function librariesKeepingOriginal(
         : '',
     engine: !settings.syncEngineDj && status.engine.found ? settings.engineLibraryDir : '',
     traktor: settings.syncTraktor ? '' : deps.traktorRead(),
-    virtualdj: settings.syncVirtualdj ? [] : deps.rootLibraries().virtualdj,
+    virtualdj: settings.syncVirtualdj ? [] : virtualdjRoots,
   }
   const held: DjProgram[] = []
   for (const program of WRITABLE_PROGRAMS) {
@@ -167,6 +168,8 @@ export async function librariesKeepingOriginal(
     )
     if ((await traktor(path)) && (await traktor(target))) held.push('traktor')
   }
+  if (settings.syncVirtualdj && virtualdjCannotFollow(virtualdjRoots, path, target))
+    held.push('virtualdj')
   const readOnly = deps.rootLibraries()
   for (const program of READ_ONLY_PROGRAMS) {
     if (readOnly[program].length === 0) continue

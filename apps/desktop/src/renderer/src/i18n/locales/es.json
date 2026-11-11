@@ -3402,7 +3402,9 @@
       "playlistGone": "{{playlist}} ya no está en VirtualDJ. {{track}} no se añadió",
       "sourceInVirtualdj": "{{track}} sigue en VirtualDJ con el archivo original y no entra en la lista «{{playlist}}»",
       "tagsNotInLibrary": "{{track}} ya no está en VirtualDJ y sus etiquetas no se cambiaron",
-      "tagsChanged": "{{track}} cambió en VirtualDJ y sus etiquetas no se cambiaron"
+      "tagsChanged": "{{track}} cambió en VirtualDJ y sus etiquetas no se cambiaron",
+      "repointOtherVolume": "{{track}} está en otro disco, así que VirtualDJ sigue con el archivo original y Surco también lo guarda",
+      "repointSongTaken": "VirtualDJ ya tiene una canción para {{track}}, así que sigue con el archivo original y Surco también lo guarda"
     }
   },
   "cueWave": {
