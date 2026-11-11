@@ -7,6 +7,7 @@ import { engineCueSource } from '../../main/engineCueSource'
 import { engineEdit } from '../../main/enginePlaylistEditIpc'
 import { engineRead } from '../../main/enginePlaylistsIpc'
 import { rekordboxCollectionPath } from '../../main/libraryFlushes'
+import { serialLibraryFlush } from '../../main/libraryTagSync'
 import { rekordboxCueSource } from '../../main/rekordboxCueSource'
 import { rekordboxEdit, rekordboxRead } from '../../main/rekordboxPlaylistsIpc'
 import type { RekordboxQueue } from '../../main/rekordboxQueue'
@@ -47,7 +48,7 @@ export function registerDoor(current: () => Queues): { settled: () => Promise<vo
   }
   const inFlight = new Set<Promise<unknown>>()
   const applying = (queue: Pick<RekordboxQueue, 'apply'>) => () => {
-    const work = queue.apply(closed)
+    const work = serialLibraryFlush(() => queue.apply(closed))
     inFlight.add(work)
     work.then(
       () => inFlight.delete(work),

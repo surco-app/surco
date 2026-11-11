@@ -37,6 +37,7 @@ import {
   usedByAnyLibrary,
 } from '../main/libraryFlushes'
 import { followingAll, librarySizeFollower } from '../main/librarySizeFollow'
+import { serialLibraryFlush } from '../main/libraryTagSync'
 import { registerListReviewIpc } from '../main/listReviewIpc'
 import { listReviewDeps } from '../main/listReviewWiring'
 import { createMediaAccess } from '../main/mediaAccess'
@@ -453,14 +454,16 @@ const followEngineSize = librarySizeFollower({
   enabled: () => getSettings().syncEngineDj,
   enqueue: (ops, repoints) => engineQueueNow?.enqueue(ops, repoints),
   apply: () => {
-    void engineQueueNow?.apply(async () => !(await isEngineDjRunning()))
+    const queue = engineQueueNow
+    if (queue) void serialLibraryFlush(() => queue.apply(async () => !(await isEngineDjRunning())))
   },
 })
 const followVirtualdjSize = librarySizeFollower({
   enabled: () => getSettings().syncVirtualdj,
   enqueue: (ops, repoints) => virtualdjQueueNow?.enqueue(ops, repoints),
   apply: () => {
-    void virtualdjQueueNow?.apply(async () => !(await isVirtualdjRunning()))
+    const queue = virtualdjQueueNow
+    if (queue) void serialLibraryFlush(() => queue.apply(async () => !(await isVirtualdjRunning())))
   },
 })
 const followLibrariesSize = followingAll(followEngineSize, followVirtualdjSize)
@@ -649,7 +652,7 @@ const programClosed: Record<Library, () => Promise<boolean>> = {
 }
 
 const applyQueue = (queues: Queues, place: Library): Promise<QueueApply> =>
-  queues[place].apply(programClosed[place])
+  serialLibraryFlush(() => queues[place].apply(programClosed[place]))
 
 function tracked<T>(inFlight: Set<Promise<unknown>>, work: Promise<T>): Promise<T> {
   inFlight.add(work)
@@ -1030,27 +1033,33 @@ function scenarioApi(
         else applies[place] = start()
       }
       const flush = () =>
-        flushConversionBatch(libraryHost(errors), sessions, {
-          rekordbox: { enqueue: queues.rekordbox.enqueue, applyQuietly: applyLater('rekordbox') },
-          traktor: {
-            enqueue: queues.traktor.enqueue,
-            state: queues.traktor.state,
-            applyQuietly: applyLater('traktor'),
-          },
-          engine: { enqueue: queues.engine.enqueue, applyQuietly: applyLater('engine') },
-          virtualdj: {
-            enqueue: queues.virtualdj.enqueue,
-            applyQuietly: applyLater('virtualdj'),
-            roots: virtualdjRoots,
-          },
-          serato: {
-            enqueue: queues.serato.enqueue,
-            applyQuietly: () => {
-              seratoApplies.push(queues.serato.apply(async () => !(await isSeratoRunning())))
+        serialLibraryFlush(() =>
+          flushConversionBatch(libraryHost(errors), sessions, {
+            rekordbox: { enqueue: queues.rekordbox.enqueue, applyQuietly: applyLater('rekordbox') },
+            traktor: {
+              enqueue: queues.traktor.enqueue,
+              state: queues.traktor.state,
+              applyQuietly: applyLater('traktor'),
             },
-            roots: seratoRoots,
-          },
-        })
+            engine: { enqueue: queues.engine.enqueue, applyQuietly: applyLater('engine') },
+            virtualdj: {
+              enqueue: queues.virtualdj.enqueue,
+              applyQuietly: applyLater('virtualdj'),
+              roots: virtualdjRoots,
+            },
+            serato: {
+              enqueue: queues.serato.enqueue,
+              applyQuietly: () => {
+                seratoApplies.push(
+                  serialLibraryFlush(() =>
+                    queues.serato.apply(async () => !(await isSeratoRunning())),
+                  ),
+                )
+              },
+              roots: seratoRoots,
+            },
+          }),
+        )
       flushes.push(
         verify
           ? judgedFlush(verify, flush, later, options.sabotage).then(() =>
