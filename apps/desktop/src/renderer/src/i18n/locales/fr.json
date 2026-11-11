@@ -356,7 +356,7 @@
     "conversionCancelled": "Conversion annulée.",
     "verifyUnknownTrack": "Cette vérification n’existe plus. Convertis à nouveau le morceau pour la refaire.",
     "seratoBlocked": "Serato perdrait le morceau et ses cues",
-    "sourceTagsUnread": "Les tags de ce fichier n’ont pas pu être lus, il n’a donc pas été touché : le convertir aurait effacé ceux qu’il a. Recharge-le et réessaie.",
+    "sourceTagsUnread": "Ce fichier n’a pas pu être lu, il n’a donc pas été touché : le convertir aurait effacé les tags qu’il a. Il est peut-être endommagé ou dans un format que Surco ne sait pas ouvrir.",
     "coverDownloadFailed": "La pochette n’a pas pu être téléchargée.",
     "coverNotImage": "Cette adresse ne mène pas à une image.",
     "bandcampUnavailable": "Bandcamp n’a pas répondu correctement. Réessaie dans un instant.",

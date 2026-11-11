@@ -356,7 +356,7 @@
     "conversionCancelled": "Conversion cancelled.",
     "verifyUnknownTrack": "This check is no longer available. Convert the track again to repeat it.",
     "seratoBlocked": "Serato would lose the track and its cues",
-    "sourceTagsUnread": "This file's tags could not be read, so it was left alone: converting it would have wiped the ones it has. Load it again and retry.",
+    "sourceTagsUnread": "This file could not be read, so it was left alone: converting it would have wiped the tags it has. It may be damaged or in a format Surco can't open.",
     "coverDownloadFailed": "The artwork couldn't be downloaded.",
     "coverNotImage": "That address doesn't point to an image.",
     "bandcampUnavailable": "Bandcamp didn't answer properly. Try again in a moment.",
