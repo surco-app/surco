@@ -83,21 +83,21 @@ Medido el 11/11 (Tarea 12) con `grep -rnE "(===|!==) '(rekordbox|traktor|engine|
 | `main/usbExportIpc.ts` `from === 'engine'` | b | La memoria de Engine en `usb:pickFolder` (ver USB 6j). | Ya apuntada. |
 | `isFrom(x, 'serato')` en `processTrack.ts`, `useTrackProcessing.ts`, `batch.ts`, `listReviewSource.ts`, `Editor.tsx` | b | Serato no convierte (`seratoBlocked`, recuento `serato` de `batch.ts`). | Consecuencia de `WritableProgram = Exclude<DjProgram, 'serato'>`, hueco que la spec deja fuera («Serato sin `WritableProgram`»). Se van al escribir Serato. |
 | `scenarios/` (`harness.tsx`, `matrix/oracle.ts`, `matrix/run.ts`) | b | El arnés lee la base real de cada programa para comprobar. | Código de pruebas, no de la app. |
-| `main/libraryFlushes.ts` `SYNC_ISSUE_PROGRAMS` (`new Set(['rekordbox', 'engine'])`) | b, apunte | Lista de quién emite avisos de sincronización (bloque 5). El compilador no la exige, pero su ausencia es lo seguro (sin evento); la tabla del renderer (`SYNC_ISSUES` de `App.tsx`) sí es `Record`. | Fuera del inventario de esta tarea. |
+| `main/libraryFlushes.ts` `SYNC_ISSUE_PROGRAMS` (era `new Set(['rekordbox', 'engine'])`) | a | Quién emite avisos de sincronización. La tabla del renderer (`SYNC_ISSUES` de `App.tsx`) ya era `Record`; un programa nuevo que rellenase su fila y llamase a `reportIssue` vería sus avisos tirados en main sin que el compilador dijera nada. | `REPORTS_SYNC_ISSUES: Record<WritableProgram, boolean>` (rekordbox y Engine `true`, Traktor `false`), del que sale el conjunto en el orden de `WRITABLE_PROGRAMS` (`b2bfcae7e`). |
 
-Hecho (11/11): `CUE_PROGRAMS.runningNote` lo leen el editor de cues (`463a2a76f`) y el aviso del árbol de `App.tsx` (`0afaf4862`); `cuesOpen` ya no nombra programas (`73c3f2404`). Tests de caracterización nuevos: un track de rekordbox, Traktor o Engine DJ no avisa ni pregunta `running` con su programa abierto (`CuesSection.serato.test.tsx`), y la pestaña de Traktor tampoco (`App.test.tsx`). Mutaciones: dar `runningNote` a rekordbox o a Traktor, quitárselo a Serato, o sacar cualquiera de los cuatro programas de `cuesOpen`, hace caer tests. Resultado: 3 sitios (a) pasados a tabla, 1 (a) ya era fila (`collectionGate`), 17 (b) se quedan (más `programOf`, Paso 3).
+Hecho (11/11): `CUE_PROGRAMS.runningNote` lo leen el editor de cues (`463a2a76f`) y el aviso del árbol de `App.tsx` (`0afaf4862`); `cuesOpen` ya no nombra programas (`73c3f2404`). Tests de caracterización nuevos: un track de rekordbox, Traktor o Engine DJ no avisa ni pregunta `running` con su programa abierto (`CuesSection.serato.test.tsx`), y la pestaña de Traktor tampoco (`App.test.tsx`). Mutaciones: dar `runningNote` a rekordbox o a Traktor, quitárselo a Serato, o sacar cualquiera de los cuatro programas de `cuesOpen`, hace caer tests. Resultado: 4 sitios (a) pasados a tabla (con `SYNC_ISSUE_PROGRAMS`, ronda de revisión), 1 (a) ya era fila (`collectionGate`), 16 (b) se quedan, y `programOf` con sus prefijos en tabla (Paso 3).
 
 Las demás listas literales de programas pasan por `programsInOrder`/`writableInOrder`, que exigen a todos. `LEGACY_PLAYLIST_ORDER` (`sessionLegacy.ts`) es la forma antigua, congelada a propósito.
 
 ### `programOf` (Paso 3)
 
-Se queda el caso por defecto a `'rekordbox'`: los ids de rekordbox no llevan prefijo, así que quitarlo exigiría reconocerlos por forma o devolver `undefined`, y cualquier id sin prefijo (también uno raro) cambiaría de resultado. Un programa nuevo añade su `is<Programa>Content` antes del caso por defecto.
+Se queda el caso por defecto a `'rekordbox'`: los ids de rekordbox no llevan prefijo, así que quitarlo exigiría reconocerlos por forma o devolver `undefined`, y cualquier id sin prefijo (también uno raro) cambiaría de resultado. Lo que deja de ser silencioso es el reconocimiento de los prefijos: `CONTENT_OF: Record<Exclude<DjProgram, 'rekordbox'>, (contentId) => boolean>` (Traktor, Engine, Serato, en el orden de antes), así que añadir `'virtualdj'` a `DjProgram` no compila hasta que exista su detector (`f0038adbc`, comprobado con `tsc`: TS2741 en `CONTENT_OF`).
 
 ### La lista «Añadidos a mano», entrada por entrada
 
 | Entrada | Estado |
 |---|---|
-| `programOf` caso por defecto | Se queda (Paso 3). |
+| `programOf` caso por defecto | Se queda para los ids sin prefijo; los prefijos pasan a `CONTENT_OF`, que el compilador exige (Paso 3). |
 | `PLACE_ORDER` | Resuelta: `['file', 'appleMusic', ...PLACE_PROGRAMS]` con `writableInOrder`. |
 | `saveAllKey` | Resuelta salvo la pareja `saveAllBoth` (b, arriba). |
 | `collectionGate` con consultas de Traktor | Fila de tabla; las consultas se quedan (restricción global). |
