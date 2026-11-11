@@ -2,7 +2,7 @@
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { basename, join } from 'node:path'
-import { beforeAll, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', async () => (await import('./electronFake')).electronFake())
 
@@ -17,7 +17,7 @@ import {
   makeTrack,
   scenarioDir,
 } from './fixtures'
-import { openSurco, type Scenario } from './harness'
+import { mainSettled, openSurco, type Scenario } from './harness'
 
 function sha1(data: Buffer | null): string {
   return data ? createHash('sha1').update(data).digest('hex') : 'no cover'
@@ -61,6 +61,11 @@ describe('Move your collection to AIFF without losing the cue points', () => {
     })
     await surco.drop(folder)
     await surco.convertAll()
+  }, 60_000)
+
+  afterAll(async () => {
+    surco.close()
+    await mainSettled()
   }, 60_000)
 
   it('runs without a single error the user would see', () => {

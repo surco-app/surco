@@ -193,10 +193,20 @@ export function listen(channel: string, listener: (...args: never[]) => void): (
   return () => set.delete(listener)
 }
 
+const mainInFlight = new Set<Promise<unknown>>()
+
 export function invokeMain<T>(channel: string, ...args: unknown[]): Promise<T> {
   const handler = ipcHandlers.get(channel)
   if (!handler) throw new Error(`scenario: main never registered ${channel}`)
-  return Promise.resolve(handler({ sender }, ...(args as never[]))) as Promise<T>
+  const call = Promise.resolve(handler({ sender }, ...(args as never[]))) as Promise<T>
+  mainInFlight.add(call)
+  const done = () => mainInFlight.delete(call)
+  call.then(done, done)
+  return call
+}
+
+export async function mainSettled(): Promise<void> {
+  while (mainInFlight.size > 0) await Promise.allSettled([...mainInFlight])
 }
 
 function processTrackInMain(
