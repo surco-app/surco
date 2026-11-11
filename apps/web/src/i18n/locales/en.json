@@ -531,7 +531,7 @@
       },
       {
         "q": "Does it work with Denon gear (Engine DJ)?",
-        "a": "Yes. In Settings → Output set Engine DJ to “Update and add” and every converted track is registered straight into your Engine DJ library (with its cover, rating and the playlists you pick), ready to sync to your players. It also exports collections to rekordbox, Traktor and Serato."
+        "a": "Yes. In Settings → DJ software set Engine DJ to “Update and add” and every converted track is registered straight into your Engine DJ library (with its cover, rating and the playlists you pick), ready to sync to your players. It also exports collections to rekordbox, Traktor and Serato."
       },
       {
         "q": "Windows says \"Windows protected your PC\". Is it safe?",
