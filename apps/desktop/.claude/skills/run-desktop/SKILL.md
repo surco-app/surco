@@ -82,8 +82,8 @@ tooltip before `ss`) · `eval <js>` (prints JSON) · `win <w> <h>` (size the win
 `scrollto <selector>` (bring a panel into view inside the editor's own scroller) ·
 `quit`.
 Selectors use the renderer's `data-testid`s — e.g. `[data-testid="player"]`,
-`[data-testid="track-row"]`, `[data-testid="player-volume-slider"]`,
-`[data-testid="player-volume"]` (the % readout).
+`[data-testid="track-row"]`, `[data-testid="player-volume-slider"]` (its
+`aria-valuetext` carries the %).
 
 After `tone`, the player is **not** open yet — run `play` (or `click`/`eval` your own
 double-click) to mount it; `eval document.querySelector('[data-testid=player]')!=null`

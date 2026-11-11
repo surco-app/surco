@@ -284,12 +284,12 @@ describe('NormalizeSection layout', () => {
     expect(screen.getByTestId('normalize-row-sentence')).toHaveTextContent('Levels to -14 LUFS')
   })
 
-  // The mode badge sat on the folded header before the sentence came, and stays beside it.
-  it('badges the active mode while folded', () => {
+  // The folded sentence already names the target in LUFS or dBFS, which says the mode, so
+  // a mode badge beside it only repeated it.
+  it('lets the folded sentence alone say the active mode', () => {
     renderWith({ open: false, value: loud })
-    expect(screen.getByTestId('normalize-active-badge')).toHaveTextContent(
-      i18n.t('normalize.mode.loudness'),
-    )
+    expect(screen.getByTestId('normalize-row-sentence')).toHaveTextContent('LUFS')
+    expect(screen.queryByTestId('normalize-active-badge')).toBeNull()
   })
 
   // The folded header always carried the true-peak ceiling next to the target; the
@@ -410,9 +410,13 @@ describe('NormalizeSection measured figures', () => {
   // per-track value. The section hid its waveform and said nothing else, so a user tuning
   // what looked like this track's loudness was silently setting it for all forty.
   describe('scope of a multi-selection', () => {
-    it('says how many tracks the settings will apply to', () => {
+    // The editor title already says "Editing 40 tracks", so the scope line names the
+    // selection without counting it a second time.
+    it('says the settings apply to the whole selection without repeating its count', () => {
       renderSection(track(), 40)
-      expect(screen.getByTestId('normalize-scope')).toHaveTextContent('40')
+      expect(screen.getByTestId('normalize-scope')).toHaveTextContent(
+        'These settings apply to all selected tracks.',
+      )
     })
 
     it('says nothing about scope for a single track', () => {

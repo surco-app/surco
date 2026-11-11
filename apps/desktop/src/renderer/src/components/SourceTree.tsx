@@ -495,7 +495,7 @@ export function SourceTree({
                 data-testid="source-drop-count"
                 className="ml-auto text-xs text-[var(--color-accent)]"
               >
-                {tr('sources.tree.dropCount', { count: dropOn.count })}
+                {`+${dropOn.count}`}
               </span>
             ) : (
               !isFolder && (

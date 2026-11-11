@@ -40,14 +40,24 @@ function setup(
 }
 
 describe('SessionBand', () => {
-  it('summarises the session: length as minutes and seconds, tracks, combos, new and harmonic mixes', () => {
+  // The playlist under the band already counts its tracks, so the band leaves that number out.
+  it('summarises the session: length as minutes and seconds, combos, new and harmonic mixes, but not the track count', () => {
     setup()
     const stats = screen.getByTestId('session-band-stats')
     expect(stats).toHaveTextContent('90:40')
-    expect(stats).toHaveTextContent('24')
-    expect(stats).toHaveTextContent('4')
-    expect(stats).toHaveTextContent('3')
+    expect(stats).not.toHaveTextContent('24')
+    expect(stats).toHaveTextContent('4 combos')
+    expect(stats).toHaveTextContent('3 new')
     expect(stats).toHaveTextContent('21/23')
+  })
+
+  // A "0 combos" or "0 new" tells nothing to act on; the line keeps only what the session has.
+  it('leaves out combos and new tracks when there are none', () => {
+    setup({ combos: 0, fresh: 0 })
+    const stats = screen.getByTestId('session-band-stats')
+    expect(stats).not.toHaveTextContent('combo')
+    expect(stats).not.toHaveTextContent('new')
+    expect(stats).toHaveTextContent('90:40')
   })
 
   it('pads the seconds of the length', () => {

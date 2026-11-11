@@ -168,17 +168,18 @@ describe('Player', () => {
     expect(screen.getByTestId('player-cover-placeholder')).toBeInTheDocument()
   })
 
-  // The readout lives inside the popover, which only mounts while the user is actually
-  // reaching for the volume — so it costs no permanent space and the exact figure is worth
-  // showing at every level, full volume included.
-  it('shows the volume readout at full volume', () => {
+  // The slider's fill already shows the level, so a printed percentage beside it said the
+  // same thing twice; the exact figure is still spoken, at every level, full volume included.
+  it('speaks the volume at full volume without printing it', () => {
     renderUI(<Player {...props({ volume: 1 })} />)
-    expect(screen.getByTestId('player-volume')).toHaveTextContent('100%')
+    expect(screen.getByTestId('player-volume-control')).not.toHaveTextContent('100%')
+    expect(screen.getByTestId('player-volume-slider')).toHaveAttribute('aria-valuetext', '100%')
   })
 
-  it('shows the volume readout once it is turned down', () => {
+  it('speaks the volume once it is turned down without printing it', () => {
     renderUI(<Player {...props({ volume: 0.5 })} />)
-    expect(screen.getByTestId('player-volume')).toHaveTextContent('50%')
+    expect(screen.getByTestId('player-volume-control')).not.toHaveTextContent('50%')
+    expect(screen.getByTestId('player-volume-slider')).toHaveAttribute('aria-valuetext', '50%')
   })
 
   it('toggles playback from the transport button', () => {
@@ -466,12 +467,11 @@ describe('Player', () => {
   it('keeps the volume visible without any hover', () => {
     renderUI(<Player {...props({ volume: 0.7 })} />)
     expect(screen.getByTestId('player-volume-slider')).toHaveValue('0.7')
-    expect(screen.getByTestId('player-volume')).toHaveTextContent('70%')
   })
 
-  // The range runs 0 to 1, so a screen reader announced "0.7": the same percentage the
-  // sighted user reads beside the slider has to be what it says.
-  it('reads the volume out as the percentage shown beside it', () => {
+  // The range runs 0 to 1, so a screen reader announced "0.7": a percentage is what a
+  // listener understands as a level.
+  it('reads the volume out as a percentage', () => {
     renderUI(<Player {...props({ volume: 0.7 })} />)
     expect(screen.getByTestId('player-volume-slider')).toHaveAttribute('aria-valuetext', '70%')
   })

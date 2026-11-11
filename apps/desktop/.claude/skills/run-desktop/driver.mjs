@@ -111,8 +111,11 @@ async function smoke() {
     await page.locator('[data-testid="player"]').hover()
     await page.waitForTimeout(400)
     const path = await shot(page, 'player')
-    const vol = await page.locator('[data-testid="player-volume"]').first().textContent()
-    console.log(`OK player up, volume pill shows "${vol?.trim()}", screenshot: ${path}`)
+    const vol = await page
+      .locator('[data-testid="player-volume-slider"]')
+      .first()
+      .getAttribute('aria-valuetext')
+    console.log(`OK player up, volume slider reads "${vol?.trim()}", screenshot: ${path}`)
   } finally {
     await app.close()
   }

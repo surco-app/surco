@@ -885,6 +885,19 @@ describe('OnboardingWizard length', () => {
     for (let i = 0; i < 4; i++) fireEvent.click(screen.getByTestId('onboarding-next'))
     expect(screen.getByTestId('onboarding-next')).toHaveTextContent(i18n.t('onboarding.finish'))
   })
+
+  // The footer showed "Step 3 of 5" in words next to Back and Next. A row of dots says the
+  // same at a glance, and the words stay for screen readers inside the dots.
+  it('shows progress as one dot per step with the current one marked', () => {
+    render(<OnboardingWizard settings={settings} onFinish={() => {}} />)
+    next()
+    next()
+    const dots = screen.getByTestId('onboarding-step-dots')
+    expect(within(dots).getAllByTestId(/^onboarding-step-dot-\d+$/)).toHaveLength(5)
+    expect(screen.getByTestId('onboarding-step-dot-2')).toHaveAttribute('data-current')
+    expect(screen.getByTestId('onboarding-step-dot-1')).not.toHaveAttribute('data-current')
+    expect(dots).toHaveTextContent(i18n.t('onboarding.step', { current: 3, total: 5 }))
+  })
 })
 
 describe('OnboardingWizard DJ software', () => {

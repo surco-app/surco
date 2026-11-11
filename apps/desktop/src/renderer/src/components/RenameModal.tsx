@@ -88,7 +88,6 @@ export function RenameModal({
         <h2 id="rename-title" className="text-base font-semibold">
           {tr('rename.title')}
         </h2>
-        <p className="mt-0.5 text-xs text-fg-dim">{tr('rename.description')}</p>
       </div>
 
       <input

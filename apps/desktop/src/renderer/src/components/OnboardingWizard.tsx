@@ -654,9 +654,22 @@ export function OnboardingWizard({
               {tr('onboarding.skip')}
             </button>
             <div className="flex items-center gap-3">
-              <span className="text-xs text-fg-faint">
-                {tr('onboarding.step', { current: step + 1, total: STEPS.length })}
-              </span>
+              <div data-testid="onboarding-step-dots" className="flex items-center gap-1.5">
+                <span className="sr-only">
+                  {tr('onboarding.step', { current: step + 1, total: STEPS.length })}
+                </span>
+                {STEPS.map((id, i) => (
+                  <span
+                    key={id}
+                    aria-hidden="true"
+                    data-testid={`onboarding-step-dot-${i}`}
+                    data-current={i === step || undefined}
+                    className={`h-1.5 w-1.5 rounded-full ${
+                      i === step ? 'bg-[var(--color-accent)]' : 'bg-[var(--color-line-strong)]'
+                    }`}
+                  />
+                ))}
+              </div>
               {step > 0 && (
                 <button
                   type="button"

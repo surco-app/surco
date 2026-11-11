@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ProgramCopies } from '../../../shared/types'
-import { COPIES_KEEP, programState, railAlert } from './copiesView'
+import { programState, railAlert } from './copiesView'
 
 function program(over: Partial<ProgramCopies> = {}): ProgramCopies {
   return {
@@ -57,11 +57,5 @@ describe('railAlert', () => {
 
   it('untouched with no problems shows no dot', () => {
     expect(railAlert([program({ untouched: true }), program()])).toBe('none')
-  })
-})
-
-describe('COPIES_KEEP', () => {
-  it('matches the five history copies the footer promises', () => {
-    expect(COPIES_KEEP).toBe(5)
   })
 })

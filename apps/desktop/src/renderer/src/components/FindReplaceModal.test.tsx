@@ -209,19 +209,21 @@ describe('FindReplaceModal', () => {
   })
 })
 
-// The count line is the user's check before rewriting tags; "1 fields in 1 tracks" reads
-// like a bug and makes them doubt the numbers next to it.
+// The count line is the user's check before rewriting tags; "1 fields" reads like a bug and
+// makes them doubt the numbers next to it. The track count lives on the apply button alone.
 describe('FindReplaceModal summary', () => {
-  it('says one field in one track in the singular', () => {
+  it('says one field in the singular', () => {
     renderModal([track('1', { title: 'foo' })])
     type('find-replace-find', 'foo')
-    expect(screen.getByTestId('find-replace-preview')).toHaveTextContent('1 field in 1 track')
+    expect(screen.getByTestId('find-replace-preview')).toHaveTextContent(/^1 field/)
   })
 
-  it('pluralizes each count on its own', () => {
+  it('counts fields above and leaves the track count to the apply button', () => {
     renderModal([track('1', { title: 'foo', artist: 'foo' }), track('2', { title: 'foo' })])
     type('find-replace-find', 'foo')
-    expect(screen.getByTestId('find-replace-preview')).toHaveTextContent('3 fields in 2 tracks')
+    expect(screen.getByTestId('find-replace-preview')).toHaveTextContent(/^3 fields/)
+    expect(screen.getByTestId('find-replace-preview')).not.toHaveTextContent('tracks')
+    expect(screen.getByTestId('find-replace-apply')).toHaveTextContent('Replace in 2')
   })
 })
 

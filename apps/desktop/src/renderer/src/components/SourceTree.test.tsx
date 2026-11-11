@@ -450,13 +450,14 @@ describe('SourceTree organising', () => {
     expect(edit.onCreate).toHaveBeenCalledTimes(1)
   })
 
-  it('lights a playlist under a file drag and says how many will land in it', () => {
+  // The drag itself says the tracks go in on drop; the badge only needs the number.
+  it('lights a playlist under a file drag and shows a bare +count of what will land in it', () => {
     const { edit } = setup(null, true)
     const house = screen.getByTestId('source-node-house')
     const dt = files('a.wav', 'b.wav')
     fireEvent.dragOver(house, { dataTransfer: dt })
     expect(house).toHaveAttribute('data-drop-target')
-    expect(screen.getByTestId('source-drop-count')).toHaveTextContent('+2 on drop')
+    expect(screen.getByTestId('source-drop-count')).toHaveTextContent(/^\+2$/)
     fireEvent.drop(house, { dataTransfer: dt })
     expect(edit.onDropTracks).toHaveBeenCalledWith(NODES[2], dt.files)
     expect(house).not.toHaveAttribute('data-drop-target')
@@ -470,7 +471,7 @@ describe('SourceTree organising', () => {
     const house = screen.getByTestId('source-node-house')
     const dt = fakeDataTransfer()
     fireEvent.dragOver(house, { dataTransfer: dt })
-    expect(screen.getByTestId('source-drop-count')).toHaveTextContent('+3 on drop')
+    expect(screen.getByTestId('source-drop-count')).toHaveTextContent(/^\+3$/)
     fireEvent.drop(house, { dataTransfer: dt })
     expect(edit.onDropTracks).toHaveBeenCalledWith(NODES[2], [])
   })
@@ -494,7 +495,7 @@ describe('SourceTree organising', () => {
     setup(null, true)
     setDraggedRows(['a', 'b', 'c'])
     fireEvent.dragOver(screen.getByTestId('source-node-house'), { dataTransfer: files('x.wav') })
-    expect(screen.getByTestId('source-drop-count')).toHaveTextContent('+1 on drop')
+    expect(screen.getByTestId('source-drop-count')).toHaveTextContent(/^\+1$/)
   })
 
   // A folder holds playlists, not tracks; a drop there must neither write anything nor
@@ -573,7 +574,7 @@ describe('SourceTree organising', () => {
     const dt = files('a.wav', 'b.wav')
     dt.items = [{ kind: 'file' }, { kind: 'file' }, { kind: 'string' }]
     fireEvent.dragOver(house, { dataTransfer: dt })
-    expect(screen.getByTestId('source-drop-count')).toHaveTextContent('+2 on drop')
+    expect(screen.getByTestId('source-drop-count')).toHaveTextContent(/^\+2$/)
   })
 })
 

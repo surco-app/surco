@@ -35,15 +35,43 @@ describe('PropertiesReadout extension', () => {
   it('shows the container from the path, not the dotted title', () => {
     render(
       <PropertiesReadout
-        properties={props}
+        properties={{ ...props, codec: 'pcm_s16be', container: 'aiff' }}
         fileName="20. Dj Isaac - On The Edge (Original Mix)"
-        inputPath="/music/bases buenas/20. Dj Isaac - On The Edge (Original Mix).flac"
+        inputPath="/music/bases buenas/20. Dj Isaac - On The Edge (Original Mix).aif"
         duration={413}
       />,
     )
     const ext = screen.getByTestId('property-extension')
-    expect(ext).toHaveTextContent('FLAC')
+    expect(ext).toHaveTextContent('AIF')
     expect(ext).not.toHaveTextContent(/ISAAC/i)
+  })
+})
+
+describe('PropertiesReadout repeated facts', () => {
+  // Kind already says FLAC and Channel mode already says Stereo, so a Codec "flac", an
+  // Extension "FLAC" and a Channels "2" beside them only repeat what the panel just said.
+  it('drops the rows that repeat the kind or the channel mode', () => {
+    render(
+      <PropertiesReadout properties={props} fileName="x" inputPath="/x/x.flac" duration={404} />,
+    )
+    expect(screen.getByTestId('property-kind')).toHaveTextContent('FLAC')
+    expect(screen.getByTestId('property-channelMode')).toHaveTextContent('Stereo')
+    expect(screen.queryByTestId('property-codec')).toBeNull()
+    expect(screen.queryByTestId('property-extension')).toBeNull()
+    expect(screen.queryByTestId('property-channels')).toBeNull()
+  })
+
+  // An .m4a can hold AAC or ALAC; there the codec is the one fact Kind cannot tell.
+  it('keeps the codec when it tells something the kind does not', () => {
+    render(
+      <PropertiesReadout
+        properties={{ ...props, codec: 'alac', container: 'm4a' }}
+        fileName="x"
+        inputPath="/x/x.m4a"
+        duration={404}
+      />,
+    )
+    expect(screen.getByTestId('property-codec')).toHaveTextContent('alac')
   })
 })
 
@@ -65,9 +93,9 @@ describe('PropertiesReadout two-column grid', () => {
   })
 
   // With an odd number of short facts the last one stretches full-width, so the grid never
-  // shows an empty half-cell next to it. Dropping only Bitrate leaves AUDIO's shorts at 7
-  // (kind, codec, sampleRate, bitDepth, channels, channelMode, duration) — odd — so its
-  // last short (Duration) stretches. A 6-short even group leaves none stretched.
+  // shows an empty half-cell next to it. Dropping only Bitrate leaves AUDIO's shorts at 5
+  // (kind, sampleRate, bitDepth, channelMode, duration) — odd — so its last short
+  // (Duration) stretches. A 6-short even group leaves none stretched.
   it('stretches the last short row when the shorts come out odd', () => {
     render(
       <PropertiesReadout
@@ -81,7 +109,7 @@ describe('PropertiesReadout two-column grid', () => {
   })
 
   it('leaves every short row single-cell when the shorts come out even', () => {
-    // Full props → AUDIO shorts = 8 (even), so none of them is stretched.
+    // Full props → AUDIO shorts = 6 (even), so none of them is stretched.
     render(
       <PropertiesReadout properties={props} fileName="x" inputPath="/x/x.flac" duration={404} />,
     )

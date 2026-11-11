@@ -144,7 +144,7 @@ import { nextLocale } from './i18n/locale'
 import { removeAnalysisQueries, seedCachedAnalyses } from './lib/analysisQueries'
 import type { AppleMusicIndex } from './lib/appleMusicLibrary'
 import { type AppError, type AppStore, createAppStore, useAppStore } from './lib/appStore'
-import { activeCleanups, cleanupPatcher, planAutoClean } from './lib/autoClean'
+import { cleanupPatcher, planAutoClean } from './lib/autoClean'
 import {
   acceptReviewOf,
   acceptReviewPatch,
@@ -3474,10 +3474,6 @@ export default function App(): React.JSX.Element {
         true,
       )
   })
-  const cleanedCount = useMemo(
-    () => tracks.filter((t) => activeCleanups(t).length > 0).length,
-    [tracks],
-  )
   const { watchLoad, onPathsAdded: noticeOnPathsAdded } = useListReviewNotice({
     store,
     tr,
@@ -3634,7 +3630,6 @@ export default function App(): React.JSX.Element {
                   analysisSlowed={analysisSlowed}
                   allAnalyzed={allAnalyzed}
                   matching={matching}
-                  cleanedCount={cleanedCount}
                   canAutoMatch={!!settings && autoMatchAvailable(settings)}
                   needsToken={needsToken}
                   tokenMissing={tokenMissing}

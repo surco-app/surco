@@ -104,7 +104,7 @@ export function TagListBulkField({
             className={`h-3 w-3 shrink-0 text-fg-faint transition-transform ${open ? 'rotate-90' : ''}`}
             aria-hidden="true"
           />
-          <span>{tr('editor.groupingPerTrack', { count: tracks.length })}</span>
+          <span>{tr('editor.groupingPerTrack')}</span>
           <span className="ml-auto text-[11px] text-fg-faint">
             {varying === 0
               ? tr('editor.groupingSame')
