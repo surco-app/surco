@@ -400,29 +400,25 @@ describe('Cues over several selected tracks', () => {
   })
 })
 
-describe('Cues over several selected tracks Surco can only read', () => {
+describe('Cues over several selected tracks of the programs Surco saves cues to', () => {
   const VDJ = [
     { contentId: 'virtualdj:/m/a.wav', path: '/m/a.wav', label: 'Maniac' },
     { contentId: 'virtualdj:/m/b.wav', path: '/m/b.wav', label: 'Summer Sky' },
   ]
 
-  it('keeps Auto mark in sight but disabled on VirtualDJ rows, saying why, since the save would be refused', () => {
+  it('leaves Auto mark enabled on VirtualDJ rows, now that Surco saves their cues', () => {
     const { onMark } = setup({}, VDJ)
     const mark = screen.getByTestId('cues-auto-mark-all')
-    expect(mark).toBeDisabled()
+    expect(mark).toBeEnabled()
     fireEvent.click(mark)
-    expect(onMark).not.toHaveBeenCalled()
-    expect(screen.getByTestId('cues-batch-read-only')).toHaveTextContent(
-      i18n.t('editor.cues.virtualdj.readOnly'),
-    )
+    expect(onMark).toHaveBeenCalled()
+    expect(screen.queryByTestId('cues-batch-read-only')).toBeNull()
   })
 
-  it('disables Auto mark for a selection that mixes VirtualDJ and rekordbox rows, since one save carries them all', () => {
+  it('leaves Auto mark enabled for a selection that mixes VirtualDJ and rekordbox rows', () => {
     setup({}, [TARGETS[0], VDJ[0]])
-    expect(screen.getByTestId('cues-auto-mark-all')).toBeDisabled()
-    expect(screen.getByTestId('cues-batch-read-only')).toHaveTextContent(
-      i18n.t('editor.cues.virtualdj.readOnly'),
-    )
+    expect(screen.getByTestId('cues-auto-mark-all')).toBeEnabled()
+    expect(screen.queryByTestId('cues-batch-read-only')).toBeNull()
   })
 
   it('leaves Auto mark enabled on Serato rows, which Surco saves', () => {

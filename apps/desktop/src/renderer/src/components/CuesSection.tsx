@@ -202,15 +202,16 @@ const VIRTUALDJ_COPY: typeof REKORDBOX_COPY = {
   autoUnanalysed: 'editor.cues.virtualdj.autoUnreadable',
 }
 
-export const READ_ONLY_COPY: Record<
-  ReadOnlyCueProgram,
-  { readOnly: string; none: string; loop: string }
-> = {
-  virtualdj: {
-    readOnly: 'editor.cues.virtualdj.readOnly',
-    none: 'editor.cues.virtualdj.none',
-    loop: 'editor.cues.virtualdj.loop',
-  },
+interface ReadOnlyCopy {
+  readOnly: string
+  none: string
+  loop: string
+}
+
+const READ_ONLY_COPY: Record<ReadOnlyCueProgram, ReadOnlyCopy> = {}
+
+export function readOnlyCopy(program: ReadOnlyCueProgram): ReadOnlyCopy {
+  return READ_ONLY_COPY[program]
 }
 
 const COPY: Record<DjProgram, typeof REKORDBOX_COPY> = {
@@ -1953,7 +1954,7 @@ function ReadOnlyCues({
   read: TrackCues
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
-  const copy = READ_ONLY_COPY[program]
+  const copy = readOnlyCopy(program)
   const { runningNote } = cueProgramOf(contentId)
   const { data: programOpen = false } = useQuery({
     queryKey: [`${program}-running`, contentId],

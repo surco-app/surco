@@ -28,7 +28,16 @@ function source(
   words: (file: string) => Promise<Uint16Array | null> = async () => null,
   fine?: (file: string) => Promise<Uint8Array | null>,
 ) {
-  return virtualdjCueSource({ dir: () => dir, words, fine }, () => '')
+  return virtualdjCueSource(
+    {
+      dir: () => dir,
+      words,
+      fine,
+      queue: { enqueue: vi.fn(), cuesOp: vi.fn(), drop: vi.fn() },
+      applyQuietly: vi.fn(),
+    },
+    () => '',
+  )
 }
 
 function library(songs: string): string {

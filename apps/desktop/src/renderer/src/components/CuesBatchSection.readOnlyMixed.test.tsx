@@ -14,7 +14,7 @@ vi.mock('../../../shared/djProgram', async (actual) => {
   return {
     ...real,
     readsCuesOnly: (program: string) =>
-      program === 'serato' || real.readsCuesOnly(program as never),
+      program === 'serato' || program === 'virtualdj' || real.readsCuesOnly(program as never),
   }
 })
 

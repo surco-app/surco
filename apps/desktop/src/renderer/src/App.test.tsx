@@ -740,6 +740,31 @@ describe('App Engine DJ cues', () => {
       'serato-queue-pill',
     ])
   })
+
+  it('shows what waits for VirtualDJ to close after the Serato queue, the last program of the rail', async () => {
+    const waiting = { tracks: 1, changes: 0, items: [] }
+    const virtualdjCueQueueReady = vi
+      .fn<ProgramReads['cueQueueReady']>()
+      .mockResolvedValue(undefined)
+    openEngine({
+      dj: djReads({
+        serato: { cueQueue: vi.fn<ProgramReads['cueQueue']>().mockResolvedValue(waiting) },
+        virtualdj: {
+          cueQueue: vi.fn<ProgramReads['cueQueue']>().mockResolvedValue(waiting),
+          cueQueueReady: virtualdjCueQueueReady,
+        },
+      }),
+    })
+    await renderApp()
+    expect(await screen.findByTestId('virtualdj-queue-pill')).toHaveTextContent(
+      '1 track waits for you to close VirtualDJ',
+    )
+    await screen.findByTestId('serato-queue-pill')
+    expect(
+      screen.getAllByTestId(/^(serato|virtualdj)-queue-pill$/).map((pill) => pill.dataset.testid),
+    ).toEqual(['serato-queue-pill', 'virtualdj-queue-pill'])
+    expect(virtualdjCueQueueReady).toHaveBeenCalled()
+  })
 })
 
 const stick = (uuid: string, by: UsbVolume['holder']['by']): UsbVolume => ({
@@ -956,7 +981,7 @@ describe('App VirtualDJ tab', () => {
     expect(screen.queryByTestId('source-rail-virtualdj')).toBeNull()
   })
 
-  it('tells the DJ in the VirtualDJ tab that what it shows may change while VirtualDJ is open', async () => {
+  it('tells the DJ in the VirtualDJ tab that the changes will be saved once VirtualDJ is closed', async () => {
     openVirtualdj({
       dj: djReads({
         virtualdj: { running: vi.fn<ProgramReads['running']>().mockResolvedValue(true) },
@@ -965,11 +990,11 @@ describe('App VirtualDJ tab', () => {
     await renderApp()
     fireEvent.click(await screen.findByTestId('source-rail-virtualdj'))
     expect(await screen.findByTestId('source-tree-notice')).toHaveTextContent(
-      'VirtualDJ is open. What you see may change when you close it',
+      'VirtualDJ is open. Your changes will be saved when you close it',
     )
   })
 
-  it('shows Auto mark over several VirtualDJ rows disabled with the read-only reason, not a false one-track reason', async () => {
+  it('offers Auto mark over several VirtualDJ rows, in the section and in the palette, now that Surco saves their cues', async () => {
     openVirtualdj({
       cues: { trackCues: vi.fn<Api['cues']['trackCues']>().mockResolvedValue(null) },
     })
@@ -981,14 +1006,12 @@ describe('App VirtualDJ tab', () => {
     const rows = screen.getAllByTestId('track-row')
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { metaKey: true })
-    expect(await screen.findByTestId('cues-auto-mark-all')).toBeDisabled()
-    expect(screen.getByTestId('cues-batch-read-only')).toHaveTextContent(
-      "Surco only reads VirtualDJ's cues. To change them, do it in VirtualDJ",
-    )
+    expect(await screen.findByTestId('cues-auto-mark-all')).toBeEnabled()
+    expect(screen.queryByTestId('cues-batch-read-only')).toBeNull()
     expect(screen.queryByTestId('cues-single-only')).toBeNull()
     fireEvent.keyDown(document.body, { key: 'k', ctrlKey: true })
     await screen.findByTestId('palette-input')
-    expect(document.getElementById('palette-option-cues-auto-mark-selected')).toBeNull()
+    expect(document.getElementById('palette-option-cues-auto-mark-selected')).not.toBeNull()
   })
 })
 

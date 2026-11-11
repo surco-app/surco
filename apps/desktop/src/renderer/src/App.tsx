@@ -940,6 +940,20 @@ export default function App(): React.JSX.Element {
     noteSessionCreated,
   )
   const { applyNow: applySeratoQueueNow, discard: discardSeratoQueue } = seratoCueQueue
+  const dropDiscardedVirtualdj = useStableCallback((paths: string[]) =>
+    setTracks((prev) => discardPlaylistEdits(prev, paths, 'virtualdj')),
+  )
+  const dropWrittenVirtualdj = useStableCallback((written: RekordboxQueueWritten[]) =>
+    setTracks((prev) => clearWrittenPlaylists(prev, written, 'virtualdj')),
+  )
+  const virtualdjCueQueue = useRekordboxQueue(
+    notifyEdit,
+    dropDiscardedVirtualdj,
+    dropWrittenVirtualdj,
+    PROGRAM_QUEUES.virtualdj.source,
+    noteSessionCreated,
+  )
+  const { applyNow: applyVirtualdjQueueNow, discard: discardVirtualdjQueue } = virtualdjCueQueue
   const queuePill = useMemo(() => {
     const queues: Record<
       CueProgram,
@@ -965,7 +979,11 @@ export default function App(): React.JSX.Element {
         applyNow: applySeratoQueueNow,
         discard: discardSeratoQueue,
       },
-      virtualdj: null,
+      virtualdj: {
+        state: virtualdjCueQueue.state,
+        applyNow: applyVirtualdjQueueNow,
+        discard: discardVirtualdjQueue,
+      },
     }
     return (
       <>
@@ -999,6 +1017,9 @@ export default function App(): React.JSX.Element {
     seratoCueQueue.state,
     applySeratoQueueNow,
     discardSeratoQueue,
+    virtualdjCueQueue.state,
+    applyVirtualdjQueueNow,
+    discardVirtualdjQueue,
   ])
   // The USB export: macOS and Windows, with a rekordbox collection or from the Engine DJ
   // tree. Its state lives in usbExportStore, outside React; App reads only the phase (for

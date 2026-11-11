@@ -144,6 +144,28 @@ export const SERATO_QUEUE_WORDS: QueueWords = {
   },
 }
 
+export const VIRTUALDJ_QUEUE_WORDS: QueueWords = {
+  pillTracks: 'virtualdjQueue.pillTracks',
+  pillChanges: 'virtualdjQueue.pillChanges',
+  pillTracksUnplugged: 'virtualdjQueue.pillTracks',
+  pillChangesUnplugged: 'virtualdjQueue.pillChanges',
+  pillHalted: 'virtualdjQueue.pillHalted',
+  pillElsewhere: 'virtualdjQueue.pillTracks',
+  halted: 'virtualdjQueue.writeUnknown',
+  elsewhere: 'virtualdjQueue.pillTracks',
+  discardConfirm: 'virtualdjQueue.discardConfirm',
+  applied: 'virtualdjQueue.applied',
+  appliedChanges: 'virtualdjQueue.appliedChanges',
+  backupFailed: 'virtualdjQueue.writeFailed',
+  refused: (reason) =>
+    reason === 'write-unknown' ? 'virtualdjQueue.writeUnknown' : 'virtualdjQueue.writeFailed',
+  notices: {
+    ...REKORDBOX_QUEUE_WORDS.notices,
+    'cues-changed': 'virtualdjQueue.notice.cuesChanged',
+    'cues-calls-dropped': 'virtualdjQueue.notice.callsDropped',
+  },
+}
+
 export function noticeText(
   tr: TFunction,
   notice: RekordboxQueueNotice,

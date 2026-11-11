@@ -82,10 +82,10 @@ export const CUE_PROGRAMS: Record<DjProgram, CueProgram> = {
     fixedColour: null,
     colourHelp: null,
     collectionGate: null,
-    callsNote: null,
+    callsNote: { key: 'editor.cues.virtualdj.calls', testId: 'cues-virtualdj-calls' },
     runningNote: { key: 'editor.cues.virtualdj.waiting', testId: 'cues-virtualdj-waiting' },
     saveAllKey: 'editor.cues.virtualdj.saveAll',
-    fixedGrid: null,
+    fixedGrid: 'editor.cues.grid.virtualdj',
     takesFlows: false,
   },
 }

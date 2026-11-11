@@ -17,7 +17,7 @@ vi.mock('./rekordboxDb', async (actual) => {
 })
 
 import { CALLS_ONLY, MY_FLOW } from '../shared/cueFlows'
-import { flowOutcome } from '../shared/cueRules'
+import { flowOutcome, HOT_KINDS } from '../shared/cueRules'
 import type { DropInput } from '../shared/dropDetect'
 import type { TrackCues } from '../shared/types'
 import { anlzFile, pqtzSection, pwv5Section } from './anlzFixture'
@@ -49,7 +49,7 @@ function registerWithSources(host: {
   engine?: Parameters<typeof engineCueSource>[0]
   traktor?: Omit<Parameters<typeof traktorCueSource>[0], 'fine'>
   serato?: Omit<Parameters<typeof seratoCueSource>[0], 'words' | 'fine'>
-  virtualdjDir?: string
+  virtualdj?: Omit<Parameters<typeof virtualdjCueSource>[0], 'dir' | 'words'> & { dir: string }
 }): void {
   registerCuesIpc({
     collection: host.collection,
@@ -66,9 +66,9 @@ function registerWithSources(host: {
       serato: host.serato
         ? seratoCueSource({ ...host.serato, words: host.words, fine: host.fine }, host.collection)
         : null,
-      virtualdj: host.virtualdjDir
+      virtualdj: host.virtualdj
         ? virtualdjCueSource(
-            { dir: () => host.virtualdjDir ?? '', words: host.words },
+            { ...host.virtualdj, dir: () => host.virtualdj?.dir ?? '', words: host.words },
             host.collection,
           )
         : null,
@@ -443,9 +443,11 @@ describe('registerCuesIpc', () => {
     expect(add).not.toHaveBeenCalled()
   })
 
-  it('refuses to save cues on a VirtualDJ track even with its cue source wired, since Surco only reads VirtualDJ, and writes nothing else from the call', async () => {
+  it('queues a VirtualDJ save on VirtualDJ’s own queue and asks it to write, leaving rekordbox’s queue alone', async () => {
     const enqueue = vi.fn<RekordboxQueue['enqueue']>(() => true)
     const applyQuietly = quietly()
+    const vdjEnqueue = vi.fn<RekordboxQueue['enqueue']>(() => true)
+    const vdjApply = quietly()
     const beginMoment = vi.fn()
     registerWithSources({
       collection: () => '/c/master.db',
@@ -457,19 +459,24 @@ describe('registerCuesIpc', () => {
       words: async () => null,
       provisional: { add: vi.fn() },
       twins: async () => ({}),
-      virtualdjDir: join(__dirname, 'virtualdjFixtures'),
+      virtualdj: {
+        dir: join(__dirname, 'virtualdjFixtures'),
+        queue: queue({ enqueue: vdjEnqueue }),
+        applyQuietly: vdjApply,
+      },
     })
     const vdj = 'virtualdj:/Music/VirtualDJ Pruebas/Pray.mp3'
     expect((await handler('cues:trackCues')({}, vdj)) as TrackCues).toMatchObject({
       contentId: vdj,
     })
-    const wanted = [{ ms: 1000, kind: 0, color: null }]
-    await expect(
-      handler('cues:save')({}, [
-        { contentId: '103', path: '/m/a.wav', label: 'a', wanted, fingerprint: 'f' },
-        { contentId: vdj, path: '/m/v.mp3', label: 'v', wanted, fingerprint: 'f' },
-      ]),
-    ).rejects.toThrow('virtualdj cues are read only')
+    const wanted = [{ ms: 1000, kind: HOT_KINDS[0], color: null }]
+    await handler('cues:save')({}, [
+      { contentId: vdj, path: '/m/v.mp3', label: 'v', wanted, fingerprint: 'f' },
+    ])
+    expect(vdjEnqueue).toHaveBeenCalledWith([
+      expect.objectContaining({ kind: 'cues', contentId: vdj, wanted }),
+    ])
+    expect(vdjApply).toHaveBeenCalled()
     expect(enqueue).not.toHaveBeenCalled()
     expect(applyQuietly).not.toHaveBeenCalled()
     expect(beginMoment).not.toHaveBeenCalled()

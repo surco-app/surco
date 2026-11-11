@@ -15,6 +15,7 @@ import {
   pillText,
   SERATO_QUEUE_WORDS,
   TRAKTOR_QUEUE_WORDS,
+  VIRTUALDJ_QUEUE_WORDS,
 } from './rekordboxQueueText'
 
 const tr = i18n.getFixedT('en')
@@ -445,5 +446,40 @@ describe('Serato queue text', () => {
     )
     for (const line of [...queueLines, ...trackLines])
       expect(line).not.toMatch(/rekordbox|Engine DJ|Traktor/)
+  })
+})
+
+describe('VirtualDJ queue text', () => {
+  it('sends the DJ to the VirtualDJ backups before opening VirtualDJ when a write could be neither saved nor undone', () => {
+    const backups =
+      "Couldn't save the changes or undo them, so the library may have changed. Before opening VirtualDJ, restore database.xml from the most recent copy in the virtualdj-backups folder in Surco's data"
+    expect(tr(VIRTUALDJ_QUEUE_WORDS.halted)).toBe(backups)
+    expect(appliedMessage(tr, { refused: 'write-unknown' }, VIRTUALDJ_QUEUE_WORDS)?.text).toBe(
+      backups,
+    )
+    expect(appliedMessage(tr, { refused: 'write-failed' }, VIRTUALDJ_QUEUE_WORDS)?.text).toBe(
+      "Couldn't save the changes to VirtualDJ. The files are as they were",
+    )
+  })
+
+  it('says in VirtualDJ’s words that a CALL was not saved and that cues changed there', () => {
+    expect(
+      noticeText(
+        tr,
+        { code: 'cues-calls-dropped', track: 'Pray', calls: [90000] },
+        VIRTUALDJ_QUEUE_WORDS,
+      ),
+    ).toBe('1 CALL of Pray was not saved (1:30). VirtualDJ only keeps hot cues')
+    expect(noticeText(tr, { code: 'cues-changed', track: 'Pray' }, VIRTUALDJ_QUEUE_WORDS)).toBe(
+      'The cues of Pray changed in VirtualDJ. Mark them again',
+    )
+  })
+
+  it('words the VirtualDJ backups warning in every language', () => {
+    for (const locale of [en, es, de, fr, ja, ptBR]) {
+      expect(locale.virtualdjQueue.writeUnknown).toContain('virtualdj-backups')
+      expect(locale.virtualdjQueue.writeUnknown).toContain('database.xml')
+      expect(locale.virtualdjQueue.writeUnknown).not.toMatch(/—|: /)
+    }
   })
 })

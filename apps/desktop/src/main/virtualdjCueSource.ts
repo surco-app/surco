@@ -13,13 +13,7 @@ import { tempoGrid } from './seratoCueSource'
 import type { VirtualdjSong } from './virtualdjDatabase'
 import { readVirtualdjSongs } from './virtualdjLibrary'
 
-const READ_ONLY_QUEUE: CueQueue = {
-  cuesOp: () => undefined,
-  drop: () => {},
-  enqueue: () => {},
-}
-
-function cueRows(song: VirtualdjSong): TrackCueRow[] {
+export function virtualdjCueRows(song: VirtualdjSong): TrackCueRow[] {
   return song.pois.flatMap((p) =>
     p.kind === 'cue' && p.num !== null && p.num >= 1 && p.num <= HOT_KINDS.length
       ? [
@@ -59,7 +53,7 @@ export function virtualdjTrackCuesOf(contentId: string, song: VirtualdjSong): Tr
   const grid = analysed
     ? tempoGrid({ firstBeatMs: phaseSeconds * 1000, bpm: 60 / secondsPerBeat }, 0, durationMs)
     : []
-  const cues = cueRows(song)
+  const cues = virtualdjCueRows(song)
   return {
     contentId,
     analysed,
@@ -80,6 +74,8 @@ export function virtualdjCueSource(
     dir: () => string
     words: (file: string) => Promise<Uint16Array | null>
     fine?: (file: string) => Promise<Uint8Array | null>
+    queue: CueQueue
+    applyQuietly: CueSource['applyQuietly']
   },
   collection: () => string,
 ): CueSource {
@@ -124,8 +120,8 @@ export function virtualdjCueSource(
     gridFit: async () => null,
     gridVerdict: async () => null,
     queuedWanted: async () => [],
-    queue: READ_ONLY_QUEUE,
-    applyQuietly: () => {},
+    queue: host.queue,
+    applyQuietly: host.applyQuietly,
   }
   return source
 }

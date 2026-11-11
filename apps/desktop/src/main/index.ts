@@ -280,6 +280,7 @@ import {
 import type { FlushOutcome, TraktorWrite } from './verifyRegistry'
 import { withRecordedRun } from './verifyRun'
 import { virtualdjCueSource } from './virtualdjCueSource'
+import { applyVirtualdjCuesBatch } from './virtualdjCuesWrite'
 import { virtualdjRead } from './virtualdjPlaylistsIpc'
 import { onWatchedFilesChanged } from './watchedFiles'
 import { dirRoots, FolderWatcher } from './watcher'
@@ -365,9 +366,12 @@ function seratoRoots() {
   }
 }
 const virtualdjDir = (): string => getSettings().virtualdjLibraryDir
+const virtualdjLibrary = (): string =>
+  existsSync(join(virtualdjDir(), 'database.xml')) ? virtualdjDir() : ''
+const virtualdjRoots = () => (virtualdjLibrary() ? [{ dir: virtualdjLibrary(), root: '/' }] : [])
 const readOnlyLibraries = (): ReadOnlyLibraries => ({
   serato: seratoRoots(),
-  virtualdj: existsSync(join(virtualdjDir(), 'database.xml')) ? virtualdjDir() : '',
+  virtualdj: virtualdjLibrary(),
 })
 
 let endConversionBatch: ((sender: WebContents) => Promise<void>) | undefined
@@ -571,7 +575,30 @@ const programQueues = {
     },
     programQueueDeps,
   ),
-  virtualdj: null,
+  virtualdj: createProgramQueue(
+    {
+      program: 'virtualdj',
+      queue: {
+        store: fileStore(join(app.getPath('userData'), 'virtualdj-cue-queue.json')),
+        collection: virtualdjLibrary,
+        configured: virtualdjDir,
+        applyBatch: (_library, ops, ensureClosed, stillQueued) =>
+          applyVirtualdjCuesBatch(ops, {
+            roots: virtualdjRoots,
+            backupDir: join(app.getPath('userData'), 'virtualdj-backups'),
+            ensureClosed,
+            stillQueued,
+            virtualdjOpen: DJ_PROCESSES.virtualdj.isRunning,
+          }),
+        repoint: async () => [],
+        nodeStamps: async () => ({}),
+        onChange: (state) =>
+          broadcast(DJ_CUE_QUEUE_CHANGED, { program: 'virtualdj', value: state }),
+        addsTracks: false,
+      },
+    },
+    programQueueDeps,
+  ),
 } satisfies { [P in CueProgram]: { program: P } | null }
 const rekordboxQueue = programQueues.rekordbox.queue
 const announceApplied = programQueues.rekordbox.announceApplied
@@ -589,6 +616,8 @@ const traktorCueQueueWatch = programQueues.traktor.watch
 const applyTraktorCueQueueQuietly = programQueues.traktor.applyQuietly
 const seratoCueQueue = programQueues.serato.queue
 const seratoCueQueueWatch = programQueues.serato.watch
+const virtualdjCueQueue = programQueues.virtualdj.queue
+const virtualdjCueQueueWatch = programQueues.virtualdj.watch
 const provisionalCues = createProvisionalList(
   fileStore(join(app.getPath('userData'), 'rekordbox-provisional.json')),
   () => rekordboxQueueWatch.poke(),
@@ -894,13 +923,15 @@ function createWindow(): BrowserWindow {
       rekordboxQueue.busy() ||
       engineCueQueue.busy() ||
       traktorCueQueue.busy() ||
-      seratoCueQueue.busy(),
+      seratoCueQueue.busy() ||
+      virtualdjCueQueue.busy(),
     finishWriting: () =>
       Promise.all([
         rekordboxQueue.settled(),
         engineCueQueue.settled(),
         traktorCueQueue.settled(),
         seratoCueQueue.settled(),
+        virtualdjCueQueue.settled(),
       ]).then(() => undefined),
     unsavedCues: () => unsavedCueTracks.size,
     confirm: async (running, exporting, unsavedCues) => {
@@ -1492,6 +1523,11 @@ function registerIpc(): void {
       pickLibraryPath: pickLibraryPath('dialogVirtualdjLibrary', {
         properties: ['openDirectory'],
       }),
+      cueQueue: seratoCueQueueSection(virtualdjCueQueue, {
+        isRunning: DJ_PROCESSES.virtualdj.isRunning,
+        onWaiting: virtualdjCueQueueWatch.poke,
+        onReady: virtualdjCueQueueWatch.poke,
+      }),
     },
   })
   const cueSourceHost = {
@@ -1554,7 +1590,13 @@ function registerIpc(): void {
         rekordboxCollectionPath,
       ),
       virtualdj: virtualdjCueSource(
-        { dir: virtualdjDir, words: cachedCueWaveWords, fine: cachedCueWaveFine },
+        {
+          dir: virtualdjDir,
+          words: cachedCueWaveWords,
+          fine: cachedCueWaveFine,
+          queue: virtualdjCueQueue,
+          applyQuietly: () => programQueues.virtualdj.applyQuietly(),
+        },
         rekordboxCollectionPath,
       ),
     },

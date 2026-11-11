@@ -1209,10 +1209,8 @@
         "autoUnreadable": "Surco はこのトラックの音声を読み取れませんでした",
         "saveAll_one": "{{count}} トラックを VirtualDJ に保存",
         "saveAll_other": "{{count}} トラックを VirtualDJ に保存",
-        "waiting": "VirtualDJ が開いています。閉じると表示内容が変わることがあります",
-        "readOnly": "Surco は VirtualDJ のキューを読むだけです。変更は VirtualDJ で行ってください",
-        "none": "このトラックには VirtualDJ のホットキューもループもありません",
-        "loop": "ループ"
+        "waiting": "VirtualDJ が開いています。変更は VirtualDJ を閉じたときに保存されます",
+        "calls": "VirtualDJ には CALL がないため、保存されません。VirtualDJ に反映されるのはホットキューのみです"
       },
       "traktor": {
         "save": "Traktor に保存",
@@ -1273,6 +1271,7 @@
         "anchorAdd": "再生位置にアンカー（ゾーンを開始）",
         "anchorRemove": "再生位置のアンカーを削除",
         "serato": "Serato のビートグリッドは Serato のもので、ここでは変更できません",
+        "virtualdj": "VirtualDJ のビートグリッドは VirtualDJ のもので、ここでは変更できません",
         "pin": "固定",
         "pinHint": "再生位置に最も近い拍に固定 (G)。⇧ で再生位置ちょうどに",
         "window": "{{time}}、グリッド {{ms}}"
@@ -1913,7 +1912,7 @@
     "virtualdjLibrary": "VirtualDJ",
     "virtualdjLibraryDir": "VirtualDJ フォルダー",
     "virtualdjLibraryDirEmpty": "フォルダー未選択",
-    "virtualdjLibraryDirHint": "VirtualDJ が database.xml と MyLists を保存しているフォルダーです。現在 Surco は読み取るだけで、何も変更しません。",
+    "virtualdjLibraryDirHint": "VirtualDJ が database.xml と MyLists を保存しているフォルダーです。Surco はここにキューを保存します。リストは今のところ変更しません。",
     "syncSerato": "Serato ライブラリ",
     "syncSeratoHint": "Serato を閉じたときに Surco が書き込みます。更新はレビューのタグ変更を反映し、追加は変換したトラックも加えます",
     "syncSeratoIdle": "Surco は Serato ライブラリを見つけられません",
@@ -2054,7 +2053,7 @@
         "traktor": "ホットキューのみ（青、A から G まで）。Traktor は起動時にコレクションを読み込むため、保存時に Surco が Traktor を閉じるよう求めます。",
         "engine": "ホットキューのみ。Engine DJ には CALL がありません。",
         "serato": "ホットキューのみ（A から H）。Serato には CALL がありません。Serato が開いている場合は、閉じたときに Surco が保存します。",
-        "virtualdj": "Surco はまだ VirtualDJ にキューを保存しないため、フローは VirtualDJ を変更しません。",
+        "virtualdj": "Surco はまだ VirtualDJ にフローを適用しないため、フローは VirtualDJ を変更しません。",
         "missing": "このコンピュータで {{program}} が見つかりません"
       }
     },
@@ -2193,7 +2192,7 @@
       "serato": "Serato",
       "seratoBody": "変換時にライブラリを同期し、新しいトラックも追加します。",
       "virtualdj": "VirtualDJ",
-      "virtualdjBody": "リストを Surco に表示します。現在 Surco は VirtualDJ を読み取るだけで、何も変更しません。"
+      "virtualdjBody": "リストを Surco に表示します。Surco は VirtualDJ にキューを保存します。リストは今のところ変更しません。"
     },
     "djLibraryNone": "使っていない（ファイルのタグ付けだけ）",
     "destinationKeepsCollection": "DJソフトやApple Musicにすでにあるトラックはその場で更新され、コレクション内の位置が保たれます。",
@@ -3347,6 +3346,25 @@
       "sourceInSerato": "{{track}} は元のファイルのまま Serato に残り、クレート「{{playlist}}」には入りません",
       "tagsNotInLibrary": "{{track}} はもう Serato にないため、タグは変更されませんでした",
       "tagsChanged": "{{track}} は Serato で変更されたため、タグは変更されませんでした"
+    }
+  },
+  "virtualdjQueue": {
+    "pillTracks_one": "{{count}} トラックが VirtualDJ の終了を待っています",
+    "pillTracks_other": "{{count}} トラックが VirtualDJ の終了を待っています",
+    "pillChanges_one": "{{count}} 件の変更が VirtualDJ の終了を待っています",
+    "pillChanges_other": "{{count}} 件の変更が VirtualDJ の終了を待っています",
+    "pillHalted": "VirtualDJ の変更を保留中",
+    "applied_one": "VirtualDJ に反映しました · {{count}} トラック",
+    "applied_other": "VirtualDJ に反映しました · {{count}} トラック",
+    "appliedChanges_one": "VirtualDJ に反映しました · {{count}} 件の変更",
+    "appliedChanges_other": "VirtualDJ に反映しました · {{count}} 件の変更",
+    "writeFailed": "VirtualDJ に変更を保存できませんでした。ファイルは元のままです",
+    "writeUnknown": "変更を保存も取り消しもできなかったため、ライブラリが変更されている可能性があります。VirtualDJ を開く前に、Surco のデータ内の virtualdj-backups フォルダーにある最新のコピーから database.xml を復元してください",
+    "discardConfirm": "待機中の内容を破棄しますか？VirtualDJ は今の状態のままです",
+    "notice": {
+      "cuesChanged": "{{track}} のキューが VirtualDJ で変更されました。もう一度マークしてください",
+      "callsDropped_one": "{{track}} の CALL {{count}} 個は保存されませんでした（{{times}}）。VirtualDJ はホットキューしか保持しません",
+      "callsDropped_other": "{{track}} の CALL {{count}} 個は保存されませんでした（{{times}}）。VirtualDJ はホットキューしか保持しません"
     }
   },
   "cueWave": {

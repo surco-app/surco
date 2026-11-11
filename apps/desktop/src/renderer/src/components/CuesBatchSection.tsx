@@ -21,7 +21,7 @@ import {
 import { recordCueEdits } from '../lib/cueTasteEdits'
 import { twinPlansOf } from '../lib/cueTwins'
 import { useAppSettings } from '../lib/settingsContext'
-import { READ_ONLY_COPY, saveAllKey } from './CuesSection'
+import { readOnlyCopy, saveAllKey } from './CuesSection'
 import { Select } from './Select'
 
 const LIBRARIES = programsInOrder(['rekordbox', 'traktor', 'engine', 'serato', 'virtualdj'])
@@ -191,7 +191,7 @@ export function CuesBatchSection({
         <p data-testid="cues-batch-read-only" className="mt-2 text-xs text-fg-dim">
           {tr(
             readOnly.length === 1
-              ? READ_ONLY_COPY[readOnly[0]].readOnly
+              ? readOnlyCopy(readOnly[0]).readOnly
               : 'editor.cues.batch.readOnly',
           )}
         </p>

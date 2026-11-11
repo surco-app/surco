@@ -72,20 +72,20 @@ describe('writableInOrder', () => {
   it('leaves Serato out of the programs Surco writes to, so no write path can reach a Serato track', () => {
     expect(WRITABLE_PROGRAMS).not.toContain('serato')
   })
-  it('leaves VirtualDJ out of the programs Surco writes to and of USB until it can write to it', () => {
+  it('saves VirtualDJ cues but leaves it out of the programs Surco writes to and of USB until it can write its lists', () => {
     expect(PROGRAM_CAN.virtualdj).toEqual({
       write: false,
       usb: false,
       reach: false,
       windows: false,
-      saveCues: false,
+      saveCues: true,
     })
     expect(WRITABLE_PROGRAMS).not.toContain('virtualdj')
     expect(USB_PROGRAMS).not.toContain('virtualdj')
   })
-  it('names VirtualDJ alone as a program whose cues Surco only reads, so its read-only texts are asked for by type', () => {
-    expect(DJ_PROGRAMS.filter(readsCuesOnly)).toEqual(['virtualdj'])
-    expectTypeOf<ReadOnlyCueProgram>().toEqualTypeOf<'virtualdj'>()
+  it('names no program whose cues Surco only reads, now that VirtualDJ saves them too', () => {
+    expect(DJ_PROGRAMS.filter(readsCuesOnly)).toEqual([])
+    expectTypeOf<ReadOnlyCueProgram>().toEqualTypeOf<never>()
   })
   it('lets Surco add to and sync tags with Serato and the programs it writes to, but not VirtualDJ yet', () => {
     expect([...REACH_PROGRAMS]).toEqual(['rekordbox', 'traktor', 'engine', 'serato'])
