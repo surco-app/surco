@@ -862,6 +862,7 @@ function Editing({
     setMenu({ ms, x: clientX - (rect?.left ?? 0), y: clientY - (rect?.top ?? 0) })
     if (placing) setHoverMs(ms)
   }
+  const manualMenuMs = menu !== null && !placing ? menu.ms : undefined
   const fromMarkMenu = (action: DraftAction) => {
     dispatch(action)
     setMarkMenu(null)
@@ -1323,7 +1324,7 @@ function Editing({
       proposals={proposals}
       onDropProposal={dropProposal}
       ghost={stripGhost}
-      cursorMs={hoverGhost && ghost ? (hoverMs ?? undefined) : undefined}
+      cursorMs={hoverGhost && ghost ? (hoverMs ?? undefined) : manualMenuMs}
       onSelect={(key) => dispatch({ type: 'select', key })}
       onMenu={maximized ? setMenu : undefined}
       onMarkMenu={openMarkMenu}
@@ -1350,6 +1351,7 @@ function Editing({
       ghost={ghost}
       onMarkMenu={openMarkMenu}
       onMenu={maximized ? openMenuAt : undefined}
+      cursorMs={manualMenuMs}
       movable={[
         ...points,
         ...state.cues

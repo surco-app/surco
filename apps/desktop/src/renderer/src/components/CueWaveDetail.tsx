@@ -111,6 +111,7 @@ export function CueWaveDetail({
   onHover,
   onMarkMenu,
   onMenu,
+  cursorMs,
   ghost: rawGhost,
   movable,
   offGrid,
@@ -135,6 +136,7 @@ export function CueWaveDetail({
   onHover?: (ms: number | null) => void
   onMarkMenu?: (at: { key: string; clientX: number; clientY: number }) => void
   onMenu?: (at: { ms: number; clientX: number; clientY: number }) => void
+  cursorMs?: number
   ghost?: CueGhost
   movable?: string[]
   offGrid?: string[]
@@ -480,6 +482,14 @@ export function CueWaveDetail({
             style={{ top: `${WAVE_MARK_LANE_PX}px` }}
             className="pointer-events-none absolute bottom-0 left-1/2 w-px bg-[var(--color-fg)]"
           />
+          {cursorMs !== undefined && (
+            <span
+              data-testid="cue-detail-cursor"
+              aria-hidden="true"
+              style={{ left: pct(cursorMs), top: `${WAVE_MARK_LANE_PX}px` }}
+              className="pointer-events-none absolute bottom-0 w-px bg-[var(--color-fg)]/40"
+            />
+          )}
           {calls.map((c) => (
             <span
               key={`c${c.key}`}

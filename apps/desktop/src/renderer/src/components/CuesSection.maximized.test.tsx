@@ -1402,7 +1402,10 @@ describe('CuesSection maximized over the rest of the editor', () => {
     fireEvent.click(screen.getByTestId('cues-memory'))
     fireEvent.mouseEnter(screen.getByTestId('cue-detail-call-120000'))
     expect(screen.queryByTestId('cue-detail-delete')).toBeNull()
-    fireEvent.contextMenu(screen.getByTestId('cue-detail-call-120000'), { clientX: 200, clientY: 5 })
+    fireEvent.contextMenu(screen.getByTestId('cue-detail-call-120000'), {
+      clientX: 200,
+      clientY: 5,
+    })
     fireEvent.click(screen.getByTestId('cues-menu-delete'))
     expect(screen.queryByTestId('cue-wave-call-120000')).toBeNull()
     expect(screen.getByTestId('cue-wave-hot-A')).toBeInTheDocument()
@@ -1510,6 +1513,20 @@ describe('CuesSection maximized over the rest of the editor', () => {
     expect(screen.getByTestId('cue-detail-ghost-call-136000')).toBeInTheDocument()
     fireEvent.keyDown(screen.getByTestId('cues-menu'), { key: 'Escape' })
     expect(screen.queryAllByTestId(/^cue-(wave|detail)-ghost-/)).toHaveLength(0)
+  })
+
+  it('marks the right-clicked point on both waves while its menu is open in manual mode, where no flow preview shows it', async () => {
+    setup({ activeCueFlow: 'manual' })
+    await maximize()
+    seek(64000)
+    expect(screen.queryByTestId('cue-detail-cursor')).toBeNull()
+    fireEvent.contextMenu(screen.getByTestId('cue-detail'), { clientX: 300, clientY: 40 })
+    fireEvent.mouseLeave(screen.getByTestId('cue-detail'))
+    expect(screen.getByTestId('cue-detail-cursor').style.left).toBe('75%')
+    expect(screen.getByTestId('cue-wave-cursor').style.left).toContain('18%')
+    fireEvent.keyDown(screen.getByTestId('cues-menu'), { key: 'Escape' })
+    expect(screen.queryByTestId('cue-detail-cursor')).toBeNull()
+    expect(screen.queryByTestId('cue-wave-cursor')).toBeNull()
   })
 
   it('opens the cue menu, not the add menu, when the right-click on the zoomed wave lands on a cue', async () => {
