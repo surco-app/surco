@@ -62,7 +62,12 @@ import type {
 } from '../../shared/types'
 import { makeTrack, scenarioDir } from '../fixtures'
 import { invokeMain, openSurco, type Scenario } from '../harness'
-import { CONVERSION_MOVE_MS, type ConvertedFormat, STICK_CUES_LEFT_OUT } from './clocks'
+import {
+  CONVERSION_MOVE_MS,
+  type ConvertedFormat,
+  STICK_CUES_LEFT_OUT,
+  STICK_MOVE_MS,
+} from './clocks'
 import { registerDoor } from './door'
 import { TEST_LIBRARIES } from './libraries'
 import type { BatteryFormat, BatteryTrack } from './testLibrary'
@@ -407,10 +412,11 @@ describe('USB', () => {
         }
         expect(leftOut, track.file).not.toContain(track.title)
         expect(track.cuesMs, track.file).toHaveLength(1)
-        if (!/\.(wav|aiff|flac)$/i.test(track.file)) continue
+        const move = STICK_MOVE_MS[program][formatOf(track.file)]
+        expect(move, `${track.file}: no known clock rule`).toBeDefined()
         const cues = await cuesOf(program, library[i])
         expect(
-          Math.abs(track.cuesMs[0] - (cues?.cues[0]?.ms ?? 0)),
+          Math.abs(track.cuesMs[0] - (cues?.cues[0]?.ms ?? 0) - (move ?? 0)),
           track.file,
         ).toBeLessThanOrEqual(CLOCK_TOLERANCE_MS)
       }
