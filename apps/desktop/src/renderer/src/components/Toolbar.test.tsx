@@ -51,6 +51,7 @@ function renderBar(over: Partial<Props> = {}): Props {
     activityRunning: false,
     onSettings: vi.fn(),
     onHelp: vi.fn(),
+    onFeedback: vi.fn(),
     ...over,
   }
   render(<Toolbar {...props} />)
@@ -557,6 +558,12 @@ describe('Toolbar', () => {
     const props = renderBar()
     fireEvent.click(screen.getByTestId('open-help'))
     expect(props.onHelp).toHaveBeenCalledOnce()
+  })
+
+  it('opens the feedback dialog from the bar, so a DJ who never opens the menu can still write', () => {
+    const props = renderBar()
+    fireEvent.click(screen.getByTestId('open-feedback'))
+    expect(props.onFeedback).toHaveBeenCalledOnce()
   })
 
   // The backups icon counted every copy Surco keeps, so it climbed with each conversion

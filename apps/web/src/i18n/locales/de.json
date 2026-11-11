@@ -3596,12 +3596,12 @@
     "title": "Datenschutz",
     "lede": "Surco hat kein Konto und keine Telemetrie. Hier steht alles, was deinen Computer verlässt, wenn du die App nutzt, und was diese Website misst.",
     "privacyHeading": "Die App",
-    "privacyLede": "Surco hat kein Konto und keine Telemetrie und sendet nichts an einen Surco-Server. Die App verbindet sich nur in diesen Fällen mit anderen Diensten.",
+    "privacyLede": "Surco hat kein Konto und keine Telemetrie. Es sendet nur dann etwas an einen Surco-Server, wenn du Feedback schickst, und ansonsten verbindet sich die App nur in diesen Fällen mit anderen Diensten.",
     "privacyItems": [
       "Wenn du nach einem Track suchst, von Hand oder per automatischem Abgleich, sendet Surco Titel, Künstler und weitere Suchangaben an die Quellen, die du aktiviert hast. Das können Discogs, Bandcamp, Deezer, Beatport und MusicBrainz sein. Cover werden von deren Servern und vom Cover Art Archive geladen.",
       "Wenn du dein Beatport-Konto verbindest, gehen Benutzername und Passwort nur an Beatport. Das Passwort wird verschlüsselt auf deinem Computer gespeichert.",
       "Um zu prüfen, ob es eine neue Version gibt, schaut Surco in die auf GitHub veröffentlichten Releases und lädt das Update von dort herunter.",
-      "Wenn du einen Fehler meldest, öffnet sich in deinem Browser ein GitHub-Formular mit der Version, dem System und den letzten Fehlerzeilen, ohne Ordnerpfade. Gesendet wird nichts, bis du es selbst abschickst."
+      "Wenn du aus der App Feedback schickst oder einen Fehler meldest, gehen deine Nachricht, deine E-Mail und, falls der technische Bericht angehakt bleibt, die Version, das System und die letzten Fehlerzeilen (ohne Ordnerpfade) über einen Surco-Server, der sie mit Resend an hello@vicent.io weiterleitet. Deine E-Mail wird nur für die Antwort verwendet. Wenn du lieber willst, kannst du stattdessen ein Issue auf GitHub öffnen, wo nichts gesendet wird, bis du es selbst abschickst."
     ],
     "policiesLabel": "Jeder Dienst hat seine eigene Datenschutzerklärung",
     "policies": [
@@ -3632,6 +3632,10 @@
       {
         "name": "GitHub",
         "url": "https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement"
+      },
+      {
+        "name": "Resend",
+        "url": "https://resend.com/legal/privacy-policy"
       }
     ],
     "webHeading": "Diese Website",

@@ -168,6 +168,7 @@
     "paletteLabel": "コマンド",
     "settings": "設定",
     "help": "ヘルプ & FAQ",
+    "feedback": "フィードバックを送る",
     "stats": "統計",
     "activity": "アクティビティ",
     "selectAll": "全選択",
@@ -2189,6 +2190,8 @@
   },
   "help": {
     "title": "ヘルプ & FAQ",
+    "notListed": "知りたいことが見つかりませんか？",
+    "writeMe": "メッセージを送る",
     "items": {
       "token": {
         "q": "Discogsトークンは必要ですか？",
@@ -2245,6 +2248,33 @@
     "pitch": "Surco は無料で広告やトラッキングがありません。時間を節約できるなら、少額の寄付でサポートできます。",
     "dontShowAgain": "今後表示しない",
     "later": "後で"
+  },
+  "feedback": {
+    "title": "フィードバックを送る",
+    "lede": "うまくいかないこと、足りないもの、気に入った点を教えてください。すべて私が読みます。",
+    "titleError": "問題を報告",
+    "ledeError": "エラー内容はすでに含まれています。よければ、何をしていたか教えてください。",
+    "message": "メッセージ",
+    "optional": "（任意）",
+    "messagePlaceholder": "何をしていて、どうなると思っていたか",
+    "email": "メールアドレス",
+    "emailHint": "（返信のため）",
+    "attach": "技術レポートを添付",
+    "attachHint": "Surco のバージョン、システム、ログの最新エラー（フォルダー名は含みません）。",
+    "preview": "送信内容を見る",
+    "previewHide": "送信内容を隠す",
+    "github": "GitHub で Issue を作成する",
+    "send": "送信",
+    "sending": "送信中…",
+    "sentTitle": "送信しました。ありがとうございます",
+    "sentBody": "確認しだい {{email}} に返信します。",
+    "close": "閉じる",
+    "failedTitle": "送信できませんでした",
+    "failedBody": "接続がないようです。メッセージは残っているので、再試行するか、ご自身でメールで送ってください。",
+    "copy": "メッセージとレポートをコピー",
+    "copied": "コピーしました",
+    "copyHint": "テキストと技術レポートをまとめてコピーし、メールにそのまま貼り付けられます。",
+    "retry": "再試行"
   },
   "whatsNew": {
     "title": "新機能",

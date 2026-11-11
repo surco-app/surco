@@ -168,6 +168,7 @@
     "paletteLabel": "Commands",
     "settings": "Settings",
     "help": "Help & FAQ",
+    "feedback": "Send feedback",
     "stats": "Stats",
     "activity": "Activity",
     "selectAll": "Select all",
@@ -2189,6 +2190,8 @@
   },
   "help": {
     "title": "Help & FAQ",
+    "notListed": "Question not here?",
+    "writeMe": "Write to me",
     "items": {
       "token": {
         "q": "Do I need a Discogs token?",
@@ -2245,6 +2248,33 @@
     "pitch": "Surco is free and has no ads or tracking. If it keeps saving you time, a small donation helps keep it that way.",
     "dontShowAgain": "Don't show this again",
     "later": "Maybe later"
+  },
+  "feedback": {
+    "title": "Send feedback",
+    "lede": "Tell me what breaks, what you miss or what you like. I read every one.",
+    "titleError": "Report a problem",
+    "ledeError": "The error is already included. If you can, tell me what you were doing.",
+    "message": "Message",
+    "optional": "(optional)",
+    "messagePlaceholder": "What you were doing and what you expected to happen",
+    "email": "Your email",
+    "emailHint": "(so I can reply)",
+    "attach": "Attach technical report",
+    "attachHint": "Surco version, system and the latest errors from the log, without folders.",
+    "preview": "See what is sent",
+    "previewHide": "Hide what is sent",
+    "github": "I'd rather open a GitHub issue",
+    "send": "Send",
+    "sending": "Sending…",
+    "sentTitle": "Sent, thank you",
+    "sentBody": "I'll reply to {{email}} as soon as I've looked at it.",
+    "close": "Close",
+    "failedTitle": "Couldn't send it",
+    "failedBody": "It looks like there's no connection. Your message is still here, so you can retry or email it to me yourself.",
+    "copy": "Copy message and report",
+    "copied": "Copied",
+    "copyHint": "Copies your text and the technical report together, ready to paste into an email.",
+    "retry": "Retry"
   },
   "whatsNew": {
     "title": "What's new",

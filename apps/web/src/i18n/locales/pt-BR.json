@@ -3596,12 +3596,12 @@
     "title": "Privacidade",
     "lede": "O Surco não tem conta nem telemetria. Isto é tudo o que sai do seu computador quando você usa o app, e o que este site mede.",
     "privacyHeading": "O app",
-    "privacyLede": "O Surco não tem conta nem telemetria e não envia nada para nenhum servidor do Surco. O app só se conecta a outros serviços nestes casos.",
+    "privacyLede": "O Surco não tem conta nem telemetria. Ele só envia algo para um servidor do Surco quando você manda um comentário, e fora isso o app só se conecta a outros serviços nestes casos.",
     "privacyItems": [
       "Quando você busca uma faixa, na mão ou com a auto-associação, ele envia o título, o artista e outros dados da busca para as fontes que você ativou. Elas podem ser Discogs, Bandcamp, Deezer, Beatport e MusicBrainz. As capas são baixadas dos servidores delas e do Cover Art Archive.",
       "Se você conectar sua conta do Beatport, seu usuário e sua senha só vão para o Beatport. A senha fica guardada criptografada no seu computador.",
       "Para saber se há uma versão nova, ele consulta as versões publicadas no GitHub e baixa a atualização de lá.",
-      "Se você relatar um bug, ele abre um formulário do GitHub no seu navegador com a versão, o sistema e as últimas linhas de erro, sem caminhos de pastas. Nada é enviado até você mesmo publicar."
+      "Se você enviar um comentário ou relatar um bug pelo app, sua mensagem, seu e-mail e, se você deixar o relatório técnico marcado, a versão, o sistema e as últimas linhas de erro (sem caminhos de pastas) passam por um servidor do Surco, que os encaminha com o Resend para hello@vicent.io. Seu e-mail só é usado para te responder. Se preferir, você pode abrir uma issue no GitHub, onde nada é enviado até você mesmo publicar."
     ],
     "policiesLabel": "Cada serviço tem sua própria política de privacidade",
     "policies": [
@@ -3632,6 +3632,10 @@
       {
         "name": "GitHub",
         "url": "https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement"
+      },
+      {
+        "name": "Resend",
+        "url": "https://resend.com/legal/privacy-policy"
       }
     ],
     "webHeading": "Este site",

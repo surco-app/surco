@@ -22,8 +22,17 @@ describe('privacy page', () => {
           'Beatport',
           'MusicBrainz',
           'GitHub',
+          'Resend',
         ]),
       )
+    }
+  })
+
+  it('no longer claims nothing reaches a Surco server, now that feedback goes through one', () => {
+    expect(es.privacy.privacyLede).not.toMatch(/no envía nada/)
+    expect(en.privacy.privacyLede).not.toMatch(/sends nothing/)
+    for (const locale of [en, es]) {
+      expect(locale.privacy.privacyItems.join(' ')).toContain('hello@vicent.io')
     }
   })
 })

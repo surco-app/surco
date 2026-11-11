@@ -6,6 +6,7 @@ import {
   Gauge,
   Loader2,
   type LucideIcon,
+  MessageSquare,
   Radio,
   Settings as SettingsIcon,
   Snail,
@@ -83,6 +84,7 @@ interface Props {
   activityRunning: boolean
   onSettings: () => void
   onHelp: () => void
+  onFeedback: () => void
   // Takes the main action's place while another view owns the screen (the Music review),
   // so Convert never acts on a list that is out of sight.
   primary?: React.ReactNode
@@ -136,6 +138,7 @@ export const Toolbar = memo(function Toolbar({
   activityRunning,
   onSettings,
   onHelp,
+  onFeedback,
   primary,
   usbPill,
   queuePill,
@@ -470,6 +473,16 @@ export const Toolbar = memo(function Toolbar({
         >
           <CircleQuestionMark className="h-4 w-4" aria-hidden="true" />
           <Tooltip label={tr('header.help')} align="end" />
+        </button>
+        <button
+          type="button"
+          data-testid="open-feedback"
+          onClick={() => onFeedback()}
+          className="press group relative flex h-8 w-8 items-center justify-center rounded-lg text-fg-muted hover:bg-[var(--color-hover)] hover:text-fg"
+          aria-label={tr('header.feedback')}
+        >
+          <MessageSquare className="h-4 w-4" aria-hidden="true" />
+          <Tooltip label={tr('header.feedback')} align="end" />
         </button>
         {/* Converting the list is the app's whole point, so it closes the header whenever
             there is a list, one track included, so the button never comes and goes: at the

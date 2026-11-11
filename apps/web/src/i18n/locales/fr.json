@@ -3596,12 +3596,12 @@
     "title": "Confidentialité",
     "lede": "Surco n’a ni compte ni télémétrie. Voici tout ce qui quitte ton ordinateur quand tu utilises l’appli, et ce que mesure ce site.",
     "privacyHeading": "L’appli",
-    "privacyLede": "Surco n’a ni compte ni télémétrie, et n’envoie rien à aucun serveur de Surco. L’appli ne se connecte à d’autres services que dans ces cas.",
+    "privacyLede": "Surco n’a ni compte ni télémétrie. Il n’envoie quelque chose à un serveur de Surco que lorsque tu envoies un commentaire, et pour le reste l’appli ne se connecte à d’autres services que dans ces cas.",
     "privacyItems": [
       "Quand tu cherches un morceau, à la main ou avec l’association automatique, elle envoie le titre, l’artiste et d’autres éléments de recherche aux sources que tu as activées. Il peut s’agir de Discogs, Bandcamp, Deezer, Beatport et MusicBrainz. Les pochettes sont téléchargées depuis leurs serveurs et depuis Cover Art Archive.",
       "Si tu connectes ton compte Beatport, ton nom d’utilisateur et ton mot de passe ne vont que vers Beatport. Le mot de passe est stocké chiffré sur ton ordinateur.",
       "Pour savoir s’il existe une nouvelle version, elle consulte les versions publiées sur GitHub et télécharge la mise à jour depuis là.",
-      "Si tu signales un bug, elle ouvre un formulaire GitHub dans ton navigateur avec la version, le système et les dernières lignes d’erreur, sans chemins de dossiers. Rien n’est envoyé tant que tu ne le publies pas toi-même."
+      "Si tu envoies un commentaire ou signales un bug depuis l’appli, ton message, ton e-mail et, si tu laisses le rapport technique coché, la version, le système et les dernières lignes d’erreur (sans chemins de dossiers) passent par un serveur de Surco, qui les transmet avec Resend à hello@vicent.io. Ton e-mail sert uniquement à te répondre. Si tu préfères, tu peux ouvrir un ticket sur GitHub, où rien n’est envoyé tant que tu ne le publies pas toi-même."
     ],
     "policiesLabel": "Chaque service a sa propre politique de confidentialité",
     "policies": [
@@ -3632,6 +3632,10 @@
       {
         "name": "GitHub",
         "url": "https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement"
+      },
+      {
+        "name": "Resend",
+        "url": "https://resend.com/legal/privacy-policy"
       }
     ],
     "webHeading": "Ce site",

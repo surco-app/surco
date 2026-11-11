@@ -168,6 +168,7 @@
     "paletteLabel": "Comandos",
     "settings": "Ajustes",
     "help": "Ayuda y preguntas",
+    "feedback": "Enviar comentarios",
     "stats": "Estadísticas",
     "activity": "Actividad",
     "selectAll": "Seleccionar todo",
@@ -2189,6 +2190,8 @@
   },
   "help": {
     "title": "Ayuda y preguntas",
+    "notListed": "¿No está tu duda?",
+    "writeMe": "Escríbeme",
     "items": {
       "token": {
         "q": "¿Necesito un token de Discogs?",
@@ -2245,6 +2248,33 @@
     "pitch": "Surco es gratis y no tiene anuncios ni rastreo. Si te sigue ahorrando tiempo, una pequeña donación ayuda a que siga así.",
     "dontShowAgain": "No volver a mostrar",
     "later": "Quizá más tarde"
+  },
+  "feedback": {
+    "title": "Enviar comentarios",
+    "lede": "Cuéntame qué falla, qué echas de menos o qué te gusta. Lo leo yo.",
+    "titleError": "Informar de un error",
+    "ledeError": "El error ya va incluido. Si puedes, cuéntame qué estabas haciendo.",
+    "message": "Mensaje",
+    "optional": "(opcional)",
+    "messagePlaceholder": "Qué estabas haciendo y qué esperabas que pasara",
+    "email": "Tu correo",
+    "emailHint": "(para poder responderte)",
+    "attach": "Adjuntar informe técnico",
+    "attachHint": "Versión de Surco, sistema y los últimos errores del registro, sin carpetas.",
+    "preview": "Ver qué se envía",
+    "previewHide": "Ocultar lo que se envía",
+    "github": "Prefiero abrir un issue en GitHub",
+    "send": "Enviar",
+    "sending": "Enviando…",
+    "sentTitle": "Enviado, gracias",
+    "sentBody": "Te respondo a {{email}} en cuanto lo mire.",
+    "close": "Cerrar",
+    "failedTitle": "No se ha podido enviar",
+    "failedBody": "Parece que no hay conexión. Tu mensaje sigue aquí, así que puedes reintentarlo o mandármelo tú por correo.",
+    "copy": "Copiar mensaje e informe",
+    "copied": "Copiado",
+    "copyHint": "Copia tu texto y el informe técnico juntos, listos para pegar en un correo.",
+    "retry": "Reintentar"
   },
   "whatsNew": {
     "title": "Novedades",

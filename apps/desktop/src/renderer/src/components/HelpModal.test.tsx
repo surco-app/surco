@@ -9,6 +9,7 @@ vi.hoisted(() => {
 })
 
 import '../i18n'
+import { onFeedbackRequested } from '../lib/feedback'
 import { HelpModal } from './HelpModal'
 
 afterEach(cleanup)
@@ -57,5 +58,16 @@ describe('HelpModal answers', () => {
     expect(screen.getByTestId('help-a-quality')).toBeInTheDocument()
     expect(screen.getByTestId('help-a-token')).toBeInTheDocument()
     expect(screen.getByTestId('help-q-token')).toHaveAttribute('aria-expanded', 'false')
+  })
+})
+
+describe('HelpModal feedback', () => {
+  it('offers to write when the question is not listed, right where the user gave up looking', () => {
+    const open = vi.fn()
+    const unsubscribe = onFeedbackRequested(open)
+    render(<HelpModal onClose={() => {}} />)
+    fireEvent.click(screen.getByTestId('help-write-me'))
+    expect(open).toHaveBeenCalledOnce()
+    unsubscribe()
   })
 })

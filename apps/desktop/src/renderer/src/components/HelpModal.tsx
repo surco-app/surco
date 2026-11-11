@@ -1,7 +1,8 @@
-import { ChevronDown, X } from 'lucide-react'
+import { ChevronDown, MessageSquare, X } from 'lucide-react'
 import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { openFeedback } from '../lib/feedback'
 import { isMacOS, isWindows } from '../lib/platform'
 import { ModalShell } from './ModalShell'
 import { SectionBody } from './SectionBody'
@@ -73,6 +74,18 @@ export function HelpModal({ onClose }: Props): React.JSX.Element {
             </div>
           )
         })}
+      </div>
+      <div className="mt-2 flex items-center justify-between gap-3 border-t border-[var(--color-line)] pt-4">
+        <p className="text-sm text-fg-muted">{tr('help.notListed')}</p>
+        <button
+          type="button"
+          data-testid="help-write-me"
+          onClick={() => openFeedback()}
+          className="press flex shrink-0 items-center gap-2 rounded-lg border border-[var(--color-line-strong)] px-3.5 py-2 text-sm font-medium hover:bg-[var(--color-hover)]"
+        >
+          <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />
+          {tr('help.writeMe')}
+        </button>
       </div>
     </ModalShell>
   )

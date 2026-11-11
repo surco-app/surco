@@ -168,6 +168,7 @@
     "paletteLabel": "Commandes",
     "settings": "Réglages",
     "help": "Aide et FAQ",
+    "feedback": "Envoyer un commentaire",
     "stats": "Statistiques",
     "activity": "Activité",
     "selectAll": "Tout sélectionner",
@@ -2189,6 +2190,8 @@
   },
   "help": {
     "title": "Aide et FAQ",
+    "notListed": "Ta question n'y est pas ?",
+    "writeMe": "Écris-moi",
     "items": {
       "token": {
         "q": "Ai-je besoin d’un token Discogs ?",
@@ -2245,6 +2248,33 @@
     "pitch": "Surco est gratuit, sans pubs ni pistage. S’il continue à te faire gagner du temps, un petit don aide à ce que ça reste comme ça.",
     "dontShowAgain": "Ne plus afficher",
     "later": "Peut-être plus tard"
+  },
+  "feedback": {
+    "title": "Envoyer un commentaire",
+    "lede": "Dis-moi ce qui ne marche pas, ce qui te manque ou ce qui te plaît. Je lis tout moi-même.",
+    "titleError": "Signaler un problème",
+    "ledeError": "L'erreur est déjà jointe. Si tu peux, dis-moi ce que tu faisais.",
+    "message": "Message",
+    "optional": "(facultatif)",
+    "messagePlaceholder": "Ce que tu faisais et ce que tu attendais",
+    "email": "Ton e-mail",
+    "emailHint": "(pour pouvoir te répondre)",
+    "attach": "Joindre le rapport technique",
+    "attachHint": "Version de Surco, système et dernières erreurs du journal, sans les dossiers.",
+    "preview": "Voir ce qui est envoyé",
+    "previewHide": "Masquer ce qui est envoyé",
+    "github": "Je préfère ouvrir un ticket sur GitHub",
+    "send": "Envoyer",
+    "sending": "Envoi…",
+    "sentTitle": "Envoyé, merci",
+    "sentBody": "Je te réponds à {{email}} dès que je l'ai lu.",
+    "close": "Fermer",
+    "failedTitle": "Impossible d'envoyer",
+    "failedBody": "Il semble qu'il n'y ait pas de connexion. Ton message est toujours là, tu peux réessayer ou me l'envoyer toi-même par e-mail.",
+    "copy": "Copier le message et le rapport",
+    "copied": "Copié",
+    "copyHint": "Copie ton texte et le rapport technique ensemble, prêts à coller dans un e-mail.",
+    "retry": "Réessayer"
   },
   "whatsNew": {
     "title": "Nouveautés",

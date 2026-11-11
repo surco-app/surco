@@ -6,6 +6,7 @@ import type { PeekableAnalyses } from '../shared/audioIpcContract'
 import type { CueProfile, CueProfileRead, TasteTrack } from '../shared/cueProfile'
 import type { DjApi } from '../shared/djApi'
 import type { DropInput } from '../shared/dropDetect'
+import type { FeedbackForm, FeedbackOutcome } from '../shared/feedback'
 import type { GridFit } from '../shared/gridEdit'
 import type { GridVerdict } from '../shared/gridVerdict'
 import type {
@@ -373,6 +374,8 @@ export interface Api {
   // Opens a prefilled report in the OS mail client. Only the error text crosses the
   // bridge; main stamps version and OS and builds the address itself.
   openFeedback: (error?: string, stack?: string) => Promise<void>
+  sendFeedback: (form: FeedbackForm) => Promise<FeedbackOutcome>
+  feedbackReport: (error?: string, stack?: string) => Promise<string>
   spectrogram: (path: string, priority?: 'high' | 'low') => Promise<SpectrumResult>
   // The list's one-shot warm-up on load: for each path, whatever spectrogram/channel-scan
   // entries are already on disk, computing nothing on a miss — see audioIpc.ts's
