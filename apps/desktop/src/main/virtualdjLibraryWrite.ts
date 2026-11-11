@@ -101,6 +101,14 @@ function takeBackups(files: string[], deps: VirtualdjCommitDeps): Map<string, st
   return copies
 }
 
+function clearOrphan(tmp: string): void {
+  try {
+    rmSync(tmp, { force: true })
+  } catch (e) {
+    log.warn(`VirtualDJ temp ${tmp} not removed`, e)
+  }
+}
+
 export async function commitVirtualdjDraft(
   draft: VirtualdjDraft,
   deps: VirtualdjCommitDeps,
@@ -110,6 +118,7 @@ export async function commitVirtualdjDraft(
   const stamps = draft.stamps()
   const moved = () =>
     changes.some(({ file }) => !sameStamp(fileStampOf(file), stamps.get(file) ?? null))
+  for (const { file } of changes) clearOrphan(`${file}${WRITING}`)
   if (await deps.virtualdjOpen()) return 'cancelled'
   let copies: Map<string, string>
   try {

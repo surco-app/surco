@@ -91,6 +91,17 @@ describe('commitVirtualdjDraft', () => {
     expect(readFileSync(database, 'utf8')).toBe(fixture)
   })
 
+  it('clears a temporary file a crash left next to the database before it writes again', async () => {
+    const { dir, database, deps } = library()
+    writeFileSync(`${database}.surco-write`, 'half written')
+    const draft = createVirtualdjDraft()
+    draft.write(database, edited(draft.read(database) as string))
+    expect(await commitVirtualdjDraft(draft, deps({ virtualdjOpen: async () => true }))).toBe(
+      'cancelled',
+    )
+    expect(readdirSync(dir)).toEqual(['database.xml'])
+  })
+
   it('does not rename when VirtualDJ opens after the copy, and leaves no temporary file behind', async () => {
     const { dir, database, deps } = library()
     const open = vi.fn().mockResolvedValueOnce(false).mockResolvedValue(true)
