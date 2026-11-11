@@ -80,7 +80,7 @@ export function CueOffGridBar({
         onClick={() => step(-1)}
         className={STEP}
       >
-        <ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" />
+        <ChevronLeft className="h-3 w-3" aria-hidden="true" />
       </button>
       <button
         type="button"
@@ -103,7 +103,7 @@ export function CueOffGridBar({
         onClick={() => step(1)}
         className={STEP}
       >
-        <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
+        <ChevronRight className="h-3 w-3" aria-hidden="true" />
       </button>
       <span data-testid="cues-offgrid-position" className="shrink-0 tabular-nums text-fg-dim">
         {tr('editor.cues.offGrid.position', { at: index + 1, total: stops.length })}

@@ -300,9 +300,9 @@ export function FieldsEditor({
             }`}
           >
             {organized ? (
-              <Check className="h-3.5 w-3.5" aria-hidden="true" />
+              <Check className="h-3 w-3" aria-hidden="true" />
             ) : (
-              <Wand2 className="h-3.5 w-3.5" aria-hidden="true" />
+              <Wand2 className="h-3 w-3" aria-hidden="true" />
             )}
             {tr(organized ? 'settings.autoOrganized' : 'settings.autoOrganize')}
             <Tooltip label={tr('settings.autoOrganizeHint')} />

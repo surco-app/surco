@@ -1157,7 +1157,7 @@ export function MusicReview({
           disabled={applying}
           onClick={onClose}
         >
-          <ChevronLeft className="h-3.5 w-3.5" aria-hidden="true" />
+          <ChevronLeft className="h-3 w-3" aria-hidden="true" />
           {t('musicReview.tracks')}
           <kbd className="ml-auto rounded border border-[var(--color-line-strong)] px-1 font-sans text-label font-normal text-fg-faint">
             esc

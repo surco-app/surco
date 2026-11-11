@@ -66,7 +66,7 @@ export function RekordboxQueuePill({
         }}
         className="press flex items-center gap-1.5 rounded-full border border-[var(--color-line-strong)] px-2.5 py-1 text-xs text-fg-muted hover:bg-[var(--color-hover)] hover:text-fg"
       >
-        <Clock className="h-3.5 w-3.5" aria-hidden="true" />
+        <Clock className="h-3 w-3" aria-hidden="true" />
         {text}
       </button>
       {open && (

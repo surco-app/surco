@@ -1383,7 +1383,7 @@ function Editing({
         className="press flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg disabled:pointer-events-none disabled:opacity-40"
       >
         <Tooltip label={tr('editor.cues.clearAll')} />
-        <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+        <Trash2 className="h-3 w-3" aria-hidden="true" />
       </button>
       {undoButton}
       <div ref={saveMenu.ref} className="relative flex shrink-0">

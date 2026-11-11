@@ -150,3 +150,38 @@ describe('a menu row is highlighted with corners parallel to its menu, so the tw
     expect(items).toEqual([])
   })
 })
+
+const BARS = new Set(['components/Toolbar.tsx', 'components/TrackListHeader.tsx'])
+
+function iconsLargerThanTheirText(code: string): string[] {
+  const lines = code.split('\n')
+  const found: string[] = []
+  lines.forEach((line, i) => {
+    const indent = line.length - line.trimStart().length
+    if (!/^<[a-z]+\b/.test(line.trimStart())) return
+    const tag = openingTags(code.slice(code.split('\n', i).join('\n').length), '<')[0] ?? ''
+    if (tag.endsWith('/>') || !/(?<![\w:-])(text-label|text-xs)(?![\w-])/.test(tag)) return
+    for (let j = i + tag.split('\n').length; j < lines.length; j++) {
+      const child = lines[j]
+      const at = child.length - child.trimStart().length
+      if (child.trim() && at <= indent && !/^[{})]/.test(child.trimStart())) break
+      const icon = /<([A-Z]\w+)\b[^>]*?className="[^"]*?\bh-(3\.5|4)\b/.exec(child)
+      if (icon && at <= indent + 4) found.push(`${j + 1}: ${icon[1]} h-${icon[2]}`)
+    }
+  })
+  return found
+}
+
+describe('an icon is as big as the text it sits beside, so neither shouts over the other', () => {
+  it('keeps every line icon beside 11 or 12 px text at 12 px, outside the toolbars', () => {
+    expect(
+      sources
+        .filter((file) => !BARS.has(file))
+        .flatMap((file) =>
+          iconsLargerThanTheirText(readFileSync(join(root, file), 'utf8')).map(
+            (m) => `${file}:${m}`,
+          ),
+        ),
+    ).toEqual([])
+  })
+})
