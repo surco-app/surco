@@ -7,8 +7,9 @@ import { readSeratoTrack } from './seratoTags'
 import {
   type ExportMarks,
   foreignExportTrack,
+  foreignMarks,
   foreignSelection,
-  marksOnRekordboxClock,
+  unixDate,
 } from './usbExportForeign'
 import type { ExportSelection } from './usbExportSource'
 
@@ -22,25 +23,9 @@ export async function seratoExportMarks(file: string): Promise<SeratoMarks | nul
   const track = readSeratoTrack(file)
   if (!track) return null
   const read = await seratoTrackCuesOf(`serato:${file}`, track)
-  const cues = [
-    ...read.cues.map((c) => ({ ms: c.ms, kind: c.kind, name: c.name ?? '' })),
-    ...(read.loops ?? []).map((l) => ({
-      ms: l.startMs,
-      kind: 0,
-      name: l.name ?? '',
-      endMs: l.endMs,
-    })),
-  ]
   const delta = await rekordboxShiftOfFileIfKnown(file, track.sampleRate)
   const facts = { lengthSec: Math.round(track.durationMs / 1000), sampleRate: track.sampleRate }
-  if (delta === null)
-    return {
-      cues: [],
-      grid: [],
-      ...(cues.length + read.grid.length > 0 && { cuesLeftOut: true }),
-      ...facts,
-    }
-  return { ...marksOnRekordboxClock(cues, read.grid, delta), ...facts }
+  return { ...foreignMarks(read, delta), ...facts }
 }
 
 interface PickedCrate {
@@ -74,10 +59,6 @@ function pickedCrates(library: SeratoLibrary, ids: ReadonlySet<string>): PickedC
   return out
 }
 
-function seratoDate(addedAt: number | null): string {
-  return addedAt === null ? '' : new Date(addedAt * 1000).toISOString().slice(0, 10)
-}
-
 export async function readSeratoExportSelection(
   library: SeratoLibrary,
   ids: string[],
@@ -101,7 +82,7 @@ export async function readSeratoExportSelection(
         genre: row?.genre ?? '',
         key: row?.key ?? '',
         bpm: Number(row?.bpm) || 0,
-        dateAdded: seratoDate(row?.addedAt ?? null),
+        dateAdded: unixDate(row?.addedAt ?? null),
         lengthSec: marks?.lengthSec ?? 0,
         sampleRate: marks?.sampleRate ?? 0,
         cues: marks?.cues ?? [],

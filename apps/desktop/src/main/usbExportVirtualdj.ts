@@ -1,13 +1,7 @@
 import { basename, extname } from 'node:path'
 import { File as TagFile } from 'node-taglib-sharp'
 import { rekordboxShiftOfFileIfKnown } from './rekordboxTimeline'
-import {
-  type ExportMarks,
-  type ForeignCue,
-  foreignExportTrack,
-  foreignSelection,
-  marksOnRekordboxClock,
-} from './usbExportForeign'
+import { foreignExportTrack, foreignMarks, foreignSelection, unixDate } from './usbExportForeign'
 import { type ExportSelection, selectedPlaylists } from './usbExportSource'
 import { virtualdjTrackCuesOf } from './virtualdjCueSource'
 import type { VirtualdjSong } from './virtualdjDatabase'
@@ -40,26 +34,6 @@ export async function virtualdjExportClock(file: string): Promise<VirtualdjClock
   return { sampleRate, delta: await rekordboxShiftOfFileIfKnown(file, sampleRate) }
 }
 
-function marksOf(song: VirtualdjSong, delta: number | null): ExportMarks & { cuesLeftOut?: true } {
-  const read = virtualdjTrackCuesOf(`virtualdj:${song.path}`, song)
-  const cues: ForeignCue[] = [
-    ...read.cues.map((c) => ({ ms: c.ms, kind: c.kind, name: c.name ?? '' })),
-    ...(read.loops ?? []).map((l) => ({
-      ms: l.startMs,
-      kind: 0,
-      name: l.name ?? '',
-      endMs: l.endMs,
-    })),
-  ]
-  if (delta === null)
-    return {
-      cues: [],
-      grid: [],
-      ...(cues.length + read.grid.length > 0 && { cuesLeftOut: true as const }),
-    }
-  return marksOnRekordboxClock(cues, read.grid, delta)
-}
-
 function listOf(nodes: VirtualdjNode[], id: string): VirtualdjNode | undefined {
   for (const n of nodes) {
     if (n.id === id) return n
@@ -67,10 +41,6 @@ function listOf(nodes: VirtualdjNode[], id: string): VirtualdjNode | undefined {
     if (inside) return inside
   }
   return undefined
-}
-
-function virtualdjDate(firstSeen: number | null): string {
-  return firstSeen === null ? '' : new Date(firstSeen * 1000).toISOString().slice(0, 10)
 }
 
 export async function readVirtualdjExportSelection(
@@ -93,7 +63,10 @@ export async function readVirtualdjExportSelection(
       const song = known.get(file.normalize('NFC'))
       const path = song?.path ?? file
       const clock = await deps.clockOf(path)
-      const marks = song && clock ? marksOf(song, clock.delta) : { cues: [], grid: [] }
+      const marks =
+        song && clock
+          ? foreignMarks(virtualdjTrackCuesOf(`virtualdj:${song.path}`, song), clock.delta)
+          : { cues: [], grid: [] }
       return foreignExportTrack(id, path, {
         title: song ? song.title : basename(path, extname(path)),
         artist: song?.artist ?? '',
@@ -102,7 +75,7 @@ export async function readVirtualdjExportSelection(
         key: song?.key ?? '',
         year: Number(song?.year) || 0,
         bpm: song?.secondsPerBeat ? 60 / song.secondsPerBeat : 0,
-        dateAdded: virtualdjDate(song?.firstSeen ?? null),
+        dateAdded: unixDate(song?.firstSeen ?? null),
         lengthSec: Math.round(song?.lengthSeconds ?? 0),
         sampleRate: clock?.sampleRate ?? 0,
         ...marks,
