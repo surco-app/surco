@@ -50,6 +50,7 @@ import type {
   NormalizeConfig,
   PlaylistSource,
   PlaylistTrackRef,
+  QueuedCreate,
   RekordboxQueueState,
   RekordboxQueueWritten,
   RekordboxSyncIssue,
@@ -125,7 +126,7 @@ import { PROGRAM_QUEUES, useRekordboxQueue } from './hooks/useRekordboxQueue'
 import { useRetireSuperseded } from './hooks/useRetireSuperseded'
 import { useSessionPersistence } from './hooks/useSessionPersistence'
 import { useSessionRows } from './hooks/useSessionRows'
-import { type BuildResult, type FillTarget, useSessionRun } from './hooks/useSessionRun'
+import { type FillTarget, useSessionRun } from './hooks/useSessionRun'
 import { useSessionWrite } from './hooks/useSessionWrite'
 import { useSettings } from './hooks/useSettings'
 import { useSourceBrowser } from './hooks/useSourceBrowser'
@@ -875,11 +876,15 @@ export default function App(): React.JSX.Element {
   const dropWrittenPlaylists = useStableCallback((written: RekordboxQueueWritten[]) =>
     setTracks((prev) => clearWrittenPlaylists(prev, written)),
   )
+  const noteSessionCreated = useStableCallback((created: QueuedCreate[]) =>
+    sessionRun.noteCreated(created),
+  )
   const rekordboxQueue = useRekordboxQueue(
     notifyEdit,
     dropDiscardedPlaylists,
     dropWrittenPlaylists,
     PROGRAM_QUEUES.rekordbox.source,
+    noteSessionCreated,
   )
   const { applyNow: applyQueueNow, discard: discardQueue } = rekordboxQueue
   const dropDiscardedEngine = useStableCallback((paths: string[]) =>
@@ -893,6 +898,7 @@ export default function App(): React.JSX.Element {
     dropDiscardedEngine,
     dropWrittenEngine,
     PROGRAM_QUEUES.engine.source,
+    noteSessionCreated,
   )
   const { applyNow: applyEngineQueueNow, discard: discardEngineQueue } = engineCueQueue
   const dropDiscardedTraktor = useStableCallback((paths: string[]) =>
@@ -906,6 +912,7 @@ export default function App(): React.JSX.Element {
     dropDiscardedTraktor,
     dropWrittenTraktor,
     PROGRAM_QUEUES.traktor.source,
+    noteSessionCreated,
   )
   const { applyNow: applyTraktorQueueNow, discard: discardTraktorQueue } = traktorCueQueue
   const dropDiscardedSerato = useStableCallback((paths: string[]) =>
@@ -919,6 +926,7 @@ export default function App(): React.JSX.Element {
     dropDiscardedSerato,
     dropWrittenSerato,
     PROGRAM_QUEUES.serato.source,
+    noteSessionCreated,
   )
   const { applyNow: applySeratoQueueNow, discard: discardSeratoQueue } = seratoCueQueue
   const queuePill = useMemo(() => {
@@ -1098,7 +1106,6 @@ export default function App(): React.JSX.Element {
   const sessionRows = useSessionRows(sessionProgram ?? 'rekordbox')
   const sessionWriter = useSessionWrite(editRekordboxRaw)
   const sessionRun = useSessionRun({
-    canWrite: async () => !(await window.api.djAppRunning()),
     rows: sessionRows,
     writer: sessionWriter,
     namesIn: (parentId) => childNames(browser.tree, parentId),
@@ -1115,9 +1122,6 @@ export default function App(): React.JSX.Element {
       if (settings)
         saveSettings({ sessionsMade: withSessionMade(settings.sessionsMade, playlistId) })
     },
-  })
-  const reportSession = useStableCallback(async (pending: Promise<BuildResult>): Promise<void> => {
-    if ((await pending) === 'closed') notifyEdit(tr('sessions.closed'), 'danger')
   })
   const editRekordbox = useStableCallback(
     async (edit: Parameters<typeof editRekordboxRaw>[0], name: string) => {
@@ -3843,7 +3847,7 @@ export default function App(): React.JSX.Element {
                                 busy={sessionRun.busy}
                                 playMinutes={sessionRun.recent.answers.playMinutes}
                                 preferCombos={sessionRun.recent.answers.preferCombos}
-                                onRedo={() => void reportSession(sessionRun.redo())}
+                                onRedo={() => void sessionRun.redo()}
                                 onAdjust={openSessionAdjust}
                                 onKeep={() => {
                                   sessionRun.keep()
@@ -4220,7 +4224,7 @@ export default function App(): React.JSX.Element {
                             roles,
                             sessionWizard.start?.path,
                           )
-                    if (result === 'built') setSessionWizard(null)
+                    if (result === 'built' || result === 'queued') setSessionWizard(null)
                     return result
                   }}
                 />

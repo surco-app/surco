@@ -119,8 +119,7 @@
       "assumed_one": "{{count}} faixa sem duração, conta como {{minutes}} min",
       "assumed_other": "{{count}} faixas sem duração, contam como {{minutes}} min cada"
     },
-    "playlistName": "Sessão de {{date}}",
-    "closed": "Feche seu programa de DJ para montar a sessão. Com ele aberto, a playlist ficaria pela metade"
+    "playlistName": "Sessão de {{date}}"
   },
   "pasteTracklist": {
     "title": "Colar tracklist em “{{name}}”",

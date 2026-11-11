@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { type CueProgram, DJ_PROGRAMS } from '../../../shared/djProgram'
 import type {
+  QueuedCreate,
   RekordboxQueueApplied,
   RekordboxQueueState,
   RekordboxQueueWritten,
@@ -87,6 +88,7 @@ export function useRekordboxQueue(
   onDiscarded: (paths: string[]) => void,
   onWritten: (written: RekordboxQueueWritten[]) => void,
   source: QueueSource = REKORDBOX_QUEUE,
+  onCreated?: (created: QueuedCreate[]) => void,
 ): { state: RekordboxQueueState; applyNow: () => Promise<void>; discard: () => Promise<void> } {
   const queryClient = useQueryClient()
   const { t: tr } = useTranslation()
@@ -136,9 +138,10 @@ export function useRekordboxQueue(
       if (message?.goTo) notify(message.text, message.tone, message.goTo)
       else if (message) notify(message.text, message.tone)
       if ('written' in applied) onWritten(applied.written)
+      if ('created' in applied && applied.created) onCreated?.(applied.created)
       void reread()
     },
-    [tr, notify, reread, onWritten, source],
+    [tr, notify, reread, onWritten, source, onCreated],
   )
 
   useEffect(() => source.onApplied(announce), [source, announce])

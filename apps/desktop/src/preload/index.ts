@@ -269,7 +269,8 @@ const api: Api = {
   editRekordboxPlaylist: (
     edit: RekordboxPlaylistEdit,
     label?: string,
-  ): Promise<RekordboxEditResult> => ipcRenderer.invoke('rekordbox:edit', edit, label),
+    mode?: PlaylistEditMode,
+  ): Promise<RekordboxEditResult> => ipcRenderer.invoke('rekordbox:edit', edit, label, mode),
   rekordboxQueue: (): Promise<RekordboxQueueState> => ipcRenderer.invoke('rekordbox:queue'),
   applyRekordboxQueue: (): Promise<RekordboxQueueApplied | null> =>
     ipcRenderer.invoke('rekordbox:applyNow'),
@@ -333,9 +334,13 @@ const api: Api = {
   editTraktorPlaylist: (
     edit: RekordboxPlaylistEdit,
     label?: string,
-  ): Promise<RekordboxEditResult> => ipcRenderer.invoke('traktor:edit', edit, label),
-  editSeratoPlaylist: (edit: RekordboxPlaylistEdit, label?: string): Promise<RekordboxEditResult> =>
-    ipcRenderer.invoke('serato:edit', edit, label),
+    mode?: PlaylistEditMode,
+  ): Promise<RekordboxEditResult> => ipcRenderer.invoke('traktor:edit', edit, label, mode),
+  editSeratoPlaylist: (
+    edit: RekordboxPlaylistEdit,
+    label?: string,
+    mode?: PlaylistEditMode,
+  ): Promise<RekordboxEditResult> => ipcRenderer.invoke('serato:edit', edit, label, mode),
   editEnginePlaylist: (
     edit: RekordboxPlaylistEdit,
     label?: string,

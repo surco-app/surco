@@ -284,6 +284,7 @@ export interface Api {
   editRekordboxPlaylist: (
     edit: RekordboxPlaylistEdit,
     label?: string,
+    mode?: PlaylistEditMode,
   ) => Promise<RekordboxEditResult>
   rekordboxQueue: () => Promise<RekordboxQueueState>
   applyRekordboxQueue: () => Promise<RekordboxQueueApplied | null>
@@ -315,8 +316,16 @@ export interface Api {
   onRekordboxQueueApplied: (cb: (applied: RekordboxQueueApplied) => void) => () => void
   // Whether the collection has a separator track that can be copied into a playlist.
   rekordboxHasSeparator: () => Promise<boolean>
-  editTraktorPlaylist: (edit: RekordboxPlaylistEdit, label?: string) => Promise<RekordboxEditResult>
-  editSeratoPlaylist: (edit: RekordboxPlaylistEdit, label?: string) => Promise<RekordboxEditResult>
+  editTraktorPlaylist: (
+    edit: RekordboxPlaylistEdit,
+    label?: string,
+    mode?: PlaylistEditMode,
+  ) => Promise<RekordboxEditResult>
+  editSeratoPlaylist: (
+    edit: RekordboxPlaylistEdit,
+    label?: string,
+    mode?: PlaylistEditMode,
+  ) => Promise<RekordboxEditResult>
   editEnginePlaylist: (
     edit: RekordboxPlaylistEdit,
     label?: string,

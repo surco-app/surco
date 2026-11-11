@@ -119,8 +119,7 @@
       "assumed_one": "{{count}} Track ohne Länge, zählt als {{minutes}} Min.",
       "assumed_other": "{{count}} Tracks ohne Länge, zählen je als {{minutes}} Min."
     },
-    "playlistName": "Session vom {{date}}",
-    "closed": "Schließe dein DJ-Programm, um die Session zu erstellen. Bei geöffnetem Programm bliebe die Playlist unvollständig"
+    "playlistName": "Session vom {{date}}"
   },
   "pasteTracklist": {
     "title": "Tracklist in „{{name}}“ einfügen",

@@ -24,6 +24,7 @@ import type {
   ActivityEvent,
   ProgramCopies,
   RekordboxEditResult,
+  RekordboxQueueApplied,
   RekordboxSyncIssue,
   Release,
   RestoreResult,
@@ -10196,9 +10197,9 @@ describe('automatic session from the tree', () => {
       fireEvent.click(screen.getByTestId('session-wizard-next'))
       fireEvent.click(await screen.findByTestId('session-wizard-next'))
       fireEvent.click(await screen.findByTestId('session-wizard-build'))
-      await waitFor(() => expect(edit).toHaveBeenCalledTimes(2))
-      const added = edit.mock.calls[1][0] as { tracks: { contentId: string }[] }
-      expect(added.tracks[0].contentId).toBe(String(40 + rows.length - 1))
+      await waitFor(() => expect(edit).toHaveBeenCalledOnce())
+      const made = edit.mock.calls[0][0] as { tracks: { contentId: string }[] }
+      expect(made.tracks[0].contentId).toBe(String(40 + rows.length - 1))
     })
 
     it('offers nothing before a playlist is open', async () => {
@@ -10313,11 +10314,11 @@ describe('automatic session from the tree', () => {
     const edit = openRekordboxTree()
     await toBuild()
     fireEvent.click(screen.getByTestId('session-wizard-build'))
-    await waitFor(() => expect(edit).toHaveBeenCalledTimes(2))
-    expect(edit.mock.calls[0][0]).toMatchObject({ kind: 'create', parentId: 'sets', folder: false })
-    expect(edit.mock.calls[1][0]).toEqual({
-      kind: 'add',
-      playlistId: 'new',
+    await waitFor(() => expect(edit).toHaveBeenCalledOnce())
+    expect(edit.mock.calls[0][0]).toMatchObject({
+      kind: 'create',
+      parentId: 'sets',
+      folder: false,
       tracks: [{ contentId: '41', paths: ['/m/a.wav'] }],
     })
     await waitFor(() =>
@@ -10354,14 +10355,55 @@ describe('automatic session from the tree', () => {
     expect(read.mock.calls.length).toBeGreaterThan(first)
   })
 
-  it('writes nothing and asks to close the program when a DJ program is open', async () => {
-    const edit = openRekordboxTree({
+  it('opens the session once rekordbox closes and the queue writes it, with its band', async () => {
+    let applied: (a: RekordboxQueueApplied) => void = () => {}
+    openRekordboxTree(
+      {
+        editRekordboxPlaylist: vi
+          .fn<Api['editRekordboxPlaylist']>()
+          .mockResolvedValue({ applied: false, queued: true, opId: 'op1' }),
+        onRekordboxQueueApplied: (cb) => {
+          applied = cb
+          return () => {}
+        },
+      },
+      [...TREE, { id: 'new', name: 'Session', kind: 'playlist' as const, count: 1 }],
+    )
+    await toBuild()
+    fireEvent.click(screen.getByTestId('session-wizard-build'))
+    await waitFor(() =>
+      expect(screen.queryByTestId('session-wizard-dialog')).not.toBeInTheDocument(),
+    )
+    expect(screen.queryByTestId('session-band')).toBeNull()
+    act(() =>
+      applied({
+        tracks: 0,
+        changes: 1,
+        notices: [],
+        written: [],
+        created: [{ opId: 'op1', createdId: 'new' }],
+      }),
+    )
+    expect(await screen.findByTestId('session-band')).toBeInTheDocument()
+  })
+
+  it('builds while the DJ program is open, sending the session to wait for it to close', async () => {
+    const edit = vi
+      .fn<Api['editRekordboxPlaylist']>()
+      .mockResolvedValue({ applied: false, queued: true, opId: 'op1' })
+    openRekordboxTree({
       djAppRunning: vi.fn<Api['djAppRunning']>().mockResolvedValue(true),
+      editRekordboxPlaylist: edit,
     })
     await toBuild()
     fireEvent.click(screen.getByTestId('session-wizard-build'))
-    expect(await screen.findByTestId('session-wizard-closed')).toBeInTheDocument()
-    expect(edit).not.toHaveBeenCalled()
-    expect(screen.getByTestId('session-wizard-dialog')).toBeInTheDocument()
+    await waitFor(() =>
+      expect(screen.queryByTestId('session-wizard-dialog')).not.toBeInTheDocument(),
+    )
+    expect(edit).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: 'create', tracks: expect.any(Array) }),
+      expect.any(String),
+      'queue',
+    )
   })
 })

@@ -2,6 +2,7 @@ import type { DjProgram } from '../../../shared/djProgram'
 import { TRAKTOR_BUILT_IN, TRAKTOR_HISTORY } from '../../../shared/traktorContent'
 import type {
   CollectionTrack,
+  PlaylistEditMode,
   RekordboxEditResult,
   RekordboxPlaylistEdit,
   SourceNode,
@@ -61,7 +62,11 @@ export const SOURCE_READ: Record<DjProgram, SourceRead> = {
 export type EditMessagePrefix = 'sources.edit.' | 'sources.editTraktor.' | 'sources.editSerato.'
 
 export interface SourceEdit {
-  save(edit: RekordboxPlaylistEdit, label?: string): Promise<RekordboxEditResult>
+  save(
+    edit: RekordboxPlaylistEdit,
+    label?: string,
+    mode?: PlaylistEditMode,
+  ): Promise<RekordboxEditResult>
   messagePrefix: EditMessagePrefix
   gate: 'none' | 'traktorCollection'
 }
@@ -89,7 +94,7 @@ export const SOURCE_PROGRAMS: {
   rekordbox: {
     separator: () => window.api.rekordboxHasSeparator(),
     edit: {
-      save: (edit, label) => window.api.editRekordboxPlaylist(edit, label),
+      save: (...args) => window.api.editRekordboxPlaylist(...args),
       messagePrefix: 'sources.edit.',
       gate: 'none',
     },
@@ -107,7 +112,7 @@ export const SOURCE_PROGRAMS: {
   traktor: {
     separator: () => window.api.traktorHasSeparator(),
     edit: {
-      save: (edit, label) => window.api.editTraktorPlaylist(edit, label),
+      save: (...args) => window.api.editTraktorPlaylist(...args),
       messagePrefix: 'sources.editTraktor.',
       gate: 'traktorCollection',
     },
@@ -144,7 +149,7 @@ export const SOURCE_PROGRAMS: {
   serato: {
     separator: null,
     edit: {
-      save: (edit, label) => window.api.editSeratoPlaylist(edit, label),
+      save: (...args) => window.api.editSeratoPlaylist(...args),
       messagePrefix: 'sources.editSerato.',
       gate: 'none',
     },

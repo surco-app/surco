@@ -119,8 +119,7 @@
       "assumed_one": "{{count}} track has no length and counts as {{minutes}} min",
       "assumed_other": "{{count}} tracks have no length and count as {{minutes}} min each"
     },
-    "playlistName": "Session {{date}}",
-    "closed": "Close your DJ program to build the session. With it open, the playlist would be left half written"
+    "playlistName": "Session {{date}}"
   },
   "pasteTracklist": {
     "title": "Paste tracklist into “{{name}}”",

@@ -101,6 +101,18 @@ describe('useRekordboxEdits', () => {
     )
   })
 
+  it('passes the queue mode on, so a session can wait for the program to close without a dialog', async () => {
+    const { result } = setup(Promise.resolve({ applied: true }))
+    await act(async () => {
+      await result.current.edit({ kind: 'delete', playlistId: 'f' }, 'Factory', 'queue')
+    })
+    expect(window.api.editRekordboxPlaylist).toHaveBeenCalledWith(
+      { kind: 'delete', playlistId: 'f' },
+      'Factory',
+      'queue',
+    )
+  })
+
   it('re-reads the membership after an edit, since a deleted playlist changes the dots', async () => {
     const { result, client } = setup(Promise.resolve({ applied: true }))
     const invalidate = vi.spyOn(client, 'invalidateQueries')

@@ -119,8 +119,7 @@
       "assumed_one": "{{count}} トラックは長さ不明のため {{minutes}} 分として計算",
       "assumed_other": "{{count}} トラックは長さ不明のため {{minutes}} 分として計算"
     },
-    "playlistName": "{{date}} のセッション",
-    "closed": "セッションを作るには DJ ソフトを閉じてください。開いたままだとプレイリストが中途半端になります"
+    "playlistName": "{{date}} のセッション"
   },
   "pasteTracklist": {
     "title": "「{{name}}」にトラックリストを貼り付け",
