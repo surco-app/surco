@@ -535,10 +535,10 @@ export default function App(): React.JSX.Element {
   showWaveformRef.current = settings?.showWaveform ?? true
   const hasTokenRef = useRef(false)
   hasTokenRef.current = !!settings?.discogsToken
-  // Live providers for the background sweep, read at probe time (Settings → Search).
+  // Live providers for the background sweep, read at probe time (Settings → Sources).
   const searchProvidersRef = useRef<SearchProviderId[]>(DEFAULT_SEARCH_PROVIDERS)
   searchProvidersRef.current = settings ? usableProviders(settings) : DEFAULT_SEARCH_PROVIDERS
-  // Which fields a release may fill (Settings → Search). A ref for the same reason as the
+  // Which fields a release may fill (Settings → Sources). A ref for the same reason as the
   // providers above: the sweep applies matches in the background, so it must read the
   // current choice at apply time rather than one captured when the sweep started.
   const importFields = normalizeImportFields(settings?.importFields)

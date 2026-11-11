@@ -1046,7 +1046,7 @@
       "pending": "Créée à l’écriture du morceau",
       "some": "Seulement sur certains morceaux. Clique pour l’ajouter à tous",
       "options": "Playlists {{app}}",
-      "unconfirmed": "Choisis la collection dans Réglages → Sortie → Traktor"
+      "unconfirmed": "Choisis la collection dans Réglages → Logiciels DJ → Traktor"
     },
     "cues": {
       "title": "Cues",
@@ -1229,10 +1229,10 @@
         "autoUnreadable": "Surco n’a pas pu lire l’audio de ce morceau",
         "saveAll_one": "Enregistrer {{count}} morceau dans Traktor",
         "saveAll_other": "Enregistrer {{count}} morceaux dans Traktor",
-        "noCollection": "Choisis ta collection.nml dans Réglages → Sortie → Traktor pour que Surco puisse enregistrer",
+        "noCollection": "Choisis ta collection.nml dans Réglages → Logiciels DJ → Traktor pour que Surco puisse enregistrer",
         "colours": "Traktor colore chaque cue selon son type. Surco les enregistre comme des cues normaux, en bleu, et laisse le bouton 1 à l’AutoGrid de Traktor",
         "calls": "Traktor n’a pas de CALL, ils ne sont donc pas enregistrés. Seuls les hot cues arrivent dans Traktor",
-        "otherCollection": "Traktor utilise une autre collection, {{path}}. Ce que tu enregistres ici ne lui parviendra pas. Change-la dans Réglages → Sortie → Traktor"
+        "otherCollection": "Traktor utilise une autre collection, {{path}}. Ce que tu enregistres ici ne lui parviendra pas. Change-la dans Réglages → Logiciels DJ → Traktor"
       },
       "provisional": {
         "chip": "Grille de Surco · {{bpm}} BPM",
@@ -2582,7 +2582,7 @@
       "serato": "Impossible de lire la bibliothèque Serato. Si tu viens de modifier quelque chose, reviens dans Surco dans quelques secondes."
     },
     "notFound": {
-      "engine": "Surco ne trouve pas de bibliothèque Engine DJ. Indique son dossier, celui qui contient Database2, sous Engine DJ dans Réglages → Sortie.",
+      "engine": "Surco ne trouve pas de bibliothèque Engine DJ. Indique son dossier, celui qui contient Database2, sous Engine DJ dans Réglages → Logiciels DJ.",
       "serato": "Surco ne trouve pas de bibliothèque Serato. Il cherche le dossier _Serato_ dans Musique et sur chaque disque connecté."
     },
     "empty": "Aucune playlist.",

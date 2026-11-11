@@ -233,7 +233,7 @@ describe('SourceTree', () => {
         onSelect={vi.fn()}
       />,
     )
-    expect(screen.getByTestId('source-tree-missing')).toHaveTextContent('Settings → Output')
+    expect(screen.getByTestId('source-tree-missing')).toHaveTextContent('Settings → DJ software')
     expect(screen.queryByText(i18n.t('sources.empty'))).not.toBeInTheDocument()
     expect(screen.queryByTestId('source-tree-new-playlist')).not.toBeInTheDocument()
   })

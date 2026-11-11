@@ -181,7 +181,7 @@ export interface Settings {
   searchProviders: SearchProviderId[]
   // Junk phrases (rip-crew stamps, pool watermarks) stripped from titles and queries
   // before searching and scoring — no release ever carries them, so left in they sink
-  // both. User-curated in Settings → Search, edited as comma-separated text.
+  // both. User-curated in Settings → Sources, edited as comma-separated text.
   searchIgnoreWords: string[]
   // Search the tagged album (with the artist) before the track, falling back to the
   // track when it finds nothing. Off by default: a single's album tag is often junk,

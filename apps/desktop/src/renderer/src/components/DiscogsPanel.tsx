@@ -76,7 +76,7 @@ interface Props {
     | undefined
   selectTrack: (track: ReleaseTrack) => void
   searchInputRef: React.RefObject<HTMLInputElement | null>
-  // The release formats search is restricted to (Settings → Search). Empty = no filter.
+  // The release formats search is restricted to (Settings → Sources). Empty = no filter.
   // Shown as a hint so a thinned or empty result set reads as the filter at work.
   formatFilter: string[]
   width: number

@@ -1046,7 +1046,7 @@
       "pending": "トラックの書き込み時に作成されます",
       "some": "一部のトラックのみ。クリックするとすべてに追加します",
       "options": "{{app}} プレイリスト",
-      "unconfirmed": "設定 → 出力 → Traktor でコレクションを選んでください"
+      "unconfirmed": "設定 → DJソフト → Traktor でコレクションを選んでください"
     },
     "cues": {
       "title": "キュー",
@@ -1229,10 +1229,10 @@
         "autoUnreadable": "Surco はこのトラックの音声を読み取れませんでした",
         "saveAll_one": "{{count}} トラックを Traktor に保存",
         "saveAll_other": "{{count}} トラックを Traktor に保存",
-        "noCollection": "Surco が保存できるよう、設定 → 出力 → Traktor で collection.nml を選択してください",
+        "noCollection": "Surco が保存できるよう、設定 → DJソフト → Traktor で collection.nml を選択してください",
         "colours": "Traktor はキューの種類ごとに色を付けます。Surco は通常のキューとして青色で保存し、ボタン 1 は Traktor の AutoGrid 用に空けておきます",
         "calls": "Traktor には CALL がないため、保存されません。Traktor に反映されるのはホットキューのみです",
-        "otherCollection": "Traktor は別のコレクション {{path}} を使用しています。ここで保存した内容はそちらに反映されません。設定 → 出力 → Traktor で変更してください"
+        "otherCollection": "Traktor は別のコレクション {{path}} を使用しています。ここで保存した内容はそちらに反映されません。設定 → DJソフト → Traktor で変更してください"
       },
       "provisional": {
         "chip": "Surco のグリッド · {{bpm}} BPM",
@@ -2582,7 +2582,7 @@
       "serato": "Serato ライブラリを読み込めませんでした。変更した直後の場合は、数秒後に Surco に戻ってください。"
     },
     "notFound": {
-      "engine": "Engine DJ ライブラリが見つかりません。設定 → 出力 の Engine DJ で、Database2 を含むフォルダーを指定してください。",
+      "engine": "Engine DJ ライブラリが見つかりません。設定 → DJソフト の Engine DJ で、Database2 を含むフォルダーを指定してください。",
       "serato": "Serato ライブラリが見つかりません。ミュージックと接続中の各ドライブにある _Serato_ フォルダーを探します。"
     },
     "empty": "プレイリストがありません。",

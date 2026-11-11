@@ -49,7 +49,7 @@ export function stripParentheticals(query: string): string {
   return squeeze(query.replace(/\([^)]*\)/g, ' '))
 }
 
-// The user's own junk phrases (Settings → Search): rip-crew stamps ("rip djotas good"),
+// The user's own junk phrases (Settings → Sources): rip-crew stamps ("rip djotas good"),
 // pool watermarks — words no release ever carries, so they sink both the free-text
 // search and the title score. Each phrase is removed wherever it appears, case-
 // insensitively and only as whole words (letters/digits can't continue on either side,

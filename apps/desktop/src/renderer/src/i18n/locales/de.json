@@ -1046,7 +1046,7 @@
       "pending": "Wird beim Schreiben des Tracks erstellt",
       "some": "Nur bei einigen Tracks. Klicken, um sie allen hinzuzufügen",
       "options": "{{app}}-Playlists",
-      "unconfirmed": "Wähle die Sammlung unter Einstellungen → Ausgabe → Traktor"
+      "unconfirmed": "Wähle die Sammlung unter Einstellungen → DJ-Software → Traktor"
     },
     "cues": {
       "title": "Cues",
@@ -1229,10 +1229,10 @@
         "autoUnreadable": "Surco konnte das Audio dieses Tracks nicht lesen",
         "saveAll_one": "{{count}} Track in Traktor speichern",
         "saveAll_other": "{{count}} Tracks in Traktor speichern",
-        "noCollection": "Wähle deine collection.nml unter Einstellungen → Ausgabe → Traktor, damit Surco speichern kann",
+        "noCollection": "Wähle deine collection.nml unter Einstellungen → DJ-Software → Traktor, damit Surco speichern kann",
         "colours": "Traktor färbt jeden Cue nach seinem Typ. Surco speichert sie als normale Cues in Blau und lässt Taste 1 für das AutoGrid von Traktor frei",
         "calls": "Traktor kennt keine CALLs, sie werden nicht gespeichert. Nur die Hot Cues landen in Traktor",
-        "otherCollection": "Traktor verwendet eine andere Sammlung, {{path}}. Was du hier speicherst, kommt dort nicht an. Ändere sie unter Einstellungen → Ausgabe → Traktor"
+        "otherCollection": "Traktor verwendet eine andere Sammlung, {{path}}. Was du hier speicherst, kommt dort nicht an. Ändere sie unter Einstellungen → DJ-Software → Traktor"
       },
       "provisional": {
         "chip": "Surco-Raster · {{bpm}} BPM",
@@ -2582,7 +2582,7 @@
       "serato": "Die Serato-Bibliothek konnte nicht gelesen werden. Wenn du gerade etwas geändert hast, kehre in ein paar Sekunden zu Surco zurück."
     },
     "notFound": {
-      "engine": "Surco findet keine Engine-DJ-Bibliothek. Lege ihren Ordner, den mit Database2, unter Engine DJ in Einstellungen → Ausgabe fest.",
+      "engine": "Surco findet keine Engine-DJ-Bibliothek. Lege ihren Ordner, den mit Database2, unter Engine DJ in Einstellungen → DJ-Software fest.",
       "serato": "Surco findet keine Serato-Bibliothek. Gesucht wird der Ordner _Serato_ in Musik und auf jedem angeschlossenen Laufwerk."
     },
     "empty": "Keine Playlists.",

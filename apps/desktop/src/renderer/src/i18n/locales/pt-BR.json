@@ -1046,7 +1046,7 @@
       "pending": "Será criada ao gravar a faixa",
       "some": "Só em algumas faixas. Clique para colocá-la em todas",
       "options": "Playlists do {{app}}",
-      "unconfirmed": "Escolha a coleção em Ajustes → Saída → Traktor"
+      "unconfirmed": "Escolha a coleção em Ajustes → Programas de DJ → Traktor"
     },
     "cues": {
       "title": "Cues",
@@ -1229,10 +1229,10 @@
         "autoUnreadable": "O Surco não conseguiu ler o áudio desta faixa",
         "saveAll_one": "Salvar {{count}} faixa no Traktor",
         "saveAll_other": "Salvar {{count}} faixas no Traktor",
-        "noCollection": "Escolha seu collection.nml em Ajustes → Saída → Traktor para que o Surco possa salvar",
+        "noCollection": "Escolha seu collection.nml em Ajustes → Programas de DJ → Traktor para que o Surco possa salvar",
         "colours": "O Traktor colore cada cue pelo tipo. O Surco os salva como cues normais, em azul, e deixa o botão 1 para o AutoGrid do Traktor",
         "calls": "O Traktor não tem CALL, então eles não são salvos. Só os hot cues chegam ao Traktor",
-        "otherCollection": "O Traktor usa outra coleção, {{path}}. O que você salvar aqui não vai chegar até ele. Troque em Ajustes → Saída → Traktor"
+        "otherCollection": "O Traktor usa outra coleção, {{path}}. O que você salvar aqui não vai chegar até ele. Troque em Ajustes → Programas de DJ → Traktor"
       },
       "provisional": {
         "chip": "Grade do Surco · {{bpm}} BPM",
@@ -2582,7 +2582,7 @@
       "serato": "Não foi possível ler a biblioteca do Serato. Se você acabou de mudar algo, volte ao Surco em alguns segundos."
     },
     "notFound": {
-      "engine": "O Surco não encontra uma biblioteca do Engine DJ. Defina a pasta dela, a que contém Database2, em Engine DJ, dentro de Ajustes → Saída.",
+      "engine": "O Surco não encontra uma biblioteca do Engine DJ. Defina a pasta dela, a que contém Database2, em Engine DJ, dentro de Ajustes → Programas de DJ.",
       "serato": "O Surco não encontra uma biblioteca do Serato. Ele procura a pasta _Serato_ em Música e em cada disco conectado."
     },
     "empty": "Nenhuma playlist.",

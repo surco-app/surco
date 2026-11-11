@@ -14,7 +14,7 @@ import * as discogs from '../discogs'
 import * as musicbrainz from '../musicbrainz'
 import { getSettings } from '../settings'
 
-// The user's junk phrases (Settings → Search), stripped from the query and hints at
+// The user's junk phrases (Settings → Sources), stripped from the query and hints at
 // this seam — the one place every search crosses — so the sweep, the editor and every
 // provider see the same cleaned text. Defensive on the array like discogsFormats below:
 // a hand-edited settings.json must not crash the search handler.
