@@ -2800,6 +2800,21 @@ export default function App(): React.JSX.Element {
       }),
     [selectedTracks, playlistScope],
   )
+  const gridContentIds = useMemo(
+    () => new Set(gridEntries.map(([, contentId]) => contentId)),
+    [gridEntries],
+  )
+  const cueGridCheckOf = useCallback(
+    (contentId: string) => (gridContentIds.has(contentId) ? gridCheckOf(contentId) : null),
+    [gridContentIds, gridCheckOf],
+  )
+  const showBadGrid = useStableCallback(() =>
+    setFilterSelection({ ...filterSelection, attention: 'badGrid' }),
+  )
+  const openCueTrack = useStableCallback((contentId: string) => {
+    const track = selectedTracks.find((t) => playlistScope?.contentOf.get(t.id) === contentId)
+    if (track) onSelectTrack(track.id, {})
+  })
   const autoMarkSelected = useStableCallback(() => {
     const ids = selectedTracks.flatMap((t) => {
       const contentId = playlistScope?.contentOf.get(t.id)
@@ -4025,6 +4040,9 @@ export default function App(): React.JSX.Element {
                             onCueFlow={onCueFlow}
                             onCueAutoMarkAll={cuesMarkable ? autoMarkSelected : undefined}
                             cueTargets={cueTargets}
+                            cueGridCheckOf={cueGridCheckOf}
+                            onShowBadGrid={showBadGrid}
+                            onOpenCueTrack={openCueTrack}
                             cueActionsRef={cueActionsRef}
                             libraryIndex={libraryIndex}
                             searchInputRef={searchInputRef}

@@ -1172,6 +1172,28 @@
         "doubtful_one": "{{count}} doubtful",
         "doubtful_other": "{{count}} doubtful"
       },
+      "gridBatch": {
+        "title": "Grid",
+        "show": "Show them in the list",
+        "measuring": "Measuring the grid… {{done}} of {{total}}",
+        "needs_one": "{{count}} of {{total}} is off the beats.",
+        "needs_other": "{{count}} of {{total}} are off the beats.",
+        "rest_one": "The other one is already fine and stays as it is.",
+        "rest_other": "The other {{count}} are already fine and stay as they are.",
+        "allFine": "They all sit on the beats.",
+        "adjust_one": "Adjust {{count}} track",
+        "adjust_other": "Adjust {{count}} tracks",
+        "adjusted": "Adjusted",
+        "fine": "Already fine",
+        "unmeasured": "No beats to measure",
+        "review": "To check by hand",
+        "reviewTitle": "Surco left these alone",
+        "tempo": "Surco hears {{heard}} BPM and {{program}} says {{bpm}}",
+        "cueJump": "A cue would move {{ms}} ms",
+        "noBetter": "The adjustment does not improve it",
+        "open": "Open",
+        "undo": "Undo the adjustment"
+      },
       "engine": {
         "save": "Save to Engine DJ",
         "unanalysed": "Engine DJ has not analysed this track yet",

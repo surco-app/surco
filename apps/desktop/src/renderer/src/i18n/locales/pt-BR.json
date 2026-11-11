@@ -1172,6 +1172,28 @@
         "doubtful_one": "{{count}} duvidosa",
         "doubtful_other": "{{count}} duvidosas"
       },
+      "gridBatch": {
+        "title": "Grade",
+        "show": "Ver na lista",
+        "measuring": "Medindo a grade… {{done}} de {{total}}",
+        "needs_one": "{{count}} de {{total}} não bate com as batidas.",
+        "needs_other": "{{count}} de {{total}} não batem com as batidas.",
+        "rest_one": "A outra já está certa e não é mexida.",
+        "rest_other": "As outras {{count}} já estão certas e não são mexidas.",
+        "allFine": "Todas batem com as batidas.",
+        "adjust_one": "Ajustar {{count}} faixa",
+        "adjust_other": "Ajustar {{count}} faixas",
+        "adjusted": "Ajustadas",
+        "fine": "Já estavam certas",
+        "unmeasured": "Sem batidas para medir",
+        "review": "Para revisar à mão",
+        "reviewTitle": "O Surco não mexeu nestas",
+        "tempo": "O Surco ouve {{heard}} BPM e o {{program}} diz {{bpm}}",
+        "cueJump": "Um cue se moveria {{ms}} ms",
+        "noBetter": "O ajuste não a melhora",
+        "open": "Abrir",
+        "undo": "Desfazer o ajuste"
+      },
       "engine": {
         "save": "Salvar no Engine DJ",
         "unanalysed": "O Engine DJ ainda não analisou esta faixa",

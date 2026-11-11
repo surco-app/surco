@@ -1172,6 +1172,28 @@
         "doubtful_one": "不確か {{count}} 件",
         "doubtful_other": "不確か {{count}} 件"
       },
+      "gridBatch": {
+        "title": "グリッド",
+        "show": "リストで見る",
+        "measuring": "グリッドを測定中… {{done}} / {{total}}",
+        "needs_one": "{{total}} 曲中 {{count}} 曲が拍に合っていません。",
+        "needs_other": "{{total}} 曲中 {{count}} 曲が拍に合っていません。",
+        "rest_one": "残りの 1 曲はすでに合っているので変更しません。",
+        "rest_other": "残りの {{count}} 曲はすでに合っているので変更しません。",
+        "allFine": "すべて拍に合っています。",
+        "adjust_one": "{{count}} トラックを調整",
+        "adjust_other": "{{count}} トラックを調整",
+        "adjusted": "調整済み",
+        "fine": "もともと合っていた",
+        "unmeasured": "測定できる拍なし",
+        "review": "手動で確認",
+        "reviewTitle": "Surco が変更しなかったトラック",
+        "tempo": "Surco には {{heard}} BPM に聞こえ、{{program}} では {{bpm}}",
+        "cueJump": "キューが {{ms}} ms 動いてしまいます",
+        "noBetter": "調整しても良くなりません",
+        "open": "開く",
+        "undo": "調整を元に戻す"
+      },
       "engine": {
         "save": "Engine DJ に保存",
         "unanalysed": "Engine DJ はまだこのトラックを解析していません",

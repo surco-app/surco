@@ -1172,6 +1172,28 @@
         "doubtful_one": "{{count}} dudosa",
         "doubtful_other": "{{count}} dudosas"
       },
+      "gridBatch": {
+        "title": "Rejilla",
+        "show": "Verlas en la lista",
+        "measuring": "Midiendo la rejilla… {{done}} de {{total}}",
+        "needs_one": "{{count}} de {{total}} no va con los golpes.",
+        "needs_other": "{{count}} de {{total}} no van con los golpes.",
+        "rest_one": "La otra ya está bien y no se toca.",
+        "rest_other": "Las otras {{count}} ya están bien y no se tocan.",
+        "allFine": "Todas van con los golpes.",
+        "adjust_one": "Ajustar {{count}} pista",
+        "adjust_other": "Ajustar {{count}} pistas",
+        "adjusted": "Ajustadas",
+        "fine": "Ya estaban bien",
+        "unmeasured": "Sin golpes que medir",
+        "review": "Para revisar a mano",
+        "reviewTitle": "Surco no las ha tocado",
+        "tempo": "Surco oye {{heard}} BPM y {{program}} dice {{bpm}}",
+        "cueJump": "Un cue se movería {{ms}} ms",
+        "noBetter": "El ajuste no la mejora",
+        "open": "Abrir",
+        "undo": "Deshacer el ajuste"
+      },
       "engine": {
         "save": "Guardar en Engine DJ",
         "unanalysed": "Engine DJ aún no ha analizado esta pista",

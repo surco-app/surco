@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { activeCueFlow, MANUAL_CUE_FLOW } from '../../../shared/cueFlows'
 import { programOf, programsInOrder } from '../../../shared/djProgram'
+import type { GridCheck } from '../../../shared/gridCheck'
 import type { CueLibrary } from '../../../shared/types'
 import { type AutoMarkTarget, acceptAutoMarks } from '../lib/cueAutoMark'
 import { forgetStaleDrafts } from '../lib/cueDrafts'
@@ -22,6 +23,7 @@ import { recordCueEdits } from '../lib/cueTasteEdits'
 import { twinPlansOf } from '../lib/cueTwins'
 import { useAppSettings } from '../lib/settingsContext'
 import { saveAllKey } from './CuesSection'
+import { GridBatchBlock } from './GridBatchBlock'
 import { Select } from './Select'
 
 const LIBRARIES = programsInOrder(['rekordbox', 'traktor', 'engine', 'serato'])
@@ -44,10 +46,16 @@ export function CuesBatchSection({
   targets,
   onMark,
   onFlow,
+  gridCheckOf,
+  onShowBadGrid,
+  onOpen,
 }: {
   targets: AutoMarkTarget[]
   onMark: () => void
   onFlow: (id: string) => void
+  gridCheckOf: (contentId: string) => GridCheck | null | undefined
+  onShowBadGrid: () => void
+  onOpen: (contentId: string) => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const queryClient = useQueryClient()
@@ -253,6 +261,12 @@ export function CuesBatchSection({
           </dl>
         </div>
       )}
+      <GridBatchBlock
+        targets={targets}
+        checkOf={gridCheckOf}
+        onShowInList={onShowBadGrid}
+        onOpen={onOpen}
+      />
       {unsaved.size > 0 && (
         <div className="mt-3 grid gap-2">
           <button

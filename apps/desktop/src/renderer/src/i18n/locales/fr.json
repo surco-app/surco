@@ -1172,6 +1172,28 @@
         "doubtful_one": "{{count}} douteuse",
         "doubtful_other": "{{count}} douteuses"
       },
+      "gridBatch": {
+        "title": "Grille",
+        "show": "Les voir dans la liste",
+        "measuring": "Mesure de la grille… {{done}} sur {{total}}",
+        "needs_one": "{{count}} sur {{total}} n’est pas calé sur les temps.",
+        "needs_other": "{{count}} sur {{total}} ne sont pas calés sur les temps.",
+        "rest_one": "L’autre est déjà bon et reste tel quel.",
+        "rest_other": "Les {{count}} autres sont déjà bons et restent tels quels.",
+        "allFine": "Tous sont calés sur les temps.",
+        "adjust_one": "Ajuster {{count}} morceau",
+        "adjust_other": "Ajuster {{count}} morceaux",
+        "adjusted": "Ajustés",
+        "fine": "Déjà bons",
+        "unmeasured": "Pas de temps à mesurer",
+        "review": "À revoir à la main",
+        "reviewTitle": "Surco n’y a pas touché",
+        "tempo": "Surco entend {{heard}} BPM et {{program}} indique {{bpm}}",
+        "cueJump": "Un cue bougerait de {{ms}} ms",
+        "noBetter": "L’ajustement ne l’améliore pas",
+        "open": "Ouvrir",
+        "undo": "Annuler l’ajustement"
+      },
       "engine": {
         "save": "Enregistrer dans Engine DJ",
         "unanalysed": "Engine DJ n’a pas encore analysé ce morceau",

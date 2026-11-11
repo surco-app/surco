@@ -40,7 +40,14 @@ import { resetGridChecks } from './hooks/useGridChecks'
 import { NEW_TRACKS_PROMPT_TIMEOUT_MS } from './hooks/useTrackLibrary'
 import i18n from './i18n'
 import { startDraft } from './lib/cueDraft'
-import { autoMarkOf, forgetDraft, keepAutoMark, keepDraft, resetCueSession } from './lib/cueSession'
+import {
+  autoMarkOf,
+  forgetDraft,
+  keepAutoMark,
+  keepDraft,
+  keepGridAdjust,
+  resetCueSession,
+} from './lib/cueSession'
 import { resetEditorPlace } from './lib/editorPlace'
 import { spellingGroups } from './lib/musicSpelling'
 import { createQueryClient } from './lib/queryClient'
@@ -523,7 +530,10 @@ describe('App unsaved cues', () => {
 })
 
 describe('App Engine DJ cues', () => {
-  afterEach(resetCueSession)
+  afterEach(() => {
+    resetCueSession()
+    resetGridChecks()
+  })
 
   function openEngine(over: ApiOverrides = {}) {
     setApi({
@@ -612,6 +622,60 @@ describe('App Engine DJ cues', () => {
     fireEvent.click(await screen.findByTestId('cues-auto-mark-all'))
     await waitFor(() => expect(autoMarkOf('engine:12')).toEqual({ kind: 'unanalysed' }))
     expect(autoMarkOf('engine:11')).toEqual({ kind: 'unanalysed' })
+  })
+
+  it('turns on the bad grid filter from the grid block of the selection', async () => {
+    openEngine({ cues: { trackCues: vi.fn<Api['cues']['trackCues']>().mockResolvedValue(null) } })
+    await openFriday()
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[0])
+    fireEvent.click(rows[1], { metaKey: true })
+    fireEvent.click(await screen.findByTestId('grid-batch-show'))
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-section-attention'))
+    await waitFor(() =>
+      expect(screen.getByTestId('quality-filter-badGrid')).toHaveAttribute('aria-selected', 'true'),
+    )
+  })
+
+  it('does not keep the grid block measuring tracks whose grid Surco never measures', async () => {
+    openEngine({
+      pickFiles: vi.fn().mockResolvedValue(['/m/a.mp3', '/m/b.mp3']),
+      cues: { trackCues: vi.fn<Api['cues']['trackCues']>().mockResolvedValue(null) },
+      dj: djReads({
+        engine: {
+          playlist: vi.fn<ProgramReads['playlist']>().mockResolvedValue([
+            { path: '/m/a.mp3', separator: false, meta: {}, contentId: 'engine:11' },
+            { path: '/m/b.mp3', separator: false, meta: {}, contentId: 'engine:12' },
+          ]),
+        },
+      }),
+    })
+    await openFriday()
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[0])
+    fireEvent.click(rows[1], { metaKey: true })
+    expect(await screen.findByTestId('grid-batch-summary')).toBeInTheDocument()
+    expect(screen.queryByTestId('grid-batch-measuring')).not.toBeInTheDocument()
+  })
+
+  it('opens a track the grid block set aside on its own, as clicking its row does', async () => {
+    openEngine({ cues: { trackCues: vi.fn<Api['cues']['trackCues']>().mockResolvedValue(null) } })
+    await openFriday()
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[0])
+    fireEvent.click(rows[1], { metaKey: true })
+    act(() =>
+      keepGridAdjust('engine:12', {
+        kind: 'review',
+        reason: { kind: 'noBetter', beforeMs: 40, afterMs: 45 },
+      }),
+    )
+    fireEvent.click(await screen.findByTestId('grid-batch-open-engine:12'))
+    expect(await screen.findByTestId('cues-section')).toBeInTheDocument()
+    expect(screen.queryByTestId('cues-multi')).not.toBeInTheDocument()
+    expect(rows[1]).toHaveAttribute('aria-selected', 'true')
+    expect(rows[0]).toHaveAttribute('aria-selected', 'false')
   })
 
   it('shows on each row of an Engine DJ playlist what Auto marcar left for its Engine track', async () => {

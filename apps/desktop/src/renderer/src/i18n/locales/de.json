@@ -1172,6 +1172,28 @@
         "doubtful_one": "{{count}} unsicher",
         "doubtful_other": "{{count}} unsicher"
       },
+      "gridBatch": {
+        "title": "Raster",
+        "show": "In der Liste zeigen",
+        "measuring": "Raster wird gemessen… {{done}} von {{total}}",
+        "needs_one": "{{count}} von {{total}} liegt nicht auf den Beats.",
+        "needs_other": "{{count}} von {{total}} liegen nicht auf den Beats.",
+        "rest_one": "Der andere passt schon und bleibt, wie er ist.",
+        "rest_other": "Die anderen {{count}} passen schon und bleiben, wie sie sind.",
+        "allFine": "Alle liegen auf den Beats.",
+        "adjust_one": "{{count}} Track anpassen",
+        "adjust_other": "{{count}} Tracks anpassen",
+        "adjusted": "Angepasst",
+        "fine": "Waren schon gut",
+        "unmeasured": "Keine Beats zum Messen",
+        "review": "Von Hand prüfen",
+        "reviewTitle": "Surco hat diese nicht angefasst",
+        "tempo": "Surco hört {{heard}} BPM und {{program}} sagt {{bpm}}",
+        "cueJump": "Ein Cue würde sich um {{ms}} ms verschieben",
+        "noBetter": "Die Anpassung macht ihn nicht besser",
+        "open": "Öffnen",
+        "undo": "Anpassung rückgängig machen"
+      },
       "engine": {
         "save": "In Engine DJ speichern",
         "unanalysed": "Engine DJ hat diesen Track noch nicht analysiert",

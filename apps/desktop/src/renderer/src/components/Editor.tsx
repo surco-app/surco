@@ -27,6 +27,7 @@ import { effectiveMeta, fieldValue, isCustomTag } from '../../../shared/customFi
 import { WRITABLE_PROGRAMS, writableInOrder } from '../../../shared/djProgram'
 import { EDITOR_SECTION_GROUP } from '../../../shared/editorSections'
 import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../../../shared/format'
+import type { GridCheck } from '../../../shared/gridCheck'
 import { fromReadOnlyProgram } from '../../../shared/trackOrigin'
 import type {
   DeclickConfig,
@@ -220,6 +221,9 @@ interface Props {
   onCueFlow?: (id: string) => void
   onCueAutoMarkAll?: () => void
   cueTargets?: AutoMarkTarget[]
+  cueGridCheckOf?: (contentId: string) => GridCheck | null | undefined
+  onShowBadGrid?: () => void
+  onOpenCueTrack?: (contentId: string) => void
   cueActionsRef?: { current: CueActions | null }
   onHideEditorHints: () => void
   // Opens the output-name pattern builder for this track (App owns the modal so the
@@ -316,6 +320,9 @@ export const Editor = memo(function Editor({
   onCueFlow,
   onCueAutoMarkAll,
   cueTargets,
+  cueGridCheckOf,
+  onShowBadGrid,
+  onOpenCueTrack,
   cueActionsRef,
   onHideEditorHints,
   onOpenRename,
@@ -1728,6 +1735,9 @@ export const Editor = memo(function Editor({
                             targets={cueTargets ?? []}
                             onMark={onCueAutoMarkAll}
                             onFlow={(flowId) => onCueFlow?.(flowId)}
+                            gridCheckOf={(contentId) => cueGridCheckOf?.(contentId)}
+                            onShowBadGrid={() => onShowBadGrid?.()}
+                            onOpen={(contentId) => onOpenCueTrack?.(contentId)}
                           />
                         )
                       if (isMulti) return singleTrackOnly(id, tr('editor.cues.title'))

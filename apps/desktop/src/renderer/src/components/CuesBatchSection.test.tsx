@@ -5,6 +5,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import { type CueFlow, MY_FLOW, ONE_AT_32 } from '../../../shared/cueFlows'
+import type { GridCheck } from '../../../shared/gridCheck'
 import type { LibraryTracks, Settings, TrackCues } from '../../../shared/types'
 import i18n from '../i18n'
 import { startDraft } from '../lib/cueDraft'
@@ -38,6 +39,8 @@ const READ: TrackCues = {
   fingerprint: 'f0',
   gridFingerprint: '',
 }
+const ON_BEATS: GridCheck = { hereMs: 2, endMs: -3, worstMs: 3, verdict: null }
+const LATE: GridCheck = { hereMs: 102, endMs: 101, worstMs: 102, verdict: null }
 const TARGETS = [
   { contentId: '103', path: '/m/a.wav', label: 'Maniac' },
   { contentId: '104', path: '/m/b.wav', label: 'Summer Sky' },
@@ -63,17 +66,25 @@ function setup(twins: Record<string, LibraryTracks> = {}, targets = TARGETS) {
   })
   const onMark = vi.fn()
   const onFlow = vi.fn()
+  const onShowBadGrid = vi.fn()
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   const tree = (over: Partial<Settings>) => (
     <QueryClientProvider client={client}>
       <SettingsProvider settings={{ cueFlows: KEPT, activeCueFlow: 'mine', ...over }}>
-        <CuesBatchSection targets={targets} onMark={onMark} onFlow={onFlow} />
+        <CuesBatchSection
+          targets={targets}
+          onMark={onMark}
+          onFlow={onFlow}
+          gridCheckOf={(contentId) => (contentId === '103' ? LATE : ON_BEATS)}
+          onShowBadGrid={onShowBadGrid}
+          onOpen={vi.fn()}
+        />
       </SettingsProvider>
     </QueryClientProvider>
   )
   const { rerender } = render(tree({}))
   const changeSettings = (over: Partial<Settings>) => rerender(tree(over))
-  return { saveRekordboxCues, onMark, onFlow, changeSettings }
+  return { saveRekordboxCues, onMark, onFlow, onShowBadGrid, changeSettings }
 }
 
 describe('Cues over several selected tracks', () => {
@@ -282,6 +293,15 @@ describe('Cues over several selected tracks', () => {
     )
   })
 
+  it('adjusts the grids of the selection from the same panel that marks its cues', () => {
+    const { onShowBadGrid } = setup()
+    expect(screen.getByTestId('grid-batch-adjust')).toHaveTextContent(
+      i18n.t('editor.cues.gridBatch.adjust', { count: 1 }),
+    )
+    fireEvent.click(screen.getByTestId('grid-batch-show'))
+    expect(onShowBadGrid).toHaveBeenCalled()
+  })
+
   it('counts the Serato tracks of the selection among what each program gets', async () => {
     const S = 'serato:/m/a.wav'
     const T1 = 'traktor:M/:m/:a.wav'
@@ -382,7 +402,14 @@ describe('Cues over several selected tracks', () => {
         client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
       >
         <SettingsProvider settings={{ cueFlows: KEPT, activeCueFlow: 'mine' }}>
-          <CuesBatchSection targets={targets} onMark={vi.fn()} onFlow={vi.fn()} />
+          <CuesBatchSection
+            targets={targets}
+            onMark={vi.fn()}
+            onFlow={vi.fn()}
+            gridCheckOf={() => ON_BEATS}
+            onShowBadGrid={vi.fn()}
+            onOpen={vi.fn()}
+          />
         </SettingsProvider>
       </QueryClientProvider>,
     )
