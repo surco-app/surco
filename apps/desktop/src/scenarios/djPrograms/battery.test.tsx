@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { existsSync, mkdirSync, realpathSync } from 'node:fs'
-import { basename, join } from 'node:path'
+import { basename, extname, join } from 'node:path'
 import { app } from 'electron'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 
@@ -62,7 +62,7 @@ import type {
 } from '../../shared/types'
 import { makeTrack, scenarioDir } from '../fixtures'
 import { invokeMain, openSurco, type Scenario } from '../harness'
-import { CONVERSION_MOVE_MS, type ConvertedFormat } from './clocks'
+import { CONVERSION_MOVE_MS, type ConvertedFormat, STICK_CUES_LEFT_OUT } from './clocks'
 import { registerDoor } from './door'
 import { TEST_LIBRARIES } from './libraries'
 import type { BatteryFormat, BatteryTrack } from './testLibrary'
@@ -84,6 +84,9 @@ let fresh: BatteryTrack
 let settings: Partial<Settings> = {}
 let surco: Scenario
 let door: ReturnType<typeof registerDoor>
+
+const formatOf = (file: string): BatteryFormat =>
+  extname(file).slice(1).toLowerCase() as BatteryFormat
 
 const dj = <T,>(op: string, program: DjProgram, ...args: unknown[]) =>
   invokeMain<T>(`dj:${op}`, program, ...args)
@@ -397,10 +400,12 @@ describe('USB', () => {
       const library = (await entries(program, id)).map((e) => e.path ?? '')
       expect(list?.tracks.map((t) => t.file)).toEqual(library.map((path) => basename(path)))
       for (const [i, track] of (list?.tracks ?? []).entries()) {
-        if (leftOut.includes(track.title)) {
+        if (STICK_CUES_LEFT_OUT[program].has(formatOf(track.file))) {
           expect(track.cuesMs, track.file).toEqual([])
+          expect(leftOut, track.file).toContain(track.title)
           continue
         }
+        expect(leftOut, track.file).not.toContain(track.title)
         expect(track.cuesMs, track.file).toHaveLength(1)
         if (!/\.(wav|aiff|flac)$/i.test(track.file)) continue
         const cues = await cuesOf(program, library[i])

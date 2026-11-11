@@ -1,4 +1,5 @@
-import type { DjProgram } from '../../shared/djProgram'
+import type { DjProgram, UsbProgram } from '../../shared/djProgram'
+import type { BatteryFormat } from './testLibrary'
 
 const RATE = 44100
 const MP3_FRAME = 1152
@@ -18,4 +19,12 @@ export const CONVERSION_MOVE_MS: Record<DjProgram, Record<ConvertedFormat, numbe
   engine: { mp3: 0, flac: 0 },
   serato: { mp3: 0, flac: 0 },
   virtualdj: { mp3: 0, flac: 0 },
+}
+
+export const STICK_CUES_LEFT_OUT: Record<UsbProgram, ReadonlySet<BatteryFormat>> = {
+  rekordbox: new Set(),
+  traktor: new Set(['m4a']),
+  engine: new Set(),
+  serato: new Set(),
+  virtualdj: new Set(),
 }
