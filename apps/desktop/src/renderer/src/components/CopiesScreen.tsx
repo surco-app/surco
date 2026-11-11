@@ -53,6 +53,11 @@ type Outcome = { ok: true; takenAt: number } | { ok: false; reason: RestoreRefus
 
 const PROGRAM_ORDER = WRITABLE_PROGRAMS
 
+const CONFIRM_BODY: Partial<Record<LibraryCopy['reason'], string>> = {
+  tracks: 'copies.confirm.bodyTracks',
+  lists: 'copies.confirm.bodyLists',
+}
+
 const MUSIC_TOOLS_MIN = 9
 
 const STATE_TONE: Record<ProgramState, string> = {
@@ -671,10 +676,10 @@ export function CopiesScreen({
     }
   }
 
-  const confirmText = (entry: ProgramCopies): string => {
+  const confirmText = (entry: ProgramCopies, copy: LibraryCopy): string => {
     const name = tr(`sources.${entry.program}`)
     return [
-      tr('copies.confirm.body', { program: name }),
+      tr(CONFIRM_BODY[copy.reason] ?? 'copies.confirm.body', { program: name }),
       entry.pending > 0 ? tr('copies.confirm.queue', { count: entry.pending, program: name }) : '',
       tr('copies.confirm.safety'),
     ]
@@ -725,7 +730,7 @@ export function CopiesScreen({
               program: tr(`sources.${askedEntry.program}`),
               when: whenInSentence(askedCopy.takenAt),
             })}
-            message={confirmText(askedEntry)}
+            message={confirmText(askedEntry, askedCopy)}
             confirmLabel={tr('copies.confirm.ok')}
             onConfirm={() => void restore(askedEntry.program, askedCopy)}
             onClose={() => setAsking(null)}

@@ -3460,6 +3460,8 @@
     "confirm": {
       "title": "¿Volver a como estaba {{program}} {{when}}?",
       "body": "Se perderá lo que hayas cambiado en {{program}} después de esa hora, también lo que hiciste desde {{program}}.",
+      "bodyTracks": "Solo vuelven sus pistas y cues. Sus listas se quedan como están ahora, y lo que cambiaste en las pistas de {{program}} después se perderá.",
+      "bodyLists": "Solo vuelven sus listas. Sus pistas y cues se quedan como están ahora, y lo que cambiaste en las listas de {{program}} después se perderá.",
       "safety": "Antes guardamos una copia de cómo está ahora, por si cambias de idea.",
       "queue_one": "También se descartará {{count}} cambio que esperaba a que cerraras {{program}}.",
       "queue_other": "También se descartarán {{count}} cambios que esperaban a que cerraras {{program}}.",

@@ -68,6 +68,7 @@ import { isTraktorRunning } from './traktorProcess'
 import { flushTraktorSync } from './traktorSyncFlush'
 import { sourceRoot } from './usbExport'
 import { type FlushOutcome, type TraktorWrite, traktorPatchKey } from './verifyRegistry'
+import { virtualdjCopyKey } from './virtualdjCopies'
 import { replaceVirtualdjDuplicates } from './virtualdjDuplicates'
 import type { VirtualdjRoot } from './virtualdjLibrary'
 import { isVirtualdjRunning } from './virtualdjProcess'
@@ -926,6 +927,8 @@ export function duplicateLibraryDeps(
                 backupDir: join(app.getPath('userData'), 'virtualdj-backups'),
                 roots: () => rootLibraries().virtualdj,
                 virtualdjOpen: isVirtualdjRunning,
+                sessionBackup: () =>
+                  sessions.virtualdj.ensure(virtualdjCopyKey(rootLibraries().virtualdj)),
               })
             ).map(outcomeOf)
         : undefined,

@@ -3460,6 +3460,8 @@
     "confirm": {
       "title": "Go back to how {{program}} was {{when}}?",
       "body": "Anything you changed in {{program}} after that time will be lost, including what you did from {{program}}.",
+      "bodyTracks": "Only its tracks and cues go back. Its lists stay as they are now, and what you changed in {{program}}'s tracks after that will be lost.",
+      "bodyLists": "Only its lists go back. Its tracks and cues stay as they are now, and what you changed in {{program}}'s lists after that will be lost.",
       "safety": "We'll first save a copy of how it is now, in case you change your mind.",
       "queue_one": "{{count}} change that was waiting for you to close {{program}} will also be discarded.",
       "queue_other": "{{count}} changes that were waiting for you to close {{program}} will also be discarded.",

@@ -156,7 +156,19 @@ describe('CopiesScreen', () => {
     expect(screen.getByTestId('copies-item-lists/b')).toHaveTextContent(
       i18n.t('copies.reason.lists'),
     )
+    const name = i18n.t('sources.virtualdj')
+    fireEvent.click(screen.getByTestId('copies-restore-item-tracks/a'))
+    expect(screen.getByRole('dialog')).toHaveTextContent(
+      i18n.t('copies.confirm.bodyTracks', { program: name }),
+    )
+    fireEvent.click(screen.getByTestId('confirm-cancel'))
     fireEvent.click(screen.getByTestId('copies-restore-item-lists/b'))
+    expect(screen.getByRole('dialog')).toHaveTextContent(
+      i18n.t('copies.confirm.bodyLists', { program: name }),
+    )
+    expect(screen.getByRole('dialog')).not.toHaveTextContent(
+      i18n.t('copies.confirm.body', { program: name }),
+    )
     await act(async () => {
       fireEvent.click(screen.getByTestId('confirm-ok'))
     })

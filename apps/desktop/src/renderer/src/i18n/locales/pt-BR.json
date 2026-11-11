@@ -3460,6 +3460,8 @@
     "confirm": {
       "title": "Voltar o {{program}} a como estava {{when}}?",
       "body": "Tudo o que você alterou no {{program}} depois desse horário será perdido, inclusive o que você fez a partir do {{program}}.",
+      "bodyTracks": "Só as faixas e os cues voltam. As listas ficam como estão agora, e o que você mudou depois nas faixas do {{program}} será perdido.",
+      "bodyLists": "Só as listas voltam. As faixas e os cues ficam como estão agora, e o que você mudou depois nas listas do {{program}} será perdido.",
       "safety": "Antes, guardamos uma cópia de como está agora, caso você mude de ideia.",
       "queue_one": "{{count}} alteração que esperava você fechar o {{program}} também será descartada.",
       "queue_other": "{{count}} alterações que esperavam você fechar o {{program}} também serão descartadas.",

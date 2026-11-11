@@ -627,6 +627,7 @@ async function commitLists(d: ListsDraft, deps: VirtualdjCommitDeps): Promise<Vi
     }
   if (await deps.virtualdjOpen()) return 'cancelled'
   try {
+    await deps.sessionBackup?.()
     if (d.disk.files.size > 0)
       takeBackups([...d.disk.files.keys()], {
         ...deps,

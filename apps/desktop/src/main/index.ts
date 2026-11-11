@@ -279,7 +279,12 @@ import {
 import type { FlushOutcome, TraktorWrite } from './verifyRegistry'
 import { withRecordedRun } from './verifyRun'
 import { applyVirtualdjBatch } from './virtualdjBatch'
-import { listVirtualdjCopies, restoreVirtualdjCopy } from './virtualdjCopies'
+import {
+  listVirtualdjCopies,
+  restoreVirtualdjCopy,
+  takeVirtualdjCopy,
+  virtualdjCopyKey,
+} from './virtualdjCopies'
 import { virtualdjCueSource } from './virtualdjCueSource'
 import { virtualdjLibraryRoots } from './virtualdjLibrary'
 import { virtualdjEdit } from './virtualdjPlaylistEditIpc'
@@ -361,7 +366,15 @@ const rekordboxSessionBackup = createSessionBackup({
 // The same for the Engine DJ library, which a run can repoint as well.
 const engineSessionBackup = createSessionBackup({ take: takeCopyAndAnnounce })
 const traktorSessionBackup = createSessionBackup({ take: takeCopyAndAnnounce })
-const virtualdjSessionBackup = createSessionBackup({ take: takeCopyAndAnnounce })
+const virtualdjSessionBackup = createSessionBackup({
+  take: async (_path, _companions, reason) => {
+    try {
+      return takeVirtualdjCopy(virtualdjCopies(), reason)
+    } finally {
+      broadcast('copies:changed', null)
+    }
+  },
+})
 function seratoRoots() {
   try {
     const volumes = readdirSync('/Volumes').map((name) => join('/Volumes', name))
@@ -374,6 +387,7 @@ const virtualdjDir = (): string => getSettings().virtualdjLibraryDir
 const virtualdjLibrary = (): string =>
   existsSync(join(virtualdjDir(), 'database.xml')) ? virtualdjDir() : ''
 const virtualdjRoots = () => virtualdjLibraryRoots(virtualdjDir(), '/Volumes')
+const virtualdjSessionCopy = () => virtualdjSessionBackup.ensure(virtualdjCopyKey(virtualdjRoots()))
 const virtualdjCopies = () => ({
   backupDir: join(app.getPath('userData'), 'virtualdj-backups'),
   roots: virtualdjRoots,
@@ -599,12 +613,14 @@ const programQueues = {
             ensureClosed,
             stillQueued,
             virtualdjOpen: DJ_PROCESSES.virtualdj.isRunning,
+            sessionBackup: virtualdjSessionCopy,
           }),
         repoint: async (_library, list) => {
           const results = await repointVirtualdjTracks(list, {
             roots: virtualdjRoots,
             backupDir: join(app.getPath('userData'), 'virtualdj-backups'),
             virtualdjOpen: DJ_PROCESSES.virtualdj.isRunning,
+            sessionBackup: virtualdjSessionCopy,
             lengthOf: async (path) => (await probeDuration(path)) ?? undefined,
           })
           queueChecks.repointed('virtualdj', results)
@@ -2353,10 +2369,7 @@ function registerIpc(): void {
         onDiscarded: () => queueChecks.discarded('engine'),
       },
       virtualdj: {
-        collectionPath: () => {
-          const dir = virtualdjLibrary()
-          return dir ? join(dir, 'database.xml') : null
-        },
+        collectionPath: () => virtualdjCopyKey(virtualdjRoots()) || null,
         untouched: () => !getSettings().syncVirtualdj,
         session: virtualdjSessionBackup,
         queue: virtualdjCueQueue,

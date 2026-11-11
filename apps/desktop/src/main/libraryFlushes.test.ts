@@ -718,6 +718,10 @@ describe('duplicateLibraryDeps', () => {
       expect(pairs).toEqual([{ from: '/m/a.mp3', to: '/m/b.mp3' }])
       expect(deps.backupDir).toBe(join('/tmp', 'virtualdj-backups'))
       expect(deps.roots()).toBe(roots)
+      await (deps as unknown as { sessionBackup: () => Promise<void> }).sessionBackup()
+      expect(sessions.virtualdj.ensure).toHaveBeenCalledWith(
+        join('/Users/v/Library/Application Support/VirtualDJ', 'database.xml'),
+      )
     } finally {
       Object.assign(SETTINGS, settings)
     }

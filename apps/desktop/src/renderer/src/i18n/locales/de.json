@@ -3460,6 +3460,8 @@
     "confirm": {
       "title": "{{program}} auf den Stand von {{when}} zurücksetzen?",
       "body": "Alles, was du nach diesem Zeitpunkt in {{program}} geändert hast, geht verloren, auch das, was du von {{program}} aus gemacht hast.",
+      "bodyTracks": "Nur die Tracks und Cues gehen zurück. Die Listen bleiben wie jetzt, und was du danach an den Tracks in {{program}} geändert hast, geht verloren.",
+      "bodyLists": "Nur die Listen gehen zurück. Tracks und Cues bleiben wie jetzt, und was du danach an den Listen in {{program}} geändert hast, geht verloren.",
       "safety": "Vorher sichern wir den aktuellen Stand, falls du es dir anders überlegst.",
       "queue_one": "Außerdem wird {{count}} Änderung verworfen, die darauf gewartet hat, dass du {{program}} schließt.",
       "queue_other": "Außerdem werden {{count}} Änderungen verworfen, die darauf gewartet haben, dass du {{program}} schließt.",
