@@ -129,6 +129,28 @@ const stateOf = (v: Verification | undefined, place: VerifyPlace) =>
   v?.checks.find((c) => c.place === place)?.state
 
 describe('verify registry', () => {
+  it('reads back a song added to VirtualDJ with no lists picked, once its queue added it', async () => {
+    const { deps, registry } = setup()
+    registry.register(
+      entry('a', {
+        places: new Set(['file', 'virtualdj']),
+        rekordbox: undefined,
+        virtualdj: 'absent',
+      }),
+    )
+    await registry.afterFlush({
+      ...written,
+      rekordbox: 'off',
+      engine: 'off',
+      virtualdj: 'queued',
+      added: { virtualdj: ['/Music/a.wav'] },
+    })
+    expect(stateOf(registry.get('a'), 'virtualdj')).toBe('pending')
+    await registry.afterTrackOps('virtualdj')
+    expect(deps.readVirtualdj.mock.calls.map((c) => c[0].map((e) => e.trackId))).toEqual([['a']])
+    expect(stateOf(registry.get('a'), 'virtualdj')).toBe('ok')
+  })
+
   it('reads VirtualDJ back once its queue moved the song, and says it waits while VirtualDJ is open', async () => {
     const { deps, registry } = setup()
     registry.register(

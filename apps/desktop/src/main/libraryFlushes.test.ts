@@ -1033,6 +1033,14 @@ describe('flushConversionBatch with a converted track VirtualDJ does not have', 
     })
   })
 
+  it('tells the check which files it added to VirtualDJ, so a song added with no lists is read back too', async () => {
+    const roots = virtualdjHome([])
+    const virtualdj = { enqueue: vi.fn(), applyQuietly: vi.fn(), roots: () => roots }
+    await withRun(true, async () => {
+      expect((await flush(virtualdj)).added?.virtualdj).toEqual(['/m/a.flac'])
+    })
+  })
+
   it('does not queue a file the VirtualDJ database already holds', async () => {
     const roots = virtualdjHome(['/m/a.flac'])
     const virtualdj = { enqueue: vi.fn(), applyQuietly: vi.fn(), roots: () => roots }

@@ -77,7 +77,7 @@ export interface FlushOutcome {
   engine: 'written' | 'queued' | 'off' | 'failed' | 'later'
   traktor: TraktorWrite | 'queued' | 'off' | 'later'
   virtualdj: 'written' | 'queued' | 'off' | 'failed' | 'later'
-  added?: Partial<Record<'rekordbox' | 'traktor', string[]>>
+  added?: Partial<Record<'rekordbox' | 'traktor' | 'virtualdj', string[]>>
 }
 
 // How a queue apply went; Traktor's carries its write's facts like the flush.
@@ -372,7 +372,7 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
 
     async afterFlush(outcome: FlushOutcome, upTo = registered): Promise<void> {
       for (const [place, paths] of Object.entries(outcome.added ?? {}) as [
-        'rekordbox' | 'traktor',
+        'rekordbox' | 'traktor' | 'virtualdj',
         string[],
       ][])
         for (const e of entries.values())

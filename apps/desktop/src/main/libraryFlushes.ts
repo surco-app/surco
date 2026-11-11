@@ -366,7 +366,7 @@ export async function flushConversionBatch(
   const added: NonNullable<FlushOutcome['added']> = {}
   const noting =
     <A extends unknown[]>(
-      place: 'rekordbox' | 'traktor',
+      place: 'rekordbox' | 'traktor' | 'virtualdj',
       enqueue: (ops: QueueOp[], ...rest: A) => void,
     ) =>
     (ops: QueueOp[], ...rest: A) => {
@@ -385,7 +385,12 @@ export async function flushConversionBatch(
       enqueue: noting('rekordbox', queues.rekordbox.enqueue),
     }),
     engine: engineConversionFlusher(host, sessions, queues.engine),
-    virtualdj: virtualdjConversionFlusher(queues.virtualdj),
+    virtualdj: virtualdjConversionFlusher(
+      queues.virtualdj && {
+        ...queues.virtualdj,
+        enqueue: noting('virtualdj', queues.virtualdj.enqueue),
+      },
+    ),
   }
   for (const program of FLUSH_ORDER) await flushers[program].before()
   // The run's repoints, taken once: rekordbox and Engine DJ each apply the same list to

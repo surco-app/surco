@@ -3922,6 +3922,19 @@ describe('runProcessTrack — checking what it wrote', () => {
     expect(registerVerification.mock.lastCall?.[0].playlists).toEqual({ virtualdj: wanted })
   })
 
+  it('keeps VirtualDJ in play for a track Surco may add to it, without checking it until the add', async () => {
+    const registerVerification = vi.fn<NonNullable<ProcessTrackDeps['registerVerification']>>()
+    const deps = makeDeps({
+      settings: settings({ addToVirtualdj: true }),
+      registerVerification,
+    })
+
+    const result = await runProcessTrack(job(), deps)
+
+    expect(result.verification?.checks.map((c) => c.place)).toEqual(['file'])
+    expect([...registerVerification.mock.calls[0][0].places]).toContain('virtualdj')
+  })
+
   it('hands the check the Traktor playlists the job asked for', async () => {
     const registerVerification = vi.fn<NonNullable<ProcessTrackDeps['registerVerification']>>()
     const deps = makeDeps({

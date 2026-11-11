@@ -1257,7 +1257,8 @@ export async function runProcessTrack(
     if (followed && (before.rekordbox || playlists.rekordbox)) places.add('rekordbox')
     if (followed && (before.engine || addedToEngineDj || playlists.engine)) places.add('engine')
     if (followed && traktor) places.add('traktor')
-    if (followed && (before.virtualdj || playlists.virtualdj)) places.add('virtualdj')
+    if (followed && (before.virtualdj || playlists.virtualdj || settings.addToVirtualdj))
+      places.add('virtualdj')
     // Named per conversion, not per track: a track converted again starts its own count.
     const checked = withChecks({ status: 'checking', checks: [] }, [
       fileCheck,
