@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { BrowserWindow, ipcMain } from 'electron'
-import type { RekordboxEditResult, RekordboxPlaylistEdit } from '../shared/types'
+import type { PlaylistEditMode, RekordboxEditResult, RekordboxPlaylistEdit } from '../shared/types'
 import { serialLibraryFlush } from './libraryTagSync'
 import { type QueueApply, type RekordboxQueue, withoutOp } from './rekordboxQueue'
 import { type EditOp, editResultOfOutcome } from './rekordboxQueueOps'
@@ -16,6 +16,7 @@ export function registerTraktorPlaylistEditIpc(host: {
   collection: () => string
   queue: Pick<RekordboxQueue, 'apply' | 'drop'> & { enqueue: (ops: EditOp[]) => void }
   ensureClosed: (win: BrowserWindow | null) => Promise<boolean>
+  isRunning: () => Promise<boolean>
   onApplied?: (result: QueueApply) => void
   onWaiting?: () => void
   beginLoose?: (collectionPath: string) => void
@@ -24,44 +25,50 @@ export function registerTraktorPlaylistEditIpc(host: {
     const path = host.collection()
     return path !== '' && traktorSeparatorKey(readFileSync(path, 'utf8')) !== null
   })
-  ipcMain.handle('traktor:edit', (e, edit: RekordboxPlaylistEdit, label?: string) =>
-    serialLibraryFlush(async (): Promise<RekordboxEditResult> => {
-      const path = host.collection()
-      if (!path) return { applied: false, reason: 'unreadable' }
-      const stamp =
-        edit.kind === 'create' || edit.kind === 'delete'
-          ? undefined
-          : traktorStamps(readFileSync(path, 'utf8'))[edit.playlistId]
-      // A delete takes everything below the node, so a change anywhere in it refuses it.
-      const stamps =
-        edit.kind === 'delete'
-          ? traktorSubtreeStamps(readFileSync(path, 'utf8'), edit.playlistId)
-          : edit.kind === 'create' || stamp === undefined
-            ? {}
-            : { [edit.playlistId]: stamp }
-      const op: EditOp = {
-        id: randomUUID(),
-        kind: 'edit',
-        edit,
-        stamps,
-        ...(label ? { label } : {}),
-      }
-      host.queue.enqueue([op])
-      host.beginLoose?.(path)
-      const result = await host.queue.apply(() =>
-        host.ensureClosed(BrowserWindow.fromWebContents(e.sender)),
-      )
-      if (result.status === 'applied') {
-        const others = withoutOp(result, op.id)
-        if (others.tracks > 0 || others.changes > 0 || others.notices.length > 0)
-          host.onApplied?.(others)
-      }
-      if (stillWaiting(result)) host.onWaiting?.()
-      else if (result.status === 'refused') host.queue.drop(op.id)
-      if (result.status === 'refused') return { applied: false, reason: result.reason }
-      const outcome =
-        result.status === 'applied' ? result.outcomes.find((o) => o.id === op.id) : undefined
-      return editResultOfOutcome(outcome)
-    }),
+  ipcMain.handle(
+    'traktor:edit',
+    (e, edit: RekordboxPlaylistEdit, label?: string, mode: PlaylistEditMode = 'ask') =>
+      serialLibraryFlush(async (): Promise<RekordboxEditResult> => {
+        const path = host.collection()
+        if (!path) return { applied: false, reason: 'unreadable' }
+        const stamp =
+          edit.kind === 'create' || edit.kind === 'delete'
+            ? undefined
+            : traktorStamps(readFileSync(path, 'utf8'))[edit.playlistId]
+        // A delete takes everything below the node, so a change anywhere in it refuses it.
+        const stamps =
+          edit.kind === 'delete'
+            ? traktorSubtreeStamps(readFileSync(path, 'utf8'), edit.playlistId)
+            : edit.kind === 'create' || stamp === undefined
+              ? {}
+              : { [edit.playlistId]: stamp }
+        const op: EditOp = {
+          id: randomUUID(),
+          kind: 'edit',
+          edit,
+          stamps,
+          ...(label ? { label } : {}),
+        }
+        host.queue.enqueue([op])
+        host.beginLoose?.(path)
+        const result = await host.queue.apply(
+          mode === 'queue'
+            ? async () => !(await host.isRunning())
+            : () => host.ensureClosed(BrowserWindow.fromWebContents(e.sender)),
+        )
+        if (result.status === 'applied') {
+          const others = withoutOp(result, op.id)
+          if (others.tracks > 0 || others.changes > 0 || others.notices.length > 0)
+            host.onApplied?.(others)
+        }
+        if (stillWaiting(result)) {
+          host.onWaiting?.()
+          if (mode === 'queue') return { applied: false, queued: true, opId: op.id }
+        } else if (result.status === 'refused') host.queue.drop(op.id)
+        if (result.status === 'refused') return { applied: false, reason: result.reason }
+        const outcome =
+          result.status === 'applied' ? result.outcomes.find((o) => o.id === op.id) : undefined
+        return editResultOfOutcome(outcome)
+      }),
   )
 }

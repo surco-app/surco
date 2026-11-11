@@ -44,6 +44,7 @@ function setup(path: string, result: (op: QueueOp) => QueueApply) {
     collection: () => path,
     queue,
     ensureClosed: vi.fn(async () => true),
+    isRunning: vi.fn(async () => false),
     onApplied: vi.fn(),
     onWaiting: vi.fn(),
   }
@@ -91,6 +92,17 @@ describe('registerTraktorPlaylistEditIpc', () => {
     registerTraktorPlaylistEditIpc({ ...host, beginLoose: (p) => order.push(`loose:${p}`) })
     await handler('traktor:edit')({ sender: {} }, { kind: 'delete', playlistId: 'dnb' })
     expect(order).toEqual([`loose:${file}`, 'apply'])
+  })
+
+  it('in queue mode leaves the edit waiting for Traktor to close without asking, and names it so its result can be matched later', async () => {
+    const file = await collection()
+    const { host, queued } = setup(file, () => ({ status: 'refused', reason: 'cancelled' }))
+    host.isRunning.mockResolvedValue(true)
+    const edit = { kind: 'create', parentId: 'root', name: 'Sesion', folder: false, tracks: [] }
+    const answer = await handler('traktor:edit')({ sender: {} }, edit, 'Sesion', 'queue')
+    expect(answer).toEqual({ applied: false, queued: true, opId: queued[0].id })
+    expect(host.ensureClosed).not.toHaveBeenCalled()
+    expect(host.onWaiting).toHaveBeenCalledOnce()
   })
 
   it('keeps an edit waiting while Traktor stays open and wakes the watcher', async () => {

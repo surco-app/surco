@@ -66,6 +66,18 @@ function registerWith({
 }
 
 describe('registerSeratoPlaylistEditIpc', () => {
+  it('in queue mode names the waiting edit so its result can be matched once Serato closes', async () => {
+    const { queued, host } = registerWith({ running: true })
+    const answer = await handler('serato:edit')(
+      { sender: {} },
+      create('root', 'Sesion'),
+      'Sesion',
+      'queue',
+    )
+    expect(answer).toEqual({ applied: false, queued: true, opId: queued[0].id })
+    expect(host.onWaiting).toHaveBeenCalledOnce()
+  })
+
   it('serato:edit queues the edit and says it waits while Serato is open, without asking to close it', async () => {
     const { handle, queue, host } = registerWith({ running: true })
     expect(await handle('serato:edit', rename('A', 'X'), 'A')).toEqual({

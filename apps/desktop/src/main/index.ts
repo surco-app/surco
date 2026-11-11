@@ -1389,6 +1389,7 @@ function registerIpc(): void {
     () => findRekordboxCollection({ configured: getSettings().rekordboxDbPath }),
     {
       ensureClosed: (win) => ensureClosed('rekordbox', win, 'playlists'),
+      isRunning: DJ_PROCESSES.rekordbox.isRunning,
       queue: rekordboxQueue,
       onApplied: announceApplied,
       onWaiting: rekordboxQueueWatch.poke,
@@ -1504,6 +1505,7 @@ function registerIpc(): void {
     collection: traktorWritePath,
     queue: traktorCueQueue,
     ensureClosed: (win) => ensureClosed('traktor', win, 'playlists'),
+    isRunning: DJ_PROCESSES.traktor.isRunning,
     onApplied: announceTraktorApplied,
     onWaiting: traktorCueQueueWatch.poke,
     beginLoose: moments.beginLoose,
