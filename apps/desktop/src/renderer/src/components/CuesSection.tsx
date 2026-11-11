@@ -1241,15 +1241,33 @@ function Editing({
     <button
       type="button"
       data-testid="cues-auto-mark"
+      aria-busy={readingAudio || undefined}
       disabled={blocked ? true : readsAudio ? readingAudio : !words}
       onClick={autoMark}
-      className={`press flex shrink-0 items-center gap-1.5 whitespace-nowrap bg-[var(--color-accent-soft)] text-xs font-semibold text-fg hover:bg-[var(--color-row-selected)] hover:text-[var(--color-on-row-selected)] disabled:opacity-40 ${autoHeight}`}
+      className={`press relative flex shrink-0 items-center gap-1.5 whitespace-nowrap bg-[var(--color-accent-soft)] text-xs font-semibold text-fg hover:bg-[var(--color-row-selected)] hover:text-[var(--color-on-row-selected)] disabled:opacity-40 ${autoHeight}`}
     >
-      {!(readsAudio || words) && <Tooltip label={tr(copy.autoUnanalysed)} />}
-      <svg viewBox="0 0 16 16" className="h-3 w-3 text-[var(--color-accent)]" aria-hidden="true">
-        <path d="M8 1 9.6 6.4 15 8 9.6 9.6 8 15 6.4 9.6 1 8 6.4 6.4Z" fill="currentColor" />
-      </svg>
-      {readingAudio ? tr('editor.cues.engine.autoReading') : tr('editor.cues.auto.button')}
+      {readingAudio ? (
+        <Tooltip label={tr('editor.cues.engine.autoReading')} />
+      ) : (
+        !(readsAudio || words) && <Tooltip label={tr(copy.autoUnanalysed)} />
+      )}
+      {readingAudio && (
+        <Loader2
+          data-testid="cues-auto-mark-spinner"
+          className="absolute inset-0 m-auto h-3 w-3 animate-spin text-fg-faint"
+          aria-hidden="true"
+        />
+      )}
+      <span
+        data-testid="cues-auto-mark-label"
+        style={readingAudio ? { visibility: 'hidden' } : undefined}
+        className="flex items-center gap-1.5"
+      >
+        <svg viewBox="0 0 16 16" className="h-3 w-3 text-[var(--color-accent)]" aria-hidden="true">
+          <path d="M8 1 9.6 6.4 15 8 9.6 9.6 8 15 6.4 9.6 1 8 6.4 6.4Z" fill="currentColor" />
+        </svg>
+        {tr('editor.cues.auto.button')}
+      </span>
     </button>
   )
   const fitGridControl = (
@@ -1264,17 +1282,22 @@ function Editing({
         gridFit &&
         fitGridTo(autoFitGrid(state.grid, gridFit, playheadMs, programBeats, rekordboxGrid))
       }
-      className={`press flex shrink-0 items-center gap-1.5 whitespace-nowrap border border-[var(--color-line-strong)] text-xs font-medium text-fg-muted hover:bg-[var(--color-hover)] disabled:opacity-40 data-[needs-fix=true]:border-[var(--color-accent)] data-[needs-fix=true]:bg-[var(--color-accent)] data-[needs-fix=true]:font-semibold data-[needs-fix=true]:text-[var(--color-on-accent)] ${autoHeight}`}
+      className={`press relative flex shrink-0 items-center gap-1.5 whitespace-nowrap border border-[var(--color-line-strong)] text-xs font-medium text-fg-muted hover:bg-[var(--color-hover)] disabled:opacity-40 data-[needs-fix=true]:border-[var(--color-accent)] data-[needs-fix=true]:bg-[var(--color-accent)] data-[needs-fix=true]:font-semibold data-[needs-fix=true]:text-[var(--color-on-accent)] ${autoHeight}`}
     >
       <Tooltip label={gridOff ?? tr('editor.cues.grid.autoHint')} />
       {fitPending && (
         <Loader2
           data-testid="cues-fit-grid-spinner"
-          className="h-3 w-3 animate-spin text-fg-faint"
+          className="absolute inset-0 m-auto h-3 w-3 animate-spin text-fg-faint"
           aria-hidden="true"
         />
       )}
-      {tr('editor.cues.grid.fit')}
+      <span
+        data-testid="cues-fit-grid-label"
+        style={fitPending ? { visibility: 'hidden' } : undefined}
+      >
+        {tr('editor.cues.grid.fit')}
+      </span>
     </button>
   )
   const actions = (

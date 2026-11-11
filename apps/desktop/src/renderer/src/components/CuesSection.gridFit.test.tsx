@@ -124,17 +124,20 @@ describe('Ajustar rejilla in the folded section', () => {
     expect(fitButton()).not.toHaveAttribute('data-needs-fix')
   })
 
-  it('spins inside the button while Surco still reads the file, so a disabled Fit grid reads as waiting and not as broken', async () => {
+  it('spins over its hidden label while Surco still reads the file, so it reads as waiting and the button never changes width', async () => {
     let finish: (fit: GridFit | null) => void = () => {}
     setup(new Promise<GridFit | null>((resolve) => (finish = resolve)))
     await ready()
     expect(fitButton()).toBeDisabled()
     expect(fitButton()).toHaveAttribute('aria-busy', 'true')
     expect(screen.getByTestId('cues-fit-grid-spinner')).toBeInTheDocument()
+    expect(screen.getByTestId('cues-fit-grid-label')).toHaveTextContent('Fit grid')
+    expect(screen.getByTestId('cues-fit-grid-label')).not.toBeVisible()
     finish(LATE)
     await waitFor(() => expect(fitButton()).toBeEnabled())
     expect(screen.queryByTestId('cues-fit-grid-spinner')).toBeNull()
     expect(fitButton()).not.toHaveAttribute('aria-busy')
+    expect(screen.getByTestId('cues-fit-grid-label')).toBeVisible()
   })
 
   it('stops spinning when the read finds no beats, so the wait never looks endless', async () => {

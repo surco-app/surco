@@ -140,15 +140,21 @@ describe('CuesSection on an Engine DJ track', () => {
     expect(dropProposals).toHaveBeenCalledWith(input, DROP_MODEL)
   })
 
-  it('says it is reading the track while the audio is decoded, since that can take a few seconds', async () => {
+  it('spins over its hidden label and says it is reading the track while the audio is decoded, without the button changing width', async () => {
     let answer: (input: DropInput | null) => void = () => {}
     setup(READ, 'engine:4', () => new Promise((done) => (answer = done)))
     await ready()
     fireEvent.click(screen.getByTestId('cues-auto-mark'))
     await waitFor(() => expect(screen.getByTestId('cues-auto-mark')).toBeDisabled())
-    expect(screen.getByTestId('cues-auto-mark')).toHaveTextContent('Reading the track…')
+    expect(screen.getByTestId('cues-auto-mark')).toHaveAttribute('aria-busy', 'true')
+    expect(screen.getByTestId('cues-auto-mark-spinner')).toBeInTheDocument()
+    expect(screen.getByTestId('cues-auto-mark-label')).toHaveTextContent('Auto mark')
+    expect(screen.getByTestId('cues-auto-mark-label')).not.toBeVisible()
+    expect(hoverTooltip(screen.getByTestId('cues-auto-mark'))).toBe('Reading the track…')
     answer(null)
     await waitFor(() => expect(screen.getByTestId('cues-auto-mark')).toBeEnabled())
+    expect(screen.queryByTestId('cues-auto-mark-spinner')).toBeNull()
+    expect(screen.getByTestId('cues-auto-mark-label')).toBeVisible()
   })
 
   it('says Surco could not read the audio when there is nothing to detect on, rather than proposing nothing as if it had looked', async () => {
