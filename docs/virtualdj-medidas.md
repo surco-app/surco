@@ -32,30 +32,35 @@ Fixtures con rutas reescritas a `/Music/...` en `apps/desktop/src/main/virtualdj
 
 ## Reloj
 
-VirtualDJ lee, la primera vez que ve un fichero, los cues de Serato (`Serato Markers2`) que trae. Con los
-mismos ficheros, leídos por Surco con `readSeratoMarkers` y `seratoLeadOfFile(file, 44100)`:
+**VirtualDJ usa el mismo reloj que Surco en todos los formatos.** Lo que VirtualDJ calcula él mismo sobre
+el audio coincide entre los cinco ficheros de Pray (MP3, FLAC, WAV, AIFF y M4A AAC): `Scan Phase` dentro
+de 0,11 ms y los `Poi` `automix` `realStart` (0,248163 s) y `cutStart` idénticos. Y su rejilla cae sobre
+la de Surco (`measureBeatGrid`, 133,9974 BPM, primer golpe a 240,210 ms) a +4,7 ms en los cinco, sin
+corregir nada. Una posición de VirtualDJ en segundos es la misma posición en el reloj de Surco.
 
-| Fichero | Cue de Serato (ms) | `Pos` de VirtualDJ (s) | Diferencia | `seratoLeadOfFile` (ms) |
+Los cues que VirtualDJ importa de las etiquetas de Serato la primera vez que ve un fichero no siguen esa
+regla: en el MP3 los coloca 26,12 ms (1152 muestras) antes que el ms que dice Serato, y en FLAC, WAV, AIFF
+y M4A en el mismo ms. Es su forma de convertir los cues de Serato al importarlos, no su reloj. Surco no
+depende de esa importación: lee y escribe `Pos` directamente.
+
+| Fichero | Cue de Serato (ms) | `Pos` importado por VirtualDJ (s) | Diferencia | `seratoLeadOfFile` (ms) |
 |---|---|---|---|---|
-| Pray.mp3 (LAME, 44,1 kHz) | 30000 | 29.973878 | -26,12 ms (1152 muestras) | 51,18 |
+| Pray.mp3 (LAME, 44,1 kHz) | 30000 | 29.973878 | -26,12 ms | 51,18 |
 | Pray.flac | 30000 | 30.0 | 0 | 0 |
 | Pray.wav | 3834 / 9192 / 16367 | 3.8340 / 9.1920 / 16.3670 | 0 | 0 |
 | Pray.aiff | 30000 | 30.0 | 0 | 0 |
 | Pray.m4a (AAC) | 7444 / 12756 / 19019 | 7.4440 / 12.7560 / 19.0190 | 0 | -23,22 |
 
-Así que VirtualDJ y Serato coinciden salvo en el MP3, donde VirtualDJ resta un frame (1152 muestras). Con
-la convención de `seratoClock.ts`, la diferencia entre el reloj de VirtualDJ y el de Surco sale de
-`seratoLeadOfFile` menos esa corrección: en el MP3, 51,18 − 26,12 = 25,06 ms, que son las 1105 muestras de
-retardo de LAME; en el M4A, -23,22 ms, las 1024 muestras de cebado de AAC; en FLAC, WAV y AIFF, 0. Es
-decir, VirtualDJ cuenta desde el principio del audio decodificado sin quitar el retardo del codificador.
-Falta medirlo en un MP3 a 48 kHz, un MP3 sin cabecera LAME y un M4A ALAC.
+Sin medir con un cue puesto a mano en VirtualDJ en el mismo golpe de dos formatos; las dos pruebas de
+arriba (análisis propio idéntico entre formatos y rejilla sobre la de Surco) lo hacen innecesario para la
+lectura. Se vuelve a comprobar en el bloque de escritura, abriendo en VirtualDJ un cue que escriba Surco.
 
 ## Rejilla
 
 `Scan Bpm` está en segundos por pulso (`0.447778`, 134 BPM). `Scan Phase` es `57.559456` en Pray, y
-57.559456 − 128 × 0.447778 = 0,244 s, junto al `realStart` de 0,248 s. La lectura de trabajo es que
-`Phase` es la posición de una negra de la rejilla y la rejilla son `Phase + k × Bpm`. Sin confirmar contra
-la pantalla de VirtualDJ ni contra la rejilla de Surco de Pray; se confirma en la Tarea 10.
+57.559456 − 128 × 0.447778 = 0,244 s, junto al `realStart` de 0,248 s. Confirmado en la Tarea 10:
+`Phase` es la posición de una negra y la rejilla son `Phase + k × Bpm`, a +4,7 ms de la rejilla de Surco en
+los cinco formatos.
 
 ## Listas
 
@@ -69,4 +74,3 @@ la pantalla de VirtualDJ ni contra la rejilla de Surco de Pray; se confirma en l
 - Base de datos por disco externo: no se añadió ninguna pista de `/Volumes/Public` y no hay
   `/Volumes/Public/VirtualDJ`.
 - Qué hace con una pista cuyo fichero ha desaparecido.
-- Reloj en MP3 a 48 kHz, MP3 sin cabecera LAME y M4A ALAC.
