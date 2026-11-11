@@ -105,3 +105,48 @@ describe('everything that answers the user moves on one curve and three duration
     expect(literal).toEqual([])
   })
 })
+
+describe('every window has the same 16 px corners, so a dialog reads as a window wherever it opens', () => {
+  it('rounds every ModalShell panel with rounded-2xl', () => {
+    const corners = sources.flatMap((file) =>
+      [...readFileSync(join(root, file), 'utf8').matchAll(/<ModalShell\b[\s\S]*?>/g)].flatMap((m) =>
+        [...m[0].matchAll(/(?<![\w-])rounded(?:-[a-z0-9]+)?(?![\w-])/g)]
+          .map((r) => r[0])
+          .filter((r) => r !== 'rounded-2xl')
+          .map((r) => `${file}: ${r}`),
+      ),
+    )
+    expect(corners).toEqual([])
+  })
+})
+
+function openingTags(code: string, marker: string): string[] {
+  const tags: string[] = []
+  for (let at = code.indexOf(marker); at !== -1; at = code.indexOf(marker, at + 1)) {
+    const open = code.lastIndexOf('<', at)
+    let depth = 0
+    let end = open
+    for (; end < code.length; end++) {
+      const ch = code[end]
+      if (ch === '{') depth++
+      else if (ch === '}') depth--
+      else if (ch === '>' && depth === 0) break
+    }
+    tags.push(code.slice(open, end + 1))
+  }
+  return tags
+}
+
+describe('a menu row is highlighted with corners parallel to its menu, so the two curves nest', () => {
+  it('rounds every menu item with 4 px inside the 8 px menu and its 4 px inset', () => {
+    const items = sources.flatMap((file) =>
+      openingTags(readFileSync(join(root, file), 'utf8'), 'role="menuitem').flatMap((tag) =>
+        [...tag.matchAll(/(?<![\w:-])rounded(?:-[a-z0-9]+)?(?![\w-])/g)]
+          .map((r) => r[0])
+          .filter((r) => r !== 'rounded')
+          .map((r) => `${file}: ${r}`),
+      ),
+    )
+    expect(items).toEqual([])
+  })
+})

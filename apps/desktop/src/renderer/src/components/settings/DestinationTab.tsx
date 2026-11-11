@@ -256,7 +256,7 @@ function OutputSettings({
                     type="button"
                     data-testid="settings-traktor-nml-use-detected"
                     onClick={onAcceptDetectedNmlPath}
-                    className="press shrink-0 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)]"
+                    className="press shrink-0 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)]"
                   >
                     {tr('settings.traktorNmlPathUseDetected')}
                   </button>
@@ -280,7 +280,7 @@ function OutputSettings({
                       type="button"
                       data-testid="settings-traktor-nml-use-traktor"
                       onClick={onAcceptDetectedNmlPath}
-                      className="press shrink-0 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)]"
+                      className="press shrink-0 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)]"
                     >
                       {tr('settings.traktorNmlPathUseTraktor')}
                     </button>

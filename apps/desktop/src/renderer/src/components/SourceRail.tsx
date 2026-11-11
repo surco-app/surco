@@ -196,7 +196,7 @@ export function SourceRail({
               role="menuitem"
               data-testid="source-rail-hide"
               onClick={() => hide(menu.source)}
-              className="block w-full rounded-md px-3 py-1.5 text-left text-sm text-fg hover:bg-[var(--color-hover)]"
+              className="block w-full rounded px-3 py-1.5 text-left text-sm text-fg hover:bg-[var(--color-hover)]"
             >
               {tr(`sources.hide.${menu.source}`)}
             </button>
