@@ -165,8 +165,8 @@ export interface ProcessTrackDeps {
   appleMusicHoldsFile?: (path: string, titles: string[]) => Promise<boolean>
   // A file's size on disk, undefined when it cannot be read.
   fileBytes?: (path: string) => Promise<number | undefined>
-  // Engine DJ's row for a file rewritten on its own path takes its new size (engineSizeFollow).
-  followEngineSize?: (file: string, fromBytes: number) => void
+  // The DJ libraries that keep a file's size follow one rewritten on its own path (librarySizeFollow).
+  followLibrarySize?: (file: string, fromBytes: number) => void
   // Shown only on a real output collision; returns the user's choice. Encapsulates the
   // Electron message box so the branches below stay unit-testable.
   // reservedOnly: nothing is on disk under that name yet, only another job's claim on it.
@@ -1067,7 +1067,7 @@ export async function runProcessTrack(
               ? await deps.updateInAppleMusic(job.musicPersistentId, job.meta, coverPath)
               : null
             if (updated && retagged && fromBytes !== undefined)
-              deps.followEngineSize?.(retagged, fromBytes)
+              deps.followLibrarySize?.(retagged, fromBytes)
             // Music never follows a rename: the entry stays on the name about to be retired.
             if (updated && entryMayPlaySource && job.musicPersistentId)
               await deps.relinkAppleMusicEntry(job.musicPersistentId, target)

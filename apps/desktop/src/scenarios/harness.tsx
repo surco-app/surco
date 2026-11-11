@@ -18,7 +18,6 @@ import { replaceDuplicates } from '../main/duplicateReplace'
 import { applyEngineCuesBatch } from '../main/engineCuesWrite'
 import { addToEngineLibrary } from '../main/engineLibrary'
 import { isEngineDjRunning } from '../main/engineProcess'
-import { engineSizeFollower } from '../main/engineSizeFollow'
 import { expandPaths } from '../main/expand'
 import { convertAudio, readTags, toNmlLocation } from '../main/ffmpeg'
 import { fileIdentity, isSameFile, removeRenamedOriginal } from '../main/inplace'
@@ -37,6 +36,7 @@ import {
   traktorWrite,
   usedByAnyLibrary,
 } from '../main/libraryFlushes'
+import { librarySizeFollower } from '../main/librarySizeFollow'
 import { registerListReviewIpc } from '../main/listReviewIpc'
 import { listReviewDeps } from '../main/listReviewWiring'
 import { createMediaAccess } from '../main/mediaAccess'
@@ -374,7 +374,7 @@ function processTrackInMain(
         (s) => s.size,
         () => undefined,
       ),
-    followEngineSize,
+    followLibrarySize: followEngineSize,
     attachPlaylists,
     verifyFile: (expect, signal) => checkFile(expect, fileReaders, { signal }),
     verifyMusic: async (expect, signal) => {
@@ -439,7 +439,7 @@ let watcher: FolderWatcher | undefined
 // The IPC handlers are registered once, so the file follower reaches the Engine queue of
 // whichever scenario is running, as index.ts's reaches the app's.
 let engineQueueNow: RekordboxQueue | undefined
-const followEngineSize = engineSizeFollower({
+const followEngineSize = librarySizeFollower({
   enabled: () => getSettings().syncEngineDj,
   enqueue: (ops, repoints) => engineQueueNow?.enqueue(ops, repoints),
   apply: () => {
@@ -1046,14 +1046,14 @@ export function bootMain(options: ScenarioOptions): MainBoot {
         ...(drivesMusic(options) && { musicHolds: musicHoldsFile }),
       }),
     )
-    if (drivesMusic(options)) registerAppleMusicIpc({ followEngineSize })
+    if (drivesMusic(options)) registerAppleMusicIpc({ followLibrarySize: followEngineSize })
     registerListReviewIpc(
       listReviewDeps({
         mediaAccess,
         tmp: { track: () => {}, untrack: () => {} },
         hostFor: () => libraryHost(errors),
         sessions,
-        followEngineSize,
+        followLibrarySize: followEngineSize,
         rootLibraries: () => ({ serato: [], virtualdj: [] }),
       }),
     )

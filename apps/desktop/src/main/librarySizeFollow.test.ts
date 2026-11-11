@@ -1,16 +1,16 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
-import { engineSizeFollower, followingAll } from './engineSizeFollow'
+import { followingAll, librarySizeFollower } from './librarySizeFollow'
 
 // A file rewritten on its own path outside a conversion still has Engine DJ's row recording
 // its old size: the row gets the same in-place repoint a conversion's flush sends, through the
 // queue that waits while Engine is open.
-describe('engineSizeFollower', () => {
+describe('librarySizeFollower', () => {
   it('queues the in-place repoint with the size the row should still hold, and applies it', () => {
     const enqueue = vi.fn()
     const apply = vi.fn()
-    engineSizeFollower({ enabled: () => true, enqueue, apply })('/m/c.aiff', 1234)
+    librarySizeFollower({ enabled: () => true, enqueue, apply })('/m/c.aiff', 1234)
     expect(enqueue).toHaveBeenCalledWith(
       [],
       [{ from: '/m/c.aiff', to: '/m/c.aiff', fromBytes: 1234 }],
@@ -21,7 +21,7 @@ describe('engineSizeFollower', () => {
   it('leaves Engine DJ alone while its sync is off', () => {
     const enqueue = vi.fn()
     const apply = vi.fn()
-    engineSizeFollower({ enabled: () => false, enqueue, apply })('/m/c.aiff', 1234)
+    librarySizeFollower({ enabled: () => false, enqueue, apply })('/m/c.aiff', 1234)
     expect(enqueue).not.toHaveBeenCalled()
     expect(apply).not.toHaveBeenCalled()
   })
@@ -49,15 +49,15 @@ describe('followingAll', () => {
       /const followLibrarySize = followingAll\(followEngineSize, followVirtualdjSize\)/,
     )
     expect(source).toMatch(
-      /const followVirtualdjSize = engineSizeFollower\(\{\s+enabled: \(\) => getSettings\(\)\.syncVirtualdj,\s+enqueue: virtualdjCueQueue\.enqueue,/,
+      /const followVirtualdjSize = librarySizeFollower\(\{\s+enabled: \(\) => getSettings\(\)\.syncVirtualdj,\s+enqueue: virtualdjCueQueue\.enqueue,/,
     )
   })
 
   it.each([
     ['the Serato batch', /applySeratoBatch\(ops, \{[\s\S]*?rewritten: followLibrarySize,/],
-    ['the Music review', /registerAppleMusicIpc\(\{[^}]*followEngineSize: followLibrarySize,/],
-    ['the list review', /listReviewDeps\(\{[^}]*followEngineSize: followLibrarySize,/],
-    ['a conversion', /runProcessTrack\(job, \{[\s\S]*?followEngineSize: followLibrarySize,/],
+    ['the Music review', /registerAppleMusicIpc\(\{[^}]*followLibrarySize,/],
+    ['the list review', /listReviewDeps\(\{[^}]*followLibrarySize,/],
+    ['a conversion', /runProcessTrack\(job, \{[\s\S]*?followLibrarySize,/],
     [
       'an original restored over its replacement',
       /registerTrashIpc\(surcoTrash, mediaAccess, \{ followEngineSize, followVirtualdjSize \}\)/,

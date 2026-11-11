@@ -70,7 +70,7 @@ export function registerAppleMusicIpc(
   deps: {
     trackTmp?: (path: string) => void
     untrackTmp?: (path: string) => void
-    followEngineSize?: Rewritten
+    followLibrarySize?: Rewritten
   } = {},
 ): void {
   // The whole-library snapshot the renderer matches the crate against to flag which
@@ -133,7 +133,7 @@ export function registerAppleMusicIpc(
           prepareTagRewrite(
             file,
             trackTmp && untrackTmp ? { track: trackTmp, untrack: untrackTmp } : undefined,
-            deps.followEngineSize,
+            deps.followLibrarySize,
           ),
       },
       {
@@ -400,7 +400,7 @@ export function registerAppleMusicIpc(
             const fromBytes = location ? (await stat(location).catch(() => null))?.size : undefined
             const updated = await updateInAppleMusic(job.persistentId, job.meta, prepared?.path)
             if (updated && location && fromBytes !== undefined)
-              deps.followEngineSize?.(location, fromBytes)
+              deps.followLibrarySize?.(location, fromBytes)
             if (updated) return updated
             if (kept) await discardBackup(kept).catch(() => undefined)
             if (!job.outputPath) {

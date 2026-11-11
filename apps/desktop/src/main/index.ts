@@ -133,7 +133,6 @@ import { addToEngineLibrary, dumpEngineLibrary, withEngineDatabase } from './eng
 import { engineEdit } from './enginePlaylistEditIpc'
 import { engineDatabasePath } from './enginePlaylists'
 import { engineRead } from './enginePlaylistsIpc'
-import { engineSizeFollower, followingAll } from './engineSizeFollow'
 import { expandPaths } from './expand'
 import { collectionExporters, registerExportIpc } from './exportIpc'
 import { registerFeedbackIpc } from './feedback'
@@ -163,6 +162,7 @@ import {
 } from './libraryFlushes'
 import { takeCopy } from './libraryHistory'
 import { enginePendingLog, rekordboxPendingLog } from './libraryRestore'
+import { followingAll, librarySizeFollower } from './librarySizeFollow'
 import { serialLibraryFlush } from './libraryTagSync'
 import { registerListReviewIpc } from './listReviewIpc'
 import { listReviewDeps } from './listReviewWiring'
@@ -681,12 +681,12 @@ const adjustProvisionalCuesOnLaunch = async (): Promise<void> => {
     adjustProvisionalCues()
   rekordboxQueueWatch.poke()
 }
-const followEngineSize = engineSizeFollower({
+const followEngineSize = librarySizeFollower({
   enabled: () => getSettings().syncEngineDj,
   enqueue: engineCueQueue.enqueue,
   apply: () => applyEngineCueQueueQuietly(),
 })
-const followVirtualdjSize = engineSizeFollower({
+const followVirtualdjSize = librarySizeFollower({
   enabled: () => getSettings().syncVirtualdj,
   enqueue: virtualdjCueQueue.enqueue,
   apply: () => programQueues.virtualdj.applyQuietly(),
@@ -1452,7 +1452,7 @@ function registerIpc(): void {
   registerAppleMusicIpc({
     trackTmp: tmpManifest.track,
     untrackTmp: tmpManifest.untrack,
-    followEngineSize: followLibrarySize,
+    followLibrarySize,
   })
   const allowMedia = (paths: string[]) => mediaAccess.allowAll(paths)
   const rekordboxCollectionNow = () =>
@@ -1893,7 +1893,7 @@ function registerIpc(): void {
       tmp: tmpManifest,
       hostFor: (sender) => hostFor(BrowserWindow.fromWebContents(sender), sender),
       sessions,
-      followEngineSize: followLibrarySize,
+      followLibrarySize,
       rootLibraries,
     }),
     beginMoment: moments.begin,
@@ -2119,7 +2119,7 @@ function registerIpc(): void {
           (s) => s.size,
           () => undefined,
         ),
-      followEngineSize: followLibrarySize,
+      followLibrarySize,
       // The conflict prompt is the one Electron-bound branch: build the same warning
       // box as before and map its buttons back to the decision runProcessTrack expects.
       confirmConflict: (outputName, reservedOnly) =>

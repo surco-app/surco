@@ -3460,27 +3460,27 @@ describe('runProcessTrack — converting a library track to another format', () 
   // Engine DJ's row records the size of the file it plays. Music's retag changes that size,
   // and a row left on the old one reads as a file Surco broke.
   it('tells Engine DJ the size the file an updated entry plays had before Music retagged it', async () => {
-    const followEngineSize = vi.fn()
+    const followLibrarySize = vi.fn()
     const fileBytes = vi.fn(async () => 4096)
-    const deps = converting('/lib/A.aiff', { fileBytes, followEngineSize })
+    const deps = converting('/lib/A.aiff', { fileBytes, followLibrarySize })
 
     await runProcessTrack(
       libraryJob({ inputPath: '/lib/A.wav', format: 'aiff', keepOutputCopy: true }),
       deps,
     )
 
-    expect(followEngineSize).toHaveBeenCalledWith('/lib/A.aiff', 4096)
+    expect(followLibrarySize).toHaveBeenCalledWith('/lib/A.aiff', 4096)
     expect(fileBytes.mock.invocationCallOrder[0]).toBeLessThan(
       vi.mocked(deps.updateInAppleMusic).mock.invocationCallOrder[0],
     )
   })
 
   it('tells Engine DJ nothing when the entry was gone and Music retagged nothing', async () => {
-    const followEngineSize = vi.fn()
+    const followLibrarySize = vi.fn()
     const deps = converting('/lib/A.aiff', {
       updateInAppleMusic: vi.fn(async () => null),
       fileBytes: vi.fn(async () => 4096),
-      followEngineSize,
+      followLibrarySize,
     })
 
     await runProcessTrack(
@@ -3488,16 +3488,16 @@ describe('runProcessTrack — converting a library track to another format', () 
       deps,
     )
 
-    expect(followEngineSize).not.toHaveBeenCalled()
+    expect(followLibrarySize).not.toHaveBeenCalled()
   })
 
   // The original the in-place rename retires is the row's own source: the conversion's
   // repoint moves the row off it, and only while the row still holds the size it had.
   it('leaves the size of the original the conversion retires to the conversion', async () => {
-    const followEngineSize = vi.fn()
+    const followLibrarySize = vi.fn()
     const deps = converting('/lib/A.aiff', {
       fileBytes: vi.fn(async () => 4096),
-      followEngineSize,
+      followLibrarySize,
     })
 
     await runProcessTrack(
@@ -3506,7 +3506,7 @@ describe('runProcessTrack — converting a library track to another format', () 
     )
 
     expect(deps.updateInAppleMusic).toHaveBeenCalled()
-    expect(followEngineSize).not.toHaveBeenCalled()
+    expect(followLibrarySize).not.toHaveBeenCalled()
   })
 
   it('leaves Music alone when the renamed original has no room for its copy', async () => {

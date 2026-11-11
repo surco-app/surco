@@ -21,7 +21,7 @@ export interface TmpTracking {
 }
 
 // Told of a file rewritten on its own path, with the size it had before and how its audio
-// moved under Engine's positions, so Engine DJ's row can follow it (see engineSizeFollow.ts).
+// moved under Engine's positions, so Engine DJ's row can follow it (see librarySizeFollow.ts).
 export type Rewritten = (file: string, fromBytes: number, engineShift?: EngineShift) => void
 
 // The same copy, check, back up and rename that convertAudio does for an in-place update,

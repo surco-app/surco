@@ -22,7 +22,7 @@ export interface ListReviewEnv {
   tmp: { track: (path: string) => void; untrack: (path: string) => void }
   hostFor: (sender: WebContents) => LibraryHost
   sessions: Sessions
-  followEngineSize?: Rewritten
+  followLibrarySize?: Rewritten
   rootLibraries: () => RootLibraries
 }
 
@@ -35,7 +35,7 @@ export function listReviewDeps(env: ListReviewEnv): ListReviewIpcDeps {
           () => true,
           () => false,
         ),
-      rewrite: (file, changes) => rewriteTagFields(file, changes, env.tmp, env.followEngineSize),
+      rewrite: (file, changes) => rewriteTagFields(file, changes, env.tmp, env.followLibrarySize),
       ...(process.platform === 'darwin' && {
         setMusicField: (pid, field, from, to, location) =>
           appleMusicLimiter.run(() => setAppleMusicField(pid, field, from, to, location)),

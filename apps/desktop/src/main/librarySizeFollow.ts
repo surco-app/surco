@@ -12,7 +12,7 @@ export function followingAll(...followers: Rewritten[]): Rewritten {
 // records the file's size, so it gets the in-place repoint a conversion's flush sends, whose
 // write only lands while the row still holds fromBytes, through the queue that waits while
 // Engine is open.
-export function engineSizeFollower(deps: {
+export function librarySizeFollower(deps: {
   enabled: () => boolean
   enqueue: (ops: [], repoints: EngineRepoint[]) => void
   apply: () => void
