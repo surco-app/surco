@@ -18,4 +18,5 @@ export interface LibraryPlace {
 export interface TestLibrary {
   build(place: LibraryPlace, tracks: BatteryTrack[], listName: string): Partial<Settings>
   formatProblems(settings: Partial<Settings>): string[]
+  storedCuesMs(settings: Partial<Settings>, path: string): number[]
 }

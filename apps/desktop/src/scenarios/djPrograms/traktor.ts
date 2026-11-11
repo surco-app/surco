@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { toNmlLocation } from '../../main/ffmpeg'
 import { bootVolumeName } from '../../main/traktorNmlLibrary'
@@ -48,4 +48,15 @@ ${keys.join('\n')}
     return { syncTraktor: true, addToTraktor: true, traktorNmlPath: nml, traktorCueOffsetMs: 0 }
   },
   formatProblems: () => [],
+  storedCuesMs: ({ traktorNmlPath }, path) => {
+    const { dir, file } = location(path)
+    const nml = readFileSync(traktorNmlPath ?? '', 'utf8')
+    const entry = [...nml.matchAll(/<ENTRY [^>]*>[\s\S]*?<\/ENTRY>/g)]
+      .map(([block]) => block)
+      .find((block) => block.includes(`DIR="${attr(dir)}" FILE="${attr(file)}"`))
+    return [...(entry ?? '').matchAll(/<CUE_V2 [^>]*>/g)]
+      .map(([cue]) => cue)
+      .filter((cue) => Number(cue.match(/ HOTCUE="(-?\d+)"/)?.[1] ?? -1) >= 0)
+      .map((cue) => Number(cue.match(/ START="([^"]*)"/)?.[1]))
+  },
 }

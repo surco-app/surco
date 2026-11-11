@@ -1,5 +1,6 @@
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { readSeratoTrack } from '../../main/seratoTags'
 import { buildSeratoCrate, concat, frame, textFrame } from '../../shared/serato'
 import type { TestLibrary } from './testLibrary'
 
@@ -30,4 +31,5 @@ export const seratoLibrary: TestLibrary = {
     return { syncSerato: true, addToSerato: true }
   },
   formatProblems: () => [],
+  storedCuesMs: (_settings, path) => (readSeratoTrack(path)?.markers?.cues ?? []).map((c) => c.ms),
 }

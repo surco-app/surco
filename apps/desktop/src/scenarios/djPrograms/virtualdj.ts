@@ -1,5 +1,6 @@
 import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { basename, join } from 'node:path'
+import { parseVirtualdjDatabase } from '../../main/virtualdjDatabase'
 import type { TestLibrary } from './testLibrary'
 
 const attr = (value: string): string =>
@@ -66,4 +67,12 @@ export const virtualdjLibrary: TestLibrary = {
         .map((file) => `${file} has a CR`),
     ]
   },
+  storedCuesMs: ({ virtualdjLibraryDir }, path) =>
+    (
+      parseVirtualdjDatabase(
+        readFileSync(join(virtualdjLibraryDir ?? '', 'database.xml'), 'utf8'),
+      ).find((song) => song.path === path)?.pois ?? []
+    )
+      .filter((poi) => poi.kind === 'cue' && poi.num !== null && poi.num >= 1 && poi.num <= 8)
+      .map((poi) => poi.seconds * 1000),
 }

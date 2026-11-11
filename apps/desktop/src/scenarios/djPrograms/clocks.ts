@@ -13,6 +13,18 @@ const REKORDBOX_MP3_LEAD_MS = samplesMs(MP3_FRAME)
 const TRAKTOR_MP3_DRAWN_AHEAD_MS = samplesMs(MP3_FRAME + LAVC_ENCODER_DELAY + MP3_DECODER_DELAY)
 const REKORDBOX_M4A_LEAD_MS = samplesMs(AAC_PRIMING)
 
+const SERATO_MP3_LEAD_MS = TRAKTOR_MP3_DRAWN_AHEAD_MS
+const SERATO_M4A_LEAD_MS = -REKORDBOX_M4A_LEAD_MS
+const NONE: Record<BatteryFormat, number> = { wav: 0, aiff: 0, flac: 0, mp3: 0, m4a: 0 }
+
+export const STORED_MINUS_READ_MS: Record<DjProgram, Record<BatteryFormat, number>> = {
+  rekordbox: NONE,
+  traktor: NONE,
+  engine: NONE,
+  serato: { ...NONE, mp3: SERATO_MP3_LEAD_MS, m4a: SERATO_M4A_LEAD_MS },
+  virtualdj: NONE,
+}
+
 export type ConvertedFormat = 'mp3' | 'flac'
 
 export const CONVERSION_MOVE_MS: Record<DjProgram, Record<ConvertedFormat, number>> = {

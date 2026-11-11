@@ -67,6 +67,7 @@ import {
   type ConvertedFormat,
   STICK_CUES_LEFT_OUT,
   STICK_MOVE_MS,
+  STORED_MINUS_READ_MS,
 } from './clocks'
 import { registerDoor } from './door'
 import { TEST_LIBRARIES } from './libraries'
@@ -268,8 +269,13 @@ describe.each(DJ_PROGRAMS)('%s, por la puerta común', (program) => {
       wanted: [{ ms: CUE_MS, kind: HOT_KINDS[0], color: null }],
       fingerprint: (before as TrackCues).fingerprint,
     }
-    await invokeMain('cues:save', [request])
+    await expect(invokeMain('cues:save', [request])).resolves.toBeUndefined()
     await door.settled()
+    const stored = TEST_LIBRARIES[program].storedCuesMs(settings, path)
+    expect(stored).toHaveLength(1)
+    expect(
+      Math.abs(stored[0] - CUE_MS - STORED_MINUS_READ_MS[program][format]),
+    ).toBeLessThanOrEqual(CLOCK_TOLERANCE_MS)
     const after = await cuesOf(program, path)
     expect(after?.cues.map((c) => c.ms)).toHaveLength(1)
     expect(Math.abs((after?.cues[0]?.ms ?? 0) - CUE_MS)).toBeLessThanOrEqual(CLOCK_TOLERANCE_MS)

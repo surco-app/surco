@@ -1,12 +1,14 @@
 import { statSync } from 'node:fs'
 import { extname, join, relative } from 'node:path'
+import Database from 'better-sqlite3-multiple-ciphers'
+import { decodeQuickCues, decodeTrackData, inflateEngineBlob } from '../../main/engineBlobs'
 import {
   beatDataBlob,
   overviewBlob,
   quickCuesBlob,
   trackDataBlob,
 } from '../../main/enginePerformanceFixture'
-import { writeEngineLibraryFixture } from '../../main/enginePlaylistsFixture'
+import { engineDbPath, writeEngineLibraryFixture } from '../../main/enginePlaylistsFixture'
 import type { TestLibrary } from './testLibrary'
 
 const RATE = 44100
@@ -56,4 +58,23 @@ export const engineLibrary: TestLibrary = {
     return { syncEngineDj: true, addToEngineDj: true, engineLibraryDir: dir }
   },
   formatProblems: () => [],
+  storedCuesMs: ({ engineLibraryDir }, path) => {
+    const dir = engineLibraryDir ?? ''
+    const db = new Database(engineDbPath(dir), { readonly: true, fileMustExist: true })
+    try {
+      const perf = db
+        .prepare(
+          `SELECT p.trackData, p.quickCues FROM PerformanceData p JOIN Track t ON t.id = p.trackId
+           WHERE t.path = ?`,
+        )
+        .get(relative(dir, path)) as { trackData: Buffer; quickCues: Buffer } | undefined
+      if (!perf) return []
+      const rate = decodeTrackData(inflateEngineBlob(perf.trackData))?.sampleRate ?? RATE
+      return (decodeQuickCues(inflateEngineBlob(perf.quickCues))?.slots ?? []).flatMap((slot) =>
+        slot.cue ? [(slot.cue.sample / rate) * 1000] : [],
+      )
+    } finally {
+      db.close()
+    }
+  },
 }
