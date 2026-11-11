@@ -172,6 +172,7 @@ export function applyVirtualdjTags(
 export interface VirtualdjRepointFacts {
   size: number | null
   lengthSeconds?: number
+  endSeconds?: number
   bitrateKbps?: number
 }
 
@@ -213,6 +214,8 @@ function movedSong(
     return { written: false, reason: existsSync(repoint.from) ? 'song-taken' : 'song-taken-gone' }
   const path = virtualdjStoredPath(root, repoint.to, xml)
   const shift = repoint.engineShift
+  if (facts.endSeconds !== undefined && !virtualdjLengthWritable(facts.endSeconds))
+    return { written: false, reason: 'unwritable' }
   const moved = withVirtualdjSongMoved(
     xml,
     song.path,
@@ -223,7 +226,7 @@ function movedSong(
       bitrateKbps: facts.bitrateKbps ?? (repoint.from === repoint.to ? undefined : null),
     },
     -(shift?.trimmedMs ?? 0) / 1000,
-    shift ? (facts.lengthSeconds ?? null) : null,
+    shift ? (facts.endSeconds ?? null) : null,
   )
   if (moved === null) return { written: false, reason: 'unwritable' }
   const names = repoint.names ?? {}
@@ -261,10 +264,12 @@ export async function repointVirtualdjTracks(
       ])
       const samples = r.engineShift?.sampleCount
       const rate = r.engineShift?.sampleRateHz ?? audio?.sampleRate
-      const lengthSeconds = samples && rate ? samples / rate : probed
+      const lengthSeconds = samples && rate ? samples / rate : undefined
+      const endSeconds = lengthSeconds ?? probed
       return {
         size,
         ...(lengthSeconds === undefined ? {} : { lengthSeconds }),
+        ...(endSeconds === undefined ? {} : { endSeconds }),
         ...(audio?.bitrateKbps === undefined ? {} : { bitrateKbps: audio.bitrateKbps }),
       }
     }),

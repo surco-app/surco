@@ -43,6 +43,7 @@ function library() {
     roots,
     virtualdjOpen: vi.fn(async () => open),
     lengthOf: vi.fn(async () => 100),
+    audioOf: vi.fn(async () => ({ sampleRate: 44100 })),
   }
   const track = (name: string, bytes = 'aiffdata') => {
     const file = join(music, name)
@@ -119,7 +120,10 @@ describe('repointVirtualdjTracks', () => {
   it('drops the old bitrate when the new file’s cannot be told, so VirtualDJ reads it again', async () => {
     const lib = library()
     const to = lib.track('Pray.flac')
-    await repointVirtualdjTracks([trimmed(to)], { ...lib.deps, audioOf: async () => ({}) })
+    await repointVirtualdjTracks([trimmed(to)], {
+      ...lib.deps,
+      audioOf: async () => ({ sampleRate: 44100 }),
+    })
     const infos = songBlock(lib.database(), to).split('\r\n')[2]
     expect(infos).toBe(
       '  <Infos SongLength="100.0" LastModified="1794400456" FirstSeen="1794393066" FirstPlay="1794393110" LastPlay="1794393110" PlayCount="1" Cover="16386" />',
@@ -233,13 +237,28 @@ describe('repointVirtualdjTracks', () => {
       await repointVirtualdjTracks([{ from: path, to: path, fromBytes: 17138984 }], lib.deps),
     ).toEqual([{ written: true }])
     expect(songBlock(lib.database(), path)).toBe(
-      before
-        .replace('FileSize="17138984"', 'FileSize="8"')
-        .replace(/SongLength="[^"]*"/, 'SongLength="100.0"'),
+      before.replace('FileSize="17138984"', 'FileSize="8"'),
     )
     expect(readFileSync(join(lib.lists, 'Surco prueba.vdjfolder'), 'utf8')).toContain(
       `path="${path}" size="8"`,
     )
+  })
+
+  it('leaves VirtualDJ’s length alone when the file was rewritten without new audio, never writing the MP3 container’s longer one', async () => {
+    const lib = library()
+    const path = join(lib.base, 'Music', 'Pray.mp3')
+    writeFileSync(
+      join(lib.dir, 'database.xml'),
+      FIXTURE_XML.replace(`FilePath="${FROM}"`, `FilePath="${path}"`),
+    )
+    lib.track('Pray.mp3', 'retagged')
+    expect(
+      await repointVirtualdjTracks([{ from: path, to: path, fromBytes: 17138984 }], {
+        ...lib.deps,
+        lengthOf: async () => 428.303673,
+      }),
+    ).toEqual([{ written: true }])
+    expect(songBlock(lib.database(), path)).toContain('SongLength="428.253333"')
   })
 
   it('leaves both songs as they are when the new file already has its own song', async () => {
@@ -276,6 +295,7 @@ describe('repointVirtualdjTracks', () => {
       await repointVirtualdjTracks([trimmed(to)], {
         ...lib.deps,
         lengthOf: async () => Number.NaN,
+        audioOf: async () => ({}),
       }),
     ).toEqual([{ written: false, reason: 'unwritable' }])
     expect(lib.database()).toBe(before)
@@ -364,7 +384,7 @@ describe('repointVirtualdjTracks', () => {
   it('says so when VirtualDJ cannot take the converted file’s length, leaving the song as it was', async () => {
     const lib = library()
     const to = lib.track('Pray.aiff')
-    const deps = { ...lib.deps, lengthOf: async () => Number.NaN }
+    const deps = { ...lib.deps, lengthOf: async () => Number.NaN, audioOf: async () => ({}) }
     const queue = createRekordboxQueue({
       store: { read: () => null, write: () => {}, setAside: () => {} },
       collection: () => lib.dir,
