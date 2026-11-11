@@ -9732,7 +9732,17 @@ describe('App Copias music files', () => {
   it('shows the retention and size cap the user chose', async () => {
     setApi({
       getSettings: vi.fn().mockResolvedValue(settings({ backupRetentionDays: 3, backupMaxGb: 2 })),
-      trashList: vi.fn().mockResolvedValue([]),
+      trashList: vi.fn().mockResolvedValue([
+        {
+          id: 'e1',
+          name: 'a.wav',
+          originalPath: '/music/a.wav',
+          storedPath: '/ud/trash/items/e1-a.wav',
+          bytes: 1024,
+          trashedAt: Date.now(),
+          reason: 'replaced',
+        },
+      ]),
     })
     await renderApp()
     act(() => menuListener?.('backups'))
