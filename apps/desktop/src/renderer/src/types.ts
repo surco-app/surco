@@ -197,6 +197,7 @@ export interface TrackItem extends TrackOrigin {
   // valid only while diskSignature still equals `signature` (the read it came from).
   reviewRaw?: { signature: string; fields: ReviewRawFields }
   notInFile?: { signature: string; fields: ReviewWriteField[] }
+  fillSignature?: string
   // What the load-time clean-up staged per field, so the row, the counter and the editor can
   // show it and undo it. Dropped once an export writes the values out.
   cleaned?: Partial<Record<MusicReviewField, FieldCleanup>>

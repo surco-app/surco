@@ -709,7 +709,7 @@ export const Editor = memo(function Editor({
   // Whether the destination library already owns this track, and whether an older copy of it
   // is still sitting there. The Discogs-proven verdict is pinned onto the track inside, so
   // the list and its filter agree with this badge.
-  const { inLibrary, staleMusicCopy, replaceTarget } = useLibraryVerdict({
+  const { inLibrary, staleMusicCopy, replaceTarget, replaceTargetPending } = useLibraryVerdict({
     item,
     libraryIndex,
     librarySource,
@@ -734,6 +734,7 @@ export const Editor = memo(function Editor({
   // A track opened from the library's own folder is that copy, so there is nothing to compare.
   const comparedCopyPath =
     pathKey(replacedCopyPath) === pathKey(item.inputPath) ? '' : replacedCopyPath
+  const musicHoldsFile = !!replacedCopyPath && !comparedCopyPath
   const hereFacts = useCopyFacts(item.inputPath, !!comparedCopyPath, 'high')
   const libraryFacts = useCopyFacts(comparedCopyPath, !!comparedCopyPath)
   const copyPair = usePairFacts(item.inputPath, comparedCopyPath, !!comparedCopyPath)
@@ -1089,6 +1090,8 @@ export const Editor = memo(function Editor({
     tagsOnlyExport &&
     item.diskSignature !== undefined &&
     !hasStagedEdits(item) &&
+    item.fillSignature !== item.diskSignature &&
+    !(item.notInFile?.signature === item.diskSignature && item.notInFile.fields.length > 0) &&
     (item.outputName?.trim() || defaultOutputName) === item.fileName
 
   // One onChange per possible key, built once (setField/onChangeAllMeta never
@@ -2007,7 +2010,12 @@ export const Editor = memo(function Editor({
           readyCount={multiGate?.ready.length}
           status={footerStatus}
           stale={stale}
-          replaces={!!replaceTarget && !isAmbiguousCandidate(replaceTarget)}
+          replaces={
+            !!replaceTarget &&
+            !isAmbiguousCandidate(replaceTarget) &&
+            !musicHoldsFile &&
+            !replaceTargetPending
+          }
           libraryBetter={libraryCopyBetter}
           done={done}
           incomplete={incomplete}
@@ -2025,7 +2033,8 @@ export const Editor = memo(function Editor({
           sameFormat={formatMatchesInput(format, item.inputPath)}
           upToDate={upToDate}
           inMusic={librarySource === 'appleMusic' && inLibrary === 'yes'}
-          musicHoldsFile={!!replacedCopyPath && !comparedCopyPath}
+          musicHoldsFile={musicHoldsFile}
+          musicPending={replaceTargetPending}
           djHolds={djTargets.filter((id) => openSource === id || isFrom(item, id))}
           replacedFormat={replacedCopyPath ? fileExtension(replacedCopyPath) : ''}
           addToAppleMusic={picked.addToAppleMusic}
@@ -2078,7 +2087,7 @@ export const Editor = memo(function Editor({
                   // converted may sit in any download folder the collection never saw.
                   // The button already offered a replacement; without this the action
                   // stayed an add, leaving two library entries and two files on disk.
-                  const patch = replacePatch(replaceTarget)
+                  const patch = replacePatch(replaceTarget, item.inputPath)
                   if (patch) onChange(patch)
                   onProcess(f as OutputFormat)
                 }

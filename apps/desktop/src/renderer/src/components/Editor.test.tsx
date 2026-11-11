@@ -2389,6 +2389,50 @@ describe('Editor convert line for a rekordbox track whose Music entry is this ve
     )
     expect(screen.getByTestId('process-btn')).toHaveTextContent('Update tags')
   })
+
+  it('retags its own Music entry on update instead of asking Music to replace the file with itself', async () => {
+    const { onChange, onProcess } = renderEditor(
+      { ...track({ ...read, genre: 'House' }) },
+      'aiff',
+      {
+        libraryIndex,
+        addToRekordbox: true,
+      },
+    )
+    await waitFor(() =>
+      expect(screen.getByTestId('convert-destination-line')).toHaveTextContent(
+        /^Updates Apple Music · rekordbox$/,
+      ),
+    )
+    fireEvent.click(screen.getByTestId('process-btn'))
+    expect(onProcess).toHaveBeenCalled()
+    expect(onChange).toHaveBeenCalledWith({ musicPersistentId: '0123456789ABCDEF' })
+    expect(onChange).not.toHaveBeenCalledWith(
+      expect.objectContaining({ replacesPath: expect.anything() }),
+    )
+  })
+  it('names no Music verb and offers no replacement while Music has not said where its copy lives', async () => {
+    window.api.appleMusicEntryLocation = vi.fn(() => new Promise<string>(() => {}))
+    renderEditor({ ...track({ ...read, genre: 'House' }) }, 'aiff', {
+      libraryIndex,
+      addToRekordbox: true,
+    })
+    await waitFor(() =>
+      expect(window.api.appleMusicEntryLocation).toHaveBeenCalledWith('0123456789ABCDEF'),
+    )
+    expect(screen.getByTestId('convert-destination-line')).toHaveTextContent(/^Updates rekordbox$/)
+    expect(screen.getByTestId('process-btn')).toHaveAccessibleName('Update tags')
+  })
+
+  it('converts its own Music copy to another format without calling it a replacement', async () => {
+    renderEditor({ ...track(read) }, 'mp3', { libraryIndex, addToRekordbox: true })
+    await waitFor(() =>
+      expect(window.api.appleMusicEntryLocation).toHaveBeenCalledWith('0123456789ABCDEF'),
+    )
+    await waitFor(() =>
+      expect(screen.getByTestId('process-btn')).toHaveAccessibleName('Convert to MP3'),
+    )
+  })
 })
 
 describe('Editor export control', () => {
@@ -2423,6 +2467,34 @@ describe('Editor export control', () => {
       renderEditor({ id: 'a', meta: read, diskSignature })
       expect(screen.getByTestId('convert-up-to-date')).toHaveTextContent('No changes')
       expect(screen.queryByTestId('process-btn')).toBeNull()
+    })
+
+    it('offers the update when it shows values a library filled in that the file lacks', () => {
+      renderEditor({ id: 'a', meta: read, diskSignature, fillSignature: diskSignature })
+      expect(screen.getByTestId('process-btn')).toHaveTextContent('Update tags')
+      expect(screen.queryByTestId('convert-up-to-date')).toBeNull()
+    })
+
+    it('offers the update when it shows a title the file does not hold', () => {
+      renderEditor({
+        id: 'a',
+        meta: read,
+        diskSignature,
+        notInFile: { signature: diskSignature, fields: ['title'] },
+      })
+      expect(screen.getByTestId('process-btn')).toHaveTextContent('Update tags')
+      expect(screen.queryByTestId('convert-up-to-date')).toBeNull()
+    })
+
+    it('goes quiet again once a conversion wrote those values', () => {
+      renderEditor({
+        id: 'a',
+        meta: read,
+        diskSignature,
+        fillSignature: 'an earlier read',
+        notInFile: { signature: 'an earlier read', fields: ['title'] },
+      })
+      expect(screen.getByTestId('convert-up-to-date')).toBeInTheDocument()
     })
 
     it('offers the update while an edit is staged', () => {
