@@ -283,13 +283,17 @@ describe('MusicReview', () => {
   })
 
   // A staged group is a change not applied yet, which the track list marks with the amber
-  // ring on the cover.
+  // ring on the cover. The ring is the visible mark, so the detail line does not repeat it;
+  // the words stay beside the ring for a screen reader.
   it('marks a row staged from the detail with the pending ring and says it is still to apply', () => {
     render(<Panes review={review({ spelling: [group, other] })} />)
     expect(rows()[0]).not.toHaveTextContent('to apply')
     expect(within(rows()[0]).queryByTestId('music-review-row-staged')).toBeNull()
     fireEvent.click(screen.getByTestId('music-review-stage'))
     expect(rows()[0]).toHaveTextContent('to apply')
+    expect(within(rows()[0]).getByTestId('music-review-row-detail')).not.toHaveTextContent(
+      'to apply',
+    )
     expect(rows()[0]).toHaveAttribute('data-staged', 'true')
     expect(within(rows()[0]).getByTestId('music-review-row-staged')).toHaveAttribute(
       'data-tone',

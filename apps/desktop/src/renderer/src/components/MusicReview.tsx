@@ -905,7 +905,12 @@ function Row({
     >
       <span className="relative shrink-0">
         <CoverPlaceholder testid="music-review-row-cover" />
-        {staged && <ToneBadge testid="music-review-row-staged" tone="attention" />}
+        {staged && (
+          <>
+            <ToneBadge testid="music-review-row-staged" tone="attention" />
+            <span className="sr-only">{t('musicReview.inTray')}</span>
+          </>
+        )}
       </span>
       <span data-fit className="relative min-w-0 flex-1">
         <span data-testid="music-review-row-title-line" className="flex items-center gap-2">
@@ -924,7 +929,6 @@ function Row({
         <span data-testid="music-review-row-detail-line" className="flex items-center gap-2">
           <span data-testid="music-review-row-detail" className={ROW_DETAIL}>
             {detail}
-            {staged && ` · ${t('musicReview.inTray')}`}
           </span>
           <span className="flex shrink-0 justify-end">
             <TonePill testid="music-review-row-pill" tone={RISKY_KINDS.has(kind) ? 'warn' : 'good'}>
@@ -970,7 +974,12 @@ function DamageRow({
     >
       <span className="relative shrink-0">
         <CoverPlaceholder testid="music-review-row-cover" />
-        {staged && <ToneBadge testid="music-review-row-staged" tone="attention" />}
+        {staged && (
+          <>
+            <ToneBadge testid="music-review-row-staged" tone="attention" />
+            <span className="sr-only">{t('musicReview.inTray')}</span>
+          </>
+        )}
       </span>
       <span data-fit className="relative min-w-0 flex-1">
         <span className="flex items-center gap-2">
@@ -984,7 +993,6 @@ function DamageRow({
         <span className="flex items-center gap-2">
           <span data-testid="music-review-row-detail" className={ROW_DETAIL}>
             {t(`damage.kind.${damageKindLabel(finding.kind)}`)}
-            {staged && ` · ${t('musicReview.inTray')}`}
           </span>
           <span className="flex shrink-0 justify-end">
             <DamageCertainty finding={finding} />
@@ -1040,7 +1048,12 @@ function IncompleteRow({
     >
       <span className="relative shrink-0">
         <CoverPlaceholder testid="music-review-row-cover" />
-        {staged && <ToneBadge testid="music-review-row-staged" tone="attention" />}
+        {staged && (
+          <>
+            <ToneBadge testid="music-review-row-staged" tone="attention" />
+            <span className="sr-only">{t('musicReview.inTray')}</span>
+          </>
+        )}
       </span>
       <span data-fit className="relative min-w-0 flex-1">
         <span className="flex items-center gap-2">
@@ -1054,7 +1067,6 @@ function IncompleteRow({
         <span className="flex items-center gap-2">
           <span data-testid="music-review-row-detail" className={ROW_DETAIL}>
             {missingLabel(t, card)}
-            {staged && ` · ${t('musicReview.inTray')}`}
           </span>
           <span className="flex shrink-0 justify-end">
             <TonePill
