@@ -1022,12 +1022,6 @@ describe('Editor convert button with Traktor taking new tracks', () => {
     })
     await waitFor(() => expect(screen.getByTestId('process-btn')).not.toHaveTextContent('Traktor'))
   })
-
-  it('does not name Traktor without a confirmed collection.nml, the only one Surco writes to', async () => {
-    Object.assign(window.api, { libraryStatus: status(true) })
-    renderEditor({ id: 'a' }, 'aiff', { addToAppleMusic: false, addToTraktor: true })
-    await waitFor(() => expect(screen.getByTestId('process-btn')).not.toHaveTextContent('Traktor'))
-  })
 })
 
 describe('Editor compilation field', () => {
@@ -2772,24 +2766,6 @@ describe('Editor export control', () => {
     const button = screen.getByTestId('process-btn')
     expect(button).toHaveAccessibleName('Convert to AIFF')
     expect(button).not.toHaveTextContent('Update tags')
-  })
-
-  it('keeps Apple Music off the button when a track already in Music is edited', () => {
-    ;(window as unknown as { api: { platform: string } }).api.platform = 'darwin'
-    renderEditor(
-      {
-        id: 'a',
-        inputPath: '/music/a.flac',
-        status: 'done',
-        outputPath: '/out/a.aiff',
-        musicStatus: 'added',
-        musicPersistentId: 'ABCD1234',
-        processedSignature: 'before the cover changed',
-      },
-      'aiff',
-      { addToAppleMusic: true },
-    )
-    expect(screen.getByTestId('process-btn')).not.toHaveTextContent('Apple Music')
   })
 
   // Picking a format from the dropdown used to convert on the spot, so a misclick

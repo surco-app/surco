@@ -1,6 +1,3 @@
-import i18n from '../i18n'
-import type { DjLibraryId } from './djLibraries'
-
 export interface ExportLabelState {
   processing: boolean
   quiet?: boolean
@@ -58,9 +55,4 @@ export function exportButtonLabel(state: ExportLabelState): {
     }
   }
   return { key: 'editor.convertAction', options: { format: state.format } }
-}
-
-export function programNames(namesMusic: boolean, djTargets: DjLibraryId[]): string {
-  const ids = [...(namesMusic ? ['appleMusic'] : []), ...djTargets]
-  return ids.map((id) => i18n.t(`settings.source.${id}`)).join(' + ')
 }

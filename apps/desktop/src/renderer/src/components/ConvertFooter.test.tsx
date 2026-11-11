@@ -1177,15 +1177,3 @@ describe('ConvertFooter batch verification', () => {
     expect(screen.getByTestId('export-success').className).not.toMatch(/\btruncate\b/)
   })
 })
-
-describe('ConvertFooter inside a library tab', () => {
-  beforeEach(() => {
-    ;(window as unknown as { api: Record<string, unknown> }).api = { platform: 'darwin' }
-  })
-
-  it('does not tack Apple Music onto the convert of a track the user opened from Music', () => {
-    render(cloneElement(footer(false), { addToAppleMusic: true, openSource: 'appleMusic' }))
-    expect(screen.getByTestId('process-btn')).toHaveTextContent('Convert to AIFF')
-    expect(screen.getByTestId('process-btn')).not.toHaveTextContent('Apple Music')
-  })
-})
