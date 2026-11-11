@@ -5,8 +5,12 @@ import { rekordboxShiftOfFileIfKnown } from './rekordboxTimeline'
 import { foreignExportTrack, foreignMarks, foreignSelection, unixDate } from './usbExportForeign'
 import { type ExportSelection, selectedPlaylists } from './usbExportSource'
 import { virtualdjTrackCuesOf } from './virtualdjCueSource'
-import { type VirtualdjLibrary, virtualdjSongsByPath, virtualdjTree } from './virtualdjLibrary'
-import type { VirtualdjNode } from './virtualdjLists'
+import {
+  type VirtualdjLibrary,
+  virtualdjListOf,
+  virtualdjSongsByPath,
+  virtualdjTree,
+} from './virtualdjLibrary'
 
 const DEFAULT_SAMPLE_RATE = 44100
 
@@ -35,22 +39,13 @@ export async function virtualdjExportClock(file: string): Promise<VirtualdjClock
   return { sampleRate, delta: await rekordboxShiftOfFileIfKnown(file, sampleRate) }
 }
 
-function listOf(nodes: VirtualdjNode[], id: string): VirtualdjNode | undefined {
-  for (const n of nodes) {
-    if (n.id === id) return n
-    const inside = listOf(n.children ?? [], id)
-    if (inside) return inside
-  }
-  return undefined
-}
-
 export async function readVirtualdjExportSelection(
   library: VirtualdjLibrary,
   ids: string[],
   deps: { clockOf: (file: string) => Promise<VirtualdjClock | null> },
 ): Promise<ExportSelection> {
   const picked = selectedPlaylists(virtualdjTree(library), new Set(ids))
-  const rows = picked.map(({ node }) => listOf(library.lists, node.id)?.paths ?? [])
+  const rows = picked.map(({ node }) => virtualdjListOf(library, node.id)?.paths ?? [])
   const known = virtualdjSongsByPath(library.songs)
   return foreignSelection(
     picked,

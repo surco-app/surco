@@ -110,6 +110,10 @@ function playlists(nodes: VirtualdjNode[]): VirtualdjNode[] {
   return nodes.flatMap((n) => (n.kind === 'playlist' ? [n] : playlists(n.children ?? [])))
 }
 
+export function virtualdjListOf(library: VirtualdjLibrary, id: string): VirtualdjNode | undefined {
+  return playlists(library.lists).find((n) => n.id === id)
+}
+
 function toSource(nodes: VirtualdjNode[]): SourceNode[] {
   return nodes.map((n): SourceNode => {
     if (n.kind === 'playlist')
@@ -177,7 +181,7 @@ export function virtualdjPlaylist(
 ): SourcePlaylistEntry[] {
   if (id === RECENTLY_ADDED_ID) return recentSongs(library, now).map((s) => entryOf(s.path, s))
   if (id === ALL_TRACKS_ID) return newestFirst(library.songs).map((s) => entryOf(s.path, s))
-  const list = playlists(library.lists).find((n) => n.id === id)
+  const list = virtualdjListOf(library, id)
   if (!list) return []
   const byPath = virtualdjSongsByPath(library.songs)
   return list.paths.map((path, i) => ({
