@@ -599,6 +599,25 @@ describe('verify registry', () => {
     expect(registry.get('a')?.status).toBe('ok')
   })
 
+  it('retry on a library that could not be read hands it the repoint again once the re-read finds it still on the old file', async () => {
+    const { deps, registry } = setup()
+    deps.readRekordbox
+      .mockResolvedValueOnce([unreadable('rekordbox', 'rekordboxUnreadable')])
+      .mockResolvedValueOnce([mismatch('rekordbox', 'rekordboxStillOld')])
+    const a = entry('a')
+    registry.register(a)
+    await registry.afterFlush(written)
+
+    expect(await registry.retry('a')).toBe('rechecked')
+
+    expect(deps.requeue).toHaveBeenCalledWith('rekordbox', a)
+    expect(stateOf(registry.get('a'), 'rekordbox')).toBe('pending')
+
+    await registry.afterQueueApplied('rekordbox', 'written')
+
+    expect(registry.get('a')?.status).toBe('ok')
+  })
+
   // Handing the repoint again moves cues a second time when the row already names the
   // file (a same-path reconversion): only a library still on the old file gets it again.
   it.each([

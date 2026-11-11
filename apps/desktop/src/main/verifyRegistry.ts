@@ -514,15 +514,20 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
         },
         'file',
       )
+    const handAgain = (place: Library) => {
+      hold(place, e)
+      if (!deps.requeue(place, e) && stateOf(e, place) === 'pending')
+        replace(e, checking(place), place)
+    }
     for (const place of PLACE_PROGRAMS) {
       const state = stateOf(e, place)
       // Only a library still on the old file is handed its repoint again: one that already
       // names the file would move its cues a second time.
-      if (stillOld(e, place) || neverWritten(e, place)) {
-        hold(place, e)
-        if (!deps.requeue(place, e) && stateOf(e, place) === 'pending')
-          replace(e, checking(place), place)
-      } else if (state === 'unreadable' || state === 'mismatch') await check(place, [e], null)
+      if (stillOld(e, place) || neverWritten(e, place)) handAgain(place)
+      else if (state === 'unreadable' || state === 'mismatch') {
+        await check(place, [e], null)
+        if (state === 'unreadable' && stillOld(e, place)) handAgain(place)
+      }
     }
     emit(e)
     return 'rechecked'
