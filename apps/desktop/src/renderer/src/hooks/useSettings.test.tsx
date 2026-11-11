@@ -341,3 +341,75 @@ describe('useSettings first-paint snapshot', () => {
     setItemSpy.mockRestore()
   })
 })
+
+describe('switching the theme cross-fades instead of jumping the whole window from dark to light', () => {
+  const noop = (): void => {}
+  let startViewTransition: ReturnType<typeof vi.fn>
+
+  function mediaQueries(reducedMotion: boolean): void {
+    window.matchMedia = vi.fn((query: string) => ({
+      matches: query === '(prefers-reduced-motion: reduce)' ? reducedMotion : false,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    })) as unknown as typeof window.matchMedia
+  }
+
+  async function renderLoadedLight() {
+    const loaded = settings({ theme: 'light' })
+    // biome-ignore lint/suspicious/noExplicitAny: minimal bridge stub for the hook under test
+    ;(window as any).api = { getSettings: vi.fn().mockResolvedValue(loaded) }
+    const hook = renderHook(() =>
+      useSettings({ settingsOpen: false, onFirstLoad: noop, onLoadError: noop, onSaveError: noop }),
+    )
+    await waitFor(() => expect(hook.result.current.settings).toEqual(loaded))
+    return hook
+  }
+
+  beforeEach(() => {
+    document.documentElement.dataset.theme = 'dark'
+    startViewTransition = vi.fn((update: () => void) => {
+      update()
+      return { finished: Promise.resolve(), ready: Promise.resolve() }
+    })
+    Object.defineProperty(document, 'startViewTransition', {
+      value: startViewTransition,
+      configurable: true,
+      writable: true,
+    })
+  })
+
+  afterEach(() => {
+    Reflect.deleteProperty(document, 'startViewTransition')
+  })
+
+  it('paints the launch theme directly, because a fade on startup would be a flash of the wrong theme', async () => {
+    mediaQueries(false)
+    await renderLoadedLight()
+    expect(document.documentElement.dataset.theme).toBe('light')
+    expect(startViewTransition).not.toHaveBeenCalled()
+  })
+
+  it('routes a later theme change through a view transition so old and new themes cross-fade', async () => {
+    mediaQueries(false)
+    const { result } = await renderLoadedLight()
+    act(() => result.current.setThemePreview('dark'))
+    expect(startViewTransition).toHaveBeenCalledTimes(1)
+    expect(document.documentElement.dataset.theme).toBe('dark')
+  })
+
+  it('switches instantly when the user asked for reduced motion', async () => {
+    mediaQueries(true)
+    const { result } = await renderLoadedLight()
+    act(() => result.current.setThemePreview('dark'))
+    expect(startViewTransition).not.toHaveBeenCalled()
+    expect(document.documentElement.dataset.theme).toBe('dark')
+  })
+
+  it('still switches the theme where view transitions do not exist', async () => {
+    mediaQueries(false)
+    Reflect.deleteProperty(document, 'startViewTransition')
+    const { result } = await renderLoadedLight()
+    act(() => result.current.setThemePreview('dark'))
+    expect(document.documentElement.dataset.theme).toBe('dark')
+  })
+})

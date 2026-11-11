@@ -3796,6 +3796,7 @@ export default function App(): React.JSX.Element {
                             setSearch={setSearch}
                             trackSearchRef={trackSearchRef}
                             qualityFilterRef={qualityFilterRef}
+                            scrollRootRef={listScrollRef}
                             filterSelection={filterSelection}
                             setFilterSelection={setFilterSelection}
                             librarySource={librarySource}

@@ -391,3 +391,28 @@ describe('TrackListHeader layout', () => {
     expect(screen.getByTestId('track-sort')).toHaveTextContent(/^Order$/)
   })
 })
+
+describe('the header shows an edge only while rows slide under it, so a list at rest has no line cutting it', () => {
+  function scrollRoot(): HTMLDivElement {
+    const root = document.createElement('div')
+    document.body.appendChild(root)
+    return root
+  }
+
+  it('draws no edge while the list sits at the top', () => {
+    renderHeader({ scrollRootRef: { current: scrollRoot() } })
+    expect(screen.getByTestId('track-list-header')).toHaveAttribute('data-scrolled', 'false')
+  })
+
+  it('raises the edge once rows scroll under the header and drops it back at the top', () => {
+    const root = scrollRoot()
+    renderHeader({ scrollRootRef: { current: root } })
+    const header = screen.getByTestId('track-list-header')
+
+    fireEvent.scroll(root, { target: { scrollTop: 40 } })
+    expect(header).toHaveAttribute('data-scrolled', 'true')
+
+    fireEvent.scroll(root, { target: { scrollTop: 0 } })
+    expect(header).toHaveAttribute('data-scrolled', 'false')
+  })
+})
