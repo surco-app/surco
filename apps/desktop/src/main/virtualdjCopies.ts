@@ -180,7 +180,7 @@ export function listVirtualdjCopies(deps: VirtualdjCopiesDeps): {
       .sort((a, b) => b.takenAt - a.takenAt)
       .slice(0, HISTORY_KEEP),
   )
-  const all = [...whole, ...legacy].sort((a, b) => b.takenAt - a.takenAt)
+  const all = [...whole, ...legacy].sort((a, b) => b.takenAt - a.takenAt).slice(0, HISTORY_KEEP)
   const restore = all.find((c) => c.reason === 'restore') ?? null
   return { copies: all.filter((c) => c !== restore), restore }
 }

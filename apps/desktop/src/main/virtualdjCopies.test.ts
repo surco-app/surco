@@ -214,6 +214,23 @@ describe('VirtualDJ copies from before whole copies', () => {
   })
 })
 
+describe('VirtualDJ copies on the screen', () => {
+  it('shows five at most, whole copies and older separate ones together, as the footer says for every program', async () => {
+    const lib = library()
+    await lib.convert()
+    await lib.convert()
+    const file = join(lib.dir, 'database.xml')
+    for (let i = 0; i < 4; i++)
+      takeBackups([file], { ...lib.deps, virtualdjOpen: async () => false })
+    for (let i = 0; i < 3; i++) takeVirtualdjCopy(lib.deps, 'queue')
+    takeVirtualdjCopy(lib.deps, 'restore')
+    const { copies, restore } = listVirtualdjCopies(lib.deps)
+    expect(copies.length + (restore ? 1 : 0)).toBe(5)
+    expect(restore?.reason).toBe('restore')
+    expect(copies.map((c) => c.reason)).toEqual(['queue', 'queue', 'queue', 'tracks'])
+  })
+})
+
 describe('restoreVirtualdjCopy refusals', () => {
   it('changes nothing and keeps the queue while VirtualDJ stays open or opens again', async () => {
     const lib = library()
