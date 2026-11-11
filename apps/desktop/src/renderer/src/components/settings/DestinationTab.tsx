@@ -528,6 +528,7 @@ function OutputSettings({
                 <SettingsHint className="mt-2">
                   {tr('settings.virtualdjLibraryDirHint')}
                 </SettingsHint>
+                <VirtualdjReach synced={synced} patch={patch} />
               </SettingsSection>
             </div>
           )}
@@ -661,6 +662,34 @@ function SeratoSection({
         {found ? tr('settings.syncSeratoHint') : tr('settings.syncSeratoIdle')}
       </SettingsHint>
     </SettingsSection>
+  )
+}
+
+function VirtualdjReach({
+  synced,
+  patch,
+}: {
+  synced: SyncedDraft
+  patch: PatchSynced
+}): React.JSX.Element {
+  const { t: tr } = useTranslation()
+  const [found, setFound] = useState(false)
+  useEffect(() => {
+    void window.api.dj.available('virtualdj').then(setFound, () => {})
+  }, [])
+  return (
+    <div className="mt-4">
+      <DjReachRow
+        program="virtualdj"
+        label={tr('settings.syncVirtualdj')}
+        synced={synced}
+        patch={patch}
+        disabled={!found && !synced.syncVirtualdj && !synced.addToVirtualdj}
+      />
+      <SettingsHint className="mt-2">
+        {found ? tr('settings.syncVirtualdjHint') : tr('settings.syncVirtualdjIdle')}
+      </SettingsHint>
+    </div>
   )
 }
 

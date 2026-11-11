@@ -66,6 +66,8 @@ import { isTraktorRunning } from './traktorProcess'
 import { flushTraktorSync } from './traktorSyncFlush'
 import { sourceRoot } from './usbExport'
 import { type FlushOutcome, type TraktorWrite, traktorPatchKey } from './verifyRegistry'
+import type { VirtualdjRoot } from './virtualdjLibrary'
+import { virtualdjLibraryHas } from './virtualdjTrackWrite'
 
 export type SyncBlockedKey = 'traktorSyncBlocked' | 'rekordboxSyncBlocked' | 'engineSyncBlocked'
 
@@ -318,6 +320,11 @@ export type ConversionQueues = {
     applyQuietly: () => void
     roots: () => SeratoLibraryRoot[]
   }
+  virtualdj?: {
+    enqueue: RekordboxQueue['enqueue']
+    applyQuietly: () => void
+    roots: () => VirtualdjRoot[]
+  }
 }
 
 export const FLUSH_ORDER = writableInOrder(['traktor', 'rekordbox', 'engine'])
@@ -376,7 +383,30 @@ export async function flushConversionBatch(
     } catch (err) {
       log.warn(`serato: queueing the converted tracks failed: ${String(err)}`)
     }
+  if (queues.virtualdj)
+    try {
+      queueVirtualdjRun(queues.virtualdj, run)
+    } catch (err) {
+      log.warn(`virtualdj: queueing the converted tracks failed: ${String(err)}`)
+    }
   return { ...(outcome as FlushOutcome), added }
+}
+
+function queueVirtualdjRun(
+  queue: NonNullable<ConversionQueues['virtualdj']>,
+  run: ConversionRun,
+): void {
+  const addToVirtualdj = getSettings().addToVirtualdj
+  const ops = libraryTrackOps(
+    run.repoints,
+    'virtualdj',
+    undefined,
+    addToVirtualdj,
+    addToVirtualdj && run.addable ? virtualdjLibraryHas(queue.roots()) : undefined,
+  )
+  if (ops.length === 0) return
+  queue.enqueue(ops)
+  queue.applyQuietly()
 }
 
 function queueSeratoRun(queue: NonNullable<ConversionQueues['serato']>, run: ConversionRun): void {
@@ -773,6 +803,7 @@ export function syncTagsInLibraries(
       serato
         ? syncSeratoTags(updates, { ...serato, enabled: getSettings().syncSerato })
         : { outcome: 'nothing' },
+    virtualdj: async () => ({ outcome: 'nothing' }),
     warn: (library, error) => log.warn(`library:syncTags ${library} failed`, error),
     ...(updates.length > 0 && { begin: beginMoment }),
   })

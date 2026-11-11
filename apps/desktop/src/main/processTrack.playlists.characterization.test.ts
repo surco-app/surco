@@ -13,7 +13,7 @@ describe('JOB_PLAYLISTS', () => {
     expect(choice && 'base' in choice).toBe(true)
   })
 
-  it.each(['traktor', 'engine', 'serato'] as const)(
+  it.each(['traktor', 'engine', 'serato', 'virtualdj'] as const)(
     'gives %s an empty base when the job has none',
     (program) => {
       const choice = JOB_PLAYLISTS[program](
@@ -23,7 +23,7 @@ describe('JOB_PLAYLISTS', () => {
     },
   )
 
-  it.each(['rekordbox', 'traktor', 'engine', 'serato'] as const)(
+  it.each(['rekordbox', 'traktor', 'engine', 'serato', 'virtualdj'] as const)(
     'ignores a %s base without targets, so no playlist work is queued',
     (program) => {
       expect(
@@ -32,7 +32,7 @@ describe('JOB_PLAYLISTS', () => {
     },
   )
 
-  it.each(['rekordbox', 'traktor', 'engine', 'serato'] as const)(
+  it.each(['rekordbox', 'traktor', 'engine', 'serato', 'virtualdj'] as const)(
     'treats empty %s targets as a choice, so leaving every playlist is still attached',
     (program) => {
       const choice = JOB_PLAYLISTS[program](
@@ -43,11 +43,17 @@ describe('JOB_PLAYLISTS', () => {
   )
 
   it('returns nothing for a job with no playlists', () => {
-    for (const program of ['rekordbox', 'traktor', 'engine', 'serato'] as const)
+    for (const program of ['rekordbox', 'traktor', 'engine', 'serato', 'virtualdj'] as const)
       expect(JOB_PLAYLISTS[program](job({}))).toBeUndefined()
   })
 
-  it('has no VirtualDJ row, since Surco does not write VirtualDJ lists yet', () => {
-    expect(Object.keys(JOB_PLAYLISTS)).toEqual(['rekordbox', 'traktor', 'engine', 'serato'])
+  it('has a VirtualDJ row, so the lists picked for a converted track reach VirtualDJ', () => {
+    expect(Object.keys(JOB_PLAYLISTS)).toEqual([
+      'rekordbox',
+      'traktor',
+      'engine',
+      'serato',
+      'virtualdj',
+    ])
   })
 })

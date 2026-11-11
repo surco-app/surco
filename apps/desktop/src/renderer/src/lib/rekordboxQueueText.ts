@@ -55,6 +55,7 @@ export const REKORDBOX_QUEUE_WORDS: QueueWords = {
     'cues-old-block': 'seratoQueue.notice.oldBlock',
     'other-volume': 'seratoQueue.notice.otherVolume',
     'source-in-serato': 'seratoQueue.notice.sourceInSerato',
+    'source-in-virtualdj': 'virtualdjQueue.notice.sourceInVirtualdj',
     'cues-calls-dropped': 'engineQueue.notice.callsDropped',
     'cues-slot-dropped': 'traktorQueue.notice.slotDropped',
     'cues-adjusted': 'rekordboxQueue.notice.cuesAdjusted',
@@ -164,6 +165,13 @@ export const VIRTUALDJ_QUEUE_WORDS: QueueWords = {
     'cues-changed': 'virtualdjQueue.notice.cuesChanged',
     'cues-calls-dropped': 'virtualdjQueue.notice.callsDropped',
     'not-in-library': 'virtualdjQueue.notice.notInLibrary',
+    'not-added': 'virtualdjQueue.notice.notAdded',
+    'playlist-changed': 'virtualdjQueue.notice.playlistChanged',
+    'playlist-gone': 'virtualdjQueue.notice.playlistGone',
+  },
+  parts: {
+    collection: 'virtualdjQueue.part.collection',
+    noPlaylists: 'virtualdjQueue.part.noPlaylists',
   },
 }
 

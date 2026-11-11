@@ -488,6 +488,25 @@ describe('VirtualDJ queue text', () => {
     )
   })
 
+  it('says in VirtualDJ’s words what became of a converted track and its lists', () => {
+    const say = (notice: Parameters<typeof noticeText>[1]) =>
+      noticeText(tr, notice, VIRTUALDJ_QUEUE_WORDS)
+    expect(say({ code: 'not-added', track: 'Pray' })).toBe('Pray was not added to VirtualDJ')
+    expect(say({ code: 'playlist-changed', track: 'Pray', playlist: 'Sets' })).toBe(
+      'Pray was not changed in Sets. It changed in VirtualDJ',
+    )
+    expect(say({ code: 'playlist-gone', track: 'Pray', playlist: 'Sets' })).toBe(
+      'Sets is no longer in VirtualDJ. Pray was not added',
+    )
+    expect(say({ code: 'source-in-virtualdj', track: 'Pray', playlist: 'Sets' })).toBe(
+      'Pray stays in VirtualDJ with the original file and does not go in the list “Sets”',
+    )
+    expect(partText(tr, { kind: 'collection' }, VIRTUALDJ_QUEUE_WORDS)).toBe('added to the library')
+    expect(partText(tr, { kind: 'playlists', names: [] }, VIRTUALDJ_QUEUE_WORDS)).toBe(
+      'out of its lists',
+    )
+  })
+
   it('says a track is gone from VirtualDJ when its song is not in the database', () => {
     expect(noticeText(tr, { code: 'not-in-library', track: 'Pray' }, VIRTUALDJ_QUEUE_WORDS)).toBe(
       'Pray is no longer in VirtualDJ. Its cues were not saved',

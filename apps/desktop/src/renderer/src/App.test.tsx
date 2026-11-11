@@ -7445,7 +7445,7 @@ describe('App offers the rekordbox Playlists field', () => {
   })
 })
 
-describe('App leaves out the playlists field of a program whose lists Surco only reads', () => {
+describe('App offers the playlists field of each program Surco adds converted tracks to', () => {
   it('offers the Serato crates field once Serato is found, since Surco adds converted tracks to its crates', async () => {
     const saveSettings = vi.fn().mockResolvedValue(settings())
     setApi({
@@ -7468,18 +7468,15 @@ describe('App leaves out the playlists field of a program whose lists Surco only
     )
   })
 
-  it('never offers the VirtualDJ lists field, since choosing a list there would change nothing', async () => {
+  it('offers the VirtualDJ lists field once VirtualDJ is found, since Surco adds converted tracks to its lists', async () => {
     const saveSettings = vi.fn().mockResolvedValue(settings())
     setApi({
-      getSettings: vi.fn().mockResolvedValue(
-        settings({
-          rekordboxPlaylistsFieldOffered: false,
-          virtualdjPlaylistsFieldOffered: false,
-          visibleFields: ['title'],
-        }),
-      ),
+      getSettings: vi
+        .fn()
+        .mockResolvedValue(
+          settings({ virtualdjPlaylistsFieldOffered: false, visibleFields: ['title'] }),
+        ),
       dj: djReads({
-        rekordbox: { available: vi.fn<ProgramReads['available']>().mockResolvedValue(true) },
         virtualdj: { available: vi.fn<ProgramReads['available']>().mockResolvedValue(true) },
       }),
       saveSettings,
@@ -7487,13 +7484,9 @@ describe('App leaves out the playlists field of a program whose lists Surco only
     await renderApp()
     await waitFor(() =>
       expect(saveSettings).toHaveBeenCalledWith({
-        visibleFields: ['title', 'rekordboxPlaylists'],
-        rekordboxPlaylistsFieldOffered: true,
+        visibleFields: ['title', 'virtualdjPlaylists'],
+        virtualdjPlaylistsFieldOffered: true,
       }),
-    )
-    expect(window.api.dj.available).toHaveBeenCalledWith('virtualdj')
-    expect(saveSettings).not.toHaveBeenCalledWith(
-      expect.objectContaining({ virtualdjPlaylistsFieldOffered: true }),
     )
   })
 })

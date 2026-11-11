@@ -966,6 +966,34 @@ describe('Editor Serato crates field', () => {
   })
 })
 
+describe('Editor VirtualDJ lists field', () => {
+  it('picks a list for a track VirtualDJ does not have yet', async () => {
+    Object.assign(window.api, {
+      dj: djReads({
+        virtualdj: {
+          available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+          tree: vi
+            .fn<ProgramReads['tree']>()
+            .mockResolvedValue([{ id: 'Friday', name: 'Friday', kind: 'playlist', count: 0 }]),
+          membership: vi.fn<ProgramReads['membership']>().mockResolvedValue({}),
+        },
+      }),
+    })
+    const { onChange } = renderEditor({ id: 'a' }, 'wav', { visibleFields: ['virtualdjPlaylists'] })
+    const field = await screen.findByTestId('virtualdj-playlists-field')
+    await waitFor(() => expect(within(field).getByTestId('playlists-summary')).not.toBeDisabled())
+    fireEvent.click(within(field).getByTestId('playlists-summary'))
+    fireEvent.click(screen.getByTestId('playlists-check-Friday'))
+    expect(onChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        playlists: {
+          virtualdj: expect.objectContaining({ targets: [{ id: 'Friday', name: 'Friday' }] }),
+        },
+      }),
+    )
+  })
+})
+
 describe('Editor Traktor Playlists field without a confirmed collection', () => {
   it('stays disabled and says where to choose the collection, since Surco writes only to that one', async () => {
     Object.assign(window.api, {

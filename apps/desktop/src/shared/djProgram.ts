@@ -10,7 +10,7 @@ export const PROGRAM_CAN = {
   traktor: { write: true, usb: true, reach: true, windows: true },
   engine: { write: true, usb: true, reach: true, windows: true },
   serato: { write: false, usb: true, reach: true, windows: true },
-  virtualdj: { write: false, usb: false, reach: false, windows: false },
+  virtualdj: { write: false, usb: false, reach: true, windows: false },
 } as const satisfies {
   [P in DjProgram]: {
     write: boolean
@@ -61,10 +61,6 @@ export const USB_PROGRAMS: readonly UsbProgram[] = DJ_PROGRAMS.filter(
 export const REACH_PROGRAMS: readonly ReachProgram[] = DJ_PROGRAMS.filter(
   (program): program is ReachProgram => PROGRAM_CAN[program].reach,
 )
-
-export function canReach(program: DjProgram): program is ReachProgram {
-  return PROGRAM_CAN[program].reach
-}
 
 export const READ_ONLY_PROGRAMS: readonly ReadOnlyProgram[] = DJ_PROGRAMS.filter(
   (program): program is ReadOnlyProgram => !PROGRAM_CAN[program].write,

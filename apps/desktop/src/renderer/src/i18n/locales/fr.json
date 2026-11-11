@@ -1911,7 +1911,10 @@
     "virtualdjLibrary": "VirtualDJ",
     "virtualdjLibraryDir": "Dossier VirtualDJ",
     "virtualdjLibraryDirEmpty": "Aucun dossier choisi",
-    "virtualdjLibraryDirHint": "Le dossier où VirtualDJ garde database.xml et MyLists. Surco y enregistre tes cues et, pour l’instant, ne touche pas à tes listes.",
+    "virtualdjLibraryDirHint": "Le dossier où VirtualDJ garde database.xml et MyLists. Surco y enregistre tes cues et tes listes.",
+    "syncVirtualdj": "Bibliothèque VirtualDJ",
+    "syncVirtualdjHint": "Surco écrit dans VirtualDJ quand tu le fermes. Mettre à jour reprend les changements de tags de la vérification, et Ajouter y met en plus ce que tu convertis",
+    "syncVirtualdjIdle": "Surco ne trouve aucune bibliothèque VirtualDJ",
     "syncSerato": "Bibliothèque Serato",
     "syncSeratoHint": "Surco écrit dans Serato quand tu le fermes. Mettre à jour reprend les changements de tags de la vérification, et Ajouter y met en plus ce que tu convertis",
     "syncSeratoIdle": "Surco ne trouve aucune bibliothèque Serato",
@@ -2192,7 +2195,7 @@
       "serato": "Serato",
       "seratoBody": "Garder la bibliothèque à jour à la conversion et y ajouter les nouveaux morceaux.",
       "virtualdj": "VirtualDJ",
-      "virtualdjBody": "Afficher ses listes dans Surco. Surco enregistre tes cues dans VirtualDJ et, pour l’instant, ne touche pas à ses listes."
+      "virtualdjBody": "Garder la bibliothèque à jour à la conversion et y ajouter les nouveaux morceaux."
     },
     "djLibraryNone": "Aucun, je tague seulement des fichiers",
     "destinationKeepsCollection": "Les morceaux déjà dans ton logiciel DJ ou dans Apple Music sont mis à jour là où ils sont, et gardent ainsi leur place dans ta collection.",
@@ -3383,6 +3386,10 @@
     "writeFailed": "Impossible d’enregistrer les changements dans VirtualDJ. Les fichiers sont restés tels quels",
     "writeUnknown": "Les changements n’ont pu être ni enregistrés ni annulés, la bibliothèque a donc pu changer. Avant d’ouvrir VirtualDJ, restaure database.xml depuis la copie la plus récente dans le dossier virtualdj-backups des données de Surco",
     "discardConfirm": "Abandonner ce qui attend ? VirtualDJ reste comme il est",
+    "part": {
+      "collection": "ajout à la bibliothèque",
+      "noPlaylists": "hors de ses listes"
+    },
     "pillTracksUnplugged_one": "{{count}} morceau attend que Surco trouve la bibliothèque VirtualDJ",
     "pillTracksUnplugged_other": "{{count}} morceaux attendent que Surco trouve la bibliothèque VirtualDJ",
     "pillChangesUnplugged_one": "{{count}} changement attend que Surco trouve la bibliothèque VirtualDJ",
@@ -3395,7 +3402,11 @@
       "cuesChanged": "Les cues de {{track}} ont changé dans VirtualDJ. Marque-les à nouveau",
       "callsDropped_one": "{{count}} CALL de {{track}} n’a pas été enregistré ({{times}}). VirtualDJ ne garde que les hot cues",
       "callsDropped_other": "{{count}} CALL de {{track}} n’ont pas été enregistrés ({{times}}). VirtualDJ ne garde que les hot cues",
-      "notInLibrary": "{{track}} n’est plus dans VirtualDJ. Ses cues n’ont pas été enregistrés"
+      "notInLibrary": "{{track}} n’est plus dans VirtualDJ. Ses cues n’ont pas été enregistrés",
+      "notAdded": "{{track}} n’a pas été ajouté à VirtualDJ",
+      "playlistChanged": "{{track}} n’a pas été modifié dans {{playlist}}. Il a changé dans VirtualDJ",
+      "playlistGone": "{{playlist}} n’est plus dans VirtualDJ. {{track}} n’a pas été ajouté",
+      "sourceInVirtualdj": "{{track}} reste dans VirtualDJ avec le fichier d’origine et ne va pas dans la liste « {{playlist}} »"
     }
   },
   "cueWave": {

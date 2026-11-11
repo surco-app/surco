@@ -70,19 +70,21 @@ describe('writableInOrder', () => {
   it('leaves Serato out of the programs Surco writes to, so no write path can reach a Serato track', () => {
     expect(WRITABLE_PROGRAMS).not.toContain('serato')
   })
-  it('leaves VirtualDJ out of the programs Surco writes to and of USB until it can write its lists', () => {
+  it('leaves VirtualDJ out of the programs Surco writes to and of USB, while it adds to and syncs tags with it', () => {
     expect(PROGRAM_CAN.virtualdj).toEqual({
       write: false,
       usb: false,
-      reach: false,
+      reach: true,
       windows: false,
     })
     expect(WRITABLE_PROGRAMS).not.toContain('virtualdj')
     expect(USB_PROGRAMS).not.toContain('virtualdj')
   })
-  it('lets Surco add to and sync tags with Serato and the programs it writes to, but not VirtualDJ yet', () => {
-    expect([...REACH_PROGRAMS]).toEqual(['rekordbox', 'traktor', 'engine', 'serato'])
-    expectTypeOf<ReachProgram>().toEqualTypeOf<'rekordbox' | 'traktor' | 'engine' | 'serato'>()
+  it('lets Surco add to and sync tags with every program, VirtualDJ included', () => {
+    expect([...REACH_PROGRAMS]).toEqual(['rekordbox', 'traktor', 'engine', 'serato', 'virtualdj'])
+    expectTypeOf<ReachProgram>().toEqualTypeOf<
+      'rekordbox' | 'traktor' | 'engine' | 'serato' | 'virtualdj'
+    >()
   })
 })
 

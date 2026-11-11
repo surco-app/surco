@@ -1911,7 +1911,10 @@
     "virtualdjLibrary": "VirtualDJ",
     "virtualdjLibraryDir": "VirtualDJ folder",
     "virtualdjLibraryDirEmpty": "No folder chosen",
-    "virtualdjLibraryDirHint": "The folder where VirtualDJ keeps database.xml and MyLists. Surco saves your cues there and, for now, leaves your lists alone.",
+    "virtualdjLibraryDirHint": "The folder where VirtualDJ keeps database.xml and MyLists. Surco saves your cues and your lists there.",
+    "syncVirtualdj": "VirtualDJ library",
+    "syncVirtualdjHint": "Surco writes to VirtualDJ when you close it. Update carries the tag changes from the review, and Add also puts in what you convert",
+    "syncVirtualdjIdle": "Surco cannot find a VirtualDJ library",
     "syncSerato": "Serato library",
     "syncSeratoHint": "Surco writes to Serato when you close it. Update carries the tag changes from the review, and Add also puts in what you convert",
     "syncSeratoIdle": "Surco cannot find a Serato library",
@@ -2192,7 +2195,7 @@
       "serato": "Serato",
       "seratoBody": "Keep the library in step when converting and add new tracks to it.",
       "virtualdj": "VirtualDJ",
-      "virtualdjBody": "Show its lists in Surco. Surco saves your cues in VirtualDJ and, for now, leaves its lists alone."
+      "virtualdjBody": "Keep the library in step when converting and add new tracks to it."
     },
     "djLibraryNone": "None, I only tag files",
     "destinationKeepsCollection": "Tracks already in your DJ software or in Apple Music are updated where they are, so they keep their place in your collection.",
@@ -3383,6 +3386,10 @@
     "writeFailed": "Couldn't save the changes to VirtualDJ. The files are as they were",
     "writeUnknown": "Couldn't save the changes or undo them, so the library may have changed. Before opening VirtualDJ, restore database.xml from the most recent copy in the virtualdj-backups folder in Surco's data",
     "discardConfirm": "Discard what is waiting? VirtualDJ stays as it is",
+    "part": {
+      "collection": "added to the library",
+      "noPlaylists": "out of its lists"
+    },
     "pillTracksUnplugged_one": "{{count}} track waits until Surco finds the VirtualDJ library",
     "pillTracksUnplugged_other": "{{count}} tracks wait until Surco finds the VirtualDJ library",
     "pillChangesUnplugged_one": "{{count}} change waits until Surco finds the VirtualDJ library",
@@ -3395,7 +3402,11 @@
       "cuesChanged": "The cues of {{track}} changed in VirtualDJ. Mark them again",
       "callsDropped_one": "{{count}} CALL of {{track}} was not saved ({{times}}). VirtualDJ only keeps hot cues",
       "callsDropped_other": "{{count}} CALLs of {{track}} were not saved ({{times}}). VirtualDJ only keeps hot cues",
-      "notInLibrary": "{{track}} is no longer in VirtualDJ. Its cues were not saved"
+      "notInLibrary": "{{track}} is no longer in VirtualDJ. Its cues were not saved",
+      "notAdded": "{{track}} was not added to VirtualDJ",
+      "playlistChanged": "{{track}} was not changed in {{playlist}}. It changed in VirtualDJ",
+      "playlistGone": "{{playlist}} is no longer in VirtualDJ. {{track}} was not added",
+      "sourceInVirtualdj": "{{track}} stays in VirtualDJ with the original file and does not go in the list “{{playlist}}”"
     }
   },
   "cueWave": {

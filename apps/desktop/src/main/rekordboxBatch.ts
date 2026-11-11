@@ -23,6 +23,7 @@ export interface RekordboxRepoint {
   traktorPlaylists?: LibraryPlaylistChoice
   enginePlaylists?: LibraryPlaylistChoice
   seratoPlaylists?: LibraryPlaylistChoice
+  virtualdjPlaylists?: LibraryPlaylistChoice
 }
 
 import type { ReachProgram } from '../shared/djProgram'
@@ -173,6 +174,7 @@ export const REPOINT_PLAYLISTS: Record<
   traktor: (r) => r.traktorPlaylists,
   engine: (r) => r.enginePlaylists,
   serato: (r) => r.seratoPlaylists,
+  virtualdj: (r) => r.virtualdjPlaylists,
 }
 
 const ATTACH_PLAYLISTS: Record<
@@ -195,6 +197,10 @@ const ATTACH_PLAYLISTS: Record<
   serato: (repoint, { wanted, base }) => ({
     ...repoint,
     seratoPlaylists: { wanted, base: base ?? [] },
+  }),
+  virtualdj: (repoint, { wanted, base }) => ({
+    ...repoint,
+    virtualdjPlaylists: { wanted, base: base ?? [] },
   }),
 }
 

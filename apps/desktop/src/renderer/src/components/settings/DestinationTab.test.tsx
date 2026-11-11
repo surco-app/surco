@@ -1083,7 +1083,41 @@ describe('DestinationTab VirtualDJ', () => {
     expect(screen.getByTestId('settings-virtualdj-dir')).toHaveTextContent(
       '/Users/dj/Library/Application Support/VirtualDJ',
     )
-    expect(screen.queryByTestId('settings-reach-virtualdj')).toBeNull()
+  })
+
+  it('turns VirtualDJ to add from its panel, so what Surco converts goes into it', async () => {
+    const before = window.api
+    ;(window as unknown as { api: Partial<Api> }).api = {
+      platform: 'darwin',
+      dj: djReads({ virtualdj: { available: async () => true } }),
+    }
+    try {
+      const patch = renderPrograms()
+      fireEvent.click(screen.getByTestId('settings-programs-virtualdj'))
+      await waitFor(() => expect(screen.getByTestId('settings-reach-virtualdj')).toBeEnabled())
+      fireEvent.click(screen.getByTestId('settings-reach-virtualdj-add'))
+      expect(patch).toHaveBeenCalledWith('syncVirtualdj', true)
+      expect(patch).toHaveBeenCalledWith('addToVirtualdj', true)
+    } finally {
+      ;(window as unknown as { api: Api }).api = before
+    }
+  })
+
+  it('disables the VirtualDJ row without a VirtualDJ library, unless it is on and needs switching off', async () => {
+    const before = window.api
+    ;(window as unknown as { api: Partial<Api> }).api = {
+      platform: 'darwin',
+      dj: djReads({ virtualdj: { available: async () => false } }),
+    }
+    try {
+      renderPrograms()
+      expect(await screen.findByTestId('settings-reach-virtualdj')).toBeDisabled()
+      cleanup()
+      renderPrograms({ syncVirtualdj: true })
+      expect(screen.getByTestId('settings-reach-virtualdj')).toBeEnabled()
+    } finally {
+      ;(window as unknown as { api: Api }).api = before
+    }
   })
 
   it('has no VirtualDJ panel on Windows, where Surco does not offer VirtualDJ yet', () => {

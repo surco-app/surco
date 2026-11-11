@@ -17,9 +17,17 @@ import type {
   PlaylistTrackRef,
   RekordboxEditRefusal,
   RekordboxPlaylistEdit,
+  RekordboxQueueNotice,
 } from '../shared/types'
 import { escapeXml } from '../shared/xml'
-import type { BatchResult, CrateStamp, EditOp, OpOutcome, QueueOp } from './rekordboxQueueOps'
+import type {
+  BatchResult,
+  CrateStamp,
+  EditOp,
+  OpOutcome,
+  QueueOp,
+  TrackOp,
+} from './rekordboxQueueOps'
 import { type FileStamp, fileStampOf } from './seratoLibraryWrite'
 import { isVirtualdjHome, type VirtualdjRoot } from './virtualdjLibrary'
 import type { VirtualdjCommit, VirtualdjCommitDeps } from './virtualdjLibraryWrite'
@@ -489,6 +497,73 @@ function applyListEdit(d: ListsDraft, op: EditOp): OpOutcome {
   return done({ ...tree, ...(filled.report && { report: filled.report }) })
 }
 
+function listFiles(d: ListsDraft): string[] {
+  return [...d.files.keys()].filter(
+    (file) => file.endsWith(EXT) && !d.dirs.has(`${file.slice(0, -EXT.length)}${SUB}`),
+  )
+}
+
+function pickedList(d: ListsDraft, target: TrackOp['wanted'][number]): string | null {
+  if (target.id) {
+    const node = nodeOf(d, target.id)
+    return node && !d.dirs.has(node.sub) ? node.file : null
+  }
+  const name = target.name.trim()
+  if (!validVirtualdjListName(name)) return null
+  const there = namesAt(d, d.root).find((n) => fold(n) === fold(name))
+  const file = join(d.root, `${there ?? name}${EXT}`)
+  if (there) return d.dirs.has(join(d.root, `${there}${SUB}`)) ? null : file
+  const order = orderAt(d, d.root)
+  put(d, file, NEW_LIST)
+  setOrder(d, d.root, [...order, name])
+  return file
+}
+
+function applyListTrack(d: ListsDraft, op: TrackOp): OpOutcome {
+  const notices: RekordboxQueueNotice[] = []
+  const key = nfc(op.path)
+  const holds = (xml: string): boolean => lineSpans(xml).some((s) => nfc(s.path) === key)
+  const changed = (file: string) =>
+    notices.push({
+      code: 'playlist-changed',
+      track: op.label,
+      playlist: basename(file).slice(0, -EXT.length),
+    })
+  const wanted = new Set<string>()
+  for (const target of op.wanted) {
+    const file = pickedList(d, target)
+    const xml = file && textOf(d, file)
+    if (!file || xml === null) {
+      notices.push({ code: 'playlist-gone', track: op.label, playlist: target.name })
+      continue
+    }
+    wanted.add(file)
+    if (holds(xml)) continue
+    const size = sizeOf(op.path)
+    if (size === null) {
+      notices.push({ code: 'file-missing', track: op.label })
+      continue
+    }
+    const next = rewrittenList(xml, [...lineSpans(xml), { path: op.path, size }])
+    if (next === null) changed(file)
+    else put(d, file, next)
+  }
+  const known = new Set(op.known.map((id) => listFileOf(d.root, id)))
+  for (const file of listFiles(d)) {
+    const xml = textOf(d, file)
+    if (wanted.has(file) || xml === null || !holds(xml)) continue
+    const next = known.has(file)
+      ? rewrittenList(
+          xml,
+          lineSpans(xml).filter((s) => nfc(s.path) !== key),
+        )
+      : null
+    if (next === null) changed(file)
+    else put(d, file, next)
+  }
+  return { id: op.id, applied: true, notices }
+}
+
 type Step = { run: () => void; undo: () => void; files: string[] }
 
 async function commitLists(d: ListsDraft, deps: VirtualdjCommitDeps): Promise<VirtualdjCommit> {
@@ -603,7 +678,9 @@ export async function applyVirtualdjListOps(
           ? { id: op.id, applied: false, reason: 'cancelled', notices: [] }
           : op.kind === 'edit'
             ? applyListEdit(d, op)
-            : { id: op.id, applied: false, reason: 'write-failed', notices: [] },
+            : op.kind === 'track'
+              ? applyListTrack(d, op)
+              : { id: op.id, applied: false, reason: 'write-failed', notices: [] },
     )
     const written = await commitLists(d, deps)
     if (written === 'changed') continue

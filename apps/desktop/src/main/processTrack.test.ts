@@ -301,6 +301,20 @@ describe('runProcessTrack — plain conversion', () => {
     })
   })
 
+  it('attaches the VirtualDJ lists the conversion chose, so the VirtualDJ queue can put the new file in them', async () => {
+    const attachPlaylists = vi.fn()
+    const result = await runProcessTrack(
+      job({
+        playlists: { virtualdj: { targets: [{ id: 'Sets/Friday', name: 'Friday' }], base: [] } },
+      }),
+      makeDeps({ attachPlaylists }),
+    )
+    expect(attachPlaylists).toHaveBeenCalledWith(result.outputPath, 'virtualdj', {
+      wanted: [{ id: 'Sets/Friday', name: 'Friday' }],
+      base: [],
+    })
+  })
+
   it('attaches nothing when the field was never touched', async () => {
     const attachPlaylists = vi.fn()
     await runProcessTrack(job(), makeDeps({ attachPlaylists }))

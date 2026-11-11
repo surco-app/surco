@@ -985,7 +985,7 @@ describe('OnboardingWizard DJ software', () => {
     expect(onFinish.mock.calls[0][0]).toMatchObject({ syncSerato: true, addToSerato: true })
   })
 
-  it('never turns on writing to VirtualDJ from the wizard, since Surco only reads it for now', async () => {
+  it('turns VirtualDJ on for update and add when the DJ ticks it, as for the other programs', async () => {
     detected.virtualdj = async () => true
     const onFinish = vi.fn()
     render(<OnboardingWizard settings={settings} onFinish={onFinish} />)
@@ -995,9 +995,7 @@ describe('OnboardingWizard DJ software', () => {
     goTo('programs')
     fireEvent.click(screen.getByTestId('onboarding-sync-virtualdj'))
     finishWizard()
-    const patch = onFinish.mock.calls[0][0] as Partial<Settings>
-    expect(patch.syncVirtualdj ?? false).toBe(false)
-    expect(patch.addToVirtualdj ?? false).toBe(false)
+    expect(onFinish.mock.calls[0][0]).toMatchObject({ syncVirtualdj: true, addToVirtualdj: true })
   })
 
   it('unticks VirtualDJ with None too', async () => {

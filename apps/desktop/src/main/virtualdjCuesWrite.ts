@@ -10,14 +10,11 @@ import { parseVirtualdjDatabase, type VirtualdjPoi, type VirtualdjSong } from '.
 import { type VirtualdjCueWrite, withVirtualdjCues } from './virtualdjDatabaseWrite'
 import { type VirtualdjRoot, virtualdjPathOf } from './virtualdjLibrary'
 import {
-  commitVirtualdjDraft,
-  createVirtualdjDraft,
+  applyVirtualdjDraftOps,
   type VirtualdjCommitDeps,
   type VirtualdjDraft,
   virtualdjDatabaseOf,
 } from './virtualdjLibraryWrite'
-
-const ATTEMPTS = 3
 
 function colorOf(wanted: WantedCue, before: VirtualdjPoi | undefined): number | undefined {
   if (wanted.color === null) return undefined
@@ -38,7 +35,7 @@ function cueOf(wanted: WantedCue, song: VirtualdjSong): VirtualdjCueWrite {
   }
 }
 
-function songIn(
+export function songIn(
   draft: VirtualdjDraft,
   roots: VirtualdjRoot[],
   path: string,
@@ -57,7 +54,11 @@ function songIn(
   return null
 }
 
-function applyVirtualdjOp(draft: VirtualdjDraft, op: QueueOp, roots: VirtualdjRoot[]): OpOutcome {
+export function applyVirtualdjCueOp(
+  draft: VirtualdjDraft,
+  op: QueueOp,
+  roots: VirtualdjRoot[],
+): OpOutcome {
   const refused = (
     code: 'cues-changed' | 'cues-invalid' | 'cues-write-failed' | 'not-in-library',
   ): OpOutcome => ({
@@ -86,28 +87,12 @@ function applyVirtualdjOp(draft: VirtualdjDraft, op: QueueOp, roots: VirtualdjRo
   return { id: op.id, applied: true, notices }
 }
 
-export async function applyVirtualdjCuesBatch(
+export function applyVirtualdjCuesBatch(
   ops: QueueOp[],
   deps: VirtualdjCommitDeps & {
     ensureClosed: () => Promise<boolean>
     stillQueued?: (id: string) => boolean
   },
 ): Promise<BatchResult> {
-  for (let attempt = 0; attempt < ATTEMPTS; attempt++) {
-    if (!(await deps.ensureClosed())) return { ok: false, reason: 'cancelled' }
-    const draft = createVirtualdjDraft()
-    const roots = deps.roots()
-    const outcomes = ops.map(
-      (op): OpOutcome =>
-        deps.stillQueued && !deps.stillQueued(op.id)
-          ? { id: op.id, applied: false, reason: 'cancelled', notices: [] }
-          : applyVirtualdjOp(draft, op, roots),
-    )
-    const written = await commitVirtualdjDraft(draft, deps)
-    if (written === 'changed') continue
-    if (written !== 'written' && written !== 'nothing') return { ok: false, reason: written }
-    return { ok: true, wrote: written === 'written', outcomes }
-  }
-  log.info('VirtualDJ database kept changing while Surco wrote, nothing written')
-  return { ok: false, reason: 'cancelled' }
+  return applyVirtualdjDraftOps(ops, deps, applyVirtualdjCueOp)
 }

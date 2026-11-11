@@ -10,6 +10,7 @@ import {
 } from 'node:fs'
 import { basename, dirname, join, relative, resolve } from 'node:path'
 import log from 'electron-log/main'
+import type { BatchResult, OpOutcome, QueueOp } from './rekordboxQueueOps'
 import { backupFolderName, type FileStamp, fileStampOf } from './seratoLibraryWrite'
 import type { VirtualdjRoot } from './virtualdjLibrary'
 
@@ -158,4 +159,33 @@ export async function commitVirtualdjDraft(
     log.warn('VirtualDJ database write failed', e)
     return undo() ? 'write-failed' : 'write-unknown'
   }
+}
+
+const ATTEMPTS = 3
+
+export async function applyVirtualdjDraftOps(
+  ops: QueueOp[],
+  deps: VirtualdjCommitDeps & {
+    ensureClosed: () => Promise<boolean>
+    stillQueued?: (id: string) => boolean
+  },
+  apply: (draft: VirtualdjDraft, op: QueueOp, roots: VirtualdjRoot[]) => OpOutcome,
+): Promise<BatchResult> {
+  for (let attempt = 0; attempt < ATTEMPTS; attempt++) {
+    if (!(await deps.ensureClosed())) return { ok: false, reason: 'cancelled' }
+    const draft = createVirtualdjDraft()
+    const roots = deps.roots()
+    const outcomes = ops.map(
+      (op): OpOutcome =>
+        deps.stillQueued && !deps.stillQueued(op.id)
+          ? { id: op.id, applied: false, reason: 'cancelled', notices: [] }
+          : apply(draft, op, roots),
+    )
+    const written = await commitVirtualdjDraft(draft, deps)
+    if (written === 'changed') continue
+    if (written !== 'written' && written !== 'nothing') return { ok: false, reason: written }
+    return { ok: true, wrote: written === 'written', outcomes }
+  }
+  log.info('VirtualDJ database kept changing while Surco wrote, nothing written')
+  return { ok: false, reason: 'cancelled' }
 }

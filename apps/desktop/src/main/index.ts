@@ -1728,6 +1728,11 @@ function registerIpc(): void {
               applyQuietly: () => programQueues.serato.applyQuietly(later),
               roots: seratoRoots,
             },
+            virtualdj: {
+              enqueue: virtualdjCueQueue.enqueue,
+              applyQuietly: () => programQueues.virtualdj.applyQuietly(later),
+              roots: virtualdjRoots,
+            },
           },
         )
       } finally {

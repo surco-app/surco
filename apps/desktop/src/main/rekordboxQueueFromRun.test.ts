@@ -228,6 +228,22 @@ describe('libraryTrackOps', () => {
     expect([serato.wanted, serato.known]).toEqual([[{ id: 'A', name: 'A' }], ['B']])
   })
 
+  it('reads the VirtualDJ lists chosen for a conversion apart from the other libraries', () => {
+    const repoints: RekordboxRepoint[] = [
+      {
+        from: '/m/a.wav',
+        to: '/m/a.wav',
+        seratoPlaylists: { wanted: [{ id: 'A', name: 'A' }], base: ['B'] },
+        virtualdjPlaylists: { wanted: [{ id: 'Sets/Friday', name: 'Friday' }], base: ['Old'] },
+      },
+    ]
+    const [virtualdj] = libraryTrackOps(repoints, 'virtualdj', () => 'id4')
+    expect([virtualdj.wanted, virtualdj.known]).toEqual([
+      [{ id: 'Sets/Friday', name: 'Friday' }],
+      ['Old'],
+    ])
+  })
+
   it('turns the choice made for one library into a track op that finds the file by either path', () => {
     const repoints: RekordboxRepoint[] = [
       {

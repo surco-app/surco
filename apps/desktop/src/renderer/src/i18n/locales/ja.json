@@ -1911,7 +1911,10 @@
     "virtualdjLibrary": "VirtualDJ",
     "virtualdjLibraryDir": "VirtualDJ フォルダー",
     "virtualdjLibraryDirEmpty": "フォルダー未選択",
-    "virtualdjLibraryDirHint": "VirtualDJ が database.xml と MyLists を保存しているフォルダーです。Surco はここにキューを保存します。リストは今のところ変更しません。",
+    "virtualdjLibraryDirHint": "VirtualDJ が database.xml と MyLists を保存しているフォルダーです。Surco はここにキューとリストを保存します。",
+    "syncVirtualdj": "VirtualDJ ライブラリ",
+    "syncVirtualdjHint": "VirtualDJ を閉じたときに Surco が書き込みます。更新はレビューのタグ変更を反映し、追加は変換したトラックも加えます",
+    "syncVirtualdjIdle": "Surco は VirtualDJ ライブラリを見つけられません",
     "syncSerato": "Serato ライブラリ",
     "syncSeratoHint": "Serato を閉じたときに Surco が書き込みます。更新はレビューのタグ変更を反映し、追加は変換したトラックも加えます",
     "syncSeratoIdle": "Surco は Serato ライブラリを見つけられません",
@@ -2192,7 +2195,7 @@
       "serato": "Serato",
       "seratoBody": "変換時にライブラリを同期し、新しいトラックも追加します。",
       "virtualdj": "VirtualDJ",
-      "virtualdjBody": "リストを Surco に表示します。Surco は VirtualDJ にキューを保存します。リストは今のところ変更しません。"
+      "virtualdjBody": "変換時にライブラリを同期し、新しいトラックも追加します。"
     },
     "djLibraryNone": "使っていない（ファイルのタグ付けだけ）",
     "destinationKeepsCollection": "DJソフトやApple Musicにすでにあるトラックはその場で更新され、コレクション内の位置が保たれます。",
@@ -3383,6 +3386,10 @@
     "writeFailed": "VirtualDJ に変更を保存できませんでした。ファイルは元のままです",
     "writeUnknown": "変更を保存も取り消しもできなかったため、ライブラリが変更されている可能性があります。VirtualDJ を開く前に、Surco のデータ内の virtualdj-backups フォルダーにある最新のコピーから database.xml を復元してください",
     "discardConfirm": "待機中の内容を破棄しますか？VirtualDJ は今の状態のままです",
+    "part": {
+      "collection": "ライブラリに追加",
+      "noPlaylists": "リストから外す"
+    },
     "pillTracksUnplugged_one": "{{count}} トラックが Surco による VirtualDJ ライブラリの検出を待っています",
     "pillTracksUnplugged_other": "{{count}} トラックが Surco による VirtualDJ ライブラリの検出を待っています",
     "pillChangesUnplugged_one": "{{count}} 件の変更が Surco による VirtualDJ ライブラリの検出を待っています",
@@ -3395,7 +3402,11 @@
       "cuesChanged": "{{track}} のキューが VirtualDJ で変更されました。もう一度マークしてください",
       "callsDropped_one": "{{track}} の CALL {{count}} 個は保存されませんでした（{{times}}）。VirtualDJ はホットキューしか保持しません",
       "callsDropped_other": "{{track}} の CALL {{count}} 個は保存されませんでした（{{times}}）。VirtualDJ はホットキューしか保持しません",
-      "notInLibrary": "{{track}} はもう VirtualDJ にありません。キューは保存されませんでした"
+      "notInLibrary": "{{track}} はもう VirtualDJ にありません。キューは保存されませんでした",
+      "notAdded": "{{track}} は VirtualDJ に追加されませんでした",
+      "playlistChanged": "{{playlist}} の {{track}} は変更されませんでした。VirtualDJ で変更されています",
+      "playlistGone": "{{playlist}} はもう VirtualDJ にありません。{{track}} は追加されませんでした",
+      "sourceInVirtualdj": "{{track}} は元のファイルのまま VirtualDJ に残り、リスト「{{playlist}}」には入りません"
     }
   },
   "cueWave": {

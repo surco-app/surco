@@ -1177,15 +1177,16 @@ export const Editor = memo(function Editor({
   const traktorPlaylists = usePlaylistsSpec('traktor', playlistsOf('traktor'))
   const enginePlaylists = usePlaylistsSpec('engine', playlistsOf('engine'))
   const seratoPlaylists = usePlaylistsSpec('serato', playlistsOf('serato'))
+  const virtualdjPlaylists = usePlaylistsSpec('virtualdj', playlistsOf('virtualdj'))
   const playlistsSpec = useMemo(
     (): Record<PlaylistLibrary, PlaylistsSpec | undefined> => ({
       rekordbox: rekordboxPlaylists,
       traktor: traktorPlaylists,
       engine: enginePlaylists,
       serato: seratoPlaylists,
-      virtualdj: undefined,
+      virtualdj: virtualdjPlaylists,
     }),
-    [rekordboxPlaylists, traktorPlaylists, enginePlaylists, seratoPlaylists],
+    [rekordboxPlaylists, traktorPlaylists, enginePlaylists, seratoPlaylists, virtualdjPlaylists],
   )
 
   // Built once per real input change. setField and tr are identity-stable, so a

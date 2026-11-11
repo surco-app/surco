@@ -528,6 +528,7 @@ export const JOB_PLAYLISTS: Record<ReachProgram, (job: ProcessJob) => PlaylistCh
     traktor: jobChoice('traktor', true),
     engine: jobChoice('engine', true),
     serato: jobChoice('serato', true),
+    virtualdj: jobChoice('virtualdj', true),
   }
 
 export async function runProcessTrack(

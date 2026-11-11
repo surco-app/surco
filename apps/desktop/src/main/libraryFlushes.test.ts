@@ -25,6 +25,8 @@ const SETTINGS = vi.hoisted(() => ({
   addToEngineDj: false,
   addToSerato: false,
   syncSerato: false,
+  addToVirtualdj: false,
+  syncVirtualdj: false,
 }))
 const REPOINTS = vi.hoisted(() => [
   { from: '/m/a.mp3', to: '/m/a.flac', playlists: [{ name: 'House' }] },
@@ -117,6 +119,7 @@ import { beginNmlBatch, endNmlBatch, recordNmlPatch } from './nmlBatch'
 import { concat, frame, track, utf16be } from './seratoDatabaseFixture'
 import type { SeratoLibraryRoot } from './seratoLibrary'
 import { traktorPatchKey } from './verifyRegistry'
+import type { VirtualdjRoot } from './virtualdjLibrary'
 
 type Closers = {
   ensureTraktorClosed: () => Promise<boolean>
@@ -910,6 +913,86 @@ describe('flushConversionBatch with a converted track Serato does not have', () 
     await withRun(true, async () => {
       await flush(serato)
       expect(serato.enqueue).not.toHaveBeenCalled()
+    })
+  })
+})
+
+describe('flushConversionBatch with a converted track VirtualDJ does not have', () => {
+  const SONG = (path: string) =>
+    ` <Song FilePath="${path}" FileSize="3" Flag="268435456">\r\n </Song>\r\n`
+  function virtualdjHome(paths: string[]): VirtualdjRoot[] {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-flush-virtualdj-'))
+    writeFileSync(
+      join(dir, 'database.xml'),
+      `<?xml version="1.0" encoding="UTF-8"?>\r\n<VirtualDJ_Database Version="2026">\r\n${paths.map(SONG).join('')}</VirtualDJ_Database>\r\n`,
+    )
+    return [{ dir, root: '/' }]
+  }
+  async function withRun(addToVirtualdj: boolean, run: () => Promise<void>) {
+    Object.assign(REPOINTS[0], { meta: { artist: 'Jaydee', title: 'Plastic Dreams' } })
+    Object.assign(SETTINGS, { addToVirtualdj })
+    try {
+      await run()
+    } finally {
+      delete (REPOINTS[0] as Record<string, unknown>).meta
+      Object.assign(SETTINGS, { addToVirtualdj: false })
+    }
+  }
+  const flush = (virtualdj: {
+    enqueue: () => void
+    applyQuietly: () => void
+    roots: () => VirtualdjRoot[]
+  }) =>
+    flushConversionBatch(host(), sessions, {
+      rekordbox: { enqueue: vi.fn(), applyQuietly: vi.fn() },
+      virtualdj,
+    })
+
+  it('queues VirtualDJ adds only with addToVirtualdj on', async () => {
+    const roots = virtualdjHome([])
+    const virtualdj = { enqueue: vi.fn(), applyQuietly: vi.fn(), roots: () => roots }
+    await withRun(true, async () => {
+      await flush(virtualdj)
+      expect(virtualdj.enqueue).toHaveBeenCalledWith([
+        expect.objectContaining({ kind: 'track', add: true, path: '/m/a.flac' }),
+      ])
+      expect(virtualdj.applyQuietly).toHaveBeenCalled()
+    })
+    virtualdj.enqueue.mockClear()
+    await withRun(false, async () => {
+      await flush(virtualdj)
+      expect(virtualdj.enqueue).not.toHaveBeenCalled()
+    })
+  })
+
+  it('does not queue a file the VirtualDJ database already holds', async () => {
+    const roots = virtualdjHome(['/m/a.flac'])
+    const virtualdj = { enqueue: vi.fn(), applyQuietly: vi.fn(), roots: () => roots }
+    await withRun(true, async () => {
+      await flush(virtualdj)
+      expect(virtualdj.enqueue).not.toHaveBeenCalled()
+    })
+  })
+
+  it('does not queue the output of a conversion whose source VirtualDJ holds, so VirtualDJ never lists the track twice', async () => {
+    const roots = virtualdjHome(['/m/a.mp3'])
+    const virtualdj = { enqueue: vi.fn(), applyQuietly: vi.fn(), roots: () => roots }
+    await withRun(true, async () => {
+      await flush(virtualdj)
+      expect(virtualdj.enqueue).not.toHaveBeenCalled()
+    })
+  })
+
+  it('leaves the outcome of the other libraries alone when the VirtualDJ database cannot be read', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-flush-virtualdj-'))
+    mkdirSync(join(dir, 'database.xml'))
+    const virtualdj = { enqueue: vi.fn(), applyQuietly: vi.fn(), roots: () => [{ dir, root: '/' }] }
+    await withRun(true, async () => {
+      const without = await flushConversionBatch(host(), sessions, {
+        rekordbox: { enqueue: vi.fn(), applyQuietly: vi.fn() },
+      })
+      await expect(flush(virtualdj)).resolves.toEqual(without)
+      expect(virtualdj.enqueue).not.toHaveBeenCalled()
     })
   })
 })
