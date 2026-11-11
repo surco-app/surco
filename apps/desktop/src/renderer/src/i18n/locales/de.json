@@ -168,6 +168,7 @@
     "paletteLabel": "Befehle",
     "settings": "Einstellungen",
     "help": "Hilfe & FAQ",
+    "feedback": "Feedback senden",
     "stats": "Statistiken",
     "activity": "Aktivität",
     "selectAll": "Alles auswählen",
@@ -2201,6 +2202,8 @@
   },
   "help": {
     "title": "Hilfe & FAQ",
+    "notListed": "Deine Frage ist nicht dabei?",
+    "writeMe": "Schreib mir",
     "items": {
       "token": {
         "q": "Brauche ich einen Discogs-Token?",
@@ -2257,6 +2260,33 @@
     "pitch": "Surco ist gratis, ohne Werbung und ohne Tracking. Wenn es dir weiter Zeit spart, hilft eine kleine Spende, dass das so bleibt.",
     "dontShowAgain": "Nicht mehr anzeigen",
     "later": "Vielleicht später"
+  },
+  "feedback": {
+    "title": "Feedback senden",
+    "lede": "Erzähl mir, was nicht klappt, was dir fehlt oder was dir gefällt. Ich lese alles selbst.",
+    "titleError": "Fehler melden",
+    "ledeError": "Der Fehler ist schon dabei. Wenn du magst, erzähl mir, was du gerade gemacht hast.",
+    "message": "Nachricht",
+    "optional": "(optional)",
+    "messagePlaceholder": "Was du gemacht hast und was du erwartet hast",
+    "email": "Deine E-Mail",
+    "emailHint": "(damit ich antworten kann)",
+    "attach": "Technischen Bericht anhängen",
+    "attachHint": "Surco-Version, System und die letzten Fehler aus dem Protokoll, ohne Ordner.",
+    "preview": "Ansehen, was gesendet wird",
+    "previewHide": "Ausblenden, was gesendet wird",
+    "github": "Lieber ein Issue auf GitHub öffnen",
+    "send": "Senden",
+    "sending": "Wird gesendet…",
+    "sentTitle": "Gesendet, danke",
+    "sentBody": "Ich antworte dir an {{email}}, sobald ich es mir angesehen habe.",
+    "close": "Schließen",
+    "failedTitle": "Senden fehlgeschlagen",
+    "failedBody": "Anscheinend gibt es keine Verbindung. Deine Nachricht ist noch da, du kannst es erneut versuchen oder sie mir selbst mailen.",
+    "copy": "Nachricht und Bericht kopieren",
+    "copied": "Kopiert",
+    "copyHint": "Kopiert deinen Text und den technischen Bericht zusammen, bereit zum Einfügen in eine E-Mail.",
+    "retry": "Erneut versuchen"
   },
   "whatsNew": {
     "title": "Neuigkeiten",

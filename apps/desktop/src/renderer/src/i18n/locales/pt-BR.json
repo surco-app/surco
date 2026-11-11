@@ -168,6 +168,7 @@
     "paletteLabel": "Comandos",
     "settings": "Ajustes",
     "help": "Ajuda e FAQ",
+    "feedback": "Enviar comentários",
     "stats": "Estatísticas",
     "activity": "Atividade",
     "selectAll": "Selecionar tudo",
@@ -2201,6 +2202,8 @@
   },
   "help": {
     "title": "Ajuda e FAQ",
+    "notListed": "Sua dúvida não está aqui?",
+    "writeMe": "Escreva para mim",
     "items": {
       "token": {
         "q": "Preciso de um token do Discogs?",
@@ -2257,6 +2260,33 @@
     "pitch": "O Surco é grátis e não tem anúncios nem rastreamento. Se ele continua economizando seu tempo, uma pequena doação ajuda a manter isso assim.",
     "dontShowAgain": "Não mostrar de novo",
     "later": "Talvez depois"
+  },
+  "feedback": {
+    "title": "Enviar comentários",
+    "lede": "Conte o que falha, o que falta ou do que você gosta. Eu mesmo leio tudo.",
+    "titleError": "Relatar um problema",
+    "ledeError": "O erro já vai incluído. Se puder, conte o que você estava fazendo.",
+    "message": "Mensagem",
+    "optional": "(opcional)",
+    "messagePlaceholder": "O que você estava fazendo e o que esperava que acontecesse",
+    "email": "Seu e-mail",
+    "emailHint": "(para eu poder responder)",
+    "attach": "Anexar relatório técnico",
+    "attachHint": "Versão do Surco, sistema e os últimos erros do registro, sem pastas.",
+    "preview": "Ver o que é enviado",
+    "previewHide": "Ocultar o que é enviado",
+    "github": "Prefiro abrir uma issue no GitHub",
+    "send": "Enviar",
+    "sending": "Enviando…",
+    "sentTitle": "Enviado, obrigado",
+    "sentBody": "Respondo para {{email}} assim que der uma olhada.",
+    "close": "Fechar",
+    "failedTitle": "Não foi possível enviar",
+    "failedBody": "Parece que não há conexão. Sua mensagem continua aqui, então você pode tentar de novo ou me mandar por e-mail.",
+    "copy": "Copiar mensagem e relatório",
+    "copied": "Copiado",
+    "copyHint": "Copia seu texto e o relatório técnico juntos, prontos para colar em um e-mail.",
+    "retry": "Tentar de novo"
   },
   "whatsNew": {
     "title": "Novidades",
