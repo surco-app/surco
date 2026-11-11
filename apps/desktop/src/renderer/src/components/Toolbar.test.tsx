@@ -51,6 +51,7 @@ function renderBar(over: Partial<Props> = {}): Props {
     activityRunning: false,
     onSettings: vi.fn(),
     onHelp: vi.fn(),
+    onFeedback: vi.fn(),
     ...over,
   }
   render(<Toolbar {...props} />)
@@ -527,6 +528,12 @@ describe('Toolbar', () => {
     expect(palette).toHaveTextContent('⌘K')
   })
 
+  // The chord already shows ⌘; a ⌘ glyph before the word said it twice in one button.
+  it('says ⌘ once on the palette button, in its chord', () => {
+    renderBar({ hintFor: (id) => (id === 'palette' ? '⌘K' : '') })
+    expect(screen.getByTestId('open-palette').querySelector('svg')).toBeNull()
+  })
+
   // It acts on the list, which doesn't exist until the crate has tracks.
   it('hides the convert button when the list is empty', () => {
     renderBar({ trackCount: 0 })
@@ -551,6 +558,12 @@ describe('Toolbar', () => {
     const props = renderBar()
     fireEvent.click(screen.getByTestId('open-help'))
     expect(props.onHelp).toHaveBeenCalledOnce()
+  })
+
+  it('opens the feedback dialog from the bar, so a DJ who never opens the menu can still write', () => {
+    const props = renderBar()
+    fireEvent.click(screen.getByTestId('open-feedback'))
+    expect(props.onFeedback).toHaveBeenCalledOnce()
   })
 
   // The backups icon counted every copy Surco keeps, so it climbed with each conversion

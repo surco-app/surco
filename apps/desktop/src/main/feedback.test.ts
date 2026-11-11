@@ -1,5 +1,12 @@
 import { describe, expect, it, vi } from 'vitest'
-import { buildIssueUrl, MAX_URL_LENGTH, openFeedbackReport } from './feedback'
+import {
+  buildIssueUrl,
+  buildReportText,
+  FEEDBACK_ENDPOINT,
+  MAX_URL_LENGTH,
+  openFeedbackReport,
+  sendFeedback,
+} from './feedback'
 
 const ctx = { version: '0.1.2', platform: 'win32', error: 'ffmpeg exited 1' }
 
@@ -98,5 +105,102 @@ describe('openFeedbackReport', () => {
     await expect(
       openFeedbackReport({ version: '0.1.2', platform: 'win32' }, openExternal, async () => []),
     ).resolves.toBeUndefined()
+  })
+})
+
+describe('buildReportText', () => {
+  it('shows version, OS, error, stack and log lines so the user sees exactly what travels', () => {
+    const text = buildReportText({
+      version: '1.32.1',
+      platform: 'win32',
+      error: 'ffmpeg exited 1',
+      stack: 'at convert (main.js:1)',
+      logLines: ['[error] audio:waveform failed'],
+    })
+    expect(text).toContain('Surco 1.32.1')
+    expect(text).toContain('Windows')
+    expect(text).toContain('ffmpeg exited 1')
+    expect(text).toContain('at convert (main.js:1)')
+    expect(text).toContain('[error] audio:waveform failed')
+  })
+
+  it('leaves out the sections a plain comment does not have', () => {
+    expect(buildReportText({ version: '1.32.1', platform: 'darwin', logLines: [] })).toBe(
+      'Surco 1.32.1 · macOS',
+    )
+  })
+})
+
+describe('sendFeedback', () => {
+  const ok = () => vi.fn(async () => new Response(null, { status: 204 }))
+  const form = { email: 'djotas@example.com', message: 'Hola', attachReport: true }
+
+  function sentBody(post: ReturnType<typeof ok>): Record<string, unknown> {
+    const calls = post.mock.calls as unknown as [string, RequestInit][]
+    return JSON.parse(calls[0][1].body as string)
+  }
+
+  it('posts the form with version, OS and the recent log to the web function', async () => {
+    const post = ok()
+    const outcome = await sendFeedback(
+      { ...form, error: 'ffmpeg exited 1' },
+      { version: '1.32.1', platform: 'win32' },
+      post,
+      async () => ['[error] boom'],
+    )
+    expect(outcome).toBe('sent')
+    const calls = post.mock.calls as unknown as [string, RequestInit][]
+    expect(calls[0][0]).toBe(FEEDBACK_ENDPOINT)
+    expect(sentBody(post)).toEqual({
+      email: 'djotas@example.com',
+      message: 'Hola',
+      version: '1.32.1',
+      platform: 'win32',
+      error: 'ffmpeg exited 1',
+      logLines: ['[error] boom'],
+    })
+  })
+
+  it('sends only the message and the email when the user unticks the report', async () => {
+    const post = ok()
+    const readErrors = vi.fn(async () => ['[error] boom'])
+    await sendFeedback(
+      { ...form, attachReport: false, error: 'ffmpeg exited 1', stack: 'at x' },
+      { version: '1.32.1', platform: 'win32' },
+      post,
+      readErrors,
+    )
+    expect(sentBody(post)).toEqual({ email: 'djotas@example.com', message: 'Hola' })
+    expect(readErrors).not.toHaveBeenCalled()
+  })
+
+  it('still sends when the log cannot be read', async () => {
+    const post = ok()
+    const outcome = await sendFeedback(
+      form,
+      { version: '1', platform: 'darwin' },
+      post,
+      async () => {
+        throw new Error('log unreadable')
+      },
+    )
+    expect(outcome).toBe('sent')
+    expect(sentBody(post).logLines).toEqual([])
+  })
+
+  it('reports a refused request as failed so the dialog offers retry and copy', async () => {
+    const post = vi.fn(async () => new Response(null, { status: 502 }))
+    expect(
+      await sendFeedback(form, { version: '1', platform: 'darwin' }, post, async () => []),
+    ).toBe('failed')
+  })
+
+  it('reports no connection as failed instead of throwing across the IPC call', async () => {
+    const post = vi.fn(async () => {
+      throw new TypeError('net::ERR_INTERNET_DISCONNECTED')
+    })
+    expect(
+      await sendFeedback(form, { version: '1', platform: 'darwin' }, post, async () => []),
+    ).toBe('failed')
   })
 })

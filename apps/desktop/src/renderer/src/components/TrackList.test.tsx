@@ -564,9 +564,10 @@ describe('TrackList', () => {
       track({ id: 'done', programs: ['engine'], sourcePreview: preview }),
     ])
     const rows = screen.getAllByTestId('track-wave-line')
-    expect(within(rows[0]).getByTestId('track-unanalyzed')).toHaveTextContent(
-      'Not analyzed in Engine DJ',
-    )
+    expect(within(rows[0]).getByTestId('track-unanalyzed')).toBeInTheDocument()
+    expect(
+      within(rows[0]).getByRole('img', { name: 'Not analyzed in Engine DJ' }),
+    ).toBeInTheDocument()
     expect(within(rows[1]).queryByTestId('track-unanalyzed')).toBeNull()
   })
 
@@ -2122,6 +2123,19 @@ describe('TrackList reorder', () => {
     renderList(abc(), null, [], { reorder, separatorBefore: new Map([['b', ['s1']]]) })
     fireEvent.click(screen.getByTestId('separator-remove-s1'))
     expect(reorder.onRemoveSeparator).toHaveBeenCalledWith('s1')
+  })
+
+  // The line was drawn in two halves around the ✕, so every editable playlist showed its
+  // breaks with a hole in the middle even with the ✕ hidden. One line runs end to end and
+  // the ✕ is laid over it.
+  it('draws a separator as one unbroken line with its remove button laid over it', () => {
+    renderList(abc(), null, [], {
+      reorder: reorderSpy(),
+      separatorBefore: new Map([['b', ['s1']]]),
+    })
+    const separator = screen.getByTestId('track-separator-s1')
+    expect(within(separator).getAllByTestId('separator-line-s1')).toHaveLength(1)
+    expect(within(separator).getByTestId('separator-remove-s1')).toBeInTheDocument()
   })
 
   // The ✕ is a bare glyph on a dashed line; hovering it has to say what it removes.

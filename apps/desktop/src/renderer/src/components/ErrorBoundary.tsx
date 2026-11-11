@@ -1,6 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
 import i18n from '../i18n'
-import { openFeedback } from '../lib/feedback'
+import { FeedbackModal } from './FeedbackModal'
 
 interface Props {
   children: ReactNode
@@ -12,10 +12,11 @@ interface Props {
 interface State {
   error: Error | null
   info: string
+  reporting: boolean
 }
 
 export class ErrorBoundary extends Component<Props, State> {
-  state: State = { error: null, info: '' }
+  state: State = { error: null, info: '', reporting: false }
 
   static getDerivedStateFromError(error: Error): Partial<State> {
     return { error }
@@ -30,7 +31,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   render(): ReactNode {
-    const { error, info } = this.state
+    const { error, info, reporting } = this.state
     if (!error) return this.props.children
     return (
       <div
@@ -48,7 +49,7 @@ export class ErrorBoundary extends Component<Props, State> {
           <button
             type="button"
             data-testid="error-retry"
-            onClick={() => this.setState({ error: null, info: '' })}
+            onClick={() => this.setState({ error: null, info: '', reporting: false })}
             className="rounded-lg bg-[var(--color-accent)] px-4 py-2 font-medium text-[var(--color-on-accent)] hover:brightness-110"
           >
             {i18n.t('errorBoundary.retry')}
@@ -56,7 +57,7 @@ export class ErrorBoundary extends Component<Props, State> {
           <button
             type="button"
             data-testid="report-crash"
-            onClick={() => openFeedback(error.message, error.stack ?? info)}
+            onClick={() => this.setState({ reporting: true })}
             className="rounded-lg border border-[var(--color-line)] px-4 py-2 font-medium text-fg-muted hover:bg-[var(--color-panel)]"
           >
             {i18n.t('errorBoundary.report')}
@@ -83,6 +84,13 @@ export class ErrorBoundary extends Component<Props, State> {
               {error.stack ?? info}
             </pre>
           </details>
+        )}
+        {reporting && (
+          <FeedbackModal
+            error={error.message}
+            stack={error.stack ?? info}
+            onClose={() => this.setState({ reporting: false })}
+          />
         )}
       </div>
     )

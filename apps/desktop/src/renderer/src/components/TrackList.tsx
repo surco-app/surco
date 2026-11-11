@@ -133,6 +133,8 @@ interface Props {
     onMove: (keys: string[], beforeKey: string | null) => void
     onRemoveSeparator: (key: string) => void
   }
+  // Rows let go on the list while reordering is off, so the reason is told when it is wanted.
+  onReorderBlocked?: () => void
 }
 
 export type MenuState = { track: TrackItem; x: number; y: number }
@@ -1119,6 +1121,7 @@ export const TrackList = memo(function TrackList({
   separatorBefore,
   trailingSeparators,
   reorder,
+  onReorderBlocked,
 }: Props): React.JSX.Element {
   const [menu, setMenu] = useState<MenuState | null>(null)
   // The keyboard ✕ (plain ⌫/Supr on a focused row). Removal deselects, which would
@@ -1191,7 +1194,11 @@ export const TrackList = memo(function TrackList({
     )
   }
   const onReorderDrop = (e: React.DragEvent): void => {
-    if (!reorder) return
+    if (!reorder) {
+      if (onReorderBlocked && ownRowsDropped(e, (id) => tracks.find((t) => t.id === id)?.inputPath))
+        onReorderBlocked()
+      return
+    }
     const separator = isReorderDrag(e) ? e.dataTransfer.getData(REORDER_TYPE) : null
     // Only the dragged rows coming back count: Finder files let go here after a drag-out
     // that ended elsewhere are an import, left to the window.
@@ -1226,8 +1233,12 @@ export const TrackList = memo(function TrackList({
           e.dataTransfer.effectAllowed = 'move'
           e.dataTransfer.setData(REORDER_TYPE, key)
         }}
-        className="group mx-4 flex h-[22px] items-center gap-2 text-label text-fg-faint before:flex-1 before:border-t before:border-dashed before:border-line-strong before:content-[''] after:flex-1 after:border-t after:border-dashed after:border-line-strong after:content-['']"
+        className="group relative mx-4 flex h-[22px] items-center justify-center text-label text-fg-faint"
       >
+        <span
+          data-testid={`separator-line-${key}`}
+          className="absolute inset-x-0 top-1/2 border-t border-dashed border-line-strong"
+        />
         {reorder && (
           <button
             type="button"
@@ -1237,7 +1248,7 @@ export const TrackList = memo(function TrackList({
             tabIndex={-1}
             aria-label={tr('sources.reorder.removeSeparator')}
             onClick={() => reorder.onRemoveSeparator(key)}
-            className="rounded opacity-0 group-hover:opacity-100 hover:text-fg focus-visible:opacity-100"
+            className="relative rounded bg-[var(--color-ink)] px-1 opacity-0 group-hover:opacity-100 hover:text-fg focus-visible:opacity-100"
           >
             <X size={11} aria-hidden="true" />
             <Tooltip label={tr('sources.reorder.removeSeparator')} />

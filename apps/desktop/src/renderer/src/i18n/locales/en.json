@@ -168,6 +168,7 @@
     "paletteLabel": "Commands",
     "settings": "Settings",
     "help": "Help & FAQ",
+    "feedback": "Send feedback",
     "stats": "Stats",
     "activity": "Activity",
     "selectAll": "Select all",
@@ -313,6 +314,7 @@
       "quality": "Quality",
       "ascending": "Ascending order",
       "descending": "Descending order",
+      "directionNeedsField": "Sort by a field to choose the direction",
       "rating": "Stars"
     },
     "position": "Track {{current}} of {{total}}",
@@ -1527,7 +1529,7 @@
       "recording": "Press keys…",
       "unbound": "Unassigned",
       "reset": "Reset to default",
-      "resetAll": "Reset all ({{count}})",
+      "resetAll": "Reset all",
       "resetAllConfirm_one": "Reset {{count}} shortcut?",
       "resetAllConfirm_other": "Reset {{count}} shortcuts?",
       "conflict": "Two commands share a shortcut. Resolve it to save.",
@@ -1541,15 +1543,11 @@
       "groupEditor": "Editor",
       "groupEditorHint": "Jumping between sections",
       "groupTags": "Tags",
-      "groupTagsHint": "Track metadata",
       "groupConvert": "Convert",
-      "groupConvertHint": "Convert and export",
       "groupLibrary": "Library",
       "groupLibraryHint": "Files and housekeeping",
       "groupPlayback": "Playback",
-      "groupPlaybackHint": "Listening to the track",
       "groupNavigate": "Navigate",
-      "groupNavigateHint": "Moving around the app",
       "groupApp": "App",
       "groupAppHint": "Settings and windows"
     },
@@ -1815,13 +1813,11 @@
     "keyNotationHint": "How the key is shown in the track list and in the suggestion under the Key field. Alphanumeric, or Camelot, is what DJ software sorts by.",
     "sections": {
       "title": "Editor sections",
-      "hint": "Choose which sections start open and their order below the metadata form.",
       "form": "Metadata",
       "otherTags": "Other metadata",
       "properties": "Properties",
       "quality": "Audio quality",
       "cues": "Cues",
-      "cuesOnly": "rekordbox only",
       "output": "Output name",
       "trim": "Silence trim",
       "declick": "Vinyl click repair",
@@ -1870,7 +1866,7 @@
     "syncRekordboxIdle": "No rekordbox collection was found on this machine.",
     "rekordboxSync": "rekordbox collection",
     "rekordboxDbPath": "rekordbox collection",
-    "rekordboxDbPathHint": "The rekordbox collection to write into. It is found automatically; change it only if yours lives elsewhere.",
+    "rekordboxDbPathHint": "It is found automatically; change it only if yours lives elsewhere.",
     "traktorNmlPathEmpty": "Not chosen yet",
     "originalBackup": "What gets kept",
     "originalBackupPolicies": {
@@ -2099,9 +2095,6 @@
     },
     "mp3Choice": {
       "320": "320 kbps CBR, the DJ-pool standard.",
-      "256": "256 kbps CBR.",
-      "192": "192 kbps CBR.",
-      "160": "160 kbps CBR.",
       "128": "128 kbps CBR, the smallest.",
       "v0": "VBR, smaller files at transparent quality.",
       "v2": "VBR, smaller still."
@@ -2109,13 +2102,9 @@
     "bitDepthChoice": {
       "source": "Keeps each file's exact depth, padding included.",
       "16": "Writes 16-bit, with dither when it reduces.",
-      "24": "Writes 24-bit.",
       "corrected": "A file that only carries 16-bit audio is written as true 16-bit, losslessly. A 32-bit file is written at 24 bits."
     },
     "sampleRateChoice": {
-      "source": "Never resamples.",
-      "44100": "Every file at 44.1 kHz, for gear that expects it.",
-      "48000": "Every file at 48 kHz, for gear that expects it.",
       "corrected": "Files measured as upsampled from 44.1 kHz go back to 44.1. Real hi-res keeps its rate."
     }
   },
@@ -2201,6 +2190,8 @@
   },
   "help": {
     "title": "Help & FAQ",
+    "notListed": "Question not here?",
+    "writeMe": "Write to me",
     "items": {
       "token": {
         "q": "Do I need a Discogs token?",
@@ -2257,6 +2248,33 @@
     "pitch": "Surco is free and has no ads or tracking. If it keeps saving you time, a small donation helps keep it that way.",
     "dontShowAgain": "Don't show this again",
     "later": "Maybe later"
+  },
+  "feedback": {
+    "title": "Send feedback",
+    "lede": "Tell me what breaks, what you miss or what you like. I read every one.",
+    "titleError": "Report a problem",
+    "ledeError": "The error is already included. If you can, tell me what you were doing.",
+    "message": "Message",
+    "optional": "(optional)",
+    "messagePlaceholder": "What you were doing and what you expected to happen",
+    "email": "Your email",
+    "emailHint": "(so I can reply)",
+    "attach": "Attach technical report",
+    "attachHint": "Surco version, system and the latest errors from the log, without folders.",
+    "preview": "See what is sent",
+    "previewHide": "Hide what is sent",
+    "github": "I'd rather open a GitHub issue",
+    "send": "Send",
+    "sending": "Sending…",
+    "sentTitle": "Sent, thank you",
+    "sentBody": "I'll reply to {{email}} as soon as I've looked at it.",
+    "close": "Close",
+    "failedTitle": "Couldn't send it",
+    "failedBody": "It looks like there's no connection. Your message is still here, so you can retry or email it to me yourself.",
+    "copy": "Copy message and report",
+    "copied": "Copied",
+    "copyHint": "Copies your text and the technical report together, ready to paste into an email.",
+    "retry": "Retry"
   },
   "whatsNew": {
     "title": "What's new",

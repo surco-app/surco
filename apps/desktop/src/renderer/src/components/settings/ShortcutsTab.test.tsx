@@ -71,12 +71,29 @@ describe('ShortcutsTab trim group', () => {
 
   // A missing translation renders the key itself, so the panel printed
   // "settings.shortcuts.groupHintTrim" where the sentence belongs. Asserting no group
-  // header leaks a raw key catches the next scope added without its two strings.
+  // header leaks a raw key catches the next scope added without its heading.
   it('translates every group heading and hint', () => {
     renderTab()
     for (const group of screen.getAllByTestId(/^shortcut-group-/)) {
       expect(group.textContent).not.toContain('settings.shortcuts.')
     }
+  })
+
+  // "Tags · Track metadata" or "Playback · Listening to the track" says the heading twice.
+  // A group keeps its line only when it says where the keys act or what the name covers.
+  it('puts no line beside a group heading that only repeats it', () => {
+    renderTab()
+    for (const [group, line] of [
+      ['tags', 'Track metadata'],
+      ['convert', 'Convert and export'],
+      ['playback', 'Listening to the track'],
+      ['navigate', 'Moving around the app'],
+    ]) {
+      expect(screen.getByTestId(`shortcut-group-${group}`)).not.toHaveTextContent(line)
+    }
+    expect(screen.getByTestId('shortcut-group-trim')).toHaveTextContent(
+      'While the trim section is open',
+    )
   })
 })
 
@@ -170,4 +187,26 @@ it('graba una combinación con control', () => {
     'shortcutOverrides',
     expect.objectContaining({ play: ['ctrl', 'e'] }),
   )
+})
+
+// The count already sits in the confirmation ("Reset 2 shortcuts?"), the one place it
+// decides anything; on the idle button it was a number to read for nothing.
+describe('ShortcutsTab reset all', () => {
+  it('names the action without a count until it asks to confirm', () => {
+    const overrides = { add: ['mod', 'shift', 'x'], play: ['mod', 'p'] }
+    const bindings = resolveBindings(overrides)
+    render(
+      <ShortcutsTab
+        synced={{ shortcutOverrides: overrides } as unknown as SyncedDraft}
+        patch={vi.fn()}
+        bindings={bindings}
+        conflictIds={new Set(findConflicts(bindings).flat())}
+      />,
+    )
+    expect(screen.getByTestId('shortcuts-reset-all')).toHaveTextContent(/^Reset all$/)
+    fireEvent.click(screen.getByTestId('shortcuts-reset-all'))
+    expect(screen.getByTestId('shortcuts-reset-all-confirm')).toHaveTextContent(
+      'Reset 2 shortcuts?',
+    )
+  })
 })

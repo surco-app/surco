@@ -73,6 +73,7 @@ export function SessionWizard({
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [step, setStep] = useState(0)
+  const [moved, setMoved] = useState<'forward' | 'back' | null>(null)
   const [minutes, setMinutes] = useState(initial.minutes)
   const [custom, setCustom] = useState<string | null>(
     isPresetMinutes(initial.minutes) ? null : String(initial.minutes),
@@ -164,6 +165,7 @@ export function SessionWizard({
       setLoaded((prev) => new Map([...prev, ...got]))
       setReading(false)
     }
+    setMoved('forward')
     setStep((s) => s + 1)
   }
 
@@ -251,7 +253,10 @@ export function SessionWizard({
                 <button
                   type="button"
                   data-testid={`session-wizard-step-${id}`}
-                  onClick={() => setStep(i)}
+                  onClick={() => {
+                    setMoved('back')
+                    setStep(i)
+                  }}
                   className="press rounded text-fg-dim underline-offset-2 hover:text-[var(--color-accent)] hover:underline"
                 >
                   {tr(`sessions.wizard.steps.${id}`)}
@@ -263,67 +268,72 @@ export function SessionWizard({
           ))}
         </ol>
       </div>
-      <h3
+      <div
         key={current}
-        ref={focusHeading}
-        id="session-wizard-step-title"
-        data-testid="session-wizard-step-title"
-        tabIndex={-1}
-        className="mb-3 text-sm font-semibold outline-none"
+        data-testid="session-wizard-page"
+        className={moved ? `animate-step-${moved}` : undefined}
       >
-        {tr(`sessions.wizard.${current}.heading`)}
-      </h3>
-      {step >= 2 && unreadable.length > 0 && (
-        <p data-testid="session-wizard-load-failed" className="mb-3 text-xs text-warn">
-          {tr('sessions.wizard.loadFailed', { names: unreadable.join(', ') })}
-        </p>
-      )}
-      <div className="min-h-[480px]">
-        {current === 'duration' && (
-          <DurationStep
-            minutes={minutes}
-            custom={custom}
-            onPreset={(value) => {
-              setMinutes(value)
-              setCustom(null)
-            }}
-            onCustomOpen={() => setCustom((text) => text ?? String(minutes))}
-            onCustomText={(text) => {
-              setCustom(text)
-              const value = wholeMinutes(text)
-              if (value !== null) setMinutes(value)
-            }}
-            playMinutes={playMinutes}
-            onPlayMinutes={setPlayMinutes}
-          />
-        )}
-        {current === 'sources' && (
-          <SourcesStep
-            tree={usable}
-            roles={roles}
-            sources={sources}
-            onPick={pick}
-            onPickMany={pickMany}
-            only={onlyChosen}
-            onOnly={setOnlyChosen}
-          />
-        )}
-        {current === 'character' && (
-          <CharacterStep
-            options={options}
-            hasKeys={hasKeys}
-            hasNew={hasNew}
-            hasMixed={sources.some((id) => roles[id] === 'any')}
-            freshShare={freshShare}
-            onFreshShare={setFreshShare}
-            onChange={(patch) => setOptions((prev) => ({ ...prev, ...patch }))}
-          />
-        )}
-        {last && (
-          <p data-testid="session-wizard-destination" className="mt-3 text-xs text-fg-dim">
-            {destinationText(destination, tr)}
+        <h3
+          ref={focusHeading}
+          id="session-wizard-step-title"
+          data-testid="session-wizard-step-title"
+          tabIndex={-1}
+          className="mb-3 text-sm font-semibold outline-none"
+        >
+          {tr(`sessions.wizard.${current}.heading`)}
+        </h3>
+        {step >= 2 && unreadable.length > 0 && (
+          <p data-testid="session-wizard-load-failed" className="mb-3 text-xs text-warn">
+            {tr('sessions.wizard.loadFailed', { names: unreadable.join(', ') })}
           </p>
         )}
+        <div className="min-h-[480px]">
+          {current === 'duration' && (
+            <DurationStep
+              minutes={minutes}
+              custom={custom}
+              onPreset={(value) => {
+                setMinutes(value)
+                setCustom(null)
+              }}
+              onCustomOpen={() => setCustom((text) => text ?? String(minutes))}
+              onCustomText={(text) => {
+                setCustom(text)
+                const value = wholeMinutes(text)
+                if (value !== null) setMinutes(value)
+              }}
+              playMinutes={playMinutes}
+              onPlayMinutes={setPlayMinutes}
+            />
+          )}
+          {current === 'sources' && (
+            <SourcesStep
+              tree={usable}
+              roles={roles}
+              sources={sources}
+              onPick={pick}
+              onPickMany={pickMany}
+              only={onlyChosen}
+              onOnly={setOnlyChosen}
+            />
+          )}
+          {current === 'character' && (
+            <CharacterStep
+              options={options}
+              hasKeys={hasKeys}
+              hasNew={hasNew}
+              hasMixed={sources.some((id) => roles[id] === 'any')}
+              freshShare={freshShare}
+              onFreshShare={setFreshShare}
+              onChange={(patch) => setOptions((prev) => ({ ...prev, ...patch }))}
+            />
+          )}
+          {last && (
+            <p data-testid="session-wizard-destination" className="mt-3 text-xs text-fg-dim">
+              {destinationText(destination, tr)}
+            </p>
+          )}
+        </div>
       </div>
       {problem && (
         <p
@@ -353,7 +363,10 @@ export function SessionWizard({
             <button
               type="button"
               data-testid="session-wizard-back"
-              onClick={() => setStep((s) => s - 1)}
+              onClick={() => {
+                setMoved('back')
+                setStep((s) => s - 1)
+              }}
               className="press rounded-lg border border-[var(--color-line-strong)] px-4 py-2 text-sm font-medium hover:bg-[var(--color-hover)]"
             >
               {tr('sessions.wizard.back')}

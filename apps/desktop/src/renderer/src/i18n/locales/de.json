@@ -168,6 +168,7 @@
     "paletteLabel": "Befehle",
     "settings": "Einstellungen",
     "help": "Hilfe & FAQ",
+    "feedback": "Feedback senden",
     "stats": "Statistiken",
     "activity": "Aktivität",
     "selectAll": "Alles auswählen",
@@ -313,6 +314,7 @@
       "quality": "Qualität",
       "ascending": "Aufsteigende Reihenfolge",
       "descending": "Absteigende Reihenfolge",
+      "directionNeedsField": "Nach einem Feld sortieren, um die Richtung zu wählen",
       "rating": "Sterne"
     },
     "position": "Track {{current}} von {{total}}",
@@ -1527,7 +1529,7 @@
       "recording": "Tasten drücken…",
       "unbound": "Nicht belegt",
       "reset": "Auf Standard zurücksetzen",
-      "resetAll": "Alle zurücksetzen ({{count}})",
+      "resetAll": "Alle zurücksetzen",
       "resetAllConfirm_one": "{{count}} Kürzel zurücksetzen?",
       "resetAllConfirm_other": "{{count}} Kürzel zurücksetzen?",
       "conflict": "Zwei Befehle teilen sich ein Kürzel. Lös den Konflikt, um zu speichern.",
@@ -1541,15 +1543,11 @@
       "groupEditor": "Editor",
       "groupEditorHint": "Zwischen Abschnitten springen",
       "groupTags": "Tags",
-      "groupTagsHint": "Track-Metadaten",
       "groupConvert": "Konvertieren",
-      "groupConvertHint": "Konvertieren und exportieren",
       "groupLibrary": "Bibliothek",
       "groupLibraryHint": "Dateien und Ordnung",
       "groupPlayback": "Wiedergabe",
-      "groupPlaybackHint": "Den Track anhören",
       "groupNavigate": "Navigieren",
-      "groupNavigateHint": "Durch die App bewegen",
       "groupApp": "App",
       "groupAppHint": "Einstellungen und Fenster"
     },
@@ -1815,13 +1813,11 @@
     "keyNotationHint": "Wie die Tonart in der Titelliste und im Vorschlag unter dem Feld Tonart angezeigt wird. Alphanumerisch, auch Camelot genannt, ist das, wonach DJ-Software sortiert.",
     "sections": {
       "title": "Editor-Abschnitte",
-      "hint": "Wähle, welche Abschnitte geöffnet starten und ihre Reihenfolge unter dem Metadaten-Formular.",
       "form": "Metadaten",
       "otherTags": "Weitere Metadaten",
       "properties": "Eigenschaften",
       "quality": "Audioqualität",
       "cues": "Cues",
-      "cuesOnly": "Nur in rekordbox",
       "output": "Ausgabename",
       "trim": "Stille kürzen",
       "declick": "Vinyl-Knackser-Reparatur",
@@ -1870,7 +1866,7 @@
     "syncRekordboxIdle": "Auf diesem Rechner wurde keine rekordbox-Sammlung gefunden.",
     "rekordboxSync": "rekordbox-Sammlung",
     "rekordboxDbPath": "rekordbox-Sammlung",
-    "rekordboxDbPathHint": "Die rekordbox-Sammlung, in die geschrieben wird. Sie wird automatisch gefunden; ändere sie nur, wenn deine woanders liegt.",
+    "rekordboxDbPathHint": "Sie wird automatisch gefunden; ändere sie nur, wenn deine woanders liegt.",
     "traktorNmlPathEmpty": "Noch nicht gewählt",
     "originalBackup": "Was aufbewahrt wird",
     "originalBackupPolicies": {
@@ -2099,9 +2095,6 @@
     },
     "mp3Choice": {
       "320": "320 kbps CBR, der Standard der DJ-Pools.",
-      "256": "256 kbps CBR.",
-      "192": "192 kbps CBR.",
-      "160": "160 kbps CBR.",
       "128": "128 kbps CBR, die kleinste.",
       "v0": "VBR, kleinere Dateien bei transparenter Qualität.",
       "v2": "VBR, noch kleiner."
@@ -2109,13 +2102,9 @@
     "bitDepthChoice": {
       "source": "Behält die genaue Bittiefe jeder Datei, Padding inklusive.",
       "16": "Schreibt 16 Bit, mit Dither beim Reduzieren.",
-      "24": "Schreibt 24 Bit.",
       "corrected": "Eine Datei, die nur 16-Bit-Audio trägt, wird verlustfrei als echtes 16 Bit geschrieben. Eine 32-Bit-Datei wird mit 24 Bit geschrieben."
     },
     "sampleRateChoice": {
-      "source": "Ändert die Abtastrate nie.",
-      "44100": "Alle Dateien mit 44,1 kHz, für Geräte, die das erwarten.",
-      "48000": "Alle Dateien mit 48 kHz, für Geräte, die das erwarten.",
       "corrected": "Was als von 44,1 kHz hochgerechnet gemessen wurde, geht zurück auf 44,1. Echtes Hi-Res behält seine Rate."
     }
   },
@@ -2201,6 +2190,8 @@
   },
   "help": {
     "title": "Hilfe & FAQ",
+    "notListed": "Deine Frage ist nicht dabei?",
+    "writeMe": "Schreib mir",
     "items": {
       "token": {
         "q": "Brauche ich einen Discogs-Token?",
@@ -2257,6 +2248,33 @@
     "pitch": "Surco ist gratis, ohne Werbung und ohne Tracking. Wenn es dir weiter Zeit spart, hilft eine kleine Spende, dass das so bleibt.",
     "dontShowAgain": "Nicht mehr anzeigen",
     "later": "Vielleicht später"
+  },
+  "feedback": {
+    "title": "Feedback senden",
+    "lede": "Erzähl mir, was nicht klappt, was dir fehlt oder was dir gefällt. Ich lese alles selbst.",
+    "titleError": "Fehler melden",
+    "ledeError": "Der Fehler ist schon dabei. Wenn du magst, erzähl mir, was du gerade gemacht hast.",
+    "message": "Nachricht",
+    "optional": "(optional)",
+    "messagePlaceholder": "Was du gemacht hast und was du erwartet hast",
+    "email": "Deine E-Mail",
+    "emailHint": "(damit ich antworten kann)",
+    "attach": "Technischen Bericht anhängen",
+    "attachHint": "Surco-Version, System und die letzten Fehler aus dem Protokoll, ohne Ordner.",
+    "preview": "Ansehen, was gesendet wird",
+    "previewHide": "Ausblenden, was gesendet wird",
+    "github": "Lieber ein Issue auf GitHub öffnen",
+    "send": "Senden",
+    "sending": "Wird gesendet…",
+    "sentTitle": "Gesendet, danke",
+    "sentBody": "Ich antworte dir an {{email}}, sobald ich es mir angesehen habe.",
+    "close": "Schließen",
+    "failedTitle": "Senden fehlgeschlagen",
+    "failedBody": "Anscheinend gibt es keine Verbindung. Deine Nachricht ist noch da, du kannst es erneut versuchen oder sie mir selbst mailen.",
+    "copy": "Nachricht und Bericht kopieren",
+    "copied": "Kopiert",
+    "copyHint": "Kopiert deinen Text und den technischen Bericht zusammen, bereit zum Einfügen in eine E-Mail.",
+    "retry": "Erneut versuchen"
   },
   "whatsNew": {
     "title": "Neuigkeiten",

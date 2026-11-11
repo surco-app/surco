@@ -50,7 +50,7 @@ const HEADING = 'text-section font-semibold text-fg-muted'
 const ICON_BUTTON =
   'press flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] text-fg hover:bg-[var(--color-line-strong)] aria-expanded:bg-[var(--color-accent-soft)] aria-expanded:text-[var(--color-accent)]'
 const DROP_MENU =
-  'animate-pop-flat absolute top-full z-50 mt-1 overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-panel-2)] py-1 shadow-[var(--shadow-float)]'
+  'animate-pop-flat absolute top-full z-50 mt-1 origin-top-right overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-panel-2)] py-1 shadow-[var(--shadow-float)]'
 const GROUP = 'divide-y divide-[var(--color-line)] rounded-lg border border-[var(--color-line)]'
 
 export function CuesTab({

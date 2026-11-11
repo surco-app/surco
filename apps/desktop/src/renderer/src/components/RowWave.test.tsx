@@ -28,7 +28,10 @@ const cues = [
 ]
 
 describe('RowWave', () => {
-  it('says rekordbox has not analysed the track yet, so an empty slot does not read as a broken wave', () => {
+  // Words in every unanalysed row turned a list fresh from a library into a column of the
+  // same sentence. The slot keeps a quiet dashed line, so it does not read as a broken
+  // wave, and the sentence goes to screen readers, which have no line to see.
+  it('marks a track rekordbox has not analysed with a quiet line, and names it for screen readers', () => {
     render(
       <RowWave
         request={{ path: '/m/new.aiff' }}
@@ -39,7 +42,8 @@ describe('RowWave', () => {
         unanalyzed="rekordbox"
       />,
     )
-    expect(screen.getByTestId('track-unanalyzed')).toHaveTextContent('Not analyzed in rekordbox')
+    expect(screen.getByTestId('track-unanalyzed')).toBeEmptyDOMElement()
+    expect(screen.getByRole('img', { name: 'Not analyzed in rekordbox' })).toBeInTheDocument()
   })
 
   // Cues set by hand on a track rekordbox has not analysed were drawn over the note that

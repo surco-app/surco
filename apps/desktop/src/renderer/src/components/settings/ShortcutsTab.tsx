@@ -181,9 +181,7 @@ export function ShortcutsTab({ synced, patch, bindings, conflictIds }: Props): R
               onClick={() => setConfirmResetAll(true)}
               className="press shrink-0 text-xs text-fg-muted hover:text-fg"
             >
-              {tr('settings.shortcuts.resetAll', {
-                count: Object.keys(synced.shortcutOverrides).length,
-              })}
+              {tr('settings.shortcuts.resetAll')}
             </button>
           ))}
       </div>
@@ -192,17 +190,20 @@ export function ShortcutsTab({ synced, patch, bindings, conflictIds }: Props): R
           {tr('settings.shortcuts.conflict')}
         </p>
       )}
-      {sections.map((scope) => (
-        <div key={scope} data-testid={`shortcut-group-${scope}`} className="mt-4">
-          <div className="mb-1 flex items-baseline gap-2">
-            <h3 className="text-xs font-medium text-fg">{tr(scopeKey(scope))}</h3>
-            <span className="text-xs text-fg-dim">{tr(scopeKey(scope, 'Hint'))}</span>
+      {sections.map((scope) => {
+        const hint = tr(scopeKey(scope, 'Hint'), { defaultValue: '' })
+        return (
+          <div key={scope} data-testid={`shortcut-group-${scope}`} className="mt-4">
+            <div className="mb-1 flex items-baseline gap-2">
+              <h3 className="text-xs font-medium text-fg">{tr(scopeKey(scope))}</h3>
+              {hint && <span className="text-xs text-fg-dim">{hint}</span>}
+            </div>
+            {SHORTCUT_DEFAULTS.filter(
+              (d) => sectionOf(d) === scope && (!d.macOnly || isMacOS()),
+            ).map(renderRow)}
           </div>
-          {SHORTCUT_DEFAULTS.filter((d) => sectionOf(d) === scope && (!d.macOnly || isMacOS())).map(
-            renderRow,
-          )}
-        </div>
-      ))}
+        )
+      })}
       {/* The list/Discogs navigation keys are fixed (vim-style j/k, arrows, Home/End, Page
           Up/Down), so they don't get an editable row above — name them here so they're still
           discoverable rather than hidden. */}

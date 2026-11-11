@@ -46,7 +46,7 @@ export function RowWave({
   // Cues on a track the library has not analysed were set in Surco's editor, which measured
   // the wave to place them: the row draws that wave under them like any other, in faint ink
   // since it is Surco's and not the library's, with a dashed ring for what is missing. The
-  // note stays only while there is nothing to draw over it.
+  // dashed baseline stays only while there is nothing to draw over it.
   const provisional = !!unanalyzed && (hot.length > 0 || calls.length > 0)
   const labels: string[] = []
   if (hot.length > 0)
@@ -54,7 +54,7 @@ export function RowWave({
       tr(pending ? 'trackList.cuesAriaPending' : 'trackList.cuesAria', { count: hot.length }),
     )
   else if (awaiting) labels.push(tr('trackList.cuesPendingNone'))
-  if (provisional && unanalyzedNote) labels.push(unanalyzedNote)
+  if (unanalyzedNote) labels.push(unanalyzedNote)
   const label = labels.length > 0 ? labels.join('. ') : undefined
   return (
     <span
@@ -69,10 +69,8 @@ export function RowWave({
         {unanalyzed && !provisional && (
           <span
             data-testid="track-unanalyzed"
-            className="absolute inset-x-0 bottom-0 block truncate text-xs text-fg-dim"
-          >
-            {unanalyzedNote}
-          </span>
+            className="absolute inset-x-0 top-1/2 block border-t border-dashed border-[var(--color-line-strong)]"
+          />
         )}
         {(!unanalyzed || provisional) && bars && bars.length > 0 && (
           <WaveBars

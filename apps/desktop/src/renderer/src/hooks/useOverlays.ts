@@ -23,6 +23,7 @@ export type ActiveModal =
   | { type: 'donateNudge' }
   | { type: 'whatsNew'; lastSeen: string }
   | { type: 'help' }
+  | { type: 'feedback'; error?: string; stack?: string }
   | { type: 'loudnessHelp' }
   | { type: 'findReplace' }
   | { type: 'stripNumbering' }
@@ -40,6 +41,7 @@ export interface Overlays {
   openDonateNudge: () => void
   openWhatsNew: (lastSeen: string) => void
   openHelp: () => void
+  openFeedback: (error?: string, stack?: string) => void
   openLoudnessHelp: () => void
   openFindReplace: () => void
   openStripNumbering: () => void
@@ -73,6 +75,10 @@ export function useOverlays(): Overlays {
     [],
   )
   const openHelp = useCallback(() => setActiveModal({ type: 'help' }), [])
+  const openFeedback = useCallback(
+    (error?: string, stack?: string) => setActiveModal({ type: 'feedback', error, stack }),
+    [],
+  )
   const openLoudnessHelp = useCallback(() => setActiveModal({ type: 'loudnessHelp' }), [])
   const openFindReplace = useCallback(() => setActiveModal({ type: 'findReplace' }), [])
   const openStripNumbering = useCallback(() => setActiveModal({ type: 'stripNumbering' }), [])
@@ -106,6 +112,7 @@ export function useOverlays(): Overlays {
     openDonateNudge,
     openWhatsNew,
     openHelp,
+    openFeedback,
     openLoudnessHelp,
     openFindReplace,
     openStripNumbering,

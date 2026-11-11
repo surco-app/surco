@@ -13,6 +13,8 @@ beforeEach(() => {
     logError: vi.fn(),
     revealLog: vi.fn(),
     openFeedback: vi.fn(async () => {}),
+    feedbackReport: vi.fn(async () => ''),
+    sendFeedback: vi.fn(async () => 'sent'),
   }
 })
 
@@ -70,10 +72,17 @@ describe('ErrorBoundary', () => {
       </ErrorBoundary>,
     )
     fireEvent.click(screen.getByTestId('report-crash'))
-    const { openFeedback } = (
-      window as unknown as { api: { openFeedback: ReturnType<typeof vi.fn> } }
+    expect(screen.getByTestId('feedback-error')).toHaveTextContent('boom')
+    fireEvent.change(screen.getByTestId('feedback-email'), {
+      target: { value: 'djotas@example.com' },
+    })
+    fireEvent.click(screen.getByTestId('feedback-send'))
+    const { sendFeedback } = (
+      window as unknown as { api: { sendFeedback: ReturnType<typeof vi.fn> } }
     ).api
-    expect(openFeedback).toHaveBeenCalledWith('boom', expect.stringContaining('Bomb'))
+    expect(sendFeedback).toHaveBeenCalledWith(
+      expect.objectContaining({ error: 'boom', stack: expect.stringContaining('Bomb') }),
+    )
     silenced.mockRestore()
   })
 

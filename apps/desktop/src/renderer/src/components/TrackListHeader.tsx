@@ -347,29 +347,32 @@ export function TrackListHeader({
                 { value: 'rating', label: tr('sidebar.sort.rating'), icon: Star },
               ]}
             />
-            {sortBy !== 'import' && (
-              <button
-                type="button"
-                data-testid="track-sort-direction"
-                // A toggle: the name holds still and aria-pressed says whether it's on. A label
-                // that swapped with the state read back as the opposite of the order shown.
-                aria-pressed={sortDir === 'desc'}
-                aria-label={tr('sidebar.sort.descending')}
-                onClick={toggleSortDir}
-                className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-dim outline-none hover:bg-[var(--color-hover)] hover:text-fg"
-              >
-                {sortDir === 'asc' ? (
-                  <ArrowDownNarrowWide className="h-4 w-4" aria-hidden="true" />
-                ) : (
-                  <ArrowUpNarrowWide className="h-4 w-4" aria-hidden="true" />
+            <button
+              type="button"
+              data-testid="track-sort-direction"
+              // A toggle: the name holds still and aria-pressed says whether it's on. A label
+              // that swapped with the state read back as the opposite of the order shown.
+              aria-pressed={sortDir === 'desc'}
+              aria-label={tr('sidebar.sort.descending')}
+              onClick={toggleSortDir}
+              disabled={sortBy === 'import'}
+              className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-dim outline-none hover:bg-[var(--color-hover)] hover:text-fg disabled:opacity-40"
+            >
+              {sortDir === 'asc' ? (
+                <ArrowDownNarrowWide className="h-4 w-4" aria-hidden="true" />
+              ) : (
+                <ArrowUpNarrowWide className="h-4 w-4" aria-hidden="true" />
+              )}
+              <Tooltip
+                label={tr(
+                  sortBy === 'import'
+                    ? 'sidebar.sort.directionNeedsField'
+                    : sortDir === 'asc'
+                      ? 'sidebar.sort.ascending'
+                      : 'sidebar.sort.descending',
                 )}
-                <Tooltip
-                  label={tr(
-                    sortDir === 'asc' ? 'sidebar.sort.ascending' : 'sidebar.sort.descending',
-                  )}
-                />
-              </button>
-            )}
+              />
+            </button>
           </QualityFilterBar>
         </div>
         {tracks.length > 0 && (

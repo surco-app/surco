@@ -177,6 +177,7 @@ import {
 import { deriveTagPatches } from './lib/deriveTags'
 import type { Destination } from './lib/destination'
 import { createDragDepth } from './lib/dragDepth'
+import { onFeedbackRequested } from './lib/feedback'
 import { missingRequiredOf, requiredFieldsOf } from './lib/fields'
 import { gridNote } from './lib/gridNote'
 import { pushImportNotice } from './lib/importNotices'
@@ -352,6 +353,7 @@ export default function App(): React.JSX.Element {
   // The single-overlay state machine (which modal is open) and its typed openers/closers.
   const overlays = useOverlays()
   const activeModal = overlays.activeModal
+  useEffect(() => onFeedbackRequested(overlays.openFeedback), [overlays.openFeedback])
   // UI-orchestration state (search, sort, filter, notices, drag, copied tags…) lives in a
   // small per-mount external store so stable callbacks read the latest value via getState()
   // instead of a ref-mirror; the field comments live in appStore. Lazily created so the
@@ -2993,6 +2995,15 @@ export default function App(): React.JSX.Element {
       reorderEnabled ? { onMove: moveInRekordbox, onRemoveSeparator: removeSeparator } : undefined,
     [reorderEnabled, moveInRekordbox, removeSeparator],
   )
+  const tellReorderBlocked = useStableCallback((): void => {
+    pushToast(store, {
+      key: 'reorder-hint',
+      tone: 'neutral',
+      message: tr('sources.reorder.hint'),
+      duration: 5000,
+      testid: 'reorder-hint',
+    })
+  })
   // The right-clicked row acts with the selection it belongs to through App's existing
   // menuTargets (the one remove and trash use). Added tracks therefore go in working-list
   // order, which is the order they were loaded in.
@@ -3652,6 +3663,7 @@ export default function App(): React.JSX.Element {
                   activityRunning={activityRunning}
                   onSettings={onOpenSettings}
                   onHelp={overlays.openHelp}
+                  onFeedback={overlays.openFeedback}
                   primary={reviewAction}
                   usbPill={usbPill}
                   queuePill={queuePill}
@@ -3867,14 +3879,6 @@ export default function App(): React.JSX.Element {
                                 }}
                               />
                             )}
-                          {crateOpen && !reorderEnabled && (
-                            <p
-                              data-testid="reorder-hint"
-                              className="px-4 pt-1 text-label text-fg-faint"
-                            >
-                              {tr('sources.reorder.hint')}
-                            </p>
-                          )}
                           {visibleTracks.length === 0 ? (
                             <div className="flex flex-col items-center gap-3 p-6 text-center">
                               <p className="text-xs text-fg-faint">{tr('sidebar.search.empty')}</p>
@@ -3922,6 +3926,11 @@ export default function App(): React.JSX.Element {
                                   : undefined
                               }
                               reorder={reorder}
+                              onReorderBlocked={
+                                crateOpen && editCan('move') && !reorderEnabled
+                                  ? tellReorderBlocked
+                                  : undefined
+                              }
                               outsideFilter={outsideFilterIds}
                               noteOf={gridNoteOf}
                               onVisible={onListRowVisible}
