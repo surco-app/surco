@@ -31,11 +31,9 @@ const pending = new Set<string>()
 const stale: string[] = []
 let draining = false
 const listeners = new Set<() => void>()
-let version = 0
 let checker = (contentId: string): GridCheck | null | undefined => checkOfContent(contentId)
 
 function notify(): void {
-  version += 1
   checker = (contentId) => checkOfContent(contentId)
   for (const listener of listeners) listener()
 }
