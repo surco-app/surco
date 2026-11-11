@@ -1327,3 +1327,27 @@ button:hover > .process-fill {
   animation-duration: var(--duration-state);
   animation-timing-function: var(--ease-standard);
 }
+
+.scroll-edge::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 100%;
+  height: 12px;
+  pointer-events: none;
+  background: linear-gradient(to bottom, var(--color-ink), transparent);
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease-standard);
+}
+
+.scroll-edge[data-scrolled="true"]::after {
+  opacity: 1;
+}
+
+@media (prefers-contrast: more), (prefers-reduced-transparency: reduce) {
+  .scroll-edge::after {
+    height: 1px;
+    background: var(--color-line);
+    opacity: 1;
+  }
+}
