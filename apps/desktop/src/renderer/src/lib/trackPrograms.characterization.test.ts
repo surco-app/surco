@@ -1,69 +1,131 @@
-import { describe, expect, it } from 'vitest'
+// @vitest-environment jsdom
+import { act, cleanup, renderHook } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { DjProgram } from '../../../shared/djProgram'
+import { emptyMetadata } from '../../../shared/metadata'
+import type { SessionEdit } from '../../../shared/types'
+import { useTrackLibrary } from '../hooks/useTrackLibrary'
 import type { TrackItem } from '../types'
 import { trackSignature } from './dirty'
 import { sessionEdits } from './sessionEdits'
-import { copyFlags, copyPlaylists, jobPlaylists, TRACK_PROGRAMS } from './trackPrograms'
+import { jobPlaylists } from './trackPrograms'
 
-type Fields = Parameters<typeof copyFlags>[0]
+afterEach(() => {
+  cleanup()
+  vi.restoreAllMocks()
+})
 
-function staged(over: Partial<TrackItem> = {}): TrackItem {
+const PATH = '/m/a.wav'
+const PROGRAMS: DjProgram[] = ['rekordbox', 'engine', 'traktor', 'serato']
+const LIBRARIES = ['rekordbox', 'traktor', 'engine', 'serato'] as const
+type Library = (typeof LIBRARIES)[number]
+
+const FLAG_KEYS = ['fromRekordbox', 'fromEngine', 'fromTraktor', 'fromSerato'] as const
+const PLAYLIST_KEYS = [
+  'rekordboxPlaylists',
+  'rekordboxPlaylistsBase',
+  'traktorPlaylists',
+  'traktorPlaylistsBase',
+  'enginePlaylists',
+  'enginePlaylistsBase',
+  'seratoPlaylists',
+  'seratoPlaylistsBase',
+] as const
+const ORIGIN_KEYS = [...FLAG_KEYS, ...PLAYLIST_KEYS]
+
+interface Staged {
+  origins?: DjProgram[]
+  falseOrigins?: DjProgram[]
+  playlists?: Partial<
+    Record<Library, { targets?: { id?: string; name: string }[]; base?: string[] }>
+  >
+}
+
+const FLAG_OF: Record<DjProgram, (typeof FLAG_KEYS)[number]> = {
+  rekordbox: 'fromRekordbox',
+  engine: 'fromEngine',
+  traktor: 'fromTraktor',
+  serato: 'fromSerato',
+}
+
+function trackWith({ origins = [], falseOrigins = [], playlists = {} }: Staged = {}): TrackItem {
+  const fields: Record<string, unknown> = {}
+  for (const p of origins) fields[FLAG_OF[p]] = true
+  for (const p of falseOrigins) fields[FLAG_OF[p]] = false
+  for (const p of LIBRARIES) {
+    const entry = playlists[p]
+    if (entry?.targets) fields[`${p}Playlists`] = entry.targets
+    if (entry?.base) fields[`${p}PlaylistsBase`] = entry.base
+  }
   return {
     id: 'id-1',
-    inputPath: '/music/a.wav',
+    inputPath: PATH,
     fileName: 'a.wav',
     query: '',
     listLabel: 'a',
     status: 'idle',
-    meta: { title: 'Edited' } as TrackItem['meta'],
+    meta: { ...emptyMetadata(), title: 'Edited' },
     diskSignature: trackSignature({ meta: { title: 'Disk' } as TrackItem['meta'] }),
-    ...over,
+    ...fields,
   }
 }
 
-const ALL_FLAGS = ['fromRekordbox', 'fromEngine', 'fromTraktor', 'fromSerato'] as const
-const PROGRAMS = ['rekordbox', 'traktor', 'engine', 'serato'] as const
+function savedSession(staged: Staged): SessionEdit {
+  return sessionEdits([trackWith(staged)])[PATH]
+}
 
-describe('TRACK_PROGRAMS', () => {
-  it('names each program’s flag and playlist fields, since saved sessions and jobs already carry these exact keys', () => {
-    expect(PROGRAMS.map((p) => TRACK_PROGRAMS[p])).toEqual([
-      expect.objectContaining({
-        flag: 'fromRekordbox',
-        playlists: 'rekordboxPlaylists',
-        playlistsBase: 'rekordboxPlaylistsBase',
-      }),
-      expect.objectContaining({
-        flag: 'fromTraktor',
-        playlists: 'traktorPlaylists',
-        playlistsBase: 'traktorPlaylistsBase',
-      }),
-      expect.objectContaining({
-        flag: 'fromEngine',
-        playlists: 'enginePlaylists',
-        playlistsBase: 'enginePlaylistsBase',
-      }),
-      expect.objectContaining({
-        flag: 'fromSerato',
-        playlists: 'seratoPlaylists',
-        playlistsBase: 'seratoPlaylistsBase',
-      }),
-    ])
-  })
-})
-
-describe('copyFlags', () => {
-  it.each(ALL_FLAGS)(
-    'carries %s so a reopened or merged row keeps knowing where it came from',
-    (flag) => {
-      const to: Fields = {}
-      copyFlags({ [flag]: true }, to)
-      expect(to).toEqual({ [flag]: true })
-    },
+function originKeysOf(edit: SessionEdit): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(edit).filter(([key]) => (ORIGIN_KEYS as readonly string[]).includes(key)),
   )
+}
 
-  it('carries every flag a track has at once, since a file can sit in several libraries', () => {
-    const to: Fields = {}
-    copyFlags({ fromRekordbox: true, fromEngine: true, fromTraktor: true, fromSerato: true }, to)
-    expect(to).toEqual({
+async function restoreAndResave(saved: SessionEdit): Promise<SessionEdit> {
+  ;(window as unknown as { api: unknown }).api = {
+    takePendingFiles: vi.fn().mockResolvedValue([]),
+    onOpenFiles: vi.fn(() => () => {}),
+    onExpandedBatch: vi.fn(() => () => {}),
+    onFoldersChanged: vi.fn(() => () => {}),
+    onFilesChanged: vi.fn(() => () => {}),
+    unwatchFolders: vi.fn().mockResolvedValue(undefined),
+    expandPaths: vi.fn().mockResolvedValue([]),
+    readMeta: vi.fn().mockResolvedValue({
+      tags: { title: '', artist: '' },
+      duration: 180,
+      cover: null,
+      foreignTags: [],
+    }),
+    recordStat: vi.fn(),
+  }
+  const { result } = renderHook(() =>
+    useTrackLibrary({
+      setSelection: vi.fn(),
+      onForget: vi.fn(),
+      onRemove: vi.fn(),
+      onClear: vi.fn(),
+      onMetaLoaded: vi.fn(),
+      onDuplicatesSkipped: vi.fn(),
+      onNoAudioFound: vi.fn(),
+      onMetaReadFailed: vi.fn(),
+    }),
+  )
+  await act(() => result.current.addPaths([PATH], { [PATH]: saved }))
+  return sessionEdits(result.current.tracks)[PATH]
+}
+
+async function afterReopen(staged: Staged): Promise<Record<string, unknown>> {
+  return originKeysOf(await restoreAndResave(savedSession(staged)))
+}
+
+describe('the saved session carries where a track came from', () => {
+  it.each(PROGRAMS)('writes only the %s origin key for a track opened from it', (program) => {
+    expect(originKeysOf(savedSession({ origins: [program] }))).toEqual({
+      [FLAG_OF[program]]: true,
+    })
+  })
+
+  it('writes every origin key for a file that sits in several libraries', () => {
+    expect(originKeysOf(savedSession({ origins: PROGRAMS }))).toEqual({
       fromRekordbox: true,
       fromEngine: true,
       fromTraktor: true,
@@ -71,116 +133,158 @@ describe('copyFlags', () => {
     })
   })
 
-  it('never copies a false flag, so a stored session stays free of absent origins', () => {
-    const to: Fields = {}
-    copyFlags({ fromRekordbox: false, fromSerato: false }, to)
-    expect(to).toEqual({})
+  it('leaves out an origin that is false, so a stored session stays free of absent origins', () => {
+    expect(originKeysOf(savedSession({ falseOrigins: ['serato', 'rekordbox'] }))).toEqual({})
   })
 
-  it('does not clear a flag the target already has when the source lacks it, so merging never loses an origin', () => {
-    const to: Fields = { fromTraktor: true }
-    copyFlags({ fromTraktor: false }, to)
-    expect(to).toEqual({ fromTraktor: true })
-  })
-
-  it('leaves flags it does not know about out of the target', () => {
-    const to: Fields = {}
-    copyFlags({ rekordboxPlaylists: [{ name: 'A' }] }, to)
-    expect(to).toEqual({})
+  it('writes no origin or playlist key for a track with none', () => {
+    expect(Object.keys(savedSession({}))).toEqual(['meta'])
   })
 })
 
-describe('copyPlaylists', () => {
-  it('copies a staged base even when there are no targets, so a reopened track still knows which playlists it was already in', () => {
-    const to: Fields = {}
-    copyPlaylists({ rekordboxPlaylistsBase: ['3000'], seratoPlaylistsBase: ['A'] }, to)
-    expect(to).toEqual({ rekordboxPlaylistsBase: ['3000'], seratoPlaylistsBase: ['A'] })
+describe('the saved session carries staged playlists', () => {
+  it('writes targets and base per program, empty lists included, so leaving every playlist survives a crash', () => {
+    expect(
+      originKeysOf(
+        savedSession({
+          playlists: {
+            rekordbox: { targets: [{ name: 'R' }], base: ['1'] },
+            serato: { targets: [], base: [] },
+          },
+        }),
+      ),
+    ).toEqual({
+      rekordboxPlaylists: [{ name: 'R' }],
+      rekordboxPlaylistsBase: ['1'],
+      seratoPlaylists: [],
+      seratoPlaylistsBase: [],
+    })
   })
 
-  it('copies targets without a base, leaving the base missing rather than inventing one', () => {
-    const to: Fields = {}
-    copyPlaylists({ traktorPlaylists: [{ id: 'fri', name: 'Friday' }] }, to)
-    expect(to).toEqual({ traktorPlaylists: [{ id: 'fri', name: 'Friday' }] })
-    expect('traktorPlaylistsBase' in to).toBe(false)
-  })
+  it.each(LIBRARIES)(
+    'writes a %s base without targets, so the reopened row still knows which playlists it was already in',
+    (program) => {
+      expect(originKeysOf(savedSession({ playlists: { [program]: { base: ['old'] } } }))).toEqual({
+        [`${program}PlaylistsBase`]: ['old'],
+      })
+    },
+  )
 
-  it('copies an empty target list, since [] is the user’s choice to leave every playlist', () => {
-    const to: Fields = {}
-    copyPlaylists({ enginePlaylists: [], enginePlaylistsBase: [] }, to)
-    expect(to).toEqual({ enginePlaylists: [], enginePlaylistsBase: [] })
+  it.each(LIBRARIES)('writes %s targets without a base and does not invent one', (program) => {
+    const keys = originKeysOf(
+      savedSession({ playlists: { [program]: { targets: [{ id: 'x', name: 'X' }] } } }),
+    )
+    expect(keys).toEqual({ [`${program}Playlists`]: [{ id: 'x', name: 'X' }] })
   })
 
   it('keeps each program’s playlists apart from the others', () => {
-    const to: Fields = {}
-    copyPlaylists(
-      {
-        rekordboxPlaylists: [{ name: 'R' }],
-        traktorPlaylists: [{ id: 't', name: 'T' }],
-        enginePlaylists: [{ id: 'e', name: 'E' }],
-        seratoPlaylists: [{ id: 's', name: 'S' }],
-      },
-      to,
-    )
-    expect(to).toEqual({
+    const playlists = {
+      rekordbox: { targets: [{ name: 'R' }] },
+      traktor: { targets: [{ id: 't', name: 'T' }] },
+      engine: { targets: [{ id: 'e', name: 'E' }] },
+      serato: { targets: [{ id: 's', name: 'S' }] },
+    }
+    expect(originKeysOf(savedSession({ playlists }))).toEqual({
       rekordboxPlaylists: [{ name: 'R' }],
       traktorPlaylists: [{ id: 't', name: 'T' }],
       enginePlaylists: [{ id: 'e', name: 'E' }],
       seratoPlaylists: [{ id: 's', name: 'S' }],
     })
   })
+})
 
-  it('shares the source arrays instead of cloning them', () => {
-    const targets = [{ id: 's', name: 'S' }]
-    const base = ['s']
-    const to: Fields = {}
-    copyPlaylists({ seratoPlaylists: targets, seratoPlaylistsBase: base }, to)
-    expect(to.seratoPlaylists).toBe(targets)
-    expect(to.seratoPlaylistsBase).toBe(base)
+describe('reopening a saved session', () => {
+  it.each(PROGRAMS)('gives a reopened %s row its origin back', async (program) => {
+    expect(await afterReopen({ origins: [program] })).toEqual({ [FLAG_OF[program]]: true })
   })
 
-  it('does not touch what the target holds when the source has nothing staged', () => {
-    const to: Fields = { rekordboxPlaylists: [{ name: 'Keep' }], rekordboxPlaylistsBase: ['1'] }
-    copyPlaylists({}, to)
-    expect(to).toEqual({ rekordboxPlaylists: [{ name: 'Keep' }], rekordboxPlaylistsBase: ['1'] })
+  it('gives a reopened row every origin it had', async () => {
+    expect(await afterReopen({ origins: PROGRAMS })).toEqual({
+      fromRekordbox: true,
+      fromEngine: true,
+      fromTraktor: true,
+      fromSerato: true,
+    })
   })
 
-  it('overwrites the target’s playlists with the source’s when both have them', () => {
-    const to: Fields = { traktorPlaylists: [{ id: 'old', name: 'Old' }] }
-    copyPlaylists({ traktorPlaylists: [{ id: 'new', name: 'New' }] }, to)
-    expect(to.traktorPlaylists).toEqual([{ id: 'new', name: 'New' }])
+  it('does not bring back an origin that was saved as false', async () => {
+    const saved = { ...savedSession({}), fromSerato: false }
+    expect(originKeysOf(await restoreAndResave(saved))).toEqual({})
   })
 
-  it('ignores flags', () => {
-    const to: Fields = {}
-    copyPlaylists({ fromRekordbox: true }, to)
-    expect(to).toEqual({})
+  it.each(LIBRARIES)(
+    'keeps a staged %s base without targets across save, reopen and save, so the row still knows its membership',
+    async (program) => {
+      expect(await afterReopen({ playlists: { [program]: { base: ['old'] } } })).toEqual({
+        [`${program}PlaylistsBase`]: ['old'],
+      })
+    },
+  )
+
+  it('keeps targets without a base from growing one: rekordbox stays absent, an empty base stays empty', async () => {
+    const keys = await afterReopen({
+      playlists: {
+        rekordbox: { targets: [{ name: 'R' }] },
+        traktor: { targets: [{ id: 't', name: 'T' }], base: [] },
+      },
+    })
+    expect(keys).toEqual({
+      rekordboxPlaylists: [{ name: 'R' }],
+      traktorPlaylists: [{ id: 't', name: 'T' }],
+      traktorPlaylistsBase: [],
+    })
+    expect('rekordboxPlaylistsBase' in keys).toBe(false)
+  })
+
+  it('restores a literal session written today with every origin, a rekordbox target, a Traktor empty base and a Serato base alone', async () => {
+    const saved: SessionEdit = {
+      meta: { ...emptyMetadata(), title: 'Restored' },
+      fromRekordbox: true,
+      fromEngine: true,
+      fromTraktor: true,
+      fromSerato: true,
+      rekordboxPlaylists: [{ name: 'Cierre' }],
+      traktorPlaylistsBase: [],
+      seratoPlaylistsBase: ['crate-a'],
+    }
+    expect(originKeysOf(await restoreAndResave(saved))).toEqual(originKeysOf(saved))
+  })
+
+  it('restores nothing for a saved session that has no origin or playlists', async () => {
+    const saved: SessionEdit = { meta: { ...emptyMetadata(), title: 'Restored' } }
+    expect(originKeysOf(await restoreAndResave(saved))).toEqual({})
   })
 })
 
 describe('jobPlaylists', () => {
+  const NONE = Object.fromEntries(PLAYLIST_KEYS.map((k) => [k, undefined]))
+
   it('sends the base of a program without targets, leaving main to decide it is not wanted', () => {
-    expect(jobPlaylists({ enginePlaylistsBase: ['7'] })).toMatchObject({
-      enginePlaylists: undefined,
+    expect(jobPlaylists(trackWith({ playlists: { engine: { base: ['7'] } } }))).toEqual({
+      ...NONE,
       enginePlaylistsBase: ['7'],
     })
   })
 
   it('sends empty lists as they are, so leaving every playlist reaches main', () => {
-    expect(jobPlaylists({ traktorPlaylists: [], traktorPlaylistsBase: [] })).toMatchObject({
+    expect(jobPlaylists(trackWith({ playlists: { traktor: { targets: [], base: [] } } }))).toEqual({
+      ...NONE,
       traktorPlaylists: [],
       traktorPlaylistsBase: [],
     })
   })
 
   it('sends all four programs’ playlists in one job', () => {
-    const job = jobPlaylists({
-      rekordboxPlaylists: [{ name: 'R' }],
-      rekordboxPlaylistsBase: ['1'],
-      traktorPlaylists: [{ id: 't', name: 'T' }],
-      enginePlaylists: [{ id: 'e', name: 'E' }],
-      enginePlaylistsBase: ['2'],
-      seratoPlaylists: [{ id: 's', name: 'S' }],
-    })
+    const job = jobPlaylists(
+      trackWith({
+        playlists: {
+          rekordbox: { targets: [{ name: 'R' }], base: ['1'] },
+          traktor: { targets: [{ id: 't', name: 'T' }] },
+          engine: { targets: [{ id: 'e', name: 'E' }], base: ['2'] },
+          serato: { targets: [{ id: 's', name: 'S' }] },
+        },
+      }),
+    )
     expect(job).toEqual({
       rekordboxPlaylists: [{ name: 'R' }],
       rekordboxPlaylistsBase: ['1'],
@@ -193,74 +297,8 @@ describe('jobPlaylists', () => {
     })
   })
 
-  it('never carries origin flags into the job', () => {
-    expect(Object.keys(jobPlaylists({ fromSerato: true, fromRekordbox: true }))).not.toContain(
-      'fromSerato',
-    )
-  })
-})
-
-describe('sessionEdits origin and playlists', () => {
-  it.each(ALL_FLAGS)(
-    'writes %s true into the saved edit and nothing for the other origins',
-    (flag) => {
-      const edit = sessionEdits([staged({ [flag]: true })])['/music/a.wav']
-      for (const other of ALL_FLAGS) expect(edit[other]).toBe(other === flag ? true : undefined)
-    },
-  )
-
-  it('omits a false flag from the saved edit', () => {
-    const edit = sessionEdits([staged({ fromEngine: false })])['/music/a.wav']
-    expect('fromEngine' in edit).toBe(false)
-  })
-
-  it('writes staged playlists with their base, empty lists included', () => {
-    const edit = sessionEdits([
-      staged({
-        rekordboxPlaylists: [{ name: 'R' }],
-        rekordboxPlaylistsBase: ['1'],
-        seratoPlaylists: [],
-        seratoPlaylistsBase: [],
-      }),
-    ])['/music/a.wav']
-    expect(edit).toMatchObject({
-      rekordboxPlaylists: [{ name: 'R' }],
-      rekordboxPlaylistsBase: ['1'],
-      seratoPlaylists: [],
-      seratoPlaylistsBase: [],
-    })
-  })
-
-  it('writes a base without targets, so the reopened row still knows its membership', () => {
-    const edit = sessionEdits([staged({ traktorPlaylistsBase: ['old'] })])['/music/a.wav']
-    expect(edit.traktorPlaylistsBase).toEqual(['old'])
-    expect('traktorPlaylists' in edit).toBe(false)
-  })
-
-  it('writes no playlist or flag keys for a track with none', () => {
-    const edit = sessionEdits([staged()])['/music/a.wav']
-    expect(Object.keys(edit)).toEqual(['meta'])
-  })
-
-  it('round-trips through the restore copies, which is how a reopened row gets its origin and playlists back', () => {
-    const edit = sessionEdits([
-      staged({
-        fromRekordbox: true,
-        fromSerato: true,
-        rekordboxPlaylists: [{ name: 'R' }],
-        traktorPlaylistsBase: ['old'],
-        enginePlaylists: [],
-      }),
-    ])['/music/a.wav']
-    const patch: Fields = {}
-    copyFlags(edit, patch)
-    copyPlaylists(edit, patch)
-    expect(patch).toEqual({
-      fromRekordbox: true,
-      fromSerato: true,
-      rekordboxPlaylists: [{ name: 'R' }],
-      traktorPlaylistsBase: ['old'],
-      enginePlaylists: [],
-    })
+  it('never carries any origin into the job', () => {
+    const keys = Object.keys(jobPlaylists(trackWith({ origins: PROGRAMS })))
+    for (const flag of FLAG_KEYS) expect(keys).not.toContain(flag)
   })
 })
