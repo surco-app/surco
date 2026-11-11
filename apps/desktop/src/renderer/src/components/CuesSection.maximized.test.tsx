@@ -1597,6 +1597,52 @@ describe('CuesSection maximized over the rest of the editor', () => {
     expect(screen.queryByTestId('cues-menu-snap')).toBeNull()
   })
 
+  it('swaps two hot cues letters from the menu when each letter is a fixed pad', async () => {
+    setup(
+      { cueLettersByTime: false },
+      {
+        ...READ,
+        cues: [
+          { id: 'a', ms: 64000, kind: 1, color: 1 },
+          { id: 'b', ms: 120000, kind: 2, color: 1 },
+        ],
+      },
+    )
+    await maximize()
+    fireEvent.contextMenu(screen.getByTestId('cue-wave-hot-A'), { clientX: 100, clientY: 5 })
+    expect(screen.getByTestId('cues-menu-letter-A')).toHaveAttribute('aria-pressed', 'true')
+    fireEvent.click(screen.getByTestId('cues-menu-letter-B'))
+    expect(screen.getByTestId('cue-wave-hot-B').style.left).toContain('16%')
+    expect(screen.getByTestId('cue-wave-hot-A').style.left).toContain('30%')
+    expect(screen.queryByTestId('cues-menu')).toBeNull()
+  })
+
+  it('offers no letters in the menu while the letters follow the track order, since a swap would not last', async () => {
+    setup({ cueLettersByTime: true })
+    await maximize()
+    seek(64000)
+    fireEvent.click(screen.getByTestId('cues-pad-A'))
+    fireEvent.contextMenu(screen.getByTestId('cue-wave-hot-A'), { clientX: 100, clientY: 5 })
+    expect(screen.queryByTestId('cues-menu-letter-B')).toBeNull()
+  })
+
+  it('cannot take the letter of a loop from the menu', async () => {
+    setup(
+      { cueLettersByTime: false },
+      {
+        ...READ,
+        cues: [
+          { id: 'a', ms: 64000, kind: 1, color: 1 },
+          { id: 'l', ms: 120000, kind: 2, color: 1, loop: true },
+        ],
+      },
+    )
+    await maximize()
+    fireEvent.contextMenu(screen.getByTestId('cue-wave-hot-A'), { clientX: 100, clientY: 5 })
+    expect(screen.getByTestId('cues-menu-letter-B')).toBeDisabled()
+    expect(screen.getByTestId('cues-menu-letter-C')).toBeEnabled()
+  })
+
   it('closes the mark menu with Escape without restoring the maximized section', async () => {
     setup()
     await maximize()

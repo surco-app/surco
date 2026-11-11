@@ -1069,6 +1069,7 @@
       "menuToHot": "Turn into a hot cue",
       "menuToCall": "Turn into a CALL",
       "menuSnap": "Move to the beat",
+      "menuLetter": "Letter",
       "colour": "Colour {{index}}",
       "colourPicker": "Cue colour",
       "selectedHot": "Hot cue {{letter}}",

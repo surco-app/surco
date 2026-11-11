@@ -1069,6 +1069,7 @@
       "menuToHot": "ホットキューに変換",
       "menuToCall": "CALL に変換",
       "menuSnap": "ビートに合わせる",
+      "menuLetter": "文字",
       "colour": "色 {{index}}",
       "colourPicker": "キューの色",
       "selectedHot": "ホットキュー {{letter}}",

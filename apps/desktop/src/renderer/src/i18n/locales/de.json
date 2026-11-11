@@ -1069,6 +1069,7 @@
       "menuToHot": "In Hot Cue umwandeln",
       "menuToCall": "In CALL umwandeln",
       "menuSnap": "Auf den Schlag setzen",
+      "menuLetter": "Buchstabe",
       "colour": "Farbe {{index}}",
       "colourPicker": "Cue-Farbe",
       "selectedHot": "Hot Cue {{letter}}",

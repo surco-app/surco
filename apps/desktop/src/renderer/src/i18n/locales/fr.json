@@ -1069,6 +1069,7 @@
       "menuToHot": "Transformer en hot cue",
       "menuToCall": "Transformer en CALL",
       "menuSnap": "Caler sur le temps",
+      "menuLetter": "Lettre",
       "colour": "Couleur {{index}}",
       "colourPicker": "Couleur du cue",
       "selectedHot": "Hot cue {{letter}}",

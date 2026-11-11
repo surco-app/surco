@@ -1805,6 +1805,33 @@ function Editing({
               >
                 {tr(markTarget.kind === 0 ? 'editor.cues.menuToHot' : 'editor.cues.menuToCall')}
               </button>
+              {markTarget.kind !== 0 && !settings.cueLettersByTime && (
+                <div className="flex items-center gap-1 px-3 py-1">
+                  <span className="mr-1 text-fg-dim">{tr('editor.cues.menuLetter')}</span>
+                  {ctx.slots.kinds.map((kind) => {
+                    const holder = state.cues.find((c) => c.kind === kind)
+                    return (
+                      <button
+                        key={kind}
+                        type="button"
+                        data-testid={`cues-menu-letter-${cueLetter(kind)}`}
+                        aria-pressed={kind === markTarget.kind}
+                        disabled={holder !== undefined && state.locked.includes(holder.key)}
+                        onClick={() =>
+                          fromMarkMenu({ type: 'reletter', key: markTarget.key, kind })
+                        }
+                        className={`press h-5 w-5 rounded-[3px] text-center font-semibold hover:bg-[var(--color-hover)] disabled:opacity-40 ${
+                          kind === markTarget.kind
+                            ? 'bg-[var(--color-fg)] text-[var(--color-panel)] hover:bg-[var(--color-fg)]'
+                            : ''
+                        }`}
+                      >
+                        {cueLetter(kind)}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
               {offGridKeys.includes(markTarget.key) && (
                 <button
                   type="button"
