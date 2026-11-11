@@ -1061,7 +1061,6 @@
       "count_one": "In {{count}} Playlist",
       "count_other": "In {{count}} Playlists",
       "search": "Playlist suchen oder erstellen",
-      "ofTotal": "{{chosen}} von {{total}}",
       "create": "Playlist „{{name}}“ erstellen",
       "pending": "Wird beim Schreiben des Tracks erstellt",
       "some": "Nur bei einigen Tracks. Klicken, um sie allen hinzuzufügen",
