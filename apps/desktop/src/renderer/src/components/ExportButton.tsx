@@ -3,14 +3,8 @@ import type React from 'react'
 import { useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { OUTPUT_FORMATS } from '../../../shared/outputFormats'
-import type {
-  FormatSetting,
-  OutputFormat,
-  PlaylistSource,
-  ProcessStage,
-} from '../../../shared/types'
+import type { FormatSetting, OutputFormat, ProcessStage } from '../../../shared/types'
 import type { Destination } from '../lib/destination'
-import type { DjLibraryId } from '../lib/djLibraries'
 import { exportButtonLabel } from '../lib/exportLabel'
 import { STAGE_PROGRESS } from '../lib/progress'
 import type { TrackItem } from '../types'
@@ -39,9 +33,6 @@ interface ExportButtonProps {
   done: boolean
   outputFormat: FormatSetting
   exportedFormat: OutputFormat | null
-  withAppleMusic: boolean
-  djTargets: DjLibraryId[]
-  openSource?: PlaylistSource | null
   incomplete: boolean
   // The reason the convert is blocked (the empty required fields), shown as a tooltip on
   // the disabled button so it explains itself. Only meaningful while incomplete.
@@ -59,9 +50,7 @@ interface ExportButtonProps {
   // Only then is an in-place or stale export a tag update, so the button offers "Update
   // tags" instead of a conversion.
   tagsOnly?: boolean
-  // True when the track already has a copy Surco added to Music, so converting an edit
-  // offers to update that copy rather than reading as a second add.
-  inMusic?: boolean
+  sameFormat?: boolean
   // When set, the button converts the whole selection in the chosen format and labels
   // itself "Convert all (N)" instead of the single-track convert; the format menu works
   // the same, it just applies to every selected track.
@@ -105,16 +94,13 @@ export function ExportButton({
   stage,
   outputFormat,
   exportedFormat,
-  withAppleMusic,
-  djTargets,
-  openSource,
   incomplete,
   incompleteReason,
   blockedLabel,
   onBlockedPress,
   inPlace,
   tagsOnly = false,
-  inMusic,
+  sameFormat = false,
   count,
   quiet,
   destination,
@@ -144,20 +130,15 @@ export function ExportButton({
   const labelSpec = exportButtonLabel({
     processing,
     quiet,
-    count,
     inPlace,
     tagsOnly,
-    inMusic,
+    sameFormat,
     stale,
     replaces,
     libraryBetter,
     done,
-    withAppleMusic,
-    djTargets,
-    openSource,
     format: formatLabel,
     exportedFormat: exportedFormat?.toUpperCase() ?? null,
-    destination,
   })
   // The in-flight view mirrors the track list's row: the stage names what's
   // happening, the fill below marks where in the pipeline it is (same keys, same

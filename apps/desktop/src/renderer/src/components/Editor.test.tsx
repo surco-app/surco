@@ -1028,96 +1028,6 @@ describe('Editor convert button with Traktor taking new tracks', () => {
     renderEditor({ id: 'a' }, 'aiff', { addToAppleMusic: false, addToTraktor: true })
     await waitFor(() => expect(screen.getByTestId('process-btn')).not.toHaveTextContent('Traktor'))
   })
-
-  it('names Traktor once its confirmed collection is found, so the DJ sees where the track goes', async () => {
-    Object.assign(window.api, { libraryStatus: status(true) })
-    renderEditor({ id: 'a' }, 'aiff', {
-      addToAppleMusic: false,
-      addToTraktor: true,
-      addToEngineDj: true,
-      traktorNmlPath: '/c/collection.nml',
-    })
-    expect(screen.getByTestId('process-btn')).toHaveTextContent('Engine DJ')
-    await waitFor(() =>
-      expect(screen.getByTestId('process-btn')).not.toHaveTextContent('Engine DJ'),
-    )
-    expect(screen.getByTestId('process-btn')).toHaveTextContent('Traktor')
-  })
-})
-
-describe('Editor convert button after choosing a DJ library in Settings', () => {
-  const found = (engine: boolean, rekordbox: boolean) => ({
-    rekordbox: { enabled: true, found: rekordbox },
-    engine: { enabled: true, found: engine },
-    traktor: { enabled: false, found: false },
-    serato: { enabled: false, found: false },
-  })
-
-  it('names Engine DJ as soon as the DJ points Settings at its library, without reopening the track', async () => {
-    const libraryStatus = vi.fn<Api['libraryStatus']>().mockResolvedValue(found(false, false))
-    Object.assign(window.api, { libraryStatus })
-    const { changeSettings } = renderEditor({ id: 'a' }, 'aiff', {
-      addToAppleMusic: false,
-      addToEngineDj: true,
-    })
-    await waitFor(() =>
-      expect(screen.getByTestId('process-btn')).not.toHaveTextContent('Engine DJ'),
-    )
-    libraryStatus.mockResolvedValue(found(true, false))
-    changeSettings({ engineLibraryDir: '/e/Engine Library' })
-    await waitFor(() => expect(screen.getByTestId('process-btn')).toHaveTextContent('Engine DJ'))
-  })
-
-  it('names Traktor as soon as the DJ confirms its collection.nml in Settings, without reopening the track', async () => {
-    const libraryStatus = vi.fn<Api['libraryStatus']>().mockResolvedValue(found(false, false))
-    Object.assign(window.api, { libraryStatus })
-    const { changeSettings } = renderEditor({ id: 'a' }, 'aiff', {
-      addToAppleMusic: false,
-      addToTraktor: true,
-    })
-    await waitFor(() => expect(libraryStatus).toHaveBeenCalled())
-    libraryStatus.mockResolvedValue({
-      ...found(false, false),
-      traktor: { enabled: true, found: true },
-    })
-    changeSettings({ traktorNmlPath: '/c/collection.nml' })
-    await waitFor(() => expect(screen.getByTestId('process-btn')).toHaveTextContent('Traktor'))
-  })
-
-  it('names rekordbox as soon as the DJ points Settings at its master.db, without reopening the track', async () => {
-    const libraryStatus = vi.fn<Api['libraryStatus']>().mockResolvedValue(found(false, false))
-    Object.assign(window.api, { libraryStatus })
-    const { changeSettings } = renderEditor({ id: 'a' }, 'aiff', { addToAppleMusic: false })
-    changeSettings({ addToRekordbox: true })
-    await waitFor(() => expect(libraryStatus).toHaveBeenCalled())
-    await waitFor(() =>
-      expect(screen.getByTestId('process-btn')).not.toHaveTextContent('rekordbox'),
-    )
-    libraryStatus.mockResolvedValue(found(false, true))
-    changeSettings({ addToRekordbox: true, rekordboxDbPath: '/c/master.db' })
-    await waitFor(() => expect(screen.getByTestId('process-btn')).toHaveTextContent('rekordbox'))
-  })
-
-  it('names Traktor as soon as the DJ points Settings at its collection.nml, without reopening the track', async () => {
-    const traktor = (found: boolean) => ({
-      rekordbox: { enabled: false, found: false },
-      engine: { enabled: false, found: false },
-      traktor: { enabled: true, found },
-      serato: { enabled: false, found: false },
-    })
-    const libraryStatus = vi.fn<Api['libraryStatus']>().mockResolvedValue(traktor(false))
-    Object.assign(window.api, { libraryStatus })
-    const { changeSettings } = renderEditor({ id: 'a' }, 'aiff', {
-      addToAppleMusic: false,
-      addToTraktor: true,
-      traktorNmlPath: '/c/old.nml',
-    })
-    await waitFor(() => expect(libraryStatus).toHaveBeenCalled())
-    await waitFor(() => expect(screen.getByTestId('process-btn')).not.toHaveTextContent('Traktor'))
-    libraryStatus.mockResolvedValue(traktor(true))
-    changeSettings({ traktorNmlPath: '/c/collection.nml' })
-    await waitFor(() => expect(screen.getByTestId('process-btn')).toHaveTextContent('Traktor'))
-  })
 })
 
 describe('Editor compilation field', () => {
@@ -2397,9 +2307,7 @@ describe('Editor export control', () => {
       outputDir: '/out',
       convertBesideOriginal: true,
     })
-    expect(screen.getByTestId('process-btn')).toHaveTextContent(
-      'Convert to WAV beside the original',
-    )
+    expect(screen.getByTestId('process-btn')).toHaveAccessibleName('Convert to WAV')
   })
 
   // The original bug: once a track was done its export button vanished, so a user
@@ -2828,7 +2736,7 @@ describe('Editor export control', () => {
   })
 
   // A staged normalize, click repair or trim re-renders the audio even when the format
-  // matches, so the job is a re-encode and "Update tags" would undersell what it does.
+  // matches, so "Update tags" would undersell what it does and the button says audio too.
   it.each<[string, Parameters<typeof renderEditor>]>([
     [
       'normalize',
@@ -2847,11 +2755,9 @@ describe('Editor export control', () => {
       ],
     ],
     ['trim', [{ id: 'a', inputPath: '/music/a.wav', trim: { startSec: 2 } }, 'wav']],
-  ])('labels a same-format export with a staged %s as a conversion', (_, args) => {
+  ])('labels a same-format export with a staged %s as a tags and audio update', (_, args) => {
     renderEditor(...args)
-    const button = screen.getByTestId('process-btn')
-    expect(button).toHaveTextContent('WAV')
-    expect(button).not.toHaveTextContent('Update tags')
+    expect(screen.getByTestId('process-btn')).toHaveTextContent('Update tags and audio')
   })
 
   // "Same as source" keeps the file's own format, so with nothing staged it is a tag
@@ -2871,9 +2777,9 @@ describe('Editor export control', () => {
   })
 
   // Reported 01/10: a FLAC converted to AIFF and added to Music, then given another cover,
-  // offered "Convert to AIFF + Apple Music", which reads as a second add. The click syncs
-  // the edit onto the library copy the first add stored, and the button says so.
-  it('offers to update the library copy when a track already in Music is edited', () => {
+  // offered "Convert to AIFF + Apple Music", which reads as a second add. The button now
+  // names only the action, so it never says Music at all.
+  it('keeps Apple Music off the button when a track already in Music is edited', () => {
     ;(window as unknown as { api: { platform: string } }).api.platform = 'darwin'
     renderEditor(
       {
@@ -2888,7 +2794,7 @@ describe('Editor export control', () => {
       'aiff',
       { addToAppleMusic: true },
     )
-    expect(screen.getByTestId('process-btn')).toHaveTextContent('Update in Apple Music')
+    expect(screen.getByTestId('process-btn')).not.toHaveTextContent('Apple Music')
   })
 
   // Picking a format from the dropdown used to convert on the spot, so a misclick
@@ -4742,7 +4648,7 @@ describe('Editor Apple Music library badge', () => {
   it('offers the replace as a deliberate one when Apple Music has the better copy', async () => {
     const { onProcess } = renderWithLibraryCopy({ here: wavLoudness, library: aifLoudness })
     await waitFor(() =>
-      expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Replace anyway with \w+$/),
+      expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Replace anyway$/),
     )
     fireEvent.click(screen.getByTestId('process-btn'))
     expect(onProcess).toHaveBeenCalled()

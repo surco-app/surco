@@ -1,17 +1,12 @@
-import type { PlaylistSource } from '../../../shared/types'
 import i18n from '../i18n'
-import type { Destination } from './destination'
 import type { DjLibraryId } from './djLibraries'
 
 export interface ExportLabelState {
   processing: boolean
   quiet?: boolean
-  count?: number
   inPlace: boolean
   stale: boolean
   done: boolean
-  withAppleMusic: boolean
-  djTargets: DjLibraryId[]
   // Already uppercased for display ("AIFF").
   format: string
   // What the last export actually produced (uppercased), null before any export. Lets
@@ -28,18 +23,9 @@ export interface ExportLabelState {
   // audio. Only then can an in-place or stale export be a tag update; otherwise it is a
   // real conversion.
   tagsOnly?: boolean
-  // The track already has a copy Surco added to Music, which converting an edit syncs
-  // instead of adding a second one.
-  inMusic?: boolean
-  // Where the file lands, named on the button unless Apple Music already names it.
-  destination?: Destination
-  openSource?: PlaylistSource | null
-}
-
-function placeSuffix(state: ExportLabelState): 'Beside' | 'Overwrite' | null {
-  if (state.destination === 'beside') return 'Beside'
-  if (state.destination === 'overwrite') return 'Overwrite'
-  return null
+  // Whether the output keeps the format of the input file, which turns an in-place or
+  // stale export that is not tags only into an update of the audio instead of a conversion.
+  sameFormat?: boolean
 }
 
 // Which label the convert split-button wears, as an i18n key plus its params. The
@@ -63,52 +49,18 @@ export function exportButtonLabel(state: ExportLabelState): {
     if (state.inPlace && state.tagsOnly) return { key: 'editor.updateAgain' }
     return { key: 'editor.reexport' }
   }
-  const place = placeSuffix(state)
-  const namesMusic = state.withAppleMusic && state.openSource !== 'appleMusic'
-  const namedDj = state.djTargets.filter((id) => id !== state.openSource)
-  const programs = programNames(namesMusic, namedDj)
-  if (state.count !== undefined) {
-    if (namedDj.length > 0) {
-      return {
-        key: place ? `editor.convertAll${place}To` : 'editor.convertAllTo',
-        options: { count: state.count, format: state.format, programs },
-      }
-    }
-    if (!state.withAppleMusic && place) {
-      return {
-        key: `editor.convertAll${place}`,
-        options: { count: state.count, format: state.format },
-      }
-    }
-    return {
-      key: namesMusic ? 'editor.convertAllMusic' : 'editor.convertAll',
-      options: { count: state.count, format: state.format },
-    }
-  }
-  if (state.inPlace && state.tagsOnly)
-    return { key: namesMusic ? 'editor.updateMusic' : 'editor.update' }
+  if (state.inPlace && state.tagsOnly) return { key: 'editor.update' }
   if (state.stale && state.tagsOnly) return { key: 'editor.update' }
-  if (state.stale && state.withAppleMusic && state.inMusic)
-    return { key: 'editor.appleMusicUpdate' }
+  if (state.sameFormat && !state.tagsOnly && (state.inPlace || state.stale))
+    return { key: 'editor.updateAudio' }
   if (state.done) return { key: 'editor.exportAgain' }
   if (state.replaces) {
-    if (state.libraryBetter)
-      return { key: 'editor.libraryHasBetter', options: { format: state.format } }
-    return { key: 'editor.replaceMusic', options: { format: state.format } }
-  }
-  if (namedDj.length > 0) {
     return {
-      key: place ? `editor.convert${place}To` : 'editor.convertTo',
-      options: { format: state.format, programs },
+      key: state.libraryBetter ? 'editor.libraryHasBetter' : 'editor.replaceAction',
+      options: { format: state.format },
     }
   }
-  if (!state.withAppleMusic && place) {
-    return { key: `editor.convert${place}`, options: { format: state.format } }
-  }
-  return {
-    key: namesMusic ? 'editor.convert' : 'editor.convertNoMusic',
-    options: { format: state.format },
-  }
+  return { key: 'editor.convertAction', options: { format: state.format } }
 }
 
 export function programNames(namesMusic: boolean, djTargets: DjLibraryId[]): string {

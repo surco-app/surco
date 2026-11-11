@@ -2011,6 +2011,7 @@ export const Editor = memo(function Editor({
           }}
           willEditInPlace={willEditInPlace}
           tagsOnly={tagsOnlyExport}
+          sameFormat={formatMatchesInput(format, item.inputPath)}
           addToAppleMusic={picked.addToAppleMusic}
           djTargets={reachedPrograms(appSettings, reachable)}
           openSource={openSource}

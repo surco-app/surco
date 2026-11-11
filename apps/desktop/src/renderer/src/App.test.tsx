@@ -6018,7 +6018,7 @@ describe('App editor format/destination reseed', () => {
     fireEvent.click(screen.getByTestId('settings-close'))
 
     await waitFor(() =>
-      expect(screen.getByTestId('process-btn')).toHaveTextContent('Convert to AIFF + Apple Music'),
+      expect(screen.getByTestId('process-btn')).toHaveTextContent('Convert to AIFF'),
     )
     fireEvent.click(screen.getByTestId('process-btn'))
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(1))
@@ -6051,9 +6051,6 @@ describe('App editor format/destination reseed', () => {
     fireEvent.click(screen.getByTestId('settings-destination-appleMusic'))
     fireEvent.click(screen.getByTestId('settings-close'))
 
-    await waitFor(() =>
-      expect(screen.getByTestId('process-btn')).toHaveTextContent('Convert to AIFF + Apple Music'),
-    )
     fireEvent.click(screen.getByTestId('process-btn'))
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(1))
     expect(processTrack.mock.calls[0][0].addToAppleMusic).toBe(true)

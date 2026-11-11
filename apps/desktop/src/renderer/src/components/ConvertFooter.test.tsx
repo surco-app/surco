@@ -53,6 +53,7 @@ function footer(
       willEditInPlace={false}
       tagsOnly={false}
       addToAppleMusic={false}
+      sameFormat={false}
       djTargets={[]}
       openSource={null}
       destination={'beside' as Destination}
@@ -1186,10 +1187,5 @@ describe('ConvertFooter inside a library tab', () => {
     render(cloneElement(footer(false), { addToAppleMusic: true, openSource: 'appleMusic' }))
     expect(screen.getByTestId('process-btn')).toHaveTextContent('Convert to AIFF')
     expect(screen.getByTestId('process-btn')).not.toHaveTextContent('Apple Music')
-  })
-
-  it('names Apple Music from Tracks, where adding the file to it is what the click also does', () => {
-    render(cloneElement(footer(false), { addToAppleMusic: true, openSource: null }))
-    expect(screen.getByTestId('process-btn')).toHaveTextContent('Apple Music')
   })
 })

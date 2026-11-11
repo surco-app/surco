@@ -90,6 +90,7 @@ interface ConvertFooterProps {
   onBlockedPress?: () => void
   willEditInPlace: boolean
   tagsOnly: boolean
+  sameFormat: boolean
   addToAppleMusic: boolean
   djTargets: DjLibraryId[]
   openSource: PlaylistSource | null
@@ -158,6 +159,7 @@ export function ConvertFooter({
   onBlockedPress,
   willEditInPlace,
   tagsOnly,
+  sameFormat,
   addToAppleMusic,
   djTargets,
   openSource,
@@ -713,16 +715,13 @@ export function ConvertFooter({
                 done={!isMulti && done}
                 outputFormat={format}
                 exportedFormat={isMulti ? null : exportedFormat}
-                withAppleMusic={isMacOS() && format !== 'flac' && addToAppleMusic}
-                djTargets={djTargets}
-                openSource={openSource}
                 incomplete={incomplete}
                 incompleteReason={incompleteReason}
                 blockedLabel={incompleteSummary}
                 onBlockedPress={onBlockedPress}
                 inPlace={!isMulti && willEditInPlace}
                 tagsOnly={tagsOnly}
-                inMusic={hasMusicCopy}
+                sameFormat={sameFormat}
                 destination={destination}
                 destinations={destinations}
                 outputFolder={outputFolder}
