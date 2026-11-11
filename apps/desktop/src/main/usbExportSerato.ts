@@ -16,6 +16,7 @@ import type { ExportSelection } from './usbExportSource'
 export interface SeratoMarks extends ExportMarks {
   lengthSec: number
   sampleRate: number
+  trackNo: number
   cuesLeftOut?: boolean
 }
 
@@ -24,7 +25,11 @@ export async function seratoExportMarks(file: string): Promise<SeratoMarks | nul
   if (!track) return null
   const read = await seratoTrackCuesOf(`serato:${file}`, track)
   const delta = await rekordboxShiftOfFileIfKnown(file, track.sampleRate)
-  const facts = { lengthSec: Math.round(track.durationMs / 1000), sampleRate: track.sampleRate }
+  const facts = {
+    lengthSec: Math.round(track.durationMs / 1000),
+    sampleRate: track.sampleRate,
+    trackNo: track.trackNo,
+  }
   return { ...foreignMarks(read, delta), ...facts }
 }
 
@@ -85,6 +90,7 @@ export async function readSeratoExportSelection(
         dateAdded: unixDate(row?.addedAt ?? null),
         lengthSec: marks?.lengthSec ?? 0,
         sampleRate: marks?.sampleRate ?? 0,
+        trackNo: marks?.trackNo ?? 0,
         cues: marks?.cues ?? [],
         grid: marks?.grid ?? [],
         ...(marks?.cuesLeftOut && { cuesLeftOut: true }),

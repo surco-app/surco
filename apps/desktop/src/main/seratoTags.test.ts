@@ -148,6 +148,15 @@ describe('readSeratoMarkers', () => {
   })
 })
 
+describe('readSeratoTrack', () => {
+  it('gives the track number the tags of the file hold', () => {
+    const file = withTag(audioFile('mp3'), (f) => {
+      f.tag.track = 7
+    })
+    expect(readSeratoTrack(file)?.trackNo).toBe(7)
+  })
+})
+
 describe('carrySeratoCues from a track whose older cue block disagrees', () => {
   it('takes both cue blocks off a copy whose clock moved, instead of leaving them at the wrong time', async () => {
     const payload = withSeratoCues(null, [{ index: 0, ms: 2000, color: 0xcc0000, name: '' }])

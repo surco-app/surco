@@ -74,6 +74,7 @@ describe('readVirtualdjExportSelection', () => {
       genre: 'Electronic',
       key: 'Ebm',
       year: 1998,
+      trackNo: 1,
       lengthSec: 428,
       sampleRate: 44100,
       fileType: 1,

@@ -31,6 +31,7 @@ describe('parseVirtualdjDatabase', () => {
       album: 'Pray',
       genre: 'Electronic',
       year: '1998',
+      trackNumber: '01',
       key: 'Ebm',
       lengthSeconds: 428.253333,
     })
@@ -108,6 +109,7 @@ describe('parseVirtualdjDatabase', () => {
       album: '',
       genre: '',
       year: '',
+      trackNumber: '',
       key: '',
       lengthSeconds: null,
       firstSeen: null,

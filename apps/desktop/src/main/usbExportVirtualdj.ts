@@ -66,6 +66,7 @@ export async function readVirtualdjExportSelection(
         genre: song?.genre ?? '',
         key: song?.key ?? '',
         year: Number(song?.year) || 0,
+        trackNo: Number.parseInt(song?.trackNumber ?? '', 10) || 0,
         bpm: song?.secondsPerBeat ? 60 / song.secondsPerBeat : 0,
         dateAdded: unixDate(song?.firstSeen ?? null),
         lengthSec: Math.round(song?.lengthSeconds ?? 0),

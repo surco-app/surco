@@ -141,6 +141,7 @@ export function readSeratoTrack(file: string): {
   tempoMap: SeratoTempoMap | null
   durationMs: number
   sampleRate: number
+  trackNo: number
 } | null {
   const ext = extname(file).toLowerCase()
   const read = readerFor(ext)
@@ -157,6 +158,7 @@ export function readSeratoTrack(file: string): {
         tempoMap: readTempo ? readTempo(f) : null,
         durationMs: f.properties?.durationMilliseconds ?? 0,
         sampleRate: f.properties?.audioSampleRate || DEFAULT_SAMPLE_RATE,
+        trackNo: f.tag.track,
       }
     } finally {
       f.dispose()

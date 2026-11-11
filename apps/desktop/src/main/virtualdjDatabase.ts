@@ -18,6 +18,7 @@ export interface VirtualdjSong {
   album: string
   genre: string
   year: string
+  trackNumber: string
   key: string
   lengthSeconds: number | null
   firstSeen: number | null
@@ -77,6 +78,7 @@ function parseSong(open: string, body: string): VirtualdjSong | null {
     album: attr(tags, 'Album'),
     genre: attr(tags, 'Genre'),
     year: attr(tags, 'Year'),
+    trackNumber: attr(tags, 'TrackNumber'),
     key: attr(tags, 'Key'),
     lengthSeconds: number(attr(infos, 'SongLength')),
     firstSeen: number(attr(infos, 'FirstSeen')),
