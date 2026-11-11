@@ -10,12 +10,15 @@ import {
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
+import { cueFingerprint } from './rekordboxCues'
 import type { RekordboxMeta } from './rekordboxMetadata'
 import { createRekordboxQueue } from './rekordboxQueue'
-import type { TrackOp } from './rekordboxQueueOps'
+import type { CuesOp, EditOp, TagsOp, TrackOp } from './rekordboxQueueOps'
 import { applyVirtualdjBatch } from './virtualdjBatch'
+import { virtualdjCueRows } from './virtualdjCueSource'
 import { parseVirtualdjDatabase } from './virtualdjDatabase'
 import { readVirtualdjLibrary, virtualdjLibraryRoots, virtualdjPlaylist } from './virtualdjLibrary'
+import { virtualdjEditFiles } from './virtualdjListsWrite'
 import { virtualdjLibraryHas } from './virtualdjTrackWrite'
 
 const fixture = join(__dirname, 'virtualdjFixtures')
@@ -241,6 +244,64 @@ describe('applyVirtualdjBatch with a converted track', () => {
     expect(lib.backups()).toHaveLength(1)
     expect(lib.backups('lists')).toHaveLength(1)
     expect(await queue.apply(async () => true)).toEqual({ status: 'empty' })
+  })
+})
+
+describe('applyVirtualdjBatch retried after its lists could not be written', () => {
+  it('takes the cues and tags it already wrote as done, with no conflict, and writes nothing twice', async () => {
+    const lib = library()
+    const song = parseVirtualdjDatabase(lib.database()).find((x) => x.path === HELD)
+    const rows = virtualdjCueRows(song as NonNullable<typeof song>)
+    const cues: CuesOp = {
+      id: 'cues',
+      kind: 'cues',
+      contentId: `virtualdj:${HELD}`,
+      path: HELD,
+      label: 'Pray',
+      wanted: rows.map((r, i) => ({
+        id: r.id,
+        ms: i === 0 ? 31000 : r.ms,
+        kind: r.kind,
+        color: r.color,
+      })),
+      fingerprint: cueFingerprint(rows),
+    }
+    const tags: TagsOp = {
+      id: 'tags',
+      kind: 'tags',
+      path: HELD,
+      label: 'Pray.mp3',
+      fields: { tsng: 'Pray (edit)' },
+      from: { tsng: 'Pray (W.I.P. In The Church Mix)' },
+    }
+    const create = { kind: 'create', parentId: 'root', name: 'Nueva', folder: false } as const
+    const edit: EditOp = {
+      id: 'edit',
+      kind: 'edit',
+      edit: create,
+      stamps: {},
+      files: virtualdjEditFiles(create, lib.roots()),
+      label: 'Nueva',
+    }
+    const written = () => lib.database() !== FIXTURE_XML
+    const blocked = { ...lib.deps, virtualdjOpen: vi.fn(async () => written()) }
+    expect(await applyVirtualdjBatch([cues, tags, edit], blocked)).toEqual({
+      ok: false,
+      reason: 'cancelled',
+    })
+    const once = lib.database()
+    expect(once).toContain('Title="Pray (edit)"')
+    expect(once).toContain('Pos="31.0" Num="1"')
+    expect(await applyVirtualdjBatch([cues, tags, edit], lib.deps)).toMatchObject({
+      ok: true,
+      outcomes: [
+        { id: 'cues', applied: true, notices: [] },
+        { id: 'tags', applied: true, notices: [] },
+        { id: 'edit', applied: true },
+      ],
+    })
+    expect(lib.database()).toBe(once)
+    expect(lib.list('Nueva')).toEqual([])
   })
 })
 

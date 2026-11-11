@@ -35,6 +35,23 @@ function cueOf(wanted: WantedCue, song: VirtualdjSong): VirtualdjCueWrite {
   }
 }
 
+const cueKeys = (cues: { slot: number; ms: number; color: number | null }[]): string =>
+  cues
+    .map((c) => `${c.slot}|${Math.round(c.ms)}|${c.color ?? ''}`)
+    .sort()
+    .join(';')
+
+function holdsWanted(rows: ReturnType<typeof virtualdjCueRows>, wanted: WantedCue[]): boolean {
+  return (
+    cueKeys(rows.map((r) => ({ slot: Number(r.id), ms: r.ms, color: r.color }))) ===
+    cueKeys(
+      wanted
+        .filter((c) => c.kind !== 0)
+        .map((c) => ({ slot: HOT_KINDS.indexOf(c.kind) + 1, ms: c.ms, color: c.color })),
+    )
+  )
+}
+
 export function songIn(
   draft: VirtualdjDraft,
   roots: VirtualdjRoot[],
@@ -71,7 +88,10 @@ export function applyVirtualdjCueOp(
   if (!found) return refused('not-in-library')
   const { file, xml, song } = found
   const rows = virtualdjCueRows(song)
-  if (cueFingerprint(rows) !== op.fingerprint) return refused('cues-changed')
+  if (cueFingerprint(rows) !== op.fingerprint)
+    return holdsWanted(rows, op.wanted)
+      ? { id: op.id, applied: true, notices: [] }
+      : refused('cues-changed')
   const valid = validWantedSet(op.wanted, rows)
   if (!valid.ok) {
     log.warn(`VirtualDJ cues: refused the queued set for ${op.contentId} (${valid.reason})`)

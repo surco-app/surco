@@ -149,6 +149,9 @@ export function applyVirtualdjTags(
   if (!found) return refused('tags-not-in-library')
   const { file, xml, song } = found
   const from = Object.entries(op.from ?? {}) as [SeratoTagField, string][]
+  const fields = Object.entries(op.fields) as [SeratoTagField, string][]
+  if (fields.every(([tag, to]) => sameText(song[HELD[tag]], to)))
+    return { id: op.id, applied: true, notices: [] }
   if (!from.every(([tag, was]) => sameText(song[HELD[tag]], was))) return refused('tags-changed')
   const tags: Partial<Record<'Title' | 'Author' | 'Album' | 'Genre', string>> = {}
   for (const [tag, value] of Object.entries(op.fields) as [SeratoTagField, string][])
