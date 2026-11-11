@@ -83,7 +83,7 @@ export function FeedbackModal({ error, stack, onClose }: Props): React.JSX.Eleme
         <h2 id="feedback-title" className="text-base font-semibold">
           {tr('feedback.sentTitle')}
         </h2>
-        <p data-testid="feedback-sent" className="max-w-[340px] text-sm text-fg-muted">
+        <p data-testid="feedback-sent" className="max-w-[340px] text-pretty text-sm text-fg-muted">
           {tr('feedback.sentBody', { email: trimmedEmail })}
         </p>
         <div className="mt-3 flex self-stretch justify-end border-t border-[var(--color-line)] pt-4">
@@ -166,7 +166,7 @@ export function FeedbackModal({ error, stack, onClose }: Props): React.JSX.Eleme
         <h2 id="feedback-title" className="text-base font-semibold">
           {tr(error ? 'feedback.titleError' : 'feedback.title')}
         </h2>
-        <p className="text-sm leading-relaxed text-fg-muted">
+        <p className="text-pretty text-sm leading-relaxed text-fg-muted">
           {tr(error ? 'feedback.ledeError' : 'feedback.lede')}
         </p>
       </div>
