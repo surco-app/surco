@@ -147,12 +147,14 @@ export async function commitVirtualdjDraft(
       const tmp = `${file}${WRITING}`
       temps.add(tmp)
       writeFileSync(tmp, xml, 'utf8')
-      const refusal = (await deps.virtualdjOpen()) ? 'cancelled' : moved() ? 'changed' : null
-      if (refusal) return undo() ? refusal : 'write-unknown'
+    }
+    const refusal = (await deps.virtualdjOpen()) ? 'cancelled' : moved() ? 'changed' : null
+    if (refusal) return undo() ? refusal : 'write-unknown'
+    for (const { file } of changes) {
+      const tmp = `${file}${WRITING}`
       renameSync(tmp, file)
       temps.delete(tmp)
       done.push(file)
-      stamps.set(file, fileStampOf(file))
     }
     return 'written'
   } catch (e) {

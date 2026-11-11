@@ -1,6 +1,6 @@
 import { mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import {
   commitVirtualdjDraft,
@@ -137,6 +137,59 @@ describe('commitVirtualdjDraft', () => {
     expect(await commitVirtualdjDraft(draft, deps({ virtualdjOpen: open }))).toBe('changed')
     expect(readFileSync(database, 'utf8')).toBe(theirs)
     expect(readdirSync(dir)).toEqual(['database.xml'])
+  })
+
+  it('checks VirtualDJ is closed for every database before renaming the first, so a rollback never lands under a running VirtualDJ', async () => {
+    const { dir, database, backupDir, deps } = library()
+    const volume = join(dirname(dir), 'Volumes', 'Public')
+    const volumeDir = join(volume, 'VirtualDJ')
+    mkdirSync(volumeDir, { recursive: true })
+    const volumeDatabase = join(volumeDir, 'database.xml')
+    writeFileSync(volumeDatabase, fixture)
+    const untouched: boolean[] = []
+    const open = vi.fn(async () => {
+      untouched.push(
+        readFileSync(database, 'utf8') === fixture &&
+          readFileSync(volumeDatabase, 'utf8') === fixture,
+      )
+      return false
+    })
+    const draft = createVirtualdjDraft()
+    draft.write(database, edited(draft.read(database) as string))
+    draft.write(volumeDatabase, edited(draft.read(volumeDatabase) as string))
+    const roots = () => [
+      { dir, root: '/' },
+      { dir: volumeDir, root: volume },
+    ]
+    expect(await commitVirtualdjDraft(draft, deps({ roots, virtualdjOpen: open }))).toBe('written')
+    expect(untouched.length).toBeGreaterThan(1)
+    expect(untouched.every(Boolean)).toBe(true)
+    expect(readFileSync(volumeDatabase, 'utf8')).toBe(edited(fixture))
+    const [folder] = readdirSync(backupDir)
+    expect(readFileSync(join(backupDir, folder, 'Public', 'database.xml'), 'utf8')).toBe(fixture)
+  })
+
+  it('writes neither database when VirtualDJ opens at the last check of a save over two drives', async () => {
+    const { dir, database, deps } = library()
+    const volume = join(dirname(dir), 'Volumes', 'Public')
+    const volumeDir = join(volume, 'VirtualDJ')
+    mkdirSync(volumeDir, { recursive: true })
+    const volumeDatabase = join(volumeDir, 'database.xml')
+    writeFileSync(volumeDatabase, fixture)
+    const open = vi.fn().mockResolvedValueOnce(false).mockResolvedValue(true)
+    const draft = createVirtualdjDraft()
+    draft.write(database, edited(draft.read(database) as string))
+    draft.write(volumeDatabase, edited(draft.read(volumeDatabase) as string))
+    const roots = () => [
+      { dir, root: '/' },
+      { dir: volumeDir, root: volume },
+    ]
+    expect(await commitVirtualdjDraft(draft, deps({ roots, virtualdjOpen: open }))).toBe(
+      'cancelled',
+    )
+    expect(readFileSync(database, 'utf8')).toBe(fixture)
+    expect(readFileSync(volumeDatabase, 'utf8')).toBe(fixture)
+    expect(readdirSync(volumeDir)).toEqual(['database.xml'])
   })
 
   it('keeps only the last 20 copies, as with Serato', async () => {
