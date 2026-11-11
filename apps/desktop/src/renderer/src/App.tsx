@@ -2721,11 +2721,7 @@ export default function App(): React.JSX.Element {
   // library holds afterwards is re-read and shown (useRekordboxEdits).
   const editableOpen =
     editableSource !== null && browser.playlist !== null && playlistScope !== null
-  const cuesOpen =
-    editableOpen ||
-    ((browser.source === 'engine' || browser.source === 'traktor' || browser.source === 'serato') &&
-      browser.playlist !== null &&
-      playlistScope !== null)
+  const cuesOpen = sourceProgram !== null && browser.playlist !== null && playlistScope !== null
   const runningNote = sourceProgram && CUE_EDITORS[sourceProgram].runningNote
   const { data: programRunning = false } = useQuery({
     queryKey: [`${sourceProgram}-running`],
