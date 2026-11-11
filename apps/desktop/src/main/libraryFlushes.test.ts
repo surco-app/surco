@@ -624,6 +624,39 @@ describe('duplicateLibraryDeps', () => {
     expect(FILE_USE.check.mock.calls).toEqual([['/m/a.mp3'], ['/m/b.mp3']])
   })
 
+  it('gives a step to every library whose sync is on, found or missing, so none keeps naming the removed copy', () => {
+    const settings = { ...SETTINGS }
+    const status = structuredClone(STATUS)
+    const steps = () =>
+      Object.keys(duplicateLibraryDeps(host(), sessions, () => ({ serato: [] })).libraries).sort()
+    try {
+      Object.assign(SETTINGS, {
+        syncRekordbox: true,
+        syncEngineDj: true,
+        engineLibraryDir: '/e',
+        syncTraktor: true,
+        traktorNmlPath: '/c/collection.nml',
+      })
+      Object.assign(STATUS, {
+        rekordbox: { enabled: true, found: true },
+        engine: { enabled: true, found: true },
+        traktor: { enabled: true, found: true },
+      })
+      expect(steps()).toEqual(['engine', 'rekordbox', 'traktor'])
+      Object.assign(STATUS, {
+        rekordbox: { enabled: true, found: false },
+        engine: { enabled: true, found: false },
+        traktor: { enabled: true, found: false },
+      })
+      expect(steps()).toEqual(['engine', 'rekordbox', 'traktor'])
+      Object.assign(SETTINGS, { syncRekordbox: false, syncEngineDj: false, syncTraktor: false })
+      expect(steps()).toEqual([])
+    } finally {
+      Object.assign(SETTINGS, settings)
+      Object.assign(STATUS, status)
+    }
+  })
+
   it('asks Serato too, so a removed copy a crate still plays is not trashed', () => {
     FILE_USE.open.mockClear()
     const roots = [{ dir: '/Users/v/Music/_Serato_', root: '/' }]

@@ -764,6 +764,10 @@ export function syncTagsInLibraries(
   })
 }
 
+type DuplicateSteps = {
+  [P in WritableProgram]: ReplaceDuplicatesDeps['libraries'][P]
+}
+
 // A removed duplicate copy: each library with its sync on moves to the copy the user kept,
 // through the same prompts, dialogs and Activity rows as the other flushes.
 export function duplicateLibraryDeps(
@@ -776,66 +780,70 @@ export function duplicateLibraryDeps(
   const engine = engineFlushDeps(host)
   const traktor = traktorFlushDeps(host, sessions.traktor)
   const keys = { written: 'activity.duplicatesReplaced' }
-  return {
-    libraries: {
-      ...((rekordbox.collectionPath || rekordbox.collectionMissing) && {
-        rekordbox: (list) =>
-          libraryOutcomes(
-            list,
-            (run) =>
-              flushLibraryRepoints(
-                {
-                  ...rekordbox,
-                  endBatch: () => list,
-                  labelOf: (p) => p.from,
-                  repointTracks: run,
-                },
-                { ...REKORDBOX_KEYS, ...keys },
-              ),
-            (path, items) =>
-              replaceRekordboxDuplicates(path, items, {
-                realPath,
-                sessionBackup: (db) => sessions.rekordbox.ensure(db),
-                held: host.rekordboxHeld,
-              }),
-          ),
-      }),
-      ...((engine.collectionPath || engine.collectionMissing) && {
-        engine: (list) =>
-          libraryOutcomes(
-            list,
-            (run) =>
-              flushLibraryRepoints(
-                { ...engine, endBatch: () => list, labelOf: (p) => p.from, repointTracks: run },
-                { ...ENGINE_KEYS, ...keys },
-              ),
-            (path, items) =>
-              replaceEngineDuplicates(path, items, {
-                realPath,
-                sessionBackup: (db) => sessions.engine.ensure(db),
-              }),
-          ),
-      }),
-      ...(traktor.collectionMissing && {
-        traktor: async (list) => {
+  const steps: DuplicateSteps = {
+    rekordbox:
+      rekordbox.collectionPath || rekordbox.collectionMissing
+        ? (list) =>
+            libraryOutcomes(
+              list,
+              (run) =>
+                flushLibraryRepoints(
+                  {
+                    ...rekordbox,
+                    endBatch: () => list,
+                    labelOf: (p) => p.from,
+                    repointTracks: run,
+                  },
+                  { ...REKORDBOX_KEYS, ...keys },
+                ),
+              (path, items) =>
+                replaceRekordboxDuplicates(path, items, {
+                  realPath,
+                  sessionBackup: (db) => sessions.rekordbox.ensure(db),
+                  held: host.rekordboxHeld,
+                }),
+            )
+        : undefined,
+    engine:
+      engine.collectionPath || engine.collectionMissing
+        ? (list) =>
+            libraryOutcomes(
+              list,
+              (run) =>
+                flushLibraryRepoints(
+                  { ...engine, endBatch: () => list, labelOf: (p) => p.from, repointTracks: run },
+                  { ...ENGINE_KEYS, ...keys },
+                ),
+              (path, items) =>
+                replaceEngineDuplicates(path, items, {
+                  realPath,
+                  sessionBackup: (db) => sessions.engine.ensure(db),
+                }),
+            )
+        : undefined,
+    traktor: traktor.collectionMissing
+      ? async (list) => {
           await traktor.track('export', 'activity.traktorSync', async () => ({}), {
             summary: () => ({ detailKey: 'activity.traktorSyncCollectionMissing' }),
           })
           return list.map(() => 'skipped' as const)
-        },
-      }),
-      ...(traktor.traktorNmlPath && {
-        traktor: (list) =>
-          traktorDuplicateStep(list, {
-            nmlPath: traktor.traktorNmlPath,
-            ensureTraktorClosed: traktor.ensureTraktorClosed,
-            showBlockedDialog: traktor.showBlockedDialog,
-            track: traktor.track,
-            replace: (nmlPath, pairs) =>
-              replaceDuplicatesInCollection(nmlPath, pairs, sessions.traktor),
-          }),
-      }),
-    },
+        }
+      : traktor.traktorNmlPath
+        ? (list) =>
+            traktorDuplicateStep(list, {
+              nmlPath: traktor.traktorNmlPath,
+              ensureTraktorClosed: traktor.ensureTraktorClosed,
+              showBlockedDialog: traktor.showBlockedDialog,
+              track: traktor.track,
+              replace: (nmlPath, pairs) =>
+                replaceDuplicatesInCollection(nmlPath, pairs, sessions.traktor),
+            })
+        : undefined,
+  }
+  const libraries: ReplaceDuplicatesDeps['libraries'] = {}
+  for (const program of WRITABLE_PROGRAMS) if (steps[program]) libraries[program] = steps[program]
+  return {
+    libraries,
     usedByLibrary: djLibraryFileUse(
       {
         rekordbox: rekordbox.collectionPath,
