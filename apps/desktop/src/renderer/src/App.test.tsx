@@ -6413,7 +6413,7 @@ describe('App stats', () => {
     await screen.findByTestId('add-files')
     runMenu('stats')
     await waitFor(() =>
-      expect(screen.getByTestId('settings-subtab-stats')).toHaveAttribute('aria-pressed', 'true'),
+      expect(screen.getByTestId('settings-tab-stats')).toHaveAttribute('aria-selected', 'true'),
     )
   })
 
@@ -6421,7 +6421,7 @@ describe('App stats', () => {
     await renderApp()
     fireEvent.click(await screen.findByTestId('open-stats'))
     await waitFor(() =>
-      expect(screen.getByTestId('settings-subtab-stats')).toHaveAttribute('aria-pressed', 'true'),
+      expect(screen.getByTestId('settings-tab-stats')).toHaveAttribute('aria-selected', 'true'),
     )
   })
 })
@@ -6448,7 +6448,7 @@ describe('App command palette list-wide actions', () => {
     expect(items).toHaveLength(1)
     fireEvent.click(items[0])
     await waitFor(() =>
-      expect(screen.getByTestId('settings-subtab-stats')).toHaveAttribute('aria-pressed', 'true'),
+      expect(screen.getByTestId('settings-tab-stats')).toHaveAttribute('aria-selected', 'true'),
     )
   })
 

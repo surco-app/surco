@@ -39,9 +39,9 @@ export type SettingsTab =
   | 'advanced'
 
 // A sidebar row. `id` is its first tab, the one a click opens; a row that joins several tabs
-// shows them as a switcher above the panel, so fifteen tabs read as ten short rows. The
+// shows them as a switcher above the panel, so fifteen tabs read as eleven short rows. The
 // joined tabs are the ones read together: the editor with its sections and fields, format
-// with processing, naming with the output, shortcuts with stats.
+// with processing, naming with the output.
 export interface SettingsEntry {
   id: SettingsTab
   tabs: SettingsTab[]
@@ -66,7 +66,7 @@ export const SETTINGS_ENTRY_GROUPS: { heading: string | null; entries: SettingsE
     heading: 'output',
     entries: [entry('conversion', 'processing'), entry('naming', 'destination'), entry('programs')],
   },
-  { heading: 'app', entries: [entry('shortcuts', 'stats'), entry('advanced')] },
+  { heading: 'app', entries: [entry('shortcuts'), entry('stats'), entry('advanced')] },
 ]
 
 export const SETTINGS_ENTRIES: SettingsEntry[] = SETTINGS_ENTRY_GROUPS.flatMap((g) => g.entries)

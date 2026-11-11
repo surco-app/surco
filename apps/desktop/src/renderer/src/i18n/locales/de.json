@@ -1523,8 +1523,7 @@
     "entries": {
       "editor": "Editor",
       "conversion": "Audio",
-      "naming": "Dateien",
-      "shortcuts": "Nutzung"
+      "naming": "Dateien"
     },
     "tabs": {
       "general": "Allgemein",
