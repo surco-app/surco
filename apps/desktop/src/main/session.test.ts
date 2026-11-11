@@ -192,6 +192,42 @@ describe('session store', () => {
     expect((await loadLastSession()).edits[kept].appliedRelease).toBeUndefined()
   })
 
+  it('round-trips the programs and playlists a track came from and drops malformed ones', async () => {
+    const dir = app.getPath('userData')
+    const kept = join(dir, 'kept.wav')
+    writeFileSync(kept, 'x')
+    const playlists = { rekordbox: { targets: [{ id: '7', name: 'Warmup' }], base: ['7'] } }
+    saveLastSession([kept], {
+      [kept]: edit({ programs: ['rekordbox'], playlists: playlists as never }),
+    })
+    const good = (await loadLastSession()).edits[kept]
+    expect(good.programs).toEqual(['rekordbox'])
+    expect(good.playlists).toEqual(playlists)
+    for (const programs of [5, {}, 'rekordbox', [1, 'rekordbox']]) {
+      saveLastSession([kept], { [kept]: edit({ programs: programs as never }) })
+      const bad = (await loadLastSession()).edits[kept]
+      expect(bad).toBeDefined()
+      expect(bad.programs).toBeUndefined()
+    }
+    for (const bad of ['rekordbox', 5, ['rekordbox']]) {
+      saveLastSession([kept], { [kept]: edit({ playlists: bad as never }) })
+      expect((await loadLastSession()).edits[kept].playlists).toBeUndefined()
+    }
+    saveLastSession([kept], {
+      [kept]: edit({
+        playlists: {
+          rekordbox: { targets: 'x', base: ['7'] },
+          engine: 5,
+          traktor: { targets: [{ id: '1', name: 'A' }], base: {} },
+        } as never,
+      }),
+    })
+    expect((await loadLastSession()).edits[kept].playlists).toEqual({
+      rekordbox: { base: ['7'] },
+      traktor: { targets: [{ id: '1', name: 'A' }] },
+    })
+  })
+
   // Every session saved before the noise ladder stores the repair as a bare mode string;
   // reopening one must keep the intensity the user dialled, not reset the track.
   it('upgrades a click repair saved as a bare mode by an older version', async () => {

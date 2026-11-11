@@ -87,6 +87,23 @@ function isAppliedRelease(raw: unknown): raw is AppliedRelease {
   return [a.before, a.wrote].every((v) => typeof v === 'object' && v !== null)
 }
 
+function isPlainObject(raw: unknown): raw is Record<string, unknown> {
+  return typeof raw === 'object' && raw !== null && !Array.isArray(raw)
+}
+
+function sanitizePlaylists(raw: unknown): SessionEdit['playlists'] {
+  if (!isPlainObject(raw)) return undefined
+  const kept: Record<string, Record<string, unknown>> = {}
+  for (const [program, entry] of Object.entries(raw)) {
+    if (!isPlainObject(entry)) continue
+    const fields: Record<string, unknown> = {}
+    if (Array.isArray(entry.targets)) fields.targets = entry.targets
+    if (Array.isArray(entry.base)) fields.base = entry.base
+    kept[program] = fields
+  }
+  return kept as SessionEdit['playlists']
+}
+
 // An edit written by this app is well-formed, but the file is hand-editable and old
 // versions wrote no edits at all — anything that isn't the expected shape degrades to
 // "no staged edits for this track" instead of poisoning the restore.
@@ -122,6 +139,11 @@ function sanitizeEdit(raw: unknown, previews: Map<string, ResolvedCover>): Sessi
   // The next release applied reads it field by field, so an unknown shape reads as "no
   // release remembered".
   if (!isAppliedRelease(edit.appliedRelease)) delete edit.appliedRelease
+  if (!Array.isArray(edit.programs) || !edit.programs.every((p) => typeof p === 'string'))
+    delete edit.programs
+  const playlists = sanitizePlaylists(edit.playlists)
+  if (playlists) edit.playlists = playlists
+  else delete edit.playlists
   const declick = parseDeclick(edit.declick)
   if (declick) edit.declick = declick
   else delete edit.declick
