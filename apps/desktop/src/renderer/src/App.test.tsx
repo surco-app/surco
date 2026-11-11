@@ -10012,7 +10012,7 @@ describe('App clean-up on load', () => {
     await renderApp()
     await load(2)
     expect(await screen.findByTestId('field-cleaned-title')).toHaveTextContent(
-      'Cleaned · joined repeated spaces',
+      'Cleaned joined repeated spaces',
     )
     fireEvent.click(screen.getByTestId('field-cleaned-undo-title'))
     await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Alpha  Mix'))
@@ -10088,7 +10088,7 @@ describe('App clean-up of a space the read already trimmed', () => {
     await renderApp()
     await load()
     expect(await screen.findByTestId('field-cleaned-title')).toHaveTextContent(
-      'Cleaned · removed a leading space · Undo',
+      'Cleaned removed a leading space · Undo',
     )
     await waitFor(
       () =>
