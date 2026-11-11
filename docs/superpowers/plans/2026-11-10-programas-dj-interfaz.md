@@ -330,4 +330,95 @@ Medida el 10/11 sobre `6b32bcc33` (main local `7ff5994be`).
 
 ## Resultado de la prueba de fuego
 
-(La rellena la Tarea 13.)
+Hecha el 11/11 (Tarea 13) en la rama desechable `dj-interfaz-prueba`, desde `474b6891c`. VirtualDJ entra solo como lectura. No es `WritableProgram`, no tiene edición, ni cola de cues, ni exportar, ni USB. El módulo falso devuelve una playlist «Pruebas» con dos pistas reales (`~/Music/VirtualDJ Pruebas/Pray.mp3` y `Pray.flac`).
+
+### Qué se tocó
+
+`git diff --stat dj-interfaz`, 68 ficheros, 333 líneas añadidas y 91 quitadas. Por grupos.
+
+| Grupo | Ficheros | Líneas (+/-) |
+|---|---|---|
+| Módulo (`main/virtualdjPlaylistsIpc.ts`, `shared/virtualdjContent.ts`, el icono en `SourceIcons.tsx`) | 3 | +52 |
+| Filas de tabla que pidió el compilador (código de la app, sin tests) | 33 | +125 / -17 |
+| Traducciones (7 claves en los 6 idiomas) | 6 | +72 / -30 (las 30 son la coma que gana la línea anterior) |
+| Tests y `test/api.ts` (fixtures con la fila nueva) | 26 | +84 / -44 |
+
+Dentro de las filas pedidas hay tres cosas que no son una fila, y conviene saberlas antes de VirtualDJ de verdad.
+
+- **Cuatro ajustes guardados nuevos** en `Settings` (`addToVirtualdj`, `syncVirtualdj`, `cueFlowToVirtualdj`, `virtualdjPlaylistsFieldOffered`), con sus valores por defecto en `main/settings.ts`, `settingsContext.tsx`, `settingsDraft.ts` y `test/api.ts`. Los exigen `DJ_REACH_SETTINGS`, `FLOW_TO` y `OFFERED`/`PLAYLISTS_FIELD_OFFERED`, que están tipadas sobre `DjProgram`/`LibraryProgram` y no sobre `WritableProgram`. La spec ya contaba con `addToX` y `syncX`; un programa de solo lectura los arrastra igual.
+- **`UsbProgram` estrechado** (`Exclude<DjProgram, 'virtualdj'>` en `shared/types.ts`). `UsbProgram = DjProgram` y `SOURCE_PROGRAMS.usb` es `P extends UsbProgram ? true : false`, así que sin tocar el tipo la fila obliga a `usb: true` y a una vista en `USB_PROGRAM_VIEW`. Es una línea de tipo, no una fila.
+- **Filas de escritura y de cola sin hueco para «no tiene»**, rellenadas con objetos inertes porque el tipo no admite `null`. Cola de cues en main (`programQueues.virtualdj = { program: 'virtualdj' }`, por `CueProgram = DjProgram`), la píldora de la cola en `App.tsx` (estado vacío y funciones que no hacen nada), `PROGRAM_QUEUES.virtualdj` (una `queueSource` con las palabras de Serato prestadas), `CUE_PROGRAMS.virtualdj` y `COPY.virtualdj` en `CuesSection.tsx` (textos de Serato prestados), `DJ_PROCESSES.virtualdj` (`isRunning` que siempre da `false`), `JOB_PLAYLISTS`, `REPOINT_PLAYLISTS` y `ATTACH_PLAYLISTS` (devuelven `undefined` o el repunte tal cual), el vaciado de etiquetas de `syncTagsInLibraries` (`nothing`) y `libraryStatus` (`enabled: false, found: false`).
+
+### Errores del compilador
+
+Primera pasada, con `'virtualdj'` solo en `DjProgram` (y fuera de `WritableProgram`) salen 134 errores únicos, 52 en código de la app y 82 en tests. Los 52 de la app.
+
+```
+src/main/djProcesses.ts:27 TS2741
+src/main/index.ts:566 TS2741          programQueues (CueProgram)
+src/main/index.ts:1384 TS2741         la tabla DjMainTable
+src/main/index.ts:1503 TS2741         sources de registerCuesIpc
+src/main/libraryFlushes.ts:712 TS2741
+src/main/libraryStatus.ts:27 TS2741
+src/main/libraryTagSync.ts:6 TS2345   programsInOrder
+src/main/processTrack.ts:525 TS2741
+src/main/rekordboxBatch.ts:168 TS2741
+src/main/rekordboxBatch.ts:178 TS2741
+src/main/usbExportIpc.ts:327 TS7053
+src/renderer/src/App.tsx:464 TS7053
+src/renderer/src/App.tsx:468 TS2741
+src/renderer/src/App.tsx:942 TS2741
+src/renderer/src/App.tsx:3981 TS2741
+src/renderer/src/components/CuesBatchSection.tsx:27 TS2345
+src/renderer/src/components/CuesBatchSection.tsx:28 TS2741
+src/renderer/src/components/CuesSection.tsx:191 TS2741
+src/renderer/src/components/Editor.tsx:1180 TS2741
+src/renderer/src/components/settings/CuesTab.tsx:87 TS2741
+src/renderer/src/components/settings/DestinationTab.tsx:643 TS2345
+src/renderer/src/components/settings/GeneralTab.tsx:44 TS2741
+src/renderer/src/components/settings/GeneralTab.tsx:51 TS2741
+src/renderer/src/components/SourceIcons.tsx:92 TS2741
+src/renderer/src/components/SourceRail.tsx:11 TS2741
+src/renderer/src/components/UsbExportModal.tsx:95 TS2741
+src/renderer/src/hooks/useRekordboxPlaylists.ts:26 TS2741 (+4 TS7053 en 92 y 98)
+src/renderer/src/hooks/useRekordboxQueue.ts:53 TS2741
+src/renderer/src/hooks/useSourceBrowser.ts:140 TS2741
+src/renderer/src/lib/cuePrograms.ts:19 TS2741
+src/renderer/src/lib/cueTwins.ts:55 TS2741
+src/renderer/src/lib/djLibraries.ts:17 TS2345
+src/renderer/src/lib/fields.ts:156 TS2741
+src/renderer/src/lib/onboarding.ts:172 TS2741 (+1 TS7053 en 184)
+src/renderer/src/lib/reviewLibraries.ts:3 TS2741
+src/renderer/src/lib/reviewLibraries.ts:14 TS2345
+src/renderer/src/lib/sourcePrograms.ts:35 TS2741
+src/renderer/src/lib/sourcePrograms.ts:77 TS2741
+src/renderer/src/lib/trackPrograms.ts:11 TS2741
+src/renderer/src/test/api.ts:311 TS2322
+src/renderer/src/test/api.ts:316 TS2322
+src/shared/djProgram.ts:13, 15, 24, 26 TS2345 (DJ_PROGRAMS, LIBRARY_PROGRAMS, RAIL_PROGRAMS, CUE_PROGRAMS)
+src/shared/djProgram.ts:59 TS2741      CONTENT_OF
+src/shared/djSettings.ts:3 TS2741
+```
+
+Segunda y tercera pasada, al añadir las cuatro claves de `Settings`, piden filas `main/settings.ts:38`, `settingsContext.tsx:130` y `:193`, `settingsDraft.ts:115`, `CuesTab.tsx:450-451` (`SyncedDraft`), `cueTwins.ts:70` (`TwinSettings`), `CuesBatchSection.tsx:80, 138` y `CuesSection.tsx:755, 761` (`ResolvedSettings` sin `cueFlowToVirtualdj`), `test/api.ts:24`. Los tests piden la misma fila en sus fixtures (82 sitios al principio, sobre todo `MusicReview.test.tsx` con 41, `cueTwins.test.ts` con 22 y `useMusicReview.test.tsx` con 11). Al final los tres `tsc` (web, node, scenarios) quedan limpios.
+
+### Lo que el compilador no pidió
+
+1. **Las traducciones por plantilla.** `sources.virtualdj`, `sources.hide.virtualdj`, `sources.failed.virtualdj`, `sources.notFound.virtualdj`, `sources.gone.virtualdj`, `settings.source.virtualdj` y `settings.sourceVirtualdjUnavailable`, en los 6 idiomas. Se leen con `tr(\`sources.${p}\`)` y similares; sin ellas la pestaña y la casilla salen con la clave en crudo.
+2. **La consulta de disponibilidad de la pestaña (`useSourceBrowser.ts`).** El compilador pide la fila de `found`, pero el valor mínimo (`undefined` o `false`) esconde la pestaña. Hizo falta escribir a mano otra `useQuery` como las de Engine, Traktor y Serato.
+3. **La sonda de `CuesTab.tsx`.** Igual que la anterior. La fila de `foundBy` se rellenó con `false` y la lista de destinos de las cues muestra «VirtualDJ» como no encontrado; un programa real necesita su `useState`/`useEffect` escrito a mano.
+4. **`playlistLibrariesFound` en `App.tsx`.** Pide la fila, pero cada programa llama a `useLibraryAvailable` a mano; con `false` VirtualDJ no ofrece el campo de playlists (correcto para solo lectura, un programa que escriba tiene que añadir la llamada).
+5. **El panel de Ajustes, Programas de DJ (`DestinationTab.tsx`).** `PROGRAM_TABS` exige el programa y aparece el botón «VirtualDJ», pero cada panel es un `<div {...panel('traktor')}>` escrito a mano y el de VirtualDJ no existe, así que el botón abre un panel vacío (comprobado con el driver).
+6. **El asistente de bienvenida (`OnboardingWizard.tsx`).** Detecta las bibliotecas con un `Promise.all` de cuatro sondas fijas y un objeto `Partial`; VirtualDJ no aparece. No se tocó.
+7. **Qué ficheros usa cada biblioteca (`libraryFileUse.ts`, `librariesKeepingOriginal`, `usedByAnyLibrary` en `index.ts`).** Es lo que impide reemplazar, mover a la papelera o dejar sin original un fichero que una biblioteca de DJ referencia. `SyncedLibraries` es `Record<WritableProgram, string>` y Serato entra como clave opcional escrita a mano (`serato?: SeratoLibraryRoot[]`), así que un programa de solo lectura no está protegido y el compilador calla. Es el hueco más serio para VirtualDJ real. No se tocó.
+8. **Las gemelas de cues (`libraryTracksOf` en `registerCuesIpc`)**, los duplicados (`duplicateLibraryDeps`) y la revisión de listas (`listReviewDeps`). Reciben `seratoRoots` por argumento propio; VirtualDJ no entra. No se tocó.
+9. **El editor de cues de una pista de VirtualDJ.** `cuesOpen` es `sourceProgram !== null` y `CUE_PROGRAMS` tiene fila, así que el editor se abre, pero la fuente de cues es `null` y la cola no existe. No se probó qué pasa al guardar. No se tocó.
+10. **Tests que afirman la lista de programas.** Con `tsc` limpio la suite da 17874 pasan, 261 saltados y 16 fallos en 12 ficheros, todos por una lista fija de programas en la afirmación, nunca por un fallo de la app. Órdenes y listas (`djProgram.test.ts` tres, `sourcePrograms.test.ts`, `GeneralTab.test.tsx`, `CuesTab.test.tsx`, `libraryTagSync.test.ts` dos, `libraryStatus.test.ts`, `djReach.test.ts`, `onboarding.test.ts` dos, `OnboardingWizard.test.tsx`), y tres que usan `'virtualdj'` como ejemplo de programa desconocido (`djIpc.test.ts`, `settings.test.ts` y `hiddenSources.test.ts`). Un VirtualDJ real cambia esas afirmaciones y, en los tres últimos, el ejemplo de programa inventado. No se tocaron.
+
+### Criterio
+
+Se cumple. `git diff dj-interfaz` no toca `preload/index.ts` ni `preload/api.ts`, y `TrackItem` (`renderer/src/types.ts`), `SessionEdit` y `ProcessJob` (`shared/types.ts`) no ganan campos; los cambios de `shared/types.ts` son las cuatro claves de `Settings` (la excepción de la spec) y el estrechamiento de `UsbProgram`. El origen de una pista de VirtualDJ viaja en `programs` y `playlists` de `TrackOrigin`, que crecen solos con `DjProgram`; la forma antigua de la sesión (`sessionLegacy.ts`) lo ignora a propósito.
+
+Con el driver (build de la rama desechable, perfil del driver, ningún programa de DJ abierto), la casilla «VirtualDJ» sale en Ajustes, General, Barra lateral (`settings-source-virtualdj`), la pestaña aparece en la barra (`source-rail-virtualdj`), y al abrir «Pruebas» la lista muestra las dos pistas (Pray MP3 y Pray FLAC). Capturas `task13-settings-sidebar.png` y `task13-virtualdj-tab.png` en `.superpowers/sdd/2026-11-10-programas-dj-interfaz/` (no versionado).
+
+Para VirtualDJ real queda estrechar a `WritableProgram` las tablas de escritura que hoy son de `DjProgram` (o aceptar que un programa de solo lectura las rellene en vacío), dar a `CueProgram` un hueco para «sin cola», y pasar a tabla las sondas de disponibilidad (puntos 2 a 4) y el uso de ficheros por biblioteca (punto 7).
