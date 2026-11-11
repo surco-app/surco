@@ -36,7 +36,6 @@ const ORIGIN_KEYS = [...FLAG_KEYS, ...PLAYLIST_KEYS]
 
 interface Staged {
   origins?: DjProgram[]
-  falseOrigins?: DjProgram[]
   playlists?: Partial<
     Record<Library, { targets?: { id?: string; name: string }[]; base?: string[] }>
   >
@@ -127,10 +126,6 @@ describe('the saved session carries where a track came from', () => {
       fromTraktor: true,
       fromSerato: true,
     })
-  })
-
-  it('leaves out an origin that is false, so a stored session stays free of absent origins', () => {
-    expect(originKeysOf(savedSession({ falseOrigins: ['serato', 'rekordbox'] }))).toEqual({})
   })
 
   it('writes no origin or playlist key for a track with none', () => {

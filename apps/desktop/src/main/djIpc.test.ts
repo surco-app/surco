@@ -194,8 +194,11 @@ describe('registerDjIpc', () => {
 
   it('asks only the named program whether it is running, and rejects one that cannot say', async () => {
     const running = vi.fn(async () => true)
-    registerDjIpc(withProgramOps(table(), { serato: { running } }))
+    registerDjIpc(
+      withProgramOps(table(), { serato: { running }, engine: { running: async () => false } }),
+    )
     expect(await handler('dj:running')({}, 'serato')).toBe(true)
+    expect(await handler('dj:running')({}, 'engine')).toBe(false)
     await expect(handler('dj:running')({}, 'rekordbox')).rejects.toThrow('rekordbox has no running')
   })
 })
