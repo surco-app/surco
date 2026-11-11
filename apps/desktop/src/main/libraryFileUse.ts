@@ -30,7 +30,7 @@ export type ReadOnlyLibraries = Omit<LibraryLocations, WritableProgram>
 
 const LIBRARY_ORDER = writableInOrder(['rekordbox', 'engine', 'traktor'])
 
-const FILE_USE_ORDER = programsInOrder(['rekordbox', 'engine', 'traktor', 'serato'])
+const PROGRAM_ORDER = programsInOrder(['rekordbox', 'engine', 'traktor', 'serato'])
 
 // Read only, and it throws when a library it should look in cannot be read: the caller
 // keeps the file then, since that library may still use it.
@@ -111,7 +111,7 @@ export function djLibraryFileUse(
   libraries: LibraryLocations,
   options: PathMatchOptions = {},
 ): (path: string) => Promise<boolean> {
-  const asked = FILE_USE_ORDER.filter((program) => libraries[program].length > 0).map((program) =>
+  const asked = PROGRAM_ORDER.filter((program) => libraries[program].length > 0).map((program) =>
     fileUseOf(program, libraries, options),
   )
   return async (path) => {
@@ -327,10 +327,15 @@ export async function libraryGenresOf(
   return out
 }
 
-const TRACK_OF: Record<
-  WritableProgram,
-  (location: string, path: string, options: PathMatchOptions) => Promise<string | undefined>
-> = {
+type TrackOf = {
+  [P in LibraryProgram]: (
+    location: LocationOf[P],
+    path: string,
+    options: PathMatchOptions,
+  ) => Promise<string | undefined>
+}
+
+const TRACK_OF: TrackOf = {
   rekordbox: async (collection, path, options) => {
     const db = openRekordboxDb(collection, {
       readonly: true,
@@ -371,6 +376,10 @@ const TRACK_OF: Record<
       ? traktorContentId(`${found[0].volume}${found[0].dir}${found[0].file}`)
       : undefined
   },
+  serato: async (roots, path, options) => {
+    const found = seratoFileFinder(readSeratoLibrary(roots), options)(path)
+    return found ? `serato:${found}` : undefined
+  },
 }
 
 function seratoFileFinder(
@@ -387,15 +396,6 @@ function seratoFileFinder(
   }
 }
 
-function seratoTrackOf(
-  roots: SeratoLibraryRoot[],
-  path: string,
-  options: PathMatchOptions,
-): string | undefined {
-  const found = seratoFileFinder(readSeratoLibrary(roots), options)(path)
-  return found ? `serato:${found}` : undefined
-}
-
 // Read only: the id each library gives the file, for the cue editor to place a flow on the
 // same track everywhere. A library that cannot be read, lacks the file or holds it twice is
 // left out, since there is then no one track to write to.
@@ -405,14 +405,21 @@ export async function libraryTracksOf(
   options: PathMatchOptions = {},
 ): Promise<LibraryTracks> {
   const out: LibraryTracks = {}
-  for (const library of LIBRARY_ORDER) {
-    if (!libraries[library]) continue
+  for (const library of PROGRAM_ORDER) {
+    if (libraries[library].length === 0) continue
     try {
-      const track = await TRACK_OF[library](libraries[library], path, options)
+      const track = await trackOf(library, libraries, path, options)
       if (track !== undefined) out[library] = track
     } catch {}
   }
-  const serato = seratoTrackOf(libraries.serato, path, options)
-  if (serato !== undefined) out.serato = serato
   return out
+}
+
+function trackOf<P extends LibraryProgram>(
+  program: P,
+  libraries: LibraryLocations,
+  path: string,
+  options: PathMatchOptions,
+): Promise<string | undefined> {
+  return TRACK_OF[program](libraries[program], path, options)
 }
