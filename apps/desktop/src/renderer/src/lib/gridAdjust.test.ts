@@ -37,10 +37,17 @@ const ctxOf = (draft: GriddedDraft): DraftContext => {
   return { beats, snapTo: beats, strong: [], phrases: [], flows: [MY_FLOW] }
 }
 
-const adjust = (draft: GriddedDraft, fit: GridFit, kicks: number[], zones: boolean) =>
+const adjust = (
+  draft: GriddedDraft,
+  fit: GridFit,
+  kicks: number[],
+  zones: boolean,
+  beats: number[] = ctxOf(draft).beats,
+) =>
   adjustGrid({
     draft,
     ctx: ctxOf(draft),
+    beats,
     fit,
     kicks,
     durationMs: DURATION_MS,
@@ -125,6 +132,13 @@ describe('adjustGrid', () => {
     expect(after.get('c0')).not.toBe(before.get('c0'))
   })
 
+  it('measures the stored beats before adjusting, as the filter does, so a borderline track the filter calls fine stays fine', () => {
+    const draft = draftOn({ bpm: BPM, anchorMs: 11 }, [32, 160, 400])
+    const stored = beatsOf(BPM, 0)
+    const result = adjust(draft, { bpm: BPM, firstMs: 0 }, stored, true, stored)
+    expect(result).toEqual({ kind: 'fine' })
+  })
+
   it('sets a cue aside when the old grid has too few beats to size half a beat', () => {
     const shortMs = 300
     const grid = { bpm: BPM, anchorMs: 102 }
@@ -138,6 +152,7 @@ describe('adjustGrid', () => {
     const beats = gridBeats(grid, shortMs).map((b) => b.ms)
     const result = adjustGrid({
       draft: gridded,
+      beats,
       ctx: { beats, snapTo: beats, strong: [], phrases: [], flows: [MY_FLOW] },
       fit: { bpm: BPM, firstMs: 0 },
       kicks: beatsOf(BPM, 0),

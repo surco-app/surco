@@ -27,16 +27,16 @@ function halfBeatAt(beats: number[], ms: number): number {
 export function adjustGrid(input: {
   draft: CueDraft & { grid: EditableGrid }
   ctx: DraftContext
+  beats: number[]
   fit: GridFit
   kicks: number[]
   durationMs: number
   toleranceMs: number
   zones: boolean
 }): GridAdjustResult {
-  const { draft, ctx, fit, kicks, durationMs, toleranceMs, zones } = input
+  const { draft, ctx, beats: was, fit, kicks, durationMs, toleranceMs, zones } = input
   const beatsOf = (grid: EditableGrid) => gridBeats(grid, durationMs).map((b) => b.ms)
   const check = (beats: number[]) => checkGrid({ beats, kicks, fit, atMs: 0, durationMs })
-  const was = beatsOf(draft.grid)
   const before = check(was)
   if (!needsGridFix(before, toleranceMs)) return { kind: 'fine' }
   const grid = autoFitGrid(draft.grid, fit, 0, kicks, zones)

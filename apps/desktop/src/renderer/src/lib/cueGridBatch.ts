@@ -59,6 +59,7 @@ async function adjustOne(
   const grid = applied.changed ? gridBeats(gridded.grid, read.durationMs) : read.grid
   const result = adjustGrid({
     draft: gridded,
+    beats: grid.map((b) => b.ms),
     ctx: {
       beats: grid.map((b) => b.ms),
       snapTo: quantizePoints(grid, settings.cueQuantize),
