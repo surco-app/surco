@@ -56,9 +56,14 @@ export function isWritable(program: DjProgram): program is WritableProgram {
   return (WRITABLE_PROGRAMS as readonly DjProgram[]).includes(program)
 }
 
+const CONTENT_OF: Record<Exclude<DjProgram, 'rekordbox'>, (contentId: string) => boolean> = {
+  traktor: isTraktorContent,
+  engine: isEngineContent,
+  serato: isSeratoContent,
+}
+
 export function programOf(contentId: string): DjProgram {
-  if (isTraktorContent(contentId)) return 'traktor'
-  if (isEngineContent(contentId)) return 'engine'
-  if (isSeratoContent(contentId)) return 'serato'
+  for (const [program, isContent] of Object.entries(CONTENT_OF))
+    if (isContent(contentId)) return program as DjProgram
   return 'rekordbox'
 }
