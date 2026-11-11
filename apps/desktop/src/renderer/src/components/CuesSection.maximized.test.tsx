@@ -1508,6 +1508,95 @@ describe('CuesSection maximized over the rest of the editor', () => {
     expect(screen.queryByTestId('cues-menu-add-hot')).toBeNull()
   })
 
+  it('turns a hot cue into a CALL in place from its menu, so changing kind needs no delete and re-add', async () => {
+    setup()
+    await maximize()
+    seek(64000)
+    fireEvent.click(screen.getByTestId('cues-pad-A'))
+    fireEvent.contextMenu(screen.getByTestId('cue-wave-hot-A'), { clientX: 100, clientY: 5 })
+    fireEvent.click(screen.getByTestId('cues-menu-to-call'))
+    expect(screen.queryByTestId('cue-wave-hot-A')).toBeNull()
+    expect(screen.getByTestId('cue-wave-call-64000')).toBeInTheDocument()
+    expect(screen.queryByTestId('cues-menu')).toBeNull()
+  })
+
+  it('turns a CALL into a hot cue in place from its menu', async () => {
+    setup()
+    await maximize()
+    seek(64000)
+    fireEvent.click(screen.getByTestId('cues-memory'))
+    fireEvent.contextMenu(screen.getByTestId('cue-wave-call-64000'), { clientX: 100, clientY: 5 })
+    fireEvent.click(screen.getByTestId('cues-menu-to-hot'))
+    expect(screen.queryByTestId('cue-wave-call-64000')).toBeNull()
+    expect(screen.getByTestId('cue-wave-hot-A').style.left).toContain('16%')
+  })
+
+  it('undoes a conversion in one step, since it is one edit to the DJ', async () => {
+    setup()
+    await maximize()
+    seek(64000)
+    fireEvent.click(screen.getByTestId('cues-memory'))
+    fireEvent.contextMenu(screen.getByTestId('cue-wave-call-64000'), { clientX: 100, clientY: 5 })
+    fireEvent.click(screen.getByTestId('cues-menu-to-hot'))
+    editor().focus()
+    key('z', { metaKey: true })
+    expect(screen.getByTestId('cue-wave-call-64000')).toBeInTheDocument()
+    expect(screen.queryByTestId('cue-wave-hot-A')).toBeNull()
+  })
+
+  it('cannot turn a CALL into a hot cue once the 8 letters are taken, so the CALL is never lost', async () => {
+    setup(null, {
+      ...READ,
+      cues: [
+        ...[1, 2, 3, 5, 6, 7, 8, 9].map((kind, i) => ({
+          id: `h${kind}`,
+          ms: 8000 * (i + 1),
+          kind,
+          color: 1,
+        })),
+        { id: 'c1', ms: 120000, kind: 0, color: null },
+      ],
+    })
+    await maximize()
+    seek(120000)
+    fireEvent.contextMenu(screen.getByTestId('cue-wave-call-120000'), { clientX: 100, clientY: 5 })
+    expect(screen.getByTestId('cues-menu-to-hot')).toBeDisabled()
+  })
+
+  it('cannot convert a hot cue sitting on its CALL, since the two would collapse into one', async () => {
+    setup()
+    await maximize()
+    seek(64000)
+    fireEvent.click(screen.getByTestId('cues-memory'))
+    fireEvent.click(screen.getByTestId('cues-pad-A'))
+    fireEvent.contextMenu(screen.getByTestId('cue-wave-hot-A'), { clientX: 100, clientY: 5 })
+    expect(screen.getByTestId('cues-menu-to-call')).toBeDisabled()
+  })
+
+  it('takes an off-grid cue to its beat from its menu, the one cue and not the rest', async () => {
+    setup(null, {
+      ...READ,
+      cues: [
+        { id: 'h1', ms: 31986, kind: 1, color: 42 },
+        { id: 'c1', ms: 48014, kind: 0, color: null },
+      ],
+    })
+    await maximize()
+    fireEvent.contextMenu(screen.getByTestId('cue-wave-hot-A'), { clientX: 100, clientY: 5 })
+    fireEvent.click(screen.getByTestId('cues-menu-snap'))
+    expect(screen.getByTestId('cue-wave-hot-A')).toHaveAttribute('data-off-grid', 'false')
+    expect(screen.getByTestId('cue-wave-call-48014')).toHaveAttribute('data-off-grid', 'true')
+  })
+
+  it('offers no snap for a cue already on its beat', async () => {
+    setup()
+    await maximize()
+    seek(64000)
+    fireEvent.click(screen.getByTestId('cues-pad-A'))
+    fireEvent.contextMenu(screen.getByTestId('cue-wave-hot-A'), { clientX: 100, clientY: 5 })
+    expect(screen.queryByTestId('cues-menu-snap')).toBeNull()
+  })
+
   it('closes the mark menu with Escape without restoring the maximized section', async () => {
     setup()
     await maximize()

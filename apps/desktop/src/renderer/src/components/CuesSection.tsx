@@ -873,6 +873,22 @@ function Editing({
             !state.locked.includes(c.key),
         )
       : undefined
+  const paired =
+    markTarget !== undefined &&
+    state.cues.some(
+      (c) =>
+        c.key !== markTarget.key &&
+        (c.kind === 0) !== (markTarget.kind === 0) &&
+        Math.abs(c.ms - markTarget.ms) <= SAME_POSITION_MS,
+    )
+  const lettersFull = state.cues.filter((c) => c.kind !== 0).length >= ctx.slots.kinds.length
+  const convertOf = (cue: DraftCue): DraftAction => ({
+    type: 'batch',
+    actions: [
+      { type: 'remove', key: cue.key },
+      { type: cue.kind === 0 ? 'add-hot' : 'add-call', ms: cue.ms },
+    ],
+  })
   const [zoom, setZoom] = useState<number>(DEFAULT_ZOOM_BARS)
   const source: DetailSource | null = detailSourceOf({
     fine,
@@ -1777,6 +1793,27 @@ function Editing({
                   className={MENU_ITEM}
                 >
                   {tr('editor.cues.menuDeleteCall')}
+                </button>
+              )}
+              <button
+                type="button"
+                role="menuitem"
+                data-testid={markTarget.kind === 0 ? 'cues-menu-to-hot' : 'cues-menu-to-call'}
+                disabled={paired || (markTarget.kind === 0 && lettersFull)}
+                onClick={() => fromMarkMenu(convertOf(markTarget))}
+                className={MENU_ITEM}
+              >
+                {tr(markTarget.kind === 0 ? 'editor.cues.menuToHot' : 'editor.cues.menuToCall')}
+              </button>
+              {offGridKeys.includes(markTarget.key) && (
+                <button
+                  type="button"
+                  role="menuitem"
+                  data-testid="cues-menu-snap"
+                  onClick={() => fromMarkMenu({ type: 'snap-to-beat', keys: [markTarget.key] })}
+                  className={MENU_ITEM}
+                >
+                  {tr('editor.cues.menuSnap')}
                 </button>
               )}
             </>
