@@ -1527,15 +1527,6 @@ export const Editor = memo(function Editor({
           )}
         </SectionPill>
       )}
-      {!isMulti && inLibrary === 'no' && (
-        <SectionPill
-          tone="neutral"
-          testid="apple-music-status"
-          icon={<Music className="h-3.5 w-3.5" aria-hidden="true" />}
-        >
-          {tr(librarySource === 'engineDj' ? 'editor.notInLibraryEngine' : 'editor.notInLibrary')}
-        </SectionPill>
-      )}
     </>
   )
 

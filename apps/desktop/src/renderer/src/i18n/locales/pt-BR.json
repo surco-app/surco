@@ -943,8 +943,6 @@
     "reportError": "Reportar",
     "inLibrary": "No Apple Music",
     "inLibraryEngine": "No Engine DJ",
-    "notInLibrary": "Fora do Apple Music",
-    "notInLibraryEngine": "Fora do Engine DJ",
     "libraryCheckFailed": "Não foi possível ler sua biblioteca do Apple Music, então as faixas não são marcadas como já incluídas. O Surco tenta de novo quando você volta para a janela.",
     "libraryCheckFailedEngine": "Não foi possível ler sua biblioteca do Engine DJ, então as faixas não são marcadas como já incluídas. O Surco tenta de novo quando você volta para a janela.",
     "convertAll": "Converter ({{count}}) · {{format}}",

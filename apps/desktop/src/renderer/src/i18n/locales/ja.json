@@ -943,8 +943,6 @@
     "reportError": "レポート",
     "inLibrary": "Apple Music に登録済み",
     "inLibraryEngine": "Engine DJ に登録済み",
-    "notInLibrary": "Apple Music に未登録",
-    "notInLibraryEngine": "Engine DJ に未登録",
     "libraryCheckFailed": "Apple Music ライブラリを読み取れなかったため、トラックがすでに含まれているかマークできません。ウィンドウに戻ったときに Surco が再試行します。",
     "libraryCheckFailedEngine": "Engine DJ ライブラリを読み取れなかったため、トラックがすでに登録されているかマークできません。ウィンドウに戻ったときに Surco が再試行します。",
     "convertAll": "変換 ({{count}}) · {{format}}",
