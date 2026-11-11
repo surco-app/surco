@@ -206,6 +206,18 @@ describe('virtualdjExportClock', () => {
     expect(await virtualdjExportClock('/nowhere/gone.mp3')).toBeNull()
   })
 
+  it('gives an unknown shift for a file on disk TagLib cannot open, so its VirtualDJ cues are counted as left out', async () => {
+    const file = join(mkdtempSync(join(tmpdir(), 'surco-vdj-usb-bad-')), 'a.wav')
+    writeFileSync(file, 'not audio')
+    expect(await virtualdjExportClock(file)).toEqual({ sampleRate: 0, delta: null })
+    const lib = made(
+      ` <Song FilePath="${file}" FileSize="1">\r\n  <Infos SongLength="10.0" />\r\n  <Poi Pos="2.0" Num="1" Type="cue" />\r\n </Song>\r\n`,
+      [file],
+    )
+    const sel = await readVirtualdjExportSelection(lib, ['Set'], { clockOf: virtualdjExportClock })
+    expect(sel.tracks[0]).toMatchObject({ cues: [], cuesLeftOut: true })
+  })
+
   it('reads the sample rate of the file, with no shift for a WAV', async () => {
     const file = join(mkdtempSync(join(tmpdir(), 'surco-vdj-usb-wav-')), 'a.wav')
     const rate = 48000

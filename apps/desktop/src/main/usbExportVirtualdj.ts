@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs'
 import { basename, extname } from 'node:path'
 import { File as TagFile } from 'node-taglib-sharp'
 import { rekordboxShiftOfFileIfKnown } from './rekordboxTimeline'
@@ -29,8 +30,9 @@ function sampleRateOf(file: string): number | null {
 }
 
 export async function virtualdjExportClock(file: string): Promise<VirtualdjClock | null> {
+  if (!existsSync(file)) return null
   const sampleRate = sampleRateOf(file)
-  if (sampleRate === null) return null
+  if (sampleRate === null) return { sampleRate: 0, delta: null }
   return { sampleRate, delta: await rekordboxShiftOfFileIfKnown(file, sampleRate) }
 }
 
