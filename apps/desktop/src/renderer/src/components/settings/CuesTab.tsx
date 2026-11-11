@@ -19,6 +19,7 @@ import { useProgramsAvailable } from '../../hooks/useProgramsAvailable'
 import { flowName } from '../../lib/cueFlowName'
 import { CUE_PROGRAMS } from '../../lib/cuePrograms'
 import { FLOW_TO } from '../../lib/cueTwins'
+import { offeredHere } from '../../lib/platform'
 import { LIBRARY_NAME } from '../../lib/reviewLibraries'
 import type { SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
@@ -435,7 +436,7 @@ export function CuesTab({
           </span>
         </h3>
         <div data-testid="cue-flow-targets" className={`${GROUP} text-sm`}>
-          {DJ_PROGRAMS.map((library) => {
+          {DJ_PROGRAMS.filter(offeredHere).map((library) => {
             const name = LIBRARY_NAME[library]
             const key = FLOW_TO[library]
             const found = foundBy[library]

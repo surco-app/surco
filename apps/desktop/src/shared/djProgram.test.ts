@@ -71,7 +71,12 @@ describe('writableInOrder', () => {
     expect(WRITABLE_PROGRAMS).not.toContain('serato')
   })
   it('leaves VirtualDJ out of the programs Surco writes to and of USB until it can write to it', () => {
-    expect(PROGRAM_CAN.virtualdj).toEqual({ write: false, usb: false, reach: false })
+    expect(PROGRAM_CAN.virtualdj).toEqual({
+      write: false,
+      usb: false,
+      reach: false,
+      windows: false,
+    })
     expect(WRITABLE_PROGRAMS).not.toContain('virtualdj')
     expect(USB_PROGRAMS).not.toContain('virtualdj')
   })

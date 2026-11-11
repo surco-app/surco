@@ -1086,6 +1086,19 @@ describe('DestinationTab VirtualDJ', () => {
     expect(screen.queryByTestId('settings-reach-virtualdj')).toBeNull()
   })
 
+  it('has no VirtualDJ panel on Windows, where Surco does not offer VirtualDJ yet', () => {
+    const api = window as unknown as { api: { platform: string } }
+    api.api.platform = 'win32'
+    try {
+      renderPrograms()
+      expect(screen.getByTestId('settings-programs-serato')).toBeInTheDocument()
+      expect(screen.queryByTestId('settings-programs-virtualdj')).toBeNull()
+      expect(screen.queryByTestId('settings-program-virtualdj')).toBeNull()
+    } finally {
+      api.api.platform = 'darwin'
+    }
+  })
+
   it('asks for another folder through the picker the modal owns', () => {
     const onChangeVirtualdjDir = vi.fn()
     render(

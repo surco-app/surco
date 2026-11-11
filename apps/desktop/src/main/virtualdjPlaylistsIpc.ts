@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import type { DjReadMain } from '../shared/djApi'
+import { PROGRAM_CAN } from '../shared/djProgram'
 import {
   readVirtualdjLibrary,
   virtualdjCollection,
@@ -19,7 +20,9 @@ export interface VirtualdjPlaylistsHost {
 export function virtualdjRead(host: VirtualdjPlaylistsHost): DjReadMain {
   const library = () => readVirtualdjLibrary(host.dir())
   return {
-    available: () => process.platform !== 'win32' && existsSync(join(host.dir(), 'database.xml')),
+    available: () =>
+      (process.platform !== 'win32' || PROGRAM_CAN.virtualdj.windows) &&
+      existsSync(join(host.dir(), 'database.xml')),
     tree: () => virtualdjTree(library()),
     recentCount: () => virtualdjRecentCount(library()),
     trackCount: () => virtualdjTrackCount(library()),

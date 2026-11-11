@@ -1,3 +1,5 @@
+import { type DjProgram, PROGRAM_CAN } from '../../../shared/djProgram'
+
 // The host OS, read from the preload bridge at call time so this module never touches
 // window.api at import. The two checks the UI gates on — macOS for the Apple Music and
 // Finder integrations, Windows for its Explorer wording — live here so components read
@@ -8,6 +10,10 @@ export function isMacOS(): boolean {
 
 export function isWindows(): boolean {
   return window.api.platform === 'win32'
+}
+
+export function offeredHere(program: DjProgram): boolean {
+  return !isWindows() || PROGRAM_CAN[program].windows
 }
 
 // A copy installed from the Microsoft Store, which takes its updates from the Store.

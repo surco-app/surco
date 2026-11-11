@@ -187,6 +187,13 @@ describe('CuesTab', () => {
     expect(screen.queryByTestId('cue-flow-library-note')).not.toBeInTheDocument()
   })
 
+  it('has no VirtualDJ destination on Windows, where Surco does not offer VirtualDJ yet', async () => {
+    installApi({ platform: 'win32' })
+    render(<Harness />)
+    expect(await screen.findByTestId('settings-cue-flow-to-serato')).toBeInTheDocument()
+    expect(screen.queryByTestId('settings-cue-flow-to-virtualdj')).toBeNull()
+  })
+
   it('leaves the hot cues note out when only rekordbox and VirtualDJ are found, since rekordbox keeps CALLs and no flow reaches VirtualDJ', async () => {
     installApi({ dj: djReads({ virtualdj: { available: async () => true } }) })
     render(<Harness collection="/c/master.db" />)
