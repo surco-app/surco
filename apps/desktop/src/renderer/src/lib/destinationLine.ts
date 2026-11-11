@@ -68,8 +68,3 @@ export function destinationLine(s: DestinationLineState): { parts: LinePart[]; w
 
   return { parts, warn }
 }
-
-export function programNames(namesMusic: boolean, djTargets: DjLibraryId[]): string {
-  const ids = [...(namesMusic ? ['appleMusic'] : []), ...djTargets]
-  return ids.map((id) => i18n.t(`settings.source.${id}`)).join(' + ')
-}

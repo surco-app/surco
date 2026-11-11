@@ -887,6 +887,8 @@
     "menuOverwriteNote": "Sobrescribe el archivo",
     "update": "Actualizar etiquetas",
     "updateAudio": "Actualizar etiquetas y audio",
+    "upToDate": "Sin cambios",
+    "updateAnyway": "Actualizar igualmente",
     "convertAction": "Convertir a {{format}}",
     "lineAdds": "Añade a {{places}}",
     "lineUpdates": "Actualiza {{places}}",

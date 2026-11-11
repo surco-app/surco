@@ -21,6 +21,7 @@ import { resetEditorSections } from '../hooks/useEditorSections'
 import i18n from '../i18n'
 import { type AppleMusicIndex, buildLibraryIndex } from '../lib/appleMusicLibrary'
 import { coverSourceOf } from '../lib/coverSource'
+import { trackSignature } from '../lib/dirty'
 import { resetEditorPlace } from '../lib/editorPlace'
 import { OpenSettingsProvider } from '../lib/openSettingsContext'
 import { createQueryClient } from '../lib/queryClient'
@@ -2284,15 +2285,15 @@ describe('Editor scroll edge', () => {
 })
 
 describe('Editor export control', () => {
-  // "Output folder", "Beside the original" and "Overwrite" all read "Convert to WAV", so
-  // where the file lands showed only once it failed on an unplugged NAS.
-  it('names the output folder beside the convert button', () => {
+  it('names the output folder in the destination line, not beside the button', () => {
     renderEditor({ id: 'a' }, 'aiff', {
       addToAppleMusic: false,
       outputDir: '/Volumes/NAS/Conversiones/',
     })
     expect(screen.getByTestId('process-btn')).toHaveAccessibleName('Convert to AIFF')
-    expect(screen.getByTestId('process-folder')).toHaveTextContent('Conversiones')
+    expect(screen.getByTestId('convert-destination-line')).toHaveTextContent(
+      'Saves to Conversiones',
+    )
   })
 
   it('says beside the original on the convert button when that is the destination', () => {
@@ -2302,6 +2303,30 @@ describe('Editor export control', () => {
       convertBesideOriginal: true,
     })
     expect(screen.getByTestId('process-btn')).toHaveAccessibleName('Convert to WAV')
+  })
+
+  describe('when the file already carries the editor', () => {
+    const read = { genre: 'Techno' }
+    const diskSignature = trackSignature(item({ id: 'a', meta: read }))
+
+    it('goes quiet instead of offering an update', () => {
+      renderEditor({ id: 'a', meta: read, diskSignature })
+      expect(screen.getByTestId('convert-up-to-date')).toHaveTextContent('No changes')
+      expect(screen.queryByTestId('process-btn')).toBeNull()
+    })
+
+    it('offers the update while an edit is staged', () => {
+      renderEditor({ id: 'a', meta: { genre: 'House' }, diskSignature })
+      expect(screen.getByTestId('process-btn')).toHaveTextContent('Update tags')
+      expect(screen.queryByTestId('convert-up-to-date')).toBeNull()
+    })
+
+    it('goes quiet again once an edit is undone back to the read values', () => {
+      renderEditor({ id: 'a', meta: { genre: 'House' }, diskSignature })
+      cleanup()
+      renderEditor({ id: 'a', meta: { genre: 'Techno' }, diskSignature })
+      expect(screen.getByTestId('convert-up-to-date')).toBeInTheDocument()
+    })
   })
 
   // The original bug: once a track was done its export button vanished, so a user

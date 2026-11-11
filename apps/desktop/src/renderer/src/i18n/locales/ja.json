@@ -887,6 +887,8 @@
     "menuOverwriteNote": "ファイルを上書きします",
     "update": "タグを更新",
     "updateAudio": "タグと音声を更新",
+    "upToDate": "変更なし",
+    "updateAnyway": "それでも更新",
     "convertAction": "{{format}} に変換",
     "lineAdds": "{{places}} に追加",
     "lineUpdates": "{{places}} を更新",

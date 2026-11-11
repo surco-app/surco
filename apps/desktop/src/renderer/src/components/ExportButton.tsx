@@ -1,4 +1,4 @@
-import { ChevronDown, Folder, RotateCw } from 'lucide-react'
+import { ChevronDown, RotateCw } from 'lucide-react'
 import type React from 'react'
 import { useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -51,6 +51,7 @@ interface ExportButtonProps {
   // tags" instead of a conversion.
   tagsOnly?: boolean
   sameFormat?: boolean
+  upToDate?: boolean
   count?: number
   // The export phase the track is in while processing. With it, the button mirrors the
   // track list's row: the stage as its label and a fill at that phase's progress mark.
@@ -65,8 +66,6 @@ interface ExportButtonProps {
   // Like the format, picking one only relabels the button for this track.
   destination: Destination
   destinations: readonly Destination[]
-  // The output folder's own name, named beside the button when the file goes there.
-  outputFolder?: string
   onProcess: (format: FormatSetting) => void
   // When given, the button stays live while converting: clicking it cancels the in-flight
   // job instead of firing another convert. Single-only — multi cancels via the toolbar
@@ -98,11 +97,11 @@ export function ExportButton({
   inPlace,
   tagsOnly = false,
   sameFormat = false,
+  upToDate = false,
   count,
   quiet,
   destination,
   destinations,
-  outputFolder,
   onProcess,
   onCancel,
   onSelectFormat,
@@ -175,6 +174,30 @@ export function ExportButton({
   function pickDestination(d: Destination): void {
     setOpen(false)
     onSelectDestination(d)
+  }
+
+  if (upToDate && !processing && !quiet) {
+    return (
+      <div key="up-to-date" className="animate-footer-swap flex h-10 items-center gap-3">
+        <span
+          data-testid="convert-up-to-date"
+          className="flex flex-1 items-center justify-center gap-1.5 text-sm text-fg-dim"
+        >
+          <span aria-hidden="true" className="text-good">
+            ✓
+          </span>
+          {tr('editor.upToDate')}
+        </span>
+        <button
+          type="button"
+          data-testid="convert-update-anyway"
+          onClick={() => onProcess(outputFormat)}
+          className="press h-8 shrink-0 rounded-lg border border-[var(--color-line-strong)] px-3 text-xs text-fg-dim hover:bg-[var(--color-hover)]"
+        >
+          {tr('editor.updateAnyway')}
+        </button>
+      </div>
+    )
   }
 
   return (
@@ -337,19 +360,6 @@ export function ExportButton({
           />
         )}
       </div>
-      {!quiet && destination === 'folder' && outputFolder && (
-        <span
-          data-testid="process-folder"
-          className="flex max-w-[30%] shrink-0 items-center gap-1 text-xs text-fg-dim"
-        >
-          <Folder
-            data-testid="process-folder-icon"
-            className="h-3.5 w-3.5 shrink-0"
-            aria-hidden="true"
-          />
-          <span className="truncate">{outputFolder}</span>
-        </span>
-      )}
     </div>
   )
 }

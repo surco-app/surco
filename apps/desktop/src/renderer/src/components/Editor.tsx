@@ -101,6 +101,7 @@ import {
 import { replacePatch } from '../lib/replaceBeforeConvert'
 import { replaceWarning } from '../lib/replaceWarning'
 import { selectionStatus } from '../lib/selectionStatus'
+import { hasStagedEdits } from '../lib/sessionEdits'
 import { useAppSettings } from '../lib/settingsContext'
 import { matchStatKey } from '../lib/stats'
 import { supersededFile } from '../lib/supersededFile'
@@ -1079,6 +1080,13 @@ export const Editor = memo(function Editor({
       formatMatchesInput(format, item.inputPath),
       jobAudio(item, normalizeCfg, declickCfg, { normalize, declick }),
     )
+  const upToDate =
+    !isMulti &&
+    item.status === 'idle' &&
+    willEditInPlace &&
+    tagsOnlyExport &&
+    item.diskSignature !== undefined &&
+    !hasStagedEdits(item)
 
   // One onChange per possible key, built once (setField/onChangeAllMeta never
   // change identity) and reused by every fieldSpecs rebuild below. Field.tsx is
@@ -2012,6 +2020,9 @@ export const Editor = memo(function Editor({
           willEditInPlace={willEditInPlace}
           tagsOnly={tagsOnlyExport}
           sameFormat={formatMatchesInput(format, item.inputPath)}
+          upToDate={upToDate}
+          inLibrary={inLibrary}
+          replacedFormat={replacedCopyPath ? fileExtension(replacedCopyPath) : ''}
           addToAppleMusic={picked.addToAppleMusic}
           djTargets={reachedPrograms(appSettings, reachable)}
           openSource={openSource}

@@ -22,6 +22,7 @@ import { PLACE_ORDER, type PlaceCheck } from '../../../shared/verification'
 import { type CleanupOffer, cleanupCount } from '../hooks/useConfirmFlows'
 import type { StaleLibraryCopy } from '../lib/appleMusicLibrary'
 import type { Destination } from '../lib/destination'
+import { destinationLine } from '../lib/destinationLine'
 import type { DjLibraryId } from '../lib/djLibraries'
 import { openFeedback } from '../lib/feedback'
 import { formatUpTo } from '../lib/numberFormat'
@@ -91,6 +92,9 @@ interface ConvertFooterProps {
   willEditInPlace: boolean
   tagsOnly: boolean
   sameFormat: boolean
+  upToDate: boolean
+  inLibrary: 'idle' | 'yes' | 'no'
+  replacedFormat: string
   addToAppleMusic: boolean
   djTargets: DjLibraryId[]
   openSource: PlaylistSource | null
@@ -160,6 +164,9 @@ export function ConvertFooter({
   willEditInPlace,
   tagsOnly,
   sameFormat,
+  upToDate,
+  inLibrary,
+  replacedFormat,
   addToAppleMusic,
   djTargets,
   openSource,
@@ -307,6 +314,18 @@ export function ConvertFooter({
     !musicAdded &&
     (musicExt !== 'flac' || hasMusicCopy) &&
     (!inMusicLibraryOnly || hasMusicCopy)
+  const line = destinationLine({
+    destination,
+    withAppleMusic: isMacOS() && format !== 'flac' && addToAppleMusic,
+    djTargets,
+    openSource,
+    inPlace: willEditInPlace,
+    inMusic: hasMusicCopy || (inLibrary === 'yes' && willEditInPlace),
+    replaces: !!replaces,
+    libraryBetter: !!libraryBetter,
+    replacedFormat,
+    outputFolder,
+  })
   const lossyToLossless =
     !isMulti &&
     isLosslessContainer(format) &&
@@ -706,31 +725,42 @@ export function ConvertFooter({
                 onSelectDestination={onSelectDestination}
               />
             ) : (
-              <ExportButton
-                status={isMulti ? 'idle' : item.status}
-                stage={isMulti ? undefined : item.stage}
-                stale={!isMulti && stale}
-                replaces={!isMulti && replaces}
-                libraryBetter={!isMulti && libraryBetter}
-                done={!isMulti && done}
-                outputFormat={format}
-                exportedFormat={isMulti ? null : exportedFormat}
-                incomplete={incomplete}
-                incompleteReason={incompleteReason}
-                blockedLabel={incompleteSummary}
-                onBlockedPress={onBlockedPress}
-                inPlace={!isMulti && willEditInPlace}
-                tagsOnly={tagsOnly}
-                sameFormat={sameFormat}
-                destination={destination}
-                destinations={destinations}
-                outputFolder={outputFolder}
-                count={isMulti ? selectedCount : undefined}
-                onProcess={onProcess}
-                onCancel={onCancel}
-                onSelectFormat={onSelectFormat}
-                onSelectDestination={onSelectDestination}
-              />
+              <>
+                {!upToDate && line.parts.length > 0 && (
+                  <p
+                    data-testid="convert-destination-line"
+                    data-tone={line.warn ? 'warn' : 'dim'}
+                    className={`text-center text-xs ${line.warn ? 'text-warn' : 'text-fg-dim'}`}
+                  >
+                    {line.parts.map((part) => tr(part.key, part.options)).join(' · ')}
+                  </p>
+                )}
+                <ExportButton
+                  status={isMulti ? 'idle' : item.status}
+                  stage={isMulti ? undefined : item.stage}
+                  stale={!isMulti && stale}
+                  replaces={!isMulti && replaces}
+                  libraryBetter={!isMulti && libraryBetter}
+                  done={!isMulti && done}
+                  outputFormat={format}
+                  exportedFormat={isMulti ? null : exportedFormat}
+                  incomplete={incomplete}
+                  incompleteReason={incompleteReason}
+                  blockedLabel={incompleteSummary}
+                  onBlockedPress={onBlockedPress}
+                  inPlace={!isMulti && willEditInPlace}
+                  tagsOnly={tagsOnly}
+                  sameFormat={sameFormat}
+                  upToDate={upToDate}
+                  destination={destination}
+                  destinations={destinations}
+                  count={isMulti ? selectedCount : undefined}
+                  onProcess={onProcess}
+                  onCancel={onCancel}
+                  onSelectFormat={onSelectFormat}
+                  onSelectDestination={onSelectDestination}
+                />
+              </>
             )}
           </>
         )}

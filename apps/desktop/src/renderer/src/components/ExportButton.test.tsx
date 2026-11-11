@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../i18n'
 import { ExportButton } from './ExportButton'
@@ -32,26 +32,37 @@ const hover = (el: HTMLElement): void => {
 }
 
 describe('ExportButton', () => {
-  // "Convert to AIFF in out" read as one odd sentence: the action keeps the button and the
-  // folder it lands in rides beside it.
-  it('names the output folder beside the convert button, not in its name', () => {
-    render(<ExportButton {...baseProps} incomplete={false} outputFolder="out" />)
-    expect(screen.getByTestId('process-btn')).toHaveAccessibleName('Convert to AIFF')
-    expect(screen.getByTestId('process-folder')).toHaveTextContent('out')
-  })
-
-  it('marks the output name as a folder, so a folder called Surco is not read as the app', () => {
-    render(<ExportButton {...baseProps} incomplete={false} outputFolder="Surco" />)
-    const folder = screen.getByTestId('process-folder')
-    expect(folder).not.toHaveTextContent('→')
-    expect(within(folder).getByTestId('process-folder-icon')).toBeInTheDocument()
-  })
-
-  it('names no folder when the file does not go to the output folder', () => {
+  it('goes quiet when there is nothing to write', () => {
+    const onProcess = vi.fn()
     render(
-      <ExportButton {...baseProps} incomplete={false} destination="beside" outputFolder="out" />,
+      <ExportButton
+        {...baseProps}
+        incomplete={false}
+        inPlace
+        tagsOnly
+        sameFormat
+        upToDate
+        onProcess={onProcess}
+      />,
     )
-    expect(screen.queryByTestId('process-folder')).toBeNull()
+    expect(screen.getByTestId('convert-up-to-date')).toHaveTextContent('No changes')
+    expect(screen.queryByTestId('process-btn')).toBeNull()
+    fireEvent.click(screen.getByTestId('convert-update-anyway'))
+    expect(onProcess).toHaveBeenCalledWith('aiff')
+  })
+
+  it('brings the accent button back with an edit', () => {
+    const props = {
+      ...baseProps,
+      incomplete: false,
+      inPlace: true,
+      tagsOnly: true,
+      sameFormat: true,
+    }
+    const { rerender } = render(<ExportButton {...props} upToDate />)
+    rerender(<ExportButton {...props} upToDate={false} />)
+    expect(screen.getByTestId('process-btn')).toHaveTextContent('Update tags')
+    expect(screen.queryByTestId('convert-up-to-date')).toBeNull()
   })
 
   // A disabled convert with no explanation leaves the user guessing; the tooltip must

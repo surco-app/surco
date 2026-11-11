@@ -54,6 +54,9 @@ function footer(
       tagsOnly={false}
       addToAppleMusic={false}
       sameFormat={false}
+      upToDate={false}
+      inLibrary="idle"
+      replacedFormat=""
       djTargets={[]}
       openSource={null}
       destination={'beside' as Destination}
@@ -1175,5 +1178,67 @@ describe('ConvertFooter batch verification', () => {
   it('the batch line is never cut short', () => {
     render(batchFooter({ ok: 36, mismatch: 1, checking: 2, unverified: 3 }))
     expect(screen.getByTestId('export-success').className).not.toMatch(/\btruncate\b/)
+  })
+})
+
+describe('ConvertFooter destination line', () => {
+  const idle = footer(false)
+  const mac = (): void => {
+    ;(window as unknown as { api: Record<string, unknown> }).api = { platform: 'darwin' }
+  }
+
+  it('names where the file goes above the button', () => {
+    mac()
+    render(
+      cloneElement(idle, {
+        destination: 'appleMusic',
+        destinations: ['appleMusic'],
+        addToAppleMusic: true,
+        inLibrary: 'yes',
+        willEditInPlace: true,
+        tagsOnly: true,
+        sameFormat: true,
+        openSource: 'rekordbox',
+        djTargets: ['rekordbox'],
+      }),
+    )
+    expect(screen.getByTestId('convert-destination-line')).toHaveTextContent(
+      'Updates Apple Music · rekordbox',
+    )
+    expect(screen.getByTestId('convert-destination-line')).toHaveAttribute('data-tone', 'dim')
+    expect(screen.getByTestId('process-btn')).toHaveTextContent('Update tags')
+  })
+
+  it('reads amber when the library copy is the better one', () => {
+    mac()
+    render(
+      cloneElement(idle, {
+        destination: 'appleMusic',
+        destinations: ['appleMusic'],
+        addToAppleMusic: true,
+        replaces: true,
+        libraryBetter: true,
+      }),
+    )
+    expect(screen.getByTestId('convert-destination-line')).toHaveAttribute('data-tone', 'warn')
+  })
+
+  it('says nothing above the button once there is nothing to write', () => {
+    render(
+      cloneElement(idle, {
+        upToDate: true,
+        willEditInPlace: true,
+        tagsOnly: true,
+        sameFormat: true,
+      }),
+    )
+    expect(screen.getByTestId('convert-up-to-date')).toBeInTheDocument()
+    expect(screen.queryByTestId('convert-destination-line')).toBeNull()
+  })
+
+  it('never reads a new normalization as no changes', () => {
+    render(cloneElement(idle, { willEditInPlace: true, tagsOnly: false, sameFormat: true }))
+    expect(screen.queryByTestId('convert-up-to-date')).toBeNull()
+    expect(screen.getByTestId('process-btn')).toHaveTextContent('Update tags and audio')
   })
 })
