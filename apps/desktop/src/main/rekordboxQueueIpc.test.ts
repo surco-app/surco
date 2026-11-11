@@ -53,7 +53,20 @@ describe('appliedNotice', () => {
       changes: 0,
       notices: [{ code: 'ambiguous', track: 'Ekkah' }],
       written: [{ path: '/m/e.wav', wanted: [{ name: 'Surco prueba A' }] }],
+      created: [{ opId: 'e', createdId: '77' }],
     })
+  })
+
+  it('names the playlists a queued create made, so the session waiting on one can open it', () => {
+    const notice = appliedNotice({
+      ...APPLIED,
+      outcomes: [
+        { id: 'op1', applied: true, createdId: '9001', notices: [] },
+        { id: 'op2', applied: true, notices: [] },
+        { id: 'op3', applied: false, reason: 'stale', notices: [] },
+      ],
+    } as QueueApply)
+    expect(notice).toMatchObject({ created: [{ opId: 'op1', createdId: '9001' }] })
   })
 
   it('says nothing when rekordbox is still open or nothing was queued', () => {

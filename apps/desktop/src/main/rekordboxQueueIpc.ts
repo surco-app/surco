@@ -13,11 +13,15 @@ export function appliedNotice(result: QueueApply): RekordboxQueueApplied | null 
     return result.reason === 'cancelled' || result.reason === 'rekordbox-running'
       ? null
       : { refused: result.reason }
+  const created = result.outcomes.flatMap((o) =>
+    o.applied && o.createdId ? [{ opId: o.id, createdId: o.createdId }] : [],
+  )
   return {
     tracks: result.tracks,
     changes: result.changes,
     notices: result.notices,
     written: result.written,
+    ...(created.length > 0 && { created }),
   }
 }
 
