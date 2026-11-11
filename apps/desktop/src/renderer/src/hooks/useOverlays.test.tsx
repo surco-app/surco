@@ -29,3 +29,11 @@ describe('useOverlays palette over another modal', () => {
     expect(result.current.activeModal).toBeNull()
   })
 })
+
+describe('useOverlays feedback', () => {
+  it('opens the feedback dialog carrying the error it reports', () => {
+    const { result } = renderHook(() => useOverlays())
+    act(() => result.current.openFeedback('boom', 'at x'))
+    expect(result.current.activeModal).toEqual({ type: 'feedback', error: 'boom', stack: 'at x' })
+  })
+})

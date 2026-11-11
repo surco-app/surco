@@ -35,6 +35,9 @@ const WhatsNewModal = lazyChunk(() =>
   import('./WhatsNewModal').then((m) => ({ default: m.WhatsNewModal })),
 )
 const HelpModal = lazyChunk(() => import('./HelpModal').then((m) => ({ default: m.HelpModal })))
+const FeedbackModal = lazyChunk(() =>
+  import('./FeedbackModal').then((m) => ({ default: m.FeedbackModal })),
+)
 const LoudnessHelpModal = lazyChunk(() =>
   import('./LoudnessHelpModal').then((m) => ({ default: m.LoudnessHelpModal })),
 )
@@ -167,6 +170,11 @@ export function Overlays({
       </ModalExit>
 
       <ModalExit>{activeModal?.type === 'help' && <HelpModal onClose={close} />}</ModalExit>
+      <ModalExit>
+        {activeModal?.type === 'feedback' && (
+          <FeedbackModal error={activeModal.error} stack={activeModal.stack} onClose={close} />
+        )}
+      </ModalExit>
       <ModalExit>
         {activeModal?.type === 'loudnessHelp' && <LoudnessHelpModal onClose={close} />}
       </ModalExit>
