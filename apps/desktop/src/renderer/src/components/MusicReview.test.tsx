@@ -809,6 +809,14 @@ describe('MusicReview', () => {
       )
     })
 
+    // A tile reading 0 states what did not happen; the sheet shows only what was done, and
+    // no tiles at all when nothing was.
+    it('leaves out a stat tile whose count is zero', () => {
+      render(<Panes review={done(run({ outcomes: [written] }))} />)
+      expect(screen.getByTestId('music-review-done-stat-corrected')).toHaveTextContent('1')
+      expect(screen.queryByTestId('music-review-done-stat-removed')).toBeNull()
+    })
+
     // The summary says what was done; what is still left to review is the list behind it.
     it('counts corrected tracks and removed copies and nothing still left', () => {
       render(
@@ -1326,7 +1334,7 @@ describe('MusicReview', () => {
         )}
       />,
     )
-    expect(screen.getByTestId('music-review-done-stat-corrected')).toHaveTextContent('0')
+    expect(screen.queryByTestId('music-review-done-stat-corrected')).toBeNull()
     expect(screen.getByTestId('music-review-done-stat-removed')).toHaveTextContent('1copy removed')
     expect(warnings()).toEqual(['3 could not be changed'])
   })
@@ -2690,7 +2698,7 @@ describe('list review', () => {
       expect(detailOf('trash')).toBe(
         '1 file stays on disk because Apple Music still uses it · 1 entry left Apple Music, but its file stays because another entry still uses it',
       )
-      expect(screen.getByTestId('music-review-done-stat-removed')).toHaveTextContent('0')
+      expect(screen.queryByTestId('music-review-done-stat-removed')).toBeNull()
       // The entry that left Music does not come back with Undo either.
       expect(screen.getByTestId('music-review-done-note')).toBeInTheDocument()
     })

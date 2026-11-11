@@ -690,21 +690,25 @@ function Done({
           ))}
         </div>
       )}
-      {!undone && (
+      {!undone && (corrected > 0 || removed > 0) && (
         <div
           data-testid="music-review-done-stats"
           className="grid auto-cols-fr grid-flow-col gap-2"
         >
-          <Stat
-            testId="corrected"
-            value={corrected}
-            label={t('musicReview.done.stat.corrected', { count: corrected })}
-          />
-          <Stat
-            testId="removed"
-            value={removed}
-            label={t('musicReview.done.stat.removed', { count: removed })}
-          />
+          {corrected > 0 && (
+            <Stat
+              testId="corrected"
+              value={corrected}
+              label={t('musicReview.done.stat.corrected', { count: corrected })}
+            />
+          )}
+          {removed > 0 && (
+            <Stat
+              testId="removed"
+              value={removed}
+              label={t('musicReview.done.stat.removed', { count: removed })}
+            />
+          )}
         </div>
       )}
       {destinations.length > 0 && (
