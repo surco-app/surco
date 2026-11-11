@@ -101,8 +101,6 @@
     },
     "band": {
       "title": "自動セッション",
-      "tracks_one": "{{count}} トラック",
-      "tracks_other": "{{count}} トラック",
       "combos_one": "{{count}} コンボ",
       "combos_other": "{{count}} コンボ",
       "fresh_one": "新曲 {{count}}",

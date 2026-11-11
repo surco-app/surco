@@ -101,8 +101,6 @@
     },
     "band": {
       "title": "Automatische Session",
-      "tracks_one": "{{count}} Track",
-      "tracks_other": "{{count}} Tracks",
       "combos_one": "{{count}} Combo",
       "combos_other": "{{count}} Combos",
       "fresh_one": "{{count}} neu",

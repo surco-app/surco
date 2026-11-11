@@ -101,8 +101,6 @@
     },
     "band": {
       "title": "Sessão automática",
-      "tracks_one": "{{count}} faixa",
-      "tracks_other": "{{count}} faixas",
       "combos_one": "{{count}} combo",
       "combos_other": "{{count}} combos",
       "fresh_one": "{{count}} nova",
