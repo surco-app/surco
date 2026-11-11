@@ -1391,6 +1391,10 @@ describe('what each program closes, shows and reports through the library host',
     expect(h.blocked).toEqual(['engineSyncBlocked'])
     expect(h.channels).toEqual(['engine'])
   })
+
+  it('reports sync issues only for rekordbox and Engine DJ, since Traktor tells a blocked write through its dialog alone', () => {
+    expect([...SYNC_ISSUE_PROGRAMS]).toEqual(['rekordbox', 'engine'])
+  })
 })
 
 describe('librariesKeepingOriginal', () => {
