@@ -85,6 +85,8 @@ Medido el 11/11 (Tarea 12) con `grep -rnE "(===|!==) '(rekordbox|traktor|engine|
 | `scenarios/` (`harness.tsx`, `matrix/oracle.ts`, `matrix/run.ts`) | b | El arnés lee la base real de cada programa para comprobar. | Código de pruebas, no de la app. |
 | `main/libraryFlushes.ts` `SYNC_ISSUE_PROGRAMS` (`new Set(['rekordbox', 'engine'])`) | b, apunte | Lista de quién emite avisos de sincronización (bloque 5). El compilador no la exige, pero su ausencia es lo seguro (sin evento); la tabla del renderer (`SYNC_ISSUES` de `App.tsx`) sí es `Record`. | Fuera del inventario de esta tarea. |
 
+Hecho (11/11): `CUE_PROGRAMS.runningNote` lo leen el editor de cues (`463a2a76f`) y el aviso del árbol de `App.tsx` (`0afaf4862`); `cuesOpen` ya no nombra programas (`73c3f2404`). Tests de caracterización nuevos: un track de rekordbox, Traktor o Engine DJ no avisa ni pregunta `running` con su programa abierto (`CuesSection.serato.test.tsx`), y la pestaña de Traktor tampoco (`App.test.tsx`). Mutaciones: dar `runningNote` a rekordbox o a Traktor, quitárselo a Serato, o sacar cualquiera de los cuatro programas de `cuesOpen`, hace caer tests. Resultado: 3 sitios (a) pasados a tabla, 1 (a) ya era fila (`collectionGate`), 17 (b) se quedan (más `programOf`, Paso 3).
+
 Las demás listas literales de programas pasan por `programsInOrder`/`writableInOrder`, que exigen a todos. `LEGACY_PLAYLIST_ORDER` (`sessionLegacy.ts`) es la forma antigua, congelada a propósito.
 
 ### `programOf` (Paso 3)
