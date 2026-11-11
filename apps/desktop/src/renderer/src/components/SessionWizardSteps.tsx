@@ -367,7 +367,7 @@ export function CharacterStep({
                 aria-pressed={hasKeys && options.harmony === mode}
                 disabled={!hasKeys}
                 onClick={() => onChange({ harmony: mode })}
-                className={`${CHIP} ${hasKeys && options.harmony === mode ? CHIP_ON : CHIP_OFF} disabled:opacity-50`}
+                className={`${CHIP} ${hasKeys && options.harmony === mode ? CHIP_ON : CHIP_OFF} disabled:opacity-40`}
               >
                 {tr(`sessions.wizard.character.${label}`)}
               </button>

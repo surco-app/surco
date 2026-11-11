@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import type { SessionPlan } from '../../../shared/sessionBuild'
 
 const BUTTON =
-  'press rounded-lg border border-[var(--color-line-strong)] px-3 py-1.5 text-xs font-medium hover:bg-[var(--color-hover)] disabled:opacity-50'
+  'press rounded-lg border border-[var(--color-line-strong)] px-3 py-1.5 text-xs font-medium hover:bg-[var(--color-hover)] disabled:opacity-40'
 
 function clock(secs: number): string {
   const minutes = Math.floor(secs / 60)
@@ -115,7 +115,7 @@ export function SessionBand({
           data-testid="session-band-keep"
           disabled={busy}
           onClick={onKeep}
-          className="press px-2 py-1.5 text-xs font-medium text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] disabled:opacity-50"
+          className="press px-2 py-1.5 text-xs font-medium text-[var(--color-accent)] hover:text-[var(--color-accent-hover)] disabled:opacity-40"
         >
           {tr('sessions.band.keep')}
         </button>

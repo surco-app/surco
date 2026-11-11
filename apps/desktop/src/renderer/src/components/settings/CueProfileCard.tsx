@@ -47,7 +47,7 @@ export function useCueProfileRead(): [CueProfileRead | null, (profile: CueProfil
 }
 
 const ICON_BUTTON =
-  'press flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] text-fg hover:bg-[var(--color-line-strong)] disabled:cursor-not-allowed disabled:opacity-50'
+  'press flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] text-fg hover:bg-[var(--color-line-strong)] disabled:cursor-not-allowed disabled:opacity-40'
 
 const tenths = (share: number): number => Math.round(share * 10)
 

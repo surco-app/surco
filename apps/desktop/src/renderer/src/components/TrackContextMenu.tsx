@@ -74,7 +74,7 @@ function MenuItem({
       data-testid={testid}
       disabled={disabled}
       onClick={onClick}
-      className={`block w-full rounded-md px-3 py-1.5 text-left text-sm hover:bg-[var(--color-hover)] disabled:opacity-60 disabled:hover:bg-transparent ${
+      className={`block w-full rounded-md px-3 py-1.5 text-left text-sm hover:bg-[var(--color-hover)] disabled:opacity-40 disabled:hover:bg-transparent ${
         danger ? 'text-danger' : 'text-fg'
       }`}
     >

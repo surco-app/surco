@@ -571,7 +571,7 @@ export function ConvertFooter({
                       data-testid="verify-retry"
                       onClick={retry}
                       aria-disabled={retrying || undefined}
-                      className="press flex h-8 shrink-0 items-center whitespace-nowrap rounded-lg px-2 text-xs font-medium text-fg hover:bg-[var(--color-hover)] aria-disabled:opacity-60"
+                      className="press flex h-8 shrink-0 items-center whitespace-nowrap rounded-lg px-2 text-xs font-medium text-fg hover:bg-[var(--color-hover)] aria-disabled:opacity-40"
                     >
                       {tr('verify.retry')}
                     </button>
@@ -637,7 +637,7 @@ export function ConvertFooter({
                     data-variant={musicPrimary ? 'primary' : 'secondary'}
                     onClick={onAddToAppleMusic}
                     disabled={musicAdding}
-                    className={`press flex h-8 shrink-0 items-center whitespace-nowrap rounded-lg px-3 text-xs font-medium disabled:opacity-60 ${
+                    className={`press flex h-8 shrink-0 items-center whitespace-nowrap rounded-lg px-3 text-xs font-medium disabled:opacity-40 ${
                       musicPrimary
                         ? 'bg-[var(--color-accent)] text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]'
                         : 'border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] text-fg hover:bg-[var(--color-line-strong)]'

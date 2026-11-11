@@ -185,7 +185,7 @@ export function PasteTracklistModal({
               type="submit"
               data-testid="paste-tracklist-search"
               disabled={!canSearch}
-              className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
+              className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
             >
               {tr('pasteTracklist.search', { program: tr(`sources.${program}`) })}
             </button>
@@ -326,7 +326,7 @@ export function PasteTracklistModal({
               type="submit"
               data-testid="paste-tracklist-add"
               disabled={!settled || chosen.length === 0}
-              className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
+              className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
             >
               {tr('pasteTracklist.add', { count: chosen.length })}
             </button>

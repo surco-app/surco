@@ -317,7 +317,7 @@ export function CuesTab({
                     more.setOpen(false)
                     patch('activeCueFlow', flow.id)
                   }}
-                  className={`${SPLIT_ITEM} disabled:cursor-not-allowed disabled:opacity-50`}
+                  className={`${SPLIT_ITEM} disabled:cursor-not-allowed disabled:opacity-40`}
                 >
                   {tr('settings.cueFlows.use')}
                 </button>

@@ -560,7 +560,7 @@ export function DeclickSection({
                     data-testid="declick-play"
                     disabled={!ab.ready}
                     onClick={() => (ab.playing ? ab.pause() : ab.play())}
-                    className="inline-flex items-center gap-2 rounded-lg border border-[var(--color-line-strong)] px-3 py-1.5 text-xs text-fg-muted transition-colors hover:text-fg disabled:opacity-50"
+                    className="inline-flex items-center gap-2 rounded-lg border border-[var(--color-line-strong)] px-3 py-1.5 text-xs text-fg-muted transition-colors hover:text-fg disabled:opacity-40"
                   >
                     {ab.playing ? (
                       <Pause className="h-3.5 w-3.5" aria-hidden="true" />

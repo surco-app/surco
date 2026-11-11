@@ -84,7 +84,7 @@ export function FormatDestinationMenu({
             // Music can't ingest FLAC — the same pin the Settings radio applies.
             disabled={d === 'appleMusic' && outputFormat === 'flac'}
             onClick={() => onPickDestination(d)}
-            className={`${SPLIT_ITEM} disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent ${
+            className={`${SPLIT_ITEM} disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent ${
               d === destination ? 'font-medium text-[var(--color-accent)]' : ''
             }`}
           >

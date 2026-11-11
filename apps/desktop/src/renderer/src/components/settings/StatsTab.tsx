@@ -255,7 +255,7 @@ export function StatsTab({ settings }: Props): React.JSX.Element {
             data-testid="stats-share"
             onClick={() => void shareImage()}
             disabled={sharing}
-            className="press inline-flex items-center gap-2 rounded-lg border border-[var(--color-line-strong)] px-4 py-2 text-sm font-medium hover:bg-[var(--color-hover)] disabled:opacity-60"
+            className="press inline-flex items-center gap-2 rounded-lg border border-[var(--color-line-strong)] px-4 py-2 text-sm font-medium hover:bg-[var(--color-hover)] disabled:opacity-40"
           >
             <Share size={14} aria-hidden="true" />
             {tr('settings.stats.share')}
