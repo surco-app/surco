@@ -475,6 +475,25 @@ describe('VirtualDJ queue text', () => {
     )
   })
 
+  it('never tells the DJ to close VirtualDJ for saves that wait for another or a missing VirtualDJ library, since closing it would not write them', () => {
+    const waiting = { tracks: 2, changes: 0, items: [] }
+    expect(pillText(tr, { ...waiting, unplugged: true }, VIRTUALDJ_QUEUE_WORDS)).toBe(
+      '2 tracks wait until Surco finds the VirtualDJ library',
+    )
+    expect(pillText(tr, { ...waiting, tracks: 0, elsewhere: 3 }, VIRTUALDJ_QUEUE_WORDS)).toBe(
+      '3 waiting for another VirtualDJ library',
+    )
+    expect(tr(VIRTUALDJ_QUEUE_WORDS.elsewhere, { count: 3 })).toBe(
+      '3 changes wait for another VirtualDJ library. They will be applied when you go back to it',
+    )
+  })
+
+  it('says a track is gone from VirtualDJ when its song is not in the database', () => {
+    expect(noticeText(tr, { code: 'not-in-library', track: 'Pray' }, VIRTUALDJ_QUEUE_WORDS)).toBe(
+      'Pray is no longer in VirtualDJ. Its cues were not saved',
+    )
+  })
+
   it('words the VirtualDJ backups warning in every language', () => {
     for (const locale of [en, es, de, fr, ja, ptBR]) {
       expect(locale.virtualdjQueue.writeUnknown).toContain('virtualdj-backups')

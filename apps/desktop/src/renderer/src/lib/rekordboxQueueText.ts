@@ -147,12 +147,12 @@ export const SERATO_QUEUE_WORDS: QueueWords = {
 export const VIRTUALDJ_QUEUE_WORDS: QueueWords = {
   pillTracks: 'virtualdjQueue.pillTracks',
   pillChanges: 'virtualdjQueue.pillChanges',
-  pillTracksUnplugged: 'virtualdjQueue.pillTracks',
-  pillChangesUnplugged: 'virtualdjQueue.pillChanges',
+  pillTracksUnplugged: 'virtualdjQueue.pillTracksUnplugged',
+  pillChangesUnplugged: 'virtualdjQueue.pillChangesUnplugged',
   pillHalted: 'virtualdjQueue.pillHalted',
-  pillElsewhere: 'virtualdjQueue.pillTracks',
+  pillElsewhere: 'virtualdjQueue.pillElsewhere',
   halted: 'virtualdjQueue.writeUnknown',
-  elsewhere: 'virtualdjQueue.pillTracks',
+  elsewhere: 'virtualdjQueue.elsewhere',
   discardConfirm: 'virtualdjQueue.discardConfirm',
   applied: 'virtualdjQueue.applied',
   appliedChanges: 'virtualdjQueue.appliedChanges',
@@ -163,6 +163,7 @@ export const VIRTUALDJ_QUEUE_WORDS: QueueWords = {
     ...REKORDBOX_QUEUE_WORDS.notices,
     'cues-changed': 'virtualdjQueue.notice.cuesChanged',
     'cues-calls-dropped': 'virtualdjQueue.notice.callsDropped',
+    'not-in-library': 'virtualdjQueue.notice.notInLibrary',
   },
 }
 

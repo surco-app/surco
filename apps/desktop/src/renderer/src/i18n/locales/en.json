@@ -3360,10 +3360,19 @@
     "writeFailed": "Couldn't save the changes to VirtualDJ. The files are as they were",
     "writeUnknown": "Couldn't save the changes or undo them, so the library may have changed. Before opening VirtualDJ, restore database.xml from the most recent copy in the virtualdj-backups folder in Surco's data",
     "discardConfirm": "Discard what is waiting? VirtualDJ stays as it is",
+    "pillTracksUnplugged_one": "{{count}} track waits until Surco finds the VirtualDJ library",
+    "pillTracksUnplugged_other": "{{count}} tracks wait until Surco finds the VirtualDJ library",
+    "pillChangesUnplugged_one": "{{count}} change waits until Surco finds the VirtualDJ library",
+    "pillChangesUnplugged_other": "{{count}} changes wait until Surco finds the VirtualDJ library",
+    "pillElsewhere_one": "{{count}} waiting for another VirtualDJ library",
+    "pillElsewhere_other": "{{count}} waiting for another VirtualDJ library",
+    "elsewhere_one": "{{count}} change waits for another VirtualDJ library. It will be applied when you go back to it",
+    "elsewhere_other": "{{count}} changes wait for another VirtualDJ library. They will be applied when you go back to it",
     "notice": {
       "cuesChanged": "The cues of {{track}} changed in VirtualDJ. Mark them again",
       "callsDropped_one": "{{count}} CALL of {{track}} was not saved ({{times}}). VirtualDJ only keeps hot cues",
-      "callsDropped_other": "{{count}} CALLs of {{track}} were not saved ({{times}}). VirtualDJ only keeps hot cues"
+      "callsDropped_other": "{{count}} CALLs of {{track}} were not saved ({{times}}). VirtualDJ only keeps hot cues",
+      "notInLibrary": "{{track}} is no longer in VirtualDJ. Its cues were not saved"
     }
   },
   "cueWave": {

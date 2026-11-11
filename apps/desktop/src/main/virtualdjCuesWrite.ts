@@ -52,14 +52,16 @@ function songIn(
 }
 
 function applyVirtualdjOp(draft: VirtualdjDraft, op: QueueOp, files: string[]): OpOutcome {
-  const refused = (code: 'cues-changed' | 'cues-invalid' | 'cues-write-failed'): OpOutcome => ({
+  const refused = (
+    code: 'cues-changed' | 'cues-invalid' | 'cues-write-failed' | 'not-in-library',
+  ): OpOutcome => ({
     id: op.id,
     applied: false,
     notices: [{ code, track: op.kind === 'edit' ? '' : op.label }],
   })
   if (op.kind !== 'cues' || op.wanted === undefined || op.grid) return refused('cues-invalid')
   const found = songIn(draft, files, virtualdjFileOf(op.contentId))
-  if (!found) return refused('cues-write-failed')
+  if (!found) return refused('not-in-library')
   const { file, xml, song } = found
   const rows = virtualdjCueRows(song)
   if (cueFingerprint(rows) !== op.fingerprint) return refused('cues-changed')

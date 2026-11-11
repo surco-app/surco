@@ -176,7 +176,7 @@ describe('applyVirtualdjCuesBatch', () => {
     expect(readFileSync(database, 'utf8')).toBe(fixture)
   })
 
-  it('refuses a track VirtualDJ does not hold', async () => {
+  it('says the track is no longer in VirtualDJ when its database does not hold it, rather than a write failure', async () => {
     const { deps, read } = library()
     const before = await read(MP3)
     const result = await applyVirtualdjCuesBatch(
@@ -185,7 +185,7 @@ describe('applyVirtualdjCuesBatch', () => {
     )
     expect(result).toMatchObject({
       ok: true,
-      outcomes: [{ applied: false, notices: [{ code: 'cues-write-failed' }] }],
+      outcomes: [{ applied: false, notices: [{ code: 'not-in-library', track: 'Pray' }] }],
     })
   })
 

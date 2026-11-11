@@ -3360,10 +3360,19 @@
     "writeFailed": "Impossible d’enregistrer les changements dans VirtualDJ. Les fichiers sont restés tels quels",
     "writeUnknown": "Les changements n’ont pu être ni enregistrés ni annulés, la bibliothèque a donc pu changer. Avant d’ouvrir VirtualDJ, restaure database.xml depuis la copie la plus récente dans le dossier virtualdj-backups des données de Surco",
     "discardConfirm": "Abandonner ce qui attend ? VirtualDJ reste comme il est",
+    "pillTracksUnplugged_one": "{{count}} morceau attend que Surco trouve la bibliothèque VirtualDJ",
+    "pillTracksUnplugged_other": "{{count}} morceaux attendent que Surco trouve la bibliothèque VirtualDJ",
+    "pillChangesUnplugged_one": "{{count}} changement attend que Surco trouve la bibliothèque VirtualDJ",
+    "pillChangesUnplugged_other": "{{count}} changements attendent que Surco trouve la bibliothèque VirtualDJ",
+    "pillElsewhere_one": "{{count}} en attente d’une autre bibliothèque VirtualDJ",
+    "pillElsewhere_other": "{{count}} en attente d’une autre bibliothèque VirtualDJ",
+    "elsewhere_one": "{{count}} changement attend une autre bibliothèque VirtualDJ. Il sera appliqué quand tu y reviendras",
+    "elsewhere_other": "{{count}} changements attendent une autre bibliothèque VirtualDJ. Ils seront appliqués quand tu y reviendras",
     "notice": {
       "cuesChanged": "Les cues de {{track}} ont changé dans VirtualDJ. Marque-les à nouveau",
       "callsDropped_one": "{{count}} CALL de {{track}} n’a pas été enregistré ({{times}}). VirtualDJ ne garde que les hot cues",
-      "callsDropped_other": "{{count}} CALL de {{track}} n’ont pas été enregistrés ({{times}}). VirtualDJ ne garde que les hot cues"
+      "callsDropped_other": "{{count}} CALL de {{track}} n’ont pas été enregistrés ({{times}}). VirtualDJ ne garde que les hot cues",
+      "notInLibrary": "{{track}} n’est plus dans VirtualDJ. Ses cues n’ont pas été enregistrés"
     }
   },
   "cueWave": {
