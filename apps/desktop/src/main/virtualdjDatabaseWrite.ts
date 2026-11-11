@@ -152,7 +152,7 @@ function withPhaseShifted(scan: string, shiftSeconds: number, beat: number): str
 export function withVirtualdjSongMoved(
   xml: string,
   from: string,
-  to: { path: string; size: number; lengthSeconds?: number },
+  to: { path: string; size: number; lengthSeconds?: number; bitrateKbps?: number | null },
   shiftSeconds: number,
   keepUntilSeconds: number | null,
 ): string | null {
@@ -168,8 +168,7 @@ export function withVirtualdjSongMoved(
   const lines = xml.slice(span.openEnd, span.bodyEnd).split(NL)
   const beat = secondsPerBeat(lines)
   const moved = lines.flatMap((line) => {
-    if (to.lengthSeconds !== undefined && isTag(line, 'Infos'))
-      return [setAttr(line, 'SongLength', decimal(to.lengthSeconds))]
+    if (isTag(line, 'Infos')) return [withInfos(line, to)]
     if (shiftSeconds !== 0 && isTag(line, 'Scan'))
       return [withPhaseShifted(line, shiftSeconds, beat)]
     const poi = poiOf(line)
@@ -182,6 +181,14 @@ export function withVirtualdjSongMoved(
     return [shiftSeconds === 0 ? line : withAttr(line, 'Pos', decimal(start))]
   })
   return `${xml.slice(0, span.openStart)}${open}${moved.join(NL)}${xml.slice(span.bodyEnd)}`
+}
+
+function withInfos(line: string, to: { lengthSeconds?: number; bitrateKbps?: number | null }) {
+  const length =
+    to.lengthSeconds === undefined ? line : setAttr(line, 'SongLength', decimal(to.lengthSeconds))
+  if (to.bitrateKbps === undefined) return length
+  if (to.bitrateKbps === null) return length.replace(/\sBitrate="[^"]*"/, '')
+  return setAttr(length, 'Bitrate', `${to.bitrateKbps}`)
 }
 
 function setAttr(tag: string, name: string, value: string): string {

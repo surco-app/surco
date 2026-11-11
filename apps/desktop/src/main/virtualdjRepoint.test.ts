@@ -15,7 +15,7 @@ import { createRekordboxQueue } from './rekordboxQueue'
 import { applyVirtualdjBatch } from './virtualdjBatch'
 import { parseVirtualdjDatabase } from './virtualdjDatabase'
 import { readVirtualdjLibrary, virtualdjLibraryRoots, virtualdjPlaylist } from './virtualdjLibrary'
-import { repointVirtualdjTracks } from './virtualdjTrackWrite'
+import { repointVirtualdjTracks, virtualdjBitrateKbps } from './virtualdjTrackWrite'
 
 const fixture = join(__dirname, 'virtualdjFixtures')
 const FIXTURE_XML = readFileSync(join(fixture, 'database.xml'), 'utf8')
@@ -90,7 +90,7 @@ describe('repointVirtualdjTracks', () => {
     expect(songBlock(xml, to).split('\r\n')).toEqual([
       `<Song FilePath="${to}" FileSize="8" Flag="268435456">`,
       '  <Tags Author="Tina Cousins" Title="Pray (W.I.P. In The Church Mix)" Genre="Electronic" Album="Pray" TrackNumber="01" Year="1998" Bpm="0.447761" Key="Ebm" Flag="1" />',
-      '  <Infos SongLength="100.0" LastModified="1794400456" FirstSeen="1794393066" FirstPlay="1794393110" LastPlay="1794393110" PlayCount="1" Bitrate="320" Cover="16386" />',
+      '  <Infos SongLength="100.0" LastModified="1794400456" FirstSeen="1794393066" FirstPlay="1794393110" LastPlay="1794393110" PlayCount="1" Cover="16386" />',
       '  <Scan Version="801" Bpm="0.447778" Phase="47.559456" AltBpm="0.335828" Volume="1.317936" Key="Ebm" AudioSig="aXOIhoepmbqHh57WpqXLTkYN" Flag="32768" />',
       '  <Poi Name="Surco" Pos="19.973878" Num="1" Color="4278190335" Type="cue" />',
       '  <Poi Name="2" Pos="47.626667" Num="2" Type="cue" />',
@@ -102,6 +102,43 @@ describe('repointVirtualdjTracks', () => {
     const others = (x: string) =>
       parseVirtualdjDatabase(x).filter((s) => s.path !== FROM && s.path !== to)
     expect(others(xml)).toEqual(others(FIXTURE_XML))
+  })
+
+  it('writes the converted file’s own bitrate, so a FLAC turned MP3 does not keep showing the FLAC’s', async () => {
+    const lib = library()
+    const flac = '/Music/Serato Pruebas/Pray.flac'
+    const to = lib.track('Pray B4.mp3')
+    const audioOf = vi.fn(async () => ({ bitrateKbps: 192 }))
+    expect(
+      await repointVirtualdjTracks([{ ...trimmed(to), from: flac }], { ...lib.deps, audioOf }),
+    ).toEqual([{ written: true }])
+    expect(audioOf).toHaveBeenCalledWith(to)
+    expect(songBlock(lib.database(), to)).toMatch(/<Infos [^>]*Bitrate="192"/)
+  })
+
+  it('drops the old bitrate when the new file’s cannot be told, so VirtualDJ reads it again', async () => {
+    const lib = library()
+    const to = lib.track('Pray.flac')
+    await repointVirtualdjTracks([trimmed(to)], { ...lib.deps, audioOf: async () => ({}) })
+    const infos = songBlock(lib.database(), to).split('\r\n')[2]
+    expect(infos).toBe(
+      '  <Infos SongLength="100.0" LastModified="1794400456" FirstSeen="1794393066" FirstPlay="1794393110" LastPlay="1794393110" PlayCount="1" Cover="16386" />',
+    )
+  })
+
+  it('keeps the bitrate of a file rewritten on its own path when the new one cannot be told', async () => {
+    const lib = library()
+    const path = join(lib.base, 'Music', 'Pray.mp3')
+    writeFileSync(
+      join(lib.dir, 'database.xml'),
+      FIXTURE_XML.replace(`FilePath="${FROM}"`, `FilePath="${path}"`),
+    )
+    lib.track('Pray.mp3', 'retagged')
+    await repointVirtualdjTracks([{ from: path, to: path, fromBytes: 17138984 }], {
+      ...lib.deps,
+      audioOf: async () => ({}),
+    })
+    expect(songBlock(lib.database(), path)).toContain('Bitrate="320"')
   })
 
   it('points every list row of the old file at the new one, keeping the rest of each row and each list', async () => {
@@ -402,5 +439,19 @@ describe('repointVirtualdjTracks', () => {
     expect(lib.database()).toContain(`FilePath="${to}"`)
     expect(lib.list('Carpeta/Dentro')).toEqual([to])
     expect(await queue.apply(async () => true)).toEqual({ status: 'empty' })
+  })
+})
+
+describe('virtualdjBitrateKbps', () => {
+  it.each([
+    [320_000, 320],
+    [268_938, 269],
+    [1_411_200, 1411],
+  ])('reads %i b/s as the %i VirtualDJ shows for the same file', (bitRate, kbps) => {
+    expect(virtualdjBitrateKbps({ bitRate })).toBe(kbps)
+  })
+
+  it('says nothing for a stream that reports no bitrate, as a FLAC does', () => {
+    expect(virtualdjBitrateKbps({})).toBeUndefined()
   })
 })

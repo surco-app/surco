@@ -172,6 +172,15 @@ export function applyVirtualdjTags(
 export interface VirtualdjRepointFacts {
   size: number | null
   lengthSeconds?: number
+  bitrateKbps?: number
+}
+
+export interface VirtualdjAudio {
+  bitrateKbps?: number
+}
+
+export function virtualdjBitrateKbps(probe: { bitRate?: number }): number | undefined {
+  return probe.bitRate ? Math.round(probe.bitRate / 1000) : undefined
 }
 
 function movedSong(
@@ -206,7 +215,12 @@ function movedSong(
   const moved = withVirtualdjSongMoved(
     xml,
     song.path,
-    { path, size: facts.size, lengthSeconds: facts.lengthSeconds },
+    {
+      path,
+      size: facts.size,
+      lengthSeconds: facts.lengthSeconds,
+      bitrateKbps: facts.bitrateKbps ?? (repoint.from === repoint.to ? undefined : null),
+    },
     -(shift?.trimmedMs ?? 0) / 1000,
     shift ? (facts.lengthSeconds ?? null) : null,
   )
@@ -231,14 +245,24 @@ const QUEUE_REASON: Partial<Record<VirtualdjCommit, string>> = {
 
 export async function repointVirtualdjTracks(
   repoints: RekordboxRepoint[],
-  deps: VirtualdjCommitDeps & { lengthOf: (path: string) => Promise<number | undefined> },
+  deps: VirtualdjCommitDeps & {
+    lengthOf: (path: string) => Promise<number | undefined>
+    audioOf?: (path: string) => Promise<VirtualdjAudio>
+  },
 ): Promise<LibraryRepointResult[]> {
   const facts = await Promise.all(
     repoints.map(async (r): Promise<VirtualdjRepointFacts> => {
       const size = sizeOf(r.to)
       if (size === null) return { size }
-      const lengthSeconds = await deps.lengthOf(r.to).catch(() => undefined)
-      return lengthSeconds === undefined ? { size } : { size, lengthSeconds }
+      const [lengthSeconds, audio] = await Promise.all([
+        deps.lengthOf(r.to).catch(() => undefined),
+        deps.audioOf?.(r.to).catch(() => undefined),
+      ])
+      return {
+        size,
+        ...(lengthSeconds === undefined ? {} : { lengthSeconds }),
+        ...(audio?.bitrateKbps === undefined ? {} : { bitrateKbps: audio.bitrateKbps }),
+      }
     }),
   )
   for (let attempt = 0; attempt < ATTEMPTS; attempt++) {

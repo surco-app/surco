@@ -136,7 +136,14 @@ import { engineRead } from './enginePlaylistsIpc'
 import { expandPaths } from './expand'
 import { collectionExporters, registerExportIpc } from './exportIpc'
 import { registerFeedbackIpc } from './feedback'
-import { convertAudio, probeDuration, readMeta, readTags, toNmlLocation } from './ffmpeg'
+import {
+  convertAudio,
+  probeAudio,
+  probeDuration,
+  readMeta,
+  readTags,
+  toNmlLocation,
+} from './ffmpeg'
 import { createFileSignatures } from './fileSignatures'
 import { createMenuT, resolveMenuLocale } from './i18n'
 import { fileIdentity, isSameFile, removeRenamedOriginal } from './inplace'
@@ -290,7 +297,7 @@ import { virtualdjCueSource } from './virtualdjCueSource'
 import { virtualdjLibraryRoots } from './virtualdjLibrary'
 import { virtualdjEdit } from './virtualdjPlaylistEditIpc'
 import { virtualdjRead } from './virtualdjPlaylistsIpc'
-import { repointVirtualdjTracks } from './virtualdjTrackWrite'
+import { repointVirtualdjTracks, virtualdjBitrateKbps } from './virtualdjTrackWrite'
 import { waitingCueQueueSection } from './waitingCueQueueIpc'
 import { onWatchedFilesChanged } from './watchedFiles'
 import { dirRoots, FolderWatcher } from './watcher'
@@ -623,6 +630,9 @@ const programQueues = {
             virtualdjOpen: DJ_PROCESSES.virtualdj.isRunning,
             sessionBackup: virtualdjSessionCopy,
             lengthOf: async (path) => (await probeDuration(path)) ?? undefined,
+            audioOf: async (path) => ({
+              bitrateKbps: virtualdjBitrateKbps(await probeAudio(path)),
+            }),
           })
           queueChecks.repointed('virtualdj', results)
           return results
