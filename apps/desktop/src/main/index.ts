@@ -209,7 +209,6 @@ import { stillWaiting } from './rekordboxQueueWatch'
 import { createSessionBackup } from './rekordboxSessionBackup'
 import { registerRowWavesIpc } from './rowWavesIpc'
 import { applySeratoBatch } from './seratoBatch'
-import { seratoCueQueueSection } from './seratoCueQueueIpc'
 import { seratoCueSource } from './seratoCueSource'
 import { seratoLibraryRoots } from './seratoLibrary'
 import { recoverSeratoTemps } from './seratoLibraryWrite'
@@ -282,6 +281,7 @@ import { withRecordedRun } from './verifyRun'
 import { virtualdjCueSource } from './virtualdjCueSource'
 import { applyVirtualdjCuesBatch } from './virtualdjCuesWrite'
 import { virtualdjRead } from './virtualdjPlaylistsIpc'
+import { waitingCueQueueSection } from './waitingCueQueueIpc'
 import { onWatchedFilesChanged } from './watchedFiles'
 import { dirRoots, FolderWatcher } from './watcher'
 import { loadWindowState, resolveWindowBounds, saveWindowState } from './windowState'
@@ -1511,7 +1511,7 @@ function registerIpc(): void {
       }),
       exportCollection: exporters.serato,
       running: DJ_PROCESSES.serato.isRunning,
-      cueQueue: seratoCueQueueSection(seratoCueQueue, {
+      cueQueue: waitingCueQueueSection(seratoCueQueue, {
         isRunning: DJ_PROCESSES.serato.isRunning,
         onWaiting: seratoCueQueueWatch.poke,
         onReady: seratoCueQueueWatch.poke,
@@ -1523,7 +1523,7 @@ function registerIpc(): void {
       pickLibraryPath: pickLibraryPath('dialogVirtualdjLibrary', {
         properties: ['openDirectory'],
       }),
-      cueQueue: seratoCueQueueSection(virtualdjCueQueue, {
+      cueQueue: waitingCueQueueSection(virtualdjCueQueue, {
         isRunning: DJ_PROCESSES.virtualdj.isRunning,
         onWaiting: virtualdjCueQueueWatch.poke,
         onReady: virtualdjCueQueueWatch.poke,
