@@ -258,7 +258,7 @@ export const Field = memo(function Field({
                 onKeyDown={(e) => {
                   if (e.key === 'Escape') setValuesOpen(false)
                 }}
-                className="animate-pop-flat absolute top-full right-0 left-0 z-20 mt-1 max-h-64 overflow-y-auto rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]"
+                className="animate-pop-flat absolute top-full right-0 left-0 z-20 mt-1 max-h-64 origin-top-right overflow-y-auto rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]"
               >
                 {mixedValues?.map(({ value: v, count }) => (
                   <button

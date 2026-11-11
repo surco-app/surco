@@ -596,6 +596,47 @@ textarea {
   }
 }
 
+/* A session wizard step coming in: forward from the trailing side, back from the leading
+   side, so each step keeps its place in the row. Only the incoming step moves and the old
+   one is gone at once, so Back or Next pressed mid-slide answers straight away. Reduced
+   motion keeps the fade and drops the travel. */
+@keyframes step-forward-in {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes step-back-in {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-step-forward {
+  animation: step-forward-in var(--duration-panel) var(--ease-standard);
+}
+
+.animate-step-back {
+  animation: step-back-in var(--duration-panel) var(--ease-standard);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-step-forward,
+  .animate-step-back {
+    animation: overlay-in var(--duration-state) var(--ease-standard);
+  }
+}
+
 /* The convert button's two faces. Blocked, it names the missing field on a neutral
    ground, with the amber dot as the only warning; once the field is filled the accent
    fades in and the action rolls down into place. The fade has no direction on purpose: a left-to-right sweep read as

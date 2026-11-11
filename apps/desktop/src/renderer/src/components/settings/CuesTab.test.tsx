@@ -231,6 +231,14 @@ describe('CuesTab', () => {
     expect(screen.getByTestId('cue-flow-mix-in')).toHaveAttribute('aria-checked', 'true')
   })
 
+  // Every flow menu hangs below its button's right edge, so it has to scale out of that
+  // corner; growing from its centre makes it look detached from the button that opened it.
+  it('grows the flow menus out of the corner that touches their button', () => {
+    render(<Harness />)
+    openMore()
+    expect(screen.getByRole('menu')).toHaveClass('origin-top-right')
+  })
+
   it('keeps Poner por defecto with the actions on the open flow, out of the list of flows to pick', () => {
     render(<Harness />)
     pick('one-at-32')
