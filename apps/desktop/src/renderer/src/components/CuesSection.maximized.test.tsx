@@ -1498,6 +1498,19 @@ describe('CuesSection maximized over the rest of the editor', () => {
     expect(screen.getByTestId('cue-wave-call-64000')).toBeInTheDocument()
   })
 
+  it('keeps the preview on the right-clicked point while its menu is open, so moving to the options does not lose where they apply', async () => {
+    setup()
+    await maximize()
+    seek(128000)
+    fireEvent.mouseMove(screen.getByTestId('cue-detail'), { clientX: 300 })
+    fireEvent.contextMenu(screen.getByTestId('cue-detail'), { clientX: 300, clientY: 40 })
+    fireEvent.mouseMove(screen.getByTestId('cue-detail'), { clientX: 100 })
+    fireEvent.mouseLeave(screen.getByTestId('cue-detail'))
+    expect(screen.getByTestId('cue-detail-ghost-call-136000')).toBeInTheDocument()
+    fireEvent.keyDown(screen.getByTestId('cues-menu'), { key: 'Escape' })
+    expect(screen.queryAllByTestId(/^cue-(wave|detail)-ghost-/)).toHaveLength(0)
+  })
+
   it('opens the cue menu, not the add menu, when the right-click on the zoomed wave lands on a cue', async () => {
     setup()
     await maximize()

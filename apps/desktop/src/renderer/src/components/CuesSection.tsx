@@ -586,6 +586,9 @@ function Editing({
   useEffect(() => {
     if (!placing) setHoverMs(null)
   }, [placing])
+  useEffect(() => {
+    if (menu === null) setHoverMs(null)
+  }, [menu])
   const hoverGhost = useMemo<DraftGhost | null>(
     () =>
       placing && hoverMs !== null
@@ -857,6 +860,7 @@ function Editing({
     const rect = editorRef.current?.getBoundingClientRect()
     setMarkMenu(null)
     setMenu({ ms, x: clientX - (rect?.left ?? 0), y: clientY - (rect?.top ?? 0) })
+    if (placing) setHoverMs(ms)
   }
   const fromMarkMenu = (action: DraftAction) => {
     dispatch(action)
@@ -1357,7 +1361,7 @@ function Editing({
       onMarkDrag={setPointDrag}
       compact={!maximized}
       onPlace={placing ? place : undefined}
-      onHover={placing ? setHoverMs : undefined}
+      onHover={placing && menu === null ? setHoverMs : undefined}
       proposals={proposals}
       onAcceptProposal={acceptProposal}
       onDropProposal={dropProposal}
