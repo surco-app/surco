@@ -55,10 +55,7 @@
         "none": "Nenhuma playlist escolhida ainda",
         "onlyChosen": "Ver só as escolhidas",
         "allPlaylists": "Ver todas as playlists",
-        "summary_one": "{{count}} playlist escolhida, até {{tracks}} faixas para escolher",
-        "summary_other": "{{count}} playlists escolhidas, até {{tracks}} faixas para escolher",
-        "short": "Dá para uns {{minutes}} min dos {{target}} que você pediu. Escolha outra playlist para chegar lá.",
-        "enough": "Dá para os {{target}} min que você pediu"
+        "short": "Dá para uns {{minutes}} min dos {{target}} que você pediu. Escolha outra playlist para chegar lá."
       },
       "fresh": {
         "hint": "Faixas novas são as adicionadas nos últimos 30 dias. Se o programa não guarda datas, as que não têm reproduções nem estrelas.",

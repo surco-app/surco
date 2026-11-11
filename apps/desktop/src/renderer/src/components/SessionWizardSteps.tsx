@@ -250,17 +250,11 @@ export function SourcesReach({
     )
   const eligible = chosen.reduce((sum, id) => sum + (counts.get(id) ?? 0), 0)
   const reach = eligible * playMinutes
+  if (reach >= minutes) return <span />
   return (
-    <div className="flex min-w-0 flex-col gap-0.5 text-xs text-fg-dim">
-      <p data-testid="session-wizard-summary">
-        {tr('sessions.wizard.sources.summary', { count: chosen.length, tracks: eligible })}
-      </p>
-      <p data-testid="session-wizard-length" className={reach < minutes ? 'text-warn' : undefined}>
-        {reach < minutes
-          ? tr('sessions.wizard.sources.short', { minutes: reach, target: minutes })
-          : tr('sessions.wizard.sources.enough', { target: minutes })}
-      </p>
-    </div>
+    <p data-testid="session-wizard-length" className="min-w-0 text-xs text-warn">
+      {tr('sessions.wizard.sources.short', { minutes: reach, target: minutes })}
+    </p>
   )
 }
 

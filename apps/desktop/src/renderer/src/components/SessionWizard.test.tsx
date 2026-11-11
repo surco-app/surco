@@ -87,6 +87,9 @@ function setup(
 }
 
 const next = () => fireEvent.click(screen.getByTestId('session-wizard-next'))
+const LONG: SessionAnswers = { ...INITIAL, minutes: 999 }
+const reach = (tracks: number, target = 999) =>
+  i18n.t('sessions.wizard.sources.short', { minutes: tracks * INITIAL.playMinutes, target })
 const toSources = () => next()
 const toCharacter = async () => {
   toSources()
@@ -182,14 +185,12 @@ describe('SessionWizard sources step', () => {
   })
 
   it('browses the folders without typing and gives a role from the row', () => {
-    setup()
+    setup({}, LONG)
     toSources()
     expect(screen.queryByTestId('session-wizard-role-b90-base')).toBeNull()
     fireEvent.click(screen.getByTestId('playlists-folder-rem'))
     fireEvent.click(screen.getByTestId('session-wizard-role-b90-base'))
-    expect(screen.getByTestId('session-wizard-summary')).toHaveTextContent(
-      i18n.t('sessions.wizard.sources.summary', { count: 1, tracks: 38 }),
-    )
+    expect(screen.getByTestId('session-wizard-length')).toHaveTextContent(reach(38))
   })
 
   it('warns before building that the chosen playlists fall short of the length asked, so the DJ adds another instead of finding a short set at the end', () => {
@@ -203,25 +204,23 @@ describe('SessionWizard sources step', () => {
     expect(screen.getByTestId('session-wizard-next')).toBeEnabled()
   })
 
-  it('says how far the chosen playlists go beside the buttons, where the eye lands before pressing Next', () => {
-    setup()
+  it('warns of a short set beside the buttons, where the eye lands before pressing Next', () => {
+    setup({}, LONG)
     toSources()
     fireEvent.click(screen.getByTestId('playlists-folder-rem'))
     fireEvent.click(screen.getByTestId('session-wizard-role-b90-base'))
     const footer = screen.getByTestId('session-wizard-footer')
-    expect(footer).toContainElement(screen.getByTestId('session-wizard-summary'))
     expect(footer).toContainElement(screen.getByTestId('session-wizard-length'))
     expect(footer).toContainElement(screen.getByTestId('session-wizard-next'))
   })
 
-  it('says the chosen playlists are enough once they reach the length asked', () => {
+  it('stays quiet once the chosen playlists reach the length asked, since only a short set needs a word', () => {
     setup()
     toSources()
     fireEvent.click(screen.getByTestId('playlists-folder-rem'))
     fireEvent.click(screen.getByTestId('session-wizard-role-b90-base'))
-    expect(screen.getByTestId('session-wizard-length')).toHaveTextContent(
-      i18n.t('sessions.wizard.sources.enough', { target: 90 }),
-    )
+    expect(screen.queryByTestId('session-wizard-length')).toBeNull()
+    expect(screen.queryByTestId('session-wizard-summary')).toBeNull()
   })
 
   it('lands in the search on the Playlists step, so the DJ types a name without reaching for the mouse first', () => {
@@ -256,7 +255,7 @@ describe('SessionWizard sources step', () => {
   })
 
   it('marks every playlist in a folder when 3 is pressed on the folder, like its own Mixed button', () => {
-    setup()
+    setup({}, LONG)
     toSources()
     fireEvent.keyDown(screen.getByTestId('playlists-search'), { key: 'ArrowDown' })
     fireEvent.keyDown(screen.getByTestId('playlists-folder-rem'), { key: '3' })
@@ -264,9 +263,7 @@ describe('SessionWizard sources step', () => {
       'aria-pressed',
       'true',
     )
-    expect(screen.getByTestId('session-wizard-summary')).toHaveTextContent(
-      i18n.t('sessions.wizard.sources.summary', { count: 4, tracks: 168 }),
-    )
+    expect(screen.getByTestId('session-wizard-length')).toHaveTextContent(reach(168))
   })
 
   it('leaves numbers typed in the search to the search, since playlist names carry years', () => {
@@ -299,14 +296,12 @@ describe('SessionWizard sources step', () => {
     expect(screen.getByTestId('playlists-empty')).toBeInTheDocument()
   })
 
-  it('counts the playlist it was given a role in, in one line', () => {
-    setup()
+  it('counts the playlist it was given a role in toward the length', () => {
+    setup({}, LONG)
     toSources()
     fireEvent.change(screen.getByTestId('playlists-search'), { target: { value: 'mak' } })
     fireEvent.click(screen.getByTestId('session-wizard-role-mk97-base'))
-    expect(screen.getByTestId('session-wizard-summary')).toHaveTextContent(
-      i18n.t('sessions.wizard.sources.summary', { count: 1, tracks: 22 }),
-    )
+    expect(screen.getByTestId('session-wizard-length')).toHaveTextContent(reach(22))
   })
 
   it('takes the playlist away and clears the role when the active role is pressed again', () => {
@@ -315,7 +310,7 @@ describe('SessionWizard sources step', () => {
     fireEvent.change(screen.getByTestId('playlists-search'), { target: { value: 'mk97' } })
     fireEvent.change(screen.getByTestId('playlists-search'), { target: { value: 'bases 97' } })
     fireEvent.click(screen.getByTestId('session-wizard-role-mk97-base'))
-    expect(screen.queryByTestId('session-wizard-summary')).toBeNull()
+    expect(screen.queryByTestId('session-wizard-length')).toBeNull()
     expect(screen.getByTestId('session-wizard-none')).toBeInTheDocument()
   })
 
@@ -337,11 +332,9 @@ describe('SessionWizard sources step', () => {
   })
 
   it('ignores a marked playlist that is no longer in the tree', () => {
-    setup({ gone: 'base', b90: 'base' })
+    setup({ gone: 'base', b90: 'base' }, LONG)
     toSources()
-    expect(screen.getByTestId('session-wizard-summary')).toHaveTextContent(
-      i18n.t('sessions.wizard.sources.summary', { count: 1, tracks: 38 }),
-    )
+    expect(screen.getByTestId('session-wizard-length')).toHaveTextContent(reach(38))
   })
 
   it('opens with nothing chosen when no playlist was handed over, whatever roles are known', () => {
@@ -411,11 +404,9 @@ describe('SessionWizard sources step', () => {
   })
 
   it('counts the tracks the chosen playlists hold', () => {
-    setup({ b90: 'base', c90: 'vocal' })
+    setup({ b90: 'base', c90: 'vocal' }, LONG)
     toSources()
-    expect(screen.getByTestId('session-wizard-summary')).toHaveTextContent(
-      i18n.t('sessions.wizard.sources.summary', { count: 2, tracks: 99 }),
-    )
+    expect(screen.getByTestId('session-wizard-length')).toHaveTextContent(reach(99))
   })
 })
 
@@ -751,9 +742,7 @@ describe('SessionWizard roles for a whole folder', () => {
   it('gives every playlist of the folder the role with one press', () => {
     renderFolders()
     fireEvent.click(screen.getByTestId('session-wizard-folder-role-fb-base'))
-    expect(screen.getByTestId('session-wizard-summary')).toHaveTextContent(
-      i18n.t('sessions.wizard.sources.summary', { count: 2, tracks: 15 }),
-    )
+    expect(screen.getByTestId('session-wizard-length')).toHaveTextContent(reach(15, 90))
     expect(screen.getByTestId('playlists-folder-fb')).toHaveTextContent(/^\D*$/)
     fireEvent.click(screen.getByTestId('playlists-folder-fb'))
     expect(screen.getByTestId('session-wizard-role-b1-base')).toHaveAttribute(
