@@ -397,7 +397,7 @@ export function ConvertFooter({
       role="status"
       className="flex min-w-0 items-center gap-1.5 text-xs text-fg-dim"
     >
-      <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden="true" />
+      <Loader2 className="h-3 w-3 shrink-0 animate-spin" aria-hidden="true" />
       {tr('verify.checking')}
     </p>
   )
@@ -431,7 +431,7 @@ export function ConvertFooter({
             onClick={onOpenNormalize}
             className="press group relative flex w-full items-center justify-center gap-1.5 text-xs text-[var(--color-accent)] hover:underline"
           >
-            <SlidersVertical className="h-3.5 w-3.5" aria-hidden="true" />
+            <SlidersVertical className="h-3 w-3" aria-hidden="true" />
             {tr(`normalize.mode.${normalizeCfg.mode}`)} ·{' '}
             {normalizeCfg.mode === 'loudness'
               ? `${formatUpTo(normalizeCfg.targetLufs, 1, i18n.language)} LUFS`
@@ -458,7 +458,7 @@ export function ConvertFooter({
                       role="status"
                       className="flex min-w-0 items-center gap-1 text-xs font-medium text-warn"
                     >
-                      <TriangleAlert className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                      <TriangleAlert className="h-3 w-3 shrink-0" aria-hidden="true" />
                       <span className="min-w-0">
                         {worst && retryFailed ? (
                           tr(`verify.detail.${DETAIL_PREFIX[worst.place] ?? worst.place}Unreadable`)
@@ -571,7 +571,7 @@ export function ConvertFooter({
                       data-testid="verify-retry"
                       onClick={retry}
                       aria-disabled={retrying || undefined}
-                      className="press flex h-8 shrink-0 items-center whitespace-nowrap rounded-lg px-2 text-xs font-medium text-fg hover:bg-[var(--color-hover)] aria-disabled:opacity-60"
+                      className="press flex h-8 shrink-0 items-center whitespace-nowrap rounded-lg px-2 text-xs font-medium text-fg hover:bg-[var(--color-hover)] aria-disabled:opacity-40"
                     >
                       {tr('verify.retry')}
                     </button>
@@ -614,7 +614,7 @@ export function ConvertFooter({
                     aria-label={tr('editor.cleanUpPrevious', { count: cleanupFiles })}
                     className="press relative flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-2 text-xs text-fg-dim hover:bg-[var(--color-hover)] hover:text-danger"
                   >
-                    <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                    <Trash2 className="h-3 w-3" aria-hidden="true" />
                     <span className="hidden whitespace-nowrap @min-[34rem]:inline">
                       {tr('editor.cleanUpPrevious', { count: cleanupFiles })}
                     </span>
@@ -637,7 +637,7 @@ export function ConvertFooter({
                     data-variant={musicPrimary ? 'primary' : 'secondary'}
                     onClick={onAddToAppleMusic}
                     disabled={musicAdding}
-                    className={`press flex h-8 shrink-0 items-center whitespace-nowrap rounded-lg px-3 text-xs font-medium disabled:opacity-60 ${
+                    className={`press flex h-8 shrink-0 items-center whitespace-nowrap rounded-lg px-3 text-xs font-medium disabled:opacity-40 ${
                       musicPrimary
                         ? 'bg-[var(--color-accent)] text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]'
                         : 'border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] text-fg hover:bg-[var(--color-line-strong)]'

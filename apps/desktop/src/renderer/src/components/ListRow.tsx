@@ -6,7 +6,7 @@ import type React from 'react'
 // tinted pill on the right.
 
 export function listRowClass(primary: boolean, selected: boolean): string {
-  return `group/row relative flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-[transform] duration-200 ease-out ${
+  return `group/row relative flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-[transform] duration-200 ease-standard ${
     // The primary row (the one open in the editor) takes the selection fill, the way
     // Finder/Mail fill the active row. A multi-selected-but-not-primary row gets the
     // quieter accent tint. Everything else is bare: no outline and no fill of its own,
@@ -23,7 +23,7 @@ export function listRowClass(primary: boolean, selected: boolean): string {
 export const ROW_TITLE = 'relative block w-fit max-w-full truncate text-sm font-medium text-fg'
 export const ROW_DETAIL = 'relative block min-w-0 flex-1 truncate text-xs text-fg-dim'
 export const ROW_TRAILING = 'shrink-0 text-right text-xs tabular-nums text-fg-dim'
-export const PILL_TEXT = 'text-[11px] font-semibold leading-4'
+export const PILL_TEXT = 'text-label font-semibold leading-4'
 
 export function CoverPlaceholder({
   testid,
@@ -37,7 +37,7 @@ export function CoverPlaceholder({
   return (
     <span
       data-testid={testid}
-      className={`flex ${large ? 'h-16 w-16' : 'h-8 w-8'} items-center justify-center bg-[var(--color-panel-2)] outline outline-1 -outline-offset-1 outline-on-scrim/10 transition-[border-radius] duration-150 ${
+      className={`flex ${large ? 'h-16 w-16' : 'h-8 w-8'} items-center justify-center bg-[var(--color-panel-2)] outline outline-1 -outline-offset-1 outline-on-scrim/10 transition-[border-radius] duration-120 ${
         round ? 'rounded-full' : 'rounded-md'
       }`}
     >

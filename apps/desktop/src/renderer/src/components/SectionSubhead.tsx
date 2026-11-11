@@ -6,7 +6,7 @@ import type React from 'react'
 // Exported as a class string (not only a component) because a couple of sites need the
 // heading on a different element — Metadata's group caption is a semantic <h3> — and both
 // must draw from a single source so the family never drifts apart again.
-export const SECTION_SUBHEAD = 'text-[11px] font-medium text-fg-dim'
+export const SECTION_SUBHEAD = 'text-label font-medium text-fg-dim'
 
 // Renders the caption as an h4, one level under the section's own h3 header, so it shows
 // in a screen reader's outline; callers pass className for the layout-specific wrapping (a

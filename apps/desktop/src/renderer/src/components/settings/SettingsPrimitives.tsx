@@ -17,7 +17,7 @@ import { CheckboxRow } from './CheckboxRow'
 // One heading voice, the editor's section title: a named section's name, a tab's opening
 // subhead and a top-level field's label all wear HEADING. A field inside a named section
 // steps down to a small dim label, so "Discogs" and "Discogs token" never read as peers.
-const HEADING = 'text-[13px] font-semibold text-fg-muted'
+const HEADING = 'text-section font-semibold text-fg-muted'
 const NESTED_LABEL = 'text-xs font-medium text-fg-dim'
 const InNamedSection = createContext(false)
 

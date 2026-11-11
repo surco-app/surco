@@ -378,7 +378,7 @@ export function FilterPanes({
             {query && (
               <p
                 data-testid={`${testid}-search`}
-                className="flex shrink-0 items-center gap-1.5 px-3 pt-2 pb-1 text-[11px] font-semibold text-fg-faint"
+                className="flex shrink-0 items-center gap-1.5 px-3 pt-2 pb-1 text-label font-semibold text-fg-faint"
               >
                 <Search className="size-3 shrink-0" aria-hidden="true" />
                 <span className="min-w-0 truncate">{searching(query)}</span>
@@ -413,7 +413,7 @@ export function FilterPanes({
                     <div key={block.key} role="group" aria-label={block.label}>
                       <div
                         aria-hidden="true"
-                        className="px-2 pt-1.5 pb-1 text-[11px] font-semibold text-fg-faint"
+                        className="px-2 pt-1.5 pb-1 text-label font-semibold text-fg-faint"
                       >
                         {block.label}
                       </div>
@@ -432,7 +432,7 @@ export function FilterPanes({
           </div>
         </div>
       </div>
-      <div className="flex items-center justify-end gap-2 border-t border-[var(--color-line)] py-1 pr-1 pl-3 text-[11px] tabular-nums text-fg-faint">
+      <div className="flex items-center justify-end gap-2 border-t border-[var(--color-line)] py-1 pr-1 pl-3 text-label tabular-nums text-fg-faint">
         <button
           type="button"
           data-testid={`${testid}-clear`}

@@ -149,9 +149,7 @@ export function PasteTracklistModal({
         <>
           {create && (
             <label className="mb-3 block">
-              <span className="mb-1 block text-[11px] text-fg-dim">
-                {tr('pasteTracklist.name')}
-              </span>
+              <span className="mb-1 block text-label text-fg-dim">{tr('pasteTracklist.name')}</span>
               <input
                 data-testid="paste-tracklist-name"
                 value={name}
@@ -185,7 +183,7 @@ export function PasteTracklistModal({
               type="submit"
               data-testid="paste-tracklist-search"
               disabled={!canSearch}
-              className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
+              className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
             >
               {tr('pasteTracklist.search', { program: tr(`sources.${program}`) })}
             </button>
@@ -247,14 +245,14 @@ export function PasteTracklistModal({
                       {hasTimes && (
                         <span
                           data-testid={`paste-tracklist-at-${i}`}
-                          className="font-mono text-[11px] leading-[18px] text-fg-faint tabular-nums"
+                          className="font-mono text-label leading-[18px] text-fg-faint tabular-nums"
                         >
                           {match.line.at ?? ''}
                         </span>
                       )}
                       <span className={`mt-[5px] size-2 rounded-full ${DOT[level]}`} />
                       <div className="min-w-0">
-                        <div className="truncate text-[13px]">
+                        <div className="truncate text-section">
                           {match.line.raw}
                           {match.line.suggested && (
                             <small className="ml-1.5 text-fg-faint">
@@ -326,7 +324,7 @@ export function PasteTracklistModal({
               type="submit"
               data-testid="paste-tracklist-add"
               disabled={!settled || chosen.length === 0}
-              className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
+              className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
             >
               {tr('pasteTracklist.add', { count: chosen.length })}
             </button>

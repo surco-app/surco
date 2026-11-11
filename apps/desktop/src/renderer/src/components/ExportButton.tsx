@@ -252,7 +252,7 @@ export function ExportButton({
           }
           className={
             quiet
-              ? 'press flex h-8 w-8 items-center justify-center rounded-l-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] hover:bg-[var(--color-line-strong)] disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50'
+              ? 'press flex h-8 w-8 items-center justify-center rounded-l-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] hover:bg-[var(--color-line-strong)] disabled:pointer-events-none disabled:opacity-40 aria-disabled:pointer-events-none aria-disabled:opacity-40'
               : liveStage
                 ? // The dimmed track + accent fill replace the usual disabled fade: the
                   // button reads as a progress bar, not as a greyed-out control.
@@ -267,7 +267,7 @@ export function ExportButton({
             <span
               data-testid="process-progress"
               aria-hidden="true"
-              className="progress-sweep absolute inset-0 origin-left bg-[var(--color-accent)] transition-transform duration-[250ms] ease-[cubic-bezier(0.2,0,0,1)]"
+              className="progress-sweep absolute inset-0 origin-left bg-[var(--color-accent)] transition-transform duration-240 ease-standard"
               style={{ transform: `scaleX(${STAGE_PROGRESS[liveStage]})` }}
             />
           )}
@@ -323,7 +323,7 @@ export function ExportButton({
           disabled={blocked}
           className={
             quiet
-              ? 'press flex h-8 w-6 items-center justify-center rounded-r-lg border border-l-0 border-[var(--color-line-strong)] bg-[var(--color-panel-2)] hover:bg-[var(--color-line-strong)] disabled:pointer-events-none disabled:opacity-50'
+              ? 'press flex h-8 w-6 items-center justify-center rounded-r-lg border border-l-0 border-[var(--color-line-strong)] bg-[var(--color-panel-2)] hover:bg-[var(--color-line-strong)] disabled:pointer-events-none disabled:opacity-40'
               : liveStage
                 ? // Matches the body's progress-bar look, or the split button would read
                   // as half-faded while the fill keeps the body vivid.

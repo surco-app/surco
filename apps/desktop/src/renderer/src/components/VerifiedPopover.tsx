@@ -117,7 +117,7 @@ export function VerifiedPopover({ checks }: { checks: PlaceCheck[] }): React.JSX
             style={{ top: pos.top, bottom: pos.bottom, left: pos.left, maxHeight: pos.maxHeight }}
             className={`animate-pop-flat fixed z-50 w-72 max-w-[calc(100vw-16px)] overflow-y-auto ${pos.bottom !== undefined ? 'origin-bottom-left' : 'origin-top-left'} rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] py-1 shadow-[var(--shadow-float)] outline-none`}
           >
-            <p className="px-3 pt-1.5 pb-1 text-[11px] font-medium text-fg-dim">
+            <p className="px-3 pt-1.5 pb-1 text-label font-medium text-fg-dim">
               {tr('verify.title')}
             </p>
             <ul>

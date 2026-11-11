@@ -70,12 +70,12 @@ export function ForeignTagsInspector({
                     instead of cramming both onto one line. */}
                 <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                   <span
-                    className={`truncate font-mono text-[11px] ${removed ? 'text-fg-muted line-through opacity-60' : 'text-fg-dim'}`}
+                    className={`truncate font-mono text-label ${removed ? 'text-fg-muted line-through opacity-60' : 'text-fg-dim'}`}
                   >
                     {tag.name}
                   </span>
                   <span
-                    className={`truncate font-mono text-[11px] ${removed ? 'text-fg-muted line-through opacity-60' : 'text-fg-muted'}`}
+                    className={`truncate font-mono text-label ${removed ? 'text-fg-muted line-through opacity-60' : 'text-fg-muted'}`}
                   >
                     <Tooltip label={tag.value} />
                     {tag.value}

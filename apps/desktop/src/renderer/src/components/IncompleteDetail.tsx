@@ -9,7 +9,7 @@ import { GroupFooter, Header } from './MusicReviewDetail'
 
 const INPUT =
   'w-full rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)]/30 px-2.5 py-1.5 text-sm outline-none transition-colors placeholder:text-fg-faint hover:border-[var(--color-line-strong)] hover:bg-[var(--color-hover)]/50 focus:border-[var(--color-accent)] focus:bg-[var(--color-field)]'
-const HINT = 'mt-1 block text-[11.5px] text-fg-faint'
+const HINT = 'mt-1 block text-xs text-fg-faint'
 
 export function IncompleteDetail({
   card,

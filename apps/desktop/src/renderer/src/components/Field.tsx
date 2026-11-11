@@ -295,7 +295,7 @@ export const Field = memo(function Field({
       {cleaned && (
         <span
           data-testid={`field-cleaned-${name}`}
-          className={`mt-1 block text-[11.5px] text-fg-faint ${width ? '' : '@[24rem]:col-start-2 @[24rem]:-mt-1'}`}
+          className={`mt-1 block text-xs text-fg-faint ${width ? '' : '@[24rem]:col-start-2 @[24rem]:-mt-1'}`}
         >
           <span className="inline-flex items-center gap-1 font-medium text-good">
             <CleanSpark />
@@ -368,7 +368,7 @@ export const Field = memo(function Field({
       {previous && (
         <span
           data-testid={`field-${name}-previous`}
-          className={`mt-1 block text-[11.5px] text-fg-faint ${width ? 'whitespace-nowrap' : '@[24rem]:col-start-2 @[24rem]:-mt-1'}`}
+          className={`mt-1 block text-xs text-fg-faint ${width ? 'whitespace-nowrap' : '@[24rem]:col-start-2 @[24rem]:-mt-1'}`}
         >
           <span className="sr-only">{`${tr('editor.previous.label')} `}</span>
           <span className="line-through">{previous.value}</span>

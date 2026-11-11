@@ -100,7 +100,7 @@ export function ExportModal({ tracks, scope = 'visible', onClose }: Props): Reac
                 .then(onClose)
                 .catch((e: unknown) => setError(mainErrorMessage(e, tr, String(e))))
             }}
-            className="press block rounded-lg border border-[var(--color-line)] px-4 py-3 text-left enabled:hover:bg-[var(--color-hover)] disabled:opacity-50"
+            className="press block rounded-lg border border-[var(--color-line)] px-4 py-3 text-left enabled:hover:bg-[var(--color-hover)] disabled:opacity-40"
           >
             <span className="flex items-center justify-between">
               <span className="text-sm font-medium">{t.label}</span>

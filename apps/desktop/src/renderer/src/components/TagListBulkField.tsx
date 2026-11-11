@@ -98,14 +98,14 @@ export function TagListBulkField({
           aria-expanded={open}
           aria-controls={`${baseId}-rows`}
           onClick={() => setOpen((v) => !v)}
-          className="flex w-full items-center gap-1.5 py-0.5 text-[11px] text-fg-muted transition-colors hover:text-fg"
+          className="flex w-full items-center gap-1.5 py-0.5 text-label text-fg-muted transition-colors hover:text-fg"
         >
           <ChevronRight
             className={`h-3 w-3 shrink-0 text-fg-faint transition-transform ${open ? 'rotate-90' : ''}`}
             aria-hidden="true"
           />
           <span>{tr('editor.groupingPerTrack')}</span>
-          <span className="ml-auto text-[11px] text-fg-faint">
+          <span className="ml-auto text-label text-fg-faint">
             {varying === 0
               ? tr('editor.groupingSame')
               : tr('editor.groupingVarying', { count: varying })}
@@ -118,10 +118,10 @@ export function TagListBulkField({
                 <div
                   id={`${baseId}-${t.id}`}
                   data-testid={`${list.key}-track-${t.id}`}
-                  className="flex min-w-0 items-center gap-1.5 text-[11px] text-fg-faint"
+                  className="flex min-w-0 items-center gap-1.5 text-label text-fg-faint"
                 >
                   {t.meta.trackNumber && (
-                    <span className="shrink-0 rounded bg-[var(--color-panel-2)] px-1 py-px text-[11px] font-semibold text-fg-dim">
+                    <span className="shrink-0 rounded bg-[var(--color-panel-2)] px-1 py-px text-label font-semibold text-fg-dim">
                       {t.meta.trackNumber}
                     </span>
                   )}

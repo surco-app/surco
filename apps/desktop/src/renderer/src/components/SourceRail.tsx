@@ -97,7 +97,7 @@ export function SourceRail({
       {dot}
       <span
         data-testid={`source-rail-label-${key}`}
-        className="max-w-full truncate px-0.5 text-[11px] leading-tight"
+        className="max-w-full truncate px-0.5 text-label leading-tight"
       >
         {label}
       </span>
@@ -196,7 +196,7 @@ export function SourceRail({
               role="menuitem"
               data-testid="source-rail-hide"
               onClick={() => hide(menu.source)}
-              className="block w-full rounded-md px-3 py-1.5 text-left text-sm text-fg hover:bg-[var(--color-hover)]"
+              className="block w-full rounded px-3 py-1.5 text-left text-sm text-fg hover:bg-[var(--color-hover)]"
             >
               {tr(`sources.hide.${menu.source}`)}
             </button>

@@ -3870,7 +3870,7 @@ export default function App(): React.JSX.Element {
                           {crateOpen && !reorderEnabled && (
                             <p
                               data-testid="reorder-hint"
-                              className="px-4 pt-1 text-[11px] text-fg-faint"
+                              className="px-4 pt-1 text-label text-fg-faint"
                             >
                               {tr('sources.reorder.hint')}
                             </p>

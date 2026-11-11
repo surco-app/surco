@@ -303,7 +303,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
         type="button"
         data-testid="discogs-held"
         onClick={showHeld}
-        className="press rounded-full bg-[var(--color-accent-soft)] px-3 py-1 text-[11px] font-medium text-[var(--color-accent)] transition-colors hover:bg-[var(--color-hover)]"
+        className="press rounded-full bg-[var(--color-accent-soft)] px-3 py-1 text-label font-medium text-[var(--color-accent)] transition-colors hover:bg-[var(--color-hover)]"
       >
         {tr('editor.heldResults', {
           count: held.count,
@@ -372,7 +372,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                 <span
                   data-testid="result-provider"
                   data-provider={r.provider}
-                  className="shrink-0 text-[11px] font-medium leading-4 text-fg-dim"
+                  className="shrink-0 text-label font-medium leading-4 text-fg-dim"
                 >
                   {tr(`settings.provider.${r.provider}`)}
                 </span>
@@ -399,7 +399,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                             base format (medium + size, e.g. "Vinyl, 12\"") dropping RPM/Single/
                             Stereo. */}
                 {identity && (
-                  <span className="min-w-0 truncate text-[11px] text-fg-dim leading-4">
+                  <span className="min-w-0 truncate text-label text-fg-dim leading-4">
                     {identity}
                   </span>
                 )}
@@ -411,7 +411,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                           Deezer row stays the same height it was. */}
               {pressing && (
                 <span className="mt-px flex min-w-0 items-center">
-                  <span className="min-w-0 truncate text-[11px] text-fg-dim leading-4">
+                  <span className="min-w-0 truncate text-label text-fg-dim leading-4">
                     {pressing}
                   </span>
                 </span>
@@ -433,7 +433,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                           under the release they already read as its tracklist. */}
               {isMulti && (
                 <div className="border-y border-[var(--color-line)] bg-[var(--color-field)] px-2.5 py-1">
-                  <span className="text-[11px] font-semibold text-fg-dim">{tr('match.title')}</span>
+                  <span className="text-label font-semibold text-fg-dim">{tr('match.title')}</span>
                 </div>
               )}
               {loaded && release ? (
@@ -762,7 +762,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                     type="button"
                     data-testid="discogs-show-rest"
                     onClick={() => setOpenedFor({ id: trackId })}
-                    className="press rounded-full border border-dashed border-[var(--color-line-strong)] px-3 py-1 text-[11px] font-medium text-[var(--color-accent)] transition-colors hover:bg-[var(--color-hover)]"
+                    className="press rounded-full border border-dashed border-[var(--color-line-strong)] px-3 py-1 text-label font-medium text-[var(--color-accent)] transition-colors hover:bg-[var(--color-hover)]"
                   >
                     {tr('editor.showRest', { count: listed.length - shown.length })}
                   </button>
@@ -774,7 +774,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
           {/* A catalog still searching: its rows will wait behind the button, not land here,
               so the panel names it instead of drawing rows that will not come. */}
           {listed.length > 0 && pendingProviders.length > 0 && (
-            <p data-testid="discogs-pending" className="px-3 py-2 text-[11px] text-fg-faint">
+            <p data-testid="discogs-pending" className="px-3 py-2 text-label text-fg-faint">
               {tr('editor.stillSearching', {
                 providers: pendingProviders.map((p) => tr(`settings.provider.${p}`)).join(', '),
               })}
@@ -869,7 +869,7 @@ function CollapsibleTracks({
 
   return (
     <div
-      className={`grid transition-[grid-template-rows] duration-200 ease-out ${
+      className={`grid transition-[grid-template-rows] duration-200 ease-standard ${
         open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
       }`}
     >
@@ -908,7 +908,7 @@ function BestMatchLabel({ label, testid }: { label: string; testid?: string }): 
   return (
     <p
       data-testid={testid}
-      className="px-3 pt-2 pb-0.5 text-[11px] font-semibold uppercase tracking-wide text-fg-faint"
+      className="px-3 pt-2 pb-0.5 text-label font-semibold uppercase tracking-wide text-fg-faint"
     >
       {label}
     </p>

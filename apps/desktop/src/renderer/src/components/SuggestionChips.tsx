@@ -83,7 +83,7 @@ export function SuggestionChips({
             onClick={() => onPick(s)}
             // Colapsado, el chip puede encoger y truncar con elipsis — solo pasa en el caso
             // mínimo-1 (ni un chip cabe entero); si el corte dice que cabe, no encoge nada.
-            className={`press rounded-full border px-2 py-0.5 text-[11px] transition-colors ${
+            className={`press rounded-full border px-2 py-0.5 text-label transition-colors ${
               chipsExpanded ? 'shrink-0' : 'min-w-0 truncate'
             } ${
               state === 'on'
@@ -117,7 +117,7 @@ export function SuggestionChips({
           aria-label={tr('fields.suggestionsMore', {
             count: suggestions.length - visibleCount,
           })}
-          className="press shrink-0 rounded-full border border-[color-mix(in_srgb,var(--color-accent)_40%,transparent)] px-2 py-0.5 text-[11px] text-[var(--color-accent)] transition-colors hover:bg-[var(--color-hover)]"
+          className="press shrink-0 rounded-full border border-[color-mix(in_srgb,var(--color-accent)_40%,transparent)] px-2 py-0.5 text-label text-[var(--color-accent)] transition-colors hover:bg-[var(--color-hover)]"
         >
           +{suggestions.length - visibleCount}
         </button>
@@ -133,11 +133,11 @@ export function SuggestionChips({
           className="invisible absolute top-0 left-0 flex items-center gap-1.5 whitespace-nowrap"
         >
           {suggestions.map((s) => (
-            <span key={s} className="rounded-full border px-2 py-0.5 text-[11px]">
+            <span key={s} className="rounded-full border px-2 py-0.5 text-label">
               {content(s)}
             </span>
           ))}
-          <span className="rounded-full border px-2 py-0.5 text-[11px]">
+          <span className="rounded-full border px-2 py-0.5 text-label">
             +{suggestions.length - 1}
           </span>
         </span>

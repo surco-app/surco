@@ -89,7 +89,7 @@ export function CheckTree({
         <div
           data-testid={`check-row-${node.id}`}
           style={{ paddingLeft: 8 + depth * 18 }}
-          className="flex h-[27px] items-center gap-1.5 pr-2 text-[11.5px]"
+          className="flex h-[27px] items-center gap-1.5 pr-2 text-xs"
         >
           {isFolder ? (
             <button
@@ -122,9 +122,9 @@ export function CheckTree({
             onChange={() => toggle(node)}
           />
           <span className={`min-w-0 truncate ${isFolder ? 'font-semibold' : ''}`}>{node.name}</span>
-          {trail && <span className="min-w-0 truncate text-[11px] text-fg-faint">{trail}</span>}
+          {trail && <span className="min-w-0 truncate text-label text-fg-faint">{trail}</span>}
           {!isFolder && (
-            <span className="ml-auto text-[11px] tabular-nums text-fg-faint">{node.count}</span>
+            <span className="ml-auto text-label tabular-nums text-fg-faint">{node.count}</span>
           )}
         </div>
         {isFolder && open && <ul>{(node.children ?? []).map((c) => row(c, depth + 1))}</ul>}

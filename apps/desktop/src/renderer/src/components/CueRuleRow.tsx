@@ -197,7 +197,7 @@ export function CueRuleRow({
               {o.hint && (
                 <span
                   data-testid={`${id}-${block}-option-${o.value}-hint`}
-                  className="block whitespace-normal font-normal text-[11px] text-fg-dim"
+                  className="block whitespace-normal font-normal text-label text-fg-dim"
                 >
                   {o.hint}
                 </span>
@@ -330,7 +330,7 @@ export function CueRuleRow({
                     {showDistance && (
                       <span
                         data-testid={`${id}-color-${slot}-distance`}
-                        className="text-[11px] leading-none font-semibold tabular-nums"
+                        className="text-label leading-none font-semibold tabular-nums"
                       >
                         {rule.bars * (slot + 1)}
                       </span>
@@ -369,7 +369,7 @@ export function CueRuleRow({
         {tr(`settings.cueFlows.whenHint.${rule.when}`)}
       </p>
       {rule.place === 'call' && (
-        <p data-testid={`${id}-loose-call`} className="text-[11px] leading-normal text-fg-dim">
+        <p data-testid={`${id}-loose-call`} className="text-label leading-normal text-fg-dim">
           {tr('settings.cueFlows.looseCall')}
         </p>
       )}

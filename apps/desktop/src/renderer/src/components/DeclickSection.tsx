@@ -525,7 +525,7 @@ export function DeclickSection({
                   onClick={() => void render()}
                   className="inline-flex items-center gap-2 rounded-lg border border-[var(--color-line-strong)] px-3 py-1.5 text-xs text-fg-muted transition-colors hover:text-fg"
                 >
-                  <Play className="h-3.5 w-3.5" aria-hidden="true" />
+                  <Play className="h-3 w-3" aria-hidden="true" />
                   {tr('declick.preview')}
                   <Tooltip label={tr('declick.previewHint')} />
                 </button>
@@ -560,14 +560,14 @@ export function DeclickSection({
                     data-testid="declick-play"
                     disabled={!ab.ready}
                     onClick={() => (ab.playing ? ab.pause() : ab.play())}
-                    className="inline-flex items-center gap-2 rounded-lg border border-[var(--color-line-strong)] px-3 py-1.5 text-xs text-fg-muted transition-colors hover:text-fg disabled:opacity-50"
+                    className="inline-flex items-center gap-2 rounded-lg border border-[var(--color-line-strong)] px-3 py-1.5 text-xs text-fg-muted transition-colors hover:text-fg disabled:opacity-40"
                   >
                     {ab.playing ? (
-                      <Pause className="h-3.5 w-3.5" aria-hidden="true" />
+                      <Pause className="h-3 w-3" aria-hidden="true" />
                     ) : ab.ready ? (
-                      <Play className="h-3.5 w-3.5" aria-hidden="true" />
+                      <Play className="h-3 w-3" aria-hidden="true" />
                     ) : (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                      <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
                     )}
                     {tr(ab.playing ? 'declick.pause' : 'declick.play')}
                   </button>
@@ -600,7 +600,7 @@ export function DeclickSection({
                       onClick={skip}
                       className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-line-strong)] px-3 py-1.5 text-xs text-fg-muted transition-colors hover:text-fg"
                     >
-                      <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
+                      <ChevronRight className="h-3 w-3" aria-hidden="true" />
                       {tr('declick.nextClick')}
                     </button>
                   )}

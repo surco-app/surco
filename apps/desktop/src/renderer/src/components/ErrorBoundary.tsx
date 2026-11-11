@@ -40,7 +40,7 @@ export class ErrorBoundary extends Component<Props, State> {
           'flex h-screen flex-col gap-4 overflow-auto bg-[var(--color-ink)] p-8 text-sm'
         }
       >
-        <h1 className="text-lg font-semibold text-danger">{i18n.t('errorBoundary.title')}</h1>
+        <h1 className="text-base font-semibold text-danger">{i18n.t('errorBoundary.title')}</h1>
         <pre className="whitespace-pre-wrap break-words rounded-lg border border-[var(--color-line)] bg-[var(--color-panel)] p-4 text-danger">
           {error.message}
         </pre>

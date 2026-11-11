@@ -137,7 +137,7 @@ export function CueDeck({
                     ? { backgroundColor: hotCueColor(cue.color), color: PAD_LETTER_COLOR }
                     : undefined
                 }
-                className={`press flex h-7 w-7 items-center justify-center rounded-[7px] text-xs font-bold ${
+                className={`press flex h-7 w-7 items-center justify-center rounded-[7px] text-xs font-semibold ${
                   cue ? '' : 'border border-dashed border-[var(--color-line-strong)] text-fg-faint'
                 } ${isSelected ? 'outline outline-2 outline-offset-2 outline-[var(--color-fg)]' : ''}`}
               >

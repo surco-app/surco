@@ -397,7 +397,7 @@ export function CueWave({
             color: '#000',
             ...(gone.has(h.key) ? { opacity: GONE_OPACITY } : {}),
           },
-          className: `absolute z-10 h-3 w-3 rounded-[3px] text-center text-[11px] font-semibold leading-3 ${
+          className: `absolute z-10 h-3 w-3 rounded-[3px] text-center text-label font-semibold leading-3 ${
             isSelected
               ? 'ring-2 ring-[var(--color-fg)]'
               : offGrid?.includes(h.key)

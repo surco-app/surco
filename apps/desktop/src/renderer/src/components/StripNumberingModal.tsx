@@ -91,7 +91,7 @@ export function StripNumberingModal({ tracks, onApply, onClose }: Props): React.
           type="submit"
           data-testid="strip-numbering-apply"
           disabled={patches.length === 0}
-          className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
+          className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
         >
           {tr('stripNumbering.apply', { count: patches.length })}
         </button>

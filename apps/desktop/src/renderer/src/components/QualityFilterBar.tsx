@@ -281,7 +281,7 @@ export function ActiveFilters({
         <li
           key={axis}
           data-testid={`active-filter-${axis}`}
-          className="flex h-[22px] items-center gap-1 rounded-full bg-[var(--color-accent-soft)] pr-0.5 pl-2 text-[11px] text-fg"
+          className="flex h-[22px] items-center gap-1 rounded-full bg-[var(--color-accent-soft)] pr-0.5 pl-2 text-label text-fg"
         >
           <Icon className="size-3 shrink-0" aria-hidden="true" />
           <span className="max-w-[12rem] truncate">{label}</span>

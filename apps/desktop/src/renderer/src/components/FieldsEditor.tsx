@@ -300,9 +300,9 @@ export function FieldsEditor({
             }`}
           >
             {organized ? (
-              <Check className="h-3.5 w-3.5" aria-hidden="true" />
+              <Check className="h-3 w-3" aria-hidden="true" />
             ) : (
-              <Wand2 className="h-3.5 w-3.5" aria-hidden="true" />
+              <Wand2 className="h-3 w-3" aria-hidden="true" />
             )}
             {tr(organized ? 'settings.autoOrganized' : 'settings.autoOrganize')}
             <Tooltip label={tr('settings.autoOrganizeHint')} />
@@ -405,7 +405,7 @@ export function FieldsEditor({
                     )
                   }
                   aria-label={tr('fields.rowRequired', { name: labelOf(key) })}
-                  className={`${TOGGLE_BOX} ${isRequired(key) ? TOGGLE_ON : TOGGLE_OFF} disabled:opacity-25`}
+                  className={`${TOGGLE_BOX} ${isRequired(key) ? TOGGLE_ON : TOGGLE_OFF} disabled:opacity-40`}
                 >
                   {isRequired(key) ? (
                     <CircleCheck className="h-4 w-4" aria-hidden="true" />
@@ -419,7 +419,7 @@ export function FieldsEditor({
                 data-arrow={`up-${key}`}
                 onClick={() => move(i, -1)}
                 disabled={i === 0}
-                className="rounded px-1.5 text-fg-muted hover:text-fg disabled:opacity-25"
+                className="rounded px-1.5 text-fg-muted hover:text-fg disabled:opacity-40"
                 aria-label={tr('fields.rowMoveUp', { name: labelOf(key) })}
               >
                 <ChevronUp className="h-4 w-4" aria-hidden="true" />
@@ -429,7 +429,7 @@ export function FieldsEditor({
                 data-arrow={`down-${key}`}
                 onClick={() => move(i, 1)}
                 disabled={i === shownFields.length - 1}
-                className="rounded px-1.5 text-fg-muted hover:text-fg disabled:opacity-25"
+                className="rounded px-1.5 text-fg-muted hover:text-fg disabled:opacity-40"
                 aria-label={tr('fields.rowMoveDown', { name: labelOf(key) })}
               >
                 <ChevronDown className="h-4 w-4" aria-hidden="true" />

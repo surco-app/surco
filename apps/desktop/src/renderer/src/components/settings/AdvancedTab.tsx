@@ -143,7 +143,7 @@ export function AdvancedTab({
             data-testid="settings-cache-clear"
             onClick={clearCache}
             disabled={clearing || cacheStats?.files === 0}
-            className="press self-start rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)] disabled:cursor-not-allowed disabled:opacity-50"
+            className="press self-start rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)] disabled:cursor-not-allowed disabled:opacity-40"
           >
             {tr('settings.cacheClear')}
           </button>

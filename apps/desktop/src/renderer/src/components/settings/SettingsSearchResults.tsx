@@ -57,7 +57,7 @@ export function SettingsSearchResults({
   let flat = 0
   return (
     <div className="flex flex-col">
-      <p data-testid="settings-search-count" className="px-3 pt-1 text-[11px] text-fg-faint">
+      <p data-testid="settings-search-count" className="px-3 pt-1 text-label text-fg-faint">
         {tr('settings.searchField.results', { count })}
       </p>
       <div
@@ -69,7 +69,7 @@ export function SettingsSearchResults({
       >
         {groups.map((group) => (
           <div key={group.tab} role="presentation" className="flex flex-col gap-0.5">
-            <p role="presentation" className="mt-3 mb-1 px-3 text-[11px] font-medium text-fg-faint">
+            <p role="presentation" className="mt-3 mb-1 px-3 text-label font-medium text-fg-faint">
               {tr(`settings.tabs.${group.tab}`)}
             </p>
             {group.hits.map((hit) => {
@@ -86,7 +86,7 @@ export function SettingsSearchResults({
                   aria-selected={isSelected}
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => onSelect(index)}
-                  className={`flex flex-col gap-0.5 rounded-lg px-3 py-1.5 text-left text-[13px] ${
+                  className={`flex flex-col gap-0.5 rounded-lg px-3 py-1.5 text-left text-section ${
                     isSelected
                       ? 'bg-[var(--color-row-selected)] font-medium text-[var(--color-on-row-selected)]'
                       : 'text-fg-muted hover:text-fg'
@@ -96,7 +96,7 @@ export function SettingsSearchResults({
                     <Highlighted hit={hit} />
                   </span>
                   {hit.synonym && (
-                    <span className="text-[11px] font-normal text-fg-dim">
+                    <span className="text-label font-normal text-fg-dim">
                       {tr('settings.searchField.also', { words: hit.synonym })}
                     </span>
                   )}
@@ -106,7 +106,7 @@ export function SettingsSearchResults({
           </div>
         ))}
       </div>
-      <p className="mt-3 border-t border-[var(--color-line)] px-3 pt-2.5 text-[11px] leading-relaxed text-fg-faint">
+      <p className="mt-3 border-t border-[var(--color-line)] px-3 pt-2.5 text-label leading-relaxed text-fg-faint">
         ↑ ↓ {tr('settings.searchField.keysMove')} · ↩ {tr('settings.searchField.keysOpen')} · esc{' '}
         {tr('settings.searchField.keysBack')}
       </p>

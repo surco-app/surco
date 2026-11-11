@@ -11,13 +11,13 @@
 // aria-pressed carries the state for a screen reader, and aria-label the name, since the
 // word itself lives in the column heading rather than in every row.
 export const TOGGLE_BOX =
-  'mx-auto flex h-6 w-6 items-center justify-center rounded disabled:opacity-25'
+  'mx-auto flex h-6 w-6 items-center justify-center rounded disabled:opacity-40'
 export const TOGGLE_ON = 'text-[var(--color-accent)] hover:bg-[var(--color-hover)]'
 export const TOGGLE_OFF = 'text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg-muted'
 
 // The column headings strip above a list: same grid as its rows (passed in by the caller,
 // since the two lists differ), sized and coloured to sit quietly above them.
-export const COLUMN_HEAD = 'mb-1 px-2 text-[11px] uppercase text-fg-faint'
+export const COLUMN_HEAD = 'mb-1 px-2 text-label uppercase text-fg-faint'
 
 // One heading cell: the label, its ⓘ, and room between them.
 export const COLUMN_HEAD_CELL =

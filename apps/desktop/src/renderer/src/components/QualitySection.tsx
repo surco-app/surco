@@ -345,7 +345,7 @@ export function QualitySection({
                 aria-label={tr('editor.saveQualityReport')}
                 onClick={() => void saveReport()}
                 disabled={savingReport || !spectrum || !verdict}
-                className="press group relative flex h-6 w-6 items-center justify-center rounded text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg disabled:opacity-60"
+                className="press group relative flex h-6 w-6 items-center justify-center rounded text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg disabled:opacity-40"
               >
                 <ImageDown className="h-3.5 w-3.5" aria-hidden="true" />
                 <Tooltip label={tr('editor.saveQualityReport')} align="end" />
@@ -472,7 +472,7 @@ export function QualitySection({
                       data-testid="quality-convert-plan"
                       className="mt-3 rounded-lg border border-[var(--color-line)] border-l-[3px] border-l-[var(--color-accent)] bg-[var(--color-field)] px-3 py-2.5"
                     >
-                      <p className="text-[11px] font-medium text-fg-dim">
+                      <p className="text-label font-medium text-fg-dim">
                         {tr('editor.qualityConvertHead')}
                       </p>
                       <p className="mt-1 text-xs leading-relaxed text-fg tabular-nums">
@@ -481,7 +481,7 @@ export function QualitySection({
                           to: formatSampleRate(44100, i18n.language),
                         })}
                       </p>
-                      <p className="mt-0.5 text-[11px] text-fg-muted">
+                      <p className="mt-0.5 text-label text-fg-muted">
                         {tr('editor.qualityConvertRateSub')}
                       </p>
                     </div>

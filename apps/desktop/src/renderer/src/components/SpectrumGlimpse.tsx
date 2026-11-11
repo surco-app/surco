@@ -89,13 +89,13 @@ function Strip({
           className={`pointer-events-none absolute inset-x-0 border-t border-dashed ${lost ? 'border-warn' : 'border-[var(--color-fg-muted)]'}`}
         >
           <span
-            className={`absolute right-1 rounded border bg-[var(--color-panel)]/80 px-1 text-[11px] font-medium ${at(cutoff) < 20 ? 'top-0.5' : 'bottom-0.5'} ${lost ? 'border-warn/40 text-warn' : 'border-[var(--color-line)] text-[var(--color-fg)]'}`}
+            className={`absolute right-1 rounded border bg-[var(--color-panel)]/80 px-1 text-label font-medium ${at(cutoff) < 20 ? 'top-0.5' : 'bottom-0.5'} ${lost ? 'border-warn/40 text-warn' : 'border-[var(--color-line)] text-[var(--color-fg)]'}`}
           >
             {tr(chip.key, { cutoff: chip.cutoff })}
           </span>
         </div>
       )}
-      <span className="pointer-events-none absolute left-7 top-1 rounded border border-[var(--color-line)] bg-[var(--color-panel)]/80 px-1 text-[11px] font-medium text-[var(--color-fg)]">
+      <span className="pointer-events-none absolute left-7 top-1 rounded border border-[var(--color-line)] bg-[var(--color-panel)]/80 px-1 text-label font-medium text-[var(--color-fg)]">
         {label}
       </span>
       {hoverPct !== null && (
@@ -104,7 +104,7 @@ function Strip({
           style={{ top: `${hoverPct}%` }}
           className="pointer-events-none absolute inset-x-0 border-t border-[var(--color-fg)]/40"
         >
-          <span className="absolute right-1 -top-2 rounded border border-[var(--color-line)] bg-[var(--color-panel)]/90 px-1 text-[11px] font-medium tabular-nums text-[var(--color-fg)]">
+          <span className="absolute right-1 -top-2 rounded border border-[var(--color-line)] bg-[var(--color-panel)]/90 px-1 text-label font-medium tabular-nums text-[var(--color-fg)]">
             {formatKHz((1 - hoverPct / 100) * topHz, i18n.language)}
           </span>
         </div>
