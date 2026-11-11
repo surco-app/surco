@@ -103,6 +103,7 @@ import { cueOutcomeOf, recordCueEdits } from '../lib/cueTasteEdits'
 import { type TwinPlan, twinPlansOf } from '../lib/cueTwins'
 import { quantizePoints } from '../lib/cueWave'
 import { formatTime } from '../lib/duration'
+import { gridGate } from '../lib/gridGate'
 import { isTypingTarget } from '../lib/keymap'
 import { formatFixed } from '../lib/numberFormat'
 import { isMacOS } from '../lib/platform'
@@ -513,18 +514,13 @@ function Editing({
       (keptDraftOn(cue.contentId, read, queued) !== undefined && keptOnSurcoGrid(cue.contentId)),
   )
   const rekordboxGrid = programOf(cue.contentId) === 'rekordbox'
-  const { fixedGrid } = cueProgramOf(cue.contentId)
-  const gridOff = fixedGrid
-    ? tr(fixedGrid)
-    : !rekordboxGrid && (read.clockLeadMs === undefined || read.clockLeadMs === null)
-      ? tr('editor.cues.grid.unmeasured')
-      : provisional
-        ? tr('editor.cues.grid.provisional')
-        : onSurcoGrid
-          ? tr('editor.cues.grid.surcoDraft')
-          : state.grid === null || (!rekordboxGrid && state.grid.zones)
-            ? tr('editor.cues.grid.varying')
-            : null
+  const gate = gridGate({
+    contentId: cue.contentId,
+    read: { analysed: provisional === undefined, clockLeadMs: read.clockLeadMs },
+    grid: state.grid,
+    onSurcoGrid,
+  })
+  const gridOff = gate === null ? null : tr(gate)
   const fine = useCueWaveFine(cue.contentId, maximized)
   const gridFit = useGridFit(cue.contentId, maximized && gridOff === null && fine !== undefined)
   const offsets =

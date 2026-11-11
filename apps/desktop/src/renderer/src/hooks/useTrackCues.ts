@@ -34,6 +34,12 @@ export const cueDropInputQuery = (contentId: string) => ({
   staleTime: Number.POSITIVE_INFINITY,
 })
 
+export const gridFitQuery = (contentId: string) => ({
+  queryKey: ['rekordbox-grid-fit', contentId],
+  queryFn: () => window.api.cues.gridFit(contentId),
+  staleTime: Number.POSITIVE_INFINITY,
+})
+
 export const cueProfileQuery = {
   queryKey: ['cue-profile'],
   queryFn: () => window.api.cueProfile(),
@@ -110,11 +116,6 @@ export function useCueWaveFine(contentId: string, enabled: boolean): FineWave | 
 }
 
 export function useGridFit(contentId: string, enabled: boolean): GridFit | null {
-  const { data } = useQuery({
-    queryKey: ['rekordbox-grid-fit', contentId],
-    queryFn: () => window.api.cues.gridFit(contentId),
-    enabled,
-    staleTime: Number.POSITIVE_INFINITY,
-  })
+  const { data } = useQuery({ ...gridFitQuery(contentId), enabled })
   return enabled ? (data ?? null) : null
 }

@@ -3,12 +3,20 @@ import { SAME_POSITION_MS, type WantedCue } from '../../../shared/cueRules'
 import type { DropProposal } from '../../../shared/dropDetect'
 import type { QueuedCues, SaveCuesRequest, TrackCueRow } from '../../../shared/types'
 import { type CueDraft, type DraftCue, gridRequestOf, wantedOfDraft } from './cueDraft'
+import type { GridReview } from './gridAdjust'
+import type { GridGateKey } from './gridGate'
 
 export type AutoMark =
   | { kind: 'proposed'; proposals: DropProposal[] }
   | { kind: 'none' }
   | { kind: 'marked' }
   | { kind: 'unanalysed' }
+
+export type GridAdjust =
+  | { kind: 'adjusted'; before: CueDraft | null; after: CueDraft }
+  | { kind: 'fine' }
+  | { kind: 'review'; reason: GridReview | { kind: 'gate'; key: GridGateKey } }
+  | { kind: 'unmeasured' }
 
 export interface CueSaveTarget {
   path: string
@@ -22,6 +30,7 @@ const drafts = new Map<
   { draftKey: string; value: CueDraft; target: CueSaveTarget; base: QueuedCues | null }
 >()
 let marks: ReadonlyMap<string, AutoMark> = new Map()
+let adjusts: ReadonlyMap<string, GridAdjust> = new Map()
 const playheads = new Map<string, number>()
 let focus: { contentId: string; ms: number } | null = null
 const listeners = new Set<() => void>()
@@ -192,6 +201,39 @@ export function forgetAutoMark(contentId: string): void {
   notify()
 }
 
+export function gridAdjusts(): ReadonlyMap<string, GridAdjust> {
+  return adjusts
+}
+
+export function useGridAdjusts(): ReadonlyMap<string, GridAdjust> {
+  return useSyncExternalStore(subscribeCueDrafts, gridAdjusts)
+}
+
+export function keepGridAdjust(contentId: string, adjust: GridAdjust): void {
+  adjusts = new Map(adjusts).set(contentId, adjust)
+  notify()
+}
+
+export function forgetGridAdjust(contentId: string): void {
+  if (!adjusts.has(contentId)) return
+  const next = new Map(adjusts)
+  next.delete(contentId)
+  adjusts = next
+  notify()
+}
+
+export function undoGridAdjusts(contentIds: string[]): void {
+  for (const contentId of contentIds) {
+    const adjust = adjusts.get(contentId)
+    const kept = drafts.get(contentId)
+    if (adjust?.kind === 'adjusted' && kept && kept.value === adjust.after) {
+      if (adjust.before) keepDraft(contentId, kept.draftKey, adjust.before, kept.target, kept.base)
+      else forgetDraft(contentId)
+    }
+    forgetGridAdjust(contentId)
+  }
+}
+
 export function keptPlayhead(contentId: string): number {
   return playheads.get(contentId) ?? 0
 }
@@ -223,6 +265,7 @@ export function resetCueSession(): void {
   playheads.clear()
   focus = null
   marks = new Map()
+  adjusts = new Map()
   changed()
 }
 
