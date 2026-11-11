@@ -85,6 +85,10 @@ export function CuesTab({
     boolean
   >
   foundBy.rekordbox = rekordboxCollection !== ''
+  const missingBy = Object.fromEntries(
+    DJ_PROGRAMS.map((p) => [p, available[p] === false]),
+  ) as Record<DjProgram, boolean>
+  missingBy.rekordbox = !foundBy.rekordbox
   const hotCuesOnlyFound = DJ_PROGRAMS.some(
     (p) => foundBy[p] && CUE_PROGRAMS[p].takesFlows && !CUE_PROGRAMS[p].writesCalls,
   )
@@ -455,12 +459,14 @@ export function CuesTab({
                   disabled={!reached}
                 />
                 <SettingsHint
-                  data-testid={found ? undefined : `settings-cue-flow-to-${library}-missing`}
+                  data-testid={
+                    missingBy[library] ? `settings-cue-flow-to-${library}-missing` : undefined
+                  }
                   className="mt-1 pl-7"
                 >
-                  {found
-                    ? tr(`settings.cueFlows.targets.${library}`)
-                    : tr('settings.cueFlows.targets.missing', { program: name })}
+                  {missingBy[library]
+                    ? tr('settings.cueFlows.targets.missing', { program: name })
+                    : tr(`settings.cueFlows.targets.${library}`)}
                 </SettingsHint>
               </div>
             )

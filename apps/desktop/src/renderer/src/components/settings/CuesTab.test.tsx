@@ -914,14 +914,35 @@ describe('CuesTab', () => {
     expect(last?.cueFlowToEngine).toBe(true)
   })
 
-  it('names Serato when its library is not on this computer and leaves its box unticked', () => {
+  it('names Serato when its library is not on this computer and leaves its box unticked', async () => {
     installApi({
       dj: djReads({ serato: { available: vi.fn<ProgramReads['available']>(async () => false) } }),
     })
     render(<Harness collection="/c/master.db" />)
+    expect(await screen.findByTestId('settings-cue-flow-to-serato-missing')).toHaveTextContent(
+      'Serato',
+    )
     expect(screen.getByTestId('settings-cue-flow-to-serato')).toBeDisabled()
     expect(screen.getByTestId('settings-cue-flow-to-serato')).not.toBeChecked()
-    expect(screen.getByTestId('settings-cue-flow-to-serato-missing')).toHaveTextContent('Serato')
+  })
+
+  it('never says a program is missing before it answers, so nothing shows and then goes away', async () => {
+    let answer: (found: boolean) => void = () => {}
+    installApi({
+      dj: djReads({
+        engine: {
+          available: vi.fn<ProgramReads['available']>(
+            () => new Promise<boolean>((resolve) => (answer = resolve)),
+          ),
+        },
+      }),
+    })
+    render(<Harness collection="/c/master.db" />)
+    expect(screen.getByTestId('settings-cue-flow-to-engine')).toBeDisabled()
+    expect(screen.queryByTestId('settings-cue-flow-to-engine-missing')).not.toBeInTheDocument()
+    answer(true)
+    await waitFor(() => expect(screen.getByTestId('settings-cue-flow-to-engine')).toBeEnabled())
+    expect(screen.queryByTestId('settings-cue-flow-to-engine-missing')).not.toBeInTheDocument()
   })
 
   it('leaves the rekordbox box unticked and says so while no collection is set', () => {
