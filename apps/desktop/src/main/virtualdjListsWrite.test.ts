@@ -5,6 +5,7 @@ import {
   mkdtempSync,
   readdirSync,
   readFileSync,
+  statSync,
   writeFileSync,
 } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -425,6 +426,22 @@ describe('applyVirtualdjListOps', () => {
       })
     expect(readFileSync(join(database, 'Local', 'database.xml'), 'utf8')).toBe('copy')
     expect(lib.backups()).toHaveLength(20)
+  })
+
+  it('puts every file and folder back when VirtualDJ opens partway through a folder rename', async () => {
+    const lib = library()
+    const open = lib.deps.virtualdjOpen
+    for (let i = 0; i < 6; i++) open.mockResolvedValueOnce(false)
+    open.mockResolvedValue(true)
+    const result = await lib.run({ kind: 'rename', playlistId: 'Carpeta', name: 'Otra' })
+    expect(result).toEqual({ ok: false, reason: 'cancelled' })
+    expect(open).toHaveBeenCalledTimes(7)
+    const tree = (root: string) =>
+      (readdirSync(root, { recursive: true }) as string[]).sort().map((rel) => {
+        const path = join(root, rel)
+        return [rel, statSync(path).isDirectory() ? 'dir' : readFileSync(path)]
+      })
+    expect(tree(lib.lists)).toEqual(tree(join(fixture, 'MyLists')))
   })
 
   it('writes nothing when VirtualDJ opens after the backup, right before the rename', async () => {
