@@ -2572,7 +2572,6 @@
     "noMatch": "一致するプレイリストがありません。",
     "pickPlaylist": "プレイリストを選ぶとトラックが表示されます",
     "loadingPlaylist": "プレイリストを読み込み中…",
-    "separator": "区切り線",
     "gone": {
       "appleMusic": "「{{name}}」は Music にもうありません",
       "rekordbox": "「{{name}}」は rekordbox にもうありません",

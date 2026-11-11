@@ -1228,7 +1228,6 @@ export const TrackList = memo(function TrackList({
         }}
         className="group mx-4 flex h-[22px] items-center gap-2 text-[11px] text-fg-faint before:flex-1 before:border-t before:border-dashed before:border-line-strong before:content-[''] after:flex-1 after:border-t after:border-dashed after:border-line-strong after:content-['']"
       >
-        {tr('sources.separator')}
         {reorder && (
           <button
             type="button"

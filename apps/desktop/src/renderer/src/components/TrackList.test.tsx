@@ -214,12 +214,13 @@ describe('TrackList', () => {
   })
 
   // A DJ splits a set inside one playlist with blank separator tracks; drawing the break
-  // where it falls keeps the sections the DJ built readable in Surco's list.
-  it('draws a separator line above the rows a playlist breaks before', () => {
+  // where it falls keeps the sections the DJ built readable in Surco's list. The dashed line
+  // says it alone, so it carries no word.
+  it('draws a wordless separator line above the rows a playlist breaks before', () => {
     renderList([track({ id: 'a' }), track({ id: 'b' })], null, [], {
       separatorBefore: new Map([['b', ['s1']]]),
     })
-    expect(screen.getByTestId('track-separator-s1')).toBeInTheDocument()
+    expect(screen.getByTestId('track-separator-s1')).toHaveTextContent(/^$/)
     expect(
       wrapperOf('s1').compareDocumentPosition(wrapperOf('b')) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy()

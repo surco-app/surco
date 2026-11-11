@@ -2572,7 +2572,6 @@
     "noMatch": "Keine Playlist passt.",
     "pickPlaylist": "Wähle eine Playlist, um ihre Tracks zu sehen",
     "loadingPlaylist": "Playlist wird gelesen…",
-    "separator": "Trenner",
     "gone": {
       "appleMusic": "„{{name}}“ ist nicht mehr in Music",
       "rekordbox": "„{{name}}“ ist nicht mehr in rekordbox",

@@ -2572,7 +2572,6 @@
     "noMatch": "No playlist matches.",
     "pickPlaylist": "Pick a playlist to see its tracks",
     "loadingPlaylist": "Reading the playlist…",
-    "separator": "separator",
     "gone": {
       "appleMusic": "“{{name}}” is no longer in Music",
       "rekordbox": "“{{name}}” is no longer in rekordbox",
