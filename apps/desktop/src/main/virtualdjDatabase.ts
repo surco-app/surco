@@ -27,9 +27,9 @@ export interface VirtualdjSong {
 }
 
 const TAG = `(?:"[^"]*"|[^>"])*`
-const SONG_OPEN_RE = new RegExp(`<Song\\b(${TAG})>`, 'g')
-const poiRe = () => new RegExp(`<Poi\\b${TAG}>`, 'g')
-const tagRe = (name: string) => new RegExp(`<${name}\\b${TAG}>`)
+export const SONG_OPEN_RE = new RegExp(`<Song\\b(${TAG})>`, 'g')
+export const poiRe = () => new RegExp(`<Poi\\b${TAG}>`, 'g')
+export const tagRe = (name: string) => new RegExp(`<${name}\\b${TAG}>`)
 
 function number(value: string): number | null {
   if (value === '') return null
@@ -37,7 +37,7 @@ function number(value: string): number | null {
   return Number.isFinite(n) ? n : null
 }
 
-function parsePoi(tag: string): VirtualdjPoi | null {
+export function parsePoi(tag: string): VirtualdjPoi | null {
   const seconds = number(attr(tag, 'Pos'))
   if (seconds === null) return null
   const type = attr(tag, 'Type')

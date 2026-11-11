@@ -1,0 +1,204 @@
+import { escapeXml } from '../shared/xml'
+import { attr, withAttr } from './traktorNml'
+import { parsePoi, SONG_OPEN_RE, tagRe, type VirtualdjPoi } from './virtualdjDatabase'
+
+export type VirtualdjArgb = number
+export type VirtualdjCueWrite = {
+  num: number
+  seconds: number
+  name?: string
+  color?: VirtualdjArgb
+}
+export type VirtualdjLoopWrite = {
+  slot: number
+  seconds: number
+  sizeBeats: number
+  name?: string
+  color?: VirtualdjArgb
+}
+
+const NL = '\r\n'
+const SONG_CLOSE = '</Song>'
+const DATABASE_CLOSE = '</VirtualDJ_Database>'
+
+interface SongSpan {
+  openStart: number
+  openEnd: number
+  bodyEnd: number
+}
+
+function findSong(xml: string, path: string): SongSpan | null {
+  for (const m of xml.matchAll(SONG_OPEN_RE)) {
+    if (m[1].trimEnd().endsWith('/') || attr(m[1], 'FilePath') !== path) continue
+    const openEnd = m.index + m[0].length
+    const bodyEnd = xml.indexOf(SONG_CLOSE, openEnd)
+    return bodyEnd < 0 ? null : { openStart: m.index, openEnd, bodyEnd }
+  }
+  return null
+}
+
+function withBody(xml: string, path: string, edit: (lines: string[]) => string[]): string | null {
+  const span = findSong(xml, path)
+  if (!span) return null
+  const body = edit(xml.slice(span.openEnd, span.bodyEnd).split(NL)).join(NL)
+  return `${xml.slice(0, span.openEnd)}${body}${xml.slice(span.bodyEnd)}`
+}
+
+function decimal(n: number): string {
+  const s = n.toFixed(6).replace(/0+$/, '')
+  return s.endsWith('.') ? `${s}0` : s
+}
+
+const isTag = (line: string, name: string) => line.trimStart().startsWith(`<${name} `)
+const poiOf = (line: string) => (isTag(line, 'Poi') ? parsePoi(line) : null)
+const nameAttr = (name?: string) => (name ? ` Name="${escapeXml(name)}"` : '')
+const colorAttr = (color?: number) => (color === undefined ? '' : ` Color="${color}"`)
+const sameLabel = (poi: VirtualdjPoi, item: { name?: string; color?: number }) =>
+  (poi.name ?? '') === (item.name ?? '') && poi.color === item.color
+
+const cueLine = (c: VirtualdjCueWrite) =>
+  `  <Poi${nameAttr(c.name)} Pos="${decimal(c.seconds)}" Num="${c.num}"${colorAttr(c.color)} Type="cue" />`
+const loopLine = (l: VirtualdjLoopWrite) =>
+  `  <Poi${nameAttr(l.name)} Pos="${decimal(l.seconds)}" Num="-1"${colorAttr(l.color)} Type="loop" Size="${decimal(l.sizeBeats)}" Slot="${l.slot}" />`
+
+function replacePois<T>(
+  lines: string[],
+  owns: (poi: VirtualdjPoi) => number | null,
+  items: T[],
+  keyOf: (item: T) => number,
+  same: (poi: VirtualdjPoi, item: T) => boolean,
+  render: (item: T) => string,
+): string[] {
+  const pending = new Map(items.map((item) => [keyOf(item), item]))
+  const kept: string[] = []
+  for (const line of lines) {
+    const poi = poiOf(line)
+    const key = poi ? owns(poi) : null
+    if (poi === null || key === null) {
+      kept.push(line)
+      continue
+    }
+    const item = pending.get(key)
+    if (item === undefined) continue
+    pending.delete(key)
+    kept.push(same(poi, item) ? line : render(item))
+  }
+  const close = kept.pop() ?? ''
+  return [...kept, ...[...pending.values()].map(render), close]
+}
+
+export function withVirtualdjCues(
+  xml: string,
+  path: string,
+  cues: VirtualdjCueWrite[],
+  loops?: VirtualdjLoopWrite[],
+): string | null {
+  return withBody(xml, path, (lines) => {
+    const withCues = replacePois(
+      lines,
+      (poi) =>
+        poi.kind === 'cue' && poi.num !== null && poi.num >= 1 && poi.num <= 8 ? poi.num : null,
+      cues,
+      (c) => c.num,
+      (poi, c) => poi.seconds === Number(decimal(c.seconds)) && sameLabel(poi, c),
+      cueLine,
+    )
+    if (loops === undefined) return withCues
+    return replacePois(
+      withCues,
+      (poi) => (poi.kind === 'loop' ? (poi.slot ?? 0) : null),
+      loops,
+      (l) => l.slot,
+      (poi, l) =>
+        poi.seconds === Number(decimal(l.seconds)) &&
+        poi.sizeBeats === Number(decimal(l.sizeBeats)) &&
+        sameLabel(poi, l),
+      loopLine,
+    )
+  })
+}
+
+function secondsPerBeat(lines: string[]): number {
+  const body = lines.join(NL)
+  const of = (tag: string) => Number(attr(body.match(tagRe(tag))?.[0] ?? '', 'Bpm')) || 0
+  return of('Scan') || of('Tags')
+}
+
+export function withVirtualdjSongMoved(
+  xml: string,
+  from: string,
+  to: { path: string; size: number },
+  shiftSeconds: number,
+  keepUntilSeconds: number | null,
+): string | null {
+  const span = findSong(xml, from)
+  if (!span) return null
+  const open = setAttr(
+    setAttr(xml.slice(span.openStart, span.openEnd), 'FilePath', to.path),
+    'FileSize',
+    `${to.size}`,
+  )
+  const lines = xml.slice(span.openEnd, span.bodyEnd).split(NL)
+  const beat = secondsPerBeat(lines)
+  const moved = lines.flatMap((line) => {
+    const poi = poiOf(line)
+    if (!poi) return [line]
+    const start = Number(decimal(poi.seconds + shiftSeconds))
+    const end = start + (poi.kind === 'loop' ? (poi.sizeBeats ?? 0) * beat : 0)
+    if (start < 0) return []
+    if (keepUntilSeconds !== null && (start >= keepUntilSeconds || end > keepUntilSeconds))
+      return []
+    return [shiftSeconds === 0 ? line : withAttr(line, 'Pos', decimal(start))]
+  })
+  return `${xml.slice(0, span.openStart)}${open}${moved.join(NL)}${xml.slice(span.bodyEnd)}`
+}
+
+function setAttr(tag: string, name: string, value: string): string {
+  const escaped = escapeXml(value)
+  if (new RegExp(`\\s${name}="`).test(tag))
+    return attr(tag, name) === value ? tag : withAttr(tag, name, escaped)
+  return tag.replace(/\s*\/?>$/, (end) => ` ${name}="${escaped}"${end}`)
+}
+
+export function withVirtualdjTags(
+  xml: string,
+  path: string,
+  tags: Partial<Record<'Title' | 'Author' | 'Album' | 'Genre', string>>,
+): string | null {
+  return withBody(xml, path, (lines) =>
+    lines.map((line) => {
+      if (!isTag(line, 'Tags')) return line
+      let out = line
+      for (const [name, value] of Object.entries(tags))
+        if (value !== undefined) out = setAttr(out, name, value)
+      return out
+    }),
+  )
+}
+
+export function withVirtualdjSongAdded(
+  xml: string,
+  song: { path: string; size: number; title: string; artist: string; album: string; genre: string },
+): string | null {
+  for (const m of xml.matchAll(SONG_OPEN_RE)) if (attr(m[1], 'FilePath') === song.path) return null
+  const at = xml.lastIndexOf(DATABASE_CLOSE)
+  if (at < 0) return null
+  const tags = (
+    [
+      ['Author', song.artist],
+      ['Title', song.title],
+      ['Genre', song.genre],
+      ['Album', song.album],
+    ] as const
+  )
+    .filter(([, value]) => value !== '')
+    .map(([name, value]) => ` ${name}="${escapeXml(value)}"`)
+    .join('')
+  const block = [
+    ` <Song FilePath="${escapeXml(song.path)}" FileSize="${song.size}" Flag="268435456">`,
+    `  <Tags${tags} />`,
+    ` ${SONG_CLOSE}`,
+    '',
+  ].join(NL)
+  return `${xml.slice(0, at)}${block}${xml.slice(at)}`
+}
