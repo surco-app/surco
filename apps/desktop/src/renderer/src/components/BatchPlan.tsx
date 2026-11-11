@@ -40,6 +40,7 @@ export function BatchPlan({
     destination,
     withAppleMusic: withAppleMusic && destination !== 'appleMusic',
     djTargets,
+    djHolds: [],
     openSource: openSource ?? null,
     inPlace: false,
     inMusic: false,
@@ -48,7 +49,9 @@ export function BatchPlan({
     replacedFormat: '',
     outputFolder: '',
   })
-    .parts.filter((part) => part.key === 'editor.lineAdds' || part.key === 'editor.lineUpdates')
+    .parts.filter((part) =>
+      ['editor.lineAdds', 'editor.lineUpdates', 'editor.lineSyncs'].includes(part.key),
+    )
     .map((part) => tr(part.key, part.options))
   return (
     <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1">

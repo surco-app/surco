@@ -5,6 +5,7 @@ const base: DestinationLineState = {
   destination: 'folder',
   withAppleMusic: false,
   djTargets: [],
+  djHolds: [],
   openSource: null,
   inPlace: false,
   inMusic: false,
@@ -30,13 +31,11 @@ describe('destinationLine', () => {
     expect(result.parts).toEqual([
       { key: 'editor.lineUpdates', options: { places: 'Apple Music · rekordbox' } },
     ])
-    expect(result.warn).toBe(false)
   })
 
   it('says a new track is added to Music', () => {
     const result = line({ destination: 'appleMusic', withAppleMusic: true })
     expect(result.parts).toEqual([{ key: 'editor.lineAdds', options: { places: 'Apple Music' } }])
-    expect(result.warn).toBe(false)
   })
 
   it('names the format a replacement supersedes in Music', () => {
@@ -47,7 +46,6 @@ describe('destinationLine', () => {
       replacedFormat: 'MP3',
     })
     expect(result.parts).toEqual([{ key: 'editor.lineReplaces', options: { format: 'MP3' } }])
-    expect(result.warn).toBe(false)
   })
 
   it('falls back to the bare replacement when the old format is unknown', () => {
@@ -56,16 +54,19 @@ describe('destinationLine', () => {
     ).toEqual(['editor.lineReplacesBare'])
   })
 
-  it('warns when the Music copy measured better than the file replacing it', () => {
+  it('warns on the better-copy statement alone, never on the places beside it', () => {
     const result = line({
       destination: 'appleMusic',
       withAppleMusic: true,
       replaces: true,
       replacedFormat: 'MP3',
       libraryBetter: true,
+      djTargets: ['rekordbox'],
     })
-    expect(result.parts.map((p) => p.key)).toEqual(['editor.lineBetter'])
-    expect(result.warn).toBe(true)
+    expect(result.parts).toEqual([
+      { key: 'editor.lineBetter', warn: true },
+      { key: 'editor.lineSyncs', options: { places: 'rekordbox' } },
+    ])
   })
 
   it('says where the file is saved before the programs that receive it', () => {
@@ -76,7 +77,7 @@ describe('destinationLine', () => {
     })
     expect(result.parts).toEqual([
       { key: 'editor.lineFolder', options: { folder: 'Converted' } },
-      { key: 'editor.lineAdds', options: { places: 'rekordbox' } },
+      { key: 'editor.lineSyncs', options: { places: 'rekordbox' } },
     ])
   })
 
@@ -104,13 +105,24 @@ describe('destinationLine', () => {
     ])
   })
 
+  it('never names Music for a track opened from it that the conversion leaves out of Music', () => {
+    expect(
+      line({
+        destination: 'folder',
+        withAppleMusic: false,
+        openSource: 'appleMusic',
+        outputFolder: 'Converted',
+      }).parts,
+    ).toEqual([{ key: 'editor.lineFolder', options: { folder: 'Converted' } }])
+  })
+
   it('never names Music for a format it cannot hold', () => {
     expect(
       line({ destination: 'folder', withAppleMusic: false, outputFolder: 'Converted' }).parts,
     ).toEqual([{ key: 'editor.lineFolder', options: { folder: 'Converted' } }])
   })
 
-  it('puts updated places before added ones', () => {
+  it('puts updated places before added and synced ones', () => {
     const result = line({
       destination: 'appleMusic',
       withAppleMusic: true,
@@ -119,7 +131,25 @@ describe('destinationLine', () => {
     })
     expect(result.parts).toEqual([
       { key: 'editor.lineUpdates', options: { places: 'Engine DJ' } },
-      { key: 'editor.lineAdds', options: { places: 'Apple Music · Traktor' } },
+      { key: 'editor.lineAdds', options: { places: 'Apple Music' } },
+      { key: 'editor.lineSyncs', options: { places: 'Traktor' } },
+    ])
+  })
+
+  it('says a DJ program is updated when the track is known to be in it', () => {
+    expect(
+      line({
+        destination: 'folder',
+        inPlace: true,
+        djTargets: ['rekordbox'],
+        djHolds: ['rekordbox'],
+      }).parts,
+    ).toEqual([{ key: 'editor.lineUpdates', options: { places: 'rekordbox' } }])
+  })
+
+  it('never claims an update or an add for a DJ program whose collection may not hold the file, even in place', () => {
+    expect(line({ destination: 'folder', inPlace: true, djTargets: ['engine'] }).parts).toEqual([
+      { key: 'editor.lineSyncs', options: { places: 'Engine DJ' } },
     ])
   })
 
@@ -130,7 +160,7 @@ describe('destinationLine', () => {
     ['serato', 'Serato'],
   ] as const)('names %s on the line', (id, name) => {
     expect(line({ destination: 'appleMusic', djTargets: [id] }).parts).toEqual([
-      { key: 'editor.lineAdds', options: { places: name } },
+      { key: 'editor.lineSyncs', options: { places: name } },
     ])
   })
 })

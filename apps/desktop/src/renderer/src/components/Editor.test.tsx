@@ -181,6 +181,7 @@ function renderEditor(
     addToAppleMusic?: boolean
     addToEngineDj?: boolean
     addToTraktor?: boolean
+    addToRekordbox?: boolean
     traktorNmlPath?: string
     keepMp3Sources?: boolean
     keyNotation?: KeyNotation
@@ -287,6 +288,7 @@ function renderEditor(
       addToAppleMusic: props.addToAppleMusic ?? true,
       addToEngineDj: props.addToEngineDj ?? false,
       addToTraktor: props.addToTraktor ?? false,
+      addToRekordbox: props.addToRekordbox ?? false,
       traktorNmlPath: props.traktorNmlPath ?? '',
       keepMp3Sources: props.keepMp3Sources ?? false,
       overwriteOriginal: props.overwriteOriginal ?? false,
@@ -1014,14 +1016,56 @@ describe('Editor convert button with Traktor taking new tracks', () => {
       serato: { enabled: false, found: false },
     })
 
-  it('does not name Traktor when its collection is not found, since nothing would be added there', async () => {
-    Object.assign(window.api, { libraryStatus: status(false) })
+  it('names Traktor on the line once its collection is found and confirmed', async () => {
+    Object.assign(window.api, { libraryStatus: status(true) })
     renderEditor({ id: 'a' }, 'aiff', {
       addToAppleMusic: false,
       addToTraktor: true,
       traktorNmlPath: '/c/collection.nml',
+      outputDir: '/out',
     })
-    await waitFor(() => expect(screen.getByTestId('process-btn')).not.toHaveTextContent('Traktor'))
+    await waitFor(() =>
+      expect(screen.getByTestId('convert-destination-line')).toHaveTextContent(
+        'Saves to out · Syncs Traktor',
+      ),
+    )
+  })
+
+  it('does not name Traktor without a confirmed collection.nml, since Surco writes only to that one', async () => {
+    const libraryStatus = status(true)
+    Object.assign(window.api, { libraryStatus })
+    renderEditor({ id: 'a' }, 'aiff', {
+      addToAppleMusic: false,
+      addToTraktor: true,
+      traktorNmlPath: '',
+      outputDir: '/out',
+    })
+    await waitFor(() => expect(libraryStatus).toHaveBeenCalled())
+    await act(async () => {})
+    expect(screen.getByTestId('convert-destination-line')).toHaveTextContent('Saves to out')
+    expect(screen.getByTestId('convert-destination-line')).not.toHaveTextContent('Traktor')
+  })
+
+  it('names a DJ program on the line the moment its add setting is turned on in Settings', async () => {
+    Object.assign(window.api, {
+      libraryStatus: vi.fn<Api['libraryStatus']>().mockResolvedValue({
+        rekordbox: { enabled: true, found: true },
+        engine: { enabled: false, found: false },
+        traktor: { enabled: false, found: false },
+        serato: { enabled: false, found: false },
+      }),
+    })
+    const { changeSettings } = renderEditor({ id: 'a' }, 'aiff', {
+      addToAppleMusic: false,
+      outputDir: '/out',
+    })
+    expect(screen.getByTestId('convert-destination-line')).not.toHaveTextContent('rekordbox')
+    changeSettings({ addToRekordbox: true })
+    await waitFor(() =>
+      expect(screen.getByTestId('convert-destination-line')).toHaveTextContent(
+        'Saves to out · Syncs rekordbox',
+      ),
+    )
   })
 })
 
@@ -2284,6 +2328,69 @@ describe('Editor scroll edge', () => {
   })
 })
 
+describe('Editor convert line for a rekordbox track whose Music entry is this very file', () => {
+  const read = { title: 'Strobe', artist: 'deadmau5', genre: 'Techno' }
+  const track = (meta: Partial<TrackMetadata>) =>
+    item({
+      id: 'a',
+      inputPath: '/music/a.aiff',
+      fileName: 'a',
+      programs: ['rekordbox'],
+      meta,
+      diskSignature: trackSignature(
+        item({
+          id: 'a',
+          inputPath: '/music/a.aiff',
+          fileName: 'a',
+          programs: ['rekordbox'],
+          meta: read,
+        }),
+      ),
+    })
+
+  beforeEach(() => {
+    Object.assign(window.api, {
+      platform: 'darwin',
+      appleMusicEntryLocation: vi.fn().mockResolvedValue('/music/a.aiff'),
+      libraryStatus: vi.fn<Api['libraryStatus']>().mockResolvedValue({
+        rekordbox: { enabled: true, found: true },
+        engine: { enabled: false, found: false },
+        traktor: { enabled: false, found: false },
+        serato: { enabled: false, found: false },
+      }),
+    })
+  })
+
+  const libraryIndex = buildLibraryIndex([
+    { title: 'Strobe', artist: 'deadmau5', persistentId: '0123456789ABCDEF' },
+  ])
+
+  it('reads as no changes while nothing is edited', async () => {
+    renderEditor({ ...track(read) }, 'aiff', { libraryIndex, addToRekordbox: true })
+    await waitFor(() =>
+      expect(window.api.appleMusicEntryLocation).toHaveBeenCalledWith('0123456789ABCDEF'),
+    )
+    expect(screen.getByTestId('convert-up-to-date')).toBeInTheDocument()
+    expect(screen.queryByTestId('convert-destination-line')).toBeNull()
+  })
+
+  it('says it updates Music and rekordbox, never that it replaces the copy, once a tag is edited', async () => {
+    renderEditor({ ...track({ ...read, genre: 'House' }) }, 'aiff', {
+      libraryIndex,
+      addToRekordbox: true,
+    })
+    await waitFor(() =>
+      expect(screen.getByTestId('convert-destination-line')).toHaveTextContent(
+        'Updates Apple Music · rekordbox',
+      ),
+    )
+    expect(screen.getByTestId('convert-destination-line')).toHaveTextContent(
+      /^Updates Apple Music · rekordbox$/,
+    )
+    expect(screen.getByTestId('process-btn')).toHaveTextContent('Update tags')
+  })
+})
+
 describe('Editor export control', () => {
   it('names the output folder in the destination line, not beside the button', () => {
     renderEditor({ id: 'a' }, 'aiff', {
@@ -2296,12 +2403,15 @@ describe('Editor export control', () => {
     )
   })
 
-  it('says beside the original on the convert button when that is the destination', () => {
+  it('says beside the original on the destination line when that is the destination', () => {
     renderEditor({ id: 'a' }, 'wav', {
       addToAppleMusic: false,
       outputDir: '/out',
       convertBesideOriginal: true,
     })
+    expect(screen.getByTestId('convert-destination-line')).toHaveTextContent(
+      'Saves next to the original',
+    )
     expect(screen.getByTestId('process-btn')).toHaveAccessibleName('Convert to WAV')
   })
 
@@ -2335,10 +2445,57 @@ describe('Editor export control', () => {
       expect(screen.getByTestId('process-btn')).toHaveAccessibleName('Update tags and audio')
     })
 
+    function EditableHarness({ start }: { start: TrackItem }) {
+      const [track, setTrack] = useState(start)
+      return (
+        <Editor
+          item={track}
+          libraryIndex={null}
+          searchInputRef={createRef<HTMLInputElement>()}
+          onChange={(patch) => setTrack((t) => ({ ...t, ...patch }))}
+          onProcess={vi.fn()}
+          onAddToAppleMusic={vi.fn()}
+          resultsWidth={480}
+          resultsFolded={false}
+          onFoldResults={vi.fn()}
+          onResultsResizeStart={vi.fn()}
+          onResultsFit={vi.fn()}
+          onShowLoudnessHelp={vi.fn()}
+          onHideEditorHints={vi.fn()}
+          onOpenRename={vi.fn()}
+          onRegenerateName={vi.fn()}
+          onTrimDetectedAll={vi.fn()}
+          onCopyFilename={vi.fn()}
+          onSearchWeb={vi.fn()}
+          onCopyMeta={vi.fn()}
+          onPasteMeta={vi.fn()}
+          copiedMetaTitle={null}
+          onExportCollection={vi.fn()}
+          readFullTrack={async () => undefined}
+        />
+      )
+    }
+
+    const typeInto = (testId: string, value: string): void => {
+      const field = screen.getByTestId(testId)
+      fireEvent.focus(field)
+      fireEvent.change(field, { target: { value } })
+      fireEvent.blur(field)
+    }
+
     it('goes quiet again once an edit is undone back to the read values', () => {
-      renderEditor({ id: 'a', meta: { genre: 'House' }, diskSignature })
-      cleanup()
-      renderEditor({ id: 'a', meta: { genre: 'Techno' }, diskSignature })
+      renderWithQuery(<EditableHarness start={item({ id: 'a', meta: read, diskSignature })} />, {
+        outputFormat: 'wav',
+        addToAppleMusic: false,
+        visibleFields: ['genre'],
+        requiredFields: [],
+        normalize: { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
+      })
+      expect(screen.getByTestId('convert-up-to-date')).toBeInTheDocument()
+      typeInto('field-genre', 'House')
+      expect(screen.queryByTestId('convert-up-to-date')).toBeNull()
+      expect(screen.getByTestId('process-btn')).toHaveTextContent('Update tags')
+      typeInto('field-genre', 'Techno')
       expect(screen.getByTestId('convert-up-to-date')).toBeInTheDocument()
     })
 

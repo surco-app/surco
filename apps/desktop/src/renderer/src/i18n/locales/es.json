@@ -885,6 +885,7 @@
     "convertAction": "Convertir a {{format}}",
     "lineAdds": "Añade a {{places}}",
     "lineUpdates": "Actualiza {{places}}",
+    "lineSyncs": "Sincroniza {{places}}",
     "lineReplaces": "Sustituye el {{format}} de Apple Music",
     "lineReplacesBare": "Sustituye la copia de Apple Music",
     "lineBetter": "La copia de Apple Music es mejor",

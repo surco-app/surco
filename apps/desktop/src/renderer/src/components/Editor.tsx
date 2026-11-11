@@ -28,7 +28,7 @@ import { WRITABLE_PROGRAMS, writableInOrder } from '../../../shared/djProgram'
 import { EDITOR_SECTION_GROUP } from '../../../shared/editorSections'
 import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../../../shared/format'
 import type { GridCheck } from '../../../shared/gridCheck'
-import { fromReadOnlyProgram } from '../../../shared/trackOrigin'
+import { fromReadOnlyProgram, isFrom } from '../../../shared/trackOrigin'
 import type {
   DeclickConfig,
   FormatSetting,
@@ -1080,6 +1080,7 @@ export const Editor = memo(function Editor({
       formatMatchesInput(format, item.inputPath),
       jobAudio(item, normalizeCfg, declickCfg, { normalize, declick }),
     )
+  const djTargets = reachedPrograms(appSettings, reachable)
   const upToDate =
     !isMulti &&
     !incomplete &&
@@ -2023,10 +2024,12 @@ export const Editor = memo(function Editor({
           tagsOnly={tagsOnlyExport}
           sameFormat={formatMatchesInput(format, item.inputPath)}
           upToDate={upToDate}
-          inLibrary={inLibrary}
+          inMusic={librarySource === 'appleMusic' && inLibrary === 'yes'}
+          musicHoldsFile={!!replacedCopyPath && !comparedCopyPath}
+          djHolds={djTargets.filter((id) => openSource === id || isFrom(item, id))}
           replacedFormat={replacedCopyPath ? fileExtension(replacedCopyPath) : ''}
           addToAppleMusic={picked.addToAppleMusic}
-          djTargets={reachedPrograms(appSettings, reachable)}
+          djTargets={djTargets}
           openSource={openSource}
           destination={destination}
           destinations={destinationChoices}

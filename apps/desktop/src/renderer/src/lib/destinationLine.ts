@@ -7,6 +7,7 @@ export interface DestinationLineState {
   destination: Destination
   withAppleMusic: boolean
   djTargets: DjLibraryId[]
+  djHolds: DjLibraryId[]
   openSource: PlaylistSource | null
   inPlace: boolean
   inMusic: boolean
@@ -19,15 +20,16 @@ export interface DestinationLineState {
 export interface LinePart {
   key: string
   options?: Record<string, unknown>
+  warn?: true
 }
 
 const placeName = (id: string): string => i18n.t(`settings.source.${id}`)
 
-export function destinationLine(s: DestinationLineState): { parts: LinePart[]; warn: boolean } {
+export function destinationLine(s: DestinationLineState): { parts: LinePart[] } {
   const parts: LinePart[] = []
   const updated: string[] = []
   const added: string[] = []
-  let warn = false
+  const synced: string[] = []
 
   if (s.destination === 'folder' && !s.inPlace) {
     parts.push({ key: 'editor.lineFolder', options: { folder: s.outputFolder } })
@@ -37,10 +39,9 @@ export function destinationLine(s: DestinationLineState): { parts: LinePart[]; w
     parts.push({ key: 'editor.lineOverwrite' })
   }
 
-  if (s.withAppleMusic || s.openSource === 'appleMusic') {
+  if (s.withAppleMusic || (s.openSource === 'appleMusic' && s.inPlace)) {
     if (s.replaces && s.libraryBetter) {
-      parts.push({ key: 'editor.lineBetter' })
-      warn = true
+      parts.push({ key: 'editor.lineBetter', warn: true })
     } else if (s.replaces) {
       parts.push(
         s.replacedFormat
@@ -55,8 +56,8 @@ export function destinationLine(s: DestinationLineState): { parts: LinePart[]; w
   }
 
   for (const id of s.djTargets) {
-    if (s.openSource === id || s.inPlace) updated.push(placeName(id))
-    else added.push(placeName(id))
+    if (s.openSource === id || s.djHolds.includes(id)) updated.push(placeName(id))
+    else synced.push(placeName(id))
   }
 
   if (updated.length > 0) {
@@ -66,5 +67,9 @@ export function destinationLine(s: DestinationLineState): { parts: LinePart[]; w
     parts.push({ key: 'editor.lineAdds', options: { places: added.join(' · ') } })
   }
 
-  return { parts, warn }
+  if (synced.length > 0) {
+    parts.push({ key: 'editor.lineSyncs', options: { places: synced.join(' · ') } })
+  }
+
+  return { parts }
 }

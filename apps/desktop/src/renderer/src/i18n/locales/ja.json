@@ -885,6 +885,7 @@
     "convertAction": "{{format}} に変換",
     "lineAdds": "{{places}} に追加",
     "lineUpdates": "{{places}} を更新",
+    "lineSyncs": "{{places}} と同期",
     "lineReplaces": "Apple Music の {{format}} を置き換え",
     "lineReplacesBare": "Apple Music のコピーを置き換え",
     "lineBetter": "Apple Music のコピーの方が高品質です",

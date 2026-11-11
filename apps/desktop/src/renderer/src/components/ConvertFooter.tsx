@@ -8,7 +8,7 @@ import {
   TriangleAlert,
 } from 'lucide-react'
 import type React from 'react'
-import { useLayoutEffect, useRef, useState } from 'react'
+import { Fragment, useLayoutEffect, useRef, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import type {
   FormatSetting,
@@ -93,7 +93,9 @@ interface ConvertFooterProps {
   tagsOnly: boolean
   sameFormat: boolean
   upToDate: boolean
-  inLibrary: 'idle' | 'yes' | 'no'
+  inMusic: boolean
+  musicHoldsFile: boolean
+  djHolds: DjLibraryId[]
   replacedFormat: string
   addToAppleMusic: boolean
   djTargets: DjLibraryId[]
@@ -165,7 +167,9 @@ export function ConvertFooter({
   tagsOnly,
   sameFormat,
   upToDate,
-  inLibrary,
+  inMusic,
+  musicHoldsFile,
+  djHolds,
   replacedFormat,
   addToAppleMusic,
   djTargets,
@@ -318,10 +322,11 @@ export function ConvertFooter({
     destination,
     withAppleMusic: isMacOS() && format !== 'flac' && addToAppleMusic,
     djTargets,
+    djHolds,
     openSource,
     inPlace: willEditInPlace,
-    inMusic: hasMusicCopy || (inLibrary === 'yes' && willEditInPlace),
-    replaces: !!replaces,
+    inMusic: hasMusicCopy || musicHoldsFile || (inMusic && willEditInPlace),
+    replaces: !!replaces && !musicHoldsFile,
     libraryBetter: !!libraryBetter,
     replacedFormat,
     outputFolder,
@@ -365,7 +370,9 @@ export function ConvertFooter({
     if (!refocus.current) return
     refocus.current = false
     footerRef.current
-      ?.querySelector<HTMLButtonElement>('[data-testid="process-btn"], [data-testid="done-more"]')
+      ?.querySelector<HTMLButtonElement>(
+        '[data-testid="process-btn"], [data-testid="convert-update-anyway"], [data-testid="done-more"]',
+      )
       ?.focus()
   })
   const batchLine = batch && batchReread && (
@@ -729,10 +736,20 @@ export function ConvertFooter({
                 {!upToDate && line.parts.length > 0 && (
                   <p
                     data-testid="convert-destination-line"
-                    data-tone={line.warn ? 'warn' : 'dim'}
-                    className={`text-center text-xs ${line.warn ? 'text-warn' : 'text-fg-dim'}`}
+                    className="text-center text-xs text-fg-dim"
                   >
-                    {line.parts.map((part) => tr(part.key, part.options)).join(' · ')}
+                    {line.parts.map((part, i) => (
+                      <Fragment key={part.key}>
+                        {i > 0 && ' · '}
+                        <span
+                          data-testid="convert-destination-part"
+                          data-tone={part.warn ? 'warn' : 'dim'}
+                          className={part.warn ? 'text-warn' : undefined}
+                        >
+                          {tr(part.key, part.options)}
+                        </span>
+                      </Fragment>
+                    ))}
                   </p>
                 )}
                 <ExportButton
