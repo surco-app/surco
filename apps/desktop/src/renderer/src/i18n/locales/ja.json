@@ -1523,8 +1523,7 @@
     "entries": {
       "editor": "エディタ",
       "conversion": "オーディオ",
-      "naming": "ファイル",
-      "shortcuts": "使い方"
+      "naming": "ファイル"
     },
     "tabs": {
       "general": "一般",
