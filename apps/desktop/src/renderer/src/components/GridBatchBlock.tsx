@@ -8,7 +8,12 @@ import { type GridCheck, needsGridFix } from '../../../shared/gridCheck'
 import type { AutoMarkTarget } from '../lib/cueAutoMark'
 import { adjustGrids } from '../lib/cueGridBatch'
 import { cueProgramOf } from '../lib/cuePrograms'
-import { type GridAdjust, undoGridAdjusts, useGridAdjusts } from '../lib/cueSession'
+import {
+  type GridAdjust,
+  undoGridAdjusts,
+  useGridAdjusts,
+  useGridAdjustsUndoable,
+} from '../lib/cueSession'
 import { formatUpTo } from '../lib/numberFormat'
 import { LIBRARY_NAME } from '../lib/reviewLibraries'
 import { useAppSettings } from '../lib/settingsContext'
@@ -32,13 +37,15 @@ export function GridBatchBlock({
   const queryClient = useQueryClient()
   const settings = useAppSettings()
   const adjusts = useGridAdjusts()
+  const undoable = useGridAdjustsUndoable(targets.map((t) => t.contentId))
   const [busy, setBusy] = useState(false)
   if (targets.every((t) => cueProgramOf(t.contentId).fixedGrid !== null)) return null
   const checks = targets.map((t) => checkOf(t.contentId))
   const done = checks.filter((c) => c !== undefined).length
   const measuring = done < targets.length
   const count = checks.filter((c) => c && needsGridFix(c, settings.cueGridTolerance)).length
-  const rest = targets.length - count
+  const unmeasurable = checks.filter((c) => c === null).length
+  const rest = targets.length - count - unmeasurable
   const adjustOf = (contentId: string) => adjusts.get(contentId)
   const ofKind = (kind: GridAdjust['kind']) =>
     targets.filter((t) => adjustOf(t.contentId)?.kind === kind).length
@@ -88,12 +95,19 @@ export function GridBatchBlock({
         </p>
       ) : (
         <p data-testid="grid-batch-summary" className="mt-2 text-xs text-fg-dim">
-          {count === 0
+          {count === 0 && unmeasurable === 0
             ? tr('editor.cues.gridBatch.allFine')
             : [
-                tr('editor.cues.gridBatch.needs', { count, total: targets.length }),
+                ...(count > 0
+                  ? [tr('editor.cues.gridBatch.needs', { count, total: targets.length })]
+                  : []),
                 ...(rest > 0 ? [tr('editor.cues.gridBatch.rest', { count: rest })] : []),
               ].join(' ')}
+        </p>
+      )}
+      {!measuring && unmeasurable > 0 && (
+        <p data-testid="grid-batch-unmeasurable" className="mt-1 text-xs text-fg-dim">
+          {tr('editor.cues.gridBatch.unmeasurable', { count: unmeasurable })}
         </p>
       )}
       {(measuring || count > 0) && (
@@ -159,7 +173,7 @@ export function GridBatchBlock({
           </ul>
         </div>
       )}
-      {ofKind('adjusted') > 0 && (
+      {undoable && (
         <button
           type="button"
           data-testid="grid-batch-undo"

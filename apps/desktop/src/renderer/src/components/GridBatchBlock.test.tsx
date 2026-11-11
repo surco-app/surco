@@ -1,14 +1,20 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import type { GridCheck } from '../../../shared/gridCheck'
 import i18n from '../i18n'
 import type { AutoMarkTarget } from '../lib/cueAutoMark'
 import { startDraft } from '../lib/cueDraft'
 import type { adjustGrids as AdjustGrids } from '../lib/cueGridBatch'
-import { type GridAdjust, keepGridAdjust, resetCueSession } from '../lib/cueSession'
+import {
+  forgetDraft,
+  type GridAdjust,
+  keepDraft,
+  keepGridAdjust,
+  resetCueSession,
+} from '../lib/cueSession'
 import { SettingsProvider } from '../lib/settingsContext'
 import { GridBatchBlock } from './GridBatchBlock'
 
@@ -44,12 +50,17 @@ function setup({
   targets?: AutoMarkTarget[]
 } = {}) {
   adjustGrids.mockImplementation(async (_client, picked) => {
-    for (const t of picked) keepGridAdjust(t.contentId, results[t.contentId] ?? { kind: 'fine' })
+    for (const t of picked) {
+      const result = results[t.contentId] ?? { kind: 'fine' }
+      if (result.kind === 'adjusted')
+        keepDraft(t.contentId, `k${t.contentId}`, result.after, { ...t, fingerprint: 'f0' })
+      keepGridAdjust(t.contentId, result)
+    }
   })
   const onShowInList = vi.fn()
   const onOpen = vi.fn()
   const client = new QueryClient()
-  render(
+  const tree = () => (
     <QueryClientProvider client={client}>
       <SettingsProvider settings={{ cueGridTolerance: 10 }}>
         <GridBatchBlock
@@ -59,9 +70,10 @@ function setup({
           onOpen={onOpen}
         />
       </SettingsProvider>
-    </QueryClientProvider>,
+    </QueryClientProvider>
   )
-  return { onShowInList, onOpen }
+  const { rerender } = render(tree())
+  return { onShowInList, onOpen, rerenderBlock: () => rerender(tree()) }
 }
 
 describe('Grid over several selected tracks', () => {
@@ -140,6 +152,55 @@ describe('Grid over several selected tracks', () => {
     fireEvent.click(await screen.findByTestId('grid-batch-undo'))
     await waitFor(() => expect(screen.queryByTestId('grid-batch-undo')).not.toBeInTheDocument())
     expect(screen.queryByTestId('grid-batch-tally')).not.toBeInTheDocument()
+  })
+
+  it('drops the undo once the adjusted draft is saved, since there is nothing left to give back', async () => {
+    setup({ results: { '201': { kind: 'adjusted', before: null, after: AFTER } } })
+    fireEvent.click(screen.getByTestId('grid-batch-adjust'))
+    await screen.findByTestId('grid-batch-undo')
+    act(() => forgetDraft('201'))
+    expect(screen.queryByTestId('grid-batch-undo')).not.toBeInTheDocument()
+  })
+
+  it('drops the undo once every adjusted track was retouched in the editor, which undo leaves as it is', async () => {
+    const { rerenderBlock } = setup({
+      checks: { '201': LATE, '202': LATE, '203': ON_BEATS },
+      results: {
+        '201': { kind: 'adjusted', before: null, after: AFTER },
+        '202': { kind: 'adjusted', before: null, after: AFTER },
+      },
+    })
+    fireEvent.click(screen.getByTestId('grid-batch-adjust'))
+    await screen.findByTestId('grid-batch-undo')
+    const retouch = (contentId: string) =>
+      keepDraft(contentId, `k${contentId}`, { ...AFTER }, { ...TARGETS[0], fingerprint: 'f0' })
+    act(() => retouch('201'))
+    rerenderBlock()
+    expect(screen.getByTestId('grid-batch-undo')).toBeInTheDocument()
+    act(() => retouch('202'))
+    rerenderBlock()
+    expect(screen.queryByTestId('grid-batch-undo')).not.toBeInTheDocument()
+  })
+
+  it('counts the tracks with no beats to measure apart from the ones already fine', () => {
+    setup({ checks: { '201': LATE, '202': null, '203': ON_BEATS } })
+    expect(screen.getByTestId('grid-batch-summary')).toHaveTextContent(
+      '1 de 3 no va con los golpes. La otra ya está bien y no se toca.',
+    )
+    expect(screen.getByTestId('grid-batch-unmeasurable')).toHaveTextContent(
+      '1 sin golpes que medir',
+    )
+  })
+
+  it('never says every grid sits on the beats when some could not be measured', () => {
+    setup({ checks: { '201': ON_BEATS, '202': null, '203': ON_BEATS } })
+    expect(screen.getByTestId('grid-batch-summary')).not.toHaveTextContent(
+      'Todas van con los golpes.',
+    )
+    expect(screen.getByTestId('grid-batch-unmeasurable')).toHaveTextContent(
+      '1 sin golpes que medir',
+    )
+    expect(screen.queryByTestId('grid-batch-adjust')).not.toBeInTheDocument()
   })
 
   it('stays out of a selection whose grids all come from Serato', () => {

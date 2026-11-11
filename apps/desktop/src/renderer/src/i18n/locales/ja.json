@@ -20,7 +20,7 @@
   "sessions": {
     "role": {
       "title": "セッション用の役割",
-    "of": "{{name}} の役割",
+      "of": "{{name}} の役割",
       "base": "インスト",
       "vocal": "ボーカル",
       "any": "ミックス"
@@ -103,11 +103,11 @@
       "redo": "やり直す",
       "adjust": "調整…",
       "keep": "このまま使う",
-    "kept": "通常のプレイリストとして残しました",
+      "kept": "通常のプレイリストとして残しました",
       "short": "{{minutes}} 分ぶんの曲しかありません",
-    "counted": "1曲あたり{{minutes}}分で数えています。ファイルの合計は{{audio}}です。",
-    "countedAtLeast": "1曲あたり{{minutes}}分で数えています。ファイルの合計は少なくとも{{audio}}です。",
-    "noCombos": "コンボは見つかりませんでした。選んだミックスのプレイリスト2つ以上に繰り返し出るペアがないためです。",
+      "counted": "1曲あたり{{minutes}}分で数えています。ファイルの合計は{{audio}}です。",
+      "countedAtLeast": "1曲あたり{{minutes}}分で数えています。ファイルの合計は少なくとも{{audio}}です。",
+      "noCombos": "コンボは見つかりませんでした。選んだミックスのプレイリスト2つ以上に繰り返し出るペアがないためです。",
       "assumed_one": "{{count}} トラックは長さ不明のため {{minutes}} 分として計算",
       "assumed_other": "{{count}} トラックは長さ不明のため {{minutes}} 分として計算"
     },
@@ -1176,10 +1176,10 @@
         "title": "グリッド",
         "show": "リストで見る",
         "measuring": "グリッドを測定中… {{done}} / {{total}}",
-        "needs_one": "{{total}} 曲中 {{count}} 曲が拍に合っていません。",
-        "needs_other": "{{total}} 曲中 {{count}} 曲が拍に合っていません。",
-        "rest_one": "残りの 1 曲はすでに合っているので変更しません。",
-        "rest_other": "残りの {{count}} 曲はすでに合っているので変更しません。",
+        "needs_one": "{{total}} トラック中 {{count}} トラックが拍に合っていません。",
+        "needs_other": "{{total}} トラック中 {{count}} トラックが拍に合っていません。",
+        "rest_one": "残りの 1 トラックはすでに合っているので変更しません。",
+        "rest_other": "残りの {{count}} トラックはすでに合っているので変更しません。",
         "allFine": "すべて拍に合っています。",
         "adjust_one": "{{count}} トラックを調整",
         "adjust_other": "{{count}} トラックを調整",
@@ -1192,6 +1192,8 @@
         "cueJump": "キューが {{ms}} ms 動いてしまいます",
         "noBetter": "調整しても良くなりません",
         "open": "開く",
+        "unmeasurable_one": "{{count}} トラックは測定できる拍がありません",
+        "unmeasurable_other": "{{count}} トラックは測定できる拍がありません",
         "undo": "調整を元に戻す"
       },
       "engine": {

@@ -222,11 +222,27 @@ export function forgetGridAdjust(contentId: string): void {
   notify()
 }
 
+function undoable(contentId: string) {
+  const adjust = adjusts.get(contentId)
+  const kept = drafts.get(contentId)
+  return adjust?.kind === 'adjusted' && kept && kept.value === adjust.after
+    ? { adjust, kept }
+    : null
+}
+
+export function undoableGridAdjusts(contentIds: string[]): string[] {
+  return contentIds.filter((contentId) => undoable(contentId) !== null)
+}
+
+export function useGridAdjustsUndoable(contentIds: string[]): boolean {
+  return useSyncExternalStore(subscribeCueDrafts, () => undoableGridAdjusts(contentIds).length > 0)
+}
+
 export function undoGridAdjusts(contentIds: string[]): void {
   for (const contentId of contentIds) {
-    const adjust = adjusts.get(contentId)
-    const kept = drafts.get(contentId)
-    if (adjust?.kind === 'adjusted' && kept && kept.value === adjust.after) {
+    const found = undoable(contentId)
+    if (found) {
+      const { adjust, kept } = found
       if (adjust.before) keepDraft(contentId, kept.draftKey, adjust.before, kept.target, kept.base)
       else forgetDraft(contentId)
     }

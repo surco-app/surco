@@ -20,7 +20,7 @@
   "sessions": {
     "role": {
       "title": "Papel para sesiones",
-    "of": "Papel de {{name}}",
+      "of": "Papel de {{name}}",
       "base": "Bases",
       "vocal": "Vocales",
       "any": "Mezcladas"
@@ -103,11 +103,11 @@
       "redo": "Rehacer",
       "adjust": "Ajustar…",
       "keep": "Quedármela así",
-    "kept": "Se queda como playlist normal",
+      "kept": "Se queda como playlist normal",
       "short": "Solo hay pistas para {{minutes}} min",
-    "counted": "Contado a {{minutes}} min por pista. Los ficheros suman {{audio}}.",
-    "countedAtLeast": "Contado a {{minutes}} min por pista. Los ficheros suman al menos {{audio}}.",
-    "noCombos": "Sin combos, porque ninguna pareja se repite en dos o más de las playlists Mezcladas que elegiste.",
+      "counted": "Contado a {{minutes}} min por pista. Los ficheros suman {{audio}}.",
+      "countedAtLeast": "Contado a {{minutes}} min por pista. Los ficheros suman al menos {{audio}}.",
+      "noCombos": "Sin combos, porque ninguna pareja se repite en dos o más de las playlists Mezcladas que elegiste.",
       "assumed_one": "{{count}} pista sin duración, se cuenta como {{minutes}} min",
       "assumed_other": "{{count}} pistas sin duración, se cuentan como {{minutes}} min cada una"
     },
@@ -1192,6 +1192,8 @@
         "cueJump": "Un cue se movería {{ms}} ms",
         "noBetter": "El ajuste no la mejora",
         "open": "Abrir",
+        "unmeasurable_one": "{{count}} sin golpes que medir",
+        "unmeasurable_other": "{{count}} sin golpes que medir",
         "undo": "Deshacer el ajuste"
       },
       "engine": {

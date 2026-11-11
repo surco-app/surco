@@ -655,7 +655,12 @@ describe('App Engine DJ cues', () => {
     const rows = screen.getAllByTestId('track-row')
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { metaKey: true })
-    expect(await screen.findByTestId('grid-batch-summary')).toBeInTheDocument()
+    expect(await screen.findByTestId('grid-batch-unmeasurable')).toHaveTextContent(
+      i18n.t('editor.cues.gridBatch.unmeasurable', { count: 2 }),
+    )
+    expect(screen.getByTestId('grid-batch-summary')).not.toHaveTextContent(
+      i18n.t('editor.cues.gridBatch.allFine'),
+    )
     expect(screen.queryByTestId('grid-batch-measuring')).not.toBeInTheDocument()
   })
 
