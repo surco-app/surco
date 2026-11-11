@@ -11,7 +11,7 @@ import { cueFingerprint } from './rekordboxCues'
 import { keyOf } from './rekordboxPlaylistsIpc'
 import { tempoGrid } from './seratoCueSource'
 import type { VirtualdjSong } from './virtualdjDatabase'
-import { readVirtualdjLibrary } from './virtualdjLibrary'
+import { readVirtualdjSongs } from './virtualdjLibrary'
 
 const READ_ONLY_QUEUE: CueQueue = {
   cuesOp: () => undefined,
@@ -42,7 +42,7 @@ function loops(song: VirtualdjSong): NonNullable<TrackCues['loops']> {
     p.kind === 'loop' && p.sizeBeats !== undefined
       ? [
           {
-            id: String(p.slot ?? i),
+            id: p.slot === undefined ? `i-${i}` : `slot-${p.slot}`,
             startMs: p.seconds * 1000,
             endMs: (p.seconds + p.sizeBeats * secondsPerBeat) * 1000,
             ...(p.name && { name: p.name }),
@@ -83,9 +83,17 @@ export function virtualdjCueSource(
   },
   collection: () => string,
 ): CueSource {
+  const byPath = new WeakMap<VirtualdjSong[], Map<string, VirtualdjSong>>()
   const songOf = (contentId: string) => {
-    const file = virtualdjFileOf(contentId).normalize('NFC')
-    return readVirtualdjLibrary(host.dir()).songs.find((s) => s.path.normalize('NFC') === file)
+    const songs = readVirtualdjSongs(host.dir())
+    let paths = byPath.get(songs)
+    if (!paths) {
+      paths = new Map()
+      for (const s of songs)
+        if (!paths.has(s.path.normalize('NFC'))) paths.set(s.path.normalize('NFC'), s)
+      byPath.set(songs, paths)
+    }
+    return paths.get(virtualdjFileOf(contentId).normalize('NFC'))
   }
   const source: CueSource = {
     trackCues: async (contentId) => {

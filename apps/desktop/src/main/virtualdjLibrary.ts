@@ -33,9 +33,13 @@ function readSongs(file: string): VirtualdjSong[] {
   return songs
 }
 
+export function readVirtualdjSongs(dir: string): VirtualdjSong[] {
+  return readSongs(join(dir, 'database.xml'))
+}
+
 export function readVirtualdjLibrary(dir: string): VirtualdjLibrary {
   return {
-    songs: readSongs(join(dir, 'database.xml')),
+    songs: readVirtualdjSongs(dir),
     lists: readVirtualdjLists(join(dir, 'MyLists')),
   }
 }

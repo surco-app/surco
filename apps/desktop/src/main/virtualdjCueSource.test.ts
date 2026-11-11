@@ -6,6 +6,18 @@ import { HOT_KINDS } from '../shared/cueRules'
 import { nearestHotCueColor } from '../shared/rekordboxCueColors'
 import { virtualdjCueSource } from './virtualdjCueSource'
 
+const { lists } = vi.hoisted(() => ({ lists: { reads: 0 } }))
+vi.mock('./virtualdjLists', async (actual) => {
+  const real = await actual<typeof import('./virtualdjLists')>()
+  return {
+    ...real,
+    readVirtualdjLists: (...args: Parameters<typeof real.readVirtualdjLists>) => {
+      lists.reads++
+      return real.readVirtualdjLists(...args)
+    },
+  }
+})
+
 const fixture = join(__dirname, 'virtualdjFixtures')
 const VDJ_MP3 = 'virtualdj:/Music/VirtualDJ Pruebas/Pray.mp3'
 const SERATO_MP3 = 'virtualdj:/Music/Serato Pruebas/Pray.mp3'
@@ -114,7 +126,7 @@ describe('virtualdjCueSource', () => {
   it('ends a saved loop Size beats after its start, since VirtualDJ keeps the length in beats', async () => {
     const read = await source().trackCues(SERATO_MP3)
     expect(read?.loops).toHaveLength(1)
-    expect(read?.loops?.[0]?.id).toBe('1')
+    expect(read?.loops?.[0]?.id).toBe('slot-1')
     expect(read?.loops?.[0]?.name).toBe('loop')
     expect(read?.loops?.[0]?.startMs).toBeCloseTo(278306.667, 3)
     expect(read?.loops?.[0]?.endMs).toBeCloseTo(278306.667 + 4 * 447.778, 3)
@@ -130,6 +142,27 @@ describe('virtualdjCueSource', () => {
     const dir = library(song('/m/Canción.wav', `  <Poi Pos="3.5" Num="1" Type="cue" />\r\n`))
     const read = await source(dir).trackCues('virtualdj:/m/Canción.wav')
     expect(read?.cues).toHaveLength(1)
+  })
+
+  it('reads only the songs of the database for cues, never the lists, which can be a large tree', async () => {
+    lists.reads = 0
+    const read = source()
+    await read.trackCues(VDJ_MP3)
+    await read.dropInput(VDJ_MP3)
+    expect(lists.reads).toBe(0)
+  })
+
+  it('keys each loop by its slot apart from a loop without one, so two loops never share a key', async () => {
+    const dir = library(
+      song(
+        '/m/a.wav',
+        `  <Scan Bpm="0.5" Phase="0.0" />\r\n  <Poi Pos="1.0" Type="loop" Size="4.0" />\r\n  <Poi Pos="2.0" Type="loop" Size="4.0" Slot="0" />\r\n`,
+      ),
+    )
+    const read = await source(dir).trackCues('virtualdj:/m/a.wav')
+    const ids = read?.loops?.map((l) => l.id) ?? []
+    expect(ids).toHaveLength(2)
+    expect(new Set(ids).size).toBe(2)
   })
 
   it('reads nothing for a track the database does not hold', async () => {
