@@ -754,7 +754,6 @@
     "propSampleRate": "Fréquence d’échantillonnage",
     "propBitDepth": "Profondeur de bits",
     "propBitDepthValue": "{{bits}} bits",
-    "propChannels": "Canaux",
     "propChannelMode": "Mode des canaux",
     "channelModeMono": "Mono",
     "channelModeStereo": "Stéréo",

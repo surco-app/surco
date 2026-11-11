@@ -754,7 +754,6 @@
     "propSampleRate": "サンプルレート",
     "propBitDepth": "ビット深度",
     "propBitDepthValue": "{{bits}} ビット",
-    "propChannels": "チャンネル",
     "propChannelMode": "チャンネルモード",
     "channelModeMono": "モノ",
     "channelModeStereo": "ステレオ",

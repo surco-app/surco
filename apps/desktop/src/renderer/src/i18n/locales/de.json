@@ -754,7 +754,6 @@
     "propSampleRate": "Abtastrate",
     "propBitDepth": "Bittiefe",
     "propBitDepthValue": "{{bits}} Bit",
-    "propChannels": "Kanäle",
     "propChannelMode": "Kanalmodus",
     "channelModeMono": "Mono",
     "channelModeStereo": "Stereo",
