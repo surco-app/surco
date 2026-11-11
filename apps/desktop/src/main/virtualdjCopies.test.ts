@@ -205,6 +205,41 @@ describe('Before restoring copies', () => {
   })
 })
 
+describe('a whole copy taken with only a drive library', () => {
+  it('leaves the lists of a home library that appeared later as they are when restored', async () => {
+    const base = mkdtempSync(join(tmpdir(), 'surco-vdj-copies-drive-'))
+    const dir = join(base, 'VirtualDJ')
+    mkdirSync(dir)
+    const drive = join(base, 'Volumes', 'Public', 'VirtualDJ')
+    mkdirSync(drive, { recursive: true })
+    const driveXml = `<?xml version="1.0" encoding="UTF-8"?>\r\n<VirtualDJ_Database Version="2026">\r\n</VirtualDJ_Database>\r\n`
+    writeFileSync(join(drive, 'database.xml'), driveXml)
+    const deps = {
+      backupDir: join(base, 'virtualdj-backups'),
+      roots: () => virtualdjLibraryRoots(dir, join(base, 'Volumes')),
+    }
+    expect(deps.roots().map((r) => r.root)).toEqual([join(base, 'Volumes', 'Public')])
+    const copy = takeVirtualdjCopy(deps, 'queue')
+    cpSync(fixture, dir, { recursive: true })
+    writeFileSync(
+      join(drive, 'database.xml'),
+      driveXml.replace('</VirtualDJ_Database>', ' \r\n</VirtualDJ_Database>'),
+    )
+    const lists = tree(join(dir, 'MyLists'))
+    expect(
+      await restoreVirtualdjCopy(copy.id, {
+        ...deps,
+        ensureClosed: async () => true,
+        isRunning: async () => false,
+        discardQueue: () => {},
+        busy: () => false,
+      }),
+    ).toEqual({ ok: true })
+    expect(tree(join(dir, 'MyLists'))).toEqual(lists)
+    expect(readFileSync(join(drive, 'database.xml'), 'utf8')).toBe(driveXml)
+  })
+})
+
 describe('VirtualDJ copies from before whole copies', () => {
   it('still lists the separate database and lists copies and restores each, saying what it holds', async () => {
     const lib = library()

@@ -234,7 +234,8 @@ function planOf(copyId: string, deps: VirtualdjCopiesDeps): Plan | null {
     const manifest = readManifest(folder)
     const databases = manifest && databasesIn(folder, roots)
     if (!manifest || !databases) return null
-    if (!home) return { writes: databases, removals: [], dirs: [] }
+    if (!home || !existsSync(join(folder, labelOf(home))))
+      return { writes: databases, removals: [], dirs: [] }
     const lists = listsIn(join(folder, labelOf(home), LISTS), manifest.dirs, join(home.dir, LISTS))
     return {
       writes: [...databases, ...lists.writes],
