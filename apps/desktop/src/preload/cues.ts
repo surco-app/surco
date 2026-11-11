@@ -11,7 +11,6 @@ export function createCuesApi(ipc: Pick<IpcRenderer, 'invoke'>): CuesApi {
     auditionLead: (contentId) => ipc.invoke('cues:auditionLead', contentId),
     surcoGrid: (contentId) => ipc.invoke('cues:surcoGrid', contentId),
     gridFit: (contentId) => ipc.invoke('cues:gridFit', contentId),
-    gridVerdict: (contentId) => ipc.invoke('cues:gridVerdict', contentId),
     queued: (contentId) => ipc.invoke('cues:queued', contentId),
     undo: (contentId) => ipc.invoke('cues:undo', contentId),
     save: (reqs) => ipc.invoke('cues:save', reqs),

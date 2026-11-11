@@ -251,7 +251,6 @@ const NO_CUES: CuesApi = {
   auditionLead: async () => 0,
   surcoGrid: async () => null,
   gridFit: async () => null,
-  gridVerdict: async () => null,
   queued: async () => null,
   undo: async () => {},
   save: async () => {},

@@ -36,7 +36,7 @@ import type {
   UsbVolumeList,
 } from '../../shared/types'
 import { resetEditorSections } from './hooks/useEditorSections'
-import { resetGridVerdicts } from './hooks/useGridVerdicts'
+import { resetGridChecks } from './hooks/useGridChecks'
 import { NEW_TRACKS_PROMPT_TIMEOUT_MS } from './hooks/useTrackLibrary'
 import i18n from './i18n'
 import { startDraft } from './lib/cueDraft'
@@ -3729,7 +3729,7 @@ describe('App source playlists', () => {
               .mockImplementation(async (id) => (id === ALL_TRACKS_ID ? ENTRIES : [ENTRIES[0]])),
           },
         }),
-        cues: { gridVerdict: vi.fn<Api['cues']['gridVerdict']>().mockResolvedValue(null) },
+        cues: { trackCues: vi.fn<Api['cues']['trackCues']>().mockResolvedValue(null) },
       }
 
       function scrollPast(rows: HTMLElement[]): void {
@@ -4982,13 +4982,13 @@ describe('App multi-select removal', () => {
 })
 
 describe('App background measuring', () => {
-  afterEach(resetGridVerdicts)
+  afterEach(resetGridChecks)
 
   // "Rejilla mal" decodes each rekordbox row against its grid. It belongs to the analysis like
   // the rest: with Analyze on import it runs by itself, without the user having to know that
   // picking the filter is what starts it.
   function openRekordbox(autoAnalyze: boolean) {
-    const rekordboxGridVerdict = vi.fn<Api['cues']['gridVerdict']>().mockResolvedValue(null)
+    const measureGrid = vi.fn<Api['cues']['trackCues']>().mockResolvedValue(null)
     setApi({
       getSettings: vi.fn().mockResolvedValue(settings({ autoAnalyze })),
       dj: djReads({
@@ -5004,10 +5004,10 @@ describe('App background measuring', () => {
         },
       }),
       cues: {
-        gridVerdict: rekordboxGridVerdict,
+        trackCues: measureGrid,
       },
     })
-    return rekordboxGridVerdict
+    return measureGrid
   }
 
   async function openFactory(): Promise<void> {
@@ -5018,31 +5018,31 @@ describe('App background measuring', () => {
   }
 
   it('measures the grids by itself when every import is analysed', async () => {
-    const rekordboxGridVerdict = openRekordbox(true)
+    const measureGrid = openRekordbox(true)
     await openFactory()
-    await waitFor(() => expect(rekordboxGridVerdict).toHaveBeenCalledTimes(2))
+    await waitFor(() => expect(measureGrid).toHaveBeenCalledTimes(2))
   })
 
   // Without that setting the analysis waits for the button, and the grids with it. "Everything
   // is already analysed" would otherwise keep the button off while they were never measured.
   it('measures the grids with the Analyze button otherwise, which stays on until they are', async () => {
-    const rekordboxGridVerdict = openRekordbox(false)
+    const measureGrid = openRekordbox(false)
     await openFactory()
     await act(async () => {})
-    expect(rekordboxGridVerdict).not.toHaveBeenCalled()
+    expect(measureGrid).not.toHaveBeenCalled()
     const analyze = screen.getByTestId('analyze-quality')
     expect(analyze).not.toBeDisabled()
     fireEvent.click(analyze)
-    await waitFor(() => expect(rekordboxGridVerdict).toHaveBeenCalledTimes(2))
+    await waitFor(() => expect(measureGrid).toHaveBeenCalledTimes(2))
   })
 
   it('does not call everything analysed while the grids are still being measured', async () => {
-    const rekordboxGridVerdict = openRekordbox(false)
-    rekordboxGridVerdict.mockImplementation(() => new Promise(() => {}))
+    const measureGrid = openRekordbox(false)
+    measureGrid.mockImplementation(() => new Promise(() => {}))
     await openFactory()
     fireEvent.click(screen.getByTestId('analyze-quality'))
     await waitFor(() => expect(screen.queryByTestId('analyze-progress')).toBeNull())
-    expect(rekordboxGridVerdict).toHaveBeenCalled()
+    expect(measureGrid).toHaveBeenCalled()
     expect(screen.getByTestId('analyze-quality')).not.toBeDisabled()
     expect(screen.getByTestId('analyze-quality')).not.toHaveAccessibleName(
       i18n.t('header.allAnalyzed'),
@@ -7287,7 +7287,7 @@ describe('App Apple Music library filter', () => {
         },
       }),
       cues: {
-        gridVerdict: vi.fn<Api['cues']['gridVerdict']>().mockResolvedValue(null),
+        trackCues: vi.fn<Api['cues']['trackCues']>().mockResolvedValue(null),
       },
     })
   }

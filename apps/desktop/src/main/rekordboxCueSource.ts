@@ -3,7 +3,6 @@ import { type BeatGridFit, provisionalGrid, REKORDBOX_BEAT_AFTER_RISE_MS } from 
 import type { CueQueue, CueSource } from './cueSource'
 import { CUE_WAVE_FINE_PER_SECOND } from './cueWaveFine'
 import { shiftedWords } from './cueWords'
-import { cachedGridVerdict } from './gridVerdictCache'
 import { rekordboxShareDir } from './rekordboxArtwork'
 import { readCueWaveDetail, readTrackCues } from './rekordboxCues'
 import { keyOf, withCollection } from './rekordboxPlaylistsIpc'
@@ -38,13 +37,10 @@ export function rekordboxCueSource(host: {
       await keyOf(path),
     )
   }
-  const gridFit = async (
-    contentId: string,
-    priority: 'high' | 'low' = 'high',
-  ): Promise<GridFit | null> => {
+  const gridFit = async (contentId: string): Promise<GridFit | null> => {
     const row = await audioRowOf(contentId)
     if (!row) return null
-    const fit = await host.beatGrid(row.FolderPath, priority)
+    const fit = await host.beatGrid(row.FolderPath, 'high')
     if (!fit) return null
     const lead =
       (await rekordboxShiftOfFile(row.FolderPath, row.SampleRate || 44100)) +
@@ -112,18 +108,6 @@ export function rekordboxCueSource(host: {
       }
     },
     gridFit: (contentId) => gridFit(contentId),
-    gridVerdict: async (contentId) => {
-      const path = host.collection()
-      const read = withCollection(
-        path,
-        (db) => readTrackCues(db, rekordboxShareDir(path), contentId, { wave: false }),
-        null,
-        await keyOf(path),
-      )
-      if (!read?.analysed) return null
-      const row = await audioRowOf(contentId)
-      return cachedGridVerdict(row?.FolderPath ?? null, read.grid, () => gridFit(contentId, 'low'))
-    },
     queuedWanted: async (contentId, op) => {
       const path = host.collection()
       const read = withCollection(

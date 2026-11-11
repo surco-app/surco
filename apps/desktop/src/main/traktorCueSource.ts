@@ -5,7 +5,6 @@ import { traktorKey } from '../shared/traktorContent'
 import type { CueQueue, CueSource } from './cueSource'
 import { CUE_WAVE_FINE_PER_SECOND } from './cueWaveFine'
 import { shiftedWords } from './cueWords'
-import { cachedGridVerdict } from './gridVerdictCache'
 import { keyOf } from './rekordboxPlaylistsIpc'
 import { type BeatGridOf, sameClockFit } from './sameClockGrid'
 import { traktorTrackCuesOf } from './traktorCues'
@@ -103,15 +102,6 @@ export function traktorCueSource(
     gridFit: async (contentId) => {
       const file = await traktorFile(contentId)
       return sameClockFit(file, beatGrid, 'high', await leadOf(file))
-    },
-    gridVerdict: async (contentId) => {
-      const block = await blockOf(contentId)
-      const file = fileOfBlock(block)
-      return cachedGridVerdict(
-        file,
-        block ? traktorTrackCuesOf(block, contentId).grid : undefined,
-        async () => sameClockFit(file, beatGrid, 'low', await leadOf(file)),
-      )
     },
     queuedWanted: async () => [],
     queue: traktor.queue,

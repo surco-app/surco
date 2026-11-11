@@ -28,7 +28,6 @@ describe('createCuesApi', () => {
     ['auditionLead', 'cues:auditionLead', ['engine:4']],
     ['surcoGrid', 'cues:surcoGrid', ['engine:4']],
     ['gridFit', 'cues:gridFit', ['engine:4']],
-    ['gridVerdict', 'cues:gridVerdict', ['engine:4']],
     ['queued', 'cues:queued', ['engine:4']],
     ['undo', 'cues:undo', ['engine:4']],
     ['save', 'cues:save', [REQUESTS]],
