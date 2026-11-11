@@ -443,7 +443,7 @@ describe('registerCuesIpc', () => {
     expect(add).not.toHaveBeenCalled()
   })
 
-  it('queues a VirtualDJ save on VirtualDJ’s own queue and asks it to write, leaving rekordbox’s queue alone', async () => {
+  it('routes a mixed rekordbox and VirtualDJ save to each program’s own queue, and opens a copy moment only for rekordbox', async () => {
     const enqueue = vi.fn<RekordboxQueue['enqueue']>(() => true)
     const applyQuietly = quietly()
     const vdjEnqueue = vi.fn<RekordboxQueue['enqueue']>(() => true)
@@ -471,15 +471,20 @@ describe('registerCuesIpc', () => {
     })
     const wanted = [{ ms: 1000, kind: HOT_KINDS[0], color: null }]
     await handler('cues:save')({}, [
+      { contentId: '103', path: '/m/a.wav', label: 'a', wanted, fingerprint: 'f' },
       { contentId: vdj, path: '/m/v.mp3', label: 'v', wanted, fingerprint: 'f' },
     ])
+    expect(vdjEnqueue).toHaveBeenCalledTimes(1)
     expect(vdjEnqueue).toHaveBeenCalledWith([
       expect.objectContaining({ kind: 'cues', contentId: vdj, wanted }),
     ])
-    expect(vdjApply).toHaveBeenCalled()
-    expect(enqueue).not.toHaveBeenCalled()
-    expect(applyQuietly).not.toHaveBeenCalled()
-    expect(beginMoment).not.toHaveBeenCalled()
+    expect(enqueue).toHaveBeenCalledTimes(1)
+    expect(enqueue).toHaveBeenCalledWith([
+      expect.objectContaining({ kind: 'cues', contentId: '103', wanted }),
+    ])
+    expect(vdjApply).toHaveBeenCalledTimes(1)
+    expect(applyQuietly).toHaveBeenCalledTimes(1)
+    expect(beginMoment).toHaveBeenCalledWith('cues', ['rekordbox'])
   })
 
   it('queues several tracks together and applies once, so master.db is written in one batch', async () => {
