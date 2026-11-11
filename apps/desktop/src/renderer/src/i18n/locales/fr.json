@@ -2260,7 +2260,7 @@
     "email": "Ton e-mail",
     "emailHint": "(pour pouvoir te répondre)",
     "attach": "Joindre le rapport technique",
-    "attachHint": "Version de Surco, système et dernières erreurs du journal, sans les dossiers.",
+    "attachHint": "Version de Surco, système et dernières erreurs du journal.",
     "preview": "Voir ce qui est envoyé",
     "previewHide": "Masquer ce qui est envoyé",
     "github": "Je préfère ouvrir un ticket sur GitHub",
@@ -3329,7 +3329,7 @@
     }
   },
   "copies": {
-    "rail": "Sauvegardes",
+    "rail": "Copies",
     "title": "Sauvegardes",
     "intro": "Avant de toucher à tes logiciels ou à tes fichiers, Surco garde une copie. Si quelque chose cloche, reviens en arrière.",
     "state": {

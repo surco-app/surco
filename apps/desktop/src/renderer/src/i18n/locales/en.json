@@ -2260,7 +2260,7 @@
     "email": "Your email",
     "emailHint": "(so I can reply)",
     "attach": "Attach technical report",
-    "attachHint": "Surco version, system and the latest errors from the log, without folders.",
+    "attachHint": "Surco version, system and the latest errors from the log.",
     "preview": "See what is sent",
     "previewHide": "Hide what is sent",
     "github": "I'd rather open a GitHub issue",

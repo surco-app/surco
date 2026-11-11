@@ -1206,9 +1206,10 @@ export interface SourcePlaylistEntry {
   // 0-100), so one fill rule serves every source.
   meta: AppleMusicTrackMeta
   musicPersistentId?: string
-  // rekordbox only: the playlist row (djmdSongPlaylist.ID) and the collection entry
-  // (djmdContent.ID) behind this entry. Edits name the row; copying to another playlist
-  // names the entry, which keeps the symlinked twins apart without guessing by path.
+  // The DJ program's own handles, when it has them: the playlist row and the collection
+  // entry behind this entry (in rekordbox djmdSongPlaylist.ID and djmdContent.ID). Edits
+  // name the row; copying to another playlist names the entry, which keeps the symlinked
+  // twins apart without guessing by path.
   linkId?: string
   contentId?: string
   preview?: SourcePreview

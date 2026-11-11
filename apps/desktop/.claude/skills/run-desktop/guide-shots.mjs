@@ -257,7 +257,7 @@ async function openFromRekordbox(page) {
   for (;;) {
     const names = await page.evaluate(() =>
       [...document.querySelectorAll('[data-testid^="source-node-"]')]
-        .filter((e) => !e.dataset.testid.includes('recent'))
+        .filter((e) => !e.dataset.testid.includes('recent') && e.checkVisibility())
         .map((e) => e.dataset.testid),
     )
     const next = names.find((n) => !seen.has(n))
