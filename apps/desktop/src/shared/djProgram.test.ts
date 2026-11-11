@@ -10,7 +10,9 @@ import {
   REACH_PROGRAMS,
   READ_ONLY_PROGRAMS,
   type ReachProgram,
+  type ReadOnlyCueProgram,
   type ReadOnlyProgram,
+  readsCuesOnly,
   USB_PROGRAMS,
   type UsbProgram,
   WRITABLE_PROGRAMS,
@@ -80,6 +82,10 @@ describe('writableInOrder', () => {
     })
     expect(WRITABLE_PROGRAMS).not.toContain('virtualdj')
     expect(USB_PROGRAMS).not.toContain('virtualdj')
+  })
+  it('names VirtualDJ alone as a program whose cues Surco only reads, so its read-only texts are asked for by type', () => {
+    expect(DJ_PROGRAMS.filter(readsCuesOnly)).toEqual(['virtualdj'])
+    expectTypeOf<ReadOnlyCueProgram>().toEqualTypeOf<'virtualdj'>()
   })
   it('lets Surco add to and sync tags with Serato and the programs it writes to, but not VirtualDJ yet', () => {
     expect([...REACH_PROGRAMS]).toEqual(['rekordbox', 'traktor', 'engine', 'serato'])

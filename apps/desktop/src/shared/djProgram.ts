@@ -21,8 +21,8 @@ export const PROGRAM_CAN = {
   }
 }
 
-type ProgramsThatCan<K extends 'write' | 'usb' | 'reach'> = {
-  [P in DjProgram]: (typeof PROGRAM_CAN)[P][K] extends true ? P : never
+type ProgramsThatCan<K extends 'write' | 'usb' | 'reach' | 'saveCues', V extends boolean = true> = {
+  [P in DjProgram]: (typeof PROGRAM_CAN)[P][K] extends V ? P : never
 }[DjProgram]
 
 export type WritableProgram = ProgramsThatCan<'write'>
@@ -32,6 +32,12 @@ export type UsbProgram = ProgramsThatCan<'usb'>
 export type ReachProgram = ProgramsThatCan<'reach'>
 
 export type ReadOnlyProgram = Exclude<DjProgram, WritableProgram>
+
+export type ReadOnlyCueProgram = ProgramsThatCan<'saveCues', false>
+
+export function readsCuesOnly(program: DjProgram): program is ReadOnlyCueProgram {
+  return !PROGRAM_CAN[program].saveCues
+}
 
 export type CueProgram = DjProgram
 

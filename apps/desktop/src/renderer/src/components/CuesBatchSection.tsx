@@ -4,7 +4,7 @@ import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { activeCueFlow, MANUAL_CUE_FLOW } from '../../../shared/cueFlows'
-import { programOf, programsInOrder } from '../../../shared/djProgram'
+import { programOf, programsInOrder, readsCuesOnly } from '../../../shared/djProgram'
 import type { CueLibrary } from '../../../shared/types'
 import { type AutoMarkTarget, acceptAutoMarks } from '../lib/cueAutoMark'
 import { forgetStaleDrafts } from '../lib/cueDrafts'
@@ -21,7 +21,7 @@ import {
 import { recordCueEdits } from '../lib/cueTasteEdits'
 import { twinPlansOf } from '../lib/cueTwins'
 import { useAppSettings } from '../lib/settingsContext'
-import { saveAllKey } from './CuesSection'
+import { READ_ONLY_COPY, saveAllKey } from './CuesSection'
 import { Select } from './Select'
 
 const LIBRARIES = programsInOrder(['rekordbox', 'traktor', 'engine', 'serato', 'virtualdj'])
@@ -58,6 +58,7 @@ export function CuesBatchSection({
   const [busy, setBusy] = useState(false)
   const [saveFailed, setSaveFailed] = useState(false)
   const ids = targets.map((t) => t.contentId)
+  const readOnly = [...new Set(ids.map(programOf).filter(readsCuesOnly))]
   const gated = ids.some((id) => cueProgramOf(id).collectionGate !== null)
   const { data: canSave = true } = useQuery({
     queryKey: ['traktor-can-save', settings.traktorNmlPath],
@@ -175,11 +176,26 @@ export function CuesBatchSection({
           onChange={onFlow}
           options={flowOptions}
         />
-        <button type="button" data-testid="cues-auto-mark-all" onClick={onMark} className={BUTTON}>
+        <button
+          type="button"
+          data-testid="cues-auto-mark-all"
+          disabled={readOnly.length > 0}
+          onClick={onMark}
+          className={BUTTON}
+        >
           <Sparkle className="h-3.5 w-3.5" aria-hidden="true" />
           {tr('editor.cues.batch.mark', { count: targets.length })}
         </button>
       </div>
+      {readOnly.length > 0 && (
+        <p data-testid="cues-batch-read-only" className="mt-2 text-xs text-fg-dim">
+          {tr(
+            readOnly.length === 1
+              ? READ_ONLY_COPY[readOnly[0]].readOnly
+              : 'editor.cues.batch.readOnly',
+          )}
+        </p>
+      )}
       {marked && (
         <dl data-testid="cues-batch-tally" className="mt-3 grid gap-1 text-xs">
           {tally

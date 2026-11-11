@@ -25,6 +25,7 @@ import {
   type LibraryProgram,
   PROGRAM_CAN,
   programOf,
+  readsCuesOnly,
   WRITABLE_PROGRAMS,
   type WritableProgram,
 } from '../../shared/djProgram'
@@ -2740,7 +2741,7 @@ export default function App(): React.JSX.Element {
     enabled: runningNote !== null,
     staleTime: 0,
   })
-  const cuesMarkable = cuesOpen && sourceProgram !== null && PROGRAM_CAN[sourceProgram].saveCues
+  const cuesMarkable = cuesOpen && sourceProgram !== null
   const crateOpen =
     editableOpen &&
     browser.playlist?.id !== RECENTLY_ADDED_ID &&
@@ -3334,6 +3335,7 @@ export default function App(): React.JSX.Element {
         rekordboxCue &&
         selectedTracks.length > 1 &&
         cuesMarkable &&
+        !cueTargets.some((t) => readsCuesOnly(programOf(t.contentId))) &&
         !settings?.editorSections.some((s) => s.id === 'cues' && s.hidden)
           ? autoMarkSelected
           : undefined,

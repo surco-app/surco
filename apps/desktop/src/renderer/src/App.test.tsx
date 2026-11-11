@@ -969,7 +969,7 @@ describe('App VirtualDJ tab', () => {
     )
   })
 
-  it('offers no Auto mark over several VirtualDJ rows, since Surco cannot save cues there', async () => {
+  it('shows Auto mark over several VirtualDJ rows disabled with the read-only reason, not a false one-track reason', async () => {
     openVirtualdj({
       cues: { trackCues: vi.fn<Api['cues']['trackCues']>().mockResolvedValue(null) },
     })
@@ -981,8 +981,14 @@ describe('App VirtualDJ tab', () => {
     const rows = screen.getAllByTestId('track-row')
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { metaKey: true })
-    await waitFor(() => expect(screen.getByTestId('cues-single-only')).toBeInTheDocument())
-    expect(screen.queryByTestId('cues-auto-mark-all')).toBeNull()
+    expect(await screen.findByTestId('cues-auto-mark-all')).toBeDisabled()
+    expect(screen.getByTestId('cues-batch-read-only')).toHaveTextContent(
+      "Surco only reads VirtualDJ's cues. To change them, do it in VirtualDJ",
+    )
+    expect(screen.queryByTestId('cues-single-only')).toBeNull()
+    fireEvent.keyDown(document.body, { key: 'k', ctrlKey: true })
+    await screen.findByTestId('palette-input')
+    expect(document.getElementById('palette-option-cues-auto-mark-selected')).toBeNull()
   })
 })
 

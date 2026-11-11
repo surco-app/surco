@@ -1161,6 +1161,7 @@
         "acceptSave_other": "Accept the {{count}} suggestions and save"
       },
       "batch": {
+        "readOnly": "Surco only reads the cues of some programs in this selection. To change them, do it in each program",
         "mark_one": "Auto mark {{count}} track",
         "mark_other": "Auto mark {{count}} tracks",
         "withProposals": "With proposals",

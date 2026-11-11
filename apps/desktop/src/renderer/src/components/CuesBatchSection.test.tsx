@@ -399,3 +399,38 @@ describe('Cues over several selected tracks', () => {
     ])
   })
 })
+
+describe('Cues over several selected tracks Surco can only read', () => {
+  const VDJ = [
+    { contentId: 'virtualdj:/m/a.wav', path: '/m/a.wav', label: 'Maniac' },
+    { contentId: 'virtualdj:/m/b.wav', path: '/m/b.wav', label: 'Summer Sky' },
+  ]
+
+  it('keeps Auto mark in sight but disabled on VirtualDJ rows, saying why, since the save would be refused', () => {
+    const { onMark } = setup({}, VDJ)
+    const mark = screen.getByTestId('cues-auto-mark-all')
+    expect(mark).toBeDisabled()
+    fireEvent.click(mark)
+    expect(onMark).not.toHaveBeenCalled()
+    expect(screen.getByTestId('cues-batch-read-only')).toHaveTextContent(
+      i18n.t('editor.cues.virtualdj.readOnly'),
+    )
+  })
+
+  it('disables Auto mark for a selection that mixes VirtualDJ and rekordbox rows, since one save carries them all', () => {
+    setup({}, [TARGETS[0], VDJ[0]])
+    expect(screen.getByTestId('cues-auto-mark-all')).toBeDisabled()
+    expect(screen.getByTestId('cues-batch-read-only')).toHaveTextContent(
+      i18n.t('editor.cues.virtualdj.readOnly'),
+    )
+  })
+
+  it('leaves Auto mark enabled on Serato rows, which Surco saves', () => {
+    setup({}, [
+      { contentId: 'serato:/m/a.mp3', path: '/m/a.mp3', label: 'A' },
+      { contentId: 'serato:/m/b.mp3', path: '/m/b.mp3', label: 'B' },
+    ])
+    expect(screen.getByTestId('cues-auto-mark-all')).toBeEnabled()
+    expect(screen.queryByTestId('cues-batch-read-only')).toBeNull()
+  })
+})

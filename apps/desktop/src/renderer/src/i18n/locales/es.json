@@ -1161,6 +1161,7 @@
         "acceptSave_other": "Aceptar las {{count}} propuestas y guardar"
       },
       "batch": {
+        "readOnly": "Surco solo lee los cues de algunos programas de esta selección. Para cambiarlos, hazlo en cada programa",
         "mark_one": "Auto marcar {{count}} pista",
         "mark_other": "Auto marcar {{count}} pistas",
         "withProposals": "Con propuestas",
