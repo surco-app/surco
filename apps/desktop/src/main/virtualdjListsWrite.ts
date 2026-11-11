@@ -46,6 +46,7 @@ interface Snapshot {
   files: Map<string, Buffer>
   dirs: Set<string>
   stamps: Map<string, FileStamp | null>
+  temps: string[]
 }
 
 interface ListsDraft {
@@ -56,7 +57,7 @@ interface ListsDraft {
 }
 
 function snapshotOf(root: string): Snapshot {
-  const snap: Snapshot = { files: new Map(), dirs: new Set(), stamps: new Map() }
+  const snap: Snapshot = { files: new Map(), dirs: new Set(), stamps: new Map(), temps: [] }
   const walk = (dir: string): void => {
     let entries: Dirent[]
     try {
@@ -68,7 +69,8 @@ function snapshotOf(root: string): Snapshot {
     for (const entry of entries) {
       const path = join(dir, entry.name)
       if (entry.isDirectory()) walk(path)
-      else if (entry.isFile() && !entry.name.endsWith(WRITING)) {
+      else if (entry.name.endsWith(WRITING)) snap.temps.push(path)
+      else if (entry.isFile()) {
         snap.stamps.set(path, fileStampOf(path))
         snap.files.set(path, readFileSync(path))
       }
@@ -496,11 +498,11 @@ async function commitLists(d: ListsDraft, deps: VirtualdjCommitDeps): Promise<Vi
     .filter((dir) => !d.dirs.has(dir))
     .sort((a, b) => b.length - a.length)
   if (writes.length + removals.length + newDirs.length + goneDirs.length === 0) return 'nothing'
-  for (const [file] of writes)
+  for (const tmp of new Set([...d.disk.temps, ...writes.map(([file]) => `${file}${WRITING}`)]))
     try {
-      rmSync(`${file}${WRITING}`, { force: true })
+      rmSync(tmp, { force: true })
     } catch (e) {
-      log.warn(`VirtualDJ temp ${file}${WRITING} not removed`, e)
+      log.warn(`VirtualDJ temp ${tmp} not removed`, e)
     }
   if (await deps.virtualdjOpen()) return 'cancelled'
   try {

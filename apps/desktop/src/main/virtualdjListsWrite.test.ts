@@ -188,6 +188,14 @@ describe('applyVirtualdjListOps', () => {
     expect(lib.text('order')).toBe('Surco prueba\nSurco escrita\n')
   })
 
+  it('deletes a folder even when a temp Surco left there after a crash sits inside it', async () => {
+    const lib = library()
+    writeFileSync(lib.at('Carpeta.subfolders/Dentro.vdjfolder.surco-write'), 'half')
+    const result = await lib.run({ kind: 'delete', playlistId: 'Carpeta' })
+    expect(result).toMatchObject({ ok: true, outcomes: [{ applied: true }] })
+    expect(existsSync(lib.at('Carpeta.subfolders'))).toBe(false)
+  })
+
   it('adds a track at the end with the next idx, keeps the rows already there and counts what it skipped', async () => {
     const lib = library()
     const c = lib.track('c.mp3', 'abcd')
