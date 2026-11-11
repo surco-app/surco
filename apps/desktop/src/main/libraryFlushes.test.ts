@@ -573,6 +573,34 @@ describe('rekordbox writes while the queue is held after a write left the collec
     }
   })
 
+  it('hands VirtualDJ the review only when its sync is on, and reports nothing for it without a VirtualDJ queue', async () => {
+    const update = [{ path: '/m/a.flac', fields: { title: { from: 'a', to: 'b' } } }]
+    const virtualdj = {
+      roots: () => [],
+      queue: { enqueue: vi.fn(), apply: vi.fn(), drop: vi.fn(), queuedOps: vi.fn(() => []) },
+      isRunning: async () => false,
+      onWaiting: vi.fn(),
+      onApplied: vi.fn(),
+    }
+    const sync = (withQueue: boolean) =>
+      syncTagsInLibraries(
+        update,
+        held(),
+        sessions,
+        vi.fn(),
+        undefined,
+        withQueue ? virtualdj : undefined,
+      )
+    expect((await sync(false)).virtualdj).toEqual({ outcome: 'nothing' })
+    expect((await sync(true)).virtualdj).toEqual({ outcome: 'nothing' })
+    Object.assign(SETTINGS, { syncVirtualdj: true })
+    try {
+      expect((await sync(true)).virtualdj).toEqual({ outcome: 'missing' })
+    } finally {
+      Object.assign(SETTINGS, { syncVirtualdj: false })
+    }
+  })
+
   it('a review with nothing to sync begins no momento, so it cannot end the one in progress', async () => {
     const begin = vi.fn()
     await syncTagsInLibraries(

@@ -2,7 +2,7 @@ import type { BatchResult, OpOutcome, QueueOp, TrackOp } from './rekordboxQueueO
 import { applyVirtualdjCueOp } from './virtualdjCuesWrite'
 import { applyVirtualdjDraftOps, type VirtualdjCommitDeps } from './virtualdjLibraryWrite'
 import { applyVirtualdjListOps } from './virtualdjListsWrite'
-import { applyVirtualdjTrack } from './virtualdjTrackWrite'
+import { applyVirtualdjTags, applyVirtualdjTrack } from './virtualdjTrackWrite'
 
 type Deps = VirtualdjCommitDeps & {
   ensureClosed: () => Promise<boolean>
@@ -28,7 +28,9 @@ export async function applyVirtualdjBatch(ops: QueueOp[], deps: Deps): Promise<B
     first = await applyVirtualdjDraftOps(database, deps, (draft, op, roots) =>
       op.kind === 'track'
         ? applyVirtualdjTrack(draft, op, roots)
-        : applyVirtualdjCueOp(draft, op, roots),
+        : op.kind === 'tags'
+          ? applyVirtualdjTags(draft, op, roots)
+          : applyVirtualdjCueOp(draft, op, roots),
     )
   if (!first.ok) return first
   const placed = new Map(first.outcomes.map((o) => [o.id, o]))

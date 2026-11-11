@@ -168,6 +168,8 @@ export const VIRTUALDJ_QUEUE_WORDS: QueueWords = {
     'not-added': 'virtualdjQueue.notice.notAdded',
     'playlist-changed': 'virtualdjQueue.notice.playlistChanged',
     'playlist-gone': 'virtualdjQueue.notice.playlistGone',
+    'tags-not-in-library': 'virtualdjQueue.notice.tagsNotInLibrary',
+    'tags-changed': 'virtualdjQueue.notice.tagsChanged',
   },
   parts: {
     collection: 'virtualdjQueue.part.collection',

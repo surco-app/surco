@@ -1758,6 +1758,13 @@ function registerIpc(): void {
         onWaiting: seratoCueQueueWatch.poke,
         onApplied: programQueues.serato.announceApplied,
       },
+      {
+        roots: virtualdjRoots,
+        queue: virtualdjCueQueue,
+        isRunning: DJ_PROCESSES.virtualdj.isRunning,
+        onWaiting: virtualdjCueQueueWatch.poke,
+        onApplied: programQueues.virtualdj.announceApplied,
+      },
     ),
   )
 

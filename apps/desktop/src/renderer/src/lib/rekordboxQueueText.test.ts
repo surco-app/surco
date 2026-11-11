@@ -501,6 +501,12 @@ describe('VirtualDJ queue text', () => {
     expect(say({ code: 'source-in-virtualdj', track: 'Pray', playlist: 'Sets' })).toBe(
       'Pray stays in VirtualDJ with the original file and does not go in the list “Sets”',
     )
+    expect(say({ code: 'tags-not-in-library', track: 'Pray' })).toBe(
+      'Pray is no longer in VirtualDJ and its tags were not changed',
+    )
+    expect(say({ code: 'tags-changed', track: 'Pray' })).toBe(
+      'Pray changed in VirtualDJ and its tags were not changed',
+    )
     expect(partText(tr, { kind: 'collection' }, VIRTUALDJ_QUEUE_WORDS)).toBe('added to the library')
     expect(partText(tr, { kind: 'playlists', names: [] }, VIRTUALDJ_QUEUE_WORDS)).toBe(
       'out of its lists',

@@ -67,6 +67,7 @@ import { flushTraktorSync } from './traktorSyncFlush'
 import { sourceRoot } from './usbExport'
 import { type FlushOutcome, type TraktorWrite, traktorPatchKey } from './verifyRegistry'
 import type { VirtualdjRoot } from './virtualdjLibrary'
+import { syncVirtualdjTags } from './virtualdjTagSync'
 import { virtualdjLibraryHas } from './virtualdjTrackWrite'
 
 export type SyncBlockedKey = 'traktorSyncBlocked' | 'rekordboxSyncBlocked' | 'engineSyncBlocked'
@@ -758,6 +759,7 @@ export function syncTagsInLibraries(
   sessions: Sessions,
   beginMoment: () => void,
   serato?: Omit<Parameters<typeof syncSeratoTags>[1], 'enabled'>,
+  virtualdj?: Omit<Parameters<typeof syncVirtualdjTags>[1], 'enabled'>,
 ) {
   const withRealPath = updates.map((u) => ({ ...u, realPath: (p: string) => realpathSync(p) }))
   return syncLibraryTags({
@@ -803,7 +805,10 @@ export function syncTagsInLibraries(
       serato
         ? syncSeratoTags(updates, { ...serato, enabled: getSettings().syncSerato })
         : { outcome: 'nothing' },
-    virtualdj: async () => ({ outcome: 'nothing' }),
+    virtualdj: async () =>
+      virtualdj
+        ? syncVirtualdjTags(updates, { ...virtualdj, enabled: getSettings().syncVirtualdj })
+        : { outcome: 'nothing' },
     warn: (library, error) => log.warn(`library:syncTags ${library} failed`, error),
     ...(updates.length > 0 && { begin: beginMoment }),
   })

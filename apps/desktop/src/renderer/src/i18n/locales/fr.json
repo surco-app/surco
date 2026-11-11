@@ -3406,7 +3406,9 @@
       "notAdded": "{{track}} n’a pas été ajouté à VirtualDJ",
       "playlistChanged": "{{track}} n’a pas été modifié dans {{playlist}}. Il a changé dans VirtualDJ",
       "playlistGone": "{{playlist}} n’est plus dans VirtualDJ. {{track}} n’a pas été ajouté",
-      "sourceInVirtualdj": "{{track}} reste dans VirtualDJ avec le fichier d’origine et ne va pas dans la liste « {{playlist}} »"
+      "sourceInVirtualdj": "{{track}} reste dans VirtualDJ avec le fichier d’origine et ne va pas dans la liste « {{playlist}} »",
+      "tagsNotInLibrary": "{{track}} n’est plus dans VirtualDJ et ses tags n’ont pas été modifiés",
+      "tagsChanged": "{{track}} a changé dans VirtualDJ et ses tags n’ont pas été modifiés"
     }
   },
   "cueWave": {
