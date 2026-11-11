@@ -80,13 +80,16 @@ function Harness({
     cueFlowToSerato: true,
     cueLearnFromEdits: true,
   })
+  const [client] = useState(() => new QueryClient())
   last = draft
   return (
-    <CuesTab
-      synced={draft as unknown as SyncedDraft}
-      patch={(key, value) => setDraft((d) => ({ ...d, [key]: value }))}
-      rekordboxCollection={collection}
-    />
+    <QueryClientProvider client={client}>
+      <CuesTab
+        synced={draft as unknown as SyncedDraft}
+        patch={(key, value) => setDraft((d) => ({ ...d, [key]: value }))}
+        rekordboxCollection={collection}
+      />
+    </QueryClientProvider>
   )
 }
 
@@ -181,6 +184,34 @@ describe('CuesTab', () => {
     render(<Harness />)
     await screen.findByTestId('cue-flow-mark-point')
     expect(screen.queryByTestId('cue-flow-library-note')).not.toBeInTheDocument()
+  })
+
+  it('shows a destination as missing only for the programs that are not installed', async () => {
+    installApi({
+      dj: djReads({
+        traktor: { available: async () => false },
+        engine: { available: async () => true },
+        serato: { available: async () => true },
+      }),
+    })
+    render(<Harness />)
+    expect(await screen.findByTestId('settings-cue-flow-to-traktor-missing')).toBeInTheDocument()
+    expect(screen.queryByTestId('settings-cue-flow-to-engine-missing')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('settings-cue-flow-to-serato-missing')).not.toBeInTheDocument()
+    cleanup()
+    installApi({
+      dj: djReads({
+        traktor: { available: async () => true },
+        engine: { available: async () => false },
+        serato: { available: async () => false },
+      }),
+    })
+    render(<Harness />)
+    expect(await screen.findByTestId('settings-cue-flow-to-engine-missing')).toBeInTheDocument()
+    await waitFor(() =>
+      expect(screen.queryByTestId('settings-cue-flow-to-traktor-missing')).not.toBeInTheDocument(),
+    )
+    expect(screen.getByTestId('settings-cue-flow-to-serato-missing')).toBeInTheDocument()
   })
 
   it('marks the point with a CALL by default and lets a DJ who does not mark it turn that off, the preview following', () => {

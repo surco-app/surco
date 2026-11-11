@@ -34,10 +34,6 @@ export function useLibraryAvailable(library: PlaylistLibrary): boolean {
   return data
 }
 
-export function useRekordboxAvailable(): boolean {
-  return useLibraryAvailable('rekordbox')
-}
-
 export function useRekordboxPlaylistTree(
   enabled: boolean,
   library: PlaylistLibrary = 'rekordbox',

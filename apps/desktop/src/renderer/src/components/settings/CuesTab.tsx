@@ -15,6 +15,7 @@ import { CUE_GRID_TOLERANCE, normalizeCueGridTolerance } from '../../../../share
 import { CUE_JUMP_BARS } from '../../../../shared/cueJump'
 import { CUE_QUANTIZE } from '../../../../shared/cueQuantize'
 import { DJ_PROGRAMS, type DjProgram } from '../../../../shared/djProgram'
+import { useProgramsAvailable } from '../../hooks/useProgramsAvailable'
 import { flowName } from '../../lib/cueFlowName'
 import { FLOW_TO } from '../../lib/cueTwins'
 import { LIBRARY_NAME } from '../../lib/reviewLibraries'
@@ -76,20 +77,13 @@ export function CuesTab({
   }, [renaming])
   // The rules serve every library, but CALLs only exist in rekordbox and Traktor paints a
   // cue by its type: where Engine DJ or Traktor is installed, the tab says what reaches them.
-  const [traktorFound, setTraktorFound] = useState(false)
-  const [engineFound, setEngineFound] = useState(false)
-  const [seratoFound, setSeratoFound] = useState(false)
-  useEffect(() => {
-    void window.api.dj.available('traktor').then(setTraktorFound, () => {})
-    void window.api.dj.available('engine').then(setEngineFound, () => {})
-    void window.api.dj.available('serato').then(setSeratoFound, () => {})
-  }, [])
-  const foundBy: Record<DjProgram, boolean> = {
-    rekordbox: rekordboxCollection !== '',
-    traktor: traktorFound,
-    engine: engineFound,
-    serato: seratoFound,
-  }
+  const available = useProgramsAvailable()
+  const foundBy = Object.fromEntries(DJ_PROGRAMS.map((p) => [p, available[p] ?? false])) as Record<
+    DjProgram,
+    boolean
+  >
+  foundBy.rekordbox = rekordboxCollection !== ''
+  const { engine: engineFound, traktor: traktorFound, serato: seratoFound } = foundBy
   const flows = synced.cueFlows
   const flow = flows.find((f) => f.id === current) ?? activeCueFlow(synced)
   const put = (next: CueFlow) =>

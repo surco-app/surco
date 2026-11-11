@@ -1,7 +1,17 @@
 // @vitest-environment jsdom
 import { BUNDLED_FLOWS } from '../../../shared/cueFlows'
 import '@testing-library/jest-dom/vitest'
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render as renderPlain,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react'
+import type { ReactElement } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // SettingsModal reads window.api.platform at module load, so stub it before the
@@ -28,6 +38,10 @@ import i18n from '../i18n'
 import { FIELD_DEFS } from '../lib/fields'
 import { SETTINGS_SEARCH_INDEX } from '../lib/settingsSearchIndex'
 import { SETTINGS_TABS, type SettingsTab } from '../lib/settingsTabs'
+
+const render = (ui: ReactElement) =>
+  renderPlain(<QueryClientProvider client={new QueryClient()}>{ui}</QueryClientProvider>)
+
 import { DONATE_URL, SettingsModal } from './SettingsModal'
 
 afterEach(cleanup)
@@ -1492,9 +1506,7 @@ describe('SettingsModal search tab layout', () => {
   it('puts no line under a title that only repeats it', () => {
     openSearch(['discogs'])
     expect(screen.queryByText('Catalogs the editor searches.')).toBeNull()
-    expect(
-      screen.queryByText('Limit Discogs and MusicBrainz results to these formats.'),
-    ).toBeNull()
+    expect(screen.queryByText('Limit Discogs and MusicBrainz results to these formats.')).toBeNull()
     expect(screen.queryByText(/How many search results to show/)).toBeNull()
     expect(screen.getByText(i18n.t('settings.maxResultsHint'))).toBeInTheDocument()
   })

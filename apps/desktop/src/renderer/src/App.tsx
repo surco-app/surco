@@ -22,6 +22,7 @@ import {
   CUE_PROGRAMS,
   type CueProgram,
   LIBRARY_PROGRAMS,
+  type LibraryProgram,
   programOf,
   WRITABLE_PROGRAMS,
   type WritableProgram,
@@ -120,9 +121,10 @@ import { useMetaUndo } from './hooks/useMetaUndo'
 import { type SettingsTab, useOverlays } from './hooks/useOverlays'
 import { usePlayer } from './hooks/usePlayer'
 import { usePlaylistReadPriority } from './hooks/usePlaylistReadPriority'
+import { useProgramsAvailable } from './hooks/useProgramsAvailable'
 import { useQualityAnalysis } from './hooks/useQualityAnalysis'
 import { useRekordboxEdits } from './hooks/useRekordboxEdits'
-import { useLibraryAvailable, useOfferPlaylistFields } from './hooks/useRekordboxPlaylists'
+import { useOfferPlaylistFields } from './hooks/useRekordboxPlaylists'
 import { PROGRAM_QUEUES, useRekordboxQueue } from './hooks/useRekordboxQueue'
 import { useRetireSuperseded } from './hooks/useRetireSuperseded'
 import { useSessionPersistence } from './hooks/useSessionPersistence'
@@ -455,12 +457,10 @@ export default function App(): React.JSX.Element {
     onLoadError: () => setAppError({ kind: 'settingsLoad' }),
     onSaveError: () => setAppError({ kind: 'settingsSave' }),
   })
-  const playlistLibrariesFound = {
-    rekordbox: useLibraryAvailable('rekordbox'),
-    traktor: useLibraryAvailable('traktor'),
-    engine: useLibraryAvailable('engine'),
-    serato: useLibraryAvailable('serato'),
-  }
+  const programsAvailable = useProgramsAvailable()
+  const playlistLibrariesFound = Object.fromEntries(
+    LIBRARY_PROGRAMS.map((l) => [l, programsAvailable[l] ?? false]),
+  ) as Record<LibraryProgram, boolean>
   const playlistLibraries = LIBRARY_PROGRAMS.filter((l) => playlistLibrariesFound[l])
   const saveSettingsStable = useStableCallback(saveSettings)
   useOfferPlaylistFields(
