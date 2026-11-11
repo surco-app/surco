@@ -123,11 +123,19 @@ describe('PasteTracklistModal review step', () => {
     expect(summary).toHaveTextContent('2 dudosas')
     expect(summary).toHaveTextContent('1 parecida')
     expect(screen.getByTestId('paste-tracklist-hint')).toHaveTextContent(
-      '5 de 19 están en la colección. Las otras 14 se ignoran.',
+      /^14 líneas no están en la colección y se ignoran\.$/,
     )
     expect(screen.getByTestId('paste-tracklist-rules')).toHaveTextContent('Dudosa')
     expect(screen.getAllByTestId(/^paste-tracklist-row-\d+$/)).toHaveLength(5)
     expect(screen.getByTestId('paste-tracklist-add')).toHaveTextContent('Añadir 4 pistas')
+  })
+
+  it('names the count only on the Add button, so the footer does not repeat it', async () => {
+    setup()
+    paste(SET1)
+    await review()
+    expect(screen.getByTestId('paste-tracklist-add')).toHaveTextContent('Añadir 4 pistas')
+    expect(screen.queryByText(/Se añadirán/)).toBeNull()
   })
 
   it('leaves a similar track out until the user takes it, and counts it then', async () => {
