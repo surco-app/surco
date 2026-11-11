@@ -2045,6 +2045,7 @@
       "markPoint": "Einen CALL an deine Markierung setzen",
       "traktorColours": "In Traktor erscheinen diese Cues blau, denn Traktor färbt jeden Cue nach seinem Typ",
       "callsOnlyRekordbox": "CALLs gibt es nur in rekordbox. Engine DJ, Traktor, Serato und VirtualDJ bekommen nur die Hot Cues",
+      "callsOnlyRekordboxWin": "CALLs gibt es nur in rekordbox. Engine DJ, Traktor und Serato bekommen nur die Hot Cues",
       "targets": {
         "title": "Abläufe auch setzen in",
         "hint": "Das Programm, in dem du markierst, bekommt die Cues immer. Surco sucht denselben Track in den anderen über seine Datei und setzt den Ablauf auf das Raster und die Cues, die er dort schon hat. Cues, die du von Hand setzt, bleiben in dem Programm, in dem du sie setzt.",

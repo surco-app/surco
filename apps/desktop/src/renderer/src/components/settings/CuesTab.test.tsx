@@ -188,6 +188,17 @@ describe('CuesTab', () => {
     expect(screen.queryByTestId('cue-flow-library-note')).not.toBeInTheDocument()
   })
 
+  it('leaves VirtualDJ out of the hot cues note on Windows, where Surco does not offer VirtualDJ', async () => {
+    installApi({
+      platform: 'win32',
+      dj: djReads({ engine: { available: async () => true } }),
+    })
+    render(<Harness />)
+    expect(await screen.findByTestId('cue-flow-library-note')).toHaveTextContent(
+      /^CALLs only exist in rekordbox\. Engine DJ, Traktor and Serato get the hot cues only$/,
+    )
+  })
+
   it('has no VirtualDJ destination on Windows, where Surco does not offer VirtualDJ yet', async () => {
     installApi({ platform: 'win32' })
     render(<Harness />)

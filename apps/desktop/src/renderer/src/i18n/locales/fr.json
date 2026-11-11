@@ -2045,6 +2045,7 @@
       "markPoint": "Mettre un CALL là où tu marques",
       "traktorColours": "Dans Traktor ces cues s’affichent en bleu, car Traktor colore chaque cue selon son type",
       "callsOnlyRekordbox": "Les CALL n’existent que dans rekordbox. Engine DJ, Traktor, Serato et VirtualDJ ne reçoivent que les hot cues",
+      "callsOnlyRekordboxWin": "Les CALL n’existent que dans rekordbox. Engine DJ, Traktor et Serato ne reçoivent que les hot cues",
       "targets": {
         "title": "Appliquer aussi les flux dans",
         "hint": "Le logiciel dans lequel tu marques reçoit toujours les cues. Surco cherche le même morceau dans les autres par son fichier et y place le flux avec la grille et les cues qu’il a déjà. Les cues placés à la main restent dans le logiciel où tu les places.",

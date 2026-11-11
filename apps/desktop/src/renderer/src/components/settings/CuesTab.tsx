@@ -19,7 +19,7 @@ import { useProgramsAvailable } from '../../hooks/useProgramsAvailable'
 import { flowName } from '../../lib/cueFlowName'
 import { CUE_PROGRAMS } from '../../lib/cuePrograms'
 import { FLOW_TO } from '../../lib/cueTwins'
-import { offeredHere } from '../../lib/platform'
+import { isWindows, offeredHere } from '../../lib/platform'
 import { LIBRARY_NAME } from '../../lib/reviewLibraries'
 import type { SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
@@ -413,7 +413,11 @@ export function CuesTab({
         {hotCuesOnlyFound && (
           <SettingsHint data-testid="cue-flow-library-note">
             {[
-              tr('settings.cueFlows.callsOnlyRekordbox'),
+              tr(
+                isWindows()
+                  ? 'settings.cueFlows.callsOnlyRekordboxWin'
+                  : 'settings.cueFlows.callsOnlyRekordbox',
+              ),
               ...(foundBy.traktor ? [tr('settings.cueFlows.traktorColours')] : []),
             ].join('. ')}
           </SettingsHint>

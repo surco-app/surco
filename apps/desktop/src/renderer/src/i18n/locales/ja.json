@@ -2045,6 +2045,7 @@
       "markPoint": "マークした位置に CALL を置く",
       "traktorColours": "Traktor はキューの種類ごとに色を付けるため、これらのキューは青で表示されます",
       "callsOnlyRekordbox": "CALL は rekordbox にのみ存在します。Engine DJ、Traktor、Serato、VirtualDJ にはホットキューのみが設定されます",
+      "callsOnlyRekordboxWin": "CALL は rekordbox にのみ存在します。Engine DJ、Traktor、Serato にはホットキューのみが設定されます",
       "targets": {
         "title": "フローを次にも配置",
         "hint": "マークしたプログラムには常にキューが設定されます。Surco はファイルをもとに他のプログラムで同じトラックを見つけ、そこにあるグリッドとキューに合わせてフローを配置します。手動で置いたキューは、置いたプログラムにのみ残ります。",
