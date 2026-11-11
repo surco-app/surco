@@ -1171,6 +1171,81 @@ describe('App Serato cues', () => {
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
   }
 
+  async function renameInSerato(nodeId: string, name: string, after: SourceNode[]) {
+    let tree: SourceNode[] = [
+      {
+        id: 'Sets',
+        name: 'Sets',
+        kind: 'playlist',
+        count: 0,
+        children: [{ id: 'Sets%%Friday', name: 'Friday', kind: 'playlist', count: 2 }],
+      },
+    ]
+    const playlist = vi
+      .fn<ProgramReads['playlist']>()
+      .mockResolvedValue([
+        { path: '/m/a.wav', separator: false, meta: {}, contentId: 'serato:/m/a.wav' },
+      ])
+    const editPlaylist = vi.fn<ProgramReads['editPlaylist']>(async () => {
+      tree = after
+      return { applied: true }
+    })
+    openSerato({
+      dj: djReads({
+        serato: { tree: vi.fn<ProgramReads['tree']>(async () => tree), playlist, editPlaylist },
+      }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-serato'))
+    fireEvent.click(await screen.findByTestId('source-node-expand-Sets'))
+    fireEvent.click(await screen.findByTestId('source-node-Sets%%Friday'))
+    await waitFor(() => expect(playlist).toHaveBeenCalledWith('Sets%%Friday'))
+    fireEvent.contextMenu(screen.getByTestId(`source-node-${nodeId}`))
+    fireEvent.click(screen.getByTestId('source-tree-rename'))
+    const field = await screen.findByTestId('source-tree-rename-field')
+    fireEvent.change(field, { target: { value: name } })
+    fireEvent.keyDown(field, { key: 'Enter' })
+    await waitFor(() => expect(editPlaylist).toHaveBeenCalled())
+    return playlist
+  }
+
+  it('keeps the open Serato subcrate open under its new name once it is renamed', async () => {
+    const playlist = await renameInSerato('Sets%%Friday', 'Sábado', [
+      {
+        id: 'Sets',
+        name: 'Sets',
+        kind: 'playlist',
+        count: 0,
+        children: [{ id: 'Sets%%Sábado', name: 'Sábado', kind: 'playlist', count: 2 }],
+      },
+    ])
+    await waitFor(() =>
+      expect(screen.getByTestId('source-node-Sets%%Sábado')).toHaveAttribute(
+        'aria-current',
+        'true',
+      ),
+    )
+    expect(playlist).toHaveBeenCalledWith('Sets%%Sábado')
+  })
+
+  it('keeps the open Serato subcrate open when the crate holding it is renamed', async () => {
+    await renameInSerato('Sets', 'Gigs', [
+      {
+        id: 'Gigs',
+        name: 'Gigs',
+        kind: 'playlist',
+        count: 0,
+        children: [{ id: 'Gigs%%Friday', name: 'Friday', kind: 'playlist', count: 2 }],
+      },
+    ])
+    await waitFor(() =>
+      expect(screen.getByTestId('source-node-Gigs%%Friday')).toHaveAttribute(
+        'aria-current',
+        'true',
+      ),
+    )
+  })
+
   it('opens the cue editor on a row of a Serato crate in Serato’s words, and keeps the track from being converted', async () => {
     const read = vi.fn<Api['cues']['trackCues']>().mockResolvedValue({
       contentId: 'serato:/m/b.wav',

@@ -420,6 +420,20 @@ describe('reopenedPlaylist', () => {
     })
   })
 
+  it('keeps open a Serato subcrate whose parent crate moved, joined by %%', () => {
+    expect(
+      reopenedPlaylist(
+        { id: 'Sets%%Deep%%Friday', name: 'Friday', folders: ['Sets', 'Deep'] },
+        { id: 'Sets', name: 'Sets', kind: 'playlist', count: 0 },
+        { id: 'Old%%Sets', name: 'Sets', folders: ['Old'] },
+        '%%',
+      ),
+    ).toEqual({
+      node: { id: 'Old%%Sets%%Deep%%Friday', name: 'Friday', kind: 'playlist', count: 0 },
+      folders: ['Old', 'Sets', 'Deep'],
+    })
+  })
+
   it('leaves the open list alone when the moved node is not it or above it', () => {
     expect(
       reopenedPlaylist(
