@@ -160,7 +160,6 @@ export function FilterPanes({
   testid,
   sections,
   sectionsLabel,
-  shown,
   clearLabel,
   canClear,
   onClear,
@@ -175,7 +174,6 @@ export function FilterPanes({
   lastSection?: string | null
   onSectionShown?: (key: string) => void
   sectionsLabel: string
-  shown: string
   clearLabel: string
   canClear: boolean
   onClear: () => void
@@ -433,8 +431,7 @@ export function FilterPanes({
           </div>
         </div>
       </div>
-      <div className="flex items-center justify-between gap-2 border-t border-[var(--color-line)] py-1 pr-1 pl-3 text-[11px] tabular-nums text-fg-faint">
-        <span data-testid={`${testid}-shown`}>{shown}</span>
+      <div className="flex items-center justify-end gap-2 border-t border-[var(--color-line)] py-1 pr-1 pl-3 text-[11px] tabular-nums text-fg-faint">
         <button
           type="button"
           data-testid={`${testid}-clear`}

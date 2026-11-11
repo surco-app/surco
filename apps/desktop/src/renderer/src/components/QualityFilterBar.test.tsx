@@ -372,7 +372,9 @@ describe('QualityFilterBar sections', () => {
     expect(onWindowKey).not.toHaveBeenCalled()
   })
 
-  it('says how many tracks the filters leave and clears them all from the foot', () => {
+  // The right-edge counter already says how many tracks survive, so the foot holds only the
+  // way out: repeating "7 of 498 tracks" there said the same thing twice.
+  it('clears every filter from the foot without restating the surviving count', () => {
     const { onChange } = renderBar({
       value: sel({ quality: 'good', format: 'WAV' }),
       formats: [{ format: 'WAV', count: 5 }],
@@ -380,7 +382,8 @@ describe('QualityFilterBar sections', () => {
       visibleCount: 7,
     })
     openMenu()
-    expect(screen.getByTestId('quality-filter-shown')).toHaveTextContent('7 of 498 tracks')
+    expect(screen.queryByTestId('quality-filter-shown')).toBeNull()
+    expect(screen.getByTestId('quality-filter-menu')).not.toHaveTextContent('7 of 498 tracks')
     fireEvent.click(screen.getByTestId('quality-filter-clear'))
     expect(onChange).toHaveBeenCalledWith(sel())
     expect(screen.queryByTestId('quality-filter-menu')).toBeNull()

@@ -295,7 +295,6 @@
         "repeats": "重複"
       },
       "clear": "フィルターを解除",
-      "shown": "{{total}} トラック中 {{visible}} トラック",
       "oneFormat": "すべてのトラックが同じ形式です",
       "remove": "{{filter}} を解除",
       "searching": "「{{query}}」を含むフィルター",

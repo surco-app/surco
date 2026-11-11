@@ -295,7 +295,6 @@
         "repeats": "Doublons"
       },
       "clear": "Effacer les filtres",
-      "shown": "{{visible}} sur {{total}} morceaux",
       "oneFormat": "Tous les morceaux ont le même format",
       "remove": "Retirer {{filter}}",
       "searching": "Filtres contenant « {{query}} »",

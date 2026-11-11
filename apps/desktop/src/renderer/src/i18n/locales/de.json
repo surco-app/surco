@@ -295,7 +295,6 @@
         "repeats": "Doppelte"
       },
       "clear": "Filter entfernen",
-      "shown": "{{visible}} von {{total}} Tracks",
       "oneFormat": "Alle Tracks haben dasselbe Format",
       "remove": "{{filter}} entfernen",
       "searching": "Filter mit „{{query}}“",

@@ -295,7 +295,6 @@
         "repeats": "Repetidas"
       },
       "clear": "Quitar filtros",
-      "shown": "{{visible}} de {{total}} pistas",
       "oneFormat": "Todas las pistas tienen el mismo formato",
       "remove": "Quitar {{filter}}",
       "searching": "Filtros con «{{query}}»",
