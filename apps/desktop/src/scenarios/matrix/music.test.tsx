@@ -9,6 +9,10 @@ vi.mock('electron', async () => (await import('../electronFake')).electronFake()
 vi.mock('../../main/rekordboxProcess', () => ({ isRekordboxRunning: vi.fn(async () => false) }))
 vi.mock('../../main/engineProcess', () => ({ isEngineDjRunning: vi.fn(async () => false) }))
 vi.mock('../../main/traktorProcess', () => ({ isTraktorRunning: vi.fn(async () => false) }))
+vi.mock('../../main/virtualdjProcess', () => ({
+  isVirtualdjRunning: vi.fn(async () => false),
+  waitForVirtualdjExit: vi.fn(async () => true),
+}))
 
 import {
   appleMusicEntryLocation,

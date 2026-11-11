@@ -712,6 +712,7 @@ export async function copyRealLibraries(
         rekordbox: rb?.playlists ?? [],
         engine: en?.playlists ?? [],
         traktor: tk?.playlists ?? [],
+        virtualdj: [],
         music: [],
       },
       baseline: {
@@ -754,6 +755,7 @@ export async function copyRealLibraries(
         rekordbox: rekordboxDb ? sha1Of(rekordboxDb) : null,
         engine: engineDir ? sha1Of(engineDbPath(engineDir)) : null,
         traktor: traktorNml ? sha1Of(traktorNml) : null,
+        virtualdj: null,
       },
       bystanderRows: bystanderRows(libraries, other),
       traktorEntries: Object.fromEntries(

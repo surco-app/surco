@@ -75,6 +75,7 @@ const PROGRAMS_SHORT: Record<Programs, string> = {
   rekordbox: 'rekordbox',
   engine: 'Engine',
   traktor: 'Traktor',
+  virtualdj: 'VirtualDJ',
   music: 'Music',
   all: 'todos',
 }

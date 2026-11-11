@@ -5,6 +5,7 @@ import { engineDbPath } from '../../main/enginePlaylistsFixture'
 import { isEngineDjRunning } from '../../main/engineProcess'
 import { isRekordboxRunning } from '../../main/rekordboxProcess'
 import { isTraktorRunning } from '../../main/traktorProcess'
+import { isVirtualdjRunning } from '../../main/virtualdjProcess'
 import { fromDestination } from '../../renderer/src/lib/destination'
 import { supersededFile } from '../../renderer/src/lib/supersededFile'
 import type { OutputFormat, Settings } from '../../shared/types'
@@ -13,7 +14,13 @@ import { music } from '../fakeMusic'
 import { scenarioDir } from '../fixtures'
 import { type ConflictChoice, openSurco, type Sabotage, type Scenario } from '../harness'
 import { type Cell, type CellGroup, type Origin, qualitySettings, type SabotageId } from './cells'
-import { buildLibraries, type LibrarySet, type SeededTrack, syncedPrograms } from './libraries'
+import {
+  buildLibraries,
+  type LibrarySet,
+  type SeededTrack,
+  syncedPrograms,
+  virtualdjDatabaseOf,
+} from './libraries'
 import {
   type Expected,
   fileInvariants,
@@ -121,6 +128,7 @@ function unreadableOnce(set: LibrarySet, cell: Cell): { sabotage: Sabotage; rest
     if (program === 'rekordbox') return set.rekordboxDb
     if (program === 'engine') return set.engineDir && engineDbPath(set.engineDir)
     if (program === 'traktor') return set.traktorNml
+    if (program === 'virtualdj') return set.virtualdjDir && virtualdjDatabaseOf(set.virtualdjDir)
     throw new Error('scenario: a first Music read that fails is not modelled')
   })
   const away = (file: string) => `${file}.lejos`
@@ -169,6 +177,7 @@ function programsOpen(open: boolean): void {
   vi.mocked(isRekordboxRunning).mockResolvedValue(open)
   vi.mocked(isEngineDjRunning).mockResolvedValue(open)
   vi.mocked(isTraktorRunning).mockResolvedValue(open)
+  vi.mocked(isVirtualdjRunning).mockResolvedValue(open)
 }
 
 export function witnessesOf(root: string, sources: SourceTrack[]): SourceTrack[] {
@@ -263,6 +272,7 @@ export async function runFixture(
       await surco.rekordboxClosed()
       await surco.engineClosed()
       await surco.traktorClosed()
+      await surco.virtualdjClosed()
       await surco.settled()
     }
     if (retry) {

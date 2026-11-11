@@ -1,3 +1,4 @@
+import { type WritableProgram, writableInOrder } from '../../shared/djProgram'
 import type { OutputFormat, Settings } from '../../shared/types'
 import type { VerifyDetailKey } from '../../shared/verification'
 
@@ -13,9 +14,9 @@ export type Origin =
   | 'mp3n'
   | 'mp3j'
 export type FileDest = 'folder' | 'beside' | 'overwrite' | 'appleMusic' | 'appleMusicCopy'
-export const MATRIX_PROGRAMS = ['rekordbox', 'engine', 'traktor'] as const
+export const MATRIX_PROGRAMS = writableInOrder(['rekordbox', 'engine', 'traktor', 'virtualdj'])
 
-export type MatrixProgram = (typeof MATRIX_PROGRAMS)[number]
+export type MatrixProgram = WritableProgram
 
 export type Programs = MatrixProgram | 'music' | 'all'
 export type CellState = 'closed' | 'open' | 'retry'
@@ -97,8 +98,9 @@ const PROGRAMS_NAME: Record<Programs, string> = {
   rekordbox: 'con rekordbox',
   engine: 'con Engine',
   traktor: 'con Traktor',
+  virtualdj: 'con VirtualDJ',
   music: 'con Music',
-  all: 'con rekordbox, Engine y Traktor',
+  all: 'con rekordbox, Engine, Traktor y VirtualDJ',
 }
 const STATE_NAME: Record<CellState, string> = {
   closed: '',
@@ -173,6 +175,13 @@ const PAIRWISE: [FileDest, Programs, CellState, keyof typeof CONVERSION, boolean
   ['beside', 'all', 'closed', 'keep', true],
   ['appleMusicCopy', 'music', 'closed', 'keep'],
   ['overwrite', 'all', 'closed', 'keep'],
+  ['folder', 'virtualdj', 'closed', 'fromLossy'],
+  ['folder', 'virtualdj', 'open', 'keep'],
+  ['beside', 'virtualdj', 'retry', 'toLossy'],
+  ['beside', 'virtualdj', 'closed', 'keep'],
+  ['overwrite', 'virtualdj', 'closed', 'toLossy'],
+  ['appleMusic', 'virtualdj', 'closed', 'keep'],
+  ['appleMusicCopy', 'virtualdj', 'open', 'fromLossy'],
 ]
 
 const LAYER_D: Cell[] = PAIRWISE.map(([dest, programs, state, conversion, core], i) =>
@@ -405,6 +414,15 @@ const SABOTAGE_BASE: Record<'file' | 'music' | MatrixProgram, Row> = {
     target: 'aiff',
     dest: 'beside',
     programs: 'traktor',
+    state: 'closed',
+    quality: 'source',
+  },
+  virtualdj: {
+    id: '',
+    origin: 'flac',
+    target: 'aiff',
+    dest: 'folder',
+    programs: 'virtualdj',
     state: 'closed',
     quality: 'source',
   },

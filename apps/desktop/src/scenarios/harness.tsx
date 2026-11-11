@@ -403,6 +403,7 @@ function processTrackInMain(
           {
             rekordbox: s.syncRekordbox ? rekordboxCollectionPath() : '',
             engine: s.syncEngineDj ? engineLibraryPath() : '',
+            virtualdj: s.syncVirtualdj ? virtualdjRoots() : [],
           },
           (p) => realpathSync(p),
         )
@@ -1118,6 +1119,7 @@ export interface Scenario {
   engineClosed: () => Promise<void>
   traktorQueue: () => RekordboxQueueState
   traktorClosed: () => Promise<void>
+  virtualdjClosed: () => Promise<void>
   retry: (fileName: string) => Promise<'rerun-job' | 'rechecked'>
   verification: (fileName: string) => Verification | undefined
   statuses: (fileName: string) => Verification['status'][]
@@ -1479,6 +1481,7 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
     },
     engineClosed: () => applyOnClose(queues, 'engine', verify?.checks),
     traktorClosed: () => applyOnClose(queues, 'traktor', verify?.checks),
+    virtualdjClosed: () => applyOnClose(queues, 'virtualdj', verify?.checks),
     retry: async (fileName) => {
       if (!verify) throw new Error('scenario: retry() needs openSurco({ verify: true })')
       const id = trackNamed(fileName).id

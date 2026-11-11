@@ -41,7 +41,13 @@ export interface SeededTrack extends SourceTrack {
   engineId: number
   traktorAudioId: string
   musicPid?: string
-  playlists: { rekordbox: string[]; engine: number[]; traktor: string[]; music: string[] }
+  playlists: {
+    rekordbox: string[]
+    engine: number[]
+    traktor: string[]
+    virtualdj: string[]
+    music: string[]
+  }
   baseline?: TrackBaseline
 }
 
@@ -50,6 +56,7 @@ export interface LibrarySet {
   rekordboxDb?: string
   engineDir?: string
   traktorNml?: string
+  virtualdjDir?: string
   music: boolean
   bystander: SeededTrack
   tracks: SeededTrack[]
@@ -93,6 +100,8 @@ const REKORDBOX_PLAYLISTS = ['80001', '80002']
 const ENGINE_PLAYLISTS = [1, 2]
 const TRAKTOR_PLAYLISTS = ['pl-seleccion', 'pl-sabado']
 const PLAYLIST_NAMES = ['Selección', 'Sábado']
+const VIRTUALDJ_PLAYLISTS = PLAYLIST_NAMES
+export const SEEDED_SECONDS_PER_BEAT = 60 / Number(TRICKY.bpm)
 
 export const sha1Of = (path: string): string =>
   createHash('sha1').update(readFileSync(path)).digest('hex')
@@ -230,6 +239,50 @@ ${playlists.join('\n')}
   )
 }
 
+const crlf = (lines: string[]): string => `${lines.join('\r\n')}\r\n`
+const vdjAttr = (value: string): string => xmlAttr(value).replace(/'/g, '&apos;')
+
+export const virtualdjDatabaseOf = (dir: string): string => join(dir, 'database.xml')
+export const virtualdjListOf = (dir: string, name: string): string =>
+  join(dir, 'MyLists', `${name}.vdjfolder`)
+
+function seedVirtualdj(dir: string, seeded: SeededTrack[]): void {
+  mkdirSync(join(dir, 'MyLists'), { recursive: true })
+  writeFileSync(
+    virtualdjDatabaseOf(dir),
+    crlf([
+      '<?xml version="1.0" encoding="UTF-8"?>',
+      '<VirtualDJ_Database Version="2026">',
+      ...seeded.flatMap((t) => [
+        ` <Song FilePath="${vdjAttr(t.path.normalize('NFC'))}" FileSize="${statSync(t.path).size}">`,
+        `  <Tags Author="${vdjAttr(t.tags.artist)}" Title="${vdjAttr(t.tags.title.normalize('NFC'))}" />`,
+        '  <Infos SongLength="20.000000" />',
+        `  <Scan Version="801" Bpm="${SEEDED_SECONDS_PER_BEAT.toFixed(6)}" Phase="0.000000" />`,
+        ...SEEDED_CUES_MS.map(
+          (ms, i) =>
+            `  <Poi Name="${i === 0 ? 'Marker' : 'Drop'}" Pos="${(ms / 1000).toFixed(6)}" Num="${i + 1}" Type="cue" />`,
+        ),
+        ' </Song>',
+      ]),
+      '</VirtualDJ_Database>',
+    ]),
+  )
+  for (const name of VIRTUALDJ_PLAYLISTS)
+    writeFileSync(
+      virtualdjListOf(dir, name),
+      crlf([
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<VirtualFolder noDuplicates="no">',
+        ...seeded.map(
+          (t, i) =>
+            `\t<song path="${vdjAttr(t.path.normalize('NFC'))}" size="${statSync(t.path).size}" idx="${i}" />`,
+        ),
+        '</VirtualFolder>',
+      ]),
+    )
+  writeFileSync(join(dir, 'MyLists', 'order'), `${VIRTUALDJ_PLAYLISTS.join('\n')}\n`)
+}
+
 export function seedMusic(seeded: SeededTrack[]): string[] {
   for (const t of seeded)
     t.musicPid = music.addEntry({
@@ -312,14 +365,27 @@ function traktorRowsOf(nmlFile: string, t: SeededTrack): string {
   return JSON.stringify([entry, lists])
 }
 
+function virtualdjRowsOf(dir: string, t: SeededTrack): string {
+  const path = vdjAttr(t.path.normalize('NFC'))
+  const xml = readFileSync(virtualdjDatabaseOf(dir), 'utf8')
+  const start = xml.indexOf(`<Song FilePath="${path}"`)
+  const song = start === -1 ? '' : xml.slice(start, xml.indexOf('</Song>', start))
+  const lists = VIRTUALDJ_PLAYLISTS.map(
+    (name) =>
+      `${name}:${readFileSync(virtualdjListOf(dir, name), 'utf8').split(`path="${path}"`).length - 1}`,
+  )
+  return JSON.stringify([song, lists])
+}
+
 export function bystanderRows(
-  set: Pick<LibrarySet, 'rekordboxDb' | 'engineDir' | 'traktorNml'>,
+  set: Pick<LibrarySet, 'rekordboxDb' | 'engineDir' | 'traktorNml' | 'virtualdjDir'>,
   t: SeededTrack,
 ): LibrarySet['bystanderRows'] {
   return {
     ...(set.rekordboxDb && { rekordbox: rekordboxRowsOf(set.rekordboxDb, t) }),
     ...(set.engineDir && { engine: engineRowsOf(set.engineDir, t) }),
     ...(set.traktorNml && { traktor: traktorRowsOf(set.traktorNml, t) }),
+    ...(set.virtualdjDir && { virtualdj: virtualdjRowsOf(set.virtualdjDir, t) }),
   }
 }
 
@@ -344,6 +410,7 @@ export function buildLibraries(
       rekordbox: REKORDBOX_PLAYLISTS,
       engine: ENGINE_PLAYLISTS,
       traktor: TRAKTOR_PLAYLISTS,
+      virtualdj: VIRTUALDJ_PLAYLISTS,
       music: [],
     },
   }))
@@ -356,6 +423,8 @@ export function buildLibraries(
   const traktorNml = join(root, 'Traktor', 'collection.nml')
   mkdirSync(dirname(traktorNml), { recursive: true })
   seedTraktor(traktorNml, seeded)
+  const virtualdjDir = join(root, 'VirtualDJ')
+  seedVirtualdj(virtualdjDir, seeded)
   const withMusic = programs === 'music'
   if (withMusic) {
     const lists = seedMusic(seeded)
@@ -367,6 +436,7 @@ export function buildLibraries(
     rekordboxDb,
     engineDir,
     traktorNml,
+    virtualdjDir,
     music: withMusic,
     bystander,
     tracks,
@@ -378,13 +448,16 @@ export function buildLibraries(
       syncTraktor: synced.has('traktor'),
       traktorNmlPath: traktorNml,
       traktorCueOffsetMs: 0,
+      syncVirtualdj: synced.has('virtualdj'),
+      virtualdjLibraryDir: virtualdjDir,
     },
     sha1Before: {
       rekordbox: sha1Of(rekordboxDb),
       engine: sha1Of(engineDbPath(engineDir)),
       traktor: sha1Of(traktorNml),
+      virtualdj: sha1Of(virtualdjDatabaseOf(virtualdjDir)),
     },
-    bystanderRows: bystanderRows({ rekordboxDb, engineDir, traktorNml }, bystander),
+    bystanderRows: bystanderRows({ rekordboxDb, engineDir, traktorNml, virtualdjDir }, bystander),
     traktorEntries: Object.fromEntries(
       tracks.map((t) => [
         t.traktorAudioId,
