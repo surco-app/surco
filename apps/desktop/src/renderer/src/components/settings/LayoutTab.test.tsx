@@ -95,13 +95,23 @@ function renderTab(over: Partial<SyncedDraft> = {}): ReturnType<typeof vi.fn> {
 // The editor's sections are the user's to arrange: which start open, and in what
 // order they stack below the metadata form. One list in Settings → Editor rules both.
 describe('LayoutTab sections', () => {
-  it('notes quietly on the Cues row that it only shows in rekordbox, and on no other row', () => {
+  // The Cues section opens for a track from a rekordbox, Engine DJ, Traktor or Serato
+  // playlist, so a "rekordbox only" note on its row told the user something false.
+  it('marks no row as rekordbox only', () => {
     renderTab()
-    const note = screen.getByTestId('settings-section-note-cues')
-    expect(note).toHaveTextContent('rekordbox only')
-    expect(screen.getByTestId('settings-section-row-cues')).toContainElement(note)
-    expect(note.className).toContain('text-fg-faint')
-    expect(screen.getAllByTestId(/^settings-section-note-/)).toHaveLength(1)
+    expect(screen.getByTestId('settings-section-row-cues')).not.toHaveTextContent('rekordbox only')
+    expect(screen.queryAllByTestId(/^settings-section-note-/)).toHaveLength(0)
+  })
+
+  // What Visible and Open do is told once, by the (i) on each column; the line under the
+  // title said it again, and the order is the grips and arrows on every row.
+  it('puts no line under the title that the columns already explain', () => {
+    renderTab()
+    expect(
+      screen.queryByText(
+        'Choose which sections start open and their order below the metadata form.',
+      ),
+    ).toBeNull()
   })
 
   it('lists every section in its configured order', () => {

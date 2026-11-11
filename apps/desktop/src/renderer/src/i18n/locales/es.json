@@ -1815,13 +1815,11 @@
     "keyNotationHint": "Cómo se muestra la tonalidad en la lista de pistas y en la sugerencia bajo el campo Tonalidad. La alfanumérica, o Camelot, es la que usan los programas de DJ para ordenar.",
     "sections": {
       "title": "Secciones del editor",
-      "hint": "Elige qué secciones empiezan abiertas y su orden debajo del formulario de metadatos.",
       "form": "Metadatos",
       "otherTags": "Otros metadatos",
       "properties": "Propiedades",
       "quality": "Calidad de audio",
       "cues": "Cues",
-      "cuesOnly": "Solo en rekordbox",
       "output": "Nombre de salida",
       "trim": "Recorte de silencio",
       "declick": "Reparación de clics de vinilo",

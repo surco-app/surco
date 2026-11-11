@@ -1815,13 +1815,11 @@
     "keyNotationHint": "Como o tom aparece na lista de faixas e na sugestão abaixo do campo Tom. A alfanumérica, ou Camelot, é o que os programas de DJ usam para ordenar.",
     "sections": {
       "title": "Seções do editor",
-      "hint": "Escolha quais seções começam abertas e a ordem delas abaixo do formulário de metadados.",
       "form": "Metadados",
       "otherTags": "Outros metadados",
       "properties": "Propriedades",
       "quality": "Qualidade de áudio",
       "cues": "Cues",
-      "cuesOnly": "Só no rekordbox",
       "output": "Nome de saída",
       "trim": "Corte de silêncio",
       "declick": "Reparo de cliques de vinil",

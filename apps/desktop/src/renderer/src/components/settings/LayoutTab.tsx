@@ -22,7 +22,7 @@ import {
 } from '../../lib/settingsRows'
 import type { PatchSynced } from '../../lib/settingsTabs'
 import { Tooltip } from '../Tooltip'
-import { SettingsHint, SettingsLabel, SettingsSection } from './SettingsPrimitives'
+import { SettingsLabel, SettingsSection } from './SettingsPrimitives'
 
 interface Props {
   synced: SyncedDraft
@@ -69,8 +69,9 @@ export function LayoutTab({ synced, patch }: Props): React.JSX.Element {
   }
   return (
     <SettingsSection first>
-      <SettingsLabel searchId="sections.title">{tr('settings.sections.title')}</SettingsLabel>
-      <SettingsHint className="mt-2 mb-3">{tr('settings.sections.hint')}</SettingsHint>
+      <SettingsLabel className="mb-3" searchId="sections.title">
+        {tr('settings.sections.title')}
+      </SettingsLabel>
       {/* Column headings on the row grid, so each label sits over its own control. Each
           carries what its column means, asked for once here rather than repeated on every
           row — see FieldsEditor, which this list matches. */}
@@ -145,14 +146,6 @@ export function LayoutTab({ synced, patch }: Props): React.JSX.Element {
                 <span className={`truncate ${section.hidden ? 'text-fg-dim line-through' : ''}`}>
                   {tr(`settings.sections.${section.id}`)}
                 </span>
-                {section.id === 'cues' && (
-                  <span
-                    data-testid="settings-section-note-cues"
-                    className="shrink-0 truncate text-xs text-fg-faint"
-                  >
-                    {tr('settings.sections.cuesOnly')}
-                  </span>
-                )}
               </span>
               {/* Hidden removes the section from the editor entirely; the form has no
                     toggle — it IS the editor. The open pill goes quiet meanwhile: a fold

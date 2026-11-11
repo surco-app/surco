@@ -1815,13 +1815,11 @@
     "keyNotationHint": "How the key is shown in the track list and in the suggestion under the Key field. Alphanumeric, or Camelot, is what DJ software sorts by.",
     "sections": {
       "title": "Editor sections",
-      "hint": "Choose which sections start open and their order below the metadata form.",
       "form": "Metadata",
       "otherTags": "Other metadata",
       "properties": "Properties",
       "quality": "Audio quality",
       "cues": "Cues",
-      "cuesOnly": "rekordbox only",
       "output": "Output name",
       "trim": "Silence trim",
       "declick": "Vinyl click repair",

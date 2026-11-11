@@ -1815,13 +1815,11 @@
     "keyNotationHint": "Wie die Tonart in der Titelliste und im Vorschlag unter dem Feld Tonart angezeigt wird. Alphanumerisch, auch Camelot genannt, ist das, wonach DJ-Software sortiert.",
     "sections": {
       "title": "Editor-Abschnitte",
-      "hint": "Wähle, welche Abschnitte geöffnet starten und ihre Reihenfolge unter dem Metadaten-Formular.",
       "form": "Metadaten",
       "otherTags": "Weitere Metadaten",
       "properties": "Eigenschaften",
       "quality": "Audioqualität",
       "cues": "Cues",
-      "cuesOnly": "Nur in rekordbox",
       "output": "Ausgabename",
       "trim": "Stille kürzen",
       "declick": "Vinyl-Knackser-Reparatur",
