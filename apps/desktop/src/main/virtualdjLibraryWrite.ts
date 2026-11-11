@@ -8,7 +8,7 @@ import {
   rmSync,
   writeFileSync,
 } from 'node:fs'
-import { basename, dirname, join, relative } from 'node:path'
+import { basename, dirname, join, relative, resolve } from 'node:path'
 import log from 'electron-log/main'
 import { backupFolderName, type FileStamp, fileStampOf } from './seratoLibraryWrite'
 
@@ -75,7 +75,7 @@ const KEPT_BACKUPS = 20
 const WRITING = '.surco-write'
 
 function backupPathOf(file: string, roots: VirtualdjRoot[]): string {
-  const root = roots.find((r) => file.startsWith(`${r.dir}/`))
+  const root = roots.find((r) => file.startsWith(`${resolve(r.dir)}/`))
   if (!root) throw new Error(`${file} is in no VirtualDJ library`)
   return join(root.root === '/' ? 'Local' : basename(root.root), relative(root.dir, file))
 }

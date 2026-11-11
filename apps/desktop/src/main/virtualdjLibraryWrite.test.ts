@@ -63,6 +63,17 @@ describe('commitVirtualdjDraft', () => {
     expect(readFileSync(join(backupDir, folder, 'Local', 'database.xml'), 'utf8')).toBe(fixture)
   })
 
+  it('backs up and writes when the VirtualDJ folder setting ends in a slash, instead of refusing every write', async () => {
+    const { dir, database, backupDir, deps } = library()
+    const draft = createVirtualdjDraft()
+    draft.write(database, edited(draft.read(database) as string))
+    expect(
+      await commitVirtualdjDraft(draft, deps({ roots: () => [{ dir: `${dir}/`, root: '/' }] })),
+    ).toBe('written')
+    const [folder] = readdirSync(backupDir)
+    expect(readFileSync(join(backupDir, folder, 'Local', 'database.xml'), 'utf8')).toBe(fixture)
+  })
+
   it('keeps the CRLF line ends VirtualDJ needs, since LF makes it throw its database away', async () => {
     const { database, deps } = library()
     const draft = createVirtualdjDraft()
