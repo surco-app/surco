@@ -1,5 +1,5 @@
 import type React from 'react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   COMMAND_GROUP_ORDER,
@@ -10,6 +10,7 @@ import {
   type PaletteTree,
 } from '../lib/commands'
 import type { PlaylistSource, SourceNode } from '../../../shared/types'
+import { useStableCallback } from '../hooks/useStableCallback'
 import type { TrackItem } from '../types'
 import { ModalShell } from './ModalShell'
 
@@ -44,7 +45,11 @@ export function CommandPalette({
   const [active, setActive] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
   const commandResults = filterCommands(commands, query, usage)
-  const trackResults = filterTrackCommands(tracks, query, onGoToTrack)
+  const goToTrack = useStableCallback(onGoToTrack)
+  const trackResults = useMemo(
+    () => filterTrackCommands(tracks, query, goToTrack),
+    [tracks, query, goToTrack],
+  )
   const playlistResults = filterPlaylistCommands(playlists, query, onGoToPlaylist)
   // Raycast's split between browsing and looking up: with no query the palette is a
   // catalog — sections in the fixed everyday-relevance order, headers where the

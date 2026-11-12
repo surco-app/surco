@@ -71,7 +71,6 @@ import type {
 } from '../../shared/types'
 import { LiveActivityPanel } from './components/ActivityPanel'
 import { Confetti } from './components/Confetti'
-import { CopiesScreen } from './components/CopiesScreen'
 import { EmptyDisc } from './components/EmptyDisc'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { ModalExit } from './components/ModalShell'
@@ -83,12 +82,11 @@ import {
   MusicReviewTopProgress,
 } from './components/MusicReviewColumn'
 import { Overlays } from './components/Overlays'
-import { PasteTracklistModal } from './components/PasteTracklistModal'
 import { LivePlayer } from './components/Player'
 import { RekordboxQueuePill } from './components/RekordboxQueuePill'
 import { ResizeHandle } from './components/ResizeHandle'
 import { SessionBand } from './components/SessionBand'
-import { type SessionDestination, SessionWizard } from './components/SessionWizard'
+import type { SessionDestination } from './components/SessionWizard'
 import { SourceRail } from './components/SourceRail'
 import { flattenPlaylists, SourceTree } from './components/SourceTree'
 import { ToastStack } from './components/ToastStack'
@@ -98,7 +96,6 @@ import { TrackContextMenu, type TrackPlaylistMenu } from './components/TrackCont
 import { TrackList, type MenuState as TrackMenuState } from './components/TrackList'
 import { TrackListHeader } from './components/TrackListHeader'
 import { TrackListSkeleton } from './components/TrackListSkeleton'
-import { UsbExportModal } from './components/UsbExportModal'
 import { UsbExportPill } from './components/UsbExportPill'
 import { UsbTopProgress } from './components/UsbTopProgress'
 import { useActivityLog } from './hooks/useActivityLog'
@@ -302,6 +299,18 @@ const SEEN_SETTLE_MS = 250
 // time a track is selected. The .then unwraps the named export React.lazy needs as a
 // default, same convention as the on-demand overlays in Overlays.tsx.
 const Editor = lazyChunk(() => import('./components/Editor').then((m) => ({ default: m.Editor })))
+const CopiesScreen = lazyChunk(() =>
+  import('./components/CopiesScreen').then((m) => ({ default: m.CopiesScreen })),
+)
+const UsbExportModal = lazyChunk(() =>
+  import('./components/UsbExportModal').then((m) => ({ default: m.UsbExportModal })),
+)
+const PasteTracklistModal = lazyChunk(() =>
+  import('./components/PasteTracklistModal').then((m) => ({ default: m.PasteTracklistModal })),
+)
+const SessionWizard = lazyChunk(() =>
+  import('./components/SessionWizard').then((m) => ({ default: m.SessionWizard })),
+)
 
 // Stable fallback while settings load, so the memoized Editor doesn't see a new array
 // each render. Mirrors the persisted default (Discogs only).
@@ -3920,24 +3929,26 @@ export default function App(): React.JSX.Element {
                 </div>
                 {copiesOpen && (
                   <div className="min-w-0 flex-1">
-                    <CopiesScreen
-                      key={copiesOpen.key}
-                      programs={libraryCopies.programs}
-                      trash={{
-                        entries: trashEntries,
-                        ...(settings
-                          ? trashLimits(settings)
-                          : { retentionDays: TRASH_RETENTION_DAYS, maxBytes: TRASH_MAX_BYTES }),
-                        onRestore: (entry) => void onRestoreFromTrash(entry),
-                        onRemove: (entry) => void onRemoveFromTrash(entry),
-                        onEmpty: () => void onEmptyTrash(),
-                        onReveal: () => void window.api.trashReveal(),
-                        initialQuery: copiesOpen.query,
-                      }}
-                      openMusic={copiesOpen.openMusic}
-                      onRestore={(program, id) => window.api.restoreCopy(program, id)}
-                      onReveal={() => void window.api.revealBackups()}
-                    />
+                    <Suspense fallback={null}>
+                      <CopiesScreen
+                        key={copiesOpen.key}
+                        programs={libraryCopies.programs}
+                        trash={{
+                          entries: trashEntries,
+                          ...(settings
+                            ? trashLimits(settings)
+                            : { retentionDays: TRASH_RETENTION_DAYS, maxBytes: TRASH_MAX_BYTES }),
+                          onRestore: (entry) => void onRestoreFromTrash(entry),
+                          onRemove: (entry) => void onRemoveFromTrash(entry),
+                          onEmpty: () => void onEmptyTrash(),
+                          onReveal: () => void window.api.trashReveal(),
+                          initialQuery: copiesOpen.query,
+                        }}
+                        openMusic={copiesOpen.openMusic}
+                        onRestore={(program, id) => window.api.restoreCopy(program, id)}
+                        onReveal={() => void window.api.revealBackups()}
+                      />
+                    </Suspense>
                   </div>
                 )}
                 {/* Until there are rows the window is one screen: an empty column beside the
@@ -4417,69 +4428,73 @@ export default function App(): React.JSX.Element {
                 }
               />
             )}
-            <ModalExit>
-              {usbModal && (
-                <UsbExportModal
-                  nodes={usbTree.data}
-                  volumes={usbVolumes}
-                  preselect={usbModal.preselect}
-                  program={usbModal.source}
-                  onStart={(req) => window.api.usbExport(req)}
-                  onCancelExport={() => void window.api.usbCancel()}
-                  onClose={closeUsbExport}
-                />
-              )}
-            </ModalExit>
-            <ModalExit>
-              {pasteTracklist && editableSource && (
-                <PasteTracklistModal
-                  program={editableSource}
-                  node={pasteTracklist.node}
-                  create={pasteTracklist.create}
-                  onAdd={(tracks, newName) => void addPastedTracklist(tracks, newName)}
-                  onClose={() => setPasteTracklist(null)}
-                />
-              )}
-            </ModalExit>
-            <ModalExit>
-              {sessionWizard && sessionProgram && settings && browser.tree && (
-                <SessionWizard
-                  tree={browser.tree}
-                  roles={
-                    sessionWizard.adjust
-                      ? sessionRun.recent?.roles
-                      : sessionWizard.start
-                        ? { [sessionWizard.start.playlistId]: 'any' }
-                        : undefined
-                  }
-                  initial={
-                    sessionWizard.adjust && sessionRun.recent
-                      ? sessionRun.recent.answers
-                      : {
-                          ...answersFromSettings(settings.sessionWizard),
-                          ...(sessionWizard.start && { sources: [sessionWizard.start.playlistId] }),
-                        }
-                  }
-                  rows={sessionRows}
-                  destination={sessionDestination(sessionWizard, browser.tree)}
-                  onClose={() => setSessionWizard(null)}
-                  onBuild={async (answers, roles) => {
-                    const result = sessionWizard.adjust
-                      ? await sessionRun.adjust(answers, roles)
-                      : sessionWizard.fill
-                        ? await sessionRun.fill(sessionWizard.fill, answers, roles)
-                        : await sessionRun.build(
-                            sessionWizard.parentId,
-                            answers,
-                            roles,
-                            sessionWizard.start?.path,
-                          )
-                    if (result === 'built' || result === 'queued') setSessionWizard(null)
-                    return result
-                  }}
-                />
-              )}
-            </ModalExit>
+            <Suspense fallback={null}>
+              <ModalExit>
+                {usbModal && (
+                  <UsbExportModal
+                    nodes={usbTree.data}
+                    volumes={usbVolumes}
+                    preselect={usbModal.preselect}
+                    program={usbModal.source}
+                    onStart={(req) => window.api.usbExport(req)}
+                    onCancelExport={() => void window.api.usbCancel()}
+                    onClose={closeUsbExport}
+                  />
+                )}
+              </ModalExit>
+              <ModalExit>
+                {pasteTracklist && editableSource && (
+                  <PasteTracklistModal
+                    program={editableSource}
+                    node={pasteTracklist.node}
+                    create={pasteTracklist.create}
+                    onAdd={(tracks, newName) => void addPastedTracklist(tracks, newName)}
+                    onClose={() => setPasteTracklist(null)}
+                  />
+                )}
+              </ModalExit>
+              <ModalExit>
+                {sessionWizard && sessionProgram && settings && browser.tree && (
+                  <SessionWizard
+                    tree={browser.tree}
+                    roles={
+                      sessionWizard.adjust
+                        ? sessionRun.recent?.roles
+                        : sessionWizard.start
+                          ? { [sessionWizard.start.playlistId]: 'any' }
+                          : undefined
+                    }
+                    initial={
+                      sessionWizard.adjust && sessionRun.recent
+                        ? sessionRun.recent.answers
+                        : {
+                            ...answersFromSettings(settings.sessionWizard),
+                            ...(sessionWizard.start && {
+                              sources: [sessionWizard.start.playlistId],
+                            }),
+                          }
+                    }
+                    rows={sessionRows}
+                    destination={sessionDestination(sessionWizard, browser.tree)}
+                    onClose={() => setSessionWizard(null)}
+                    onBuild={async (answers, roles) => {
+                      const result = sessionWizard.adjust
+                        ? await sessionRun.adjust(answers, roles)
+                        : sessionWizard.fill
+                          ? await sessionRun.fill(sessionWizard.fill, answers, roles)
+                          : await sessionRun.build(
+                              sessionWizard.parentId,
+                              answers,
+                              roles,
+                              sessionWizard.start?.path,
+                            )
+                      if (result === 'built' || result === 'queued') setSessionWizard(null)
+                      return result
+                    }}
+                  />
+                )}
+              </ModalExit>
+            </Suspense>
             {confettiBurst > 0 && <Confetti key={confettiBurst} />}
           </div>
         </ToastProvider>
