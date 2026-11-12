@@ -17,6 +17,7 @@ import GridScene from './components/scenes/GridScene'
 import ReplaceScene from './components/scenes/ReplaceScene'
 import SyncScene from './components/scenes/SyncScene'
 import Walkthrough from './components/Walkthrough'
+import WorksWith from './components/WorksWith'
 import type { Language } from './i18n'
 import { PAGES } from './lib/nav'
 import { SCENE_ANCHORS, SECTION_VIEWS } from './lib/sceneAnchors'
@@ -25,19 +26,6 @@ import { SCENE_ANCHORS, SECTION_VIEWS } from './lib/sceneAnchors'
 // get it. Everything that used to sit below — the feature lists, the five-app
 // comparison, the shortcut table, the FAQ — moved to the features page, because
 // eight stacked sections can each be well designed and still never feel minimal.
-
-// Proper nouns, so the same list serves every language.
-const INTEGRATIONS = [
-  'Discogs',
-  'Bandcamp',
-  'Deezer',
-  'Apple Music',
-  'Engine DJ',
-  'rekordbox',
-  'Traktor',
-  'Serato',
-  'VirtualDJ',
-]
 
 export default function App() {
   const { t, i18n } = useTranslation()
@@ -99,14 +87,7 @@ export default function App() {
             reveal would hold that context back until the visitor had already decided. */}
         <Reveal eager delay={300}>
           <section className="mx-auto max-w-6xl px-6 sm:px-10 pb-4">
-            <div className="flex flex-col gap-3 border-y border-line py-5 sm:flex-row sm:items-center sm:gap-6">
-              <p className="text-sm text-faint">{t('home.worksWith')}</p>
-              <ul className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted">
-                {INTEGRATIONS.map((name) => (
-                  <li key={name}>{name}</li>
-                ))}
-              </ul>
-            </div>
+            <WorksWith />
           </section>
         </Reveal>
 

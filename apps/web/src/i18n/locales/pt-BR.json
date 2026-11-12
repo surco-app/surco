@@ -1278,7 +1278,8 @@
     "closeStatsLead": "Sem telemetria.",
     "closeStatsRest": "O Surco não sabe quem o usa nem o que você faz com a sua música. Os únicos números públicos são os downloads, e eles estão em <stats>Estatísticas</stats>.",
     "allFeatures": "Ver tudo o que ele faz →",
-    "worksWith": "Funciona com",
+    "worksWithSources": "Etiqueta a partir de",
+    "worksWithPrograms": "Exporta para",
     "heroLede": "O Surco converte suas faixas, aplica as tags do Discogs ou do Beatport, confere se o lossless é lossless de verdade e as coloca no rekordbox, Traktor, Engine DJ, Serato, VirtualDJ ou Apple Music.",
     "anchors": {
       "see": "Ver como",

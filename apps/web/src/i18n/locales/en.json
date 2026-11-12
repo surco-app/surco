@@ -1278,7 +1278,8 @@
     "closeStatsLead": "No telemetry.",
     "closeStatsRest": "Surco doesn’t know who uses it or what you do with your music. The only public figures are the downloads, and they’re in <stats>Stats</stats>.",
     "allFeatures": "See everything it does →",
-    "worksWith": "Works with",
+    "worksWithSources": "Tags from",
+    "worksWithPrograms": "Exports to",
     "heroLede": "Surco converts your tracks, tags them from Discogs or Beatport, checks that your lossless files really are lossless and drops them into rekordbox, Traktor, Engine DJ, Serato, VirtualDJ or Apple Music.",
     "anchors": {
       "see": "See how",

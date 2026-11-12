@@ -1278,7 +1278,8 @@
     "closeStatsLead": "Sans télémétrie.",
     "closeStatsRest": "Surco ne sait pas qui l’utilise ni ce que tu fais de ta musique. Les seuls chiffres publics sont les téléchargements, et tu les trouves dans <stats>Statistiques</stats>.",
     "allFeatures": "Voir tout ce qu’il fait →",
-    "worksWith": "Compatible avec",
+    "worksWithSources": "Tags depuis",
+    "worksWithPrograms": "Exporte vers",
     "heroLede": "Surco convertit tes morceaux, les tague depuis Discogs ou Beatport, vérifie que tes fichiers sans perte le sont vraiment et les dépose dans rekordbox, Traktor, Engine DJ, Serato, VirtualDJ ou Apple Music.",
     "anchors": {
       "see": "Voir comment",

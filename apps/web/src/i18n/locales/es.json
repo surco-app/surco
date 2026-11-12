@@ -1278,7 +1278,8 @@
     "closeStatsLead": "Sin telemetría.",
     "closeStatsRest": "Surco no sabe quién lo usa ni qué haces con tu música. Lo único público son las descargas, y las tienes en <stats>Estadísticas</stats>.",
     "allFeatures": "Ver todo lo que hace →",
-    "worksWith": "Funciona con",
+    "worksWithSources": "Etiqueta desde",
+    "worksWithPrograms": "Exporta a",
     "heroLede": "Surco convierte tus pistas, las etiqueta desde Discogs o Beatport, comprueba que el lossless lo sea de verdad y las deja en rekordbox, Traktor, Engine DJ, Serato, VirtualDJ o Apple Music.",
     "anchors": {
       "see": "Ver cómo",
