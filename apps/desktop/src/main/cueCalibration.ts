@@ -43,6 +43,12 @@ export async function mp3TimingOfFile(file: string): Promise<Mp3Timing | null> {
   return head ? mp3Timing(head) : null
 }
 
+export function skippedByFfmpegMs(timing: Mp3Timing | null): number {
+  return timing
+    ? ((timing.headerSamples + (timing.gaplessDelay ?? 0)) / timing.sampleRate) * 1000
+    : 0
+}
+
 // Measured in Traktor Pro 4.5.1 on 31/10/2026: Traktor plays an MP3 from its first frame,
 // the Xing/Info one included, and trims no encoder delay. ffmpeg skips that header frame
 // (Xing, Info or VBRI), and the delay too when the tag sits right after the ID3 tag and
@@ -55,10 +61,7 @@ export function automaticCueOffsetMs(source: Mp3Timing | null, output: Mp3Timing
   const drawnAhead = output
     ? (output.headerSamples + (output.gaplessDelay ?? LIBMP3LAME_DELAY_SAMPLES)) / output.sampleRate
     : 0
-  const skippedByFfmpeg = source
-    ? (source.headerSamples + (source.gaplessDelay ?? 0)) / source.sampleRate
-    : 0
-  return (drawnAhead - skippedByFfmpeg) * 1000
+  return drawnAhead * 1000 - skippedByFfmpegMs(source)
 }
 
 export async function automaticCueOffsetOfFiles(input: string, output: string): Promise<number> {
