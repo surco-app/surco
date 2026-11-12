@@ -2354,7 +2354,6 @@ describe('Editor convert line for a rekordbox track whose Music entry is this ve
       expect(window.api.appleMusicEntryLocation).toHaveBeenCalledWith('0123456789ABCDEF'),
     )
     expect(screen.getByTestId('convert-up-to-date')).toBeInTheDocument()
-    expect(screen.queryByTestId('convert-destination-line')).toBeNull()
   })
 
   it('offers to update the tags, never to replace the copy, once a tag is edited', async () => {

@@ -22,7 +22,6 @@ import { PLACE_ORDER, type PlaceCheck } from '../../../shared/verification'
 import { type CleanupOffer, cleanupCount } from '../hooks/useConfirmFlows'
 import type { StaleLibraryCopy } from '../lib/appleMusicLibrary'
 import type { Destination } from '../lib/destination'
-import type { DjLibraryId } from '../lib/djLibraries'
 import { openFeedback } from '../lib/feedback'
 import { formatUpTo } from '../lib/numberFormat'
 import { isMacOS } from '../lib/platform'
@@ -92,9 +91,6 @@ interface ConvertFooterProps {
   tagsOnly: boolean
   sameFormat: boolean
   upToDate: boolean
-  addToAppleMusic: boolean
-  djTargets: DjLibraryId[]
-  openSource: PlaylistSource | null
   // The editor's one-shot destination pick and the choices its split-button menu
   // offers, pre-filtered by the editor (platform, configured overwrite).
   destination: Destination
@@ -161,9 +157,6 @@ export function ConvertFooter({
   tagsOnly,
   sameFormat,
   upToDate,
-  addToAppleMusic,
-  djTargets,
-  openSource,
   destination,
   destinations,
   format,
@@ -699,9 +692,6 @@ export function ConvertFooter({
                 format={format}
                 destination={destination}
                 destinations={destinations}
-                withAppleMusic={isMacOS() && format !== 'flac' && addToAppleMusic}
-                djTargets={djTargets}
-                openSource={openSource}
                 leftOut={leftOut}
                 onBlockedPress={onBlockedPress}
                 onSelectFormat={onSelectFormat}

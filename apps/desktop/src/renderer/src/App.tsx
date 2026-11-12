@@ -4319,7 +4319,6 @@ export default function App(): React.JSX.Element {
                             onExportCollection={onOpenExport}
                             readFullTrack={readFullTrack}
                             librarySources={browser.sources}
-                            openSource={browser.source}
                             onRevealIn={onRevealIn}
                             onRetryVerification={retryVerification}
                             onOpenBackup={onOpenBackup}
