@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next'
 import { ALL_TRACKS_ID } from '../../shared/allTracks'
 import { autoMatchAvailable, usableProviders } from '../../shared/autoMatch'
 import { trashLimits } from '../../shared/backupPolicy'
+import { WINDOW_MIN_SIZE } from '../../shared/windowSize'
 import { DEFAULT_CUE_GRID_TOLERANCE } from '../../shared/cueGrid'
 import type { CueJumpBars } from '../../shared/cueJump'
 import type { CueQuantize } from '../../shared/cueQuantize'
@@ -3779,7 +3780,9 @@ export default function App(): React.JSX.Element {
           keyboard-accessible path to the same action. */}
           {/* biome-ignore lint/a11y/noStaticElementInteractions: drop target, not a control */}
           <div
-            className="relative flex h-screen min-h-[620px] min-w-[1080px] flex-col overflow-clip"
+            data-testid="app-root"
+            className="relative flex h-full flex-col overflow-clip"
+            style={{ minWidth: WINDOW_MIN_SIZE.width }}
             onDragEnterCapture={(e) => {
               // A reorder inside the list is not files arriving, and rows dragged out of the
               // list (toward a playlist in the tree) are already in it: no import overlay.

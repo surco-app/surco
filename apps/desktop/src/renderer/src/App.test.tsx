@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { BUNDLED_FLOWS } from '../../shared/cueFlows'
+import { WINDOW_MIN_SIZE } from '../../shared/windowSize'
 import '@testing-library/jest-dom/vitest'
 import { type QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import {
@@ -9132,9 +9133,8 @@ describe('zoomed window', () => {
   it('keeps the layout at the window minimum so zooming in scrolls instead of clipping the convert button', async () => {
     await renderApp()
     await addTwoTracks()
-    const root = screen.getByTestId('sidebar').closest('.flex.h-screen') as HTMLElement
 
-    expect(root).toHaveClass('min-w-[1080px]', 'min-h-[620px]')
+    expect(screen.getByTestId('app-root')).toHaveStyle({ minWidth: `${WINDOW_MIN_SIZE.width}px` })
   })
 })
 
@@ -9145,7 +9145,7 @@ describe('drop target', () => {
   it('marks the column the tracks will land in, covering nothing', async () => {
     await renderApp()
     await addTwoTracks()
-    const root = screen.getByTestId('sidebar').closest('.flex.h-screen') as HTMLElement
+    const root = screen.getByTestId('app-root')
 
     fireEvent.dragEnter(root)
 
@@ -9157,7 +9157,7 @@ describe('drop target', () => {
   it('lights no column for a playlist dragged in the tree, which is not files arriving', async () => {
     await renderApp()
     await addTwoTracks()
-    const root = screen.getByTestId('sidebar').closest('.flex.h-screen') as HTMLElement
+    const root = screen.getByTestId('app-root')
     const dt = fakeDataTransfer()
     dt.setData(TREE_NODE_TYPE, 'house')
 
@@ -9172,7 +9172,7 @@ describe('drop target', () => {
   it('lights the one empty screen while the first files are dragged in, and clears it on leave', async () => {
     await renderApp()
     const zone = await screen.findByTestId('empty-dropzone')
-    const root = zone.closest('.flex.h-screen') as HTMLElement
+    const root = screen.getByTestId('app-root')
 
     fireEvent.dragEnter(root)
 
@@ -9191,7 +9191,7 @@ describe('drop target', () => {
     setApi({ pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']) })
     await renderApp()
     await addOneTrack()
-    const root = screen.getByTestId('sidebar').closest('.flex.h-screen') as HTMLElement
+    const root = screen.getByTestId('app-root')
     const well = await screen.findByTestId('cover-dropzone')
 
     fireEvent.dragEnter(root)
@@ -9205,7 +9205,7 @@ describe('drop target', () => {
     setApi({ pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']) })
     await renderApp()
     await addOneTrack()
-    const root = screen.getByTestId('sidebar').closest('.flex.h-screen') as HTMLElement
+    const root = screen.getByTestId('app-root')
     const well = await screen.findByTestId('cover-dropzone')
 
     fireEvent.dragEnter(root)
@@ -9995,7 +9995,7 @@ describe('App list review notice', () => {
       getPathForFile: (f: { name: string }) => f.name,
     })
     await renderApp()
-    const root = (await screen.findByTestId('add-files')).closest('.flex.h-screen') as HTMLElement
+    const root = await screen.findByTestId('app-root')
     fireEvent.drop(root, {
       dataTransfer: { files: Object.keys(tags).map((name) => ({ name })), types: ['Files'] },
     })
@@ -10091,7 +10091,7 @@ describe('App list review notice', () => {
       getPathForFile: (f: { name: string }) => f.name,
     })
     await renderApp()
-    const root = (await screen.findByTestId('add-files')).closest('.flex.h-screen') as HTMLElement
+    const root = await screen.findByTestId('app-root')
     const drop = (paths: string[]) =>
       fireEvent.drop(root, {
         dataTransfer: { files: paths.map((name) => ({ name })), types: ['Files'] },
@@ -10137,7 +10137,7 @@ describe('App list review notice', () => {
     await waitFor(() => expect(screen.queryByTestId('list-review-notice')).not.toBeInTheDocument())
     runMenu('list-review')
     await screen.findByTestId('list-review-scope')
-    const root = screen.getByTestId('sidebar').closest('.flex.h-screen') as HTMLElement
+    const root = screen.getByTestId('app-root')
     fireEvent.drop(root, {
       dataTransfer: {
         files: ['/music/e.wav', '/music/f.wav'].map((name) => ({ name })),
