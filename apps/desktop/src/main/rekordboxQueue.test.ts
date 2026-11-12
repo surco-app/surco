@@ -1052,4 +1052,13 @@ describe('cues in the queue', () => {
     expect(q.outcomeOf('e1')).toEqual({ id: 'e1', applied: true, notices: [] })
     expect(q.outcomeOf('e1')).toBeUndefined()
   })
+
+  it('forgets the outcome of an edit nobody asked for once two more applies ran, so edits a queue wrote on its own after the DJ closed the program do not pile up', async () => {
+    const q = createRekordboxQueue(deps())
+    q.enqueue([rename])
+    await q.apply(async () => true)
+    await q.apply(async () => true)
+    await q.apply(async () => true)
+    expect(q.outcomeOf('e1')).toBeUndefined()
+  })
 })
