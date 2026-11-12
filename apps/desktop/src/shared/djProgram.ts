@@ -36,6 +36,14 @@ export type CueProgram = DjProgram
 
 export type LibraryProgram = DjProgram
 
+export const PROGRAM_BETA: Record<DjProgram, boolean> = {
+  rekordbox: false,
+  traktor: false,
+  engine: false,
+  serato: false,
+  virtualdj: true,
+}
+
 export const DJ_PROGRAMS = programsInOrder([
   'rekordbox',
   'traktor',

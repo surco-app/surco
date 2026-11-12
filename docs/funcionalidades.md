@@ -1422,7 +1422,9 @@ real: carpeta `Documents\VirtualDJ` o, si ahí no hay `database.xml`, `%LOCALAPP
 proceso `virtualdj.exe` por `tasklist` (`virtualdjProcess.ts`) y rutas `C:\…` o `C:/…` comparadas
 sin distinguir separador ni mayúscula de la letra (`virtualdjPaths.ts`). El USB sigue solo en macOS
 (`virtualdj: process.platform === 'darwin'` en los exportadores de `main/index.ts`). Lo supuesto está
-en `docs/virtualdj-medidas.md`, «Windows (sin medir)».
+en `docs/virtualdj-medidas.md`, «Windows (sin medir)». En la barra lateral lleva una píldora «beta» bajo su nombre en
+macOS y en Windows (`PROGRAM_BETA`, `shared/djProgram.ts`), y la celda de Windows de la tabla de
+`/funciones` dice «Beta» (atada por test a `PROGRAM_BETA`).
 
 **Lectura.** Lee `database.xml` de la carpeta personal (`~/Library/Application Support/VirtualDJ`)
 y la de cada disco que VirtualDJ conoce (`virtualdjLibraryRoots`, `virtualdjLibrary.ts`), con

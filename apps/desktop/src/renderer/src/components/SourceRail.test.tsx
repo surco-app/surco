@@ -2,6 +2,7 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { DJ_PROGRAMS, PROGRAM_BETA } from '../../../shared/djProgram'
 import type { PlaylistSource } from '../../../shared/types'
 import i18n from '../i18n'
 import { RAIL_WIDTH } from '../lib/columnLayout'
@@ -12,6 +13,40 @@ afterEach(cleanup)
 const COPIES = { active: false, alert: 'none', onOpen: () => {} } as const
 
 describe('SourceRail', () => {
+  it('marks VirtualDJ as beta next to its name, on macOS and Windows alike, since it is the one program not proven on every system', () => {
+    render(
+      <SourceRail
+        copies={COPIES}
+        onHide={vi.fn()}
+        sources={['rekordbox', 'serato', 'virtualdj']}
+        active="virtualdj"
+        onSelect={vi.fn()}
+      />,
+    )
+    const pill = screen.getByTestId('source-rail-beta-virtualdj')
+    expect(pill).toHaveTextContent(i18n.t('sources.beta'))
+    expect(screen.getByTestId('source-rail-virtualdj')).toContainElement(pill)
+    expect(screen.queryByTestId('source-rail-beta-rekordbox')).toBeNull()
+    expect(screen.queryByTestId('source-rail-beta-serato')).toBeNull()
+  })
+
+  it('takes which programs are beta from the program table, never from a program name', () => {
+    render(
+      <SourceRail
+        copies={COPIES}
+        onHide={vi.fn()}
+        sources={['appleMusic', ...DJ_PROGRAMS]}
+        active={null}
+        onSelect={vi.fn()}
+      />,
+    )
+    for (const program of DJ_PROGRAMS)
+      expect(screen.queryByTestId(`source-rail-beta-${program}`) !== null, program).toBe(
+        PROGRAM_BETA[program],
+      )
+    expect(screen.queryByTestId('source-rail-beta-appleMusic')).toBeNull()
+  })
+
   it('is as wide as the rail the column layout subtracts, so the editor columns fill the window exactly', () => {
     render(
       <SourceRail copies={COPIES} onHide={vi.fn()} sources={[]} active={null} onSelect={vi.fn()} />,

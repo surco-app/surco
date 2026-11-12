@@ -3,7 +3,12 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { I18nextProvider } from 'react-i18next'
 import { describe, expect, it } from 'vitest'
 import { CUE_PROGRAMS } from '../../../desktop/src/renderer/src/lib/cuePrograms'
-import { DJ_PROGRAMS, isWritable, PROGRAM_CAN } from '../../../desktop/src/shared/djProgram'
+import {
+  DJ_PROGRAMS,
+  isWritable,
+  PROGRAM_BETA,
+  PROGRAM_CAN,
+} from '../../../desktop/src/shared/djProgram'
 import { createI18n, LANGUAGES } from '../i18n'
 import de from '../i18n/locales/de.json'
 import en from '../i18n/locales/en.json'
@@ -93,6 +98,13 @@ describe('DJ program table never promises what the app does not do', () => {
   it.each(DJ_PROGRAMS)('says Windows only where the app offers %s on Windows', (program) => {
     expect(cellOf('windows', program).yes).toBe(PROGRAM_CAN[program].windows)
   })
+
+  it.each(DJ_PROGRAMS)(
+    'calls %s beta only where the app marks it beta in its sidebar',
+    (program) => {
+      expect(cellOf('windows', program).note === 'beta').toBe(PROGRAM_BETA[program])
+    },
+  )
 
   it.each(DJ_PROGRAMS)('offers a USB from %s only where the app exports one', (program) => {
     expect(cellOf('usb', program).yes).toBe(PROGRAM_CAN[program].usb)

@@ -2,8 +2,10 @@ import { ListMusic, ShieldAlert, ShieldCheck } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { PROGRAM_BETA } from '../../../shared/djProgram'
 import type { PlaylistSource } from '../../../shared/types'
 import { RAIL_WIDTH } from '../lib/columnLayout'
+import { PILL_TEXT } from './ListRow'
 import {
   AppleMusicIcon,
   EngineIcon,
@@ -70,7 +72,13 @@ export function SourceRail({
       hideable,
       className = '',
       dot,
-    }: { hideable?: PlaylistSource; className?: string; dot?: React.ReactNode } = {},
+      tag,
+    }: {
+      hideable?: PlaylistSource
+      className?: string
+      dot?: React.ReactNode
+      tag?: React.ReactNode
+    } = {},
   ) => (
     <button
       key={key}
@@ -109,6 +117,7 @@ export function SourceRail({
       >
         {label}
       </span>
+      {tag}
     </button>
   )
   return (
@@ -133,7 +142,17 @@ export function SourceRail({
           <Icon size={22} data-testid={`source-rail-icon-${s}`} />,
           !copies.active && active === s,
           () => onSelect(s),
-          { hideable: s },
+          {
+            hideable: s,
+            tag: s !== 'appleMusic' && PROGRAM_BETA[s] && (
+              <span
+                data-testid={`source-rail-beta-${s}`}
+                className={`rounded px-[5px] text-fg-dim ring-1 ring-[var(--color-line-strong)] ring-inset ${PILL_TEXT}`}
+              >
+                {tr('sources.beta')}
+              </span>
+            ),
+          },
         )
       })}
       {item(
