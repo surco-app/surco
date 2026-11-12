@@ -4593,6 +4593,34 @@ describe('runProcessTrack — checking what it wrote', () => {
     expect([...registerVerification.mock.calls[0][0].places]).toContain('engine')
   })
 
+  it('a failed library read also leaves VirtualDJ unreadable when its sync is on, never skipped', async () => {
+    const registerVerification = vi.fn<NonNullable<ProcessTrackDeps['registerVerification']>>()
+    const failing = () =>
+      vi.fn<NonNullable<ProcessTrackDeps['snapshotLibraries']>>(async () => {
+        throw new Error('SQLITE_BUSY')
+      })
+    const synced = await runProcessTrack(
+      job(),
+      makeDeps({
+        settings: settings({ syncVirtualdj: true }),
+        snapshotLibraries: failing(),
+        registerVerification,
+      }),
+    )
+    expect(registerVerification.mock.calls[0][0].virtualdj).toBe('unreadable')
+    expect(synced.verification?.checks.map((c) => c.place)).toEqual([
+      'file',
+      'rekordbox',
+      'engine',
+      'virtualdj',
+    ])
+    const off = await runProcessTrack(
+      job(),
+      makeDeps({ settings: settings({ syncVirtualdj: false }), snapshotLibraries: failing() }),
+    )
+    expect(off.verification?.checks.map((c) => c.place)).toEqual(['file', 'rekordbox', 'engine'])
+  })
+
   it('an Engine add that failed lists no Engine row to check', async () => {
     const deps = makeDeps({
       settings: settings({ addToEngineDj: true }),

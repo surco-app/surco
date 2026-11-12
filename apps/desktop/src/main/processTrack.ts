@@ -546,11 +546,15 @@ export async function runProcessTrack(
   if (deps.isAllowed && !deps.isAllowed(job.inputPath)) throw errorWithKey('pathNotAllowed')
   // The libraries follow the file this conversion supersedes, the same one the repoint names.
   const libraryFrom = job.replacesPath ?? job.inputPath
-  // A snapshot that failed is not a library without the track: both read as unreadable.
+  // A snapshot that failed is not a library without the track: each reads as unreadable.
   const before: Awaited<ReturnType<NonNullable<ProcessTrackDeps['snapshotLibraries']>>> =
     (await deps.snapshotLibraries?.(libraryFrom).catch((e) => {
       log.warn('process:track could not read the libraries before converting', e)
-      return { rekordbox: 'unreadable' as const, engine: 'unreadable' as const }
+      return {
+        rekordbox: 'unreadable' as const,
+        engine: 'unreadable' as const,
+        ...(settings.syncVirtualdj ? { virtualdj: 'unreadable' as const } : {}),
+      }
     })) ?? {}
 
   let prepared: PreparedCover | undefined
