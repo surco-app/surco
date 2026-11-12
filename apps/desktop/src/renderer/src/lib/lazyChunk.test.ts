@@ -1,6 +1,6 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { lazyChunk, preloadLazy } from './lazyChunk'
 
 const SOURCE = join(__dirname, '..')
@@ -36,5 +36,39 @@ describe('lazyChunk', () => {
     await preloadLazy()
     expect(outer).toHaveBeenCalledTimes(1)
     expect(inner).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('preloadLazyWhenIdle', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.useRealTimers()
+    vi.resetModules()
+  })
+
+  it('loads every lazy chunk once, in the first idle moment, so the first open of a screen or modal does not wait for its chunk nor compete with the startup reads', async () => {
+    const idle = vi.fn<(cb: () => void) => number>(() => 1)
+    vi.stubGlobal('requestIdleCallback', idle)
+    const { lazyChunk, preloadLazyWhenIdle } = await import('./lazyChunk')
+    const load = vi.fn(async () => ({ default: () => null }))
+    lazyChunk(load)
+    preloadLazyWhenIdle()
+    preloadLazyWhenIdle()
+    expect(idle).toHaveBeenCalledTimes(1)
+    expect(load).not.toHaveBeenCalled()
+    idle.mock.calls[0][0]()
+    await vi.waitFor(() => expect(load).toHaveBeenCalledTimes(1))
+  })
+
+  it('falls back to a timer where there is no idle callback', async () => {
+    vi.stubGlobal('requestIdleCallback', undefined)
+    vi.useFakeTimers()
+    const { lazyChunk, preloadLazyWhenIdle } = await import('./lazyChunk')
+    const load = vi.fn(async () => ({ default: () => null }))
+    lazyChunk(load)
+    preloadLazyWhenIdle()
+    expect(load).not.toHaveBeenCalled()
+    await vi.runAllTimersAsync()
+    expect(load).toHaveBeenCalledTimes(1)
   })
 })

@@ -188,7 +188,7 @@ import { gridNote } from './lib/gridNote'
 import { pushImportNotice } from './lib/importNotices'
 import { mainErrorMessage } from './lib/ipcError'
 import { columnOf, cycleRegion, isTypingTarget, nextColumn } from './lib/keymap'
-import { lazyChunk } from './lib/lazyChunk'
+import { lazyChunk, preloadLazyWhenIdle } from './lib/lazyChunk'
 import { librarySourceOf } from './lib/librarySource'
 import { listReviewSource } from './lib/listReviewSource'
 import { OpenSettingsProvider } from './lib/openSettingsContext'
@@ -685,6 +685,7 @@ export default function App(): React.JSX.Element {
   // the real selection's own lazy load will retry and surface any genuine problem.
   useEffect(() => {
     void import('./components/Editor').catch(() => {})
+    preloadLazyWhenIdle()
   }, [])
 
   // IPC promises rejected outside any catch (shell calls, fire-and-forget writes)
