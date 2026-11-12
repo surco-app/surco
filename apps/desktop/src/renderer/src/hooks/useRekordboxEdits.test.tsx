@@ -24,7 +24,7 @@ const TREE: SourceNode[] = [
   playlist('b'),
 ]
 
-function setup(answer: Promise<RekordboxEditResult>) {
+function setup(answer: Promise<RekordboxEditResult>, beforeWrite?: () => Promise<unknown>) {
   const loadRekordboxPlaylist = vi.fn().mockResolvedValue(ORDER)
   const loadRekordboxTree = vi.fn().mockResolvedValue(TREE)
   ;(window as unknown as { api: unknown }).api = {
@@ -43,7 +43,7 @@ function setup(answer: Promise<RekordboxEditResult>) {
   )
   const hook = renderHook(
     () => ({
-      edit: useRekordboxEdits(notify),
+      edit: useRekordboxEdits(notify, 'rekordbox', beforeWrite),
       entries: useQuery({
         queryKey: ['source-playlist', 'rekordbox', 'f'],
         queryFn: () => window.api.dj.playlist('rekordbox', 'f'),
@@ -95,6 +95,64 @@ describe('useRekordboxEdits', () => {
     )
   })
 
+  it('paints a move at once while the ask before writing is still unanswered', async () => {
+    const { result } = setup(Promise.resolve({ applied: true }), () => new Promise(() => {}))
+    await waitFor(() => expect(result.current.entries).toHaveLength(3))
+    act(() => {
+      void result.current.edit(
+        { kind: 'move', playlistId: 'f', linkIds: ['c'], beforeLinkId: 'a' },
+        'Factory',
+      )
+    })
+    await waitFor(() =>
+      expect(result.current.entries?.map((e) => e.linkId)).toEqual(['c', 'a', 'b']),
+    )
+    expect(window.api.dj.editPlaylist).not.toHaveBeenCalled()
+  })
+
+  it('does not ask for an edit the program cannot do', async () => {
+    const beforeWrite = vi.fn(async () => {})
+    const client = new QueryClient()
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    )
+    ;(window as unknown as { api: unknown }).api = { dj: djReads() }
+    const { result } = renderHook(() => useRekordboxEdits(vi.fn(), 'engine', beforeWrite), {
+      wrapper,
+    })
+    await act(async () => {
+      await result.current({ kind: 'rename', playlistId: '7', name: 'X' }, 'Sesion')
+    })
+    expect(beforeWrite).not.toHaveBeenCalled()
+  })
+
+  it('sends two quick edits in the order they were painted even when the second ask would answer first', async () => {
+    let releaseFirst: () => void = () => {}
+    const beforeWrite = vi
+      .fn<() => Promise<void>>()
+      .mockImplementationOnce(() => new Promise<void>((resolve) => (releaseFirst = resolve)))
+      .mockResolvedValue(undefined)
+    const { result } = setup(Promise.resolve({ applied: true }), beforeWrite)
+    await waitFor(() => expect(result.current.entries).toHaveLength(3))
+    let both: Promise<unknown> = Promise.resolve()
+    act(() => {
+      both = Promise.all([
+        result.current.edit({ kind: 'rename', playlistId: 'f', name: 'One' }, 'One'),
+        result.current.edit({ kind: 'rename', playlistId: 'f', name: 'Two' }, 'Two'),
+      ])
+    })
+    await waitFor(() => expect(beforeWrite).toHaveBeenCalled())
+    expect(window.api.dj.editPlaylist).not.toHaveBeenCalled()
+    await act(async () => {
+      releaseFirst()
+      await both
+    })
+    expect(vi.mocked(window.api.dj.editPlaylist).mock.calls.map((c) => c[2])).toEqual([
+      'One',
+      'Two',
+    ])
+  })
+
   it('sends the playlist name with the edit, for the queue to show', async () => {
     const { result } = setup(Promise.resolve({ applied: true }))
     await act(async () => {
@@ -121,19 +179,6 @@ describe('useRekordboxEdits', () => {
     })
     expect(answer).toEqual({ applied: false, reason: 'read-only' })
     expect(dj.editPlaylist).not.toHaveBeenCalled()
-  })
-
-  it('passes the queue mode on, so a session can wait for the program to close without a dialog', async () => {
-    const { result } = setup(Promise.resolve({ applied: true }))
-    await act(async () => {
-      await result.current.edit({ kind: 'delete', playlistId: 'f' }, 'Factory', 'queue')
-    })
-    expect(window.api.dj.editPlaylist).toHaveBeenCalledWith(
-      'rekordbox',
-      { kind: 'delete', playlistId: 'f' },
-      'Factory',
-      'queue',
-    )
   })
 
   it('re-reads the membership after an edit, since a deleted playlist changes the dots', async () => {

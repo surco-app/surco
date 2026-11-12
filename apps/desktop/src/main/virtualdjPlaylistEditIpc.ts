@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import type { DjEditMain } from '../shared/djApi'
-import type { PlaylistEditMode, RekordboxEditResult, RekordboxPlaylistEdit } from '../shared/types'
+import type { RekordboxEditResult, RekordboxPlaylistEdit } from '../shared/types'
 import { serialLibraryFlush } from './libraryTagSync'
 import { type QueueApply, type RekordboxQueue, withoutOp } from './rekordboxQueue'
 import { type EditOp, editResultOfOutcome } from './rekordboxQueueOps'
@@ -16,12 +16,7 @@ export function virtualdjEdit(host: {
   onWaiting?: () => void
 }): DjEditMain {
   return {
-    save: (
-      edit: RekordboxPlaylistEdit,
-      label: string | undefined,
-      _sender?: unknown,
-      mode: PlaylistEditMode = 'ask',
-    ) =>
+    save: (edit: RekordboxPlaylistEdit, label: string | undefined) =>
       serialLibraryFlush(async (): Promise<RekordboxEditResult> => {
         const roots = host.roots()
         if (badVirtualdjName(edit, roots)) return { applied: false, reason: 'bad-name' }
@@ -42,7 +37,7 @@ export function virtualdjEdit(host: {
         }
         if (stillWaiting(result)) {
           host.onWaiting?.()
-          if (mode === 'queue') return { applied: false, queued: true, opId: op.id }
+          return { applied: false, queued: true, opId: op.id }
         } else if (result.status === 'refused') host.queue.drop(op.id)
         if (result.status === 'refused') return { applied: false, reason: result.reason }
         const written = host.queue.outcomeOf(op.id)

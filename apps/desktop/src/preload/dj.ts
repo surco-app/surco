@@ -40,6 +40,7 @@ export function createDjApi(ipc: DjIpc): DjApi {
     exportCollection: (p, payload) => ipc.invoke('dj:exportCollection', p, payload),
     pickLibraryPath: (p) => ipc.invoke('dj:pickLibraryPath', p),
     running: (p) => ipc.invoke('dj:running', p),
+    askToApply: (programs) => ipc.invoke('dj:ask-to-apply', programs),
     onSyncIssue: (p, cb) => subscribe(ipc, DJ_SYNC_ISSUE, p, cb),
   }
 }

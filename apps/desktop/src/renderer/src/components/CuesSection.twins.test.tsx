@@ -55,9 +55,16 @@ function setup(
   twins: Record<string, LibraryTracks> = { '/m/g.wav': { traktor: TRAKTOR } },
   reads: Record<string, Partial<TrackCues>> = {},
 ) {
-  const saveRekordboxCues = vi.fn<Api['cues']['save']>(async () => {})
+  const calls: string[] = []
+  const askToApply = vi.fn<Api['dj']['askToApply']>(async () => {
+    calls.push('askToApply')
+    return {}
+  })
+  const saveRekordboxCues = vi.fn<Api['cues']['save']>(async () => {
+    calls.push('save')
+  })
   const rekordboxCueTwins = vi.fn<Api['cues']['twins']>(async (file) => twins[file] ?? {})
-  installApi({
+  const api = installApi({
     cues: {
       trackCues: vi.fn<Api['cues']['trackCues']>(async (id) => ({
         ...READ,
@@ -69,6 +76,7 @@ function setup(
       save: saveRekordboxCues,
     },
   })
+  api.dj.askToApply = askToApply
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   const tree = (over: Partial<Settings>) => (
     <QueryClientProvider client={client}>
@@ -83,7 +91,7 @@ function setup(
   )
   const { rerender } = render(tree(settings))
   const changeSettings = (over: Partial<Settings>) => rerender(tree({ ...settings, ...over }))
-  return { saveRekordboxCues, rekordboxCueTwins, changeSettings }
+  return { saveRekordboxCues, rekordboxCueTwins, changeSettings, askToApply, calls }
 }
 
 const ready = () => waitFor(() => expect(screen.getByTestId('cue-wave')).toBeInTheDocument())
@@ -111,6 +119,17 @@ describe('a flow placed in the cue editor reaches the other DJ programs', () => 
     const traktor = saveRekordboxCues.mock.calls[0][0][1]
     expect(traktor).toMatchObject({ path: '/m/g.wav', label: 'Gowan', fingerprint: 'f0' })
     expect(traktor.wanted.filter((c) => c.kind !== 0)).toHaveLength(3)
+  })
+
+  it('asks to close each program a save reaches before saving, once per Save', async () => {
+    const { askToApply, calls } = setup()
+    await ready()
+    markAt(bar(64))
+    await screen.findByTestId('cues-twin-traktor')
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(calls).toEqual(['askToApply', 'save']))
+    expect(askToApply).toHaveBeenCalledOnce()
+    expect(askToApply).toHaveBeenCalledWith(['rekordbox', 'traktor'])
   })
 
   // Reported 29/10/2026: "of the 5 I marked, Traktor got 2 or 3 at most, or none". The flow

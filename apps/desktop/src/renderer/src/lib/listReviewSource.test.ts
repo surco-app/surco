@@ -20,7 +20,9 @@ const row = (path: string, artist: string, over: Partial<TrackItem> = {}): Track
   }
 }
 let api: Record<string, ReturnType<typeof vi.fn>>
+let askToApply: ReturnType<typeof vi.fn>
 beforeEach(() => {
+  askToApply = vi.fn().mockResolvedValue({})
   api = {
     appleMusicFileEntries: vi.fn().mockResolvedValue({ consulted: true, entries: {} }),
     applyListFixes: vi.fn().mockResolvedValue([]),
@@ -32,7 +34,7 @@ beforeEach(() => {
     scanDamage: vi.fn().mockResolvedValue({ findings: [], unread: [] }),
     repairDamage: vi.fn().mockResolvedValue([]),
   }
-  ;(window as unknown as { api: unknown }).api = api
+  ;(window as unknown as { api: unknown }).api = { ...api, dj: { askToApply } }
 })
 const source = (rows: TrackItem[], over = {}) =>
   listReviewSource({
@@ -549,6 +551,47 @@ describe('listReviewSource damage', () => {
     ]
     await source([row('/m/a.mp3', 'A')]).repairDamage?.(items)
     expect(api.repairDamage).toHaveBeenCalledWith(items)
+  })
+
+  it('asks to close Traktor or Engine DJ before repairing their damage, once, and then repairs', async () => {
+    const calls: string[] = []
+    askToApply.mockImplementation(async () => {
+      calls.push('ask')
+      return {}
+    })
+    api.repairDamage.mockImplementation(async () => {
+      calls.push('repair')
+      return []
+    })
+    const items = [
+      { id: 'a', repair: { target: 'traktor', path: '/m/a.mp3', addMs: 5 } },
+      { id: 'b', repair: { target: 'traktor', path: '/m/b.mp3', addMs: 5 } },
+      { id: 'c', repair: { target: 'genre', path: '/m/c.mp3', from: 'a', to: 'b' } },
+      { id: 'd', repair: { target: 'engine', path: '/m/d.mp3' } },
+    ]
+    await source([row('/m/a.mp3', 'A')]).repairDamage?.(items as never)
+    expect(askToApply).toHaveBeenCalledOnce()
+    expect(askToApply).toHaveBeenCalledWith(['traktor', 'engine'])
+    expect(calls).toEqual(['ask', 'repair'])
+  })
+
+  it('leaves the asking to the review for a program its own tag sync reaches, so one Apply shows one prompt per program', async () => {
+    const items = [
+      { id: 'a', repair: { target: 'traktor', path: '/m/a.mp3', addMs: 5 } },
+      { id: 'd', repair: { target: 'engine', path: '/m/d.mp3' } },
+    ]
+    await source([row('/m/a.mp3', 'A')]).repairDamage?.(items as never, ['traktor'])
+    expect(askToApply).toHaveBeenCalledOnce()
+    expect(askToApply).toHaveBeenCalledWith(['engine'])
+    expect(api.repairDamage).toHaveBeenCalledWith(items)
+  })
+
+  it('does not ask when the repairs only touch tags', async () => {
+    const items = [
+      { id: 'x', repair: { target: 'genre' as const, path: '/m/a.mp3', from: 'a', to: 'b' } },
+    ]
+    await source([row('/m/a.mp3', 'A')]).repairDamage?.(items)
+    expect(askToApply).not.toHaveBeenCalled()
   })
 })
 

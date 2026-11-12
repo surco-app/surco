@@ -1,4 +1,3 @@
-import type { BrowserWindow } from 'electron'
 import type { WantedCue } from '../shared/cueRules'
 import type { DropInput } from '../shared/dropDetect'
 import type { GridFit } from '../shared/gridEdit'
@@ -23,5 +22,5 @@ export interface CueReader {
 export interface CueSource extends CueReader {
   queuedWanted(contentId: string, op: CuesOp): Promise<WantedCue[]>
   queue: CueQueue
-  applyQuietly: (win: BrowserWindow | null) => void
+  applyQuietly: () => void
 }

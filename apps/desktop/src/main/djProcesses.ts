@@ -1,21 +1,22 @@
 import type { BrowserWindow, MessageBoxOptions } from 'electron'
-import type { DjProgram, WritableProgram } from '../shared/djProgram'
+import type { ApplyAnswer } from '../shared/djApi'
+import type { CueProgram, DjProgram, WritableProgram } from '../shared/djProgram'
 import { isEngineDjRunning, quitEngineDj } from './engineProcess'
 import type { createMenuT } from './i18n'
 import { isRekordboxRunning, quitRekordbox } from './rekordboxProcess'
-import { isSeratoRunning } from './seratoProcess'
+import { isSeratoRunning, waitForSeratoExit } from './seratoProcess'
 import { sharedPrompt } from './sharedPrompt'
 import { isTraktorRunning, quitTraktor } from './traktorProcess'
 import { isVirtualdjRunning, waitForVirtualdjExit } from './virtualdjProcess'
 
 type MenuKey = Parameters<ReturnType<typeof createMenuT>>[0]
 
-export type QuitReason = 'convert' | 'cues' | 'playlists' | 'usb' | 'restore' | 'duplicates'
+export type QuitReason = 'convert' | 'usb' | 'restore' | 'duplicates'
 
 export const QUIT_REASONS = {
-  rekordbox: ['convert', 'playlists', 'usb', 'restore'],
-  traktor: ['convert', 'cues', 'playlists', 'restore'],
-  engine: ['convert', 'cues', 'playlists', 'usb', 'restore'],
+  rekordbox: ['convert', 'usb', 'restore'],
+  traktor: ['convert', 'restore'],
+  engine: ['convert', 'usb', 'restore'],
   virtualdj: ['convert', 'restore', 'duplicates'],
 } as const satisfies { [P in WritableProgram]: readonly ['convert', ...QuitReason[]] }
 
@@ -26,13 +27,11 @@ export interface ProgramProcess {
   quit: () => Promise<boolean>
 }
 
-export const DJ_PROCESSES: {
-  [P in DjProgram]: P extends WritableProgram ? ProgramProcess : Pick<ProgramProcess, 'isRunning'>
-} = {
+export const DJ_PROCESSES: Record<DjProgram, ProgramProcess> = {
   rekordbox: { isRunning: isRekordboxRunning, quit: () => quitRekordbox() },
   traktor: { isRunning: isTraktorRunning, quit: quitTraktor },
   engine: { isRunning: isEngineDjRunning, quit: quitEngineDj },
-  serato: { isRunning: isSeratoRunning },
+  serato: { isRunning: isSeratoRunning, quit: () => waitForSeratoExit() },
   virtualdj: { isRunning: isVirtualdjRunning, quit: () => waitForVirtualdjExit() },
 }
 
@@ -59,7 +58,6 @@ export const QUIT_TEXT: { [P in WritableProgram]: QuitText<P> } = {
     cancel: 'rekordboxQuitCancel',
     detail: {
       convert: 'rekordboxQuitDetail',
-      playlists: 'rekordboxQuitDetailPlaylists',
       usb: 'rekordboxQuitDetailUsb',
       restore: 'rekordboxQuitDetailRestore',
     },
@@ -70,8 +68,6 @@ export const QUIT_TEXT: { [P in WritableProgram]: QuitText<P> } = {
     cancel: 'traktorQuitCancel',
     detail: {
       convert: 'traktorQuitDetail',
-      cues: 'traktorQuitDetailCues',
-      playlists: 'traktorQuitDetailPlaylists',
       restore: 'traktorQuitDetailRestore',
     },
   },
@@ -81,8 +77,6 @@ export const QUIT_TEXT: { [P in WritableProgram]: QuitText<P> } = {
     cancel: 'engineQuitCancel',
     detail: {
       convert: 'engineQuitDetail',
-      cues: 'engineQuitDetailCues',
-      playlists: 'engineQuitDetailPlaylists',
       usb: 'engineQuitDetailUsb',
       restore: 'engineQuitDetailRestore',
     },
@@ -178,4 +172,69 @@ export function createEnsureClosed(deps: {
     win: BrowserWindow | null,
     reason: ReasonOf<P> = 'convert',
   ) => closers[program](win, reason)
+}
+
+export type { ApplyAnswer }
+
+const APPLY_TEXT = {
+  rekordbox: {
+    message: 'rekordboxQuitMessage',
+    detail: 'rekordboxApplyDetail',
+    now: 'rekordboxApplyNow',
+  },
+  traktor: { message: 'traktorQuitMessage', detail: 'traktorApplyDetail', now: 'traktorApplyNow' },
+  engine: { message: 'engineQuitMessage', detail: 'engineApplyDetail', now: 'engineApplyNow' },
+  serato: { message: 'seratoQuitMessage', detail: 'seratoApplyDetail', now: 'seratoApplyNow' },
+  virtualdj: {
+    message: 'virtualdjQuitMessage',
+    detail: 'virtualdjApplyDetail',
+    now: 'virtualdjApplyNow',
+  },
+} as const satisfies Record<CueProgram, { message: MenuKey; detail: MenuKey; now: MenuKey }>
+
+export function createAskToApply(deps: {
+  processes: Record<CueProgram, ProgramProcess>
+  ask: (win: BrowserWindow | null, opts: MessageBoxOptions) => Promise<number>
+  t: (key: MenuKey) => string
+}): (program: CueProgram, win: BrowserWindow | null) => Promise<ApplyAnswer> {
+  function asker(program: CueProgram) {
+    const text = APPLY_TEXT[program]
+    const prompt = sharedPrompt(async (_key: null, win: BrowserWindow | null) => {
+      const response = await deps.ask(win, {
+        type: 'warning',
+        message: deps.t(text.message),
+        detail: deps.t(text.detail),
+        buttons: [deps.t('applyLater'), deps.t(text.now)],
+        defaultId: 0,
+        cancelId: 0,
+      })
+      if (response !== 1) return false
+      return deps.processes[program].quit().catch(() => false)
+    })
+    return async (win: BrowserWindow | null): Promise<ApplyAnswer> => {
+      const running = await deps.processes[program].isRunning().catch(() => true)
+      if (!running) return 'now'
+      return (await prompt(null, win)) ? 'now' : 'later'
+    }
+  }
+
+  const askers: Record<CueProgram, (win: BrowserWindow | null) => Promise<ApplyAnswer>> = {
+    rekordbox: asker('rekordbox'),
+    traktor: asker('traktor'),
+    engine: asker('engine'),
+    serato: asker('serato'),
+    virtualdj: asker('virtualdj'),
+  }
+
+  return (program, win) => askers[program](win)
+}
+
+export async function askInOrder(
+  asker: (program: CueProgram, win: BrowserWindow | null) => Promise<ApplyAnswer>,
+  programs: CueProgram[],
+  win: BrowserWindow | null,
+): Promise<Partial<Record<CueProgram, ApplyAnswer>>> {
+  const answers: Partial<Record<CueProgram, ApplyAnswer>> = {}
+  for (const program of programs) answers[program] = await asker(program, win)
+  return answers
 }

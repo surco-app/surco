@@ -1,7 +1,6 @@
 import { mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import type { WebContents } from 'electron'
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({
@@ -19,8 +18,7 @@ import { traktorStamps, traktorSubtreeStamps } from './traktorPlaylistModel'
 
 let section: DjEditMain
 
-const save = (edit: RekordboxPlaylistEdit, label?: string) =>
-  section.save(edit, label, {} as WebContents)
+const save = (edit: RekordboxPlaylistEdit, label?: string) => section.save(edit, label)
 
 async function collection(text = PLAYLISTS_SAMPLE): Promise<string> {
   const file = join(await mkdtemp(join(tmpdir(), 'surco-traktoredit-')), 'collection.nml')
@@ -45,7 +43,6 @@ function setup(path: string, result: (op: QueueOp) => QueueApply) {
   const host = {
     collection: () => path,
     queue,
-    ensureClosed: vi.fn(async () => true),
     isRunning: vi.fn(async () => false),
     onApplied: vi.fn(),
     onWaiting: vi.fn(),
@@ -66,7 +63,7 @@ const applied = (op: QueueOp): QueueApply => ({
 describe('traktorEdit', () => {
   it('queues the edit with the stamp of the playlist it names, so a change made in Traktor meanwhile is caught', async () => {
     const file = await collection()
-    const { host, queued } = setup(file, applied)
+    const { queued } = setup(file, applied)
     const edit: RekordboxPlaylistEdit = {
       kind: 'remove',
       playlistId: 'fri',
@@ -74,7 +71,6 @@ describe('traktorEdit', () => {
     }
     expect(await save(edit, 'Friday')).toEqual({ applied: true })
     expect((queued[0] as EditOp).stamps).toEqual({ fri: traktorStamps(PLAYLISTS_SAMPLE).fri })
-    expect(host.ensureClosed).toHaveBeenCalledWith('window')
   })
 
   // The delete takes everything below the folder, so a change anywhere in it must catch it.
@@ -100,7 +96,7 @@ describe('traktorEdit', () => {
     expect(order).toEqual([`loose:${file}`, 'apply'])
   })
 
-  it('in queue mode leaves the edit waiting for Traktor to close without asking, and names it so its result can be matched later', async () => {
+  it('reports a queued edit as waiting, never as refused, and names it so its result can be matched later', async () => {
     const file = await collection()
     const { host, queued } = setup(file, () => ({ status: 'refused', reason: 'cancelled' }))
     host.isRunning.mockResolvedValue(true)
@@ -111,9 +107,8 @@ describe('traktorEdit', () => {
       folder: false,
       tracks: [],
     }
-    const answer = await section.save(edit, 'Sesion', {} as WebContents, 'queue')
+    const answer = await save(edit, 'Sesion')
     expect(answer).toEqual({ applied: false, queued: true, opId: queued[0].id })
-    expect(host.ensureClosed).not.toHaveBeenCalled()
     expect(host.onWaiting).toHaveBeenCalledOnce()
   })
 
@@ -121,10 +116,8 @@ describe('traktorEdit', () => {
     const file = await collection()
     const { host } = setup(file, () => ({ status: 'refused', reason: 'cancelled' }))
     const edit: RekordboxPlaylistEdit = { kind: 'rename', playlistId: 'dnb', name: 'DnB' }
-    expect(await save(edit)).toEqual({
-      applied: false,
-      reason: 'cancelled',
-    })
+    host.isRunning.mockResolvedValue(true)
+    expect(await save(edit)).toEqual({ applied: false, queued: true, opId: expect.any(String) })
     expect(host.onWaiting).toHaveBeenCalled()
     expect(host.queue.drop).not.toHaveBeenCalled()
   })
@@ -163,13 +156,8 @@ describe('traktorEdit with an apply already running', () => {
     const saving = traktorEdit({
       collection: () => '/library/collection.nml',
       queue: race.queue,
-      ensureClosed: async () => true,
       isRunning: async () => false,
-    }).save(
-      { kind: 'create', parentId: 'root', name: 'Nueva', folder: false },
-      'Nueva',
-      {} as WebContents,
-    )
+    }).save({ kind: 'create', parentId: 'root', name: 'Nueva', folder: false }, 'Nueva')
     await race.release()
     expect(await saving).toEqual({ applied: true, createdId: 'Nueva' })
   })

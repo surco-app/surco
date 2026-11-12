@@ -5,6 +5,7 @@
 import type { PeekableAnalyses } from '../shared/audioIpcContract'
 import type { CueProfile, CueProfileRead, TasteTrack } from '../shared/cueProfile'
 import type { DjApi } from '../shared/djApi'
+import type { CueProgram } from '../shared/djProgram'
 import type { DropInput } from '../shared/dropDetect'
 import type { FeedbackForm, FeedbackOutcome } from '../shared/feedback'
 import type { GridFit } from '../shared/gridEdit'
@@ -193,6 +194,7 @@ export interface Api {
   loadMusicReview: () => Promise<MusicReviewEntry[]>
   applyMusicFixes: (fixes: MusicFieldFix[]) => Promise<MusicFixOutcome[]>
   syncLibraryTags: (updates: LibraryTagUpdate[]) => Promise<LibraryTagSyncReport>
+  tagSyncPrograms: (paths: string[]) => Promise<CueProgram[]>
   // After a review removed duplicate copies: the DJ libraries move to the kept copies, then
   // the removed files go to the Trash when nothing needs them. Empty off macOS.
   replaceDuplicatesInLibraries: (
@@ -301,6 +303,7 @@ export interface Api {
   // file-conflict choice the previous run left. Fire-and-forget; single converts skip it,
   // so their conflicts always prompt.
   beginConversionBatch: () => void
+  conversionPrograms: (paths: string[]) => Promise<CueProgram[]>
   // Marks the end of a convert-all run so main flushes any Traktor collection.nml
   // patches the batch recorded. Fire-and-forget; must fire even when the run was
   // cancelled or failed, or its patches would leak into the next batch's flush.

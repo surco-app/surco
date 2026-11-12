@@ -52,8 +52,15 @@ afterEach(() => {
 })
 
 function setup(twins: Record<string, LibraryTracks> = {}, targets = TARGETS) {
-  const saveRekordboxCues = vi.fn<Api['cues']['save']>(async () => {})
-  installApi({
+  const calls: string[] = []
+  const askToApply = vi.fn<Api['dj']['askToApply']>(async () => {
+    calls.push('askToApply')
+    return {}
+  })
+  const saveRekordboxCues = vi.fn<Api['cues']['save']>(async () => {
+    calls.push('save')
+  })
+  const api = installApi({
     cues: {
       twins: vi.fn<Api['cues']['twins']>(async (file) => twins[file] ?? {}),
       trackCues: vi.fn<Api['cues']['trackCues']>(async (id) => ({
@@ -64,6 +71,7 @@ function setup(twins: Record<string, LibraryTracks> = {}, targets = TARGETS) {
       save: saveRekordboxCues,
     },
   })
+  api.dj.askToApply = askToApply
   const onMark = vi.fn()
   const onFlow = vi.fn()
   const onShowBadGrid = vi.fn()
@@ -84,7 +92,7 @@ function setup(twins: Record<string, LibraryTracks> = {}, targets = TARGETS) {
   )
   const { rerender } = render(tree({}))
   const changeSettings = (over: Partial<Settings>) => rerender(tree(over))
-  return { saveRekordboxCues, onMark, onFlow, onShowBadGrid, changeSettings }
+  return { saveRekordboxCues, askToApply, calls, onMark, onFlow, onShowBadGrid, changeSettings }
 }
 
 describe('Cues over several selected tracks', () => {
@@ -291,6 +299,34 @@ describe('Cues over several selected tracks', () => {
     expect(saveRekordboxCues.mock.calls[0][0].map((r) => r.contentId).sort()).toEqual(
       ['103', '104', 'engine:2', T1, T2].sort(),
     )
+  })
+
+  it('asks to close each program the batch save reaches before saving, once per Save', async () => {
+    const T1 = 'traktor:M/:m/:a.wav'
+    const T2 = 'traktor:M/:m/:b.wav'
+    const { askToApply, calls } = setup({
+      '/m/a.wav': { traktor: T1 },
+      '/m/b.wav': { traktor: T2, engine: 'engine:2' },
+    })
+    act(() => {
+      keepAutoMark('103', {
+        kind: 'proposed',
+        proposals: [bar(64)].map((ms) => ({ ms, sure: true, quietBars: 8 })),
+      })
+      keepAutoMark('104', {
+        kind: 'proposed',
+        proposals: [bar(96)].map((ms) => ({ ms, sure: true, quietBars: 8 })),
+      })
+    })
+    fireEvent.click(screen.getByTestId('cues-batch-accept'))
+    await screen.findByTestId('cues-batch-twins')
+    await waitFor(() =>
+      expect(screen.getByTestId('cues-batch-twin-engine')).toHaveTextContent('1'),
+    )
+    fireEvent.click(screen.getByTestId('cues-batch-save'))
+    await waitFor(() => expect(calls).toEqual(['askToApply', 'save']))
+    expect(askToApply).toHaveBeenCalledOnce()
+    expect([...askToApply.mock.calls[0][0]].sort()).toEqual(['engine', 'rekordbox', 'traktor'])
   })
 
   it('adjusts the grids of the selection from the same panel that marks its cues', () => {

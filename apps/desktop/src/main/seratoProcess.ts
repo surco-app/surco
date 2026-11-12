@@ -16,3 +16,16 @@ export async function isSeratoRunning(): Promise<boolean> {
     return true
   }
 }
+
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
+
+export async function waitForSeratoExit(
+  isRunning: () => Promise<boolean> = isSeratoRunning,
+  wait: (ms: number) => Promise<void> = sleep,
+): Promise<boolean> {
+  for (let attempt = 0; attempt < 30; attempt++) {
+    if (!(await isRunning())) return true
+    await wait(500)
+  }
+  return false
+}

@@ -46,6 +46,7 @@ function track(
 
 function setApi(over: Record<string, unknown>): void {
   ;(window as unknown as { api: unknown }).api = {
+    conversionPrograms: vi.fn<Api['conversionPrograms']>().mockResolvedValue([]),
     beginConversionBatch: vi.fn(),
     endConversionBatch: vi.fn(),
     ...over,

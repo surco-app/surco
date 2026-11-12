@@ -1,6 +1,5 @@
 import { realpathSync } from 'node:fs'
 import { readFile, stat } from 'node:fs/promises'
-import type { BrowserWindow } from 'electron'
 import { traktorKey } from '../shared/traktorContent'
 import type { CueQueue, CueSource } from './cueSource'
 import { CUE_WAVE_FINE_PER_SECOND } from './cueWaveFine'
@@ -18,7 +17,7 @@ export function traktorCueSource(
     nml: () => string
     bootVolume: () => string
     queue: CueQueue
-    applyQuietly: (win: BrowserWindow | null) => void
+    applyQuietly: () => void
     words: (file: string) => Promise<Uint16Array | null>
     fine?: (file: string) => Promise<Uint8Array | null>
   },

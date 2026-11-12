@@ -46,17 +46,17 @@ function registerProgramOperation(table: DjMainTable, operation: ProgramOperatio
 function registerSave(table: DjMainTable): void {
   ipcMain.handle(
     'dj:editPlaylist',
-    async (event, program: DjProgram, edit: unknown, label: unknown, mode: unknown) => {
+    async (_event, program: DjProgram, edit: unknown, label: unknown) => {
       const { target, run } = resolveOperation(table, program, 'edit', 'save', 'editPlaylist')
-      return run.call(target, edit, label, event.sender, mode)
+      return run.call(target, edit, label)
     },
   )
 }
 
 function registerApplyCueQueue(table: DjMainTable): void {
-  ipcMain.handle('dj:applyCueQueue', async (event, program: DjProgram) => {
+  ipcMain.handle('dj:applyCueQueue', async (_event, program: DjProgram) => {
     const { target, run } = resolveOperation(table, program, 'cueQueue', 'apply', 'applyCueQueue')
-    return run.call(target, event.sender)
+    return run.call(target)
   })
 }
 

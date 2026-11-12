@@ -10,7 +10,7 @@ import type { CueLibrary } from '../../../shared/types'
 import { type AutoMarkTarget, acceptAutoMarks } from '../lib/cueAutoMark'
 import { forgetStaleDrafts } from '../lib/cueDrafts'
 import { flowName } from '../lib/cueFlowName'
-import { cueProgramOf } from '../lib/cuePrograms'
+import { cueProgramOf, programsOfSave } from '../lib/cuePrograms'
 import {
   draftsToSave,
   forgetAutoMark,
@@ -152,10 +152,13 @@ export function CuesBatchSection({
           p.status === 'planned' && savable(p.contentId) ? [p.request] : [],
         ),
       ]
-      const saved = await window.api.cues.save(reqs).then(
-        () => true,
-        () => false,
-      )
+      const saved = await window.api.dj
+        .askToApply(programsOfSave(reqs))
+        .then(() => window.api.cues.save(reqs))
+        .then(
+          () => true,
+          () => false,
+        )
       setSaveFailed(!saved)
       if (!saved) return
       recordCueEdits(

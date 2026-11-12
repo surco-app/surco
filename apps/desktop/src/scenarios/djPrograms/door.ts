@@ -57,12 +57,11 @@ export function registerDoor(current: () => Queues): { settled: () => Promise<vo
   }
   const engineDir = () => getSettings().engineLibraryDir
   const traktorNml = () => getSettings().traktorNmlPath
-  const section = { ensureClosed: closed, onWaiting: () => {}, onReady: () => {} }
+  const section = { isClosed: closed, onWaiting: () => {}, onReady: () => {} }
   const table: DjMainTable = {
     rekordbox: {
       read: rekordboxRead(rekordboxCollectionPath, rekordboxCollectionPath, {}),
       edit: rekordboxEdit(rekordboxCollectionPath, {
-        ensureClosed: closed,
         isRunning: notRunning,
         queue: queues.rekordbox,
       }),
@@ -74,7 +73,6 @@ export function registerDoor(current: () => Queues): { settled: () => Promise<vo
         libraryDir: engineDir,
         queue: queues.engine,
         isRunning: notRunning,
-        ensureClosed: closed,
       }),
       cueQueue: engineCueQueueSection(queues.engine, section),
     },
@@ -83,7 +81,6 @@ export function registerDoor(current: () => Queues): { settled: () => Promise<vo
       edit: traktorEdit({
         collection: traktorNml,
         queue: queues.traktor,
-        ensureClosed: closed,
         isRunning: notRunning,
       }),
       cueQueue: traktorCueQueueSection(queues.traktor, section),

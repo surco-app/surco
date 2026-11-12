@@ -138,15 +138,14 @@ describe('SOURCE_PROGRAMS says what each DJ program allows in its tab', () => {
     }
   })
 
-  it('saves an Engine DJ edit through window.api.dj, passing the queue mode on', async () => {
+  it('saves an Engine DJ edit through window.api.dj', async () => {
     const editPlaylist = vi.fn<Api['dj']['editPlaylist']>().mockResolvedValue({ applied: true })
     installApi({ dj: { ...djReads(), editPlaylist } as unknown as Api['dj'] })
-    await SOURCE_PROGRAMS.engine.edit?.save({ kind: 'delete', playlistId: '7' }, 'Sesion', 'queue')
+    await SOURCE_PROGRAMS.engine.edit?.save({ kind: 'delete', playlistId: '7' }, 'Sesion')
     expect(editPlaylist).toHaveBeenCalledWith(
       'engine',
       { kind: 'delete', playlistId: '7' },
       'Sesion',
-      'queue',
     )
   })
 

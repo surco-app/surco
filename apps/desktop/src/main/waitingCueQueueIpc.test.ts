@@ -1,4 +1,3 @@
-import type { WebContents } from 'electron'
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({ BrowserWindow: { fromWebContents: vi.fn(() => 'window') } }))
@@ -42,7 +41,7 @@ describe('waitingCueQueueSection', () => {
   it('writes now when Serato is closed and answers with what landed', async () => {
     const q = queue()
     register(q, { isRunning: vi.fn(async () => false) })
-    expect(await section.apply({} as WebContents)).toEqual(appliedNotice(APPLIED))
+    expect(await section.apply()).toEqual(appliedNotice(APPLIED))
     expect(q.apply).toHaveBeenCalledWith(expect.any(Function), { manual: true })
   })
 
@@ -50,7 +49,7 @@ describe('waitingCueQueueSection', () => {
     const onWaiting = vi.fn()
     const isRunning = vi.fn(async () => true)
     register(queue(), { isRunning, onWaiting })
-    expect(await section.apply({} as WebContents)).toBeNull()
+    expect(await section.apply()).toBeNull()
     expect(isRunning).toHaveBeenCalled()
     expect(onWaiting).toHaveBeenCalled()
   })

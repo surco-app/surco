@@ -2,11 +2,11 @@
 import { cleanup, renderHook } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type {
-  PlaylistEditMode,
   PlaylistTrackRef,
   RekordboxEditResult,
   RekordboxPlaylistEdit,
 } from '../../../shared/types'
+import { djReads } from '../test/api'
 import { useSessionWrite } from './useSessionWrite'
 
 afterEach(cleanup)
@@ -20,16 +20,21 @@ const applied = (createdId?: string): RekordboxEditResult => ({ applied: true, c
 const queued = (opId: string): RekordboxEditResult => ({ applied: false, queued: true, opId })
 const refused: RekordboxEditResult = { applied: false, reason: 'write-failed' }
 
-type Edit = (
-  edit: RekordboxPlaylistEdit,
-  name: string,
-  mode?: PlaylistEditMode,
-) => Promise<RekordboxEditResult>
+type Edit = (edit: RekordboxPlaylistEdit, name: string) => Promise<RekordboxEditResult>
 
 function setup(script: (edit: RekordboxPlaylistEdit) => RekordboxEditResult) {
-  const edit = vi.fn<Edit>(async (e) => script(e))
-  const { result } = renderHook(() => useSessionWrite(edit))
-  return { edit, writer: result.current }
+  const calls: string[] = []
+  const askToApply = vi.fn(async () => {
+    calls.push('ask')
+    return {}
+  })
+  ;(window as unknown as { api: unknown }).api = { dj: { ...djReads({}), askToApply } }
+  const edit = vi.fn<Edit>(async (e) => {
+    calls.push(e.kind)
+    return script(e)
+  })
+  const { result } = renderHook(() => useSessionWrite(edit, 'engine'))
+  return { edit, askToApply, calls, writer: result.current }
 }
 
 const kinds = (edit: ReturnType<typeof setup>['edit']): string[] =>
@@ -41,6 +46,37 @@ describe('useSessionWrite', () => {
     expect(edit).not.toHaveBeenCalled()
   })
 
+  describe('asking to close the program', () => {
+    it('asks once for a session that creates, fills and deletes playlists, not once per write', async () => {
+      const { askToApply, calls, writer } = setup((e) =>
+        e.kind === 'create' ? applied('new') : applied(),
+      )
+
+      await writer.replace('folder', 'old', 'Sesión', tracks)
+
+      expect(askToApply).toHaveBeenCalledExactlyOnceWith(['engine'])
+      expect(calls).toEqual(['ask', 'create', 'delete'])
+    })
+
+    it('asks before filling an existing playlist, since the DJ may want it written now', async () => {
+      const { askToApply, calls, writer } = setup(() => applied())
+
+      await writer.fill('empty', 'Session', tracks)
+
+      expect(askToApply).toHaveBeenCalledExactlyOnceWith(['engine'])
+      expect(calls).toEqual(['ask', 'add'])
+    })
+
+    it('asks before creating a playlist', async () => {
+      const { askToApply, calls, writer } = setup(() => applied('new'))
+
+      await writer.create('folder', 'Session', tracks)
+
+      expect(askToApply).toHaveBeenCalledExactlyOnceWith(['engine'])
+      expect(calls).toEqual(['ask', 'create'])
+    })
+  })
+
   describe('create', () => {
     it('makes the playlist with its tracks in one edit that may wait for the program to close', async () => {
       const { edit, writer } = setup(() => applied('new'))
@@ -49,7 +85,6 @@ describe('useSessionWrite', () => {
       expect(edit).toHaveBeenCalledExactlyOnceWith(
         { kind: 'create', parentId: 'folder', name: 'Sesión del 9/11', folder: false, tracks },
         'Sesión del 9/11',
-        'queue',
       )
     })
 
@@ -70,7 +105,7 @@ describe('useSessionWrite', () => {
 
       expect(await writer.replace('folder', 'old', 'Sesión', tracks)).toEqual({ id: 'new' })
       expect(kinds(edit)).toEqual(['create', 'delete'])
-      expect(edit.mock.calls[1]).toEqual([{ kind: 'delete', playlistId: 'old' }, 'Sesión', 'queue'])
+      expect(edit.mock.calls[1]).toEqual([{ kind: 'delete', playlistId: 'old' }, 'Sesión'])
     })
 
     it('queues the delete behind the new playlist when the program is open', async () => {
@@ -101,7 +136,6 @@ describe('useSessionWrite', () => {
       expect(edit).toHaveBeenCalledExactlyOnceWith(
         { kind: 'add', playlistId: 'empty', tracks },
         'Session 11-9',
-        'queue',
       )
     })
 

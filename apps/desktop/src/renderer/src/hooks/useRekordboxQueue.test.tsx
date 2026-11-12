@@ -7,7 +7,12 @@ import type { Api } from '../../../preload/api'
 import type { RekordboxQueueApplied, RekordboxQueueState } from '../../../shared/types'
 import '../i18n'
 import { djReads, installApi, type ProgramReads } from '../test/api'
-import { ENGINE_CUE_QUEUE, SERATO_CUE_QUEUE, useRekordboxQueue } from './useRekordboxQueue'
+import {
+  ENGINE_CUE_QUEUE,
+  SERATO_CUE_QUEUE,
+  useRekordboxQueue,
+  VIRTUALDJ_CUE_QUEUE,
+} from './useRekordboxQueue'
 
 afterEach(cleanup)
 
@@ -154,6 +159,43 @@ describe('useRekordboxQueue', () => {
     })
     await act(() => hook.result.current.applyNow())
     expect(notify).toHaveBeenCalledWith('Done in rekordbox · 1 track', 'neutral')
+  })
+
+  it('asks to close rekordbox before Apply now writes, and applies once it is answered', async () => {
+    const calls: string[] = []
+    const applyCueQueue = vi.fn<ProgramReads['applyCueQueue']>(async () => {
+      calls.push('apply')
+      return null
+    })
+    const { hook, api } = setup({ applyCueQueue })
+    vi.mocked(api.dj.askToApply).mockImplementation(async () => {
+      calls.push('ask')
+      return { rekordbox: 'now' }
+    })
+    await act(() => hook.result.current.applyNow())
+    expect(api.dj.askToApply).toHaveBeenCalledWith(['rekordbox'])
+    expect(calls).toEqual(['ask', 'apply'])
+  })
+
+  it('asks before Apply now in Serato and VirtualDJ, which only checked silently before', async () => {
+    const applyCueQueue = vi.fn<ProgramReads['applyCueQueue']>(async () => null)
+    const api = installApi({
+      dj: djReads({ serato: { applyCueQueue }, virtualdj: { applyCueQueue } }),
+    })
+    const client = new QueryClient()
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    )
+    for (const [source, program] of [
+      [SERATO_CUE_QUEUE, 'serato'],
+      [VIRTUALDJ_CUE_QUEUE, 'virtualdj'],
+    ] as const) {
+      const hook = renderHook(() => useRekordboxQueue(vi.fn(), vi.fn(), vi.fn(), source), {
+        wrapper,
+      })
+      await act(() => hook.result.current.applyNow())
+      expect(api.dj.askToApply).toHaveBeenLastCalledWith([program])
+    }
   })
 
   it('keeps the pushed state when the first read answers late with an older one', async () => {

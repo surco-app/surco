@@ -6,9 +6,11 @@ vi.mock('./virtualdjProcess', async (original) => ({
   waitForVirtualdjExit: vi.fn(async () => true),
 }))
 
-import type { WritableProgram } from '../shared/djProgram'
+import type { CueProgram, WritableProgram } from '../shared/djProgram'
 import {
   anyDjProgramRunning,
+  askInOrder,
+  createAskToApply,
   createEnsureClosed,
   DJ_PROCESSES,
   type ProgramProcess,
@@ -16,6 +18,7 @@ import {
   QUIT_TEXT,
   reasonOfDetail,
 } from './djProcesses'
+import { createMenuT } from './i18n'
 import { isVirtualdjRunning, waitForVirtualdjExit } from './virtualdjProcess'
 
 function deferred<T>() {
@@ -80,8 +83,8 @@ describe('createEnsureClosed', () => {
   })
 
   it.each([
-    ['traktor', 'cues', 'playlists', 't:traktorQuitDetailCues'],
-    ['engine', 'cues', 'usb', 't:engineQuitDetailCues'],
+    ['traktor', 'convert', 'restore', 't:traktorQuitDetail'],
+    ['engine', 'convert', 'usb', 't:engineQuitDetail'],
   ] as const)(
     "asks %s once for two writes that arrive together, in the first one's words",
     async (program, firstReason, secondReason, firstDetail) => {
@@ -120,7 +123,7 @@ describe('createEnsureClosed', () => {
       opts.detail === 't:rekordboxQuitDetail' ? firstAnswer.promise : Promise.resolve(1),
     )
     const conversion = ensureClosed('rekordbox', win, 'convert')
-    const playlists = ensureClosed('rekordbox', win, 'playlists')
+    const playlists = ensureClosed('rekordbox', win, 'usb')
     await vi.waitFor(() => expect(ask).toHaveBeenCalledTimes(1))
     await new Promise((r) => setTimeout(r, 0))
     expect(ask).toHaveBeenCalledTimes(1)
@@ -131,7 +134,7 @@ describe('createEnsureClosed', () => {
     expect(await playlists).toBe(false)
     expect(ask).toHaveBeenCalledTimes(2)
     expect(ask.mock.calls[0][1].detail).toBe('t:rekordboxQuitDetail')
-    expect(ask.mock.calls[1][1].detail).toBe('t:rekordboxQuitDetailPlaylists')
+    expect(ask.mock.calls[1][1].detail).toBe('t:rekordboxQuitDetailUsb')
     expect(rekordbox.isRunning).toHaveBeenCalledTimes(2)
   })
 
@@ -139,8 +142,8 @@ describe('createEnsureClosed', () => {
     const answer = deferred<number>()
     const rekordbox = fakeProcess(true)
     const { ask, ensureClosed } = setup({ rekordbox }, () => answer.promise)
-    const first = ensureClosed('rekordbox', win, 'playlists')
-    const second = ensureClosed('rekordbox', win, 'playlists')
+    const first = ensureClosed('rekordbox', win, 'usb')
+    const second = ensureClosed('rekordbox', win, 'usb')
     await vi.waitFor(() => expect(ask).toHaveBeenCalledTimes(1))
     answer.resolve(0)
     expect(await Promise.all([first, second])).toEqual([true, true])
@@ -151,20 +154,15 @@ describe('createEnsureClosed', () => {
   const words = {
     rekordbox: {
       convert: 'rekordboxQuitDetail',
-      playlists: 'rekordboxQuitDetailPlaylists',
       usb: 'rekordboxQuitDetailUsb',
       restore: 'rekordboxQuitDetailRestore',
     },
     traktor: {
       convert: 'traktorQuitDetail',
-      cues: 'traktorQuitDetailCues',
-      playlists: 'traktorQuitDetailPlaylists',
       restore: 'traktorQuitDetailRestore',
     },
     engine: {
       convert: 'engineQuitDetail',
-      cues: 'engineQuitDetailCues',
-      playlists: 'engineQuitDetailPlaylists',
       usb: 'engineQuitDetailUsb',
       restore: 'engineQuitDetailRestore',
     },
@@ -172,9 +170,9 @@ describe('createEnsureClosed', () => {
 
   it('gives each program the reasons it has words for today', () => {
     expect(QUIT_REASONS).toEqual({
-      rekordbox: ['convert', 'playlists', 'usb', 'restore'],
-      traktor: ['convert', 'cues', 'playlists', 'restore'],
-      engine: ['convert', 'cues', 'playlists', 'usb', 'restore'],
+      rekordbox: ['convert', 'usb', 'restore'],
+      traktor: ['convert', 'restore'],
+      engine: ['convert', 'usb', 'restore'],
       virtualdj: ['convert', 'restore', 'duplicates'],
     })
   })
@@ -247,8 +245,7 @@ describe('reasonOfDetail', () => {
     ['rekordbox', 'rekordboxQuitDetail', 'convert'],
     ['engine', 'engineQuitDetailUsb', 'usb'],
     ['engine', 'engineQuitDetailRestore', 'restore'],
-    ['traktor', 'traktorQuitDetailCues', 'cues'],
-    ['traktor', 'traktorQuitDetailPlaylists', 'playlists'],
+    ['traktor', 'traktorQuitDetailRestore', 'restore'],
     ['virtualdj', 'virtualdjQuitDetailRestore', 'restore'],
     ['virtualdj', 'virtualdjQuitDetailDuplicates', 'duplicates'],
   ] as const)(
@@ -258,8 +255,8 @@ describe('reasonOfDetail', () => {
     },
   )
   it('refuses a wording no reason uses', () => {
-    expect(() => reasonOfDetail('rekordbox', 'rekordboxQuitDetailCues' as never)).toThrow(
-      'No rekordbox quit reason for rekordboxQuitDetailCues',
+    expect(() => reasonOfDetail('rekordbox', 'rekordboxQuitDetailPlaylists' as never)).toThrow(
+      'No rekordbox quit reason for rekordboxQuitDetailPlaylists',
     )
   })
 })
@@ -267,8 +264,8 @@ describe('reasonOfDetail', () => {
 describe('QUIT_TEXT', () => {
   it('refuses at compile time a wording that belongs to another program', () => {
     // @ts-expect-error
-    const wrong: (typeof QUIT_TEXT)['engine']['detail']['cues'] = 'traktorQuitDetailCues'
-    expect(wrong).toBe('traktorQuitDetailCues')
+    const wrong: (typeof QUIT_TEXT)['engine']['detail']['usb'] = 'rekordboxQuitDetailUsb'
+    expect(wrong).toBe('rekordboxQuitDetailUsb')
   })
 
   it('refuses at compile time a writable program with no quit wording, so it can never be closed without asking', () => {
@@ -326,5 +323,113 @@ describe('anyDjProgramRunning', () => {
         virtualdj: stopped,
       }),
     ).toBe(false)
+  })
+})
+
+function askToApplyWith(opts: {
+  running: boolean | 'throws'
+  ask: (win: unknown, opts: unknown) => Promise<number>
+  quit?: () => Promise<boolean>
+}) {
+  const process = {
+    isRunning: async () => {
+      if (opts.running === 'throws') throw new Error('probe failed')
+      return opts.running
+    },
+    quit: opts.quit ?? (async () => true),
+  }
+  const processes: Record<CueProgram, ProgramProcess> = {
+    rekordbox: process,
+    traktor: process,
+    engine: process,
+    serato: process,
+    virtualdj: process,
+  }
+  return createAskToApply({ processes, ask: opts.ask, t: createMenuT('es') })
+}
+
+describe('createAskToApply', () => {
+  it('answers now without asking when the program is closed, so a closed program never shows a prompt', async () => {
+    const ask = vi.fn()
+    const answer = await askToApplyWith({ running: false, ask })('traktor', null)
+    expect(answer).toBe('now')
+    expect(ask).not.toHaveBeenCalled()
+  })
+  it('puts Apply when it closes first and as both Enter and Escape, so a habitual Enter never closes Traktor mid-set', async () => {
+    const ask = vi.fn().mockResolvedValue(0)
+    expect(await askToApplyWith({ running: true, ask })('traktor', null)).toBe('later')
+    expect(ask.mock.calls[0][1]).toMatchObject({
+      buttons: ['Aplicar al cerrarlo', 'Cerrar Traktor y aplicar'],
+      defaultId: 0,
+      cancelId: 0,
+    })
+  })
+  it('closes the program and answers now when the DJ picks Close and apply', async () => {
+    const quit = vi.fn().mockResolvedValue(true)
+    expect(
+      await askToApplyWith({ running: true, ask: async () => 1, quit })('rekordbox', null),
+    ).toBe('now')
+    expect(quit).toHaveBeenCalledOnce()
+  })
+  it('answers later when the program would not close, so the change waits instead of being lost', async () => {
+    expect(
+      await askToApplyWith({ running: true, ask: async () => 1, quit: async () => false })(
+        'virtualdj',
+        null,
+      ),
+    ).toBe('later')
+  })
+  it('answers later when closing the program throws, so the DJ action still goes on and the change waits', async () => {
+    const quit = async () => {
+      throw new Error('quit failed')
+    }
+    expect(
+      await askToApplyWith({ running: true, ask: async () => 1, quit })('traktor', null),
+    ).toBe('later')
+  })
+  it('asks when the running check fails, as the quiet path counts it as open', async () => {
+    const ask = vi.fn().mockResolvedValue(0)
+    await askToApplyWith({ running: 'throws', ask })('engine', null)
+    expect(ask).toHaveBeenCalledOnce()
+  })
+  it('shares one prompt between two asks for the same program at once', async () => {
+    const ask = vi.fn().mockResolvedValue(0)
+    const asker = askToApplyWith({ running: true, ask })
+    await Promise.all([asker('traktor', null), asker('traktor', null)])
+    expect(ask).toHaveBeenCalledOnce()
+  })
+  it('offers I closed it, apply for Serato and VirtualDJ, which Surco cannot close itself', async () => {
+    const ask = vi.fn().mockResolvedValue(0)
+    await askToApplyWith({ running: true, ask })('serato', null)
+    expect(ask.mock.calls[0][1].buttons).toEqual(['Aplicar al cerrarlo', 'Lo he cerrado, aplicar'])
+  })
+})
+
+describe('askInOrder', () => {
+  it('asks the programs one after another in the given order, so two prompts never stack, and collects each answer', async () => {
+    const win = {} as BrowserWindow
+    const first = deferred<'now' | 'later'>()
+    const second = deferred<'now' | 'later'>()
+    const pending: Record<CueProgram, Promise<'now' | 'later'>> = {
+      traktor: first.promise,
+      serato: second.promise,
+      rekordbox: Promise.resolve('now'),
+      engine: Promise.resolve('now'),
+      virtualdj: Promise.resolve('now'),
+    }
+    const asked: CueProgram[] = []
+    const asker = vi.fn((program: CueProgram, _win: BrowserWindow | null) => {
+      asked.push(program)
+      return pending[program]
+    })
+    const answers = askInOrder(asker, ['traktor', 'serato'], win)
+    await Promise.resolve()
+    expect(asked).toEqual(['traktor'])
+    first.resolve('later')
+    await vi.waitFor(() => expect(asked).toEqual(['traktor', 'serato']))
+    second.resolve('now')
+    expect(await answers).toEqual({ traktor: 'later', serato: 'now' })
+    expect(asker).toHaveBeenCalledWith('traktor', win)
+    expect(asker).toHaveBeenCalledWith('serato', win)
   })
 })

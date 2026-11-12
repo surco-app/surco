@@ -1,8 +1,6 @@
-import type { WebContents } from 'electron'
-import type { DjProgram } from './djProgram'
+import type { CueProgram, DjProgram } from './djProgram'
 import type {
   CollectionTrack,
-  PlaylistEditMode,
   RekordboxEditResult,
   RekordboxPlaylistEdit,
   RekordboxQueueApplied,
@@ -11,6 +9,8 @@ import type {
   SourceNode,
   SourcePlaylistEntry,
 } from './types'
+
+export type ApplyAnswer = 'now' | 'later'
 
 type Awaitable<T> = T | Promise<T>
 
@@ -25,18 +25,13 @@ export interface DjReadMain {
 }
 
 export interface DjEditMain {
-  save(
-    edit: RekordboxPlaylistEdit,
-    label: string | undefined,
-    sender: WebContents,
-    mode?: PlaylistEditMode,
-  ): Promise<RekordboxEditResult>
+  save(edit: RekordboxPlaylistEdit, label: string | undefined): Promise<RekordboxEditResult>
   hasSeparator?(): Awaitable<boolean>
 }
 
 export interface DjCueQueueMain {
   read(): Awaitable<RekordboxQueueState>
-  apply(sender: WebContents): Promise<RekordboxQueueApplied | null>
+  apply(): Promise<RekordboxQueueApplied | null>
   discard(): Promise<void> | void
   ready(): Awaitable<void>
 }
@@ -81,7 +76,6 @@ export interface DjApi {
     p: DjProgram,
     edit: RekordboxPlaylistEdit,
     label?: string,
-    mode?: PlaylistEditMode,
   ): Promise<RekordboxEditResult>
   hasSeparator(p: DjProgram): Promise<boolean>
   cueQueue(p: DjProgram): Promise<RekordboxQueueState>
@@ -96,5 +90,6 @@ export interface DjApi {
   ): Promise<string | null>
   pickLibraryPath(p: DjProgram): Promise<string | null>
   running(p: DjProgram): Promise<boolean>
+  askToApply(programs: CueProgram[]): Promise<Partial<Record<CueProgram, ApplyAnswer>>>
   onSyncIssue(p: DjProgram, cb: (issue: RekordboxSyncIssue) => void): () => void
 }

@@ -80,26 +80,16 @@ describe('registerDjIpc', () => {
     await expect(handler('dj:tree')({}, 'djotron')).rejects.toThrow('unknown DJ program djotron')
   })
 
-  it('dispatches a playlist edit with its label to the program it names, with the window it came from', async () => {
+  it('dispatches a playlist edit with its label to the program it names', async () => {
     const save = vi.fn(async () => ({ applied: true }) as const)
     const other = vi.fn(async () => ({ applied: true }) as const)
     registerDjIpc(table({}, { traktor: { save }, serato: { save: other } }))
     const edit = { kind: 'delete', playlistId: 'p1' } as const
-    const sender = { id: 7 }
-    expect(await handler('dj:editPlaylist')({ sender }, 'traktor', edit, 'Friday')).toEqual({
+    expect(await handler('dj:editPlaylist')({}, 'traktor', edit, 'Friday')).toEqual({
       applied: true,
     })
-    expect(save).toHaveBeenCalledWith(edit, 'Friday', sender, undefined)
+    expect(save).toHaveBeenCalledWith(edit, 'Friday')
     expect(other).not.toHaveBeenCalled()
-  })
-
-  it('passes the queue mode on, so a session can wait for the program to close without a dialog', async () => {
-    const save = vi.fn(async () => ({ applied: true }) as const)
-    registerDjIpc(table({}, { rekordbox: { save } }))
-    const edit = { kind: 'delete', playlistId: 'p1' } as const
-    const sender = { id: 7 }
-    await handler('dj:editPlaylist')({ sender }, 'rekordbox', edit, 'Friday', 'queue')
-    expect(save).toHaveBeenCalledWith(edit, 'Friday', sender, 'queue')
   })
 
   it('asks the program whether it has a separator', async () => {
@@ -129,10 +119,9 @@ describe('registerDjIpc', () => {
     const engine = queue('engine')
     const serato = queue('serato')
     registerDjIpc(table({}, {}, { engine, serato }))
-    const sender = { id: 3 }
     expect(await handler('dj:cueQueue')({}, 'engine')).toEqual({ ...state, tracks: 6 })
-    expect(await handler('dj:applyCueQueue')({ sender }, 'engine')).toEqual(applied)
-    expect(engine.apply).toHaveBeenCalledWith(sender)
+    expect(await handler('dj:applyCueQueue')({}, 'engine')).toEqual(applied)
+    expect(engine.apply).toHaveBeenCalledWith()
     await handler('dj:discardCueQueue')({}, 'engine')
     await handler('dj:cueQueueReady')({}, 'engine')
     expect(engine.discard).toHaveBeenCalled()

@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import { NAME_LEFT_MARKED } from '../../../shared/errorKeys'
 import type { ProcessResult, Settings, TrackMetadata } from '../../../shared/types'
-import type { Verification } from '../../../shared/verification'
+import type { PlaceCheck, Verification } from '../../../shared/verification'
 import i18n from '../i18n'
 import type { TrackItem } from '../types'
 import { useTrackProcessing } from './useTrackProcessing'
@@ -53,6 +53,7 @@ function setApi(over: Record<string, unknown>): void {
   // main's recorded Traktor patches), so stub both by default; a test that cares can
   // still override.
   ;(window as unknown as { api: unknown }).api = {
+    conversionPrograms: vi.fn<Api['conversionPrograms']>().mockResolvedValue([]),
     beginConversionBatch: vi.fn(),
     endConversionBatch: vi.fn(),
     sourceChanged: vi.fn<Api['sourceChanged']>().mockResolvedValue(false),
@@ -162,6 +163,168 @@ describe('useTrackProcessing', () => {
       error: 'biblioteca abierta',
     })
     expect(onProcessError).toHaveBeenCalledWith('biblioteca abierta', 'a.wav')
+  })
+
+  it('asks to close the open programs before converting, once for the whole batch', async () => {
+    const calls: string[] = []
+    const conversionPrograms = vi
+      .fn<Api['conversionPrograms']>()
+      .mockResolvedValue(['traktor', 'rekordbox'])
+    const askToApply = vi.fn().mockImplementation(async () => {
+      calls.push('askToApply')
+      return {}
+    })
+    const processTrack = vi.fn().mockImplementation(async () => {
+      calls.push('processTrack')
+      return { outputPath: '/m/a.aiff' }
+    })
+    setApi({ processTrack, conversionPrograms, dj: { askToApply } })
+    const tracks = [track({ id: 'a' }), track({ id: 'b' })]
+    const { result } = renderHook(
+      () => useTrackProcessing({ tracks, settings: null, updateTrack: vi.fn() }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await result.current.processAll(tracks)
+    })
+    expect(conversionPrograms).toHaveBeenCalledWith(['/m/a.wav', '/m/b.wav'])
+    expect(askToApply).toHaveBeenCalledOnce()
+    expect(askToApply).toHaveBeenCalledWith(['traktor', 'rekordbox'])
+    expect(calls).toEqual(['askToApply', 'processTrack', 'processTrack'])
+  })
+
+  it('converts the same whatever the DJ answers, because the library write itself waits or applies', async () => {
+    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/m/a.aiff' })
+    setApi({
+      processTrack,
+      conversionPrograms: vi.fn().mockResolvedValue(['traktor']),
+      dj: { askToApply: vi.fn().mockResolvedValue({ traktor: 'later' }) },
+    })
+    const tracks = [track({ id: 'a' }), track({ id: 'b' })]
+    const { result } = renderHook(
+      () => useTrackProcessing({ tracks, settings: null, updateTrack: vi.fn() }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await result.current.processAll(tracks)
+    })
+    expect(processTrack).toHaveBeenCalledTimes(2)
+  })
+
+  it('does not show the batch as converting while the close-program prompt is open', async () => {
+    let answer: (value: Record<string, never>) => void = () => {}
+    const askToApply = vi.fn().mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          answer = resolve
+        }),
+    )
+    const beginConversionBatch = vi.fn()
+    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/m/a.aiff' })
+    setApi({
+      processTrack,
+      beginConversionBatch,
+      conversionPrograms: vi.fn().mockResolvedValue(['traktor']),
+      dj: { askToApply },
+    })
+    const tracks = [track({ id: 'a' })]
+    const { result } = renderHook(
+      () => useTrackProcessing({ tracks, settings: null, updateTrack: vi.fn() }),
+      { wrapper: withClient() },
+    )
+    let run: Promise<void> = Promise.resolve()
+    await act(async () => {
+      run = result.current.processAll(tracks)
+      await vi.waitFor(() => expect(askToApply).toHaveBeenCalled())
+    })
+    expect(beginConversionBatch).not.toHaveBeenCalled()
+    expect(result.current.batching).toBe(false)
+    expect(result.current.batchProgress.total).toBe(0)
+    await act(async () => {
+      answer({})
+      await run
+    })
+    expect(beginConversionBatch).toHaveBeenCalledOnce()
+    expect(processTrack).toHaveBeenCalledOnce()
+  })
+
+  it('still converts the batch when the close-program prompt fails, since the quiet path queues the change for an open program', async () => {
+    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/m/a.aiff' })
+    const endConversionBatch = vi.fn()
+    const beginConversionBatch = vi.fn()
+    setApi({
+      processTrack,
+      beginConversionBatch,
+      endConversionBatch,
+      conversionPrograms: vi.fn().mockResolvedValue(['traktor']),
+      dj: { askToApply: vi.fn().mockRejectedValue(new Error('ipc failed')) },
+    })
+    const tracks = [track({ id: 'a' })]
+    const { result } = renderHook(
+      () => useTrackProcessing({ tracks, settings: null, updateTrack: vi.fn() }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await result.current.processAll(tracks)
+    })
+    expect(processTrack).toHaveBeenCalledOnce()
+    expect(beginConversionBatch).toHaveBeenCalledOnce()
+    expect(endConversionBatch).toHaveBeenCalledOnce()
+  })
+
+  it('still converts one track when the libraries cannot be read for the prompt', async () => {
+    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/m/a.aiff' })
+    setApi({
+      processTrack,
+      conversionPrograms: vi.fn().mockRejectedValue(new Error('master.db unreadable')),
+      dj: { askToApply: vi.fn() },
+    })
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({ tracks: [track({ id: 'a' })], settings: null, updateTrack: vi.fn() }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await result.current.processOne('a')
+    })
+    expect(processTrack).toHaveBeenCalledOnce()
+  })
+
+  it('does not ask when no program is reached', async () => {
+    const askToApply = vi.fn()
+    setApi({
+      processTrack: vi.fn().mockResolvedValue({ outputPath: '/m/a.aiff' }),
+      dj: { askToApply },
+    })
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({ tracks: [track({ id: 'a' })], settings: null, updateTrack: vi.fn() }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await result.current.processOne('a')
+    })
+    expect(askToApply).not.toHaveBeenCalled()
+  })
+
+  it('asks before a single conversion too, with that track only', async () => {
+    const askToApply = vi.fn().mockResolvedValue({})
+    const conversionPrograms = vi.fn().mockResolvedValue(['engine'])
+    setApi({
+      processTrack: vi.fn().mockResolvedValue({ outputPath: '/m/a.aiff' }),
+      conversionPrograms,
+      dj: { askToApply },
+    })
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({ tracks: [track({ id: 'a' })], settings: null, updateTrack: vi.fn() }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await result.current.processOne('a')
+    })
+    expect(conversionPrograms).toHaveBeenCalledWith(['/m/a.wav'])
+    expect(askToApply).toHaveBeenCalledWith(['engine'])
   })
 
   // Windows refuses to rename over a file another handle holds open, and the player's
@@ -2955,6 +3118,106 @@ describe('useTrackProcessing retryVerification', () => {
     })
     expect(retryVerification).toHaveBeenCalledWith('a')
     expect(processTrack).toHaveBeenCalledTimes(1)
+  })
+
+  it('asks to close the programs a retry writes to before main hands them the repoint again', async () => {
+    const calls: string[] = []
+    const askToApply = vi.fn().mockImplementation(async () => {
+      calls.push('ask')
+      return {}
+    })
+    const retryVerification = vi.fn<Api['retryVerification']>().mockImplementation(async () => {
+      calls.push('retry')
+      return 'rechecked'
+    })
+    setApi({ retryVerification, dj: { askToApply } })
+    const place = (p: PlaceCheck['place'], state: PlaceCheck['state']): PlaceCheck => ({
+      place: p,
+      state,
+      detail: { key: 'pending' },
+    })
+    const hook = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [
+            track({
+              id: 'a',
+              verification: {
+                status: 'pending',
+                checks: [
+                  place('file', 'ok'),
+                  place('rekordbox', 'ok'),
+                  place('traktor', 'pending'),
+                  place('engine', 'mismatch'),
+                ],
+              },
+            }),
+          ],
+          settings: null,
+          updateTrack: vi.fn(),
+        }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await hook.result.current.retryVerification('a')
+    })
+    expect(askToApply).toHaveBeenCalledOnce()
+    expect(askToApply).toHaveBeenCalledWith(['traktor', 'engine'])
+    expect(calls).toEqual(['ask', 'retry'])
+  })
+
+  it('asks only once for a Retry that converts the track again', async () => {
+    const askToApply = vi.fn().mockResolvedValue({})
+    const processTrack = vi
+      .fn<Api['processTrack']>()
+      .mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false })
+    setApi({
+      processTrack,
+      retryVerification: vi.fn<Api['retryVerification']>().mockResolvedValue('rerun-job'),
+      conversionPrograms: vi.fn().mockResolvedValue(['traktor']),
+      dj: { askToApply },
+    })
+    const place = (p: PlaceCheck['place'], state: PlaceCheck['state']): PlaceCheck => ({
+      place: p,
+      state,
+      detail: { key: 'pending' },
+    })
+    const hook = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [
+            track({
+              id: 'a',
+              verification: {
+                status: 'mismatch',
+                checks: [place('file', 'mismatch'), place('traktor', 'pending')],
+              },
+            }),
+          ],
+          settings: null,
+          updateTrack: vi.fn(),
+          rememberedPick: () => ({ destination: 'overwrite' }),
+        }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await hook.result.current.retryVerification('a')
+    })
+    expect(processTrack).toHaveBeenCalledTimes(1)
+    expect(askToApply).toHaveBeenCalledOnce()
+  })
+
+  it('does not ask on a retry that reaches no DJ program', async () => {
+    const askToApply = vi.fn().mockResolvedValue({})
+    setApi({ retryVerification: vi.fn().mockResolvedValue('rechecked'), dj: { askToApply } })
+    const hook = renderHook(
+      () => useTrackProcessing({ tracks: [track({ id: 'a' })], settings: null, updateTrack: vi.fn() }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await hook.result.current.retryVerification('a')
+    })
+    expect(askToApply).not.toHaveBeenCalled()
   })
 
   // A recheck only re-reads; converting again would rewrite a file that is fine.

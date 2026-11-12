@@ -1,11 +1,11 @@
 import { randomUUID } from 'node:crypto'
 import { existsSync, realpathSync } from 'node:fs'
 import { realpath } from 'node:fs/promises'
-import { BrowserWindow, ipcMain, type WebContents } from 'electron'
+import { ipcMain } from 'electron'
 import log from 'electron-log/main'
 import type { DjEditMain, DjReadMain } from '../shared/djApi'
 import { mediaPathFromUrl } from '../shared/media'
-import type { PlaylistEditMode, RekordboxEditResult, RekordboxPlaylistEdit } from '../shared/types'
+import type { RekordboxEditResult, RekordboxPlaylistEdit } from '../shared/types'
 import { pathAliasesOf } from './libraryPathKey'
 import { serialLibraryFlush } from './libraryTagSync'
 import { rekordboxShareDir } from './rekordboxArtwork'
@@ -58,9 +58,7 @@ export function collectionAvailable(path: string): boolean {
 }
 
 export interface PlaylistEditHost {
-  // The "rekordbox is open" dialog, over the window the edit came from.
-  ensureClosed: (win: BrowserWindow | null) => Promise<boolean>
-  isRunning?: () => Promise<boolean>
+  isRunning: () => Promise<boolean>
   queue: Pick<RekordboxQueue, 'enqueue' | 'apply' | 'drop' | 'outcomeOf'>
   onApplied?: (result: QueueApply) => void
   onWaiting?: () => void
@@ -143,12 +141,7 @@ export function rekordboxEdit(collection: () => string, host: PlaylistEditHost):
     // Queued behind any other library write (a conversion's repoint, a review's sync): they
     // touch the same master.db, and the write's transaction spans an await, so two at once
     // would block each other on SQLite's busy timeout.
-    save: (
-      edit: RekordboxPlaylistEdit,
-      label: string | undefined,
-      sender: WebContents,
-      mode: PlaylistEditMode = 'ask',
-    ) =>
+    save: (edit: RekordboxPlaylistEdit, label: string | undefined) =>
       serialLibraryFlush(async (): Promise<RekordboxEditResult> => {
         const path = collection()
         if (!path) return { applied: false, reason: 'unreadable' }
@@ -161,11 +154,7 @@ export function rekordboxEdit(collection: () => string, host: PlaylistEditHost):
         }
         host.queue.enqueue([op])
         host.beginLoose?.(path)
-        const result = await host.queue.apply(
-          mode === 'queue' && host.isRunning
-            ? async () => !(await host.isRunning?.())
-            : () => host.ensureClosed(BrowserWindow.fromWebContents(sender)),
-        )
+        const result = await host.queue.apply(async () => !(await host.isRunning()))
         if (result.status === 'applied') {
           const others = withoutOp(result, op.id)
           if (others.tracks > 0 || others.changes > 0 || others.notices.length > 0)
@@ -173,7 +162,7 @@ export function rekordboxEdit(collection: () => string, host: PlaylistEditHost):
         }
         if (stillWaiting(result)) {
           host.onWaiting?.()
-          if (mode === 'queue') return { applied: false, queued: true, opId: op.id }
+          return { applied: false, queued: true, opId: op.id }
         } else if (result.status === 'refused') host.queue.drop(op.id)
         if (result.status === 'refused') return { applied: false, reason: result.reason }
         const written = host.queue.outcomeOf(op.id)

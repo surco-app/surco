@@ -2,7 +2,7 @@
 import { existsSync, mkdirSync, realpathSync } from 'node:fs'
 import { basename, extname, join } from 'node:path'
 import { app } from 'electron'
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, describe, expect, it, type Mock, vi } from 'vitest'
 
 const usb = vi.hoisted(() => ({ stick: '', volume: null as unknown, events: [] as unknown[] }))
 
@@ -38,6 +38,12 @@ vi.mock('../../main/virtualdjProcess', () => ({
   waitForVirtualdjExit: vi.fn(async () => true),
 }))
 
+import { isEngineDjRunning } from '../../main/engineProcess'
+import { serialLibraryFlush } from '../../main/libraryTagSync'
+import { isRekordboxRunning } from '../../main/rekordboxProcess'
+import { isSeratoRunning } from '../../main/seratoProcess'
+import { isTraktorRunning } from '../../main/traktorProcess'
+import { isVirtualdjRunning } from '../../main/virtualdjProcess'
 import { USB_PROGRAM_VIEW } from '../../renderer/src/components/UsbExportModal'
 import { fromDestination } from '../../renderer/src/lib/destination'
 import { SOURCE_PROGRAMS, SOURCE_READ } from '../../renderer/src/lib/sourcePrograms'
@@ -61,7 +67,13 @@ import type {
   UsbExportEvent,
 } from '../../shared/types'
 import { makeTrack, scenarioDir } from '../fixtures'
-import { invokeMain, openSurco, type Scenario } from '../harness'
+import {
+  type DjAsk,
+  followLibrariesSize,
+  invokeMain,
+  openSurco,
+  type Scenario,
+} from '../harness'
 import {
   CONVERSION_MOVE_MS,
   type ConvertedFormat,
@@ -84,6 +96,14 @@ const RETAGGED: BatteryFormat = 'wav'
 const NEW_TITLE = 'Pista wav retitulada'
 const UPDATED: BatteryFormat = 'aiff'
 const UPDATED_TITLE = 'Pista aiff actualizada'
+const RUNNING: Record<DjProgram, Mock<() => Promise<boolean>>> = {
+  rekordbox: vi.mocked(isRekordboxRunning),
+  traktor: vi.mocked(isTraktorRunning),
+  engine: vi.mocked(isEngineDjRunning),
+  serato: vi.mocked(isSeratoRunning),
+  virtualdj: vi.mocked(isVirtualdjRunning),
+}
+const FOLLOWS_SIZE: ReadonlySet<DjProgram> = new Set(['engine', 'virtualdj'])
 const UPDATE_CARRIES_TITLE: Record<DjProgram, boolean> = {
   rekordbox: true,
   traktor: true,
@@ -115,9 +135,9 @@ function makeBatteryTrack(dir: string, stem: string, format: BatteryFormat): Bat
   return { format, path, title: stem, artist: 'Surco Batería', durationSec: 8 }
 }
 
-async function open(extra: Partial<Settings>): Promise<void> {
+async function open(extra: Partial<Settings>, djAsk?: DjAsk): Promise<void> {
   surco?.close()
-  surco = await openSurco({ settings: { ...settings, outputDir: output, ...extra } })
+  surco = await openSurco({ settings: { ...settings, outputDir: output, ...extra }, djAsk })
 }
 
 function flat(nodes: SourceNode[]): SourceNode[] {
@@ -154,6 +174,13 @@ async function cuesOf(program: DjProgram, path: string): Promise<TrackCues | nul
 
 async function save(program: DjProgram, edit: RekordboxPlaylistEdit): Promise<RekordboxEditResult> {
   return dj<RekordboxEditResult>('editPlaylist', program, edit, 'Batería')
+}
+
+async function titleOf(program: DjProgram, path: string): Promise<string | undefined> {
+  if (SOURCE_READ[program].collection)
+    return (await dj<CollectionTrack[]>('collection', program)).find((t) => t.path === path)?.title
+  return (await entries(program, await listId(program))).find((e) => e.path === path)?.preview
+    ?.title
 }
 
 const formatsIntact = (): void => {
@@ -365,13 +392,6 @@ describe('Convertir', () => {
 })
 
 describe('Etiquetas y añadir', () => {
-  const titleOf = async (program: DjProgram, path: string): Promise<string | undefined> => {
-    if (SOURCE_READ[program].collection)
-      return (await dj<CollectionTrack[]>('collection', program)).find((t) => t.path === path)
-        ?.title
-    return (await entries(program, await listId(program))).find((e) => e.path === path)?.preview
-      ?.title
-  }
   const counts: Partial<Record<DjProgram, number>> = {}
 
   beforeAll(async () => {
@@ -422,6 +442,82 @@ describe('Etiquetas y añadir', () => {
           join(output, 'Pista nueva.aiff'),
         )
     })
+  })
+
+  it('deja cada biblioteca en su formato de fichero', () => {
+    formatsIntact()
+  })
+})
+
+describe('Con el programa abierto', () => {
+  const closing: DjAsk['close'] = (program) => RUNNING[program].mockResolvedValue(false)
+  const applyWhenClosed = (program: DjProgram) =>
+    serialLibraryFlush(() => surco.queues[program].apply(async () => true))
+
+  const updateTitle = async (program: DjProgram, answer: DjAsk['answer'], title: string) => {
+    RUNNING[program].mockResolvedValue(true)
+    await open(
+      { ...fromDestination('overwrite'), outputFormat: 'aiff', autoApplyFilename: false },
+      { open: [program], answer, close: closing },
+    )
+    await surco.drop(tracks[UPDATED].path)
+    surco.editMeta(basename(tracks[UPDATED].path), { title })
+    await surco.convertAll('confirm', 'aiff')
+  }
+
+  afterEach(() => {
+    for (const program of DJ_PROGRAMS) RUNNING[program].mockResolvedValue(false)
+  })
+
+  describe.each(DJ_PROGRAMS)('%s', (program) => {
+    it('leaves the change waiting when the DJ picks Apply when it closes, and writes it once the program closes', async () => {
+      const title = `${program} después`
+      const was = await titleOf(program, tracks[UPDATED].path)
+      await updateTitle(program, 'later', title)
+      expect(surco.asked()).toEqual([[program]])
+      expect(await titleOf(program, tracks[UPDATED].path)).toBe(was)
+      expect(surco.queues[program].isEmpty()).toBe(false)
+      RUNNING[program].mockResolvedValue(false)
+      await applyWhenClosed(program)
+      expect(surco.queues[program].isEmpty()).toBe(true)
+      expect(await titleOf(program, tracks[UPDATED].path)).toBe(title)
+      expect(surco.asked()).toEqual([[program]])
+    })
+
+    it('writes at once when the DJ picks Close and apply', async () => {
+      const title = `${program} aplicado al cerrar`
+      await updateTitle(program, 'now', title)
+      expect(surco.asked()).toEqual([[program]])
+      expect(await titleOf(program, tracks[UPDATED].path)).toBe(title)
+      expect(surco.queues[program].isEmpty()).toBe(true)
+    })
+
+    it.skipIf(!FOLLOWS_SIZE.has(program))(
+      'never asks for a write that follows on its own',
+      async () => {
+        RUNNING[program].mockResolvedValue(true)
+        await open(fromDestination('folder'), { open: [program], answer: 'later', close: closing })
+        followLibrariesSize(tracks[UPDATED].path, 1)
+        expect(surco.asked()).toEqual([])
+        expect(surco.queues[program].isEmpty()).toBe(false)
+      },
+    )
+  })
+
+  it('keeps a review rename waiting for Traktor when the DJ will not close it, and applies it once Traktor closes', async () => {
+    const title = 'Pista wav renombrada con Traktor abierto'
+    const was = await titleOf('traktor', tracks[RETAGGED].path)
+    RUNNING.traktor.mockResolvedValue(true)
+    await open(fromDestination('folder'), { open: ['traktor'], answer: 'later', close: closing })
+    await window.api.syncLibraryTags([
+      { path: tracks[RETAGGED].path, fields: { title: { from: was ?? '', to: title } } },
+    ])
+    await serialLibraryFlush(async () => {})
+    expect(await titleOf('traktor', tracks[RETAGGED].path)).toBe(was)
+    expect(surco.queues.traktor.isEmpty()).toBe(false)
+    RUNNING.traktor.mockResolvedValue(false)
+    await applyWhenClosed('traktor')
+    expect(await titleOf('traktor', tracks[RETAGGED].path)).toBe(title)
   })
 
   it('deja cada biblioteca en su formato de fichero', () => {

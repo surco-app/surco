@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import { app } from 'electron'
 import log from 'electron-log/main'
 import {
+  DJ_PROGRAMS,
   type DjProgram,
   type LibraryProgram,
   READ_ONLY_PROGRAMS,
@@ -145,6 +146,103 @@ function onlyLibrary<P extends LibraryProgram>(
   location: LibraryLocations[P],
 ): LibraryLocations {
   return { ...NO_LIBRARIES, [program]: location }
+}
+
+const UPDATE_SETTING = {
+  rekordbox: 'syncRekordbox',
+  traktor: 'syncTraktor',
+  engine: 'syncEngineDj',
+  serato: 'syncSerato',
+  virtualdj: 'syncVirtualdj',
+} as const satisfies Record<DjProgram, keyof ReturnType<typeof getSettings>>
+
+const ADD_SETTING = {
+  rekordbox: 'addToRekordbox',
+  traktor: 'addToTraktor',
+  engine: 'addToEngineDj',
+  serato: 'addToSerato',
+  virtualdj: 'addToVirtualdj',
+} as const satisfies Record<DjProgram, keyof ReturnType<typeof getSettings>>
+
+type ProgramsDeps = {
+  traktorRead: () => string
+  rootLibraries: () => RootLibraries
+  isRunning: (program: DjProgram) => Promise<boolean>
+}
+
+async function openPrograms(deps: ProgramsDeps): Promise<DjProgram[]> {
+  const running = await Promise.all(
+    DJ_PROGRAMS.map((program) => deps.isRunning(program).catch(() => true)),
+  )
+  return DJ_PROGRAMS.filter((_, i) => running[i])
+}
+
+function libraryLocations(deps: ProgramsDeps): LibraryLocations {
+  const settings = getSettings()
+  const status = currentLibraryStatus()
+  const roots = deps.rootLibraries()
+  return {
+    rekordbox: status.rekordbox.found
+      ? findRekordboxCollection({ configured: settings.rekordboxDbPath })
+      : '',
+    engine: status.engine.found ? settings.engineLibraryDir : '',
+    traktor: deps.traktorRead(),
+    serato: roots.serato,
+    virtualdj: roots.virtualdj,
+  }
+}
+
+export async function conversionPrograms(
+  paths: string[],
+  deps: ProgramsDeps,
+): Promise<DjProgram[]> {
+  const open = await openPrograms(deps)
+  if (open.length === 0) return []
+  const settings = getSettings()
+  const locations = libraryLocations(deps)
+  const reached: DjProgram[] = []
+  for (const program of open) {
+    if (locations[program].length === 0) continue
+    if (settings[ADD_SETTING[program]]) {
+      reached.push(program)
+      continue
+    }
+    if (!settings[UPDATE_SETTING[program]]) continue
+    if (await holdsAny(program, locations[program], paths)) reached.push(program)
+  }
+  return reached
+}
+
+const SYNC_ASKS_ITSELF: ReadonlySet<DjProgram> = new Set(['rekordbox', 'traktor', 'engine'])
+
+export async function tagSyncPrograms(paths: string[], deps: ProgramsDeps): Promise<DjProgram[]> {
+  const open = await openPrograms(deps)
+  if (open.length === 0) return []
+  const settings = getSettings()
+  const locations = libraryLocations(deps)
+  const reached: DjProgram[] = []
+  for (const program of open) {
+    if (locations[program].length === 0 || !settings[UPDATE_SETTING[program]]) continue
+    if (SYNC_ASKS_ITSELF.has(program) || (await holdsAny(program, locations[program], paths)))
+      reached.push(program)
+  }
+  return reached
+}
+
+async function holdsAny(
+  program: LibraryProgram,
+  location: LibraryLocations[LibraryProgram],
+  paths: string[],
+): Promise<boolean> {
+  const holds = djLibraryFileUse(onlyLibrary(program, location), {
+    realPath: (p: string) => realpathSync(p),
+  })
+  try {
+    for (const path of paths) if (await holds(path)) return true
+    return false
+  } catch {
+    return true
+  }
 }
 
 export async function librariesKeepingOriginal(
@@ -620,7 +718,8 @@ function engineConversionFlusher(
       // rekordbox's does: the dialog asked to convert again, which an in-place conversion
       // cannot, its source being gone. A check that cannot tell counts as Engine being open.
       const engineRepoints = repoints.filter(
-        (repoint) => repoint.from !== repoint.to || repoint.fromBytes !== undefined,
+        (repoint) =>
+          repoint.from !== repoint.to || repoint.fromBytes !== undefined || repoint.names,
       )
       const engineUnplugged = onUnpluggedDrive(getSettings().engineLibraryDir)
       const engineDeps = engineFlushDeps(host)
@@ -753,6 +852,14 @@ async function engineLibraryHas(
   return (path, from) => pathsHeld(path, from, followsFrom).some((p) => find(p, key).length > 0)
 }
 
+const ENGINE_STILL_TO_TRY: ReadonlySet<string> = new Set([
+  ENGINE_KEYS.runningReason,
+  'output-missing',
+  'backup-failed',
+  'write-failed',
+  'unreadable',
+])
+
 function repointEngine(
   libraryDir: string,
   list: RekordboxRepoint[],
@@ -776,7 +883,10 @@ export async function repointEngineQueued(
   sessions: Pick<Sessions, 'engine'>,
 ): Promise<LibraryRepointResult[]> {
   const results = await repointEngine(libraryDir, list, sessions)
-  const named = list.filter((repoint, i) => repoint.names && results[i]?.written)
+  const named = list.filter((repoint, i) => {
+    const result = results[i]
+    return repoint.names && result && (result.written || !ENGINE_STILL_TO_TRY.has(result.reason))
+  })
   if (named.length > 0)
     await updateEngineTags(
       libraryDir,
@@ -807,6 +917,7 @@ export function syncTagsInLibraries(
   beginMoment: () => void,
   serato?: Omit<Parameters<typeof syncSeratoTags>[1], 'enabled'>,
   virtualdj?: Omit<Parameters<typeof syncVirtualdjTags>[1], 'enabled'>,
+  traktorQueue?: ConversionQueues['traktor'],
 ) {
   const withRealPath = updates.map((u) => ({ ...u, realPath: (p: string) => realpathSync(p) }))
   return syncLibraryTags({
@@ -814,6 +925,7 @@ export function syncTagsInLibraries(
       flushTraktorSync({
         ...traktorFlushDeps(host, sessions.traktor),
         endNmlBatch: () => nmlTagPatches(updates, toNmlLocation),
+        queue: traktorQueue && holdInQueue(traktorQueue, bootVolumeName),
       }),
     rekordbox: async () => {
       const result = await flushLibraryRepoints(

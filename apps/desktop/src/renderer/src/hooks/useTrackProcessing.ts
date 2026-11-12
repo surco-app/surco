@@ -564,6 +564,12 @@ export function useTrackProcessing({
     },
   )
 
+  const askToCloseReached = useStableCallback(async (ids: string[]): Promise<void> => {
+    const paths = ids.flatMap((id) => tracksRef.current.find((t) => t.id === id)?.inputPath ?? [])
+    const programs = await window.api.conversionPrograms(paths).catch(() => [])
+    if (programs.length > 0) await window.api.dj.askToApply(programs).catch(() => {})
+  })
+
   // The Editor's convert button and ⌘⏎ call this directly — the only entry point that
   // reaches a conversion without going through processAll's loop. ffmpeg.ts records a
   // Traktor patch for every conversion unconditionally, so a standalone call needs its
@@ -582,6 +588,7 @@ export function useTrackProcessing({
       declickOverride?: DeclickConfig,
       keepMp3?: boolean,
     ): Promise<BatchOutcome> => {
+      await askToCloseReached([id])
       window.api.beginConversionBatch()
       try {
         return await runOne(
@@ -730,10 +737,11 @@ export function useTrackProcessing({
         if (t.skipReason !== undefined && ids.includes(t.id))
           updateTrack(t.id, { skipReason: undefined })
       }
+      batchingRef.current = true
+      await askToCloseReached(ids)
       // A fresh run: let main forget any "apply to the rest" conflict choice the last batch
       // left, so this one starts asking again rather than reusing a stale decision.
       window.api.beginConversionBatch()
-      batchingRef.current = true
       setBatching(true)
       setBatchSummary(null)
       setBatchProgress({ done: 0, total: ids.length })
@@ -808,6 +816,18 @@ export function useTrackProcessing({
   })
 
   const retryVerification = useStableCallback(async (id: string): Promise<void> => {
+    const checks = tracksRef.current.find((t) => t.id === id)?.verification?.checks ?? []
+    const converts = checks.some(
+      (c) => (c.place === 'file' || c.place === 'appleMusic') && c.state === 'mismatch',
+    )
+    const writes = checks.flatMap((c) =>
+      c.place !== 'file' &&
+      c.place !== 'appleMusic' &&
+      (c.state === 'pending' || c.state === 'mismatch')
+        ? [c.place]
+        : [],
+    )
+    if (!converts && writes.length > 0) await window.api.dj.askToApply(writes)
     const answer = await window.api.retryVerification(id)
     if (answer !== 'rerun-job') return
     const track = tracksRef.current.find((t) => t.id === id)

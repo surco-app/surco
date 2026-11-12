@@ -54,6 +54,7 @@ function setApi(over: Partial<Record<keyof Api, unknown>> = {}) {
       },
     ]),
     syncLibraryTags: vi.fn<Api['syncLibraryTags']>().mockResolvedValue(SYNCED),
+    tagSyncPrograms: vi.fn<Api['tagSyncPrograms']>().mockResolvedValue([]),
     cancelMusicFixes: vi.fn<Api['cancelMusicFixes']>().mockResolvedValue(undefined),
     onMusicFixProgress: vi.fn<Api['onMusicFixProgress']>().mockReturnValue(() => {}),
     setMusicField: vi.fn<Api['setMusicField']>().mockResolvedValue('set'),
@@ -219,6 +220,65 @@ describe('useMusicReview', () => {
       { path: '/m/c.mp3', fields: { artist: { from: 'Dj Lara', to: 'DJ Lara' } } },
     ])
     expect(result.current.status).toBe('done')
+  })
+
+  it.each(['serato', 'virtualdj'] as const)(
+    'asks to close %s before its tags follow the review, since its sync waits in a queue while it is open',
+    async (program) => {
+      const order: string[] = []
+      const askToApply = vi.fn(async () => {
+        order.push('ask')
+        return { [program]: 'later' as const }
+      })
+      const api = setApi({
+        tagSyncPrograms: vi.fn<Api['tagSyncPrograms']>().mockResolvedValue([program]),
+        syncLibraryTags: vi.fn<Api['syncLibraryTags']>(async () => {
+          order.push('sync')
+          return SYNCED
+        }),
+        dj: { askToApply },
+      })
+      const { result } = await ready()
+      act(() => result.current.toggleStaged(result.current.spelling[0].key))
+      await act(() => result.current.apply())
+      expect(api.tagSyncPrograms).toHaveBeenCalledWith(['/m/c.mp3'])
+      expect(askToApply).toHaveBeenCalledWith([program])
+      expect(order).toEqual(['ask', 'sync'])
+    },
+  )
+
+  it('leaves rekordbox, Engine DJ and Traktor to the Close or Cancel dialog their own sync shows', async () => {
+    const askToApply = vi.fn()
+    const api = setApi({
+      tagSyncPrograms: vi
+        .fn<Api['tagSyncPrograms']>()
+        .mockResolvedValue(['rekordbox', 'traktor', 'engine']),
+      dj: { askToApply },
+    })
+    const { result } = await ready()
+    act(() => result.current.toggleStaged(result.current.spelling[0].key))
+    await act(() => result.current.apply())
+    expect(askToApply).not.toHaveBeenCalled()
+    expect(api.syncLibraryTags).toHaveBeenCalledOnce()
+  })
+
+  it('still follows the libraries when the prompt or the check before it fails', async () => {
+    const api = setApi({
+      tagSyncPrograms: vi.fn<Api['tagSyncPrograms']>().mockRejectedValue(new Error('ipc')),
+      dj: { askToApply: vi.fn() },
+    })
+    const { result } = await ready()
+    act(() => result.current.toggleStaged(result.current.spelling[0].key))
+    await act(() => result.current.apply())
+    expect(api.syncLibraryTags).toHaveBeenCalledOnce()
+    const failingAsk = setApi({
+      tagSyncPrograms: vi.fn<Api['tagSyncPrograms']>().mockResolvedValue(['serato']),
+      dj: { askToApply: vi.fn().mockRejectedValue(new Error('ipc')) },
+    })
+    const second = await ready()
+    act(() => second.result.current.toggleStaged(second.result.current.spelling[0].key))
+    await act(() => second.result.current.apply())
+    expect(failingAsk.syncLibraryTags).toHaveBeenCalledOnce()
   })
 
   // Music held the value before the run: putting it back would wipe what was there.
@@ -2152,6 +2212,46 @@ describe('damage in the list review', () => {
     expect(result.current.lastRun?.damage).toEqual([
       { id: SURE.id, state: 'mismatch', backupId: 'd1' },
     ])
+  })
+
+  it('does not ask for Traktor before a calibration repair when the same review syncs tags to Traktor, whose own dialog covers it', async () => {
+    const TREE: DamageFinding = {
+      id: 'traktor-calibration\0/m/a.aiff',
+      kind: 'traktor-calibration',
+      path: '/m/a.aiff',
+      certainty: 'sure',
+      evidence: [],
+      before: { key: 'damage.value.text', params: { value: '5' } },
+      options: [],
+      repair: { target: 'traktor', path: '/m/a.aiff', addMs: 5 },
+    }
+    const askToApply = vi.fn().mockResolvedValue({})
+    const api = damageApi({
+      applyListFixes: vi.fn().mockResolvedValue([
+        {
+          id: '/m/c.aiff',
+          path: '/m/c.aiff',
+          fixes: [{ id: '/m/c.aiff', field: 'artist', from: 'Dj Lara', to: 'DJ Lara' }],
+          music: ['none'],
+          file: 'written',
+          written: ['artist'],
+          backupId: 'b1',
+        },
+      ]),
+      scanDamage: vi.fn<Api['scanDamage']>().mockResolvedValue({ findings: [TREE], unread: [] }),
+      repairDamage: vi
+        .fn<Api['repairDamage']>()
+        .mockResolvedValue([{ id: TREE.id, state: 'repaired', backupId: 't1' }]),
+      tagSyncPrograms: vi.fn<Api['tagSyncPrograms']>().mockResolvedValue(['traktor']),
+      dj: { askToApply },
+    })
+    const { result } = hook()
+    await waitFor(() => expect(result.current.damage).toHaveLength(1))
+    act(() => result.current.toggleStaged(result.current.spelling[0].key))
+    await act(() => result.current.apply())
+    expect(api.repairDamage).toHaveBeenCalledWith([{ id: TREE.id, repair: TREE.repair }])
+    expect(api.syncLibraryTags).toHaveBeenCalledOnce()
+    expect(askToApply.mock.calls.flat(2)).not.toContain('traktor')
   })
 
   // The libraries keep the good genre or the damaged one: sending them the restored text would

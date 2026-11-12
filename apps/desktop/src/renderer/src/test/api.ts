@@ -2,12 +2,11 @@ import { vi } from 'vitest'
 import type { Api, CuesApi } from '../../../preload/api'
 import { BUNDLED_FLOWS } from '../../../shared/cueFlows'
 import type { DjApi, DjExportPayload, ExportProgram } from '../../../shared/djApi'
-import type { DjProgram } from '../../../shared/djProgram'
+import type { CueProgram, DjProgram } from '../../../shared/djProgram'
 import { DEFAULT_EDITOR_SECTIONS } from '../../../shared/editorSections'
 import { emptyMetadata } from '../../../shared/metadata'
 import { DEFAULT_SESSION_WIZARD } from '../../../shared/sessionSettings'
 import type {
-  PlaylistEditMode,
   CollectionTrack,
   RekordboxEditResult,
   RekordboxPlaylistEdit,
@@ -155,11 +154,7 @@ export interface ProgramReads {
   playlist(id: string): Promise<SourcePlaylistEntry[]>
   membership(paths: string[]): Promise<Record<string, string[]>>
   collection(): Promise<CollectionTrack[]>
-  editPlaylist(
-    edit: RekordboxPlaylistEdit,
-    label?: string,
-    mode?: PlaylistEditMode,
-  ): Promise<RekordboxEditResult>
+  editPlaylist(edit: RekordboxPlaylistEdit, label?: string): Promise<RekordboxEditResult>
   hasSeparator(): Promise<boolean>
   cueQueue(): Promise<RekordboxQueueState>
   applyCueQueue(): Promise<RekordboxQueueApplied | null>
@@ -227,6 +222,9 @@ export function djReads(...layers: (DjReads | DjApi | undefined)[]): DjApi {
     exportCollection: vi.fn((p, payload) => of(p).exportCollection(payload)),
     pickLibraryPath: vi.fn((p) => of(p).pickLibraryPath()),
     running: vi.fn((p) => of(p).running()),
+    askToApply: vi.fn(async (programs: CueProgram[]) =>
+      Object.fromEntries(programs.map((p) => [p, 'now' as const])),
+    ),
     onSyncIssue: vi.fn((p, cb) => of(p).onSyncIssue(cb)),
   }
   layersOf.set(api, flat)
@@ -326,6 +324,7 @@ export function stubApi({ cues, ...over }: ApiOverrides = {}): Api {
         virtualdj: nothing,
       }
     },
+    tagSyncPrograms: async () => [],
     replaceDuplicatesInLibraries: async () => [],
     libraryStatus: async () => {
       const off = { enabled: false, found: false }
@@ -387,6 +386,7 @@ export function stubApi({ cues, ...over }: ApiOverrides = {}): Api {
     retryVerification: async () => 'rechecked',
     verifyMusicAdded: async () => {},
     releasePlayingFile: async () => {},
+    conversionPrograms: vi.fn(async (_paths: string[]): Promise<CueProgram[]> => []),
     beginConversionBatch: noop,
     endConversionBatch: noop,
     cancelJob: noop,

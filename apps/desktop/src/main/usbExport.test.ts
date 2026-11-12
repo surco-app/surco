@@ -1132,7 +1132,6 @@ describe('sharing the stick with rekordbox', () => {
       const t = createMenuT(locale)
       const text = t(USB_QUIT_DETAIL)
       expect(text).toContain('USB')
-      expect(text).not.toBe(t('rekordboxQuitDetailPlaylists'))
       expect(text).not.toMatch(/[—:]/)
     }
   })

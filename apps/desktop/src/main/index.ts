@@ -120,6 +120,8 @@ import { damageDeps } from './damageWiring'
 import { registerDjIpc } from './djIpc'
 import {
   anyDjProgramRunning,
+  askInOrder,
+  createAskToApply,
   createEnsureClosed,
   DJ_PROCESSES,
   reasonOfDetail,
@@ -150,6 +152,7 @@ import { fileIdentity, isSameFile, removeRenamedOriginal } from './inplace'
 import { setLibraryBackupRoot } from './libraryBackups'
 import { libraryCopyInfo, libraryTracksOf, type RootLibraries } from './libraryFileUse'
 import {
+  conversionPrograms,
   currentLibraryStatus,
   duplicateLibraryDeps,
   engineFlushDeps,
@@ -163,6 +166,7 @@ import {
   SYNC_BLOCKED_KEY,
   SYNC_ISSUE_PROGRAMS,
   syncTagsInLibraries,
+  tagSyncPrograms,
   traktorFlushDeps,
   traktorWrite,
   usedByAnyLibrary,
@@ -212,7 +216,6 @@ import { applyRekordboxBatch } from './rekordboxPlaylistWrite'
 import { adjustProvisional, createProvisionalList } from './rekordboxProvisional'
 import { fileStore } from './rekordboxQueue'
 import { rekordboxQueueSection } from './rekordboxQueueIpc'
-import { stillWaiting } from './rekordboxQueueWatch'
 import { createSessionBackup } from './rekordboxSessionBackup'
 import { registerRowWavesIpc } from './rowWavesIpc'
 import { applySeratoBatch } from './seratoBatch'
@@ -711,19 +714,6 @@ const followVirtualdjSize = librarySizeFollower({
   apply: () => programQueues.virtualdj.applyQuietly(),
 })
 const followLibrarySize = followingAll(followEngineSize, followVirtualdjSize)
-// A save from the editor asks to close Traktor, as a playlist edit does; declined, it stays
-// queued and lands when Traktor closes.
-const applyTraktorCueQueueAsking = (win: BrowserWindow | null): void => {
-  void serialLibraryFlush(() =>
-    traktorCueQueue.apply(() => ensureClosed('traktor', win, 'cues')),
-  ).then(
-    (result) => {
-      announceTraktorApplied(result)
-      if (stillWaiting(result)) traktorCueQueueWatch.poke()
-    },
-    () => queueChecks.settled('traktor', 'threw'),
-  )
-}
 // What each conversion is checked against after its batch and each queue apply (see
 // verifyRegistry.ts).
 const musicUnreadable = async () =>
@@ -841,6 +831,13 @@ function menuLocale(): string {
 }
 
 const ensureClosed = createEnsureClosed({
+  processes: DJ_PROCESSES,
+  ask: (win, opts) =>
+    (win ? dialog.showMessageBox(win, opts) : dialog.showMessageBox(opts)).then((r) => r.response),
+  t: (key) => createMenuT(menuLocale())(key),
+})
+
+const askToApply = createAskToApply({
   processes: DJ_PROCESSES,
   ask: (win, opts) =>
     (win ? dialog.showMessageBox(win, opts) : dialog.showMessageBox(opts)).then((r) => r.response),
@@ -1501,11 +1498,13 @@ function registerIpc(): void {
       })
       return canceled ? null : filePaths[0]
     }
+  ipcMain.handle('dj:ask-to-apply', (e, programs: CueProgram[]) =>
+    askInOrder(askToApply, programs, BrowserWindow.fromWebContents(e.sender)),
+  )
   registerDjIpc({
     rekordbox: {
       read: rekordboxRead(rekordboxCollectionNow, rekordboxCollectionPath, { allowMedia }),
       edit: rekordboxEdit(rekordboxCollectionNow, {
-        ensureClosed: (win) => ensureClosed('rekordbox', win, 'playlists'),
         isRunning: DJ_PROCESSES.rekordbox.isRunning,
         queue: rekordboxQueue,
         onApplied: announceApplied,
@@ -1521,7 +1520,7 @@ function registerIpc(): void {
         filters: [{ name: 'rekordbox master.db', extensions: ['db'] }],
       }),
       cueQueue: rekordboxQueueSection(rekordboxQueue, {
-        ensureClosed: (win) => ensureClosed('rekordbox', win, 'playlists'),
+        isClosed: async () => !(await DJ_PROCESSES.rekordbox.isRunning()),
         onWaiting: rekordboxQueueWatch.poke,
         onReady: () => void adjustProvisionalCuesOnLaunch(),
         beginMoment: (reason) => moments.begin(reason, ['rekordbox']),
@@ -1538,7 +1537,6 @@ function registerIpc(): void {
         libraryDir: engineLibraryPath,
         queue: engineCueQueue,
         isRunning: DJ_PROCESSES.engine.isRunning,
-        ensureClosed: (win) => ensureClosed('engine', win, 'playlists'),
         onApplied: programQueues.engine.announceApplied,
         onWaiting: engineCueQueueWatch.poke,
         beginLoose: moments.beginLoose,
@@ -1547,7 +1545,7 @@ function registerIpc(): void {
         properties: ['openDirectory', 'createDirectory'],
       }),
       cueQueue: engineCueQueueSection(engineCueQueue, {
-        ensureClosed: (win) => ensureClosed('engine', win, 'cues'),
+        isClosed: async () => !(await DJ_PROCESSES.engine.isRunning()),
         onWaiting: engineCueQueueWatch.poke,
         onReady: engineCueQueueWatch.poke,
         beginMoment: (reason) => moments.begin(reason, ['engine']),
@@ -1560,7 +1558,6 @@ function registerIpc(): void {
       edit: traktorEdit({
         collection: traktorWritePath,
         queue: traktorCueQueue,
-        ensureClosed: (win) => ensureClosed('traktor', win, 'playlists'),
         isRunning: DJ_PROCESSES.traktor.isRunning,
         onApplied: announceTraktorApplied,
         onWaiting: traktorCueQueueWatch.poke,
@@ -1572,7 +1569,7 @@ function registerIpc(): void {
         filters: [{ name: 'Traktor Collection', extensions: ['nml'] }],
       }),
       cueQueue: traktorCueQueueSection(traktorCueQueue, {
-        ensureClosed: (win) => ensureClosed('traktor', win, 'cues'),
+        isClosed: async () => !(await DJ_PROCESSES.traktor.isRunning()),
         onWaiting: traktorCueQueueWatch.poke,
         onReady: traktorCueQueueWatch.poke,
         beginMoment: (reason) => moments.begin(reason, ['traktor']),
@@ -1660,7 +1657,7 @@ function registerIpc(): void {
           nml: traktorReadPath,
           bootVolume: () => bootVolumeName(),
           queue: traktorCueQueue,
-          applyQuietly: applyTraktorCueQueueAsking,
+          applyQuietly: () => applyTraktorCueQueueQuietly(),
           words: cachedCueWaveWords,
           fine: cachedCueWaveFine,
         },
@@ -1785,6 +1782,17 @@ function registerIpc(): void {
   // so a batch begun meanwhile waits for its own; a library a nested end took nothing from
   // is left for the end that does.
   ipcMain.on('process:batch-end', (e) => endConversionBatch?.(e.sender))
+  const programsDeps = {
+    traktorRead: traktorReadPath,
+    rootLibraries,
+    isRunning: (program: CueProgram) => DJ_PROCESSES[program].isRunning(),
+  }
+  ipcMain.handle('process:programs-for', (_e, paths: string[]) =>
+    conversionPrograms(paths, programsDeps),
+  )
+  ipcMain.handle('library:tag-sync-programs', (_e, paths: string[]) =>
+    tagSyncPrograms(paths, programsDeps),
+  )
   endConversionBatch = (sender) => {
     const upTo = verifyRegistry.cut()
     return moments.runFlush(serialLibraryFlush, rekordboxBatchOpen, async (later) => {
@@ -1853,6 +1861,11 @@ function registerIpc(): void {
         isRunning: DJ_PROCESSES.virtualdj.isRunning,
         onWaiting: virtualdjCueQueueWatch.poke,
         onApplied: programQueues.virtualdj.announceApplied,
+      },
+      {
+        enqueue: traktorCueQueue.enqueue,
+        state: traktorCueQueue.state,
+        applyQuietly: () => applyTraktorCueQueueQuietly(),
       },
     ),
   )

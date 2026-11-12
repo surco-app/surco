@@ -154,6 +154,7 @@ const api: Api = {
   applyMusicFixes: (fixes: MusicFieldFix[]) => ipcRenderer.invoke('applemusic:applyFixes', fixes),
   cancelMusicFixes: () => ipcRenderer.invoke('applemusic:cancelFixes'),
   syncLibraryTags: (updates) => ipcRenderer.invoke('library:syncTags', updates),
+  tagSyncPrograms: (paths) => ipcRenderer.invoke('library:tag-sync-programs', paths),
   replaceDuplicatesInLibraries: (pairs) => ipcRenderer.invoke('library:replaceDuplicates', pairs),
   libraryStatus: () => ipcRenderer.invoke('library:status'),
   libraryCopyInfo: (paths) => ipcRenderer.invoke('library:copyInfo', paths),
@@ -260,6 +261,7 @@ const api: Api = {
   verifyMusicAdded: (trackId, persistentId) =>
     ipcRenderer.invoke('verify:musicAdded', trackId, persistentId),
   releasePlayingFile: (path) => ipcRenderer.invoke('player:release', path),
+  conversionPrograms: (paths) => ipcRenderer.invoke('process:programs-for', paths),
   beginConversionBatch: (): void => ipcRenderer.send('process:batch-begin'),
   endConversionBatch: (): void => ipcRenderer.send('process:batch-end'),
   cancelJob: (jobId: string): void => ipcRenderer.send('process:cancel', jobId),
