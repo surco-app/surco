@@ -30,7 +30,7 @@ interface FeedbackContext {
   platform: string
   error?: string
   stack?: string
-  // Recent [error] lines, already stripped of directory paths by errorReport.ts —
+  // Log lines around recent errors, already stripped of directory paths by errorReport.ts —
   // this body becomes a public issue.
   logLines?: string[]
 }
@@ -73,7 +73,7 @@ export function buildIssueUrl(ctx: FeedbackContext): string {
   return fitToLimit(title.slice(0, 120), buildBody(ctx))
 }
 
-// The failure lines a report carries, read on demand — never at startup, since the log
+// The log lines a report carries, read on demand — never at startup, since the log
 // can sit on a slow volume.
 async function readRecentErrors(): Promise<string[]> {
   const contents = await readFile(log.transports.file.getFile().path, 'utf8')

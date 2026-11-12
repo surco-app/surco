@@ -8,10 +8,16 @@
 // carry spaces, dashes and accents ("Sola Brothers - Open Eyes.mp3"), so the run stops
 // only at a path separator, and at the quote/paren that usually closes the path in a
 // log line.
-const POSIX_PATH =
-  /\/(?:[^/\s"')]*(?:[ \t][^/\s"'\-)][^/\s"')]*)*\/)*([^/\s"')]+(?:[ \t][^/\s"')]+)*)/g
-const WINDOWS_PATH =
-  /[A-Za-z]:\\(?:[^\\\s"')]*(?:[ \t][^\\\s"'\-)][^\\\s"')]*)*\\)*([^\\\s"')]+(?:[ \t][^\\\s"')]+)*)/g
+const FOLDER_POSIX = String.raw`(?:[^/\s()"']|\([^()/]*\)|(?<=\S)["']|[ \t](?!-\S))*`
+const FOLDER_WINDOWS = String.raw`(?:[^\\\s()"']|\([^()\\]*\)|(?<=\S)["']|[ \t](?!-\S))*`
+const POSIX_PATH = new RegExp(
+  String.raw`/(?:${FOLDER_POSIX}/)*([^/\s"')]+(?:[ \t][^/\s"')]+)*)`,
+  'g',
+)
+const WINDOWS_PATH = new RegExp(
+  String.raw`(?:[A-Za-z]:\\|\\\\)(?:${FOLDER_WINDOWS}\\)*([^\\\s"')]+(?:[ \t][^\\\s"')]+)*)`,
+  'g',
+)
 
 export function stripPaths(line: string): string {
   return line.replace(WINDOWS_PATH, '$1').replace(POSIX_PATH, '$1')

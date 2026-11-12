@@ -24,6 +24,38 @@ describe('stripPaths', () => {
     )
   })
 
+  it('reduces a OneDrive folder named after an employer so it never reaches a public issue', () => {
+    expect(stripPaths('read C:\\Users\\Ana\\OneDrive - Contoso Ltd\\Música\\x.wav')).toBe(
+      'read x.wav',
+    )
+  })
+
+  it('reduces an external volume whose name has a dash', () => {
+    expect(stripPaths('read /Volumes/Ana - SSD/Music/x.wav')).toBe('read x.wav')
+  })
+
+  it('reduces an Artist - Album folder down to the file name', () => {
+    expect(stripPaths('read /Users/ana/Music/Sola - Open Eyes/01 x.mp3')).toBe('read 01 x.mp3')
+  })
+
+  it('keeps the flags of a command line between two paths', () => {
+    expect(stripPaths('Command failed: /A/ffmpeg -i /B/in.mp3 -f lavfi')).toBe(
+      'Command failed: ffmpeg -i in.mp3 -f lavfi',
+    )
+  })
+
+  it('reduces a folder whose name has parentheses', () => {
+    expect(stripPaths('read /Users/ana/Música (2024)/x.wav')).toBe('read x.wav')
+  })
+
+  it('reduces a folder whose name has an apostrophe', () => {
+    expect(stripPaths("read /Users/ana/Ana's Music/x.wav")).toBe('read x.wav')
+  })
+
+  it('reduces UNC paths on a network share', () => {
+    expect(stripPaths('read \\\\NAS\\Users\\Ana\\Music\\x.wav')).toBe('read x.wav')
+  })
+
   it('keeps lines that carry no path untouched', () => {
     expect(stripPaths('uncaughtException Error: boom')).toBe('uncaughtException Error: boom')
   })
