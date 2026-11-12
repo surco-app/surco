@@ -45,7 +45,17 @@ export function mergedOrigin(onto: TrackOrigin, from: TrackOrigin): TrackOrigin 
   return merged
 }
 
+function changesTrack(t: TrackItem, patch: Partial<TrackItem>): boolean {
+  return Object.entries(patch).some(([key, value]) => {
+    if (key !== 'playlists' || !value) return !Object.is(t[key as keyof TrackItem], value)
+    return Object.entries(value).some(
+      ([program, entry]) => t.playlists?.[program as keyof typeof value] !== entry,
+    )
+  })
+}
+
 export function patchedTrack(t: TrackItem, patch: Partial<TrackItem>): TrackItem {
+  if (!changesTrack(t, patch)) return t
   if (!patch.playlists) return { ...t, ...patch }
   return { ...t, ...patch, playlists: { ...t.playlists, ...patch.playlists } }
 }

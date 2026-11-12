@@ -610,6 +610,32 @@ describe('useTrackLibrary own outputs vs watcher', () => {
   })
 })
 
+describe('useTrackLibrary updateTrack with nothing to change', () => {
+  it('keeps the same tracks array so every measured track does not re-run the whole-library chain', async () => {
+    const { result } = setupWithTracks()
+    await act(() => result.current.addPaths(['/m/a.wav', '/m/b.wav']))
+    const a = result.current.tracks.find((t) => t.inputPath === '/m/a.wav')
+    if (!a) throw new Error('track not loaded')
+    const before = result.current.tracks
+
+    act(() => result.current.updateTrack(a.id, { analyzeFailed: undefined }))
+    act(() => result.current.updateTrack(a.id, { inputPath: a.inputPath }))
+
+    expect(result.current.tracks).toBe(before)
+  })
+
+  it('still publishes a patch that changes the track', async () => {
+    const { result } = setupWithTracks()
+    await act(() => result.current.addPaths(['/m/a.wav']))
+    const a = result.current.tracks[0]
+    if (!a) throw new Error('track not loaded')
+
+    act(() => result.current.updateTrack(a.id, { analyzeFailed: true }))
+
+    expect(result.current.tracks[0]?.analyzeFailed).toBe(true)
+  })
+})
+
 describe('useTrackLibrary new-tracks prompt lifetime', () => {
   // The watcher's safety poll re-reports the folder every minute whether or not anything
   // changed. Without remembering the declined offer, a dismissed prompt would resurrect on
