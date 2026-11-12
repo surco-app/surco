@@ -2,7 +2,7 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { DJ_PROGRAMS, PROGRAM_BETA } from '../../../shared/djProgram'
+import { DJ_PROGRAMS } from '../../../shared/djProgram'
 import type { PlaylistSource } from '../../../shared/types'
 import i18n from '../i18n'
 import { RAIL_WIDTH } from '../lib/columnLayout'
@@ -13,34 +13,7 @@ afterEach(cleanup)
 const COPIES = { active: false, alert: 'none', onOpen: () => {} } as const
 
 describe('SourceRail', () => {
-  it('marks VirtualDJ as beta next to its name, on macOS and Windows alike, and tells screen readers too, since it is the one program not proven on every system', () => {
-    render(
-      <SourceRail
-        width={RAIL_WIDTH}
-        showNames
-        onToggleNames={vi.fn()}
-        sidebarShown
-        onToggleSidebar={vi.fn()}
-        copies={COPIES}
-        onHide={vi.fn()}
-        sources={['rekordbox', 'serato', 'virtualdj']}
-        active="virtualdj"
-        onSelect={vi.fn()}
-      />,
-    )
-    const pill = screen.getByTestId('source-rail-beta-virtualdj')
-    expect(pill).toHaveTextContent(i18n.t('sources.beta'))
-    expect(screen.getByTestId('source-rail-virtualdj')).toContainElement(pill)
-    expect(screen.getByTestId('source-rail-virtualdj')).toHaveAccessibleName('VirtualDJ')
-    expect(screen.getByTestId('source-rail-virtualdj')).toHaveAccessibleDescription(
-      i18n.t('sources.beta'),
-    )
-    expect(screen.getByTestId('source-rail-serato')).not.toHaveAccessibleDescription()
-    expect(screen.queryByTestId('source-rail-beta-rekordbox')).toBeNull()
-    expect(screen.queryByTestId('source-rail-beta-serato')).toBeNull()
-  })
-
-  it('takes which programs are beta from the program table, never from a program name', () => {
+  it('writes only the program name under VirtualDJ, with no beta pill taking room in the rail', () => {
     render(
       <SourceRail
         width={RAIL_WIDTH}
@@ -55,11 +28,9 @@ describe('SourceRail', () => {
         onSelect={vi.fn()}
       />,
     )
+    expect(screen.getByTestId('source-rail-virtualdj')).toHaveTextContent(/^VirtualDJ$/)
     for (const program of DJ_PROGRAMS)
-      expect(screen.queryByTestId(`source-rail-beta-${program}`) !== null, program).toBe(
-        PROGRAM_BETA[program],
-      )
-    expect(screen.queryByTestId('source-rail-beta-appleMusic')).toBeNull()
+      expect(screen.getByTestId(`source-rail-${program}`)).not.toHaveAccessibleDescription()
   })
 
   it('is as wide as the rail the column layout subtracts, so the editor columns fill the window exactly', () => {
@@ -377,27 +348,6 @@ describe('SourceRail', () => {
     expect(screen.queryByTestId('source-rail-label-rekordbox')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'rekordbox' })).toBeInTheDocument()
     expect(screen.getByTestId('source-rail').style.width).toBe('52px')
-  })
-
-  it('drops the beta pill with the names, since the icon-only rail has no room under the mark, yet VoiceOver still hears VirtualDJ is beta', () => {
-    render(
-      <SourceRail
-        width={52}
-        showNames={false}
-        onToggleNames={vi.fn()}
-        sidebarShown
-        onToggleSidebar={vi.fn()}
-        copies={COPIES}
-        onHide={vi.fn()}
-        sources={['virtualdj']}
-        active={null}
-        onSelect={vi.fn()}
-      />,
-    )
-    expect(screen.getByTestId('source-rail-beta-virtualdj')).not.toBeVisible()
-    expect(screen.getByRole('button', { name: 'VirtualDJ' })).toHaveAccessibleDescription(
-      i18n.t('sources.beta'),
-    )
   })
 
   describe('Copias', () => {
