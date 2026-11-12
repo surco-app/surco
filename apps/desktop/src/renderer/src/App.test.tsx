@@ -9128,6 +9128,16 @@ describe('App duplicates filter', () => {
   })
 })
 
+describe('zoomed window', () => {
+  it('keeps the layout at the window minimum so zooming in scrolls instead of clipping the convert button', async () => {
+    await renderApp()
+    await addTwoTracks()
+    const root = screen.getByTestId('sidebar').closest('.flex.h-screen') as HTMLElement
+
+    expect(root).toHaveClass('min-w-[1080px]', 'min-h-[620px]')
+  })
+})
+
 describe('drop target', () => {
   // With tracks in the list they land in the sidebar, so that is where the drag answers.
   // The old full-screen overlay covered both columns — including the one nothing was going

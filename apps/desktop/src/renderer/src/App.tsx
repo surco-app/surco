@@ -3779,7 +3779,7 @@ export default function App(): React.JSX.Element {
           keyboard-accessible path to the same action. */}
           {/* biome-ignore lint/a11y/noStaticElementInteractions: drop target, not a control */}
           <div
-            className="relative flex h-screen flex-col overflow-clip"
+            className="relative flex h-screen min-h-[620px] min-w-[1080px] flex-col overflow-clip"
             onDragEnterCapture={(e) => {
               // A reorder inside the list is not files arriving, and rows dragged out of the
               // list (toward a playlist in the tree) are already in it: no import overlay.
