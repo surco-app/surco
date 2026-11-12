@@ -1095,6 +1095,7 @@
       "keys": {
         "label": "Tasten",
         "button": "Tastenkürzel",
+        "description": "Leertaste spielt ab oder stoppt. Links und Rechts springen Takte, mit Umschalt einen Beat. M setzt einen CALL und 1 bis 8 setzen die Hot Cues A bis H am Abspielkopf. Entfernen löscht den ausgewählten Cue.",
         "space": "Leertaste",
         "play": "abspielen oder stoppen",
         "jump_one": "{{count}} Takt springen",

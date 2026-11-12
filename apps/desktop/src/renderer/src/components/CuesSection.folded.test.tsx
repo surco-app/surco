@@ -150,6 +150,16 @@ const clickDetail = (x: number) => {
 }
 
 describe('CuesSection folded', () => {
+  it('describes the keys the cue editor answers to, so a screen reader hears them on entering', async () => {
+    setup()
+    await ready()
+    const description = screen.getByTestId('cues-editor').getAttribute('aria-describedby')
+    expect(description).toBeTruthy()
+    expect(screen.getByTestId('cues-editor')).toHaveAccessibleDescription(
+      /Space plays or stops.*Left and Right.*hot cues A to H.*Delete/,
+    )
+  })
+
   it('moves the playhead to the beat with a plain click on the strip, without opening full screen or placing', async () => {
     setup()
     await ready()

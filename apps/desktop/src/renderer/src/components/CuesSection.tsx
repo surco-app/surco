@@ -15,6 +15,7 @@ import type React from 'react'
 import {
   useCallback,
   useEffect,
+  useId,
   useMemo,
   useReducer,
   useRef,
@@ -778,6 +779,7 @@ function Editing({
   }, [settled])
   const menuRef = useRef<HTMLDivElement>(null)
   const editorRef = useRef<HTMLFieldSetElement>(null)
+  const keysId = useId()
   const focusEditor = useCallback(() => editorRef.current?.focus(), [])
   const wanted = wantedOfDraft(state.cues)
   const clearable = state.cues.some((c) => !state.locked.includes(c.key))
@@ -1788,9 +1790,13 @@ function Editing({
       data-maximized={maximized ? 'true' : 'false'}
       tabIndex={-1}
       aria-label={tr('editor.cues.title')}
+      aria-describedby={keysId}
       className={`relative m-0 min-w-0 border-0 p-0 outline-none focus-visible:shadow-none ${maximized ? 'flex min-h-0 flex-1 flex-col gap-3' : ''}`}
       onKeyDown={onKey}
     >
+      <p id={keysId} className="sr-only">
+        {tr('editor.cues.keys.description')}
+      </p>
       {maximized && header}
       {maximized ? (
         <>
