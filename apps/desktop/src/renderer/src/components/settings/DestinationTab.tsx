@@ -463,7 +463,7 @@ function OutputSettings({
                       type="button"
                       data-testid="settings-complete-cues-no"
                       onClick={() => setCompleteCount(null)}
-                      className="rounded px-2 py-1 text-fg-muted hover:bg-[var(--color-hover)]"
+                      className="press rounded px-2 py-1 text-fg-muted hover:bg-[var(--color-hover)]"
                     >
                       {tr('settings.completeCuesNo')}
                     </button>
@@ -474,7 +474,7 @@ function OutputSettings({
                         patch('completeCuesOnClose', true)
                         setCompleteCount(null)
                       }}
-                      className="rounded bg-[var(--color-accent-soft)] px-2 py-1 text-fg hover:bg-[var(--color-hover)]"
+                      className="press rounded bg-[var(--color-accent-soft)] px-2 py-1 text-fg hover:bg-[var(--color-hover)]"
                     >
                       {tr('settings.completeCuesYes')}
                     </button>

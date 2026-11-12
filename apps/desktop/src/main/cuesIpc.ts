@@ -4,7 +4,6 @@ import type { CueFlow } from '../shared/cueFlows'
 import { CUE_PROGRAMS, type CueProgram, isWritable, programOf } from '../shared/djProgram'
 import type { DropInput } from '../shared/dropDetect'
 import type { GridFit } from '../shared/gridEdit'
-import type { GridVerdict } from '../shared/gridVerdict'
 import type {
   CopyReason,
   FineWave,
@@ -57,14 +56,13 @@ export function registerCuesIpc(host: {
     const source = sourceOf(contentId)
     return source ? source.surcoGrid(contentId) : null
   })
-  ipcMain.handle('cues:gridVerdict', async (_e, contentId: string): Promise<GridVerdict | null> => {
-    const source = sourceOf(contentId)
-    return source ? source.gridVerdict(contentId) : null
-  })
-  ipcMain.handle('cues:gridFit', async (_e, contentId: string): Promise<GridFit | null> => {
-    const source = sourceOf(contentId)
-    return source ? source.gridFit(contentId) : null
-  })
+  ipcMain.handle(
+    'cues:gridFit',
+    async (_e, contentId: string, priority: 'high' | 'low' = 'high'): Promise<GridFit | null> => {
+      const source = sourceOf(contentId)
+      return source ? source.gridFit(contentId, priority) : null
+    },
+  )
   ipcMain.handle('rekordbox:countCompletable', () => {
     const path = host.collection()
     return withCollection(

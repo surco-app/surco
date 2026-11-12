@@ -51,4 +51,13 @@ describe('replacePatch', () => {
       musicPersistentId: 'PID1',
     })
   })
+
+  it('stamps just the id when the offered copy is the open file itself, so Music retags its own entry instead of re-adding the same file', () => {
+    expect(
+      replacePatch(
+        { persistentId: 'PID1', label: 'Sola Brothers - Lov3', path: '/Music/Lov3 m4 hous3.aiff' },
+        '/music/lov3 m4 hous3.aiff',
+      ),
+    ).toEqual({ musicPersistentId: 'PID1' })
+  })
 })

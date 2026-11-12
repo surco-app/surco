@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { PlaylistRole, SessionAnswers } from '../../../shared/sessionTypes'
 import type { SourceNode, SourcePlaylistEntry } from '../../../shared/types'
@@ -112,23 +112,20 @@ describe('SessionWizard steps', () => {
   it('brings the next step in from the trailing side and an earlier one from the leading side', async () => {
     setup({ b90: 'base' })
     toSources()
-    expect(screen.getByTestId('session-wizard-page')).toHaveClass('animate-step-forward')
+    expect(screen.getByTestId('session-wizard-page')).toHaveAttribute('data-enter', 'trailing')
     fireEvent.click(screen.getByTestId('session-wizard-back'))
-    expect(screen.getByTestId('session-wizard-page')).toHaveClass('animate-step-back')
+    expect(screen.getByTestId('session-wizard-page')).toHaveAttribute('data-enter', 'leading')
     await toCharacter()
-    expect(screen.getByTestId('session-wizard-page')).toHaveClass('animate-step-forward')
+    expect(screen.getByTestId('session-wizard-page')).toHaveAttribute('data-enter', 'trailing')
     fireEvent.click(screen.getByTestId('session-wizard-step-sources'))
-    expect(screen.getByTestId('session-wizard-page')).toHaveClass('animate-step-back')
+    expect(screen.getByTestId('session-wizard-page')).toHaveAttribute('data-enter', 'leading')
   })
 
   // The window itself is popping in, so a first step sliding too would be two motions for
   // one thing happening.
   it('opens on the first step without sliding it in', () => {
     setup()
-    expect(screen.getByTestId('session-wizard-page')).not.toHaveClass(
-      'animate-step-forward',
-      'animate-step-back',
-    )
+    expect(screen.getByTestId('session-wizard-page')).not.toHaveAttribute('data-enter')
   })
 
   // A DJ who changes their mind mid-slide turns around at once; nothing waits for the
@@ -140,6 +137,98 @@ describe('SessionWizard steps', () => {
     expect(screen.getByTestId('session-wizard-step-title')).toHaveTextContent(
       i18n.t('sessions.wizard.duration.heading'),
     )
+  })
+
+  describe('when the OS allows motion', () => {
+    const allowMotion = (reduce = false) => {
+      window.matchMedia = vi.fn().mockReturnValue({ matches: reduce }) as never
+    }
+    afterEach(() => {
+      Reflect.deleteProperty(window, 'matchMedia')
+      document.documentElement.style.removeProperty('--duration-panel')
+      vi.useRealTimers()
+    })
+    const leaving = () => screen.queryByTestId('session-wizard-page-leaving')
+    const title = () =>
+      within(screen.getByTestId('session-wizard-page')).getByTestId('session-wizard-step-title')
+
+    it('sends the step being left out toward the side it sits on, so both steps move as one row', () => {
+      allowMotion()
+      setup({ b90: 'base' })
+      toSources()
+      expect(leaving()).toHaveAttribute('data-step', 'duration')
+      expect(leaving()).toHaveAttribute('data-exit', 'leading')
+      fireEvent.click(screen.getByTestId('session-wizard-back'))
+      expect(leaving()).toHaveAttribute('data-step', 'sources')
+      expect(leaving()).toHaveAttribute('data-exit', 'trailing')
+    })
+
+    it('keeps the step being left out of reach of the keyboard and screen readers, with focus on the new one', () => {
+      allowMotion()
+      setup()
+      toSources()
+      expect(leaving()).toHaveAttribute('aria-hidden', 'true')
+      expect(leaving()).toHaveAttribute('inert')
+      expect(screen.getByTestId('session-wizard-page')).toContainElement(
+        document.activeElement as HTMLElement,
+      )
+      expect(title()).toHaveTextContent(i18n.t('sessions.wizard.sources.heading'))
+    })
+
+    it('turns the leaving step around from where it is when Back is pressed mid-slide, and focuses it', () => {
+      allowMotion()
+      setup()
+      toSources()
+      const duration = leaving()
+      fireEvent.click(screen.getByTestId('session-wizard-back'))
+      expect(screen.getByTestId('session-wizard-page')).toBe(duration)
+      expect(duration).not.toHaveAttribute('inert')
+      expect(duration).not.toHaveAttribute('aria-hidden')
+      expect(document.activeElement).toBe(title())
+      expect(title()).toHaveTextContent(i18n.t('sessions.wizard.duration.heading'))
+    })
+
+    it('drops the leaving step once its slide ends, so no hidden copy stays behind', () => {
+      allowMotion()
+      setup()
+      toSources()
+      const gone = leaving()
+      if (!gone) throw new Error('no leaving step')
+      fireEvent.transitionEnd(gone)
+      expect(leaving()).toBeNull()
+    })
+
+    it('drops the leaving step after the panel duration even when its slide never reports an end', () => {
+      allowMotion()
+      document.documentElement.style.setProperty('--duration-panel', '240ms')
+      vi.useFakeTimers()
+      setup()
+      toSources()
+      act(() => vi.advanceTimersByTime(239))
+      expect(leaving()).not.toBeNull()
+      act(() => vi.advanceTimersByTime(1))
+      expect(leaving()).toBeNull()
+    })
+
+    it('reads the panel duration in seconds too, as the built stylesheet writes it, so the copy is not dropped at once', () => {
+      allowMotion()
+      document.documentElement.style.setProperty('--duration-panel', '.24s')
+      vi.useFakeTimers()
+      setup()
+      toSources()
+      act(() => vi.advanceTimersByTime(239))
+      expect(leaving()).not.toBeNull()
+      act(() => vi.advanceTimersByTime(1))
+      expect(leaving()).toBeNull()
+    })
+
+    it('leaves no copy of the old step behind when the OS asks for reduced motion, only the fade in', () => {
+      allowMotion(true)
+      setup()
+      toSources()
+      expect(leaving()).toBeNull()
+      expect(screen.getByTestId('session-wizard-page')).toHaveAttribute('data-enter', 'trailing')
+    })
   })
 
   it('does not let a step ahead be pressed, since it may need what comes before', () => {

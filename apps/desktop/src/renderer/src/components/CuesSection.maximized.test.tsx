@@ -134,6 +134,8 @@ describe('CuesSection maximized', () => {
     await ready()
     fireEvent.contextMenu(screen.getByTestId('cue-wave'), { clientX: 100 })
     expect(screen.queryByTestId('cues-menu')).toBeNull()
+    fireEvent.contextMenu(screen.getByTestId('cue-detail'), { clientX: 200, clientY: 40 })
+    expect(screen.queryByTestId('cues-menu')).toBeNull()
   })
 
   it('opens the full editor with the track header, the zoomed wave and the deck', async () => {
@@ -324,11 +326,29 @@ describe('CuesSection maximized', () => {
     )
     const gridFit = vi.fn<Api['cues']['gridFit']>(async () => null)
     setup(null, READ, { cues: { waveFine: fine, gridFit: gridFit } })
+    await waitFor(() => expect(gridFit).toHaveBeenCalledTimes(1))
     await maximize()
     await waitFor(() => expect(fine).toHaveBeenCalledWith('103'))
-    expect(gridFit).not.toHaveBeenCalled()
     act(() => release(null))
+    await waitFor(() => expect(screen.getByTestId('cues-editor')).toBeInTheDocument())
+    expect(gridFit).toHaveBeenCalledTimes(1)
+  })
+
+  it('holds the fine wave while the folded view still measures the grid, so full screen never reads the file twice at once', async () => {
+    let finish: (fit: null) => void = () => {}
+    const gridFit = vi.fn<Api['cues']['gridFit']>(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve
+        }),
+    )
+    const fine = vi.fn<Api['cues']['waveFine']>(async () => null)
+    setup(null, READ, { cues: { waveFine: fine, gridFit: gridFit } })
     await waitFor(() => expect(gridFit).toHaveBeenCalledWith('103'))
+    await maximize()
+    expect(fine).not.toHaveBeenCalled()
+    act(() => finish(null))
+    await waitFor(() => expect(fine).toHaveBeenCalledWith('103'))
   })
 
   it('starts below the macOS window controls, so the cover and title never sit under the traffic lights', async () => {
@@ -1373,16 +1393,20 @@ describe('CuesSection maximized over the rest of the editor', () => {
     expect(screen.queryByTestId('cue-wave-hot-B')).toBeNull()
   })
 
-  it('shows the ✕ beside a hot cue and a CALL in the zoomed wave on hover and deletes only that mark', async () => {
+  it('deletes only the right-clicked mark of the zoomed wave from its menu, with no ✕ over the wave', async () => {
     setup()
     await maximize()
     seek(64000)
     fireEvent.click(screen.getByTestId('cues-pad-A'))
     seek(120000)
     fireEvent.click(screen.getByTestId('cues-memory'))
-    expect(screen.queryByTestId('cue-detail-delete')).toBeNull()
     fireEvent.mouseEnter(screen.getByTestId('cue-detail-call-120000'))
-    fireEvent.click(screen.getByTestId('cue-detail-delete'))
+    expect(screen.queryByTestId('cue-detail-delete')).toBeNull()
+    fireEvent.contextMenu(screen.getByTestId('cue-detail-call-120000'), {
+      clientX: 200,
+      clientY: 5,
+    })
+    fireEvent.click(screen.getByTestId('cues-menu-delete'))
     expect(screen.queryByTestId('cue-wave-call-120000')).toBeNull()
     expect(screen.getByTestId('cue-wave-hot-A')).toBeInTheDocument()
   })
@@ -1456,6 +1480,198 @@ describe('CuesSection maximized over the rest of the editor', () => {
     fireEvent.contextMenu(screen.getByTestId('cue-detail-hot-A'), { clientX: 200, clientY: 5 })
     fireEvent.click(screen.getByTestId('cues-menu-delete'))
     expect(screen.queryByTestId('cue-wave-hot-A')).toBeNull()
+  })
+
+  it('puts a hot cue on the beat nearest the right-click on the zoomed wave, so a cue goes in without leaving the wave for the pads', async () => {
+    setup()
+    await maximize()
+    seek(64000)
+    fireEvent.contextMenu(screen.getByTestId('cue-detail'), { clientX: 203, clientY: 40 })
+    expect(screen.queryByTestId('cues-menu-delete')).toBeNull()
+    fireEvent.click(screen.getByTestId('cues-menu-add-hot'))
+    expect(screen.getByTestId('cue-wave-hot-A').style.left).toContain('16%')
+    expect(screen.queryByTestId('cues-menu')).toBeNull()
+  })
+
+  it('puts a CALL on the beat nearest the right-click on the zoomed wave', async () => {
+    setup()
+    await maximize()
+    seek(64000)
+    fireEvent.contextMenu(screen.getByTestId('cue-detail'), { clientX: 203, clientY: 40 })
+    fireEvent.click(screen.getByTestId('cues-menu-add-call'))
+    expect(screen.getByTestId('cue-wave-call-64000')).toBeInTheDocument()
+  })
+
+  it('keeps the preview on the right-clicked point while its menu is open, so moving to the options does not lose where they apply', async () => {
+    setup()
+    await maximize()
+    seek(128000)
+    fireEvent.mouseMove(screen.getByTestId('cue-detail'), { clientX: 300 })
+    fireEvent.contextMenu(screen.getByTestId('cue-detail'), { clientX: 300, clientY: 40 })
+    fireEvent.mouseMove(screen.getByTestId('cue-detail'), { clientX: 100 })
+    fireEvent.mouseLeave(screen.getByTestId('cue-detail'))
+    expect(screen.getByTestId('cue-detail-ghost-call-136000')).toBeInTheDocument()
+    fireEvent.keyDown(screen.getByTestId('cues-menu'), { key: 'Escape' })
+    expect(screen.queryAllByTestId(/^cue-(wave|detail)-ghost-/)).toHaveLength(0)
+  })
+
+  it('marks the right-clicked point on both waves while its menu is open in manual mode, where no flow preview shows it', async () => {
+    setup({ activeCueFlow: 'manual' })
+    await maximize()
+    seek(64000)
+    expect(screen.queryByTestId('cue-detail-cursor')).toBeNull()
+    fireEvent.contextMenu(screen.getByTestId('cue-detail'), { clientX: 300, clientY: 40 })
+    fireEvent.mouseLeave(screen.getByTestId('cue-detail'))
+    expect(screen.getByTestId('cue-detail-cursor').style.left).toBe('75%')
+    expect(screen.getByTestId('cue-wave-cursor').style.left).toContain('18%')
+    fireEvent.keyDown(screen.getByTestId('cues-menu'), { key: 'Escape' })
+    expect(screen.queryByTestId('cue-detail-cursor')).toBeNull()
+    expect(screen.queryByTestId('cue-wave-cursor')).toBeNull()
+  })
+
+  it('opens the cue menu, not the add menu, when the right-click on the zoomed wave lands on a cue', async () => {
+    setup()
+    await maximize()
+    seek(64000)
+    fireEvent.click(screen.getByTestId('cues-pad-A'))
+    fireEvent.contextMenu(screen.getByTestId('cue-detail-hot-A'), { clientX: 200, clientY: 5 })
+    expect(screen.getByTestId('cues-menu-delete')).toBeInTheDocument()
+    expect(screen.queryByTestId('cues-menu-add-hot')).toBeNull()
+  })
+
+  it('turns a hot cue into a CALL in place from its menu, so changing kind needs no delete and re-add', async () => {
+    setup()
+    await maximize()
+    seek(64000)
+    fireEvent.click(screen.getByTestId('cues-pad-A'))
+    fireEvent.contextMenu(screen.getByTestId('cue-wave-hot-A'), { clientX: 100, clientY: 5 })
+    fireEvent.click(screen.getByTestId('cues-menu-to-call'))
+    expect(screen.queryByTestId('cue-wave-hot-A')).toBeNull()
+    expect(screen.getByTestId('cue-wave-call-64000')).toBeInTheDocument()
+    expect(screen.queryByTestId('cues-menu')).toBeNull()
+  })
+
+  it('turns a CALL into a hot cue in place from its menu', async () => {
+    setup()
+    await maximize()
+    seek(64000)
+    fireEvent.click(screen.getByTestId('cues-memory'))
+    fireEvent.contextMenu(screen.getByTestId('cue-wave-call-64000'), { clientX: 100, clientY: 5 })
+    fireEvent.click(screen.getByTestId('cues-menu-to-hot'))
+    expect(screen.queryByTestId('cue-wave-call-64000')).toBeNull()
+    expect(screen.getByTestId('cue-wave-hot-A').style.left).toContain('16%')
+  })
+
+  it('undoes a conversion in one step, since it is one edit to the DJ', async () => {
+    setup()
+    await maximize()
+    seek(64000)
+    fireEvent.click(screen.getByTestId('cues-memory'))
+    fireEvent.contextMenu(screen.getByTestId('cue-wave-call-64000'), { clientX: 100, clientY: 5 })
+    fireEvent.click(screen.getByTestId('cues-menu-to-hot'))
+    editor().focus()
+    key('z', { metaKey: true })
+    expect(screen.getByTestId('cue-wave-call-64000')).toBeInTheDocument()
+    expect(screen.queryByTestId('cue-wave-hot-A')).toBeNull()
+  })
+
+  it('cannot turn a CALL into a hot cue once the 8 letters are taken, so the CALL is never lost', async () => {
+    setup(null, {
+      ...READ,
+      cues: [
+        ...[1, 2, 3, 5, 6, 7, 8, 9].map((kind, i) => ({
+          id: `h${kind}`,
+          ms: 8000 * (i + 1),
+          kind,
+          color: 1,
+        })),
+        { id: 'c1', ms: 120000, kind: 0, color: null },
+      ],
+    })
+    await maximize()
+    seek(120000)
+    fireEvent.contextMenu(screen.getByTestId('cue-wave-call-120000'), { clientX: 100, clientY: 5 })
+    expect(screen.getByTestId('cues-menu-to-hot')).toBeDisabled()
+  })
+
+  it('cannot convert a hot cue sitting on its CALL, since the two would collapse into one', async () => {
+    setup()
+    await maximize()
+    seek(64000)
+    fireEvent.click(screen.getByTestId('cues-memory'))
+    fireEvent.click(screen.getByTestId('cues-pad-A'))
+    fireEvent.contextMenu(screen.getByTestId('cue-wave-hot-A'), { clientX: 100, clientY: 5 })
+    expect(screen.getByTestId('cues-menu-to-call')).toBeDisabled()
+  })
+
+  it('takes an off-grid cue to its beat from its menu, the one cue and not the rest', async () => {
+    setup(null, {
+      ...READ,
+      cues: [
+        { id: 'h1', ms: 31986, kind: 1, color: 42 },
+        { id: 'c1', ms: 48014, kind: 0, color: null },
+      ],
+    })
+    await maximize()
+    fireEvent.contextMenu(screen.getByTestId('cue-wave-hot-A'), { clientX: 100, clientY: 5 })
+    fireEvent.click(screen.getByTestId('cues-menu-snap'))
+    expect(screen.getByTestId('cue-wave-hot-A')).toHaveAttribute('data-off-grid', 'false')
+    expect(screen.getByTestId('cue-wave-call-48014')).toHaveAttribute('data-off-grid', 'true')
+  })
+
+  it('offers no snap for a cue already on its beat', async () => {
+    setup()
+    await maximize()
+    seek(64000)
+    fireEvent.click(screen.getByTestId('cues-pad-A'))
+    fireEvent.contextMenu(screen.getByTestId('cue-wave-hot-A'), { clientX: 100, clientY: 5 })
+    expect(screen.queryByTestId('cues-menu-snap')).toBeNull()
+  })
+
+  it('swaps two hot cues letters from the menu when each letter is a fixed pad', async () => {
+    setup(
+      { cueLettersByTime: false },
+      {
+        ...READ,
+        cues: [
+          { id: 'a', ms: 64000, kind: 1, color: 1 },
+          { id: 'b', ms: 120000, kind: 2, color: 1 },
+        ],
+      },
+    )
+    await maximize()
+    fireEvent.contextMenu(screen.getByTestId('cue-wave-hot-A'), { clientX: 100, clientY: 5 })
+    expect(screen.getByTestId('cues-menu-letter-A')).toHaveAttribute('aria-pressed', 'true')
+    fireEvent.click(screen.getByTestId('cues-menu-letter-B'))
+    expect(screen.getByTestId('cue-wave-hot-B').style.left).toContain('16%')
+    expect(screen.getByTestId('cue-wave-hot-A').style.left).toContain('30%')
+    expect(screen.queryByTestId('cues-menu')).toBeNull()
+  })
+
+  it('offers no letters in the menu while the letters follow the track order, since a swap would not last', async () => {
+    setup({ cueLettersByTime: true })
+    await maximize()
+    seek(64000)
+    fireEvent.click(screen.getByTestId('cues-pad-A'))
+    fireEvent.contextMenu(screen.getByTestId('cue-wave-hot-A'), { clientX: 100, clientY: 5 })
+    expect(screen.queryByTestId('cues-menu-letter-B')).toBeNull()
+  })
+
+  it('cannot take the letter of a loop from the menu', async () => {
+    setup(
+      { cueLettersByTime: false },
+      {
+        ...READ,
+        cues: [
+          { id: 'a', ms: 64000, kind: 1, color: 1 },
+          { id: 'l', ms: 120000, kind: 2, color: 1, loop: true },
+        ],
+      },
+    )
+    await maximize()
+    fireEvent.contextMenu(screen.getByTestId('cue-wave-hot-A'), { clientX: 100, clientY: 5 })
+    expect(screen.getByTestId('cues-menu-letter-B')).toBeDisabled()
+    expect(screen.getByTestId('cues-menu-letter-C')).toBeEnabled()
   })
 
   it('closes the mark menu with Escape without restoring the maximized section', async () => {
@@ -1640,15 +1856,11 @@ describe('CuesSection maximized point corrections', () => {
     expect(position()).toBe('3:20.0')
   })
 
-  it('takes the point’s flow away with its CALL from the ✕, from ⌫ and from the menu, leaving nothing behind', async () => {
+  it('takes the point’s flow away with its CALL from ⌫ and from the menu, leaving nothing behind', async () => {
     setup()
     await maximize()
     seek(128000)
     const remove = [
-      () => {
-        fireEvent.mouseEnter(screen.getByTestId('cue-detail-call-128000'))
-        fireEvent.click(screen.getByTestId('cue-detail-delete'))
-      },
       () => {
         fireEvent.click(screen.getByTestId('cue-wave-call-128000'))
         editor().focus()

@@ -11,7 +11,7 @@ import {
 describe('stripIgnoredWords', () => {
   // Rip crews stamp their signature into the title tag ("Song rip djotas good"); no
   // release ever carries those words, so they sink both the free-text search and the
-  // title score. The user lists their own junk phrases (Settings → Search) and every
+  // title score. The user lists their own junk phrases (Settings → Sources) and every
   // search/score sees the title without them.
   it('removes a listed phrase wherever it appears, case-insensitively', () => {
     expect(stripIgnoredWords('Sueño Latino RIP Djotas Good', ['rip djotas good'])).toBe(

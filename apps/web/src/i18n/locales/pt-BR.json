@@ -258,7 +258,7 @@
           {
             "t": "Sessão automática",
             "s": "Monta uma sessão com suas playlists, seus combos, o que você mais curte e mixagem harmônica.",
-            "d": "Você abre pela paleta de comandos, pelo menu de uma pasta ou numa playlist vazia. Escolhe quanto ela dura e de quais playlists saem as faixas, e diz o que há em cada uma, Instrumentais, Com voz ou Misto, também para uma pasta inteira. O Surco junta os pares que você repete nos seus sets e tracklists, as faixas com mais estrelas e reproduções, mixagem harmônica Camelot se você quiser e um espaço para as novidades, e conta o tempo que cada faixa toca, não o arquivo inteiro. Embaixo de cada faixa você vê por que ela está ali e troca por outra que encaixe. Ela aprende com seus sets quanto você muda o tempo e quanto o tom importa para você, deixa as faixas de encerramento para o final, toca mais as que você sempre toca e abre com uma faixa com voz. Fixe as faixas que quer manter ao refazer, ou comece por uma faixa pelo menu dela. No rekordbox, no Traktor, no Serato e no VirtualDJ, com o programa fechado."
+            "d": "Você abre pela paleta de comandos, pelo menu de uma pasta ou numa playlist vazia. Escolhe quanto ela dura e de quais playlists saem as faixas, e diz o que há em cada uma, Instrumentais, Com voz ou Misto, também para uma pasta inteira. O Surco junta os pares que você repete nos seus sets e tracklists, as faixas com mais estrelas e reproduções, mixagem harmônica Camelot se você quiser e um espaço para as novidades, e conta o tempo que cada faixa toca, não o arquivo inteiro. Ela fica como qualquer playlist, com o tom de cada faixa. Ela aprende com seus sets quanto você muda o tempo e quanto o tom importa para você, deixa as faixas de encerramento para o final, toca mais as que você sempre toca e abre com uma faixa com voz. “Refazer” monta tudo de novo, ou comece por uma faixa pelo menu dela. No rekordbox, no Traktor, no Engine DJ, no Serato e no VirtualDJ. Se o programa estiver aberto, ela espera você fechá-lo."
           },
           {
             "t": "Cues do rekordbox",
@@ -273,7 +273,7 @@
           {
             "t": "A grade no lugar",
             "s": "Corrija a grade de uma faixa à mão ou com Auto, e o filtro “Grade errada” mostra quais.",
-            "d": "Com a seção de cues maximizada, você move a grade, muda o BPM, põe o primeiro tempo no cursor ou clica em “Auto”, que a encaixa nas batidas, e vê quanto ela se desvia aqui e no fim da faixa. “Fixar” (G) prende a grade na batida mais próxima do cursor, ou exatamente no cursor com ⇧. Um segundo alfinete longe do primeiro conta as batidas entre os dois e dá o BPM exato, e no rekordbox um terceiro abre um trecho com tempo próprio. Seis verificações embaixo da onda da faixa inteira dizem se ela continua sobre o bumbo ao longo da música, e clicar numa leva o cursor até essa batida. O Auto dá a mesma resposta de qualquer ponto da faixa e pega o bumbo da grade que o seu programa analisou, então nunca desloca a grade meio tempo para o contratempo. Ela é salva no rekordbox, no Traktor e no Engine DJ, e no rekordbox também em trechos com tempo próprio. O filtro “Grade errada” separa as faixas cuja grade não cai nas batidas. No Traktor e no Engine DJ, por enquanto, para WAV, AIFF e FLAC, e no Traktor também para MP3 criados com o iTunes. O Surco deixa travada a grade que salva e também salva por cima de uma que já estava travada no programa."
+            "d": "Com a seção de cues maximizada, você move a grade, muda o BPM, põe o primeiro tempo no cursor ou clica em “Auto”, que a encaixa nas batidas, e vê quanto ela se desvia aqui e no fim da faixa. “Fixar” (G) prende a grade na batida mais próxima do cursor, ou exatamente no cursor com ⇧. Um segundo alfinete longe do primeiro conta as batidas entre os dois e dá o BPM exato, e no rekordbox um terceiro abre um trecho com tempo próprio. Seis verificações embaixo da onda da faixa inteira dizem se ela continua sobre o bumbo ao longo da música, e clicar numa leva o cursor até essa batida. O Auto dá a mesma resposta de qualquer ponto da faixa e pega o bumbo da grade que o seu programa analisou, então nunca desloca a grade meio tempo para o contratempo. Ela é salva no rekordbox, no Traktor e no Engine DJ, e no rekordbox também em trechos com tempo próprio. O filtro “Grade errada” separa as faixas cuja grade não cai nas batidas. No Traktor e no Engine DJ, por enquanto, para WAV, AIFF e FLAC, e no Traktor também para MP3 criados com o iTunes. O Surco deixa travada a grade que salva e também salva por cima de uma que já estava travada no programa. Com várias faixas selecionadas, “Ajustar” corrige de uma vez as que estão com a grade fora, e “Ajustar grade” também está no editor de cues pequeno."
           },
           {
             "t": "Sua coleção do rekordbox",
@@ -582,7 +582,7 @@
       },
       {
         "q": "Funciona com equipamentos Denon (Engine DJ)?",
-        "a": "Sim. Em Ajustes → Saída, coloque o Engine DJ em “Atualizar e adicionar” e cada faixa convertida é registrada direto na sua biblioteca do Engine DJ (com capa, avaliação e as playlists que você escolher), pronta para sincronizar com os seus players. Ele também exporta coleções para rekordbox, Traktor e Serato."
+        "a": "Sim. Em Ajustes → Programas de DJ, coloque o Engine DJ em “Atualizar e adicionar” e cada faixa convertida é registrada direto na sua biblioteca do Engine DJ (com capa, avaliação e as playlists que você escolher), pronta para sincronizar com os seus players. Ele também exporta coleções para rekordbox, Traktor e Serato."
       },
       {
         "q": "O Windows diz \"O Windows protegeu o computador\". É seguro?",
@@ -1106,16 +1106,16 @@
           },
           {
             "lead": "Monte e revise.",
-            "text": "Cada faixa diz por que está ali e «Trocar» oferece outras. Refaça, ajuste ou fique com ela como uma playlist normal."
+            "text": "Ela fica como qualquer playlist. Refaça, ajuste ou fique com ela como está."
           }
         ],
         "points": [
           "Cada faixa conta só o tempo que toca na mixagem, dois minutos por padrão. Um set real de 28 faixas durou uma hora.",
           "Um combo é um par que se repete em duas ou mais playlists Mistas. Sem elas não há combos.",
           "Nova é a faixa adicionada nos últimos 30 dias, ou sem reproduções nem estrelas se não houver datas.",
-          "Escreve no rekordbox, Traktor, Serato ou VirtualDJ com o programa fechado."
+          "Escreve no rekordbox, Traktor, Engine DJ, Serato ou VirtualDJ. Com o programa aberto, espera você fechá-lo."
         ],
-        "shotCaption": "A sessão montada, com seu resumo, o motivo de cada faixa e «Trocar».",
+        "shotCaption": "A sessão montada no seu programa de DJ.",
         "shot": "sesion-pt-BR.webp"
       },
       {
@@ -1266,6 +1266,8 @@
       "added": "✓ {{count}} faixas adicionadas ao Apple Music"
     },
     "heroFree": "Grátis. macOS, Windows e Linux. Sem conta.",
+    "heroStatsTotal": "<n>{{total}}</n> downloads",
+    "heroStatsWeek": "<n>{{count}}</n> no Mac em 7 dias",
     "closeTitle": "Tudo isso, em uma janela.",
     "closeNote": "Sem nuvem, sem limites, sem cadastro. Ele se atualiza sozinho.",
     "closeSafety": "Seus originais ficam intactos: ao mudar de formato, a cópia vai para uma pasta própria. Ele só reescreve o próprio arquivo se você reexportar no mesmo formato, que é como atualiza as tags sem recodificar. Notarizado pela Apple.",

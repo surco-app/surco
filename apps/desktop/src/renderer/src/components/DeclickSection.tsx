@@ -523,7 +523,7 @@ export function DeclickSection({
                   type="button"
                   data-testid="declick-render"
                   onClick={() => void render()}
-                  className="inline-flex items-center gap-2 rounded-lg border border-[var(--color-line-strong)] px-3 py-1.5 text-xs text-fg-muted transition-colors hover:text-fg"
+                  className="press inline-flex items-center gap-2 rounded-lg border border-[var(--color-line-strong)] px-3 py-1.5 text-xs text-fg-muted transition-colors hover:text-fg"
                 >
                   <Play className="h-3 w-3" aria-hidden="true" />
                   {tr('declick.preview')}
@@ -547,7 +547,7 @@ export function DeclickSection({
                     data-testid="declick-cancel"
                     onClick={cancel}
                     aria-label={tr('declick.cancel')}
-                    className="shrink-0 rounded-lg border border-[var(--color-line-strong)] p-1 text-fg-muted transition-colors hover:text-fg"
+                    className="press shrink-0 rounded-lg border border-[var(--color-line-strong)] p-1 text-fg-muted transition-colors hover:text-fg"
                   >
                     <X className="h-3.5 w-3.5" aria-hidden="true" />
                   </button>
@@ -560,7 +560,7 @@ export function DeclickSection({
                     data-testid="declick-play"
                     disabled={!ab.ready}
                     onClick={() => (ab.playing ? ab.pause() : ab.play())}
-                    className="inline-flex items-center gap-2 rounded-lg border border-[var(--color-line-strong)] px-3 py-1.5 text-xs text-fg-muted transition-colors hover:text-fg disabled:opacity-40"
+                    className="press inline-flex items-center gap-2 rounded-lg border border-[var(--color-line-strong)] px-3 py-1.5 text-xs text-fg-muted transition-colors hover:text-fg disabled:opacity-40"
                   >
                     {ab.playing ? (
                       <Pause className="h-3 w-3" aria-hidden="true" />
@@ -579,7 +579,7 @@ export function DeclickSection({
                     type="button"
                     data-testid="declick-ab"
                     onClick={ab.toggle}
-                    className="inline-flex items-center gap-2 rounded-lg border border-[var(--color-line-strong)] px-3 py-1.5 text-xs font-medium transition-colors hover:text-fg"
+                    className="press inline-flex items-center gap-2 rounded-lg border border-[var(--color-line-strong)] px-3 py-1.5 text-xs font-medium transition-colors hover:text-fg"
                   >
                     <span
                       data-testid="declick-ab-state"
@@ -598,7 +598,7 @@ export function DeclickSection({
                       type="button"
                       data-testid="declick-skip"
                       onClick={skip}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-line-strong)] px-3 py-1.5 text-xs text-fg-muted transition-colors hover:text-fg"
+                      className="press inline-flex items-center gap-1.5 rounded-lg border border-[var(--color-line-strong)] px-3 py-1.5 text-xs text-fg-muted transition-colors hover:text-fg"
                     >
                       <ChevronRight className="h-3 w-3" aria-hidden="true" />
                       {tr('declick.nextClick')}

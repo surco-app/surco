@@ -665,27 +665,10 @@ describe('registerCuesIpc', () => {
       provisional: { add: vi.fn() },
       twins: async () => ({}),
     })
-    await handler('cues:gridVerdict')({}, '101')
+    await handler('cues:gridFit')({}, '101', 'low')
     expect(beatGrid).toHaveBeenLastCalledWith(expect.any(String), 'low')
     await handler('cues:gridFit')({}, '101')
     expect(beatGrid).toHaveBeenLastCalledWith(expect.any(String), 'high')
-  })
-
-  it('judges the rekordbox grid of a track against the beats Surco measured, for the filter of bad grids', async () => {
-    const path = await completableCollection()
-    const phases = Array.from({ length: 40 }, (_, i) => ({ ms: 3200 + i * 6400, firstMs: 90 }))
-    registerWithSources({
-      collection: () => path,
-      queue: queue(),
-      applyQuietly: quietly(),
-      flow: () => MY_FLOW,
-      beatGrid: async () => ({ bpm: 120, firstMs: 90, phases }),
-      words: async () => null,
-      provisional: { add: vi.fn() },
-      twins: async () => ({}),
-    })
-    expect(await handler('cues:gridVerdict')({}, '101')).toEqual({ kind: 'shifted', ms: -92 })
-    expect(await handler('cues:gridVerdict')({}, 'engine:4')).toBeNull()
   })
 
   it('fits nothing when Surco hears no beat or the track is not in the collection', async () => {
@@ -1193,12 +1176,9 @@ describe('registerCuesIpc for Traktor tracks', () => {
       expect(await handler('cues:gridFit')({}, 'engine:4')).toBeNull()
     })
 
-    it('judges the grid of an uncompressed Traktor file for the bad-grid filter, measuring at low priority', async () => {
-      const phases = Array.from({ length: 40 }, (_, i) => ({ ms: 3200 + i * 6400, firstMs: 0 }))
-      const { beatGrid } = await registerAll({
-        beatGrid: async () => ({ bpm: 120, firstMs: 0, phases }),
-      })
-      await handler('cues:gridVerdict')({}, ID)
+    it('fits the grid of an uncompressed Traktor file for the bad-grid filter at low priority', async () => {
+      const { beatGrid } = await registerAll()
+      await handler('cues:gridFit')({}, ID, 'low')
       expect(beatGrid).toHaveBeenLastCalledWith(expect.stringMatching(/t\.aiff$/), 'low')
     })
 

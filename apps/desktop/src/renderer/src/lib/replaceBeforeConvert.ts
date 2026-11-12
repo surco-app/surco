@@ -11,8 +11,16 @@ import { isAmbiguousCandidate, type ReplaceCandidate } from './appleMusicLibrary
 //
 // Ambiguous matches deliberately stamp nothing: overwriting on a guess can destroy the
 // wrong song, and the add is the safe outcome.
-export function replacePatch(target: ReplaceCandidate | null): Partial<TrackItem> | null {
+const samePath = (a: string, b: string): boolean =>
+  a.normalize('NFC').toLowerCase() === b.normalize('NFC').toLowerCase()
+
+export function replacePatch(
+  target: ReplaceCandidate | null,
+  openPath?: string,
+): Partial<TrackItem> | null {
   if (!target || isAmbiguousCandidate(target)) return null
+  if (target.path && openPath && samePath(target.path, openPath))
+    return { musicPersistentId: target.persistentId }
   // replacesPath comes from the candidate, never from a fresh lookup: it must name the file
   // the user was shown, and Music's answer changes the moment an earlier replacement
   // repoints that entry (see StaleLibraryCopy.path).

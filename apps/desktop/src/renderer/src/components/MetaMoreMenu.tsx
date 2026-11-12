@@ -15,7 +15,7 @@ export interface MetaMenuItem {
 }
 
 const MENU =
-  'animate-pop-flat absolute left-0 top-full z-50 mt-1 w-64 origin-top-left overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-panel-2)] py-1 shadow-[var(--shadow-float)]'
+  'animate-pop-flat absolute right-0 top-full z-50 mt-1 w-64 origin-top-right overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-panel-2)] py-1 shadow-[var(--shadow-float)]'
 
 export function MetaMoreMenu({ items }: { items: MetaMenuItem[] }): React.JSX.Element | null {
   const { t: tr } = useTranslation()

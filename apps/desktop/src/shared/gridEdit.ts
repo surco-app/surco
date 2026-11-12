@@ -27,7 +27,7 @@ export const GRID_BPM_MAX = 300
 const CONSTANT_TOLERANCE_MS = 2
 const ZONE_BREAK_MS = 3
 const MIN_ZONE_BEATS = 4
-const SAME_TEMPO_RATIO = 0.01
+export const SAME_TEMPO_RATIO = 0.01
 const START_SLACK_MS = 0.5
 
 const periodOf = (bpm: number): number => 60000 / bpm

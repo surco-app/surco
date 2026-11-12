@@ -272,20 +272,49 @@ describe('reduceDraft', () => {
     expect(at(s, bar(48), false)).toBeUndefined()
   })
 
-  it('recolours and reletters hot cues only, and only to a free letter', () => {
+  it('recolours and reletters hot cues only', () => {
     const marked = run(empty(), { type: 'mark-drop', ms: bar(64) })
     const a = at(marked, bar(16), true)?.key as string
     const call = at(marked, bar(16), false)?.key as string
     const s = run(
       marked,
       { type: 'recolour', key: a, color: 5 },
-      { type: 'reletter', key: a, kind: 2 },
       { type: 'reletter', key: a, kind: 9 },
       { type: 'recolour', key: call, color: 5 },
+      { type: 'reletter', key: call, kind: 8 },
     )
     expect(at(s, bar(16), true)).toMatchObject({ kind: 9, color: 5 })
-    expect(at(s, bar(16), false)?.color).toBeNull()
+    expect(at(s, bar(16), false)).toMatchObject({ kind: 0, color: null })
     expect(freeLetters(s.cues)).toEqual([1, 5, 6, 7, 8])
+  })
+
+  it('swaps letters when a hot cue takes one already in use, so a DJ with fixed pads can trade two without a free letter in between', () => {
+    const s = startDraft(
+      [
+        { id: 'a', ms: bar(16), kind: 1, color: 1 },
+        { id: 'b', ms: bar(32), kind: 2, color: 5 },
+      ],
+      'mine',
+    )
+    const swapped = run(s, { type: 'reletter', key: 'a', kind: 2 })
+    expect(hotOf(swapped)).toEqual([
+      [bar(16), 2, 1],
+      [bar(32), 1, 5],
+    ])
+    expect(swapped.edited).toEqual(expect.arrayContaining(['a', 'b']))
+    expect(hotOf(run(swapped, { type: 'undo' }))).toEqual(hotOf(s))
+  })
+
+  it('never takes the letter of a loop, since a loop is never changed', () => {
+    const s = startDraft(
+      [
+        { id: 'a', ms: bar(16), kind: 1, color: 1 },
+        { id: 'l', ms: bar(32), kind: 2, color: 5 },
+      ],
+      'mine',
+      ['l'],
+    )
+    expect(run(s, { type: 'reletter', key: 'a', kind: 2 })).toBe(s)
   })
 
   it('adds a hot cue on the first free letter in the default colour, never a ninth', () => {

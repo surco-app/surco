@@ -258,7 +258,7 @@
           {
             "t": "Automatic session",
             "s": "Builds a session from your playlists, your combos, what you like most and harmonic mixing.",
-            "d": "Open it from the command palette, from a folder's menu or on an empty playlist. Choose how long it lasts and which playlists the tracks come from, and say what each one holds, Instrumentals, Vocals or Mixed, for a whole folder too. Surco brings together the pairs you repeat in your sets and tracklists, the tracks with the most stars and plays, Camelot harmonic mixing if you want it and room for what's new, and it counts the time each track plays, not the whole file. Under each track you see why it is there and swap it for another that fits. It learns from your sets how far you move the tempo and how much the key matters to you, keeps your closing tracks for the end, plays the ones you always play more often and opens with a vocal. Lock the tracks you want to keep when you redo it, or start it from a track with its menu. In rekordbox, Traktor, Serato and VirtualDJ, with the program closed."
+            "d": "Open it from the command palette, from a folder's menu or on an empty playlist. Choose how long it lasts and which playlists the tracks come from, and say what each one holds, Instrumentals, Vocals or Mixed, for a whole folder too. Surco brings together the pairs you repeat in your sets and tracklists, the tracks with the most stars and plays, Camelot harmonic mixing if you want it and room for what's new, and it counts the time each track plays, not the whole file. It looks like any playlist, with the key of each track. It learns from your sets how far you move the tempo and how much the key matters to you, keeps your closing tracks for the end, plays the ones you always play more often and opens with a vocal. “Redo” rebuilds it whole, or start it from a track with its menu. In rekordbox, Traktor, Engine DJ, Serato and VirtualDJ. If the program is open, it waits for you to close it."
           },
           {
             "t": "rekordbox cues",
@@ -273,7 +273,7 @@
           {
             "t": "The grid, in place",
             "s": "Fix a track's beat grid by hand or with Auto, and the “Bad grid” filter tells you which ones.",
-            "d": "With the cues section maximized you move the grid, change the BPM, put the downbeat at the playhead or hit “Auto”, which fits it to the beats, and see how far it is off here and at the end of the track. “Pin” (G) fixes it on the beat nearest the playhead, or right at the playhead with ⇧. A second pin far from the first counts the beats between them and gives the exact BPM, and in rekordbox a third one opens a stretch with its own tempo. Six checks under the whole-track wave tell you whether it stays on the kick all through the track, and clicking one takes the playhead to that beat. Auto gives the same answer from anywhere in the track and takes the kick from the grid your program analyzed, so it never shifts the grid half a beat onto the offbeat. It saves to rekordbox, Traktor and Engine DJ, and in rekordbox also in stretches with their own tempo. The “Bad grid” filter pulls out the tracks whose grid misses the beats. In Traktor and Engine DJ, for now, for WAV, AIFF and FLAC, and in Traktor also for MP3s made with iTunes. Surco leaves the grid it saves locked, and also saves over one that was already locked in the program."
+            "d": "With the cues section maximized you move the grid, change the BPM, put the downbeat at the playhead or hit “Auto”, which fits it to the beats, and see how far it is off here and at the end of the track. “Pin” (G) fixes it on the beat nearest the playhead, or right at the playhead with ⇧. A second pin far from the first counts the beats between them and gives the exact BPM, and in rekordbox a third one opens a stretch with its own tempo. Six checks under the whole-track wave tell you whether it stays on the kick all through the track, and clicking one takes the playhead to that beat. Auto gives the same answer from anywhere in the track and takes the kick from the grid your program analyzed, so it never shifts the grid half a beat onto the offbeat. It saves to rekordbox, Traktor and Engine DJ, and in rekordbox also in stretches with their own tempo. The “Bad grid” filter pulls out the tracks whose grid misses the beats. In Traktor and Engine DJ, for now, for WAV, AIFF and FLAC, and in Traktor also for MP3s made with iTunes. Surco leaves the grid it saves locked, and also saves over one that was already locked in the program. With several tracks selected, “Adjust” fixes at once the ones whose grid is off, and “Fit grid” is also in the small cue editor."
           },
           {
             "t": "Your rekordbox collection",
@@ -582,7 +582,7 @@
       },
       {
         "q": "Does it work with Denon gear (Engine DJ)?",
-        "a": "Yes. In Settings → Output set Engine DJ to “Update and add” and every converted track is registered straight into your Engine DJ library (with its cover, rating and the playlists you pick), ready to sync to your players. It also exports collections to rekordbox, Traktor and Serato."
+        "a": "Yes. In Settings → DJ software set Engine DJ to “Update and add” and every converted track is registered straight into your Engine DJ library (with its cover, rating and the playlists you pick), ready to sync to your players. It also exports collections to rekordbox, Traktor and Serato."
       },
       {
         "q": "Windows says \"Windows protected your PC\". Is it safe?",
@@ -1106,16 +1106,16 @@
           },
           {
             "lead": "Build and review.",
-            "text": "Each track says why it is there and “Change” offers others. Redo, adjust or keep it as a normal playlist."
+            "text": "It looks like any playlist. Redo it, adjust it or keep it."
           }
         ],
         "points": [
           "Each track counts only the time it plays in the mix, two minutes by default. A real 28-track set lasted an hour.",
           "A combo is a pair that repeats in two or more Mixed playlists. Without them there are none.",
           "New means added in the last 30 days, or with no plays or stars if there are no dates.",
-          "It writes to rekordbox, Traktor, Serato or VirtualDJ with the program closed."
+          "It writes to rekordbox, Traktor, Engine DJ, Serato or VirtualDJ. With the program open, it waits."
         ],
-        "shotCaption": "The built session, with its summary, why each track is there and “Change”.",
+        "shotCaption": "The built session in your DJ program.",
         "shot": "sesion-en.webp"
       },
       {
@@ -1266,6 +1266,8 @@
       "added": "✓ {{count}} tracks added to Apple Music"
     },
     "heroFree": "Free. macOS, Windows and Linux. No account.",
+    "heroStatsTotal": "<n>{{total}}</n> downloads",
+    "heroStatsWeek": "<n>{{count}}</n> on Mac in 7 days",
     "closeTitle": "All of it, in one window.",
     "closeNote": "No cloud, no limits, nothing to sign up for. It updates itself.",
     "closeSafety": "Your originals stay untouched: change format and the copy goes to a folder of its own. It only rewrites the file itself if you re-export to the same format, which is how it updates tags without re-encoding. Notarized by Apple.",

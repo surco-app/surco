@@ -294,10 +294,10 @@ describe('SettingsModal tablist', () => {
     expect(general).toHaveAttribute('aria-selected', 'true')
     general.focus()
     fireEvent.keyDown(general, { key: 'ArrowDown' })
-    const search = screen.getByTestId('settings-tab-search')
-    expect(search).toHaveAttribute('aria-selected', 'true')
-    expect(search).toHaveFocus()
-    fireEvent.keyDown(search, { key: 'Home' })
+    const shortcuts = screen.getByTestId('settings-tab-shortcuts')
+    expect(shortcuts).toHaveAttribute('aria-selected', 'true')
+    expect(shortcuts).toHaveFocus()
+    fireEvent.keyDown(shortcuts, { key: 'Home' })
     expect(screen.getByTestId('settings-tab-general')).toHaveFocus()
     // Up from the first tab wraps to the last.
     fireEvent.keyDown(screen.getByTestId('settings-tab-general'), { key: 'ArrowUp' })
@@ -323,10 +323,10 @@ describe('SettingsModal tablist', () => {
   // group lands on the first of the next.
   it('crosses group boundaries with the arrow keys', () => {
     open()
-    const search = screen.getByTestId('settings-tab-search')
-    search.focus()
-    fireEvent.keyDown(search, { key: 'ArrowDown' })
-    expect(screen.getByTestId('settings-tab-editor')).toHaveFocus()
+    const shortcuts = screen.getByTestId('settings-tab-shortcuts')
+    shortcuts.focus()
+    fireEvent.keyDown(shortcuts, { key: 'ArrowDown' })
+    expect(screen.getByTestId('settings-tab-search')).toHaveFocus()
   })
 
   it('heads the panel with the open tab, the level above the sections inside it, and follows tab switches', () => {
@@ -826,7 +826,7 @@ describe('SettingsModal stats', () => {
         onSettingsReplaced={() => {}}
       />,
     )
-    openTab('shortcuts', 'stats')
+    fireEvent.click(screen.getByTestId('settings-tab-stats'))
     expect(screen.getByTestId('stats-count')).toHaveTextContent('142')
     expect(screen.getByTestId('stats-time-saved')).toHaveTextContent('one workday')
   })
@@ -843,7 +843,7 @@ describe('SettingsModal stats', () => {
         onSettingsReplaced={() => {}}
       />,
     )
-    openTab('shortcuts', 'stats')
+    fireEvent.click(screen.getByTestId('settings-tab-stats'))
     expect(screen.getByTestId('stats-empty')).toBeInTheDocument()
     expect(screen.queryByTestId('stats-count')).not.toBeInTheDocument()
   })
@@ -862,7 +862,7 @@ describe('SettingsModal stats', () => {
         onSettingsReplaced={() => {}}
       />,
     )
-    openTab('shortcuts', 'stats')
+    fireEvent.click(screen.getByTestId('settings-tab-stats'))
     const donate = screen.getByTestId('stats-donate')
     expect(donate).toHaveAttribute('href', DONATE_URL)
     expect(donate).toHaveAttribute('target', '_blank')
@@ -877,8 +877,25 @@ describe('SettingsModal stats', () => {
         onSettingsReplaced={() => {}}
       />,
     )
-    openTab('shortcuts', 'stats')
+    fireEvent.click(screen.getByTestId('settings-tab-stats'))
     expect(screen.getByTestId('stats-donate')).toHaveAttribute('href', DONATE_URL)
+  })
+
+  // Stats is something people come to look at, not a setting next to the shortcuts:
+  // it gets its own sidebar row so it is one click away and shows no tab switcher.
+  it('has its own sidebar row, apart from the shortcuts', () => {
+    render(
+      <SettingsModal
+        settings={{ ...settings, conversionCount: 142 }}
+        onClose={() => {}}
+        onSave={() => {}}
+        onPreviewTheme={() => {}}
+        onSettingsReplaced={() => {}}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('settings-tab-stats'))
+    expect(screen.getByTestId('stats-count')).toBeInTheDocument()
+    expect(screen.queryByTestId('settings-subtab-shortcuts')).not.toBeInTheDocument()
   })
 
   // The toolbar stats icon opens settings straight on this tab, so a caller can
@@ -1095,7 +1112,7 @@ describe('SettingsModal advanced', () => {
       />,
     )
     const tabs = screen.getAllByRole('tab').map((t) => t.dataset.testid)
-    expect(tabs.slice(-2)).toEqual(['settings-tab-shortcuts', 'settings-tab-advanced'])
+    expect(tabs.slice(-2)).toEqual(['settings-tab-stats', 'settings-tab-advanced'])
   })
 })
 
@@ -1114,14 +1131,41 @@ describe('SettingsModal grouped tabs', () => {
   }
 
   // Fifteen sidebar rows were a long list to scan for one setting. The tabs that are read
-  // together share a row (format with processing, naming with the output, shortcuts with
-  // stats, the editor with its sections and fields), so the sidebar is ten short rows and
-  // every tab is still one click away from its switcher.
-  it('lists ten rows in the sidebar, joining the tabs that are read together', () => {
+  // together share a row (format with processing, naming with the output, the editor with
+  // its sections and fields), so the sidebar is eleven short rows and every tab is still
+  // one click away from its switcher.
+  it('lists eleven rows in the sidebar, joining the tabs that are read together', () => {
     open()
-    expect(screen.getAllByRole('tab')).toHaveLength(10)
+    expect(screen.getAllByRole('tab')).toHaveLength(11)
     expect(screen.queryByTestId('settings-tab-processing')).toBeNull()
     expect(screen.getByTestId('settings-tab-conversion')).toHaveTextContent('Audio')
+  })
+
+  // The sidebar follows the work. Everyday app preferences first, then finding and editing
+  // the tags (Sources is only used to fill them), then everything applied when converting,
+  // and the app's own corner with maintenance last, as on macOS. "Output" named both a group
+  // and a tab inside Files, so the group is named for what its rows share, the conversion.
+  it('orders the sidebar by the work, with Advanced last', () => {
+    open()
+    const sidebar = screen.getByRole('tablist')
+    const rows = within(sidebar)
+      .getAllByRole('tab')
+      .map((t) => t.dataset.testid?.replace('settings-tab-', ''))
+    expect(rows).toEqual([
+      'general',
+      'shortcuts',
+      'search',
+      'editor',
+      'artwork',
+      'cues',
+      'conversion',
+      'naming',
+      'programs',
+      'stats',
+      'advanced',
+    ])
+    expect(sidebar).toHaveTextContent('Conversion')
+    expect(sidebar).not.toHaveTextContent('Output')
   })
 
   it('offers the joined tabs as a switcher above the panel', () => {
@@ -1133,11 +1177,11 @@ describe('SettingsModal grouped tabs', () => {
     expect(screen.getByTestId('settings-tab-conversion')).toHaveAttribute('aria-selected', 'true')
   })
 
-  // A link such as the toolbar's stats button names its own tab, which now sits inside a row.
+  // A deep link names its own tab, which may sit inside a joined row.
   it('opens a deep link on its own tab inside the joined row', () => {
-    open('stats')
-    expect(screen.getByTestId('settings-tab-shortcuts')).toHaveAttribute('aria-selected', 'true')
-    expect(screen.getByTestId('settings-subtab-stats')).toHaveAttribute('aria-pressed', 'true')
+    open('processing')
+    expect(screen.getByTestId('settings-tab-conversion')).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByTestId('settings-subtab-processing')).toHaveAttribute('aria-pressed', 'true')
   })
 
   it('shows no switcher on a row that stands alone', () => {

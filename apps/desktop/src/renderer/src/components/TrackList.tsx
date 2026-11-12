@@ -1248,7 +1248,7 @@ export const TrackList = memo(function TrackList({
             tabIndex={-1}
             aria-label={tr('sources.reorder.removeSeparator')}
             onClick={() => reorder.onRemoveSeparator(key)}
-            className="relative rounded bg-[var(--color-ink)] px-1 opacity-0 group-hover:opacity-100 hover:text-fg focus-visible:opacity-100"
+            className="press relative rounded bg-[var(--color-ink)] px-1 opacity-0 group-hover:opacity-100 hover:text-fg focus-visible:opacity-100"
           >
             <X size={11} aria-hidden="true" />
             <Tooltip label={tr('sources.reorder.removeSeparator')} />

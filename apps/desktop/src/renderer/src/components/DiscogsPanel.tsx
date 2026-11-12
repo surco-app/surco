@@ -76,7 +76,7 @@ interface Props {
     | undefined
   selectTrack: (track: ReleaseTrack) => void
   searchInputRef: React.RefObject<HTMLInputElement | null>
-  // The release formats search is restricted to (Settings → Search). Empty = no filter.
+  // The release formats search is restricted to (Settings → Sources). Empty = no filter.
   // Shown as a hint so a thinned or empty result set reads as the filter at work.
   formatFilter: string[]
   width: number
@@ -630,7 +630,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                 type="button"
                 data-testid="discogs-retry"
                 onClick={retrySearch}
-                className="ml-2 underline underline-offset-2 hover:no-underline"
+                className="press ml-2 underline underline-offset-2 hover:no-underline"
               >
                 {tr('editor.retry')}
               </button>
@@ -645,7 +645,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                 type="button"
                 data-testid="discogs-retry-failed"
                 onClick={retrySearch}
-                className="ml-2 underline underline-offset-2 hover:no-underline"
+                className="press ml-2 underline underline-offset-2 hover:no-underline"
               >
                 {tr('editor.retry')}
               </button>

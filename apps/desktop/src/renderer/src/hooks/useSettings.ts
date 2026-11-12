@@ -1,5 +1,5 @@
 import type React from 'react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Settings, ThemePref } from '../../../shared/types'
 import i18n from '../i18n'
 import { resolveLocale } from '../i18n/locale'
@@ -73,6 +73,7 @@ export function useSettings({
   // the snapshot (if any) so first paint already has real values instead of null.
   const [settings, setSettings] = useState<Settings | null>(readSnapshot)
   const [themePreview, setThemePreview] = useState<ThemePref | null>(null)
+  const themePainted = useRef(false)
   // The load effect runs once; reading the callbacks through a ref keeps it that way
   // without freezing App's closures from the first render.
   const latest = useLatest({ onFirstLoad, onLoadError, onSaveError })
@@ -121,9 +122,21 @@ export function useSettings({
     const pref = themePreview ?? settings?.theme ?? 'system'
     const mq = window.matchMedia('(prefers-color-scheme: dark)')
     const apply = (): void => {
-      document.documentElement.dataset.theme = resolveTheme(pref, mq.matches)
+      const root = document.documentElement
+      const theme = resolveTheme(pref, mq.matches)
+      if (root.dataset.theme === theme) return
+      const set = (): void => {
+        root.dataset.theme = theme
+      }
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      if (themePainted.current && document.startViewTransition && !reduced) {
+        document.startViewTransition(set)
+      } else {
+        set()
+      }
     }
     apply()
+    themePainted.current = true
     if (pref !== 'system') return
     mq.addEventListener('change', apply)
     return () => mq.removeEventListener('change', apply)

@@ -27,7 +27,8 @@ import { effectiveMeta, fieldValue, isCustomTag } from '../../../shared/customFi
 import { WRITABLE_PROGRAMS, writableInOrder } from '../../../shared/djProgram'
 import { EDITOR_SECTION_GROUP } from '../../../shared/editorSections'
 import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../../../shared/format'
-import { READ_ONLY_BLOCKED, readOnlyProgramsOf } from '../../../shared/trackOrigin'
+import type { GridCheck } from '../../../shared/gridCheck'
+import { isFrom, READ_ONLY_BLOCKED, readOnlyProgramsOf } from '../../../shared/trackOrigin'
 import type {
   DeclickConfig,
   FormatSetting,
@@ -100,6 +101,7 @@ import {
 import { replacePatch } from '../lib/replaceBeforeConvert'
 import { replaceWarning } from '../lib/replaceWarning'
 import { selectionStatus } from '../lib/selectionStatus'
+import { hasStagedEdits } from '../lib/sessionEdits'
 import { useAppSettings } from '../lib/settingsContext'
 import { matchStatKey } from '../lib/stats'
 import { supersededFile } from '../lib/supersededFile'
@@ -220,6 +222,9 @@ interface Props {
   onCueFlow?: (id: string) => void
   onCueAutoMarkAll?: () => void
   cueTargets?: AutoMarkTarget[]
+  cueGridCheckOf?: (contentId: string) => GridCheck | null | undefined
+  onShowBadGrid?: () => void
+  onOpenCueTrack?: (contentId: string) => void
   cueActionsRef?: { current: CueActions | null }
   onHideEditorHints: () => void
   // Opens the output-name pattern builder for this track (App owns the modal so the
@@ -316,6 +321,9 @@ export const Editor = memo(function Editor({
   onCueFlow,
   onCueAutoMarkAll,
   cueTargets,
+  cueGridCheckOf,
+  onShowBadGrid,
+  onOpenCueTrack,
   cueActionsRef,
   onHideEditorHints,
   onOpenRename,
@@ -701,7 +709,7 @@ export const Editor = memo(function Editor({
   // Whether the destination library already owns this track, and whether an older copy of it
   // is still sitting there. The Discogs-proven verdict is pinned onto the track inside, so
   // the list and its filter agree with this badge.
-  const { inLibrary, staleMusicCopy, replaceTarget } = useLibraryVerdict({
+  const { inLibrary, staleMusicCopy, replaceTarget, replaceTargetPending } = useLibraryVerdict({
     item,
     libraryIndex,
     librarySource,
@@ -726,6 +734,7 @@ export const Editor = memo(function Editor({
   // A track opened from the library's own folder is that copy, so there is nothing to compare.
   const comparedCopyPath =
     pathKey(replacedCopyPath) === pathKey(item.inputPath) ? '' : replacedCopyPath
+  const musicHoldsFile = !!replacedCopyPath && !comparedCopyPath
   const hereFacts = useCopyFacts(item.inputPath, !!comparedCopyPath, 'high')
   const libraryFacts = useCopyFacts(comparedCopyPath, !!comparedCopyPath)
   const copyPair = usePairFacts(item.inputPath, comparedCopyPath, !!comparedCopyPath)
@@ -1073,6 +1082,18 @@ export const Editor = memo(function Editor({
       formatMatchesInput(format, item.inputPath),
       jobAudio(item, normalizeCfg, declickCfg, { normalize, declick }),
     )
+  const djTargets = reachedPrograms(appSettings, reachable)
+  const upToDate =
+    !isMulti &&
+    !incomplete &&
+    item.status === 'idle' &&
+    willEditInPlace &&
+    tagsOnlyExport &&
+    item.diskSignature !== undefined &&
+    !hasStagedEdits(item) &&
+    item.fillSignature !== item.diskSignature &&
+    !(item.notInFile?.signature === item.diskSignature && item.notInFile.fields.length > 0) &&
+    (item.outputName?.trim() || defaultOutputName) === item.fileName
 
   // One onChange per possible key, built once (setField/onChangeAllMeta never
   // change identity) and reused by every fieldSpecs rebuild below. Field.tsx is
@@ -1258,7 +1279,7 @@ export const Editor = memo(function Editor({
     ],
   )
 
-  // One-click "empty every tag", set apart at the end of the header so a reach for fill
+  // One-click "empty every tag", set apart from fill by a divider so a reach for fill
   // never lands on it. Named in the header so the eraser is never taken for a neighbour.
   const clearButton = (
     <button
@@ -1632,10 +1653,9 @@ export const Editor = memo(function Editor({
             status={hasLibraryMarks ? libraryMarks : undefined}
             right={
               // Fill and Clear stay in the header with their names; every other glyph that
-              // used to ride this line waits in the menu. Clear sits last, set apart by a
-              // divider, so a reach for fill never lands on it.
+              // used to ride this line waits in the menu, which closes the row. Clear is set
+              // apart from Fill by a divider, so a reach for fill never lands on it.
               <div className="flex items-center gap-1">
-                {formOpen && <MetaMoreMenu items={moreItems} />}
                 {formOpen && deriveButton}
                 {formOpen && (
                   <>
@@ -1646,6 +1666,7 @@ export const Editor = memo(function Editor({
                     {clearButton}
                   </>
                 )}
+                {formOpen && <MetaMoreMenu items={moreItems} />}
               </div>
             }
           />
@@ -1731,6 +1752,9 @@ export const Editor = memo(function Editor({
                             targets={cueTargets ?? []}
                             onMark={onCueAutoMarkAll}
                             onFlow={(flowId) => onCueFlow?.(flowId)}
+                            gridCheckOf={(contentId) => cueGridCheckOf?.(contentId)}
+                            onShowBadGrid={() => onShowBadGrid?.()}
+                            onOpen={(contentId) => onOpenCueTrack?.(contentId)}
                           />
                         )
                       if (isMulti) return singleTrackOnly(id, tr('editor.cues.title'))
@@ -1989,7 +2013,12 @@ export const Editor = memo(function Editor({
           readyCount={multiGate?.ready.length}
           status={footerStatus}
           stale={stale}
-          replaces={!!replaceTarget && !isAmbiguousCandidate(replaceTarget)}
+          replaces={
+            !!replaceTarget &&
+            !isAmbiguousCandidate(replaceTarget) &&
+            !musicHoldsFile &&
+            !replaceTargetPending
+          }
           libraryBetter={libraryCopyBetter}
           done={done}
           incomplete={incomplete}
@@ -2004,8 +2033,15 @@ export const Editor = memo(function Editor({
           }}
           willEditInPlace={willEditInPlace}
           tagsOnly={tagsOnlyExport}
+          sameFormat={formatMatchesInput(format, item.inputPath)}
+          upToDate={upToDate}
+          inMusic={librarySource === 'appleMusic' && inLibrary === 'yes'}
+          musicHoldsFile={musicHoldsFile}
+          musicPending={replaceTargetPending}
+          djHolds={djTargets.filter((id) => openSource === id || isFrom(item, id))}
+          replacedFormat={replacedCopyPath ? fileExtension(replacedCopyPath) : ''}
           addToAppleMusic={picked.addToAppleMusic}
-          djTargets={reachedPrograms(appSettings, reachable)}
+          djTargets={djTargets}
           openSource={openSource}
           destination={destination}
           destinations={destinationChoices}
@@ -2054,7 +2090,7 @@ export const Editor = memo(function Editor({
                   // converted may sit in any download folder the collection never saw.
                   // The button already offered a replacement; without this the action
                   // stayed an add, leaving two library entries and two files on disk.
-                  const patch = replacePatch(replaceTarget)
+                  const patch = replacePatch(replaceTarget, item.inputPath)
                   if (patch) onChange(patch)
                   onProcess(f as OutputFormat)
                 }

@@ -649,12 +649,20 @@ function step(state: CueDraft, action: DraftAction, ctx: DraftContext): CueDraft
     )
   }
   if (action.type === 'reletter') {
-    if (!isHot(target) || !freeLetters(state.cues, undefined, kindsOf(ctx)).includes(action.kind))
+    if (!isHot(target) || !kindsOf(ctx).includes(action.kind) || action.kind === target.kind)
       return state
+    const holder = state.cues.find((c) => isHot(c) && c.kind === action.kind)
+    if (holder && state.locked.includes(holder.key)) return state
     return commit(
       state,
-      state.cues.map((c) => (c.key === target.key ? { ...c, kind: action.kind } : c)),
-      { edited: [...state.edited, target.key] },
+      state.cues.map((c) =>
+        c.key === target.key
+          ? { ...c, kind: action.kind }
+          : c.key === holder?.key
+            ? { ...c, kind: target.kind }
+            : c,
+      ),
+      { edited: [...state.edited, target.key, ...(holder ? [holder.key] : [])] },
     )
   }
   const ms = snap(ctx, action.ms)

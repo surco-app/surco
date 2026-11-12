@@ -23,6 +23,13 @@ import { flattenPlaylists } from './SourceTree'
 
 const STEPS = ['duration', 'sources', 'character'] as const
 
+function motionAllowed(): boolean {
+  return (
+    typeof window.matchMedia === 'function' &&
+    !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  )
+}
+
 type Problem = Exclude<BuildResult, 'built' | 'queued'>
 
 const PROBLEM_TEXT: Record<Problem, string> = {
@@ -74,6 +81,17 @@ export function SessionWizard({
   const { t: tr } = useTranslation()
   const [step, setStep] = useState(0)
   const [moved, setMoved] = useState<'forward' | 'back' | null>(null)
+  const [shown, setShown] = useState(step)
+  const [leaving, setLeaving] = useState<{
+    step: number
+    toward: 'leading' | 'trailing'
+  } | null>(null)
+  if (shown !== step) {
+    setShown(step)
+    setLeaving(
+      motionAllowed() ? { step: shown, toward: moved === 'back' ? 'trailing' : 'leading' } : null,
+    )
+  }
   const [minutes, setMinutes] = useState(initial.minutes)
   const [custom, setCustom] = useState<string | null>(
     isPresetMinutes(initial.minutes) ? null : String(initial.minutes),
@@ -196,6 +214,16 @@ export function SessionWizard({
   }
 
   useEffect(() => {
+    if (!leaving) return
+    const token = getComputedStyle(document.documentElement)
+      .getPropertyValue('--duration-panel')
+      .trim()
+    const ms = Number.parseFloat(token) * (token.endsWith('ms') ? 1 : 1000) || 0
+    const timer = setTimeout(() => setLeaving(null), ms)
+    return () => clearTimeout(timer)
+  }, [leaving])
+
+  useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       if (e.key !== 'Enter' || !(e.metaKey || e.ctrlKey)) return
       e.preventDefault()
@@ -268,72 +296,90 @@ export function SessionWizard({
           ))}
         </ol>
       </div>
-      <div
-        key={current}
-        data-testid="session-wizard-page"
-        className={moved ? `animate-step-${moved}` : undefined}
-      >
-        <h3
-          ref={focusHeading}
-          id="session-wizard-step-title"
-          data-testid="session-wizard-step-title"
-          tabIndex={-1}
-          className="mb-3 text-sm font-semibold outline-none"
-        >
-          {tr(`sessions.wizard.${current}.heading`)}
-        </h3>
-        {step >= 2 && unreadable.length > 0 && (
-          <p data-testid="session-wizard-load-failed" className="mb-3 text-xs text-warn">
-            {tr('sessions.wizard.loadFailed', { names: unreadable.join(', ') })}
-          </p>
-        )}
-        <div className="min-h-[480px]">
-          {current === 'duration' && (
-            <DurationStep
-              minutes={minutes}
-              custom={custom}
-              onPreset={(value) => {
-                setMinutes(value)
-                setCustom(null)
+      <div className="grid grid-cols-1">
+        {STEPS.map((id, i) => {
+          const isCurrent = i === step
+          if (!isCurrent && i !== leaving?.step) return null
+          return (
+            <div
+              key={id}
+              data-testid={isCurrent ? 'session-wizard-page' : 'session-wizard-page-leaving'}
+              data-step={id}
+              data-enter={
+                isCurrent && moved ? (moved === 'forward' ? 'trailing' : 'leading') : undefined
+              }
+              data-exit={isCurrent ? undefined : leaving?.toward}
+              aria-hidden={isCurrent ? undefined : true}
+              inert={!isCurrent}
+              onTransitionEnd={(e) => {
+                if (!isCurrent && e.target === e.currentTarget) setLeaving(null)
               }}
-              onCustomOpen={() => setCustom((text) => text ?? String(minutes))}
-              onCustomText={(text) => {
-                setCustom(text)
-                const value = wholeMinutes(text)
-                if (value !== null) setMinutes(value)
-              }}
-              playMinutes={playMinutes}
-              onPlayMinutes={setPlayMinutes}
-            />
-          )}
-          {current === 'sources' && (
-            <SourcesStep
-              tree={usable}
-              roles={roles}
-              sources={sources}
-              onPick={pick}
-              onPickMany={pickMany}
-              only={onlyChosen}
-              onOnly={setOnlyChosen}
-            />
-          )}
-          {current === 'character' && (
-            <CharacterStep
-              options={options}
-              hasKeys={hasKeys}
-              hasNew={hasNew}
-              hasMixed={sources.some((id) => roles[id] === 'any')}
-              freshShare={freshShare}
-              onFreshShare={setFreshShare}
-              onChange={(patch) => setOptions((prev) => ({ ...prev, ...patch }))}
-            />
-          )}
-          {last && (
-            <p data-testid="session-wizard-destination" className="mt-3 text-xs text-fg-dim">
-              {destinationText(destination, tr)}
-            </p>
-          )}
-        </div>
+              className="wizard-step col-start-1 row-start-1"
+            >
+              <h3
+                ref={isCurrent ? focusHeading : undefined}
+                id={isCurrent ? 'session-wizard-step-title' : undefined}
+                data-testid="session-wizard-step-title"
+                tabIndex={-1}
+                className="mb-3 text-sm font-semibold outline-none"
+              >
+                {tr(`sessions.wizard.${id}.heading`)}
+              </h3>
+              {i >= 2 && unreadable.length > 0 && (
+                <p data-testid="session-wizard-load-failed" className="mb-3 text-xs text-warn">
+                  {tr('sessions.wizard.loadFailed', { names: unreadable.join(', ') })}
+                </p>
+              )}
+              <div className="min-h-[480px]">
+                {id === 'duration' && (
+                  <DurationStep
+                    minutes={minutes}
+                    custom={custom}
+                    onPreset={(value) => {
+                      setMinutes(value)
+                      setCustom(null)
+                    }}
+                    onCustomOpen={() => setCustom((text) => text ?? String(minutes))}
+                    onCustomText={(text) => {
+                      setCustom(text)
+                      const value = wholeMinutes(text)
+                      if (value !== null) setMinutes(value)
+                    }}
+                    playMinutes={playMinutes}
+                    onPlayMinutes={setPlayMinutes}
+                  />
+                )}
+                {id === 'sources' && (
+                  <SourcesStep
+                    tree={usable}
+                    roles={roles}
+                    sources={sources}
+                    onPick={pick}
+                    onPickMany={pickMany}
+                    only={onlyChosen}
+                    onOnly={setOnlyChosen}
+                  />
+                )}
+                {id === 'character' && (
+                  <CharacterStep
+                    options={options}
+                    hasKeys={hasKeys}
+                    hasNew={hasNew}
+                    hasMixed={sources.some((id) => roles[id] === 'any')}
+                    freshShare={freshShare}
+                    onFreshShare={setFreshShare}
+                    onChange={(patch) => setOptions((prev) => ({ ...prev, ...patch }))}
+                  />
+                )}
+                {i === STEPS.length - 1 && (
+                  <p data-testid="session-wizard-destination" className="mt-3 text-xs text-fg-dim">
+                    {destinationText(destination, tr)}
+                  </p>
+                )}
+              </div>
+            </div>
+          )
+        })}
       </div>
       {problem && (
         <p

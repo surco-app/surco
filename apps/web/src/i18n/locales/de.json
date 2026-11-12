@@ -258,7 +258,7 @@
           {
             "t": "Automatische Session",
             "s": "Baut eine Session aus deinen Playlists, deinen Combos, deinen Favoriten und harmonischem Mixen.",
-            "d": "Du öffnest sie über die Befehlspalette, über das Menü eines Ordners oder auf einer leeren Playlist. Du wählst, wie lange sie dauert und aus welchen Playlists die Tracks kommen, und sagst, was in jeder steckt, Instrumentals, Gesang oder Gemischt, auch für einen ganzen Ordner. Surco bringt die Paare, die du in deinen Sets und Tracklists wiederholst, die Tracks mit den meisten Sternen und Wiedergaben, harmonisches Mixen nach Camelot, wenn du willst, und Platz für Neues zusammen, und zählt die Zeit, die jeder Track läuft, nicht die ganze Datei. Unter jedem Track siehst du, warum er dort ist, und tauschst ihn gegen einen anderen, der passt. Sie lernt aus deinen Sets, wie weit du das Tempo veränderst und wie wichtig dir die Tonart ist, hebt deine Abschluss-Tracks fürs Ende auf, spielt deine Pflicht-Tracks öfter und beginnt mit einem Gesangstrack. Fixiere die Tracks, die beim Neu würfeln bleiben sollen, oder starte sie über das Menü eines Tracks. In rekordbox, Traktor, Serato und VirtualDJ, bei geschlossenem Programm."
+            "d": "Du öffnest sie über die Befehlspalette, über das Menü eines Ordners oder auf einer leeren Playlist. Du wählst, wie lange sie dauert und aus welchen Playlists die Tracks kommen, und sagst, was in jeder steckt, Instrumentals, Gesang oder Gemischt, auch für einen ganzen Ordner. Surco bringt die Paare, die du in deinen Sets und Tracklists wiederholst, die Tracks mit den meisten Sternen und Wiedergaben, harmonisches Mixen nach Camelot, wenn du willst, und Platz für Neues zusammen, und zählt die Zeit, die jeder Track läuft, nicht die ganze Datei. Sie sieht aus wie jede Playlist, mit der Tonart jedes Tracks. Sie lernt aus deinen Sets, wie weit du das Tempo veränderst und wie wichtig dir die Tonart ist, hebt deine Abschluss-Tracks fürs Ende auf, spielt deine Pflicht-Tracks öfter und beginnt mit einem Gesangstrack. „Neu würfeln“ baut sie komplett neu auf, oder starte sie über das Menü eines Tracks. In rekordbox, Traktor, Engine DJ, Serato und VirtualDJ. Ist das Programm offen, wartet sie, bis du es schließt."
           },
           {
             "t": "rekordbox-Cues",
@@ -273,7 +273,7 @@
           {
             "t": "Das Raster, wo es hingehört",
             "s": "Korrigiere das Beat-Raster von Hand oder mit Auto, der Filter „Raster falsch“ zeigt dir, welche.",
-            "d": "Mit maximiertem Cue-Abschnitt verschiebst du das Raster, änderst die BPM, setzt den ersten Beat an den Abspielkopf oder drückst „Auto“, das es an die Beats anpasst, und siehst, wie weit es hier und am Ende des Tracks danebenliegt. „Anheften“ (G) setzt es auf den Schlag, der dem Abspielkopf am nächsten ist, mit ⇧ genau auf den Abspielkopf. Eine zweite Nadel weit von der ersten zählt die Schläge dazwischen und ergibt die genauen BPM, und in rekordbox öffnet eine dritte einen Abschnitt mit eigenem Tempo. Sechs Prüfpunkte unter der Wellenform des ganzen Tracks zeigen dir, ob es durch den ganzen Track auf der Kick bleibt, und ein Klick auf einen bringt den Abspielkopf zu diesem Schlag. Auto gibt von jeder Stelle im Track dieselbe Antwort und nimmt die Kick aus dem Raster, das dein Programm analysiert hat, verschiebt das Raster also nie um einen halben Schlag auf den Offbeat. Gespeichert wird in rekordbox, Traktor und Engine DJ, in rekordbox auch in Abschnitten mit eigenem Tempo. Der Filter „Raster falsch“ zeigt dir die Tracks, deren Raster die Beats verfehlt. In Traktor und Engine DJ vorerst für WAV, AIFF und FLAC, in Traktor auch für MP3s, die mit iTunes erstellt wurden. Surco lässt das Raster, das es speichert, gesperrt und speichert auch über ein Raster, das im Programm schon gesperrt war."
+            "d": "Mit maximiertem Cue-Abschnitt verschiebst du das Raster, änderst die BPM, setzt den ersten Beat an den Abspielkopf oder drückst „Auto“, das es an die Beats anpasst, und siehst, wie weit es hier und am Ende des Tracks danebenliegt. „Anheften“ (G) setzt es auf den Schlag, der dem Abspielkopf am nächsten ist, mit ⇧ genau auf den Abspielkopf. Eine zweite Nadel weit von der ersten zählt die Schläge dazwischen und ergibt die genauen BPM, und in rekordbox öffnet eine dritte einen Abschnitt mit eigenem Tempo. Sechs Prüfpunkte unter der Wellenform des ganzen Tracks zeigen dir, ob es durch den ganzen Track auf der Kick bleibt, und ein Klick auf einen bringt den Abspielkopf zu diesem Schlag. Auto gibt von jeder Stelle im Track dieselbe Antwort und nimmt die Kick aus dem Raster, das dein Programm analysiert hat, verschiebt das Raster also nie um einen halben Schlag auf den Offbeat. Gespeichert wird in rekordbox, Traktor und Engine DJ, in rekordbox auch in Abschnitten mit eigenem Tempo. Der Filter „Raster falsch“ zeigt dir die Tracks, deren Raster die Beats verfehlt. In Traktor und Engine DJ vorerst für WAV, AIFF und FLAC, in Traktor auch für MP3s, die mit iTunes erstellt wurden. Surco lässt das Raster, das es speichert, gesperrt und speichert auch über ein Raster, das im Programm schon gesperrt war. Bei mehreren ausgewählten Tracks passt „Anpassen“ auf einmal die an, deren Raster danebenliegt, und „Raster anpassen“ gibt es auch im kleinen Cue-Editor."
           },
           {
             "t": "Deine rekordbox-Sammlung",
@@ -582,7 +582,7 @@
       },
       {
         "q": "Funktioniert es mit Denon-Geräten (Engine DJ)?",
-        "a": "Ja. Stell Engine DJ unter Einstellungen → Ausgabe auf „Aktualisieren und hinzufügen“, und jeder konvertierte Track wird direkt in deiner Engine-DJ-Bibliothek eingetragen (mit Cover, Bewertung und den Playlists, die du wählst), bereit zur Synchronisierung mit deinen Playern. Außerdem exportiert es Sammlungen für rekordbox, Traktor und Serato."
+        "a": "Ja. Stell Engine DJ unter Einstellungen → DJ-Software auf „Aktualisieren und hinzufügen“, und jeder konvertierte Track wird direkt in deiner Engine-DJ-Bibliothek eingetragen (mit Cover, Bewertung und den Playlists, die du wählst), bereit zur Synchronisierung mit deinen Playern. Außerdem exportiert es Sammlungen für rekordbox, Traktor und Serato."
       },
       {
         "q": "Windows meldet „Der Computer wurde durch Windows geschützt“. Ist es sicher?",
@@ -1106,16 +1106,16 @@
           },
           {
             "lead": "Bauen und prüfen.",
-            "text": "Jeder Track nennt seinen Grund und „Ändern“ bietet andere an. Neu würfeln, anpassen oder als normale Playlist behalten."
+            "text": "Sie sieht aus wie jede Playlist. Würfle sie neu, passe sie an oder behalte sie so."
           }
         ],
         "points": [
           "Jeder Track zählt nur die Zeit, die er im Mix läuft, standardmäßig zwei Minuten. Ein echtes Set mit 28 Tracks dauerte eine Stunde.",
           "Eine Combo ist ein Paar, das sich in zwei oder mehr gemischten Playlists wiederholt. Ohne sie gibt es keine.",
           "Neu heißt in den letzten 30 Tagen hinzugekommen, ohne Datum ohne Wiedergaben und Sterne.",
-          "Geschrieben wird in rekordbox, Traktor, Serato oder VirtualDJ bei geschlossenem Programm."
+          "Geschrieben wird in rekordbox, Traktor, Engine DJ, Serato oder VirtualDJ. Ist das Programm offen, wartet sie, bis du es schließt."
         ],
-        "shotCaption": "Die gebaute Session mit ihrer Übersicht, dem Grund für jeden Track und „Ändern“.",
+        "shotCaption": "Die Session, gebaut in deinem DJ-Programm.",
         "shot": "sesion-de.webp"
       },
       {
@@ -1266,6 +1266,8 @@
       "added": "✓ {{count}} Tracks zu Apple Music hinzugefügt"
     },
     "heroFree": "Kostenlos. macOS, Windows und Linux. Ohne Konto.",
+    "heroStatsTotal": "<n>{{total}}</n> Downloads",
+    "heroStatsWeek": "<n>{{count}}</n> auf dem Mac in 7 Tagen",
     "closeTitle": "Alles in einem Fenster.",
     "closeNote": "Keine Cloud, keine Limits, keine Anmeldung. Es aktualisiert sich selbst.",
     "closeSafety": "Deine Originale bleiben unangetastet: Wechselst du das Format, landet die Kopie in einem eigenen Ordner. Die Datei selbst wird nur überschrieben, wenn du erneut ins selbe Format exportierst. So aktualisiert Surco Tags, ohne neu zu kodieren. Von Apple notarisiert.",

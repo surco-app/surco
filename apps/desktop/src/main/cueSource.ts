@@ -2,7 +2,6 @@ import type { BrowserWindow } from 'electron'
 import type { WantedCue } from '../shared/cueRules'
 import type { DropInput } from '../shared/dropDetect'
 import type { GridFit } from '../shared/gridEdit'
-import type { GridVerdict } from '../shared/gridVerdict'
 import type { FineWave, SurcoGrid, TrackCues } from '../shared/types'
 import type { RekordboxQueue } from './rekordboxQueue'
 import type { CuesOp, QueueOp } from './rekordboxQueueOps'
@@ -18,8 +17,7 @@ export interface CueReader {
   dropInput(contentId: string): Promise<DropInput | null>
   auditionLead(contentId: string): Promise<number>
   surcoGrid(contentId: string): Promise<SurcoGrid | null>
-  gridFit(contentId: string): Promise<GridFit | null>
-  gridVerdict(contentId: string): Promise<GridVerdict | null>
+  gridFit(contentId: string, priority: 'high' | 'low'): Promise<GridFit | null>
 }
 
 export interface CueSource extends CueReader {

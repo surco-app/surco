@@ -230,7 +230,7 @@ export function FeedbackModal({ error, stack, onClose }: Props): React.JSX.Eleme
             data-testid="feedback-preview-toggle"
             aria-expanded={previewOpen}
             onClick={togglePreview}
-            className="text-xs text-[var(--color-accent)] hover:text-[var(--color-accent-hover)]"
+            className="press text-xs text-[var(--color-accent)] hover:text-[var(--color-accent-hover)]"
           >
             {tr(previewOpen ? 'feedback.previewHide' : 'feedback.preview')}
           </button>
@@ -250,7 +250,7 @@ export function FeedbackModal({ error, stack, onClose }: Props): React.JSX.Eleme
           type="button"
           data-testid="feedback-github"
           onClick={() => void window.api.openFeedback(error, stack)}
-          className="text-left text-xs text-fg-dim underline-offset-2 hover:text-fg hover:underline"
+          className="press text-left text-xs text-fg-dim underline-offset-2 hover:text-fg hover:underline"
         >
           {tr('feedback.github')}
         </button>

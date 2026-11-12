@@ -134,7 +134,7 @@ export function SettingsField({
           <button
             type="button"
             data-testid={`settings-info-${searchId}`}
-            className="relative inline-flex rounded text-fg-faint hover:text-fg focus-visible:text-fg"
+            className="press relative inline-flex rounded text-fg-faint hover:text-fg focus-visible:text-fg"
           >
             <Info className="h-3.5 w-3.5" aria-hidden="true" />
             <span className="sr-only">{info}</span>

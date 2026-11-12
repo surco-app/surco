@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { GridVerdict } from '../../../shared/gridVerdict'
+import type { GridCheck } from '../../../shared/gridCheck'
 import type { SpectrumResult, TrackMetadata } from '../../../shared/types'
 import type { Verification } from '../../../shared/verification'
 import type { TrackItem, TrackStatus } from '../types'
@@ -343,14 +343,14 @@ describe('bad grid filter', () => {
   const tracks = ['shifted', 'drifting', 'fine', 'unmeasured'].map(
     (id) => ({ id, status: 'idle' }) as TrackItem,
   )
-  const verdicts: Record<string, GridVerdict | null> = {
-    shifted: { kind: 'shifted', ms: -92 },
-    drifting: { kind: 'drifting', msPerMin: -7.5 },
-    fine: null,
+  const checks: Record<string, GridCheck | null> = {
+    shifted: { hereMs: -92, endMs: -92, worstMs: 92, verdict: { kind: 'shifted', ms: -92 } },
+    drifting: { hereMs: 0, endMs: 4, worstMs: 4, verdict: { kind: 'drifting', msPerMin: -7.5 } },
+    fine: { hereMs: 3, endMs: 2, worstMs: 3, verdict: null },
   }
-  const facts: FilterFacts = { ...NO_FACTS, gridVerdict: (t) => verdicts[t.id] }
+  const facts: FilterFacts = { ...NO_FACTS, gridCheck: (t) => checks[t.id] }
 
-  it('isolates the tracks whose rekordbox grid Surco measured off the beats, leaving out the ones not measured yet', () => {
+  it('isolates the tracks whose grid Surco measured off the beats, leaving out the ones not measured yet', () => {
     expect(
       tracks
         .filter((t) => matchesFilter(t, { ...EMPTY_FILTER, attention: 'badGrid' }, facts))
@@ -361,6 +361,21 @@ describe('bad grid filter', () => {
 
   it('counts none before anything is measured', () => {
     expect(qualityCounts(tracks).badGrid).toBe(0)
+  })
+
+  it('counts as bad grid exactly the tracks the batch would adjust', () => {
+    const batch = ['large', 'drifts', 'within', 'gated'].map(
+      (id) => ({ id, status: 'idle' }) as TrackItem,
+    )
+    const measured: Record<string, GridCheck | null> = {
+      large: { hereMs: 102, endMs: 101, worstMs: 102, verdict: null },
+      drifts: { hereMs: 1, endMs: 6, worstMs: 6, verdict: { kind: 'drifting', msPerMin: 4 } },
+      within: { hereMs: 7, endMs: -6, worstMs: 7, verdict: null },
+      gated: null,
+    }
+    const batchFacts: FilterFacts = { ...NO_FACTS, gridCheck: (t) => measured[t.id] }
+    expect(qualityCounts(batch, batchFacts).badGrid).toBe(2)
+    expect(qualityCounts(batch, { ...batchFacts, gridTolerance: 5 }).badGrid).toBe(3)
   })
 })
 
@@ -477,7 +492,7 @@ describe('filters that read what App knows about a row', () => {
     incomplete: (t) => t.id === 'a',
     unsaved: (t) => t.id !== 'a',
     gridTolerance: 10,
-    gridVerdict: () => undefined,
+    gridCheck: () => undefined,
     libraryCopy: () => undefined,
     played: () => false,
     selected: () => false,

@@ -36,11 +36,18 @@ import type {
   UsbVolumeList,
 } from '../../shared/types'
 import { resetEditorSections } from './hooks/useEditorSections'
-import { resetGridVerdicts } from './hooks/useGridVerdicts'
+import { resetGridChecks } from './hooks/useGridChecks'
 import { NEW_TRACKS_PROMPT_TIMEOUT_MS } from './hooks/useTrackLibrary'
 import i18n from './i18n'
 import { startDraft } from './lib/cueDraft'
-import { autoMarkOf, forgetDraft, keepAutoMark, keepDraft, resetCueSession } from './lib/cueSession'
+import {
+  autoMarkOf,
+  forgetDraft,
+  keepAutoMark,
+  keepDraft,
+  keepGridAdjust,
+  resetCueSession,
+} from './lib/cueSession'
 import { resetEditorPlace } from './lib/editorPlace'
 import { spellingGroups } from './lib/musicSpelling'
 import { createQueryClient } from './lib/queryClient'
@@ -528,7 +535,10 @@ describe('App unsaved cues', () => {
 })
 
 describe('App Engine DJ cues', () => {
-  afterEach(resetCueSession)
+  afterEach(() => {
+    resetCueSession()
+    resetGridChecks()
+  })
 
   function openEngine(over: ApiOverrides = {}) {
     setApi({
@@ -617,6 +627,63 @@ describe('App Engine DJ cues', () => {
     fireEvent.click(await screen.findByTestId('cues-auto-mark-all'))
     await waitFor(() => expect(autoMarkOf('engine:12')).toEqual({ kind: 'unanalysed' }))
     expect(autoMarkOf('engine:11')).toEqual({ kind: 'unanalysed' })
+  })
+
+  it('turns on the bad grid filter from the grid block of the selection', async () => {
+    openEngine({ cues: { trackCues: vi.fn<Api['cues']['trackCues']>().mockResolvedValue(null) } })
+    await openFriday()
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[0])
+    fireEvent.click(rows[1], { metaKey: true })
+    fireEvent.click(await screen.findByTestId('grid-batch-show'))
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-section-attention'))
+    await waitFor(() =>
+      expect(screen.getByTestId('quality-filter-badGrid')).toHaveAttribute('aria-selected', 'true'),
+    )
+  })
+
+  it('does not keep the grid block measuring tracks whose grid Surco never measures', async () => {
+    openEngine({
+      pickFiles: vi.fn().mockResolvedValue(['/m/a.mp3', '/m/b.mp3']),
+      cues: { trackCues: vi.fn<Api['cues']['trackCues']>().mockResolvedValue(null) },
+      dj: djReads({
+        engine: {
+          playlist: vi.fn<ProgramReads['playlist']>().mockResolvedValue([
+            { path: '/m/a.mp3', separator: false, meta: {}, contentId: 'engine:11' },
+            { path: '/m/b.mp3', separator: false, meta: {}, contentId: 'engine:12' },
+          ]),
+        },
+      }),
+    })
+    await openFriday()
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[0])
+    fireEvent.click(rows[1], { metaKey: true })
+    expect(await screen.findByTestId('grid-batch-unmeasurable')).toHaveTextContent(
+      i18n.t('editor.cues.gridBatch.unmeasurable', { count: 2 }),
+    )
+    expect(screen.queryByTestId('grid-batch-summary')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('grid-batch-measuring')).not.toBeInTheDocument()
+  })
+
+  it('opens a track the grid block set aside on its own, as clicking its row does', async () => {
+    openEngine({ cues: { trackCues: vi.fn<Api['cues']['trackCues']>().mockResolvedValue(null) } })
+    await openFriday()
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[0])
+    fireEvent.click(rows[1], { metaKey: true })
+    act(() =>
+      keepGridAdjust('engine:12', {
+        kind: 'review',
+        reason: { kind: 'noBetter', beforeMs: 40, afterMs: 45 },
+      }),
+    )
+    fireEvent.click(await screen.findByTestId('grid-batch-open-engine:12'))
+    expect(await screen.findByTestId('cues-section')).toBeInTheDocument()
+    expect(screen.queryByTestId('cues-multi')).not.toBeInTheDocument()
+    expect(rows[1]).toHaveAttribute('aria-selected', 'true')
+    expect(rows[0]).toHaveAttribute('aria-selected', 'false')
   })
 
   it('shows on each row of an Engine DJ playlist what Auto marcar left for its Engine track', async () => {
@@ -4080,7 +4147,7 @@ describe('App source playlists', () => {
               .mockImplementation(async (id) => (id === ALL_TRACKS_ID ? ENTRIES : [ENTRIES[0]])),
           },
         }),
-        cues: { gridVerdict: vi.fn<Api['cues']['gridVerdict']>().mockResolvedValue(null) },
+        cues: { trackCues: vi.fn<Api['cues']['trackCues']>().mockResolvedValue(null) },
       }
 
       function scrollPast(rows: HTMLElement[]): void {
@@ -4961,7 +5028,7 @@ describe('App per-track format pick', () => {
     fireEvent.click((await screen.findAllByTestId('track-row'))[0])
     await openFormatMenu()
     fireEvent.click(screen.getByTestId('process-destination-overwrite'))
-    fireEvent.click(screen.getByTestId('process-btn'))
+    fireEvent.click(screen.getByTestId('convert-update-anyway'))
     fireEvent.click(await screen.findByTestId('confirm-ok'))
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(1))
     const [job] = processTrack.mock.calls[0]
@@ -5333,13 +5400,13 @@ describe('App multi-select removal', () => {
 })
 
 describe('App background measuring', () => {
-  afterEach(resetGridVerdicts)
+  afterEach(resetGridChecks)
 
   // "Rejilla mal" decodes each rekordbox row against its grid. It belongs to the analysis like
   // the rest: with Analyze on import it runs by itself, without the user having to know that
   // picking the filter is what starts it.
   function openRekordbox(autoAnalyze: boolean) {
-    const rekordboxGridVerdict = vi.fn<Api['cues']['gridVerdict']>().mockResolvedValue(null)
+    const measureGrid = vi.fn<Api['cues']['trackCues']>().mockResolvedValue(null)
     setApi({
       getSettings: vi.fn().mockResolvedValue(settings({ autoAnalyze })),
       dj: djReads({
@@ -5355,10 +5422,10 @@ describe('App background measuring', () => {
         },
       }),
       cues: {
-        gridVerdict: rekordboxGridVerdict,
+        trackCues: measureGrid,
       },
     })
-    return rekordboxGridVerdict
+    return measureGrid
   }
 
   async function openFactory(): Promise<void> {
@@ -5369,31 +5436,31 @@ describe('App background measuring', () => {
   }
 
   it('measures the grids by itself when every import is analysed', async () => {
-    const rekordboxGridVerdict = openRekordbox(true)
+    const measureGrid = openRekordbox(true)
     await openFactory()
-    await waitFor(() => expect(rekordboxGridVerdict).toHaveBeenCalledTimes(2))
+    await waitFor(() => expect(measureGrid).toHaveBeenCalledTimes(2))
   })
 
   // Without that setting the analysis waits for the button, and the grids with it. "Everything
   // is already analysed" would otherwise keep the button off while they were never measured.
   it('measures the grids with the Analyze button otherwise, which stays on until they are', async () => {
-    const rekordboxGridVerdict = openRekordbox(false)
+    const measureGrid = openRekordbox(false)
     await openFactory()
     await act(async () => {})
-    expect(rekordboxGridVerdict).not.toHaveBeenCalled()
+    expect(measureGrid).not.toHaveBeenCalled()
     const analyze = screen.getByTestId('analyze-quality')
     expect(analyze).not.toBeDisabled()
     fireEvent.click(analyze)
-    await waitFor(() => expect(rekordboxGridVerdict).toHaveBeenCalledTimes(2))
+    await waitFor(() => expect(measureGrid).toHaveBeenCalledTimes(2))
   })
 
   it('does not call everything analysed while the grids are still being measured', async () => {
-    const rekordboxGridVerdict = openRekordbox(false)
-    rekordboxGridVerdict.mockImplementation(() => new Promise(() => {}))
+    const measureGrid = openRekordbox(false)
+    measureGrid.mockImplementation(() => new Promise(() => {}))
     await openFactory()
     fireEvent.click(screen.getByTestId('analyze-quality'))
     await waitFor(() => expect(screen.queryByTestId('analyze-progress')).toBeNull())
-    expect(rekordboxGridVerdict).toHaveBeenCalled()
+    expect(measureGrid).toHaveBeenCalled()
     expect(screen.getByTestId('analyze-quality')).not.toBeDisabled()
     expect(screen.getByTestId('analyze-quality')).not.toHaveAccessibleName(
       i18n.t('header.allAnalyzed'),
@@ -5997,7 +6064,7 @@ describe('App convert all format with a track open', () => {
     fireEvent.click(await screen.findByTestId('add-files'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
     fireEvent.click(screen.getAllByTestId('track-row')[0])
-    await screen.findByTestId('process-btn')
+    await screen.findByTestId('convert-all')
     if (pick) {
       fireEvent.click(screen.getByTestId('process-format-toggle'))
       fireEvent.click(screen.getByTestId(`process-format-${pick}`))
@@ -6213,7 +6280,9 @@ describe('App Default format x input extension matrix', () => {
       await renderApp()
       const rows = await addOneTrack()
       fireEvent.click(rows[0])
-      const convert = await screen.findByTestId('process-btn')
+      const convert = await screen.findByTestId(
+        settingFormat === inputExt ? 'convert-update-anyway' : 'process-btn',
+      )
       fireEvent.click(convert)
       await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(1))
       expect(processTrack.mock.calls[0][0].format).toBe(expectedFormat)
@@ -6294,7 +6363,7 @@ describe('App editor format/destination reseed', () => {
     const rows = await addOneTrack()
     fireEvent.click(rows[0])
     // Same format as the source .flac: the button offers to update it in place.
-    expect(await screen.findByTestId('process-btn')).toHaveTextContent('Update tags')
+    expect(await screen.findByTestId('convert-up-to-date')).toHaveTextContent('No changes')
 
     fireEvent.click(screen.getByTestId('open-settings'))
     fireEvent.click(await screen.findByTestId('settings-tab-conversion'))
@@ -6302,7 +6371,7 @@ describe('App editor format/destination reseed', () => {
     fireEvent.click(screen.getByTestId('settings-close'))
 
     await waitFor(() =>
-      expect(screen.getByTestId('process-btn')).toHaveTextContent('Convert to AIFF + Apple Music'),
+      expect(screen.getByTestId('process-btn')).toHaveTextContent('Convert to AIFF'),
     )
     fireEvent.click(screen.getByTestId('process-btn'))
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(1))
@@ -6335,9 +6404,6 @@ describe('App editor format/destination reseed', () => {
     fireEvent.click(screen.getByTestId('settings-destination-appleMusic'))
     fireEvent.click(screen.getByTestId('settings-close'))
 
-    await waitFor(() =>
-      expect(screen.getByTestId('process-btn')).toHaveTextContent('Convert to AIFF + Apple Music'),
-    )
     fireEvent.click(screen.getByTestId('process-btn'))
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(1))
     expect(processTrack.mock.calls[0][0].addToAppleMusic).toBe(true)
@@ -6606,7 +6672,7 @@ describe('App on Windows', () => {
       fireEvent.click((await addTwoTracks())[0])
 
       expect(await screen.findByTestId('process-btn')).toHaveTextContent('Convert to AIFF')
-      expect(screen.getByTestId('process-folder')).toHaveTextContent('out')
+      expect(screen.getByTestId('convert-destination-line')).toHaveTextContent('Saves to out')
     })
 
     it('checks the output folder in Settings instead of leaving no destination picked', async () => {
@@ -6698,7 +6764,7 @@ describe('App stats', () => {
     await screen.findByTestId('add-files')
     runMenu('stats')
     await waitFor(() =>
-      expect(screen.getByTestId('settings-subtab-stats')).toHaveAttribute('aria-pressed', 'true'),
+      expect(screen.getByTestId('settings-tab-stats')).toHaveAttribute('aria-selected', 'true'),
     )
   })
 
@@ -6706,7 +6772,7 @@ describe('App stats', () => {
     await renderApp()
     fireEvent.click(await screen.findByTestId('open-stats'))
     await waitFor(() =>
-      expect(screen.getByTestId('settings-subtab-stats')).toHaveAttribute('aria-pressed', 'true'),
+      expect(screen.getByTestId('settings-tab-stats')).toHaveAttribute('aria-selected', 'true'),
     )
   })
 })
@@ -6733,7 +6799,7 @@ describe('App command palette list-wide actions', () => {
     expect(items).toHaveLength(1)
     fireEvent.click(items[0])
     await waitFor(() =>
-      expect(screen.getByTestId('settings-subtab-stats')).toHaveAttribute('aria-pressed', 'true'),
+      expect(screen.getByTestId('settings-tab-stats')).toHaveAttribute('aria-selected', 'true'),
     )
   })
 
@@ -7684,7 +7750,7 @@ describe('App Apple Music library filter', () => {
         },
       }),
       cues: {
-        gridVerdict: vi.fn<Api['cues']['gridVerdict']>().mockResolvedValue(null),
+        trackCues: vi.fn<Api['cues']['trackCues']>().mockResolvedValue(null),
       },
     })
   }

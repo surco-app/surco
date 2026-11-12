@@ -97,7 +97,7 @@ export function SourceRail({
             }
           : undefined
       }
-      className={`${className} relative flex w-[64px] flex-col items-center justify-center gap-0.5 rounded-lg pt-1.5 pb-1 ${
+      className={`press ${className} relative flex w-[64px] flex-col items-center justify-center gap-0.5 rounded-lg pt-1.5 pb-1 ${
         on ? 'bg-[var(--color-accent-soft)] text-fg' : 'text-fg-faint hover:bg-[var(--color-hover)]'
       }`}
     >

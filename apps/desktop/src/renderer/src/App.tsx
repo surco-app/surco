@@ -111,7 +111,7 @@ import { useDuplicateRanks } from './hooks/useDuplicateRanks'
 import { useEditorPicks } from './hooks/useEditorPicks'
 import { editorSectionOpen, useMaximizedSection } from './hooks/useEditorSections'
 import { useExitPresence } from './hooks/useExitPresence'
-import { useGridVerdicts } from './hooks/useGridVerdicts'
+import { useGridChecks } from './hooks/useGridChecks'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { useLaunchModals } from './hooks/useLaunchModals'
 import { useLibraryCopyVerdicts } from './hooks/useLibraryCopyVerdicts'
@@ -537,10 +537,10 @@ export default function App(): React.JSX.Element {
   showWaveformRef.current = settings?.showWaveform ?? true
   const hasTokenRef = useRef(false)
   hasTokenRef.current = !!settings?.discogsToken
-  // Live providers for the background sweep, read at probe time (Settings → Search).
+  // Live providers for the background sweep, read at probe time (Settings → Sources).
   const searchProvidersRef = useRef<SearchProviderId[]>(DEFAULT_SEARCH_PROVIDERS)
   searchProvidersRef.current = settings ? usableProviders(settings) : DEFAULT_SEARCH_PROVIDERS
-  // Which fields a release may fill (Settings → Search). A ref for the same reason as the
+  // Which fields a release may fill (Settings → Sources). A ref for the same reason as the
   // providers above: the sweep applies matches in the background, so it must read the
   // current choice at apply time rather than one captured when the sweep started.
   const importFields = normalizeImportFields(settings?.importFields)
@@ -2121,7 +2121,17 @@ export default function App(): React.JSX.Element {
   const measuringGrid = filterSelection.attention === 'badGrid' || measureAll
   const comparesLibraryCopy = browser.source === null && librarySource === 'appleMusic'
   const measuringLibrary = filterSelection.library === 'betterThanLibrary' || measureAll
-  const gridVerdicts = useGridVerdicts(gridEntries, measuringGrid)
+  const cuesOpen = sourceProgram !== null && browser.playlist !== null && playlistScope !== null
+  const batchCuesShown = cuesOpen && selectedTracks.length > 1
+  const checkedGridEntries = useMemo(
+    () =>
+      measuringGrid || !batchCuesShown
+        ? gridEntries
+        : gridEntries.filter(([trackId]) => selectedIdSet.has(trackId)),
+    [measuringGrid, batchCuesShown, gridEntries, selectedIdSet],
+  )
+  const gridChecks = useGridChecks(checkedGridEntries, measuringGrid || batchCuesShown)
+  const gridCheckOf = gridChecks.checkOfContent
   const libraryCopyVerdicts = useLibraryCopyVerdicts(
     scopeTracks,
     comparesLibraryCopy ? libraryIndex : null,
@@ -2130,10 +2140,11 @@ export default function App(): React.JSX.Element {
   const gridNoteOf = useMemo(() => {
     if (filterSelection.attention !== 'badGrid') return undefined
     return (t: TrackItem) => {
-      const verdict = gridVerdicts.verdictOf(t.id)
-      return verdict ? gridNote(verdict, tr, i18n.language) : undefined
+      const contentId = playlistScope?.contentOf.get(t.id)
+      const check = contentId === undefined ? undefined : gridCheckOf(contentId)
+      return check ? gridNote(check, tr, i18n.language) : undefined
     }
-  }, [filterSelection.attention, gridVerdicts, tr, i18n.language])
+  }, [filterSelection.attention, gridCheckOf, playlistScope, tr, i18n.language])
   // The selection reaches the filter only while it filters by it: every click or arrow
   // moves the selection, and rebuilding the facts recounts every filter over the whole list.
   const filteredSelection = filterSelection.selection ? selectedIdSet : null
@@ -2148,13 +2159,16 @@ export default function App(): React.JSX.Element {
         return hasStagedEdits(t) || (contentId !== undefined && unsavedCues.has(contentId))
       },
       gridTolerance: settings?.cueGridTolerance ?? DEFAULT_CUE_GRID_TOLERANCE,
-      gridVerdict: (t) => gridVerdicts.verdictOf(t.id),
+      gridCheck: (t) => {
+        const contentId = playlistScope?.contentOf.get(t.id)
+        return contentId === undefined ? undefined : gridCheckOf(contentId)
+      },
       libraryCopy: libraryCopyVerdicts.verdictOf,
       played: (t) => playedPaths.has(t.inputPath),
       selected: (t) => filteredSelection?.has(t.id) ?? false,
     }),
     [
-      gridVerdicts,
+      gridCheckOf,
       libraryCopyVerdicts,
       requiredFields,
       settings?.customFields,
@@ -2754,7 +2768,6 @@ export default function App(): React.JSX.Element {
   // library holds afterwards is re-read and shown (useRekordboxEdits).
   const editableOpen =
     editableSource !== null && browser.playlist !== null && playlistScope !== null
-  const cuesOpen = sourceProgram !== null && browser.playlist !== null && playlistScope !== null
   const runningNote = sourceProgram && CUE_EDITORS[sourceProgram].runningNote
   const { data: programRunning = false } = useQuery({
     queryKey: [`${sourceProgram}-running`],
@@ -2820,6 +2833,21 @@ export default function App(): React.JSX.Element {
       }),
     [selectedTracks, playlistScope],
   )
+  const gridContentIds = useMemo(
+    () => new Set(gridEntries.map(([, contentId]) => contentId)),
+    [gridEntries],
+  )
+  const cueGridCheckOf = useCallback(
+    (contentId: string) => (gridContentIds.has(contentId) ? gridCheckOf(contentId) : null),
+    [gridContentIds, gridCheckOf],
+  )
+  const showBadGrid = useStableCallback(() =>
+    setFilterSelection({ ...filterSelection, attention: 'badGrid' }),
+  )
+  const openCueTrack = useStableCallback((contentId: string) => {
+    const track = selectedTracks.find((t) => playlistScope?.contentOf.get(t.id) === contentId)
+    if (track) onSelectTrack(track.id, {})
+  })
   const autoMarkSelected = useStableCallback(() => {
     const ids = selectedTracks.flatMap((t) => {
       const contentId = playlistScope?.contentOf.get(t.id)
@@ -3238,12 +3266,12 @@ export default function App(): React.JSX.Element {
   const allAnalyzed = useMemo(
     () =>
       visibleTracks.every((t) => Boolean(t.spectrum)) &&
-      gridVerdicts.done >= gridVerdicts.total &&
+      gridChecks.done >= gridEntries.length &&
       libraryCopyVerdicts.done >= libraryCopyVerdicts.total,
     [
       visibleTracks,
-      gridVerdicts.done,
-      gridVerdicts.total,
+      gridChecks.done,
+      gridEntries.length,
       libraryCopyVerdicts.done,
       libraryCopyVerdicts.total,
     ],
@@ -3852,6 +3880,7 @@ export default function App(): React.JSX.Element {
                             setSearch={setSearch}
                             trackSearchRef={trackSearchRef}
                             qualityFilterRef={qualityFilterRef}
+                            scrollRootRef={listScrollRef}
                             filterSelection={filterSelection}
                             setFilterSelection={setFilterSelection}
                             librarySource={librarySource}
@@ -3860,8 +3889,8 @@ export default function App(): React.JSX.Element {
                             gridMeasure={{
                               offered: gridEntries.length > 0,
                               measuring: measuringGrid,
-                              done: gridVerdicts.done,
-                              total: gridVerdicts.total,
+                              done: gridChecks.done,
+                              total: gridEntries.length,
                             }}
                             libraryMeasure={
                               comparesLibraryCopy
@@ -4068,6 +4097,9 @@ export default function App(): React.JSX.Element {
                             onCueFlow={onCueFlow}
                             onCueAutoMarkAll={cuesMarkable ? autoMarkSelected : undefined}
                             cueTargets={cueTargets}
+                            cueGridCheckOf={cueGridCheckOf}
+                            onShowBadGrid={showBadGrid}
+                            onOpenCueTrack={openCueTrack}
                             cueActionsRef={cueActionsRef}
                             libraryIndex={libraryIndex}
                             searchInputRef={searchInputRef}

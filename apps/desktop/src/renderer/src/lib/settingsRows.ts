@@ -11,7 +11,7 @@
 // aria-pressed carries the state for a screen reader, and aria-label the name, since the
 // word itself lives in the column heading rather than in every row.
 export const TOGGLE_BOX =
-  'mx-auto flex h-6 w-6 items-center justify-center rounded disabled:opacity-40'
+  'press mx-auto flex h-6 w-6 items-center justify-center rounded disabled:opacity-40'
 export const TOGGLE_ON = 'text-[var(--color-accent)] hover:bg-[var(--color-hover)]'
 export const TOGGLE_OFF = 'text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg-muted'
 

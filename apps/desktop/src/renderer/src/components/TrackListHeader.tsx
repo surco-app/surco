@@ -31,7 +31,7 @@ import {
   User,
 } from 'lucide-react'
 import type React from 'react'
-import { useId, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { Command } from '../lib/commands'
 import type { LibrarySource } from '../lib/librarySource'
@@ -53,6 +53,7 @@ interface Props {
   setSearch: (v: string) => void
   trackSearchRef: React.RefObject<HTMLInputElement | null>
   qualityFilterRef: React.RefObject<HTMLDivElement | null>
+  scrollRootRef?: React.RefObject<HTMLElement | null>
   filterSelection: FilterSelection
   setFilterSelection: (next: FilterSelection) => void
   librarySource: LibrarySource
@@ -167,6 +168,7 @@ export function TrackListHeader({
   setSearch,
   trackSearchRef,
   qualityFilterRef,
+  scrollRootRef,
   filterSelection,
   setFilterSelection,
   librarySource,
@@ -207,6 +209,16 @@ export function TrackListHeader({
   // and anything else layered over the list, and placed from its toggle in the window.
   const [menuPos, setMenuPos] = useState<MenuPlacement | null>(null)
   useCloseOnMove(open, menuRef, setOpen)
+  const [scrolled, setScrolled] = useState(false)
+
+  useEffect(() => {
+    const root = scrollRootRef?.current
+    if (!root) return
+    const onScroll = (): void => setScrolled(root.scrollTop > 0)
+    onScroll()
+    root.addEventListener('scroll', onScroll, { passive: true })
+    return () => root.removeEventListener('scroll', onScroll)
+  }, [scrollRootRef])
 
   function toggleMenu(): void {
     if (!open) {
@@ -248,7 +260,8 @@ export function TrackListHeader({
     <div
       ref={qualityFilterRef}
       data-testid="track-list-header"
-      className="@container sticky top-0 z-10 border-b border-[var(--color-line)] bg-[var(--color-ink)]"
+      data-scrolled={scrolled}
+      className="scroll-edge @container sticky top-0 z-10 bg-[var(--color-ink)]"
     >
       <div className="flex items-center gap-1.5 px-1.5 pt-2">
         <SearchInput

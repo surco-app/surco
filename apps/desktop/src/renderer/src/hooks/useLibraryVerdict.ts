@@ -33,6 +33,7 @@ interface LibraryVerdict {
   // merely loaded — a FLAC downloaded into a folder whose song is already in the library as
   // an MP3 — had no way to offer a replacement and quietly offered an add instead.
   replaceTarget: ReplaceCandidate | null
+  replaceTargetPending: boolean
 }
 
 // Whether the destination library (Apple Music or Engine DJ) already owns this track, and
@@ -177,6 +178,7 @@ export function useLibraryVerdict({
   const offeredId =
     replaceTarget && !('ambiguous' in replaceTarget) ? replaceTarget.persistentId : null
   const [offeredPath, setOfferedPath] = useState<{ id: string; path: string } | null>(null)
+  const [lookedUp, setLookedUp] = useState<string | null>(null)
   useEffect(() => {
     if (!offeredId) return
     let cancelled = false
@@ -184,7 +186,9 @@ export function useLibraryVerdict({
       .appleMusicEntryLocation(offeredId)
       .catch(() => '')
       .then((path) => {
-        if (!cancelled && path) setOfferedPath({ id: offeredId, path })
+        if (cancelled) return
+        if (path) setOfferedPath({ id: offeredId, path })
+        setLookedUp(offeredId)
       })
     return () => {
       cancelled = true
@@ -199,5 +203,10 @@ export function useLibraryVerdict({
     [replaceTarget, offeredId, offeredPath],
   )
 
-  return { inLibrary, staleMusicCopy, replaceTarget: replaceTargetWithPath }
+  return {
+    inLibrary,
+    staleMusicCopy,
+    replaceTarget: replaceTargetWithPath,
+    replaceTargetPending: !!offeredId && lookedUp !== offeredId,
+  }
 }

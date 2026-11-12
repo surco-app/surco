@@ -57,6 +57,23 @@ describe('recentErrorLines', () => {
     ])
   })
 
+  it('keeps the tool output that explains a failed command, without the stack trace', () => {
+    const multiline = [
+      '[2026-11-11 21:20:57.154] [error] audio:properties failed Error: Command failed: /Applications/Surco.app/Contents/Resources/ffprobe -v error /Users/ana/Music/Entasia.wav',
+      '/Users/ana/Music/Entasia.wav: Invalid data found when processing input',
+      '',
+      '    at run (file:///Applications/Surco.app/out/main/index.js:5007:41)',
+      '    at async probeAudio (file:///Applications/Surco.app/out/main/index.js:6961:19)',
+      '[2026-11-11 21:21:00.000] [info]  cache hit',
+    ].join('\n')
+    expect(recentErrorLines(multiline, 10)).toEqual([
+      [
+        '[2026-11-11 21:20:57.154] [error] audio:properties failed Error: Command failed: ffprobe -v error Entasia.wav',
+        'Entasia.wav: Invalid data found when processing input',
+      ].join('\n'),
+    ])
+  })
+
   it('returns nothing for a log with no errors', () => {
     expect(recentErrorLines('[2026-08-10 20:28:00.000] [info]  all good', 10)).toEqual([])
   })

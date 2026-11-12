@@ -149,6 +149,50 @@ describe('opening a source playlist', () => {
     expect(row.diskSignature).toBe(trackSignature(row))
   })
 
+  it('marks a row filled from its rekordbox entry as holding values the file does not', async () => {
+    const readMeta = vi.fn().mockResolvedValue({
+      tags: tags({ title: 'A' }),
+      duration: null,
+      cover: null,
+      foreignTags: [],
+    })
+    const { result } = setup({ readMeta })
+    await act(async () => {
+      await result.current.addPaths(['/m/a.aiff'])
+    })
+    await waitFor(() => expect(result.current.tracks[0]?.loadingMeta).toBeFalsy())
+    expect(result.current.tracks[0].fillSignature).toBeUndefined()
+    await act(async () => {
+      await result.current.openSourcePlaylist(
+        [{ path: '/m/a.aiff', separator: false, meta: { bpm: '124' } }],
+        'rekordbox',
+        { fillLoaded: true },
+      )
+    })
+    const row = result.current.tracks[0]
+    expect(row.fillSignature).toBe(row.diskSignature)
+  })
+
+  it('marks a row opened fresh from a playlist as holding the entry values the file does not', async () => {
+    const readMeta = vi.fn().mockResolvedValue({
+      tags: tags({ title: 'A' }),
+      duration: null,
+      cover: null,
+      foreignTags: [],
+    })
+    const { result } = setup({ readMeta })
+    await act(async () => {
+      await result.current.openSourcePlaylist(
+        [{ path: '/m/a.aiff', separator: false, meta: { bpm: '124' } }],
+        'rekordbox',
+      )
+    })
+    await waitFor(() => expect(result.current.tracks[0]?.loadingMeta).toBeFalsy())
+    const row = result.current.tracks[0]
+    expect(row.meta.bpm).toBe('124')
+    expect(row.fillSignature).toBe(row.diskSignature)
+  })
+
   // An edit the user made stays the only change, and the filled values do not join it.
   it('keeps a filled gap out of the edits the row already had', async () => {
     const readMeta = vi.fn().mockResolvedValue({

@@ -1,5 +1,5 @@
 import { DEFAULT_CUE_GRID_TOLERANCE } from '../../../shared/cueGrid'
-import type { GridVerdict } from '../../../shared/gridVerdict'
+import { type GridCheck, needsGridFix } from '../../../shared/gridCheck'
 import {
   ENHARMONIC,
   MAJOR_CAMELOT,
@@ -112,7 +112,7 @@ export interface FilterFacts {
   incomplete: (track: TrackItem) => boolean
   unsaved: (track: TrackItem) => boolean
   gridTolerance: number
-  gridVerdict: (track: TrackItem) => GridVerdict | null | undefined
+  gridCheck: (track: TrackItem) => GridCheck | null | undefined
   libraryCopy: (track: TrackItem) => CopyVerdict | null | undefined
   played: (track: TrackItem) => boolean
   selected: (track: TrackItem) => boolean
@@ -122,7 +122,7 @@ export const NO_FACTS: FilterFacts = {
   incomplete: () => false,
   unsaved: () => false,
   gridTolerance: DEFAULT_CUE_GRID_TOLERANCE,
-  gridVerdict: () => undefined,
+  gridCheck: () => undefined,
   libraryCopy: () => undefined,
   played: () => false,
   selected: () => false,
@@ -256,7 +256,7 @@ export function matchesFilter(
   if (sel.attention === 'clipping' && track.audioIssues?.clipping !== true) return false
   if (sel.attention === 'noCues' && !hasNoCues(track)) return false
   if (sel.attention === 'offGrid' && !isOffGrid(track, facts)) return false
-  if (sel.attention === 'badGrid' && !facts.gridVerdict(track)) return false
+  if (sel.attention === 'badGrid' && !hasBadGrid(track, facts)) return false
   if (sel.attention === 'unanalysedRekordbox' && unanalysedIn(track) !== 'rekordbox') return false
   if (sel.attention === 'unanalysedEngine' && unanalysedIn(track) !== 'engine') return false
   if (sel.tags && !matchesTags(track, sel.tags, facts)) return false
@@ -290,6 +290,11 @@ function matchesStars(track: TrackItem, filter: StarsFilter): boolean {
 function isOffGrid(track: TrackItem, facts: FilterFacts): boolean {
   const drift = track.sourcePreview?.gridDriftMs
   return drift !== undefined && drift > facts.gridTolerance
+}
+
+function hasBadGrid(track: TrackItem, facts: FilterFacts): boolean {
+  const check = facts.gridCheck(track)
+  return Boolean(check && needsGridFix(check, facts.gridTolerance))
 }
 
 function hasNoCues(track: TrackItem): boolean {
@@ -639,7 +644,7 @@ export function qualityCounts(
     if (t.audioIssues?.clipping) clipping += 1
     if (hasNoCues(t)) noCues += 1
     if (isOffGrid(t, facts)) offGrid += 1
-    if (facts.gridVerdict(t)) badGrid += 1
+    if (hasBadGrid(t, facts)) badGrid += 1
     const waitingOn = unanalysedIn(t)
     if (waitingOn === 'rekordbox') unanalysedRekordbox += 1
     else if (waitingOn === 'engine') unanalysedEngine += 1

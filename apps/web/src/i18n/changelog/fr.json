@@ -1,5 +1,52 @@
 [
   {
+    "version": "1.33",
+    "date": "November 11, 2026",
+    "title": "Des grilles corrigées en lot",
+    "items": [
+      {
+        "text": "Sélectionne plusieurs morceaux et le panneau Cues te dit combien ont leur grille à côté des temps. « Ajuster » corrige seulement ceux-là, et les cues et les CALL suivent la grille. Rien n’est enregistré tant que tu n’appuies pas sur Enregistrer.",
+        "in": "1.33.0"
+      },
+      {
+        "text": "Si corriger un morceau risque de décaler ses cues, Surco le laisse tel quel et te dit pourquoi, pour que tu l’ouvres toi-même. « Grille fausse » trouve maintenant tous les morceaux dont la grille est décalée, y compris ceux qu’il ratait avant.",
+        "in": "1.33.0"
+      },
+      {
+        "text": "« Ajuster la grille » est aussi dans le petit éditeur de cues, avant « Marquage auto », et s’allume quand le morceau en a besoin.",
+        "in": "1.33.0"
+      },
+      {
+        "text": "Convertis des morceaux que tu as dans rekordbox ou Traktor sans fermer le logiciel. Surco garde les changements et les écrit dès que tu le fermes.",
+        "in": "1.33.0"
+      },
+      {
+        "text": "Crée une session ou modifie des playlists avec rekordbox, Traktor, Serato ou Engine DJ ouvert. Le changement attend et s’écrit quand tu fermes le logiciel. Dans Engine DJ, tu peux maintenant aussi créer des playlists, ajouter des morceaux et supprimer des playlists.",
+        "in": "1.33.0"
+      },
+      {
+        "text": "Chaque morceau de la liste affiche sa tonalité à côté de sa durée, dans la « Notation de la tonalité » choisie dans les Réglages, maintenant appelée Alphanumérique et Classique. Les tonalités écrites autrement, comme Abm ou Ab Major, sont lues aussi, pour qu’elles s’affichent et se mixent bien dans une session.",
+        "in": "1.33.0"
+      },
+      {
+        "text": "Une session ressemble maintenant à n’importe quelle playlist, avec la tonalité de chaque morceau. « Refaire » refait toute la session et ne garde que le morceau par lequel tu as commencé. Bases et vocaux continuent d’alterner même quand les tonalités ne collent pas.",
+        "in": "1.33.0"
+      },
+      {
+        "text": "« Envoyer un commentaire » te permet de nous écrire sans quitter Surco, et il est là où tu pourrais en avoir besoin, même quand une conversion échoue. Mets ton e-mail pour qu’on puisse te répondre. S’il ne part pas, tu peux réessayer ou le copier.",
+        "in": "1.33.0"
+      },
+      {
+        "text": "Avec plusieurs morceaux sélectionnés, tu peux modifier ou vider « Commentaire » sur tous à la fois.",
+        "in": "1.33.0"
+      },
+      {
+        "text": "Une interface plus calme, avec moins de chiffres répétés, des mouvements plus doux et un fondu quand le thème passe du clair au sombre.",
+        "in": "1.33.0"
+      }
+    ]
+  },
+  {
     "version": "1.32",
     "date": "November 10, 2026",
     "title": "Des sessions qui sonnent comme tes sets",

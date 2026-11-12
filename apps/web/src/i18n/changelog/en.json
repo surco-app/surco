@@ -1,5 +1,52 @@
 [
   {
+    "version": "1.33",
+    "date": "November 11, 2026",
+    "title": "Fix grids in bulk",
+    "items": [
+      {
+        "text": "Select several tracks and the Cues panel tells you how many have their grid off the beat. “Adjust” fixes just those, and the cues and calls move with the grid. Nothing is saved until you press Save.",
+        "in": "1.33.0"
+      },
+      {
+        "text": "If fixing a track could push its cues off, Surco leaves it as it is and tells you why, so you can open it yourself. “Bad grid” now finds every track whose grid is off, including the ones it used to miss.",
+        "in": "1.33.0"
+      },
+      {
+        "text": "“Fit grid” is also in the small cue editor, before “Auto mark”, and lights up when the track needs it.",
+        "in": "1.33.0"
+      },
+      {
+        "text": "Convert tracks you keep in rekordbox or Traktor without closing the program. Surco keeps the changes and writes them as soon as you close it.",
+        "in": "1.33.0"
+      },
+      {
+        "text": "Build a session or edit playlists with rekordbox, Traktor, Serato or Engine DJ open. The change waits and is written when you close the program. In Engine DJ you can now create playlists, add tracks and delete playlists too.",
+        "in": "1.33.0"
+      },
+      {
+        "text": "Every track in the list shows its key next to its length, in the “Key notation” you choose in Settings, now called Alphanumeric and Classic. Keys written in other ways, like Abm or Ab Major, are read too, so they show and mix right in a session.",
+        "in": "1.33.0"
+      },
+      {
+        "text": "A session now looks like any playlist, with the key of each track. “Redo” draws the whole session again and keeps only the track you started from. Bases and vocals keep alternating even when the keys don’t match.",
+        "in": "1.33.0"
+      },
+      {
+        "text": "“Send feedback” lets you write to us without leaving Surco, and it is there wherever you might need it, even when a conversion fails. Add your email so we can answer. If it cannot be sent, you can try again or copy it.",
+        "in": "1.33.0"
+      },
+      {
+        "text": "With several tracks selected you can edit or clear “Comment” on all of them at once.",
+        "in": "1.33.0"
+      },
+      {
+        "text": "A calmer interface, with fewer repeated numbers, smoother motion and a soft fade when the theme switches between light and dark.",
+        "in": "1.33.0"
+      }
+    ]
+  },
+  {
     "version": "1.32",
     "date": "November 10, 2026",
     "title": "Sessions that sound like your sets",

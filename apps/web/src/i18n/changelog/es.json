@@ -1,5 +1,52 @@
 [
   {
+    "version": "1.33",
+    "date": "11 de noviembre de 2026",
+    "title": "Rejillas arregladas en lote",
+    "items": [
+      {
+        "text": "Selecciona varias pistas y el panel de Cues te dice cuántas tienen la rejilla fuera de los golpes. «Ajustar» arregla solo esas, y los cues y los CALL se mueven con la rejilla. No se guarda nada hasta que pulsas Guardar.",
+        "in": "1.33.0"
+      },
+      {
+        "text": "Si arreglar una pista pudiera descolocar sus cues, Surco la deja como está y te dice por qué, para que la abras tú. «Rejilla mal» ahora encuentra todas las pistas con la rejilla fuera, también las que antes se le escapaban.",
+        "in": "1.33.0"
+      },
+      {
+        "text": "«Ajustar rejilla» también está en el editor de cues pequeño, antes de «Auto marcar», y se ilumina cuando la pista lo necesita.",
+        "in": "1.33.0"
+      },
+      {
+        "text": "Convierte pistas que tienes en rekordbox o Traktor sin cerrar el programa. Surco guarda los cambios y los escribe en cuanto lo cierras.",
+        "in": "1.33.0"
+      },
+      {
+        "text": "Crea una sesión o edita playlists con rekordbox, Traktor, Serato o Engine DJ abierto. El cambio espera y se escribe al cerrar el programa. En Engine DJ ahora también puedes crear playlists, añadir pistas y borrar playlists.",
+        "in": "1.33.0"
+      },
+      {
+        "text": "Cada pista de la lista muestra su tonalidad junto a la duración, en la «Notación de la tonalidad» que elijas en Ajustes, que ahora se llama Alfanumérica y Clásica. También se leen tonalidades escritas de otras formas, como Abm o Ab Major, así que se ven y mezclan bien en una sesión.",
+        "in": "1.33.0"
+      },
+      {
+        "text": "Una sesión ahora se ve como cualquier playlist, con la tonalidad de cada pista. «Rehacer» vuelve a montar la sesión entera y solo conserva la pista con la que empezaste. Bases y cantaditas siguen alternándose aunque las tonalidades no casen.",
+        "in": "1.33.0"
+      },
+      {
+        "text": "«Enviar comentarios» te deja escribirnos sin salir de Surco, y lo tienes donde puedas necesitarlo, incluso cuando falla una conversión. Pon tu email para que te podamos responder. Si no se puede enviar, puedes reintentarlo o copiarlo.",
+        "in": "1.33.0"
+      },
+      {
+        "text": "Con varias pistas seleccionadas puedes editar o vaciar «Comentario» en todas a la vez.",
+        "in": "1.33.0"
+      },
+      {
+        "text": "Una interfaz más tranquila, con menos números repetidos, movimientos más suaves y un fundido al cambiar el tema entre claro y oscuro.",
+        "in": "1.33.0"
+      }
+    ]
+  },
+  {
     "version": "1.32",
     "date": "10 de noviembre de 2026",
     "title": "Sesiones que suenan a tus sets",

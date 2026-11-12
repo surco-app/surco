@@ -514,7 +514,7 @@ export function SourceTree({
             onDragOver={dragOver}
             onDrop={drop}
             style={{ left: 8 + depth * 18 }}
-            className="absolute top-[6px] flex h-4 w-4 items-center justify-center rounded text-fg-faint hover:text-fg"
+            className="press absolute top-[6px] flex h-4 w-4 items-center justify-center rounded text-fg-faint hover:text-fg"
           >
             <Chevron size={12} aria-hidden="true" />
           </button>
@@ -604,7 +604,7 @@ export function SourceTree({
                 data-testid="source-tree-export-usb"
                 aria-label={tr('sources.tree.exportUsb')}
                 onClick={onExportUsb}
-                className="rounded p-1 text-fg-faint hover:bg-[var(--color-hover)] hover:text-fg"
+                className="press rounded p-1 text-fg-faint hover:bg-[var(--color-hover)] hover:text-fg"
               >
                 <Usb size={14} aria-hidden="true" />
                 <Tooltip label={tr('sources.tree.exportUsb')} />
@@ -619,7 +619,7 @@ export function SourceTree({
                     edit.crates ? 'sources.tree.newCrate' : 'sources.tree.newPlaylist',
                   )}
                   onClick={() => startCreating('root', false)}
-                  className="rounded p-1 text-fg-faint hover:bg-[var(--color-hover)] hover:text-fg"
+                  className="press rounded p-1 text-fg-faint hover:bg-[var(--color-hover)] hover:text-fg"
                 >
                   <ListPlus size={14} aria-hidden="true" />
                   <Tooltip
@@ -632,7 +632,7 @@ export function SourceTree({
                     data-testid="source-tree-new-folder"
                     aria-label={tr('sources.tree.newFolder')}
                     onClick={() => startCreating('root', true)}
-                    className="rounded p-1 text-fg-faint hover:bg-[var(--color-hover)] hover:text-fg"
+                    className="press rounded p-1 text-fg-faint hover:bg-[var(--color-hover)] hover:text-fg"
                   >
                     <FolderPlus size={14} aria-hidden="true" />
                     <Tooltip label={tr('sources.tree.newFolder')} />

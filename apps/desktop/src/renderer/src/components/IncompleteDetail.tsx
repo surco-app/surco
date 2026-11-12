@@ -58,7 +58,7 @@ export function IncompleteDetail({
                         type="button"
                         data-testid={`incomplete-use-others-${field}`}
                         disabled={busy}
-                        className="text-[var(--color-accent)] hover:underline"
+                        className="press text-[var(--color-accent)] hover:underline"
                         onClick={() => {
                           for (const o of others) review.setFillValue(o.id, field, value)
                         }}
@@ -85,7 +85,7 @@ export function IncompleteDetail({
                   type="button"
                   data-testid="incomplete-open-editor"
                   disabled={busy}
-                  className="text-[var(--color-accent)] hover:underline"
+                  className="press text-[var(--color-accent)] hover:underline"
                   onClick={openEditor}
                 >
                   {t('musicReview.incomplete.openEditor')}

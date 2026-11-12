@@ -309,7 +309,7 @@ export const Field = memo(function Field({
                 type="button"
                 data-testid={`field-cleaned-undo-${name}`}
                 onClick={cleaned.onUndo}
-                className="text-[var(--color-accent)] hover:underline"
+                className="press text-[var(--color-accent)] hover:underline"
               >
                 {tr('editor.cleaned.undo')}
               </button>
@@ -377,7 +377,7 @@ export const Field = memo(function Field({
             type="button"
             data-testid={`field-previous-restore-${name}`}
             onClick={previous.onRestore}
-            className="text-fg-dim underline decoration-[var(--color-line-strong)] underline-offset-2 hover:text-fg hover:decoration-current"
+            className="press text-fg-dim underline decoration-[var(--color-line-strong)] underline-offset-2 hover:text-fg hover:decoration-current"
           >
             {tr('editor.previous.restore')}
           </button>

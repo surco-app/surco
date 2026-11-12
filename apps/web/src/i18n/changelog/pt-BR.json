@@ -1,5 +1,52 @@
 [
   {
+    "version": "1.33",
+    "date": "November 11, 2026",
+    "title": "Grades corrigidas em lote",
+    "items": [
+      {
+        "text": "Selecione várias faixas e o painel Cues diz quantas estão com a grade fora das batidas. “Ajustar” corrige só essas, e os cues e os CALL acompanham a grade. Nada é salvo até você apertar Salvar.",
+        "in": "1.33.0"
+      },
+      {
+        "text": "Se corrigir uma faixa puder tirar os cues do lugar, o Surco deixa como está e diz por quê, para você abrir ela mesmo. “Grade errada” agora encontra todas as faixas com a grade fora, inclusive as que antes escapavam.",
+        "in": "1.33.0"
+      },
+      {
+        "text": "“Ajustar grade” também está no editor de cues pequeno, antes de “Marcar automático”, e acende quando a faixa precisa.",
+        "in": "1.33.0"
+      },
+      {
+        "text": "Converta faixas que você tem no rekordbox ou no Traktor sem fechar o programa. O Surco guarda as mudanças e grava assim que você fecha.",
+        "in": "1.33.0"
+      },
+      {
+        "text": "Crie uma sessão ou edite playlists com o rekordbox, Traktor, Serato ou Engine DJ aberto. A mudança espera e é gravada quando você fecha o programa. No Engine DJ agora você também pode criar playlists, adicionar faixas e apagar playlists.",
+        "in": "1.33.0"
+      },
+      {
+        "text": "Cada faixa da lista mostra o tom ao lado da duração, na “Notação do tom” que você escolhe nas Configurações, agora chamada Alfanumérica e Clássica. Tons escritos de outros jeitos, como Abm ou Ab Major, também são lidos, então aparecem e mixam certo numa sessão.",
+        "in": "1.33.0"
+      },
+      {
+        "text": "Uma sessão agora parece uma playlist qualquer, com o tom de cada faixa. “Refazer” monta a sessão inteira de novo e só mantém a faixa com que você começou. Bases e vocais continuam alternando mesmo quando os tons não combinam.",
+        "in": "1.33.0"
+      },
+      {
+        "text": "“Enviar comentários” deixa você escrever para a gente sem sair do Surco, e está onde você puder precisar, até quando uma conversão falha. Coloque seu e-mail para a gente responder. Se não der para enviar, você pode tentar de novo ou copiar.",
+        "in": "1.33.0"
+      },
+      {
+        "text": "Com várias faixas selecionadas, você pode editar ou limpar “Comentário” em todas de uma vez.",
+        "in": "1.33.0"
+      },
+      {
+        "text": "Uma interface mais calma, com menos números repetidos, movimentos mais suaves e um esmaecimento ao trocar o tema entre claro e escuro.",
+        "in": "1.33.0"
+      }
+    ]
+  },
+  {
     "version": "1.32",
     "date": "November 10, 2026",
     "title": "Sessões com a cara dos seus sets",

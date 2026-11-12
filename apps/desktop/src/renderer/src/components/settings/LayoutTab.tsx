@@ -201,7 +201,7 @@ export function LayoutTab({ synced, patch }: Props): React.JSX.Element {
                     aria-label={tr('settings.moveUp')}
                     disabled={!canUp}
                     onClick={() => move(i, -1)}
-                    className="mx-auto rounded px-1.5 text-fg-muted hover:text-fg disabled:opacity-40"
+                    className="press mx-auto rounded px-1.5 text-fg-muted hover:text-fg disabled:opacity-40"
                   >
                     <ChevronUp className="h-4 w-4" aria-hidden="true" />
                   </button>
@@ -211,7 +211,7 @@ export function LayoutTab({ synced, patch }: Props): React.JSX.Element {
                     aria-label={tr('settings.moveDown')}
                     disabled={!canDown}
                     onClick={() => move(i, 1)}
-                    className="mx-auto rounded px-1.5 text-fg-muted hover:text-fg disabled:opacity-40"
+                    className="press mx-auto rounded px-1.5 text-fg-muted hover:text-fg disabled:opacity-40"
                   >
                     <ChevronDown className="h-4 w-4" aria-hidden="true" />
                   </button>

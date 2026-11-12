@@ -84,7 +84,6 @@ describe('traktorCueSource', () => {
     const cues = source()
     for (const file of FILES) {
       await cues.trackCues(traktorContentId(keyOf(file)))
-      await cues.gridVerdict(traktorContentId(keyOf(file)))
     }
     expect(reads.count).toBe(1)
   })
@@ -93,7 +92,6 @@ describe('traktorCueSource', () => {
     const cues = source()
     for (const file of FILES) {
       await cues.trackCues(traktorContentId(keyOf(file)))
-      await cues.gridVerdict(traktorContentId(keyOf(file)))
     }
     expect(reads.scans).toBe(1)
   })

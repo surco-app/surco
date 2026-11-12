@@ -8,7 +8,7 @@ import type { TrackCues } from '../../../shared/types'
 import { cueDropInputQuery, cueWaveDetailQuery, trackCuesQuery } from '../hooks/useTrackCues'
 import { installApi } from '../test/api'
 import { startDraft } from './cueDraft'
-import { cueOutcomeOf, recordCueEdits } from './cueTasteEdits'
+import { recordCueEdits } from './cueTasteEdits'
 
 const GRID = Array.from({ length: 400 }, (_, i) => ({ ms: i * 500, beat: (i % 4) + 1 }))
 const bar = (n: number) => n * 2000
@@ -123,52 +123,6 @@ describe('recordCueEdits', () => {
 
     it('calls a track manual when none of the proposed drops survived', () => {
       expect(recorded([{ ms: bar(2), kind: 0 }]).outcome).toBe('manual')
-    })
-  })
-
-  describe('what the editor says while the DJ is still marking', () => {
-    const PER_BAR = 300
-    const words = new Uint16Array(40 * PER_BAR)
-    const input: DropInput = (() => {
-      let at = 0
-      for (const [bars, low] of [
-        [16, 7],
-        [8, 0],
-        [16, 7],
-      ]) {
-        words.fill((low << 13) | (3 << 10) | (2 << 7) | (20 << 2), at, at + bars * PER_BAR)
-        at += bars * PER_BAR
-      }
-      return { grid: GRID, phrases: [], words }
-    })()
-    const draftOf = (cues: { ms: number; kind: number }[]) => drafted(cues)
-
-    it('says nothing is different while the marks are the ones Auto proposed', () => {
-      const { client } = setup()
-      client.setQueryData(cueDropInputQuery('engine:4').queryKey, input)
-      const proposed = detectDrops(input).map((ms) => ({ ms, kind: 0 }))
-      expect(cueOutcomeOf(client, 'engine:4', draftOf(proposed))).toBe('accepted')
-    })
-
-    it('says the DJ changed what Auto proposed, or marked their own, as soon as the marks differ', () => {
-      const { client } = setup()
-      client.setQueryData(cueDropInputQuery('engine:4').queryKey, input)
-      const proposed = detectDrops(input).map((ms) => ({ ms, kind: 0 }))
-      expect(
-        cueOutcomeOf(client, 'engine:4', draftOf([...proposed, { ms: bar(2), kind: 0 }])),
-      ).toBe('corrected')
-      expect(cueOutcomeOf(client, 'engine:4', draftOf([{ ms: bar(2), kind: 0 }]))).toBe('manual')
-    })
-
-    it('says nothing when the track has not been read yet, rather than guessing', () => {
-      const { client } = setup()
-      expect(cueOutcomeOf(client, 'engine:4', draftOf([{ ms: bar(2), kind: 0 }]))).toBeNull()
-    })
-
-    it('says nothing while the draft has no drop marked', () => {
-      const { client } = setup()
-      client.setQueryData(cueDropInputQuery('engine:4').queryKey, input)
-      expect(cueOutcomeOf(client, 'engine:4', draftOf([]))).toBeNull()
     })
   })
 })

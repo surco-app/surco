@@ -39,9 +39,9 @@ export type SettingsTab =
   | 'advanced'
 
 // A sidebar row. `id` is its first tab, the one a click opens; a row that joins several tabs
-// shows them as a switcher above the panel, so fifteen tabs read as ten short rows. The
+// shows them as a switcher above the panel, so fifteen tabs read as eleven short rows. The
 // joined tabs are the ones read together: the editor with its sections and fields, format
-// with processing, naming with the output, shortcuts with stats.
+// with processing, naming with the output.
 export interface SettingsEntry {
   id: SettingsTab
   tabs: SettingsTab[]
@@ -54,19 +54,25 @@ const entry = (id: SettingsTab, ...more: SettingsTab[]): SettingsEntry => ({
 
 // The sidebar, grouped so the rows scan as four short runs instead of one long list.
 // `heading` is an i18n key under settings.tabGroups (null on the opening group, which needs
-// no label). Ordered by workflow within and across groups: set up the app and its sources,
-// then how you edit metadata, then how the file is produced, then the utilities.
+// no label). Ordered by workflow within and across groups: everyday app preferences, then
+// how you find and edit metadata, then what converting applies, then stats and maintenance,
+// with Advanced last as on macOS.
 export const SETTINGS_ENTRY_GROUPS: { heading: string | null; entries: SettingsEntry[] }[] = [
-  { heading: null, entries: [entry('general'), entry('search')] },
+  { heading: null, entries: [entry('general'), entry('shortcuts')] },
   {
     heading: 'editing',
-    entries: [entry('editor', 'layout', 'fields'), entry('artwork'), entry('cues')],
+    entries: [
+      entry('search'),
+      entry('editor', 'layout', 'fields'),
+      entry('artwork'),
+      entry('cues'),
+    ],
   },
   {
-    heading: 'output',
+    heading: 'conversion',
     entries: [entry('conversion', 'processing'), entry('naming', 'destination'), entry('programs')],
   },
-  { heading: 'app', entries: [entry('shortcuts', 'stats'), entry('advanced')] },
+  { heading: 'app', entries: [entry('stats'), entry('advanced')] },
 ]
 
 export const SETTINGS_ENTRIES: SettingsEntry[] = SETTINGS_ENTRY_GROUPS.flatMap((g) => g.entries)

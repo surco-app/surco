@@ -153,7 +153,7 @@ describe('CuesSection on a Traktor track', () => {
     await ready()
     await waitFor(() => expect(screen.getByTestId('cues-auto-mark')).toBeDisabled())
     expect(screen.getByTestId('cues-traktor-no-collection')).toHaveTextContent(
-      'Choose your collection.nml in Settings → Output → Traktor so Surco can save',
+      'Choose your collection.nml in Settings → DJ software → Traktor so Surco can save',
     )
     markAt(bar(8))
     expect(screen.getByTestId('cues-save')).toBeDisabled()

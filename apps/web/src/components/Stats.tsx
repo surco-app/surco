@@ -17,6 +17,12 @@ import ScrollProgress from './ScrollProgress'
 // fresh figures without a redeploy.
 const STATS_URL = 'https://raw.githubusercontent.com/surco-app/surco-releases/stats/stats.json'
 
+export const fetchStats = () =>
+  fetch(STATS_URL).then((res) => {
+    if (!res.ok) throw new Error(`GitHub returned ${res.status}`)
+    return res.json() as Promise<Stats>
+  })
+
 const W = 720
 const LEFT = 52
 const RIGHT = 12
@@ -31,7 +37,7 @@ function niceMax(value: number): number {
 
 const ticks = (max: number) => [0, 1, 2, 3, 4].map((i) => (max / 4) * i)
 
-function useFormat() {
+export function useFormat() {
   const { i18n } = useTranslation()
   const lang = i18n.language
   const number = new Intl.NumberFormat(lang, {
@@ -322,11 +328,7 @@ export default function StatsPage() {
 
   useEffect(() => {
     let cancelled = false
-    fetch(STATS_URL)
-      .then((res) => {
-        if (!res.ok) throw new Error(`GitHub returned ${res.status}`)
-        return res.json() as Promise<Stats>
-      })
+    fetchStats()
       .then((data) => {
         if (!cancelled) setStats(data.days.length > 0 ? data : 'error')
       })

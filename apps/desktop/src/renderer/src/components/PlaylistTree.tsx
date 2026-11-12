@@ -304,7 +304,7 @@ export function PlaylistTree({
             if (row.target.id) setFolder(row.target.id, !row.open)
           }}
           style={{ left: 8 + row.depth * 18 }}
-          className="absolute top-0 flex h-7 w-3 items-center text-fg-faint"
+          className="press absolute top-0 flex h-7 w-3 items-center text-fg-faint"
         >
           {row.open ? (
             <ChevronDown size={12} aria-hidden="true" />

@@ -6,7 +6,7 @@ evidencia en `fichero:línea`. Lo que aquí no está, no se puede prometer en la
 Documento de referencia: sirve para redactar la home, llenar `/funciones` y
 saber qué NO decir.
 
-**Última revisión: 12 de noviembre de 2026** (rama `virtualdj`, sin publicar: VirtualDJ como quinto programa de DJ, con su pestaña, listas editables, cues, conversión que lo sigue, USB y Copias, solo en macOS, y la tabla por programa de `/funciones`; antes, el 10 de noviembre, v1.32.0, sesión automática que sortea sus pistas en vez de tomar siempre la mejor, aprende de las Mezcladas el margen de tempo y el peso del tono, sube poco a poco de tempo, da su parte del set a las playlists de apertura, cierre y fijas, abre siempre con un vocal, no aprende de las sesiones que escribió Surco y no repite un tema en dos ficheros, «Sesión desde esta pista…» y candados que «Rehacer» respeta, grupos Bases y Vocales, quitar una pista de una playlist abierta la quita siempre de la playlist; antes v1.31.0, «Sesión automática…» que monta una playlist en rekordbox, Traktor o Serato con papeles por playlist, combos de las Mezcladas, gusto, Camelot y pistas nuevas, con el porqué de cada pista y «Cambiar»; «Clavar» la rejilla y seis comprobaciones bajo la onda de toda la pista, Auto que ya no salta medio golpe al contratiempo, onda ampliada de los cues medida del audio a 1000 niveles por segundo, Play al instante; antes v1.30.0, Auto marcar que aprende solo del DJ sin botón de aprender y con las ediciones de cues compartidas entre Macs por la carpeta de ajustes, rejilla que Surco deja bloqueada en rekordbox, Traktor y Engine DJ y que se puede corregir y guardar encima aunque esté bloqueada, cues que acompañan a la rejilla al cambiarla, asistente de primer arranque que pregunta si es el primer Mac y trae los ajustes sincronizados, restaurar una copia que conserva las rutas de este Mac que no existen en la copia; antes v1.29.0, playlists y carpetas que se mueven arrastrándolas en el árbol de rekordbox, Traktor y Serato, árbol que pinta crear, renombrar, borrar y mover antes de que el programa escriba, aviso con «Deshacer» tras Buscar y reemplazar, rellenar toda la lista y los botones de Tag, revisión del tracklist con una casilla por fila y filtros por nivel, lectura de tracklists de YouTube escritos a mano, Ajustes en diez filas, botón de ayuda en la barra de herramientas, acciones de archivo de la cabecera de metadatos en «Más acciones»; antes v1.28.0, «Pegar tracklist…» sobre una playlist de rekordbox, Traktor o Serato y «Nueva playlist desde tracklist…» sobre una carpeta, con revisión por niveles antes de escribir; en las pestañas de los programas de DJ «Convertir» solo convierte lo seleccionado, ⌘⏎ convierte la selección, el botón y el plan del editor dicen qué se queda fuera; antes v1.27.0, menú de filtros por secciones con búsqueda y filtros puestos bajo la barra, filtros «Escucha», «Selección» y «Estrellas» y orden por estrellas, filtro «Mejor que Music», «Rejilla mal» y «Mejor que Music» medidos con el análisis y con anillo de progreso, sesión reabierta con filtros, orden, búsqueda, selección, escuchadas y posición, barrido en dos fases a un hilo que solo se frena con un programa de DJ abierto; antes v1.26.0, pestaña «Programas de DJ» en Ajustes y pregunta por el programa al empezar, condiciones «hasta la marca anterior» y «si no viene otro cue en los siguientes» en los flujos, vista previa del flujo sobre la pista seleccionada con cues que se quedan fuera, flujo aprendido desde el +, Auto marcar a más de 32 compases entre propuestas, copiar y pegar metadatos y Mostrar en Finder desde la cabecera, pistas fuera de «Convertir todas» por campo obligatorio, análisis que solo se pausa con un programa de DJ abierto; antes v1.25.0, campo «Calidad» con el veredicto del análisis, autocomprobación de las playlists de rekordbox, Traktor y Engine DJ, búsqueda solo de lo seleccionado fuera de la pestaña de ficheros y columna de resultados plegable, recuentos de los filtros combinados, la playlist abierta se analiza primero; antes v1.24.0, USB de Pioneer desde Serato y Traktor, crates de Serato editables, ajuste «Biblioteca de Serato» con Actualizar y Actualizar y añadir, crates de Serato elegidos en el editor, «Auto» de la rejilla que lleva los cues al golpe, Auto marcar en pistas que rekordbox no ha analizado; antes v1.23.0, cues de Serato escritos en el fichero con Serato cerrado, editor y flujos de cues en Serato, cues de Serato conservados al convertir, rejilla de Serato leída, Music relee una pista reescrita en su sitio, original renombrado que se queda si otro programa lo usa, título, artista, álbum y género cambiados al convertir que llegan a Traktor y Engine DJ, cambios de biblioteca que sobreviven a una recarga; antes v1.22.0, ajuste de la rejilla en el editor de cues maximizado con guardado en rekordbox, Traktor y Engine DJ, filtro «Rejilla mal», cues fuera del golpe señalados y «Al golpe», pestaña de Serato de solo lectura, MP3 de iTunes a tiempo en Traktor; antes v1.21.0, filtro «Cues fuera de la rejilla» en rekordbox, Traktor y Engine DJ con su tolerancia en Ajustes › Cues; antes v1.20.0, espectros de las dos copias en la comparación con la biblioteca, editor de cues sin vista previa en reposo, barra de propuestas de Auto marcar, un solo Guardar en el editor plegado, reproductor que se cierra al cambiar de pestaña; antes v1.19.0, filtro Incompletas en la revisión, valores de un campo mezclado, deshacer «Borrar metadatos», 32 bits a 24 bajo «Corregido», fechas y auto-match recordados; antes filtro Daños en «Revisar metadatos de la lista…»; antes v1.18.0, autocomprobación tras convertir, sustituir al cambiar de formato, pantalla Copias, carpeta Artista/Álbum en Music, grouping y totales; antes v1.17.0, elección por programa de DJ, cola de Engine DJ abierto, búsqueda en Ajustes, deshacer y rehacer, «Antes:» por campo, archivos dañados, orden por BPM/tonalidad/año/calidad). Levantado por primera vez el
+**Última revisión: 12 de noviembre de 2026** (rama `virtualdj`, sin publicar: VirtualDJ como quinto programa de DJ, con su pestaña, listas editables, cues, conversión que lo sigue, USB y Copias, solo en macOS, y la tabla por programa de `/funciones`; antes, el 11 de noviembre, v1.33.0, bloque «Rejilla» en el panel de Cues con varias pistas que ajusta solo las que tienen la rejilla fuera de los golpes, mueve con ella los cues y CALL sin guardar hasta «Guardar» y aparta con su motivo las que el ajuste descolocaría, con «Deshacer el ajuste»; «Rejilla mal» con el mismo criterio de corrida y deriva, medido en la ventana, que ve corridas grandes que antes se escapaban; «Ajustar rejilla» en la cabecera del editor de cues pequeño, antes de «Auto marcar»; convertir pistas de rekordbox y Traktor con el programa abierto, con los cambios en cola sin preguntar; montar una sesión con rekordbox, Traktor, Serato o Engine DJ abierto, esperando en la cola; crear playlists, añadir pistas y borrar playlists en Engine DJ; tonalidad en cada fila en la notación elegida, ahora Alfanumérica o Clásica, y lectura de grafías como Abm, Gbmin o Ab Major; sesiones que se ven como cualquier playlist, sin línea de motivos, candados ni «Cambiar», con «Rehacer» que solo conserva la pista de arranque y bases y vocales que se alternan antes que el tono; diálogo «Enviar comentarios»; «Comentario» editable con varias pistas; antes v1.32.0, sesión automática que sortea sus pistas en vez de tomar siempre la mejor, aprende de las Mezcladas el margen de tempo y el peso del tono, sube poco a poco de tempo, da su parte del set a las playlists de apertura, cierre y fijas, abre siempre con un vocal, no aprende de las sesiones que escribió Surco y no repite un tema en dos ficheros, «Sesión desde esta pista…» y candados que «Rehacer» respeta, grupos Bases y Vocales, quitar una pista de una playlist abierta la quita siempre de la playlist; antes v1.31.0, «Sesión automática…» que monta una playlist en rekordbox, Traktor o Serato con papeles por playlist, combos de las Mezcladas, gusto, Camelot y pistas nuevas, con el porqué de cada pista y «Cambiar»; «Clavar» la rejilla y seis comprobaciones bajo la onda de toda la pista, Auto que ya no salta medio golpe al contratiempo, onda ampliada de los cues medida del audio a 1000 niveles por segundo, Play al instante; antes v1.30.0, Auto marcar que aprende solo del DJ sin botón de aprender y con las ediciones de cues compartidas entre Macs por la carpeta de ajustes, rejilla que Surco deja bloqueada en rekordbox, Traktor y Engine DJ y que se puede corregir y guardar encima aunque esté bloqueada, cues que acompañan a la rejilla al cambiarla, asistente de primer arranque que pregunta si es el primer Mac y trae los ajustes sincronizados, restaurar una copia que conserva las rutas de este Mac que no existen en la copia; antes v1.29.0, playlists y carpetas que se mueven arrastrándolas en el árbol de rekordbox, Traktor y Serato, árbol que pinta crear, renombrar, borrar y mover antes de que el programa escriba, aviso con «Deshacer» tras Buscar y reemplazar, rellenar toda la lista y los botones de Tag, revisión del tracklist con una casilla por fila y filtros por nivel, lectura de tracklists de YouTube escritos a mano, Ajustes en diez filas, botón de ayuda en la barra de herramientas, acciones de archivo de la cabecera de metadatos en «Más acciones»; antes v1.28.0, «Pegar tracklist…» sobre una playlist de rekordbox, Traktor o Serato y «Nueva playlist desde tracklist…» sobre una carpeta, con revisión por niveles antes de escribir; en las pestañas de los programas de DJ «Convertir» solo convierte lo seleccionado, ⌘⏎ convierte la selección, el botón y el plan del editor dicen qué se queda fuera; antes v1.27.0, menú de filtros por secciones con búsqueda y filtros puestos bajo la barra, filtros «Escucha», «Selección» y «Estrellas» y orden por estrellas, filtro «Mejor que Music», «Rejilla mal» y «Mejor que Music» medidos con el análisis y con anillo de progreso, sesión reabierta con filtros, orden, búsqueda, selección, escuchadas y posición, barrido en dos fases a un hilo que solo se frena con un programa de DJ abierto; antes v1.26.0, pestaña «Programas de DJ» en Ajustes y pregunta por el programa al empezar, condiciones «hasta la marca anterior» y «si no viene otro cue en los siguientes» en los flujos, vista previa del flujo sobre la pista seleccionada con cues que se quedan fuera, flujo aprendido desde el +, Auto marcar a más de 32 compases entre propuestas, copiar y pegar metadatos y Mostrar en Finder desde la cabecera, pistas fuera de «Convertir todas» por campo obligatorio, análisis que solo se pausa con un programa de DJ abierto; antes v1.25.0, campo «Calidad» con el veredicto del análisis, autocomprobación de las playlists de rekordbox, Traktor y Engine DJ, búsqueda solo de lo seleccionado fuera de la pestaña de ficheros y columna de resultados plegable, recuentos de los filtros combinados, la playlist abierta se analiza primero; antes v1.24.0, USB de Pioneer desde Serato y Traktor, crates de Serato editables, ajuste «Biblioteca de Serato» con Actualizar y Actualizar y añadir, crates de Serato elegidos en el editor, «Auto» de la rejilla que lleva los cues al golpe, Auto marcar en pistas que rekordbox no ha analizado; antes v1.23.0, cues de Serato escritos en el fichero con Serato cerrado, editor y flujos de cues en Serato, cues de Serato conservados al convertir, rejilla de Serato leída, Music relee una pista reescrita en su sitio, original renombrado que se queda si otro programa lo usa, título, artista, álbum y género cambiados al convertir que llegan a Traktor y Engine DJ, cambios de biblioteca que sobreviven a una recarga; antes v1.22.0, ajuste de la rejilla en el editor de cues maximizado con guardado en rekordbox, Traktor y Engine DJ, filtro «Rejilla mal», cues fuera del golpe señalados y «Al golpe», pestaña de Serato de solo lectura, MP3 de iTunes a tiempo en Traktor; antes v1.21.0, filtro «Cues fuera de la rejilla» en rekordbox, Traktor y Engine DJ con su tolerancia en Ajustes › Cues; antes v1.20.0, espectros de las dos copias en la comparación con la biblioteca, editor de cues sin vista previa en reposo, barra de propuestas de Auto marcar, un solo Guardar en el editor plegado, reproductor que se cierra al cambiar de pestaña; antes v1.19.0, filtro Incompletas en la revisión, valores de un campo mezclado, deshacer «Borrar metadatos», 32 bits a 24 bajo «Corregido», fechas y auto-match recordados; antes filtro Daños en «Revisar metadatos de la lista…»; antes v1.18.0, autocomprobación tras convertir, sustituir al cambiar de formato, pantalla Copias, carpeta Artista/Álbum en Music, grouping y totales; antes v1.17.0, elección por programa de DJ, cola de Engine DJ abierto, búsqueda en Ajustes, deshacer y rehacer, «Antes:» por campo, archivos dañados, orden por BPM/tonalidad/año/calidad). Levantado por primera vez el
 2026-07-30 y revisado contra el código el 2026-09-02, cuando cinco releases lo
 habían dejado atrás: daba por perdidos cues que hoy se conservan y publicaba
 umbrales del espectro que el código había recalibrado.
@@ -727,6 +727,16 @@ compensación de afinación, los sintetizadores y las voces pueden despistarlo),
 que es exactamente por qué el resultado solo se ofrece como sugerencia»*
 (`musicalKey.ts:6-9`).
 
+**La tonalidad en la lista** (v1.33.0). Cada fila lleva la tonalidad de la pista en una pastilla
+junto a la duración, antes del formato (`track-key`, `TrackList.tsx:894`), en la notación de
+Ajustes › Editor, «Notación de la tonalidad», que ahora se llama Alfanumérica (8A) o Clásica (Am)
+como en rekordbox (`settings.keyNotations`, `keyNotation: 'camelot'` por defecto,
+`settings.ts:164`; `keyIn`, `shared/camelot.ts:30`). Se leen las dos grafías de cada nota, en
+mayúsculas o minúsculas, y con mayor o menor en palabras: Abm, G#m, Gbmin o Ab Major dan el mismo
+tono (`camelotOf`, `shared/camelot.ts:20`; `WORDED`, `:5`; `ENHARMONIC`, `shared/keyNames.ts`), así
+que también se ordenan y mezclan bien en una sesión. Una tonalidad que no se reconoce se muestra
+tal cual. Solo cambia cómo se ve: el valor del campo no se reescribe.
+
 ---
 
 ## 8. Metadatos
@@ -757,6 +767,11 @@ parten (`bulkEdit.ts:46`). Al aplicar Discogs, Género sigue recibiendo solo el
 principal. Un plegado «Por
 pista · N» lista cada pista con sus propias pastillas, y las activas se ordenan
 delante para que el recorte «+N» no las esconda.
+
+**«Comentario» con varias pistas** (v1.33.0). Comentario se ofrece también en el editor de
+varias pistas, para escribir uno para todas o vaciarlo en todas a la vez, por ejemplo la nota de
+una web de descargas (`BULK_FIELDS`, `lib/bulkEdit.ts:10`, `'comment'` en `:24`). Título, nº de
+pista, BPM, tonalidad y remixer siguen fuera del lote.
 
 **Un campo mezclado enseña sus valores** (v1.19.0). Con varias pistas, un campo de texto
 cuyo valor difiere entre ellas cuenta cuántos valores distintos lleva, los lista con
@@ -1297,8 +1312,10 @@ y separadores (`traktorPlaylistEdit.ts`). Las listas propias de Traktor (Prepara
 HISTORY, _LOOPS y _RECORDINGS) no se renombran ni se borran, y HISTORY no se edita
 (`TRAKTOR_BUILT_IN`, `shared/traktorContent.ts:12`). Una pista que no está en la colección
 no se da de alta: se salta y se avisa, igual que en rekordbox
-(`notInCollection`, `traktorPlaylistEdit.ts:154`). Toda escritura pide cerrar Traktor y
-espera en cola si sigue abierto (`ensureTraktorClosed`, `index.ts:476`), relee la colección
+(`notInCollection`, `traktorPlaylistEdit.ts:154`). Una edición del árbol pide cerrar Traktor y
+espera en cola si sigue abierto (`ensureClosed`, `traktorPlaylistEditIpc.ts:62`); una sesión
+(desde v1.33.0) y una conversión esperan sin preguntar (`:61`; `closedWithoutAsking`,
+`libraryFlushes.ts:92`, `:402`). Después relee la colección
 después de que Traktor guarde al salir (`applyTraktorBatch`, `traktorCuesWrite.ts:122`) y
 guarda antes una copia `.surco-session` por tanda.
 
@@ -1562,8 +1579,11 @@ playlist exige que la pista traiga tags con los que describirla (`trackOpsFromRu
 `rekordboxQueueFromRun.ts:30`); en Traktor y rekordbox se distingue del resto de cambios con
 `op.add` (`traktorPlaylistEdit.ts:213`, `rekordboxPlaylistWrite.ts:232`).
 
-**Con el programa abierto.** Las altas de rekordbox, Traktor y Engine DJ esperan en la cola de
-cada programa, como las playlists (`libraryFlushes.ts:177`, `:238`). Con Engine DJ abierto, una
+**Con el programa abierto.** Las altas y los repuntes de rekordbox, Traktor y Engine DJ esperan
+en la cola de cada programa, como las playlists, y desde v1.33.0 sin preguntar si se cierra el
+programa: la tanda mira si corre y, si corre, lo deja en la cola, que se escribe al cerrarse
+(`closedWithoutAsking`, `libraryFlushes.ts:92`, usado en `:402`, `:477` y `:531`). Antes rekordbox
+y Traktor pedían cerrarlos en mitad de la conversión. Con Engine DJ abierto, una
 conversión con Engine en «Actualizar y añadir» no pregunta ni falla: la pista queda en la cola de
 Engine, la misma de los cues y las playlists, y se da de alta al cerrarse Engine, con la carátula
 incrustada en el fichero (`planEngineTrackPlaylists`, `engineTrackPlaylists.ts:112`;
@@ -1635,7 +1655,8 @@ playlists las elige el campo Playlists de la pista.
 `isAnalyzed = 0`, para que Engine analice el audio él mismo al primer load.
 
 **Salvaguardas:** backup antes de cada escritura, escritura atómica, y **se niega
-a escribir con Engine DJ abierto** (las altas de una conversión esperan en su cola). Si no puede saber si está abierto (la consulta del
+a escribir con Engine DJ abierto** (las altas de una conversión y, desde v1.33.0, las ediciones de
+playlists esperan en su cola). Si no puede saber si está abierto (la consulta del
 proceso falla), lo da por abierto, como rekordbox y Traktor (desde v1.12.0,
 `engineProcess.ts:23`) — Engine carga la biblioteca al arrancar y no
 la relee, así que una escritura sería invisible en el mejor caso y machacada en
@@ -1824,9 +1845,12 @@ tres atributos en un diff de la colección entera (`traktorNml.ts:1-4`).
 falla, se responde «puede que esté abierto» en vez de dar vía libre
 (`traktorProcess.ts:32`, `:41`). Igual que Engine DJ: Traktor carga el `.nml` al
 arrancar y lo reescribe entero al salir, así que escribir con él abierto sería
-invisible en el mejor caso y revertido en el peor. Surco se ofrece a cerrarlo, y
-si el usuario declina no escribe y avisa (`traktorNmlLibrary.ts:28`, `:57`;
-`index.ts:213` `ensureTraktorClosed`).
+invisible en el mejor caso y revertido en el peor. Desde v1.33.0 una conversión con Traktor
+abierto ya no pregunta: si hay cola de Traktor, los cambios de la tanda esperan en ella y se
+escriben al cerrarse Traktor (`traktorHold`, `closedWithoutAsking(isTraktorRunning)`,
+`libraryFlushes.ts:393`, `:402`; `holdInQueue`, `traktorPatchQueue.ts:50`). Fuera de la
+conversión (otras escrituras de la colección) Surco se ofrece a cerrarlo, y si el usuario
+declina no escribe y avisa (`ensureTraktorClosed`, `traktorSyncFlush.ts:39`).
 
 Salvaguardas notables: un árbol de cues ilegible **no borra** los hotcues
 existentes; una rejilla existente se rescata cuando no hay BPM; y un lote de 300
@@ -1882,7 +1906,9 @@ la copia con ellos (`restoreCollection`, `rekordboxSessionBackup.ts`).
 
 **Exige rekordbox cerrado**, comprobado dos veces: antes de leer y otra vez tras la copia,
 para estrechar la ventana (`rekordboxLibrary.ts:159`, `:192`). **Si está abierto, espera.**
-Desde v1.9.0 los repuntes bloqueados entran en la cola de rekordbox
+Desde v1.33.0 la conversión ni siquiera pregunta si se cierra: comprueba si rekordbox corre y,
+si corre, deja el repunte en la cola (`ensureClosed: closedWithoutAsking(isRekordboxRunning)`,
+`libraryFlushes.ts:477`). Desde v1.9.0 los repuntes bloqueados entran en la cola de rekordbox
 (`rekordboxQueueFromRun.ts:87`), que se guarda en disco y se aplica sola al cerrar rekordbox,
 y una pastilla dice cuántas pistas esperan (`rekordboxQueue.pill*`). Antes se omitían.
 **La guarda falla cerrada**: si no
@@ -1975,8 +2001,20 @@ con ese nombre, sin distinguir mayúsculas, o si se suelta dentro de sí mismo
 (`seratoNameTaken`, `seratoCrateEdits.ts:73`; `:357`). Si el crate movido estaba abierto, se
 reabre bajo su nombre nuevo cuando Serato ya lo ha escrito (`movedCrateId`,
 `playlistEdits.ts:117`). Si Surco mismo quita o mueve la playlist que estaba abierta, la lista no
-avisa de que «ya no está» (`ownRemovals.ts`). Engine DJ no lo ofrece, porque Surco no escribe
+avisa de que «ya no está» (`ownRemovals.ts`). Engine DJ no lo ofrece, porque Surco no mueve
 sus playlists.
+
+**Playlists de Engine DJ** (nuevo en v1.33.0). En la pestaña de Engine DJ se crean playlists,
+se les añaden pistas (soltándolas o desde el menú de la pista) y se borran, y solo eso: no hay
+carpetas nuevas, renombrar, mover, quitar una pista, reordenar ni separadores, y el árbol solo
+ofrece lo que el escritor sabe hacer (`kinds`, `folders: false`, `lib/sourcePrograms.ts:127`;
+`editCan`, `App.tsx`). Se escribe en la base de Engine por su cola, la misma de los cues y las
+altas (`applyEngineEdit`, `engineEdits.ts:199`; `engineEdit`, `enginePlaylistEditIpc.ts:11`).
+Una pista que no está en la biblioteca de Engine no se da de alta: se cuenta y se avisa
+(`notInCollection`, `engineEdits.ts:52`). Con Engine DJ abierto, una edición del árbol pide
+cerrarlo una vez y, si sigue abierto, espera en la cola; una sesión espera sin preguntar
+(`enginePlaylistEditIpc.ts:39-43`). Solo hay tests contra copias de la base
+(`engineEdits.test.ts`); no está probado en un Engine DJ real.
 
 **Pegar un tracklist** (nuevo en v1.28.0). En el menú de una playlist de rekordbox, Traktor
 o Serato, «Pegar tracklist…» abre un modal de dos pasos (`PasteTracklistModal.tsx`): se pega
@@ -2002,8 +2040,9 @@ nombra el tracklist (`mixScore`, `lib/tracklistMatch.ts`); una línea sin guion 
 título se empareja como parecida si coincide con «artista título» de una candidata. Medido contra una colección real de 2100
 pistas con tres sets (96 líneas): el set de 31 que el usuario había pasado a mano dio 28
 solas y 3 con un clic, 0 falsas (`tracklistMatch.test.ts`, con un fixture de 1234 pistas).
-Engine DJ no lo ofrece porque Surco no escribe sus playlists; los títulos en alfabetos no
-latinos no se emparejan.
+En Engine DJ el menú «Pegar tracklist…» aparece desde v1.33.0, pero Surco no lee su colección
+para emparejar (`collection: false`, `lib/sourcePrograms.ts:38`), así que no encuentra ninguna
+pista; no prometerlo para Engine DJ. Los títulos en alfabetos no latinos no se emparejan.
 
 **El campo Playlists.** En el editor, «Playlists» elige en qué playlists de rekordbox está
 cada pista, también sobre varias a la vez, y puede crear una playlist nueva al escribir
@@ -2032,8 +2071,9 @@ seleccionada y sus cues abiertas (`useLibraryReveals.ts`, `lib/revealCue.ts`).
 
 **Con rekordbox abierto, los cambios esperan.** Cada gesto pide cerrarlo una vez; si sigue
 abierto, el cambio entra en una cola guardada en disco (`rekordboxQueue.ts`) que se aplica
-sola al cerrar rekordbox, y una pastilla dice cuántos cambios esperan. La cola se puede
-descartar. Desde v1.14.0 hay una cola por colección, en el mismo fichero
+sola al cerrar rekordbox, y una pastilla dice cuántos cambios esperan. Desde v1.33.0 una sesión
+automática no pregunta: entra directa en la cola (`'queue'`, `rekordboxPlaylistsIpc.ts:165`), y
+la pastilla nombra lo que espera. La cola se puede descartar. Desde v1.14.0 hay una cola por colección, en el mismo fichero
 (`createRekordboxQueue`, `rekordboxQueue.ts`), igual para Engine DJ y Traktor: lo que se
 preparó para otra colección espera en la suya, nunca se aplica a la actual y se aplica al
 volver a ella. La pastilla cuenta lo de la colección en uso y avisa de lo que espera a otra
@@ -2057,7 +2097,9 @@ playlists que ya tiene el DJ. Se abre desde la paleta de comandos (`commands.new
 el menú de una carpeta del árbol y, sobre una playlist vacía, con «Rellenar con una sesión…»
 (`source-tree-session`, `source-tree-fill-session`, `SourceTree.tsx:754`). Va donde va la edición
 del árbol (`edit={editableSource ? treeEdit : undefined}`, `App.tsx`), así que rekordbox, Traktor
-(con la colección confirmada) y Serato; Engine DJ no, porque Surco no escribe sus playlists.
+(con la colección confirmada), Serato y, desde v1.33.0, Engine DJ, que ya acepta crear playlists y
+añadirles pistas (`kinds`, `lib/sourcePrograms.ts:127`). En Engine DJ solo está probado en tests
+(`engineEdits.test.ts`), no en un Engine DJ real.
 
 **Tres pasos** (`SessionWizard.tsx`, `SessionWizardSteps.tsx`). Duración (60, 90 min, 2 h, 3 h u
 otra; por defecto 90). Playlists, elegidas en el mismo árbol del editor, cada una con su papel:
@@ -2084,7 +2126,7 @@ que toca está a ±8 se toma la de tempo más cercano antes que repetir el rol (
 el 10-11 esos dos márgenes se aprenden de las Mezcladas elegidas cuando dan al menos 30 saltos
 medidos: la mediana del salto de BPM y su percentil 80 (`learnMixing`, `shared/sessionLearn.ts`).
 De ahí sale también cuánto pesa el tono, según cuánto superan esos sets al azar en transiciones
-armónicas (`keyCare`); «Cambiar» usa los mismos márgenes. Las sesiones que escribió Surco en ese
+armónicas (`keyCare`). Las sesiones que escribió Surco en ese
 Mac no enseñan nada, ni combos ni márgenes: se recuerdan por id (`sessionsMade`, local) para que
 una sesión guardada en una carpeta de sets no se dé la razón a sí misma.
 
@@ -2095,16 +2137,16 @@ artista seguido pesa un 30 % (`pickWeighted`, `liking`, `keyWeight`, `actWeight`
 siempre una cantada si las hay, porque una canción con voz abre mejor (lo pidió el DJ; 15 de sus
 23 bolos ya abren así), y se sortea entre los combos que salen de una cantada, con más peso cuanto
 más probado; «Sesión desde esta pista…» manda sobre esto. Un mismo tema no suena dos veces aunque
-esté en dos ficheros (`song`, `lib/sessionCandidates.ts`), y «Cambiar» no ofrece el otro fichero.
-La línea dice «de las mejores que cuadran» solo si la pista está en el cuarto con más gusto de las
-que cabían. Dos nuevas nunca van seguidas. Una pista fijada sigue en su posición aunque el hueco
-de antes no tenga ninguna en tono: se llena fuera de tono antes que correrla. **Fases**: las
+esté en dos ficheros (`song`, `lib/sessionCandidates.ts`). Dos nuevas nunca van seguidas.
+**Alternar va antes que el tono** (v1.33.0): si ninguna pista del rol que toca casa en tono, se
+toma una del rol aunque no case, antes que repetir rol (`fit = fitTier(..., 'free')`,
+`shared/sessionBuild.ts:307`), así que la sesión no encadena vocales cuando ninguna base mezcla
+por tono. **Fases**: las
 playlists elegidas que se llaman como una parte del set, en los seis idiomas (Warm
 Up, Comienzos, Cierre, Fijas, Himnos…), marcan sus pistas como apertura, cierre o fija
 (`libraryPhases`, `lib/sessionTree.ts`). Las que no se eligieron no cuentan, porque pueden ser
 playlists de amigos importadas de su NML (`runSession`, `lib/sessionRun.ts`). Una de apertura pesa ×4 en el primer cuarto y ×0,15
-después; una de cierre, ×4 desde el 80 % y ×0,15 antes; una fija, ×2,5. La línea lo dice («Para
-abrir…», «Para cerrar…», «De las que siempre pinchas»). Con
+después; una de cierre, ×4 desde el 80 % y ×0,15 antes; una fija, ×2,5. Con
 Bases y Cantaditas conocidas y «Alternar» activado la alternancia es estricta (`strict`): las
 pistas sin rol, que solo están en Mezcladas, no se usan de relleno, no arrancan la sesión ni se
 encadenan por un set. Entran como pareja de un combo repetido en dos sets, o cuando se acaba el
@@ -2115,29 +2157,31 @@ ninguno, sigue sin rol. Las playlists sin elegir no se leen ni dan rol.
 El rol que el usuario dio a una playlist elegida manda sobre el de la biblioteca. Nueva es una pista añadida
 en los últimos 30 días; si el programa no da fechas, una sin escuchas ni estrellas cuando otras
 sí las tienen (`isNew`, `lib/sessionCandidates.ts`). Fecha de alta y escuchas solo las trae
-rekordbox (`rekordboxPlaylists.ts:98-102`); Traktor da estrellas (`traktorPlaylists.ts:105`);
-Serato ninguna de las tres, así que ahí deciden tempo, tono y combos.
+rekordbox (`rekordboxPlaylists.ts:98-102`); Traktor y Engine DJ dan estrellas
+(`traktorPlaylists.ts:107`, `enginePlaylists.ts:127`); Serato ninguna de las tres, así que ahí
+deciden tempo, tono y combos.
 
 **El resultado.** La playlist se llama «Sesión del 9-11» con un número si ya existe en esa
 carpeta (`sessionDateLabel`, `uniqueName`, `shared/sessionName.ts`). Se crea y se llena; si el
 llenado falla, se borra la recién creada, y rehacer crea la nueva antes de borrar la anterior
-(`useSessionWrite.ts`). Con un programa de DJ abierto no se escribe: se comprueba al montar y
-otra vez justo antes de escribir, y el asistente pide cerrarlo (`'closed'`,
-`hooks/useSessionRun.ts:68`; `sessions.closed`). La lista de la sesión lleva una banda con
-pistas, combos, nuevas y armónicas, la duración contada y lo que suman los ficheros (`audioSecs`, `summarizeSession`), y «Rehacer», «Ajustar…» y «Quedármela así»
-(`SessionBand.tsx`). Bajo cada pista una línea dice por qué está (arranque, combo en N sets,
-salto Camelot, estrellas o escuchas, tempo, nueva, elegida por ti) y «Cambiar» lista solo
-entonces las que encajan en ese hueco (`SessionWhyLine.tsx`, `lib/sessionAlternatives.ts`). Al
-quedársela queda como una playlist normal y un aviso lo dice. Cada pista lleva un candado
-(`session-why-lock`): «Rehacer» conserva las fijadas en su posición y sortea el resto alrededor
-(`SessionOptions.pinned` y `fixedLength`, `shared/sessionBuild.ts`; `RecentSession.locked`,
-`useSessionRun.ts`), y la banda dice cuántas hay fijadas. Una pista elegida con «Cambiar» queda
-fijada y la que sustituye se suelta; «Ajustar…» empieza de cero y las suelta todas. Las pistas
-fijadas dicen «elegida por ti» y cuentan para la alternancia de roles de las vecinas. Con el menú de
+(`useSessionWrite.ts`). **Con el programa abierto** (desde v1.33.0) ya no pide cerrarlo: la
+sesión se escribe en modo cola, sin diálogo (`'queue'`, `hooks/useSessionWrite.ts:40`;
+`rekordboxPlaylistsIpc.ts:165`, `traktorPlaylistEditIpc.ts:60`, `seratoPlaylistEditIpc.ts:45`,
+`enginePlaylistEditIpc.ts:40`), el asistente se cierra y la playlist se abre cuando el programa
+se cierra y la cola la escribe (`noteCreated`, `hooks/useSessionRun.ts:232`). Mientras espera,
+«Rehacer» y «Ajustar…» no hacen nada (`recent.waiting`, `useSessionRun.ts:217`). La lista de la
+sesión lleva una banda con la duración contada, los combos, las nuevas y las armónicas cuando hay
+alguna, y lo que suman los ficheros (`audioSecs`, `summarizeSession`; `session-band-stats`), y «Rehacer», «Ajustar…» y «Quedármela así» (`SessionBand.tsx`). Desde
+v1.33.0 las filas son las de cualquier playlist, con la tonalidad en la notación de Ajustes
+(ver §7): ya no hay línea de motivos bajo cada pista, ni candados, ni «Cambiar» (quitados en
+`bcb4fd67d`, `3a9a92755`, `9a07c9c89`). La fila no muestra el tempo. Al quedársela queda como
+una playlist normal y un aviso lo dice. «Rehacer» vuelve a sortear la sesión entera y solo
+conserva la pista con la que se empezó si se montó desde una (`keepStart`,
+`useSessionRun.ts:186`); «Ajustar…» empieza de cero. Con el menú de
 una pista de una playlist abierta, «Sesión desde esta pista…» (`track-menu-start-session`,
 `TrackContextMenu.tsx`) abre el asistente con esa playlist ya elegida como Mezclada y monta la
-sesión empezando por esa pista (`SessionOptions.startWith`, `runSession` la busca por ruta);
-queda fijada, así que «Rehacer» la conserva la primera. Si no está en las playlists que se
+sesión empezando por esa pista (`SessionOptions.startWith`, `runSession` la busca por ruta), y
+«Rehacer» la conserva la primera. Si no está en las playlists que se
 acaban eligiendo, la sesión se monta como siempre. Medido el 9-11 con la colección real, 20 sesiones por caso y el rol de cada pista según las
 carpetas Bases y Cantaditas: con las carpetas enteras, 0 de 880 parejas seguidas repiten rol.
 Con «Top» de Bases, «Top» de Cantaditas y la Mezclada «rockola-spook-2016», que antes repetían
@@ -2220,24 +2264,24 @@ algo de error, porque Chromium no puede buscar en él con exactitud.
 
 Nuevo en v1.21.0. En las pestañas rekordbox, Traktor y Engine DJ, el filtro «Cues fuera de
 la rejilla» deja solo las pistas con algún cue (hot cue o CALL) que no cae en un golpe
-(`isOffGrid`, `renderer/src/lib/triage.ts:201`; `QualityFilterBar.tsx:87`). Mide contra el
+(`isOffGrid`, `renderer/src/lib/triage.ts:290`; `QualityFilterBar.tsx:77`). Mide contra el
 golpe, no contra el compás. Para cada pista se toma la distancia del cue más alejado al golpe
 más cercano, alargando la rejilla antes del primer golpe y después del último
 (`cueGridDrift`, `shared/cueGrid.ts:30`). La rejilla sale del análisis de cada programa: el
-PQTZ del ANLZ de rekordbox (`gridDriftOf`, `rekordboxPlaylists.ts:210`), el marcador de
-rejilla del .nml de Traktor (`gridBeatsOf`, `traktorPlaylists.ts:120`) y el beatData de
-Engine DJ (`gridDriftOf`, `enginePlaylists.ts:222`). Una pista sin cues o sin rejilla no
+PQTZ del ANLZ de rekordbox (`gridDriftOf`, `rekordboxPlaylists.ts:240`), el marcador de
+rejilla del .nml de Traktor (`gridBeatsOf`, `traktorPlaylists.ts:137`) y el beatData de
+Engine DJ (`gridDriftOf`, `enginePlaylists.ts:234`). Una pista sin cues o sin rejilla no
 entra.
 
 **La tolerancia se elige** en Ajustes › Cues, «Tolerancia de la rejilla», entre 5, 10 y
-20 ms, por defecto 10 (`CUE_GRID_TOLERANCE`, `shared/cueGrid.ts:1`; `CuesTab.tsx:444`). Se
+20 ms, por defecto 10 (`CUE_GRID_TOLERANCE`, `shared/cueGrid.ts:1`; `CuesTab.tsx:523`). Se
 sincroniza como el resto de ajustes de cues. Cambiarla recalcula el filtro sin releer la
 biblioteca.
 
 **El filtro solo encuentra las pistas.** Desde v1.22.0 el editor señala cuáles son: los cues
 fuera del golpe se pintan aparte en las dos ondas y una barra encima los nombra uno a uno
 con su desvío firmado; «Al golpe» los lleva a su golpe en un paso que se deshace
-(`offGridCues`, `shared/cueGrid.ts:55`; `CueOffGridBar.tsx:44`). Si todos se desvían lo mismo
+(`offGridCues`, `shared/cueGrid.ts:55`; `CueOffGridBar.tsx:45`). Si todos se desvían lo mismo
 (dentro de 5 ms) y el editor está maximizado, la barra ofrece «Mover la rejilla N ms» en su
 lugar. Si la culpa es de la rejilla, ver «Ajustar la rejilla». Medido en una
 biblioteca real de rekordbox, 2077 pistas, 1592 con cues: con 10 ms salen 38, y las que
@@ -2246,41 +2290,66 @@ pasan de 20 ms están claramente mal.
 ### Ajustar la rejilla
 
 Nuevo en v1.22.0. Con la sección de cues maximizada aparece, en la misma fila que los pads,
-la fila de la rejilla (`CueGridControls.tsx:46`): el BPM (con menú para escribirlo, ×2 y ½
+la fila de la rejilla (`CueGridControls.tsx:89`): el BPM (con menú para escribirlo, ×2 y ½
 conservando el compás), mover a izquierda y derecha 5 ms por pulsación (1 ms con ⇧; ⌥← ⌥→
 desde el teclado), estrechar y ensanchar ±0,01 BPM, primer tiempo en el cabezal, ancla en el
 cabezal (solo rekordbox) y «Auto». Junto al tiempo se ve «Rejilla aquí» y «al final»: cuánto
 se desvían las líneas pintadas de los golpes medidos cerca del cabezal y al final
-(`gridOffsets`, `shared/gridEdit.ts:265`). La rejilla va en el borrador, así que ⌘Z la deshace
+(`gridOffsets`, `shared/gridEdit.ts:534`). La rejilla va en el borrador, así que ⌘Z la deshace
 y no se guarda hasta «Guardar».
 
 **Auto** mide los golpes del audio por tramos de 32 golpes y toma la mediana de los tramos
 cercanos al cabezal; un tramo suelto mal medido no decide. El BPM se corrige con la pendiente
-mediana de esos tramos a lo largo de la pista (`fitGrid`, `shared/gridEdit.ts:249`). Si el BPM
+mediana de esos tramos a lo largo de la pista (`fitGrid`, `shared/gridEdit.ts:409`). Si el BPM
 del detector es el doble o la mitad, conserva el del DJ y solo corrige la fase. Desde v1.24.0, Auto lleva
 además cada cue a su golpe más cercano de la rejilla nueva, salvo los loops bloqueados. Desde
 v1.30.0 también lo hace al mover la rejilla a mano, pero solo con los cues que estaban sobre un
 golpe de la rejilla anterior: cada uno se queda en el mismo golpe de la nueva (con el doble o la
 mitad de golpes si el tempo cambia a uno el doble o la mitad); un cue fuera de golpe se queda
 donde estaba (`carryOntoGrid`, `shared/gridEdit.ts`; `set-grid` y `fit-grid` en
-`lib/cueDraft.ts:542`). Rejilla y cues se deshacen juntos con un ⌘Z. Desde v1.31.0
+`lib/cueDraft.ts:538`). Rejilla y cues se deshacen juntos con un ⌘Z. Desde v1.31.0
 Auto da una sola respuesta por tramo de rejilla (zona) esté donde esté el cabezal (`phaseIn`,
-`shared/gridEdit.ts:256`) y no se va medio golpe cuando el detector oye el contratiempo: lo
+`shared/gridEdit.ts:377`) y no se va medio golpe cuando el detector oye el contratiempo: lo
 distingue del bombo con la rejilla que analizó el programa y lo pliega (`offbeatFolded`,
-`fitGrid`, `shared/gridEdit.ts:288`).
+`fitGrid`, `shared/gridEdit.ts:406`).
 
 **Clavar** (nuevo en v1.31.0). «Clavar» o la tecla G fija la rejilla en el golpe medido más
-cercano al cabezal; con ⇧, justo en el cabezal (`pinGrid`, `shared/gridEdit.ts:344`;
-`CuesSection.tsx:539`). El primer clavo desplaza la rejilla; el segundo en la misma zona ajusta
+cercano al cabezal; con ⇧, justo en el cabezal (`pinGrid`, `shared/gridEdit.ts:560`;
+`CuesSection.tsx:550`). El primer clavo desplaza la rejilla; el segundo en la misma zona ajusta
 el BPM para que los dos caigan en golpe, y en rekordbox, si hacen falta más, pone un ancla y
 abre zona. Bajo la onda de toda la pista, seis comprobaciones repartidas por el tema dicen en
 ms cuánto se separa la rejilla del bombo medido, en verde dentro de la tolerancia de Ajustes ›
 Cues y en ámbar fuera, con un clic que lleva allí el cabezal (`CueGridStrip.tsx`, `CHECKS = 6`).
 
+**«Ajustar rejilla» en el editor pequeño** (v1.33.0). Con la sección de cues sin maximizar, la
+cabecera plegada lleva «Ajustar rejilla» antes de «Auto marcar» (`cues-fit-grid`,
+`CuesSection.tsx:1227`, puesto en `flowControl`, `:1348`). Hace lo mismo que «Auto» y va en
+acento cuando la pista lo necesita según el criterio de «Rejilla mal» (`needsFix`,
+`CuesSection.tsx:540`). Mientras falta la medida de los golpes queda deshabilitado.
+
+**Ajustar en lote** (v1.33.0). Con varias pistas seleccionadas en una playlist de un programa
+de DJ, el panel de Cues lleva un bloque «Rejilla» (`GridBatchBlock.tsx:94`, dentro de
+`CuesBatchSection.tsx:264`) que mide las seleccionadas y dice cuántas no van con los golpes, cuántas
+ya van y cuántas no tienen golpes que medir; «Verlas en la lista» lleva a ellas. «Ajustar N
+pistas» (`grid-batch-adjust`) toca solo las que lo necesitan (`adjustGrid`,
+`lib/gridAdjust.ts:27`; `adjustGrids`, `lib/cueGridBatch.ts:89`): hace el mismo Auto que el
+editor y los cues y CALL se mueven con la rejilla (`fit-grid`). Cada ajuste queda como un
+borrador sin guardar de esa pista, como si se hubiera hecho a mano, y nada se escribe hasta
+«Guardar» (`keepDraft`, `cueGridBatch.ts:79`). Una pista se aparta, sin tocarla, en «Para
+revisar a mano» con su motivo y un botón «Abrir» si el ajuste movería algún cue más de medio
+golpe («Un cue se movería N ms»), si además el tempo que oye Surco no es el del programa («Surco
+oye N BPM y rekordbox dice M»), si el ajuste no la mejora o si la fila de la rejilla no se puede
+editar en esa pista (formato sin medir, pista sin analizar, varias zonas fuera de rekordbox;
+`gridGate`, `lib/gridGate.ts:12`). El recuento final dice cuántas se ajustaron, cuántas ya
+estaban bien, cuántas no tenían golpes y cuántas quedan para revisar. «Deshacer el ajuste»
+devuelve cada pista a como estaba antes y solo sale mientras queda algún borrador ajustado
+(`undoGridAdjusts`, `useGridAdjustsUndoable`, `lib/cueSession.ts`). Solo hay tests; no está
+medido sobre una biblioteca real cuántas aparta.
+
 **Zonas, solo en rekordbox.** Una rejilla con varios tempos o un compás que se reinicia se lee
 como hasta 8 zonas, cada una con su tempo y su ancla; todo edita la zona bajo el cabezal y
-el ancla abre o cierra una zona (`editableGridOf`, `shared/gridEdit.ts:69`;
-`toggleAnchor`, `:140`). Una rejilla de un solo tramo que rekordbox curva unos ms se endereza
+el ancla abre o cierra una zona (`editableGridOf`, `shared/gridEdit.ts:117`;
+`toggleAnchor`, `:216`). Una rejilla de un solo tramo que rekordbox curva unos ms se endereza
 al tocarla. En Traktor y Engine DJ no hay zonas: una rejilla con varios tempos deshabilita la
 fila.
 
@@ -2288,7 +2357,7 @@ fila.
 pista, con copia de los ANLZ antes de escribir y la original de la sesión guardada aparte
 (`writeGridFiles`, `rekordboxGridWrite.ts:46`). rekordbox lo acepta sin reanalizar y un CDJ
 lee la rejilla escrita (probado con un USB exportado). Traktor: el marcador de rejilla y el
-tempo de la entrada en `collection.nml` (`withTraktorGrid`, `traktorCuesWrite.ts:75`).
+tempo de la entrada en `collection.nml` (`withTraktorGrid`, `traktorCuesWrite.ts:92`).
 Engine DJ: la lista ajustada del beatData y el BPM analizado (`encodeAdjustedGrid`,
 `engineBlobs.ts:193`). Desde v1.30.0 Surco deja bloqueada la rejilla que escribe, para que
 volver a analizar la pista en el programa no la borre: en rekordbox pone el bit `0x80` de
@@ -2307,14 +2376,31 @@ de Traktor). El resto sale con el motivo «reloj sin medir».
 ### Filtro «Rejilla mal»
 
 Nuevo en v1.22.0. En la barra de filtros, «Rejilla mal» deja las pistas cuya rejilla no cae
-en los golpes medidos (`triage.ts:198`). Se mide a prioridad baja para no retrasar la
-pista abierta. Desde v1.27.0 se mide con el análisis: sola con «Analizar todo al importar»,
-al pulsar «Analizar», o al elegir el filtro (`measuringGrid`, `App.tsx`). El progreso es un
-anillo que se cierra alrededor del icono, y el recuento queda sin número hasta medir. Cada fila lleva al lado el motivo
-corto («−92 ms» corrida, «−4,9 ms/min» deriva) y la frase entera al pasar el ratón. Regla
-(`gridVerdictOf`, `shared/gridVerdict.ts:18`): al menos 8 tramos estables, como mucho un 30 %
-a medio golpe y una dispersión de 5 ms; deriva desde 3 ms/min y corrida desde 15 ms. Mismos
-formatos que «Ajustar la rejilla».
+en los golpes medidos (`hasBadGrid`, `triage.ts:295`). Desde v1.27.0 se mide con el análisis:
+sola con «Analizar todo al importar», al pulsar «Analizar», o al elegir el filtro
+(`measuringGrid`, `App.tsx:2088`). El progreso es un anillo que se cierra alrededor del icono,
+y el recuento queda sin número hasta medir.
+
+**Un solo criterio** (v1.33.0). El filtro, el bloque «Rejilla» del lote y el acento de «Ajustar
+rejilla» preguntan lo mismo (`needsGridFix`, `shared/gridCheck.ts:28`): la rejilla está mal si
+al principio o al final se separa de los golpes medidos más que la «Tolerancia de la rejilla» de
+Ajustes › Cues, o si el veredicto de tramos ve corrida o deriva. Ese veredicto sigue igual
+(`gridVerdictOf`, `shared/gridVerdict.ts:18`): al menos 8 tramos estables, como mucho un 30 % a
+medio golpe y una dispersión de 5 ms; deriva desde 3 ms/min y corrida desde 15 ms. Antes solo
+contaba ese veredicto, que se calla ante una corrida grande: con 84 a 102 ms de desfase los
+tramos pasan de un cuarto de golpe y no cuentan como estables. Medido el 11-11 sobre 116 pistas
+reales de rekordbox, sin escribir: la medida de principio y final marcaba 11 y el veredicto 1,
+sin solaparse; de las pistas sin tocar, 6 lo necesitaban y Auto arregló las 6 (102 ms a 1, 101
+a 0, 84 a 7, 48 a 1, 15 a 0) (`docs/superpowers/specs/2026-11-11-rejilla-en-lote-design.md`).
+
+**Se mide en la ventana**, no en el proceso principal (`useGridChecks`,
+`hooks/useGridChecks.ts:127`), con dos a la vez (`WORKERS = 2`) y la medida de golpes pedida a
+prioridad baja (`gridFit(contentId, 'low')`, `:99`) para no retrasar la pista abierta. Juzga la
+rejilla que se guardaría: la de un borrador sin guardar o un guardado en cola si lo hay, y si no
+la del programa (`appliedGrid`, `lib/appliedGrid.ts:14`), y vuelve a medir cuando cambia un
+borrador o se relee la pista. Las pistas cuya rejilla no se puede editar no entran (`gridGate`).
+Cada fila lleva al lado el motivo corto («−92 ms» corrida, «−4,9 ms/min» deriva) y la frase entera
+al pasar el ratón (`gridNote`, `lib/gridNote.ts:18`). Mismos formatos que «Ajustar la rejilla».
 
 ### Pistas que rekordbox no ha analizado
 
@@ -2995,7 +3081,7 @@ comparación»* (`useDeclickAb.ts:60-67`).
   Procesado, Nombres con Destino, Atajos con Estadísticas; `SETTINGS_ENTRY_GROUPS`,
   `lib/settingsTabs.ts:60`).
 - **Botón de ayuda** (v1.29.0). La barra de herramientas lleva un botón «Ayuda y preguntas»
-  que abre la FAQ, que antes solo salía por la paleta (`header.help`, `Toolbar.tsx:479`).
+  que abre la FAQ, que antes solo salía por la paleta (`header.help`, `Toolbar.tsx:472`).
 - **Editar el original avisa en el menú de destino** (v1.29.0). En el menú de destino de
   «Convertir», la opción que sobrescribe lleva debajo «Sobrescribe el archivo»
   (`editor.menuOverwriteNote`, `FormatDestinationMenu.tsx:95`).
@@ -3009,6 +3095,17 @@ comparación»* (`useDeclickAb.ts:60-67`).
   escribe (`next-in-field`, `prev-in-field`, `shortcutDefaults.ts:42-43`). El BPM y la
   tonalidad detectados en el audio salen como sugerencias que nunca vacían el campo
   (`fields.suggestionDetected`, `SuggestionChips.tsx:64`).
+- **Enviar comentarios** (v1.33.0). Un diálogo para escribir sin salir de Surco
+  (`FeedbackModal.tsx`), desde el botón de la barra de herramientas (`open-feedback`,
+  `Toolbar.tsx:479`), la ayuda (`HelpModal.tsx:83`), el menú de la aplicación
+  (`appMenu.ts:119`), la paleta (`commands.ts:1123`), una conversión fallida
+  (`ConvertFooter.tsx:415`, con el error incluido) y la pantalla de fallo
+  (`ErrorBoundary.tsx:89`). Pide un email para responder, que se recuerda tras un envío
+  correcto, y un mensaje (opcional si lleva un error); el informe técnico va marcado por defecto
+  y se puede ver antes de enviar. Se manda a una función de la web de Surco
+  (`FEEDBACK_ENDPOINT`, `main/feedback.ts:8`; `apps/web/api/feedback.ts`), que lo reenvía por
+  Resend. Si falla, deja reintentar o copiar el texto (`feedback-retry`, `feedback-copy`), y el
+  diálogo lleva además un enlace para abrir una issue en GitHub (`feedback-github`).
 - **La ventana vuelve como se cerró**: tamaño, posición y maximizada
   (`main/windowState.ts`, `main/index.ts:707`).
 
@@ -3053,7 +3150,8 @@ Recopilado de los cinco informes. Cada punto está verificado.
 5. **El repunte de rekordbox sale en «No tocar»** (`syncRekordbox: false`): sin él, convertir
     una pista de rekordbox no conserva nada en la colección, que sigue apuntando al fichero
     antiguo. Escribe con rekordbox cerrado; si está abierto, espera en la cola hasta que se
-    cierre. No resuelve las pistas con dos entradas, las declara ambiguas y no elige. No se
+    cierre, sin preguntar desde v1.33.0. No decir que se escribe con rekordbox abierto: lo
+    que cambia es que no hace falta cerrarlo para convertir. No resuelve las pistas con dos entradas, las declara ambiguas y no elige. No se
     ha probado con la sincronización en la nube de rekordbox.
 6. **Sustituir no mueve el fichero en Apple Music:** Music no deja escribir la
     ubicación de una pista, así que por debajo es añadir y borrar. El aviso de
@@ -3076,8 +3174,10 @@ Recopilado de los cinco informes. Cada punto está verificado.
 12. **Exportar una biblioteca Engine nueva a una carpeta no está expuesto**:
     `buildEngineDatabase` existe y está probado, pero solo lo llaman los tests.
 13. **La rejilla al convertir fue eliminada** de la app y se descarta activamente al leer
-    sesiones antiguas. La rejilla solo se edita desde el editor de cues maximizado (v1.22.0),
-    y en Traktor y Engine DJ solo en los formatos medidos (ver «Ajustar la rejilla»).
+    sesiones antiguas. La rejilla solo se edita desde el editor de cues: la fila completa con
+    la sección maximizada (v1.22.0), «Ajustar rejilla» en la cabecera plegada y el bloque
+    «Rejilla» con varias pistas (v1.33.0), y en Traktor y Engine DJ solo en los formatos medidos
+    (ver «Ajustar la rejilla»). El lote no guarda nada solo: deja borradores hasta «Guardar».
 14. **En el mismo formato, los ajustes de calidad solo recodifican si cambian el
     audio** (WAV, FLAC, AIFF); si el resultado sería idéntico, solo se actualizan
     las etiquetas. Un MP3 nunca se recodifica a MP3 salvo por un filtro (volumen,
@@ -3190,3 +3290,12 @@ Recopilado de los cinco informes. Cada punto está verificado.
     «reordena tus crates», y mover uno cambia el nombre de su archivo y los de sus subcrates.
     No decir que el programa lo ve al instante: el árbol de Surco se pinta antes, pero el
     programa lo recibe cuando se escribe, y con el programa abierto el cambio espera en la cola.
+44. **Engine DJ solo crea playlists, les añade pistas y las borra** (v1.33.0). No crea
+    carpetas, no renombra, no mueve, no quita pistas de una playlist ni la reordena, y «Pegar
+    tracklist…» no encuentra nada allí. No decir «organiza Engine DJ como rekordbox». Escribir
+    con Engine DJ abierto no existe: el cambio espera en la cola hasta que se cierra. Solo
+    probado en tests, no en un Engine DJ real.
+45. **La sesión automática ya no explica cada pista ni deja fijarlas** (v1.33.0). No hay
+    línea de motivos, candados ni «Cambiar»; «Rehacer» redibuja la sesión entera y solo
+    conserva la pista de arranque. La fila muestra la tonalidad, no el tempo. Con el programa
+    abierto la sesión no se escribe al momento: espera en la cola y se abre al escribirse.

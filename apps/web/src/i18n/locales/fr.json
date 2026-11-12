@@ -258,7 +258,7 @@
           {
             "t": "Session automatique",
             "s": "Monte une session avec tes playlists, tes combos, ce que tu préfères et le mix harmonique.",
-            "d": "Tu l'ouvres depuis la palette de commandes, depuis le menu d'un dossier ou sur une playlist vide. Tu choisis sa durée et les playlists d'où viennent les pistes, et tu dis ce que contient chacune, Instrumentaux, Voix ou Mixte, aussi pour un dossier entier. Surco réunit les paires que tu répètes dans tes sets et tracklists, les pistes avec le plus d'étoiles et d'écoutes, le mix harmonique Camelot si tu le veux et une place pour les nouveautés, et compte le temps que joue chaque piste, pas le fichier entier. Sous chaque piste tu vois pourquoi elle est là et tu la changes pour une autre qui convient. Elle apprend de tes sets de combien tu changes le tempo et à quel point la tonalité compte pour toi, garde tes morceaux de clôture pour la fin, passe plus souvent tes incontournables et commence par un morceau chanté. Fixe les morceaux à garder quand tu la refais, ou lance-la depuis un morceau avec son menu. Dans rekordbox, Traktor, Serato et VirtualDJ, avec le logiciel fermé."
+            "d": "Tu l'ouvres depuis la palette de commandes, depuis le menu d'un dossier ou sur une playlist vide. Tu choisis sa durée et les playlists d'où viennent les pistes, et tu dis ce que contient chacune, Instrumentaux, Voix ou Mixte, aussi pour un dossier entier. Surco réunit les paires que tu répètes dans tes sets et tracklists, les pistes avec le plus d'étoiles et d'écoutes, le mix harmonique Camelot si tu le veux et une place pour les nouveautés, et compte le temps que joue chaque piste, pas le fichier entier. Elle ressemble à n'importe quelle playlist, avec la tonalité de chaque piste. Elle apprend de tes sets de combien tu changes le tempo et à quel point la tonalité compte pour toi, garde tes morceaux de clôture pour la fin, passe plus souvent tes incontournables et commence par un morceau chanté. « Refaire » la remonte en entier, ou lance-la depuis un morceau avec son menu. Dans rekordbox, Traktor, Engine DJ, Serato et VirtualDJ. Si le logiciel est ouvert, elle attend que tu le fermes."
           },
           {
             "t": "Cues rekordbox",
@@ -273,7 +273,7 @@
           {
             "t": "La grille, à sa place",
             "s": "Corrige la grille d’un morceau à la main ou avec Auto, et le filtre « Grille fausse » te dit lesquels.",
-            "d": "Avec la section des cues agrandie, tu déplaces la grille, tu changes le BPM, tu mets le premier temps sur la tête de lecture ou tu lances « Auto », qui la cale sur les temps, et tu vois de combien elle s’écarte ici et à la fin du morceau. « Épingler » (G) la fixe sur le temps le plus proche de la tête de lecture, ou pile sur la tête de lecture avec ⇧. Une deuxième épingle loin de la première compte les temps entre les deux et donne le BPM exact, et dans rekordbox une troisième ouvre un tronçon avec son propre tempo. Six contrôles sous l'onde de toute la piste te disent si elle reste sur le kick tout au long du morceau, et un clic sur l'un d'eux amène la tête de lecture sur ce temps. Auto donne la même réponse depuis n'importe quel endroit du morceau et prend le kick dans la grille que ton logiciel a analysée, donc il ne décale jamais la grille d'un demi-temps sur le contretemps. Elle s’enregistre dans rekordbox, Traktor et Engine DJ, et dans rekordbox aussi par tronçons avec leur propre tempo. Le filtre « Grille fausse » te sort les morceaux dont la grille rate les temps. Dans Traktor et Engine DJ, pour l’instant, pour le WAV, l’AIFF et le FLAC, et dans Traktor aussi pour les MP3 créés avec iTunes. Surco laisse verrouillée la grille qu'il enregistre, et enregistre aussi par-dessus une grille déjà verrouillée dans le logiciel."
+            "d": "Avec la section des cues agrandie, tu déplaces la grille, tu changes le BPM, tu mets le premier temps sur la tête de lecture ou tu lances « Auto », qui la cale sur les temps, et tu vois de combien elle s’écarte ici et à la fin du morceau. « Épingler » (G) la fixe sur le temps le plus proche de la tête de lecture, ou pile sur la tête de lecture avec ⇧. Une deuxième épingle loin de la première compte les temps entre les deux et donne le BPM exact, et dans rekordbox une troisième ouvre un tronçon avec son propre tempo. Six contrôles sous l'onde de toute la piste te disent si elle reste sur le kick tout au long du morceau, et un clic sur l'un d'eux amène la tête de lecture sur ce temps. Auto donne la même réponse depuis n'importe quel endroit du morceau et prend le kick dans la grille que ton logiciel a analysée, donc il ne décale jamais la grille d'un demi-temps sur le contretemps. Elle s’enregistre dans rekordbox, Traktor et Engine DJ, et dans rekordbox aussi par tronçons avec leur propre tempo. Le filtre « Grille fausse » te sort les morceaux dont la grille rate les temps. Dans Traktor et Engine DJ, pour l’instant, pour le WAV, l’AIFF et le FLAC, et dans Traktor aussi pour les MP3 créés avec iTunes. Surco laisse verrouillée la grille qu'il enregistre, et enregistre aussi par-dessus une grille déjà verrouillée dans le logiciel. Avec plusieurs morceaux sélectionnés, « Ajuster » corrige d'un coup ceux dont la grille est décalée, et « Ajuster la grille » est aussi dans le petit éditeur de cues."
           },
           {
             "t": "Ta collection rekordbox",
@@ -582,7 +582,7 @@
       },
       {
         "q": "Ça marche avec le matériel Denon (Engine DJ) ?",
-        "a": "Oui. Dans Réglages → Sortie, mets Engine DJ sur « Mettre à jour et ajouter » et chaque morceau converti est enregistré directement dans ta bibliothèque Engine DJ (avec sa pochette, sa note et les playlists que tu choisis), prêt à synchroniser vers tes lecteurs. Il exporte aussi des collections vers rekordbox, Traktor et Serato."
+        "a": "Oui. Dans Réglages → Logiciels DJ, mets Engine DJ sur « Mettre à jour et ajouter » et chaque morceau converti est enregistré directement dans ta bibliothèque Engine DJ (avec sa pochette, sa note et les playlists que tu choisis), prêt à synchroniser vers tes lecteurs. Il exporte aussi des collections vers rekordbox, Traktor et Serato."
       },
       {
         "q": "Windows affiche « Windows a protégé votre ordinateur ». C’est sûr ?",
@@ -1106,16 +1106,16 @@
           },
           {
             "lead": "Monte et vérifie.",
-            "text": "Chaque morceau dit pourquoi il est là et « Changer » en propose d’autres. Refais, ajuste ou garde-la comme une playlist normale."
+            "text": "Elle ressemble à n’importe quelle playlist. Refais-la, ajuste-la ou garde-la telle quelle."
           }
         ],
         "points": [
           "Chaque morceau ne compte que le temps où il joue dans le mix, deux minutes par défaut. Un vrai set de 28 morceaux a duré une heure.",
           "Un combo est une paire qui se répète dans au moins deux playlists Mixtes. Sans elles, pas de combos.",
           "Nouveau veut dire ajouté ces 30 derniers jours, ou sans lectures ni étoiles s’il n’y a pas de dates.",
-          "Il écrit dans rekordbox, Traktor, Serato ou VirtualDJ, programme fermé."
+          "Il écrit dans rekordbox, Traktor, Engine DJ, Serato ou VirtualDJ. Si le logiciel est ouvert, il attend que tu le fermes."
         ],
-        "shotCaption": "La session montée, avec son résumé, la raison de chaque morceau et « Changer ».",
+        "shotCaption": "La session montée dans ton logiciel de DJ.",
         "shot": "sesion-fr.webp"
       },
       {
@@ -1266,6 +1266,8 @@
       "added": "✓ {{count}} morceaux ajoutés à Apple Music"
     },
     "heroFree": "Gratuit. macOS, Windows et Linux. Sans compte.",
+    "heroStatsTotal": "<n>{{total}}</n> téléchargements",
+    "heroStatsWeek": "<n>{{count}}</n> sur Mac en 7 jours",
     "closeTitle": "Tout ça, dans une seule fenêtre.",
     "closeNote": "Pas de cloud, pas de limites, aucune inscription. Il se met à jour tout seul.",
     "closeSafety": "Tes originaux restent intacts : si tu changes de format, la copie va dans un dossier à part. Il ne réécrit le fichier lui-même que si tu réexportes dans le même format, c’est ainsi qu’il met à jour les tags sans réencoder. Notarisé par Apple.",

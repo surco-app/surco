@@ -438,7 +438,7 @@ export function FilterPanes({
           data-testid={`${testid}-clear`}
           disabled={!canClear}
           onClick={onClear}
-          className="rounded px-2 py-1 text-xs text-[var(--color-accent)] outline-none hover:bg-[var(--color-hover)] disabled:text-fg-faint disabled:hover:bg-transparent"
+          className="press rounded px-2 py-1 text-xs text-[var(--color-accent)] outline-none hover:bg-[var(--color-hover)] disabled:text-fg-faint disabled:hover:bg-transparent"
         >
           {clearLabel}
         </button>

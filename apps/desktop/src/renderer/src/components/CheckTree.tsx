@@ -104,7 +104,7 @@ export function CheckTree({
                   return next
                 })
               }
-              className="text-fg-faint"
+              className="press text-fg-faint"
             >
               <Chevron size={12} aria-hidden="true" />
             </button>

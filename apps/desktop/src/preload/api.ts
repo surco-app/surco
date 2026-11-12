@@ -8,7 +8,6 @@ import type { DjApi } from '../shared/djApi'
 import type { DropInput } from '../shared/dropDetect'
 import type { FeedbackForm, FeedbackOutcome } from '../shared/feedback'
 import type { GridFit } from '../shared/gridEdit'
-import type { GridVerdict } from '../shared/gridVerdict'
 import type {
   ActivityEvent,
   AppleMusicAddJob,
@@ -95,8 +94,7 @@ export interface CuesApi {
   twins: (file: string) => Promise<LibraryTracks>
   auditionLead: (contentId: string) => Promise<number>
   surcoGrid: (contentId: string) => Promise<SurcoGrid | null>
-  gridFit: (contentId: string) => Promise<GridFit | null>
-  gridVerdict: (contentId: string) => Promise<GridVerdict | null>
+  gridFit: (contentId: string, priority?: 'high' | 'low') => Promise<GridFit | null>
   queued: (contentId: string) => Promise<QueuedCues | null>
   undo: (contentId: string) => Promise<void>
   save: (reqs: SaveCuesRequest[]) => Promise<void>

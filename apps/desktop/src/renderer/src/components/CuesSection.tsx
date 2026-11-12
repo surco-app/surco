@@ -1,9 +1,10 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useIsFetching, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Check,
   ChevronDown,
   CircleAlert,
   Keyboard,
+  Loader2,
   Minimize2,
   Pause,
   Play,
@@ -22,14 +23,15 @@ import type { CueQuantize } from '../../../shared/cueQuantize'
 import { BEATS_PER_BAR, nearestBeat, SAME_POSITION_MS } from '../../../shared/cueRules'
 import { type DjProgram, programOf } from '../../../shared/djProgram'
 import type { DropInput, DropProposal } from '../../../shared/dropDetect'
+import { checkGrid, needsGridFix } from '../../../shared/gridCheck'
 import {
+  autoFitGrid,
   detectedBeatNear,
   type EditableGrid,
   editAt,
   editableGridOf,
   gridAnchors,
   gridBeats,
-  gridOffsets,
   pinGrid,
   sameGrid,
   shiftGrid,
@@ -40,6 +42,7 @@ import { type CueAudition, useCueAudition } from '../hooks/useCueAudition'
 import { useMaximizedSection } from '../hooks/useEditorSections'
 import {
   cueDropInputQuery,
+  gridFitQuery,
   useAuditionLead,
   useCueProfile,
   useCueWaveDetail,
@@ -99,10 +102,11 @@ import {
   useCueFocus,
   useUnsavedCueTracks,
 } from '../lib/cueSession'
-import { cueOutcomeOf, recordCueEdits } from '../lib/cueTasteEdits'
+import { recordCueEdits } from '../lib/cueTasteEdits'
 import { type TwinPlan, twinPlansOf } from '../lib/cueTwins'
 import { quantizePoints } from '../lib/cueWave'
 import { formatTime } from '../lib/duration'
+import { gridGate } from '../lib/gridGate'
 import { isTypingTarget } from '../lib/keymap'
 import { formatFixed } from '../lib/numberFormat'
 import { isMacOS } from '../lib/platform'
@@ -523,27 +527,29 @@ function Editing({
       (keptDraftOn(cue.contentId, read, queued) !== undefined && keptOnSurcoGrid(cue.contentId)),
   )
   const rekordboxGrid = programOf(cue.contentId) === 'rekordbox'
-  const { fixedGrid } = cueProgramOf(cue.contentId)
-  const gridOff = fixedGrid
-    ? tr(fixedGrid)
-    : !rekordboxGrid && (read.clockLeadMs === undefined || read.clockLeadMs === null)
-      ? tr('editor.cues.grid.unmeasured')
-      : provisional
-        ? tr('editor.cues.grid.provisional')
-        : onSurcoGrid
-          ? tr('editor.cues.grid.surcoDraft')
-          : state.grid === null || (!rekordboxGrid && state.grid.zones)
-            ? tr('editor.cues.grid.varying')
-            : null
-  const fine = useCueWaveFine(cue.contentId, maximized)
-  const gridFit = useGridFit(cue.contentId, maximized && gridOff === null && fine !== undefined)
+  const gate = gridGate({
+    contentId: cue.contentId,
+    read: { analysed: provisional === undefined, clockLeadMs: read.clockLeadMs },
+    grid: state.grid,
+    onSurcoGrid,
+  })
+  const gridOff = gate === null ? null : tr(gate)
+  const fitting = useIsFetching({ queryKey: gridFitQuery(cue.contentId).queryKey }) > 0
+  const fine = useCueWaveFine(cue.contentId, maximized && !fitting)
+  const fitPending = gridOff === null && fitting
+  const gridFit = useGridFit(cue.contentId, gridOff === null && (!maximized || fine !== undefined))
   const offsets =
     gridFit && state.grid
-      ? gridOffsets(ctx.beats, gridFit, playheadMs, read.durationMs, programBeats)
+      ? checkGrid({
+          beats: ctx.beats,
+          kicks: programBeats,
+          fit: gridFit,
+          atMs: playheadMs,
+          durationMs: read.durationMs,
+        })
       : null
   const tolerance = settings.cueGridTolerance
-  const needsFix =
-    offsets !== null && Math.max(Math.abs(offsets.hereMs), Math.abs(offsets.endMs)) > tolerance
+  const needsFix = offsets !== null && needsGridFix(offsets, tolerance)
   const setGrid = (next: EditableGrid) => dispatch({ type: 'set-grid', grid: next })
   const [pinned, setPinned] = useState<{ grid: EditableGrid; pins: number[] } | null>(null)
   const pins = pinned && sameGrid(pinned.grid, state.grid) ? pinned.pins : []
@@ -592,6 +598,9 @@ function Editing({
   useEffect(() => {
     if (!placing) setHoverMs(null)
   }, [placing])
+  useEffect(() => {
+    if (menu === null) setHoverMs(null)
+  }, [menu])
   const hoverGhost = useMemo<DraftGhost | null>(
     () =>
       placing && hoverMs !== null
@@ -601,14 +610,6 @@ function Editing({
   )
   const { data: rekordboxWords } = useCueWaveDetail(cue.contentId, !provisional)
   const words = provisional ? provisional.words : rekordboxWords
-  const learnsFromEdits = settings.cueLearnFromEdits
-  const outcome = useMemo(
-    () =>
-      learnsFromEdits && words
-        ? cueOutcomeOf(queryClient, cue.contentId, { cues: state.cues, locked: state.locked })
-        : null,
-    [learnsFromEdits, words, queryClient, cue.contentId, state.cues, state.locked],
-  )
   const { readsAudio, fixedColour, collectionGate, callsNote, runningNote } = cueProgramOf(
     cue.contentId,
   )
@@ -852,6 +853,21 @@ function Editing({
       palette: false,
     })
   }
+  const openMenuAt = ({
+    ms,
+    clientX,
+    clientY,
+  }: {
+    ms: number
+    clientX: number
+    clientY: number
+  }) => {
+    const rect = editorRef.current?.getBoundingClientRect()
+    setMarkMenu(null)
+    setMenu({ ms, x: clientX - (rect?.left ?? 0), y: clientY - (rect?.top ?? 0) })
+    if (placing) setHoverMs(ms)
+  }
+  const manualMenuMs = menu !== null && !placing ? menu.ms : undefined
   const fromMarkMenu = (action: DraftAction) => {
     dispatch(action)
     setMarkMenu(null)
@@ -867,6 +883,22 @@ function Editing({
             !state.locked.includes(c.key),
         )
       : undefined
+  const paired =
+    markTarget !== undefined &&
+    state.cues.some(
+      (c) =>
+        c.key !== markTarget.key &&
+        (c.kind === 0) !== (markTarget.kind === 0) &&
+        Math.abs(c.ms - markTarget.ms) <= SAME_POSITION_MS,
+    )
+  const lettersFull = state.cues.filter((c) => c.kind !== 0).length >= ctx.slots.kinds.length
+  const convertOf = (cue: DraftCue): DraftAction => ({
+    type: 'batch',
+    actions: [
+      { type: 'remove', key: cue.key },
+      { type: cue.kind === 0 ? 'add-hot' : 'add-call', ms: cue.ms },
+    ],
+  })
   const [zoom, setZoom] = useState<number>(DEFAULT_ZOOM_BARS)
   const source: DetailSource | null = detailSourceOf({
     fine,
@@ -1220,15 +1252,63 @@ function Editing({
     <button
       type="button"
       data-testid="cues-auto-mark"
+      aria-busy={readingAudio || undefined}
       disabled={blocked ? true : readsAudio ? readingAudio : !words}
       onClick={autoMark}
-      className={`press flex shrink-0 items-center gap-1.5 whitespace-nowrap bg-[var(--color-accent-soft)] text-xs font-semibold text-fg hover:bg-[var(--color-row-selected)] hover:text-[var(--color-on-row-selected)] disabled:opacity-40 ${autoHeight}`}
+      className={`press relative flex shrink-0 items-center gap-1.5 whitespace-nowrap bg-[var(--color-accent-soft)] text-xs font-semibold text-fg hover:bg-[var(--color-row-selected)] hover:text-[var(--color-on-row-selected)] disabled:opacity-40 ${autoHeight}`}
     >
-      {!(readsAudio || words) && <Tooltip label={tr(copy.autoUnanalysed)} />}
-      <svg viewBox="0 0 16 16" className="h-3 w-3 text-[var(--color-accent)]" aria-hidden="true">
-        <path d="M8 1 9.6 6.4 15 8 9.6 9.6 8 15 6.4 9.6 1 8 6.4 6.4Z" fill="currentColor" />
-      </svg>
-      {readingAudio ? tr('editor.cues.engine.autoReading') : tr('editor.cues.auto.button')}
+      {readingAudio ? (
+        <Tooltip label={tr('editor.cues.engine.autoReading')} />
+      ) : (
+        !(readsAudio || words) && <Tooltip label={tr(copy.autoUnanalysed)} />
+      )}
+      {readingAudio && (
+        <Loader2
+          data-testid="cues-auto-mark-spinner"
+          className="absolute inset-0 m-auto h-3 w-3 animate-spin text-fg-faint"
+          aria-hidden="true"
+        />
+      )}
+      <span
+        data-testid="cues-auto-mark-label"
+        style={readingAudio ? { visibility: 'hidden' } : undefined}
+        className="flex items-center gap-1.5"
+      >
+        <svg viewBox="0 0 16 16" className="h-3 w-3 text-[var(--color-accent)]" aria-hidden="true">
+          <path d="M8 1 9.6 6.4 15 8 9.6 9.6 8 15 6.4 9.6 1 8 6.4 6.4Z" fill="currentColor" />
+        </svg>
+        {tr('editor.cues.auto.button')}
+      </span>
+    </button>
+  )
+  const fitGridControl = (
+    <button
+      type="button"
+      data-testid="cues-fit-grid"
+      data-needs-fix={needsFix ? 'true' : undefined}
+      aria-busy={fitPending || undefined}
+      disabled={!state.grid || !gridFit}
+      onClick={() =>
+        state.grid &&
+        gridFit &&
+        fitGridTo(autoFitGrid(state.grid, gridFit, playheadMs, programBeats, rekordboxGrid))
+      }
+      className={`press relative flex shrink-0 items-center gap-1.5 whitespace-nowrap border border-[var(--color-line-strong)] text-xs font-medium text-fg-muted hover:bg-[var(--color-hover)] disabled:opacity-40 data-[needs-fix=true]:border-[var(--color-accent)] data-[needs-fix=true]:bg-[var(--color-accent)] data-[needs-fix=true]:font-semibold data-[needs-fix=true]:text-[var(--color-on-accent)] ${autoHeight}`}
+    >
+      <Tooltip label={gridOff ?? tr('editor.cues.grid.autoHint')} />
+      {fitPending && (
+        <Loader2
+          data-testid="cues-fit-grid-spinner"
+          className="absolute inset-0 m-auto h-3 w-3 animate-spin text-fg-faint"
+          aria-hidden="true"
+        />
+      )}
+      <span
+        data-testid="cues-fit-grid-label"
+        style={fitPending ? { visibility: 'hidden' } : undefined}
+      >
+        {tr('editor.cues.grid.fit')}
+      </span>
     </button>
   )
   const actions = (
@@ -1280,7 +1360,7 @@ function Editing({
       proposals={proposals}
       onDropProposal={dropProposal}
       ghost={stripGhost}
-      cursorMs={hoverGhost && ghost ? (hoverMs ?? undefined) : undefined}
+      cursorMs={hoverGhost && ghost ? (hoverMs ?? undefined) : manualMenuMs}
       onSelect={(key) => dispatch({ type: 'select', key })}
       onMenu={maximized ? setMenu : undefined}
       onMarkMenu={openMarkMenu}
@@ -1306,7 +1386,8 @@ function Editing({
       onZoom={(dir) => setZoom((z) => zoomStep(z, dir))}
       ghost={ghost}
       onMarkMenu={openMarkMenu}
-      onDeleteMark={(key) => dispatch(removeOf(key))}
+      onMenu={maximized ? openMenuAt : undefined}
+      cursorMs={manualMenuMs}
       movable={[
         ...points,
         ...state.cues
@@ -1317,7 +1398,7 @@ function Editing({
       onMarkDrag={setPointDrag}
       compact={!maximized}
       onPlace={placing ? place : undefined}
-      onHover={placing ? setHoverMs : undefined}
+      onHover={placing && menu === null ? setHoverMs : undefined}
       proposals={proposals}
       onAcceptProposal={acceptProposal}
       onDropProposal={dropProposal}
@@ -1335,6 +1416,7 @@ function Editing({
         onChange={pickOption}
         options={flowOptions}
       />
+      {fitGridControl}
       {autoControl}
     </span>
   )
@@ -1754,6 +1836,54 @@ function Editing({
                   {tr('editor.cues.menuDeleteCall')}
                 </button>
               )}
+              <button
+                type="button"
+                role="menuitem"
+                data-testid={markTarget.kind === 0 ? 'cues-menu-to-hot' : 'cues-menu-to-call'}
+                disabled={paired || (markTarget.kind === 0 && lettersFull)}
+                onClick={() => fromMarkMenu(convertOf(markTarget))}
+                className={MENU_ITEM}
+              >
+                {tr(markTarget.kind === 0 ? 'editor.cues.menuToHot' : 'editor.cues.menuToCall')}
+              </button>
+              {markTarget.kind !== 0 && !settings.cueLettersByTime && (
+                <div className="flex items-center gap-1 px-3 py-1">
+                  <span className="mr-1 text-fg-dim">{tr('editor.cues.menuLetter')}</span>
+                  {ctx.slots.kinds.map((kind) => {
+                    const holder = state.cues.find((c) => c.kind === kind)
+                    return (
+                      <button
+                        key={kind}
+                        type="button"
+                        data-testid={`cues-menu-letter-${cueLetter(kind)}`}
+                        aria-pressed={kind === markTarget.kind}
+                        disabled={holder !== undefined && state.locked.includes(holder.key)}
+                        onClick={() =>
+                          fromMarkMenu({ type: 'reletter', key: markTarget.key, kind })
+                        }
+                        className={`press h-5 w-5 rounded-[3px] text-center font-semibold hover:bg-[var(--color-hover)] disabled:opacity-40 ${
+                          kind === markTarget.kind
+                            ? 'bg-[var(--color-fg)] text-[var(--color-panel)] hover:bg-[var(--color-fg)]'
+                            : ''
+                        }`}
+                      >
+                        {cueLetter(kind)}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+              {offGridKeys.includes(markTarget.key) && (
+                <button
+                  type="button"
+                  role="menuitem"
+                  data-testid="cues-menu-snap"
+                  onClick={() => fromMarkMenu({ type: 'snap-to-beat', keys: [markTarget.key] })}
+                  className={MENU_ITEM}
+                >
+                  {tr('editor.cues.menuSnap')}
+                </button>
+              )}
             </>
           )}
         </div>
@@ -1858,11 +1988,6 @@ function Editing({
       {autoNote === 'marked' && (
         <p data-testid="cues-auto-marked" className="mt-2 text-xs text-fg-dim">
           {tr('editor.cues.auto.marked')}
-        </p>
-      )}
-      {(outcome === 'corrected' || outcome === 'manual') && (
-        <p data-testid="cues-auto-outcome" className="mt-2 text-xs text-fg-dim">
-          {tr(outcome === 'corrected' ? 'editor.cues.auto.changed' : 'editor.cues.auto.own')}
         </p>
       )}
       {state.notice === 'too-many' && (

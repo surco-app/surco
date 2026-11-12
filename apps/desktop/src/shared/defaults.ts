@@ -87,7 +87,7 @@ export const SEARCH_PROVIDERS: readonly SearchProviderId[] = [
 export const DISCOGS_FORMATS = ['Vinyl', 'CD', 'File', 'Cassette'] as const
 
 // How many search results the editor's results column shows by default, and the presets
-// offered in Settings → Search. Kept low so the relevant releases sit on screen instead of
+// offered in Settings → Sources. Kept low so the relevant releases sit on screen instead of
 // a long noise tail of compilations/reissues; the auto-match probe scans the full set
 // independently, so trimming the displayed list never costs a suggestion.
 export const DEFAULT_DISCOGS_MAX_RESULTS = 10

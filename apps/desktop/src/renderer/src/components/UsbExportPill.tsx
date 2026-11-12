@@ -26,7 +26,7 @@ export function UsbExportPill({
       type="button"
       data-testid="usb-export-progress"
       onClick={onOpen}
-      className="flex items-center gap-1.5 rounded-md px-2 py-1 text-sm text-[var(--color-accent)] tabular-nums hover:bg-[var(--color-hover)]"
+      className="press flex items-center gap-1.5 rounded-md px-2 py-1 text-sm text-[var(--color-accent)] tabular-nums hover:bg-[var(--color-hover)]"
     >
       <Usb size={14} aria-hidden="true" />
       {label}
