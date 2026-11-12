@@ -11251,6 +11251,35 @@ describe('automatic session from the tree', () => {
 
 // Hiding the sidebar is for the user who wants the whole window for the list and the
 // editor; it has to take the rail and the playlists with it and leave a way back.
+// Typing a playlist's name in ⌘K is the fastest way into it, from any source and with the
+// sidebar hidden or not.
+describe('App palette playlists', () => {
+  it('opens a playlist of another source from the palette', async () => {
+    const playlist = vi
+      .fn<ProgramReads['playlist']>()
+      .mockResolvedValue([{ path: '/m/a.wav', separator: false, meta: {} }])
+    setApi({
+      dj: djReads({
+        engine: {
+          available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+          tree: vi
+            .fn<ProgramReads['tree']>()
+            .mockResolvedValue([{ id: '7', name: 'Carcer edits', kind: 'playlist', count: 1 }]),
+          recentCount: vi.fn<ProgramReads['recentCount']>().mockResolvedValue(0),
+          playlist,
+        },
+      }),
+    })
+    await renderApp()
+    await screen.findByTestId('source-rail-engine')
+    fireEvent.keyDown(window, { key: 'k', metaKey: true })
+    fireEvent.change(await screen.findByTestId('palette-input'), { target: { value: 'carcer' } })
+    fireEvent.click(await screen.findByRole('option', { name: 'Engine DJ › Carcer edits' }))
+    await waitFor(() => expect(playlist).toHaveBeenCalledWith('7'))
+    expect(screen.getByTestId('source-rail-engine')).toHaveAttribute('aria-pressed', 'true')
+  })
+})
+
 describe('App sidebar', () => {
   // Kept mounted off screen so it can slide back out the way it came, but nothing in it can
   // take a click or the focus while it is away.

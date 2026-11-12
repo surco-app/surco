@@ -31,6 +31,8 @@ export interface SourceBrowser {
   canInsertSeparator: boolean
   selectSource: (source: PlaylistSource | null) => void
   selectPlaylist: (node: SourceNode, folders: string[]) => void
+  openPlaylist: (source: PlaylistSource, node: SourceNode, folders: string[]) => void
+  loadTrees: () => Promise<{ source: PlaylistSource; tree: SourceNode[] }[]>
 }
 
 function containsNode(nodes: SourceNode[], id: string): boolean {
@@ -128,19 +130,21 @@ export function useSourceBrowser({
     ].filter((s) => !hiddenSources.includes(s))
   }, [isMac, found, hiddenSources])
 
-  const treeKey = ['source-tree', source]
-  const tree = useQuery({
-    queryKey: treeKey,
-    queryFn: () =>
-      source === 'appleMusic'
-        ? readMusicTree(tr('sources.allTracks'), (last) => {
-            if (queryClient.getQueryData(treeKey) === undefined)
-              queryClient.setQueryData(treeKey, last)
-          })
-        : readTree(source as PlaylistSource, tr('sources.allTracks')),
-    enabled: source !== null,
-    staleTime: Number.POSITIVE_INFINITY,
-  })
+  const treeQuery = (of: PlaylistSource | null) => {
+    const queryKey = ['source-tree', of]
+    return {
+      queryKey,
+      queryFn: () =>
+        of === 'appleMusic'
+          ? readMusicTree(tr('sources.allTracks'), (last: SourceNode[]) => {
+              if (queryClient.getQueryData(queryKey) === undefined)
+                queryClient.setQueryData(queryKey, last)
+            })
+          : readTree(of as PlaylistSource, tr('sources.allTracks')),
+      staleTime: Number.POSITIVE_INFINITY,
+    }
+  }
+  const tree = useQuery({ ...treeQuery(source), enabled: source !== null })
   const program = source === 'appleMusic' ? null : source
   const hasRecent = program !== null
   const recent = useQuery({
@@ -259,5 +263,18 @@ export function useSourceBrowser({
       if (!source) return
       setPlaylists((all) => ({ ...all, [source]: { id: node.id, name: node.name, folders } }))
     },
+    openPlaylist: (next, node, folders) => {
+      setSource(next)
+      setPlaylists((all) => ({ ...all, [next]: { id: node.id, name: node.name, folders } }))
+    },
+    loadTrees: () =>
+      Promise.all(
+        sources.map((s) =>
+          queryClient
+            .ensureQueryData(treeQuery(s))
+            .then((t) => ({ source: s, tree: t }))
+            .catch(() => ({ source: s, tree: [] })),
+        ),
+      ),
   }
 }

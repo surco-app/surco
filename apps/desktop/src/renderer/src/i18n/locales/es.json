@@ -2176,8 +2176,9 @@
   "palette": {
     "resultCount_one": "{{count}} resultado",
     "resultCount_other": "{{count}} resultados",
-    "placeholder": "Busca pistas o ejecuta una acción…",
+    "placeholder": "Busca pistas, playlists o ejecuta una acción…",
     "tracks": "Pistas",
+    "playlists": "Playlists",
     "empty": "Sin resultados",
     "groups": {
       "tags": "Metadatos",

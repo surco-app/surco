@@ -164,6 +164,7 @@ import { railWidth } from './lib/columnLayout'
 import {
   buildCommands,
   type Command,
+  type PaletteTree,
   type CueActions,
   type NewPlaylist,
   runCommand,
@@ -1250,6 +1251,29 @@ export default function App(): React.JSX.Element {
     browser.selectSource(next)
     closePlayer()
   })
+  const goToPlaylist = useStableCallback(
+    (source: PlaylistSource, node: SourceNode, folders: string[]) => {
+      selectSource(source)
+      if (node.id !== browser.playlist?.id || source !== browser.source) {
+        heldSelection.current ??= selection
+        setSelection({ ids: [], anchor: null })
+      }
+      browser.openPlaylist(source, node, folders)
+    },
+  )
+  const [paletteTrees, setPaletteTrees] = useState<PaletteTree[]>([])
+  const paletteOpen = activeModal?.type === 'palette'
+  const loadPaletteTrees = useStableCallback(() => browser.loadTrees())
+  useEffect(() => {
+    if (!paletteOpen) return
+    let live = true
+    void loadPaletteTrees().then((trees) => {
+      if (live) setPaletteTrees(trees.map((t) => ({ ...t, name: tr(`sources.${t.source}`) })))
+    })
+    return () => {
+      live = false
+    }
+  }, [paletteOpen, loadPaletteTrees, tr])
   // Files the user adds go to the working list, which a source does not show, so Tracks
   // comes forward with them on screen; a cancelled picker added nothing and stays. A drop on
   // a tree playlist never reaches here. Picked and dropped paths expand alike: a folder
@@ -4336,6 +4360,8 @@ export default function App(): React.JSX.Element {
               deriveTracksUndoable={deriveTracksUndoable}
               updateTrack={updateTrack}
               revealSelection={revealSelection}
+              paletteTrees={paletteTrees}
+              goToPlaylist={goToPlaylist}
               playlistLibraries={playlistLibraries}
               cueTrack={cueTrack}
             />
