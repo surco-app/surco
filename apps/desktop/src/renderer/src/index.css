@@ -46,6 +46,9 @@
   --color-good: #9ece6a;
   --color-warn: #e0af68;
   --color-danger: #f7768e;
+  --color-good-label: var(--color-good);
+  --color-warn-label: var(--color-warn);
+  --color-danger-label: var(--color-danger);
   /* Text sitting ON a filled accent/danger/good surface. It has to flip with the theme
      because those fills do: the dark palette's accent is a LIGHT blue (#7aa2f7) and its
      danger a light rose, so white text on them lands at 2.5:1 — under even the relaxed
@@ -108,6 +111,9 @@
   --color-good: #33635c;
   --color-warn: #785526;
   --color-danger: #8c4351;
+  --color-good-label: color-mix(in srgb, var(--color-good) 78%, var(--color-fg));
+  --color-warn-label: color-mix(in srgb, var(--color-warn) 64%, var(--color-fg));
+  --color-danger-label: color-mix(in srgb, var(--color-danger) 68%, var(--color-fg));
   --color-on-accent: #ffffff;
   /* Un azul claro y tranquilo, por lo mismo que en oscuro: el relleno macizo competía con
      el botón principal. Lo bastante lejos de --color-accent para que el contorno de foco de
@@ -875,7 +881,7 @@ button:hover > .process-fill {
   color: var(--color-on-row-selected);
 }
 .is-applied .text-fg-dim {
-  color: color-mix(in srgb, var(--color-on-row-selected) 72%, transparent);
+  color: color-mix(in srgb, var(--color-on-row-selected) 88%, transparent);
 }
 .is-applied [data-testid="track-confidence"] {
   color: var(--color-on-row-selected);
@@ -891,10 +897,17 @@ button:hover > .process-fill {
   color: var(--color-on-row-selected);
 }
 .is-primary [data-fit] .text-fg-dim {
-  color: color-mix(in srgb, var(--color-on-row-selected) 78%, transparent);
+  color: color-mix(in srgb, var(--color-on-row-selected) 90%, transparent);
 }
 .is-primary [data-testid="track-format"] {
-  color: color-mix(in srgb, var(--color-on-row-selected) 85%, transparent);
+  color: color-mix(in srgb, var(--color-on-row-selected) 92%, transparent);
+}
+@media (prefers-contrast: more) {
+  .is-applied .text-fg-dim,
+  .is-primary [data-fit] .text-fg-dim,
+  .is-primary [data-testid="track-format"] {
+    color: var(--color-on-row-selected);
+  }
 }
 /* The right-hand glyphs (match sparkles, backup mark) carry their own accent/semantic
    colour, which on the blue fill either vanishes (accent-on-blue) or clashes (amber-on-blue).
