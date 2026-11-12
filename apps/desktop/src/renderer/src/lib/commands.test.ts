@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { SHORTCUT_DEFAULTS } from '../../../shared/shortcutDefaults'
-import type { Settings } from '../../../shared/types'
+import type { Settings, SourceNode } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import {
   buildCommands,
@@ -8,6 +8,7 @@ import {
   type CommandDeps,
   commandGroups,
   filterCommands,
+  filterPlaylistCommands,
   filterTrackCommands,
   guideUrl,
   runCommand,
@@ -463,6 +464,79 @@ describe('filterTrackCommands', () => {
       track({ id: `m${i}`, meta: meta('Mix', `Track ${i}`) }),
     )
     expect(filterTrackCommands(many, 'mix', () => {}).length).toBe(8)
+  })
+})
+
+describe('filterPlaylistCommands', () => {
+  const node = (id: string, name: string, kind: 'folder' | 'playlist', children?: SourceNode[]) =>
+    ({ id, name, kind, count: 0, children }) as SourceNode
+  const trees = [
+    {
+      source: 'rekordbox' as const,
+      name: 'rekordbox',
+      tree: [
+        node('f', 'Cárcel', 'folder', [node('p1', 'Peak time', 'playlist')]),
+        node('p2', 'Cantaditas', 'playlist'),
+      ],
+    },
+    { source: 'traktor' as const, name: 'Traktor', tree: [node('p3', 'carcer edits', 'playlist')] },
+  ]
+
+  it('returns nothing until something is typed, so browsing ⌘K stays the command catalogue', () => {
+    expect(filterPlaylistCommands(trees, ' ', () => {})).toEqual([])
+  })
+
+  // People remember the playlist, not which program holds it, and often not the accents:
+  // the folder a playlist sits in counts as part of its name.
+  it('finds playlists across every source by their name or their folders, without accents', () => {
+    const found = filterPlaylistCommands(trees, 'carcel', () => {})
+    expect(found.map((c) => c.title)).toEqual(['rekordbox › Cárcel › Peak time'])
+    expect(filterPlaylistCommands(trees, 'carce', () => {}).map((c) => c.title)).toEqual([
+      'Traktor › carcer edits',
+      'rekordbox › Cárcel › Peak time',
+    ])
+    expect(found[0].group).toBe('playlists')
+  })
+
+  // A big folder named like the query must not fill every slot: playlists named like it
+  // come first, and each source keeps a share so one library cannot hide the others.
+  it('puts playlists named like the query first and gives every source a share', () => {
+    const many = (prefix: string) =>
+      Array.from({ length: 10 }, (_, i) => node(`${prefix}${i}`, `${i}`, 'playlist'))
+    const crowded = [
+      {
+        source: 'appleMusic' as const,
+        name: 'Music',
+        tree: [node('m', 'Cantaditas', 'folder', many('m'))],
+      },
+      {
+        source: 'rekordbox' as const,
+        name: 'rekordbox',
+        tree: [
+          node('r', 'CANTADITAS', 'folder', many('r')),
+          node('x', 'Cantaditas 98', 'playlist'),
+        ],
+      },
+    ]
+    const titles = filterPlaylistCommands(crowded, 'canta', () => {}).map((c) => c.title)
+    expect(titles[0]).toBe('rekordbox › Cantaditas 98')
+    expect(titles).toHaveLength(8)
+    expect(titles.filter((t) => t.startsWith('Music')).length).toBeGreaterThan(0)
+    expect(titles.filter((t) => t.startsWith('rekordbox › CANTADITAS')).length).toBeGreaterThan(0)
+  })
+
+  it('never offers a folder as a place to open', () => {
+    expect(filterPlaylistCommands(trees, 'cárcel', () => {}).map((c) => c.title)).not.toContain(
+      'rekordbox › Cárcel',
+    )
+  })
+
+  it('opens the playlist in its own source when its result runs', () => {
+    const open = vi.fn()
+    filterPlaylistCommands(trees, 'peak', open)[0].run()
+    expect(open).toHaveBeenCalledWith('rekordbox', expect.objectContaining({ id: 'p1' }), [
+      'Cárcel',
+    ])
   })
 })
 

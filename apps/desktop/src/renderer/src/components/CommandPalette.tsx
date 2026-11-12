@@ -5,8 +5,11 @@ import {
   COMMAND_GROUP_ORDER,
   type Command,
   filterCommands,
+  filterPlaylistCommands,
   filterTrackCommands,
+  type PaletteTree,
 } from '../lib/commands'
+import type { PlaylistSource, SourceNode } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { ModalShell } from './ModalShell'
 
@@ -17,6 +20,8 @@ interface Props {
   // optional and additive: without them the palette is a plain command launcher.
   tracks?: TrackItem[]
   onGoToTrack?: (id: string) => void
+  playlists?: PaletteTree[]
+  onGoToPlaylist?: (source: PlaylistSource, node: SourceNode, folders: string[]) => void
   // Per-command run counts (command id → count) that float a filtered list's most-used
   // entries to the top, and a callback to record one more run so the counts keep learning.
   usage?: Record<string, number>
@@ -28,6 +33,8 @@ export function CommandPalette({
   commands,
   tracks = [],
   onGoToTrack = () => {},
+  playlists = [],
+  onGoToPlaylist = () => {},
   usage = {},
   onRunCommand = () => {},
   onClose,
@@ -38,6 +45,7 @@ export function CommandPalette({
   const inputRef = useRef<HTMLInputElement>(null)
   const commandResults = filterCommands(commands, query, usage)
   const trackResults = filterTrackCommands(tracks, query, onGoToTrack)
+  const playlistResults = filterPlaylistCommands(playlists, query, onGoToPlaylist)
   // Raycast's split between browsing and looking up: with no query the palette is a
   // catalog — sections in the fixed everyday-relevance order, headers where the
   // group changes. A typed query is a lookup — matches rank flat by usage (the
@@ -49,6 +57,7 @@ export function CommandPalette({
     ...(browsing
       ? COMMAND_GROUP_ORDER.flatMap((g) => commandResults.filter((c) => c.group === g))
       : commandResults),
+    ...playlistResults,
     ...trackResults,
   ]
   const activeId = results[active] ? `palette-option-${results[active].id}` : undefined
@@ -57,7 +66,9 @@ export function CommandPalette({
   // stays ungrouped. Each entry keeps its flat index for the arrow/Enter navigation.
   const sections: { group?: string; items: { c: Command; i: number }[] }[] = []
   results.forEach((c, i) => {
-    const header = (browsing || c.group === 'tracks') && results[i - 1]?.group !== c.group
+    const header =
+      (browsing || c.group === 'tracks' || c.group === 'playlists') &&
+      results[i - 1]?.group !== c.group
     if (header || sections.length === 0) {
       sections.push({ group: header ? c.group : undefined, items: [] })
     }
@@ -80,7 +91,7 @@ export function CommandPalette({
     if (c?.enabled) {
       // Only real commands count toward frecency; a track jump ("goto:<id>") is a one-off
       // navigation, not a command whose ranking should stick.
-      if (!c.id.startsWith('goto:')) onRunCommand(c.id)
+      if (!c.id.startsWith('goto:') && !c.id.startsWith('playlist:')) onRunCommand(c.id)
       c.run()
       onClose()
     }
@@ -180,7 +191,9 @@ export function CommandPalette({
                 data-testid="palette-group-header"
                 className="px-3 pt-2 pb-1 text-label font-medium text-fg-dim"
               >
-                {group === 'tracks' ? t('palette.tracks') : t(`palette.groups.${group}`)}
+                {group === 'tracks' || group === 'playlists'
+                  ? t(`palette.${group}`)
+                  : t(`palette.groups.${group}`)}
               </p>
               {options}
             </div>

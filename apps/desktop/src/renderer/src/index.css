@@ -513,19 +513,28 @@ textarea {
   animation: overlay-in var(--duration-state) var(--ease-standard);
 }
 
-@keyframes sidebar-peek-in {
-  from {
-    transform: translateX(-100%);
-  }
+.sidebar-peek {
+  transform: translateX(-100%);
+  box-shadow: none;
+  transition:
+    transform var(--duration-panel) var(--ease-standard),
+    box-shadow var(--duration-panel) var(--ease-standard);
 }
 
-.animate-sidebar-peek {
-  animation: sidebar-peek-in var(--duration-panel) var(--ease-standard);
+.sidebar-peek[data-open] {
+  transform: none;
+  box-shadow: var(--shadow-float);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-sidebar-peek {
-    animation: overlay-in var(--duration-state) var(--ease-standard);
+  .sidebar-peek {
+    transform: none;
+    opacity: 0;
+    transition: opacity var(--duration-state) var(--ease-standard);
+  }
+
+  .sidebar-peek[data-open] {
+    opacity: 1;
   }
 }
 

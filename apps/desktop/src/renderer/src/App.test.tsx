@@ -11251,12 +11251,45 @@ describe('automatic session from the tree', () => {
 
 // Hiding the sidebar is for the user who wants the whole window for the list and the
 // editor; it has to take the rail and the playlists with it and leave a way back.
+// Typing a playlist's name in ⌘K is the fastest way into it, from any source and with the
+// sidebar hidden or not.
+describe('App palette playlists', () => {
+  it('opens a playlist of another source from the palette', async () => {
+    const playlist = vi
+      .fn<ProgramReads['playlist']>()
+      .mockResolvedValue([{ path: '/m/a.wav', separator: false, meta: {} }])
+    setApi({
+      dj: djReads({
+        engine: {
+          available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+          tree: vi
+            .fn<ProgramReads['tree']>()
+            .mockResolvedValue([{ id: '7', name: 'Carcer edits', kind: 'playlist', count: 1 }]),
+          recentCount: vi.fn<ProgramReads['recentCount']>().mockResolvedValue(0),
+          playlist,
+        },
+      }),
+    })
+    await renderApp()
+    await screen.findByTestId('source-rail-engine')
+    fireEvent.keyDown(window, { key: 'k', metaKey: true })
+    fireEvent.change(await screen.findByTestId('palette-input'), { target: { value: 'carcer' } })
+    fireEvent.click(await screen.findByRole('option', { name: 'Engine DJ › Carcer edits' }))
+    await waitFor(() => expect(playlist).toHaveBeenCalledWith('7'))
+    expect(screen.getByTestId('source-rail-engine')).toHaveAttribute('aria-pressed', 'true')
+  })
+})
+
 describe('App sidebar', () => {
-  it('draws neither the rail nor the playlists while the sidebar is hidden', async () => {
+  // Kept mounted off screen so it can slide back out the way it came, but nothing in it can
+  // take a click or the focus while it is away.
+  it('keeps the rail and the playlists out of view and out of reach while the sidebar is hidden', async () => {
     setApi({ getSettings: vi.fn().mockResolvedValue(settings({ showSidebar: false })) })
     await renderApp()
     await addTwoTracks()
-    expect(screen.queryByTestId('source-rail')).not.toBeInTheDocument()
+    const peek = screen.getByTestId('sidebar-peek')
+    expect(peek).not.toHaveAttribute('data-open')
+    expect(peek).toHaveAttribute('inert')
   })
 
   // A hidden sidebar must not cost the user the playlists: resting the pointer on the left
@@ -11266,9 +11299,12 @@ describe('App sidebar', () => {
     await renderApp()
     await addTwoTracks()
     fireEvent.pointerEnter(screen.getByTestId('sidebar-edge'))
-    expect(await screen.findByTestId('source-rail')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByTestId('sidebar-peek')).toHaveAttribute('data-open'))
+    expect(screen.getByTestId('sidebar-peek')).not.toHaveAttribute('inert')
     fireEvent.pointerLeave(screen.getByTestId('sidebar-peek'))
-    await waitFor(() => expect(screen.queryByTestId('source-rail')).not.toBeInTheDocument())
+    await waitFor(() =>
+      expect(screen.getByTestId('sidebar-peek')).not.toHaveAttribute('data-open'),
+    )
   })
 
   // The edge has to be found; the location over the list is in plain sight and opens the
@@ -11278,9 +11314,9 @@ describe('App sidebar', () => {
     await renderApp()
     await addTwoTracks()
     fireEvent.click(screen.getByTestId('track-list-location'))
-    expect(screen.getByTestId('source-rail')).toBeInTheDocument()
+    expect(screen.getByTestId('sidebar-peek')).toHaveAttribute('data-open')
     fireEvent.keyDown(screen.getByTestId('sidebar-peek'), { key: 'Escape' })
-    expect(screen.queryByTestId('source-rail')).not.toBeInTheDocument()
+    expect(screen.getByTestId('sidebar-peek')).not.toHaveAttribute('data-open')
   })
 
   it('brings the sidebar back from the right-click on the list header', async () => {
@@ -11289,6 +11325,7 @@ describe('App sidebar', () => {
     await addTwoTracks()
     fireEvent.contextMenu(screen.getByTestId('track-list-toolbar'))
     fireEvent.click(screen.getByRole('menuitemcheckbox', { name: i18n.t('view.sidebar') }))
-    expect(await screen.findByTestId('source-rail')).toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByTestId('sidebar-peek')).not.toBeInTheDocument())
+    expect(screen.getByTestId('source-rail')).toBeInTheDocument()
   })
 })

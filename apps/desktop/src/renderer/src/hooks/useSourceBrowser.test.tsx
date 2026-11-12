@@ -933,3 +933,39 @@ describe('useSourceBrowser', () => {
     expect(result.current.canInsertSeparator).toBe(false)
   })
 })
+
+// A palette jump lands in another source in one step: the source and its playlist change
+// together, or the playlist would be filed under the source being left.
+describe('useSourceBrowser palette jumps', () => {
+  it('opens a playlist of another source in one step', async () => {
+    const { result } = setup({}, 'win32')
+    await waitFor(() => expect(result.current.sources).toEqual(['rekordbox', 'engine']))
+    act(() =>
+      result.current.openPlaylist(
+        'engine',
+        { id: '7', name: 'Friday', kind: 'playlist', count: 1 },
+        ['Gigs'],
+      ),
+    )
+    expect(result.current.source).toBe('engine')
+    expect(result.current.playlist).toEqual({ id: '7', name: 'Friday', folders: ['Gigs'] })
+  })
+
+  // The palette searches every source, and reads each tree through the cache the rail uses,
+  // so opening the source afterwards reads nothing again.
+  it('reads the trees of every source once, through the cache the rail shares', async () => {
+    const { result } = setup({}, 'win32')
+    await waitFor(() => expect(result.current.sources).toEqual(['rekordbox', 'engine']))
+    let trees: Awaited<ReturnType<typeof result.current.loadTrees>> = []
+    await act(async () => {
+      trees = await result.current.loadTrees()
+    })
+    expect(trees.map((t) => [t.source, t.tree.map((n) => n.name)])).toEqual([
+      ['rekordbox', ['House']],
+      ['engine', ['Friday']],
+    ])
+    act(() => result.current.selectSource('engine'))
+    await waitFor(() => expect(result.current.tree?.some((n) => n.name === 'Friday')).toBe(true))
+    expect(window.api.dj.tree).toHaveBeenCalledTimes(2)
+  })
+})
