@@ -10913,7 +10913,7 @@ describe('paste tracklist from the tree', () => {
     fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
     fireEvent.contextMenu(await screen.findByTestId(`source-node-${nodeId}`))
     fireEvent.click(screen.getByTestId('source-tree-paste-tracklist'))
-    fireEvent.change(screen.getByTestId('paste-tracklist-text'), {
+    fireEvent.change(await screen.findByTestId('paste-tracklist-text'), {
       target: { value: 'Jessy - Silent Tears (Extended Mix)' },
     })
     if (name)
@@ -10943,7 +10943,7 @@ describe('paste tracklist from the tree', () => {
     fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
     fireEvent.contextMenu(await screen.findByTestId('source-node-f'))
     fireEvent.click(screen.getByTestId('source-tree-paste-tracklist'))
-    fireEvent.change(screen.getByTestId('paste-tracklist-text'), {
+    fireEvent.change(await screen.findByTestId('paste-tracklist-text'), {
       target: { value: 'Jessy - Silent Tears (Extended Mix)' },
     })
     fireEvent.keyDown(window, { key: 'Escape' })
@@ -10962,6 +10962,7 @@ describe('paste tracklist from the tree', () => {
     fireEvent.keyDown(window, { key: 'Escape' })
     await waitFor(() => expect(screen.queryByTestId('palette-input')).not.toBeInTheDocument())
     fireEvent.click(screen.getByTestId('source-tree-paste-tracklist'))
+    await screen.findByTestId('paste-tracklist-dialog')
     fireEvent.keyDown(window, { key: 'k', metaKey: true })
     expect(screen.queryByTestId('palette-input')).not.toBeInTheDocument()
     expect(screen.getByTestId('paste-tracklist-dialog')).toBeInTheDocument()
