@@ -293,6 +293,7 @@ const SYNC_ISSUES: Record<
 const inFiles = (t: TrackItem): boolean => !!t.inFiles
 
 const SEEN_SETTLE_MS = 250
+const SEEN_DWELL_MS = 300
 
 // The editor (DiscogsPanel, metadata form, every section) is dead weight on first
 // paint, which shows the empty pane — split it into its own chunk, loaded the first
@@ -2037,9 +2038,23 @@ export default function App(): React.JSX.Element {
   const [seenInAll, setSeenInAll] = useState<ReadonlySet<string>>(() => new Set())
   const rowsOnScreen = useRef(new Set<string>())
   const cameIntoView = useRef<string[]>([])
+  const seenDwell = useRef(new Map<string, ReturnType<typeof setTimeout>>())
+  const markSeenInAll = useStableCallback((id: string): void => {
+    seenDwell.current.delete(id)
+    if (browser.playlist?.id !== ALL_TRACKS_ID || seenInAllRef.current.has(id)) return
+    seenInAllRef.current.add(id)
+    seenSettle.current ??= setTimeout(() => {
+      seenSettle.current = null
+      setSeenInAll(new Set(seenInAllRef.current))
+    }, SEEN_SETTLE_MS)
+  })
   const onListRowVisible = useStableCallback((id: string, visible: boolean): void => {
     if (visible) rowsOnScreen.current.add(id)
-    else rowsOnScreen.current.delete(id)
+    else {
+      rowsOnScreen.current.delete(id)
+      clearTimeout(seenDwell.current.get(id))
+      seenDwell.current.delete(id)
+    }
     onTrackVisible(id, visible)
     onDuplicateRowVisible(id, visible)
     if (visible && cameIntoView.current.push(id) === 1)
@@ -2048,13 +2063,13 @@ export default function App(): React.JSX.Element {
         prioritizeReads(came)
         readCoversOnScreen(came)
       })
-    if (visible && browser.playlist?.id === ALL_TRACKS_ID && !seenInAllRef.current.has(id)) {
-      seenInAllRef.current.add(id)
-      seenSettle.current ??= setTimeout(() => {
-        seenSettle.current = null
-        setSeenInAll(new Set(seenInAllRef.current))
-      }, SEEN_SETTLE_MS)
-    }
+    if (
+      visible &&
+      browser.playlist?.id === ALL_TRACKS_ID &&
+      !seenInAllRef.current.has(id) &&
+      !seenDwell.current.has(id)
+    )
+      seenDwell.current.set(id, setTimeout(() => markSeenInAll(id), SEEN_DWELL_MS))
   })
   // A library that could not be read leaves every row without a verdict, the same blank a
   // check still loading shows; the notice is what tells the two apart. It goes away once

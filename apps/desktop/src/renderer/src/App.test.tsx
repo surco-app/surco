@@ -4247,6 +4247,21 @@ describe('App source playlists', () => {
         })
       }
 
+      function scrollOut(rows: HTMLElement[]): void {
+        act(() => {
+          for (const o of observers) {
+            const gone = [...o.els].filter((el) => rows.some((r) => el === r || el.contains(r)))
+            if (gone.length === 0) continue
+            o.cb(
+              gone.map(
+                (target) => ({ target, isIntersecting: false }) as IntersectionObserverEntry,
+              ),
+              o as unknown as IntersectionObserver,
+            )
+          }
+        })
+      }
+
       async function openAll(): Promise<HTMLElement[]> {
         await renderApp()
         fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
@@ -4399,6 +4414,34 @@ describe('App source playlists', () => {
         await waitFor(() => expect([...analyzed].sort()).toEqual(['/m/x.wav', '/m/y.wav']))
         await waitFor(() => expect(screen.queryByTestId('analyze-progress')).toBeNull())
         expect([...analyzed].sort()).toEqual(['/m/x.wav', '/m/y.wav'])
+      })
+
+      it('leaves out a row the scroll only flies past and analyzes one the DJ stops on', async () => {
+        const analyzed: string[] = []
+        setApi({
+          ...collection,
+          getSettings: vi.fn().mockResolvedValue(settings({ autoAnalyze: true })),
+          readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'DJ' }),
+          spectrogram: vi.fn(async (path: string) => {
+            analyzed.push(path)
+            return spectrum
+          }),
+        })
+        const rows = await openAll()
+        await new Promise((r) => setTimeout(r, 400))
+        vi.useFakeTimers()
+
+        scrollPast([rows[1]])
+        act(() => vi.advanceTimersByTime(100))
+        scrollOut([rows[1]])
+        scrollPast([rows[2]])
+        act(() => vi.advanceTimersByTime(400))
+        act(() => vi.advanceTimersByTime(300))
+        vi.useRealTimers()
+
+        await waitFor(() => expect(analyzed).toEqual(['/m/y.wav']))
+        await waitFor(() => expect(screen.queryByTestId('analyze-progress')).toBeNull())
+        expect(analyzed).toEqual(['/m/y.wav'])
       })
     })
   })
