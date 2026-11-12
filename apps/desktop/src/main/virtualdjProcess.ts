@@ -4,12 +4,15 @@ import { promisify } from 'node:util'
 const run = promisify(execFile)
 
 export async function isVirtualdjRunning(): Promise<boolean> {
-  if (process.platform === 'win32') return false
   try {
+    if (process.platform === 'win32') {
+      const { stdout } = await run('tasklist', ['/FI', 'IMAGENAME eq virtualdj.exe', '/NH'])
+      return stdout.toLowerCase().includes('virtualdj.exe')
+    }
     await run('pgrep', ['-x', 'VirtualDJ'])
     return true
   } catch (err) {
-    return (err as { code?: unknown })?.code !== 1
+    return process.platform === 'win32' || (err as { code?: unknown })?.code !== 1
   }
 }
 

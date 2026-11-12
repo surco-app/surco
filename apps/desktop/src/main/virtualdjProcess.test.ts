@@ -51,11 +51,28 @@ describe('isVirtualdjRunning', () => {
     expect(await runningOn('darwin')).toBe(true)
   })
 
-  it('asks nothing on Windows, where Surco does not offer VirtualDJ yet', async () => {
+  it('lists virtualdj.exe on Windows and reports it running when it is listed, whatever its case', async () => {
     execFile.mockReset()
-    respond(() => ({ stdout: '' }))
+    respond(() => ({ stdout: 'VirtualDJ.exe   4242 Console 1 300,000 K\r\n' }))
+    expect(await runningOn('win32')).toBe(true)
+    expect(execFile.mock.calls[0].slice(0, 2)).toEqual([
+      'tasklist',
+      ['/FI', 'IMAGENAME eq virtualdj.exe', '/NH'],
+    ])
+  })
+
+  it('reports VirtualDJ closed when the Windows listing comes back empty', async () => {
+    execFile.mockReset()
+    respond(() => ({
+      stdout: 'INFO: No tasks are running which match the specified criteria.\r\n',
+    }))
     expect(await runningOn('win32')).toBe(false)
-    expect(execFile).not.toHaveBeenCalled()
+  })
+
+  it('treats a tasklist that could not answer as VirtualDJ running, so nothing is written under it', async () => {
+    execFile.mockReset()
+    respond(() => failure(1))
+    expect(await runningOn('win32')).toBe(true)
   })
 })
 
