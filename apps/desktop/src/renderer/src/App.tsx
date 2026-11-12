@@ -266,6 +266,8 @@ import type { CopiedTags, TrackItem } from './types'
 
 // Hovering counts as intent only after the cursor rests briefly, so sweeping the
 // pointer across the list while scrolling doesn't fire a prefetch for every row.
+const SIDEBAR_PEEK_DELAY_MS = 150
+const PEEK_TREE_WIDTH = 240
 const NO_HIDDEN_SOURCES: PlaylistSource[] = []
 const PREFETCH_HOVER_MS = 150
 const PLAYER_LEAVE_MS = 200
@@ -423,6 +425,8 @@ export default function App(): React.JSX.Element {
   const [activityOpen, setActivityOpen] = useState(false)
   // Surco's own trash (main/surcoTrash.ts): the list is read when Copias opens and
   // after every run that could have added to it.
+  const [sidebarPeek, setSidebarPeek] = useState(false)
+  const peekTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const [copiesOpen, setCopiesOpen] = useState<{
     openMusic: boolean
     query: string
@@ -3435,6 +3439,10 @@ export default function App(): React.JSX.Element {
     if (selected) setRevealingTrack({ source, trackId: selected.id })
   })
   function onEscape(): void {
+    if (sidebarPeek) {
+      setSidebarPeek(false)
+      return
+    }
     if (activeModal) {
       if (activeModal.type === 'onboarding') return
       if (activeModal.type === 'settings') setThemePreview(null)
@@ -3707,32 +3715,96 @@ export default function App(): React.JSX.Element {
                 />
               </div>
 
-              <div className="flex min-h-0 flex-1">
-                {showSidebar && (
-                  <SourceRail
-                    onHideSidebar={toggleSidebar}
-                    width={railWidth({ names: showRailNames })}
-                    showNames={showRailNames}
-                    onToggleNames={toggleRailNames}
-                    sources={browser.sources}
-                    active={browser.source}
-                    onSelect={(next) => {
-                      setCopiesOpen(null)
-                      selectSource(next)
+              <div className="relative flex min-h-0 flex-1">
+                {!showSidebar && !sidebarPeek && (
+                  <div
+                    data-testid="sidebar-edge"
+                    aria-hidden="true"
+                    onPointerEnter={() => {
+                      peekTimer.current = setTimeout(
+                        () => setSidebarPeek(true),
+                        SIDEBAR_PEEK_DELAY_MS,
+                      )
                     }}
-                    onHide={(hidden) =>
-                      saveSettings({
-                        hiddenSources: [...(settings?.hiddenSources ?? NO_HIDDEN_SOURCES), hidden],
-                      })
-                    }
-                    copies={{
-                      active: copiesOpen !== null,
-                      alert: railAlert(libraryCopies.programs),
-                      onOpen: () => {
-                        if (!copiesOpen) openCopies(false, '')
-                      },
-                    }}
+                    onPointerLeave={() => clearTimeout(peekTimer.current)}
+                    className="absolute inset-y-0 left-0 z-30 w-2"
                   />
+                )}
+                {(showSidebar || sidebarPeek) && (
+                  <div
+                    data-testid={showSidebar ? undefined : 'sidebar-peek'}
+                    onPointerLeave={showSidebar ? undefined : () => setSidebarPeek(false)}
+                    onKeyDown={
+                      showSidebar
+                        ? undefined
+                        : (e) => {
+                            if (e.key !== 'Escape') return
+                            e.stopPropagation()
+                            setSidebarPeek(false)
+                          }
+                    }
+                    className={
+                      showSidebar
+                        ? 'contents'
+                        : 'animate-sidebar-peek absolute inset-y-0 left-0 z-30 flex bg-[var(--color-ink)] shadow-[var(--shadow-float)]'
+                    }
+                  >
+                    <SourceRail
+                      sidebarShown={showSidebar}
+                      onToggleSidebar={() => {
+                        setSidebarPeek(false)
+                        toggleSidebar()
+                      }}
+                      width={railWidth({ names: showRailNames })}
+                      showNames={showRailNames}
+                      onToggleNames={toggleRailNames}
+                      sources={browser.sources}
+                      active={browser.source}
+                      onSelect={(next) => {
+                        setCopiesOpen(null)
+                        selectSource(next)
+                      }}
+                      onHide={(hidden) =>
+                        saveSettings({
+                          hiddenSources: [
+                            ...(settings?.hiddenSources ?? NO_HIDDEN_SOURCES),
+                            hidden,
+                          ],
+                        })
+                      }
+                      copies={{
+                        active: copiesOpen !== null,
+                        alert: railAlert(libraryCopies.programs),
+                        onOpen: () => {
+                          setSidebarPeek(false)
+                          if (!copiesOpen) openCopies(false, '')
+                        },
+                      }}
+                    />
+                    {!copiesOpen && browser.source && (
+                      <SourceTree
+                        key={browser.source}
+                        width={showSidebar ? columns.widths.tree : PEEK_TREE_WIDTH}
+                        title={tr(`sources.${browser.source}`)}
+                        source={browser.source}
+                        nodes={browser.tree}
+                        failed={browser.treeFailed}
+                        missing={browser.libraryMissing}
+                        notice={runningNote && programRunning ? tr(runningNote.key) : undefined}
+                        selectedId={browser.playlist?.id ?? null}
+                        onSelect={(node, folders) => {
+                          setSidebarPeek(false)
+                          selectPlaylist(node, folders)
+                        }}
+                        edit={editableSource ? treeEdit : undefined}
+                        fixed={fixed}
+                        onExportUsb={
+                          treeUsbProgram ? () => openUsbExport(null, treeUsbProgram) : undefined
+                        }
+                        newPlaylistRef={newPlaylistRef}
+                      />
+                    )}
+                  </div>
                 )}
                 {copiesOpen && (
                   <div className="min-w-0 flex-1">
@@ -3755,26 +3827,6 @@ export default function App(): React.JSX.Element {
                       onReveal={() => void window.api.revealBackups()}
                     />
                   </div>
-                )}
-                {showSidebar && !copiesOpen && browser.source && (
-                  <SourceTree
-                    key={browser.source}
-                    width={columns.widths.tree}
-                    title={tr(`sources.${browser.source}`)}
-                    source={browser.source}
-                    nodes={browser.tree}
-                    failed={browser.treeFailed}
-                    missing={browser.libraryMissing}
-                    notice={runningNote && programRunning ? tr(runningNote.key) : undefined}
-                    selectedId={browser.playlist?.id ?? null}
-                    onSelect={selectPlaylist}
-                    edit={editableSource ? treeEdit : undefined}
-                    fixed={fixed}
-                    onExportUsb={
-                      treeUsbProgram ? () => openUsbExport(null, treeUsbProgram) : undefined
-                    }
-                    newPlaylistRef={newPlaylistRef}
-                  />
                 )}
                 {/* Until there are rows the window is one screen: an empty column beside the
                   empty-screen card read as a second, broken pane. A picked playlist and an
@@ -3839,6 +3891,7 @@ export default function App(): React.JSX.Element {
                             onToggleWaves={toggleListWaves}
                             showSidebar={showSidebar}
                             onToggleSidebar={toggleSidebar}
+                            onOpenLocation={() => setSidebarPeek(true)}
                             location={
                               showSidebar
                                 ? undefined

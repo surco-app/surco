@@ -26,6 +26,7 @@ function renderHeader(over: Partial<Parameters<typeof TrackListHeader>[0]> = {})
     onTrashSuspects: vi.fn(),
     onToggleWaves: vi.fn(),
     onToggleSidebar: vi.fn(),
+    onOpenLocation: vi.fn(),
   }
   render(
     <TrackListHeader

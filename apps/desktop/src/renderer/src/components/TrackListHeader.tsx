@@ -99,6 +99,7 @@ interface Props {
   showSidebar: boolean
   onToggleSidebar: () => void
   location?: string
+  onOpenLocation: () => void
 }
 
 const LIST_COMMAND_ICONS: [string, LucideIcon][] = [
@@ -214,6 +215,7 @@ export function TrackListHeader({
   showSidebar,
   onToggleSidebar,
   location,
+  onOpenLocation,
 }: Props): React.JSX.Element {
   const { open, setOpen, ref: moreRef, toggleRef, menuRef, onMenuKeyDown } = useSplitMenu()
   // Portaled out of the sticky header, whose layer would hold it under the activity panel
@@ -281,12 +283,14 @@ export function TrackListHeader({
       className="scroll-edge @container sticky top-0 z-10 bg-[var(--color-ink)]"
     >
       {location && (
-        <p
+        <button
+          type="button"
           data-testid="track-list-location"
-          className="truncate px-3 pt-2 text-xs font-medium text-fg-dim"
+          onClick={onOpenLocation}
+          className="press mx-1.5 mt-1.5 block max-w-[calc(100%-0.75rem)] truncate rounded-md px-1.5 py-0.5 text-left text-xs font-medium text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg"
         >
           {location}
-        </p>
+        </button>
       )}
       <div className="flex items-center gap-1.5 px-1.5 pt-2">
         <SearchInput
