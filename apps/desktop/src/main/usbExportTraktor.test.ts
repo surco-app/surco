@@ -1,3 +1,8 @@
+import { execFileSync } from 'node:child_process'
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import ffmpegStatic from 'ffmpeg-static'
 import { describe, expect, it } from 'vitest'
 import { buildBakenXml } from './bakenXml'
 import { readTraktorExportSelection, traktorExportDelta } from './usbExportTraktor'
@@ -120,14 +125,14 @@ describe('readTraktorExportSelection', () => {
     )
   })
 
-  it('exports an MP3 whose lead Traktor never measured without cues or grid, and marks it', async () => {
+  it('exports an MP3 whose lead cannot be read without cues or grid, and marks it', async () => {
     const sel = await readTraktorExportSelection(NML, ['p1'], deps)
     expect(sel.tracks[1]).toMatchObject({ cues: [], cuesLeftOut: true })
     expect(sel.tracks[1].grid ?? []).toEqual([])
     expect(sel.tracks[0].cuesLeftOut).toBeFalsy()
   })
 
-  it('does not mark an unmeasured MP3 that had neither cues nor grid, as nothing was left out', async () => {
+  it('does not mark an MP3 of unknown lead that had neither cues nor grid, as nothing was left out', async () => {
     const bare: Track = { file: 'bare.mp3' }
     const sel = await readTraktorExportSelection(
       nml([bare], [playlist('Plain', 'p4', [bare])]),
@@ -176,11 +181,41 @@ describe('readTraktorExportSelection', () => {
   })
 })
 
+function encodedMp3(patch: (bytes: Buffer) => unknown): string {
+  const file = join(mkdtempSync(join(tmpdir(), 'surco-tkdelta-')), 'a.mp3')
+  execFileSync(ffmpegStatic as unknown as string, [
+    '-y',
+    '-v',
+    'error',
+    '-f',
+    'lavfi',
+    '-i',
+    'sine=frequency=440:duration=1',
+    file,
+  ])
+  const bytes = readFileSync(file)
+  patch(bytes)
+  writeFileSync(file, bytes)
+  return file
+}
+
 describe('traktorExportDelta', () => {
   it('knows the lead of a WAV, and not that of an M4A or an MP3 that is not there', async () => {
     expect(await traktorExportDelta('/m/a.wav')).toBe(0)
     expect(await traktorExportDelta('/m/a.m4a')).toBeNull()
     expect(await traktorExportDelta('/nowhere/a.mp3')).toBeNull()
+  })
+
+  it('leaves a LAME MP3’s marks where they are, since rekordbox and Traktor both draw it 51.18 ms after Surco', async () => {
+    const file = encodedMp3((bytes) => bytes.write('LAME', bytes.indexOf('Lavc'), 'latin1'))
+    const delta = await traktorExportDelta(file)
+    expect(delta).not.toBeNull()
+    expect(delta).toBeCloseTo(0, 6)
+  })
+
+  it('moves an ffmpeg MP3 signed Lavc 25.06 ms earlier, its encoder delay, which Traktor draws and rekordbox does not', async () => {
+    const file = encodedMp3(() => 0)
+    expect(await traktorExportDelta(file)).toBeCloseTo(-((576 + 529) / 44100) * 1000, 6)
   })
 
   it('exports an M4A with no cues or grid and names it, since the collection keeps no rate to place its priming with', async () => {

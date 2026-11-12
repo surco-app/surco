@@ -1776,6 +1776,17 @@ encima. Solo afecta a los cues de Traktor; rekordbox y Engine DJ van por su lado
 Sin medir en Traktor: VBRI, MPEG-2 y la basura delante de la primera trama. Se asume que
 Traktor las trata como la Xing medida (no se salta nada).
 
+**El editor de cues de Traktor, solo en los MP3 medidos** (desde el 12/11). La pestaña de
+Traktor pinta con desfase un MP3 MPEG-1 cuya primera trama va justo detrás del ID3 y que lleva
+una de estas tres formas. Xing o Info firmada `LAME`, `Lavf` o `Lavc` (51,18 ms a 44,1 kHz),
+ninguna cabecera (0) o cabecera firmada `Appl` con retardo 0, la de iTunes (26,12 ms, medida en unos
+27 ms el 03/11). El desfase es lo que ffmpeg se salta de ese fichero, el mismo término que resta
+la conversión (`skippedByFfmpegMs`, `cueCalibration.ts`; `traktorLeadOfFile`,
+`traktorTimeline.ts`), así que el editor y la conversión no discrepan en esos MP3. Los MP3 sin
+medir siguen como antes, sin desfase conocido. Su rejilla sale con «reloj sin medir» y la
+exportación al USB los lleva sin cues ni rejilla, aunque la conversión asuma la regla para ellos. Son los VBRI, los MPEG-2 y 2.5, los que llevan basura delante de la primera
+trama, los de Info sin firma y los de iTunes con retardo distinto de 0.
+
 **El editor de cues escribe en la colección de Traktor** (nuevo en v1.12.0), nunca en el
 fichero. Solo hot cues: Traktor no tiene CALL, así que no se escribe ninguno, y se escriben
 como tipo 0, que Traktor pinta en azul sea cual sea el color elegido
@@ -2376,11 +2387,17 @@ entrada (`withGridLock`, `traktorCuesWrite.ts`) y en Engine DJ `isBeatGridLocked
 Surco guarda encima y la deja bloqueada. Solo hay tests de escritura; no está probado reanalizando
 la pista en el programa real.
 
-**Formatos.** rekordbox, todos. Traktor y Engine DJ, solo donde Surco ha medido que su reloj
-coincide con el del programa: WAV, AIFF y FLAC, y en Traktor también los MP3 hechos con iTunes,
-que Traktor dibuja 27 ms más tarde (`TRAKTOR_ITUNES_MP3_LEAD_MS`, `traktorTimeline.ts:4`; con
-ese desfase se corrigen también la onda, la escucha y Auto marcar de esos MP3 en la pestaña
-de Traktor). El resto sale con el motivo «reloj sin medir».
+**Formatos.** rekordbox, todos. Engine DJ, solo WAV, AIFF y FLAC, donde Surco ha medido que su
+reloj coincide con el del programa. Traktor, WAV, AIFF y FLAC con desfase 0 y los MP3 de las
+tres formas medidas (ver «El editor de cues de Traktor, solo en los MP3 medidos»), que son
+Xing o Info firmada por LAME o ffmpeg (51,18 ms a 44,1 kHz), sin cabecera (0) e iTunes con
+retardo 0 (26,12 ms). Con ese desfase se corrigen la onda, la onda fina, la escucha y el ajuste
+de rejilla en la pestaña de Traktor, y Auto marcar cuando trabaja sobre las palabras de Surco.
+Cuando rekordbox tiene el mismo fichero, Auto marcar usa su análisis en el reloj de rekordbox
+sin este desfase, como antes. Un cue puesto en el instante 10000 ms del audio de un MP3 de LAME
+se guarda en Traktor en 10051,18 ms. La exportación de Traktor al USB usa el mismo desfase. El
+resto (M4A y los MP3 de cualquier otra forma o cuya cabecera no se lee) sale con el motivo
+«reloj sin medir».
 
 ### Filtro «Rejilla mal»
 
