@@ -1,4 +1,3 @@
-import type { WebContents } from 'electron'
 import type { CueProgram, DjProgram } from './djProgram'
 import type {
   CollectionTrack,
@@ -26,17 +25,13 @@ export interface DjReadMain {
 }
 
 export interface DjEditMain {
-  save(
-    edit: RekordboxPlaylistEdit,
-    label: string | undefined,
-    sender: WebContents,
-  ): Promise<RekordboxEditResult>
+  save(edit: RekordboxPlaylistEdit, label: string | undefined): Promise<RekordboxEditResult>
   hasSeparator?(): Awaitable<boolean>
 }
 
 export interface DjCueQueueMain {
   read(): Awaitable<RekordboxQueueState>
-  apply(sender: WebContents): Promise<RekordboxQueueApplied | null>
+  apply(): Promise<RekordboxQueueApplied | null>
   discard(): Promise<void> | void
   ready(): Awaitable<void>
 }

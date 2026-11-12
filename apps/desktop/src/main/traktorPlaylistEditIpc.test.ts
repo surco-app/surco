@@ -1,7 +1,6 @@
 import { mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import type { WebContents } from 'electron'
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({
@@ -19,8 +18,7 @@ import { traktorStamps, traktorSubtreeStamps } from './traktorPlaylistModel'
 
 let section: DjEditMain
 
-const save = (edit: RekordboxPlaylistEdit, label?: string) =>
-  section.save(edit, label, {} as WebContents)
+const save = (edit: RekordboxPlaylistEdit, label?: string) => section.save(edit, label)
 
 async function collection(text = PLAYLISTS_SAMPLE): Promise<string> {
   const file = join(await mkdtemp(join(tmpdir(), 'surco-traktoredit-')), 'collection.nml')
@@ -159,11 +157,7 @@ describe('traktorEdit with an apply already running', () => {
       collection: () => '/library/collection.nml',
       queue: race.queue,
       isRunning: async () => false,
-    }).save(
-      { kind: 'create', parentId: 'root', name: 'Nueva', folder: false },
-      'Nueva',
-      {} as WebContents,
-    )
+    }).save({ kind: 'create', parentId: 'root', name: 'Nueva', folder: false }, 'Nueva')
     await race.release()
     expect(await saving).toEqual({ applied: true, createdId: 'Nueva' })
   })

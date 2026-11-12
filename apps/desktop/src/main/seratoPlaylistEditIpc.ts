@@ -24,7 +24,7 @@ export function seratoEdit(host: {
   onWaiting?: () => void
 }): DjEditMain {
   return {
-    save: (edit: RekordboxPlaylistEdit, label: string | undefined, _sender?: unknown) =>
+    save: (edit: RekordboxPlaylistEdit, label: string | undefined) =>
       serialLibraryFlush(async (): Promise<RekordboxEditResult> => {
         const roots = host.roots()
         if (badName(edit, roots)) return { applied: false, reason: 'bad-name' }

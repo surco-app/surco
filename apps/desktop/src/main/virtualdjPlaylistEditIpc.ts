@@ -16,7 +16,7 @@ export function virtualdjEdit(host: {
   onWaiting?: () => void
 }): DjEditMain {
   return {
-    save: (edit: RekordboxPlaylistEdit, label: string | undefined, _sender?: unknown) =>
+    save: (edit: RekordboxPlaylistEdit, label: string | undefined) =>
       serialLibraryFlush(async (): Promise<RekordboxEditResult> => {
         const roots = host.roots()
         if (badVirtualdjName(edit, roots)) return { applied: false, reason: 'bad-name' }

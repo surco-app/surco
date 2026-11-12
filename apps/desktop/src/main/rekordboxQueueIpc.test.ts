@@ -1,4 +1,3 @@
-import type { WebContents } from 'electron'
 import { describe, expect, it, vi } from 'vitest'
 
 import type { DjCueQueueMain } from '../shared/djApi'
@@ -84,7 +83,7 @@ describe('rekordboxQueueSection', () => {
     const q = queue()
     const isClosed = vi.fn(async () => true)
     register(q, { isClosed })
-    expect(await section.apply({} as WebContents)).toEqual(appliedNotice(APPLIED))
+    expect(await section.apply()).toEqual(appliedNotice(APPLIED))
     expect(isClosed).toHaveBeenCalledWith()
     expect(q.apply).toHaveBeenCalledWith(expect.any(Function), { manual: true })
   })
@@ -101,7 +100,7 @@ describe('rekordboxQueueSection', () => {
       isClosed: vi.fn(async () => true),
       beginMoment: (r) => order.push(`begin:${r}`),
     })
-    await section.apply({} as WebContents)
+    await section.apply()
     expect(order).toEqual(['begin:queue', 'apply'])
   })
 
@@ -122,7 +121,7 @@ describe('rekordboxQueueSection', () => {
       isClosed: vi.fn(async () => false),
       onWaiting,
     })
-    expect(await section.apply({} as WebContents)).toBeNull()
+    expect(await section.apply()).toBeNull()
     expect(onWaiting).toHaveBeenCalledTimes(1)
   })
 
@@ -132,7 +131,7 @@ describe('rekordboxQueueSection', () => {
       isClosed: vi.fn(async () => true),
       onWaiting,
     })
-    await section.apply({} as WebContents)
+    await section.apply()
     expect(onWaiting).not.toHaveBeenCalled()
   })
 
@@ -154,7 +153,7 @@ describe('rekordboxQueueSection', () => {
       isClosed: vi.fn(async () => true),
       onSettled,
     })
-    await section.apply({} as WebContents)
+    await section.apply()
     expect(onSettled).toHaveBeenCalledWith(APPLIED)
   })
 
@@ -166,7 +165,7 @@ describe('rekordboxQueueSection', () => {
       isClosed: vi.fn(async () => true),
       onSettled,
     })
-    await expect(section.apply({} as WebContents)).rejects.toThrow('disk gone')
+    await expect(section.apply()).rejects.toThrow('disk gone')
     expect(onSettled).toHaveBeenCalledWith('threw')
   })
 

@@ -1,4 +1,3 @@
-import type { WebContents } from 'electron'
 import { describe, expect, it, vi } from 'vitest'
 
 import type { DjCueQueueMain } from '../shared/djApi'
@@ -42,7 +41,7 @@ describe('traktorCueQueueSection', () => {
     const q = queue()
     const isClosed = vi.fn(async () => true)
     register(q, { isClosed })
-    expect(await section.apply({} as WebContents)).toEqual(appliedNotice(APPLIED))
+    expect(await section.apply()).toEqual(appliedNotice(APPLIED))
     expect(isClosed).toHaveBeenCalledWith()
     expect(q.apply).toHaveBeenCalledWith(expect.any(Function), { manual: true })
   })
@@ -59,7 +58,7 @@ describe('traktorCueQueueSection', () => {
       isClosed: vi.fn(async () => true),
       beginMoment: (r) => order.push(`begin:${r}`),
     })
-    await section.apply({} as WebContents)
+    await section.apply()
     expect(order).toEqual(['begin:queue', 'apply'])
   })
 
@@ -69,7 +68,7 @@ describe('traktorCueQueueSection', () => {
       isClosed: vi.fn(async () => false),
       onWaiting,
     })
-    expect(await section.apply({} as WebContents)).toBeNull()
+    expect(await section.apply()).toBeNull()
     expect(onWaiting).toHaveBeenCalled()
   })
 
@@ -92,7 +91,7 @@ describe('traktorCueQueueSection', () => {
   it('tells the verification how an apply by hand went', async () => {
     const onSettled = vi.fn()
     register(queue(), { isClosed: vi.fn(async () => true), onSettled })
-    await section.apply({} as WebContents)
+    await section.apply()
     expect(onSettled).toHaveBeenCalledWith(APPLIED)
   })
 
@@ -101,7 +100,7 @@ describe('traktorCueQueueSection', () => {
     const q = queue()
     q.apply.mockRejectedValueOnce(new Error('disk gone'))
     register(q, { isClosed: vi.fn(async () => true), onSettled })
-    await expect(section.apply({} as WebContents)).rejects.toThrow('disk gone')
+    await expect(section.apply()).rejects.toThrow('disk gone')
     expect(onSettled).toHaveBeenCalledWith('threw')
   })
 

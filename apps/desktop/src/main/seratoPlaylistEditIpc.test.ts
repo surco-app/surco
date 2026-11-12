@@ -1,4 +1,3 @@
-import type { WebContents } from 'electron'
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('./seratoCuesWrite', () => ({ applySeratoCuesBatch: vi.fn() }))
@@ -58,15 +57,14 @@ function registerWith({
     onWaiting: vi.fn(),
   }
   section = seratoEdit(host)
-  const handle = (edit: RekordboxPlaylistEdit, label?: string) =>
-    section.save(edit, label, {} as WebContents)
+  const handle = (edit: RekordboxPlaylistEdit, label?: string) => section.save(edit, label)
   return { handle, queue, queued, host, roots }
 }
 
 describe('seratoEdit', () => {
   it('reports a queued edit as waiting, never as refused, and names it so its result can be matched once Serato closes', async () => {
     const { queued, host } = registerWith({ running: true })
-    const answer = await section.save(create('root', 'Sesion'), 'Sesion', {} as WebContents)
+    const answer = await section.save(create('root', 'Sesion'), 'Sesion')
     expect(answer).toEqual({ applied: false, queued: true, opId: queued[0].id })
     expect(host.onWaiting).toHaveBeenCalledOnce()
   })
@@ -179,7 +177,7 @@ describe('seratoEdit with an apply already running', () => {
       roots: () => roots,
       queue: race.queue,
       isRunning: async () => false,
-    }).save(create('root', 'Nueva'), 'Nueva', {} as WebContents)
+    }).save(create('root', 'Nueva'), 'Nueva')
     await race.release()
     expect(await saving).toEqual({ applied: true, createdId: 'Nueva' })
   })

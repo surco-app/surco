@@ -1,7 +1,6 @@
 import { cpSync, mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import type { WebContents } from 'electron'
 import { describe, expect, it, vi } from 'vitest'
 import type { RekordboxPlaylistEdit } from '../shared/types'
 import { queueWithApplyInFlight } from './editRaceFixture'
@@ -53,8 +52,7 @@ function registerWith({
     onWaiting: vi.fn(),
   }
   const section = virtualdjEdit(host)
-  const handle = (edit: RekordboxPlaylistEdit, label?: string) =>
-    section.save(edit, label, {} as WebContents)
+  const handle = (edit: RekordboxPlaylistEdit, label?: string) => section.save(edit, label)
   return { handle, queue, queued, host, roots }
 }
 
@@ -134,7 +132,7 @@ describe('virtualdjEdit', () => {
       roots: () => roots,
       queue: race.queue,
       isRunning: async () => false,
-    }).save(create('Nueva'), 'Nueva', {} as WebContents)
+    }).save(create('Nueva'), 'Nueva')
     await race.release()
     expect(await saving).toEqual({ applied: true, createdId: 'Nueva' })
   })

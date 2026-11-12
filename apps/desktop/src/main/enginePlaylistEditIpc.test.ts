@@ -1,4 +1,3 @@
-import type { WebContents } from 'electron'
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({
@@ -53,8 +52,7 @@ function registerWith({
     beginLoose: vi.fn(),
   }
   const edit = engineEdit(host)
-  const handle = (e: RekordboxPlaylistEdit, label?: string) =>
-    edit.save(e, label, 'sender' as unknown as WebContents)
+  const handle = (e: RekordboxPlaylistEdit, label?: string) => edit.save(e, label)
   return { handle, queue, queued, host }
 }
 
@@ -134,11 +132,7 @@ describe('engineEdit with an apply already running', () => {
       libraryDir: () => '/library/Engine Library',
       queue: race.queue,
       isRunning: async () => false,
-    }).save(
-      { kind: 'create', parentId: 'root', name: 'Nueva', folder: false },
-      'Nueva',
-      {} as WebContents,
-    )
+    }).save({ kind: 'create', parentId: 'root', name: 'Nueva', folder: false }, 'Nueva')
     await race.release()
     expect(await saving).toEqual({ applied: true, createdId: 'Nueva' })
   })

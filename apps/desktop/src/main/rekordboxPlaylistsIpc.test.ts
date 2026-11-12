@@ -15,7 +15,6 @@ vi.mock('./rekordboxDb', async (importOriginal) => {
   return { ...real, openRekordboxDb: vi.fn(real.openRekordboxDb) }
 })
 
-import type { WebContents } from 'electron'
 import type { DjEditMain } from '../shared/djApi'
 import type { CollectionTrack, RekordboxPlaylistEdit, SourcePlaylistEntry } from '../shared/types'
 import { registerCuesIpc } from './cuesIpc'
@@ -118,8 +117,7 @@ function register(collection: () => string, host: PlaylistEditHost): void {
   section = rekordboxEdit(collection, host)
 }
 
-const save = (edit: RekordboxPlaylistEdit, label?: string) =>
-  section.save(edit, label, {} as WebContents)
+const save = (edit: RekordboxPlaylistEdit, label?: string) => section.save(edit, label)
 
 describe('rekordboxEdit', () => {
   it('grants the files and covers of the playlist it read, so the rows can play and paint before any disk walk', async () => {
@@ -515,11 +513,7 @@ describe('rekordboxEdit with an apply already running', () => {
     const saving = rekordboxEdit(() => '/library/master.db', {
       isRunning: async () => false,
       queue: race.queue,
-    }).save(
-      { kind: 'create', parentId: 'root', name: 'Nueva', folder: false },
-      'Nueva',
-      {} as WebContents,
-    )
+    }).save({ kind: 'create', parentId: 'root', name: 'Nueva', folder: false }, 'Nueva')
     await race.release()
     expect(await saving).toEqual({ applied: true, createdId: 'Nueva' })
   })
