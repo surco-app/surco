@@ -167,10 +167,15 @@ export function useGridChecks(entries: [string, string][], active: boolean): Gri
   useEffect(() => {
     if (!active || ids === '') return
     let stopped = false
-    const next = (): string | undefined =>
-      latest.current
-        .map(([, contentId]) => contentId)
-        .find((id) => !reads.has(id) && !pending.has(id))
+    let from = 0
+    const next = (): string | undefined => {
+      const list = latest.current
+      for (; from < list.length; from++) {
+        const [, contentId] = list[from]
+        if (!reads.has(contentId) && !pending.has(contentId)) return contentId
+      }
+      return undefined
+    }
     const work = async (): Promise<void> => {
       for (;;) {
         if (stopped) return
