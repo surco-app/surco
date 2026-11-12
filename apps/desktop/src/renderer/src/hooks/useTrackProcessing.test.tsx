@@ -3151,6 +3151,47 @@ describe('useTrackProcessing retryVerification', () => {
     expect(calls).toEqual(['ask', 'retry'])
   })
 
+  it('asks only once for a Retry that converts the track again', async () => {
+    const askToApply = vi.fn().mockResolvedValue({})
+    const processTrack = vi
+      .fn<Api['processTrack']>()
+      .mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false })
+    setApi({
+      processTrack,
+      retryVerification: vi.fn<Api['retryVerification']>().mockResolvedValue('rerun-job'),
+      conversionPrograms: vi.fn().mockResolvedValue(['traktor']),
+      dj: { askToApply },
+    })
+    const place = (p: PlaceCheck['place'], state: PlaceCheck['state']): PlaceCheck => ({
+      place: p,
+      state,
+      detail: { key: 'pending' },
+    })
+    const hook = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [
+            track({
+              id: 'a',
+              verification: {
+                status: 'mismatch',
+                checks: [place('file', 'mismatch'), place('traktor', 'pending')],
+              },
+            }),
+          ],
+          settings: null,
+          updateTrack: vi.fn(),
+          rememberedPick: () => ({ destination: 'overwrite' }),
+        }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await hook.result.current.retryVerification('a')
+    })
+    expect(processTrack).toHaveBeenCalledTimes(1)
+    expect(askToApply).toHaveBeenCalledOnce()
+  })
+
   it('does not ask on a retry that reaches no DJ program', async () => {
     const askToApply = vi.fn().mockResolvedValue({})
     setApi({ retryVerification: vi.fn().mockResolvedValue('rechecked'), dj: { askToApply } })
