@@ -35,6 +35,7 @@ const INTEGRATIONS = [
   'rekordbox',
   'Traktor',
   'Serato',
+  'VirtualDJ',
 ]
 
 export default function App() {

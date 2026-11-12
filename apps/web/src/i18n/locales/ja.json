@@ -7,10 +7,10 @@
     "ogLocale": "ja_JP",
     "inLanguage": "ja",
     "title": "Surco: DJトラックを数秒で準備",
-    "description": "SurcoがDJトラックの準備を数秒で済ませます。AIFF、WAV、FLAC、ALAC、MP3を相互に変換し、Discogs、Bandcamp、Deezer、Beatport、MusicBrainzの情報でタグとメタデータを編集。トラックをApple Music、rekordbox、Engine DJ、Traktorへ送れます。ロスレスを装った、MP3からの再変換ファイルも検出します。",
+    "description": "SurcoがDJトラックの準備を数秒で済ませます。AIFF、WAV、FLAC、ALAC、MP3を相互に変換し、Discogs、Bandcamp、Deezer、Beatport、MusicBrainzの情報でタグとメタデータを編集。トラックをApple Music、rekordbox、Engine DJ、Traktor、VirtualDJへ送れます。ロスレスを装った、MP3からの再変換ファイルも検出します。",
     "ogTitle": "Surco: DJトラックを数秒で準備",
     "ogDescription": "準備の時間を減らして、プレイをもっと。AIFF、WAV、FLAC、ALAC、MP3を相互に変換し、Discogs、Bandcamp、Deezer、Beatport、MusicBrainzの情報でタグ付け。数秒で整理し、ロスレスを装ったMP3も検出します。",
-    "jsonLdDescription": "DJ向け音源整理アプリ。AIFF、WAV、FLAC、ALAC、MP3の相互変換、Discogs、Bandcamp、Deezer、Beatport、MusicBrainzの情報によるタグ付け、Apple Music、rekordbox、Engine DJ、Traktorへの取り込みに対応。スペクトラム解析で、MP3から再変換された音源も検出します。"
+    "jsonLdDescription": "DJ向け音源整理アプリ。AIFF、WAV、FLAC、ALAC、MP3の相互変換、Discogs、Bandcamp、Deezer、Beatport、MusicBrainzの情報によるタグ付け、Apple Music、rekordbox、Engine DJ、Traktor、VirtualDJへの取り込みに対応。スペクトラム解析で、MP3から再変換された音源も検出します。"
   },
   "nav": {
     "velocidad": "速度",
@@ -97,7 +97,7 @@
           {
             "t": "保存先は自分で選ぶ",
             "s": "フォルダー、元ファイルの横、Apple Music、またはDJソフトのライブラリ。",
-            "d": "フォルダー、元ファイルの横、Apple Music のいずれか。rekordbox、Engine DJ、Traktor では、トラックを更新するだけか追加もするかを選べます。"
+            "d": "フォルダー、元ファイルの横、Apple Music のいずれか。rekordbox、Engine DJ、Traktor、VirtualDJ では、トラックを更新するだけか追加もするかを選べます。"
           },
           {
             "t": "「修正済み」サンプルレート",
@@ -247,23 +247,23 @@
       },
       {
         "kick": "DJソフト",
-        "title": "rekordbox、Traktor、Engine DJ",
+        "title": "rekordbox、Traktor、Engine DJ、Serato、VirtualDJ",
         "replaces": "ライブラリマネージャーの代わりに",
         "items": [
           {
             "t": "rekordboxのプレイリスト",
             "s": "Surcoから離れずに、rekordboxのプレイリストを開いて整理できます。",
-            "d": "フォルダー構成と並び順はそのままにSurcoで開け、各トラックにはrekordboxの波形とキューが表示されます。整理もここから行えます。プレイリストやフォルダーの作成・名前変更・削除・ドラッグでの移動、トラックの追加・削除・並べ替えに加え、エディタで各トラックが入るプレイリストを選べます。rekordboxが開いている場合、変更は閉じるまで待機します。先頭には「最近追加した項目」があり、過去30日間にコレクションに追加したトラックが並びます。その次の「すべてのトラック」には、どのプレイリストにも入っていないものも含めてコレクション全体が並びます。rekordboxやApple Musicを使わない場合は、そのソースを非表示にできます。セットのトラックリストがあれば、「トラックリストを貼り付け…」でプレイリストに貼り付けると、Surco が各行をコレクションから探し、見つかったものを見せて、セットの順番でトラックを追加します。Traktor と Serato でも同じです。"
+            "d": "フォルダー構成と並び順はそのままにSurcoで開け、各トラックにはrekordboxの波形とキューが表示されます。整理もここから行えます。プレイリストやフォルダーの作成・名前変更・削除・ドラッグでの移動、トラックの追加・削除・並べ替えに加え、エディタで各トラックが入るプレイリストを選べます。rekordboxが開いている場合、変更は閉じるまで待機します。先頭には「最近追加した項目」があり、過去30日間にコレクションに追加したトラックが並びます。その次の「すべてのトラック」には、どのプレイリストにも入っていないものも含めてコレクション全体が並びます。rekordboxやApple Musicを使わない場合は、そのソースを非表示にできます。セットのトラックリストがあれば、「トラックリストを貼り付け…」でプレイリストに貼り付けると、Surco が各行をコレクションから探し、見つかったものを見せて、セットの順番でトラックを追加します。Traktor、Serato、VirtualDJ でも同じです。"
           },
           {
             "t": "自動セッション",
             "s": "プレイリスト、組み合わせ、好み、ハーモニックミックスからセッションを組みます。",
-            "d": "コマンドパレット、フォルダのメニュー、または空のプレイリストから開きます。長さとトラックを取るプレイリストを選び、それぞれの中身をインスト、ボーカル、ミックスで指定します (フォルダ全体にも指定できます)。Surco はセットやトラックリストで繰り返す組み合わせ、星や再生回数の多いトラック、必要なら Camelot のハーモニックミックス、新しいトラックの枠をまとめ、ファイル全体ではなく各トラックが鳴る時間で長さを数えます。各トラックの下にそこにある理由が表示され、合う別のトラックに変更できます。セットから、テンポをどれくらい動かすか、キーをどれくらい気にするかを学び、クロージングの曲は最後に回し、いつもかける曲を多めに出し、ボーカル曲で始めます。やり直しても残したい曲は固定でき、曲のメニューからその曲で始めることもできます。rekordbox、Traktor、Serato で、ソフトを閉じた状態で使えます。"
+            "d": "コマンドパレット、フォルダのメニュー、または空のプレイリストから開きます。長さとトラックを取るプレイリストを選び、それぞれの中身をインスト、ボーカル、ミックスで指定します (フォルダ全体にも指定できます)。Surco はセットやトラックリストで繰り返す組み合わせ、星や再生回数の多いトラック、必要なら Camelot のハーモニックミックス、新しいトラックの枠をまとめ、ファイル全体ではなく各トラックが鳴る時間で長さを数えます。各トラックの下にそこにある理由が表示され、合う別のトラックに変更できます。セットから、テンポをどれくらい動かすか、キーをどれくらい気にするかを学び、クロージングの曲は最後に回し、いつもかける曲を多めに出し、ボーカル曲で始めます。やり直しても残したい曲は固定でき、曲のメニューからその曲で始めることもできます。rekordbox、Traktor、Serato、VirtualDJ で、ソフトを閉じた状態で使えます。"
           },
           {
             "t": "rekordboxのキュー",
             "s": "rekordboxの波形上に、手動またはフローでホットキューを配置します。",
-            "d": "ホットキューAからH、そしてCALLを、rekordboxの波形とグリッド上で扱えます。ドラッグすると小節や拍にスナップし、元に戻すこともできます。拡大すると、音声そのものから測った細かい波形で各拍を確認でき、再生もすぐに始まります。Mix in 64、Mix in 32、またはブロックから組み立てたりコレクションから学習した独自のフローを選ぶと、波形にカーソルを合わせるだけで配置結果がゴースト表示されます。ワンクリックで配置し、収まらないものは知らせてくれます。自動マークは各トラックのドロップ位置を提案し、複数トラックにもまとめて使えます。すでに置いたキューと保存したキューからマークの付け方を学習し、確実な提案と不確かな提案を分けて示します。rekordboxでCALLをマークしておけば、rekordboxを閉じたときにSurcoがフローのホットキューを配置します。rekordboxがまだ解析していないトラックではSurcoのグリッドで作業し、rekordboxが解析するとキューはそのグリッドに移ります。文字はトラック内の順に割り当てられます。各文字を固定パッドとして使っている場合は、設定でオフにできます。同じトラックがTraktorやEngine DJにもあれば、保存時にそちらのグリッドと既存のキューに合わせてフローを配置します。バックアップ後にrekordboxへ書き込みます。"
+            "d": "ホットキューAからH、そしてCALLを、rekordboxの波形とグリッド上で扱えます。ドラッグすると小節や拍にスナップし、元に戻すこともできます。拡大すると、音声そのものから測った細かい波形で各拍を確認でき、再生もすぐに始まります。Mix in 64、Mix in 32、またはブロックから組み立てたりコレクションから学習した独自のフローを選ぶと、波形にカーソルを合わせるだけで配置結果がゴースト表示されます。ワンクリックで配置し、収まらないものは知らせてくれます。自動マークは各トラックのドロップ位置を提案し、複数トラックにもまとめて使えます。すでに置いたキューと保存したキューからマークの付け方を学習し、確実な提案と不確かな提案を分けて示します。rekordboxでCALLをマークしておけば、rekordboxを閉じたときにSurcoがフローのホットキューを配置します。rekordboxがまだ解析していないトラックではSurcoのグリッドで作業し、rekordboxが解析するとキューはそのグリッドに移ります。文字はトラック内の順に割り当てられます。各文字を固定パッドとして使っている場合は、設定でオフにできます。同じトラックがTraktor、Engine DJ、VirtualDJにもあれば、保存時にそちらのグリッドと既存のキューに合わせてフローを配置します。バックアップ後にrekordboxへ書き込みます。"
           },
           {
             "t": "グリッドからずれたキュー",
@@ -283,7 +283,7 @@
           {
             "t": "CDJ用のUSBメモリ",
             "s": "キュー、グリッド、波形付きでCDJ用のUSBメモリを作成します。",
-            "d": "rekordboxのプレイリストを、キュー、グリッド、波形付きでUSBメモリにエクスポートします。その後もrekordboxで同期を続けられます。rekordboxが閉じている必要があります。macOSとWindowsに対応。SeratoのクレートやTraktorのプレイリストからも、キュー、ループ、グリッド付きで、rekordboxを経由せずにエクスポートできます。"
+            "d": "rekordboxのプレイリストを、キュー、グリッド、波形付きでUSBメモリにエクスポートします。その後もrekordboxで同期を続けられます。rekordboxが閉じている必要があります。macOSとWindowsに対応。SeratoのクレートやTraktorのプレイリスト、macOSではVirtualDJのリストからも、キュー、ループ、グリッド付きで、rekordboxを経由せずにエクスポートできます。"
           },
           {
             "t": "Traktorのプレイリスト",
@@ -316,6 +316,11 @@
             "d": "ライブラリ内のアートワーク、評価、プレイリスト。まずバックアップし、Engineが開いている間は触れません。"
           },
           {
+            "t": "VirtualDJのリスト",
+            "s": "VirtualDJのリストを整理し、同じエディタでホットキューを設定できます（macOS）。",
+            "d": "フォルダー構成のままSurcoで開き、rekordboxのプレイリストと同じように整理できます。トラックリストの貼り付けや自動セッションにも対応。同じエディタでトラックにホットキューを設定でき、自動マークにも対応します。VirtualDJはホットキューのみを受け取るため、CALLポイントは対象外です。グリッドはVirtualDJが解析したものを使います。変換すると、VirtualDJはキューとリストごと新しいトラックに付け替わり、VirtualDJにないトラックはSurcoが追加します。CDJ用のUSBメモリにもエクスポートできます。書き込み前にコピーを保存し、「バックアップ」から復元できます。VirtualDJが開いている間、変更は閉じるまで待機します。macOSのみ対応。"
+          },
+          {
             "t": "rekordbox、Serato、M3U8用ファイル",
             "s": "rekordbox、Serato、M3U8用のリストをエクスポートします。",
             "d": "パスとメタデータのみ、キューや評価はなし。Seratoのクレート、パスのみ。"
@@ -340,7 +345,7 @@
           {
             "t": "ライブラリ内の誤字と重複",
             "s": "ライブラリ内の表記ゆれ、不可視文字、重複トラックを見つけます。",
-            "d": "Apple Musicライブラリやトラックリストから、表記ゆれ、不可視文字、重複トラックをまとめて見つけます。修正はファイルとApple Music、さらに同期を有効にしたrekordbox、Engine DJ、Traktorに反映されます。書き込み前のバックアップはバックアップ画面から復元でき、Undoにも対応。削除するコピーのプレイリスト情報は、残すコピーに引き継がれます。Apple MusicはmacOSのみ対応。"
+            "d": "Apple Musicライブラリやトラックリストから、表記ゆれ、不可視文字、重複トラックをまとめて見つけます。修正はファイルとApple Music、さらに同期を有効にしたrekordbox、Engine DJ、Traktor、VirtualDJに反映されます。書き込み前のバックアップはバックアップ画面から復元でき、Undoにも対応。削除するコピーのプレイリスト情報は、残すコピーに引き継がれます。Apple MusicはmacOSのみ対応。"
           },
           {
             "t": "Apple Music プレイリストを取り込む",
@@ -381,8 +386,8 @@
         "items": [
           {
             "t": "ライブラリのバックアップ",
-            "s": "rekordbox、Traktor、Engine DJに書き込む前にバックアップを保存します。",
-            "d": "rekordbox、Traktor、Engine DJに書き込む前に、日付付きのコピーを保存し、各ソフトにつき直近5件を保持します。左サイドバー下部の「バックアップ」でソフトごとに確認でき、ワンクリックでどれでも復元できます。復元時はソフトを閉じるよう求め、現在の状態のコピーを残して元に戻せるようにし、そのライブラリの保留中の変更だけを破棄します。"
+            "s": "rekordbox、Traktor、Engine DJ、VirtualDJを書く前にバックアップ。",
+            "d": "rekordbox、Traktor、Engine DJ、VirtualDJに書き込む前に、日付付きのコピーを保存し、各ソフトにつき直近5件を保持します。左サイドバー下部の「バックアップ」でソフトごとに確認でき、ワンクリックでどれでも復元できます。復元時はソフトを閉じるよう求め、現在の状態のコピーを残して元に戻せるようにし、そのライブラリの保留中の変更だけを破棄します。"
           },
           {
             "t": "元の音声ファイル",
@@ -413,7 +418,7 @@
       }
     ],
     "metaTitle": "Surco にできることすべて · 機能",
-    "metaDescription": "変換、Discogs・Bandcamp・Deezer・Beatport・MusicBrainz からのタグ付け、品質分析、クリック修復、無音トリミング、そして rekordbox・Engine DJ・Traktor・Serato へのエクスポート。無料。"
+    "metaDescription": "変換、Discogs・Bandcamp・Deezer・Beatport・MusicBrainz からのタグ付け、品質分析、クリック修復、無音トリミング、そして rekordbox・Engine DJ・Traktor・Serato・VirtualDJ へのエクスポート。無料。"
   },
   "shortcuts": {
     "kicker": "キーボード優先",
@@ -515,7 +520,7 @@
       },
       {
         "q": "キューポイントは保持されますか？",
-        "a": "Traktor のキューポイントは保持されます。MP3、AIFF、FLAC、WAV の間ならどの組み合わせでも保持されます。Surco は Traktor がファイル内に保存するキュー情報を読み取り、変換先フォーマットに合わせて書き戻すためです。失われるのは、保存場所のない ALAC だけです。rekordbox と Engine DJ のキューはそれぞれのライブラリにあり、変換時にそのライブラリを更新すればトラックに付いたまま残ります。無音をトリミングすると、キューは削った分に合わせて自動で再配置されます（グリッドもずれないよう位相で再アンカーされます）。確実に再配置できないものは、誤った位置に残さず削除されます。変換前に Surco が知らせます。"
+        "a": "Traktor のキューポイントは保持されます。MP3、AIFF、FLAC、WAV の間ならどの組み合わせでも保持されます。Surco は Traktor がファイル内に保存するキュー情報を読み取り、変換先フォーマットに合わせて書き戻すためです。失われるのは、保存場所のない ALAC だけです。rekordbox、Engine DJ、VirtualDJ のキューはそれぞれのライブラリにあり、変換時にそのライブラリを更新すればトラックに付いたまま残ります。無音をトリミングすると、キューは削った分に合わせて自動で再配置されます（グリッドもずれないよう位相で再アンカーされます）。確実に再配置できないものは、誤った位置に残さず削除されます。変換前に Surco が知らせます。"
       },
       {
         "q": "リップの無音部分をトリミングできますか？",
@@ -575,7 +580,7 @@
   },
   "guide": {
     "metaTitle": "Surco の使い方：ステップバイステップガイド",
-    "metaDescription": "Surcoのステップガイド。トラックの読み込み、Discogs・Bandcamp・Deezer・Beatport・MusicBrainzでのタグ付け、スペクトラム分析、変換、キューの設定、そしてApple Music・rekordbox・Engine DJ・Traktor・Seratoへの書き出しまで。",
+    "metaDescription": "Surcoのステップガイド。トラックの読み込み、Discogs・Bandcamp・Deezer・Beatport・MusicBrainzでのタグ付け、スペクトラム分析、変換、キューの設定、そしてApple Music・rekordbox・Engine DJ・Traktor・Serato・VirtualDJへの書き出しまで。",
     "kicker": "ガイド",
     "title": "Surco の使い方",
     "lede": "トラックの追加からプレイの準備が整うまで、16の短いステップで解説します。",
@@ -630,7 +635,7 @@
         ],
         "points": [
           "初期状態で、インポート時にすべてを分析し、設定なしでDiscogs、Bandcamp、Deezer、MusicBrainzを検索します。",
-          "rekordbox、Traktor、Engine DJ、Seratoが見つかると、ようこそ画面のすぐ後にどれを使っているかを尋ねます。選ばなかったものはサイドバーに表示されません。"
+          "rekordbox、Traktor、Engine DJ、Serato、VirtualDJが見つかると、ようこそ画面のすぐ後にどれを使っているかを尋ねます。選ばなかったものはサイドバーに表示されません。"
         ],
         "shot": "instalar-ja.webp",
         "shotCaption": "初回起動時のセットアップアシスタント。"
@@ -939,7 +944,7 @@
         "id": "exportar",
         "group": "out",
         "title": "DJソフトにトラックを届ける",
-        "s": "Apple Music、rekordbox、Engine DJ、Traktor、Seratoへ届けます。",
+        "s": "Apple Music、rekordbox、Engine DJ、Traktor、Serato、VirtualDJへ。",
         "body": [
           "サイドバーにライブラリが表示されます。プレイリストを開くと、そのトラックが実際のファイルごとリストに入ります。"
         ],
@@ -970,7 +975,7 @@
         "id": "rekordbox",
         "group": "out",
         "title": "キューを打つ",
-        "s": "rekordbox、Engine DJ、Traktorの波形にホットキューを、自分のフローで。",
+        "s": "rekordbox、Engine DJ、Traktor、VirtualDJの波形にホットキューを、自分のフローで。",
         "body": [
           "サイドバーで3つのいずれかのプレイリストを開き、トラックを選びます。キューのセクションに波形とグリッドが表示されます。"
         ],
@@ -991,7 +996,7 @@
         "points": [
           "「自動マーク」は提案するだけで、決めるのはあなたです。確かな提案は実線、疑わしい提案は破線で表示されます。",
           "複数のトラックを選択すれば、まとめてマークして保存できます。",
-          "Engine DJとTraktorにはホットキューだけが入ります。Traktorでは1番がグリッド用なので、2〜8番に入ります。",
+          "Engine DJ、Traktor、VirtualDJにはホットキューだけが入ります。Traktorでは1番がグリッド用なので、2〜8番に入ります。",
           "「グリッドからずれたキュー」フィルターで、ビートから外れたキューのあるトラックを見つけられます。"
         ],
         "shot": "rekordbox-ja.webp",
@@ -1001,7 +1006,7 @@
         "id": "tracklist",
         "group": "out",
         "title": "セットのトラックリストを貼り付ける",
-        "s": "テキストのトラックリストから、rekordbox、Traktor、Serato のプレイリストへ、セットの順番のままで",
+        "s": "テキストのトラックリストを、rekordbox、Traktor、Serato、VirtualDJ のプレイリストに",
         "body": [
           "1行に1曲のリストなら、時間の有無を問わず何でも使えます。YouTube 動画の説明文、ウェブからコピーしたトラックリスト、あるいは Surco の作者が作った tracklist の出力。tracklist は自分の動画の曲を YouTube の申し立てと Shazam から特定するプログラムです（github.com/vigosan/tracklist）。"
         ],
@@ -1062,7 +1067,7 @@
           "1曲はミックスで流れる時間だけを数えます。標準は2分です。実際の28曲のセットは1時間でした。",
           "コンボとは、2つ以上のミックスのプレイリストで繰り返されるペアです。なければコンボもありません。",
           "新しい曲とは直近30日に追加された曲で、日付がなければ再生も星もない曲です。",
-          "rekordbox、Traktor、Serato に、プログラムを閉じた状態で書き込みます。"
+          "rekordbox、Traktor、Serato、VirtualDJ に、プログラムを閉じた状態で書き込みます。"
         ],
         "shotCaption": "作られたセッション。概要、各曲の理由、「変更」が見えます。",
         "shot": "sesion-ja.webp"
@@ -1073,7 +1078,7 @@
         "title": "プレイリストを USB に持ち出す",
         "s": "プレイリストを、プレイヤーですぐ使える USB にエクスポートします。",
         "body": [
-          "rekordbox、Engine DJ、Serato、Traktorのプレイリストに対応し、macOSとWindowsで使えます。"
+          "rekordbox、Engine DJ、Serato、Traktorのプレイリストに対応し、macOSとWindowsで使えます。VirtualDJのリストはmacOSで使えます。"
         ],
         "steps": [
           {
@@ -1225,7 +1230,7 @@
     "closeStatsRest": "Surco は誰が使っているかも、あなたが音楽で何をしているかも知りません。公開しているのはダウンロード数だけで、<stats>統計</stats>で確認できます。",
     "allFeatures": "すべての機能を見る →",
     "worksWith": "連携するアプリ",
-    "heroLede": "Surcoはトラックを変換し、DiscogsやBeatportからタグを付け、ロスレスが本物か確かめて、rekordbox、Traktor、Engine DJ、Apple Musicに届けます。",
+    "heroLede": "Surcoはトラックを変換し、DiscogsやBeatportからタグを付け、ロスレスが本物か確かめて、rekordbox、Traktor、Engine DJ、VirtualDJ、Apple Musicに届けます。",
     "anchors": {
       "see": "詳しく見る",
       "quality": {
@@ -1240,9 +1245,9 @@
       },
       "export": {
         "title": "いつものアプリへ、そのまま取り込み",
-        "note": "Apple Music、Engine DJ、rekordbox、Traktor、Serato へ。インポートは不要です。",
+        "note": "Apple Music、Engine DJ、rekordbox、Traktor、Serato、VirtualDJ へ。インポートは不要です。",
         "lead": "いつものアプリへ直接。",
-        "rest": "rekordbox、Traktor、Engine DJ、Apple Musicに表示されます。"
+        "rest": "rekordbox、Traktor、Engine DJ、VirtualDJ、Apple Musicに表示されます。"
       }
     },
     "replace": {
@@ -1287,7 +1292,7 @@
     },
     "sync": {
       "title": "一度変えれば、すべてのアプリに届く。",
-      "lede": "Apple Musicかrekordboxのタブからトラックを開き、タイトル、ジャンル、ファイル名を直して「タグを更新」を押します。SurcoがApple Music、rekordbox、Traktor、Engine DJに変更を届け、どのアプリでも同じトラックのままです。",
+      "lede": "Apple Musicかrekordboxのタブからトラックを開き、タイトル、ジャンル、ファイル名を直して「タグを更新」を押します。SurcoがApple Music、rekordbox、Traktor、Engine DJ、VirtualDJに変更を届け、どのアプリでも同じトラックのままです。",
       "tabAppleMusic": "Apple Musicタブ",
       "tabRekordbox": "rekordboxタブ",
       "fieldTitle": "タイトル",
@@ -1313,7 +1318,7 @@
     },
     "cues": {
       "title": "ドロップを指定するだけ。残りのキューは自動で配置。",
-      "lede": "トラックのドロップ位置をクリックするか、自動マークに探させましょう。残りのキューはフローがどのトラックにも同じように配置し、Surcoがrekordbox、Engine DJ、Traktorに保存します。",
+      "lede": "トラックのドロップ位置をクリックするか、自動マークに探させましょう。残りのキューはフローがどのトラックにも同じように配置し、Surcoがrekordbox、Engine DJ、Traktor、VirtualDJに保存します。",
       "unsaved": "未保存",
       "flow": "フロー",
       "flowName": "Subidón",
@@ -1333,7 +1338,7 @@
         },
         "programs": {
           "title": "いつものアプリへ直接",
-          "text": "rekordbox、Engine DJ、Traktor。Engine DJとTraktorにはホットキューのみが保存されます。"
+          "text": "rekordbox、Engine DJ、Traktor、VirtualDJ。Engine DJ、Traktor、VirtualDJにはホットキューのみが保存されます。"
         }
       },
       "grid": {
@@ -1366,7 +1371,7 @@
     },
     "review": {
       "title": "ライブラリ内の誤字と重複を見つける",
-      "lede": "SurcoはApple Musicライブラリ、ドロップしたフォルダー、またはrekordbox、Engine DJ、Traktorのプレイリストを解析し、綴りが複数ある項目、コピー時に混入した見えないスペースや文字、重複トラックをグループ化します。どのように表示すべきかを選択し、変更はファイル、Apple Music、そして同期している場合はrekordbox、Engine DJ、Traktorに反映されます。",
+      "lede": "SurcoはApple Musicライブラリ、ドロップしたフォルダー、またはrekordbox、Engine DJ、Traktor、VirtualDJのプレイリストを解析し、綴りが複数ある項目、コピー時に混入した見えないスペースや文字、重複トラックをグループ化します。どのように表示すべきかを選択し、変更はファイル、Apple Music、そして同期している場合はrekordbox、Engine DJ、Traktor、VirtualDJに反映されます。",
       "points": {
         "spelling": {
           "title": "表記ゆれ",
@@ -1382,7 +1387,7 @@
         },
         "everywhere": {
           "title": "各アプリに反映",
-          "text": "ファイル、Apple Music、rekordbox、Engine DJ、Traktorに反映。各ファイルとDJライブラリのバックアップを保存し、「バックアップ」から復元できます。修正はUndoで元に戻せます。"
+          "text": "ファイル、Apple Music、rekordbox、Engine DJ、Traktor、VirtualDJに反映。各ファイルとDJライブラリのバックアップを保存し、「バックアップ」から復元できます。修正はUndoで元に戻せます。"
         }
       },
       "all": "すべて",
@@ -1502,7 +1507,7 @@
         },
         {
           "title": "変換",
-          "text": "コピーは Music/Surco、元ファイルの横、または Apple Music に保存され、同期していれば rekordbox、Engine DJ、Traktor も更新されます。"
+          "text": "コピーは Music/Surco、元ファイルの横、または Apple Music に保存され、同期していれば rekordbox、Engine DJ、Traktor、VirtualDJ も更新されます。"
         }
       ],
       "guide": "ガイドで手順を見る"
@@ -2097,7 +2102,7 @@
       {
         "id": "library",
         "title": "ライブラリとDJソフト",
-        "lede": "Apple Music、rekordbox、Engine DJ、Traktorは、Surcoで変更した内容と同期して最新の状態に保たれます。"
+        "lede": "Apple Music、rekordbox、Engine DJ、Traktor、VirtualDJは、Surcoで変更した内容と同期して最新の状態に保たれます。"
       },
       {
         "id": "go",
@@ -2821,7 +2826,7 @@
           }
         ],
         "points": [
-          "変更はファイルと Apple Music、および rekordbox、Engine DJ、Traktor に同期されます。",
+          "変更はファイルと Apple Music、および rekordbox、Engine DJ、Traktor、VirtualDJ に同期されます。",
           "Surco は何も触る前にすべてのファイルとDJライブラリのコピーを保存します。「元に戻す」はすべてを元に戻します。",
           "BPM、キー、キューポイントと評価はそのままです。",
           "DJ アプリが開いている場合、Surco は閉じることを提案します。"
@@ -3293,11 +3298,11 @@
         "slug": "organize-playlists",
         "group": "library",
         "title": "ソフトを開かずにプレイリストとフォルダを整理する",
-        "s": "rekordbox や Traktor のプレイリストを、サイドバーで作成、移動、並べ替えできます。",
+        "s": "rekordbox、Traktor、VirtualDJ のプレイリストを、サイドバーで作成、移動、並べ替えできます。",
         "body": [
-          "rekordbox や Traktor のプレイリストを、ソフトを開かずに整理したいときのレシピです。"
+          "rekordbox、Traktor、VirtualDJ のプレイリストを、ソフトを開かずに整理したいときのレシピです。"
         ],
-        "keywords": "プレイリスト フォルダ ドラッグ 移動 名前変更 並べ替え rekordbox traktor",
+        "keywords": "プレイリスト フォルダ ドラッグ 移動 名前変更 並べ替え rekordbox traktor virtualdj",
         "settings": [],
         "steps": [
           {
@@ -3496,7 +3501,7 @@
         "s": "リストをテキストで貼り付けると、Surco がコレクションから各トラックを探し、セットの順に並べます。",
         "body": [
           "YouTube の動画やウェブページにあるセットのリストを、DJ ソフトのプレイリストに同じ順番で入れたいときのレシピです。",
-          "変更する設定はありません。rekordbox、Traktor、Serato で使えます。"
+          "変更する設定はありません。rekordbox、Traktor、Serato、VirtualDJ で使えます。"
         ],
         "keywords": "トラックリスト セット リスト 貼り付け プレイリスト youtube 順番",
         "settings": [],
