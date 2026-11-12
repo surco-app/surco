@@ -38,36 +38,6 @@ describe('createMenuT', () => {
     expect(renderer.copies.revealWin).toBe(label)
   })
 
-  it('asks to close Engine DJ for cues without promising a conversion that is not running', () => {
-    for (const lang of ['es', 'en', 'de', 'fr', 'pt-BR']) {
-      const t = createMenuT(lang)
-      expect(t('engineQuitDetailCues')).not.toBe(t('engineQuitDetail'))
-    }
-    expect(createMenuT('es')('engineQuitDetailCues')).toBe(
-      'Surco necesita cerrarlo para guardar los cues en su biblioteca. Engine DJ se cerrará de forma segura y puedes volver a abrirlo enseguida.',
-    )
-  })
-
-  it('asks to close Traktor for cues without promising a conversion that is not running', () => {
-    for (const lang of ['es', 'en', 'de', 'fr', 'pt-BR']) {
-      const t = createMenuT(lang)
-      expect(t('traktorQuitDetailCues')).not.toBe(t('traktorQuitDetail'))
-    }
-    expect(createMenuT('es')('traktorQuitDetailCues')).toBe(
-      'Surco necesita cerrarlo para guardar los cues en collection.nml. Traktor se cerrará de forma segura y puedes volver a abrirlo enseguida.',
-    )
-  })
-
-  it('asks to close Traktor for a playlist change with its own words', () => {
-    for (const lang of ['es', 'en', 'de', 'fr', 'pt-BR']) {
-      const t = createMenuT(lang)
-      expect(t('traktorQuitDetailPlaylists')).not.toBe(t('traktorQuitDetail'))
-    }
-    expect(createMenuT('es')('traktorQuitDetailPlaylists')).toBe(
-      'Surco necesita cerrarlo para guardar el cambio en tus playlists. Traktor se cerrará de forma segura y puedes volver a abrirlo enseguida.',
-    )
-  })
-
   it('asks to close rekordbox and Traktor for a library update without promising a conversion, since only tag syncs and duplicate replacements still ask', () => {
     const conversion: Record<string, RegExp> = {
       es: /conversi[oó]n/i,
@@ -118,11 +88,8 @@ describe('createMenuT', () => {
     for (const lang of ['es', 'en', 'de', 'fr', 'pt-BR', 'ja']) {
       const t = createMenuT(lang)
       expect(t('rekordboxQuitDetailRestore')).toBeTruthy()
-      expect(t('rekordboxQuitDetailRestore')).not.toBe(t('rekordboxQuitDetailPlaylists'))
       expect(t('traktorQuitDetailRestore')).toBeTruthy()
-      expect(t('traktorQuitDetailRestore')).not.toBe(t('traktorQuitDetailCues'))
       expect(t('engineQuitDetailRestore')).toBeTruthy()
-      expect(t('engineQuitDetailRestore')).not.toBe(t('engineQuitDetailCues'))
     }
     expect(createMenuT('es')('rekordboxQuitDetailRestore')).toBe(
       'Surco necesita cerrarlo para restaurar tu colección. rekordbox se cerrará de forma segura; no lo vuelvas a abrir hasta que Surco termine de restaurar.',

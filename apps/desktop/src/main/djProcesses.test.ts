@@ -82,8 +82,8 @@ describe('createEnsureClosed', () => {
   })
 
   it.each([
-    ['traktor', 'cues', 'playlists', 't:traktorQuitDetailCues'],
-    ['engine', 'cues', 'usb', 't:engineQuitDetailCues'],
+    ['traktor', 'convert', 'restore', 't:traktorQuitDetail'],
+    ['engine', 'convert', 'usb', 't:engineQuitDetail'],
   ] as const)(
     "asks %s once for two writes that arrive together, in the first one's words",
     async (program, firstReason, secondReason, firstDetail) => {
@@ -122,7 +122,7 @@ describe('createEnsureClosed', () => {
       opts.detail === 't:rekordboxQuitDetail' ? firstAnswer.promise : Promise.resolve(1),
     )
     const conversion = ensureClosed('rekordbox', win, 'convert')
-    const playlists = ensureClosed('rekordbox', win, 'playlists')
+    const playlists = ensureClosed('rekordbox', win, 'usb')
     await vi.waitFor(() => expect(ask).toHaveBeenCalledTimes(1))
     await new Promise((r) => setTimeout(r, 0))
     expect(ask).toHaveBeenCalledTimes(1)
@@ -133,7 +133,7 @@ describe('createEnsureClosed', () => {
     expect(await playlists).toBe(false)
     expect(ask).toHaveBeenCalledTimes(2)
     expect(ask.mock.calls[0][1].detail).toBe('t:rekordboxQuitDetail')
-    expect(ask.mock.calls[1][1].detail).toBe('t:rekordboxQuitDetailPlaylists')
+    expect(ask.mock.calls[1][1].detail).toBe('t:rekordboxQuitDetailUsb')
     expect(rekordbox.isRunning).toHaveBeenCalledTimes(2)
   })
 
@@ -141,8 +141,8 @@ describe('createEnsureClosed', () => {
     const answer = deferred<number>()
     const rekordbox = fakeProcess(true)
     const { ask, ensureClosed } = setup({ rekordbox }, () => answer.promise)
-    const first = ensureClosed('rekordbox', win, 'playlists')
-    const second = ensureClosed('rekordbox', win, 'playlists')
+    const first = ensureClosed('rekordbox', win, 'usb')
+    const second = ensureClosed('rekordbox', win, 'usb')
     await vi.waitFor(() => expect(ask).toHaveBeenCalledTimes(1))
     answer.resolve(0)
     expect(await Promise.all([first, second])).toEqual([true, true])
@@ -153,20 +153,15 @@ describe('createEnsureClosed', () => {
   const words = {
     rekordbox: {
       convert: 'rekordboxQuitDetail',
-      playlists: 'rekordboxQuitDetailPlaylists',
       usb: 'rekordboxQuitDetailUsb',
       restore: 'rekordboxQuitDetailRestore',
     },
     traktor: {
       convert: 'traktorQuitDetail',
-      cues: 'traktorQuitDetailCues',
-      playlists: 'traktorQuitDetailPlaylists',
       restore: 'traktorQuitDetailRestore',
     },
     engine: {
       convert: 'engineQuitDetail',
-      cues: 'engineQuitDetailCues',
-      playlists: 'engineQuitDetailPlaylists',
       usb: 'engineQuitDetailUsb',
       restore: 'engineQuitDetailRestore',
     },
@@ -174,9 +169,9 @@ describe('createEnsureClosed', () => {
 
   it('gives each program the reasons it has words for today', () => {
     expect(QUIT_REASONS).toEqual({
-      rekordbox: ['convert', 'playlists', 'usb', 'restore'],
-      traktor: ['convert', 'cues', 'playlists', 'restore'],
-      engine: ['convert', 'cues', 'playlists', 'usb', 'restore'],
+      rekordbox: ['convert', 'usb', 'restore'],
+      traktor: ['convert', 'restore'],
+      engine: ['convert', 'usb', 'restore'],
       virtualdj: ['convert', 'restore', 'duplicates'],
     })
   })
@@ -249,8 +244,7 @@ describe('reasonOfDetail', () => {
     ['rekordbox', 'rekordboxQuitDetail', 'convert'],
     ['engine', 'engineQuitDetailUsb', 'usb'],
     ['engine', 'engineQuitDetailRestore', 'restore'],
-    ['traktor', 'traktorQuitDetailCues', 'cues'],
-    ['traktor', 'traktorQuitDetailPlaylists', 'playlists'],
+    ['traktor', 'traktorQuitDetailRestore', 'restore'],
     ['virtualdj', 'virtualdjQuitDetailRestore', 'restore'],
     ['virtualdj', 'virtualdjQuitDetailDuplicates', 'duplicates'],
   ] as const)(
@@ -260,8 +254,8 @@ describe('reasonOfDetail', () => {
     },
   )
   it('refuses a wording no reason uses', () => {
-    expect(() => reasonOfDetail('rekordbox', 'rekordboxQuitDetailCues' as never)).toThrow(
-      'No rekordbox quit reason for rekordboxQuitDetailCues',
+    expect(() => reasonOfDetail('rekordbox', 'rekordboxQuitDetailPlaylists' as never)).toThrow(
+      'No rekordbox quit reason for rekordboxQuitDetailPlaylists',
     )
   })
 })
@@ -269,8 +263,8 @@ describe('reasonOfDetail', () => {
 describe('QUIT_TEXT', () => {
   it('refuses at compile time a wording that belongs to another program', () => {
     // @ts-expect-error
-    const wrong: (typeof QUIT_TEXT)['engine']['detail']['cues'] = 'traktorQuitDetailCues'
-    expect(wrong).toBe('traktorQuitDetailCues')
+    const wrong: (typeof QUIT_TEXT)['engine']['detail']['usb'] = 'rekordboxQuitDetailUsb'
+    expect(wrong).toBe('rekordboxQuitDetailUsb')
   })
 
   it('refuses at compile time a writable program with no quit wording, so it can never be closed without asking', () => {

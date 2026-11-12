@@ -61,8 +61,6 @@ interface MenuStrings {
   appleMusicGone: string
   engineQuitMessage: string
   engineQuitDetail: string
-  engineQuitDetailCues: string
-  engineQuitDetailPlaylists: string
   engineQuitDetailUsb: string
   engineQuitDetailRestore: string
   engineQuitConfirm: string
@@ -70,15 +68,12 @@ interface MenuStrings {
   engineOpenError: string
   traktorQuitMessage: string
   traktorQuitDetail: string
-  traktorQuitDetailCues: string
-  traktorQuitDetailPlaylists: string
   traktorQuitDetailRestore: string
   traktorQuitConfirm: string
   traktorQuitCancel: string
   traktorSyncBlocked: string
   rekordboxQuitMessage: string
   rekordboxQuitDetail: string
-  rekordboxQuitDetailPlaylists: string
   rekordboxQuitDetailUsb: string
   rekordboxQuitDetailRestore: string
   rekordboxQuitConfirm: string
@@ -188,10 +183,6 @@ const strings: Record<MenuLang, MenuStrings> = {
     engineQuitMessage: 'Engine DJ está abierto',
     engineQuitDetail:
       'Surco necesita cerrarlo para escribir en su biblioteca. Engine DJ se cerrará de forma segura; puedes volver a abrirlo cuando termine la conversión.',
-    engineQuitDetailCues:
-      'Surco necesita cerrarlo para guardar los cues en su biblioteca. Engine DJ se cerrará de forma segura y puedes volver a abrirlo enseguida.',
-    engineQuitDetailPlaylists:
-      'Surco necesita cerrarlo para guardar el cambio en tus playlists. Engine DJ se cerrará de forma segura y puedes volver a abrirlo enseguida.',
     engineQuitDetailUsb:
       'Surco necesita cerrarlo para exportar tus playlists al USB. Engine DJ se cerrará de forma segura y puedes volver a abrirlo cuando termine la exportación al USB.',
     engineQuitDetailRestore:
@@ -202,10 +193,6 @@ const strings: Record<MenuLang, MenuStrings> = {
     traktorQuitMessage: 'Traktor está abierto',
     traktorQuitDetail:
       'Surco necesita cerrarlo para escribir en collection.nml. Traktor se cerrará de forma segura y puedes volver a abrirlo enseguida.',
-    traktorQuitDetailCues:
-      'Surco necesita cerrarlo para guardar los cues en collection.nml. Traktor se cerrará de forma segura y puedes volver a abrirlo enseguida.',
-    traktorQuitDetailPlaylists:
-      'Surco necesita cerrarlo para guardar el cambio en tus playlists. Traktor se cerrará de forma segura y puedes volver a abrirlo enseguida.',
     traktorQuitDetailRestore:
       'Surco necesita cerrarlo para restaurar collection.nml. Traktor se cerrará de forma segura; no lo vuelvas a abrir hasta que Surco termine de restaurar.',
     traktorQuitConfirm: 'Cerrar Traktor',
@@ -214,8 +201,6 @@ const strings: Record<MenuLang, MenuStrings> = {
     rekordboxQuitMessage: 'rekordbox está abierto',
     rekordboxQuitDetail:
       'Surco necesita cerrarlo para actualizar tu colección. rekordbox se cerrará de forma segura y puedes volver a abrirlo enseguida.',
-    rekordboxQuitDetailPlaylists:
-      'Surco necesita cerrarlo para guardar el cambio en tus playlists. rekordbox se cerrará de forma segura y puedes volver a abrirlo enseguida.',
     rekordboxQuitDetailUsb:
       'Surco necesita cerrarlo para exportar tus playlists al USB. rekordbox se cerrará de forma segura y puedes volver a abrirlo cuando termine la exportación al USB.',
     rekordboxQuitDetailRestore:
@@ -335,10 +320,6 @@ const strings: Record<MenuLang, MenuStrings> = {
     engineQuitMessage: 'Engine DJ is open',
     engineQuitDetail:
       'Surco needs to close it to write into its library. Engine DJ will quit safely; reopen it once the conversion finishes.',
-    engineQuitDetailCues:
-      'Surco needs to close it to save the cues into its library. Engine DJ will quit safely, and you can reopen it right away.',
-    engineQuitDetailPlaylists:
-      'Surco needs to close it to save the change to your playlists. Engine DJ will quit safely, and you can reopen it right away.',
     engineQuitDetailUsb:
       'Surco needs to close it to export your playlists to the USB drive. Engine DJ will quit safely and you can reopen it once the export to the USB drive finishes.',
     engineQuitDetailRestore:
@@ -349,10 +330,6 @@ const strings: Record<MenuLang, MenuStrings> = {
     traktorQuitMessage: 'Traktor is open',
     traktorQuitDetail:
       'Surco needs to close it to write into collection.nml. Traktor will quit safely, and you can reopen it right away.',
-    traktorQuitDetailCues:
-      'Surco needs to close it to save the cues into collection.nml. Traktor will quit safely, and you can reopen it right away.',
-    traktorQuitDetailPlaylists:
-      'Surco needs to close it to save the change to your playlists. Traktor will be closed safely and you can reopen it right away.',
     traktorQuitDetailRestore:
       'Surco needs to close it to restore collection.nml. Traktor will quit safely; keep it closed until Surco finishes restoring.',
     traktorQuitConfirm: 'Close Traktor',
@@ -361,8 +338,6 @@ const strings: Record<MenuLang, MenuStrings> = {
     rekordboxQuitMessage: 'rekordbox is open',
     rekordboxQuitDetail:
       'Surco needs to close it to update your collection. rekordbox will be closed safely and you can reopen it right away.',
-    rekordboxQuitDetailPlaylists:
-      'Surco needs to close it to save the change to your playlists. rekordbox will be closed safely and you can reopen it right away.',
     rekordboxQuitDetailUsb:
       'Surco needs to close it to export your playlists to the USB drive. rekordbox will be closed safely and you can reopen it once the export to the USB drive finishes.',
     rekordboxQuitDetailRestore:
@@ -483,10 +458,6 @@ const strings: Record<MenuLang, MenuStrings> = {
     engineQuitMessage: 'Engine DJ ist geöffnet',
     engineQuitDetail:
       'Surco muss es schließen, um in seine Bibliothek zu schreiben. Engine DJ wird sicher beendet; du kannst es nach der Konvertierung wieder öffnen.',
-    engineQuitDetailCues:
-      'Surco muss es schließen, um die Cues in seiner Bibliothek zu speichern. Engine DJ wird sicher beendet, und du kannst es gleich wieder öffnen.',
-    engineQuitDetailPlaylists:
-      'Surco muss es schließen, um die Änderung an deinen Playlists zu speichern. Engine DJ wird sicher beendet, und du kannst es gleich wieder öffnen.',
     engineQuitDetailUsb:
       'Surco muss es schließen, um deine Playlists auf den USB-Stick zu exportieren. Engine DJ wird sicher beendet und du kannst es wieder öffnen, sobald der Export auf den USB-Stick fertig ist.',
     engineQuitDetailRestore:
@@ -497,10 +468,6 @@ const strings: Record<MenuLang, MenuStrings> = {
     traktorQuitMessage: 'Traktor ist geöffnet',
     traktorQuitDetail:
       'Surco muss es schließen, um in collection.nml zu schreiben. Traktor wird sicher beendet, und du kannst es gleich wieder öffnen.',
-    traktorQuitDetailCues:
-      'Surco muss es schließen, um die Cues in collection.nml zu speichern. Traktor wird sicher beendet, und du kannst es gleich wieder öffnen.',
-    traktorQuitDetailPlaylists:
-      'Surco muss es schließen, um die Änderung an deinen Playlists zu speichern. Traktor wird sicher geschlossen und du kannst es gleich wieder öffnen.',
     traktorQuitDetailRestore:
       'Surco muss es schließen, um collection.nml wiederherzustellen. Traktor wird sicher beendet; lass es geschlossen, bis Surco mit dem Wiederherstellen fertig ist.',
     traktorQuitConfirm: 'Traktor schließen',
@@ -509,8 +476,6 @@ const strings: Record<MenuLang, MenuStrings> = {
     rekordboxQuitMessage: 'rekordbox ist geöffnet',
     rekordboxQuitDetail:
       'Surco muss es schließen, um deine Sammlung zu aktualisieren. rekordbox wird sicher geschlossen und du kannst es gleich wieder öffnen.',
-    rekordboxQuitDetailPlaylists:
-      'Surco muss es schließen, um die Änderung an deinen Playlists zu speichern. rekordbox wird sicher geschlossen und du kannst es gleich wieder öffnen.',
     rekordboxQuitDetailUsb:
       'Surco muss es schließen, um deine Playlists auf den USB-Stick zu exportieren. rekordbox wird sicher geschlossen und du kannst es wieder öffnen, sobald der Export auf den USB-Stick fertig ist.',
     rekordboxQuitDetailRestore:
@@ -632,10 +597,6 @@ const strings: Record<MenuLang, MenuStrings> = {
     engineQuitMessage: 'Engine DJ est ouvert',
     engineQuitDetail:
       'Surco doit le fermer pour écrire dans sa bibliothèque. Engine DJ sera fermé proprement ; tu pourras le rouvrir à la fin de la conversion.',
-    engineQuitDetailCues:
-      'Surco doit le fermer pour enregistrer les cues dans sa bibliothèque. Engine DJ sera fermé proprement et tu pourras le rouvrir tout de suite.',
-    engineQuitDetailPlaylists:
-      'Surco doit le fermer pour enregistrer la modification de tes playlists. Engine DJ sera fermé proprement et tu pourras le rouvrir tout de suite.',
     engineQuitDetailUsb:
       "Surco doit le fermer pour exporter tes playlists sur la clé USB. Engine DJ sera fermé proprement et tu pourras le rouvrir une fois l'export sur la clé USB terminé.",
     engineQuitDetailRestore:
@@ -646,10 +607,6 @@ const strings: Record<MenuLang, MenuStrings> = {
     traktorQuitMessage: 'Traktor est ouvert',
     traktorQuitDetail:
       'Surco doit le fermer pour écrire dans collection.nml. Traktor sera fermé proprement et tu pourras le rouvrir tout de suite.',
-    traktorQuitDetailCues:
-      'Surco doit le fermer pour enregistrer les cues dans collection.nml. Traktor sera fermé proprement et tu pourras le rouvrir tout de suite.',
-    traktorQuitDetailPlaylists:
-      'Surco doit le fermer pour enregistrer la modification de tes playlists. Traktor sera fermé proprement et tu pourras le rouvrir tout de suite.',
     traktorQuitDetailRestore:
       'Surco doit le fermer pour restaurer collection.nml. Traktor sera fermé proprement ; ne le rouvre pas avant que Surco ait fini la restauration.',
     traktorQuitConfirm: 'Fermer Traktor',
@@ -659,8 +616,6 @@ const strings: Record<MenuLang, MenuStrings> = {
     rekordboxQuitMessage: 'rekordbox est ouvert',
     rekordboxQuitDetail:
       'Surco doit le fermer pour mettre à jour ta collection. rekordbox sera fermé proprement et tu pourras le rouvrir tout de suite.',
-    rekordboxQuitDetailPlaylists:
-      'Surco doit le fermer pour enregistrer la modification de tes playlists. rekordbox sera fermé proprement et tu pourras le rouvrir tout de suite.',
     rekordboxQuitDetailUsb:
       "Surco doit le fermer pour exporter tes playlists sur la clé USB. rekordbox sera fermé proprement et tu pourras le rouvrir une fois l'export sur la clé USB terminé.",
     rekordboxQuitDetailRestore:
@@ -781,10 +736,6 @@ const strings: Record<MenuLang, MenuStrings> = {
     engineQuitMessage: 'O Engine DJ está aberto',
     engineQuitDetail:
       'O Surco precisa fechá-lo para escrever na biblioteca dele. O Engine DJ será fechado com segurança; você pode reabri-lo quando a conversão terminar.',
-    engineQuitDetailCues:
-      'O Surco precisa fechá-lo para salvar os cues na biblioteca dele. O Engine DJ será fechado com segurança e você pode reabri-lo em seguida.',
-    engineQuitDetailPlaylists:
-      'O Surco precisa fechá-lo para salvar a alteração nas suas playlists. O Engine DJ será fechado com segurança e você pode reabri-lo em seguida.',
     engineQuitDetailUsb:
       'O Surco precisa fechá-lo para exportar as suas playlists para o pendrive USB. O Engine DJ será fechado com segurança e você pode reabri-lo quando a exportação para o USB terminar.',
     engineQuitDetailRestore:
@@ -795,10 +746,6 @@ const strings: Record<MenuLang, MenuStrings> = {
     traktorQuitMessage: 'O Traktor está aberto',
     traktorQuitDetail:
       'O Surco precisa fechá-lo para escrever no collection.nml. O Traktor será fechado com segurança e você pode reabri-lo em seguida.',
-    traktorQuitDetailCues:
-      'O Surco precisa fechá-lo para salvar os cues no collection.nml. O Traktor será fechado com segurança e você pode reabri-lo em seguida.',
-    traktorQuitDetailPlaylists:
-      'O Surco precisa fechá-lo para salvar a alteração nas suas playlists. O Traktor será fechado com segurança e você pode reabri-lo em seguida.',
     traktorQuitDetailRestore:
       'O Surco precisa fechá-lo para restaurar o collection.nml. O Traktor será fechado com segurança; não o abra de novo até o Surco terminar de restaurar.',
     traktorQuitConfirm: 'Fechar o Traktor',
@@ -807,8 +754,6 @@ const strings: Record<MenuLang, MenuStrings> = {
     rekordboxQuitMessage: 'O rekordbox está aberto',
     rekordboxQuitDetail:
       'O Surco precisa fechá-lo para atualizar a sua coleção. O rekordbox será fechado com segurança e você pode reabri-lo em seguida.',
-    rekordboxQuitDetailPlaylists:
-      'O Surco precisa fechá-lo para salvar a mudança nas suas playlists. O rekordbox será fechado com segurança e você pode reabri-lo em seguida.',
     rekordboxQuitDetailUsb:
       'O Surco precisa fechá-lo para exportar as suas playlists para o pendrive USB. O rekordbox será fechado com segurança e você pode reabri-lo quando a exportação para o USB terminar.',
     rekordboxQuitDetailRestore:

@@ -11,12 +11,12 @@ import { isVirtualdjRunning, waitForVirtualdjExit } from './virtualdjProcess'
 
 type MenuKey = Parameters<ReturnType<typeof createMenuT>>[0]
 
-export type QuitReason = 'convert' | 'cues' | 'playlists' | 'usb' | 'restore' | 'duplicates'
+export type QuitReason = 'convert' | 'usb' | 'restore' | 'duplicates'
 
 export const QUIT_REASONS = {
-  rekordbox: ['convert', 'playlists', 'usb', 'restore'],
-  traktor: ['convert', 'cues', 'playlists', 'restore'],
-  engine: ['convert', 'cues', 'playlists', 'usb', 'restore'],
+  rekordbox: ['convert', 'usb', 'restore'],
+  traktor: ['convert', 'restore'],
+  engine: ['convert', 'usb', 'restore'],
   virtualdj: ['convert', 'restore', 'duplicates'],
 } as const satisfies { [P in WritableProgram]: readonly ['convert', ...QuitReason[]] }
 
@@ -58,7 +58,6 @@ export const QUIT_TEXT: { [P in WritableProgram]: QuitText<P> } = {
     cancel: 'rekordboxQuitCancel',
     detail: {
       convert: 'rekordboxQuitDetail',
-      playlists: 'rekordboxQuitDetailPlaylists',
       usb: 'rekordboxQuitDetailUsb',
       restore: 'rekordboxQuitDetailRestore',
     },
@@ -69,8 +68,6 @@ export const QUIT_TEXT: { [P in WritableProgram]: QuitText<P> } = {
     cancel: 'traktorQuitCancel',
     detail: {
       convert: 'traktorQuitDetail',
-      cues: 'traktorQuitDetailCues',
-      playlists: 'traktorQuitDetailPlaylists',
       restore: 'traktorQuitDetailRestore',
     },
   },
@@ -80,8 +77,6 @@ export const QUIT_TEXT: { [P in WritableProgram]: QuitText<P> } = {
     cancel: 'engineQuitCancel',
     detail: {
       convert: 'engineQuitDetail',
-      cues: 'engineQuitDetailCues',
-      playlists: 'engineQuitDetailPlaylists',
       usb: 'engineQuitDetailUsb',
       restore: 'engineQuitDetailRestore',
     },
