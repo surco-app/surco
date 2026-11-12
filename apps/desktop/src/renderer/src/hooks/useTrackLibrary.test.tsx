@@ -723,6 +723,62 @@ describe('useTrackLibrary import batching', () => {
   })
 })
 
+// Every read asked whether its row was still in the crate by walking the crate: 8,000 reads
+// over 8,000 rows is 64 million visits, a second and a half of a first read spent asking.
+describe('useTrackLibrary finding a read row', () => {
+  it('finds each row without walking the crate once per read', async () => {
+    const N = 60
+    setApi({
+      readMeta: vi.fn().mockResolvedValue({
+        tags: emptyMetadata(),
+        duration: 1,
+        cover: null,
+        foreignTags: [],
+      }),
+    })
+    const { result } = renderHook(() =>
+      useTrackLibrary({
+        setSelection: vi.fn(),
+        onForget: vi.fn(),
+        onRemove: vi.fn(),
+        onClear: vi.fn(),
+        onMetaLoaded: vi.fn(),
+        onDuplicatesSkipped: vi.fn(),
+        onNoAudioFound: vi.fn(),
+        onMetaReadFailed: vi.fn(),
+      }),
+    )
+    const realSome = Array.prototype.some
+    let bigSomeVisits = 0
+    Array.prototype.some = function someSpy<T>(
+      this: T[],
+      callback: (value: T, index: number, array: T[]) => unknown,
+      thisArg?: unknown,
+    ): boolean {
+      if (this.length < N) return realSome.call(this, callback, thisArg)
+      return realSome.call(
+        this,
+        (v: T, i: number, a: T[]) => {
+          bigSomeVisits++
+          return callback.call(thisArg, v, i, a)
+        },
+        thisArg,
+      )
+    }
+    try {
+      await act(async () => {
+        await result.current.addPaths(Array.from({ length: N }, (_, i) => `/m/${i}.wav`))
+        await new Promise((r) => setTimeout(r, 50))
+      })
+    } finally {
+      Array.prototype.some = realSome
+    }
+
+    expect(result.current.tracks.every((t) => !t.loadingMeta)).toBe(true)
+    expect(bigSomeVisits).toBeLessThan(N * 10)
+  })
+})
+
 describe('useTrackLibrary read coalescing across IPC replies', () => {
   // Each IPC reply lands in its own task, so a microtask flush wrote the crate (and
   // re-rendered the whole App) once per file while a big import loaded. Replies arriving

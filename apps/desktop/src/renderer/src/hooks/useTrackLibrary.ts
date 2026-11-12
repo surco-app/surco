@@ -216,6 +216,15 @@ export function useTrackLibrary({
   const [tracks, setTracks] = useState<TrackItem[]>([])
   const tracksRef = useRef<TrackItem[]>([])
   tracksRef.current = tracks
+  // The ids of the crate as it is now, rebuilt only when the crate changes: each read asks
+  // whether its row is still there, and walking 8,000 rows for each of 8,000 reads cost a
+  // second and a half of a first read.
+  const idIndex = useRef<{ of: TrackItem[]; ids: Set<string> } | null>(null)
+  const isInCrate = (id: string): boolean => {
+    if (idIndex.current?.of !== tracksRef.current)
+      idIndex.current = { of: tracksRef.current, ids: new Set(tracksRef.current.map((t) => t.id)) }
+    return idIndex.current.ids.has(id)
+  }
   // Import progress, accumulated across overlapping drops via refs (the React state is just
   // the render mirror): each drop bumps the total, each finished read bumps done, and the
   // pair resets to null once everything in flight has landed — like the auto-match sweep.
@@ -479,7 +488,7 @@ export function useTrackLibrary({
           // Checked before the read, not after: the point is to not start the ones still
           // queued behind the handful already in flight.
           if (generation !== importGeneration.current) return
-          const present = tracksRef.current.some((t) => t.id === base.id)
+          const present = isInCrate(base.id)
           const ok = present ? await loadTrackMeta(base) : true
           unread.delete(base.id)
           if (generation !== importGeneration.current) return
