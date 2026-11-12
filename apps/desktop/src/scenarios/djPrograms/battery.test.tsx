@@ -2,7 +2,7 @@
 import { existsSync, mkdirSync, realpathSync } from 'node:fs'
 import { basename, extname, join } from 'node:path'
 import { app } from 'electron'
-import { beforeAll, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
 const usb = vi.hoisted(() => ({ stick: '', volume: null as unknown, events: [] as unknown[] }))
 
@@ -196,6 +196,8 @@ beforeAll(async () => {
 }, 120_000)
 
 describe.each(DJ_PROGRAMS)('%s, por la puerta común', (program) => {
+  afterEach(formatsIntact)
+
   it('lee el árbol, la lista, la colección y la pertenencia', async () => {
     const id = await listId(program)
     const paths = (await entries(program, id)).map((e) => e.path)
@@ -430,6 +432,8 @@ describe('Etiquetas y añadir', () => {
 describe('USB', () => {
   const stickOf = (program: UsbProgram) =>
     sticks(usb.events as UsbExportEvent[])[STICK_FORMAT[program]]
+
+  afterEach(formatsIntact)
 
   beforeAll(() => {
     usb.stick = join(root, 'USB')
