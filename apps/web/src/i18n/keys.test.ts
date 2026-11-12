@@ -30,9 +30,12 @@ function keys(obj: unknown, prefix = ''): string[] {
 }
 
 describe('locale parity', () => {
-  it.each(TRANSLATIONS)('%s exposes the exact same keys as en', (_, locale) => {
-    expect(keys(locale).sort()).toEqual(keys(en).sort())
-  })
+  it.each([['en', en], ...TRANSLATIONS] as const)(
+    '%s exposes the exact same keys as es',
+    (_, locale) => {
+      expect(keys(locale).sort()).toEqual(keys(es).sort())
+    },
+  )
 
   // Search engines and screen readers take the page's language from these, not from
   // the text: a German page declaring itself English is indexed and read as English.
