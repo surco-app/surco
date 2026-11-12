@@ -1213,6 +1213,35 @@ describe('facetCounts', () => {
     expect(tally.unanalyzed).toBe(1)
   })
 
+  // Every write of a big list recounts it on each render, and counting 8,000 rows twice
+  // over (the whole crate for the filter bar, then the same crate again for each section
+  // nothing else narrows) was most of a render while a first read landed. The counts must
+  // stay the same; only the second walk goes.
+  const spiedFacts = () => ({ ...NO_FACTS, unsaved: vi.fn(() => false) })
+
+  it('takes the count of the whole crate it is handed instead of counting it again', () => {
+    const facts = spiedFacts()
+    const whole = qualityCounts(tracks, facts)
+    facts.unsaved.mockClear()
+
+    const counted = facetCounts(tracks, EMPTY_FILTER, facts, whole)
+
+    expect(facts.unsaved).not.toHaveBeenCalled()
+    expect(counted).toEqual(facetCounts(tracks, EMPTY_FILTER, spiedFacts()))
+  })
+
+  it('counts only the rows a filter narrows to, reusing the whole crate for the section it filters', () => {
+    const facts = spiedFacts()
+    const whole = qualityCounts(tracks, facts)
+    facts.unsaved.mockClear()
+    const sel = { ...EMPTY_FILTER, quality: 'good' as const }
+
+    const counted = facetCounts(tracks, sel, facts, whole)
+
+    expect(facts.unsaved).toHaveBeenCalledTimes(2)
+    expect(counted).toEqual(facetCounts(tracks, sel, spiedFacts()))
+  })
+
   it('combines every other active section when several are on', () => {
     const { tally, formats } = facetCounts(tracks, {
       ...EMPTY_FILTER,

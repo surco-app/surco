@@ -2204,8 +2204,8 @@ export default function App(): React.JSX.Element {
   )
   const formatTally = useMemo(() => formatBuckets(scopeTracks), [scopeTracks])
   const filterFacets = useMemo(
-    () => facetCounts(scopeTracks, filterSelection, filterFacts),
-    [scopeTracks, filterSelection, filterFacts],
+    () => facetCounts(scopeTracks, filterSelection, filterFacts, qualityTally),
+    [scopeTracks, filterSelection, filterFacts, qualityTally],
   )
   // The format filter is tied to the crate's contents (unlike the deliberately-sticky
   // Apple Music buckets): once its format is no longer present — the last MP3 removed, or

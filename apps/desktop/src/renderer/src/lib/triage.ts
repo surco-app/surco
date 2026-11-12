@@ -735,12 +735,16 @@ const TALLY_AXIS: Record<keyof Tally, keyof FilterSelection> = {
   stars5: 'stars',
 }
 
+// `whole` is qualityCounts(tracks, facts) when the caller already has it: a section no
+// other filter narrows is counted over the whole crate, and walking 8,000 rows again for
+// it was most of a render while a big list landed.
 export function facetCounts(
   tracks: TrackItem[],
   sel: FilterSelection,
   facts: FilterFacts = NO_FACTS,
+  whole?: Tally,
 ): { tally: Tally; formats: Record<string, number> } {
-  const subsets = new Map<string, TrackItem[]>()
+  const subsets = new Map<string, TrackItem[]>([[filterSessionKey(EMPTY_FILTER), tracks]])
   const within = (axis: keyof FilterSelection): TrackItem[] => {
     const others = { ...sel, [axis]: null }
     const key = filterSessionKey(others)
@@ -751,7 +755,7 @@ export function facetCounts(
     }
     return subset
   }
-  const counted = new Map<TrackItem[], Tally>()
+  const counted = new Map<TrackItem[], Tally>(whole ? [[tracks, whole]] : [])
   const countsOf = (subset: TrackItem[]): Tally => {
     let counts = counted.get(subset)
     if (!counts) {

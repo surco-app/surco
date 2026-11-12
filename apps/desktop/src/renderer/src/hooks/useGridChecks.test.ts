@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { act, renderHook, waitFor } from '@testing-library/react'
+import { act, configure, renderHook, waitFor } from '@testing-library/react'
 import { createElement, type ReactNode, useMemo } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
@@ -17,6 +17,9 @@ import { cueDraftKey, keepDraft, resetCueSession } from '../lib/cueSession'
 import { installApi } from '../test/api'
 import { resetGridChecks, useGridChecks } from './useGridChecks'
 import { trackCuesQuery } from './useTrackCues'
+
+// A burst of measures is told at most once a second, so the counts land within two.
+configure({ asyncUtilTimeout: 2000 })
 
 afterEach(() => {
   resetGridChecks()
@@ -251,5 +254,27 @@ describe('useGridChecks', () => {
     })
     await waitFor(() => expect(needsFix(result.current.checkOf('t2'))).toBe(false))
     expect(gridFit).toHaveBeenCalledTimes(3)
+  })
+})
+
+// With every import analysed, the grid of each of 8,000 Traktor rows is measured, and each
+// measure re-rendered the whole App and recounted every filter over the list: 130 renders a
+// second, the list's read starved behind them. A burst of measures is told in batches.
+describe('useGridChecks telling a burst of measures', () => {
+  it('re-renders about once a second while measures keep landing, and ends with all of them', async () => {
+    const entries = Array.from({ length: 30 }, (_, i): [string, string] => [`t${i}`, `${200 + i}`])
+    const { wrapper } = setup(vi.fn<Api['cues']['trackCues']>(async (id) => readOn(id, 7)))
+    let renders = 0
+    const { result } = renderHook(
+      () => {
+        renders++
+        return useGridChecks(entries, true)
+      },
+      { wrapper },
+    )
+
+    await waitFor(() => expect(result.current.done).toBe(30), { timeout: 3000 })
+
+    expect(renders).toBeLessThanOrEqual(5)
   })
 })
