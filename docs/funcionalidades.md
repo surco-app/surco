@@ -1548,7 +1548,7 @@ el cambio de nombre (ver abajo).
 
 **El original renombrado se queda si otro programa lo usa** (v1.23.0). Antes de retirar el
 original de una pista que cambió de nombre, Surco mira quién lo reproduce todavía
-(`librariesKeepingOriginal`, `libraryFlushes.ts:101`; `retireOriginal`, `processTrack.ts:808`).
+(`librariesKeepingOriginal`, `libraryFlushes.ts:204`; `retireOriginal`, `processTrack.ts:808`).
 Se queda si lo tiene una biblioteca de rekordbox, Engine DJ o Traktor encontrada pero sin
 «Actualizar», si Traktor ya tenía una entrada con el nombre nuevo y dejaría atrás la vieja, si
 lo tiene Serato, o si Music no ha podido responder. El aviso nombra el programa
@@ -1558,10 +1558,9 @@ lo tiene Serato, o si Music no ha podido responder. El aviso nombra el programa
 título, el artista, el álbum o el género, el cambio llega a la entrada de Traktor
 (`changedNames`, `ffmpeg.ts:1960`; `NmlPatch.tags`, `traktorNml.ts:98`) y a la fila de Engine DJ
 después de repuntarla (`updateEngineTags`, `libraryFlushes.ts:695`), solo con el «Actualizar» de
-ese programa encendido (`ffmpeg.ts:2161`). Con Engine DJ abierto el cambio espera en su cola junto al repunte y se escribe al cerrarse Engine aunque el tamaño del fichero no cambie (`engineConversionFlusher`, `libraryFlushes.ts:676`; `repointEngineQueued`, `libraryFlushes.ts:836`). Cada campo solo se cambia si el programa aún tiene
+ese programa encendido (`ffmpeg.ts:2161`). Con Engine DJ abierto el cambio espera en su cola junto al repunte y se escribe al cerrarse Engine aunque el tamaño del fichero no cambie (`engineConversionFlusher`, `libraryFlushes.ts:664`; `repointEngineQueued`, `libraryFlushes.ts:836`). Cada campo solo se cambia si el programa aún tiene
 el valor que tenía el fichero, así que un nombre editado a mano en el programa se respeta
-(`replaceTags`, `traktorNml.ts:547`). Con Engine DJ abierto, el repunte que queda en cola no
-lleva los nombres.
+(`replaceTags`, `traktorNml.ts:547`).
 
 **Una recarga a mitad no pierde los cambios** (v1.23.0). Si la ventana se recarga en mitad de
 una tanda, los cambios de biblioteca que llevaba se escriben en vez de tirarse
@@ -3185,7 +3184,7 @@ Recopilado de los cinco informes. Cada punto está verificado.
    hacia Serato solo están probados en tests, no en un Serato real.
    **La biblioteca de Serato no se repunta.** Una conversión que renombra o cambia de formato
    no mueve la pista en Serato, así que el original se queda en su carpeta mientras Serato lo
-   use (`librariesKeepingOriginal`, `libraryFlushes.ts:101`). Nunca cambia la ruta de una pista
+   use (`librariesKeepingOriginal`, `libraryFlushes.ts:204`). Nunca cambia la ruta de una pista
    que Serato ya tiene: se intentó y se retiró (`99597884a`), porque cambiarla hacía que Serato 5
    perdiera la pista y su valoración (medido el 4 de noviembre de 2026 en Serato 5, que guarda
    la valoración en `master.sqlite`). Lo que sí escribe en `database V2` desde v1.24.0 (editar
