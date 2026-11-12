@@ -247,19 +247,6 @@ const qualityLabel: Record<RowVerdict, string> = {
   damaged: 'editor.qualityDamaged',
 }
 
-const qualityWord: Record<Exclude<RowVerdict, 'good'>, string> = {
-  warn: 'trackList.qualityWord.warn',
-  bad: 'trackList.qualityWord.bad',
-  processed: 'trackList.qualityWord.processed',
-  transcoded: 'trackList.qualityWord.transcoded',
-  damaged: 'trackList.qualityWord.damaged',
-}
-
-const wordClass: Record<Exclude<RowTone, 'good'>, string> = {
-  warn: 'text-warn',
-  danger: 'text-danger',
-}
-
 // The same verdict as a colour stripe down the row's left edge: ambient, scannable severity
 // you read without parsing the small glyph at the right. good is deliberately absent: a clean
 // file needs no mark, so a page of good rows stays calm.
@@ -931,16 +918,6 @@ const TrackRow = memo(function TrackRow({
                     className={`shrink-0 whitespace-nowrap rounded px-[5px] text-fg-dim ring-1 ring-[var(--color-line-strong)] ring-inset ${PILL_TEXT}`}
                   >
                     {key}
-                  </span>
-                )}
-                {quality !== 'unanalyzed' && quality !== 'good' && (
-                  <span
-                    data-testid="track-quality-word"
-                    data-tone={qualityTone[quality]}
-                    aria-hidden="true"
-                    className={`shrink-0 text-label font-medium leading-4 ${wordClass[qualityTone[quality] as Exclude<RowTone, 'good'>]}`}
-                  >
-                    {tr(qualityWord[quality])}
                   </span>
                 )}
                 <span

@@ -593,13 +593,6 @@
     "cuesOpenFull": "キューを全画面で編集"
   },
   "trackList": {
-    "qualityWord": {
-      "warn": "疑わしい",
-      "bad": "低音質",
-      "processed": "再処理",
-      "transcoded": "非可逆",
-      "damaged": "破損"
-    },
     "cuesUnsaved": "キューが未保存",
     "autoMark": {
       "proposed_one": "{{count}} 件の提案",

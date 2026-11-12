@@ -593,13 +593,6 @@
     "cuesOpenFull": "Editar los cues a pantalla completa"
   },
   "trackList": {
-    "qualityWord": {
-      "warn": "Dudosa",
-      "bad": "Baja calidad",
-      "processed": "Reprocesada",
-      "transcoded": "Con pérdida",
-      "damaged": "Dañada"
-    },
     "cuesUnsaved": "Cues sin guardar",
     "autoMark": {
       "proposed_one": "{{count}} propuesta",

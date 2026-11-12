@@ -593,13 +593,6 @@
     "cuesOpenFull": "Modifier les cues en plein écran"
   },
   "trackList": {
-    "qualityWord": {
-      "warn": "Douteux",
-      "bad": "Faible",
-      "processed": "Retraité",
-      "transcoded": "Avec pertes",
-      "damaged": "Endommagé"
-    },
     "cuesUnsaved": "Cues non enregistrés",
     "autoMark": {
       "proposed_one": "{{count}} proposition",

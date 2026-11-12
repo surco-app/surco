@@ -593,13 +593,6 @@
     "cuesOpenFull": "Edit the cues full screen"
   },
   "trackList": {
-    "qualityWord": {
-      "warn": "Doubtful",
-      "bad": "Low quality",
-      "processed": "Reprocessed",
-      "transcoded": "Lossy",
-      "damaged": "Damaged"
-    },
     "cuesUnsaved": "Cues not saved",
     "autoMark": {
       "proposed_one": "{{count}} proposal",
