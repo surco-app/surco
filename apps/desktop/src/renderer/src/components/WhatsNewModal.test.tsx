@@ -9,7 +9,7 @@ import { WhatsNewModal } from './WhatsNewModal'
 // both locales — the real files grow with every release and would make these tests
 // about whatever shipped last.
 vi.mock('../lib/changelog', () => ({
-  changelogReleases: (locale: 'en' | 'es') =>
+  changelogReleases: async (locale: 'en' | 'es') =>
     locale === 'es'
       ? [
           {
@@ -56,9 +56,9 @@ afterEach(cleanup)
 describe('WhatsNewModal', () => {
   // The popup only exists to answer "what changed since my version": every batch it
   // selects must be on screen, under its release title, or the update news is lost.
-  it('lists every unseen release batch with its title and items', () => {
+  it('lists every unseen release batch with its title and items', async () => {
     render(<WhatsNewModal lastSeen="0.31.0" onClose={vi.fn()} />)
-    expect(screen.getByText('Novedades y avisos')).toBeInTheDocument()
+    expect(await screen.findByText('Novedades y avisos')).toBeInTheDocument()
     expect(screen.getByText('Deshacer, sesiones que vuelven y ALAC')).toBeInTheDocument()
     expect(screen.getByText('Popup de novedades tras actualizar.')).toBeInTheDocument()
     expect(screen.getByText('Exportación M3U8 corregida.')).toBeInTheDocument()
@@ -80,11 +80,11 @@ describe('WhatsNewModal', () => {
   it('re-renders the news in the freshly chosen language', async () => {
     await act(() => i18n.changeLanguage('en'))
     render(<WhatsNewModal lastSeen="0.31.0" onClose={vi.fn()} />)
-    expect(screen.getByText('News and notices')).toBeInTheDocument()
+    expect(await screen.findByText('News and notices')).toBeInTheDocument()
 
     await act(() => i18n.changeLanguage('es'))
 
-    expect(screen.getByText('Novedades y avisos')).toBeInTheDocument()
+    expect(await screen.findByText('Novedades y avisos')).toBeInTheDocument()
     expect(screen.queryByText('News and notices')).toBeNull()
   })
 })

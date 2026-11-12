@@ -1,9 +1,10 @@
 import { Sparkles } from 'lucide-react'
 import type React from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { baseLocale } from '../i18n/locale'
 import { changelogReleases } from '../lib/changelog'
-import { selectWhatsNew } from '../lib/whatsNew'
+import { type ChangelogRelease, selectWhatsNew } from '../lib/whatsNew'
 import { ModalShell } from './ModalShell'
 
 interface Props {
@@ -21,9 +22,20 @@ interface Props {
 // popup already silences itself.
 export function WhatsNewModal({ lastSeen, onClose }: Props): React.JSX.Element {
   const { t: tr, i18n } = useTranslation()
+  const locale = baseLocale(i18n.language)
+  const [history, setHistory] = useState<ChangelogRelease[]>([])
+  useEffect(() => {
+    let live = true
+    void changelogReleases(locale).then((loaded) => {
+      if (live) setHistory(loaded)
+    })
+    return () => {
+      live = false
+    }
+  }, [locale])
   const releases =
     selectWhatsNew(
-      changelogReleases(baseLocale(i18n.language)),
+      history,
       { hasSeenOnboarding: true, lastSeenChangelogVersion: lastSeen },
       window.api.version,
     ) ?? []

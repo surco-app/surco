@@ -117,18 +117,22 @@ vi.mock('./lib/triage', async (importOriginal) => {
 })
 // The real changelog data grows with every release; pinning it keeps the what's-new
 // tests about the launch gating, not about whatever shipped last.
+const { changelogLoads } = vi.hoisted(() => ({ changelogLoads: { count: 0 } }))
 vi.mock('./lib/changelog', () => ({
-  changelogReleases: () => [
-    {
-      version: '0.33',
-      date: '10 de julio de 2026',
-      title: 'Novedades y avisos',
-      items: [
-        { text: 'Popup de novedades tras actualizar.', in: '0.33.0' },
-        { text: 'Arreglo del análisis a 48 kHz.', in: '0.33.1' },
-      ],
-    },
-  ],
+  changelogReleases: async () => {
+    changelogLoads.count++
+    return [
+      {
+        version: '0.33',
+        date: '10 de julio de 2026',
+        title: 'Novedades y avisos',
+        items: [
+          { text: 'Popup de novedades tras actualizar.', in: '0.33.0' },
+          { text: 'Arreglo del análisis a 48 kHz.', in: '0.33.1' },
+        ],
+      },
+    ]
+  },
 }))
 
 afterEach(cleanup)
@@ -7675,6 +7679,35 @@ describe("App what's new popup", () => {
     await flush()
     expect(screen.queryByTestId('whats-new-close')).toBeNull()
     expect(saveSettings).not.toHaveBeenCalledWith({ lastSeenChangelogVersion: '0.33.1' })
+  })
+
+  // The release histories are the heaviest data the app ships. A launch with nothing
+  // new to announce — the everyday launch — must not load one just to find that out.
+  it('loads no changelog when the running version was already seen', async () => {
+    const before = changelogLoads.count
+    setApi({
+      version: '0.33.1',
+      getSettings: vi.fn().mockResolvedValue(settings({ lastSeenChangelogVersion: '0.33.1' })),
+      saveSettings: vi.fn().mockResolvedValue(settings()),
+    })
+    await renderApp()
+    await flush()
+    expect(changelogLoads.count).toBe(before)
+  })
+
+  // Onboarding owns a fresh install's launch, so there is no news to look up either.
+  it('loads no changelog on a fresh install', async () => {
+    const before = changelogLoads.count
+    setApi({
+      version: '0.33.1',
+      getSettings: vi
+        .fn()
+        .mockResolvedValue(settings({ hasSeenOnboarding: false, lastSeenChangelogVersion: '' })),
+      saveSettings: vi.fn().mockResolvedValue(settings()),
+    })
+    await renderApp()
+    await flush()
+    expect(changelogLoads.count).toBe(before)
   })
 })
 

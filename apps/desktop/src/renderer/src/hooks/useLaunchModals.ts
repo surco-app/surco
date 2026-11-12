@@ -30,17 +30,15 @@ export function useLaunchModals({ overlays, saveSettings, setSettings }: Params)
   const decideOnLoad = useStableCallback((s: Settings) => {
     if (shouldShowOnboarding(s)) {
       overlays.openOnboarding()
-    } else {
+    } else if (s.lastSeenChangelogVersion !== window.api.version) {
       // Post-update news: the changelog items shipped between the version this
       // machine last saw and the one now running (lib/whatsNew decides whether there
       // is anything). The modal only gets the last-seen stamp — it re-selects the
       // localized items itself, so the news follows a language switch live.
-      const news = selectWhatsNew(
-        changelogReleases(resolveLocale(s.language)),
-        s,
-        window.api.version,
-      )
-      if (news) overlays.openWhatsNew(s.lastSeenChangelogVersion)
+      void changelogReleases(resolveLocale(s.language)).then((releases) => {
+        const news = selectWhatsNew(releases, s, window.api.version)
+        if (news) overlays.openWhatsNew(s.lastSeenChangelogVersion)
+      })
     }
     // Stamped on every version change — including the fresh install that showed
     // onboarding instead — so the popup fires once per update and a brand-new
