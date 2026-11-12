@@ -135,6 +135,7 @@ import { useTrackLibrary } from './hooks/useTrackLibrary'
 import { useTrackProcessing } from './hooks/useTrackProcessing'
 import { useTracksView, type ViewCacheEntry } from './hooks/useTracksView'
 import { useTriageFilters } from './hooks/useTriageFilters'
+import { useLibraryCheckToast } from './hooks/useLibraryCheckToast'
 import { useAppNotifications } from './hooks/useAppNotifications'
 import { useUsbExportToasts } from './hooks/useUsbExportToasts'
 import { useUsbVolumes } from './hooks/useUsbVolumes'
@@ -1932,24 +1933,7 @@ export default function App(): React.JSX.Element {
     )
       seenDwell.current.set(id, setTimeout(() => markSeenInAll(id), SEEN_DWELL_MS))
   })
-  // A library that could not be read leaves every row without a verdict, the same blank a
-  // check still loading shows; the notice is what tells the two apart. It goes away once
-  // a refocus retries the read and it lands.
-  useEffect(() => {
-    if (!libraryFailed || !librarySource) return
-    const id = pushToast(store, {
-      key: 'library-check',
-      tone: 'danger',
-      testid: 'library-check-failed',
-      message: {
-        key:
-          librarySource === 'engineDj'
-            ? 'editor.libraryCheckFailedEngine'
-            : 'editor.libraryCheckFailed',
-      },
-    })
-    return () => dismissToast(store, id)
-  }, [libraryFailed, librarySource, store])
+  useLibraryCheckToast(store, libraryFailed, librarySource)
   // The list narrowed to the open playlist, in its order. Only what the list shows and
   // counts reads it: the Files rows are what is persisted.
   const prevPlaylistScope = useRef<PlaylistScope | null>(null)
