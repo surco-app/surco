@@ -10,6 +10,7 @@ const settings: Settings = {
   density: 'normal',
   showListWaves: true,
   showRailNames: true,
+  showSidebar: true,
   language: 'system',
   discogsToken: '',
   beatportUsername: '',

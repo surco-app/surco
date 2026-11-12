@@ -564,6 +564,7 @@
     "toggleTheme": "Design wechseln (System / Hell / Dunkel)",
     "toggleListWaves": "Wellenformen der Liste ein- oder ausblenden",
     "toggleRailNames": "Quellennamen ein- oder ausblenden",
+    "toggleSidebar": "Seitenleiste ein- oder ausblenden",
     "confetti": "Konfetti werfen 🎉",
     "trimStartBack": "Anfangsschnitt zurück",
     "trimStartForward": "Anfangsschnitt vor",
@@ -3629,6 +3630,8 @@
   "view": {
     "menu": "Listenansicht",
     "listWaves": "Wellenformen zeigen",
-    "railNames": "Namen zeigen"
+    "railNames": "Namen zeigen",
+    "sidebar": "Seitenleiste zeigen",
+    "hideSidebar": "Seitenleiste ausblenden"
   }
 }

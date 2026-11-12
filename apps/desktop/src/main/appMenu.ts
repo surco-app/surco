@@ -9,7 +9,7 @@ interface Params {
   checkForUpdates: () => void
   mac: boolean
   windows: boolean
-  view: { listWaves: boolean; railNames: boolean }
+  view: { listWaves: boolean; railNames: boolean; sidebar: boolean }
 }
 
 export function appMenuTemplate({
@@ -99,6 +99,12 @@ export function appMenuTemplate({
         { label: t('activity'), click: () => run('activity') },
         { label: t('backups'), click: () => run('backups') },
         { type: 'separator' },
+        {
+          ...keymapItem(t('sidebar'), 'toggle-sidebar'),
+          accelerator: mac ? accel('toggle-sidebar') : undefined,
+          type: 'checkbox',
+          checked: view.sidebar,
+        },
         {
           label: t('listWaves'),
           type: 'checkbox',

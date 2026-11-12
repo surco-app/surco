@@ -354,6 +354,7 @@ export interface Settings {
   showWaveform: boolean
   showListWaves: boolean
   showRailNames: boolean
+  showSidebar: boolean
   // When on, dropping files runs a Discogs search per track and auto-applies the
   // metadata of any high-confidence release match, without waiting for a click.
   // Off by default since it spends the token's rate limit across the whole crate.

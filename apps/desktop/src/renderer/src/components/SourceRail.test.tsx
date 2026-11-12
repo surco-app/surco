@@ -18,6 +18,7 @@ describe('SourceRail', () => {
         width={RAIL_WIDTH}
         showNames
         onToggleNames={vi.fn()}
+        onHideSidebar={vi.fn()}
         copies={COPIES}
         onHide={vi.fn()}
         sources={[]}
@@ -34,6 +35,7 @@ describe('SourceRail', () => {
         width={RAIL_WIDTH}
         showNames
         onToggleNames={vi.fn()}
+        onHideSidebar={vi.fn()}
         copies={COPIES}
         onHide={vi.fn()}
         sources={['rekordbox']}
@@ -57,6 +59,7 @@ describe('SourceRail', () => {
         width={RAIL_WIDTH}
         showNames
         onToggleNames={vi.fn()}
+        onHideSidebar={vi.fn()}
         copies={COPIES}
         onHide={vi.fn()}
         sources={['appleMusic', 'rekordbox', 'engine', 'traktor']}
@@ -92,6 +95,7 @@ describe('SourceRail', () => {
         width={RAIL_WIDTH}
         showNames
         onToggleNames={vi.fn()}
+        onHideSidebar={vi.fn()}
         copies={COPIES}
         onHide={vi.fn()}
         sources={['appleMusic', 'rekordbox']}
@@ -120,6 +124,7 @@ describe('SourceRail', () => {
             width={RAIL_WIDTH}
             showNames
             onToggleNames={vi.fn()}
+            onHideSidebar={vi.fn()}
             copies={COPIES}
             onHide={vi.fn()}
             sources={['appleMusic', 'rekordbox', 'engine', 'traktor']}
@@ -149,6 +154,7 @@ describe('SourceRail', () => {
         width={RAIL_WIDTH}
         showNames
         onToggleNames={vi.fn()}
+        onHideSidebar={vi.fn()}
         copies={COPIES}
         onHide={vi.fn()}
         sources={['appleMusic', 'rekordbox']}
@@ -166,11 +172,13 @@ describe('SourceRail', () => {
       const onSelect = vi.fn<(source: PlaylistSource | null) => void>()
       const onHide = vi.fn<(source: PlaylistSource) => void>()
       const onToggleNames = vi.fn()
+      const onHideSidebar = vi.fn()
       render(
         <SourceRail
           width={RAIL_WIDTH}
           showNames
           onToggleNames={onToggleNames}
+          onHideSidebar={onHideSidebar}
           sources={['appleMusic', 'rekordbox']}
           active={active}
           onSelect={onSelect}
@@ -178,7 +186,7 @@ describe('SourceRail', () => {
           copies={COPIES}
         />,
       )
-      return { onSelect, onHide, onToggleNames }
+      return { onSelect, onHide, onToggleNames, onHideSidebar }
     }
 
     it('offers to hide a source from its right-click menu, named after it', () => {
@@ -251,12 +259,34 @@ describe('SourceRail', () => {
     })
   })
 
+  it('hides the whole sidebar from its own right-click', () => {
+    const onHideSidebar = vi.fn()
+    render(
+      <SourceRail
+        width={RAIL_WIDTH}
+        showNames
+        onToggleNames={vi.fn()}
+        onHideSidebar={onHideSidebar}
+        copies={COPIES}
+        onHide={vi.fn()}
+        sources={[]}
+        active={null}
+        onSelect={vi.fn()}
+      />,
+    )
+    fireEvent.contextMenu(screen.getByTestId('source-rail-tracks'))
+    fireEvent.click(screen.getByRole('menuitem', { name: i18n.t('view.hideSidebar') }))
+    expect(onHideSidebar).toHaveBeenCalledTimes(1)
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+  })
+
   it('draws no names when they are hidden, and VoiceOver still hears each one', () => {
     render(
       <SourceRail
         width={52}
         showNames={false}
         onToggleNames={vi.fn()}
+        onHideSidebar={vi.fn()}
         copies={COPIES}
         onHide={vi.fn()}
         sources={['rekordbox']}
@@ -277,6 +307,7 @@ describe('SourceRail', () => {
           width={RAIL_WIDTH}
           showNames
           onToggleNames={vi.fn()}
+          onHideSidebar={vi.fn()}
           onHide={vi.fn()}
           sources={['rekordbox']}
           active="rekordbox"

@@ -564,6 +564,7 @@
     "toggleTheme": "テーマを切り替える (システム / ライト / ダーク)",
     "toggleListWaves": "リストの波形を表示/非表示",
     "toggleRailNames": "ソース名を表示/非表示",
+    "toggleSidebar": "サイドバーを表示/非表示",
     "confetti": "紙吹雪を飛ばす 🎉",
     "trimStartBack": "先頭のカットを手前へ微調整",
     "trimStartForward": "先頭のカットを後ろへ微調整",
@@ -3629,6 +3630,8 @@
   "view": {
     "menu": "リストの表示",
     "listWaves": "波形を表示",
-    "railNames": "名前を表示"
+    "railNames": "名前を表示",
+    "sidebar": "サイドバーを表示",
+    "hideSidebar": "サイドバーを隠す"
   }
 }

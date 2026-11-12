@@ -802,6 +802,7 @@ function buildAppMenu(win: BrowserWindow): void {
     view: {
       listWaves: getSettings().showListWaves,
       railNames: getSettings().showRailNames,
+      sidebar: getSettings().showSidebar,
     },
   })
   Menu.setApplicationMenu(Menu.buildFromTemplate(template))
@@ -1102,7 +1103,8 @@ function registerIpc(): void {
       patch.shortcutOverrides !== undefined ||
       patch.language !== undefined ||
       patch.showListWaves !== undefined ||
-      patch.showRailNames !== undefined
+      patch.showRailNames !== undefined ||
+      patch.showSidebar !== undefined
     ) {
       const win = BrowserWindow.fromWebContents(e.sender)
       if (win) buildAppMenu(win)

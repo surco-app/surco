@@ -96,6 +96,9 @@ interface Props {
   onReviewIncomplete?: () => void
   showWaves: boolean
   onToggleWaves: () => void
+  showSidebar: boolean
+  onToggleSidebar: () => void
+  location?: string
 }
 
 const LIST_COMMAND_ICONS: [string, LucideIcon][] = [
@@ -208,6 +211,9 @@ export function TrackListHeader({
   onReviewIncomplete,
   showWaves,
   onToggleWaves,
+  showSidebar,
+  onToggleSidebar,
+  location,
 }: Props): React.JSX.Element {
   const { open, setOpen, ref: moreRef, toggleRef, menuRef, onMenuKeyDown } = useSplitMenu()
   // Portaled out of the sticky header, whose layer would hold it under the activity panel
@@ -274,6 +280,14 @@ export function TrackListHeader({
       }}
       className="scroll-edge @container sticky top-0 z-10 bg-[var(--color-ink)]"
     >
+      {location && (
+        <p
+          data-testid="track-list-location"
+          className="truncate px-3 pt-2 text-xs font-medium text-fg-dim"
+        >
+          {location}
+        </p>
+      )}
       <div className="flex items-center gap-1.5 px-1.5 pt-2">
         <SearchInput
           className="flex-1"
@@ -516,6 +530,12 @@ export function TrackListHeader({
           y={viewMenu.y}
           label={tr('view.menu')}
           items={[
+            {
+              id: 'sidebar',
+              label: tr('view.sidebar'),
+              checked: showSidebar,
+              onToggle: onToggleSidebar,
+            },
             {
               id: 'list-waves',
               label: tr('view.listWaves'),

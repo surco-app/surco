@@ -14,7 +14,7 @@ function build(locale = 'en', mac = true, windows = false) {
     checkForUpdates: vi.fn(),
     mac,
     windows,
-    view: { listWaves: true, railNames: true },
+    view: { listWaves: true, railNames: true, sidebar: true },
   })
   return { template, run }
 }
@@ -173,5 +173,17 @@ describe('View menu rail names', () => {
     expect(item.checked).toBe(true)
     click(item)
     expect(run).toHaveBeenCalledWith('toggle-rail-names')
+  })
+})
+
+describe('View menu sidebar', () => {
+  it('ticks the sidebar while it shows, with the keymap\'s shortcut, and toggles it through the command', () => {
+    const { template, run } = build()
+    const item = itemFor(menu(template, 'View'), 'Show Sidebar')
+    expect(item.type).toBe('checkbox')
+    expect(item.checked).toBe(true)
+    expect(item.accelerator).toBe('accel:toggle-sidebar')
+    click(item)
+    expect(run).toHaveBeenCalledWith('toggle-sidebar')
   })
 })

@@ -1846,9 +1846,10 @@ export default function App(): React.JSX.Element {
     setThemePreview(null)
   }
 
+  const showSidebar = settings?.showSidebar ?? true
   const columns = useColumnLayout({
-    railWidth: railWidth({ names: settings?.showRailNames ?? true }),
-    hasTree: !!browser.source,
+    railWidth: showSidebar ? railWidth({ names: settings?.showRailNames ?? true }) : 0,
+    hasTree: showSidebar && !!browser.source,
     saved: settings?.columnShares,
     onCommit: (columnShares) => saveSettings({ columnShares }),
   })
@@ -3206,6 +3207,7 @@ export default function App(): React.JSX.Element {
   const toggleListWaves = useStableCallback(() => saveSettings({ showListWaves: !showListWaves }))
   const showRailNames = settings?.showRailNames ?? true
   const toggleRailNames = useStableCallback(() => saveSettings({ showRailNames: !showRailNames }))
+  const toggleSidebar = useStableCallback(() => saveSettings({ showSidebar: !showSidebar }))
   // A remount-keyed confetti burst: bumping the key mounts a fresh <Confetti>, so the ⌘K
   // command can fire it again and again. The burst tears itself down once it settles.
   const [confettiBurst, setConfettiBurst] = useState(0)
@@ -3340,6 +3342,7 @@ export default function App(): React.JSX.Element {
       toggleTheme,
       toggleListWaves,
       toggleRailNames,
+      toggleSidebar,
       clearMeta,
       deriveTags,
       numberTracks,
@@ -3705,29 +3708,32 @@ export default function App(): React.JSX.Element {
               </div>
 
               <div className="flex min-h-0 flex-1">
-                <SourceRail
-                  width={railWidth({ names: showRailNames })}
-                  showNames={showRailNames}
-                  onToggleNames={toggleRailNames}
-                  sources={browser.sources}
-                  active={browser.source}
-                  onSelect={(next) => {
-                    setCopiesOpen(null)
-                    selectSource(next)
-                  }}
-                  onHide={(hidden) =>
-                    saveSettings({
-                      hiddenSources: [...(settings?.hiddenSources ?? NO_HIDDEN_SOURCES), hidden],
-                    })
-                  }
-                  copies={{
-                    active: copiesOpen !== null,
-                    alert: railAlert(libraryCopies.programs),
-                    onOpen: () => {
-                      if (!copiesOpen) openCopies(false, '')
-                    },
-                  }}
-                />
+                {showSidebar && (
+                  <SourceRail
+                    onHideSidebar={toggleSidebar}
+                    width={railWidth({ names: showRailNames })}
+                    showNames={showRailNames}
+                    onToggleNames={toggleRailNames}
+                    sources={browser.sources}
+                    active={browser.source}
+                    onSelect={(next) => {
+                      setCopiesOpen(null)
+                      selectSource(next)
+                    }}
+                    onHide={(hidden) =>
+                      saveSettings({
+                        hiddenSources: [...(settings?.hiddenSources ?? NO_HIDDEN_SOURCES), hidden],
+                      })
+                    }
+                    copies={{
+                      active: copiesOpen !== null,
+                      alert: railAlert(libraryCopies.programs),
+                      onOpen: () => {
+                        if (!copiesOpen) openCopies(false, '')
+                      },
+                    }}
+                  />
+                )}
                 {copiesOpen && (
                   <div className="min-w-0 flex-1">
                     <CopiesScreen
@@ -3750,7 +3756,7 @@ export default function App(): React.JSX.Element {
                     />
                   </div>
                 )}
-                {!copiesOpen && browser.source && (
+                {showSidebar && !copiesOpen && browser.source && (
                   <SourceTree
                     key={browser.source}
                     width={columns.widths.tree}
@@ -3831,6 +3837,15 @@ export default function App(): React.JSX.Element {
                           <TrackListHeader
                             showWaves={showListWaves}
                             onToggleWaves={toggleListWaves}
+                            showSidebar={showSidebar}
+                            onToggleSidebar={toggleSidebar}
+                            location={
+                              showSidebar
+                                ? undefined
+                                : browser.source
+                                  ? `${tr(`sources.${browser.source}`)} › ${browser.playlist?.name ?? ''}`
+                                  : tr('sources.workingList')
+                            }
                             tr={tr}
                             hintFor={hintFor}
                             search={search}

@@ -141,6 +141,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     density: 'normal',
     showListWaves: true,
     showRailNames: true,
+    showSidebar: true,
     cueFlows: BUNDLED_FLOWS,
     activeCueFlow: 'mine',
     cueJumpBars: 16,
@@ -10829,5 +10830,25 @@ describe('automatic session from the tree', () => {
       expect.any(String),
       'queue',
     )
+  })
+})
+
+// Hiding the sidebar is for the user who wants the whole window for the list and the
+// editor; it has to take the rail and the playlists with it and leave a way back.
+describe('App sidebar', () => {
+  it('draws neither the rail nor the playlists while the sidebar is hidden', async () => {
+    setApi({ getSettings: vi.fn().mockResolvedValue(settings({ showSidebar: false })) })
+    await renderApp()
+    await addTwoTracks()
+    expect(screen.queryByTestId('source-rail')).not.toBeInTheDocument()
+  })
+
+  it('brings the sidebar back from the right-click on the list header', async () => {
+    setApi({ getSettings: vi.fn().mockResolvedValue(settings({ showSidebar: false })) })
+    await renderApp()
+    await addTwoTracks()
+    fireEvent.contextMenu(screen.getByTestId('track-list-toolbar'))
+    fireEvent.click(screen.getByRole('menuitemcheckbox', { name: i18n.t('view.sidebar') }))
+    expect(await screen.findByTestId('source-rail')).toBeInTheDocument()
   })
 })

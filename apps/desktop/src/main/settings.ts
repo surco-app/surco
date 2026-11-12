@@ -157,6 +157,7 @@ export const defaults: Settings = {
   showWaveform: true,
   showListWaves: true,
   showRailNames: true,
+  showSidebar: true,
   // On by default so the audio-quality read (spotting fakes and transcodes) surfaces on
   // import without the user having to discover it; it can be turned off in Settings.
   autoAnalyze: true,

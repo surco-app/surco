@@ -259,6 +259,7 @@ export interface CommandDeps {
   toggleTheme: () => void
   toggleListWaves: () => void
   toggleRailNames: () => void
+  toggleSidebar: () => void
   // Empties every metadata field on the current selection (the Editor's clear button).
   clearMeta: () => void
   // Fills tags on the current selection by parsing each file name (the Editor's derive button).
@@ -395,6 +396,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     toggleTheme,
     toggleListWaves,
     toggleRailNames,
+    toggleSidebar,
     clearMeta,
     deriveTags,
     numberTracks,
@@ -1120,6 +1122,14 @@ export function buildCommands(deps: CommandDeps): Command[] {
       hint: hintFor('toggle-rail-names'),
       enabled: true,
       run: toggleRailNames,
+    },
+    {
+      id: 'toggle-sidebar',
+      group: 'app',
+      title: tr('commands.toggleSidebar'),
+      hint: hintFor('toggle-sidebar'),
+      enabled: true,
+      run: toggleSidebar,
     },
     {
       id: 'help',

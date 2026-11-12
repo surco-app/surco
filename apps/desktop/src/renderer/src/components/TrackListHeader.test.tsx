@@ -25,6 +25,7 @@ function renderHeader(over: Partial<Parameters<typeof TrackListHeader>[0]> = {})
     onTrashSelected: vi.fn(),
     onTrashSuspects: vi.fn(),
     onToggleWaves: vi.fn(),
+    onToggleSidebar: vi.fn(),
   }
   render(
     <TrackListHeader
@@ -54,6 +55,7 @@ function renderHeader(over: Partial<Parameters<typeof TrackListHeader>[0]> = {})
       reviewDetail="The 1 track in the list. Changes the file"
       listCommands={() => []}
       showWaves
+      showSidebar
       {...handlers}
       {...over}
     />,
@@ -447,8 +449,29 @@ describe('TrackListHeader view menu', () => {
   it('closes on Escape without changing anything', () => {
     const { onToggleWaves } = renderHeader()
     fireEvent.contextMenu(screen.getByTestId('track-list-toolbar'))
-    fireEvent.keyDown(screen.getByRole('menuitemcheckbox'), { key: 'Escape' })
+    fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' })
     expect(screen.queryByRole('menuitemcheckbox')).toBeNull()
     expect(onToggleWaves).not.toHaveBeenCalled()
+  })
+})
+
+// With the sidebar hidden nothing on screen says which playlist the rows come from, so the
+// header names it; with the sidebar showing, the tree already does.
+describe('TrackListHeader location', () => {
+  it('names where the rows come from only when it is given', () => {
+    renderHeader({ location: 'rekordbox › Friday' })
+    expect(screen.getByTestId('track-list-location')).toHaveTextContent('rekordbox › Friday')
+    cleanup()
+    renderHeader()
+    expect(screen.queryByTestId('track-list-location')).toBeNull()
+  })
+
+  it('offers the sidebar back from the same right-click, ticked by its state', () => {
+    const { onToggleSidebar } = renderHeader({ showSidebar: false })
+    fireEvent.contextMenu(screen.getByTestId('track-list-toolbar'))
+    const item = screen.getByRole('menuitemcheckbox', { name: i18n.t('view.sidebar') })
+    expect(item).toHaveAttribute('aria-checked', 'false')
+    fireEvent.click(item)
+    expect(onToggleSidebar).toHaveBeenCalledTimes(1)
   })
 })

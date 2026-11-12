@@ -30,6 +30,7 @@ export function SourceRail({
   width,
   showNames,
   onToggleNames,
+  onHideSidebar,
 }: {
   sources: PlaylistSource[]
   active: PlaylistSource | null
@@ -39,6 +40,7 @@ export function SourceRail({
   width: number
   showNames: boolean
   onToggleNames: () => void
+  onHideSidebar: () => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [menu, setMenu] = useState<{
@@ -240,6 +242,19 @@ export function SourceRail({
                 className={`h-3.5 w-3.5 shrink-0 ${showNames ? '' : 'invisible'}`}
               />
               {tr('view.railNames')}
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              data-testid="source-rail-hide-sidebar"
+              onClick={() => {
+                setMenu(null)
+                onHideSidebar()
+              }}
+              className="flex w-full items-center gap-2 rounded py-1.5 pr-3 pl-2 text-left text-sm text-fg hover:bg-[var(--color-hover)]"
+            >
+              <span aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+              {tr('view.hideSidebar')}
             </button>
           </div>
         </div>

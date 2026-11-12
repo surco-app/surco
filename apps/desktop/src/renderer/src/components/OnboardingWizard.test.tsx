@@ -32,6 +32,7 @@ const settings: Settings = {
   density: 'normal',
   showListWaves: true,
   showRailNames: true,
+  showSidebar: true,
   cueFlows: BUNDLED_FLOWS,
   activeCueFlow: 'mine',
   cueJumpBars: 16,

@@ -564,6 +564,7 @@
     "toggleTheme": "Trocar tema (sistema / claro / escuro)",
     "toggleListWaves": "Mostrar ou ocultar as ondas da lista",
     "toggleRailNames": "Mostrar ou ocultar os nomes das fontes",
+    "toggleSidebar": "Mostrar ou ocultar a barra lateral",
     "confetti": "Soltar confete 🎉",
     "trimStartBack": "Recuar o corte inicial",
     "trimStartForward": "Avançar o corte inicial",
@@ -3629,6 +3630,8 @@
   "view": {
     "menu": "Vista da lista",
     "listWaves": "Mostrar ondas",
-    "railNames": "Mostrar nomes"
+    "railNames": "Mostrar nomes",
+    "sidebar": "Mostrar barra lateral",
+    "hideSidebar": "Ocultar barra lateral"
   }
 }
