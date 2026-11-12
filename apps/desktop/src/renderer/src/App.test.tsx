@@ -647,6 +647,15 @@ describe('App Engine DJ cues', () => {
     expect(screen.queryByTestId('source-tree-rename')).not.toBeInTheDocument()
   })
 
+  it('never offers pasting a tracklist into Engine DJ, since Surco cannot read its collection to find the tracks', async () => {
+    openEngine()
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-engine'))
+    fireEvent.contextMenu(await screen.findByTestId('source-node-7'))
+    expect(screen.getByTestId('source-tree-delete')).toBeInTheDocument()
+    expect(screen.queryByTestId('source-tree-paste-tracklist')).not.toBeInTheDocument()
+  })
+
   it('lets an Engine DJ row go to another playlist but never offers removing it from the open one', async () => {
     openEngine({
       dj: djReads({
@@ -1208,6 +1217,14 @@ describe('App Serato cues', () => {
     await waitFor(() => expect(editPlaylist).toHaveBeenCalled())
     return playlist
   }
+
+  it('offers pasting a tracklist into a Serato crate, since Surco reads the whole Serato collection to find the tracks', async () => {
+    openSerato()
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-serato'))
+    fireEvent.contextMenu(await screen.findByTestId('source-node-Friday'))
+    expect(screen.getByTestId('source-tree-paste-tracklist')).toBeInTheDocument()
+  })
 
   it('keeps the open Serato subcrate open under its new name once it is renamed', async () => {
     const playlist = await renameInSerato('Sets%%Friday', 'Sábado', [

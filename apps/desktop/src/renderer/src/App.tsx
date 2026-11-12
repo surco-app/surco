@@ -2959,13 +2959,14 @@ export default function App(): React.JSX.Element {
   const canRename = editCan('rename')
   const canMoveNode = editCan('moveNode')
   const noFolders = sourceEdit?.folders === false
+  const readsCollection = Boolean(sourceProgram && SOURCE_READ[sourceProgram].collection)
   const treeEdit = useMemo(
     () => ({
       onCreate: createInRekordbox,
       onDropTracks: dropOnRekordbox,
       ...(canRename && { onRename: renameInRekordbox }),
       onDelete: deleteInRekordbox,
-      onPasteTracklist: openPasteTracklist,
+      ...(readsCollection && { onPasteTracklist: openPasteTracklist }),
       onSession: (node: SourceNode) => openSessionAt(node.id),
       onFill: openSessionFill,
       ...(canMoveNode && { onMove: moveInTree }),
@@ -2985,6 +2986,7 @@ export default function App(): React.JSX.Element {
       canRename,
       canMoveNode,
       noFolders,
+      readsCollection,
     ],
   )
   // Read at drop time, so a re-read landing mid-drag still names the dragged rows. A track
