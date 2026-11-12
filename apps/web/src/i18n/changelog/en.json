@@ -1,5 +1,60 @@
 [
   {
+    "version": "1.34",
+    "date": "November 12, 2026",
+    "title": "VirtualDJ joins Surco",
+    "items": [
+      {
+        "text": "VirtualDJ is now in Surco, in beta, on Mac and Windows. Its tab shows your library, lists and folders, and you can edit them from there.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "Mark cues for VirtualDJ like for the other programs. If VirtualDJ is open, Surco saves them when you close it. VirtualDJ has no CALLs, so only the hot cues reach it.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "Convert a track you keep in VirtualDJ and it stays the same track, with its cues, its grid and its lists. Tag changes reach VirtualDJ too, and what you convert can go straight into it.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "Export your VirtualDJ lists to a Pioneer USB on macOS. Surco keeps copies of the VirtualDJ library and lists, and you can bring them back from Copies.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "Change the title, artist, album or genre of a track you keep in Serato and press “Update tags”. Serato gets the new names too, without losing anything.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "Right-click the zoomed wave in the cue editor to add a hot cue or a CALL. Right-click a cue to turn it into a hot cue or a CALL, move it to the beat or change its letter.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "The cues of your Traktor MP3s now sit in the cue editor exactly where Traktor plays them.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "The convert button just says what it does, like “Convert to FLAC”. One line under it tells you where the file goes, and it says “No changes” when there is nothing to do.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "The new “Compact” density in Settings → General fits more tracks in the window. You can also hide the sidebar, the source names or the list waveforms when you want more room.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "Find any playlist from any source in the command palette and open it. A track’s right-click menu can show it in any of your DJ programs.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "A DJ library opens on “Recently added”, or on “All tracks” if you added nothing lately. Covers appear as you scroll, and big lists open and import faster.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "Settings are grouped by what you are doing, with Shortcuts next to General, a Conversion group and Stats in its own place.",
+        "in": "1.34.0"
+      }
+    ]
+  },
+  {
     "version": "1.33",
     "date": "November 11, 2026",
     "title": "Fix grids in bulk",

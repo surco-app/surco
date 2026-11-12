@@ -1,5 +1,60 @@
 [
   {
+    "version": "1.34",
+    "date": "November 12, 2026",
+    "title": "VirtualDJ arrive dans Surco",
+    "items": [
+      {
+        "text": "VirtualDJ est maintenant dans Surco, en bêta, sur Mac et Windows. Son onglet montre ta bibliothèque, tes listes et tes dossiers, et tu peux les modifier depuis là.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "Place des cues pour VirtualDJ comme pour les autres logiciels. Si VirtualDJ est ouvert, Surco les enregistre dès que tu le fermes. VirtualDJ n’a pas de CALL, donc seuls les hot cues y arrivent.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "Convertis un morceau que tu as dans VirtualDJ et il reste le même morceau, avec ses cues, sa grille et ses listes. Les changements de tags arrivent aussi dans VirtualDJ, et ce que tu convertis peut y entrer directement.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "Exporte tes listes VirtualDJ sur une clé USB Pioneer sous macOS. Surco garde des copies de la bibliothèque et des listes VirtualDJ, et tu peux les récupérer depuis Copies.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "Change le titre, l’artiste, l’album ou le genre d’un morceau que tu as dans Serato et appuie sur « Mettre à jour les tags ». Serato reçoit aussi les nouveaux noms, sans rien perdre.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "Fais un clic droit sur l’onde agrandie de l’éditeur de cues pour ajouter un hot cue ou un CALL. Fais un clic droit sur un cue pour le transformer en hot cue ou en CALL, le caler sur le temps ou changer sa lettre.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "Les cues de tes MP3 Traktor tombent maintenant dans l’éditeur de cues exactement là où Traktor les joue.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "Le bouton de conversion dit juste ce qu’il fait, comme « Convertir en FLAC ». Une ligne en dessous indique où va le fichier, et affiche « Aucun changement » quand il n’y a rien à faire.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "La nouvelle densité « Compacte » dans Réglages → Général affiche plus de morceaux dans la fenêtre. Tu peux aussi masquer la barre latérale, les noms des sources ou les ondes de la liste quand tu veux plus de place.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "Trouve n’importe quelle playlist de n’importe quelle source dans la palette de commandes et ouvre-la. Le menu clic droit d’un morceau peut le montrer dans n’importe lequel de tes logiciels DJ.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "Une bibliothèque DJ s’ouvre sur « Ajoutés récemment », ou sur « Tous les morceaux » si tu n’as rien ajouté dernièrement. Les pochettes apparaissent pendant que tu fais défiler, et les grandes listes s’ouvrent et s’importent plus vite.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "Les réglages sont regroupés selon ce que tu fais, avec Raccourcis à côté de Général, un groupe Conversion et Statistiques à sa propre place.",
+        "in": "1.34.0"
+      }
+    ]
+  },
+  {
     "version": "1.33",
     "date": "November 11, 2026",
     "title": "Des grilles corrigées en lot",

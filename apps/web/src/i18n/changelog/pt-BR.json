@@ -1,5 +1,60 @@
 [
   {
+    "version": "1.34",
+    "date": "November 12, 2026",
+    "title": "O VirtualDJ chega ao Surco",
+    "items": [
+      {
+        "text": "O VirtualDJ agora está no Surco, em beta, no Mac e no Windows. A aba dele mostra sua biblioteca, suas listas e suas pastas, e você pode editá-las por ali.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "Marque cues para o VirtualDJ como para os outros programas. Se o VirtualDJ estiver aberto, o Surco salva quando você fechar. O VirtualDJ não tem CALLs, então só os hot cues chegam até ele.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "Converta uma faixa que você tem no VirtualDJ e ela continua sendo a mesma faixa, com seus cues, sua grade e suas listas. As mudanças de tags também chegam ao VirtualDJ, e o que você converte pode entrar direto nele.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "Exporte suas listas do VirtualDJ para um USB da Pioneer no macOS. O Surco guarda cópias da biblioteca e das listas do VirtualDJ, e você pode recuperá-las em Cópias.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "Mude o título, o artista, o álbum ou o gênero de uma faixa que você tem no Serato e aperte “Atualizar tags”. O Serato também recebe os novos nomes, sem perder nada.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "Clique com o botão direito na onda ampliada do editor de cues para adicionar um hot cue ou um CALL. Clique com o botão direito num cue para transformá-lo em hot cue ou CALL, levá-lo ao tempo ou mudar sua letra.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "Os cues dos seus MP3 do Traktor agora ficam no editor de cues exatamente onde o Traktor os toca.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "O botão de converter só diz o que faz, como “Converter para FLAC”. Uma linha embaixo diz para onde vai o arquivo, e mostra “Sem alterações” quando não há nada a fazer.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "A nova densidade “Compacta” em Ajustes → Geral cabe mais faixas na janela. Você também pode ocultar a barra lateral, os nomes das fontes ou as ondas da lista quando quiser mais espaço.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "Encontre qualquer playlist de qualquer fonte na paleta de comandos e abra. O menu de clique direito de uma faixa pode mostrá-la em qualquer um dos seus programas de DJ.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "Uma biblioteca de DJ abre em “Adicionadas recentemente”, ou em “Todas as faixas” se você não adicionou nada nos últimos tempos. As capas aparecem conforme você rola, e listas grandes abrem e importam mais rápido.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "Os ajustes estão agrupados pelo que você está fazendo, com Atalhos ao lado de Geral, um grupo de Conversão e Estatísticas no seu próprio lugar.",
+        "in": "1.34.0"
+      }
+    ]
+  },
+  {
     "version": "1.33",
     "date": "November 11, 2026",
     "title": "Grades corrigidas em lote",

@@ -1,5 +1,60 @@
 [
   {
+    "version": "1.34",
+    "date": "12 de noviembre de 2026",
+    "title": "VirtualDJ llega a Surco",
+    "items": [
+      {
+        "text": "VirtualDJ ya está en Surco, en beta, en Mac y Windows. Su pestaña muestra tu biblioteca, tus listas y tus carpetas, y puedes editarlas desde ahí.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "Marca cues para VirtualDJ como para los demás programas. Si VirtualDJ está abierto, Surco los guarda cuando lo cierras. VirtualDJ no tiene CALL, así que solo le llegan los hot cues.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "Convierte una pista que tienes en VirtualDJ y sigue siendo la misma pista, con sus cues, su rejilla y sus listas. Los cambios de etiquetas también llegan a VirtualDJ, y lo que conviertes puede entrar directamente.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "Exporta tus listas de VirtualDJ a un USB de Pioneer en macOS. Surco guarda copias de la biblioteca y las listas de VirtualDJ, y puedes recuperarlas desde Copias.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "Cambia el título, el artista, el álbum o el género de una pista que tienes en Serato y pulsa «Actualizar etiquetas». Serato también recibe los nuevos nombres, sin perder nada.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "Haz clic derecho en la onda ampliada del editor de cues para añadir un hot cue o un CALL. Haz clic derecho en un cue para convertirlo en hot cue o en CALL, llevarlo al golpe o cambiarle la letra.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "Los cues de tus MP3 de Traktor ahora salen en el editor de cues justo donde los toca Traktor.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "El botón de convertir solo dice lo que hace, como «Convertir a FLAC». Una línea debajo te dice adónde va el fichero, y pone «Sin cambios» cuando no hay nada que hacer.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "La nueva densidad «Compacta» de Ajustes → General mete más pistas en la ventana. También puedes ocultar la barra lateral, los nombres de las fuentes o las ondas de la lista cuando quieras más sitio.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "Encuentra cualquier playlist de cualquier fuente en la paleta de comandos y ábrela. El menú de clic derecho de una pista puede mostrarla en cualquiera de tus programas de DJ.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "Una biblioteca de DJ se abre en «Añadidas recientemente», o en «Todas las pistas» si no has añadido nada últimamente. Las carátulas aparecen según bajas, y las listas grandes se abren e importan más rápido.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "Los ajustes se agrupan según lo que estás haciendo, con Atajos junto a General, un grupo de Conversión y Estadísticas en su propio sitio.",
+        "in": "1.34.0"
+      }
+    ]
+  },
+  {
     "version": "1.33",
     "date": "11 de noviembre de 2026",
     "title": "Rejillas arregladas en lote",

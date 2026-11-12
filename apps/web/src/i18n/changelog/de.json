@@ -1,5 +1,60 @@
 [
   {
+    "version": "1.34",
+    "date": "November 12, 2026",
+    "title": "VirtualDJ kommt zu Surco",
+    "items": [
+      {
+        "text": "VirtualDJ ist jetzt in Surco, als Beta, auf Mac und Windows. Sein Tab zeigt deine Bibliothek, Listen und Ordner, und du kannst sie dort bearbeiten.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "Setze Cues für VirtualDJ wie für die anderen Programme. Ist VirtualDJ offen, speichert Surco sie, sobald du es schließt. VirtualDJ kennt keine CALLs, deshalb kommen nur die Hot Cues an.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "Konvertiere einen Track aus VirtualDJ und er bleibt derselbe Track, mit seinen Cues, seinem Raster und seinen Listen. Tag-Änderungen kommen auch in VirtualDJ an, und was du konvertierst, kann direkt hinein.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "Exportiere deine VirtualDJ-Listen unter macOS auf einen Pioneer-USB-Stick. Surco legt Kopien der VirtualDJ-Bibliothek und der Listen an, und du kannst sie unter Kopien zurückholen.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "Ändere Titel, Künstler, Album oder Genre eines Tracks aus Serato und drücke „Tags aktualisieren“. Auch Serato bekommt die neuen Namen, ohne dass etwas verloren geht.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "Klicke mit rechts auf die vergrößerte Wellenform im Cue-Editor, um einen Hot Cue oder einen CALL zu setzen. Klicke mit rechts auf einen Cue, um ihn in einen Hot Cue oder CALL umzuwandeln, auf den Schlag zu setzen oder seinen Buchstaben zu ändern.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "Die Cues deiner Traktor-MP3s sitzen im Cue-Editor jetzt genau dort, wo Traktor sie spielt.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "Der Konvertieren-Button sagt nur noch, was er tut, etwa „In FLAC konvertieren“. Eine Zeile darunter zeigt, wohin die Datei geht, und bei nichts zu tun steht dort „Keine Änderungen“.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "Die neue Dichte „Kompakt“ unter Einstellungen → Allgemein zeigt mehr Tracks im Fenster. Du kannst auch die Seitenleiste, die Quellennamen oder die Wellenformen der Liste ausblenden, wenn du mehr Platz willst.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "Finde jede Playlist jeder Quelle in der Befehlspalette und öffne sie. Das Rechtsklickmenü eines Tracks zeigt ihn in jedem deiner DJ-Programme.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "Eine DJ-Bibliothek öffnet sich unter „Zuletzt hinzugefügt“, oder unter „Alle Tracks“, wenn du zuletzt nichts hinzugefügt hast. Cover erscheinen beim Scrollen, und große Listen öffnen und importieren schneller.",
+        "in": "1.34.0"
+      },
+      {
+        "text": "Die Einstellungen sind nach Aufgaben gruppiert, mit Kürzel neben Allgemein, einer Gruppe Konvertierung und Statistiken an eigener Stelle.",
+        "in": "1.34.0"
+      }
+    ]
+  },
+  {
     "version": "1.33",
     "date": "November 11, 2026",
     "title": "Raster gesammelt korrigieren",
