@@ -196,6 +196,24 @@ describe('control border contrast (WCAG 1.4.11)', () => {
   })
 })
 
+describe('light theme layers', () => {
+  it('lifts the panel off the ground so the editor and results read as a layer above the lists', () => {
+    expect(contrast(light['color-panel'], light['color-ink'])).toBeGreaterThanOrEqual(1.2)
+  })
+
+  it('keeps cards and placeholders lighter than the panel they sit on', () => {
+    expect(contrast(light['color-panel-2'], light['color-panel'])).toBeGreaterThanOrEqual(1.08)
+  })
+
+  it('draws a resting field border quieter than the text in it, leaving emphasis to the focus ring', () => {
+    for (const surface of ['color-panel', 'color-panel-2', 'color-field']) {
+      expect(contrast(light['color-input-border'], light[surface])).toBeLessThan(
+        contrast(light['color-fg-faint'], light[surface]) * 0.6,
+      )
+    }
+  })
+})
+
 // The section header pills are a dot and a label on the bare panel, no wash. Warn and
 // danger print the label itself in the tone colour so a problem reads before the dot is
 // found, which makes those two colours body text on the panel: they have to clear AA there,
@@ -440,7 +458,9 @@ const BLENDS: Record<Theme, Record<string, Blend>> = {
     'color-fg-faint': ['dark5', 50, 'fg_dark'],
   },
   light: {
-    'color-panel-2': ['bg', 30, 'field'],
+    'color-panel': ['bg', 50, 'field'],
+    'color-panel-2': ['field', 50, 'button_foreground'],
+    'color-input-border': ['description', 80, 'toolbar'],
     'color-accent-hover': ['blue', 75, 'fg'],
     'color-accent-soft': ['blue', 15, 'field'],
     'color-fg-dim': ['comment', 40, 'fg'],

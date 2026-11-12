@@ -94,13 +94,13 @@
 :root[data-theme="light"] {
   color-scheme: light;
   --color-ink: #d6d8df;
-  --color-panel: #e6e7ed;
-  --color-panel-2: #f0f1f5;
+  --color-panel: #edeef3;
+  --color-panel-2: #fafafc;
   --color-hover: rgba(52, 59, 88, 0.07);
   --color-field: #f4f5f8;
   --color-line: rgba(52, 59, 88, 0.12);
   --color-line-strong: rgba(52, 59, 88, 0.22);
-  --color-input-border: #707280;
+  --color-input-border: #7c7e8d;
   --color-accent: #2959aa;
   --color-accent-hover: #2c5296;
   --color-accent-soft: #d6deec;
