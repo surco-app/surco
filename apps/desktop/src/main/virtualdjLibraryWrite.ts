@@ -1,3 +1,4 @@
+import { isUtf8 } from 'node:buffer'
 import {
   copyFileSync,
   existsSync,
@@ -24,17 +25,21 @@ export interface VirtualdjDraft {
   write(file: string, xml: string): void
   stamps(): Map<string, FileStamp | null>
   changes(): { file: string; xml: string }[]
+  notUtf8(file: string): boolean
 }
 
 export function createVirtualdjDraft(): VirtualdjDraft {
   const disk = new Map<string, string | null>()
   const stamps = new Map<string, FileStamp | null>()
   const layer = new Map<string, string>()
+  const notUtf8 = new Set<string>()
   const fromDisk = (file: string): string | null => {
     if (!disk.has(file)) {
       const stamp = fileStampOf(file)
       stamps.set(file, stamp)
-      disk.set(file, stamp ? readFileSync(file, 'utf8') : null)
+      const bytes = stamp ? readFileSync(file) : null
+      if (bytes && !isUtf8(bytes)) notUtf8.add(file)
+      disk.set(file, bytes ? bytes.toString('utf8') : null)
     }
     return disk.get(file) ?? null
   }
@@ -49,6 +54,7 @@ export function createVirtualdjDraft(): VirtualdjDraft {
       [...layer]
         .filter(([file, xml]) => disk.get(file) !== xml)
         .map(([file, xml]) => ({ file, xml })),
+    notUtf8: (file) => notUtf8.has(file),
   }
 }
 
@@ -66,6 +72,7 @@ export type VirtualdjCommit =
   | 'cancelled'
   | 'changed'
   | 'backup-failed'
+  | 'unreadable'
   | 'write-failed'
   | 'write-unknown'
 
@@ -115,6 +122,10 @@ export async function commitVirtualdjDraft(
 ): Promise<VirtualdjCommit> {
   const changes = draft.changes()
   if (changes.length === 0) return 'nothing'
+  if (changes.some(({ file }) => draft.notUtf8(file))) {
+    log.warn('VirtualDJ database holds bytes that are not UTF-8, nothing written')
+    return 'unreadable'
+  }
   const stamps = draft.stamps()
   const moved = () =>
     changes.some(({ file }) => !sameStamp(fileStampOf(file), stamps.get(file) ?? null))

@@ -219,6 +219,23 @@ describe('commitVirtualdjDraft', () => {
     expect(kept.filter((n) => n !== 'lists')).toHaveLength(20)
   })
 
+  it('refuses as unreadable a database holding a byte that is not UTF-8, so another song’s path is never rewritten into a replacement character', async () => {
+    const { database, backupDir, deps } = library()
+    const at = fixture.indexOf('Pray.wav')
+    const bad = Buffer.concat([
+      Buffer.from(fixture.slice(0, at), 'utf8'),
+      Buffer.from([0x50, 0xe9]),
+      Buffer.from(fixture.slice(at + 'Pray'.length), 'utf8'),
+    ])
+    writeFileSync(database, bad)
+    const draft = createVirtualdjDraft()
+    draft.write(database, edited(draft.read(database) as string))
+    expect(await commitVirtualdjDraft(draft, deps())).toBe('unreadable')
+    expect(readFileSync(database)).toEqual(bad)
+    expect(readdirSync(dirname(database))).toEqual(['database.xml'])
+    expect(() => readdirSync(backupDir)).toThrow()
+  })
+
   it('refuses to write when the copy cannot be taken, so no write ever lands without one', async () => {
     const { database, backupDir, deps } = library()
     writeFileSync(backupDir, 'not a folder')

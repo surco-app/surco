@@ -1,3 +1,4 @@
+import { isUtf8 } from 'node:buffer'
 import {
   type Dirent,
   mkdirSync,
@@ -619,6 +620,10 @@ async function commitLists(d: ListsDraft, deps: VirtualdjCommitDeps): Promise<Vi
     .filter((dir) => !d.dirs.has(dir))
     .sort((a, b) => b.length - a.length)
   if (writes.length + removals.length + newDirs.length + goneDirs.length === 0) return 'nothing'
+  if (writes.some(([file]) => !isUtf8(d.disk.files.get(file) ?? Buffer.alloc(0)))) {
+    log.warn('VirtualDJ list holds bytes that are not UTF-8, nothing written')
+    return 'unreadable'
+  }
   for (const tmp of new Set([...d.disk.temps, ...writes.map(([file]) => `${file}${WRITING}`)]))
     try {
       rmSync(tmp, { force: true })

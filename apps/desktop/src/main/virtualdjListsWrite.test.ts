@@ -240,6 +240,23 @@ describe('applyVirtualdjListOps', () => {
     )
   })
 
+  it('refuses as unreadable a list holding a byte that is not UTF-8, so its other rows never get a replacement character', async () => {
+    const lib = library()
+    const c = lib.track('c.mp3', 'abcd')
+    const bad = Buffer.concat([
+      original('Surco escrita.vdjfolder').subarray(0, -'</VirtualFolder>\r\n'.length),
+      Buffer.from('\t<song path="/Music/Caf', 'utf8'),
+      Buffer.from([0xe9]),
+      Buffer.from('.mp3" size="1" idx="1" />\r\n</VirtualFolder>\r\n', 'utf8'),
+    ])
+    writeFileSync(lib.at('Surco escrita.vdjfolder'), bad)
+    expect(
+      await lib.run({ kind: 'add', playlistId: 'Surco escrita', tracks: [{ paths: [c] }] }),
+    ).toEqual({ ok: false, reason: 'unreadable' })
+    expect(lib.bytes('Surco escrita.vdjfolder')).toEqual(bad)
+    expect(lib.backups()).toEqual([])
+  })
+
   it('removes a row and numbers the rest again, keeping every other attribute', async () => {
     const lib = library()
     const [, flac] = lib.links('Surco prueba')
