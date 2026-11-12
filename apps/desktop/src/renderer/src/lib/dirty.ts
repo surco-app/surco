@@ -25,7 +25,18 @@ function coverProxy(url: string | undefined): string {
 // when a track finishes (processedSignature); when the live values diverge from
 // it the track is "stale" — the file on disk no longer matches the editor, so the
 // convert button returns as "Update" to write the edit.
+const signatures = new WeakMap<SignatureFields, string>()
+
 export function trackSignature(track: SignatureFields): string {
+  let signature = signatures.get(track)
+  if (signature === undefined) {
+    signature = serializedSignature(track)
+    signatures.set(track, signature)
+  }
+  return signature
+}
+
+function serializedSignature(track: SignatureFields): string {
   return JSON.stringify([
     track.meta,
     track.outputName ?? '',
