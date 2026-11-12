@@ -562,6 +562,7 @@
     "trackBackup": "Sicherungskopie dieses Tracks wiederherstellen",
     "toggleLanguage": "Sprache wechseln",
     "toggleTheme": "Design wechseln (System / Hell / Dunkel)",
+    "toggleListWaves": "Wellenformen der Liste ein- oder ausblenden",
     "confetti": "Konfetti werfen 🎉",
     "trimStartBack": "Anfangsschnitt zurück",
     "trimStartForward": "Anfangsschnitt vor",
@@ -3623,5 +3624,9 @@
       "traktorRecord": "Backups belegt, dass {{sibling}} mit Surco aus dieser MP3 konvertiert wurde",
       "traktorNoRecord": "Kein Surco-Eintrag sagt, dass {{sibling}} aus dieser MP3 stammt"
     }
+  },
+  "view": {
+    "menu": "Listenansicht",
+    "listWaves": "Wellenformen zeigen"
   }
 }

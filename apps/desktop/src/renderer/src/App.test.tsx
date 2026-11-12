@@ -139,6 +139,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     resultsWidth: null,
     theme: 'system',
     density: 'normal',
+    showListWaves: true,
     cueFlows: BUNDLED_FLOWS,
     activeCueFlow: 'mine',
     cueJumpBars: 16,

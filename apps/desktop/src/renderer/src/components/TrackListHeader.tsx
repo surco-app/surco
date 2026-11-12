@@ -43,6 +43,7 @@ import { SearchInput } from './SearchInput'
 import { Select } from './Select'
 import { useSplitMenu } from './SplitButton'
 import { Tooltip } from './Tooltip'
+import { ViewMenu } from './ViewMenu'
 
 interface Props {
   tr: TFunction
@@ -93,6 +94,8 @@ interface Props {
   onTrashSelected: () => void
   onTrashSuspects: () => void
   onReviewIncomplete?: () => void
+  showWaves: boolean
+  onToggleWaves: () => void
 }
 
 const LIST_COMMAND_ICONS: [string, LucideIcon][] = [
@@ -203,6 +206,8 @@ export function TrackListHeader({
   onTrashSelected,
   onTrashSuspects,
   onReviewIncomplete,
+  showWaves,
+  onToggleWaves,
 }: Props): React.JSX.Element {
   const { open, setOpen, ref: moreRef, toggleRef, menuRef, onMenuKeyDown } = useSplitMenu()
   // Portaled out of the sticky header, whose layer would hold it under the activity panel
@@ -210,6 +215,7 @@ export function TrackListHeader({
   const [menuPos, setMenuPos] = useState<MenuPlacement | null>(null)
   useCloseOnMove(open, menuRef, setOpen)
   const [scrolled, setScrolled] = useState(false)
+  const [viewMenu, setViewMenu] = useState<{ x: number; y: number } | null>(null)
 
   useEffect(() => {
     const root = scrollRootRef?.current
@@ -261,6 +267,11 @@ export function TrackListHeader({
       ref={qualityFilterRef}
       data-testid="track-list-header"
       data-scrolled={scrolled}
+      onContextMenu={(e) => {
+        if (e.target instanceof HTMLInputElement) return
+        e.preventDefault()
+        setViewMenu({ x: e.clientX, y: e.clientY })
+      }}
       className="scroll-edge @container sticky top-0 z-10 bg-[var(--color-ink)]"
     >
       <div className="flex items-center gap-1.5 px-1.5 pt-2">
@@ -499,6 +510,22 @@ export function TrackListHeader({
         onChange={setFilterSelection}
         librarySource={librarySource}
       />
+      {viewMenu && (
+        <ViewMenu
+          x={viewMenu.x}
+          y={viewMenu.y}
+          label={tr('view.menu')}
+          items={[
+            {
+              id: 'list-waves',
+              label: tr('view.listWaves'),
+              checked: showWaves,
+              onToggle: onToggleWaves,
+            },
+          ]}
+          onClose={() => setViewMenu(null)}
+        />
+      )}
     </div>
   )
 }

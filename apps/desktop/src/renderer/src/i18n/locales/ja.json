@@ -562,6 +562,7 @@
     "trackBackup": "このトラックのバックアップを復元",
     "toggleLanguage": "言語を切り替える",
     "toggleTheme": "テーマを切り替える (システム / ライト / ダーク)",
+    "toggleListWaves": "リストの波形を表示/非表示",
     "confetti": "紙吹雪を飛ばす 🎉",
     "trimStartBack": "先頭のカットを手前へ微調整",
     "trimStartForward": "先頭のカットを後ろへ微調整",
@@ -3623,5 +3624,9 @@
       "traktorRecord": "バックアップには{{sibling}}がこのMP3からSurcoで変換された記録があります",
       "traktorNoRecord": "{{sibling}}がこのMP3から作られたというSurcoの記録はありません"
     }
+  },
+  "view": {
+    "menu": "リストの表示",
+    "listWaves": "波形を表示"
   }
 }

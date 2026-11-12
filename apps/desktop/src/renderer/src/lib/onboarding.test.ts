@@ -24,6 +24,7 @@ import {
 const settings: Settings = {
   theme: 'system',
   density: 'normal',
+  showListWaves: true,
   cueFlows: BUNDLED_FLOWS,
   activeCueFlow: 'mine',
   cueJumpBars: 16,

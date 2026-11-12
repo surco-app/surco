@@ -562,6 +562,7 @@
     "trackBackup": "Restaurer la copie de sauvegarde de ce morceau",
     "toggleLanguage": "Changer de langue",
     "toggleTheme": "Changer de thème (système / clair / sombre)",
+    "toggleListWaves": "Afficher ou masquer les formes d’onde de la liste",
     "confetti": "Lancer des confettis 🎉",
     "trimStartBack": "Reculer la coupe de début",
     "trimStartForward": "Avancer la coupe de début",
@@ -3623,5 +3624,9 @@
       "traktorRecord": "Sauvegardes indique que {{sibling}} a été converti depuis ce MP3 avec Surco",
       "traktorNoRecord": "Aucune trace dans Surco ne dit que {{sibling}} vient de ce MP3"
     }
+  },
+  "view": {
+    "menu": "Vue de la liste",
+    "listWaves": "Afficher les formes d’onde"
   }
 }

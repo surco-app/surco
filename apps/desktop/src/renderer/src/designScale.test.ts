@@ -221,6 +221,7 @@ const BACKDROPS = new Set([
   'components/SourceRail.tsx: data-testid="source-rail-menu-backdrop"',
   "components/SourceTree.tsx: aria-label={tr('common.close')}",
   'components/TrackContextMenu.tsx: data-testid="track-menu-backdrop"',
+  'components/ViewMenu.tsx: data-testid="view-menu-backdrop"',
 ])
 const COVER_AREAS = new Set([
   'components/CoverPicker.tsx: data-testid="cover-zoom"',

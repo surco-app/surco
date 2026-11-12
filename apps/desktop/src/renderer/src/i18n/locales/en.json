@@ -562,6 +562,7 @@
     "trackBackup": "Restore this track's backup",
     "toggleLanguage": "Switch language",
     "toggleTheme": "Switch theme (system / light / dark)",
+    "toggleListWaves": "Show or hide the list waveforms",
     "confetti": "Throw confetti 🎉",
     "trimStartBack": "Nudge the head cut back",
     "trimStartForward": "Nudge the head cut forward",
@@ -3623,5 +3624,9 @@
       "traktorRecord": "Backups records that {{sibling}} was converted from this MP3 with Surco",
       "traktorNoRecord": "No Surco record says {{sibling}} comes from this MP3"
     }
+  },
+  "view": {
+    "menu": "List view",
+    "listWaves": "Show Waveforms"
   }
 }

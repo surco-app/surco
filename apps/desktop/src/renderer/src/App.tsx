@@ -3200,6 +3200,8 @@ export default function App(): React.JSX.Element {
     const current = settings?.theme ?? 'system'
     saveSettings({ theme: order[(order.indexOf(current) + 1) % order.length] })
   })
+  const showListWaves = settings?.showListWaves ?? true
+  const toggleListWaves = useStableCallback(() => saveSettings({ showListWaves: !showListWaves }))
   // A remount-keyed confetti burst: bumping the key mounts a fresh <Confetti>, so the ⌘K
   // command can fire it again and again. The burst tears itself down once it settles.
   const [confettiBurst, setConfettiBurst] = useState(0)
@@ -3332,6 +3334,7 @@ export default function App(): React.JSX.Element {
       openOnboarding: overlays.openOnboarding,
       toggleLanguage: () => void i18n.changeLanguage(nextLocale(i18n.language)),
       toggleTheme,
+      toggleListWaves,
       clearMeta,
       deriveTags,
       numberTracks,
@@ -3818,6 +3821,8 @@ export default function App(): React.JSX.Element {
                       null : (
                         <>
                           <TrackListHeader
+                            showWaves={showListWaves}
+                            onToggleWaves={toggleListWaves}
                             tr={tr}
                             hintFor={hintFor}
                             search={search}
@@ -3921,6 +3926,7 @@ export default function App(): React.JSX.Element {
                             </div>
                           ) : (
                             <TrackList
+                              showWaves={showListWaves}
                               tracks={visibleTracks}
                               selectedId={selectedId}
                               selectedIds={selectedIdSet}

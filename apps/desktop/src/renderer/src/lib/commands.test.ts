@@ -102,6 +102,7 @@ function makeDeps(overrides: Partial<CommandDeps> = {}): CommandDeps {
     openOnboarding: () => {},
     toggleLanguage: () => {},
     toggleTheme: () => {},
+    toggleListWaves: () => {},
     clearMeta: () => {},
     deriveTags: () => {},
     numberTracks: () => {},

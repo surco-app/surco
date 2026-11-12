@@ -25,23 +25,32 @@ export const ROW_DETAIL = 'relative block min-w-0 flex-1 truncate text-xs text-f
 export const ROW_TRAILING = 'shrink-0 text-right text-xs tabular-nums text-fg-dim'
 export const PILL_TEXT = 'text-label font-semibold leading-4'
 
+const COVER_SIZE = {
+  small: 'h-8 w-8',
+  medium: 'h-12 w-12',
+  large: 'h-16 w-16 compact:h-12 compact:w-12',
+}
+
 export function CoverPlaceholder({
   testid,
   round = false,
-  large = false,
+  size = 'small',
 }: {
   testid: string
   round?: boolean
-  large?: boolean
+  size?: 'small' | 'medium' | 'large'
 }): React.JSX.Element {
   return (
     <span
       data-testid={testid}
-      className={`flex ${large ? 'h-16 w-16 compact:h-12 compact:w-12' : 'h-8 w-8'} items-center justify-center bg-[var(--color-panel-2)] outline outline-1 -outline-offset-1 outline-on-scrim/10 transition-[border-radius] duration-120 ${
+      className={`flex ${COVER_SIZE[size]} items-center justify-center bg-[var(--color-panel-2)] outline outline-1 -outline-offset-1 outline-on-scrim/10 transition-[border-radius] duration-120 ${
         round ? 'rounded-full' : 'rounded-md'
       }`}
     >
-      <Music className={`${large ? 'h-5 w-5' : 'h-3.5 w-3.5'} text-fg-faint`} aria-hidden="true" />
+      <Music
+        className={`${size === 'small' ? 'h-3.5 w-3.5' : 'h-5 w-5'} text-fg-faint`}
+        aria-hidden="true"
+      />
     </span>
   )
 }

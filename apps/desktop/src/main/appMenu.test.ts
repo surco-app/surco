@@ -14,6 +14,7 @@ function build(locale = 'en', mac = true, windows = false) {
     checkForUpdates: vi.fn(),
     mac,
     windows,
+    view: { listWaves: true },
   })
   return { template, run }
 }
@@ -148,5 +149,18 @@ describe('appMenuTemplate', () => {
       expect(menu(template, t('tracks')).length).toBeGreaterThan(0)
       expect(t('stats')).not.toBe(createMenuT('en')('stats'))
     }
+  })
+})
+
+// The list waves are a view choice like Finder's path bar: the View menu carries it with a
+// tick that says the state, and the click goes through the same command as the right-click.
+describe('View menu list waves', () => {
+  it('ticks the waves while they are shown and toggles them through the command', () => {
+    const { template, run } = build()
+    const item = itemFor(menu(template, 'View'), 'Show Waveforms in List')
+    expect(item.type).toBe('checkbox')
+    expect(item.checked).toBe(true)
+    click(item)
+    expect(run).toHaveBeenCalledWith('toggle-list-waves')
   })
 })

@@ -562,6 +562,7 @@
     "trackBackup": "Restaurar la copia de seguridad de esta pista",
     "toggleLanguage": "Cambiar idioma",
     "toggleTheme": "Cambiar tema (sistema / claro / oscuro)",
+    "toggleListWaves": "Mostrar u ocultar las ondas de la lista",
     "confetti": "Lanzar confeti 🎉",
     "trimStartBack": "Mover el corte de entrada atrás",
     "trimStartForward": "Mover el corte de entrada adelante",
@@ -3623,5 +3624,9 @@
       "traktorRecord": "Copias guarda que {{sibling}} se convirtió de este MP3 con Surco",
       "traktorNoRecord": "Ningún registro de Surco dice que {{sibling}} salga de este MP3"
     }
+  },
+  "view": {
+    "menu": "Vista de la lista",
+    "listWaves": "Mostrar ondas"
   }
 }

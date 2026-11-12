@@ -799,6 +799,7 @@ function buildAppMenu(win: BrowserWindow): void {
     checkForUpdates: () => checkForUpdates(win),
     mac: process.platform === 'darwin',
     windows: process.platform === 'win32',
+    view: { listWaves: getSettings().showListWaves },
   })
   Menu.setApplicationMenu(Menu.buildFromTemplate(template))
 }
@@ -1094,7 +1095,11 @@ function registerIpc(): void {
     // Rebinding a shortcut changes the menu accelerators, and pinning a language
     // changes every menu label — both need the menu rebuilt from the freshly-saved
     // settings (buildAppMenu re-reads shortcuts and menuLocale re-reads language).
-    if (patch.shortcutOverrides !== undefined || patch.language !== undefined) {
+    if (
+      patch.shortcutOverrides !== undefined ||
+      patch.language !== undefined ||
+      patch.showListWaves !== undefined
+    ) {
       const win = BrowserWindow.fromWebContents(e.sender)
       if (win) buildAppMenu(win)
     }

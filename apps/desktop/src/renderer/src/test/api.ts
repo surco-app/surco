@@ -103,6 +103,7 @@ export const testSettings: Settings = {
   resultsWidth: null,
   autoAnalyze: false,
   showWaveform: true,
+  showListWaves: true,
   showLoudness: true,
   showEditorHints: true,
   autoMatch: false,
