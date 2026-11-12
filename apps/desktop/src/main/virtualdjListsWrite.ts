@@ -47,8 +47,14 @@ export function virtualdjListsDir(roots: VirtualdjRoot[]): string | null {
   return home ? join(home.dir, 'MyLists') : null
 }
 
+const FORBIDDEN_IN_NAME = /[/:]/
+const FORBIDDEN_IN_WINDOWS_NAME = /[/:\\*?"<>|]/
+const hasControl = (name: string): boolean => [...name].some((c) => c.charCodeAt(0) < 32)
+
 export function validVirtualdjListName(name: string): boolean {
-  return name.trim() !== '' && !/[/:]/.test(name)
+  if (name.trim() === '') return false
+  if (process.platform !== 'win32') return !FORBIDDEN_IN_NAME.test(name)
+  return !FORBIDDEN_IN_WINDOWS_NAME.test(name) && !hasControl(name)
 }
 
 interface Snapshot {

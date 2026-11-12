@@ -141,6 +141,42 @@ describe('applyVirtualdjListOps', () => {
     expect(lib.backups()).toEqual([])
   })
 
+  it('refuses on Windows a name a Windows file cannot carry, so a backslash can never write a list outside MyLists', async () => {
+    const lib = library()
+    const platform = Object.getOwnPropertyDescriptor(process, 'platform')
+    Object.defineProperty(process, 'platform', { value: 'win32', configurable: true })
+    try {
+      for (const name of [
+        '..\\x',
+        'a*b',
+        'a?b',
+        'a"b',
+        'a<b',
+        'a>b',
+        'a|b',
+        'a\u0001b',
+        'a/b',
+        'a:b',
+      ]) {
+        const result = await lib.run({ kind: 'create', parentId: 'root', name, folder: false })
+        expect(result, name).toMatchObject({
+          ok: true,
+          outcomes: [{ applied: false, reason: 'bad-name' }],
+        })
+      }
+    } finally {
+      if (platform) Object.defineProperty(process, 'platform', platform)
+    }
+    expect(lib.bytes('order')).toEqual(original('order'))
+    expect(lib.backups()).toEqual([])
+  })
+
+  it('still accepts on a Mac the characters only Windows forbids, as it always did', async () => {
+    const lib = library()
+    const result = await lib.run({ kind: 'create', parentId: 'root', name: 'a*b?', folder: false })
+    expect(result).toMatchObject({ ok: true, outcomes: [{ applied: true }] })
+  })
+
   it('renames a list by renaming its file and its order line, keeping its bytes', async () => {
     const lib = library()
     await lib.run({ kind: 'rename', playlistId: 'Surco prueba', name: 'Renombrada' })
