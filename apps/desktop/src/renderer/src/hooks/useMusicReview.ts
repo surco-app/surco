@@ -710,7 +710,7 @@ export function useMusicReview({
       if (applyError === undefined && repairs.length && source.repairDamage) {
         setPhase({ name: 'writing', current: writes + 1, total: writes + repairs.length })
         damageOutcomes = await source
-          .repairDamage(repairs)
+          .repairDamage(repairs, reviewAsks)
           .catch(() => repairs.map(({ id }): DamageOutcome => ({ id, state: 'failed' })))
         setProgress({ done: writes + repairs.length, total })
       }

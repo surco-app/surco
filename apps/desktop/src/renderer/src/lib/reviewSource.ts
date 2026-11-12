@@ -1,4 +1,4 @@
-import type { ReadOnlyProgram } from '../../../shared/djProgram'
+import type { CueProgram, ReadOnlyProgram } from '../../../shared/djProgram'
 import type {
   DamageOutcome,
   DamageRepairItem,
@@ -71,7 +71,10 @@ export interface ReviewSource {
   facts?: (id: string) => TrackItem | undefined
   settle?: (updates: ReviewedFileUpdate[], trashed: string[]) => void
   loadDamage?: () => Promise<DamageScan>
-  repairDamage?: (items: DamageRepairItem[]) => Promise<DamageOutcome[]>
+  repairDamage?: (
+    items: DamageRepairItem[],
+    reviewAsks?: readonly CueProgram[],
+  ) => Promise<DamageOutcome[]>
 }
 
 // The texts that name where the review reads and writes: Music and its library, or the

@@ -192,10 +192,14 @@ export function listReviewSource(deps: ListSourceDeps): ReviewSource {
           .entries.map((e) => e.id)
           .filter((path) => !gone.has(path)),
       ),
-    repairDamage: async (items) => {
+    repairDamage: async (items, reviewAsks = []) => {
       const programs = new Set<CueProgram>()
       for (const { repair } of items)
-        if (repair.target === 'traktor' || repair.target === 'engine') programs.add(repair.target)
+        if (
+          (repair.target === 'traktor' || repair.target === 'engine') &&
+          !reviewAsks.includes(repair.target)
+        )
+          programs.add(repair.target)
       if (programs.size > 0) await window.api.dj.askToApply([...programs])
       return window.api.repairDamage(items)
     },

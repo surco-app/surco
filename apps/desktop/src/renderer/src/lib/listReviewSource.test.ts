@@ -575,6 +575,17 @@ describe('listReviewSource damage', () => {
     expect(calls).toEqual(['ask', 'repair'])
   })
 
+  it('leaves the asking to the review for a program its own tag sync reaches, so one Apply shows one prompt per program', async () => {
+    const items = [
+      { id: 'a', repair: { target: 'traktor', path: '/m/a.mp3', addMs: 5 } },
+      { id: 'd', repair: { target: 'engine', path: '/m/d.mp3' } },
+    ]
+    await source([row('/m/a.mp3', 'A')]).repairDamage?.(items as never, ['traktor'])
+    expect(askToApply).toHaveBeenCalledOnce()
+    expect(askToApply).toHaveBeenCalledWith(['engine'])
+    expect(api.repairDamage).toHaveBeenCalledWith(items)
+  })
+
   it('does not ask when the repairs only touch tags', async () => {
     const items = [
       { id: 'x', repair: { target: 'genre' as const, path: '/m/a.mp3', from: 'a', to: 'b' } },

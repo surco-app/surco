@@ -2214,6 +2214,46 @@ describe('damage in the list review', () => {
     ])
   })
 
+  it('does not ask for Traktor before a calibration repair when the same review syncs tags to Traktor, whose own dialog covers it', async () => {
+    const TREE: DamageFinding = {
+      id: 'traktor-calibration\0/m/a.aiff',
+      kind: 'traktor-calibration',
+      path: '/m/a.aiff',
+      certainty: 'sure',
+      evidence: [],
+      before: { key: 'damage.value.text', params: { value: '5' } },
+      options: [],
+      repair: { target: 'traktor', path: '/m/a.aiff', addMs: 5 },
+    }
+    const askToApply = vi.fn().mockResolvedValue({})
+    const api = damageApi({
+      applyListFixes: vi.fn().mockResolvedValue([
+        {
+          id: '/m/c.aiff',
+          path: '/m/c.aiff',
+          fixes: [{ id: '/m/c.aiff', field: 'artist', from: 'Dj Lara', to: 'DJ Lara' }],
+          music: ['none'],
+          file: 'written',
+          written: ['artist'],
+          backupId: 'b1',
+        },
+      ]),
+      scanDamage: vi.fn<Api['scanDamage']>().mockResolvedValue({ findings: [TREE], unread: [] }),
+      repairDamage: vi
+        .fn<Api['repairDamage']>()
+        .mockResolvedValue([{ id: TREE.id, state: 'repaired', backupId: 't1' }]),
+      tagSyncPrograms: vi.fn<Api['tagSyncPrograms']>().mockResolvedValue(['traktor']),
+      dj: { askToApply },
+    })
+    const { result } = hook()
+    await waitFor(() => expect(result.current.damage).toHaveLength(1))
+    act(() => result.current.toggleStaged(result.current.spelling[0].key))
+    await act(() => result.current.apply())
+    expect(api.repairDamage).toHaveBeenCalledWith([{ id: TREE.id, repair: TREE.repair }])
+    expect(api.syncLibraryTags).toHaveBeenCalledOnce()
+    expect(askToApply.mock.calls.flat(2)).not.toContain('traktor')
+  })
+
   // The libraries keep the good genre or the damaged one: sending them the restored text would
   // put the damage back where it was good.
   it('undoes a genre repair from its backup and tells no library', async () => {
