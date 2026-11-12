@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import type React from 'react'
-import { Suspense } from 'react'
+import { Suspense, useMemo } from 'react'
 import { effectiveMeta } from '../../../shared/customFields'
 import { formatExtension, resolveJobFormat } from '../../../shared/format'
 import type {
@@ -122,6 +122,11 @@ export function Overlays({
   const queryClient = useQueryClient()
   // App hands over the visible list itself when nothing is multi-selected.
   const bulkScope = bulkTracks === visibleTracks ? 'visible' : 'selected'
+  const paletteOpen = activeModal?.type === 'palette'
+  const paletteCommands = useMemo(
+    () => (paletteOpen ? getCommands() : []),
+    [paletteOpen, getCommands],
+  )
   // Each run bumps its command's counter, so the palette can float the user's habits up the
   // filtered list. It lived inline in the JSX prop below — a state write dressed as markup.
   const recordCommandRun = (id: string): void =>
@@ -251,7 +256,7 @@ export function Overlays({
 
       {activeModal?.type === 'palette' && (
         <CommandPalette
-          commands={getCommands()}
+          commands={paletteCommands}
           // Searching by title/artist turns ⌘K into a jump-to-track launcher over the
           // visible list; picking a track selects and scrolls to it, then the palette
           // closes itself (runAt → onClose) like any other command.

@@ -87,6 +87,13 @@ function listedIn(listed: ReadonlySet<string>, t: TrackItem): boolean {
   )
 }
 
+function patchedRow(rows: TrackItem[], id: string, patch: Partial<TrackItem>): TrackItem[] {
+  const row = rows.find((t) => t.id === id)
+  if (!row) return rows
+  const next = patchedTrack(row, patch)
+  return next === row ? rows : rows.map((t) => (t === row ? next : t))
+}
+
 interface Params {
   // The library owns the selection consequences of its operations (deselect on remove,
   // id swap on start-over, first-track pick on import) through App's setter.
@@ -1116,8 +1123,8 @@ export function useTrackLibrary({
   // converts immediately — and without this the conversion ran against the unstamped
   // track, adding a second Apple Music entry and leaving rekordbox on the old file.
   const updateTrack = useCallback((id: string, patch: Partial<TrackItem>): void => {
-    tracksRef.current = tracksRef.current.map((t) => (t.id === id ? patchedTrack(t, patch) : t))
-    setTracks((prev) => prev.map((t) => (t.id === id ? patchedTrack(t, patch) : t)))
+    tracksRef.current = patchedRow(tracksRef.current, id, patch)
+    setTracks((prev) => patchedRow(prev, id, patch))
   }, [])
 
   // The same ref-then-state publish as updateTrack, for a patch that depends on each row.

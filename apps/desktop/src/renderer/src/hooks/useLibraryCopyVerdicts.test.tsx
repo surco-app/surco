@@ -5,11 +5,16 @@ import type React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import type { LoudnessResult, SpectrumResult } from '../../../shared/types'
-import { buildLibraryIndex } from '../lib/appleMusicLibrary'
+import { buildLibraryIndex, replaceCandidate } from '../lib/appleMusicLibrary'
 import { createQueryClient } from '../lib/queryClient'
 import { installApi } from '../test/api'
 import type { TrackItem } from '../types'
 import { resetLibraryCopyVerdicts, useLibraryCopyVerdicts } from './useLibraryCopyVerdicts'
+
+vi.mock('../lib/appleMusicLibrary', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../lib/appleMusicLibrary')>()
+  return { ...actual, replaceCandidate: vi.fn(actual.replaceCandidate) }
+})
 
 afterEach(resetLibraryCopyVerdicts)
 
@@ -215,5 +220,23 @@ describe('useLibraryCopyVerdicts', () => {
     rerender({ on: false })
     await act(async () => release())
     expect(appleMusicEntryLocation).toHaveBeenCalledTimes(asked)
+  })
+  // Every metadata flush hands a new track list; with 8000 tracks, looking each one up in
+  // the Apple Music index again, and handing the filters a new lookup, made every edit pay
+  // for the whole library.
+  it('looks up only the track that changed and keeps the same lookup when no pair changed', () => {
+    api()
+    const pray = track('pray-flush', 'Pray', 'Lasgo')
+    const dreams = track('dreams-flush', 'Sweet Dreams', 'Eurythmics', { duration: 216 })
+    const { result, rerender } = renderHook(
+      ({ tracks }) => useLibraryCopyVerdicts(tracks, INDEX, false),
+      { wrapper: wrapper(), initialProps: { tracks: [pray, dreams] } },
+    )
+    const before = result.current
+    vi.mocked(replaceCandidate).mockClear()
+    const edited = { ...dreams, listLabel: 'edited' } as TrackItem
+    rerender({ tracks: [pray, edited] })
+    expect(vi.mocked(replaceCandidate)).toHaveBeenCalledTimes(1)
+    expect(result.current).toBe(before)
   })
 })

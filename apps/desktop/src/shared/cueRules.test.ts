@@ -205,6 +205,29 @@ describe('nearestBeat', () => {
   it('snaps a click before the first beat to the first beat', () => {
     expect(nearestBeat([500, 1000], 0)).toBe(0)
   })
+
+  it('snaps past the last beat to the last beat and lands on the closest one in between', () => {
+    const beats = [0, 500, 1000, 1500]
+    expect(nearestBeat(beats, 9000)).toBe(3)
+    expect(nearestBeat(beats, 1240)).toBe(2)
+    expect(nearestBeat(beats, 1260)).toBe(3)
+    expect(nearestBeat([], 300)).toBe(0)
+  })
+
+  // The cue editor asks for the nearest beat of a whole track's grid on every animation
+  // frame of the preview, so walking the thousands of beats one by one is not affordable.
+  it('finds the beat in a whole-track grid by halving, reading only a handful of beats', () => {
+    const beats = Array.from({ length: 100000 }, (_, i) => i * 500)
+    let reads = 0
+    const counted = new Proxy(beats, {
+      get(target, prop, receiver) {
+        if (typeof prop === 'string' && /^\d+$/.test(prop)) reads++
+        return Reflect.get(target, prop, receiver)
+      },
+    })
+    expect(nearestBeat(counted, 31_234_100)).toBe(62468)
+    expect(reads).toBeLessThan(100)
+  })
 })
 
 describe('fitsPlan', () => {

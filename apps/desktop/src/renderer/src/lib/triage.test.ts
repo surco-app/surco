@@ -1177,6 +1177,13 @@ describe('outsideFilter', () => {
     expect([...outsideFilter(rows, { ...EMPTY_FILTER, conversion: 'matchReview' })]).toEqual(['a'])
     expect(outsideFilter(rows, EMPTY_FILTER).size).toBe(0)
   })
+
+  // The list redraws every row when this set is a new one; with nothing dimmed, an edit to
+  // one row must not hand it a fresh empty set.
+  it('hands back the same empty set whenever nothing is outside the filter', () => {
+    const rows = [{ id: 'a', status: 'idle' } as TrackItem]
+    expect(outsideFilter(rows, EMPTY_FILTER)).toBe(outsideFilter([...rows], EMPTY_FILTER))
+  })
 })
 
 describe('holdOrder', () => {

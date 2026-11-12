@@ -35,18 +35,34 @@ export function baseTitle(title: string): string {
   return fold(title.replace(/\s*[([][^)\]]*[)\]]/g, '').replace(/-\d+$/, ''))
 }
 
-function startsWord(whole: string, part: string): boolean {
-  return ` ${whole} `.includes(` ${part} `) || ` ${whole} `.includes(` ${part}s `)
+interface Artist {
+  name: string
+  word: string
+  plural: string
+  compact: string
 }
 
-function sameArtist(x: string, y: string): boolean {
+function artistsOf(text: string): Artist[] {
+  return splitArtists(text).map((name) => ({
+    name,
+    word: ` ${name} `,
+    plural: ` ${name}s `,
+    compact: name.replace(/ /g, ''),
+  }))
+}
+
+function startsWord(whole: Artist, part: Artist): boolean {
+  return whole.word.includes(part.word) || whole.word.includes(part.plural)
+}
+
+function sameArtist(x: Artist, y: Artist): boolean {
   if (startsWord(x, y) || startsWord(y, x)) return true
-  const a = x.replace(/ /g, '')
-  const b = y.replace(/ /g, '')
+  const a = x.compact
+  const b = y.compact
   return a === b || (Math.min(a.length, b.length) >= ARTIST_TYPO_MIN && levenshtein(a, b) <= 1)
 }
 
-function overlap(a: string[], b: string[]): boolean {
+function overlap(a: Artist[], b: Artist[]): boolean {
   return a.some((x) => b.some((y) => sameArtist(x, y)))
 }
 
@@ -93,7 +109,7 @@ interface Indexed {
   base: string
   words: Set<string>
   mix: Set<string>
-  artists: string[]
+  artists: Artist[]
 }
 
 function index(collection: CollectionTrack[]): Indexed[] {
@@ -105,16 +121,20 @@ function index(collection: CollectionTrack[]): Indexed[] {
       base,
       words: tokens(base),
       mix: mixTokens(track.title),
-      artists: splitArtists(track.artist),
+      artists: artistsOf(track.artist),
     }
   })
 }
 
-function matchLine(line: TracklistLine, indexed: Indexed[]): TracklistMatch {
+function matchLine(
+  line: TracklistLine,
+  indexed: Indexed[],
+  byBase: Map<string, Indexed[]>,
+): TracklistMatch {
   const full = fold(line.title)
   const base = baseTitle(line.title)
   const words = tokens(base)
-  const artists = splitArtists(line.artist)
+  const artists = artistsOf(line.artist)
   const named = artists.length > 0
   if (!base) return { line, level: 'absent', candidates: [] }
   const mix = mixTokens(line.title)
@@ -143,12 +163,12 @@ function matchLine(line: TracklistLine, indexed: Indexed[]): TracklistMatch {
   )
   if (doubtful.length) return { line, level: 'doubtful', candidates: sorted(doubtful) }
 
-  const similar = indexed.filter((c) => c.base === base)
+  const similar = byBase.get(base) ?? []
   if (similar.length) return { line, level: 'similar', candidates: sorted(similar) }
   if (!named) {
-    const ofArtist = indexed.filter((c) => c.artists.includes(full))
+    const ofArtist = indexed.filter((c) => c.artists.some((a) => a.name === full))
     if (ofArtist.length === 1) return { line, level: 'similar', candidates: [ofArtist[0].track] }
-    const joined = indexed.filter((c) => c.artists.some((a) => `${a} ${c.base}` === full))
+    const joined = indexed.filter((c) => c.artists.some((a) => `${a.name} ${c.base}` === full))
     if (joined.length) return { line, level: 'similar', candidates: sorted(joined) }
   }
   return { line, level: 'absent', candidates: [] }
@@ -159,7 +179,13 @@ export function matchTracklist(
   collection: CollectionTrack[],
 ): TracklistMatch[] {
   const indexed = index(collection).filter((c) => c.base)
-  return lines.map((line) => matchLine(line, indexed))
+  const byBase = new Map<string, Indexed[]>()
+  for (const c of indexed) {
+    const same = byBase.get(c.base)
+    if (same) same.push(c)
+    else byBase.set(c.base, [c])
+  }
+  return lines.map((line) => matchLine(line, indexed, byBase))
 }
 
 export interface ReviewRow {

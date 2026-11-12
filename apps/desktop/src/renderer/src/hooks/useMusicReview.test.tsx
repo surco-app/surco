@@ -2338,4 +2338,28 @@ describe('incomplete tracks in the review', () => {
     act(() => result.current.ignore(incompleteKey('/m/b.aiff')))
     expect(result.current.incomplete.map((f) => f.id)).toEqual(['/m/a.aiff'])
   })
+
+  // Each row of the list asks for its fill values, and the tray counts them all on every
+  // render: a lookup that scans the whole list of incomplete tracks turns a library with
+  // thousands of them into millions of comparisons per keystroke.
+  it("looks up a track's fill value without scanning the whole list", async () => {
+    incompleteApi()
+    const rows = Array.from({ length: 300 }, (_, i) => row(`/m/${i}.aiff`, `${i}`, { artist: '' }))
+    const source = listReviewSource({
+      rows: () => rows,
+      mac: true,
+      launchMusic: () => true,
+      onRowsRemoved: vi.fn(),
+      incomplete: { required: () => ['artist'], suggest: () => undefined },
+    })
+    const { result } = renderHook(() => useMusicReview(props({ source })))
+    await waitFor(() => expect(result.current.incomplete).toHaveLength(300))
+    const find = vi.spyOn(Array.prototype, 'find')
+    try {
+      for (const f of result.current.incomplete) result.current.fillValue(f.id, 'artist')
+      expect(find.mock.contexts.filter((list) => (list as unknown[]).length >= 300)).toEqual([])
+    } finally {
+      find.mockRestore()
+    }
+  })
 })

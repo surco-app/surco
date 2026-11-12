@@ -293,6 +293,7 @@ describe('useTracksView', () => {
     }
     await act(async () => {
       await client.fetchQuery(spectrogramOptions('/music/a.wav'))
+      await new Promise(requestAnimationFrame)
     })
 
     expect(result.current.tracksView[0].spectrum?.cutoffHz).toBe(spectrum.cutoffHz)
@@ -384,6 +385,7 @@ describe('useTracksView', () => {
   // tick. A probe landing for one track must read only that track's slot, never all N — so a
   // probe event costs exactly one slot read, whatever the crate size.
   it('patches one slot on a probe event instead of rebuilding the whole snapshot', () => {
+    vi.useFakeTimers({ toFake: ['requestAnimationFrame', 'cancelAnimationFrame'] })
     const client = new QueryClient()
     const tracks = ['a', 'b', 'c'].map((id) => track(id))
     const { result } = setup(tracks, client)
@@ -396,6 +398,7 @@ describe('useTracksView', () => {
     act(() => {
       client.setQueryData(['spectrogram', '/music/b.wav'], spectrum)
     })
+    act(() => vi.advanceTimersToNextFrame())
 
     // The new verdict is visible…
     expect(result.current.tracksView[1].spectrum).toEqual(spectrum)
@@ -408,6 +411,35 @@ describe('useTracksView', () => {
       expect.any(Function),
     )
     expect(buildSpy).not.toHaveBeenCalled()
+    vi.useRealTimers()
+  })
+
+  it('repaints once per frame however many probes land in it, so a sweep does not rerun the whole list chain per probe', () => {
+    vi.useFakeTimers({ toFake: ['requestAnimationFrame', 'cancelAnimationFrame'] })
+    setApi()
+    const client = new QueryClient()
+    const tracks = ['a', 'b', 'c'].map((id) => track(id))
+    let renders = 0
+    const { result } = renderHook(
+      () => {
+        renders += 1
+        const viewCache = useRef(new Map<string, ViewCacheEntry>())
+        return useTracksView(tracks, viewCache, 'appleMusic')
+      },
+      {
+        wrapper: ({ children }) => (
+          <QueryClientProvider client={client}>{children}</QueryClientProvider>
+        ),
+      },
+    )
+    const before = renders
+
+    for (const t of tracks) act(() => client.setQueryData(['spectrogram', t.inputPath], spectrum))
+    act(() => vi.advanceTimersToNextFrame())
+
+    expect(renders - before).toBe(1)
+    expect(result.current.tracksView.map((t) => t.spectrum)).toEqual([spectrum, spectrum, spectrum])
+    vi.useRealTimers()
   })
 
   // The patch reads one slot, but finding that slot must not cost a pass over the whole

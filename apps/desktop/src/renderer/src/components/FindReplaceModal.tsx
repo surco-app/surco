@@ -1,11 +1,11 @@
 import { ArrowRight } from 'lucide-react'
 import type React from 'react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { effectiveMeta } from '../../../shared/customFields'
 import type { CustomField, MetaTextKey, TrackMetadata } from '../../../shared/types'
 import { labeledFields } from '../lib/fields'
-import { findReplaceTrack, isValidRegex } from '../lib/findReplace'
+import { compileFindReplace, findReplaceTrack, isValidRegex } from '../lib/findReplace'
 import type { TrackItem } from '../types'
 import { ModalShell } from './ModalShell'
 
@@ -56,18 +56,15 @@ export function FindReplaceModal({
     () => new Map(tracks.map((t) => [t.id, effectiveMeta(t, customFields)])),
     [tracks, customFields],
   )
-  const patches = useMemo(
-    () =>
-      find && !badRegex
-        ? [...resolved]
-            .map(([id, meta]) => ({
-              id,
-              meta: findReplaceTrack(meta, find, replace, { regex, caseSensitive }),
-            }))
-            .filter((p) => Object.keys(p.meta).length > 0)
-        : [],
-    [resolved, find, replace, regex, caseSensitive, badRegex],
-  )
+  const previewFind = useDeferredValue(find)
+  const patches = useMemo(() => {
+    if (!previewFind) return []
+    const replaceIn = compileFindReplace(previewFind, replace, { regex, caseSensitive })
+    return [...resolved]
+      .map(([id, meta]) => ({ id, meta: findReplaceTrack(meta, replaceIn) }))
+      .filter((p) => Object.keys(p.meta).length > 0)
+  }, [resolved, previewFind, replace, regex, caseSensitive])
+  const previewStale = previewFind !== find
   // One row per field that changes, custom fields included one by one: a patch carries the
   // whole custom set, so the rows come from comparing it with what the track held.
   const changes = useMemo(() => {
@@ -105,7 +102,7 @@ export function FindReplaceModal({
   // they are done. `tracks` is live state from App, so the preview recomputes against the text
   // that was just rewritten.
   function apply(): void {
-    if (!patches.length) return
+    if (!patches.length || previewStale) return
     onApply(patches)
     setApplied(true)
     setFind('')
@@ -263,7 +260,7 @@ export function FindReplaceModal({
         <button
           type="submit"
           data-testid="find-replace-apply"
-          disabled={patches.length === 0}
+          disabled={patches.length === 0 || previewStale}
           className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
         >
           {tr('findReplace.apply', { count: patches.length })}

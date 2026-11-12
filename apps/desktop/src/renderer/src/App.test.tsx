@@ -117,18 +117,22 @@ vi.mock('./lib/triage', async (importOriginal) => {
 })
 // The real changelog data grows with every release; pinning it keeps the what's-new
 // tests about the launch gating, not about whatever shipped last.
+const { changelogLoads } = vi.hoisted(() => ({ changelogLoads: { count: 0 } }))
 vi.mock('./lib/changelog', () => ({
-  changelogReleases: () => [
-    {
-      version: '0.33',
-      date: '10 de julio de 2026',
-      title: 'Novedades y avisos',
-      items: [
-        { text: 'Popup de novedades tras actualizar.', in: '0.33.0' },
-        { text: 'Arreglo del análisis a 48 kHz.', in: '0.33.1' },
-      ],
-    },
-  ],
+  changelogReleases: async () => {
+    changelogLoads.count++
+    return [
+      {
+        version: '0.33',
+        date: '10 de julio de 2026',
+        title: 'Novedades y avisos',
+        items: [
+          { text: 'Popup de novedades tras actualizar.', in: '0.33.0' },
+          { text: 'Arreglo del análisis a 48 kHz.', in: '0.33.1' },
+        ],
+      },
+    ]
+  },
 }))
 
 afterEach(cleanup)
@@ -7037,6 +7041,41 @@ describe('App editor prop stability', () => {
     fireEvent.change(screen.getByTestId('track-search'), { target: { value: 'zz' } })
     expect(editorRenders.count).toBe(before)
   })
+
+  // Dragging the results border resizes the columns every animation frame. Only the column
+  // width moves; re-rendering the whole editor (form, waves, every section) per frame made
+  // the drag stutter.
+  it('keeps the editor props stable while the results column border is dragged', async () => {
+    const initialWidth = window.innerWidth
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1600 })
+    setApi({ pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']) })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    await screen.findByTestId('field-title')
+    const frames: FrameRequestCallback[] = []
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => frames.push(cb))
+    try {
+      const column = screen.getByTestId('matches-column')
+      const width = () => screen.getByRole('main').style.getPropertyValue('--results-width')
+      const was = width()
+      const border = column.nextElementSibling as HTMLElement
+      const at = (event: Event, clientX: number): Event =>
+        Object.defineProperty(event, 'clientX', { value: clientX })
+      const before = editorRenders.count
+      fireEvent(border, at(createEvent.pointerDown(border), 700))
+      fireEvent(window, at(createEvent.pointerMove(window), 640))
+      act(() => {
+        for (const frame of frames.splice(0)) frame(0)
+      })
+      expect(editorRenders.count).toBe(before)
+      expect(width()).not.toBe(was)
+      fireEvent(window, at(createEvent.pointerUp(window), 640))
+    } finally {
+      vi.unstubAllGlobals()
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: initialWidth })
+    }
+  })
 })
 
 describe('App derived list stability', () => {
@@ -7051,6 +7090,9 @@ describe('App derived list stability', () => {
     // are behind us before sampling the baseline.
     await act(async () => {
       await new Promise((r) => setTimeout(r, 0))
+    })
+    await act(async () => {
+      await new Promise(requestAnimationFrame)
     })
     const before = sortRuns.count
     runMenu('find-replace')
@@ -7094,6 +7136,9 @@ describe('App derived list stability', () => {
     await addTwoTracks()
     await act(async () => {
       await new Promise((r) => setTimeout(r, 0))
+    })
+    await act(async () => {
+      await new Promise(requestAnimationFrame)
     })
     const before = trackListRenders.count
     runMenu('find-replace')
@@ -7675,6 +7720,35 @@ describe("App what's new popup", () => {
     await flush()
     expect(screen.queryByTestId('whats-new-close')).toBeNull()
     expect(saveSettings).not.toHaveBeenCalledWith({ lastSeenChangelogVersion: '0.33.1' })
+  })
+
+  // The release histories are the heaviest data the app ships. A launch with nothing
+  // new to announce — the everyday launch — must not load one just to find that out.
+  it('loads no changelog when the running version was already seen', async () => {
+    const before = changelogLoads.count
+    setApi({
+      version: '0.33.1',
+      getSettings: vi.fn().mockResolvedValue(settings({ lastSeenChangelogVersion: '0.33.1' })),
+      saveSettings: vi.fn().mockResolvedValue(settings()),
+    })
+    await renderApp()
+    await flush()
+    expect(changelogLoads.count).toBe(before)
+  })
+
+  // Onboarding owns a fresh install's launch, so there is no news to look up either.
+  it('loads no changelog on a fresh install', async () => {
+    const before = changelogLoads.count
+    setApi({
+      version: '0.33.1',
+      getSettings: vi
+        .fn()
+        .mockResolvedValue(settings({ hasSeenOnboarding: false, lastSeenChangelogVersion: '' })),
+      saveSettings: vi.fn().mockResolvedValue(settings()),
+    })
+    await renderApp()
+    await flush()
+    expect(changelogLoads.count).toBe(before)
   })
 })
 
@@ -10880,7 +10954,7 @@ describe('paste tracklist from the tree', () => {
     fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
     fireEvent.contextMenu(await screen.findByTestId(`source-node-${nodeId}`))
     fireEvent.click(screen.getByTestId('source-tree-paste-tracklist'))
-    fireEvent.change(screen.getByTestId('paste-tracklist-text'), {
+    fireEvent.change(await screen.findByTestId('paste-tracklist-text'), {
       target: { value: 'Jessy - Silent Tears (Extended Mix)' },
     })
     if (name)
@@ -10910,7 +10984,7 @@ describe('paste tracklist from the tree', () => {
     fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
     fireEvent.contextMenu(await screen.findByTestId('source-node-f'))
     fireEvent.click(screen.getByTestId('source-tree-paste-tracklist'))
-    fireEvent.change(screen.getByTestId('paste-tracklist-text'), {
+    fireEvent.change(await screen.findByTestId('paste-tracklist-text'), {
       target: { value: 'Jessy - Silent Tears (Extended Mix)' },
     })
     fireEvent.keyDown(window, { key: 'Escape' })
@@ -10929,6 +11003,7 @@ describe('paste tracklist from the tree', () => {
     fireEvent.keyDown(window, { key: 'Escape' })
     await waitFor(() => expect(screen.queryByTestId('palette-input')).not.toBeInTheDocument())
     fireEvent.click(screen.getByTestId('source-tree-paste-tracklist'))
+    await screen.findByTestId('paste-tracklist-dialog')
     fireEvent.keyDown(window, { key: 'k', metaKey: true })
     expect(screen.queryByTestId('palette-input')).not.toBeInTheDocument()
     expect(screen.getByTestId('paste-tracklist-dialog')).toBeInTheDocument()

@@ -20,11 +20,24 @@ export const SAME_RECORDING_SEC = 5
 const FEATURING = /[([]\s*(?:feat|ft|featuring)\.?\s[^)\]]*[)\]]/gi
 const ORIGINAL = /[([]\s*original(?:\s+(?:mix|version))?\s*[)\]]/gi
 
+const KEYS_KEPT = 50_000
+const keys = new Map<string, string | null>()
+
 // Uses the same foldText the matcher and search use, so what the app considers "the
 // same track" never disagrees between features. Rows missing either field have no key:
 // a fresh drop's untagged rows would otherwise read as one giant duplicate set. foldText
 // turns "&" into "and", so a spelled-out "and" splits the acts the same way.
 export function recordingKey(artist: string, title: string): string | null {
+  const id = `${artist}\0${title}`
+  const known = keys.get(id)
+  if (known !== undefined) return known
+  if (keys.size >= KEYS_KEPT) keys.clear()
+  const key = foldedKey(artist, title)
+  keys.set(id, key)
+  return key
+}
+
+function foldedKey(artist: string, title: string): string | null {
   const acts = [
     ...new Set(
       splitActs(artist)
@@ -59,7 +72,10 @@ export function duplicateGroups(items: RecordingItem[]): DuplicateGroup[] {
   const byKey = new Map<string, RecordingItem[]>()
   for (const item of items) {
     const key = recordingKey(item.artist, item.title)
-    if (key) byKey.set(key, [...(byKey.get(key) ?? []), item])
+    if (!key) continue
+    const members = byKey.get(key)
+    if (members) members.push(item)
+    else byKey.set(key, [item])
   }
   const groups: DuplicateGroup[] = []
   for (const [key, members] of byKey) {
