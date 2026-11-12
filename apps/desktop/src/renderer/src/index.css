@@ -513,6 +513,22 @@ textarea {
   animation: overlay-in var(--duration-state) var(--ease-standard);
 }
 
+@keyframes sidebar-peek-in {
+  from {
+    transform: translateX(-100%);
+  }
+}
+
+.animate-sidebar-peek {
+  animation: sidebar-peek-in var(--duration-panel) var(--ease-standard);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-sidebar-peek {
+    animation: overlay-in var(--duration-state) var(--ease-standard);
+  }
+}
+
 /* The donate nudge is a celebration moment, so it arrives more gently than the app's
    utility dialogs: a longer rise from further down with a soft overshoot, instead of the
    brisk pop-in every other modal shares. Overrides .animate-pop's animation (same box,

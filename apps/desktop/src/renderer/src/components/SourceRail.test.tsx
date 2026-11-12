@@ -18,7 +18,8 @@ describe('SourceRail', () => {
         width={RAIL_WIDTH}
         showNames
         onToggleNames={vi.fn()}
-        onHideSidebar={vi.fn()}
+        sidebarShown
+        onToggleSidebar={vi.fn()}
         copies={COPIES}
         onHide={vi.fn()}
         sources={[]}
@@ -35,7 +36,8 @@ describe('SourceRail', () => {
         width={RAIL_WIDTH}
         showNames
         onToggleNames={vi.fn()}
-        onHideSidebar={vi.fn()}
+        sidebarShown
+        onToggleSidebar={vi.fn()}
         copies={COPIES}
         onHide={vi.fn()}
         sources={['rekordbox']}
@@ -59,7 +61,8 @@ describe('SourceRail', () => {
         width={RAIL_WIDTH}
         showNames
         onToggleNames={vi.fn()}
-        onHideSidebar={vi.fn()}
+        sidebarShown
+        onToggleSidebar={vi.fn()}
         copies={COPIES}
         onHide={vi.fn()}
         sources={['appleMusic', 'rekordbox', 'engine', 'traktor']}
@@ -95,7 +98,8 @@ describe('SourceRail', () => {
         width={RAIL_WIDTH}
         showNames
         onToggleNames={vi.fn()}
-        onHideSidebar={vi.fn()}
+        sidebarShown
+        onToggleSidebar={vi.fn()}
         copies={COPIES}
         onHide={vi.fn()}
         sources={['appleMusic', 'rekordbox']}
@@ -124,7 +128,8 @@ describe('SourceRail', () => {
             width={RAIL_WIDTH}
             showNames
             onToggleNames={vi.fn()}
-            onHideSidebar={vi.fn()}
+            sidebarShown
+            onToggleSidebar={vi.fn()}
             copies={COPIES}
             onHide={vi.fn()}
             sources={['appleMusic', 'rekordbox', 'engine', 'traktor']}
@@ -154,7 +159,8 @@ describe('SourceRail', () => {
         width={RAIL_WIDTH}
         showNames
         onToggleNames={vi.fn()}
-        onHideSidebar={vi.fn()}
+        sidebarShown
+        onToggleSidebar={vi.fn()}
         copies={COPIES}
         onHide={vi.fn()}
         sources={['appleMusic', 'rekordbox']}
@@ -178,7 +184,8 @@ describe('SourceRail', () => {
           width={RAIL_WIDTH}
           showNames
           onToggleNames={onToggleNames}
-          onHideSidebar={onHideSidebar}
+          sidebarShown
+          onToggleSidebar={onHideSidebar}
           sources={['appleMusic', 'rekordbox']}
           active={active}
           onSelect={onSelect}
@@ -266,7 +273,8 @@ describe('SourceRail', () => {
         width={RAIL_WIDTH}
         showNames
         onToggleNames={vi.fn()}
-        onHideSidebar={onHideSidebar}
+        sidebarShown
+        onToggleSidebar={onHideSidebar}
         copies={COPIES}
         onHide={vi.fn()}
         sources={[]}
@@ -280,13 +288,35 @@ describe('SourceRail', () => {
     expect(screen.queryByRole('menu')).not.toBeInTheDocument()
   })
 
+  // Laid over the list while hidden, the same item pins the sidebar back instead of hiding
+  // something that is already hidden.
+  it('offers to show the sidebar again while it is only laid over the list', () => {
+    render(
+      <SourceRail
+        width={RAIL_WIDTH}
+        showNames
+        onToggleNames={vi.fn()}
+        sidebarShown={false}
+        onToggleSidebar={vi.fn()}
+        copies={COPIES}
+        onHide={vi.fn()}
+        sources={[]}
+        active={null}
+        onSelect={vi.fn()}
+      />,
+    )
+    fireEvent.contextMenu(screen.getByTestId('source-rail-tracks'))
+    expect(screen.getByRole('menuitem', { name: i18n.t('view.sidebar') })).toBeInTheDocument()
+  })
+
   it('draws no names when they are hidden, and VoiceOver still hears each one', () => {
     render(
       <SourceRail
         width={52}
         showNames={false}
         onToggleNames={vi.fn()}
-        onHideSidebar={vi.fn()}
+        sidebarShown
+        onToggleSidebar={vi.fn()}
         copies={COPIES}
         onHide={vi.fn()}
         sources={['rekordbox']}
@@ -307,7 +337,8 @@ describe('SourceRail', () => {
           width={RAIL_WIDTH}
           showNames
           onToggleNames={vi.fn()}
-          onHideSidebar={vi.fn()}
+          sidebarShown
+          onToggleSidebar={vi.fn()}
           onHide={vi.fn()}
           sources={['rekordbox']}
           active="rekordbox"

@@ -27,7 +27,7 @@ export const PILL_TEXT = 'text-label font-semibold leading-4'
 
 const COVER_SIZE = {
   small: 'h-8 w-8',
-  medium: 'h-12 w-12',
+  medium: 'h-10 w-10',
   large: 'h-16 w-16 compact:h-12 compact:w-12',
 }
 

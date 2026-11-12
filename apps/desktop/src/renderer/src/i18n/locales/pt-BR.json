@@ -3628,6 +3628,7 @@
     }
   },
   "view": {
+    "submenu": "Visualizar",
     "menu": "Vista da lista",
     "listWaves": "Mostrar ondas",
     "railNames": "Mostrar nomes",

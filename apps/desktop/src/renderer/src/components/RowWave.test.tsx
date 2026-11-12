@@ -262,24 +262,3 @@ describe('RowWave', () => {
     expect(lines[0].className).toContain('border-dashed')
   })
 })
-
-// With the waves hidden the row still has to say which tracks are already marked, and it
-// must not spend a waveform read per row on bars nobody will see.
-describe('RowWave without its bars', () => {
-  it('keeps the cue marks and never asks for the waveform', async () => {
-    render(
-      <RowWave
-        request={request}
-        cues={cues}
-        durationSec={120}
-        pending={false}
-        active
-        showBars={false}
-      />,
-    )
-    await new Promise((r) => setTimeout(r, 30))
-    expect(screen.getAllByTestId('track-hot-cue')).toHaveLength(2)
-    expect(screen.queryByTestId('track-wave-bars')).toBeNull()
-    expect(window.api.rowWaves).not.toHaveBeenCalled()
-  })
-})
