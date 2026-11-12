@@ -521,6 +521,16 @@ describe('flushConversionBatch with Engine DJ open', () => {
     )
   })
 
+  it('writes the names of a retitle that leaves the row as it is, so a title inside the tag padding still reaches Engine', async () => {
+    WRITERS.updateEngineTags.mockClear()
+    WRITERS.repointEngineTracks.mockResolvedValueOnce([
+      { written: false, reason: 'no-match' },
+    ] as never)
+    const named = [{ ...REPOINTS[0], names: { title: { from: 'Old', to: 'New' } } }]
+    await repointEngineQueued('/e/Engine Library', named, sessions)
+    expect(WRITERS.updateEngineTags).toHaveBeenCalledTimes(1)
+  })
+
   it('writes no names for a move that is still waiting', async () => {
     WRITERS.updateEngineTags.mockClear()
     WRITERS.repointEngineTracks.mockResolvedValueOnce([

@@ -674,7 +674,8 @@ function engineConversionFlusher(
       // rekordbox's does: the dialog asked to convert again, which an in-place conversion
       // cannot, its source being gone. A check that cannot tell counts as Engine being open.
       const engineRepoints = repoints.filter(
-        (repoint) => repoint.from !== repoint.to || repoint.fromBytes !== undefined,
+        (repoint) =>
+          repoint.from !== repoint.to || repoint.fromBytes !== undefined || repoint.names,
       )
       const engineUnplugged = onUnpluggedDrive(getSettings().engineLibraryDir)
       const engineDeps = engineFlushDeps(host)
@@ -807,6 +808,14 @@ async function engineLibraryHas(
   return (path, from) => pathsHeld(path, from, followsFrom).some((p) => find(p, key).length > 0)
 }
 
+const ENGINE_STILL_TO_TRY: ReadonlySet<string> = new Set([
+  ENGINE_KEYS.runningReason,
+  'output-missing',
+  'backup-failed',
+  'write-failed',
+  'unreadable',
+])
+
 function repointEngine(
   libraryDir: string,
   list: RekordboxRepoint[],
@@ -830,7 +839,10 @@ export async function repointEngineQueued(
   sessions: Pick<Sessions, 'engine'>,
 ): Promise<LibraryRepointResult[]> {
   const results = await repointEngine(libraryDir, list, sessions)
-  const named = list.filter((repoint, i) => repoint.names && results[i]?.written)
+  const named = list.filter((repoint, i) => {
+    const result = results[i]
+    return repoint.names && result && (result.written || !ENGINE_STILL_TO_TRY.has(result.reason))
+  })
   if (named.length > 0)
     await updateEngineTags(
       libraryDir,

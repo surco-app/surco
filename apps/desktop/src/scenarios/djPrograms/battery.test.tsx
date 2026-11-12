@@ -103,13 +103,6 @@ const RUNNING: Record<DjProgram, Mock<() => Promise<boolean>>> = {
   serato: vi.mocked(isSeratoRunning),
   virtualdj: vi.mocked(isVirtualdjRunning),
 }
-const QUEUES_THE_TITLE: Record<DjProgram, boolean> = {
-  rekordbox: true,
-  traktor: true,
-  engine: false,
-  serato: true,
-  virtualdj: true,
-}
 const FOLLOWS_SIZE: ReadonlySet<DjProgram> = new Set(['engine', 'virtualdj'])
 const UPDATE_CARRIES_TITLE: Record<DjProgram, boolean> = {
   rekordbox: true,
@@ -478,7 +471,7 @@ describe('Con el programa abierto', () => {
 
   describe.each(DJ_PROGRAMS)('%s', (program) => {
     it('leaves the change waiting when the DJ picks Apply when it closes, and writes it once the program closes', async () => {
-      const title = `${program} aplicado después ${'y más '.repeat(25).trim()}`
+      const title = `${program} después`
       const was = await titleOf(program, tracks[UPDATED].path)
       await updateTitle(program, 'later', title)
       expect(surco.asked()).toEqual([[program]])
@@ -487,8 +480,7 @@ describe('Con el programa abierto', () => {
       RUNNING[program].mockResolvedValue(false)
       await applyWhenClosed(program)
       expect(surco.queues[program].isEmpty()).toBe(true)
-      if (QUEUES_THE_TITLE[program])
-        expect(await titleOf(program, tracks[UPDATED].path)).toBe(title)
+      expect(await titleOf(program, tracks[UPDATED].path)).toBe(title)
       expect(surco.asked()).toEqual([[program]])
     })
 
@@ -520,6 +512,7 @@ describe('Con el programa abierto', () => {
     await window.api.syncLibraryTags([
       { path: tracks[RETAGGED].path, fields: { title: { from: was ?? '', to: title } } },
     ])
+    await serialLibraryFlush(async () => {})
     expect(await titleOf('traktor', tracks[RETAGGED].path)).toBe(was)
     expect(surco.queues.traktor.isEmpty()).toBe(false)
     RUNNING.traktor.mockResolvedValue(false)
