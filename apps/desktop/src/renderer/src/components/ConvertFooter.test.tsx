@@ -101,6 +101,17 @@ describe('ConvertFooter state swap', () => {
     expect(screen.getByTestId('done-more')).toHaveFocus()
   })
 
+  // The button is disabled for the stages a cancel does not reach, and Chromium drops focus to
+  // <body> the moment that happens, long before the swap to done finds it inside the footer.
+  it('hands focus to the done state when it fell to body while converting', () => {
+    const { rerender } = render(footer(false))
+    screen.getByTestId('process-btn').focus()
+    ;(document.activeElement as HTMLElement).blur()
+    expect(document.body).toHaveFocus()
+    rerender(footer(true))
+    expect(screen.getByTestId('done-more')).toHaveFocus()
+  })
+
   // Focus that was elsewhere (the metadata form) must stay there: the footer only restores
   // what its own swap took away.
   it('leaves focus alone when it was outside the footer', () => {

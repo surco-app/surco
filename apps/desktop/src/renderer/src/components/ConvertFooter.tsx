@@ -362,7 +362,9 @@ export function ConvertFooter({
   if (prevShowDone.current !== showDone) {
     swapped.current = true
     prevShowDone.current = showDone
-    refocus.current = footerRef.current?.contains(document.activeElement) ?? false
+    refocus.current =
+      !!footerRef.current?.contains(document.activeElement) ||
+      document.activeElement === document.body
   }
   useLayoutEffect(() => {
     if (focusShield.current && !retrying) {
