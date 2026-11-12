@@ -21,6 +21,13 @@ const loud: LoudnessResult = {
 const club: NormalizeConfig = { mode: 'loudness', targetLufs: -13, truePeakDb: -1, peakDb: -1 }
 const off: NormalizeConfig = { ...club, mode: 'none' }
 
+describe('LoudnessReadout help toggle', () => {
+  it('keeps a 24 px press area around its 20 px drawing', () => {
+    render(<LoudnessReadout loudness={loud} normalize={club} onShowHelp={vi.fn()} />)
+    expect(screen.getByTestId('loudness-help-toggle').className).toContain('after:-inset-0.5')
+  })
+})
+
 // The estimates used to sit in italics with a footnote legend at the very bottom
 // explaining what the italics meant. The arrow carries that meaning inline: it only
 // appears on the figures the conversion moves, and the figures it cannot move say "="

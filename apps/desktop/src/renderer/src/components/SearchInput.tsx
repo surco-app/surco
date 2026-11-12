@@ -95,7 +95,7 @@ export function SearchInput({
           data-testid={`${testid}-clear`}
           aria-label={clearLabel}
           onClick={onClear}
-          className="press absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-fg-faint hover:text-fg"
+          className="press absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-fg-faint after:absolute after:-inset-[3px] after:content-[''] hover:text-fg"
         >
           <X className="h-3.5 w-3.5" aria-hidden="true" />
         </button>

@@ -51,6 +51,18 @@ function setup(over: Partial<React.ComponentProps<typeof CueWave>> = {}) {
 }
 
 describe('CueWave', () => {
+  // A 12 px mark is under the 24 px pointer target (WCAG 2.5.8). An invisible square hanging
+  // from the top edge of the strip, the only side the strip's overflow does not clip, enlarges
+  // the press without moving the drawing.
+  it('gives the hot cue and memory cue marks a 24 px press area under their drawing', () => {
+    setup()
+    for (const id of ['cue-wave-hot-A', 'cue-wave-call-16000']) {
+      const mark = screen.getByTestId(id)
+      expect(mark.className).toContain('after:h-6')
+      expect(mark.className).toContain('after:w-6')
+    }
+  })
+
   it('draws the overview with the list row’s own mirrored bars, accent and opacity, so the two waves read as one', async () => {
     ;(window as unknown as { api: Partial<Api> }).api = {
       rowWaves: vi.fn<Api['rowWaves']>(async () => ({ '/a.DAT': [1, 0.5, 0] })),

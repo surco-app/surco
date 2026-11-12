@@ -129,4 +129,13 @@ describe('StarRating', () => {
     fireEvent.click(screen.getByTestId('star-3'))
     expect(onChange).toHaveBeenCalledWith('')
   })
+
+  // A 16 px star is under the 24 px pointer target. The stars sit 18 px apart, so the press
+  // area grows to the full 24 px in height and to the pitch in width, without overlapping.
+  it('gives every star a taller press area than its drawing', () => {
+    render(<StarRating value="" onChange={() => {}} />)
+    for (const n of [1, 2, 3, 4, 5]) {
+      expect(screen.getByTestId(`star-${n}`).className).toContain('after:-inset-y-1')
+    }
+  })
 })
