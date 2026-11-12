@@ -186,7 +186,7 @@ import { missingRequiredOf, requiredFieldsOf } from './lib/fields'
 import { gridNote } from './lib/gridNote'
 import { pushImportNotice } from './lib/importNotices'
 import { mainErrorMessage } from './lib/ipcError'
-import { columnOf, isTypingTarget, nextColumn } from './lib/keymap'
+import { columnOf, cycleRegion, isTypingTarget, nextColumn } from './lib/keymap'
 import { lazyChunk } from './lib/lazyChunk'
 import { librarySourceOf } from './lib/librarySource'
 import { listReviewSource } from './lib/listReviewSource'
@@ -3417,6 +3417,7 @@ export default function App(): React.JSX.Element {
     if (!field?.startsWith('field-')) return
     setTimeout(() => document.querySelector<HTMLElement>(`[data-testid="${field}"]`)?.focus(), 0)
   }
+  const focusRegion = (delta: 1 | -1): void => cycleRegion(document.activeElement, delta)
   // El salto relativo se apoya en los tres saltos absolutos de arriba: resuelve a qué
   // columna toca ir mirando dónde está el foco ahora, y llama al que corresponda.
   const focusColumn = (delta: 1 | -1): void => {
@@ -3472,6 +3473,7 @@ export default function App(): React.JSX.Element {
       focusMatches,
       focusEditor,
       focusColumn,
+      focusRegion,
       togglePlay,
       playerVisible,
       seek,

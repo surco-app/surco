@@ -521,6 +521,8 @@
     "focusEditor": "Aller à l’éditeur",
     "focusColumnPrev": "Aller à la colonne précédente",
     "focusColumnNext": "Aller à la colonne suivante",
+    "focusRegionNext": "Aller à la région suivante",
+    "focusRegionPrev": "Aller à la région précédente",
     "search": "Rechercher dans la liste des morceaux",
     "settings": "Réglages",
     "clearAll": "Vider la liste",

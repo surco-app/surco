@@ -88,6 +88,12 @@ export const SHORTCUT_DEFAULTS: ShortcutDef[] = [
   // El precio es perder inicio/fin de línea de macOS mientras se escribe dentro de un campo.
   { id: 'focus-column-prev', chord: ['mod', 'left'] },
   { id: 'focus-column-next', chord: ['mod', 'right'] },
+  // F6 y Mayús F6 recorren las tres regiones (carril de fuentes, lista, editor) en círculo,
+  // la convención de Windows y de los navegadores para saltar de panel sin recorrer 14
+  // paradas de tabulador. Teclas sueltas, así que el guardián de tecleo las deja a un campo
+  // enfocado; desde ahí valen ⌘1/2/3 y ⌘←/→.
+  { id: 'focus-region-next', chord: ['f6'] },
+  { id: 'focus-region-prev', chord: ['shift', 'f6'] },
   // Saltar de sección a sección por sus cabeceras, sin cruzar los campos de dentro: con
   // una sola sección abierta el editor tiene 133 paradas de tabulador. Llevan `mod` para
   // seguir vivas con un campo enfocado — irse al recorte desde el título es el caso — y

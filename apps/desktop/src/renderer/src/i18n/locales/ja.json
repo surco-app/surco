@@ -521,6 +521,8 @@
     "focusEditor": "エディタにフォーカス",
     "focusColumnPrev": "前の列にフォーカス",
     "focusColumnNext": "次の列にフォーカス",
+    "focusRegionNext": "次の領域にフォーカス",
+    "focusRegionPrev": "前の領域にフォーカス",
     "search": "トラックリストを検索",
     "settings": "設定",
     "clearAll": "リストをクリア",

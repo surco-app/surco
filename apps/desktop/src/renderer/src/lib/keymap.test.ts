@@ -5,12 +5,15 @@ import type { KeyLike } from '../../../shared/shortcuts'
 import {
   activeScope,
   columnOf,
+  cycleRegion,
   isTypingTarget,
   jumpIndex,
   keyToCommandId,
   moveIndex,
   nextColumn,
+  nextRegion,
   pageSize,
+  regionOf,
 } from './keymap'
 
 function key(
@@ -327,5 +330,87 @@ describe('columnOf', () => {
   it('devuelve null fuera de las tres columnas y sin elemento', () => {
     expect(columnOf(mount('<div><b data-probe></b></div>'))).toBeNull()
     expect(columnOf(null)).toBeNull()
+  })
+})
+
+describe('F6 regions', () => {
+  function mount(html: string): HTMLElement {
+    document.body.innerHTML = html
+    return document.querySelector('[data-probe]') as HTMLElement
+  }
+
+  it('resolves F6 and Shift+F6 to the region commands', () => {
+    expect(press(key('F6'), false)).toBe('focus-region-next')
+    expect(press(key('F6', { shiftKey: true }), false)).toBe('focus-region-prev')
+  })
+
+  it('leaves F6 to the field while typing, like every other bare key', () => {
+    expect(press(key('F6'), true)).toBeNull()
+  })
+
+  it('names the sources rail, the track list and the editor as the three regions', () => {
+    expect(regionOf(mount('<nav data-testid="source-rail"><b data-probe></b></nav>'))).toBe('rail')
+    expect(regionOf(mount('<aside data-testid="sidebar"><b data-probe></b></aside>'))).toBe('list')
+    expect(regionOf(mount('<div data-shortcut-scope="editor"><b data-probe></b></div>'))).toBe(
+      'editor',
+    )
+    expect(regionOf(mount('<div data-testid="matches-column"><b data-probe></b></div>'))).toBe(
+      'editor',
+    )
+    expect(regionOf(mount('<div><b data-probe></b></div>'))).toBeNull()
+  })
+
+  it('goes round in both directions, because F6 is a cycle and not a walk to an edge', () => {
+    expect(nextRegion('rail', 1)).toBe('list')
+    expect(nextRegion('list', 1)).toBe('editor')
+    expect(nextRegion('editor', 1)).toBe('rail')
+    expect(nextRegion('rail', -1)).toBe('editor')
+    expect(nextRegion('editor', -1)).toBe('list')
+  })
+
+  it('enters by the track list when the focus is in none of them', () => {
+    expect(nextRegion(null, 1)).toBe('list')
+    expect(nextRegion(null, -1)).toBe('list')
+  })
+})
+
+describe('cycleRegion', () => {
+  const page = `
+    <nav data-testid="source-rail"><button data-testid="source-rail-tracks" aria-pressed="false">a</button><button data-testid="source-rail-virtualdj" aria-pressed="true">b</button></nav>
+    <aside data-testid="sidebar"><div data-testid="track-row" tabindex="-1">x</div><div data-testid="track-row" tabindex="0" data-probe-list>y</div></aside>
+    <div data-shortcut-scope="editor"><input data-testid="field-title" /></div>`
+
+  function focusedTestId(): string | null {
+    return document.activeElement?.getAttribute('data-testid') ?? null
+  }
+
+  it('moves from the rail to the list row that holds the tab stop, then to the title', () => {
+    document.body.innerHTML = page
+    ;(document.querySelector('[data-testid="source-rail-tracks"]') as HTMLElement).focus()
+    cycleRegion(document.activeElement, 1)
+    expect(document.activeElement).toBe(document.querySelector('[tabindex="0"]'))
+    cycleRegion(document.activeElement, 1)
+    expect(focusedTestId()).toBe('field-title')
+  })
+
+  it('lands on the rail button of the source in use', () => {
+    document.body.innerHTML = page
+    ;(document.querySelector('[data-testid="field-title"]') as HTMLElement).focus()
+    cycleRegion(document.activeElement, 1)
+    expect(focusedTestId()).toBe('source-rail-virtualdj')
+  })
+
+  it('goes back with a negative step', () => {
+    document.body.innerHTML = page
+    ;(document.querySelector('[data-testid="field-title"]') as HTMLElement).focus()
+    cycleRegion(document.activeElement, -1)
+    expect(document.activeElement).toBe(document.querySelector('[tabindex="0"]'))
+  })
+
+  it('skips a region that is not on screen instead of dropping the focus', () => {
+    document.body.innerHTML = page.replace(/<aside[\s\S]*<\/aside>/, '')
+    ;(document.querySelector('[data-testid="source-rail-tracks"]') as HTMLElement).focus()
+    cycleRegion(document.activeElement, 1)
+    expect(focusedTestId()).toBe('field-title')
   })
 })

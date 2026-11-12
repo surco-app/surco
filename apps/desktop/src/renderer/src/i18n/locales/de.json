@@ -521,6 +521,8 @@
     "focusEditor": "Editor fokussieren",
     "focusColumnPrev": "Vorherige Spalte fokussieren",
     "focusColumnNext": "Nächste Spalte fokussieren",
+    "focusRegionNext": "Nächsten Bereich fokussieren",
+    "focusRegionPrev": "Vorherigen Bereich fokussieren",
     "search": "In der Trackliste suchen",
     "settings": "Einstellungen",
     "clearAll": "Liste leeren",

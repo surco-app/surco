@@ -521,6 +521,8 @@
     "focusEditor": "Focus the editor",
     "focusColumnPrev": "Focus the previous column",
     "focusColumnNext": "Focus the next column",
+    "focusRegionNext": "Focus the next region",
+    "focusRegionPrev": "Focus the previous region",
     "search": "Search the track list",
     "settings": "Settings",
     "clearAll": "Clear the list",

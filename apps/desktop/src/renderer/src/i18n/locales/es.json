@@ -521,6 +521,8 @@
     "focusEditor": "Ir al editor",
     "focusColumnPrev": "Ir a la columna anterior",
     "focusColumnNext": "Ir a la columna siguiente",
+    "focusRegionNext": "Ir a la región siguiente",
+    "focusRegionPrev": "Ir a la región anterior",
     "search": "Buscar en la lista de pistas",
     "settings": "Ajustes",
     "clearAll": "Vaciar la lista",
