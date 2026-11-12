@@ -7,10 +7,10 @@
     "ogLocale": "en_US",
     "inLanguage": "en",
     "title": "Surco: Get your DJ tracks ready in seconds",
-    "description": "Surco gets your DJ tracks ready in seconds. Convert between AIFF, WAV, FLAC, ALAC and MP3 in any direction, edit tags and metadata from Discogs, Bandcamp, Deezer, Beatport and MusicBrainz, and send your tracks to Apple Music, rekordbox, Engine DJ, Traktor or VirtualDJ. And catch re-encoded MP3s disguised as lossless.",
+    "description": "Surco gets your DJ tracks ready in seconds. Convert between AIFF, WAV, FLAC, ALAC and MP3 in any direction, edit tags and metadata from Discogs, Bandcamp, Deezer, Beatport and MusicBrainz, and send your tracks to Apple Music, rekordbox, Engine DJ, Traktor, Serato or VirtualDJ. And catch re-encoded MP3s disguised as lossless.",
     "ogTitle": "Surco: Get your DJ tracks ready in seconds",
     "ogDescription": "Less prepping, more playing. Convert between AIFF, WAV, FLAC, ALAC and MP3 in any direction, tag from Discogs, Bandcamp, Deezer, Beatport and MusicBrainz, and organize in seconds. And catch MP3s disguised as lossless.",
-    "jsonLdDescription": "Audio track organizer for DJs. Convert between AIFF, WAV, FLAC, ALAC and MP3 in any direction, tag from Discogs, Bandcamp, Deezer, Beatport and MusicBrainz, send tracks to Apple Music, rekordbox, Engine DJ, Traktor or VirtualDJ and analyze the spectrum to detect re-encoded MP3s."
+    "jsonLdDescription": "Audio track organizer for DJs. Convert between AIFF, WAV, FLAC, ALAC and MP3 in any direction, tag from Discogs, Bandcamp, Deezer, Beatport and MusicBrainz, send tracks to Apple Music, rekordbox, Engine DJ, Traktor, Serato or VirtualDJ and analyze the spectrum to detect re-encoded MP3s."
   },
   "nav": {
     "velocidad": "Speed",
@@ -96,8 +96,8 @@
           },
           {
             "t": "You choose where it lands",
-            "s": "A folder, beside the original, Apple Music, rekordbox, Engine DJ, Traktor or VirtualDJ.",
-            "d": "A folder, beside the original or Apple Music. And in rekordbox, Engine DJ, Traktor and VirtualDJ you choose whether the track gets updated or added too."
+            "s": "A folder, beside the original, Apple Music, rekordbox, Engine DJ, Traktor, Serato or VirtualDJ.",
+            "d": "A folder, beside the original or Apple Music. And in rekordbox, Engine DJ, Traktor, Serato and VirtualDJ you choose whether the track gets updated or added too."
           },
           {
             "t": "Corrected sample rate",
@@ -263,7 +263,7 @@
           {
             "t": "rekordbox cues",
             "s": "Set hot cues on rekordbox's waveform, by hand or with your marking flow.",
-            "d": "Hot cues A to H and CALLs, on rekordbox's waveform and grid. Drag them, they snap to the bar or the beat, and you can undo. Zooming in shows every beat in detail, measured from the audio itself, and Play starts at once. Pick a flow, like Mix in 64, Mix in 32 or one of your own built from blocks or learned from your collection, and hovering over the waveform shows a ghost of what it would place. One click places it and tells you what doesn't fit. Auto mark suggests where each track drops, on several at once too. It learns how you mark from the cues you already placed and the ones you save, and sets what it's sure of apart from what it doubts. And if you mark the CALLs in rekordbox, Surco places your flow's hot cues when you close it. On a track rekordbox hasn't analyzed yet you work on Surco's grid, and once rekordbox analyzes it, your cues move onto its own. Letters follow track order, and if each letter is a fixed pad for you, turn it off in Settings. If the same track is in Traktor, Engine DJ or VirtualDJ, saving places the flow there too, on its grid and around its cues. Written to rekordbox after a backup."
+            "d": "Hot cues A to H and CALLs, on rekordbox's waveform and grid. Drag them, they snap to the bar or the beat, and you can undo. Zooming in shows every beat in detail, measured from the audio itself, and Play starts at once. Pick a flow, like Mix in 64, Mix in 32 or one of your own built from blocks or learned from your collection, and hovering over the waveform shows a ghost of what it would place. One click places it and tells you what doesn't fit. Auto mark suggests where each track drops, on several at once too. It learns how you mark from the cues you already placed and the ones you save, and sets what it's sure of apart from what it doubts. And if you mark the CALLs in rekordbox, Surco places your flow's hot cues when you close it. On a track rekordbox hasn't analyzed yet you work on Surco's grid, and once rekordbox analyzes it, your cues move onto its own. Letters follow track order, and if each letter is a fixed pad for you, turn it off in Settings. If the same track is in Traktor, Engine DJ, Serato or VirtualDJ, saving places the flow there too, on its grid and around its cues. Written to rekordbox after a backup."
           },
           {
             "t": "Cues off the grid",
@@ -345,7 +345,7 @@
           {
             "t": "Typos and duplicates in your library",
             "s": "Finds typos, invisible characters and duplicate tracks in your library.",
-            "d": "Groups what your Apple Music library or your list spells more than one way, invisible characters and the tracks you have twice. Each fix reaches the file, Apple Music and, if you sync them, rekordbox, Engine DJ, Traktor and VirtualDJ, with a backup before writing that you restore from Backups, and Undo. The copy you remove hands its playlists to the one you keep. Apple Music on macOS only."
+            "d": "Groups what your Apple Music library or your list spells more than one way, invisible characters and the tracks you have twice. Each fix reaches the file, Apple Music and, if you sync them, rekordbox, Engine DJ, Traktor, Serato and VirtualDJ, with a backup before writing that you restore from Backups (except Serato's), and Undo. The copy you remove hands its playlists to the one you keep. Apple Music on macOS only."
           },
           {
             "t": "Bring in an Apple Music playlist",
@@ -386,8 +386,8 @@
         "items": [
           {
             "t": "Library backups",
-            "s": "Keeps a copy of rekordbox, Traktor, Engine DJ and VirtualDJ before writing to them.",
-            "d": "Before writing to rekordbox, Traktor, Engine DJ or VirtualDJ, Surco keeps a dated copy and holds on to the last 5 for each program. Backups, at the bottom of the left sidebar, shows them per program and restores any one in a click: it asks you to close the program, keeps a copy of how it was so you can go back, and drops only that library's waiting changes."
+            "s": "Keeps a copy of rekordbox, Traktor, Engine DJ, Serato and VirtualDJ before writing to them.",
+            "d": "Before writing to rekordbox, Traktor, Engine DJ or VirtualDJ, Surco keeps a dated copy and holds on to the last 5 for each program. Backups, at the bottom of the left sidebar, shows them per program and restores any one in a click: it asks you to close the program, keeps a copy of how it was so you can go back, and drops only that library's waiting changes. Surco also keeps a copy of Serato before writing to it, but that one is not restored from Backups."
           },
           {
             "t": "Original audio files",
@@ -1021,7 +1021,7 @@
         "id": "rekordbox",
         "group": "out",
         "title": "Mark your cues",
-        "s": "Hot cues on the rekordbox, Engine DJ, Traktor or VirtualDJ waveform, with your flow.",
+        "s": "Hot cues on the rekordbox, Engine DJ, Traktor, Serato or VirtualDJ waveform, with your flow.",
         "body": [
           "Open a playlist from any of the three in the sidebar and pick a track. The Cues section shows its waveform and grid."
         ],
@@ -1042,7 +1042,7 @@
         "points": [
           "Auto mark suggests, it doesn't decide. Sure suggestions show a solid line and doubtful ones a dashed line.",
           "With several tracks selected you mark and save them all at once.",
-          "Engine DJ, Traktor and VirtualDJ get the hot cues only. In Traktor they go on buttons 2 to 8, since 1 is its grid.",
+          "Engine DJ, Traktor, Serato and VirtualDJ get the hot cues only. In Traktor they go on buttons 2 to 8, since 1 is its grid.",
           "The “Cues off the grid” filter pulls out the tracks with a cue that misses the beat."
         ],
         "shot": "rekordbox-en.webp",
@@ -1276,7 +1276,7 @@
     "closeStatsRest": "Surco doesn’t know who uses it or what you do with your music. The only public figures are the downloads, and they’re in <stats>Stats</stats>.",
     "allFeatures": "See everything it does →",
     "worksWith": "Works with",
-    "heroLede": "Surco converts your tracks, tags them from Discogs or Beatport, checks that your lossless files really are lossless and drops them into rekordbox, Traktor, Engine DJ, VirtualDJ or Apple Music.",
+    "heroLede": "Surco converts your tracks, tags them from Discogs or Beatport, checks that your lossless files really are lossless and drops them into rekordbox, Traktor, Engine DJ, Serato, VirtualDJ or Apple Music.",
     "anchors": {
       "see": "See how",
       "quality": {
@@ -1293,7 +1293,7 @@
         "title": "And they land in your program",
         "note": "Apple Music, Engine DJ, rekordbox, Traktor, Serato or VirtualDJ. Nothing to import.",
         "lead": "Straight to your program.",
-        "rest": "It shows up in rekordbox, Traktor, Engine DJ, VirtualDJ or Apple Music."
+        "rest": "It shows up in rekordbox, Traktor, Engine DJ, Serato, VirtualDJ or Apple Music."
       }
     },
     "replace": {
@@ -1338,7 +1338,7 @@
     },
     "sync": {
       "title": "Change it once. Every program sees it.",
-      "lede": "Open the track from the Apple Music or rekordbox tab, fix the title, the genre or the file name and press Update tags. Surco carries the change to Apple Music, rekordbox, Traktor, Engine DJ and VirtualDJ, and it stays the same track in each one.",
+      "lede": "Open the track from the Apple Music or rekordbox tab, fix the title, the genre or the file name and press Update tags. Surco carries the change to Apple Music, rekordbox, Traktor, Engine DJ, Serato and VirtualDJ, and it stays the same track in each one.",
       "tabAppleMusic": "Apple Music tab",
       "tabRekordbox": "rekordbox tab",
       "fieldTitle": "Title",
@@ -1364,7 +1364,7 @@
     },
     "cues": {
       "title": "Mark the drop. The rest of the cues place themselves.",
-      "lede": "Click where the track drops, or let Auto mark find it. Your flow places the other cues the same way on every track and Surco saves them to rekordbox, Engine DJ, Traktor or VirtualDJ.",
+      "lede": "Click where the track drops, or let Auto mark find it. Your flow places the other cues the same way on every track and Surco saves them to rekordbox, Engine DJ, Traktor, Serato or VirtualDJ.",
       "unsaved": "Not saved",
       "flow": "Flow",
       "flowName": "Subidón",
@@ -1384,7 +1384,7 @@
         },
         "programs": {
           "title": "Straight to your program",
-          "text": "rekordbox, Engine DJ, Traktor and VirtualDJ. Engine DJ, Traktor and VirtualDJ take the hot cues only."
+          "text": "rekordbox, Engine DJ, Traktor, Serato and VirtualDJ. Engine DJ, Traktor, Serato and VirtualDJ take the hot cues only."
         }
       },
       "grid": {
@@ -1417,7 +1417,7 @@
     },
     "review": {
       "title": "Find the typos and duplicates in your library",
-      "lede": "Surco goes through your Apple Music library, the folder you drop or a rekordbox, Engine DJ, Traktor or VirtualDJ playlist, and groups what's spelled more than one way, the invisible spaces and characters that sneak in when you copy from a website, and the tracks you have twice. You choose how it should read and the change reaches the files, Apple Music and, if you sync them, rekordbox, Engine DJ, Traktor and VirtualDJ.",
+      "lede": "Surco goes through your Apple Music library, the folder you drop or a rekordbox, Engine DJ, Traktor, Serato or VirtualDJ playlist, and groups what's spelled more than one way, the invisible spaces and characters that sneak in when you copy from a website, and the tracks you have twice. You choose how it should read and the change reaches the files, Apple Music and, if you sync them, rekordbox, Engine DJ, Traktor, Serato and VirtualDJ.",
       "points": {
         "spelling": {
           "title": "Spellings",
@@ -1433,7 +1433,7 @@
         },
         "everywhere": {
           "title": "Everywhere",
-          "text": "Files, Apple Music, rekordbox, Engine DJ, Traktor and VirtualDJ, with a backup of every file and every DJ library, restorable from Backups. And corrections come with Undo."
+          "text": "Files, Apple Music, rekordbox, Engine DJ, Traktor, Serato and VirtualDJ, with a backup of every file and every DJ library, restorable from Backups (except Serato's). And corrections come with Undo."
         }
       },
       "all": "All",
@@ -1553,7 +1553,7 @@
         },
         {
           "title": "Convert",
-          "text": "The copies go to Music/Surco, next to the original or to Apple Music, and rekordbox, Engine DJ, Traktor and VirtualDJ are brought up to date if you sync them."
+          "text": "The copies go to Music/Surco, next to the original or to Apple Music, and rekordbox, Engine DJ, Traktor, Serato and VirtualDJ are brought up to date if you sync them."
         }
       ],
       "guide": "Step by step in the guide"
@@ -2148,7 +2148,7 @@
       {
         "id": "library",
         "title": "Your library and your DJ software",
-        "lede": "Apple Music, rekordbox, Engine DJ, Traktor and VirtualDJ kept up to date with what you change in Surco."
+        "lede": "Apple Music, rekordbox, Engine DJ, Traktor, Serato and VirtualDJ kept up to date with what you change in Surco."
       },
       {
         "id": "go",
@@ -2872,7 +2872,7 @@
           }
         ],
         "points": [
-          "The change reaches the file and Apple Music, and rekordbox, Engine DJ, Traktor and VirtualDJ if you sync them.",
+          "The change reaches the file and Apple Music, and rekordbox, Engine DJ, Traktor, Serato and VirtualDJ if you sync them.",
           "Before touching anything, Surco keeps a copy of every file and your DJ libraries. “Undo” puts it all back.",
           "BPM, key, cue points and rating are left alone.",
           "If a DJ app is open, Surco offers to close it."
@@ -3344,11 +3344,11 @@
         "slug": "organize-playlists",
         "group": "library",
         "title": "Organize your playlists and folders without opening the app",
-        "s": "Create, rename, move and sort rekordbox, Traktor or VirtualDJ playlists from Surco’s sidebar.",
+        "s": "Create, rename, move and sort rekordbox, Traktor, Serato or VirtualDJ playlists from Surco’s sidebar.",
         "body": [
-          "You want to sort your rekordbox, Traktor or VirtualDJ playlists without opening the program."
+          "You want to sort your rekordbox, Traktor, Serato or VirtualDJ playlists without opening the program."
         ],
-        "keywords": "playlists folders drag move rename sort rekordbox traktor virtualdj",
+        "keywords": "playlists folders drag move rename sort rekordbox traktor serato virtualdj",
         "settings": [],
         "steps": [
           {
