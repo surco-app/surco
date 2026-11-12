@@ -101,15 +101,35 @@ describe('ConvertFooter state swap', () => {
     expect(screen.getByTestId('done-more')).toHaveFocus()
   })
 
-  // The button is disabled for the stages a cancel does not reach, and Chromium drops focus to
-  // <body> the moment that happens, long before the swap to done finds it inside the footer.
-  it('hands focus to the done state when it fell to body while converting', () => {
+  it('hands focus to the done state when the disabled convert button dropped it to body', () => {
     const { rerender } = render(footer(false))
-    screen.getByTestId('process-btn').focus()
-    ;(document.activeElement as HTMLElement).blur()
+    const button = screen.getByTestId('process-btn') as HTMLButtonElement
+    button.focus()
+    button.disabled = true
+    Object.defineProperty(document, 'activeElement', {
+      get: () => document.body,
+      configurable: true,
+    })
+    rerender(footer(true))
+    Reflect.deleteProperty(document, 'activeElement')
+    expect(screen.getByTestId('done-more')).toHaveFocus()
+  })
+
+  it('leaves focus on the page when the DJ clicked away from the footer before the swap', () => {
+    const { rerender } = render(footer(false))
+    const button = screen.getByTestId('process-btn')
+    button.focus()
+    button.blur()
     expect(document.body).toHaveFocus()
     rerender(footer(true))
-    expect(screen.getByTestId('done-more')).toHaveFocus()
+    expect(document.body).toHaveFocus()
+  })
+
+  it('does not take focus from the page on the swap back to convert', () => {
+    const { rerender } = render(footer(true))
+    expect(document.body).toHaveFocus()
+    rerender(footer(false))
+    expect(document.body).toHaveFocus()
   })
 
   // Focus that was elsewhere (the metadata form) must stay there: the footer only restores
