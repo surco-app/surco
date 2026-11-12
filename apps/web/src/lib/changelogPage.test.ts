@@ -3,12 +3,18 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { I18nextProvider } from 'react-i18next'
 import { describe, expect, it } from 'vitest'
 import Changelog from '../components/Changelog'
-import { createI18n, LANGUAGES } from '../i18n'
+import { LANGUAGES, loadI18n } from '../i18n'
 import releasesEs from '../i18n/changelog/es.json'
+
+const I18N = Object.fromEntries(
+  await Promise.all(
+    LANGUAGES.map(async (lng) => [lng, await loadI18n(lng, { releases: true })] as const),
+  ),
+)
 
 const render = (lng: (typeof LANGUAGES)[number]) =>
   renderToStaticMarkup(
-    createElement(I18nextProvider, { i18n: createI18n(lng) }, createElement(Changelog)),
+    createElement(I18nextProvider, { i18n: I18N[lng] }, createElement(Changelog)),
   )
 
 const latestBlock = (html: string) => {

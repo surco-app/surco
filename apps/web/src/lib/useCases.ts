@@ -1,6 +1,6 @@
 import { LANGUAGES, type Language } from '../i18n'
-import en from '../i18n/locales/en.json'
-import es from '../i18n/locales/es.json'
+import en from '../i18n/locales/en.json?slugs'
+import es from '../i18n/locales/es.json?slugs'
 import { PAGES } from './nav'
 import shots from './useCaseShots.json'
 
@@ -95,10 +95,7 @@ type PagedCase = { id: string; slug: string }
 // Spanish recipes carry Spanish slugs; every other language is served under the English
 // ones, so a link keeps working whichever language it is opened in.
 const CASES = Object.fromEntries(
-  LANGUAGES.map((lng): [Language, PagedCase[]] => [
-    lng,
-    lng === 'es' ? es.useCases.cases : en.useCases.cases,
-  ]),
+  LANGUAGES.map((lng): [Language, PagedCase[]] => [lng, lng === 'es' ? es : en]),
 ) as Record<Language, PagedCase[]>
 
 export const recipePath = (lang: Language, slug: string) => `${PAGES.useCases[lang]}/${slug}`

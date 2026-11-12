@@ -3,8 +3,12 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { I18nextProvider } from 'react-i18next'
 import { describe, expect, it } from 'vitest'
 import Header from '../components/Header'
-import { createI18n, type Language } from '../i18n'
+import { LANGUAGES, type Language, loadI18n } from '../i18n'
 import { recipePages } from './useCases'
+
+const I18N = Object.fromEntries(
+  await Promise.all(LANGUAGES.map(async (lng) => [lng, await loadI18n(lng)] as const)),
+)
 
 function header(lang: Language, page?: 'guide' | 'useCases', id?: string) {
   const alternates = id
@@ -13,7 +17,7 @@ function header(lang: Language, page?: 'guide' | 'useCases', id?: string) {
   return renderToStaticMarkup(
     createElement(
       I18nextProvider,
-      { i18n: createI18n(lang) },
+      { i18n: I18N[lang] },
       createElement(Header, { page, alternates }),
     ),
   )

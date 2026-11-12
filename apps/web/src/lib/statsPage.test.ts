@@ -4,7 +4,7 @@ import { I18nextProvider } from 'react-i18next'
 import { describe, expect, it } from 'vitest'
 import Footer from '../components/Footer'
 import { StatsView } from '../components/Stats'
-import { createI18n } from '../i18n'
+import { loadI18n } from '../i18n'
 import { PAGES } from './nav'
 import type { Stats } from './stats'
 
@@ -20,9 +20,11 @@ const stats: Stats = {
   ],
 }
 
+const es = await loadI18n('es')
+
 function render<P extends object>(node: (props: P) => ReactNode, props: P): string {
   return renderToStaticMarkup(
-    createElement(I18nextProvider, { i18n: createI18n('es') }, createElement(node, props)),
+    createElement(I18nextProvider, { i18n: es }, createElement(node, props)),
   )
 }
 

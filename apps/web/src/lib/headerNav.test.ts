@@ -5,12 +5,14 @@ import { describe, expect, it } from 'vitest'
 import Footer from '../components/Footer'
 import Header from '../components/Header'
 import { DONATE_URL } from '../config'
-import { createI18n } from '../i18n'
+import { loadI18n } from '../i18n'
 import { PAGES } from './nav'
+
+const es = await loadI18n('es')
 
 function render(component: typeof Header | typeof Footer): string {
   return renderToStaticMarkup(
-    createElement(I18nextProvider, { i18n: createI18n('es') }, createElement(component)),
+    createElement(I18nextProvider, { i18n: es }, createElement(component)),
   )
 }
 

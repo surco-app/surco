@@ -5,7 +5,7 @@ import es from './changelog/es.json'
 import fr from './changelog/fr.json'
 import ja from './changelog/ja.json'
 import ptBR from './changelog/pt-BR.json'
-import { resources } from './index'
+import { loadI18n } from './index'
 import enLocale from './locales/en.json'
 import esLocale from './locales/es.json'
 
@@ -23,8 +23,9 @@ const TRANSLATED = [
 ] as const
 
 describe.each(TRANSLATED)('%s release history', (lng, releases) => {
-  it('serves its page its own releases', () => {
-    expect(resources[lng].translation.changelog.releases).toBe(releases)
+  it('serves its page its own releases', async () => {
+    const i18n = await loadI18n(lng, { releases: true })
+    expect(i18n.getResource(lng, 'translation', 'changelog.releases')).toBe(releases)
   })
 
   it('mirrors every English release, item for item', () => {

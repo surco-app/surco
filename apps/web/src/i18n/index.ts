@@ -1,17 +1,5 @@
 import { createInstance, type i18n } from 'i18next'
 import { initReactI18next } from 'react-i18next'
-import changelogDe from './changelog/de.json'
-import changelogEn from './changelog/en.json'
-import changelogEs from './changelog/es.json'
-import changelogFr from './changelog/fr.json'
-import changelogJa from './changelog/ja.json'
-import changelogPtBR from './changelog/pt-BR.json'
-import de from './locales/de.json'
-import en from './locales/en.json'
-import es from './locales/es.json'
-import fr from './locales/fr.json'
-import ja from './locales/ja.json'
-import ptBR from './locales/pt-BR.json'
 
 // The app's languages, in the order its own language picker lists them.
 export const LANGUAGES = ['es', 'en', 'de', 'fr', 'pt-BR', 'ja'] as const
@@ -25,28 +13,63 @@ export const LANGUAGE_NAMES: Record<Language, string> = {
   ja: '日本語',
 }
 
+type Translation = { changelog: object } & Record<string, unknown>
+
+const LOCALES = import.meta.glob<Translation>('./locales/*.json', { import: 'default' })
 // The release history lives in its own files (not the locale bundles) because the
 // desktop app imports the same data for its "what's new" popup after an update.
-export const resources = {
-  es: { translation: { ...es, changelog: { ...es.changelog, releases: changelogEs } } },
-  en: { translation: { ...en, changelog: { ...en.changelog, releases: changelogEn } } },
-  de: { translation: { ...de, changelog: { ...de.changelog, releases: changelogDe } } },
-  fr: { translation: { ...fr, changelog: { ...fr.changelog, releases: changelogFr } } },
-  'pt-BR': { translation: { ...ptBR, changelog: { ...ptBR.changelog, releases: changelogPtBR } } },
-  ja: { translation: { ...ja, changelog: { ...ja.changelog, releases: changelogJa } } },
-} as const
+const HISTORIES = import.meta.glob<unknown[]>('./changelog/*.json', { import: 'default' })
+const LATEST = import.meta.glob<unknown>('./changelog/*.json', {
+  import: 'default',
+  query: '?latest',
+})
+const LANGUAGE_OFFERS = import.meta.glob<unknown>('./locales/*.json', {
+  import: 'default',
+  query: '?languageOffer',
+  eager: true,
+})
+
+const offerOf = (lng: Language) => LANGUAGE_OFFERS[`./locales/${lng}.json`]
 
 // A fresh instance per language keeps prerendered routes isolated: all locale
 // pages render in the same process, so a shared singleton would leak whatever
 // language was set last into the other page's HTML.
-export function createI18n(lng: Language): i18n {
+function createI18n(lng: Language, translation: Translation): i18n {
   const instance = createInstance()
   void instance.use(initReactI18next).init({
-    resources,
+    resources: Object.fromEntries(
+      LANGUAGES.map((other) => [
+        other,
+        {
+          translation: other === lng ? translation : { nav: { languageOffer: offerOf(other) } },
+        },
+      ]),
+    ),
     lng,
     fallbackLng: 'es',
     interpolation: { escapeValue: false },
     returnObjects: true,
   })
   return instance
+}
+
+async function load(lng: Language, withReleases: boolean): Promise<i18n> {
+  const [locale, latest, releases] = await Promise.all([
+    LOCALES[`./locales/${lng}.json`](),
+    LATEST[`./changelog/${lng}.json`](),
+    withReleases ? HISTORIES[`./changelog/${lng}.json`]() : undefined,
+  ])
+  return createI18n(lng, {
+    ...locale,
+    changelog: { ...locale.changelog, latest, ...(releases && { releases }) },
+  })
+}
+
+const loading = new Map<string, Promise<i18n>>()
+
+export function loadI18n(lng: Language, { releases = false } = {}): Promise<i18n> {
+  const key = `${lng}:${releases}`
+  const cached = loading.get(key) ?? load(lng, releases)
+  loading.set(key, cached)
+  return cached
 }
