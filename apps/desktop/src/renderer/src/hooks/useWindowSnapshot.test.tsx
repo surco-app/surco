@@ -18,8 +18,6 @@ describe('useWindowSnapshot', () => {
     vi.useRealTimers()
   })
 
-  // A crash report is only useful if the counts are the ones the window had just before it
-  // died, so they are read when the sample leaves, not when the hook was mounted.
   it('reports once on mount and every 30 s, reading the counts at send time', () => {
     let tracks = 10
     renderHook(() =>

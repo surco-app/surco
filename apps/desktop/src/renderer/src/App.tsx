@@ -848,7 +848,6 @@ export default function App(): React.JSX.Element {
     },
     filesOpen: browser.source === null,
   })
-
   useWindowSnapshot(() => ({
     listTracks: tracksRef.current.length,
     source: browser.source,
