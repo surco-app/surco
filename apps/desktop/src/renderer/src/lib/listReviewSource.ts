@@ -1,4 +1,4 @@
-import { READ_ONLY_PROGRAMS, type ReadOnlyProgram } from '../../../shared/djProgram'
+import { type CueProgram, READ_ONLY_PROGRAMS, type ReadOnlyProgram } from '../../../shared/djProgram'
 import { fromReadOnlyProgram, isFrom } from '../../../shared/trackOrigin'
 import type {
   DuplicateReplaceOutcome,
@@ -192,7 +192,13 @@ export function listReviewSource(deps: ListSourceDeps): ReviewSource {
           .entries.map((e) => e.id)
           .filter((path) => !gone.has(path)),
       ),
-    repairDamage: (items) => window.api.repairDamage(items),
+    repairDamage: async (items) => {
+      const programs = new Set<CueProgram>()
+      for (const { repair } of items)
+        if (repair.target === 'traktor' || repair.target === 'engine') programs.add(repair.target)
+      if (programs.size > 0) await window.api.dj.askToApply([...programs])
+      return window.api.repairDamage(items)
+    },
     settle: (updates, trashed) => {
       forget(updates.map((u) => u.path))
       changes.push(...updates)

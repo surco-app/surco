@@ -1,10 +1,6 @@
 import type { WebContents } from 'electron'
 import { describe, expect, it, vi } from 'vitest'
 
-vi.mock('electron', () => ({
-  BrowserWindow: { fromWebContents: vi.fn(() => 'window') },
-}))
-
 import type { DjCueQueueMain } from '../shared/djApi'
 import type { QueueApply, RekordboxQueue } from './rekordboxQueue'
 import { appliedNotice, rekordboxQueueSection } from './rekordboxQueueIpc'
@@ -84,12 +80,12 @@ describe('appliedNotice', () => {
 })
 
 describe('rekordboxQueueSection', () => {
-  it('applies now behind the close dialog and answers with the notice', async () => {
+  it('applies now without asking the DJ anything, and answers with the notice', async () => {
     const q = queue()
-    const ensureClosed = vi.fn(async () => true)
-    register(q, { ensureClosed })
+    const isClosed = vi.fn(async () => true)
+    register(q, { isClosed })
     expect(await section.apply({} as WebContents)).toEqual(appliedNotice(APPLIED))
-    expect(ensureClosed).toHaveBeenCalledWith('window')
+    expect(isClosed).toHaveBeenCalledWith()
     expect(q.apply).toHaveBeenCalledWith(expect.any(Function), { manual: true })
   })
 
@@ -102,7 +98,7 @@ describe('rekordboxQueueSection', () => {
       return apply ? apply(...args) : APPLIED
     })
     register(q, {
-      ensureClosed: vi.fn(async () => true),
+      isClosed: vi.fn(async () => true),
       beginMoment: (r) => order.push(`begin:${r}`),
     })
     await section.apply({} as WebContents)
@@ -112,7 +108,7 @@ describe('rekordboxQueueSection', () => {
   it('starts the queue only once the window listens, so the startup apply is never announced to nobody', async () => {
     const onReady = vi.fn()
     register(queue(), {
-      ensureClosed: vi.fn(async () => true),
+      isClosed: vi.fn(async () => true),
       onReady,
     })
     expect(onReady).not.toHaveBeenCalled()
@@ -123,7 +119,7 @@ describe('rekordboxQueueSection', () => {
   it('wakes the watcher when the apply is cancelled and the work keeps waiting', async () => {
     const onWaiting = vi.fn()
     register(queue({ status: 'refused', reason: 'cancelled' }), {
-      ensureClosed: vi.fn(async () => false),
+      isClosed: vi.fn(async () => false),
       onWaiting,
     })
     expect(await section.apply({} as WebContents)).toBeNull()
@@ -133,7 +129,7 @@ describe('rekordboxQueueSection', () => {
   it('does not wake the watcher after a refusal that retrying would only repeat', async () => {
     const onWaiting = vi.fn()
     register(queue({ status: 'refused', reason: 'backup-failed' }), {
-      ensureClosed: vi.fn(async () => true),
+      isClosed: vi.fn(async () => true),
       onWaiting,
     })
     await section.apply({} as WebContents)
@@ -143,7 +139,7 @@ describe('rekordboxQueueSection', () => {
   it('discards and reports the state', async () => {
     const q = queue()
     register(q, {
-      ensureClosed: vi.fn(async () => true),
+      isClosed: vi.fn(async () => true),
     })
     await section.discard()
     expect(q.discard).toHaveBeenCalled()
@@ -155,7 +151,7 @@ describe('rekordboxQueueSection', () => {
   it('tells the verification how an apply by hand went', async () => {
     const onSettled = vi.fn()
     register(queue(), {
-      ensureClosed: vi.fn(async () => true),
+      isClosed: vi.fn(async () => true),
       onSettled,
     })
     await section.apply({} as WebContents)
@@ -167,7 +163,7 @@ describe('rekordboxQueueSection', () => {
     const q = queue()
     q.apply.mockRejectedValueOnce(new Error('disk gone'))
     register(q, {
-      ensureClosed: vi.fn(async () => true),
+      isClosed: vi.fn(async () => true),
       onSettled,
     })
     await expect(section.apply({} as WebContents)).rejects.toThrow('disk gone')
@@ -178,7 +174,7 @@ describe('rekordboxQueueSection', () => {
     const onDiscarded = vi.fn()
     const q = queue()
     register(q, {
-      ensureClosed: vi.fn(async () => true),
+      isClosed: vi.fn(async () => true),
       onDiscarded,
     })
     await section.discard()

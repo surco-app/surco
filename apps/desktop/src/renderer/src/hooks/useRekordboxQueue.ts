@@ -40,7 +40,10 @@ function queueSource(p: CueProgram, name: string, words: QueueWords): QueueSourc
     onChanged: (cb) => window.api.dj.onCueQueueChanged(p, cb),
     onApplied: (cb) => window.api.dj.onCueQueueApplied(p, cb),
     ready: () => window.api.dj.cueQueueReady(p),
-    applyNow: () => window.api.dj.applyCueQueue(p),
+    applyNow: async () => {
+      await window.api.dj.askToApply([p])
+      return window.api.dj.applyCueQueue(p)
+    },
     discard: () => window.api.dj.discardCueQueue(p),
     words,
   }

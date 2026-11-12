@@ -57,7 +57,7 @@ export function registerDoor(current: () => Queues): { settled: () => Promise<vo
   }
   const engineDir = () => getSettings().engineLibraryDir
   const traktorNml = () => getSettings().traktorNmlPath
-  const section = { ensureClosed: closed, onWaiting: () => {}, onReady: () => {} }
+  const section = { isClosed: closed, onWaiting: () => {}, onReady: () => {} }
   const table: DjMainTable = {
     rekordbox: {
       read: rekordboxRead(rekordboxCollectionPath, rekordboxCollectionPath, {}),

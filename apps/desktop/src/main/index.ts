@@ -1522,7 +1522,7 @@ function registerIpc(): void {
         filters: [{ name: 'rekordbox master.db', extensions: ['db'] }],
       }),
       cueQueue: rekordboxQueueSection(rekordboxQueue, {
-        ensureClosed: (win) => ensureClosed('rekordbox', win, 'playlists'),
+        isClosed: async () => !(await DJ_PROCESSES.rekordbox.isRunning()),
         onWaiting: rekordboxQueueWatch.poke,
         onReady: () => void adjustProvisionalCuesOnLaunch(),
         beginMoment: (reason) => moments.begin(reason, ['rekordbox']),
@@ -1547,7 +1547,7 @@ function registerIpc(): void {
         properties: ['openDirectory', 'createDirectory'],
       }),
       cueQueue: engineCueQueueSection(engineCueQueue, {
-        ensureClosed: (win) => ensureClosed('engine', win, 'cues'),
+        isClosed: async () => !(await DJ_PROCESSES.engine.isRunning()),
         onWaiting: engineCueQueueWatch.poke,
         onReady: engineCueQueueWatch.poke,
         beginMoment: (reason) => moments.begin(reason, ['engine']),
@@ -1571,7 +1571,7 @@ function registerIpc(): void {
         filters: [{ name: 'Traktor Collection', extensions: ['nml'] }],
       }),
       cueQueue: traktorCueQueueSection(traktorCueQueue, {
-        ensureClosed: (win) => ensureClosed('traktor', win, 'cues'),
+        isClosed: async () => !(await DJ_PROCESSES.traktor.isRunning()),
         onWaiting: traktorCueQueueWatch.poke,
         onReady: traktorCueQueueWatch.poke,
         beginMoment: (reason) => moments.begin(reason, ['traktor']),

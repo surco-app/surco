@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import { NAME_LEFT_MARKED } from '../../../shared/errorKeys'
 import type { ProcessResult, Settings, TrackMetadata } from '../../../shared/types'
-import type { Verification } from '../../../shared/verification'
+import type { PlaceCheck, Verification } from '../../../shared/verification'
 import i18n from '../i18n'
 import type { TrackItem } from '../types'
 import { useTrackProcessing } from './useTrackProcessing'
@@ -3103,6 +3103,65 @@ describe('useTrackProcessing retryVerification', () => {
     })
     expect(retryVerification).toHaveBeenCalledWith('a')
     expect(processTrack).toHaveBeenCalledTimes(1)
+  })
+
+  it('asks to close the programs a retry writes to before main hands them the repoint again', async () => {
+    const calls: string[] = []
+    const askToApply = vi.fn().mockImplementation(async () => {
+      calls.push('ask')
+      return {}
+    })
+    const retryVerification = vi.fn<Api['retryVerification']>().mockImplementation(async () => {
+      calls.push('retry')
+      return 'rechecked'
+    })
+    setApi({ retryVerification, dj: { askToApply } })
+    const place = (p: PlaceCheck['place'], state: PlaceCheck['state']): PlaceCheck => ({
+      place: p,
+      state,
+      detail: { key: 'pending' },
+    })
+    const hook = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [
+            track({
+              id: 'a',
+              verification: {
+                status: 'pending',
+                checks: [
+                  place('file', 'ok'),
+                  place('rekordbox', 'ok'),
+                  place('traktor', 'pending'),
+                  place('engine', 'mismatch'),
+                ],
+              },
+            }),
+          ],
+          settings: null,
+          updateTrack: vi.fn(),
+        }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await hook.result.current.retryVerification('a')
+    })
+    expect(askToApply).toHaveBeenCalledOnce()
+    expect(askToApply).toHaveBeenCalledWith(['traktor', 'engine'])
+    expect(calls).toEqual(['ask', 'retry'])
+  })
+
+  it('does not ask on a retry that reaches no DJ program', async () => {
+    const askToApply = vi.fn().mockResolvedValue({})
+    setApi({ retryVerification: vi.fn().mockResolvedValue('rechecked'), dj: { askToApply } })
+    const hook = renderHook(
+      () => useTrackProcessing({ tracks: [track({ id: 'a' })], settings: null, updateTrack: vi.fn() }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await hook.result.current.retryVerification('a')
+    })
+    expect(askToApply).not.toHaveBeenCalled()
   })
 
   // A recheck only re-reads; converting again would rewrite a file that is fine.

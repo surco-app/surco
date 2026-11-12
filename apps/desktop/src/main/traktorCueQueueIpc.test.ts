@@ -1,10 +1,6 @@
 import type { WebContents } from 'electron'
 import { describe, expect, it, vi } from 'vitest'
 
-vi.mock('electron', () => ({
-  BrowserWindow: { fromWebContents: vi.fn(() => 'window') },
-}))
-
 import type { DjCueQueueMain } from '../shared/djApi'
 import type { QueueApply, RekordboxQueue } from './rekordboxQueue'
 import { appliedNotice } from './rekordboxQueueIpc'
@@ -38,16 +34,16 @@ function queue(result: QueueApply = APPLIED) {
 
 describe('traktorCueQueueSection', () => {
   it('shows what waits for Traktor to close', () => {
-    register(queue(), { ensureClosed: vi.fn(async () => true) })
+    register(queue(), { isClosed: vi.fn(async () => true) })
     expect(section.read()).toEqual({ tracks: 1, changes: 0, items: [] })
   })
 
-  it('applies now behind the dialog that closes Traktor and answers with what landed', async () => {
+  it('applies now without asking the DJ anything, and answers with what landed', async () => {
     const q = queue()
-    const ensureClosed = vi.fn(async () => true)
-    register(q, { ensureClosed })
+    const isClosed = vi.fn(async () => true)
+    register(q, { isClosed })
     expect(await section.apply({} as WebContents)).toEqual(appliedNotice(APPLIED))
-    expect(ensureClosed).toHaveBeenCalledWith('window')
+    expect(isClosed).toHaveBeenCalledWith()
     expect(q.apply).toHaveBeenCalledWith(expect.any(Function), { manual: true })
   })
 
@@ -60,7 +56,7 @@ describe('traktorCueQueueSection', () => {
       return apply ? apply(...args) : APPLIED
     })
     register(q, {
-      ensureClosed: vi.fn(async () => true),
+      isClosed: vi.fn(async () => true),
       beginMoment: (r) => order.push(`begin:${r}`),
     })
     await section.apply({} as WebContents)
@@ -70,7 +66,7 @@ describe('traktorCueQueueSection', () => {
   it('keeps watching when the DJ leaves Traktor open, so the save lands once it closes', async () => {
     const onWaiting = vi.fn()
     register(queue({ status: 'refused', reason: 'cancelled' }), {
-      ensureClosed: vi.fn(async () => false),
+      isClosed: vi.fn(async () => false),
       onWaiting,
     })
     expect(await section.apply({} as WebContents)).toBeNull()
@@ -79,14 +75,14 @@ describe('traktorCueQueueSection', () => {
 
   it('throws away what waits when the DJ discards it', () => {
     const q = queue()
-    register(q, { ensureClosed: vi.fn(async () => true) })
+    register(q, { isClosed: vi.fn(async () => true) })
     section.discard()
     expect(q.discard).toHaveBeenCalled()
   })
 
   it('starts the queue only once the window listens', () => {
     const onReady = vi.fn()
-    register(queue(), { ensureClosed: vi.fn(async () => true), onReady })
+    register(queue(), { isClosed: vi.fn(async () => true), onReady })
     section.ready()
     expect(onReady).toHaveBeenCalled()
   })
@@ -95,7 +91,7 @@ describe('traktorCueQueueSection', () => {
   // and an apply that throws or a discarded queue never leaves them pending.
   it('tells the verification how an apply by hand went', async () => {
     const onSettled = vi.fn()
-    register(queue(), { ensureClosed: vi.fn(async () => true), onSettled })
+    register(queue(), { isClosed: vi.fn(async () => true), onSettled })
     await section.apply({} as WebContents)
     expect(onSettled).toHaveBeenCalledWith(APPLIED)
   })
@@ -104,7 +100,7 @@ describe('traktorCueQueueSection', () => {
     const onSettled = vi.fn()
     const q = queue()
     q.apply.mockRejectedValueOnce(new Error('disk gone'))
-    register(q, { ensureClosed: vi.fn(async () => true), onSettled })
+    register(q, { isClosed: vi.fn(async () => true), onSettled })
     await expect(section.apply({} as WebContents)).rejects.toThrow('disk gone')
     expect(onSettled).toHaveBeenCalledWith('threw')
   })
@@ -112,7 +108,7 @@ describe('traktorCueQueueSection', () => {
   it('tells the verification the queue was discarded', async () => {
     const onDiscarded = vi.fn()
     const q = queue()
-    register(q, { ensureClosed: vi.fn(async () => true), onDiscarded })
+    register(q, { isClosed: vi.fn(async () => true), onDiscarded })
     await section.discard()
     expect(q.discard).toHaveBeenCalled()
     expect(onDiscarded).toHaveBeenCalled()

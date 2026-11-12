@@ -821,6 +821,12 @@ export function useTrackProcessing({
   })
 
   const retryVerification = useStableCallback(async (id: string): Promise<void> => {
+    const unsettled = tracksRef.current
+      .find((t) => t.id === id)
+      ?.verification?.checks.flatMap((c) =>
+        c.place !== 'file' && c.place !== 'appleMusic' && c.state !== 'ok' ? [c.place] : [],
+      )
+    if (unsettled && unsettled.length > 0) await window.api.dj.askToApply(unsettled)
     const answer = await window.api.retryVerification(id)
     if (answer !== 'rerun-job') return
     const track = tracksRef.current.find((t) => t.id === id)

@@ -1,4 +1,3 @@
-import { BrowserWindow } from 'electron'
 import type { DjCueQueueMain } from '../shared/djApi'
 import type { CopyReason, RekordboxQueueApplied } from '../shared/types'
 import { serialLibraryFlush } from './libraryTagSync'
@@ -24,7 +23,7 @@ export function appliedNotice(result: QueueApply): RekordboxQueueApplied | null 
 }
 
 export interface QueueIpcHost {
-  ensureClosed: (win: BrowserWindow | null) => Promise<boolean>
+  isClosed: () => Promise<boolean>
   onWaiting?: () => void
   onReady?: () => void
   beginMoment?: (reason: CopyReason) => void
@@ -36,15 +35,12 @@ export interface QueueIpcHost {
 export function rekordboxQueueSection(queue: RekordboxQueue, host: QueueIpcHost): DjCueQueueMain {
   return {
     read: () => queue.state(),
-    apply: (sender) =>
+    apply: () =>
       serialLibraryFlush(async () => {
         host.beginMoment?.('queue')
         let result: QueueApply
         try {
-          result = await queue.apply(
-            () => host.ensureClosed(BrowserWindow.fromWebContents(sender)),
-            { manual: true },
-          )
+          result = await queue.apply(() => host.isClosed(), { manual: true })
         } catch (err) {
           host.onSettled?.('threw')
           throw err
