@@ -41,6 +41,8 @@ export default function HeroApp({ video }: { video?: boolean }) {
         <div className="relative">
           <img
             src={shot}
+            srcSet={`${base}-800.webp 800w, ${base}-1200.webp 1200w, ${shot} 2000w`}
+            sizes="(min-width: 1104px) 1024px, (min-width: 640px) calc(100vw - 5rem), calc(100vw - 3rem)"
             alt={t('showcase.alt')}
             width={2000}
             height={1242}
@@ -54,7 +56,6 @@ export default function HeroApp({ video }: { video?: boolean }) {
             // don't take WebM.
             <video
               ref={ref}
-              poster={shot}
               muted
               loop
               playsInline
