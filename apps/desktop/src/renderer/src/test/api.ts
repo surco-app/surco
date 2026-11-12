@@ -2,7 +2,7 @@ import { vi } from 'vitest'
 import type { Api, CuesApi } from '../../../preload/api'
 import { BUNDLED_FLOWS } from '../../../shared/cueFlows'
 import type { DjApi, DjExportPayload, ExportProgram } from '../../../shared/djApi'
-import type { DjProgram } from '../../../shared/djProgram'
+import type { CueProgram, DjProgram } from '../../../shared/djProgram'
 import { DEFAULT_EDITOR_SECTIONS } from '../../../shared/editorSections'
 import { emptyMetadata } from '../../../shared/metadata'
 import { DEFAULT_SESSION_WIZARD } from '../../../shared/sessionSettings'
@@ -227,6 +227,9 @@ export function djReads(...layers: (DjReads | DjApi | undefined)[]): DjApi {
     exportCollection: vi.fn((p, payload) => of(p).exportCollection(payload)),
     pickLibraryPath: vi.fn((p) => of(p).pickLibraryPath()),
     running: vi.fn((p) => of(p).running()),
+    askToApply: vi.fn(async (programs: CueProgram[]) =>
+      Object.fromEntries(programs.map((p) => [p, 'now' as const])),
+    ),
     onSyncIssue: vi.fn((p, cb) => of(p).onSyncIssue(cb)),
   }
   layersOf.set(api, flat)

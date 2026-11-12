@@ -69,3 +69,27 @@ describe('isSeratoRunning', () => {
     expect(await runningOn('win32')).toBe(false)
   })
 })
+
+describe('waitForSeratoExit', () => {
+  it('waits while Serato is still exiting after the DJ closed it, never ending it itself', async () => {
+    vi.resetModules()
+    const { waitForSeratoExit } = await import('./seratoProcess')
+    const isRunning = vi
+      .fn()
+      .mockResolvedValueOnce(true)
+      .mockResolvedValueOnce(true)
+      .mockResolvedValue(false)
+    const wait = vi.fn(async () => {})
+    expect(await waitForSeratoExit(isRunning, wait)).toBe(true)
+    expect(isRunning).toHaveBeenCalledTimes(3)
+    expect(wait).toHaveBeenCalledTimes(2)
+  })
+
+  it('gives up after about fifteen seconds when Serato stays open', async () => {
+    vi.resetModules()
+    const { waitForSeratoExit } = await import('./seratoProcess')
+    const wait = vi.fn(async (_ms: number) => {})
+    expect(await waitForSeratoExit(async () => true, wait)).toBe(false)
+    expect(wait.mock.calls.reduce((sum, [ms]) => sum + ms, 0)).toBe(15000)
+  })
+})

@@ -42,6 +42,9 @@ function stubbedOnly(...layers: DjReads[]): DjApi {
     exportCollection: vi.fn((p, payload) => pick(p, 'exportCollection')(payload)),
     pickLibraryPath: vi.fn((p) => pick(p, 'pickLibraryPath')()),
     running: vi.fn((p) => pick(p, 'running')()),
+    askToApply: vi.fn(async () => {
+      throw new TypeError('askToApply is not stubbed')
+    }),
     onSyncIssue: vi.fn((p, cb) => pick(p, 'onSyncIssue')(cb)),
   }
 }

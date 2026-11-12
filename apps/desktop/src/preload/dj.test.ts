@@ -98,6 +98,12 @@ describe('createDjApi', () => {
       expect(ipc.invoke).toHaveBeenCalledWith(channel, 'serato', ...rest)
     },
   )
+
+  it('sends every program in one call to its own channel, so the main process can ask them in order', async () => {
+    const ipc = fakeIpc()
+    await createDjApi(ipc).askToApply(['traktor', 'serato'])
+    expect(ipc.invoke).toHaveBeenCalledWith('dj:ask-to-apply', ['traktor', 'serato'])
+  })
 })
 
 describe.each([

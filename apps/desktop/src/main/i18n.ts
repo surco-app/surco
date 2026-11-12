@@ -88,6 +88,18 @@ interface MenuStrings {
   virtualdjQuitDetailDuplicates: string
   virtualdjQuitConfirm: string
   virtualdjQuitCancel: string
+  applyLater: string
+  rekordboxApplyNow: string
+  traktorApplyNow: string
+  engineApplyNow: string
+  seratoApplyNow: string
+  virtualdjApplyNow: string
+  seratoQuitMessage: string
+  rekordboxApplyDetail: string
+  traktorApplyDetail: string
+  engineApplyDetail: string
+  seratoApplyDetail: string
+  virtualdjApplyDetail: string
   rekordboxSyncBlocked: string
   engineSyncBlocked: string
   quitBusyMessage: string
@@ -217,6 +229,23 @@ const strings: Record<MenuLang, MenuStrings> = {
       'Surco no cierra VirtualDJ por ti. Ciérralo tú para que las copias que quitaste pasen a las que te quedas, y no lo vuelvas a abrir hasta que Surco termine.',
     virtualdjQuitConfirm: 'Ya lo he cerrado',
     virtualdjQuitCancel: 'Cancelar',
+    applyLater: 'Aplicar al cerrarlo',
+    rekordboxApplyNow: 'Cerrar rekordbox y aplicar',
+    traktorApplyNow: 'Cerrar Traktor y aplicar',
+    engineApplyNow: 'Cerrar Engine DJ y aplicar',
+    seratoApplyNow: 'Lo he cerrado, aplicar',
+    virtualdjApplyNow: 'Lo he cerrado, aplicar',
+    seratoQuitMessage: 'Serato está abierto',
+    rekordboxApplyDetail:
+      'Surco puede cerrarlo y aplicar el cambio ahora, o guardarlo y aplicarlo cuando lo cierres tú.',
+    traktorApplyDetail:
+      'Surco puede cerrarlo y aplicar el cambio ahora, o guardarlo y aplicarlo cuando lo cierres tú.',
+    engineApplyDetail:
+      'Surco puede cerrarlo y aplicar el cambio ahora, o guardarlo y aplicarlo cuando lo cierres tú.',
+    seratoApplyDetail:
+      'Ciérralo y pulsa «Lo he cerrado, aplicar», o Surco guarda el cambio y lo aplica cuando lo cierres.',
+    virtualdjApplyDetail:
+      'Ciérralo y pulsa «Lo he cerrado, aplicar», o Surco guarda el cambio y lo aplica cuando lo cierres.',
     rekordboxSyncBlocked:
       'La colección de rekordbox no se ha actualizado: rekordbox sigue abierto. Ciérralo y vuelve a convertir para que apunte al archivo nuevo.',
     engineSyncBlocked:
@@ -347,6 +376,23 @@ const strings: Record<MenuLang, MenuStrings> = {
       'Surco does not close VirtualDJ for you. Close it yourself so the copies you removed move to the ones you kept, and keep it closed until Surco finishes.',
     virtualdjQuitConfirm: 'I closed it',
     virtualdjQuitCancel: 'Cancel',
+    applyLater: 'Apply when it closes',
+    rekordboxApplyNow: 'Close rekordbox and apply',
+    traktorApplyNow: 'Close Traktor and apply',
+    engineApplyNow: 'Close Engine DJ and apply',
+    seratoApplyNow: 'I closed it, apply',
+    virtualdjApplyNow: 'I closed it, apply',
+    seratoQuitMessage: 'Serato is open',
+    rekordboxApplyDetail:
+      'Surco can close it and apply the change now, or keep it and apply it when you close it.',
+    traktorApplyDetail:
+      'Surco can close it and apply the change now, or keep it and apply it when you close it.',
+    engineApplyDetail:
+      'Surco can close it and apply the change now, or keep it and apply it when you close it.',
+    seratoApplyDetail:
+      'Close it and press “I closed it, apply”, or Surco keeps the change and applies it when you close it.',
+    virtualdjApplyDetail:
+      'Close it and press “I closed it, apply”, or Surco keeps the change and applies it when you close it.',
     rekordboxSyncBlocked:
       "rekordbox's collection was not updated: rekordbox is still open. Close it and convert again so it points at the new file.",
     engineSyncBlocked:
@@ -478,6 +524,23 @@ const strings: Record<MenuLang, MenuStrings> = {
       'Surco schließt VirtualDJ nicht für dich. Schließe es selbst, damit die entfernten Kopien auf die behaltenen wechseln, und lass es geschlossen, bis Surco fertig ist.',
     virtualdjQuitConfirm: 'Ich habe es geschlossen',
     virtualdjQuitCancel: 'Abbrechen',
+    applyLater: 'Beim Schließen anwenden',
+    rekordboxApplyNow: 'rekordbox schließen und anwenden',
+    traktorApplyNow: 'Traktor schließen und anwenden',
+    engineApplyNow: 'Engine DJ schließen und anwenden',
+    seratoApplyNow: 'Ich habe es geschlossen, anwenden',
+    virtualdjApplyNow: 'Ich habe es geschlossen, anwenden',
+    seratoQuitMessage: 'Serato ist geöffnet',
+    rekordboxApplyDetail:
+      'Surco kann es schließen und die Änderung jetzt anwenden oder sie aufbewahren und anwenden, sobald du es schließt.',
+    traktorApplyDetail:
+      'Surco kann es schließen und die Änderung jetzt anwenden oder sie aufbewahren und anwenden, sobald du es schließt.',
+    engineApplyDetail:
+      'Surco kann es schließen und die Änderung jetzt anwenden oder sie aufbewahren und anwenden, sobald du es schließt.',
+    seratoApplyDetail:
+      'Schließe es und klicke auf „Ich habe es geschlossen, anwenden“, oder Surco bewahrt die Änderung auf und wendet sie an, sobald du es schließt.',
+    virtualdjApplyDetail:
+      'Schließe es und klicke auf „Ich habe es geschlossen, anwenden“, oder Surco bewahrt die Änderung auf und wendet sie an, sobald du es schließt.',
     rekordboxSyncBlocked:
       'Die rekordbox-Sammlung wurde nicht aktualisiert: rekordbox ist noch geöffnet. Schließe es und konvertiere erneut, damit es auf die neue Datei zeigt.',
     engineSyncBlocked:
@@ -611,6 +674,23 @@ const strings: Record<MenuLang, MenuStrings> = {
       'Surco ne ferme pas VirtualDJ à ta place. Ferme-le toi-même pour que les copies retirées passent à celles que tu gardes, et ne le rouvre pas avant que Surco ait fini.',
     virtualdjQuitConfirm: 'Je l’ai fermé',
     virtualdjQuitCancel: 'Annuler',
+    applyLater: 'Appliquer à la fermeture',
+    rekordboxApplyNow: 'Fermer rekordbox et appliquer',
+    traktorApplyNow: 'Fermer Traktor et appliquer',
+    engineApplyNow: 'Fermer Engine DJ et appliquer',
+    seratoApplyNow: 'Je l’ai fermé, appliquer',
+    virtualdjApplyNow: 'Je l’ai fermé, appliquer',
+    seratoQuitMessage: 'Serato est ouvert',
+    rekordboxApplyDetail:
+      'Surco peut le fermer et appliquer la modification maintenant, ou la garder et l’appliquer quand tu le fermeras.',
+    traktorApplyDetail:
+      'Surco peut le fermer et appliquer la modification maintenant, ou la garder et l’appliquer quand tu le fermeras.',
+    engineApplyDetail:
+      'Surco peut le fermer et appliquer la modification maintenant, ou la garder et l’appliquer quand tu le fermeras.',
+    seratoApplyDetail:
+      'Ferme-le et clique sur « Je l’ai fermé, appliquer », ou Surco garde la modification et l’applique quand tu le fermeras.',
+    virtualdjApplyDetail:
+      'Ferme-le et clique sur « Je l’ai fermé, appliquer », ou Surco garde la modification et l’applique quand tu le fermeras.',
     rekordboxSyncBlocked:
       "La collection rekordbox n'a pas été mise à jour : rekordbox est encore ouvert. Ferme-le et relance la conversion pour qu'il pointe vers le nouveau fichier.",
     engineSyncBlocked:
@@ -742,6 +822,23 @@ const strings: Record<MenuLang, MenuStrings> = {
       'O Surco não fecha o VirtualDJ por você. Feche-o você mesmo para que as cópias removidas passem para as que você manteve e não o abra de novo até o Surco terminar.',
     virtualdjQuitConfirm: 'Já fechei',
     virtualdjQuitCancel: 'Cancelar',
+    applyLater: 'Aplicar ao fechar',
+    rekordboxApplyNow: 'Fechar o rekordbox e aplicar',
+    traktorApplyNow: 'Fechar o Traktor e aplicar',
+    engineApplyNow: 'Fechar o Engine DJ e aplicar',
+    seratoApplyNow: 'Já fechei, aplicar',
+    virtualdjApplyNow: 'Já fechei, aplicar',
+    seratoQuitMessage: 'O Serato está aberto',
+    rekordboxApplyDetail:
+      'O Surco pode fechá-lo e aplicar a mudança agora, ou guardá-la e aplicá-la quando você o fechar.',
+    traktorApplyDetail:
+      'O Surco pode fechá-lo e aplicar a mudança agora, ou guardá-la e aplicá-la quando você o fechar.',
+    engineApplyDetail:
+      'O Surco pode fechá-lo e aplicar a mudança agora, ou guardá-la e aplicá-la quando você o fechar.',
+    seratoApplyDetail:
+      'Feche-o e clique em “Já fechei, aplicar”, ou o Surco guarda a mudança e a aplica quando você o fechar.',
+    virtualdjApplyDetail:
+      'Feche-o e clique em “Já fechei, aplicar”, ou o Surco guarda a mudança e a aplica quando você o fechar.',
     rekordboxSyncBlocked:
       'A coleção do rekordbox não foi atualizada: o rekordbox ainda está aberto. Feche-o e converta de novo para que aponte para o arquivo novo.',
     engineSyncBlocked:

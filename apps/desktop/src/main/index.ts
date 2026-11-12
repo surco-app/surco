@@ -119,7 +119,9 @@ import { registerDamageIpc } from './damageIpc'
 import { damageDeps } from './damageWiring'
 import { registerDjIpc } from './djIpc'
 import {
+  type ApplyAnswer,
   anyDjProgramRunning,
+  createAskToApply,
   createEnsureClosed,
   DJ_PROCESSES,
   reasonOfDetail,
@@ -847,6 +849,13 @@ const ensureClosed = createEnsureClosed({
   t: (key) => createMenuT(menuLocale())(key),
 })
 
+const askToApply = createAskToApply({
+  processes: DJ_PROCESSES,
+  ask: (win, opts) =>
+    (win ? dialog.showMessageBox(win, opts) : dialog.showMessageBox(opts)).then((r) => r.response),
+  t: (key) => createMenuT(menuLocale())(key),
+})
+
 // Set while a user-triggered update check is in flight so the updater's result
 // events surface a dialog or toast; the silent startup check leaves it false and
 // stays quiet.
@@ -1501,6 +1510,12 @@ function registerIpc(): void {
       })
       return canceled ? null : filePaths[0]
     }
+  ipcMain.handle('dj:ask-to-apply', async (e, programs: CueProgram[]) => {
+    const win = BrowserWindow.fromWebContents(e.sender)
+    const answers: Partial<Record<CueProgram, ApplyAnswer>> = {}
+    for (const program of programs) answers[program] = await askToApply(program, win)
+    return answers
+  })
   registerDjIpc({
     rekordbox: {
       read: rekordboxRead(rekordboxCollectionNow, rekordboxCollectionPath, { allowMedia }),

@@ -825,6 +825,7 @@ function wiredDj(): DjApi {
     exportCollection: (p) => notWiredDj('exportCollection', p),
     pickLibraryPath: (p) => notWiredDj('pickLibraryPath', p),
     running: (p) => notWiredDj('running', p),
+    askToApply: async (programs) => Object.fromEntries(programs.map((p) => [p, 'now' as const])),
     onSyncIssue: () => () => {},
   }
 }

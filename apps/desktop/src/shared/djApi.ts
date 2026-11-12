@@ -1,5 +1,5 @@
 import type { WebContents } from 'electron'
-import type { DjProgram } from './djProgram'
+import type { CueProgram, DjProgram } from './djProgram'
 import type {
   CollectionTrack,
   PlaylistEditMode,
@@ -11,6 +11,8 @@ import type {
   SourceNode,
   SourcePlaylistEntry,
 } from './types'
+
+export type ApplyAnswer = 'now' | 'later'
 
 type Awaitable<T> = T | Promise<T>
 
@@ -96,5 +98,6 @@ export interface DjApi {
   ): Promise<string | null>
   pickLibraryPath(p: DjProgram): Promise<string | null>
   running(p: DjProgram): Promise<boolean>
+  askToApply(programs: CueProgram[]): Promise<Partial<Record<CueProgram, ApplyAnswer>>>
   onSyncIssue(p: DjProgram, cb: (issue: RekordboxSyncIssue) => void): () => void
 }

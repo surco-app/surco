@@ -6,9 +6,10 @@ vi.mock('./virtualdjProcess', async (original) => ({
   waitForVirtualdjExit: vi.fn(async () => true),
 }))
 
-import type { WritableProgram } from '../shared/djProgram'
+import type { CueProgram, WritableProgram } from '../shared/djProgram'
 import {
   anyDjProgramRunning,
+  createAskToApply,
   createEnsureClosed,
   DJ_PROCESSES,
   type ProgramProcess,
@@ -16,6 +17,7 @@ import {
   QUIT_TEXT,
   reasonOfDetail,
 } from './djProcesses'
+import { createMenuT } from './i18n'
 import { isVirtualdjRunning, waitForVirtualdjExit } from './virtualdjProcess'
 
 function deferred<T>() {
@@ -326,5 +328,76 @@ describe('anyDjProgramRunning', () => {
         virtualdj: stopped,
       }),
     ).toBe(false)
+  })
+})
+
+function askToApplyWith(opts: {
+  running: boolean | 'throws'
+  ask: (win: unknown, opts: unknown) => Promise<number>
+  quit?: () => Promise<boolean>
+}) {
+  const process = {
+    isRunning: async () => {
+      if (opts.running === 'throws') throw new Error('probe failed')
+      return opts.running
+    },
+    quit: opts.quit ?? (async () => true),
+  }
+  const processes: Record<CueProgram, ProgramProcess> = {
+    rekordbox: process,
+    traktor: process,
+    engine: process,
+    serato: process,
+    virtualdj: process,
+  }
+  return createAskToApply({ processes, ask: opts.ask, t: createMenuT('es') })
+}
+
+describe('createAskToApply', () => {
+  it('answers now without asking when the program is closed, so a closed program never shows a prompt', async () => {
+    const ask = vi.fn()
+    const answer = await askToApplyWith({ running: false, ask })('traktor', null)
+    expect(answer).toBe('now')
+    expect(ask).not.toHaveBeenCalled()
+  })
+  it('puts Apply when it closes first and as both Enter and Escape, so a habitual Enter never closes Traktor mid-set', async () => {
+    const ask = vi.fn().mockResolvedValue(0)
+    expect(await askToApplyWith({ running: true, ask })('traktor', null)).toBe('later')
+    expect(ask.mock.calls[0][1]).toMatchObject({
+      buttons: ['Aplicar al cerrarlo', 'Cerrar Traktor y aplicar'],
+      defaultId: 0,
+      cancelId: 0,
+    })
+  })
+  it('closes the program and answers now when the DJ picks Close and apply', async () => {
+    const quit = vi.fn().mockResolvedValue(true)
+    expect(
+      await askToApplyWith({ running: true, ask: async () => 1, quit })('rekordbox', null),
+    ).toBe('now')
+    expect(quit).toHaveBeenCalledOnce()
+  })
+  it('answers later when the program would not close, so the change waits instead of being lost', async () => {
+    expect(
+      await askToApplyWith({ running: true, ask: async () => 1, quit: async () => false })(
+        'virtualdj',
+        null,
+      ),
+    ).toBe('later')
+  })
+  it('asks when the running check fails, as the quiet path counts it as open', async () => {
+    const ask = vi.fn().mockResolvedValue(0)
+    await askToApplyWith({ running: 'throws', ask })('engine', null)
+    expect(ask).toHaveBeenCalledOnce()
+  })
+  it('shares one prompt between two asks for the same program at once', async () => {
+    const ask = vi.fn().mockResolvedValue(0)
+    const asker = askToApplyWith({ running: true, ask })
+    await Promise.all([asker('traktor', null), asker('traktor', null)])
+    expect(ask).toHaveBeenCalledOnce()
+  })
+  it('offers I closed it, apply for Serato and VirtualDJ, which Surco cannot close itself', async () => {
+    const ask = vi.fn().mockResolvedValue(0)
+    await askToApplyWith({ running: true, ask })('serato', null)
+    expect(ask.mock.calls[0][1].buttons).toEqual(['Aplicar al cerrarlo', 'Lo he cerrado, aplicar'])
   })
 })
