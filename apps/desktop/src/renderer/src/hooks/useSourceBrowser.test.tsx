@@ -969,3 +969,57 @@ describe('useSourceBrowser palette jumps', () => {
     expect(window.api.dj.tree).toHaveBeenCalledTimes(2)
   })
 })
+
+// Opening a DJ library with nothing picked showed an empty column; the tracks added last
+// are what a DJ opens the program for, so they are on screen by default. A playlist the
+// user picked there before still wins when they come back.
+describe('useSourceBrowser default playlist', () => {
+  it('opens Recently added when a library is entered with nothing picked', async () => {
+    const { result } = setup({ dj: { traktor: { available: vi.fn().mockResolvedValue(true) } } })
+    act(() => result.current.selectSource('traktor'))
+    await waitFor(() => expect(result.current.playlist?.id).toBe(RECENTLY_ADDED_ID))
+    expect(result.current.playlist?.folders).toEqual([])
+  })
+
+  it('keeps the playlist picked there before', async () => {
+    const { result } = setup({ dj: { traktor: { available: vi.fn().mockResolvedValue(true) } } })
+    act(() => result.current.selectSource('traktor'))
+    await waitFor(() => expect(result.current.tree).toHaveLength(2))
+    act(() =>
+      result.current.selectPlaylist({ id: 'u1', name: 'Saturday', kind: 'playlist', count: 1 }, []),
+    )
+    act(() => result.current.selectSource(null))
+    act(() => result.current.selectSource('traktor'))
+    expect(result.current.playlist?.id).toBe('u1')
+  })
+
+  it('opens All tracks instead when Recently added is empty, and nothing when both are', async () => {
+    const open = (trackCount: number) =>
+      setup({
+        dj: {
+          traktor: {
+            available: vi.fn().mockResolvedValue(true),
+            recentCount: vi.fn().mockResolvedValue(0),
+            trackCount: vi.fn().mockResolvedValue(trackCount),
+          },
+        },
+      })
+    const full = open(12)
+    act(() => full.result.current.selectSource('traktor'))
+    await waitFor(() => expect(full.result.current.playlist?.id).toBe(ALL_TRACKS_ID))
+    cleanup()
+    const empty = open(0)
+    act(() => empty.result.current.selectSource('traktor'))
+    await waitFor(() =>
+      expect(empty.result.current.tree?.[1]).toMatchObject({ id: ALL_TRACKS_ID, count: 0 }),
+    )
+    expect(empty.result.current.playlist).toBeNull()
+  })
+
+  it('leaves Music with nothing picked, since it has no Recently added', async () => {
+    const { result } = setup({})
+    act(() => result.current.selectSource('appleMusic'))
+    await waitFor(() => expect(result.current.tree).toBeDefined())
+    expect(result.current.playlist).toBeNull()
+  })
+})
