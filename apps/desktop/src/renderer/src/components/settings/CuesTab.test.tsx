@@ -19,6 +19,7 @@ import type { CueJumpBars } from '../../../../shared/cueJump'
 import type { CueQuantize } from '../../../../shared/cueQuantize'
 import i18n from '../../i18n'
 import { EXAMPLE_DROP } from '../../lib/cueExample'
+import { createQueryClient } from '../../lib/queryClient'
 import type { SyncedDraft } from '../../lib/settingsDraft'
 import { djReads, installApi, type ProgramReads } from '../../test/api'
 import { CuesTab } from './CuesTab'
@@ -255,6 +256,28 @@ describe('CuesTab', () => {
     fireEvent.click(screen.getByTestId('settings-cue-flow-to-virtualdj'))
     expect(last?.cueFlowToVirtualdj).toBe(false)
     expect(last?.cueFlowToSerato).toBe(true)
+  })
+
+  it('says a destination is missing once its probe fails, since a failed probe is an answer and the neutral hint would wait forever', async () => {
+    installApi({
+      dj: djReads({
+        traktor: {
+          available: async () => {
+            throw new Error('library unreadable')
+          },
+        },
+      }),
+    })
+    render(
+      <QueryClientProvider client={createQueryClient()}>
+        <CuesTab
+          synced={{ cueFlows: KEPT, activeCueFlow: 'mine' } as unknown as SyncedDraft}
+          patch={() => {}}
+          rekordboxCollection=""
+        />
+      </QueryClientProvider>,
+    )
+    expect(await screen.findByTestId('settings-cue-flow-to-traktor-missing')).toBeInTheDocument()
   })
 
   it('probes the destinations again each time the tab opens, so a library saved in Settings shows as found', async () => {

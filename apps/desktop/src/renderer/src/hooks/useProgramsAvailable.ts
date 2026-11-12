@@ -13,9 +13,8 @@ export function useProgramsAvailable(
       refetchOnMount: options.refetchOnMount,
     })),
     combine: (results) =>
-      Object.fromEntries(DJ_PROGRAMS.map((p, i) => [p, results[i].data])) as Record<
-        DjProgram,
-        boolean | undefined
-      >,
+      Object.fromEntries(
+        DJ_PROGRAMS.map((p, i) => [p, results[i].isError ? false : results[i].data]),
+      ) as Record<DjProgram, boolean | undefined>,
   })
 }
