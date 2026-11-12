@@ -183,6 +183,7 @@ interface TrackLibrary {
   rereadTrackMeta: (id: string) => Promise<boolean>
   refreshChangedTrack: (id: string) => Promise<boolean>
   completeTrackMeta: (id: string) => Promise<void>
+  readCoversOnScreen: (ids: string[]) => void
   // Re-reads the file after an in-place export rewrote it, so the row stops describing
   // bytes that no longer exist. Only the fields the row renders — everything the user
   // staged in the editor is left alone.
@@ -578,7 +579,11 @@ export function useTrackLibrary({
   // The light read leaves the cover out because the library painted it already; a row the
   // library holds no art for needs the file's own, or it shows a placeholder until it is
   // clicked.
-  const wantsLightRead = (base: TrackItem): boolean => !!base.sourcePreview?.coverUrl
+  // A DJ program's row takes it too even with no art from its library: the full read costs
+  // three times the light one, and Serato and VirtualDJ hand Surco no art at all. Its file's
+  // art is read once the row comes on screen (readCoversOnScreen).
+  const wantsLightRead = (base: TrackItem): boolean =>
+    !!base.sourcePreview?.coverUrl || (base.programs?.length ?? 0) > 0
 
   async function loadTrackMeta(base: TrackItem): Promise<boolean> {
     const path = base.inputPath
@@ -768,6 +773,15 @@ export function useTrackLibrary({
     readSlot.current.prioritize([id])
     completing.current.set(id, completion)
     return completion
+  })
+
+  // The rows that came on screen with nothing to paint: a light read left their file's art
+  // unread, and their library holds none.
+  const readCoversOnScreen = useStableCallback((ids: string[]): void => {
+    const wanted = new Set(ids)
+    for (const t of tracksRef.current)
+      if (wanted.has(t.id) && t.metaPartial && !t.sourcePreview?.coverUrl && !t.embeddedCover)
+        void completeTrackMeta(t.id)
   })
 
   async function completeFromFullRead(id: string, path: string): Promise<void> {
@@ -1283,6 +1297,7 @@ export function useTrackLibrary({
     rereadTrackMeta,
     refreshChangedTrack,
     completeTrackMeta,
+    readCoversOnScreen,
     refreshTrackFromDisk,
     patchReviewedFields,
     removeTrack,

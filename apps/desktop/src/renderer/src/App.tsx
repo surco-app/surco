@@ -728,6 +728,7 @@ export default function App(): React.JSX.Element {
     rereadTrackMeta,
     refreshChangedTrack,
     completeTrackMeta,
+    readCoversOnScreen,
     refreshTrackFromDisk,
     patchReviewedFields,
     removeTracks,
@@ -788,6 +789,8 @@ export default function App(): React.JSX.Element {
       for (const t of cleared) revokeCoverUrl(t.coverUrl)
     },
     onMetaLoaded: (t) => {
+      // A row already on screen when its light read lands never comes into view again.
+      if (t.metaPartial && rowsOnScreen.current.has(t.id)) readCoversOnScreen([t.id])
       // With auto-match on, every imported track is probed whether or not its row is on
       // screen; already-matched ones are never re-probed.
       if (browser.source === null && settings?.autoMatch && autoMatchAvailable(settings))
@@ -2015,7 +2018,11 @@ export default function App(): React.JSX.Element {
     onTrackVisible(id, visible)
     onDuplicateRowVisible(id, visible)
     if (visible && cameIntoView.current.push(id) === 1)
-      queueMicrotask(() => prioritizeReads(cameIntoView.current.splice(0)))
+      queueMicrotask(() => {
+        const came = cameIntoView.current.splice(0)
+        prioritizeReads(came)
+        readCoversOnScreen(came)
+      })
     if (visible && browser.playlist?.id === ALL_TRACKS_ID && !seenInAllRef.current.has(id)) {
       seenInAllRef.current.add(id)
       seenSettle.current ??= setTimeout(() => {

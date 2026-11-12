@@ -43,6 +43,12 @@ function setup(
     unwatchFolders: vi.fn().mockResolvedValue(undefined),
     expandPaths,
     readMeta: vi.fn().mockResolvedValue({ tags: {}, duration: null, cover: null, foreignTags: [] }),
+    // The light read as the real one: the full read without the cover and the foreign tags,
+    // delegated at call time so a test that drives readMeta drives a library row's read too.
+    readMetaLight: vi.fn(async (path: string) => {
+      const api = (window as unknown as { api: { readMeta: (p: string) => Promise<object> } }).api
+      return { ...(await api.readMeta(path)), cover: null, foreignTags: [], partial: true }
+    }),
     readMetaCached: vi.fn().mockResolvedValue({}),
     recordStat: vi.fn(),
     loadAppleMusicPlaylistTracks: vi
@@ -904,7 +910,10 @@ describe('the light read of a rekordbox row', () => {
     expect(result.current.tracks[0].metaPartial).toBe(true)
   })
 
-  it('reads the file in full when the library holds no cover for it, so the row shows the file art without being clicked', async () => {
+  // The full read costs three times the light one, and a first read of a big Serato or
+  // VirtualDJ collection, which hand Surco no art at all, paid it for every row. A row with
+  // nothing to paint takes the light read and its file's art once it comes on screen.
+  it('reads light when the library holds no cover, and reads the file art once the row is on screen', async () => {
     const readMetaLight = vi.fn<Api['readMetaLight']>().mockResolvedValue(light)
     const readMeta = vi.fn<Api['readMeta']>().mockResolvedValue(full)
     const { result } = setup({ readMetaLight, readMeta })
@@ -913,11 +922,35 @@ describe('the light read of a rekordbox row', () => {
       await result.current.openSourcePlaylist([{ ...entry, preview: bare }], 'rekordbox')
     })
     await waitFor(() => expect(result.current.tracks[0]?.loadingMeta).toBeFalsy())
+    expect(readMeta).not.toHaveBeenCalled()
+    expect(result.current.tracks[0].metaPartial).toBe(true)
+
+    await act(async () => {
+      result.current.readCoversOnScreen([result.current.tracks[0].id])
+    })
+    await waitFor(() => expect(result.current.tracks[0].metaPartial).toBe(false))
+
     const row = result.current.tracks[0]
-    expect(readMetaLight).not.toHaveBeenCalled()
     expect(row.embeddedCover).toBe('surco://cover/a.jpg')
-    expect(row.metaPartial).toBe(false)
     expect(row.diskSignature).toBe(trackSignature(row))
+  })
+
+  it('leaves the read of a row on screen alone when its library already paints it', async () => {
+    const readMeta = vi.fn<Api['readMeta']>().mockResolvedValue(full)
+    const { result } = setup({
+      readMetaLight: vi.fn<Api['readMetaLight']>().mockResolvedValue(light),
+      readMeta,
+    })
+    await act(async () => {
+      await result.current.openSourcePlaylist([entry], 'rekordbox')
+    })
+    await waitFor(() => expect(result.current.tracks[0]?.loadingMeta).toBeFalsy())
+
+    await act(async () => {
+      result.current.readCoversOnScreen([result.current.tracks[0].id])
+    })
+
+    expect(readMeta).not.toHaveBeenCalled()
   })
 
   it('completes the cover and foreign tags without the row reading as edited', async () => {

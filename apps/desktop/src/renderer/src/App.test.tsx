@@ -370,6 +370,12 @@ function setApi(over: Record<string, unknown> = {}): void {
       ])
       return { tags, duration, cover }
     }),
+    // The light read as the real one: the full read without the cover and the foreign tags,
+    // delegated at call time so a test that drives readMeta drives a library row's read too.
+    readMetaLight: vi.fn(async (path: string) => {
+      const api = (window as unknown as { api: { readMeta: (p: string) => Promise<object> } }).api
+      return { ...(await api.readMeta(path)), cover: null, foreignTags: [], partial: true }
+    }),
     properties: vi.fn().mockResolvedValue(null),
     loudness: vi.fn().mockResolvedValue(null),
     bpm: vi.fn().mockResolvedValue(null),
@@ -4243,6 +4249,56 @@ describe('App source playlists', () => {
 
         await waitFor(() => expect(started).toHaveLength(10))
         expect(started.slice(6, 9)).toEqual(['/m/t7.wav', '/m/t8.wav', '/m/t9.wav'])
+      })
+
+      // A library row with no art of its own takes the light read; its file's cover is read
+      // only for the rows the DJ actually sees, not for every row of the collection.
+      describe('file art of the rows on screen', () => {
+        const lightRead = (gate?: Promise<void>) =>
+          vi.fn<Api['readMetaLight']>(async () => {
+            await gate
+            return {
+              tags: { ...emptyMetadata(), title: 'Song', artist: 'DJ' },
+              duration: null,
+              cover: null,
+              foreignTags: [],
+              partial: true,
+            }
+          })
+        const fullRead = () =>
+          vi.fn<Api['readMeta']>(async () => ({
+            tags: { ...emptyMetadata(), title: 'Song', artist: 'DJ' },
+            duration: null,
+            cover: { thumbUrl: 'surco://cover/a.jpg', width: 600, height: 600 },
+            foreignTags: [],
+          }))
+
+        it('reads the cover of the rows scrolled past and of no other', async () => {
+          const readMeta = fullRead()
+          setApi({ ...collection, readMetaLight: lightRead(), readMeta })
+          const rows = await openAll()
+          await new Promise((r) => setTimeout(r, 100))
+          expect(readMeta).not.toHaveBeenCalled()
+
+          scrollPast([rows[1]])
+
+          await waitFor(() => expect(readMeta).toHaveBeenCalledExactlyOnceWith('/m/x.wav'))
+        })
+
+        it('reads the cover of a row already on screen once its light read lands', async () => {
+          let release: () => void = () => {}
+          const gate = new Promise<void>((r) => {
+            release = r
+          })
+          const readMeta = fullRead()
+          setApi({ ...collection, readMetaLight: lightRead(gate), readMeta })
+          const rows = await openAll()
+
+          scrollPast([rows[2]])
+          release()
+
+          await waitFor(() => expect(readMeta).toHaveBeenCalledExactlyOnceWith('/m/y.wav'))
+        })
       })
 
       it('analyzes only the rows scrolled past, with auto-analyze on', async () => {
@@ -11302,9 +11358,7 @@ describe('App sidebar', () => {
     await waitFor(() => expect(screen.getByTestId('sidebar-peek')).toHaveAttribute('data-open'))
     expect(screen.getByTestId('sidebar-peek')).not.toHaveAttribute('inert')
     fireEvent.pointerLeave(screen.getByTestId('sidebar-peek'))
-    await waitFor(() =>
-      expect(screen.getByTestId('sidebar-peek')).not.toHaveAttribute('data-open'),
-    )
+    await waitFor(() => expect(screen.getByTestId('sidebar-peek')).not.toHaveAttribute('data-open'))
   })
 
   // The edge has to be found; the location over the list is in plain sight and opens the
