@@ -1,5 +1,5 @@
 import type React from 'react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { isRecoveryUrl, mediaRecoveryUrl, mediaUrl } from '../../../shared/media'
 import { stopAuditionsOf } from '../lib/auditionHolds'
 import { isWindows } from '../lib/platform'
@@ -191,18 +191,21 @@ export function usePlayer({ tracks, selected, selectedId, onListened }: Params):
   // Removing (or clearing) the track that is playing must stop the audio: the
   // file it streamed is gone from the list, so the player would otherwise keep
   // sounding it while the card shows a different, still-selected track.
+  const playing = useMemo(
+    () => (playingId ? tracks.find((t) => t.id === playingId) : undefined),
+    [tracks, playingId],
+  )
   useEffect(() => {
-    if (playingId && !tracks.some((t) => t.id === playingId)) closePlayer()
-  }, [tracks, playingId, closePlayer])
+    if (playingId && !playing) closePlayer()
+  }, [playing, playingId, closePlayer])
 
   // An in-place export rewrites (and can rename) the playing track's file under the
   // stream; restart from the new path instead of holding a file that no longer exists.
   useEffect(() => {
-    const playing = playingId ? tracks.find((t) => t.id === playingId) : undefined
     if (playing && playingPathRef.current && playing.inputPath !== playingPathRef.current) {
       startPlayback(playing)
     }
-  }, [tracks, playingId, startPlayback])
+  }, [playing, startPlayback])
 
   // Invariant guard and field probe. startPlayback keeps sound and card in step, but if any
   // path ever leaves a track streaming (playingId set, the element on a real src) with the
@@ -317,7 +320,7 @@ export function usePlayer({ tracks, selected, selectedId, onListened }: Params):
 
   // Falls back to the selection so the card still renders for the brief moment
   // between opening and the first track loading.
-  const playerTrack = tracks.find((t) => t.id === playingId) ?? selected
+  const playerTrack = playing ?? selected
 
   return {
     audioRef,

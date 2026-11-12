@@ -1421,14 +1421,20 @@ export const TrackList = memo(function TrackList({
       revealRowRef.current = null
     }
   }, [revealRowRef, virtual, tracks, virtualizer])
+  const mountedRange = windowed
+    ? `${windowed[0]?.index}-${windowed[windowed.length - 1]?.index}`
+    : null
   useLayoutEffect(() => {
     const options = listRef.current?.querySelectorAll('[role="option"]') ?? []
     options.forEach((option, i) => {
-      const at = windowed ? Number(option.closest('[data-index]')?.getAttribute('data-index')) : i
+      const at =
+        mountedRange !== null
+          ? Number(option.closest('[data-index]')?.getAttribute('data-index'))
+          : i
       option.setAttribute('aria-setsize', String(tracks.length))
       option.setAttribute('aria-posinset', String(at + 1))
     })
-  }, [tracks, windowed])
+  }, [tracks, mountedRange])
   const rowFor = (t: TrackItem, i: number): React.JSX.Element => (
     <Fragment key={t.id}>
       {separatorBefore?.get(t.id)?.map(separatorLine)}

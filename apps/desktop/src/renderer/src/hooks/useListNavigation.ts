@@ -4,6 +4,7 @@ import { scrollBehavior } from '../lib/motion'
 import { pageScrollTop } from '../lib/scroll'
 import type { Selection } from '../lib/selection'
 import type { TrackItem } from '../types'
+import { useStableCallback } from './useStableCallback'
 
 interface Params {
   // The on-screen order (after the quality filter and search) the keyboard steps through.
@@ -163,11 +164,11 @@ export function useListNavigation({
   }
 
   return {
-    moveSelection,
-    jumpSelection,
-    pageSelection,
-    revealSelection,
-    scrollToSelected,
-    onTrackEnded,
+    moveSelection: useStableCallback(moveSelection),
+    jumpSelection: useStableCallback(jumpSelection),
+    pageSelection: useStableCallback(pageSelection),
+    revealSelection: useStableCallback(revealSelection),
+    scrollToSelected: useStableCallback(scrollToSelected),
+    onTrackEnded: useStableCallback(onTrackEnded),
   }
 }

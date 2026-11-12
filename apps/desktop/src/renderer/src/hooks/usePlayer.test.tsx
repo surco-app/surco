@@ -94,6 +94,23 @@ describe('usePlayer', () => {
     expect(audio.play).toHaveBeenCalledTimes(1)
     expect(audio.getAttribute('src')).toBeNull()
   })
+
+  // App re-renders on every metadata flush; with a library of thousands of tracks and
+  // nothing playing there is no track to look up, and scanning the list for one made each
+  // edit pay for the whole library.
+  it('does not scan the list while nothing plays', () => {
+    const tracks = [track('a', '/m/a.wav'), track('b', '/m/b.wav')]
+    const { rerender } = renderHook(
+      ({ list }) => usePlayer({ tracks: list, selected: null, selectedId: null }),
+      { initialProps: { list: tracks } },
+    )
+    const next = [...tracks]
+    const find = vi.spyOn(next, 'find')
+    const some = vi.spyOn(next, 'some')
+    rerender({ list: next })
+    expect(find).not.toHaveBeenCalled()
+    expect(some).not.toHaveBeenCalled()
+  })
 })
 
 // Windows refuses to rename over a file another handle holds open, and the surco://
