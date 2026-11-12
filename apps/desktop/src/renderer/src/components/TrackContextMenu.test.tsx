@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 // The menu reads window.api.platform at render, so stub it before importing.
@@ -378,5 +378,34 @@ describe('TrackContextMenu view submenu', () => {
     fireEvent.click(screen.getByRole('menuitemcheckbox', { name: 'Show Waveforms' }))
     expect(onToggle).toHaveBeenCalledTimes(1)
     expect(onClose).toHaveBeenCalled()
+  })
+})
+
+// A submenu that waits for a click reads as broken on a Mac: it opens under the pointer,
+// and a pointer cutting across another item on its way in must not snap it shut.
+describe('TrackContextMenu submenus on hover', () => {
+  const view = [{ id: 'list-waves', label: 'Show Waveforms', checked: true, onToggle: vi.fn() }]
+
+  it('opens the view submenu as soon as the pointer rests on its item', () => {
+    renderMenu({ view })
+    fireEvent.pointerEnter(screen.getByTestId('track-menu-view'))
+    expect(screen.getByTestId('track-menu-view-items')).toBeInTheDocument()
+  })
+
+  it('closes it a beat after the pointer moves to another item, unless it reaches the submenu', () => {
+    vi.useFakeTimers()
+    try {
+      renderMenu({ view })
+      fireEvent.pointerEnter(screen.getByTestId('track-menu-view'))
+      fireEvent.pointerEnter(screen.getByTestId('track-menu-trash'))
+      fireEvent.pointerEnter(screen.getByTestId('track-menu-view-items'))
+      act(() => vi.advanceTimersByTime(400))
+      expect(screen.getByTestId('track-menu-view-items')).toBeInTheDocument()
+      fireEvent.pointerEnter(screen.getByTestId('track-menu-trash'))
+      act(() => vi.advanceTimersByTime(400))
+      expect(screen.queryByTestId('track-menu-view-items')).toBeNull()
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })
