@@ -51,14 +51,26 @@ describe('isVirtualdjRunning', () => {
     expect(await runningOn('darwin')).toBe(true)
   })
 
-  it('lists virtualdj.exe on Windows and reports it running when it is listed, whatever its case', async () => {
+  it('lists every virtualdj* image on Windows and reports it running when one is listed, whatever its case', async () => {
     execFile.mockReset()
     respond(() => ({ stdout: 'VirtualDJ.exe   4242 Console 1 300,000 K\r\n' }))
     expect(await runningOn('win32')).toBe(true)
     expect(execFile.mock.calls[0].slice(0, 2)).toEqual([
       'tasklist',
-      ['/FI', 'IMAGENAME eq virtualdj.exe', '/NH'],
+      ['/FI', 'IMAGENAME eq virtualdj*', '/NH'],
     ])
+  })
+
+  it('reads a VirtualDJ build with another image name, such as virtualdj8.exe, as running, so Surco never writes under it', async () => {
+    execFile.mockReset()
+    respond(() => ({ stdout: '\r\nvirtualdj8.exe   4242 Console 1 300,000 K\r\n' }))
+    expect(await runningOn('win32')).toBe(true)
+  })
+
+  it('reads only the image name column, so a line that merely mentions VirtualDJ does not count', async () => {
+    execFile.mockReset()
+    respond(() => ({ stdout: 'helper.exe   4242 Console 1 virtualdj.exe\r\n' }))
+    expect(await runningOn('win32')).toBe(false)
   })
 
   it('reports VirtualDJ closed when the Windows listing comes back empty', async () => {

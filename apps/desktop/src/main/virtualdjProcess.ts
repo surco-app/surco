@@ -6,8 +6,8 @@ const run = promisify(execFile)
 export async function isVirtualdjRunning(): Promise<boolean> {
   try {
     if (process.platform === 'win32') {
-      const { stdout } = await run('tasklist', ['/FI', 'IMAGENAME eq virtualdj.exe', '/NH'])
-      return stdout.toLowerCase().includes('virtualdj.exe')
+      const { stdout } = await run('tasklist', ['/FI', 'IMAGENAME eq virtualdj*', '/NH'])
+      return /^virtualdj[^\s]*\.exe(\s|$)/im.test(stdout)
     }
     await run('pgrep', ['-x', 'VirtualDJ'])
     return true

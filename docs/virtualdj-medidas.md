@@ -101,8 +101,9 @@ algo falla allí.
   estar en OneDrive) y, si ahí no hay `database.xml`, `%LOCALAPPDATA%\VirtualDJ`
   (`virtualdjHomeDir`, `main/virtualdjLibrary.ts`). Se decide al arrancar Surco; el ajuste de carpeta
   manda siempre.
-- **Proceso.** `tasklist /FI "IMAGENAME eq virtualdj.exe" /NH`, buscando `virtualdj.exe` en la salida
-  sin distinguir mayúsculas. Cualquier error del comando cuenta como abierto. Surco no lo cierra:
+- **Proceso.** `tasklist /FI "IMAGENAME eq virtualdj*" /NH`, y cuenta como abierto cualquier nombre de
+  imagen que empiece por `virtualdj` y acabe en `.exe` (`virtualdj.exe`, `virtualdj8.exe`…), sin
+  distinguir mayúsculas, como hace Traktor. El nombre exacto en Windows no está medido. Cualquier error del comando cuenta como abierto. Surco no lo cierra:
   espera a que el DJ lo cierre, como en Mac.
 - **Formato.** Los mismos finales de línea que en Mac (CRLF en `database.xml` y `.vdjfolder`, LF en
   `order`) y las mismas entidades. El escritor conserva lo que ya tenga cada fichero.
