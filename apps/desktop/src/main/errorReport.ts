@@ -4,23 +4,47 @@
 // file name out of any path they quote — the directory tree identifies the person,
 // never the bug.
 
-// Absolute paths, POSIX and Windows, reduced to their last segment. File names here
-// carry spaces, dashes and accents ("Sola Brothers - Open Eyes.mp3"), so the run stops
-// only at a path separator, and at the quote/paren that usually closes the path in a
-// log line.
-const FOLDER_POSIX = String.raw`(?:[^/\s()"']|\([^()/]*\)|(?<=\S)["']|[ \t](?!-\S))*`
-const FOLDER_WINDOWS = String.raw`(?:[^\\\s()"']|\([^()\\]*\)|(?<=\S)["']|[ \t](?!-\S))*`
-const POSIX_PATH = new RegExp(
-  String.raw`/(?:${FOLDER_POSIX}/)*([^/\s"')]+(?:[ \t][^/\s"')]+)*)`,
-  'g',
-)
-const WINDOWS_PATH = new RegExp(
-  String.raw`(?:[A-Za-z]:\\|\\\\)(?:${FOLDER_WINDOWS}\\)*([^\\\s"')]+(?:[ \t][^\\\s"')]+)*)`,
-  'g',
-)
+const ROOT_PREFIX = /[\s(["'=:,;]/
+const LETTER = /[A-Za-z]/
+const SEPARATOR = /[/\\]/
+
+function isRootAt(line: string, i: number): number {
+  const before = i === 0 ? '' : line[i - 1]
+  const atBoundary = i === 0 || ROOT_PREFIX.test(before)
+  const c = line[i]
+  if (c === '/' && atBoundary && i + 1 < line.length && !/\s/.test(line[i + 1])) return 1
+  if (c === '\\' && line[i + 1] === '\\' && atBoundary) return 2
+  if (
+    LETTER.test(c) &&
+    (i === 0 || !/[A-Za-z0-9]/.test(before)) &&
+    line[i + 1] === ':' &&
+    SEPARATOR.test(line[i + 2] ?? '')
+  )
+    return 3
+  return 0
+}
 
 export function stripPaths(line: string): string {
-  return line.replace(WINDOWS_PATH, '$1').replace(POSIX_PATH, '$1')
+  const roots: number[] = []
+  for (let i = 0; i < line.length; ) {
+    const width = isRootAt(line, i)
+    if (width) {
+      roots.push(i)
+      i += width
+    } else {
+      i++
+    }
+  }
+  let out = ''
+  let copied = 0
+  roots.forEach((root, index) => {
+    const end = index + 1 < roots.length ? roots[index + 1] : line.length
+    let lastSeparator = -1
+    for (let i = root; i < end; i++) if (SEPARATOR.test(line[i])) lastSeparator = i
+    out += line.slice(copied, root)
+    copied = lastSeparator + 1
+  })
+  return out + line.slice(copied)
 }
 
 // electron-log writes one line per entry, prefixed "[timestamp] [level]".

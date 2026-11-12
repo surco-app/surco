@@ -56,6 +56,31 @@ describe('stripPaths', () => {
     expect(stripPaths('read \\\\NAS\\Users\\Ana\\Music\\x.wav')).toBe('read x.wav')
   })
 
+  it('reduces a folder with a dash glued to the next word', () => {
+    expect(stripPaths('read /Users/ana/Sola -Open Eyes/x.wav')).toBe('read x.wav')
+    expect(stripPaths('read C:\\Users\\Ana\\Work -Contoso\\x.wav')).toBe('read x.wav')
+  })
+
+  it('reduces a folder with double quotes in its name', () => {
+    expect(stripPaths('read /Users/ana/Ana "DJ" Mix/x.wav')).toBe('read x.wav')
+  })
+
+  it('reduces a folder with nested or unbalanced parentheses', () => {
+    expect(stripPaths('read /Users/ana/Mix (Remix (Edit))/x.wav')).toBe('read x.wav')
+    expect(stripPaths('read /Users/ana/Música (2024/x.wav')).toBe('read x.wav')
+  })
+
+  it('reduces a folder with a non-breaking space in its name', () => {
+    expect(stripPaths('read /Users/ana/Música\u00a0Ana/x.wav')).toBe('read x.wav')
+  })
+
+  it('stays linear on a very long line', () => {
+    const line = `/${'a/ '.repeat(17000)}`
+    const started = performance.now()
+    stripPaths(line)
+    expect(performance.now() - started).toBeLessThan(200)
+  })
+
   it('keeps lines that carry no path untouched', () => {
     expect(stripPaths('uncaughtException Error: boom')).toBe('uncaughtException Error: boom')
   })
