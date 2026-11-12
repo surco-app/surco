@@ -8,7 +8,7 @@ const RATE_DIVISORS = [4, 0, 2, 1]
 const VBRI_AT = 36
 const DECODER_DELAY_SAMPLES = 529
 const LIBMP3LAME_DELAY_SAMPLES = 576 + DECODER_DELAY_SAMPLES
-const GAPLESS_SIGNATURES = ['LAME', 'Lavf', 'Lavc']
+export const GAPLESS_SIGNATURES = ['LAME', 'Lavf', 'Lavc']
 
 export interface Mp3Timing {
   sampleRate: number
