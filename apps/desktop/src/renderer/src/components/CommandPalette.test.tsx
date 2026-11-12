@@ -310,3 +310,41 @@ describe('CommandPalette', () => {
     expect(screen.queryByText('Daft Punk — Da Funk')).not.toBeInTheDocument()
   })
 })
+
+// ⌘K is where the hand goes to jump somewhere, and a playlist is the place a DJ goes most:
+// typing its name lists it under its own header, and picking it opens it without counting
+// as a habit, like a track jump.
+describe('CommandPalette playlists', () => {
+  const trees = [
+    {
+      source: 'rekordbox' as const,
+      name: 'rekordbox',
+      tree: [{ id: 'p1', name: 'Carcer edits', kind: 'playlist' as const, count: 3 }],
+    },
+  ]
+
+  it('lists matching playlists under their header and opens the one picked', () => {
+    const onGoToPlaylist = vi.fn()
+    const onRunCommand = vi.fn()
+    const onClose = vi.fn()
+    render(
+      <CommandPalette
+        commands={[]}
+        playlists={trees}
+        onGoToPlaylist={onGoToPlaylist}
+        onRunCommand={onRunCommand}
+        onClose={onClose}
+      />,
+    )
+    fireEvent.change(screen.getByTestId('palette-input'), { target: { value: 'carcer' } })
+    expect(screen.getByRole('group', { name: i18n.t('palette.playlists') })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('option', { name: 'rekordbox › Carcer edits' }))
+    expect(onGoToPlaylist).toHaveBeenCalledWith(
+      'rekordbox',
+      expect.objectContaining({ id: 'p1' }),
+      [],
+    )
+    expect(onRunCommand).not.toHaveBeenCalled()
+    expect(onClose).toHaveBeenCalled()
+  })
+})

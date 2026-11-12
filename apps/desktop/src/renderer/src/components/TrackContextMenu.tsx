@@ -50,6 +50,7 @@ interface Props {
 // on the side of the menu that has room. Measured from this resting place once it opens.
 const SUBMENU_REST = { top: 0, side: 'right' as 'right' | 'left' }
 const EDGE = 8
+const SUBMENU_CLOSE_DELAY_MS = 250
 
 function MenuItem({
   label,
@@ -58,6 +59,7 @@ function MenuItem({
   disabled,
   hint,
   onClick,
+  onHover,
 }: {
   label: string
   testid: string
@@ -67,6 +69,7 @@ function MenuItem({
   // broken.
   hint?: string
   onClick: () => void
+  onHover?: () => void
 }): React.JSX.Element {
   return (
     <button
@@ -77,6 +80,7 @@ function MenuItem({
       data-testid={testid}
       disabled={disabled}
       onClick={onClick}
+      onPointerEnter={onHover}
       className={`block w-full rounded px-3 py-1.5 text-left text-sm hover:bg-[var(--color-hover)] disabled:opacity-40 disabled:hover:bg-transparent ${
         danger ? 'text-danger' : 'text-fg'
       }`}
@@ -119,6 +123,18 @@ export function TrackContextMenu({
   const [pos, setPos] = useState({ x, y })
   const isWin = isWindows()
   const [openSub, setOpenSub] = useState<'playlists' | 'view' | null>(null)
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  useEffect(() => () => clearTimeout(closeTimer.current), [])
+  const keepSub = (): void => clearTimeout(closeTimer.current)
+  const hoverSub = (kind: 'playlists' | 'view'): void => {
+    keepSub()
+    if (openSub !== kind) setSub(SUBMENU_REST)
+    setOpenSub(kind)
+  }
+  const leaveSub = (): void => {
+    keepSub()
+    closeTimer.current = setTimeout(() => setOpenSub(null), SUBMENU_CLOSE_DELAY_MS)
+  }
   const subRef = useRef<HTMLDivElement>(null)
   const [sub, setSub] = useState(SUBMENU_REST)
 
@@ -227,34 +243,40 @@ export function TrackContextMenu({
         className="absolute min-w-[210px] rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]"
       >
         <MenuItem
+          onHover={leaveSub}
           testid="track-menu-search"
           label={tr('trackList.context.search')}
           onClick={() => run(() => onSearch(track.id))}
         />
         <MenuItem
+          onHover={leaveSub}
           testid="track-menu-search-web"
           label={tr('trackList.context.searchWeb')}
           onClick={() => run(() => onSearchWeb(track))}
         />
         <MenuItem
+          onHover={leaveSub}
           testid="track-menu-copy-meta"
           label={tr('trackList.context.copyMeta')}
           onClick={() => run(() => onCopyMeta(track))}
         />
         {canPasteMeta && (
           <MenuItem
+            onHover={leaveSub}
             testid="track-menu-paste-meta"
             label={tr('trackList.context.pasteMeta')}
             onClick={() => run(() => onPasteMeta(track))}
           />
         )}
         <MenuItem
+          onHover={leaveSub}
           testid="track-menu-startover"
           label={tr('trackList.context.startOver')}
           onClick={() => run(() => onStartOver(track))}
         />
         {onStartSession && (
           <MenuItem
+            onHover={leaveSub}
             testid="track-menu-start-session"
             label={tr('trackList.context.startSession')}
             onClick={() => run(() => onStartSession(track))}
@@ -267,6 +289,7 @@ export function TrackContextMenu({
               <MenuItem
                 testid="track-menu-add-to"
                 label={`${tr('sources.menu.addTo')} ›`}
+                onHover={() => hoverSub('playlists')}
                 onClick={() => {
                   setSub(SUBMENU_REST)
                   setOpenSub((o) => (o === 'playlists' ? null : 'playlists'))
@@ -276,6 +299,7 @@ export function TrackContextMenu({
                 <div
                   ref={subRef}
                   data-testid="track-menu-playlists"
+                  onPointerEnter={keepSub}
                   data-side={sub.side}
                   style={{ top: sub.top, maxHeight: window.innerHeight - 2 * EDGE }}
                   className={`absolute min-w-[220px] overflow-y-auto rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)] ${
@@ -295,6 +319,7 @@ export function TrackContextMenu({
             </div>
             {playlist.openName !== null && (
               <MenuItem
+                onHover={leaveSub}
                 testid="track-menu-insert-separator"
                 label={tr('sources.menu.insertSeparator')}
                 disabled={!playlist.canInsertSeparator}
@@ -306,6 +331,7 @@ export function TrackContextMenu({
             )}
             {playlist.openName !== null && playlist.onRemoveSeparatorAbove && (
               <MenuItem
+                onHover={leaveSub}
                 testid="track-menu-remove-separator"
                 label={tr('sources.menu.removeSeparatorAbove')}
                 onClick={() => run(() => playlist.onRemoveSeparatorAbove?.())}
@@ -315,21 +341,25 @@ export function TrackContextMenu({
         )}
         <hr className="my-1 h-px border-0 bg-[var(--color-line)]" />
         <MenuItem
+          onHover={leaveSub}
           testid="track-menu-info"
           label={tr('trackList.context.info')}
           onClick={() => run(() => onInfo(track))}
         />
         <MenuItem
+          onHover={leaveSub}
           testid="track-menu-reveal"
           label={tr(isWin ? 'trackList.context.revealWin' : 'trackList.context.reveal')}
           onClick={() => run(() => window.api.reveal(track.inputPath))}
         />
         <MenuItem
+          onHover={leaveSub}
           testid="track-menu-open"
           label={tr('trackList.context.open')}
           onClick={() => run(() => window.api.openFile(track.inputPath))}
         />
         <MenuItem
+          onHover={leaveSub}
           testid="track-menu-copy"
           label={tr('trackList.context.copyPath')}
           onClick={() => run(() => onCopyPath(track))}
@@ -341,6 +371,7 @@ export function TrackContextMenu({
               <MenuItem
                 testid="track-menu-view"
                 label={`${tr('view.submenu')} ›`}
+                onHover={() => hoverSub('view')}
                 onClick={() => {
                   setSub(SUBMENU_REST)
                   setOpenSub((o) => (o === 'view' ? null : 'view'))
@@ -350,6 +381,7 @@ export function TrackContextMenu({
                 <div
                   ref={subRef}
                   data-testid="track-menu-view-items"
+                  onPointerEnter={keepSub}
                   data-side={sub.side}
                   style={{ top: sub.top }}
                   className={`absolute min-w-[220px] rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)] ${
@@ -383,6 +415,7 @@ export function TrackContextMenu({
         {hasBackup && onOpenBackup && (
           <>
             <MenuItem
+              onHover={leaveSub}
               testid="track-menu-backup"
               label={tr('trackList.context.backup')}
               onClick={() => run(() => onOpenBackup(track))}
@@ -392,6 +425,7 @@ export function TrackContextMenu({
         )}
         {!(playlist && playlist.openName !== null) && (
           <MenuItem
+            onHover={leaveSub}
             testid="track-menu-remove"
             label={tr('trackList.context.remove')}
             onClick={() => run(() => onRemove(track.id))}
@@ -399,6 +433,7 @@ export function TrackContextMenu({
         )}
         {playlist && playlist.openName !== null && (
           <MenuItem
+            onHover={leaveSub}
             testid="track-menu-remove-from"
             danger
             label={tr('sources.menu.removeFrom', { name: playlist.openName })}
@@ -406,6 +441,7 @@ export function TrackContextMenu({
           />
         )}
         <MenuItem
+          onHover={leaveSub}
           testid="track-menu-trash"
           danger
           label={tr(isWin ? 'trackList.context.trashWin' : 'trackList.context.trash')}

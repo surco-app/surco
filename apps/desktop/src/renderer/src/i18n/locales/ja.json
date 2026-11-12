@@ -2176,8 +2176,9 @@
   "palette": {
     "resultCount_one": "{{count}} 件の結果",
     "resultCount_other": "{{count}} 件の結果",
-    "placeholder": "トラックを検索またはコマンドを実行…",
+    "placeholder": "トラックやプレイリストを検索、またはコマンドを実行…",
     "tracks": "トラック",
+    "playlists": "プレイリスト",
     "empty": "結果がありません",
     "groups": {
       "tags": "メタデータ",

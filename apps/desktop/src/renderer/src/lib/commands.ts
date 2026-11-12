@@ -6,6 +6,7 @@ import type {
   NormalizeConfig,
   PlaylistSource,
   Settings,
+  SourceNode,
 } from '../../../shared/types'
 import i18n from '../i18n'
 import type { TrackItem } from '../types'
@@ -19,7 +20,15 @@ import { suspectTracks } from './triage'
 // The palette's section for a command, Raycast-style: a fixed set of buckets so 47
 // commands read as six short lists instead of one wall. 'tracks' is reserved for the
 // go-to-track jumps filterTrackCommands builds.
-type CommandGroup = 'tags' | 'convert' | 'library' | 'playback' | 'navigate' | 'app' | 'tracks'
+type CommandGroup =
+  | 'tags'
+  | 'convert'
+  | 'library'
+  | 'playback'
+  | 'navigate'
+  | 'app'
+  | 'playlists'
+  | 'tracks'
 
 // The order the palette shows the sections in: everyday tag work first, app chrome last.
 export const COMMAND_GROUP_ORDER: CommandGroup[] = [
@@ -29,6 +38,7 @@ export const COMMAND_GROUP_ORDER: CommandGroup[] = [
   'playback',
   'navigate',
   'app',
+  'playlists',
   'tracks',
 ]
 
@@ -110,6 +120,55 @@ export function filterTrackCommands(
     })
     if (out.length >= TRACK_RESULT_LIMIT) break
   }
+  return out
+}
+
+export interface PaletteTree {
+  source: PlaylistSource
+  name: string
+  tree: SourceNode[]
+}
+
+export function filterPlaylistCommands(
+  trees: PaletteTree[],
+  query: string,
+  open: (source: PlaylistSource, node: SourceNode, folders: string[]) => void,
+): Command[] {
+  const q = fold(query.trim())
+  if (!q) return []
+  const byName: Command[][] = []
+  const byFolder: Command[][] = []
+  for (const source of trees) {
+    const named: Command[] = []
+    const filed: Command[] = []
+    const walk = (nodes: SourceNode[], folders: string[]): void => {
+      for (const node of nodes) {
+        if (node.kind === 'folder') {
+          walk(node.children ?? [], [...folders, node.name])
+          continue
+        }
+        const ownName = fold(node.name).includes(q)
+        if (!ownName && !fold(folders.join(' ')).includes(q)) continue
+        ;(ownName ? named : filed).push({
+          id: `playlist:${source.source}:${node.id}`,
+          title: [source.name, ...folders, node.name].join(' › '),
+          enabled: true,
+          group: 'playlists',
+          run: () => open(source.source, node, folders),
+        })
+      }
+    }
+    walk(source.tree, [])
+    byName.push(named)
+    byFolder.push(filed)
+  }
+  return [...interleave(byName), ...interleave(byFolder)].slice(0, TRACK_RESULT_LIMIT)
+}
+
+function interleave<T>(lists: T[][]): T[] {
+  const out: T[] = []
+  for (let i = 0; lists.some((l) => i < l.length); i++)
+    for (const l of lists) if (i < l.length) out.push(l[i])
   return out
 }
 

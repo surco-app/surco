@@ -6,12 +6,14 @@ import { formatExtension, resolveJobFormat } from '../../../shared/format'
 import type {
   FormatSetting,
   PlaylistLibrary,
+  PlaylistSource,
   Settings,
+  SourceNode,
   ThemePref,
   TrackMetadata,
 } from '../../../shared/types'
 import type { ActiveModal } from '../hooks/useOverlays'
-import type { Command } from '../lib/commands'
+import type { Command, PaletteTree } from '../lib/commands'
 import { lazyChunk } from '../lib/lazyChunk'
 import { withCachedQualityTag } from '../lib/qualityTag'
 import type { TrackItem } from '../types'
@@ -85,6 +87,8 @@ interface Props {
   deriveTracksUndoable: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
   updateTrack: (id: string, patch: Partial<TrackItem>) => void
   revealSelection: (id: string) => void
+  paletteTrees: PaletteTree[]
+  goToPlaylist: (source: PlaylistSource, node: SourceNode, folders: string[]) => void
   playlistLibraries?: PlaylistLibrary[]
   cueTrack?: { contentId: string; label: string }
 }
@@ -110,6 +114,8 @@ export function Overlays({
   deriveTracksUndoable,
   updateTrack,
   revealSelection,
+  paletteTrees,
+  goToPlaylist,
   playlistLibraries,
   cueTrack,
 }: Props): React.JSX.Element {
@@ -251,6 +257,8 @@ export function Overlays({
           // closes itself (runAt → onClose) like any other command.
           tracks={visibleTracks}
           onGoToTrack={revealSelection}
+          playlists={paletteTrees}
+          onGoToPlaylist={goToPlaylist}
           usage={settings?.commandUsage ?? {}}
           // Learn from each run so the next filtered list floats the user's habits up.
           onRunCommand={recordCommandRun}

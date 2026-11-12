@@ -2176,8 +2176,9 @@
   "palette": {
     "resultCount_one": "{{count}} Ergebnis",
     "resultCount_other": "{{count}} Ergebnisse",
-    "placeholder": "Tracks suchen oder einen Befehl ausführen…",
+    "placeholder": "Tracks und Playlists suchen oder einen Befehl ausführen…",
     "tracks": "Tracks",
+    "playlists": "Playlists",
     "empty": "Keine Ergebnisse",
     "groups": {
       "tags": "Metadaten",

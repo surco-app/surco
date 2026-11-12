@@ -2176,8 +2176,9 @@
   "palette": {
     "resultCount_one": "{{count}} résultat",
     "resultCount_other": "{{count}} résultats",
-    "placeholder": "Cherche des morceaux ou lance une commande…",
+    "placeholder": "Cherche des morceaux, des playlists ou lance une commande…",
     "tracks": "Morceaux",
+    "playlists": "Playlists",
     "empty": "Aucun résultat",
     "groups": {
       "tags": "Métadonnées",
