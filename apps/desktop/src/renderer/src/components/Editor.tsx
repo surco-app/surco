@@ -1958,7 +1958,7 @@ export const Editor = memo(function Editor({
                 // A maximized section leaves the column (it renders to a portal),
                 // so it neither shows a heading nor shifts the column's phase — the
                 // heading belongs to whatever visible section takes over the flow.
-                if (element && id === maximized) {
+                if (element && (id === maximized || id === maximizeMotion.leaving)) {
                   lifted = element
                   return []
                 }
@@ -1994,21 +1994,19 @@ export const Editor = memo(function Editor({
                   </div>,
                 ]
               })
-            if (!lifted && !maximizeMotion.closing) return column
+            if (!lifted) return column
             return [
               ...column,
               createPortal(
                 <div
                   ref={maximizeMotion.overlayRef}
                   data-testid="section-maximized-overlay"
-                  className={`fixed inset-0 z-[46] origin-top-left overflow-y-auto bg-[var(--color-panel)] px-8 pb-8 pt-2 ${
-                    lifted ? '' : 'pointer-events-none'
-                  }`}
+                  className="fixed inset-0 z-[46] origin-top-left overflow-y-auto bg-[var(--color-panel)] px-8 pb-8 pt-2"
                 >
                   {lifted}
                 </div>,
                 document.body,
-                'section-maximized-overlay',
+                maximized ?? maximizeMotion.leaving,
               ),
             ]
           })()}

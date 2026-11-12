@@ -99,7 +99,7 @@ export function useMaximizedSection(): {
 } {
   const value = useSyncExternalStore(subscribe, () => maximized)
   const setMaximized = useCallback((section: EditorSection | null): void => {
-    if (maximized === null && section !== null) origin = sectionRect(section)
+    if (maximized === null && section !== null) origin = sectionRect(section) ?? origin
     maximized = section
     if (section !== null) store = { ...store, [section]: true }
     emit()

@@ -5377,7 +5377,7 @@ describe('Editor maximized section motion', () => {
     ) {
       return this.parentElement?.dataset.testid === 'editor-scroll' &&
         this.querySelector('[data-section-header="trim"]')
-        ? new DOMRect(512, 384, 256, 192)
+        ? new DOMRect(512, 384, 256, 96)
         : new DOMRect(0, 0, 0, 0)
     })
   })
@@ -5392,52 +5392,85 @@ describe('Editor maximized section motion', () => {
     return screen.getByTestId('section-maximized-overlay')
   }
 
+  const SECTION_FRAME = {
+    transform: 'translate(512px, 384px) scale(0.25)',
+    clipPath: 'inset(0px 0px 384px 0px)',
+    opacity: 0,
+  }
+  const FULL_FRAME = { transform: 'none', clipPath: 'inset(0px 0px 0px 0px)', opacity: 1 }
+  const inColumn = (): HTMLElement[] =>
+    within(screen.getByTestId('editor-scroll')).queryAllByTestId('editor-trim')
+
   it('grows the overlay out of the section the DJ maximized, so the full view keeps its place', () => {
     renderEditor({ id: 'a' })
     const overlay = maximizeTrim()
     expect(animations).toHaveLength(1)
     const [{ el, frames, options }] = animations
     expect(el).toBe(overlay)
-    expect(frames[0]).toEqual({ transform: 'translate(512px, 384px) scale(0.25, 0.25)', opacity: 0 })
-    expect(frames[1]).toEqual({ transform: 'none', opacity: 1 })
+    expect(frames).toEqual([SECTION_FRAME, FULL_FRAME])
     expect(options).toMatchObject({ duration: 240, easing: 'cubic-bezier(0.2, 0, 0, 1)' })
   })
 
-  it('shrinks back into the section along the same path and only then leaves', () => {
+  it('scales the text evenly and crops the rest, so nothing reads squashed on the way', () => {
+    renderEditor({ id: 'a' })
+    maximizeTrim()
+    expect(animations[0].frames[0].transform).toMatch(/scale\([\d.]+\)$/)
+  })
+
+  it('carries the section back into its place and only then returns it to the column', () => {
     renderEditor({ id: 'a' })
     const overlay = maximizeTrim()
     act(() => animations[0].anim.onfinish?.())
     fireEvent.keyDown(window, { key: 'Escape' })
     expect(screen.getByTestId('section-maximized-overlay')).toBe(overlay)
-    expect(within(overlay).queryByTestId('editor-trim')).toBeNull()
-    expect(overlay).toHaveClass('pointer-events-none')
-    expect(screen.getByTestId('editor-trim')).toBeInTheDocument()
+    expect(within(overlay).getByTestId('editor-trim')).toBeInTheDocument()
+    expect(inColumn()).toHaveLength(0)
+    expect(screen.getAllByTestId('editor-trim')).toHaveLength(1)
     const exit = animations[1]
-    expect(exit.frames).toEqual([
-      { transform: 'none', opacity: 1 },
-      { transform: 'translate(512px, 384px) scale(0.25, 0.25)', opacity: 0 },
-    ])
+    expect(exit.frames).toEqual([FULL_FRAME, SECTION_FRAME])
     expect(exit.options).toMatchObject({ duration: 240 })
     act(() => exit.anim.onfinish?.())
     expect(screen.queryByTestId('section-maximized-overlay')).toBeNull()
+    expect(inColumn()).toHaveLength(1)
+    expect(screen.getAllByTestId('editor-trim')).toHaveLength(1)
   })
 
-  it('turns back from wherever it is when the DJ restores mid-way', () => {
+  it('turns back from wherever it is when the DJ changes their mind mid-way', () => {
     renderEditor({ id: 'a' })
     const overlay = maximizeTrim()
     overlay.style.transform = 'matrix(0.6, 0, 0, 0.6, 200, 150)'
     overlay.style.opacity = '0.5'
     fireEvent.keyDown(window, { key: 'Escape' })
     expect(animations[0].anim.cancel).toHaveBeenCalled()
-    expect(animations[1].frames[0]).toEqual({
+    expect(animations[1].frames[0]).toMatchObject({
       transform: 'matrix(0.6, 0, 0, 0.6, 200, 150)',
       opacity: '0.5',
     })
     expect(animations[1].options).toMatchObject({ duration: 100 })
-    fireEvent.click(within(screen.getByTestId('editor-trim')).getByTestId('section-maximize'))
+    const section = within(overlay).getByTestId('editor-trim')
+    fireEvent.click(within(section).getByTestId('section-maximize'))
     expect(animations[1].anim.cancel).toHaveBeenCalled()
-    expect(animations[2].frames[1]).toEqual({ transform: 'none', opacity: 1 })
-    expect(within(overlay).getByTestId('editor-trim')).toBeInTheDocument()
+    expect(animations[2].frames[1]).toEqual(FULL_FRAME)
+    expect(screen.getByTestId('section-maximized-overlay')).toBe(overlay)
+    expect(within(overlay).getByTestId('editor-trim')).toBe(section)
+    expect(inColumn()).toHaveLength(0)
+  })
+
+  it('opens another section at its top rather than at the last one\'s scroll', () => {
+    renderEditor({ id: 'a' })
+    const overlay = maximizeTrim()
+    act(() => animations[0].anim.onfinish?.())
+    fireEvent.click(within(screen.getByTestId('editor-declick')).getByTestId('section-maximize'))
+    const next = screen.getByTestId('section-maximized-overlay')
+    expect(within(next).getByTestId('editor-declick')).toBeInTheDocument()
+    expect(next).not.toBe(overlay)
+  })
+
+  it('stops a running animation when the editor goes away', () => {
+    renderEditor({ id: 'a' })
+    maximizeTrim()
+    cleanup()
+    expect(animations[0].anim.cancel).toHaveBeenCalled()
   })
 
   it('cuts straight in and out when the system asks for less motion', () => {
