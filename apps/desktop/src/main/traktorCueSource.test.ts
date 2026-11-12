@@ -130,6 +130,7 @@ describe('traktorCueSource', () => {
 describe('traktorCueSource on a LAME MP3', () => {
   const LEAD_MS = ((1152 + 576 + 529) / 44100) * 1000
   const SURCO_MS = 10000
+  const GRID_MS = 151.18
 
   const lameMp3 = async (): Promise<string> => {
     const file = join(dir, 'lame.mp3')
@@ -162,7 +163,7 @@ describe('traktorCueSource on a LAME MP3', () => {
     await writeFile(
       nmlPath,
       collection(
-        `<ENTRY TITLE="lame"><LOCATION DIR="${traktorDir(dir)}" FILE="lame.mp3" VOLUME="Macintosh HD" VOLUMEID="v"></LOCATION>\n<INFO PLAYTIME="1" PLAYTIME_FLOAT="1.000000"></INFO>\n</ENTRY>`,
+        `<ENTRY TITLE="lame"><LOCATION DIR="${traktorDir(dir)}" FILE="lame.mp3" VOLUME="Macintosh HD" VOLUMEID="v"></LOCATION>\n<INFO PLAYTIME="1" PLAYTIME_FLOAT="1.000000"></INFO>\n<TEMPO BPM="120.000000" BPM_QUALITY="100.000000"></TEMPO>\n<CUE_V2 NAME="AutoGrid" DISPL_ORDER="0" TYPE="4" START="${GRID_MS}" LEN="0.000000" REPEATS="-1" HOTCUE="0"><GRID BPM="120.000000"></GRID></CUE_V2>\n</ENTRY>`,
       ),
     )
     const cues = traktorCueSource(
@@ -191,6 +192,13 @@ describe('traktorCueSource on a LAME MP3', () => {
     )
     const words = (await cues.waveDetail(id)) as Uint16Array
     expect(words.indexOf(7)).toBe(Math.round((LEAD_MS * 150) / 1000))
+  })
+
+  it('runs Auto mark on Surco’s words moved by the same 51.18 ms, once, against Traktor’s own grid', async () => {
+    const { cues, id } = await lameSource()
+    const input = await cues.dropInput(id)
+    expect(input?.words.indexOf(7)).toBe(Math.round((LEAD_MS * 150) / 1000))
+    expect(input?.grid[0]?.ms).toBeCloseTo(GRID_MS, 6)
   })
 
   it('stores a cue placed at 10000 ms on Surco’s wave at 10051.18 ms in Traktor, which the conversion to WAV carries back to 10000', async () => {
