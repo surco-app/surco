@@ -1511,9 +1511,7 @@ describe('SettingsModal search tab layout', () => {
   it('puts no line under a title that only repeats it', () => {
     openSearch(['discogs'])
     expect(screen.queryByText('Catalogs the editor searches.')).toBeNull()
-    expect(
-      screen.queryByText('Limit Discogs and MusicBrainz results to these formats.'),
-    ).toBeNull()
+    expect(screen.queryByText('Limit Discogs and MusicBrainz results to these formats.')).toBeNull()
     expect(screen.queryByText(/How many search results to show/)).toBeNull()
     expect(screen.getByText(i18n.t('settings.maxResultsHint'))).toBeInTheDocument()
   })
@@ -1666,6 +1664,27 @@ describe('settings search', () => {
     )
     expect(screen.getByTestId('settings-program-serato')).toBeVisible()
     expect(screen.getByTestId('settings-program-traktor')).not.toBeVisible()
+  })
+
+  it('leaves VirtualDJ out of the results on Windows, where Surco does not offer it, so no result opens an empty tab', () => {
+    const api = window.api as unknown as { platform: string }
+    api.platform = 'win32'
+    try {
+      open()
+      search('virtualdj')
+      expect(screen.queryByTestId('settings-search-result-virtualdjLibrary')).toBeNull()
+      expect(screen.queryByTestId('settings-search-result-virtualdjLibraryDir')).toBeNull()
+      search('traktor')
+      expect(screen.getByTestId('settings-search-result-traktorSync')).toBeVisible()
+    } finally {
+      api.platform = 'darwin'
+    }
+  })
+
+  it('finds VirtualDJ on a Mac, where Surco offers it', () => {
+    open()
+    search('virtualdj')
+    expect(screen.getByTestId('settings-search-result-virtualdjLibrary')).toBeVisible()
   })
 
   it('moves through results with the arrow keys without leaving the field', () => {

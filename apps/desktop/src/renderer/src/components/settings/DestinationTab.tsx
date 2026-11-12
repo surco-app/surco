@@ -9,6 +9,7 @@ import { DJ_REACH_SETTINGS, type DjReach, fromDjReach, toDjReach } from '../../l
 import { isMacOS, offeredHere } from '../../lib/platform'
 import { LIBRARY_NAME } from '../../lib/reviewLibraries'
 import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
+import { PROGRAM_OF_ANCHOR } from '../../lib/settingsSearchIndex'
 import type { PatchSynced } from '../../lib/settingsTabs'
 import { DestinationPicker } from '../DestinationPicker'
 import { EngineLibraryFields } from '../EngineLibraryFields'
@@ -696,19 +697,6 @@ function VirtualdjReach({
 const DJ_REACHES: readonly DjReach[] = ['off', 'update', 'add']
 
 const PROGRAM_TABS = programsInOrder(['traktor', 'rekordbox', 'engine', 'serato', 'virtualdj'])
-
-const PROGRAM_OF_ANCHOR: Record<string, DjProgram> = {
-  traktorSync: 'traktor',
-  traktorNmlPath: 'traktor',
-  traktorCueOffset: 'traktor',
-  rekordboxSync: 'rekordbox',
-  rekordboxDbPath: 'rekordbox',
-  completeCues: 'rekordbox',
-  engineSync: 'engine',
-  seratoSync: 'serato',
-  virtualdjLibrary: 'virtualdj',
-  virtualdjLibraryDir: 'virtualdj',
-}
 
 function DjReachRow({
   program,
