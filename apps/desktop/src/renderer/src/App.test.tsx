@@ -77,6 +77,17 @@ vi.mock('./components/Editor', async (importOriginal) => {
   })
   return { ...real, Editor: CountingEditor }
 })
+const { idlePreload } = vi.hoisted(() => ({ idlePreload: { calls: 0 } }))
+vi.mock('./lib/lazyChunk', async (importOriginal) => {
+  const real = await importOriginal<typeof import('./lib/lazyChunk')>()
+  return {
+    ...real,
+    preloadLazyWhenIdle: () => {
+      idlePreload.calls++
+      real.preloadLazyWhenIdle()
+    },
+  }
+})
 // Pass-through TrackList that counts renders — TrackList is already memo'd itself
 // (see TrackList.tsx), so wrapping the real (already-memoized) component in a
 // second counting memo pins the contract from the outside: App must hand it
@@ -7349,6 +7360,27 @@ describe('App sort direction', () => {
     expect(toggle).toHaveAccessibleName(name)
     fireEvent.click(toggle)
     expect(toggle).toHaveAccessibleName(name)
+  })
+})
+
+describe('App lazy preload', () => {
+  it('schedules the preload once the first rows of the library are in', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+    })
+    idlePreload.calls = 0
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    await waitFor(() => expect(idlePreload.calls).toBeGreaterThan(0))
+  })
+
+  it('does not schedule the preload while the library is empty', async () => {
+    idlePreload.calls = 0
+    await renderApp()
+    await screen.findByTestId('add-files')
+    expect(idlePreload.calls).toBe(0)
   })
 })
 

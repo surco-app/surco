@@ -678,7 +678,6 @@ export default function App(): React.JSX.Element {
   // the real selection's own lazy load will retry and surface any genuine problem.
   useEffect(() => {
     void import('./components/Editor').catch(() => {})
-    preloadLazyWhenIdle()
   }, [])
 
   // IPC promises rejected outside any catch (shell calls, fire-and-forget writes)
@@ -869,6 +868,10 @@ export default function App(): React.JSX.Element {
     },
     filesOpen: browser.source === null,
   })
+  const libraryHasRows = tracks.length > 0
+  useEffect(() => {
+    if (libraryHasRows) preloadLazyWhenIdle()
+  }, [libraryHasRows])
   useEffect(
     () =>
       window.api.onNotAudioSkipped((count) =>
