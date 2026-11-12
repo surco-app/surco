@@ -353,12 +353,15 @@ export function filterWithSticky(
 
 // The rows on screen that the live filter no longer matches: the ones filterWithSticky
 // kept in place after their verdict flipped, dimmed so they read as already handled.
+const NONE_OUTSIDE: ReadonlySet<string> = new Set()
+
 export function outsideFilter(
   tracks: TrackItem[],
   sel: FilterSelection,
   facts: FilterFacts = NO_FACTS,
-): Set<string> {
-  return new Set(tracks.filter((t) => !matchesFilter(t, sel, facts)).map((t) => t.id))
+): ReadonlySet<string> {
+  const outside = tracks.filter((t) => !matchesFilter(t, sel, facts))
+  return outside.length ? new Set(outside.map((t) => t.id)) : NONE_OUTSIDE
 }
 
 // The fresh rows laid out in the order the list already shows, so a sort that would move

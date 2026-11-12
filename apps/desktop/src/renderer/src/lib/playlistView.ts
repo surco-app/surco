@@ -17,6 +17,8 @@ import type { TrackItem } from '../types'
 // collection entry: a drag moves all its rows, a copy links that entry.
 export interface PlaylistScope {
   tracks: TrackItem[]
+  ids: readonly string[]
+  pathOf: ReadonlyMap<string, string>
   separatorBefore: ReadonlyMap<string, readonly string[]>
   trailingSeparators: readonly string[]
   linkOf: ReadonlyMap<string, string>
@@ -24,17 +26,61 @@ export interface PlaylistScope {
   contentOf: ReadonlyMap<string, string>
 }
 
-export function playlistView(tracks: TrackItem[], entries: SourcePlaylistEntry[]): PlaylistScope {
+interface ComposedPaths {
+  input: string
+  output: string | undefined
+  moved: string[]
+}
+
+const composedPaths = new WeakMap<TrackItem, ComposedPaths>()
+
+function composed(t: TrackItem): ComposedPaths {
+  let paths = composedPaths.get(t)
+  if (!paths) {
+    paths = {
+      input: t.inputPath.normalize('NFC'),
+      output: t.outputPath?.normalize('NFC'),
+      moved: (t.movedFrom ?? []).map((p) => p.normalize('NFC')),
+    }
+    composedPaths.set(t, paths)
+  }
+  return paths
+}
+
+interface LaidOutFrom {
+  entries: readonly SourcePlaylistEntry[]
+  rows: readonly (string | undefined)[]
+}
+
+const laidOutFrom = new WeakMap<PlaylistScope, LaidOutFrom>()
+
+function sameLayout(a: LaidOutFrom, b: LaidOutFrom): boolean {
+  return (
+    a.entries === b.entries &&
+    a.rows.length === b.rows.length &&
+    a.rows.every((r, i) => r === b.rows[i])
+  )
+}
+
+export function playlistView(
+  tracks: TrackItem[],
+  entries: SourcePlaylistEntry[],
+  previous: PlaylistScope | null = null,
+): PlaylistScope {
   const byPath = new Map<string, TrackItem>()
-  for (const t of tracks) for (const p of t.movedFrom ?? []) byPath.set(p.normalize('NFC'), t)
-  for (const t of tracks) if (t.outputPath) byPath.set(t.outputPath.normalize('NFC'), t)
-  for (const t of tracks) byPath.set(t.inputPath.normalize('NFC'), t)
+  for (const t of tracks) for (const p of composed(t).moved) byPath.set(p, t)
+  for (const t of tracks) {
+    const output = composed(t).output
+    if (output) byPath.set(output, t)
+  }
+  for (const t of tracks) byPath.set(composed(t).input, t)
   const shown: TrackItem[] = []
   const seen = new Set<string>()
   const separatorBefore = new Map<string, string[]>()
   const linkOf = new Map<string, string>()
   const linksOf = new Map<string, string[]>()
   const contentOf = new Map<string, string>()
+  const rows: (string | undefined)[] = []
   let pending: string[] = []
   // A separator with no row id of its own is keyed by the row it follows and its place in
   // that run, so a row added elsewhere does not rename it.
@@ -49,6 +95,7 @@ export function playlistView(tracks: TrackItem[], entries: SourcePlaylistEntry[]
     }
     after = e.path ?? ''
     const t = e.path ? byPath.get(e.path.normalize('NFC')) : undefined
+    rows.push(t && `${t.id}\n${t.inputPath}`)
     if (t && e.linkId) linksOf.set(t.id, [...(linksOf.get(t.id) ?? []), e.linkId])
     if (!t || seen.has(t.id)) return
     seen.add(t.id)
@@ -58,7 +105,23 @@ export function playlistView(tracks: TrackItem[], entries: SourcePlaylistEntry[]
     if (pending.length) separatorBefore.set(t.id, pending)
     pending = []
   })
-  return { tracks: shown, separatorBefore, trailingSeparators: pending, linkOf, linksOf, contentOf }
+  const from = { entries, rows }
+  const before = previous && laidOutFrom.get(previous)
+  const view =
+    previous && before && sameLayout(before, from)
+      ? { ...previous, tracks: shown }
+      : {
+          tracks: shown,
+          ids: shown.map((t) => t.id),
+          pathOf: new Map(shown.map((t) => [t.id, t.inputPath])),
+          separatorBefore,
+          trailingSeparators: pending,
+          linkOf,
+          linksOf,
+          contentOf,
+        }
+  laidOutFrom.set(view, from)
+  return view
 }
 
 // Whether a track belongs to the open playlist, by the same path rules as playlistView, for
@@ -70,8 +133,8 @@ export function playlistMembership(
   const paths = new Set(
     entries.flatMap((e) => (e.path && !e.separator ? [e.path.normalize('NFC')] : [])),
   )
-  return (t) =>
-    paths.has(t.inputPath.normalize('NFC')) ||
-    (!!t.outputPath && paths.has(t.outputPath.normalize('NFC'))) ||
-    (t.movedFrom ?? []).some((p) => paths.has(p.normalize('NFC')))
+  return (t) => {
+    const { input, output, moved } = composed(t)
+    return paths.has(input) || (!!output && paths.has(output)) || moved.some((p) => paths.has(p))
+  }
 }
