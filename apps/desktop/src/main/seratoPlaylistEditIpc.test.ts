@@ -64,14 +64,9 @@ function registerWith({
 }
 
 describe('seratoEdit', () => {
-  it('in queue mode names the waiting edit so its result can be matched once Serato closes', async () => {
+  it('reports a queued edit as waiting, never as refused, and names it so its result can be matched once Serato closes', async () => {
     const { queued, host } = registerWith({ running: true })
-    const answer = await section.save(
-      create('root', 'Sesion'),
-      'Sesion',
-      {} as WebContents,
-      'queue',
-    )
+    const answer = await section.save(create('root', 'Sesion'), 'Sesion', {} as WebContents)
     expect(answer).toEqual({ applied: false, queued: true, opId: queued[0].id })
     expect(host.onWaiting).toHaveBeenCalledOnce()
   })
@@ -80,7 +75,8 @@ describe('seratoEdit', () => {
     const { handle, queue, host } = registerWith({ running: true })
     expect(await handle(rename('A', 'X'), 'A')).toEqual({
       applied: false,
-      reason: 'cancelled',
+      queued: true,
+      opId: expect.any(String),
     })
     expect(queue.enqueue).toHaveBeenCalledWith([
       expect.objectContaining({ kind: 'edit', files: expect.any(Object) }),

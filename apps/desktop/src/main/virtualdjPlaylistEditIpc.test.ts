@@ -53,8 +53,8 @@ function registerWith({
     onWaiting: vi.fn(),
   }
   const section = virtualdjEdit(host)
-  const handle = (edit: RekordboxPlaylistEdit, label?: string, mode?: 'queue') =>
-    section.save(edit, label, {} as WebContents, mode)
+  const handle = (edit: RekordboxPlaylistEdit, label?: string) =>
+    section.save(edit, label, {} as WebContents)
   return { handle, queue, queued, host, roots }
 }
 
@@ -70,16 +70,17 @@ describe('virtualdjEdit', () => {
     const { handle, queue, host } = registerWith({ running: true })
     expect(await handle({ kind: 'rename', playlistId: 'Carpeta', name: 'X' }, 'Carpeta')).toEqual({
       applied: false,
-      reason: 'cancelled',
+      queued: true,
+      opId: expect.any(String),
     })
     expect(queue.enqueue).toHaveBeenCalledWith([expect.objectContaining({ kind: 'edit' })])
     expect(host.onWaiting).toHaveBeenCalled()
     expect(queue.drop).not.toHaveBeenCalled()
   })
 
-  it('in queue mode names the waiting edit so a pasted tracklist can follow it once VirtualDJ closes', async () => {
+  it('reports a queued edit as waiting, never as refused, and names the edit so a pasted tracklist can follow it once VirtualDJ closes', async () => {
     const { handle, queued } = registerWith({ running: true })
-    expect(await handle(create('Sesion'), 'Sesion', 'queue')).toEqual({
+    expect(await handle(create('Sesion'), 'Sesion')).toEqual({
       applied: false,
       queued: true,
       opId: queued[0].id,

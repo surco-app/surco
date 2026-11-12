@@ -2,7 +2,6 @@ import type { DjProgram } from '../../../shared/djProgram'
 import { TRAKTOR_BUILT_IN, TRAKTOR_HISTORY } from '../../../shared/traktorContent'
 import type {
   CollectionTrack,
-  PlaylistEditMode,
   RekordboxEditResult,
   RekordboxPlaylistEdit,
   SourceNode,
@@ -48,11 +47,7 @@ export type EditMessagePrefix =
   | 'sources.editVirtualdj.'
 
 export interface SourceEdit {
-  save(
-    edit: RekordboxPlaylistEdit,
-    label?: string,
-    mode?: PlaylistEditMode,
-  ): Promise<RekordboxEditResult>
+  save(edit: RekordboxPlaylistEdit, label?: string): Promise<RekordboxEditResult>
   messagePrefix: EditMessagePrefix
   gate: 'none' | 'traktorCollection'
   kinds?: ReadonlySet<RekordboxPlaylistEdit['kind']>

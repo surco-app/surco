@@ -1158,7 +1158,7 @@ export default function App(): React.JSX.Element {
   })
   const sessionProgram = editableSource
   const sessionRows = useSessionRows(sessionProgram ?? 'rekordbox')
-  const sessionWriter = useSessionWrite(editRekordboxRaw)
+  const sessionWriter = useSessionWrite(editRekordboxRaw, sessionProgram ?? 'rekordbox')
   const sessionRun = useSessionRun({
     rows: sessionRows,
     writer: sessionWriter,
@@ -1177,11 +1177,20 @@ export default function App(): React.JSX.Element {
         saveSettings({ sessionsMade: withSessionMade(settings.sessionsMade, playlistId) })
     },
   })
-  const editRekordbox = useStableCallback(
+  const editRekordboxAfterAsking = useStableCallback(
     async (edit: Parameters<typeof editRekordboxRaw>[0], name: string) => {
       const result = await editRekordboxRaw(edit, name)
       if (result.applied && 'playlistId' in edit) sessionRun.noteEdit(edit.playlistId)
       return result
+    },
+  )
+  const askToApplyEdit = useStableCallback(() =>
+    window.api.dj.askToApply([editableSource ?? 'rekordbox']),
+  )
+  const editRekordbox = useStableCallback(
+    async (edit: Parameters<typeof editRekordboxRaw>[0], name: string) => {
+      await askToApplyEdit()
+      return editRekordboxAfterAsking(edit, name)
     },
   )
   const [sessionWizard, setSessionWizard] = useState<{
@@ -3001,10 +3010,11 @@ export default function App(): React.JSX.Element {
     async (tracks: PlaylistTrackRef[], newName: string | null) => {
       if (!pasteTracklist) return
       const { node, create } = pasteTracklist
+      await askToApplyEdit()
       let playlistId = node.id
       let name = node.name
       if (create && newName) {
-        const created = await editRekordbox(
+        const created = await editRekordboxAfterAsking(
           { kind: 'create', parentId: node.id, name: newName, folder: false },
           newName,
         )
@@ -3012,7 +3022,7 @@ export default function App(): React.JSX.Element {
         playlistId = created.createdId
         name = newName
       }
-      await editRekordbox({ kind: 'add', playlistId, tracks }, name)
+      await editRekordboxAfterAsking({ kind: 'add', playlistId, tracks }, name)
     },
   )
   const moveInTree = useStableCallback(

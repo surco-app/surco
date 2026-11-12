@@ -1,8 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { readFileSync } from 'node:fs'
-import { BrowserWindow, type WebContents } from 'electron'
 import type { DjEditMain } from '../shared/djApi'
-import type { PlaylistEditMode, RekordboxEditResult, RekordboxPlaylistEdit } from '../shared/types'
+import type { RekordboxEditResult, RekordboxPlaylistEdit } from '../shared/types'
 import { serialLibraryFlush } from './libraryTagSync'
 import { type QueueApply, type RekordboxQueue, withoutOp } from './rekordboxQueue'
 import { type EditOp, editResultOfOutcome } from './rekordboxQueueOps'
@@ -16,7 +15,6 @@ import { traktorSeparatorKey } from './traktorPlaylists'
 export function traktorEdit(host: {
   collection: () => string
   queue: Pick<RekordboxQueue, 'apply' | 'drop' | 'outcomeOf'> & { enqueue: (ops: EditOp[]) => void }
-  ensureClosed: (win: BrowserWindow | null) => Promise<boolean>
   isRunning: () => Promise<boolean>
   onApplied?: (result: QueueApply) => void
   onWaiting?: () => void
@@ -27,12 +25,7 @@ export function traktorEdit(host: {
       const path = host.collection()
       return path !== '' && traktorSeparatorKey(readFileSync(path, 'utf8')) !== null
     },
-    save: (
-      edit: RekordboxPlaylistEdit,
-      label: string | undefined,
-      sender: WebContents,
-      mode: PlaylistEditMode = 'ask',
-    ) =>
+    save: (edit: RekordboxPlaylistEdit, label: string | undefined) =>
       serialLibraryFlush(async (): Promise<RekordboxEditResult> => {
         const path = host.collection()
         if (!path) return { applied: false, reason: 'unreadable' }
@@ -56,11 +49,7 @@ export function traktorEdit(host: {
         }
         host.queue.enqueue([op])
         host.beginLoose?.(path)
-        const result = await host.queue.apply(
-          mode === 'queue'
-            ? async () => !(await host.isRunning())
-            : () => host.ensureClosed(BrowserWindow.fromWebContents(sender)),
-        )
+        const result = await host.queue.apply(async () => !(await host.isRunning()))
         if (result.status === 'applied') {
           const others = withoutOp(result, op.id)
           if (others.tracks > 0 || others.changes > 0 || others.notices.length > 0)
@@ -68,7 +57,7 @@ export function traktorEdit(host: {
         }
         if (stillWaiting(result)) {
           host.onWaiting?.()
-          if (mode === 'queue') return { applied: false, queued: true, opId: op.id }
+          return { applied: false, queued: true, opId: op.id }
         } else if (result.status === 'refused') host.queue.drop(op.id)
         if (result.status === 'refused') return { applied: false, reason: result.reason }
         const written = host.queue.outcomeOf(op.id)

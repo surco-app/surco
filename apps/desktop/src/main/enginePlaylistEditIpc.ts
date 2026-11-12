@@ -1,7 +1,6 @@
 import { randomUUID } from 'node:crypto'
-import { BrowserWindow, type WebContents } from 'electron'
 import type { DjEditMain } from '../shared/djApi'
-import type { PlaylistEditMode, RekordboxEditResult, RekordboxPlaylistEdit } from '../shared/types'
+import type { RekordboxEditResult, RekordboxPlaylistEdit } from '../shared/types'
 import { engineDatabasePath } from './enginePlaylists'
 import { serialLibraryFlush } from './libraryTagSync'
 import { type QueueApply, type RekordboxQueue, withoutOp } from './rekordboxQueue'
@@ -12,18 +11,12 @@ export function engineEdit(host: {
   libraryDir: () => string
   queue: Pick<RekordboxQueue, 'apply' | 'drop' | 'outcomeOf'> & { enqueue: (ops: EditOp[]) => void }
   isRunning: () => Promise<boolean>
-  ensureClosed: (win: BrowserWindow | null) => Promise<boolean>
   onApplied?: (result: QueueApply) => void
   onWaiting?: () => void
   beginLoose?: (collectionPath: string) => void
 }): DjEditMain {
   return {
-    save: (
-      edit: RekordboxPlaylistEdit,
-      label: string | undefined,
-      sender: WebContents,
-      mode: PlaylistEditMode = 'ask',
-    ) =>
+    save: (edit: RekordboxPlaylistEdit, label: string | undefined) =>
       serialLibraryFlush(async (): Promise<RekordboxEditResult> => {
         const dir = host.libraryDir()
         if (!dir) return { applied: false, reason: 'unreadable' }
@@ -36,11 +29,7 @@ export function engineEdit(host: {
         }
         host.queue.enqueue([op])
         host.beginLoose?.(engineDatabasePath(dir))
-        const result = await host.queue.apply(
-          mode === 'queue'
-            ? async () => !(await host.isRunning())
-            : () => host.ensureClosed(BrowserWindow.fromWebContents(sender)),
-        )
+        const result = await host.queue.apply(async () => !(await host.isRunning()))
         if (result.status === 'applied') {
           const others = withoutOp(result, op.id)
           if (others.tracks > 0 || others.changes > 0 || others.notices.length > 0)
@@ -48,7 +37,7 @@ export function engineEdit(host: {
         }
         if (stillWaiting(result)) {
           host.onWaiting?.()
-          if (mode === 'queue') return { applied: false, queued: true, opId: op.id }
+          return { applied: false, queued: true, opId: op.id }
         } else if (result.status === 'refused') host.queue.drop(op.id)
         if (result.status === 'refused') return { applied: false, reason: result.reason }
         const written = host.queue.outcomeOf(op.id)

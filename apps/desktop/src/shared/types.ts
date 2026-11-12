@@ -1285,8 +1285,6 @@ export type RekordboxEditResult =
   | { applied: false; reason: RekordboxEditRefusal; report?: PlaylistAddReport }
   | { applied: false; queued: true; opId: string }
 
-export type PlaylistEditMode = 'ask' | 'queue'
-
 export interface QueuedCreate {
   opId: string
   createdId: string

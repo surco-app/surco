@@ -1215,6 +1215,25 @@ describe('App VirtualDJ tab', () => {
     )
   })
 
+  it('asks before a tree edit in VirtualDJ too, as in the other programs', async () => {
+    const editPlaylist = vi
+      .fn<ProgramReads['editPlaylist']>()
+      .mockResolvedValue({ applied: true, createdId: 'Carpeta/Nueva' })
+    openVirtualdj({ dj: djReads({ virtualdj: { editPlaylist } }) })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-virtualdj'))
+    fireEvent.contextMenu(await screen.findByTestId('source-node-Carpeta'))
+    fireEvent.click(screen.getByTestId('source-tree-new-playlist-inside'))
+    const input = await screen.findByTestId('source-tree-name')
+    fireEvent.change(input, { target: { value: 'Nueva' } })
+    fireEvent.keyDown(input, { key: 'Enter' })
+    await waitFor(() => expect(editPlaylist).toHaveBeenCalled())
+    expect(window.api.dj.askToApply).toHaveBeenCalledExactlyOnceWith(['virtualdj'])
+    expect(vi.mocked(window.api.dj.askToApply).mock.invocationCallOrder[0]).toBeLessThan(
+      editPlaylist.mock.invocationCallOrder[0],
+    )
+  })
+
   it('sends a list made from the VirtualDJ tab to VirtualDJ', async () => {
     const editPlaylist = vi
       .fn<ProgramReads['editPlaylist']>()
@@ -3573,14 +3592,16 @@ describe('App source playlists', () => {
     fireEvent.dragOver(rowWrapper(0), { dataTransfer: back, clientY: -1 })
     fireEvent.drop(rowWrapper(0), { dataTransfer: back })
     expect(window.api.expandPaths).not.toHaveBeenCalledWith(['/m/c.wav'])
-    expect(edit).toHaveBeenCalledWith(
-      {
-        kind: 'move',
-        playlistId: 'f',
-        linkIds: ['l3'],
-        beforeLinkId: 'l1',
-      },
-      'Factory',
+    await waitFor(() =>
+      expect(edit).toHaveBeenCalledWith(
+        {
+          kind: 'move',
+          playlistId: 'f',
+          linkIds: ['l3'],
+          beforeLinkId: 'l1',
+        },
+        'Factory',
+      ),
     )
     await waitFor(() =>
       expect(titles()).toEqual([
@@ -3664,16 +3685,18 @@ describe('App source playlists', () => {
       fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
       fireEvent.click(await screen.findByTestId('track-menu-add-to'))
       fireEvent.click(screen.getByTestId('track-menu-playlist-g'))
-      expect(edit).toHaveBeenCalledWith(
-        {
-          kind: 'add',
-          playlistId: 'g',
-          tracks: [
-            { contentId: 'c-h2', paths: ['/m/b.wav'] },
-            { contentId: 'c-h3', paths: ['/m/c.wav'] },
-          ],
-        },
-        'Gym',
+      await waitFor(() =>
+        expect(edit).toHaveBeenCalledWith(
+          {
+            kind: 'add',
+            playlistId: 'g',
+            tracks: [
+              { contentId: 'c-h2', paths: ['/m/b.wav'] },
+              { contentId: 'c-h3', paths: ['/m/c.wav'] },
+            ],
+          },
+          'Gym',
+        ),
       )
     })
 
@@ -3744,13 +3767,15 @@ describe('App source playlists', () => {
       fireEvent.contextMenu(charlie)
       fireEvent.click(await screen.findByTestId('track-menu-add-to'))
       fireEvent.click(screen.getByTestId('track-menu-playlist-h'))
-      expect(edit).toHaveBeenLastCalledWith(
-        {
-          kind: 'add',
-          playlistId: 'h',
-          tracks: [{ contentId: 'c-l3', paths: ['/m/c.wav'] }],
-        },
-        'House',
+      await waitFor(() =>
+        expect(edit).toHaveBeenLastCalledWith(
+          {
+            kind: 'add',
+            playlistId: 'h',
+            tracks: [{ contentId: 'c-l3', paths: ['/m/c.wav'] }],
+          },
+          'House',
+        ),
       )
     })
 
@@ -3837,13 +3862,15 @@ describe('App source playlists', () => {
     fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
     fireEvent.click(await screen.findByTestId('track-menu-add-to'))
     fireEvent.click(screen.getByTestId('track-menu-playlist-h'))
-    expect(edit).toHaveBeenCalledWith(
-      {
-        kind: 'add',
-        playlistId: 'h',
-        tracks: [{ contentId: 'c-l1', paths: ['/m/a.wav'] }],
-      },
-      'House',
+    await waitFor(() =>
+      expect(edit).toHaveBeenCalledWith(
+        {
+          kind: 'add',
+          playlistId: 'h',
+          tracks: [{ contentId: 'c-l1', paths: ['/m/a.wav'] }],
+        },
+        'House',
+      ),
     )
     expect(await screen.findByTestId('rekordbox-edit-notice')).toHaveTextContent(
       '1 track added to “House”',
@@ -3862,9 +3889,11 @@ describe('App source playlists', () => {
     fireEvent.contextMenu(screen.getAllByTestId('track-row')[1])
     fireEvent.click(await screen.findByTestId('track-menu-remove-from'))
     // Removing deletes rows of the DJ's real playlist: the link sent must be the clicked row's.
-    expect(edit).toHaveBeenCalledWith(
-      { kind: 'remove', playlistId: 'f', linkIds: ['l2'] },
-      'Factory',
+    await waitFor(() =>
+      expect(edit).toHaveBeenCalledWith(
+        { kind: 'remove', playlistId: 'f', linkIds: ['l2'] },
+        'Factory',
+      ),
     )
     expect(await screen.findByTestId('rekordbox-edit-notice')).toHaveTextContent(
       'rekordbox is still open. The change will apply when you close it',
@@ -3888,9 +3917,11 @@ describe('App source playlists', () => {
     expect(edit).not.toHaveBeenCalled()
     expect(await screen.findByText('Remove 2 tracks from “Factory”?')).toBeInTheDocument()
     fireEvent.click(screen.getByTestId('confirm-ok'))
-    expect(edit).toHaveBeenCalledWith(
-      { kind: 'remove', playlistId: 'f', linkIds: ['l1', 'l2'] },
-      'Factory',
+    await waitFor(() =>
+      expect(edit).toHaveBeenCalledWith(
+        { kind: 'remove', playlistId: 'f', linkIds: ['l1', 'l2'] },
+        'Factory',
+      ),
     )
   })
 
@@ -3945,9 +3976,11 @@ describe('App source playlists', () => {
     fireEvent.keyDown(document, { key: 'Escape' })
     fireEvent.contextMenu(screen.getAllByTestId('track-row')[1])
     fireEvent.click(await screen.findByTestId('track-menu-remove-separator'))
-    expect(edit).toHaveBeenCalledWith(
-      { kind: 'remove', playlistId: 'f', linkIds: ['s1'] },
-      'Factory',
+    await waitFor(() =>
+      expect(edit).toHaveBeenCalledWith(
+        { kind: 'remove', playlistId: 'f', linkIds: ['s1'] },
+        'Factory',
+      ),
     )
   })
 
@@ -3973,13 +4006,15 @@ describe('App source playlists', () => {
     const insert = await screen.findByTestId('track-menu-insert-separator')
     await waitFor(() => expect(insert).toBeEnabled())
     fireEvent.click(insert)
-    expect(edit).toHaveBeenCalledWith(
-      {
-        kind: 'insertSeparator',
-        playlistId: 'f',
-        beforeLinkId: 'l3',
-      },
-      'Factory',
+    await waitFor(() =>
+      expect(edit).toHaveBeenCalledWith(
+        {
+          kind: 'insertSeparator',
+          playlistId: 'f',
+          beforeLinkId: 'l3',
+        },
+        'Factory',
+      ),
     )
   })
 
@@ -4038,9 +4073,11 @@ describe('App source playlists', () => {
       fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
       fireEvent.click(await screen.findByTestId('track-menu-add-to'))
       fireEvent.click(screen.getByTestId('track-menu-playlist-h'))
-      expect(edit).toHaveBeenCalledWith(
-        { kind: 'add', playlistId: 'h', tracks: [{ contentId: 'r3', paths: ['/m/c.wav'] }] },
-        'House',
+      await waitFor(() =>
+        expect(edit).toHaveBeenCalledWith(
+          { kind: 'add', playlistId: 'h', tracks: [{ contentId: 'r3', paths: ['/m/c.wav'] }] },
+          'House',
+        ),
       )
     })
 
@@ -4445,13 +4482,15 @@ describe('App source playlists', () => {
     const house = screen.getByTestId('source-node-h')
     fireEvent.dragOver(house, { dataTransfer: fakeDataTransfer() })
     fireEvent.drop(house, { dataTransfer: fakeDataTransfer() })
-    expect(edit).toHaveBeenCalledWith(
-      {
-        kind: 'add',
-        playlistId: 'h',
-        tracks: [{ contentId: 'c-l1', paths: ['/m/a.wav'] }],
-      },
-      'House',
+    await waitFor(() =>
+      expect(edit).toHaveBeenCalledWith(
+        {
+          kind: 'add',
+          playlistId: 'h',
+          tracks: [{ contentId: 'c-l1', paths: ['/m/a.wav'] }],
+        },
+        'House',
+      ),
     )
   })
 
@@ -4474,13 +4513,15 @@ describe('App source playlists', () => {
     const dt = fakeDataTransfer([new File([''], 'Gowan.wav')])
     fireEvent.dragOver(house, { dataTransfer: dt })
     fireEvent.drop(house, { dataTransfer: dt })
-    expect(edit).toHaveBeenCalledWith(
-      {
-        kind: 'add',
-        playlistId: 'h',
-        tracks: [{ paths: ['/Volumes/Public/Music/Gowan.wav'] }],
-      },
-      'House',
+    await waitFor(() =>
+      expect(edit).toHaveBeenCalledWith(
+        {
+          kind: 'add',
+          playlistId: 'h',
+          tracks: [{ paths: ['/Volumes/Public/Music/Gowan.wav'] }],
+        },
+        'House',
+      ),
     )
     expect(screen.getByTestId('source-rail-rekordbox')).toHaveAttribute('aria-pressed', 'true')
   })
@@ -4491,14 +4532,16 @@ describe('App source playlists', () => {
     fireEvent.click(screen.getByTestId('source-tree-new-playlist'))
     fireEvent.change(screen.getByTestId('source-tree-name'), { target: { value: 'Bolo' } })
     fireEvent.keyDown(screen.getByTestId('source-tree-name'), { key: 'Enter' })
-    expect(edit).toHaveBeenCalledWith(
-      {
-        kind: 'create',
-        parentId: 'root',
-        name: 'Bolo',
-        folder: false,
-      },
-      'Bolo',
+    await waitFor(() =>
+      expect(edit).toHaveBeenCalledWith(
+        {
+          kind: 'create',
+          parentId: 'root',
+          name: 'Bolo',
+          folder: false,
+        },
+        'Bolo',
+      ),
     )
   })
 
@@ -4560,13 +4603,15 @@ describe('App source playlists', () => {
       fireEvent.drop(screen.getByTestId('source-node-h'), {
         dataTransfer: fakeDataTransfer([new File([''], 'a.wav')]),
       })
-      expect(edit).toHaveBeenCalledWith(
-        {
-          kind: 'add',
-          playlistId: 'h',
-          tracks: [{ contentId: 'c-l1', paths: ['/m/a.wav'] }],
-        },
-        'House',
+      await waitFor(() =>
+        expect(edit).toHaveBeenCalledWith(
+          {
+            kind: 'add',
+            playlistId: 'h',
+            tracks: [{ contentId: 'c-l1', paths: ['/m/a.wav'] }],
+          },
+          'House',
+        ),
       )
     })
   })
@@ -4659,14 +4704,16 @@ describe('App source playlists', () => {
     fireEvent.dragStart(rowWrapper(0), { dataTransfer: dt })
     fireEvent.dragOver(rowWrapper(2), { dataTransfer: dt, clientY: 1 })
     fireEvent.drop(rowWrapper(2), { dataTransfer: dt })
-    expect(edit).toHaveBeenCalledWith(
-      {
-        kind: 'move',
-        playlistId: 'f',
-        linkIds: ['l1', 'l4'],
-        beforeLinkId: null,
-      },
-      'Factory',
+    await waitFor(() =>
+      expect(edit).toHaveBeenCalledWith(
+        {
+          kind: 'move',
+          playlistId: 'f',
+          linkIds: ['l1', 'l4'],
+          beforeLinkId: null,
+        },
+        'Factory',
+      ),
     )
   })
 
@@ -4687,9 +4734,11 @@ describe('App source playlists', () => {
     })
     fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
     fireEvent.click(await screen.findByTestId('track-menu-remove-from'))
-    expect(edit).toHaveBeenCalledWith(
-      { kind: 'remove', playlistId: 'f', linkIds: ['l1', 'l4'] },
-      'Factory',
+    await waitFor(() =>
+      expect(edit).toHaveBeenCalledWith(
+        { kind: 'remove', playlistId: 'f', linkIds: ['l1', 'l4'] },
+        'Factory',
+      ),
     )
   })
 
@@ -4707,13 +4756,15 @@ describe('App source playlists', () => {
     const dt = fakeDataTransfer([new File([''], 'Gowan.wav')])
     fireEvent.dragOver(house, { dataTransfer: dt })
     fireEvent.drop(house, { dataTransfer: dt })
-    expect(edit).toHaveBeenCalledWith(
-      {
-        kind: 'add',
-        playlistId: 'h',
-        tracks: [{ paths: ['/Volumes/Public/Music/Gowan.wav'] }],
-      },
-      'House',
+    await waitFor(() =>
+      expect(edit).toHaveBeenCalledWith(
+        {
+          kind: 'add',
+          playlistId: 'h',
+          tracks: [{ paths: ['/Volumes/Public/Music/Gowan.wav'] }],
+        },
+        'House',
+      ),
     )
   })
 })
@@ -10957,6 +11008,21 @@ describe('paste tracklist from the tree', () => {
     })
   })
 
+  it('asks once to close rekordbox before it creates the playlist and adds to it, not once per edit', async () => {
+    const edit = openRekordboxTree(
+      vi
+        .fn<ProgramReads['editPlaylist']>()
+        .mockResolvedValueOnce({ applied: true, createdId: 'new' })
+        .mockResolvedValue({ applied: true }),
+    )
+    await pasteAndAdd('sets', 'Mi set')
+    await waitFor(() => expect(edit).toHaveBeenCalledTimes(2))
+    expect(window.api.dj.askToApply).toHaveBeenCalledExactlyOnceWith(['rekordbox'])
+    expect(vi.mocked(window.api.dj.askToApply).mock.invocationCallOrder[0]).toBeLessThan(
+      edit.mock.invocationCallOrder[0],
+    )
+  })
+
   it('adds nothing when the playlist could not be created', async () => {
     const edit = openRekordboxTree(
       vi
@@ -11321,10 +11387,11 @@ describe('automatic session from the tree', () => {
     await waitFor(() =>
       expect(screen.queryByTestId('session-wizard-dialog')).not.toBeInTheDocument(),
     )
-    expect(edit).toHaveBeenCalledWith(
-      expect.objectContaining({ kind: 'create', tracks: expect.any(Array) }),
-      expect.any(String),
-      'queue',
+    await waitFor(() =>
+      expect(edit).toHaveBeenCalledWith(
+        expect.objectContaining({ kind: 'create', tracks: expect.any(Array) }),
+        expect.any(String),
+      ),
     )
   })
 })

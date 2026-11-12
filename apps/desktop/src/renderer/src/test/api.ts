@@ -7,7 +7,6 @@ import { DEFAULT_EDITOR_SECTIONS } from '../../../shared/editorSections'
 import { emptyMetadata } from '../../../shared/metadata'
 import { DEFAULT_SESSION_WIZARD } from '../../../shared/sessionSettings'
 import type {
-  PlaylistEditMode,
   CollectionTrack,
   RekordboxEditResult,
   RekordboxPlaylistEdit,
@@ -155,11 +154,7 @@ export interface ProgramReads {
   playlist(id: string): Promise<SourcePlaylistEntry[]>
   membership(paths: string[]): Promise<Record<string, string[]>>
   collection(): Promise<CollectionTrack[]>
-  editPlaylist(
-    edit: RekordboxPlaylistEdit,
-    label?: string,
-    mode?: PlaylistEditMode,
-  ): Promise<RekordboxEditResult>
+  editPlaylist(edit: RekordboxPlaylistEdit, label?: string): Promise<RekordboxEditResult>
   hasSeparator(): Promise<boolean>
   cueQueue(): Promise<RekordboxQueueState>
   applyCueQueue(): Promise<RekordboxQueueApplied | null>

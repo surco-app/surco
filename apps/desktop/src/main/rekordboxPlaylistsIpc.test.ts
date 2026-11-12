@@ -159,7 +159,7 @@ describe('rekordboxEdit', () => {
     const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')
     writeRekordboxPlaylistFixture(path, ORGANISE_FIXTURE)
     register(() => path, {
-      ensureClosed: vi.fn(async () => true),
+      isRunning: async () => false,
       queue: queueFor(path),
     })
     const read = rekordboxRead(
@@ -216,13 +216,11 @@ describe('rekordboxEdit', () => {
     ])
   })
 
-  // The dialog asking to close rekordbox must sit over the window the user was dragging in.
-  it('asks to close rekordbox over the window that made the edit, then writes', async () => {
+  it('writes the edit at once when rekordbox is closed', async () => {
     const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')
     writeRekordboxPlaylistFixture(path, ORGANISE_FIXTURE)
-    const ensureClosed = vi.fn(async () => true)
     register(() => path, {
-      ensureClosed,
+      isRunning: async () => false,
       queue: queueFor(path),
     })
     const result = await save({
@@ -231,27 +229,22 @@ describe('rekordboxEdit', () => {
       linkIds: ['f6'],
       beforeLinkId: 'f1',
     })
-    expect(ensureClosed).toHaveBeenCalledWith('window')
     expect(result).toEqual({ applied: true })
   })
 
-  it('in queue mode leaves the edit waiting for rekordbox to close without asking, and names it so its result can be matched later', async () => {
+  it('reports a queued edit as waiting, never as refused, and names it so its result can be matched later', async () => {
     const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')
     writeRekordboxPlaylistFixture(path, ORGANISE_FIXTURE)
-    const ensureClosed = vi.fn(async () => true)
     const queue = queueFor(path)
     const enqueue = vi.spyOn(queue, 'enqueue')
     const onWaiting = vi.fn()
-    register(() => path, { ensureClosed, isRunning: async () => true, queue, onWaiting })
-    const result = await section.save(
+    register(() => path, { isRunning: async () => true, queue, onWaiting })
+    const result = await save(
       { kind: 'create', parentId: 'root', name: 'Sesion', folder: false, tracks: [] },
       'Sesion',
-      {} as WebContents,
-      'queue',
     )
     const opId = (enqueue.mock.calls[0][0][0] as { id: string }).id
     expect(result).toEqual({ applied: false, queued: true, opId })
-    expect(ensureClosed).not.toHaveBeenCalled()
     expect(onWaiting).toHaveBeenCalledOnce()
   })
 
@@ -266,7 +259,7 @@ describe('rekordboxEdit', () => {
       return apply(...args)
     }
     register(() => path, {
-      ensureClosed: vi.fn(async () => true),
+      isRunning: async () => false,
       queue,
       beginLoose: (p) => order.push(`loose:${p}`),
     })
@@ -278,7 +271,7 @@ describe('rekordboxEdit', () => {
     const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')
     writeRekordboxPlaylistFixture(path, ORGANISE_FIXTURE)
     register(() => path, {
-      ensureClosed: vi.fn(async () => true),
+      isRunning: async () => false,
       queue: queueFor(path),
     })
     expect(await section.hasSeparator?.()).toBe(true)
@@ -300,7 +293,7 @@ describe('rekordboxEdit', () => {
   })
 
   // The write's transaction spans an await: two at once would fight over SQLite's busy
-  // timeout, so the second must not even ask to close rekordbox until the first is done.
+  // timeout, so the second must not even look at rekordbox until the first is done.
   it('runs two edits sent at once one after the other', async () => {
     const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')
     writeRekordboxPlaylistFixture(path, ORGANISE_FIXTURE)
@@ -308,15 +301,15 @@ describe('rekordboxEdit', () => {
     let release: () => void = () => {}
     const gate = new Promise<void>((r) => (release = r))
     let calls = 0
-    const ensureClosed = vi.fn(async () => {
+    const isRunning = vi.fn(async () => {
       const n = ++calls
       order.push(`start${n}`)
       if (n === 1) await gate
       order.push(`end${n}`)
-      return true
+      return false
     })
     register(() => path, {
-      ensureClosed,
+      isRunning,
       queue: queueFor(path),
     })
     const edit = save
@@ -330,16 +323,16 @@ describe('rekordboxEdit', () => {
     expect(order).toEqual(['start1', 'end1', 'start2', 'end2'])
   })
 
-  it('keeps a cancelled edit queued', async () => {
+  it('keeps the edit queued while rekordbox is open', async () => {
     const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')
     writeRekordboxPlaylistFixture(path, { ...ORGANISE_FIXTURE, xml: true })
     const queue = queueFor(path)
     register(() => path, {
-      ensureClosed: vi.fn(async () => false),
+      isRunning: async () => true,
       queue,
     })
     const result = await save({ kind: 'rename', playlistId: '3000', name: 'House 26' }, 'House')
-    expect(result).toEqual({ applied: false, reason: 'cancelled' })
+    expect(result).toEqual({ applied: false, queued: true, opId: expect.any(String) })
     expect(queue.state().items).toEqual([
       {
         key: expect.stringMatching(/^edit:/),
@@ -360,7 +353,7 @@ describe('rekordboxEdit', () => {
       outcomeOf: vi.fn(),
     }
     register(() => path, {
-      ensureClosed: vi.fn(async () => true),
+      isRunning: async () => false,
       queue,
       onWaiting,
     })
@@ -390,7 +383,7 @@ describe('rekordboxEdit', () => {
         label: 'Factory',
       },
     ])
-    register(() => path, { ensureClosed: vi.fn(async () => true), queue })
+    register(() => path, { isRunning: async () => false, queue })
     expect(
       await save({ kind: 'create', parentId: 'root', name: 'Makina 2', folder: false }, 'Makina 2'),
     ).toEqual({ applied: false, reason: 'backup-failed' })
@@ -423,7 +416,7 @@ describe('rekordboxEdit', () => {
     }
     const onApplied = vi.fn()
     register(() => path, {
-      ensureClosed: vi.fn(async () => true),
+      isRunning: async () => false,
       queue,
       onApplied,
     })
@@ -442,7 +435,7 @@ describe('rekordboxEdit', () => {
     writeRekordboxPlaylistFixture(path, { ...ORGANISE_FIXTURE, xml: true })
     const onApplied = vi.fn()
     register(() => path, {
-      ensureClosed: vi.fn(async () => true),
+      isRunning: async () => false,
       queue: queueFor(path),
       onApplied,
     })
@@ -455,7 +448,7 @@ describe('rekordboxEdit', () => {
     writeRekordboxPlaylistFixture(path, { ...ORGANISE_FIXTURE, xml: true })
     const onWaiting = vi.fn()
     register(() => path, {
-      ensureClosed: vi.fn(async () => false),
+      isRunning: async () => true,
       queue: queueFor(path),
       onWaiting,
     })
@@ -520,7 +513,7 @@ describe('rekordboxEdit with an apply already running', () => {
   it('says the edit was written when that apply wrote it, not that it failed', async () => {
     const race = queueWithApplyInFlight('Nueva')
     const saving = rekordboxEdit(() => '/library/master.db', {
-      ensureClosed: async () => true,
+      isRunning: async () => false,
       queue: race.queue,
     }).save(
       { kind: 'create', parentId: 'root', name: 'Nueva', folder: false },
