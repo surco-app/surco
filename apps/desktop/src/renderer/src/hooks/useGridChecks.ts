@@ -38,12 +38,34 @@ function notify(): void {
   for (const listener of listeners) listener()
 }
 
+// A measure is told at once after a quiet spell, and a burst of them at most once a second:
+// every notice re-renders the App and recounts the filters over the whole list, and with
+// every import analysed a big collection measured, and re-rendered, 130 times a second.
+const MEASURE_NOTICE_MS = 1000
+let lastMeasureNotice = Number.NEGATIVE_INFINITY
+let measureNoticeTimer: ReturnType<typeof setTimeout> | null = null
+
+function noticeMeasured(): void {
+  if (measureNoticeTimer) return
+  const tell = (): void => {
+    measureNoticeTimer = null
+    lastMeasureNotice = performance.now()
+    notify()
+  }
+  const wait = lastMeasureNotice + MEASURE_NOTICE_MS - performance.now()
+  if (wait <= 0) tell()
+  else measureNoticeTimer = setTimeout(tell, wait)
+}
+
 function subscribe(listener: () => void): () => void {
   listeners.add(listener)
   return () => listeners.delete(listener)
 }
 
 export function resetGridChecks(): void {
+  if (measureNoticeTimer) clearTimeout(measureNoticeTimer)
+  measureNoticeTimer = null
+  lastMeasureNotice = Number.NEGATIVE_INFINITY
   reads.clear()
   fits.clear()
   queues.clear()
@@ -102,7 +124,7 @@ async function measure(client: QueryClient, contentId: string): Promise<void> {
     )
   queues.set(contentId, queued)
   reads.set(contentId, read)
-  notify()
+  noticeMeasured()
 }
 
 async function remeasure(client: QueryClient, contentId: string): Promise<void> {
