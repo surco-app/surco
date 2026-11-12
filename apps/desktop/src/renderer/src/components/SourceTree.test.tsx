@@ -8,6 +8,7 @@ import { RECENTLY_ADDED_ID } from '../../../shared/recentlyAdded'
 import type { SourceNode } from '../../../shared/types'
 import i18n from '../i18n'
 import type { NewPlaylist } from '../lib/commands'
+import * as playlistEdits from '../lib/playlistEdits'
 import { clearDraggedRows, setDraggedRows, TREE_NODE_TYPE } from '../lib/reorderDrag'
 import { fakeDataTransfer, installDragEvent } from '../test/drag'
 import { SourceTree } from './SourceTree'
@@ -308,6 +309,28 @@ describe('SourceTree', () => {
     rerender(<SourceTree {...props} onExportUsb={onExportUsb} />)
     fireEvent.click(screen.getByTestId('source-tree-export-usb'))
     expect(onExportUsb).toHaveBeenCalled()
+  })
+
+  // App re-renders on every metadata flush; the tree beside the list has nothing new to
+  // draw then, and walking its playlists again made each edit pay for the whole tree.
+  it('does not redraw when the window re-renders with the same playlists', () => {
+    const onSelect = vi.fn()
+    const tree = () => (
+      <SourceTree
+        width={236}
+        title="rekordbox"
+        source="rekordbox"
+        nodes={NODES}
+        failed={false}
+        selectedId={null}
+        onSelect={onSelect}
+      />
+    )
+    const { rerender } = render(tree())
+    const drawn = vi.spyOn(playlistEdits, 'isPendingNode')
+    rerender(tree())
+    expect(drawn).not.toHaveBeenCalled()
+    drawn.mockRestore()
   })
 })
 

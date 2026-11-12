@@ -3066,6 +3066,13 @@ export default function App(): React.JSX.Element {
       readsCollection,
     ],
   )
+  const selectTreePlaylist = useStableCallback((node: SourceNode, folders: string[]) => {
+    setSidebarPeek(false)
+    selectPlaylist(node, folders)
+  })
+  const exportTreeToUsb = useStableCallback(() => {
+    if (treeUsbProgram) openUsbExport(null, treeUsbProgram)
+  })
   // Read at drop time, so a re-read landing mid-drag still names the dragged rows. A track
   // row stands for every row it has in the playlist (the list shows it once), so all of them
   // move together; a separator key is its own link.
@@ -3903,15 +3910,10 @@ export default function App(): React.JSX.Element {
                       missing={browser.libraryMissing}
                       notice={runningNote && programRunning ? tr(runningNote.key) : undefined}
                       selectedId={browser.playlist?.id ?? null}
-                      onSelect={(node, folders) => {
-                        setSidebarPeek(false)
-                        selectPlaylist(node, folders)
-                      }}
+                      onSelect={selectTreePlaylist}
                       edit={editableSource ? treeEdit : undefined}
                       fixed={fixed}
-                      onExportUsb={
-                        treeUsbProgram ? () => openUsbExport(null, treeUsbProgram) : undefined
-                      }
+                      onExportUsb={treeUsbProgram ? exportTreeToUsb : undefined}
                       newPlaylistRef={newPlaylistRef}
                     />
                   )}
