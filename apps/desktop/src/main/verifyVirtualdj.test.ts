@@ -48,6 +48,22 @@ describe('snapshotVirtualdjSong', () => {
 })
 
 describe('checkVirtualdj', () => {
+  it('cannot judge a file whose library read failed before the write, so it never calls it missing', () => {
+    const lib = library()
+    expect(
+      checkVirtualdj(lib.roots(), [
+        { from: '/Music/Nowhere.mp3', to: lib.to, before: 'unreadable', size: 8 },
+      ]),
+    ).toEqual([
+      {
+        place: 'virtualdj',
+        state: 'unreadable',
+        detail: { key: 'virtualdjUnreadable' },
+        final: true,
+      },
+    ])
+  })
+
   it('confirms the song and every list that held the source now point at the converted file', async () => {
     const lib = library()
     const before = snapshotVirtualdjSong(lib.roots(), FROM)

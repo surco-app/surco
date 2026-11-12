@@ -54,6 +54,8 @@ export function checkVirtualdj(roots: VirtualdjRoot[], list: VirtualdjExpect[]):
   const top = new Set(library.lists.map((n) => n.id))
   const songsAt = (path: string) => library.songs.filter((s) => nfc(s.path) === nfc(path))
   return list.map((e) => {
+    if (e.before === 'unreadable')
+      return { ...check('unreadable', 'virtualdjUnreadable'), final: true }
     if (nfc(e.from) !== nfc(e.to) && songsAt(e.from).length > 0)
       return check('mismatch', 'virtualdjStillOld', { format: formatOf(extname(e.from)) })
     const [song] = songsAt(e.to)
