@@ -21,6 +21,7 @@ import { normalizeImportFields } from '../../shared/defaults'
 import {
   CUE_PROGRAMS,
   type CueProgram,
+  exportsUsbOn,
   LIBRARY_PROGRAMS,
   type LibraryProgram,
   PROGRAM_CAN,
@@ -1024,12 +1025,13 @@ export default function App(): React.JSX.Element {
   // The USB export: macOS and Windows, with a rekordbox collection or from the Engine DJ
   // tree. Its state lives in usbExportStore, outside React; App reads only the phase (for
   // the notices), so a byte tick never re-renders the app.
-  const usbPlatform = isMac || window.api.platform === 'win32'
+  const usbPlatform = window.api.platform === 'darwin' || window.api.platform === 'win32'
   const usbAvailable = usbPlatform && browser.sources.includes('rekordbox')
   const treeUsbProgram =
     usbPlatform &&
     sourceProgram &&
     isUsbProgram(sourceProgram) &&
+    exportsUsbOn(sourceProgram, window.api.platform) &&
     (SOURCE_PROGRAMS[sourceProgram].missingLibraryCheck ||
       browser.sources.includes(sourceProgram)) &&
     !browser.libraryMissing

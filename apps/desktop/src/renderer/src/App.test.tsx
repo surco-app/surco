@@ -1056,11 +1056,20 @@ describe('App VirtualDJ tab', () => {
     expect(screen.queryByTestId('source-rail-virtualdj')).toBeNull()
   })
 
-  it('opens the USB export from the VirtualDJ tree on its lists and asks for a VirtualDJ export', async () => {
+  it('offers no USB export from the VirtualDJ tree on Windows, where Surco has no VirtualDJ exporter', async () => {
+    openVirtualdj({ platform: 'win32' })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-virtualdj'))
+    expect(await screen.findByTestId('source-tree')).toBeInTheDocument()
+    expect(screen.queryByTestId('source-tree-export-usb')).toBeNull()
+  })
+
+  it('opens the USB export from the VirtualDJ tree on its lists on macOS and asks for a VirtualDJ export', async () => {
     const usbPlan = vi
       .fn<Api['usbPlan']>()
       .mockResolvedValue({ ok: false, reason: 'nothing-selected' })
     openVirtualdj({
+      platform: 'darwin',
       usbVolumes: vi
         .fn<Api['usbVolumes']>()
         .mockResolvedValue({ volumes: [stick('A', 'empty')], lastKey: null }),
@@ -1361,11 +1370,20 @@ describe('App Serato cues', () => {
     )
   })
 
-  it('opens the USB export from the Serato tree on its crates and asks for a Serato export', async () => {
+  it('offers no USB export from the Serato tree on Windows, where Surco has no Serato exporter', async () => {
+    openSerato({ platform: 'win32' })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-serato'))
+    expect(await screen.findByTestId('source-tree')).toBeInTheDocument()
+    expect(screen.queryByTestId('source-tree-export-usb')).toBeNull()
+  })
+
+  it('opens the USB export from the Serato tree on its crates on macOS and asks for a Serato export', async () => {
     const usbPlan = vi
       .fn<Api['usbPlan']>()
       .mockResolvedValue({ ok: false, reason: 'nothing-selected' })
     openSerato({
+      platform: 'darwin',
       usbVolumes: vi
         .fn<Api['usbVolumes']>()
         .mockResolvedValue({ volumes: [stick('A', 'empty')], lastKey: null }),

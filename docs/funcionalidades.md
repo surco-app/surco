@@ -1421,7 +1421,7 @@ real: carpeta `Documents\VirtualDJ` o, si ahí no hay `database.xml`, `%LOCALAPP
 (`virtualdjHomeDir`, `virtualdjLibrary.ts`), una base por letra de unidad (`virtualdjDriveRoots`),
 proceso `virtualdj.exe` por `tasklist` (`virtualdjProcess.ts`) y rutas `C:\…` o `C:/…` comparadas
 sin distinguir separador ni mayúscula de la letra (`virtualdjPaths.ts`). El USB sigue solo en macOS
-(`virtualdj: process.platform === 'darwin'` en los exportadores de `main/index.ts`). Lo supuesto está
+(`USB_EXPORT_ON`, `shared/djProgram.ts`, que también quita del árbol la entrada del USB donde no hay exportador, en Windows la de Serato y la de VirtualDJ). Lo supuesto está
 en `docs/virtualdj-medidas.md`, «Windows (sin medir)». En la barra lateral lleva una píldora «beta» bajo su nombre en
 macOS y en Windows (`PROGRAM_BETA`, `shared/djProgram.ts`), y la celda de Windows de la tabla de
 `/funciones` dice «Beta» (atada por test a `PROGRAM_BETA`).

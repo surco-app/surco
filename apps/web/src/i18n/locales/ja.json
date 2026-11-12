@@ -283,7 +283,7 @@
           {
             "t": "CDJ用のUSBメモリ",
             "s": "キュー、グリッド、波形付きでCDJ用のUSBメモリを作成します。",
-            "d": "rekordboxのプレイリストを、キュー、グリッド、波形付きでUSBメモリにエクスポートします。その後もrekordboxで同期を続けられます。rekordboxが閉じている必要があります。macOSとWindowsに対応。SeratoのクレートやTraktorのプレイリスト、macOSではVirtualDJのリストからも、キュー、ループ、グリッド付きで、rekordboxを経由せずにエクスポートできます。"
+            "d": "rekordboxのプレイリストを、キュー、グリッド、波形付きでUSBメモリにエクスポートします。その後もrekordboxで同期を続けられます。rekordboxが閉じている必要があります。macOSとWindowsに対応。Traktorのプレイリスト、macOSではSeratoのクレートやVirtualDJのリストからも、キュー、ループ、グリッド付きで、rekordboxを経由せずにエクスポートできます。"
           },
           {
             "t": "Traktorのプレイリスト",
@@ -460,7 +460,8 @@
         "keepsOriginal": "元ファイルを維持",
         "engineUsb": "Engine用USB",
         "noRestore": "バックアップ画面は非対応",
-        "beta": "ベータ版"
+        "beta": "ベータ版",
+        "macOnly": "macOSのみ"
       }
     },
     "metaTitle": "Surco にできることすべて · 機能",
@@ -1124,7 +1125,7 @@
         "title": "プレイリストを USB に持ち出す",
         "s": "プレイリストを、プレイヤーですぐ使える USB にエクスポートします。",
         "body": [
-          "rekordbox、Engine DJ、Serato、Traktorのプレイリストに対応し、macOSとWindowsで使えます。VirtualDJのリストはmacOSで使えます。"
+          "rekordbox、Engine DJ、Traktorのプレイリストに対応し、macOSとWindowsで使えます。SeratoのクレートとVirtualDJのリストはmacOSで使えます。"
         ],
         "steps": [
           {

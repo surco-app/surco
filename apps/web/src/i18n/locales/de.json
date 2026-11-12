@@ -283,7 +283,7 @@
           {
             "t": "Ein USB-Stick für deine CDJs",
             "s": "Bereitet einen USB-Stick für deine CDJs vor, mit Cues, Raster und Wellenformen.",
-            "d": "Exportiere deine rekordbox-Playlists mit Cues, Raster und Wellenformen auf einen USB-Stick, und rekordbox kann ihn weiter synchronisieren. rekordbox muss geschlossen sein. Unter macOS und Windows. Auch aus deinen Serato-Crates, deinen Traktor-Playlists und, unter macOS, deinen VirtualDJ-Listen, mit Cues, Loops und Raster, ohne Umweg über rekordbox."
+            "d": "Exportiere deine rekordbox-Playlists mit Cues, Raster und Wellenformen auf einen USB-Stick, und rekordbox kann ihn weiter synchronisieren. rekordbox muss geschlossen sein. Unter macOS und Windows. Auch aus deinen Traktor-Playlists und, unter macOS, deinen Serato-Crates und VirtualDJ-Listen, mit Cues, Loops und Raster, ohne Umweg über rekordbox."
           },
           {
             "t": "Deine Traktor-Playlists",
@@ -460,7 +460,8 @@
         "keepsOriginal": "Behält das Original",
         "engineUsb": "Engine-USB",
         "noRestore": "Nicht in Backups",
-        "beta": "Beta"
+        "beta": "Beta",
+        "macOnly": "Nur macOS"
       }
     },
     "metaTitle": "Alles, was Surco kann · Funktionen",
@@ -1124,7 +1125,7 @@
         "title": "Deine Playlists auf einen USB-Stick bringen",
         "s": "Exportiere deine Playlists auf einen USB-Stick, bereit für die Player.",
         "body": [
-          "Das klappt mit Playlists aus rekordbox, Engine DJ, Serato und Traktor, auf macOS und Windows, und mit VirtualDJ-Listen auf macOS."
+          "Das klappt mit Playlists aus rekordbox, Engine DJ und Traktor, auf macOS und Windows, und mit Serato-Crates und VirtualDJ-Listen auf macOS."
         ],
         "steps": [
           {

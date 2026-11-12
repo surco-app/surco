@@ -283,7 +283,7 @@
           {
             "t": "Une clé USB pour tes CDJ",
             "s": "Prépare une clé USB pour tes CDJ avec cues, grille et formes d’onde.",
-            "d": "Exporte tes playlists rekordbox sur une clé USB avec leurs cues, leur grille et leurs formes d’onde, et rekordbox peut continuer à la synchroniser. rekordbox doit être fermé. Sur macOS et Windows. Aussi depuis tes crates Serato, tes playlists Traktor et, sur macOS, tes listes VirtualDJ, avec leurs cues, leurs boucles et leur grille, sans passer par rekordbox."
+            "d": "Exporte tes playlists rekordbox sur une clé USB avec leurs cues, leur grille et leurs formes d’onde, et rekordbox peut continuer à la synchroniser. rekordbox doit être fermé. Sur macOS et Windows. Aussi depuis tes playlists Traktor et, sur macOS, tes crates Serato et tes listes VirtualDJ, avec leurs cues, leurs boucles et leur grille, sans passer par rekordbox."
           },
           {
             "t": "Tes playlists Traktor",
@@ -460,7 +460,8 @@
         "keepsOriginal": "Garde l’original",
         "engineUsb": "USB Engine",
         "noRestore": "Pas dans Sauvegardes",
-        "beta": "Bêta"
+        "beta": "Bêta",
+        "macOnly": "macOS seulement"
       }
     },
     "metaTitle": "Tout ce que fait Surco · Fonctions",
@@ -1124,7 +1125,7 @@
         "title": "Emporte tes playlists sur une clé USB",
         "s": "Exporte tes playlists vers une clé USB prête pour les lecteurs.",
         "body": [
-          "Ça marche avec les playlists rekordbox, Engine DJ, Serato et Traktor, sur macOS et Windows, et avec les listes VirtualDJ sur macOS."
+          "Ça marche avec les playlists rekordbox, Engine DJ et Traktor, sur macOS et Windows, et avec les crates Serato et les listes VirtualDJ sur macOS."
         ],
         "steps": [
           {

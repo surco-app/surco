@@ -36,6 +36,19 @@ export type CueProgram = DjProgram
 
 export type LibraryProgram = DjProgram
 
+export const USB_EXPORT_ON = {
+  rekordbox: { darwin: true, win32: true },
+  traktor: { darwin: true, win32: true },
+  engine: { darwin: true, win32: true },
+  serato: { darwin: true, win32: false },
+  virtualdj: { darwin: true, win32: false },
+} as const satisfies Record<UsbProgram, { darwin: boolean; win32: boolean }>
+
+export function exportsUsbOn(program: DjProgram, platform: string): boolean {
+  if (!PROGRAM_CAN[program].usb || (platform !== 'darwin' && platform !== 'win32')) return false
+  return USB_EXPORT_ON[program as UsbProgram][platform]
+}
+
 export const PROGRAM_BETA: Record<DjProgram, boolean> = {
   rekordbox: false,
   traktor: false,

@@ -45,7 +45,7 @@ import { cacheBytesOf } from '../shared/analysisCacheSize'
 import { trashLimits } from '../shared/backupPolicy'
 import { activeCueFlow } from '../shared/cueFlows'
 import { DJ_CUE_QUEUE_CHANGED, DJ_SYNC_ISSUE } from '../shared/djApi'
-import type { CueProgram } from '../shared/djProgram'
+import { type CueProgram, exportsUsbOn } from '../shared/djProgram'
 import type { TunedTaste } from '../shared/dropTaste'
 import { errorWithKey } from '../shared/errorKeys'
 import {
@@ -1700,9 +1700,11 @@ function registerIpc(): void {
     ensureClosed: (program, win, detail) =>
       ensureClosed(program, win, reasonOfDetail(program, detail)),
     engineLibrary: engineLibraryPath,
-    serato: process.platform === 'darwin' ? { roots: seratoRoots } : undefined,
-    traktor: { nml: traktorReadPath, bootVolume: () => bootVolumeName() },
-    virtualdj: process.platform === 'darwin' ? { roots: virtualdjRoots } : undefined,
+    serato: exportsUsbOn('serato', process.platform) ? { roots: seratoRoots } : undefined,
+    traktor: exportsUsbOn('traktor', process.platform)
+      ? { nml: traktorReadPath, bootVolume: () => bootVolumeName() }
+      : undefined,
+    virtualdj: exportsUsbOn('virtualdj', process.platform) ? { roots: virtualdjRoots } : undefined,
   })
 
   // Reaches an encode already in flight: cancelBatch's own flag only stops jobs

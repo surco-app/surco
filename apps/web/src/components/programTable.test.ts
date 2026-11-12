@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest'
 import { CUE_PROGRAMS } from '../../../desktop/src/renderer/src/lib/cuePrograms'
 import {
   DJ_PROGRAMS,
+  exportsUsbOn,
   isWritable,
   PROGRAM_BETA,
   PROGRAM_CAN,
@@ -103,6 +104,15 @@ describe('DJ program table never promises what the app does not do', () => {
     'calls %s beta only where the app marks it beta in its sidebar',
     (program) => {
       expect(cellOf('windows', program).note === 'beta').toBe(PROGRAM_BETA[program])
+    },
+  )
+
+  it.each(DJ_PROGRAMS)(
+    'says the USB from %s is macOS only exactly where the app has no Windows exporter for it',
+    (program) => {
+      expect(cellOf('usb', program).note === 'macOnly').toBe(
+        exportsUsbOn(program, 'darwin') && !exportsUsbOn(program, 'win32'),
+      )
     },
   )
 

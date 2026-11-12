@@ -283,7 +283,7 @@
           {
             "t": "Un USB para tus CDJ",
             "s": "Prepara un USB para tus CDJ con cues, rejilla y ondas.",
-            "d": "Exportas tus playlists de rekordbox a un USB con sus cues, su rejilla y sus ondas, y rekordbox lo puede seguir sincronizando. Necesita rekordbox cerrado. En macOS y Windows. También desde tus crates de Serato, tus playlists de Traktor y, en macOS, tus listas de VirtualDJ, con sus cues, loops y rejilla, sin pasar por rekordbox."
+            "d": "Exportas tus playlists de rekordbox a un USB con sus cues, su rejilla y sus ondas, y rekordbox lo puede seguir sincronizando. Necesita rekordbox cerrado. En macOS y Windows. También desde tus playlists de Traktor y, en macOS, tus crates de Serato y tus listas de VirtualDJ, con sus cues, loops y rejilla, sin pasar por rekordbox."
           },
           {
             "t": "Tus playlists de Traktor",
@@ -460,7 +460,8 @@
         "keepsOriginal": "Conserva el original",
         "engineUsb": "USB de Engine",
         "noRestore": "Sin restaurar en Copias",
-        "beta": "Beta"
+        "beta": "Beta",
+        "macOnly": "Solo macOS"
       }
     },
     "metaTitle": "Todo lo que hace Surco · Funciones",
@@ -1124,7 +1125,7 @@
         "title": "Lleva tus playlists a un USB",
         "s": "Exporta tus playlists a un USB listo para los reproductores.",
         "body": [
-          "Funciona con playlists de rekordbox, Engine DJ, Serato y Traktor, en macOS y Windows, y con las listas de VirtualDJ en macOS."
+          "Funciona con playlists de rekordbox, Engine DJ y Traktor, en macOS y Windows, y con los crates de Serato y las listas de VirtualDJ en macOS."
         ],
         "steps": [
           {

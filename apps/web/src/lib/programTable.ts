@@ -22,6 +22,7 @@ export type Note =
   | 'engineUsb'
   | 'noRestore'
   | 'beta'
+  | 'macOnly'
 
 export type RowId =
   | 'tab'
@@ -123,7 +124,13 @@ export const PROGRAM_TABLE: readonly {
     rows: [
       {
         id: 'usb',
-        cells: { rekordbox: Y, traktor: Y, engine: y('engineUsb'), serato: Y, virtualdj: Y },
+        cells: {
+          rekordbox: Y,
+          traktor: Y,
+          engine: y('engineUsb'),
+          serato: y('macOnly'),
+          virtualdj: y('macOnly'),
+        },
       },
       {
         id: 'copies',

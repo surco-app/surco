@@ -283,7 +283,7 @@
           {
             "t": "Um pendrive para os seus CDJs",
             "s": "Prepara um pendrive para os seus CDJs com cues, grade e ondas.",
-            "d": "Exporte suas playlists do rekordbox para um pendrive com cues, grade e ondas, e o rekordbox pode continuar sincronizando com ele. Precisa do rekordbox fechado. No macOS e no Windows. Também a partir dos seus crates do Serato, das suas playlists do Traktor e, no macOS, das suas listas do VirtualDJ, com cues, loops e grade, sem passar pelo rekordbox."
+            "d": "Exporte suas playlists do rekordbox para um pendrive com cues, grade e ondas, e o rekordbox pode continuar sincronizando com ele. Precisa do rekordbox fechado. No macOS e no Windows. Também a partir das suas playlists do Traktor e, no macOS, dos seus crates do Serato e das suas listas do VirtualDJ, com cues, loops e grade, sem passar pelo rekordbox."
           },
           {
             "t": "Suas playlists do Traktor",
@@ -460,7 +460,8 @@
         "keepsOriginal": "Mantém o original",
         "engineUsb": "Pendrive do Engine",
         "noRestore": "Sem restaurar em Cópias",
-        "beta": "Beta"
+        "beta": "Beta",
+        "macOnly": "Só macOS"
       }
     },
     "metaTitle": "Tudo o que o Surco faz · Funções",
@@ -1124,7 +1125,7 @@
         "title": "Leve suas playlists para um USB",
         "s": "Exporte suas playlists para um USB pronto para os players.",
         "body": [
-          "Funciona com playlists do rekordbox, Engine DJ, Serato e Traktor, no macOS e no Windows, e com as listas do VirtualDJ no macOS."
+          "Funciona com playlists do rekordbox, Engine DJ e Traktor, no macOS e no Windows, e com os crates do Serato e as listas do VirtualDJ no macOS."
         ],
         "steps": [
           {

@@ -283,7 +283,7 @@
           {
             "t": "A USB stick for your CDJs",
             "s": "Prepares a USB stick for your CDJs with cues, grid and waveforms.",
-            "d": "Export your rekordbox playlists to a USB stick with their cues, grid and waveforms, and rekordbox can keep syncing it. Needs rekordbox closed. On macOS and Windows. Also from your Serato crates, your Traktor playlists and, on macOS, your VirtualDJ lists, with their cues, loops and grid, without going through rekordbox."
+            "d": "Export your rekordbox playlists to a USB stick with their cues, grid and waveforms, and rekordbox can keep syncing it. Needs rekordbox closed. On macOS and Windows. Also from your Traktor playlists and, on macOS, your Serato crates and your VirtualDJ lists, with their cues, loops and grid, without going through rekordbox."
           },
           {
             "t": "Your Traktor playlists",
@@ -460,7 +460,8 @@
         "keepsOriginal": "Keeps the original",
         "engineUsb": "Engine USB",
         "noRestore": "Not in Backups",
-        "beta": "Beta"
+        "beta": "Beta",
+        "macOnly": "macOS only"
       }
     },
     "metaTitle": "Everything Surco does · Features",
@@ -1124,7 +1125,7 @@
         "title": "Take your playlists on a USB stick",
         "s": "Export your playlists to a USB stick ready for the players.",
         "body": [
-          "It works with rekordbox, Engine DJ, Serato and Traktor playlists, on macOS and Windows, and with VirtualDJ lists on macOS."
+          "It works with rekordbox, Engine DJ and Traktor playlists, on macOS and Windows, and with Serato crates and VirtualDJ lists on macOS."
         ],
         "steps": [
           {
