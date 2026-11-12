@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import { app } from 'electron'
 import log from 'electron-log/main'
 import {
+  DJ_PROGRAMS,
   type DjProgram,
   type LibraryProgram,
   READ_ONLY_PROGRAMS,
@@ -145,6 +146,59 @@ function onlyLibrary<P extends LibraryProgram>(
   location: LibraryLocations[P],
 ): LibraryLocations {
   return { ...NO_LIBRARIES, [program]: location }
+}
+
+const UPDATE_SETTING = {
+  rekordbox: 'syncRekordbox',
+  traktor: 'syncTraktor',
+  engine: 'syncEngineDj',
+  serato: 'syncSerato',
+  virtualdj: 'syncVirtualdj',
+} as const satisfies Record<DjProgram, keyof ReturnType<typeof getSettings>>
+
+const ADD_SETTING = {
+  rekordbox: 'addToRekordbox',
+  traktor: 'addToTraktor',
+  engine: 'addToEngineDj',
+  serato: 'addToSerato',
+  virtualdj: 'addToVirtualdj',
+} as const satisfies Record<DjProgram, keyof ReturnType<typeof getSettings>>
+
+export async function conversionPrograms(
+  paths: string[],
+  deps: { traktorRead: () => string; rootLibraries: () => RootLibraries },
+): Promise<DjProgram[]> {
+  const settings = getSettings()
+  const status = currentLibraryStatus()
+  const roots = deps.rootLibraries()
+  const locations: LibraryLocations = {
+    rekordbox: status.rekordbox.found
+      ? findRekordboxCollection({ configured: settings.rekordboxDbPath })
+      : '',
+    engine: status.engine.found ? settings.engineLibraryDir : '',
+    traktor: deps.traktorRead(),
+    serato: roots.serato,
+    virtualdj: roots.virtualdj,
+  }
+  const reached: DjProgram[] = []
+  for (const program of DJ_PROGRAMS) {
+    if (locations[program].length === 0) continue
+    if (settings[ADD_SETTING[program]]) {
+      reached.push(program)
+      continue
+    }
+    if (!settings[UPDATE_SETTING[program]]) continue
+    const holds = djLibraryFileUse(onlyLibrary(program, locations[program]), {
+      realPath: (p: string) => realpathSync(p),
+    })
+    for (const path of paths) {
+      if (await holds(path)) {
+        reached.push(program)
+        break
+      }
+    }
+  }
+  return reached
 }
 
 export async function librariesKeepingOriginal(

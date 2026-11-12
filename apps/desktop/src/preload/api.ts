@@ -5,6 +5,7 @@
 import type { PeekableAnalyses } from '../shared/audioIpcContract'
 import type { CueProfile, CueProfileRead, TasteTrack } from '../shared/cueProfile'
 import type { DjApi } from '../shared/djApi'
+import type { CueProgram } from '../shared/djProgram'
 import type { DropInput } from '../shared/dropDetect'
 import type { FeedbackForm, FeedbackOutcome } from '../shared/feedback'
 import type { GridFit } from '../shared/gridEdit'
@@ -301,6 +302,7 @@ export interface Api {
   // file-conflict choice the previous run left. Fire-and-forget; single converts skip it,
   // so their conflicts always prompt.
   beginConversionBatch: () => void
+  conversionPrograms: (paths: string[]) => Promise<CueProgram[]>
   // Marks the end of a convert-all run so main flushes any Traktor collection.nml
   // patches the batch recorded. Fire-and-forget; must fire even when the run was
   // cancelled or failed, or its patches would leak into the next batch's flush.

@@ -564,6 +564,12 @@ export function useTrackProcessing({
     },
   )
 
+  const askToCloseReached = useStableCallback(async (ids: string[]): Promise<void> => {
+    const paths = ids.flatMap((id) => tracksRef.current.find((t) => t.id === id)?.inputPath ?? [])
+    const programs = await window.api.conversionPrograms(paths)
+    if (programs.length > 0) await window.api.dj.askToApply(programs)
+  })
+
   // The Editor's convert button and ⌘⏎ call this directly — the only entry point that
   // reaches a conversion without going through processAll's loop. ffmpeg.ts records a
   // Traktor patch for every conversion unconditionally, so a standalone call needs its
@@ -582,6 +588,7 @@ export function useTrackProcessing({
       declickOverride?: DeclickConfig,
       keepMp3?: boolean,
     ): Promise<BatchOutcome> => {
+      await askToCloseReached([id])
       window.api.beginConversionBatch()
       try {
         return await runOne(
@@ -740,6 +747,7 @@ export function useTrackProcessing({
       let done = 0
       let results: BatchOutcome[] = []
       try {
+        await askToCloseReached(ids)
         // Convert several tracks at once instead of one-at-a-time: ffmpeg spawns an
         // independent child per track, so a bulk run overlaps them up to CONVERT_CONCURRENCY.
         // The Apple Music add stays serialized in the main process (Music imports one file at

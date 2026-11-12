@@ -152,6 +152,7 @@ import { fileIdentity, isSameFile, removeRenamedOriginal } from './inplace'
 import { setLibraryBackupRoot } from './libraryBackups'
 import { libraryCopyInfo, libraryTracksOf, type RootLibraries } from './libraryFileUse'
 import {
+  conversionPrograms,
   currentLibraryStatus,
   duplicateLibraryDeps,
   engineFlushDeps,
@@ -1800,6 +1801,9 @@ function registerIpc(): void {
   // so a batch begun meanwhile waits for its own; a library a nested end took nothing from
   // is left for the end that does.
   ipcMain.on('process:batch-end', (e) => endConversionBatch?.(e.sender))
+  ipcMain.handle('process:programs-for', (_e, paths: string[]) =>
+    conversionPrograms(paths, { traktorRead: traktorReadPath, rootLibraries }),
+  )
   endConversionBatch = (sender) => {
     const upTo = verifyRegistry.cut()
     return moments.runFlush(serialLibraryFlush, rekordboxBatchOpen, async (later) => {

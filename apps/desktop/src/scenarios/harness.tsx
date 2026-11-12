@@ -1017,6 +1017,7 @@ function scenarioApi(
       updateAppleMusic: (job) => invokeMain('applemusic:update', job),
       deleteAppleMusic: (pid, track) => invokeMain('applemusic:delete', pid, track),
     }),
+    conversionPrograms: async () => [],
     beginConversionBatch: () => {
       beginNmlBatch()
       beginRekordboxBatch()

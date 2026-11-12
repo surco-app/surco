@@ -21,6 +21,7 @@ const SETTINGS = vi.hoisted(() => ({
   engineLibraryDir: '',
   syncTraktor: false,
   traktorNmlPath: '',
+  addToRekordbox: false,
   addToTraktor: false,
   addToEngineDj: false,
   addToSerato: false,
@@ -107,6 +108,7 @@ vi.mock('./rekordboxProcess', async (importOriginal) => ({
 import { activity } from './activity'
 import { writeEngineLibraryFixture } from './enginePlaylistsFixture'
 import {
+  conversionPrograms,
   duplicateLibraryDeps,
   engineFlushDeps,
   flushConversionBatch,
@@ -1709,6 +1711,52 @@ describe('what each program closes, shows and reports through the library host',
 
   it('reports sync issues only for rekordbox and Engine DJ, since Traktor tells a blocked write through its dialog alone', () => {
     expect([...SYNC_ISSUE_PROGRAMS]).toEqual(['rekordbox', 'engine'])
+  })
+})
+
+describe('conversionPrograms', () => {
+  const deps = {
+    traktorRead: () => '/t/collection.nml',
+    rootLibraries: () => ({ serato: [], virtualdj: [] }),
+  }
+
+  it('counts a program whose Update is on only when it holds one of the tracks, so converting files it does not know never asks to close it', async () => {
+    const before = { ...SETTINGS }
+    Object.assign(SETTINGS, { syncRekordbox: true, syncTraktor: true })
+    FILE_USE.check.mockImplementation(async (path: string) => path === '/m/a.mp3')
+    try {
+      expect(await conversionPrograms(['/m/a.mp3', '/m/b.mp3'], deps)).toEqual([
+        'rekordbox',
+        'traktor',
+      ])
+      expect(await conversionPrograms(['/m/other.mp3'], deps)).toEqual([])
+    } finally {
+      Object.assign(SETTINGS, before)
+      FILE_USE.check.mockImplementation(async () => false)
+    }
+  })
+
+  it('counts a program whose Add is on for any track, since the conversion adds to it', async () => {
+    const before = { ...SETTINGS }
+    Object.assign(SETTINGS, { syncRekordbox: false, addToTraktor: true })
+    FILE_USE.check.mockImplementation(async () => false)
+    try {
+      expect(await conversionPrograms(['/m/a.mp3'], deps)).toEqual(['traktor'])
+    } finally {
+      Object.assign(SETTINGS, before)
+    }
+  })
+
+  it('leaves out a program with both switches off even when it holds the track', async () => {
+    const before = { ...SETTINGS }
+    Object.assign(SETTINGS, { syncRekordbox: false })
+    FILE_USE.check.mockImplementation(async () => true)
+    try {
+      expect(await conversionPrograms(['/m/a.mp3'], deps)).toEqual([])
+    } finally {
+      Object.assign(SETTINGS, before)
+      FILE_USE.check.mockImplementation(async () => false)
+    }
   })
 })
 

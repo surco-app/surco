@@ -260,6 +260,7 @@ const api: Api = {
   verifyMusicAdded: (trackId, persistentId) =>
     ipcRenderer.invoke('verify:musicAdded', trackId, persistentId),
   releasePlayingFile: (path) => ipcRenderer.invoke('player:release', path),
+  conversionPrograms: (paths) => ipcRenderer.invoke('process:programs-for', paths),
   beginConversionBatch: (): void => ipcRenderer.send('process:batch-begin'),
   endConversionBatch: (): void => ipcRenderer.send('process:batch-end'),
   cancelJob: (jobId: string): void => ipcRenderer.send('process:cancel', jobId),

@@ -399,6 +399,7 @@ function setApi(over: Record<string, unknown> = {}): void {
     // Fired at the top of every convert-all run (it resets main's conflict-decision
     // memory), at the end of every run (it flushes main's recorded Traktor patches), and
     // to cancel a single convert; stub all so processAll doesn't throw.
+    conversionPrograms: vi.fn<Api['conversionPrograms']>().mockResolvedValue([]),
     beginConversionBatch: vi.fn(),
     endConversionBatch: vi.fn(),
     cancelJob: vi.fn(),
