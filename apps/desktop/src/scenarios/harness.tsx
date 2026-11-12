@@ -951,6 +951,7 @@ function scenarioApi(
     },
     onFilesChanged: () => () => {},
     sourceChanged: async () => false,
+    reportSnapshot: () => {},
     takePendingFiles: async () => [],
     unwatchFolders: async () => watcher?.close(),
     recordStat: (key, by) => recordStat(key, by),

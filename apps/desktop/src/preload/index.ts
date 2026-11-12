@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import type { AudioAnalysisIpc, PeekableAnalyses } from '../shared/audioIpcContract'
 import type { CueProfile, CueProfileRead, TasteTrack } from '../shared/cueProfile'
+import type { WindowSnapshot } from '../shared/diagnostics'
 import type { FeedbackForm, FeedbackOutcome } from '../shared/feedback'
 import type {
   ActivityEvent,
@@ -292,6 +293,14 @@ const api: Api = {
   trashReveal: (): Promise<void> => ipcRenderer.invoke('trash:reveal'),
   copyText: (text: string): Promise<void> => ipcRenderer.invoke('clipboard:write', text),
   logInfo: (message: string): void => ipcRenderer.send('log:info', message),
+  reportSnapshot: (counts: Omit<WindowSnapshot, 'heapUsedMb' | 'heapLimitMb'>): void => {
+    const heap = process.getHeapStatistics()
+    ipcRenderer.send('diag:snapshot', {
+      ...counts,
+      heapUsedMb: Math.round(heap.usedHeapSize / 1024),
+      heapLimitMb: Math.round(heap.heapSizeLimit / 1024),
+    })
+  },
   logError: (message: string, stack?: string): void =>
     ipcRenderer.send('log:renderer', message, stack),
   revealLog: (): Promise<void> => ipcRenderer.invoke('log:reveal'),

@@ -4,6 +4,7 @@
 // mismatch — and the renderer (via index.d.ts) reads the very same shape.
 import type { PeekableAnalyses } from '../shared/audioIpcContract'
 import type { CueProfile, CueProfileRead, TasteTrack } from '../shared/cueProfile'
+import type { WindowSnapshot } from '../shared/diagnostics'
 import type { DjApi } from '../shared/djApi'
 import type { CueProgram } from '../shared/djProgram'
 import type { DropInput } from '../shared/dropDetect'
@@ -366,6 +367,7 @@ export interface Api {
   // artifact in an app with no telemetry.
   logError: (message: string, stack?: string) => void
   logInfo: (message: string) => void
+  reportSnapshot: (counts: Omit<WindowSnapshot, 'heapUsedMb' | 'heapLimitMb'>) => void
   // Shows the log file in the OS file manager so a user can attach it to a report.
   revealLog: () => Promise<void>
   revealBackups: () => Promise<string>

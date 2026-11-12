@@ -141,6 +141,7 @@ import { useTriageFilters } from './hooks/useTriageFilters'
 import { useUsbVolumes } from './hooks/useUsbVolumes'
 import { useVerificationUpdates } from './hooks/useVerificationUpdates'
 import { waveformOptions } from './hooks/useWaveform'
+import { useWindowSnapshot } from './hooks/useWindowSnapshot'
 import { nextLocale } from './i18n/locale'
 import { removeAnalysisQueries, seedCachedAnalyses } from './lib/analysisQueries'
 import type { AppleMusicIndex } from './lib/appleMusicLibrary'
@@ -847,6 +848,12 @@ export default function App(): React.JSX.Element {
     },
     filesOpen: browser.source === null,
   })
+
+  useWindowSnapshot(() => ({
+    listTracks: tracksRef.current.length,
+    source: browser.source,
+    sourceTracks: browser.source === null ? null : (browser.entries?.length ?? null),
+  }))
   useEffect(
     () =>
       window.api.onNotAudioSkipped((count) =>
