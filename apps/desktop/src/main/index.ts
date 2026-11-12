@@ -108,7 +108,14 @@ import type { CoverSource } from './cover'
 import { createCoverMemo, hasCoverSource, prepareProcessedCover } from './cover'
 import { downloadCover, imageExt } from './coverDownload'
 import { coverThumbPathOf, pruneCoverThumbs } from './coverThumbs'
-import { installCrashGuards, logHandlerFailures, wireRendererRecovery } from './crashGuards'
+import {
+  installCrashGuards,
+  logHandlerFailures,
+  wireChildProcessGone,
+  wireRendererRecovery,
+  wireUnresponsive,
+} from './crashGuards'
+import { createCrashState } from './crashState'
 import { registerCuesIpc } from './cuesIpc'
 import { createCueTaste } from './cueTaste'
 import { registerCueTasteIpc } from './cueTasteIpc'
@@ -179,6 +186,7 @@ import { registerListReviewIpc } from './listReviewIpc'
 import { listReviewDeps } from './listReviewWiring'
 import { createMediaAccess } from './mediaAccess'
 import { releaseMediaFile, trackMediaStream } from './mediaStreams'
+import { createMemoryWatch, processSamples } from './memoryWatch'
 import { createMoments } from './moments'
 import { isIssuedPair } from './musicDuplicates'
 import { musicReviewLog } from './musicReviewLog'
@@ -312,6 +320,16 @@ import { runInWorker } from './worker'
 // At module load so even a throw during startup leaves a trace in the log file.
 installCrashGuards(process, log)
 logHandlerFailures(ipcMain, log)
+const crashState = createCrashState(
+  createMemoryWatch({
+    metrics: () => processSamples(app.getAppMetrics()),
+    now: Date.now,
+    logger: log,
+    highMb: 3072,
+    size: 20,
+  }),
+)
+wireChildProcessGone(app, log, (type) => crashState.watch.dump(`${type} gone`))
 setLibraryBackupRoot(join(app.getPath('userData'), 'backups'))
 
 if (!app.requestSingleInstanceLock()) app.exit(0)
@@ -969,7 +987,11 @@ function createWindow(): BrowserWindow {
     }
   })
   win.on('ready-to-show', () => win.show())
-  wireRendererRecovery(win.webContents, log)
+  wireRendererRecovery(win.webContents, log, (crash) => {
+    crashState.record(crash)
+    crashState.watch.dump('render process gone')
+  })
+  wireUnresponsive(win.webContents, log, Date.now, 10_000)
   // Stream background-work events (Discogs/Bandcamp searches, cover downloads,
   // conversions) to the renderer's activity panel. Detach on close so the emitter
   // never sends into a destroyed webContents.
@@ -1254,6 +1276,23 @@ function registerIpc(): void {
     log.error('[renderer]', message, typeof stack === 'string' ? stack : '')
   })
   // A decision the renderer takes that the log should keep (why an original stayed).
+  ipcMain.on('diag:snapshot', (_e, snapshot: unknown) => {
+    const s = snapshot as Record<string, unknown> | null
+    if (typeof s !== 'object' || s === null) return
+    if (
+      typeof s.heapUsedMb !== 'number' ||
+      typeof s.heapLimitMb !== 'number' ||
+      typeof s.listTracks !== 'number'
+    )
+      return
+    crashState.watch.window({
+      heapUsedMb: s.heapUsedMb,
+      heapLimitMb: s.heapLimitMb,
+      listTracks: s.listTracks,
+      source: typeof s.source === 'string' ? s.source : null,
+      sourceTracks: typeof s.sourceTracks === 'number' ? s.sourceTracks : null,
+    })
+  })
   ipcMain.on('log:info', (_e, message: unknown) => {
     if (typeof message === 'string') log.info('[renderer]', message)
   })
@@ -2486,6 +2525,7 @@ app.whenReady().then(() => {
     app.dock?.setIcon(nativeImage.createFromPath(join(app.getAppPath(), 'build', 'icon.png')))
   }
   registerIpc()
+  setInterval(() => crashState.watch.sample(), 30_000).unref()
   setTimeout(() => cueTaste.refresh(getSettings().cueLearnFromEdits), 10_000).unref()
   // Lock scripts to same-origin in the packaged build. The meta CSP in index.html
   // keeps 'unsafe-inline' because the dev server's React Fast Refresh injects an

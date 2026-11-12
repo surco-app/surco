@@ -1,6 +1,12 @@
 import { describe, expect, it, vi } from 'vitest'
 import { errorWithKey } from '../shared/errorKeys'
-import { installCrashGuards, logHandlerFailures, wireRendererRecovery } from './crashGuards'
+import {
+  installCrashGuards,
+  logHandlerFailures,
+  wireChildProcessGone,
+  wireRendererRecovery,
+  wireUnresponsive,
+} from './crashGuards'
 
 function fakeEmitter(): {
   on: (event: string, cb: (...args: never[]) => void) => void
@@ -54,7 +60,7 @@ describe('wireRendererRecovery', () => {
     const contents = { ...fakeEmitter(), reload: vi.fn() }
     const logger = { error: vi.fn() }
     wireRendererRecovery(contents, logger)
-    contents.fire('render-process-gone', {}, { reason })
+    contents.fire('render-process-gone', {}, { reason, exitCode: 0 })
     expect(logger.error).not.toHaveBeenCalled()
     expect(contents.reload).not.toHaveBeenCalled()
   })
@@ -138,5 +144,79 @@ describe('logHandlerFailures', () => {
     ipc.handle('sum', (_e, a, b) => (a as number) + (b as number))
     expect(await ipc.call('sum', 2, 3)).toBe(5)
     expect(logger.error).not.toHaveBeenCalled()
+  })
+})
+
+describe('wireRendererRecovery onGone', () => {
+  it('hands the crash to onGone before reloading, so the dump and the notice see the dead window state', () => {
+    const calls: string[] = []
+    const contents = { ...fakeEmitter(), reload: vi.fn(() => calls.push('reload')) }
+    const onGone = vi.fn(() => calls.push('onGone'))
+    wireRendererRecovery(contents, { error: vi.fn() }, onGone)
+    contents.fire('render-process-gone', {}, { reason: 'crashed', exitCode: 5 })
+    expect(calls).toEqual(['onGone', 'reload'])
+    expect(onGone).toHaveBeenCalledWith({
+      reason: 'crashed',
+      exitCode: 5,
+      at: expect.any(Number),
+    })
+  })
+})
+
+describe('wireChildProcessGone', () => {
+  it('logs a GPU or utility process that dies, which used to vanish without a line', () => {
+    const app = fakeEmitter()
+    const logger = { error: vi.fn() }
+    const onGone = vi.fn()
+    wireChildProcessGone(app, logger, onGone)
+    const details = { type: 'GPU', reason: 'crashed', exitCode: 11, name: 'gpu' }
+    app.fire('child-process-gone', {}, details)
+    expect(logger.error).toHaveBeenCalledWith('child process gone', details)
+    expect(onGone).toHaveBeenCalledWith('GPU')
+  })
+
+  it.each(['clean-exit', 'killed'])(
+    'ignores child processes that exit on purpose (%s)',
+    (reason) => {
+      const app = fakeEmitter()
+      const logger = { error: vi.fn() }
+      const onGone = vi.fn()
+      wireChildProcessGone(app, logger, onGone)
+      app.fire('child-process-gone', {}, { type: 'Utility', reason, exitCode: 0 })
+      expect(logger.error).not.toHaveBeenCalled()
+      expect(onGone).not.toHaveBeenCalled()
+    },
+  )
+})
+
+describe('wireUnresponsive', () => {
+  function hung(responsiveAt: number) {
+    const contents = fakeEmitter()
+    const logger = { error: vi.fn(), warn: vi.fn() }
+    let clock = 0
+    wireUnresponsive(contents, logger, () => clock, 10_000)
+    contents.fire('unresponsive')
+    clock = responsiveAt
+    contents.fire('responsive')
+    return logger
+  }
+
+  it('logs how long the window hung, as an error past ten seconds', () => {
+    const logger = hung(12_000)
+    expect(logger.error).toHaveBeenCalledWith('window responsive again after', 12_000, 'ms')
+  })
+
+  it('logs a short hang as a warning, since the window recovered on its own', () => {
+    const logger = hung(3_000)
+    expect(logger.warn).toHaveBeenCalledWith('window responsive again after', 3_000, 'ms')
+    expect(logger.error).not.toHaveBeenCalled()
+  })
+
+  it('logs the moment the window stops answering', () => {
+    const contents = fakeEmitter()
+    const logger = { error: vi.fn(), warn: vi.fn() }
+    wireUnresponsive(contents, logger, () => 0, 10_000)
+    contents.fire('unresponsive')
+    expect(logger.warn).toHaveBeenCalledWith('window unresponsive')
   })
 })

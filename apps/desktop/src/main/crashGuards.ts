@@ -1,3 +1,4 @@
+import type { LastCrash } from '../shared/diagnostics'
 import { type ErrorKey, errorKeyOf } from '../shared/errorKeys'
 // The narrow slices of process / webContents the guards need, so tests hand in fakes.
 export interface CrashLogger {
@@ -58,6 +59,7 @@ const EXPECTED_EXITS = new Set(['clean-exit', 'killed'])
 
 interface GoneDetails {
   reason: string
+  exitCode: number
 }
 
 interface RendererContents {
@@ -69,10 +71,62 @@ interface RendererContents {
 // otherwise leaves a permanently blank window: the React ErrorBoundary lives in
 // the process that just died, so recovery has to come from main. Reloading gets
 // the user back to a working app, and the session file restores their crate.
-export function wireRendererRecovery(contents: RendererContents, logger: CrashLogger): void {
+export function wireRendererRecovery(
+  contents: RendererContents,
+  logger: CrashLogger,
+  onGone?: (crash: LastCrash) => void,
+): void {
   contents.on('render-process-gone', (_event, details) => {
     if (EXPECTED_EXITS.has(details.reason)) return
     logger.error('render process gone', details)
+    onGone?.({ reason: details.reason, exitCode: details.exitCode, at: Date.now() })
     contents.reload()
+  })
+}
+
+interface ChildGoneDetails {
+  type: string
+  reason: string
+  exitCode: number
+  name?: string
+}
+
+interface ChildGoneEvents {
+  on(event: 'child-process-gone', cb: (event: unknown, details: ChildGoneDetails) => void): unknown
+}
+
+export function wireChildProcessGone(
+  appEvents: ChildGoneEvents,
+  logger: CrashLogger,
+  onGone: (why: string) => void,
+): void {
+  appEvents.on('child-process-gone', (_event, details) => {
+    if (EXPECTED_EXITS.has(details.reason)) return
+    logger.error('child process gone', details)
+    onGone(details.type)
+  })
+}
+
+interface HangEvents {
+  on(event: 'unresponsive' | 'responsive', cb: () => void): unknown
+}
+
+export function wireUnresponsive(
+  contents: HangEvents,
+  logger: CrashLogger & { warn: (...a: unknown[]) => void },
+  now: () => number,
+  longMs: number,
+): void {
+  let since: number | null = null
+  contents.on('unresponsive', () => {
+    since = now()
+    logger.warn('window unresponsive')
+  })
+  contents.on('responsive', () => {
+    if (since === null) return
+    const ms = now() - since
+    since = null
+    if (ms >= longMs) logger.error('window responsive again after', ms, 'ms')
+    else logger.warn('window responsive again after', ms, 'ms')
   })
 }
