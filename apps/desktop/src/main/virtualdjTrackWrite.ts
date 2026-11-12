@@ -21,7 +21,8 @@ import {
   type VirtualdjDraft,
   virtualdjDatabaseOf,
 } from './virtualdjLibraryWrite'
-import { moveVirtualdjListRows } from './virtualdjListsWrite'
+import { readVirtualdjLists, type VirtualdjNode } from './virtualdjLists'
+import { moveVirtualdjListRows, virtualdjListsDir } from './virtualdjListsWrite'
 
 const ATTEMPTS = 3
 
@@ -44,6 +45,24 @@ export function virtualdjHeld(roots: VirtualdjRoot[]): (path: string) => boolean
     }),
   )
   return (path) => held.has(path.normalize('NFC'))
+}
+
+function virtualdjListed(roots: VirtualdjRoot[]): (path: string) => boolean {
+  const dir = virtualdjListsDir(roots)
+  const listed = new Set(
+    (dir ? readVirtualdjLists(dir) : []).flatMap(function paths(n: VirtualdjNode): string[] {
+      return n.kind === 'playlist'
+        ? n.paths.map((p) => p.normalize('NFC'))
+        : (n.children ?? []).flatMap(paths)
+    }),
+  )
+  return (path) => listed.has(path.normalize('NFC'))
+}
+
+export function virtualdjHeldOrListed(roots: VirtualdjRoot[]): (path: string) => boolean {
+  const held = virtualdjHeld(roots)
+  const listed = virtualdjListed(roots)
+  return (path) => held(path) || listed(path)
 }
 
 export function virtualdjLibraryHas(
@@ -190,6 +209,7 @@ function movedSong(
   repoint: RekordboxRepoint,
   facts: VirtualdjRepointFacts,
   roots: VirtualdjRoot[],
+  listed: (path: string) => boolean,
 ): LibraryRepointResult {
   if (facts.size === null) return { written: false, reason: 'output-missing' }
   const found = songIn(draft, roots, repoint.from)
@@ -197,7 +217,7 @@ function movedSong(
     songIn(draft, roots, repoint.to)?.song.size === facts.size
       ? { written: true }
       : { written: false, reason: 'no-match' }
-  if (!found) return landed()
+  if (!found) return listed(repoint.from) ? { written: true } : landed()
   const { root, file, xml, song } = found
   if (
     repoint.from === repoint.to &&
@@ -277,7 +297,8 @@ export async function repointVirtualdjTracks(
   for (let attempt = 0; attempt < ATTEMPTS; attempt++) {
     const draft = createVirtualdjDraft()
     const roots = deps.roots()
-    const results = repoints.map((r, i) => movedSong(draft, r, facts[i], roots))
+    const listed = virtualdjListed(roots)
+    const results = repoints.map((r, i) => movedSong(draft, r, facts[i], roots, listed))
     const written = await commitVirtualdjDraft(draft, deps)
     if (written === 'changed') continue
     if (written !== 'written' && written !== 'nothing') {

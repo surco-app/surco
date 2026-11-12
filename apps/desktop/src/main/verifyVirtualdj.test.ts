@@ -12,6 +12,7 @@ import { repointVirtualdjTracks } from './virtualdjTrackWrite'
 
 const fixture = join(__dirname, 'virtualdjFixtures')
 const FROM = '/Music/Serato Pruebas/Pray.mp3'
+const LISTED = '/Music/VirtualDJ Pruebas/Pray.flac'
 
 function library() {
   const base = mkdtempSync(join(tmpdir(), 'surco-vdj-verify-'))
@@ -56,6 +57,31 @@ describe('checkVirtualdj', () => {
         place: 'virtualdj',
         state: 'ok',
         detail: { key: 'virtualdjOk', params: { format: 'AIFF' } },
+      },
+    ])
+  })
+
+  it('confirms a file only a list held once that list points at the converted file, with no song to look for', async () => {
+    const lib = library()
+    const before = snapshotVirtualdjSong(lib.roots(), LISTED)
+    await repointVirtualdjTracks([{ from: LISTED, to: lib.to }], lib.deps)
+    expect(checkVirtualdj(lib.roots(), [{ from: LISTED, to: lib.to, before, size: 8 }])).toEqual([
+      {
+        place: 'virtualdj',
+        state: 'ok',
+        detail: { key: 'virtualdjOk', params: { format: 'AIFF' } },
+      },
+    ])
+  })
+
+  it('names the list still on a file only that list held when its row was not moved', () => {
+    const lib = library()
+    const before = snapshotVirtualdjSong(lib.roots(), LISTED)
+    expect(checkVirtualdj(lib.roots(), [{ from: LISTED, to: lib.to, before, size: 8 }])).toEqual([
+      {
+        place: 'virtualdj',
+        state: 'mismatch',
+        detail: { key: 'virtualdjPlaylistMissing', params: { playlist: 'Surco escrita' } },
       },
     ])
   })

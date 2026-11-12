@@ -20,6 +20,7 @@ import { repointVirtualdjTracks, virtualdjBitrateKbps } from './virtualdjTrackWr
 const fixture = join(__dirname, 'virtualdjFixtures')
 const FIXTURE_XML = readFileSync(join(fixture, 'database.xml'), 'utf8')
 const FROM = '/Music/Serato Pruebas/Pray.mp3'
+const LISTED = '/Music/VirtualDJ Pruebas/Pray.flac'
 const CLOSE = '</VirtualDJ_Database>\r\n'
 
 function songBlock(xml: string, path: string): string {
@@ -194,6 +195,27 @@ describe('repointVirtualdjTracks', () => {
     expect(readFileSync(join(lib.lists, 'Surco escrita.vdjfolder'))).toEqual(
       readFileSync(join(fixture, 'MyLists', 'Surco escrita.vdjfolder')),
     )
+  })
+
+  it('points the rows of a file only a list holds at the new one, since a list add from Surco writes no song and the original goes', async () => {
+    const lib = library()
+    const to = lib.track('Pray listed.aiff')
+    const database = lib.database()
+    expect(await repointVirtualdjTracks([{ from: LISTED, to }], lib.deps)).toEqual([
+      { written: true },
+    ])
+    expect(lib.list('Surco escrita')).toEqual([to])
+    expect(lib.database()).toBe(database)
+  })
+
+  it('answers no match for a file neither the database nor any list holds, and writes nothing', async () => {
+    const lib = library()
+    const to = lib.track('Nowhere.aiff')
+    expect(await repointVirtualdjTracks([{ from: '/Music/Nowhere.mp3', to }], lib.deps)).toEqual([
+      { written: false, reason: 'no-match' },
+    ])
+    expect(lib.copies()).toEqual([])
+    expect(lib.copies('lists')).toEqual([])
   })
 
   it('keeps the database and the lists copies apart, one of each for the move', async () => {

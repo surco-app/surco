@@ -5,7 +5,10 @@ import { formatOf } from './verifyFile'
 import { readVirtualdjLibrary, type VirtualdjRoot } from './virtualdjLibrary'
 import type { VirtualdjNode } from './virtualdjLists'
 
-export type VirtualdjBefore = { lists: { id: string; name: string }[] } | 'absent' | 'unreadable'
+export type VirtualdjBefore =
+  | { lists: { id: string; name: string }[]; listOnly?: true }
+  | 'absent'
+  | 'unreadable'
 
 export interface VirtualdjExpect {
   from: string
@@ -29,7 +32,10 @@ export function snapshotVirtualdjSong(roots: VirtualdjRoot[], from: string): Vir
   const song = library.songs.some((s) => nfc(s.path) === nfc(from))
   const lists = holding(listsOf(library.lists), from)
   if (!song && lists.length === 0) return 'absent'
-  return { lists: lists.map((l) => ({ id: l.id, name: l.name })) }
+  return {
+    lists: lists.map((l) => ({ id: l.id, name: l.name })),
+    ...(song ? {} : { listOnly: true as const }),
+  }
 }
 
 const check = (
@@ -51,8 +57,9 @@ export function checkVirtualdj(roots: VirtualdjRoot[], list: VirtualdjExpect[]):
     if (nfc(e.from) !== nfc(e.to) && songsAt(e.from).length > 0)
       return check('mismatch', 'virtualdjStillOld', { format: formatOf(extname(e.from)) })
     const [song] = songsAt(e.to)
-    if (!song) return check('mismatch', 'virtualdjMissing')
-    if (song.size !== e.size) return check('mismatch', 'virtualdjSizeDiffers')
+    const listOnly = typeof e.before === 'object' && e.before.listOnly === true
+    if (!song && !listOnly) return check('mismatch', 'virtualdjMissing')
+    if (song && song.size !== e.size) return check('mismatch', 'virtualdjSizeDiffers')
     const held = holding(lists, e.to)
     const had = typeof e.before === 'object' ? e.before.lists : []
     const lost = had.find((l) => !held.some((h) => h.id === l.id))

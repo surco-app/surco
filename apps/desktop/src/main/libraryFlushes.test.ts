@@ -1135,7 +1135,25 @@ describe('flushConversionBatch with a converted track VirtualDJ has', () => {
     )
   })
 
-  it('hands VirtualDJ no move for a track it does not have, so its queue never waits on it', async () => {
+  it('hands VirtualDJ the move of a track only one of its lists holds, so the row follows the converted file', async () => {
+    const roots = home(['/m/other.mp3'])
+    mkdirSync(join(roots[0].dir, 'MyLists'))
+    writeFileSync(
+      join(roots[0].dir, 'MyLists', 'Lista.vdjfolder'),
+      '<?xml version="1.0" encoding="UTF-8"?>\r\n<VirtualFolder noDuplicates="no">\r\n\t<song path="/m/a.mp3" size="3" idx="0" />\r\n</VirtualFolder>\r\n',
+    )
+    const virtualdj = { enqueue: vi.fn(), applyQuietly: vi.fn(), roots: () => roots }
+    await withSync(true, async () => {
+      const outcome = await flushConversionBatch(host(), sessions, {
+        rekordbox: { enqueue: vi.fn(), applyQuietly: vi.fn() },
+        virtualdj,
+      })
+      expect(virtualdj.enqueue).toHaveBeenCalledWith([], REPOINTS)
+      expect(outcome.virtualdj).toBe('queued')
+    })
+  })
+
+  it('hands VirtualDJ no move for a track neither its database nor its lists have, so its queue never waits on it', async () => {
     const roots = home(['/m/other.mp3'])
     const virtualdj = { enqueue: vi.fn(), applyQuietly: vi.fn(), roots: () => roots }
     await withSync(true, async () => {
@@ -1827,6 +1845,13 @@ describe('librariesKeepingOriginal', () => {
       expect(await keeps('/m/a.mp3', '/m/taken.flac')).toEqual(['virtualdj'])
       expect(await keeps('/m/a.mp3', '/m/a.flac')).toEqual([])
       expect(await keeps('/m/other.mp3', join(volume, 'other.flac'))).toEqual([])
+      mkdirSync(join(dir, 'MyLists'))
+      writeFileSync(
+        join(dir, 'MyLists', 'Lista.vdjfolder'),
+        '<?xml version="1.0" encoding="UTF-8"?>\r\n<VirtualFolder noDuplicates="no">\r\n\t<song path="/m/listed.mp3" size="3" idx="0" />\r\n</VirtualFolder>\r\n',
+      )
+      expect(await keeps('/m/listed.mp3', join(volume, 'listed.flac'))).toEqual([])
+      expect(await keeps('/m/listed.mp3', '/m/taken.flac')).toEqual([])
     } finally {
       Object.assign(SETTINGS, { syncVirtualdj: false })
     }

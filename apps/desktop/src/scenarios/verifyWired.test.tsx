@@ -7,6 +7,10 @@ vi.mock('electron', async () => (await import('./electronFake')).electronFake())
 vi.mock('../main/rekordboxProcess', () => ({ isRekordboxRunning: vi.fn(async () => false) }))
 vi.mock('../main/engineProcess', () => ({ isEngineDjRunning: vi.fn(async () => false) }))
 vi.mock('../main/traktorProcess', () => ({ isTraktorRunning: vi.fn(async () => false) }))
+vi.mock('../main/virtualdjProcess', () => ({
+  isVirtualdjRunning: vi.fn(async () => false),
+  waitForVirtualdjExit: vi.fn(async () => true),
+}))
 
 import { analysedTrack } from '../main/enginePerformanceFixture'
 import { writeEngineLibraryFixture } from '../main/enginePlaylistsFixture'
@@ -17,8 +21,11 @@ import { findEntries } from '../main/traktorNml'
 import { bootVolumeName } from '../main/traktorNmlLibrary'
 import { readTraktorTree } from '../main/traktorPlaylists'
 import { isTraktorRunning } from '../main/traktorProcess'
+import type { RekordboxEditResult, SourceNode, SourcePlaylistEntry } from '../shared/types'
+import { registerDoor } from './djPrograms/door'
+import { virtualdjLibrary } from './djPrograms/virtualdj'
 import { makeTrack, scenarioDir } from './fixtures'
-import { openSurco, type Sabotage } from './harness'
+import { invokeMain, openSurco, type Sabotage } from './harness'
 import { makeRekordbox, rekordboxRow } from './rekordboxFixture'
 
 afterEach(() => {
@@ -520,5 +527,49 @@ describe('The self-check says a track it added reached the library', () => {
       detail: { key: 'traktorOk', params: { format: 'AIFF' } },
     })
     expect(surco.verification('x.flac')?.status).toBe('ok')
+  }, 60_000)
+})
+
+describe('The self-check follows a VirtualDJ list row Surco wrote with no song of its own', () => {
+  it('moves the row a list add from Surco wrote onto the AIFF and says ok, so the DJ never finds it gone from the list', async () => {
+    const root = scenarioDir('verify-virtualdj-list-only')
+    const source = makeTrack(join(root, 'Crate', 'x.flac'), {
+      title: 'Plastic Dreams',
+      artist: 'Jaydee',
+      signal: 'kick',
+    })
+    const library = virtualdjLibrary.build({ root, home: root }, [], 'Mi lista')
+    const surco = await openSurco({
+      verify: true,
+      settings: { ...library, addToVirtualdj: false, outputFormat: 'aiff' },
+      destination: 'beside',
+    })
+    const door = registerDoor(() => surco.queues)
+    const [list] = await invokeMain<SourceNode[]>('dj:tree', 'virtualdj')
+    const rows = () => invokeMain<SourcePlaylistEntry[]>('dj:playlist', 'virtualdj', list.id)
+    expect(
+      await invokeMain<RekordboxEditResult>(
+        'dj:editPlaylist',
+        'virtualdj',
+        { kind: 'add', playlistId: list.id, tracks: [{ paths: [source] }] },
+        'Mi lista',
+      ),
+    ).toMatchObject({ applied: true })
+    await door.settled()
+    expect((await rows()).map((r) => r.path)).toEqual([source])
+    expect(
+      readFileSync(join(library.virtualdjLibraryDir ?? '', 'database.xml'), 'utf8'),
+    ).not.toContain('x.flac')
+    await surco.drop(join(root, 'Crate'))
+    await surco.convertAll()
+    await surco.settled()
+    expect((await rows()).map((r) => r.path)).toEqual([join(root, 'Crate', 'x.aiff')])
+    expect(surco.verification('x.flac')?.checks.find((c) => c.place === 'virtualdj')).toEqual({
+      place: 'virtualdj',
+      state: 'ok',
+      detail: { key: 'virtualdjOk', params: { format: 'AIFF' } },
+    })
+    expect(surco.verification('x.flac')?.status).toBe('ok')
+    expect(surco.errors).toEqual([])
   }, 60_000)
 })

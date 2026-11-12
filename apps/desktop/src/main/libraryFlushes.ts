@@ -77,7 +77,7 @@ import { syncVirtualdjTags } from './virtualdjTagSync'
 import {
   virtualdjBitrateKbps,
   virtualdjCannotFollow,
-  virtualdjHeld,
+  virtualdjHeldOrListed,
   virtualdjLibraryHas,
 } from './virtualdjTrackWrite'
 
@@ -428,7 +428,7 @@ function virtualdjConversionFlusher(
       try {
         const { addToVirtualdj, syncVirtualdj } = getSettings()
         const roots = queue.roots()
-        const held = syncVirtualdj ? virtualdjHeld(roots) : () => false
+        const held = syncVirtualdj ? virtualdjHeldOrListed(roots) : () => false
         const moves = repoints.filter(
           (r) => (r.from !== r.to || r.fromBytes !== undefined) && held(r.from),
         )
