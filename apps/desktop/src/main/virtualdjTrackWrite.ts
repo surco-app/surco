@@ -25,6 +25,7 @@ import { readVirtualdjLists, type VirtualdjNode } from './virtualdjLists'
 import { moveVirtualdjListRows, virtualdjListsDir } from './virtualdjListsWrite'
 
 const ATTEMPTS = 3
+const LENGTH_TOLERANCE_S = 0.000001
 
 export function virtualdjRootFor(path: string, roots: VirtualdjRoot[]): VirtualdjRoot | null {
   return (
@@ -219,9 +220,14 @@ function movedSong(
       : { written: false, reason: 'no-match' }
   if (!found) return listed(repoint.from) ? { written: true } : landed()
   const { root, file, xml, song } = found
+  const shiftedAlready =
+    !!repoint.engineShift?.trimmedMs &&
+    facts.lengthSeconds !== undefined &&
+    song.lengthSeconds !== null &&
+    Math.abs(song.lengthSeconds - facts.lengthSeconds) < LENGTH_TOLERANCE_S
   if (
     repoint.from === repoint.to &&
-    (repoint.fromBytes === undefined || song.size !== repoint.fromBytes)
+    (repoint.fromBytes === undefined || song.size !== repoint.fromBytes || shiftedAlready)
   )
     return landed()
   if (virtualdjRootFor(repoint.to, roots) !== root)

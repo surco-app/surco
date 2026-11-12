@@ -241,6 +241,25 @@ describe('repointVirtualdjTracks', () => {
     expect(songBlock(once, path)).toContain('Pos="19.973878" Num="1"')
   })
 
+  it('moves the cues only once when a rewrite on the same path that kept its size is applied again after its lists failed', async () => {
+    const lib = library()
+    const path = join(lib.base, 'Music', 'Pray.mp3')
+    writeFileSync(
+      join(lib.dir, 'database.xml'),
+      FIXTURE_XML.replace(
+        `FilePath="${FROM}" FileSize="17138984"`,
+        `FilePath="${path}" FileSize="9"`,
+      ),
+    )
+    lib.track('Pray.mp3', 'rewritten')
+    const repoint = { ...trimmed(path), from: path, fromBytes: 9 }
+    expect(await repointVirtualdjTracks([repoint], lib.deps)).toEqual([{ written: true }])
+    const once = lib.database()
+    expect(await repointVirtualdjTracks([repoint], lib.deps)).toEqual([{ written: true }])
+    expect(lib.database()).toBe(once)
+    expect(songBlock(once, path)).toContain('Pos="19.973878" Num="1"')
+  })
+
   it('follows a file a repair rewrote on its own path to its new size, in the song and in its list rows, cues where they were', async () => {
     const lib = library()
     const path = join(lib.base, 'Music', 'Pray.mp3')
