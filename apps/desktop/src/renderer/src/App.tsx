@@ -1566,7 +1566,7 @@ export default function App(): React.JSX.Element {
     // Both: the notice says how many, and the rows themselves carry the flag so the
     // user can actually find them afterwards instead of hunting through the crate.
     onErrors: (failedIds) => {
-      for (const id of failedIds) updateTrack(id, { analyzeFailed: true })
+      patchTracks(failedIds, { analyzeFailed: true })
       setNotice(tr('notices.qualityErrors', { count: failedIds.length }))
     },
     // Cleared on the way back up: onErrors only fires when something failed, so a
