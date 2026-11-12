@@ -113,7 +113,7 @@ jobs:
           fi
 
   release:
-    needs: prepare
+    needs: [prepare, check]
     strategy:
       # A transient install hiccup on one runner (e.g. ffmpeg-static's binary
       # download getting a 504 from GitHub) shouldn't cancel the other arches'
