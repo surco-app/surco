@@ -581,6 +581,27 @@ describe('CueWaveDetail', () => {
     vi.unstubAllGlobals()
   })
 
+  // The playing preview moves the playhead every frame. Measuring the stage and the canvas
+  // forces the browser to lay the page out, so the size comes from the resize watcher and a
+  // moving playhead only slides the strip it has.
+  it('measures neither the stage nor the canvas while only the playhead moves', () => {
+    const fake = { clearRect: vi.fn(), fillRect: vi.fn(), setTransform: vi.fn(), fillStyle: '' }
+    const context = vi
+      .spyOn(HTMLCanvasElement.prototype, 'getContext')
+      .mockReturnValue(fake as never)
+    const words = new Uint16Array(45000).fill((7 << 13) | (31 << 2))
+    const { rerender } = setup({ source: { words }, playheadMs: 150000 })
+    const canvas = screen.getByTestId('cue-detail').querySelector('canvas') as HTMLCanvasElement
+    const measured = vi.mocked(Element.prototype.getBoundingClientRect)
+    const measures = measured.mock.calls.length
+    const contexts = context.mock.calls.length
+    const left = canvas.style.left
+    for (const ms of [150500, 151000, 151500]) rerender({ source: { words }, playheadMs: ms })
+    expect(canvas.style.left).not.toBe(left)
+    expect(measured.mock.calls.length - measures).toBe(0)
+    expect(context.mock.calls.length - contexts).toBe(0)
+  })
+
   it('paints one column per device pixel on a Retina screen, so a zoomed wave never stretches one entry into blocks', () => {
     vi.stubGlobal('devicePixelRatio', 2)
     const fillRect = vi.fn()

@@ -14,6 +14,7 @@ export function checkGrid(input: {
   fit: GridFit
   atMs: number
   durationMs: number
+  verdict?: GridVerdict | null
 }): GridCheck {
   const { beats, kicks, fit, atMs, durationMs } = input
   const { hereMs, endMs } = gridOffsets(beats, fit, atMs, durationMs, kicks)
@@ -21,7 +22,7 @@ export function checkGrid(input: {
     hereMs,
     endMs,
     worstMs: Math.max(Math.abs(hereMs), Math.abs(endMs)),
-    verdict: gridVerdictOf(beats, fit),
+    verdict: input.verdict === undefined ? gridVerdictOf(beats, fit) : input.verdict,
   }
 }
 

@@ -61,3 +61,37 @@ describe('useListNavigation on a list that mounts only the rows on screen', () =
     expect(revealRow).toHaveBeenCalledWith('t500')
   })
 })
+
+describe('useListNavigation across renders', () => {
+  // App re-renders on every metadata flush and runs an effect keyed on scrollToSelected,
+  // and memoized children take these as props; a new function each render re-ran that
+  // effect and redrew those children for nothing. Each call still reads the latest list.
+  it('keeps the same functions across renders and acts on the latest selection', () => {
+    const revealRow = vi.fn()
+    const nav = (selectedId: string) =>
+      useListNavigation({
+        visibleTracks: tracks,
+        selectedId,
+        setSelection: vi.fn(),
+        continuousPlayback: false,
+        playerVisible: false,
+        playerTrack: null,
+        closePlayer: vi.fn(),
+        rowEls: { current: new Map<string, HTMLButtonElement>() },
+        listScrollRef: { current: document.createElement('div') },
+        qualityFilterRef: { current: null },
+        revealRowRef: { current: revealRow },
+      })
+    const { result, rerender } = renderHook(({ id }) => nav(id), { initialProps: { id: 't1' } })
+    const first = result.current
+    rerender({ id: 't2' })
+    expect(result.current.scrollToSelected).toBe(first.scrollToSelected)
+    expect(result.current.moveSelection).toBe(first.moveSelection)
+    expect(result.current.jumpSelection).toBe(first.jumpSelection)
+    expect(result.current.pageSelection).toBe(first.pageSelection)
+    expect(result.current.revealSelection).toBe(first.revealSelection)
+    expect(result.current.onTrackEnded).toBe(first.onTrackEnded)
+    act(() => first.scrollToSelected())
+    expect(revealRow).toHaveBeenCalledWith('t2')
+  })
+})

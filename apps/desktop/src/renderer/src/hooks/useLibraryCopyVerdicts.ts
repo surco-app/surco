@@ -59,26 +59,47 @@ async function measure(client: QueryClient, entry: Entry): Promise<CopyVerdict |
   return here && library ? compareCopies(here, library, pair) : null
 }
 
+const entryCache = new WeakMap<AppleMusicIndex, WeakMap<TrackItem, Entry | null>>()
+
+function entryOf(index: AppleMusicIndex, t: TrackItem): Entry | null {
+  let byTrack = entryCache.get(index)
+  if (!byTrack) {
+    byTrack = new WeakMap()
+    entryCache.set(index, byTrack)
+  }
+  const cached = byTrack.get(t)
+  if (cached !== undefined) return cached
+  const copy = replaceCandidate(index, {
+    title: t.meta.title,
+    artist: t.meta.artist,
+    durationSec: t.duration,
+  })
+  const entry =
+    !copy || 'ambiguous' in copy
+      ? null
+      : {
+          trackId: t.id,
+          inputPath: t.inputPath,
+          persistentId: copy.persistentId,
+          key: `${t.inputPath}\0${copy.persistentId}`,
+        }
+  byTrack.set(t, entry)
+  return entry
+}
+
 function entriesOf(tracks: TrackItem[], index: AppleMusicIndex | null): Entry[] {
   if (!index) return []
   const entries: Entry[] = []
   for (const t of tracks) {
     if (t.inLibrary !== true || t.musicPersistentId) continue
-    const copy = replaceCandidate(index, {
-      title: t.meta.title,
-      artist: t.meta.artist,
-      durationSec: t.duration,
-    })
-    if (!copy || 'ambiguous' in copy) continue
-    entries.push({
-      trackId: t.id,
-      inputPath: t.inputPath,
-      persistentId: copy.persistentId,
-      key: `${t.inputPath}\0${copy.persistentId}`,
-    })
+    const entry = entryOf(index, t)
+    if (entry) entries.push(entry)
   }
   return entries
 }
+
+const sameEntries = (a: Entry[], b: Entry[]): boolean =>
+  a.length === b.length && a.every((e, i) => e.trackId === b[i].trackId && e.key === b[i].key)
 
 export interface LibraryCopyVerdicts {
   verdictOf: (track: TrackItem) => CopyVerdict | null | undefined
@@ -93,7 +114,12 @@ export function useLibraryCopyVerdicts(
 ): LibraryCopyVerdicts {
   const client = useQueryClient()
   const seen = useSyncExternalStore(subscribe, () => version)
-  const entries = useMemo(() => entriesOf(tracks, index), [tracks, index])
+  const prevEntries = useRef<Entry[]>([])
+  const entries = useMemo(() => {
+    const next = entriesOf(tracks, index)
+    if (!sameEntries(prevEntries.current, next)) prevEntries.current = next
+    return prevEntries.current
+  }, [tracks, index])
   const keys = useMemo(() => entries.map((e) => e.key).join('\n'), [entries])
   const latest = useRef(entries)
   latest.current = entries

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import type { SourcePlaylistEntry } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { playlistMembership, playlistView } from './playlistView'
@@ -151,6 +151,40 @@ describe('playlistView', () => {
     const view = playlistView([converted, B], [entry('/m/B.wav')])
     expect(view.tracks.map((t) => t.id)).toEqual(['b'])
   })
+
+  // Every metadata flush hands a new track list; with 8000 tracks the list, its filters and
+  // the cue lookups all key on the playlist's layout, and a new one rebuilt them on each edit.
+  it('keeps the layout of the previous view across a flush that moves no track', () => {
+    const entries = [
+      entry('/m/A.wav', false, 'l1'),
+      entry(SEP, true, 's1'),
+      entry('/m/B.wav', false, 'l2'),
+    ]
+    const before = playlistView([A, B], entries)
+    const edited = { ...A, listLabel: 'edited' } as TrackItem
+    const after = playlistView([edited, B], entries, before)
+    expect(after.tracks).toEqual([edited, B])
+    expect(after.ids).toBe(before.ids)
+    expect(after.contentOf).toBe(before.contentOf)
+    expect(after.separatorBefore).toBe(before.separatorBefore)
+    expect(after.linksOf).toBe(before.linksOf)
+    expect(after.pathOf).toBe(before.pathOf)
+  })
+
+  it('lays the playlist out again when a flush renames a track it shows', () => {
+    const entries = [entry('/m/A.wav', false, 'l1'), entry('/m/B.wav', false, 'l2')]
+    const before = playlistView([A, B], entries)
+    const renamed = { ...A, inputPath: '/m/A.aiff', movedFrom: ['/m/A.wav'] }
+    const after = playlistView([renamed, B], entries, before)
+    expect(after.pathOf.get('a')).toBe('/m/A.aiff')
+    expect(after.contentOf).not.toBe(before.contentOf)
+  })
+
+  it('lays the playlist out again when its rows change', () => {
+    const before = playlistView([A, B], [entry('/m/A.wav', false, 'l1')])
+    const after = playlistView([A, B], [entry('/m/A.wav', false, 'l1')], before)
+    expect(after.contentOf).not.toBe(before.contentOf)
+  })
 })
 
 describe('playlistMembership', () => {
@@ -167,5 +201,19 @@ describe('playlistMembership', () => {
   // A separator is rekordbox's blank-audio file, not a track of the set.
   it('leaves the separator file out', () => {
     expect(playlistMembership([entry(SEP, true)])(track('s', SEP))).toBe(false)
+  })
+  // The sweeps ask about every loaded track on every flush; a track that did not change
+  // must not have its paths spelled again each time.
+  it('spells the paths of a track it already asked about only once', () => {
+    const inPlaylist = playlistMembership([entry('/m/A.wav')])
+    const moved = { ...B, movedFrom: ['/m/old.wav'], outputPath: '/out/B.aiff' }
+    inPlaylist(moved)
+    const normalize = vi.spyOn(String.prototype, 'normalize')
+    try {
+      expect(inPlaylist(moved)).toBe(false)
+      expect(normalize).not.toHaveBeenCalled()
+    } finally {
+      normalize.mockRestore()
+    }
   })
 })

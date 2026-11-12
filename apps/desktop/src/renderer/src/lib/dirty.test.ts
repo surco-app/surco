@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import type { NormalizeConfig } from '../../../shared/types'
 import type { TrackItem, TrackStatus } from '../types'
 import {
@@ -105,6 +105,25 @@ describe('isStale', () => {
 
   it('treats a done track with no snapshot as fresh rather than stale', () => {
     expect(isStale({ ...converted(), processedSignature: undefined })).toBe(false)
+  })
+
+  it('serializes an unchanged track once, so a whole-library recount on every flush does not restringify 8000 tracks', () => {
+    const t = converted()
+    const stringify = vi.spyOn(JSON, 'stringify')
+    try {
+      isStale(t)
+      isStale(t)
+      trackSignature(t)
+      expect(stringify).toHaveBeenCalledTimes(1)
+    } finally {
+      stringify.mockRestore()
+    }
+  })
+
+  it('reads an edit made as a new track object even after the old one was serialized', () => {
+    const t = converted()
+    expect(isStale(t)).toBe(false)
+    expect(isStale({ ...t, meta: { ...t.meta, title: 'Other' } })).toBe(true)
   })
 })
 

@@ -391,14 +391,15 @@ export function useMusicReview({
       }),
     [allIncomplete, byId, hidden],
   )
+  const incompleteById = useMemo(() => new Map(incomplete.map((f) => [f.id, f])), [incomplete])
   const fillValue = useCallback(
     (id: string, field: ReviewWriteField): string => {
       const key = fillKey(id, field)
       if (key in choices) return choices[key]
-      const found = incomplete.find((f) => f.id === id)?.fields.find((f) => f.field === field)
+      const found = incompleteById.get(id)?.fields.find((f) => f.field === field)
       return found?.proposal?.value ?? ''
     },
-    [choices, incomplete],
+    [choices, incompleteById],
   )
   const fillable = useCallback(
     (f: IncompleteFinding) => f.fields.some((x) => fillValue(f.id, x.field).trim()),

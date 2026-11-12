@@ -31,6 +31,8 @@ export default defineConfig({
     },
     plugins: [react(), tailwindcss()],
     build: {
+      minify: true,
+      sourcemap: 'hidden',
       rollupOptions: {
         input: { index: resolve(__dirname, 'src/renderer/index.html') },
         output: {

@@ -55,6 +55,17 @@ interface QualityAnalysis {
 // dropped folder is checked for fake-lossless rips without opening each row.
 const DJ_APP_POLL_MS = 10_000
 
+const indexes = new WeakMap<TrackItem[], Map<string, TrackItem>>()
+
+function byId(tracks: TrackItem[]): Map<string, TrackItem> {
+  let index = indexes.get(tracks)
+  if (!index) {
+    index = new Map(tracks.map((t) => [t.id, t]))
+    indexes.set(tracks, index)
+  }
+  return index
+}
+
 export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params): QualityAnalysis {
   const queryClient = useQueryClient()
   // Bridged through a ref so analyzeAllQuality keeps a stable identity (the command
@@ -162,7 +173,7 @@ export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params)
       return [
         ...(background ? targetsRef.current.filter(inScope) : targetsRef.current),
         ...Array.from(pendingRef.current.values()).filter(
-          (t) => !targetsRef.current.some((existing) => existing.id === t.id),
+          (t) => !byId(targetsRef.current).has(t.id),
         ),
       ]
     },
@@ -195,7 +206,7 @@ export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params)
         // forgotten mark is lifted and the track queues normally; anything still absent
         // from the list is the stale enqueue of a removed row and is dropped.
         if (forgottenRef.current.has(t.id)) {
-          if (!targetsRef.current.some((existing) => existing.id === t.id)) continue
+          if (!byId(targetsRef.current).has(t.id)) continue
           forgottenRef.current.delete(t.id)
         }
         pendingRef.current.set(t.id, t)
@@ -252,7 +263,7 @@ export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params)
         // Read at the track's turn, not when it was queued: an in-place conversion that
         // renames the file meanwhile leaves the queued row on a path that no longer exists,
         // and the probe then reports a file the user can see right there as missing.
-        const latest = targetsRef.current.find((x) => x.id === t.id) ?? t
+        const latest = byId(targetsRef.current).get(t.id) ?? t
         const path = latest.inputPath
         let evicted = false
         try {

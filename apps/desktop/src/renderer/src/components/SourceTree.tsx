@@ -9,7 +9,7 @@ import {
   Usb,
 } from 'lucide-react'
 import type React from 'react'
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ALL_TRACKS_ID } from '../../../shared/allTracks'
 import { RECENTLY_ADDED_ID } from '../../../shared/recentlyAdded'
@@ -48,7 +48,7 @@ export function flattenPlaylists(
   ])
 }
 
-export function SourceTree({
+export const SourceTree = memo(function SourceTree({
   width,
   title,
   source,
@@ -825,4 +825,4 @@ export function SourceTree({
       </ModalExit>
     </div>
   )
-}
+})

@@ -12,7 +12,15 @@ import {
   Undo2,
 } from 'lucide-react'
 import type React from 'react'
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { withBars } from '../../../shared/barPhase'
@@ -36,6 +44,7 @@ import {
   sameGrid,
   shiftGrid,
 } from '../../../shared/gridEdit'
+import { gridVerdictOf } from '../../../shared/gridVerdict'
 import { hotCueColor } from '../../../shared/rekordboxCueColors'
 import type { QueuedCues, SaveCuesRequest, SurcoGrid, TrackCues } from '../../../shared/types'
 import { type CueAudition, useCueAudition } from '../hooks/useCueAudition'
@@ -81,6 +90,8 @@ import {
   DEFAULT_ZOOM_BARS,
   detailWindow,
   jumpBeats,
+  type Playhead,
+  playheadStore,
   wholeBars,
   zoomStep,
 } from '../lib/cuePlayhead'
@@ -430,6 +441,21 @@ function TwinRows({
   )
 }
 
+const atMs = (ms: number): number => ms
+
+function AtHead<T>({
+  head,
+  of,
+  children,
+}: {
+  head: Playhead
+  of: (ms: number) => T
+  children: (at: T) => React.ReactNode
+}): React.JSX.Element {
+  const at = useSyncExternalStore(head.subscribe, () => of(head.get()))
+  return <>{children(at)}</>
+}
+
 function Editing({
   read,
   queued,
@@ -437,7 +463,7 @@ function Editing({
   draftKey,
   maximized,
   track,
-  playheadMs,
+  head,
   onPlayhead,
   audition,
   onJumpBars,
@@ -455,7 +481,7 @@ function Editing({
   draftKey: string
   maximized: boolean
   track?: CueTrackInfo
-  playheadMs: number
+  head: Playhead
   onPlayhead: (ms: number) => void
   audition: CueAudition
   onJumpBars?: (bars: CueJumpBars) => void
@@ -538,23 +564,32 @@ function Editing({
   const fine = useCueWaveFine(cue.contentId, maximized && !fitting)
   const fitPending = gridOff === null && fitting
   const gridFit = useGridFit(cue.contentId, gridOff === null && (!maximized || fine !== undefined))
-  const offsets =
+  const verdict = useMemo(
+    () => (gridFit ? gridVerdictOf(ctx.beats, gridFit) : null),
+    [ctx.beats, gridFit],
+  )
+  const offsetsAt = (ms: number) =>
     gridFit && state.grid
       ? checkGrid({
           beats: ctx.beats,
           kicks: programBeats,
           fit: gridFit,
-          atMs: playheadMs,
+          atMs: ms,
           durationMs: read.durationMs,
+          verdict,
         })
       : null
   const tolerance = settings.cueGridTolerance
-  const needsFix = offsets !== null && needsGridFix(offsets, tolerance)
+  const needsFixAt = (ms: number) => {
+    const offsets = offsetsAt(ms)
+    return offsets !== null && needsGridFix(offsets, tolerance)
+  }
   const setGrid = (next: EditableGrid) => dispatch({ type: 'set-grid', grid: next })
   const [pinned, setPinned] = useState<{ grid: EditableGrid; pins: number[] } | null>(null)
   const pins = pinned && sameGrid(pinned.grid, state.grid) ? pinned.pins : []
   const pin = (exact: boolean) => {
     if (!state.grid || gridOff !== null) return
+    const playheadMs = head.get()
     const detected = gridFit ? detectedBeatNear(gridFit, playheadMs, programBeats) : playheadMs
     const period = gridFit ? 60000 / gridFit.bpm : 0
     const at = !exact && Math.abs(detected - playheadMs) <= period / 4 ? detected : playheadMs
@@ -614,6 +649,7 @@ function Editing({
     cue.contentId,
   )
   const unsavedSet = useUnsavedCueTracks()
+  const unsavedIds = useMemo(() => [...unsavedSet].sort(), [unsavedSet])
   const { data: canSave = true } = useQuery({
     queryKey: ['traktor-can-save', settings.traktorNmlPath],
     queryFn: () => window.api.traktorCanSave(),
@@ -729,6 +765,7 @@ function Editing({
       : anyGhost
   const place = (ms: number) => dispatch({ type: 'mark-drop', ms, byHand: true })
   const markHere = () => {
+    const playheadMs = head.get()
     if (manual) dispatch({ type: 'add-call', ms: playheadMs })
     else if (placing) place(playheadMs)
   }
@@ -744,7 +781,11 @@ function Editing({
   const focusEditor = useCallback(() => editorRef.current?.focus(), [])
   const wanted = wantedOfDraft(state.cues)
   const clearable = state.cues.some((c) => !state.locked.includes(c.key))
-  const unchanged = JSON.stringify(wanted) === JSON.stringify(baseline) && !draftGridEdited(state)
+  const sameCues = useMemo(
+    () => JSON.stringify(wantedOfDraft(state.cues)) === JSON.stringify(baseline),
+    [state.cues, baseline],
+  )
+  const unchanged = sameCues && !draftGridEdited(state)
   const [overwrite, setOverwrite] = useState<ReadonlySet<string>>(new Set())
   const own = { contentId: cue.contentId, path: cue.path, label: cue.label, draft: state }
   const flowMarked = !provisional && !unchanged && Object.keys(state.origin).length > 0
@@ -755,7 +796,7 @@ function Editing({
       cue.path,
       wanted,
       state.origin,
-      [...unsavedSet].sort(),
+      unsavedIds,
       [...overwrite],
       settings.cueFlowToRekordbox,
       settings.cueFlowToTraktor,
@@ -910,38 +951,45 @@ function Editing({
   const pad = (kind: number) => {
     const existing = state.cues.find((c) => c.kind === kind)
     if (!existing) {
-      dispatch({ type: 'add-hot', ms: playheadMs, kind })
+      dispatch({ type: 'add-hot', ms: head.get(), kind })
       return
     }
     dispatch({ type: 'select', key: existing.key })
     seekTo(existing.ms)
   }
-  const landsAs = (kind: number): number | null => {
-    const next = reduceDraft(
-      state,
-      { type: 'add-hot', ms: playheadMs, kind },
-      ctxRef.current as DraftContext,
-    )
-    return next.cues.find((c) => !state.cues.some((o) => o.key === c.key))?.kind ?? null
-  }
+  const snappedAt = (ms: number) => ctx.snapTo[nearestBeat(ctx.snapTo, ms)]
+  const landsAs = useMemo(() => {
+    const landings = new Map<string, number | null>()
+    return (kind: number): number | null => {
+      const ms = head.get()
+      const at = `${ctx.snapTo[nearestBeat(ctx.snapTo, ms)]}|${kind}`
+      if (landings.has(at)) return landings.get(at) ?? null
+      const next = reduceDraft(state, { type: 'add-hot', ms, kind }, ctx)
+      const lands = next.cues.find((c) => !state.cues.some((o) => o.key === c.key))?.kind ?? null
+      landings.set(at, lands)
+      return lands
+    }
+  }, [state, ctx, head])
   const memoryStep = (dir: 1 | -1) => {
-    const to = adjacentCall(state.cues, playheadMs, dir)
+    const to = adjacentCall(state.cues, head.get(), dir)
     if (to === null) return
     seekTo(to)
     const call = callAt(state.cues, to)
     if (call) dispatch({ type: 'select', key: call.key })
   }
-  const removableCall =
+  const removableCallAt = (ms: number) =>
     selected && selected.kind === 0
       ? selected
-      : (callAt(state.cues, playheadMs) ??
-        callAt(state.cues, ctx.snapTo[nearestBeat(ctx.snapTo, playheadMs)]))
+      : (callAt(state.cues, ms) ?? callAt(state.cues, ctx.snapTo[nearestBeat(ctx.snapTo, ms)]))
+  const deckAt = (ms: number) => `${removableCallAt(ms)?.key ?? ''}|${snappedAt(ms)}`
   const memoryRemove = () => {
+    const removableCall = removableCallAt(head.get())
     if (!removableCall || state.locked.includes(removableCall.key)) return
     dispatch(removeOf(removableCall.key))
     focusEditor()
   }
   const run = (key: CueKey) => {
+    const playheadMs = head.get()
     if (key.type === 'play') audition.toggle(playheadMs)
     else if (key.type === 'jump')
       seekTo(jumpBeats(ctx.beats, playheadMs, key.dir * settings.cueJumpBars * BEATS_PER_BAR))
@@ -1285,34 +1333,38 @@ function Editing({
     </button>
   )
   const fitGridControl = (
-    <button
-      type="button"
-      data-testid="cues-fit-grid"
-      data-needs-fix={needsFix ? 'true' : undefined}
-      aria-busy={fitPending || undefined}
-      disabled={!state.grid || !gridFit}
-      onClick={() =>
-        state.grid &&
-        gridFit &&
-        fitGridTo(autoFitGrid(state.grid, gridFit, playheadMs, programBeats, rekordboxGrid))
-      }
-      className={`press relative flex shrink-0 items-center gap-1.5 whitespace-nowrap border border-[var(--color-line-strong)] text-xs font-medium text-fg-muted hover:bg-[var(--color-hover)] disabled:opacity-40 data-[needs-fix=true]:border-[var(--color-accent)] data-[needs-fix=true]:bg-[var(--color-accent)] data-[needs-fix=true]:font-semibold data-[needs-fix=true]:text-[var(--color-on-accent)] ${autoHeight}`}
-    >
-      <Tooltip label={gridOff ?? tr('editor.cues.grid.autoHint')} />
-      {fitPending && (
-        <Loader2
-          data-testid="cues-fit-grid-spinner"
-          className="absolute inset-0 m-auto h-3 w-3 animate-spin text-fg-faint"
-          aria-hidden="true"
-        />
+    <AtHead head={head} of={needsFixAt}>
+      {(needsFix) => (
+        <button
+          type="button"
+          data-testid="cues-fit-grid"
+          data-needs-fix={needsFix ? 'true' : undefined}
+          aria-busy={fitPending || undefined}
+          disabled={!state.grid || !gridFit}
+          onClick={() =>
+            state.grid &&
+            gridFit &&
+            fitGridTo(autoFitGrid(state.grid, gridFit, head.get(), programBeats, rekordboxGrid))
+          }
+          className={`press relative flex shrink-0 items-center gap-1.5 whitespace-nowrap border border-[var(--color-line-strong)] text-xs font-medium text-fg-muted hover:bg-[var(--color-hover)] disabled:opacity-40 data-[needs-fix=true]:border-[var(--color-accent)] data-[needs-fix=true]:bg-[var(--color-accent)] data-[needs-fix=true]:font-semibold data-[needs-fix=true]:text-[var(--color-on-accent)] ${autoHeight}`}
+        >
+          <Tooltip label={gridOff ?? tr('editor.cues.grid.autoHint')} />
+          {fitPending && (
+            <Loader2
+              data-testid="cues-fit-grid-spinner"
+              className="absolute inset-0 m-auto h-3 w-3 animate-spin text-fg-faint"
+              aria-hidden="true"
+            />
+          )}
+          <span
+            data-testid="cues-fit-grid-label"
+            style={fitPending ? { visibility: 'hidden' } : undefined}
+          >
+            {tr('editor.cues.grid.fit')}
+          </span>
+        </button>
       )}
-      <span
-        data-testid="cues-fit-grid-label"
-        style={fitPending ? { visibility: 'hidden' } : undefined}
-      >
-        {tr('editor.cues.grid.fit')}
-      </span>
-    </button>
+    </AtHead>
   )
   const actions = (
     <div data-testid="cues-actions" className="flex shrink-0 items-center gap-1">
@@ -1336,10 +1388,9 @@ function Editing({
       </button>
     </div>
   )
-  const stripView = detailWindow(ctx.beats, playheadMs, zoom)
-  const offView = (ms: number) => ms < stripView.fromMs || ms > stripView.toMs
-  const stripGhost =
-    hoverGhost && ghost
+  const stripGhostIn = (stripView: { fromMs: number; toMs: number }) => {
+    const offView = (ms: number) => ms < stripView.fromMs || ms > stripView.toMs
+    return hoverGhost && ghost
       ? {
           added: ghost.added.filter((c) => offView(c.ms)),
           gone: ghost.gone.filter((key) => {
@@ -1349,65 +1400,79 @@ function Editing({
           rejected: ghost.rejected?.filter((r) => offView(r.ms)),
         }
       : ghost
+  }
   const strip = (
-    <CueWave
-      offGrid={offGridKeys}
-      anchors={state.grid && draftGridChanged(state) ? gridAnchors(state.grid) : programAnchors}
-      wave={read.wave}
-      grid={grid}
-      quantize={quantize}
-      durationMs={read.durationMs}
-      cues={waveCues}
-      selected={state.selected}
-      trimmed={state.trimmed}
-      proposals={proposals}
-      onDropProposal={dropProposal}
-      ghost={stripGhost}
-      cursorMs={hoverGhost && ghost ? (hoverMs ?? undefined) : manualMenuMs}
-      onSelect={(key) => dispatch({ type: 'select', key })}
-      onMenu={maximized ? setMenu : undefined}
-      onMarkMenu={openMarkMenu}
-      playheadMs={playheadMs}
-      onSeek={seekTo}
-      view={stripView}
-      slim={!maximized}
-      detail={words}
-    />
+    <AtHead head={head} of={atMs}>
+      {(playheadMs) => {
+        const stripView = detailWindow(ctx.beats, playheadMs, zoom)
+        return (
+          <CueWave
+            offGrid={offGridKeys}
+            anchors={
+              state.grid && draftGridChanged(state) ? gridAnchors(state.grid) : programAnchors
+            }
+            wave={read.wave}
+            grid={grid}
+            quantize={quantize}
+            durationMs={read.durationMs}
+            cues={waveCues}
+            selected={state.selected}
+            trimmed={state.trimmed}
+            proposals={proposals}
+            onDropProposal={dropProposal}
+            ghost={stripGhostIn(stripView)}
+            cursorMs={hoverGhost && ghost ? (hoverMs ?? undefined) : manualMenuMs}
+            onSelect={(key) => dispatch({ type: 'select', key })}
+            onMenu={maximized ? setMenu : undefined}
+            onMarkMenu={openMarkMenu}
+            playheadMs={playheadMs}
+            onSeek={seekTo}
+            view={stripView}
+            slim={!maximized}
+            detail={words}
+          />
+        )
+      }}
+    </AtHead>
   )
   const detail = (
-    <CueWaveDetail
-      offGrid={offGridKeys}
-      anchors={state.grid && draftGridChanged(state) ? gridAnchors(state.grid) : programAnchors}
-      source={source}
-      grid={grid}
-      cues={waveCues}
-      selected={state.selected}
-      playheadMs={playheadMs}
-      bars={zoom}
-      quantize={quantize}
-      onScrub={seekTo}
-      onZoom={(dir) => setZoom((z) => zoomStep(z, dir))}
-      ghost={ghost}
-      onMarkMenu={openMarkMenu}
-      onMenu={maximized ? openMenuAt : undefined}
-      cursorMs={manualMenuMs}
-      movable={[
-        ...points,
-        ...state.cues
-          .filter((c) => c.kind !== 0 && !state.locked.includes(c.key))
-          .map((c) => c.key),
-      ]}
-      onMoveMark={(key, ms) => dispatch(moveOf(key, ms))}
-      onMarkDrag={setPointDrag}
-      compact={!maximized}
-      onPlace={placing ? place : undefined}
-      onHover={placing && menu === null ? setHoverMs : undefined}
-      proposals={proposals}
-      onAcceptProposal={acceptProposal}
-      onDropProposal={dropProposal}
-    />
+    <AtHead head={head} of={atMs}>
+      {(playheadMs) => (
+        <CueWaveDetail
+          offGrid={offGridKeys}
+          anchors={state.grid && draftGridChanged(state) ? gridAnchors(state.grid) : programAnchors}
+          source={source}
+          grid={grid}
+          cues={waveCues}
+          selected={state.selected}
+          playheadMs={playheadMs}
+          bars={zoom}
+          quantize={quantize}
+          onScrub={seekTo}
+          onZoom={(dir) => setZoom((z) => zoomStep(z, dir))}
+          ghost={ghost}
+          onMarkMenu={openMarkMenu}
+          onMenu={maximized ? openMenuAt : undefined}
+          cursorMs={manualMenuMs}
+          movable={[
+            ...points,
+            ...state.cues
+              .filter((c) => c.kind !== 0 && !state.locked.includes(c.key))
+              .map((c) => c.key),
+          ]}
+          onMoveMark={(key, ms) => dispatch(moveOf(key, ms))}
+          onMarkDrag={setPointDrag}
+          compact={!maximized}
+          onPlace={placing ? place : undefined}
+          onHover={placing && menu === null ? setHoverMs : undefined}
+          proposals={proposals}
+          onAcceptProposal={acceptProposal}
+          onDropProposal={dropProposal}
+        />
+      )}
+    </AtHead>
   )
-  const toCall = barsToNextCall(ctx.beats, pointMs, playheadMs)
+  const toCallAt = (ms: number) => barsToNextCall(ctx.beats, pointMs, ms)
   const flowControl = (
     <span data-testid="cues-flow-menu" className="flex min-w-0 items-center gap-2">
       <Select
@@ -1442,7 +1507,7 @@ function Editing({
         type="button"
         data-testid="cues-play"
         aria-label={audition.playing ? tr('editor.cues.pause') : tr('editor.cues.play')}
-        onClick={() => audition.toggle(playheadMs)}
+        onClick={() => audition.toggle(head.get())}
         className="press flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-fg hover:bg-[var(--color-hover)]"
       >
         {audition.playing ? (
@@ -1462,14 +1527,26 @@ function Editing({
         onZoom={(dir) => setZoom((z) => zoomStep(z, dir))}
         onReset={() => setZoom(DEFAULT_ZOOM_BARS)}
       />
-      <span data-testid="cues-position" className="shrink-0 font-semibold tabular-nums text-fg">
-        {cueClock(playheadMs)}
-      </span>
-      {toCall !== null && (
-        <span data-testid="cue-detail-to-call" className="min-w-0 truncate text-fg-dim">
-          {tr('editor.cues.toCallShort', { count: wholeBars(toCall) })}
-        </span>
-      )}
+      <AtHead head={head} of={atMs}>
+        {(playheadMs) => {
+          const toCall = toCallAt(playheadMs)
+          return (
+            <>
+              <span
+                data-testid="cues-position"
+                className="shrink-0 font-semibold tabular-nums text-fg"
+              >
+                {cueClock(playheadMs)}
+              </span>
+              {toCall !== null && (
+                <span data-testid="cue-detail-to-call" className="min-w-0 truncate text-fg-dim">
+                  {tr('editor.cues.toCallShort', { count: wholeBars(toCall) })}
+                </span>
+              )}
+            </>
+          )
+        }}
+      </AtHead>
       <span className="flex-1" />
       {addCallButton}
       <button
@@ -1650,39 +1727,49 @@ function Editing({
       />
       {autoControl}
       <span className="flex-1" />
-      {offsets && (
-        <span
-          data-testid="cues-grid-offsets"
-          className="flex shrink-0 items-center gap-3 whitespace-nowrap text-xs text-fg-dim"
-        >
-          <GridOffset
-            testid="cues-grid-here"
-            label={tr('editor.cues.grid.here')}
-            ms={offsets.hereMs}
-            tolerance={tolerance}
-          />
-          <GridOffset
-            testid="cues-grid-end"
-            label={tr('editor.cues.grid.end')}
-            ms={offsets.endMs}
-            tolerance={tolerance}
-          />
-        </span>
-      )}
-      <span
-        data-testid="cues-position"
-        className="shrink-0 text-section font-semibold tabular-nums text-fg"
-      >
-        {cueClock(playheadMs)}
-      </span>
-      {toCall !== null && (
-        <span
-          data-testid="cue-detail-to-call"
-          className="shrink-0 whitespace-nowrap text-xs text-fg-dim"
-        >
-          {tr('editor.cues.toCall', { count: wholeBars(toCall) })}
-        </span>
-      )}
+      <AtHead head={head} of={atMs}>
+        {(playheadMs) => {
+          const offsets = offsetsAt(playheadMs)
+          const toCall = toCallAt(playheadMs)
+          return (
+            <>
+              {offsets && (
+                <span
+                  data-testid="cues-grid-offsets"
+                  className="flex shrink-0 items-center gap-3 whitespace-nowrap text-xs text-fg-dim"
+                >
+                  <GridOffset
+                    testid="cues-grid-here"
+                    label={tr('editor.cues.grid.here')}
+                    ms={offsets.hereMs}
+                    tolerance={tolerance}
+                  />
+                  <GridOffset
+                    testid="cues-grid-end"
+                    label={tr('editor.cues.grid.end')}
+                    ms={offsets.endMs}
+                    tolerance={tolerance}
+                  />
+                </span>
+              )}
+              <span
+                data-testid="cues-position"
+                className="shrink-0 text-section font-semibold tabular-nums text-fg"
+              >
+                {cueClock(playheadMs)}
+              </span>
+              {toCall !== null && (
+                <span
+                  data-testid="cue-detail-to-call"
+                  className="shrink-0 whitespace-nowrap text-xs text-fg-dim"
+                >
+                  {tr('editor.cues.toCall', { count: wholeBars(toCall) })}
+                </span>
+              )}
+            </>
+          )
+        }}
+      </AtHead>
       <span aria-hidden="true" className="mx-1 h-5 w-px shrink-0 bg-[var(--color-line-strong)]" />
       <CueMoves
         jumpBars={settings.cueJumpBars}
@@ -1719,16 +1806,20 @@ function Editing({
           <div className="flex shrink-0 flex-col gap-1">
             {strip}
             {gridFit && state.grid && gridOff === null && (
-              <CueGridStrip
-                beats={ctx.beats}
-                kicks={programBeats}
-                fit={gridFit}
-                durationMs={read.durationMs}
-                tolerance={tolerance}
-                playheadMs={playheadMs}
-                pins={pins}
-                onSeek={seekTo}
-              />
+              <AtHead head={head} of={atMs}>
+                {(playheadMs) => (
+                  <CueGridStrip
+                    beats={ctx.beats}
+                    kicks={programBeats}
+                    fit={gridFit}
+                    durationMs={read.durationMs}
+                    tolerance={tolerance}
+                    playheadMs={playheadMs}
+                    pins={pins}
+                    onSeek={seekTo}
+                  />
+                )}
+              </AtHead>
             )}
           </div>
           {detail}
@@ -2004,52 +2095,65 @@ function Editing({
         </p>
       )}
       {maximized && (
-        <CueDeck
-          cues={shownCues}
-          kinds={ctx.slots.kinds}
-          selected={state.selected}
-          locked={state.locked}
-          playing={audition.playing}
-          onPlay={() => audition.toggle(playheadMs)}
-          onPad={pad}
-          onRecolour={
-            fixedColour !== null
-              ? undefined
-              : (key, color) => dispatch({ type: 'recolour', key, color })
-          }
-          onDelete={(key) => dispatch(removeOf(key))}
-          onMemory={() => dispatch({ type: 'add-call', ms: playheadMs })}
-          onMemoryStep={memoryStep}
-          onMemoryRemove={memoryRemove}
-          canRemoveMemory={removableCall !== undefined && !state.locked.includes(removableCall.key)}
-          onClearAll={clearAll}
-          canClearAll={clearable}
-          landsAs={settings.cueLettersByTime ? landsAs : undefined}
-          onDone={focusEditor}
-          gridControls={
-            <>
-              <CueGridControls
-                grid={state.grid}
-                disabledReason={gridOff}
-                fit={gridFit}
-                needsFix={needsFix}
-                playheadMs={playheadMs}
-                onChange={setGrid}
-                onFit={fitGridTo}
+        <AtHead head={head} of={deckAt}>
+          {() => {
+            const removableCall = removableCallAt(head.get())
+            return (
+              <CueDeck
+                cues={shownCues}
+                kinds={ctx.slots.kinds}
+                selected={state.selected}
+                locked={state.locked}
+                playing={audition.playing}
+                onPlay={() => audition.toggle(head.get())}
+                onPad={pad}
+                onRecolour={
+                  fixedColour !== null
+                    ? undefined
+                    : (key, color) => dispatch({ type: 'recolour', key, color })
+                }
+                onDelete={(key) => dispatch(removeOf(key))}
+                onMemory={() => dispatch({ type: 'add-call', ms: head.get() })}
+                onMemoryStep={memoryStep}
+                onMemoryRemove={memoryRemove}
+                canRemoveMemory={
+                  removableCall !== undefined && !state.locked.includes(removableCall.key)
+                }
+                onClearAll={clearAll}
+                canClearAll={clearable}
+                landsAs={settings.cueLettersByTime ? landsAs : undefined}
                 onDone={focusEditor}
-                zones={rekordboxGrid}
-                kicks={programBeats}
-                onPin={pin}
+                gridControls={
+                  <>
+                    <AtHead head={head} of={atMs}>
+                      {(playheadMs) => (
+                        <CueGridControls
+                          grid={state.grid}
+                          disabledReason={gridOff}
+                          fit={gridFit}
+                          needsFix={needsFixAt(playheadMs)}
+                          playheadMs={playheadMs}
+                          onChange={setGrid}
+                          onFit={fitGridTo}
+                          onDone={focusEditor}
+                          zones={rekordboxGrid}
+                          kicks={programBeats}
+                          onPin={pin}
+                        />
+                      )}
+                    </AtHead>
+                    <CueZoom
+                      row
+                      bars={zoom}
+                      onZoom={(dir) => setZoom((z) => zoomStep(z, dir))}
+                      onReset={() => setZoom(DEFAULT_ZOOM_BARS)}
+                    />
+                  </>
+                }
               />
-              <CueZoom
-                row
-                bars={zoom}
-                onZoom={(dir) => setZoom((z) => zoomStep(z, dir))}
-                onReset={() => setZoom(DEFAULT_ZOOM_BARS)}
-              />
-            </>
-          }
-        />
+            )
+          }}
+        </AtHead>
       )}
     </fieldset>
   )
@@ -2119,13 +2223,15 @@ export function CuesSection({
   const unsaved = useUnsavedCueTracks().has(cue.contentId)
   const [round, setRound] = useState(0)
   const draftKey = cueDraftKey(cue.contentId, read?.fingerprint ?? '', queued)
-  const [head, setHead] = useState(() => ({
+  const [heads, setHeads] = useState(() => ({
     contentId: cue.contentId,
-    ms: keptPlayhead(cue.contentId),
+    head: playheadStore(keptPlayhead(cue.contentId)),
   }))
-  const playheadMs = head.contentId === cue.contentId ? head.ms : 0
+  if (heads.contentId !== cue.contentId)
+    setHeads({ contentId: cue.contentId, head: playheadStore(0) })
+  const { head } = heads
   const follow = (ms: number) => {
-    setHead({ contentId: cue.contentId, ms })
+    head.set(ms)
     keepPlayhead(cue.contentId, ms)
   }
   const leadMs = useAuditionLead(cue.contentId)
@@ -2151,7 +2257,7 @@ export function CuesSection({
     moveHeadRef.current(focus.ms)
   }, [focus, cue.contentId])
   const toggle = useRef(() => {})
-  toggle.current = () => audition.toggle(playheadMs)
+  toggle.current = () => audition.toggle(head.get())
   useEffect(() => {
     if (!maximized) return
     return claimKeys({ ...HIDDEN_SECTION_KEYS, play: () => toggle.current() }, { over: true })
@@ -2208,7 +2314,7 @@ export function CuesSection({
         draftKey={draftKey}
         maximized={maximized}
         track={track}
-        playheadMs={playheadMs}
+        head={head}
         onPlayhead={moveHead}
         audition={audition}
         onJumpBars={onJumpBars}

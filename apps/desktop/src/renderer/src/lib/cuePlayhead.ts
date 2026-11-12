@@ -93,3 +93,27 @@ export function wheelZoom(
   if (sum >= WHEEL_ZOOM_STEP) return { pending: 0, dir: 'out' }
   return { pending: sum, dir: null }
 }
+
+export interface Playhead {
+  get: () => number
+  set: (ms: number) => void
+  subscribe: (listener: () => void) => () => void
+}
+
+export function playheadStore(ms: number): Playhead {
+  let at = ms
+  const listeners = new Set<() => void>()
+  return {
+    get: () => at,
+    set: (next) => {
+      at = next
+      for (const listener of listeners) listener()
+    },
+    subscribe: (listener) => {
+      listeners.add(listener)
+      return () => {
+        listeners.delete(listener)
+      }
+    },
+  }
+}

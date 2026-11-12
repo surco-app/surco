@@ -71,7 +71,6 @@ import type {
 } from '../../shared/types'
 import { LiveActivityPanel } from './components/ActivityPanel'
 import { Confetti } from './components/Confetti'
-import { CopiesScreen } from './components/CopiesScreen'
 import { EmptyDisc } from './components/EmptyDisc'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { ModalExit } from './components/ModalShell'
@@ -83,12 +82,11 @@ import {
   MusicReviewTopProgress,
 } from './components/MusicReviewColumn'
 import { Overlays } from './components/Overlays'
-import { PasteTracklistModal } from './components/PasteTracklistModal'
 import { LivePlayer } from './components/Player'
 import { RekordboxQueuePill } from './components/RekordboxQueuePill'
 import { ResizeHandle } from './components/ResizeHandle'
 import { SessionBand } from './components/SessionBand'
-import { type SessionDestination, SessionWizard } from './components/SessionWizard'
+import type { SessionDestination } from './components/SessionWizard'
 import { SourceRail } from './components/SourceRail'
 import { flattenPlaylists, SourceTree } from './components/SourceTree'
 import { ToastStack } from './components/ToastStack'
@@ -98,7 +96,6 @@ import { TrackContextMenu, type TrackPlaylistMenu } from './components/TrackCont
 import { TrackList, type MenuState as TrackMenuState } from './components/TrackList'
 import { TrackListHeader } from './components/TrackListHeader'
 import { TrackListSkeleton } from './components/TrackListSkeleton'
-import { UsbExportModal } from './components/UsbExportModal'
 import { UsbExportPill } from './components/UsbExportPill'
 import { UsbTopProgress } from './components/UsbTopProgress'
 import { useActivityLog } from './hooks/useActivityLog'
@@ -199,7 +196,7 @@ import { clampPanelGeometry } from './lib/panelGeometry'
 import { flushPendingEdits } from './lib/pendingEdits'
 import { isMacOS } from './lib/platform'
 import { reopenedPlaylist } from './lib/playlistEdits'
-import { playlistMembership, playlistView } from './lib/playlistView'
+import { type PlaylistScope, playlistMembership, playlistView } from './lib/playlistView'
 import { needsDiscogsPrefetch } from './lib/prefetch'
 import { topBarProgress } from './lib/progress'
 import { withCachedQualityTag } from './lib/qualityTag'
@@ -302,6 +299,18 @@ const SEEN_SETTLE_MS = 250
 // time a track is selected. The .then unwraps the named export React.lazy needs as a
 // default, same convention as the on-demand overlays in Overlays.tsx.
 const Editor = lazyChunk(() => import('./components/Editor').then((m) => ({ default: m.Editor })))
+const CopiesScreen = lazyChunk(() =>
+  import('./components/CopiesScreen').then((m) => ({ default: m.CopiesScreen })),
+)
+const UsbExportModal = lazyChunk(() =>
+  import('./components/UsbExportModal').then((m) => ({ default: m.UsbExportModal })),
+)
+const PasteTracklistModal = lazyChunk(() =>
+  import('./components/PasteTracklistModal').then((m) => ({ default: m.PasteTracklistModal })),
+)
+const SessionWizard = lazyChunk(() =>
+  import('./components/SessionWizard').then((m) => ({ default: m.SessionWizard })),
+)
 
 // Stable fallback while settings load, so the memoized Editor doesn't see a new array
 // each render. Mirrors the persisted default (Discogs only).
@@ -1581,7 +1590,7 @@ export default function App(): React.JSX.Element {
     // Both: the notice says how many, and the rows themselves carry the flag so the
     // user can actually find them afterwards instead of hunting through the crate.
     onErrors: (failedIds) => {
-      for (const id of failedIds) updateTrack(id, { analyzeFailed: true })
+      patchTracks(failedIds, { analyzeFailed: true })
       setNotice(tr('notices.qualityErrors', { count: failedIds.length }))
     },
     // Cleared on the way back up: onErrors only fires when something failed, so a
@@ -2067,10 +2076,17 @@ export default function App(): React.JSX.Element {
   }, [libraryFailed, librarySource, store])
   // The list narrowed to the open playlist, in its order. Only what the list shows and
   // counts reads it: the Files rows are what is persisted.
-  const playlistScope = useMemo(
-    () => (browser.playlist && browser.entries ? playlistView(tracksView, browser.entries) : null),
-    [browser.playlist, browser.entries, tracksView],
-  )
+  const prevPlaylistScope = useRef<PlaylistScope | null>(null)
+  const playlistScope = useMemo(() => {
+    prevPlaylistScope.current =
+      browser.playlist && browser.entries
+        ? playlistView(tracksView, browser.entries, prevPlaylistScope.current)
+        : null
+    return prevPlaylistScope.current
+  }, [browser.playlist, browser.entries, tracksView])
+  const playlistIds = playlistScope?.ids
+  const playlistPathOf = playlistScope?.pathOf
+  const playlistContentOf = playlistScope?.contentOf
   usePlaylistReadPriority(
     browser.playlist?.id ?? null,
     playlistScope?.tracks ?? [],
@@ -2089,10 +2105,10 @@ export default function App(): React.JSX.Element {
   // the others stay in the collection, and selected they would reach the row menu and
   // the bulk actions unseen.
   useEffect(() => {
-    if (!playlistScope) return
+    if (!playlistIds) return
     const held = heldSelection.current
     heldSelection.current = null
-    const shown = new Set(playlistScope.tracks.map((t) => t.id))
+    const shown = new Set(playlistIds)
     setSelection((current) => {
       const from = held ?? current
       const ids = from.ids.filter((id) => shown.has(id))
@@ -2101,16 +2117,13 @@ export default function App(): React.JSX.Element {
         ? current
         : { ids, anchor }
     })
-  }, [playlistScope, setSelection])
+  }, [playlistIds, setSelection])
   // Keyed on the playlist once its rows are applied, not when it is picked: while its
   // entries load the list is empty, and the order must follow on arrival.
   const openPlaylistId = playlistScope ? (browser.playlist?.id ?? '') : ''
   // The playlist's order, so a reorder (or a re-read bringing another order) is a new view:
   // the order held for the selected row would otherwise keep the old one on screen.
-  const playlistOrder = useMemo(
-    () => playlistScope?.tracks.map((t) => t.id).join('\n') ?? '',
-    [playlistScope],
-  )
+  const playlistOrder = useMemo(() => playlistIds?.join('\n') ?? '', [playlistIds])
   // The background sweeps work on the open playlist only: the collection keeps every
   // playlist passed through, and sweeping all of it spent Discogs and ffmpeg on sets the
   // user had left. Narrowed from the moment a playlist is picked, before its entries land
@@ -2162,14 +2175,13 @@ export default function App(): React.JSX.Element {
 
   const unsavedCues = useUnsavedCueTracks()
   const gridEntries = useMemo(() => {
-    const pathOf = new Map((playlistScope?.tracks ?? []).map((t) => [t.id, t.inputPath]))
-    return [...(playlistScope?.contentOf ?? new Map<string, string>())].filter(
+    return [...(playlistContentOf ?? new Map<string, string>())].filter(
       ([trackId, contentId]) =>
         programOf(contentId) === 'rekordbox' ||
-        SAME_CLOCK_FILE.test(pathOf.get(trackId) ?? '') ||
-        (programOf(contentId) === 'traktor' && /\.mp3$/i.test(pathOf.get(trackId) ?? '')),
+        SAME_CLOCK_FILE.test(playlistPathOf?.get(trackId) ?? '') ||
+        (programOf(contentId) === 'traktor' && /\.mp3$/i.test(playlistPathOf?.get(trackId) ?? '')),
     )
-  }, [playlistScope])
+  }, [playlistContentOf, playlistPathOf])
   // The grids and the comparison with the library copy are part of the analysis: they run
   // with it, by themselves when every import is analysed, else once Analyze is pressed. Picking
   // their filter still starts them, for a list nobody analysed yet.
@@ -2196,11 +2208,11 @@ export default function App(): React.JSX.Element {
   const gridNoteOf = useMemo(() => {
     if (filterSelection.attention !== 'badGrid') return undefined
     return (t: TrackItem) => {
-      const contentId = playlistScope?.contentOf.get(t.id)
+      const contentId = playlistContentOf?.get(t.id)
       const check = contentId === undefined ? undefined : gridCheckOf(contentId)
       return check ? gridNote(check, tr, i18n.language) : undefined
     }
-  }, [filterSelection.attention, gridCheckOf, playlistScope, tr, i18n.language])
+  }, [filterSelection.attention, gridCheckOf, playlistContentOf, tr, i18n.language])
   // The selection reaches the filter only while it filters by it: every click or arrow
   // moves the selection, and rebuilding the facts recounts every filter over the whole list.
   const filteredSelection = filterSelection.selection ? selectedIdSet : null
@@ -2211,12 +2223,12 @@ export default function App(): React.JSX.Element {
       incomplete: (t) =>
         missingRequiredOf(t, requiredFields, settings?.customFields ?? []).length > 0,
       unsaved: (t) => {
-        const contentId = playlistScope?.contentOf.get(t.id)
+        const contentId = playlistContentOf?.get(t.id)
         return hasStagedEdits(t) || (contentId !== undefined && unsavedCues.has(contentId))
       },
       gridTolerance: settings?.cueGridTolerance ?? DEFAULT_CUE_GRID_TOLERANCE,
       gridCheck: (t) => {
-        const contentId = playlistScope?.contentOf.get(t.id)
+        const contentId = playlistContentOf?.get(t.id)
         return contentId === undefined ? undefined : gridCheckOf(contentId)
       },
       libraryCopy: libraryCopyVerdicts.verdictOf,
@@ -2229,7 +2241,7 @@ export default function App(): React.JSX.Element {
       requiredFields,
       settings?.customFields,
       settings?.cueGridTolerance,
-      playlistScope,
+      playlistContentOf,
       unsavedCues,
       playedPaths,
       filteredSelection,
@@ -2872,20 +2884,20 @@ export default function App(): React.JSX.Element {
   const unsavedCueIds = useMemo(() => {
     const ids = new Set<string>()
     if (!cuesOpen) return ids
-    for (const [id, contentId] of playlistScope?.contentOf ?? [])
+    for (const [id, contentId] of playlistContentOf ?? [])
       if (unsavedCues.has(contentId)) ids.add(id)
     return ids
-  }, [cuesOpen, playlistScope, unsavedCues])
+  }, [cuesOpen, playlistContentOf, unsavedCues])
   const autoMarks = useAutoMarks()
   const autoMarkById = useMemo(() => {
     const byId = new Map<string, AutoMark>()
     if (!cuesOpen) return byId
-    for (const [id, contentId] of playlistScope?.contentOf ?? []) {
+    for (const [id, contentId] of playlistContentOf ?? []) {
       const mark = autoMarks.get(contentId)
       if (mark) byId.set(id, mark)
     }
     return byId
-  }, [cuesOpen, playlistScope, autoMarks])
+  }, [cuesOpen, playlistContentOf, autoMarks])
   const cueTargets = useMemo(
     () =>
       selectedTracks.flatMap((t) => {
@@ -3079,6 +3091,13 @@ export default function App(): React.JSX.Element {
       readsCollection,
     ],
   )
+  const selectTreePlaylist = useStableCallback((node: SourceNode, folders: string[]) => {
+    setSidebarPeek(false)
+    selectPlaylist(node, folders)
+  })
+  const exportTreeToUsb = useStableCallback(() => {
+    if (treeUsbProgram) openUsbExport(null, treeUsbProgram)
+  })
   // Read at drop time, so a re-read landing mid-drag still names the dragged rows. A track
   // row stands for every row it has in the playlist (the list shows it once), so all of them
   // move together; a separator key is its own link.
@@ -3916,39 +3935,36 @@ export default function App(): React.JSX.Element {
                       missing={browser.libraryMissing}
                       notice={runningNote && programRunning ? tr(runningNote.key) : undefined}
                       selectedId={browser.playlist?.id ?? null}
-                      onSelect={(node, folders) => {
-                        setSidebarPeek(false)
-                        selectPlaylist(node, folders)
-                      }}
+                      onSelect={selectTreePlaylist}
                       edit={editableSource ? treeEdit : undefined}
                       fixed={fixed}
-                      onExportUsb={
-                        treeUsbProgram ? () => openUsbExport(null, treeUsbProgram) : undefined
-                      }
+                      onExportUsb={treeUsbProgram ? exportTreeToUsb : undefined}
                       newPlaylistRef={newPlaylistRef}
                     />
                   )}
                 </div>
                 {copiesOpen && (
                   <div className="min-w-0 flex-1">
-                    <CopiesScreen
-                      key={copiesOpen.key}
-                      programs={libraryCopies.programs}
-                      trash={{
-                        entries: trashEntries,
-                        ...(settings
-                          ? trashLimits(settings)
-                          : { retentionDays: TRASH_RETENTION_DAYS, maxBytes: TRASH_MAX_BYTES }),
-                        onRestore: (entry) => void onRestoreFromTrash(entry),
-                        onRemove: (entry) => void onRemoveFromTrash(entry),
-                        onEmpty: () => void onEmptyTrash(),
-                        onReveal: () => void window.api.trashReveal(),
-                        initialQuery: copiesOpen.query,
-                      }}
-                      openMusic={copiesOpen.openMusic}
-                      onRestore={(program, id) => window.api.restoreCopy(program, id)}
-                      onReveal={() => void window.api.revealBackups()}
-                    />
+                    <Suspense fallback={null}>
+                      <CopiesScreen
+                        key={copiesOpen.key}
+                        programs={libraryCopies.programs}
+                        trash={{
+                          entries: trashEntries,
+                          ...(settings
+                            ? trashLimits(settings)
+                            : { retentionDays: TRASH_RETENTION_DAYS, maxBytes: TRASH_MAX_BYTES }),
+                          onRestore: (entry) => void onRestoreFromTrash(entry),
+                          onRemove: (entry) => void onRemoveFromTrash(entry),
+                          onEmpty: () => void onEmptyTrash(),
+                          onReveal: () => void window.api.trashReveal(),
+                          initialQuery: copiesOpen.query,
+                        }}
+                        openMusic={copiesOpen.openMusic}
+                        onRestore={(program, id) => window.api.restoreCopy(program, id)}
+                        onReveal={() => void window.api.revealBackups()}
+                      />
+                    </Suspense>
                   </div>
                 )}
                 {/* Until there are rows the window is one screen: an empty column beside the
@@ -4209,7 +4225,14 @@ export default function App(): React.JSX.Element {
                 )}
 
                 {!copiesOpen && (
-                  <main className="min-w-0 flex-1 bg-[var(--color-panel)]">
+                  <main
+                    className="min-w-0 flex-1 bg-[var(--color-panel)]"
+                    style={
+                      {
+                        '--results-width': `${columns.widths.results}px`,
+                      } as React.CSSProperties
+                    }
+                  >
                     {review !== null ? (
                       <MusicReviewDetailPane
                         sync={{
@@ -4279,7 +4302,6 @@ export default function App(): React.JSX.Element {
                             onDeclickChange={onDeclickChange}
                             onAddToAppleMusic={onAddSelectedToAppleMusic}
                             onCleanUp={onCleanUp}
-                            resultsWidth={columns.widths.results}
                             resultsFolded={resultsFolded}
                             onFoldResults={foldResults}
                             onResultsResizeStart={onResultsResizeStart}
@@ -4422,69 +4444,73 @@ export default function App(): React.JSX.Element {
                 }
               />
             )}
-            <ModalExit>
-              {usbModal && (
-                <UsbExportModal
-                  nodes={usbTree.data}
-                  volumes={usbVolumes}
-                  preselect={usbModal.preselect}
-                  program={usbModal.source}
-                  onStart={(req) => window.api.usbExport(req)}
-                  onCancelExport={() => void window.api.usbCancel()}
-                  onClose={closeUsbExport}
-                />
-              )}
-            </ModalExit>
-            <ModalExit>
-              {pasteTracklist && editableSource && (
-                <PasteTracklistModal
-                  program={editableSource}
-                  node={pasteTracklist.node}
-                  create={pasteTracklist.create}
-                  onAdd={(tracks, newName) => void addPastedTracklist(tracks, newName)}
-                  onClose={() => setPasteTracklist(null)}
-                />
-              )}
-            </ModalExit>
-            <ModalExit>
-              {sessionWizard && sessionProgram && settings && browser.tree && (
-                <SessionWizard
-                  tree={browser.tree}
-                  roles={
-                    sessionWizard.adjust
-                      ? sessionRun.recent?.roles
-                      : sessionWizard.start
-                        ? { [sessionWizard.start.playlistId]: 'any' }
-                        : undefined
-                  }
-                  initial={
-                    sessionWizard.adjust && sessionRun.recent
-                      ? sessionRun.recent.answers
-                      : {
-                          ...answersFromSettings(settings.sessionWizard),
-                          ...(sessionWizard.start && { sources: [sessionWizard.start.playlistId] }),
-                        }
-                  }
-                  rows={sessionRows}
-                  destination={sessionDestination(sessionWizard, browser.tree)}
-                  onClose={() => setSessionWizard(null)}
-                  onBuild={async (answers, roles) => {
-                    const result = sessionWizard.adjust
-                      ? await sessionRun.adjust(answers, roles)
-                      : sessionWizard.fill
-                        ? await sessionRun.fill(sessionWizard.fill, answers, roles)
-                        : await sessionRun.build(
-                            sessionWizard.parentId,
-                            answers,
-                            roles,
-                            sessionWizard.start?.path,
-                          )
-                    if (result === 'built' || result === 'queued') setSessionWizard(null)
-                    return result
-                  }}
-                />
-              )}
-            </ModalExit>
+            <Suspense fallback={null}>
+              <ModalExit>
+                {usbModal && (
+                  <UsbExportModal
+                    nodes={usbTree.data}
+                    volumes={usbVolumes}
+                    preselect={usbModal.preselect}
+                    program={usbModal.source}
+                    onStart={(req) => window.api.usbExport(req)}
+                    onCancelExport={() => void window.api.usbCancel()}
+                    onClose={closeUsbExport}
+                  />
+                )}
+              </ModalExit>
+              <ModalExit>
+                {pasteTracklist && editableSource && (
+                  <PasteTracklistModal
+                    program={editableSource}
+                    node={pasteTracklist.node}
+                    create={pasteTracklist.create}
+                    onAdd={(tracks, newName) => void addPastedTracklist(tracks, newName)}
+                    onClose={() => setPasteTracklist(null)}
+                  />
+                )}
+              </ModalExit>
+              <ModalExit>
+                {sessionWizard && sessionProgram && settings && browser.tree && (
+                  <SessionWizard
+                    tree={browser.tree}
+                    roles={
+                      sessionWizard.adjust
+                        ? sessionRun.recent?.roles
+                        : sessionWizard.start
+                          ? { [sessionWizard.start.playlistId]: 'any' }
+                          : undefined
+                    }
+                    initial={
+                      sessionWizard.adjust && sessionRun.recent
+                        ? sessionRun.recent.answers
+                        : {
+                            ...answersFromSettings(settings.sessionWizard),
+                            ...(sessionWizard.start && {
+                              sources: [sessionWizard.start.playlistId],
+                            }),
+                          }
+                    }
+                    rows={sessionRows}
+                    destination={sessionDestination(sessionWizard, browser.tree)}
+                    onClose={() => setSessionWizard(null)}
+                    onBuild={async (answers, roles) => {
+                      const result = sessionWizard.adjust
+                        ? await sessionRun.adjust(answers, roles)
+                        : sessionWizard.fill
+                          ? await sessionRun.fill(sessionWizard.fill, answers, roles)
+                          : await sessionRun.build(
+                              sessionWizard.parentId,
+                              answers,
+                              roles,
+                              sessionWizard.start?.path,
+                            )
+                      if (result === 'built' || result === 'queued') setSessionWizard(null)
+                      return result
+                    }}
+                  />
+                )}
+              </ModalExit>
+            </Suspense>
             {confettiBurst > 0 && <Confetti key={confettiBurst} />}
           </div>
         </ToastProvider>

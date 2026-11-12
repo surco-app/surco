@@ -20,6 +20,7 @@ import type {
 import { resetEditorSections } from '../hooks/useEditorSections'
 import i18n from '../i18n'
 import { type AppleMusicIndex, buildLibraryIndex } from '../lib/appleMusicLibrary'
+import { convertGate } from '../lib/batch'
 import { coverSourceOf } from '../lib/coverSource'
 import { trackSignature } from '../lib/dirty'
 import { resetEditorPlace } from '../lib/editorPlace'
@@ -37,6 +38,11 @@ vi.hoisted(() => {
 
 import { djReads, type ProgramReads } from '../test/api'
 import { Editor } from './Editor'
+
+vi.mock('../lib/batch', async (importOriginal) => {
+  const real = await importOriginal<typeof import('../lib/batch')>()
+  return { ...real, convertGate: vi.fn(real.convertGate) }
+})
 
 afterEach(cleanup)
 
@@ -260,7 +266,6 @@ function renderEditor(
         onApplyTitleFormat={onApplyTitleFormat}
         onAddToAppleMusic={vi.fn()}
         onCleanUp={onCleanUp}
-        resultsWidth={480}
         resultsFolded={props.resultsFolded ?? false}
         onFoldResults={onFoldResults}
         onResultsResizeStart={vi.fn()}
@@ -1495,7 +1500,6 @@ function MultiHarness() {
         searchInputRef={createRef<HTMLInputElement>()}
         onExportCollection={vi.fn()}
         readFullTrack={async () => undefined}
-        resultsWidth={480}
         resultsFolded={false}
         onFoldResults={vi.fn()}
         onResultsResizeStart={vi.fn()}
@@ -1890,7 +1894,6 @@ describe('Editor multi-select', () => {
         searchInputRef={createRef<HTMLInputElement>()}
         onExportCollection={vi.fn()}
         readFullTrack={async () => undefined}
-        resultsWidth={480}
         resultsFolded={false}
         onFoldResults={vi.fn()}
         onResultsResizeStart={vi.fn()}
@@ -1940,6 +1943,19 @@ describe('Editor multi-select', () => {
       onChangeTracksPlaylists,
     }
   }
+
+  // Working out what a convert would leave out walks every selected track through the
+  // library and required-field checks. Typing a search in the results column changes none
+  // of that, so a big selection must not pay for it on every keystroke.
+  it('keeps the convert plan of several tracks while typing a search', () => {
+    renderMulti()
+    const before = vi.mocked(convertGate).mock.calls.length
+    for (const query of ['k', 'ku', 'kum']) {
+      fireEvent.change(screen.getByTestId('discogs-query'), { target: { value: query } })
+    }
+    expect(screen.getByTestId('discogs-query')).toHaveValue('kum')
+    expect(vi.mocked(convertGate).mock.calls.length - before).toBe(0)
+  })
 
   // "File" heads the single-track form; over "Editing 2 tracks" it read as one file
   // sitting above a selection of several, so the multi form starts at its own title.
@@ -2558,7 +2574,6 @@ describe('Editor export control', () => {
           onChange={(patch) => setTrack((t) => ({ ...t, ...patch }))}
           onProcess={vi.fn()}
           onAddToAppleMusic={vi.fn()}
-          resultsWidth={480}
           resultsFolded={false}
           onFoldResults={vi.fn()}
           onResultsResizeStart={vi.fn()}
@@ -3999,7 +4014,6 @@ describe('Editor Discogs apply', () => {
         onRecordUndo={onRecordUndo}
         onProcess={vi.fn()}
         onAddToAppleMusic={vi.fn()}
-        resultsWidth={480}
         resultsFolded={false}
         onFoldResults={vi.fn()}
         onResultsResizeStart={vi.fn()}

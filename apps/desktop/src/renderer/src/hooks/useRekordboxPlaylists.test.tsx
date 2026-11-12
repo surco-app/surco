@@ -5,6 +5,7 @@ import type React from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import type { Settings } from '../../../shared/types'
+import { rekordboxPathOf } from '../lib/rekordboxPlaylists'
 import { djReads, installApi, type ProgramReads } from '../test/api'
 import type { TrackItem } from '../types'
 import {
@@ -15,6 +16,11 @@ import {
   useRekordboxPlaylistOptions,
   useRekordboxPlaylistTree,
 } from './useRekordboxPlaylists'
+
+vi.mock('../lib/rekordboxPlaylists', async (importOriginal) => {
+  const real = await importOriginal<typeof import('../lib/rekordboxPlaylists')>()
+  return { ...real, rekordboxPathOf: vi.fn(real.rekordboxPathOf) }
+})
 
 const wrapper = ({ children }: { children: React.ReactNode }) => (
   <QueryClientProvider client={new QueryClient()}>{children}</QueryClientProvider>
@@ -283,6 +289,41 @@ describe('usePlaylistsSpec', () => {
   it('holds Traktor’s playlists until its collection is confirmed, since Surco writes to that one only', async () => {
     const hook = spec('traktor', false)
     await waitFor(() => expect(hook.result.current?.disabled).toBe('unconfirmed'))
+  })
+
+  // The editor asks for every library's field on every render, over the whole selection.
+  // A hidden field, or a render where the selection did not change, must not walk the
+  // tracks again to rebuild the membership key.
+  it('walks the selection only when it changes, and not at all while the field is hidden', async () => {
+    const tracks = Array.from(
+      { length: 50 },
+      (_, i) => ({ id: `t${i}`, inputPath: `/m/${i}.flac`, meta: {} }) as TrackItem,
+    )
+    installApi({
+      dj: djReads({
+        engine: {
+          available: vi.fn<ProgramReads['available']>(async () => true),
+          tree: vi.fn<ProgramReads['tree']>(async () => []),
+          membership: vi.fn<ProgramReads['membership']>(async () => ({})),
+        },
+      }),
+    })
+    const onChange = vi.fn()
+    vi.mocked(rekordboxPathOf).mockClear()
+    const hook = renderHook(
+      ({ shown }: { shown: boolean }) =>
+        usePlaylistsSpec('engine', { shown, item: tracks[0], tracks, onChange }),
+      { wrapper, initialProps: { shown: false } },
+    )
+    await act(async () => {})
+    for (let i = 0; i < 3; i++) hook.rerender({ shown: false })
+    expect(rekordboxPathOf).not.toHaveBeenCalled()
+    hook.rerender({ shown: true })
+    await act(async () => {})
+    const walked = vi.mocked(rekordboxPathOf).mock.calls.length
+    expect(walked).toBe(tracks.length)
+    for (let i = 0; i < 3; i++) hook.rerender({ shown: true })
+    expect(vi.mocked(rekordboxPathOf).mock.calls.length).toBe(walked)
   })
 
   it('never holds Engine DJ’s playlists behind Traktor’s collection check', async () => {

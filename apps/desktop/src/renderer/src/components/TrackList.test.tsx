@@ -2486,6 +2486,17 @@ describe('TrackList past a few hundred rows', () => {
     expect(row).toHaveAttribute('aria-setsize', '1000')
   })
 
+  // The list re-renders for its own reasons (a row menu, the drop line, the scroll) while
+  // the same rows stay mounted; their numbers are already right, and rewriting every one on
+  // each of those renders was work for nothing.
+  it('leaves the row numbers alone on a re-render that mounts no other rows', () => {
+    renderScrolled(many(1000))
+    const renumbered = vi.spyOn(Element.prototype, 'setAttribute')
+    fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+    expect(renumbered.mock.calls.filter(([name]) => name === 'aria-posinset')).toEqual([])
+    renumbered.mockRestore()
+  })
+
   it('draws a playlist separator above the row it breaks before', () => {
     const { scrollTo } = renderScrolled(many(1000), {
       separatorBefore: new Map([['t500', ['s1']]]),

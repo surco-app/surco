@@ -97,6 +97,22 @@ describe('useGridChecks', () => {
     expect(result.current.checkOfContent('102')).toEqual(result.current.checkOf('t2'))
   })
 
+  it('walks a big list once while measuring it, so checking thousands of tracks stays linear', async () => {
+    const { wrapper } = setup(vi.fn<Api['cues']['trackCues']>(async () => null))
+    const size = 200
+    let reads = 0
+    const list: [string, string][] = Array.from({ length: size }, (_, i) => [`t${i}`, `${i}`])
+    const counted = new Proxy(list, {
+      get(target, key, receiver) {
+        if (typeof key === 'string' && /^\d+$/.test(key)) reads += 1
+        return Reflect.get(target, key, receiver)
+      },
+    })
+    const { result } = renderHook(() => useGridChecks(counted, true), { wrapper })
+    await waitFor(() => expect(result.current.done).toBe(size))
+    expect(reads).toBeLessThan(size * 20)
+  })
+
   it('keeps what it measured for the session, so turning the filter on again is instant', async () => {
     const { gridFit, wrapper } = setup()
     const first = renderHook(() => useGridChecks(ENTRIES, true), { wrapper })

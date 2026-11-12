@@ -23,12 +23,18 @@ import '../i18n'
 import { resetEditorSections } from '../hooks/useEditorSections'
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
 import type { Command, CueActions } from '../lib/commands'
+import { reduceDraft } from '../lib/cueDraft'
 import { autoMarkOf, resetCueSession } from '../lib/cueSession'
 import { SettingsProvider } from '../lib/settingsContext'
 import { claimKeys, runKeyClaim } from '../lib/spaceClaim'
 import { type ApiOverrides, installApi } from '../test/api'
 import { hoverTooltip } from '../test/tooltip'
 import { CuesSection } from './CuesSection'
+
+vi.mock('../lib/cueDraft', async (importOriginal) => {
+  const real = await importOriginal<typeof import('../lib/cueDraft')>()
+  return { ...real, reduceDraft: vi.fn(real.reduceDraft) }
+})
 
 const KEPT: CueFlow[] = [MY_FLOW, ONE_AT_32, CALLS_ONLY]
 
@@ -759,6 +765,58 @@ describe('CuesSection maximized keys', () => {
     expect(hoverTooltip(screen.getByTestId('cues-pad-E'))).toBe('Places a cue here · it becomes C')
     seek(128000)
     expect(hoverTooltip(screen.getByTestId('cues-pad-E'))).toBe('Places a cue here · it becomes D')
+  })
+
+  // Each empty pad works out its letter by running the whole draft reducer. The answer only
+  // changes when the playhead reaches another beat, so the playing preview must not pay for
+  // it on every frame.
+  it('works out which letter each empty pad would take once per beat while playing, not on every frame', async () => {
+    stubSound()
+    const frames: FrameRequestCallback[] = []
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => frames.push(cb))
+    setup(
+      { cueLettersByTime: true },
+      {
+        ...READ,
+        cues: [
+          { id: 'a', ms: 16000, kind: 1, color: 1 },
+          { id: 'b', ms: 32000, kind: 2, color: 1 },
+          { id: 'c', ms: 96000, kind: 3, color: 1 },
+        ],
+      },
+    )
+    await maximize()
+    seek(64000)
+    fireEvent.click(screen.getByTestId('cues-play'))
+    await act(async () => audios[0].onloadedmetadata?.())
+    const landings = () =>
+      vi.mocked(reduceDraft).mock.calls.filter(([, action]) => action.type === 'add-hot').length
+    const before = landings()
+    for (const sec of [64.01, 64.05, 64.1, 64.15, 64.2]) {
+      audios[0].currentTime = sec
+      await act(async () => frames.shift()?.(0))
+    }
+    expect(position()).toBe('1:04.2')
+    expect(landings() - before).toBe(0)
+    expect(hoverTooltip(screen.getByTestId('cues-pad-E'))).toBe('Places a cue here · it becomes C')
+  })
+
+  it('keeps the letters the empty pads would take while the pointer moves over the wave', async () => {
+    setup(
+      { cueLettersByTime: true },
+      { ...READ, cues: [{ id: 'a', ms: 16000, kind: 1, color: 1 }] },
+    )
+    await maximize()
+    seek(64000)
+    const landings = () =>
+      vi.mocked(reduceDraft).mock.calls.filter(([, action]) => action.type === 'add-hot').length
+    const before = landings()
+    for (const x of [100, 150, 200, 250]) {
+      fireEvent.mouseMove(screen.getByTestId('cue-detail'), { clientX: x })
+    }
+    expect(screen.getAllByTestId(/^cue-detail-ghost-/).length).toBeGreaterThan(0)
+    expect(landings() - before).toBe(0)
+    expect(hoverTooltip(screen.getByTestId('cues-pad-C'))).toBe('Places a cue here · it becomes B')
   })
 
   it('leaves the empty pads unexplained when each letter is a fixed pad', async () => {

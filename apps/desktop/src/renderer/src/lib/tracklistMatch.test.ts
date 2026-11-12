@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import type { CollectionTrack } from '../../../shared/types'
 import fixture from './fixtures/tracklistCollection.json'
 import { baseTitle, chosenTracks, matchTracklist, reviewRows, splitArtists } from './tracklistMatch'
@@ -324,5 +324,29 @@ describe('matchTracklist against the DJ spelling of an artist', () => {
     ])
     expect(m.level).toBe('similar')
     expect(m.candidates[0].title).toBe('Wonderland (Extended Mix)')
+  })
+})
+
+describe('matchTracklist cost', () => {
+  function rewritesFor(lines: number, collection: CollectionTrack[]): number {
+    const pasted = Array.from({ length: lines }, (_, i) => line(`Somebody Else ${i}`, `Other ${i}`))
+    const replace = vi.spyOn(String.prototype, 'replace')
+    try {
+      matchTracklist(pasted, collection)
+      return replace.mock.calls.length
+    } finally {
+      replace.mockRestore()
+    }
+  }
+
+  // Every pasted line is checked against the whole collection, tens of thousands of tracks.
+  // Rebuilding each collection artist's text for every line made a long set crawl; that work
+  // belongs to the collection, done once, so one more line costs the same in any library.
+  it('does the text work of a line once, not once per collection track', () => {
+    const collection = Array.from({ length: 400 }, (_, i) =>
+      track(`Artist Number ${i}`, `Title ${i}`),
+    )
+    const perLine = (rewritesFor(101, collection) - rewritesFor(1, collection)) / 100
+    expect(perLine).toBeLessThan(50)
   })
 })
