@@ -51,6 +51,18 @@
       {
         "text": "Os ajustes estão agrupados pelo que você está fazendo, com Atalhos ao lado de Geral, um grupo de Conversão e Estatísticas no seu próprio lugar.",
         "in": "1.34.0"
+      },
+      {
+        "text": "Com o seu programa de DJ aberto, o Surco agora pergunta antes de mexer na biblioteca dele. “Fechar o Traktor e aplicar” fecha o programa e grava a mudança na hora. “Aplicar ao fechar” guarda a mudança até você fechar o programa. O Serato e o VirtualDJ pedem que você os feche e aperte “Já fechei, aplicar”.",
+        "in": "1.34.1"
+      },
+      {
+        "text": "Um título que você muda com o Engine DJ aberto agora chega ao Engine quando você o fecha. Uma revisão de metadados aplicada com o Traktor aberto não se perde mais se você não fechar o Traktor.",
+        "in": "1.34.1"
+      },
+      {
+        "text": "Uma lista de um programa de DJ com uma faixa cujo arquivo sumiu não pisca mais. Bibliotecas grandes também ficam mais leves para navegar, analisar e editar.",
+        "in": "1.34.1"
       }
     ]
   },

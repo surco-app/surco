@@ -51,6 +51,18 @@
       {
         "text": "Settings are grouped by what you are doing, with Shortcuts next to General, a Conversion group and Stats in its own place.",
         "in": "1.34.0"
+      },
+      {
+        "text": "With your DJ program open, Surco now asks before changing its library. “Close Traktor and apply” closes it and writes the change right away. “Apply when it closes” keeps the change until you close the program yourself. Serato and VirtualDJ ask you to close them and press “I closed it, apply”.",
+        "in": "1.34.1"
+      },
+      {
+        "text": "A title you change with Engine DJ open now reaches Engine when you close it. A metadata review you apply with Traktor open is no longer lost if you don’t close Traktor.",
+        "in": "1.34.1"
+      },
+      {
+        "text": "A DJ program list that holds a track whose file is gone no longer flickers. Big libraries also feel lighter to browse, analyse and edit.",
+        "in": "1.34.1"
       }
     ]
   },

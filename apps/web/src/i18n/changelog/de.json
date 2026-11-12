@@ -51,6 +51,18 @@
       {
         "text": "Die Einstellungen sind nach Aufgaben gruppiert, mit Kürzel neben Allgemein, einer Gruppe Konvertierung und Statistiken an eigener Stelle.",
         "in": "1.34.0"
+      },
+      {
+        "text": "Wenn dein DJ-Programm offen ist, fragt Surco jetzt, bevor es seine Bibliothek ändert. „Traktor schließen und anwenden“ schließt es und schreibt die Änderung sofort. „Beim Schließen anwenden“ hebt die Änderung auf, bis du das Programm selbst schließt. Bei Serato und VirtualDJ schließt du sie und drückst „Ich habe es geschlossen, anwenden“.",
+        "in": "1.34.1"
+      },
+      {
+        "text": "Ein Titel, den du bei offenem Engine DJ änderst, kommt jetzt in Engine an, sobald du es schließt. Eine Metadaten-Prüfung, die du bei offenem Traktor anwendest, geht nicht mehr verloren, wenn du Traktor nicht schließt.",
+        "in": "1.34.1"
+      },
+      {
+        "text": "Eine Liste eines DJ-Programms mit einem Track, dessen Datei fehlt, flackert nicht mehr. Große Bibliotheken fühlen sich beim Durchsehen, Analysieren und Bearbeiten auch leichter an.",
+        "in": "1.34.1"
       }
     ]
   },
