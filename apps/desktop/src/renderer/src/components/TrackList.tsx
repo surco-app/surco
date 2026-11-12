@@ -29,6 +29,7 @@ import { keyIn } from '../../../shared/camelot'
 import { matchChord } from '../../../shared/shortcutDefaults'
 import { type Chord, eventToChord } from '../../../shared/shortcuts'
 import type { OutputFormat } from '../../../shared/types'
+import { useMiddleTruncatedTitle } from '../hooks/useMiddleTruncatedTitle'
 import { useStableCallback } from '../hooks/useStableCallback'
 import { activeCleanups } from '../lib/autoClean'
 import type { AutoMark } from '../lib/cueSession'
@@ -527,6 +528,7 @@ const TrackRow = memo(function TrackRow({
   const stage = t.status === 'processing' ? t.stage : undefined
   const converting = stage !== undefined
   const shown = rowDisplay(t)
+  const titleFit = useMiddleTruncatedTitle(shown.title)
   const { keyNotation } = useAppSettings()
   const key = t.meta.key ? keyIn(t.meta.key, keyNotation) : ''
   const unanalyzed = unanalysedIn(t)
@@ -770,9 +772,18 @@ const TrackRow = memo(function TrackRow({
                 artist a few letters. */}
               <span data-testid="track-title-line" className="flex h-[18px] items-center gap-2">
                 <span className="relative block min-w-0 flex-1 truncate">
-                  <span className={ROW_TITLE}>
+                  <span ref={titleFit.ref} data-testid="track-title" className={ROW_TITLE}>
                     <Tooltip label={rowTooltip(t, tr)} />
-                    {shown.title}
+                    {titleFit.text === shown.title ? (
+                      shown.title
+                    ) : (
+                      <>
+                        <span data-testid="track-title-fit" aria-hidden="true">
+                          {titleFit.text}
+                        </span>
+                        <span className="sr-only">{shown.title}</span>
+                      </>
+                    )}
                   </span>
                 </span>
                 <span data-testid="track-duration-slot" className={`min-w-[34px] ${ROW_TRAILING}`}>
