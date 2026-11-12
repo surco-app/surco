@@ -111,8 +111,8 @@ algo falla allí.
   `main/virtualdjPaths.ts`). El resto de la ruta se compara tal cual, aunque NTFS no distinga
   mayúsculas. Una ruta nueva se escribe con el separador de la primera ruta con letra que ya tenga esa
   base o esa lista, y con `\` si no hay ninguna.
-- **Bases por unidad.** `<letra>:\VirtualDJ\database.xml` en cada letra de la C a la Z
-  (`virtualdjDriveRoots`, la lista `WINDOWS_DRIVES` de `main/usbVolumes.ts`). Dentro, una ruta con la
+- **Bases por unidad.** `<letra>:\VirtualDJ\database.xml` en cada letra de la C a la Z, y solo si
+  la carpeta de VirtualDJ tiene su `database.xml` (`virtualdjWindowsRoots`, `virtualdjDriveRoots`, la lista `WINDOWS_DRIVES` de `main/usbVolumes.ts`). Dentro, una ruta con la
   letra de la unidad es absoluta, y con otra letra es relativa a la unidad, como el `D:/` medido en
   Mac. Una ruta nueva lleva la letra que ya use esa base, o la de la unidad si no tiene ninguna.
 - **Qué base recibe una pista.** La de su letra si existe. Si no, la base de la carpeta personal

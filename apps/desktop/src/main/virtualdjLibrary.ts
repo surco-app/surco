@@ -55,6 +55,14 @@ export function virtualdjDriveRoots(dir: string, volumes: string[]): VirtualdjRo
   ].filter((r) => existsSync(join(r.dir, 'database.xml')))
 }
 
+export function virtualdjWindowsRoots(
+  dir: string,
+  drives: () => readonly string[],
+): VirtualdjRoot[] {
+  if (!existsSync(join(dir, 'database.xml'))) return []
+  return virtualdjDriveRoots(dir, [...drives()])
+}
+
 export function virtualdjLibraryRoots(dir: string, volumesRoot: string): VirtualdjRoot[] {
   let volumes: string[] = []
   try {

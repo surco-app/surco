@@ -38,6 +38,7 @@ import {
   virtualdjStoredPath,
   virtualdjTrackCount,
   virtualdjTree,
+  virtualdjWindowsRoots,
 } from './virtualdjLibrary'
 
 const fixture = join(__dirname, 'virtualdjFixtures')
@@ -487,5 +488,26 @@ describe('VirtualDJ on Windows, not measured on a real Windows yet', () => {
     expect(virtualdjMembership(lib, ['C:\\Music\\a.mp3'])).toEqual({
       'C:\\Music\\a.mp3': ['Gigs'],
     })
+  })
+
+  it('looks at no drive letter while the VirtualDJ folder holds no database, so a Windows user without VirtualDJ pays nothing', () => {
+    const drives = vi.fn(() => ['E:\\'])
+    const dir = mkdtempSync(join(tmpdir(), 'surco-vdj-nohome-'))
+    expect(virtualdjWindowsRoots(dir, drives)).toEqual([])
+    expect(drives).not.toHaveBeenCalled()
+  })
+
+  it('looks at every drive letter once the VirtualDJ folder holds its database', () => {
+    const base = mkdtempSync(join(tmpdir(), 'surco-vdj-winroots-'))
+    const home = join(base, 'Documents', 'VirtualDJ')
+    mkdirSync(home, { recursive: true })
+    writeFileSync(join(home, 'database.xml'), '<VirtualDJ_Database />')
+    const e = join(base, 'E')
+    mkdirSync(join(e, 'VirtualDJ'), { recursive: true })
+    writeFileSync(join(e, 'VirtualDJ', 'database.xml'), '<VirtualDJ_Database />')
+    expect(virtualdjWindowsRoots(home, () => [e])).toEqual([
+      { dir: home, root: '/' },
+      { dir: join(e, 'VirtualDJ'), root: e },
+    ])
   })
 })

@@ -295,7 +295,7 @@ import {
   virtualdjCopyKey,
 } from './virtualdjCopies'
 import { virtualdjCueSource } from './virtualdjCueSource'
-import { virtualdjDriveRoots, virtualdjLibraryRoots } from './virtualdjLibrary'
+import { virtualdjLibraryRoots, virtualdjWindowsRoots } from './virtualdjLibrary'
 import { virtualdjEdit } from './virtualdjPlaylistEditIpc'
 import { virtualdjRead } from './virtualdjPlaylistsIpc'
 import { repointVirtualdjTracks, virtualdjBitrateKbps } from './virtualdjTrackWrite'
@@ -397,7 +397,7 @@ const virtualdjLibrary = (): string =>
   existsSync(join(virtualdjDir(), 'database.xml')) ? virtualdjDir() : ''
 const virtualdjRoots = () =>
   process.platform === 'win32'
-    ? virtualdjDriveRoots(virtualdjDir(), WINDOWS_DRIVES)
+    ? virtualdjWindowsRoots(virtualdjDir(), () => WINDOWS_DRIVES)
     : virtualdjLibraryRoots(virtualdjDir(), '/Volumes')
 const virtualdjSessionCopy = () => virtualdjSessionBackup.ensure(virtualdjCopyKey(virtualdjRoots()))
 const virtualdjCopies = () => ({
