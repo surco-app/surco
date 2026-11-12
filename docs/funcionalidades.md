@@ -1475,10 +1475,11 @@ programa (`PROGRAM_TABLE`, `apps/web/src/lib/programTable.ts`). Las filas de Win
 guardar la rejilla, seguir a la pista convertida y restaurar en Copias están atadas por test a las
 tablas de la app (`PROGRAM_CAN`, `CUE_PROGRAMS`, `isWritable`; `programTable.test.ts`). Las
 salvedades que dice: Engine DJ crea y borra listas pero no las renombra ni mueve
-(`kinds: create, add, delete`). Pegar tracklist y sesión salen como «No» en Engine DJ: el menú
-del árbol aún ofrece «Pegar tracklist…», pero sin colección (`collection: false`) no encuentra
-ninguna pista, y la sesión se alcanza desde la paleta y «Rellenar con una sesión…» sin haberse
-probado en Engine DJ; Traktor solo sigue a la pista convertida en la misma carpeta (`newFile` solo con
+(`kinds: create, add, delete`). Pegar tracklist sale como «No» en Engine DJ, porque sin colección
+(`collection: false`) no encontraría ninguna pista, y el menú del árbol ya no lo ofrece
+(`readsCollection`, `App.tsx`). La sesión sale como «Sí» en Engine DJ, que crea la playlist y le
+añade pistas (`kinds`), y se alcanza desde la paleta y «Rellenar con una sesión…», probada solo en
+tests; las dos filas están atadas por test a `SOURCE_READ` y `SOURCE_PROGRAMS`. Traktor solo sigue a la pista convertida en la misma carpeta (`newFile` solo con
 `sameDir`, `ffmpeg.ts:2010`) y guarda la rejilla en WAV, AIFF y FLAC (y los MP3 de iTunes); Serato
 conserva el original al convertir (`write: false`), recibe los nombres solo al actualizar en su
 sitio (`queueSeratoRun`, `libraryFlushes.ts:454`) y no aparece en Copias (`WRITABLE_PROGRAMS`).

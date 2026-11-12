@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest'
+import { PROGRAM_TABLE } from '../../../../../web/src/lib/programTable'
 import type { Api } from '../../../preload/api'
-import { type DjProgram, RAIL_PROGRAMS } from '../../../shared/djProgram'
+import { DJ_PROGRAMS, type DjProgram, RAIL_PROGRAMS } from '../../../shared/djProgram'
 import type { RekordboxPlaylistEdit, SourceNode } from '../../../shared/types'
 import { djReads, installApi } from '../test/api'
 import { SOURCE_PROGRAMS, SOURCE_READ } from './sourcePrograms'
@@ -230,4 +231,25 @@ describe('SOURCE_PROGRAMS says what each DJ program allows in its tab', () => {
     const node: SourceNode = { id: 'n', name, kind: 'playlist', count: 0 }
     expect(SOURCE_PROGRAMS.traktor.fixedNode?.(node, atRoot)).toBe(fixed)
   })
+})
+
+describe('the features page table says where pasting a tracklist and the automatic session work', () => {
+  const cellOf = (row: 'paste' | 'session', program: DjProgram) =>
+    PROGRAM_TABLE.flatMap((group) => group.rows).find((r) => r.id === row)?.cells[program]
+
+  it.each(DJ_PROGRAMS)(
+    'offers pasting a tracklist into %s only where Surco reads the whole collection to find each line',
+    (program) => {
+      expect(cellOf('paste', program)?.yes).toBe(SOURCE_READ[program].collection !== undefined)
+    },
+  )
+
+  it.each(DJ_PROGRAMS)(
+    'offers the automatic session in %s wherever Surco can create a playlist there and add tracks to it',
+    (program) => {
+      const edit = SOURCE_PROGRAMS[program].edit
+      const can = (kind: 'create' | 'add') => edit !== null && (!edit.kinds || edit.kinds.has(kind))
+      expect(cellOf('session', program)?.yes).toBe(can('create') && can('add'))
+    },
+  )
 })
