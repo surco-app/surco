@@ -30,6 +30,7 @@
     "donar": "寄付",
     "download": "ダウンロード",
     "language": "言語",
+    "main": "メイン",
     "languageOffer": {
       "text": "このページは日本語でもご覧いただけます。",
       "switch": "日本語で読む",
@@ -422,6 +423,7 @@
       "title": "DJソフトごとにSurcoができること",
       "lede": "rekordbox、Traktor、Engine DJ、Serato、VirtualDJ。ライブラリへの書き込みは、必ずバックアップを取り、ソフトを閉じた状態で行います。",
       "feature": "機能",
+      "region": "Surcoが各プログラムに行うこと",
       "yes": "対応",
       "no": "非対応",
       "foot": "ソフトが開いている間、変更は待機し、閉じたときに書き込まれます。Apple Musicは専用のセクションで扱います。",
@@ -502,6 +504,7 @@
   "showcase": {
     "alt": "macOS上のSurco：トラックリスト、Discogsマッチ、メタデータエディタ、品質分析",
     "zoom": "スクリーンショットを拡大",
+    "pause": "動画を一時停止",
     "tour": {
       "tracks": {
         "title": "トラックリスト",
