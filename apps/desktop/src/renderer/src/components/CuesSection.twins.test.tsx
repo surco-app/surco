@@ -121,8 +121,6 @@ describe('a flow placed in the cue editor reaches the other DJ programs', () => 
     expect(traktor.wanted.filter((c) => c.kind !== 0)).toHaveLength(3)
   })
 
-  // Saving into an open program only queues the cues; asking first lets the DJ close it
-  // and have them written now, once for the whole save however many programs it reaches.
   it('asks to close each program a save reaches before saving, once per Save', async () => {
     const { askToApply, calls } = setup()
     await ready()
