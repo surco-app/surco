@@ -580,12 +580,20 @@ function movedRows(d: ListsDraft, moves: VirtualdjRowMove[]): void {
     if (xml === null) continue
     const spans = lineSpans(xml)
     if (!spans.some((s) => byFrom.has(nfc(s.path)))) continue
-    const rows = spans.map((s): Row => {
+    const holds = new Set(spans.map((s) => nfc(s.path)))
+    const rows = spans.flatMap((s): Row[] => {
       const move = byFrom.get(nfc(s.path))
-      if (!move) return s
-      return {
-        text: withRowAttr(withRowAttr(s.text, 'path', escapeXml(move.to)), 'size', `${move.size}`),
-      }
+      if (!move) return [s]
+      if (nfc(move.to) !== nfc(move.from) && holds.has(nfc(move.to))) return []
+      return [
+        {
+          text: withRowAttr(
+            withRowAttr(s.text, 'path', escapeXml(move.to)),
+            'size',
+            `${move.size}`,
+          ),
+        },
+      ]
     })
     const next = rewrittenList(xml, rows)
     if (next !== null) put(d, file, next)

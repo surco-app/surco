@@ -107,6 +107,27 @@ describe('replaceVirtualdjDuplicates', () => {
     expect(lib.list('Surco prueba')[0]).toBe(lib.kept)
   })
 
+  it('drops the removed copy’s row from a list that already holds the kept copy, so the list never shows the track twice', async () => {
+    const lib = library()
+    writeFileSync(
+      join(lib.dir, 'database.xml'),
+      FIXTURE_XML.replace(`FilePath="${WAV}"`, `FilePath="${lib.kept}"`),
+    )
+    const file = join(lib.dir, 'MyLists', 'Surco prueba.vdjfolder')
+    writeFileSync(
+      file,
+      readFileSync(file, 'utf8').replaceAll(`path="${WAV}"`, `path="${lib.kept}"`),
+    )
+    const others = lib.list('Surco prueba').filter((p) => p !== FROM && p !== lib.kept)
+    expect(await replaceVirtualdjDuplicates([{ from: FROM, to: lib.kept }], lib.deps)).toEqual([
+      { written: true, outcome: 'replaced' },
+    ])
+    expect(lib.list('Surco prueba').filter((p) => p === lib.kept)).toHaveLength(1)
+    expect(lib.list('Surco prueba')).not.toContain(FROM)
+    expect(lib.list('Surco prueba').filter((p) => p !== lib.kept)).toEqual(others)
+    expect(lib.list('Carpeta/Dentro')).toEqual([lib.kept])
+  })
+
   it('leaves VirtualDJ as it is while it is open, so the removed file stays for it', async () => {
     const lib = library()
     lib.setOpen(true)
