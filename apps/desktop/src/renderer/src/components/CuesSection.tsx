@@ -946,14 +946,19 @@ function Editing({
     dispatch({ type: 'select', key: existing.key })
     seekTo(existing.ms)
   }
-  const landsAs = (kind: number): number | null => {
-    const next = reduceDraft(
-      state,
-      { type: 'add-hot', ms: head.get(), kind },
-      ctxRef.current as DraftContext,
-    )
-    return next.cues.find((c) => !state.cues.some((o) => o.key === c.key))?.kind ?? null
-  }
+  const snappedAt = (ms: number) => ctx.snapTo[nearestBeat(ctx.snapTo, ms)]
+  const landsAs = useMemo(() => {
+    const landings = new Map<string, number | null>()
+    return (kind: number): number | null => {
+      const ms = head.get()
+      const at = `${ctx.snapTo[nearestBeat(ctx.snapTo, ms)]}|${kind}`
+      if (landings.has(at)) return landings.get(at) ?? null
+      const next = reduceDraft(state, { type: 'add-hot', ms, kind }, ctx)
+      const lands = next.cues.find((c) => !state.cues.some((o) => o.key === c.key))?.kind ?? null
+      landings.set(at, lands)
+      return lands
+    }
+  }, [state, ctx, head])
   const memoryStep = (dir: 1 | -1) => {
     const to = adjacentCall(state.cues, head.get(), dir)
     if (to === null) return
@@ -965,6 +970,7 @@ function Editing({
     selected && selected.kind === 0
       ? selected
       : (callAt(state.cues, ms) ?? callAt(state.cues, ctx.snapTo[nearestBeat(ctx.snapTo, ms)]))
+  const deckAt = (ms: number) => `${removableCallAt(ms)?.key ?? ''}|${snappedAt(ms)}`
   const memoryRemove = () => {
     const removableCall = removableCallAt(head.get())
     if (!removableCall || state.locked.includes(removableCall.key)) return
@@ -2075,9 +2081,9 @@ function Editing({
         </p>
       )}
       {maximized && (
-        <AtHead head={head} of={atMs}>
-          {(playheadMs) => {
-            const removableCall = removableCallAt(playheadMs)
+        <AtHead head={head} of={deckAt}>
+          {() => {
+            const removableCall = removableCallAt(head.get())
             return (
               <CueDeck
                 cues={shownCues}
