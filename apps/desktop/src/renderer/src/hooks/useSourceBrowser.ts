@@ -119,7 +119,6 @@ export function useSourceBrowser({
   const [playlists, setPlaylists] = useState<
     Partial<Record<PlaylistSource, NonNullable<SourceBrowser['playlist']>>>
   >({})
-  const playlist = source ? (playlists[source] ?? null) : null
   const isMac = window.api.platform === 'darwin'
 
   const found = useProgramsAvailable()
@@ -159,6 +158,13 @@ export function useSourceBrowser({
     enabled: hasRecent,
     staleTime: Number.POSITIVE_INFINITY,
   })
+  const startingPlaylist =
+    (recent.data ?? 0) > 0
+      ? { id: RECENTLY_ADDED_ID, name: tr('sources.recentlyAdded'), folders: [] }
+      : (all.data ?? 0) > 0
+        ? { id: ALL_TRACKS_ID, name: tr('sources.allTracks'), folders: [] }
+        : null
+  const playlist = source ? (playlists[source] ?? (hasRecent ? startingPlaylist : null)) : null
   const shownTree = useMemo(
     () =>
       hasRecent && tree.data
