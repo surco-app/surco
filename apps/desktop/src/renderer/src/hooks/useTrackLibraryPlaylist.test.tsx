@@ -24,6 +24,7 @@ afterEach(() => {
 function setup(
   over: Record<string, unknown> = {},
   opts: Record<string, unknown> = {},
+  onRender: () => void = () => {},
 ): {
   result: { current: ReturnType<typeof useTrackLibrary> }
   expandPaths: ReturnType<typeof vi.fn>
@@ -56,8 +57,9 @@ function setup(
       .mockResolvedValue({ paths: [], persistentIds: {}, missing: 0 }),
     ...over,
   }
-  const { result } = renderHook(() =>
-    useTrackLibrary({
+  const { result } = renderHook(() => {
+    onRender()
+    return useTrackLibrary({
       setSelection: vi.fn(),
       onForget: vi.fn(),
       onRemove: vi.fn(),
@@ -67,8 +69,8 @@ function setup(
       onNoAudioFound: vi.fn(),
       onMetaReadFailed: vi.fn(),
       ...opts,
-    }),
-  )
+    })
+  })
   return { result, expandPaths, fireChanged: (files) => changedCb(files) }
 }
 
@@ -1435,5 +1437,52 @@ describe('a playlist whose files were read before', () => {
 
     expect(readMetaCached).toHaveBeenCalledWith([{ path: '/m/a.aiff', light: true }])
     expect(result.current.tracks[0].metaPartial).toBe(true)
+  })
+})
+
+// Filtering for the rows with no cover reads the art of every row of a collection, and a
+// write of the list per read re-rendered the App and recounted every filter for each.
+describe('reading every row art in the background', () => {
+  it('writes the list about once a second while the reads keep landing', async () => {
+    const paths = Array.from({ length: 20 }, (_, i) => `/m/${i}.aiff`)
+    const releases: (() => void)[] = []
+    const readMeta = vi.fn<Api['readMeta']>(
+      () =>
+        new Promise((resolve) => {
+          releases.push(() =>
+            resolve({
+              tags: tags({ title: 'A' }),
+              duration: 1,
+              cover: { thumbUrl: 'surco://cover/a.jpg', width: 600, height: 600 },
+              foreignTags: [],
+            }),
+          )
+        }),
+    )
+    const readMetaLight = vi.fn<Api['readMetaLight']>().mockResolvedValue({
+      tags: tags({ title: 'A' }),
+      duration: 1,
+      cover: null,
+      foreignTags: [],
+      partial: true,
+    })
+    let renders = 0
+    const { result } = setup({ readMeta, readMetaLight }, {}, () => renders++)
+    await act(async () => {
+      await result.current.openSourcePlaylist(
+        paths.map((path) => ({ path, separator: false, meta: {} })),
+        'serato',
+      )
+    })
+    await waitFor(() => expect(result.current.tracks.every((t) => t.metaPartial)).toBe(true))
+    act(() => result.current.readCoversInBackground(result.current.tracks.map((t) => t.id)))
+    const before = renders
+
+    for (let i = 0; i < 8; i++) {
+      for (const release of releases.splice(0, 2)) release()
+      await new Promise((r) => setTimeout(r, 80))
+    }
+
+    expect(renders - before).toBeLessThanOrEqual(2)
   })
 })

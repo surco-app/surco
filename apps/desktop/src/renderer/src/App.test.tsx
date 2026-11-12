@@ -4285,6 +4285,29 @@ describe('App source playlists', () => {
           await waitFor(() => expect(readMeta).toHaveBeenCalledExactlyOnceWith('/m/x.wav'))
         })
 
+        // Without its art read a row is not known to lack one, so the filter leaves it out;
+        // picking the filter is the DJ asking, so every row of the list gets its art read.
+        it('reads the cover of every row once the DJ filters for the ones with none', async () => {
+          const readMeta = fullRead()
+          setApi({ ...collection, readMetaLight: lightRead(), readMeta })
+          await openAll()
+          await new Promise((r) => setTimeout(r, 100))
+          expect(readMeta).not.toHaveBeenCalled()
+
+          fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+          fireEvent.click(screen.getByTestId('quality-filter-section-tags'))
+          fireEvent.click(screen.getByTestId('quality-filter-noCover'))
+
+          await waitFor(() =>
+            expect(readMeta.mock.calls.map(([p]) => p).sort()).toEqual([
+              '/m/w.wav',
+              '/m/x.wav',
+              '/m/y.wav',
+              '/m/z.wav',
+            ]),
+          )
+        })
+
         it('reads the cover of a row already on screen once its light read lands', async () => {
           let release: () => void = () => {}
           const gate = new Promise<void>((r) => {

@@ -184,6 +184,7 @@ interface TrackLibrary {
   refreshChangedTrack: (id: string) => Promise<boolean>
   completeTrackMeta: (id: string) => Promise<void>
   readCoversOnScreen: (ids: string[]) => void
+  readCoversInBackground: (ids: string[]) => void
   // Re-reads the file after an in-place export rewrote it, so the row stops describing
   // bytes that no longer exist. Only the fields the row renders — everything the user
   // staged in the editor is left alone.
@@ -248,6 +249,7 @@ export function useTrackLibrary({
   // result that repeats them. They are Surco's plumbing, not a user duplicate, so the skip
   // notice discounts them — and consumes the set, one import at a time. See addPaths.
   const streamedPaths = useRef(new Set<string>())
+  const backgroundCompletions = useRef(0)
   const importDone = useRef(0)
   const importTotal = useRef(0)
   // Failed metadata reads in the in-flight batch, reported once when it settles so a
@@ -335,7 +337,8 @@ export function useTrackLibrary({
   const scheduleMetaFlush = useCallback((): void => {
     if (metaFlushScheduled.current) return
     metaFlushScheduled.current = true
-    const span = importTotal.current > 0 ? IMPORT_FLUSH_MS : META_FLUSH_MS
+    const span =
+      importTotal.current > 0 || backgroundCompletions.current > 0 ? IMPORT_FLUSH_MS : META_FLUSH_MS
     const wait = lastMetaFlush.current + span - performance.now()
     if (wait <= 0) queueMicrotask(flushMetaPatches)
     else metaFlushTimer.current = setTimeout(flushMetaPatches, wait)
@@ -764,27 +767,45 @@ export function useTrackLibrary({
   })
 
   const completing = useRef(new Map<string, Promise<void>>())
-  const completeTrackMeta = useStableCallback((id: string): Promise<void> => {
-    const inFlight = completing.current.get(id)
+  // A completion someone waits on jumps the queue and is written at once; one in the
+  // background waits its turn and is written with the rest, like an import's reads.
+  function completeRow(current: TrackItem, urgent: boolean): Promise<void> {
+    const inFlight = completing.current.get(current.id)
     if (inFlight) return inFlight
-    const current = tracksRef.current.find((t) => t.id === id)
-    if (!current?.metaPartial) return Promise.resolve()
-    const completion = readSlot.current.run(id, () => completeFromFullRead(id, current.inputPath))
-    readSlot.current.prioritize([id])
-    completing.current.set(id, completion)
+    if (!urgent) backgroundCompletions.current += 1
+    const completion = readSlot.current
+      .run(current.id, () => completeFromFullRead(current.id, current.inputPath, urgent))
+      .finally(() => {
+        if (!urgent) backgroundCompletions.current -= 1
+      })
+    if (urgent) readSlot.current.prioritize([current.id])
+    completing.current.set(current.id, completion)
     return completion
+  }
+  const completeTrackMeta = useStableCallback((id: string): Promise<void> => {
+    const current = tracksRef.current.find((t) => t.id === id)
+    if (!current?.metaPartial) return completing.current.get(id) ?? Promise.resolve()
+    return completeRow(current, true)
   })
 
   // The rows that came on screen with nothing to paint: a light read left their file's art
   // unread, and their library holds none.
+  const artUnread = (t: TrackItem): boolean =>
+    !!t.metaPartial && !t.sourcePreview?.coverUrl && !t.embeddedCover
   const readCoversOnScreen = useStableCallback((ids: string[]): void => {
     const wanted = new Set(ids)
     for (const t of tracksRef.current)
-      if (wanted.has(t.id) && t.metaPartial && !t.sourcePreview?.coverUrl && !t.embeddedCover)
-        void completeTrackMeta(t.id)
+      if (wanted.has(t.id) && artUnread(t)) void completeRow(t, true)
+  })
+  // Every row of the list, behind whatever is already queued: the DJ asked for the rows
+  // with no cover, and a row whose art is unread is not known to have none.
+  const readCoversInBackground = useStableCallback((ids: string[]): void => {
+    const wanted = new Set(ids)
+    for (const t of tracksRef.current)
+      if (wanted.has(t.id) && artUnread(t)) void completeRow(t, false)
   })
 
-  async function completeFromFullRead(id: string, path: string): Promise<void> {
+  async function completeFromFullRead(id: string, path: string, urgent: boolean): Promise<void> {
     try {
       const read = await window.api.readMeta(path).catch(() => null)
       if (!read || read.failed) return
@@ -815,7 +836,8 @@ export function useTrackLibrary({
             }),
         }
       })
-      flushMetaPatches()
+      if (urgent) flushMetaPatches()
+      else scheduleMetaFlush()
     } finally {
       completing.current.delete(id)
     }
@@ -1298,6 +1320,7 @@ export function useTrackLibrary({
     refreshChangedTrack,
     completeTrackMeta,
     readCoversOnScreen,
+    readCoversInBackground,
     refreshTrackFromDisk,
     patchReviewedFields,
     removeTrack,

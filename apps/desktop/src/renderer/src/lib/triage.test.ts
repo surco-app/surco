@@ -484,6 +484,21 @@ describe('tags filter', () => {
     expect(ids('noKey')).toEqual(['no-key'])
     expect(qualityCounts(tracks)).toMatchObject({ noCover: 1, smallCover: 1, noBpm: 1, noKey: 1 })
   })
+
+  // A DJ program's row takes the light read, which leaves its file's art unread until the
+  // row comes on screen: until then nobody knows whether it has a cover, and counting it as
+  // coverless would hand the DJ thousands of rows to fix that have nothing wrong.
+  it('leaves out a row whose file art is not read yet', () => {
+    const unread = t('art-unread', {
+      metaPartial: true,
+      coverUrl: undefined,
+      embeddedCover: undefined,
+      embeddedCoverDims: undefined,
+    })
+
+    expect(by([...tracks, unread], { tags: 'noCover' }).map((x) => x.id)).toEqual(['bare'])
+    expect(qualityCounts([...tracks, unread]).noCover).toBe(1)
+  })
 })
 
 describe('filters that read what App knows about a row', () => {

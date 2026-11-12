@@ -729,6 +729,7 @@ export default function App(): React.JSX.Element {
     refreshChangedTrack,
     completeTrackMeta,
     readCoversOnScreen,
+    readCoversInBackground,
     refreshTrackFromDisk,
     patchReviewedFields,
     removeTracks,
@@ -2229,6 +2230,11 @@ export default function App(): React.JSX.Element {
   useEffect(() => {
     scopeAutoMatch(autoMatchScope)
   }, [autoMatchScope, scopeAutoMatch])
+  // A row whose art is not read yet is not known to have none, so the filter leaves it out
+  // until it is: picking it reads the art of every row of the list in the background.
+  useEffect(() => {
+    if (filterSelection.tags === 'noCover') readCoversInBackground(scopeTracks.map((t) => t.id))
+  }, [filterSelection.tags, scopeTracks, readCoversInBackground])
   const qualityTally = useMemo(
     () => qualityCounts(scopeTracks, filterFacts),
     [scopeTracks, filterFacts],

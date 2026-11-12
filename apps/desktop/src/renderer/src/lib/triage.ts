@@ -304,7 +304,9 @@ function hasNoCues(track: TrackItem): boolean {
 function matchesTags(track: TrackItem, filter: TagsFilter, facts: FilterFacts): boolean {
   if (track.loadingMeta) return false
   if (filter === 'missingRequired') return facts.incomplete(track)
-  if (filter === 'noCover') return !track.coverUrl && !track.sourcePreview?.coverUrl
+  // A light read leaves the file's art unread: until it is, the row is not known to lack one.
+  if (filter === 'noCover')
+    return !track.metaPartial && !track.coverUrl && !track.sourcePreview?.coverUrl
   if (filter === 'smallCover') {
     const original = Boolean(track.coverUrl) && track.coverUrl === track.embeddedCover
     const dims = track.embeddedCoverDims
