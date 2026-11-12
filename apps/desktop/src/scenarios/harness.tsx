@@ -128,7 +128,7 @@ import { detectTrim } from '../renderer/src/lib/trim'
 import type { TrackItem } from '../renderer/src/types'
 import { trashLimits } from '../shared/backupPolicy'
 import { normalizeImportFields } from '../shared/defaults'
-import type { DjApi } from '../shared/djApi'
+import type { ApplyAnswer, DjApi } from '../shared/djApi'
 import type { DjProgram, WritableProgram } from '../shared/djProgram'
 import { resolveJobFormat } from '../shared/format'
 import type {
@@ -156,6 +156,13 @@ export interface ScenarioOptions {
   verify?: boolean
   sabotage?: Sabotage
   realMusic?: boolean
+  djAsk?: DjAsk
+}
+
+export interface DjAsk {
+  open: DjProgram[]
+  answer: ApplyAnswer
+  close: (program: DjProgram) => void
 }
 
 // What a scenario does to a file or a library after Surco wrote it and before the self-check
@@ -445,6 +452,8 @@ function libraryHost(errors: string[]): LibraryHost {
 }
 
 let watcher: FolderWatcher | undefined
+let djAsk: DjAsk | undefined
+let asked: DjProgram[][] = []
 
 // The IPC handlers are registered once, so the file follower reaches the Engine queue of
 // whichever scenario is running, as index.ts's reaches the app's.
@@ -466,7 +475,7 @@ const followVirtualdjSize = librarySizeFollower({
     if (queue) void serialLibraryFlush(() => queue.apply(async () => !(await isVirtualdjRunning())))
   },
 })
-const followLibrariesSize = followingAll(followEngineSize, followVirtualdjSize)
+export const followLibrariesSize = followingAll(followEngineSize, followVirtualdjSize)
 
 const NO_VOLUMES = join(app.getPath('userData'), 'no-volumes')
 
@@ -825,7 +834,12 @@ function wiredDj(): DjApi {
     exportCollection: (p) => notWiredDj('exportCollection', p),
     pickLibraryPath: (p) => notWiredDj('pickLibraryPath', p),
     running: (p) => notWiredDj('running', p),
-    askToApply: async (programs) => Object.fromEntries(programs.map((p) => [p, 'now' as const])),
+    askToApply: async (programs) => {
+      asked.push(programs)
+      const answer = djAsk?.answer ?? 'now'
+      if (answer === 'now') for (const program of programs) djAsk?.close(program)
+      return Object.fromEntries(programs.map((p) => [p, answer]))
+    },
     onSyncIssue: () => () => {},
   }
 }
@@ -976,6 +990,11 @@ function scenarioApi(
           onWaiting: () => errors.push('VirtualDJ tags left waiting'),
           onApplied: () => {},
         },
+        {
+          enqueue: queues.traktor.enqueue,
+          state: queues.traktor.state,
+          applyQuietly: () => void applyQueue(queues, 'traktor'),
+        },
       ),
     applyListFixes: (request) => invokeMain('listreview:applyFixes', request),
     cancelListFixes: () => invokeMain('listreview:cancelFixes'),
@@ -1017,7 +1036,7 @@ function scenarioApi(
       updateAppleMusic: (job) => invokeMain('applemusic:update', job),
       deleteAppleMusic: (pid, track) => invokeMain('applemusic:delete', pid, track),
     }),
-    conversionPrograms: async () => [],
+    conversionPrograms: async () => djAsk?.open ?? [],
     beginConversionBatch: () => {
       beginNmlBatch()
       beginRekordboxBatch()
@@ -1136,6 +1155,7 @@ export interface Scenario {
   statuses: (fileName: string) => Verification['status'][]
   settled: () => Promise<void>
   queues: Queues
+  asked: () => DjProgram[][]
 }
 
 // The main process every scenario runs against: settings, the backup store, the real IPC
@@ -1153,6 +1173,8 @@ export interface MainBoot {
 }
 
 export function bootMain(options: ScenarioOptions): MainBoot {
+  djAsk = options.djAsk
+  asked = []
   const settings = replaceSettings({
     ...options.settings,
     ...(options.destination && fromDestination(options.destination)),
@@ -1467,6 +1489,7 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
     errors,
     sentToAppleMusic,
     queues,
+    asked: () => asked,
     rekordboxWaiting: () => queues.rekordbox.state().tracks,
     rekordboxClosed: () => applyOnClose(queues, 'rekordbox', verify?.checks),
     engineQueue: () => queues.engine.state(),
