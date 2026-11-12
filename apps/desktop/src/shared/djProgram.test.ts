@@ -70,12 +70,12 @@ describe('writableInOrder', () => {
   it('leaves Serato out of the programs Surco writes to, so no write path can reach a Serato track', () => {
     expect(WRITABLE_PROGRAMS).not.toContain('serato')
   })
-  it('writes to VirtualDJ, so a VirtualDJ track can be converted, and exports its lists to a USB', () => {
+  it('writes to VirtualDJ, so a VirtualDJ track can be converted, exports its lists to a USB and is offered on Windows', () => {
     expect(PROGRAM_CAN.virtualdj).toEqual({
       write: true,
       usb: true,
       reach: true,
-      windows: false,
+      windows: true,
     })
     expect(WRITABLE_PROGRAMS).toContain('virtualdj')
     expect(USB_PROGRAMS).toContain('virtualdj')

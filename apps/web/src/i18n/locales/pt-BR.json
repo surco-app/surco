@@ -317,8 +317,8 @@
           },
           {
             "t": "Suas listas do VirtualDJ",
-            "s": "Organize suas listas do VirtualDJ e coloque hot cues com o mesmo editor, no macOS.",
-            "d": "Abra-as no Surco com suas pastas e organize-as como as playlists do rekordbox, também colando uma tracklist ou com uma sessão automática. Coloque hot cues nas faixas delas com o mesmo editor, Marcar automático incluído. Pontos CALL não, porque o VirtualDJ só recebe hot cues, e a grade é a que o VirtualDJ analisou. Ao converter, o VirtualDJ segue a faixa nova com seus cues e suas listas, e se ele não a tinha, o Surco a adiciona. Você também pode exportá-las para um pendrive para os seus CDJs. O Surco guarda uma cópia antes de gravar, que você restaura em Cópias, e com o VirtualDJ aberto as mudanças esperam você fechá-lo. Só no macOS."
+            "s": "Organize suas listas do VirtualDJ e coloque hot cues com o mesmo editor.",
+            "d": "Abra-as no Surco com suas pastas e organize-as como as playlists do rekordbox, também colando uma tracklist ou com uma sessão automática. Coloque hot cues nas faixas delas com o mesmo editor, Marcar automático incluído. Pontos CALL não, porque o VirtualDJ só recebe hot cues, e a grade é a que o VirtualDJ analisou. Ao converter, o VirtualDJ segue a faixa nova com seus cues e suas listas, e se ele não a tinha, o Surco a adiciona. No macOS você também pode exportá-las para um pendrive para os seus CDJs. O Surco guarda uma cópia antes de gravar, que você restaura em Cópias, e com o VirtualDJ aberto as mudanças esperam você fechá-lo. No Windows está em beta."
           },
           {
             "t": "Arquivos para rekordbox, Serato, M3U8",
@@ -460,7 +460,7 @@
         "keepsOriginal": "Mantém o original",
         "engineUsb": "Pendrive do Engine",
         "noRestore": "Sem restaurar em Cópias",
-        "macOnly": "Só macOS"
+        "beta": "Beta"
       }
     },
     "metaTitle": "Tudo o que o Surco faz · Funções",

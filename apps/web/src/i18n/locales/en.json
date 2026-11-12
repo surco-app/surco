@@ -317,8 +317,8 @@
           },
           {
             "t": "Your VirtualDJ lists",
-            "s": "Organise your VirtualDJ lists and set hot cues with the same editor, on macOS.",
-            "d": "Open them in Surco with their folders and organise them like your rekordbox playlists, pasting a tracklist or building an automatic session too. Set hot cues on their tracks with the same editor, Auto mark included. Not CALL points, since VirtualDJ takes only hot cues, and the grid is the one VirtualDJ analysed. When you convert, VirtualDJ follows the new track with its cues and its lists, and if it didn’t have it, Surco adds it. You can also export them to a USB stick for your CDJs. Surco keeps a copy before writing that you restore from Backups, and while VirtualDJ is open the changes wait for you to close it. macOS only."
+            "s": "Organise your VirtualDJ lists and set hot cues with the same editor.",
+            "d": "Open them in Surco with their folders and organise them like your rekordbox playlists, pasting a tracklist or building an automatic session too. Set hot cues on their tracks with the same editor, Auto mark included. Not CALL points, since VirtualDJ takes only hot cues, and the grid is the one VirtualDJ analysed. When you convert, VirtualDJ follows the new track with its cues and its lists, and if it didn’t have it, Surco adds it. On macOS you can also export them to a USB stick for your CDJs. Surco keeps a copy before writing that you restore from Backups, and while VirtualDJ is open the changes wait for you to close it. On Windows it is in beta."
           },
           {
             "t": "Files for rekordbox, Serato, M3U8",
@@ -460,7 +460,7 @@
         "keepsOriginal": "Keeps the original",
         "engineUsb": "Engine USB",
         "noRestore": "Not in Backups",
-        "macOnly": "macOS only"
+        "beta": "Beta"
       }
     },
     "metaTitle": "Everything Surco does · Features",

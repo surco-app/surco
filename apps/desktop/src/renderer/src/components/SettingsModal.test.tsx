@@ -1710,14 +1710,15 @@ describe('settings search', () => {
     expect(screen.getByTestId('settings-program-traktor')).not.toBeVisible()
   })
 
-  it('leaves VirtualDJ out of the results on Windows, where Surco does not offer it, so no result opens an empty tab', () => {
+  it('finds VirtualDJ on Windows too, where Surco offers it in beta, and a result opens its panel', () => {
     const api = window.api as unknown as { platform: string }
     api.platform = 'win32'
     try {
       open()
       search('virtualdj')
-      expect(screen.queryByTestId('settings-search-result-virtualdjLibrary')).toBeNull()
-      expect(screen.queryByTestId('settings-search-result-virtualdjLibraryDir')).toBeNull()
+      expect(screen.getByTestId('settings-search-result-virtualdjLibrary')).toBeVisible()
+      fireEvent.click(screen.getByTestId('settings-search-result-virtualdjLibraryDir'))
+      expect(screen.getByTestId('settings-virtualdj-dir')).toBeVisible()
       search('traktor')
       expect(screen.getByTestId('settings-search-result-traktorSync')).toBeVisible()
     } finally {

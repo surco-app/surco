@@ -21,7 +21,7 @@ export type Note =
   | 'keepsOriginal'
   | 'engineUsb'
   | 'noRestore'
-  | 'macOnly'
+  | 'beta'
 
 export type RowId =
   | 'tab'
@@ -131,7 +131,7 @@ export const PROGRAM_TABLE: readonly {
       },
       {
         id: 'windows',
-        cells: { rekordbox: Y, traktor: Y, engine: Y, serato: Y, virtualdj: n('macOnly') },
+        cells: { rekordbox: Y, traktor: Y, engine: Y, serato: Y, virtualdj: y('beta') },
       },
     ],
   },

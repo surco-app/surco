@@ -200,11 +200,11 @@ describe('CuesTab', () => {
     )
   })
 
-  it('has no VirtualDJ destination on Windows, where Surco does not offer VirtualDJ yet', async () => {
+  it('has a VirtualDJ destination on Windows too, where Surco offers VirtualDJ in beta', async () => {
     installApi({ platform: 'win32' })
     render(<Harness />)
     expect(await screen.findByTestId('settings-cue-flow-to-serato')).toBeInTheDocument()
-    expect(screen.queryByTestId('settings-cue-flow-to-virtualdj')).toBeNull()
+    expect(screen.getByTestId('settings-cue-flow-to-virtualdj')).toBeInTheDocument()
   })
 
   it('says the hot cues note when only rekordbox and VirtualDJ are found, since a flow reaches VirtualDJ without its CALLs', async () => {

@@ -10,7 +10,7 @@ export const PROGRAM_CAN = {
   traktor: { write: true, usb: true, reach: true, windows: true },
   engine: { write: true, usb: true, reach: true, windows: true },
   serato: { write: false, usb: true, reach: true, windows: true },
-  virtualdj: { write: true, usb: true, reach: true, windows: false },
+  virtualdj: { write: true, usb: true, reach: true, windows: true },
 } as const satisfies {
   [P in DjProgram]: {
     write: boolean

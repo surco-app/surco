@@ -1120,14 +1120,14 @@ describe('DestinationTab VirtualDJ', () => {
     }
   })
 
-  it('has no VirtualDJ panel on Windows, where Surco does not offer VirtualDJ yet', () => {
+  it('has a VirtualDJ panel on Windows too, where Surco offers VirtualDJ in beta', () => {
     const api = window as unknown as { api: { platform: string } }
     api.api.platform = 'win32'
     try {
       renderPrograms()
       expect(screen.getByTestId('settings-programs-serato')).toBeInTheDocument()
-      expect(screen.queryByTestId('settings-programs-virtualdj')).toBeNull()
-      expect(screen.queryByTestId('settings-program-virtualdj')).toBeNull()
+      fireEvent.click(screen.getByTestId('settings-programs-virtualdj'))
+      expect(screen.getByTestId('settings-virtualdj-dir')).toBeInTheDocument()
     } finally {
       api.api.platform = 'darwin'
     }

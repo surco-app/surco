@@ -317,8 +317,8 @@
           },
           {
             "t": "Tes listes VirtualDJ",
-            "s": "Organise tes listes VirtualDJ et place des hot cues avec le même éditeur, sur macOS.",
-            "d": "Ouvre-les dans Surco avec leurs dossiers et organise-les comme tes playlists rekordbox, aussi en collant une tracklist ou avec une session automatique. Place des hot cues sur leurs morceaux avec le même éditeur, marquage auto compris. Pas de CALL, puisque VirtualDJ ne reçoit que les hot cues, et la grille est celle qu’a analysée VirtualDJ. À la conversion, VirtualDJ suit le nouveau morceau avec ses cues et ses listes, et s’il ne l’avait pas, Surco l’ajoute. Tu peux aussi les exporter sur une clé USB pour tes CDJ. Surco garde une copie avant d’écrire, que tu restaures dans Sauvegardes, et si VirtualDJ est ouvert, les changements attendent que tu le fermes. Sur macOS uniquement."
+            "s": "Organise tes listes VirtualDJ et place des hot cues avec le même éditeur.",
+            "d": "Ouvre-les dans Surco avec leurs dossiers et organise-les comme tes playlists rekordbox, aussi en collant une tracklist ou avec une session automatique. Place des hot cues sur leurs morceaux avec le même éditeur, marquage auto compris. Pas de CALL, puisque VirtualDJ ne reçoit que les hot cues, et la grille est celle qu’a analysée VirtualDJ. À la conversion, VirtualDJ suit le nouveau morceau avec ses cues et ses listes, et s’il ne l’avait pas, Surco l’ajoute. Sur macOS, tu peux aussi les exporter sur une clé USB pour tes CDJ. Surco garde une copie avant d’écrire, que tu restaures dans Sauvegardes, et si VirtualDJ est ouvert, les changements attendent que tu le fermes. Sur Windows, c’est une bêta."
           },
           {
             "t": "Fichiers pour rekordbox, Serato, M3U8",
@@ -460,7 +460,7 @@
         "keepsOriginal": "Garde l’original",
         "engineUsb": "USB Engine",
         "noRestore": "Pas dans Sauvegardes",
-        "macOnly": "macOS seulement"
+        "beta": "Bêta"
       }
     },
     "metaTitle": "Tout ce que fait Surco · Fonctions",

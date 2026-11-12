@@ -317,8 +317,8 @@
           },
           {
             "t": "Deine VirtualDJ-Listen",
-            "s": "Organisiere deine VirtualDJ-Listen und setz Hot Cues mit demselben Editor, unter macOS.",
-            "d": "Öffne sie in Surco mit ihren Ordnern und organisiere sie wie deine rekordbox-Playlists, auch per eingefügter Tracklist oder mit einer automatischen Session. Setz Hot Cues auf ihren Tracks mit demselben Editor, Auto-Markieren inklusive. Keine CALL-Punkte, denn VirtualDJ übernimmt nur Hot Cues, und das Raster ist das, was VirtualDJ analysiert hat. Beim Konvertieren folgt VirtualDJ dem neuen Track mit seinen Cues und Listen, und fehlt er in VirtualDJ, nimmt Surco ihn auf. Du kannst sie auch auf einen USB-Stick für deine CDJs exportieren. Surco legt vor dem Schreiben eine Kopie an, die du unter Backups wiederherstellst, und ist VirtualDJ offen, warten die Änderungen, bis du es schließt. Nur unter macOS."
+            "s": "Organisiere deine VirtualDJ-Listen und setz Hot Cues mit demselben Editor.",
+            "d": "Öffne sie in Surco mit ihren Ordnern und organisiere sie wie deine rekordbox-Playlists, auch per eingefügter Tracklist oder mit einer automatischen Session. Setz Hot Cues auf ihren Tracks mit demselben Editor, Auto-Markieren inklusive. Keine CALL-Punkte, denn VirtualDJ übernimmt nur Hot Cues, und das Raster ist das, was VirtualDJ analysiert hat. Beim Konvertieren folgt VirtualDJ dem neuen Track mit seinen Cues und Listen, und fehlt er in VirtualDJ, nimmt Surco ihn auf. Unter macOS kannst du sie auch auf einen USB-Stick für deine CDJs exportieren. Surco legt vor dem Schreiben eine Kopie an, die du unter Backups wiederherstellst, und ist VirtualDJ offen, warten die Änderungen, bis du es schließt. Unter Windows ist es eine Beta."
           },
           {
             "t": "Dateien für rekordbox, Serato, M3U8",
@@ -460,7 +460,7 @@
         "keepsOriginal": "Behält das Original",
         "engineUsb": "Engine-USB",
         "noRestore": "Nicht in Backups",
-        "macOnly": "Nur macOS"
+        "beta": "Beta"
       }
     },
     "metaTitle": "Alles, was Surco kann · Funktionen",

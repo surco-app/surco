@@ -28,13 +28,13 @@ describe('virtualdjRead', () => {
     expect(read.available()).toBe(false)
   })
 
-  it('says VirtualDJ is not there on Windows, where nothing of it is measured yet', () => {
+  it('says VirtualDJ is there on Windows too, where Surco offers it in beta', () => {
     const dir = copy()
     const read = virtualdjRead({ roots: homeOnly(() => dir) })
     const original = Object.getOwnPropertyDescriptor(process, 'platform')
     Object.defineProperty(process, 'platform', { value: 'win32', configurable: true })
     try {
-      expect(read.available()).toBe(false)
+      expect(read.available()).toBe(true)
     } finally {
       if (original) Object.defineProperty(process, 'platform', original)
     }
