@@ -1316,8 +1316,8 @@ HISTORY, _LOOPS y _RECORDINGS) no se renombran ni se borran, y HISTORY no se edi
 no se da de alta: se salta y se avisa, igual que en rekordbox
 (`notInCollection`, `traktorPlaylistEdit.ts:154`). Una edición del árbol, una sesión y una conversión
 preguntan «Cerrar Traktor y aplicar» o «Aplicar al cerrarlo» y esperan en cola solo si se elige
-la segunda (`ensureClosed`, `traktorPlaylistEditIpc.ts:62`; `createAskToApply`,
-`djProcesses.ts:195`; `closedWithoutAsking`, `libraryFlushes.ts:92`, `:402`). Después relee la colección
+la segunda (`queue.apply`, `traktorPlaylistEditIpc.ts:52`, `:60`; `createAskToApply`,
+`djProcesses.ts:195`; `closedWithoutAsking`, `libraryFlushes.ts:117`, `:555`). Después relee la colección
 después de que Traktor guarde al salir (`applyTraktorBatch`, `traktorCuesWrite.ts:122`) y
 guarda antes una copia `.surco-session` por tanda.
 
@@ -1557,8 +1557,8 @@ lo tiene Serato, o si Music no ha podido responder. El aviso nombra el programa
 **Los nombres cambiados llegan a Traktor y Engine DJ** (v1.23.0). Si una conversión cambia el
 título, el artista, el álbum o el género, el cambio llega a la entrada de Traktor
 (`changedNames`, `ffmpeg.ts:1960`; `NmlPatch.tags`, `traktorNml.ts:98`) y a la fila de Engine DJ
-después de repuntarla (`updateEngineTags`, `libraryFlushes.ts:481`), solo con el «Actualizar» de
-ese programa encendido (`ffmpeg.ts:2161`). Cada campo solo se cambia si el programa aún tiene
+después de repuntarla (`updateEngineTags`, `libraryFlushes.ts:695`), solo con el «Actualizar» de
+ese programa encendido (`ffmpeg.ts:2161`). Con Engine DJ abierto el cambio espera en su cola junto al repunte y se escribe al cerrarse Engine aunque el tamaño del fichero no cambie (`engineConversionFlusher`, `libraryFlushes.ts:676`; `repointEngineQueued`, `libraryFlushes.ts:836`). Cada campo solo se cambia si el programa aún tiene
 el valor que tenía el fichero, así que un nombre editado a mano en el programa se respeta
 (`replaceTags`, `traktorNml.ts:547`). Con Engine DJ abierto, el repunte que queda en cola no
 lleva los nombres.
@@ -1603,7 +1603,7 @@ Serato y VirtualDJ no se cierran desde Surco y ofrecen «Lo he cerrado, aplicar�
 se deja cerrar el cambio también espera. Las altas y los repuntes de rekordbox, Traktor y Engine
 DJ esperan en la cola de cada programa, como las playlists: después de la pregunta la tanda mira
 si el programa corre y, si corre, lo deja en la cola, que se escribe al cerrarse
-(`closedWithoutAsking`, `libraryFlushes.ts:92`, usado en `:402`, `:477` y `:531`). Las escrituras
+(`closedWithoutAsking`, `libraryFlushes.ts:117`, usado en `:555`, `:630` y `:685`). Las escrituras
 que salen solas (el seguidor de tamaño, el completado al cerrar, las provisionales y la vigilancia
 de la cola) siguen esperando sin preguntar. Antes de v1.33.0 rekordbox y Traktor pedían cerrarlos
 en mitad de la conversión. Con Engine DJ abierto, una
@@ -1883,7 +1883,7 @@ arrancar y lo reescribe entero al salir, así que escribir con él abierto serí
 invisible en el mejor caso y revertido en el peor. Una conversión con Traktor
 abierto pregunta antes «Cerrar Traktor y aplicar» o «Aplicar al cerrarlo»: si hay cola de Traktor y se elige esperar, los cambios de la tanda esperan en ella y se
 escriben al cerrarse Traktor (`traktorHold`, `closedWithoutAsking(isTraktorRunning)`,
-`libraryFlushes.ts:393`, `:402`; `holdInQueue`, `traktorPatchQueue.ts:50`). Fuera de la
+`libraryFlushes.ts:546`, `:555`; `holdInQueue`, `traktorPatchQueue.ts:50`). Fuera de la
 conversión (otras escrituras de la colección) Surco se ofrece a cerrarlo, y si el usuario
 declina no escribe y avisa (`ensureTraktorClosed`, `traktorSyncFlush.ts:39`).
 
@@ -1943,7 +1943,7 @@ la copia con ellos (`restoreCollection`, `rekordboxSessionBackup.ts`).
 para estrechar la ventana (`rekordboxLibrary.ts:159`, `:192`). **Si está abierto, espera.**
 La conversión pregunta antes «Cerrar rekordbox y aplicar» o «Aplicar al cerrarlo»; tras la
 respuesta comprueba si rekordbox corre y, si corre, deja el repunte en la cola (`ensureClosed: closedWithoutAsking(isRekordboxRunning)`,
-`libraryFlushes.ts:477`). Desde v1.9.0 los repuntes bloqueados entran en la cola de rekordbox
+`libraryFlushes.ts:630`). Desde v1.9.0 los repuntes bloqueados entran en la cola de rekordbox
 (`rekordboxQueueFromRun.ts:87`), que se guarda en disco y se aplica sola al cerrar rekordbox,
 y una pastilla dice cuántas pistas esperan (`rekordboxQueue.pill*`). Antes se omitían.
 **La guarda falla cerrada**: si no
@@ -2049,7 +2049,7 @@ Una pista que no está en la biblioteca de Engine no se da de alta: se cuenta y 
 (`notInCollection`, `engineEdits.ts:52`). Con Engine DJ abierto, una edición del árbol pide
 cerrarlo una vez («Cerrar Engine DJ y aplicar» o «Aplicar al cerrarlo») y, si sigue abierto,
 espera en la cola; lo mismo una sesión (`createAskToApply`, `djProcesses.ts:195`;
-`enginePlaylistEditIpc.ts:39-43`). Solo hay tests contra copias de la base
+`enginePlaylistEditIpc.ts:32-40`). Solo hay tests contra copias de la base
 (`engineEdits.test.ts`); no está probado en un Engine DJ real.
 
 **Pegar un tracklist** (nuevo en v1.28.0). En el menú de una playlist de rekordbox, Traktor
@@ -2108,7 +2108,7 @@ seleccionada y sus cues abiertas (`useLibraryReveals.ts`, `lib/revealCue.ts`).
 **Con rekordbox abierto, los cambios esperan.** Cada gesto pide cerrarlo una vez; si sigue
 abierto, el cambio entra en una cola guardada en disco (`rekordboxQueue.ts`) que se aplica
 sola al cerrar rekordbox, y una pastilla dice cuántos cambios esperan. La sesión automática
-pregunta lo mismo y, si se elige esperar, entra en la cola (`'queue'`,
+pregunta lo mismo y, si se elige esperar, entra en la cola (`queued`,
 `rekordboxPlaylistsIpc.ts:165`), y la pastilla nombra lo que espera. La cola se puede descartar. Desde v1.14.0 hay una cola por colección, en el mismo fichero
 (`createRekordboxQueue`, `rekordboxQueue.ts`), igual para Engine DJ y Traktor: lo que se
 preparó para otra colección espera en la suya, nunca se aplica a la actual y se aplica al
@@ -2202,8 +2202,8 @@ carpeta (`sessionDateLabel`, `uniqueName`, `shared/sessionName.ts`). Se crea y s
 llenado falla, se borra la recién creada, y rehacer crea la nueva antes de borrar la anterior
 (`useSessionWrite.ts`). **Con el programa abierto** pregunta una vez «Cerrar <programa> y aplicar» o
 «Aplicar al cerrarlo» (`createAskToApply`, `djProcesses.ts:195`; `hooks/useSessionWrite.ts:28`) y,
-si se elige esperar, la sesión se escribe en modo cola (`'queue'`, `hooks/useSessionWrite.ts:40`;
-`rekordboxPlaylistsIpc.ts:165`, `traktorPlaylistEditIpc.ts:60`, `seratoPlaylistEditIpc.ts:45`,
+si se elige esperar, la sesión queda en la cola de cada programa (`queued`, `hooks/useSessionWrite.ts:36`;
+`rekordboxPlaylistsIpc.ts:165`, `traktorPlaylistEditIpc.ts:60`, `seratoPlaylistEditIpc.ts:48`,
 `enginePlaylistEditIpc.ts:40`), el asistente se cierra y la playlist se abre cuando el programa
 se cierra y la cola la escribe (`noteCreated`, `hooks/useSessionRun.ts:232`). Mientras espera,
 «Rehacer» y «Ajustar…» no hacen nada (`recent.waiting`, `useSessionRun.ts:217`). La lista de la
