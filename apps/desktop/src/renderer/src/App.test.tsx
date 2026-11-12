@@ -11252,11 +11252,15 @@ describe('automatic session from the tree', () => {
 // Hiding the sidebar is for the user who wants the whole window for the list and the
 // editor; it has to take the rail and the playlists with it and leave a way back.
 describe('App sidebar', () => {
-  it('draws neither the rail nor the playlists while the sidebar is hidden', async () => {
+  // Kept mounted off screen so it can slide back out the way it came, but nothing in it can
+  // take a click or the focus while it is away.
+  it('keeps the rail and the playlists out of view and out of reach while the sidebar is hidden', async () => {
     setApi({ getSettings: vi.fn().mockResolvedValue(settings({ showSidebar: false })) })
     await renderApp()
     await addTwoTracks()
-    expect(screen.queryByTestId('source-rail')).not.toBeInTheDocument()
+    const peek = screen.getByTestId('sidebar-peek')
+    expect(peek).not.toHaveAttribute('data-open')
+    expect(peek).toHaveAttribute('inert')
   })
 
   // A hidden sidebar must not cost the user the playlists: resting the pointer on the left
@@ -11266,9 +11270,12 @@ describe('App sidebar', () => {
     await renderApp()
     await addTwoTracks()
     fireEvent.pointerEnter(screen.getByTestId('sidebar-edge'))
-    expect(await screen.findByTestId('source-rail')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByTestId('sidebar-peek')).toHaveAttribute('data-open'))
+    expect(screen.getByTestId('sidebar-peek')).not.toHaveAttribute('inert')
     fireEvent.pointerLeave(screen.getByTestId('sidebar-peek'))
-    await waitFor(() => expect(screen.queryByTestId('source-rail')).not.toBeInTheDocument())
+    await waitFor(() =>
+      expect(screen.getByTestId('sidebar-peek')).not.toHaveAttribute('data-open'),
+    )
   })
 
   // The edge has to be found; the location over the list is in plain sight and opens the
@@ -11278,9 +11285,9 @@ describe('App sidebar', () => {
     await renderApp()
     await addTwoTracks()
     fireEvent.click(screen.getByTestId('track-list-location'))
-    expect(screen.getByTestId('source-rail')).toBeInTheDocument()
+    expect(screen.getByTestId('sidebar-peek')).toHaveAttribute('data-open')
     fireEvent.keyDown(screen.getByTestId('sidebar-peek'), { key: 'Escape' })
-    expect(screen.queryByTestId('source-rail')).not.toBeInTheDocument()
+    expect(screen.getByTestId('sidebar-peek')).not.toHaveAttribute('data-open')
   })
 
   it('brings the sidebar back from the right-click on the list header', async () => {
@@ -11289,6 +11296,7 @@ describe('App sidebar', () => {
     await addTwoTracks()
     fireEvent.contextMenu(screen.getByTestId('track-list-toolbar'))
     fireEvent.click(screen.getByRole('menuitemcheckbox', { name: i18n.t('view.sidebar') }))
-    expect(await screen.findByTestId('source-rail')).toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByTestId('sidebar-peek')).not.toBeInTheDocument())
+    expect(screen.getByTestId('source-rail')).toBeInTheDocument()
   })
 })
