@@ -1785,7 +1785,11 @@ function registerIpc(): void {
   // is left for the end that does.
   ipcMain.on('process:batch-end', (e) => endConversionBatch?.(e.sender))
   ipcMain.handle('process:programs-for', (_e, paths: string[]) =>
-    conversionPrograms(paths, { traktorRead: traktorReadPath, rootLibraries }),
+    conversionPrograms(paths, {
+      traktorRead: traktorReadPath,
+      rootLibraries,
+      isRunning: (program) => DJ_PROCESSES[program].isRunning(),
+    }),
   )
   endConversionBatch = (sender) => {
     const upTo = verifyRegistry.cut()

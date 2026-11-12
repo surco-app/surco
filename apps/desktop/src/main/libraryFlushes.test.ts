@@ -91,7 +91,7 @@ vi.mock('./virtualdjDuplicates', () => VIRTUALDJ_DUPLICATES)
 
 const FILE_USE = vi.hoisted(() => {
   const check = vi.fn(async (_path: string) => false)
-  return { check, open: vi.fn(() => check) }
+  return { check, open: vi.fn((_libraries: object, _options?: object) => check) }
 })
 vi.mock('./libraryFileUse', () => ({ djLibraryFileUse: FILE_USE.open }))
 
@@ -1742,6 +1742,7 @@ describe('conversionPrograms', () => {
   const deps = {
     traktorRead: () => '/t/collection.nml',
     rootLibraries: () => ({ serato: [], virtualdj: [] }),
+    isRunning: async () => true,
   }
 
   it('counts a program whose Update is on only when it holds one of the tracks, so converting files it does not know never asks to close it', async () => {
@@ -1777,6 +1778,63 @@ describe('conversionPrograms', () => {
     FILE_USE.check.mockImplementation(async () => true)
     try {
       expect(await conversionPrograms(['/m/a.mp3'], deps)).toEqual([])
+    } finally {
+      Object.assign(SETTINGS, before)
+      FILE_USE.check.mockImplementation(async () => false)
+    }
+  })
+
+  it('counts a library it cannot read as reached, so an unreadable library asks rather than aborting the conversion', async () => {
+    const before = { ...SETTINGS }
+    Object.assign(SETTINGS, { syncRekordbox: true, syncTraktor: true })
+    FILE_USE.check.mockRejectedValue(new Error('master.db unreadable'))
+    try {
+      expect(await conversionPrograms(['/m/a.mp3'], deps)).toEqual(['rekordbox', 'traktor'])
+    } finally {
+      Object.assign(SETTINGS, before)
+      FILE_USE.check.mockImplementation(async () => false)
+    }
+  })
+
+  it('reads no library when every program is closed, since nothing would ask and a Convert must not wait on reading them', async () => {
+    const before = { ...SETTINGS }
+    Object.assign(SETTINGS, { syncRekordbox: true, syncTraktor: true, addToEngineDj: true })
+    FILE_USE.open.mockClear()
+    const traktorRead = vi.fn(() => '/t/collection.nml')
+    const rootLibraries = vi.fn(() => ({ serato: [], virtualdj: [] }))
+    try {
+      expect(
+        await conversionPrograms(['/m/a.mp3'], {
+          traktorRead,
+          rootLibraries,
+          isRunning: async () => false,
+        }),
+      ).toEqual([])
+      expect(FILE_USE.open).not.toHaveBeenCalled()
+      expect(traktorRead).not.toHaveBeenCalled()
+      expect(rootLibraries).not.toHaveBeenCalled()
+    } finally {
+      Object.assign(SETTINGS, before)
+    }
+  })
+
+  it('reads only the libraries of programs that are open, and counts one whose check fails as open', async () => {
+    const before = { ...SETTINGS }
+    Object.assign(SETTINGS, { syncRekordbox: true, syncTraktor: true })
+    FILE_USE.check.mockImplementation(async () => true)
+    FILE_USE.open.mockClear()
+    try {
+      expect(
+        await conversionPrograms(['/m/a.mp3'], {
+          ...deps,
+          isRunning: async (program) => {
+            if (program === 'traktor') throw new Error('ps failed')
+            return false
+          },
+        }),
+      ).toEqual(['traktor'])
+      expect(FILE_USE.open).toHaveBeenCalledOnce()
+      expect(FILE_USE.open.mock.calls[0]?.[0]).toMatchObject({ traktor: '/t/collection.nml' })
     } finally {
       Object.assign(SETTINGS, before)
       FILE_USE.check.mockImplementation(async () => false)

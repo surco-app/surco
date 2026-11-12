@@ -248,16 +248,16 @@ describe('useTrackProcessing', () => {
     expect(processTrack).toHaveBeenCalledOnce()
   })
 
-  it('does not close a batch it never began when the close-program prompt fails, and can run again', async () => {
+  it('still converts the batch when the close-program prompt fails, since the quiet path queues the change for an open program', async () => {
+    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/m/a.aiff' })
     const endConversionBatch = vi.fn()
     const beginConversionBatch = vi.fn()
-    const askToApply = vi.fn().mockRejectedValueOnce(new Error('ipc failed')).mockResolvedValue({})
     setApi({
-      processTrack: vi.fn().mockResolvedValue({ outputPath: '/m/a.aiff' }),
+      processTrack,
       beginConversionBatch,
       endConversionBatch,
       conversionPrograms: vi.fn().mockResolvedValue(['traktor']),
-      dj: { askToApply },
+      dj: { askToApply: vi.fn().mockRejectedValue(new Error('ipc failed')) },
     })
     const tracks = [track({ id: 'a' })]
     const { result } = renderHook(
@@ -265,14 +265,29 @@ describe('useTrackProcessing', () => {
       { wrapper: withClient() },
     )
     await act(async () => {
-      await result.current.processAll(tracks).catch(() => {})
-    })
-    expect(beginConversionBatch).not.toHaveBeenCalled()
-    expect(endConversionBatch).not.toHaveBeenCalled()
-    await act(async () => {
       await result.current.processAll(tracks)
     })
+    expect(processTrack).toHaveBeenCalledOnce()
     expect(beginConversionBatch).toHaveBeenCalledOnce()
+    expect(endConversionBatch).toHaveBeenCalledOnce()
+  })
+
+  it('still converts one track when the libraries cannot be read for the prompt', async () => {
+    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/m/a.aiff' })
+    setApi({
+      processTrack,
+      conversionPrograms: vi.fn().mockRejectedValue(new Error('master.db unreadable')),
+      dj: { askToApply: vi.fn() },
+    })
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({ tracks: [track({ id: 'a' })], settings: null, updateTrack: vi.fn() }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await result.current.processOne('a')
+    })
+    expect(processTrack).toHaveBeenCalledOnce()
   })
 
   it('does not ask when no program is reached', async () => {

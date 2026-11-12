@@ -566,8 +566,8 @@ export function useTrackProcessing({
 
   const askToCloseReached = useStableCallback(async (ids: string[]): Promise<void> => {
     const paths = ids.flatMap((id) => tracksRef.current.find((t) => t.id === id)?.inputPath ?? [])
-    const programs = await window.api.conversionPrograms(paths)
-    if (programs.length > 0) await window.api.dj.askToApply(programs)
+    const programs = await window.api.conversionPrograms(paths).catch(() => [])
+    if (programs.length > 0) await window.api.dj.askToApply(programs).catch(() => {})
   })
 
   // The Editor's convert button and ⌘⏎ call this directly — the only entry point that
@@ -738,12 +738,7 @@ export function useTrackProcessing({
           updateTrack(t.id, { skipReason: undefined })
       }
       batchingRef.current = true
-      try {
-        await askToCloseReached(ids)
-      } catch (error) {
-        batchingRef.current = false
-        throw error
-      }
+      await askToCloseReached(ids)
       // A fresh run: let main forget any "apply to the rest" conflict choice the last batch
       // left, so this one starts asking again rather than reusing a stale decision.
       window.api.beginConversionBatch()

@@ -166,8 +166,17 @@ const ADD_SETTING = {
 
 export async function conversionPrograms(
   paths: string[],
-  deps: { traktorRead: () => string; rootLibraries: () => RootLibraries },
+  deps: {
+    traktorRead: () => string
+    rootLibraries: () => RootLibraries
+    isRunning: (program: DjProgram) => Promise<boolean>
+  },
 ): Promise<DjProgram[]> {
+  const running = await Promise.all(
+    DJ_PROGRAMS.map((program) => deps.isRunning(program).catch(() => true)),
+  )
+  const open = DJ_PROGRAMS.filter((_, i) => running[i])
+  if (open.length === 0) return []
   const settings = getSettings()
   const status = currentLibraryStatus()
   const roots = deps.rootLibraries()
@@ -181,24 +190,32 @@ export async function conversionPrograms(
     virtualdj: roots.virtualdj,
   }
   const reached: DjProgram[] = []
-  for (const program of DJ_PROGRAMS) {
+  for (const program of open) {
     if (locations[program].length === 0) continue
     if (settings[ADD_SETTING[program]]) {
       reached.push(program)
       continue
     }
     if (!settings[UPDATE_SETTING[program]]) continue
-    const holds = djLibraryFileUse(onlyLibrary(program, locations[program]), {
-      realPath: (p: string) => realpathSync(p),
-    })
-    for (const path of paths) {
-      if (await holds(path)) {
-        reached.push(program)
-        break
-      }
-    }
+    if (await holdsAny(program, locations[program], paths)) reached.push(program)
   }
   return reached
+}
+
+async function holdsAny(
+  program: LibraryProgram,
+  location: LibraryLocations[LibraryProgram],
+  paths: string[],
+): Promise<boolean> {
+  const holds = djLibraryFileUse(onlyLibrary(program, location), {
+    realPath: (p: string) => realpathSync(p),
+  })
+  try {
+    for (const path of paths) if (await holds(path)) return true
+    return false
+  } catch {
+    return true
+  }
 }
 
 export async function librariesKeepingOriginal(
