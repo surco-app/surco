@@ -259,3 +259,44 @@ describe('FindReplaceModal scope', () => {
     )
   })
 })
+
+describe('FindReplaceModal cost per keystroke', () => {
+  function countRegExpBuilds(run: () => void): number {
+    const Real = RegExp
+    let built = 0
+    globalThis.RegExp = new Proxy(Real, {
+      construct(target, args: ConstructorParameters<RegExpConstructor>) {
+        built++
+        return new target(...args)
+      },
+    })
+    try {
+      run()
+    } finally {
+      globalThis.RegExp = Real
+    }
+    return built
+  }
+
+  // The preview runs over every visible track — the whole crate when nothing is selected —
+  // and a regex was compiled again for each of their eleven fields on every keystroke. The
+  // pattern is the same for all of them, so how often it is compiled must not grow with
+  // the list.
+  function buildsWhileTyping(count: number, regex: boolean): number {
+    const tracks = Array.from({ length: count }, (_, i) => track(`t${i}`, { title: `Song ${i}` }))
+    render(<FindReplaceModal tracks={tracks} onApply={vi.fn()} onClose={vi.fn()} />)
+    if (regex) fireEvent.click(screen.getByTestId('find-replace-regex'))
+    const built = countRegExpBuilds(() =>
+      fireEvent.change(screen.getByTestId('find-replace-find'), { target: { value: 'Song' } }),
+    )
+    cleanup()
+    return built
+  }
+
+  it.each([false, true])(
+    'compiles the pattern as often for 300 tracks as for 3 (regex %s)',
+    (regex) => {
+      expect(buildsWhileTyping(300, regex)).toBe(buildsWhileTyping(3, regex))
+    },
+  )
+})

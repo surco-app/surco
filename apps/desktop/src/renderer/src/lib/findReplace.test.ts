@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { emptyMetadata } from '../../../shared/metadata'
 import type { TrackMetadata } from '../../../shared/types'
-import { findReplaceTrack, isValidRegex, replaceInValue } from './findReplace'
+import { compileFindReplace, findReplaceTrack, isValidRegex, replaceInValue } from './findReplace'
 
 function meta(patch: Partial<TrackMetadata>): TrackMetadata {
   return {
@@ -71,21 +71,21 @@ describe('findReplaceTrack', () => {
       title: 'Song',
       custom: { vinylCondition: 'VG+ (promo)', shop: 'Discogs' },
     }
-    expect(findReplaceTrack(meta, ' (promo)', '')).toEqual({
+    expect(findReplaceTrack(meta, compileFindReplace(' (promo)', ''))).toEqual({
       custom: { vinylCondition: 'VG+', shop: 'Discogs' },
     })
   })
 
   it('returns only the text fields that changed, leaving the rest out', () => {
     const m = meta({ title: 'Snap (Original Mix)', artist: 'Kumara', year: '2000' })
-    expect(findReplaceTrack(m, 'Original Mix', 'Radio Edit')).toEqual({
+    expect(findReplaceTrack(m, compileFindReplace('Original Mix', 'Radio Edit'))).toEqual({
       title: 'Snap (Radio Edit)',
     })
   })
 
   it('never touches numeric fields, so a digit search cannot mangle the year or track no.', () => {
     const m = meta({ title: '2000 mix', year: '2000', trackNumber: '2' })
-    const out = findReplaceTrack(m, '2000', 'two thousand')
+    const out = findReplaceTrack(m, compileFindReplace('2000', 'two thousand'))
     expect(out.title).toBe('two thousand mix')
     expect('year' in out).toBe(false)
     expect('trackNumber' in out).toBe(false)

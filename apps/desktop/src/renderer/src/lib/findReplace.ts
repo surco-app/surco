@@ -38,19 +38,29 @@ export function isValidRegex(pattern: string): boolean {
 // Replaces every occurrence of `find` in `value`. Plain mode matches literal text and treats
 // `replace` literally (a "$" stays a "$"); regex mode compiles `find` as a pattern and lets
 // `replace` use $1 capture groups. An empty find or an invalid regex leaves the value as is.
+export function compileFindReplace(
+  find: string,
+  replace: string,
+  opts: FindReplaceOptions = {},
+): (value: string) => string {
+  if (!find) return (value) => value
+  const flags = `g${opts.caseSensitive ? '' : 'i'}`
+  if (opts.regex) {
+    if (!isValidRegex(find)) return (value) => value
+    const pattern = new RegExp(find, flags)
+    return (value) => value.replace(pattern, replace)
+  }
+  const pattern = new RegExp(escapeRegex(find), flags)
+  return (value) => value.replace(pattern, () => replace)
+}
+
 export function replaceInValue(
   value: string,
   find: string,
   replace: string,
   opts: FindReplaceOptions = {},
 ): string {
-  if (!find) return value
-  const flags = `g${opts.caseSensitive ? '' : 'i'}`
-  if (opts.regex) {
-    if (!isValidRegex(find)) return value
-    return value.replace(new RegExp(find, flags), replace)
-  }
-  return value.replace(new RegExp(escapeRegex(find), flags), () => replace)
+  return compileFindReplace(find, replace, opts)(value)
 }
 
 // Applies the replacement across a track's text fields, returning only the fields that
@@ -58,18 +68,16 @@ export function replaceInValue(
 // search never touched.
 export function findReplaceTrack(
   meta: TrackMetadata,
-  find: string,
-  replace: string,
-  opts: FindReplaceOptions = {},
+  replaceIn: (value: string) => string,
 ): Partial<TrackMetadata> {
   const out: Partial<TrackMetadata> = {}
   for (const field of FIND_REPLACE_FIELDS) {
-    const next = replaceInValue(meta[field] ?? '', find, replace, opts)
+    const next = replaceIn(meta[field] ?? '')
     if (next !== meta[field]) out[field] = next
   }
   const custom = meta.custom ?? {}
   const changed = Object.entries(custom).flatMap(([key, value]) => {
-    const next = replaceInValue(value, find, replace, opts)
+    const next = replaceIn(value)
     return next === value ? [] : [[key, next] as const]
   })
   if (changed.length > 0) out.custom = { ...custom, ...Object.fromEntries(changed) }
