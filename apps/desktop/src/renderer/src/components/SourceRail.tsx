@@ -170,6 +170,7 @@ export function SourceRail({
               <span
                 id={`source-rail-beta-${s}`}
                 data-testid={`source-rail-beta-${s}`}
+                hidden={!showNames}
                 className={`rounded px-[5px] text-fg-dim ring-1 ring-[var(--color-line-strong)] ring-inset ${PILL_TEXT}`}
               >
                 {tr('sources.beta')}

@@ -379,6 +379,27 @@ describe('SourceRail', () => {
     expect(screen.getByTestId('source-rail').style.width).toBe('52px')
   })
 
+  it('drops the beta pill with the names, since the icon-only rail has no room under the mark, yet VoiceOver still hears VirtualDJ is beta', () => {
+    render(
+      <SourceRail
+        width={52}
+        showNames={false}
+        onToggleNames={vi.fn()}
+        sidebarShown
+        onToggleSidebar={vi.fn()}
+        copies={COPIES}
+        onHide={vi.fn()}
+        sources={['virtualdj']}
+        active={null}
+        onSelect={vi.fn()}
+      />,
+    )
+    expect(screen.getByTestId('source-rail-beta-virtualdj')).not.toBeVisible()
+    expect(screen.getByRole('button', { name: 'VirtualDJ' })).toHaveAccessibleDescription(
+      i18n.t('sources.beta'),
+    )
+  })
+
   describe('Copias', () => {
     function renderWith(copies: Partial<Parameters<typeof SourceRail>[0]['copies']>) {
       const props = { ...COPIES, onOpen: vi.fn(), ...copies }
