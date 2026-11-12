@@ -13,7 +13,7 @@ import {
   SpellCheck,
 } from 'lucide-react'
 import type React from 'react'
-import { useEffect, useRef, useState } from 'react'
+import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   isWritable,
@@ -32,6 +32,7 @@ import {
   type ReviewPhase,
   type ReviewSpellingGroup,
 } from '../hooks/useMusicReview'
+import { useStableCallback } from '../hooks/useStableCallback'
 import { damageKey } from '../lib/damageReview'
 import { errorKeyOf } from '../lib/ipcError'
 import { isTypingTarget } from '../lib/keymap'
@@ -810,6 +811,17 @@ export type ReviewSort = 'default' | 'tracks' | 'name'
 
 const trackCount = (g: ReviewSpellingGroup) => new Set(g.variants.flatMap((v) => v.ids)).size
 
+const collator = new Intl.Collator()
+const byName = (a: string, b: string) => collator.compare(a, b)
+const byMost = (a: number, b: number) => b - a
+
+function sortedBy<T, K>(items: T[], keyOf: (item: T) => K, compare: (a: K, b: K) => number): T[] {
+  return items
+    .map((item) => ({ item, key: keyOf(item) }))
+    .sort((a, b) => compare(a.key, b.key))
+    .map((entry) => entry.item)
+}
+
 const nameOf = (review: Review, g: ReviewSpellingGroup) =>
   review.choice(g.key) ?? g.variants[0].value
 const duplicateName = (c: DuplicateCard) => `${c.entries[0]?.artist} · ${c.entries[0]?.title}`
@@ -852,17 +864,15 @@ export function visibleGroups(
     : []
   if (sort === 'name')
     return {
-      spelling: [...spelling].sort((a, b) => nameOf(review, a).localeCompare(nameOf(review, b))),
-      duplicates: [...duplicates].sort((a, b) => duplicateName(a).localeCompare(duplicateName(b))),
-      damage: [...damage].sort((a, b) =>
-        damageTitle(review, a.path).localeCompare(damageTitle(review, b.path)),
-      ),
-      incomplete: [...incomplete].sort((a, b) => a.name.localeCompare(b.name)),
+      spelling: sortedBy(spelling, (g) => nameOf(review, g), byName),
+      duplicates: sortedBy(duplicates, duplicateName, byName),
+      damage: sortedBy(damage, (f) => damageTitle(review, f.path), byName),
+      incomplete: sortedBy(incomplete, (f) => f.name, byName),
     }
   if (sort === 'tracks')
     return {
-      spelling: [...spelling].sort((a, b) => trackCount(b) - trackCount(a)),
-      duplicates: [...duplicates].sort((a, b) => b.entries.length - a.entries.length),
+      spelling: sortedBy(spelling, trackCount, byMost),
+      duplicates: sortedBy(duplicates, (c) => c.entries.length, byMost),
       damage,
       incomplete,
     }
@@ -880,7 +890,8 @@ export const visibleKeys = ({ spelling, duplicates, damage, incomplete }: Visibl
 
 const RISKY_KINDS = new Set(['typo', 'version'])
 
-function Row({
+const Row = memo(function Row({
+  id,
   selected,
   staged,
   kind,
@@ -895,7 +906,8 @@ function Row({
   name: string
   detail: string
   count?: number
-  onSelect: () => void
+  id: string
+  onSelect: (key: string) => void
 }) {
   const { t } = useTranslation()
   return (
@@ -905,11 +917,11 @@ function Row({
       data-staged={staged || undefined}
       aria-selected={selected}
       tabIndex={selected ? 0 : -1}
-      onClick={onSelect}
+      onClick={() => onSelect(id)}
       onKeyDown={(e) => {
         if (e.key !== 'Enter' && e.key !== ' ') return
         e.preventDefault()
-        onSelect()
+        onSelect(id)
       }}
       className={`cursor-default ${listRowClass(selected, false)}`}
     >
@@ -951,9 +963,10 @@ function Row({
       </span>
     </div>
   )
-}
+})
 
-function DamageRow({
+const DamageRow = memo(function DamageRow({
+  id,
   finding,
   selected,
   staged,
@@ -964,7 +977,8 @@ function DamageRow({
   selected: boolean
   staged: boolean
   name: string
-  onSelect: () => void
+  id: string
+  onSelect: (key: string) => void
 }) {
   const { t } = useTranslation()
   return (
@@ -974,11 +988,11 @@ function DamageRow({
       data-staged={staged || undefined}
       aria-selected={selected}
       tabIndex={selected ? 0 : -1}
-      onClick={onSelect}
+      onClick={() => onSelect(id)}
       onKeyDown={(e) => {
         if (e.key !== 'Enter' && e.key !== ' ') return
         e.preventDefault()
-        onSelect()
+        onSelect(id)
       }}
       className={`cursor-default ${listRowClass(selected, false)}`}
     >
@@ -1011,7 +1025,7 @@ function DamageRow({
       </span>
     </div>
   )
-}
+})
 
 export const editorNames = (t: TFunction, card: IncompleteCard) =>
   (card.editor?.fields ?? []).map((f) => f.label ?? t(`fields.${f.key}`))
@@ -1024,7 +1038,8 @@ export const missingLabel = (t: TFunction, card: IncompleteCard) =>
     ].join(', '),
   })
 
-function IncompleteRow({
+const IncompleteRow = memo(function IncompleteRow({
+  id,
   card,
   filled,
   selected,
@@ -1035,7 +1050,8 @@ function IncompleteRow({
   filled: boolean
   selected: boolean
   staged: boolean
-  onSelect: () => void
+  id: string
+  onSelect: (key: string) => void
 }) {
   const { t } = useTranslation()
   const source =
@@ -1048,11 +1064,11 @@ function IncompleteRow({
       data-staged={staged || undefined}
       aria-selected={selected}
       tabIndex={selected ? 0 : -1}
-      onClick={onSelect}
+      onClick={() => onSelect(id)}
       onKeyDown={(e) => {
         if (e.key !== 'Enter' && e.key !== ' ') return
         e.preventDefault()
-        onSelect()
+        onSelect(id)
       }}
       className={`cursor-default min-w-0 ${listRowClass(selected, false)}`}
     >
@@ -1091,7 +1107,7 @@ function IncompleteRow({
       </span>
     </div>
   )
-}
+})
 
 // `busy` is a conversion running elsewhere in the app: it writes the same files and the
 // same library databases, so nothing here may start a write until it ends.
@@ -1131,31 +1147,45 @@ export function MusicReview({
   const applying = review.status === 'applying'
   const [doneSeen, setDoneSeen] = useState<object | null>(null)
   const listRef = useRef<HTMLDivElement>(null)
-  const counts = {
-    all:
-      review.spelling.length +
-      review.duplicates.length +
-      review.damage.length +
-      review.incomplete.length,
-    spelling: review.spelling.length,
-    duplicates: review.duplicates.length,
-    damage: review.damage.length,
-    incomplete: review.incomplete.length,
-    staged: [
-      ...review.spelling.map((g) => g.key),
-      ...review.duplicates.map((c) => c.group.key),
-      ...review.damage.map(damageKey),
-      ...review.incomplete.map((f) => incompleteKey(f.id)),
-    ].filter((key) => review.staged.has(key)).length,
-  }
+  const select = useStableCallback(onSelect)
+  const counts = useMemo(
+    () => ({
+      all:
+        review.spelling.length +
+        review.duplicates.length +
+        review.damage.length +
+        review.incomplete.length,
+      spelling: review.spelling.length,
+      duplicates: review.duplicates.length,
+      damage: review.damage.length,
+      incomplete: review.incomplete.length,
+      staged: [
+        ...review.spelling.map((g) => g.key),
+        ...review.duplicates.map((c) => c.group.key),
+        ...review.damage.map(damageKey),
+        ...review.incomplete.map((f) => incompleteKey(f.id)),
+      ].filter((key) => review.staged.has(key)).length,
+    }),
+    [review.spelling, review.duplicates, review.damage, review.incomplete, review.staged],
+  )
   const keys = visibleKeys(visible)
   const at = selectedKey === null ? -1 : keys.indexOf(selectedKey)
   const nothing = review.status === 'ready' && counts.all === 0 && !review.damageLoading
-  const proposals = review.incomplete.filter(
-    (f) =>
-      !review.staged.has(incompleteKey(f.id)) &&
-      f.fields.some((x) => review.fillValue(f.id, x.field).trim()),
-  ).length
+  const filled = useMemo(
+    () =>
+      new Set(
+        review.incomplete
+          .filter((f) => f.fields.some((x) => review.fillValue(f.id, x.field).trim()))
+          .map((f) => f.id),
+      ),
+    [review.incomplete, review.fillValue],
+  )
+  const proposals = useMemo(
+    () =>
+      review.incomplete.filter((f) => !review.staged.has(incompleteKey(f.id)) && filled.has(f.id))
+        .length,
+    [review.incomplete, review.staged, filled],
+  )
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape' || e.defaultPrevented || applying) return
@@ -1349,7 +1379,8 @@ export function MusicReview({
               name={nameOf(review, g)}
               detail={fieldsLabel(t, g)}
               count={trackCount(g)}
-              onSelect={() => onSelect(g.key)}
+              id={g.key}
+              onSelect={select}
             />
           ))}
           {visible.duplicates.map((c) => (
@@ -1364,7 +1395,8 @@ export function MusicReview({
                   ? t('musicReview.kind.version')
                   : t('musicReview.kind.duplicate', { count: c.entries.length })
               }
-              onSelect={() => onSelect(c.group.key)}
+              id={c.group.key}
+              onSelect={select}
             />
           ))}
           {visible.damage.map((f) => (
@@ -1374,17 +1406,19 @@ export function MusicReview({
               selected={damageKey(f) === selectedKey}
               staged={review.staged.has(damageKey(f))}
               name={damageTitle(review, f.path)}
-              onSelect={() => onSelect(damageKey(f))}
+              id={damageKey(f)}
+              onSelect={select}
             />
           ))}
           {visible.incomplete.map((f) => (
             <IncompleteRow
               key={incompleteKey(f.id)}
               card={f}
-              filled={f.fields.some((x) => review.fillValue(f.id, x.field).trim())}
+              filled={filled.has(f.id)}
               selected={incompleteKey(f.id) === selectedKey}
               staged={review.staged.has(incompleteKey(f.id))}
-              onSelect={() => onSelect(incompleteKey(f.id))}
+              id={incompleteKey(f.id)}
+              onSelect={select}
             />
           ))}
         </div>

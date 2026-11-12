@@ -28,6 +28,16 @@ import {
 import { useReviewSelection } from './MusicReviewColumn'
 import { MusicReviewDetail, type ReviewSync } from './MusicReviewDetail'
 
+const { tooltipLabels } = vi.hoisted(() => ({ tooltipLabels: [] as string[] }))
+vi.mock('./Tooltip', async (importOriginal) => {
+  const real = await importOriginal<typeof import('./Tooltip')>()
+  const Tooltip: typeof real.Tooltip = (props) => {
+    tooltipLabels.push(String(props.label))
+    return real.Tooltip(props)
+  }
+  return { ...real, Tooltip }
+})
+
 afterEach(cleanup)
 
 const part = {
@@ -228,6 +238,90 @@ describe('MusicReview search cost', () => {
     const onePass = normalize.mock.calls.length
     normalize.mockRestore()
     expect(perKeystroke).toBe(onePass)
+  })
+})
+
+describe('MusicReview list cost', () => {
+  const groups = Array.from({ length: 30 }, (_, i) => ({
+    ...group,
+    key: `artist||case|g${i}`,
+    suggested: `Artist ${i}`,
+    variants: [
+      { value: `Artist ${i}`, ids: [`A${i}`] },
+      { value: `artist ${i}`, ids: [`B${i}`, `C${i}`] },
+    ],
+  }))
+  const cards: IncompleteCard[] = Array.from({ length: 30 }, (_, i) => ({
+    id: `/m/${i}.aiff`,
+    name: `Track ${i}`,
+    fields: [{ field: 'artist' as const }],
+  })) as IncompleteCard[]
+  const props = (r: Review, selectedKey: string) => ({
+    review: r,
+    visible: { spelling: r.spelling, duplicates: [], damage: [], incomplete: r.incomplete },
+    selectedKey,
+    onSelect: vi.fn(),
+    onClose: vi.fn(),
+    search: '',
+    onSearch: vi.fn(),
+    sort: 'default' as ReviewSort,
+    onSort: vi.fn(),
+    confirming: false,
+    onConfirming: vi.fn(),
+  })
+
+  // Arrowing through a review of thousands of groups moves the selection one row at a
+  // time; redrawing every row for each step made the arrow keys lag behind the hand.
+  it('redraws only the rows whose selection changed when the selection moves', () => {
+    const r = review({
+      spelling: groups,
+      choice: (key) => groups.find((g) => g.key === key)?.suggested ?? null,
+    })
+    const { rerender } = render(<MusicReview {...props(r, groups[0].key)} />)
+    tooltipLabels.length = 0
+
+    rerender(<MusicReview {...props(r, groups[1].key)} />)
+
+    const rowNames = new Set(groups.map((g) => g.suggested))
+    expect(tooltipLabels.filter((label) => rowNames.has(label)).sort()).toEqual([
+      'Artist 0',
+      'Artist 1',
+    ])
+  })
+
+  // Whether an incomplete track has something to write is asked of every track for the
+  // rows and again for the tray's count; moving the selection changes none of the answers.
+  it('does not ask for the fill values again when only the selection moves', () => {
+    const fillValue = vi.fn(() => '')
+    const r = review({ spelling: [], incomplete: cards, fillValue })
+    const { rerender } = render(<MusicReview {...props(r, incompleteKey(cards[0].id))} />)
+    fillValue.mockClear()
+
+    rerender(<MusicReview {...props(r, incompleteKey(cards[1].id))} />)
+
+    expect(fillValue).not.toHaveBeenCalled()
+  })
+
+  // Sorting by size compared groups by recounting their tracks on every comparison, so a
+  // big review sorted in n·log n recounts; each group's count is needed only once.
+  it('counts each group once when sorting by tracks', () => {
+    let reads = 0
+    const counted = groups.map((g) => {
+      const { variants, ...rest } = g
+      return Object.defineProperty({ ...rest }, 'variants', {
+        get: () => {
+          reads++
+          return variants
+        },
+        enumerable: true,
+      }) as typeof g
+    })
+    const sorted = visibleGroups(review({ spelling: counted }), '', 'tracks')
+    const sortedReads = reads
+    reads = 0
+    visibleGroups(review({ spelling: counted }), '', 'default')
+    expect(sorted.spelling).toHaveLength(30)
+    expect(sortedReads - reads).toBeLessThanOrEqual(counted.length)
   })
 })
 
