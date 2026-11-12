@@ -207,7 +207,6 @@ interface Props {
   // superseded, the old Apple Music copy) for the Trash in one confirmed step. Confirmation
   // lives in App, so the link just signals intent with what it would clean up.
   onCleanUp?: (offer: CleanupOffer) => void
-  resultsWidth: number
   resultsFolded: boolean
   onFoldResults: (folded: boolean) => void
   onResultsResizeStart: (e: React.PointerEvent) => void
@@ -309,7 +308,6 @@ export const Editor = memo(function Editor({
   onDeclickChange,
   onAddToAppleMusic,
   onCleanUp,
-  resultsWidth,
   resultsFolded,
   onFoldResults,
   onResultsResizeStart,
@@ -1607,7 +1605,7 @@ export const Editor = memo(function Editor({
           selectTrack={selectTrack}
           searchInputRef={searchInputRef}
           formatFilter={discogsFormats}
-          width={resultsWidth}
+          width="var(--results-width)"
           onResizeStart={onResultsResizeStart}
           onFit={onResultsFit}
           onFold={() => onFoldResults(true)}

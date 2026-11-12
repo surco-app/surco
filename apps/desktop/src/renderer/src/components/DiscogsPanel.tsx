@@ -79,7 +79,7 @@ interface Props {
   // The release formats search is restricted to (Settings → Sources). Empty = no filter.
   // Shown as a hint so a thinned or empty result set reads as the filter at work.
   formatFilter: string[]
-  width: number
+  width: number | string
   onResizeStart: (e: React.PointerEvent) => void
   onFit: (deficit: number) => void
   onFold: () => void

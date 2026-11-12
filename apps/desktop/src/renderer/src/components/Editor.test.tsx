@@ -260,7 +260,6 @@ function renderEditor(
         onApplyTitleFormat={onApplyTitleFormat}
         onAddToAppleMusic={vi.fn()}
         onCleanUp={onCleanUp}
-        resultsWidth={480}
         resultsFolded={props.resultsFolded ?? false}
         onFoldResults={onFoldResults}
         onResultsResizeStart={vi.fn()}
@@ -1495,7 +1494,6 @@ function MultiHarness() {
         searchInputRef={createRef<HTMLInputElement>()}
         onExportCollection={vi.fn()}
         readFullTrack={async () => undefined}
-        resultsWidth={480}
         resultsFolded={false}
         onFoldResults={vi.fn()}
         onResultsResizeStart={vi.fn()}
@@ -1890,7 +1888,6 @@ describe('Editor multi-select', () => {
         searchInputRef={createRef<HTMLInputElement>()}
         onExportCollection={vi.fn()}
         readFullTrack={async () => undefined}
-        resultsWidth={480}
         resultsFolded={false}
         onFoldResults={vi.fn()}
         onResultsResizeStart={vi.fn()}
@@ -2558,7 +2555,6 @@ describe('Editor export control', () => {
           onChange={(patch) => setTrack((t) => ({ ...t, ...patch }))}
           onProcess={vi.fn()}
           onAddToAppleMusic={vi.fn()}
-          resultsWidth={480}
           resultsFolded={false}
           onFoldResults={vi.fn()}
           onResultsResizeStart={vi.fn()}
@@ -3999,7 +3995,6 @@ describe('Editor Discogs apply', () => {
         onRecordUndo={onRecordUndo}
         onProcess={vi.fn()}
         onAddToAppleMusic={vi.fn()}
-        resultsWidth={480}
         resultsFolded={false}
         onFoldResults={vi.fn()}
         onResultsResizeStart={vi.fn()}

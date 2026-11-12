@@ -7037,6 +7037,41 @@ describe('App editor prop stability', () => {
     fireEvent.change(screen.getByTestId('track-search'), { target: { value: 'zz' } })
     expect(editorRenders.count).toBe(before)
   })
+
+  // Dragging the results border resizes the columns every animation frame. Only the column
+  // width moves; re-rendering the whole editor (form, waves, every section) per frame made
+  // the drag stutter.
+  it('keeps the editor props stable while the results column border is dragged', async () => {
+    const initialWidth = window.innerWidth
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1600 })
+    setApi({ pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']) })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    await screen.findByTestId('field-title')
+    const frames: FrameRequestCallback[] = []
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => frames.push(cb))
+    try {
+      const column = screen.getByTestId('matches-column')
+      const width = () => screen.getByRole('main').style.getPropertyValue('--results-width')
+      const was = width()
+      const border = column.nextElementSibling as HTMLElement
+      const at = (event: Event, clientX: number): Event =>
+        Object.defineProperty(event, 'clientX', { value: clientX })
+      const before = editorRenders.count
+      fireEvent(border, at(createEvent.pointerDown(border), 700))
+      fireEvent(window, at(createEvent.pointerMove(window), 640))
+      act(() => {
+        for (const frame of frames.splice(0)) frame(0)
+      })
+      expect(editorRenders.count).toBe(before)
+      expect(width()).not.toBe(was)
+      fireEvent(window, at(createEvent.pointerUp(window), 640))
+    } finally {
+      vi.unstubAllGlobals()
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: initialWidth })
+    }
+  })
 })
 
 describe('App derived list stability', () => {
