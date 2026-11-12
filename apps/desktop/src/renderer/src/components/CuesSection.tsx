@@ -1,4 +1,4 @@
-import { useIsFetching, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Check,
   ChevronDown,
@@ -560,7 +560,7 @@ function Editing({
     onSurcoGrid,
   })
   const gridOff = gate === null ? null : tr(gate)
-  const fitting = useIsFetching({ queryKey: gridFitQuery(cue.contentId).queryKey }) > 0
+  const fitting = useQuery({ ...gridFitQuery(cue.contentId), enabled: false }).isFetching
   const fine = useCueWaveFine(cue.contentId, maximized && !fitting)
   const fitPending = gridOff === null && fitting
   const gridFit = useGridFit(cue.contentId, gridOff === null && (!maximized || fine !== undefined))
