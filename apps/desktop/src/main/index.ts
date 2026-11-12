@@ -266,6 +266,7 @@ import { updateMode } from './updateMode'
 import { armUpdateRecheck } from './updateRecheck'
 import { createUpdateRetry } from './updateRetry'
 import { registerUsbExportIpc } from './usbExportIpc'
+import { WINDOWS_DRIVES } from './usbVolumes'
 import { checkFile, fileReaders } from './verifyFile'
 import {
   appVerifyRegistry,
@@ -294,7 +295,7 @@ import {
   virtualdjCopyKey,
 } from './virtualdjCopies'
 import { virtualdjCueSource } from './virtualdjCueSource'
-import { virtualdjLibraryRoots } from './virtualdjLibrary'
+import { virtualdjDriveRoots, virtualdjLibraryRoots } from './virtualdjLibrary'
 import { virtualdjEdit } from './virtualdjPlaylistEditIpc'
 import { virtualdjRead } from './virtualdjPlaylistsIpc'
 import { repointVirtualdjTracks, virtualdjBitrateKbps } from './virtualdjTrackWrite'
@@ -394,7 +395,10 @@ function seratoRoots() {
 const virtualdjDir = (): string => getSettings().virtualdjLibraryDir
 const virtualdjLibrary = (): string =>
   existsSync(join(virtualdjDir(), 'database.xml')) ? virtualdjDir() : ''
-const virtualdjRoots = () => virtualdjLibraryRoots(virtualdjDir(), '/Volumes')
+const virtualdjRoots = () =>
+  process.platform === 'win32'
+    ? virtualdjDriveRoots(virtualdjDir(), WINDOWS_DRIVES)
+    : virtualdjLibraryRoots(virtualdjDir(), '/Volumes')
 const virtualdjSessionCopy = () => virtualdjSessionBackup.ensure(virtualdjCopyKey(virtualdjRoots()))
 const virtualdjCopies = () => ({
   backupDir: join(app.getPath('userData'), 'virtualdj-backups'),

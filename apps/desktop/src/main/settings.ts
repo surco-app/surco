@@ -34,6 +34,7 @@ import { FORMAT_SETTINGS } from '../shared/outputFormats'
 import { TRASH_MAX_BYTES, TRASH_RETENTION_DAYS } from '../shared/trash'
 import type { FormatSetting, LanguagePref, NormalizeConfig, Settings } from '../shared/types'
 import { migratedSyncToggles } from './syncToggleMigration'
+import { virtualdjHomeDir } from './virtualdjLibrary'
 
 export const defaults: Settings = {
   theme: 'system',
@@ -83,7 +84,11 @@ export const defaults: Settings = {
   // often kept outside the standard location), so no reliable default — empty means the feature
   // is off until the user points Surco at their collection.nml.
   traktorNmlPath: '',
-  virtualdjLibraryDir: join(app.getPath('home'), 'Library', 'Application Support', 'VirtualDJ'),
+  virtualdjLibraryDir: virtualdjHomeDir(process.platform, {
+    home: app.getPath('home'),
+    documents: app.getPath('documents'),
+    localAppData: process.env.LOCALAPPDATA ?? join(app.getPath('home'), 'AppData', 'Local'),
+  }),
   // Off by default, both of them: writing into a collection the user cannot rebuild is a
   // bigger step than converting a file, so it is opted into rather than out of. A user
   // already syncing with Traktor before these toggles existed keeps syncing — see

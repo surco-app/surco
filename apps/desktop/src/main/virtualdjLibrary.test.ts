@@ -27,10 +27,14 @@ import { RECENTLY_ADDED_ID } from '../shared/recentlyAdded'
 import {
   readVirtualdjLibrary,
   virtualdjCollection,
+  virtualdjDriveRoots,
+  virtualdjHomeDir,
   virtualdjLibraryRoots,
   virtualdjMembership,
+  virtualdjPathOf,
   virtualdjPlaylist,
   virtualdjRecentCount,
+  virtualdjRootLabel,
   virtualdjStoredPath,
   virtualdjTrackCount,
   virtualdjTree,
@@ -386,5 +390,102 @@ describe('virtualdjStoredPath', () => {
 
   it('keeps a file of the home database as it is', () => {
     expect(virtualdjStoredPath({ dir: '/x', root: '/' }, '/Music/a.mp3', '')).toBe('/Music/a.mp3')
+  })
+})
+
+describe('VirtualDJ on Windows, not measured on a real Windows yet', () => {
+  const folders = {
+    home: 'C:\\Users\\dj',
+    documents: 'C:\\Users\\dj\\Documents',
+    localAppData: 'C:\\Users\\dj\\AppData\\Local',
+  }
+  const documents = 'C:\\Users\\dj\\Documents\\VirtualDJ'
+  const localAppData = 'C:\\Users\\dj\\AppData\\Local\\VirtualDJ'
+  const home = { dir: documents, root: '/' }
+  const drive = { dir: 'E:\\VirtualDJ', root: 'E:\\' }
+
+  it('looks for the library in Documents, where VirtualDJ 8 keeps it on Windows', () => {
+    expect(virtualdjHomeDir('win32', folders, () => true)).toBe(documents)
+    expect(virtualdjHomeDir('win32', folders, () => false)).toBe(documents)
+  })
+
+  it('falls back to the local application data folder only when Documents holds no database', () => {
+    const exists = (path: string) => path === `${localAppData}\\database.xml`
+    expect(virtualdjHomeDir('win32', folders, exists)).toBe(localAppData)
+  })
+
+  it('keeps the measured macOS folder on a Mac', () => {
+    expect(virtualdjHomeDir('darwin', { ...folders, home: '/Users/dj' }, () => false)).toBe(
+      '/Users/dj/Library/Application Support/VirtualDJ',
+    )
+  })
+
+  it('reads a home path with either separator as the same Windows file', () => {
+    expect(virtualdjPathOf(home, 'C:/Music/a.mp3')).toBe('C:\\Music\\a.mp3')
+    expect(virtualdjPathOf(home, 'C:\\Music\\a.mp3')).toBe('C:\\Music\\a.mp3')
+  })
+
+  it("reads a drive database's own letter as absolute and another letter as relative to the drive", () => {
+    expect(virtualdjPathOf(drive, 'E:\\Music\\a.mp3')).toBe('E:\\Music\\a.mp3')
+    expect(virtualdjPathOf(drive, 'e:/Music/a.mp3')).toBe('E:\\Music\\a.mp3')
+    expect(virtualdjPathOf(drive, 'D:/Music/a.mp3')).toBe('E:\\Music\\a.mp3')
+  })
+
+  it('writes a new home path with the separator the database already uses, and a backslash when it has none', () => {
+    const slashed = '<Song FilePath="C:/Music/a.mp3" />'
+    expect(virtualdjStoredPath(home, 'C:\\Music\\new.mp3', slashed)).toBe('C:/Music/new.mp3')
+    expect(virtualdjStoredPath(home, 'C:/Music/new.mp3', '<VirtualDJ_Database>')).toBe(
+      'C:\\Music\\new.mp3',
+    )
+  })
+
+  it("writes a new drive path with the letter and separator that drive's database already uses", () => {
+    const file = 'E:\\Music\\new.mp3'
+    expect(virtualdjStoredPath(drive, file, '<Song FilePath="D:/Old/a.mp3" />')).toBe(
+      'D:/Music/new.mp3',
+    )
+    expect(virtualdjStoredPath(drive, file, '<Song FilePath="E:\\Old\\a.mp3" />')).toBe(
+      'E:\\Music\\new.mp3',
+    )
+    expect(virtualdjStoredPath(drive, file, '<VirtualDJ_Database>')).toBe('E:\\Music\\new.mp3')
+  })
+
+  it('names the copies of a drive database after its letter, since a drive root has no folder name', () => {
+    expect(virtualdjRootLabel(drive)).toBe('E')
+    expect(virtualdjRootLabel(home)).toBe('Local')
+    expect(virtualdjRootLabel({ dir: '/Volumes/Public/VirtualDJ', root: '/Volumes/Public' })).toBe(
+      'Public',
+    )
+  })
+
+  it('looks for a VirtualDJ folder on every drive it is given, keeping only those VirtualDJ used', () => {
+    const base = mkdtempSync(join(tmpdir(), 'surco-vdj-letters-'))
+    const [c, e, f] = ['C', 'E', 'F'].map((l) => join(base, l))
+    for (const d of [c, e, f]) mkdirSync(d)
+    mkdirSync(join(c, 'Documents', 'VirtualDJ'), { recursive: true })
+    writeFileSync(join(c, 'Documents', 'VirtualDJ', 'database.xml'), '<VirtualDJ_Database />')
+    mkdirSync(join(e, 'VirtualDJ'))
+    writeFileSync(join(e, 'VirtualDJ', 'database.xml'), '<VirtualDJ_Database />')
+    expect(virtualdjDriveRoots(join(c, 'Documents', 'VirtualDJ'), [c, e, f])).toEqual([
+      { dir: join(c, 'Documents', 'VirtualDJ'), root: '/' },
+      { dir: join(e, 'VirtualDJ'), root: e },
+    ])
+  })
+
+  it('matches list rows and songs whatever separator or letter case each one uses', () => {
+    const dir = library([song('C:/Music/a.mp3'), song('C:\\Music\\b.mp3')], {
+      Gigs: ['c:\\Music\\a.mp3'],
+    })
+    const lib = readVirtualdjLibrary(local(dir))
+    expect(virtualdjCollection(lib).map((t) => t.path)).toEqual([
+      'C:\\Music\\b.mp3',
+      'C:\\Music\\a.mp3',
+    ])
+    const [entry] = virtualdjPlaylist(lib, 'Gigs')
+    expect(entry.contentId).toBe('virtualdj:C:\\Music\\a.mp3')
+    expect(entry.meta.bpm).toBe('120')
+    expect(virtualdjMembership(lib, ['C:\\Music\\a.mp3'])).toEqual({
+      'C:\\Music\\a.mp3': ['Gigs'],
+    })
   })
 })

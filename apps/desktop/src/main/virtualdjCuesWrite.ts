@@ -15,6 +15,7 @@ import {
   type VirtualdjDraft,
   virtualdjDatabaseOf,
 } from './virtualdjLibraryWrite'
+import { virtualdjPathKey } from './virtualdjPaths'
 
 function colorOf(wanted: WantedCue, before: VirtualdjPoi | undefined): number | undefined {
   if (wanted.color === null) return undefined
@@ -57,14 +58,14 @@ export function songIn(
   roots: VirtualdjRoot[],
   path: string,
 ): { root: VirtualdjRoot; file: string; xml: string; song: VirtualdjSong } | null {
-  const wanted = path.normalize('NFC')
+  const wanted = virtualdjPathKey(path)
   for (const root of roots) {
     const file = virtualdjDatabaseOf(root)
     const xml = draft.read(file)
     const song =
       xml &&
       parseVirtualdjDatabase(xml).find(
-        (s) => virtualdjPathOf(root, s.path).normalize('NFC') === wanted,
+        (s) => virtualdjPathKey(virtualdjPathOf(root, s.path)) === wanted,
       )
     if (xml && song) return { root, file, xml, song }
   }

@@ -323,4 +323,13 @@ describe('virtualdjRootFor', () => {
     expect(virtualdjRootFor('/Users/dj/Music/a.flac', [home, drive])).toBe(home)
     expect(virtualdjRootFor('/Volumes/Nuevo/a.flac', [home, drive])).toBeNull()
   })
+
+  it('on Windows gives a file to the database of its drive letter, and the home one only its own letter', () => {
+    const home = { dir: 'C:\\Users\\dj\\Documents\\VirtualDJ', root: '/' }
+    const drive = { dir: 'E:\\VirtualDJ', root: 'E:\\' }
+    expect(virtualdjRootFor('E:\\Music\\a.flac', [home, drive])).toBe(drive)
+    expect(virtualdjRootFor('e:/Music/a.flac', [home, drive])).toBe(drive)
+    expect(virtualdjRootFor('C:\\Music\\a.flac', [home, drive])).toBe(home)
+    expect(virtualdjRootFor('F:\\Music\\a.flac', [home, drive])).toBeNull()
+  })
 })

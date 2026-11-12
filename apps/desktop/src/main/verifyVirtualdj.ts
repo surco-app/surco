@@ -4,6 +4,7 @@ import type { PlaceCheck, VerifyDetailKey } from '../shared/verification'
 import { formatOf } from './verifyFile'
 import { readVirtualdjLibrary, type VirtualdjRoot } from './virtualdjLibrary'
 import type { VirtualdjNode } from './virtualdjLists'
+import { virtualdjPathKey } from './virtualdjPaths'
 
 export type VirtualdjBefore =
   | { lists: { id: string; name: string }[]; listOnly?: true }
@@ -18,18 +19,16 @@ export interface VirtualdjExpect {
   playlists?: RekordboxPlaylistTarget[]
 }
 
-const nfc = (path: string) => path.normalize('NFC')
-
 function listsOf(nodes: VirtualdjNode[]): VirtualdjNode[] {
   return nodes.flatMap((n) => (n.kind === 'playlist' ? [n] : listsOf(n.children ?? [])))
 }
 
 const holding = (lists: VirtualdjNode[], path: string) =>
-  lists.filter((l) => l.paths.some((p) => nfc(p) === nfc(path)))
+  lists.filter((l) => l.paths.some((p) => virtualdjPathKey(p) === virtualdjPathKey(path)))
 
 export function snapshotVirtualdjSong(roots: VirtualdjRoot[], from: string): VirtualdjBefore {
   const library = readVirtualdjLibrary(roots)
-  const song = library.songs.some((s) => nfc(s.path) === nfc(from))
+  const song = library.songs.some((s) => virtualdjPathKey(s.path) === virtualdjPathKey(from))
   const lists = holding(listsOf(library.lists), from)
   if (!song && lists.length === 0) return 'absent'
   return {
@@ -52,11 +51,12 @@ export function checkVirtualdj(roots: VirtualdjRoot[], list: VirtualdjExpect[]):
   const library = readVirtualdjLibrary(roots)
   const lists = listsOf(library.lists)
   const top = new Set(library.lists.map((n) => n.id))
-  const songsAt = (path: string) => library.songs.filter((s) => nfc(s.path) === nfc(path))
+  const songsAt = (path: string) =>
+    library.songs.filter((s) => virtualdjPathKey(s.path) === virtualdjPathKey(path))
   return list.map((e) => {
     if (e.before === 'unreadable')
       return { ...check('unreadable', 'virtualdjUnreadable'), final: true }
-    if (nfc(e.from) !== nfc(e.to) && songsAt(e.from).length > 0)
+    if (virtualdjPathKey(e.from) !== virtualdjPathKey(e.to) && songsAt(e.from).length > 0)
       return check('mismatch', 'virtualdjStillOld', { format: formatOf(extname(e.from)) })
     const [song] = songsAt(e.to)
     const listOnly = typeof e.before === 'object' && e.before.listOnly === true

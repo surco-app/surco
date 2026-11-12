@@ -14,7 +14,7 @@ import type { CopyReason, LibraryCopy, RestoreRefusal, RestoreResult } from '../
 import { HISTORY_KEEP } from './libraryHistory'
 import type { RestoreDeps } from './libraryRestore'
 import { backupFolderName } from './seratoLibraryWrite'
-import { isVirtualdjHome, type VirtualdjRoot } from './virtualdjLibrary'
+import { isVirtualdjHome, type VirtualdjRoot, virtualdjRootLabel } from './virtualdjLibrary'
 import { HISTORY_BACKUPS, LIST_BACKUPS } from './virtualdjLibraryWrite'
 
 type Part = 'tracks' | 'lists'
@@ -38,7 +38,7 @@ const WRITING = '.surco-write'
 const LISTS = 'MyLists'
 const STAMP = /^(\d{4}-\d{2}-\d{2})T(\d{2})-(\d{2})-(\d{2})-(\d{3})Z(?:-\d+)?$/
 
-const labelOf = (root: VirtualdjRoot): string => (root.root === '/' ? 'Local' : basename(root.root))
+const labelOf = virtualdjRootLabel
 
 const homeOf = (roots: VirtualdjRoot[]) => roots.find(isVirtualdjHome)
 

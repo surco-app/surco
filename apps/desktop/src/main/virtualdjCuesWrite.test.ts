@@ -144,6 +144,23 @@ describe('applyVirtualdjCuesBatch', () => {
     expect(xml.replace(/\r\n/g, '')).not.toContain('\n')
   })
 
+  it('writes the cues of a Windows song stored with forward slashes when Surco names it with backslashes, keeping its spelling and CRLF', async () => {
+    const stored = 'C:/Music/VirtualDJ Pruebas/Pray.mp3'
+    const windows = 'C:\\Music\\VirtualDJ Pruebas\\Pray.mp3'
+    const { database, deps, read } = library(
+      fixture.replace(`FilePath="${MP3}"`, `FilePath="${stored}"`),
+    )
+    const before = await read(windows)
+    expect(before.cues).toHaveLength(1)
+    const wanted = [...wantedOf(before), { ms: 60500, kind: HOT_KINDS[1], color: null }]
+    const result = await applyVirtualdjCuesBatch([op(windows, before, wanted)], deps)
+    expect(result).toMatchObject({ ok: true, wrote: true })
+    const xml = readFileSync(database, 'utf8')
+    expect(songOf(xml, stored)?.pois.filter((p) => p.kind === 'cue')).toHaveLength(2)
+    expect(xml).not.toContain(windows)
+    expect(xml.replace(/\r\n/g, '')).not.toContain('\n')
+  })
+
   it('writes a new cue’s colour as the unsigned ARGB VirtualDJ stores, from Surco’s palette', async () => {
     const { database, deps, read } = library()
     const before = await read(MP3)

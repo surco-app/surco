@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { attr } from './traktorNml'
+import { virtualdjListPath } from './virtualdjPaths'
 
 export interface VirtualdjNode {
   id: string
@@ -47,7 +48,8 @@ export function virtualdjListRows(xml: string): VirtualdjListRow[] {
   return ordered.map(({ path, start, end }) => ({ path, start, end }))
 }
 
-const readPaths = (file: string): string[] => virtualdjListRows(readText(file)).map((r) => r.path)
+const readPaths = (file: string): string[] =>
+  virtualdjListRows(readText(file)).map((r) => virtualdjListPath(r.path))
 
 export function virtualdjLinkId(index: number, path: string): string {
   return `${index}:${encodeURIComponent(path)}`

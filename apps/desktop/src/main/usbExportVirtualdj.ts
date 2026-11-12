@@ -11,6 +11,7 @@ import {
   virtualdjSongsByPath,
   virtualdjTree,
 } from './virtualdjLibrary'
+import { virtualdjPathKey } from './virtualdjPaths'
 
 const DEFAULT_SAMPLE_RATE = 44100
 
@@ -52,7 +53,7 @@ export async function readVirtualdjExportSelection(
     rows,
     (file) => file,
     async (id, file) => {
-      const song = known.get(file.normalize('NFC'))
+      const song = known.get(virtualdjPathKey(file))
       const path = song?.path ?? file
       const clock = await deps.clockOf(path)
       const marks =

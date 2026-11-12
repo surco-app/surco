@@ -12,6 +12,7 @@ import {
   type VirtualdjDraft,
 } from './virtualdjLibraryWrite'
 import { moveVirtualdjListRows } from './virtualdjListsWrite'
+import { virtualdjPathKey } from './virtualdjPaths'
 import { type VirtualdjAudio, virtualdjRootFor } from './virtualdjTrackWrite'
 
 const ATTEMPTS = 3
@@ -74,7 +75,7 @@ export async function replaceVirtualdjDuplicates(
     const listed = new Set(
       readVirtualdjLibrary(roots).lists.flatMap(function paths(n): string[] {
         return n.kind === 'playlist'
-          ? n.paths.map((p) => p.normalize('NFC'))
+          ? n.paths.map(virtualdjPathKey)
           : (n.children ?? []).flatMap(paths)
       }),
     )
@@ -86,7 +87,7 @@ export async function replaceVirtualdjDuplicates(
     const results = pairs.map((p, i): DuplicateReplaceResult => {
       const song = songs[i]
       if (song) return song
-      if (listed.has(p.from.normalize('NFC')) && sizes[i] !== null)
+      if (listed.has(virtualdjPathKey(p.from)) && sizes[i] !== null)
         return { written: true, outcome: 'repointed' }
       return { written: false, reason: 'no-match' }
     })

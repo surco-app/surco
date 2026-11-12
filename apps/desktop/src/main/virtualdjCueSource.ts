@@ -14,6 +14,7 @@ import type { BeatGridOf } from './sameClockGrid'
 import { tempoGrid } from './seratoCueSource'
 import type { VirtualdjSong } from './virtualdjDatabase'
 import { readVirtualdjSongs, type VirtualdjRoot } from './virtualdjLibrary'
+import { virtualdjPathKey } from './virtualdjPaths'
 
 export function virtualdjCueRows(song: VirtualdjSong): TrackCueRow[] {
   return song.pois.flatMap((p) =>
@@ -89,10 +90,10 @@ export function virtualdjCueSource(
     if (!paths) {
       paths = new Map()
       for (const s of songs)
-        if (!paths.has(s.path.normalize('NFC'))) paths.set(s.path.normalize('NFC'), s)
+        if (!paths.has(virtualdjPathKey(s.path))) paths.set(virtualdjPathKey(s.path), s)
       byPath.set(songs, paths)
     }
-    return paths.get(virtualdjFileOf(contentId).normalize('NFC'))
+    return paths.get(virtualdjPathKey(virtualdjFileOf(contentId)))
   }
   const source: CueSource = {
     trackCues: async (contentId) => {

@@ -240,6 +240,27 @@ describe('applyVirtualdjListOps', () => {
     )
   })
 
+  it('matches the rows of a Windows list whatever separator or letter case Surco names them with, and keeps the spelling of the rows it leaves', async () => {
+    const lib = library()
+    const rows = ['C:/Music/a.mp3', 'C:/Music/b.mp3']
+    const list = `${LIST_HEAD}${rows.map((p, i) => `\t<song path="${p}" size="1" idx="${i}" />\r\n`).join('')}</VirtualFolder>\r\n`
+    writeFileSync(lib.at('Surco escrita.vdjfolder'), list)
+    expect(
+      await lib.run({
+        kind: 'add',
+        playlistId: 'Surco escrita',
+        tracks: [{ paths: ['c:\\Music\\a.mp3'] }],
+      }),
+    ).toMatchObject({ ok: true, outcomes: [{ applied: false, report: { already: 1 } }] })
+    const [, b] = lib.links('Surco escrita')
+    expect(
+      await lib.run({ kind: 'remove', playlistId: 'Surco escrita', linkIds: [b] }),
+    ).toMatchObject({ ok: true, outcomes: [{ applied: true }] })
+    expect(lib.text('Surco escrita.vdjfolder')).toBe(
+      `${LIST_HEAD}\t<song path="C:/Music/a.mp3" size="1" idx="0" />\r\n</VirtualFolder>\r\n`,
+    )
+  })
+
   it('refuses as unreadable a list holding a byte that is not UTF-8, so its other rows never get a replacement character', async () => {
     const lib = library()
     const c = lib.track('c.mp3', 'abcd')

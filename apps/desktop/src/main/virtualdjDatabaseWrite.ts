@@ -1,6 +1,7 @@
 import { escapeXml } from '../shared/xml'
 import { attr, withAttr } from './traktorNml'
 import { parsePoi, songOpenRe, tagRe, type VirtualdjPoi } from './virtualdjDatabase'
+import { virtualdjPathKey } from './virtualdjPaths'
 
 export type VirtualdjArgb = number
 export type VirtualdjCueWrite = {
@@ -28,7 +29,9 @@ interface SongSpan {
 }
 
 function hasSong(xml: string, path: string): boolean {
-  for (const m of xml.matchAll(songOpenRe())) if (attr(m[1], 'FilePath') === path) return true
+  const key = virtualdjPathKey(path)
+  for (const m of xml.matchAll(songOpenRe()))
+    if (virtualdjPathKey(attr(m[1], 'FilePath')) === key) return true
   return false
 }
 

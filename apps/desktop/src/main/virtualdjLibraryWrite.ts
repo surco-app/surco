@@ -9,11 +9,11 @@ import {
   rmSync,
   writeFileSync,
 } from 'node:fs'
-import { basename, dirname, join, relative, resolve } from 'node:path'
+import { basename, dirname, join, relative, resolve, sep } from 'node:path'
 import log from 'electron-log/main'
 import type { BatchResult, OpOutcome, QueueOp } from './rekordboxQueueOps'
 import { backupFolderName, type FileStamp, fileStampOf } from './seratoLibraryWrite'
-import type { VirtualdjRoot } from './virtualdjLibrary'
+import { type VirtualdjRoot, virtualdjRootLabel } from './virtualdjLibrary'
 
 export const virtualdjDatabaseOf = (root: VirtualdjRoot): string => join(root.dir, 'database.xml')
 
@@ -82,9 +82,9 @@ export const HISTORY_BACKUPS = 'history'
 const WRITING = '.surco-write'
 
 function backupPathOf(file: string, roots: VirtualdjRoot[]): string {
-  const root = roots.find((r) => file.startsWith(`${resolve(r.dir)}/`))
+  const root = roots.find((r) => file.startsWith(`${resolve(r.dir)}${sep}`))
   if (!root) throw new Error(`${file} is in no VirtualDJ library`)
-  return join(root.root === '/' ? 'Local' : basename(root.root), relative(root.dir, file))
+  return join(virtualdjRootLabel(root), relative(root.dir, file))
 }
 
 export function takeBackups(files: string[], deps: VirtualdjCommitDeps): Map<string, string> {

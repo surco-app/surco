@@ -23,11 +23,22 @@ import {
 } from './virtualdjLibraryWrite'
 import { readVirtualdjLists, type VirtualdjNode } from './virtualdjLists'
 import { moveVirtualdjListRows, virtualdjListsDir } from './virtualdjListsWrite'
+import { isVirtualdjDrivePath, isWindowsDriveRoot, virtualdjPathKey } from './virtualdjPaths'
 
 const ATTEMPTS = 3
 const LENGTH_TOLERANCE_S = 0.000001
 
+const letterOf = (path: string): string => path[0].toUpperCase()
+
 export function virtualdjRootFor(path: string, roots: VirtualdjRoot[]): VirtualdjRoot | null {
+  if (isVirtualdjDrivePath(path))
+    return (
+      roots.find((r) => isWindowsDriveRoot(r.root) && letterOf(r.root) === letterOf(path)) ??
+      roots.find(
+        (r) => r.root === '/' && isVirtualdjDrivePath(r.dir) && letterOf(r.dir) === letterOf(path),
+      ) ??
+      null
+    )
   return (
     roots.find((r) => r.root !== '/' && path.startsWith(`${r.root}/`)) ??
     (path.startsWith('/Volumes/') ? null : roots.find((r) => r.root === '/')) ??
@@ -41,11 +52,11 @@ export function virtualdjHeld(roots: VirtualdjRoot[]): (path: string) => boolean
       const file = virtualdjDatabaseOf(root)
       if (!existsSync(file)) return []
       return parseVirtualdjDatabase(readFileSync(file, 'utf8')).map((s) =>
-        virtualdjPathOf(root, s.path).normalize('NFC'),
+        virtualdjPathKey(virtualdjPathOf(root, s.path)),
       )
     }),
   )
-  return (path) => held.has(path.normalize('NFC'))
+  return (path) => held.has(virtualdjPathKey(path))
 }
 
 function virtualdjListed(roots: VirtualdjRoot[]): (path: string) => boolean {
@@ -53,11 +64,11 @@ function virtualdjListed(roots: VirtualdjRoot[]): (path: string) => boolean {
   const listed = new Set(
     (dir ? readVirtualdjLists(dir) : []).flatMap(function paths(n: VirtualdjNode): string[] {
       return n.kind === 'playlist'
-        ? n.paths.map((p) => p.normalize('NFC'))
+        ? n.paths.map(virtualdjPathKey)
         : (n.children ?? []).flatMap(paths)
     }),
   )
-  return (path) => listed.has(path.normalize('NFC'))
+  return (path) => listed.has(virtualdjPathKey(path))
 }
 
 export function virtualdjHeldOrListed(roots: VirtualdjRoot[]): (path: string) => boolean {
@@ -80,7 +91,7 @@ export async function virtualdjCannotFollow(
   to: string,
   lengthOf?: (path: string) => Promise<number | undefined>,
 ): Promise<boolean> {
-  const key = (p: string) => p.normalize('NFC')
+  const key = virtualdjPathKey
   for (const root of roots) {
     const file = virtualdjDatabaseOf(root)
     if (!existsSync(file)) continue
@@ -232,9 +243,9 @@ function movedSong(
     return landed()
   if (virtualdjRootFor(repoint.to, roots) !== root)
     return { written: false, reason: 'other-volume' }
-  const wanted = repoint.to.normalize('NFC')
+  const wanted = virtualdjPathKey(repoint.to)
   const taken = parseVirtualdjDatabase(xml).some(
-    (s) => s.path !== song.path && virtualdjPathOf(root, s.path).normalize('NFC') === wanted,
+    (s) => s.path !== song.path && virtualdjPathKey(virtualdjPathOf(root, s.path)) === wanted,
   )
   if (taken)
     return { written: false, reason: existsSync(repoint.from) ? 'song-taken' : 'song-taken-gone' }

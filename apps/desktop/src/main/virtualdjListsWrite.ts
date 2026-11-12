@@ -10,7 +10,7 @@ import {
   statSync,
   writeFileSync,
 } from 'node:fs'
-import { basename, dirname, join, relative } from 'node:path'
+import { basename, dirname, join, relative, sep } from 'node:path'
 import log from 'electron-log/main'
 import type {
   PlaylistAddReport,
@@ -33,6 +33,7 @@ import { isVirtualdjHome, type VirtualdjRoot } from './virtualdjLibrary'
 import type { VirtualdjCommit, VirtualdjCommitDeps } from './virtualdjLibraryWrite'
 import { LIST_BACKUPS, takeBackups } from './virtualdjLibraryWrite'
 import { EXT, parseVirtualdjLinkId, SUB, virtualdjListRows } from './virtualdjLists'
+import { virtualdjPathKey, virtualdjSpelling } from './virtualdjPaths'
 
 const XML_HEAD = '<?xml version="1.0" encoding="UTF-8"?>\r\n'
 const NEW_LIST = `${XML_HEAD}<VirtualFolder noDuplicates="no">\r\n</VirtualFolder>\r\n`
@@ -155,7 +156,8 @@ function nodeOf(d: ListsDraft, id: string): ListNode | null {
   return { level, name, file, sub: join(level, `${name}${SUB}`) }
 }
 
-const inside = (path: string, dir: string): boolean => path === dir || path.startsWith(`${dir}/`)
+const inside = (path: string, dir: string): boolean =>
+  path === dir || path.startsWith(`${dir}${sep}`)
 
 function moveNode(d: ListsDraft, node: ListNode, level: string, name: string): void {
   const file = join(level, `${name}${EXT}`)
@@ -335,16 +337,16 @@ function addTracks(
   if (!node || xml === null) return { refused: 'stale' }
   const spans = lineSpans(xml)
   const report: PlaylistAddReport = { added: 0, already: 0, notInCollection: 0, ambiguous: 0 }
-  const there = new Set(spans.map((s) => s.path.normalize('NFC')))
+  const there = new Set(spans.map((s) => virtualdjPathKey(s.path)))
   const rows: Row[] = [...spans]
   for (const track of tracks) {
     const file = track.paths[track.paths.length - 1] ?? ''
     const size = sizeOf(file)
-    if (there.has(file.normalize('NFC'))) report.already++
+    if (there.has(virtualdjPathKey(file))) report.already++
     else if (size === null) report.notInCollection++
     else {
-      there.add(file.normalize('NFC'))
-      rows.push({ path: file, size })
+      there.add(virtualdjPathKey(file))
+      rows.push({ path: virtualdjSpelling(file, xml), size })
       report.added++
     }
   }
@@ -368,7 +370,7 @@ function editRows(
     for (const id of ids) {
       const link = parseVirtualdjLinkId(id)
       const row = link && spans[link.index]
-      if (!link || !row || row.path.normalize('NFC') !== link.path.normalize('NFC')) return null
+      if (!link || !row || virtualdjPathKey(row.path) !== virtualdjPathKey(link.path)) return null
       out.push(link.index)
     }
     return out
@@ -521,8 +523,9 @@ function pickedList(d: ListsDraft, target: TrackOp['wanted'][number]): string | 
 
 function applyListTrack(d: ListsDraft, op: TrackOp): OpOutcome {
   const notices: RekordboxQueueNotice[] = []
-  const key = nfc(op.path)
-  const holds = (xml: string): boolean => lineSpans(xml).some((s) => nfc(s.path) === key)
+  const key = virtualdjPathKey(op.path)
+  const holds = (xml: string): boolean =>
+    lineSpans(xml).some((s) => virtualdjPathKey(s.path) === key)
   const changed = (file: string) =>
     notices.push({
       code: 'playlist-changed',
@@ -544,7 +547,10 @@ function applyListTrack(d: ListsDraft, op: TrackOp): OpOutcome {
       notices.push({ code: 'file-missing', track: op.label })
       continue
     }
-    const next = rewrittenList(xml, [...lineSpans(xml), { path: op.path, size }])
+    const next = rewrittenList(xml, [
+      ...lineSpans(xml),
+      { path: virtualdjSpelling(op.path, xml), size },
+    ])
     if (next === null) changed(file)
     else put(d, file, next)
   }
@@ -555,7 +561,7 @@ function applyListTrack(d: ListsDraft, op: TrackOp): OpOutcome {
     const next = known.has(file)
       ? rewrittenList(
           xml,
-          lineSpans(xml).filter((s) => nfc(s.path) !== key),
+          lineSpans(xml).filter((s) => virtualdjPathKey(s.path) !== key),
         )
       : null
     if (next === null) changed(file)
@@ -574,21 +580,22 @@ const withRowAttr = (text: string, name: string, value: string): string =>
   text.replace(new RegExp(`(\\s${name}=")[^"]*(")`), (_m, open, close) => `${open}${value}${close}`)
 
 function movedRows(d: ListsDraft, moves: VirtualdjRowMove[]): void {
-  const byFrom = new Map(moves.map((m) => [nfc(m.from), m]))
+  const byFrom = new Map(moves.map((m) => [virtualdjPathKey(m.from), m]))
   for (const file of listFiles(d)) {
     const xml = textOf(d, file)
     if (xml === null) continue
     const spans = lineSpans(xml)
-    if (!spans.some((s) => byFrom.has(nfc(s.path)))) continue
-    const holds = new Set(spans.map((s) => nfc(s.path)))
+    if (!spans.some((s) => byFrom.has(virtualdjPathKey(s.path)))) continue
+    const holds = new Set(spans.map((s) => virtualdjPathKey(s.path)))
     const rows = spans.flatMap((s): Row[] => {
-      const move = byFrom.get(nfc(s.path))
+      const move = byFrom.get(virtualdjPathKey(s.path))
       if (!move) return [s]
-      if (nfc(move.to) !== nfc(move.from) && holds.has(nfc(move.to))) return []
+      const to = virtualdjPathKey(move.to)
+      if (to !== virtualdjPathKey(move.from) && holds.has(to)) return []
       return [
         {
           text: withRowAttr(
-            withRowAttr(s.text, 'path', escapeXml(move.to)),
+            withRowAttr(s.text, 'path', escapeXml(virtualdjSpelling(move.to, xml))),
             'size',
             `${move.size}`,
           ),

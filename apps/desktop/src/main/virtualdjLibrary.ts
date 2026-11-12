@@ -1,5 +1,5 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
-import { join, posix, resolve } from 'node:path'
+import { basename, join, posix, resolve, win32 } from 'node:path'
 import { ALL_TRACKS_ID } from '../shared/allTracks'
 import { RECENTLY_ADDED_ID } from '../shared/recentlyAdded'
 import type {
@@ -11,6 +11,14 @@ import type {
 import { recentSince } from './traktorPlaylists'
 import { parseVirtualdjDatabase, type VirtualdjSong } from './virtualdjDatabase'
 import { readVirtualdjLists, type VirtualdjNode, virtualdjLinkId } from './virtualdjLists'
+import {
+  isVirtualdjDrivePath,
+  isWindowsDriveRoot,
+  virtualdjPathKey,
+  virtualdjSpelledLetter,
+  virtualdjSpelling,
+  virtualdjWindowsPath,
+} from './virtualdjPaths'
 
 export interface VirtualdjLibrary {
   songs: VirtualdjSong[]
@@ -26,11 +34,19 @@ export interface VirtualdjRoot {
 export const isVirtualdjHome = (root: VirtualdjRoot): boolean =>
   root.root === '/' || root.home === true
 
-export function virtualdjLibraryRoots(dir: string, volumesRoot: string): VirtualdjRoot[] {
-  let volumes: string[] = []
-  try {
-    volumes = readdirSync(volumesRoot).map((name) => join(volumesRoot, name))
-  } catch {}
+export function virtualdjHomeDir(
+  platform: NodeJS.Platform,
+  folders: { home: string; documents: string; localAppData: string },
+  exists: (path: string) => boolean = existsSync,
+): string {
+  if (platform !== 'win32') return join(folders.home, 'Library', 'Application Support', 'VirtualDJ')
+  const documents = win32.join(folders.documents, 'VirtualDJ')
+  const local = win32.join(folders.localAppData, 'VirtualDJ')
+  const holds = (dir: string) => exists(win32.join(dir, 'database.xml'))
+  return !holds(documents) && holds(local) ? local : documents
+}
+
+export function virtualdjDriveRoots(dir: string, volumes: string[]): VirtualdjRoot[] {
   const drives = volumes.map((volume) => ({ dir: join(volume, 'VirtualDJ'), root: volume }))
   const homeDrive = drives.find((d) => resolve(d.dir) === resolve(dir))
   return [
@@ -39,16 +55,33 @@ export function virtualdjLibraryRoots(dir: string, volumesRoot: string): Virtual
   ].filter((r) => existsSync(join(r.dir, 'database.xml')))
 }
 
-const DRIVE = /^[A-Za-z]:\//
+export function virtualdjLibraryRoots(dir: string, volumesRoot: string): VirtualdjRoot[] {
+  let volumes: string[] = []
+  try {
+    volumes = readdirSync(volumesRoot).map((name) => join(volumesRoot, name))
+  } catch {}
+  return virtualdjDriveRoots(dir, volumes)
+}
+
+export const virtualdjRootLabel = (root: VirtualdjRoot): string =>
+  root.root === '/'
+    ? 'Local'
+    : isWindowsDriveRoot(root.root)
+      ? root.root[0].toUpperCase()
+      : basename(root.root)
 
 export function virtualdjPathOf(root: VirtualdjRoot, filePath: string): string {
-  return root.root !== '/' && DRIVE.test(filePath)
-    ? posix.join(root.root, filePath.slice(3))
-    : filePath
+  if (!isVirtualdjDrivePath(filePath)) return filePath
+  if (isWindowsDriveRoot(root.root))
+    return virtualdjWindowsPath(filePath, root.root[0].toUpperCase())
+  if (root.root !== '/') return posix.join(root.root, filePath.slice(3))
+  return virtualdjWindowsPath(filePath)
 }
 
 export function virtualdjStoredPath(root: VirtualdjRoot, path: string, xml: string): string {
-  if (root.root === '/') return path
+  if (root.root === '/') return virtualdjSpelling(path, xml)
+  if (isWindowsDriveRoot(root.root))
+    return virtualdjSpelling(path, xml, virtualdjSpelledLetter(xml) ?? root.root[0].toUpperCase())
   const letter = xml.match(/FilePath="([A-Za-z]):\//)?.[1] ?? 'D'
   return `${letter}:/${posix.relative(root.root, path)}`
 }
@@ -98,11 +131,10 @@ export function readVirtualdjLibrary(roots: VirtualdjRoot[]): VirtualdjLibrary {
   }
 }
 
-const nfc = (path: string) => path.normalize('NFC')
-
 export function virtualdjSongsByPath(songs: VirtualdjSong[]): Map<string, VirtualdjSong> {
   const byPath = new Map<string, VirtualdjSong>()
-  for (const s of songs) if (!byPath.has(nfc(s.path))) byPath.set(nfc(s.path), s)
+  for (const s of songs)
+    if (!byPath.has(virtualdjPathKey(s.path))) byPath.set(virtualdjPathKey(s.path), s)
   return byPath
 }
 
@@ -185,7 +217,7 @@ export function virtualdjPlaylist(
   if (!list) return []
   const byPath = virtualdjSongsByPath(library.songs)
   return list.paths.map((path, i) => ({
-    ...entryOf(path, byPath.get(nfc(path))),
+    ...entryOf(path, byPath.get(virtualdjPathKey(path))),
     linkId: virtualdjLinkId(i, path),
   }))
 }
@@ -194,14 +226,16 @@ export function virtualdjMembership(
   library: VirtualdjLibrary,
   paths: string[],
 ): Record<string, string[]> {
-  const lists = playlists(library.lists).map((n) => [n.id, new Set(n.paths.map(nfc))] as const)
+  const lists = playlists(library.lists).map(
+    (n) => [n.id, new Set(n.paths.map(virtualdjPathKey))] as const,
+  )
   const known = new Set([
-    ...library.songs.map((s) => nfc(s.path)),
+    ...library.songs.map((s) => virtualdjPathKey(s.path)),
     ...lists.flatMap(([, files]) => [...files]),
   ])
   const out: Record<string, string[]> = {}
   for (const path of paths) {
-    const file = nfc(path)
+    const file = virtualdjPathKey(path)
     if (!known.has(file)) continue
     out[path] = lists.filter(([, files]) => files.has(file)).map(([id]) => id)
   }
