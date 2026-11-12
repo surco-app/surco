@@ -3628,6 +3628,7 @@
     }
   },
   "view": {
+    "submenu": "表示",
     "menu": "リストの表示",
     "listWaves": "波形を表示",
     "railNames": "名前を表示",

@@ -3100,6 +3100,20 @@ export default function App(): React.JSX.Element {
         hasBackup={backupAtByPath.has(menu.track.inputPath)}
         onOpenBackup={onOpenBackup}
         playlist={trackMenuPlaylist(menu.track)}
+        view={[
+          {
+            id: 'sidebar',
+            label: tr('view.sidebar'),
+            checked: showSidebar,
+            onToggle: toggleSidebar,
+          },
+          {
+            id: 'list-waves',
+            label: tr('view.listWaves'),
+            checked: showListWaves,
+            onToggle: toggleListWaves,
+          },
+        ]}
       />
     ),
   )

@@ -358,3 +358,25 @@ describe('TrackContextMenu starting a session from the track', () => {
     expect(ids.indexOf('track-menu-start-session')).toBe(ids.indexOf('track-menu-startover') + 1)
   })
 })
+
+// Right-clicking a track is where people look first; the view choices sit one step away
+// there, under their own submenu, so the track's own actions keep the menu.
+describe('TrackContextMenu view submenu', () => {
+  it('opens the view choices with their ticks and toggles the one picked', () => {
+    const onToggle = vi.fn()
+    const { onClose } = renderMenu({
+      view: [
+        { id: 'sidebar', label: 'Show Sidebar', checked: false, onToggle: vi.fn() },
+        { id: 'list-waves', label: 'Show Waveforms', checked: true, onToggle },
+      ],
+    })
+    fireEvent.click(screen.getByRole('menuitem', { name: `${i18n.t('view.submenu')} ›` }))
+    expect(screen.getByRole('menuitemcheckbox', { name: 'Show Sidebar' })).toHaveAttribute(
+      'aria-checked',
+      'false',
+    )
+    fireEvent.click(screen.getByRole('menuitemcheckbox', { name: 'Show Waveforms' }))
+    expect(onToggle).toHaveBeenCalledTimes(1)
+    expect(onClose).toHaveBeenCalled()
+  })
+})

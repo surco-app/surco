@@ -3628,6 +3628,7 @@
     }
   },
   "view": {
+    "submenu": "View",
     "menu": "List view",
     "listWaves": "Show Waveforms",
     "railNames": "Show Names",

@@ -1,9 +1,11 @@
+import { Check } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { SourceNode } from '../../../shared/types'
 import { isWindows } from '../lib/platform'
 import type { TrackItem } from '../types'
+import type { ViewMenuItem } from './ViewMenu'
 
 // What the menu offers for the open rekordbox crate. Present only while rekordbox is the
 // source; openName is the playlist on screen, null when the list is not one.
@@ -41,6 +43,7 @@ interface Props {
   hasBackup?: boolean
   onOpenBackup?: (track: TrackItem) => void
   playlist?: TrackPlaylistMenu
+  view?: ViewMenuItem[]
 }
 
 // Where the playlist submenu sits against its row: shifted up by top (px, never down) and
@@ -109,12 +112,13 @@ export function TrackContextMenu({
   hasBackup = false,
   onOpenBackup,
   playlist,
+  view,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const menuRef = useRef<HTMLDivElement>(null)
   const [pos, setPos] = useState({ x, y })
   const isWin = isWindows()
-  const [picking, setPicking] = useState(false)
+  const [openSub, setOpenSub] = useState<'playlists' | 'view' | null>(null)
   const subRef = useRef<HTMLDivElement>(null)
   const [sub, setSub] = useState(SUBMENU_REST)
 
@@ -135,14 +139,14 @@ export function TrackContextMenu({
   // opens on the menu's left when the right edge has no room.
   useLayoutEffect(() => {
     const el = subRef.current
-    if (!picking || !el) return
+    if (!openSub || !el) return
     const rect = el.getBoundingClientRect()
     const height = Math.min(rect.height, window.innerHeight - 2 * EDGE)
     setSub({
       top: Math.max(Math.min(0, window.innerHeight - EDGE - height - rect.top), EDGE - rect.top),
       side: rect.right > window.innerWidth - EDGE ? 'left' : 'right',
     })
-  }, [picking])
+  }, [openSub])
 
   // The menu can be opened from the keyboard (Shift+F10 / the context-menu key), so move
   // focus to the first item on open and hand it back to the opener once it closes.
@@ -178,7 +182,9 @@ export function TrackContextMenu({
     }
     // A disabled item cannot take focus; counted as a stop, it would trap the arrows.
     const items = Array.from(
-      menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]:not(:disabled)') ?? [],
+      menuRef.current?.querySelectorAll<HTMLElement>(
+        '[role="menuitem"]:not(:disabled), [role="menuitemcheckbox"]',
+      ) ?? [],
     )
     if (items.length === 0) return
     const idx = items.indexOf(document.activeElement as HTMLElement)
@@ -263,10 +269,10 @@ export function TrackContextMenu({
                 label={`${tr('sources.menu.addTo')} ›`}
                 onClick={() => {
                   setSub(SUBMENU_REST)
-                  setPicking((p) => !p)
+                  setOpenSub((o) => (o === 'playlists' ? null : 'playlists'))
                 }}
               />
-              {picking && (
+              {openSub === 'playlists' && (
                 <div
                   ref={subRef}
                   data-testid="track-menu-playlists"
@@ -328,6 +334,51 @@ export function TrackContextMenu({
           label={tr('trackList.context.copyPath')}
           onClick={() => run(() => onCopyPath(track))}
         />
+        {view && (
+          <>
+            <hr className="my-1 h-px border-0 bg-[var(--color-line)]" />
+            <div className="relative">
+              <MenuItem
+                testid="track-menu-view"
+                label={`${tr('view.submenu')} ›`}
+                onClick={() => {
+                  setSub(SUBMENU_REST)
+                  setOpenSub((o) => (o === 'view' ? null : 'view'))
+                }}
+              />
+              {openSub === 'view' && (
+                <div
+                  ref={subRef}
+                  data-testid="track-menu-view-items"
+                  data-side={sub.side}
+                  style={{ top: sub.top }}
+                  className={`absolute min-w-[220px] rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)] ${
+                    sub.side === 'right' ? 'left-full ml-1' : 'right-full mr-1'
+                  }`}
+                >
+                  {view.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      role="menuitemcheckbox"
+                      aria-checked={item.checked}
+                      tabIndex={-1}
+                      data-testid={`track-menu-view-${item.id}`}
+                      onClick={() => run(item.onToggle)}
+                      className="flex w-full items-center gap-2 rounded py-1.5 pr-3 pl-2 text-left text-sm text-fg hover:bg-[var(--color-hover)]"
+                    >
+                      <Check
+                        aria-hidden="true"
+                        className={`h-3.5 w-3.5 shrink-0 ${item.checked ? '' : 'invisible'}`}
+                      />
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
+        )}
         <hr className="my-1 h-px border-0 bg-[var(--color-line)]" />
         {hasBackup && onOpenBackup && (
           <>

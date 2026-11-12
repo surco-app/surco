@@ -3628,6 +3628,7 @@
     }
   },
   "view": {
+    "submenu": "Ansicht",
     "menu": "Listenansicht",
     "listWaves": "Wellenformen zeigen",
     "railNames": "Namen zeigen",
