@@ -92,8 +92,8 @@ los cinco formatos.
 
 ## Windows (sin medir)
 
-Desde el 12/11 Surco ofrece VirtualDJ en Windows, con escritura, copias y cola como en macOS, y con
-la píldora «beta» en la barra lateral. Nada de lo que sigue se ha comprobado en un Windows real ni
+Desde el 12/11 Surco ofrece VirtualDJ en Windows, con escritura, copias y cola como en macOS, y la
+tabla de la web lo marca «Beta» en Windows. Nada de lo que sigue se ha comprobado en un Windows real ni
 con VirtualDJ para Windows. Es lo que Surco supone, y cada punto es un sitio donde mirar primero si
 algo falla allí.
 

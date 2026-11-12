@@ -2,9 +2,7 @@ import { Check, ListMusic, ShieldAlert, ShieldCheck } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { PROGRAM_BETA } from '../../../shared/djProgram'
 import type { PlaylistSource } from '../../../shared/types'
-import { PILL_TEXT } from './ListRow'
 import {
   AppleMusicIcon,
   EngineIcon,
@@ -86,14 +84,10 @@ export function SourceRail({
       hideable,
       className = '',
       dot,
-      tag,
-      describedBy,
     }: {
       hideable?: PlaylistSource
       className?: string
       dot?: React.ReactNode
-      tag?: React.ReactNode
-      describedBy?: string
     } = {},
   ) => (
     <button
@@ -102,7 +96,6 @@ export function SourceRail({
       data-testid={`source-rail-${key}`}
       aria-pressed={on}
       aria-label={label}
-      aria-describedby={describedBy}
       onClick={pick}
       onContextMenu={(e) => {
         e.preventDefault()
@@ -133,7 +126,6 @@ export function SourceRail({
       ) : (
         <Tooltip label={label} />
       )}
-      {tag}
     </button>
   )
   return (
@@ -156,27 +148,13 @@ export function SourceRail({
       )}
       {sources.map((s) => {
         const Icon = SOURCE_ICON[s]
-        const beta = s !== 'appleMusic' && PROGRAM_BETA[s]
         return item(
           s,
           tr(`sources.${s}`),
           <Icon size={22} data-testid={`source-rail-icon-${s}`} />,
           !copies.active && active === s,
           () => onSelect(s),
-          {
-            hideable: s,
-            describedBy: beta ? `source-rail-beta-${s}` : undefined,
-            tag: beta && (
-              <span
-                id={`source-rail-beta-${s}`}
-                data-testid={`source-rail-beta-${s}`}
-                hidden={!showNames}
-                className={`rounded px-[5px] text-fg-dim ring-1 ring-[var(--color-line-strong)] ring-inset ${PILL_TEXT}`}
-              >
-                {tr('sources.beta')}
-              </span>
-            ),
-          },
+          { hideable: s },
         )
       })}
       {item(
