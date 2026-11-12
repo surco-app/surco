@@ -73,11 +73,13 @@ export function SourceRail({
       className = '',
       dot,
       tag,
+      describedBy,
     }: {
       hideable?: PlaylistSource
       className?: string
       dot?: React.ReactNode
       tag?: React.ReactNode
+      describedBy?: string
     } = {},
   ) => (
     <button
@@ -86,6 +88,7 @@ export function SourceRail({
       data-testid={`source-rail-${key}`}
       aria-pressed={on}
       aria-label={label}
+      aria-describedby={describedBy}
       onClick={pick}
       onContextMenu={
         hideable
@@ -136,6 +139,7 @@ export function SourceRail({
       )}
       {sources.map((s) => {
         const Icon = SOURCE_ICON[s]
+        const beta = s !== 'appleMusic' && PROGRAM_BETA[s]
         return item(
           s,
           tr(`sources.${s}`),
@@ -144,8 +148,10 @@ export function SourceRail({
           () => onSelect(s),
           {
             hideable: s,
-            tag: s !== 'appleMusic' && PROGRAM_BETA[s] && (
+            describedBy: beta ? `source-rail-beta-${s}` : undefined,
+            tag: beta && (
               <span
+                id={`source-rail-beta-${s}`}
                 data-testid={`source-rail-beta-${s}`}
                 className={`rounded px-[5px] text-fg-dim ring-1 ring-[var(--color-line-strong)] ring-inset ${PILL_TEXT}`}
               >

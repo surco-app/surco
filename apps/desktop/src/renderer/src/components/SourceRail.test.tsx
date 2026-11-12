@@ -13,7 +13,7 @@ afterEach(cleanup)
 const COPIES = { active: false, alert: 'none', onOpen: () => {} } as const
 
 describe('SourceRail', () => {
-  it('marks VirtualDJ as beta next to its name, on macOS and Windows alike, since it is the one program not proven on every system', () => {
+  it('marks VirtualDJ as beta next to its name, on macOS and Windows alike, and tells screen readers too, since it is the one program not proven on every system', () => {
     render(
       <SourceRail
         copies={COPIES}
@@ -26,6 +26,11 @@ describe('SourceRail', () => {
     const pill = screen.getByTestId('source-rail-beta-virtualdj')
     expect(pill).toHaveTextContent(i18n.t('sources.beta'))
     expect(screen.getByTestId('source-rail-virtualdj')).toContainElement(pill)
+    expect(screen.getByTestId('source-rail-virtualdj')).toHaveAccessibleName('VirtualDJ')
+    expect(screen.getByTestId('source-rail-virtualdj')).toHaveAccessibleDescription(
+      i18n.t('sources.beta'),
+    )
+    expect(screen.getByTestId('source-rail-serato')).not.toHaveAccessibleDescription()
     expect(screen.queryByTestId('source-rail-beta-rekordbox')).toBeNull()
     expect(screen.queryByTestId('source-rail-beta-serato')).toBeNull()
   })
