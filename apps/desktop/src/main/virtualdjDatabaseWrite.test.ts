@@ -104,6 +104,13 @@ describe('withVirtualdjCues', () => {
 })
 
 describe('withVirtualdjSongMoved', () => {
+  it('repoints a song onto the same file spelled in the other Unicode form, since it is that song and not another one in the way', () => {
+    const nfd = '/Music/Cafe\u0301.flac'
+    const xml = fixture.replace(`FilePath="${FLAC}"`, `FilePath="${nfd}"`)
+    const out = withVirtualdjSongMoved(xml, nfd, { path: nfd.normalize('NFC'), size: 9 }, 0, null)
+    expect(out).toContain(`<Song FilePath="${nfd.normalize('NFC')}" FileSize="9"`)
+  })
+
   it('repoints the song to the converted file and shifts every point by the conversion offset', () => {
     const out =
       withVirtualdjSongMoved(
