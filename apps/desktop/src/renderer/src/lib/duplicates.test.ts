@@ -1,8 +1,14 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { emptyMetadata } from '../../../shared/metadata'
 import type { TrackMetadata } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { duplicateGroups, duplicateIds, recordingKey } from './duplicates'
+import { splitActs } from './musicSpelling'
+
+vi.mock('./musicSpelling', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./musicSpelling')>()
+  return { ...actual, splitActs: vi.fn(actual.splitActs) }
+})
 
 function track(id: string, meta: Partial<TrackMetadata> = {}, duration?: number): TrackItem {
   return {
@@ -136,5 +142,21 @@ describe('duplicateGroups', () => {
     expect(duplicateGroups([item('a', 'X'), item('b', 'X')])).toEqual([
       expect.objectContaining({ kind: 'duplicate', ids: ['a', 'b'] }),
     ])
+  })
+})
+
+describe('recordingKey reuse', () => {
+  it('folds an artist and title once, so both duplicate scans on every tracks change reuse the key', () => {
+    vi.mocked(splitActs).mockClear()
+    expect(recordingKey('Reused Act', 'Reused Title')).toBe(
+      recordingKey('Reused Act', 'Reused Title'),
+    )
+    expect(splitActs).toHaveBeenCalledTimes(1)
+  })
+
+  it('keys a different title on its own', () => {
+    expect(recordingKey('Reused Act', 'Other Title')).not.toBe(
+      recordingKey('Reused Act', 'Reused Title'),
+    )
   })
 })
