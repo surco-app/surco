@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { recentErrorLines, stripPaths } from './errorReport'
+import { recentContextLines, stripPaths } from './errorReport'
 
 describe('stripPaths', () => {
   // A report becomes a public GitHub issue, and log lines quote the absolute path of
@@ -18,6 +18,12 @@ describe('stripPaths', () => {
     )
   })
 
+  it('keeps the words between two paths on one line', () => {
+    expect(stripPaths('Command failed: /A/ffmpeg -i /B/in.mp3 -o /C/out.flac')).toBe(
+      'Command failed: ffmpeg -i in.mp3 -o out.flac',
+    )
+  })
+
   it('keeps lines that carry no path untouched', () => {
     expect(stripPaths('uncaughtException Error: boom')).toBe('uncaughtException Error: boom')
   })
@@ -31,54 +37,101 @@ describe('stripPaths', () => {
   })
 })
 
-describe('recentErrorLines', () => {
-  const log = [
-    '[2026-08-10 20:28:00.000] [info]  download range: bytes=0-100',
-    '[2026-08-10 20:28:59.825] [error] [renderer] playback: rejected /Users/ana/x.mp3',
-    '[2026-08-10 20:29:00.000] [debug] cache hit',
-    '[2026-08-10 22:26:38.267] [error] audio:waveform failed Error: Command failed',
-  ].join('\n')
+describe('recentContextLines', () => {
+  const stamp = (n: number, level: string, text: string) =>
+    `[2026-11-12 10:00:${String(n).padStart(2, '0')}.000] [${level}] ${text}`
+  const options = { errors: 40, before: 40, frames: 8 }
 
-  // The log is mostly updater download chatter — 71 KB of it against four real error
-  // lines in a typical file. Shipping the tail wastes the URL budget on noise, so the
-  // report carries only the lines that record a failure.
-  it('keeps only error lines, newest last, with paths stripped', () => {
-    expect(recentErrorLines(log, 10)).toEqual([
-      '[2026-08-10 20:28:59.825] [error] [renderer] playback: rejected x.mp3',
-      '[2026-08-10 22:26:38.267] [error] audio:waveform failed Error: Command failed',
+  it('carries what happened before an error, not only the error', () => {
+    const log = [
+      stamp(1, 'info', 'open session'),
+      stamp(2, 'info', 'convert 3 tracks'),
+      stamp(3, 'info', 'ffmpeg started'),
+      stamp(4, 'error', 'audio:convert failed'),
+    ].join('\n')
+    expect(recentContextLines(log, options)).toEqual(log.split('\n'))
+  })
+
+  it('does not repeat lines shared by two close errors', () => {
+    const log = [
+      stamp(1, 'error', 'first'),
+      stamp(2, 'info', 'a'),
+      stamp(3, 'info', 'b'),
+      stamp(4, 'error', 'second'),
+    ].join('\n')
+    expect(recentContextLines(log, { ...options, before: 5 })).toEqual(log.split('\n'))
+  })
+
+  it('separates windows that do not touch with an ellipsis line', () => {
+    const log = [
+      stamp(1, 'error', 'first'),
+      stamp(2, 'info', 'a'),
+      stamp(3, 'info', 'b'),
+      stamp(4, 'info', 'c'),
+      stamp(5, 'error', 'second'),
+    ].join('\n')
+    expect(recentContextLines(log, { errors: 40, before: 0, frames: 8 })).toEqual([
+      stamp(1, 'error', 'first'),
+      '…',
+      stamp(5, 'error', 'second'),
     ])
   })
 
-  // The issue body travels in a query string, so the budget is finite. When a session
-  // failed repeatedly the last errors are the ones describing the crash being reported.
-  it('keeps the most recent lines when over the limit', () => {
-    expect(recentErrorLines(log, 1)).toEqual([
-      '[2026-08-10 22:26:38.267] [error] audio:waveform failed Error: Command failed',
-    ])
+  it('keeps the first stack frames so a minified renderer stack can be mapped back', () => {
+    const frames = Array.from(
+      { length: 20 },
+      (_, i) =>
+        `    at f${i} (file:///Applications/Surco.app/out/renderer/assets/index-abc.js:1:${i})`,
+    )
+    const log = [stamp(1, 'error', 'renderer crashed'), ...frames].join('\n')
+    const lines = recentContextLines(log, options)
+    expect(lines).toHaveLength(9)
+    expect(lines.slice(1)).toEqual(
+      Array.from({ length: 8 }, (_, i) => `    at f${i} (file:index-abc.js:1:${i})`),
+    )
   })
 
-  it('keeps the tool output that explains a failed command, without the stack trace', () => {
-    const multiline = [
-      '[2026-11-11 21:20:57.154] [error] audio:properties failed Error: Command failed: /Applications/Surco.app/Contents/Resources/ffprobe -v error /Users/ana/Music/Entasia.wav',
+  it('reduces Windows and macOS paths with spaces in context lines to the file name', () => {
+    const log = [
+      stamp(1, 'info', 'read C:\\Users\\Ana\\Música\\DJ Sets\\Pray (Mix).wav'),
+      stamp(2, 'info', 'read /Users/ana/Music/DJ Sets/Pray (Mix).wav'),
+      stamp(3, 'error', 'boom'),
+    ].join('\n')
+    const lines = recentContextLines(log, options)
+    expect(lines[0]).toBe(stamp(1, 'info', 'read Pray (Mix).wav'))
+    expect(lines[1]).toBe(stamp(2, 'info', 'read Pray (Mix).wav'))
+  })
+
+  it('keeps the tool output that explains a failed command', () => {
+    const log = [
+      stamp(1, 'error', 'audio:properties failed /Users/ana/Music/Entasia.wav'),
       '/Users/ana/Music/Entasia.wav: Invalid data found when processing input',
       '',
       '    at run (file:///Applications/Surco.app/out/main/index.js:5007:41)',
-      '    at async probeAudio (file:///Applications/Surco.app/out/main/index.js:6961:19)',
-      '[2026-11-11 21:21:00.000] [info]  cache hit',
     ].join('\n')
-    expect(recentErrorLines(multiline, 10)).toEqual([
-      [
-        '[2026-11-11 21:20:57.154] [error] audio:properties failed Error: Command failed: ffprobe -v error Entasia.wav',
-        'Entasia.wav: Invalid data found when processing input',
-      ].join('\n'),
+    expect(recentContextLines(log, options)).toEqual([
+      stamp(1, 'error', 'audio:properties failed Entasia.wav'),
+      'Entasia.wav: Invalid data found when processing input',
+      '    at run (file:index.js:5007:41)',
     ])
   })
 
+  it('bounds the output on a pathological log', () => {
+    const entry = (n: number) => [
+      stamp(n % 60, 'error', `boom ${n}`),
+      ...Array.from({ length: 200 }, (_, i) => `    at g${i} (/a/b/c.js:1:${i})`),
+    ]
+    const log = Array.from({ length: 5000 }, (_, n) => entry(n))
+      .flat()
+      .join('\n')
+    expect(recentContextLines(log, options).length).toBeLessThanOrEqual(40 * (40 + 1 + 8))
+  })
+
   it('returns nothing for a log with no errors', () => {
-    expect(recentErrorLines('[2026-08-10 20:28:00.000] [info]  all good', 10)).toEqual([])
+    expect(recentContextLines(stamp(1, 'info', 'all good'), options)).toEqual([])
   })
 
   it('survives an empty or unreadable log', () => {
-    expect(recentErrorLines('', 10)).toEqual([])
+    expect(recentContextLines('', options)).toEqual([])
   })
 })

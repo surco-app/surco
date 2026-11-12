@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises'
 import { app, ipcMain, net, shell } from 'electron'
 import log from 'electron-log/main'
 import type { FeedbackForm, FeedbackOutcome } from '../shared/feedback'
-import { recentErrorLines } from './errorReport'
+import { recentContextLines } from './errorReport'
 
 const ISSUE_URL = 'https://github.com/surco-app/surco/issues/new'
 export const FEEDBACK_ENDPOINT = 'https://getsurco.app/api/feedback'
@@ -12,9 +12,12 @@ export const FEEDBACK_ENDPOINT = 'https://getsurco.app/api/feedback'
 // report bouncing.
 export const MAX_URL_LENGTH = 7500
 
-// How many [error] lines ride along. A typical log holds a handful; the cap bounds
-// what a pathological one could push into the URL.
-const REPORT_LOG_LINES = 40
+// How many errors ride along, with the entries before each and its first stack frames.
+// A typical log holds a handful; the caps bound what a pathological one could push into
+// the URL.
+const REPORT_LOG_ERRORS = 40
+const REPORT_LOG_BEFORE = 40
+const REPORT_LOG_FRAMES = 8
 
 const OS_LABEL: Record<string, string> = {
   darwin: 'macOS',
@@ -74,7 +77,11 @@ export function buildIssueUrl(ctx: FeedbackContext): string {
 // can sit on a slow volume.
 async function readRecentErrors(): Promise<string[]> {
   const contents = await readFile(log.transports.file.getFile().path, 'utf8')
-  return recentErrorLines(contents, REPORT_LOG_LINES)
+  return recentContextLines(contents, {
+    errors: REPORT_LOG_ERRORS,
+    before: REPORT_LOG_BEFORE,
+    frames: REPORT_LOG_FRAMES,
+  })
 }
 
 // Opens the report in the browser. This deliberately does NOT go through the window's
