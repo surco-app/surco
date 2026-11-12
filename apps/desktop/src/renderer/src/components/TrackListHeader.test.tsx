@@ -437,7 +437,10 @@ describe('TrackListHeader view menu', () => {
 
   it('leaves the search field its own text menu, so copy and paste still work there', () => {
     renderHeader()
-    fireEvent.contextMenu(screen.getByTestId('track-search').querySelector('input') ?? screen.getByTestId('track-search'))
+    fireEvent.contextMenu(
+      screen.getByTestId('track-search').querySelector('input') ??
+        screen.getByTestId('track-search'),
+    )
     expect(screen.queryByRole('menuitemcheckbox')).toBeNull()
   })
 

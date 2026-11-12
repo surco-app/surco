@@ -11,6 +11,11 @@ export interface ColumnWidths {
 }
 
 export const RAIL_WIDTH = 76
+const MARKS_ONLY_RAIL_WIDTH = 52
+
+export function railWidth({ names }: { names: boolean }): number {
+  return names ? RAIL_WIDTH : MARKS_ONLY_RAIL_WIDTH
+}
 export const DIVIDERS_WIDTH = 2
 export const FORM_MIN = 460
 

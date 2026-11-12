@@ -588,7 +588,9 @@ const TrackRow = memo(function TrackRow({
         // min-h-0 lets the slot's grid row actually shrink; overflow-hidden only while
         // collapsing, so it never clips the row the rest of its life.
         className={`group relative min-h-0 ${removing ? 'overflow-hidden' : ''} ${
-          deferPaint ? '[content-visibility:auto] [contain-intrinsic-size:auto_80px] compact:[contain-intrinsic-size:auto_56px]' : ''
+          deferPaint
+            ? '[content-visibility:auto] [contain-intrinsic-size:auto_80px] compact:[contain-intrinsic-size:auto_56px]'
+            : ''
         }`}
         draggable
         onWheel={onSwipeWheel}

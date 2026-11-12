@@ -9,7 +9,7 @@ interface Params {
   checkForUpdates: () => void
   mac: boolean
   windows: boolean
-  view: { listWaves: boolean }
+  view: { listWaves: boolean; railNames: boolean }
 }
 
 export function appMenuTemplate({
@@ -104,6 +104,12 @@ export function appMenuTemplate({
           type: 'checkbox',
           checked: view.listWaves,
           click: () => run('toggle-list-waves'),
+        },
+        {
+          label: t('railNames'),
+          type: 'checkbox',
+          checked: view.railNames,
+          click: () => run('toggle-rail-names'),
         },
         { type: 'separator' },
         // Replacing Electron's default View menu dropped its zoom items, and with them the

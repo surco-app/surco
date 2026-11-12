@@ -5,6 +5,7 @@ import {
   DIVIDERS_WIDTH,
   FORM_MIN,
   RAIL_WIDTH,
+  railWidth,
   shareFor,
 } from './columnLayout'
 
@@ -130,5 +131,12 @@ describe('shareFor', () => {
   it('clamps the width first, so a drag past a limit saves the limit', () => {
     expect(shareFor('list', 900, 1380, true, undefined)).toBeCloseTo(480 / 1380)
     expect(shareFor('list', 10, 1380, true, undefined)).toBeCloseTo(300 / 1380)
+  })
+})
+
+describe('railWidth', () => {
+  it("keeps today's rail with the names and narrows it to the marks without them", () => {
+    expect(railWidth({ names: true })).toBe(RAIL_WIDTH)
+    expect(railWidth({ names: false })).toBe(52)
   })
 })

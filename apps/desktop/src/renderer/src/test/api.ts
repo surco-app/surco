@@ -104,6 +104,7 @@ export const testSettings: Settings = {
   autoAnalyze: false,
   showWaveform: true,
   showListWaves: true,
+  showRailNames: true,
   showLoudness: true,
   showEditorHints: true,
   autoMatch: false,

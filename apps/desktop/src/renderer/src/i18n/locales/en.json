@@ -563,6 +563,7 @@
     "toggleLanguage": "Switch language",
     "toggleTheme": "Switch theme (system / light / dark)",
     "toggleListWaves": "Show or hide the list waveforms",
+    "toggleRailNames": "Show or hide the source names",
     "confetti": "Throw confetti 🎉",
     "trimStartBack": "Nudge the head cut back",
     "trimStartForward": "Nudge the head cut forward",
@@ -3627,6 +3628,7 @@
   },
   "view": {
     "menu": "List view",
-    "listWaves": "Show Waveforms"
+    "listWaves": "Show Waveforms",
+    "railNames": "Show Names"
   }
 }

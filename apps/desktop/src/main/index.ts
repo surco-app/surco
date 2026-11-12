@@ -799,7 +799,10 @@ function buildAppMenu(win: BrowserWindow): void {
     checkForUpdates: () => checkForUpdates(win),
     mac: process.platform === 'darwin',
     windows: process.platform === 'win32',
-    view: { listWaves: getSettings().showListWaves },
+    view: {
+      listWaves: getSettings().showListWaves,
+      railNames: getSettings().showRailNames,
+    },
   })
   Menu.setApplicationMenu(Menu.buildFromTemplate(template))
 }
@@ -1098,7 +1101,8 @@ function registerIpc(): void {
     if (
       patch.shortcutOverrides !== undefined ||
       patch.language !== undefined ||
-      patch.showListWaves !== undefined
+      patch.showListWaves !== undefined ||
+      patch.showRailNames !== undefined
     ) {
       const win = BrowserWindow.fromWebContents(e.sender)
       if (win) buildAppMenu(win)

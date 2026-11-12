@@ -27,6 +27,7 @@ interface MenuStrings {
   activity: string
   backups: string
   listWaves: string
+  railNames: string
   stats: string
   tracks: string
   analyzeQuality: string
@@ -133,6 +134,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     activity: 'Actividad',
     backups: 'Copias',
     listWaves: 'Mostrar ondas en la lista',
+    railNames: 'Mostrar nombres de las fuentes',
     stats: 'Estadísticas',
     tracks: 'Pistas',
     analyzeQuality: 'Analizar calidad',
@@ -253,6 +255,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     activity: 'Activity',
     backups: 'Backups',
     listWaves: 'Show Waveforms in List',
+    railNames: 'Show Source Names',
     stats: 'Stats',
     tracks: 'Tracks',
     analyzeQuality: 'Analyze quality',
@@ -373,6 +376,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     activity: 'Aktivität',
     backups: 'Backups',
     listWaves: 'Wellenformen in der Liste zeigen',
+    railNames: 'Quellennamen zeigen',
     stats: 'Statistiken',
     tracks: 'Tracks',
     analyzeQuality: 'Qualität analysieren',
@@ -495,6 +499,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     activity: 'Activité',
     backups: 'Sauvegardes',
     listWaves: 'Afficher les formes d’onde dans la liste',
+    railNames: 'Afficher le nom des sources',
     stats: 'Statistiques',
     tracks: 'Morceaux',
     analyzeQuality: 'Analyser la qualité',
@@ -618,6 +623,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     activity: 'Atividade',
     backups: 'Cópias',
     listWaves: 'Mostrar ondas na lista',
+    railNames: 'Mostrar nomes das fontes',
     stats: 'Estatísticas',
     tracks: 'Faixas',
     analyzeQuality: 'Analisar qualidade',

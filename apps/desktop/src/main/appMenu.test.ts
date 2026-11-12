@@ -14,7 +14,7 @@ function build(locale = 'en', mac = true, windows = false) {
     checkForUpdates: vi.fn(),
     mac,
     windows,
-    view: { listWaves: true },
+    view: { listWaves: true, railNames: true },
   })
   return { template, run }
 }
@@ -162,5 +162,16 @@ describe('View menu list waves', () => {
     expect(item.checked).toBe(true)
     click(item)
     expect(run).toHaveBeenCalledWith('toggle-list-waves')
+  })
+})
+
+describe('View menu rail names', () => {
+  it('ticks the source names while they show and toggles them through the command', () => {
+    const { template, run } = build()
+    const item = itemFor(menu(template, 'View'), 'Show Source Names')
+    expect(item.type).toBe('checkbox')
+    expect(item.checked).toBe(true)
+    click(item)
+    expect(run).toHaveBeenCalledWith('toggle-rail-names')
   })
 })

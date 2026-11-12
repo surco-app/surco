@@ -258,6 +258,7 @@ export interface CommandDeps {
   // Rotates the UI theme through system → light → dark; global chrome, so it's always live.
   toggleTheme: () => void
   toggleListWaves: () => void
+  toggleRailNames: () => void
   // Empties every metadata field on the current selection (the Editor's clear button).
   clearMeta: () => void
   // Fills tags on the current selection by parsing each file name (the Editor's derive button).
@@ -393,6 +394,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     toggleLanguage,
     toggleTheme,
     toggleListWaves,
+    toggleRailNames,
     clearMeta,
     deriveTags,
     numberTracks,
@@ -1110,6 +1112,14 @@ export function buildCommands(deps: CommandDeps): Command[] {
       hint: hintFor('toggle-list-waves'),
       enabled: true,
       run: toggleListWaves,
+    },
+    {
+      id: 'toggle-rail-names',
+      group: 'app',
+      title: tr('commands.toggleRailNames'),
+      hint: hintFor('toggle-rail-names'),
+      enabled: true,
+      run: toggleRailNames,
     },
     {
       id: 'help',

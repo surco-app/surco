@@ -9,6 +9,7 @@ const settings: Settings = {
   theme: 'system',
   density: 'normal',
   showListWaves: true,
+  showRailNames: true,
   language: 'system',
   discogsToken: '',
   beatportUsername: '',
