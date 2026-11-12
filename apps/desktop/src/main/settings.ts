@@ -37,6 +37,7 @@ import { migratedSyncToggles } from './syncToggleMigration'
 
 export const defaults: Settings = {
   theme: 'system',
+  density: 'normal',
   // Follow the OS locale by default; the user can pin a shipped language.
   language: 'system',
   discogsToken: '',
@@ -154,6 +155,9 @@ export const defaults: Settings = {
   activityPanel: null,
   resultsWidth: null,
   showWaveform: true,
+  showListWaves: true,
+  showRailNames: true,
+  showSidebar: true,
   // On by default so the audio-quality read (spotting fakes and transcodes) surfaces on
   // import without the user having to discover it; it can be turned off in Settings.
   autoAnalyze: true,

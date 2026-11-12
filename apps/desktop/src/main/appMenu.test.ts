@@ -14,6 +14,7 @@ function build(locale = 'en', mac = true, windows = false) {
     checkForUpdates: vi.fn(),
     mac,
     windows,
+    view: { listWaves: true, railNames: true, sidebar: true },
   })
   return { template, run }
 }
@@ -148,5 +149,41 @@ describe('appMenuTemplate', () => {
       expect(menu(template, t('tracks')).length).toBeGreaterThan(0)
       expect(t('stats')).not.toBe(createMenuT('en')('stats'))
     }
+  })
+})
+
+// The list waves are a view choice like Finder's path bar: the View menu carries it with a
+// tick that says the state, and the click goes through the same command as the right-click.
+describe('View menu list waves', () => {
+  it('ticks the waves while they are shown and toggles them through the command', () => {
+    const { template, run } = build()
+    const item = itemFor(menu(template, 'View'), 'Show Waveforms in List')
+    expect(item.type).toBe('checkbox')
+    expect(item.checked).toBe(true)
+    click(item)
+    expect(run).toHaveBeenCalledWith('toggle-list-waves')
+  })
+})
+
+describe('View menu rail names', () => {
+  it('ticks the source names while they show and toggles them through the command', () => {
+    const { template, run } = build()
+    const item = itemFor(menu(template, 'View'), 'Show Source Names')
+    expect(item.type).toBe('checkbox')
+    expect(item.checked).toBe(true)
+    click(item)
+    expect(run).toHaveBeenCalledWith('toggle-rail-names')
+  })
+})
+
+describe('View menu sidebar', () => {
+  it('ticks the sidebar while it shows, with the keymap\'s shortcut, and toggles it through the command', () => {
+    const { template, run } = build()
+    const item = itemFor(menu(template, 'View'), 'Show Sidebar')
+    expect(item.type).toBe('checkbox')
+    expect(item.checked).toBe(true)
+    expect(item.accelerator).toBe('accel:toggle-sidebar')
+    click(item)
+    expect(run).toHaveBeenCalledWith('toggle-sidebar')
   })
 })

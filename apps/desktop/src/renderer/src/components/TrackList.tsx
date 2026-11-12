@@ -76,6 +76,7 @@ interface Props {
   selectedId: string | null
   selectedIds: ReadonlySet<string>
   outputFormat: OutputFormat
+  showWaves?: boolean
   // The effective key bindings (defaults + the user's overrides), read by the row to
   // resolve Shift+F10 (or whatever it's been rebound to) to the track-menu command.
   bindings: Map<string, Chord>
@@ -337,6 +338,7 @@ interface RowProps {
   // A flag rather than the list's length, so a row only re-renders when it flips.
   deferPaint: boolean
   outputFormat: OutputFormat
+  showWaves: boolean
   onSelect: (id: string, mods: ClickMods) => void
   onActivate: (track: TrackItem) => void
   onSwipeRemove: (id: string) => void
@@ -387,6 +389,7 @@ const TrackRow = memo(function TrackRow({
   tabbable,
   deferPaint,
   outputFormat,
+  showWaves,
   onSelect,
   onActivate,
   onSwipeRemove,
@@ -585,7 +588,9 @@ const TrackRow = memo(function TrackRow({
         // min-h-0 lets the slot's grid row actually shrink; overflow-hidden only while
         // collapsing, so it never clips the row the rest of its life.
         className={`group relative min-h-0 ${removing ? 'overflow-hidden' : ''} ${
-          deferPaint ? '[content-visibility:auto] [contain-intrinsic-size:auto_80px]' : ''
+          deferPaint
+            ? '[content-visibility:auto] [contain-intrinsic-size:auto_80px] compact:[contain-intrinsic-size:auto_56px]'
+            : ''
         }`}
         draggable
         onWheel={onSwipeWheel}
@@ -727,12 +732,16 @@ const TrackRow = memo(function TrackRow({
                 // which, combined with content-visibility below, lands mid-scroll and janks.
                 loading="lazy"
                 decoding="async"
-                className={`h-16 w-16 object-cover outline outline-1 -outline-offset-1 outline-on-scrim/10 transition-[border-radius] duration-120 ${
+                className={`${showWaves ? 'h-16 w-16 compact:h-12 compact:w-12' : 'h-12 w-12'} object-cover outline outline-1 -outline-offset-1 outline-on-scrim/10 transition-[border-radius] duration-120 ${
                   converting ? 'rounded-full' : 'rounded-md'
                 }`}
               />
             ) : (
-              <CoverPlaceholder testid="track-cover-placeholder" round={converting} large />
+              <CoverPlaceholder
+                testid="track-cover-placeholder"
+                round={converting}
+                size={showWaves ? 'large' : 'medium'}
+              />
             )}
             {!converting && <StatusBadge track={t} stale={stale} />}
             <Tooltip label={statusLabel} align="start" scope="dot" />
@@ -751,7 +760,9 @@ const TrackRow = memo(function TrackRow({
               nothing. */}
           <span
             data-fit
-            className="relative ml-0.5 flex h-16 min-w-0 flex-1 flex-col justify-between"
+            className={`relative ml-0.5 flex min-w-0 flex-1 flex-col justify-between ${
+              showWaves ? 'h-16 compact:h-[52px]' : 'h-12'
+            }`}
           >
             <span className="flex flex-col gap-px">
               {/* The duration rides the title line, the way Mail puts the time beside the
@@ -973,6 +984,7 @@ const TrackRow = memo(function TrackRow({
                       pending={cuesPending}
                       active={seen}
                       unanalyzed={unanalyzed}
+                      showBars={showWaves}
                       proposals={
                         autoMark?.kind === 'proposed'
                           ? autoMark.proposals.map((p) => p.ms)
@@ -1097,6 +1109,7 @@ export const TrackList = memo(function TrackList({
   selectedId,
   selectedIds,
   outputFormat,
+  showWaves = true,
   bindings,
   onSelect,
   onActivate,
@@ -1395,6 +1408,7 @@ export const TrackList = memo(function TrackList({
         tabbable={t.id === selectedId || (selectedId === null && i === 0)}
         deferPaint={!virtual && tracks.length >= DEFER_PAINT_MIN_ROWS}
         outputFormat={outputFormat}
+        showWaves={showWaves}
         onSelect={onSelect}
         onActivate={onActivate}
         onSwipeRemove={removeBySwipe}

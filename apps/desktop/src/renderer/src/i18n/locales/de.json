@@ -562,6 +562,9 @@
     "trackBackup": "Sicherungskopie dieses Tracks wiederherstellen",
     "toggleLanguage": "Sprache wechseln",
     "toggleTheme": "Design wechseln (System / Hell / Dunkel)",
+    "toggleListWaves": "Wellenformen der Liste ein- oder ausblenden",
+    "toggleRailNames": "Quellennamen ein- oder ausblenden",
+    "toggleSidebar": "Seitenleiste ein- oder ausblenden",
     "confetti": "Konfetti werfen 🎉",
     "trimStartBack": "Anfangsschnitt zurück",
     "trimStartForward": "Anfangsschnitt vor",
@@ -1606,6 +1609,12 @@
       "light": "Hell",
       "dark": "Dunkel"
     },
+    "density": "Dichte",
+    "densityHint": "Kompakt zeigt mehr Titel im selben Fenster.",
+    "densities": {
+      "normal": "Normal",
+      "compact": "Kompakt"
+    },
     "language": "Sprache",
     "languages": {
       "system": "System",
@@ -2090,6 +2099,7 @@
       "sampleRate": "Hz, kHz, 44.1, 48, Abtastrate",
       "outputFormat": "AIFF, FLAC, MP3, WAV, ALAC, konvertieren",
       "theme": "dunkel, hell, Modus",
+      "density": "kompakt, dicht, Zeilen, Größe",
       "coverMaxSize": "Cover, Bild, Auflösung",
       "destination": "Ordner, exportieren, Apple Music",
       "configDir": "iCloud, Dropbox, synchronisieren",
@@ -3616,5 +3626,12 @@
       "traktorRecord": "Backups belegt, dass {{sibling}} mit Surco aus dieser MP3 konvertiert wurde",
       "traktorNoRecord": "Kein Surco-Eintrag sagt, dass {{sibling}} aus dieser MP3 stammt"
     }
+  },
+  "view": {
+    "menu": "Listenansicht",
+    "listWaves": "Wellenformen zeigen",
+    "railNames": "Namen zeigen",
+    "sidebar": "Seitenleiste zeigen",
+    "hideSidebar": "Seitenleiste ausblenden"
   }
 }

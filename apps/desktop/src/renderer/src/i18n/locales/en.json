@@ -562,6 +562,9 @@
     "trackBackup": "Restore this track's backup",
     "toggleLanguage": "Switch language",
     "toggleTheme": "Switch theme (system / light / dark)",
+    "toggleListWaves": "Show or hide the list waveforms",
+    "toggleRailNames": "Show or hide the source names",
+    "toggleSidebar": "Show or hide the sidebar",
     "confetti": "Throw confetti 🎉",
     "trimStartBack": "Nudge the head cut back",
     "trimStartForward": "Nudge the head cut forward",
@@ -1606,6 +1609,12 @@
       "light": "Light",
       "dark": "Dark"
     },
+    "density": "Density",
+    "densityHint": "Compact fits more tracks in the same window.",
+    "densities": {
+      "normal": "Normal",
+      "compact": "Compact"
+    },
     "language": "Language",
     "languages": {
       "system": "System",
@@ -2090,6 +2099,7 @@
       "sampleRate": "Hz, kHz, 44.1, 48",
       "outputFormat": "AIFF, FLAC, MP3, WAV, ALAC, convert",
       "theme": "dark, light, mode",
+      "density": "compact, dense, rows, size",
       "coverMaxSize": "artwork, image, resolution",
       "destination": "folder, export, Apple Music",
       "configDir": "iCloud, Dropbox, sync",
@@ -3616,5 +3626,12 @@
       "traktorRecord": "Backups records that {{sibling}} was converted from this MP3 with Surco",
       "traktorNoRecord": "No Surco record says {{sibling}} comes from this MP3"
     }
+  },
+  "view": {
+    "menu": "List view",
+    "listWaves": "Show Waveforms",
+    "railNames": "Show Names",
+    "sidebar": "Show Sidebar",
+    "hideSidebar": "Hide Sidebar"
   }
 }

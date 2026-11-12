@@ -562,6 +562,9 @@
     "trackBackup": "Restaurar la copia de seguridad de esta pista",
     "toggleLanguage": "Cambiar idioma",
     "toggleTheme": "Cambiar tema (sistema / claro / oscuro)",
+    "toggleListWaves": "Mostrar u ocultar las ondas de la lista",
+    "toggleRailNames": "Mostrar u ocultar los nombres de las fuentes",
+    "toggleSidebar": "Mostrar u ocultar la barra lateral",
     "confetti": "Lanzar confeti 🎉",
     "trimStartBack": "Mover el corte de entrada atrás",
     "trimStartForward": "Mover el corte de entrada adelante",
@@ -1606,6 +1609,12 @@
       "light": "Claro",
       "dark": "Oscuro"
     },
+    "density": "Densidad",
+    "densityHint": "Compacta muestra más pistas en la misma ventana.",
+    "densities": {
+      "normal": "Normal",
+      "compact": "Compacta"
+    },
     "language": "Idioma",
     "languages": {
       "system": "Sistema",
@@ -2090,6 +2099,7 @@
       "sampleRate": "Hz, kHz, 44.1, 48, frecuencia",
       "outputFormat": "AIFF, FLAC, MP3, WAV, ALAC, convertir",
       "theme": "oscuro, claro, modo",
+      "density": "compacto, denso, filas, tamaño",
       "coverMaxSize": "carátula, imagen, resolución",
       "destination": "carpeta, exportar, Apple Music",
       "configDir": "iCloud, Dropbox, sincronizar",
@@ -3616,5 +3626,12 @@
       "traktorRecord": "Copias guarda que {{sibling}} se convirtió de este MP3 con Surco",
       "traktorNoRecord": "Ningún registro de Surco dice que {{sibling}} salga de este MP3"
     }
+  },
+  "view": {
+    "menu": "Vista de la lista",
+    "listWaves": "Mostrar ondas",
+    "railNames": "Mostrar nombres",
+    "sidebar": "Mostrar barra lateral",
+    "hideSidebar": "Ocultar barra lateral"
   }
 }

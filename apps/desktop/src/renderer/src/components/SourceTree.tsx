@@ -458,7 +458,7 @@ export function SourceTree({
             }}
             onDrop={drop}
             style={{ paddingLeft: 10 + depth * 18 }}
-            className={`flex h-[28px] w-full items-center gap-1.5 rounded-md pr-2.5 text-left text-section ${
+            className={`flex h-[28px] w-full items-center gap-1.5 rounded-md compact:h-6 pr-2.5 text-left text-section ${
               selected
                 ? 'bg-[var(--color-row-selected)] text-[var(--color-on-row-selected)]'
                 : `${isFolder ? 'text-fg' : 'text-fg-muted'} hover:bg-[var(--color-hover)]`

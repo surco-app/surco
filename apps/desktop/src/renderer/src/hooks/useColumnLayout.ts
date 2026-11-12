@@ -5,7 +5,6 @@ import {
   type ColumnWidths,
   columnWidths,
   DIVIDERS_WIDTH,
-  RAIL_WIDTH,
   type ResizableColumn,
   shareFor,
 } from '../lib/columnLayout'
@@ -15,9 +14,10 @@ interface Params {
   hasTree: boolean
   saved: ColumnShares | undefined
   onCommit: (shares: ColumnShares) => void
+  railWidth: number
 }
 
-export function useColumnLayout({ hasTree, saved, onCommit }: Params): {
+export function useColumnLayout({ hasTree, saved, onCommit, railWidth }: Params): {
   widths: ColumnWidths
   startResize: (column: ResizableColumn, e: React.PointerEvent) => void
   fit: (column: ResizableColumn, deficit: number) => void
@@ -46,7 +46,7 @@ export function useColumnLayout({ hasTree, saved, onCommit }: Params): {
   useEffect(() => () => endDrag.current?.(), [])
 
   const shares = draft ?? saved
-  const available = windowWidth - RAIL_WIDTH - DIVIDERS_WIDTH
+  const available = windowWidth - railWidth - DIVIDERS_WIDTH
   const widths = columnWidths(available, hasTree, shares)
 
   const settle = (

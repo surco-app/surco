@@ -26,6 +26,9 @@ interface MenuStrings {
   palette: string
   activity: string
   backups: string
+  listWaves: string
+  railNames: string
+  sidebar: string
   stats: string
   tracks: string
   analyzeQuality: string
@@ -131,6 +134,9 @@ const strings: Record<MenuLang, MenuStrings> = {
     palette: 'Paleta de comandos',
     activity: 'Actividad',
     backups: 'Copias',
+    listWaves: 'Mostrar ondas en la lista',
+    railNames: 'Mostrar nombres de las fuentes',
+    sidebar: 'Mostrar barra lateral',
     stats: 'Estadísticas',
     tracks: 'Pistas',
     analyzeQuality: 'Analizar calidad',
@@ -250,6 +256,9 @@ const strings: Record<MenuLang, MenuStrings> = {
     palette: 'Command palette',
     activity: 'Activity',
     backups: 'Backups',
+    listWaves: 'Show Waveforms in List',
+    railNames: 'Show Source Names',
+    sidebar: 'Show Sidebar',
     stats: 'Stats',
     tracks: 'Tracks',
     analyzeQuality: 'Analyze quality',
@@ -369,6 +378,9 @@ const strings: Record<MenuLang, MenuStrings> = {
     palette: 'Befehlspalette',
     activity: 'Aktivität',
     backups: 'Backups',
+    listWaves: 'Wellenformen in der Liste zeigen',
+    railNames: 'Quellennamen zeigen',
+    sidebar: 'Seitenleiste zeigen',
     stats: 'Statistiken',
     tracks: 'Tracks',
     analyzeQuality: 'Qualität analysieren',
@@ -490,6 +502,9 @@ const strings: Record<MenuLang, MenuStrings> = {
     palette: 'Palette de commandes',
     activity: 'Activité',
     backups: 'Sauvegardes',
+    listWaves: 'Afficher les formes d’onde dans la liste',
+    railNames: 'Afficher le nom des sources',
+    sidebar: 'Afficher la barre latérale',
     stats: 'Statistiques',
     tracks: 'Morceaux',
     analyzeQuality: 'Analyser la qualité',
@@ -612,6 +627,9 @@ const strings: Record<MenuLang, MenuStrings> = {
     palette: 'Paleta de comandos',
     activity: 'Atividade',
     backups: 'Cópias',
+    listWaves: 'Mostrar ondas na lista',
+    railNames: 'Mostrar nomes das fontes',
+    sidebar: 'Mostrar barra lateral',
     stats: 'Estatísticas',
     tracks: 'Faixas',
     analyzeQuality: 'Analisar qualidade',

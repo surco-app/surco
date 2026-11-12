@@ -32,6 +32,7 @@ afterEach(() => vi.unstubAllEnvs())
 
 const synced = {
   theme: 'system',
+  density: 'normal',
   language: 'system',
   hiddenSources: [],
 } as unknown as SyncedDraft
@@ -75,6 +76,22 @@ it('persists a selected Japanese UI language through the settings patch', () => 
   fireEvent.click(screen.getByTestId('settings-language-ja'))
 
   expect(patch).toHaveBeenCalledWith('language', 'ja')
+})
+
+// Compact exists for the user who wants more tracks on screen; everyone else must keep
+// today's layout, so the choice is opt-in and sits beside the theme as a named group.
+it('offers a Compact density beside the theme, off unless chosen', () => {
+  const patch = vi.fn()
+  renderTab({}, [], patch)
+
+  expect(screen.getByRole('group', { name: i18n.t('settings.density') })).toContainElement(
+    screen.getByTestId('settings-density-compact'),
+  )
+  expect(screen.getByTestId('settings-density-normal')).toHaveAttribute('aria-pressed', 'true')
+
+  fireEvent.click(screen.getByTestId('settings-density-compact'))
+
+  expect(patch).toHaveBeenCalledWith('density', 'compact')
 })
 
 // Added after a run of regressions that reached users straight from a release: the

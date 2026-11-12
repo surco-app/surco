@@ -1,9 +1,9 @@
-import { ListMusic, ShieldAlert, ShieldCheck } from 'lucide-react'
+import { Check, ListMusic, ShieldAlert, ShieldCheck } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { PlaylistSource } from '../../../shared/types'
-import { RAIL_WIDTH } from '../lib/columnLayout'
+import { Tooltip } from './Tooltip'
 import { AppleMusicIcon, EngineIcon, RekordboxIcon, SeratoIcon, TraktorIcon } from './SourceIcons'
 
 // Each program's own mark, the thing a DJ already recognises from the Dock, with its name
@@ -27,15 +27,27 @@ export function SourceRail({
   onSelect,
   onHide,
   copies,
+  width,
+  showNames,
+  onToggleNames,
+  onHideSidebar,
 }: {
   sources: PlaylistSource[]
   active: PlaylistSource | null
   onSelect: (source: PlaylistSource | null) => void
   onHide: (source: PlaylistSource) => void
   copies: { active: boolean; alert: 'none' | 'warn' | 'danger'; onOpen: () => void }
+  width: number
+  showNames: boolean
+  onToggleNames: () => void
+  onHideSidebar: () => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
-  const [menu, setMenu] = useState<{ source: PlaylistSource; x: number; y: number } | null>(null)
+  const [menu, setMenu] = useState<{
+    source: PlaylistSource | null
+    x: number
+    y: number
+  } | null>(null)
   const itemRef = useRef<HTMLButtonElement>(null)
   const openerRef = useRef<HTMLElement | null>(null)
 
@@ -71,43 +83,46 @@ export function SourceRail({
       aria-pressed={on}
       aria-label={label}
       onClick={pick}
-      onContextMenu={
-        hideable
-          ? (e) => {
-              e.preventDefault()
-              setMenu({ source: hideable, x: e.clientX, y: e.clientY })
-            }
-          : undefined
-      }
-      onKeyDown={
-        hideable
-          ? (e) => {
-              if (e.key !== 'ContextMenu' && !(e.key === 'F10' && e.shiftKey)) return
-              e.preventDefault()
-              const box = e.currentTarget.getBoundingClientRect()
-              setMenu({ source: hideable, x: box.right, y: box.top })
-            }
-          : undefined
-      }
-      className={`press ${className} relative flex w-[64px] flex-col items-center justify-center gap-0.5 rounded-lg pt-1.5 pb-1 ${
+      onContextMenu={(e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        setMenu({ source: hideable ?? null, x: e.clientX, y: e.clientY })
+      }}
+      onKeyDown={(e) => {
+        if (e.key !== 'ContextMenu' && !(e.key === 'F10' && e.shiftKey)) return
+        e.preventDefault()
+        const box = e.currentTarget.getBoundingClientRect()
+        setMenu({ source: hideable ?? null, x: box.right, y: box.top })
+      }}
+      className={`press ${className} relative flex flex-col items-center justify-center gap-0.5 rounded-lg ${
+        showNames ? 'w-[64px] pt-1.5 pb-1 compact:pt-1 compact:pb-0.5' : 'h-10 w-10'
+      } ${
         on ? 'bg-[var(--color-accent-soft)] text-fg' : 'text-fg-faint hover:bg-[var(--color-hover)]'
       }`}
     >
       {icon}
       {dot}
-      <span
-        data-testid={`source-rail-label-${key}`}
-        className="max-w-full truncate px-0.5 text-label leading-tight"
-      >
-        {label}
-      </span>
+      {showNames ? (
+        <span
+          data-testid={`source-rail-label-${key}`}
+          className="max-w-full truncate px-0.5 text-label leading-tight"
+        >
+          {label}
+        </span>
+      ) : (
+        <Tooltip label={label} />
+      )}
     </button>
   )
   return (
     <nav
       data-testid="source-rail"
       aria-label={tr('sources.rail')}
-      style={{ width: RAIL_WIDTH }}
+      style={{ width }}
+      onContextMenu={(e) => {
+        e.preventDefault()
+        setMenu({ source: null, x: e.clientX, y: e.clientY })
+      }}
       className="flex shrink-0 flex-col items-center gap-1 border-r border-[var(--color-line)] bg-[var(--color-ink)] pt-2.5 pb-2.5"
     >
       {item(
@@ -156,7 +171,7 @@ export function SourceRail({
             <span
               data-testid="source-rail-copies-dot"
               data-alert={copies.alert}
-              className={`absolute top-1 right-[17px] h-2.5 w-2.5 rounded-full border-2 border-[var(--color-ink)] ${
+              className={`absolute top-1 ${showNames ? 'right-[17px]' : 'right-1'} h-2.5 w-2.5 rounded-full border-2 border-[var(--color-ink)] ${
                 copies.alert === 'danger' ? 'bg-[var(--color-danger)]' : 'bg-[var(--color-warn)]'
               }`}
             />
@@ -172,6 +187,7 @@ export function SourceRail({
             onClick={() => setMenu(null)}
             onContextMenu={(e) => {
               e.preventDefault()
+              e.stopPropagation()
               setMenu(null)
             }}
             className="absolute inset-0"
@@ -180,6 +196,10 @@ export function SourceRail({
             role="menu"
             aria-label={tr('sources.rail')}
             data-testid="source-rail-menu"
+            onContextMenu={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+            }}
             onKeyDown={(e) => {
               if (e.key === 'Escape' || e.key === 'Tab') {
                 e.preventDefault()
@@ -190,15 +210,51 @@ export function SourceRail({
             style={{ top: menu.y, left: menu.x }}
             className="absolute min-w-[180px] rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]"
           >
+            {menu.source && (
+              <>
+                <button
+                  ref={itemRef}
+                  type="button"
+                  role="menuitem"
+                  data-testid="source-rail-hide"
+                  onClick={() => menu.source && hide(menu.source)}
+                  className="block w-full rounded px-3 py-1.5 text-left text-sm text-fg hover:bg-[var(--color-hover)]"
+                >
+                  {tr(`sources.hide.${menu.source}`)}
+                </button>
+                <hr className="my-1 h-px border-0 bg-[var(--color-line)]" />
+              </>
+            )}
             <button
-              ref={itemRef}
+              ref={menu.source ? undefined : itemRef}
+              type="button"
+              role="menuitemcheckbox"
+              aria-checked={showNames}
+              data-testid="source-rail-names"
+              onClick={() => {
+                setMenu(null)
+                onToggleNames()
+              }}
+              className="flex w-full items-center gap-2 rounded py-1.5 pr-3 pl-2 text-left text-sm text-fg hover:bg-[var(--color-hover)]"
+            >
+              <Check
+                aria-hidden="true"
+                className={`h-3.5 w-3.5 shrink-0 ${showNames ? '' : 'invisible'}`}
+              />
+              {tr('view.railNames')}
+            </button>
+            <button
               type="button"
               role="menuitem"
-              data-testid="source-rail-hide"
-              onClick={() => hide(menu.source)}
-              className="block w-full rounded px-3 py-1.5 text-left text-sm text-fg hover:bg-[var(--color-hover)]"
+              data-testid="source-rail-hide-sidebar"
+              onClick={() => {
+                setMenu(null)
+                onHideSidebar()
+              }}
+              className="flex w-full items-center gap-2 rounded py-1.5 pr-3 pl-2 text-left text-sm text-fg hover:bg-[var(--color-hover)]"
             >
-              {tr(`sources.hide.${menu.source}`)}
+              <span aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+              {tr('view.hideSidebar')}
             </button>
           </div>
         </div>

@@ -2278,6 +2278,33 @@ describe('TrackList row waves', () => {
     expect(rowWaves.mock.calls[1][0].map((r) => r.path)).toEqual([tracks[30].inputPath])
   })
 
+  it('reads no waves at all while the user has them hidden, since nobody would see the bars', async () => {
+    const rowWaves = vi.fn<Api['rowWaves']>(async () => ({}))
+    Object.assign(window, { api: { ...api, rowWaves } })
+    const tracks = Array.from({ length: 5 }, (_, i) => track({ id: `t${i}` }))
+    render(
+      <TrackList
+        tracks={tracks}
+        selectedId={null}
+        selectedIds={new Set()}
+        outputFormat="aiff"
+        bindings={bindings}
+        showWaves={false}
+        onSelect={vi.fn()}
+        onActivate={vi.fn()}
+        onRemove={vi.fn()}
+        onSwipeRemove={vi.fn()}
+        onAcceptReview={vi.fn()}
+        onPrefetch={vi.fn()}
+        onVisible={vi.fn()}
+        renderMenu={() => null}
+      />,
+    )
+    show(observed.slice(0, 5))
+    await new Promise((r) => setTimeout(r, 30))
+    expect(rowWaves).not.toHaveBeenCalled()
+  })
+
   // A row a filter or search takes off the list never scrolls out of view: it just goes.
   // Without a last "not visible" report the auto-match sweep kept treating it as on screen
   // and probed it ahead of the rows the user is actually looking at.

@@ -345,7 +345,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
             style={{
               animationDelay: `${i < STAGGERED_ROWS ? i * STAGGER_STEP_MS : 0}ms`,
             }}
-            className={`press result-in ${freshKeys.has(rk) ? 'result-new' : ''} group relative flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors focus-visible:bg-[var(--color-accent-soft)] focus-visible:shadow-[inset_0_0_0_1px_var(--color-accent)] focus-visible:outline-none ${
+            className={`press result-in ${freshKeys.has(rk) ? 'result-new' : ''} group relative flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors compact:py-1 focus-visible:bg-[var(--color-accent-soft)] focus-visible:shadow-[inset_0_0_0_1px_var(--color-accent)] focus-visible:outline-none ${
               // The open card takes no fill: the tracklist unfolding under it already
               // says which one is open, and the applied track keeps the column's only fill.
               expanded ? '' : 'hover:bg-[var(--color-hover)]/85'

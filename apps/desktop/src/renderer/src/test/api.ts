@@ -23,6 +23,7 @@ import type {
 // added to the type fails here, once, instead of in every test that built its own literal.
 export const testSettings: Settings = {
   theme: 'system',
+  density: 'normal',
   language: 'system',
   discogsToken: '',
   beatportUsername: '',
@@ -102,6 +103,9 @@ export const testSettings: Settings = {
   resultsWidth: null,
   autoAnalyze: false,
   showWaveform: true,
+  showListWaves: true,
+  showRailNames: true,
+  showSidebar: true,
   showLoudness: true,
   showEditorHints: true,
   autoMatch: false,

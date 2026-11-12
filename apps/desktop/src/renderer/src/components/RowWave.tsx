@@ -16,6 +16,7 @@ export function RowWave({
   active,
   unanalyzed,
   proposals = [],
+  showBars = true,
 }: {
   request: RowWaveRequest
   cues: RowCue[]
@@ -24,14 +25,15 @@ export function RowWave({
   active: boolean
   unanalyzed?: 'rekordbox' | 'engine'
   proposals?: number[]
+  showBars?: boolean
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const key = rowWaveKey(request)
   const { path, analysisPath } = request
   const subscribe = useCallback(
     (listener: () => void) =>
-      active ? subscribeRowWave({ path, analysisPath }, listener) : () => {},
-    [path, analysisPath, active],
+      active && showBars ? subscribeRowWave({ path, analysisPath }, listener) : () => {},
+    [path, analysisPath, active, showBars],
   )
   const bars = useSyncExternalStore(subscribe, () => rowWaveOf(key))
   const span = durationSec && durationSec > 0 ? durationSec * 1000 : 0
@@ -72,11 +74,11 @@ export function RowWave({
             className="absolute inset-x-0 top-1/2 block border-t border-dashed border-[var(--color-line-strong)]"
           />
         )}
-        {(!unanalyzed || provisional) && bars && bars.length > 0 && (
+        {showBars && (!unanalyzed || provisional) && bars && bars.length > 0 && (
           <WaveBars
             bars={bars}
             testId="track-wave-bars"
-            className="absolute inset-x-0 bottom-0 h-[18px] w-full"
+            className="absolute inset-x-0 bottom-0 h-[18px] w-full compact:h-4"
             fill={provisional ? 'var(--color-fg-faint)' : undefined}
           />
         )}
