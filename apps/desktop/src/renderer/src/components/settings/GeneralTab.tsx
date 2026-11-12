@@ -2,7 +2,7 @@ import type React from 'react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { type DjProgram, RAIL_PROGRAMS } from '../../../../shared/djProgram'
-import type { LanguagePref, PlaylistSource, ThemePref } from '../../../../shared/types'
+import type { Density, LanguagePref, PlaylistSource, ThemePref } from '../../../../shared/types'
 import { isMacOS, isStoreBuild, offeredHere } from '../../lib/platform'
 import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchLocal, PatchSynced } from '../../lib/settingsTabs'
@@ -16,6 +16,7 @@ import {
 } from './SettingsPrimitives'
 
 const THEMES: ThemePref[] = ['system', 'light', 'dark']
+const DENSITIES: Density[] = ['normal', 'compact']
 const LANGUAGES: LanguagePref[] = ['system', 'en', 'es', 'de', 'fr', 'pt-BR', 'ja']
 const SOURCES: PlaylistSource[] = ['appleMusic', ...RAIL_PROGRAMS]
 
@@ -74,6 +75,22 @@ export function GeneralTab({
               compact
               label={tr('settings.theme')}
               labelFor={(id) => tr(`settings.themes.${id}`)}
+            />
+          </SettingsField>
+
+          <SettingsField
+            label={tr('settings.density')}
+            hint={tr('settings.densityHint')}
+            searchId="density"
+          >
+            <SegmentedControl
+              options={DENSITIES}
+              value={synced.density}
+              onChange={(id) => patch('density', id)}
+              testidPrefix="settings-density"
+              compact
+              label={tr('settings.density')}
+              labelFor={(id) => tr(`settings.densities.${id}`)}
             />
           </SettingsField>
 

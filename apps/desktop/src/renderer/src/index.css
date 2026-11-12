@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant compact (&:where([data-density="compact"] *));
+
 /* Tokyo Night. Dark values are the defaults; the light palette overrides the
    same custom properties under [data-theme='light'] below, so every utility
    that resolves to var(--color-*) flips automatically. The active theme is set
@@ -509,6 +511,22 @@ textarea {
 
 .animate-overlay {
   animation: overlay-in var(--duration-state) var(--ease-standard);
+}
+
+@keyframes sidebar-peek-in {
+  from {
+    transform: translateX(-100%);
+  }
+}
+
+.animate-sidebar-peek {
+  animation: sidebar-peek-in var(--duration-panel) var(--ease-standard);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-sidebar-peek {
+    animation: overlay-in var(--duration-state) var(--ease-standard);
+  }
 }
 
 /* The donate nudge is a celebration moment, so it arrives more gently than the app's

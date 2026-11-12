@@ -562,6 +562,9 @@
     "trackBackup": "Restaurer la copie de sauvegarde de ce morceau",
     "toggleLanguage": "Changer de langue",
     "toggleTheme": "Changer de thème (système / clair / sombre)",
+    "toggleListWaves": "Afficher ou masquer les formes d’onde de la liste",
+    "toggleRailNames": "Afficher ou masquer le nom des sources",
+    "toggleSidebar": "Afficher ou masquer la barre latérale",
     "confetti": "Lancer des confettis 🎉",
     "trimStartBack": "Reculer la coupe de début",
     "trimStartForward": "Avancer la coupe de début",
@@ -1620,6 +1623,12 @@
       "light": "Clair",
       "dark": "Sombre"
     },
+    "density": "Densité",
+    "densityHint": "Compacte affiche plus de morceaux dans la même fenêtre.",
+    "densities": {
+      "normal": "Normale",
+      "compact": "Compacte"
+    },
     "language": "Langue",
     "languages": {
       "system": "Système",
@@ -2115,6 +2124,7 @@
       "sampleRate": "Hz, kHz, 44.1, 48, échantillonnage",
       "outputFormat": "AIFF, FLAC, MP3, WAV, ALAC, convertir",
       "theme": "sombre, clair, mode",
+      "density": "compact, dense, lignes, taille",
       "coverMaxSize": "pochette, image, résolution",
       "destination": "dossier, exporter, Apple Music",
       "configDir": "iCloud, Dropbox, synchroniser",
@@ -3734,5 +3744,13 @@
       "traktorRecord": "Sauvegardes indique que {{sibling}} a été converti depuis ce MP3 avec Surco",
       "traktorNoRecord": "Aucune trace dans Surco ne dit que {{sibling}} vient de ce MP3"
     }
+  },
+  "view": {
+    "submenu": "Présentation",
+    "menu": "Vue de la liste",
+    "listWaves": "Afficher les formes d’onde",
+    "railNames": "Afficher les noms",
+    "sidebar": "Afficher la barre latérale",
+    "hideSidebar": "Masquer la barre latérale"
   }
 }

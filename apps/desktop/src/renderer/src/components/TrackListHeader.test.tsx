@@ -24,6 +24,9 @@ function renderHeader(over: Partial<Parameters<typeof TrackListHeader>[0]> = {})
     onRemoveSelected: vi.fn(),
     onTrashSelected: vi.fn(),
     onTrashSuspects: vi.fn(),
+    onToggleWaves: vi.fn(),
+    onToggleSidebar: vi.fn(),
+    onOpenLocation: vi.fn(),
   }
   render(
     <TrackListHeader
@@ -52,6 +55,8 @@ function renderHeader(over: Partial<Parameters<typeof TrackListHeader>[0]> = {})
       canReviewList
       reviewDetail="The 1 track in the list. Changes the file"
       listCommands={() => []}
+      showWaves
+      showSidebar
       {...handlers}
       {...over}
     />,
@@ -414,5 +419,60 @@ describe('the header shows an edge only while rows slide under it, so a list at 
 
     fireEvent.scroll(root, { target: { scrollTop: 0 } })
     expect(header).toHaveAttribute('data-scrolled', 'false')
+  })
+})
+
+// What the list shows is changed where the list is: a right-click on its header, the way
+// Finder's toolbar and Music's column headers take theirs. The tick says the state without
+// looking at the rows.
+describe('TrackListHeader view menu', () => {
+  it('offers to hide the waveforms on a right-click and says they are shown now', () => {
+    const { onToggleWaves } = renderHeader()
+
+    fireEvent.contextMenu(screen.getByTestId('track-list-toolbar'))
+
+    const item = screen.getByRole('menuitemcheckbox', { name: i18n.t('view.listWaves') })
+    expect(item).toHaveAttribute('aria-checked', 'true')
+    fireEvent.click(item)
+    expect(onToggleWaves).toHaveBeenCalledTimes(1)
+    expect(screen.queryByRole('menuitemcheckbox')).toBeNull()
+  })
+
+  it('leaves the search field its own text menu, so copy and paste still work there', () => {
+    renderHeader()
+    fireEvent.contextMenu(
+      screen.getByTestId('track-search').querySelector('input') ??
+        screen.getByTestId('track-search'),
+    )
+    expect(screen.queryByRole('menuitemcheckbox')).toBeNull()
+  })
+
+  it('closes on Escape without changing anything', () => {
+    const { onToggleWaves } = renderHeader()
+    fireEvent.contextMenu(screen.getByTestId('track-list-toolbar'))
+    fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' })
+    expect(screen.queryByRole('menuitemcheckbox')).toBeNull()
+    expect(onToggleWaves).not.toHaveBeenCalled()
+  })
+})
+
+// With the sidebar hidden nothing on screen says which playlist the rows come from, so the
+// header names it; with the sidebar showing, the tree already does.
+describe('TrackListHeader location', () => {
+  it('names where the rows come from only when it is given', () => {
+    renderHeader({ location: 'rekordbox › Friday' })
+    expect(screen.getByTestId('track-list-location')).toHaveTextContent('rekordbox › Friday')
+    cleanup()
+    renderHeader()
+    expect(screen.queryByTestId('track-list-location')).toBeNull()
+  })
+
+  it('offers the sidebar back from the same right-click, ticked by its state', () => {
+    const { onToggleSidebar } = renderHeader({ showSidebar: false })
+    fireEvent.contextMenu(screen.getByTestId('track-list-toolbar'))
+    const item = screen.getByRole('menuitemcheckbox', { name: i18n.t('view.sidebar') })
+    expect(item).toHaveAttribute('aria-checked', 'false')
+    fireEvent.click(item)
+    expect(onToggleSidebar).toHaveBeenCalledTimes(1)
   })
 })

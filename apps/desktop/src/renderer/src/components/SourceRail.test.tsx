@@ -16,6 +16,11 @@ describe('SourceRail', () => {
   it('marks VirtualDJ as beta next to its name, on macOS and Windows alike, and tells screen readers too, since it is the one program not proven on every system', () => {
     render(
       <SourceRail
+        width={RAIL_WIDTH}
+        showNames
+        onToggleNames={vi.fn()}
+        sidebarShown
+        onToggleSidebar={vi.fn()}
         copies={COPIES}
         onHide={vi.fn()}
         sources={['rekordbox', 'serato', 'virtualdj']}
@@ -38,6 +43,11 @@ describe('SourceRail', () => {
   it('takes which programs are beta from the program table, never from a program name', () => {
     render(
       <SourceRail
+        width={RAIL_WIDTH}
+        showNames
+        onToggleNames={vi.fn()}
+        sidebarShown
+        onToggleSidebar={vi.fn()}
         copies={COPIES}
         onHide={vi.fn()}
         sources={['appleMusic', ...DJ_PROGRAMS]}
@@ -54,7 +64,18 @@ describe('SourceRail', () => {
 
   it('is as wide as the rail the column layout subtracts, so the editor columns fill the window exactly', () => {
     render(
-      <SourceRail copies={COPIES} onHide={vi.fn()} sources={[]} active={null} onSelect={vi.fn()} />,
+      <SourceRail
+        width={RAIL_WIDTH}
+        showNames
+        onToggleNames={vi.fn()}
+        sidebarShown
+        onToggleSidebar={vi.fn()}
+        copies={COPIES}
+        onHide={vi.fn()}
+        sources={[]}
+        active={null}
+        onSelect={vi.fn()}
+      />,
     )
     expect(screen.getByTestId('source-rail').style.width).toBe(`${RAIL_WIDTH}px`)
   })
@@ -62,6 +83,11 @@ describe('SourceRail', () => {
   it('offers the working list plus each source found on this machine', () => {
     render(
       <SourceRail
+        width={RAIL_WIDTH}
+        showNames
+        onToggleNames={vi.fn()}
+        sidebarShown
+        onToggleSidebar={vi.fn()}
         copies={COPIES}
         onHide={vi.fn()}
         sources={['rekordbox']}
@@ -82,6 +108,11 @@ describe('SourceRail', () => {
   it('shows each source by its own mark in the rail colour with its name written under it', () => {
     render(
       <SourceRail
+        width={RAIL_WIDTH}
+        showNames
+        onToggleNames={vi.fn()}
+        sidebarShown
+        onToggleSidebar={vi.fn()}
         copies={COPIES}
         onHide={vi.fn()}
         sources={['appleMusic', 'rekordbox', 'engine', 'traktor']}
@@ -114,6 +145,11 @@ describe('SourceRail', () => {
   it('does not repeat the written name in a tooltip or a native title', () => {
     render(
       <SourceRail
+        width={RAIL_WIDTH}
+        showNames
+        onToggleNames={vi.fn()}
+        sidebarShown
+        onToggleSidebar={vi.fn()}
         copies={COPIES}
         onHide={vi.fn()}
         sources={['appleMusic', 'rekordbox']}
@@ -139,6 +175,11 @@ describe('SourceRail', () => {
         await i18n.changeLanguage(lng)
         render(
           <SourceRail
+            width={RAIL_WIDTH}
+            showNames
+            onToggleNames={vi.fn()}
+            sidebarShown
+            onToggleSidebar={vi.fn()}
             copies={COPIES}
             onHide={vi.fn()}
             sources={['appleMusic', 'rekordbox', 'engine', 'traktor']}
@@ -165,6 +206,11 @@ describe('SourceRail', () => {
     const onSelect = vi.fn()
     render(
       <SourceRail
+        width={RAIL_WIDTH}
+        showNames
+        onToggleNames={vi.fn()}
+        sidebarShown
+        onToggleSidebar={vi.fn()}
         copies={COPIES}
         onHide={vi.fn()}
         sources={['appleMusic', 'rekordbox']}
@@ -181,8 +227,15 @@ describe('SourceRail', () => {
     function setup(active: PlaylistSource | null = null) {
       const onSelect = vi.fn<(source: PlaylistSource | null) => void>()
       const onHide = vi.fn<(source: PlaylistSource) => void>()
+      const onToggleNames = vi.fn()
+      const onHideSidebar = vi.fn()
       render(
         <SourceRail
+          width={RAIL_WIDTH}
+          showNames
+          onToggleNames={onToggleNames}
+          sidebarShown
+          onToggleSidebar={onHideSidebar}
           sources={['appleMusic', 'rekordbox']}
           active={active}
           onSelect={onSelect}
@@ -190,7 +243,7 @@ describe('SourceRail', () => {
           copies={COPIES}
         />,
       )
-      return { onSelect, onHide }
+      return { onSelect, onHide, onToggleNames, onHideSidebar }
     }
 
     it('offers to hide a source from its right-click menu, named after it', () => {
@@ -220,9 +273,22 @@ describe('SourceRail', () => {
       expect(onHide.mock.calls).toEqual([['rekordbox']])
     })
 
-    it('has no menu on the working list, which cannot be hidden', () => {
+    it('offers no Hide on the working list, which cannot be hidden', () => {
       setup()
       fireEvent.contextMenu(screen.getByTestId('source-rail-tracks'))
+      expect(screen.getByRole('menu')).toBeInTheDocument()
+      expect(screen.queryByTestId('source-rail-hide')).not.toBeInTheDocument()
+    })
+
+    // The names under the marks are what a newcomer reads; someone who knows the marks
+    // takes the room back from the same right-click, and the tick says which way it is.
+    it('offers to hide the names from any right-click on the rail, ticked while they show', () => {
+      const { onToggleNames } = setup()
+      fireEvent.contextMenu(screen.getByTestId('source-rail-tracks'))
+      const item = screen.getByRole('menuitemcheckbox', { name: i18n.t('view.railNames') })
+      expect(item).toHaveAttribute('aria-checked', 'true')
+      fireEvent.click(item)
+      expect(onToggleNames).toHaveBeenCalledTimes(1)
       expect(screen.queryByRole('menu')).not.toBeInTheDocument()
     })
 
@@ -250,11 +316,79 @@ describe('SourceRail', () => {
     })
   })
 
+  it('hides the whole sidebar from its own right-click', () => {
+    const onHideSidebar = vi.fn()
+    render(
+      <SourceRail
+        width={RAIL_WIDTH}
+        showNames
+        onToggleNames={vi.fn()}
+        sidebarShown
+        onToggleSidebar={onHideSidebar}
+        copies={COPIES}
+        onHide={vi.fn()}
+        sources={[]}
+        active={null}
+        onSelect={vi.fn()}
+      />,
+    )
+    fireEvent.contextMenu(screen.getByTestId('source-rail-tracks'))
+    fireEvent.click(screen.getByRole('menuitem', { name: i18n.t('view.hideSidebar') }))
+    expect(onHideSidebar).toHaveBeenCalledTimes(1)
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+  })
+
+  // Laid over the list while hidden, the same item pins the sidebar back instead of hiding
+  // something that is already hidden.
+  it('offers to show the sidebar again while it is only laid over the list', () => {
+    render(
+      <SourceRail
+        width={RAIL_WIDTH}
+        showNames
+        onToggleNames={vi.fn()}
+        sidebarShown={false}
+        onToggleSidebar={vi.fn()}
+        copies={COPIES}
+        onHide={vi.fn()}
+        sources={[]}
+        active={null}
+        onSelect={vi.fn()}
+      />,
+    )
+    fireEvent.contextMenu(screen.getByTestId('source-rail-tracks'))
+    expect(screen.getByRole('menuitem', { name: i18n.t('view.sidebar') })).toBeInTheDocument()
+  })
+
+  it('draws no names when they are hidden, and VoiceOver still hears each one', () => {
+    render(
+      <SourceRail
+        width={52}
+        showNames={false}
+        onToggleNames={vi.fn()}
+        sidebarShown
+        onToggleSidebar={vi.fn()}
+        copies={COPIES}
+        onHide={vi.fn()}
+        sources={['rekordbox']}
+        active={null}
+        onSelect={vi.fn()}
+      />,
+    )
+    expect(screen.queryByTestId('source-rail-label-rekordbox')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'rekordbox' })).toBeInTheDocument()
+    expect(screen.getByTestId('source-rail').style.width).toBe('52px')
+  })
+
   describe('Copias', () => {
     function renderWith(copies: Partial<Parameters<typeof SourceRail>[0]['copies']>) {
       const props = { ...COPIES, onOpen: vi.fn(), ...copies }
       render(
         <SourceRail
+          width={RAIL_WIDTH}
+          showNames
+          onToggleNames={vi.fn()}
+          sidebarShown
+          onToggleSidebar={vi.fn()}
           onHide={vi.fn()}
           sources={['rekordbox']}
           active="rekordbox"

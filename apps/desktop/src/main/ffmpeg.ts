@@ -671,6 +671,19 @@ export async function readMetaLight(input: string): Promise<MetaRead & { partial
   return light ? { ...composed(light), partial: true } : { ...FAILED_READ, partial: false }
 }
 
+// What readMeta (or readMetaLight, for a light row) would answer from disk, without ever
+// reading the file: null when the read is not cached.
+export async function peekMeta(
+  input: string,
+  light: boolean,
+): Promise<(MetaRead & { partial: boolean }) | null> {
+  const full = await peekAnalysis<MetaRead>(readMetaNamespace(input), input)
+  if (full) return { ...composed(full), partial: false }
+  if (!light) return null
+  const partial = await peekAnalysis<MetaRead>(readMetaLightNamespace(input), input)
+  return partial ? { ...composed(partial), partial: true } : null
+}
+
 // The actual probe/decode work behind readMeta, split out so cachedAnalysis can tell a
 // successful read (an object, cached) from a failed one (null, never pinned — retried on
 // the next call rather than serving the degraded result forever).

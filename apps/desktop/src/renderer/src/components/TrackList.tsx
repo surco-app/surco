@@ -76,6 +76,7 @@ interface Props {
   selectedId: string | null
   selectedIds: ReadonlySet<string>
   outputFormat: OutputFormat
+  showWaves?: boolean
   // The effective key bindings (defaults + the user's overrides), read by the row to
   // resolve Shift+F10 (or whatever it's been rebound to) to the track-menu command.
   bindings: Map<string, Chord>
@@ -337,6 +338,7 @@ interface RowProps {
   // A flag rather than the list's length, so a row only re-renders when it flips.
   deferPaint: boolean
   outputFormat: OutputFormat
+  showWaves: boolean
   onSelect: (id: string, mods: ClickMods) => void
   onActivate: (track: TrackItem) => void
   onSwipeRemove: (id: string) => void
@@ -387,6 +389,7 @@ const TrackRow = memo(function TrackRow({
   tabbable,
   deferPaint,
   outputFormat,
+  showWaves,
   onSelect,
   onActivate,
   onSwipeRemove,
@@ -585,7 +588,9 @@ const TrackRow = memo(function TrackRow({
         // min-h-0 lets the slot's grid row actually shrink; overflow-hidden only while
         // collapsing, so it never clips the row the rest of its life.
         className={`group relative min-h-0 ${removing ? 'overflow-hidden' : ''} ${
-          deferPaint ? '[content-visibility:auto] [contain-intrinsic-size:auto_80px]' : ''
+          deferPaint
+            ? '[content-visibility:auto] [contain-intrinsic-size:auto_80px] compact:[contain-intrinsic-size:auto_56px]'
+            : ''
         }`}
         draggable
         onWheel={onSwipeWheel}
@@ -727,12 +732,16 @@ const TrackRow = memo(function TrackRow({
                 // which, combined with content-visibility below, lands mid-scroll and janks.
                 loading="lazy"
                 decoding="async"
-                className={`h-16 w-16 object-cover outline outline-1 -outline-offset-1 outline-on-scrim/10 transition-[border-radius] duration-120 ${
+                className={`${showWaves ? 'h-16 w-16 compact:h-12 compact:w-12' : 'h-10 w-10'} object-cover outline outline-1 -outline-offset-1 outline-on-scrim/10 transition-[border-radius] duration-120 ${
                   converting ? 'rounded-full' : 'rounded-md'
                 }`}
               />
             ) : (
-              <CoverPlaceholder testid="track-cover-placeholder" round={converting} large />
+              <CoverPlaceholder
+                testid="track-cover-placeholder"
+                round={converting}
+                size={showWaves ? 'large' : 'medium'}
+              />
             )}
             {!converting && <StatusBadge track={t} stale={stale} />}
             <Tooltip label={statusLabel} align="start" scope="dot" />
@@ -751,7 +760,9 @@ const TrackRow = memo(function TrackRow({
               nothing. */}
           <span
             data-fit
-            className="relative ml-0.5 flex h-16 min-w-0 flex-1 flex-col justify-between"
+            className={`relative ml-0.5 flex min-w-0 flex-1 flex-col justify-between ${
+              showWaves ? 'h-16 compact:h-[52px]' : 'h-10'
+            }`}
           >
             <span className="flex flex-col gap-px">
               {/* The duration rides the title line, the way Mail puts the time beside the
@@ -780,6 +791,29 @@ const TrackRow = memo(function TrackRow({
                     {shown.artist || tr('trackList.noArtist')}
                   </span>
                 </span>
+                {!showWaves && cuesUnsaved && (
+                  <span
+                    data-testid="track-cues-unsaved"
+                    className="h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-warn)]"
+                  >
+                    <span className="sr-only">{tr('trackList.cuesUnsaved')}</span>
+                  </span>
+                )}
+                {!showWaves &&
+                  (autoMark?.kind === 'proposed' ? (
+                    <span
+                      data-testid="track-auto-mark"
+                      className="shrink-0 whitespace-nowrap rounded-full border border-dashed border-[var(--color-accent)] px-1.5 text-label font-semibold leading-4 text-[var(--color-accent)]"
+                    >
+                      {tr('trackList.autoMark.proposed', { count: autoMark.proposals.length })}
+                    </span>
+                  ) : (
+                    autoMark && (
+                      <span data-testid="track-auto-mark-status" className="sr-only">
+                        {tr(`trackList.autoMark.${autoMark.kind}`)}
+                      </span>
+                    )
+                  ))}
                 {note && (
                   <span
                     data-testid="track-note"
@@ -944,73 +978,86 @@ const TrackRow = memo(function TrackRow({
                 </span>
               </span>
             </span>
-            <span data-testid="track-wave-line" className="relative block h-5">
-              {shown.waiting ? (
-                <span
-                  data-testid="track-loading"
-                  className="skeleton-sweep mt-2 block h-2.5 w-28 rounded bg-[var(--color-panel-2)]"
-                />
-              ) : converting ? (
-                <span data-testid="track-stage" className="mt-0.5 block">
-                  <span className="block truncate text-xs text-[var(--color-accent)]">
-                    {tr(`trackList.stage.${stage}`, {
-                      format: (t.format ?? outputFormat).toUpperCase(),
-                    })}
+            {showWaves ? (
+              <span data-testid="track-wave-line" className="relative block h-5">
+                {shown.waiting ? (
+                  <span
+                    data-testid="track-loading"
+                    className="skeleton-sweep mt-2 block h-2.5 w-28 rounded bg-[var(--color-panel-2)]"
+                  />
+                ) : converting ? (
+                  <span data-testid="track-stage" className="mt-0.5 block">
+                    <span className="block truncate text-xs text-[var(--color-accent)]">
+                      {tr(`trackList.stage.${stage}`, {
+                        format: (t.format ?? outputFormat).toUpperCase(),
+                      })}
+                    </span>
+                    {/* Text, not role="progressbar": an option's children are presentational,
+                      so a nested role would be flattened away and the amount never spoken. */}
+                    <span className="sr-only">
+                      {tr('trackList.progress', {
+                        percent: Math.round(STAGE_PROGRESS[stage] * 100),
+                      })}
+                    </span>
                   </span>
-                  {/* Text, not role="progressbar": an option's children are presentational,
-                    so a nested role would be flattened away and the amount never spoken. */}
-                  <span className="sr-only">
-                    {tr('trackList.progress', { percent: Math.round(STAGE_PROGRESS[stage] * 100) })}
-                  </span>
-                </span>
-              ) : (
-                <span className="flex h-full items-center gap-1.5">
-                  <span className="relative block h-full min-w-0 flex-1">
-                    <RowWave
-                      request={{ path: t.inputPath, analysisPath: t.sourcePreview?.analysisPath }}
-                      cues={t.sourcePreview?.cues ?? []}
-                      durationSec={shown.duration}
-                      pending={cuesPending}
-                      active={seen}
-                      unanalyzed={unanalyzed}
-                      proposals={
-                        autoMark?.kind === 'proposed'
-                          ? autoMark.proposals.map((p) => p.ms)
-                          : undefined
-                      }
-                    />
-                    {cuesUnsaved && (
+                ) : (
+                  <span className="flex h-full items-center gap-1.5">
+                    <span className="relative block h-full min-w-0 flex-1">
+                      <RowWave
+                        request={{ path: t.inputPath, analysisPath: t.sourcePreview?.analysisPath }}
+                        cues={t.sourcePreview?.cues ?? []}
+                        durationSec={shown.duration}
+                        pending={cuesPending}
+                        active={seen}
+                        unanalyzed={unanalyzed}
+                        proposals={
+                          autoMark?.kind === 'proposed'
+                            ? autoMark.proposals.map((p) => p.ms)
+                            : undefined
+                        }
+                      />
+                      {cuesUnsaved && (
+                        <span
+                          data-testid="track-cues-unsaved"
+                          className={`absolute top-0.5 h-1.5 w-1.5 rounded-full bg-[var(--color-warn)] ${
+                            // Clear of the dashed ring RowWave puts at the end of an unanalysed
+                            // track's cues, so the dot does not read as part of it.
+                            unanalyzed && (t.sourcePreview?.cues.length ?? 0) > 0
+                              ? 'right-5'
+                              : 'right-0'
+                          }`}
+                        >
+                          <span className="sr-only">{tr('trackList.cuesUnsaved')}</span>
+                        </span>
+                      )}
+                    </span>
+                    {autoMark?.kind === 'proposed' ? (
                       <span
-                        data-testid="track-cues-unsaved"
-                        className={`absolute top-0.5 h-1.5 w-1.5 rounded-full bg-[var(--color-warn)] ${
-                          // Clear of the dashed ring RowWave puts at the end of an unanalysed
-                          // track's cues, so the dot does not read as part of it.
-                          unanalyzed && (t.sourcePreview?.cues.length ?? 0) > 0
-                            ? 'right-5'
-                            : 'right-0'
-                        }`}
+                        data-testid="track-auto-mark"
+                        className="shrink-0 whitespace-nowrap rounded-full border border-dashed border-[var(--color-accent)] px-1.5 text-label font-semibold leading-4 text-[var(--color-accent)]"
                       >
-                        <span className="sr-only">{tr('trackList.cuesUnsaved')}</span>
+                        {tr('trackList.autoMark.proposed', { count: autoMark.proposals.length })}
                       </span>
+                    ) : (
+                      autoMark && (
+                        <span data-testid="track-auto-mark-status" className="sr-only">
+                          {tr(`trackList.autoMark.${autoMark.kind}`)}
+                        </span>
+                      )
                     )}
                   </span>
-                  {autoMark?.kind === 'proposed' ? (
-                    <span
-                      data-testid="track-auto-mark"
-                      className="shrink-0 whitespace-nowrap rounded-full border border-dashed border-[var(--color-accent)] px-1.5 text-label font-semibold leading-4 text-[var(--color-accent)]"
-                    >
-                      {tr('trackList.autoMark.proposed', { count: autoMark.proposals.length })}
-                    </span>
-                  ) : (
-                    autoMark && (
-                      <span data-testid="track-auto-mark-status" className="sr-only">
-                        {tr(`trackList.autoMark.${autoMark.kind}`)}
-                      </span>
-                    )
-                  )}
+                )}
+              </span>
+            ) : (
+              converting && (
+                <span data-testid="track-stage" className="sr-only">
+                  {tr(`trackList.stage.${stage}`, {
+                    format: (t.format ?? outputFormat).toUpperCase(),
+                  })}{' '}
+                  {tr('trackList.progress', { percent: Math.round(STAGE_PROGRESS[stage] * 100) })}
                 </span>
-              )}
-            </span>
+              )
+            )}
           </span>
         </button>
         {/* A review-tier suggestion the user hasn't acted on yet: amber, distinct from the
@@ -1030,7 +1077,7 @@ const TrackRow = memo(function TrackRow({
             data-confidence="review"
             aria-label={tr('commands.acceptReview')}
             onClick={() => onAcceptReview(t.id)}
-            className="group/dot press absolute right-[58px] top-[23px] flex h-6 w-6 items-center justify-center text-warn"
+            className="group/dot press absolute right-[58px] top-[23px] flex h-6 w-6 compact:top-[19px] items-center justify-center text-warn"
           >
             <Spark />
             <Tooltip
@@ -1055,7 +1102,7 @@ const TrackRow = memo(function TrackRow({
             // overlay to a render surface even at opacity-0, and dozens of backdrop-filter
             // layers inside the scroller are a known compositor jank source. A slightly
             // denser plain fill keeps the glyph readable over any cover.
-            className="absolute top-1/2 left-2.5 flex h-16 w-16 -translate-y-1/2 items-center justify-center rounded-md bg-scrim/65 text-on-scrim opacity-0 transition-[opacity,scale] motion-safe:active:scale-[0.97] pointer-events-none hover:bg-scrim/75 group-hover:pointer-events-auto group-hover:opacity-100"
+            className={`absolute top-1/2 left-2.5 flex ${showWaves ? 'h-16 w-16 compact:h-12 compact:w-12' : 'h-10 w-10'} -translate-y-1/2 items-center justify-center rounded-md bg-scrim/65 text-on-scrim opacity-0 transition-[opacity,scale] motion-safe:active:scale-[0.97] pointer-events-none hover:bg-scrim/75 group-hover:pointer-events-auto group-hover:opacity-100`}
           >
             <Play className="h-5 w-5 fill-current" aria-hidden="true" />
           </button>
@@ -1097,6 +1144,7 @@ export const TrackList = memo(function TrackList({
   selectedId,
   selectedIds,
   outputFormat,
+  showWaves = true,
   bindings,
   onSelect,
   onActivate,
@@ -1395,6 +1443,7 @@ export const TrackList = memo(function TrackList({
         tabbable={t.id === selectedId || (selectedId === null && i === 0)}
         deferPaint={!virtual && tracks.length >= DEFER_PAINT_MIN_ROWS}
         outputFormat={outputFormat}
+        showWaves={showWaves}
         onSelect={onSelect}
         onActivate={onActivate}
         onSwipeRemove={removeBySwipe}

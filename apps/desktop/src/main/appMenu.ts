@@ -9,6 +9,7 @@ interface Params {
   checkForUpdates: () => void
   mac: boolean
   windows: boolean
+  view: { listWaves: boolean; railNames: boolean; sidebar: boolean }
 }
 
 export function appMenuTemplate({
@@ -19,6 +20,7 @@ export function appMenuTemplate({
   checkForUpdates,
   mac,
   windows,
+  view,
 }: Params): Electron.MenuItemConstructorOptions[] {
   const keymapItem = (label: string, id: string): Electron.MenuItemConstructorOptions => ({
     label,
@@ -96,6 +98,25 @@ export function appMenuTemplate({
         keymapItem(t('stats'), 'stats'),
         { label: t('activity'), click: () => run('activity') },
         { label: t('backups'), click: () => run('backups') },
+        { type: 'separator' },
+        {
+          ...keymapItem(t('sidebar'), 'toggle-sidebar'),
+          accelerator: mac ? accel('toggle-sidebar') : undefined,
+          type: 'checkbox',
+          checked: view.sidebar,
+        },
+        {
+          label: t('listWaves'),
+          type: 'checkbox',
+          checked: view.listWaves,
+          click: () => run('toggle-list-waves'),
+        },
+        {
+          label: t('railNames'),
+          type: 'checkbox',
+          checked: view.railNames,
+          click: () => run('toggle-rail-names'),
+        },
         { type: 'separator' },
         // Replacing Electron's default View menu dropped its zoom items, and with them the
         // only way to enlarge the interface; the roles restore ⌘+ / ⌘- / ⌘0 everywhere.

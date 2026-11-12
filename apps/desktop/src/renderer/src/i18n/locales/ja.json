@@ -562,6 +562,9 @@
     "trackBackup": "このトラックのバックアップを復元",
     "toggleLanguage": "言語を切り替える",
     "toggleTheme": "テーマを切り替える (システム / ライト / ダーク)",
+    "toggleListWaves": "リストの波形を表示/非表示",
+    "toggleRailNames": "ソース名を表示/非表示",
+    "toggleSidebar": "サイドバーを表示/非表示",
     "confetti": "紙吹雪を飛ばす 🎉",
     "trimStartBack": "先頭のカットを手前へ微調整",
     "trimStartForward": "先頭のカットを後ろへ微調整",
@@ -1620,6 +1623,12 @@
       "light": "ライト",
       "dark": "ダーク"
     },
+    "density": "表示密度",
+    "densityHint": "コンパクトでは同じウインドウにより多くのトラックを表示します。",
+    "densities": {
+      "normal": "標準",
+      "compact": "コンパクト"
+    },
     "language": "言語",
     "languages": {
       "system": "システム",
@@ -2115,6 +2124,7 @@
       "sampleRate": "Hz, kHz, 44.1, 48, サンプリング",
       "outputFormat": "AIFF, FLAC, MP3, WAV, ALAC, 変換",
       "theme": "ダーク, ライト, モード",
+      "density": "コンパクト, 密度, 行, サイズ",
       "coverMaxSize": "アートワーク, 画像, 解像度",
       "destination": "フォルダー, 書き出し, Apple Music",
       "configDir": "iCloud, Dropbox, 同期",
@@ -3734,5 +3744,13 @@
       "traktorRecord": "バックアップには{{sibling}}がこのMP3からSurcoで変換された記録があります",
       "traktorNoRecord": "{{sibling}}がこのMP3から作られたというSurcoの記録はありません"
     }
+  },
+  "view": {
+    "submenu": "表示",
+    "menu": "リストの表示",
+    "listWaves": "波形を表示",
+    "railNames": "名前を表示",
+    "sidebar": "サイドバーを表示",
+    "hideSidebar": "サイドバーを隠す"
   }
 }

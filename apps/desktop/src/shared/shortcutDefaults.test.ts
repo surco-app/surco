@@ -222,3 +222,12 @@ describe('saltos relativos de columna', () => {
     expect(findConflicts(resolveBindings())).toEqual([])
   })
 })
+
+// ⌃⌘S is the shortcut Finder and Mail use to hide their sidebar, so a Mac user reaches
+// for it without looking it up.
+describe('sidebar shortcut', () => {
+  it('hides and shows the sidebar with ⌃⌘S', () => {
+    const b = resolveBindings({})
+    expect(matchChord(b, ['ctrl', 'mod', 's'], false)).toBe('toggle-sidebar')
+  })
+})

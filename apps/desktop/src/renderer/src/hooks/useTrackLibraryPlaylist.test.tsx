@@ -43,6 +43,7 @@ function setup(
     unwatchFolders: vi.fn().mockResolvedValue(undefined),
     expandPaths,
     readMeta: vi.fn().mockResolvedValue({ tags: {}, duration: null, cover: null, foreignTags: [] }),
+    readMetaCached: vi.fn().mockResolvedValue({}),
     recordStat: vi.fn(),
     loadAppleMusicPlaylistTracks: vi
       .fn()
@@ -1308,5 +1309,98 @@ describe('Files and the source playlists keep their own tracks', () => {
     expect(result.current.tracks).toEqual([
       expect.objectContaining({ inputPath: '/m/a.aiff', inFiles: false }),
     ])
+  })
+})
+
+// A track is read once, not once per launch: every row a source tab adds is rebuilt on each
+// launch, and a Traktor collection of 8,000 files sat "reading" for over a minute (hours on
+// a slower machine) even with every read on disk, because each one went through the import
+// queue and a render of its own. The files already read land together; only the rest read.
+describe('a playlist whose files were read before', () => {
+  const entries = (paths: string[]) => paths.map((path) => ({ path, separator: false, meta: {} }))
+  const cached = (title: string) => ({
+    tags: tags({ title }),
+    duration: 200,
+    cover: { thumbUrl: `surco://cover/${title}.jpg`, width: 600, height: 600 },
+    foreignTags: [],
+    partial: false,
+  })
+
+  it('lands the files already read at once and reads, and counts, only the rest', async () => {
+    const readMetaCached = vi.fn<Api['readMetaCached']>().mockResolvedValue({
+      '/m/a.aiff': cached('A'),
+      '/m/b.aiff': cached('B'),
+    })
+    let finishC: () => void = () => {}
+    const readMeta = vi.fn<Api['readMeta']>(
+      () =>
+        new Promise((resolve) => {
+          finishC = () =>
+            resolve({ tags: tags({ title: 'C' }), duration: 1, cover: null, foreignTags: [] })
+        }),
+    )
+    const { result } = setup({ readMetaCached, readMeta })
+
+    await act(async () => {
+      await result.current.openSourcePlaylist(
+        entries(['/m/a.aiff', '/m/b.aiff', '/m/c.aiff']),
+        'traktor',
+      )
+    })
+    await waitFor(() => expect(readMeta).toHaveBeenCalled())
+
+    const byPath = (p: string) => result.current.tracks.find((t) => t.inputPath === p)
+    expect(readMeta).toHaveBeenCalledExactlyOnceWith('/m/c.aiff')
+    expect(byPath('/m/a.aiff')?.meta.title).toBe('A')
+    expect(byPath('/m/a.aiff')?.embeddedCover).toBe('surco://cover/A.jpg')
+    expect(byPath('/m/b.aiff')?.loadingMeta).toBeFalsy()
+    expect(result.current.importProgress).toEqual({ done: 0, total: 1 })
+
+    await act(async () => finishC())
+    await waitFor(() => expect(result.current.importProgress).toBeNull())
+    expect(byPath('/m/c.aiff')?.meta.title).toBe('C')
+  })
+
+  it('shows no reading at all when every file was read before', async () => {
+    const readMetaCached = vi
+      .fn<Api['readMetaCached']>()
+      .mockResolvedValue({ '/m/a.aiff': cached('A') })
+    const readMeta = vi.fn<Api['readMeta']>()
+    const { result } = setup({ readMetaCached, readMeta })
+
+    await act(async () => {
+      await result.current.openSourcePlaylist(entries(['/m/a.aiff']), 'traktor')
+    })
+
+    expect(readMeta).not.toHaveBeenCalled()
+    expect(result.current.importProgress).toBeNull()
+    expect(result.current.tracks[0].meta.title).toBe('A')
+    expect(result.current.tracks[0].diskSignature).toBe(trackSignature(result.current.tracks[0]))
+  })
+
+  it('takes the light read for a row whose library holds its cover', async () => {
+    const readMetaCached = vi.fn<Api['readMetaCached']>().mockResolvedValue({
+      '/m/a.aiff': { ...cached('A'), cover: null, partial: true },
+    })
+    const { result } = setup({ readMetaCached })
+    const withArt = {
+      path: '/m/a.aiff',
+      separator: false,
+      meta: {},
+      preview: {
+        title: 'A',
+        artist: 'R',
+        durationSec: 200,
+        cues: [],
+        coverUrl: 'surco://media/x.jpg',
+      },
+    }
+
+    await act(async () => {
+      await result.current.openSourcePlaylist([withArt], 'rekordbox')
+    })
+
+    expect(readMetaCached).toHaveBeenCalledWith([{ path: '/m/a.aiff', light: true }])
+    expect(result.current.tracks[0].metaPartial).toBe(true)
   })
 })

@@ -439,6 +439,9 @@ export interface Api {
   // Tags, duration and cover from a single round-trip, for the import path.
   readMeta: (path: string) => Promise<MetaRead>
   readMetaLight: (path: string) => Promise<MetaRead & { partial: boolean }>
+  readMetaCached: (
+    rows: { path: string; light: boolean }[],
+  ) => Promise<Record<string, MetaRead & { partial: boolean }>>
   readCover: (path: string) => Promise<CoverRead | null>
   // The file's embedded art at its original resolution, for the cover lightbox.
   readCoverFull: (path: string) => Promise<string | null>

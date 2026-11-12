@@ -16,6 +16,7 @@ afterEach(cleanup)
 
 const synced: SyncedDraft = {
   theme: 'system',
+  density: 'normal',
   cueFlows: BUNDLED_FLOWS,
   activeCueFlow: 'mine',
   cueJumpBars: 16,

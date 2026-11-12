@@ -76,7 +76,7 @@ export function RowWave({
           <WaveBars
             bars={bars}
             testId="track-wave-bars"
-            className="absolute inset-x-0 bottom-0 h-[18px] w-full"
+            className="absolute inset-x-0 bottom-0 h-[18px] w-full compact:h-4"
             fill={provisional ? 'var(--color-fg-faint)' : undefined}
           />
         )}

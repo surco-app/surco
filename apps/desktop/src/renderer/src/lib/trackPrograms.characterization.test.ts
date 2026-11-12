@@ -84,6 +84,7 @@ async function restoreAndResave(saved: SessionEdit): Promise<SessionEdit> {
     onFilesChanged: vi.fn(() => () => {}),
     unwatchFolders: vi.fn().mockResolvedValue(undefined),
     expandPaths: vi.fn().mockResolvedValue([]),
+    readMetaCached: vi.fn().mockResolvedValue({}),
     readMeta: vi.fn().mockResolvedValue({
       tags: { title: '', artist: '' },
       duration: 180,

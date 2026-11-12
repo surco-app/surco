@@ -76,6 +76,7 @@ export const SHORTCUT_DEFAULTS: ShortcutDef[] = [
   { id: 'cues-open-full', chord: ['mod', 'shift', 'c'] },
   { id: 'stats', chord: ['mod', 'shift', 's'] },
   { id: 'toggle-language', chord: ['mod', 'shift', 'l'] },
+  { id: 'toggle-sidebar', chord: ['ctrl', 'mod', 's'], macOnly: true },
   // Jump focus between the three columns — list, Discogs matches, editor. mod-combos so
   // they fire while a field is focused (the same key jumps you out of the editor).
   { id: 'focus-list', chord: ['mod', '1'] },

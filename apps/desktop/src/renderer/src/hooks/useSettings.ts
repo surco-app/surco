@@ -142,6 +142,10 @@ export function useSettings({
     return () => mq.removeEventListener('change', apply)
   }, [themePreview, settings?.theme])
 
+  useEffect(() => {
+    document.documentElement.dataset.density = settings?.density ?? 'normal'
+  }, [settings?.density])
+
   // Apply the saved UI language once settings load and whenever it changes. The ⌘⇧L
   // toggle flips i18n directly for a quick switch without persisting; since this only
   // re-runs when the saved preference itself changes, that flip survives.

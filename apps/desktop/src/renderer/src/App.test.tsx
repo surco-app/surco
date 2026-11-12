@@ -138,6 +138,10 @@ function settings(over: Partial<Settings> = {}): Settings {
     editorSections: DEFAULT_EDITOR_SECTIONS,
     resultsWidth: null,
     theme: 'system',
+    density: 'normal',
+    showListWaves: true,
+    showRailNames: true,
+    showSidebar: true,
     cueFlows: BUNDLED_FLOWS,
     activeCueFlow: 'mine',
     cueJumpBars: 16,
@@ -353,6 +357,7 @@ function setApi(over: Record<string, unknown> = {}): void {
     readTags: vi.fn().mockResolvedValue({}),
     readDuration: vi.fn().mockResolvedValue(180),
     readCover: vi.fn().mockResolvedValue(null),
+    readMetaCached: vi.fn<Api['readMetaCached']>().mockResolvedValue({}),
     // Mirrors the real readMeta (one round-trip for all three) by delegating to the
     // individual mocks at call time, so a test overriding readTags/readDuration/readCover
     // still drives the import without having to know they were collapsed into one call.
@@ -11241,5 +11246,49 @@ describe('automatic session from the tree', () => {
       expect.any(String),
       'queue',
     )
+  })
+})
+
+// Hiding the sidebar is for the user who wants the whole window for the list and the
+// editor; it has to take the rail and the playlists with it and leave a way back.
+describe('App sidebar', () => {
+  it('draws neither the rail nor the playlists while the sidebar is hidden', async () => {
+    setApi({ getSettings: vi.fn().mockResolvedValue(settings({ showSidebar: false })) })
+    await renderApp()
+    await addTwoTracks()
+    expect(screen.queryByTestId('source-rail')).not.toBeInTheDocument()
+  })
+
+  // A hidden sidebar must not cost the user the playlists: resting the pointer on the left
+  // edge lays it over the list, and leaving it puts it away again.
+  it('lays the sidebar over the list while the pointer rests on the left edge', async () => {
+    setApi({ getSettings: vi.fn().mockResolvedValue(settings({ showSidebar: false })) })
+    await renderApp()
+    await addTwoTracks()
+    fireEvent.pointerEnter(screen.getByTestId('sidebar-edge'))
+    expect(await screen.findByTestId('source-rail')).toBeInTheDocument()
+    fireEvent.pointerLeave(screen.getByTestId('sidebar-peek'))
+    await waitFor(() => expect(screen.queryByTestId('source-rail')).not.toBeInTheDocument())
+  })
+
+  // The edge has to be found; the location over the list is in plain sight and opens the
+  // same sidebar at once.
+  it('opens the sidebar over the list from the location in the list header', async () => {
+    setApi({ getSettings: vi.fn().mockResolvedValue(settings({ showSidebar: false })) })
+    await renderApp()
+    await addTwoTracks()
+    fireEvent.click(screen.getByTestId('track-list-location'))
+    expect(screen.getByTestId('source-rail')).toBeInTheDocument()
+    fireEvent.keyDown(screen.getByTestId('sidebar-peek'), { key: 'Escape' })
+    expect(screen.queryByTestId('source-rail')).not.toBeInTheDocument()
+  })
+
+  it('brings the sidebar back from the right-click on the list header', async () => {
+    setApi({ getSettings: vi.fn().mockResolvedValue(settings({ showSidebar: false })) })
+    await renderApp()
+    await addTwoTracks()
+    fireEvent.contextMenu(screen.getByTestId('track-list-toolbar'))
+    fireEvent.click(screen.getByRole('menuitemcheckbox', { name: i18n.t('view.sidebar') }))
+    expect(await screen.findByTestId('source-rail')).toBeInTheDocument()
   })
 })

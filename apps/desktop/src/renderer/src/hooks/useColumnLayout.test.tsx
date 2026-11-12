@@ -28,7 +28,7 @@ function setup(saved?: ColumnShares) {
   const onCommit = vi.fn<(shares: ColumnShares) => void>()
   const hook = renderHook(
     (props: { saved?: ColumnShares }) =>
-      useColumnLayout({ hasTree: true, saved: props.saved, onCommit }),
+      useColumnLayout({ hasTree: true, saved: props.saved, onCommit, railWidth: 76 }),
     { initialProps: { saved } },
   )
   return { ...hook, onCommit }
@@ -146,4 +146,19 @@ describe('useColumnLayout', () => {
     act(() => result.current.fit('list', 0))
     expect(onCommit).not.toHaveBeenCalled()
   })
+})
+
+// A narrower rail frees pixels; they must reach the columns, or the window would end in a
+// dead strip on the right instead of a wider editor.
+it('hands the room a narrower rail frees to the columns', () => {
+  const onCommit = vi.fn<(shares: ColumnShares) => void>()
+  const wide = renderHook(() =>
+    useColumnLayout({ hasTree: true, saved: undefined, onCommit, railWidth: 76 }),
+  )
+  const narrow = renderHook(() =>
+    useColumnLayout({ hasTree: true, saved: undefined, onCommit, railWidth: 52 }),
+  )
+  const sum = (w: { tree: number; list: number; results: number; form: number }): number =>
+    w.tree + w.list + w.results + w.form
+  expect(sum(narrow.result.current.widths) - sum(wide.result.current.widths)).toBe(24)
 })

@@ -112,6 +112,7 @@ function renderList(
     autoMarkById,
     playedPaths,
     keyNotation,
+    showWaves,
   }: {
     canPasteMeta?: boolean
     bindings?: Map<string, Chord>
@@ -127,6 +128,7 @@ function renderList(
     autoMarkById?: ReadonlyMap<string, AutoMark>
     playedPaths?: ReadonlySet<string>
     keyNotation?: KeyNotation
+    showWaves?: boolean
   } = {},
 ) {
   const onSelect = vi.fn()
@@ -163,6 +165,7 @@ function renderList(
       unsavedCueIds={unsavedCueIds}
       autoMarkById={autoMarkById}
       playedPaths={playedPaths}
+      showWaves={showWaves}
       // Composed here exactly as App composes it: the list owns when/where the menu
       // opens, the caller owns what it offers.
       renderMenu={(menu, close) => (
@@ -675,6 +678,42 @@ describe('TrackList', () => {
     expect(within(row).getByTestId('track-cues-unsaved')).toBeInTheDocument()
     expect(within(row).getByTestId('track-auto-mark')).toHaveTextContent('1 proposal')
     expect(within(row).getAllByTestId('track-wave-proposal')).toHaveLength(1)
+  })
+
+  // Hiding the waves is asking for short rows: the cue marks go with them, and what still
+  // needs the user (unsaved cues, Auto's proposals) moves up to the artist line.
+  it('drops the cue marks with the waves and keeps what still needs a look on the artist line', () => {
+    renderList(
+      [
+        track({
+          id: 'a',
+          duration: 200,
+          sourcePreview: {
+            title: 'A',
+            artist: 'B',
+            durationSec: 200,
+            cues: [{ ms: 1000, kind: 1, color: null }],
+          },
+        }),
+      ],
+      null,
+      [],
+      {
+        showWaves: false,
+        unsavedCueIds: new Set(['a']),
+        autoMarkById: new Map<string, AutoMark>([
+          [
+            'a',
+            { kind: 'proposed', proposals: [50000].map((ms) => ({ ms, sure: true, quietBars: 8 })) },
+          ],
+        ]),
+      },
+    )
+    expect(screen.queryByTestId('track-wave-line')).toBeNull()
+    expect(screen.queryByTestId('track-hot-cue')).toBeNull()
+    const detail = screen.getByTestId('track-detail-line')
+    expect(within(detail).getByTestId('track-cues-unsaved')).toBeInTheDocument()
+    expect(within(detail).getByTestId('track-auto-mark')).toHaveTextContent('1 proposal')
   })
 
   it('omits the duration until it has been probed', () => {
@@ -2276,6 +2315,33 @@ describe('TrackList row waves', () => {
     show([observed[30]])
     await vi.waitFor(() => expect(rowWaves).toHaveBeenCalledTimes(2))
     expect(rowWaves.mock.calls[1][0].map((r) => r.path)).toEqual([tracks[30].inputPath])
+  })
+
+  it('reads no waves at all while the user has them hidden, since nobody would see the bars', async () => {
+    const rowWaves = vi.fn<Api['rowWaves']>(async () => ({}))
+    Object.assign(window, { api: { ...api, rowWaves } })
+    const tracks = Array.from({ length: 5 }, (_, i) => track({ id: `t${i}` }))
+    render(
+      <TrackList
+        tracks={tracks}
+        selectedId={null}
+        selectedIds={new Set()}
+        outputFormat="aiff"
+        bindings={bindings}
+        showWaves={false}
+        onSelect={vi.fn()}
+        onActivate={vi.fn()}
+        onRemove={vi.fn()}
+        onSwipeRemove={vi.fn()}
+        onAcceptReview={vi.fn()}
+        onPrefetch={vi.fn()}
+        onVisible={vi.fn()}
+        renderMenu={() => null}
+      />,
+    )
+    show(observed.slice(0, 5))
+    await new Promise((r) => setTimeout(r, 30))
+    expect(rowWaves).not.toHaveBeenCalled()
   })
 
   // A row a filter or search takes off the list never scrolls out of view: it just goes.
