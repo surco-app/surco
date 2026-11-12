@@ -20,7 +20,7 @@ import { resolveBindings } from '../../../shared/shortcutDefaults'
 import { resetEditorSections } from '../hooks/useEditorSections'
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
 import type { Command } from '../lib/commands'
-import { ghostOf } from '../lib/cueDraft'
+import { ghostOf, wantedOfDraft } from '../lib/cueDraft'
 import { resetCueSession } from '../lib/cueSession'
 import { SettingsProvider } from '../lib/settingsContext'
 import { runKeyClaim } from '../lib/spaceClaim'
@@ -32,7 +32,7 @@ import { CuesSection } from './CuesSection'
 // reducer, the cost the playing playhead must not pay on every frame.
 vi.mock('../lib/cueDraft', async (importOriginal) => {
   const real = await importOriginal<typeof import('../lib/cueDraft')>()
-  return { ...real, ghostOf: vi.fn(real.ghostOf) }
+  return { ...real, ghostOf: vi.fn(real.ghostOf), wantedOfDraft: vi.fn(real.wantedOfDraft) }
 })
 
 const KEPT: CueFlow[] = [MY_FLOW, ONE_AT_32]
@@ -389,6 +389,39 @@ describe('CuesSection folded', () => {
     }
     expect(position()).not.toBe(shown)
     expect(vi.mocked(ghostOf).mock.calls.length - before).toBeLessThanOrEqual(1)
+  })
+
+  // The whole cue editor (wave, detail, deck, menus, twin rows) hangs off the playhead. Moving
+  // it sixty times a second re-rendered all of it per frame; only the parts that draw the
+  // position may follow the audio.
+  it('keeps the cue editor body still while the preview plays, moving only the playhead', async () => {
+    stubSound()
+    const frames: FrameRequestCallback[] = []
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => frames.push(cb))
+    setup()
+    await ready()
+    fireEvent.click(screen.getByTestId('cues-play'))
+    await act(async () => audios[0].onloadedmetadata?.())
+    const shown = position()
+    const before = vi.mocked(wantedOfDraft).mock.calls.length
+    for (const sec of [64.01, 64.5, 65, 65.5, 66]) {
+      audios[0].currentTime = sec
+      await act(async () => frames.shift()?.(0))
+    }
+    expect(position()).toBe('1:06.0')
+    expect(position()).not.toBe(shown)
+    expect(vi.mocked(wantedOfDraft).mock.calls.length - before).toBe(0)
+  })
+
+  it('keeps the cue editor body still while dragging the playhead along the strip', async () => {
+    setup()
+    await ready()
+    fireEvent.mouseDown(screen.getByTestId('cue-wave'), { button: 0, clientX: 10 })
+    const before = vi.mocked(wantedOfDraft).mock.calls.length
+    for (const x of [20, 40, 60, 80, 100]) fireEvent.mouseMove(window, { clientX: x })
+    fireEvent.mouseUp(window, { clientX: 100 })
+    expect(position()).toBe('1:40.0')
+    expect(vi.mocked(wantedOfDraft).mock.calls.length - before).toBe(0)
   })
 
   it('lets Space stop the folded preview while it plays, instead of starting the mini-player over it, and gives Space back once stopped', async () => {
