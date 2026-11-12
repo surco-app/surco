@@ -4198,7 +4198,14 @@ export default function App(): React.JSX.Element {
                 )}
 
                 {!copiesOpen && (
-                  <main className="min-w-0 flex-1 bg-[var(--color-panel)]">
+                  <main
+                    className="min-w-0 flex-1 bg-[var(--color-panel)]"
+                    style={
+                      {
+                        '--results-width': `${columns.widths.results}px`,
+                      } as React.CSSProperties
+                    }
+                  >
                     {review !== null ? (
                       <MusicReviewDetailPane
                         sync={{
@@ -4268,7 +4275,6 @@ export default function App(): React.JSX.Element {
                             onDeclickChange={onDeclickChange}
                             onAddToAppleMusic={onAddSelectedToAppleMusic}
                             onCleanUp={onCleanUp}
-                            resultsWidth={columns.widths.results}
                             resultsFolded={resultsFolded}
                             onFoldResults={foldResults}
                             onResultsResizeStart={onResultsResizeStart}

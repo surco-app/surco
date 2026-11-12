@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import { type CueFlow, MY_FLOW, ONE_AT_32 } from '../../../shared/cueFlows'
 import type { GridFit } from '../../../shared/gridEdit'
+import { gridVerdictOf } from '../../../shared/gridVerdict'
 import type { TrackCues } from '../../../shared/types'
 import '../i18n'
 import { resetEditorSections } from '../hooks/useEditorSections'
@@ -13,6 +14,11 @@ import { resetCueSession } from '../lib/cueSession'
 import { SettingsProvider } from '../lib/settingsContext'
 import { installApi } from '../test/api'
 import { CuesSection } from './CuesSection'
+
+vi.mock('../../../shared/gridVerdict', async (importOriginal) => {
+  const real = await importOriginal<typeof import('../../../shared/gridVerdict')>()
+  return { ...real, gridVerdictOf: vi.fn(real.gridVerdictOf) }
+})
 
 const KEPT: CueFlow[] = [MY_FLOW, ONE_AT_32]
 const GRID = Array.from({ length: 800 }, (_, i) => ({ ms: i * 500, beat: (i % 4) + 1 }))
@@ -115,6 +121,22 @@ describe('Ajustar rejilla in the folded section', () => {
     await waitFor(() => expect(screen.getByTestId('cues-unsaved')).toBeInTheDocument())
     expect(fitButton()).not.toHaveAttribute('data-needs-fix')
     expect(screen.getByTestId('cues-editor')).toHaveAttribute('data-maximized', 'false')
+  })
+
+  // Whether the grid drifts or sits shifted is a property of the whole grid, read from every
+  // stretch Surco measured. Moving the playhead does not change it, so dragging along the
+  // strip must not measure it again at every step.
+  it('judges the whole grid once, not at every step of the playhead', async () => {
+    setup(LATE)
+    await ready()
+    await waitFor(() => expect(fitButton()).toHaveAttribute('data-needs-fix', 'true'))
+    const before = vi.mocked(gridVerdictOf).mock.calls.length
+    fireEvent.mouseDown(screen.getByTestId('cue-wave'), { button: 0, clientX: 10 })
+    for (const x of [20, 40, 60, 80, 100]) fireEvent.mouseMove(window, { clientX: x })
+    fireEvent.mouseUp(window, { clientX: 100 })
+    expect(screen.getByTestId('cues-position')).toHaveTextContent('1:40.0')
+    expect(fitButton()).toHaveAttribute('data-needs-fix', 'true')
+    expect(vi.mocked(gridVerdictOf).mock.calls.length - before).toBe(0)
   })
 
   it('stays calm on a grid already on the kicks, so the accent only asks for real work', async () => {

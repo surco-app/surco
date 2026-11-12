@@ -57,7 +57,7 @@ export function useRekordboxMembership(
   enabled: boolean,
   library: PlaylistLibrary = 'rekordbox',
 ): Membership | undefined {
-  const key = [...new Set(paths)].sort()
+  const key = useMemo(() => [...new Set(paths)].sort(), [paths])
   const { data } = useQuery({
     queryKey: [SOURCE_PROGRAMS[library].membershipKey, key],
     queryFn: () => SOURCE_READ[library].membership(key),
@@ -108,7 +108,8 @@ export function usePlaylistsSpec(
   const shown = useLibraryAvailable(library) && opts.shown
   const tree = useRekordboxPlaylistTree(shown, library)
   const options = useRekordboxPlaylistOptions(shown, library)
-  const membership = useRekordboxMembership(tracks.map(rekordboxPathOf), shown, library)
+  const paths = useMemo(() => (shown ? tracks.map(rekordboxPathOf) : []), [shown, tracks])
+  const membership = useRekordboxMembership(paths, shown, library)
   const gated = SOURCE_PROGRAMS[library].edit?.gate === 'traktorCollection'
   const { data: canSave } = useQuery({
     queryKey: ['traktor-can-save', 'field'],

@@ -294,13 +294,25 @@ export function CueWaveDetail({
     height: number
     dpr: number
   } | null>(null)
+  const painter = useRef<{
+    g: CanvasRenderingContext2D
+    width: number
+    height: number
+  } | null>(null)
   const sync = (force: boolean) => {
     const canvas = canvasRef.current
     const stage = stageRef.current
-    const g = canvas?.getContext('2d')
-    if (!canvas || !stage || !g) return
-    const width = Math.max(1, Math.round(stage.getBoundingClientRect().width))
-    const height = Math.max(1, Math.round(canvas.getBoundingClientRect().height))
+    if (!canvas || !stage) return
+    if (force || !painter.current) {
+      const g = painter.current?.g ?? canvas.getContext('2d')
+      if (!g) return
+      painter.current = {
+        g,
+        width: Math.max(1, Math.round(stage.getBoundingClientRect().width)),
+        height: Math.max(1, Math.round(canvas.getBoundingClientRect().height)),
+      }
+    }
+    const { g, width, height } = painter.current
     const dpr = window.devicePixelRatio || 1
     const data =
       source &&

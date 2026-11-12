@@ -94,7 +94,7 @@ export function CueWave({
   const sought = useRef<number | null>(null)
   const [stripPx, setStripPx] = useState(0)
   const analysed = grid.length > 0
-  const snapMs = quantizePoints(grid, quantize)
+  const snapMs = useMemo(() => quantizePoints(grid, quantize), [grid, quantize])
   const latest = useRef({ durationMs, onSeek })
   latest.current = { durationMs, onSeek }
   useLayoutEffect(() => {

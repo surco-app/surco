@@ -51,9 +51,15 @@ export function classify(
 }
 
 export function nearestBeat(beatsMs: number[], ms: number): number {
-  let best = 0
-  for (let i = 1; i < beatsMs.length; i++)
-    if (Math.abs(beatsMs[i] - ms) < Math.abs(beatsMs[best] - ms)) best = i
+  let lo = 0
+  let hi = beatsMs.length - 1
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1
+    if (beatsMs[mid] < ms) lo = mid + 1
+    else hi = mid
+  }
+  let best = lo > 0 && Math.abs(beatsMs[lo - 1] - ms) <= Math.abs(beatsMs[lo] - ms) ? lo - 1 : lo
+  while (best > 0 && beatsMs[best - 1] === beatsMs[best]) best--
   return best
 }
 
