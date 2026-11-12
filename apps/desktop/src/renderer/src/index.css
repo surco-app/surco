@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant compact (&:where([data-density="compact"] *));
+
 /* Tokyo Night. Dark values are the defaults; the light palette overrides the
    same custom properties under [data-theme='light'] below, so every utility
    that resolves to var(--color-*) flips automatically. The active theme is set

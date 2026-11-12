@@ -585,7 +585,7 @@ const TrackRow = memo(function TrackRow({
         // min-h-0 lets the slot's grid row actually shrink; overflow-hidden only while
         // collapsing, so it never clips the row the rest of its life.
         className={`group relative min-h-0 ${removing ? 'overflow-hidden' : ''} ${
-          deferPaint ? '[content-visibility:auto] [contain-intrinsic-size:auto_80px]' : ''
+          deferPaint ? '[content-visibility:auto] [contain-intrinsic-size:auto_80px] compact:[contain-intrinsic-size:auto_56px]' : ''
         }`}
         draggable
         onWheel={onSwipeWheel}
@@ -727,7 +727,7 @@ const TrackRow = memo(function TrackRow({
                 // which, combined with content-visibility below, lands mid-scroll and janks.
                 loading="lazy"
                 decoding="async"
-                className={`h-16 w-16 object-cover outline outline-1 -outline-offset-1 outline-on-scrim/10 transition-[border-radius] duration-120 ${
+                className={`h-16 w-16 object-cover compact:h-12 compact:w-12 outline outline-1 -outline-offset-1 outline-on-scrim/10 transition-[border-radius] duration-120 ${
                   converting ? 'rounded-full' : 'rounded-md'
                 }`}
               />
@@ -751,7 +751,7 @@ const TrackRow = memo(function TrackRow({
               nothing. */}
           <span
             data-fit
-            className="relative ml-0.5 flex h-16 min-w-0 flex-1 flex-col justify-between"
+            className="relative ml-0.5 flex h-16 min-w-0 flex-1 flex-col justify-between compact:h-[52px]"
           >
             <span className="flex flex-col gap-px">
               {/* The duration rides the title line, the way Mail puts the time beside the
