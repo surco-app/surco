@@ -1068,9 +1068,9 @@ describe('registerCuesIpc for Traktor tracks', () => {
     expect(input.grid[1]).toEqual({ ms: 500, beat: 2 })
   })
 
-  // Traktor only reads its collection when it starts, so a save made while it is open
-  // would wait unseen: the save asks to close Traktor over the window that made it.
-  it('queues a Traktor save on the Traktor queue and applies it there, asking over the window that saved', async () => {
+  // Traktor only reads its collection when it starts, so the renderer already asked to close
+  // it before saving; main only writes if it is closed and queues otherwise, like every program.
+  it('queues a Traktor save on the Traktor queue and applies it there the quiet way, since the DJ already answered before saving', async () => {
     const rekordbox = queue()
     const traktor = queue()
     const { applyTraktor } = register(await collectionFile(), rekordbox, traktor)
@@ -1080,7 +1080,7 @@ describe('registerCuesIpc for Traktor tracks', () => {
       [ID],
     )
     expect(rekordbox.enqueue).not.toHaveBeenCalled()
-    expect(applyTraktor).toHaveBeenCalledWith('window')
+    expect(applyTraktor).toHaveBeenCalledWith()
   })
 
   it('shows and takes back a Traktor save from the Traktor queue', async () => {

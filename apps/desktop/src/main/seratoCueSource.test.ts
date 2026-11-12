@@ -299,7 +299,7 @@ describe('seratoCueSource', () => {
     const applyQuietly = vi.fn()
     const writer = seratoCueSource({ words: async () => null, queue, applyQuietly }, () => '')
     expect(writer.queue).toBe(queue)
-    writer.applyQuietly(null)
+    writer.applyQuietly()
     expect(applyQuietly).toHaveBeenCalled()
   })
 

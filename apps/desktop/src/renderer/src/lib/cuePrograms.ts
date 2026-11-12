@@ -97,3 +97,7 @@ export const CUE_PROGRAMS: Record<DjProgram, CueProgram> = {
 }
 
 export const cueProgramOf = (contentId: string): CueProgram => CUE_PROGRAMS[programOf(contentId)]
+
+export function programsOfSave(reqs: { contentId: string }[]): DjProgram[] {
+  return [...new Set(reqs.map((r) => programOf(r.contentId)))]
+}

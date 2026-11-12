@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { BrowserWindow, ipcMain } from 'electron'
+import { ipcMain } from 'electron'
 import type { CueFlow } from '../shared/cueFlows'
 import { CUE_PROGRAMS, type CueProgram, isWritable, programOf } from '../shared/djProgram'
 import type { DropInput } from '../shared/dropDetect'
@@ -88,7 +88,7 @@ export function registerCuesIpc(host: {
     const op = queue?.cuesOp(contentId)
     if (queue && op) queue.drop(op.id)
   })
-  ipcMain.handle('cues:save', async (e, reqs: SaveCuesRequest[]) => {
+  ipcMain.handle('cues:save', async (_e, reqs: SaveCuesRequest[]) => {
     for (const req of reqs) {
       const program = programOf(req.contentId)
       if (!host.sources[program]) throw new Error(`${program} has no cue source`)
@@ -105,7 +105,7 @@ export function registerCuesIpc(host: {
       for (const req of t.mine)
         if (req.provisional)
           host.provisional.add({ contentId: req.contentId, label: req.label, wanted: req.wanted })
-      t.applyQuietly(BrowserWindow.fromWebContents(e.sender))
+      t.applyQuietly()
     }
   })
 }

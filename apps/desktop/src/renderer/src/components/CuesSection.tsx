@@ -84,7 +84,7 @@ import {
   wholeBars,
   zoomStep,
 } from '../lib/cuePlayhead'
-import { CUE_PROGRAMS, cueProgramOf } from '../lib/cuePrograms'
+import { CUE_PROGRAMS, cueProgramOf, programsOfSave } from '../lib/cuePrograms'
 import {
   autoMarkOf,
   cueDraftKey,
@@ -1033,10 +1033,13 @@ function Editing({
   }))
   const [saveFailed, setSaveFailed] = useState(false)
   const send = async (reqs: SaveCuesRequest[]): Promise<boolean> => {
-    const saved = await window.api.cues.save(reqs).then(
-      () => true,
-      () => false,
-    )
+    const saved = await window.api.dj
+      .askToApply(programsOfSave(reqs))
+      .then(() => window.api.cues.save(reqs))
+      .then(
+        () => true,
+        () => false,
+      )
     setSaveFailed(!saved)
     if (!saved) return false
     setOverwrite(new Set())

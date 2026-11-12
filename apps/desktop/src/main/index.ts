@@ -215,7 +215,6 @@ import { applyRekordboxBatch } from './rekordboxPlaylistWrite'
 import { adjustProvisional, createProvisionalList } from './rekordboxProvisional'
 import { fileStore } from './rekordboxQueue'
 import { rekordboxQueueSection } from './rekordboxQueueIpc'
-import { stillWaiting } from './rekordboxQueueWatch'
 import { createSessionBackup } from './rekordboxSessionBackup'
 import { registerRowWavesIpc } from './rowWavesIpc'
 import { applySeratoBatch } from './seratoBatch'
@@ -714,19 +713,6 @@ const followVirtualdjSize = librarySizeFollower({
   apply: () => programQueues.virtualdj.applyQuietly(),
 })
 const followLibrarySize = followingAll(followEngineSize, followVirtualdjSize)
-// A save from the editor asks to close Traktor, as a playlist edit does; declined, it stays
-// queued and lands when Traktor closes.
-const applyTraktorCueQueueAsking = (win: BrowserWindow | null): void => {
-  void serialLibraryFlush(() =>
-    traktorCueQueue.apply(() => ensureClosed('traktor', win, 'cues')),
-  ).then(
-    (result) => {
-      announceTraktorApplied(result)
-      if (stillWaiting(result)) traktorCueQueueWatch.poke()
-    },
-    () => queueChecks.settled('traktor', 'threw'),
-  )
-}
 // What each conversion is checked against after its batch and each queue apply (see
 // verifyRegistry.ts).
 const musicUnreadable = async () =>
@@ -1676,7 +1662,7 @@ function registerIpc(): void {
           nml: traktorReadPath,
           bootVolume: () => bootVolumeName(),
           queue: traktorCueQueue,
-          applyQuietly: applyTraktorCueQueueAsking,
+          applyQuietly: () => applyTraktorCueQueueQuietly(),
           words: cachedCueWaveWords,
           fine: cachedCueWaveFine,
         },
