@@ -33,16 +33,18 @@ export default function SceneLayout({
       <SectionView location={view} />
       <Reveal>
         <div className="lg:grid lg:grid-cols-2 lg:items-end lg:gap-16">
-          <h2
-            className={`group/title font-semibold tracking-tight text-balance ${
-              field
-                ? 'text-[min(2.25rem,7.6vw)] sm:text-6xl'
-                : 'text-[min(1.875rem,6.15vw)] sm:text-4xl'
-            }`}
-          >
-            {title}
+          <div className="group/title text-balance">
+            <h2
+              className={`inline font-semibold tracking-tight text-balance ${
+                field
+                  ? 'text-[min(2.25rem,7.6vw)] sm:text-6xl'
+                  : 'text-[min(1.875rem,6.15vw)] sm:text-4xl'
+              }`}
+            >
+              {title}
+            </h2>
             <AnchorLink id={id} />
-          </h2>
+          </div>
           <div
             className={`mt-3 leading-relaxed text-pretty lg:mt-0 ${field ? 'text-bg/85' : 'text-muted'}`}
           >

@@ -86,7 +86,7 @@ export function UseCaseOutro() {
 export function MacBadge() {
   const { t } = useTranslation()
   return (
-    <span className="inline-flex flex-none rounded-full border border-line px-2 py-0.5 text-[11px] font-medium whitespace-nowrap text-faint">
+    <span className="inline-flex flex-none rounded-full border border-line px-2 py-0.5 text-xs font-medium whitespace-nowrap text-faint">
       {t('useCases.macOnly')}
     </span>
   )
@@ -121,7 +121,7 @@ function SettingRow({ s }: { s: Setting & { n: number } }) {
             {s.value ?? t('useCases.on')}
           </span>
           {s.optional && (
-            <span className="rounded-full border border-line px-2 text-[11px] font-medium text-faint">
+            <span className="rounded-full border border-line px-2 text-xs font-medium text-faint">
               {t('useCases.optional')}
             </span>
           )}

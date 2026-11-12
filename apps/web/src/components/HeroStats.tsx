@@ -71,7 +71,7 @@ export function HeroStatsView({ stats }: { stats: Stats }) {
       <a
         href={PAGES.stats[i18n.language as Language]}
         data-testid="hero-stats-link"
-        className="font-medium text-blue transition-colors hover:text-cyan"
+        className="inline-block py-1.5 -my-1.5 font-medium text-blue transition-colors hover:text-cyan"
       >
         {t('nav.estadisticas')} →
       </a>

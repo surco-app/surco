@@ -27,10 +27,12 @@ export default function Spotlight({
       <SectionView location={view} />
       <Reveal>
         <div id={id} className="scroll-mt-8 text-center">
-          <h2 className="group/title mx-auto max-w-3xl text-[min(1.875rem,6.15vw)] font-semibold tracking-tight text-balance sm:text-5xl">
-            {t(`home.${copy}.title`)}
+          <div className="group/title mx-auto max-w-3xl text-balance">
+            <h2 className="inline text-[min(1.875rem,6.15vw)] font-semibold tracking-tight text-balance sm:text-5xl">
+              {t(`home.${copy}.title`)}
+            </h2>
             <AnchorLink id={id} />
-          </h2>
+          </div>
           <p className="mx-auto mt-3 max-w-2xl leading-relaxed text-pretty text-muted">
             {t(`home.${copy}.lede`)}
           </p>

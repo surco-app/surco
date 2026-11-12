@@ -15,10 +15,12 @@ export default function LibraryReview() {
       <SectionView location={SECTION_VIEWS.review} />
       <Reveal>
         <div id={SCENE_ANCHORS.review} className="scroll-mt-8 text-center">
-          <h2 className="group/title mx-auto max-w-2xl text-[min(1.875rem,6.15vw)] font-semibold tracking-tight text-balance sm:text-5xl">
-            {t('home.review.title')}
+          <div className="group/title mx-auto max-w-2xl text-balance">
+            <h2 className="inline text-[min(1.875rem,6.15vw)] font-semibold tracking-tight text-balance sm:text-5xl">
+              {t('home.review.title')}
+            </h2>
             <AnchorLink id={SCENE_ANCHORS.review} />
-          </h2>
+          </div>
           <p className="mx-auto mt-3 max-w-2xl leading-relaxed text-pretty text-muted">
             {t('home.review.lede')}
           </p>

@@ -31,11 +31,25 @@ const hrefs = (html: string) => [...html.matchAll(/href="([^"]*)"/g)].map((m) =>
 describe('header navigation', () => {
   const pages = [PAGES.features.es, PAGES.guide.es, PAGES.useCases.es, PAGES.changelog.es]
 
-  for (const testid of ['header-nav', 'header-mobile-nav']) {
-    it(`${testid} links the four pages and nothing else`, () => {
-      expect(hrefs(block(render(Header), testid))).toEqual(pages)
-    })
-  }
+  it('header-nav links the four pages and nothing else', () => {
+    expect(hrefs(block(render(Header), 'header-nav'))).toEqual(pages)
+  })
+
+  it('header-mobile-nav links the four pages and ends on the install button, since the menu hides the one in the bar', () => {
+    expect(hrefs(block(render(Header), 'header-mobile-nav'))).toEqual([...pages, '#instalar'])
+  })
+
+  it('names the header navigation so screen readers tell its landmarks apart', () => {
+    const html = render(Header)
+    for (const testid of ['header-nav', 'header-mobile-nav']) {
+      expect(html).toMatch(new RegExp(`data-testid="${testid}"[^>]*aria-label="Principal"`))
+    }
+  })
+
+  it('wraps the footer link columns in labelled navigation landmarks', () => {
+    const labels = [...render(Footer).matchAll(/<nav aria-label="([^"]+)"/g)].map((m) => m[1])
+    expect(labels).toEqual(['Producto', 'Convertir'])
+  })
 
   it('shows the language as its short code and names it for screen readers', () => {
     const toggle = render(Header).match(

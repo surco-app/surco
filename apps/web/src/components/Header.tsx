@@ -149,7 +149,7 @@ export default function Header({
               melted into the page so only the blue label read. Here the rim is lifted. */}
           <img
             src="/logo.svg"
-            alt="Surco"
+            alt=""
             width={48}
             height={48}
             className="h-10 w-10 sm:h-12 sm:w-12"
@@ -159,6 +159,7 @@ export default function Header({
         <div className="flex items-center gap-4 sm:gap-7">
           <nav
             data-testid="header-nav"
+            aria-label={t('nav.main')}
             className="hidden items-center gap-7 text-sm text-muted lg:flex"
           >
             <a href={featuresHref} className="transition-colors hover:text-fg">
@@ -357,8 +358,9 @@ export default function Header({
       <nav
         id="mobile-nav"
         data-testid="header-mobile-nav"
+        aria-label={t('nav.main')}
         aria-hidden={!open}
-        className={`absolute inset-x-0 top-full max-h-[calc(100dvh-4rem)] overflow-y-auto border-t bg-bg/95 backdrop-blur-md transition-[opacity,translate,visibility] duration-200 ease-out lg:hidden ${
+        className={`absolute inset-x-0 top-full max-h-[calc(100dvh-4rem)] overflow-y-auto border-t bg-bg transition-[opacity,translate,visibility] duration-200 ease-out lg:hidden ${
           open
             ? 'border-line/70 opacity-100'
             : 'invisible -translate-y-2 border-transparent opacity-0'
@@ -393,6 +395,14 @@ export default function Header({
             className="block py-3 text-sm text-muted transition-colors hover:text-fg"
           >
             {t('nav.cambios')}
+          </a>
+          <a
+            href={page ? `${home}#instalar` : '#instalar'}
+            data-testid="header-mobile-download"
+            onClick={() => setOpen(false)}
+            className={`${btnPrimary} mt-2 mb-3 flex px-4 py-2.5 text-sm`}
+          >
+            {t('nav.download')}
           </a>
         </div>
       </nav>

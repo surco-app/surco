@@ -28,7 +28,7 @@ const LABEL: Record<OS, string> = {
 
 const primary = `inline-flex ${btnPrimary} px-7 py-3 text-sm`
 const altLink =
-  'text-muted underline decoration-muted/35 underline-offset-[3px] transition-colors hover:text-blue hover:decoration-current'
+  'inline-block py-1.5 -my-1.5 text-muted underline decoration-muted/35 underline-offset-[3px] transition-colors hover:text-blue hover:decoration-current'
 
 // Resolves the installer for the visitor's OS from the newest published release that
 // actually carries it. A brand-new release shows up before CI finishes uploading its 12
