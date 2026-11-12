@@ -95,7 +95,10 @@ export default function HeroStats() {
   }, [])
 
   return (
-    <div data-testid="hero-stats" className="mt-5 flex min-h-8 items-center justify-center">
+    <div
+      data-testid="hero-stats"
+      className="mt-5 flex min-h-14 items-center justify-center min-[27.5rem]:min-h-8"
+    >
       {stats && <HeroStatsView stats={stats} />}
     </div>
   )
