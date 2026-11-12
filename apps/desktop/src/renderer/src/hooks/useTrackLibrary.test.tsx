@@ -49,6 +49,7 @@ function setApi(over: Record<string, unknown> = {}): {
       cover: null,
       foreignTags: [],
     }),
+    readMetaCached: vi.fn().mockResolvedValue({}),
     recordStat: vi.fn(),
     ...over,
   }
@@ -1146,6 +1147,48 @@ describe('useTrackLibrary foreign tags', () => {
       mode: 'strong',
       noise: 'off',
     })
+  })
+
+  // A reopened session's files are mostly already read, so their edits land on a read
+  // taken from disk in the opening batch, not on a fresh one: they must come back the same.
+  it('restores the edits of a file whose read was already on disk', async () => {
+    const readMeta = vi.fn()
+    setApi({
+      readMeta,
+      readMetaCached: vi.fn().mockResolvedValue({
+        '/m/a.wav': {
+          tags: { title: 'On disk', artist: '' },
+          duration: 180,
+          cover: null,
+          foreignTags: [],
+          partial: false,
+        },
+      }),
+    })
+    const { result } = renderHook(() =>
+      useTrackLibrary({
+        setSelection: vi.fn(),
+        onForget: vi.fn(),
+        onRemove: vi.fn(),
+        onClear: vi.fn(),
+        onMetaLoaded: vi.fn(),
+        onDuplicatesSkipped: vi.fn(),
+        onNoAudioFound: vi.fn(),
+        onMetaReadFailed: vi.fn(),
+      }),
+    )
+    await act(() =>
+      result.current.addPaths(['/m/a.wav'], {
+        '/m/a.wav': {
+          meta: { title: 'Restored' } as never,
+          declick: { mode: 'strong', noise: 'off' },
+        },
+      }),
+    )
+
+    expect(readMeta).not.toHaveBeenCalled()
+    expect(result.current.tracks[0]?.meta.title).toBe('Restored')
+    expect(result.current.tracks[0]?.declick).toEqual({ mode: 'strong', noise: 'off' })
   })
 
   it('restores the wanted rekordbox playlists with the membership they were edited against', async () => {

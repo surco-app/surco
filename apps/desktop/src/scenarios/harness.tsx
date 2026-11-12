@@ -814,6 +814,7 @@ function scenarioApi(
     recordStat: (key, by) => recordStat(key, by),
     readMeta: (path) => invokeMain('audio:meta', path),
     readMetaLight: (path) => invokeMain('audio:metaLight', path),
+    readMetaCached: (rows) => invokeMain('audio:metaCached', rows),
     spectrogram: (path, priority) => invokeMain('audio:spectrogram', path, priority),
     loudness: (path, priority) => invokeMain('audio:loudness', path, priority),
     fingerprint: (path, priority) => invokeMain('audio:fingerprint', path, priority),
