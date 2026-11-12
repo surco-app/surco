@@ -8,13 +8,13 @@ import {
   setAppleMusicField,
   transferPlaylists,
 } from './applemusic'
+import type { RootLibraries } from './libraryFileUse'
 import { duplicateLibraryDeps, type LibraryHost, type Sessions } from './libraryFlushes'
 import type { ListReviewIpcDeps } from './listReviewIpc'
 import type { MediaAccess } from './mediaAccess'
 import { type Rewritten, rewriteTagFields } from './musicFieldWrite'
 import { musicReviewLog } from './musicReviewLog'
 import { trashRecoverably } from './recoverableTrash'
-import type { SeratoLibraryRoot } from './seratoLibrary'
 import { volumeKeepsTrash } from './trashSupport'
 
 export interface ListReviewEnv {
@@ -22,8 +22,8 @@ export interface ListReviewEnv {
   tmp: { track: (path: string) => void; untrack: (path: string) => void }
   hostFor: (sender: WebContents) => LibraryHost
   sessions: Sessions
-  followEngineSize?: Rewritten
-  seratoRoots: () => SeratoLibraryRoot[]
+  followLibrarySize?: Rewritten
+  rootLibraries: () => RootLibraries
 }
 
 export function listReviewDeps(env: ListReviewEnv): ListReviewIpcDeps {
@@ -35,7 +35,7 @@ export function listReviewDeps(env: ListReviewEnv): ListReviewIpcDeps {
           () => true,
           () => false,
         ),
-      rewrite: (file, changes) => rewriteTagFields(file, changes, env.tmp, env.followEngineSize),
+      rewrite: (file, changes) => rewriteTagFields(file, changes, env.tmp, env.followLibrarySize),
       ...(process.platform === 'darwin' && {
         setMusicField: (pid, field, from, to, location) =>
           appleMusicLimiter.run(() => setAppleMusicField(pid, field, from, to, location)),
@@ -43,7 +43,7 @@ export function listReviewDeps(env: ListReviewEnv): ListReviewIpcDeps {
     },
     isAllowed: (path) => env.mediaAccess.isAllowed(path),
     removal: (sender) => ({
-      replace: duplicateLibraryDeps(env.hostFor(sender), env.sessions, env.seratoRoots),
+      replace: duplicateLibraryDeps(env.hostFor(sender), env.sessions, env.rootLibraries),
       realpath: (path) => realpath(path).catch(() => null),
       identity: (path) =>
         stat(path, { bigint: true }).then(

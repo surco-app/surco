@@ -342,6 +342,20 @@ describe('playlists on a repoint', () => {
     endRekordboxBatch()
   })
 
+  it('carries the VirtualDJ lists chosen for a conversion to its repoint, for the VirtualDJ queue', () => {
+    beginRekordboxBatch()
+    recordRekordboxRepoint(a)
+    attachPlaylists('/m/one.wav', 'virtualdj', {
+      wanted: [{ id: 'Carpeta/Dentro', name: 'Dentro' }],
+      base: [],
+    })
+    expect(recordedRekordboxRepoint('/m/one.wav')?.virtualdjPlaylists).toEqual({
+      wanted: [{ id: 'Carpeta/Dentro', name: 'Dentro' }],
+      base: [],
+    })
+    endRekordboxBatch()
+  })
+
   it('writes no membership base for rekordbox when the job had none, and the base when it had one', () => {
     beginRekordboxBatch()
     recordRekordboxRepoint(a)

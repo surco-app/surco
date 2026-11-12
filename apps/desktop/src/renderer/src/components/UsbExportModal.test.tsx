@@ -621,6 +621,38 @@ describe('UsbExportModal for Serato and Traktor', () => {
     )
   })
 
+  it('asks main for a VirtualDJ export ticking what Surco last sent there from VirtualDJ', async () => {
+    await show(
+      {
+        volumes: [vol({ remembered: REMEMBERED, bySource: { virtualdj: SERATO_MEMORY } })],
+        lastKey: null,
+      },
+      { program: 'virtualdj' },
+    )
+    expect(screen.queryByTestId('usb-settings')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('usb-prune')).not.toBeInTheDocument()
+    await waitFor(() =>
+      expect(usbPlan).toHaveBeenLastCalledWith({
+        playlistIds: ['house'],
+        target: { kind: 'volume', uuid: 'U1' },
+        prune: false,
+        settings: false,
+        source: 'virtualdj',
+      }),
+    )
+  })
+
+  it('says the VirtualDJ library is missing in VirtualDJ words, not rekordbox ones', async () => {
+    usbPlan.mockResolvedValue({ ok: false, reason: 'no-collection' })
+    await show(
+      { volumes: [vol({ bySource: { virtualdj: SERATO_MEMORY } })], lastKey: null },
+      { program: 'virtualdj' },
+    )
+    expect(await screen.findByTestId('usb-summary')).toHaveTextContent(
+      'No se encuentra la biblioteca de VirtualDJ.',
+    )
+  })
+
   it('asks for the folder with what Surco remembers for Traktor there', async () => {
     const usbPickFolder = vi.fn<Api['usbPickFolder']>(async () => null)
     ;(window as unknown as { api: Api }).api = stubApi({ usbPlan, usbPickFolder })

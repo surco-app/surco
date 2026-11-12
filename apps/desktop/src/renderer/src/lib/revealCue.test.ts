@@ -196,4 +196,17 @@ describe('revealableIn', () => {
     ])
     expect(revealableIn(track({ playlists: undefined }), recent)).toEqual([])
   })
+
+  it('offers every picked library in the order of the sources rail, so the buttons sit where the DJ finds the tabs', () => {
+    const picked = { targets: [{ id: 'A', name: 'A' }] }
+    const added = [entry('/out/Love Ya.aiff')]
+    expect(
+      revealableIn(
+        track({
+          playlists: { serato: picked, traktor: picked, engine: picked, rekordbox: picked },
+        }),
+        { serato: added, traktor: added, engine: added, rekordbox: added },
+      ),
+    ).toEqual(['rekordbox', 'engine', 'traktor', 'serato'])
+  })
 })

@@ -6,9 +6,10 @@ import { BACKUP_POLICIES, type BackupPolicy } from '../../../../shared/backupPol
 import { type DjProgram, type LibraryProgram, programsInOrder } from '../../../../shared/djProgram'
 import { DESTINATIONS, fromDestination, toDestination } from '../../lib/destination'
 import { DJ_REACH_SETTINGS, type DjReach, fromDjReach, toDjReach } from '../../lib/djReach'
-import { isMacOS } from '../../lib/platform'
+import { isMacOS, offeredHere } from '../../lib/platform'
 import { LIBRARY_NAME } from '../../lib/reviewLibraries'
 import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
+import { PROGRAM_OF_ANCHOR } from '../../lib/settingsSearchIndex'
 import type { PatchSynced } from '../../lib/settingsTabs'
 import { DestinationPicker } from '../DestinationPicker'
 import { EngineLibraryFields } from '../EngineLibraryFields'
@@ -85,6 +86,7 @@ interface Props {
   // somewhere else had no way to say so.
   rekordboxCollection: string
   onChangeRekordboxDbPath: () => void
+  onChangeVirtualdjDir: () => void
 }
 
 // Where a conversion ends up: the output folder, the destination radio (folder /
@@ -111,6 +113,7 @@ function OutputSettings({
   onAcceptDetectedNmlPath,
   rekordboxCollection,
   onChangeRekordboxDbPath,
+  onChangeVirtualdjDir,
   searchAnchor,
 }: Props & { part: 'output' | 'programs' }): React.JSX.Element {
   const { t: tr } = useTranslation()
@@ -198,7 +201,7 @@ function OutputSettings({
           it isn't itself a place the converted file goes. Empty path means the feature
           is off (see settings.ts), so this is the only control that turns it on. */}
           <SegmentedControl
-            options={PROGRAM_TABS}
+            options={PROGRAM_TABS.filter(offeredHere)}
             value={program}
             onChange={setProgram}
             testidPrefix="settings-programs"
@@ -505,6 +508,31 @@ function OutputSettings({
           <div {...panel('serato')}>
             <SeratoSection synced={synced} patch={patch} />
           </div>
+          {offeredHere('virtualdj') && (
+            <div {...panel('virtualdj')}>
+              <SettingsSection
+                eyebrow={tr('settings.virtualdjLibrary')}
+                searchId="virtualdjLibrary"
+                first
+              >
+                <SettingsLabel searchId="virtualdjLibraryDir">
+                  {tr('settings.virtualdjLibraryDir')}
+                </SettingsLabel>
+                <div className="mt-2">
+                  <PathField
+                    value={local.virtualdjLibraryDir}
+                    onChange={onChangeVirtualdjDir}
+                    testid="settings-virtualdj-dir"
+                    emptyLabel={tr('settings.virtualdjLibraryDirEmpty')}
+                  />
+                </div>
+                <SettingsHint className="mt-2">
+                  {tr('settings.virtualdjLibraryDirHint')}
+                </SettingsHint>
+                <VirtualdjReach synced={synced} patch={patch} />
+              </SettingsSection>
+            </div>
+          )}
         </>
       )}
       {part === 'output' && (
@@ -638,20 +666,37 @@ function SeratoSection({
   )
 }
 
+function VirtualdjReach({
+  synced,
+  patch,
+}: {
+  synced: SyncedDraft
+  patch: PatchSynced
+}): React.JSX.Element {
+  const { t: tr } = useTranslation()
+  const [found, setFound] = useState(false)
+  useEffect(() => {
+    void window.api.dj.available('virtualdj').then(setFound, () => {})
+  }, [])
+  return (
+    <div className="mt-4">
+      <DjReachRow
+        program="virtualdj"
+        label={tr('settings.syncVirtualdj')}
+        synced={synced}
+        patch={patch}
+        disabled={!found && !synced.syncVirtualdj && !synced.addToVirtualdj}
+      />
+      <SettingsHint className="mt-2">
+        {found ? tr('settings.syncVirtualdjHint') : tr('settings.syncVirtualdjIdle')}
+      </SettingsHint>
+    </div>
+  )
+}
+
 const DJ_REACHES: readonly DjReach[] = ['off', 'update', 'add']
 
-const PROGRAM_TABS = programsInOrder(['traktor', 'rekordbox', 'engine', 'serato'])
-
-const PROGRAM_OF_ANCHOR: Record<string, DjProgram> = {
-  traktorSync: 'traktor',
-  traktorNmlPath: 'traktor',
-  traktorCueOffset: 'traktor',
-  rekordboxSync: 'rekordbox',
-  rekordboxDbPath: 'rekordbox',
-  completeCues: 'rekordbox',
-  engineSync: 'engine',
-  seratoSync: 'serato',
-}
+const PROGRAM_TABS = programsInOrder(['traktor', 'rekordbox', 'engine', 'serato', 'virtualdj'])
 
 function DjReachRow({
   program,

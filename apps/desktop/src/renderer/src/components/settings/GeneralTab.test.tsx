@@ -294,6 +294,13 @@ describe('GeneralTab sources', () => {
     expect(screen.queryByText(i18n.t('settings.sourceSeratoUnavailable'))).not.toBeInTheDocument()
   })
 
+  it('has a VirtualDJ switch on Windows too, where Surco offers VirtualDJ in beta', async () => {
+    renderSources({ platform: 'win32', rekordbox: true })
+    await waitFor(() => expect(screen.getByTestId('settings-source-rekordbox')).toBeEnabled())
+    expect(screen.getByTestId('settings-source-serato')).toBeInTheDocument()
+    expect(screen.getByTestId('settings-source-virtualdj')).toBeInTheDocument()
+  })
+
   it('lists the sources in the order the rail draws them', async () => {
     renderSources({ platform: 'darwin', rekordbox: true })
     await waitFor(() => expect(screen.getByTestId('settings-source-rekordbox')).toBeEnabled())
@@ -303,6 +310,7 @@ describe('GeneralTab sources', () => {
       'settings-source-engine',
       'settings-source-traktor',
       'settings-source-serato',
+      'settings-source-virtualdj',
     ])
   })
 

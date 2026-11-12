@@ -4,7 +4,7 @@ import type { RekordboxQueue } from './rekordboxQueue'
 import { appliedNotice } from './rekordboxQueueIpc'
 import { stillWaiting } from './rekordboxQueueWatch'
 
-export function seratoCueQueueSection(
+export function waitingCueQueueSection(
   queue: Pick<RekordboxQueue, 'state' | 'discard' | 'apply'>,
   host: {
     isRunning: () => Promise<boolean>

@@ -19,6 +19,7 @@ import type { CueJumpBars } from '../../../../shared/cueJump'
 import type { CueQuantize } from '../../../../shared/cueQuantize'
 import i18n from '../../i18n'
 import { EXAMPLE_DROP } from '../../lib/cueExample'
+import { createQueryClient } from '../../lib/queryClient'
 import type { SyncedDraft } from '../../lib/settingsDraft'
 import { djReads, installApi, type ProgramReads } from '../../test/api'
 import { CuesTab } from './CuesTab'
@@ -43,6 +44,7 @@ let last: Pick<
   | 'cueFlowToTraktor'
   | 'cueFlowToEngine'
   | 'cueFlowToSerato'
+  | 'cueFlowToVirtualdj'
 > | null = null
 
 const KEPT: CueFlow[] = [MIX_IN, MY_FLOW, ONE_AT_32, CALLS_ONLY]
@@ -78,15 +80,19 @@ function Harness({
     cueFlowToTraktor: true,
     cueFlowToEngine: true,
     cueFlowToSerato: true,
+    cueFlowToVirtualdj: true,
     cueLearnFromEdits: true,
   })
+  const [client] = useState(() => new QueryClient())
   last = draft
   return (
-    <CuesTab
-      synced={draft as unknown as SyncedDraft}
-      patch={(key, value) => setDraft((d) => ({ ...d, [key]: value }))}
-      rekordboxCollection={collection}
-    />
+    <QueryClientProvider client={client}>
+      <CuesTab
+        synced={draft as unknown as SyncedDraft}
+        patch={(key, value) => setDraft((d) => ({ ...d, [key]: value }))}
+        rekordboxCollection={collection}
+      />
+    </QueryClientProvider>
   )
 }
 
@@ -146,7 +152,7 @@ describe('CuesTab', () => {
     })
     render(<Harness />)
     expect(await screen.findByTestId('cue-flow-library-note')).toHaveTextContent(
-      'CALLs only exist in rekordbox. Engine DJ, Traktor and Serato get the hot cues only. In Traktor these cues show in blue, since Traktor colours each cue by its type',
+      'CALLs only exist in rekordbox. Engine DJ, Traktor, Serato and VirtualDJ get the hot cues only. In Traktor these cues show in blue, since Traktor colours each cue by its type',
     )
     cleanup()
     installApi({
@@ -157,7 +163,7 @@ describe('CuesTab', () => {
     })
     render(<Harness />)
     expect(await screen.findByTestId('cue-flow-library-note')).toHaveTextContent(
-      /^CALLs only exist in rekordbox\. Engine DJ, Traktor and Serato get the hot cues only$/,
+      /^CALLs only exist in rekordbox\. Engine DJ, Traktor, Serato and VirtualDJ get the hot cues only$/,
     )
     cleanup()
     installApi({
@@ -169,7 +175,7 @@ describe('CuesTab', () => {
     })
     render(<Harness />)
     expect(await screen.findByTestId('cue-flow-library-note')).toHaveTextContent(
-      /^CALLs only exist in rekordbox\. Engine DJ, Traktor and Serato get the hot cues only$/,
+      /^CALLs only exist in rekordbox\. Engine DJ, Traktor, Serato and VirtualDJ get the hot cues only$/,
     )
     cleanup()
     installApi({
@@ -181,6 +187,120 @@ describe('CuesTab', () => {
     render(<Harness />)
     await screen.findByTestId('cue-flow-mark-point')
     expect(screen.queryByTestId('cue-flow-library-note')).not.toBeInTheDocument()
+  })
+
+  it('leaves VirtualDJ out of the hot cues note on Windows, where Surco does not offer VirtualDJ', async () => {
+    installApi({
+      platform: 'win32',
+      dj: djReads({ engine: { available: async () => true } }),
+    })
+    render(<Harness />)
+    expect(await screen.findByTestId('cue-flow-library-note')).toHaveTextContent(
+      /^CALLs only exist in rekordbox\. Engine DJ, Traktor and Serato get the hot cues only$/,
+    )
+  })
+
+  it('has a VirtualDJ destination on Windows too, where Surco offers VirtualDJ in beta', async () => {
+    installApi({ platform: 'win32' })
+    render(<Harness />)
+    expect(await screen.findByTestId('settings-cue-flow-to-serato')).toBeInTheDocument()
+    expect(screen.getByTestId('settings-cue-flow-to-virtualdj')).toBeInTheDocument()
+  })
+
+  it('says the hot cues note when only rekordbox and VirtualDJ are found, since a flow reaches VirtualDJ without its CALLs', async () => {
+    installApi({ dj: djReads({ virtualdj: { available: async () => true } }) })
+    render(<Harness collection="/c/master.db" />)
+    expect(await screen.findByTestId('cue-flow-library-note')).toHaveTextContent(
+      /^CALLs only exist in rekordbox\. Engine DJ, Traktor, Serato and VirtualDJ get the hot cues only$/,
+    )
+  })
+
+  it('shows a destination as missing only for the programs that are not installed', async () => {
+    installApi({
+      dj: djReads({
+        traktor: { available: async () => false },
+        engine: { available: async () => true },
+        serato: { available: async () => true },
+      }),
+    })
+    render(<Harness />)
+    await waitFor(() => {
+      expect(screen.queryByTestId('settings-cue-flow-to-engine-missing')).not.toBeInTheDocument()
+      expect(screen.queryByTestId('settings-cue-flow-to-serato-missing')).not.toBeInTheDocument()
+    })
+    expect(screen.getByTestId('settings-cue-flow-to-traktor-missing')).toBeInTheDocument()
+    cleanup()
+    installApi({
+      dj: djReads({
+        traktor: { available: async () => true },
+        engine: { available: async () => false },
+        serato: { available: async () => false },
+      }),
+    })
+    render(<Harness />)
+    expect(await screen.findByTestId('settings-cue-flow-to-engine-missing')).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.queryByTestId('settings-cue-flow-to-traktor-missing')).not.toBeInTheDocument()
+      expect(screen.getByTestId('settings-cue-flow-to-serato-missing')).toBeInTheDocument()
+    })
+  })
+
+  it('lets the DJ send the flows to a found VirtualDJ and says it gets the hot cues only, saved when VirtualDJ closes', async () => {
+    installApi({ dj: djReads({ virtualdj: { available: async () => true } }) })
+    render(<Harness />)
+    await waitFor(() => expect(screen.getByTestId('settings-cue-flow-to-virtualdj')).toBeEnabled())
+    expect(screen.getByTestId('settings-cue-flow-to-virtualdj')).toBeChecked()
+    expect(screen.getByTestId('cue-flow-targets')).toHaveTextContent(
+      'Hot cues only, from A to H. VirtualDJ has no CALLs. If VirtualDJ is open, Surco saves them when you close it.',
+    )
+    fireEvent.click(screen.getByTestId('settings-cue-flow-to-virtualdj'))
+    expect(last?.cueFlowToVirtualdj).toBe(false)
+    expect(last?.cueFlowToSerato).toBe(true)
+  })
+
+  it('says a destination is missing once its probe fails, since a failed probe is an answer and the neutral hint would wait forever', async () => {
+    installApi({
+      dj: djReads({
+        traktor: {
+          available: async () => {
+            throw new Error('library unreadable')
+          },
+        },
+      }),
+    })
+    render(
+      <QueryClientProvider client={createQueryClient()}>
+        <CuesTab
+          synced={{ cueFlows: KEPT, activeCueFlow: 'mine' } as unknown as SyncedDraft}
+          patch={() => {}}
+          rekordboxCollection=""
+        />
+      </QueryClientProvider>,
+    )
+    expect(await screen.findByTestId('settings-cue-flow-to-traktor-missing')).toBeInTheDocument()
+  })
+
+  it('probes the destinations again each time the tab opens, so a library saved in Settings shows as found', async () => {
+    const traktor = vi.fn<ProgramReads['available']>(async () => false)
+    installApi({ dj: djReads({ traktor: { available: traktor } }) })
+    const client = new QueryClient()
+    const tab = () => (
+      <QueryClientProvider client={client}>
+        <CuesTab
+          synced={{ cueFlows: KEPT, activeCueFlow: 'mine' } as unknown as SyncedDraft}
+          patch={() => {}}
+          rekordboxCollection=""
+        />
+      </QueryClientProvider>
+    )
+    const first = render(tab())
+    expect(await screen.findByTestId('settings-cue-flow-to-traktor-missing')).toBeInTheDocument()
+    first.unmount()
+    traktor.mockImplementation(async () => true)
+    render(tab())
+    await waitFor(() =>
+      expect(screen.queryByTestId('settings-cue-flow-to-traktor-missing')).not.toBeInTheDocument(),
+    )
   })
 
   it('marks the point with a CALL by default and lets a DJ who does not mark it turn that off, the preview following', () => {
@@ -785,7 +905,7 @@ describe('CuesTab', () => {
     expect(last?.cueFlowToRekordbox).toBe(true)
   })
 
-  it('lists the targets as rekordbox, Traktor, Engine DJ and Serato, in that order', () => {
+  it('lists the targets as rekordbox, Traktor, Engine DJ, Serato and VirtualDJ, in that order', () => {
     installApi()
     render(<Harness collection="/c/master.db" />)
     const rows = within(screen.getByTestId('cue-flow-targets')).getAllByRole('checkbox')
@@ -794,9 +914,10 @@ describe('CuesTab', () => {
       'settings-cue-flow-to-traktor',
       'settings-cue-flow-to-engine',
       'settings-cue-flow-to-serato',
+      'settings-cue-flow-to-virtualdj',
     ])
     expect(screen.getByTestId('cue-flow-targets')).toHaveTextContent(
-      /rekordbox.*Traktor.*Engine DJ.*Serato/s,
+      /rekordbox.*Traktor.*Engine DJ.*Serato.*VirtualDJ/s,
     )
   })
 
@@ -816,14 +937,35 @@ describe('CuesTab', () => {
     expect(last?.cueFlowToEngine).toBe(true)
   })
 
-  it('names Serato when its library is not on this computer and leaves its box unticked', () => {
+  it('names Serato when its library is not on this computer and leaves its box unticked', async () => {
     installApi({
       dj: djReads({ serato: { available: vi.fn<ProgramReads['available']>(async () => false) } }),
     })
     render(<Harness collection="/c/master.db" />)
+    expect(await screen.findByTestId('settings-cue-flow-to-serato-missing')).toHaveTextContent(
+      'Serato',
+    )
     expect(screen.getByTestId('settings-cue-flow-to-serato')).toBeDisabled()
     expect(screen.getByTestId('settings-cue-flow-to-serato')).not.toBeChecked()
-    expect(screen.getByTestId('settings-cue-flow-to-serato-missing')).toHaveTextContent('Serato')
+  })
+
+  it('never says a program is missing before it answers, so nothing shows and then goes away', async () => {
+    let answer: (found: boolean) => void = () => {}
+    installApi({
+      dj: djReads({
+        engine: {
+          available: vi.fn<ProgramReads['available']>(
+            () => new Promise<boolean>((resolve) => (answer = resolve)),
+          ),
+        },
+      }),
+    })
+    render(<Harness collection="/c/master.db" />)
+    expect(screen.getByTestId('settings-cue-flow-to-engine')).toBeDisabled()
+    expect(screen.queryByTestId('settings-cue-flow-to-engine-missing')).not.toBeInTheDocument()
+    answer(true)
+    await waitFor(() => expect(screen.getByTestId('settings-cue-flow-to-engine')).toBeEnabled())
+    expect(screen.queryByTestId('settings-cue-flow-to-engine-missing')).not.toBeInTheDocument()
   })
 
   it('leaves the rekordbox box unticked and says so while no collection is set', () => {

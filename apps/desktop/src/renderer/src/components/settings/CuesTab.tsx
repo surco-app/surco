@@ -15,8 +15,11 @@ import { CUE_GRID_TOLERANCE, normalizeCueGridTolerance } from '../../../../share
 import { CUE_JUMP_BARS } from '../../../../shared/cueJump'
 import { CUE_QUANTIZE } from '../../../../shared/cueQuantize'
 import { DJ_PROGRAMS, type DjProgram } from '../../../../shared/djProgram'
+import { useProgramsAvailable } from '../../hooks/useProgramsAvailable'
 import { flowName } from '../../lib/cueFlowName'
+import { CUE_PROGRAMS } from '../../lib/cuePrograms'
 import { FLOW_TO } from '../../lib/cueTwins'
+import { isWindows, offeredHere } from '../../lib/platform'
 import { LIBRARY_NAME } from '../../lib/reviewLibraries'
 import type { SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
@@ -76,20 +79,19 @@ export function CuesTab({
   }, [renaming])
   // The rules serve every library, but CALLs only exist in rekordbox and Traktor paints a
   // cue by its type: where Engine DJ or Traktor is installed, the tab says what reaches them.
-  const [traktorFound, setTraktorFound] = useState(false)
-  const [engineFound, setEngineFound] = useState(false)
-  const [seratoFound, setSeratoFound] = useState(false)
-  useEffect(() => {
-    void window.api.dj.available('traktor').then(setTraktorFound, () => {})
-    void window.api.dj.available('engine').then(setEngineFound, () => {})
-    void window.api.dj.available('serato').then(setSeratoFound, () => {})
-  }, [])
-  const foundBy: Record<DjProgram, boolean> = {
-    rekordbox: rekordboxCollection !== '',
-    traktor: traktorFound,
-    engine: engineFound,
-    serato: seratoFound,
-  }
+  const available = useProgramsAvailable({ refetchOnMount: 'always' })
+  const foundBy = Object.fromEntries(DJ_PROGRAMS.map((p) => [p, available[p] ?? false])) as Record<
+    DjProgram,
+    boolean
+  >
+  foundBy.rekordbox = rekordboxCollection !== ''
+  const missingBy = Object.fromEntries(
+    DJ_PROGRAMS.map((p) => [p, available[p] === false]),
+  ) as Record<DjProgram, boolean>
+  missingBy.rekordbox = !foundBy.rekordbox
+  const hotCuesOnlyFound = DJ_PROGRAMS.some(
+    (p) => foundBy[p] && CUE_PROGRAMS[p].takesFlows && !CUE_PROGRAMS[p].writesCalls,
+  )
   const flows = synced.cueFlows
   const flow = flows.find((f) => f.id === current) ?? activeCueFlow(synced)
   const put = (next: CueFlow) =>
@@ -412,11 +414,15 @@ export function CuesTab({
             />
           </div>
         </div>
-        {(engineFound || traktorFound || seratoFound) && (
+        {hotCuesOnlyFound && (
           <SettingsHint data-testid="cue-flow-library-note">
             {[
-              tr('settings.cueFlows.callsOnlyRekordbox'),
-              ...(traktorFound ? [tr('settings.cueFlows.traktorColours')] : []),
+              tr(
+                isWindows()
+                  ? 'settings.cueFlows.callsOnlyRekordboxWin'
+                  : 'settings.cueFlows.callsOnlyRekordbox',
+              ),
+              ...(foundBy.traktor ? [tr('settings.cueFlows.traktorColours')] : []),
             ].join('. ')}
           </SettingsHint>
         )}
@@ -438,26 +444,29 @@ export function CuesTab({
           </span>
         </h3>
         <div data-testid="cue-flow-targets" className={`${GROUP} text-sm`}>
-          {DJ_PROGRAMS.map((library) => {
+          {DJ_PROGRAMS.filter(offeredHere).map((library) => {
             const name = LIBRARY_NAME[library]
             const key = FLOW_TO[library]
             const found = foundBy[library]
+            const reached = found && CUE_PROGRAMS[library].takesFlows
             return (
               <div key={library} className="px-3.5 py-2.5">
                 <CheckboxRow
                   testid={`settings-cue-flow-to-${library}`}
-                  checked={found && synced[key]}
+                  checked={reached && synced[key]}
                   onChange={(v) => patch(key, v)}
                   label={name}
-                  disabled={!found}
+                  disabled={!reached}
                 />
                 <SettingsHint
-                  data-testid={found ? undefined : `settings-cue-flow-to-${library}-missing`}
+                  data-testid={
+                    missingBy[library] ? `settings-cue-flow-to-${library}-missing` : undefined
+                  }
                   className="mt-1 pl-7"
                 >
-                  {found
-                    ? tr(`settings.cueFlows.targets.${library}`)
-                    : tr('settings.cueFlows.targets.missing', { program: name })}
+                  {missingBy[library]
+                    ? tr('settings.cueFlows.targets.missing', { program: name })
+                    : tr(`settings.cueFlows.targets.${library}`)}
                 </SettingsHint>
               </div>
             )

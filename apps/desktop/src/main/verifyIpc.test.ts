@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, statSync, writeFileSync } from 'node:fs'
+import { cpSync, mkdirSync, mkdtempSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
@@ -56,6 +56,8 @@ import {
   verifyUpdateSender,
 } from './verifyIpc'
 import { createVerifyRegistry, type VerifyEntry, type VerifyRegistryDeps } from './verifyRegistry'
+import { virtualdjLibraryRoots } from './virtualdjLibrary'
+import { repointVirtualdjTracks } from './virtualdjTrackWrite'
 
 function handlerFor(channel: string): (e: unknown, ...args: unknown[]) => Promise<unknown> {
   const call = vi.mocked(ipcMain.handle).mock.calls.findLast(([ch]) => ch === channel)
@@ -311,6 +313,75 @@ describe('library readers', () => {
   })
 })
 
+const VIRTUALDJ_FROM = '/Music/Serato Pruebas/Pray.mp3'
+
+function virtualdjLibrary() {
+  const base = mkdtempSync(join(tmpdir(), 'surco-verifyipc-vdj-'))
+  cpSync(join(__dirname, 'virtualdjFixtures'), join(base, 'VirtualDJ'), { recursive: true })
+  mkdirSync(join(base, 'Volumes'))
+  const to = join(base, 'Pray.aiff')
+  writeFileSync(to, 'aiffdata')
+  const roots = () => virtualdjLibraryRoots(join(base, 'VirtualDJ'), join(base, 'Volumes'))
+  return { base, roots, to }
+}
+
+describe('VirtualDJ in the checks', () => {
+  it('takes the lists that held the source from the VirtualDJ in play, before anything writes', async () => {
+    const lib = virtualdjLibrary()
+    const before = await snapshotLibraries(
+      VIRTUALDJ_FROM,
+      { rekordbox: '', engine: '', virtualdj: lib.roots() },
+      realPath,
+    )
+    expect(before).toEqual({
+      virtualdj: {
+        lists: [
+          { id: 'Carpeta/Dentro', name: 'Dentro' },
+          { id: 'Surco prueba', name: 'Surco prueba' },
+        ],
+      },
+    })
+  })
+
+  it('reads VirtualDJ at the roots it is handed, against the size of the written file', async () => {
+    const lib = virtualdjLibrary()
+    const before = await snapshotLibraries(
+      VIRTUALDJ_FROM,
+      { rekordbox: '', engine: '', virtualdj: lib.roots() },
+      realPath,
+    )
+    await repointVirtualdjTracks([{ from: VIRTUALDJ_FROM, to: lib.to }], {
+      backupDir: join(lib.base, 'virtualdj-backups'),
+      roots: lib.roots,
+      virtualdjOpen: async () => false,
+      lengthOf: async () => 400,
+    })
+    const readers = libraryReaders(
+      { rekordbox: () => '', engine: () => '', traktor: () => '', virtualdj: lib.roots },
+      { realPath, bootVolume: () => 'Macintosh HD' },
+    )
+    expect(
+      await readers.readVirtualdj([
+        entry({ from: VIRTUALDJ_FROM, to: lib.to, virtualdj: before.virtualdj }),
+      ]),
+    ).toEqual([
+      {
+        place: 'virtualdj',
+        state: 'ok',
+        detail: { key: 'virtualdjOk', params: { format: 'AIFF' } },
+      },
+    ])
+  })
+
+  it('reads a VirtualDJ with no database as unreadable', async () => {
+    const readers = libraryReaders(
+      { rekordbox: () => '', engine: () => '', traktor: () => '' },
+      { realPath, bootVolume: () => 'Macintosh HD' },
+    )
+    expect(await readers.readVirtualdj([entry()])).toBe('unreadable')
+  })
+})
+
 describe('snapshotLibraries', () => {
   it('takes the source row from the libraries in play and closes them', async () => {
     const path = collection()
@@ -346,6 +417,7 @@ describe('libraryRequeue', () => {
       at: () => '/t/collection.nml',
       holds,
     },
+    virtualdj: { enqueue: vi.fn(), apply: vi.fn(), at: () => '', holds },
   })
 
   // The run's repoint still queued carries its tags, artwork, grid or stars: a bare move by
@@ -613,6 +685,7 @@ describe('queueVerification', () => {
       readRekordbox,
       readEngine: vi.fn<VerifyRegistryDeps['readEngine']>(),
       readTraktor: vi.fn<VerifyRegistryDeps['readTraktor']>(),
+      readVirtualdj: vi.fn<VerifyRegistryDeps['readVirtualdj']>(),
       readFile: vi.fn<VerifyRegistryDeps['readFile']>(),
       readMusic: vi.fn<VerifyRegistryDeps['readMusic']>(),
       requeue: vi.fn<VerifyRegistryDeps['requeue']>(() => false),
@@ -621,7 +694,12 @@ describe('queueVerification', () => {
     const q = queueVerification(registry)
     const rekordboxOf = () => registry.get('a')?.checks.find((c) => c.place === 'rekordbox')
     registry.register(entry())
-    await registry.afterFlush({ rekordbox: 'written', engine: 'off', traktor: 'off' })
+    await registry.afterFlush({
+      rekordbox: 'written',
+      engine: 'off',
+      traktor: 'off',
+      virtualdj: 'off',
+    })
     await registry.retry('a')
     expect(rekordboxOf()?.state).toBe('checking')
 
@@ -696,6 +774,7 @@ describe('appVerifyRegistry', () => {
         rekordbox: { enqueue: vi.fn(), apply: vi.fn(), at: () => path, holds: () => false },
         engine: { enqueue: vi.fn(), apply: vi.fn(), at: () => '', holds: () => false },
         traktor: { enqueue: vi.fn(), apply: vi.fn(), at: () => '', holds: () => false },
+        virtualdj: { enqueue: vi.fn(), apply: vi.fn(), at: () => '', holds: () => false },
       },
       emit,
       readMusic: vi.fn<VerifyRegistryDeps['readMusic']>(),
@@ -711,7 +790,12 @@ describe('appVerifyRegistry', () => {
       } as Partial<VerifyEntry>),
     )
 
-    await registry.afterFlush({ rekordbox: 'written', engine: 'off', traktor: 'off' })
+    await registry.afterFlush({
+      rekordbox: 'written',
+      engine: 'off',
+      traktor: 'off',
+      virtualdj: 'off',
+    })
 
     expect(emit.mock.lastCall?.[1].status).toBe('ok')
     expect(emit.mock.lastCall?.[1].checks).toContainEqual(

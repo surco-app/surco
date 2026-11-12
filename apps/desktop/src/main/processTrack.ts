@@ -5,8 +5,8 @@ import log from 'electron-log/main'
 import { tagsOnly as tagsOnlyExport } from '../shared/audioProcessing'
 import {
   type DjProgram,
-  LIBRARY_PROGRAMS,
-  type LibraryProgram,
+  REACH_PROGRAMS,
+  type ReachProgram,
   WRITABLE_PROGRAMS,
   type WritableProgram,
 } from '../shared/djProgram'
@@ -19,7 +19,7 @@ import {
 } from '../shared/errorKeys'
 import { foldAccents } from '../shared/foldAccents'
 import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../shared/format'
-import { fromReadOnlyProgram } from '../shared/trackOrigin'
+import { READ_ONLY_BLOCKED, readOnlyProgramsOf } from '../shared/trackOrigin'
 import type {
   DeclickConfig,
   MusicOp,
@@ -63,6 +63,7 @@ import type { FileExpect } from './verifyFile'
 import type { MusicExpect } from './verifyMusic'
 import type { VerifyEntry } from './verifyRegistry'
 import type { RekordboxBefore } from './verifyRekordbox'
+import type { VirtualdjBefore } from './verifyVirtualdj'
 
 // The conversion workflow, lifted out of the process:track IPC handler so it can be
 // unit-tested without booting Electron. Every collaborator that touches Electron, the
@@ -145,7 +146,7 @@ export interface ProcessTrackDeps {
   isAllowed?: (path: string) => boolean
   // Marks a written file as streamable through surco://.
   allowMedia: (path: string) => void
-  attachPlaylists?: (to: string, program: LibraryProgram, choice: PlaylistChoice) => void
+  attachPlaylists?: (to: string, program: ReachProgram, choice: PlaylistChoice) => void
   existsSync: (path: string) => boolean
   // Device+inode identity, so an in-place edit can tell "the target is the source
   // being rewritten" (fine) from "the target is an unrelated file" (a collision).
@@ -164,8 +165,8 @@ export interface ProcessTrackDeps {
   appleMusicHoldsFile?: (path: string, titles: string[]) => Promise<boolean>
   // A file's size on disk, undefined when it cannot be read.
   fileBytes?: (path: string) => Promise<number | undefined>
-  // Engine DJ's row for a file rewritten on its own path takes its new size (engineSizeFollow).
-  followEngineSize?: (file: string, fromBytes: number) => void
+  // The DJ libraries that keep a file's size follow one rewritten on its own path (librarySizeFollow).
+  followLibrarySize?: (file: string, fromBytes: number) => void
   // Shown only on a real output collision; returns the user's choice. Encapsulates the
   // Electron message box so the branches below stay unit-testable.
   // reservedOnly: nothing is on disk under that name yet, only another job's claim on it.
@@ -211,7 +212,7 @@ export interface ProcessTrackDeps {
   // play are keyed; a read that fails is 'unreadable'.
   snapshotLibraries?: (
     from: string,
-  ) => Promise<{ rekordbox?: RekordboxBefore; engine?: EngineBefore }>
+  ) => Promise<{ rekordbox?: RekordboxBefore; engine?: EngineBefore; virtualdj?: VirtualdjBefore }>
   // Re-read the written file and the Music entry before the job reports back. The signal is
   // the job's cancel; a cancelled read rejects with conversionCancelled, and the job still
   // returns what it converted with that place unreadable.
@@ -515,22 +516,21 @@ const checking = (place: VerifyPlace): PlaceCheck => ({
 })
 
 const jobChoice =
-  (program: LibraryProgram, emptyBase: boolean) =>
+  (program: ReachProgram, emptyBase: boolean) =>
   (job: ProcessJob): PlaylistChoice | undefined => {
     const staged = job.playlists?.[program]
     if (!staged?.targets) return undefined
     return { wanted: staged.targets, base: emptyBase ? (staged.base ?? []) : staged.base }
   }
 
-export const JOB_PLAYLISTS: Record<
-  LibraryProgram,
-  (job: ProcessJob) => PlaylistChoice | undefined
-> = {
-  rekordbox: jobChoice('rekordbox', false),
-  traktor: jobChoice('traktor', true),
-  engine: jobChoice('engine', true),
-  serato: jobChoice('serato', true),
-}
+export const JOB_PLAYLISTS: Record<ReachProgram, (job: ProcessJob) => PlaylistChoice | undefined> =
+  {
+    rekordbox: jobChoice('rekordbox', false),
+    traktor: jobChoice('traktor', true),
+    engine: jobChoice('engine', true),
+    serato: jobChoice('serato', true),
+    virtualdj: jobChoice('virtualdj', true),
+  }
 
 export async function runProcessTrack(
   job: ProcessJob,
@@ -539,17 +539,22 @@ export async function runProcessTrack(
   // Before any side effect: metadata that never came from the file (see ProcessJob.metaUnread)
   // would be written empty over whatever the file still carries.
   if (job.metaUnread) throw errorWithKey('sourceTagsUnread', job.inputPath)
-  if (fromReadOnlyProgram(job)) throw errorWithKey('seratoBlocked', job.inputPath)
+  const readOnly = readOnlyProgramsOf(job)[0]
+  if (readOnly) throw errorWithKey(READ_ONLY_BLOCKED[readOnly], job.inputPath)
   const { settings } = deps
   const stage = (s: ProcessStage): void => deps.sendProgress(s)
   if (deps.isAllowed && !deps.isAllowed(job.inputPath)) throw errorWithKey('pathNotAllowed')
   // The libraries follow the file this conversion supersedes, the same one the repoint names.
   const libraryFrom = job.replacesPath ?? job.inputPath
-  // A snapshot that failed is not a library without the track: both read as unreadable.
-  const before =
+  // A snapshot that failed is not a library without the track: each reads as unreadable.
+  const before: Awaited<ReturnType<NonNullable<ProcessTrackDeps['snapshotLibraries']>>> =
     (await deps.snapshotLibraries?.(libraryFrom).catch((e) => {
       log.warn('process:track could not read the libraries before converting', e)
-      return { rekordbox: 'unreadable' as const, engine: 'unreadable' as const }
+      return {
+        rekordbox: 'unreadable' as const,
+        engine: 'unreadable' as const,
+        ...(settings.syncVirtualdj ? { virtualdj: 'unreadable' as const } : {}),
+      }
     })) ?? {}
 
   let prepared: PreparedCover | undefined
@@ -816,7 +821,7 @@ export async function runProcessTrack(
     }
     await deps.noteWritten?.(target).catch(() => undefined)
     const outputIdentity = musicOnly ? undefined : await deps.fileIdentity(target)
-    for (const program of LIBRARY_PROGRAMS) {
+    for (const program of REACH_PROGRAMS) {
       const choice = JOB_PLAYLISTS[program](job)
       if (choice) deps.attachPlaylists?.(target, program, choice)
     }
@@ -1066,7 +1071,7 @@ export async function runProcessTrack(
               ? await deps.updateInAppleMusic(job.musicPersistentId, job.meta, coverPath)
               : null
             if (updated && retagged && fromBytes !== undefined)
-              deps.followEngineSize?.(retagged, fromBytes)
+              deps.followLibrarySize?.(retagged, fromBytes)
             // Music never follows a rename: the entry stays on the name about to be retired.
             if (updated && entryMayPlaySource && job.musicPersistentId)
               await deps.relinkAppleMusicEntry(job.musicPersistentId, target)
@@ -1249,11 +1254,15 @@ export async function runProcessTrack(
         : { place, state: 'unreadable', detail: { key: `${place}Unreadable` } }
     const rekordboxListed =
       (before.rekordbox && before.rekordbox !== 'absent') || !!playlists.rekordbox
+    const virtualdjListed =
+      (before.virtualdj && before.virtualdj !== 'absent') || !!playlists.virtualdj
     const places = new Set<VerifyPlace>(['file'])
     if (musicCheck) places.add('appleMusic')
     if (followed && (before.rekordbox || playlists.rekordbox)) places.add('rekordbox')
     if (followed && (before.engine || addedToEngineDj || playlists.engine)) places.add('engine')
     if (followed && traktor) places.add('traktor')
+    if (followed && (before.virtualdj || playlists.virtualdj || settings.addToVirtualdj))
+      places.add('virtualdj')
     // Named per conversion, not per track: a track converted again starts its own count.
     const checked = withChecks({ status: 'checking', checks: [] }, [
       fileCheck,
@@ -1261,6 +1270,7 @@ export async function runProcessTrack(
       ...(rekordboxListed ? [library('rekordbox')] : []),
       ...(engineListed ? [library('engine')] : []),
       ...(traktor ? [library('traktor')] : []),
+      ...(virtualdjListed ? [library('virtualdj')] : []),
     ])
     const heldOriginal = claimHeldOriginal(finalPath)
     const originalHeld = settleHeldOriginal(heldOriginal, checked.status)
@@ -1282,6 +1292,7 @@ export async function runProcessTrack(
       music: musicExpect,
       rekordbox: before.rekordbox,
       engine: before.engine,
+      virtualdj: before.virtualdj,
       engineStep: addedToEngineDj,
       ...(Object.keys(playlists).length > 0 ? { playlists } : {}),
       heldOriginal,

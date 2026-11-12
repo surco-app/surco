@@ -55,6 +55,7 @@ export const REKORDBOX_QUEUE_WORDS: QueueWords = {
     'cues-old-block': 'seratoQueue.notice.oldBlock',
     'other-volume': 'seratoQueue.notice.otherVolume',
     'source-in-serato': 'seratoQueue.notice.sourceInSerato',
+    'source-in-virtualdj': 'virtualdjQueue.notice.sourceInVirtualdj',
     'cues-calls-dropped': 'engineQueue.notice.callsDropped',
     'cues-slot-dropped': 'traktorQueue.notice.slotDropped',
     'cues-adjusted': 'rekordboxQueue.notice.cuesAdjusted',
@@ -62,6 +63,10 @@ export const REKORDBOX_QUEUE_WORDS: QueueWords = {
     'not-in-library': 'rekordboxQueue.notice.notInLibrary',
     'tags-not-in-library': 'seratoQueue.notice.tagsNotInLibrary',
     'tags-changed': 'seratoQueue.notice.tagsChanged',
+    'repoint-other-volume': 'virtualdjQueue.notice.repointOtherVolume',
+    'repoint-song-taken': 'virtualdjQueue.notice.repointSongTaken',
+    'repoint-song-taken-gone': 'virtualdjQueue.notice.repointSongTakenGone',
+    'repoint-unwritable': 'virtualdjQueue.notice.repointUnwritable',
   },
 }
 
@@ -141,6 +146,38 @@ export const SERATO_QUEUE_WORDS: QueueWords = {
   parts: {
     collection: 'seratoQueue.part.collection',
     noPlaylists: 'seratoQueue.part.noPlaylists',
+  },
+}
+
+export const VIRTUALDJ_QUEUE_WORDS: QueueWords = {
+  pillTracks: 'virtualdjQueue.pillTracks',
+  pillChanges: 'virtualdjQueue.pillChanges',
+  pillTracksUnplugged: 'virtualdjQueue.pillTracksUnplugged',
+  pillChangesUnplugged: 'virtualdjQueue.pillChangesUnplugged',
+  pillHalted: 'virtualdjQueue.pillHalted',
+  pillElsewhere: 'virtualdjQueue.pillElsewhere',
+  halted: 'virtualdjQueue.writeUnknown',
+  elsewhere: 'virtualdjQueue.elsewhere',
+  discardConfirm: 'virtualdjQueue.discardConfirm',
+  applied: 'virtualdjQueue.applied',
+  appliedChanges: 'virtualdjQueue.appliedChanges',
+  backupFailed: 'virtualdjQueue.writeFailed',
+  refused: (reason) =>
+    reason === 'write-unknown' ? 'virtualdjQueue.writeUnknown' : 'virtualdjQueue.writeFailed',
+  notices: {
+    ...REKORDBOX_QUEUE_WORDS.notices,
+    'cues-changed': 'virtualdjQueue.notice.cuesChanged',
+    'cues-calls-dropped': 'virtualdjQueue.notice.callsDropped',
+    'not-in-library': 'virtualdjQueue.notice.notInLibrary',
+    'not-added': 'virtualdjQueue.notice.notAdded',
+    'playlist-changed': 'virtualdjQueue.notice.playlistChanged',
+    'playlist-gone': 'virtualdjQueue.notice.playlistGone',
+    'tags-not-in-library': 'virtualdjQueue.notice.tagsNotInLibrary',
+    'tags-changed': 'virtualdjQueue.notice.tagsChanged',
+  },
+  parts: {
+    collection: 'virtualdjQueue.part.collection',
+    noPlaylists: 'virtualdjQueue.part.noPlaylists',
   },
 }
 

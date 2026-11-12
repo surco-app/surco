@@ -17,7 +17,7 @@ afterEach(() => {
 })
 
 const PATH = '/m/a.wav'
-const PROGRAMS: DjProgram[] = ['rekordbox', 'engine', 'traktor', 'serato']
+const PROGRAMS = ['rekordbox', 'engine', 'traktor', 'serato'] as const satisfies DjProgram[]
 const LIBRARIES = ['rekordbox', 'traktor', 'engine', 'serato'] as const
 type Library = (typeof LIBRARIES)[number]
 
@@ -41,7 +41,7 @@ interface Staged {
   >
 }
 
-const FLAG_OF: Record<DjProgram, (typeof FLAG_KEYS)[number]> = {
+const FLAG_OF: Record<(typeof PROGRAMS)[number], (typeof FLAG_KEYS)[number]> = {
   rekordbox: 'fromRekordbox',
   engine: 'fromEngine',
   traktor: 'fromTraktor',
@@ -197,6 +197,12 @@ describe('reopening a saved session', () => {
       fromTraktor: true,
       fromSerato: true,
     })
+  })
+
+  it('gives a reopened VirtualDJ row its origin back, so it stays out of conversion after a restart', async () => {
+    const reopened = await restoreAndResave(savedSession({ origins: ['virtualdj'] }))
+    expect(reopened.programs).toEqual(['virtualdj'])
+    expect(originKeysOf(reopened)).toEqual({})
   })
 
   it('does not bring back an origin that was saved as false', async () => {

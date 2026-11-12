@@ -14,7 +14,7 @@ export interface DetectedDjLibrary {
 }
 
 // Fixed order rather than detection order, so the step reads the same on every machine.
-const ORDER = programsInOrder(['rekordbox', 'engine', 'traktor', 'serato'])
+const ORDER = programsInOrder(['rekordbox', 'engine', 'traktor', 'serato', 'virtualdj'])
 
 export function detectedDjLibraries(
   found: Partial<Record<DjLibraryId, string | true>>,

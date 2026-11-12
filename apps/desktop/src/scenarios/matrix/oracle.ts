@@ -13,6 +13,7 @@ import {
 import { basename, dirname, extname, join, resolve } from 'node:path'
 import ffprobeInstaller from '@ffprobe-installer/ffprobe'
 import Database from 'better-sqlite3-multiple-ciphers'
+import { app } from 'electron'
 import ffmpegStatic from 'ffmpeg-static'
 import {
   Id3v2AttachmentFrame,
@@ -41,11 +42,10 @@ import { libraryBackupRoot } from '../../main/libraryBackups'
 import { openRekordboxDb } from '../../main/rekordboxDb'
 import { defaults } from '../../main/settings'
 import { readTraktorCueStart, storedTree } from '../../main/traktor4Fixture'
-import type { WritableProgram } from '../../shared/djProgram'
-import { writableInOrder } from '../../shared/djProgram'
+import { parseVirtualdjDatabase, type VirtualdjSong } from '../../main/virtualdjDatabase'
 import type { OutputFormat } from '../../shared/types'
 import { music } from '../fakeMusic'
-import type { Cell, InvariantName } from './cells'
+import { type Cell, type InvariantName, MATRIX_PROGRAMS, type MatrixProgram } from './cells'
 import {
   analysisDataPathOf,
   bystanderRows,
@@ -60,10 +60,12 @@ import {
   syncedPrograms,
   traktorEntryOf,
   twinIdOf,
+  virtualdjDatabaseOf,
+  virtualdjListOf,
 } from './libraries'
 import { SEEDED_CUES_MS, type SourceTrack, type TrickyTags } from './sources'
 
-const PROGRAM_ORDER = writableInOrder(['rekordbox', 'engine', 'traktor'])
+const PROGRAM_ORDER = MATRIX_PROGRAMS
 
 const FF = ffmpegStatic as unknown as string
 const PROBE = ffprobeInstaller.path
@@ -571,6 +573,7 @@ export const pointingAt = (path: string): Record<Program, string> => ({
   rekordbox: path,
   engine: path,
   traktor: path,
+  virtualdj: path,
   music: path,
 })
 
@@ -1065,6 +1068,58 @@ function musicNewEntries(set: LibrarySet): Found[] {
     .map((x): Found => ['unique', `Music: entrada nueva ${x.persistentId} sin fichero`])
 }
 
+function virtualdjSongs(dir: string): VirtualdjSong[] {
+  return parseVirtualdjDatabase(readFileSync(virtualdjDatabaseOf(dir), 'utf8'))
+}
+
+const songsAt = (songs: VirtualdjSong[], path: string): VirtualdjSong[] =>
+  songs.filter((s) => canonical(s.path) === canonical(path))
+
+const listHolds = (dir: string, name: string, path: string): number => {
+  const paths = [...readFileSync(virtualdjListOf(dir, name), 'utf8').matchAll(/ path="([^"]*)"/g)]
+  return paths.filter(([, p]) => canonical(unescapeAttr(p)) === canonical(path)).length
+}
+
+const unescapeAttr = (text: string): string =>
+  text
+    .replace(/&apos;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
+
+function virtualdjBroken(dir: string, t: SeededTrack, e: Expected): Found[] {
+  const songs = virtualdjSongs(dir)
+  const final = e.at.virtualdj
+  const moved = canonical(final) !== canonical(t.path)
+  const found: Found[] = []
+  const at = songsAt(songs, final)
+  if (at.length === 0) found.push(['points', `VirtualDJ: ninguna Song en '${final}'`])
+  if (at.length > 1) found.push(['unique', `VirtualDJ: ${at.length} Songs en '${final}'`])
+  if (moved && songsAt(songs, t.path).length > 0)
+    found.push(['points', `VirtualDJ: sigue una Song en el original '${t.path}'`])
+  const song = at[0]
+  if (song) {
+    const size = sizeOf(final)
+    if (size !== null && song.size !== size)
+      found.push(['points', `VirtualDJ: FileSize ${song.size}, el fichero mide ${size}`])
+    const cues = song.pois
+      .filter((p) => p.kind === 'cue' && p.num !== null && p.num >= 1 && p.num <= 8)
+      .map((p) => p.seconds * 1000)
+    const want = SEEDED_CUES_MS.map((ms) => ms + e.lagMs)
+    if (!cuesAt(cues, want))
+      found.push(['cues', `VirtualDJ: cues en ${msList(cues)} ms, se esperaba ${msList(want)}`])
+  }
+  for (const name of t.playlists.virtualdj) {
+    const held = listHolds(dir, name, final)
+    if (held !== 1)
+      found.push(['playlists', `VirtualDJ: la lista ${name} tiene ${held} veces '${final}'`])
+    if (moved && listHolds(dir, name, t.path) > 0)
+      found.push(['playlists', `VirtualDJ: la lista ${name} sigue en el original`])
+  }
+  return found
+}
+
 function programBroken(program: Program, set: LibrarySet, t: SeededTrack, e: Expected): Found[] {
   if (program === 'rekordbox')
     return set.rekordboxDb && t.rekordboxId ? rekordboxBroken(set.rekordboxDb, t, e) : []
@@ -1072,19 +1127,34 @@ function programBroken(program: Program, set: LibrarySet, t: SeededTrack, e: Exp
     return set.engineDir && t.engineId ? engineBroken(set.engineDir, set, t, e) : []
   if (program === 'traktor')
     return set.traktorNml && t.traktorAudioId ? traktorBroken(set.traktorNml, set, t, e) : []
+  if (program === 'virtualdj')
+    return set.virtualdjDir ? virtualdjBroken(set.virtualdjDir, t, e) : []
   return set.music ? musicBroken(t, e) : []
 }
 
-const PROGRAM_NAME: Record<WritableProgram, string> = {
+const PROGRAM_NAME: Record<MatrixProgram, string> = {
   rekordbox: 'rekordbox',
   engine: 'Engine',
   traktor: 'Traktor',
+  virtualdj: 'VirtualDJ',
 }
 
-function libraryFile(set: LibrarySet, program: WritableProgram): string | undefined {
+function libraryFile(set: LibrarySet, program: MatrixProgram): string | undefined {
   if (program === 'rekordbox') return set.rekordboxDb
   if (program === 'engine') return set.engineDir && engineDbPath(set.engineDir)
+  if (program === 'virtualdj') return set.virtualdjDir && virtualdjDatabaseOf(set.virtualdjDir)
   return set.traktorNml
+}
+
+function virtualdjBackedUp(sha1: string): boolean {
+  const dir = join(app.getPath('userData'), 'virtualdj-backups')
+  let copies: string[] = []
+  try {
+    copies = readdirSync(dir).map((name) => join(dir, name, 'Local', 'database.xml'))
+  } catch {
+    return false
+  }
+  return copies.some((file) => existsSync(file) && sha1Of(file) === sha1)
 }
 
 function backedUp(path: string, sha1: string): boolean {
@@ -1122,7 +1192,7 @@ function collateralBroken(cell: Cell, set: LibrarySet): Found[] {
     if (!file || before === null || sha1Of(file) === before) return []
     if (!synced.has(program))
       return [['collateral', `${PROGRAM_NAME[program]}: la biblioteca no sincronizada cambió`]]
-    return backedUp(file, before)
+    return (program === 'virtualdj' ? virtualdjBackedUp(before) : backedUp(file, before))
       ? []
       : [['collateral', `${PROGRAM_NAME[program]}: escrita sin copia de seguridad previa`]]
   })
@@ -1139,7 +1209,7 @@ function diskBroken(e: Expected): Found[] {
   return found
 }
 
-function libraryPathOf(program: WritableProgram, set: LibrarySet, t: SeededTrack): string | null {
+function libraryPathOf(program: MatrixProgram, set: LibrarySet, t: SeededTrack): string | null {
   if (program === 'rekordbox' && set.rekordboxDb && t.rekordboxId) {
     const db = openRekordboxDb(set.rekordboxDb, { readonly: true })
     if (!db) return null
@@ -1169,6 +1239,8 @@ function libraryPathOf(program: WritableProgram, set: LibrarySet, t: SeededTrack
     )
     return entry?.path ?? null
   }
+  if (program === 'virtualdj' && set.virtualdjDir)
+    return songsAt(virtualdjSongs(set.virtualdjDir), t.path).length > 0 ? t.path : null
   return null
 }
 
@@ -1187,7 +1259,12 @@ function reachableBroken(cell: Cell, set: LibrarySet, t: SeededTrack): Found[] {
   })
 }
 
-function libraryTitleOf(program: WritableProgram, set: LibrarySet, t: SeededTrack): string | null {
+function libraryTitleOf(
+  program: MatrixProgram,
+  set: LibrarySet,
+  t: SeededTrack,
+  e: Expected,
+): string | null {
   if (program === 'rekordbox' && set.rekordboxDb && t.rekordboxId) {
     const db = openRekordboxDb(set.rekordboxDb, { readonly: true })
     if (!db) return null
@@ -1217,16 +1294,18 @@ function libraryTitleOf(program: WritableProgram, set: LibrarySet, t: SeededTrac
     )
     return entry?.title ?? null
   }
+  if (program === 'virtualdj' && set.virtualdjDir)
+    return songsAt(virtualdjSongs(set.virtualdjDir), e.at.virtualdj)[0]?.title ?? null
   return null
 }
 
-function namesBroken(cell: Cell, set: LibrarySet, t: SeededTrack): Found[] {
+function namesBroken(cell: Cell, set: LibrarySet, t: SeededTrack, e: Expected): Found[] {
   const title = cell.edit?.title
   if (!title) return []
   return syncedPrograms(cell.programs)
-    .filter((p): p is WritableProgram => p !== 'music')
+    .filter((p): p is MatrixProgram => p !== 'music')
     .flatMap((program): Found[] => {
-      const got = libraryTitleOf(program, set, t)
+      const got = libraryTitleOf(program, set, t, e)
       return got !== null && got.normalize('NFC') !== title.normalize('NFC')
         ? [['names', `${PROGRAM_NAME[program]}: muestra '${got}', se esperaba '${title}'`]]
         : []
@@ -1261,7 +1340,7 @@ export function libraryInvariants(
     ...(set.music ? musicNewEntries(set) : []),
     ...diskBroken(expected),
     ...reachableBroken(cell, set, track),
-    ...namesBroken(cell, set, track),
+    ...namesBroken(cell, set, track, expected),
     ...collateralBroken(cell, set),
     ...bystanderRowsBroken(set),
     ...programs

@@ -31,6 +31,8 @@ export interface XmlTrackFacts {
 const attrs = (pairs: [string, string | number][]): string =>
   pairs.map(([k, v]) => `${k}="${escapeXml(String(v))}"`).join(' ')
 
+const bpmText = (bpm: number): string => bpm.toFixed(6).replace(/0{1,4}$/, '')
+
 function tempoLines(grid: Beat[]): string[] {
   const lines: string[] = []
   let last: number | null = null
@@ -39,7 +41,7 @@ function tempoLines(grid: Beat[]): string[] {
     if (bpm === last) continue
     last = bpm
     lines.push(
-      `<TEMPO Inizio="${(b.ms / 1000).toFixed(3)}" Bpm="${bpm.toFixed(2)}" Metro="4/4" Battito="${b.beat}"/>`,
+      `<TEMPO Inizio="${(b.ms / 1000).toFixed(3)}" Bpm="${bpmText(b.bpm)}" Metro="4/4" Battito="${b.beat}"/>`,
     )
   }
   return lines

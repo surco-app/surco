@@ -16,6 +16,7 @@ import {
   REKORDBOX_QUEUE_WORDS,
   SERATO_QUEUE_WORDS,
   TRAKTOR_QUEUE_WORDS,
+  VIRTUALDJ_QUEUE_WORDS,
 } from '../lib/rekordboxQueueText'
 import { SOURCE_PROGRAMS } from '../lib/sourcePrograms'
 
@@ -49,13 +50,19 @@ export const REKORDBOX_QUEUE = queueSource('rekordbox', 'rekordbox queue', REKOR
 export const ENGINE_CUE_QUEUE = queueSource('engine', 'Engine DJ cue queue', ENGINE_QUEUE_WORDS)
 export const TRAKTOR_CUE_QUEUE = queueSource('traktor', 'Traktor cue queue', TRAKTOR_QUEUE_WORDS)
 export const SERATO_CUE_QUEUE = queueSource('serato', 'Serato cue queue', SERATO_QUEUE_WORDS)
+export const VIRTUALDJ_CUE_QUEUE = queueSource(
+  'virtualdj',
+  'VirtualDJ cue queue',
+  VIRTUALDJ_QUEUE_WORDS,
+)
 
-export const PROGRAM_QUEUES: Record<CueProgram, { source: QueueSource; testid: string }> = {
+export const PROGRAM_QUEUES = {
   rekordbox: { source: REKORDBOX_QUEUE, testid: 'rekordbox-queue' },
   engine: { source: ENGINE_CUE_QUEUE, testid: 'engine-queue' },
   traktor: { source: TRAKTOR_CUE_QUEUE, testid: 'traktor-queue' },
   serato: { source: SERATO_CUE_QUEUE, testid: 'serato-queue' },
-}
+  virtualdj: { source: VIRTUALDJ_CUE_QUEUE, testid: 'virtualdj-queue' },
+} satisfies Record<CueProgram, { source: QueueSource; testid: string } | null>
 
 export function useRekordboxQueue(
   notify: (text: string, tone: 'neutral' | 'danger', goTo?: CueSpot) => void,

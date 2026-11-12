@@ -1,3 +1,4 @@
+import type { ReadOnlyProgram } from '../../../shared/djProgram'
 import type {
   DamageOutcome,
   DamageRepairItem,
@@ -23,7 +24,7 @@ import {
 export interface ReviewLoad {
   entries: ReviewEntry[]
   skipped: number
-  seratoLeftOut?: number
+  leftOut?: Record<ReadOnlyProgram, number>
   // Undefined where there is no Music; false when it was closed and not opened to ask.
   musicConsulted?: boolean
   incomplete?: IncompleteFinding[]

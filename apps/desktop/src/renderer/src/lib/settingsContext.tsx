@@ -36,8 +36,8 @@ import {
 import { normalizeHiddenSources } from '../../../shared/hiddenSources'
 import {
   DEFAULT_SESSION_WIZARD,
-  normalizeSessionWizard,
   normalizeSessionsMade,
+  normalizeSessionWizard,
 } from '../../../shared/sessionSettings'
 import type { SessionWizardSettings } from '../../../shared/sessionTypes'
 import type {
@@ -115,6 +115,7 @@ interface ResolvedSettings extends Record<DjAddKey, boolean> {
   cueFlowToTraktor: boolean
   cueFlowToEngine: boolean
   cueFlowToSerato: boolean
+  cueFlowToVirtualdj: boolean
   cueLearnFromEdits: boolean
   hiddenSources: PlaylistSource[]
   sessionWizard: SessionWizardSettings
@@ -123,6 +124,7 @@ interface ResolvedSettings extends Record<DjAddKey, boolean> {
   traktorNmlPath: string
   rekordboxDbPath: string
   engineLibraryDir: string
+  virtualdjLibraryDir: string
 }
 
 // One frozen default per field (not fresh objects per call): the provider memoizes on
@@ -140,6 +142,7 @@ const DEFAULTS: ResolvedSettings = {
   addToRekordbox: false,
   addToTraktor: false,
   addToSerato: false,
+  addToVirtualdj: false,
   overwriteOriginal: false,
   backupPolicy: 'audioChanges',
   convertBesideOriginal: false,
@@ -178,6 +181,7 @@ const DEFAULTS: ResolvedSettings = {
   cueFlowToTraktor: true,
   cueFlowToEngine: true,
   cueFlowToSerato: true,
+  cueFlowToVirtualdj: true,
   cueLearnFromEdits: true,
   hiddenSources: [],
   sessionWizard: DEFAULT_SESSION_WIZARD,
@@ -185,6 +189,7 @@ const DEFAULTS: ResolvedSettings = {
   traktorNmlPath: '',
   rekordboxDbPath: '',
   engineLibraryDir: '',
+  virtualdjLibraryDir: '',
 }
 
 function resolveSettings(settings: Partial<Settings> | null): ResolvedSettings {
@@ -203,6 +208,7 @@ function resolveSettings(settings: Partial<Settings> | null): ResolvedSettings {
     addToRekordbox: settings.addToRekordbox ?? DEFAULTS.addToRekordbox,
     addToTraktor: settings.addToTraktor ?? DEFAULTS.addToTraktor,
     addToSerato: settings.addToSerato ?? DEFAULTS.addToSerato,
+    addToVirtualdj: settings.addToVirtualdj ?? DEFAULTS.addToVirtualdj,
     overwriteOriginal: settings.overwriteOriginal ?? DEFAULTS.overwriteOriginal,
     backupPolicy: settings.backupPolicy ?? DEFAULTS.backupPolicy,
     convertBesideOriginal: settings.convertBesideOriginal ?? DEFAULTS.convertBesideOriginal,
@@ -241,6 +247,7 @@ function resolveSettings(settings: Partial<Settings> | null): ResolvedSettings {
     cueFlowToTraktor: settings.cueFlowToTraktor !== false,
     cueFlowToEngine: settings.cueFlowToEngine !== false,
     cueFlowToSerato: settings.cueFlowToSerato !== false,
+    cueFlowToVirtualdj: settings.cueFlowToVirtualdj !== false,
     cueLearnFromEdits: settings.cueLearnFromEdits !== false,
     hiddenSources: normalizeHiddenSources(settings.hiddenSources),
     sessionWizard: normalizeSessionWizard(settings.sessionWizard),
@@ -248,6 +255,7 @@ function resolveSettings(settings: Partial<Settings> | null): ResolvedSettings {
     traktorNmlPath: settings.traktorNmlPath ?? DEFAULTS.traktorNmlPath,
     rekordboxDbPath: settings.rekordboxDbPath ?? DEFAULTS.rekordboxDbPath,
     engineLibraryDir: settings.engineLibraryDir ?? DEFAULTS.engineLibraryDir,
+    virtualdjLibraryDir: settings.virtualdjLibraryDir ?? DEFAULTS.virtualdjLibraryDir,
   }
 }
 

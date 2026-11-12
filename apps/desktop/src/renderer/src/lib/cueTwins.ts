@@ -3,7 +3,7 @@ import type { CueFlow } from '../../../shared/cueFlows'
 import { HOT_KINDS, SAME_POSITION_MS, type WantedCue } from '../../../shared/cueRules'
 import { DJ_PROGRAMS, type DjProgram, programOf } from '../../../shared/djProgram'
 import type { CueLibrary, LibraryTracks, SaveCuesRequest, TrackCues } from '../../../shared/types'
-import { queuedCuesQuery, trackCuesQuery } from '../hooks/useTrackCues'
+import { queuedCuesQuery, surcoGridQuery, trackCuesQuery } from '../hooks/useTrackCues'
 import {
   type CueDraft,
   type DraftContext,
@@ -35,6 +35,7 @@ export interface TwinSettings {
   cueFlowToTraktor: boolean
   cueFlowToEngine: boolean
   cueFlowToSerato: boolean
+  cueFlowToVirtualdj: boolean
 }
 
 export type TwinPlan =
@@ -54,12 +55,17 @@ const LIBRARIES = DJ_PROGRAMS
 
 export const FLOW_TO: Record<
   DjProgram,
-  'cueFlowToRekordbox' | 'cueFlowToTraktor' | 'cueFlowToEngine' | 'cueFlowToSerato'
+  | 'cueFlowToRekordbox'
+  | 'cueFlowToTraktor'
+  | 'cueFlowToEngine'
+  | 'cueFlowToSerato'
+  | 'cueFlowToVirtualdj'
 > = {
   rekordbox: 'cueFlowToRekordbox',
   traktor: 'cueFlowToTraktor',
   engine: 'cueFlowToEngine',
   serato: 'cueFlowToSerato',
+  virtualdj: 'cueFlowToVirtualdj',
 }
 
 const wanted = (library: DjProgram, settings: TwinSettings): boolean => settings[FLOW_TO[library]]
@@ -121,6 +127,19 @@ function onlyAdded(baseline: WantedCue[], placed: WantedCue[], kinds: number[]):
   return [...baseline, ...added]
 }
 
+async function gridded(
+  client: QueryClient,
+  library: DjProgram,
+  contentId: string,
+): Promise<TrackCues | null> {
+  const read = await client.fetchQuery(trackCuesQuery(contentId)).catch(() => null)
+  if (!read) return null
+  if (read.analysed) return read.grid.length > 0 ? read : null
+  if (!CUE_PROGRAMS[library].twinsOnSurcoGrid) return null
+  const surco = await client.fetchQuery(surcoGridQuery(contentId)).catch(() => null)
+  return surco && surco.grid.length > 0 ? { ...read, analysed: true, grid: surco.grid } : null
+}
+
 async function planOne(
   client: QueryClient,
   source: TwinSource,
@@ -128,8 +147,8 @@ async function planOne(
   contentId: string,
   settings: TwinSettings,
 ): Promise<TwinPlan | null> {
-  const read = await client.fetchQuery(trackCuesQuery(contentId)).catch(() => null)
-  if (!read?.analysed || read.grid.length === 0) return null
+  const read = await gridded(client, library, contentId)
+  if (!read) return null
   const queued = await client.fetchQuery(queuedCuesQuery(contentId))
   const baseline =
     queued && queued.fingerprint === read.fingerprint

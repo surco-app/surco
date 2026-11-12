@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<VirtualDJ_Database Version="2026">
+ <Song FilePath="/Music/VirtualDJ Pruebas/Pray.mp3" FileSize="17138984" Flag="268435456">
+  <Tags Author="Tina Cousins" Title="Pray (W.I.P. In The Church Mix)" Genre="Electronic" Album="Pray" TrackNumber="01" Year="1998" Bpm="0.447761" Key="Ebm" Flag="1" />
+  <Infos SongLength="428.253333" LastModified="1794393110" FirstSeen="1794393066" FirstPlay="1794393110" LastPlay="1794393110" PlayCount="1" Bitrate="320" Cover="16386" />
+  <Scan Version="801" Bpm="0.447778" Phase="57.559456" AltBpm="0.335828" Volume="1.317936" Key="Ebm" AudioSig="aXOIhoepmbqHh57WpqXLTkYN" Flag="32768" />
+  <Poi Name="Surco" Pos="29.973878" Num="1" Color="4278190335" Type="cue" />
+  <Poi Pos="0.248163" Type="automix" Point="realStart" />
+  <Poi Pos="424.394014" Type="automix" Point="realEnd" />
+  <Poi Pos="8.20" Type="automix" Point="fadeStart" />
+  <Poi Pos="417.30" Type="automix" Point="fadeEnd" />
+  <Poi Pos="58.014331" Type="automix" Point="cutStart" />
+  <Poi Pos="408.173424" Type="automix" Point="cutEnd" />
+  <Poi Pos="58.454512" Type="automix" Point="tempoStart" />
+  <Poi Pos="393.832766" Type="automix" Point="tempoEnd" />
+  <Poi Name="Break 1" Pos="240.251791" Type="remix" />
+ </Song>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
+ <Song FilePath="/Music/Serato Pruebas/Pray.flac" FileSize="53447167" Flag="268435456">
+  <Tags Author="Tina Cousins" Title="Pray (W.I.P. In The Church Mix)" Genre="Electronic" Album="Pray" TrackNumber="01" Year="1998" Bpm="0.447761" Key="Ebm" Flag="1" />
+  <Infos SongLength="428.253333" LastModified="1794393812" FirstSeen="1794393662" FirstPlay="1794393809" LastPlay="1794393809" PlayCount="1" Bitrate="998" Cover="2" />
+  <Comment>℗ 1998 Zomba Records Ltd. © 1998 Zomba Records Ltd. Manufactured in the EU.</Comment>
+  <Scan Version="801" Bpm="0.447778" Phase="57.559502" AltBpm="0.335828" Volume="1.318134" Key="Ebm" AudioSig="aXOIhoepmbqHh57WpqXLTkYN" Flag="32768" />
+  <Poi Name="Surco" Pos="30.0" Num="1" Color="4278190335" Type="cue" />
+  <Poi Pos="0.248163" Type="automix" Point="realStart" />
+  <Poi Pos="424.394014" Type="automix" Point="realEnd" />
+  <Poi Pos="8.20" Type="automix" Point="fadeStart" />
+  <Poi Pos="417.30" Type="automix" Point="fadeEnd" />
+  <Poi Pos="58.014331" Type="automix" Point="cutStart" />
+  <Poi Pos="408.173424" Type="automix" Point="cutEnd" />
+  <Poi Pos="58.454512" Type="automix" Point="tempoStart" />
+  <Poi Pos="393.832948" Type="automix" Point="tempoEnd" />
+  <Poi Name="Break 1" Pos="240.251791" Type="remix" />
+  <Poi Pos="71.773787" Num="2" Type="cue" />
+  <Poi Pos="142.561156" Num="3" Type="cue" />
+  <Poi Pos="206.875442" Num="4" Type="cue" />
+  <Poi Pos="247.963333" Num="5" Type="cue" />
+  <Poi Pos="287.260113" Num="6" Type="cue" />
+  <Poi Pos="330.023016" Num="7" Type="cue" />
+  <Poi Pos="376.426190" Num="8" Type="cue" />
+  <Poi Name="Surco medida" Pos="60.0" Num="9" Type="cue" />
+ </Song>
+ <Song FilePath="/Music/Serato Pruebas/Pray.mp3" FileSize="17138984" Flag="268435456">
+  <Tags Author="Tina Cousins" Title="Pray (W.I.P. In The Church Mix)" Genre="Electronic" Album="Pray" TrackNumber="01" Year="1998" Bpm="0.447761" Key="Ebm" Flag="1" />
+  <Infos SongLength="428.253333" LastModified="1794400456" FirstSeen="1794393066" FirstPlay="1794393110" LastPlay="1794393110" PlayCount="1" Bitrate="320" Cover="16386" />
+  <Scan Version="801" Bpm="0.447778" Phase="57.559456" AltBpm="0.335828" Volume="1.317936" Key="Ebm" AudioSig="aXOIhoepmbqHh57WpqXLTkYN" Flag="32768" />
+  <Poi Pos="0.248163" Type="automix" Point="realStart" />
+  <Poi Pos="8.20" Type="automix" Point="fadeStart" />
+  <Poi Name="Surco" Pos="29.973878" Num="1" Color="4278190335" Type="cue" />
+  <Poi Name="2" Pos="57.626667" Num="2" Type="cue" />
+  <Poi Pos="58.014331" Type="automix" Point="cutStart" />
+  <Poi Pos="58.454512" Type="automix" Point="tempoStart" />
+  <Poi Name="3" Pos="97.0" Num="3" Type="cue" />
+  <Poi Name="4" Pos="122.666667" Num="4" Type="cue" />
+  <Poi Name="5" Pos="159.346667" Num="5" Type="cue" />
+  <Poi Name="6" Pos="181.173333" Num="6" Type="cue" />
+  <Poi Name="7" Pos="205.383288" Num="7" Type="cue" />
+  <Poi Name="8" Pos="238.299478" Num="8" Type="cue" />
+  <Poi Name="Break 1" Pos="240.251791" Type="remix" />
+  <Poi Name="loop" Pos="278.306667" Num="-1" Color="4278190335" Type="loop" Size="4.0" Slot="1" />
+  <Poi Pos="393.832766" Type="automix" Point="tempoEnd" />
+  <Poi Pos="408.173424" Type="automix" Point="cutEnd" />
+  <Poi Pos="417.30" Type="automix" Point="fadeEnd" />
+  <Poi Pos="424.394014" Type="automix" Point="realEnd" />
+ </Song>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
+ <Song FilePath="/Music/VirtualDJ Pruebas/Pray.m4a" FileSize="14480477">
+  <Tags Author="Tina Cousins" Title="Pray (W.I.P. In The Church Mix)" Genre="Electronic" Album="Pray" TrackNumber="1" Year="1998" Bpm="0.447761" Key="Ebm" Flag="1" />
+  <Infos SongLength="428.253333" LastModified="1794400495" FirstSeen="1794400494" Bitrate="269" Cover="2" />
+  <Comment>℗ 1998 Zomba Records Ltd. © 1998 Zomba Records Ltd. Manufactured in the EU.</Comment>
+  <Scan Version="801" Bpm="0.447778" Phase="57.559433" AltBpm="0.335828" Volume="1.305201" Key="Ebm" AudioSig="aXOIhoepmbmHh57WpqXLTkYN" Flag="32768" />
+  <Poi Pos="7.4440" Num="1" Color="4291559424" Type="cue" />
+  <Poi Pos="12.7560" Num="2" Color="4291594240" Type="cue" />
+  <Poi Pos="19.0190" Num="3" Color="4278190284" Type="cue" />
+  <Poi Pos="0.248163" Type="automix" Point="realStart" />
+  <Poi Pos="424.394014" Type="automix" Point="realEnd" />
+  <Poi Pos="1.750" Type="automix" Point="fadeStart" />
+  <Poi Pos="417.30" Type="automix" Point="fadeEnd" />
+  <Poi Pos="58.014331" Type="automix" Point="cutStart" />
+  <Poi Pos="408.173424" Type="automix" Point="cutEnd" />
+  <Poi Pos="58.454422" Type="automix" Point="tempoStart" />
+  <Poi Pos="393.833855" Type="automix" Point="tempoEnd" />
+  <Poi Name="Break 1" Pos="240.251791" Type="remix" />
+ </Song>
+ <Song FilePath="/Music/VirtualDJ Pruebas/Pray.wav" FileSize="75550522">
+  <Tags Author="Tina Cousins" Title="Pray (W.I.P. In The Church Mix)" Genre="Electronic" Album="Pray" Bpm="0.447761" Key="Ebm" Flag="1" />
+  <Infos SongLength="428.253333" LastModified="1794400495" FirstSeen="1794400494" Bitrate="1411" Cover="2" />
+  <Comment>℗ 1998 Zomba Records Ltd. © 1998 Zomba Records Ltd. Manufactured in the EU.</Comment>
+  <Scan Version="801" Bpm="0.447778" Phase="57.559547" AltBpm="0.335828" Volume="1.318134" Key="Ebm" AudioSig="aXOIhoepmbqHh57WpqXLTkYN" Flag="32768" />
+  <Poi Pos="3.8340" Num="1" Color="4291559424" Type="cue" />
+  <Poi Pos="9.1920" Num="2" Color="4291594240" Type="cue" />
+  <Poi Pos="16.3670" Num="3" Color="4278190284" Type="cue" />
+  <Poi Pos="0.248163" Type="automix" Point="realStart" />
+  <Poi Pos="424.394014" Type="automix" Point="realEnd" />
+  <Poi Pos="8.20" Type="automix" Point="fadeStart" />
+  <Poi Pos="417.30" Type="automix" Point="fadeEnd" />
+  <Poi Pos="58.014331" Type="automix" Point="cutStart" />
+  <Poi Pos="408.173424" Type="automix" Point="cutEnd" />
+  <Poi Pos="58.454512" Type="automix" Point="tempoStart" />
+  <Poi Pos="393.833197" Type="automix" Point="tempoEnd" />
+  <Poi Name="Break 1" Pos="240.251791" Type="remix" />
+ </Song>
+ <Song FilePath="/Music/VirtualDJ Pruebas/Pray.aiff" FileSize="75549722">
+  <Tags Author="Tina Cousins" Title="Pray (W.I.P. In The Church Mix)" Genre="Electronic" Album="Pray" TrackNumber="01" Year="1998" Bpm="0.447761" Key="Ebm" Flag="1" />
+  <Infos SongLength="428.253333" LastModified="1794400495" FirstSeen="1794400494" Bitrate="1411" Cover="2" />
+  <Comment>℗ 1998 Zomba Records Ltd. © 1998 Zomba Records Ltd. Manufactured in the EU.</Comment>
+  <Scan Version="801" Bpm="0.447778" Phase="57.559502" AltBpm="0.335828" Volume="1.318134" Key="Ebm" AudioSig="aXOIhoepmbqHh57WpqXLTkYN" Flag="32768" />
+  <Poi Name="Surco" Pos="30.0" Num="1" Color="4278190335" Type="cue" />
+  <Poi Pos="0.248163" Type="automix" Point="realStart" />
+  <Poi Pos="424.394014" Type="automix" Point="realEnd" />
+  <Poi Pos="8.20" Type="automix" Point="fadeStart" />
+  <Poi Pos="417.30" Type="automix" Point="fadeEnd" />
+  <Poi Pos="58.014331" Type="automix" Point="cutStart" />
+  <Poi Pos="408.173424" Type="automix" Point="cutEnd" />
+  <Poi Pos="58.454512" Type="automix" Point="tempoStart" />
+  <Poi Pos="393.832948" Type="automix" Point="tempoEnd" />
+  <Poi Name="Break 1" Pos="240.251791" Type="remix" />
+ </Song>
+</VirtualDJ_Database>

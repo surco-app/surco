@@ -35,6 +35,7 @@ const SYNCED = {
   engine: { outcome: 'nothing' as const },
   traktor: { outcome: 'missing' as const },
   serato: { outcome: 'nothing' as const },
+  virtualdj: { outcome: 'nothing' as const },
 }
 const LIB = [e('A', 'DJ Lara'), e('B', 'DJ Lara'), e('C', 'Dj Lara')]
 
@@ -69,6 +70,7 @@ function setApi(over: Partial<Record<keyof Api, unknown>> = {}) {
       engine: { enabled: false, found: false },
       traktor: { enabled: false, found: false },
       serato: { enabled: false, found: false },
+      virtualdj: { enabled: false, found: false },
     }),
     ...over,
   }
@@ -1716,7 +1718,18 @@ describe('with the list as source', () => {
     listApi()
     const { result } = listHook([...LARA, row('/m/d.aiff', 'X', 'Td', { programs: ['serato'] })])
     await waitFor(() => expect(result.current.status).toBe('ready'))
-    expect(result.current).toMatchObject({ reviewed: 3, skipped: 0, seratoLeftOut: 1 })
+    expect(result.current).toMatchObject({
+      reviewed: 3,
+      skipped: 0,
+      leftOut: { serato: 1 },
+    })
+  })
+
+  it('reviews the VirtualDJ rows, since VirtualDJ follows a track the review converts', async () => {
+    listApi()
+    const { result } = listHook([...LARA, row('/m/d.aiff', 'X', 'Td', { programs: ['virtualdj'] })])
+    await waitFor(() => expect(result.current.status).toBe('ready'))
+    expect(result.current).toMatchObject({ reviewed: 4, leftOut: { serato: 0 } })
   })
 
   it('says how many rows it reviewed, how many it left out and whether Music answered', async () => {

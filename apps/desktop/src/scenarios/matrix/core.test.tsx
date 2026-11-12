@@ -15,6 +15,10 @@ vi.mock('../../main/appleMusicArtwork', async (original) =>
 vi.mock('../../main/rekordboxProcess', () => ({ isRekordboxRunning: vi.fn(async () => false) }))
 vi.mock('../../main/engineProcess', () => ({ isEngineDjRunning: vi.fn(async () => false) }))
 vi.mock('../../main/traktorProcess', () => ({ isTraktorRunning: vi.fn(async () => false) }))
+vi.mock('../../main/virtualdjProcess', () => ({
+  isVirtualdjRunning: vi.fn(async () => false),
+  waitForVirtualdjExit: vi.fn(async () => true),
+}))
 
 import { CELLS, groupsOf } from './cells'
 import { type CellOutcome, cellFailure, writeReport } from './report'

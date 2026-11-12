@@ -4,7 +4,7 @@ import type { CueGridTolerance } from './cueGrid'
 import type { CueJumpBars } from './cueJump'
 import type { CueQuantize } from './cueQuantize'
 import type { StrongPart, WantedCue } from './cueRules'
-import type { DjProgram, LibraryProgram, WritableProgram } from './djProgram'
+import type { DjProgram, LibraryProgram, UsbProgram, WritableProgram } from './djProgram'
 import type { EditorSectionPref } from './editorSections'
 import type { ErrorKey } from './errorKeys'
 import type { EditableGrid } from './gridEdit'
@@ -230,12 +230,14 @@ export interface Settings {
   addToRekordbox: boolean
   addToTraktor: boolean
   addToSerato: boolean
+  addToVirtualdj: boolean
   // The Engine DJ library folder whose Database2/m.db conversions are registered in.
   // Machine-local like outputDir — a filesystem path means nothing on another machine.
   engineLibraryDir: string
   // Traktor's collection.nml path. Machine-local — the folder doesn't exist on another Mac.
   // Empty by default: the feature is off until the user points Surco at their collection.
   traktorNmlPath: string
+  virtualdjLibraryDir: string
   // Whether a conversion writes back into each DJ collection. Separate from the paths
   // below: a path says WHERE the collection is, never whether to touch it.
   syncTraktor: boolean
@@ -252,6 +254,7 @@ export interface Settings {
   cueFlowToTraktor: boolean
   cueFlowToEngine: boolean
   cueFlowToSerato: boolean
+  cueFlowToVirtualdj: boolean
   cueLearnFromEdits: boolean
   hiddenSources: PlaylistSource[]
   sessionWizard: SessionWizardSettings
@@ -260,8 +263,10 @@ export interface Settings {
   traktorPlaylistsFieldOffered: boolean
   enginePlaylistsFieldOffered: boolean
   seratoPlaylistsFieldOffered: boolean
+  virtualdjPlaylistsFieldOffered: boolean
   syncEngineDj: boolean
   syncSerato: boolean
+  syncVirtualdj: boolean
   // Override for the rekordbox collection; empty means the standard location is used.
   rekordboxDbPath: string
   // Milliseconds every carried cue is nudged by, on top of the route calibration
@@ -1302,10 +1307,19 @@ export type RekordboxQueueNotice =
         | 'not-in-library'
         | 'tags-not-in-library'
         | 'tags-changed'
+        | 'repoint-other-volume'
+        | 'repoint-song-taken'
+        | 'repoint-song-taken-gone'
+        | 'repoint-unwritable'
       track: string
     }
   | {
-      code: 'playlist-changed' | 'playlist-gone' | 'other-volume' | 'source-in-serato'
+      code:
+        | 'playlist-changed'
+        | 'playlist-gone'
+        | 'other-volume'
+        | 'source-in-serato'
+        | 'source-in-virtualdj'
       track: string
       playlist: string
     }
@@ -1729,7 +1743,10 @@ export interface UsbVolume {
   stickPlaylists: string[] | null
   engine?: { holder: UsbHolder; remembered: UsbRemembered | null }
   bySource?: Partial<
-    Record<'serato' | 'traktor', { holder: UsbHolder; remembered: UsbRemembered | null }>
+    Record<
+      'serato' | 'traktor' | 'virtualdj',
+      { holder: UsbHolder; remembered: UsbRemembered | null }
+    >
   >
 }
 
@@ -1784,7 +1801,7 @@ export interface UsbPlan {
   warnings: UsbWarning[]
 }
 
-export type UsbProgram = DjProgram
+export type { UsbProgram }
 
 export interface UsbExportRequest {
   playlistIds: string[]
@@ -1972,6 +1989,8 @@ export type CopyReason =
   | 'duplicates'
   | 'playlists'
   | 'restore'
+  | 'tracks'
+  | 'lists'
 
 export interface LibraryCopy {
   id: string

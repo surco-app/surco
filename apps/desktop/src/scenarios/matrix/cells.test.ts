@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { VERIFY_DETAIL_KEYS } from '../../shared/verification'
-import { CELLS, type Cell, groupsOf, qualitySettings } from './cells'
+import { CELLS, type Cell, groupsOf, MATRIX_PROGRAMS, qualitySettings } from './cells'
 
 const layer = (name: Cell['layer']) => CELLS.filter((cell) => cell.layer === name)
 
@@ -10,7 +10,7 @@ const CLASS_OF: Record<string, string> = {
   'mp3n>aiff': 'fromLossy',
 }
 const DESTS = ['folder', 'beside', 'overwrite', 'appleMusic', 'appleMusicCopy']
-const PROGRAMS = ['rekordbox', 'engine', 'traktor', 'music', 'all']
+const PROGRAMS = [...MATRIX_PROGRAMS, 'music', 'all']
 const STATES = ['closed', 'open', 'retry']
 const CLASSES = ['keep', 'toLossy', 'fromLossy']
 const toMusic = (dest: string) => dest.startsWith('appleMusic')
@@ -33,13 +33,13 @@ describe('the results matrix cells', () => {
     expect(new Set(groupsOf(r).map((g) => g.cells.length))).toEqual(new Set([1]))
   })
 
-  it('has 136 cells with unique ids', () => {
-    expect(CELLS).toHaveLength(136)
-    expect(new Set(CELLS.map((cell) => cell.id)).size).toBe(136)
+  it('has 143 cells with unique ids', () => {
+    expect(CELLS).toHaveLength(143)
+    expect(new Set(CELLS.map((cell) => cell.id)).size).toBe(143)
     const counts = Object.fromEntries(
       (['C', 'D', 'Q', 'K', 'S', 'R'] as const).map((name) => [name, layer(name).length]),
     )
-    expect(counts).toEqual({ C: 50, D: 28, Q: 12, K: 14, S: 27, R: 5 })
+    expect(counts).toEqual({ C: 50, D: 35, Q: 12, K: 14, S: 27, R: 5 })
     expect(layer('K').map((cell) => cell.id)).toEqual(
       Array.from({ length: 14 }, (_, i) => `K${String(i + 1).padStart(2, '0')}`),
     )
@@ -175,7 +175,7 @@ describe('the results matrix cells', () => {
       const group = groups.find((g) => g.cells.includes(cell))
       expect(group?.cells, cell.id).toEqual([cell])
     }
-    expect(groups.flatMap((g) => g.cells)).toHaveLength(136)
+    expect(groups.flatMap((g) => g.cells)).toHaveLength(143)
     expect(new Set(groups.map((g) => g.key)).size).toBe(groups.length)
   })
 
@@ -240,6 +240,6 @@ describe('the results matrix cells', () => {
       expect(cell.name, cell.id).not.toMatch(/[—:]/)
       expect(cell.name.length, cell.id).toBeGreaterThan(0)
     }
-    expect(new Set(CELLS.map((cell) => cell.name)).size).toBe(136)
+    expect(new Set(CELLS.map((cell) => cell.name)).size).toBe(143)
   })
 })

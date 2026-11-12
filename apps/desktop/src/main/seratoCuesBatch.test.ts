@@ -371,7 +371,7 @@ describe('a Serato save whose cues changed meanwhile', () => {
         settled: vi.fn(),
         moments: { begin: vi.fn() },
         serial: (task) => task(),
-        processes: { rekordbox: idle, engine: idle, traktor: idle, serato: idle },
+        processes: { rekordbox: idle, engine: idle, traktor: idle, serato: idle, virtualdj: idle },
       },
     )
     pq.queue.enqueue([op(file, read, moved(read), { fingerprint: 'stale' })])
@@ -425,7 +425,7 @@ describe('a Serato save for a file Surco is converting', () => {
         settled: vi.fn(),
         moments: { begin: vi.fn() },
         serial: (task) => task(),
-        processes: { rekordbox: idle, engine: idle, traktor: idle, serato: idle },
+        processes: { rekordbox: idle, engine: idle, traktor: idle, serato: idle, virtualdj: idle },
       },
     )
     pq.queue.enqueue([op(file, read, moved(read))])
@@ -464,7 +464,7 @@ describe('a Serato save for a file Surco is converting', () => {
         settled: vi.fn(),
         moments: { begin: vi.fn() },
         serial: (task) => task(),
-        processes: { rekordbox: idle, engine: idle, traktor: idle, serato: idle },
+        processes: { rekordbox: idle, engine: idle, traktor: idle, serato: idle, virtualdj: idle },
       },
     )
     pq.queue.enqueue([op(file, read, moved(read))])

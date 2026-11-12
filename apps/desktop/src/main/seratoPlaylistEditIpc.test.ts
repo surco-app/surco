@@ -5,6 +5,7 @@ vi.mock('./seratoCuesWrite', () => ({ applySeratoCuesBatch: vi.fn() }))
 
 import type { DjEditMain } from '../shared/djApi'
 import type { RekordboxPlaylistEdit } from '../shared/types'
+import { queueWithApplyInFlight } from './editRaceFixture'
 import type { QueueApply, RekordboxQueue } from './rekordboxQueue'
 import type { EditOp, QueueOp } from './rekordboxQueueOps'
 import { seratoEditFiles } from './seratoCrateEdits'
@@ -47,6 +48,7 @@ function registerWith({
       result(queued[queued.length - 1], await ensureClosed()),
     ),
     drop: vi.fn<RekordboxQueue['drop']>(),
+    outcomeOf: vi.fn<RekordboxQueue['outcomeOf']>(),
   }
   const host = {
     roots: () => roots,
@@ -170,5 +172,19 @@ describe('seratoEdit', () => {
     const { handle, queue } = registerWith({ running: true })
     await handle(rename('House', 'HOUSE'), 'House')
     expect(queue.enqueue).toHaveBeenCalled()
+  })
+})
+
+describe('seratoEdit with an apply already running', () => {
+  it('says the edit was written when that apply wrote it, not that it failed', async () => {
+    const { roots } = twoRoots({})
+    const race = queueWithApplyInFlight('Nueva')
+    const saving = seratoEdit({
+      roots: () => roots,
+      queue: race.queue,
+      isRunning: async () => false,
+    }).save(create('root', 'Nueva'), 'Nueva', {} as WebContents)
+    await race.release()
+    expect(await saving).toEqual({ applied: true, createdId: 'Nueva' })
   })
 })

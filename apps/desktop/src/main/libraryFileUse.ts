@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises'
 import { basename, join } from 'node:path'
-import type { WritableProgram } from '../shared/djProgram'
-import { writableInOrder } from '../shared/djProgram'
+import type { LibraryProgram, WritableProgram } from '../shared/djProgram'
+import { programsInOrder, writableInOrder } from '../shared/djProgram'
 import { engineContentId } from '../shared/engineContent'
 import { traktorContentId } from '../shared/traktorContent'
 import type { LibraryCopyInfo, LibraryCopyPresence, LibraryTracks } from '../shared/types'
@@ -10,39 +10,56 @@ import { engineRowFinder } from './engineRepoint'
 import { toNmlLocation } from './ffmpeg'
 import { type PathMatchOptions, pathKey } from './libraryPathKey'
 import { findTrackByPath, isAmbiguous, openRekordboxDb, rekordboxRawKey } from './rekordboxDb'
-import { readSeratoLibrary, type SeratoLibrary, type SeratoLibraryRoot } from './seratoLibrary'
+import { readSeratoLibrary, type SeratoLibraryRoot } from './seratoLibrary'
 import { attr, findEntries, nmlCopyInfo } from './traktorNml'
 import { traktorFileOf } from './traktorPlaylists'
+import { readVirtualdjLibrary, type VirtualdjRoot } from './virtualdjLibrary'
+import type { VirtualdjNode } from './virtualdjLists'
 
-// Each library's location, or '' when its sync is off.
-export type SyncedLibraries = Record<WritableProgram, string>
+interface LocationOf {
+  rekordbox: string
+  engine: string
+  traktor: string
+  serato: SeratoLibraryRoot[]
+  virtualdj: VirtualdjRoot[]
+}
 
-const LIBRARY_ORDER = writableInOrder(['rekordbox', 'engine', 'traktor'])
+export type LibraryLocations = { [P in LibraryProgram]: LocationOf[P] }
+
+// Each library's location, or an empty one when its sync is off.
+export type SyncedLibraries = Pick<LibraryLocations, WritableProgram>
+
+type RootProgram = {
+  [P in LibraryProgram]: LocationOf[P] extends string ? never : P
+}[LibraryProgram]
+
+export type RootLibraries = Pick<LibraryLocations, RootProgram>
+
+const LIBRARY_ORDER = writableInOrder(['rekordbox', 'engine', 'traktor', 'virtualdj'])
+
+const PROGRAM_ORDER = programsInOrder(['rekordbox', 'engine', 'traktor', 'serato', 'virtualdj'])
 
 // Read only, and it throws when a library it should look in cannot be read: the caller
 // keeps the file then, since that library may still use it.
 export function usedByDjLibrary(
   path: string,
-  libraries: SyncedLibraries & { serato?: SeratoLibraryRoot[] },
+  libraries: LibraryLocations,
   options: PathMatchOptions = {},
 ): Promise<boolean> {
   return djLibraryFileUse(libraries, options)(path)
 }
 
-// The same check for a whole run of files. Each library is read once, when the first file
-// reaches it, and the rekordbox key is derived once: a duplicate replace asks per removed
-// copy, after it has settled every library, so nothing changes them between two files.
-export function djLibraryFileUse(
-  libraries: SyncedLibraries & { serato?: SeratoLibraryRoot[] },
-  options: PathMatchOptions = {},
-): (path: string) => Promise<boolean> {
-  const key = pathKey(options)
-  let rekordboxKey: Promise<string> | undefined
-  let engineRows: ReturnType<typeof readEngineRows> | undefined
-  let nmlFiles: Promise<Map<string, string[]>> | undefined
-  let seratoFile: ((path: string) => string | undefined) | undefined
-  const holds: Record<WritableProgram, (location: string, path: string) => Promise<boolean>> = {
-    rekordbox: async (collection, path) => {
+type FileUseOf = {
+  [P in LibraryProgram]: (
+    location: LocationOf[P],
+    options: PathMatchOptions,
+  ) => (path: string) => Promise<boolean>
+}
+
+const FILE_USE: FileUseOf = {
+  rekordbox: (collection, options) => {
+    let rekordboxKey: Promise<string> | undefined
+    return async (path) => {
       rekordboxKey ??= rekordboxRawKey(collection)
       const db = openRekordboxDb(collection, { readonly: true, key: await rekordboxKey })
       if (!db) throw new Error(`rekordbox collection unreadable: ${collection}`)
@@ -51,30 +68,82 @@ export function djLibraryFileUse(
       } finally {
         db.close()
       }
-    },
-    engine: async (libraryDir, path) => {
+    }
+  },
+  engine: (libraryDir, options) => {
+    const key = pathKey(options)
+    let engineRows: ReturnType<typeof readEngineRows> | undefined
+    return async (path) => {
       engineRows ??= readEngineRows(libraryDir)
       return (await engineRows)(path, key).length > 0
-    },
-    traktor: async (nmlPath, path) => {
+    }
+  },
+  traktor: (nmlPath, options) => {
+    const key = pathKey(options)
+    let nmlFiles: Promise<Map<string, string[]>> | undefined
+    return async (path) => {
       nmlFiles ??= readFile(nmlPath, 'utf8').then(traktorFiles)
       const nfc = path.normalize('NFC')
       const target = key(nfc)
       const sameName = (await nmlFiles).get(basename(nfc).toLowerCase()) ?? []
       return sameName.some((file) => key(file) === target)
-    },
-  }
-  return async (path) => {
-    for (const library of LIBRARY_ORDER)
-      if (libraries[library] && (await holds[library](libraries[library], path))) return true
-    if (!libraries.serato?.length) return false
-    if (!seratoFile) {
-      const library = readSeratoLibrary(libraries.serato)
-      if (library.unreadable.length > 0)
-        throw new Error(`Serato library unreadable: ${library.unreadable.join(', ')}`)
-      seratoFile = seratoFileFinder(library, options)
     }
-    return seratoFile(path) !== undefined
+  },
+  serato: (roots, options) => {
+    let seratoFile: ((path: string) => string | undefined) | undefined
+    return async (path) => {
+      if (!seratoFile) {
+        const library = readSeratoLibrary(roots)
+        if (library.unreadable.length > 0)
+          throw new Error(`Serato library unreadable: ${library.unreadable.join(', ')}`)
+        seratoFile = fileFinder(
+          library.tracks.map((t) => t.file),
+          options,
+        )
+      }
+      return seratoFile(path) !== undefined
+    }
+  },
+  virtualdj: (roots, options) => {
+    let virtualdjFile: ((path: string) => string | undefined) | undefined
+    return async (path) => {
+      if (!virtualdjFile) {
+        const library = readVirtualdjLibrary(roots)
+        virtualdjFile = fileFinder(
+          [...library.songs.map((s) => s.path), ...listPaths(library.lists)],
+          options,
+        )
+      }
+      return virtualdjFile(path) !== undefined
+    }
+  },
+}
+
+function listPaths(nodes: VirtualdjNode[]): string[] {
+  return nodes.flatMap((n) => [...n.paths, ...listPaths(n.children ?? [])])
+}
+
+function fileUseOf<P extends LibraryProgram>(
+  program: P,
+  libraries: LibraryLocations,
+  options: PathMatchOptions,
+): (path: string) => Promise<boolean> {
+  return FILE_USE[program](libraries[program], options)
+}
+
+// The same check for a whole run of files. Each library is read once, when the first file
+// reaches it, and the rekordbox key is derived once: a duplicate replace asks per removed
+// copy, after it has settled every library, so nothing changes them between two files.
+export function djLibraryFileUse(
+  libraries: LibraryLocations,
+  options: PathMatchOptions = {},
+): (path: string) => Promise<boolean> {
+  const asked = PROGRAM_ORDER.filter((program) => libraries[program].length > 0).map((program) =>
+    fileUseOf(program, libraries, options),
+  )
+  return async (path) => {
+    for (const holds of asked) if (await holds(path)) return true
+    return false
   }
 }
 
@@ -161,20 +230,59 @@ async function engineInfo(
   }
 }
 
-const COPY_INFO: Record<
-  WritableProgram,
-  (
-    location: string,
+function virtualdjInfo(
+  roots: VirtualdjRoot[],
+  paths: string[],
+  options: PathMatchOptions,
+): LibraryCopyPresence[] {
+  const library = readVirtualdjLibrary(roots)
+  const find = fileFinder(
+    library.songs.map((s) => s.path),
+    options,
+  )
+  const lists = listsOf(library.lists)
+  return paths.map((path) => {
+    const at = find(path)
+    const song = at && library.songs.find((s) => s.path === at)
+    if (!song) return null
+    const file = song.path.normalize('NFC')
+    return {
+      cues: song.pois.filter((p) => p.kind === 'cue' && (p.num ?? 0) >= 1 && (p.num ?? 0) <= 8)
+        .length,
+      playlists: lists.filter((n) => n.paths.some((p) => p.normalize('NFC') === file)).length,
+    }
+  })
+}
+
+function listsOf(nodes: VirtualdjNode[]): VirtualdjNode[] {
+  return nodes.flatMap((n) => (n.kind === 'playlist' ? [n] : listsOf(n.children ?? [])))
+}
+
+type CopyInfoOf = {
+  [P in WritableProgram]: (
+    location: SyncedLibraries[P],
     paths: string[],
     options: PathMatchOptions,
   ) => LibraryCopyPresence[] | Promise<LibraryCopyPresence[]>
-> = {
+}
+
+const COPY_INFO: CopyInfoOf = {
   rekordbox: rekordboxInfo,
   engine: engineInfo,
   traktor: async (nmlPath, paths) => {
     const nml = await readFile(nmlPath, 'utf8')
     return paths.map((p) => nmlCopyInfo(nml, toNmlLocation(p)))
   },
+  virtualdj: virtualdjInfo,
+}
+
+function copyInfoOf<P extends WritableProgram>(
+  program: P,
+  libraries: SyncedLibraries,
+  paths: string[],
+  options: PathMatchOptions,
+) {
+  return COPY_INFO[program](libraries[program], paths, options)
 }
 
 // Read only, for the duplicate detail: what each enabled library holds for each copy. A
@@ -190,9 +298,9 @@ export async function libraryCopyInfo(
       info[p][library] = found[i]
     })
   for (const library of LIBRARY_ORDER) {
-    if (!libraries[library]) continue
+    if (libraries[library].length === 0) continue
     try {
-      fill(library, await COPY_INFO[library](libraries[library], paths, options))
+      fill(library, await copyInfoOf(library, libraries, paths, options))
     } catch {}
   }
   return info
@@ -285,10 +393,15 @@ export async function libraryGenresOf(
   return out
 }
 
-const TRACK_OF: Record<
-  WritableProgram,
-  (location: string, path: string, options: PathMatchOptions) => Promise<string | undefined>
-> = {
+type TrackOf = {
+  [P in LibraryProgram]: (
+    location: LocationOf[P],
+    path: string,
+    options: PathMatchOptions,
+  ) => Promise<string | undefined>
+}
+
+const TRACK_OF: TrackOf = {
   rekordbox: async (collection, path, options) => {
     const db = openRekordboxDb(collection, {
       readonly: true,
@@ -329,29 +442,34 @@ const TRACK_OF: Record<
       ? traktorContentId(`${found[0].volume}${found[0].dir}${found[0].file}`)
       : undefined
   },
+  serato: async (roots, path, options) => {
+    const found = fileFinder(
+      readSeratoLibrary(roots).tracks.map((t) => t.file),
+      options,
+    )(path)
+    return found ? `serato:${found}` : undefined
+  },
+  virtualdj: async (roots, path, options) => {
+    const found = fileFinder(
+      readVirtualdjLibrary(roots).songs.map((s) => s.path),
+      options,
+    )(path)
+    return found ? `virtualdj:${found}` : undefined
+  },
 }
 
-function seratoFileFinder(
-  library: SeratoLibrary,
+function fileFinder(
+  files: string[],
   options: PathMatchOptions,
 ): (path: string) => string | undefined {
   const key = pathKey(options)
   return (path) => {
     const wanted = key(path)
     const name = basename(path.normalize('NFC')).toLowerCase()
-    return library.tracks.find(
-      (t) => basename(t.file.normalize('NFC')).toLowerCase() === name && key(t.file) === wanted,
-    )?.file
+    return files.find(
+      (file) => basename(file.normalize('NFC')).toLowerCase() === name && key(file) === wanted,
+    )
   }
-}
-
-function seratoTrackOf(
-  roots: SeratoLibraryRoot[],
-  path: string,
-  options: PathMatchOptions,
-): string | undefined {
-  const found = seratoFileFinder(readSeratoLibrary(roots), options)(path)
-  return found ? `serato:${found}` : undefined
 }
 
 // Read only: the id each library gives the file, for the cue editor to place a flow on the
@@ -359,18 +477,25 @@ function seratoTrackOf(
 // left out, since there is then no one track to write to.
 export async function libraryTracksOf(
   path: string,
-  libraries: SyncedLibraries & { serato?: SeratoLibraryRoot[] },
+  libraries: LibraryLocations,
   options: PathMatchOptions = {},
 ): Promise<LibraryTracks> {
   const out: LibraryTracks = {}
-  for (const library of LIBRARY_ORDER) {
-    if (!libraries[library]) continue
+  for (const library of PROGRAM_ORDER) {
+    if (libraries[library].length === 0) continue
     try {
-      const track = await TRACK_OF[library](libraries[library], path, options)
+      const track = await trackOf(library, libraries, path, options)
       if (track !== undefined) out[library] = track
     } catch {}
   }
-  const serato = seratoTrackOf(libraries.serato ?? [], path, options)
-  if (serato !== undefined) out.serato = serato
   return out
+}
+
+function trackOf<P extends LibraryProgram>(
+  program: P,
+  libraries: LibraryLocations,
+  path: string,
+  options: PathMatchOptions,
+): Promise<string | undefined> {
+  return TRACK_OF[program](libraries[program], path, options)
 }

@@ -6,15 +6,17 @@ import { isRekordboxRunning, quitRekordbox } from './rekordboxProcess'
 import { isSeratoRunning } from './seratoProcess'
 import { sharedPrompt } from './sharedPrompt'
 import { isTraktorRunning, quitTraktor } from './traktorProcess'
+import { isVirtualdjRunning, waitForVirtualdjExit } from './virtualdjProcess'
 
 type MenuKey = Parameters<ReturnType<typeof createMenuT>>[0]
 
-export type QuitReason = 'convert' | 'cues' | 'playlists' | 'usb' | 'restore'
+export type QuitReason = 'convert' | 'cues' | 'playlists' | 'usb' | 'restore' | 'duplicates'
 
 export const QUIT_REASONS = {
   rekordbox: ['convert', 'playlists', 'usb', 'restore'],
   traktor: ['convert', 'cues', 'playlists', 'restore'],
   engine: ['convert', 'cues', 'playlists', 'usb', 'restore'],
+  virtualdj: ['convert', 'restore', 'duplicates'],
 } as const satisfies { [P in WritableProgram]: readonly ['convert', ...QuitReason[]] }
 
 export type ReasonOf<P extends WritableProgram> = (typeof QUIT_REASONS)[P][number]
@@ -31,6 +33,7 @@ export const DJ_PROCESSES: {
   traktor: { isRunning: isTraktorRunning, quit: quitTraktor },
   engine: { isRunning: isEngineDjRunning, quit: quitEngineDj },
   serato: { isRunning: isSeratoRunning },
+  virtualdj: { isRunning: isVirtualdjRunning, quit: () => waitForVirtualdjExit() },
 }
 
 export async function anyDjProgramRunning(
@@ -46,7 +49,7 @@ export interface QuitText<P extends WritableProgram = WritableProgram> {
   message: Extract<MenuKey, `${P}QuitMessage`>
   confirm: Extract<MenuKey, `${P}QuitConfirm`>
   cancel: Extract<MenuKey, `${P}QuitCancel`>
-  detail: Record<ReasonOf<P>, DetailKeyOf<P>>
+  detail: Record<ReasonOf<P>, DetailKeyOf<P> | null>
 }
 
 export const QUIT_TEXT: { [P in WritableProgram]: QuitText<P> } = {
@@ -84,6 +87,16 @@ export const QUIT_TEXT: { [P in WritableProgram]: QuitText<P> } = {
       restore: 'engineQuitDetailRestore',
     },
   },
+  virtualdj: {
+    message: 'virtualdjQuitMessage',
+    confirm: 'virtualdjQuitConfirm',
+    cancel: 'virtualdjQuitCancel',
+    detail: {
+      convert: null,
+      restore: 'virtualdjQuitDetailRestore',
+      duplicates: 'virtualdjQuitDetailDuplicates',
+    },
+  },
 }
 
 export type DetailKeyOf<P extends WritableProgram> = Extract<MenuKey, `${P}QuitDetail${string}`>
@@ -92,7 +105,8 @@ export function reasonOfDetail<P extends WritableProgram>(
   program: P,
   key: DetailKeyOf<P>,
 ): ReasonOf<P> {
-  const detail: Record<ReasonOf<P>, MenuKey> = QUIT_TEXT[program].detail
+  const text: QuitText<P> = QUIT_TEXT[program]
+  const detail: Record<ReasonOf<P>, MenuKey | null> = text.detail
   const reason = (QUIT_REASONS[program] as readonly ReasonOf<P>[]).find((r) => detail[r] === key)
   if (reason === undefined) throw new Error(`No ${program} quit reason for ${key}`)
   return reason
@@ -102,6 +116,7 @@ export const QUIT_PROMPT_SHARING: Record<WritableProgram, 'once' | 'perReason'> 
   rekordbox: 'perReason',
   traktor: 'once',
   engine: 'once',
+  virtualdj: 'once',
 }
 
 export function createEnsureClosed(deps: {
@@ -119,10 +134,12 @@ export function createEnsureClosed(deps: {
     reason: ReasonOf<P>,
   ): Promise<boolean> {
     const text: QuitText<P> = QUIT_TEXT[program]
+    const detail = text.detail[reason]
+    if (!detail) return false
     const response = await deps.ask(win, {
       type: 'warning',
       message: deps.t(text.message),
-      detail: deps.t(text.detail[reason]),
+      detail: deps.t(detail),
       buttons: [deps.t(text.confirm), deps.t(text.cancel)],
       defaultId: 0,
       cancelId: 1,
@@ -153,6 +170,7 @@ export function createEnsureClosed(deps: {
     rekordbox: closer('rekordbox'),
     traktor: closer('traktor'),
     engine: closer('engine'),
+    virtualdj: closer('virtualdj'),
   }
 
   return <P extends WritableProgram>(

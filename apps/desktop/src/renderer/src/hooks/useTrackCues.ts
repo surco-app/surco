@@ -28,6 +28,12 @@ export const cueWaveDetailQuery = (contentId: string) => ({
   staleTime: Number.POSITIVE_INFINITY,
 })
 
+export const surcoGridQuery = (contentId: string) => ({
+  queryKey: ['rekordbox-surco-grid', contentId],
+  queryFn: () => window.api.cues.surcoGrid(contentId),
+  staleTime: Number.POSITIVE_INFINITY,
+})
+
 export const cueDropInputQuery = (contentId: string) => ({
   queryKey: ['rekordbox-cue-drop-input', contentId],
   queryFn: () => window.api.cues.dropInput(contentId),
@@ -78,12 +84,7 @@ export function useSurcoGrid(
   contentId: string,
   enabled: boolean,
 ): { data: SurcoGrid | null | undefined } {
-  const { data, isError } = useQuery({
-    queryKey: ['rekordbox-surco-grid', contentId],
-    queryFn: () => window.api.cues.surcoGrid(contentId),
-    enabled,
-    staleTime: Number.POSITIVE_INFINITY,
-  })
+  const { data, isError } = useQuery({ ...surcoGridQuery(contentId), enabled })
   return { data: isError ? null : data }
 }
 

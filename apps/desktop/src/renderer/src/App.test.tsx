@@ -152,6 +152,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     cueFlowToTraktor: true,
     cueFlowToEngine: true,
     cueFlowToSerato: true,
+    cueFlowToVirtualdj: true,
     cueLearnFromEdits: true,
     hiddenSources: [],
     sessionWizard: { ...DEFAULT_SESSION_WIZARD },
@@ -191,9 +192,13 @@ function settings(over: Partial<Settings> = {}): Settings {
     traktorPlaylistsFieldOffered: true,
     enginePlaylistsFieldOffered: true,
     seratoPlaylistsFieldOffered: false,
+    virtualdjPlaylistsFieldOffered: false,
     syncEngineDj: false,
     addToSerato: false,
     syncSerato: false,
+    addToVirtualdj: false,
+    syncVirtualdj: false,
+    virtualdjLibraryDir: '',
     betaUpdates: false,
     traktorCueOffsetMs: 0,
     filenameFormat: '{artist} - {title}',
@@ -714,6 +719,15 @@ describe('App Engine DJ cues', () => {
     expect(screen.queryByTestId('source-tree-rename')).not.toBeInTheDocument()
   })
 
+  it('never offers pasting a tracklist into Engine DJ, since Surco cannot read its collection to find the tracks', async () => {
+    openEngine()
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-engine'))
+    fireEvent.contextMenu(await screen.findByTestId('source-node-7'))
+    expect(screen.getByTestId('source-tree-delete')).toBeInTheDocument()
+    expect(screen.queryByTestId('source-tree-paste-tracklist')).not.toBeInTheDocument()
+  })
+
   it('lets an Engine DJ row go to another playlist but never offers removing it from the open one', async () => {
     openEngine({
       dj: djReads({
@@ -806,6 +820,31 @@ describe('App Engine DJ cues', () => {
       'traktor-queue-pill',
       'serato-queue-pill',
     ])
+  })
+
+  it('shows what waits for VirtualDJ to close after the Serato queue, the last program of the rail', async () => {
+    const waiting = { tracks: 1, changes: 0, items: [] }
+    const virtualdjCueQueueReady = vi
+      .fn<ProgramReads['cueQueueReady']>()
+      .mockResolvedValue(undefined)
+    openEngine({
+      dj: djReads({
+        serato: { cueQueue: vi.fn<ProgramReads['cueQueue']>().mockResolvedValue(waiting) },
+        virtualdj: {
+          cueQueue: vi.fn<ProgramReads['cueQueue']>().mockResolvedValue(waiting),
+          cueQueueReady: virtualdjCueQueueReady,
+        },
+      }),
+    })
+    await renderApp()
+    expect(await screen.findByTestId('virtualdj-queue-pill')).toHaveTextContent(
+      '1 track waits for you to close VirtualDJ',
+    )
+    await screen.findByTestId('serato-queue-pill')
+    expect(
+      screen.getAllByTestId(/^(serato|virtualdj)-queue-pill$/).map((pill) => pill.dataset.testid),
+    ).toEqual(['serato-queue-pill', 'virtualdj-queue-pill'])
+    expect(virtualdjCueQueueReady).toHaveBeenCalled()
   })
 })
 
@@ -952,6 +991,244 @@ describe('App Traktor cues', () => {
   })
 })
 
+describe('App VirtualDJ tab', () => {
+  afterEach(resetCueSession)
+
+  function openVirtualdj(over: ApiOverrides = {}) {
+    setApi({
+      ...over,
+      dj: djReads(
+        {
+          virtualdj: {
+            available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+            tree: vi.fn<ProgramReads['tree']>().mockResolvedValue([
+              {
+                id: 'Carpeta',
+                name: 'Carpeta',
+                kind: 'folder',
+                count: 1,
+                children: [{ id: 'Carpeta/Dentro', name: 'Dentro', kind: 'playlist', count: 2 }],
+              },
+            ]),
+            recentCount: vi.fn<ProgramReads['recentCount']>().mockResolvedValue(0),
+            trackCount: vi.fn<ProgramReads['trackCount']>().mockResolvedValue(6),
+            playlist: vi.fn<ProgramReads['playlist']>().mockResolvedValue([
+              { path: '/m/a.wav', separator: false, meta: {}, contentId: 'virtualdj:/m/a.wav' },
+              { path: '/m/b.wav', separator: false, meta: {}, contentId: 'virtualdj:/m/b.wav' },
+            ]),
+          },
+        },
+        over.dj,
+      ),
+    })
+  }
+
+  it('shows VirtualDJ in the rail with its folders and lists the tracks of a list', async () => {
+    openVirtualdj()
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-virtualdj'))
+    expect(await screen.findByTestId(`source-node-${ALL_TRACKS_ID}`)).toBeInTheDocument()
+    fireEvent.click(await screen.findByTestId('source-node-Carpeta'))
+    fireEvent.click(await screen.findByTestId('source-node-Carpeta/Dentro'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    expect(window.api.dj.playlist).toHaveBeenCalledWith('virtualdj', 'Carpeta/Dentro')
+  })
+
+  it('holds a track of a VirtualDJ list back only for what it lacks, not for coming from VirtualDJ, since VirtualDJ follows it to the new file', async () => {
+    openVirtualdj()
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-virtualdj'))
+    fireEvent.click(await screen.findByTestId('source-node-Carpeta'))
+    fireEvent.click(await screen.findByTestId('source-node-Carpeta/Dentro'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    fireEvent.click(screen.getAllByTestId('track-row')[1])
+    await waitFor(() =>
+      expect(screen.getByTestId('process-btn')).toHaveAccessibleDescription(
+        'Missing required fields: Artist',
+      ),
+    )
+  })
+
+  it('leaves VirtualDJ out of the rail where its library is not found', async () => {
+    setApi({
+      dj: djReads({
+        rekordbox: { available: vi.fn<ProgramReads['available']>().mockResolvedValue(true) },
+      }),
+    })
+    await renderApp()
+    await screen.findByTestId('source-rail-rekordbox')
+    await waitFor(() => expect(window.api.dj.available).toHaveBeenCalledWith('virtualdj'))
+    expect(screen.queryByTestId('source-rail-virtualdj')).toBeNull()
+  })
+
+  it('offers no USB export from the VirtualDJ tree on Windows, where Surco has no VirtualDJ exporter', async () => {
+    openVirtualdj({ platform: 'win32' })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-virtualdj'))
+    expect(await screen.findByTestId('source-tree')).toBeInTheDocument()
+    expect(screen.queryByTestId('source-tree-export-usb')).toBeNull()
+  })
+
+  it('opens the USB export from the VirtualDJ tree on its lists on macOS and asks for a VirtualDJ export', async () => {
+    const usbPlan = vi
+      .fn<Api['usbPlan']>()
+      .mockResolvedValue({ ok: false, reason: 'nothing-selected' })
+    openVirtualdj({
+      platform: 'darwin',
+      usbVolumes: vi
+        .fn<Api['usbVolumes']>()
+        .mockResolvedValue({ volumes: [stick('A', 'empty')], lastKey: null }),
+      usbPlan,
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-virtualdj'))
+    fireEvent.click(await screen.findByTestId('source-tree-export-usb'))
+    fireEvent.click(await screen.findByTestId('check-node-Carpeta'))
+    await waitFor(() =>
+      expect(usbPlan).toHaveBeenCalledWith(
+        expect.objectContaining({ playlistIds: ['Carpeta/Dentro'], source: 'virtualdj' }),
+      ),
+    )
+  })
+
+  it('tells the DJ in the VirtualDJ tab that the changes will be saved once VirtualDJ is closed', async () => {
+    openVirtualdj({
+      dj: djReads({
+        virtualdj: { running: vi.fn<ProgramReads['running']>().mockResolvedValue(true) },
+      }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-virtualdj'))
+    expect(await screen.findByTestId('source-tree-notice')).toHaveTextContent(
+      'VirtualDJ is open. Your changes will be saved when you close it',
+    )
+  })
+
+  it('offers Auto mark over several VirtualDJ rows, in the section and in the palette, now that Surco saves their cues', async () => {
+    openVirtualdj({
+      cues: { trackCues: vi.fn<Api['cues']['trackCues']>().mockResolvedValue(null) },
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-virtualdj'))
+    fireEvent.click(await screen.findByTestId('source-node-Carpeta'))
+    fireEvent.click(await screen.findByTestId('source-node-Carpeta/Dentro'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[0])
+    fireEvent.click(rows[1], { metaKey: true })
+    expect(await screen.findByTestId('cues-auto-mark-all')).toBeEnabled()
+    expect(screen.queryByTestId('cues-single-only')).toBeNull()
+    fireEvent.keyDown(document.body, { key: 'k', ctrlKey: true })
+    await screen.findByTestId('palette-input')
+    expect(document.getElementById('palette-option-cues-auto-mark-selected')).not.toBeNull()
+  })
+
+  it('offers Pegar tracklist and Sesión automática on a VirtualDJ folder, now that its lists can be edited', async () => {
+    openVirtualdj()
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-virtualdj'))
+    fireEvent.contextMenu(await screen.findByTestId('source-node-Carpeta'))
+    expect(screen.getByTestId('source-tree-paste-tracklist')).toBeInTheDocument()
+    expect(screen.getByTestId('source-tree-session')).toBeInTheDocument()
+    expect(screen.getByTestId('source-tree-rename')).toBeInTheDocument()
+  })
+
+  async function renameInVirtualdj(nodeId: string, name: string, after: SourceNode[]) {
+    let tree: SourceNode[] = [
+      {
+        id: 'Carpeta',
+        name: 'Carpeta',
+        kind: 'folder',
+        count: 1,
+        children: [{ id: 'Carpeta/Dentro', name: 'Dentro', kind: 'playlist', count: 2 }],
+      },
+    ]
+    const playlist = vi
+      .fn<ProgramReads['playlist']>()
+      .mockResolvedValue([
+        { path: '/m/a.wav', separator: false, meta: {}, contentId: 'virtualdj:/m/a.wav' },
+      ])
+    const editPlaylist = vi.fn<ProgramReads['editPlaylist']>(async () => {
+      tree = after
+      return { applied: true }
+    })
+    openVirtualdj({
+      dj: djReads({
+        virtualdj: { tree: vi.fn<ProgramReads['tree']>(async () => tree), playlist, editPlaylist },
+      }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-virtualdj'))
+    fireEvent.click(await screen.findByTestId('source-node-Carpeta'))
+    fireEvent.click(await screen.findByTestId('source-node-Carpeta/Dentro'))
+    await waitFor(() => expect(playlist).toHaveBeenCalledWith('Carpeta/Dentro'))
+    fireEvent.contextMenu(screen.getByTestId(`source-node-${nodeId}`))
+    fireEvent.click(screen.getByTestId('source-tree-rename'))
+    const field = await screen.findByTestId('source-tree-rename-field')
+    fireEvent.change(field, { target: { value: name } })
+    fireEvent.keyDown(field, { key: 'Enter' })
+    await waitFor(() => expect(editPlaylist).toHaveBeenCalled())
+    return playlist
+  }
+
+  it('keeps the open VirtualDJ list open under its new name once it is renamed', async () => {
+    const playlist = await renameInVirtualdj('Carpeta/Dentro', 'Fuera', [
+      {
+        id: 'Carpeta',
+        name: 'Carpeta',
+        kind: 'folder',
+        count: 1,
+        children: [{ id: 'Carpeta/Fuera', name: 'Fuera', kind: 'playlist', count: 2 }],
+      },
+    ])
+    await waitFor(() =>
+      expect(screen.getByTestId('source-node-Carpeta/Fuera')).toHaveAttribute(
+        'aria-current',
+        'true',
+      ),
+    )
+    expect(playlist).toHaveBeenCalledWith('Carpeta/Fuera')
+  })
+
+  it('keeps the open VirtualDJ list open when the folder holding it is renamed', async () => {
+    await renameInVirtualdj('Carpeta', 'Cajón', [
+      {
+        id: 'Cajón',
+        name: 'Cajón',
+        kind: 'folder',
+        count: 1,
+        children: [{ id: 'Cajón/Dentro', name: 'Dentro', kind: 'playlist', count: 2 }],
+      },
+    ])
+    await waitFor(() =>
+      expect(screen.getByTestId('source-node-Cajón/Dentro')).toHaveAttribute(
+        'aria-current',
+        'true',
+      ),
+    )
+  })
+
+  it('sends a list made from the VirtualDJ tab to VirtualDJ', async () => {
+    const editPlaylist = vi
+      .fn<ProgramReads['editPlaylist']>()
+      .mockResolvedValue({ applied: true, createdId: 'Carpeta/Nueva' })
+    openVirtualdj({ dj: djReads({ virtualdj: { editPlaylist } }) })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-virtualdj'))
+    fireEvent.contextMenu(await screen.findByTestId('source-node-Carpeta'))
+    fireEvent.click(screen.getByTestId('source-tree-new-playlist-inside'))
+    const input = await screen.findByTestId('source-tree-name')
+    fireEvent.change(input, { target: { value: 'Nueva' } })
+    fireEvent.keyDown(input, { key: 'Enter' })
+    await waitFor(() =>
+      expect(editPlaylist).toHaveBeenCalledWith(
+        { kind: 'create', parentId: 'Carpeta', name: 'Nueva', folder: false },
+        'Nueva',
+      ),
+    )
+  })
+})
+
 describe('App Serato cues', () => {
   afterEach(resetCueSession)
 
@@ -984,6 +1261,89 @@ describe('App Serato cues', () => {
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
   }
 
+  async function renameInSerato(nodeId: string, name: string, after: SourceNode[]) {
+    let tree: SourceNode[] = [
+      {
+        id: 'Sets',
+        name: 'Sets',
+        kind: 'playlist',
+        count: 0,
+        children: [{ id: 'Sets%%Friday', name: 'Friday', kind: 'playlist', count: 2 }],
+      },
+    ]
+    const playlist = vi
+      .fn<ProgramReads['playlist']>()
+      .mockResolvedValue([
+        { path: '/m/a.wav', separator: false, meta: {}, contentId: 'serato:/m/a.wav' },
+      ])
+    const editPlaylist = vi.fn<ProgramReads['editPlaylist']>(async () => {
+      tree = after
+      return { applied: true }
+    })
+    openSerato({
+      dj: djReads({
+        serato: { tree: vi.fn<ProgramReads['tree']>(async () => tree), playlist, editPlaylist },
+      }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-serato'))
+    fireEvent.click(await screen.findByTestId('source-node-expand-Sets'))
+    fireEvent.click(await screen.findByTestId('source-node-Sets%%Friday'))
+    await waitFor(() => expect(playlist).toHaveBeenCalledWith('Sets%%Friday'))
+    fireEvent.contextMenu(screen.getByTestId(`source-node-${nodeId}`))
+    fireEvent.click(screen.getByTestId('source-tree-rename'))
+    const field = await screen.findByTestId('source-tree-rename-field')
+    fireEvent.change(field, { target: { value: name } })
+    fireEvent.keyDown(field, { key: 'Enter' })
+    await waitFor(() => expect(editPlaylist).toHaveBeenCalled())
+    return playlist
+  }
+
+  it('offers pasting a tracklist into a Serato crate, since Surco reads the whole Serato collection to find the tracks', async () => {
+    openSerato()
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-serato'))
+    fireEvent.contextMenu(await screen.findByTestId('source-node-Friday'))
+    expect(screen.getByTestId('source-tree-paste-tracklist')).toBeInTheDocument()
+  })
+
+  it('keeps the open Serato subcrate open under its new name once it is renamed', async () => {
+    const playlist = await renameInSerato('Sets%%Friday', 'Sábado', [
+      {
+        id: 'Sets',
+        name: 'Sets',
+        kind: 'playlist',
+        count: 0,
+        children: [{ id: 'Sets%%Sábado', name: 'Sábado', kind: 'playlist', count: 2 }],
+      },
+    ])
+    await waitFor(() =>
+      expect(screen.getByTestId('source-node-Sets%%Sábado')).toHaveAttribute(
+        'aria-current',
+        'true',
+      ),
+    )
+    expect(playlist).toHaveBeenCalledWith('Sets%%Sábado')
+  })
+
+  it('keeps the open Serato subcrate open when the crate holding it is renamed', async () => {
+    await renameInSerato('Sets', 'Gigs', [
+      {
+        id: 'Gigs',
+        name: 'Gigs',
+        kind: 'playlist',
+        count: 0,
+        children: [{ id: 'Gigs%%Friday', name: 'Friday', kind: 'playlist', count: 2 }],
+      },
+    ])
+    await waitFor(() =>
+      expect(screen.getByTestId('source-node-Gigs%%Friday')).toHaveAttribute(
+        'aria-current',
+        'true',
+      ),
+    )
+  })
+
   it('opens the cue editor on a row of a Serato crate in Serato’s words, and keeps the track from being converted', async () => {
     const read = vi.fn<Api['cues']['trackCues']>().mockResolvedValue({
       contentId: 'serato:/m/b.wav',
@@ -1015,11 +1375,20 @@ describe('App Serato cues', () => {
     )
   })
 
-  it('opens the USB export from the Serato tree on its crates and asks for a Serato export', async () => {
+  it('offers no USB export from the Serato tree on Windows, where Surco has no Serato exporter', async () => {
+    openSerato({ platform: 'win32' })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-serato'))
+    expect(await screen.findByTestId('source-tree')).toBeInTheDocument()
+    expect(screen.queryByTestId('source-tree-export-usb')).toBeNull()
+  })
+
+  it('opens the USB export from the Serato tree on its crates on macOS and asks for a Serato export', async () => {
     const usbPlan = vi
       .fn<Api['usbPlan']>()
       .mockResolvedValue({ ok: false, reason: 'nothing-selected' })
     openSerato({
+      platform: 'darwin',
       usbVolumes: vi
         .fn<Api['usbVolumes']>()
         .mockResolvedValue({ volumes: [stick('A', 'empty')], lastKey: null }),
@@ -7273,6 +7642,52 @@ describe('App offers the rekordbox Playlists field', () => {
     await act(async () => {})
     expect(saveSettings).not.toHaveBeenCalledWith(
       expect.objectContaining({ rekordboxPlaylistsFieldOffered: true }),
+    )
+  })
+})
+
+describe('App offers the playlists field of each program Surco adds converted tracks to', () => {
+  it('offers the Serato crates field once Serato is found, since Surco adds converted tracks to its crates', async () => {
+    const saveSettings = vi.fn().mockResolvedValue(settings())
+    setApi({
+      getSettings: vi
+        .fn()
+        .mockResolvedValue(
+          settings({ seratoPlaylistsFieldOffered: false, visibleFields: ['title'] }),
+        ),
+      dj: djReads({
+        serato: { available: vi.fn<ProgramReads['available']>().mockResolvedValue(true) },
+      }),
+      saveSettings,
+    })
+    await renderApp()
+    await waitFor(() =>
+      expect(saveSettings).toHaveBeenCalledWith({
+        visibleFields: ['title', 'seratoPlaylists'],
+        seratoPlaylistsFieldOffered: true,
+      }),
+    )
+  })
+
+  it('offers the VirtualDJ lists field once VirtualDJ is found, since Surco adds converted tracks to its lists', async () => {
+    const saveSettings = vi.fn().mockResolvedValue(settings())
+    setApi({
+      getSettings: vi
+        .fn()
+        .mockResolvedValue(
+          settings({ virtualdjPlaylistsFieldOffered: false, visibleFields: ['title'] }),
+        ),
+      dj: djReads({
+        virtualdj: { available: vi.fn<ProgramReads['available']>().mockResolvedValue(true) },
+      }),
+      saveSettings,
+    })
+    await renderApp()
+    await waitFor(() =>
+      expect(saveSettings).toHaveBeenCalledWith({
+        visibleFields: ['title', 'virtualdjPlaylists'],
+        virtualdjPlaylistsFieldOffered: true,
+      }),
     )
   })
 })

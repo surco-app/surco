@@ -2,13 +2,14 @@ import { describe, expect, it } from 'vitest'
 import type { RekordboxPlaylistEdit, SourceNode, SourcePlaylistEntry } from '../../../shared/types'
 import i18n from '../i18n'
 import {
-  PENDING_NODE,
-  editMessage,
   editedTree,
+  editMessage,
   isPendingNode,
   moveBefore,
   movedCrateId,
   movedEntries,
+  PENDING_NODE,
+  reopenedPlaylist,
   subtreeCounts,
   subtreeIds,
 } from './playlistEdits'
@@ -387,5 +388,60 @@ describe('movedCrateId', () => {
   it('joins the last segment to the new parent, or stands alone at the root', () => {
     expect(movedCrateId('A%%B', 'D')).toBe('D%%B')
     expect(movedCrateId('A%%B', 'root')).toBe('B')
+  })
+})
+
+describe('reopenedPlaylist', () => {
+  const folder: SourceNode = { id: 'Sets', name: 'Sets', kind: 'folder', count: 1 }
+
+  it('opens a list moved into another folder under the id it has there', () => {
+    const list: SourceNode = { id: 'Sets/Friday', name: 'Friday', kind: 'playlist', count: 2 }
+    expect(
+      reopenedPlaylist(
+        { id: 'Sets/Friday', name: 'Friday', folders: ['Sets'] },
+        list,
+        { id: 'Old/Friday', name: 'Friday', folders: ['Old'] },
+        '/',
+      ),
+    ).toEqual({ node: { ...list, id: 'Old/Friday' }, folders: ['Old'] })
+  })
+
+  it('keeps open a list whose folder moved, under the folder’s new place', () => {
+    expect(
+      reopenedPlaylist(
+        { id: 'Sets/Deep/Friday', name: 'Friday', folders: ['Sets', 'Deep'] },
+        folder,
+        { id: 'Old/Sets', name: 'Sets', folders: ['Old'] },
+        '/',
+      ),
+    ).toEqual({
+      node: { id: 'Old/Sets/Deep/Friday', name: 'Friday', kind: 'playlist', count: 0 },
+      folders: ['Old', 'Sets', 'Deep'],
+    })
+  })
+
+  it('keeps open a Serato subcrate whose parent crate moved, joined by %%', () => {
+    expect(
+      reopenedPlaylist(
+        { id: 'Sets%%Deep%%Friday', name: 'Friday', folders: ['Sets', 'Deep'] },
+        { id: 'Sets', name: 'Sets', kind: 'playlist', count: 0 },
+        { id: 'Old%%Sets', name: 'Sets', folders: ['Old'] },
+        '%%',
+      ),
+    ).toEqual({
+      node: { id: 'Old%%Sets%%Deep%%Friday', name: 'Friday', kind: 'playlist', count: 0 },
+      folders: ['Old', 'Sets', 'Deep'],
+    })
+  })
+
+  it('leaves the open list alone when the moved node is not it or above it', () => {
+    expect(
+      reopenedPlaylist(
+        { id: 'Setsx/Friday', name: 'Friday', folders: ['Setsx'] },
+        folder,
+        { id: 'Old/Sets', name: 'Sets', folders: ['Old'] },
+        '/',
+      ),
+    ).toBeNull()
   })
 })

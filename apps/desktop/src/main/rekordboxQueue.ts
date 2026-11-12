@@ -102,6 +102,7 @@ export interface RekordboxQueue<R extends QueuedRepoint = RekordboxRepoint> {
   holdsRepoint: (from: string) => boolean
   queuedRepoints: () => R[]
   queuedOps: () => QueueOp[]
+  outcomeOf: (id: string) => OpOutcome | undefined
   busy: () => boolean
   settled: () => Promise<void>
   apply: (ensureClosed: () => Promise<boolean>, opts?: { manual?: boolean }) => Promise<QueueApply>
@@ -212,6 +213,8 @@ export function createRekordboxQueue<R extends QueuedRepoint = RekordboxRepoint>
   // The repoints an apply has read and is writing: a later one for the same file waits on
   // its own, measured from what that write leaves, instead of stacking onto it.
   const writing = new Set<R>()
+  let editOutcomes = new Map<string, OpOutcome>()
+  let olderEditOutcomes = new Map<string, OpOutcome>()
 
   // The collection in use, or the one the settings name while its drive is unplugged. A
   // queue made while no collection was known belongs to whichever is found.
@@ -268,6 +271,8 @@ export function createRekordboxQueue<R extends QueuedRepoint = RekordboxRepoint>
     ensureClosed: () => Promise<boolean>,
     manual: boolean,
   ): Promise<QueueApply> => {
+    olderEditOutcomes = editOutcomes
+    editOutcomes = new Map()
     if (file.queues.every(isEmptyQueue)) return { status: 'empty' }
     const collectionPath = deps.collection()
     if (!collectionPath) return refused('unreadable')
@@ -314,6 +319,14 @@ export function createRekordboxQueue<R extends QueuedRepoint = RekordboxRepoint>
           repointNotices.push({ code: 'ambiguous', track: basename(repoints[i].to) })
         else if (r.reason === 'output-missing')
           repointNotices.push({ code: 'file-missing', track: basename(repoints[i].to) })
+        else if (r.reason === 'other-volume')
+          repointNotices.push({ code: 'repoint-other-volume', track: basename(repoints[i].to) })
+        else if (r.reason === 'song-taken')
+          repointNotices.push({ code: 'repoint-song-taken', track: basename(repoints[i].to) })
+        else if (r.reason === 'song-taken-gone')
+          repointNotices.push({ code: 'repoint-song-taken-gone', track: basename(repoints[i].to) })
+        else if (r.reason === 'unwritable')
+          repointNotices.push({ code: 'repoint-unwritable', track: basename(repoints[i].to) })
         else if (r.reason === 'no-match')
           log.info(`rekordbox repoint found no match for ${basename(repoints[i].to)}`)
       }
@@ -379,6 +392,7 @@ export function createRekordboxQueue<R extends QueuedRepoint = RekordboxRepoint>
         return { ...o, notices: [{ code: 'edit-changed', playlist: op.label ?? '' }] }
       return o
     })
+    for (const o of outcomes) if (byId.get(o.id)?.kind === 'edit') editOutcomes.set(o.id, o)
     const notices = [...repointNotices, ...outcomes.flatMap((o) => o.notices)]
     const appliedOps = outcomes.filter((o) => o.applied).map((o) => byId.get(o.id))
     const tracks = new Set([
@@ -439,6 +453,12 @@ export function createRekordboxQueue<R extends QueuedRepoint = RekordboxRepoint>
     holdsRepoint: (from) => queueFor(here())?.repoints.some((r) => r.from === from) ?? false,
     queuedRepoints: () => [...(queueFor(here())?.repoints ?? [])],
     queuedOps: () => [...(queueFor(here())?.ops ?? [])],
+    outcomeOf: (id) => {
+      const outcome = editOutcomes.get(id) ?? olderEditOutcomes.get(id)
+      editOutcomes.delete(id)
+      olderEditOutcomes.delete(id)
+      return outcome
+    },
     busy: () => pending > 0,
     settled: () => chain.then(() => undefined),
     apply(ensureClosed, opts) {

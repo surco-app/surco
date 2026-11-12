@@ -65,7 +65,7 @@ interface UsbProgramView {
 
 const failureKey = (reason: UsbFailure): string => `usbExport.errors.${reason}`
 
-function pioneerViewFrom(source: 'serato' | 'traktor'): UsbProgramView {
+function pioneerViewFrom(source: 'serato' | 'traktor' | 'virtualdj'): UsbProgramView {
   const memory = (v: UsbVolume | null) => v?.bySource?.[source] ?? null
   return {
     holder: (v) => memory(v)?.holder ?? v.holder,
@@ -92,7 +92,7 @@ function pioneerViewFrom(source: 'serato' | 'traktor'): UsbProgramView {
   }
 }
 
-const USB_PROGRAM_VIEW: Record<UsbProgram, UsbProgramView> = {
+export const USB_PROGRAM_VIEW: Record<UsbProgram, UsbProgramView> = {
   rekordbox: {
     holder: (v) => v.holder,
     ticks: tickedFor,
@@ -131,6 +131,7 @@ const USB_PROGRAM_VIEW: Record<UsbProgram, UsbProgramView> = {
   },
   serato: pioneerViewFrom('serato'),
   traktor: pioneerViewFrom('traktor'),
+  virtualdj: pioneerViewFrom('virtualdj'),
 }
 
 // What main refuses to export anyway: Exportar is not offered while one of these shows.

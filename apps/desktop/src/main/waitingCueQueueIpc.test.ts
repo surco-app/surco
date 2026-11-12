@@ -6,12 +6,12 @@ vi.mock('electron', () => ({ BrowserWindow: { fromWebContents: vi.fn(() => 'wind
 import type { DjCueQueueMain } from '../shared/djApi'
 import type { QueueApply, RekordboxQueue } from './rekordboxQueue'
 import { appliedNotice } from './rekordboxQueueIpc'
-import { seratoCueQueueSection } from './seratoCueQueueIpc'
+import { waitingCueQueueSection } from './waitingCueQueueIpc'
 
 let section: DjCueQueueMain
 
-function register(...args: Parameters<typeof seratoCueQueueSection>): void {
-  section = seratoCueQueueSection(...args)
+function register(...args: Parameters<typeof waitingCueQueueSection>): void {
+  section = waitingCueQueueSection(...args)
 }
 
 const APPLIED: QueueApply = {
@@ -33,7 +33,7 @@ function queue() {
   }
 }
 
-describe('seratoCueQueueSection', () => {
+describe('waitingCueQueueSection', () => {
   it('shows what waits for Serato to close', () => {
     register(queue(), { isRunning: vi.fn(async () => false) })
     expect(section.read()).toEqual({ tracks: 1, changes: 0, items: [] })

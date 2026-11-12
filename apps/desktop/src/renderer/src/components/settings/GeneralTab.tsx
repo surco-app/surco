@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { type DjProgram, RAIL_PROGRAMS } from '../../../../shared/djProgram'
 import type { Density, LanguagePref, PlaylistSource, ThemePref } from '../../../../shared/types'
-import { isMacOS, isStoreBuild } from '../../lib/platform'
+import { isMacOS, isStoreBuild, offeredHere } from '../../lib/platform'
 import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchLocal, PatchSynced } from '../../lib/settingsTabs'
 import { SOURCE_READ } from '../../lib/sourcePrograms'
@@ -48,6 +48,7 @@ export function GeneralTab({
     engine: found.engine !== true,
     traktor: found.traktor !== true,
     serato: found.serato !== true,
+    virtualdj: found.virtualdj !== true,
   }
   const reason: Record<PlaylistSource, string | undefined> = {
     appleMusic: unavailable.appleMusic ? tr('settings.sourceAppleMusicUnavailable') : undefined,
@@ -55,6 +56,7 @@ export function GeneralTab({
     engine: found.engine === false ? tr('settings.sourceEngineUnavailable') : undefined,
     traktor: found.traktor === false ? tr('settings.sourceTraktorUnavailable') : undefined,
     serato: found.serato === false ? tr('settings.sourceSeratoUnavailable') : undefined,
+    virtualdj: found.virtualdj === false ? tr('settings.sourceVirtualdjUnavailable') : undefined,
   }
 
   return (
@@ -114,7 +116,7 @@ export function GeneralTab({
         tester's laptop channel onto the machine he plays gigs from. */}
       <SettingsSection eyebrow={tr('settings.sourcesTitle')} searchId="sourcesTitle">
         <div className="flex flex-col gap-3">
-          {SOURCES.map((source) => (
+          {SOURCES.filter((s) => s === 'appleMusic' || offeredHere(s)).map((source) => (
             <SettingsCheckboxField
               key={source}
               testid={`settings-source-${source}`}

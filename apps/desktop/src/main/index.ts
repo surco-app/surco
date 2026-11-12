@@ -45,7 +45,7 @@ import { cacheBytesOf } from '../shared/analysisCacheSize'
 import { trashLimits } from '../shared/backupPolicy'
 import { activeCueFlow } from '../shared/cueFlows'
 import { DJ_CUE_QUEUE_CHANGED, DJ_SYNC_ISSUE } from '../shared/djApi'
-import type { CueProgram } from '../shared/djProgram'
+import { type CueProgram, exportsUsbOn } from '../shared/djProgram'
 import type { TunedTaste } from '../shared/dropTaste'
 import { errorWithKey } from '../shared/errorKeys'
 import {
@@ -133,16 +133,22 @@ import { addToEngineLibrary, dumpEngineLibrary, withEngineDatabase } from './eng
 import { engineEdit } from './enginePlaylistEditIpc'
 import { engineDatabasePath } from './enginePlaylists'
 import { engineRead } from './enginePlaylistsIpc'
-import { engineSizeFollower } from './engineSizeFollow'
 import { expandPaths } from './expand'
 import { collectionExporters, registerExportIpc } from './exportIpc'
 import { registerFeedbackIpc } from './feedback'
-import { convertAudio, readMeta, readTags, toNmlLocation } from './ffmpeg'
+import {
+  convertAudio,
+  probeAudio,
+  probeDuration,
+  readMeta,
+  readTags,
+  toNmlLocation,
+} from './ffmpeg'
 import { createFileSignatures } from './fileSignatures'
 import { createMenuT, resolveMenuLocale } from './i18n'
 import { fileIdentity, isSameFile, removeRenamedOriginal } from './inplace'
 import { setLibraryBackupRoot } from './libraryBackups'
-import { libraryCopyInfo, libraryTracksOf } from './libraryFileUse'
+import { libraryCopyInfo, libraryTracksOf, type RootLibraries } from './libraryFileUse'
 import {
   currentLibraryStatus,
   duplicateLibraryDeps,
@@ -163,6 +169,7 @@ import {
 } from './libraryFlushes'
 import { takeCopy } from './libraryHistory'
 import { enginePendingLog, rekordboxPendingLog } from './libraryRestore'
+import { followingAll, librarySizeFollower } from './librarySizeFollow'
 import { serialLibraryFlush } from './libraryTagSync'
 import { registerListReviewIpc } from './listReviewIpc'
 import { listReviewDeps } from './listReviewWiring'
@@ -209,7 +216,6 @@ import { stillWaiting } from './rekordboxQueueWatch'
 import { createSessionBackup } from './rekordboxSessionBackup'
 import { registerRowWavesIpc } from './rowWavesIpc'
 import { applySeratoBatch } from './seratoBatch'
-import { seratoCueQueueSection } from './seratoCueQueueIpc'
 import { seratoCueSource } from './seratoCueSource'
 import { seratoLibraryRoots } from './seratoLibrary'
 import { recoverSeratoTemps } from './seratoLibraryWrite'
@@ -260,6 +266,7 @@ import { updateMode } from './updateMode'
 import { armUpdateRecheck } from './updateRecheck'
 import { createUpdateRetry } from './updateRetry'
 import { registerUsbExportIpc } from './usbExportIpc'
+import { WINDOWS_DRIVES } from './usbVolumes'
 import { checkFile, fileReaders } from './verifyFile'
 import {
   appVerifyRegistry,
@@ -279,6 +286,20 @@ import {
 } from './verifyMusic'
 import type { FlushOutcome, TraktorWrite } from './verifyRegistry'
 import { withRecordedRun } from './verifyRun'
+import { applyVirtualdjBatch } from './virtualdjBatch'
+import {
+  listVirtualdjCopies,
+  recoverVirtualdjCopies,
+  restoreVirtualdjCopy,
+  takeVirtualdjCopy,
+  virtualdjCopyKey,
+} from './virtualdjCopies'
+import { virtualdjCueSource } from './virtualdjCueSource'
+import { virtualdjLibraryRoots, virtualdjWindowsRoots } from './virtualdjLibrary'
+import { virtualdjEdit } from './virtualdjPlaylistEditIpc'
+import { virtualdjRead } from './virtualdjPlaylistsIpc'
+import { repointVirtualdjTracks, virtualdjBitrateKbps } from './virtualdjTrackWrite'
+import { waitingCueQueueSection } from './waitingCueQueueIpc'
 import { onWatchedFilesChanged } from './watchedFiles'
 import { dirRoots, FolderWatcher } from './watcher'
 import { loadWindowState, resolveWindowBounds, saveWindowState } from './windowState'
@@ -354,6 +375,15 @@ const rekordboxSessionBackup = createSessionBackup({
 // The same for the Engine DJ library, which a run can repoint as well.
 const engineSessionBackup = createSessionBackup({ take: takeCopyAndAnnounce })
 const traktorSessionBackup = createSessionBackup({ take: takeCopyAndAnnounce })
+const virtualdjSessionBackup = createSessionBackup({
+  take: async (_path, _companions, reason) => {
+    try {
+      return takeVirtualdjCopy(virtualdjCopies(), reason)
+    } finally {
+      broadcast('copies:changed', null)
+    }
+  },
+})
 function seratoRoots() {
   try {
     const volumes = readdirSync('/Volumes').map((name) => join('/Volumes', name))
@@ -362,6 +392,22 @@ function seratoRoots() {
     return seratoLibraryRoots(app.getPath('home'), [])
   }
 }
+const virtualdjDir = (): string => getSettings().virtualdjLibraryDir
+const virtualdjLibrary = (): string =>
+  existsSync(join(virtualdjDir(), 'database.xml')) ? virtualdjDir() : ''
+const virtualdjRoots = () =>
+  process.platform === 'win32'
+    ? virtualdjWindowsRoots(virtualdjDir(), () => WINDOWS_DRIVES)
+    : virtualdjLibraryRoots(virtualdjDir(), '/Volumes')
+const virtualdjSessionCopy = () => virtualdjSessionBackup.ensure(virtualdjCopyKey(virtualdjRoots()))
+const virtualdjCopies = () => ({
+  backupDir: join(app.getPath('userData'), 'virtualdj-backups'),
+  roots: virtualdjRoots,
+})
+const rootLibraries = (): RootLibraries => ({
+  serato: seratoRoots(),
+  virtualdj: virtualdjRoots(),
+})
 
 let endConversionBatch: ((sender: WebContents) => Promise<void>) | undefined
 
@@ -369,6 +415,7 @@ const sessions = {
   rekordbox: rekordboxSessionBackup,
   traktor: traktorSessionBackup,
   engine: engineSessionBackup,
+  virtualdj: virtualdjSessionBackup,
 }
 const moments = createMoments(sessions)
 const broadcast = (channel: string, payload: unknown): void => {
@@ -415,7 +462,7 @@ const traktorReadPath = (): string =>
 const holdsInAnyLibrary = (path: string, titles: string[]): Promise<boolean> =>
   usedByAnyLibrary(path, titles, {
     traktorRead: traktorReadPath,
-    seratoRoots,
+    rootLibraries,
     ...(process.platform === 'darwin' && { musicEntries: musicReaders.entriesForFile }),
     fileTitle: async (file) => (await readTags(file)).title,
     fileLike: fileLikeForMusic,
@@ -424,7 +471,7 @@ const holdsInAnyLibrary = (path: string, titles: string[]): Promise<boolean> =>
 const holdsForConversion = (path: string, titles: string[]): Promise<boolean> =>
   usedByAnyLibrary(path, titles, {
     traktorRead: traktorReadPath,
-    seratoRoots,
+    rootLibraries,
     ...(process.platform === 'darwin' && {
       musicEntries: musicEntriesIfOpen,
       musicHolds: () => musicIsOpen(),
@@ -553,13 +600,56 @@ const programQueues = {
               activeConversions.isConverting(file) || outputReservations.holds(file),
             writing: seratoWriting,
             tracking: tmpManifest,
-            rewritten: followEngineSize,
+            rewritten: followLibrarySize,
             seratoOpen: DJ_PROCESSES.serato.isRunning,
           }),
         repoint: async () => [],
         nodeStamps: async () => ({}),
         onChange: (state) => broadcast(DJ_CUE_QUEUE_CHANGED, { program: 'serato', value: state }),
         addsTracks: false,
+      },
+    },
+    programQueueDeps,
+  ),
+  virtualdj: createProgramQueue(
+    {
+      program: 'virtualdj',
+      queue: {
+        store: fileStore(join(app.getPath('userData'), 'virtualdj-cue-queue.json')),
+        collection: virtualdjLibrary,
+        configured: virtualdjDir,
+        applyBatch: (_library, ops, ensureClosed, stillQueued) =>
+          applyVirtualdjBatch(ops, {
+            roots: virtualdjRoots,
+            backupDir: join(app.getPath('userData'), 'virtualdj-backups'),
+            ensureClosed,
+            stillQueued,
+            virtualdjOpen: DJ_PROCESSES.virtualdj.isRunning,
+            sessionBackup: virtualdjSessionCopy,
+          }),
+        repoint: async (_library, list) => {
+          const results = await repointVirtualdjTracks(list, {
+            roots: virtualdjRoots,
+            backupDir: join(app.getPath('userData'), 'virtualdj-backups'),
+            virtualdjOpen: DJ_PROCESSES.virtualdj.isRunning,
+            sessionBackup: virtualdjSessionCopy,
+            lengthOf: async (path) => (await probeDuration(path)) ?? undefined,
+            audioOf: async (path) => {
+              const audio = await probeAudio(path)
+              return {
+                sampleRate: Number(audio.sampleRate) || undefined,
+                bitrateKbps: virtualdjBitrateKbps(audio),
+              }
+            },
+          })
+          queueChecks.repointed('virtualdj', results)
+          return results
+        },
+        nodeStamps: async () => ({}),
+        onChange: (state) =>
+          broadcast(DJ_CUE_QUEUE_CHANGED, { program: 'virtualdj', value: state }),
+        addsTracks: false,
+        stack: stackRepoint,
       },
     },
     programQueueDeps,
@@ -581,6 +671,8 @@ const traktorCueQueueWatch = programQueues.traktor.watch
 const applyTraktorCueQueueQuietly = programQueues.traktor.applyQuietly
 const seratoCueQueue = programQueues.serato.queue
 const seratoCueQueueWatch = programQueues.serato.watch
+const virtualdjCueQueue = programQueues.virtualdj.queue
+const virtualdjCueQueueWatch = programQueues.virtualdj.watch
 const provisionalCues = createProvisionalList(
   fileStore(join(app.getPath('userData'), 'rekordbox-provisional.json')),
   () => rekordboxQueueWatch.poke(),
@@ -607,11 +699,17 @@ const adjustProvisionalCuesOnLaunch = async (): Promise<void> => {
     adjustProvisionalCues()
   rekordboxQueueWatch.poke()
 }
-const followEngineSize = engineSizeFollower({
+const followEngineSize = librarySizeFollower({
   enabled: () => getSettings().syncEngineDj,
   enqueue: engineCueQueue.enqueue,
   apply: () => applyEngineCueQueueQuietly(),
 })
+const followVirtualdjSize = librarySizeFollower({
+  enabled: () => getSettings().syncVirtualdj,
+  enqueue: virtualdjCueQueue.enqueue,
+  apply: () => programQueues.virtualdj.applyQuietly(),
+})
+const followLibrarySize = followingAll(followEngineSize, followVirtualdjSize)
 // A save from the editor asks to close Traktor, as a playlist edit does; declined, it stays
 // queued and lands when Traktor closes.
 const applyTraktorCueQueueAsking = (win: BrowserWindow | null): void => {
@@ -635,6 +733,7 @@ const verifyRegistry = appVerifyRegistry({
     rekordbox: rekordboxCollectionPath,
     engine: engineLibraryPath,
     traktor: traktorWritePath,
+    virtualdj: virtualdjRoots,
   },
   realPath: (p) => realpathSync(p),
   bootVolume: () => bootVolumeName(),
@@ -661,6 +760,12 @@ const verifyRegistry = appVerifyRegistry({
       apply: () => applyTraktorCueQueueQuietly(),
       at: traktorWritePath,
       holds: traktorCueQueue.holdsRepoint,
+    },
+    virtualdj: {
+      enqueue: virtualdjCueQueue.enqueue,
+      apply: () => programQueues.virtualdj.applyQuietly(),
+      at: virtualdjLibrary,
+      holds: virtualdjCueQueue.holdsRepoint,
     },
   },
 })
@@ -891,13 +996,15 @@ function createWindow(): BrowserWindow {
       rekordboxQueue.busy() ||
       engineCueQueue.busy() ||
       traktorCueQueue.busy() ||
-      seratoCueQueue.busy(),
+      seratoCueQueue.busy() ||
+      virtualdjCueQueue.busy(),
     finishWriting: () =>
       Promise.all([
         rekordboxQueue.settled(),
         engineCueQueue.settled(),
         traktorCueQueue.settled(),
         seratoCueQueue.settled(),
+        virtualdjCueQueue.settled(),
       ]).then(() => undefined),
     unsavedCues: () => unsavedCueTracks.size,
     confirm: async (running, exporting, unsavedCues) => {
@@ -1374,7 +1481,7 @@ function registerIpc(): void {
   registerAppleMusicIpc({
     trackTmp: tmpManifest.track,
     untrackTmp: tmpManifest.untrack,
-    followEngineSize,
+    followLibrarySize,
   })
   const allowMedia = (paths: string[]) => mediaAccess.allowAll(paths)
   const rekordboxCollectionNow = () =>
@@ -1483,10 +1590,29 @@ function registerIpc(): void {
       }),
       exportCollection: exporters.serato,
       running: DJ_PROCESSES.serato.isRunning,
-      cueQueue: seratoCueQueueSection(seratoCueQueue, {
+      cueQueue: waitingCueQueueSection(seratoCueQueue, {
         isRunning: DJ_PROCESSES.serato.isRunning,
         onWaiting: seratoCueQueueWatch.poke,
         onReady: seratoCueQueueWatch.poke,
+      }),
+    },
+    virtualdj: {
+      read: virtualdjRead({ roots: virtualdjRoots, allowMedia }),
+      edit: virtualdjEdit({
+        roots: virtualdjRoots,
+        queue: virtualdjCueQueue,
+        isRunning: DJ_PROCESSES.virtualdj.isRunning,
+        onApplied: programQueues.virtualdj.announceApplied,
+        onWaiting: virtualdjCueQueueWatch.poke,
+      }),
+      running: DJ_PROCESSES.virtualdj.isRunning,
+      pickLibraryPath: pickLibraryPath('dialogVirtualdjLibrary', {
+        properties: ['openDirectory'],
+      }),
+      cueQueue: waitingCueQueueSection(virtualdjCueQueue, {
+        isRunning: DJ_PROCESSES.virtualdj.isRunning,
+        onWaiting: virtualdjCueQueueWatch.poke,
+        onReady: virtualdjCueQueueWatch.poke,
       }),
     },
   })
@@ -1508,7 +1634,7 @@ function registerIpc(): void {
           rekordbox: rekordboxCollectionPath(),
           engine: getSettings().engineLibraryDir,
           traktor: traktorReadPath(),
-          serato: seratoRoots(),
+          ...rootLibraries(),
         },
         { realPath: (p: string) => realpathSync(p) },
       ),
@@ -1549,6 +1675,17 @@ function registerIpc(): void {
         },
         rekordboxCollectionPath,
       ),
+      virtualdj: virtualdjCueSource(
+        {
+          roots: virtualdjRoots,
+          words: cachedCueWaveWords,
+          fine: cachedCueWaveFine,
+          beatGrid: cachedBeatGrid,
+          queue: virtualdjCueQueue,
+          applyQuietly: () => programQueues.virtualdj.applyQuietly(),
+        },
+        rekordboxCollectionPath,
+      ),
     },
   })
   registerCueTasteIpc({
@@ -1574,8 +1711,11 @@ function registerIpc(): void {
     ensureClosed: (program, win, detail) =>
       ensureClosed(program, win, reasonOfDetail(program, detail)),
     engineLibrary: engineLibraryPath,
-    serato: process.platform === 'darwin' ? { roots: seratoRoots } : undefined,
-    traktor: { nml: traktorReadPath, bootVolume: () => bootVolumeName() },
+    serato: exportsUsbOn('serato', process.platform) ? { roots: seratoRoots } : undefined,
+    traktor: exportsUsbOn('traktor', process.platform)
+      ? { nml: traktorReadPath, bootVolume: () => bootVolumeName() }
+      : undefined,
+    virtualdj: exportsUsbOn('virtualdj', process.platform) ? { roots: virtualdjRoots } : undefined,
   })
 
   // Reaches an encode already in flight: cancelBatch's own flag only stops jobs
@@ -1625,8 +1765,11 @@ function registerIpc(): void {
   )
 
   const hostFor = (win: BrowserWindow | null, sender: WebContents): LibraryHost => ({
-    ensureClosed: (program) => ensureClosed(program, win),
-    showBlockedDialog: (program) => showSyncBlockedDialog(win, SYNC_BLOCKED_KEY[program]),
+    ensureClosed: (program, reason) => ensureClosed(program, win, reason),
+    showBlockedDialog: (program) => {
+      const key = SYNC_BLOCKED_KEY[program]
+      if (key) showSyncBlockedDialog(win, key)
+    },
     reportIssue: (program, issue) => {
       if (SYNC_ISSUE_PROGRAMS.has(program) && !sender.isDestroyed())
         sender.send(DJ_SYNC_ISSUE, { program, value: issue })
@@ -1644,7 +1787,12 @@ function registerIpc(): void {
   endConversionBatch = (sender) => {
     const upTo = verifyRegistry.cut()
     return moments.runFlush(serialLibraryFlush, rekordboxBatchOpen, async (later) => {
-      let outcome: FlushOutcome = { rekordbox: 'failed', engine: 'failed', traktor: 'failed' }
+      let outcome: FlushOutcome = {
+        rekordbox: 'failed',
+        engine: 'failed',
+        traktor: 'failed',
+        virtualdj: 'failed',
+      }
       try {
         outcome = await flushConversionBatch(
           hostFor(BrowserWindow.fromWebContents(sender), sender),
@@ -1667,6 +1815,11 @@ function registerIpc(): void {
               enqueue: seratoCueQueue.enqueue,
               applyQuietly: () => programQueues.serato.applyQuietly(later),
               roots: seratoRoots,
+            },
+            virtualdj: {
+              enqueue: virtualdjCueQueue.enqueue,
+              applyQuietly: () => programQueues.virtualdj.applyQuietly(later),
+              roots: virtualdjRoots,
             },
           },
         )
@@ -1693,6 +1846,13 @@ function registerIpc(): void {
         onWaiting: seratoCueQueueWatch.poke,
         onApplied: programQueues.serato.announceApplied,
       },
+      {
+        roots: virtualdjRoots,
+        queue: virtualdjCueQueue,
+        isRunning: DJ_PROCESSES.virtualdj.isRunning,
+        onWaiting: virtualdjCueQueueWatch.poke,
+        onApplied: programQueues.virtualdj.announceApplied,
+      },
     ),
   )
 
@@ -1706,6 +1866,7 @@ function registerIpc(): void {
         rekordbox: rekordboxFlushDeps(hostFor(win, e.sender)).collectionPath,
         engine: engineFlushDeps(hostFor(win, e.sender)).collectionPath,
         traktor: traktorFlushDeps(hostFor(win, e.sender), sessions.traktor).traktorNmlPath,
+        virtualdj: getSettings().syncVirtualdj ? virtualdjRoots() : [],
       },
       { realPath: (p: string) => realpathSync(p) },
     )
@@ -1720,6 +1881,7 @@ function registerIpc(): void {
       beginMoment: () => moments.begin('review'),
       backups: () => surcoTrash.list(),
       followEngineSize,
+      followVirtualdjSize,
       traktorQueue: {
         enqueue: traktorCueQueue.enqueue,
         state: traktorCueQueue.state,
@@ -1749,7 +1911,7 @@ function registerIpc(): void {
         ...duplicateLibraryDeps(
           hostFor(BrowserWindow.fromWebContents(e.sender), e.sender),
           sessions,
-          seratoRoots,
+          rootLibraries,
         ),
         trash: (path) => trashRecoverably(path),
         log: { track: activity.track, copyOf: musicReviewLog.copyOf },
@@ -1763,8 +1925,8 @@ function registerIpc(): void {
       tmp: tmpManifest,
       hostFor: (sender) => hostFor(BrowserWindow.fromWebContents(sender), sender),
       sessions,
-      followEngineSize,
-      seratoRoots,
+      followLibrarySize,
+      rootLibraries,
     }),
     beginMoment: moments.begin,
   })
@@ -1917,7 +2079,11 @@ function registerIpc(): void {
         )
       },
       librariesKeepingOriginal: (path, target) =>
-        librariesKeepingOriginal(path, target, { traktorRead: traktorReadPath, seratoRoots }),
+        librariesKeepingOriginal(path, target, {
+          traktorRead: traktorReadPath,
+          rootLibraries,
+          lengthOf: async (p) => (await probeDuration(p)) ?? undefined,
+        }),
       refreshAppleMusicEntry: (persistentId) =>
         appleMusicLimiter.run(() => refreshAppleMusicEntry(persistentId)),
       relinkAppleMusicEntry: (persistentId, path) =>
@@ -1985,7 +2151,7 @@ function registerIpc(): void {
           (s) => s.size,
           () => undefined,
         ),
-      followEngineSize,
+      followLibrarySize,
       // The conflict prompt is the one Electron-bound branch: build the same warning
       // box as before and map its buttons back to the decision runProcessTrack expects.
       confirmConflict: (outputName, reservedOnly) =>
@@ -2037,6 +2203,7 @@ function registerIpc(): void {
           {
             rekordbox: s.syncRekordbox ? rekordboxCollectionPath() : '',
             engine: s.syncEngineDj ? engineLibraryPath() : '',
+            virtualdj: s.syncVirtualdj ? virtualdjRoots() : [],
           },
           (p) => realpathSync(p),
         )
@@ -2235,11 +2402,28 @@ function registerIpc(): void {
         exclusive: withEngineDatabase,
         onDiscarded: () => queueChecks.discarded('engine'),
       },
+      virtualdj: {
+        collectionPath: () => virtualdjCopyKey(virtualdjRoots()) || null,
+        untouched: () => !getSettings().syncVirtualdj,
+        session: virtualdjSessionBackup,
+        queue: virtualdjCueQueue,
+        ensureClosed: (win) => ensureClosed('virtualdj', win, 'restore'),
+        isRunning: DJ_PROCESSES.virtualdj.isRunning,
+        pendingLog: () => false,
+        exclusive: (_path, task) => task(),
+        onDiscarded: () => queueChecks.discarded('virtualdj'),
+        history: {
+          list: () => listVirtualdjCopies(virtualdjCopies()),
+          recover: () => recoverVirtualdjCopies(virtualdjCopies()),
+          restore: (copyId, deps) =>
+            restoreVirtualdjCopy(copyId, { ...virtualdjCopies(), ...deps }),
+        },
+      },
     },
     broadcast,
     rekordboxBatchOpen,
   )
-  registerTrashIpc(surcoTrash, mediaAccess, { followEngineSize })
+  registerTrashIpc(surcoTrash, mediaAccess, { followEngineSize, followVirtualdjSize })
   registerFeedbackIpc()
 
   // Restarts into the already-downloaded update. Paired with the update:downloaded

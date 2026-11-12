@@ -271,7 +271,7 @@ export async function readVolumes(
   syncText: (root: string) => Promise<string | null> = (root) =>
     readFile(join(root, 'PIONEER', 'rekordbox', 'playlists3.sync'), 'utf8').catch(() => null),
   engine?: { memory: UsbMemory; holder: (root: string) => Promise<UsbHolder> },
-  bySource?: Partial<Record<'serato' | 'traktor', UsbMemory>>,
+  bySource?: Partial<Record<'serato' | 'traktor' | 'virtualdj', UsbMemory>>,
   surco?: Partial<Record<UsbPioneerProgram, UsbMemory>>,
 ): Promise<UsbVolume[]> {
   const out: UsbVolume[] = []
@@ -361,7 +361,7 @@ export function volumeContaining(
   )
 }
 
-const LETTERS = 'CDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map((l) => `${l}:\\`)
+export const WINDOWS_DRIVES = 'CDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map((l) => `${l}:\\`)
 
 // macOS adds and removes /Volumes entries as volumes mount and unmount (debounced: one mount
 // fires several events). Windows has no such folder: the set of existing drive roots is
@@ -381,7 +381,9 @@ export function watchVolumes(
     // Asynchronous, and one check at a time: a mapped drive whose NAS sleeps can hang a stat
     // for seconds, which must neither block the main thread nor stack up ticks.
     const snapshot = async (): Promise<string> =>
-      (await Promise.all(LETTERS.map(async (l) => ((await deps.exists(l)) ? l : '')))).join('')
+      (await Promise.all(WINDOWS_DRIVES.map(async (l) => ((await deps.exists(l)) ? l : '')))).join(
+        '',
+      )
     let last: string | null = null
     let pending = true
     let stopped = false

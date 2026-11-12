@@ -15,7 +15,7 @@ import { readSeratoTrack } from './seratoTags'
 
 const BEATS_PER_BAR = 4
 
-function tempoGrid(
+export function tempoGrid(
   tempoMap: SeratoTempoMap,
   leadMs: number,
   durationMs: number,

@@ -1,7 +1,17 @@
 // @vitest-environment jsdom
 import { BUNDLED_FLOWS } from '../../../shared/cueFlows'
 import '@testing-library/jest-dom/vitest'
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render as renderPlain,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react'
+import type { ReactElement } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // SettingsModal reads window.api.platform at module load, so stub it before the
@@ -28,7 +38,11 @@ import i18n from '../i18n'
 import { FIELD_DEFS } from '../lib/fields'
 import { SETTINGS_SEARCH_INDEX } from '../lib/settingsSearchIndex'
 import { SETTINGS_TABS, type SettingsTab } from '../lib/settingsTabs'
+
 import { DONATE_URL, SettingsModal } from './SettingsModal'
+
+const render = (ui: ReactElement) =>
+  renderPlain(<QueryClientProvider client={new QueryClient()}>{ui}</QueryClientProvider>)
 
 afterEach(cleanup)
 
@@ -48,6 +62,7 @@ const settings: Settings = {
   cueFlowToTraktor: true,
   cueFlowToEngine: true,
   cueFlowToSerato: true,
+  cueFlowToVirtualdj: true,
   cueLearnFromEdits: true,
   hiddenSources: [],
   sessionWizard: { ...DEFAULT_SESSION_WIZARD },
@@ -87,9 +102,13 @@ const settings: Settings = {
   traktorPlaylistsFieldOffered: false,
   enginePlaylistsFieldOffered: false,
   seratoPlaylistsFieldOffered: false,
+  virtualdjPlaylistsFieldOffered: false,
+  virtualdjLibraryDir: '/Users/dj/Library/Application Support/VirtualDJ',
   syncEngineDj: false,
   addToSerato: false,
   syncSerato: false,
+  addToVirtualdj: false,
+  syncVirtualdj: false,
   betaUpdates: false,
   traktorCueOffsetMs: 0,
   filenameFormat: '',
@@ -1540,9 +1559,7 @@ describe('SettingsModal search tab layout', () => {
   it('puts no line under a title that only repeats it', () => {
     openSearch(['discogs'])
     expect(screen.queryByText('Catalogs the editor searches.')).toBeNull()
-    expect(
-      screen.queryByText('Limit Discogs and MusicBrainz results to these formats.'),
-    ).toBeNull()
+    expect(screen.queryByText('Limit Discogs and MusicBrainz results to these formats.')).toBeNull()
     expect(screen.queryByText(/How many search results to show/)).toBeNull()
     expect(screen.getByText(i18n.t('settings.maxResultsHint'))).toBeInTheDocument()
   })
@@ -1695,6 +1712,28 @@ describe('settings search', () => {
     )
     expect(screen.getByTestId('settings-program-serato')).toBeVisible()
     expect(screen.getByTestId('settings-program-traktor')).not.toBeVisible()
+  })
+
+  it('finds VirtualDJ on Windows too, where Surco offers it in beta, and a result opens its panel', () => {
+    const api = window.api as unknown as { platform: string }
+    api.platform = 'win32'
+    try {
+      open()
+      search('virtualdj')
+      expect(screen.getByTestId('settings-search-result-virtualdjLibrary')).toBeVisible()
+      fireEvent.click(screen.getByTestId('settings-search-result-virtualdjLibraryDir'))
+      expect(screen.getByTestId('settings-virtualdj-dir')).toBeVisible()
+      search('traktor')
+      expect(screen.getByTestId('settings-search-result-traktorSync')).toBeVisible()
+    } finally {
+      api.platform = 'darwin'
+    }
+  })
+
+  it('finds VirtualDJ on a Mac, where Surco offers it', () => {
+    open()
+    search('virtualdj')
+    expect(screen.getByTestId('settings-search-result-virtualdjLibrary')).toBeVisible()
   })
 
   it('moves through results with the arrow keys without leaving the field', () => {

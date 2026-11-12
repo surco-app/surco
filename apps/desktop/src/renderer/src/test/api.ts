@@ -48,8 +48,10 @@ export const testSettings: Settings = {
   addToRekordbox: false,
   addToTraktor: false,
   addToSerato: false,
+  addToVirtualdj: false,
   engineLibraryDir: '/music/Engine Library',
   traktorNmlPath: '',
+  virtualdjLibraryDir: '/Users/dj/Library/Application Support/VirtualDJ',
   rekordboxDbPath: '',
   syncTraktor: false,
   syncRekordbox: false,
@@ -64,6 +66,7 @@ export const testSettings: Settings = {
   cueFlowToTraktor: true,
   cueFlowToEngine: true,
   cueFlowToSerato: true,
+  cueFlowToVirtualdj: true,
   cueLearnFromEdits: true,
   hiddenSources: [],
   sessionWizard: { ...DEFAULT_SESSION_WIZARD },
@@ -72,8 +75,10 @@ export const testSettings: Settings = {
   traktorPlaylistsFieldOffered: false,
   enginePlaylistsFieldOffered: false,
   seratoPlaylistsFieldOffered: false,
+  virtualdjPlaylistsFieldOffered: false,
   syncEngineDj: false,
   syncSerato: false,
+  syncVirtualdj: false,
   betaUpdates: false,
   traktorCueOffsetMs: 0,
   filenameFormat: '',
@@ -313,12 +318,18 @@ export function stubApi({ cues, ...over }: ApiOverrides = {}): Api {
     cancelMusicFixes: async () => {},
     syncLibraryTags: async () => {
       const nothing = { outcome: 'nothing' as const }
-      return { rekordbox: nothing, engine: nothing, traktor: nothing, serato: nothing }
+      return {
+        rekordbox: nothing,
+        engine: nothing,
+        traktor: nothing,
+        serato: nothing,
+        virtualdj: nothing,
+      }
     },
     replaceDuplicatesInLibraries: async () => [],
     libraryStatus: async () => {
       const off = { enabled: false, found: false }
-      return { rekordbox: off, engine: off, traktor: off, serato: off }
+      return { rekordbox: off, engine: off, traktor: off, serato: off, virtualdj: off }
     },
     libraryCopyInfo: async () => ({}),
     scanDamage: async () => ({ findings: [], unread: [] }),

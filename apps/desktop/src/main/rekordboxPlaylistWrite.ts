@@ -24,7 +24,7 @@ import { backupOf } from './libraryBackups'
 import { rekordboxShareDir } from './rekordboxArtwork'
 import { type ContentFacts, insertContent } from './rekordboxContentAdd'
 import { applyCueChanges, readTrackCues } from './rekordboxCues'
-import { type FindOptions, openRekordboxDb } from './rekordboxDb'
+import { type FindOptions, openRekordboxDb, rekordboxRawKey } from './rekordboxDb'
 import {
   type AnlzPaths,
   anlzPathsOf,
@@ -494,7 +494,8 @@ export async function applyRekordboxBatch(
   const hasXml = existsSync(xmlPath)
   const outcomes = new Map<string, OpOutcome>()
   const planned: Planned[] = []
-  const probe = openRekordboxDb(collectionPath, { readonly: true })
+  const key = await rekordboxRawKey(collectionPath).catch(() => undefined)
+  const probe = openRekordboxDb(collectionPath, { readonly: true, key })
   if (!probe) return { ok: false, reason: 'unreadable' }
   try {
     const current = hasXml ? await readFile(xmlPath, 'utf8') : null
@@ -517,7 +518,7 @@ export async function applyRekordboxBatch(
   const touched = hasXml ? [collectionPath, xmlPath] : [collectionPath]
   let xml: string | null = null
   try {
-    checkpointCollection(collectionPath)
+    checkpointCollection(collectionPath, key)
     for (const path of touched) {
       await deps.sessionBackup(path)
       await writeBackup(path, backupOf(path, 'backup'))
@@ -529,7 +530,7 @@ export async function applyRekordboxBatch(
 
   if (await isRekordboxRunning()) return { ok: false, reason: 'rekordbox-running' }
 
-  const db = openRekordboxDb(collectionPath)
+  const db = openRekordboxDb(collectionPath, { key })
   if (!db) return { ok: false, reason: 'unreadable' }
   const stillPlanned: Planned[] = []
   for (const p of planned) {

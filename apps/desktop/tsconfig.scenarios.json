@@ -20,6 +20,7 @@
     "src/shared/**/*",
     "src/preload/index.d.ts",
     "src/preload/api.ts",
-    "src/renderer/src/**/*"
+    "src/renderer/src/**/*",
+    "../web/src/lib/programTable.ts"
   ]
 }

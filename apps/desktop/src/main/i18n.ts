@@ -83,6 +83,11 @@ interface MenuStrings {
   rekordboxQuitDetailRestore: string
   rekordboxQuitConfirm: string
   rekordboxQuitCancel: string
+  virtualdjQuitMessage: string
+  virtualdjQuitDetailRestore: string
+  virtualdjQuitDetailDuplicates: string
+  virtualdjQuitConfirm: string
+  virtualdjQuitCancel: string
   rekordboxSyncBlocked: string
   engineSyncBlocked: string
   quitBusyMessage: string
@@ -99,6 +104,7 @@ interface MenuStrings {
   dialogPickTracks: string
   dialogOutputDir: string
   dialogEngineLibrary: string
+  dialogVirtualdjLibrary: string
   dialogTraktorCollection: string
   dialogRekordboxCollection: string
   dialogExportCover: string
@@ -204,6 +210,13 @@ const strings: Record<MenuLang, MenuStrings> = {
       'Surco necesita cerrarlo para restaurar tu colección. rekordbox se cerrará de forma segura; no lo vuelvas a abrir hasta que Surco termine de restaurar.',
     rekordboxQuitConfirm: 'Cerrar rekordbox',
     rekordboxQuitCancel: 'Cancelar',
+    virtualdjQuitMessage: 'VirtualDJ está abierto',
+    virtualdjQuitDetailRestore:
+      'Surco no cierra VirtualDJ por ti. Ciérralo tú para restaurar su biblioteca y no lo vuelvas a abrir hasta que Surco termine de restaurar.',
+    virtualdjQuitDetailDuplicates:
+      'Surco no cierra VirtualDJ por ti. Ciérralo tú para que las copias que quitaste pasen a las que te quedas, y no lo vuelvas a abrir hasta que Surco termine.',
+    virtualdjQuitConfirm: 'Ya lo he cerrado',
+    virtualdjQuitCancel: 'Cancelar',
     rekordboxSyncBlocked:
       'La colección de rekordbox no se ha actualizado: rekordbox sigue abierto. Ciérralo y vuelve a convertir para que apunte al archivo nuevo.',
     engineSyncBlocked:
@@ -224,6 +237,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     dialogPickTracks: 'Selecciona pistas',
     dialogOutputDir: 'Carpeta de salida',
     dialogEngineLibrary: 'Biblioteca de Engine DJ',
+    dialogVirtualdjLibrary: 'Carpeta de VirtualDJ',
     dialogTraktorCollection: 'Colección de Traktor',
     dialogRekordboxCollection: 'Colección de rekordbox',
     dialogExportCover: 'Exporta la carátula',
@@ -326,6 +340,13 @@ const strings: Record<MenuLang, MenuStrings> = {
       'Surco needs to close it to restore your collection. rekordbox will be closed safely; keep it closed until Surco finishes restoring.',
     rekordboxQuitConfirm: 'Close rekordbox',
     rekordboxQuitCancel: 'Cancel',
+    virtualdjQuitMessage: 'VirtualDJ is open',
+    virtualdjQuitDetailRestore:
+      'Surco does not close VirtualDJ for you. Close it yourself to restore its library, and keep it closed until Surco finishes restoring.',
+    virtualdjQuitDetailDuplicates:
+      'Surco does not close VirtualDJ for you. Close it yourself so the copies you removed move to the ones you kept, and keep it closed until Surco finishes.',
+    virtualdjQuitConfirm: 'I closed it',
+    virtualdjQuitCancel: 'Cancel',
     rekordboxSyncBlocked:
       "rekordbox's collection was not updated: rekordbox is still open. Close it and convert again so it points at the new file.",
     engineSyncBlocked:
@@ -346,6 +367,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     dialogPickTracks: 'Choose tracks',
     dialogOutputDir: 'Output folder',
     dialogEngineLibrary: 'Engine DJ library',
+    dialogVirtualdjLibrary: 'VirtualDJ folder',
     dialogTraktorCollection: 'Traktor collection',
     dialogRekordboxCollection: 'rekordbox collection',
     dialogExportCover: 'Export the artwork',
@@ -449,6 +471,13 @@ const strings: Record<MenuLang, MenuStrings> = {
       'Surco muss es schließen, um deine Sammlung wiederherzustellen. rekordbox wird sicher geschlossen; lass es geschlossen, bis Surco mit dem Wiederherstellen fertig ist.',
     rekordboxQuitConfirm: 'rekordbox schließen',
     rekordboxQuitCancel: 'Abbrechen',
+    virtualdjQuitMessage: 'VirtualDJ ist geöffnet',
+    virtualdjQuitDetailRestore:
+      'Surco schließt VirtualDJ nicht für dich. Schließe es selbst, um seine Bibliothek wiederherzustellen, und lass es geschlossen, bis Surco mit dem Wiederherstellen fertig ist.',
+    virtualdjQuitDetailDuplicates:
+      'Surco schließt VirtualDJ nicht für dich. Schließe es selbst, damit die entfernten Kopien auf die behaltenen wechseln, und lass es geschlossen, bis Surco fertig ist.',
+    virtualdjQuitConfirm: 'Ich habe es geschlossen',
+    virtualdjQuitCancel: 'Abbrechen',
     rekordboxSyncBlocked:
       'Die rekordbox-Sammlung wurde nicht aktualisiert: rekordbox ist noch geöffnet. Schließe es und konvertiere erneut, damit es auf die neue Datei zeigt.',
     engineSyncBlocked:
@@ -470,6 +499,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     dialogPickTracks: 'Tracks auswählen',
     dialogOutputDir: 'Ausgabeordner',
     dialogEngineLibrary: 'Engine-DJ-Bibliothek',
+    dialogVirtualdjLibrary: 'VirtualDJ-Ordner',
     dialogTraktorCollection: 'Traktor-Sammlung',
     dialogRekordboxCollection: 'rekordbox-Sammlung',
     dialogExportCover: 'Cover exportieren',
@@ -574,6 +604,13 @@ const strings: Record<MenuLang, MenuStrings> = {
       'Surco doit le fermer pour restaurer ta collection. rekordbox sera fermé proprement ; ne le rouvre pas avant que Surco ait fini la restauration.',
     rekordboxQuitConfirm: 'Fermer rekordbox',
     rekordboxQuitCancel: 'Annuler',
+    virtualdjQuitMessage: 'VirtualDJ est ouvert',
+    virtualdjQuitDetailRestore:
+      'Surco ne ferme pas VirtualDJ à ta place. Ferme-le toi-même pour restaurer sa bibliothèque, et ne le rouvre pas avant que Surco ait fini de restaurer.',
+    virtualdjQuitDetailDuplicates:
+      'Surco ne ferme pas VirtualDJ à ta place. Ferme-le toi-même pour que les copies retirées passent à celles que tu gardes, et ne le rouvre pas avant que Surco ait fini.',
+    virtualdjQuitConfirm: 'Je l’ai fermé',
+    virtualdjQuitCancel: 'Annuler',
     rekordboxSyncBlocked:
       "La collection rekordbox n'a pas été mise à jour : rekordbox est encore ouvert. Ferme-le et relance la conversion pour qu'il pointe vers le nouveau fichier.",
     engineSyncBlocked:
@@ -595,6 +632,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     dialogPickTracks: 'Choisis des morceaux',
     dialogOutputDir: 'Dossier de sortie',
     dialogEngineLibrary: 'Bibliothèque Engine DJ',
+    dialogVirtualdjLibrary: 'Dossier VirtualDJ',
     dialogTraktorCollection: 'Collection Traktor',
     dialogRekordboxCollection: 'Collection rekordbox',
     dialogExportCover: 'Exporter la pochette',
@@ -697,6 +735,13 @@ const strings: Record<MenuLang, MenuStrings> = {
       'O Surco precisa fechá-lo para restaurar sua coleção. O rekordbox será fechado com segurança; não o abra de novo até o Surco terminar de restaurar.',
     rekordboxQuitConfirm: 'Fechar o rekordbox',
     rekordboxQuitCancel: 'Cancelar',
+    virtualdjQuitMessage: 'O VirtualDJ está aberto',
+    virtualdjQuitDetailRestore:
+      'O Surco não fecha o VirtualDJ por você. Feche-o você mesmo para restaurar a biblioteca dele e não o abra de novo até o Surco terminar de restaurar.',
+    virtualdjQuitDetailDuplicates:
+      'O Surco não fecha o VirtualDJ por você. Feche-o você mesmo para que as cópias removidas passem para as que você manteve e não o abra de novo até o Surco terminar.',
+    virtualdjQuitConfirm: 'Já fechei',
+    virtualdjQuitCancel: 'Cancelar',
     rekordboxSyncBlocked:
       'A coleção do rekordbox não foi atualizada: o rekordbox ainda está aberto. Feche-o e converta de novo para que aponte para o arquivo novo.',
     engineSyncBlocked:
@@ -717,6 +762,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     dialogPickTracks: 'Escolha faixas',
     dialogOutputDir: 'Pasta de saída',
     dialogEngineLibrary: 'Biblioteca do Engine DJ',
+    dialogVirtualdjLibrary: 'Pasta do VirtualDJ',
     dialogTraktorCollection: 'Coleção do Traktor',
     dialogRekordboxCollection: 'Coleção do rekordbox',
     dialogExportCover: 'Exportar a capa',

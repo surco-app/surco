@@ -210,13 +210,13 @@ describe('applemusic:applyFixes', () => {
     writeFileSync(file, 'audio')
     appleMusicEntryLocation.mockReset().mockResolvedValue(file)
     setAppleMusicField.mockReset().mockResolvedValue('mismatch')
-    const followEngineSize = vi.fn()
+    const followLibrarySize = vi.fn()
     const { registerAppleMusicIpc } = await import('./appleMusicIpc')
-    registerAppleMusicIpc({ followEngineSize })
+    registerAppleMusicIpc({ followLibrarySize })
     await handlers.get('applemusic:applyFixes')?.({ sender: { isDestroyed: () => true } }, [
       { persistentId: 'PID', field: 'artist', from: 'Dj Lara', to: 'DJ Lara' },
     ])
-    expect(followEngineSize).not.toHaveBeenCalled()
+    expect(followLibrarySize).not.toHaveBeenCalled()
     setAppleMusicField.mockImplementation(async () => {
       writeFileSync(file, 'audio retagged by Music')
       throw new Error('AppleEvent timed out (-1712)')
@@ -224,7 +224,7 @@ describe('applemusic:applyFixes', () => {
     await handlers.get('applemusic:applyFixes')?.({ sender: { isDestroyed: () => true } }, [
       { persistentId: 'PID', field: 'artist', from: 'Dj Lara', to: 'DJ Lara' },
     ])
-    expect(followEngineSize).toHaveBeenCalledWith(file, 'audio'.length)
+    expect(followLibrarySize).toHaveBeenCalledWith(file, 'audio'.length)
   })
 })
 
@@ -335,11 +335,11 @@ describe('applemusic:update', () => {
       writeFileSync(file, 'audio with longer tags')
       return 'PID'
     })
-    const followEngineSize = vi.fn()
+    const followLibrarySize = vi.fn()
     const { registerAppleMusicIpc } = await import('./appleMusicIpc')
-    registerAppleMusicIpc({ followEngineSize })
+    registerAppleMusicIpc({ followLibrarySize })
     await handlers.get('applemusic:update')?.(null, job)
-    expect(followEngineSize).toHaveBeenCalledWith(file, 'audio'.length)
+    expect(followLibrarySize).toHaveBeenCalledWith(file, 'audio'.length)
   })
 
   it('tells Engine DJ nothing when the entry is gone and Music touched nothing', async () => {
@@ -349,11 +349,11 @@ describe('applemusic:update', () => {
     appleMusicEntryLocation.mockResolvedValue(file)
     updateInAppleMusic.mockResolvedValue(null)
     addToAppleMusic.mockReset().mockResolvedValue('NEW')
-    const followEngineSize = vi.fn()
+    const followLibrarySize = vi.fn()
     const { registerAppleMusicIpc } = await import('./appleMusicIpc')
-    registerAppleMusicIpc({ followEngineSize })
+    registerAppleMusicIpc({ followLibrarySize })
     await handlers.get('applemusic:update')?.(null, { ...job, outputPath: '/m/out.aiff' })
-    expect(followEngineSize).not.toHaveBeenCalled()
+    expect(followLibrarySize).not.toHaveBeenCalled()
   })
 
   it('drops the backup when the entry is gone and Music touched nothing', async () => {

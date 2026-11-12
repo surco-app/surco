@@ -2,7 +2,7 @@ import { AudioLines } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { LIBRARY_PROGRAMS } from '../../../shared/djProgram'
+import { LIBRARY_PROGRAMS, type LibraryProgram, PROGRAM_CAN } from '../../../shared/djProgram'
 import type { Settings } from '../../../shared/types'
 import { useStableCallback } from '../hooks/useStableCallback'
 import { type DESTINATIONS, fromDestination, toDestination } from '../lib/destination'
@@ -46,6 +46,8 @@ const STEP_TITLES: Record<Exclude<Step, 'mac' | 'thisMac' | 'welcome'>, string> 
   search: 'settings.searchProviders',
 }
 const PRESELECTED = new Set<DetectedDjLibrary['id']>(['rekordbox', 'traktor'])
+
+const onlyRead = (library: DetectedDjLibrary): boolean => !PROGRAM_CAN[library.id].reach
 const WIZARD_DESTINATIONS = ['folder', 'beside', 'appleMusic'] as const
 
 interface Props {
@@ -104,13 +106,15 @@ export function OnboardingWizard({
       window.api.dj.available('engine'),
       window.api.detectTraktorNmlPath(),
       window.api.dj.available('serato'),
+      window.api.dj.available('virtualdj'),
     ])
-      .then(([rekordbox, engine, traktor, serato]) =>
+      .then(([rekordbox, engine, traktor, serato, virtualdj]) =>
         detectedDjLibraries({
           rekordbox,
           engine: engine ? settings.engineLibraryDir : '',
           traktor: traktor ?? '',
           ...(serato ? { serato: true as const } : {}),
+          virtualdj: virtualdj ? settings.virtualdjLibraryDir : '',
         }),
       )
       // A probe that fails only means there is no collections step to offer.
@@ -119,7 +123,7 @@ export function OnboardingWizard({
         if (movedOn.current) return
         setDjLibraries(found)
       })
-  }, [settings.engineLibraryDir])
+  }, [settings.engineLibraryDir, settings.virtualdjLibraryDir])
   const STEPS: readonly Step[] =
     adoptedDir !== null
       ? ['mac', 'thisMac']
@@ -201,7 +205,14 @@ export function OnboardingWizard({
     patch('overwriteOriginal', next.overwriteOriginal)
     patch('convertBesideOriginal', next.convertBesideOriginal)
   }
+  const [readChosen, setReadChosen] = useState<ReadonlySet<LibraryProgram>>(new Set())
   const reachProgram = useStableCallback((library: DetectedDjLibrary, on: boolean): void => {
+    if (onlyRead(library)) {
+      setReadChosen((was) =>
+        on ? new Set([...was, library.id]) : new Set([...was].filter((id) => id !== library.id)),
+      )
+      return
+    }
     patch(DJ_REACH_SETTINGS[library.id].sync, on)
     patch(DJ_REACH_SETTINGS[library.id].add, on)
     if (library.id === 'traktor' && on && !local.traktorNmlPath)
@@ -227,6 +238,7 @@ export function OnboardingWizard({
     if (dir) patchLocal('outputDir', dir)
   }
   function reaches(library: DetectedDjLibrary): boolean {
+    if (onlyRead(library)) return readChosen.has(library.id)
     const keys = DJ_REACH_SETTINGS[library.id]
     return toDjReach(synced[keys.sync], synced[keys.add]) !== 'off'
   }

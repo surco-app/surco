@@ -37,6 +37,7 @@ export const SOURCE_READ: Record<DjProgram, SourceRead> = {
   traktor: sourceRead('traktor', { collection: true }),
   engine: sourceRead('engine', { collection: false }),
   serato: sourceRead('serato', { collection: true }),
+  virtualdj: sourceRead('virtualdj', { collection: true }),
 }
 
 export type EditMessagePrefix =
@@ -44,6 +45,7 @@ export type EditMessagePrefix =
   | 'sources.editTraktor.'
   | 'sources.editSerato.'
   | 'sources.editEngine.'
+  | 'sources.editVirtualdj.'
 
 export interface SourceEdit {
   save(
@@ -72,6 +74,7 @@ export interface SourceProgram {
   membershipKey: string
   invalidatesOnEdit: boolean
   crates: boolean
+  idJoin: string | null
 }
 
 export const SOURCE_PROGRAMS: {
@@ -94,6 +97,7 @@ export const SOURCE_PROGRAMS: {
     membershipKey: 'rekordbox-membership',
     invalidatesOnEdit: true,
     crates: false,
+    idJoin: null,
   },
   traktor: {
     separator: () => window.api.dj.hasSeparator('traktor'),
@@ -117,6 +121,7 @@ export const SOURCE_PROGRAMS: {
     membershipKey: 'traktor-membership',
     invalidatesOnEdit: true,
     crates: false,
+    idJoin: null,
   },
   engine: {
     separator: null,
@@ -137,6 +142,7 @@ export const SOURCE_PROGRAMS: {
     membershipKey: 'engine-membership',
     invalidatesOnEdit: true,
     crates: false,
+    idJoin: null,
   },
   serato: {
     separator: null,
@@ -155,6 +161,26 @@ export const SOURCE_PROGRAMS: {
     membershipKey: 'serato-membership',
     invalidatesOnEdit: true,
     crates: true,
+    idJoin: '%%',
+  },
+  virtualdj: {
+    separator: null,
+    edit: {
+      save: (...args) => window.api.dj.editPlaylist('virtualdj', ...args),
+      messagePrefix: 'sources.editVirtualdj.',
+      gate: 'none',
+    },
+    fixedNode: null,
+    usb: true,
+    missingLibraryCheck: false,
+    marksOrigin: true,
+    fillsLoaded: false,
+    addsUncollected: true,
+    fieldTestIdPrefix: 'virtualdj-',
+    membershipKey: 'virtualdj-membership',
+    invalidatesOnEdit: true,
+    crates: false,
+    idJoin: '/',
   },
 }
 

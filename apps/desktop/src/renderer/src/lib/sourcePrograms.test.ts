@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from 'vitest'
+import { PROGRAM_TABLE } from '../../../../../web/src/lib/programTable'
 import type { Api } from '../../../preload/api'
-import { type DjProgram, RAIL_PROGRAMS } from '../../../shared/djProgram'
+import { DJ_PROGRAMS, type DjProgram, RAIL_PROGRAMS } from '../../../shared/djProgram'
 import type { RekordboxPlaylistEdit, SourceNode } from '../../../shared/types'
 import { djReads, installApi } from '../test/api'
 import { SOURCE_PROGRAMS, SOURCE_READ } from './sourcePrograms'
@@ -35,6 +36,13 @@ describe('SOURCE_READ reads each DJ program’s tab through window.api.dj, namin
     ['serato', 'playlist', ['Sets%%Friday']],
     ['serato', 'membership', [['/m/a.wav']]],
     ['serato', 'collection', []],
+    ['virtualdj', 'available', []],
+    ['virtualdj', 'tree', []],
+    ['virtualdj', 'recentCount', []],
+    ['virtualdj', 'trackCount', []],
+    ['virtualdj', 'playlist', ['Carpeta/Dentro']],
+    ['virtualdj', 'membership', [['/m/a.wav']]],
+    ['virtualdj', 'collection', []],
   ] as const)('reads %s’s %s through window.api.dj at call time', async (program, read, args) => {
     const answer = Symbol(read)
     const spy = vi.fn(async () => answer)
@@ -50,8 +58,8 @@ describe('SOURCE_READ reads each DJ program’s tab through window.api.dj, namin
 })
 
 describe('RAIL_PROGRAMS', () => {
-  it('draws rekordbox, then Engine DJ, then Traktor, after Music, as the rail always has, and Serato last', () => {
-    expect(RAIL_PROGRAMS).toEqual(['rekordbox', 'engine', 'traktor', 'serato'])
+  it('draws rekordbox, then Engine DJ, then Traktor, after Music, as the rail always has, then Serato and VirtualDJ last', () => {
+    expect(RAIL_PROGRAMS).toEqual(['rekordbox', 'engine', 'traktor', 'serato', 'virtualdj'])
   })
 })
 
@@ -80,6 +88,7 @@ describe('SOURCE_PROGRAMS says what each DJ program allows in its tab', () => {
       membershipKey: 'rekordbox-membership',
       invalidatesOnEdit: true,
       crates: false,
+      idJoin: null,
     })
   })
 
@@ -97,6 +106,7 @@ describe('SOURCE_PROGRAMS says what each DJ program allows in its tab', () => {
       membershipKey: 'traktor-membership',
       invalidatesOnEdit: true,
       crates: false,
+      idJoin: null,
     })
   })
 
@@ -114,6 +124,7 @@ describe('SOURCE_PROGRAMS says what each DJ program allows in its tab', () => {
       membershipKey: 'engine-membership',
       invalidatesOnEdit: true,
       crates: false,
+      idJoin: null,
     })
   })
 
@@ -153,6 +164,25 @@ describe('SOURCE_PROGRAMS says what each DJ program allows in its tab', () => {
       membershipKey: 'serato-membership',
       invalidatesOnEdit: true,
       crates: true,
+      idJoin: '%%',
+    })
+  })
+
+  it('lets the VirtualDJ tab edit its lists and folders with no separator and no gate, marking its tracks so none is converted, and export them to a USB', () => {
+    expect(shape('virtualdj')).toEqual({
+      separator: false,
+      edit: { messagePrefix: 'sources.editVirtualdj.', gate: 'none' },
+      fixedNode: false,
+      usb: true,
+      missingLibraryCheck: false,
+      marksOrigin: true,
+      fillsLoaded: false,
+      addsUncollected: true,
+      fieldTestIdPrefix: 'virtualdj-',
+      membershipKey: 'virtualdj-membership',
+      invalidatesOnEdit: true,
+      crates: false,
+      idJoin: '/',
     })
   })
 
@@ -201,4 +231,25 @@ describe('SOURCE_PROGRAMS says what each DJ program allows in its tab', () => {
     const node: SourceNode = { id: 'n', name, kind: 'playlist', count: 0 }
     expect(SOURCE_PROGRAMS.traktor.fixedNode?.(node, atRoot)).toBe(fixed)
   })
+})
+
+describe('the features page table says where pasting a tracklist and the automatic session work', () => {
+  const cellOf = (row: 'paste' | 'session', program: DjProgram) =>
+    PROGRAM_TABLE.flatMap((group) => group.rows).find((r) => r.id === row)?.cells[program]
+
+  it.each(DJ_PROGRAMS)(
+    'offers pasting a tracklist into %s only where Surco reads the whole collection to find each line',
+    (program) => {
+      expect(cellOf('paste', program)?.yes).toBe(SOURCE_READ[program].collection !== undefined)
+    },
+  )
+
+  it.each(DJ_PROGRAMS)(
+    'offers the automatic session in %s wherever Surco can create a playlist there and add tracks to it',
+    (program) => {
+      const edit = SOURCE_PROGRAMS[program].edit
+      const can = (kind: 'create' | 'add') => edit !== null && (!edit.kinds || edit.kinds.has(kind))
+      expect(cellOf('session', program)?.yes).toBe(can('create') && can('add'))
+    },
+  )
 })

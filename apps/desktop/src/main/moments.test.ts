@@ -17,7 +17,12 @@ function fakeSession(): SessionBackup {
 }
 
 function fakeSessions(): Record<WritableProgram, SessionBackup> {
-  return { rekordbox: fakeSession(), traktor: fakeSession(), engine: fakeSession() }
+  return {
+    rekordbox: fakeSession(),
+    traktor: fakeSession(),
+    engine: fakeSession(),
+    virtualdj: fakeSession(),
+  }
 }
 
 function recorded() {
@@ -29,7 +34,12 @@ function recorded() {
         return {} as never
       },
     })
-  const sessions = { rekordbox: session(), traktor: session(), engine: session() }
+  const sessions = {
+    rekordbox: session(),
+    traktor: session(),
+    engine: session(),
+    virtualdj: session(),
+  }
   return { labels, sessions, moments: createMoments(sessions) }
 }
 

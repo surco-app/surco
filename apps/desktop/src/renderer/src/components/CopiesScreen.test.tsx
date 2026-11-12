@@ -139,6 +139,42 @@ describe('CopiesScreen', () => {
 
   // "Last backup: No backups yet" beside "Saved: 0" said the same thing twice; before its
   // first copy a program keeps its state and count and drops the date it does not have.
+  it('lists VirtualDJ after the others, telling its database copies from its lists copies, and restores one', async () => {
+    const tracks = copy({ id: 'tracks/a', reason: 'tracks' })
+    const lists = copy({ id: 'lists/b', reason: 'lists', takenAt: older.takenAt })
+    const { onRestore } = renderScreen([
+      program('virtualdj', { copies: [tracks, lists] }),
+      program('engine', { copies: [latest] }),
+    ])
+    expect(
+      screen.getAllByTestId(/^copies-section-/).map((el) => el.getAttribute('data-testid')),
+    ).toEqual(['copies-section-engine', 'copies-section-virtualdj', 'copies-section-music'])
+    fireEvent.click(screen.getByTestId('copies-toggle-virtualdj'))
+    expect(screen.getByTestId('copies-item-tracks/a')).toHaveTextContent(
+      i18n.t('copies.reason.tracks'),
+    )
+    expect(screen.getByTestId('copies-item-lists/b')).toHaveTextContent(
+      i18n.t('copies.reason.lists'),
+    )
+    const name = i18n.t('sources.virtualdj')
+    fireEvent.click(screen.getByTestId('copies-restore-item-tracks/a'))
+    expect(screen.getByRole('dialog')).toHaveTextContent(
+      i18n.t('copies.confirm.bodyTracks', { program: name }),
+    )
+    fireEvent.click(screen.getByTestId('confirm-cancel'))
+    fireEvent.click(screen.getByTestId('copies-restore-item-lists/b'))
+    expect(screen.getByRole('dialog')).toHaveTextContent(
+      i18n.t('copies.confirm.bodyLists', { program: name }),
+    )
+    expect(screen.getByRole('dialog')).not.toHaveTextContent(
+      i18n.t('copies.confirm.body', { program: name }),
+    )
+    await act(async () => {
+      fireEvent.click(screen.getByTestId('confirm-ok'))
+    })
+    expect(onRestore).toHaveBeenCalledWith('virtualdj', 'lists/b')
+  })
+
   it('drops the last backup row of a program before its first copy', () => {
     renderScreen([program('engine')], { trash: { ...musicTrash(), entries: [] } })
     expect(screen.getByTestId('copies-state-engine')).toBeInTheDocument()

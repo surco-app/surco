@@ -3,7 +3,7 @@ import { BUNDLED_FLOWS } from '../../../shared/cueFlows'
 import { DEFAULT_EDITOR_SECTIONS } from '../../../shared/editorSections'
 import { DEFAULT_SESSION_WIZARD } from '../../../shared/sessionSettings'
 import type { Settings } from '../../../shared/types'
-import { buildSettingsPatch, type LocalDraft, pickSynced } from './settingsDraft'
+import { buildSettingsPatch, type LocalDraft, pickLocal, pickSynced } from './settingsDraft'
 
 const settings: Settings = {
   theme: 'system',
@@ -49,6 +49,10 @@ const settings: Settings = {
   syncEngineDj: false,
   addToSerato: false,
   syncSerato: false,
+  addToVirtualdj: false,
+  syncVirtualdj: false,
+  virtualdjPlaylistsFieldOffered: false,
+  virtualdjLibraryDir: '/Users/dj/Library/Application Support/VirtualDJ',
   betaUpdates: false,
   traktorCueOffsetMs: 0,
   filenameFormat: '{artist} - {title}',
@@ -100,6 +104,7 @@ const settings: Settings = {
   cueFlowToTraktor: true,
   cueFlowToEngine: true,
   cueFlowToSerato: true,
+  cueFlowToVirtualdj: true,
   cueLearnFromEdits: true,
   hiddenSources: [],
   sessionWizard: { ...DEFAULT_SESSION_WIZARD },
@@ -132,6 +137,7 @@ const local: LocalDraft = {
   engineLibraryDir: '/music/Engine Library',
   traktorNmlPath: '',
   rekordboxDbPath: '',
+  virtualdjLibraryDir: '/Users/dj/Library/Application Support/VirtualDJ',
   betaUpdates: false,
   autoMatch: false,
   beatportUsername: '',
@@ -320,6 +326,22 @@ describe('cue flows in the draft', () => {
   it('keeps Serato out of the flows across a Settings save once the DJ took it out', () => {
     const synced = pickSynced({ ...settings, cueFlowToSerato: false })
     expect(buildSettingsPatch(synced, local).cueFlowToSerato).toBe(false)
+  })
+
+  it('keeps VirtualDJ out of the flows across a Settings save once the DJ took it out', () => {
+    const synced = pickSynced({ ...settings, cueFlowToVirtualdj: false })
+    expect(buildSettingsPatch(synced, local).cueFlowToVirtualdj).toBe(false)
+  })
+
+  it('saves the VirtualDJ folder the DJ programs tab staged, as a setting of this Mac', () => {
+    const patch = buildSettingsPatch(pickSynced(settings), {
+      ...local,
+      virtualdjLibraryDir: '/Volumes/Gigs/VirtualDJ',
+    })
+    expect(patch.virtualdjLibraryDir).toBe('/Volumes/Gigs/VirtualDJ')
+    expect(
+      pickLocal({ ...settings, virtualdjLibraryDir: '/x/VirtualDJ' }).virtualdjLibraryDir,
+    ).toBe('/x/VirtualDJ')
   })
 
   it('saves the hidden sources the General tab staged', () => {

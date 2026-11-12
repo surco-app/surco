@@ -1,4 +1,4 @@
-import type { WritableProgram } from '../../shared/djProgram'
+import { type WritableProgram, writableInOrder } from '../../shared/djProgram'
 import type { OutputFormat, Settings } from '../../shared/types'
 import type { VerifyDetailKey } from '../../shared/verification'
 
@@ -14,7 +14,11 @@ export type Origin =
   | 'mp3n'
   | 'mp3j'
 export type FileDest = 'folder' | 'beside' | 'overwrite' | 'appleMusic' | 'appleMusicCopy'
-export type Programs = WritableProgram | 'music' | 'all'
+export const MATRIX_PROGRAMS = writableInOrder(['rekordbox', 'engine', 'traktor', 'virtualdj'])
+
+export type MatrixProgram = WritableProgram
+
+export type Programs = MatrixProgram | 'music' | 'all'
 export type CellState = 'closed' | 'open' | 'retry'
 export type Quality = 'source' | 'rate48' | 'bits16' | 'normalize' | 'trim'
 export type InvariantName =
@@ -94,8 +98,9 @@ const PROGRAMS_NAME: Record<Programs, string> = {
   rekordbox: 'con rekordbox',
   engine: 'con Engine',
   traktor: 'con Traktor',
+  virtualdj: 'con VirtualDJ',
   music: 'con Music',
-  all: 'con rekordbox, Engine y Traktor',
+  all: 'con rekordbox, Engine, Traktor y VirtualDJ',
 }
 const STATE_NAME: Record<CellState, string> = {
   closed: '',
@@ -170,6 +175,13 @@ const PAIRWISE: [FileDest, Programs, CellState, keyof typeof CONVERSION, boolean
   ['beside', 'all', 'closed', 'keep', true],
   ['appleMusicCopy', 'music', 'closed', 'keep'],
   ['overwrite', 'all', 'closed', 'keep'],
+  ['folder', 'virtualdj', 'closed', 'fromLossy'],
+  ['folder', 'virtualdj', 'open', 'keep'],
+  ['beside', 'virtualdj', 'retry', 'toLossy'],
+  ['beside', 'virtualdj', 'closed', 'keep'],
+  ['overwrite', 'virtualdj', 'closed', 'toLossy'],
+  ['appleMusic', 'virtualdj', 'closed', 'keep'],
+  ['appleMusicCopy', 'virtualdj', 'open', 'fromLossy'],
 ]
 
 const LAYER_D: Cell[] = PAIRWISE.map(([dest, programs, state, conversion, core], i) =>
@@ -359,7 +371,7 @@ const K_ROWS: Row[] = [
 
 const LAYER_K: Cell[] = K_ROWS.map((row) => cell('K', row))
 
-const SABOTAGE_BASE: Record<'file' | 'music' | WritableProgram, Row> = {
+const SABOTAGE_BASE: Record<'file' | 'music' | MatrixProgram, Row> = {
   file: {
     id: '',
     origin: 'flac',
@@ -402,6 +414,15 @@ const SABOTAGE_BASE: Record<'file' | 'music' | WritableProgram, Row> = {
     target: 'aiff',
     dest: 'beside',
     programs: 'traktor',
+    state: 'closed',
+    quality: 'source',
+  },
+  virtualdj: {
+    id: '',
+    origin: 'flac',
+    target: 'aiff',
+    dest: 'folder',
+    programs: 'virtualdj',
     state: 'closed',
     quality: 'source',
   },

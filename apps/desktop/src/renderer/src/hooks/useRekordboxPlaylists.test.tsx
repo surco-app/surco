@@ -98,7 +98,7 @@ describe('useRekordboxPlaylists', () => {
     renderHook(() =>
       useOfferPlaylistFields(
         settings,
-        { rekordbox: true, traktor: false, engine: false, serato: false },
+        { rekordbox: true, traktor: false, engine: false, serato: false, virtualdj: false },
         save,
       ),
     )
@@ -110,7 +110,7 @@ describe('useRekordboxPlaylists', () => {
     renderHook(() =>
       useOfferPlaylistFields(
         { ...settings, rekordboxPlaylistsFieldOffered: true },
-        { rekordbox: true, traktor: false, engine: false, serato: false },
+        { rekordbox: true, traktor: false, engine: false, serato: false, virtualdj: false },
         save,
       ),
     )
@@ -124,7 +124,7 @@ describe('useRekordboxPlaylists', () => {
       ({ current }) =>
         useOfferPlaylistFields(
           current,
-          { rekordbox: true, traktor: false, engine: false, serato: false },
+          { rekordbox: true, traktor: false, engine: false, serato: false, virtualdj: false },
           save,
         ),
       {
@@ -173,7 +173,7 @@ describe('the Traktor and Engine DJ playlists', () => {
     renderHook(() =>
       useOfferPlaylistFields(
         settings,
-        { rekordbox: true, traktor: true, engine: true, serato: false },
+        { rekordbox: true, traktor: true, engine: true, serato: false, virtualdj: false },
         save,
       ),
     )
@@ -197,14 +197,14 @@ describe('the Traktor and Engine DJ playlists', () => {
       ({ engine }) =>
         useOfferPlaylistFields(
           settings,
-          { rekordbox: false, traktor: false, engine, serato: false },
+          { rekordbox: false, traktor: false, engine, serato: false, virtualdj: false },
           save,
         ),
-      { initialProps: { engine: false, serato: false } },
+      { initialProps: { engine: false, serato: false, virtualdj: false } },
     )
     expect(save).not.toHaveBeenCalled()
-    rerender({ engine: true, serato: false })
-    rerender({ engine: true, serato: false })
+    rerender({ engine: true, serato: false, virtualdj: false })
+    rerender({ engine: true, serato: false, virtualdj: false })
     expect(save).toHaveBeenCalledTimes(1)
     expect(save).toHaveBeenCalledWith({
       visibleFields: ['title', 'enginePlaylists'],
@@ -226,7 +226,7 @@ describe('the Serato crates field', () => {
     renderHook(() =>
       useOfferPlaylistFields(
         settings,
-        { rekordbox: false, traktor: false, engine: false, serato: true },
+        { rekordbox: false, traktor: false, engine: false, serato: true, virtualdj: false },
         save,
       ),
     )

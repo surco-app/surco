@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { ReadOnlyProgram } from '../../../shared/djProgram'
 import type {
   DamageFinding,
   DamageKind,
@@ -141,7 +142,7 @@ export interface MusicReview {
   reviewed: number
   // Rows the list could not review because their file was not read.
   skipped: number
-  seratoLeftOut?: number
+  leftOut?: Record<ReadOnlyProgram, number>
   musicConsulted?: boolean
   inMusic: (id: string) => boolean
   facts: (id: string) => TrackItem | undefined
@@ -308,7 +309,7 @@ export function useMusicReview({
   const [libraries, setLibraries] = useState<LibraryStatus | null>(null)
   const [loaded, setLoaded] = useState<{
     skipped: number
-    seratoLeftOut?: number
+    leftOut?: Record<ReadOnlyProgram, number>
     musicConsulted?: boolean
   }>({
     skipped: 0,
@@ -326,7 +327,7 @@ export function useMusicReview({
     setAllIncomplete(result.incomplete ?? [])
     setLoaded({
       skipped: result.skipped,
-      seratoLeftOut: result.seratoLeftOut,
+      leftOut: result.leftOut,
       musicConsulted: consulted(result.musicConsulted),
     })
     return result.entries
@@ -953,7 +954,7 @@ export function useMusicReview({
       affected,
       reviewed: entries.length,
       skipped: loaded.skipped,
-      seratoLeftOut: loaded.seratoLeftOut,
+      leftOut: loaded.leftOut,
       musicConsulted: loaded.musicConsulted,
       inMusic,
       facts,

@@ -1,2 +1,5 @@
 # Pinned upstream data and patches must stay byte for byte (LF) on every checkout.
 apps/desktop/vendor/baken/** -text
+
+# VirtualDJ writes CRLF and rejects a database with LF; its measured files must stay byte for byte.
+apps/desktop/src/main/virtualdjFixtures/** -text

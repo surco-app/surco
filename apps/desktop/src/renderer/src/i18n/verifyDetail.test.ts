@@ -109,6 +109,12 @@ const SENT: Record<VerifyDetailKey, CheckDetail['params'][]> = {
   traktorNameStale: [{ value: 'Old Title' }],
   traktorPlaylistMissing: [{ playlist: 'Peak time' }],
   traktorUnreadable: [undefined],
+  virtualdjOk: [{ format: 'AIFF' }, { format: 'AIFF', playlists: ['Sets', 'Peak time'] }],
+  virtualdjStillOld: [{ format: 'MP3' }],
+  virtualdjMissing: [undefined],
+  virtualdjSizeDiffers: [undefined],
+  virtualdjPlaylistMissing: [{ playlist: 'Sets' }],
+  virtualdjUnreadable: [undefined],
 }
 
 // The shield and the amber line print whatever key main judged with. A key with no string in

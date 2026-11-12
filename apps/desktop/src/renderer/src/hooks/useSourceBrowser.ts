@@ -14,7 +14,7 @@ import {
 } from '../lib/appleMusicSource'
 import { takeOwnRemoval } from '../lib/ownRemovals'
 import { SOURCE_PROGRAMS, SOURCE_READ } from '../lib/sourcePrograms'
-import { useRekordboxAvailable } from './useRekordboxPlaylists'
+import { useProgramsAvailable } from './useProgramsAvailable'
 import { useWindowFocus } from './useWindowFocus'
 
 export interface SourceBrowser {
@@ -120,26 +120,7 @@ export function useSourceBrowser({
   const playlist = source ? (playlists[source] ?? null) : null
   const isMac = window.api.platform === 'darwin'
 
-  const rekordbox = useRekordboxAvailable()
-  const engine = useQuery({
-    queryKey: ['source-available', 'engine'],
-    queryFn: SOURCE_READ.engine.available,
-    staleTime: Number.POSITIVE_INFINITY,
-  })
-  const traktor = useQuery({
-    queryKey: ['source-available', 'traktor'],
-    queryFn: SOURCE_READ.traktor.available,
-    staleTime: Number.POSITIVE_INFINITY,
-  })
-  const serato = useQuery({
-    queryKey: ['source-available', 'serato'],
-    queryFn: SOURCE_READ.serato.available,
-    staleTime: Number.POSITIVE_INFINITY,
-  })
-  const found = useMemo<Record<DjProgram, boolean | undefined>>(
-    () => ({ rekordbox, engine: engine.data, traktor: traktor.data, serato: serato.data }),
-    [rekordbox, engine.data, traktor.data, serato.data],
-  )
+  const found = useProgramsAvailable()
   const sources = useMemo<PlaylistSource[]>(() => {
     return [
       ...(isMac ? (['appleMusic'] as const) : []),

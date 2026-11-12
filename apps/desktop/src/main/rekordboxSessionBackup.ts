@@ -129,8 +129,8 @@ export function createSessionBackup(deps: {
 // older snapshot blocks the fold, and SQLite reports that only in the result (busy, or
 // fewer frames checkpointed than the log holds), never by throwing: then there is no
 // complete backup, and no write.
-export function checkpointCollection(collectionPath: string): void {
-  const db = openRekordboxDb(collectionPath)
+export function checkpointCollection(collectionPath: string, key?: string): void {
+  const db = key ? openRekordboxDb(collectionPath, { key }) : openRekordboxDb(collectionPath)
   if (!db) throw new Error('rekordbox collection could not be opened')
   try {
     foldWal(db)

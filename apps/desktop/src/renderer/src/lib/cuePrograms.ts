@@ -14,6 +14,8 @@ export interface CueProgram {
   runningNote: { key: string; testId: string } | null
   saveAllKey: string
   fixedGrid: string | null
+  takesFlows: boolean
+  twinsOnSurcoGrid: boolean
 }
 
 export const CUE_PROGRAMS: Record<DjProgram, CueProgram> = {
@@ -29,6 +31,8 @@ export const CUE_PROGRAMS: Record<DjProgram, CueProgram> = {
     runningNote: null,
     saveAllKey: 'editor.cues.saveAll',
     fixedGrid: null,
+    takesFlows: true,
+    twinsOnSurcoGrid: false,
   },
   traktor: {
     slots: TRAKTOR_SLOTS,
@@ -42,6 +46,8 @@ export const CUE_PROGRAMS: Record<DjProgram, CueProgram> = {
     runningNote: null,
     saveAllKey: 'editor.cues.traktor.saveAll',
     fixedGrid: null,
+    takesFlows: true,
+    twinsOnSurcoGrid: false,
   },
   engine: {
     slots: ALL_SLOTS,
@@ -55,6 +61,8 @@ export const CUE_PROGRAMS: Record<DjProgram, CueProgram> = {
     runningNote: null,
     saveAllKey: 'editor.cues.engine.saveAll',
     fixedGrid: null,
+    takesFlows: true,
+    twinsOnSurcoGrid: false,
   },
   serato: {
     slots: { kinds: HOT_KINDS, pairCalls: false },
@@ -68,6 +76,23 @@ export const CUE_PROGRAMS: Record<DjProgram, CueProgram> = {
     runningNote: { key: 'editor.cues.serato.waiting', testId: 'cues-serato-waiting' },
     saveAllKey: 'editor.cues.serato.saveAll',
     fixedGrid: 'editor.cues.grid.serato',
+    takesFlows: true,
+    twinsOnSurcoGrid: false,
+  },
+  virtualdj: {
+    slots: { kinds: HOT_KINDS, pairCalls: false },
+    readsAudio: true,
+    surcoGrid: false,
+    writesCalls: false,
+    fixedColour: null,
+    colourHelp: null,
+    collectionGate: null,
+    callsNote: { key: 'editor.cues.virtualdj.calls', testId: 'cues-virtualdj-calls' },
+    runningNote: { key: 'editor.cues.virtualdj.waiting', testId: 'cues-virtualdj-waiting' },
+    saveAllKey: 'editor.cues.virtualdj.saveAll',
+    fixedGrid: 'editor.cues.grid.virtualdj',
+    takesFlows: true,
+    twinsOnSurcoGrid: true,
   },
 }
 

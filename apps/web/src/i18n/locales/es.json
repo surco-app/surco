@@ -7,10 +7,10 @@
     "ogLocale": "es_ES",
     "inLanguage": "es",
     "title": "Surco: Prepara tus pistas de DJ en segundos",
-    "description": "Surco prepara tus pistas de DJ en segundos. Convierte entre AIFF, WAV, FLAC, ALAC y MP3 en cualquier dirección, edita etiquetas y metadatos desde Discogs, Bandcamp, Deezer, Beatport y MusicBrainz, y lleva las pistas a Apple Music, rekordbox, Engine DJ o Traktor. Y detecta MP3 recomprimidos disfrazados de lossless.",
+    "description": "Surco prepara tus pistas de DJ en segundos. Convierte entre AIFF, WAV, FLAC, ALAC y MP3 en cualquier dirección, edita etiquetas y metadatos desde Discogs, Bandcamp, Deezer, Beatport y MusicBrainz, y lleva las pistas a Apple Music, rekordbox, Engine DJ, Traktor, Serato o VirtualDJ. Y detecta MP3 recomprimidos disfrazados de lossless.",
     "ogTitle": "Surco: Prepara tus pistas de DJ en segundos",
     "ogDescription": "Menos preparar, más pinchar. Convierte entre AIFF, WAV, FLAC, ALAC y MP3 en cualquier dirección, etiqueta desde Discogs, Bandcamp, Deezer, Beatport y MusicBrainz, y organiza en segundos. Y detecta MP3 disfrazados de lossless.",
-    "jsonLdDescription": "Organizador de pistas de audio para DJ. Convierte entre AIFF, WAV, FLAC, ALAC y MP3 en cualquier dirección, etiqueta desde Discogs, Bandcamp, Deezer, Beatport y MusicBrainz, lleva las pistas a Apple Music, rekordbox, Engine DJ o Traktor y analiza el espectro para detectar MP3 recomprimidos."
+    "jsonLdDescription": "Organizador de pistas de audio para DJ. Convierte entre AIFF, WAV, FLAC, ALAC y MP3 en cualquier dirección, etiqueta desde Discogs, Bandcamp, Deezer, Beatport y MusicBrainz, lleva las pistas a Apple Music, rekordbox, Engine DJ, Traktor, Serato o VirtualDJ y analiza el espectro para detectar MP3 recomprimidos."
   },
   "nav": {
     "velocidad": "Velocidad",
@@ -96,8 +96,8 @@
           },
           {
             "t": "Tú eliges dónde cae",
-            "s": "Una carpeta, junto al original, Apple Music, rekordbox, Engine DJ o Traktor.",
-            "d": "Una carpeta, junto al original o Apple Music. Y en rekordbox, Engine DJ y Traktor eliges si la pista se actualiza o también se añade."
+            "s": "Una carpeta, junto al original, Apple Music, rekordbox, Engine DJ, Traktor, Serato o VirtualDJ.",
+            "d": "Una carpeta, junto al original o Apple Music. Y en rekordbox, Engine DJ, Traktor, Serato y VirtualDJ eliges si la pista se actualiza o también se añade."
           },
           {
             "t": "Frecuencia corregida",
@@ -247,23 +247,23 @@
       },
       {
         "kick": "programas de dj",
-        "title": "rekordbox, Traktor y Engine DJ",
+        "title": "rekordbox, Traktor, Engine DJ, Serato y VirtualDJ",
         "replaces": "en vez de tu gestor de biblioteca",
         "items": [
           {
             "t": "Tus playlists de rekordbox",
             "s": "Abre y organiza tus playlists de rekordbox sin salir de Surco.",
-            "d": "Las abres en Surco con sus carpetas y en su orden, con la onda y los cues de rekordbox en cada pista. Y las organizas desde aquí. Creas, renombras y borras playlists y carpetas, las mueves arrastrándolas, añades, quitas y reordenas pistas, y en el editor eliges en qué playlists está cada una. Si rekordbox está abierto, los cambios esperan a que lo cierres. «Añadidas recientemente» va la primera, con lo que metiste en la colección los últimos 30 días, y después «Todas las pistas», con tu colección entera, también lo que no está en ninguna playlist. Si no usas rekordbox o Apple Music, ocultas esa fuente. Y si tienes el tracklist de una sesión, lo pegas sobre una playlist con «Pegar tracklist…» y Surco busca cada línea en tu colección, te enseña lo que ha encontrado y mete las pistas en el orden del set. También en Traktor y Serato."
+            "d": "Las abres en Surco con sus carpetas y en su orden, con la onda y los cues de rekordbox en cada pista. Y las organizas desde aquí. Creas, renombras y borras playlists y carpetas, las mueves arrastrándolas, añades, quitas y reordenas pistas, y en el editor eliges en qué playlists está cada una. Si rekordbox está abierto, los cambios esperan a que lo cierres. «Añadidas recientemente» va la primera, con lo que metiste en la colección los últimos 30 días, y después «Todas las pistas», con tu colección entera, también lo que no está en ninguna playlist. Si no usas rekordbox o Apple Music, ocultas esa fuente. Y si tienes el tracklist de una sesión, lo pegas sobre una playlist con «Pegar tracklist…» y Surco busca cada línea en tu colección, te enseña lo que ha encontrado y mete las pistas en el orden del set. También en Traktor, Serato y VirtualDJ."
           },
           {
             "t": "Sesión automática",
             "s": "Monta una sesión con tus playlists, tus combos, lo que más te gusta y mezcla armónica.",
-            "d": "La abres desde la paleta de comandos, desde el menú de una carpeta o sobre una playlist vacía. Eliges cuánto dura y de qué playlists salen las pistas, y dices qué hay en cada una, Bases, Vocales o Mezcladas, también para una carpeta entera. Surco junta las parejas que repites en tus sets y tracklists, las pistas con más estrellas y escuchas, mezcla armónica Camelot si la quieres y un hueco para lo nuevo, y cuenta el tiempo que suena cada pista, no el archivo entero. Se ve como cualquier playlist, con la tonalidad de cada pista. Aprende de tus sets cuánto mueves el tempo y cuánto te importa el tono, deja tus cierres para el final, saca más tus fijas y abre con un vocal. «Rehacer» la vuelve a montar entera, o empiézala desde una pista con su menú. En rekordbox, Traktor, Serato y Engine DJ. Si el programa está abierto, espera a que lo cierres."
+            "d": "La abres desde la paleta de comandos, desde el menú de una carpeta o sobre una playlist vacía. Eliges cuánto dura y de qué playlists salen las pistas, y dices qué hay en cada una, Bases, Vocales o Mezcladas, también para una carpeta entera. Surco junta las parejas que repites en tus sets y tracklists, las pistas con más estrellas y escuchas, mezcla armónica Camelot si la quieres y un hueco para lo nuevo, y cuenta el tiempo que suena cada pista, no el archivo entero. Se ve como cualquier playlist, con la tonalidad de cada pista. Aprende de tus sets cuánto mueves el tempo y cuánto te importa el tono, deja tus cierres para el final, saca más tus fijas y abre con un vocal. «Rehacer» la vuelve a montar entera, o empiézala desde una pista con su menú. En rekordbox, Traktor, Engine DJ, Serato y VirtualDJ. Si el programa está abierto, espera a que lo cierres."
           },
           {
             "t": "Cues de rekordbox",
             "s": "Pon hot cues sobre la onda de rekordbox, a mano o con tu flujo de marcado.",
-            "d": "Hot cues de la A a la H y CALL, sobre la onda y la rejilla de rekordbox. Los arrastras, se ajustan al compás o al golpe y puedes deshacer. Al ampliar la onda ves cada golpe con detalle, medido del propio audio, y Play suena al instante. Eliges un flujo, como Mix in 64, Mix in 32 o uno tuyo hecho por bloques o aprendido de tu colección, y al pasar el ratón por la onda ves en transparente lo que pondría. Un clic lo coloca y te dice lo que no cabe. Auto marcar te propone dónde rompe cada pista, también en varias a la vez. Aprende tu forma de marcar de los cues que ya pusiste y de los que guardas, y separa lo que ve seguro de lo dudoso. Y si marcas los CALL en rekordbox, Surco pone los hot cues de tu flujo al cerrarlo. En una pista que rekordbox aún no ha analizado trabajas sobre la rejilla de Surco, y cuando rekordbox la analiza, tus cues se ajustan a la suya. Las letras siguen el orden de la pista, y si cada letra es un pad fijo para ti, lo apagas en Ajustes. Si la misma pista está en Traktor o Engine DJ, al guardar el flujo llega también allí, puesto con su rejilla y sus cues. Se escriben en rekordbox con copia de seguridad antes."
+            "d": "Hot cues de la A a la H y CALL, sobre la onda y la rejilla de rekordbox. Los arrastras, se ajustan al compás o al golpe y puedes deshacer. Al ampliar la onda ves cada golpe con detalle, medido del propio audio, y Play suena al instante. Eliges un flujo, como Mix in 64, Mix in 32 o uno tuyo hecho por bloques o aprendido de tu colección, y al pasar el ratón por la onda ves en transparente lo que pondría. Un clic lo coloca y te dice lo que no cabe. Auto marcar te propone dónde rompe cada pista, también en varias a la vez. Aprende tu forma de marcar de los cues que ya pusiste y de los que guardas, y separa lo que ve seguro de lo dudoso. Y si marcas los CALL en rekordbox, Surco pone los hot cues de tu flujo al cerrarlo. En una pista que rekordbox aún no ha analizado trabajas sobre la rejilla de Surco, y cuando rekordbox la analiza, tus cues se ajustan a la suya. Las letras siguen el orden de la pista, y si cada letra es un pad fijo para ti, lo apagas en Ajustes. Si la misma pista está en Traktor, Engine DJ, Serato o VirtualDJ, al guardar el flujo llega también allí, puesto con su rejilla y sus cues. Se escriben en rekordbox con copia de seguridad antes."
           },
           {
             "t": "Cues fuera de la rejilla",
@@ -283,7 +283,7 @@
           {
             "t": "Un USB para tus CDJ",
             "s": "Prepara un USB para tus CDJ con cues, rejilla y ondas.",
-            "d": "Exportas tus playlists de rekordbox a un USB con sus cues, su rejilla y sus ondas, y rekordbox lo puede seguir sincronizando. Necesita rekordbox cerrado. En macOS y Windows. También desde tus crates de Serato y tus playlists de Traktor, con sus cues, loops y rejilla, sin pasar por rekordbox."
+            "d": "Exportas tus playlists de rekordbox a un USB con sus cues, su rejilla y sus ondas, y rekordbox lo puede seguir sincronizando. Necesita rekordbox cerrado. En macOS y Windows. También desde tus playlists de Traktor y, en macOS, tus crates de Serato y tus listas de VirtualDJ, con sus cues, loops y rejilla, sin pasar por rekordbox."
           },
           {
             "t": "Tus playlists de Traktor",
@@ -316,6 +316,11 @@
             "d": "Carátula, puntuación y playlist en tu biblioteca. Copia de seguridad antes, y no la toca si Engine está abierto."
           },
           {
+            "t": "Tus listas de VirtualDJ",
+            "s": "Organiza tus listas de VirtualDJ y ponles hot cues con el mismo editor.",
+            "d": "Las abres en Surco con sus carpetas y las organizas como las de rekordbox, también pegando un tracklist o con una sesión automática. Pones hot cues a sus pistas con el mismo editor, Auto marcar incluido. Los CALL no, porque VirtualDJ solo recibe hot cues, y la rejilla es la que analizó VirtualDJ. Al convertir, VirtualDJ sigue a la pista nueva con sus cues y sus listas, y si no la tenía, Surco la añade. En macOS también las exportas a un USB para tus CDJ. Surco guarda una copia antes de escribir, que restauras desde Copias, y con VirtualDJ abierto los cambios esperan a que lo cierres. En Windows está en beta."
+          },
+          {
             "t": "Archivos para rekordbox, Serato y M3U8",
             "s": "Exporta playlists para rekordbox, Serato y M3U8.",
             "d": "Llevan rutas y metadatos, sin cues ni puntuación. El crate de Serato, solo rutas."
@@ -340,7 +345,7 @@
           {
             "t": "Erratas y duplicados de tu biblioteca",
             "s": "Encuentra erratas, caracteres invisibles y pistas repetidas en tu biblioteca.",
-            "d": "Agrupa lo que tu Apple Music o tu lista escribe de varias formas, los caracteres invisibles y las pistas que tienes dos veces. Cada corrección llega al archivo, a Apple Music y, si los sincronizas, a rekordbox, Engine DJ y Traktor, con copia antes de escribir, que restauras desde Copias, y Deshacer. La copia que quitas deja sus playlists a la que se queda. Apple Music, solo en macOS."
+            "d": "Agrupa lo que tu Apple Music o tu lista escribe de varias formas, los caracteres invisibles y las pistas que tienes dos veces. Cada corrección llega al archivo, a Apple Music y, si los sincronizas, a rekordbox, Engine DJ, Traktor, Serato y VirtualDJ, con copia antes de escribir, que restauras desde Copias (salvo la de Serato), y Deshacer. La copia que quitas deja sus playlists a la que se queda. Apple Music, solo en macOS."
           },
           {
             "t": "Traer una playlist de Apple Music",
@@ -381,8 +386,8 @@
         "items": [
           {
             "t": "Copias de tus bibliotecas",
-            "s": "Guarda una copia de rekordbox, Traktor y Engine DJ antes de tocarlos.",
-            "d": "Antes de escribir en rekordbox, Traktor o Engine DJ, Surco guarda una copia con fecha y conserva las últimas 5 de cada programa. En Copias, abajo en la barra lateral, ves las de cada uno y restauras cualquiera de un clic: te pide cerrar el programa, guarda una copia de cómo estaba para que puedas volver atrás y solo descarta los cambios en espera de esa biblioteca."
+            "s": "Guarda una copia de rekordbox, Traktor, Engine DJ, Serato y VirtualDJ antes de tocarlos.",
+            "d": "Antes de escribir en rekordbox, Traktor, Engine DJ o VirtualDJ, Surco guarda una copia con fecha y conserva las últimas 5 de cada programa. En Copias, abajo en la barra lateral, ves las de cada uno y restauras cualquiera de un clic: te pide cerrar el programa, guarda una copia de cómo estaba para que puedas volver atrás y solo descarta los cambios en espera de esa biblioteca. De Serato también guarda una copia antes de escribir, pero esa no se restaura desde Copias."
           },
           {
             "t": "Originales de audio",
@@ -412,8 +417,55 @@
         ]
       }
     ],
+    "programs": {
+      "kicker": "Programas de DJ",
+      "title": "Qué hace Surco con cada programa",
+      "lede": "rekordbox, Traktor, Engine DJ, Serato y VirtualDJ. Lo que Surco escribe en tu biblioteca lo escribe con copia antes y con el programa cerrado.",
+      "feature": "Función",
+      "yes": "Sí",
+      "no": "No",
+      "foot": "Con el programa abierto, los cambios esperan y se escriben al cerrarlo. Apple Music va aparte, en su propia sección.",
+      "groups": {
+        "library": "Biblioteca",
+        "cues": "Cues y rejilla",
+        "convert": "Al convertir",
+        "usb": "USB y copias"
+      },
+      "rows": {
+        "tab": "Pestaña con sus playlists",
+        "edit": "Crear, renombrar y mover playlists",
+        "paste": "Pegar un tracklist",
+        "session": "Sesión automática",
+        "cueEditor": "Editor de hot cues y Auto marcar",
+        "calls": "CALL",
+        "flows": "Flujos y pista gemela en otro programa",
+        "grid": "Guardar la rejilla",
+        "add": "Añadir la pista convertida",
+        "names": "Llevar título, artista, álbum y género",
+        "follow": "Seguir a la pista nueva con sus cues",
+        "usb": "USB para reproductores Pioneer",
+        "copies": "Copia antes de escribir y restaurar",
+        "windows": "Windows"
+      },
+      "notes": {
+        "noRenameMove": "Sin renombrar ni mover",
+        "crates": "Crates",
+        "listsFolders": "Listas y carpetas",
+        "hotCuesOnly": "Solo hot cues",
+        "zones": "También por tramos",
+        "losslessFiles": "WAV, AIFF y FLAC",
+        "readsOnly": "La lee",
+        "inPlace": "En su sitio",
+        "sameFolder": "En la misma carpeta",
+        "keepsOriginal": "Conserva el original",
+        "engineUsb": "USB de Engine",
+        "noRestore": "Sin restaurar en Copias",
+        "beta": "Beta",
+        "macOnly": "Solo macOS"
+      }
+    },
     "metaTitle": "Todo lo que hace Surco · Funciones",
-    "metaDescription": "Convertir, etiquetar desde Discogs, Bandcamp, Deezer, Beatport o MusicBrainz, analizar la calidad, reparar clics, recortar silencios y exportar a rekordbox, Engine DJ, Traktor o Serato. Gratis."
+    "metaDescription": "Convertir, etiquetar desde Discogs, Bandcamp, Deezer, Beatport o MusicBrainz, analizar la calidad, reparar clics, recortar silencios y exportar a rekordbox, Engine DJ, Traktor, Serato o VirtualDJ. Gratis."
   },
   "shortcuts": {
     "kicker": "Teclado primero",
@@ -515,7 +567,7 @@
       },
       {
         "q": "¿Conserva los cue points?",
-        "a": "Los de Traktor, sí. Se conservan entre MP3, AIFF, FLAC y WAV en cualquier combinación, porque Surco lee el árbol que Traktor guarda dentro del archivo y lo vuelve a escribir en el formato de destino. Solo se pierden en ALAC, que no tiene dónde guardarlo. Los de rekordbox y Engine DJ viven en su biblioteca y siguen con la pista si actualizas esa biblioteca al convertir. Si recortas silencio, los cues se recolocan solos según lo que hayas cortado (incluida la rejilla, que se reancla por fase para que no se descuadre), y si algo no se puede recolocar con garantías se descarta en vez de quedar mal puesto. Surco te lo avisa antes de convertir."
+        "a": "Los de Traktor, sí. Se conservan entre MP3, AIFF, FLAC y WAV en cualquier combinación, porque Surco lee el árbol que Traktor guarda dentro del archivo y lo vuelve a escribir en el formato de destino. Solo se pierden en ALAC, que no tiene dónde guardarlo. Los de rekordbox, Engine DJ y VirtualDJ viven en su biblioteca y siguen con la pista si actualizas esa biblioteca al convertir. Si recortas silencio, los cues se recolocan solos según lo que hayas cortado (incluida la rejilla, que se reancla por fase para que no se descuadre), y si algo no se puede recolocar con garantías se descarta en vez de quedar mal puesto. Surco te lo avisa antes de convertir."
       },
       {
         "q": "¿Puedo recortar el silencio de mis rips?",
@@ -575,7 +627,7 @@
   },
   "guide": {
     "metaTitle": "Cómo usar Surco: guía paso a paso",
-    "metaDescription": "Guía de Surco paso a paso: importar pistas, etiquetar desde Discogs, Bandcamp, Deezer, Beatport y MusicBrainz, analizar el espectro, convertir, marcar cues y llevarlo a Apple Music, rekordbox, Engine DJ, Traktor o Serato.",
+    "metaDescription": "Guía de Surco paso a paso: importar pistas, etiquetar desde Discogs, Bandcamp, Deezer, Beatport y MusicBrainz, analizar el espectro, convertir, marcar cues y llevarlo a Apple Music, rekordbox, Engine DJ, Traktor, Serato o VirtualDJ.",
     "kicker": "Guía",
     "title": "Cómo usar Surco",
     "lede": "De soltar tus pistas a tenerlas listas para pinchar, en dieciséis pasos cortos.",
@@ -630,7 +682,7 @@
         ],
         "points": [
           "De serie ya analiza todo al importar y busca en Discogs, Bandcamp, Deezer y MusicBrainz sin configurar nada.",
-          "Si Surco encuentra tu rekordbox, Traktor, Engine DJ o Serato, justo después de la bienvenida te pregunta con cuál pinchas, y lo que no marques deja de verse en la barra lateral."
+          "Si Surco encuentra tu rekordbox, Traktor, Engine DJ, Serato o VirtualDJ, justo después de la bienvenida te pregunta con cuál pinchas, y lo que no marques deja de verse en la barra lateral."
         ],
         "shot": "instalar-es.webp",
         "shotCaption": "El asistente de bienvenida en el primer arranque."
@@ -939,7 +991,7 @@
         "id": "exportar",
         "group": "out",
         "title": "Lleva tus pistas a tu programa de DJ",
-        "s": "Apple Music, rekordbox, Engine DJ, Traktor y Serato, al convertir o desde sus playlists.",
+        "s": "Apple Music, rekordbox, Engine DJ, Traktor, Serato y VirtualDJ, al convertir o desde sus playlists.",
         "body": [
           "La barra lateral enseña tus bibliotecas. Abre cualquier playlist y sus pistas entran en la lista con sus archivos de verdad."
         ],
@@ -970,7 +1022,7 @@
         "id": "rekordbox",
         "group": "out",
         "title": "Marca tus cues",
-        "s": "Hot cues sobre la onda de rekordbox, Engine DJ o Traktor, con tu flujo.",
+        "s": "Hot cues sobre la onda de rekordbox, Engine DJ, Traktor, Serato o VirtualDJ, con tu flujo.",
         "body": [
           "Abre una playlist de cualquiera de los tres en la barra lateral y elige una pista. La sección Cues muestra su onda y su rejilla."
         ],
@@ -991,7 +1043,7 @@
         "points": [
           "Auto marcar propone y no decide. Las propuestas seguras salen con línea continua y las dudosas con discontinua.",
           "Con varias pistas seleccionadas las marcas y las guardas todas de una vez.",
-          "Engine DJ y Traktor reciben solo los hot cues. En Traktor van en los botones 2 a 8, porque el 1 es su rejilla.",
+          "Engine DJ, Traktor, Serato y VirtualDJ reciben solo los hot cues. En Traktor van en los botones 2 a 8, porque el 1 es su rejilla.",
           "El filtro «Cues fuera de la rejilla» te saca las pistas con algún cue que no cae en el golpe."
         ],
         "shot": "rekordbox-es.webp",
@@ -1001,7 +1053,7 @@
         "id": "tracklist",
         "group": "out",
         "title": "Pega el tracklist de tu sesión",
-        "s": "De un tracklist en texto a una playlist de rekordbox, Traktor o Serato, en el orden del set.",
+        "s": "De un tracklist en texto a una playlist de rekordbox, Traktor, Serato o VirtualDJ, en el orden del set.",
         "body": [
           "Vale cualquier lista con una pista por línea, con o sin tiempos: la descripción de un vídeo de YouTube, un tracklist copiado de una web o lo que saca tracklist, el programa del autor de Surco que identifica las pistas de un vídeo propio (github.com/vigosan/tracklist)."
         ],
@@ -1062,7 +1114,7 @@
           "Cada pista cuenta solo lo que suena en la mezcla, dos minutos por defecto. Un set real de 28 pistas duró una hora.",
           "Un combo es una pareja que se repite en dos o más Mezcladas. Sin ellas no hay combos.",
           "Nueva es la añadida en los últimos 30 días, o sin escuchas ni estrellas si no hay fechas.",
-          "Escribe en rekordbox, Traktor, Serato o Engine DJ. Con el programa abierto, espera a que lo cierres."
+          "Escribe en rekordbox, Traktor, Engine DJ, Serato o VirtualDJ. Con el programa abierto, espera a que lo cierres."
         ],
         "shotCaption": "La sesión montada en tu programa de DJ.",
         "shot": "sesion-es.webp"
@@ -1073,7 +1125,7 @@
         "title": "Lleva tus playlists a un USB",
         "s": "Exporta tus playlists a un USB listo para los reproductores.",
         "body": [
-          "Funciona con playlists de rekordbox, Engine DJ, Serato y Traktor, en macOS y Windows."
+          "Funciona con playlists de rekordbox, Engine DJ y Traktor, en macOS y Windows, y con los crates de Serato y las listas de VirtualDJ en macOS."
         ],
         "steps": [
           {
@@ -1227,7 +1279,7 @@
     "closeStatsRest": "Surco no sabe quién lo usa ni qué haces con tu música. Lo único público son las descargas, y las tienes en <stats>Estadísticas</stats>.",
     "allFeatures": "Ver todo lo que hace →",
     "worksWith": "Funciona con",
-    "heroLede": "Surco convierte tus pistas, las etiqueta desde Discogs o Beatport, comprueba que el lossless lo sea de verdad y las deja en rekordbox, Traktor, Engine DJ o Apple Music.",
+    "heroLede": "Surco convierte tus pistas, las etiqueta desde Discogs o Beatport, comprueba que el lossless lo sea de verdad y las deja en rekordbox, Traktor, Engine DJ, Serato, VirtualDJ o Apple Music.",
     "anchors": {
       "see": "Ver cómo",
       "quality": {
@@ -1242,9 +1294,9 @@
       },
       "export": {
         "title": "Y aparecen en tu programa",
-        "note": "Apple Music, Engine DJ, rekordbox, Traktor o Serato. Sin importar nada.",
+        "note": "Apple Music, Engine DJ, rekordbox, Traktor, Serato o VirtualDJ. Sin importar nada.",
         "lead": "Directo a tu programa.",
-        "rest": "Aparece en rekordbox, Traktor, Engine DJ o Apple Music."
+        "rest": "Aparece en rekordbox, Traktor, Engine DJ, Serato, VirtualDJ o Apple Music."
       }
     },
     "replace": {
@@ -1289,7 +1341,7 @@
     },
     "sync": {
       "title": "Lo cambias una vez. Lo ven todos tus programas.",
-      "lede": "Abre la pista desde la pestaña de Apple Music o de rekordbox, corrige el título, el género o el nombre del archivo y pulsa Actualizar etiquetas. Surco lleva el cambio a Apple Music, rekordbox, Traktor y Engine DJ, y en cada uno sigue siendo la misma pista.",
+      "lede": "Abre la pista desde la pestaña de Apple Music o de rekordbox, corrige el título, el género o el nombre del archivo y pulsa Actualizar etiquetas. Surco lleva el cambio a Apple Music, rekordbox, Traktor, Engine DJ, Serato y VirtualDJ, y en cada uno sigue siendo la misma pista.",
       "tabAppleMusic": "Pestaña Apple Music",
       "tabRekordbox": "Pestaña rekordbox",
       "fieldTitle": "Título",
@@ -1315,7 +1367,7 @@
     },
     "cues": {
       "title": "Marca el drop. El resto de cues se pone solo.",
-      "lede": "Haz clic donde rompe la pista, o deja que Auto marcar lo encuentre. Tu flujo coloca los demás cues igual en cada pista y Surco los guarda en rekordbox, Engine DJ o Traktor.",
+      "lede": "Haz clic donde rompe la pista, o deja que Auto marcar lo encuentre. Tu flujo coloca los demás cues igual en cada pista y Surco los guarda en rekordbox, Engine DJ, Traktor, Serato o VirtualDJ.",
       "unsaved": "Sin guardar",
       "flow": "Flujo",
       "flowName": "Subidón",
@@ -1335,7 +1387,7 @@
         },
         "programs": {
           "title": "Directo a tu programa",
-          "text": "rekordbox, Engine DJ y Traktor. Engine DJ y Traktor reciben solo los hot cues."
+          "text": "rekordbox, Engine DJ, Traktor, Serato y VirtualDJ. Engine DJ, Traktor, Serato y VirtualDJ reciben solo los hot cues."
         }
       },
       "grid": {
@@ -1368,7 +1420,7 @@
     },
     "review": {
       "title": "Encuentra las erratas y los duplicados de tu biblioteca",
-      "lede": "Surco repasa tu biblioteca de Apple Music, la carpeta que sueltes o una playlist de rekordbox, Engine DJ o Traktor, y agrupa lo que está escrito de varias formas, los espacios y caracteres invisibles que se cuelan al copiar de una web y las pistas repetidas. Eliges cómo debe quedar y el cambio llega a los archivos, a Apple Music y, si los sincronizas, a rekordbox, Engine DJ y Traktor.",
+      "lede": "Surco repasa tu biblioteca de Apple Music, la carpeta que sueltes o una playlist de rekordbox, Engine DJ, Traktor, Serato o VirtualDJ, y agrupa lo que está escrito de varias formas, los espacios y caracteres invisibles que se cuelan al copiar de una web y las pistas repetidas. Eliges cómo debe quedar y el cambio llega a los archivos, a Apple Music y, si los sincronizas, a rekordbox, Engine DJ, Traktor, Serato y VirtualDJ.",
       "points": {
         "spelling": {
           "title": "Grafías",
@@ -1384,7 +1436,7 @@
         },
         "everywhere": {
           "title": "En todas partes",
-          "text": "Archivos, Apple Music, rekordbox, Engine DJ y Traktor, con copia de cada archivo y de cada biblioteca de DJ, que restauras desde Copias. Y las correcciones tienen Deshacer."
+          "text": "Archivos, Apple Music, rekordbox, Engine DJ, Traktor, Serato y VirtualDJ, con copia de cada archivo y de cada biblioteca de DJ, que restauras desde Copias (salvo la de Serato). Y las correcciones tienen Deshacer."
         }
       },
       "all": "Todo",
@@ -1504,7 +1556,7 @@
         },
         {
           "title": "Convierte",
-          "text": "Las copias van a Música/Surco, junto al original o a Apple Music, y rekordbox, Engine DJ y Traktor se ponen al día si los sincronizas."
+          "text": "Las copias van a Música/Surco, junto al original o a Apple Music, y rekordbox, Engine DJ, Traktor, Serato y VirtualDJ se ponen al día si los sincronizas."
         }
       ],
       "guide": "Paso a paso en la guía"
@@ -2099,7 +2151,7 @@
       {
         "id": "library",
         "title": "Tu biblioteca y tu programa de DJ",
-        "lede": "Apple Music, rekordbox, Engine DJ y Traktor al día con lo que cambias en Surco."
+        "lede": "Apple Music, rekordbox, Engine DJ, Traktor, Serato y VirtualDJ al día con lo que cambias en Surco."
       },
       {
         "id": "go",
@@ -2823,7 +2875,7 @@
           }
         ],
         "points": [
-          "El cambio llega al archivo y a Apple Music, y a rekordbox, Engine DJ y Traktor si los sincronizas.",
+          "El cambio llega al archivo y a Apple Music, y a rekordbox, Engine DJ, Traktor, Serato y VirtualDJ si los sincronizas.",
           "Antes de tocar nada, Surco guarda una copia de cada archivo y de tus bibliotecas de DJ. «Deshacer» lo deja todo como estaba.",
           "El BPM, la tonalidad, los cue points y la puntuación no se tocan.",
           "Si un programa de DJ está abierto, Surco se ofrece a cerrarlo."
@@ -3295,11 +3347,11 @@
         "slug": "organizar-playlists",
         "group": "library",
         "title": "Organiza tus playlists y carpetas sin abrir el programa",
-        "s": "Crea, renombra, mueve y ordena playlists de rekordbox o Traktor desde la barra lateral de Surco.",
+        "s": "Crea, renombra, mueve y ordena playlists de rekordbox, Traktor, Serato o VirtualDJ desde la barra lateral.",
         "body": [
-          "Quieres ordenar tus playlists de rekordbox o de Traktor sin abrir el programa."
+          "Quieres ordenar tus playlists de rekordbox, de Traktor, de Serato o de VirtualDJ sin abrir el programa."
         ],
-        "keywords": "playlists carpetas arrastrar mover renombrar ordenar rekordbox traktor",
+        "keywords": "playlists carpetas arrastrar mover renombrar ordenar rekordbox traktor serato virtualdj",
         "settings": [],
         "steps": [
           {
@@ -3498,7 +3550,7 @@
         "s": "Pega la lista en texto y Surco busca cada pista en tu colección, en el orden del set.",
         "body": [
           "Tienes la lista de un set, de un vídeo de YouTube o de una web, y quieres esas pistas en una playlist de tu programa, en el mismo orden.",
-          "No hay ajustes que tocar. Funciona con rekordbox, Traktor y Serato."
+          "No hay ajustes que tocar. Funciona con rekordbox, Traktor, Serato y VirtualDJ."
         ],
         "keywords": "tracklist set lista pegar playlist youtube orden sesion",
         "settings": [],

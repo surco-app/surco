@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<VirtualFolder noDuplicates="no">
+	<song path="/Music/Serato Pruebas/Pray.mp3" size="17138984" songlength="428.3" bpm="133.995" key="Ebm" artist="Tina Cousins" title="Pray (W.I.P. In The Church Mix)" idx="0" />
+	<song path="/Music/Serato Pruebas/Pray.flac" size="53447167" songlength="428.3" bpm="133.995" key="Ebm" artist="Tina Cousins" title="Pray (W.I.P. In The Church Mix)" idx="1" />
+	<song path="/Music/VirtualDJ Pruebas/Pray.aiff" size="75549722" idx="2" />
+	<song path="/Music/VirtualDJ Pruebas/Pray.m4a" size="14480477" idx="3" />
+	<song path="/Music/VirtualDJ Pruebas/Pray.wav" size="75550522" idx="4" />
+</VirtualFolder>

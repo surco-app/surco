@@ -116,10 +116,17 @@ const status = (over: Partial<Record<'rekordbox' | 'engine' | 'traktor', boolean
     engine: lib(over.engine),
     traktor: lib(over.traktor),
     serato: { enabled: false, found: false },
+    virtualdj: { enabled: false, found: false },
   }
 }
 
-const NO_SYNC: ReviewSync = { rekordbox: false, engine: false, traktor: false, serato: false }
+const NO_SYNC: ReviewSync = {
+  rekordbox: false,
+  engine: false,
+  traktor: false,
+  serato: false,
+  virtualdj: false,
+}
 
 function Panes({
   review: base,
@@ -753,6 +760,7 @@ describe('MusicReview', () => {
                   engine: updated,
                   traktor: updated,
                   serato: { outcome: 'nothing' },
+                  virtualdj: { outcome: 'nothing' },
                 },
               }),
             ),
@@ -915,6 +923,7 @@ describe('MusicReview', () => {
       engine: { outcome: 'updated', count: 1 },
       traktor: { outcome: 'updated', count: 1 },
       serato: { outcome: 'nothing' },
+      virtualdj: { outcome: 'nothing' },
       ...over,
     })
     const musicOnly = {
@@ -1472,7 +1481,7 @@ describe('MusicReview', () => {
       render(
         <Panes
           review={staged()}
-          sync={{ rekordbox: true, engine: true, traktor: false, serato: false }}
+          sync={{ rekordbox: true, engine: true, traktor: false, serato: false, virtualdj: false }}
         />,
       )
       const chip = screen.getByTestId('music-review-where-missing')
@@ -1488,7 +1497,7 @@ describe('MusicReview', () => {
             ...staged(),
             libraries: { ...status(), serato: { enabled: true, found: true } },
           }}
-          sync={{ rekordbox: true, engine: true, traktor: true, serato: true }}
+          sync={{ rekordbox: true, engine: true, traktor: true, serato: true, virtualdj: false }}
         />,
       )
       expect(
@@ -1626,6 +1635,7 @@ describe('MusicReview', () => {
               engine: { outcome: 'open' },
               traktor: { outcome: 'nothing' },
               serato: { outcome: 'nothing' },
+              virtualdj: { outcome: 'nothing' },
             },
             libraryUndo,
           }),
@@ -1961,7 +1971,7 @@ describe('MusicReview', () => {
       render(
         <Panes
           review={review({ affected })}
-          sync={{ rekordbox: true, engine: false, traktor: true, serato: false }}
+          sync={{ rekordbox: true, engine: false, traktor: true, serato: false, virtualdj: false }}
         />,
       )
       expect(affected).toHaveBeenCalledWith(group.key)
@@ -1990,7 +2000,13 @@ describe('MusicReview', () => {
       render(
         <Panes
           review={review({ affected })}
-          sync={{ rekordbox: false, engine: false, traktor: false, serato: false }}
+          sync={{
+            rekordbox: false,
+            engine: false,
+            traktor: false,
+            serato: false,
+            virtualdj: false,
+          }}
         />,
       )
       const [first, second] = screen.getAllByTestId('music-review-affected')
@@ -2013,7 +2029,13 @@ describe('MusicReview', () => {
       render(
         <Panes
           review={review({ affected })}
-          sync={{ rekordbox: false, engine: false, traktor: false, serato: false }}
+          sync={{
+            rekordbox: false,
+            engine: false,
+            traktor: false,
+            serato: false,
+            virtualdj: false,
+          }}
         />,
       )
       expect(screen.getByTestId('music-review-diff-from')).toHaveTextContent(/^j$/)
@@ -2036,7 +2058,13 @@ describe('MusicReview', () => {
       render(
         <Panes
           review={review({ affected })}
-          sync={{ rekordbox: false, engine: false, traktor: false, serato: false }}
+          sync={{
+            rekordbox: false,
+            engine: false,
+            traktor: false,
+            serato: false,
+            virtualdj: false,
+          }}
         />,
       )
       expect(screen.getByTestId('music-review-diff-from')).toHaveTextContent(/^e\u0301$/)
@@ -2344,7 +2372,11 @@ describe('list review', () => {
   it('says how many Serato tracks it left out, so the DJ knows why they are not reviewed', () => {
     render(
       <MusicReview
-        review={listReview({ reviewed: 1, seratoLeftOut: 2, musicConsulted: true })}
+        review={listReview({
+          reviewed: 1,
+          leftOut: { serato: 2 },
+          musicConsulted: true,
+        })}
         {...columnProps}
       />,
     )
@@ -2368,7 +2400,7 @@ describe('list review', () => {
   it('says the list holds only Serato tracks when that is why nothing is reviewed, not that no tags were read', () => {
     render(
       <MusicReview
-        review={listReview({ status: 'empty', reviewed: 0, seratoLeftOut: 2 })}
+        review={listReview({ status: 'empty', reviewed: 0, leftOut: { serato: 2 } })}
         {...columnProps}
       />,
     )
@@ -2830,6 +2862,7 @@ describe('list review', () => {
             engine: { outcome: 'nothing' },
             traktor: { outcome: 'open' },
             serato: { outcome: 'nothing' },
+            virtualdj: { outcome: 'nothing' },
           },
         }),
       )
@@ -2852,6 +2885,7 @@ describe('list review', () => {
             engine: { outcome: 'updated', count: 1 },
             traktor: { outcome: 'updated', count: 1 },
             serato: { outcome: 'nothing' },
+            virtualdj: { outcome: 'nothing' },
           },
         }),
       )
@@ -2906,6 +2940,7 @@ describe('list review', () => {
             engine: { outcome: 'updated', count: 1 },
             traktor: { outcome: 'updated', count: 1 },
             serato: { outcome: 'nothing' },
+            virtualdj: { outcome: 'nothing' },
           },
         }),
       )

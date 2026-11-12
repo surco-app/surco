@@ -1222,6 +1222,18 @@
         "calls": "Serato n’a pas de CALL, ils ne sont donc pas enregistrés. Seuls les hot cues arrivent dans Serato",
         "waiting": "Serato est ouvert. Tes changements seront enregistrés quand tu le fermeras"
       },
+      "virtualdj": {
+        "unreadable": "Impossible de lire les cues de VirtualDJ",
+        "save": "Enregistrer dans VirtualDJ",
+        "unanalysed": "VirtualDJ n’a pas encore analysé ce morceau",
+        "queuedStale": "L’enregistrement en attente date d’avant le changement du morceau dans VirtualDJ et n’est plus valable. Tu vois ce qu’a VirtualDJ maintenant.",
+        "saveFailed": "Impossible d’enregistrer dans VirtualDJ. Les cues ne sont toujours pas enregistrés",
+        "autoUnreadable": "Surco n’a pas pu lire l’audio de ce morceau",
+        "saveAll_one": "Enregistrer {{count}} morceau dans VirtualDJ",
+        "saveAll_other": "Enregistrer {{count}} morceaux dans VirtualDJ",
+        "waiting": "VirtualDJ est ouvert. Tes changements seront enregistrés quand tu le fermeras",
+        "calls": "VirtualDJ n’a pas de CALL, ils ne sont donc pas enregistrés. Seuls les hot cues arrivent dans VirtualDJ"
+      },
       "traktor": {
         "save": "Enregistrer dans Traktor",
         "unanalysed": "Traktor n’a pas encore analysé ce morceau",
@@ -1282,6 +1294,7 @@
         "anchorAdd": "Ancrer à la tête de lecture, commence une zone",
         "anchorRemove": "Retirer l’ancre à la tête de lecture",
         "serato": "La grille de Serato vient de Serato et ne peut pas être modifiée ici",
+        "virtualdj": "La grille de VirtualDJ vient de VirtualDJ et ne peut pas être modifiée ici",
         "pin": "Épingler",
         "pinHint": "Épingler le temps le plus proche de la tête de lecture (G). Avec ⇧, pile sur la tête de lecture",
         "window": "{{time}}, grille {{ms}}"
@@ -1355,7 +1368,8 @@
     "rekordboxPlaylists": "Playlists rekordbox",
     "traktorPlaylists": "Playlists Traktor",
     "enginePlaylists": "Playlists Engine DJ",
-    "seratoPlaylists": "Crates Serato"
+    "seratoPlaylists": "Crates Serato",
+    "virtualdjPlaylists": "Listes VirtualDJ"
   },
   "declick": {
     "cueWarning": "ALAC ne conserve ni les cues ni le beatgrid de Traktor : la conversion les perd.",
@@ -1636,13 +1650,15 @@
       "rekordbox": "rekordbox",
       "engine": "Engine DJ",
       "traktor": "Traktor",
-      "serato": "Serato"
+      "serato": "Serato",
+      "virtualdj": "VirtualDJ"
     },
     "sourceAppleMusicUnavailable": "Disponible uniquement sur macOS",
     "sourceRekordboxUnavailable": "Aucune collection rekordbox n’a été trouvée",
     "sourceEngineUnavailable": "Aucune bibliothèque Engine DJ n’a été trouvée",
     "sourceTraktorUnavailable": "Aucune collection Traktor n’a été trouvée",
     "sourceSeratoUnavailable": "Aucune bibliothèque Serato n’a été trouvée",
+    "sourceVirtualdjUnavailable": "Aucune bibliothèque VirtualDJ n’a été trouvée",
     "sourcesHint": "Masquer une bibliothèque la retire seulement de la barre latérale et ne change pas la synchronisation lors des conversions.",
     "updates": "Mises à jour",
     "betaUpdates": "Recevoir les versions bêta",
@@ -1921,6 +1937,13 @@
     "syncEngineDj": "Mettre à jour la bibliothèque Engine DJ à la conversion",
     "syncEngineDjHint": "Quand tu convertis un morceau présent dans ta bibliothèque Engine DJ, son entrée suit le nouveau fichier et conserve ses playlists et ses cue points. C’est la bibliothèque choisie juste au-dessus qui est utilisée. Avant d’écrire, Surco enregistre dans son dossier de sauvegardes (Réglages → Avancé) une sauvegarde de toute la série, plus une par écriture, et n’écrit jamais quand Engine DJ est ouvert.",
     "seratoSync": "Serato",
+    "virtualdjLibrary": "VirtualDJ",
+    "virtualdjLibraryDir": "Dossier VirtualDJ",
+    "virtualdjLibraryDirEmpty": "Aucun dossier choisi",
+    "virtualdjLibraryDirHint": "Le dossier où VirtualDJ garde database.xml et MyLists. Surco y enregistre tes cues et tes listes.",
+    "syncVirtualdj": "Bibliothèque VirtualDJ",
+    "syncVirtualdjHint": "Surco écrit dans VirtualDJ quand tu le fermes. Mettre à jour reprend les changements de tags de la vérification, et Ajouter y met en plus ce que tu convertis",
+    "syncVirtualdjIdle": "Surco ne trouve aucune bibliothèque VirtualDJ",
     "syncSerato": "Bibliothèque Serato",
     "syncSeratoHint": "Surco écrit dans Serato quand tu le fermes. Mettre à jour reprend les changements de tags de la vérification, et Ajouter y met en plus ce que tu convertis",
     "syncSeratoIdle": "Surco ne trouve aucune bibliothèque Serato",
@@ -2053,7 +2076,8 @@
       "lettersByTimeHint": "A est toujours le premier cue du morceau. Désactive-le si chaque lettre est un pad fixe pour toi.",
       "markPoint": "Mettre un CALL là où tu marques",
       "traktorColours": "Dans Traktor ces cues s’affichent en bleu, car Traktor colore chaque cue selon son type",
-      "callsOnlyRekordbox": "Les CALL n’existent que dans rekordbox. Engine DJ, Traktor et Serato ne reçoivent que les hot cues",
+      "callsOnlyRekordbox": "Les CALL n’existent que dans rekordbox. Engine DJ, Traktor, Serato et VirtualDJ ne reçoivent que les hot cues",
+      "callsOnlyRekordboxWin": "Les CALL n’existent que dans rekordbox. Engine DJ, Traktor et Serato ne reçoivent que les hot cues",
       "targets": {
         "title": "Appliquer aussi les flux dans",
         "hint": "Le logiciel dans lequel tu marques reçoit toujours les cues. Surco cherche le même morceau dans les autres par son fichier et y place le flux avec la grille et les cues qu’il a déjà. Les cues placés à la main restent dans le logiciel où tu les places.",
@@ -2061,6 +2085,7 @@
         "traktor": "Hot cues seulement, en bleu, de A à G. Traktor lit sa collection au démarrage, donc Surco te demandera de le fermer à l’enregistrement.",
         "engine": "Hot cues seulement. Engine DJ n’a pas de CALL.",
         "serato": "Hot cues seulement, de A à H. Serato n’a pas de CALL. Si Serato est ouvert, Surco les enregistre quand tu le fermes.",
+        "virtualdj": "Hot cues seulement, de A à H. VirtualDJ n’a pas de CALL. Si VirtualDJ est ouvert, Surco les enregistre quand tu le fermes.",
         "missing": "Surco ne trouve pas {{program}} sur cet ordinateur"
       }
     },
@@ -2198,7 +2223,9 @@
       "traktor": "Traktor",
       "traktorBody": "Garder la collection à jour à la conversion, avec ses playlists et ses cues, et y ajouter les nouveaux morceaux.",
       "serato": "Serato",
-      "seratoBody": "Garder la bibliothèque à jour à la conversion et y ajouter les nouveaux morceaux."
+      "seratoBody": "Garder la bibliothèque à jour à la conversion et y ajouter les nouveaux morceaux.",
+      "virtualdj": "VirtualDJ",
+      "virtualdjBody": "Garder la bibliothèque à jour à la conversion et y ajouter les nouveaux morceaux."
     },
     "djLibraryNone": "Aucun, je tague seulement des fichiers",
     "destinationKeepsCollection": "Les morceaux déjà dans ton logiciel DJ ou dans Apple Music sont mis à jour là où ils sont, et gardent ainsi leur place dans ta collection.",
@@ -2483,6 +2510,10 @@
     "statusDone": "Terminé",
     "statusWarn": "Avec avertissements",
     "statusError": "Échec",
+    "virtualdjSync": "Mise à jour de la bibliothèque VirtualDJ",
+    "virtualdjSyncRunning": "Ignoré, VirtualDJ était ouvert",
+    "virtualdjSyncBackupFailed": "Ignoré, impossible de sauvegarder la bibliothèque",
+    "virtualdjSyncNothing": "Aucun de ces morceaux n’est dans VirtualDJ",
     "engineSync": "Mise à jour de la bibliothèque Engine DJ",
     "engineSyncWritten_one": "{{count}} morceau pointe désormais vers le nouveau fichier",
     "engineSyncWritten_other": "{{count}} morceaux pointent désormais vers le nouveau fichier",
@@ -2572,14 +2603,17 @@
       "rekordbox": "Masquer rekordbox",
       "engine": "Masquer Engine DJ",
       "traktor": "Masquer Traktor",
-      "serato": "Masquer Serato"
+      "serato": "Masquer Serato",
+      "virtualdj": "Masquer VirtualDJ"
     },
     "workingList": "Morceaux",
+    "beta": "bêta",
     "appleMusic": "Music",
     "rekordbox": "rekordbox",
     "engine": "Engine DJ",
     "traktor": "Traktor",
     "serato": "Serato",
+    "virtualdj": "VirtualDJ",
     "allTracks": "Tous les morceaux",
     "recentlyAdded": "Ajoutés récemment",
     "search": "Rechercher une playlist",
@@ -2589,11 +2623,13 @@
       "rekordbox": "Impossible de lire la collection. Si tu viens de modifier quelque chose, reviens dans Surco dans quelques secondes.",
       "engine": "Impossible de lire la bibliothèque Engine DJ. Si tu viens de modifier quelque chose, reviens dans Surco dans quelques secondes.",
       "traktor": "Impossible de lire la collection Traktor. Si tu viens de modifier quelque chose, reviens dans Surco dans quelques secondes.",
-      "serato": "Impossible de lire la bibliothèque Serato. Si tu viens de modifier quelque chose, reviens dans Surco dans quelques secondes."
+      "serato": "Impossible de lire la bibliothèque Serato. Si tu viens de modifier quelque chose, reviens dans Surco dans quelques secondes.",
+      "virtualdj": "Impossible de lire la bibliothèque VirtualDJ. Si tu viens de modifier quelque chose, reviens dans Surco dans quelques secondes."
     },
     "notFound": {
       "engine": "Surco ne trouve pas de bibliothèque Engine DJ. Indique son dossier, celui qui contient Database2, sous Engine DJ dans Réglages → Logiciels DJ.",
-      "serato": "Surco ne trouve pas de bibliothèque Serato. Il cherche le dossier _Serato_ dans Musique et sur chaque disque connecté."
+      "serato": "Surco ne trouve pas de bibliothèque Serato. Il cherche le dossier _Serato_ dans Musique et sur chaque disque connecté.",
+      "virtualdj": "Surco ne trouve pas de bibliothèque VirtualDJ. Il cherche database.xml dans le dossier VirtualDJ choisi."
     },
     "empty": "Aucune playlist.",
     "noMatch": "Aucune playlist ne correspond.",
@@ -2604,7 +2640,8 @@
       "rekordbox": "« {{name}} » n’est plus dans rekordbox",
       "engine": "« {{name}} » n’est plus dans Engine DJ",
       "traktor": "« {{name}} » n’est plus dans Traktor",
-      "serato": "« {{name}} » n’est plus dans Serato"
+      "serato": "« {{name}} » n’est plus dans Serato",
+      "virtualdj": "« {{name}} » n’est plus dans VirtualDJ"
     },
     "missing_one": "{{count}} morceau de « {{name}} » n’a pas de fichier sur le disque",
     "missing_other": "{{count}} morceaux de « {{name}} » n’ont pas de fichier sur le disque",
@@ -2718,6 +2755,28 @@
       "insertSeparator": "Insérer un séparateur au-dessus",
       "removeFrom": "Retirer de « {{name}} »",
       "removeSeparatorAbove": "Retirer le séparateur au-dessus"
+    },
+    "editVirtualdj": {
+      "added_one": "{{count}} morceau ajouté à « {{name}} »",
+      "added_other": "{{count}} morceaux ajoutés à « {{name}} »",
+      "noneAdded": "Aucun morceau ajouté à « {{name}} »",
+      "already_one": "{{count}} était déjà dans la liste",
+      "already_other": "{{count}} étaient déjà dans la liste",
+      "notInCollection_one": "{{count}} n’existe plus",
+      "notInCollection_other": "{{count}} n’existent plus",
+      "ambiguous_one": "{{count}} est deux fois dans la bibliothèque et Surco ne sait pas laquelle utiliser",
+      "ambiguous_other": "{{count}} sont deux fois dans la bibliothèque et Surco ne sait pas lesquelles utiliser",
+      "refused": {
+        "cancelled": "VirtualDJ est encore ouvert. Le changement s’appliquera à sa fermeture",
+        "running": "VirtualDJ s’est ouvert avant l’enregistrement. Le changement s’appliquera à sa fermeture",
+        "unreadable": "Surco ne peut pas modifier les listes de VirtualDJ pour le moment, rien n’a changé",
+        "backupFailed": "Impossible de sauvegarder les listes avant, rien n’a changé",
+        "writeFailed": "Impossible d’enregistrer la modification. Les listes sont restées telles quelles",
+        "readOnly": "Les listes de VirtualDJ sont en lecture seule, rien n’a changé",
+        "stale": "La liste a changé dans VirtualDJ. Vérifie-la et réessaie",
+        "writeUnknown": "Le changement n’a pu être ni enregistré ni annulé, les listes ont donc pu changer. Avant d’ouvrir VirtualDJ, restaure le dossier MyLists depuis la copie la plus récente dans le dossier virtualdj-backups/lists des données de Surco",
+        "badName": "Ce nom ne convient pas pour une liste. Il ne peut pas être vide, en double ni contenir / ou :"
+      }
     },
     "editSerato": {
       "added_one": "{{count}} morceau ajouté à « {{name}} »",
@@ -2975,6 +3034,7 @@
     "loading": "Lecture de la liste…",
     "empty": "Aucun morceau de la liste n’a ses tags lus.",
     "emptySerato": "Tous les morceaux de la liste viennent de Serato et sont laissés de côté pour que Serato les garde.",
+    "emptyReadOnly": "Tous les morceaux de la liste viennent d’un logiciel de DJ qui les perdrait, ils sont donc tous laissés de côté.",
     "error": "Impossible de préparer la vérification de la liste.",
     "scope_one": "{{count}} morceau de la liste",
     "scope_other": "{{count}} morceaux de la liste",
@@ -3118,6 +3178,10 @@
       "traktor": {
         "no-collection": "La collection Traktor est introuvable.",
         "unreadable": "La collection Traktor n’a pas pu être lue."
+      },
+      "virtualdj": {
+        "no-collection": "La bibliothèque VirtualDJ est introuvable.",
+        "unreadable": "La bibliothèque VirtualDJ n’a pas pu être lue."
       }
     },
     "trackFailure": {
@@ -3345,6 +3409,48 @@
       "tagsChanged": "{{track}} a changé dans Serato et ses tags n’ont pas été modifiés"
     }
   },
+  "virtualdjQueue": {
+    "pillTracks_one": "{{count}} morceau attend que tu fermes VirtualDJ",
+    "pillTracks_other": "{{count}} morceaux attendent que tu fermes VirtualDJ",
+    "pillChanges_one": "{{count}} changement attend que tu fermes VirtualDJ",
+    "pillChanges_other": "{{count}} changements attendent que tu fermes VirtualDJ",
+    "pillHalted": "Changements VirtualDJ en pause",
+    "applied_one": "Fait dans VirtualDJ · {{count}} morceau",
+    "applied_other": "Fait dans VirtualDJ · {{count}} morceaux",
+    "appliedChanges_one": "Fait dans VirtualDJ · {{count}} changement",
+    "appliedChanges_other": "Fait dans VirtualDJ · {{count}} changements",
+    "writeFailed": "Impossible d’enregistrer les changements dans VirtualDJ. Les fichiers sont restés tels quels",
+    "writeUnknown": "Les changements n’ont pu être ni enregistrés ni annulés, la bibliothèque a donc pu changer. Avant d’ouvrir VirtualDJ, restaure database.xml depuis la copie la plus récente dans le dossier virtualdj-backups des données de Surco",
+    "discardConfirm": "Abandonner ce qui attend ? VirtualDJ reste comme il est",
+    "part": {
+      "collection": "ajout à la bibliothèque",
+      "noPlaylists": "hors de ses listes"
+    },
+    "pillTracksUnplugged_one": "{{count}} morceau attend que Surco trouve la bibliothèque VirtualDJ",
+    "pillTracksUnplugged_other": "{{count}} morceaux attendent que Surco trouve la bibliothèque VirtualDJ",
+    "pillChangesUnplugged_one": "{{count}} changement attend que Surco trouve la bibliothèque VirtualDJ",
+    "pillChangesUnplugged_other": "{{count}} changements attendent que Surco trouve la bibliothèque VirtualDJ",
+    "pillElsewhere_one": "{{count}} en attente d’une autre bibliothèque VirtualDJ",
+    "pillElsewhere_other": "{{count}} en attente d’une autre bibliothèque VirtualDJ",
+    "elsewhere_one": "{{count}} changement attend une autre bibliothèque VirtualDJ. Il sera appliqué quand tu y reviendras",
+    "elsewhere_other": "{{count}} changements attendent une autre bibliothèque VirtualDJ. Ils seront appliqués quand tu y reviendras",
+    "notice": {
+      "cuesChanged": "Les cues de {{track}} ont changé dans VirtualDJ. Marque-les à nouveau",
+      "callsDropped_one": "{{count}} CALL de {{track}} n’a pas été enregistré ({{times}}). VirtualDJ ne garde que les hot cues",
+      "callsDropped_other": "{{count}} CALL de {{track}} n’ont pas été enregistrés ({{times}}). VirtualDJ ne garde que les hot cues",
+      "notInLibrary": "{{track}} n’est plus dans VirtualDJ. Ses cues n’ont pas été enregistrés",
+      "notAdded": "{{track}} n’a pas été ajouté à VirtualDJ",
+      "playlistChanged": "{{track}} n’a pas été modifié dans {{playlist}}. Il a changé dans VirtualDJ",
+      "playlistGone": "{{playlist}} n’est plus dans VirtualDJ. {{track}} n’a pas été ajouté",
+      "sourceInVirtualdj": "{{track}} reste dans VirtualDJ avec le fichier d’origine et ne va pas dans la liste « {{playlist}} »",
+      "tagsNotInLibrary": "{{track}} n’est plus dans VirtualDJ et ses tags n’ont pas été modifiés",
+      "tagsChanged": "{{track}} a changé dans VirtualDJ et ses tags n’ont pas été modifiés",
+      "repointOtherVolume": "{{track}} est sur un autre disque, donc VirtualDJ garde le fichier d’origine et Surco le garde aussi",
+      "repointSongTaken": "VirtualDJ a déjà un morceau pour {{track}}, donc il garde le fichier d’origine et Surco le garde aussi",
+      "repointUnwritable": "VirtualDJ ne peut pas prendre la durée de {{track}}, donc il garde le fichier d’origine et Surco le garde aussi",
+      "repointSongTakenGone": "VirtualDJ avait déjà un morceau pour {{track}}, donc l’ancien pointe toujours vers le fichier d’origine, qui n’est plus dans son dossier"
+    }
+  },
   "cueWave": {
     "notAnalysed": "Ce morceau n’est pas analysé dans rekordbox. Analyse-le là-bas pour placer des cues",
     "hotCue": "Hot cue {{letter}}",
@@ -3385,7 +3491,9 @@
       "queue": "Avant l’application des modifications en attente",
       "duplicates": "Avant le remplacement des doublons",
       "playlists": "Avant tes changements de playlists d’aujourd’hui",
-      "restore": "Avant la restauration"
+      "restore": "Avant la restauration",
+      "tracks": "Avant la modification des morceaux ou des cues",
+      "lists": "Avant la modification des listes"
     },
     "show": "Voir les sauvegardes",
     "hide": "Masquer les sauvegardes",
@@ -3394,6 +3502,8 @@
     "confirm": {
       "title": "Revenir à {{program}} tel qu’il était {{when}} ?",
       "body": "Tout ce que tu as modifié dans {{program}} après cette heure sera perdu, y compris ce que tu as fait depuis {{program}}.",
+      "bodyTracks": "Seuls ses morceaux et ses cues reviennent. Ses listes restent comme maintenant, et ce que tu as changé ensuite dans les morceaux de {{program}} sera perdu.",
+      "bodyLists": "Seules ses listes reviennent. Ses morceaux et ses cues restent comme maintenant, et ce que tu as changé ensuite dans les listes de {{program}} sera perdu.",
       "safety": "Nous gardons d’abord une copie de l’état actuel, au cas où tu changerais d’avis.",
       "queue_one": "{{count}} modification qui attendait que tu fermes {{program}} sera aussi abandonnée.",
       "queue_other": "{{count}} modifications qui attendaient que tu fermes {{program}} seront aussi abandonnées.",
@@ -3482,7 +3592,8 @@
       "appleMusic": "Apple Music",
       "rekordbox": "rekordbox",
       "engine": "Engine DJ",
-      "traktor": "Traktor"
+      "traktor": "Traktor",
+      "virtualdj": "VirtualDJ"
     },
     "detail": {
       "pending": "En attente, s’applique à la fermeture de {{program}}",
@@ -3556,7 +3667,14 @@
       "traktorCuesChanged": "Les cues ont changé dans Traktor",
       "traktorNameStale": "Traktor affiche toujours « {{value}} »",
       "traktorPlaylistMissing": "Le morceau n’est pas dans la playlist {{playlist}} de Traktor",
-      "traktorUnreadable": "Impossible de vérifier Traktor"
+      "traktorUnreadable": "Impossible de vérifier Traktor",
+      "virtualdjOk": "Pointe vers le {{format}}",
+      "virtualdjOkPlaylists": "Pointe vers le {{format}} · dans {{playlists}}",
+      "virtualdjStillOld": "VirtualDJ pointe toujours vers le {{format}}",
+      "virtualdjMissing": "Le morceau n’est pas dans VirtualDJ",
+      "virtualdjSizeDiffers": "VirtualDJ a une autre taille pour le nouveau fichier",
+      "virtualdjPlaylistMissing": "Le morceau n’est pas dans la liste {{playlist}} de VirtualDJ",
+      "virtualdjUnreadable": "Impossible de vérifier VirtualDJ"
     },
     "retry": "Réessayer",
     "sourceGoneKeptLine": "L’original n’est plus là, une copie est dans <0>{{panel}}</0>",

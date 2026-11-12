@@ -1,3 +1,4 @@
+import { Fragment } from 'react'
 import { useTranslation } from 'react-i18next'
 import Band from './Band'
 import DownloadButton from './DownloadButton'
@@ -6,6 +7,7 @@ import Footer from './Footer'
 import Header from './Header'
 import InstallSection from './InstallSection'
 import Kicker from './Kicker'
+import ProgramTable from './ProgramTable'
 import Reveal from './Reveal'
 
 const GROUP_IDS = ['convert', 'tag', 'analyze', 'dj', 'library', 'safety']
@@ -77,40 +79,64 @@ export default function Features() {
 
         <div id="funciones" className="pb-20">
           {featureGroups.map((g, i) => (
-            <section
-              key={GROUP_IDS[i]}
-              id={GROUP_IDS[i]}
-              data-testid={`features-group-${GROUP_IDS[i]}`}
-              className="grid scroll-mt-24 gap-x-14 gap-y-4 pt-16 lg:grid-cols-[16rem_minmax(0,1fr)]"
-            >
-              <Reveal className="lg:sticky lg:top-24 lg:self-start">
-                <h2 className="text-2xl font-semibold tracking-tight text-balance text-fg">
-                  {g.title}
-                </h2>
-                <p className="mt-1.5 text-sm text-faint">{g.replaces}</p>
-              </Reveal>
-              <Reveal>
-                <div className="max-w-2xl border-t border-line">
-                  {g.items.map((it) => (
-                    <details key={it.t} className="group border-b border-line">
-                      <summary className="relative cursor-pointer list-none py-3.5 pr-8 focus-visible:outline-2 focus-visible:outline-blue [&::-webkit-details-marker]:hidden">
-                        <span className="block font-semibold text-fg">{it.t}</span>
-                        <span className="block text-[15px] text-muted">{it.s}</span>
-                        <span
-                          aria-hidden="true"
-                          className="absolute top-3.5 right-1 font-mono text-lg text-faint transition-transform group-open:rotate-45"
-                        >
-                          +
-                        </span>
-                      </summary>
-                      <p className="pb-4 text-[15px] leading-relaxed text-pretty text-muted">
-                        {it.d}
-                      </p>
-                    </details>
-                  ))}
-                </div>
-              </Reveal>
-            </section>
+            <Fragment key={GROUP_IDS[i]}>
+              <section
+                id={GROUP_IDS[i]}
+                data-testid={`features-group-${GROUP_IDS[i]}`}
+                className="grid scroll-mt-24 gap-x-14 gap-y-4 pt-16 lg:grid-cols-[16rem_minmax(0,1fr)]"
+              >
+                <Reveal className="lg:sticky lg:top-24 lg:self-start">
+                  <h2 className="text-2xl font-semibold tracking-tight text-balance text-fg">
+                    {g.title}
+                  </h2>
+                  <p className="mt-1.5 text-sm text-faint">{g.replaces}</p>
+                </Reveal>
+                <Reveal>
+                  <div className="max-w-2xl border-t border-line">
+                    {g.items.map((it) => (
+                      <details key={it.t} className="group border-b border-line">
+                        <summary className="relative cursor-pointer list-none py-3.5 pr-8 focus-visible:outline-2 focus-visible:outline-blue [&::-webkit-details-marker]:hidden">
+                          <span className="block font-semibold text-fg">{it.t}</span>
+                          <span className="block text-[15px] text-muted">{it.s}</span>
+                          <span
+                            aria-hidden="true"
+                            className="absolute top-3.5 right-1 font-mono text-lg text-faint transition-transform group-open:rotate-45"
+                          >
+                            +
+                          </span>
+                        </summary>
+                        <p className="pb-4 text-[15px] leading-relaxed text-pretty text-muted">
+                          {it.d}
+                        </p>
+                      </details>
+                    ))}
+                  </div>
+                </Reveal>
+              </section>
+              {GROUP_IDS[i] === 'dj' && (
+                <section
+                  id="dj-programs"
+                  data-testid="features-programs"
+                  className="scroll-mt-24 pt-16"
+                >
+                  <Reveal>
+                    <Kicker>{t('features.programs.kicker')}</Kicker>
+                    <h2 className="mt-3 max-w-2xl text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+                      {t('features.programs.title')}
+                    </h2>
+                    <p className="mt-3 max-w-2xl leading-relaxed text-pretty text-subtle">
+                      {t('features.programs.lede')}
+                    </p>
+                  </Reveal>
+                  <Reveal className="mt-8">
+                    <ProgramTable />
+                    <p className="mt-4 text-sm leading-relaxed text-faint">
+                      {t('features.programs.foot')}
+                    </p>
+                  </Reveal>
+                </section>
+              )}
+            </Fragment>
           ))}
         </div>
 

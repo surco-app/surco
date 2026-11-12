@@ -37,6 +37,7 @@ const settings: Settings = {
   cueFlowToTraktor: true,
   cueFlowToEngine: true,
   cueFlowToSerato: true,
+  cueFlowToVirtualdj: true,
   cueLearnFromEdits: true,
   hiddenSources: [],
   sessionWizard: { ...DEFAULT_SESSION_WIZARD },
@@ -76,9 +77,13 @@ const settings: Settings = {
   traktorPlaylistsFieldOffered: false,
   enginePlaylistsFieldOffered: false,
   seratoPlaylistsFieldOffered: false,
+  virtualdjPlaylistsFieldOffered: false,
+  virtualdjLibraryDir: '/Users/dj/Library/Application Support/VirtualDJ',
   syncEngineDj: false,
   addToSerato: false,
   syncSerato: false,
+  addToVirtualdj: false,
+  syncVirtualdj: false,
   betaUpdates: false,
   traktorCueOffsetMs: 0,
   filenameFormat: '{artist} - {title}',
@@ -569,12 +574,13 @@ describe('programChoicePatch', () => {
       hiddenSources: [],
       visibleFields: ['title', 'rekordboxPlaylists', 'enginePlaylists'],
     })
-    expect(patch.hiddenSources).toEqual(['traktor', 'engine', 'serato'])
+    expect(patch.hiddenSources).toEqual(['traktor', 'engine', 'serato', 'virtualdj'])
     expect(patch.visibleFields).toEqual(['title', 'rekordboxPlaylists'])
     expect(patch).toMatchObject({
       traktorPlaylistsFieldOffered: true,
       enginePlaylistsFieldOffered: true,
       seratoPlaylistsFieldOffered: true,
+      virtualdjPlaylistsFieldOffered: true,
     })
     expect(patch.rekordboxPlaylistsFieldOffered).toBeUndefined()
   })
@@ -585,6 +591,12 @@ describe('programChoicePatch', () => {
       hiddenSources: ['appleMusic', 'traktor'],
       visibleFields: [],
     })
-    expect(patch.hiddenSources).toEqual(['appleMusic', 'rekordbox', 'engine', 'serato'])
+    expect(patch.hiddenSources).toEqual([
+      'appleMusic',
+      'rekordbox',
+      'engine',
+      'serato',
+      'virtualdj',
+    ])
   })
 })

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { WRITABLE_PROGRAMS } from '../../../shared/djProgram'
 import type { ProgramCopies } from '../../../shared/types'
 
 export function useCopies(): { programs: ProgramCopies[]; refresh: () => void } {
@@ -12,9 +13,7 @@ export function useCopies(): { programs: ProgramCopies[]; refresh: () => void } 
     refresh()
     const offs = [
       window.api.onCopiesChanged(refresh),
-      window.api.dj.onCueQueueChanged('rekordbox', refresh),
-      window.api.dj.onCueQueueChanged('engine', refresh),
-      window.api.dj.onCueQueueChanged('traktor', refresh),
+      ...WRITABLE_PROGRAMS.map((program) => window.api.dj.onCueQueueChanged(program, refresh)),
     ]
     return () => {
       for (const off of offs) off()

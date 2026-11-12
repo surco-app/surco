@@ -43,10 +43,15 @@ export interface DamageEnv {
   engineQueue?: { enqueue: RekordboxQueue['enqueue']; applyQuietly: () => void }
   serial?: DamageIpcDeps['serial']
   followEngineSize?: Rewritten
+  followVirtualdjSize?: Rewritten
   queued?: DamageIpcDeps['queued']
 }
 
 export function damageDeps(env: DamageEnv): DamageIpcDeps {
+  const rewritten: Rewritten = (...args) => {
+    env.followEngineSize?.(...args)
+    env.followVirtualdjSize?.(...args)
+  }
   return {
     scanDeps: (sender) => {
       const host = env.hostFor(sender)
@@ -54,6 +59,7 @@ export function damageDeps(env: DamageEnv): DamageIpcDeps {
         rekordbox: rekordboxFlushDeps(host).collectionPath,
         engine: engineFlushDeps(host).collectionPath,
         traktor: traktorFlushDeps(host, env.sessions.traktor).traktorNmlPath,
+        virtualdj: [],
       }
       return {
         isAllowed: env.mediaAccess.isAllowed,
@@ -102,10 +108,10 @@ export function damageDeps(env: DamageEnv): DamageIpcDeps {
               () => false,
             ),
           rewrite: (file, changes) =>
-            rewriteTagFields(file, changes, env.tmp, env.followEngineSize, 'setGenreFrame'),
+            rewriteTagFields(file, changes, env.tmp, rewritten, 'setGenreFrame'),
         },
         rewriteTree: (file, addMs, expected) =>
-          rewriteCueTree(file, addMs, expected, env.tmp, env.followEngineSize),
+          rewriteCueTree(file, addMs, expected, env.tmp, rewritten),
         traktor: {
           ...traktor,
           ensureTraktorClosed: async () => !(await isTraktorRunning().catch(() => true)),

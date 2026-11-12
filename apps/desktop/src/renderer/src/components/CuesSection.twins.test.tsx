@@ -281,3 +281,36 @@ describe('a flow placed in the cue editor reaches Serato', () => {
     expect(screen.queryByTestId('cues-twins')).toBeNull()
   })
 })
+
+describe('a flow placed in the cue editor reaches VirtualDJ', () => {
+  const VDJ = 'virtualdj:/m/g.wav'
+  const VDJ_GRID = GRID.map((b) => ({ ...b, ms: b.ms + 20 }))
+  const withVirtualdj = (settings: Partial<Settings> = {}) =>
+    setup(settings, { '/m/g.wav': { virtualdj: VDJ } }, { [VDJ]: { grid: VDJ_GRID } })
+
+  it('saves the flow to the same file in VirtualDJ in the one save, on VirtualDJ’s beats', async () => {
+    const { saveRekordboxCues } = withVirtualdj()
+    await ready()
+    markAt(bar(64))
+    expect(await screen.findByTestId('cues-twin-virtualdj')).toHaveTextContent('VirtualDJ')
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
+    expect(saveRekordboxCues).toHaveBeenCalledTimes(1)
+    expect(savedIds(saveRekordboxCues)).toEqual(['103', VDJ])
+    const twin = saveRekordboxCues.mock.calls[0][0][1]
+    expect(twin).toMatchObject({ path: '/m/g.wav', label: 'Gowan', fingerprint: 'f0' })
+    const hot = twin.wanted.filter((c) => c.kind !== 0)
+    expect(hot).toHaveLength(3)
+    expect(hot.every((c) => c.ms % 500 === 20)).toBe(true)
+  })
+
+  it('keeps the flow out of VirtualDJ when the DJ took VirtualDJ out of the flows', async () => {
+    const { saveRekordboxCues } = withVirtualdj({ cueFlowToVirtualdj: false })
+    await ready()
+    markAt(bar(64))
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
+    expect(savedIds(saveRekordboxCues)).toEqual(['103'])
+    expect(screen.queryByTestId('cues-twins')).toBeNull()
+  })
+})

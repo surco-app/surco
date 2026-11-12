@@ -24,6 +24,7 @@ describe('syncLibraryTags', () => {
           return { outcome: 'open' }
         },
         serato: async () => ({ outcome: 'queued' }),
+        virtualdj: async () => ({ outcome: 'updated', count: 1 }),
         warn,
       }),
     ).resolves.toEqual({
@@ -31,13 +32,14 @@ describe('syncLibraryTags', () => {
       rekordbox: { outcome: 'updated', count: 2 },
       engine: { outcome: 'open' },
       serato: { outcome: 'queued' },
+      virtualdj: { outcome: 'updated', count: 1 },
     })
     expect(rekordbox).toHaveBeenCalled()
     expect(engine).toHaveBeenCalled()
     expect(warn).toHaveBeenCalledWith('traktor', expect.any(Error))
   })
 
-  it('syncs traktor, then rekordbox, then engine, then serato, and a failure in the middle stops none', async () => {
+  it('syncs traktor, then rekordbox, then engine, then serato, then VirtualDJ, and a failure in the middle stops none', async () => {
     const calls: string[] = []
     const flusher =
       (library: string, fail = false) =>
@@ -51,10 +53,12 @@ describe('syncLibraryTags', () => {
       rekordbox: flusher('rekordbox', true),
       engine: flusher('engine'),
       serato: flusher('serato'),
+      virtualdj: flusher('virtualdj'),
       warn: vi.fn(),
     })
-    expect(calls).toEqual(['traktor', 'rekordbox', 'engine', 'serato'])
-    expect(Object.keys(report)).toEqual(['traktor', 'rekordbox', 'engine', 'serato'])
+    expect(calls).toEqual(['traktor', 'rekordbox', 'engine', 'serato', 'virtualdj'])
+    expect(Object.keys(report)).toEqual(['traktor', 'rekordbox', 'engine', 'serato', 'virtualdj'])
+    expect(report.virtualdj).toEqual(NOTHING)
     expect(report.rekordbox).toEqual({ outcome: 'failed' })
   })
 
@@ -69,6 +73,7 @@ describe('syncLibraryTags', () => {
       rekordbox: async () => NOTHING,
       engine: async () => NOTHING,
       serato: async () => NOTHING,
+      virtualdj: async () => NOTHING,
       warn: vi.fn(),
     })
     await new Promise((r) => setTimeout(r, 0))
@@ -87,6 +92,7 @@ describe('syncLibraryTags', () => {
       rekordbox: async () => NOTHING,
       engine: async () => NOTHING,
       serato: async () => NOTHING,
+      virtualdj: async () => NOTHING,
       warn: vi.fn(),
       begin,
     })

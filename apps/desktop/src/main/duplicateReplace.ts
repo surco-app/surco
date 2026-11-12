@@ -15,7 +15,7 @@ import type { NmlLocation } from './traktorNml'
 import type { DuplicateCollectionResult } from './traktorNmlLibrary'
 import { logKeptOpen, TRAKTOR_SYNC_SKIP_KEYS } from './traktorSyncFlush'
 
-const LIBRARY_ORDER = writableInOrder(['traktor', 'rekordbox', 'engine'])
+const LIBRARY_ORDER = writableInOrder(['traktor', 'rekordbox', 'engine', 'virtualdj'])
 
 // After the review removes duplicate copies from Music, each DJ library with its sync on
 // moves to the copy the user kept, and only then does a removed copy's file go to the
@@ -68,6 +68,7 @@ const RUNNING_REASON: Record<WritableProgram, string> = {
   rekordbox: 'rekordbox-running',
   engine: 'engine-running',
   traktor: 'traktor-running',
+  virtualdj: 'virtualdj-running',
 }
 const SKIPPED = new Set([
   ...Object.values(RUNNING_REASON),
@@ -145,6 +146,42 @@ export async function traktorDuplicateStep(
     },
   )
   return result.outcomes
+}
+
+const VIRTUALDJ_SKIP_KEYS: Record<string, string> = {
+  'virtualdj-running': 'activity.virtualdjSyncRunning',
+  'backup-failed': 'activity.virtualdjSyncBackupFailed',
+}
+
+export async function virtualdjDuplicateStep(
+  pairs: DuplicatePair[],
+  deps: {
+    ensureClosed: () => Promise<boolean>
+    track: Activity['track']
+    replace: (pairs: DuplicatePair[]) => Promise<DuplicateReplaceResult[]>
+  },
+): Promise<LibraryReplaceOutcome[]> {
+  const running = { detailKey: VIRTUALDJ_SKIP_KEYS['virtualdj-running'], status: 'warn' as const }
+  if (!(await deps.ensureClosed())) {
+    await deps.track('export', 'activity.virtualdjSync', async () => undefined, {
+      summary: () => running,
+    })
+    return pairs.map(() => 'skipped')
+  }
+  const results = await deps.track('export', 'activity.virtualdjSync', () => deps.replace(pairs), {
+    summary: (r: DuplicateReplaceResult[]) => {
+      const moved = r.filter((x) => x.written).length
+      if (moved > 0)
+        return { detailKey: 'activity.duplicatesReplaced', detailParams: { count: moved } }
+      const refused = r.find((x) => !x.written && x.reason !== 'no-match')
+      if (!refused || refused.written) return { detailKey: 'activity.virtualdjSyncNothing' }
+      return {
+        detailKey: VIRTUALDJ_SKIP_KEYS[refused.reason] ?? 'activity.duplicatesUnsettled',
+        status: 'warn' as const,
+      }
+    },
+  })
+  return results.map(outcomeOf)
 }
 
 export function replaceDuplicates(

@@ -15,7 +15,7 @@ import { traktorSeparatorKey } from './traktorPlaylists'
 // the DJ confirmed in Settings; without one there is nothing to edit.
 export function traktorEdit(host: {
   collection: () => string
-  queue: Pick<RekordboxQueue, 'apply' | 'drop'> & { enqueue: (ops: EditOp[]) => void }
+  queue: Pick<RekordboxQueue, 'apply' | 'drop' | 'outcomeOf'> & { enqueue: (ops: EditOp[]) => void }
   ensureClosed: (win: BrowserWindow | null) => Promise<boolean>
   isRunning: () => Promise<boolean>
   onApplied?: (result: QueueApply) => void
@@ -71,9 +71,10 @@ export function traktorEdit(host: {
           if (mode === 'queue') return { applied: false, queued: true, opId: op.id }
         } else if (result.status === 'refused') host.queue.drop(op.id)
         if (result.status === 'refused') return { applied: false, reason: result.reason }
+        const written = host.queue.outcomeOf(op.id)
         const outcome =
           result.status === 'applied' ? result.outcomes.find((o) => o.id === op.id) : undefined
-        return editResultOfOutcome(outcome)
+        return editResultOfOutcome(outcome ?? written)
       }),
   }
 }

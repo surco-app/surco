@@ -10,6 +10,7 @@ vi.mock('electron', () => ({
 
 import type { DjEditMain } from '../shared/djApi'
 import type { RekordboxPlaylistEdit } from '../shared/types'
+import { queueWithApplyInFlight } from './editRaceFixture'
 import type { QueueApply, RekordboxQueue } from './rekordboxQueue'
 import type { EditOp, QueueOp } from './rekordboxQueueOps'
 import { traktorEdit } from './traktorPlaylistEditIpc'
@@ -39,6 +40,7 @@ function setup(path: string, result: (op: QueueOp) => QueueApply) {
       return result(queued[queued.length - 1])
     }),
     drop: vi.fn<RekordboxQueue['drop']>(),
+    outcomeOf: vi.fn<RekordboxQueue['outcomeOf']>(),
   }
   const host = {
     collection: () => path,
@@ -152,5 +154,23 @@ describe('traktorEdit', () => {
     expect(await section.hasSeparator?.()).toBe(true)
     setup(await collection(), applied)
     expect(await section.hasSeparator?.()).toBe(false)
+  })
+})
+
+describe('traktorEdit with an apply already running', () => {
+  it('says the edit was written when that apply wrote it, not that it failed', async () => {
+    const race = queueWithApplyInFlight('Nueva')
+    const saving = traktorEdit({
+      collection: () => '/library/collection.nml',
+      queue: race.queue,
+      ensureClosed: async () => true,
+      isRunning: async () => false,
+    }).save(
+      { kind: 'create', parentId: 'root', name: 'Nueva', folder: false },
+      'Nueva',
+      {} as WebContents,
+    )
+    await race.release()
+    expect(await saving).toEqual({ applied: true, createdId: 'Nueva' })
   })
 })

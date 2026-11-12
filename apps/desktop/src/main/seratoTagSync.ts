@@ -47,19 +47,22 @@ export function seratoTagOps(updates: LibraryTagUpdate[], roots: SeratoLibraryRo
 
 export async function syncSeratoTags(
   updates: LibraryTagUpdate[],
-  deps: {
-    enabled: boolean
-    roots: () => SeratoLibraryRoot[]
-    queue: Pick<RekordboxQueue, 'enqueue' | 'apply' | 'drop' | 'queuedOps'>
-    isRunning: () => Promise<boolean>
-    onWaiting: () => void
-    onApplied: (result: QueueApply) => void
-  },
+  deps: TagQueueDeps & { enabled: boolean; roots: () => SeratoLibraryRoot[] },
 ): Promise<LibraryTagSync> {
   if (!deps.enabled) return { outcome: 'nothing' }
   const roots = deps.roots()
   if (roots.length === 0) return { outcome: 'missing' }
-  const ops = seratoTagOps(updates, roots)
+  return syncTagOps(seratoTagOps(updates, roots), deps)
+}
+
+export type TagQueueDeps = {
+  queue: Pick<RekordboxQueue, 'enqueue' | 'apply' | 'drop' | 'queuedOps'>
+  isRunning: () => Promise<boolean>
+  onWaiting: () => void
+  onApplied: (result: QueueApply) => void
+}
+
+export async function syncTagOps(ops: TagsOp[], deps: TagQueueDeps): Promise<LibraryTagSync> {
   if (ops.length === 0) return { outcome: 'nothing' }
   deps.queue.enqueue(ops)
   const pathOf = new Map(

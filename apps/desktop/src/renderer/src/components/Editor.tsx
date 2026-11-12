@@ -28,7 +28,7 @@ import { WRITABLE_PROGRAMS, writableInOrder } from '../../../shared/djProgram'
 import { EDITOR_SECTION_GROUP } from '../../../shared/editorSections'
 import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../../../shared/format'
 import type { GridCheck } from '../../../shared/gridCheck'
-import { fromReadOnlyProgram, isFrom } from '../../../shared/trackOrigin'
+import { isFrom, READ_ONLY_BLOCKED, readOnlyProgramsOf } from '../../../shared/trackOrigin'
 import type {
   DeclickConfig,
   FormatSetting,
@@ -132,8 +132,8 @@ import { SpectrumGlimpse } from './SpectrumGlimpse'
 import { Tooltip } from './Tooltip'
 import { TrimSection } from './TrimSection'
 
-const LIBRARY_ORDER = writableInOrder(['rekordbox', 'engine', 'traktor'])
-const COLLECTION_PATH_ORDER = writableInOrder(['traktor', 'rekordbox', 'engine'])
+const LIBRARY_ORDER = writableInOrder(['rekordbox', 'engine', 'traktor', 'virtualdj'])
+const COLLECTION_PATH_ORDER = writableInOrder(['traktor', 'rekordbox', 'engine', 'virtualdj'])
 
 interface Props {
   item: TrackItem
@@ -1011,11 +1011,12 @@ export const Editor = memo(function Editor({
   const againLeftOut = isMulti
     ? leftOutNote(convertGate(multiTracks, requiredFields, customFields, libraryIndex, true), tr)
     : null
-  const seratoRows = !isMulti && fromReadOnlyProgram(item)
-  const missing = isMulti || seratoRows ? [] : missingRequired(resolvedMeta, requiredFields)
+  const blockedBy = isMulti ? undefined : readOnlyProgramsOf(item)[0]
+  const readOnlyRows = blockedBy !== undefined
+  const missing = isMulti || readOnlyRows ? [] : missingRequired(resolvedMeta, requiredFields)
   const firstMissing = (multiGate?.missing.fields ?? missing)[0]
-  const incomplete = isMulti ? againLeftOut !== null : seratoRows || missing.length > 0
-  const seratoReason = seratoRows ? [tr('errors.seratoBlocked')] : []
+  const incomplete = isMulti ? againLeftOut !== null : readOnlyRows || missing.length > 0
+  const readOnlyReason = blockedBy ? [tr(`errors.${READ_ONLY_BLOCKED[blockedBy]}`)] : []
   const otherReason = missing.length
     ? tr('editor.missingRequired', {
         fields: missing.map((key) => tr(`fields.${key}`)).join(', '),
@@ -1023,7 +1024,7 @@ export const Editor = memo(function Editor({
     : undefined
   const incompleteReason = isMulti
     ? (againLeftOut ?? undefined)
-    : [...seratoReason, ...(otherReason ? [otherReason] : [])].join(' · ') || undefined
+    : [...readOnlyReason, ...(otherReason ? [otherReason] : [])].join(' · ') || undefined
   const otherSummary = missing.length
     ? missingSummary(
         missing.map((key) => tr(`fields.${key}`)),
@@ -1197,14 +1198,16 @@ export const Editor = memo(function Editor({
   const traktorPlaylists = usePlaylistsSpec('traktor', playlistsOf('traktor'))
   const enginePlaylists = usePlaylistsSpec('engine', playlistsOf('engine'))
   const seratoPlaylists = usePlaylistsSpec('serato', playlistsOf('serato'))
+  const virtualdjPlaylists = usePlaylistsSpec('virtualdj', playlistsOf('virtualdj'))
   const playlistsSpec = useMemo(
     (): Record<PlaylistLibrary, PlaylistsSpec | undefined> => ({
       rekordbox: rekordboxPlaylists,
       traktor: traktorPlaylists,
       engine: enginePlaylists,
       serato: seratoPlaylists,
+      virtualdj: virtualdjPlaylists,
     }),
-    [rekordboxPlaylists, traktorPlaylists, enginePlaylists, seratoPlaylists],
+    [rekordboxPlaylists, traktorPlaylists, enginePlaylists, seratoPlaylists, virtualdjPlaylists],
   )
 
   // Built once per real input change. setField and tr are identity-stable, so a
@@ -2021,7 +2024,7 @@ export const Editor = memo(function Editor({
           incomplete={incomplete}
           incompleteReason={incompleteReason}
           incompleteSummary={
-            [...seratoReason, ...(otherSummary ? [otherSummary] : [])].join(' · ') || undefined
+            [...readOnlyReason, ...(otherSummary ? [otherSummary] : [])].join(' · ') || undefined
           }
           leftOut={leftOut ?? undefined}
           onBlockedPress={() => {

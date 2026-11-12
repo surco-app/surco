@@ -1,11 +1,18 @@
 import type { EngineRepoint, EngineShift } from './engineRepoint'
+import type { Rewritten } from './musicFieldWrite'
+
+export function followingAll(...followers: Rewritten[]): Rewritten {
+  return (...args) => {
+    for (const follow of followers) follow(...args)
+  }
+}
 
 // A file rewritten on its own path outside a conversion: a review's tag write, Music
 // retagging its entry's file, an original restored over its replacement. Engine DJ's row
 // records the file's size, so it gets the in-place repoint a conversion's flush sends, whose
 // write only lands while the row still holds fromBytes, through the queue that waits while
 // Engine is open.
-export function engineSizeFollower(deps: {
+export function librarySizeFollower(deps: {
   enabled: () => boolean
   enqueue: (ops: [], repoints: EngineRepoint[]) => void
   apply: () => void

@@ -192,11 +192,21 @@ const SERATO_COPY: typeof REKORDBOX_COPY = {
   autoUnanalysed: 'editor.cues.serato.autoUnreadable',
 }
 
+const VIRTUALDJ_COPY: typeof REKORDBOX_COPY = {
+  save: 'editor.cues.virtualdj.save',
+  unanalysed: 'editor.cues.virtualdj.unanalysed',
+  unreadable: 'editor.cues.virtualdj.unreadable',
+  queuedStale: 'editor.cues.virtualdj.queuedStale',
+  saveFailed: 'editor.cues.virtualdj.saveFailed',
+  autoUnanalysed: 'editor.cues.virtualdj.autoUnreadable',
+}
+
 const COPY: Record<DjProgram, typeof REKORDBOX_COPY> = {
   rekordbox: REKORDBOX_COPY,
   traktor: TRAKTOR_COPY,
   engine: ENGINE_COPY,
   serato: SERATO_COPY,
+  virtualdj: VIRTUALDJ_COPY,
 }
 
 const copyOf = (contentId: string) => COPY[programOf(contentId)]
@@ -751,6 +761,7 @@ function Editing({
       settings.cueFlowToTraktor,
       settings.cueFlowToEngine,
       settings.cueFlowToSerato,
+      settings.cueFlowToVirtualdj,
     ],
     queryFn: () => twinPlansOf(queryClient, [own], settings, overwrite),
     enabled: flowMarked,

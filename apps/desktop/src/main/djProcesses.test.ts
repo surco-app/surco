@@ -1,14 +1,22 @@
 import type { BrowserWindow } from 'electron'
 import { describe, expect, it, vi } from 'vitest'
+
+vi.mock('./virtualdjProcess', async (original) => ({
+  ...(await original<typeof import('./virtualdjProcess')>()),
+  waitForVirtualdjExit: vi.fn(async () => true),
+}))
+
 import type { WritableProgram } from '../shared/djProgram'
 import {
   anyDjProgramRunning,
   createEnsureClosed,
+  DJ_PROCESSES,
   type ProgramProcess,
   QUIT_REASONS,
-  type QUIT_TEXT,
+  QUIT_TEXT,
   reasonOfDetail,
 } from './djProcesses'
+import { isVirtualdjRunning, waitForVirtualdjExit } from './virtualdjProcess'
 
 function deferred<T>() {
   let resolve: (v: T) => void = () => {}
@@ -33,6 +41,7 @@ function setup(
     rekordbox: overrides.rekordbox ?? fakeProcess(true),
     traktor: overrides.traktor ?? fakeProcess(true),
     engine: overrides.engine ?? fakeProcess(true),
+    virtualdj: overrides.virtualdj ?? fakeProcess(true),
   } satisfies Record<WritableProgram, ProgramProcess>
   const askSpy = vi.fn(ask)
   const t = (key: string) => `t:${key}`
@@ -166,11 +175,37 @@ describe('createEnsureClosed', () => {
       rekordbox: ['convert', 'playlists', 'usb', 'restore'],
       traktor: ['convert', 'cues', 'playlists', 'restore'],
       engine: ['convert', 'cues', 'playlists', 'usb', 'restore'],
+      virtualdj: ['convert', 'restore', 'duplicates'],
     })
   })
 
+  it('asks the DJ to close VirtualDJ before a restore, and only checks that it closed', async () => {
+    const virtualdj = fakeProcess(true, false)
+    const { ask, ensureClosed } = setup({ virtualdj })
+    expect(await ensureClosed('virtualdj', win, 'restore')).toBe(false)
+    expect(ask).toHaveBeenCalledWith(win, {
+      type: 'warning',
+      message: 't:virtualdjQuitMessage',
+      detail: 't:virtualdjQuitDetailRestore',
+      buttons: ['t:virtualdjQuitConfirm', 't:virtualdjQuitCancel'],
+      defaultId: 0,
+      cancelId: 1,
+    })
+    expect(virtualdj.quit).toHaveBeenCalledTimes(1)
+  })
+
+  it('never asks VirtualDJ to quit, since its writes wait in its queue until it closes', async () => {
+    const virtualdj = fakeProcess(true)
+    const { ask, ensureClosed } = setup({ virtualdj })
+    expect(await ensureClosed('virtualdj', win)).toBe(false)
+    expect(ask).not.toHaveBeenCalled()
+    expect(virtualdj.quit).not.toHaveBeenCalled()
+    virtualdj.isRunning.mockResolvedValue(false)
+    expect(await ensureClosed('virtualdj', win)).toBe(true)
+  })
+
   it.each(
-    (Object.keys(words) as WritableProgram[]).flatMap((program) =>
+    (Object.keys(words) as (keyof typeof words)[]).flatMap((program) =>
       Object.entries(words[program]).map(([reason, detail]) => [program, reason, detail] as const),
     ),
   )("uses each program's own words: %s %s", async (program, reason, detail) => {
@@ -214,6 +249,8 @@ describe('reasonOfDetail', () => {
     ['engine', 'engineQuitDetailRestore', 'restore'],
     ['traktor', 'traktorQuitDetailCues', 'cues'],
     ['traktor', 'traktorQuitDetailPlaylists', 'playlists'],
+    ['virtualdj', 'virtualdjQuitDetailRestore', 'restore'],
+    ['virtualdj', 'virtualdjQuitDetailDuplicates', 'duplicates'],
   ] as const)(
     'keeps the words a %s caller passes by asking for the reason behind %s',
     (program, key, reason) => {
@@ -233,6 +270,12 @@ describe('QUIT_TEXT', () => {
     const wrong: (typeof QUIT_TEXT)['engine']['detail']['cues'] = 'traktorQuitDetailCues'
     expect(wrong).toBe('traktorQuitDetailCues')
   })
+
+  it('refuses at compile time a writable program with no quit wording, so it can never be closed without asking', () => {
+    // @ts-expect-error
+    const missing: typeof QUIT_TEXT = { ...QUIT_TEXT, virtualdj: null }
+    expect(missing.virtualdj).toBeNull()
+  })
 })
 
 describe('anyDjProgramRunning', () => {
@@ -240,15 +283,37 @@ describe('anyDjProgramRunning', () => {
   // when a DJ program is open, the one moment ffmpeg could steal CPU from a set.
   const stopped = { isRunning: async () => false }
   const open = { isRunning: async () => true }
-  it('is true when any of the four programs is open', async () => {
+  it('is true when any of the programs is open', async () => {
     expect(
       await anyDjProgramRunning({
         rekordbox: stopped,
         traktor: stopped,
         engine: stopped,
         serato: open,
+        virtualdj: stopped,
       }),
     ).toBe(true)
+  })
+
+  it('is true when only VirtualDJ is open, since a set in VirtualDJ needs the CPU as much', async () => {
+    expect(
+      await anyDjProgramRunning({
+        rekordbox: stopped,
+        traktor: stopped,
+        engine: stopped,
+        serato: stopped,
+        virtualdj: open,
+      }),
+    ).toBe(true)
+  })
+
+  it('waits for VirtualDJ to exit once the DJ says it closed it, as the others wait for theirs', async () => {
+    expect(await DJ_PROCESSES.virtualdj.quit()).toBe(true)
+    expect(waitForVirtualdjExit).toHaveBeenCalledTimes(1)
+  })
+
+  it('asks the VirtualDJ process whether VirtualDJ is open', () => {
+    expect(DJ_PROCESSES.virtualdj.isRunning).toBe(isVirtualdjRunning)
   })
 
   it('is false when none is open', async () => {
@@ -258,6 +323,7 @@ describe('anyDjProgramRunning', () => {
         traktor: stopped,
         engine: stopped,
         serato: stopped,
+        virtualdj: stopped,
       }),
     ).toBe(false)
   })

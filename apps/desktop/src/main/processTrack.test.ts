@@ -301,6 +301,20 @@ describe('runProcessTrack — plain conversion', () => {
     })
   })
 
+  it('attaches the VirtualDJ lists the conversion chose, so the VirtualDJ queue can put the new file in them', async () => {
+    const attachPlaylists = vi.fn()
+    const result = await runProcessTrack(
+      job({
+        playlists: { virtualdj: { targets: [{ id: 'Sets/Friday', name: 'Friday' }], base: [] } },
+      }),
+      makeDeps({ attachPlaylists }),
+    )
+    expect(attachPlaylists).toHaveBeenCalledWith(result.outputPath, 'virtualdj', {
+      wanted: [{ id: 'Sets/Friday', name: 'Friday' }],
+      base: [],
+    })
+  })
+
   it('attaches nothing when the field was never touched', async () => {
     const attachPlaylists = vi.fn()
     await runProcessTrack(job(), makeDeps({ attachPlaylists }))
@@ -348,6 +362,15 @@ describe('runProcessTrack — a file Serato cues are being written to', () => {
     seratoWriting.clear('/Volumes/M/song.mp3')
     await running
     expect(deps.beginJob).toHaveBeenCalledWith('job1', ['/in/song.wav', '/Volumes/M/song.mp3'])
+  })
+})
+
+describe('runProcessTrack — a row opened from VirtualDJ', () => {
+  it('converts it, since VirtualDJ follows the track to the new file', async () => {
+    const deps = makeDeps()
+    const result = await runProcessTrack(job({ programs: ['virtualdj'] }), deps)
+    expect(deps.convertAudio).toHaveBeenCalled()
+    expect(result.outputPath).not.toBe('')
   })
 })
 
@@ -3437,27 +3460,27 @@ describe('runProcessTrack — converting a library track to another format', () 
   // Engine DJ's row records the size of the file it plays. Music's retag changes that size,
   // and a row left on the old one reads as a file Surco broke.
   it('tells Engine DJ the size the file an updated entry plays had before Music retagged it', async () => {
-    const followEngineSize = vi.fn()
+    const followLibrarySize = vi.fn()
     const fileBytes = vi.fn(async () => 4096)
-    const deps = converting('/lib/A.aiff', { fileBytes, followEngineSize })
+    const deps = converting('/lib/A.aiff', { fileBytes, followLibrarySize })
 
     await runProcessTrack(
       libraryJob({ inputPath: '/lib/A.wav', format: 'aiff', keepOutputCopy: true }),
       deps,
     )
 
-    expect(followEngineSize).toHaveBeenCalledWith('/lib/A.aiff', 4096)
+    expect(followLibrarySize).toHaveBeenCalledWith('/lib/A.aiff', 4096)
     expect(fileBytes.mock.invocationCallOrder[0]).toBeLessThan(
       vi.mocked(deps.updateInAppleMusic).mock.invocationCallOrder[0],
     )
   })
 
   it('tells Engine DJ nothing when the entry was gone and Music retagged nothing', async () => {
-    const followEngineSize = vi.fn()
+    const followLibrarySize = vi.fn()
     const deps = converting('/lib/A.aiff', {
       updateInAppleMusic: vi.fn(async () => null),
       fileBytes: vi.fn(async () => 4096),
-      followEngineSize,
+      followLibrarySize,
     })
 
     await runProcessTrack(
@@ -3465,16 +3488,16 @@ describe('runProcessTrack — converting a library track to another format', () 
       deps,
     )
 
-    expect(followEngineSize).not.toHaveBeenCalled()
+    expect(followLibrarySize).not.toHaveBeenCalled()
   })
 
   // The original the in-place rename retires is the row's own source: the conversion's
   // repoint moves the row off it, and only while the row still holds the size it had.
   it('leaves the size of the original the conversion retires to the conversion', async () => {
-    const followEngineSize = vi.fn()
+    const followLibrarySize = vi.fn()
     const deps = converting('/lib/A.aiff', {
       fileBytes: vi.fn(async () => 4096),
-      followEngineSize,
+      followLibrarySize,
     })
 
     await runProcessTrack(
@@ -3483,7 +3506,7 @@ describe('runProcessTrack — converting a library track to another format', () 
     )
 
     expect(deps.updateInAppleMusic).toHaveBeenCalled()
-    expect(followEngineSize).not.toHaveBeenCalled()
+    expect(followLibrarySize).not.toHaveBeenCalled()
   })
 
   it('leaves Music alone when the renamed original has no room for its copy', async () => {
@@ -3860,6 +3883,56 @@ describe('runProcessTrack — checking what it wrote', () => {
     const entry = registerVerification.mock.calls[0][0]
     expect(entry.playlists).toEqual({ engine: wanted })
     expect([...entry.places]).toContain('engine')
+  })
+
+  it('lists VirtualDJ for a song it held, and for one it never had only when the job asked for its lists', async () => {
+    const registerVerification = vi.fn<NonNullable<ProcessTrackDeps['registerVerification']>>()
+    const held = { lists: [{ id: 'Sets', name: 'Sets' }] }
+    const deps = makeDeps({
+      snapshotLibraries: vi.fn<NonNullable<ProcessTrackDeps['snapshotLibraries']>>(async () => ({
+        virtualdj: held,
+      })),
+      registerVerification,
+    })
+
+    const result = await runProcessTrack(job(), deps)
+
+    expect(result.verification?.checks.map((c) => [c.place, c.state])).toEqual([
+      ['file', 'ok'],
+      ['virtualdj', 'checking'],
+    ])
+    expect(registerVerification.mock.calls[0][0].virtualdj).toEqual(held)
+    expect([...registerVerification.mock.calls[0][0].places]).toContain('virtualdj')
+
+    const absent = makeDeps({
+      snapshotLibraries: vi.fn<NonNullable<ProcessTrackDeps['snapshotLibraries']>>(async () => ({
+        virtualdj: 'absent',
+      })),
+      registerVerification,
+    })
+    expect((await runProcessTrack(job(), absent)).verification?.checks.map((c) => c.place)).toEqual(
+      ['file'],
+    )
+    const wanted = [{ name: 'Peak time' }]
+    const picked = await runProcessTrack(
+      job({ playlists: { virtualdj: { targets: wanted } } }),
+      absent,
+    )
+    expect(picked.verification?.checks.map((c) => c.place)).toEqual(['file', 'virtualdj'])
+    expect(registerVerification.mock.lastCall?.[0].playlists).toEqual({ virtualdj: wanted })
+  })
+
+  it('keeps VirtualDJ in play for a track Surco may add to it, without checking it until the add', async () => {
+    const registerVerification = vi.fn<NonNullable<ProcessTrackDeps['registerVerification']>>()
+    const deps = makeDeps({
+      settings: settings({ addToVirtualdj: true }),
+      registerVerification,
+    })
+
+    const result = await runProcessTrack(job(), deps)
+
+    expect(result.verification?.checks.map((c) => c.place)).toEqual(['file'])
+    expect([...registerVerification.mock.calls[0][0].places]).toContain('virtualdj')
   })
 
   it('hands the check the Traktor playlists the job asked for', async () => {
@@ -4518,6 +4591,34 @@ describe('runProcessTrack — checking what it wrote', () => {
     expect(result.verification?.checks.map((c) => c.place)).toEqual(['file', 'engine'])
     expect(registerVerification.mock.calls[0][0].engineStep).toBe(true)
     expect([...registerVerification.mock.calls[0][0].places]).toContain('engine')
+  })
+
+  it('a failed library read also leaves VirtualDJ unreadable when its sync is on, never skipped', async () => {
+    const registerVerification = vi.fn<NonNullable<ProcessTrackDeps['registerVerification']>>()
+    const failing = () =>
+      vi.fn<NonNullable<ProcessTrackDeps['snapshotLibraries']>>(async () => {
+        throw new Error('SQLITE_BUSY')
+      })
+    const synced = await runProcessTrack(
+      job(),
+      makeDeps({
+        settings: settings({ syncVirtualdj: true }),
+        snapshotLibraries: failing(),
+        registerVerification,
+      }),
+    )
+    expect(registerVerification.mock.calls[0][0].virtualdj).toBe('unreadable')
+    expect(synced.verification?.checks.map((c) => c.place)).toEqual([
+      'file',
+      'rekordbox',
+      'engine',
+      'virtualdj',
+    ])
+    const off = await runProcessTrack(
+      job(),
+      makeDeps({ settings: settings({ syncVirtualdj: false }), snapshotLibraries: failing() }),
+    )
+    expect(off.verification?.checks.map((c) => c.place)).toEqual(['file', 'rekordbox', 'engine'])
   })
 
   it('an Engine add that failed lists no Engine row to check', async () => {

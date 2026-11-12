@@ -34,6 +34,7 @@ const synced: SyncedDraft = {
   cueFlowToTraktor: true,
   cueFlowToEngine: true,
   cueFlowToSerato: true,
+  cueFlowToVirtualdj: true,
   cueLearnFromEdits: true,
   hiddenSources: [],
   language: 'system',
@@ -55,6 +56,8 @@ const synced: SyncedDraft = {
   syncEngineDj: false,
   addToSerato: false,
   syncSerato: false,
+  addToVirtualdj: false,
+  syncVirtualdj: false,
   filenameFormat: '{artist} - {title}',
   titleFormat: '',
   autoApplyFilename: false,
@@ -104,6 +107,7 @@ const local: LocalDraft = {
   engineLibraryDir: '/music/Engine Library',
   traktorNmlPath: '',
   rekordboxDbPath: '',
+  virtualdjLibraryDir: '/Users/dj/Library/Application Support/VirtualDJ',
   betaUpdates: false,
   autoMatch: false,
   beatportUsername: '',
@@ -128,6 +132,7 @@ function renderTab(
       onAcceptDetectedNmlPath={vi.fn()}
       rekordboxCollection=""
       onChangeRekordboxDbPath={vi.fn()}
+      onChangeVirtualdjDir={vi.fn()}
     />,
   )
   return patch
@@ -152,6 +157,7 @@ function renderWithCollection(patch: PatchSynced, offset = '0'): void {
       onAcceptDetectedNmlPath={vi.fn()}
       rekordboxCollection=""
       onChangeRekordboxDbPath={vi.fn()}
+      onChangeVirtualdjDir={vi.fn()}
     />,
   )
 }
@@ -278,6 +284,7 @@ describe('DestinationTab Traktor collection', () => {
         onAcceptDetectedNmlPath={vi.fn()}
         rekordboxCollection=""
         onChangeRekordboxDbPath={vi.fn()}
+        onChangeVirtualdjDir={vi.fn()}
       />,
     )
     fireEvent.click(screen.getByTestId('settings-traktor-nml-change'))
@@ -300,6 +307,7 @@ describe('DestinationTab Traktor collection', () => {
         onAcceptDetectedNmlPath={vi.fn()}
         rekordboxCollection=""
         onChangeRekordboxDbPath={vi.fn()}
+        onChangeVirtualdjDir={vi.fn()}
       />,
     )
     expect(screen.getByTestId('settings-traktor-nml-detected')).toBeInTheDocument()
@@ -316,6 +324,7 @@ describe('DestinationTab Traktor collection', () => {
         onAcceptDetectedNmlPath={vi.fn()}
         rekordboxCollection=""
         onChangeRekordboxDbPath={vi.fn()}
+        onChangeVirtualdjDir={vi.fn()}
       />,
     )
     expect(screen.queryByTestId('settings-traktor-nml-detected')).not.toBeInTheDocument()
@@ -341,6 +350,7 @@ describe('DestinationTab Traktor collection', () => {
         onAcceptDetectedNmlPath={onAcceptDetectedNmlPath}
         rekordboxCollection=""
         onChangeRekordboxDbPath={vi.fn()}
+        onChangeVirtualdjDir={vi.fn()}
       />,
     )
     expect(screen.getByTestId('settings-traktor-nml-mismatch')).toHaveTextContent(traktorUses)
@@ -364,6 +374,7 @@ describe('DestinationTab Traktor collection', () => {
         onAcceptDetectedNmlPath={onAcceptDetectedNmlPath}
         rekordboxCollection=""
         onChangeRekordboxDbPath={vi.fn()}
+        onChangeVirtualdjDir={vi.fn()}
       />,
     )
     fireEvent.click(screen.getByTestId('settings-traktor-nml-use-detected'))
@@ -389,6 +400,7 @@ describe('DestinationTab Traktor collection', () => {
         onAcceptDetectedNmlPath={vi.fn()}
         rekordboxCollection=""
         onChangeRekordboxDbPath={vi.fn()}
+        onChangeVirtualdjDir={vi.fn()}
       />,
     )
 
@@ -413,6 +425,7 @@ describe('DestinationTab Traktor collection', () => {
         onAcceptDetectedNmlPath={vi.fn()}
         rekordboxCollection=""
         onChangeRekordboxDbPath={vi.fn()}
+        onChangeVirtualdjDir={vi.fn()}
       />,
     )
 
@@ -437,6 +450,7 @@ describe('DestinationTab Traktor collection', () => {
         onAcceptDetectedNmlPath={vi.fn()}
         rekordboxCollection="/Users/dj/Library/Pioneer/rekordbox/master.db"
         onChangeRekordboxDbPath={vi.fn()}
+        onChangeVirtualdjDir={vi.fn()}
       />,
     )
 
@@ -459,6 +473,7 @@ describe('DestinationTab Traktor collection', () => {
         onAcceptDetectedNmlPath={vi.fn()}
         rekordboxCollection=""
         onChangeRekordboxDbPath={vi.fn()}
+        onChangeVirtualdjDir={vi.fn()}
       />,
     )
 
@@ -497,6 +512,7 @@ describe('DestinationTab Traktor collection', () => {
         onAcceptDetectedNmlPath={vi.fn()}
         rekordboxCollection=""
         onChangeRekordboxDbPath={vi.fn()}
+        onChangeVirtualdjDir={vi.fn()}
       />,
     )
 
@@ -519,6 +535,7 @@ describe('DestinationTab Traktor collection', () => {
         onAcceptDetectedNmlPath={vi.fn()}
         rekordboxCollection=""
         onChangeRekordboxDbPath={onChangeRekordboxDbPath}
+        onChangeVirtualdjDir={vi.fn()}
       />,
     )
     expect(screen.getByTestId('settings-rekordbox-db')).toHaveTextContent(
@@ -552,6 +569,7 @@ describe('DestinationTab Traktor collection', () => {
         onAcceptDetectedNmlPath={vi.fn()}
         rekordboxCollection=""
         onChangeRekordboxDbPath={vi.fn()}
+        onChangeVirtualdjDir={vi.fn()}
       />,
     )
     expect(screen.getByTestId('settings-cue-dir-early')).toBeEnabled()
@@ -568,6 +586,7 @@ describe('DestinationTab Traktor collection', () => {
         onAcceptDetectedNmlPath={vi.fn()}
         rekordboxCollection=""
         onChangeRekordboxDbPath={vi.fn()}
+        onChangeVirtualdjDir={vi.fn()}
       />,
     )
     expect(screen.getByTestId('settings-cue-dir-early')).toBeEnabled()
@@ -594,6 +613,7 @@ describe('DestinationTab Traktor collection', () => {
         onAcceptDetectedNmlPath={vi.fn()}
         rekordboxCollection=""
         onChangeRekordboxDbPath={vi.fn()}
+        onChangeVirtualdjDir={vi.fn()}
       />,
     )
     const field = screen.getByTestId('settings-traktor-nml')
@@ -729,6 +749,7 @@ describe('DestinationTab Traktor collection', () => {
         onAcceptDetectedNmlPath={vi.fn()}
         rekordboxCollection=""
         onChangeRekordboxDbPath={vi.fn()}
+        onChangeVirtualdjDir={vi.fn()}
       />,
     )
 
@@ -752,6 +773,7 @@ describe('DestinationTab Traktor collection', () => {
         onAcceptDetectedNmlPath={vi.fn()}
         rekordboxCollection=""
         onChangeRekordboxDbPath={vi.fn()}
+        onChangeVirtualdjDir={vi.fn()}
       />,
     )
 
@@ -891,6 +913,7 @@ describe('complete on close', () => {
         onAcceptDetectedNmlPath={vi.fn()}
         rekordboxCollection="/rb/master.db"
         onChangeRekordboxDbPath={vi.fn()}
+        onChangeVirtualdjDir={vi.fn()}
       />,
     )
     return { patch, rekordboxCountCompletable }
@@ -947,6 +970,7 @@ describe('complete on close', () => {
         onAcceptDetectedNmlPath={vi.fn()}
         rekordboxCollection="/rb/master.db"
         onChangeRekordboxDbPath={vi.fn()}
+        onChangeVirtualdjDir={vi.fn()}
       />,
     )
     fireEvent.click(screen.getByTestId('settings-complete-cues'))
@@ -972,6 +996,7 @@ describe('complete on close', () => {
         onAcceptDetectedNmlPath={vi.fn()}
         rekordboxCollection=""
         onChangeRekordboxDbPath={vi.fn()}
+        onChangeVirtualdjDir={vi.fn()}
       />,
     )
     const toggle = screen.getByTestId('settings-complete-cues')
@@ -993,6 +1018,7 @@ describe('complete on close', () => {
         onAcceptDetectedNmlPath={vi.fn()}
         rekordboxCollection=""
         onChangeRekordboxDbPath={vi.fn()}
+        onChangeVirtualdjDir={vi.fn()}
       />,
     )
     expect(screen.getByTestId('settings-complete-cues')).toBeDisabled()
@@ -1049,6 +1075,96 @@ describe('DestinationTab Serato', () => {
   })
 })
 
+describe('DestinationTab VirtualDJ', () => {
+  it('gives VirtualDJ its own panel with the folder Surco reads it from', () => {
+    renderPrograms()
+    fireEvent.click(screen.getByTestId('settings-programs-virtualdj'))
+    const panel = screen.getByTestId('settings-program-virtualdj')
+    expect(panel).toBeVisible()
+    expect(screen.getByTestId('settings-virtualdj-dir')).toHaveTextContent(
+      '/Users/dj/Library/Application Support/VirtualDJ',
+    )
+  })
+
+  it('turns VirtualDJ to add from its panel, so what Surco converts goes into it', async () => {
+    const before = window.api
+    ;(window as unknown as { api: Partial<Api> }).api = {
+      platform: 'darwin',
+      dj: djReads({ virtualdj: { available: async () => true } }),
+    }
+    try {
+      const patch = renderPrograms()
+      fireEvent.click(screen.getByTestId('settings-programs-virtualdj'))
+      await waitFor(() => expect(screen.getByTestId('settings-reach-virtualdj')).toBeEnabled())
+      fireEvent.click(screen.getByTestId('settings-reach-virtualdj-add'))
+      expect(patch).toHaveBeenCalledWith('syncVirtualdj', true)
+      expect(patch).toHaveBeenCalledWith('addToVirtualdj', true)
+    } finally {
+      ;(window as unknown as { api: Api }).api = before
+    }
+  })
+
+  it('disables the VirtualDJ row without a VirtualDJ library, unless it is on and needs switching off', async () => {
+    const before = window.api
+    ;(window as unknown as { api: Partial<Api> }).api = {
+      platform: 'darwin',
+      dj: djReads({ virtualdj: { available: async () => false } }),
+    }
+    try {
+      renderPrograms()
+      expect(await screen.findByTestId('settings-reach-virtualdj')).toBeDisabled()
+      cleanup()
+      renderPrograms({ syncVirtualdj: true })
+      expect(screen.getByTestId('settings-reach-virtualdj')).toBeEnabled()
+    } finally {
+      ;(window as unknown as { api: Api }).api = before
+    }
+  })
+
+  it('has a VirtualDJ panel on Windows too, where Surco offers VirtualDJ in beta', () => {
+    const api = window as unknown as { api: { platform: string } }
+    api.api.platform = 'win32'
+    try {
+      renderPrograms()
+      expect(screen.getByTestId('settings-programs-serato')).toBeInTheDocument()
+      fireEvent.click(screen.getByTestId('settings-programs-virtualdj'))
+      expect(screen.getByTestId('settings-virtualdj-dir')).toBeInTheDocument()
+    } finally {
+      api.api.platform = 'darwin'
+    }
+  })
+
+  it('says no folder is chosen in its own words when the VirtualDJ folder is empty', () => {
+    renderPrograms({}, { virtualdjLibraryDir: '' })
+    fireEvent.click(screen.getByTestId('settings-programs-virtualdj'))
+    expect(screen.getByTestId('settings-virtualdj-dir')).toHaveTextContent(
+      i18n.t('settings.virtualdjLibraryDirEmpty'),
+    )
+  })
+
+  it('asks for another folder through the picker the modal owns', () => {
+    const onChangeVirtualdjDir = vi.fn()
+    render(
+      <ProgramsTab
+        synced={synced}
+        local={local}
+        patch={vi.fn()}
+        onOutputDirChange={vi.fn()}
+        onChangeEngineDir={vi.fn()}
+        onChangeTraktorNmlPath={vi.fn()}
+        detectedNmlPath={null}
+        onAcceptDetectedNmlPath={vi.fn()}
+        rekordboxCollection=""
+        onChangeRekordboxDbPath={vi.fn()}
+        onChangeVirtualdjDir={onChangeVirtualdjDir}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('settings-programs-virtualdj'))
+    fireEvent.click(screen.getByTestId('settings-virtualdj-dir-change'))
+    expect(onChangeVirtualdjDir).toHaveBeenCalled()
+  })
+})
+
 describe('ProgramsTab layout', () => {
   // Moved out of Output, the first program still drew the rule meant for a section that
   // follows another one, so the tab opened on an empty band and a line.
@@ -1072,6 +1188,7 @@ describe('DJ software one program at a time', () => {
     expect(shown('traktor')).not.toBeVisible()
     expect(shown('engine')).not.toBeVisible()
     expect(shown('serato')).not.toBeVisible()
+    expect(shown('virtualdj')).not.toBeVisible()
   })
 
   it('opens on the first program the DJ already sends conversions to', () => {
@@ -1093,6 +1210,7 @@ describe('DJ software one program at a time', () => {
       onAcceptDetectedNmlPath: vi.fn(),
       rekordboxCollection: '',
       onChangeRekordboxDbPath: vi.fn(),
+      onChangeVirtualdjDir: vi.fn(),
     }
     rerender(<ProgramsTab {...props} searchAnchor="seratoSync" />)
     expect(shown('serato')).toBeVisible()

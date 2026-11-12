@@ -7,6 +7,7 @@ vi.mock('electron', () => ({
 }))
 
 import type { PlaylistEditMode, RekordboxPlaylistEdit } from '../shared/types'
+import { queueWithApplyInFlight } from './editRaceFixture'
 import { engineEdit } from './enginePlaylistEditIpc'
 import { engineDatabasePath } from './enginePlaylists'
 import type { QueueApply, RekordboxQueue } from './rekordboxQueue'
@@ -44,6 +45,7 @@ function registerWith({
       result(queued[queued.length - 1], await ensureClosed()),
     ),
     drop: vi.fn<RekordboxQueue['drop']>(),
+    outcomeOf: vi.fn<RekordboxQueue['outcomeOf']>(),
   }
   const host = {
     libraryDir: () => libraryDir,
@@ -142,5 +144,23 @@ describe('engineEdit', () => {
     expect(host.onApplied).toHaveBeenCalledWith(
       expect.objectContaining({ tracks: 2, outcomes: [expect.objectContaining({ id: 'cues' })] }),
     )
+  })
+})
+
+describe('engineEdit with an apply already running', () => {
+  it('says the edit was written when that apply wrote it, not that it failed', async () => {
+    const race = queueWithApplyInFlight('Nueva')
+    const saving = engineEdit({
+      libraryDir: () => '/library/Engine Library',
+      queue: race.queue,
+      isRunning: async () => false,
+      ensureClosed: async () => true,
+    }).save(
+      { kind: 'create', parentId: 'root', name: 'Nueva', folder: false },
+      'Nueva',
+      {} as WebContents,
+    )
+    await race.release()
+    expect(await saving).toEqual({ applied: true, createdId: 'Nueva' })
   })
 })

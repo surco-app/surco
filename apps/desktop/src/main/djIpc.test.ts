@@ -77,9 +77,7 @@ describe('registerDjIpc', () => {
 
   it('rejects a program it does not know, so a typo cannot reach another program', async () => {
     registerDjIpc(table())
-    await expect(handler('dj:tree')({}, 'virtualdj')).rejects.toThrow(
-      'unknown DJ program virtualdj',
-    )
+    await expect(handler('dj:tree')({}, 'djotron')).rejects.toThrow('unknown DJ program djotron')
   })
 
   it('dispatches a playlist edit with its label to the program it names, with the window it came from', async () => {

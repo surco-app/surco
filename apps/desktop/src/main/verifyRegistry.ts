@@ -17,6 +17,7 @@ import type { FileExpect } from './verifyFile'
 import type { MusicExpect } from './verifyMusic'
 import type { RekordboxBefore } from './verifyRekordbox'
 import type { TraktorAddExpect, TraktorExpect } from './verifyTraktor'
+import type { VirtualdjBefore } from './verifyVirtualdj'
 
 type Library = WritableProgram
 
@@ -36,6 +37,7 @@ export interface VerifyEntry {
   music?: MusicExpect
   rekordbox?: RekordboxBefore
   engine?: EngineBefore
+  virtualdj?: VirtualdjBefore
   traktorPatch?: NmlPatch
   engineStep?: boolean
   // The playlists the job asked each library to put the track in, written by the queue apply
@@ -74,7 +76,8 @@ export interface FlushOutcome {
   rekordbox: 'written' | 'queued' | 'off' | 'failed' | 'later'
   engine: 'written' | 'queued' | 'off' | 'failed' | 'later'
   traktor: TraktorWrite | 'queued' | 'off' | 'later'
-  added?: Partial<Record<'rekordbox' | 'traktor', string[]>>
+  virtualdj: 'written' | 'queued' | 'off' | 'failed' | 'later'
+  added?: Partial<Record<'rekordbox' | 'traktor' | 'virtualdj', string[]>>
 }
 
 // How a queue apply went; Traktor's carries its write's facts like the flush.
@@ -87,6 +90,7 @@ export interface VerifyRegistryDeps {
   readRekordbox: (list: VerifyEntry[]) => Read<PlaceCheck>
   readEngine: (list: VerifyEntry[]) => Read<PlaceCheck>
   readTraktor: (list: (TraktorExpect | TraktorAddExpect)[]) => Read<PlaceCheck | null>
+  readVirtualdj: (list: VerifyEntry[]) => Read<PlaceCheck>
   readFile: (e: FileExpect) => Promise<PlaceCheck>
   readMusic: (e: MusicExpect) => Promise<PlaceCheck>
   // True when the library is not there to take the repoint now: it waits in the queue until
@@ -101,6 +105,7 @@ const PROGRAM: Record<Library, string> = {
   rekordbox: 'rekordbox',
   engine: 'Engine DJ',
   traktor: 'Traktor',
+  virtualdj: 'VirtualDJ',
 }
 
 const pending = (place: Library): PlaceCheck => ({
@@ -137,6 +142,11 @@ const LISTED: Record<
   },
   traktor: {
     touches: (e) => e.traktorPatch !== undefined || inPlaylists(e, 'traktor'),
+    byJob: () => false,
+  },
+  virtualdj: {
+    touches: (e) =>
+      (e.virtualdj !== undefined && e.virtualdj !== 'absent') || inPlaylists(e, 'virtualdj'),
     byJob: () => false,
   },
 }
@@ -180,6 +190,7 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
     rekordbox: new Set(),
     engine: new Set(),
     traktor: new Set(),
+    virtualdj: new Set(),
   }
   // Tracks no flush has judged yet, by library, with the order they were registered in: a
   // flush judges only what was registered before its batch ended, and leaves a library it
@@ -188,6 +199,7 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
     rekordbox: new Set(),
     engine: new Set(),
     traktor: new Set(),
+    virtualdj: new Set(),
   }
   const order = new WeakMap<VerifyEntry, number>()
   let registered = 0
@@ -324,6 +336,7 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
     rekordbox: checkRow('rekordbox', (list) => deps.readRekordbox(list)),
     engine: checkRow('engine', (list) => deps.readEngine(list)),
     traktor: checkTraktor,
+    virtualdj: checkRow('virtualdj', (list) => deps.readVirtualdj(list)),
   }
 
   return {
@@ -359,7 +372,7 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
 
     async afterFlush(outcome: FlushOutcome, upTo = registered): Promise<void> {
       for (const [place, paths] of Object.entries(outcome.added ?? {}) as [
-        'rekordbox' | 'traktor',
+        'rekordbox' | 'traktor' | 'virtualdj',
         string[],
       ][])
         for (const e of entries.values())
@@ -501,15 +514,20 @@ export function createVerifyRegistry(deps: VerifyRegistryDeps) {
         },
         'file',
       )
+    const handAgain = (place: Library) => {
+      hold(place, e)
+      if (!deps.requeue(place, e) && stateOf(e, place) === 'pending')
+        replace(e, checking(place), place)
+    }
     for (const place of PLACE_PROGRAMS) {
       const state = stateOf(e, place)
       // Only a library still on the old file is handed its repoint again: one that already
       // names the file would move its cues a second time.
-      if (stillOld(e, place) || neverWritten(e, place)) {
-        hold(place, e)
-        if (!deps.requeue(place, e) && stateOf(e, place) === 'pending')
-          replace(e, checking(place), place)
-      } else if (state === 'unreadable' || state === 'mismatch') await check(place, [e], null)
+      if (stillOld(e, place) || neverWritten(e, place)) handAgain(place)
+      else if (state === 'unreadable' || state === 'mismatch') {
+        await check(place, [e], null)
+        if (state === 'unreadable' && stillOld(e, place)) handAgain(place)
+      }
     }
     emit(e)
     return 'rechecked'

@@ -14,7 +14,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { BrowserWindow, dialog, ipcMain } from 'electron'
 import log from 'electron-log/main'
-import type { DjProgram } from '../shared/djProgram'
+import type { UsbProgram } from '../shared/djProgram'
 import type { UsbExportRequest, UsbFolderPick, UsbVolumeList } from '../shared/types'
 import type { DetailKeyOf } from './djProcesses'
 import { isEngineDjRunning } from './engineProcess'
@@ -36,7 +36,9 @@ import { readSeratoExportSelection, seratoExportMarks } from './usbExportSerato'
 import { readExportSelection } from './usbExportSource'
 import { stageExport } from './usbExportStage'
 import { readTraktorExportSelection, traktorExportDelta } from './usbExportTraktor'
+import { readVirtualdjExportSelection, virtualdjExportClock } from './usbExportVirtualdj'
 import { readVolumes, stickHolder, systemVolumeSource, watchVolumes } from './usbVolumes'
+import { isVirtualdjHome, readVirtualdjLibrary, type VirtualdjRoot } from './virtualdjLibrary'
 
 const REMEMBERED_TRACKS = 2000
 
@@ -60,6 +62,7 @@ export function registerUsbExportIpc(opts: {
   engineLibrary: () => string
   serato?: { roots: () => SeratoLibraryRoot[] }
   traktor?: { nml: () => string; bootVolume: () => string }
+  virtualdj?: { roots: () => VirtualdjRoot[] }
 }): { busy: () => boolean; stop: () => Promise<void> } | null {
   const platform = process.platform
   const source = systemVolumeSource(platform)
@@ -85,12 +88,15 @@ export function registerUsbExportIpc(opts: {
   }
   // The window that pressed Exportar, for the close dialog: one export at a time.
   let asking: BrowserWindow | null = null
-  const sourceMemories: Partial<Record<'serato' | 'traktor', UsbMemory>> = {
+  const sourceMemories: Partial<Record<'serato' | 'traktor' | 'virtualdj', UsbMemory>> = {
     ...(opts.serato && {
       serato: createUsbMemory(join(opts.userData, 'usb-serato-exports.json')),
     }),
     ...(opts.traktor && {
       traktor: createUsbMemory(join(opts.userData, 'usb-traktor-exports.json')),
+    }),
+    ...(opts.virtualdj && {
+      virtualdj: createUsbMemory(join(opts.userData, 'usb-virtualdj-exports.json')),
     }),
   }
   const surcoMemories = { rekordbox: memory, ...sourceMemories }
@@ -248,6 +254,7 @@ export function registerUsbExportIpc(opts: {
       .catch(() => null)
   const seratoMarks = fileMemo(seratoExportMarks, factsOf, REMEMBERED_TRACKS)
   const traktorDeltas = fileMemo(traktorExportDelta, factsOf, REMEMBERED_TRACKS)
+  const virtualdjClocks = fileMemo(virtualdjExportClock, factsOf, REMEMBERED_TRACKS)
   const serato = opts.serato
   const seratoExporter =
     serato &&
@@ -269,6 +276,18 @@ export function registerUsbExportIpc(opts: {
         bootVolume: traktor.bootVolume(),
         deltaOf: traktorDeltas(),
       }),
+    )
+  const virtualdj = opts.virtualdj
+  const virtualdjExporter =
+    virtualdj &&
+    sourceMemories.virtualdj &&
+    pioneerFrom(
+      sourceMemories.virtualdj,
+      () => virtualdj.roots().find(isVirtualdjHome)?.dir ?? '',
+      (_path, ids) =>
+        readVirtualdjExportSelection(readVirtualdjLibrary(virtualdj.roots()), ids, {
+          clockOf: virtualdjClocks(),
+        }),
     )
   const exporter = createUsbExporter(rekordboxDeps)
   const engineExporter = createEngineUsbExporter({
@@ -295,8 +314,9 @@ export function registerUsbExportIpc(opts: {
   const route = routeUsbExports({
     rekordbox: exporter,
     engine: engineExporter,
-    ...(seratoExporter && { serato: seratoExporter }),
-    ...(traktorExporter && { traktor: traktorExporter }),
+    serato: seratoExporter,
+    traktor: traktorExporter,
+    virtualdj: virtualdjExporter,
   })
   // Watching starts with the first request for the list (the rail offers the export only
   // with a rekordbox collection), not at launch for every user.
@@ -310,7 +330,7 @@ export function registerUsbExportIpc(opts: {
   })
   ipcMain.handle(
     'usb:pickFolder',
-    async (e, from?: Exclude<DjProgram, 'rekordbox'>): Promise<UsbFolderPick | null> => {
+    async (e, from?: Exclude<UsbProgram, 'rekordbox'>): Promise<UsbFolderPick | null> => {
       const w = BrowserWindow.fromWebContents(e.sender)
       const options = {
         properties: ['openDirectory', 'createDirectory'] as Array<

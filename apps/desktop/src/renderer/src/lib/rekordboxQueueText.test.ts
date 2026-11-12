@@ -15,6 +15,7 @@ import {
   pillText,
   SERATO_QUEUE_WORDS,
   TRAKTOR_QUEUE_WORDS,
+  VIRTUALDJ_QUEUE_WORDS,
 } from './rekordboxQueueText'
 
 const tr = i18n.getFixedT('en')
@@ -445,5 +446,90 @@ describe('Serato queue text', () => {
     )
     for (const line of [...queueLines, ...trackLines])
       expect(line).not.toMatch(/rekordbox|Engine DJ|Traktor/)
+  })
+})
+
+describe('VirtualDJ queue text', () => {
+  it('sends the DJ to the VirtualDJ backups before opening VirtualDJ when a write could be neither saved nor undone', () => {
+    const backups =
+      "Couldn't save the changes or undo them, so the library may have changed. Before opening VirtualDJ, restore database.xml from the most recent copy in the virtualdj-backups folder in Surco's data"
+    expect(tr(VIRTUALDJ_QUEUE_WORDS.halted)).toBe(backups)
+    expect(appliedMessage(tr, { refused: 'write-unknown' }, VIRTUALDJ_QUEUE_WORDS)?.text).toBe(
+      backups,
+    )
+    expect(appliedMessage(tr, { refused: 'write-failed' }, VIRTUALDJ_QUEUE_WORDS)?.text).toBe(
+      "Couldn't save the changes to VirtualDJ. The files are as they were",
+    )
+  })
+
+  it('says in VirtualDJ’s words that a CALL was not saved and that cues changed there', () => {
+    expect(
+      noticeText(
+        tr,
+        { code: 'cues-calls-dropped', track: 'Pray', calls: [90000] },
+        VIRTUALDJ_QUEUE_WORDS,
+      ),
+    ).toBe('1 CALL of Pray was not saved (1:30). VirtualDJ only keeps hot cues')
+    expect(noticeText(tr, { code: 'cues-changed', track: 'Pray' }, VIRTUALDJ_QUEUE_WORDS)).toBe(
+      'The cues of Pray changed in VirtualDJ. Mark them again',
+    )
+  })
+
+  it('never tells the DJ to close VirtualDJ for saves that wait for another or a missing VirtualDJ library, since closing it would not write them', () => {
+    const waiting = { tracks: 2, changes: 0, items: [] }
+    expect(pillText(tr, { ...waiting, unplugged: true }, VIRTUALDJ_QUEUE_WORDS)).toBe(
+      '2 tracks wait until Surco finds the VirtualDJ library',
+    )
+    expect(pillText(tr, { ...waiting, tracks: 0, elsewhere: 3 }, VIRTUALDJ_QUEUE_WORDS)).toBe(
+      '3 waiting for another VirtualDJ library',
+    )
+    expect(tr(VIRTUALDJ_QUEUE_WORDS.elsewhere, { count: 3 })).toBe(
+      '3 changes wait for another VirtualDJ library. They will be applied when you go back to it',
+    )
+  })
+
+  it('says in VirtualDJ’s words what became of a converted track and its lists', () => {
+    const say = (notice: Parameters<typeof noticeText>[1]) =>
+      noticeText(tr, notice, VIRTUALDJ_QUEUE_WORDS)
+    expect(say({ code: 'not-added', track: 'Pray' })).toBe('Pray was not added to VirtualDJ')
+    expect(say({ code: 'playlist-changed', track: 'Pray', playlist: 'Sets' })).toBe(
+      'Pray was not changed in Sets. It changed in VirtualDJ',
+    )
+    expect(say({ code: 'playlist-gone', track: 'Pray', playlist: 'Sets' })).toBe(
+      'Sets is no longer in VirtualDJ. Pray was not added',
+    )
+    expect(say({ code: 'source-in-virtualdj', track: 'Pray', playlist: 'Sets' })).toBe(
+      'Pray stays in VirtualDJ with the original file and does not go in the list “Sets”',
+    )
+    expect(say({ code: 'tags-not-in-library', track: 'Pray' })).toBe(
+      'Pray is no longer in VirtualDJ and its tags were not changed',
+    )
+    expect(say({ code: 'tags-changed', track: 'Pray' })).toBe(
+      'Pray changed in VirtualDJ and its tags were not changed',
+    )
+    expect(say({ code: 'repoint-other-volume', track: 'Pray.aiff' })).toBe(
+      'Pray.aiff is on another disk, so VirtualDJ keeps the original file and Surco keeps it too',
+    )
+    expect(say({ code: 'repoint-song-taken', track: 'Pray.aiff' })).toBe(
+      'VirtualDJ already has a song for Pray.aiff, so it keeps the original file and Surco keeps it too',
+    )
+    expect(partText(tr, { kind: 'collection' }, VIRTUALDJ_QUEUE_WORDS)).toBe('added to the library')
+    expect(partText(tr, { kind: 'playlists', names: [] }, VIRTUALDJ_QUEUE_WORDS)).toBe(
+      'out of its lists',
+    )
+  })
+
+  it('says a track is gone from VirtualDJ when its song is not in the database', () => {
+    expect(noticeText(tr, { code: 'not-in-library', track: 'Pray' }, VIRTUALDJ_QUEUE_WORDS)).toBe(
+      'Pray is no longer in VirtualDJ. Its cues were not saved',
+    )
+  })
+
+  it('words the VirtualDJ backups warning in every language', () => {
+    for (const locale of [en, es, de, fr, ja, ptBR]) {
+      expect(locale.virtualdjQueue.writeUnknown).toContain('virtualdj-backups')
+      expect(locale.virtualdjQueue.writeUnknown).toContain('database.xml')
+      expect(locale.virtualdjQueue.writeUnknown).not.toMatch(/—|: /)
+    }
   })
 })

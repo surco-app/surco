@@ -10,7 +10,7 @@ export type DjReach = 'off' | 'update' | 'add'
 export type DjAddKey = (typeof DJ_REACH_SETTINGS)[DjLibraryId]['add']
 export type DjSyncKey = (typeof DJ_REACH_SETTINGS)[DjLibraryId]['sync']
 
-const ORDER = writableInOrder(['rekordbox', 'engine', 'traktor'])
+const ORDER = writableInOrder(['rekordbox', 'engine', 'traktor', 'virtualdj'])
 
 export function toDjReach(sync: boolean, add: boolean): DjReach {
   if (add) return 'add'

@@ -17,7 +17,7 @@ vi.mock('./rekordboxDb', async (actual) => {
 })
 
 import { CALLS_ONLY, MY_FLOW } from '../shared/cueFlows'
-import { flowOutcome } from '../shared/cueRules'
+import { flowOutcome, HOT_KINDS } from '../shared/cueRules'
 import type { DropInput } from '../shared/dropDetect'
 import type { TrackCues } from '../shared/types'
 import { anlzFile, pqtzSection, pwv5Section } from './anlzFixture'
@@ -33,6 +33,7 @@ import type { CuesOp } from './rekordboxQueueOps'
 import { seratoCueSource } from './seratoCueSource'
 import { traktorCueSource } from './traktorCueSource'
 import { readTraktorTrackCues } from './traktorCues'
+import { virtualdjCueSource } from './virtualdjCueSource'
 
 function registerWithSources(host: {
   collection: () => string
@@ -48,6 +49,9 @@ function registerWithSources(host: {
   engine?: Parameters<typeof engineCueSource>[0]
   traktor?: Omit<Parameters<typeof traktorCueSource>[0], 'fine'>
   serato?: Omit<Parameters<typeof seratoCueSource>[0], 'words' | 'fine'>
+  virtualdj?: Omit<Parameters<typeof virtualdjCueSource>[0], 'roots' | 'words' | 'beatGrid'> & {
+    dir: string
+  }
 }): void {
   registerCuesIpc({
     collection: host.collection,
@@ -63,6 +67,17 @@ function registerWithSources(host: {
       engine: host.engine ? engineCueSource(host.engine, host.collection, host.beatGrid) : null,
       serato: host.serato
         ? seratoCueSource({ ...host.serato, words: host.words, fine: host.fine }, host.collection)
+        : null,
+      virtualdj: host.virtualdj
+        ? virtualdjCueSource(
+            {
+              ...host.virtualdj,
+              roots: () => [{ dir: host.virtualdj?.dir ?? '', root: '/' }],
+              words: host.words,
+              beatGrid: host.beatGrid,
+            },
+            host.collection,
+          )
         : null,
     },
   })
@@ -355,15 +370,17 @@ describe('registerCuesIpc', () => {
       provisional: { add: vi.fn() },
       twins: async () => ({}),
     })
-    await handler('cues:save')({}, [
-      {
-        contentId: 'engine:4',
-        path: '/m/e.mp3',
-        label: 'e',
-        wanted: [{ ms: 1000, kind: 0, color: null }],
-        fingerprint: 'f',
-      },
-    ])
+    await expect(
+      handler('cues:save')({}, [
+        {
+          contentId: 'engine:4',
+          path: '/m/e.mp3',
+          label: 'e',
+          wanted: [{ ms: 1000, kind: 0, color: null }],
+          fingerprint: 'f',
+        },
+      ]),
+    ).rejects.toThrow('engine has no cue source')
     expect(enqueue).not.toHaveBeenCalled()
     expect(beginMoment).not.toHaveBeenCalled()
   })
@@ -382,17 +399,99 @@ describe('registerCuesIpc', () => {
       provisional: { add: vi.fn() },
       twins: async () => ({}),
     })
-    await handler('cues:save')({}, [
-      {
-        contentId: 'traktor:HD/:Music/:t.aiff',
-        path: '/Music/t.aiff',
-        label: 't',
-        wanted: [{ ms: 1000, kind: 0, color: null }],
-        fingerprint: 'f',
-      },
-    ])
+    await expect(
+      handler('cues:save')({}, [
+        {
+          contentId: 'traktor:HD/:Music/:t.aiff',
+          path: '/Music/t.aiff',
+          label: 't',
+          wanted: [{ ms: 1000, kind: 0, color: null }],
+          fingerprint: 'f',
+        },
+      ]),
+    ).rejects.toThrow('traktor has no cue source')
     expect(enqueue).not.toHaveBeenCalled()
     expect(beginMoment).not.toHaveBeenCalled()
+  })
+
+  it('refuses a save that mixes a program with no cue source and a wired one, so nothing from the call is written', async () => {
+    const enqueue = vi.fn<RekordboxQueue['enqueue']>(() => true)
+    const applyQuietly = quietly()
+    const beginMoment = vi.fn()
+    const add = vi.fn()
+    registerWithSources({
+      collection: () => '/c/master.db',
+      queue: queue({ enqueue }),
+      applyQuietly,
+      beginMoment,
+      flow: () => MY_FLOW,
+      beatGrid: async () => null,
+      words: async () => null,
+      provisional: { add },
+      twins: async () => ({}),
+    })
+    const wanted = [{ ms: 1000, kind: 0, color: null }]
+    await expect(
+      handler('cues:save')({}, [
+        {
+          contentId: '103',
+          path: '/m/a.wav',
+          label: 'a',
+          wanted,
+          fingerprint: 'f',
+          provisional: true,
+        },
+        { contentId: 'engine:4', path: '/m/e.mp3', label: 'e', wanted, fingerprint: 'f' },
+      ]),
+    ).rejects.toThrow('engine has no cue source')
+    expect(enqueue).not.toHaveBeenCalled()
+    expect(applyQuietly).not.toHaveBeenCalled()
+    expect(beginMoment).not.toHaveBeenCalled()
+    expect(add).not.toHaveBeenCalled()
+  })
+
+  it('routes a mixed rekordbox and VirtualDJ save to each program’s own queue, and opens the copy moment for both', async () => {
+    const enqueue = vi.fn<RekordboxQueue['enqueue']>(() => true)
+    const applyQuietly = quietly()
+    const vdjEnqueue = vi.fn<RekordboxQueue['enqueue']>(() => true)
+    const vdjApply = quietly()
+    const beginMoment = vi.fn()
+    registerWithSources({
+      collection: () => '/c/master.db',
+      queue: queue({ enqueue }),
+      applyQuietly,
+      beginMoment,
+      flow: () => MY_FLOW,
+      beatGrid: async () => null,
+      words: async () => null,
+      provisional: { add: vi.fn() },
+      twins: async () => ({}),
+      virtualdj: {
+        dir: join(__dirname, 'virtualdjFixtures'),
+        queue: queue({ enqueue: vdjEnqueue }),
+        applyQuietly: vdjApply,
+      },
+    })
+    const vdj = 'virtualdj:/Music/VirtualDJ Pruebas/Pray.mp3'
+    expect((await handler('cues:trackCues')({}, vdj)) as TrackCues).toMatchObject({
+      contentId: vdj,
+    })
+    const wanted = [{ ms: 1000, kind: HOT_KINDS[0], color: null }]
+    await handler('cues:save')({}, [
+      { contentId: '103', path: '/m/a.wav', label: 'a', wanted, fingerprint: 'f' },
+      { contentId: vdj, path: '/m/v.mp3', label: 'v', wanted, fingerprint: 'f' },
+    ])
+    expect(vdjEnqueue).toHaveBeenCalledTimes(1)
+    expect(vdjEnqueue).toHaveBeenCalledWith([
+      expect.objectContaining({ kind: 'cues', contentId: vdj, wanted }),
+    ])
+    expect(enqueue).toHaveBeenCalledTimes(1)
+    expect(enqueue).toHaveBeenCalledWith([
+      expect.objectContaining({ kind: 'cues', contentId: '103', wanted }),
+    ])
+    expect(vdjApply).toHaveBeenCalledTimes(1)
+    expect(applyQuietly).toHaveBeenCalledTimes(1)
+    expect(beginMoment).toHaveBeenCalledWith('cues', ['rekordbox', 'virtualdj'])
   })
 
   it('queues several tracks together and applies once, so master.db is written in one batch', async () => {

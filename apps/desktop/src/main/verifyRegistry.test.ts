@@ -101,6 +101,9 @@ const mocks = () => ({
   readTraktor: vi.fn<VerifyRegistryDeps['readTraktor']>(async (list) =>
     list.map(() => libraryOk('traktor')),
   ),
+  readVirtualdj: vi.fn<VerifyRegistryDeps['readVirtualdj']>(async (list) =>
+    list.map(() => ok('virtualdj', 'virtualdjOk')),
+  ),
   readFile: vi.fn<VerifyRegistryDeps['readFile']>(async () => ok('file', 'fileIdentical')),
   readMusic: vi.fn<VerifyRegistryDeps['readMusic']>(async () => ok('appleMusic', 'musicOne')),
   requeue: vi.fn<VerifyRegistryDeps['requeue']>(() => true),
@@ -115,12 +118,66 @@ function setup(over: Partial<ReturnType<typeof mocks>> = {}) {
   return { deps, registry: createVerifyRegistry(deps) }
 }
 
-const written = { rekordbox: 'written', engine: 'written', traktor: 'off' } as const
+const written = {
+  rekordbox: 'written',
+  engine: 'written',
+  traktor: 'off',
+  virtualdj: 'off',
+} as const
 
 const stateOf = (v: Verification | undefined, place: VerifyPlace) =>
   v?.checks.find((c) => c.place === place)?.state
 
 describe('verify registry', () => {
+  it('reads back a song added to VirtualDJ with no lists picked, once its queue added it', async () => {
+    const { deps, registry } = setup()
+    registry.register(
+      entry('a', {
+        places: new Set(['file', 'virtualdj']),
+        rekordbox: undefined,
+        virtualdj: 'absent',
+      }),
+    )
+    await registry.afterFlush({
+      ...written,
+      rekordbox: 'off',
+      engine: 'off',
+      virtualdj: 'queued',
+      added: { virtualdj: ['/Music/a.wav'] },
+    })
+    expect(stateOf(registry.get('a'), 'virtualdj')).toBe('pending')
+    await registry.afterTrackOps('virtualdj')
+    expect(deps.readVirtualdj.mock.calls.map((c) => c[0].map((e) => e.trackId))).toEqual([['a']])
+    expect(stateOf(registry.get('a'), 'virtualdj')).toBe('ok')
+  })
+
+  it('reads VirtualDJ back once its queue moved the song, and says it waits while VirtualDJ is open', async () => {
+    const { deps, registry } = setup()
+    registry.register(
+      entry('a', {
+        places: new Set(['file', 'virtualdj']),
+        rekordbox: undefined,
+        virtualdj: { lists: [{ id: 'Sets', name: 'Sets' }] },
+      }),
+    )
+    registry.register(
+      entry('b', {
+        places: new Set(['file', 'virtualdj']),
+        rekordbox: undefined,
+        virtualdj: 'absent',
+      }),
+    )
+    await registry.afterFlush({ ...written, rekordbox: 'off', engine: 'off', virtualdj: 'queued' })
+    expect(stateOf(registry.get('a'), 'virtualdj')).toBe('pending')
+    expect(stateOf(registry.get('b'), 'virtualdj')).toBeUndefined()
+    await registry.afterQueueApplied('virtualdj', 'written')
+    expect(deps.readVirtualdj.mock.calls.map((c) => c[0].map((e) => e.trackId))).toEqual([['a']])
+    expect(registry.get('a')).toEqual({
+      status: 'ok',
+      checks: [ok('file', 'fileIdentical'), ok('virtualdj', 'virtualdjOk')],
+    })
+  })
+
   it('after a written flush each registered track gets its library checks and one emit', async () => {
     const { deps, registry } = setup()
     registry.register(entry('a'))
@@ -542,6 +599,25 @@ describe('verify registry', () => {
     expect(registry.get('a')?.status).toBe('ok')
   })
 
+  it('retry on a library that could not be read hands it the repoint again once the re-read finds it still on the old file', async () => {
+    const { deps, registry } = setup()
+    deps.readRekordbox
+      .mockResolvedValueOnce([unreadable('rekordbox', 'rekordboxUnreadable')])
+      .mockResolvedValueOnce([mismatch('rekordbox', 'rekordboxStillOld')])
+    const a = entry('a')
+    registry.register(a)
+    await registry.afterFlush(written)
+
+    expect(await registry.retry('a')).toBe('rechecked')
+
+    expect(deps.requeue).toHaveBeenCalledWith('rekordbox', a)
+    expect(stateOf(registry.get('a'), 'rekordbox')).toBe('pending')
+
+    await registry.afterQueueApplied('rekordbox', 'written')
+
+    expect(registry.get('a')?.status).toBe('ok')
+  })
+
   // Handing the repoint again moves cues a second time when the row already names the
   // file (a same-path reconversion): only a library still on the old file gets it again.
   it.each([
@@ -622,7 +698,7 @@ describe('verify registry', () => {
     ])
     expect(stateOf(registry.get('b'), 'rekordbox')).toBe('checking')
 
-    await registry.afterFlush({ rekordbox: 'off', engine: 'off', traktor: 'off' })
+    await registry.afterFlush({ rekordbox: 'off', engine: 'off', traktor: 'off', virtualdj: 'off' })
     expect(stateOf(registry.get('a'), 'rekordbox')).toBe('ok')
     expect(stateOf(registry.get('b'), 'rekordbox')).toBeUndefined()
   })
@@ -631,7 +707,12 @@ describe('verify registry', () => {
   it('a flush that left a library for a later end keeps its tracks checking for it', async () => {
     const { deps, registry } = setup()
     registry.register(entry('a'))
-    await registry.afterFlush({ rekordbox: 'later', engine: 'later', traktor: 'later' })
+    await registry.afterFlush({
+      rekordbox: 'later',
+      engine: 'later',
+      traktor: 'later',
+      virtualdj: 'off',
+    })
     expect(deps.readRekordbox).not.toHaveBeenCalled()
     expect(stateOf(registry.get('a'), 'rekordbox')).toBe('checking')
 
@@ -731,7 +812,7 @@ describe('verify registry', () => {
         entry('e', { places: new Set(['file', 'engine']), engine: 'absent', engineStep: true }),
       )
 
-      await registry.afterFlush({ rekordbox: 'off', engine, traktor: 'off' })
+      await registry.afterFlush({ rekordbox: 'off', engine, traktor: 'off', virtualdj: 'off' })
 
       expect(deps.readEngine).toHaveBeenCalledWith([expect.objectContaining({ trackId: 'e' })])
       expect(registry.get('e')).toEqual({
@@ -753,7 +834,7 @@ describe('verify registry', () => {
       }),
     )
 
-    await registry.afterFlush({ rekordbox: 'off', engine: 'off', traktor: 'off' })
+    await registry.afterFlush({ rekordbox: 'off', engine: 'off', traktor: 'off', virtualdj: 'off' })
 
     expect(deps.readRekordbox).not.toHaveBeenCalled()
     expect(deps.readTraktor).not.toHaveBeenCalled()
@@ -790,6 +871,7 @@ describe('verify registry', () => {
       rekordbox: 'written',
       engine: 'written',
       traktor: { before: new Map([[traktorPatchKey(p), 'b.aiff']]) },
+      virtualdj: 'off',
     })
 
     expect(deps.readRekordbox.mock.calls.map((c) => c[0].map((e) => e.trackId))).toEqual([

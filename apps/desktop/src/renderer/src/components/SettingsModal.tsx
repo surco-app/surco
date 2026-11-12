@@ -15,7 +15,7 @@ import {
   type SyncedDraft,
 } from '../lib/settingsDraft'
 import { groupByTab, searchSettings } from '../lib/settingsSearch'
-import { SETTINGS_SEARCH_INDEX } from '../lib/settingsSearchIndex'
+import { settingsSearchIndexHere } from '../lib/settingsSearchIndex'
 import {
   entryOf,
   SETTINGS_ENTRIES,
@@ -116,7 +116,7 @@ export function SettingsModal({
   const searchRef = useRef<HTMLInputElement>(null)
   const [query, setQuery] = useState('')
   const [selected, setSelected] = useState(0)
-  const results = groupByTab(searchSettings(query, SETTINGS_SEARCH_INDEX, tr))
+  const results = groupByTab(searchSettings(query, settingsSearchIndexHere(), tr))
   const flatResults = results.flatMap((g) => g.hits)
   const searching = query.trim() !== ''
   const selectedHit = searching ? flatResults[selected] : undefined
@@ -274,6 +274,11 @@ export function SettingsModal({
     if (!path) return
     patchLocal('rekordboxDbPath', path)
     setRekordboxCollection(path)
+  }
+
+  async function changeVirtualdjDir(): Promise<void> {
+    const path = await window.api.dj.pickLibraryPath('virtualdj')
+    if (path) patchLocal('virtualdjLibraryDir', path)
   }
 
   // Where settings.json lives — null is the app default. Loaded on open because it
@@ -541,6 +546,7 @@ export function SettingsModal({
                 onChangeTraktorNmlPath={changeTraktorNmlPath}
                 rekordboxCollection={rekordboxCollection}
                 onChangeRekordboxDbPath={() => void changeRekordboxDbPath()}
+                onChangeVirtualdjDir={() => void changeVirtualdjDir()}
                 detectedNmlPath={detectedNmlPath}
                 onAcceptDetectedNmlPath={acceptDetectedNmlPath}
               />
@@ -555,6 +561,7 @@ export function SettingsModal({
                 onChangeTraktorNmlPath={changeTraktorNmlPath}
                 rekordboxCollection={rekordboxCollection}
                 onChangeRekordboxDbPath={() => void changeRekordboxDbPath()}
+                onChangeVirtualdjDir={() => void changeVirtualdjDir()}
                 detectedNmlPath={detectedNmlPath}
                 onAcceptDetectedNmlPath={acceptDetectedNmlPath}
                 searchAnchor={selectedTab === 'programs' ? selectedAnchor : undefined}

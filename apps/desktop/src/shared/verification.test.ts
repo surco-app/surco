@@ -51,7 +51,9 @@ describe('verificationStatus', () => {
       checks: [check('file', 'ok'), check('rekordbox', 'checking'), check('traktor', 'ok')],
     }
     const next = withChecks(start, [check('rekordbox', 'mismatch'), check('appleMusic', 'ok')])
-    expect(next.checks.map((c) => c.place)).toEqual(PLACE_ORDER.filter((p) => p !== 'engine'))
+    expect(next.checks.map((c) => c.place)).toEqual(
+      PLACE_ORDER.filter((p) => p !== 'engine' && p !== 'virtualdj'),
+    )
     expect(next.checks.find((c) => c.place === 'rekordbox')?.state).toBe('mismatch')
     expect(next.checks.find((c) => c.place === 'file')?.state).toBe('ok')
     expect(next.status).toBe('mismatch')

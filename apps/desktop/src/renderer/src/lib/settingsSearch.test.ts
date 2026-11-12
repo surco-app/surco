@@ -88,6 +88,18 @@ describe('the shipped index', () => {
     },
   )
 
+  it('finds the VirtualDJ folder in DJ programs, so a DJ who moved VirtualDJ can point Surco at it', () => {
+    const enT = (k: string): string => {
+      const found = k.split('.').reduce<unknown>((o, p) => (o as Record<string, unknown>)?.[p], en)
+      return typeof found === 'string' ? found : k
+    }
+    const hits = searchSettings('virtualdj folder', SETTINGS_SEARCH_INDEX, enT)
+    expect(hits.map((h) => [h.entry.id, h.entry.tab])).toContainEqual([
+      'virtualdjLibraryDir',
+      'programs',
+    ])
+  })
+
   it('finds a tab with no labelled settings by its name', () => {
     expect(ids('shortcuts')).toContain('tabs.shortcuts')
   })

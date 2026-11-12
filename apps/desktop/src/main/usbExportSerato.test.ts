@@ -73,6 +73,7 @@ const marks = async (file: string): Promise<SeratoMarks | null> =>
         grid: [],
         lengthSec: 300,
         sampleRate: 96000,
+        trackNo: 7,
       }
 
 describe('readSeratoExportSelection', () => {
@@ -132,6 +133,7 @@ describe('readSeratoExportSelection', () => {
       fileType: 1,
       lengthSec: 300,
       sampleRate: 96000,
+      trackNo: 7,
       rating: 0,
       cues: [
         { inMs: 1000, outMs: -1, kind: 1, comment: 'Drop' },
@@ -154,7 +156,14 @@ describe('readSeratoExportSelection', () => {
 
   it('marks a track whose cues were left out, so the plan names it', async () => {
     const sel = await readSeratoExportSelection(LIB, ['Gig%%Fri'], {
-      marks: async () => ({ cues: [], grid: [], cuesLeftOut: true, lengthSec: 1, sampleRate: 1 }),
+      marks: async () => ({
+        cues: [],
+        grid: [],
+        cuesLeftOut: true,
+        lengthSec: 1,
+        sampleRate: 1,
+        trackNo: 0,
+      }),
     })
     expect(sel.tracks[0].cuesLeftOut).toBe(true)
   })
@@ -181,6 +190,7 @@ describe('seratoExportMarks', () => {
       oldBlockDisagrees: false,
       durationMs: 10000,
       sampleRate: 44100,
+      trackNo: 4,
       markers: {
         cues: [{ index: 0, ms: 1000, color: 0xcc0000, name: 'Drop' }],
         loops: [{ index: 0, startMs: 2000, endMs: 6000, name: '' }],
@@ -195,7 +205,7 @@ describe('seratoExportMarks', () => {
     expect(m?.cues[1].outMs).toBeCloseTo(5974.94, 6)
     expect(m?.grid[0]).toMatchObject({ beat: 1, bpm: 120 })
     expect(m?.grid[0].ms).toBeCloseTo(474.94, 6)
-    expect(m).toMatchObject({ lengthSec: 10, sampleRate: 44100 })
+    expect(m).toMatchObject({ lengthSec: 10, sampleRate: 44100, trackNo: 4 })
   })
 
   it('leaves out the cues and grid of a file whose rekordbox shift is unknown, and counts it, since a guessed shift puts cues off the beat on a CDJ', async () => {
@@ -204,6 +214,7 @@ describe('seratoExportMarks', () => {
       oldBlockDisagrees: false,
       durationMs: 10000,
       sampleRate: 22050,
+      trackNo: 0,
       markers: { cues: [{ index: 0, ms: 1000, color: 0xcc0000, name: 'Drop' }], loops: [] },
       tempoMap: { firstBeatMs: 500, bpm: 120 },
     })
@@ -215,6 +226,7 @@ describe('seratoExportMarks', () => {
       cuesLeftOut: true,
       lengthSec: 10,
       sampleRate: 22050,
+      trackNo: 0,
     })
   })
 
@@ -224,6 +236,7 @@ describe('seratoExportMarks', () => {
       oldBlockDisagrees: false,
       durationMs: 10000,
       sampleRate: 22050,
+      trackNo: 0,
       markers: { cues: [], loops: [] },
       tempoMap: null,
     })

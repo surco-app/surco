@@ -21,7 +21,10 @@ import { normalizeImportFields } from '../../shared/defaults'
 import {
   CUE_PROGRAMS,
   type CueProgram,
+  exportsUsbOn,
   LIBRARY_PROGRAMS,
+  type LibraryProgram,
+  PROGRAM_CAN,
   programOf,
   WRITABLE_PROGRAMS,
   type WritableProgram,
@@ -120,9 +123,10 @@ import { useMetaUndo } from './hooks/useMetaUndo'
 import { type SettingsTab, useOverlays } from './hooks/useOverlays'
 import { usePlayer } from './hooks/usePlayer'
 import { usePlaylistReadPriority } from './hooks/usePlaylistReadPriority'
+import { useProgramsAvailable } from './hooks/useProgramsAvailable'
 import { useQualityAnalysis } from './hooks/useQualityAnalysis'
 import { useRekordboxEdits } from './hooks/useRekordboxEdits'
-import { useLibraryAvailable, useOfferPlaylistFields } from './hooks/useRekordboxPlaylists'
+import { useOfferPlaylistFields } from './hooks/useRekordboxPlaylists'
 import { PROGRAM_QUEUES, useRekordboxQueue } from './hooks/useRekordboxQueue'
 import { useRetireSuperseded } from './hooks/useRetireSuperseded'
 import { useSessionPersistence } from './hooks/useSessionPersistence'
@@ -193,7 +197,7 @@ import { outputNamePatches, renderOutputName, titleFormatSummary } from './lib/o
 import { clampPanelGeometry } from './lib/panelGeometry'
 import { flushPendingEdits } from './lib/pendingEdits'
 import { isMacOS } from './lib/platform'
-import { movedCrateId } from './lib/playlistEdits'
+import { reopenedPlaylist } from './lib/playlistEdits'
 import { playlistMembership, playlistView } from './lib/playlistView'
 import { needsDiscogsPrefetch } from './lib/prefetch'
 import { topBarProgress } from './lib/progress'
@@ -285,6 +289,7 @@ const SYNC_ISSUES: Record<
   },
   traktor: null,
   engine: { listen: (cb) => window.api.dj.onSyncIssue('engine', cb), messages: 'engineIssue' },
+  virtualdj: null,
 }
 
 const inFiles = (t: TrackItem): boolean => !!t.inFiles
@@ -460,12 +465,10 @@ export default function App(): React.JSX.Element {
     onLoadError: () => setAppError({ kind: 'settingsLoad' }),
     onSaveError: () => setAppError({ kind: 'settingsSave' }),
   })
-  const playlistLibrariesFound = {
-    rekordbox: useLibraryAvailable('rekordbox'),
-    traktor: useLibraryAvailable('traktor'),
-    engine: useLibraryAvailable('engine'),
-    serato: useLibraryAvailable('serato'),
-  }
+  const programsAvailable = useProgramsAvailable()
+  const playlistLibrariesFound = Object.fromEntries(
+    LIBRARY_PROGRAMS.map((l) => [l, (programsAvailable[l] ?? false) && PROGRAM_CAN[l].reach]),
+  ) as Record<LibraryProgram, boolean>
   const playlistLibraries = LIBRARY_PROGRAMS.filter((l) => playlistLibrariesFound[l])
   const saveSettingsStable = useStableCallback(saveSettings)
   useOfferPlaylistFields(
@@ -943,10 +946,28 @@ export default function App(): React.JSX.Element {
     noteSessionCreated,
   )
   const { applyNow: applySeratoQueueNow, discard: discardSeratoQueue } = seratoCueQueue
+  const dropDiscardedVirtualdj = useStableCallback((paths: string[]) =>
+    setTracks((prev) => discardPlaylistEdits(prev, paths, 'virtualdj')),
+  )
+  const dropWrittenVirtualdj = useStableCallback((written: RekordboxQueueWritten[]) =>
+    setTracks((prev) => clearWrittenPlaylists(prev, written, 'virtualdj')),
+  )
+  const virtualdjCueQueue = useRekordboxQueue(
+    notifyEdit,
+    dropDiscardedVirtualdj,
+    dropWrittenVirtualdj,
+    PROGRAM_QUEUES.virtualdj.source,
+    noteSessionCreated,
+  )
+  const { applyNow: applyVirtualdjQueueNow, discard: discardVirtualdjQueue } = virtualdjCueQueue
   const queuePill = useMemo(() => {
     const queues: Record<
       CueProgram,
-      { state: RekordboxQueueState; applyNow: () => Promise<void>; discard: () => Promise<void> }
+      {
+        state: RekordboxQueueState
+        applyNow: () => Promise<void>
+        discard: () => Promise<void>
+      } | null
     > = {
       rekordbox: { state: rekordboxQueue.state, applyNow: applyQueueNow, discard: discardQueue },
       engine: {
@@ -964,19 +985,29 @@ export default function App(): React.JSX.Element {
         applyNow: applySeratoQueueNow,
         discard: discardSeratoQueue,
       },
+      virtualdj: {
+        state: virtualdjCueQueue.state,
+        applyNow: applyVirtualdjQueueNow,
+        discard: discardVirtualdjQueue,
+      },
     }
     return (
       <>
-        {QUEUE_PILL_ORDER.map((program) => (
-          <RekordboxQueuePill
-            key={program}
-            state={queues[program].state}
-            onApplyNow={() => void queues[program].applyNow()}
-            onDiscard={() => void queues[program].discard()}
-            words={PROGRAM_QUEUES[program].source.words}
-            testid={PROGRAM_QUEUES[program].testid}
-          />
-        ))}
+        {QUEUE_PILL_ORDER.map((program) => {
+          const queue = queues[program]
+          const pill = PROGRAM_QUEUES[program]
+          if (!queue || !pill) return null
+          return (
+            <RekordboxQueuePill
+              key={program}
+              state={queue.state}
+              onApplyNow={() => void queue.applyNow()}
+              onDiscard={() => void queue.discard()}
+              words={pill.source.words}
+              testid={pill.testid}
+            />
+          )
+        })}
       </>
     )
   }, [
@@ -992,16 +1023,20 @@ export default function App(): React.JSX.Element {
     seratoCueQueue.state,
     applySeratoQueueNow,
     discardSeratoQueue,
+    virtualdjCueQueue.state,
+    applyVirtualdjQueueNow,
+    discardVirtualdjQueue,
   ])
   // The USB export: macOS and Windows, with a rekordbox collection or from the Engine DJ
   // tree. Its state lives in usbExportStore, outside React; App reads only the phase (for
   // the notices), so a byte tick never re-renders the app.
-  const usbPlatform = isMac || window.api.platform === 'win32'
+  const usbPlatform = window.api.platform === 'darwin' || window.api.platform === 'win32'
   const usbAvailable = usbPlatform && browser.sources.includes('rekordbox')
   const treeUsbProgram =
     usbPlatform &&
     sourceProgram &&
     isUsbProgram(sourceProgram) &&
+    exportsUsbOn(sourceProgram, window.api.platform) &&
     (SOURCE_PROGRAMS[sourceProgram].missingLibraryCheck ||
       browser.sources.includes(sourceProgram)) &&
     !browser.libraryMissing
@@ -2889,8 +2924,25 @@ export default function App(): React.JSX.Element {
   const createInRekordbox = useStableCallback((parentId: string, name: string, folder: boolean) => {
     void editRekordbox({ kind: 'create', parentId, name, folder }, name)
   })
-  const renameInRekordbox = useStableCallback((node: SourceNode, name: string) => {
-    void editRekordbox({ kind: 'rename', playlistId: node.id, name }, node.name)
+  const idJoin = sourceProgram ? SOURCE_PROGRAMS[sourceProgram].idJoin : null
+  const reopenAt = (
+    open: typeof browser.playlist,
+    node: SourceNode,
+    to: { id: string; name: string; folders: string[] },
+  ) => {
+    const reopened = idJoin ? reopenedPlaylist(open, node, to, idJoin) : null
+    if (reopened) browser.selectPlaylist(reopened.node, reopened.folders)
+  }
+  const renameInRekordbox = useStableCallback(async (node: SourceNode, name: string) => {
+    const open = browser.playlist
+    const result = await editRekordbox({ kind: 'rename', playlistId: node.id, name }, node.name)
+    if (!result.applied || !idJoin || !open) return
+    const above = node.id.split(idJoin).slice(0, -1)
+    reopenAt(open, node, {
+      id: [...above, name].join(idJoin),
+      name,
+      folders: open.folders.slice(0, above.length),
+    })
   })
   const deleteInRekordbox = useStableCallback((node: SourceNode) => {
     void editRekordbox({ kind: 'delete', playlistId: node.id }, node.name)
@@ -2928,25 +2980,30 @@ export default function App(): React.JSX.Element {
   )
   const moveInTree = useStableCallback(
     async (node: SourceNode, parentId: string, beforeId: string | null, folders: string[]) => {
-      const wasOpen = browser.playlist?.id === node.id
+      const open = browser.playlist
       const result = await editRekordbox(
         { kind: 'moveNode', playlistId: node.id, parentId, beforeId },
         node.name,
       )
-      if (result.applied && wasOpen && sourceProgram && SOURCE_PROGRAMS[sourceProgram].crates)
-        browser.selectPlaylist({ ...node, id: movedCrateId(node.id, parentId) }, folders)
+      if (result.applied && idJoin)
+        reopenAt(open, node, {
+          id: parentId === 'root' ? node.name : `${parentId}${idJoin}${node.name}`,
+          name: node.name,
+          folders,
+        })
     },
   )
   const canRename = editCan('rename')
   const canMoveNode = editCan('moveNode')
   const noFolders = sourceEdit?.folders === false
+  const readsCollection = Boolean(sourceProgram && SOURCE_READ[sourceProgram].collection)
   const treeEdit = useMemo(
     () => ({
       onCreate: createInRekordbox,
       onDropTracks: dropOnRekordbox,
       ...(canRename && { onRename: renameInRekordbox }),
       onDelete: deleteInRekordbox,
-      onPasteTracklist: openPasteTracklist,
+      ...(readsCollection && { onPasteTracklist: openPasteTracklist }),
       onSession: (node: SourceNode) => openSessionAt(node.id),
       onFill: openSessionFill,
       ...(canMoveNode && { onMove: moveInTree }),
@@ -2966,6 +3023,7 @@ export default function App(): React.JSX.Element {
       canRename,
       canMoveNode,
       noFolders,
+      readsCollection,
     ],
   )
   // Read at drop time, so a re-read landing mid-drag still names the dragged rows. A track
@@ -4108,6 +4166,7 @@ export default function App(): React.JSX.Element {
                           engine: settings?.syncEngineDj ?? false,
                           traktor: settings?.syncTraktor ?? false,
                           serato: settings?.syncSerato ?? false,
+                          virtualdj: settings?.syncVirtualdj ?? false,
                         }}
                         onClose={() => setReview(null)}
                         onOpenTrack={(rowId) => {

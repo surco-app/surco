@@ -1,4 +1,5 @@
 import { extname } from 'node:path'
+import type { TrackCues } from '../shared/types'
 import type { Beat } from './anlz'
 import type { ExportCue, ExportPlaylist, ExportSelection, ExportTrack } from './usbExportSource'
 
@@ -45,6 +46,32 @@ export function marksOnRekordboxClock(
     cues: moved,
     grid: grid.map((b) => ({ beat: b.beat, bpm, ms: b.ms + deltaMs })).filter((b) => b.ms >= 0),
   }
+}
+
+export function foreignMarks(
+  read: Pick<TrackCues, 'cues' | 'loops' | 'grid'>,
+  delta: number | null,
+): ExportMarks & { cuesLeftOut?: true } {
+  const cues: ForeignCue[] = [
+    ...read.cues.map((c) => ({ ms: c.ms, kind: c.kind, name: c.name ?? '' })),
+    ...(read.loops ?? []).map((l) => ({
+      ms: l.startMs,
+      kind: 0,
+      name: l.name ?? '',
+      endMs: l.endMs,
+    })),
+  ]
+  if (delta === null)
+    return {
+      cues: [],
+      grid: [],
+      ...(cues.length + read.grid.length > 0 && { cuesLeftOut: true as const }),
+    }
+  return marksOnRekordboxClock(cues, read.grid, delta)
+}
+
+export function unixDate(seconds: number | null): string {
+  return seconds === null ? '' : new Date(seconds * 1000).toISOString().slice(0, 10)
 }
 
 function fnv1a(text: string): number {

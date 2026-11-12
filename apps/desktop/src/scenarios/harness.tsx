@@ -18,9 +18,8 @@ import { replaceDuplicates } from '../main/duplicateReplace'
 import { applyEngineCuesBatch } from '../main/engineCuesWrite'
 import { addToEngineLibrary } from '../main/engineLibrary'
 import { isEngineDjRunning } from '../main/engineProcess'
-import { engineSizeFollower } from '../main/engineSizeFollow'
 import { expandPaths } from '../main/expand'
-import { convertAudio, readTags, toNmlLocation } from '../main/ffmpeg'
+import { convertAudio, probeAudio, probeDuration, readTags, toNmlLocation } from '../main/ffmpeg'
 import { fileIdentity, isSameFile, removeRenamedOriginal } from '../main/inplace'
 import {
   currentLibraryStatus,
@@ -37,6 +36,8 @@ import {
   traktorWrite,
   usedByAnyLibrary,
 } from '../main/libraryFlushes'
+import { followingAll, librarySizeFollower } from '../main/librarySizeFollow'
+import { serialLibraryFlush } from '../main/libraryTagSync'
 import { registerListReviewIpc } from '../main/listReviewIpc'
 import { listReviewDeps } from '../main/listReviewWiring'
 import { createMediaAccess } from '../main/mediaAccess'
@@ -58,6 +59,9 @@ import { isRekordboxRunning } from '../main/rekordboxProcess'
 import { createRekordboxQueue, type QueueApply, type RekordboxQueue } from '../main/rekordboxQueue'
 import { stillWaiting } from '../main/rekordboxQueueWatch'
 import { createSessionBackup } from '../main/rekordboxSessionBackup'
+import { applySeratoBatch } from '../main/seratoBatch'
+import { seratoLibraryRoots } from '../main/seratoLibrary'
+import { isSeratoRunning } from '../main/seratoProcess'
 import { getSettings, recordConversion, recordStat, replaceSettings } from '../main/settings'
 import { registerShellIpc } from '../main/shellIpc'
 import { createSurcoTrash, type SurcoTrash } from '../main/surcoTrash'
@@ -77,6 +81,10 @@ import {
 } from '../main/verifyMusic'
 import type { FlushOutcome, TraktorWrite } from '../main/verifyRegistry'
 import { withRecordedRun } from '../main/verifyRun'
+import { applyVirtualdjBatch } from '../main/virtualdjBatch'
+import { virtualdjLibraryRoots } from '../main/virtualdjLibrary'
+import { isVirtualdjRunning } from '../main/virtualdjProcess'
+import { repointVirtualdjTracks, virtualdjBitrateKbps } from '../main/virtualdjTrackWrite'
 import { onWatchedFilesChanged } from '../main/watchedFiles'
 import { dirRoots, FolderWatcher } from '../main/watcher'
 import type { Api, CuesApi } from '../preload/api'
@@ -193,10 +201,20 @@ export function listen(channel: string, listener: (...args: never[]) => void): (
   return () => set.delete(listener)
 }
 
+const mainInFlight = new Set<Promise<unknown>>()
+
 export function invokeMain<T>(channel: string, ...args: unknown[]): Promise<T> {
   const handler = ipcHandlers.get(channel)
   if (!handler) throw new Error(`scenario: main never registered ${channel}`)
-  return Promise.resolve(handler({ sender }, ...(args as never[]))) as Promise<T>
+  const call = Promise.resolve(handler({ sender }, ...(args as never[]))) as Promise<T>
+  mainInFlight.add(call)
+  const done = () => mainInFlight.delete(call)
+  call.then(done, done)
+  return call
+}
+
+export async function mainSettled(): Promise<void> {
+  while (mainInFlight.size > 0) await Promise.allSettled([...mainInFlight])
 }
 
 function processTrackInMain(
@@ -308,7 +326,11 @@ function processTrackInMain(
       refreshAppleMusicEntry: (pid: string) => appleMusic.refreshAppleMusicEntry(pid),
     }),
     librariesKeepingOriginal: (path, target) =>
-      librariesKeepingOriginal(path, target, { traktorRead: traktorWritePath }),
+      librariesKeepingOriginal(path, target, {
+        traktorRead: traktorWritePath,
+        rootLibraries,
+        lengthOf: async (p) => (await probeDuration(p)) ?? undefined,
+      }),
     isEngineDjRunning,
     addToEngineDj: (target, meta, coverPath, replaces) => {
       const s = getSettings()
@@ -361,7 +383,7 @@ function processTrackInMain(
         (s) => s.size,
         () => undefined,
       ),
-    followEngineSize,
+    followLibrarySize: followLibrariesSize,
     attachPlaylists,
     verifyFile: (expect, signal) => checkFile(expect, fileReaders, { signal }),
     verifyMusic: async (expect, signal) => {
@@ -382,6 +404,7 @@ function processTrackInMain(
           {
             rekordbox: s.syncRekordbox ? rekordboxCollectionPath() : '',
             engine: s.syncEngineDj ? engineLibraryPath() : '',
+            virtualdj: s.syncVirtualdj ? virtualdjRoots() : [],
           },
           (p) => realpathSync(p),
         )
@@ -399,6 +422,7 @@ const sessions = {
   rekordbox: createSessionBackup({}),
   traktor: createSessionBackup({}),
   engine: createSessionBackup({}),
+  virtualdj: createSessionBackup({}),
 }
 
 function libraryHost(errors: string[]): LibraryHost {
@@ -425,13 +449,33 @@ let watcher: FolderWatcher | undefined
 // The IPC handlers are registered once, so the file follower reaches the Engine queue of
 // whichever scenario is running, as index.ts's reaches the app's.
 let engineQueueNow: RekordboxQueue | undefined
-const followEngineSize = engineSizeFollower({
+let virtualdjQueueNow: RekordboxQueue | undefined
+const followEngineSize = librarySizeFollower({
   enabled: () => getSettings().syncEngineDj,
   enqueue: (ops, repoints) => engineQueueNow?.enqueue(ops, repoints),
   apply: () => {
-    void engineQueueNow?.apply(async () => !(await isEngineDjRunning()))
+    const queue = engineQueueNow
+    if (queue) void serialLibraryFlush(() => queue.apply(async () => !(await isEngineDjRunning())))
   },
 })
+const followVirtualdjSize = librarySizeFollower({
+  enabled: () => getSettings().syncVirtualdj,
+  enqueue: (ops, repoints) => virtualdjQueueNow?.enqueue(ops, repoints),
+  apply: () => {
+    const queue = virtualdjQueueNow
+    if (queue) void serialLibraryFlush(() => queue.apply(async () => !(await isVirtualdjRunning())))
+  },
+})
+const followLibrariesSize = followingAll(followEngineSize, followVirtualdjSize)
+
+const NO_VOLUMES = join(app.getPath('userData'), 'no-volumes')
+
+export const seratoRoots = () => seratoLibraryRoots(app.getPath('home'), [])
+export const virtualdjRoots = () => {
+  const dir = getSettings().virtualdjLibraryDir
+  return dir ? virtualdjLibraryRoots(dir, NO_VOLUMES) : []
+}
+const rootLibraries = () => ({ serato: seratoRoots(), virtualdj: virtualdjRoots() })
 
 function storeInMemory() {
   let stored: string | null = null
@@ -500,6 +544,69 @@ function traktorQueueInMemory(checks: { current?: QueueChecks }): RekordboxQueue
   })
 }
 
+const virtualdjLibraryDir = (): string => {
+  const dir = getSettings().virtualdjLibraryDir
+  return dir && existsSync(join(dir, 'database.xml')) ? dir : ''
+}
+
+function virtualdjQueueInMemory(checks: { current?: QueueChecks }): RekordboxQueue {
+  const backupDir = join(app.getPath('userData'), 'virtualdj-backups')
+  return createRekordboxQueue({
+    store: storeInMemory(),
+    collection: virtualdjLibraryDir,
+    configured: () => getSettings().virtualdjLibraryDir,
+    applyBatch: (_library, ops, ensureClosed, stillQueued) =>
+      applyVirtualdjBatch(ops, {
+        roots: virtualdjRoots,
+        backupDir,
+        ensureClosed,
+        stillQueued,
+        virtualdjOpen: isVirtualdjRunning,
+      }),
+    repoint: async (_library, list) => {
+      const results = await repointVirtualdjTracks(list, {
+        roots: virtualdjRoots,
+        backupDir,
+        virtualdjOpen: isVirtualdjRunning,
+        lengthOf: async (path) => (await probeDuration(path)) ?? undefined,
+        audioOf: async (path) => {
+          const audio = await probeAudio(path)
+          return {
+            sampleRate: Number(audio.sampleRate) || undefined,
+            bitrateKbps: virtualdjBitrateKbps(audio),
+          }
+        },
+      })
+      checks.current?.repointed('virtualdj', results)
+      return results
+    },
+    nodeStamps: async () => ({}),
+    onChange: () => {},
+    addsTracks: false,
+    stack: stackRepoint,
+  })
+}
+
+function seratoQueueInMemory(): RekordboxQueue {
+  return createRekordboxQueue({
+    store: storeInMemory(),
+    collection: () => join(app.getPath('home'), 'Music', '_Serato_'),
+    applyBatch: (_library, ops, ensureClosed, stillQueued) =>
+      applySeratoBatch(ops, {
+        roots: seratoRoots,
+        backupDir: join(app.getPath('userData'), 'serato-backups'),
+        ensureClosed,
+        stillQueued,
+        rewritten: followLibrariesSize,
+        seratoOpen: isSeratoRunning,
+      }),
+    repoint: async () => [],
+    nodeStamps: async () => ({}),
+    onChange: () => {},
+    addsTracks: false,
+  })
+}
+
 function rekordboxQueueInMemory(checks: { current?: QueueChecks }): RekordboxQueue {
   return createRekordboxQueue({
     store: storeInMemory(),
@@ -522,26 +629,30 @@ function rekordboxQueueInMemory(checks: { current?: QueueChecks }): RekordboxQue
   })
 }
 
-interface Queues {
+export interface Queues {
   rekordbox: RekordboxQueue
   engine: RekordboxQueue
   traktor: RekordboxQueue<QueuedNmlPatch>
+  virtualdj: RekordboxQueue
+  serato: RekordboxQueue
 }
 
 const libraryAt: Record<Library, () => string> = {
   rekordbox: rekordboxCollectionPath,
   engine: engineLibraryPath,
   traktor: traktorWritePath,
+  virtualdj: virtualdjLibraryDir,
 }
 
 const programClosed: Record<Library, () => Promise<boolean>> = {
   rekordbox: async () => !(await isRekordboxRunning()),
   engine: async () => !(await isEngineDjRunning()),
   traktor: async () => !(await isTraktorRunning()),
+  virtualdj: async () => !(await isVirtualdjRunning()),
 }
 
 const applyQueue = (queues: Queues, place: Library): Promise<QueueApply> =>
-  queues[place].apply(programClosed[place])
+  serialLibraryFlush(() => queues[place].apply(programClosed[place]))
 
 function tracked<T>(inFlight: Set<Promise<unknown>>, work: Promise<T>): Promise<T> {
   inFlight.add(work)
@@ -581,7 +692,12 @@ function verifyWiring(queues: Queues, checks: { current?: QueueChecks }): Verify
       statuses.set(trackId, [...(statuses.get(trackId) ?? []), verification.status])
       sender.send('verify:update', trackId, verification)
     },
-    paths: libraryAt,
+    paths: {
+      rekordbox: libraryAt.rekordbox,
+      engine: libraryAt.engine,
+      traktor: libraryAt.traktor,
+      virtualdj: virtualdjRoots,
+    },
     realPath: (p) => realpathSync(p),
     bootVolume: () => bootVolumeName(),
     readMusic: async () => ({
@@ -608,6 +724,12 @@ function verifyWiring(queues: Queues, checks: { current?: QueueChecks }): Verify
         at: libraryAt.traktor,
         holds: queues.traktor.holdsRepoint,
       },
+      virtualdj: {
+        enqueue: queues.virtualdj.enqueue,
+        apply: () => applyQuietly(verify, queues, 'virtualdj'),
+        at: libraryAt.virtualdj,
+        holds: queues.virtualdj.holdsRepoint,
+      },
     },
   })
   const wired = queueVerification({
@@ -633,7 +755,12 @@ async function judgedFlush(
   sabotage: Sabotage | undefined,
 ): Promise<void> {
   const upTo = verify.registry.cut()
-  let outcome: FlushOutcome = { rekordbox: 'failed', engine: 'failed', traktor: 'failed' }
+  let outcome: FlushOutcome = {
+    rekordbox: 'failed',
+    engine: 'failed',
+    traktor: 'failed',
+    virtualdj: 'failed',
+  }
   try {
     outcome = await flush()
   } finally {
@@ -829,7 +956,26 @@ function scenarioApi(
     onWindowFocus: () => () => {},
     libraryStatus: async () => currentLibraryStatus(),
     syncLibraryTags: (updates) =>
-      syncTagsInLibraries(updates, libraryHost(errors), sessions, () => {}),
+      syncTagsInLibraries(
+        updates,
+        libraryHost(errors),
+        sessions,
+        () => {},
+        {
+          roots: seratoRoots,
+          queue: queues.serato,
+          isRunning: isSeratoRunning,
+          onWaiting: () => errors.push('Serato tags left waiting'),
+          onApplied: () => {},
+        },
+        {
+          roots: virtualdjRoots,
+          queue: queues.virtualdj,
+          isRunning: isVirtualdjRunning,
+          onWaiting: () => errors.push('VirtualDJ tags left waiting'),
+          onApplied: () => {},
+        },
+      ),
     applyListFixes: (request) => invokeMain('listreview:applyFixes', request),
     cancelListFixes: () => invokeMain('listreview:cancelFixes'),
     onListFixProgress: (listener) => listen('listreview:fixProgress', listener),
@@ -858,7 +1004,7 @@ function scenarioApi(
       removeMusicDuplicate: (request) => invokeMain('applemusic:removeDuplicate', request),
       replaceDuplicatesInLibraries: (pairs) =>
         replaceDuplicates(pairs, {
-          ...duplicateLibraryDeps(libraryHost(errors), sessions, () => []),
+          ...duplicateLibraryDeps(libraryHost(errors), sessions, rootLibraries),
           trash: (path) => trashRecoverably(path),
           log: { track: activity.track, copyOf: musicReviewLog.copyOf },
         }),
@@ -878,6 +1024,7 @@ function scenarioApi(
     },
     endConversionBatch: () => {
       const applies: Partial<Record<Library, Promise<QueueApply>>> = {}
+      const seratoApplies: Promise<QueueApply>[] = []
       const later: LaterApply[] = []
       const applyLater = (place: Library) => () => {
         if (!libraryAt[place]()) return
@@ -886,19 +1033,41 @@ function scenarioApi(
         else applies[place] = start()
       }
       const flush = () =>
-        flushConversionBatch(libraryHost(errors), sessions, {
-          rekordbox: { enqueue: queues.rekordbox.enqueue, applyQuietly: applyLater('rekordbox') },
-          traktor: {
-            enqueue: queues.traktor.enqueue,
-            state: queues.traktor.state,
-            applyQuietly: applyLater('traktor'),
-          },
-          engine: { enqueue: queues.engine.enqueue, applyQuietly: applyLater('engine') },
-        })
+        serialLibraryFlush(() =>
+          flushConversionBatch(libraryHost(errors), sessions, {
+            rekordbox: { enqueue: queues.rekordbox.enqueue, applyQuietly: applyLater('rekordbox') },
+            traktor: {
+              enqueue: queues.traktor.enqueue,
+              state: queues.traktor.state,
+              applyQuietly: applyLater('traktor'),
+            },
+            engine: { enqueue: queues.engine.enqueue, applyQuietly: applyLater('engine') },
+            virtualdj: {
+              enqueue: queues.virtualdj.enqueue,
+              applyQuietly: applyLater('virtualdj'),
+              roots: virtualdjRoots,
+            },
+            serato: {
+              enqueue: queues.serato.enqueue,
+              applyQuietly: () => {
+                seratoApplies.push(
+                  serialLibraryFlush(() =>
+                    queues.serato.apply(async () => !(await isSeratoRunning())),
+                  ),
+                )
+              },
+              roots: seratoRoots,
+            },
+          }),
+        )
       flushes.push(
         verify
-          ? judgedFlush(verify, flush, later, options.sabotage)
-          : flush().then(() => Promise.all(Object.values(applies)).then(() => {})),
+          ? judgedFlush(verify, flush, later, options.sabotage).then(() =>
+              Promise.all(seratoApplies).then(() => {}),
+            )
+          : flush().then(() =>
+              Promise.all([...Object.values(applies), ...seratoApplies]).then(() => {}),
+            ),
       )
     },
     processTrack: (job) =>
@@ -959,10 +1128,12 @@ export interface Scenario {
   engineClosed: () => Promise<void>
   traktorQueue: () => RekordboxQueueState
   traktorClosed: () => Promise<void>
+  virtualdjClosed: () => Promise<void>
   retry: (fileName: string) => Promise<'rerun-job' | 'rechecked'>
   verification: (fileName: string) => Verification | undefined
   statuses: (fileName: string) => Verification['status'][]
   settled: () => Promise<void>
+  queues: Queues
 }
 
 // The main process every scenario runs against: settings, the backup store, the real IPC
@@ -996,21 +1167,22 @@ export function bootMain(options: ScenarioOptions): MainBoot {
     registerShellIpc(mediaAccess, (path, titles) =>
       usedByAnyLibrary(path, titles, {
         traktorRead: traktorWritePath,
+        rootLibraries,
         ...(drivesMusic(options) && { musicEntries: musicReaders.entriesForFile }),
         fileTitle: async (file) => (await readTags(file)).title,
         fileLike: fileLikeForMusic,
         ...(drivesMusic(options) && { musicHolds: musicHoldsFile }),
       }),
     )
-    if (drivesMusic(options)) registerAppleMusicIpc({ followEngineSize })
+    if (drivesMusic(options)) registerAppleMusicIpc({ followLibrarySize: followEngineSize })
     registerListReviewIpc(
       listReviewDeps({
         mediaAccess,
         tmp: { track: () => {}, untrack: () => {} },
         hostFor: () => libraryHost(errors),
         sessions,
-        followEngineSize,
-        seratoRoots: () => [],
+        followLibrarySize: followEngineSize,
+        rootLibraries,
       }),
     )
     registerDamageIpc(
@@ -1033,8 +1205,11 @@ export function bootMain(options: ScenarioOptions): MainBoot {
     rekordbox: rekordboxQueueInMemory(checks),
     engine: engineQueueInMemory(checks),
     traktor: traktorQueueInMemory(checks),
+    virtualdj: virtualdjQueueInMemory(checks),
+    serato: seratoQueueInMemory(),
   }
   engineQueueNow = queues.engine
+  virtualdjQueueNow = queues.virtualdj
   const verify = options.verify ? verifyWiring(queues, checks) : undefined
   const api = scenarioApi(options, errors, sentToAppleMusic, flushes, queues, verify)
   return {
@@ -1289,6 +1464,7 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
     trash,
     errors,
     sentToAppleMusic,
+    queues,
     rekordboxWaiting: () => queues.rekordbox.state().tracks,
     rekordboxClosed: () => applyOnClose(queues, 'rekordbox', verify?.checks),
     engineQueue: () => queues.engine.state(),
@@ -1314,6 +1490,7 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
     },
     engineClosed: () => applyOnClose(queues, 'engine', verify?.checks),
     traktorClosed: () => applyOnClose(queues, 'traktor', verify?.checks),
+    virtualdjClosed: () => applyOnClose(queues, 'virtualdj', verify?.checks),
     retry: async (fileName) => {
       if (!verify) throw new Error('scenario: retry() needs openSurco({ verify: true })')
       const id = trackNamed(fileName).id

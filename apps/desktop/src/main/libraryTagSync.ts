@@ -1,11 +1,11 @@
-import type { LibraryProgram } from '../shared/djProgram'
+import type { ReachProgram } from '../shared/djProgram'
 import { programsInOrder } from '../shared/djProgram'
 import type { LibraryTagSync, LibraryTagSyncReport } from '../shared/types'
 import type { FlushResult } from './libraryRepointFlush'
 
-const LIBRARY_ORDER = programsInOrder(['traktor', 'rekordbox', 'engine', 'serato'])
+const LIBRARY_ORDER = programsInOrder(['traktor', 'rekordbox', 'engine', 'serato', 'virtualdj'])
 
-export interface LibraryTagFlushers extends Record<LibraryProgram, () => Promise<LibraryTagSync>> {
+export interface LibraryTagFlushers extends Record<ReachProgram, () => Promise<LibraryTagSync>> {
   warn: (library: string, error: unknown) => void
   begin?: () => void
 }

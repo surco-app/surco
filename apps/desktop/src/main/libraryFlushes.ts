@@ -1,19 +1,24 @@
 import { existsSync, realpathSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import { app } from 'electron'
 import log from 'electron-log/main'
 import {
   type DjProgram,
+  type LibraryProgram,
+  READ_ONLY_PROGRAMS,
   WRITABLE_PROGRAMS,
   type WritableProgram,
   writableInOrder,
 } from '../shared/djProgram'
 import type { LibraryStatus, LibraryTagUpdate, RekordboxSyncIssue } from '../shared/types'
 import { activity } from './activity'
+import type { ReasonOf } from './djProcesses'
 import {
   libraryOutcomes,
   type ReplaceDuplicatesDeps,
   traktorDuplicateStep,
+  virtualdjDuplicateStep,
 } from './duplicateReplace'
 import { loadSqlJs } from './engine'
 import { replaceEngineDuplicates } from './engineDuplicates'
@@ -22,7 +27,13 @@ import { engineBitrateKbps, engineRowFinder, repointEngineTracks } from './engin
 import { ENGINE_KEYS, flushEngineSync } from './engineSyncFlush'
 import { updateEngineTags } from './engineTags'
 import { probeAudio, probeDuration, probeProperties, toNmlLocation } from './ffmpeg'
-import { djLibraryFileUse, type SyncedLibraries, usedByDjLibrary } from './libraryFileUse'
+import {
+  djLibraryFileUse,
+  type LibraryLocations,
+  type RootLibraries,
+  type SyncedLibraries,
+  usedByDjLibrary,
+} from './libraryFileUse'
 import { pathKey } from './libraryPathKey'
 import { flushLibraryRepoints, type LibraryRepointResult } from './libraryRepointFlush'
 import { libraryStatus } from './libraryStatus'
@@ -42,7 +53,7 @@ import type { createSessionBackup } from './rekordboxSessionBackup'
 import { updateRekordboxTags } from './rekordboxTags'
 import { seratoLibraryHas } from './seratoCrateEdits'
 import type { SeratoLibraryRoot } from './seratoLibrary'
-import { syncSeratoTags } from './seratoTagSync'
+import { seratoTagOps, syncSeratoTags } from './seratoTagSync'
 import { getSettings } from './settings'
 import { readEmbeddedCover } from './tags'
 import type { NmlPatch } from './traktorNml'
@@ -58,19 +69,32 @@ import { isTraktorRunning } from './traktorProcess'
 import { flushTraktorSync } from './traktorSyncFlush'
 import { sourceRoot } from './usbExport'
 import { type FlushOutcome, type TraktorWrite, traktorPatchKey } from './verifyRegistry'
+import { virtualdjCopyKey } from './virtualdjCopies'
+import { replaceVirtualdjDuplicates } from './virtualdjDuplicates'
+import type { VirtualdjRoot } from './virtualdjLibrary'
+import { isVirtualdjRunning } from './virtualdjProcess'
+import { syncVirtualdjTags } from './virtualdjTagSync'
+import {
+  virtualdjBitrateKbps,
+  virtualdjCannotFollow,
+  virtualdjHeldOrListed,
+  virtualdjLibraryHas,
+} from './virtualdjTrackWrite'
 
 export type SyncBlockedKey = 'traktorSyncBlocked' | 'rekordboxSyncBlocked' | 'engineSyncBlocked'
 
-export const SYNC_BLOCKED_KEY: Record<WritableProgram, SyncBlockedKey> = {
+export const SYNC_BLOCKED_KEY: Record<WritableProgram, SyncBlockedKey | null> = {
   rekordbox: 'rekordboxSyncBlocked',
   traktor: 'traktorSyncBlocked',
   engine: 'engineSyncBlocked',
+  virtualdj: null,
 }
 
 const REPORTS_SYNC_ISSUES: Record<WritableProgram, boolean> = {
   rekordbox: true,
   traktor: false,
   engine: true,
+  virtualdj: false,
 }
 
 export const SYNC_ISSUE_PROGRAMS: ReadonlySet<WritableProgram> = new Set(
@@ -78,7 +102,7 @@ export const SYNC_ISSUE_PROGRAMS: ReadonlySet<WritableProgram> = new Set(
 )
 
 export interface LibraryHost {
-  ensureClosed: (program: WritableProgram) => Promise<boolean>
+  ensureClosed: <P extends WritableProgram>(program: P, reason?: ReasonOf<P>) => Promise<boolean>
   showBlockedDialog: (program: WritableProgram) => void
   reportIssue: (program: WritableProgram, issue: RekordboxSyncIssue) => void
   rekordboxHeld: () => boolean
@@ -108,13 +132,33 @@ export function rekordboxCollectionPath(): string {
     : ''
 }
 
+const NO_LIBRARIES: LibraryLocations = {
+  rekordbox: '',
+  engine: '',
+  traktor: '',
+  serato: [],
+  virtualdj: [],
+}
+
+function onlyLibrary<P extends LibraryProgram>(
+  program: P,
+  location: LibraryLocations[P],
+): LibraryLocations {
+  return { ...NO_LIBRARIES, [program]: location }
+}
+
 export async function librariesKeepingOriginal(
   path: string,
   target: string,
-  deps: { traktorRead: () => string; seratoRoots?: () => SeratoLibraryRoot[] },
+  deps: {
+    traktorRead: () => string
+    rootLibraries: () => RootLibraries
+    lengthOf?: (path: string) => Promise<number | undefined>
+  },
 ): Promise<DjProgram[]> {
   const settings = getSettings()
   const status = currentLibraryStatus()
+  const virtualdjRoots = deps.rootLibraries().virtualdj
   const locations: SyncedLibraries = {
     rekordbox:
       !settings.syncRekordbox && status.rekordbox.found
@@ -122,31 +166,35 @@ export async function librariesKeepingOriginal(
         : '',
     engine: !settings.syncEngineDj && status.engine.found ? settings.engineLibraryDir : '',
     traktor: settings.syncTraktor ? '' : deps.traktorRead(),
+    virtualdj: settings.syncVirtualdj ? [] : virtualdjRoots,
   }
   const held: DjProgram[] = []
   for (const program of WRITABLE_PROGRAMS) {
-    if (!locations[program]) continue
-    const only = { rekordbox: '', engine: '', traktor: '', [program]: locations[program] }
+    if (locations[program].length === 0) continue
+    const only = onlyLibrary(program, locations[program])
     if (await djLibraryFileUse(only, { realPath: (p: string) => realpathSync(p) })(path))
       held.push(program)
   }
   const nml = settings.syncTraktor ? deps.traktorRead() : ''
   if (nml) {
     const traktor = djLibraryFileUse(
-      { rekordbox: '', engine: '', traktor: nml },
+      { ...NO_LIBRARIES, traktor: nml },
       { realPath: (p: string) => realpathSync(p) },
     )
     if ((await traktor(path)) && (await traktor(target))) held.push('traktor')
   }
-  const serato = deps.seratoRoots?.() ?? []
   if (
-    serato.length > 0 &&
-    (await djLibraryFileUse(
-      { rekordbox: '', engine: '', traktor: '', serato },
-      { realPath: (p: string) => realpathSync(p) },
-    )(path))
+    settings.syncVirtualdj &&
+    (await virtualdjCannotFollow(virtualdjRoots, path, target, deps.lengthOf))
   )
-    held.push('serato')
+    held.push('virtualdj')
+  const readOnly = deps.rootLibraries()
+  for (const program of READ_ONLY_PROGRAMS) {
+    if (readOnly[program].length === 0) continue
+    const only = onlyLibrary(program, readOnly[program])
+    if (await djLibraryFileUse(only, { realPath: (p: string) => realpathSync(p) })(path))
+      held.push(program)
+  }
   return held
 }
 
@@ -161,7 +209,7 @@ export async function usedByAnyLibrary(
   titles: string[],
   deps: {
     traktorRead: () => string
-    seratoRoots?: () => SeratoLibraryRoot[]
+    rootLibraries: () => RootLibraries
     musicEntries?: (
       path: string,
       titles: string[],
@@ -183,7 +231,7 @@ export async function usedByAnyLibrary(
           : '',
       engine: settings.syncEngineDj || status.engine.found ? settings.engineLibraryDir : '',
       traktor: (settings.syncTraktor && settings.traktorNmlPath) || deps.traktorRead(),
-      serato: deps.seratoRoots?.(),
+      ...deps.rootLibraries(),
     },
     { realPath: (p: string) => realpathSync(p) },
   )
@@ -297,9 +345,14 @@ export type ConversionQueues = {
     applyQuietly: () => void
     roots: () => SeratoLibraryRoot[]
   }
+  virtualdj?: {
+    enqueue: RekordboxQueue['enqueue']
+    applyQuietly: () => void
+    roots: () => VirtualdjRoot[]
+  }
 }
 
-export const FLUSH_ORDER = writableInOrder(['traktor', 'rekordbox', 'engine'])
+export const FLUSH_ORDER = writableInOrder(['traktor', 'rekordbox', 'engine', 'virtualdj'])
 
 // A convert-all run ends (however it ended — finished, cancelled, or failed, the
 // renderer calls this from its finally block): flush whatever Traktor cue patches the
@@ -318,7 +371,7 @@ export async function flushConversionBatch(
   const added: NonNullable<FlushOutcome['added']> = {}
   const noting =
     <A extends unknown[]>(
-      place: 'rekordbox' | 'traktor',
+      place: 'rekordbox' | 'traktor' | 'virtualdj',
       enqueue: (ops: QueueOp[], ...rest: A) => void,
     ) =>
     (ops: QueueOp[], ...rest: A) => {
@@ -337,6 +390,12 @@ export async function flushConversionBatch(
       enqueue: noting('rekordbox', queues.rekordbox.enqueue),
     }),
     engine: engineConversionFlusher(host, sessions, queues.engine),
+    virtualdj: virtualdjConversionFlusher(
+      queues.virtualdj && {
+        ...queues.virtualdj,
+        enqueue: noting('virtualdj', queues.virtualdj.enqueue),
+      },
+    ),
   }
   for (const program of FLUSH_ORDER) await flushers[program].before()
   // The run's repoints, taken once: rekordbox and Engine DJ each apply the same list to
@@ -358,15 +417,55 @@ export async function flushConversionBatch(
   return { ...(outcome as FlushOutcome), added }
 }
 
+function virtualdjConversionFlusher(
+  queue: ConversionQueues['virtualdj'],
+): ConversionFlusher<'virtualdj'> {
+  return {
+    before: async () => {},
+    after: async ({ repoints, later, addable }) => {
+      if (later) return 'later'
+      if (!queue) return 'off'
+      try {
+        const { addToVirtualdj, syncVirtualdj } = getSettings()
+        const roots = queue.roots()
+        const held = syncVirtualdj ? virtualdjHeldOrListed(roots) : () => false
+        const moves = repoints.filter(
+          (r) => (r.from !== r.to || r.fromBytes !== undefined) && held(r.from),
+        )
+        const ops = libraryTrackOps(
+          repoints,
+          'virtualdj',
+          undefined,
+          addToVirtualdj,
+          addToVirtualdj && addable ? virtualdjLibraryHas(roots) : undefined,
+        )
+        if (ops.length + moves.length === 0) return 'off'
+        queue.enqueue(ops, moves)
+        queue.applyQuietly()
+        return 'queued'
+      } catch (err) {
+        log.warn(`virtualdj: queueing the converted tracks failed: ${String(err)}`)
+        return 'failed'
+      }
+    },
+  }
+}
+
 function queueSeratoRun(queue: NonNullable<ConversionQueues['serato']>, run: ConversionRun): void {
-  const addToSerato = getSettings().addToSerato
-  const ops = libraryTrackOps(
-    run.repoints,
-    'serato',
-    undefined,
-    addToSerato,
-    addToSerato && run.addable ? seratoLibraryHas(queue.roots()) : undefined,
-  )
+  const { addToSerato, syncSerato } = getSettings()
+  const named = syncSerato
+    ? run.repoints.flatMap((r) => (r.names ? [{ path: r.to, fields: r.names }] : []))
+    : []
+  const ops = [
+    ...libraryTrackOps(
+      run.repoints,
+      'serato',
+      undefined,
+      addToSerato,
+      addToSerato && run.addable ? seratoLibraryHas(queue.roots()) : undefined,
+    ),
+    ...(named.length > 0 ? seratoTagOps(named, queue.roots()) : []),
+  ]
   if (ops.length === 0) return
   queue.enqueue(ops)
   queue.applyQuietly()
@@ -707,6 +806,7 @@ export function syncTagsInLibraries(
   sessions: Sessions,
   beginMoment: () => void,
   serato?: Omit<Parameters<typeof syncSeratoTags>[1], 'enabled'>,
+  virtualdj?: Omit<Parameters<typeof syncVirtualdjTags>[1], 'enabled'>,
 ) {
   const withRealPath = updates.map((u) => ({ ...u, realPath: (p: string) => realpathSync(p) }))
   return syncLibraryTags({
@@ -752,9 +852,17 @@ export function syncTagsInLibraries(
       serato
         ? syncSeratoTags(updates, { ...serato, enabled: getSettings().syncSerato })
         : { outcome: 'nothing' },
+    virtualdj: async () =>
+      virtualdj
+        ? syncVirtualdjTags(updates, { ...virtualdj, enabled: getSettings().syncVirtualdj })
+        : { outcome: 'nothing' },
     warn: (library, error) => log.warn(`library:syncTags ${library} failed`, error),
     ...(updates.length > 0 && { begin: beginMoment }),
   })
+}
+
+type DuplicateSteps = {
+  [P in WritableProgram]: ReplaceDuplicatesDeps['libraries'][P]
 }
 
 // A removed duplicate copy: each library with its sync on moves to the copy the user kept,
@@ -762,79 +870,102 @@ export function syncTagsInLibraries(
 export function duplicateLibraryDeps(
   host: LibraryHost,
   sessions: Sessions,
-  seratoRoots: () => SeratoLibraryRoot[],
+  rootLibraries: () => RootLibraries,
 ): Omit<ReplaceDuplicatesDeps, 'trash' | 'musicStep' | 'log'> {
   const realPath = (p: string) => realpathSync(p)
   const rekordbox = rekordboxFlushDeps(host)
   const engine = engineFlushDeps(host)
   const traktor = traktorFlushDeps(host, sessions.traktor)
   const keys = { written: 'activity.duplicatesReplaced' }
-  return {
-    libraries: {
-      ...((rekordbox.collectionPath || rekordbox.collectionMissing) && {
-        rekordbox: (list) =>
-          libraryOutcomes(
-            list,
-            (run) =>
-              flushLibraryRepoints(
-                {
-                  ...rekordbox,
-                  endBatch: () => list,
-                  labelOf: (p) => p.from,
-                  repointTracks: run,
-                },
-                { ...REKORDBOX_KEYS, ...keys },
-              ),
-            (path, items) =>
-              replaceRekordboxDuplicates(path, items, {
-                realPath,
-                sessionBackup: (db) => sessions.rekordbox.ensure(db),
-                held: host.rekordboxHeld,
-              }),
-          ),
-      }),
-      ...((engine.collectionPath || engine.collectionMissing) && {
-        engine: (list) =>
-          libraryOutcomes(
-            list,
-            (run) =>
-              flushLibraryRepoints(
-                { ...engine, endBatch: () => list, labelOf: (p) => p.from, repointTracks: run },
-                { ...ENGINE_KEYS, ...keys },
-              ),
-            (path, items) =>
-              replaceEngineDuplicates(path, items, {
-                realPath,
-                sessionBackup: (db) => sessions.engine.ensure(db),
-              }),
-          ),
-      }),
-      ...(traktor.collectionMissing && {
-        traktor: async (list) => {
+  const steps: DuplicateSteps = {
+    rekordbox:
+      rekordbox.collectionPath || rekordbox.collectionMissing
+        ? (list) =>
+            libraryOutcomes(
+              list,
+              (run) =>
+                flushLibraryRepoints(
+                  {
+                    ...rekordbox,
+                    endBatch: () => list,
+                    labelOf: (p) => p.from,
+                    repointTracks: run,
+                  },
+                  { ...REKORDBOX_KEYS, ...keys },
+                ),
+              (path, items) =>
+                replaceRekordboxDuplicates(path, items, {
+                  realPath,
+                  sessionBackup: (db) => sessions.rekordbox.ensure(db),
+                  held: host.rekordboxHeld,
+                }),
+            )
+        : undefined,
+    engine:
+      engine.collectionPath || engine.collectionMissing
+        ? (list) =>
+            libraryOutcomes(
+              list,
+              (run) =>
+                flushLibraryRepoints(
+                  { ...engine, endBatch: () => list, labelOf: (p) => p.from, repointTracks: run },
+                  { ...ENGINE_KEYS, ...keys },
+                ),
+              (path, items) =>
+                replaceEngineDuplicates(path, items, {
+                  realPath,
+                  sessionBackup: (db) => sessions.engine.ensure(db),
+                }),
+            )
+        : undefined,
+    traktor: traktor.collectionMissing
+      ? async (list) => {
           await traktor.track('export', 'activity.traktorSync', async () => ({}), {
             summary: () => ({ detailKey: 'activity.traktorSyncCollectionMissing' }),
           })
           return list.map(() => 'skipped' as const)
-        },
-      }),
-      ...(traktor.traktorNmlPath && {
-        traktor: (list) =>
-          traktorDuplicateStep(list, {
-            nmlPath: traktor.traktorNmlPath,
-            ensureTraktorClosed: traktor.ensureTraktorClosed,
-            showBlockedDialog: traktor.showBlockedDialog,
-            track: traktor.track,
-            replace: (nmlPath, pairs) =>
-              replaceDuplicatesInCollection(nmlPath, pairs, sessions.traktor),
-          }),
-      }),
-    },
+        }
+      : traktor.traktorNmlPath
+        ? (list) =>
+            traktorDuplicateStep(list, {
+              nmlPath: traktor.traktorNmlPath,
+              ensureTraktorClosed: traktor.ensureTraktorClosed,
+              showBlockedDialog: traktor.showBlockedDialog,
+              track: traktor.track,
+              replace: (nmlPath, pairs) =>
+                replaceDuplicatesInCollection(nmlPath, pairs, sessions.traktor),
+            })
+        : undefined,
+    virtualdj:
+      getSettings().syncVirtualdj && rootLibraries().virtualdj.length > 0
+        ? (list) =>
+            virtualdjDuplicateStep(list, {
+              ensureClosed: () => host.ensureClosed('virtualdj', 'duplicates'),
+              track: activity.track.bind(activity),
+              replace: (pairs) =>
+                replaceVirtualdjDuplicates(pairs, {
+                  backupDir: join(app.getPath('userData'), 'virtualdj-backups'),
+                  roots: () => rootLibraries().virtualdj,
+                  virtualdjOpen: isVirtualdjRunning,
+                  sessionBackup: () =>
+                    sessions.virtualdj.ensure(virtualdjCopyKey(rootLibraries().virtualdj)),
+                  audioOf: async (path) => ({
+                    bitrateKbps: virtualdjBitrateKbps(await probeAudio(path)),
+                  }),
+                }),
+            })
+        : undefined,
+  }
+  const libraries: ReplaceDuplicatesDeps['libraries'] = {}
+  for (const program of WRITABLE_PROGRAMS) if (steps[program]) libraries[program] = steps[program]
+  return {
+    libraries,
     usedByLibrary: djLibraryFileUse(
       {
         rekordbox: rekordbox.collectionPath,
         engine: engine.collectionPath,
         traktor: traktor.traktorNmlPath,
-        serato: seratoRoots(),
+        ...rootLibraries(),
       },
       { realPath },
     ),
