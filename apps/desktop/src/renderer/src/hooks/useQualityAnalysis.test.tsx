@@ -480,6 +480,31 @@ describe('useQualityAnalysis', () => {
   })
 })
 
+describe('useQualityAnalysis with a big library', () => {
+  it('looks each queued track up without rescanning the whole library, so a sweep of thousands stays linear', async () => {
+    setApi({})
+    const size = 200
+    let reads = 0
+    const listed = Array.from({ length: size }, (_, i) => track(`listed${i}`, { spectrum }))
+    const counted = new Proxy(listed, {
+      get(target, key, receiver) {
+        if (typeof key === 'string' && /^\d+$/.test(key)) reads += 1
+        return Reflect.get(target, key, receiver)
+      },
+    })
+    const targetsRef = { current: counted }
+    const { result } = renderHook(() => useQualityAnalysis({ targetsRef }), {
+      wrapper: wrapper(),
+    })
+    const queued = Array.from({ length: size }, (_, i) => track(`queued${i}`))
+
+    act(() => result.current.analyzeAllQuality(queued))
+    await waitFor(() => expect(result.current.analysis).toBeNull())
+
+    expect(reads).toBeLessThan(size * 10)
+  })
+})
+
 describe('useQualityAnalysis removed tracks', () => {
   // Reported as "13 tracks loaded but the sweep says 87/621": pendingRef holds every track an
   // import enqueued, and until now nothing ever took a removed one back out — only measuring it
