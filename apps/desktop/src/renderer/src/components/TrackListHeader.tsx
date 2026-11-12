@@ -271,6 +271,7 @@ export function TrackListHeader({
     // header. Measuring only the filter bar left the row tucked under the search/sort rows
     // above it — cut off at the top. offsetHeight re-reads on every page, so it tracks the
     // header's real height at any window size.
+    // biome-ignore lint/a11y/noStaticElementInteractions: a pointer shortcut to the view choices, which the View menu also offers
     <div
       ref={qualityFilterRef}
       data-testid="track-list-header"

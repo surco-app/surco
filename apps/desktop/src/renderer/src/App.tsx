@@ -3839,6 +3839,7 @@ export default function App(): React.JSX.Element {
                     className="absolute inset-y-0 left-0 z-30 w-2"
                   />
                 )}
+                {/* biome-ignore lint/a11y/noStaticElementInteractions: the rail and tree inside take the keys, this only closes the overlay */}
                 <div
                   data-testid={showSidebar ? undefined : 'sidebar-peek'}
                   data-open={(!showSidebar && sidebarPeek) || undefined}
