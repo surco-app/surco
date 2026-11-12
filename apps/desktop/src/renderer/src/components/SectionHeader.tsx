@@ -205,7 +205,6 @@ export function SectionHeader({
               type="button"
               data-testid="section-maximize"
               aria-label={isMaximized ? tr('editor.sectionRestore') : tr('editor.sectionMaximize')}
-              aria-pressed={isMaximized}
               onClick={() => setMaximized(isMaximized ? null : sectionId)}
               className="press relative flex h-5 w-5 shrink-0 items-center justify-center rounded text-fg-dim after:absolute after:-inset-0.5 after:content-[''] hover:text-fg"
             >

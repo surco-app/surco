@@ -1706,7 +1706,6 @@ function Editing({
         type="button"
         data-testid="section-maximize"
         aria-label={tr('editor.sectionRestore')}
-        aria-pressed="true"
         onClick={onRestore}
         className="press flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-fg-faint transition-colors hover:bg-[var(--color-line-strong)] hover:text-fg"
       >
