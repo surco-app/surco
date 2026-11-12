@@ -981,6 +981,17 @@ describe('useSourceBrowser default playlist', () => {
     expect(result.current.playlist?.folders).toEqual([])
   })
 
+  it('hands back the same Recently added on every render, so the list it opens is not rebuilt in a loop', async () => {
+    const { result, rerender } = setup({
+      dj: { traktor: { available: vi.fn().mockResolvedValue(true) } },
+    })
+    act(() => result.current.selectSource('traktor'))
+    await waitFor(() => expect(result.current.playlist?.id).toBe(RECENTLY_ADDED_ID))
+    const opened = result.current.playlist
+    rerender()
+    expect(result.current.playlist).toBe(opened)
+  })
+
   it('keeps the playlist picked there before', async () => {
     const { result } = setup({ dj: { traktor: { available: vi.fn().mockResolvedValue(true) } } })
     act(() => result.current.selectSource('traktor'))
