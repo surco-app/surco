@@ -1773,6 +1773,10 @@ recodificar no se mueve. Todo se lee del origen y del fichero ya codificado, sal
 entero aunque una carátula lo haga pasar del mega. El ajuste de cues de Ajustes se suma
 encima. Solo afecta a los cues de Traktor; rekordbox y Engine DJ van por su lado.
 
+El editor de cues usa la misma regla desde el 12/11. El desfase con que pinta un MP3 en la
+pestaña de Traktor es lo que ffmpeg se saltó de ese fichero, el mismo término que resta la
+conversión, así que mover el cue al convertir a PCM y el desfase del editor nunca discrepan.
+
 Sin medir en Traktor: VBRI, MPEG-2 y la basura delante de la primera trama. Se asume que
 Traktor las trata como la Xing medida (no se salta nada).
 
@@ -2376,11 +2380,17 @@ entrada (`withGridLock`, `traktorCuesWrite.ts`) y en Engine DJ `isBeatGridLocked
 Surco guarda encima y la deja bloqueada. Solo hay tests de escritura; no está probado reanalizando
 la pista en el programa real.
 
-**Formatos.** rekordbox, todos. Traktor y Engine DJ, solo donde Surco ha medido que su reloj
-coincide con el del programa: WAV, AIFF y FLAC, y en Traktor también los MP3 hechos con iTunes,
-que Traktor dibuja 27 ms más tarde (`TRAKTOR_ITUNES_MP3_LEAD_MS`, `traktorTimeline.ts:4`; con
-ese desfase se corrigen también la onda, la escucha y Auto marcar de esos MP3 en la pestaña
-de Traktor). El resto sale con el motivo «reloj sin medir».
+**Formatos.** rekordbox, todos. Engine DJ, solo WAV, AIFF y FLAC, donde Surco ha medido que su
+reloj coincide con el del programa. Traktor, WAV, AIFF y FLAC con desfase 0 y cualquier MP3 cuya
+cabecera Surco sepa leer, con la misma regla medida que usa la conversión (ver «Calibración al
+cruzar MP3»). Traktor dibuja cada MP3 tan tarde como lo que ffmpeg se salta de él, la trama de
+cabecera más el retardo cuando ffmpeg se fía de la etiqueta (`skippedByFfmpegMs`,
+`cueCalibration.ts`; `traktorLeadOfFile`, `traktorTimeline.ts`). A 44,1 kHz son 51,18 ms con
+Xing/LAME, 0 sin Xing y 26,12 ms en los de iTunes, que el 03/11 se midieron en unos 27 ms. Con
+ese desfase se corrigen la onda, la onda fina, la escucha, el ajuste de rejilla y Auto marcar
+en la pestaña de Traktor, y un cue puesto en el instante 10000 ms del audio se guarda en
+Traktor en 10051,18 ms en un MP3 de LAME. La exportación de Traktor al USB usa el mismo
+desfase. El resto (M4A y los MP3 cuya cabecera no se lee) sale con el motivo «reloj sin medir».
 
 ### Filtro «Rejilla mal»
 
