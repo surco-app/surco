@@ -7091,6 +7091,9 @@ describe('App derived list stability', () => {
     await act(async () => {
       await new Promise((r) => setTimeout(r, 0))
     })
+    await act(async () => {
+      await new Promise(requestAnimationFrame)
+    })
     const before = sortRuns.count
     runMenu('find-replace')
     await screen.findByTestId('find-replace-find')
@@ -7133,6 +7136,9 @@ describe('App derived list stability', () => {
     await addTwoTracks()
     await act(async () => {
       await new Promise((r) => setTimeout(r, 0))
+    })
+    await act(async () => {
+      await new Promise(requestAnimationFrame)
     })
     const before = trackListRenders.count
     runMenu('find-replace')
