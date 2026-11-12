@@ -28,7 +28,7 @@ import { WRITABLE_PROGRAMS, writableInOrder } from '../../../shared/djProgram'
 import { EDITOR_SECTION_GROUP } from '../../../shared/editorSections'
 import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../../../shared/format'
 import type { GridCheck } from '../../../shared/gridCheck'
-import { isFrom, READ_ONLY_BLOCKED, readOnlyProgramsOf } from '../../../shared/trackOrigin'
+import { READ_ONLY_BLOCKED, readOnlyProgramsOf } from '../../../shared/trackOrigin'
 import type {
   DeclickConfig,
   FormatSetting,
@@ -63,7 +63,6 @@ import type { AppleMusicIndex } from '../lib/appleMusicLibrary'
 import { isAmbiguousCandidate } from '../lib/appleMusicLibrary'
 import { activeCleanups, cleanReasons, undoCleanup } from '../lib/autoClean'
 import { clearedTrackPatch, matchTargetOf, shouldAutoApplyMatch } from '../lib/autoMatch'
-import { baseName } from '../lib/baseName'
 import { convertGate, leftOutNote } from '../lib/batch'
 import { type CopyReason, compareCopies } from '../lib/bestCopy'
 import { BULK_FIELDS, GENRE_TAGS, GROUPING_TAGS } from '../lib/bulkEdit'
@@ -354,7 +353,6 @@ export const Editor = memo(function Editor({
     addToAppleMusic,
     addToEngineDj,
     keepMp3Sources,
-    outputDir,
     overwriteOriginal,
     backupPolicy,
     convertBesideOriginal,
@@ -2042,17 +2040,11 @@ export const Editor = memo(function Editor({
           tagsOnly={tagsOnlyExport}
           sameFormat={formatMatchesInput(format, item.inputPath)}
           upToDate={upToDate}
-          inMusic={librarySource === 'appleMusic' && inLibrary === 'yes'}
-          musicHoldsFile={musicHoldsFile}
-          musicPending={replaceTargetPending}
-          djHolds={djTargets.filter((id) => openSource === id || isFrom(item, id))}
-          replacedFormat={replacedCopyPath ? fileExtension(replacedCopyPath) : ''}
           addToAppleMusic={picked.addToAppleMusic}
           djTargets={djTargets}
           openSource={openSource}
           destination={destination}
           destinations={destinationChoices}
-          outputFolder={baseName(outputDir.replace(/[\\/]+$/, ''))}
           format={isMulti ? formatPick : format}
           exportedFormat={exportedFormat}
           musicExt={musicExt}

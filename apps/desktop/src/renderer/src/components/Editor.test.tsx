@@ -1040,70 +1040,6 @@ describe('Editor Traktor Playlists field without a confirmed collection', () => 
   })
 })
 
-describe('Editor convert button with Traktor taking new tracks', () => {
-  const status = (traktorFound: boolean) =>
-    vi.fn<Api['libraryStatus']>().mockResolvedValue({
-      rekordbox: { enabled: false, found: false },
-      engine: { enabled: false, found: false },
-      traktor: { enabled: true, found: traktorFound },
-      serato: { enabled: false, found: false },
-      virtualdj: { enabled: false, found: false },
-    })
-
-  it('names Traktor on the line once its collection is found and confirmed', async () => {
-    Object.assign(window.api, { libraryStatus: status(true) })
-    renderEditor({ id: 'a' }, 'aiff', {
-      addToAppleMusic: false,
-      addToTraktor: true,
-      traktorNmlPath: '/c/collection.nml',
-      outputDir: '/out',
-    })
-    await waitFor(() =>
-      expect(screen.getByTestId('convert-destination-line')).toHaveTextContent(
-        'Saves to out · Syncs Traktor',
-      ),
-    )
-  })
-
-  it('does not name Traktor without a confirmed collection.nml, since Surco writes only to that one', async () => {
-    const libraryStatus = status(true)
-    Object.assign(window.api, { libraryStatus })
-    renderEditor({ id: 'a' }, 'aiff', {
-      addToAppleMusic: false,
-      addToTraktor: true,
-      traktorNmlPath: '',
-      outputDir: '/out',
-    })
-    await waitFor(() => expect(libraryStatus).toHaveBeenCalled())
-    await act(async () => {})
-    expect(screen.getByTestId('convert-destination-line')).toHaveTextContent('Saves to out')
-    expect(screen.getByTestId('convert-destination-line')).not.toHaveTextContent('Traktor')
-  })
-
-  it('names a DJ program on the line the moment its add setting is turned on in Settings', async () => {
-    Object.assign(window.api, {
-      libraryStatus: vi.fn<Api['libraryStatus']>().mockResolvedValue({
-        rekordbox: { enabled: true, found: true },
-        engine: { enabled: false, found: false },
-        traktor: { enabled: false, found: false },
-        serato: { enabled: false, found: false },
-        virtualdj: { enabled: false, found: false },
-      }),
-    })
-    const { changeSettings } = renderEditor({ id: 'a' }, 'aiff', {
-      addToAppleMusic: false,
-      outputDir: '/out',
-    })
-    expect(screen.getByTestId('convert-destination-line')).not.toHaveTextContent('rekordbox')
-    changeSettings({ addToRekordbox: true })
-    await waitFor(() =>
-      expect(screen.getByTestId('convert-destination-line')).toHaveTextContent(
-        'Saves to out · Syncs rekordbox',
-      ),
-    )
-  })
-})
-
 describe('Editor compilation field', () => {
   // A compilation is a yes/no fact, not free text: a checkbox writes the exact
   // '1' the TCMP/COMPILATION tag needs, where a text field would invite junk.
@@ -2421,19 +2357,15 @@ describe('Editor convert line for a rekordbox track whose Music entry is this ve
     expect(screen.queryByTestId('convert-destination-line')).toBeNull()
   })
 
-  it('says it updates Music and rekordbox, never that it replaces the copy, once a tag is edited', async () => {
+  it('offers to update the tags, never to replace the copy, once a tag is edited', async () => {
     renderEditor({ ...track({ ...read, genre: 'House' }) }, 'aiff', {
       libraryIndex,
       addToRekordbox: true,
     })
     await waitFor(() =>
-      expect(screen.getByTestId('convert-destination-line')).toHaveTextContent(
-        'Updates Apple Music · rekordbox',
-      ),
+      expect(window.api.appleMusicEntryLocation).toHaveBeenCalledWith('0123456789ABCDEF'),
     )
-    expect(screen.getByTestId('convert-destination-line')).toHaveTextContent(
-      /^Updates Apple Music · rekordbox$/,
-    )
+    await act(async () => {})
     expect(screen.getByTestId('process-btn')).toHaveTextContent('Update tags')
   })
 
@@ -2447,10 +2379,9 @@ describe('Editor convert line for a rekordbox track whose Music entry is this ve
       },
     )
     await waitFor(() =>
-      expect(screen.getByTestId('convert-destination-line')).toHaveTextContent(
-        /^Updates Apple Music · rekordbox$/,
-      ),
+      expect(window.api.appleMusicEntryLocation).toHaveBeenCalledWith('0123456789ABCDEF'),
     )
+    await act(async () => {})
     fireEvent.click(screen.getByTestId('process-btn'))
     expect(onProcess).toHaveBeenCalled()
     expect(onChange).toHaveBeenCalledWith({ musicPersistentId: '0123456789ABCDEF' })
@@ -2467,7 +2398,6 @@ describe('Editor convert line for a rekordbox track whose Music entry is this ve
     await waitFor(() =>
       expect(window.api.appleMusicEntryLocation).toHaveBeenCalledWith('0123456789ABCDEF'),
     )
-    expect(screen.getByTestId('convert-destination-line')).toHaveTextContent(/^Updates rekordbox$/)
     expect(screen.getByTestId('process-btn')).toHaveAccessibleName('Update tags')
   })
 
@@ -2483,29 +2413,6 @@ describe('Editor convert line for a rekordbox track whose Music entry is this ve
 })
 
 describe('Editor export control', () => {
-  it('names the output folder in the destination line, not beside the button', () => {
-    renderEditor({ id: 'a' }, 'aiff', {
-      addToAppleMusic: false,
-      outputDir: '/Volumes/NAS/Conversiones/',
-    })
-    expect(screen.getByTestId('process-btn')).toHaveAccessibleName('Convert to AIFF')
-    expect(screen.getByTestId('convert-destination-line')).toHaveTextContent(
-      'Saves to Conversiones',
-    )
-  })
-
-  it('says beside the original on the destination line when that is the destination', () => {
-    renderEditor({ id: 'a' }, 'wav', {
-      addToAppleMusic: false,
-      outputDir: '/out',
-      convertBesideOriginal: true,
-    })
-    expect(screen.getByTestId('convert-destination-line')).toHaveTextContent(
-      'Saves next to the original',
-    )
-    expect(screen.getByTestId('process-btn')).toHaveAccessibleName('Convert to WAV')
-  })
-
   describe('when the file already carries the editor', () => {
     const read = { genre: 'Techno' }
     const diskSignature = trackSignature(item({ id: 'a', meta: read }))

@@ -43,7 +43,6 @@ function footer(
       spectrum={undefined}
       isMulti={false}
       selectedCount={1}
-      outputFolder=""
       status={status(showDone)}
       stale={false}
       done={showDone}
@@ -55,10 +54,6 @@ function footer(
       addToAppleMusic={false}
       sameFormat={false}
       upToDate={false}
-      inMusic={false}
-      musicHoldsFile={false}
-      djHolds={[]}
-      replacedFormat=""
       djTargets={[]}
       openSource={null}
       destination={'beside' as Destination}
@@ -1189,14 +1184,13 @@ describe('ConvertFooter destination line', () => {
     ;(window as unknown as { api: Record<string, unknown> }).api = { platform: 'darwin' }
   }
 
-  it('names where the file goes above the button', () => {
+  it('leaves the button alone, since Activity tells where each file went once it is done', () => {
     mac()
     render(
       cloneElement(idle, {
         destination: 'appleMusic',
         destinations: ['appleMusic'],
         addToAppleMusic: true,
-        inMusic: true,
         willEditInPlace: true,
         tagsOnly: true,
         sameFormat: true,
@@ -1204,57 +1198,8 @@ describe('ConvertFooter destination line', () => {
         djTargets: ['rekordbox'],
       }),
     )
-    expect(screen.getByTestId('convert-destination-line')).toHaveTextContent(
-      'Updates Apple Music · rekordbox',
-    )
-    for (const part of screen.getAllByTestId('convert-destination-part')) {
-      expect(part).toHaveAttribute('data-tone', 'dim')
-    }
     expect(screen.getByTestId('process-btn')).toHaveTextContent('Update tags')
-  })
-
-  it('reads amber on the better-copy statement only, so the places beside it stay quiet', () => {
-    mac()
-    render(
-      cloneElement(idle, {
-        destination: 'appleMusic',
-        destinations: ['appleMusic'],
-        addToAppleMusic: true,
-        replaces: true,
-        libraryBetter: true,
-        djTargets: ['rekordbox'],
-      }),
-    )
-    const [better, synced] = screen.getAllByTestId('convert-destination-part')
-    expect(better).toHaveTextContent('The Apple Music copy is better')
-    expect(better).toHaveAttribute('data-tone', 'warn')
-    expect(synced).toHaveTextContent('Syncs rekordbox')
-    expect(synced).toHaveAttribute('data-tone', 'dim')
-    expect(screen.getByTestId('convert-destination-line')).toHaveTextContent(
-      'The Apple Music copy is better · Syncs rekordbox',
-    )
-  })
-
-  it('says it updates the Music entry, not that it replaces it, when that entry is the open file', () => {
-    mac()
-    render(
-      cloneElement(idle, {
-        destination: 'appleMusic',
-        destinations: ['appleMusic'],
-        addToAppleMusic: true,
-        replaces: true,
-        replacedFormat: 'aiff',
-        musicHoldsFile: true,
-        willEditInPlace: true,
-        tagsOnly: true,
-        sameFormat: true,
-        openSource: 'rekordbox',
-        djTargets: ['rekordbox'],
-      }),
-    )
-    expect(screen.getByTestId('convert-destination-line')).toHaveTextContent(
-      'Updates Apple Music · rekordbox',
-    )
+    expect(screen.queryByTestId('convert-destination-line')).toBeNull()
   })
 
   it('hands focus to Update anyway when a finished track goes back to having nothing to write', () => {
