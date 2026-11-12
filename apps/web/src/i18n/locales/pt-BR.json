@@ -417,6 +417,52 @@
         ]
       }
     ],
+    "programs": {
+      "kicker": "Programas de DJ",
+      "title": "O que o Surco faz com cada programa",
+      "lede": "rekordbox, Traktor, Engine DJ, Serato e VirtualDJ. O que o Surco grava na sua biblioteca, ele grava com cópia antes e com o programa fechado.",
+      "feature": "Função",
+      "yes": "Sim",
+      "no": "Não",
+      "foot": "Com o programa aberto, as mudanças esperam e são gravadas quando você o fecha. O Apple Music tem a sua própria seção.",
+      "groups": {
+        "library": "Biblioteca",
+        "cues": "Cues e grade",
+        "convert": "Ao converter",
+        "usb": "USB e cópias"
+      },
+      "rows": {
+        "tab": "Aba com as playlists",
+        "edit": "Criar, renomear e mover playlists",
+        "paste": "Colar uma tracklist",
+        "session": "Sessão automática",
+        "cueEditor": "Editor de hot cues e Marcar automático",
+        "calls": "CALL",
+        "flows": "Fluxos e faixa gêmea em outro programa",
+        "grid": "Salvar a grade",
+        "add": "Adicionar a faixa convertida",
+        "names": "Levar título, artista, álbum e gênero",
+        "follow": "Seguir a faixa nova com seus cues",
+        "usb": "Pendrive para players Pioneer",
+        "copies": "Cópia antes de gravar e restaurar",
+        "windows": "Windows"
+      },
+      "notes": {
+        "noRenameMove": "Sem renomear nem mover",
+        "crates": "Crates",
+        "listsFolders": "Listas e pastas",
+        "hotCuesOnly": "Só hot cues",
+        "zones": "Também por trechos",
+        "losslessFiles": "WAV, AIFF e FLAC",
+        "readsOnly": "Só lê",
+        "inPlace": "No lugar",
+        "sameFolder": "Na mesma pasta",
+        "keepsOriginal": "Mantém o original",
+        "engineUsb": "Pendrive do Engine",
+        "noRestore": "Sem restaurar em Cópias",
+        "macOnly": "Só macOS"
+      }
+    },
     "metaTitle": "Tudo o que o Surco faz · Funções",
     "metaDescription": "Converta, etiquete com Discogs, Bandcamp, Deezer, Beatport ou MusicBrainz, analise a qualidade, repare cliques, corte silêncios e exporte para rekordbox, Engine DJ, Traktor, Serato ou VirtualDJ. Grátis."
   },

@@ -417,6 +417,52 @@
         ]
       }
     ],
+    "programs": {
+      "kicker": "DJソフト",
+      "title": "DJソフトごとにSurcoができること",
+      "lede": "rekordbox、Traktor、Engine DJ、Serato、VirtualDJ。ライブラリへの書き込みは、必ずバックアップを取り、ソフトを閉じた状態で行います。",
+      "feature": "機能",
+      "yes": "対応",
+      "no": "非対応",
+      "foot": "ソフトが開いている間、変更は待機し、閉じたときに書き込まれます。Apple Musicは専用のセクションで扱います。",
+      "groups": {
+        "library": "ライブラリ",
+        "cues": "キューとグリッド",
+        "convert": "変換時",
+        "usb": "USBとバックアップ"
+      },
+      "rows": {
+        "tab": "プレイリストのタブ",
+        "edit": "プレイリストの作成・名前変更・移動",
+        "paste": "トラックリストの貼り付け",
+        "session": "自動セッション",
+        "cueEditor": "ホットキューエディタと自動マーク",
+        "calls": "CALL",
+        "flows": "フローと他ソフトの同じトラック",
+        "grid": "グリッドの保存",
+        "add": "変換したトラックの追加",
+        "names": "タイトル・アーティスト・アルバム・ジャンルの反映",
+        "follow": "キューごと新しいトラックへ付け替え",
+        "usb": "Pioneerプレイヤー用USB",
+        "copies": "書き込み前のバックアップと復元",
+        "windows": "Windows"
+      },
+      "notes": {
+        "noRenameMove": "名前変更・移動は不可",
+        "crates": "クレート",
+        "listsFolders": "リストとフォルダー",
+        "hotCuesOnly": "ホットキューのみ",
+        "zones": "区間ごとにも",
+        "losslessFiles": "WAV・AIFF・FLAC",
+        "readsOnly": "読み取りのみ",
+        "inPlace": "同じ場所のみ",
+        "sameFolder": "同じフォルダーのみ",
+        "keepsOriginal": "元ファイルを維持",
+        "engineUsb": "Engine用USB",
+        "noRestore": "バックアップ画面は非対応",
+        "macOnly": "macOSのみ"
+      }
+    },
     "metaTitle": "Surco にできることすべて · 機能",
     "metaDescription": "変換、Discogs・Bandcamp・Deezer・Beatport・MusicBrainz からのタグ付け、品質分析、クリック修復、無音トリミング、そして rekordbox・Engine DJ・Traktor・Serato・VirtualDJ へのエクスポート。無料。"
   },

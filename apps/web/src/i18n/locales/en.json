@@ -417,6 +417,52 @@
         ]
       }
     ],
+    "programs": {
+      "kicker": "DJ apps",
+      "title": "What Surco does with each program",
+      "lede": "rekordbox, Traktor, Engine DJ, Serato and VirtualDJ. Whatever Surco writes to your library, it writes after a backup and with the program closed.",
+      "feature": "Feature",
+      "yes": "Yes",
+      "no": "No",
+      "foot": "With the program open, the changes wait and are written when you close it. Apple Music has its own section.",
+      "groups": {
+        "library": "Library",
+        "cues": "Cues and grid",
+        "convert": "When converting",
+        "usb": "USB and backups"
+      },
+      "rows": {
+        "tab": "Tab with its playlists",
+        "edit": "Create, rename and move playlists",
+        "paste": "Paste a tracklist",
+        "session": "Automatic session",
+        "cueEditor": "Hot cue editor and Auto mark",
+        "calls": "CALL",
+        "flows": "Flows and twin track in another program",
+        "grid": "Save the grid",
+        "add": "Add the converted track",
+        "names": "Carry title, artist, album and genre",
+        "follow": "Follow the new track with its cues",
+        "usb": "USB for Pioneer players",
+        "copies": "Backup before writing, and restore",
+        "windows": "Windows"
+      },
+      "notes": {
+        "noRenameMove": "No rename or move",
+        "crates": "Crates",
+        "listsFolders": "Lists and folders",
+        "hotCuesOnly": "Hot cues only",
+        "zones": "Stretches too",
+        "losslessFiles": "WAV, AIFF and FLAC",
+        "readsOnly": "Reads it",
+        "inPlace": "In place",
+        "sameFolder": "Same folder",
+        "keepsOriginal": "Keeps the original",
+        "engineUsb": "Engine USB",
+        "noRestore": "Not in Backups",
+        "macOnly": "macOS only"
+      }
+    },
     "metaTitle": "Everything Surco does · Features",
     "metaDescription": "Convert, tag from Discogs, Bandcamp, Deezer, Beatport or MusicBrainz, analyse quality, repair clicks, trim silence and export to rekordbox, Engine DJ, Traktor, Serato or VirtualDJ. Free."
   },

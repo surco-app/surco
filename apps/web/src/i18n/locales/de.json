@@ -417,6 +417,52 @@
         ]
       }
     ],
+    "programs": {
+      "kicker": "DJ-Programme",
+      "title": "Was Surco mit jedem Programm macht",
+      "lede": "rekordbox, Traktor, Engine DJ, Serato und VirtualDJ. Was Surco in deine Bibliothek schreibt, schreibt es nach einer Sicherung und bei geschlossenem Programm.",
+      "feature": "Funktion",
+      "yes": "Ja",
+      "no": "Nein",
+      "foot": "Ist das Programm offen, warten die Änderungen und werden beim Schließen geschrieben. Apple Music hat einen eigenen Abschnitt.",
+      "groups": {
+        "library": "Bibliothek",
+        "cues": "Cues und Raster",
+        "convert": "Beim Konvertieren",
+        "usb": "USB und Backups"
+      },
+      "rows": {
+        "tab": "Tab mit seinen Playlists",
+        "edit": "Playlists anlegen, umbenennen und verschieben",
+        "paste": "Tracklist einfügen",
+        "session": "Automatische Session",
+        "cueEditor": "Hot-Cue-Editor und Auto-Markieren",
+        "calls": "CALL",
+        "flows": "Abläufe und Zwillingstrack in einem anderen Programm",
+        "grid": "Raster speichern",
+        "add": "Konvertierten Track hinzufügen",
+        "names": "Titel, Artist, Album und Genre mitnehmen",
+        "follow": "Dem neuen Track mit seinen Cues folgen",
+        "usb": "USB für Pioneer-Player",
+        "copies": "Sicherung vor dem Schreiben und Wiederherstellen",
+        "windows": "Windows"
+      },
+      "notes": {
+        "noRenameMove": "Ohne Umbenennen und Verschieben",
+        "crates": "Crates",
+        "listsFolders": "Listen und Ordner",
+        "hotCuesOnly": "Nur Hot Cues",
+        "zones": "Auch in Abschnitten",
+        "losslessFiles": "WAV, AIFF und FLAC",
+        "readsOnly": "Nur gelesen",
+        "inPlace": "Am selben Ort",
+        "sameFolder": "Im selben Ordner",
+        "keepsOriginal": "Behält das Original",
+        "engineUsb": "Engine-USB",
+        "noRestore": "Nicht in Backups",
+        "macOnly": "Nur macOS"
+      }
+    },
     "metaTitle": "Alles, was Surco kann · Funktionen",
     "metaDescription": "Konvertieren, aus Discogs, Bandcamp, Deezer, Beatport oder MusicBrainz taggen, Qualität analysieren, Knackser reparieren, Stille kürzen und nach rekordbox, Engine DJ, Traktor, Serato oder VirtualDJ exportieren. Kostenlos."
   },
