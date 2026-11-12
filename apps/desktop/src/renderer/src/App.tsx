@@ -68,7 +68,6 @@ import type {
   TrackMetadata,
   TrashEntry,
   UsbProgram,
-  UsbVolume,
 } from '../../shared/types'
 import { LiveActivityPanel } from './components/ActivityPanel'
 import { Confetti } from './components/Confetti'
@@ -139,6 +138,7 @@ import { NEW_TRACKS_PROMPT_TIMEOUT_MS, useTrackLibrary } from './hooks/useTrackL
 import { useTrackProcessing } from './hooks/useTrackProcessing'
 import { useTracksView, type ViewCacheEntry } from './hooks/useTracksView'
 import { useTriageFilters } from './hooks/useTriageFilters'
+import { useUsbExportToasts } from './hooks/useUsbExportToasts'
 import { useUsbVolumes } from './hooks/useUsbVolumes'
 import { useVerificationUpdates } from './hooks/useVerificationUpdates'
 import { waveformOptions } from './hooks/useWaveform'
@@ -264,7 +264,7 @@ import {
   type TrackSort,
 } from './lib/triage'
 import { detectTrim } from './lib/trim'
-import { formatSpan, isRunning, newlyMounted } from './lib/usbExport'
+import { isRunning } from './lib/usbExport'
 import { connectUsbExportFeed, usbExportStore, useUsbExportState } from './lib/usbExportStore'
 import type { CopiedTags, TrackItem } from './types'
 
@@ -1129,59 +1129,15 @@ export default function App(): React.JSX.Element {
     enabled: usbModal !== null,
     staleTime: Number.POSITIVE_INFINITY,
   })
-  // A stick plugged in while Surco runs, holding an export, is offered in one click. Not
-  // while the chooser is open (it lists it already) or an export runs.
-  const prevVolumes = useRef<UsbVolume[] | null>(null)
-  useEffect(() => {
-    if (!usbVolumes) return
-    const appeared = newlyMounted(prevVolumes.current, usbVolumes.volumes)
-    prevVolumes.current = usbVolumes.volumes
-    if (usbModal || usbRunning) return
-    for (const v of appeared.filter((x) => x.holder.by !== 'empty'))
-      pushToast(store, {
-        key: `usb-connected-${v.uuid}`,
-        tone: 'neutral',
-        message: { key: 'usbExport.connected', values: { name: v.name } },
-        action: {
-          label: { key: 'usbExport.connectedAction' },
-          onAction: () => openUsbExport(v.uuid),
-        },
-        duration: 8000,
-        testid: 'usb-connected',
-      })
-  }, [usbVolumes, usbModal, usbRunning, store, openUsbExport])
-  // An export that ends with its modal closed says so in a notice; with the modal open, the
-  // modal says it.
-  const lastUsbPhase = useRef(usbPhase)
-  useEffect(() => {
-    const was = lastUsbPhase.current
-    lastUsbPhase.current = usbPhase
-    if (usbModal || was === usbPhase) return
-    const s = usbExportStore.getState()
-    if (usbPhase === 'done' && s.result) {
-      pushToast(store, {
-        tone: 'neutral',
-        message: {
-          key: 'usbExport.progress.done',
-          values: { count: s.result.tracks, time: formatSpan(s.result.ms, tr) },
-        },
-        duration: 10000,
-        testid: 'usb-done-notice',
-      })
-      if (!s.result.syncFiles)
-        pushToast(store, {
-          tone: 'danger',
-          message: { key: 'usbExport.errors.sync-files' },
-          testid: 'usb-sync-files-notice',
-        })
-    }
-    if (usbPhase === 'error' && s.reason)
-      pushToast(store, {
-        tone: 'danger',
-        message: { key: `usbExport.errors.${s.reason}` },
-        testid: 'usb-error-notice',
-      })
-  }, [usbPhase, usbModal, store, tr])
+  useUsbExportToasts({
+    store,
+    usbVolumes,
+    usbModal,
+    usbRunning,
+    usbPhase,
+    openUsbExport,
+    tr,
+  })
   // Each source is its own list with its own selection: the row picked in Tracks is not in
   // Music, and leaving it selected there kept its editor open beside a list without it.
   // What is kept was picked before leaving, so rows removed meanwhile are left out.
