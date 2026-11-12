@@ -7,6 +7,16 @@ import type { Command } from '../lib/commands'
 import type { TrackItem } from '../types'
 import { CommandPalette } from './CommandPalette'
 
+const { trackSearches } = vi.hoisted(() => ({ trackSearches: { count: 0 } }))
+vi.mock('../lib/commands', async (importOriginal) => {
+  const real = await importOriginal<typeof import('../lib/commands')>()
+  const filterTrackCommands: typeof real.filterTrackCommands = (...args) => {
+    trackSearches.count++
+    return real.filterTrackCommands(...args)
+  }
+  return { ...real, filterTrackCommands }
+})
+
 afterEach(cleanup)
 
 function cmd(over: Partial<Command> & { id: string }): Command {
@@ -294,6 +304,44 @@ describe('CommandPalette', () => {
     fireEvent.click(screen.getByText('Daft Punk — Da Funk'))
     expect(onGoToTrack).toHaveBeenCalledWith('t1')
     expect(onClose).toHaveBeenCalled()
+  })
+
+  // The track search folds the text of every visible track — thousands of them in a real
+  // crate. Arrowing through the results, or the app re-rendering behind the palette, leaves
+  // the query and the tracks as they were, so the search must not run again.
+  it('does not search the tracks again while arrowing or when re-rendered with the same input', () => {
+    const tracks = [track('t1', 'Daft Punk', 'Da Funk'), track('t2', 'Daft Punk', 'Da Rock')]
+    const props = {
+      commands: [cmd({ id: 'a', title: 'Add files' })],
+      tracks,
+      onClose: vi.fn(),
+    }
+    const { rerender } = render(<CommandPalette {...props} onGoToTrack={vi.fn()} />)
+    fireEvent.change(screen.getByTestId('palette-input'), { target: { value: 'daft' } })
+    const before = trackSearches.count
+
+    fireEvent.keyDown(screen.getByTestId('palette-input'), { key: 'ArrowDown' })
+    fireEvent.keyDown(screen.getByTestId('palette-input'), { key: 'ArrowDown' })
+    rerender(<CommandPalette {...props} onGoToTrack={vi.fn()} />)
+
+    expect(trackSearches.count).toBe(before)
+  })
+
+  // The search result is reused, but the jump it runs must still be the latest one the
+  // app handed in.
+  it('jumps through the latest track handler after a re-render', () => {
+    const tracks = [track('t1', 'Daft Punk', 'Da Funk')]
+    const props = { commands: [cmd({ id: 'a', title: 'Add files' })], tracks, onClose: vi.fn() }
+    const stale = vi.fn()
+    const latest = vi.fn()
+    const { rerender } = render(<CommandPalette {...props} onGoToTrack={stale} />)
+    fireEvent.change(screen.getByTestId('palette-input'), { target: { value: 'da funk' } })
+    rerender(<CommandPalette {...props} onGoToTrack={latest} />)
+
+    fireEvent.click(screen.getByText('Daft Punk — Da Funk'))
+
+    expect(latest).toHaveBeenCalledWith('t1')
+    expect(stale).not.toHaveBeenCalled()
   })
 
   // The empty query keeps ⌘K a pure command launcher — tracks only appear once the user
