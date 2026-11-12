@@ -214,7 +214,7 @@ export function createAskToApply(deps: {
         cancelId: 0,
       })
       if (response !== 1) return false
-      return deps.processes[program].quit()
+      return deps.processes[program].quit().catch(() => false)
     })
     return async (win: BrowserWindow | null): Promise<ApplyAnswer> => {
       const running = await deps.processes[program].isRunning().catch(() => true)
