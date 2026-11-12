@@ -2519,7 +2519,7 @@ app.whenReady().then(() => {
       const file = traktorCoverFile(traktorReadPath(), traktorCover)
       const png = file && traktorCoverPng(file)
       return png
-        ? new Response(png, { headers: { 'Content-Type': 'image/png' } })
+        ? new Response(new Uint8Array(png), { headers: { 'Content-Type': 'image/png' } })
         : new Response('Not found', { status: 404 })
     }
     const thumb = coverThumbPathOf(req.url)
