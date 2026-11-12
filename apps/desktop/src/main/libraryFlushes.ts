@@ -53,7 +53,7 @@ import type { createSessionBackup } from './rekordboxSessionBackup'
 import { updateRekordboxTags } from './rekordboxTags'
 import { seratoLibraryHas } from './seratoCrateEdits'
 import type { SeratoLibraryRoot } from './seratoLibrary'
-import { syncSeratoTags } from './seratoTagSync'
+import { seratoTagOps, syncSeratoTags } from './seratoTagSync'
 import { getSettings } from './settings'
 import { readEmbeddedCover } from './tags'
 import type { NmlPatch } from './traktorNml'
@@ -452,14 +452,20 @@ function virtualdjConversionFlusher(
 }
 
 function queueSeratoRun(queue: NonNullable<ConversionQueues['serato']>, run: ConversionRun): void {
-  const addToSerato = getSettings().addToSerato
-  const ops = libraryTrackOps(
-    run.repoints,
-    'serato',
-    undefined,
-    addToSerato,
-    addToSerato && run.addable ? seratoLibraryHas(queue.roots()) : undefined,
-  )
+  const { addToSerato, syncSerato } = getSettings()
+  const named = syncSerato
+    ? run.repoints.flatMap((r) => (r.names ? [{ path: r.to, fields: r.names }] : []))
+    : []
+  const ops = [
+    ...libraryTrackOps(
+      run.repoints,
+      'serato',
+      undefined,
+      addToSerato,
+      addToSerato && run.addable ? seratoLibraryHas(queue.roots()) : undefined,
+    ),
+    ...(named.length > 0 ? seratoTagOps(named, queue.roots()) : []),
+  ]
   if (ops.length === 0) return
   queue.enqueue(ops)
   queue.applyQuietly()

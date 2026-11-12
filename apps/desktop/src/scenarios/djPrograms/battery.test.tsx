@@ -88,7 +88,7 @@ const UPDATE_CARRIES_TITLE: Record<DjProgram, boolean> = {
   rekordbox: true,
   traktor: true,
   engine: true,
-  serato: false,
+  serato: true,
   virtualdj: true,
 }
 

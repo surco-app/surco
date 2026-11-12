@@ -974,6 +974,32 @@ describe('flushConversionBatch with a converted track Serato does not have', () 
     })
   })
 
+  it('queues the names an in-place Update changed for a track Serato holds, only with syncSerato on, so Serato shows what the file now says as the other libraries do', async () => {
+    const roots = seratoHome(['m/a.flac'])
+    const serato = { enqueue: vi.fn(), applyQuietly: vi.fn(), roots: () => roots }
+    Object.assign(REPOINTS[0], { names: { title: { from: 'Old', to: 'New' } } })
+    try {
+      Object.assign(SETTINGS, { syncSerato: true })
+      await flush(serato)
+      expect(serato.enqueue).toHaveBeenCalledWith([
+        expect.objectContaining({
+          kind: 'tags',
+          path: '/m/a.flac',
+          fields: { tsng: 'New' },
+          from: { tsng: 'Old' },
+        }),
+      ])
+      expect(serato.applyQuietly).toHaveBeenCalled()
+      serato.enqueue.mockClear()
+      Object.assign(SETTINGS, { syncSerato: false })
+      await flush(serato)
+      expect(serato.enqueue).not.toHaveBeenCalled()
+    } finally {
+      delete (REPOINTS[0] as Record<string, unknown>).names
+      Object.assign(SETTINGS, { syncSerato: false })
+    }
+  })
+
   it('does not queue the output of a conversion whose source Serato holds, since Serato keeps the original and would list the track twice', async () => {
     const roots = seratoHome(['m/a.mp3'])
     const serato = { enqueue: vi.fn(), applyQuietly: vi.fn(), roots: () => roots }
