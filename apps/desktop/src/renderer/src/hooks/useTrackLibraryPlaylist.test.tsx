@@ -1486,3 +1486,99 @@ describe('reading every row art in the background', () => {
     expect(renders - before).toBeLessThanOrEqual(2)
   })
 })
+
+describe('a playlist whose disk check streams its files back', () => {
+  const entries = (paths: string[]) => paths.map((path) => ({ path, separator: false, meta: {} }))
+  const streamingSetup = (batches: (paths: string[]) => string[][], opts = {}, over = {}) => {
+    let stream: (paths: string[]) => void = () => {}
+    return setup(
+      {
+        ...over,
+        onExpandedBatch: vi.fn<Api['onExpandedBatch']>((cb) => {
+          stream = cb
+          return () => {}
+        }),
+        expandPaths: vi.fn<Api['expandPaths']>(async (paths) => {
+          for (const batch of batches(paths)) stream(batch)
+          return paths
+        }),
+      },
+      opts,
+    )
+  }
+
+  it('keeps one row per file in playlist order and lets a later drop join Files without a duplicate notice', async () => {
+    const onDuplicatesSkipped = vi.fn()
+    const { result } = streamingSetup(
+      () => [['/m/a.aiff', '/m/b.aiff'], ['/m/c.aiff'], ['/m/b.aiff', '/m/d.aiff']],
+      { onDuplicatesSkipped },
+    )
+    await act(async () => {
+      await result.current.openSourcePlaylist(
+        entries(['/m/a.aiff', '/m/b.aiff', '/m/c.aiff', '/m/d.aiff']),
+        'rekordbox',
+      )
+    })
+    const playlistId = result.current.tracks[2].id
+    await act(async () => {
+      await result.current.addPaths(['/m/c.aiff', '/m/e.aiff'])
+    })
+
+    expect(result.current.tracks.map((t) => [t.inputPath, Boolean(t.inFiles)])).toEqual([
+      ['/m/a.aiff', false],
+      ['/m/b.aiff', false],
+      ['/m/c.aiff', true],
+      ['/m/d.aiff', false],
+      ['/m/e.aiff', true],
+    ])
+    expect(result.current.tracks[2].id).toBe(playlistId)
+    expect(onDuplicatesSkipped).not.toHaveBeenCalled()
+
+    await act(async () => {
+      await result.current.addPaths(['/m/c.aiff', '/m/a.aiff'])
+    })
+    expect(result.current.tracks).toHaveLength(5)
+    expect(result.current.tracks[0].inFiles).toBe(true)
+    expect(onDuplicatesSkipped).toHaveBeenCalledWith(1)
+    await waitFor(() => expect(result.current.importProgress).toBeNull())
+  })
+
+  it('checks each streamed batch against the crate without walking the whole crate per batch', async () => {
+    const N = 60
+    const batches = N / 2
+    const paths = Array.from({ length: N }, (_, i) => `/m/${i}.aiff`)
+    const { result } = streamingSetup(
+      (all) => Array.from({ length: batches }, (_, i) => all.slice(i * 2, i * 2 + 2)),
+      {},
+      { readMeta: vi.fn(() => new Promise(() => {})) },
+    )
+    const realMap = Array.prototype.map
+    const realFilter = Array.prototype.filter
+    let bigVisits = 0
+    const counting = (real: typeof realMap) =>
+      function (this: unknown[], callback: (...args: unknown[]) => unknown, thisArg?: unknown) {
+        if (this.length < N) return real.call(this, callback, thisArg)
+        return real.call(
+          this,
+          (...args: unknown[]) => {
+            bigVisits++
+            return callback.apply(thisArg, args)
+          },
+          thisArg,
+        )
+      }
+    Array.prototype.map = counting(realMap) as typeof realMap
+    Array.prototype.filter = counting(realFilter as unknown as typeof realMap) as typeof realFilter
+    try {
+      await act(async () => {
+        await result.current.openSourcePlaylist(entries(paths), 'rekordbox')
+      })
+    } finally {
+      Array.prototype.map = realMap
+      Array.prototype.filter = realFilter
+    }
+
+    expect(result.current.tracks.map((t) => t.inputPath)).toEqual(paths)
+    expect(bigVisits).toBeLessThan(batches * N)
+  })
+})

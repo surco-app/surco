@@ -234,6 +234,18 @@ export function useTrackLibrary({
       idIndex.current = { of: tracksRef.current, ids: new Set(tracksRef.current.map((t) => t.id)) }
     return idIndex.current.ids.has(id)
   }
+  const pathIndex = useRef<{ of: TrackItem[]; paths: Set<string>; inFiles: Set<string> } | null>(
+    null,
+  )
+  const crateByPath = (): { paths: Set<string>; inFiles: Set<string> } => {
+    if (pathIndex.current?.of !== tracksRef.current)
+      pathIndex.current = {
+        of: tracksRef.current,
+        paths: new Set(tracksRef.current.map((t) => t.inputPath)),
+        inFiles: new Set(tracksRef.current.filter((t) => t.inFiles).map((t) => t.inputPath)),
+      }
+    return pathIndex.current
+  }
   // Import progress, accumulated across overlapping drops via refs (the React state is just
   // the render mirror): each drop bumps the total, each finished read bumps done, and the
   // pair resets to null once everything in flight has landed — like the auto-match sweep.
@@ -384,10 +396,7 @@ export function useTrackLibrary({
   ): Promise<void> {
     // Read the live list, not the render snapshot: the native picker can sit open for
     // a long time, and a file that arrived through the OS meanwhile must still dedupe.
-    const existing = new Set(tracksRef.current.map((t) => t.inputPath))
-    const alreadyInFiles = new Set(
-      tracksRef.current.filter((t) => t.inFiles).map((t) => t.inputPath),
-    )
+    const { paths: existing, inFiles: alreadyInFiles } = crateByPath()
     const audio = paths.filter((p) => AUDIO_EXT.test(p))
     const fresh = audio.filter((p) => !existing.has(p))
     // A user-initiated drop that yielded no audio at all: say so rather than doing nothing
@@ -460,7 +469,13 @@ export function useTrackLibrary({
     // being exactly what was added, so the dedupe has to settle before it, not inside
     // setTracks; the updater stays a plain append and the render overwrites this with the
     // identical array.
+    const index = crateByPath()
     tracksRef.current = [...tracksRef.current, ...bases]
+    for (const b of bases) {
+      index.paths.add(b.inputPath)
+      if (b.inFiles) index.inFiles.add(b.inputPath)
+    }
+    pathIndex.current = { ...index, of: tracksRef.current }
     setTracks((prev) => [...prev, ...bases])
     // Every import route (drop, picker, Open With, watched folder) funnels through
     // here after dedup, so this is the one bump for the lifetime "loaded" tally.
