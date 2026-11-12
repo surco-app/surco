@@ -891,7 +891,15 @@ export default function App(): React.JSX.Element {
     }).data === true
   const editableSource =
     sourceEdit && (sourceEdit.gate === 'none' || traktorCanSave) ? sourceProgram : null
+  const askToApplyEdit = useStableCallback(() =>
+    window.api.dj.askToApply([editableSource ?? 'rekordbox']),
+  )
   const editRekordboxRaw = useRekordboxEdits(notifyEdit, editableSource ?? 'rekordbox')
+  const editRekordboxAsking = useRekordboxEdits(
+    notifyEdit,
+    editableSource ?? 'rekordbox',
+    askToApplyEdit,
+  )
   const dropDiscardedPlaylists = useStableCallback((paths: string[]) =>
     setTracks((prev) => discardPlaylistEdits(prev, paths)),
   )
@@ -1184,13 +1192,11 @@ export default function App(): React.JSX.Element {
       return result
     },
   )
-  const askToApplyEdit = useStableCallback(() =>
-    window.api.dj.askToApply([editableSource ?? 'rekordbox']),
-  )
   const editRekordbox = useStableCallback(
     async (edit: Parameters<typeof editRekordboxRaw>[0], name: string) => {
-      await askToApplyEdit()
-      return editRekordboxAfterAsking(edit, name)
+      const result = await editRekordboxAsking(edit, name)
+      if (result.applied && 'playlistId' in edit) sessionRun.noteEdit(edit.playlistId)
+      return result
     },
   )
   const [sessionWizard, setSessionWizard] = useState<{

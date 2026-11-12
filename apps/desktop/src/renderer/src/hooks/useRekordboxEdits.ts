@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { useCallback } from 'react'
+import { useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { DJ_PROGRAMS, type DjProgram } from '../../../shared/djProgram'
 import type {
@@ -20,9 +20,11 @@ import { SOURCE_PROGRAMS } from '../lib/sourcePrograms'
 export function useRekordboxEdits(
   notify: (text: string, tone: 'neutral' | 'danger') => void,
   source: DjProgram = 'rekordbox',
+  beforeWrite?: () => Promise<unknown>,
 ): (edit: RekordboxPlaylistEdit, playlistName: string) => Promise<RekordboxEditResult> {
   const queryClient = useQueryClient()
   const { t: tr } = useTranslation()
+  const asks = useRef<Promise<unknown>>(Promise.resolve())
   return useCallback(
     async (edit, playlistName) => {
       const sourceEdit = SOURCE_PROGRAMS[source].edit
@@ -52,6 +54,11 @@ export function useRekordboxEdits(
       })
       let result: RekordboxEditResult
       try {
+        if (beforeWrite) {
+          const turn = asks.current.then(beforeWrite)
+          asks.current = turn.catch(() => {})
+          await turn
+        }
         result = sourceEdit
           ? await sourceEdit.save(edit, playlistName)
           : { applied: false, reason: 'read-only' }
@@ -71,6 +78,6 @@ export function useRekordboxEdits(
       if (message) notify(message.text, message.tone)
       return result
     },
-    [queryClient, tr, notify, source],
+    [queryClient, tr, notify, source, beforeWrite],
   )
 }

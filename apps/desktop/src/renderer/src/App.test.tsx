@@ -1325,6 +1325,19 @@ describe('App Serato cues', () => {
     return playlist
   }
 
+  it('asks before a tree edit in Serato too, as in the other programs', async () => {
+    await renameInSerato('Sets%%Friday', 'Saturday', [
+      {
+        id: 'Sets',
+        name: 'Sets',
+        kind: 'playlist',
+        count: 0,
+        children: [{ id: 'Sets%%Saturday', name: 'Saturday', kind: 'playlist', count: 2 }],
+      },
+    ])
+    expect(window.api.dj.askToApply).toHaveBeenCalledExactlyOnceWith(['serato'])
+  })
+
   it('offers pasting a tracklist into a Serato crate, since Surco reads the whole Serato collection to find the tracks', async () => {
     openSerato()
     await renderApp()
