@@ -999,16 +999,25 @@ export const Editor = memo(function Editor({
   // Serato rows, a mixed replace/add selection), so the plan down here and the count up
   // there cannot disagree over one selection. A single track keeps its own check over the
   // live form, which the gate cannot see.
-  const multiGate = isMulti
-    ? convertGate(multiTracks, requiredFields, customFields, libraryIndex)
-    : null
+  const multiGate = useMemo(
+    () =>
+      isMulti
+        ? convertGate(selectedTracks ?? [], requiredFields, customFields, libraryIndex)
+        : null,
+    [isMulti, selectedTracks, requiredFields, customFields, libraryIndex],
+  )
   const leftOut = multiGate ? leftOutNote(multiGate, tr) : null
   // The done menu's "Convert again" re-runs every selected track, done ones included, and
   // a menu item cannot name what it would drop, so anything the re-run would leave out
   // holds it back with the reason (the same words as the header's note).
-  const againLeftOut = isMulti
-    ? leftOutNote(convertGate(multiTracks, requiredFields, customFields, libraryIndex, true), tr)
-    : null
+  const againGate = useMemo(
+    () =>
+      isMulti
+        ? convertGate(selectedTracks ?? [], requiredFields, customFields, libraryIndex, true)
+        : null,
+    [isMulti, selectedTracks, requiredFields, customFields, libraryIndex],
+  )
+  const againLeftOut = againGate ? leftOutNote(againGate, tr) : null
   const blockedBy = isMulti ? undefined : readOnlyProgramsOf(item)[0]
   const readOnlyRows = blockedBy !== undefined
   const missing = isMulti || readOnlyRows ? [] : missingRequired(resolvedMeta, requiredFields)
