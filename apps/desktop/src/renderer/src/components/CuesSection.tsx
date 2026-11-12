@@ -44,6 +44,7 @@ import {
   sameGrid,
   shiftGrid,
 } from '../../../shared/gridEdit'
+import { gridVerdictOf } from '../../../shared/gridVerdict'
 import { hotCueColor } from '../../../shared/rekordboxCueColors'
 import type { QueuedCues, SaveCuesRequest, SurcoGrid, TrackCues } from '../../../shared/types'
 import { type CueAudition, useCueAudition } from '../hooks/useCueAudition'
@@ -563,6 +564,10 @@ function Editing({
   const fine = useCueWaveFine(cue.contentId, maximized && !fitting)
   const fitPending = gridOff === null && fitting
   const gridFit = useGridFit(cue.contentId, gridOff === null && (!maximized || fine !== undefined))
+  const verdict = useMemo(
+    () => (gridFit ? gridVerdictOf(ctx.beats, gridFit) : null),
+    [ctx.beats, gridFit],
+  )
   const offsetsAt = (ms: number) =>
     gridFit && state.grid
       ? checkGrid({
@@ -571,6 +576,7 @@ function Editing({
           fit: gridFit,
           atMs: ms,
           durationMs: read.durationMs,
+          verdict,
         })
       : null
   const tolerance = settings.cueGridTolerance
@@ -643,6 +649,7 @@ function Editing({
     cue.contentId,
   )
   const unsavedSet = useUnsavedCueTracks()
+  const unsavedIds = useMemo(() => [...unsavedSet].sort(), [unsavedSet])
   const { data: canSave = true } = useQuery({
     queryKey: ['traktor-can-save', settings.traktorNmlPath],
     queryFn: () => window.api.traktorCanSave(),
@@ -774,7 +781,11 @@ function Editing({
   const focusEditor = useCallback(() => editorRef.current?.focus(), [])
   const wanted = wantedOfDraft(state.cues)
   const clearable = state.cues.some((c) => !state.locked.includes(c.key))
-  const unchanged = JSON.stringify(wanted) === JSON.stringify(baseline) && !draftGridEdited(state)
+  const sameCues = useMemo(
+    () => JSON.stringify(wantedOfDraft(state.cues)) === JSON.stringify(baseline),
+    [state.cues, baseline],
+  )
+  const unchanged = sameCues && !draftGridEdited(state)
   const [overwrite, setOverwrite] = useState<ReadonlySet<string>>(new Set())
   const own = { contentId: cue.contentId, path: cue.path, label: cue.label, draft: state }
   const flowMarked = !provisional && !unchanged && Object.keys(state.origin).length > 0
@@ -785,7 +796,7 @@ function Editing({
       cue.path,
       wanted,
       state.origin,
-      [...unsavedSet].sort(),
+      unsavedIds,
       [...overwrite],
       settings.cueFlowToRekordbox,
       settings.cueFlowToTraktor,
