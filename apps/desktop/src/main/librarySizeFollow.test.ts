@@ -3,11 +3,8 @@ import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import { followingAll, librarySizeFollower } from './librarySizeFollow'
 
-// A file rewritten on its own path outside a conversion still has Engine DJ's row recording
-// its old size: the row gets the same in-place repoint a conversion's flush sends, through the
-// queue that waits while Engine is open.
-describe('librarySizeFollower', () => {
-  it('queues the in-place repoint with the size the row should still hold, and applies it', () => {
+describe('librarySizeFollower, for a file rewritten on its own path outside a conversion whose old size Engine DJ’s row still records', () => {
+  it('queues the in-place repoint a conversion’s flush sends, with the size the row should still hold, and applies it through the queue that waits while Engine is open', () => {
     const enqueue = vi.fn()
     const apply = vi.fn()
     librarySizeFollower({ enabled: () => true, enqueue, apply })('/m/c.aiff', 1234)
@@ -27,9 +24,7 @@ describe('librarySizeFollower', () => {
   })
 })
 
-// Every rewrite on a file's own path reaches each library that keeps its size, through one
-// follower handed to every place Engine DJ's was.
-describe('followingAll', () => {
+describe('followingAll, the one follower handed to every place Engine DJ’s was, so each library that keeps a file’s size sees every rewrite on its own path', () => {
   it('hands the same rewrite to each library follower, the way back included', () => {
     const engine = vi.fn()
     const virtualdj = vi.fn()

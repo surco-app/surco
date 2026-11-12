@@ -73,10 +73,7 @@ describe('trash:restore', () => {
   })
 })
 
-// VirtualDJ keeps the file's size in its song and in every list row, and its cues sit on the
-// audio the conversion cut, so its song follows the restore as Engine DJ's row does, under its
-// own check of the file set aside.
-describe('trash:restore with VirtualDJ', () => {
+describe('trash:restore with VirtualDJ, whose song keeps the file’s size in it and every list row and its cues on the cut audio, so it follows the restore as Engine DJ’s row does under its own check of the file set aside', () => {
   const restore = vi.fn()
   const followEngineSize = vi.fn()
   const followVirtualdjSize = vi.fn()

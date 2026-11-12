@@ -73,9 +73,7 @@ describe('damageDeps with Traktor open', () => {
   })
 })
 
-// A repair that rewrites the file on its own path changes its size, and VirtualDJ keeps the
-// size in its song and in every list row, as Engine DJ keeps it in its row.
-describe('damageDeps rewriting a file', () => {
+describe('damageDeps rewriting a file on its own path, whose new size VirtualDJ keeps in its song and every list row as Engine DJ keeps it in its row', () => {
   it('tells VirtualDJ of the new size, as it tells Engine DJ, for a genre and for a cue tree', async () => {
     const followEngineSize = vi.fn()
     const followVirtualdjSize = vi.fn()
