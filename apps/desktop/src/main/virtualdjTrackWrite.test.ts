@@ -19,7 +19,7 @@ import { virtualdjCueRows } from './virtualdjCueSource'
 import { parseVirtualdjDatabase } from './virtualdjDatabase'
 import { readVirtualdjLibrary, virtualdjLibraryRoots, virtualdjPlaylist } from './virtualdjLibrary'
 import { virtualdjEditFiles } from './virtualdjListsWrite'
-import { virtualdjLibraryHas } from './virtualdjTrackWrite'
+import { virtualdjLibraryHas, virtualdjRootFor } from './virtualdjTrackWrite'
 
 const fixture = join(__dirname, 'virtualdjFixtures')
 const FIXTURE_XML = readFileSync(join(fixture, 'database.xml'), 'utf8')
@@ -312,5 +312,15 @@ describe('virtualdjLibraryHas', () => {
     expect(has(HELD)).toBe(true)
     expect(has('/Music/new.flac')).toBe(false)
     expect(has('/Music/new.flac', HELD)).toBe(true)
+  })
+})
+
+describe('virtualdjRootFor', () => {
+  it('gives a file on a drive with no VirtualDJ folder no database, since VirtualDJ never keeps a drive’s tracks in the home one', () => {
+    const home = { dir: '/Users/dj/VirtualDJ', root: '/' }
+    const drive = { dir: '/Volumes/Public/VirtualDJ', root: '/Volumes/Public' }
+    expect(virtualdjRootFor('/Volumes/Public/a.flac', [home, drive])).toBe(drive)
+    expect(virtualdjRootFor('/Users/dj/Music/a.flac', [home, drive])).toBe(home)
+    expect(virtualdjRootFor('/Volumes/Nuevo/a.flac', [home, drive])).toBeNull()
   })
 })

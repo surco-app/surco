@@ -1843,6 +1843,7 @@ describe('librariesKeepingOriginal', () => {
       expect(await keeps('/m/a.mp3', join(volume, 'a.flac'))).toEqual(['virtualdj'])
       expect(await keeps(join(volume, 'x.mp3'), '/m/x.flac')).toEqual(['virtualdj'])
       expect(await keeps('/m/a.mp3', '/m/taken.flac')).toEqual(['virtualdj'])
+      expect(await keeps('/m/a.mp3', '/Volumes/Nuevo/a.flac')).toEqual(['virtualdj'])
       expect(await keeps('/m/a.mp3', '/m/a.flac')).toEqual([])
       expect(await keeps('/m/other.mp3', join(volume, 'other.flac'))).toEqual([])
       mkdirSync(join(dir, 'MyLists'))

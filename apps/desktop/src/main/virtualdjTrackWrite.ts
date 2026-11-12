@@ -29,7 +29,7 @@ const ATTEMPTS = 3
 export function virtualdjRootFor(path: string, roots: VirtualdjRoot[]): VirtualdjRoot | null {
   return (
     roots.find((r) => r.root !== '/' && path.startsWith(`${r.root}/`)) ??
-    roots.find((r) => r.root === '/') ??
+    (path.startsWith('/Volumes/') ? null : roots.find((r) => r.root === '/')) ??
     null
   )
 }
