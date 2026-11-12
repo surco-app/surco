@@ -248,6 +248,7 @@ import { latestBackupByPath } from './lib/trashView'
 import {
   EMPTY_FILTER,
   type FilterFacts,
+  type FilterSelection,
   facetCounts,
   filterSessionKey,
   filterWithSticky,
@@ -495,15 +496,40 @@ export default function App(): React.JSX.Element {
   })
   // Quality triage filter, free-text search and display order — read from the store with a
   // stable setter each (field comments live in appStore).
-  const { filterSelection, filterActive, formatFilter, setFilterSelection, setFormatFilter } =
-    useTriageFilters(store)
+  const {
+    filterSelection,
+    filterActive,
+    formatFilter,
+    setFilterSelection: storeFilterSelection,
+    setFormatFilter: storeFormatFilter,
+  } = useTriageFilters(store)
+  const setFilterSelection = useCallback(
+    (next: FilterSelection): void => {
+      flushPendingEdits()
+      storeFilterSelection(next)
+    },
+    [storeFilterSelection],
+  )
+  const setFormatFilter = useCallback(
+    (next: string | null): void => {
+      flushPendingEdits()
+      storeFormatFilter(next)
+    },
+    [storeFormatFilter],
+  )
   const search = useAppStore(store, (s) => s.search)
   const playedPaths = useAppStore(store, (s) => s.playedPaths)
   const markListened = useStableCallback((path: string) => {
     const played = store.getState().playedPaths
     if (!played.has(path)) store.setState({ playedPaths: new Set(played).add(path) })
   })
-  const setSearch = useCallback((v: string) => store.setState({ search: v }), [store])
+  const setSearch = useCallback(
+    (v: string) => {
+      flushPendingEdits()
+      store.setState({ search: v })
+    },
+    [store],
+  )
   // The text box stays driven by `search` (instant keystrokes); the expensive filter/sort
   // pass below keys off the deferred value so typing in a large crate never blocks paint.
   const deferredSearch = useDeferredValue(search)
@@ -2431,23 +2457,21 @@ export default function App(): React.JSX.Element {
   // sort only reorders, never hides.
   // Selected rows the new filter hides leave the selection too, so the next trash or remove
   // acts only on rows the user can see.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: react to filter changes only; visibleTracks and selection are read from the latest render.
-  useEffect(() => {
-    const ids = visibleTracks.map((t) => t.id)
-    const next = pruneToVisible(ids, selection) ?? reanchorToVisible(ids, selectedId)
-    if (next) setSelection(next)
-  }, [filterSelection])
   // A search hides rows too, and an action on the selection must not reach them. Only the
   // hidden extras of a selection go: when no selected row is left on screen the selection
   // stays, so typing does not jump the editor from track to track on every keystroke.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: react to search changes only; visibleTracks and selection are read from the latest render.
-  useEffect(() => {
-    const next = pruneToVisible(
-      visibleTracks.map((t) => t.id),
-      selection,
-    )
-    if (next) setSelection(next)
-  }, [deferredSearch])
+  const [prunedFor, setPrunedFor] = useState({ filterSelection, deferredSearch })
+  if (
+    prunedFor.filterSelection !== filterSelection ||
+    prunedFor.deferredSearch !== deferredSearch
+  ) {
+    setPrunedFor({ filterSelection, deferredSearch })
+    const ids = visibleTracks.map((t) => t.id)
+    const next =
+      pruneToVisible(ids, selection) ??
+      (prunedFor.filterSelection !== filterSelection ? reanchorToVisible(ids, selectedId) : null)
+    if (next) setSelectionState(next)
+  }
   // Drives the toolbar auto-match button: how many visible tracks are still worth a probe, so
   // it disables once every shown track is matched, and changing the filter to reveal unmatched
   // rows re-enables it. Scoped to the visible set because the sweep matches only those.

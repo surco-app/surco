@@ -80,7 +80,9 @@ vi.mock('./components/Editor', async (importOriginal) => {
 // (see TrackList.tsx), so wrapping the real (already-memoized) component in a
 // second counting memo pins the contract from the outside: App must hand it
 // stable props on a render that doesn't touch the visible tracks.
-const { trackListRenders } = vi.hoisted(() => ({ trackListRenders: { count: 0 } }))
+const { trackListRenders } = vi.hoisted(() => ({
+  trackListRenders: { count: 0, shown: [] as { ids: string[]; selectedId: string | null }[] },
+}))
 vi.mock('./components/TrackList', async (importOriginal) => {
   const real = await importOriginal<typeof import('./components/TrackList')>()
   const { memo } = await import('react')
@@ -88,6 +90,10 @@ vi.mock('./components/TrackList', async (importOriginal) => {
     props: React.ComponentProps<typeof real.TrackList>,
   ): React.JSX.Element {
     trackListRenders.count++
+    trackListRenders.shown.push({
+      ids: props.tracks.map((t) => t.id),
+      selectedId: props.selectedId,
+    })
     return <real.TrackList {...props} />
   })
   return { ...real, TrackList: CountingTrackList }
@@ -7448,6 +7454,51 @@ describe('App filter selection', () => {
     // …so the lone remaining row (the mp3) becomes the selected one.
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
     expect(screen.getAllByTestId('track-row')[0]).toHaveAttribute('aria-selected', 'true')
+  })
+
+  it('never renders the list with the editor still on a track the new filter hides', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.mp3']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-section-format'))
+    trackListRenders.shown = []
+    fireEvent.click(screen.getByTestId('quality-filter-ext:MP3'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    expect(screen.getAllByTestId('track-row')[0]).toHaveAttribute('aria-selected', 'true')
+    const stranded = trackListRenders.shown.filter(
+      (r) => r.selectedId !== null && !r.ids.includes(r.selectedId),
+    )
+    expect(stranded).toEqual([])
+  })
+
+  it('keeps text typed into a track on that track when the filter hides it and the selection moves', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.mp3']),
+      readTags: vi.fn(async (path: string) => ({
+        title: path.endsWith('a.wav') ? 'Alpha' : 'Bravo',
+        artist: 'DJ',
+      })),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Alpha'))
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-section-format'))
+    fireEvent.change(screen.getByTestId('field-title'), { target: { value: 'Typed Name' } })
+    fireEvent.click(screen.getByTestId('quality-filter-ext:MP3'))
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Bravo'))
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-section-format'))
+    fireEvent.click(screen.getByTestId('quality-filter-ext:MP3'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    fireEvent.click(screen.getAllByTestId('track-row')[0])
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Typed Name'))
   })
 })
 
