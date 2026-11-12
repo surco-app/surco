@@ -41,6 +41,9 @@ const READ_CONCURRENCY = 6
 // How long finished metadata reads wait to be written to the crate together. Short enough
 // that a row's tags land with no visible lag, long enough to fold a burst of replies.
 const META_FLUSH_MS = 50
+// The same while an import reads: each write re-renders the whole App and recounts the
+// library, and at one every 50 ms a first read of 8,000 files was bound by the renders.
+const IMPORT_FLUSH_MS = 1000
 
 // How long the "N new tracks" prompt stays up before dismissing itself. Long enough to
 // read and hit Load, short enough that an ignored prompt gets out of the way; timing out
@@ -322,7 +325,8 @@ export function useTrackLibrary({
   const scheduleMetaFlush = useCallback((): void => {
     if (metaFlushScheduled.current) return
     metaFlushScheduled.current = true
-    const wait = lastMetaFlush.current + META_FLUSH_MS - performance.now()
+    const span = importTotal.current > 0 ? IMPORT_FLUSH_MS : META_FLUSH_MS
+    const wait = lastMetaFlush.current + span - performance.now()
     if (wait <= 0) queueMicrotask(flushMetaPatches)
     else metaFlushTimer.current = setTimeout(flushMetaPatches, wait)
   }, [flushMetaPatches])

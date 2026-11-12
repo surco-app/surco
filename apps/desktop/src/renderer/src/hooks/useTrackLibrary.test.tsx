@@ -355,8 +355,8 @@ describe('useTrackLibrary cancelling an import', () => {
 
     await act(async () => {
       releaseOne()
-      // Past the window the read results are written in, which the count rides.
-      await new Promise((r) => setTimeout(r, 60))
+      // Past the window an import's read results are written in, which the count rides.
+      await new Promise((r) => setTimeout(r, 1050))
     })
     expect(result.current.importProgress).toEqual({ done: 1, total: 2 })
 
@@ -771,6 +771,51 @@ describe('useTrackLibrary read coalescing across IPC replies', () => {
 
     expect(result.current.tracks.every((t) => !t.loadingMeta)).toBe(true)
     expect(renders - tracksBefore).toBeLessThanOrEqual(2)
+  })
+})
+
+// A first read of a big collection is bound by the renders, not the disk: every write of
+// the crate re-renders the whole App and recounts the library, and at one write every 50 ms
+// 8,000 new files read in over 110 s. While an import reads, the writes are spread out.
+describe('useTrackLibrary writes while an import reads', () => {
+  it('writes the crate about once a second while reads keep landing', async () => {
+    const pending: (() => void)[] = []
+    setApi({
+      readMeta: vi.fn<Api['readMeta']>(
+        () =>
+          new Promise((resolve) => {
+            pending.push(() =>
+              resolve({ tags: emptyMetadata(), duration: 180, cover: null, foreignTags: [] }),
+            )
+          }),
+      ),
+    })
+    let renders = 0
+    const { result } = renderHook(() => {
+      renders++
+      return useTrackLibrary({
+        setSelection: vi.fn(),
+        onForget: vi.fn(),
+        onRemove: vi.fn(),
+        onClear: vi.fn(),
+        onMetaLoaded: vi.fn(),
+        onDuplicatesSkipped: vi.fn(),
+        onNoAudioFound: vi.fn(),
+        onMetaReadFailed: vi.fn(),
+      })
+    })
+    await act(async () => {
+      void result.current.addPaths(Array.from({ length: 40 }, (_, i) => `/m/${i}.wav`))
+      await new Promise((r) => setTimeout(r, 0))
+    })
+    const before = renders
+
+    for (let i = 0; i < 8; i++) {
+      for (const release of pending.splice(0, 2)) release()
+      await new Promise((r) => setTimeout(r, 80))
+    }
+
+    expect(renders - before).toBeLessThanOrEqual(2)
   })
 })
 
