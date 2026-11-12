@@ -16,7 +16,7 @@ export const traktorLibrary: TestLibrary = {
   build: ({ root }, tracks, listName) => {
     const entries = tracks.map((t, i) => {
       const { volume, dir, file } = location(t.path)
-      return `<ENTRY MODIFIED_DATE="2026/11/11" AUDIO_ID="AQAAAAAAAAAAAAAAAAAAAA${String(i).padStart(4, '0')}" TITLE="${attr(t.title)}" ARTIST="${attr(t.artist)}"><LOCATION DIR="${attr(dir)}" FILE="${attr(file)}" VOLUME="${attr(volume)}" VOLUMEID="${attr(volume)}"></LOCATION>
+      return `<ENTRY MODIFIED_DATE="2026/11/11" AUDIO_ID="AQAAAAAAAAAAAAAAAAAAAA${String(i).padStart(4, '0')}" TITLE="${attr(t.title)}" ARTIST="${attr(t.artist)}"><LOCATION DIR="${attr(dir)}" FILE="${attr(file)}" VOLUME="${attr(volume)}" VOLUMEID="${attr(volume || 'boot')}"></LOCATION>
 <INFO PLAYTIME="${t.durationSec}"></INFO>
 <TEMPO BPM="120.000000" BPM_QUALITY="100.000000"></TEMPO>
 </ENTRY>`
