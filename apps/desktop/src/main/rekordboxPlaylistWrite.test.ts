@@ -17,6 +17,11 @@ import {
 // rekordbox happens to be open on the machine running it.
 vi.mock('./rekordboxProcess', () => ({ isRekordboxRunning: vi.fn(async () => false) }))
 
+vi.mock('./rekordboxDb', async (importOriginal) => {
+  const real = await importOriginal<typeof import('./rekordboxDb')>()
+  return { ...real, openRekordboxDb: vi.fn(real.openRekordboxDb) }
+})
+
 // The real generator by default; one test feeds it IDs to prove which ones a creation skips.
 vi.mock('./rekordboxPlaylistEdit', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./rekordboxPlaylistEdit')>()
@@ -723,6 +728,15 @@ function playlistRow(path: string, id: string): { Name: string } | undefined {
 }
 
 describe('applyRekordboxBatch', () => {
+  it('opens the collection with the key derived once, so a write does not pay the slow passphrase derivation on every open', async () => {
+    const path = await collection()
+    vi.mocked(openRekordboxDb).mockClear()
+    await applyRekordboxBatch(path, [edit('a', MOVE)], deps())
+    const opens = vi.mocked(openRekordboxDb).mock.calls
+    expect(opens.length).toBeGreaterThan(0)
+    for (const [, options] of opens) expect(options?.key).toMatch(/^x'[0-9a-f]{96}'$/)
+  })
+
   it('writes several operations behind one question and one copy', async () => {
     const path = await collection()
     const d = deps()

@@ -322,6 +322,7 @@ describe('rekordboxEdit', () => {
     const edit = save
     const first = edit({ kind: 'move', playlistId: '2000', linkIds: ['f6'], beforeLinkId: 'f1' })
     const second = edit({ kind: 'move', playlistId: '2000', linkIds: ['f5'], beforeLinkId: 'f1' })
+    await vi.waitFor(() => expect(order).toEqual(['start1']))
     await new Promise((r) => setTimeout(r, 50))
     expect(order).toEqual(['start1'])
     release()
