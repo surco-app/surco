@@ -89,3 +89,35 @@ los cinco formatos.
 - SQLite junto a cada `database.xml` (`~/Library/...` y el disco externo), con tablas `lyrics`,
   `related_tracks` y `track_data (id, sid, file, filesize, artist, title, remix)`. No guarda cues ni listas.
   Surco no lo lee ni lo escribe.
+
+## Windows (sin medir)
+
+Desde el 12/11 Surco ofrece VirtualDJ en Windows, con escritura, copias y cola como en macOS, y con
+la píldora «beta» en la barra lateral. Nada de lo que sigue se ha comprobado en un Windows real ni
+con VirtualDJ para Windows. Es lo que Surco supone, y cada punto es un sitio donde mirar primero si
+algo falla allí.
+
+- **Carpeta.** Por defecto `Documentos\VirtualDJ` (la carpeta Documentos que da Windows, que puede
+  estar en OneDrive) y, si ahí no hay `database.xml`, `%LOCALAPPDATA%\VirtualDJ`
+  (`virtualdjHomeDir`, `main/virtualdjLibrary.ts`). Se decide al arrancar Surco; el ajuste de carpeta
+  manda siempre.
+- **Proceso.** `tasklist /FI "IMAGENAME eq virtualdj.exe" /NH`, buscando `virtualdj.exe` en la salida
+  sin distinguir mayúsculas. Cualquier error del comando cuenta como abierto. Surco no lo cierra:
+  espera a que el DJ lo cierre, como en Mac.
+- **Formato.** Los mismos finales de línea que en Mac (CRLF en `database.xml` y `.vdjfolder`, LF en
+  `order`) y las mismas entidades. El escritor conserva lo que ya tenga cada fichero.
+- **Rutas.** Pueden venir como `C:\…` o `C:/…`, en la base y en las listas. Surco las enseña con `\` y
+  las compara sin distinguir el separador ni la mayúscula de la letra (`virtualdjPathKey`,
+  `main/virtualdjPaths.ts`). El resto de la ruta se compara tal cual, aunque NTFS no distinga
+  mayúsculas. Una ruta nueva se escribe con el separador de la primera ruta con letra que ya tenga esa
+  base o esa lista, y con `\` si no hay ninguna.
+- **Bases por unidad.** `<letra>:\VirtualDJ\database.xml` en cada letra de la C a la Z
+  (`virtualdjDriveRoots`, la lista `WINDOWS_DRIVES` de `main/usbVolumes.ts`). Dentro, una ruta con la
+  letra de la unidad es absoluta, y con otra letra es relativa a la unidad, como el `D:/` medido en
+  Mac. Una ruta nueva lleva la letra que ya use esa base, o la de la unidad si no tiene ninguna.
+- **Qué base recibe una pista.** La de su letra si existe. Si no, la base de la carpeta personal
+  solo para la letra de esa carpeta (normalmente `C:`). Una pista de otra letra sin base no se añade,
+  como una de `/Volumes` en Mac.
+- **Copias.** Las de una base por unidad se guardan con la letra como nombre (`E`), porque `E:\` no
+  tiene nombre de carpeta.
+- **USB.** Exportar las listas de VirtualDJ a un USB sigue solo en macOS, como Serato.

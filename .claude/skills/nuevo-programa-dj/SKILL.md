@@ -137,6 +137,29 @@ Recorrerla entera en cada bloque. Cada punto costó una revisión.
 - [ ] Tests que afirman la lista de programas (`djProgram.test.ts`, `sourcePrograms.test.ts`, `GeneralTab.test.tsx`, `CuesTab.test.tsx`, `libraryTagSync.test.ts`, `onboarding.test.ts`…) y los que usan un nombre inventado como programa desconocido (hoy `'djotron'`): si el programa nuevo se llama así, cambiar el ejemplo.
 - [ ] El camino de cues de solo lectura se borró (commit `89a5a8a95`). Si el bloque 2 enseña cues sin guardarlos, recuperarlo de ahí o ir directo al bloque 3.
 
+**Windows** (al poner `windows: true`; aprendido con VirtualDJ, que se ofreció en Windows sin medir)
+- [ ] Proceso con `tasklist /FI "IMAGENAME eq <exe>" /NH` como `seratoProcess.ts` y `engineProcess.ts`;
+  en Windows cualquier error cuenta como abierto (no hay "nada coincide" como el código 1 de `pgrep`).
+  Test con `Object.defineProperty(process, 'platform', { value: 'win32' })` y `execFile` simulado.
+- [ ] Carpeta por defecto por plataforma en `main/settings.ts` (con `win32.join` en la función pura,
+  para que el test en Mac dé barras de Windows), y su lista de supuestos en `docs/<p>-medidas.md`.
+- [ ] Bases por unidad: Windows no tiene `/Volumes`. Recorrer `WINDOWS_DRIVES` (`main/usbVolumes.ts`).
+  Serato no lo hace (su `seratoRoots` lee `/Volumes` y en Windows se queda solo con la carpeta personal).
+- [ ] Rutas con `\` o `/` y letra en cualquier caja: una sola función de clave para comparar
+  (`virtualdjPathKey`) en lector, escritores, cola de cues, comprobación tras convertir, duplicados y
+  USB. Buscar `normalize('NFC')` en el diff: cada comparación de rutas del programa la necesita.
+- [ ] Nada de `` `${dir}/` `` ni `basename(root)` para una raíz: en Windows `basename('E:\')` es `''`
+  (copias de dos unidades en la misma carpeta) y el separador es `\`. Usar `sep` y una etiqueta por letra.
+- [ ] Lo que no se puede probar en Mac: el módulo `path` de Node es posix en los tests, y
+  `SURCO_SIMULATE_PLATFORM` no simula letras de unidad ni rutas de Windows. La batería no puede correr
+  con rutas de Windows (sus pistas son ficheros reales del Mac). Probar las funciones puras con rutas
+  `C:\…` escritas a mano y decir en el informe lo que queda sin probar.
+- [ ] Las filas que lo ocultaban en Windows (Ajustes, búsqueda, Cues, Programas de DJ, asistente) siguen
+  solas a `offeredHere`; sus tests pasan de "no está" a "está". La celda `windows` de la web está atada
+  por test a `PROGRAM_CAN.windows`, y la nota «Beta» a `PROGRAM_BETA`.
+- [ ] Textos «Solo en macOS» del programa en la web (`features.groups.*.items.*`) en los 6 idiomas; lo
+  que siga solo en Mac (el USB de VirtualDJ) lo dice el texto.
+
 **Formato y reloj**
 - [ ] Escritura sobre el texto, conservando bytes, finales de línea, entidades y lo desconocido; rechazar una entrada con finales de línea que no son los medidos.
 - [ ] La batería comprueba el formato tras cada paso (`formatProblems` de su `TestLibrary`) y los cues contra el fichero crudo (`storedCuesMs`), no solo con el lector del propio programa: un error simétrico entre lector y escritor pasa el lector.
