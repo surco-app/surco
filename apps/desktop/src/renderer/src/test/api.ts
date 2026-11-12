@@ -324,6 +324,7 @@ export function stubApi({ cues, ...over }: ApiOverrides = {}): Api {
         virtualdj: nothing,
       }
     },
+    tagSyncPrograms: async () => [],
     replaceDuplicatesInLibraries: async () => [],
     libraryStatus: async () => {
       const off = { enabled: false, found: false }

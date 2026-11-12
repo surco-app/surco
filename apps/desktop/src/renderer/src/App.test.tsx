@@ -9145,6 +9145,7 @@ const spellingFixture = () => ({
     },
   ]),
   syncLibraryTags: vi.fn().mockResolvedValue(undefined),
+  tagSyncPrograms: vi.fn().mockResolvedValue([]),
   onMusicFixProgress: () => () => {},
   appleMusicEntryLocation: vi.fn().mockResolvedValue(''),
 })
@@ -9532,6 +9533,7 @@ const listApi = (over: Record<string, unknown> = {}) => {
     onListRemovalPhase: () => () => {},
     removeListDuplicates: vi.fn().mockResolvedValue([]),
     syncLibraryTags: vi.fn().mockResolvedValue(undefined),
+    tagSyncPrograms: vi.fn().mockResolvedValue([]),
     ...over,
   })
 }

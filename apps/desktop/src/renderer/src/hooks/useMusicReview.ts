@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { ReadOnlyProgram } from '../../../shared/djProgram'
+import type { CueProgram, ReadOnlyProgram } from '../../../shared/djProgram'
 import type {
   DamageFinding,
   DamageKind,
@@ -702,6 +702,10 @@ export function useMusicReview({
         } catch (error) {
           applyError = error instanceof Error ? error.message : String(error)
         }
+      const updates = libraryUpdatesOf(outcomes, 'apply')
+      const reviewAsks = updates.length
+        ? await window.api.tagSyncPrograms(updates.map((u) => u.path)).catch((): CueProgram[] => [])
+        : []
       let damageOutcomes: DamageOutcome[] = []
       if (applyError === undefined && repairs.length && source.repairDamage) {
         setPhase({ name: 'writing', current: writes + 1, total: writes + repairs.length })
@@ -729,11 +733,12 @@ export function useMusicReview({
           onCheckingMusic: () => setPhase({ name: 'checking-music' }),
         })
       const { removed, replaced } = removal
-      const updates = libraryUpdatesOf(outcomes, 'apply')
       if (updates.length && !librariesPhase) setPhase({ name: 'libraries' })
       let librarySync: ReviewRun['librarySync'] = removal.replaceFailed ? 'failed' : 'none'
       let tagSync: LibraryTagSyncReport | undefined
       if (updates.length) {
+        const queued = reviewAsks.filter((p) => p === 'serato' || p === 'virtualdj')
+        if (queued.length) await window.api.dj.askToApply(queued).catch(() => {})
         const synced = await window.api.syncLibraryTags(updates).then(
           (report) => {
             tagSync = report

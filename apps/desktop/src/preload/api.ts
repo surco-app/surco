@@ -194,6 +194,7 @@ export interface Api {
   loadMusicReview: () => Promise<MusicReviewEntry[]>
   applyMusicFixes: (fixes: MusicFieldFix[]) => Promise<MusicFixOutcome[]>
   syncLibraryTags: (updates: LibraryTagUpdate[]) => Promise<LibraryTagSyncReport>
+  tagSyncPrograms: (paths: string[]) => Promise<CueProgram[]>
   // After a review removed duplicate copies: the DJ libraries move to the kept copies, then
   // the removed files go to the Trash when nothing needs them. Empty off macOS.
   replaceDuplicatesInLibraries: (

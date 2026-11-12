@@ -154,6 +154,7 @@ const api: Api = {
   applyMusicFixes: (fixes: MusicFieldFix[]) => ipcRenderer.invoke('applemusic:applyFixes', fixes),
   cancelMusicFixes: () => ipcRenderer.invoke('applemusic:cancelFixes'),
   syncLibraryTags: (updates) => ipcRenderer.invoke('library:syncTags', updates),
+  tagSyncPrograms: (paths) => ipcRenderer.invoke('library:tag-sync-programs', paths),
   replaceDuplicatesInLibraries: (pairs) => ipcRenderer.invoke('library:replaceDuplicates', pairs),
   libraryStatus: () => ipcRenderer.invoke('library:status'),
   libraryCopyInfo: (paths) => ipcRenderer.invoke('library:copyInfo', paths),

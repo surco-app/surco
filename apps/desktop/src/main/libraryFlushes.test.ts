@@ -119,6 +119,7 @@ import {
   SYNC_BLOCKED_KEY,
   SYNC_ISSUE_PROGRAMS,
   syncTagsInLibraries,
+  tagSyncPrograms,
   traktorFlushDeps,
 } from './libraryFlushes'
 import { beginNmlBatch, endNmlBatch, recordNmlPatch } from './nmlBatch'
@@ -1835,6 +1836,71 @@ describe('conversionPrograms', () => {
       ).toEqual(['traktor'])
       expect(FILE_USE.open).toHaveBeenCalledOnce()
       expect(FILE_USE.open.mock.calls[0]?.[0]).toMatchObject({ traktor: '/t/collection.nml' })
+    } finally {
+      Object.assign(SETTINGS, before)
+      FILE_USE.check.mockImplementation(async () => false)
+    }
+  })
+})
+
+describe('tagSyncPrograms', () => {
+  const SERATO = [{ path: '/s/_Serato_' }] as unknown as SeratoLibraryRoot[]
+  const VIRTUALDJ = [{ path: '/v/database.xml' }] as unknown as VirtualdjRoot[]
+  const deps = {
+    traktorRead: () => '/t/collection.nml',
+    rootLibraries: () => ({ serato: SERATO, virtualdj: VIRTUALDJ }),
+    isRunning: async () => true,
+  }
+
+  it('counts Serato and VirtualDJ only when their Update is on and they hold a track, since Add plays no part in a review', async () => {
+    const before = { ...SETTINGS }
+    Object.assign(SETTINGS, {
+      syncRekordbox: false,
+      syncSerato: true,
+      syncVirtualdj: false,
+      addToVirtualdj: true,
+    })
+    FILE_USE.check.mockImplementation(async (path: string) => path === '/m/a.mp3')
+    try {
+      expect(await tagSyncPrograms(['/m/a.mp3'], deps)).toEqual(['serato'])
+      expect(await tagSyncPrograms(['/m/other.mp3'], deps)).toEqual([])
+    } finally {
+      Object.assign(SETTINGS, before)
+      FILE_USE.check.mockImplementation(async () => false)
+    }
+  })
+
+  it('counts rekordbox, Traktor and Engine DJ whenever their Update is on, since their sync shows its own dialog held or not', async () => {
+    const before = { ...SETTINGS }
+    Object.assign(SETTINGS, { syncRekordbox: true, syncTraktor: true })
+    FILE_USE.check.mockImplementation(async () => false)
+    try {
+      expect(await tagSyncPrograms(['/m/a.mp3'], deps)).toEqual(['rekordbox', 'traktor'])
+    } finally {
+      Object.assign(SETTINGS, before)
+    }
+  })
+
+  it('reads no library and counts nothing when every program is closed', async () => {
+    const before = { ...SETTINGS }
+    Object.assign(SETTINGS, { syncRekordbox: true, syncSerato: true })
+    FILE_USE.open.mockClear()
+    try {
+      expect(
+        await tagSyncPrograms(['/m/a.mp3'], { ...deps, isRunning: async () => false }),
+      ).toEqual([])
+      expect(FILE_USE.open).not.toHaveBeenCalled()
+    } finally {
+      Object.assign(SETTINGS, before)
+    }
+  })
+
+  it('counts a Serato library it cannot read as reached', async () => {
+    const before = { ...SETTINGS }
+    Object.assign(SETTINGS, { syncRekordbox: false, syncSerato: true })
+    FILE_USE.check.mockRejectedValue(new Error('Serato library unreadable'))
+    try {
+      expect(await tagSyncPrograms(['/m/a.mp3'], deps)).toEqual(['serato'])
     } finally {
       Object.assign(SETTINGS, before)
       FILE_USE.check.mockImplementation(async () => false)

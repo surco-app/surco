@@ -164,23 +164,24 @@ const ADD_SETTING = {
   virtualdj: 'addToVirtualdj',
 } as const satisfies Record<DjProgram, keyof ReturnType<typeof getSettings>>
 
-export async function conversionPrograms(
-  paths: string[],
-  deps: {
-    traktorRead: () => string
-    rootLibraries: () => RootLibraries
-    isRunning: (program: DjProgram) => Promise<boolean>
-  },
-): Promise<DjProgram[]> {
+type ProgramsDeps = {
+  traktorRead: () => string
+  rootLibraries: () => RootLibraries
+  isRunning: (program: DjProgram) => Promise<boolean>
+}
+
+async function openPrograms(deps: ProgramsDeps): Promise<DjProgram[]> {
   const running = await Promise.all(
     DJ_PROGRAMS.map((program) => deps.isRunning(program).catch(() => true)),
   )
-  const open = DJ_PROGRAMS.filter((_, i) => running[i])
-  if (open.length === 0) return []
+  return DJ_PROGRAMS.filter((_, i) => running[i])
+}
+
+function libraryLocations(deps: ProgramsDeps): LibraryLocations {
   const settings = getSettings()
   const status = currentLibraryStatus()
   const roots = deps.rootLibraries()
-  const locations: LibraryLocations = {
+  return {
     rekordbox: status.rekordbox.found
       ? findRekordboxCollection({ configured: settings.rekordboxDbPath })
       : '',
@@ -189,6 +190,16 @@ export async function conversionPrograms(
     serato: roots.serato,
     virtualdj: roots.virtualdj,
   }
+}
+
+export async function conversionPrograms(
+  paths: string[],
+  deps: ProgramsDeps,
+): Promise<DjProgram[]> {
+  const open = await openPrograms(deps)
+  if (open.length === 0) return []
+  const settings = getSettings()
+  const locations = libraryLocations(deps)
   const reached: DjProgram[] = []
   for (const program of open) {
     if (locations[program].length === 0) continue
@@ -198,6 +209,22 @@ export async function conversionPrograms(
     }
     if (!settings[UPDATE_SETTING[program]]) continue
     if (await holdsAny(program, locations[program], paths)) reached.push(program)
+  }
+  return reached
+}
+
+const SYNC_ASKS_ITSELF: ReadonlySet<DjProgram> = new Set(['rekordbox', 'traktor', 'engine'])
+
+export async function tagSyncPrograms(paths: string[], deps: ProgramsDeps): Promise<DjProgram[]> {
+  const open = await openPrograms(deps)
+  if (open.length === 0) return []
+  const settings = getSettings()
+  const locations = libraryLocations(deps)
+  const reached: DjProgram[] = []
+  for (const program of open) {
+    if (locations[program].length === 0 || !settings[UPDATE_SETTING[program]]) continue
+    if (SYNC_ASKS_ITSELF.has(program) || (await holdsAny(program, locations[program], paths)))
+      reached.push(program)
   }
   return reached
 }

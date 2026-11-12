@@ -166,6 +166,7 @@ import {
   SYNC_BLOCKED_KEY,
   SYNC_ISSUE_PROGRAMS,
   syncTagsInLibraries,
+  tagSyncPrograms,
   traktorFlushDeps,
   traktorWrite,
   usedByAnyLibrary,
@@ -1781,12 +1782,16 @@ function registerIpc(): void {
   // so a batch begun meanwhile waits for its own; a library a nested end took nothing from
   // is left for the end that does.
   ipcMain.on('process:batch-end', (e) => endConversionBatch?.(e.sender))
+  const programsDeps = {
+    traktorRead: traktorReadPath,
+    rootLibraries,
+    isRunning: (program: CueProgram) => DJ_PROCESSES[program].isRunning(),
+  }
   ipcMain.handle('process:programs-for', (_e, paths: string[]) =>
-    conversionPrograms(paths, {
-      traktorRead: traktorReadPath,
-      rootLibraries,
-      isRunning: (program) => DJ_PROCESSES[program].isRunning(),
-    }),
+    conversionPrograms(paths, programsDeps),
+  )
+  ipcMain.handle('library:tag-sync-programs', (_e, paths: string[]) =>
+    tagSyncPrograms(paths, programsDeps),
   )
   endConversionBatch = (sender) => {
     const upTo = verifyRegistry.cut()

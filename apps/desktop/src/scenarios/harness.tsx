@@ -970,6 +970,7 @@ function scenarioApi(
     cancelAnalysis: (path) => invokeMain('audio:cancelAnalysis', path),
     onWindowFocus: () => () => {},
     libraryStatus: async () => currentLibraryStatus(),
+    tagSyncPrograms: async () => djAsk?.open ?? [],
     syncLibraryTags: (updates) =>
       syncTagsInLibraries(
         updates,
