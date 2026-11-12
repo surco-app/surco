@@ -9,10 +9,10 @@ import { traktorContentId } from '../shared/traktorContent'
 import { rekordboxColorOf } from './traktorNmlCues'
 import {
   nmlPath,
+  readTraktorCollection,
   readTraktorMembership,
   readTraktorPlaylist,
   readTraktorRecentCount,
-  readTraktorCollection,
   readTraktorTrackCount,
   readTraktorTree,
   TRAKTOR_TYPE_COLOR,
@@ -152,6 +152,24 @@ describe('readTraktorPlaylist', () => {
       '/Users/dj/Music/a.mp3',
     ])
     expect(entries[0].preview).toMatchObject({ title: 'Beta', artist: 'Bob', durationSec: 200.5 })
+  })
+
+  // The list paints a row from the art its program already keeps, and only a row with
+  // nothing to paint needs its file's cover read in full. Traktor names its thumbnail of a
+  // track's cover in COVERARTID; a cover its cache does not hold is left out, not drawn broken.
+  it('points the row at the cover thumbnail Traktor keeps, when its cache holds one', () => {
+    const covered: Track = { ...A, info: ' COVERARTID="042/ABCDEF"' }
+    const missing: Track = { ...B, info: ' COVERARTID="042/GONE"' }
+    const doc = nml([covered, missing, C], [playlist('L', 'p1', [covered, missing, C])])
+    const coverUrlOf = (id: string) => (id === '042/ABCDEF' ? `thumb:${id}` : undefined)
+
+    const entries = readTraktorPlaylist(doc, 'p1', 'Macintosh HD', undefined, coverUrlOf)
+
+    expect(entries.map((e) => e.preview?.coverUrl)).toEqual([
+      'thumb:042/ABCDEF',
+      undefined,
+      undefined,
+    ])
   })
 
   it('finds a file on a Windows drive, where Traktor stores the drive letter as the volume', () => {

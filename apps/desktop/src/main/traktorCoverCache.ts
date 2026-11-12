@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { basename, dirname, join, relative, resolve, sep } from 'node:path'
 import { nativeImage } from 'electron'
+import { MEDIA_SCHEME } from '../shared/media'
 import type { CoverRefresh } from './traktorNml'
 
 // Traktor renders every cover into its own thumbnail cache and serves the library's
@@ -147,4 +148,54 @@ export function refreshCachedCoverArt(
     }
   }
   return written
+}
+
+// The largest thumbnail Traktor keeps for a cover, or null when its cache holds none. The
+// list paints a Traktor row from it, as it paints a rekordbox row from rekordbox's own art,
+// so the row's file needs only the light read.
+export function traktorCoverFile(nmlPath: string, coverId: string): string | null {
+  const parts = idParts(coverId)
+  if (!parts) return null
+  for (const root of cacheRoots(nmlPath).map((r) => resolve(r))) {
+    const file = resolve(join(root, parts.folder, parts.name + VARIANTS[0][0]))
+    if (insideCache(root, file) && existsSync(file)) return file
+  }
+  return null
+}
+
+const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+
+// A thumbnail as a PNG the renderer can draw: Traktor's own format (0x08, width, height,
+// BGRA pixels) converted, a PNG passed through, and anything else, a file cut short
+// included, refused rather than drawn garbled.
+export function traktorCoverPng(file: string): Buffer | null {
+  try {
+    const bytes = readFileSync(file)
+    if (bytes.subarray(0, PNG_SIGNATURE.length).equals(PNG_SIGNATURE)) return bytes
+    if (bytes[0] !== 0x08 || bytes.length < 9) return null
+    const width = bytes.readUInt32LE(1)
+    const height = bytes.readUInt32LE(5)
+    const pixels = bytes.subarray(9)
+    if (width === 0 || height === 0 || pixels.length !== width * height * 4) return null
+    return nativeImage.createFromBitmap(pixels, { width, height }).toPNG()
+  } catch {
+    return null
+  }
+}
+
+const COVER_HOST = 'traktor-cover'
+
+export function traktorCoverUrl(coverId: string): string {
+  return `${MEDIA_SCHEME}://${COVER_HOST}/${encodeURIComponent(coverId)}`
+}
+
+export function traktorCoverIdOf(url: string): string | null {
+  let parsed: URL
+  try {
+    parsed = new URL(url)
+  } catch {
+    return null
+  }
+  if (parsed.protocol !== `${MEDIA_SCHEME}:` || parsed.host !== COVER_HOST) return null
+  return decodeURIComponent(parsed.pathname.replace(/^\//, '')) || null
 }

@@ -6,7 +6,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 // nativeImage is Electron's, so the unit tests stub it: the sizes and the bytes written
 // are what this module is responsible for, not Chromium's rasteriser.
 vi.mock('electron', () => ({
-  nativeImage: { createFromBuffer: (buf: Buffer) => makeImage(buf.toString(), 0) },
+  nativeImage: {
+    createFromBuffer: (buf: Buffer) => makeImage(buf.toString(), 0),
+    createFromBitmap: (pixels: Buffer, { width, height }: { width: number; height: number }) => ({
+      toPNG: () => Buffer.from(`png-of-bitmap:${width}x${height}:${pixels.length}`),
+    }),
+  },
 }))
 
 // Some builds/platforms give no usable bitmap. Flipped by the test below to pin that
@@ -25,7 +30,13 @@ function makeImage(source: string, size: number) {
   }
 }
 
-import { refreshCachedCoverArt } from './traktorCoverCache'
+import {
+  refreshCachedCoverArt,
+  traktorCoverFile,
+  traktorCoverIdOf,
+  traktorCoverPng,
+  traktorCoverUrl,
+} from './traktorCoverCache'
 
 // Reported 06/09/2026 and reproduced on five machines: after a conversion Traktor kept
 // drawing the old cover. Clearing COVERARTID and waiting for Traktor to regenerate is
@@ -206,5 +217,81 @@ describe('refreshCachedCoverArt', () => {
       refreshCachedCoverArt(nml, [{ coverId: '042/ABC', file: '/Music/uno.flac' }], noCover),
     ).toBe(0)
     expect(readFileSync(join(cache, 'ABC000'), 'utf8')).toBe('stale thumbnail')
+  })
+})
+
+// A Traktor row had no art to show until its file was read in full, so every one of a big
+// collection took the full read (cover and all, three times the cost of the light one).
+// Traktor keeps a thumbnail of each cover in its own cache; the list paints from that.
+describe('the thumbnail Traktor already keeps', () => {
+  let dir: string
+  let nml: string
+
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), 'surco-cover-thumb-'))
+    nml = join(dir, 'Traktor 4.5.1', 'collection.nml')
+    mkdirSync(join(dir, 'Traktor 4.5.1'), { recursive: true })
+    writeFileSync(nml, '<NML/>')
+  })
+
+  afterEach(() => rmSync(dir, { recursive: true, force: true }))
+
+  const keep = (root: string, bytes: Buffer) => {
+    mkdirSync(join(root, 'Coverart', '042'), { recursive: true })
+    writeFileSync(join(root, 'Coverart', '042', 'ABCDEF000'), bytes)
+  }
+
+  it('finds the largest thumbnail beside the collection or one folder above it', () => {
+    keep(dir, Buffer.from('x'))
+
+    expect(traktorCoverFile(nml, '042/ABCDEF')).toBe(join(dir, 'Coverart', '042', 'ABCDEF000'))
+    expect(traktorCoverFile(nml, '042/MISSING')).toBeNull()
+  })
+
+  it('never reaches outside the cache for an id the collection file made up', () => {
+    writeFileSync(join(dir, 'secret000'), 'x')
+
+    expect(traktorCoverFile(nml, '../../secret')).toBeNull()
+    expect(traktorCoverFile(nml, '042/../../../secret')).toBeNull()
+  })
+
+  it("turns Traktor's own pixel format into a picture the list can show", () => {
+    const header = Buffer.alloc(9)
+    header[0] = 0x08
+    header.writeUInt32LE(2, 1)
+    header.writeUInt32LE(3, 5)
+    keep(dir, Buffer.concat([header, Buffer.alloc(2 * 3 * 4, 7)]))
+
+    const png = traktorCoverPng(join(dir, 'Coverart', '042', 'ABCDEF000'))
+
+    expect(png?.toString()).toBe('png-of-bitmap:2x3:24')
+  })
+
+  it('hands a thumbnail Traktor wrote as PNG over as it is', () => {
+    const png = Buffer.concat([
+      Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+      Buffer.from('rest'),
+    ])
+    keep(dir, png)
+
+    expect(traktorCoverPng(join(dir, 'Coverart', '042', 'ABCDEF000'))).toEqual(png)
+  })
+
+  it('shows nothing for a thumbnail cut short, rather than a garbled picture', () => {
+    const header = Buffer.alloc(9)
+    header[0] = 0x08
+    header.writeUInt32LE(125, 1)
+    header.writeUInt32LE(125, 5)
+    keep(dir, Buffer.concat([header, Buffer.alloc(100)]))
+
+    expect(traktorCoverPng(join(dir, 'Coverart', '042', 'ABCDEF000'))).toBeNull()
+  })
+
+  it('names a cover by an address only this cache answers, and reads the id back from it', () => {
+    const url = traktorCoverUrl('042/ABC DEF')
+
+    expect(traktorCoverIdOf(url)).toBe('042/ABC DEF')
+    expect(traktorCoverIdOf('surco://cover/abc.jpg')).toBeNull()
+    expect(traktorCoverIdOf('https://example.com/042/ABC')).toBeNull()
   })
 })

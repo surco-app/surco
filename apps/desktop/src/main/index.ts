@@ -245,6 +245,7 @@ import { createStickyConflict } from './stickyConflict'
 import { createSurcoTrash } from './surcoTrash'
 import { snapshotTagsInWorker, tagChangeDetail } from './tagChanges'
 import { createTmpManifest } from './tmpManifest'
+import { traktorCoverFile, traktorCoverIdOf, traktorCoverPng } from './traktorCoverCache'
 import { traktorCueQueueSection } from './traktorCueQueueIpc'
 import { traktorCueSource } from './traktorCueSource'
 import { applyTraktorBatch } from './traktorCuesWrite'
@@ -2511,6 +2512,16 @@ app.whenReady().then(() => {
   protocol.handle(MEDIA_SCHEME, async (req) => {
     // Embedded cover thumbnails (see coverThumbs.ts): content-named files in the app's own
     // store, so no media allow-list applies; coverThumbPathOf admits nothing else.
+    // A Traktor row's cover, drawn from the thumbnail Traktor keeps in its own cache (see
+    // traktorCoverFile): an id resolves inside that cache or not at all.
+    const traktorCover = traktorCoverIdOf(req.url)
+    if (traktorCover !== null) {
+      const file = traktorCoverFile(traktorReadPath(), traktorCover)
+      const png = file && traktorCoverPng(file)
+      return png
+        ? new Response(png, { headers: { 'Content-Type': 'image/png' } })
+        : new Response('Not found', { status: 404 })
+    }
     const thumb = coverThumbPathOf(req.url)
     if (thumb) {
       try {

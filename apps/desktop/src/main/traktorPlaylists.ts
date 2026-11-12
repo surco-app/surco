@@ -144,10 +144,20 @@ function gridBeatsOf(block: string): number[] {
   return [anchor, anchor + 60000 / bpm]
 }
 
-function entryOf(track: Track | undefined, bootVolume: string): SourcePlaylistEntry {
+// The thumbnail Traktor keeps for a cover id, as a URL the list can draw, or undefined when
+// its cache holds none. See traktorCoverFile.
+export type TraktorCoverUrlOf = (coverId: string) => string | undefined
+
+function entryOf(
+  track: Track | undefined,
+  bootVolume: string,
+  coverUrlOf?: TraktorCoverUrlOf,
+): SourcePlaylistEntry {
   if (!track) return { path: null, separator: false, meta: {} }
   const head = track.block.match(/<ENTRY\b[^>]*>/)?.[0] ?? ''
   const info = track.block.match(/<INFO\b[^>]*>/)?.[0] ?? ''
+  const coverId = attr(info, 'COVERARTID')
+  const coverUrl = coverId ? coverUrlOf?.(coverId) : undefined
   const cues = cuesOf(track.block)
   const drift = cueGridDrift(
     cues.map((c) => c.ms),
@@ -163,6 +173,7 @@ function entryOf(track: Track | undefined, bootVolume: string): SourcePlaylistEn
       artist: attr(head, 'ARTIST').trim(),
       durationSec: Number(attr(info, 'PLAYTIME_FLOAT') || attr(info, 'PLAYTIME')) || 0,
       ...(drift === null ? {} : { gridDriftMs: drift }),
+      ...(coverUrl ? { coverUrl } : {}),
       cues,
     },
   }
@@ -256,16 +267,18 @@ export function readTraktorPlaylist(
   id: string,
   bootVolume: string,
   now: Date = new Date(),
+  coverUrlOf?: TraktorCoverUrlOf,
 ): SourcePlaylistEntry[] {
-  if (id === RECENTLY_ADDED_ID) return recentTracks(nml, now).map((t) => entryOf(t, bootVolume))
-  if (id === ALL_TRACKS_ID) return allTracks(nml).map((t) => entryOf(t, bootVolume))
+  const entry = (t: Track | undefined) => entryOf(t, bootVolume, coverUrlOf)
+  if (id === RECENTLY_ADDED_ID) return recentTracks(nml, now).map(entry)
+  if (id === ALL_TRACKS_ID) return allTracks(nml).map(entry)
   const list = nodeById(parsePlaylists(nml), id)
   if (list?.kind !== 'playlist') return []
   const tracks = collection(nml)
   const byKey = new Map(tracks.map((t) => [t.key, t]))
   const separators = new Set(tracks.filter(isSeparator).map((t) => t.key))
   return list.rows.map((row, i) => ({
-    ...entryOf(byKey.get(row.key), bootVolume),
+    ...entry(byKey.get(row.key)),
     ...(separators.has(row.key) && { separator: true }),
     linkId: rowLinkId(list, i),
   }))
