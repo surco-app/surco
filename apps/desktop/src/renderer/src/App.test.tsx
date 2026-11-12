@@ -51,6 +51,7 @@ import {
 } from './lib/cueSession'
 import { resetEditorPlace } from './lib/editorPlace'
 import { spellingGroups } from './lib/musicSpelling'
+import { holdPendingEdit } from './lib/pendingEdits'
 import { createQueryClient } from './lib/queryClient'
 import { clearDraggedRows, draggedRows, TREE_NODE_TYPE } from './lib/reorderDrag'
 import { usbExportStore } from './lib/usbExportStore'
@@ -7395,6 +7396,21 @@ describe('App per-format filter', () => {
     // The crate is now WAV-only: had the format filter stayed on MP3 the WAV row would be
     // hidden (0 rows). Seeing it proves the format filter reset.
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+  })
+
+  it('leaves text still in a field alone when the format filter resets on its own', async () => {
+    await addMixedCrate()
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-section-format'))
+    fireEvent.click(screen.getByTestId('quality-filter-ext:MP3'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    fireEvent.contextMenu(screen.getByTestId('track-row'))
+    const flush = vi.fn()
+    const release = holdPendingEdit(flush)
+    fireEvent.click(screen.getByTestId('track-menu-remove'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    release()
+    expect(flush).toHaveBeenCalledTimes(1)
   })
 
   // The bug a DJ hit: filter to one format (MP3), press "Empty" expecting only those gone,

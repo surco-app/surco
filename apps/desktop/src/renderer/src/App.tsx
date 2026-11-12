@@ -501,7 +501,7 @@ export default function App(): React.JSX.Element {
     filterActive,
     formatFilter,
     setFilterSelection: storeFilterSelection,
-    setFormatFilter: storeFormatFilter,
+    setFormatFilter,
   } = useTriageFilters(store)
   const setFilterSelection = useCallback(
     (next: FilterSelection): void => {
@@ -509,13 +509,6 @@ export default function App(): React.JSX.Element {
       storeFilterSelection(next)
     },
     [storeFilterSelection],
-  )
-  const setFormatFilter = useCallback(
-    (next: string | null): void => {
-      flushPendingEdits()
-      storeFormatFilter(next)
-    },
-    [storeFormatFilter],
   )
   const search = useAppStore(store, (s) => s.search)
   const playedPaths = useAppStore(store, (s) => s.playedPaths)
