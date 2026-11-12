@@ -1,8 +1,9 @@
-import { mkdtemp, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import type { CollectionTrack, SourceNode, SourcePlaylistEntry } from '../shared/types'
+import { traktorCoverUrl } from './traktorCoverCache'
 import { traktorRead } from './traktorPlaylistsIpc'
 
 const today = new Date()
@@ -51,6 +52,25 @@ describe('traktorRead', () => {
     expect(read.membership(['/Music/a.mp3'])).toEqual({})
     found = file
     expect(read.membership(['/Music/a.mp3'])).toEqual({ '/Music/a.mp3': ['u1'] })
+  })
+
+  it('points a row at the thumbnail Traktor keeps beside the collection, so its file needs only the light read', async () => {
+    const file = await collection()
+    await writeFile(
+      file,
+      NML.replace(
+        `<INFO IMPORT_DATE="${imported}">`,
+        `<INFO IMPORT_DATE="${imported}" COVERARTID="042/ABC">`,
+      ),
+    )
+    const cache = join(file, '..', 'Coverart', '042')
+    await mkdir(cache, { recursive: true })
+    await writeFile(join(cache, 'ABC000'), 'thumb')
+    const read = traktorRead(() => file, { bootVolume: () => 'HD' })
+
+    const entries = read.playlist('u1') as SourcePlaylistEntry[]
+
+    expect(entries.map((e) => e.preview?.coverUrl)).toEqual([traktorCoverUrl('042/ABC'), undefined])
   })
 
   it('fails on a collection it cannot read, so the tab says so instead of showing no playlists', async () => {
