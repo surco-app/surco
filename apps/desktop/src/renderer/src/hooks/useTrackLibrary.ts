@@ -4,6 +4,7 @@ import { fromLegacy } from '../../../shared/sessionLegacy'
 import { isFrom, withPrograms } from '../../../shared/trackOrigin'
 import type {
   AppleMusicTrackMeta,
+  MetaRead,
   PlaylistSource,
   ProcessProgress,
   ReviewedFileUpdate,
@@ -40,6 +41,9 @@ const READ_CONCURRENCY = 6
 // How long finished metadata reads wait to be written to the crate together. Short enough
 // that a row's tags land with no visible lag, long enough to fold a burst of replies.
 const META_FLUSH_MS = 50
+// The same while an import reads: each write re-renders the whole App and recounts the
+// library, and at one every 50 ms a first read of 8,000 files was bound by the renders.
+const IMPORT_FLUSH_MS = 1000
 
 // How long the "N new tracks" prompt stays up before dismissing itself. Long enough to
 // read and hit Load, short enough that an ignored prompt gets out of the way; timing out
@@ -212,6 +216,15 @@ export function useTrackLibrary({
   const [tracks, setTracks] = useState<TrackItem[]>([])
   const tracksRef = useRef<TrackItem[]>([])
   tracksRef.current = tracks
+  // The ids of the crate as it is now, rebuilt only when the crate changes: each read asks
+  // whether its row is still there, and walking 8,000 rows for each of 8,000 reads cost a
+  // second and a half of a first read.
+  const idIndex = useRef<{ of: TrackItem[]; ids: Set<string> } | null>(null)
+  const isInCrate = (id: string): boolean => {
+    if (idIndex.current?.of !== tracksRef.current)
+      idIndex.current = { of: tracksRef.current, ids: new Set(tracksRef.current.map((t) => t.id)) }
+    return idIndex.current.ids.has(id)
+  }
   // Import progress, accumulated across overlapping drops via refs (the React state is just
   // the render mirror): each drop bumps the total, each finished read bumps done, and the
   // pair resets to null once everything in flight has landed — like the auto-match sweep.
@@ -321,7 +334,8 @@ export function useTrackLibrary({
   const scheduleMetaFlush = useCallback((): void => {
     if (metaFlushScheduled.current) return
     metaFlushScheduled.current = true
-    const wait = lastMetaFlush.current + META_FLUSH_MS - performance.now()
+    const span = importTotal.current > 0 ? IMPORT_FLUSH_MS : META_FLUSH_MS
+    const wait = lastMetaFlush.current + span - performance.now()
     if (wait <= 0) queueMicrotask(flushMetaPatches)
     else metaFlushTimer.current = setTimeout(flushMetaPatches, wait)
   }, [flushMetaPatches])
@@ -441,21 +455,40 @@ export function useTrackLibrary({
     // here after dedup, so this is the one bump for the lifetime "loaded" tally.
     window.api.recordStat('imported', bases.length)
     setSelection((s) => (s.anchor ? s : { ids: [bases[0].id], anchor: bases[0].id }))
-    importTotal.current += bases.length
-    setImportProgress({ done: importDone.current, total: importTotal.current })
     const generation = importGeneration.current
+    // A file is read once, not once per launch or per tab: the ones whose read is already
+    // on disk land together, in one write, and only the rest go through the queue and the
+    // import's count. One by one, a reopened collection of 8,000 read for over a minute.
+    const known = await window.api.readMetaCached(
+      bases.map((b) => ({ path: b.inputPath, light: wantsLightRead(b) })),
+    )
+    if (generation !== importGeneration.current) {
+      const dropped = new Set(bases.map((b) => b.id))
+      tracksRef.current = tracksRef.current.filter((t) => !dropped.has(t.id))
+      setTracks((prev) => prev.filter((t) => !dropped.has(t.id)))
+      return
+    }
+    for (const base of bases) {
+      const read = known[base.inputPath]
+      if (read) landRead(base, read, takeRestoredEdit(base.inputPath))
+    }
+    flushMetaPatches()
+    const toRead = bases.filter((b) => !known[b.inputPath])
+    if (toRead.length === 0) return
+    importTotal.current += toRead.length
+    setImportProgress({ done: importDone.current, total: importTotal.current })
     // The rows this import added that never got their tags read. A cancel drops them:
     // they carry nothing but a filename, and leaving them would put rows in the crate
     // that look like tracks with no metadata. Rows already read are finished work and
     // stay — cancel means "stop working", not "undo".
-    const unread = new Set(bases.map((b) => b.id))
+    const unread = new Set(toRead.map((b) => b.id))
     void Promise.all(
-      bases.map((base) =>
+      toRead.map((base) =>
         readSlot.current.run(base.id, async () => {
           // Checked before the read, not after: the point is to not start the ones still
           // queued behind the handful already in flight.
           if (generation !== importGeneration.current) return
-          const present = tracksRef.current.some((t) => t.id === base.id)
+          const present = isInCrate(base.id)
           const ok = present ? await loadTrackMeta(base) : true
           unread.delete(base.id)
           if (generation !== importGeneration.current) return
@@ -534,107 +567,29 @@ export function useTrackLibrary({
     return patch
   }
 
-  async function loadTrackMeta(base: TrackItem): Promise<boolean> {
-    const path = base.inputPath
-    // Consumed exactly once: a later start-over on the same path must rebuild from
-    // the file alone, not resurrect the restored edit.
+  // Consumed exactly once: a later start-over on the same path must rebuild from the file
+  // alone, not resurrect the restored edit.
+  function takeRestoredEdit(path: string): SessionEdit | undefined {
     const saved = restoredEdits.current.get(path)
     restoredEdits.current.delete(path)
-    const savedOrigin = saved && fromLegacy(saved)
+    return saved
+  }
+
+  // The light read leaves the cover out because the library painted it already; a row the
+  // library holds no art for needs the file's own, or it shows a placeholder until it is
+  // clicked.
+  const wantsLightRead = (base: TrackItem): boolean => !!base.sourcePreview?.coverUrl
+
+  async function loadTrackMeta(base: TrackItem): Promise<boolean> {
+    const path = base.inputPath
+    const saved = takeRestoredEdit(path)
     try {
-      // The light read leaves the cover out because the library painted it already; a row
-      // the library holds no art for needs the file's own, or it shows a placeholder until
-      // it is clicked.
-      const read = base.sourcePreview?.coverUrl
+      const read = wantsLightRead(base)
         ? await window.api.readMetaLight(path)
         : { ...(await window.api.readMeta(path)), partial: false }
-      const { tags, duration, cover, foreignTags, failed, reviewRaw } = read
-      const s = searchFromTags(parseFileName(path), tags)
-      // Whatever Music knows that this file does not. Consumed once, like the restored
-      // edit above: a later start-over must rebuild from the file alone.
-      const fromMusic = appleMusicMeta.current.get(path)
-      appleMusicMeta.current.delete(path)
-      const ownMeta: TrackMetadata = {
-        ...base.meta,
-        ...tags,
-        title: s.title,
-        artist: s.artist,
-      }
-      const readMeta: TrackMetadata = fillFromAppleMusic(ownMeta, fromMusic ?? {})
-      const patch: Partial<TrackItem> = {
-        query: s.query,
-        queryTyped: false,
-        duration: duration ?? undefined,
-        foreignTags,
-        // The file's own art wins; Music's copy fills the gap for the files that carry
-        // none — over half a real library, almost all WAVs, which imported with an empty
-        // cover slot even though Music held the picture.
-        coverUrl: cover?.thumbUrl ?? fromMusic?.coverUrl,
-        ...(cover?.thumbUrl ? {} : { coverPath: fromMusic?.coverPath }),
-        // The row reads embeddedCover, the art captured once at import — so Music's copy
-        // belongs here too for the files that carry none of their own, or the crate shows
-        // a placeholder while the editor shows the cover. The file's own art still wins.
-        embeddedCover: cover?.thumbUrl ?? fromMusic?.coverUrl,
-        embeddedCoverDims:
-          cover && cover.width > 0 ? { w: cover.width, h: cover.height } : undefined,
-        listLabel: s.title || base.fileName,
-        loadingMeta: false,
-        metaPartial: read.partial,
-        // The pure read IS the file's state: everything staged on top of this
-        // snapshot exists nowhere on disk, which is what the session store persists.
-        // Stamped before the restored overlay below, so restored edits keep counting
-        // as staged until they are actually converted.
-        diskSignature: trackSignature({ meta: readMeta, coverUrl: cover?.thumbUrl }),
-      }
-      // Only a spelling the row took from the file: a title parsed from the file name or
-      // filled from Music is not the file's spelling of anything.
-      const rawFields = Object.fromEntries(
-        Object.entries(reviewRaw ?? {}).filter(
-          ([field, value]) => value.trim() === readMeta[field as keyof ReviewRawFields],
-        ),
-      )
-      if (Object.keys(rawFields).length > 0 && patch.diskSignature)
-        patch.reviewRaw = { signature: patch.diskSignature, fields: rawFields }
-      const notInFile = REVIEW_WRITE_FIELDS.filter(
-        (f) => readMeta[f].trim() && !(tags[f] ?? '').trim(),
-      )
-      if (notInFile.length > 0 && patch.diskSignature)
-        patch.notInFile = { signature: patch.diskSignature, fields: notInFile }
-      if (readMeta !== ownMeta && patch.diskSignature) patch.fillSignature = patch.diskSignature
-      if (saved) Object.assign(patch, restoredPatch(saved))
-      // The row paints from embeddedCover, so a cover restored from the session has to
-      // land there too — otherwise reopening showed the placeholder in the crate while the
-      // editor showed the art, for every track whose cover came from the library rather
-      // than the file. The file's own art still wins: the row is a view of the file on
-      // disk, and this only fills the gap when the file carries none.
-      if (!cover?.thumbUrl && saved?.coverUrl) patch.embeddedCover = saved.coverUrl
-      // A restored edit replaces the read wholesale (it was itself built on a read of
-      // this same file, plus everything the user staged since); the matched flag rides
-      // in the patch so the auto-match sweep skips the row instead of overwriting it.
-      const finalMeta = saved ? saved.meta : readMeta
-      // The row is editable while the read runs, so merge instead of overwriting:
-      // a field the user typed into meanwhile keeps the user's value, and the read
-      // fills only what was left untouched. Queued into the shared flush rather than
-      // written on its own, so a batch of reads costs one array rewrite, not one each.
-      loadedPending.current.push({
-        ...base,
-        ...patch,
-        ...(savedOrigin && mergedOrigin(base, savedOrigin)),
-        meta: finalMeta,
-      })
-      enqueueMetaPatch(base.id, (t) => ({
-        ...t,
-        ...patch,
-        ...(savedOrigin && mergedOrigin(t, savedOrigin)),
-        // A read that succeeded clears the mark a failed one left; a degraded read sets
-        // it, so the row says so instead of looking like a file with no tags.
-        ...(failed ? { metaReadFailed: true } : t.metaReadFailed ? { metaReadFailed: false } : {}),
-        meta: mergeReadMeta(base.meta, t.meta, finalMeta),
-      }))
-      // Reported like a thrown failure so the batch's aggregate notice counts it: the
-      // read degraded, whether or not it raised on the way.
-      return !failed
+      return landRead(base, read, saved)
     } catch {
+      const savedOrigin = saved && fromLegacy(saved)
       // The row survives on its file-name parse, but flagged: without the mark, an
       // unreadable file is indistinguishable from a file that simply carries no tags.
       // A restored edit still applies — its metadata is better than the name parse,
@@ -655,6 +610,100 @@ export function useTrackLibrary({
       }))
       return false
     }
+  }
+
+  function landRead(
+    base: TrackItem,
+    read: MetaRead & { partial: boolean },
+    saved: SessionEdit | undefined,
+  ): boolean {
+    const path = base.inputPath
+    const savedOrigin = saved && fromLegacy(saved)
+    const { tags, duration, cover, foreignTags, failed, reviewRaw } = read
+    const s = searchFromTags(parseFileName(path), tags)
+    // Whatever Music knows that this file does not. Consumed once, like the restored
+    // edit above: a later start-over must rebuild from the file alone.
+    const fromMusic = appleMusicMeta.current.get(path)
+    appleMusicMeta.current.delete(path)
+    const ownMeta: TrackMetadata = {
+      ...base.meta,
+      ...tags,
+      title: s.title,
+      artist: s.artist,
+    }
+    const readMeta: TrackMetadata = fillFromAppleMusic(ownMeta, fromMusic ?? {})
+    const patch: Partial<TrackItem> = {
+      query: s.query,
+      queryTyped: false,
+      duration: duration ?? undefined,
+      foreignTags,
+      // The file's own art wins; Music's copy fills the gap for the files that carry
+      // none — over half a real library, almost all WAVs, which imported with an empty
+      // cover slot even though Music held the picture.
+      coverUrl: cover?.thumbUrl ?? fromMusic?.coverUrl,
+      ...(cover?.thumbUrl ? {} : { coverPath: fromMusic?.coverPath }),
+      // The row reads embeddedCover, the art captured once at import — so Music's copy
+      // belongs here too for the files that carry none of their own, or the crate shows
+      // a placeholder while the editor shows the cover. The file's own art still wins.
+      embeddedCover: cover?.thumbUrl ?? fromMusic?.coverUrl,
+      embeddedCoverDims: cover && cover.width > 0 ? { w: cover.width, h: cover.height } : undefined,
+      listLabel: s.title || base.fileName,
+      loadingMeta: false,
+      metaPartial: read.partial,
+      // The pure read IS the file's state: everything staged on top of this
+      // snapshot exists nowhere on disk, which is what the session store persists.
+      // Stamped before the restored overlay below, so restored edits keep counting
+      // as staged until they are actually converted.
+      diskSignature: trackSignature({ meta: readMeta, coverUrl: cover?.thumbUrl }),
+    }
+    // Only a spelling the row took from the file: a title parsed from the file name or
+    // filled from Music is not the file's spelling of anything.
+    const rawFields = Object.fromEntries(
+      Object.entries(reviewRaw ?? {}).filter(
+        ([field, value]) => value.trim() === readMeta[field as keyof ReviewRawFields],
+      ),
+    )
+    if (Object.keys(rawFields).length > 0 && patch.diskSignature)
+      patch.reviewRaw = { signature: patch.diskSignature, fields: rawFields }
+    const notInFile = REVIEW_WRITE_FIELDS.filter(
+      (f) => readMeta[f].trim() && !(tags[f] ?? '').trim(),
+    )
+    if (notInFile.length > 0 && patch.diskSignature)
+      patch.notInFile = { signature: patch.diskSignature, fields: notInFile }
+    if (readMeta !== ownMeta && patch.diskSignature) patch.fillSignature = patch.diskSignature
+    if (saved) Object.assign(patch, restoredPatch(saved))
+    // The row paints from embeddedCover, so a cover restored from the session has to
+    // land there too — otherwise reopening showed the placeholder in the crate while the
+    // editor showed the art, for every track whose cover came from the library rather
+    // than the file. The file's own art still wins: the row is a view of the file on
+    // disk, and this only fills the gap when the file carries none.
+    if (!cover?.thumbUrl && saved?.coverUrl) patch.embeddedCover = saved.coverUrl
+    // A restored edit replaces the read wholesale (it was itself built on a read of
+    // this same file, plus everything the user staged since); the matched flag rides
+    // in the patch so the auto-match sweep skips the row instead of overwriting it.
+    const finalMeta = saved ? saved.meta : readMeta
+    // The row is editable while the read runs, so merge instead of overwriting:
+    // a field the user typed into meanwhile keeps the user's value, and the read
+    // fills only what was left untouched. Queued into the shared flush rather than
+    // written on its own, so a batch of reads costs one array rewrite, not one each.
+    loadedPending.current.push({
+      ...base,
+      ...patch,
+      ...(savedOrigin && mergedOrigin(base, savedOrigin)),
+      meta: finalMeta,
+    })
+    enqueueMetaPatch(base.id, (t) => ({
+      ...t,
+      ...patch,
+      ...(savedOrigin && mergedOrigin(t, savedOrigin)),
+      // A read that succeeded clears the mark a failed one left; a degraded read sets
+      // it, so the row says so instead of looking like a file with no tags.
+      ...(failed ? { metaReadFailed: true } : t.metaReadFailed ? { metaReadFailed: false } : {}),
+      meta: mergeReadMeta(base.meta, t.meta, finalMeta),
+    }))
+    // Reported like a thrown failure so the batch's aggregate notice counts it: the
+    // read degraded, whether or not it raised on the way.
+    return !failed
   }
 
   // Right-click "Start over": rebuild the row from the file alone, exactly as if it had

@@ -52,7 +52,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { app } from 'electron'
 import { clearAnalysisCache } from './analysisCache'
-import { readMeta, readMetaLight } from './ffmpeg'
+import { peekMeta, readMeta, readMetaLight } from './ffmpeg'
 
 const work = mkdtempSync(join(tmpdir(), 'surco-readmetacache-src-'))
 const src = join(work, 'in.flac')
@@ -160,5 +160,49 @@ describe('readMetaLight', () => {
     calls.length = 0
     await readMetaLight(src)
     expect(calls).toHaveLength(0)
+  })
+})
+
+// A big library opened again must land its known files at once: thousands of reads, each
+// already on disk, went one by one through the import queue and kept the list "reading"
+// for minutes on every launch. The peek is what lets the list take them in one batch, so it
+// must never cost a spawn, and must answer exactly what the read would have.
+describe('peekMeta', () => {
+  it('answers the cached full read without spawning anything', async () => {
+    const read = await readMeta(src)
+    calls.length = 0
+
+    const peeked = await peekMeta(src, false)
+
+    expect(peeked).toEqual({ ...read, partial: false })
+    expect(calls).toHaveLength(0)
+  })
+
+  it('answers nothing for a file never read, and does not read it', async () => {
+    expect(await peekMeta(src, false)).toBeNull()
+    expect(calls).toHaveLength(0)
+  })
+
+  it('answers the light read for a row that only needs it', async () => {
+    await readMetaLight(src)
+    calls.length = 0
+
+    const peeked = await peekMeta(src, true)
+
+    expect(peeked?.partial).toBe(true)
+    expect(peeked?.tags.title).toBe('Test Track')
+    expect(calls).toHaveLength(0)
+  })
+
+  it('prefers the full read for a light row, so a known file is never partial', async () => {
+    await readMeta(src)
+
+    expect((await peekMeta(src, true))?.partial).toBe(false)
+  })
+
+  it('never hands a light read to a row that needs the cover', async () => {
+    await readMetaLight(src)
+
+    expect(await peekMeta(src, false)).toBeNull()
   })
 })

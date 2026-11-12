@@ -373,6 +373,8 @@ const api: Api = {
   readDuration: (path: string) => ipcRenderer.invoke('audio:duration', path),
   readMeta: (path: string) => ipcRenderer.invoke('audio:meta', path),
   readMetaLight: (path: string) => ipcRenderer.invoke('audio:metaLight', path),
+  readMetaCached: (rows: { path: string; light: boolean }[]) =>
+    ipcRenderer.invoke('audio:metaCached', rows),
   readCover: (path: string) => ipcRenderer.invoke('audio:cover', path),
   readCoverFull: (path: string) => ipcRenderer.invoke('audio:coverFull', path),
   onMenuCommand: (cb: (id: string) => void) => {

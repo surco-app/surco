@@ -49,6 +49,7 @@ function setApi(over: Record<string, unknown> = {}): {
       cover: null,
       foreignTags: [],
     }),
+    readMetaCached: vi.fn().mockResolvedValue({}),
     recordStat: vi.fn(),
     ...over,
   }
@@ -354,8 +355,8 @@ describe('useTrackLibrary cancelling an import', () => {
 
     await act(async () => {
       releaseOne()
-      // Past the window the read results are written in, which the count rides.
-      await new Promise((r) => setTimeout(r, 60))
+      // Past the window an import's read results are written in, which the count rides.
+      await new Promise((r) => setTimeout(r, 1050))
     })
     expect(result.current.importProgress).toEqual({ done: 1, total: 2 })
 
@@ -722,6 +723,62 @@ describe('useTrackLibrary import batching', () => {
   })
 })
 
+// Every read asked whether its row was still in the crate by walking the crate: 8,000 reads
+// over 8,000 rows is 64 million visits, a second and a half of a first read spent asking.
+describe('useTrackLibrary finding a read row', () => {
+  it('finds each row without walking the crate once per read', async () => {
+    const N = 60
+    setApi({
+      readMeta: vi.fn().mockResolvedValue({
+        tags: emptyMetadata(),
+        duration: 1,
+        cover: null,
+        foreignTags: [],
+      }),
+    })
+    const { result } = renderHook(() =>
+      useTrackLibrary({
+        setSelection: vi.fn(),
+        onForget: vi.fn(),
+        onRemove: vi.fn(),
+        onClear: vi.fn(),
+        onMetaLoaded: vi.fn(),
+        onDuplicatesSkipped: vi.fn(),
+        onNoAudioFound: vi.fn(),
+        onMetaReadFailed: vi.fn(),
+      }),
+    )
+    const realSome = Array.prototype.some
+    let bigSomeVisits = 0
+    Array.prototype.some = function someSpy<T>(
+      this: T[],
+      callback: (value: T, index: number, array: T[]) => unknown,
+      thisArg?: unknown,
+    ): boolean {
+      if (this.length < N) return realSome.call(this, callback, thisArg)
+      return realSome.call(
+        this,
+        (v: T, i: number, a: T[]) => {
+          bigSomeVisits++
+          return callback.call(thisArg, v, i, a)
+        },
+        thisArg,
+      )
+    }
+    try {
+      await act(async () => {
+        await result.current.addPaths(Array.from({ length: N }, (_, i) => `/m/${i}.wav`))
+        await new Promise((r) => setTimeout(r, 50))
+      })
+    } finally {
+      Array.prototype.some = realSome
+    }
+
+    expect(result.current.tracks.every((t) => !t.loadingMeta)).toBe(true)
+    expect(bigSomeVisits).toBeLessThan(N * 10)
+  })
+})
+
 describe('useTrackLibrary read coalescing across IPC replies', () => {
   // Each IPC reply lands in its own task, so a microtask flush wrote the crate (and
   // re-rendered the whole App) once per file while a big import loaded. Replies arriving
@@ -770,6 +827,51 @@ describe('useTrackLibrary read coalescing across IPC replies', () => {
 
     expect(result.current.tracks.every((t) => !t.loadingMeta)).toBe(true)
     expect(renders - tracksBefore).toBeLessThanOrEqual(2)
+  })
+})
+
+// A first read of a big collection is bound by the renders, not the disk: every write of
+// the crate re-renders the whole App and recounts the library, and at one write every 50 ms
+// 8,000 new files read in over 110 s. While an import reads, the writes are spread out.
+describe('useTrackLibrary writes while an import reads', () => {
+  it('writes the crate about once a second while reads keep landing', async () => {
+    const pending: (() => void)[] = []
+    setApi({
+      readMeta: vi.fn<Api['readMeta']>(
+        () =>
+          new Promise((resolve) => {
+            pending.push(() =>
+              resolve({ tags: emptyMetadata(), duration: 180, cover: null, foreignTags: [] }),
+            )
+          }),
+      ),
+    })
+    let renders = 0
+    const { result } = renderHook(() => {
+      renders++
+      return useTrackLibrary({
+        setSelection: vi.fn(),
+        onForget: vi.fn(),
+        onRemove: vi.fn(),
+        onClear: vi.fn(),
+        onMetaLoaded: vi.fn(),
+        onDuplicatesSkipped: vi.fn(),
+        onNoAudioFound: vi.fn(),
+        onMetaReadFailed: vi.fn(),
+      })
+    })
+    await act(async () => {
+      void result.current.addPaths(Array.from({ length: 40 }, (_, i) => `/m/${i}.wav`))
+      await new Promise((r) => setTimeout(r, 0))
+    })
+    const before = renders
+
+    for (let i = 0; i < 8; i++) {
+      for (const release of pending.splice(0, 2)) release()
+      await new Promise((r) => setTimeout(r, 80))
+    }
+
+    expect(renders - before).toBeLessThanOrEqual(2)
   })
 })
 
@@ -1146,6 +1248,48 @@ describe('useTrackLibrary foreign tags', () => {
       mode: 'strong',
       noise: 'off',
     })
+  })
+
+  // A reopened session's files are mostly already read, so their edits land on a read
+  // taken from disk in the opening batch, not on a fresh one: they must come back the same.
+  it('restores the edits of a file whose read was already on disk', async () => {
+    const readMeta = vi.fn()
+    setApi({
+      readMeta,
+      readMetaCached: vi.fn().mockResolvedValue({
+        '/m/a.wav': {
+          tags: { title: 'On disk', artist: '' },
+          duration: 180,
+          cover: null,
+          foreignTags: [],
+          partial: false,
+        },
+      }),
+    })
+    const { result } = renderHook(() =>
+      useTrackLibrary({
+        setSelection: vi.fn(),
+        onForget: vi.fn(),
+        onRemove: vi.fn(),
+        onClear: vi.fn(),
+        onMetaLoaded: vi.fn(),
+        onDuplicatesSkipped: vi.fn(),
+        onNoAudioFound: vi.fn(),
+        onMetaReadFailed: vi.fn(),
+      }),
+    )
+    await act(() =>
+      result.current.addPaths(['/m/a.wav'], {
+        '/m/a.wav': {
+          meta: { title: 'Restored' } as never,
+          declick: { mode: 'strong', noise: 'off' },
+        },
+      }),
+    )
+
+    expect(readMeta).not.toHaveBeenCalled()
+    expect(result.current.tracks[0]?.meta.title).toBe('Restored')
+    expect(result.current.tracks[0]?.declick).toEqual({ mode: 'strong', noise: 'off' })
   })
 
   it('restores the wanted rekordbox playlists with the membership they were edited against', async () => {

@@ -44,6 +44,7 @@ import {
   measureLoudness,
   measureWaveform,
   measureWaveformWindow,
+  peekMeta,
   probeAudio,
   probeDuration,
   probeProperties,
@@ -199,6 +200,23 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
       ...meta,
       cover: { ...meta.cover, thumbUrl: await coverThumbUrlFor(meta.cover.thumbUrl) },
     }
+  })
+
+  // The rows a list adds whose read is already on disk, answered in one round trip: a
+  // reopened library of thousands went through the import queue one read at a time and
+  // kept the list reading for minutes. A miss is left out and never read here.
+  ipcMain.handle('audio:metaCached', async (_e, rows: { path: string; light: boolean }[]) => {
+    const hits = await Promise.all(
+      rows.map(async ({ path, light }) => {
+        const read = await peekMeta(path, light)
+        if (!read) return null
+        const meta = { ...read, tags: withSettingsYear(read.tags) }
+        if (!meta.cover) return [path, meta] as const
+        const thumbUrl = await coverThumbUrlFor(meta.cover.thumbUrl)
+        return [path, { ...meta, cover: { ...meta.cover, thumbUrl } }] as const
+      }),
+    )
+    return Object.fromEntries(hits.filter((hit) => hit !== null))
   })
 
   ipcMain.handle('audio:cover', async (_e, inputPath: string) => {

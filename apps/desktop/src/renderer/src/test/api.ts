@@ -449,6 +449,7 @@ export function stubApi({ cues, ...over }: ApiOverrides = {}): Api {
       cover: null,
       foreignTags: [],
     }),
+    readMetaCached: async () => ({}),
     readMetaLight: async () => ({
       tags: emptyMetadata(),
       duration: null,
