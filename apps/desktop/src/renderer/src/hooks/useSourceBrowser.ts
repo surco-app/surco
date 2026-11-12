@@ -158,12 +158,15 @@ export function useSourceBrowser({
     enabled: hasRecent,
     staleTime: Number.POSITIVE_INFINITY,
   })
-  const startingPlaylist =
-    (recent.data ?? 0) > 0
-      ? { id: RECENTLY_ADDED_ID, name: tr('sources.recentlyAdded'), folders: [] }
-      : (all.data ?? 0) > 0
-        ? { id: ALL_TRACKS_ID, name: tr('sources.allTracks'), folders: [] }
-        : null
+  const startingPlaylist = useMemo(
+    () =>
+      (recent.data ?? 0) > 0
+        ? { id: RECENTLY_ADDED_ID, name: tr('sources.recentlyAdded'), folders: [] }
+        : (all.data ?? 0) > 0
+          ? { id: ALL_TRACKS_ID, name: tr('sources.allTracks'), folders: [] }
+          : null,
+    [recent.data, all.data, tr],
+  )
   const playlist = source ? (playlists[source] ?? (hasRecent ? startingPlaylist : null)) : null
   const shownTree = useMemo(
     () =>
