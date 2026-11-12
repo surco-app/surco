@@ -737,17 +737,22 @@ export function useTrackProcessing({
         if (t.skipReason !== undefined && ids.includes(t.id))
           updateTrack(t.id, { skipReason: undefined })
       }
+      batchingRef.current = true
+      try {
+        await askToCloseReached(ids)
+      } catch (error) {
+        batchingRef.current = false
+        throw error
+      }
       // A fresh run: let main forget any "apply to the rest" conflict choice the last batch
       // left, so this one starts asking again rather than reusing a stale decision.
       window.api.beginConversionBatch()
-      batchingRef.current = true
       setBatching(true)
       setBatchSummary(null)
       setBatchProgress({ done: 0, total: ids.length })
       let done = 0
       let results: BatchOutcome[] = []
       try {
-        await askToCloseReached(ids)
         // Convert several tracks at once instead of one-at-a-time: ffmpeg spawns an
         // independent child per track, so a bulk run overlaps them up to CONVERT_CONCURRENCY.
         // The Apple Music add stays serialized in the main process (Music imports one file at

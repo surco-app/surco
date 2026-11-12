@@ -211,6 +211,70 @@ describe('useTrackProcessing', () => {
     expect(processTrack).toHaveBeenCalledTimes(2)
   })
 
+  it('does not show the batch as converting while the close-program prompt is open', async () => {
+    let answer: (value: Record<string, never>) => void = () => {}
+    const askToApply = vi.fn().mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          answer = resolve
+        }),
+    )
+    const beginConversionBatch = vi.fn()
+    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/m/a.aiff' })
+    setApi({
+      processTrack,
+      beginConversionBatch,
+      conversionPrograms: vi.fn().mockResolvedValue(['traktor']),
+      dj: { askToApply },
+    })
+    const tracks = [track({ id: 'a' })]
+    const { result } = renderHook(
+      () => useTrackProcessing({ tracks, settings: null, updateTrack: vi.fn() }),
+      { wrapper: withClient() },
+    )
+    let run: Promise<void> = Promise.resolve()
+    await act(async () => {
+      run = result.current.processAll(tracks)
+      await vi.waitFor(() => expect(askToApply).toHaveBeenCalled())
+    })
+    expect(beginConversionBatch).not.toHaveBeenCalled()
+    expect(result.current.batching).toBe(false)
+    expect(result.current.batchProgress.total).toBe(0)
+    await act(async () => {
+      answer({})
+      await run
+    })
+    expect(beginConversionBatch).toHaveBeenCalledOnce()
+    expect(processTrack).toHaveBeenCalledOnce()
+  })
+
+  it('does not close a batch it never began when the close-program prompt fails, and can run again', async () => {
+    const endConversionBatch = vi.fn()
+    const beginConversionBatch = vi.fn()
+    const askToApply = vi.fn().mockRejectedValueOnce(new Error('ipc failed')).mockResolvedValue({})
+    setApi({
+      processTrack: vi.fn().mockResolvedValue({ outputPath: '/m/a.aiff' }),
+      beginConversionBatch,
+      endConversionBatch,
+      conversionPrograms: vi.fn().mockResolvedValue(['traktor']),
+      dj: { askToApply },
+    })
+    const tracks = [track({ id: 'a' })]
+    const { result } = renderHook(
+      () => useTrackProcessing({ tracks, settings: null, updateTrack: vi.fn() }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await result.current.processAll(tracks).catch(() => {})
+    })
+    expect(beginConversionBatch).not.toHaveBeenCalled()
+    expect(endConversionBatch).not.toHaveBeenCalled()
+    await act(async () => {
+      await result.current.processAll(tracks)
+    })
+    expect(beginConversionBatch).toHaveBeenCalledOnce()
+  })
+
   it('does not ask when no program is reached', async () => {
     const askToApply = vi.fn()
     setApi({
