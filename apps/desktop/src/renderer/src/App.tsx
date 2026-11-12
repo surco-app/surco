@@ -728,6 +728,8 @@ export default function App(): React.JSX.Element {
     rereadTrackMeta,
     refreshChangedTrack,
     completeTrackMeta,
+    readCoversOnScreen,
+    readCoversInBackground,
     refreshTrackFromDisk,
     patchReviewedFields,
     removeTracks,
@@ -788,6 +790,8 @@ export default function App(): React.JSX.Element {
       for (const t of cleared) revokeCoverUrl(t.coverUrl)
     },
     onMetaLoaded: (t) => {
+      // A row already on screen when its light read lands never comes into view again.
+      if (t.metaPartial && rowsOnScreen.current.has(t.id)) readCoversOnScreen([t.id])
       // With auto-match on, every imported track is probed whether or not its row is on
       // screen; already-matched ones are never re-probed.
       if (browser.source === null && settings?.autoMatch && autoMatchAvailable(settings))
@@ -2015,7 +2019,11 @@ export default function App(): React.JSX.Element {
     onTrackVisible(id, visible)
     onDuplicateRowVisible(id, visible)
     if (visible && cameIntoView.current.push(id) === 1)
-      queueMicrotask(() => prioritizeReads(cameIntoView.current.splice(0)))
+      queueMicrotask(() => {
+        const came = cameIntoView.current.splice(0)
+        prioritizeReads(came)
+        readCoversOnScreen(came)
+      })
     if (visible && browser.playlist?.id === ALL_TRACKS_ID && !seenInAllRef.current.has(id)) {
       seenInAllRef.current.add(id)
       seenSettle.current ??= setTimeout(() => {
@@ -2222,6 +2230,11 @@ export default function App(): React.JSX.Element {
   useEffect(() => {
     scopeAutoMatch(autoMatchScope)
   }, [autoMatchScope, scopeAutoMatch])
+  // A row whose art is not read yet is not known to have none, so the filter leaves it out
+  // until it is: picking it reads the art of every row of the list in the background.
+  useEffect(() => {
+    if (filterSelection.tags === 'noCover') readCoversInBackground(scopeTracks.map((t) => t.id))
+  }, [filterSelection.tags, scopeTracks, readCoversInBackground])
   const qualityTally = useMemo(
     () => qualityCounts(scopeTracks, filterFacts),
     [scopeTracks, filterFacts],
