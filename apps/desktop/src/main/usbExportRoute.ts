@@ -1,4 +1,4 @@
-import { DJ_PROGRAMS, type DjProgram } from '../shared/djProgram'
+import { type DjProgram, USB_PROGRAMS, type UsbProgram } from '../shared/djProgram'
 import type { UsbExportRequest, UsbPlanResult, UsbStartResult } from '../shared/types'
 
 export interface UsbExporter {
@@ -9,24 +9,28 @@ export interface UsbExporter {
   busy: () => boolean
 }
 
-export type UsbExporters = Partial<Record<DjProgram, UsbExporter>> &
-  Record<'rekordbox' | 'engine', UsbExporter>
+export type UsbExporters = { [P in UsbProgram]: UsbExporter | undefined } & Record<
+  'rekordbox' | 'engine',
+  UsbExporter
+>
 
 export function usbProgramOf(req: UsbExportRequest): DjProgram {
   return req.source ?? 'rekordbox'
 }
 
 export function routeUsbExports(exporters: UsbExporters): UsbExporter {
-  const registered = DJ_PROGRAMS.flatMap((p) => {
+  const registered = USB_PROGRAMS.flatMap((p) => {
     const exporter = exporters[p]
     return exporter ? [{ program: p, exporter }] : []
   })
+  const exporterOf = (program: DjProgram): UsbExporter | undefined =>
+    registered.find((r) => r.program === program)?.exporter
   const otherBusy = (program: DjProgram): boolean =>
     registered.some((r) => r.program !== program && r.exporter.busy())
   return {
     plan: (req) => {
       const program = usbProgramOf(req)
-      const exporter = exporters[program]
+      const exporter = exporterOf(program)
       if (!exporter) return Promise.resolve({ ok: false, reason: 'unsupported' })
       return otherBusy(program)
         ? Promise.resolve({ ok: false, reason: 'busy' })
@@ -34,7 +38,7 @@ export function routeUsbExports(exporters: UsbExporters): UsbExporter {
     },
     start: (req) => {
       const program = usbProgramOf(req)
-      const exporter = exporters[program]
+      const exporter = exporterOf(program)
       if (!exporter) return Promise.resolve({ ok: false, reason: 'unsupported' })
       return otherBusy(program)
         ? Promise.resolve({ ok: false, reason: 'busy' })

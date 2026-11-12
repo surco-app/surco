@@ -52,7 +52,7 @@ export interface QuitText<P extends WritableProgram = WritableProgram> {
   detail: Record<ReasonOf<P>, DetailKeyOf<P> | null>
 }
 
-export const QUIT_TEXT: { [P in WritableProgram]: QuitText<P> | null } = {
+export const QUIT_TEXT: { [P in WritableProgram]: QuitText<P> } = {
   rekordbox: {
     message: 'rekordboxQuitMessage',
     confirm: 'rekordboxQuitConfirm',
@@ -105,8 +105,7 @@ export function reasonOfDetail<P extends WritableProgram>(
   program: P,
   key: DetailKeyOf<P>,
 ): ReasonOf<P> {
-  const text: QuitText<P> | null = QUIT_TEXT[program]
-  if (!text) throw new Error(`${program} is never asked to quit`)
+  const text: QuitText<P> = QUIT_TEXT[program]
   const detail: Record<ReasonOf<P>, MenuKey | null> = text.detail
   const reason = (QUIT_REASONS[program] as readonly ReasonOf<P>[]).find((r) => detail[r] === key)
   if (reason === undefined) throw new Error(`No ${program} quit reason for ${key}`)
@@ -134,9 +133,9 @@ export function createEnsureClosed(deps: {
     win: BrowserWindow | null,
     reason: ReasonOf<P>,
   ): Promise<boolean> {
-    const text: QuitText<P> | null = QUIT_TEXT[program]
-    const detail = text?.detail[reason]
-    if (!text || !detail) return false
+    const text: QuitText<P> = QUIT_TEXT[program]
+    const detail = text.detail[reason]
+    if (!detail) return false
     const response = await deps.ask(win, {
       type: 'warning',
       message: deps.t(text.message),

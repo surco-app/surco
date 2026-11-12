@@ -112,7 +112,7 @@ Recorrerla entera en cada bloque. Cada punto costó una revisión.
 
 **Filas que compilan pero no hacen nada**
 - [ ] Ninguna fila es un no-op: `CHECKS.<p>` vacío, `LISTED.<p>.touches: () => false`, `collectionPath: () => null` en Copias, `DuplicateSteps.<p>: undefined`, tablas de daños a `null`. Buscar en el diff `() => false`, `async () => {}`, `null`, `undefined` en filas del programa nuevo y justificar cada uno.
-- [ ] `UsbExporters` (`main/usbExportRoute.ts`) es `Partial`: sin exportador el USB responde `unsupported` y compila.
+- [ ] `UsbExporters` (`main/usbExportRoute.ts`) pide la clave de cada programa con USB, pero acepta `undefined` para un programa sin exportador en esta plataforma (Serato y VirtualDJ fuera de macOS). Pasar `undefined` donde sí hay exportador responde `unsupported` y compila.
 - [ ] `WIRED_READS` de `scenarios/harness.tsx` es `Partial`, y la tabla de `scenarios/djPrograms/door.ts` es una copia a mano del cableado de `main/index.ts` (sin `serialLibraryFlush` ni `ensureClosed` reales): revisar que siguen a producción.
 
 **Caminos compartidos que antes solo seguía un programa**
@@ -123,7 +123,7 @@ Recorrerla entera en cada bloque. Cada punto costó una revisión.
 - [ ] Repunte que el programa no puede seguir (otro volumen, destino ocupado): conservar el original (`librariesKeepingOriginal` en `main/libraryFlushes.ts`) y avisar. Un fallo de listas después de escribir la base se reintenta, no se da por hecho.
 
 **Trampas de cerrar el programa**
-- [ ] `reasonOfDetail` (`main/djProcesses.ts`) lanza si el programa no tiene `QUIT_TEXT`, y `ensureClosed` devuelve `false` sin diálogo. Copias, USB y duplicados no pueden pasar por ahí sin darle `QUIT_REASONS` y textos (`<p>Quit*` en `main/i18n.ts` y `main/locales/ja.json`).
+- [ ] `QUIT_TEXT` (`main/djProcesses.ts`) no compila sin la fila del programa nuevo. Un motivo con `detail` a `null` hace que `ensureClosed` devuelva `false` sin diálogo, así que Copias, USB y duplicados necesitan su motivo en `QUIT_REASONS` y su texto (`<p>Quit*` en `main/i18n.ts` y `main/locales/ja.json`).
 - [ ] Si Surco no sabe cerrarlo, `quit` solo espera a que el usuario lo cierre (`waitForVirtualdjExit` en `main/virtualdjProcess.ts`) y `convert` va sin diálogo (`detail.convert: null`).
 
 **Sitios escritos a mano**

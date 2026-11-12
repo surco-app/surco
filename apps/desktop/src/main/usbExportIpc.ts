@@ -314,9 +314,9 @@ export function registerUsbExportIpc(opts: {
   const route = routeUsbExports({
     rekordbox: exporter,
     engine: engineExporter,
-    ...(seratoExporter && { serato: seratoExporter }),
-    ...(traktorExporter && { traktor: traktorExporter }),
-    ...(virtualdjExporter && { virtualdj: virtualdjExporter }),
+    serato: seratoExporter,
+    traktor: traktorExporter,
+    virtualdj: virtualdjExporter,
   })
   // Watching starts with the first request for the list (the rail offers the export only
   // with a rekordbox collection), not at launch for every user.

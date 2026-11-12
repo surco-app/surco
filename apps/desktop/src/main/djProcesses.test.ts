@@ -13,7 +13,7 @@ import {
   DJ_PROCESSES,
   type ProgramProcess,
   QUIT_REASONS,
-  type QUIT_TEXT,
+  QUIT_TEXT,
   reasonOfDetail,
 } from './djProcesses'
 import { isVirtualdjRunning, waitForVirtualdjExit } from './virtualdjProcess'
@@ -269,6 +269,12 @@ describe('QUIT_TEXT', () => {
     // @ts-expect-error
     const wrong: (typeof QUIT_TEXT)['engine']['detail']['cues'] = 'traktorQuitDetailCues'
     expect(wrong).toBe('traktorQuitDetailCues')
+  })
+
+  it('refuses at compile time a writable program with no quit wording, so it can never be closed without asking', () => {
+    // @ts-expect-error
+    const missing: typeof QUIT_TEXT = { ...QUIT_TEXT, virtualdj: null }
+    expect(missing.virtualdj).toBeNull()
   })
 })
 

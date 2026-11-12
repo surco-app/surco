@@ -650,7 +650,7 @@ const programQueues = {
     },
     programQueueDeps,
   ),
-} satisfies { [P in CueProgram]: { program: P } | null }
+} satisfies { [P in CueProgram]: { program: P } }
 const rekordboxQueue = programQueues.rekordbox.queue
 const announceApplied = programQueues.rekordbox.announceApplied
 const rekordboxQueueWatch = programQueues.rekordbox.watch

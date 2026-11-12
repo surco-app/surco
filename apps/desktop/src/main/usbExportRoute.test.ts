@@ -1,6 +1,12 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { UsbExportRequest, UsbPlanResult } from '../shared/types'
-import { latestPlanOnly, routeUsbExports, type UsbExporter, usbProgramOf } from './usbExportRoute'
+import {
+  latestPlanOnly,
+  routeUsbExports,
+  type UsbExporter,
+  type UsbExporters,
+  usbProgramOf,
+} from './usbExportRoute'
 
 const fake = (busy = false): UsbExporter => ({
   plan: vi.fn(async () => ({ ok: false as const, reason: 'unsupported' as const })),
@@ -18,11 +24,21 @@ const req = (source?: UsbExportRequest['source']): UsbExportRequest => ({
   ...(source && { source }),
 })
 
+const NO_SOURCE_EXPORTERS = { serato: undefined, traktor: undefined, virtualdj: undefined }
+
+const exporters = (given: Partial<UsbExporters> & Pick<UsbExporters, 'rekordbox' | 'engine'>) =>
+  routeUsbExports({ ...NO_SOURCE_EXPORTERS, ...given })
+
 describe('routeUsbExports', () => {
+  it('refuses at compile time a set of exporters that leaves a USB program out', () => {
+    // @ts-expect-error
+    routeUsbExports({ rekordbox: fake(), engine: fake(), serato: fake(), traktor: fake() })
+  })
+
   it('sends an Engine DJ export to the Engine exporter and everything else to rekordbox, as before', async () => {
     const rekordbox = fake()
     const engine = fake()
-    const route = routeUsbExports({ rekordbox, engine })
+    const route = exporters({ rekordbox, engine })
     await route.start(req('engine'))
     await route.plan(req())
     expect(engine.start).toHaveBeenCalledOnce()
@@ -32,18 +48,18 @@ describe('routeUsbExports', () => {
   })
 
   it('refuses either export while the other one writes, since both would write the same drive at once', async () => {
-    const route = routeUsbExports({ rekordbox: fake(true), engine: fake() })
+    const route = exporters({ rekordbox: fake(true), engine: fake() })
     expect(await route.start(req('engine'))).toEqual({ ok: false, reason: 'busy' })
     expect(await route.plan(req('engine'))).toEqual({ ok: false, reason: 'busy' })
     expect(route.busy()).toBe(true)
-    const other = routeUsbExports({ rekordbox: fake(), engine: fake(true) })
+    const other = exporters({ rekordbox: fake(), engine: fake(true) })
     expect(await other.start(req())).toEqual({ ok: false, reason: 'busy' })
   })
 
   it('cancels and settles whichever export runs, so Cancel and quitting work for both', async () => {
     const rekordbox = fake()
     const engine = fake(true)
-    const route = routeUsbExports({ rekordbox, engine })
+    const route = exporters({ rekordbox, engine })
     expect(route.cancel()).toBe(true)
     await route.stop()
     expect(engine.stop).toHaveBeenCalledOnce()
@@ -54,7 +70,7 @@ describe('routeUsbExports', () => {
     const rekordbox = fake()
     const serato = fake()
     const traktor = fake()
-    const route = routeUsbExports({ rekordbox, engine: fake(), serato, traktor })
+    const route = exporters({ rekordbox, engine: fake(), serato, traktor })
     await route.plan(req('serato'))
     await route.start(req('traktor'))
     expect(serato.plan).toHaveBeenCalledWith(req('serato'))
@@ -64,22 +80,22 @@ describe('routeUsbExports', () => {
   })
 
   it('refuses a Serato export while rekordbox writes, and rekordbox while Traktor writes, as a stick takes one export at a time', async () => {
-    const route = routeUsbExports({ rekordbox: fake(true), engine: fake(), serato: fake() })
+    const route = exporters({ rekordbox: fake(true), engine: fake(), serato: fake() })
     expect(await route.start(req('serato'))).toEqual({ ok: false, reason: 'busy' })
-    const other = routeUsbExports({ rekordbox: fake(), engine: fake(), traktor: fake(true) })
+    const other = exporters({ rekordbox: fake(), engine: fake(), traktor: fake(true) })
     expect(await other.plan(req())).toEqual({ ok: false, reason: 'busy' })
     expect(other.busy()).toBe(true)
   })
 
   it('answers unsupported for a source with no exporter here, rather than reading another library', async () => {
-    const route = routeUsbExports({ rekordbox: fake(), engine: fake() })
+    const route = exporters({ rekordbox: fake(), engine: fake() })
     expect(await route.plan(req('serato'))).toEqual({ ok: false, reason: 'unsupported' })
     expect(await route.start(req('traktor'))).toEqual({ ok: false, reason: 'unsupported' })
   })
 
   it('cancels and stops a Traktor export like the others', async () => {
     const traktor = fake(true)
-    const route = routeUsbExports({ rekordbox: fake(), engine: fake(), traktor })
+    const route = exporters({ rekordbox: fake(), engine: fake(), traktor })
     expect(route.cancel()).toBe(true)
     await route.stop()
     expect(traktor.stop).toHaveBeenCalledOnce()
