@@ -861,6 +861,7 @@ export function syncTagsInLibraries(
   beginMoment: () => void,
   serato?: Omit<Parameters<typeof syncSeratoTags>[1], 'enabled'>,
   virtualdj?: Omit<Parameters<typeof syncVirtualdjTags>[1], 'enabled'>,
+  traktorQueue?: ConversionQueues['traktor'],
 ) {
   const withRealPath = updates.map((u) => ({ ...u, realPath: (p: string) => realpathSync(p) }))
   return syncLibraryTags({
@@ -868,6 +869,7 @@ export function syncTagsInLibraries(
       flushTraktorSync({
         ...traktorFlushDeps(host, sessions.traktor),
         endNmlBatch: () => nmlTagPatches(updates, toNmlLocation),
+        queue: traktorQueue && holdInQueue(traktorQueue, bootVolumeName),
       }),
     rekordbox: async () => {
       const result = await flushLibraryRepoints(

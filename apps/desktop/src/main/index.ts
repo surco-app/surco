@@ -1856,6 +1856,11 @@ function registerIpc(): void {
         onWaiting: virtualdjCueQueueWatch.poke,
         onApplied: programQueues.virtualdj.announceApplied,
       },
+      {
+        enqueue: traktorCueQueue.enqueue,
+        state: traktorCueQueue.state,
+        applyQuietly: () => applyTraktorCueQueueQuietly(),
+      },
     ),
   )
 

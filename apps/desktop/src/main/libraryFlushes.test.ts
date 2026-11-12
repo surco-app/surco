@@ -295,6 +295,20 @@ describe('flushConversionBatch with Traktor open', () => {
       expect(h.ensureTraktorClosed).toHaveBeenCalled()
     })
   })
+
+  it('keeps a review rename for Traktor in its queue when the DJ cancels closing it, instead of dropping it', async () => {
+    await withTraktorOpen(async () => {
+      const h = host({ ensureTraktorClosed: vi.fn(async () => false) })
+      const traktor = traktorQueue()
+      const update = [{ path: '/m/a.flac', fields: { title: { from: 'a', to: 'b' } } }]
+      await syncTagsInLibraries(update, h, sessions, vi.fn(), undefined, undefined, traktor)
+      expect(h.ensureTraktorClosed).toHaveBeenCalled()
+      expect(traktor.enqueue).toHaveBeenCalledWith(
+        [],
+        [expect.objectContaining({ patch: expect.objectContaining({ tags: update[0]?.fields }) })],
+      )
+    })
+  })
 })
 
 describe('flushConversionBatch with master.db on an unplugged drive', () => {
