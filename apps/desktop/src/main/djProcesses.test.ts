@@ -9,6 +9,7 @@ vi.mock('./virtualdjProcess', async (original) => ({
 import type { CueProgram, WritableProgram } from '../shared/djProgram'
 import {
   anyDjProgramRunning,
+  askInOrder,
   createAskToApply,
   createEnsureClosed,
   DJ_PROCESSES,
@@ -401,5 +402,34 @@ describe('createAskToApply', () => {
     const ask = vi.fn().mockResolvedValue(0)
     await askToApplyWith({ running: true, ask })('serato', null)
     expect(ask.mock.calls[0][1].buttons).toEqual(['Aplicar al cerrarlo', 'Lo he cerrado, aplicar'])
+  })
+})
+
+describe('askInOrder', () => {
+  it('asks the programs one after another in the given order, so two prompts never stack, and collects each answer', async () => {
+    const win = {} as BrowserWindow
+    const first = deferred<'now' | 'later'>()
+    const second = deferred<'now' | 'later'>()
+    const pending: Record<CueProgram, Promise<'now' | 'later'>> = {
+      traktor: first.promise,
+      serato: second.promise,
+      rekordbox: Promise.resolve('now'),
+      engine: Promise.resolve('now'),
+      virtualdj: Promise.resolve('now'),
+    }
+    const asked: CueProgram[] = []
+    const asker = vi.fn((program: CueProgram, _win: BrowserWindow | null) => {
+      asked.push(program)
+      return pending[program]
+    })
+    const answers = askInOrder(asker, ['traktor', 'serato'], win)
+    await Promise.resolve()
+    expect(asked).toEqual(['traktor'])
+    first.resolve('later')
+    await vi.waitFor(() => expect(asked).toEqual(['traktor', 'serato']))
+    second.resolve('now')
+    expect(await answers).toEqual({ traktor: 'later', serato: 'now' })
+    expect(asker).toHaveBeenCalledWith('traktor', win)
+    expect(asker).toHaveBeenCalledWith('serato', win)
   })
 })

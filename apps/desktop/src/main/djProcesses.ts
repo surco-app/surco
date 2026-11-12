@@ -228,3 +228,13 @@ export function createAskToApply(deps: {
 
   return (program, win) => askers[program](win)
 }
+
+export async function askInOrder(
+  asker: (program: CueProgram, win: BrowserWindow | null) => Promise<ApplyAnswer>,
+  programs: CueProgram[],
+  win: BrowserWindow | null,
+): Promise<Partial<Record<CueProgram, ApplyAnswer>>> {
+  const answers: Partial<Record<CueProgram, ApplyAnswer>> = {}
+  for (const program of programs) answers[program] = await asker(program, win)
+  return answers
+}

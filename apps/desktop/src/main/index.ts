@@ -119,8 +119,8 @@ import { registerDamageIpc } from './damageIpc'
 import { damageDeps } from './damageWiring'
 import { registerDjIpc } from './djIpc'
 import {
-  type ApplyAnswer,
   anyDjProgramRunning,
+  askInOrder,
   createAskToApply,
   createEnsureClosed,
   DJ_PROCESSES,
@@ -1497,12 +1497,9 @@ function registerIpc(): void {
       })
       return canceled ? null : filePaths[0]
     }
-  ipcMain.handle('dj:ask-to-apply', async (e, programs: CueProgram[]) => {
-    const win = BrowserWindow.fromWebContents(e.sender)
-    const answers: Partial<Record<CueProgram, ApplyAnswer>> = {}
-    for (const program of programs) answers[program] = await askToApply(program, win)
-    return answers
-  })
+  ipcMain.handle('dj:ask-to-apply', (e, programs: CueProgram[]) =>
+    askInOrder(askToApply, programs, BrowserWindow.fromWebContents(e.sender)),
+  )
   registerDjIpc({
     rekordbox: {
       read: rekordboxRead(rekordboxCollectionNow, rekordboxCollectionPath, { allowMedia }),
