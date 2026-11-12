@@ -1866,6 +1866,36 @@ describe('CuesSection maximized point corrections', () => {
     expect(screen.getByTestId('cue-detail-call-128000').style.cursor).toBe('ew-resize')
   })
 
+  it('keeps the countdown slot as wide as its longest text so the clock and grid offsets never shift while playing', async () => {
+    const calls: CueFlow = {
+      id: 'calls16',
+      name: 'CALLs',
+      markPoint: true,
+      rules: [
+        {
+          from: 'drop',
+          direction: 'back',
+          bars: 16,
+          repeat: 2,
+          when: 'always',
+          place: 'call',
+          color: { fixed: 1 },
+        },
+      ],
+    }
+    setup({ cueFlows: [...KEPT, calls], activeCueFlow: 'calls16' })
+    await maximize()
+    seek(128000)
+    placeAtPlayhead()
+    seek(80000)
+    const slot = screen.getByTestId('cue-to-call-slot')
+    expect(slot).toContainElement(screen.getByTestId('cue-detail-to-call'))
+    expect(screen.getByTestId('cue-to-call-sizer')).toHaveTextContent('88 bars to the CALL')
+    seek(140000)
+    expect(screen.queryByTestId('cue-detail-to-call')).not.toBeInTheDocument()
+    expect(screen.getByTestId('cue-to-call-sizer')).toHaveTextContent('88 bars to the CALL')
+  })
+
   it('moves a hot cue with its CALL by dragging it on the zoomed wave, on the Quantize grid, undone in one step', async () => {
     setup()
     await maximize()
