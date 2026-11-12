@@ -30,6 +30,7 @@ vi.mock('./ffmpeg', () => ({
   measureLoudness: vi.fn(),
   measureWaveform: vi.fn(),
   measureWaveformWindow: vi.fn(),
+  peekMeta: vi.fn(),
   probeAudio: vi.fn(),
   probeDuration: vi.fn(),
   probeProperties: vi.fn(),
@@ -73,6 +74,7 @@ import {
   measureKey,
   measureLoudness,
   measureWaveform,
+  peekMeta,
   probeProperties,
   readMeta,
   readTags,
@@ -427,6 +429,49 @@ describe('cover thumbnails over IPC', () => {
     const cover = (await handlerFor('audio:cover')({}, '/m/a.flac')) as { thumbUrl: string }
 
     expect(cover.thumbUrl).toMatch(/^surco:\/\/cover\//)
+  })
+})
+
+// A reopened library lands every file it already read in one round trip instead of one
+// queued read each, which kept a big Traktor collection "reading" for minutes per launch.
+describe('audio:metaCached', () => {
+  const thumb = `data:image/jpeg;base64,${Buffer.alloc(3000, 7).toString('base64')}`
+
+  it('hands back, by path, the cached reads with their cover as a short URL, and leaves out the misses', async () => {
+    vi.mocked(peekMeta).mockImplementation(async (path) =>
+      path === '/m/known.flac'
+        ? ({
+            tags: { title: 'Known' },
+            duration: 10,
+            cover: { thumbUrl: thumb, width: 600, height: 600 },
+            foreignTags: [],
+            partial: false,
+          } as unknown as Awaited<ReturnType<typeof peekMeta>>)
+        : null,
+    )
+
+    const hits = (await handlerFor('audio:metaCached')({}, [
+      { path: '/m/known.flac', light: false },
+      { path: '/m/new.flac', light: false },
+    ])) as Record<string, { tags: { title: string }; cover: { thumbUrl: string } }>
+
+    expect(Object.keys(hits)).toEqual(['/m/known.flac'])
+    expect(hits['/m/known.flac'].tags.title).toBe('Known')
+    expect(hits['/m/known.flac'].cover.thumbUrl).toMatch(/^surco:\/\/cover\//)
+  })
+
+  it('asks for the light read only for the rows that need no cover', async () => {
+    vi.mocked(peekMeta).mockResolvedValue(null)
+
+    await handlerFor('audio:metaCached')({}, [
+      { path: '/m/a.flac', light: true },
+      { path: '/m/b.flac', light: false },
+    ])
+
+    expect(vi.mocked(peekMeta).mock.calls).toEqual([
+      ['/m/a.flac', true],
+      ['/m/b.flac', false],
+    ])
   })
 })
 

@@ -352,6 +352,7 @@ function setApi(over: Record<string, unknown> = {}): void {
     readTags: vi.fn().mockResolvedValue({}),
     readDuration: vi.fn().mockResolvedValue(180),
     readCover: vi.fn().mockResolvedValue(null),
+    readMetaCached: vi.fn<Api['readMetaCached']>().mockResolvedValue({}),
     // Mirrors the real readMeta (one round-trip for all three) by delegating to the
     // individual mocks at call time, so a test overriding readTags/readDuration/readCover
     // still drives the import without having to know they were collapsed into one call.
