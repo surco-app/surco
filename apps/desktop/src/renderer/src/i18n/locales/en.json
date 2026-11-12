@@ -1606,6 +1606,12 @@
       "light": "Light",
       "dark": "Dark"
     },
+    "density": "Density",
+    "densityHint": "Compact fits more tracks in the same window.",
+    "densities": {
+      "normal": "Normal",
+      "compact": "Compact"
+    },
     "language": "Language",
     "languages": {
       "system": "System",
@@ -2090,6 +2096,7 @@
       "sampleRate": "Hz, kHz, 44.1, 48",
       "outputFormat": "AIFF, FLAC, MP3, WAV, ALAC, convert",
       "theme": "dark, light, mode",
+      "density": "compact, dense, rows, size",
       "coverMaxSize": "artwork, image, resolution",
       "destination": "folder, export, Apple Music",
       "configDir": "iCloud, Dropbox, sync",

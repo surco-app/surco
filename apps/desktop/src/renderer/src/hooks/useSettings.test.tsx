@@ -413,3 +413,37 @@ describe('switching the theme cross-fades instead of jumping the whole window fr
     expect(document.documentElement.dataset.theme).toBe('dark')
   })
 })
+
+describe('density is painted on the root, so every column can tighten from CSS alone', () => {
+  const noop = (): void => {}
+
+  async function renderLoaded(density: Settings['density']) {
+    window.matchMedia = vi.fn(() => ({
+      matches: false,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    })) as unknown as typeof window.matchMedia
+    const loaded = settings({ density })
+    // biome-ignore lint/suspicious/noExplicitAny: minimal bridge stub for the hook under test
+    ;(window as any).api = {
+      getSettings: vi.fn().mockResolvedValue(loaded),
+      saveSettings: vi.fn((patch: Partial<Settings>) => Promise.resolve({ ...loaded, ...patch })),
+    }
+    const hook = renderHook(() =>
+      useSettings({ settingsOpen: false, onFirstLoad: noop, onLoadError: noop, onSaveError: noop }),
+    )
+    await waitFor(() => expect(hook.result.current.settings).toEqual(loaded))
+    return hook
+  }
+
+  it('marks the window compact when the user chose Compact', async () => {
+    await renderLoaded('compact')
+    expect(document.documentElement.dataset.density).toBe('compact')
+  })
+
+  it('takes the mark off again on Normal, or a compact session would outlive the choice', async () => {
+    const { result } = await renderLoaded('compact')
+    act(() => result.current.saveSettings({ density: 'normal' }))
+    expect(document.documentElement.dataset.density).toBe('normal')
+  })
+})

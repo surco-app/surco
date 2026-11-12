@@ -7,6 +7,7 @@ import { buildSettingsPatch, type LocalDraft, pickSynced } from './settingsDraft
 
 const settings: Settings = {
   theme: 'system',
+  density: 'normal',
   language: 'system',
   discogsToken: '',
   beatportUsername: '',

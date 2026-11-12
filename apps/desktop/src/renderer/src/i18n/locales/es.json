@@ -1606,6 +1606,12 @@
       "light": "Claro",
       "dark": "Oscuro"
     },
+    "density": "Densidad",
+    "densityHint": "Compacta muestra más pistas en la misma ventana.",
+    "densities": {
+      "normal": "Normal",
+      "compact": "Compacta"
+    },
     "language": "Idioma",
     "languages": {
       "system": "Sistema",
@@ -2090,6 +2096,7 @@
       "sampleRate": "Hz, kHz, 44.1, 48, frecuencia",
       "outputFormat": "AIFF, FLAC, MP3, WAV, ALAC, convertir",
       "theme": "oscuro, claro, modo",
+      "density": "compacto, denso, filas, tamaño",
       "coverMaxSize": "carátula, imagen, resolución",
       "destination": "carpeta, exportar, Apple Music",
       "configDir": "iCloud, Dropbox, sincronizar",

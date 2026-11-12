@@ -1606,6 +1606,12 @@
       "light": "ライト",
       "dark": "ダーク"
     },
+    "density": "表示密度",
+    "densityHint": "コンパクトでは同じウインドウにより多くのトラックを表示します。",
+    "densities": {
+      "normal": "標準",
+      "compact": "コンパクト"
+    },
     "language": "言語",
     "languages": {
       "system": "システム",
@@ -2090,6 +2096,7 @@
       "sampleRate": "Hz, kHz, 44.1, 48, サンプリング",
       "outputFormat": "AIFF, FLAC, MP3, WAV, ALAC, 変換",
       "theme": "ダーク, ライト, モード",
+      "density": "コンパクト, 密度, 行, サイズ",
       "coverMaxSize": "アートワーク, 画像, 解像度",
       "destination": "フォルダー, 書き出し, Apple Music",
       "configDir": "iCloud, Dropbox, 同期",

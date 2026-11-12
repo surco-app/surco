@@ -23,6 +23,7 @@ import {
 // (pickSynced/pickLocal); each test overrides only the fields its assertion is about.
 const settings: Settings = {
   theme: 'system',
+  density: 'normal',
   cueFlows: BUNDLED_FLOWS,
   activeCueFlow: 'mine',
   cueJumpBars: 16,

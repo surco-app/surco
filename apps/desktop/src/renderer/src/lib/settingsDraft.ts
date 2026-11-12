@@ -14,6 +14,7 @@ import type { DjAddKey, DjSyncKey } from './djReach'
 // config-dir re-seed can never disagree on the field list.
 export interface SyncedDraft extends Record<DjAddKey | DjSyncKey, boolean> {
   theme: Settings['theme']
+  density: Settings['density']
   language: Settings['language']
   outputFormat: Settings['outputFormat']
   keepMp3Sources: boolean
@@ -114,6 +115,7 @@ export function pickLocal(s: Settings): LocalDraft {
 export function pickSynced(s: Settings): SyncedDraft {
   return {
     theme: s.theme,
+    density: s.density,
     language: s.language,
     outputFormat: s.outputFormat,
     keepMp3Sources: s.keepMp3Sources,

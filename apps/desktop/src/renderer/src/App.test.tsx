@@ -138,6 +138,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     editorSections: DEFAULT_EDITOR_SECTIONS,
     resultsWidth: null,
     theme: 'system',
+    density: 'normal',
     cueFlows: BUNDLED_FLOWS,
     activeCueFlow: 'mine',
     cueJumpBars: 16,

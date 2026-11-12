@@ -37,6 +37,7 @@ import { migratedSyncToggles } from './syncToggleMigration'
 
 export const defaults: Settings = {
   theme: 'system',
+  density: 'normal',
   // Follow the OS locale by default; the user can pin a shipped language.
   language: 'system',
   discogsToken: '',

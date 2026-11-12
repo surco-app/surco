@@ -15,6 +15,8 @@ import type { Verification } from './verification'
 
 export type ThemePref = 'system' | 'light' | 'dark'
 
+export type Density = 'normal' | 'compact'
+
 // UI language: 'system' follows the OS locale (collapsed to a shipped locale, English
 // as the catch-all), or pin one of them. Persisted so the choice survives restarts.
 export type LanguagePref = 'system' | 'en' | 'es' | 'de' | 'fr' | 'pt-BR' | 'ja'
@@ -163,6 +165,7 @@ export interface ColumnShares {
 
 export interface Settings {
   theme: ThemePref
+  density: Density
   // UI language; 'system' (the default) follows the OS locale.
   language: LanguagePref
   discogsToken: string

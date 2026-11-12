@@ -1606,6 +1606,12 @@
       "light": "Hell",
       "dark": "Dunkel"
     },
+    "density": "Dichte",
+    "densityHint": "Kompakt zeigt mehr Titel im selben Fenster.",
+    "densities": {
+      "normal": "Normal",
+      "compact": "Kompakt"
+    },
     "language": "Sprache",
     "languages": {
       "system": "System",
@@ -2090,6 +2096,7 @@
       "sampleRate": "Hz, kHz, 44.1, 48, Abtastrate",
       "outputFormat": "AIFF, FLAC, MP3, WAV, ALAC, konvertieren",
       "theme": "dunkel, hell, Modus",
+      "density": "kompakt, dicht, Zeilen, Größe",
       "coverMaxSize": "Cover, Bild, Auflösung",
       "destination": "Ordner, exportieren, Apple Music",
       "configDir": "iCloud, Dropbox, synchronisieren",
