@@ -58,9 +58,9 @@ export function CoverPlaceholder({
 export type PillTone = 'good' | 'warn' | 'danger'
 
 export const PILL_TONE: Record<PillTone, string> = {
-  good: 'bg-good/15 text-good',
-  warn: 'bg-warn/20 text-warn',
-  danger: 'bg-danger/20 text-danger',
+  good: 'bg-good/15 text-[var(--color-good-label)]',
+  warn: 'bg-warn/20 text-[var(--color-warn-label)]',
+  danger: 'bg-danger/20 text-[var(--color-danger-label)]',
 }
 
 // The stylesheet keys the selected row's opaque pill off each list's testid and data-tone.

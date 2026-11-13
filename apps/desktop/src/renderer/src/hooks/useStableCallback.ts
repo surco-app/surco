@@ -1,5 +1,4 @@
-import { useCallback } from 'react'
-import { useLatest } from './useLatest'
+import { useCallback, useRef } from 'react'
 
 // A callback whose identity never changes but whose body always sees the latest
 // render's closure. This is what lets App hand a fresh inline handler to a memoized
@@ -8,6 +7,7 @@ import { useLatest } from './useLatest'
 export function useStableCallback<A extends unknown[], R>(
   fn: (...args: A) => R,
 ): (...args: A) => R {
-  const latest = useLatest(fn)
-  return useCallback((...args: A) => latest.current(...args), [latest])
+  const latest = useRef(fn)
+  latest.current = fn
+  return useCallback((...args: A) => latest.current(...args), [])
 }

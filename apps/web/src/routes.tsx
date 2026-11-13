@@ -1,7 +1,6 @@
 import { Analytics } from '@vercel/analytics/react'
-import type { i18n } from 'i18next'
 import type { ReactNode } from 'react'
-import { I18nextProvider } from 'react-i18next'
+import { I18nextProvider, useTranslation } from 'react-i18next'
 import { Outlet } from 'react-router-dom'
 import type { RouteRecord } from 'vite-react-ssg'
 import { Head } from 'vite-react-ssg'
@@ -17,7 +16,7 @@ import Privacy from './components/Privacy'
 import Stats from './components/Stats'
 import UseCasePage, { type UseCase } from './components/UseCase'
 import UseCases from './components/UseCases'
-import { createI18n, LANGUAGES, type Language } from './i18n'
+import { LANGUAGES, type Language, loadI18n } from './i18n'
 import { CONVERT_PAGES, type ConvertPage } from './lib/convertPages'
 import { HOME, PAGES } from './lib/nav'
 import { SITE } from './lib/sitemap'
@@ -31,10 +30,14 @@ const CHANGELOG_PATHS = PAGES.changelog
 const PRIVACY_PATHS = PAGES.privacy
 const STATS_PATHS = PAGES.stats
 
-const I18N = Object.fromEntries(LANGUAGES.map((lng) => [lng, createI18n(lng)])) as Record<
-  Language,
-  i18n
->
+function localized(lng: Language, page: ReactNode, releases = false) {
+  return {
+    lazy: async () => ({
+      element: <I18nextProvider i18n={await loadI18n(lng, { releases })}>{page}</I18nextProvider>,
+    }),
+    entry: 'src/routes.tsx',
+  }
+}
 
 // Every page names its counterpart in each language, and Spanish as the default for
 // languages the site does not have.
@@ -48,7 +51,7 @@ function alternateLinks(paths: Record<Language, string>) {
 }
 
 function DocumentHead({ lng }: { lng: Language }) {
-  const t = I18N[lng].getFixedT(lng)
+  const { t } = useTranslation()
   const url = SITE + PATHS[lng]
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -83,15 +86,15 @@ function DocumentHead({ lng }: { lng: Language }) {
 
 function LocalizedApp({ lng }: { lng: Language }) {
   return (
-    <I18nextProvider i18n={I18N[lng]}>
+    <>
       <DocumentHead lng={lng} />
       <App />
-    </I18nextProvider>
+    </>
   )
 }
 
 function FeaturesHead({ lng }: { lng: Language }) {
-  const t = I18N[lng].getFixedT(lng)
+  const { t } = useTranslation()
   const url = SITE + FEATURE_PATHS[lng]
   return (
     <Head>
@@ -112,15 +115,15 @@ function FeaturesHead({ lng }: { lng: Language }) {
 
 function LocalizedFeatures({ lng }: { lng: Language }) {
   return (
-    <I18nextProvider i18n={I18N[lng]}>
+    <>
       <FeaturesHead lng={lng} />
       <Features />
-    </I18nextProvider>
+    </>
   )
 }
 
 function GuideHead({ lng }: { lng: Language }) {
-  const t = I18N[lng].getFixedT(lng)
+  const { t } = useTranslation()
   const url = SITE + GUIDE_PATHS[lng]
   return (
     <Head>
@@ -141,15 +144,15 @@ function GuideHead({ lng }: { lng: Language }) {
 
 function LocalizedGuide({ lng }: { lng: Language }) {
   return (
-    <I18nextProvider i18n={I18N[lng]}>
+    <>
       <GuideHead lng={lng} />
       <Guide />
-    </I18nextProvider>
+    </>
   )
 }
 
 function UseCasesHead({ lng }: { lng: Language }) {
-  const t = I18N[lng].getFixedT(lng)
+  const { t } = useTranslation()
   const url = SITE + USE_CASES_PATHS[lng]
   return (
     <Head>
@@ -170,15 +173,15 @@ function UseCasesHead({ lng }: { lng: Language }) {
 
 function LocalizedUseCases({ lng }: { lng: Language }) {
   return (
-    <I18nextProvider i18n={I18N[lng]}>
+    <>
       <UseCasesHead lng={lng} />
       <UseCases />
-    </I18nextProvider>
+    </>
   )
 }
 
 function RecipeHead({ page }: { page: RecipePage }) {
-  const t = I18N[page.lang].getFixedT(page.lang)
+  const { t } = useTranslation()
   const cases = t('useCases.cases', { returnObjects: true }) as UseCase[]
   const c = cases.find((o) => o.id === page.id) as UseCase
   const url = SITE + page.path
@@ -202,15 +205,15 @@ function RecipeHead({ page }: { page: RecipePage }) {
 
 function LocalizedRecipe({ page }: { page: RecipePage }) {
   return (
-    <I18nextProvider i18n={I18N[page.lang]}>
+    <>
       <RecipeHead page={page} />
       <UseCasePage id={page.id} />
-    </I18nextProvider>
+    </>
   )
 }
 
 function ChangelogHead({ lng }: { lng: Language }) {
-  const t = I18N[lng].getFixedT(lng)
+  const { t } = useTranslation()
   const url = SITE + CHANGELOG_PATHS[lng]
   return (
     <Head>
@@ -231,15 +234,15 @@ function ChangelogHead({ lng }: { lng: Language }) {
 
 function LocalizedChangelog({ lng }: { lng: Language }) {
   return (
-    <I18nextProvider i18n={I18N[lng]}>
+    <>
       <ChangelogHead lng={lng} />
       <Changelog />
-    </I18nextProvider>
+    </>
   )
 }
 
 function ConvertHead({ lng, page }: { lng: Language; page: ConvertPage }) {
-  const t = I18N[lng].getFixedT(lng)
+  const { t } = useTranslation()
   const paths = PAGES[page]
   const url = SITE + paths[lng]
   const faq = t(`${page}.faq.items`, { returnObjects: true }) as { q: string; a: string }[]
@@ -273,15 +276,15 @@ function ConvertHead({ lng, page }: { lng: Language; page: ConvertPage }) {
 
 function LocalizedConvert({ lng, page }: { lng: Language; page: ConvertPage }) {
   return (
-    <I18nextProvider i18n={I18N[lng]}>
+    <>
       <ConvertHead lng={lng} page={page} />
       <ConvertPageView page={page} />
-    </I18nextProvider>
+    </>
   )
 }
 
 function PrivacyHead({ lng }: { lng: Language }) {
-  const t = I18N[lng].getFixedT(lng)
+  const { t } = useTranslation()
   const url = SITE + PRIVACY_PATHS[lng]
   return (
     <Head>
@@ -302,15 +305,15 @@ function PrivacyHead({ lng }: { lng: Language }) {
 
 function LocalizedPrivacy({ lng }: { lng: Language }) {
   return (
-    <I18nextProvider i18n={I18N[lng]}>
+    <>
       <PrivacyHead lng={lng} />
       <Privacy />
-    </I18nextProvider>
+    </>
   )
 }
 
 function StatsHead({ lng }: { lng: Language }) {
-  const t = I18N[lng].getFixedT(lng)
+  const { t } = useTranslation()
   const url = SITE + STATS_PATHS[lng]
   return (
     <Head>
@@ -331,10 +334,10 @@ function StatsHead({ lng }: { lng: Language }) {
 
 function LocalizedStats({ lng }: { lng: Language }) {
   return (
-    <I18nextProvider i18n={I18N[lng]}>
+    <>
       <StatsHead lng={lng} />
       <Stats />
-    </I18nextProvider>
+    </>
   )
 }
 
@@ -369,12 +372,8 @@ export const routes: RouteRecord[] = [
     children: [
       ...LANGUAGES.flatMap((lng) => [
         lng === 'es'
-          ? { index: true, element: <LocalizedApp lng="es" />, entry: 'src/routes.tsx' }
-          : {
-              path: PATHS[lng].slice(1),
-              element: <LocalizedApp lng={lng} />,
-              entry: 'src/routes.tsx',
-            },
+          ? { index: true, ...localized('es', <LocalizedApp lng="es" />) }
+          : { path: PATHS[lng].slice(1), ...localized(lng, <LocalizedApp lng={lng} />) },
         ...(
           [
             [FEATURE_PATHS, LocalizedFeatures],
@@ -386,19 +385,16 @@ export const routes: RouteRecord[] = [
           ] as const
         ).map(([paths, Page]) => ({
           path: paths[lng].slice(1),
-          element: <Page lng={lng} />,
-          entry: 'src/routes.tsx',
+          ...localized(lng, <Page lng={lng} />, paths === CHANGELOG_PATHS),
         })),
         ...CONVERT_PAGES.map((page) => ({
           path: PAGES[page][lng].slice(1),
-          element: <LocalizedConvert lng={lng} page={page} />,
-          entry: 'src/routes.tsx',
+          ...localized(lng, <LocalizedConvert lng={lng} page={page} />),
         })),
       ]),
       ...recipePages().map((page) => ({
         path: page.path.slice(1),
-        element: <LocalizedRecipe page={page} />,
-        entry: 'src/routes.tsx',
+        ...localized(page.lang, <LocalizedRecipe page={page} />),
       })),
       // Transactional pages PayPal redirects to after the donate flow: their copy is
       // self-contained and language-detected on the client, so they don't need the

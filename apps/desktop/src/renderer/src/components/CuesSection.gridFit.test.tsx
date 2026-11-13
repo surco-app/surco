@@ -94,7 +94,7 @@ function setup(fit: GridFit | null | Promise<GridFit | null>, read: TrackCues = 
       </SettingsProvider>
     </QueryClientProvider>,
   )
-  return { gridFit }
+  return { gridFit, client }
 }
 
 const ready = () => waitFor(() => expect(screen.getByTestId('cue-detail')).toBeInTheDocument())
@@ -160,6 +160,31 @@ describe('Ajustar rejilla in the folded section', () => {
     expect(screen.queryByTestId('cues-fit-grid-spinner')).toBeNull()
     expect(fitButton()).not.toHaveAttribute('aria-busy')
     expect(screen.getByTestId('cues-fit-grid-label')).toBeVisible()
+  })
+
+  it('follows its own read without walking every query in the cache on each unrelated change', async () => {
+    const { client } = setup(LATE)
+    await ready()
+    await waitFor(() => expect(fitButton()).toBeEnabled())
+    const findAll = vi.spyOn(client.getQueryCache(), 'findAll')
+    for (let i = 0; i < 50; i++) client.setQueryData(['unrelated', i], i)
+    await new Promise((r) => setTimeout(r, 20))
+    expect(findAll).not.toHaveBeenCalled()
+    expect(fitButton()).not.toHaveAttribute('aria-busy')
+  })
+
+  it('spins again while its read is fetched anew and settles when it lands', async () => {
+    const { client, gridFit } = setup(LATE)
+    await ready()
+    await waitFor(() => expect(fitButton()).toBeEnabled())
+    let finish: (fit: GridFit | null) => void = () => {}
+    gridFit.mockImplementation(() => new Promise((resolve) => (finish = resolve)))
+    void client.refetchQueries({ queryKey: ['rekordbox-grid-fit', '103'] })
+    await waitFor(() => expect(fitButton()).toHaveAttribute('aria-busy', 'true'))
+    expect(screen.getByTestId('cues-fit-grid-spinner')).toBeInTheDocument()
+    finish(ON_BEAT)
+    await waitFor(() => expect(fitButton()).not.toHaveAttribute('aria-busy'))
+    expect(screen.queryByTestId('cues-fit-grid-spinner')).toBeNull()
   })
 
   it('stops spinning when the read finds no beats, so the wait never looks endless', async () => {

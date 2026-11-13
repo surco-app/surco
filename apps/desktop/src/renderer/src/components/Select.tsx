@@ -303,7 +303,7 @@ export function Select({
           </span>
         )}
         {selected?.count !== undefined && (
-          <span data-testid={`${testid}-count`} className="shrink-0 tabular-nums opacity-70">
+          <span data-testid={`${testid}-count`} className="shrink-0 tabular-nums">
             {selected.count}
           </span>
         )}

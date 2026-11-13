@@ -92,6 +92,57 @@ export function nextColumn(current: Column | null, delta: 1 | -1): Column {
   return COLUMNS[Math.min(COLUMNS.length - 1, Math.max(0, i + delta))]
 }
 
+export type Region = 'rail' | 'list' | 'editor'
+
+const REGIONS: Region[] = ['rail', 'list', 'editor']
+
+const FOCUSABLE = [
+  'a[href]',
+  'button:not([disabled])',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])',
+]
+
+const REGION_TARGETS: Record<Region, string[]> = {
+  rail: ['[data-testid="source-rail"] [aria-pressed="true"]', '[data-testid="source-rail"] button'],
+  list: ['[data-testid="track-row"][tabindex="0"]'],
+  editor: [
+    FOCUSABLE.map((f) => `[data-testid="section-maximized-overlay"] ${f}`).join(', '),
+    '[data-testid="field-title"]',
+  ],
+}
+
+export function regionOf(el: Element | null): Region | null {
+  if (!el?.closest) return null
+  if (el.closest('[data-testid="source-rail"]')) return 'rail'
+  const column = columnOf(el)
+  if (column === 'list') return 'list'
+  return column === null ? null : 'editor'
+}
+
+export function nextRegion(current: Region | null, delta: 1 | -1): Region {
+  if (!current) return 'list'
+  const i = REGIONS.indexOf(current)
+  return REGIONS[(i + delta + REGIONS.length) % REGIONS.length]
+}
+
+export function cycleRegion(from: Element | null, delta: 1 | -1): void {
+  if (from?.closest?.('[data-testid="section-maximized-overlay"]')) return
+  let region = regionOf(from)
+  for (let tries = 0; tries < REGIONS.length; tries++) {
+    region = nextRegion(region, delta)
+    const target = REGION_TARGETS[region]
+      .map((selector) => document.querySelector<HTMLElement>(selector))
+      .find(Boolean)
+    if (target) {
+      target.focus()
+      return
+    }
+  }
+}
+
 // Resolves a key event to a command id using the configurable bindings, falling back
 // to the fixed vim aliases. `bindings` is the merged defaults+overrides map; `isMac`
 // picks ⌘ vs Ctrl as the `mod` key.

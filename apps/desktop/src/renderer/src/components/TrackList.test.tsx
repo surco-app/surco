@@ -2536,3 +2536,63 @@ describe('TrackList row notes', () => {
     expect(within(second).queryByTestId('track-note')).toBeNull()
   })
 })
+
+describe('TrackList title of a versioned track', () => {
+  const observed: { el: Element; fire: () => void }[] = []
+  beforeEach(() => {
+    observed.length = 0
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(private cb: ResizeObserverCallback) {}
+        observe(el: Element): void {
+          observed.push({
+            el,
+            fire: () =>
+              this.cb(
+                [{ contentRect: { width: 154 } } as ResizeObserverEntry],
+                this as unknown as ResizeObserver,
+              ),
+          })
+        }
+        disconnect(): void {}
+      },
+    )
+    vi.stubGlobal(
+      'OffscreenCanvas',
+      class {
+        getContext() {
+          return { font: '', letterSpacing: '', measureText: (s: string) => ({ width: s.length * 7 }) }
+        }
+      },
+    )
+  })
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('cuts the middle of a long version so rows of the same track still differ at the end', () => {
+    renderList([
+      track({ id: 'a', meta: { title: 'Pray (W.I.P. In The Church Mix)' } }),
+      track({ id: 'b', meta: { title: 'A long title that carries no version at all' } }),
+    ])
+    act(() => {
+      for (const o of observed) o.fire()
+    })
+    const [versioned, plain] = screen.getAllByTestId('track-title')
+    expect(within(versioned).getByTestId('track-title-fit')).toHaveTextContent(
+      /^Pray \(W\.I\.P\. In … Mix\)$/,
+    )
+    expect(within(versioned).getByTestId('track-title-fit')).toHaveAttribute('aria-hidden', 'true')
+    expect(within(versioned).getByText('Pray (W.I.P. In The Church Mix)')).toHaveClass('sr-only')
+    expect(plain).toHaveTextContent(/^A long title that carries no version at all$/)
+    expect(within(plain).queryByTestId('track-title-fit')).toBeNull()
+  })
+
+  it('shows the whole title when it fits', () => {
+    renderList([track({ id: 'a', meta: { title: 'Pray (Edit)' } })])
+    act(() => {
+      for (const o of observed) o.fire()
+    })
+    expect(screen.getByTestId('track-title')).toHaveTextContent(/^Pray \(Edit\)$/)
+    expect(screen.queryByTestId('track-title-fit')).toBeNull()
+  })
+})

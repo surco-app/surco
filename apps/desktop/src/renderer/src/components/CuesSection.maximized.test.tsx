@@ -169,7 +169,8 @@ describe('CuesSection maximized', () => {
     for (const id of ['cues-save', 'cues-step-back', 'cues-keys', 'section-maximize'])
       expect(header).toContainElement(screen.getByTestId(id))
     expect(screen.getAllByTestId('section-maximize')).toHaveLength(1)
-    expect(screen.getByTestId('section-maximize')).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByTestId('section-maximize')).toHaveAccessibleName('Restore the section')
+    expect(screen.getByTestId('section-maximize')).not.toHaveAttribute('aria-pressed')
     expect(screen.getByTestId('cues-save')).toHaveTextContent('Save to rekordbox')
   })
 
@@ -373,9 +374,9 @@ describe('CuesSection maximized', () => {
     setup(null, { ...READ, analysed: false, grid: [] })
     await waitFor(() => expect(screen.getByTestId('cues-unanalysed')).toBeInTheDocument())
     fireEvent.click(screen.getByTestId('section-maximize'))
-    expect(screen.getByTestId('section-maximize')).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByTestId('section-maximize')).toHaveAccessibleName('Restore the section')
     fireEvent.click(screen.getByTestId('section-maximize'))
-    expect(screen.getByTestId('section-maximize')).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByTestId('section-maximize')).toHaveAccessibleName('Maximize the section')
   })
 
   it('shows no selection row in the full editor, where the pads and ⌫ do its work', async () => {

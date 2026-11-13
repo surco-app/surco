@@ -30,6 +30,7 @@
     "donar": "Donate",
     "download": "Download",
     "language": "Language",
+    "main": "Main",
     "languageOffer": {
       "text": "This page is also available in English.",
       "switch": "Read in English",
@@ -422,6 +423,7 @@
       "title": "What Surco does with each program",
       "lede": "rekordbox, Traktor, Engine DJ, Serato and VirtualDJ. Whatever Surco writes to your library, it writes after a backup and with the program closed.",
       "feature": "Feature",
+      "region": "What Surco does with each program",
       "yes": "Yes",
       "no": "No",
       "foot": "With the program open, the changes wait and are written when you close it. Apple Music has its own section.",
@@ -502,6 +504,7 @@
   "showcase": {
     "alt": "Surco on macOS: track list, Discogs match, metadata editor and quality analysis",
     "zoom": "Enlarge the screenshot",
+    "pause": "Pause the video",
     "tour": {
       "tracks": {
         "title": "Track list",

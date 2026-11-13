@@ -48,6 +48,7 @@ import { useDiscogsBrowser } from '../hooks/useDiscogsBrowser'
 import { useDiskCacheSeed } from '../hooks/useDiskCacheSeed'
 import type { RememberedPick } from '../hooks/useEditorPicks'
 import { useEditorSections, useMaximizedSection } from '../hooks/useEditorSections'
+import { useMaximizeMotion } from '../hooks/useMaximizeMotion'
 import { useKey } from '../hooks/useKey'
 import { useLatest } from '../hooks/useLatest'
 import { useLibraryReveals } from '../hooks/useLibraryReveals'
@@ -413,6 +414,7 @@ export const Editor = memo(function Editor({
   // flow over the whole track list. A dialog opened over it (palette, settings) owns
   // Escape, and the overlay sits under the z-50 modals so that dialog is the one on top.
   const { maximized, setMaximized } = useMaximizedSection()
+  const maximizeMotion = useMaximizeMotion(maximized)
   useEffect(() => {
     if (maximized === null) return
     const onKey = (e: KeyboardEvent): void => {
@@ -1686,7 +1688,8 @@ export const Editor = memo(function Editor({
             // changes the group (a maximized section renders to a portal and a
             // hidden-by-condition one to null — neither shifts the column's phase).
             let lastGroup = EDITOR_SECTION_GROUP.form
-            return editorSections
+            let lifted: React.ReactElement | null = null
+            const column = editorSections
               .filter((s) => s.id !== 'form' && s.hidden !== true)
               .flatMap(({ id }) => {
                 // Typed as element-or-falsy (not the wider ReactNode) so the arrays
@@ -1924,21 +1927,9 @@ export const Editor = memo(function Editor({
                 // A maximized section leaves the column (it renders to a portal),
                 // so it neither shows a heading nor shifts the column's phase — the
                 // heading belongs to whatever visible section takes over the flow.
-                if (element && id === maximized) {
-                  // Wrapped in an array like every other branch, so flatMap's callback has
-                  // one return shape (a node list) instead of a bare portal.
-                  return [
-                    createPortal(
-                      <div
-                        data-testid="section-maximized-overlay"
-                        className="fixed inset-0 z-[46] overflow-y-auto bg-[var(--color-panel)] px-8 pb-8 pt-2"
-                      >
-                        {element}
-                      </div>,
-                      document.body,
-                      id,
-                    ),
-                  ]
+                if (element && (id === maximized || id === maximizeMotion.leaving)) {
+                  lifted = element
+                  return []
                 }
                 // A section hidden by its own conditions (null) doesn't advance the
                 // phase either — the next visible section still opens its group.
@@ -1972,6 +1963,21 @@ export const Editor = memo(function Editor({
                   </div>,
                 ]
               })
+            if (!lifted) return column
+            return [
+              ...column,
+              createPortal(
+                <div
+                  ref={maximizeMotion.overlayRef}
+                  data-testid="section-maximized-overlay"
+                  className="fixed inset-0 z-[46] origin-top-left overflow-y-auto bg-[var(--color-panel)] px-8 pb-8 pt-2"
+                >
+                  {lifted}
+                </div>,
+                document.body,
+                maximized ?? maximizeMotion.leaving,
+              ),
+            ]
           })()}
         </div>
         <div

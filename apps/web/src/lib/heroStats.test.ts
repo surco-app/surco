@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { I18nextProvider } from 'react-i18next'
 import { describe, expect, it } from 'vitest'
 import { HeroStatsView } from '../components/HeroStats'
-import { createI18n } from '../i18n'
+import { loadI18n } from '../i18n'
 import { PAGES } from './nav'
 import type { Stats } from './stats'
 
@@ -16,13 +16,11 @@ const stats: Stats = {
   macUpdates: [],
 }
 
+const es = await loadI18n('es')
+
 const render = (s: Stats) =>
   renderToStaticMarkup(
-    createElement(
-      I18nextProvider,
-      { i18n: createI18n('es') },
-      createElement(HeroStatsView, { stats: s }),
-    ),
+    createElement(I18nextProvider, { i18n: es }, createElement(HeroStatsView, { stats: s })),
   )
 
 const text = (html: string, testid: string) =>

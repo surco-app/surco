@@ -521,6 +521,8 @@
     "focusEditor": "Aller à l’éditeur",
     "focusColumnPrev": "Aller à la colonne précédente",
     "focusColumnNext": "Aller à la colonne suivante",
+    "focusRegionNext": "Aller à la région suivante",
+    "focusRegionPrev": "Aller à la région précédente",
     "search": "Rechercher dans la liste des morceaux",
     "settings": "Réglages",
     "clearAll": "Vider la liste",
@@ -1079,6 +1081,7 @@
       "keys": {
         "label": "Touches",
         "button": "Raccourcis clavier",
+        "description": "Espace lit ou arrête. Gauche et Droite sautent des mesures, et avec Maj un temps. M place un CALL et de 1 à 8 placent les hot cues A à H sur la tête de lecture. Suppr supprime le cue sélectionné.",
         "space": "Espace",
         "play": "lire ou arrêter",
         "jump_one": "sauter {{count}} mesure",

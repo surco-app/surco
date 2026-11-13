@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next'
 import { ALL_TRACKS_ID } from '../../shared/allTracks'
 import { autoMatchAvailable, usableProviders } from '../../shared/autoMatch'
 import { trashLimits } from '../../shared/backupPolicy'
+import { WINDOW_MIN_SIZE } from '../../shared/windowSize'
 import { DEFAULT_CUE_GRID_TOLERANCE } from '../../shared/cueGrid'
 import type { CueJumpBars } from '../../shared/cueJump'
 import type { CueQuantize } from '../../shared/cueQuantize'
@@ -26,8 +27,6 @@ import {
   type LibraryProgram,
   PROGRAM_CAN,
   programOf,
-  WRITABLE_PROGRAMS,
-  type WritableProgram,
 } from '../../shared/djProgram'
 import { SAME_CLOCK_FILE } from '../../shared/gridEdit'
 import { emptyMetadata } from '../../shared/metadata'
@@ -57,7 +56,6 @@ import type {
   RekordboxPlaylistEdit,
   RekordboxQueueState,
   RekordboxQueueWritten,
-  RekordboxSyncIssue,
   ReviewedFileUpdate,
   SearchHints,
   SearchProviderId,
@@ -67,7 +65,6 @@ import type {
   TrackMetadata,
   TrashEntry,
   UsbProgram,
-  UsbVolume,
 } from '../../shared/types'
 import { LiveActivityPanel } from './components/ActivityPanel'
 import { Confetti } from './components/Confetti'
@@ -134,10 +131,13 @@ import { useSettings } from './hooks/useSettings'
 import { useSourceBrowser } from './hooks/useSourceBrowser'
 import { spectrogramOptions } from './hooks/useSpectrogram'
 import { useStableCallback } from './hooks/useStableCallback'
-import { NEW_TRACKS_PROMPT_TIMEOUT_MS, useTrackLibrary } from './hooks/useTrackLibrary'
+import { useTrackLibrary } from './hooks/useTrackLibrary'
 import { useTrackProcessing } from './hooks/useTrackProcessing'
 import { useTracksView, type ViewCacheEntry } from './hooks/useTracksView'
 import { useTriageFilters } from './hooks/useTriageFilters'
+import { useLibraryCheckToast } from './hooks/useLibraryCheckToast'
+import { useAppNotifications } from './hooks/useAppNotifications'
+import { useUsbExportToasts } from './hooks/useUsbExportToasts'
 import { useUsbVolumes } from './hooks/useUsbVolumes'
 import { useVerificationUpdates } from './hooks/useVerificationUpdates'
 import { waveformOptions } from './hooks/useWaveform'
@@ -186,8 +186,8 @@ import { missingRequiredOf, requiredFieldsOf } from './lib/fields'
 import { gridNote } from './lib/gridNote'
 import { pushImportNotice } from './lib/importNotices'
 import { mainErrorMessage } from './lib/ipcError'
-import { columnOf, isTypingTarget, nextColumn } from './lib/keymap'
-import { lazyChunk } from './lib/lazyChunk'
+import { columnOf, cycleRegion, isTypingTarget, nextColumn } from './lib/keymap'
+import { lazyChunk, preloadLazyWhenIdle } from './lib/lazyChunk'
 import { librarySourceOf } from './lib/librarySource'
 import { listReviewSource } from './lib/listReviewSource'
 import { OpenSettingsProvider } from './lib/openSettingsContext'
@@ -247,6 +247,7 @@ import { latestBackupByPath } from './lib/trashView'
 import {
   EMPTY_FILTER,
   type FilterFacts,
+  type FilterSelection,
   facetCounts,
   filterSessionKey,
   filterWithSticky,
@@ -262,7 +263,7 @@ import {
   type TrackSort,
 } from './lib/triage'
 import { detectTrim } from './lib/trim'
-import { formatSpan, isRunning, newlyMounted } from './lib/usbExport'
+import { isRunning } from './lib/usbExport'
 import { connectUsbExportFeed, usbExportStore, useUsbExportState } from './lib/usbExportStore'
 import type { CopiedTags, TrackItem } from './types'
 
@@ -274,25 +275,10 @@ const NO_HIDDEN_SOURCES: PlaylistSource[] = []
 const PREFETCH_HOVER_MS = 150
 const PLAYER_LEAVE_MS = 200
 const QUEUE_PILL_ORDER = CUE_PROGRAMS
-const SYNC_ISSUES: Record<
-  WritableProgram,
-  {
-    listen: (cb: (issue: RekordboxSyncIssue) => void) => () => void
-    messages: 'rekordboxIssue' | 'engineIssue'
-  } | null
-> = {
-  rekordbox: {
-    listen: (cb) => window.api.dj.onSyncIssue('rekordbox', cb),
-    messages: 'rekordboxIssue',
-  },
-  traktor: null,
-  engine: { listen: (cb) => window.api.dj.onSyncIssue('engine', cb), messages: 'engineIssue' },
-  virtualdj: null,
-}
-
 const inFiles = (t: TrackItem): boolean => !!t.inFiles
 
 const SEEN_SETTLE_MS = 250
+const SEEN_DWELL_MS = 300
 
 // The editor (DiscogsPanel, metadata form, every section) is dead weight on first
 // paint, which shows the empty pane — split it into its own chunk, loaded the first
@@ -493,15 +479,33 @@ export default function App(): React.JSX.Element {
   })
   // Quality triage filter, free-text search and display order — read from the store with a
   // stable setter each (field comments live in appStore).
-  const { filterSelection, filterActive, formatFilter, setFilterSelection, setFormatFilter } =
-    useTriageFilters(store)
+  const {
+    filterSelection,
+    filterActive,
+    formatFilter,
+    setFilterSelection: storeFilterSelection,
+    setFormatFilter,
+  } = useTriageFilters(store)
+  const setFilterSelection = useCallback(
+    (next: FilterSelection): void => {
+      flushPendingEdits()
+      storeFilterSelection(next)
+    },
+    [storeFilterSelection],
+  )
   const search = useAppStore(store, (s) => s.search)
   const playedPaths = useAppStore(store, (s) => s.playedPaths)
   const markListened = useStableCallback((path: string) => {
     const played = store.getState().playedPaths
     if (!played.has(path)) store.setState({ playedPaths: new Set(played).add(path) })
   })
-  const setSearch = useCallback((v: string) => store.setState({ search: v }), [store])
+  const setSearch = useCallback(
+    (v: string) => {
+      flushPendingEdits()
+      store.setState({ search: v })
+    },
+    [store],
+  )
   // The text box stays driven by `search` (instant keystrokes); the expensive filter/sort
   // pass below keys off the deferred value so typing in a large crate never blocks paint.
   const deferredSearch = useDeferredValue(search)
@@ -847,6 +851,10 @@ export default function App(): React.JSX.Element {
     },
     filesOpen: browser.source === null,
   })
+  const libraryHasRows = tracks.length > 0
+  useEffect(() => {
+    if (libraryHasRows) preloadLazyWhenIdle()
+  }, [libraryHasRows])
   useEffect(
     () =>
       window.api.onNotAudioSkipped((count) =>
@@ -1104,59 +1112,15 @@ export default function App(): React.JSX.Element {
     enabled: usbModal !== null,
     staleTime: Number.POSITIVE_INFINITY,
   })
-  // A stick plugged in while Surco runs, holding an export, is offered in one click. Not
-  // while the chooser is open (it lists it already) or an export runs.
-  const prevVolumes = useRef<UsbVolume[] | null>(null)
-  useEffect(() => {
-    if (!usbVolumes) return
-    const appeared = newlyMounted(prevVolumes.current, usbVolumes.volumes)
-    prevVolumes.current = usbVolumes.volumes
-    if (usbModal || usbRunning) return
-    for (const v of appeared.filter((x) => x.holder.by !== 'empty'))
-      pushToast(store, {
-        key: `usb-connected-${v.uuid}`,
-        tone: 'neutral',
-        message: { key: 'usbExport.connected', values: { name: v.name } },
-        action: {
-          label: { key: 'usbExport.connectedAction' },
-          onAction: () => openUsbExport(v.uuid),
-        },
-        duration: 8000,
-        testid: 'usb-connected',
-      })
-  }, [usbVolumes, usbModal, usbRunning, store, openUsbExport])
-  // An export that ends with its modal closed says so in a notice; with the modal open, the
-  // modal says it.
-  const lastUsbPhase = useRef(usbPhase)
-  useEffect(() => {
-    const was = lastUsbPhase.current
-    lastUsbPhase.current = usbPhase
-    if (usbModal || was === usbPhase) return
-    const s = usbExportStore.getState()
-    if (usbPhase === 'done' && s.result) {
-      pushToast(store, {
-        tone: 'neutral',
-        message: {
-          key: 'usbExport.progress.done',
-          values: { count: s.result.tracks, time: formatSpan(s.result.ms, tr) },
-        },
-        duration: 10000,
-        testid: 'usb-done-notice',
-      })
-      if (!s.result.syncFiles)
-        pushToast(store, {
-          tone: 'danger',
-          message: { key: 'usbExport.errors.sync-files' },
-          testid: 'usb-sync-files-notice',
-        })
-    }
-    if (usbPhase === 'error' && s.reason)
-      pushToast(store, {
-        tone: 'danger',
-        message: { key: `usbExport.errors.${s.reason}` },
-        testid: 'usb-error-notice',
-      })
-  }, [usbPhase, usbModal, store, tr])
+  useUsbExportToasts({
+    store,
+    usbVolumes,
+    usbModal,
+    usbRunning,
+    usbPhase,
+    openUsbExport,
+    tr,
+  })
   // Each source is its own list with its own selection: the row picked in Tracks is not in
   // Music, and leaving it selected there kept its editor open beside a list without it.
   // What is kept was picked before leaving, so rows removed meanwhile are left out.
@@ -1400,108 +1364,7 @@ export default function App(): React.JSX.Element {
     resumePlayback: (path, time) => resumeAtRef.current(path, time),
   })
 
-  // The watcher's "N new tracks" prompt rides the same queue as every other toast: keyed so a
-  // second copy-in updates the count in place, and with a Load action that adds the tracks.
-  // Re-pushed whenever the pending set changes; dismissed when it clears (the user accepted,
-  // the countdown declined it, or the crate was emptied). The countdown is the toast's own,
-  // so it holds while the pointer rests on the card, and expiring declines like the ✕.
-  useEffect(() => {
-    if (!pendingNew) return
-    // Both separators — the watcher root is a raw OS path, backslashed on Windows.
-    const folder = pendingNew.root.split(/[/\\]/).pop() || pendingNew.root
-    const id = pushToast(store, {
-      key: 'new-tracks',
-      tone: 'neutral',
-      testid: 'new-tracks',
-      message: { key: 'newTracks.prompt', values: { count: pendingNew.paths.length, folder } },
-      action: { label: { key: 'newTracks.load' }, onAction: loadPending },
-      onDismiss: dismissPending,
-      onExpire: dismissPending,
-      duration: NEW_TRACKS_PROMPT_TIMEOUT_MS,
-    })
-    return () => dismissToast(store, id)
-  }, [pendingNew, loadPending, dismissPending, store])
-
-  // The auto-updater reports a downloaded version (or a download failure) over IPC; surface
-  // each as a toast instead of a bespoke component. The ready prompt offers Restart (applies
-  // it immediately); a failure is a plain danger toast. Each kind has its own key, so a retry
-  // supersedes its own stale card rather than stacking, and a failed check can never take
-  // the place of a downloaded update still waiting for its restart.
-  useEffect(
-    () =>
-      window.api.onUpdateDownloaded((version) =>
-        pushToast(store, {
-          key: 'update',
-          tone: 'neutral',
-          testid: 'update',
-          message: { key: 'update.ready', values: { version } },
-          action: { label: { key: 'update.restart' }, onAction: () => window.api.installUpdate() },
-        }),
-      ),
-    [store],
-  )
-  // What a run's rekordbox or Engine DJ repoint could not do: the library stays on the old
-  // file, so the DJ has to hear it now rather than when a track fails to load at the gig.
-  useEffect(() => {
-    const stops = WRITABLE_PROGRAMS.flatMap((program) => {
-      const issues = SYNC_ISSUES[program]
-      if (!issues) return []
-      return [
-        issues.listen((issue) =>
-          pushToast(store, {
-            key: `${program}-sync-issue`,
-            tone: 'danger',
-            testid: `${program}-sync-issue`,
-            message: issue.blocked
-              ? { key: `${issues.messages}.${issue.blocked}` }
-              : {
-                  key: `${issues.messages}.ambiguous`,
-                  values: {
-                    count: issue.ambiguous.length,
-                    name: baseName(issue.ambiguous[0] ?? ''),
-                  },
-                },
-          }),
-        ),
-      ]
-    })
-    return () => {
-      for (const stop of stops) stop()
-    }
-  }, [store])
-  useEffect(
-    () =>
-      window.api.onUpdateError((error) =>
-        pushToast(store, {
-          key: 'update-error',
-          tone: 'danger',
-          testid: 'update-error',
-          message: { key: 'update.failed', values: { error } },
-        }),
-      ),
-    [store],
-  )
-  useEffect(
-    () =>
-      window.api.onUpdateCheckFailed((status) => {
-        const id = pushToast(store, {
-          key: 'update-check',
-          tone: 'danger',
-          testid: 'update-check-failed',
-          message: status
-            ? { key: 'update.checkFailedStatus', values: { status } }
-            : { key: 'update.checkFailed' },
-          action: {
-            label: { key: 'update.retry' },
-            onAction: () => {
-              dismissToast(store, id)
-              window.api.checkForUpdates()
-            },
-          },
-        })
-      }),
-    [store],
-  )
+  useAppNotifications({ store, pendingNew, loadPending, dismissPending })
 
   const onSelectTrack = useCallback(
     (id: string, mods: ClickMods): void => {
@@ -2037,9 +1900,23 @@ export default function App(): React.JSX.Element {
   const [seenInAll, setSeenInAll] = useState<ReadonlySet<string>>(() => new Set())
   const rowsOnScreen = useRef(new Set<string>())
   const cameIntoView = useRef<string[]>([])
+  const seenDwell = useRef(new Map<string, ReturnType<typeof setTimeout>>())
+  const markSeenInAll = useStableCallback((id: string): void => {
+    seenDwell.current.delete(id)
+    if (browser.playlist?.id !== ALL_TRACKS_ID || seenInAllRef.current.has(id)) return
+    seenInAllRef.current.add(id)
+    seenSettle.current ??= setTimeout(() => {
+      seenSettle.current = null
+      setSeenInAll(new Set(seenInAllRef.current))
+    }, SEEN_SETTLE_MS)
+  })
   const onListRowVisible = useStableCallback((id: string, visible: boolean): void => {
     if (visible) rowsOnScreen.current.add(id)
-    else rowsOnScreen.current.delete(id)
+    else {
+      rowsOnScreen.current.delete(id)
+      clearTimeout(seenDwell.current.get(id))
+      seenDwell.current.delete(id)
+    }
     onTrackVisible(id, visible)
     onDuplicateRowVisible(id, visible)
     if (visible && cameIntoView.current.push(id) === 1)
@@ -2048,32 +1925,15 @@ export default function App(): React.JSX.Element {
         prioritizeReads(came)
         readCoversOnScreen(came)
       })
-    if (visible && browser.playlist?.id === ALL_TRACKS_ID && !seenInAllRef.current.has(id)) {
-      seenInAllRef.current.add(id)
-      seenSettle.current ??= setTimeout(() => {
-        seenSettle.current = null
-        setSeenInAll(new Set(seenInAllRef.current))
-      }, SEEN_SETTLE_MS)
-    }
+    if (
+      visible &&
+      browser.playlist?.id === ALL_TRACKS_ID &&
+      !seenInAllRef.current.has(id) &&
+      !seenDwell.current.has(id)
+    )
+      seenDwell.current.set(id, setTimeout(() => markSeenInAll(id), SEEN_DWELL_MS))
   })
-  // A library that could not be read leaves every row without a verdict, the same blank a
-  // check still loading shows; the notice is what tells the two apart. It goes away once
-  // a refocus retries the read and it lands.
-  useEffect(() => {
-    if (!libraryFailed || !librarySource) return
-    const id = pushToast(store, {
-      key: 'library-check',
-      tone: 'danger',
-      testid: 'library-check-failed',
-      message: {
-        key:
-          librarySource === 'engineDj'
-            ? 'editor.libraryCheckFailedEngine'
-            : 'editor.libraryCheckFailed',
-      },
-    })
-    return () => dismissToast(store, id)
-  }, [libraryFailed, librarySource, store])
+  useLibraryCheckToast(store, libraryFailed, librarySource)
   // The list narrowed to the open playlist, in its order. Only what the list shows and
   // counts reads it: the Files rows are what is persisted.
   const prevPlaylistScope = useRef<PlaylistScope | null>(null)
@@ -2415,23 +2275,21 @@ export default function App(): React.JSX.Element {
   // sort only reorders, never hides.
   // Selected rows the new filter hides leave the selection too, so the next trash or remove
   // acts only on rows the user can see.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: react to filter changes only; visibleTracks and selection are read from the latest render.
-  useEffect(() => {
-    const ids = visibleTracks.map((t) => t.id)
-    const next = pruneToVisible(ids, selection) ?? reanchorToVisible(ids, selectedId)
-    if (next) setSelection(next)
-  }, [filterSelection])
   // A search hides rows too, and an action on the selection must not reach them. Only the
   // hidden extras of a selection go: when no selected row is left on screen the selection
   // stays, so typing does not jump the editor from track to track on every keystroke.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: react to search changes only; visibleTracks and selection are read from the latest render.
-  useEffect(() => {
-    const next = pruneToVisible(
-      visibleTracks.map((t) => t.id),
-      selection,
-    )
-    if (next) setSelection(next)
-  }, [deferredSearch])
+  const [prunedFor, setPrunedFor] = useState({ filterSelection, deferredSearch })
+  if (
+    prunedFor.filterSelection !== filterSelection ||
+    prunedFor.deferredSearch !== deferredSearch
+  ) {
+    setPrunedFor({ filterSelection, deferredSearch })
+    const ids = visibleTracks.map((t) => t.id)
+    const next =
+      pruneToVisible(ids, selection) ??
+      (prunedFor.filterSelection !== filterSelection ? reanchorToVisible(ids, selectedId) : null)
+    if (next) setSelectionState(next)
+  }
   // Drives the toolbar auto-match button: how many visible tracks are still worth a probe, so
   // it disables once every shown track is matched, and changing the filter to reveal unmatched
   // rows re-enables it. Scoped to the visible set because the sweep matches only those.
@@ -3402,6 +3260,7 @@ export default function App(): React.JSX.Element {
     if (!field?.startsWith('field-')) return
     setTimeout(() => document.querySelector<HTMLElement>(`[data-testid="${field}"]`)?.focus(), 0)
   }
+  const focusRegion = (delta: 1 | -1): void => cycleRegion(document.activeElement, delta)
   // El salto relativo se apoya en los tres saltos absolutos de arriba: resuelve a qué
   // columna toca ir mirando dónde está el foco ahora, y llama al que corresponda.
   const focusColumn = (delta: 1 | -1): void => {
@@ -3457,6 +3316,7 @@ export default function App(): React.JSX.Element {
       focusMatches,
       focusEditor,
       focusColumn,
+      focusRegion,
       togglePlay,
       playerVisible,
       seek,
@@ -3762,7 +3622,9 @@ export default function App(): React.JSX.Element {
           keyboard-accessible path to the same action. */}
           {/* biome-ignore lint/a11y/noStaticElementInteractions: drop target, not a control */}
           <div
-            className="relative flex h-screen flex-col overflow-clip"
+            data-testid="app-root"
+            className="relative flex h-full flex-col overflow-clip"
+            style={{ minWidth: WINDOW_MIN_SIZE.width }}
             onDragEnterCapture={(e) => {
               // A reorder inside the list is not files arriving, and rows dragged out of the
               // list (toward a playlist in the tree) are already in it: no import overlay.

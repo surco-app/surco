@@ -179,23 +179,23 @@ export const Toolbar = memo(function Toolbar({
       {/* The sweeps' counters, spoken. Outside the buttons because a button flattens what
           it holds into its own name (the cancel action), and always mounted, empty while
           idle, because a live region born together with its text is often never read. */}
-      <div className="sr-only">
-        <span role="status">
+      <div role="status" className="sr-only">
+        <span>
           {batching
             ? tr('header.convertingCount', { done: batchProgress.done, total: batchProgress.total })
             : ''}
         </span>
-        <span role="status">
+        <span>
           {importing
             ? tr('header.importingCount', { done: importing.done, total: importing.total })
             : ''}
         </span>
-        <span role="status">
+        <span>
           {matching
             ? tr('header.autoMatchingCount', { done: matching.done, total: matching.total })
             : ''}
         </span>
-        <span role="status">{analysisLabel || ''}</span>
+        <span>{analysisLabel || ''}</span>
       </div>
       <div
         data-testid="toolbar-list-actions"

@@ -4,6 +4,7 @@ import {
   type EditorSectionId,
   type EditorSectionPref,
 } from '../../../shared/editorSections'
+import { sectionRect } from '../lib/sectionRect'
 
 export type EditorSection = EditorSectionId
 
@@ -24,6 +25,11 @@ let store: Record<EditorSection, boolean> = toRecord(DEFAULT_EDITOR_SECTIONS)
 // remount is what turns "maximize the trim" into a review flow (arrow
 // through the crate, every grid full-screen).
 let maximized: EditorSection | null = null
+let origin: DOMRect | null = null
+
+export function maximizedOrigin(): DOMRect | null {
+  return origin
+}
 
 // useSyncExternalStore plumbing, so a seed arriving after editors mounted (settings
 // load async) updates them live instead of waiting for the next track switch.
@@ -93,6 +99,7 @@ export function useMaximizedSection(): {
 } {
   const value = useSyncExternalStore(subscribe, () => maximized)
   const setMaximized = useCallback((section: EditorSection | null): void => {
+    if (maximized === null && section !== null) origin = sectionRect(section) ?? origin
     maximized = section
     if (section !== null) store = { ...store, [section]: true }
     emit()

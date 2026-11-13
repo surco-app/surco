@@ -30,6 +30,7 @@
     "donar": "Doar",
     "download": "Baixar",
     "language": "Idioma",
+    "main": "Principal",
     "languageOffer": {
       "text": "Esta página também está disponível em português.",
       "switch": "Ler em português",
@@ -422,6 +423,7 @@
       "title": "O que o Surco faz com cada programa",
       "lede": "rekordbox, Traktor, Engine DJ, Serato e VirtualDJ. O que o Surco grava na sua biblioteca, ele grava com cópia antes e com o programa fechado.",
       "feature": "Função",
+      "region": "O que o Surco faz com cada programa",
       "yes": "Sim",
       "no": "Não",
       "foot": "Com o programa aberto, as mudanças esperam e são gravadas quando você o fecha. O Apple Music tem a sua própria seção.",
@@ -502,6 +504,7 @@
   "showcase": {
     "alt": "Surco no macOS: lista de faixas, associação com o Discogs, editor de metadados e análise de qualidade",
     "zoom": "Ampliar a captura de tela",
+    "pause": "Pausar o vídeo",
     "tour": {
       "tracks": {
         "title": "Lista de faixas",

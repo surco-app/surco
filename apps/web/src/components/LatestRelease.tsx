@@ -5,7 +5,7 @@ type Release = { version: string; title: string }
 
 export default function LatestRelease() {
   const { t, i18n } = useTranslation()
-  const [latest] = t('changelog.releases', { returnObjects: true }) as Release[]
+  const latest = t('changelog.latest', { returnObjects: true }) as Release
   const href = PAGES.changelog[i18n.language === 'en' ? 'en' : 'es']
 
   return (

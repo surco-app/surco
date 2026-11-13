@@ -26,4 +26,16 @@ describe('useStableCallback', () => {
     result.current()
     expect(seen).toBe('second')
   })
+
+  it('calls the closure of the render in progress when a component calls it while rendering, as the row menu and the command lists do', () => {
+    const { result, rerender } = renderHook(
+      (props: { value: string }) => {
+        const read = useStableCallback(() => props.value)
+        return read()
+      },
+      { initialProps: { value: 'first' } },
+    )
+    rerender({ value: 'second' })
+    expect(result.current).toBe('second')
+  })
 })

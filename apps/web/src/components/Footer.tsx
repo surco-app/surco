@@ -20,7 +20,7 @@ export default function Footer() {
       <div className="mx-auto grid max-w-6xl gap-8 px-6 sm:px-10 py-14 sm:grid-cols-2 lg:grid-cols-[1.8fr_1fr_1fr_1fr]">
         <div>
           <div className="flex items-center gap-2.5">
-            <img src="/logo.svg" alt="Surco" width={48} height={48} className="h-9 w-9" />
+            <img src="/logo.svg" alt="" width={48} height={48} className="h-9 w-9" />
             <span className="text-xl font-semibold tracking-tight">Surco</span>
           </div>
           <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted">{t('footer.tagline')}</p>
@@ -34,87 +34,109 @@ export default function Footer() {
 
         <div>
           <h3 className="text-sm font-medium text-faint">{t('footer.product')}</h3>
-          <ul className="mt-4 space-y-2.5 text-sm text-muted">
-            <li>
-              <a href={featuresHref} className="transition-colors hover:text-fg">
-                {t('nav.funciones')}
-              </a>
-            </li>
-            <li>
-              <a href={`${featuresHref}#instalar`} className="transition-colors hover:text-fg">
-                {t('nav.instalar')}
-              </a>
-            </li>
-            <li>
-              <a href={`${featuresHref}#faq`} className="transition-colors hover:text-fg">
-                {t('nav.faq')}
-              </a>
-            </li>
-            <li>
-              <a href={guideHref} className="transition-colors hover:text-fg">
-                {t('nav.guia')}
-              </a>
-            </li>
-            <li>
-              <a
-                href={useCasesHref}
-                data-testid="footer-use-cases"
-                className="transition-colors hover:text-fg"
-              >
-                {t('nav.casos')}
-              </a>
-            </li>
-            <li>
-              <a href={changelogHref} className="transition-colors hover:text-fg">
-                {t('nav.cambios')}
-              </a>
-            </li>
-            <li>
-              <a
-                href={statsHref}
-                data-testid="footer-stats"
-                className="transition-colors hover:text-fg"
-              >
-                {t('nav.estadisticas')}
-              </a>
-            </li>
-            <li>
-              <a
-                href={DONATE_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                data-testid="footer-donate"
-                onClick={() => trackDonate('footer')}
-                className="transition-colors hover:text-fg"
-              >
-                {t('nav.donar')}
-              </a>
-            </li>
-          </ul>
+          <nav aria-label={t('footer.product')}>
+            <ul className="mt-4 space-y-2.5 text-sm text-muted">
+              <li>
+                <a
+                  href={featuresHref}
+                  className="inline-block py-1.5 -my-1.5 transition-colors hover:text-fg"
+                >
+                  {t('nav.funciones')}
+                </a>
+              </li>
+              <li>
+                <a
+                  href={`${featuresHref}#instalar`}
+                  className="inline-block py-1.5 -my-1.5 transition-colors hover:text-fg"
+                >
+                  {t('nav.instalar')}
+                </a>
+              </li>
+              <li>
+                <a
+                  href={`${featuresHref}#faq`}
+                  className="inline-block py-1.5 -my-1.5 transition-colors hover:text-fg"
+                >
+                  {t('nav.faq')}
+                </a>
+              </li>
+              <li>
+                <a
+                  href={guideHref}
+                  className="inline-block py-1.5 -my-1.5 transition-colors hover:text-fg"
+                >
+                  {t('nav.guia')}
+                </a>
+              </li>
+              <li>
+                <a
+                  href={useCasesHref}
+                  data-testid="footer-use-cases"
+                  className="inline-block py-1.5 -my-1.5 transition-colors hover:text-fg"
+                >
+                  {t('nav.casos')}
+                </a>
+              </li>
+              <li>
+                <a
+                  href={changelogHref}
+                  className="inline-block py-1.5 -my-1.5 transition-colors hover:text-fg"
+                >
+                  {t('nav.cambios')}
+                </a>
+              </li>
+              <li>
+                <a
+                  href={statsHref}
+                  data-testid="footer-stats"
+                  className="inline-block py-1.5 -my-1.5 transition-colors hover:text-fg"
+                >
+                  {t('nav.estadisticas')}
+                </a>
+              </li>
+              <li>
+                <a
+                  href={DONATE_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-testid="footer-donate"
+                  onClick={() => trackDonate('footer')}
+                  className="inline-block py-1.5 -my-1.5 transition-colors hover:text-fg"
+                >
+                  {t('nav.donar')}
+                </a>
+              </li>
+            </ul>
+          </nav>
         </div>
 
         <div>
           <h3 className="text-sm font-medium text-faint">{t('footer.convertHeading')}</h3>
-          <ul className="mt-4 space-y-2.5 text-sm text-muted">
-            {CONVERT_PAGES.map((page) => (
-              <li key={page}>
-                <a
-                  href={PAGES[page][lang]}
-                  data-testid={`footer-${page}`}
-                  className="transition-colors hover:text-fg"
-                >
-                  {t(`footer.${page}`)}
-                </a>
-              </li>
-            ))}
-          </ul>
+          <nav aria-label={t('footer.convertHeading')}>
+            <ul className="mt-4 space-y-2.5 text-sm text-muted">
+              {CONVERT_PAGES.map((page) => (
+                <li key={page}>
+                  <a
+                    href={PAGES[page][lang]}
+                    data-testid={`footer-${page}`}
+                    className="inline-block py-1.5 -my-1.5 transition-colors hover:text-fg"
+                  >
+                    {t(`footer.${page}`)}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
         </div>
 
         <div>
           <h3 className="text-sm font-medium text-faint">{t('footer.contactHeading')}</h3>
           <ul className="mt-4 space-y-2.5 text-sm text-muted">
             <li>
-              <a href="mailto:hello@vicent.io" className="transition-colors hover:text-fg">
+              <a
+                href="mailto:hello@vicent.io"
+                className="inline-block py-1.5 -my-1.5 transition-colors hover:text-fg"
+              >
                 hello@vicent.io
               </a>
             </li>
@@ -123,7 +145,7 @@ export default function Footer() {
                 href="https://vicent.io"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="transition-colors hover:text-fg"
+                className="inline-block py-1.5 -my-1.5 transition-colors hover:text-fg"
               >
                 vicent.io
               </a>
@@ -138,7 +160,7 @@ export default function Footer() {
           <a
             href={privacyHref}
             data-testid="footer-privacy"
-            className="transition-colors hover:text-fg"
+            className="inline-block py-1.5 -my-1.5 transition-colors hover:text-fg"
           >
             {t('footer.privacy')}
           </a>

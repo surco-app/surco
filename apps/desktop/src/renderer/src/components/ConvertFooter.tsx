@@ -8,7 +8,7 @@ import {
   TriangleAlert,
 } from 'lucide-react'
 import type React from 'react'
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import type {
   FormatSetting,
@@ -322,15 +322,32 @@ export function ConvertFooter({
   const prevShowDone = useRef(showDone)
   const swapped = useRef(false)
   const footerRef = useRef<HTMLDivElement>(null)
-  // The swap unmounts the button a keyboard user just pressed and focus drops to <body>.
-  // Whether focus was in here is read before the commit replaces the block, while the old
-  // button still holds it, so only focus the footer itself owned is handed back.
   const refocus = useRef(false)
+  const heldFocus = useRef(false)
   if (prevShowDone.current !== showDone) {
     swapped.current = true
     prevShowDone.current = showDone
-    refocus.current = footerRef.current?.contains(document.activeElement) ?? false
+    refocus.current =
+      !!footerRef.current?.contains(document.activeElement) ||
+      (showDone && heldFocus.current && document.activeElement === document.body)
+    heldFocus.current = false
   }
+  useEffect(() => {
+    const footer = footerRef.current
+    if (!footer) return
+    const held = (): void => {
+      heldFocus.current = true
+    }
+    const lost = (e: FocusEvent): void => {
+      if (!(e.target as HTMLElement).matches(':disabled')) heldFocus.current = false
+    }
+    footer.addEventListener('focusin', held)
+    footer.addEventListener('focusout', lost)
+    return () => {
+      footer.removeEventListener('focusin', held)
+      footer.removeEventListener('focusout', lost)
+    }
+  }, [])
   useLayoutEffect(() => {
     if (focusShield.current && !retrying) {
       focusShield.current = false

@@ -521,6 +521,8 @@
     "focusEditor": "エディタにフォーカス",
     "focusColumnPrev": "前の列にフォーカス",
     "focusColumnNext": "次の列にフォーカス",
+    "focusRegionNext": "次の領域にフォーカス",
+    "focusRegionPrev": "前の領域にフォーカス",
     "search": "トラックリストを検索",
     "settings": "設定",
     "clearAll": "リストをクリア",
@@ -1079,6 +1081,7 @@
       "keys": {
         "label": "キー",
         "button": "キーボードショートカット",
+        "description": "スペースで再生 / 停止。左右キーで小節ジャンプ、Shift を押すと 1 拍ずつ。M で再生ヘッドに CALL、1 から 8 でホットキュー A〜H を配置。Delete で選択中のキューを削除。",
         "space": "スペース",
         "play": "再生 / 停止",
         "jump_one": "{{count}} 小節ジャンプ",

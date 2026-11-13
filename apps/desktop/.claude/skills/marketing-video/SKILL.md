@@ -35,7 +35,8 @@ when the current tree has none) and `playwright-core` installed in `run-desktop`
 /funciones) in every app language: the folder `SURCO_HERO_DIR` (default
 `/Volumes/Public/Musica/FLAC/bases buenas`) opened, one track picked, its Discogs match
 applied and the track converted. No cursor, no voice. It writes
-`apps/web/public/hero-app-<lang>.{webm,mp4,webp}`; the still is the clip's first frame.
+`apps/web/public/hero-app-<lang>.{webm,mp4,webp}`, plus `hero-app-<lang>-{800,1200}.webp` for
+smaller screens; the still is the clip's first frame.
 The conversion goes to a throwaway profile.
 
 ## A case

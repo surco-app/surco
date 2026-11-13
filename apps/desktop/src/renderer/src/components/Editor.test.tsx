@@ -5262,6 +5262,171 @@ describe('Editor maximized section', () => {
   })
 })
 
+describe('Editor maximized section motion', () => {
+  type FakeAnimation = { currentTime: number; cancel: () => void; onfinish: (() => void) | null }
+  let animations: { el: Element; frames: Keyframe[]; options: KeyframeAnimationOptions; anim: FakeAnimation }[]
+  beforeEach(() => {
+    animations = []
+    Object.assign((window as unknown as { api: object }).api, { cancelAnalysis: vi.fn() })
+    HTMLElement.prototype.animate = function (frames, options) {
+      const anim: FakeAnimation = { currentTime: 100, cancel: vi.fn(), onfinish: null }
+      animations.push({
+        el: this,
+        frames: frames as Keyframe[],
+        options: options as KeyframeAnimationOptions,
+        anim,
+      })
+      return anim as unknown as Animation
+    }
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: Element,
+    ) {
+      return this.parentElement?.dataset.testid === 'editor-scroll' &&
+        this.querySelector('[data-section-header="trim"]')
+        ? new DOMRect(512, 384, 256, 96)
+        : new DOMRect(0, 0, 0, 0)
+    })
+    clientArea(1024, 768)
+  })
+  const clientArea = (width: number, height: number): void => {
+    vi.spyOn(Element.prototype, 'clientWidth', 'get').mockImplementation(function (this: Element) {
+      return this === document.documentElement ? width : 0
+    })
+    vi.spyOn(Element.prototype, 'clientHeight', 'get').mockImplementation(function (
+      this: Element,
+    ) {
+      return this === document.documentElement ? height : 0
+    })
+  }
+  afterEach(() => {
+    delete (HTMLElement.prototype as { animate?: unknown }).animate
+    vi.restoreAllMocks()
+    vi.unstubAllGlobals()
+  })
+
+  const maximizeTrim = (): HTMLElement => {
+    fireEvent.click(within(screen.getByTestId('editor-trim')).getByTestId('section-maximize'))
+    return screen.getByTestId('section-maximized-overlay')
+  }
+
+  const SECTION_FRAME = {
+    transform: 'translate(512px, 384px) scale(0.25)',
+    clipPath: 'inset(0px 0px 384px 0px)',
+    opacity: 0,
+  }
+  const FULL_FRAME = { transform: 'none', clipPath: 'inset(0px 0px 0px 0px)', opacity: 1 }
+  const inColumn = (): HTMLElement[] =>
+    within(screen.getByTestId('editor-scroll')).queryAllByTestId('editor-trim')
+
+  it('grows the overlay out of the section the DJ maximized, so the full view keeps its place', () => {
+    renderEditor({ id: 'a' })
+    const overlay = maximizeTrim()
+    expect(animations).toHaveLength(1)
+    const [{ el, frames, options }] = animations
+    expect(el).toBe(overlay)
+    expect(frames).toEqual([SECTION_FRAME, FULL_FRAME])
+    expect(options).toMatchObject({ duration: 240, easing: 'cubic-bezier(0.2, 0, 0, 1)' })
+  })
+
+  it('measures the area the overlay covers and not the window, so a classic Windows scrollbar does not throw the crop off', () => {
+    clientArea(1000, 750)
+    renderEditor({ id: 'a' })
+    maximizeTrim()
+    expect(animations[0].frames[0]).toEqual({
+      transform: 'translate(512px, 384px) scale(0.256)',
+      clipPath: 'inset(0px 0px 375px 0px)',
+      opacity: 0,
+    })
+  })
+
+  it('scales the text evenly and crops the rest, so nothing reads squashed on the way', () => {
+    renderEditor({ id: 'a' })
+    maximizeTrim()
+    expect(animations[0].frames[0].transform).toMatch(/scale\([\d.]+\)$/)
+  })
+
+  it('carries the section back into its place and only then returns it to the column', () => {
+    renderEditor({ id: 'a' })
+    const overlay = maximizeTrim()
+    act(() => animations[0].anim.onfinish?.())
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(screen.getByTestId('section-maximized-overlay')).toBe(overlay)
+    expect(within(overlay).getByTestId('editor-trim')).toBeInTheDocument()
+    expect(inColumn()).toHaveLength(0)
+    expect(screen.getAllByTestId('editor-trim')).toHaveLength(1)
+    const exit = animations[1]
+    expect(exit.frames).toEqual([FULL_FRAME, SECTION_FRAME])
+    expect(exit.options).toMatchObject({ duration: 240 })
+    act(() => exit.anim.onfinish?.())
+    expect(screen.queryByTestId('section-maximized-overlay')).toBeNull()
+    expect(inColumn()).toHaveLength(1)
+    expect(screen.getAllByTestId('editor-trim')).toHaveLength(1)
+  })
+
+  it('turns back from wherever it is when the DJ changes their mind mid-way', () => {
+    renderEditor({ id: 'a' })
+    const overlay = maximizeTrim()
+    overlay.style.transform = 'matrix(0.6, 0, 0, 0.6, 200, 150)'
+    overlay.style.opacity = '0.5'
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(animations[0].anim.cancel).toHaveBeenCalled()
+    expect(animations[1].frames[0]).toMatchObject({
+      transform: 'matrix(0.6, 0, 0, 0.6, 200, 150)',
+      opacity: '0.5',
+    })
+    expect(animations[1].options).toMatchObject({ duration: 100 })
+    const section = within(overlay).getByTestId('editor-trim')
+    fireEvent.click(within(section).getByTestId('section-maximize'))
+    expect(animations[1].anim.cancel).toHaveBeenCalled()
+    expect(animations[2].frames[1]).toEqual(FULL_FRAME)
+    expect(screen.getByTestId('section-maximized-overlay')).toBe(overlay)
+    expect(within(overlay).getByTestId('editor-trim')).toBe(section)
+    expect(inColumn()).toHaveLength(0)
+  })
+
+  it('opens another section at its top rather than at the last one\'s scroll', () => {
+    renderEditor({ id: 'a' })
+    const overlay = maximizeTrim()
+    act(() => animations[0].anim.onfinish?.())
+    fireEvent.click(within(screen.getByTestId('editor-declick')).getByTestId('section-maximize'))
+    const next = screen.getByTestId('section-maximized-overlay')
+    expect(within(next).getByTestId('editor-declick')).toBeInTheDocument()
+    expect(next).not.toBe(overlay)
+  })
+
+  it('stops a running animation when the editor goes away', () => {
+    renderEditor({ id: 'a' })
+    maximizeTrim()
+    cleanup()
+    expect(animations[0].anim.cancel).toHaveBeenCalled()
+  })
+
+  it('cuts straight in and out when the system asks for less motion', () => {
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn((query: string) => ({
+        matches: query === '(prefers-reduced-motion: reduce)',
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      })),
+    )
+    renderEditor({ id: 'a' })
+    maximizeTrim()
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(animations).toHaveLength(0)
+    expect(screen.queryByTestId('section-maximized-overlay')).toBeNull()
+  })
+
+  it('does not replay the entrance when the next track opens already maximized', () => {
+    renderEditor({ id: 'a' })
+    maximizeTrim()
+    cleanup()
+    renderEditor({ id: 'b' })
+    expect(screen.getByTestId('section-maximized-overlay')).toBeInTheDocument()
+    expect(animations).toHaveLength(1)
+  })
+})
+
 // The editor is a flat list of same-weight sections; the group headings make its
 // three phases (describe the file → operate on the audio → name the output) visible
 // so the eye can find where audio work begins instead of scanning every header.

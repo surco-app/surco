@@ -255,6 +255,7 @@ export interface CommandDeps {
   focusMatches: () => void
   focusEditor: () => void
   focusColumn: (delta: 1 | -1) => void
+  focusRegion: (delta: 1 | -1) => void
   togglePlay: () => void
   // Whether the player card is open — gates the ←/→ seek so the arrows only act on a
   // running player, never while it's closed.
@@ -423,6 +424,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     focusMatches,
     focusEditor,
     focusColumn,
+    focusRegion,
     togglePlay,
     playerVisible,
     seek,
@@ -845,6 +847,22 @@ export function buildCommands(deps: CommandDeps): Command[] {
       hint: hintFor('focus-column-next'),
       enabled: true,
       run: () => focusColumn(1),
+    },
+    {
+      id: 'focus-region-prev',
+      group: 'navigate',
+      title: tr('commands.focusRegionPrev'),
+      hint: hintFor('focus-region-prev'),
+      enabled: true,
+      run: () => focusRegion(-1),
+    },
+    {
+      id: 'focus-region-next',
+      group: 'navigate',
+      title: tr('commands.focusRegionNext'),
+      hint: hintFor('focus-region-next'),
+      enabled: true,
+      run: () => focusRegion(1),
     },
     ...(sources.length > 0
       ? [

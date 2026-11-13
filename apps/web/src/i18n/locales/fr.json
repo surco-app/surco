@@ -30,6 +30,7 @@
     "donar": "Faire un don",
     "download": "Télécharger",
     "language": "Langue",
+    "main": "Principale",
     "languageOffer": {
       "text": "Cette page existe aussi en français.",
       "switch": "Lire en français",
@@ -422,6 +423,7 @@
       "title": "Ce que Surco fait avec chaque logiciel",
       "lede": "rekordbox, Traktor, Engine DJ, Serato et VirtualDJ. Ce que Surco écrit dans ta bibliothèque, il l’écrit après une sauvegarde et avec le logiciel fermé.",
       "feature": "Fonction",
+      "region": "Ce que Surco fait avec chaque logiciel",
       "yes": "Oui",
       "no": "Non",
       "foot": "Si le logiciel est ouvert, les changements attendent et s’écrivent à sa fermeture. Apple Music a sa propre section.",
@@ -502,6 +504,7 @@
   "showcase": {
     "alt": "Surco sur macOS : liste des morceaux, correspondance Discogs, éditeur de métadonnées et analyse de qualité",
     "zoom": "Agrandir la capture",
+    "pause": "Mettre la vidéo en pause",
     "tour": {
       "tracks": {
         "title": "Liste des morceaux",

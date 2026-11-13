@@ -521,6 +521,8 @@
     "focusEditor": "Focus the editor",
     "focusColumnPrev": "Focus the previous column",
     "focusColumnNext": "Focus the next column",
+    "focusRegionNext": "Focus the next region",
+    "focusRegionPrev": "Focus the previous region",
     "search": "Search the track list",
     "settings": "Settings",
     "clearAll": "Clear the list",
@@ -1079,6 +1081,7 @@
       "keys": {
         "label": "Keys",
         "button": "Keyboard shortcuts",
+        "description": "Space plays or stops. Left and Right jump bars, and with Shift one beat. M places a CALL and 1 to 8 place hot cues A to H at the playhead. Delete removes the selected cue.",
         "space": "Space",
         "play": "play or stop",
         "jump_one": "jump {{count}} bar",

@@ -93,6 +93,37 @@ describe('ConvertFooter state swap', () => {
     expect(screen.getByTestId('done-more')).toHaveFocus()
   })
 
+  it('hands focus to the done state when the disabled convert button dropped it to body', () => {
+    const { rerender } = render(footer(false))
+    const button = screen.getByTestId('process-btn') as HTMLButtonElement
+    button.focus()
+    button.disabled = true
+    Object.defineProperty(document, 'activeElement', {
+      get: () => document.body,
+      configurable: true,
+    })
+    rerender(footer(true))
+    Reflect.deleteProperty(document, 'activeElement')
+    expect(screen.getByTestId('done-more')).toHaveFocus()
+  })
+
+  it('leaves focus on the page when the DJ clicked away from the footer before the swap', () => {
+    const { rerender } = render(footer(false))
+    const button = screen.getByTestId('process-btn')
+    button.focus()
+    button.blur()
+    expect(document.body).toHaveFocus()
+    rerender(footer(true))
+    expect(document.body).toHaveFocus()
+  })
+
+  it('does not take focus from the page on the swap back to convert', () => {
+    const { rerender } = render(footer(true))
+    expect(document.body).toHaveFocus()
+    rerender(footer(false))
+    expect(document.body).toHaveFocus()
+  })
+
   // Focus that was elsewhere (the metadata form) must stay there: the footer only restores
   // what its own swap took away.
   it('leaves focus alone when it was outside the footer', () => {

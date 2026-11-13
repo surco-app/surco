@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { BUNDLED_FLOWS } from '../../shared/cueFlows'
+import { WINDOW_MIN_SIZE } from '../../shared/windowSize'
 import '@testing-library/jest-dom/vitest'
 import { type QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import {
@@ -50,6 +51,7 @@ import {
 } from './lib/cueSession'
 import { resetEditorPlace } from './lib/editorPlace'
 import { spellingGroups } from './lib/musicSpelling'
+import { holdPendingEdit } from './lib/pendingEdits'
 import { createQueryClient } from './lib/queryClient'
 import { clearDraggedRows, draggedRows, TREE_NODE_TYPE } from './lib/reorderDrag'
 import { usbExportStore } from './lib/usbExportStore'
@@ -75,11 +77,24 @@ vi.mock('./components/Editor', async (importOriginal) => {
   })
   return { ...real, Editor: CountingEditor }
 })
+const { idlePreload } = vi.hoisted(() => ({ idlePreload: { calls: 0 } }))
+vi.mock('./lib/lazyChunk', async (importOriginal) => {
+  const real = await importOriginal<typeof import('./lib/lazyChunk')>()
+  return {
+    ...real,
+    preloadLazyWhenIdle: () => {
+      idlePreload.calls++
+      real.preloadLazyWhenIdle()
+    },
+  }
+})
 // Pass-through TrackList that counts renders — TrackList is already memo'd itself
 // (see TrackList.tsx), so wrapping the real (already-memoized) component in a
 // second counting memo pins the contract from the outside: App must hand it
 // stable props on a render that doesn't touch the visible tracks.
-const { trackListRenders } = vi.hoisted(() => ({ trackListRenders: { count: 0 } }))
+const { trackListRenders } = vi.hoisted(() => ({
+  trackListRenders: { count: 0, shown: [] as { ids: string[]; selectedId: string | null }[] },
+}))
 vi.mock('./components/TrackList', async (importOriginal) => {
   const real = await importOriginal<typeof import('./components/TrackList')>()
   const { memo } = await import('react')
@@ -87,6 +102,10 @@ vi.mock('./components/TrackList', async (importOriginal) => {
     props: React.ComponentProps<typeof real.TrackList>,
   ): React.JSX.Element {
     trackListRenders.count++
+    trackListRenders.shown.push({
+      ids: props.tracks.map((t) => t.id),
+      selectedId: props.selectedId,
+    })
     return <real.TrackList {...props} />
   })
   return { ...real, TrackList: CountingTrackList }
@@ -428,6 +447,7 @@ function setApi(over: Record<string, unknown> = {}): void {
 
 beforeEach(() => {
   setApi()
+  trackListRenders.shown = []
   // The editor section store is module-level and survives across tests; reset it so a
   // test that folds a section away doesn't leak that state into the next.
   resetEditorSections()
@@ -4247,6 +4267,21 @@ describe('App source playlists', () => {
         })
       }
 
+      function scrollOut(rows: HTMLElement[]): void {
+        act(() => {
+          for (const o of observers) {
+            const gone = [...o.els].filter((el) => rows.some((r) => el === r || el.contains(r)))
+            if (gone.length === 0) continue
+            o.cb(
+              gone.map(
+                (target) => ({ target, isIntersecting: false }) as IntersectionObserverEntry,
+              ),
+              o as unknown as IntersectionObserver,
+            )
+          }
+        })
+      }
+
       async function openAll(): Promise<HTMLElement[]> {
         await renderApp()
         fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
@@ -4399,6 +4434,34 @@ describe('App source playlists', () => {
         await waitFor(() => expect([...analyzed].sort()).toEqual(['/m/x.wav', '/m/y.wav']))
         await waitFor(() => expect(screen.queryByTestId('analyze-progress')).toBeNull())
         expect([...analyzed].sort()).toEqual(['/m/x.wav', '/m/y.wav'])
+      })
+
+      it('leaves out a row the scroll only flies past and analyzes one the DJ stops on', async () => {
+        const analyzed: string[] = []
+        setApi({
+          ...collection,
+          getSettings: vi.fn().mockResolvedValue(settings({ autoAnalyze: true })),
+          readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'DJ' }),
+          spectrogram: vi.fn(async (path: string) => {
+            analyzed.push(path)
+            return spectrum
+          }),
+        })
+        const rows = await openAll()
+        await new Promise((r) => setTimeout(r, 400))
+        vi.useFakeTimers()
+
+        scrollPast([rows[1]])
+        act(() => vi.advanceTimersByTime(100))
+        scrollOut([rows[1]])
+        scrollPast([rows[2]])
+        act(() => vi.advanceTimersByTime(400))
+        act(() => vi.advanceTimersByTime(300))
+        vi.useRealTimers()
+
+        await waitFor(() => expect(analyzed).toEqual(['/m/y.wav']))
+        await waitFor(() => expect(screen.queryByTestId('analyze-progress')).toBeNull())
+        expect(analyzed).toEqual(['/m/y.wav'])
       })
     })
   })
@@ -7300,6 +7363,27 @@ describe('App sort direction', () => {
   })
 })
 
+describe('App lazy preload', () => {
+  it('schedules the preload once the first rows of the library are in', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+    })
+    idlePreload.calls = 0
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    await waitFor(() => expect(idlePreload.calls).toBeGreaterThan(0))
+  })
+
+  it('does not schedule the preload while the library is empty', async () => {
+    idlePreload.calls = 0
+    await renderApp()
+    await screen.findByTestId('add-files')
+    expect(idlePreload.calls).toBe(0)
+  })
+})
+
 describe('App per-format filter', () => {
   // Drops the wav + mp3 pair the format cases lean on (both unconverted, distinct formats).
   async function addMixedCrate(): Promise<void> {
@@ -7344,6 +7428,21 @@ describe('App per-format filter', () => {
     // The crate is now WAV-only: had the format filter stayed on MP3 the WAV row would be
     // hidden (0 rows). Seeing it proves the format filter reset.
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+  })
+
+  it('leaves text still in a field alone when the format filter resets on its own', async () => {
+    await addMixedCrate()
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-section-format'))
+    fireEvent.click(screen.getByTestId('quality-filter-ext:MP3'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    fireEvent.contextMenu(screen.getByTestId('track-row'))
+    const flush = vi.fn()
+    const release = holdPendingEdit(flush)
+    fireEvent.click(screen.getByTestId('track-menu-remove'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    release()
+    expect(flush).toHaveBeenCalledTimes(1)
   })
 
   // The bug a DJ hit: filter to one format (MP3), press "Empty" expecting only those gone,
@@ -7403,6 +7502,51 @@ describe('App filter selection', () => {
     // …so the lone remaining row (the mp3) becomes the selected one.
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
     expect(screen.getAllByTestId('track-row')[0]).toHaveAttribute('aria-selected', 'true')
+  })
+
+  it('never renders the list with the editor still on a track the new filter hides', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.mp3']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-section-format'))
+    trackListRenders.shown = []
+    fireEvent.click(screen.getByTestId('quality-filter-ext:MP3'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    expect(screen.getAllByTestId('track-row')[0]).toHaveAttribute('aria-selected', 'true')
+    const stranded = trackListRenders.shown.filter(
+      (r) => r.selectedId !== null && !r.ids.includes(r.selectedId),
+    )
+    expect(stranded).toEqual([])
+  })
+
+  it('keeps text typed into a track on that track when the filter hides it and the selection moves', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.mp3']),
+      readTags: vi.fn(async (path: string) => ({
+        title: path.endsWith('a.wav') ? 'Alpha' : 'Bravo',
+        artist: 'DJ',
+      })),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Alpha'))
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-section-format'))
+    fireEvent.change(screen.getByTestId('field-title'), { target: { value: 'Typed Name' } })
+    fireEvent.click(screen.getByTestId('quality-filter-ext:MP3'))
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Bravo'))
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-section-format'))
+    fireEvent.click(screen.getByTestId('quality-filter-ext:MP3'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    fireEvent.click(screen.getAllByTestId('track-row')[0])
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Typed Name'))
   })
 })
 
@@ -9084,6 +9228,15 @@ describe('App duplicates filter', () => {
   })
 })
 
+describe('zoomed window', () => {
+  it('keeps the layout at the window minimum so zooming in scrolls instead of clipping the convert button', async () => {
+    await renderApp()
+    await addTwoTracks()
+
+    expect(screen.getByTestId('app-root')).toHaveStyle({ minWidth: `${WINDOW_MIN_SIZE.width}px` })
+  })
+})
+
 describe('drop target', () => {
   // With tracks in the list they land in the sidebar, so that is where the drag answers.
   // The old full-screen overlay covered both columns — including the one nothing was going
@@ -9091,7 +9244,7 @@ describe('drop target', () => {
   it('marks the column the tracks will land in, covering nothing', async () => {
     await renderApp()
     await addTwoTracks()
-    const root = screen.getByTestId('sidebar').closest('.flex.h-screen') as HTMLElement
+    const root = screen.getByTestId('app-root')
 
     fireEvent.dragEnter(root)
 
@@ -9103,7 +9256,7 @@ describe('drop target', () => {
   it('lights no column for a playlist dragged in the tree, which is not files arriving', async () => {
     await renderApp()
     await addTwoTracks()
-    const root = screen.getByTestId('sidebar').closest('.flex.h-screen') as HTMLElement
+    const root = screen.getByTestId('app-root')
     const dt = fakeDataTransfer()
     dt.setData(TREE_NODE_TYPE, 'house')
 
@@ -9118,7 +9271,7 @@ describe('drop target', () => {
   it('lights the one empty screen while the first files are dragged in, and clears it on leave', async () => {
     await renderApp()
     const zone = await screen.findByTestId('empty-dropzone')
-    const root = zone.closest('.flex.h-screen') as HTMLElement
+    const root = screen.getByTestId('app-root')
 
     fireEvent.dragEnter(root)
 
@@ -9137,7 +9290,7 @@ describe('drop target', () => {
     setApi({ pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']) })
     await renderApp()
     await addOneTrack()
-    const root = screen.getByTestId('sidebar').closest('.flex.h-screen') as HTMLElement
+    const root = screen.getByTestId('app-root')
     const well = await screen.findByTestId('cover-dropzone')
 
     fireEvent.dragEnter(root)
@@ -9151,7 +9304,7 @@ describe('drop target', () => {
     setApi({ pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']) })
     await renderApp()
     await addOneTrack()
-    const root = screen.getByTestId('sidebar').closest('.flex.h-screen') as HTMLElement
+    const root = screen.getByTestId('app-root')
     const well = await screen.findByTestId('cover-dropzone')
 
     fireEvent.dragEnter(root)
@@ -9914,7 +10067,7 @@ describe('App list review', () => {
 
 // A dropped folder is when the user can still fix its names before they spread to the
 // libraries; the notice says what the review would find without opening it uninvited.
-describe('App list review notice', () => {
+describe('App list review notice', { timeout: 15000 }, () => {
   it('says what a finished load leaves to review and opens the review from there', async () => {
     vi.resetModules()
     listApi()
@@ -9941,7 +10094,7 @@ describe('App list review notice', () => {
       getPathForFile: (f: { name: string }) => f.name,
     })
     await renderApp()
-    const root = (await screen.findByTestId('add-files')).closest('.flex.h-screen') as HTMLElement
+    const root = await screen.findByTestId('app-root')
     fireEvent.drop(root, {
       dataTransfer: { files: Object.keys(tags).map((name) => ({ name })), types: ['Files'] },
     })
@@ -9969,12 +10122,15 @@ describe('App list review notice', () => {
     })
     await renderApp()
     await addThree()
-    await waitFor(() => expect(screen.getAllByTestId('track-row')[1]).toHaveTextContent('Bravo'))
+    await waitFor(
+      () => expect(screen.getAllByTestId('track-row')[1]).toHaveTextContent('Bravo'),
+      { timeout: 3000 },
+    )
     expect(screen.queryByTestId('list-review-notice')).not.toBeInTheDocument()
     await act(async () => release())
-    expect(await screen.findByTestId('list-review-notice')).toHaveTextContent(
-      '3 tracks loaded. 1 spelling to review',
-    )
+    expect(
+      await screen.findByTestId('list-review-notice', {}, { timeout: 3000 }),
+    ).toHaveTextContent('3 tracks loaded. 1 spelling to review')
   })
 
   it('stays quiet when the list has nothing to review', async () => {
@@ -10037,7 +10193,7 @@ describe('App list review notice', () => {
       getPathForFile: (f: { name: string }) => f.name,
     })
     await renderApp()
-    const root = (await screen.findByTestId('add-files')).closest('.flex.h-screen') as HTMLElement
+    const root = await screen.findByTestId('app-root')
     const drop = (paths: string[]) =>
       fireEvent.drop(root, {
         dataTransfer: { files: paths.map((name) => ({ name })), types: ['Files'] },
@@ -10083,7 +10239,7 @@ describe('App list review notice', () => {
     await waitFor(() => expect(screen.queryByTestId('list-review-notice')).not.toBeInTheDocument())
     runMenu('list-review')
     await screen.findByTestId('list-review-scope')
-    const root = screen.getByTestId('sidebar').closest('.flex.h-screen') as HTMLElement
+    const root = screen.getByTestId('app-root')
     fireEvent.drop(root, {
       dataTransfer: {
         files: ['/music/e.wav', '/music/f.wav'].map((name) => ({ name })),

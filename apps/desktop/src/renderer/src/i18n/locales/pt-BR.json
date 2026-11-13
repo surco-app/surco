@@ -521,6 +521,8 @@
     "focusEditor": "Focar o editor",
     "focusColumnPrev": "Focar a coluna anterior",
     "focusColumnNext": "Focar a próxima coluna",
+    "focusRegionNext": "Focar a próxima região",
+    "focusRegionPrev": "Focar a região anterior",
     "search": "Buscar na lista de faixas",
     "settings": "Ajustes",
     "clearAll": "Limpar a lista",
@@ -1079,6 +1081,7 @@
       "keys": {
         "label": "Teclas",
         "button": "Atalhos de teclado",
+        "description": "Espaço reproduz ou para. Esquerda e Direita saltam compassos, e com Shift uma batida. M coloca um CALL e de 1 a 8 colocam os hot cues A a H no cursor. Delete apaga o cue selecionado.",
         "space": "Espaço",
         "play": "reproduzir ou parar",
         "jump_one": "saltar {{count}} compasso",

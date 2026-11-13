@@ -52,7 +52,7 @@ export default function App() {
           </Reveal>
           <Reveal eager>
             <h1 className="mx-auto max-w-4xl text-[min(2.25rem,7.6vw)] leading-[1.1] font-bold tracking-tight text-balance sm:text-5xl lg:text-[4.5rem] lg:leading-[1.02]">
-              {t('hero.h1a')}
+              {t('hero.h1a')}{' '}
               <br />
               {t('hero.h1b')}
             </h1>
