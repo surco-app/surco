@@ -8,6 +8,7 @@ import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchLocal, PatchSynced } from '../../lib/settingsTabs'
 import { SOURCE_READ } from '../../lib/sourcePrograms'
 import { SegmentedControl } from '../SegmentedControl'
+import { Select } from '../Select'
 import { CheckboxRow } from './CheckboxRow'
 import {
   SettingsCheckboxField,
@@ -96,15 +97,15 @@ export function GeneralTab({
           </SettingsField>
 
           <SettingsField label={tr('settings.language')} searchId="language">
-            <SegmentedControl
-              options={LANGUAGES}
-              value={synced.language}
-              onChange={(id) => patch('language', id)}
-              testidPrefix="settings-language"
-              compact
-              fill
+            <Select
+              testid="settings-language"
               label={tr('settings.language')}
-              labelFor={(id) => (id === 'ja' ? '日本語' : tr(`settings.languages.${id}`))}
+              value={synced.language}
+              onChange={(id) => patch('language', id as LanguagePref)}
+              options={LANGUAGES.map((id) => ({
+                value: id,
+                label: id === 'ja' ? '日本語' : tr(`settings.languages.${id}`),
+              }))}
             />
           </SettingsField>
         </div>

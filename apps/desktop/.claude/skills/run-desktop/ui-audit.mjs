@@ -256,7 +256,8 @@ async function main() {
         await page.click('[data-testid="open-settings"]')
         await page.waitForSelector('[data-testid="settings-tab-general"]')
         await page.click('[data-testid="settings-tab-general"]')
-        await page.click(`[data-testid="settings-language-${lang}"]`)
+        await page.click('[data-testid="settings-language"]')
+        await page.click(`[data-testid="settings-language-option-${lang}"]`)
         for (const tab of TABS) {
           const row = ROW_OF[tab]
           if (row) await page.click(`[data-testid="settings-tab-${row}"]`)
@@ -280,7 +281,8 @@ async function main() {
     }
     await page.click('[data-testid="open-settings"]')
     await page.click('[data-testid="settings-tab-general"]')
-    await page.click(`[data-testid="settings-language-${before}"]`).catch(() => {})
+    await page.click('[data-testid="settings-language"]')
+    await page.click(`[data-testid="settings-language-option-${before}"]`).catch(() => {})
     await page.click('[data-testid="settings-close"]')
   } finally {
     await app.close()

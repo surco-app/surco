@@ -429,7 +429,8 @@ describe('SettingsModal applies changes as they are made', () => {
   it('applies a choice on its own, as macOS System Settings does, with no Save to forget', async () => {
     const onSave = vi.fn()
     renderModal({ onSave })
-    fireEvent.click(screen.getByTestId('settings-language-es'))
+    fireEvent.click(screen.getByTestId('settings-language'))
+    fireEvent.click(screen.getByTestId('settings-language-option-es'))
     await waitFor(() =>
       expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ language: 'es' })),
     )
@@ -440,7 +441,8 @@ describe('SettingsModal applies changes as they are made', () => {
     const onSave = vi.fn()
     const onClose = vi.fn()
     renderModal({ onSave, onClose })
-    fireEvent.click(screen.getByTestId('settings-language-es'))
+    fireEvent.click(screen.getByTestId('settings-language'))
+    fireEvent.click(screen.getByTestId('settings-language-option-es'))
     fireEvent.click(screen.getByTestId('settings-close'))
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ language: 'es' }))
     expect(onClose).toHaveBeenCalled()

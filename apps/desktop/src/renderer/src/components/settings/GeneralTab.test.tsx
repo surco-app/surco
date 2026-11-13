@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { PlaylistSource } from '../../../../shared/types'
 import i18n from '../../i18n'
@@ -57,24 +57,36 @@ function renderTab(
   return patchLocal
 }
 
-// The theme and language rows are segmented choices under a visible label; the label has
-// to name the group too, or VoiceOver reads "Dark, toggle button" with no idea of what.
-it('names the theme and language choices after their labels', () => {
+it('names the theme choices after their label, so VoiceOver says what Dark is the dark of', () => {
   renderTab()
   expect(screen.getByRole('group', { name: i18n.t('settings.theme') })).toContainElement(
     screen.getByTestId('settings-theme-dark'),
   )
-  expect(screen.getByRole('group', { name: i18n.t('settings.language') })).toContainElement(
-    screen.getByTestId('settings-language-es'),
-  )
-  expect(screen.getByTestId('settings-language-ja')).toHaveTextContent('日本語')
+})
+
+it('offers the language as one menu with each language in its own words, so the row stays one line however many languages come', () => {
+  renderTab()
+  const trigger = screen.getByTestId('settings-language')
+  expect(trigger.getAttribute('aria-label')).toContain(i18n.t('settings.language'))
+  fireEvent.click(trigger)
+  const options = within(screen.getByTestId('settings-language-listbox')).getAllByRole('option')
+  expect(options.map((o) => o.textContent)).toEqual([
+    i18n.t('settings.languages.system'),
+    'English',
+    'Español',
+    'Deutsch',
+    'Français',
+    'Português',
+    '日本語',
+  ])
 })
 
 it('persists a selected Japanese UI language through the settings patch', () => {
   const patch = vi.fn()
   renderTab({}, [], patch)
 
-  fireEvent.click(screen.getByTestId('settings-language-ja'))
+  fireEvent.click(screen.getByTestId('settings-language'))
+  fireEvent.click(screen.getByTestId('settings-language-option-ja'))
 
   expect(patch).toHaveBeenCalledWith('language', 'ja')
 })
