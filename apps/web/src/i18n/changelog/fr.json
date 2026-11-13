@@ -53,6 +53,10 @@
         "in": "1.34.0"
       },
       {
+        "text": "« Format du titre » et « Année avec date complète » sont maintenant dans Réglages → Éditeur → Options, avec les autres options qui modifient les tags. Fichiers → Noms ne sert plus qu’au nom du fichier, et tu choisis la langue dans un menu.",
+        "in": "1.34.3"
+      },
+      {
         "text": "Quand ton logiciel DJ est ouvert, Surco demande maintenant avant de modifier sa bibliothèque. « Fermer Traktor et appliquer » le ferme et écrit le changement tout de suite. « Appliquer à la fermeture » garde le changement jusqu’à ce que tu fermes le logiciel toi-même. Serato et VirtualDJ te demandent de les fermer et d’appuyer sur « Je l’ai fermé, appliquer ».",
         "in": "1.34.1"
       },

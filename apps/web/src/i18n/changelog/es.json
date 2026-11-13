@@ -53,6 +53,10 @@
         "in": "1.34.0"
       },
       {
+        "text": "«Formato del título» y «Año con fecha completa» están ahora en Ajustes → Editor → Opciones, junto a las demás opciones que cambian las etiquetas. Archivos → Nombres queda solo para el nombre del archivo, y el idioma se elige en un menú.",
+        "in": "1.34.3"
+      },
+      {
         "text": "Con tu programa de DJ abierto, Surco ahora pregunta antes de tocar su biblioteca. «Cerrar Traktor y aplicar» lo cierra y escribe el cambio al momento. «Aplicar al cerrarlo» guarda el cambio hasta que lo cierres tú. Serato y VirtualDJ te piden que los cierres y pulses «Lo he cerrado, aplicar».",
         "in": "1.34.1"
       },

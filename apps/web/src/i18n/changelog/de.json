@@ -53,6 +53,10 @@
         "in": "1.34.0"
       },
       {
+        "text": "„Titelformat“ und „Jahr mit vollständigem Datum“ sind jetzt unter Einstellungen → Editor → Optionen, bei den anderen Optionen, die Tags ändern. Dateien → Benennung ist nur noch für den Dateinamen da, und die Sprache wählst du in einem Menü.",
+        "in": "1.34.3"
+      },
+      {
         "text": "Wenn dein DJ-Programm offen ist, fragt Surco jetzt, bevor es seine Bibliothek ändert. „Traktor schließen und anwenden“ schließt es und schreibt die Änderung sofort. „Beim Schließen anwenden“ hebt die Änderung auf, bis du das Programm selbst schließt. Bei Serato und VirtualDJ schließt du sie und drückst „Ich habe es geschlossen, anwenden“.",
         "in": "1.34.1"
       },
