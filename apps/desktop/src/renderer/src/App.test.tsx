@@ -6392,6 +6392,31 @@ describe('App multi-select convert', () => {
     )
   })
 
+  it('hands focus to the playlists when the batch ends under a source with none picked, the panel having no control left', async () => {
+    const { processTrack, cancelJob } = hangingConvert()
+    setApi({
+      platform: 'darwin',
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      loadAppleMusicPlaylists: vi
+        .fn<Api['loadAppleMusicPlaylists']>()
+        .mockResolvedValue([{ persistentId: 'p1', name: 'Warm up', count: 1 }]),
+      processTrack,
+      cancelJob,
+    })
+    await renderApp()
+    await addTwoTracks()
+    runMenu('process-all')
+    await waitFor(() => expect(processTrack).toHaveBeenCalled())
+    fireEvent.click(await screen.findByTestId('source-rail-appleMusic'))
+    await screen.findByTestId('source-pick-playlist')
+    const cancel = screen.getByTestId('batch-run-cancel')
+    cancel.focus()
+    fireEvent.click(cancel)
+    await waitFor(() => expect(screen.queryByTestId('batch-run')).toBeNull())
+    expect(document.activeElement).toBe(screen.getByTestId('source-node-p1'))
+  })
+
   it('applies a format and destination picked by hand to the whole selection', async () => {
     const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/x', inPlace: false })
     setApi({
@@ -11859,5 +11884,45 @@ describe('App sidebar', () => {
     fireEvent.click(screen.getByRole('menuitemcheckbox', { name: i18n.t('view.sidebar') }))
     await waitFor(() => expect(screen.queryByTestId('sidebar-peek')).not.toBeInTheDocument())
     expect(screen.getByTestId('source-rail')).toBeInTheDocument()
+  })
+})
+
+describe('App editor crash', () => {
+  it('keeps the running batch and its cancel under the editor when the editor crashes mid-batch', async () => {
+    const silenced = vi.spyOn(console, 'error').mockImplementation(() => {})
+    vi.resetModules()
+    vi.doMock('./components/Editor', () => ({
+      Editor: () => {
+        throw new Error('boom')
+      },
+    }))
+    try {
+      const pending: ((v: unknown) => void)[] = []
+      const processTrack = vi.fn(() => new Promise((resolve) => pending.push(resolve)))
+      const cancelJob = vi.fn(() => {
+        for (const resolve of pending.splice(0))
+          resolve({ outputPath: '', inPlace: false, skipped: true })
+      })
+      setApi({
+        pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']),
+        readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+        processTrack,
+        cancelJob,
+      })
+      await renderApp()
+      const rows = await addTwoTracks()
+      runMenu('process-all')
+      await waitFor(() => expect(processTrack).toHaveBeenCalled())
+      fireEvent.click(rows[0])
+      expect(await screen.findByTestId('error-boundary')).toBeInTheDocument()
+      expect(screen.getByTestId('batch-run-progress')).toHaveTextContent('Converting… 0/2')
+      fireEvent.click(screen.getByTestId('batch-run-cancel'))
+      expect(cancelJob).toHaveBeenCalled()
+      await waitFor(() => expect(screen.queryByTestId('batch-run')).toBeNull())
+    } finally {
+      vi.doUnmock('./components/Editor')
+      vi.resetModules()
+      silenced.mockRestore()
+    }
   })
 })
