@@ -2320,7 +2320,10 @@ export default function App(): React.JSX.Element {
     const region = batchStripRegion.current
     if (!region) return
     batchStripRegion.current = null
-    region.querySelector<HTMLElement>(FOCUSABLE.join(', '))?.focus()
+    const target =
+      region.querySelector<HTMLElement>(FOCUSABLE.join(', ')) ??
+      document.querySelector<HTMLElement>('[data-testid="source-tree"] [data-testid^="source-node-"]')
+    target?.focus()
   })
   const batchStrip = (
     <div ref={batchStripRef} className={FOOTER_BAR}>
