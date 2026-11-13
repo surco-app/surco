@@ -1752,7 +1752,7 @@
       "v0": "V0",
       "v2": "V2"
     },
-    "mp3QualityHint": "CBR-Raten in kbps: 320 ist der Standard der DJ-Pools; V0 und V2 sind VBR (kleinere Dateien bei transparenter Qualität). Eine MP3-Quelle wird nie neu kodiert.",
+    "mp3QualityHint": "CBR-Raten in kbps: 320 ist der Standard der DJ-Pools; V0 und V2 sind VBR (kleinere Dateien bei transparenter Qualität).",
     "mp3QualityApplies": "Gilt beim Konvertieren nach MP3, auch wenn du es für einen einzelnen Track wählst.",
     "bitDepth": "Bittiefe",
     "bitDepths": {
@@ -2149,7 +2149,7 @@
       "source": "Jede Datei behält ihr Format, ein gemischter Stapel wird nie neu kodiert.",
       "aiff": "Verlustfrei, mit Cover und Tags, die jede DJ-Software liest.",
       "alac": "Verlustfrei und komprimiert, in einer .m4a.",
-      "mp3": "Kleinere Dateien. Eine Quelle, die schon MP3 ist, wird nie neu kodiert.",
+      "mp3": "Kleinere Dateien.",
       "wav": "Verlustfrei und unkomprimiert.",
       "flac": "Verlustfrei und komprimiert. Apple Music nimmt es nicht auf."
     },

@@ -1752,7 +1752,7 @@
       "v0": "V0",
       "v2": "V2"
     },
-    "mp3QualityHint": "Débits CBR en kbit/s : 320 est le standard des pools DJ ; V0 et V2 sont en VBR (fichiers plus petits, qualité transparente). Une source déjà en MP3 n’est jamais réencodée.",
+    "mp3QualityHint": "Débits CBR en kbit/s : 320 est le standard des pools DJ ; V0 et V2 sont en VBR (fichiers plus petits, qualité transparente).",
     "mp3QualityApplies": "S’applique à la conversion en MP3, y compris quand tu le choisis pour un seul morceau.",
     "bitDepth": "Profondeur de bits",
     "bitDepths": {
@@ -2149,7 +2149,7 @@
       "source": "Chaque fichier garde son format, un lot mélangé n’est jamais réencodé.",
       "aiff": "Sans perte, avec pochette et tags que lit tout logiciel DJ.",
       "alac": "Sans perte et compressé, dans un .m4a.",
-      "mp3": "Fichiers plus légers. Une source déjà en MP3 n’est jamais réencodée.",
+      "mp3": "Fichiers plus légers.",
       "wav": "Sans perte et non compressé.",
       "flac": "Sans perte et compressé. Apple Music ne l’accepte pas."
     },

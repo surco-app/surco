@@ -1752,7 +1752,7 @@
       "v0": "V0",
       "v2": "V2"
     },
-    "mp3QualityHint": "CBR rates in kbps: 320 is the DJ-pool standard; V0 and V2 are VBR (smaller files, transparent quality). A source already in MP3 is never re-encoded.",
+    "mp3QualityHint": "CBR rates in kbps: 320 is the DJ-pool standard; V0 and V2 are VBR (smaller files, transparent quality).",
     "mp3QualityApplies": "Used when converting to MP3, also when you pick it for a single track.",
     "bitDepth": "Bit depth",
     "bitDepths": {
@@ -2149,7 +2149,7 @@
       "source": "Each file keeps its own format, so a mixed batch is never re-encoded.",
       "aiff": "Lossless, with artwork and tags every DJ program reads.",
       "alac": "Lossless and compressed, in an .m4a.",
-      "mp3": "Smaller files. A source already in MP3 is never re-encoded.",
+      "mp3": "Smaller files.",
       "wav": "Lossless and uncompressed.",
       "flac": "Lossless and compressed. Apple Music can't add it."
     },
