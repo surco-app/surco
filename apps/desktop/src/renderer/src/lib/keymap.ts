@@ -96,10 +96,22 @@ export type Region = 'rail' | 'list' | 'editor'
 
 const REGIONS: Region[] = ['rail', 'list', 'editor']
 
+const FOCUSABLE = [
+  'a[href]',
+  'button:not([disabled])',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])',
+]
+
 const REGION_TARGETS: Record<Region, string[]> = {
   rail: ['[data-testid="source-rail"] [aria-pressed="true"]', '[data-testid="source-rail"] button'],
   list: ['[data-testid="track-row"][tabindex="0"]'],
-  editor: ['[data-testid="field-title"]'],
+  editor: [
+    FOCUSABLE.map((f) => `[data-testid="section-maximized-overlay"] ${f}`).join(', '),
+    '[data-testid="field-title"]',
+  ],
 }
 
 export function regionOf(el: Element | null): Region | null {

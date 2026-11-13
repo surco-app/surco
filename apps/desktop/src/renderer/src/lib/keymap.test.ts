@@ -344,8 +344,34 @@ describe('F6 regions', () => {
     expect(press(key('F6', { shiftKey: true }), false)).toBe('focus-region-prev')
   })
 
-  it('leaves F6 to the field while typing, like every other bare key', () => {
-    expect(press(key('F6'), true)).toBeNull()
+  it('moves from the title field to the rail on F6, because a function key types nothing and the field would trap the focus', () => {
+    document.body.innerHTML = `
+      <nav data-testid="source-rail"><button data-testid="source-rail-tracks" aria-pressed="true">a</button></nav>
+      <aside data-testid="sidebar"><input data-testid="track-search" /><div data-testid="track-row" tabindex="0">y</div></aside>
+      <div data-shortcut-scope="editor"><input data-testid="field-title" /></div>`
+    ;(document.querySelector('[data-testid="field-title"]') as HTMLElement).focus()
+    expect(press(key('F6'), isTypingTarget(document.activeElement))).toBe('focus-region-next')
+    cycleRegion(document.activeElement, 1)
+    expect(document.activeElement?.getAttribute('data-testid')).toBe('source-rail-tracks')
+  })
+
+  it('moves backwards from the search box on Shift+F6, so the cycle works from any field', () => {
+    document.body.innerHTML = `
+      <nav data-testid="source-rail"><button data-testid="source-rail-tracks" aria-pressed="true">a</button></nav>
+      <aside data-testid="sidebar"><input data-testid="track-search" /><div data-testid="track-row" tabindex="0">y</div></aside>
+      <div data-shortcut-scope="editor"><input data-testid="field-title" /></div>`
+    ;(document.querySelector('[data-testid="track-search"]') as HTMLElement).focus()
+    expect(press(key('F6', { shiftKey: true }), isTypingTarget(document.activeElement))).toBe(
+      'focus-region-prev',
+    )
+    cycleRegion(document.activeElement, -1)
+    expect(document.activeElement?.getAttribute('data-testid')).toBe('source-rail-tracks')
+  })
+
+  it('still leaves a plain letter to the field while typing, so a name with a q is never a trim nudge', () => {
+    expect(press(key('q'), false)).toBe('trim-start-back')
+    expect(press(key('q'), true)).toBeNull()
+    expect(press(key('ArrowDown'), true)).toBeNull()
   })
 
   it('names the sources rail, the track list and the editor as the three regions', () => {
@@ -405,6 +431,13 @@ describe('cycleRegion', () => {
     ;(document.querySelector('[data-testid="field-title"]') as HTMLElement).focus()
     cycleRegion(document.activeElement, -1)
     expect(document.activeElement).toBe(document.querySelector('[tabindex="0"]'))
+  })
+
+  it('enters a maximized section instead of the title it covers', () => {
+    document.body.innerHTML = `${page}<div data-testid="section-maximized-overlay"><span>t</span><button data-testid="overlay-first" disabled>x</button><button data-testid="overlay-live">y</button></div>`
+    ;(document.querySelector('[tabindex="0"]') as HTMLElement).focus()
+    cycleRegion(document.activeElement, 1)
+    expect(focusedTestId()).toBe('overlay-live')
   })
 
   it('skips a region that is not on screen instead of dropping the focus', () => {
