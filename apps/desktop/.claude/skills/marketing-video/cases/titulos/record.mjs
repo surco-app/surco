@@ -46,7 +46,7 @@ try {
     await clickOn(page.locator('[data-testid="find-replace-cancel"]'), 600)
     unzoom()
     await page.waitForTimeout(500)
-    await clickOn(page.locator('[data-testid="convert-all"]'), 900)
+    await key('Meta+Shift+Enter', '⌘ ⇧ ⏎')
     await page.waitForTimeout(700)
     await clickOn(page.getByRole('button', { name: 'Sobrescribir y convertir' }), 700)
   })

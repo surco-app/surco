@@ -8,7 +8,7 @@ const s = await session('carpeta', {
   overwriteOriginal: true,
   autoMatch: true,
 })
-const { page, step, clickOn, glide, zoomAt, unzoom } = s
+const { page, step, clickOn, glide, key, zoomAt, unzoom } = s
 let ok = false
 try {
   await s.startRec()
@@ -51,7 +51,7 @@ try {
     await page.waitForTimeout(1500)
   })
   await step('convert', async () => {
-    await clickOn(page.locator('[data-testid="convert-all"]'), 900)
+    await key('Meta+Shift+Enter', '⌘ ⇧ ⏎')
     await page.waitForTimeout(800)
     await clickOn(page.getByRole('button', { name: 'Sobrescribir y convertir' }), 700)
   })
