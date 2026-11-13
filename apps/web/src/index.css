@@ -188,6 +188,16 @@ button:not(:disabled) {
   animation: labelPop 0.15s ease-out;
 }
 
+@keyframes offerIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+}
+.language-offer {
+  animation: offerIn 0.2s ease-out;
+}
+
 /* blue→cyan gradient text accent */
 .text-grad {
   background: linear-gradient(100deg, var(--color-blue), var(--color-cyan));
