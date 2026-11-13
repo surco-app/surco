@@ -581,7 +581,7 @@ function OutputSettings({
             {/* Disabled rather than hidden under 'never' (Settings' own rule), and for a
             reason the hint states: they still govern the copies already stored. Turning
             the feature off must never read as having discarded them. */}
-            <div className="mt-4 flex gap-4 border-t border-[var(--color-line)] pt-4">
+            <div className="mt-5 flex gap-4">
               <div className="flex-1">
                 <SettingsLabel htmlFor="backup-days" className="mb-2">
                   {tr('settings.originalBackupDays')}
