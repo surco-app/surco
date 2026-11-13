@@ -1,8 +1,11 @@
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
+import type { TrackMetadata } from '../../../../shared/types'
+import { renderTitle } from '../../lib/outputName'
 import type { SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
 import { SegmentedControl } from '../SegmentedControl'
+import { FormatField, SAMPLE_META } from './FormatField'
 import {
   SettingsCheckboxField,
   SettingsField,
@@ -17,6 +20,10 @@ interface Props {
 
 export function EditorTab({ synced, patch }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
+  const sample: TrackMetadata = {
+    ...SAMPLE_META,
+    custom: Object.fromEntries(synced.customFields.map((f) => [f.key, f.label])),
+  }
   return (
     <>
       <SettingsSection first>
@@ -52,6 +59,40 @@ export function EditorTab({ synced, patch }: Props): React.JSX.Element {
             />
           </SettingsField>
         </div>
+      </SettingsSection>
+
+      <SettingsSection eyebrow={tr('settings.editorTagsTitle')}>
+        <SettingsGroup>
+          <div data-search-id="titleFormat">
+            <FormatField
+              id="settings-title-format"
+              label={tr('settings.titleFormat')}
+              value={synced.titleFormat}
+              placeholder="({trackNumber}) {title} ({year})"
+              hint={
+                <p className="mt-2 text-xs leading-relaxed text-fg-dim">
+                  {tr('settings.titleFormatHint')}
+                </p>
+              }
+              preview={
+                synced.titleFormat.trim() !== ''
+                  ? renderTitle(synced.titleFormat, sample) || '—'
+                  : undefined
+              }
+              customFields={synced.customFields}
+              previewTestId="settings-title-format-preview"
+              onChange={(v) => patch('titleFormat', v)}
+            />
+          </div>
+          <SettingsCheckboxField
+            testid="settings-full-release-date"
+            checked={synced.fullReleaseDate}
+            onChange={(v) => patch('fullReleaseDate', v)}
+            label={tr('settings.fullReleaseDate')}
+            searchId="fullReleaseDate"
+            hint={tr('settings.fullReleaseDateHint')}
+          />
+        </SettingsGroup>
       </SettingsSection>
 
       <SettingsSection>

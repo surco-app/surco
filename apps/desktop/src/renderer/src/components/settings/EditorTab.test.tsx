@@ -4,8 +4,8 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { DEFAULT_EDITOR_SECTIONS } from '../../../../shared/editorSections'
-import type { SyncedDraft } from '../../lib/settingsDraft'
 import '../../i18n'
+import type { SyncedDraft } from '../../lib/settingsDraft'
 import { EditorTab } from './EditorTab'
 
 afterEach(cleanup)
@@ -151,5 +151,22 @@ describe('EditorTab inline explanations toggle', () => {
     const patch = renderTab()
     fireEvent.click(screen.getByTestId('settings-show-editor-hints'))
     expect(patch).toHaveBeenCalledWith('showEditorHints', false)
+  })
+})
+
+describe('EditorTab tag options', () => {
+  it('edits the title format here, next to the tags it rewrites, with a preview of the result', () => {
+    const patch = renderTab({ titleFormat: '({trackNumber}) {title}' })
+    expect(screen.getByTestId('settings-title-format-preview')).toHaveTextContent(
+      '(03) Take me into the sky',
+    )
+    fireEvent.change(screen.getByTestId('settings-title-format'), { target: { value: '{title}' } })
+    expect(patch).toHaveBeenCalledWith('titleFormat', '{title}')
+  })
+
+  it('stages the full release date toggle', () => {
+    const patch = renderTab()
+    fireEvent.click(screen.getByTestId('settings-full-release-date'))
+    expect(patch).toHaveBeenCalledWith('fullReleaseDate', true)
   })
 })

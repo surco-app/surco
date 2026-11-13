@@ -1830,6 +1830,7 @@
     "zeroPadTrack": "トラック番号をゼロ埋め（03）",
     "fullReleaseDate": "年を完全な日付で",
     "fullReleaseDateHint": "ファイルや Discogs、Bandcamp、Deezer、Beatport、MusicBrainz に完全な日付がある場合、2020 ではなく 2020-12-01 を表示・保存します。",
+    "editorTagsTitle": "タグ",
     "asciiFileNames": "アクセントなしのファイル名",
     "asciiFileNamesHint": "「Röyksopp」の代わりに「Royksopp」と書き込みます。NAS検索やアクセント付き名前で問題になるドライブに便利です。",
     "coverMaxSize": "最大アートワークサイズ",
