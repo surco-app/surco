@@ -357,7 +357,7 @@ function OutputSettings({
               keeps the chosen direction, so the amount can never cross zero and flip it
               under a DJ who was only making the correction smaller. */}
                 <div className="mt-3 flex items-center gap-2 border-t border-[var(--color-line)] pt-3">
-                  <span className="flex-1 text-sm text-fg-muted">
+                  <span className="mr-2 text-sm text-fg-muted">
                     {tr('settings.traktorCueAmount')}
                   </span>
                   <button
