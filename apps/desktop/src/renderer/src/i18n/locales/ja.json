@@ -1538,7 +1538,7 @@
       "destination": "出力",
       "programs": "DJソフト",
       "naming": "命名",
-      "editor": "エディタ",
+      "editor": "オプション",
       "layout": "セクション",
       "artwork": "アートワーク",
       "fields": "フィールド",
@@ -1752,7 +1752,7 @@
       "v0": "V0",
       "v2": "V2"
     },
-    "mp3QualityHint": "CBR レート（kbps）：320 は DJ プール標準；V0 と V2 は VBR（小さいファイル、聴感上劣化のない音質）。ソースがすでに MP3 の場合は再エンコードされません。",
+    "mp3QualityHint": "CBR レート（kbps）：320 は DJ プール標準；V0 と V2 は VBR（小さいファイル、聴感上劣化のない音質）。",
     "mp3QualityApplies": "MP3 に変換するとき、また単一トラックを選択したときに使用されます。",
     "bitDepth": "ビット深度",
     "bitDepths": {
@@ -1830,13 +1830,21 @@
     "zeroPadTrack": "トラック番号をゼロ埋め（03）",
     "fullReleaseDate": "年を完全な日付で",
     "fullReleaseDateHint": "ファイルや Discogs、Bandcamp、Deezer、Beatport、MusicBrainz に完全な日付がある場合、2020 ではなく 2020-12-01 を表示・保存します。",
+    "editorQuickButtonsTitle": "クイックボタン",
+    "editorTagsTitle": "タグ",
+    "editorAnalysisTitle": "分析",
+    "editorKeyTitle": "キー",
     "asciiFileNames": "アクセントなしのファイル名",
     "asciiFileNamesHint": "「Röyksopp」の代わりに「Royksopp」と書き込みます。NAS検索やアクセント付き名前で問題になるドライブに便利です。",
     "coverMaxSize": "最大アートワークサイズ",
     "coverMaxHint": "px (0 = 無制限)",
     "coverUpscale": "小さいアートワークをこのサイズに拡大",
     "coverSquare": "アートワークを正方形にクロップ",
-    "coverHint": "埋め込み時に適用：大きなアートワークを縮小し、有効の場合は正方形に中央クロップします。",
+    "coverHint": "埋め込み時に中央でクロップします。",
+    "coverMaxSizeHint": "大きなアートワークは埋め込み時に縮小されます。",
+    "coverSizeTitle": "サイズ",
+    "coverOnApplyTitle": "リリース適用時",
+    "coverFinderTitle": "Finder",
     "replaceLowRes": "リリース適用時に低解像度カバーを置換",
     "replaceLowResHint": "オフの場合、ファイル独自のカバーは常に保持され、低解像度はフラグ付けされるだけでリリース画像に置き換えられません。",
     "flacFinderCovers": "FinderでFLACカバーを表示",
@@ -2077,8 +2085,7 @@
         "traktor": "ホットキューのみ（青、A から G まで）。Traktor は起動時にコレクションを読み込むため、保存時に Surco が Traktor を閉じるよう求めます。",
         "engine": "ホットキューのみ。Engine DJ には CALL がありません。",
         "serato": "ホットキューのみ（A から H）。Serato には CALL がありません。Serato が開いている場合は、閉じたときに Surco が保存します。",
-        "virtualdj": "ホットキューのみ（A から H）。VirtualDJ には CALL がありません。VirtualDJ が開いている場合は、閉じたときに Surco が保存します。",
-        "missing": "このコンピュータで {{program}} が見つかりません"
+        "virtualdj": "ホットキューのみ（A から H）。VirtualDJ には CALL がありません。VirtualDJ が開いている場合は、閉じたときに Surco が保存します。"
       }
     },
     "cueProfile": {
@@ -2111,6 +2118,9 @@
       "fromEditsHint": "エディタで保存したトラックは学習内容に加わり、修正すると Surco が自動で学び直します。設定フォルダを同期していれば、ほかの Mac からも学びます。"
     },
     "searchSynonyms": {
+      "tabs": {
+        "editor": "エディタ"
+      },
       "mp3Quality": "ビットレート, bitrate, kbps, CBR, VBR",
       "bitDepth": "ビット, 16bit, 24bit",
       "sampleRate": "Hz, kHz, 44.1, 48, サンプリング",
@@ -2139,7 +2149,7 @@
       "source": "各ファイルの形式をそのまま保つので、混在したバッチも再エンコードされません。",
       "aiff": "ロスレスで、どのDJソフトでも読めるアートワークとタグ付き。",
       "alac": "ロスレスの圧縮形式で、.m4aに保存。",
-      "mp3": "ファイルが小さくなります。元がMP3なら再エンコードしません。",
+      "mp3": "ファイルが小さくなります。",
       "wav": "ロスレスの非圧縮形式。",
       "flac": "ロスレスの圧縮形式。Apple Musicには追加できません。"
     },

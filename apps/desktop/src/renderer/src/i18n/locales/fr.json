@@ -1538,7 +1538,7 @@
       "destination": "Sortie",
       "programs": "Logiciels DJ",
       "naming": "Noms",
-      "editor": "Éditeur",
+      "editor": "Options",
       "layout": "Sections",
       "artwork": "Pochette",
       "fields": "Champs",
@@ -1752,7 +1752,7 @@
       "v0": "V0",
       "v2": "V2"
     },
-    "mp3QualityHint": "Débits CBR en kbit/s : 320 est le standard des pools DJ ; V0 et V2 sont en VBR (fichiers plus petits, qualité transparente). Une source déjà en MP3 n’est jamais réencodée.",
+    "mp3QualityHint": "Débits CBR en kbit/s : 320 est le standard des pools DJ ; V0 et V2 sont en VBR (fichiers plus petits, qualité transparente).",
     "mp3QualityApplies": "S’applique à la conversion en MP3, y compris quand tu le choisis pour un seul morceau.",
     "bitDepth": "Profondeur de bits",
     "bitDepths": {
@@ -1830,13 +1830,21 @@
     "zeroPadTrack": "N° de piste avec zéro devant (03)",
     "fullReleaseDate": "Année avec date complète",
     "fullReleaseDateHint": "Affiche et enregistre 2020-12-01 au lieu de 2020 quand le fichier ou Discogs, Bandcamp, Deezer, Beatport ou MusicBrainz a la date entière.",
+    "editorQuickButtonsTitle": "Boutons rapides",
+    "editorTagsTitle": "Tags",
+    "editorAnalysisTitle": "Analyse",
+    "editorKeyTitle": "Tonalité",
     "asciiFileNames": "Noms de fichier sans accents",
     "asciiFileNamesHint": "Écrit « Royksopp » au lieu de « Röyksopp ». Pratique pour chercher sur un NAS et pour les disques qui gèrent mal les accents.",
     "coverMaxSize": "Taille maximale de la pochette",
     "coverMaxHint": "px (0 = sans limite)",
     "coverUpscale": "Agrandir les pochettes plus petites jusqu’à cette taille",
     "coverSquare": "Recadrer la pochette en carré",
-    "coverHint": "Appliqué à l’intégration : réduit les grandes pochettes et, si activé, les recadre au centre pour les rendre carrées.",
+    "coverHint": "Recadre au centre à l’intégration.",
+    "coverMaxSizeHint": "Les pochettes plus grandes sont réduites à l’intégration.",
+    "coverSizeTitle": "Taille",
+    "coverOnApplyTitle": "En appliquant une release",
+    "coverFinderTitle": "Finder",
     "replaceLowRes": "Remplacer les pochettes basse résolution en appliquant une release",
     "replaceLowResHint": "Si désactivé, la pochette du fichier est toujours conservée ; une basse résolution est seulement signalée, jamais remplacée par l’image de la release.",
     "flacFinderCovers": "Afficher les pochettes FLAC dans le Finder",
@@ -2077,8 +2085,7 @@
         "traktor": "Hot cues seulement, en bleu, de A à G. Traktor lit sa collection au démarrage, donc Surco te demandera de le fermer à l’enregistrement.",
         "engine": "Hot cues seulement. Engine DJ n’a pas de CALL.",
         "serato": "Hot cues seulement, de A à H. Serato n’a pas de CALL. Si Serato est ouvert, Surco les enregistre quand tu le fermes.",
-        "virtualdj": "Hot cues seulement, de A à H. VirtualDJ n’a pas de CALL. Si VirtualDJ est ouvert, Surco les enregistre quand tu le fermes.",
-        "missing": "Surco ne trouve pas {{program}} sur cet ordinateur"
+        "virtualdj": "Hot cues seulement, de A à H. VirtualDJ n’a pas de CALL. Si VirtualDJ est ouvert, Surco les enregistre quand tu le fermes."
       }
     },
     "cueProfile": {
@@ -2111,6 +2118,9 @@
       "fromEditsHint": "Chaque morceau que tu enregistres dans l’éditeur s’ajoute à ce qui est appris, et Surco réapprend tout seul quand tu corriges. Avec un dossier de réglages synchronisé, il apprend aussi de tes autres Mac."
     },
     "searchSynonyms": {
+      "tabs": {
+        "editor": "éditeur"
+      },
       "mp3Quality": "débit, bitrate, kbps, CBR, VBR",
       "bitDepth": "bits, 16 bits, 24 bits",
       "sampleRate": "Hz, kHz, 44.1, 48, échantillonnage",
@@ -2139,7 +2149,7 @@
       "source": "Chaque fichier garde son format, un lot mélangé n’est jamais réencodé.",
       "aiff": "Sans perte, avec pochette et tags que lit tout logiciel DJ.",
       "alac": "Sans perte et compressé, dans un .m4a.",
-      "mp3": "Fichiers plus légers. Une source déjà en MP3 n’est jamais réencodée.",
+      "mp3": "Fichiers plus légers.",
       "wav": "Sans perte et non compressé.",
       "flac": "Sans perte et compressé. Apple Music ne l’accepte pas."
     },

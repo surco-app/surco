@@ -32,6 +32,8 @@ const SETTINGS_IDS: [SettingsTab, string[]][] = [
     [
       'grouping',
       'genre',
+      'titleFormat',
+      'fullReleaseDate',
       'showSpectrum',
       'autoAnalyze',
       'showLoudness',
@@ -57,15 +59,7 @@ const SETTINGS_IDS: [SettingsTab, string[]][] = [
   ],
   [
     'naming',
-    [
-      'titleFormat',
-      'filenameFormat',
-      'autoApplyFilename',
-      'asciiFileNames',
-      'trimWhitespace',
-      'zeroPadTrack',
-      'fullReleaseDate',
-    ],
+    ['filenameFormat', 'autoApplyFilename', 'asciiFileNames', 'trimWhitespace', 'zeroPadTrack'],
   ],
   ['destination', ['destination', 'originals', 'originalBackup']],
   [

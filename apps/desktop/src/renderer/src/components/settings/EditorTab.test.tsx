@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
 import { BUNDLED_FLOWS } from '../../../../shared/cueFlows'
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { DEFAULT_EDITOR_SECTIONS } from '../../../../shared/editorSections'
+import i18n from '../../i18n'
 import type { SyncedDraft } from '../../lib/settingsDraft'
-import '../../i18n'
 import { EditorTab } from './EditorTab'
 
 afterEach(cleanup)
@@ -151,5 +151,44 @@ describe('EditorTab inline explanations toggle', () => {
     const patch = renderTab()
     fireEvent.click(screen.getByTestId('settings-show-editor-hints'))
     expect(patch).toHaveBeenCalledWith('showEditorHints', false)
+  })
+})
+
+describe('EditorTab blocks', () => {
+  it('names each block, so the analysis switches and the key notation do not read as more quick buttons', () => {
+    renderTab()
+    const named = (testid: string) => {
+      const section = screen.getByTestId(testid).closest('section') as HTMLElement
+      return within(section).getAllByRole('heading')[0].textContent
+    }
+    expect(named('settings-grouping')).toBe(i18n.t('settings.editorQuickButtonsTitle'))
+    expect(named('settings-title-format')).toBe(i18n.t('settings.editorTagsTitle'))
+    expect(named('settings-show-spectrum')).toBe(i18n.t('settings.editorAnalysisTitle'))
+    expect(named('settings-key-notation-camelot')).toBe(i18n.t('settings.editorKeyTitle'))
+  })
+
+  it('does not name its own sub-tab like the tab that holds it, in any language', async () => {
+    for (const lang of ['es', 'en', 'de', 'fr', 'pt-BR', 'ja']) {
+      await i18n.changeLanguage(lang)
+      expect(i18n.t('settings.tabs.editor')).not.toBe(i18n.t('settings.entries.editor'))
+    }
+    await i18n.changeLanguage('es')
+  })
+})
+
+describe('EditorTab tag options', () => {
+  it('edits the title format here, next to the tags it rewrites, with a preview of the result', () => {
+    const patch = renderTab({ titleFormat: '({trackNumber}) {title}' })
+    expect(screen.getByTestId('settings-title-format-preview')).toHaveTextContent(
+      '(03) Take me into the sky',
+    )
+    fireEvent.change(screen.getByTestId('settings-title-format'), { target: { value: '{title}' } })
+    expect(patch).toHaveBeenCalledWith('titleFormat', '{title}')
+  })
+
+  it('stages the full release date toggle', () => {
+    const patch = renderTab()
+    fireEvent.click(screen.getByTestId('settings-full-release-date'))
+    expect(patch).toHaveBeenCalledWith('fullReleaseDate', true)
   })
 })

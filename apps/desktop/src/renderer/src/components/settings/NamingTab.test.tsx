@@ -124,11 +124,11 @@ describe('NamingTab filename preview extension', () => {
   })
 })
 
-describe('NamingTab full release date', () => {
-  it('stages the full release date toggle', () => {
-    const patch = renderTab()
-    fireEvent.click(screen.getByTestId('settings-full-release-date'))
-    expect(patch).toHaveBeenCalledWith('fullReleaseDate', true)
+describe('NamingTab scope', () => {
+  it('keeps only what shapes the file name, since the title format and the release date rewrite tags and live in Editor', () => {
+    renderTab()
+    expect(screen.queryByTestId('settings-title-format')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('settings-full-release-date')).not.toBeInTheDocument()
   })
 })
 

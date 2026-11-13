@@ -109,17 +109,9 @@ export function SearchTab({
           </div>
         </div>
 
-        {/* A one-value select doesn't need a full-width stacked block: the label and hint
-            take the left, the control sits on the right, one row instead of three. */}
-        <div className="mt-5 flex items-center justify-between gap-6">
-          {/* The text side wraps (min-w-0) and the control side never shrinks: squeezed by
-            justify-between, the select used to give up 2px and poke past the panel,
-            summoning a horizontal scrollbar over the whole tab. */}
-          <div className="min-w-0 flex flex-col gap-2">
+        <div className="mt-5 flex flex-col gap-2">
+          <div className="flex items-center gap-3">
             <SettingsLabel searchId="maxResults">{tr('settings.maxResults')}</SettingsLabel>
-            <SettingsHint>{tr('settings.maxResultsHint')}</SettingsHint>
-          </div>
-          <div className="shrink-0">
             <Select
               testid="settings-max-results"
               label={tr('settings.maxResults')}
@@ -131,6 +123,7 @@ export function SearchTab({
               }))}
             />
           </div>
+          <SettingsHint>{tr('settings.maxResultsHint')}</SettingsHint>
         </div>
       </SettingsSection>
 

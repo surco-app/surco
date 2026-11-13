@@ -1,7 +1,7 @@
 // Walks the built app through every settings tab and every editor section, in each UI
 // language and at the smallest and a large window, and measures the layout faults a DJ
-// notices at a glance: an option row split over two lines, a checkbox off its label's
-// first line, text cut with no ellipsis, a button label that wraps, a control spilling
+// notices at a glance: two settings stacked with no gap, an option row split over two
+// lines, a checkbox off its label's first line, text cut with no ellipsis, a button label that wraps, a control spilling
 // out of its panel, a sideways scrollbar, two controls on top of each other.
 //
 //   node ui-audit.mjs [audioFile]     # writes /tmp/surco-ui-audit.json + one screenshot
@@ -9,7 +9,7 @@
 //
 // Uses the app's own isolated profile (see SKILL.md); the language it changes is put back.
 
-import { copyFileSync, mkdirSync, writeFileSync } from 'node:fs'
+import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -22,33 +22,22 @@ const repoRoot = resolve(appDir, '../..')
 const electronPath = createRequire(resolve(repoRoot, 'index.js'))('electron')
 
 const LANGUAGES = ['es', 'en', 'de', 'fr', 'pt-BR']
-// Tabs that sit behind another tab's sidebar row, with the row that holds them.
-const ROW_OF = {
-  layout: 'editor',
-  fields: 'editor',
-  processing: 'conversion',
-  destination: 'naming',
-  stats: 'shortcuts',
-}
 const SIZES = [
   [1080, 620],
   [1440, 900],
 ]
-const TABS = [
-  'general',
-  'search',
-  'editor',
-  'layout',
-  'fields',
-  'artwork',
-  'cues',
-  'conversion',
-  'processing',
-  'naming',
-  'destination',
-  'shortcuts',
-  'stats',
-]
+const { TABS, ROW_OF } = (() => {
+  const source = readFileSync(resolve(appDir, 'src/renderer/src/lib/settingsTabs.ts'), 'utf8')
+  const tabs = []
+  const rowOf = {}
+  for (const [, args] of source.matchAll(/\bentry\(([^)]*)\)/g)) {
+    const ids = [...args.matchAll(/'([a-z]+)'/g)].map((m) => m[1])
+    if (ids.length === 0) continue
+    tabs.push(...ids)
+    for (const id of ids.slice(1)) rowOf[id] = ids[0]
+  }
+  return { TABS: tabs, ROW_OF: rowOf }
+})()
 
 // Runs in the page. Returns one finding per fault, named by the nearest data-testid.
 const MEASURE = (scopeSelector) => {
@@ -143,6 +132,50 @@ const MEASURE = (scopeSelector) => {
       el.clientWidth > 0
     )
       add('sideways-scroll', el, `${el.scrollWidth}>${el.clientWidth}`)
+  }
+
+  const holdsControl = (el) =>
+    el.matches('button, input, select, textarea, [role="group"]') ||
+    !!el.querySelector('button, input, select, textarea, [role="group"]')
+  const ruled = (el) => {
+    const cs = getComputedStyle(el)
+    const side = (s) => Number.parseFloat(cs[`border${s}Width`]) > 0
+    return (side('Top') || side('Bottom')) && !side('Left')
+  }
+  const ink = (el) => {
+    const rects = []
+    for (const c of [el, ...el.querySelectorAll('button, input, select, textarea')])
+      if (c.matches('button, input, select, textarea') && visible(c)) rects.push(c.getBoundingClientRect())
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT)
+    for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+      if (!n.textContent.trim() || !visible(n.parentElement)) continue
+      const range = document.createRange()
+      range.selectNodeContents(n)
+      for (const r of range.getClientRects()) if (r.width > 0) rects.push(r)
+    }
+    if (rects.length === 0) return null
+    return {
+      top: Math.min(...rects.map((r) => r.top)),
+      bottom: Math.max(...rects.map((r) => r.bottom)),
+    }
+  }
+  for (const parent of scope.querySelectorAll('*')) {
+    const kids = [...parent.children].filter(
+      (k) => visible(k) && !k.matches('[role="tab"]') && !k.querySelector('[role="tab"]'),
+    )
+    for (let i = 1; i < kids.length; i++) {
+      const [x, y] = [kids[i - 1], kids[i]]
+      const a = x.getBoundingClientRect()
+      const b = y.getBoundingClientRect()
+      const stacked = b.top >= a.bottom - 1 && Math.min(a.right, b.right) - Math.max(a.left, b.left) > 20
+      if (!stacked || a.height > 160 || b.height > 160) continue
+      if (!holdsControl(x) || !holdsControl(y) || ruled(x) || ruled(y)) continue
+      if (b.left > a.left + 12) continue
+      const [p, q] = [ink(x), ink(y)]
+      if (!p || !q) continue
+      const gap = q.top - p.bottom
+      if (gap < 8) add('settings-touch', y, `${gap.toFixed(0)}px under ${where(x)}`)
+    }
   }
 
   const controls = [

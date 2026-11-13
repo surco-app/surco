@@ -737,6 +737,7 @@ describe('SettingsModal filename tokens', () => {
   // filename input teaches by clicking.
   it('inserts a token into the title format via its own ⋯ menu and previews it', () => {
     openNaming()
+    fireEvent.click(screen.getByTestId('settings-tab-editor'))
     fireEvent.click(screen.getByTestId('field-insert-settings-title-format'))
     fireEvent.click(screen.getByTestId('field-insert-option-trackNumber'))
     fireEvent.click(screen.getByTestId('field-insert-settings-title-format'))
