@@ -2081,8 +2081,7 @@
         "traktor": "Nur Hot Cues, in Blau, von A bis G. Traktor liest seine Sammlung beim Start, deshalb bittet Surco dich beim Speichern, es zu schließen.",
         "engine": "Nur Hot Cues. Engine DJ hat keine CALLs.",
         "serato": "Nur Hot Cues, von A bis H. Serato hat keine CALLs. Ist Serato geöffnet, speichert Surco sie, wenn du es schließt.",
-        "virtualdj": "Nur Hot Cues, von A bis H. VirtualDJ hat keine CALLs. Ist VirtualDJ geöffnet, speichert Surco sie, wenn du es schließt.",
-        "missing": "Surco findet {{program}} auf diesem Computer nicht"
+        "virtualdj": "Nur Hot Cues, von A bis H. VirtualDJ hat keine CALLs. Ist VirtualDJ geöffnet, speichert Surco sie, wenn du es schließt."
       }
     },
     "cueProfile": {

@@ -2081,8 +2081,7 @@
         "traktor": "Hot cues only, in blue, from A to G. Traktor reads its collection when it starts, so Surco will ask you to close it when you save.",
         "engine": "Hot cues only. Engine DJ has no CALLs.",
         "serato": "Hot cues only, from A to H. Serato has no CALLs. If Serato is open, Surco saves them when you close it.",
-        "virtualdj": "Hot cues only, from A to H. VirtualDJ has no CALLs. If VirtualDJ is open, Surco saves them when you close it.",
-        "missing": "Surco cannot find {{program}} on this computer"
+        "virtualdj": "Hot cues only, from A to H. VirtualDJ has no CALLs. If VirtualDJ is open, Surco saves them when you close it."
       }
     },
     "cueProfile": {
