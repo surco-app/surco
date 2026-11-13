@@ -3856,7 +3856,7 @@ export default function App(): React.JSX.Element {
                         listHovered.current = false
                         if (heldOrder.current.selected !== selectedId) setHeldRelease((n) => n + 1)
                       }}
-                      className={`min-h-0 flex-1 ${review !== null ? 'flex flex-col overflow-hidden' : 'overflow-y-auto'}`}
+                      className={`min-h-0 flex-1 pb-[var(--player-space,0px)] scroll-pb-[var(--player-space,0px)] ${review !== null ? 'flex flex-col overflow-hidden' : 'overflow-y-auto'}`}
                     >
                       {review !== null ? (
                         <MusicReviewColumn

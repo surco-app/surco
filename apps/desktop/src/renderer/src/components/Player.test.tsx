@@ -37,9 +37,13 @@ afterEach(() => {
 // Every render needs a QueryClient in context for the waveform's useQuery; a fresh
 // client per render keeps the cache from leaking between tests. The wrapper option
 // (not a wrapping element) is what makes rerender keep the provider in place.
-function renderUI(ui: React.ReactElement): ReturnType<typeof render> {
+function renderUI(
+  ui: React.ReactElement,
+  options: { container?: HTMLElement } = {},
+): ReturnType<typeof render> {
   const client = createQueryClient()
   return render(ui, {
+    ...options,
     wrapper: ({ children }) => (
       <QueryClientProvider client={client}>{children}</QueryClientProvider>
     ),
@@ -398,6 +402,33 @@ describe('Player', () => {
   it('reflects the current volume on the slider', () => {
     renderUI(<Player {...props({ volume: 0.4 })} />)
     expect(screen.getByTestId('player-volume-slider')).toHaveValue('0.4')
+  })
+
+  // The card floats over the foot of the track column, so without this the last tracks of
+  // the list would sit under it for good, unreachable by scrolling. It tells its column how
+  // much room to keep free below the list, and gives that room back when it goes.
+  it('reserves its own height plus its gaps at the foot of the column while open', () => {
+    let fire = (): void => {}
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(cb: () => void) {
+          fire = cb
+        }
+        observe(): void {
+          fire()
+        }
+        disconnect(): void {}
+      },
+    )
+    vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(151)
+    const column = document.createElement('div')
+    document.body.append(column)
+    const { unmount } = renderUI(<Player {...props()} />, { container: column })
+    expect(column.style.getPropertyValue('--player-space')).toBe('167px')
+    unmount()
+    expect(column.style.getPropertyValue('--player-space')).toBe('')
+    column.remove()
   })
 
   // Volume lives on the transport row, never over the wave. Auditioning a track means
