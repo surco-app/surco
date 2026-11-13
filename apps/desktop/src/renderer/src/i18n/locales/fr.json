@@ -1538,7 +1538,7 @@
       "destination": "Sortie",
       "programs": "Logiciels DJ",
       "naming": "Noms",
-      "editor": "Éditeur",
+      "editor": "Options",
       "layout": "Sections",
       "artwork": "Pochette",
       "fields": "Champs",
@@ -1830,7 +1830,10 @@
     "zeroPadTrack": "N° de piste avec zéro devant (03)",
     "fullReleaseDate": "Année avec date complète",
     "fullReleaseDateHint": "Affiche et enregistre 2020-12-01 au lieu de 2020 quand le fichier ou Discogs, Bandcamp, Deezer, Beatport ou MusicBrainz a la date entière.",
+    "editorQuickButtonsTitle": "Boutons rapides",
     "editorTagsTitle": "Tags",
+    "editorAnalysisTitle": "Analyse",
+    "editorKeyTitle": "Tonalité",
     "asciiFileNames": "Noms de fichier sans accents",
     "asciiFileNamesHint": "Écrit « Royksopp » au lieu de « Röyksopp ». Pratique pour chercher sur un NAS et pour les disques qui gèrent mal les accents.",
     "coverMaxSize": "Taille maximale de la pochette",
@@ -2115,6 +2118,9 @@
       "fromEditsHint": "Chaque morceau que tu enregistres dans l’éditeur s’ajoute à ce qui est appris, et Surco réapprend tout seul quand tu corriges. Avec un dossier de réglages synchronisé, il apprend aussi de tes autres Mac."
     },
     "searchSynonyms": {
+      "tabs": {
+        "editor": "éditeur"
+      },
       "mp3Quality": "débit, bitrate, kbps, CBR, VBR",
       "bitDepth": "bits, 16 bits, 24 bits",
       "sampleRate": "Hz, kHz, 44.1, 48, échantillonnage",

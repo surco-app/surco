@@ -1538,7 +1538,7 @@
       "destination": "出力",
       "programs": "DJソフト",
       "naming": "命名",
-      "editor": "エディタ",
+      "editor": "オプション",
       "layout": "セクション",
       "artwork": "アートワーク",
       "fields": "フィールド",
@@ -1830,7 +1830,10 @@
     "zeroPadTrack": "トラック番号をゼロ埋め（03）",
     "fullReleaseDate": "年を完全な日付で",
     "fullReleaseDateHint": "ファイルや Discogs、Bandcamp、Deezer、Beatport、MusicBrainz に完全な日付がある場合、2020 ではなく 2020-12-01 を表示・保存します。",
+    "editorQuickButtonsTitle": "クイックボタン",
     "editorTagsTitle": "タグ",
+    "editorAnalysisTitle": "分析",
+    "editorKeyTitle": "キー",
     "asciiFileNames": "アクセントなしのファイル名",
     "asciiFileNamesHint": "「Röyksopp」の代わりに「Royksopp」と書き込みます。NAS検索やアクセント付き名前で問題になるドライブに便利です。",
     "coverMaxSize": "最大アートワークサイズ",
@@ -2115,6 +2118,9 @@
       "fromEditsHint": "エディタで保存したトラックは学習内容に加わり、修正すると Surco が自動で学び直します。設定フォルダを同期していれば、ほかの Mac からも学びます。"
     },
     "searchSynonyms": {
+      "tabs": {
+        "editor": "エディタ"
+      },
       "mp3Quality": "ビットレート, bitrate, kbps, CBR, VBR",
       "bitDepth": "ビット, 16bit, 24bit",
       "sampleRate": "Hz, kHz, 44.1, 48, サンプリング",

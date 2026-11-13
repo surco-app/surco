@@ -1538,7 +1538,7 @@
       "destination": "Ausgabe",
       "programs": "DJ-Software",
       "naming": "Benennung",
-      "editor": "Editor",
+      "editor": "Optionen",
       "layout": "Abschnitte",
       "artwork": "Cover",
       "fields": "Felder",
@@ -1830,7 +1830,10 @@
     "zeroPadTrack": "Tracknummer mit führender Null (03)",
     "fullReleaseDate": "Jahr mit vollständigem Datum",
     "fullReleaseDateHint": "Zeigt und speichert 2020-12-01 statt 2020, wenn die Datei oder Discogs, Bandcamp, Deezer, Beatport oder MusicBrainz das ganze Datum hat.",
+    "editorQuickButtonsTitle": "Schnellbuttons",
     "editorTagsTitle": "Tags",
+    "editorAnalysisTitle": "Analyse",
+    "editorKeyTitle": "Tonart",
     "asciiFileNames": "Dateinamen ohne Akzente",
     "asciiFileNamesHint": "Schreibt „Royksopp“ statt „Röyksopp“. Praktisch für die Suche auf einem NAS und für Laufwerke, die mit Akzenten Probleme haben.",
     "coverMaxSize": "Maximale Covergröße",
@@ -2115,6 +2118,9 @@
       "fromEditsHint": "Jeder Track, den du im Editor speicherst, fließt ins Gelernte ein, und Surco lernt von selbst neu, wenn du korrigierst. Mit einem synchronisierten Einstellungsordner lernt es auch von deinen anderen Macs."
     },
     "searchSynonyms": {
+      "tabs": {
+        "editor": "Editor"
+      },
       "mp3Quality": "Bitrate, kbps, CBR, VBR",
       "bitDepth": "Bits, 16 Bit, 24 Bit, Bittiefe",
       "sampleRate": "Hz, kHz, 44.1, 48, Abtastrate",

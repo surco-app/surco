@@ -26,7 +26,7 @@ export function EditorTab({ synced, patch }: Props): React.JSX.Element {
   }
   return (
     <>
-      <SettingsSection first>
+      <SettingsSection first eyebrow={tr('settings.editorQuickButtonsTitle')}>
         <div className="flex flex-col gap-5">
           <SettingsField
             label={tr('settings.grouping')}
@@ -95,7 +95,7 @@ export function EditorTab({ synced, patch }: Props): React.JSX.Element {
         </SettingsGroup>
       </SettingsSection>
 
-      <SettingsSection>
+      <SettingsSection eyebrow={tr('settings.editorAnalysisTitle')}>
         <SettingsGroup>
           <div data-testid="settings-quality-analysis">
             <SettingsCheckboxField
@@ -139,6 +139,11 @@ export function EditorTab({ synced, patch }: Props): React.JSX.Element {
             searchId="showEditorHints"
             hint={tr('settings.showEditorHintsHint')}
           />
+        </SettingsGroup>
+      </SettingsSection>
+
+      <SettingsSection eyebrow={tr('settings.editorKeyTitle')}>
+        <SettingsGroup>
           <SettingsField
             label={tr('settings.keyNotation')}
             hint={tr('settings.keyNotationHint')}
