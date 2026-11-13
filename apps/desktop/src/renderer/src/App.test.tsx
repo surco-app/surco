@@ -3054,6 +3054,47 @@ describe('App source playlists', () => {
     ])
   })
 
+  function openMusicPlaylist(paths: string[]): void {
+    setApi({
+      platform: 'darwin',
+      readTags: vi.fn().mockResolvedValue({ title: 'Bravo', artist: 'DJ' }),
+      loadAppleMusicPlaylists: vi
+        .fn<Api['loadAppleMusicPlaylists']>()
+        .mockResolvedValue([{ persistentId: 'p1', name: 'Friday', count: paths.length }]),
+      loadAppleMusicPlaylistTracks: vi
+        .fn<Api['loadAppleMusicPlaylistTracks']>()
+        .mockResolvedValue({ paths, persistentIds: {}, meta: {}, missing: 0 }),
+    })
+  }
+
+  // Files chosen or dropped from a library view land in Tracks, not in the playlist on
+  // screen, so the panel beside a library playlist must not offer them; it says what to do
+  // there instead.
+  it('asks for a track, not for files, beside a library playlist with none open', async () => {
+    openMusicPlaylist(['/m/b.wav'])
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-appleMusic'))
+    fireEvent.click(await screen.findByTestId('source-node-p1'))
+    await screen.findByTestId('track-row')
+    expect(within(screen.getByRole('main')).queryByTestId('add-files')).toBeNull()
+    expect(screen.getByTestId('source-pick-track')).toHaveTextContent(i18n.t('sources.pickTrack'))
+    fireEvent.click(screen.getByTestId('source-pick-track'))
+    await act(async () => {})
+    expect(window.api.pickFiles).not.toHaveBeenCalled()
+  })
+
+  it('says the library playlist is empty instead of asking for a track it does not have', async () => {
+    openMusicPlaylist([])
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-appleMusic'))
+    fireEvent.click(await screen.findByTestId('source-node-p1'))
+    expect(await screen.findByTestId('source-empty-playlist')).toHaveTextContent(
+      i18n.t('sources.emptyPlaylist'),
+    )
+    expect(screen.queryByTestId('source-pick-track')).toBeNull()
+    expect(within(screen.getByRole('main')).queryByTestId('add-files')).toBeNull()
+  })
+
   describe('an Apple Music playlist’s covers', () => {
     const cover = { thumbUrl: 'thumb://own', width: 600, height: 600 }
     function musicPlaylist(appleMusicArtwork: Api['appleMusicArtwork']): void {
