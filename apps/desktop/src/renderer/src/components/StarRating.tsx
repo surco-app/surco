@@ -35,9 +35,10 @@ export function StarRating({
       : ['ArrowLeft', 'ArrowDown'].includes(e.key)
         ? -1
         : 0
-    const next = Math.min(5, Math.max(1, n + delta))
-    if (!delta || next === n) return
+    if (!delta) return
     e.preventDefault()
+    const next = stars === 0 && delta > 0 ? 1 : Math.min(5, Math.max(1, n + delta))
+    if (stars === 0 ? delta < 0 : next === n) return
     onChange(String(next))
     e.currentTarget.parentElement
       ?.querySelector<HTMLElement>(`[data-testid="star-${next}"]`)

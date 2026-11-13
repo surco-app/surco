@@ -116,11 +116,29 @@ describe('StarRating', () => {
     expect(onChange).not.toHaveBeenCalled()
   })
 
-  it('steps from the focused star when nothing is rated yet', () => {
+  it('keeps the arrow inside the stars at either end, so the track list behind never moves to another track', () => {
     const onChange = vi.fn()
-    render(<StarRating value="" onChange={onChange} />)
+    const { rerender } = render(<StarRating value="5" onChange={onChange} />)
+    expect(fireEvent.keyDown(screen.getByTestId('star-5'), { key: 'ArrowRight' })).toBe(false)
+    expect(fireEvent.keyDown(screen.getByTestId('star-5'), { key: 'ArrowUp' })).toBe(false)
+    rerender(<StarRating value="1" onChange={onChange} />)
+    expect(fireEvent.keyDown(screen.getByTestId('star-1'), { key: 'ArrowLeft' })).toBe(false)
+    expect(fireEvent.keyDown(screen.getByTestId('star-1'), { key: 'ArrowDown' })).toBe(false)
+    rerender(<StarRating value="" onChange={onChange} />)
+    expect(fireEvent.keyDown(screen.getByTestId('star-1'), { key: 'ArrowLeft' })).toBe(false)
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it('gives one star on the first step up from no rating, since the first star is the lowest rating there is', () => {
+    const onChange = vi.fn()
+    const { rerender } = render(<StarRating value="" onChange={onChange} />)
     fireEvent.keyDown(screen.getByTestId('star-1'), { key: 'ArrowRight' })
-    expect(onChange).toHaveBeenCalledWith('2')
+    expect(onChange).toHaveBeenLastCalledWith('1')
+    expect(screen.getByTestId('star-1')).toHaveFocus()
+    onChange.mockClear()
+    rerender(<StarRating value="" onChange={onChange} />)
+    fireEvent.keyDown(screen.getByTestId('star-1'), { key: 'ArrowUp' })
+    expect(onChange).toHaveBeenLastCalledWith('1')
   })
 
   it('still clears the rating when the current star is clicked', () => {
