@@ -6344,6 +6344,54 @@ describe('App multi-select convert', () => {
     await waitFor(() => expect(screen.queryByTestId('batch-run')).toBeNull())
   })
 
+  it('keeps keyboard focus on screen when the batch ends under the empty editor while its Cancel had it', async () => {
+    const { processTrack, cancelJob } = hangingConvert()
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      processTrack,
+      cancelJob,
+    })
+    await renderApp()
+    await addTwoTracks()
+    runMenu('select-all')
+    runMenu('select-all')
+    await waitFor(() => expect(screen.queryByTestId('field-title')).toBeNull())
+    runMenu('process-all')
+    const cancel = await screen.findByTestId('batch-run-cancel')
+    expect(screen.queryByTestId('process-btn')).toBeNull()
+    cancel.focus()
+    fireEvent.click(cancel)
+    await waitFor(() => expect(screen.queryByTestId('batch-run')).toBeNull())
+    expect(document.activeElement).not.toBe(document.body)
+    expect(document.activeElement?.isConnected).toBe(true)
+  })
+
+  it('keeps keyboard focus on screen when the batch ends over Copias while its Cancel had it', async () => {
+    const { processTrack, cancelJob } = hangingConvert()
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      trashList: vi.fn().mockResolvedValue([]),
+      processTrack,
+      cancelJob,
+    })
+    await renderApp()
+    await addTwoTracks()
+    runMenu('process-all')
+    await waitFor(() => expect(processTrack).toHaveBeenCalled())
+    runMenu('backups')
+    await screen.findByTestId('copies-screen')
+    const cancel = screen.getByTestId('batch-run-cancel')
+    cancel.focus()
+    fireEvent.click(cancel)
+    await waitFor(() => expect(screen.queryByTestId('batch-run')).toBeNull())
+    expect(document.activeElement).not.toBe(document.body)
+    expect(screen.getByTestId('copies-screen').parentElement).toContainElement(
+      document.activeElement as HTMLElement,
+    )
+  })
+
   it('applies a format and destination picked by hand to the whole selection', async () => {
     const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/x', inPlace: false })
     setApi({

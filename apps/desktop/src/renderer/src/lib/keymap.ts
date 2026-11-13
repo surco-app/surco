@@ -96,7 +96,7 @@ export type Region = 'rail' | 'list' | 'editor'
 
 const REGIONS: Region[] = ['rail', 'list', 'editor']
 
-const FOCUSABLE = [
+export const FOCUSABLE = [
   'a[href]',
   'button:not([disabled])',
   'input:not([disabled])',

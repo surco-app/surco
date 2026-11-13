@@ -5,6 +5,7 @@ import {
   useCallback,
   useDeferredValue,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -188,7 +189,7 @@ import { missingRequiredOf, requiredFieldsOf } from './lib/fields'
 import { gridNote } from './lib/gridNote'
 import { pushImportNotice } from './lib/importNotices'
 import { mainErrorMessage } from './lib/ipcError'
-import { columnOf, cycleRegion, isTypingTarget, nextColumn } from './lib/keymap'
+import { columnOf, cycleRegion, FOCUSABLE, isTypingTarget, nextColumn } from './lib/keymap'
 import { lazyChunk, preloadLazyWhenIdle } from './lib/lazyChunk'
 import { librarySourceOf } from './lib/librarySource'
 import { listReviewSource } from './lib/listReviewSource'
@@ -2307,8 +2308,22 @@ export default function App(): React.JSX.Element {
   const tokenMissing =
     !!settings && !autoMatchAvailable(settings) && usableProviders(settings).includes('discogs')
   const canProcessAll = eligibleCount > 0 && !batching
+  const batchStripRef = useRef<HTMLDivElement>(null)
+  const batchStripRegion = useRef<HTMLElement | null>(null)
+  const prevBatching = useRef(batching)
+  if (prevBatching.current !== batching) {
+    prevBatching.current = batching
+    const strip = batchStripRef.current
+    batchStripRegion.current = strip?.contains(document.activeElement) ? strip.parentElement : null
+  }
+  useLayoutEffect(() => {
+    const region = batchStripRegion.current
+    if (!region) return
+    batchStripRegion.current = null
+    region.querySelector<HTMLElement>(FOCUSABLE.join(', '))?.focus()
+  })
   const batchStrip = (
-    <div className={FOOTER_BAR}>
+    <div ref={batchStripRef} className={FOOTER_BAR}>
       <BatchRun progress={batchProgress} onCancel={cancelBatch} />
     </div>
   )
