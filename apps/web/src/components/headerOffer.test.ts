@@ -36,12 +36,41 @@ function click(container: HTMLElement, testId: string) {
   return act(async () => el.click())
 }
 
+function pressEscape() {
+  return act(async () => {
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+  })
+}
+
 const offer = (container: HTMLElement) => container.querySelector('[data-testid="language-offer"]')
 
-describe('language offer and the language menu', () => {
+describe('language offer and Escape', () => {
+  it('lets Escape close the mobile menu without throwing away the offer the visitor never saw answered', async () => {
+    const container = await renderOfferedHeader()
+    await click(container, 'header-menu-toggle')
+    await pressEscape()
+    expect(localStorage.getItem('surco_lang')).toBeNull()
+    expect(offer(container)).not.toBeNull()
+  })
+
+  it('lets Escape close the language menu without silencing the offer for good', async () => {
+    const container = await renderOfferedHeader()
+    await click(container, 'language-menu-toggle')
+    await pressEscape()
+    expect(localStorage.getItem('surco_lang')).toBeNull()
+    expect(offer(container)).not.toBeNull()
+  })
+
   it('hides the offer while the language menu is open so its edges do not stick out around the menu', async () => {
     const container = await renderOfferedHeader()
     await click(container, 'language-menu-toggle')
+    expect(offer(container)).toBeNull()
+  })
+
+  it('still dismisses the offer with Escape when it is the thing on screen', async () => {
+    const container = await renderOfferedHeader()
+    await pressEscape()
+    expect(localStorage.getItem('surco_lang')).toBe('es')
     expect(offer(container)).toBeNull()
   })
 })

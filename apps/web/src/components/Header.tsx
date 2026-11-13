@@ -101,8 +101,10 @@ export default function Header({
     return () => window.removeEventListener('resize', place)
   }, [offered])
 
+  const offerShown = showOffer(offered, open, languageOpen)
+
   useEffect(() => {
-    if (!offered) return
+    if (!offerShown) return
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return
       dismissOffer()
@@ -110,7 +112,7 @@ export default function Header({
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [offered, dismissOffer])
+  }, [offerShown, dismissOffer])
 
   useEffect(() => {
     if (!open) return
@@ -267,7 +269,7 @@ export default function Header({
                 <path d="M6 9l6 6 6-6" />
               </svg>
             </button>
-            {offered && offerBox && showOffer(offered, open, languageOpen) && (
+            {offered && offerBox && offerShown && (
               <div
                 data-testid="language-offer"
                 lang={offered}
@@ -356,6 +358,7 @@ export default function Header({
           </a>
           <button
             type="button"
+            data-testid="header-menu-toggle"
             aria-label={open ? t('nav.closeMenu') : t('nav.openMenu')}
             aria-expanded={open}
             aria-controls="mobile-nav"
