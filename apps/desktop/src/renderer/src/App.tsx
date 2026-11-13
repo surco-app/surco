@@ -2307,6 +2307,11 @@ export default function App(): React.JSX.Element {
   const tokenMissing =
     !!settings && !autoMatchAvailable(settings) && usableProviders(settings).includes('discogs')
   const canProcessAll = eligibleCount > 0 && !batching
+  const batchStrip = (
+    <div className={FOOTER_BAR}>
+      <BatchRun progress={batchProgress} onCancel={cancelBatch} />
+    </div>
+  )
 
   // Effective key bindings (defaults + the user's overrides): the single source the
   // palette hints below and the keydown listener (via a ref, since it subscribes once)
@@ -3799,27 +3804,30 @@ export default function App(): React.JSX.Element {
                   )}
                 </div>
                 {copiesOpen && (
-                  <div className="min-w-0 flex-1">
-                    <Suspense fallback={null}>
-                      <CopiesScreen
-                        key={copiesOpen.key}
-                        programs={libraryCopies.programs}
-                        trash={{
-                          entries: trashEntries,
-                          ...(settings
-                            ? trashLimits(settings)
-                            : { retentionDays: TRASH_RETENTION_DAYS, maxBytes: TRASH_MAX_BYTES }),
-                          onRestore: (entry) => void onRestoreFromTrash(entry),
-                          onRemove: (entry) => void onRemoveFromTrash(entry),
-                          onEmpty: () => void onEmptyTrash(),
-                          onReveal: () => void window.api.trashReveal(),
-                          initialQuery: copiesOpen.query,
-                        }}
-                        openMusic={copiesOpen.openMusic}
-                        onRestore={(program, id) => window.api.restoreCopy(program, id)}
-                        onReveal={() => void window.api.revealBackups()}
-                      />
-                    </Suspense>
+                  <div className="flex min-w-0 flex-1 flex-col">
+                    <div className="min-h-0 flex-1">
+                      <Suspense fallback={null}>
+                        <CopiesScreen
+                          key={copiesOpen.key}
+                          programs={libraryCopies.programs}
+                          trash={{
+                            entries: trashEntries,
+                            ...(settings
+                              ? trashLimits(settings)
+                              : { retentionDays: TRASH_RETENTION_DAYS, maxBytes: TRASH_MAX_BYTES }),
+                            onRestore: (entry) => void onRestoreFromTrash(entry),
+                            onRemove: (entry) => void onRemoveFromTrash(entry),
+                            onEmpty: () => void onEmptyTrash(),
+                            onReveal: () => void window.api.trashReveal(),
+                            initialQuery: copiesOpen.query,
+                          }}
+                          openMusic={copiesOpen.openMusic}
+                          onRestore={(program, id) => window.api.restoreCopy(program, id)}
+                          onReveal={() => void window.api.revealBackups()}
+                        />
+                      </Suspense>
+                    </div>
+                    {batching && batchStrip}
                   </div>
                 )}
                 {/* Until there are rows the window is one screen: an empty column beside the
@@ -4246,11 +4254,7 @@ export default function App(): React.JSX.Element {
                         </button>
                       )}
                     </div>
-                    {batching && (review !== null || !selected) && (
-                      <div className={FOOTER_BAR}>
-                        <BatchRun progress={batchProgress} onCancel={cancelBatch} />
-                      </div>
-                    )}
+                    {batching && (review !== null || !selected) && batchStrip}
                   </main>
                 )}
               </div>

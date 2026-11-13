@@ -6319,6 +6319,27 @@ describe('App multi-select convert', () => {
     await waitFor(() => expect(screen.queryByTestId('batch-run')).toBeNull())
   })
 
+  it('keeps the running batch and its cancel on screen while Copias is open', async () => {
+    const { processTrack, cancelJob } = hangingConvert()
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      trashList: vi.fn().mockResolvedValue([]),
+      processTrack,
+      cancelJob,
+    })
+    await renderApp()
+    await addTwoTracks()
+    runMenu('process-all')
+    await waitFor(() => expect(processTrack).toHaveBeenCalled())
+    runMenu('backups')
+    await screen.findByTestId('copies-screen')
+    expect(screen.getByTestId('batch-run-progress')).toHaveTextContent('Converting… 0/2')
+    fireEvent.click(screen.getByTestId('batch-run-cancel'))
+    expect(cancelJob).toHaveBeenCalled()
+    await waitFor(() => expect(screen.queryByTestId('batch-run')).toBeNull())
+  })
+
   it('applies a format and destination picked by hand to the whole selection', async () => {
     const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/x', inPlace: false })
     setApi({
