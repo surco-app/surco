@@ -19,35 +19,33 @@ export function ArtworkTab({ synced, patch }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   return (
     <>
-      <SettingsSection first>
-        <SettingsField
-          label={tr('settings.coverMaxSize')}
-          htmlFor="settings-cover-max"
-          searchId="coverMaxSize"
-        >
-          <div className="flex items-center gap-2">
-            <input
-              id="settings-cover-max"
-              data-testid="settings-cover-max"
-              type="number"
-              min={0}
-              value={synced.coverMaxSize}
-              onChange={(e) => patch('coverMaxSize', e.target.value)}
-              // An invalid cap (blank, negative, garbage) used to save silently
-              // as the default; clamping on blur shows the figure in effect.
-              onBlur={() => {
-                const max = parseInt(synced.coverMaxSize, 10)
-                if (!Number.isFinite(max) || max < 0) patch('coverMaxSize', '1200')
-              }}
-              className="w-28 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
-            />
-            <span className="text-sm text-fg-dim">{tr('settings.coverMaxHint')}</span>
-          </div>
-        </SettingsField>
-      </SettingsSection>
-
-      <SettingsSection>
+      <SettingsSection first eyebrow={tr('settings.coverSizeTitle')}>
         <SettingsGroup>
+          <SettingsField
+            label={tr('settings.coverMaxSize')}
+            htmlFor="settings-cover-max"
+            hint={tr('settings.coverMaxSizeHint')}
+            searchId="coverMaxSize"
+          >
+            <div className="flex items-center gap-2">
+              <input
+                id="settings-cover-max"
+                data-testid="settings-cover-max"
+                type="number"
+                min={0}
+                value={synced.coverMaxSize}
+                onChange={(e) => patch('coverMaxSize', e.target.value)}
+                // An invalid cap (blank, negative, garbage) used to save silently
+                // as the default; clamping on blur shows the figure in effect.
+                onBlur={() => {
+                  const max = parseInt(synced.coverMaxSize, 10)
+                  if (!Number.isFinite(max) || max < 0) patch('coverMaxSize', '1200')
+                }}
+                className="w-28 rounded-lg border border-[var(--color-input-border)] bg-[var(--color-field)] px-3 py-2 text-sm outline-none focus:border-[var(--color-accent)]"
+              />
+              <span className="text-sm text-fg-dim">{tr('settings.coverMaxHint')}</span>
+            </div>
+          </SettingsField>
           <SettingsCheckboxField
             testid="settings-cover-upscale"
             checked={synced.coverUpscale}
@@ -63,26 +61,32 @@ export function ArtworkTab({ synced, patch }: Props): React.JSX.Element {
             searchId="coverSquare"
             hint={tr('settings.coverHint')}
           />
-          <SettingsCheckboxField
-            testid="settings-replace-lowres"
-            checked={synced.replaceLowResCover}
-            onChange={(v) => patch('replaceLowResCover', v)}
-            label={tr('settings.replaceLowRes')}
-            searchId="replaceLowRes"
-            hint={tr('settings.replaceLowResHint')}
-          />
-          {isMacOS() && (
-            <SettingsCheckboxField
-              testid="settings-flac-finder-covers"
-              checked={synced.flacFinderCovers}
-              onChange={(v) => patch('flacFinderCovers', v)}
-              label={tr('settings.flacFinderCovers')}
-              searchId="flacFinderCovers"
-              hint={tr('settings.flacFinderCoversHint')}
-            />
-          )}
         </SettingsGroup>
       </SettingsSection>
+
+      <SettingsSection eyebrow={tr('settings.coverOnApplyTitle')}>
+        <SettingsCheckboxField
+          testid="settings-replace-lowres"
+          checked={synced.replaceLowResCover}
+          onChange={(v) => patch('replaceLowResCover', v)}
+          label={tr('settings.replaceLowRes')}
+          searchId="replaceLowRes"
+          hint={tr('settings.replaceLowResHint')}
+        />
+      </SettingsSection>
+
+      {isMacOS() && (
+        <SettingsSection eyebrow={tr('settings.coverFinderTitle')}>
+          <SettingsCheckboxField
+            testid="settings-flac-finder-covers"
+            checked={synced.flacFinderCovers}
+            onChange={(v) => patch('flacFinderCovers', v)}
+            label={tr('settings.flacFinderCovers')}
+            searchId="flacFinderCovers"
+            hint={tr('settings.flacFinderCoversHint')}
+          />
+        </SettingsSection>
+      )}
     </>
   )
 }
