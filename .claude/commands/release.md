@@ -14,6 +14,7 @@ Work directly on `main` for this flow (the one exception to the worktree rule): 
 - The working tree must be clean and the current branch must be `main`. Run `git pull --ff-only origin main`. Abort on any failure.
 - Type-check exactly as CI does, from `apps/desktop`: `npx tsc --build`. Abort if it errors. This is NOT optional and NOT the same as `tsc --noEmit` — CI runs `tsc --build` (project references), which catches errors a `--noEmit` from a subdir misses, and `npm test` does not type-check at all. Releasing over a red `tsc --build` is exactly the failure this step exists to prevent.
 - Run the full test suite from the repo root (`npm test`). Abort if anything is red — never release over failing tests.
+- Run the memory load test on this tree's build (patch, minor and major; skip it for a beta): from `apps/desktop`, `PATH="$(git rev-parse --show-toplevel)/node_modules/.bin:$PATH" electron-vite build`, then `node .claude/skills/run-desktop/soak.mjs`. Abort on FAIL: the renderer's heap grows with every track on a big rekordbox list, which is how 1.34.1 crashed for a user with 13,245 rows open. It needs this Mac's rekordbox collection and, the first time, the NAS.
 
 ## 2. Compute the new version
 
