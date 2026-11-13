@@ -389,76 +389,42 @@ export const Toolbar = memo(function Toolbar({
   )
 })
 
-// Holds a ticking counter at the width of the widest value it can reach: an invisible copy
-// of that value sizes the cell and the live text sits over it, so gaining a digit doesn't
-// shove the rest of the right-pinned bar sideways.
-function SteadyWidth({
-  testid,
-  widest,
-  children,
-}: {
-  testid: string
-  widest: string
-  children: React.ReactNode
-}): React.JSX.Element {
-  return (
-    <span className="inline-grid tabular-nums">
-      <span data-testid={testid} aria-hidden="true" className="invisible col-start-1 row-start-1">
-        {widest}
-      </span>
-      <span className="col-start-1 row-start-1">{children}</span>
-    </span>
-  )
-}
-
 // The toolbar's trailing main action: labelled, tinted while it can run, and while it runs
 // the same button shows the count and cancels.
 export function PrimaryAction({
   testid,
   Icon,
   label,
-  labelWidest,
   running,
   runningLabel,
   cancelLabel,
   ready,
-  quiet = false,
-  hint,
-  note,
   onRun,
   onCancel,
 }: {
   testid: string
   Icon: LucideIcon
   label: string
-  // The label at its widest, for a label carrying a count that moves while it shows.
-  labelWidest?: string
   running: boolean
   runningLabel: React.ReactNode
   cancelLabel: string
   ready: boolean
-  quiet?: boolean
-  hint?: string
-  note?: string | null
   onRun: () => void
   onCancel?: () => void
 }): React.JSX.Element {
-  const described = note ? `${label} · ${note}` : label
   return (
     <button
       type="button"
       data-testid={testid}
       onClick={running ? onCancel : onRun}
       disabled={running ? !onCancel : !ready}
-      data-variant={quiet ? 'secondary' : 'primary'}
-      aria-label={running ? (onCancel ? cancelLabel : undefined) : described}
+      data-variant="primary"
+      aria-label={running ? (onCancel ? cancelLabel : undefined) : label}
       className={`press group relative flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-medium disabled:opacity-40 ${
         running
           ? 'text-[var(--color-accent)] hover:bg-[var(--color-hover)]'
           : ready
-            ? quiet
-              ? 'text-fg-muted hover:bg-[var(--color-hover)] hover:text-fg'
-              : 'bg-[var(--color-accent-soft)] text-fg hover:bg-[var(--color-row-selected)] hover:text-[var(--color-on-row-selected)]'
+            ? 'bg-[var(--color-accent-soft)] text-fg hover:bg-[var(--color-row-selected)] hover:text-[var(--color-on-row-selected)]'
             : 'text-fg-muted'
       }`}
     >
@@ -472,18 +438,10 @@ export function PrimaryAction({
       ) : (
         <>
           <Icon className="h-4 w-4" aria-hidden="true" />
-          {labelWidest ? (
-            <SteadyWidth testid={`${testid}-sizer`} widest={labelWidest}>
-              {label}
-            </SteadyWidth>
-          ) : (
-            label
-          )}
+          {label}
         </>
       )}
-      {(!running || onCancel) && (
-        <Tooltip label={running ? cancelLabel : described} hint={running ? undefined : hint} />
-      )}
+      {(!running || onCancel) && <Tooltip label={running ? cancelLabel : label} />}
     </button>
   )
 }
