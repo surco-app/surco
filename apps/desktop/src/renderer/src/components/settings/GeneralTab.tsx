@@ -8,6 +8,7 @@ import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchLocal, PatchSynced } from '../../lib/settingsTabs'
 import { SOURCE_READ } from '../../lib/sourcePrograms'
 import { SegmentedControl } from '../SegmentedControl'
+import { CheckboxRow } from './CheckboxRow'
 import {
   SettingsCheckboxField,
   SettingsField,
@@ -117,7 +118,7 @@ export function GeneralTab({
       <SettingsSection eyebrow={tr('settings.sourcesTitle')} searchId="sourcesTitle">
         <div className="flex flex-col gap-3">
           {SOURCES.filter((s) => s === 'appleMusic' || offeredHere(s)).map((source) => (
-            <SettingsCheckboxField
+            <CheckboxRow
               key={source}
               testid={`settings-source-${source}`}
               checked={!synced.hiddenSources.includes(source)}
@@ -130,7 +131,7 @@ export function GeneralTab({
                 )
               }
               label={tr(`settings.source.${source}`)}
-              hint={reason[source]}
+              note={reason[source]}
               disabled={unavailable[source]}
             />
           ))}
