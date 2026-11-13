@@ -972,10 +972,6 @@ export const Editor = memo(function Editor({
   // reason any more, so the field's amber dot and the button's own tooltip — which
   // names exactly what's missing — are what tell the user why. The tooltip reuses the
   // same phrasing the blocked-convert error would have shown.
-  // Several tracks read the gate the header's Convert reads (ready rows, missing fields,
-  // Serato rows, a mixed replace/add selection), so the plan down here and the count up
-  // there cannot disagree over one selection. A single track keeps its own check over the
-  // live form, which the gate cannot see.
   const multiGate = useMemo(
     () =>
       isMulti
@@ -984,9 +980,6 @@ export const Editor = memo(function Editor({
     [isMulti, selectedTracks, requiredFields, customFields, libraryIndex],
   )
   const leftOut = multiGate ? leftOutNote(multiGate, tr) : null
-  // The done menu's "Convert again" re-runs every selected track, done ones included, and
-  // a menu item cannot name what it would drop, so anything the re-run would leave out
-  // holds it back with the reason (the same words as the header's note).
   const againGate = useMemo(
     () =>
       isMulti

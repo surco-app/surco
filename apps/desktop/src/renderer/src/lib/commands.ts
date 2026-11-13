@@ -937,9 +937,6 @@ export function buildCommands(deps: CommandDeps): Command[] {
       title: tr('commands.processAll'),
       hint: hintFor('process-all'),
       enabled: batching ? true : canProcessAll,
-      // Convert the bulk scope: the multi-selection when one exists, else the visible
-      // rows — with a format filter on, never the hidden FLAC/WAV rows. In a library
-      // only the picked rows, the same scope the header button counts.
       run: () => {
         if (batching) cancelBatch()
         else

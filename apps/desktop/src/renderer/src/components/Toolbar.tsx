@@ -132,9 +132,6 @@ export const Toolbar = memo(function Toolbar({
       className="flex h-12 shrink-0 items-center justify-between border-b border-[var(--color-line)] pr-3 pl-24"
       style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
     >
-      {/* The sweeps' counters, spoken. Outside the buttons because a button flattens what
-          it holds into its own name (the cancel action), and always mounted, empty while
-          idle, because a live region born together with its text is often never read. */}
       <div role="status" className="sr-only">
         <span>
           {batching

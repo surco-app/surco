@@ -280,9 +280,6 @@ describe('Toolbar', () => {
     ])
   })
 
-  // The count has to reach a screen reader as one label; the digits alone are silent. And
-  // exactly once: this button replaced a separate progress pill that announced the same
-  // run, which would have read the count out twice.
   it('announces how far the run has got, once', () => {
     renderBar({ batching: true, batchProgress: { done: 12, total: 40 } })
     const name = i18n.t('header.convertingCount', { done: 12, total: 40 })

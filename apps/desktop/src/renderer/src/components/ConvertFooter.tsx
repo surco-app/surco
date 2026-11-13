@@ -65,9 +65,7 @@ interface ConvertFooterProps {
   item: TrackItem
   spectrum: SpectrumVerdict | undefined
   isMulti: boolean
-  // Size of the multi-selection, for the "Convert all (N)" label and the done counts.
   selectedCount: number
-  // How many of them the batch converts, for the plan's count, so it matches the header's.
   readyCount?: number
   // The footer's aggregate view of the selection (done block, reveal, Apple Music).
   status: SelectionStatus
@@ -84,8 +82,6 @@ interface ConvertFooterProps {
   // The same block said short enough for the main button's face (a count past two missing
   // fields), since the full reason can list every required field.
   incompleteSummary?: string
-  // What the batch leaves out of a multi-selection and why, in the header's own words; the
-  // plan shows it even while the rest converts.
   leftOut?: string
   onBlockedPress?: () => void
   willEditInPlace: boolean
