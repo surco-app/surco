@@ -39,7 +39,8 @@ export function recipeTranslator(lang) {
   const target = flat(appLocale(lang))
   return (field, enText, esText) => {
     let keys = Object.keys(en).filter((k) => en[k] === enText && es[k] === esText)
-    if (field === 'tab') keys = keys.filter((k) => k.startsWith('settings.tabs.'))
+    if (field === 'tab')
+      keys = keys.filter((k) => k.startsWith('settings.tabs.') || k.startsWith('settings.entries.'))
     const used = keys.filter((k) => settingsSource.includes(`'${k}'`))
     if (used.length) keys = used
     const out = [...new Set(keys.map((k) => target[k]))]

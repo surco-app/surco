@@ -90,7 +90,8 @@ const ROW_OF = {
 }
 
 async function capture(page, lang, c, group, index) {
-  const tabId = Object.entries(appLocale(lang).settings.tabs).find(([, v]) => v === group.tab)[0]
+  const { tabs, entries } = appLocale(lang).settings
+  const tabId = [...Object.entries(tabs), ...Object.entries(entries)].find(([, v]) => v === group.tab)[0]
   await page.click('[data-testid="open-settings"]')
   const row = ROW_OF[tabId]
   if (row) await page.click(`[data-testid="settings-tab-${row}"]`)
