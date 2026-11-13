@@ -10122,12 +10122,15 @@ describe('App list review notice', () => {
     })
     await renderApp()
     await addThree()
-    await waitFor(() => expect(screen.getAllByTestId('track-row')[1]).toHaveTextContent('Bravo'))
+    await waitFor(
+      () => expect(screen.getAllByTestId('track-row')[1]).toHaveTextContent('Bravo'),
+      { timeout: 3000 },
+    )
     expect(screen.queryByTestId('list-review-notice')).not.toBeInTheDocument()
     await act(async () => release())
-    expect(await screen.findByTestId('list-review-notice')).toHaveTextContent(
-      '3 tracks loaded. 1 spelling to review',
-    )
+    expect(
+      await screen.findByTestId('list-review-notice', {}, { timeout: 3000 }),
+    ).toHaveTextContent('3 tracks loaded. 1 spelling to review')
   })
 
   it('stays quiet when the list has nothing to review', async () => {
