@@ -29,7 +29,7 @@ try {
   await step(
     'auto2',
     async () => {
-      await page.waitForFunction(() => !document.querySelector('[data-testid="auto-match-progress"]'), null, {
+      await page.waitForFunction(() => !document.querySelector('[data-testid="sweep-icon-match"]'), null, {
         timeout: 120000,
         polling: 500,
       })

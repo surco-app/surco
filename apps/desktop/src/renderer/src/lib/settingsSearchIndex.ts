@@ -10,7 +10,10 @@ export interface SettingsSearchEntry {
 }
 
 const SETTINGS_IDS: [SettingsTab, string[]][] = [
-  ['general', ['theme', 'density', 'language', 'sourcesTitle', 'updates', 'betaUpdates']],
+  [
+    'general',
+    ['theme', 'density', 'language', 'sourcesTitle', 'updates', 'autoUpdates', 'betaUpdates'],
+  ],
   [
     'search',
     [

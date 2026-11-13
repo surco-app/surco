@@ -16,6 +16,7 @@ import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
 // before it renders.
 ;(window as unknown as { api: unknown }).api = {
   platform: 'darwin',
+  checkForUpdates: () => Promise.resolve(),
   dj: djReads({
     rekordbox: { available: () => Promise.resolve(true) },
     engine: { available: () => Promise.resolve(true) },
@@ -36,7 +37,7 @@ const synced = {
   language: 'system',
   hiddenSources: [],
 } as unknown as SyncedDraft
-const local = { betaUpdates: false } as unknown as LocalDraft
+const local = { betaUpdates: false, autoUpdates: true } as unknown as LocalDraft
 
 function renderTab(
   over: Partial<LocalDraft> = {},
@@ -162,6 +163,62 @@ describe('GeneralTab beta channel', () => {
     renderTab()
 
     expect(screen.getByTestId('settings-beta-updates')).toBeEnabled()
+  })
+})
+
+// Asked for by users who want to stay on the version they have for now.
+describe('GeneralTab automatic updates', () => {
+  it('shows whether this machine updates on its own', () => {
+    renderTab()
+    expect(screen.getByTestId('settings-auto-updates')).toBeChecked()
+    cleanup()
+
+    renderTab({ autoUpdates: false })
+    expect(screen.getByTestId('settings-auto-updates')).not.toBeChecked()
+  })
+
+  it('stages the switch', () => {
+    const patchLocal = renderTab()
+
+    fireEvent.click(screen.getByTestId('settings-auto-updates'))
+
+    expect(patchLocal).toHaveBeenCalledWith('autoUpdates', false)
+  })
+
+  // Turning it off does not lock the user out of updating; the hint has to name the
+  // check that still does it, or the box reads as a one-way door.
+  it('says how to update by hand once it is off', () => {
+    renderTab()
+
+    const hint = screen.getByText(i18n.t('settings.autoUpdatesHint'))
+    expect(hint.textContent).toContain('Check for Updates')
+  })
+
+  // Someone staying on a version has to find the way to update where the switch lives,
+  // not only in a menu; it must run the same check the menu item does.
+  it('checks for updates from the button', () => {
+    const check = vi.spyOn(window.api, 'checkForUpdates')
+    renderTab({ autoUpdates: false })
+
+    fireEvent.click(screen.getByTestId('settings-check-updates'))
+
+    expect(check).toHaveBeenCalledTimes(1)
+    check.mockRestore()
+  })
+
+  // The Store updates its copies itself; Surco cannot stop it, so the box must not pretend to.
+  it('stays visible but locked in a copy from the Microsoft Store', () => {
+    const api = window.api as unknown as { storeBuild?: boolean }
+    api.storeBuild = true
+    try {
+      renderTab()
+
+      expect(screen.getByTestId('settings-auto-updates')).toBeDisabled()
+      expect(screen.getByTestId('settings-check-updates')).toBeDisabled()
+      expect(screen.getByText(i18n.t('settings.autoUpdatesStoreHint'))).toBeInTheDocument()
+    } finally {
+      api.storeBuild = false
+    }
   })
 })
 

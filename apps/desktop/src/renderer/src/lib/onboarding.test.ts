@@ -85,6 +85,7 @@ const settings: Settings = {
   addToVirtualdj: false,
   syncVirtualdj: false,
   betaUpdates: false,
+  autoUpdates: true,
   traktorCueOffsetMs: 0,
   filenameFormat: '{artist} - {title}',
   titleFormat: '',

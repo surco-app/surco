@@ -223,6 +223,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     syncVirtualdj: false,
     virtualdjLibraryDir: '',
     betaUpdates: false,
+    autoUpdates: true,
     traktorCueOffsetMs: 0,
     filenameFormat: '{artist} - {title}',
     titleFormat: '',
@@ -2076,7 +2077,7 @@ describe('App quality triage', () => {
     await addTwoTracks()
     await waitFor(() => expect(screen.getAllByText('Song A').length).toBeGreaterThan(0))
     await waitFor(() => expect(spectrogram).toHaveBeenCalledWith('/music/a.wav', 'high'))
-    expect(screen.queryByTestId('analyze-progress')).toBeNull()
+    expect(screen.queryByTestId('sweep-icon-analyze')).toBeNull()
     expect(loudness).not.toHaveBeenCalled()
 
     releaseB()
@@ -2119,8 +2120,8 @@ describe('App quality triage', () => {
 
     releaseB()
     await waitFor(() => expect(screen.getAllByText('Song B').length).toBeGreaterThan(0))
-    await waitFor(() => expect(screen.queryByTestId('import-progress')).toBeNull())
-    expect(screen.queryByTestId('analyze-progress')).toBeNull()
+    await waitFor(() => expect(screen.queryByTestId('sweep-icon-import')).toBeNull())
+    expect(screen.queryByTestId('sweep-icon-analyze')).toBeNull()
     expect(loudness).not.toHaveBeenCalled()
   })
 })
@@ -2305,7 +2306,7 @@ describe('App auto-match', () => {
     await renderApp()
     await addTwoTracks()
     await waitFor(() => expect(screen.getAllByTestId('track-automatched')).toHaveLength(2))
-    await waitFor(() => expect(screen.queryByTestId('auto-match-progress')).toBeNull())
+    await waitFor(() => expect(screen.queryByTestId('sweep-icon-match')).toBeNull())
     await waitFor(() => expect(screen.getByTestId('field-album')).toHaveValue('Album'))
 
     fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
@@ -3508,7 +3509,7 @@ describe('App source playlists', () => {
         () => expect(analyzed).toEqual(expect.arrayContaining(playlists.a.map((e) => e.path))),
         { timeout: 4000 },
       )
-      await waitFor(() => expect(screen.queryByTestId('analyze-progress')).toBeNull())
+      await waitFor(() => expect(screen.queryByTestId('sweep-icon-analyze')).toBeNull())
     })
   })
 
@@ -4431,7 +4432,7 @@ describe('App source playlists', () => {
         scrollPast([rows[1], rows[2]])
 
         await waitFor(() => expect([...analyzed].sort()).toEqual(['/m/x.wav', '/m/y.wav']))
-        await waitFor(() => expect(screen.queryByTestId('analyze-progress')).toBeNull())
+        await waitFor(() => expect(screen.queryByTestId('sweep-icon-analyze')).toBeNull())
         expect([...analyzed].sort()).toEqual(['/m/x.wav', '/m/y.wav'])
       })
 
@@ -4459,7 +4460,7 @@ describe('App source playlists', () => {
         vi.useRealTimers()
 
         await waitFor(() => expect(analyzed).toEqual(['/m/y.wav']))
-        await waitFor(() => expect(screen.queryByTestId('analyze-progress')).toBeNull())
+        await waitFor(() => expect(screen.queryByTestId('sweep-icon-analyze')).toBeNull())
         expect(analyzed).toEqual(['/m/y.wav'])
       })
     })
@@ -4935,12 +4936,15 @@ describe('App import skeleton', () => {
     fireEvent.click(await screen.findByTestId('add-files'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
     // Reads are still gated → none of the two have resolved yet.
-    expect(screen.getByTestId('import-progress')).toHaveTextContent('0/2')
+    expect(screen.getByTestId('sweep-icon-import')).toBeInTheDocument()
+    expect(screen.getByTestId('sweeps-percent')).toHaveTextContent(
+      new Intl.NumberFormat(i18n.language, { style: 'percent' }).format(0),
+    )
     // Once both land, the counter clears.
     await act(async () => {
       releaseTags()
     })
-    await waitFor(() => expect(screen.queryByTestId('import-progress')).toBeNull())
+    await waitFor(() => expect(screen.queryByTestId('sweep-icon-import')).toBeNull())
   })
 
   // The native file dialog can stay open for a long time; a file that arrives through
@@ -5692,7 +5696,7 @@ describe('App background measuring', () => {
     measureGrid.mockImplementation(() => new Promise(() => {}))
     await openFactory()
     fireEvent.click(screen.getByTestId('analyze-quality'))
-    await waitFor(() => expect(screen.queryByTestId('analyze-progress')).toBeNull())
+    await waitFor(() => expect(screen.queryByTestId('sweep-icon-analyze')).toBeNull())
     expect(measureGrid).toHaveBeenCalled()
     expect(screen.getByTestId('analyze-quality')).not.toBeDisabled()
     expect(screen.getByTestId('analyze-quality')).not.toHaveAccessibleName(

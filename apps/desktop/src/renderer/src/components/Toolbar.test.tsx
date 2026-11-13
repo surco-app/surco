@@ -4,9 +4,21 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import type React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../i18n'
+import { formatCount } from '../lib/stats'
 import { Toolbar } from './Toolbar'
 
 afterEach(cleanup)
+
+function count(done: number, total: number): string {
+  return i18n.t('header.sweepCount', {
+    done: formatCount(done, i18n.language),
+    total: formatCount(total, i18n.language),
+  })
+}
+
+function said(labelKey: string, done: number, total: number): string {
+  return `${i18n.t(labelKey)} · ${count(done, total)}`
+}
 
 type Props = React.ComponentProps<typeof Toolbar>
 
@@ -105,7 +117,6 @@ describe('Toolbar', () => {
     cleanup()
 
     const running = renderBar({ analysis: { done: 2, total: 10 } })
-    expect(screen.getByTestId('analyze-progress')).toHaveTextContent('2/10')
     fireEvent.click(screen.getByTestId('analyze-quality'))
     expect(running.onCancelAnalyze).toHaveBeenCalledOnce()
     expect(running.onAnalyzeAll).not.toHaveBeenCalled()
@@ -186,7 +197,7 @@ describe('Toolbar', () => {
 
   it('says the quality sweep goes slower while a DJ program is open, so a count that ticks slowly is not taken for a hang', () => {
     renderBar({ analysis: { done: 0, total: 4 }, analysisSlowed: true })
-    const slowed = i18n.t('header.analyzingSlowed', { done: 0, total: 4 })
+    const slowed = said('header.sweepAnalyzeSlowed', 0, 4)
     expect(screen.getByRole('status').textContent).toBe(slowed)
     expect(screen.getByTestId('analyze-slowed')).toBeInTheDocument()
     fireEvent.focus(screen.getByTestId('analyze-quality'))
@@ -197,17 +208,13 @@ describe('Toolbar', () => {
     renderBar({ analysis: { done: 1, total: 4 }, analysisSlowed: false })
     expect(screen.queryByTestId('analyze-slowed')).toBeNull()
     fireEvent.focus(screen.getByTestId('analyze-quality'))
-    expect(screen.getByRole('tooltip')).toHaveTextContent(
-      i18n.t('header.analyzingCount', { done: 1, total: 4 }),
-    )
+    expect(screen.getByRole('tooltip')).toHaveTextContent(said('header.sweepAnalyze', 1, 4))
   })
 
   it('tells the details pass apart from the quality pass, since its count starts over', () => {
     renderBar({ analysis: { done: 1, total: 4, stage: 'details' }, analysisSlowed: false })
     fireEvent.focus(screen.getByTestId('analyze-quality'))
-    expect(screen.getByRole('tooltip')).toHaveTextContent(
-      i18n.t('header.analyzingDetails', { done: 1, total: 4 }),
-    )
+    expect(screen.getByRole('tooltip')).toHaveTextContent(said('header.sweepAnalyzeDetails', 1, 4))
   })
 
   it('says why Match cannot run without a Discogs token and takes the user to add one', () => {
@@ -221,44 +228,65 @@ describe('Toolbar', () => {
     expect(props.onAutoMatch).not.toHaveBeenCalled()
   })
 
-  // A big drop used to be an opaque wait; the counter is the import's only progress
-  // surface, so it must reflect the exact done/total the library reports.
-  it('shows the metadata-read progress while importing', () => {
-    renderBar({ importing: { done: 212, total: 319 } })
-    expect(screen.getByTestId('import-progress')).toHaveTextContent('212/319')
-  })
-
-  // The bar is pinned to the trailing edge, so a counter gaining a digit (9 → 10, 999 →
-  // 1000) pushed every icon to its left sideways mid-run. Each counter holds the width of
-  // the widest value it can reach, so the bar stays still while the numbers tick.
-  it('reserves every counter the width of its final value so the bar holds still', () => {
-    renderBar({
-      importing: { done: 7, total: 1642 },
-      matching: { done: 3, total: 266 },
-      analysis: { done: 31, total: 200 },
-    })
-    expect(screen.getByTestId('import-progress-sizer')).toHaveTextContent(
-      i18n.t('header.importingCount', { done: 1642, total: 1642 }),
+  it('keeps the sweep buttons as words while they run, since a bare 118/1842 said nothing about what it counted', () => {
+    renderBar({ matching: { done: 1, total: 4 }, analysis: { done: 2, total: 10 } })
+    expect(screen.getByTestId('auto-match')).toHaveTextContent(i18n.t('header.autoMatchLabel'))
+    expect(screen.getByTestId('auto-match')).not.toHaveTextContent(/\d/)
+    expect(screen.getByTestId('analyze-quality')).toHaveTextContent(
+      i18n.t('header.analyzeQualityLabel'),
     )
-    expect(screen.getByTestId('auto-match-progress-sizer')).toHaveTextContent('266/266')
-    expect(screen.getByTestId('analyze-progress-sizer')).toHaveTextContent('200/200')
+    expect(screen.getByTestId('analyze-quality')).not.toHaveTextContent(/\d/)
   })
 
-  // Importing is the longest operation in the app — thousands of files on a NAS — and
-  // was the only sweep with no way out: the other three pills cancel on click and this
-  // one was an inert span, so a wrong folder meant waiting it out.
-  it('cancels the import when its pill is clicked', () => {
-    const props = renderBar({ importing: { done: 212, total: 319 } })
-    fireEvent.click(screen.getByTestId('import-progress'))
+  it('gathers every running sweep in one pill that shows how far the leading one is', () => {
+    renderBar()
+    expect(screen.queryByTestId('sweeps-pill')).toBeNull()
+    cleanup()
+    renderBar({ importing: { done: 1842, total: 5303 }, matching: { done: 118, total: 1842 } })
+    const pill = screen.getByTestId('sweeps-pill')
+    expect(within(pill).getByTestId('sweep-icon-import')).toBeInTheDocument()
+    expect(within(pill).getByTestId('sweep-icon-match')).toBeInTheDocument()
+    expect(within(pill).queryByTestId('sweep-icon-analyze')).toBeNull()
+    expect(within(pill).getByTestId('sweeps-percent')).toHaveTextContent(
+      new Intl.NumberFormat(i18n.language, { style: 'percent' }).format(1842 / 5303),
+    )
+  })
+
+  it('opens one row per sweep with its count in words against a total that does not move', () => {
+    renderBar({ importing: { done: 1842, total: 5303 }, matching: { done: 118, total: 1842 } })
+    expect(screen.queryByTestId('sweeps-menu')).toBeNull()
+    fireEvent.click(screen.getByTestId('sweeps-pill'))
+    expect(screen.getByTestId('sweep-import')).toHaveTextContent(i18n.t('header.sweepImport'))
+    expect(screen.getByTestId('sweep-import')).toHaveTextContent(count(1842, 5303))
+    expect(screen.getByTestId('sweep-match')).toHaveTextContent(i18n.t('header.sweepMatch'))
+    expect(screen.getByTestId('sweep-match')).toHaveTextContent(count(118, 5303))
+    expect(screen.getByTestId('sweep-match')).toHaveTextContent(
+      i18n.t('header.sweepWaiting', { count: 1724, formatted: formatCount(1724, i18n.language) }),
+    )
+  })
+
+  it('stops each sweep from its own row', () => {
+    const props = renderBar({
+      importing: { done: 5, total: 9 },
+      analysis: { done: 2, total: 10 },
+      matching: { done: 1, total: 4 },
+    })
+    fireEvent.click(screen.getByTestId('sweeps-pill'))
+    fireEvent.click(screen.getByTestId('sweep-import-stop'))
     expect(props.onCancelImport).toHaveBeenCalledOnce()
+    fireEvent.click(screen.getByTestId('sweep-analyze-stop'))
+    expect(props.onCancelAnalyze).toHaveBeenCalledOnce()
+    fireEvent.click(screen.getByTestId('sweep-match-stop'))
+    expect(props.onCancelAutoMatch).toHaveBeenCalledOnce()
   })
 
-  // The counters were visible-only: without sight, a 500-track run is silence between the
-  // click and the final toast. Each sweep speaks its count through a status region. The
-  // region sits outside the buttons (a button flattens what it holds into its own name,
-  // which here is the cancel action) and is mounted empty from the start: a live region
-  // born together with its text is often never announced. One region carries the four
-  // counters, so a reader walking the header meets one empty status, not four.
+  it('closes the sweeps menu with Escape', () => {
+    renderBar({ importing: { done: 5, total: 9 } })
+    fireEvent.click(screen.getByTestId('sweeps-pill'))
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(screen.queryByTestId('sweeps-menu')).toBeNull()
+  })
+
   it('announces every sweep through one persistent status region outside the buttons', () => {
     const region = (): HTMLElement => screen.getByRole('status')
     renderBar()
@@ -274,9 +302,9 @@ describe('Toolbar', () => {
     })
     expect([...region().children].map((r) => r.textContent)).toEqual([
       i18n.t('header.convertingCount', { done: 3, total: 12 }),
-      i18n.t('header.importingCount', { done: 5, total: 9 }),
-      i18n.t('header.autoMatchingCount', { done: 1, total: 4 }),
-      i18n.t('header.analyzingCount', { done: 2, total: 10 }),
+      said('header.sweepImport', 5, 9),
+      said('header.sweepAnalyze', 2, 10),
+      said('header.sweepMatch', 1, 8),
     ])
   })
 

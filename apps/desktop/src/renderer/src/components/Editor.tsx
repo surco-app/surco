@@ -1474,6 +1474,13 @@ export const Editor = memo(function Editor({
   // sentence spelled out there outgrew a narrow panel and ran under the toolbar. Once the
   // copies are measured, Compare goes to the numbers in Audio quality.
   const canCompareCopies = copyVerdict?.winner === 'b' && !isMulti && (showSpectrum || showLoudness)
+  const canRevealCopies =
+    !!copyVerdict && copyVerdict.winner !== 'tie' && !isMulti && (showSpectrum || showLoudness)
+  function revealCopyComparison(): void {
+    revealCopy.current = true
+    setSectionOpen('quality', true)
+    setCopyOpenFor(`${item.inputPath}\n${replacedCopyPath}`)
+  }
   const libraryCopyBetterNote = !isMulti && inLibrary === 'yes' && libraryCopyBetter && (
     <div
       data-testid="library-copy-better-note"
@@ -1495,11 +1502,7 @@ export const Editor = memo(function Editor({
         <button
           type="button"
           data-testid="library-copy-compare"
-          onClick={() => {
-            revealCopy.current = true
-            setSectionOpen('quality', true)
-            setCopyOpenFor(`${item.inputPath}\n${replacedCopyPath}`)
-          }}
+          onClick={revealCopyComparison}
           className="press shrink-0 rounded font-medium text-[var(--color-warn)] hover:underline"
         >
           {tr('editor.libraryCopyCompare')}
@@ -1628,7 +1631,20 @@ export const Editor = memo(function Editor({
                 : undefined
             }
             summaryTestId="form-summary"
-            status={hasLibraryMarks ? libraryMarks : undefined}
+            status={hasLibraryMarks && !canRevealCopies ? libraryMarks : undefined}
+            statusAction={
+              hasLibraryMarks && canRevealCopies ? (
+                <button
+                  type="button"
+                  data-testid="apple-music-status-link"
+                  onClick={revealCopyComparison}
+                  className="press -mx-1.5 -my-0.5 flex shrink-0 items-center gap-1 rounded px-1.5 py-0.5 transition-colors hover:bg-[var(--color-hover)]"
+                >
+                  {libraryMarks}
+                  <ChevronRight className="h-3 w-3 text-fg-faint" aria-hidden="true" />
+                </button>
+              ) : undefined
+            }
             right={
               // Fill and Clear stay in the header with their names; every other glyph that
               // used to ride this line waits in the menu, which closes the row. Clear is set

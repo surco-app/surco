@@ -12,3 +12,11 @@ export function armUpdateRecheck(
   const handle = setInterval(check, intervalMs)
   return () => clearInterval(handle)
 }
+
+// Wraps a background check so it only runs while the user lets Surco update itself.
+// Reads the setting on every call, so switching it off stops the very next re-check.
+export function onlyWhenAutoUpdates(enabled: () => boolean, check: () => void): () => void {
+  return () => {
+    if (enabled()) check()
+  }
+}
