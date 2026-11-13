@@ -1309,6 +1309,20 @@ button:hover > .process-fill {
   transition-duration: var(--duration-state);
 }
 
+.player-fade {
+  transition: opacity var(--duration-state) var(--ease-standard);
+}
+
+.player-fade[data-leaving] {
+  opacity: 0;
+}
+
+@starting-style {
+  .player-fade {
+    opacity: 0;
+  }
+}
+
 @starting-style {
   .player-card {
     transform: translateY(calc(100% + 0.75rem));
