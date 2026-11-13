@@ -19,9 +19,15 @@ export default function HeroApp({ video }: { video?: boolean }) {
   const togglePause = () => {
     const el = ref.current
     if (!el) return
-    if (paused) el.play()
-    else el.pause()
-    setPaused(!paused)
+    if (!paused) {
+      el.pause()
+      setPaused(true)
+      return
+    }
+    el.play().then(
+      () => setPaused(false),
+      () => setPaused(true),
+    )
   }
 
   useEffect(() => {
