@@ -268,7 +268,7 @@ import { registerTrashIpc } from './trashIpc'
 import { wireUpdateDelivery } from './updateDelivery'
 import { classifyUpdateError, isFeedStillUploading, summarizeUpdateError } from './updateErrors'
 import { updateMode } from './updateMode'
-import { armUpdateRecheck } from './updateRecheck'
+import { armUpdateRecheck, onlyWhenAutoUpdates } from './updateRecheck'
 import { createUpdateRetry } from './updateRetry'
 import { registerUsbExportIpc } from './usbExportIpc'
 import { WINDOWS_DRIVES } from './usbVolumes'
@@ -2612,6 +2612,9 @@ app.whenReady().then(() => {
     // startup rather than per check: switching channels takes effect on the next launch,
     // which keeps a mid-session toggle from swapping the feed under a download in flight.
     updater.allowPrerelease = getSettings().betaUpdates
+    // With automatic updates off, a version fetched through the menu's manual check only
+    // goes in through the toast's restart button, never silently on quit.
+    updater.autoInstallOnAppQuit = getSettings().autoUpdates
     // Never capture `win` here: on macOS ⌘W destroys the window while the app and
     // the updater keep running, so anything bound to the launch window would send
     // its events into a destroyed webContents after a Dock reopen.
@@ -2684,11 +2687,15 @@ app.whenReady().then(() => {
       if (checkInFlight) return
       reportFailure(err)
     })
-    runUpdateCheck()
+    const backgroundUpdateCheck = onlyWhenAutoUpdates(
+      () => getSettings().autoUpdates,
+      runUpdateCheck,
+    )
+    backgroundUpdateCheck()
     // The launch probe alone missed every patch: they ship within the hour of their
     // minor, after users have already relaunched, and a running instance never asked
     // again. Re-checking on an interval keeps a long-lived session in the loop.
-    armUpdateRecheck(runUpdateCheck)
+    armUpdateRecheck(backgroundUpdateCheck)
   }
 
   app.on('activate', () => {
