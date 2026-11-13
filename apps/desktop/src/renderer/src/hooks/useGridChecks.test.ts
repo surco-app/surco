@@ -97,6 +97,22 @@ describe('useGridChecks', () => {
     expect(result.current.checkOfContent('102')).toEqual(result.current.checkOf('t2'))
   })
 
+  it('keeps no wave from the tracks it measures, since judging a grid needs only its beats and a big list would hold thousands of them', async () => {
+    const wave = Array.from({ length: 1200 }, () => ({ h: 0.5, rgb: null }))
+    const { client, wrapper } = setup(
+      vi.fn<Api['cues']['trackCues']>(async (id) => ({ ...readOn(id, ANCHORS[id]), wave })),
+    )
+    const { result } = renderHook(() => useGridChecks(ENTRIES, true), { wrapper })
+    await waitFor(() => expect(result.current.done).toBe(3))
+    const kept = client
+      .getQueryCache()
+      .getAll()
+      .filter((q) => (q.state.data as TrackCues | null | undefined)?.wave)
+    expect(kept).toEqual([])
+    expect(needsFix(result.current.checkOf('t2'))).toBe(true)
+    expect(needsFix(result.current.checkOf('t1'))).toBe(false)
+  })
+
   it('walks a big list once while measuring it, so checking thousands of tracks stays linear', async () => {
     const { wrapper } = setup(vi.fn<Api['cues']['trackCues']>(async () => null))
     const size = 200

@@ -109,8 +109,17 @@ function checkOfContent(contentId: string): GridCheck | null | undefined {
   return check
 }
 
+const gridReadQuery = (contentId: string) => ({
+  queryKey: [...trackCuesQuery(contentId).queryKey, 'grid'],
+  queryFn: async (): Promise<TrackCues | null> => {
+    const read = await window.api.cues.trackCues(contentId)
+    return read && { ...read, wave: null }
+  },
+  staleTime: Number.POSITIVE_INFINITY,
+})
+
 async function measure(client: QueryClient, contentId: string): Promise<void> {
-  const read = await client.fetchQuery(trackCuesQuery(contentId)).catch(() => null)
+  const read = await client.fetchQuery(gridReadQuery(contentId)).catch(() => null)
   const queued = read ? await client.fetchQuery(queuedCuesQuery(contentId)) : null
   if (read?.analysed && !cueProgramOf(contentId).fixedGrid && !fits.has(contentId))
     fits.set(
