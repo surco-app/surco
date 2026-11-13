@@ -5380,7 +5380,18 @@ describe('Editor maximized section motion', () => {
         ? new DOMRect(512, 384, 256, 96)
         : new DOMRect(0, 0, 0, 0)
     })
+    clientArea(1024, 768)
   })
+  const clientArea = (width: number, height: number): void => {
+    vi.spyOn(Element.prototype, 'clientWidth', 'get').mockImplementation(function (this: Element) {
+      return this === document.documentElement ? width : 0
+    })
+    vi.spyOn(Element.prototype, 'clientHeight', 'get').mockImplementation(function (
+      this: Element,
+    ) {
+      return this === document.documentElement ? height : 0
+    })
+  }
   afterEach(() => {
     delete (HTMLElement.prototype as { animate?: unknown }).animate
     vi.restoreAllMocks()
@@ -5409,6 +5420,17 @@ describe('Editor maximized section motion', () => {
     expect(el).toBe(overlay)
     expect(frames).toEqual([SECTION_FRAME, FULL_FRAME])
     expect(options).toMatchObject({ duration: 240, easing: 'cubic-bezier(0.2, 0, 0, 1)' })
+  })
+
+  it('measures the area the overlay covers and not the window, so a classic Windows scrollbar does not throw the crop off', () => {
+    clientArea(1000, 750)
+    renderEditor({ id: 'a' })
+    maximizeTrim()
+    expect(animations[0].frames[0]).toEqual({
+      transform: 'translate(512px, 384px) scale(0.256)',
+      clipPath: 'inset(0px 0px 375px 0px)',
+      opacity: 0,
+    })
   })
 
   it('scales the text evenly and crops the rest, so nothing reads squashed on the way', () => {

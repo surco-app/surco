@@ -7,9 +7,10 @@ const EASE_STANDARD = 'cubic-bezier(0.2, 0, 0, 1)'
 const FULL: Keyframe = { transform: 'none', clipPath: 'inset(0px 0px 0px 0px)', opacity: 1 }
 
 function frameOf(rect: DOMRect): Keyframe {
-  const scale = Math.max(rect.width / window.innerWidth, rect.height / window.innerHeight)
-  const right = window.innerWidth - rect.width / scale
-  const bottom = window.innerHeight - rect.height / scale
+  const { clientWidth, clientHeight } = document.documentElement
+  const scale = Math.max(rect.width / clientWidth, rect.height / clientHeight)
+  const right = clientWidth - rect.width / scale
+  const bottom = clientHeight - rect.height / scale
   return {
     transform: `translate(${rect.left}px, ${rect.top}px) scale(${scale})`,
     clipPath: `inset(0px ${right}px ${bottom}px 0px)`,
