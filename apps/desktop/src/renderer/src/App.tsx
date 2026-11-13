@@ -4158,6 +4158,7 @@ export default function App(): React.JSX.Element {
                               onProcess={onProcessSelected}
                               onCancel={onCancelSelected}
                               onConvertSelection={onConvertAllTracks}
+                            convertHint={hintFor('process-all')}
                               batchRun={batching ? batchProgress : null}
                               onCancelBatch={cancelBatch}
                               onFormatChange={onFormatChange}

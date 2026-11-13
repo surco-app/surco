@@ -108,6 +108,7 @@ interface ConvertFooterProps {
   // it runs.
   onCancel?: () => void
   onConvertSelection?: () => void
+  convertHint?: string
   batchRun?: { done: number; total: number } | null
   onCancelBatch?: () => void
   onAddToAppleMusic?: () => void
@@ -169,6 +170,7 @@ export function ConvertFooter({
   onProcess,
   onCancel,
   onConvertSelection,
+  convertHint,
   batchRun,
   onCancelBatch,
   onAddToAppleMusic,
@@ -722,6 +724,7 @@ export function ConvertFooter({
                 count={readyCount ?? selectedCount}
                 total={selectedCount}
                 onConvert={onConvertSelection}
+                convertHint={convertHint}
                 format={format}
                 destination={destination}
                 destinations={destinations}

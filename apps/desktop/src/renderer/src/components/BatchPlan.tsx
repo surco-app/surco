@@ -5,6 +5,7 @@ import type { FormatSetting } from '../../../shared/types'
 import type { Destination } from '../lib/destination'
 import { FormatDestinationMenu } from './FormatDestinationMenu'
 import { useSplitMenu } from './SplitButton'
+import { Tooltip } from './Tooltip'
 
 export function BatchPlan({
   count,
@@ -17,6 +18,7 @@ export function BatchPlan({
   onSelectFormat,
   onSelectDestination,
   onConvert,
+  convertHint,
 }: {
   count: number
   total: number
@@ -28,10 +30,15 @@ export function BatchPlan({
   onSelectFormat: (format: FormatSetting) => void
   onSelectDestination: (destination: Destination) => void
   onConvert?: () => void
+  convertHint?: string
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const { open, setOpen, ref, toggleRef, menuRef, onMenuKeyDown } = useSplitMenu()
   const formatLabel = format === 'source' ? tr('settings.formats.source') : format.toUpperCase()
+  const convertLabel =
+    count < total
+      ? tr('header.convertSomeSelected', { ready: count, total })
+      : tr('header.convertSelected', { count })
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
@@ -95,11 +102,10 @@ export function BatchPlan({
         data-testid="batch-convert"
         onClick={onConvert}
         disabled={count === 0}
-        className="press w-full rounded-lg bg-[var(--color-accent)] py-2.5 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:pointer-events-none disabled:opacity-40"
+        className="press group relative w-full rounded-lg bg-[var(--color-accent)] py-2.5 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:pointer-events-none disabled:opacity-40"
       >
-        {count < total
-          ? tr('header.convertSomeSelected', { ready: count, total })
-          : tr('header.convertSelected', { count })}
+        {convertLabel}
+        <Tooltip label={convertLabel} hint={convertHint} />
       </button>
     </div>
   )

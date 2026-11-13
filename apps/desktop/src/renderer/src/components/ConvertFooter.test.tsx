@@ -1260,6 +1260,13 @@ describe('ConvertFooter convert of a selection', () => {
     )
   })
 
+  it('shows the convert-all shortcut on hover, as the toolbar button did', () => {
+    render(multi({ onConvertSelection: vi.fn(), convertHint: '⌘⇧⏎' }))
+    expect(hoverTooltip(screen.getByTestId('batch-convert'))).toBe(
+      `${i18n.t('header.convertSelected', { count: 3 })}⌘⇧⏎`,
+    )
+  })
+
   it('stays in place but greyed when nothing in the selection can be converted', () => {
     render(multi({ readyCount: 0, onConvertSelection: vi.fn() }))
     expect(screen.getByTestId('batch-convert')).toBeDisabled()

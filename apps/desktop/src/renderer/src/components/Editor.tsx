@@ -178,6 +178,7 @@ interface Props {
   // runs, so a long convert has the escape a batch always had. Single-only.
   onCancel?: () => void
   onConvertSelection?: () => void
+  convertHint?: string
   batchRun?: { done: number; total: number } | null
   onCancelBatch?: () => void
   // Reports the format chosen in the split-button menu so the keyboard convert
@@ -297,6 +298,7 @@ export const Editor = memo(function Editor({
   onProcess,
   onCancel,
   onConvertSelection,
+  convertHint,
   batchRun,
   onCancelBatch,
   onFormatChange,
@@ -2069,6 +2071,7 @@ export const Editor = memo(function Editor({
           // Single-only: passing it in multi would cancel just the primary track.
           onCancel={isMulti ? undefined : onCancel}
           onConvertSelection={onConvertSelection}
+          convertHint={convertHint}
           batchRun={batchRun}
           onCancelBatch={onCancelBatch}
           onAddToAppleMusic={isMulti ? onAddAllToAppleMusic : onAddToAppleMusic}
