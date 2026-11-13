@@ -1,6 +1,6 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { lazyChunk, preloadLazy } from './lazyChunk'
 
 const SOURCE = join(__dirname, '..')
@@ -40,6 +40,10 @@ describe('lazyChunk', () => {
 })
 
 describe('preloadLazyWhenIdle', () => {
+  beforeEach(() => {
+    vi.resetModules()
+  })
+
   afterEach(() => {
     vi.unstubAllGlobals()
     vi.useRealTimers()

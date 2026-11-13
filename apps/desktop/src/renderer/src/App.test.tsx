@@ -447,6 +447,7 @@ function setApi(over: Record<string, unknown> = {}): void {
 
 beforeEach(() => {
   setApi()
+  trackListRenders.shown = []
   // The editor section store is module-level and survives across tests; reset it so a
   // test that folds a section away doesn't leak that state into the next.
   resetEditorSections()
