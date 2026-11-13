@@ -4212,7 +4212,7 @@ export default function App(): React.JSX.Element {
                             />
                           </Suspense>
                         </ErrorBoundary>
-                      ) : browser.source && !browser.playlist ? (
+                      ) : browser.source ? (
                         <div className="flex h-full items-center justify-center p-8 text-center">
                           {/* The drag answers here as well as in the sidebar. The column is the
                           place the rows land once there are any, but on an empty screen this
@@ -4230,11 +4230,23 @@ export default function App(): React.JSX.Element {
                             thing to do there is pick a playlist, so that is all it says, and
                             a click there opens no file dialog. */}
                             <p
-                              data-testid="source-pick-playlist"
+                              data-testid={
+                                !browser.playlist
+                                  ? 'source-pick-playlist'
+                                  : browser.entries?.length === 0
+                                    ? 'source-empty-playlist'
+                                    : 'source-pick-track'
+                              }
                               className="empty-copy-in text-sm text-pretty text-fg-dim"
                               style={{ animationDelay: '0.10s' }}
                             >
-                              {tr('sources.pickPlaylist')}
+                              {tr(
+                                !browser.playlist
+                                  ? 'sources.pickPlaylist'
+                                  : browser.entries?.length === 0
+                                    ? 'sources.emptyPlaylist'
+                                    : 'sources.pickTrack',
+                              )}
                             </p>
                           </div>
                         </div>

@@ -2626,6 +2626,8 @@
     "empty": "No playlists.",
     "noMatch": "No playlist matches.",
     "pickPlaylist": "Pick a playlist to see its tracks",
+    "pickTrack": "Pick a track to see it here",
+    "emptyPlaylist": "This playlist is empty",
     "loadingPlaylist": "Reading the playlist…",
     "gone": {
       "appleMusic": "“{{name}}” is no longer in Music",
