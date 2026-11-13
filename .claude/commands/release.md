@@ -53,7 +53,7 @@ En un patch, salta este paso. En un minor o major es obligatorio, y va ANTES del
 
 ## 4. Release
 
-- Run `npm run release:patch`, `release:minor`, `release:major` or `release:beta` to match `$ARGUMENTS`. The script bumps `apps/desktop/package.json`, commits `Release vX.Y.Z`, creates the annotated tag and pushes main with tags, which triggers `.github/workflows/release.yml` (binaries publish to `surco-app/surco-releases`; the web deploys from the same push).
+- Run `SURCO_SKIP_SOAK=1 npm run release:patch`, `release:minor`, `release:major` or `release:beta` to match `$ARGUMENTS` (the memory load test already passed in the preflight on this same build; `release.sh` runs it itself when called without that variable). The script bumps `apps/desktop/package.json`, commits `Release vX.Y.Z`, creates the annotated tag and pushes main with tags, which triggers `.github/workflows/release.yml` (binaries publish to `surco-app/surco-releases`; the web deploys from the same push).
 
 ## 5. Report
 
