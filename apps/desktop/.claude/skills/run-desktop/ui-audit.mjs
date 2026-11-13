@@ -9,7 +9,7 @@
 //
 // Uses the app's own isolated profile (see SKILL.md); the language it changes is put back.
 
-import { copyFileSync, mkdirSync, writeFileSync } from 'node:fs'
+import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -22,33 +22,22 @@ const repoRoot = resolve(appDir, '../..')
 const electronPath = createRequire(resolve(repoRoot, 'index.js'))('electron')
 
 const LANGUAGES = ['es', 'en', 'de', 'fr', 'pt-BR']
-// Tabs that sit behind another tab's sidebar row, with the row that holds them.
-const ROW_OF = {
-  layout: 'editor',
-  fields: 'editor',
-  processing: 'conversion',
-  destination: 'naming',
-  stats: 'shortcuts',
-}
 const SIZES = [
   [1080, 620],
   [1440, 900],
 ]
-const TABS = [
-  'general',
-  'search',
-  'editor',
-  'layout',
-  'fields',
-  'artwork',
-  'cues',
-  'conversion',
-  'processing',
-  'naming',
-  'destination',
-  'shortcuts',
-  'stats',
-]
+const { TABS, ROW_OF } = (() => {
+  const source = readFileSync(resolve(appDir, 'src/renderer/src/lib/settingsTabs.ts'), 'utf8')
+  const tabs = []
+  const rowOf = {}
+  for (const [, args] of source.matchAll(/\bentry\(([^)]*)\)/g)) {
+    const ids = [...args.matchAll(/'([a-z]+)'/g)].map((m) => m[1])
+    if (ids.length === 0) continue
+    tabs.push(...ids)
+    for (const id of ids.slice(1)) rowOf[id] = ids[0]
+  }
+  return { TABS: tabs, ROW_OF: rowOf }
+})()
 
 // Runs in the page. Returns one finding per fault, named by the nearest data-testid.
 const MEASURE = (scopeSelector) => {
