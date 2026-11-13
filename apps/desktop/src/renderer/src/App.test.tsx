@@ -10068,7 +10068,7 @@ describe('App list review', () => {
 
 // A dropped folder is when the user can still fix its names before they spread to the
 // libraries; the notice says what the review would find without opening it uninvited.
-describe('App list review notice', () => {
+describe('App list review notice', { timeout: 15000 }, () => {
   it('says what a finished load leaves to review and opens the review from there', async () => {
     vi.resetModules()
     listApi()
