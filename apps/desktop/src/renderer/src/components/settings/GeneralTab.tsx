@@ -150,6 +150,15 @@ export function GeneralTab({
           hint={tr(isStoreBuild() ? 'settings.autoUpdatesStoreHint' : 'settings.autoUpdatesHint')}
           disabled={isStoreBuild()}
         />
+        <button
+          type="button"
+          data-testid="settings-check-updates"
+          onClick={() => void window.api.checkForUpdates()}
+          disabled={isStoreBuild()}
+          className="press self-start rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)] disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          {tr('settings.checkUpdates')}
+        </button>
         <SettingsCheckboxField
           testid="settings-beta-updates"
           checked={local.betaUpdates}
