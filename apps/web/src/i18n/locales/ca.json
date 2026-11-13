@@ -102,7 +102,7 @@
           },
           {
             "t": "Freqüència corregida",
-            "s": "Torna a 44,1 i a 16 bits el que estava inflat, i deixa intacte el que és genuí.",
+            "s": "Torna a 44,1 i a 16 bits el que estava farcit, i deixa intacte el que és genuí.",
             "d": "El mode «Corregit» reescriu a 44,1 només les pistes que s'han mesurat com a reescalades; el que és genuí i el que és dubtós surt intacte. I la profunditat «Corregit» desa com a 16 bits reals, sense pèrdues, l'àudio de 16 bits farcit fins a 24; «Igual que l'origen» conserva el contenidor tal com és."
           }
         ]
@@ -589,8 +589,8 @@
         "a": "Sí. A Configuració → Programes de DJ posa Engine DJ a «Actualitzar i afegir» i cada pista convertida es registra directament a la teva biblioteca d'Engine DJ (amb caràtula, puntuació i les playlists que triïs), a punt per sincronitzar amb els teus reproductors. També exporta col·leccions a rekordbox, Traktor i Serato."
       },
       {
-        "q": "El Windows diu «Windows ha protegit l'ordinador». És segur?",
-        "a": "Sí. És l'avís de SmartScreen per a apps noves encara sense signatura a Windows. Prem «Més informació» i després «Executa de totes maneres». A macOS, Surco està notaritzat per Apple i s'obre sense avisos."
+        "q": "El Windows diu «Windows ha protegit el PC». És segur?",
+        "a": "Sí. És l'avís de SmartScreen per a apps noves encara sense signatura a Windows. Prem «Més informació» i després «Executa igualment». A macOS, Surco està notaritzat per Apple i s'obre sense avisos."
       },
       {
         "q": "Quins formats admet?",
@@ -1379,7 +1379,7 @@
       "save": "Desar a rekordbox",
       "addCall": "+ CALL",
       "autoButton": "Marcar automàticament",
-      "ask": "Esclata aquí?",
+      "ask": "Trenca aquí?",
       "points": {
         "oneClick": {
           "title": "Un clic, no vuit",
@@ -1649,7 +1649,7 @@
           "how": "Surco llegeix l'arbre de cues que Traktor desa al FLAC i el torna a escriure on Traktor el busca en un AIFF."
         },
         {
-          "what": "Àudio de 24 bits inflat",
+          "what": "Àudio de 24 bits farcit",
           "result": "Es desa en 16 bits",
           "how": "Un FLAC de «24 bits» que en realitat en porta 16 es desa en 16 bits reals, sense pèrdua."
         }

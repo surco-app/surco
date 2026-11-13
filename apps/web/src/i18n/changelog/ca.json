@@ -1827,7 +1827,7 @@
         "in": "0.93.1"
       },
       {
-        "text": "Una pista que diu ser de 24 bits ja no es creu només per l'etiqueta. Surco escolta l'àudio i comprova si de debò els porta. Un 16 bits inflat a 24 es delata tot sol i surt marcat, i un 24 bits real es guanya la seva frase amb la mesura al davant.",
+        "text": "Una pista que diu ser de 24 bits ja no es creu només per l'etiqueta. Surco escolta l'àudio i comprova si de debò els porta. Un 16 bits farcit fins a 24 es delata tot sol i surt marcat, i un 24 bits real es guanya la seva frase amb la mesura al davant.",
         "in": "0.93.0"
       },
       {
