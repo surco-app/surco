@@ -353,6 +353,12 @@ describe('GeneralTab sources', () => {
     )
   })
 
+  it('leaves a library that is not on this machine unticked, since a ticked box says the sidebar shows it and it cannot', async () => {
+    renderSources({ platform: 'darwin', rekordbox: true, serato: false })
+    await waitFor(() => expect(screen.getByTestId('settings-source-serato')).toBeDisabled())
+    expect(screen.getByTestId('settings-source-serato')).not.toBeChecked()
+  })
+
   it('lets Serato be hidden on a machine that has a Serato library', async () => {
     renderSources({ platform: 'darwin', rekordbox: true, serato: true })
     await waitFor(() => expect(screen.getByTestId('settings-source-serato')).toBeEnabled())

@@ -121,7 +121,7 @@ export function GeneralTab({
             <CheckboxRow
               key={source}
               testid={`settings-source-${source}`}
-              checked={!synced.hiddenSources.includes(source)}
+              checked={!synced.hiddenSources.includes(source) && !reason[source]}
               onChange={(shown) =>
                 patch(
                   'hiddenSources',
