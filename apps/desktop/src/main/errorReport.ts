@@ -4,44 +4,49 @@
 // file name out of any path they quote — the directory tree identifies the person,
 // never the bug.
 
-const ROOT_PREFIX = /[\s(["'=:,;]/
-const LETTER = /[A-Za-z]/
+const NAME_CHAR = /[A-Za-z0-9._-]/
+const WHITESPACE = /\s/
 const SEPARATOR = /[/\\]/
+const SOFT_BREAK = /[,;:=([{"']/
 
-function isRootAt(line: string, i: number): number {
-  const before = i === 0 ? '' : line[i - 1]
-  const atBoundary = i === 0 || ROOT_PREFIX.test(before)
+function rootWidthAt(line: string, i: number): number {
   const c = line[i]
-  if (c === '/' && atBoundary && i + 1 < line.length && !/\s/.test(line[i + 1])) return 1
-  if (c === '\\' && line[i + 1] === '\\' && atBoundary) return 2
-  if (
-    LETTER.test(c) &&
-    (i === 0 || !/[A-Za-z0-9]/.test(before)) &&
-    line[i + 1] === ':' &&
-    SEPARATOR.test(line[i + 2] ?? '')
-  )
+  const before = i === 0 ? '' : line[i - 1]
+  const afterName = before !== '' && NAME_CHAR.test(before)
+  const next = line[i + 1] ?? ''
+  if (c === '/' && !afterName && before !== '/' && next !== '' && !WHITESPACE.test(next)) return 1
+  if (c === '~' && !afterName && next === '/' && !WHITESPACE.test(line[i + 2] ?? ' ')) return 2
+  if (c === '\\' && next === '\\' && !afterName) return 2
+  if (/[A-Za-z]/.test(c) && !afterName && next === ':' && SEPARATOR.test(line[i + 2] ?? ''))
     return 3
   return 0
 }
 
+function startsLine(line: string, i: number): boolean {
+  let j = i - 1
+  if (j >= 0 && !WHITESPACE.test(line[j])) return false
+  while (j >= 0 && WHITESPACE.test(line[j])) j--
+  return j < 0 || !SOFT_BREAK.test(line[j])
+}
+
 export function stripPaths(line: string): string {
-  const roots: number[] = []
+  const starts: number[] = []
   for (let i = 0; i < line.length; ) {
-    const width = isRootAt(line, i)
-    if (width) {
-      roots.push(i)
-      i += width
-    } else {
+    const width = rootWidthAt(line, i)
+    if (!width) {
       i++
+      continue
     }
+    if (starts.length === 0 || startsLine(line, i)) starts.push(i)
+    i += width
   }
   let out = ''
   let copied = 0
-  roots.forEach((root, index) => {
-    const end = index + 1 < roots.length ? roots[index + 1] : line.length
-    let lastSeparator = -1
-    for (let i = root; i < end; i++) if (SEPARATOR.test(line[i])) lastSeparator = i
-    out += line.slice(copied, root)
+  starts.forEach((start, index) => {
+    const end = index + 1 < starts.length ? starts[index + 1] : line.length
+    let lastSeparator = start
+    for (let i = start; i < end; i++) if (SEPARATOR.test(line[i])) lastSeparator = i
+    out += line.slice(copied, start)
     copied = lastSeparator + 1
   })
   return out + line.slice(copied)

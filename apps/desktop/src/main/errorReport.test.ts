@@ -74,6 +74,26 @@ describe('stripPaths', () => {
     expect(stripPaths('read /Users/ana/Música\u00a0Ana/x.wav')).toBe('read x.wav')
   })
 
+  it('reduces a folder whose name ends in a quote, apostrophe, colon or comma', () => {
+    expect(stripPaths('read /Users/ana/The "Album"/x.wav')).toBe('read x.wav')
+    expect(stripPaths("read /Users/ana/Rock 'n' 'Roll'/x.wav")).toBe('read x.wav')
+    expect(stripPaths('read /Users/ana/Hits 2024:/x.wav')).toBe('read x.wav')
+    expect(stripPaths('read /Users/ana/Best Of, /x.wav')).toBe('read x.wav')
+    expect(stripPaths('read /Users/ana/Disc_A:/x.wav')).toBe('read x.wav')
+  })
+
+  it('reduces a path that follows punctuation outside the usual prefixes', () => {
+    expect(stripPaths('path `/Users/ana/DJ Sets/x.wav`')).toBe('path `x.wav`')
+    expect(stripPaths('path </Users/ana/x.wav>')).toBe('path <x.wav>')
+    expect(stripPaths('path {/Users/ana/x.wav}')).toBe('path {x.wav}')
+    expect(stripPaths('a|/Users/ana/x.wav')).toBe('a|x.wav')
+    expect(stripPaths('x=>/Users/ana/x.wav')).toBe('x=>x.wav')
+  })
+
+  it('reduces a home-relative path', () => {
+    expect(stripPaths('read ~/Music/Ana/x.wav')).toBe('read x.wav')
+  })
+
   it('stays linear on a very long line', () => {
     const line = `/${'a/ '.repeat(17000)}`
     const started = performance.now()
