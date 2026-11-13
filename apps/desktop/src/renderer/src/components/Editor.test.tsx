@@ -4485,10 +4485,9 @@ describe('Editor Apple Music library badge', () => {
     expect(headerRow).toContainElement(screen.getByTestId('apple-music-status'))
   })
 
-  // A track already in the library offers to replace that copy, and whether that is worth it
-  // depends on what the copy is: an MP3 at 128 begs replacing, an AIFF may not. The badge
-  // names the copy's format so the decision doesn't need a trip to Music.
-  it('names the format of the library copy the track would replace', async () => {
+  // The mark beside Metadata only says the track is in the library. The copy's format
+  // belongs with the comparison that weighs it, so it is said once, not on both lines.
+  it('keeps the library copy format off the mark beside Metadata', async () => {
     setApi('darwin')
     const api = window.api as unknown as Record<string, unknown>
     api.appleMusicEntryLocation = vi.fn().mockResolvedValue('/Music/Strobe.mp3')
@@ -4496,9 +4495,9 @@ describe('Editor Apple Music library badge', () => {
     renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } }, 'wav', {
       libraryIndex: ownedWithId,
     })
-    await waitFor(() =>
-      expect(screen.getByTestId('apple-music-copy-format')).toHaveTextContent('MP3 320'),
-    )
+    await waitFor(() => expect(api.properties).toHaveBeenCalledWith('/Music/Strobe.mp3'))
+    expect(screen.getByTestId('apple-music-status')).toHaveTextContent('In Apple Music')
+    expect(screen.getByTestId('apple-music-status')).not.toHaveTextContent('MP3')
   })
 
   // The swap recipe promises a warning when the file in hand is worse than the library copy.
@@ -4529,7 +4528,6 @@ describe('Editor Apple Music library badge', () => {
       ),
     )
     expect(screen.getByTestId('apple-music-status')).toHaveAttribute('data-tone', 'warn')
-    expect(screen.queryByTestId('apple-music-copy-format')).toBeNull()
   })
 
   it('says nothing about quality when the file in hand is a real upgrade', async () => {
@@ -4549,9 +4547,6 @@ describe('Editor Apple Music library badge', () => {
       libraryIndex: ownedWithId,
       showSpectrum: true,
     })
-    await waitFor(() =>
-      expect(screen.getByTestId('apple-music-copy-format')).toHaveTextContent('MP3 320'),
-    )
     await waitFor(() => expect(api.spectrogram).toHaveBeenCalled())
     expect(screen.queryByTestId('library-copy-better-note')).toBeNull()
   })
@@ -4567,7 +4562,6 @@ describe('Editor Apple Music library badge', () => {
     })
     await waitFor(() => expect(api.appleMusicEntryLocation).toHaveBeenCalled())
     expect(screen.getByTestId('apple-music-status')).toHaveTextContent('In Apple Music')
-    expect(screen.queryByTestId('apple-music-copy-format')).toBeNull()
   })
 
   // Netzwerk, measured: the AIFF and the library's WAV are one master, and the WAV went
@@ -4663,6 +4657,25 @@ describe('Editor Apple Music library badge', () => {
 
   // The pill sat inside the header's fold button: a click on it folded Metadata, and a
   // button nested in a button is out of reach for the keyboard and a screen reader.
+  // Whether the swap is worth it depends on what the library copy is down to its depth and
+  // rate: a WAV 16/44.1 and a WAV 24/96 are not the same copy. The table that weighs the two
+  // copies is where that is read, so its heading names the copy in full.
+  it('names the library copy in full at the head of the comparison', async () => {
+    const { api } = renderWithLibraryCopy({ here: aifLoudness, library: wavLoudness })
+    api.properties = vi.fn(async (path: string) =>
+      path === '/Music/Strobe.wav'
+        ? { ...mp3Copy, container: 'wav', codec: 'pcm_s16le', bitDepth: 16, bitrateKbps: 1411 }
+        : null,
+    )
+    await waitFor(() =>
+      expect(screen.getByTestId('copy-verdict')).toHaveAttribute('data-state', 'here'),
+    )
+    fireEvent.click(screen.getByTestId('copy-verdict'))
+    expect(
+      await screen.findByRole('columnheader', { name: 'Apple Music · WAV 16/44.1' }),
+    ).toBeInTheDocument()
+  })
+
   // A track opened straight from the library's own folder is the library's copy: comparing
   // it with itself measures twice to say "same audio" about one file.
   it('shows no verdict when the file in hand is the library copy itself', async () => {

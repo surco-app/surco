@@ -1429,7 +1429,7 @@ export const Editor = memo(function Editor({
             here={hereFacts}
             library={libraryFacts}
             hereLabel={hereFacts.ext}
-            libraryLabel={libraryFacts.ext}
+            libraryLabel={replacedCopyFormat || libraryFacts.ext}
             glimpse={
               limitedRate ? (
                 <LimiterGlimpse
@@ -1525,9 +1525,6 @@ export const Editor = memo(function Editor({
           <span className="sr-only">
             {tr(librarySource === 'engineDj' ? 'editor.inLibraryEngine' : 'editor.inLibrary')}
           </span>
-          {replacedCopyFormat && !libraryCopyBetter && (
-            <span data-testid="apple-music-copy-format">· {replacedCopyFormat}</span>
-          )}
         </SectionPill>
       )}
     </>
