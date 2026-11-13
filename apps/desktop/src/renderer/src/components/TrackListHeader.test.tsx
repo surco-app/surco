@@ -69,6 +69,19 @@ const openMenu = (): HTMLElement => {
   return screen.getByRole('menu')
 }
 
+// Files added from a library view land in Tracks, not in the playlist on screen, so the
+// list there must not offer them; the Tracks tab keeps its button.
+describe('TrackListHeader add files', () => {
+  it('offers to add files only in Tracks, not beside a library playlist', () => {
+    renderHeader({ tab: 'rekordbox' })
+    expect(screen.queryByTestId('add-files')).toBeNull()
+    expect(screen.getByTestId('select-all')).toBeInTheDocument()
+    cleanup()
+    renderHeader({ tab: null })
+    expect(screen.getByTestId('add-files')).toBeInTheDocument()
+  })
+})
+
 describe('TrackListHeader actions row', () => {
   it('keeps the everyday actions one click away as icons and names the occasional list-wide ones in a ⋯ menu', () => {
     renderHeader()
