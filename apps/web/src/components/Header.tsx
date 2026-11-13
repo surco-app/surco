@@ -3,10 +3,12 @@ import { useTranslation } from 'react-i18next'
 import { LANGUAGE_NAMES, LANGUAGES, type Language } from '../i18n'
 import { isCondensed, showsHeaderDownload } from '../lib/header'
 import { HOME, PAGES, type Page } from '../lib/nav'
-import { offerPlacement } from '../lib/offerCard'
+import { offerPlacement, showOffer } from '../lib/offerCard'
 import { toggleTheme } from '../lib/theme'
 import { btnPrimary } from '../lib/ui'
 import { rememberLanguage, useAutoLanguage } from '../lib/useAutoLanguage'
+
+const FLOATING_SHADOW = 'shadow-[0_16px_40px_color-mix(in_srgb,var(--color-scrim)_60%,transparent)]'
 
 // `page` marks which standalone page renders the header; section links then
 // point back to the landing instead of to anchors that don't exist here.
@@ -265,7 +267,7 @@ export default function Header({
                 <path d="M6 9l6 6 6-6" />
               </svg>
             </button>
-            {offered && offerBox && (
+            {offered && offerBox && showOffer(offered, open) && (
               <div
                 data-testid="language-offer"
                 lang={offered}
@@ -274,7 +276,7 @@ export default function Header({
                   width: offerBox.width,
                   transformOrigin: `${offerBox.arrow}px 0`,
                 }}
-                className="language-offer absolute top-full z-50 mt-3 rounded-xl border border-line bg-surface2 p-4 text-sm text-muted shadow-[0_16px_40px_color-mix(in_srgb,var(--color-scrim)_60%,transparent)]"
+                className={`language-offer absolute top-full z-50 mt-3 rounded-xl border border-line bg-surface2 p-4 text-sm text-muted ${FLOATING_SHADOW}`}
               >
                 <span
                   aria-hidden="true"
@@ -304,7 +306,7 @@ export default function Header({
             )}
             <ul
               id="language-menu"
-              className={`absolute top-full right-0 z-50 mt-2 w-44 rounded-xl border border-line bg-surface2 p-1.5 shadow-[0_16px_40px_color-mix(in_srgb,var(--color-scrim)_60%,transparent)] origin-top-right transition-[opacity,scale,visibility] duration-150 ease-out ${
+              className={`absolute top-full right-0 z-50 mt-2 w-44 rounded-xl border border-line bg-surface2 p-1.5 ${FLOATING_SHADOW} origin-top-right transition-[opacity,scale,visibility] duration-150 ease-out ${
                 languageOpen ? 'opacity-100' : 'invisible scale-[0.97] opacity-0'
               }`}
             >

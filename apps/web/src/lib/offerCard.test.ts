@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { offerPlacement } from './offerCard'
+import { offerPlacement, showOffer } from './offerCard'
 
 describe('offerPlacement', () => {
   it('right-aligns the card to the language button on a wide screen', () => {
@@ -29,5 +29,19 @@ describe('offerPlacement', () => {
   it('keeps the arrow away from the card corners', () => {
     const p = offerPlacement({ left: 1420, right: 1440 }, 1440)
     expect(p.arrow).toBeLessThanOrEqual(p.width - 16)
+  })
+})
+
+describe('showOffer', () => {
+  it('shows nothing when no language is offered', () => {
+    expect(showOffer(null, false)).toBe(false)
+  })
+
+  it('shows the card for an offered language', () => {
+    expect(showOffer('en', false)).toBe(true)
+  })
+
+  it('steps aside while the mobile menu is open so it cannot cover the menu links', () => {
+    expect(showOffer('en', true)).toBe(false)
   })
 })

@@ -11,3 +11,7 @@ export function offerPlacement(
   const arrow = Math.max(MARGIN, Math.min(centre - left, width - MARGIN))
   return { left, width, arrow }
 }
+
+export function showOffer(offered: string | null, menuOpen: boolean): boolean {
+  return offered !== null && !menuOpen
+}

@@ -14,7 +14,7 @@ const sources = (readdirSync(root, { recursive: true }) as string[])
 // over the content. Here that is the language menu and its offer card, the popover in the replace scene and
 // the file being dragged into the drop scene. A ring or a glow with no offset is not depth.
 const FLOATING: Record<string, number> = {
-  'components/Header.tsx': 2,
+  'components/Header.tsx': 1,
   'components/scenes/ReplaceScene.tsx': 1,
 }
 
