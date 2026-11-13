@@ -19,6 +19,11 @@ bump="${1:?usage: release.sh <patch|minor|major|beta>}"
 npm run lint -w apps/desktop
 npm run lint -w apps/web
 
+if [ "$bump" != beta ] && [ "${SURCO_SKIP_SOAK:-}" != 1 ]; then
+  (cd apps/desktop && PATH="$(git rev-parse --show-toplevel)/node_modules/.bin:$PATH" electron-vite build)
+  node apps/desktop/.claude/skills/run-desktop/soak.mjs --tree "$(git rev-parse --show-toplevel)"
+fi
+
 # A beta rides the same tag/build pipeline as a stable release; what makes it a beta is
 # the -beta.N suffix, which release.yml reads to leave the release flagged as a
 # prerelease. electron-updater then hides it from everyone whose betaUpdates is off, so
