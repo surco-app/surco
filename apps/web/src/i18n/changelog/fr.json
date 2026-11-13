@@ -63,6 +63,26 @@
       {
         "text": "Une liste d’un logiciel DJ qui contient un morceau dont le fichier a disparu ne clignote plus. Les grandes bibliothèques sont aussi plus légères à parcourir, analyser et modifier.",
         "in": "1.34.1"
+      },
+      {
+        "text": "Surco ne se ferme plus quand tu travailles longtemps sur une très grande liste rekordbox. L’analyse en arrière-plan prenait de plus en plus de mémoire, et elle la libère maintenant dès qu’un morceau est terminé.",
+        "in": "1.34.2"
+      },
+      {
+        "text": "Désactive « Mettre à jour automatiquement » dans Réglages → Général → Mises à jour pour rester sur ta version. Cela ne concerne que cet ordinateur, et tu peux y rechercher les mises à jour quand tu veux.",
+        "in": "1.34.2"
+      },
+      {
+        "text": "La conversion tient maintenant dans un seul bouton en bas de l’éditeur. Pendant un lot, tu y vois la progression et tu peux l’annuler. Activité t’indique où est parti chaque fichier.",
+        "in": "1.34.2"
+      },
+      {
+        "text": "Appuie sur F6 pour passer des sources à la liste puis à l’éditeur. Tu peux aussi noter avec les étoiles grâce aux flèches du clavier.",
+        "in": "1.34.2"
+      },
+      {
+        "text": "Le thème clair a plus de contraste. La liste et l’éditeur se distinguent mieux, et le morceau sélectionné est rempli de bleu.",
+        "in": "1.34.2"
       }
     ]
   },

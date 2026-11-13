@@ -63,6 +63,26 @@
       {
         "text": "A DJ program list that holds a track whose file is gone no longer flickers. Big libraries also feel lighter to browse, analyse and edit.",
         "in": "1.34.1"
+      },
+      {
+        "text": "Surco no longer closes when you work for a while on a very large rekordbox list. The background analysis kept taking more memory, and now it lets go as soon as each track is done.",
+        "in": "1.34.2"
+      },
+      {
+        "text": "Turn off “Update automatically” in Settings → General → Updates to stay on your version. It only affects that computer, and you can check for updates from there whenever you like.",
+        "in": "1.34.2"
+      },
+      {
+        "text": "Converting now lives in one button at the foot of the editor. While a batch converts, you see its progress there and can cancel it. Activity tells you where each file went.",
+        "in": "1.34.2"
+      },
+      {
+        "text": "Press F6 to jump between the sources, the list and the editor. You can also rate the stars with the arrow keys.",
+        "in": "1.34.2"
+      },
+      {
+        "text": "The light theme has more contrast. The list and the editor stand apart better, and the selected track is filled in blue.",
+        "in": "1.34.2"
       }
     ]
   },

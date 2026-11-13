@@ -63,6 +63,26 @@
       {
         "text": "Una lista de un programa de DJ con una pista cuyo fichero ya no está deja de parpadear. Las bibliotecas grandes también van más ligeras al navegar, analizar y editar.",
         "in": "1.34.1"
+      },
+      {
+        "text": "Surco ya no se cierra cuando trabajas un buen rato con una lista de rekordbox muy grande. El análisis en segundo plano iba ocupando cada vez más memoria, y ahora la suelta en cuanto termina cada pista.",
+        "in": "1.34.2"
+      },
+      {
+        "text": "Desactiva «Actualizar automáticamente» en Ajustes → General → Actualizaciones para quedarte en tu versión. Solo afecta a ese equipo, y desde ahí también puedes buscar actualizaciones cuando quieras.",
+        "in": "1.34.2"
+      },
+      {
+        "text": "Convertir vive ahora en un solo botón al pie del editor. Mientras convierte un lote, ahí ves el progreso y puedes cancelarlo. Adónde ha ido cada fichero te lo cuenta Actividad.",
+        "in": "1.34.2"
+      },
+      {
+        "text": "Pulsa F6 para saltar entre las fuentes, la lista y el editor. Las estrellas también se puntúan con las flechas del teclado.",
+        "in": "1.34.2"
+      },
+      {
+        "text": "El tema claro tiene más contraste. La lista y el editor se distinguen mejor, y la pista seleccionada se rellena de azul.",
+        "in": "1.34.2"
       }
     ]
   },
