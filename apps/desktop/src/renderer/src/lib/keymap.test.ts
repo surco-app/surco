@@ -440,6 +440,16 @@ describe('cycleRegion', () => {
     expect(focusedTestId()).toBe('overlay-live')
   })
 
+  it('keeps the focus inside a maximized section on F6 and Shift+F6, since every region behind it is covered', () => {
+    document.body.innerHTML = `${page}<div data-testid="section-maximized-overlay"><button data-testid="overlay-live">y</button></div>`
+    const inside = document.querySelector('[data-testid="overlay-live"]') as HTMLElement
+    inside.focus()
+    cycleRegion(document.activeElement, 1)
+    expect(document.activeElement).toBe(inside)
+    cycleRegion(document.activeElement, -1)
+    expect(document.activeElement).toBe(inside)
+  })
+
   it('skips a region that is not on screen instead of dropping the focus', () => {
     document.body.innerHTML = page.replace(/<aside[\s\S]*<\/aside>/, '')
     ;(document.querySelector('[data-testid="source-rail-tracks"]') as HTMLElement).focus()

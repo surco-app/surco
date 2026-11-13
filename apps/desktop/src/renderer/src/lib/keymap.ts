@@ -129,6 +129,7 @@ export function nextRegion(current: Region | null, delta: 1 | -1): Region {
 }
 
 export function cycleRegion(from: Element | null, delta: 1 | -1): void {
+  if (from?.closest?.('[data-testid="section-maximized-overlay"]')) return
   let region = regionOf(from)
   for (let tries = 0; tries < REGIONS.length; tries++) {
     region = nextRegion(region, delta)
