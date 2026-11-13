@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
+import ca from './locales/ca.json'
 import de from './locales/de.json'
 import en from './locales/en.json'
 import es from './locales/es.json'
@@ -14,6 +15,7 @@ const TRANSLATIONS = [
   ['fr', fr],
   ['pt-BR', ptBR],
   ['ja', ja],
+  ['ca', ca],
 ] as const
 
 // Every visible string is keyed; a missing key silently falls back to the other
@@ -44,6 +46,7 @@ describe('locale parity', () => {
     ['fr', fr, 'fr_FR'],
     ['pt-BR', ptBR, 'pt_BR'],
     ['ja', ja, 'ja_JP'],
+    ['ca', ca, 'ca_ES'],
   ] as const)('declares %s as the document and structured-data language', (lang, locale, og) => {
     expect(locale.meta.htmlLang).toBe(lang)
     expect(locale.meta.ogLocale).toBe(og)

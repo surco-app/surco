@@ -22,7 +22,7 @@ const WIDTH = 1440
 const HEIGHT = 894
 const FPS = 25
 const OUT = resolve(APP_DIR, '../web/public')
-const LANGUAGES = ['es', 'en', 'de', 'fr', 'pt-BR', 'ja']
+const LANGUAGES = ['es', 'en', 'de', 'fr', 'pt-BR', 'ja', 'ca']
 
 const { _electron: electron } = createRequire(
   join(ROOT, 'apps/desktop/.claude/skills/run-desktop/package.json'),

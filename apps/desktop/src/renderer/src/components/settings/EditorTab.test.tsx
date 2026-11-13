@@ -168,7 +168,7 @@ describe('EditorTab blocks', () => {
   })
 
   it('does not name its own sub-tab like the tab that holds it, in any language', async () => {
-    for (const lang of ['es', 'en', 'de', 'fr', 'pt-BR', 'ja']) {
+    for (const lang of ['es', 'en', 'de', 'fr', 'pt-BR', 'ja', 'ca']) {
       await i18n.changeLanguage(lang)
       expect(i18n.t('settings.tabs.editor')).not.toBe(i18n.t('settings.entries.editor'))
     }

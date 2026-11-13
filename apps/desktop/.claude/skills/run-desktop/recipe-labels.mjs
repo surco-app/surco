@@ -12,7 +12,7 @@ const appDir = resolve(dirname(fileURLToPath(import.meta.url)), '../../..')
 const webDir = resolve(appDir, '../web')
 const json = (p) => JSON.parse(readFileSync(p, 'utf8'))
 
-export const APP_LANGUAGES = ['es', 'en', 'de', 'fr', 'pt-BR', 'ja']
+export const APP_LANGUAGES = ['es', 'en', 'de', 'fr', 'pt-BR', 'ja', 'ca']
 export const FIELDS = ['tab', 'section', 'setting', 'value']
 
 function flat(obj, prefix = '', out = {}) {

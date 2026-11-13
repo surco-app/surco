@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import ca from './changelog/ca.json'
 import de from './changelog/de.json'
 import en from './changelog/en.json'
 import es from './changelog/es.json'
@@ -20,6 +21,7 @@ const TRANSLATED = [
   ['fr', fr],
   ['pt-BR', ptBR],
   ['ja', ja],
+  ['ca', ca],
 ] as const
 
 describe.each(TRANSLATED)('%s release history', (lng, releases) => {

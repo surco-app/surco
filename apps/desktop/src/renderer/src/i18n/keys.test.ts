@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { ERROR_KEYS } from '../../../shared/errorKeys'
 import type { UsbFailure } from '../../../shared/types'
 import { SETTINGS_SEARCH_INDEX } from '../lib/settingsSearchIndex'
+import ca from './locales/ca.json'
 import de from './locales/de.json'
 import en from './locales/en.json'
 import es from './locales/es.json'
@@ -42,6 +43,7 @@ const LOCALES: [string, unknown][] = [
   ['fr', fr],
   ['pt-BR', ptBR],
   ['ja', ja],
+  ['ca', ca],
 ]
 
 describe('locale parity', () => {

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import ca from '../i18n/locales/ca.json'
 import de from '../i18n/locales/de.json'
 import en from '../i18n/locales/en.json'
 import es from '../i18n/locales/es.json'
@@ -8,7 +9,7 @@ import ptBR from '../i18n/locales/pt-BR.json'
 import { HERO_ANCHORS, SCENE_ANCHORS, SECTION_VIEWS } from './sceneAnchors'
 
 const OTHER_HOME_IDS = ['top', 'main', 'mobile-nav']
-const LOCALES = { es, en, de, fr, 'pt-BR': ptBR, ja }
+const LOCALES = { es, en, de, fr, 'pt-BR': ptBR, ja, ca }
 
 describe('scene anchors', () => {
   const ids = Object.values(SCENE_ANCHORS)

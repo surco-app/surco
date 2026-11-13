@@ -2189,7 +2189,7 @@ esté en dos ficheros (`song`, `lib/sessionCandidates.ts`). Dos nuevas nunca van
 toma una del rol aunque no case, antes que repetir rol (`fit = fitTier(..., 'free')`,
 `shared/sessionBuild.ts:307`), así que la sesión no encadena vocales cuando ninguna base mezcla
 por tono. **Fases**: las
-playlists elegidas que se llaman como una parte del set, en los seis idiomas (Warm
+playlists elegidas que se llaman como una parte del set, en los siete idiomas (Warm
 Up, Comienzos, Cierre, Fijas, Himnos…), marcan sus pistas como apertura, cierre o fija
 (`libraryPhases`, `lib/sessionTree.ts`). Las que no se eligieron no cuentan, porque pueden ser
 playlists de amigos importadas de su NML (`runSession`, `lib/sessionRun.ts`). Una de apertura pesa ×4 en el primer cuarto y ×0,15
@@ -3052,8 +3052,8 @@ comparación»* (`useDeclickAb.ts:60-67`).
   los bytes), Volumen, Dudosa, Por confirmar (emparejamiento sin corroborar),
   Emparejar y Agrupación. Seleccionar todo, rellenar, vaciar y papelera viven
   también en el menú Pistas.
-- **Seis idiomas** en la app: español, inglés, alemán, francés, portugués de
-  Brasil y japonés (nuevo en v1.14.0, `LanguagePref`, `shared/types.ts:13`). Por
+- **Siete idiomas** en la app: español, inglés, alemán, francés, portugués de
+  Brasil, japonés (nuevo en v1.14.0) y catalán (`LanguagePref`, `shared/types.ts:22`). Por
   defecto sigue el idioma del sistema.
 - **Plataformas:** macOS (Apple Silicon e Intel, notarizado), Windows (NSIS) y
   Linux (AppImage — el único target que electron-updater puede actualizar en

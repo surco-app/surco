@@ -50,6 +50,13 @@ const COPY = {
     paypalMe: 'または「友達」への送金として、手数料なしで：',
     home: 'ホームへ戻る',
   },
+  ca: {
+    title: "No s'ha completat el donatiu",
+    body: "Cap problema, gràcies per haver-t'ho plantejat. Surco és gratuït i són els donatius els que en mantenen el desenvolupament. Si algun dia t'estalvia unes hores, el botó continuarà aquí.",
+    retry: 'Fer un donatiu amb PayPal',
+    paypalMe: 'O sense comissió, entre amics:',
+    home: "Tornar a l'inici",
+  },
 }
 
 // Detected after hydration: Node ≥21 defines a global navigator, so a render-time

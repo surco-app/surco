@@ -2,7 +2,7 @@ import { createInstance, type i18n } from 'i18next'
 import { initReactI18next } from 'react-i18next'
 
 // The app's languages, in the order its own language picker lists them.
-export const LANGUAGES = ['es', 'en', 'de', 'fr', 'pt-BR', 'ja'] as const
+export const LANGUAGES = ['es', 'en', 'de', 'fr', 'pt-BR', 'ja', 'ca'] as const
 export type Language = (typeof LANGUAGES)[number]
 export const LANGUAGE_NAMES: Record<Language, string> = {
   es: 'Español',
@@ -11,6 +11,7 @@ export const LANGUAGE_NAMES: Record<Language, string> = {
   fr: 'Français',
   'pt-BR': 'Português',
   ja: '日本語',
+  ca: 'Català',
 }
 
 type Translation = { changelog: object } & Record<string, unknown>

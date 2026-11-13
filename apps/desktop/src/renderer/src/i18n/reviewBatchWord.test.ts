@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import ca from './locales/ca.json'
 import de from './locales/de.json'
 import en from './locales/en.json'
 import es from './locales/es.json'
@@ -13,6 +14,7 @@ const BATCH_WORD = {
   fr: [fr, 'appliquer'],
   ja: [ja, '適用待ち'],
   'pt-BR': [ptBR, 'aplicar'],
+  ca: [ca, 'aplicar'],
 } as const
 
 // English said "Stage 2 proposals" and "Unstage" beside "in the batch", and a DJ read

@@ -21,7 +21,7 @@ const appDir = resolve(here, '../../..')
 const repoRoot = resolve(appDir, '../..')
 const electronPath = createRequire(resolve(repoRoot, 'index.js'))('electron')
 
-const LANGUAGES = ['es', 'en', 'de', 'fr', 'pt-BR']
+const LANGUAGES = ['es', 'en', 'de', 'fr', 'pt-BR', 'ca']
 const SIZES = [
   [1080, 620],
   [1440, 900],

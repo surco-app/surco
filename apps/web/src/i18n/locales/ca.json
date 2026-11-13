@@ -1,0 +1,3742 @@
+{
+  "lightbox": {
+    "close": "Tancar"
+  },
+  "meta": {
+    "htmlLang": "ca",
+    "ogLocale": "ca_ES",
+    "inLanguage": "ca",
+    "title": "Surco: Prepara les teves pistes de DJ en segons",
+    "description": "Surco prepara les teves pistes de DJ en segons. Converteix entre AIFF, WAV, FLAC, ALAC i MP3 en qualsevol direcció, edita etiquetes i metadades des de Discogs, Bandcamp, Deezer, Beatport i MusicBrainz, i porta les pistes a Apple Music, rekordbox, Engine DJ, Traktor, Serato o VirtualDJ. I detecta MP3 recomprimits disfressats de lossless.",
+    "ogTitle": "Surco: Prepara les teves pistes de DJ en segons",
+    "ogDescription": "Menys preparar, més punxar. Converteix entre AIFF, WAV, FLAC, ALAC i MP3 en qualsevol direcció, etiqueta des de Discogs, Bandcamp, Deezer, Beatport i MusicBrainz, i endreça-ho tot en segons. I detecta MP3 disfressats de lossless.",
+    "jsonLdDescription": "Organitzador de pistes d'àudio per a DJ. Converteix entre AIFF, WAV, FLAC, ALAC i MP3 en qualsevol direcció, etiqueta des de Discogs, Bandcamp, Deezer, Beatport i MusicBrainz, porta les pistes a Apple Music, rekordbox, Engine DJ, Traktor, Serato o VirtualDJ i analitza l'espectre per detectar MP3 recomprimits."
+  },
+  "nav": {
+    "velocidad": "Velocitat",
+    "analisis": "Anàlisi",
+    "funciones": "Funcions",
+    "atajos": "Dreceres",
+    "instalar": "Instal·lar",
+    "faq": "Preguntes",
+    "guia": "Guia",
+    "casos": "Casos d'ús",
+    "skipToContent": "Anar al contingut",
+    "theme": "Canviar entre el tema clar i el fosc",
+    "openMenu": "Obrir el menú",
+    "closeMenu": "Tancar el menú",
+    "cambios": "Novetats",
+    "estadisticas": "Estadístiques",
+    "donar": "Fer un donatiu",
+    "download": "Baixar",
+    "language": "Idioma",
+    "main": "Principal",
+    "languageOffer": {
+      "text": "Aquesta pàgina també està en català.",
+      "switch": "Llegir en català",
+      "dismiss": "Tancar"
+    }
+  },
+  "available": "macOS · Windows · Linux",
+  "footerNote": "Sense compte, sense subscripció.",
+  "keys": {
+    "space": "Espai"
+  },
+  "hero": {
+    "latestRelease": "Novetat a la {{version}}",
+    "h1a": "De la descàrrega",
+    "h1b": "a la cabina, amb un clic.",
+    "ledeShort": "Convertir, etiquetar, comprovar la qualitat i endreçar a Apple Music o Engine DJ. El que feies saltant entre quatre o cinc apps, Surco ho fa en una de sola. De minuts per pista a un parell de segons."
+  },
+  "features": {
+    "kicker": "Funcions",
+    "title": "Cada pas, de la descàrrega a la cabina",
+    "lede": "El que fa Surco, una línia per funció. Obre la que vulguis per veure'n tot el detall.",
+    "count_one": "{{count}} funció",
+    "count_other": "{{count}} funcions",
+    "groups": [
+      {
+        "kick": "convertir",
+        "title": "Convertir",
+        "replaces": "en lloc d'un convertidor",
+        "items": [
+          {
+            "t": "De qualsevol format a qualsevol altre",
+            "s": "AIFF, WAV, FLAC, ALAC i MP3 en qualsevol direcció, i també llegeix M4A, AAC, OGG i OPUS.",
+            "d": "AIFF, WAV, FLAC, ALAC o MP3, en qualsevol direcció. De FLAC a MP3 perquè càpiga a l'USB, de WAV a AIFF per portar la caràtula, de MP3 al que demani el teu programa. A més, llegeix M4A, AAC, OGG i OPUS. Un M4A es pot quedar tal com és; els altres tres sempre es transcodifiquen."
+          },
+          {
+            "t": "Sense recodificar si no cal",
+            "s": "Si el fitxer ja és en aquest format, es copia tal com és en lloc de recodificar-lo.",
+            "d": "Un fitxer que ja és en aquest format es copia byte a byte, tret que la configuració de qualitat o un filtre d'àudio en canviïn l'àudio; en MP3 i AIFF sobre APFS és un clon instantani sigui quina sigui la mida."
+          },
+          {
+            "t": "Qualitat al teu gust",
+            "s": "Tries el bitrate, els bits i la freqüència, o et quedes amb els de l'original.",
+            "d": "Bitrate del MP3, bits i freqüència. Per defecte es conserven els de l'original, tret d'un àudio de 16 bits farcit fins a 24, que es desa com a 16 bits reals sense pèrdua."
+          },
+          {
+            "t": "Res d'eixamplaments per sorpresa",
+            "s": "Un rip de 16 bits no acaba en 24 sense que ho demanis.",
+            "d": "Fixa la profunditat perquè un rip de 16 bits no acabi en 24 sense que ningú ho demani."
+          },
+          {
+            "t": "Volum igualat",
+            "s": "Totes les pistes al mateix volum, amb limitador només si no hi ha més remei.",
+            "d": "Guany constant, i limitador només quan l'objectiu no s'assoleix de cap altra manera."
+          },
+          {
+            "t": "Et diu què farà abans de fer-ho",
+            "s": "Abans de convertir veus quant pujarà o baixarà cada pista i si hi entrarà el limitador.",
+            "d": "Quant pujarà o baixarà aquesta pista, si hi entrarà el limitador i per quants decibels es passarien els pics."
+          },
+          {
+            "t": "Retall de silencis",
+            "s": "Treu el silenci del principi i del final mentre veus el tall sobre l'ona.",
+            "d": "El tall a la vista sobre l'ona, amb ajust al mil·lisegon."
+          },
+          {
+            "t": "Tu tries on va a parar",
+            "s": "Una carpeta, al costat de l'original, Apple Music, rekordbox, Engine DJ, Traktor, Serato o VirtualDJ.",
+            "d": "Una carpeta, al costat de l'original o Apple Music. I a rekordbox, Engine DJ, Traktor, Serato i VirtualDJ tries si la pista s'actualitza o també s'hi afegeix."
+          },
+          {
+            "t": "Freqüència corregida",
+            "s": "Torna a 44,1 i a 16 bits el que estava inflat, i deixa intacte el que és genuí.",
+            "d": "El mode «Corregit» reescriu a 44,1 només les pistes que s'han mesurat com a reescalades; el que és genuí i el que és dubtós surt intacte. I la profunditat «Corregit» desa com a 16 bits reals, sense pèrdues, l'àudio de 16 bits farcit fins a 24; «Igual que l'origen» conserva el contenidor tal com és."
+          }
+        ]
+      },
+      {
+        "kick": "etiquetar",
+        "title": "Etiquetar",
+        "replaces": "en lloc de cinc webs i un editor d'etiquetes",
+        "items": [
+          {
+            "t": "Discogs, Bandcamp, Deezer, Beatport i MusicBrainz",
+            "s": "Cerca artista, àlbum, any, BPM, tonalitat, segell i catàleg en cinc fonts.",
+            "d": "Artista, àlbum, any, BPM i tonalitat. El segell i el catàleg vénen de Discogs, Beatport i MusicBrainz, i Beatport hi afegeix el mix i l'ISRC."
+          },
+          {
+            "t": "Aparella el disc sencer",
+            "s": "Reconeix cada tall per la durada encara que el títol no ajudi.",
+            "d": "Per la durada de la pista, que és el que distingeix dos talls quan el títol no ajuda."
+          },
+          {
+            "t": "Aparellament automàtic",
+            "s": "Aplica només el que és segur i et deixa el que és dubtós perquè ho confirmis.",
+            "d": "Recorre la llista sencera, aplica només el que té una confiança alta i deixa el que és dubtós pendent de confirmar. Si has aplicat el disc equivocat, ⌘Z torna les etiquetes de totes les pistes."
+          },
+          {
+            "t": "Edició en bloc",
+            "s": "Edita els camps d'un disc sencer d'una vegada, amb cercar i substituir.",
+            "d": "Els camps que comparteix un disc, més cercar i substituir amb regex."
+          },
+          {
+            "t": "Caràtules",
+            "s": "Porta la caràtula de qualsevol font o fes servir la teva, retallada al teu gust.",
+            "d": "De Discogs, Bandcamp, Deezer, Beatport, MusicBrainz o la teva, amb retall quadrat i mida màxima configurables."
+          },
+          {
+            "t": "ID3v2.3, no v2.4",
+            "s": "Escriu la versió d'etiquetes que els CDJ i rekordbox llegeixen sense problemes.",
+            "d": "Perquè els CDJ i rekordbox ho llegeixin sense coses estranyes."
+          },
+          {
+            "t": "Puntuació d'anada i tornada",
+            "s": "Les teves estrelles es llegeixen i s'escriuen tal com les entenen Traktor i Windows.",
+            "d": "Als dos frames que llegeixen Traktor i Windows Media Player. I les estrelles que ja havies posat a Traktor es veuen aquí."
+          },
+          {
+            "t": "Camps de col·leccionista",
+            "s": "Estil, país, suport i URL del disc, amb els noms de mp3tag.",
+            "d": "Estil, país, tipus de suport i l'URL del disc, amb els noms que fa servir mp3tag perquè no es dupliquin."
+          },
+          {
+            "t": "Els teus propis camps",
+            "s": "Crea el camp que et falti i fes-lo servir a l'editor i als noms de fitxer.",
+            "d": "Crea el camp que et falti amb un nom i una clau, i fes-lo servir a l'editor, al nom del fitxer i a cercar i substituir. Es desa en tots els formats."
+          },
+          {
+            "t": "Data completa, si la vols",
+            "s": "Desa la data sencera, com ara 2020-12-01, si la font la porta.",
+            "d": "L'any com a 2020-12-01 quan el fitxer o Discogs, Bandcamp, Deezer, Beatport o MusicBrainz porten la data sencera. Al nom del fitxer i a rekordbox continua anant-hi només l'any."
+          },
+          {
+            "t": "Gènere i grouping amb diverses etiquetes",
+            "s": "Diversos gèneres en una pista, amb el separador que prefereixis.",
+            "d": "Cada llista tria el seu separador, que pot ser coma, punt i coma, barra o el teu. Quan edites diverses pistes, cada etiqueta indica si és a totes o només a algunes."
+          },
+          {
+            "t": "Tu decideixes què toca cada cerca",
+            "s": "Un interruptor per camp perquè una cerca no trepitgi el que has posat a mà.",
+            "d": "Un interruptor per camp. El gènere que has posat a mà no es perd quan apliques un disc."
+          },
+          {
+            "t": "Etiquetes d'altres programes",
+            "s": "Veus les etiquetes que hi han deixat altres programes i esborres les que sobren.",
+            "d": "Inspecciona-les i esborra-les una a una, o buida la fitxa sencera."
+          }
+        ]
+      },
+      {
+        "kick": "analitzar",
+        "title": "Analitzar la qualitat",
+        "replaces": "en lloc d'un analitzador d'espectre",
+        "items": [
+          {
+            "t": "Caça els MP3 disfressats",
+            "s": "Detecta els MP3 que es fan passar per FLAC o WAV.",
+            "d": "Dibuixa l'espectre amb el tall del còdec marcat sobre la imatge."
+          },
+          {
+            "t": "Tres coses, no una",
+            "s": "Distingeix transcodificacions, aguts inventats i falsos hi-res.",
+            "d": "Una transcodificació, uns possibles aguts regenerats per un «enhancer» i un hi-res que era un 44,1 estirat."
+          },
+          {
+            "t": "Sense falsos positius",
+            "s": "Un màster apagat no compta com a fals, calibrat amb 6000 pistes reals.",
+            "d": "Comprova que hi ha un tall de debò, un penya-segat dins d'un quilohertz. Un màster apagat no és un fake. Calibrat amb 6000 pistes lossless reals."
+          },
+          {
+            "t": "Ensenya els seus números",
+            "s": "Cada veredicte ve amb les mesures que el justifiquen.",
+            "d": "Cada veredicte ve amb la mesura que l'aguanta, és a dir, fins on arriba l'energia, on és el tall i quant cau en un quilohertz."
+          },
+          {
+            "t": "Un MP3 no és un defecte",
+            "s": "Un MP3 es jutja com a MP3 i surt net si ho és.",
+            "d": "El seu tall és el format, no una tara. Es jutja amb la seva pròpia escala i surt net si ho és."
+          },
+          {
+            "t": "Lectura per colors",
+            "s": "Sonoritat, pics, dinàmica, balanç i soroll de fons, en colors.",
+            "d": "LUFS, pic real, dinàmica, balanç L/R i soroll de fons."
+          },
+          {
+            "t": "Clipping igual que a Audacity",
+            "s": "Marca el clipping amb el mateix criteri que Audacity.",
+            "d": "El mateix criteri mostra a mostra, perquè les marques vermelles coincideixin."
+          },
+          {
+            "t": "Ona amb zoom ×256",
+            "s": "Apropa l'ona fins a 256 vegades sense que es pixeli.",
+            "d": "Torna a descodificar el tros visible en lloc d'estirar píxels."
+          },
+          {
+            "t": "Vinil net",
+            "s": "Treu clics, soroll i rumble del vinil i compara l'abans i el després.",
+            "d": "Clics, soroll de fons i rumble, amb un A/B sense talls per sentir què s'ha endut."
+          },
+          {
+            "t": "BPM i tonalitat",
+            "s": "Calcula el BPM i la tonalitat de l'àudio i te'ls proposa perquè els confirmis.",
+            "d": "Del mateix àudio, sempre com a suggeriment que confirmes tu."
+          },
+          {
+            "t": "El que ja tens",
+            "s": "T'avisa si una pista ja és al teu Apple Music o Engine DJ.",
+            "d": "Avisa si la pista ja és al teu Apple Music o Engine DJ i filtra les que et falten."
+          },
+          {
+            "t": "Els bits, comprovats",
+            "s": "Comprova si un fitxer de 24 bits ho és de debò.",
+            "d": "Un 24 bits declarat es verifica amb les seves pròpies mostres. Si gairebé cap mostra del primer minut fa servir el byte baix, és àudio de 16 bits farcit. No és un defecte, sona igual, i amb les explicacions activades veus el percentatge mesurat."
+          }
+        ]
+      },
+      {
+        "kick": "programes de dj",
+        "title": "rekordbox, Traktor, Engine DJ, Serato i VirtualDJ",
+        "replaces": "en lloc del teu gestor de biblioteca",
+        "items": [
+          {
+            "t": "Les teves playlists de rekordbox",
+            "s": "Obre i organitza les teves playlists de rekordbox sense sortir de Surco.",
+            "d": "Les obres a Surco amb les seves carpetes i en el seu ordre, amb l'ona i els cues de rekordbox a cada pista. I les organitzes des d'aquí. Crees, canvies el nom i esborres playlists i carpetes, les mous arrossegant-les, afegeixes, treus i reordenes pistes, i a l'editor tries a quines playlists és cadascuna. Si rekordbox és obert, els canvis esperen que el tanquis. «Afegides recentment» va la primera, amb el que has posat a la col·lecció els últims 30 dies, i després «Totes les pistes», amb tota la col·lecció, també el que no és a cap playlist. Si no fas servir rekordbox o Apple Music, n'amagues la font. I si tens el tracklist d'una sessió, l'enganxes sobre una playlist amb «Enganxar tracklist…» i Surco cerca cada línia a la teva col·lecció, t'ensenya el que ha trobat i hi posa les pistes en l'ordre del set. També a Traktor, Serato i VirtualDJ."
+          },
+          {
+            "t": "Sessió automàtica",
+            "s": "Munta una sessió amb les teves playlists, les teves combinacions, el que més t'agrada i mescla harmònica.",
+            "d": "L'obres des de la paleta d'ordres, des del menú d'una carpeta o sobre una playlist buida. Tries quant dura i de quines playlists surten les pistes, i dius què hi ha a cadascuna, Bases, Vocals o Barrejades, també per a una carpeta sencera. Surco ajunta les parelles que repeteixes als teus sets i tracklists, les pistes amb més estrelles i reproduccions, mescla harmònica Camelot si la vols i un forat per a les novetats, i compta el temps que sona cada pista, no el fitxer sencer. Es veu com qualsevol playlist, amb la tonalitat de cada pista. Aprèn dels teus sets quant mous el tempo i quant t'importa el to, deixa els teus tancaments per al final, treu més sovint les teves fixes i obre amb un vocal. «Refer» la torna a muntar sencera, o comença-la des d'una pista amb el seu menú. A rekordbox, Traktor, Engine DJ, Serato i VirtualDJ. Si el programa és obert, espera que el tanquis."
+          },
+          {
+            "t": "Cues de rekordbox",
+            "s": "Posa hot cues sobre l'ona de rekordbox, a mà o amb el teu flux de marcatge.",
+            "d": "Hot cues de la A a la H i CALL, sobre l'ona i la graella de rekordbox. Els arrossegues, s'ajusten al compàs o al cop i pots desfer. Quan amplies l'ona veus cada cop amb detall, mesurat del mateix àudio, i el Play sona a l'instant. Tries un flux, com Mix in 64, Mix in 32 o un de teu fet per blocs o après de la teva col·lecció, i quan passes el ratolí per l'ona veus en transparent el que hi posaria. Un clic el col·loca i et diu el que no hi cap. «Marcar automàticament» et proposa on trenca cada pista, també en diverses alhora. Aprèn la teva manera de marcar dels cues que ja has posat i dels que deses, i separa el que veu segur del que és dubtós. I si marques els CALL a rekordbox, Surco hi posa els hot cues del teu flux quan el tanques. En una pista que rekordbox encara no ha analitzat treballes sobre la graella de Surco, i quan rekordbox l'analitza, els teus cues s'ajusten a la seva. Les lletres segueixen l'ordre de la pista, i si per a tu cada lletra és un pad fix, ho desactives a Configuració. Si la mateixa pista és a Traktor, Engine DJ, Serato o VirtualDJ, quan deses el flux també hi arriba, posat amb la seva graella i els seus cues. S'escriuen a rekordbox amb una còpia de seguretat abans."
+          },
+          {
+            "t": "Cues fora de la graella",
+            "s": "Troba les pistes amb cues que no cauen al cop de la graella.",
+            "d": "Quan les obres, l'editor et diu quins cues se'n surten i quant, i «Al cop» els porta al seu cop d'una vegada. A rekordbox, Traktor i Engine DJ, Surco mesura cada cue respecte de la graella de la pista i et diu quantes pistes es passen. A partir de quants ms compta ho tries a la configuració de cues, entre 5, 10 i 20 ms. Per defecte, 10."
+          },
+          {
+            "t": "La graella, al seu lloc",
+            "s": "Corregeix la graella d'una pista a mà o amb Auto, i el filtre «Graella malament» et diu quines.",
+            "d": "Amb la secció de cues maximitzada mous la graella, canvies el BPM, poses el primer temps al capçal o prems «Auto», que la quadra amb els cops, i veus quant es desvia aquí i al final de la pista. «Clavar» (G) la fixa al cop més proper al capçal, o just al capçal amb ⇧. Un segon clau lluny del primer compta els cops entre tots dos i en treu el BPM exacte, i a rekordbox un tercer obre un tram amb el seu propi tempo. Sis comprovacions sota l'ona de tota la pista et diuen si continua sobre el bombo al llarg del tema, i si en prems una el capçal va a aquell cop. Auto dona la mateixa resposta des de qualsevol punt de la pista i pren el bombo de la graella que va analitzar el teu programa, així que mai no la desplaça mig temps cap al contratemps. Es desa a rekordbox, Traktor i Engine DJ, i a rekordbox també per trams amb el seu propi tempo. El filtre «Graella malament» treu les pistes amb la graella fora dels cops. A Traktor i Engine DJ, de moment, per a WAV, AIFF i FLAC, i a Traktor també per als MP3 creats amb iTunes. Surco deixa bloquejada la graella que desa, i també desa sobre una que ja estigués bloquejada al programa. Amb diverses pistes seleccionades, «Ajustar» arregla d'una vegada les que tenen la graella desplaçada, i «Ajustar la graella» també és a l'editor de cues petit."
+          },
+          {
+            "t": "La teva col·lecció de rekordbox",
+            "s": "Quan converteixes, la pista continua sent la mateixa a rekordbox, amb les seves playlists i els seus cues.",
+            "d": "Quan converteixes, la pista continua sent la mateixa a rekordbox, amb les playlists, els cue points i l'historial, i canviar-ne les etiquetes no canvia el nom del fitxer. S'activa a Configuració i fa una còpia de seguretat abans. Si rekordbox és obert, espera que el tanquis."
+          },
+          {
+            "t": "Un USB per als teus CDJ",
+            "s": "Prepara un USB per als teus CDJ amb cues, graella i ones.",
+            "d": "Exportes les teves playlists de rekordbox a un USB amb els cues, la graella i les ones, i rekordbox el pot continuar sincronitzant. Cal que rekordbox estigui tancat. A macOS i Windows. També des de les teves playlists de Traktor i, a macOS, des dels teus crates de Serato i les teves llistes de VirtualDJ, amb els seus cues, loops i graella, sense passar per rekordbox."
+          },
+          {
+            "t": "Les teves playlists de Traktor",
+            "s": "Organitza les teves playlists de Traktor i posa-hi hot cues amb el mateix editor.",
+            "d": "Les obres a Surco, les organitzes com les de rekordbox i poses hot cues a les seves pistes amb el mateix editor, «Marcar automàticament» inclòs. Traktor els rep en blau, als botons del 2 al 8, i Surco et demana que el tanquis abans de desar. A l'editor tries a quines playlists va cada pista, un cop confirmada la col·lecció a Configuració. I si Traktor no la tenia, Surco l'afegeix a la teva col·lecció quan la converteixes, amb la caràtula."
+          },
+          {
+            "t": "La teva col·lecció de Traktor",
+            "s": "Actualitza la teva col·lecció de Traktor amb una còpia de seguretat abans.",
+            "d": "Actualitza el .nml amb una còpia abans, que restaures des de Còpies, i una sola escriptura per tanda. Cal que Traktor estigui tancat."
+          },
+          {
+            "t": "Cue points de Traktor",
+            "s": "Els cue points de Traktor sobreviuen a qualsevol conversió.",
+            "d": "Intactes entre MP3, AIFF, FLAC i WAV, en qualsevol combinació. Si retalles, la graella es torna a ancorar per fase."
+          },
+          {
+            "t": "Cues de Mixed In Key, i el desfasament del MP3",
+            "s": "Porta els cues de Mixed In Key a Traktor i corregeix el desfasament del MP3.",
+            "d": "Els de Mixed In Key es tradueixen a Traktor quan converteixes. I quan passes de MP3 a un altre format, o a l'inrevés, Surco compensa el desfasament del còdec perquè caiguin on els veus."
+          },
+          {
+            "t": "Les teves playlists d'Engine DJ",
+            "s": "Obre les teves playlists d'Engine DJ, posa-hi hot cues i exporta-les a un USB.",
+            "d": "Les obres a Surco i poses hot cues a les seves pistes amb el mateix editor, «Marcar automàticament» inclòs. Els CALL no, perquè Engine DJ només desa hot cues. I les exportes a un USB amb la seva biblioteca d'Engine, a punt per al reproductor. A l'editor tries a quines playlists va cada pista, i si Engine DJ no la tenia, Surco l'afegeix a la teva biblioteca quan la converteixes."
+          },
+          {
+            "t": "Engine DJ (Denon)",
+            "s": "Porta la caràtula, la puntuació i la playlist a la teva biblioteca d'Engine DJ.",
+            "d": "Caràtula, puntuació i playlist a la teva biblioteca. Amb còpia de seguretat abans, i no la toca si Engine és obert."
+          },
+          {
+            "t": "Les teves llistes de VirtualDJ",
+            "s": "Organitza les teves llistes de VirtualDJ i posa-hi hot cues amb el mateix editor.",
+            "d": "Les obres a Surco amb les seves carpetes i les organitzes com les de rekordbox, també enganxant-hi un tracklist o amb una sessió automàtica. Poses hot cues a les seves pistes amb el mateix editor, «Marcar automàticament» inclòs. Els CALL no, perquè VirtualDJ només rep hot cues, i la graella és la que va analitzar VirtualDJ. Quan converteixes, VirtualDJ segueix la pista nova amb els seus cues i les seves llistes, i si no la tenia, Surco l'hi afegeix. A macOS també les exportes a un USB per als teus CDJ. Surco desa una còpia abans d'escriure, que restaures des de Còpies, i amb VirtualDJ obert els canvis esperen que el tanquis. A Windows és en beta."
+          },
+          {
+            "t": "Fitxers per a rekordbox, Serato i M3U8",
+            "s": "Exporta playlists per a rekordbox, Serato i M3U8.",
+            "d": "Porten rutes i metadades, sense cues ni puntuació. El crate de Serato, només rutes."
+          }
+        ]
+      },
+      {
+        "kick": "biblioteca",
+        "title": "Apple Music i les teves carpetes",
+        "replaces": "sense dues còpies de res",
+        "items": [
+          {
+            "t": "Apple Music",
+            "s": "Afegeix les teves pistes a Apple Music amb etiquetes i caràtula, també en WAV.",
+            "d": "Amb etiquetes i caràtula, fins i tot en WAV. Només a macOS, i mai en FLAC, perquè Music no l'admet."
+          },
+          {
+            "t": "Substitueix el que ja tens",
+            "s": "Una còpia millor ocupa el lloc de la vella a Apple Music i rekordbox, amb les seves playlists.",
+            "d": "Carregues una altra còpia d'una pista que ja tens, en qualsevol format i també en el mateix, i n'ocupa el lloc a Apple Music i a rekordbox, en lloc d'acabar amb dues. La pista continua a les seves playlists, sense haver-la de tornar a posar a mà a cadascuna, i a Apple Music conserva les reproduccions i la teva puntuació. La marca d'Apple Music et diu en quin format és la teva còpia, perquè sàpigues si val la pena."
+          },
+          {
+            "t": "Errades i duplicats de la teva biblioteca",
+            "s": "Troba errades, caràcters invisibles i pistes repetides a la teva biblioteca.",
+            "d": "Agrupa el que el teu Apple Music o la teva llista escriu de maneres diferents, els caràcters invisibles i les pistes que tens dues vegades. Cada correcció arriba al fitxer, a Apple Music i, si els sincronitzes, a rekordbox, Engine DJ, Traktor, Serato i VirtualDJ, amb una còpia abans d'escriure, que restaures des de Còpies (tret de la de Serato), i Desfer. La còpia que treus passa les seves playlists a la que es queda. Apple Music, només a macOS."
+          },
+          {
+            "t": "Portar una playlist d'Apple Music",
+            "s": "Obres una playlist de Music i treballes directament sobre els seus fitxers.",
+            "d": "Carregues la llista i treballes sobre els seus fitxers. Conserva el format i omple el que només viu a Music, com el grouping, també a les pistes que obres soltes. Només a macOS."
+          },
+          {
+            "t": "Grouping d'Apple Music",
+            "s": "Escriu el grouping allà on Apple Music el llegeix.",
+            "d": "L'escriu al seu propi frame, invisible per a gairebé totes les eines."
+          },
+          {
+            "t": "Les teves baixades, al dia",
+            "s": "Vigila les teves carpetes de baixades i t'ofereix cada pista nova.",
+            "d": "Les carpetes que carregues queden vigilades, i quan hi cau una pista nova Surco te l'ofereix sense haver d'arrossegar res una altra vegada."
+          },
+          {
+            "t": "El que queda per fer",
+            "s": "Filtra duplicades, errors en convertir i aparellaments per confirmar.",
+            "d": "Filtra les duplicades (la mateixa cançó en FLAC i en MP3), les que han fallat en convertir i els aparellaments pendents de confirmar."
+          },
+          {
+            "t": "Plantilles de nom",
+            "s": "Posa nom a fitxers i títols amb plantilles com {artist} - {title}.",
+            "d": "Fitxers i títols amb {artist} - {title}. Una barra dins d'un camp no crea carpetes, i si el teu NAS s'ennuega amb els accents, noms sense accents."
+          },
+          {
+            "t": "Caràtula dins d'un WAV",
+            "s": "Posa caràtula i metadades en un WAV, que per si sol no les admet.",
+            "d": "Que per si sol no admet ni caràtula ni metadades."
+          }
+        ]
+      },
+      {
+        "kick": "xarxa de seguretat",
+        "title": "No es perd res",
+        "replaces": "còpies abans de cada escriptura",
+        "items": [
+          {
+            "t": "Còpies de les teves biblioteques",
+            "s": "Desa una còpia de rekordbox, Traktor, Engine DJ, Serato i VirtualDJ abans de tocar-los.",
+            "d": "Abans d'escriure a rekordbox, Traktor, Engine DJ o VirtualDJ, Surco desa una còpia amb data i conserva les 5 últimes de cada programa. A Còpies, a la part de baix de la barra lateral, veus les de cadascun i en restaures qualsevol amb un clic. Et demana que tanquis el programa, desa una còpia de com estava perquè puguis tornar enrere i només descarta els canvis pendents d'aquella biblioteca. De Serato també en desa una còpia abans d'escriure, però aquesta no es restaura des de Còpies."
+          },
+          {
+            "t": "Originals d'àudio",
+            "s": "Desa els fitxers que substitueix o canvia de nom perquè els puguis recuperar.",
+            "d": "Els fitxers que Surco substitueix o canvia de nom es desen a Còpies › Fitxers de música; els restaures des d'allà o des de la marca de la pista. Tu tries si sempre, només quan canvia l'àudio o mai. Per defecte, 7 dies o fins a 2 GB. Si al disc li queden menys de 5 GB lliures, esborra primer els més antics."
+          },
+          {
+            "t": "No s'esborra res sense avisar",
+            "s": "El que treus va a la paperera, o a Còpies si el disc no en té.",
+            "d": "El que treus va a la paperera del sistema. En un disc sense paperera, com un NAS, i a Windows, va a Còpies › Fitxers de música, des d'on el restaures. Si a Configuració → Destinació tries «Mai», s'esborra del tot i l'avís t'ho diu abans de confirmar."
+          },
+          {
+            "t": "No es perd res",
+            "s": "Les edicions es desen soles, encara que l'app es tanqui de cop.",
+            "d": "Les edicions es desen soles. Recuperes la sessió encara que l'app es tanqui de cop."
+          },
+          {
+            "t": "Comprova la còpia abans de donar-la per bona",
+            "s": "No dona per bona una conversió que s'hagi quedat a mitges.",
+            "d": "Un fitxer tallat a mitges declara la mateixa durada que el sencer. Surco compara el que promet amb el que sona de debò i no publica una conversió truncada."
+          },
+          {
+            "t": "Rescata WAV trencats",
+            "s": "Repara sobre una còpia la capçalera que altres apps no saben llegir.",
+            "d": "La capçalera que s'ennuega en altres apps, reparada sobre una còpia. El teu fitxer no es toca."
+          }
+        ]
+      }
+    ],
+    "programs": {
+      "kicker": "Programes de DJ",
+      "title": "Què fa Surco amb cada programa",
+      "lede": "rekordbox, Traktor, Engine DJ, Serato i VirtualDJ. El que Surco escriu a la teva biblioteca ho escriu amb una còpia abans i amb el programa tancat.",
+      "feature": "Funció",
+      "region": "Què fa Surco amb cada programa",
+      "yes": "Sí",
+      "no": "No",
+      "foot": "Amb el programa obert, els canvis esperen i s'escriuen quan el tanques. Apple Music va a part, a la seva pròpia secció.",
+      "groups": {
+        "library": "Biblioteca",
+        "cues": "Cues i graella",
+        "convert": "En convertir",
+        "usb": "USB i còpies"
+      },
+      "rows": {
+        "tab": "Pestanya amb les seves playlists",
+        "edit": "Crear, canviar el nom i moure playlists",
+        "paste": "Enganxar un tracklist",
+        "session": "Sessió automàtica",
+        "cueEditor": "Editor de hot cues i «Marcar automàticament»",
+        "calls": "CALL",
+        "flows": "Fluxos i pista bessona en un altre programa",
+        "grid": "Desar la graella",
+        "add": "Afegir la pista convertida",
+        "names": "Portar el títol, l'artista, l'àlbum i el gènere",
+        "follow": "Seguir la pista nova amb els seus cues",
+        "usb": "USB per a reproductors Pioneer",
+        "copies": "Còpia abans d'escriure i restaurar",
+        "windows": "Windows"
+      },
+      "notes": {
+        "noRenameMove": "Sense canviar el nom ni moure",
+        "crates": "Crates",
+        "listsFolders": "Llistes i carpetes",
+        "hotCuesOnly": "Només hot cues",
+        "zones": "També per trams",
+        "losslessFiles": "WAV, AIFF i FLAC",
+        "readsOnly": "La llegeix",
+        "inPlace": "Al seu lloc",
+        "sameFolder": "A la mateixa carpeta",
+        "keepsOriginal": "Conserva l'original",
+        "engineUsb": "USB d'Engine",
+        "noRestore": "Sense restaurar a Còpies",
+        "beta": "Beta",
+        "macOnly": "Només macOS"
+      }
+    },
+    "metaTitle": "Tot el que fa Surco · Funcions",
+    "metaDescription": "Convertir, etiquetar des de Discogs, Bandcamp, Deezer, Beatport o MusicBrainz, analitzar la qualitat, treure clics, retallar silencis i exportar a rekordbox, Engine DJ, Traktor, Serato o VirtualDJ. Gratis."
+  },
+  "shortcuts": {
+    "kicker": "Primer el teclat",
+    "title": "Vola sense tocar el ratolí",
+    "lede": "Una paleta d'ordres i dreceres per a tot el flux. Afegeix, etiqueta, analitza i processa pista rere pista sense deixar anar el teclat, i reassigna les que vulguis.",
+    "items": [
+      "Afegir fitxers",
+      "Convertir la pista",
+      "Convertir-les totes",
+      "Reproduir / pausa",
+      "Navegar per les pistes",
+      "Cercar a Discogs"
+    ]
+  },
+  "how": {
+    "kicker": "Com funciona",
+    "title": "Tres passos i a punxar",
+    "guideCta": "Veure la guia completa →",
+    "steps": [
+      {
+        "title": "Deixa anar les pistes",
+        "body": "Arrossega els teus WAV, FLAC, AIFF o MP3. Surco en llegeix al moment les etiquetes i la caràtula."
+      },
+      {
+        "title": "Tria el disc",
+        "body": "Cerca a Discogs, Bandcamp, Deezer, Beatport o MusicBrainz i aplica artista, àlbum, any, gènere i caràtula amb un clic."
+      },
+      {
+        "title": "Exporta i llestos",
+        "body": "Converteix a AIFF, WAV, FLAC, ALAC o MP3, revisa l'espectre i envia la pista a Apple Music o a Engine DJ."
+      }
+    ]
+  },
+  "showcase": {
+    "alt": "Surco a macOS amb la llista de pistes, el match de Discogs, l'editor de metadades i l'anàlisi de qualitat",
+    "zoom": "Ampliar la captura",
+    "pause": "Pausar el vídeo",
+    "tour": {
+      "tracks": {
+        "title": "Llista de pistes",
+        "desc": "Les teves pistes i el filtre del que ja és a la teva biblioteca d'Apple Music o Engine DJ."
+      },
+      "discogs": {
+        "title": "Match de Discogs, Bandcamp, Deezer, Beatport i MusicBrainz",
+        "desc": "Cerca el disc exacte a Discogs, Bandcamp, Deezer, Beatport o MusicBrainz, de l'edició de club al single comercial, i tria la versió correcta."
+      },
+      "metadata": {
+        "title": "Editor de metadades",
+        "desc": "Títol, artista, àlbum, gènere i caràtula. Edita-ho tot en un sol lloc."
+      },
+      "quality": {
+        "title": "Qualitat d'àudio",
+        "desc": "L'espectre delata els falsos. Aguts que falten en un suposat lossless."
+      },
+      "convert": {
+        "title": "Converteix i arxiva",
+        "desc": "A AIFF, WAV, FLAC, ALAC o MP3 i directe a la teva biblioteca d'Apple Music o Engine DJ, en un clic."
+      }
+    }
+  },
+  "footer": {
+    "tagline": "Converteix, etiqueta i organitza les teves pistes de DJ, a punt per punxar en pocs segons.",
+    "product": "Producte",
+    "contactHeading": "Contacte",
+    "copyright": "© 2026 Surco · getsurco.app",
+    "slogan": "la teva música, en ordre",
+    "convertHeading": "Convertir",
+    "flacToAiff": "FLAC a AIFF",
+    "privacy": "Privadesa",
+    "convert": "Tots els formats",
+    "wavToAiff": "WAV a AIFF",
+    "flacToMp3": "FLAC a MP3",
+    "wavToMp3": "WAV a MP3",
+    "convertMore": "Altres conversions"
+  },
+  "install": {
+    "kicker": "Instal·lar",
+    "title": "Baixa'l i instal·la'l",
+    "lede": "Baixa'l per al teu sistema o instal·la'l amb Homebrew. En tots dos casos, s'actualitza sol.",
+    "or": "O amb Homebrew",
+    "copy": "Copiar",
+    "copied": "Copiat!",
+    "note": "Homebrew només per a macOS. Windows i Linux, des del botó de baixada."
+  },
+  "faq": {
+    "kicker": "Preguntes",
+    "title": "Abans de baixar-lo",
+    "items": [
+      {
+        "q": "De debò és gratis?",
+        "a": "Sí. Surco és gratis i complet, sense compte, sense subscripció i sense límits. Si t'estalvia hores, pots donar suport al desenvolupament amb un donatiu."
+      },
+      {
+        "q": "És un editor d'etiquetes i metadades?",
+        "a": "Sí, i més. Surco edita les etiquetes i les metadades de la teva música (artista, títol, àlbum, any, caràtula…) i les completa des de Discogs, Bandcamp, Deezer, Beatport o MusicBrainz. Però a més converteix entre AIFF, WAV, FLAC, ALAC i MP3 en qualsevol direcció, comprova la qualitat de l'àudio i endreça la teva biblioteca. El que faries amb un editor d'etiquetes i tres apps més, en una de sola."
+      },
+      {
+        "q": "Toca els meus fitxers originals?",
+        "a": "Depèn de si canvies de format. Si converteixes a un format diferent del que ja té, l'original queda intacte i la còpia va a una carpeta a part (Música/Surco). Hi ha dues excepcions. Si la còpia nova substitueix la vella a la teva biblioteca, Surco retira el fitxer vell tan bon punt comprova que el nou està bé, i l'envia a la paperera o a Còpies. I amb «Editar l'original» el fitxer es reescriu al seu lloc, així que canviar de format n'elimina l'original. Si tornes a exportar al mateix format, Surco reescriu aquell fitxer allà on és, que és com actualitza les etiquetes sense recodificar l'àudio. Quan l'àudio canvia (convertir, normalitzar, retallar), Surco desa abans una còpia de seguretat de l'original que restaures des de la mateixa pista; a Configuració → Destinació tries si la vols sempre, només quan canvia l'àudio o mai, i quants dies i quant espai ocupen."
+      },
+      {
+        "q": "Conserva els cue points?",
+        "a": "Els de Traktor, sí. Es conserven entre MP3, AIFF, FLAC i WAV en qualsevol combinació, perquè Surco llegeix l'arbre que Traktor desa dins del fitxer i el torna a escriure en el format de destinació. Només es perden en ALAC, que no té on desar-lo. Els de rekordbox, Engine DJ i VirtualDJ viuen a la seva biblioteca i segueixen la pista si actualitzes aquella biblioteca quan converteixes. Si retalles silenci, els cues es recol·loquen sols segons el que hagis tallat (graella inclosa, que es torna a ancorar per fase perquè no es descompassi), i si alguna cosa no es pot recol·locar amb garanties es descarta en lloc de quedar mal posada. Surco t'ho avisa abans de convertir."
+      },
+      {
+        "q": "Puc retallar el silenci dels meus rips?",
+        "a": "Sí. Surco detecta el silenci d'entrada i de sortida i t'ensenya els dos talls sobre l'ona, amb zoom i ajust al mil·lisegon, perquè sentis com queda abans d'aplicar-ho. Pots retallar una pista o tota la selecció d'una vegada. Tingues en compte que retallar recodifica l'àudio, així que fes un cop d'ull a la nota sobre els cue points."
+      },
+      {
+        "q": "I els clics i el soroll del vinil?",
+        "a": "Surco els detecta i els interpola quan converteix, amb quatre nivells d'intensitat. Marca sobre l'ona cada clic que troba perquè puguis saltar de l'un a l'altre, i renderitza la pista reparada perquè la comparis amb l'original mentre sona, sense cap tall a l'àudio. Així sents si la reparació s'ha endut els clics, i si també s'ha endut alguna cosa de la música. També abaixa el soroll de fons del disc, el soroll de la gravació i el ronc del plat, amb la seva pròpia escala de quatre nivells. Gairebé no toca la música, i en una pista neta no canvia res. Ve desactivat."
+      },
+      {
+        "q": "Tinc MP3 a la meva biblioteca. Els puc passar a lossless sense perdre les playlists?",
+        "a": "Sí, això és substituir. Carrega l'AIFF o el FLAC de la mateixa pista i, si Surco el troba a la teva biblioteca, el botó diu «Substituir» en lloc d'«Afegir». Quan converteixes, l'entrada d'Apple Music deixa d'apuntar al MP3 i apunta al fitxer nou, i a rekordbox es torna a apuntar la mateixa fila. Conserva les seves playlists i els seus cue points, perquè rekordbox enllaça per pista i no per ruta. Un avís. rekordbox analitza el fitxer nou i pot recol·locar el beatgrid, així que val la pena revisar la graella. rekordbox ha d'estar tancat per escriure a la seva base de dades; Surco s'ofereix a tancar-lo i fa una còpia de seguretat abans. Quan la comprovació del fitxer nou surt bé i cap programa no continua fent servir el vell, Surco retira el vell tot sol. Va a la paperera, o a Còpies › Fitxers de música si és en un disc sense paperera, com un NAS. Amb «Mai» a Configuració → Destinació s'esborra del tot."
+      },
+      {
+        "q": "Funciona amb equips Denon (Engine DJ)?",
+        "a": "Sí. A Configuració → Programes de DJ posa Engine DJ a «Actualitzar i afegir» i cada pista convertida es registra directament a la teva biblioteca d'Engine DJ (amb caràtula, puntuació i les playlists que triïs), a punt per sincronitzar amb els teus reproductors. També exporta col·leccions a rekordbox, Traktor i Serato."
+      },
+      {
+        "q": "El Windows diu «Windows ha protegit l'ordinador». És segur?",
+        "a": "Sí. És l'avís de SmartScreen per a apps noves encara sense signatura a Windows. Prem «Més informació» i després «Executa de totes maneres». A macOS, Surco està notaritzat per Apple i s'obre sense avisos."
+      },
+      {
+        "q": "Quins formats admet?",
+        "a": "Converteix entre AIFF, WAV, FLAC, ALAC i MP3, de qualsevol a qualsevol. De lossless a MP3 per estalviar espai, de MP3 a AIFF per al teu programa o de FLAC a WAV, com ho necessitis. La qualitat la tries tu, amb el bitrate del MP3 (de 320 a 128 kbps, o VBR V0/V2), la profunditat de bits i la freqüència de mostreig. Per defecte es conserven les de l'original, tret d'un àudio de 16 bits farcit fins a 24, que es desa com a 16 bits reals sense pèrdua. A més, llegeix M4A, AAC, OGG i OPUS i els converteix a qualsevol d'aquests cinc."
+      },
+      {
+        "q": "I els WAV trencats?",
+        "a": "Algunes baixades antigues porten capçaleres WAV mal formades que fan ennuegar altres apps. Surco les repara sobre una còpia temporal quan les llegeix (el teu original no es toca) i la pista es reprodueix, s'analitza i es converteix amb normalitat."
+      },
+      {
+        "q": "I si l'app es tanca a mitja feina?",
+        "a": "No perds res. Surco desa tot sol les edicions sense aplicar mentre treballes, i quan el tornes a obrir t'ofereix recuperar la sessió amb tot tal com ho havies deixat. Metadades, caràtules i aparellaments inclosos, fins i tot després que l'ordinador es pengi."
+      },
+      {
+        "q": "En quins idiomes està?",
+        "a": "Castellà, anglès, alemany, francès, portuguès (Brasil), japonès i català. Per defecte segueix l'idioma del sistema, i el pots fixar a Configuració."
+      },
+      {
+        "q": "En quins sistemes funciona?",
+        "a": "macOS (Apple Silicon i Intel), Windows i Linux (AppImage). S'actualitza sol, així que sempre tindràs l'última versió."
+      }
+    ]
+  },
+  "download": {
+    "viewDownloads": "Veure les baixades",
+    "cta": "Baixar per a {{os}}",
+    "archAppleSilicon": "Apple Silicon",
+    "archIntel": "Intel",
+    "macRequirement": "macOS 13 o posterior",
+    "alsoFor": "També per a",
+    "macWith": "Mac amb {{chip}}",
+    "monterey": "macOS 12",
+    "smartscreen": "En obrir l'instal·lador, Windows mostrarà «Windows ha protegit el PC». Prem «Més informació» i després «Executa igualment». És l'SmartScreen, que avisa que no reconeix l'editor, no que el fitxer tingui res de dolent.",
+    "unsupported": "Encara no hi ha instal·lador per al teu sistema.",
+    "unreachable": "Ara mateix no hem pogut consultar les baixades.",
+    "unreachableLink": "Baixa'l des de GitHub"
+  },
+  "guide": {
+    "metaTitle": "Com fer servir Surco: guia pas a pas",
+    "metaDescription": "Guia de Surco pas a pas. Importa pistes, etiqueta-les des de Discogs, Bandcamp, Deezer, Beatport i MusicBrainz, analitza l'espectre, converteix, marca cues i porta-ho tot a Apple Music, rekordbox, Engine DJ, Traktor, Serato o VirtualDJ.",
+    "kicker": "Guia",
+    "title": "Com fer servir Surco",
+    "lede": "De deixar anar les pistes a tenir-les a punt per punxar, en setze passos curts.",
+    "tocLabel": "En aquesta guia",
+    "shotPlaceholder": "Captura properament",
+    "outroTitle": "A punt per provar-ho",
+    "outroLede": "Baixa Surco i prepara les primeres pistes en un parell de minuts.",
+    "groups": [
+      {
+        "id": "start",
+        "title": "Començar"
+      },
+      {
+        "id": "tag",
+        "title": "Etiquetar"
+      },
+      {
+        "id": "sound",
+        "title": "So"
+      },
+      {
+        "id": "out",
+        "title": "Treure les pistes"
+      },
+      {
+        "id": "keep",
+        "title": "Mantenir-ho en ordre"
+      }
+    ],
+    "sections": [
+      {
+        "id": "instalar",
+        "group": "start",
+        "title": "Instal·la i obre Surco",
+        "s": "Baixa'l, obre'l i en un minut l'assistent el deixa al teu gust.",
+        "body": [
+          "Hi ha versió per a macOS, Windows i Linux, en set idiomes. No cal cap compte i Surco s'actualitza sol."
+        ],
+        "steps": [
+          {
+            "lead": "Baixa'l.",
+            "text": "Des de la pàgina principal, o amb Homebrew a macOS."
+          },
+          {
+            "lead": "Segueix l'assistent.",
+            "text": "En quatre passos tries on cercar les etiquetes, el format i la carpeta de sortida, i què fas amb les pistes. Així l'editor només mostra el que fas servir."
+          },
+          {
+            "lead": "Ajusta la resta quan vulguis.",
+            "text": "Tot és a Configuració (⌘ ,), i l'assistent es torna a obrir des del menú Ajuda o amb ⌘K."
+          }
+        ],
+        "points": [
+          "D'entrada ja ho analitza tot en importar i cerca a Discogs, Bandcamp, Deezer i MusicBrainz sense configurar res.",
+          "Si Surco troba el teu rekordbox, Traktor, Engine DJ, Serato o VirtualDJ, just després de la benvinguda et pregunta amb quin punxes, i el que no marquis deixa de sortir a la barra lateral."
+        ],
+        "shot": "instalar-ca.webp",
+        "shotCaption": "L'assistent de benvinguda en obrir l'app per primer cop."
+      },
+      {
+        "id": "importar",
+        "group": "start",
+        "title": "Afegeix les teves pistes",
+        "s": "Arrossega fitxers o carpetes senceres i Surco ho llegeix tot al moment.",
+        "body": [
+          "Llegeix WAV, FLAC, AIFF, ALAC, MP3, M4A, AAC, OGG i OPUS. El mateix fitxer no entra mai dues vegades."
+        ],
+        "steps": [
+          {
+            "lead": "Deixa anar fitxers o carpetes.",
+            "text": "A sobre de la finestra, o prem «Afegir fitxers» (⌘O). Surco recorre les carpetes i afegeix tot l'àudio que hi troba."
+          },
+          {
+            "lead": "Mira com s'omple la llista.",
+            "text": "Les pistes apareixen a mesura que es llegeixen, amb les etiquetes, la durada i la caràtula, així que una carpeta en xarxa es comença a veure de seguida."
+          }
+        ],
+        "points": [
+          "Un fitxer malmès es marca i se salta sense aturar la importació.",
+          "Si tanques l'app, en tornar-la a obrir t'ofereix recuperar l'última sessió amb les edicions sense aplicar.",
+          "Surco t'avisa si després apareixen fitxers nous a les carpetes que hi vas deixar anar."
+        ],
+        "shot": "importar-ca.webp",
+        "shotCaption": "Arrossegar i deixar anar pistes a la llista."
+      },
+      {
+        "id": "lista",
+        "group": "start",
+        "title": "Coneix la llista de pistes",
+        "s": "Què et diu cada fila de la llista, d'un cop d'ull.",
+        "body": [
+          "Cada fila porta la caràtula, el títol, l'artista i el format. Quan analitzes la qualitat, l'etiqueta del format es posa verda, ambre o vermella."
+        ],
+        "steps": [
+          {
+            "lead": "Escolta.",
+            "text": "Espai reprodueix la pista seleccionada al reproductor de baix, amb la forma d'ona per saltar a qualsevol punt."
+          },
+          {
+            "lead": "Filtra.",
+            "text": "Els filtres de dalt («Dubtoses», «Sense convertir», «Duplicades», «Silenci per retallar»…) queden apagats quan cap pista no els compleix, i cadascun diu quantes en veuràs. El que facis després només afecta el que veus."
+          },
+          {
+            "lead": "Selecciona.",
+            "text": "⌘ + clic afegeix pistes i Maj + clic marca un interval. Supr treu la selecció de la llista."
+          }
+        ],
+        "points": [
+          "La icona ✦ marca el que Surco ha emplenat sol, un punt ambre el que has editat després de convertir i una fletxa de desfer les pistes amb còpia de seguretat.",
+          "Pots arrossegar pistes fora de Surco cap a qualsevol altra app.",
+          "⌘K salta a qualsevol pista si n'escrius el títol o l'artista."
+        ],
+        "shot": "lista-ca.webp",
+        "shotCaption": "La llista de pistes amb filtres i estats."
+      },
+      {
+        "id": "editor",
+        "group": "tag",
+        "title": "Edita les metadades",
+        "s": "Tots els camps de la pista, i fora les restes que hi han deixat altres programes.",
+        "body": [
+          "Quan selecciones una pista, l'editor de la dreta en mostra els camps, la caràtula i la puntuació."
+        ],
+        "steps": [
+          {
+            "lead": "Emplena els camps.",
+            "text": "Retorn confirma i salta al següent, i els gèneres i groupings que tens desats surten com a suggeriments d'un clic."
+          },
+          {
+            "lead": "Aprofita el que detecta Surco.",
+            "text": "Sota el BPM i la tonalitat apareix el que s'ha mesurat al mateix àudio, a punt per aplicar. Si la pista no té etiquetes, «Emplenar des del nom» en treu el títol i l'artista."
+          },
+          {
+            "lead": "Neteja el que arrossega el fitxer.",
+            "text": "«Altres metadades» mostra les etiquetes que hi han deixat altres programes, com restes de Serato o de ReplayGain, i les pots treure una a una o totes alhora."
+          }
+        ],
+        "points": [
+          "Copia i enganxa metadades entre pistes des del menú contextual. ⌘Z desfà fins a vint passos.",
+          "Els camps obligatoris es marquen en vermell si estan buits.",
+          "Les seccions de l'editor es pleguen, es reordenen i s'amaguen a Configuració → Seccions."
+        ],
+        "shot": "editor-ca.webp",
+        "shotCaption": "L'editor de metadades amb els suggeriments de Discogs."
+      },
+      {
+        "id": "discogs",
+        "group": "tag",
+        "title": "Cerca el disc a les teves fonts",
+        "s": "Discogs, Bandcamp, Deezer, Beatport i MusicBrainz, amb dades i caràtula en un clic.",
+        "body": [
+          "Discogs, Bandcamp, Deezer i MusicBrainz venen activades i no demanen cap compte. Beatport s'activa a Configuració → Fonts."
+        ],
+        "steps": [
+          {
+            "lead": "Cerca.",
+            "text": "Escriu el nom del disc o enganxa un ID de release de Discogs, i prem «Cercar» o la tecla /."
+          },
+          {
+            "lead": "Tria l'edició.",
+            "text": "Cada resultat porta caràtula, any, segell, catàleg i format. Desplega'n un per veure'n el tracklist. El que s'hi assembla més surt com a «Suggerida»."
+          },
+          {
+            "lead": "Aplica.",
+            "text": "Fes clic a la pista i Surco hi posa artista, àlbum, any, gènere, segell, catàleg i caràtula d'una tirada."
+          }
+        ],
+        "points": [
+          "Bandcamp va bé per a autoedicions i exclusives, i Deezer per a la música comercial que no és a Discogs.",
+          "Beatport et demana que connectis el teu compte (n'hi ha prou amb un de gratuït) i porta BPM, tonalitat, mix i ISRC.",
+          "MusicBrainz va a una cerca per segon, així que els resultats poden arribar una mica més tard.",
+          "Amb el teu propi token de Discogs a Configuració tens un límit més alt i vas més ràpid."
+        ],
+        "shot": "discogs-ca.webp",
+        "shotCaption": "Cercar un disc i triar la pista a Discogs."
+      },
+      {
+        "id": "automatch",
+        "group": "tag",
+        "title": "Deixa que Surco etiqueti sol",
+        "s": "Cada pista que hi deixes anar es cerca i s'etiqueta sola si la coincidència és fiable.",
+        "body": [
+          "Surco compara el títol, la durada, el número de pista i l'artista amb cada candidat. Que el títol coincideixi no n'hi ha prou, cal que alguna altra cosa ho confirmi."
+        ],
+        "steps": [
+          {
+            "lead": "Activa-ho.",
+            "text": "Activa «Aparellar automàticament en importar» a Configuració. Ve desactivat."
+          },
+          {
+            "lead": "Deixa anar les pistes.",
+            "text": "Cadascuna es cerca en segon pla a les teves fonts i, si la coincidència és fiable, en rep les dades i la caràtula."
+          },
+          {
+            "lead": "Confirma les dubtoses.",
+            "text": "Les que res no confirma queden a «Per confirmar», i les acceptes des de ⌘K sense obrir l'editor."
+          }
+        ],
+        "points": [
+          "Mai no trepitja la teva feina. Salta les pistes ja aparellades i conserva la teva caràtula.",
+          "A les playlists de les teves biblioteques no cerca sol. Allà el botó Aparellar actua sobre les pistes que seleccionis.",
+          "El filtre «Aparellades automàticament» aplega el que ha fet, i el tauler d'Activitat explica cada veredicte."
+        ],
+        "shot": "automatch-ca.webp",
+        "shotCaption": "El tauler d'Activitat amb les cerques que es fan en segon pla."
+      },
+      {
+        "id": "album",
+        "group": "tag",
+        "title": "Aparella un disc sencer",
+        "s": "Aplica un disc sencer a totes les seves pistes de cop.",
+        "body": [
+          "Serveix per a un àlbum o un EP que has importat sencer."
+        ],
+        "steps": [
+          {
+            "lead": "Selecciona les pistes.",
+            "text": "Amb ⌘ + clic o Maj + clic. La capçalera de l'editor passa a dir «Editant N pistes»."
+          },
+          {
+            "lead": "Cerca el disc un sol cop.",
+            "text": "Surco munta una graella amb els teus fitxers a l'esquerra i el tracklist a la dreta, i assigna cada fitxer per la durada."
+          },
+          {
+            "lead": "Corregeix i aplica.",
+            "text": "Canvia des del desplegable la que no hagi encertat i prem «Aplicar a N»."
+          }
+        ],
+        "points": [
+          "Un fitxer que no encaixa amb cap cançó es queda sense assignar en lloc d'anar a la que no toca.",
+          "Al grouping i al gènere, cada etiqueta indica si és a totes, a algunes o a cap.",
+          "Si el disc no és a les teves fonts, una ordre numera la selecció en l'ordre de la llista."
+        ],
+        "shot": "album-ca.webp",
+        "shotCaption": "Assignar cada fitxer a la seva cançó del disc i aplicar-ho a totes."
+      },
+      {
+        "id": "calidad",
+        "group": "sound",
+        "title": "Comprova la qualitat real",
+        "s": "Mira a l'espectre si un fitxer sense pèrdua ho és de debò.",
+        "body": [
+          "Un fitxer sense pèrdua de debò té so fins a dalt de tot de l'espectre. Un MP3 disfressat de WAV es talla en sec, i Surco marca on."
+        ],
+        "steps": [
+          {
+            "lead": "Analitza.",
+            "text": "Obre la secció de qualitat d'una pista, o analitza tota la cua amb el botó de la barra o amb ⌘⇧A."
+          },
+          {
+            "lead": "Llegeix el veredicte.",
+            "text": "Fins a uns 20 kHz és qualitat completa (verd), de 18 a 19,5 kHz és dubtosa (ambre) i per sota és dolenta (vermell)."
+          },
+          {
+            "lead": "Garbella la carpeta.",
+            "text": "Filtra la llista per «Dubtoses», «Bones» o «Sense analitzar» i decideix quines pistes es queden fora."
+          }
+        ],
+        "points": [
+          "Un MP3 no es jutja com un lossless. El seu tall és el format, no un defecte.",
+          "«Possible reprocessat» avisa d'aguts que semblen regenerats sobre un tall anterior. És una sospita mesurada, no una prova.",
+          "Sota l'espectre tens LUFS, pic real, dinàmica i soroll de fons, i pots desar l'informe en PNG."
+        ],
+        "shot": "calidad-ca.webp",
+        "shotCaption": "L'espectre d'una pista amb el seu veredicte de qualitat."
+      },
+      {
+        "id": "declick",
+        "group": "sound",
+        "title": "Neteja els teus rips de vinil",
+        "s": "Treu clics, soroll de fons i el silenci de l'agulla al principi i al final.",
+        "body": [
+          "Les dues seccions venen desactivades i s'apliquen en convertir. Tu decideixes quina pista ho necessita."
+        ],
+        "steps": [
+          {
+            "lead": "Mira quants clics té.",
+            "text": "Surco els estima i els marca sobre l'ona, i «Clic següent» els recorre un per un."
+          },
+          {
+            "lead": "Tria els nivells.",
+            "text": "Els clics i el soroll de fons tenen quatre nivells cadascun, de desactivat a fort."
+          },
+          {
+            "lead": "Escolta el resultat.",
+            "text": "«Escoltar el resultat» alterna sense talls entre la pista reparada i l'original, perquè sentis si s'ha endut una mica de música."
+          },
+          {
+            "lead": "Retalla el silenci.",
+            "text": "La secció de retall detecta l'entrada i la sortida, i ajustes cada tall al mil·lisegon amb el seu propi zoom i la seva escolta."
+          }
+        ],
+        "points": [
+          "Reparar i retallar tornen a codificar l'àudio. Els cues de Traktor es conserven excepte en ALAC.",
+          "El filtre «Silenci per retallar» aplega les pistes que ho necessiten.",
+          "El soroll s'estima sobre la mateixa pista, així que funciona en rips que comencen directament amb la música."
+        ],
+        "shot": "declick-ca.webp",
+        "shotCaption": "Clics marcats sobre l'ona i soroll de fons a la mateixa secció."
+      },
+      {
+        "id": "convertir",
+        "group": "out",
+        "title": "Converteix les teves pistes",
+        "s": "Una pista o tota la cua, al format que triïs o en el seu propi.",
+        "body": [
+          "⌘Retorn converteix la pista seleccionada i ⌘⇧Retorn tota la cua, i se salta el que ja està fet. Si has filtrat la llista, només es converteix el que veus."
+        ],
+        "steps": [
+          {
+            "lead": "Tria el format.",
+            "text": "Al desplegable del botó. AIFF, WAV, FLAC, ALAC o MP3. Amb «Igual que l'origen» cada fitxer es queda en el seu format i només se'n reescriuen les etiquetes, a l'instant."
+          },
+          {
+            "lead": "Tria on van.",
+            "text": "A Configuració → Destinació. Una carpeta, el teu Apple Music, al costat de l'original o «Editar l'original»."
+          },
+          {
+            "lead": "Converteix.",
+            "text": "En acabar veus quantes s'han convertit, quantes s'han saltat i quantes han fallat, i «Mostrar el fitxer» et porta al resultat."
+          }
+        ],
+        "points": [
+          "Si la conversió canvia l'àudio d'un original, Surco en desa abans una còpia. La marca de la fila t'hi torna.",
+          "Amb «Editar l'original», canviar de format elimina l'original.",
+          "Convertir no cerca a les teves fonts. Si vols dades fresques, passa abans Aparellar (⌘⇧D)."
+        ],
+        "shot": "convertir-ca.webp",
+        "shotCaption": "El botó de convertir amb el selector de format."
+      },
+      {
+        "id": "nombres",
+        "group": "out",
+        "title": "Posa nom als fitxers i endreça'ls",
+        "s": "Fitxers i carpetes amb el nom que tu vulguis.",
+        "body": [
+          "Per defecte Surco conserva el nom original i tu decideixes quan canviar-lo."
+        ],
+        "steps": [
+          {
+            "lead": "Munta la plantilla.",
+            "text": "A Configuració → Noms prem fitxes com {artist}, {title} o {year}, i una vista prèvia mostra el resultat."
+          },
+          {
+            "lead": "Crea carpetes si vols.",
+            "text": "Una barra crea subcarpetes, per exemple {albumArtist}/{album}/{title}."
+          },
+          {
+            "lead": "Aplica-la.",
+            "text": "El botó de regenerar de l'editor l'aplica a una pista o a tota la selecció. Si no t'hi vols amoïnar, una opció l'aplica sola en convertir."
+          }
+        ],
+        "points": [
+          "«Noms de fitxer sense accents» escriu «Royksopp» en lloc de «Röyksopp». Les etiquetes conserven els accents.",
+          "El títol també pot tenir un format propi, com ({trackNumber}) {title} ({year}), i no s'aplica mai sol."
+        ],
+        "shot": "nombres-ca.webp",
+        "shotCaption": "El constructor de plantilles de nom a Configuració."
+      },
+      {
+        "id": "exportar",
+        "group": "out",
+        "title": "Porta les pistes al teu programa de DJ",
+        "s": "Apple Music, rekordbox, Engine DJ, Traktor, Serato i VirtualDJ, en convertir o des de les seves playlists.",
+        "body": [
+          "La barra lateral mostra les teves biblioteques. Obre qualsevol playlist i les pistes entren a la llista amb els fitxers de debò."
+        ],
+        "steps": [
+          {
+            "lead": "Tria què fa la conversió.",
+            "text": "A Configuració → Programes de DJ decideixes, per a cada programa, si no el toca, si posa al dia les pistes que ja té o si, a més, hi afegeix les noves."
+          },
+          {
+            "lead": "Converteix.",
+            "text": "Les pistes hi arriben amb les etiquetes i la caràtula. També pots exportar la cua com a col·lecció .xml, .nml o .crate, o com a playlist M3U8."
+          },
+          {
+            "lead": "Organitza les playlists.",
+            "text": "Des de la barra lateral crees, canvies de nom i mous playlists i carpetes arrossegant-les, sense obrir el programa."
+          }
+        ],
+        "points": [
+          "Si el programa és obert, Surco espera que el tanquis o s'ofereix a tancar-lo, i sempre desa una còpia abans d'escriure.",
+          "Traktor no torna a llegir el fitxer, llegeix el seu collection.nml. Perquè vegi els cues nous, indica la teva col·lecció a Configuració.",
+          "Els cues de Traktor sobreviuen a la conversió entre MP3, AIFF, FLAC i WAV, i només es perden en ALAC.",
+          "Si carregues una altra còpia d'una pista que ja tens, el botó passa a «Substituir» i en conserva les playlists i els cues."
+        ],
+        "shot": "exportar-ca.webp",
+        "shotCaption": "Enviar la pista a Apple Music o exportar la col·lecció."
+      },
+      {
+        "id": "rekordbox",
+        "group": "out",
+        "title": "Marca els teus cues",
+        "s": "Hot cues sobre l'ona de rekordbox, Engine DJ, Traktor, Serato o VirtualDJ, amb el teu flux.",
+        "body": [
+          "Obre una playlist de qualsevol d'aquests programes a la barra lateral i tria una pista. La secció Cues en mostra l'ona i la graella."
+        ],
+        "steps": [
+          {
+            "lead": "Tria un flux.",
+            "text": "N'hi ha dos de fets, Mix in 64 i Mix in 32, i a Configuració › Cues Surco aprèn el teu a partir dels cues que ja tens."
+          },
+          {
+            "lead": "Fes clic on esclata la pista.",
+            "text": "El flux posa la resta comptant enrere. Si no vols buscar aquest punt, «Marcar automàticament» te'l proposa i l'acceptes amb Retorn."
+          },
+          {
+            "lead": "Desa.",
+            "text": "Surco fa una còpia de seguretat i escriu a la teva col·lecció. Si el programa és obert, espera que el tanquis."
+          }
+        ],
+        "points": [
+          "«Marcar automàticament» proposa i no decideix. Les propostes segures surten amb línia contínua i les dubtoses amb línia discontínua.",
+          "Amb diverses pistes seleccionades les marques i les deses totes de cop.",
+          "Engine DJ, Traktor, Serato i VirtualDJ només reben els hot cues. A Traktor van als botons del 2 al 8, perquè l'1 és la seva graella.",
+          "El filtre «Cues fora de la graella» et mostra les pistes amb algun cue que no cau al cop."
+        ],
+        "shot": "rekordbox-ca.webp",
+        "shotCaption": "«Marcar automàticament» proposa on esclata la pista, amb el teu flux a punt per acceptar."
+      },
+      {
+        "id": "tracklist",
+        "group": "out",
+        "title": "Enganxa el tracklist de la teva sessió",
+        "s": "D'un tracklist en text a una playlist de rekordbox, Traktor, Serato o VirtualDJ, en l'ordre del set.",
+        "body": [
+          "Val qualsevol llista amb una pista per línia, amb temps o sense. La descripció d'un vídeo de YouTube, un tracklist copiat d'una web o el que treu tracklist, el programa de l'autor de Surco que identifica les pistes d'un vídeo propi (github.com/vigosan/tracklist)."
+        ],
+        "steps": [
+          {
+            "lead": "Botó dret sobre una playlist.",
+            "text": "Tria «Enganxar el tracklist…». Sobre una carpeta, «Playlist des d'un tracklist…» et demana el nom."
+          },
+          {
+            "lead": "Enganxa el text.",
+            "text": "Surco compta les pistes i els buits que ha entès. Prem «Cercar a rekordbox»."
+          },
+          {
+            "lead": "Revisa.",
+            "text": "Cada línia surt amb el que Surco ha trobat a la teva col·lecció. Les trobades i les d'una altra mescla hi entren. Les que només coincideixen en el títol esperen el teu clic."
+          },
+          {
+            "lead": "Afegeix.",
+            "text": "Les pistes entren al final de la playlist en l'ordre del set. No s'escriu res abans de prémer aquest botó."
+          }
+        ],
+        "points": [
+          "Les pistes que no tens no surten a la revisió. Només es compten.",
+          "Si dues línies cauen a la mateixa pista, entra un sol cop.",
+          "Si rekordbox és obert, Surco et demana que el tanquis.",
+          "Mesurat amb un set real de 31 pistes. 28 van entrar soles i 3 amb un clic."
+        ],
+        "shotCaption": "La revisió del tracklist abans d'afegir, amb les trobades, les dubtoses i les semblants.",
+        "shot": "tracklist-ca.webp"
+      },
+      {
+        "id": "sesion",
+        "group": "out",
+        "title": "Munta una sessió automàtica",
+        "s": "Una playlist de la durada que vulguis, amb els teus combos, el teu gust i mescla harmònica.",
+        "body": [
+          "Surco ordena les pistes de les playlists que triïs. Ajunta les parelles que repeteixes als teus sets, encaixa per to i tempo, i deixa lloc per a les novetats."
+        ],
+        "steps": [
+          {
+            "lead": "Obre-la.",
+            "text": "Botó dret sobre una carpeta i «Sessió automàtica…», o «Omplir amb una sessió…» sobre una playlist buida."
+          },
+          {
+            "lead": "Tria la durada i les playlists.",
+            "text": "Marca cadascuna com a Bases, Vocals o Mesclades, o una carpeta sencera. Les Mesclades són els teus sets, i del seu ordre en surten els combos."
+          },
+          {
+            "lead": "Digues com la vols.",
+            "text": "Alternar bases i vocals, combos, gust, Camelot, quant sona cada pista i pistes noves."
+          },
+          {
+            "lead": "Munta-la i revisa-la.",
+            "text": "Es veu com qualsevol playlist. Refés-la, ajusta-la o queda-te-la tal com està."
+          }
+        ],
+        "points": [
+          "Cada pista compta només el que sona a la mescla, dos minuts per defecte. Un set real de 28 pistes va durar una hora.",
+          "Un combo és una parella que es repeteix en dues Mesclades o més. Sense Mesclades no hi ha combos.",
+          "Una pista és nova si s'ha afegit en els últims 30 dies, o si no té escoltes ni estrelles quan no hi ha dates.",
+          "Escriu a rekordbox, Traktor, Engine DJ, Serato o VirtualDJ. Si el programa és obert, espera que el tanquis."
+        ],
+        "shotCaption": "La sessió muntada al teu programa de DJ.",
+        "shot": "sesion-ca.webp"
+      },
+      {
+        "id": "usb",
+        "group": "out",
+        "title": "Porta les playlists a un USB",
+        "s": "Exporta les playlists a un USB a punt per als reproductors.",
+        "body": [
+          "Funciona amb playlists de rekordbox, Engine DJ i Traktor, a macOS i Windows, i amb els crates de Serato i les llistes de VirtualDJ a macOS."
+        ],
+        "steps": [
+          {
+            "lead": "Obre l'exportació.",
+            "text": "Des de la icona d'USB al costat del programa a la barra lateral, des d'«Exportar a USB…» a ⌘K o des de l'avís que surt quan connectes un USB."
+          },
+          {
+            "lead": "Marca les playlists i l'USB.",
+            "text": "Abans de copiar, Surco et diu quantes pistes són noves, quantes ja hi eren i si hi cap tot."
+          },
+          {
+            "lead": "Exporta.",
+            "text": "L'USB porta la biblioteca que llegeixen els reproductors, amb els cues i la graella."
+          }
+        ],
+        "points": [
+          "La música es copia tal com està. Si el teu CDJ és antic, converteix abans a AIFF el que sigui FLAC o passi de 24 bits o de 48 kHz.",
+          "T'avisa si l'USB està en exFAT, NTFS o GPT, uns formats que alguns CDJ no llegeixen.",
+          "rekordbox o Engine DJ han d'estar tancats."
+        ],
+        "shot": "usb-ca.webp",
+        "shotCaption": "Exportar a USB amb les playlists de rekordbox."
+      },
+      {
+        "id": "revisar",
+        "group": "keep",
+        "title": "Revisa la teva biblioteca",
+        "s": "Errates, grafies i duplicats de la teva biblioteca, en un sol lloc.",
+        "body": [
+          "Els canvis arriben als fitxers, a Apple Music i a les biblioteques que sincronitzes. Abans d'escriure Surco desa una còpia, i la revisió té Desfer."
+        ],
+        "steps": [
+          {
+            "lead": "Obre «Revisar».",
+            "text": "És a la barra d'eines i repassa el teu Apple Music, la llista carregada o una playlist."
+          },
+          {
+            "lead": "Tria què vols arreglar.",
+            "text": "Per a cada cas veus com està i com queda, i poses a la tanda el que vulguis."
+          },
+          {
+            "lead": "Aplica.",
+            "text": "Tot s'escriu d'una vegada."
+          }
+        ],
+        "points": [
+          "Grafies ajunta el que està escrit de diverses maneres, com DJ Lara i Dj Lara.",
+          "Duplicats et deixa triar quina es queda, i aquesta hereta les playlists de l'altra.",
+          "Danys repara cues i durades trencades de Traktor i Engine DJ, i Incompletes proposa com emplenar els camps obligatoris.",
+          "El BPM, la tonalitat, els cues i la puntuació no es toquen."
+        ],
+        "shot": "revisar-ca.webp",
+        "shotCaption": "Revisar sobre una playlist de rekordbox, amb un espai de més en un àlbum."
+      },
+      {
+        "id": "atajos",
+        "group": "keep",
+        "title": "Dreceres i configuració",
+        "s": "Gairebé tot té drecera, ⌘K te la troba i Configuració guarda la resta.",
+        "body": [
+          "Surco està pensat per anar sense ratolí."
+        ],
+        "steps": [
+          {
+            "lead": "Obre la paleta.",
+            "text": "⌘K cerca qualsevol acció o pista, sense distingir accents."
+          },
+          {
+            "lead": "Aprèn les dreceres.",
+            "text": "Prem ? per veure-les totes. Cada botó mostra la seva al rètol d'ajuda, i les pots reassignar a Configuració → Dreceres."
+          },
+          {
+            "lead": "Cerca una opció.",
+            "text": "A Configuració (⌘ ,) escriu a «Cercar a la configuració» i Surco t'hi porta."
+          }
+        ],
+        "points": [
+          "⌘F cerca i substitueix a totes les pistes, i et diu quantes en tocarà abans de fer-ho.",
+          "Exporta la configuració a un fitxer, o apunta'n la carpeta a iCloud Drive o Dropbox per compartir-la entre diversos Mac.",
+          "Res no passa per cap servidor de Surco. No hi ha compte, ni núvol, ni telemetria."
+        ],
+        "shot": "atajos-ca.webp",
+        "shotCaption": "La paleta d'ordres amb la cerca oberta."
+      }
+    ],
+    "notesLabel": "Bo de saber"
+  },
+  "changelog": {
+    "metaTitle": "Novetats de Surco, historial de versions",
+    "metaDescription": "Què hi ha de nou a cada versió de Surco, com l'aparellament automàtic de Discogs, exportació a rekordbox i Traktor, anàlisi de sonoritat, edició de diverses pistes i més.",
+    "kicker": "Novetats",
+    "title": "Tot el que ha canviat a Surco",
+    "lede": "El que importa de cada versió, sense soroll. Les funcions que canvien com prepares la teva música, versió a versió.",
+    "beta": {
+      "kicker": "En proves",
+      "version": "",
+      "title": "El que arriba a la propera versió",
+      "how": "Per provar-ho ja, activa «Rebre versions beta» a Configuració, General, i reinicia Surco. Les versions beta arriben a l'instal·lador del web, no a la còpia de la Microsoft Store.",
+      "items": []
+    },
+    "olderTitle": "Versions anteriors",
+    "outroTitle": "Prova-ho tot a la teva propera sessió",
+    "outroLede": "Baixa Surco i prepara les teves primeres pistes en un parell de minuts."
+  },
+  "home": {
+    "replay": "Tornar a veure l'animació",
+    "anchorLink": "Enllaç a aquest exemple",
+    "quality": {
+      "title": "Aquell lossless era un MP3.",
+      "lede": "Comprar lossless no garanteix que ho sigui. Si algú ha convertit un MP3 a FLAC, WAV o AIFF, el fitxer pesa el mateix però a l'espectre es veu el mur. Surco te'l marca abans que la pista surti de casa.",
+      "goodAlt": "Espectre d'un FLAC autèntic, amb l'energia fins a dalt de tot i sense tall",
+      "fakeAlt": "Espectre d'un MP3 transcodificat a FLAC, amb una banda buida per sobre de 16 kHz i la vora recta",
+      "section": "Qualitat d'àudio",
+      "good": "Bona qualitat",
+      "bad": "Mala qualitat",
+      "analyzing": "Analitzant l'espectre…",
+      "highsGood": "aguts fins a ~21,2 kHz",
+      "highsBad": "aguts fins a ~16 kHz",
+      "evidenceGood": "No s'ha detectat cap tall de còdec. Aguts fins a ~21,2 kHz.",
+      "evidenceBad": "Tall de còdec a ~16 kHz. L'origen era amb pèrdua.",
+      "goodBadge": "● Bona qualitat",
+      "fakeBadge": "● Fals lossless"
+    },
+    "tag": {
+      "title": "Les etiquetes, de Discogs, en un clic.",
+      "lede": "Discogs per als segells, Bandcamp per a les autoedicions, Deezer per al comercial, Beatport per al que sona als clubs i MusicBrainz per a tota la resta. Un clic i hi entra tot. Artista, segell, any, BPM i caràtula.",
+      "all": "Tots ({{count}})"
+    },
+    "batch": {
+      "title": "I apareix sola al teu Apple Music.",
+      "lede": "Tria el format i la destinació i converteix la carpeta sencera. A Apple Music i a Engine DJ no has d'importar res. La pista apareix a la teva biblioteca amb la caràtula posada, i a Engine DJ, amb puntuació i playlist. Als altres els deixa el fitxer que esperen.",
+      "stage": "Convertint a AIFF…",
+      "converting": "Convertint… {{done}}/{{total}}",
+      "converted": "{{count}} convertides",
+      "editing": "Editant {{count}} pistes",
+      "mixed": "Diversos valors",
+      "genreAll": "Gènere · totes les pistes",
+      "button": "Convertir ({{count}}) · AIFF + Apple Music",
+      "added": "✓ {{count}} pistes afegides a Apple Music"
+    },
+    "heroFree": "Gratis. macOS, Windows i Linux. Sense compte.",
+    "heroStatsTotal": "<n>{{total}}</n> baixades",
+    "heroStatsWeek": "<n>{{count}}</n> a Mac en 7 dies",
+    "closeTitle": "Tot això, en una finestra.",
+    "closeNote": "Sense núvol, sense límits i sense registrar-te. S'actualitza sol.",
+    "closeSafety": "Els teus originals no es toquen. Quan canvies de format, la còpia va a una carpeta a part. Només reescriu el fitxer si el tornes a exportar al mateix format, que és com actualitza les etiquetes sense tornar a codificar. Notaritzat per Apple.",
+    "closeDirect": "Baixada directa",
+    "closeSafeLead": "Els teus originals, a recer.",
+    "closeSafeRest": "Quan canvies de format, la còpia va a una carpeta a part. Si la còpia substitueix la vella a la teva biblioteca, la vella va a la paperera o a Còpies després de comprovar la nova. Notaritzat per Apple.",
+    "closeStatsLead": "Sense telemetria.",
+    "closeStatsRest": "Surco no sap qui el fa servir ni què fas amb la teva música. L'únic que és públic són les baixades, i les tens a <stats>Estadístiques</stats>.",
+    "allFeatures": "Veure tot el que fa →",
+    "worksWithSources": "Etiqueta des de",
+    "worksWithPrograms": "Exporta a",
+    "heroLede": "Surco converteix les teves pistes, les etiqueta des de Discogs o Beatport, comprova que el lossless ho sigui de debò i les deixa a rekordbox, Traktor, Engine DJ, Serato, VirtualDJ o Apple Music.",
+    "anchors": {
+      "see": "Veure com",
+      "quality": {
+        "lead": "Enxampa els falsos lossless.",
+        "rest": "El FLAC que vas comprar pot ser un MP3 inflat."
+      },
+      "tag": {
+        "title": "Totes les metadades, en un clic",
+        "note": "Discogs, Bandcamp, Deezer, Beatport i MusicBrainz. Artista, segell, any, BPM i caràtula.",
+        "lead": "Etiquetes en un clic.",
+        "rest": "Artista, segell, any, BPM i caràtula de cinc fonts."
+      },
+      "export": {
+        "title": "I apareixen al teu programa",
+        "note": "Apple Music, Engine DJ, rekordbox, Traktor, Serato o VirtualDJ. Sense importar res.",
+        "lead": "Directe al teu programa.",
+        "rest": "Apareix a rekordbox, Traktor, Engine DJ, Serato, VirtualDJ o Apple Music."
+      }
+    },
+    "replace": {
+      "title": "Millora el fitxer. Les teves playlists ni se n'assabenten.",
+      "lede": "Si la pista ja és al teu Apple Music, el botó passa a dir «Substituir». Surco canvia el fitxer i cada programa apunta al nou, així que no has de tornar a ficar la pista a mà a cada playlist.",
+      "convertAll": "Convertir 1 pista",
+      "search": "Cercar pistes",
+      "file": "Fitxer",
+      "metadata": "Metadades",
+      "fieldTitle": "Títol",
+      "fieldArtist": "Artista",
+      "fieldAlbum": "Àlbum",
+      "button": "Substituir per AIFF + Apple Music",
+      "converting": "Convertint a AIFF…",
+      "appleMusic": "Afegint a Apple Music…",
+      "added": "✓ Afegida a Apple Music",
+      "activity": "Activitat",
+      "activityRow": "Actualitzant la col·lecció de rekordbox",
+      "activityDetail": "1 pista apuntada al fitxer nou",
+      "collection": "Col·lecció",
+      "location": "Ubicació",
+      "inPlaylists": "És a",
+      "playlistsLabel": "Playlists",
+      "cuesLabel": "Cue points",
+      "intact": "sense tocar",
+      "inPlace": "al seu lloc",
+      "fieldYear": "Any",
+      "points": {
+        "anyFormat": {
+          "title": "D'MP3 a AIFF, o al que vulguis",
+          "text": "Val qualsevol format, fins i tot el mateix, d'un MP3 de 128 a un de 320."
+        },
+        "playlists": {
+          "title": "Les playlists, intactes",
+          "text": "La pista continua a totes les playlists on era, amb els seus cues."
+        },
+        "programs": {
+          "title": "A tots els teus programes",
+          "text": "Apple Music, i també rekordbox, Engine DJ i Traktor si els sincronitzes."
+        }
+      }
+    },
+    "sync": {
+      "title": "Ho canvies un cop. Ho veuen tots els teus programes.",
+      "lede": "Obre la pista des de la pestanya d'Apple Music o de rekordbox, corregeix el títol, el gènere o el nom del fitxer i prem «Actualitzar les etiquetes». Surco porta el canvi a Apple Music, rekordbox, Traktor, Engine DJ, Serato i VirtualDJ, i a cadascun continua sent la mateixa pista.",
+      "tabAppleMusic": "Pestanya Apple Music",
+      "tabRekordbox": "Pestanya rekordbox",
+      "fieldTitle": "Títol",
+      "fieldGenre": "Gènere",
+      "fieldFile": "Nom del fitxer",
+      "button": "Actualitzar les etiquetes",
+      "saved": "Etiquetes actualitzades",
+      "origin": "origen",
+      "points": {
+        "anyTab": {
+          "title": "Des de qualsevol pestanya",
+          "text": "Tant és de quin programa obris la pista. El canvi surt de Surco i arriba als altres."
+        },
+        "sameTrack": {
+          "title": "La mateixa pista a tot arreu",
+          "text": "Canvia el nom del fitxer i cada programa apunta al nou, amb les seves playlists i els seus cues."
+        },
+        "waits": {
+          "title": "Si és obert, espera",
+          "text": "Un programa obert rep el canvi tan bon punt el tanques. Cadascun, amb la sincronització activada."
+        }
+      }
+    },
+    "cues": {
+      "title": "Marca el drop. La resta de cues es posen sols.",
+      "lede": "Fes clic on esclata la pista, o deixa que «Marcar automàticament» el trobi. El teu flux col·loca els altres cues igual a cada pista i Surco els desa a rekordbox, Engine DJ, Traktor, Serato o VirtualDJ.",
+      "unsaved": "Sense desar",
+      "flow": "Flux",
+      "flowName": "Pujada",
+      "discard": "Descartar els canvis",
+      "save": "Desar a rekordbox",
+      "addCall": "+ CALL",
+      "autoButton": "Marcar automàticament",
+      "ask": "Esclata aquí?",
+      "points": {
+        "oneClick": {
+          "title": "Un clic, no vuit",
+          "text": "Marques on esclata la pista i el flux posa tots els altres cues."
+        },
+        "yourFlow": {
+          "title": "El teu flux, no el d'un altre",
+          "text": "Els cues cauen on tu els poses sempre, igual a cada pista."
+        },
+        "programs": {
+          "title": "Directe al teu programa",
+          "text": "rekordbox, Engine DJ, Traktor, Serato i VirtualDJ. Engine DJ, Traktor, Serato i VirtualDJ només reben els hot cues."
+        }
+      },
+      "grid": {
+        "title": "Troba els cues que no cauen al cop.",
+        "text": "A rekordbox, Engine DJ i Traktor, Surco mesura cada cue respecte de la graella i et mostra les pistes que se'n desvien. Esborres i fas clic a «Marcar automàticament». Tu tries a partir de quants ms compta.",
+        "clearAll": "Esborrar tots els cues",
+        "miss": "a {{ms}} ms del cop",
+        "hit": "al cop",
+        "filters": {
+          "silence": "Silenci per retallar",
+          "noCues": "Sense cues",
+          "offGrid": "Cues fora de la graella"
+        }
+      }
+    },
+    "app": {
+      "search": "Cercar pistes",
+      "file": "Fitxer",
+      "metadata": "Metadades",
+      "notInLibrary": "No és a Apple Music",
+      "fieldTitle": "Títol",
+      "fieldArtist": "Artista",
+      "fieldAlbum": "Àlbum",
+      "fieldYear": "Any",
+      "fieldGenre": "Gènere",
+      "convert": "Convertir",
+      "convertCount": "Convertir {{count}} pistes",
+      "convertTo": "Convertir a AIFF",
+      "missingArtist": "Falta l'artista"
+    },
+    "review": {
+      "title": "Troba les errates i els duplicats de la teva biblioteca",
+      "lede": "Surco repassa la teva biblioteca d'Apple Music, la carpeta que hi deixis anar o una playlist de rekordbox, Engine DJ, Traktor, Serato o VirtualDJ, i agrupa el que està escrit de diverses maneres, els espais i caràcters invisibles que s'hi colen quan copies d'una web i les pistes repetides. Tries com ha de quedar i el canvi arriba als fitxers, a Apple Music i, si els sincronitzes, a rekordbox, Engine DJ, Traktor, Serato i VirtualDJ.",
+      "points": {
+        "spelling": {
+          "title": "Grafies",
+          "text": "DJ Lara i Dj Lara, Head Horny's amb dos apòstrofs diferents, accents que no quadren."
+        },
+        "typo": {
+          "title": "Errates",
+          "text": "Rahcel per Rachel. Una errata no entra mai sola a la tanda, la decideixes tu."
+        },
+        "duplicate": {
+          "title": "Duplicats",
+          "text": "La mateixa pista dues vegades. La còpia que es queda entra a les playlists de la que treus."
+        },
+        "everywhere": {
+          "title": "A tot arreu",
+          "text": "Fitxers, Apple Music, rekordbox, Engine DJ, Traktor, Serato i VirtualDJ, amb còpia de cada fitxer i de cada biblioteca de DJ, que restaures des de Còpies (excepte la de Serato). I les correccions tenen Desfer."
+        }
+      },
+      "all": "Tot",
+      "artist": "Artista",
+      "bothArtists": "Artista i artista de l'àlbum",
+      "tracks_one": "{{count}} pista",
+      "tracks_other": "{{count}} pistes",
+      "copies": "{{count}} còpies",
+      "inBatch": "a la tanda",
+      "badge": {
+        "case": "Majúscules",
+        "invisible": "Invisibles",
+        "punctuation": "Signes",
+        "typo": "Errata",
+        "duplicate": "Duplicat"
+      },
+      "typo": "possible errata",
+      "tie": "Empat. Tria quina es queda.",
+      "options": "Com està i com queda",
+      "keeps": "Es queda",
+      "fieldTitle": "Títol",
+      "now": "Ara",
+      "after": "Queda",
+      "where": "On",
+      "music": "Music",
+      "file": "Fitxer",
+      "applyCount_one": "Aplicar {{count}} canvi",
+      "applyCount_other": "Aplicar {{count}} canvis",
+      "done": "rekordbox · 4 pistes actualitzades, playlists i cues intactes"
+    }
+  },
+  "convert": {
+    "metaTitle": "Convertir àudio entre AIFF, WAV, FLAC, ALAC i MP3 per a DJ",
+    "metaDescription": "Converteix en qualsevol direcció entre AIFF, WAV, FLAC, ALAC i MP3, per lots i sense perdre etiquetes, caràtula ni cues de Traktor. També llegeix M4A, AAC, OGG i OPUS. Per a Mac, Windows i Linux.",
+    "h1a": "Converteix la teva música",
+    "h1b": "al format que necessitis.",
+    "lede": "De FLAC a AIFF per al CDJ, de WAV a MP3 perquè càpiga a l'USB o de MP3 al que demani el teu programa. Surco converteix en qualsevol direcció i porta amb l'àudio les etiquetes, la caràtula i els cues de Traktor.",
+    "note": "macOS, Windows i Linux. Sense compte i sense subscripció.",
+    "example": {
+      "label": "Formats que entren i surten",
+      "arrow": "en qualsevol direcció",
+      "in": "Entra",
+      "out": "Surt",
+      "keeps": [
+        "Etiquetes i caràtula",
+        "Cues i beatgrid de Traktor",
+        "Bits i freqüència, tret que els canviïs",
+        "Per lots i en paral·lel"
+      ]
+    },
+    "carry": {
+      "kicker": "Què passa a l'altra banda",
+      "title": "El que porta el fitxer arriba a l'altre format",
+      "lede": "Cada format desa les etiquetes a la seva manera. Surco les reescriu en la forma que espera el de destinació.",
+      "head": {
+        "what": "A l'origen",
+        "result": "A la còpia",
+        "how": "Com"
+      },
+      "rows": [
+        {
+          "what": "Àudio",
+          "result": "Sense pèrdua entre formats lossless",
+          "how": "Entre AIFF, WAV, FLAC i ALAC les mostres són les mateixes. Per a MP3 tries la qualitat, de 320 a 128 kbps o VBR V0/V2."
+        },
+        {
+          "what": "Etiquetes",
+          "result": "Es conserven",
+          "how": "Passen a la forma del format de destinació, ID3 en AIFF, WAV i MP3, comentaris Vorbis en FLAC i àtoms de MP4 en ALAC."
+        },
+        {
+          "what": "Caràtula",
+          "result": "Es conserva",
+          "how": "Va incrustada a la còpia, també en un WAV."
+        },
+        {
+          "what": "Cues de Traktor",
+          "result": "Es conserven",
+          "how": "Entre MP3, AIFF, FLAC i WAV en qualsevol combinació, amb el desfasament del MP3 compensat. Només ALAC no té on desar-los."
+        },
+        {
+          "what": "Mateix format",
+          "result": "Sense recodificar",
+          "how": "Si el fitxer ja és en aquest format, es copia tal com és i només es reescriuen les etiquetes."
+        }
+      ]
+    },
+    "why": {
+      "kicker": "Per a què",
+      "title": "Cada format, per al que serveix",
+      "items": [
+        {
+          "title": "AIFF, el que tothom llegeix",
+          "text": "Sense pèrdua, amb etiquetes i caràtula, i el llegeix qualsevol CDJ i qualsevol programa de DJ."
+        },
+        {
+          "title": "MP3, perquè hi càpiga",
+          "text": "Un MP3 de 320 kbps ocupa unes quatre vegades menys que un AIFF. Per a un USB petit o per escoltar fora de la cabina."
+        },
+        {
+          "title": "FLAC i ALAC, per arxivar",
+          "text": "Sense pèrdua i comprimits, ocupen força menys que un AIFF. A més, ALAC sona a Apple Music, i FLAC no."
+        }
+      ]
+    },
+    "steps": {
+      "kicker": "Com es fa",
+      "title": "Convertir en tres passos",
+      "items": [
+        {
+          "title": "Deixa anar els fitxers",
+          "text": "Arrossega a Surco un fitxer en qualsevol format, una selecció o una carpeta sencera."
+        },
+        {
+          "title": "Tria el format",
+          "text": "AIFF, WAV, FLAC, ALAC o MP3, al menú del costat del botó de convertir. Amb diverses pistes, també «Igual que l'origen»."
+        },
+        {
+          "title": "Converteix",
+          "text": "Les còpies van a Música/Surco, al costat de l'original o a Apple Music, i rekordbox, Engine DJ, Traktor, Serato i VirtualDJ es posen al dia si els sincronitzes."
+        }
+      ],
+      "guide": "Pas a pas a la guia"
+    },
+    "quality": {
+      "kicker": "Abans de convertir",
+      "title": "El teu lossless és de debò sense pèrdua?",
+      "lede": "Un MP3 convertit a FLAC, a WAV o a AIFF pesa el mateix que l'autèntic. L'espectre el delata, perquè el so es talla en sec. Surco revisa cada pista abans que la converteixis."
+    },
+    "faq": {
+      "kicker": "Preguntes",
+      "title": "Preguntes sobre convertir",
+      "items": [
+        {
+          "q": "Quins formats puc convertir?",
+          "a": "Hi entren WAV, FLAC, AIFF, ALAC, MP3, M4A, AAC, OGG i OPUS. En surten AIFF, WAV, FLAC, ALAC i MP3, de qualsevol a qualsevol."
+        },
+        {
+          "q": "Perdo qualitat quan converteixo?",
+          "a": "Entre formats sense pèrdua, no, perquè les mostres són les mateixes. Quan passes a MP3 es perd alguna cosa, com en qualsevol MP3, i tu tries quant amb el bitrate. Passar un MP3 a AIFF no li torna la qualitat, només el fa més gran."
+        },
+        {
+          "q": "Es toquen els meus originals?",
+          "a": "Quan canvies de format, la còpia va a una carpeta a part i l'original es queda on era. Si la còpia substitueix la vella a la teva biblioteca, Surco retira la vella després de comprovar la nova, a la paperera o a Còpies."
+        },
+        {
+          "q": "Puc convertir una carpeta sencera de cop?",
+          "a": "Sí. Deixa anar la carpeta i converteix-ho tot d'una vegada. Les conversions van en paral·lel."
+        },
+        {
+          "q": "Funciona a Windows?",
+          "a": "Sí. Surco funciona a macOS (Apple Silicon i Intel), Windows i Linux."
+        }
+      ]
+    },
+    "outro": {
+      "title": "Converteix la teva música",
+      "lede": "A més, Surco etiqueta des de Discogs, Bandcamp, Deezer, Beatport i MusicBrainz i ho arxiva tot a la teva biblioteca."
+    }
+  },
+  "flacToAiff": {
+    "metaTitle": "Convertir FLAC a AIFF a Mac i Windows, sense perdre etiquetes ni cues",
+    "metaDescription": "Converteix FLAC a AIFF sense pèrdua i per lots per a rekordbox, Serato o CDJ. Surco conserva les etiquetes, la caràtula i els cues de Traktor, i detecta els FLAC falsos que en realitat són MP3.",
+    "h1a": "Converteix FLAC a AIFF",
+    "h1b": "sense perdre ni una etiqueta.",
+    "lede": "Deixa anar una carpeta de FLAC i treu-la en AIFF a punt per a rekordbox, Serato o CDJ antics. L'àudio continua sent sense pèrdua, bit a bit, i les etiquetes, la caràtula i els cues de Traktor també hi passen.",
+    "note": "macOS, Windows i Linux. Sense compte i sense subscripció.",
+    "example": {
+      "label": "Exemple de conversió",
+      "arrow": "sense pèrdua, mateixa profunditat de bits i freqüència",
+      "keeps": [
+        "Artista, títol, àlbum i la resta d'etiquetes",
+        "Caràtula",
+        "Cues i beatgrid de Traktor",
+        "Profunditat de bits i freqüència"
+      ]
+    },
+    "carry": {
+      "kicker": "Què passa a l'altra banda",
+      "title": "Tot el que porta el FLAC acaba a l'AIFF",
+      "lede": "Els convertidors en línia et donen l'àudio i llencen la resta. Surco reescriu cada etiqueta tal com l'espera l'AIFF.",
+      "head": {
+        "what": "Al FLAC",
+        "result": "A l'AIFF",
+        "how": "Com"
+      },
+      "rows": [
+        {
+          "what": "Àudio",
+          "result": "Idèntic bit a bit",
+          "how": "Tots dos formats són sense pèrdua, així que les mostres són les mateixes. Es conserven la profunditat de bits i la freqüència."
+        },
+        {
+          "what": "Etiquetes",
+          "result": "Es conserven",
+          "how": "Els comentaris Vorbis passen a etiquetes ID3, les que llegeixen rekordbox, Serato i Traktor en un AIFF."
+        },
+        {
+          "what": "Caràtula",
+          "result": "Es conserva",
+          "how": "La portada va incrustada a l'AIFF."
+        },
+        {
+          "what": "Cues de Traktor",
+          "result": "Es conserven",
+          "how": "Surco llegeix l'arbre de cues que Traktor desa al FLAC i el torna a escriure on Traktor el busca en un AIFF."
+        },
+        {
+          "what": "Àudio de 24 bits inflat",
+          "result": "Es desa en 16 bits",
+          "how": "Un FLAC de «24 bits» que en realitat en porta 16 es desa en 16 bits reals, sense pèrdua."
+        }
+      ]
+    },
+    "why": {
+      "kicker": "Per què AIFF",
+      "title": "Per què els DJ passen de FLAC a AIFF",
+      "items": [
+        {
+          "title": "Els reproductors antics no llegeixen FLAC",
+          "text": "El CDJ-2000NXS i els Pioneer anteriors no llegeixen FLAC des d'USB. L'AIFF sona a qualsevol CDJ i a qualsevol programa de DJ."
+        },
+        {
+          "title": "Caràtules que es veuen",
+          "text": "L'AIFF porta etiquetes ID3, així que la portada i els comentaris surten igual a rekordbox, Serato i Traktor."
+        },
+        {
+          "title": "El mateix so, més espai",
+          "text": "L'AIFF va sense comprimir, així que els fitxers ocupen més que els FLAC. El so no canvia gens."
+        }
+      ]
+    },
+    "steps": {
+      "kicker": "Com es fa",
+      "title": "De FLAC a AIFF en tres passos",
+      "items": [
+        {
+          "title": "Deixa anar els fitxers",
+          "text": "Arrossega a Surco un FLAC, una selecció o una carpeta sencera."
+        },
+        {
+          "title": "Tria AIFF",
+          "text": "Tria AIFF al menú de format, al costat del botó de convertir. Per defecte, la profunditat de bits i la freqüència són les de l'origen."
+        },
+        {
+          "title": "Converteix",
+          "text": "Els AIFF van a Música/Surco, o directament a Apple Music o Engine DJ. Els FLAC es queden com estaven."
+        }
+      ],
+      "guide": "Pas a pas a la guia"
+    },
+    "quality": {
+      "kicker": "Abans de convertir",
+      "title": "Aquest FLAC és de debò sense pèrdua?",
+      "lede": "Un MP3 convertit a FLAC pesa el mateix i es veu igual en una llista de fitxers. L'espectre el delata, perquè el so es talla en sec. Surco revisa cada pista abans que la converteixis."
+    },
+    "faq": {
+      "kicker": "Preguntes",
+      "title": "Preguntes sobre FLAC a AIFF",
+      "items": [
+        {
+          "q": "Es perd qualitat en convertir FLAC a AIFF?",
+          "a": "No. Tots dos són sense pèrdua, així que l'AIFF porta exactament les mateixes mostres que el FLAC. El que canvia és el contenidor. L'AIFF desa l'àudio sense comprimir."
+        },
+        {
+          "q": "Per què l'AIFF ocupa més que el FLAC?",
+          "a": "El FLAC comprimeix l'àudio sense perdre res, com un zip. L'AIFF no el comprimeix, així que a 16 bits i 44,1 kHz ocupa uns 10 MB per minut d'àudio estèreo."
+        },
+        {
+          "q": "Puc convertir una carpeta sencera de cop?",
+          "a": "Sí. Deixa anar la carpeta i converteix-ho tot d'una vegada."
+        },
+        {
+          "q": "Es conserven els meus cues?",
+          "a": "Els de Traktor, sí. Surco porta els cues i el beatgrid on Traktor els llegeix en un AIFF. rekordbox desa els cues a la seva pròpia biblioteca. Carrega l'AIFF amb «Substituir» i la mateixa fila de rekordbox passa a apuntar al fitxer nou, amb els seus cues i les seves playlists."
+        },
+        {
+          "q": "Funciona a Windows?",
+          "a": "Sí. Surco funciona a macOS (Apple Silicon i Intel), Windows i Linux."
+        }
+      ]
+    },
+    "outro": {
+      "title": "Passa els teus FLAC a AIFF",
+      "lede": "A més, Surco etiqueta des de Discogs, Bandcamp, Deezer, Beatport i MusicBrainz i ho arxiva tot a la teva biblioteca."
+    }
+  },
+  "wavToAiff": {
+    "metaTitle": "Convertir WAV a AIFF sense perdre etiquetes, caràtula ni cues",
+    "metaDescription": "Converteix WAV a AIFF sense pèrdua i per lots. L'àudio és idèntic, i Surco porta a l'AIFF les etiquetes, la caràtula i els cues de Traktor per a rekordbox, Serato, Traktor i Apple Music.",
+    "h1a": "Converteix WAV a AIFF",
+    "h1b": "amb les etiquetes posades.",
+    "lede": "El WAV i l'AIFF porten el mateix àudio, mostra a mostra. La diferència són les etiquetes, que en un AIFF les llegeix qualsevol programa de DJ. Surco passa la carpeta sencera i s'emporta la caràtula i els cues de Traktor.",
+    "note": "macOS, Windows i Linux. Sense compte i sense subscripció.",
+    "example": {
+      "label": "Exemple de conversió",
+      "arrow": "mateix àudio, mateixa mida",
+      "keeps": [
+        "Artista, títol, àlbum i la resta d'etiquetes",
+        "Caràtula",
+        "Cues i beatgrid de Traktor",
+        "Profunditat de bits i freqüència"
+      ]
+    },
+    "carry": {
+      "kicker": "Què passa a l'altra banda",
+      "title": "Tot el que porta el WAV acaba a l'AIFF",
+      "lede": "Molts convertidors et donen l'àudio i perden les etiquetes pel camí. Surco les escriu on l'AIFF les desa.",
+      "head": {
+        "what": "Al WAV",
+        "result": "A l'AIFF",
+        "how": "Com"
+      },
+      "rows": [
+        {
+          "what": "Àudio",
+          "result": "Idèntic",
+          "how": "Tots dos són PCM sense comprimir. Les mostres, la profunditat de bits i la freqüència no canvien, i el fitxer pesa el mateix."
+        },
+        {
+          "what": "Etiquetes",
+          "result": "Es conserven",
+          "how": "El que desi el WAV, en ID3 o en INFO, passa a etiquetes ID3 a l'AIFF, les que llegeixen rekordbox, Serato i Traktor."
+        },
+        {
+          "what": "Caràtula",
+          "result": "Es conserva",
+          "how": "La portada va incrustada a l'AIFF."
+        },
+        {
+          "what": "Cues de Traktor",
+          "result": "Es conserven",
+          "how": "Surco llegeix l'arbre de cues que Traktor desa al WAV i l'escriu on Traktor el busca en un AIFF."
+        },
+        {
+          "what": "Capçaleres trencades",
+          "result": "Es reparen",
+          "how": "Un WAV amb la capçalera mal formada es repara sobre una còpia en llegir-lo. El teu original no es toca."
+        }
+      ]
+    },
+    "why": {
+      "kicker": "Per què AIFF",
+      "title": "Per què passar de WAV a AIFF",
+      "items": [
+        {
+          "title": "Etiquetes que es llegeixen",
+          "text": "El WAV va néixer sense un lloc estàndard per a les etiquetes i cada programa les busca en un lloc diferent. En un AIFF, rekordbox, Serato, Traktor i Apple Music llegeixen les mateixes."
+        },
+        {
+          "title": "Caràtula a la cabina",
+          "text": "Amb la portada incrustada a l'AIFF, la veus al teu programa i al reproductor."
+        },
+        {
+          "title": "Res a perdre",
+          "text": "El mateix àudio i la mateixa mida. Passar de WAV a AIFF no costa ni qualitat ni espai."
+        }
+      ]
+    },
+    "steps": {
+      "kicker": "Com es fa",
+      "title": "De WAV a AIFF en tres passos",
+      "items": [
+        {
+          "title": "Deixa anar els fitxers",
+          "text": "Arrossega a Surco un WAV, una selecció o una carpeta sencera."
+        },
+        {
+          "title": "Tria AIFF",
+          "text": "És el format per defecte. La profunditat de bits i la freqüència són les de l'origen."
+        },
+        {
+          "title": "Converteix",
+          "text": "Els AIFF van a Música/Surco, o directament a Apple Music o Engine DJ. Els WAV es queden on eren."
+        }
+      ],
+      "guide": "Pas a pas a la guia"
+    },
+    "quality": {
+      "kicker": "Abans de convertir",
+      "title": "Aquest WAV és de debò sense pèrdua?",
+      "lede": "Un MP3 desat com a WAV pesa el mateix que un d'autèntic. L'espectre el delata, perquè el so es talla en sec. Surco revisa cada pista abans que la converteixis."
+    },
+    "faq": {
+      "kicker": "Preguntes",
+      "title": "Preguntes sobre WAV a AIFF",
+      "items": [
+        {
+          "q": "Es perd qualitat en convertir WAV a AIFF?",
+          "a": "No. Tots dos desen l'àudio sense comprimir, així que l'AIFF porta exactament les mateixes mostres que el WAV."
+        },
+        {
+          "q": "I si m'estimo més quedar-me amb el WAV?",
+          "a": "Pots fer-ho. Surco també posa etiquetes i caràtula a un WAV. L'AIFF és més segur si canvies de programa o d'equip, perquè tots en llegeixen les etiquetes igual."
+        },
+        {
+          "q": "Puc convertir una carpeta sencera de cop?",
+          "a": "Sí. Deixa anar la carpeta i converteix-ho tot d'una vegada. Les conversions van en paral·lel."
+        },
+        {
+          "q": "Es conserven els meus cues?",
+          "a": "Els de Traktor, sí. Surco els porta on Traktor els llegeix en un AIFF. Els de rekordbox viuen a la seva biblioteca. Carrega l'AIFF amb «Substituir» i la mateixa fila de rekordbox passa a apuntar al fitxer nou, amb els seus cues i les seves playlists."
+        },
+        {
+          "q": "Funciona a Windows?",
+          "a": "Sí. Surco funciona a macOS (Apple Silicon i Intel), Windows i Linux."
+        }
+      ]
+    },
+    "outro": {
+      "title": "Passa els teus WAV a AIFF",
+      "lede": "A més, Surco etiqueta des de Discogs, Bandcamp, Deezer, Beatport i MusicBrainz i ho arxiva tot a la teva biblioteca."
+    }
+  },
+  "flacToMp3": {
+    "metaTitle": "Convertir FLAC a MP3 de 320 kbps sense perdre etiquetes ni cues",
+    "metaDescription": "Converteix FLAC a MP3 per lots, a 320 kbps o a la qualitat que triïs. Surco conserva les etiquetes, la caràtula i els cues de Traktor, amb el desfasament de l'MP3 compensat.",
+    "h1a": "Converteix FLAC a MP3",
+    "h1b": "i que càpiga a l'USB.",
+    "lede": "Passa els teus FLAC a MP3 de 320 kbps, o a la qualitat que triïs, per a un USB petit, un equip que no llegeix FLAC o el mòbil. Les etiquetes, la caràtula i els cues de Traktor passen amb l'àudio.",
+    "note": "macOS, Windows i Linux. Sense compte i sense subscripció.",
+    "example": {
+      "label": "Exemple de conversió",
+      "arrow": "MP3 de 320 kbps, menys de la meitat de pes",
+      "keeps": [
+        "Artista, títol, àlbum i la resta d'etiquetes",
+        "Caràtula",
+        "Cues i beatgrid de Traktor",
+        "Qualitat de l'MP3 a la teva tria"
+      ]
+    },
+    "carry": {
+      "kicker": "Què passa a l'altra banda",
+      "title": "Tot el que porta el FLAC acaba a l'MP3",
+      "lede": "Els convertidors en línia et donen l'àudio i llencen la resta. Surco reescriu cada etiqueta tal com l'espera l'MP3.",
+      "head": {
+        "what": "Al FLAC",
+        "result": "A l'MP3",
+        "how": "Com"
+      },
+      "rows": [
+        {
+          "what": "Àudio",
+          "result": "MP3 de 320 kbps",
+          "how": "Per defecte a 320 kbps. A Configuració → Format tries de 320 a 128 kbps, o VBR V0/V2."
+        },
+        {
+          "what": "Etiquetes",
+          "result": "Es conserven",
+          "how": "Els comentaris Vorbis passen a ID3v2.3, les etiquetes que llegeixen els CDJ, rekordbox, Serato i Traktor."
+        },
+        {
+          "what": "Caràtula",
+          "result": "Es conserva",
+          "how": "La portada va incrustada a l'MP3."
+        },
+        {
+          "what": "Cues de Traktor",
+          "result": "Es conserven",
+          "how": "Surco porta l'arbre de cues de Traktor a l'MP3 i compensa el desfasament que hi afegeix el còdec, perquè cada cue caigui on era."
+        }
+      ]
+    },
+    "why": {
+      "kicker": "Per què MP3",
+      "title": "Per què passar de FLAC a MP3",
+      "items": [
+        {
+          "title": "Hi cap molt més",
+          "text": "Un MP3 de 320 kbps ocupa menys de la meitat que un FLAC. Al mateix USB hi caben més del doble de pistes."
+        },
+        {
+          "title": "El llegeix qualsevol equip",
+          "text": "Els CDJ antics, el cotxe i gairebé qualsevol reproductor llegeixen MP3. No tots llegeixen FLAC."
+        },
+        {
+          "title": "El teu FLAC continua sent el màster",
+          "text": "Converteix a una carpeta a part i guarda el FLAC per a casa. Si un dia vols AIFF, el treus del FLAC i no de l'MP3."
+        }
+      ]
+    },
+    "steps": {
+      "kicker": "Com es fa",
+      "title": "De FLAC a MP3 en tres passos",
+      "items": [
+        {
+          "title": "Deixa anar els fitxers",
+          "text": "Arrossega a Surco un FLAC, una selecció o una carpeta sencera."
+        },
+        {
+          "title": "Tria MP3",
+          "text": "Al menú de format, al costat del botó de convertir. La qualitat, a Configuració → Format, ve a 320 kbps."
+        },
+        {
+          "title": "Converteix",
+          "text": "Els MP3 van a Música/Surco o a la carpeta que triïs, com la del teu USB. Els FLAC es queden on eren."
+        }
+      ],
+      "guide": "Pas a pas a la guia"
+    },
+    "quality": {
+      "kicker": "Abans de convertir",
+      "title": "Aquest FLAC és de debò sense pèrdua?",
+      "lede": "Un MP3 convertit a FLAC pesa el mateix i es veu igual en una llista de fitxers. L'espectre el delata, perquè el so es talla en sec. Surco revisa cada pista abans que la converteixis."
+    },
+    "faq": {
+      "kicker": "Preguntes",
+      "title": "Preguntes sobre FLAC a MP3",
+      "items": [
+        {
+          "q": "Es nota la diferència entre un FLAC i un MP3 de 320?",
+          "a": "En la majoria d'equips costa sentir-la. L'MP3 retalla sobretot els aguts més alts. Per al màster i per arxivar, queda't amb el FLAC."
+        },
+        {
+          "q": "Quina qualitat d'MP3 trio?",
+          "a": "320 kbps, que és com ve. Si et falta espai, VBR V0 sona gairebé igual i ocupa una mica menys."
+        },
+        {
+          "q": "Puc convertir una carpeta sencera de cop?",
+          "a": "Sí. Deixa anar la carpeta i converteix-ho tot d'una vegada. Les conversions van en paral·lel."
+        },
+        {
+          "q": "Es conserven els meus cues?",
+          "a": "Els de Traktor, sí, amb el desfasament del còdec compensat perquè caiguin on eren. Els de rekordbox i Engine DJ viuen a la seva biblioteca i no viatgen dins del fitxer."
+        },
+        {
+          "q": "Funciona a Windows?",
+          "a": "Sí. Surco funciona a macOS (Apple Silicon i Intel), Windows i Linux."
+        }
+      ]
+    },
+    "outro": {
+      "title": "Passa els teus FLAC a MP3",
+      "lede": "A més, Surco etiqueta des de Discogs, Bandcamp, Deezer, Beatport i MusicBrainz i ho arxiva tot a la teva biblioteca."
+    }
+  },
+  "wavToMp3": {
+    "metaTitle": "Convertir WAV a MP3 de 320 kbps sense perdre etiquetes ni cues",
+    "metaDescription": "Converteix WAV a MP3 per lots, a 320 kbps o a la qualitat que triïs, amb fitxers quatre vegades més lleugers. Surco conserva les etiquetes, la caràtula i els cues de Traktor.",
+    "h1a": "Converteix WAV a MP3",
+    "h1b": "quatre vegades més lleuger.",
+    "lede": "Un WAV ocupa uns 10 MB per minut i un MP3 de 320 kbps uns 2,4. Surco passa els teus WAV a MP3 per lots i s'hi emporta les etiquetes, la caràtula i els cues de Traktor.",
+    "note": "macOS, Windows i Linux. Sense compte i sense subscripció.",
+    "example": {
+      "label": "Exemple de conversió",
+      "arrow": "MP3 de 320 kbps, quatre vegades més lleuger",
+      "keeps": [
+        "Artista, títol, àlbum i la resta d'etiquetes",
+        "Caràtula",
+        "Cues i beatgrid de Traktor",
+        "Qualitat del MP3 al teu gust"
+      ]
+    },
+    "carry": {
+      "kicker": "Què passa a l'altra banda",
+      "title": "Tot el que porta el WAV acaba al MP3",
+      "lede": "Molts convertidors et donen l'àudio i es deixen les etiquetes pel camí. Surco les escriu allà on el MP3 les desa.",
+      "head": {
+        "what": "Al WAV",
+        "result": "Al MP3",
+        "how": "Com"
+      },
+      "rows": [
+        {
+          "what": "Àudio",
+          "result": "MP3 de 320 kbps",
+          "how": "Per defecte a 320 kbps. A Configuració → Format tries de 320 a 128 kbps, o VBR V0/V2."
+        },
+        {
+          "what": "Etiquetes",
+          "result": "Es conserven",
+          "how": "El que desi el WAV, en ID3 o en INFO, passa a ID3v2.3, les etiquetes que llegeixen els CDJ, rekordbox, Serato i Traktor."
+        },
+        {
+          "what": "Caràtula",
+          "result": "Es conserva",
+          "how": "La portada va incrustada al MP3."
+        },
+        {
+          "what": "Cues de Traktor",
+          "result": "Es conserven",
+          "how": "Surco porta l'arbre de cues de Traktor al MP3 i compensa el desfasament que hi afegeix el còdec, perquè cada cue caigui on era."
+        },
+        {
+          "what": "Capçaleres trencades",
+          "result": "Es reparen",
+          "how": "Un WAV amb la capçalera mal formada es repara sobre una còpia quan es llegeix. El teu original no es toca."
+        }
+      ]
+    },
+    "why": {
+      "kicker": "Per què MP3",
+      "title": "Per què passar de WAV a MP3",
+      "items": [
+        {
+          "title": "Quatre vegades menys espai",
+          "text": "Un WAV de 16 bits a 44,1 kHz ocupa uns 10 MB per minut. El MP3 de 320 kbps, uns 2,4."
+        },
+        {
+          "title": "Etiquetes que es llegeixen",
+          "text": "El MP3 porta les etiquetes en ID3, que llegeix qualsevol programa i qualsevol reproductor."
+        },
+        {
+          "title": "El teu WAV continua sent el màster",
+          "text": "Converteix a una carpeta a part i guarda't el WAV. Si un dia vols AIFF o FLAC, surt del WAV i no del MP3."
+        }
+      ]
+    },
+    "steps": {
+      "kicker": "Com es fa",
+      "title": "De WAV a MP3 en tres passos",
+      "items": [
+        {
+          "title": "Deixa anar els fitxers",
+          "text": "Arrossega a Surco un WAV, una selecció o una carpeta sencera."
+        },
+        {
+          "title": "Tria MP3",
+          "text": "Al menú de format del costat del botó de convertir. La qualitat, a Configuració → Format, ve a 320 kbps."
+        },
+        {
+          "title": "Converteix",
+          "text": "Els MP3 van a Música/Surco o a la carpeta que triïs, com la del teu USB. Els WAV es queden on eren."
+        }
+      ],
+      "guide": "Pas a pas a la guia"
+    },
+    "quality": {
+      "kicker": "Abans de convertir",
+      "title": "Aquest WAV és de debò sense pèrdua?",
+      "lede": "Un MP3 desat com a WAV pesa el mateix que un d'autèntic. L'espectre el delata, perquè el so es talla en sec. Surco revisa cada pista abans que la converteixis."
+    },
+    "faq": {
+      "kicker": "Preguntes",
+      "title": "Preguntes sobre WAV a MP3",
+      "items": [
+        {
+          "q": "Es nota la diferència entre un WAV i un MP3 de 320?",
+          "a": "En la majoria d'equips costa de sentir-la. El MP3 retalla sobretot els aguts més alts. Per al màster i per arxivar, queda't amb el WAV."
+        },
+        {
+          "q": "Quina qualitat de MP3 trio?",
+          "a": "320 kbps, que és la que ve per defecte. Si et falta espai, VBR V0 sona gairebé igual i ocupa una mica menys."
+        },
+        {
+          "q": "Puc convertir una carpeta sencera de cop?",
+          "a": "Sí. Deixa anar la carpeta i converteix-ho tot d'una vegada. Les conversions van en paral·lel."
+        },
+        {
+          "q": "Es conserven els meus cues?",
+          "a": "Els de Traktor, sí, amb el desfasament del còdec compensat perquè caiguin on eren. Els de rekordbox i Engine DJ viuen a la seva biblioteca i no viatgen dins del fitxer."
+        },
+        {
+          "q": "Funciona a Windows?",
+          "a": "Sí. Surco funciona a macOS (Apple Silicon i Intel), Windows i Linux."
+        }
+      ]
+    },
+    "outro": {
+      "title": "Passa els teus WAV a MP3",
+      "lede": "A més, Surco etiqueta des de Discogs, Bandcamp, Deezer, Beatport i MusicBrainz i ho arxiva tot a la teva biblioteca."
+    }
+  },
+  "useCases": {
+    "metaTitle": "Casos d'ús de Surco. Com configurar-lo per a cada feina",
+    "metaDescription": "Receptes pas a pas per a Surco. Quina configuració tocar i què prémer per etiquetar una carpeta sencera, treure duplicats d'Apple Music, igualar el volum o portar les teves pistes a rekordbox i Engine DJ.",
+    "recipeMetaTitle": "{{title}} amb Surco",
+    "kicker": "Casos d'ús",
+    "title": "Surco per a allò que vens a fer",
+    "lede": "Receptes per a les feines de sempre. Primer, la configuració que es toca una sola vegada. Després, els passos que repeteixes cada vegada.",
+    "tocLabel": "En aquesta pàgina",
+    "backLabel": "Tots els casos d'ús",
+    "settingsLabel": "Configuració, una sola vegada",
+    "settingsHint": "Obre la Configuració de Surco (⌘ , al Mac) i cerca cada opció pel seu nom.",
+    "showShot": "Mostra on és a {{place}}",
+    "settingsRoot": "Configuració",
+    "on": "Activat",
+    "optional": "Opcional",
+    "stepsLabel": "Després, cada vegada",
+    "relatedLabel": "Més a fons a la guia",
+    "outroTitle": "Hi trobes a faltar un cas?",
+    "outroLede": "Explica'ns què vols fer amb les teves pistes i l'afegirem aquí.",
+    "macOnly": "Només Mac",
+    "searchLabel": "Cerca un cas d'ús",
+    "searchPlaceholder": "Duplicats, cue points, volum, USB…",
+    "sourcesLabel": "La teva música és a",
+    "allSources": "Tot",
+    "shownCount": "{{shown}} de {{total}}",
+    "emptyTitle": "Encara no hi ha cap recepta per a això",
+    "clearFilters": "Treure els filtres",
+    "requestCase": "Demana-ho a GitHub",
+    "sources": {
+      "folder": "Una carpeta",
+      "appleMusic": "Apple Music",
+      "rekordbox": "rekordbox",
+      "engineDj": "Engine DJ",
+      "traktor": "Traktor",
+      "usb": "USB",
+      "nas": "NAS"
+    },
+    "groups": [
+      {
+        "id": "organize",
+        "title": "Etiqueta i endreça",
+        "lede": "Dades, caràtules i noms en ordre, sense anar pista per pista."
+      },
+      {
+        "id": "sound",
+        "title": "Qualitat i so",
+        "lede": "Saber què tens i que tot soni igual de fort."
+      },
+      {
+        "id": "library",
+        "title": "La teva biblioteca i el teu programa de DJ",
+        "lede": "Apple Music, rekordbox, Engine DJ, Traktor, Serato i VirtualDJ al dia amb el que canvies a Surco."
+      },
+      {
+        "id": "go",
+        "title": "Emporta-te-la",
+        "lede": "La teva música fora de casa, en un USB o en un NAS."
+      }
+    ],
+    "cases": [
+      {
+        "id": "in-place",
+        "slug": "etiquetar-carpeta-entera",
+        "group": "organize",
+        "title": "Posa etiquetes i caràtula a una carpeta sencera, sense crear còpies",
+        "s": "Surco omple les etiquetes i la caràtula als mateixos fitxers, sense còpies i sense canviar el format.",
+        "body": [
+          "Tens una carpeta de música amb etiquetes incompletes o sense caràtula. Vols que Surco les ompli tot sol, als mateixos fitxers, sense còpies i sense canviar el format.",
+          "Fes la configuració una sola vegada. Després, amb cada carpeta, són quatre passos."
+        ],
+        "keywords": "etiquetar etiquetes tags metadades portada caràtula cover autocompletar",
+        "settings": [
+          {
+            "tab": "Fonts",
+            "setting": "Aparellar automàticament en importar",
+            "note": "Ve desactivat. Quan deixes anar les pistes, Surco cerca cada una i hi posa les dades i la caràtula quan n'està segur. Si Discogs és entre les teves fonts, primer afegeix-ne el token."
+          },
+          {
+            "tab": "Format",
+            "setting": "Format per defecte",
+            "value": "Igual que l'origen",
+            "note": "Cada fitxer es queda en el seu format. Un MP3 continua sent MP3. Els OGG, OPUS i AAC se salten, i un M4A surt com a ALAC."
+          },
+          {
+            "tab": "Destinació",
+            "setting": "Destinació dels fitxers convertits",
+            "value": "Editar l'original",
+            "note": "Surco desa els canvis al mateix fitxer, sense crear-ne un altre."
+          },
+          {
+            "tab": "Destinació",
+            "section": "Còpies dels originals",
+            "setting": "Què es desa",
+            "value": "Sempre",
+            "optional": true,
+            "note": "Així pots tornar al fitxer d'abans si alguna cosa no t'agrada."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Arrossega la carpeta a Surco",
+            "text": "També hi entren les pistes de les subcarpetes. Surco comença a cercar tot sol."
+          },
+          {
+            "title": "Espera que acabi la cerca",
+            "text": "A dalt veuràs «Aparellant automàticament…» amb un comptador. Espera que acabi."
+          },
+          {
+            "title": "Mira les que queden per confirmar",
+            "text": "Al filtre de la llista, tria «Per confirmar». Són les que Surco no ha vist clares. Revisa-les o deixa-les com estan."
+          },
+          {
+            "title": "Prem «Convertir»",
+            "text": "És el botó de la barra de dalt. Surco t'ho pregunta abans de tocar els fitxers. Prem «Sobreescriure i convertir»."
+          }
+        ],
+        "points": [
+          "El so no canvia. Només s'escriuen les etiquetes i la caràtula, per això va tan de pressa.",
+          "Les pistes que deixes sense confirmar es queden amb les etiquetes que ja tenien.",
+          "Els cue points de Traktor continuen al seu lloc."
+        ],
+        "related": [
+          {
+            "label": "Aparellar automàticament",
+            "anchor": "automatch"
+          },
+          {
+            "label": "Converteix les teves pistes",
+            "anchor": "convertir"
+          }
+        ]
+      },
+      {
+        "id": "replace",
+        "slug": "sustituir-pista-por-copia-mejor",
+        "group": "library",
+        "macOnly": true,
+        "title": "Canvia una pista de la teva biblioteca per una còpia millor",
+        "s": "La còpia nova ocupa el lloc de la vella i continua a totes les seves playlists.",
+        "body": [
+          "Tens una pista en MP3 a la biblioteca i aconsegueixes l'AIFF o el WAV. Vols que la còpia nova ocupi el lloc de la vella, sense acabar amb dues i sense haver de tornar-la a posar a cada playlist.",
+          "Només funciona al Mac, perquè la substitució passa per Apple Music. La pista vella ha de ser a la teva biblioteca d'Apple Music."
+        ],
+        "keywords": "substituir reemplaçar canviar millor qualitat mp3 aiff wav",
+        "settings": [
+          {
+            "tab": "Destinació",
+            "setting": "Destinació dels fitxers convertits",
+            "value": "Apple Music",
+            "note": "Així Surco mira si la pista ja és a la teva biblioteca."
+          },
+          {
+            "tab": "Format",
+            "setting": "Format per defecte",
+            "value": "AIFF",
+            "note": "Apple Music no admet FLAC. L'AIFF sona igual que el WAV i, a més, desa la caràtula."
+          },
+          {
+            "tab": "Format",
+            "setting": "Mantenir els MP3 i M4A tal com són",
+            "optional": true,
+            "note": "Si la còpia nova és un MP3 millor (de 320 en lloc de 128), es queda com a MP3 en lloc de passar a AIFF."
+          },
+          {
+            "tab": "Programes de DJ",
+            "section": "Col·lecció de rekordbox",
+            "program": "rekordbox",
+            "setting": "Actualitzar la col·lecció de rekordbox en convertir",
+            "value": "Actualitzar",
+            "optional": true,
+            "note": "Si fas servir rekordbox. La pista continua a les seves playlists i amb els seus cue points."
+          },
+          {
+            "tab": "Programes de DJ",
+            "section": "Biblioteca d'Engine DJ",
+            "program": "engine",
+            "setting": "Actualitzar la biblioteca d'Engine DJ en convertir",
+            "value": "Actualitzar",
+            "optional": true,
+            "note": "Si fas servir Engine DJ. La pista continua a les seves playlists i amb els seus cue points."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Tanca rekordbox i Engine DJ",
+            "text": "Només si els fas servir. Si estan oberts, Surco no pot tocar les seves biblioteques, i s'ofereix a tancar-los."
+          },
+          {
+            "title": "Arrossega les còpies noves a Surco",
+            "text": "Les de més qualitat, per exemple l'AIFF d'una pista que tens en MP3."
+          },
+          {
+            "title": "Comprova que el botó diu «Substituir»",
+            "text": "Així saps que Surco ha trobat la pista al teu Apple Music. Si la còpia nova és pitjor que la que tens, t'avisa."
+          },
+          {
+            "title": "Prem «Substituir»",
+            "text": "Quan acaba, Surco t'ofereix enviar el fitxer vell a la paperera."
+          }
+        ],
+        "points": [
+          "A rekordbox i a Engine DJ la pista continua a les seves playlists i amb els seus cue points.",
+          "A Apple Music, les playlists intel·ligents la recullen soles. Si era en una playlist normal, l'hauràs de tornar a afegir.",
+          "A rekordbox, revisa la graella el primer cop que carreguis la pista. Com que veu un fitxer diferent, la pot tornar a calcular."
+        ],
+        "related": [
+          {
+            "label": "Porta les teves pistes al teu programa de DJ",
+            "anchor": "exportar"
+          },
+          {
+            "label": "Converteix les teves pistes",
+            "anchor": "convertir"
+          }
+        ]
+      },
+      {
+        "id": "apple-music-rekordbox",
+        "slug": "apple-music-y-rekordbox",
+        "group": "library",
+        "macOnly": true,
+        "title": "Tens la música a Apple Music i l'organitzes a rekordbox",
+        "s": "El que millores a Surco arriba sol a rekordbox, sense tornar a importar.",
+        "body": [
+          "Passes la música a Apple Music i des de rekordbox la importes per fer les teves playlists. Vols que, quan millores una pista o en corregeixes les dades a Surco, rekordbox se n'assabenti sol, sense tornar a importar i sense perdre playlists ni cue points.",
+          "Només funciona al Mac, perquè passa per Apple Music."
+        ],
+        "keywords": "sincronitzar xml biblioteca playlists",
+        "settings": [
+          {
+            "tab": "Destinació",
+            "setting": "Destinació dels fitxers convertits",
+            "value": "Apple Music",
+            "note": "Les pistes van a la teva biblioteca d'Apple Music, igual que fas ara."
+          },
+          {
+            "tab": "Format",
+            "setting": "Format per defecte",
+            "value": "AIFF",
+            "note": "Apple Music no admet FLAC. L'AIFF sona igual que el WAV i, a més, desa la caràtula."
+          },
+          {
+            "tab": "Programes de DJ",
+            "section": "Col·lecció de rekordbox",
+            "program": "rekordbox",
+            "setting": "Actualitzar la col·lecció de rekordbox en convertir",
+            "value": "Actualitzar",
+            "note": "És el que manté rekordbox al dia. Sense això, rekordbox continuaria amb les dades i el fitxer d'abans."
+          },
+          {
+            "tab": "Format",
+            "setting": "Mantenir els MP3 i M4A tal com són",
+            "optional": true,
+            "note": "Si una pista és MP3, es queda com a MP3 en lloc de passar a AIFF."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Tanca rekordbox",
+            "text": "Surco no escriu a la teva col·lecció si rekordbox és obert. Si te n'oblides, s'ofereix a tancar-lo."
+          },
+          {
+            "title": "Arrossega les pistes a Surco",
+            "text": "Les que vols millorar o corregir. Si una ja és al teu Apple Music, Surco la reconeix."
+          },
+          {
+            "title": "Corregeix el que calgui",
+            "text": "Títol, artista, gènere, el que sigui. A mà o amb l'aparellament automàtic."
+          },
+          {
+            "title": "Prem el botó de convertir",
+            "text": "És el botó de sota de l'editor. Apple Music i rekordbox es posen al dia alhora."
+          }
+        ],
+        "points": [
+          "A rekordbox la pista continua a les seves playlists, amb els seus cue points, el seu BPM i la seva tonalitat.",
+          "rekordbox rep el títol, l'artista, l'àlbum, el gènere, el segell, el remixer, el comentari, l'any, els números de pista i de disc i la caràtula.",
+          "Un camp que deixes buit a Surco no esborra el que tinguis a rekordbox. Si la pista no porta caràtula, rekordbox es queda amb la seva."
+        ],
+        "related": [
+          {
+            "label": "Porta les teves pistes al teu programa de DJ",
+            "anchor": "exportar"
+          },
+          {
+            "label": "Edita les metadades",
+            "anchor": "editor"
+          }
+        ]
+      },
+      {
+        "id": "to-aiff",
+        "slug": "pasar-a-aiff-sin-perder-cue-points",
+        "group": "library",
+        "title": "Passa la teva col·lecció a AIFF sense perdre els cue points",
+        "s": "Tota la col·lecció a AIFF d'un sol cop, amb els cue points on eren.",
+        "body": [
+          "Tens la música en FLAC o WAV i el teu programa de DJ o els teus CDJ prefereixen l'AIFF, que a més desa la caràtula. Vols convertir-ho tot d'un sol cop i que els cue points continuïn on eren.",
+          "El so no perd res. Passar de FLAC o WAV a AIFF és sense pèrdua."
+        ],
+        "keywords": "convertir format flac wav cdj cues",
+        "settings": [
+          {
+            "tab": "Format",
+            "setting": "Format per defecte",
+            "value": "AIFF",
+            "note": "Tot el que converteixis sortirà en AIFF."
+          },
+          {
+            "tab": "Format",
+            "setting": "Mantenir els MP3 i M4A tal com són",
+            "note": "Un MP3 no guanya qualitat en passar a AIFF, només ocupa més. Així es queda com està."
+          },
+          {
+            "tab": "Destinació",
+            "setting": "Destinació dels fitxers convertits",
+            "value": "Al costat de l'original",
+            "note": "L'AIFF es desa a la mateixa carpeta i l'original no es toca."
+          },
+          {
+            "tab": "Programes de DJ",
+            "section": "Col·lecció de rekordbox",
+            "program": "rekordbox",
+            "setting": "Actualitzar la col·lecció de rekordbox en convertir",
+            "value": "Actualitzar",
+            "optional": true,
+            "note": "Si fas servir rekordbox. La pista passa a l'AIFF sense sortir de les seves playlists."
+          },
+          {
+            "tab": "Programes de DJ",
+            "section": "Col·lecció de Traktor",
+            "program": "traktor",
+            "setting": "Actualitzar la col·lecció de Traktor en convertir",
+            "value": "Actualitzar",
+            "optional": true,
+            "note": "Si fas servir Traktor. Primer tria el teu collection.nml just a sota, i Traktor veurà els cue points a l'AIFF."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Tanca rekordbox i Traktor",
+            "text": "Només si els fas servir. Si estan oberts, Surco no pot tocar les seves col·leccions, i s'ofereix a tancar-los."
+          },
+          {
+            "title": "Arrossega la carpeta a Surco",
+            "text": "També hi entren les pistes de les subcarpetes."
+          },
+          {
+            "title": "Prem «Convertir»",
+            "text": "És el botó de la barra de dalt. Converteix totes les pistes de la llista d'un sol cop."
+          },
+          {
+            "title": "Decideix què fas amb els originals",
+            "text": "Quan acaba, Surco els pot enviar a la paperera tots alhora. Si prefereixes conservar-los, no premis res."
+          }
+        ],
+        "points": [
+          "Els cue points de Traktor passen a l'AIFF des de MP3, FLAC i WAV.",
+          "L'ALAC no té lloc per als cue points. Per això aquesta recepta fa servir AIFF.",
+          "Abans, treu de la llista les pistes que ja siguin AIFF. Si no, Surco en fa una altra còpia amb «(2)» al nom."
+        ],
+        "related": [
+          {
+            "label": "Converteix les teves pistes",
+            "anchor": "convertir"
+          },
+          {
+            "label": "Porta les teves pistes al teu programa de DJ",
+            "anchor": "exportar"
+          }
+        ]
+      },
+      {
+        "id": "other-formats",
+        "slug": "convertir-m4a-aac-ogg-opus",
+        "group": "organize",
+        "title": "Converteix els teus M4A, AAC, OGG i OPUS",
+        "s": "Passa'ls a un format que llegeixi qualsevol programa, amb etiquetes i caràtula.",
+        "body": [
+          "Tens pistes d'Apple Music, de Bandcamp o d'altres botigues en M4A, AAC, OGG o OPUS, i el teu programa de DJ o els teus CDJ no les llegeixen. Les vols passar a un format que ho llegeixi tot, amb les seves etiquetes i la seva caràtula."
+        ],
+        "keywords": "m4a aac ogg opus vorbis itunes bandcamp convertir",
+        "settings": [
+          {
+            "tab": "Format",
+            "setting": "Format per defecte",
+            "value": "AIFF",
+            "note": "El llegeix qualsevol CDJ i qualsevol programa de DJ. Si prefereixes que ocupin poc, tria MP3."
+          },
+          {
+            "tab": "Destinació",
+            "setting": "Destinació dels fitxers convertits",
+            "value": "Al costat de l'original",
+            "note": "La còpia es desa al costat i l'original no es toca."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Arrossega les pistes a Surco",
+            "text": "O la carpeta sencera, amb les subcarpetes."
+          },
+          {
+            "title": "Prem «Convertir»",
+            "text": "És el botó de la barra de dalt. Cada pista surt en el format que has triat."
+          }
+        ],
+        "points": [
+          "Passar un format amb pèrdua a AIFF no li torna la qualitat, només el fa llegible per al teu equip. Si amb això en tens prou, un MP3 de 320 ocupa menys.",
+          "Amb «Mantenir els MP3 i M4A tal com són» activat, els M4A no canvien de format. Desactiva-ho per convertir-los.",
+          "Amb «Igual que l'origen», els OGG, OPUS i AAC se salten perquè no hi ha cap format de sortida equivalent, i un M4A surt com a ALAC.",
+          "Les etiquetes i la caràtula passen al fitxer nou."
+        ],
+        "related": [
+          {
+            "label": "Converteix les teves pistes",
+            "anchor": "convertir"
+          }
+        ]
+      },
+      {
+        "id": "check-quality",
+        "slug": "comprobar-calidad",
+        "group": "sound",
+        "title": "Comprova la qualitat del que has comprat o baixat",
+        "s": "Descobreix si aquell FLAC que vas comprar ve, en realitat, d'un MP3.",
+        "body": [
+          "T'has baixat un pack o has comprat música i vols saber si és el que diu ser. Per exemple, un FLAC que en realitat ve d'un MP3.",
+          "Aquesta recepta no canvia res. Surco només mira i et diu què ha trobat."
+        ],
+        "keywords": "fals flac espectre lossless sense pèrdua kbps transcode",
+        "settings": [
+          {
+            "tab": "Editor",
+            "setting": "Anàlisi de la qualitat de l'àudio",
+            "note": "Ve activat. És el que mira l'espectre de cada pista."
+          },
+          {
+            "tab": "Editor",
+            "setting": "Analitzar-ho tot en importar",
+            "note": "Ve activat. Analitza cada pista tan bon punt entra, sense que hagis de prémer res."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Arrossega la carpeta a Surco",
+            "text": "També hi entren les pistes de les subcarpetes."
+          },
+          {
+            "title": "Espera que acabi l'anàlisi",
+            "text": "A dalt veuràs «Analitzant la qualitat…» amb un comptador."
+          },
+          {
+            "title": "Filtra per «Dubtoses»",
+            "text": "Al filtre de la llista. Són les pistes on Surco ha trobat alguna cosa."
+          },
+          {
+            "title": "Obre'n una per veure per què",
+            "text": "L'editor mostra l'espectre i explica el veredicte amb números mesurats."
+          }
+        ],
+        "points": [
+          "En vermell només surten «Font amb pèrdues» i «Mala qualitat».",
+          "«Possible reprocessat» surt en ambre perquè és una sospita, no una prova.",
+          "Un MP3 mai no surt com a mala qualitat. Que talli els aguts és propi del format.",
+          "Mentre no premis «Convertir», Surco no escriu res als teus fitxers."
+        ],
+        "related": [
+          {
+            "label": "Comprova la qualitat real",
+            "anchor": "calidad"
+          },
+          {
+            "label": "Coneix la llista de pistes",
+            "anchor": "lista"
+          }
+        ]
+      },
+      {
+        "id": "fake-hires",
+        "slug": "detectar-hires-falsos",
+        "group": "sound",
+        "title": "Detecta els falsos hi-res abans de pagar-los dues vegades",
+        "s": "Un 96 kHz que era un 44,1 estirat, o un 24 bits que en porta 16, es veu a l'espectre.",
+        "body": [
+          "Has comprat o baixat música «hi-res» i vols saber si ho és de debò. Surco distingeix tres enganys diferents, i no només un FLAC que ve d'un MP3.",
+          "Aquesta recepta no canvia res. Surco només mira."
+        ],
+        "keywords": "hi-res hires 96 khz 24 bits fals estirat enhancer transcodificació",
+        "settings": [
+          {
+            "tab": "Editor",
+            "setting": "Anàlisi de la qualitat de l'àudio",
+            "note": "Ve activat. És el que mira l'espectre de cada pista."
+          },
+          {
+            "tab": "Editor",
+            "setting": "Analitzar-ho tot en importar",
+            "note": "Ve activat. Analitza cada pista tan bon punt entra, sense que hagis de prémer res."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Arrossega la carpeta a Surco",
+            "text": "També hi entren les pistes de les subcarpetes."
+          },
+          {
+            "title": "Espera que acabi l'anàlisi",
+            "text": "A dalt veuràs «Analitzant la qualitat…» amb un comptador."
+          },
+          {
+            "title": "Filtra per «Dubtoses»",
+            "text": "Són les pistes on Surco ha trobat alguna cosa."
+          },
+          {
+            "title": "Obre'n una per veure per què",
+            "text": "L'espectre marca on acaba el so real i el veredicte ho explica amb números mesurats."
+          }
+        ],
+        "points": [
+          "Un hi-res que era un 44,1 estirat té l'espectre tallat on el tallaria un 44,1.",
+          "Uns aguts regenerats per un «enhancer» surten com a «Possible reprocessat», en ambre, perquè és una sospita i no una prova.",
+          "Un 24 bits que en realitat en porta 16 es marca a part.",
+          "Mentre no premis «Convertir», Surco no escriu res als teus fitxers."
+        ],
+        "related": [
+          {
+            "label": "Comprova la qualitat real",
+            "anchor": "calidad"
+          },
+          {
+            "label": "Coneix la llista de pistes",
+            "anchor": "lista"
+          }
+        ]
+      },
+      {
+        "id": "vinyl",
+        "slug": "digitalizar-vinilos",
+        "group": "sound",
+        "title": "Digitalitza els teus vinils",
+        "s": "Sense clics, sense soroll de fons, sense silencis i amb les dades de Discogs.",
+        "body": [
+          "Has gravat els teus discos a l'ordinador i els vols deixar a punt per punxar. Sense clics de l'agulla, sense soroll de fons, sense silenci al principi i al final, i amb les dades de Discogs.",
+          "Surco no talla una cara sencera en pistes. Necessites un fitxer per pista."
+        ],
+        "keywords": "vinils vinil gravar clics agulla silenci retallar soroll fons rumble",
+        "settings": [
+          {
+            "tab": "Processament",
+            "section": "Reparació de vinil",
+            "setting": "Clics",
+            "value": "Estàndard",
+            "note": "Treu els clics curts de l'agulla en convertir."
+          },
+          {
+            "tab": "Processament",
+            "section": "Reparació de vinil",
+            "setting": "Soroll de fons",
+            "value": "Mitjà",
+            "optional": true,
+            "note": "Baixa el soroll de fons del disc que se sent a les aturades i el brunzit del plat. No toca la música."
+          },
+          {
+            "tab": "Fonts",
+            "setting": "Mostrar només aquests formats",
+            "value": "Vinil",
+            "note": "Així Discogs et mostra l'edició en vinil i no la del CD."
+          },
+          {
+            "tab": "Processament",
+            "setting": "Igualar el volum",
+            "value": "−1 dBFS",
+            "optional": true,
+            "note": "Puja cada pista fins que el seu pic més alt quedi a −1 dBFS. No comprimeix res."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Arrossega les teves gravacions a Surco",
+            "text": "Un fitxer per pista."
+          },
+          {
+            "title": "Etiqueta el disc sencer d'un sol cop",
+            "text": "Selecciona totes les seves pistes i cerca el disc amb /. Surco assigna cada fitxer a la seva cançó, amb la seva posició A1, B2."
+          },
+          {
+            "title": "Retalla el silenci",
+            "text": "Obre la paleta amb ⌘K i tria «Retallar el silenci detectat a la selecció»."
+          },
+          {
+            "title": "Prem «Convertir»",
+            "text": "La reparació de vinil i el volum s'apliquen en convertir."
+          }
+        ],
+        "points": [
+          "Abans de convertir, pots escoltar la reparació i comparar-la amb l'original a la secció de vinil de l'editor.",
+          "Si una pista té molts clics grossos, prova «Fort». Pot suavitzar una mica els cops.",
+          "Si a les aturades se sent un soroll de fons, puja «Soroll de fons». Funciona encara que la pista ja vingui retallada.",
+          "Un clic tapat per molta música alhora de vegades s'escapa."
+        ],
+        "related": [
+          {
+            "label": "Neteja els teus rips de vinil",
+            "anchor": "declick"
+          },
+          {
+            "label": "Aparella un disc sencer",
+            "anchor": "album"
+          }
+        ]
+      },
+      {
+        "id": "usb",
+        "slug": "preparar-usb-para-el-club",
+        "group": "go",
+        "title": "Prepara un USB per al club",
+        "s": "Les teves playlists en un USB amb cues, graella i ones, a punt per als reproductors.",
+        "body": [
+          "Vols endur-te les teves playlists de rekordbox o d'Engine DJ en un USB, amb els cues, la graella i les ones, a punt per als reproductors. Els fitxers de casa no es toquen.",
+          "Funciona al Mac i al Windows."
+        ],
+        "keywords": "pendrive llapis memòria cdj club exportar usb playlists rekordbox engine",
+        "settings": [],
+        "steps": [
+          {
+            "title": "Connecta l'USB",
+            "text": "Surco el detecta i t'ofereix exportar. Si no, obre Fonts, tria rekordbox o Engine DJ i prem la icona d'USB al costat del nom, o cerca «Exportar a USB…» amb ⌘K."
+          },
+          {
+            "title": "Marca les playlists",
+            "text": "Les que t'emportes. Surco et diu quantes pistes són noves, quantes ja hi eren i si hi cap tot."
+          },
+          {
+            "title": "Prem «Exportar»",
+            "text": "Tanca rekordbox o Engine DJ si t'ho demana. Surco copia la música i escriu la biblioteca que llegeixen els reproductors."
+          },
+          {
+            "title": "Expulsa l'USB",
+            "text": "Des del Finder o l'Explorador, abans de desconnectar-lo."
+          }
+        ],
+        "points": [
+          "Des de rekordbox, l'USB porta els cues, la graella i les ones de cada pista, i rekordbox el pot continuar sincronitzant. Des d'Engine DJ, porta la seva biblioteca d'Engine a punt per al reproductor.",
+          "L'exportació copia els fitxers tal com són. Si el teu CDJ és antic i tens FLAC o pistes de més de 24 bits o 48 kHz, converteix-les abans a AIFF.",
+          "Abans d'exportar t'avisa si l'USB està en exFAT, NTFS o GPT, que alguns CDJ no llegeixen, i de les pistes que potser no sonaran en un CDJ-2000.",
+          "«Esborrar de l'USB la música que ja no s'exporta» neteja el que has tret de les teves playlists des de l'última vegada.",
+          "Si cancel·les o l'USB es desconnecta, es queda amb la biblioteca que tenia."
+        ],
+        "related": [
+          {
+            "label": "Porta les teves playlists a un USB",
+            "anchor": "usb"
+          },
+          {
+            "label": "Porta les teves pistes al teu programa de DJ",
+            "anchor": "exportar"
+          }
+        ]
+      },
+      {
+        "id": "to-mp3",
+        "slug": "pasar-a-mp3-para-que-quepa",
+        "group": "go",
+        "title": "Passa les teves pistes a MP3 perquè hi càpiguen",
+        "s": "Una còpia en MP3 per a l'USB o el mòbil, sense tocar els originals.",
+        "body": [
+          "Tens la música en FLAC, WAV o AIFF i vols una còpia en MP3 per a un USB petit, el mòbil o un equip que no llegeix FLAC. Els teus fitxers sense pèrdua es queden com estan.",
+          "Un MP3 de 320 kbps ocupa unes quatre vegades menys que un WAV o un AIFF."
+        ],
+        "keywords": "mp3 320 convertir comprimir espai lleuger flac wav aiff",
+        "settings": [
+          {
+            "tab": "Format",
+            "setting": "Format per defecte",
+            "value": "MP3",
+            "note": "Tot el que converteixis sortirà en MP3."
+          },
+          {
+            "tab": "Format",
+            "setting": "Qualitat MP3",
+            "value": "320",
+            "note": "La millor qualitat d'MP3. Si vas molt just d'espai, V0 ocupa una mica menys i sona gairebé igual."
+          },
+          {
+            "tab": "Destinació",
+            "setting": "Destinació dels fitxers convertits",
+            "value": "Carpeta de sortida",
+            "note": "A sota tries la carpeta. Els originals no es toquen."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Arrossega les pistes a Surco",
+            "text": "O la carpeta sencera, amb les subcarpetes."
+          },
+          {
+            "title": "Prem «Convertir»",
+            "text": "És el botó de la barra de dalt. Els MP3 van a la carpeta de sortida."
+          }
+        ],
+        "points": [
+          "Els cue points de Traktor passen a l'MP3, amb el desfasament del còdec compensat.",
+          "Les etiquetes i la caràtula van en ID3v2.3, les que llegeixen els CDJ.",
+          "Passar a MP3 no es pot desfer. Conserva els originals sense pèrdua per a casa."
+        ],
+        "related": [
+          {
+            "label": "Converteix les teves pistes",
+            "anchor": "convertir"
+          },
+          {
+            "label": "Porta les teves playlists a un USB",
+            "anchor": "usb"
+          }
+        ]
+      },
+      {
+        "id": "review-spellings",
+        "slug": "unificar-nombres-apple-music",
+        "group": "organize",
+        "macOnly": true,
+        "title": "Unifica com s'escriu la teva biblioteca d'Apple Music",
+        "s": "El mateix artista escrit igual a tota la biblioteca, sense anar pista per pista.",
+        "body": [
+          "A la teva biblioteca el mateix artista surt com a «DJ Lara» i «Dj Lara», hi ha accents que no quadren i espais invisibles que s'hi van colar en copiar d'un web. Ho vols deixar tot igual sense anar pista per pista."
+        ],
+        "keywords": "majúscules artistes noms accents espais",
+        "settings": [
+          {
+            "tab": "Programes de DJ",
+            "section": "Col·lecció de rekordbox",
+            "program": "rekordbox",
+            "setting": "Actualitzar la col·lecció de rekordbox en convertir",
+            "value": "Actualitzar",
+            "optional": true,
+            "note": "Si fas servir rekordbox. La correcció també hi arriba."
+          },
+          {
+            "tab": "Programes de DJ",
+            "section": "Biblioteca d'Engine DJ",
+            "program": "engine",
+            "setting": "Actualitzar la biblioteca d'Engine DJ en convertir",
+            "value": "Actualitzar",
+            "optional": true,
+            "note": "Si fas servir Engine DJ. La correcció també hi arriba."
+          },
+          {
+            "tab": "Programes de DJ",
+            "section": "Col·lecció de Traktor",
+            "program": "traktor",
+            "setting": "Actualitzar la col·lecció de Traktor en convertir",
+            "value": "Actualitzar",
+            "optional": true,
+            "note": "Si fas servir Traktor. La correcció també hi arriba."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Obre la revisió",
+            "text": "Amb ⌘K tria «Revisar les metadades a Apple Music…», o obre una playlist d'Apple Music a la columna de fonts i tria «Revisar les metadades» al menú … de la llista."
+          },
+          {
+            "title": "Tria com queda cada grup",
+            "text": "Cada grup aplega les maneres d'escriure el mateix i Surco marca la més utilitzada. Canvia la que vulguis i prem «Unificar»."
+          },
+          {
+            "title": "Decideix les possibles errades",
+            "text": "«Armin van Buren» per «Armin van Buuren» surt en ambre i mai no entra sola a la tanda. Si no són el mateix, tria «No és el mateix»."
+          },
+          {
+            "title": "Prem «Aplicar»",
+            "text": "A dalt, i confirma-ho. En acabar, un resum et diu on s'ha canviat cada cosa."
+          }
+        ],
+        "points": [
+          "El canvi arriba al fitxer i a Apple Music, i a rekordbox, Engine DJ, Traktor, Serato i VirtualDJ si els sincronitzes.",
+          "Abans de tocar res, Surco desa una còpia de cada fitxer i de les teves biblioteques de DJ. «Desfer» ho deixa tot com estava.",
+          "El BPM, la tonalitat, els cue points i la puntuació no es toquen.",
+          "Si un programa de DJ és obert, Surco s'ofereix a tancar-lo."
+        ],
+        "related": []
+      },
+      {
+        "id": "duplicates",
+        "slug": "quitar-duplicados-apple-music",
+        "group": "organize",
+        "macOnly": true,
+        "title": "Treu les pistes repetides d'Apple Music",
+        "s": "Queda't amb la còpia bona sense perdre les playlists de l'altra.",
+        "body": [
+          "Tens la mateixa cançó dues vegades, potser una en MP3 i una altra en AIFF, cadascuna a les seves playlists. Vols quedar-te amb la bona sense perdre les playlists de l'altra."
+        ],
+        "keywords": "duplicats repetides dobles",
+        "settings": [
+          {
+            "tab": "Programes de DJ",
+            "section": "Col·lecció de rekordbox",
+            "program": "rekordbox",
+            "setting": "Actualitzar la col·lecció de rekordbox en convertir",
+            "value": "Actualitzar",
+            "optional": true,
+            "note": "Si fas servir rekordbox. Hi veuràs quina còpia té cues i playlists, i les seves playlists passen a la que es queda."
+          },
+          {
+            "tab": "Programes de DJ",
+            "section": "Biblioteca d'Engine DJ",
+            "program": "engine",
+            "setting": "Actualitzar la biblioteca d'Engine DJ en convertir",
+            "value": "Actualitzar",
+            "optional": true,
+            "note": "Si fas servir Engine DJ. Hi veuràs quina còpia té cues i playlists, i les seves playlists passen a la que es queda."
+          },
+          {
+            "tab": "Programes de DJ",
+            "section": "Col·lecció de Traktor",
+            "program": "traktor",
+            "setting": "Actualitzar la col·lecció de Traktor en convertir",
+            "value": "Actualitzar",
+            "optional": true,
+            "note": "Si fas servir Traktor. Hi veuràs quina còpia té cues i playlists, i les seves playlists passen a la que es queda."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Obre els duplicats",
+            "text": "Amb ⌘K tria «Mostrar els duplicats a Apple Music…», o obre una playlist d'Apple Music a la columna de fonts i tria «Mostrar els duplicats» al menú … de la llista."
+          },
+          {
+            "title": "Compara les còpies",
+            "text": "Cadascuna mostra el seu format, quan la vas afegir i el que té als teus programes de DJ. «Copiar el títol» t'ajuda a cercar-la."
+          },
+          {
+            "title": "Tria la que es queda",
+            "text": "D'entrada, Surco marca la que té el millor format. Canvia-la si vols i prem «Treure»."
+          },
+          {
+            "title": "Prem «Aplicar»",
+            "text": "A dalt, i confirma-ho."
+          }
+        ],
+        "points": [
+          "La còpia que es queda entra a les playlists de l'altra, a Apple Music i als teus programes de DJ.",
+          "Els cue points de la còpia que treus no passen a l'altra. Mira quina té cues abans de triar.",
+          "El fitxer tret va a la paperera, o a Còpies › Fitxers de música si el disc no té paperera, com un NAS.",
+          "«Desfer» no recupera les còpies que has tret. Si t'equivoques, el fitxer continua a la paperera o a Còpies › Fitxers de música."
+        ],
+        "related": []
+      },
+      {
+        "id": "review-folder",
+        "slug": "revisar-carpeta-antes-de-importar",
+        "group": "organize",
+        "title": "Revisa una carpeta abans de posar-la a la teva biblioteca",
+        "s": "Un pack net abans d'entrar, sense grafies diferents ni pistes repetides.",
+        "body": [
+          "T'has baixat un pack i vols que arribi net, sense el mateix artista escrit de tres maneres i sense pistes repetides.",
+          "Funciona al Mac i al Windows."
+        ],
+        "keywords": "pack baixades descàrregues netejar",
+        "settings": [],
+        "steps": [
+          {
+            "title": "Arrossega la carpeta a Surco",
+            "text": "Si troba grafies diferents o pistes repetides, t'avisa amb un botó «Revisar»."
+          },
+          {
+            "title": "Obre la revisió",
+            "text": "Amb aquest botó, o des del menú ⋯ de la capçalera de la llista, «Revisar les metadades»."
+          },
+          {
+            "title": "Tria com queda cada grup",
+            "text": "I quina còpia es queda a cada duplicat. Aquí cada còpia també mostra la seva qualitat i la seva mida."
+          },
+          {
+            "title": "Prem «Aplicar»",
+            "text": "Els canvis van als fitxers i, si la pista és a Apple Music o als teus programes de DJ, també hi arriben."
+          }
+        ],
+        "points": [
+          "Les possibles errades mai no entren soles. Les decideixes tu.",
+          "Abans de tocar res, Surco desa una còpia de cada fitxer, i «Desfer» recupera les correccions.",
+          "Les còpies que treus no tornen amb «Desfer»."
+        ],
+        "related": []
+      },
+      {
+        "id": "find-replace",
+        "slug": "limpiar-titulos-en-lote",
+        "group": "organize",
+        "title": "Neteja els títols de centenars de pistes alhora",
+        "s": "Treu «(Original Mix)» o la signatura del web de totes les pistes alhora.",
+        "body": [
+          "Els teus títols porten «(Original Mix)», la signatura del web d'on els vas baixar o un guió baix en lloc d'un espai. Ho vols treure de totes les pistes d'un sol cop."
+        ],
+        "keywords": "cercar reemplaçar substituir original mix guió baix",
+        "settings": [],
+        "steps": [
+          {
+            "title": "Selecciona les pistes",
+            "text": "Si no en selecciones cap, es fan servir totes les que veus a la llista."
+          },
+          {
+            "title": "Obre «Cercar i reemplaçar»",
+            "text": "Amb ⌘F, o Ctrl+F al Windows."
+          },
+          {
+            "title": "Escriu què vols cercar i per què ho vols canviar",
+            "text": "Deixa «Reemplaçar per» buit per esborrar-ho. Surco et diu quantes pistes canvien i et mostra exemples d'abans i després."
+          },
+          {
+            "title": "Reemplaça i desa",
+            "text": "Prem «Reemplaçar a…». El canvi no és als fitxers fins que prems «Actualitzar les etiquetes» o «Convertir»."
+          }
+        ],
+        "points": [
+          "Funciona al títol, l'artista, l'àlbum, el gènere, el grouping, el comentari, el segell i altres camps de text.",
+          "Si en saps d'expressions regulars, marca «Regex».",
+          "Si aquestes signatures només et molesten quan cerques a Discogs, afegeix-les a Configuració › Fonts › «Paraules que s'ignoren a les cerques». Es treuen en cercar, sense tocar les teves etiquetes."
+        ],
+        "related": [
+          {
+            "label": "Dreceres i configuració",
+            "anchor": "atajos"
+          }
+        ]
+      },
+      {
+        "id": "custom-fields",
+        "slug": "campos-propios",
+        "group": "organize",
+        "title": "Crea el camp que et falta i fes-lo servir als teus fitxers",
+        "s": "Estil, país, suport o el que se t'acudeixi, amb nom i clau propis, en tots els formats.",
+        "body": [
+          "Necessites desar una dada que cap etiqueta estàndard no recull, com l'estil, el país o el tipus de suport del disc.",
+          "Els camps de col·leccionista fan servir els noms de mp3tag, així que no es dupliquen."
+        ],
+        "keywords": "camps propis personalitzats custom etiquetes mp3tag estil país suport url",
+        "settings": [],
+        "steps": [
+          {
+            "title": "Crea el camp",
+            "text": "A Configuració › Editor › Camps, posa-hi un nom i una clau."
+          },
+          {
+            "title": "Omple'l a l'editor",
+            "text": "Surt amb la resta de camps de la pista."
+          },
+          {
+            "title": "Fes-lo servir als noms de fitxer",
+            "text": "El pots posar al patró de nom."
+          },
+          {
+            "title": "Fes-lo servir a cercar i reemplaçar",
+            "text": "Per netejar o canviar el seu valor a centenars de pistes alhora."
+          }
+        ],
+        "points": [
+          "Es desa en tots els formats.",
+          "Un camp que ja existeix a mp3tag no es duplica."
+        ],
+        "related": [
+          {
+            "label": "Edita les metadades",
+            "anchor": "editor"
+          },
+          {
+            "label": "Posa nom als fitxers i endreça'ls",
+            "anchor": "nombres"
+          }
+        ],
+        "shot": "use-cases/custom-fields-ca.webp",
+        "shotCaption": "Configuració › Editor › Camps, amb el formulari per afegir un camp al final."
+      },
+      {
+        "id": "beatport",
+        "slug": "bpm-y-tonalidad-de-beatport",
+        "group": "organize",
+        "title": "Porta el BPM i la tonalitat de Beatport",
+        "s": "BPM, tonalitat i nom del mix correctes, sense escriure'ls a mà.",
+        "body": [
+          "Vols que les teves pistes arribin amb el BPM, la tonalitat i el nom del mix correctes, sense escriure'ls a mà.",
+          "Necessites un compte de Beatport. N'hi ha prou amb un de gratuït."
+        ],
+        "keywords": "bpm key tonalitat mix",
+        "settings": [
+          {
+            "tab": "Fonts",
+            "section": "Fonts de cerca",
+            "setting": "Beatport",
+            "note": "Just a sota escrius el teu usuari i la contrasenya i prems «Connectar». La contrasenya es desa xifrada i només al teu ordinador."
+          },
+          {
+            "tab": "Editor",
+            "setting": "Notació de la tonalitat",
+            "value": "Alfanumèrica (8A)",
+            "optional": true,
+            "note": "O «Clàssica (Am)». És com s'escriurà la tonalitat que porta Beatport."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Cerca la pista",
+            "text": "Amb / a l'editor. Els resultats de Beatport surten al costat dels de les altres fonts."
+          },
+          {
+            "title": "Tria el disc",
+            "text": "La pista s'emporta el BPM, la tonalitat, el mix, el segell, el catàleg i la caràtula."
+          },
+          {
+            "title": "Prem «Convertir»",
+            "text": "O «Actualitzar les etiquetes». Fins aleshores el fitxer no canvia."
+          }
+        ],
+        "points": [
+          "El mix passa al títol, tret que sigui «Original Mix».",
+          "Si prefereixes que el BPM o la tonalitat del teu fitxer no canviïn, desmarca'n l'«Auto» a Configuració › Camps.",
+          "Amb el compte connectat, l'aparellament automàtic també cerca a Beatport."
+        ],
+        "related": [
+          {
+            "label": "Cerca el disc a les teves fonts",
+            "anchor": "discogs"
+          }
+        ]
+      },
+      {
+        "id": "watched-folder",
+        "slug": "etiquetar-descargas-automaticamente",
+        "group": "organize",
+        "title": "Que el que baixes arribi ja etiquetat",
+        "s": "Cada baixada nova entra a Surco i s'etiqueta sola.",
+        "body": [
+          "Tens una carpeta on van a parar les teves baixades. Vols que cada pista nova entri a Surco i s'etiqueti sola, sense tornar a arrossegar res."
+        ],
+        "keywords": "vigilar automàtic baixades descàrregues carpeta",
+        "settings": [
+          {
+            "tab": "Fonts",
+            "setting": "Aparellar automàticament en importar",
+            "note": "Ve desactivat. Cerca cada pista nova a les teves fonts i hi posa les dades quan n'està segur. Si Discogs és entre les teves fonts, primer afegeix-ne el token."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Arrossega la teva carpeta de baixades",
+            "text": "A partir d'aquell moment Surco la vigila, amb les subcarpetes."
+          },
+          {
+            "title": "Baixa com sempre",
+            "text": "Quan arriba una pista nova, Surco t'avisa que hi ha pistes noves en aquella carpeta, amb un botó «Carregar»."
+          },
+          {
+            "title": "Prem «Carregar»",
+            "text": "La pista entra a la llista i l'aparellament automàtic l'etiqueta si n'està segur."
+          },
+          {
+            "title": "Revisa i converteix",
+            "text": "Mira les que queden «Per confirmar» i prem «Convertir»."
+          }
+        ],
+        "points": [
+          "L'avís es tanca sol al cap de pocs segons. Les pistes que no carreguis no se't tornen a oferir, però les pots arrossegar quan vulguis.",
+          "En un NAS, una pista nova pot trigar uns minuts a aparèixer.",
+          "La vigilància dura mentre Surco és obert. Quan el tornis a obrir, arrossega una altra vegada la carpeta."
+        ],
+        "related": [
+          {
+            "label": "Aparellar automàticament",
+            "anchor": "automatch"
+          }
+        ]
+      },
+      {
+        "id": "loudness",
+        "slug": "igualar-volumen",
+        "group": "sound",
+        "title": "Iguala el volum d'una carpeta sencera",
+        "s": "Totes les pistes a un volum semblant, vinguin d'on vinguin.",
+        "body": [
+          "Les teves pistes vénen de llocs diferents i unes sonen molt més fort que d'altres. Vols que totes quedin a un volum semblant."
+        ],
+        "keywords": "volum normalitzar lufs guany",
+        "settings": [
+          {
+            "tab": "Processament",
+            "setting": "Igualar el volum",
+            "value": "Streaming −14",
+            "note": "El nivell d'Spotify i Apple Music, segur per escoltar. Per a la cabina, «Club −9»."
+          },
+          {
+            "tab": "Destinació",
+            "setting": "Destinació dels fitxers convertits",
+            "value": "Al costat de l'original",
+            "optional": true,
+            "note": "Les pistes igualades es desen al costat i les originals no es toquen."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Arrossega la carpeta a Surco",
+            "text": "També hi entren les pistes de les subcarpetes."
+          },
+          {
+            "title": "Mira què li passarà a una pista",
+            "text": "Obre'n qualsevol. La targeta «Què passarà amb aquesta pista» et diu quant puja o baixa i si cal limitar els pics."
+          },
+          {
+            "title": "Prem «Convertir»",
+            "text": "Totes s'igualen amb l'opció de dalt, tret de les que hagis canviat a mà a l'editor."
+          }
+        ],
+        "points": [
+          "El sostre de pics ve a −1 dBTP. És un límit de seguretat, no un segon objectiu.",
+          "Si per arribar-hi cal limitar molt, la targeta t'avisa que es perd una mica de pegada.",
+          "Igualar torna a codificar l'àudio. Si el format de sortida és MP3 i escrius sobre l'original, Surco t'ho pregunta abans. Amb el format per defecte, cada pista surt en AIFF.",
+          "Si tornes a desar una pista ja igualada, no es torna a pujar.",
+          "Els cue points de Traktor es conserven, tret de l'ALAC."
+        ],
+        "related": [
+          {
+            "label": "Converteix les teves pistes",
+            "anchor": "convertir"
+          }
+        ]
+      },
+      {
+        "id": "engine-dj",
+        "slug": "llevar-pistas-a-engine-dj",
+        "group": "library",
+        "title": "Porta les teves pistes a Engine DJ",
+        "s": "El que prepares a Surco apareix a Engine DJ amb caràtula i playlists.",
+        "body": [
+          "Punxes amb Denon i vols que el que prepares a Surco aparegui a la teva biblioteca d'Engine DJ, amb la caràtula i a les seves playlists.",
+          "Funciona al Mac i al Windows."
+        ],
+        "keywords": "denon engine prime playlist",
+        "settings": [
+          {
+            "tab": "Programes de DJ",
+            "section": "Biblioteca d'Engine DJ",
+            "program": "engine",
+            "setting": "Actualitzar la biblioteca d'Engine DJ en convertir",
+            "value": "Actualitzar i afegir",
+            "note": "Amb «Actualitzar i afegir», les pistes que Engine encara no té entren a la teva biblioteca quan les converteixes. Les que ja té continuen sent la mateixa pista, amb les seves playlists i els seus cue points."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Tanca Engine DJ",
+            "text": "Surco no escriu a la biblioteca si Engine és obert, i s'ofereix a tancar-lo."
+          },
+          {
+            "title": "Arrossega les pistes a Surco",
+            "text": "Les que vols portar a Engine."
+          },
+          {
+            "title": "Tria les seves playlists",
+            "text": "A l'editor, el camp «Playlists d'Engine DJ» diu a quines playlists entra cada pista, encara que Engine no la tingui."
+          },
+          {
+            "title": "Prem «Convertir»",
+            "text": "El botó diu «+ Engine DJ». Cada pista entra a la teva biblioteca i a les seves playlists."
+          },
+          {
+            "title": "Obre Engine DJ",
+            "text": "El primer cop que carreguis cada pista, Engine l'analitza."
+          }
+        ],
+        "points": [
+          "A Engine hi arriben les dades, la puntuació i la caràtula.",
+          "Una pista nova entra sense analitzar i Engine en calcula la graella quan l'obres. Els hot cues els pots posar des de Surco, amb el teu flux i Marcar automàticament.",
+          "Abans d'escriure, Surco desa una còpia de seguretat de la biblioteca, que pots restaurar des de Còpies.",
+          "En acabar, la icona d'Engine DJ al costat del resultat et porta a la pista amb els cues oberts."
+        ],
+        "related": [
+          {
+            "label": "Porta les teves pistes al teu programa de DJ",
+            "anchor": "exportar"
+          }
+        ]
+      },
+      {
+        "id": "rekordbox-cues",
+        "slug": "preparar-cues-de-rekordbox-con-tu-flujo",
+        "group": "library",
+        "title": "Prepara els cues de les teves pistes amb el teu flux",
+        "s": "Marca on esclata la pista i el teu flux posa la resta de cues.",
+        "body": [
+          "Prepares les pistes de rekordbox sempre igual, amb uns cues comptats des d'on esclata la pista. Vols marcar aquest punt amb un clic, o que Surco te'l proposi, i que posi la resta.",
+          "Així ho fa un DJ amb el seu flux, però el punt pot ser el que vulguis i el flux el muntes a la teva manera. Funciona al Mac i al Windows."
+        ],
+        "keywords": "hot cues call memory drop esclat pujada mix in compassos marcar automàtic propostes sense analitzar completar en tancar",
+        "settings": [
+          {
+            "tab": "Cues",
+            "setting": "Posar un CALL on marques",
+            "note": "Posa nom al teu flux, per exemple Pujada. La seva regla ja compta enrere des d'on marques cada 16 compassos i posa hot cue + CALL. Canvia «1 vegada» per «3 vegades» i tria «un color per repetició» amb blau, verd i vermell. Aquesta casella, que ve marcada, afegeix el CALL del punt."
+          },
+          {
+            "tab": "Cues",
+            "setting": "Lletres en l'ordre de la pista",
+            "note": "Ve així. L'A és sempre el primer cue de la pista. Desactiva-ho si per a tu cada lletra és un pad fix."
+          },
+          {
+            "tab": "Programes de DJ",
+            "section": "Col·lecció de rekordbox",
+            "program": "rekordbox",
+            "setting": "En tancar rekordbox, aplicar el teu flux actiu a les pistes amb CALL i sense hot cues",
+            "optional": true,
+            "note": "Per marcar el punt a rekordbox en lloc de fer-ho a Surco. Poses un CALL on esclata mentre prepares i, quan tanques rekordbox, Surco hi afegeix els hot cues del teu flux. Quan l'actives, et diu quantes pistes completarà."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Obre la teva playlist de rekordbox",
+            "text": "És a la barra lateral de Surco, amb les carpetes de la teva col·lecció. Tria una pista i ves a la secció Cues."
+          },
+          {
+            "title": "Tria el teu flux",
+            "text": "Al menú «Flux» de la secció, per exemple Pujada. Es queda triat per a les pistes següents."
+          },
+          {
+            "title": "Marca on esclata la pista",
+            "text": "Quan passes el ratolí per l'ona ampliada, veus en contorn el que hi posaria el flux. Amb el clic, Surco compta enrere des d'aquest punt i posa un hot cue vermell a 48 compassos, un de verd a 32 i un de blau a 16, cadascun amb el seu CALL, i un altre CALL al punt. Si prefereixes que el cerqui Surco, prem «Marcar automàticament». Et proposa on esclata, amb el flux dibuixat en contorn, i les acceptes amb Retorn totes alhora o una per una."
+          },
+          {
+            "title": "Prem «Desar a rekordbox»",
+            "text": "Amb rekordbox tancat es desa al moment. Si el tens obert, Surco espera i ho desa quan el tanques. Després passa a la pista següent."
+          }
+        ],
+        "points": [
+          "Marcar automàticament proposa, no decideix. Les seves propostes no sempre l'encerten, així que no es desa res fins que les acceptes.",
+          "Per preparar-ne unes quantes de cop, selecciona-les a la llista i tria «Marcar automàticament les seleccionades». Cada fila et diu quantes propostes té i les veus quan l'obres.",
+          "Si rekordbox encara no ha analitzat la pista, Surco en calcula el tempo i la graella ell mateix i pots posar els cues sense obrir rekordbox. Quan rekordbox l'analitzi, Surco els ajusta a la seva graella. Marcar automàticament també funciona, i dedueix on comença el compàs pels canvis del baix.",
+          "En tancar rekordbox, Surco només completa pistes que rekordbox ja ha analitzat, amb algun CALL i cap hot cue, així que una pista que ja té hot cues es queda com està. Surco ha d'estar obert quan tanques rekordbox.",
+          "rekordbox admet com a màxim 8 hot cues, de l'A a l'H. Si n'hi ha un que no hi cap, Surco t'ho diu.",
+          "Si en tens prou amb un cue, ja vénen dos fluxos fets. Mix in 64 posa un hot cue 16 compassos abans del punt, i Mix in 32, 8 compassos abans.",
+          "Els cues es desen a la teva col·lecció de rekordbox, no al fitxer. Abans que Surco hi escrigui, fes la teva pròpia còpia de seguretat de la biblioteca des de rekordbox. Surco també fa la seva.",
+          "Si acabes de convertir la pista i la vas enviar a playlists de rekordbox, la icona de rekordbox al costat del resultat t'hi porta, a «Afegides recentment», amb els cues oberts."
+        ],
+        "related": []
+      },
+      {
+        "id": "organize-playlists",
+        "slug": "organizar-playlists",
+        "group": "library",
+        "title": "Organitza les teves playlists i carpetes sense obrir el programa",
+        "s": "Crea, canvia el nom, mou i ordena playlists de rekordbox, Traktor, Serato o VirtualDJ des de la barra lateral.",
+        "body": [
+          "Vols ordenar les teves playlists de rekordbox, de Traktor, de Serato o de VirtualDJ sense obrir el programa."
+        ],
+        "keywords": "playlists carpetes arrossegar moure canviar nom reanomenar ordenar rekordbox traktor serato virtualdj",
+        "settings": [],
+        "steps": [
+          {
+            "title": "Obre la teva biblioteca a la barra lateral",
+            "text": "Les playlists surten amb les seves carpetes i en el seu ordre."
+          },
+          {
+            "title": "Crea, canvia el nom o esborra",
+            "text": "Amb el botó dret sobre una playlist o una carpeta."
+          },
+          {
+            "title": "Arrossega per moure",
+            "text": "Mous playlists i carpetes, i també pistes dins d'una playlist."
+          },
+          {
+            "title": "Tria les playlists d'una pista",
+            "text": "A l'editor decideixes en quines és cada pista."
+          }
+        ],
+        "points": [
+          "Si el programa és obert, els canvis esperen que el tanquis.",
+          "«Afegides recentment» surt primer, amb el que hi ha dels últims 30 dies. Després ve «Totes les pistes».",
+          "Surco desa una còpia abans d'escriure."
+        ],
+        "related": [
+          {
+            "label": "Porta les teves pistes al teu programa de DJ",
+            "anchor": "exportar"
+          },
+          {
+            "label": "Marca els teus cues",
+            "anchor": "rekordbox"
+          }
+        ],
+        "shot": "use-cases/organize-playlists-ca.webp",
+        "shotCaption": "La barra lateral de rekordbox amb les seves carpetes i el menú d'una playlist."
+      },
+      {
+        "id": "repair-library",
+        "slug": "reparar-biblioteca",
+        "group": "library",
+        "title": "Arregla cues trencats, durades errònies i camps buits de la teva biblioteca",
+        "s": "Revisar troba els danys i els camps obligatoris sense omplir, i ho arregla tot d'un sol cop.",
+        "body": [
+          "La teva biblioteca té pistes amb cues que no quadren, durades errònies o camps obligatoris buits. Les vols veure totes juntes i arreglar-les sense anar una per una.",
+          "Abans d'escriure, Surco desa una còpia. I la revisió té Desfer."
+        ],
+        "keywords": "revisar danys danyades durada cues trencats incompletes camps buits traktor engine",
+        "settings": [],
+        "steps": [
+          {
+            "title": "Obre «Revisar»",
+            "text": "És a la barra d'eines i repassa el teu Apple Music, la llista carregada o una playlist."
+          },
+          {
+            "title": "Mira «Danys»",
+            "text": "Són els cues i les durades trencades de Traktor i Engine DJ."
+          },
+          {
+            "title": "Mira «Incompletes»",
+            "text": "Surco proposa com omplir els camps obligatoris que falten."
+          },
+          {
+            "title": "Tria i aplica",
+            "text": "Per a cada cas veus com està i com queda. Poses a la tanda el que vulguis i tot s'escriu d'un sol cop."
+          }
+        ],
+        "points": [
+          "El BPM, la tonalitat, els cues i la puntuació no es toquen.",
+          "Els canvis arriben als fitxers, a Apple Music i a les biblioteques que sincronitzes."
+        ],
+        "related": [
+          {
+            "label": "Revisa la teva biblioteca",
+            "anchor": "revisar"
+          }
+        ],
+        "shot": "guide/revisar-ca.webp",
+        "shotCaption": "Revisar sobre una playlist de rekordbox, amb un espai de més en un àlbum."
+      },
+      {
+        "id": "traktor-convert",
+        "slug": "convertir-coleccion-traktor",
+        "group": "library",
+        "title": "Converteix la teva col·lecció de Traktor sense perdre cues, graella ni estrelles",
+        "s": "Passa les teves pistes a AIFF, FLAC, WAV o MP3 i Traktor les continua veient com sempre.",
+        "body": [
+          "Vols canviar el format de pistes que ja tens a Traktor sense tornar a marcar cues ni a quadrar graelles.",
+          "Traktor no torna a llegir el fitxer. Llegeix el seu collection.nml, així que Surco ha de saber on és."
+        ],
+        "keywords": "traktor nml cues beatgrid graella estrelles ranking aiff convertir",
+        "settings": [
+          {
+            "tab": "Programes de DJ",
+            "section": "Col·lecció de Traktor",
+            "program": "traktor",
+            "setting": "Actualitzar la col·lecció de Traktor en convertir",
+            "value": "Actualitzar",
+            "note": "Els cues i la graella de les pistes convertides s'escriuen a la teva col·lecció. Si Traktor és obert, Surco espera que el tanquis."
+          },
+          {
+            "tab": "Programes de DJ",
+            "section": "Col·lecció de Traktor",
+            "program": "traktor",
+            "setting": "collection.nml",
+            "note": "Indica la col·lecció que fa servir Traktor. Si ja està detectada, no cal que toquis res."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Indica la teva col·lecció",
+            "text": "A la Configuració, indica on és el teu collection.nml. Sense això, Traktor no veurà els canvis."
+          },
+          {
+            "title": "Obre la teva playlist de Traktor",
+            "text": "És a la barra lateral. Les seves pistes entren a la llista amb les estrelles que ja els havies posat."
+          },
+          {
+            "title": "Tria el format i converteix",
+            "text": "Els cues i la graella viatgen allà on Traktor els llegeix al fitxer nou."
+          },
+          {
+            "title": "Tanca Traktor abans de desar",
+            "text": "Surco desa una còpia del .nml i escriu a la teva col·lecció."
+          }
+        ],
+        "points": [
+          "Els cues sobreviuen entre MP3, AIFF, FLAC i WAV. Només es perden en passar a ALAC.",
+          "Si Traktor és obert, Surco espera que el tanquis.",
+          "Si alguna cosa surt malament, restaures el .nml des de Còpies."
+        ],
+        "related": [
+          {
+            "label": "Porta les teves pistes al teu programa de DJ",
+            "anchor": "exportar"
+          },
+          {
+            "label": "Marca els teus cues",
+            "anchor": "rekordbox"
+          }
+        ]
+      },
+      {
+        "id": "music-playlist-set",
+        "slug": "set-desde-playlist-apple-music",
+        "group": "go",
+        "macOnly": true,
+        "title": "Prepara un set des d'una playlist d'Apple Music",
+        "s": "Treu una playlist d'Apple Music en AIFF o a l'USB sense cercar fitxers.",
+        "body": [
+          "La teva selecció ja és en una playlist d'Apple Music. La vols treure en AIFF, o a l'USB, sense cercar els fitxers un per un."
+        ],
+        "keywords": "playlist set exportar sessió",
+        "settings": [
+          {
+            "tab": "Destinació",
+            "setting": "Destinació dels fitxers convertits",
+            "value": "Carpeta de sortida",
+            "note": "Just a sota tries la carpeta del set, o el teu USB."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Importa la playlist",
+            "text": "Des de la pantalla d'inici o amb ⌘K, tria «Obrir playlists d'Apple Music» i després la playlist."
+          },
+          {
+            "title": "Mira si en falta alguna",
+            "text": "Surco carrega els fitxers que tens al disc. Les pistes de streaming o sense baixar es compten a part, com a pistes sense fitxer al disc."
+          },
+          {
+            "title": "Tria el format",
+            "text": "A «Format i destinació», al peu de l'editor, per exemple AIFF, o MP3 si va a un USB amb poc espai. Si no, cada pista es queda en el seu format."
+          },
+          {
+            "title": "Prem «Convertir»",
+            "text": "Les còpies van a la carpeta i els teus fitxers d'Apple Music no es toquen."
+          }
+        ],
+        "points": [
+          "Si a un fitxer li falten dades que Music sí que té, com l'any o la caràtula, Surco les agafa de Music.",
+          "Surco carrega la playlist tal com és. Si després hi afegeixes pistes, torna-la a importar."
+        ],
+        "related": [
+          {
+            "label": "Converteix les teves pistes",
+            "anchor": "convertir"
+          }
+        ]
+      },
+      {
+        "id": "paste-tracklist",
+        "slug": "pegar-tracklist-en-playlist",
+        "group": "library",
+        "title": "Converteix el tracklist d'un set en una playlist",
+        "s": "Enganxa la llista en text i Surco cerca cada pista a la teva col·lecció, en l'ordre del set.",
+        "body": [
+          "Tens la llista d'un set, d'un vídeo de YouTube o d'un web, i vols aquestes pistes en una playlist del teu programa, en el mateix ordre.",
+          "No hi ha cap opció per tocar. Funciona amb rekordbox, Traktor, Serato i VirtualDJ."
+        ],
+        "keywords": "tracklist set llista enganxar playlist youtube ordre sessió",
+        "settings": [],
+        "steps": [
+          {
+            "title": "Botó dret sobre una playlist.",
+            "text": "Tria «Enganxar tracklist…». Sobre una carpeta, «Playlist des d'un tracklist…» et demana el nom."
+          },
+          {
+            "title": "Enganxa el text.",
+            "text": "Surco compta les pistes i els buits que ha entès. Prem «Cercar a rekordbox»."
+          },
+          {
+            "title": "Revisa.",
+            "text": "Cada línia surt amb el que Surco ha trobat a la teva col·lecció. Les trobades i les d'una altra mescla hi entren. Les que només coincideixen en el títol esperen el teu clic."
+          },
+          {
+            "title": "Afegeix.",
+            "text": "Les pistes entren al final de la playlist en l'ordre del set. No s'escriu res abans d'aquest botó."
+          }
+        ],
+        "points": [
+          "Les pistes que no tens no surten a la revisió. Només es compten.",
+          "Si dues línies van a parar a la mateixa pista, entra una sola vegada.",
+          "Si rekordbox és obert, Surco et demana que el tanquis.",
+          "Mesurat amb un set real de 31 pistes. 28 van entrar soles i 3 amb un clic."
+        ],
+        "related": [
+          {
+            "label": "Enganxa el tracklist de la teva sessió",
+            "anchor": "tracklist"
+          },
+          {
+            "label": "Porta les teves playlists a un USB",
+            "anchor": "usb"
+          }
+        ],
+        "shot": "guide/tracklist-ca.webp",
+        "shotCaption": "La revisió del tracklist abans d'afegir, amb les trobades, les dubtoses i les semblants."
+      },
+      {
+        "id": "nas",
+        "slug": "musica-en-un-nas",
+        "group": "go",
+        "title": "La teva música en un NAS",
+        "s": "Treballa amb la música del teu disc de xarxa des del Mac o el Windows.",
+        "body": [
+          "Tens la música en un disc de xarxa i hi treballes des de Surco, al Mac o al Windows."
+        ],
+        "keywords": "xarxa smb servidor disc windows",
+        "settings": [
+          {
+            "tab": "Noms",
+            "setting": "Noms de fitxer sense accents",
+            "optional": true,
+            "note": "Escriu «Royksopp» en lloc de «Röyksopp» al nom del fitxer, útil per cercar al NAS. Les etiquetes conserven els accents."
+          },
+          {
+            "tab": "Destinació",
+            "section": "Còpies dels originals",
+            "setting": "Què es desa",
+            "value": "Només si canvia l'àudio",
+            "note": "Ve així. Un NAS no té paperera, així que el que esborres va a Còpies › Fitxers de música."
+          }
+        ],
+        "steps": [
+          {
+            "title": "Arrossega la carpeta del NAS",
+            "text": "La primera càrrega d'una biblioteca gran triga una mica més. Les pistes van apareixent mentre llegeix."
+          },
+          {
+            "title": "Etiqueta i converteix com sempre",
+            "text": "Tot funciona igual que en un disc de l'ordinador."
+          },
+          {
+            "title": "Abans d'esborrar, mira on va",
+            "text": "Surco et diu on anirà cada fitxer abans de confirmar."
+          }
+        ],
+        "points": [
+          "Si tries «Mai» a «Què es desa», esborrar un fitxer del NAS és definitiu. Surco t'avisa abans.",
+          "Les còpies de seguretat duren 7 dies, ocupen com a màxim 2 GB i sempre deixen 5 GB lliures.",
+          "Una pista nova en una carpeta vigilada del NAS pot trigar uns minuts a aparèixer."
+        ],
+        "related": [
+          {
+            "label": "Posa nom als fitxers i endreça'ls",
+            "anchor": "nombres"
+          }
+        ]
+      }
+    ]
+  },
+  "privacy": {
+    "metaTitle": "Privadesa · Surco",
+    "metaDescription": "Quines dades surten del teu ordinador quan fas servir Surco, a quins serveis van i què mesura aquest web.",
+    "title": "Privadesa",
+    "lede": "Surco no té compte ni telemetria. Això és tot el que surt del teu ordinador quan fas servir l'app, i el que mesura aquest web.",
+    "privacyHeading": "L'app",
+    "privacyLede": "Surco no té compte ni telemetria. Només envia alguna cosa a un servidor de Surco quan tu hi envies un comentari, i per a la resta l'app es connecta a altres serveis únicament en aquests casos.",
+    "privacyItems": [
+      "Quan cerques una pista, a mà o amb la cerca automàtica, envia el títol, l'artista i altres dades de cerca a les fonts que tinguis activades. Poden ser Discogs, Bandcamp, Deezer, Beatport i MusicBrainz. Les caràtules es baixen dels seus servidors i de Cover Art Archive.",
+      "Si connectes el teu compte de Beatport, l'usuari i la contrasenya només viatgen a Beatport. La contrasenya es desa xifrada al teu ordinador.",
+      "Per saber si hi ha una versió nova, consulta les versions publicades a GitHub i en baixa l'actualització d'allà mateix.",
+      "Si envies un comentari o informes d'un error des de l'app, el missatge, el teu correu i, si deixes marcat l'informe tècnic, la versió, el sistema i les últimes línies d'error (sense rutes de carpetes) passen per un servidor de Surco, que els reenvia amb Resend a hello@vicent.io. El teu correu només es fa servir per respondre't. Si ho prefereixes, pots obrir un issue a GitHub, on no s'envia res fins que no el publiques tu."
+    ],
+    "policiesLabel": "Cada servei té la seva pròpia política de privadesa",
+    "policies": [
+      {
+        "name": "Discogs",
+        "url": "https://www.discogs.com/help/doc/privacy-policy"
+      },
+      {
+        "name": "Bandcamp",
+        "url": "https://bandcamp.com/privacy"
+      },
+      {
+        "name": "Deezer",
+        "url": "https://www.deezer.com/legal/personal-datas"
+      },
+      {
+        "name": "Beatport",
+        "url": "https://support.beatport.com/hc/en-us/articles/4412316093588"
+      },
+      {
+        "name": "MusicBrainz",
+        "url": "https://metabrainz.org/privacy"
+      },
+      {
+        "name": "Cover Art Archive",
+        "url": "https://archive.org/about/terms"
+      },
+      {
+        "name": "GitHub",
+        "url": "https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement"
+      },
+      {
+        "name": "Resend",
+        "url": "https://resend.com/legal/privacy-policy"
+      }
+    ],
+    "webHeading": "Aquest web",
+    "webBody": "getsurco.app fa servir Google Analytics i Vercel Analytics per comptar visites i baixades. L'app d'escriptori no fa servir cap dels dos.",
+    "webPolicies": "Polítiques de Google i Vercel",
+    "webPolicyLinks": [
+      {
+        "name": "Google",
+        "url": "https://policies.google.com/privacy"
+      },
+      {
+        "name": "Vercel",
+        "url": "https://vercel.com/legal/privacy-notice"
+      }
+    ]
+  },
+  "stats": {
+    "metaTitle": "Estadístiques · Surco",
+    "metaDescription": "Quantes vegades s'ha baixat Surco a Mac, Windows i Linux sense comptar bots, i com creixen les instal·lacions setmana a setmana.",
+    "kicker": "Estadístiques",
+    "title": "Quanta gent baixa Surco",
+    "lede": "Surco no té telemetria, així que no sap qui el fa servir. El que sí que és públic és quantes vegades es baixa cada instal·lador a GitHub. D'aquí surten aquestes xifres.",
+    "total": "baixades des del {{date}}, sense comptar bots",
+    "mac": "Mac",
+    "windows": "Windows, amb actualitzacions",
+    "linux": "Linux, amb actualitzacions",
+    "macHeading": "Instal·lacions a Mac",
+    "macLede": "A Mac les actualitzacions van a part, així que aquí cada baixada és algú que instal·la Surco.",
+    "lastWeek": "en els últims 7 dies",
+    "lastMonth": "en els últims 30 dies",
+    "chartLabel": "Instal·lacions acumulades a Mac",
+    "estimatedLegend": "La part puntejada està reconstruïda a partir de la data de cada versió. La contínua es mesura cada dia.",
+    "weeklyHeading": "Instal·lacions noves a Mac per setmana",
+    "updatesHeading": "Mac que s'actualitzen a cada versió",
+    "updatesLede": "Quants Mac han baixat cada actualització. És el més semblant a saber quanta gent fa servir Surco de debò.",
+    "howHeading": "Com es compta",
+    "howItems": [
+      "A Mac només compta l'instal·lador .dmg. Les actualitzacions baixen un altre fitxer, així que no es barregen.",
+      "A Windows i Linux l'instal·lador també és l'actualització, així que cada versió nova suma una baixada per cada persona que actualitza.",
+      "Cada versió rep una o dues baixades de programes automàtics que es baixen tots els fitxers. Es resten fent servir un fitxer que no necessita ningú."
+    ],
+    "measuredSince": "GitHub només guarda el total d'avui. El que és anterior al {{date}} està reconstruït amb la data de cada versió, i des de llavors es guarda una foto cada dia.",
+    "loading": "Carregant les xifres…",
+    "error": "No s'han pogut carregar les xifres. Prova de tornar a carregar la pàgina."
+  }
+}

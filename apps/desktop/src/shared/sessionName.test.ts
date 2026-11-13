@@ -20,7 +20,7 @@ describe('sessionDateLabel', () => {
   const day = new Date(2026, 10, 9)
 
   it('never holds a slash, which a Serato crate name refuses', () => {
-    for (const locale of ['es', 'en', 'fr', 'de', 'ja', 'pt-BR', undefined]) {
+    for (const locale of ['es', 'en', 'fr', 'de', 'ja', 'pt-BR', 'ca', undefined]) {
       expect(sessionDateLabel(day, locale)).not.toContain('/')
     }
   })

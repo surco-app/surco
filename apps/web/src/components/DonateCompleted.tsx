@@ -37,6 +37,11 @@ const COPY = {
     body: '皆さまの寄付が Surco を支えています。開発に取り組む時間も、新機能も、サブスクリプションなしでの提供も、そのおかげです。DJ ブースでの作業時間をたくさん節約できますように。',
     home: 'ホームへ戻る',
   },
+  ca: {
+    title: 'Gràcies de tot cor!',
+    body: "El teu donatiu és el que manté Surco viu, amb hores de desenvolupament, funcions noves i zero subscripcions. Que t'estalviï moltes hores de cabina.",
+    home: "Tornar a l'inici",
+  },
 }
 
 // Detected after hydration: Node ≥21 defines a global navigator, so a render-time

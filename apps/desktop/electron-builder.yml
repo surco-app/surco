@@ -145,6 +145,10 @@ mac:
     - ja_FEMININE
     - ja_MASCULINE
     - ja_NEUTER
+    - ca
+    - ca_FEMININE
+    - ca_MASCULINE
+    - ca_NEUTER
   hardenedRuntime: true
   gatekeeperAssess: false
   entitlements: build/entitlements.mac.plist
