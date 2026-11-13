@@ -4754,6 +4754,54 @@ describe('Editor Apple Music library badge', () => {
     expect(screen.getByTestId('copy-sentence')).toBeInTheDocument()
   })
 
+  // The Apple Music mark beside the Metadata title is where the user first learns there is
+  // another copy; the numbers that say which one to keep live far below, in Audio quality.
+  // The mark carries the way there, so the two places read as one story, not two claims.
+  it('opens the comparison in Audio quality from the Apple Music mark beside Metadata', async () => {
+    renderWithLibraryCopy({ here: aifLoudness, library: wavLoudness })
+    await waitFor(() =>
+      expect(screen.getByTestId('copy-verdict')).toHaveAttribute('data-state', 'here'),
+    )
+    const quality = screen.getByRole('button', { name: 'Audio quality' })
+    if (quality.getAttribute('aria-expanded') === 'true') fireEvent.click(quality)
+    expect(quality).toHaveAttribute('aria-expanded', 'false')
+    const mark = screen.getByTestId('apple-music-status-link')
+    expect(mark).toContainElement(screen.getByTestId('apple-music-status'))
+    fireEvent.click(mark)
+    expect(quality).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByTestId('copy-verdict')).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByRole('button', { name: 'Metadata' })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    )
+  })
+
+  // Nested inside the header's fold button, a click on the mark would fold Metadata and the
+  // keyboard could not reach it, which is what moved the old verdict pill out of there.
+  it('reaches the Apple Music mark from the keyboard as a button of its own', async () => {
+    renderWithLibraryCopy({ here: wavLoudness, library: aifLoudness })
+    await waitFor(() =>
+      expect(screen.getByTestId('copy-verdict')).toHaveAttribute('data-state', 'library'),
+    )
+    const mark = screen.getByTestId('apple-music-status-link')
+    mark.focus()
+    expect(document.activeElement).toBe(mark)
+    expect(mark.tagName).toBe('BUTTON')
+    expect(mark.parentElement?.closest('button')).toBeNull()
+  })
+
+  // A mark that looks pressable and leads nowhere teaches the user to ignore it.
+  it('leaves the Apple Music mark as plain text when there is no comparison to open', async () => {
+    const { api } = renderWithLibraryCopy({
+      here: wavLoudness,
+      library: wavLoudness,
+      herePath: '/music/strobe.wav'.normalize('NFD'),
+    })
+    await waitFor(() => expect(api.properties).toHaveBeenCalledWith('/Music/Strobe.wav'))
+    expect(screen.getByTestId('apple-music-status')).toBeInTheDocument()
+    expect(screen.queryByTestId('apple-music-status-link')).toBeNull()
+  })
+
   // "Pinned at its ceiling" is a claim the user has to take on trust; the glimpse shows it.
   // The limited copy picks the stretch, so it is always the worse one whichever side it is.
   describe('shows the limiter on the waves when it decided the verdict', () => {
