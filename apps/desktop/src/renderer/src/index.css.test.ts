@@ -69,11 +69,77 @@ describe('theme text contrast (WCAG 1.4.3 AA)', () => {
       expect(dim).toBeGreaterThan(faint)
     })
   }
+})
 
-  it('light color-fg-faint reaches 4.5:1 on the selected row fill', () => {
-    expect(contrast(light['color-fg-faint'], light['color-row-selected'])).toBeGreaterThanOrEqual(
-      4.5,
+describe('light selected fill reads at a glance, like Finder', () => {
+  const selector = ':root[data-theme="light"] :is(.is-primary, .is-applied, .is-selected) {'
+  const start = css.indexOf(selector)
+  const scoped = start < 0 ? '' : css.slice(start, css.indexOf('}', start))
+  const fill = light['color-row-selected']
+  const on = light['color-on-row-selected']
+
+  function painted(token: string): string {
+    const value = scoped.match(new RegExp(`--${token}:\\s*([^;]+);`))?.[1] ?? ''
+    if (value === 'var(--color-on-row-selected)') return on
+    const pct = value.match(
+      /color-mix\(in srgb, var\(--color-on-row-selected\) (\d+)%, transparent\)/,
     )
+    return pct ? blend(on, fill, Number(pct[1]) / 100) : (light[token] ?? fill)
+  }
+
+  it('fills the selected row with the theme blue and white text instead of a lavender tint', () => {
+    expect(fill).toBe(TOKYO_NIGHT.light.blue)
+    expect(on).toBe(TOKYO_NIGHT.light.button_foreground)
+    expect(contrast(fill, light['color-ink'])).toBeGreaterThanOrEqual(4.5)
+  })
+
+  for (const token of [
+    'color-fg',
+    'color-fg-muted',
+    'color-fg-dim',
+    'color-fg-faint',
+    'color-accent',
+  ]) {
+    it(`turns ${token} light inside the fill, since the dark ink of the theme vanishes on the blue`, () => {
+      expect(contrast(painted(token), fill)).toBeGreaterThanOrEqual(4.5)
+    })
+  }
+
+  it('keeps cover placeholders a tile apart from the fill, with their glyph still visible', () => {
+    const tile = (() => {
+      const value = scoped.match(/--color-panel-2:\s*([^;]+);/)?.[1] ?? ''
+      const pct = value.match(
+        /color-mix\(in srgb, var\(--color-on-row-selected\) (\d+)%, var\(--color-row-selected\)\)/,
+      )
+      return pct ? blend(on, fill, Number(pct[1]) / 100) : light['color-panel-2']
+    })()
+    expect(contrast(tile, fill)).toBeGreaterThan(1.1)
+    expect(contrast(painted('color-fg-faint'), tile)).toBeGreaterThanOrEqual(3)
+  })
+
+  it('marks every selected fill outside the track list so its text flips too', () => {
+    for (const file of [
+      'components/SourceTree.tsx',
+      'components/settings/SettingsSearchResults.tsx',
+    ]) {
+      const code = readFileSync(fileURLToPath(new URL(`./${file}`, import.meta.url)), 'utf8')
+      expect(code).toContain("'is-selected bg-[var(--color-row-selected)]")
+    }
+  })
+
+  it('rings a focused selected row in the selection text colour, since the accent ring vanishes on the accent fill', () => {
+    const listRow = readFileSync(
+      fileURLToPath(new URL('./components/ListRow.tsx', import.meta.url)),
+      'utf8',
+    )
+    expect(listRow).toContain(
+      "'is-primary bg-[var(--color-row-selected)] focus-visible:outline-[var(--color-on-row-selected)]'",
+    )
+    for (const t of [dark, light]) {
+      expect(contrast(t['color-on-row-selected'], t['color-row-selected'])).toBeGreaterThanOrEqual(
+        3,
+      )
+    }
   })
 })
 
@@ -477,7 +543,6 @@ const BLENDS: Record<Theme, Record<string, Blend>> = {
     'color-fg-dim': ['comment', 40, 'fg'],
     'color-fg-faint': ['comment', 55, 'fg'],
     'color-warn': ['yellow', 75, 'fg'],
-    'color-row-selected': ['blue', 25, 'field'],
   },
 }
 

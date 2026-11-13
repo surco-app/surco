@@ -88,7 +88,7 @@ export function SettingsSearchResults({
                   onClick={() => onSelect(index)}
                   className={`flex flex-col gap-0.5 rounded-lg px-3 py-1.5 text-left text-section ${
                     isSelected
-                      ? 'bg-[var(--color-row-selected)] font-medium text-[var(--color-on-row-selected)]'
+                      ? 'is-selected bg-[var(--color-row-selected)] font-medium text-[var(--color-on-row-selected)]'
                       : 'text-fg-muted hover:text-fg'
                   }`}
                 >

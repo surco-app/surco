@@ -115,11 +115,8 @@
   --color-warn-label: color-mix(in srgb, var(--color-warn) 64%, var(--color-fg));
   --color-danger-label: color-mix(in srgb, var(--color-danger) 68%, var(--color-fg));
   --color-on-accent: #ffffff;
-  /* Un azul claro y tranquilo, por lo mismo que en oscuro: el relleno macizo competía con
-     el botón principal. Lo bastante lejos de --color-accent para que el contorno de foco de
-     la fila, que se pinta en accent, siga viéndose encima. */
-  --color-row-selected: #c1cee5;
-  --color-on-row-selected: #343b58;
+  --color-row-selected: #2959aa;
+  --color-on-row-selected: #ffffff;
   /* El gris de las barras de Tokyo Night Light: el gemelo claro del terminal_black. */
   --color-swipe-action: #acb0bf;
   --color-on-swipe-action: #343b58;
@@ -128,6 +125,15 @@
   --color-scrollbar: rgba(52, 59, 88, 0.18);
   --color-scrollbar-hover: rgba(52, 59, 88, 0.3);
   --sheen: var(--color-field);
+}
+
+:root[data-theme="light"] :is(.is-primary, .is-applied, .is-selected) {
+  --color-fg: var(--color-on-row-selected);
+  --color-fg-muted: var(--color-on-row-selected);
+  --color-fg-dim: color-mix(in srgb, var(--color-on-row-selected) 92%, transparent);
+  --color-fg-faint: color-mix(in srgb, var(--color-on-row-selected) 88%, transparent);
+  --color-accent: var(--color-on-row-selected);
+  --color-panel-2: color-mix(in srgb, var(--color-on-row-selected) 18%, var(--color-row-selected));
 }
 
 html,
