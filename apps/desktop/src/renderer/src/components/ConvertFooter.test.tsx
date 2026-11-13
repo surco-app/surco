@@ -1299,3 +1299,39 @@ describe('ConvertFooter running batch', () => {
     expect(onProcess).not.toHaveBeenCalled()
   })
 })
+
+describe('ConvertFooter focus across a batch', () => {
+  const run = { done: 0, total: 3 }
+  const selection = cloneElement(footer(false), {
+    isMulti: true,
+    selectedCount: 3,
+    readyCount: 3,
+    status: { ...status(false), superseded: [] },
+    onConvertSelection: vi.fn(),
+    onCancelBatch: vi.fn(),
+  })
+
+  it('moves focus from Convert to Cancel when the batch starts, and back when it ends', () => {
+    const { rerender } = render(selection)
+    screen.getByTestId('batch-convert').focus()
+    rerender(cloneElement(selection, { batchRun: run }))
+    expect(document.activeElement).toBe(screen.getByTestId('batch-run-cancel'))
+    rerender(cloneElement(selection, { batchRun: null }))
+    expect(document.activeElement).toBe(screen.getByTestId('batch-convert'))
+  })
+
+  it('hands focus back to the track convert button when a batch ends over one track', () => {
+    const single = cloneElement(footer(false), { onCancelBatch: vi.fn() })
+    const { rerender } = render(cloneElement(single, { batchRun: run }))
+    screen.getByTestId('batch-run-cancel').focus()
+    rerender(cloneElement(single, { batchRun: null }))
+    expect(document.activeElement).toBe(screen.getByTestId('process-btn'))
+  })
+
+  it('leaves focus where it is when it was outside the footer as the batch starts', () => {
+    const { rerender } = render(selection)
+    expect(document.activeElement).toBe(document.body)
+    rerender(cloneElement(selection, { batchRun: run }))
+    expect(document.activeElement).toBe(document.body)
+  })
+})

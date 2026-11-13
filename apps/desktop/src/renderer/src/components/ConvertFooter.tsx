@@ -327,6 +327,8 @@ export function ConvertFooter({
   // and stepping through a crate must not replay an entrance on every switch. Refs
   // survive re-renders but not that remount, which is exactly the boundary wanted.
   const prevShowDone = useRef(showDone)
+  const running = !!batchRun && !!onCancelBatch
+  const prevRunning = useRef(running)
   const swapped = useRef(false)
   const footerRef = useRef<HTMLDivElement>(null)
   const refocus = useRef(false)
@@ -337,6 +339,13 @@ export function ConvertFooter({
     refocus.current =
       !!footerRef.current?.contains(document.activeElement) ||
       (showDone && heldFocus.current && document.activeElement === document.body)
+    heldFocus.current = false
+  }
+  if (prevRunning.current !== running) {
+    prevRunning.current = running
+    refocus.current =
+      !!footerRef.current?.contains(document.activeElement) ||
+      (heldFocus.current && document.activeElement === document.body)
     heldFocus.current = false
   }
   useEffect(() => {
@@ -364,7 +373,7 @@ export function ConvertFooter({
     refocus.current = false
     footerRef.current
       ?.querySelector<HTMLButtonElement>(
-        '[data-testid="process-btn"], [data-testid="convert-update-anyway"], [data-testid="done-more"]',
+        '[data-testid="process-btn"], [data-testid="convert-update-anyway"], [data-testid="done-more"], [data-testid="batch-convert"], [data-testid="batch-run-cancel"]',
       )
       ?.focus()
   })
