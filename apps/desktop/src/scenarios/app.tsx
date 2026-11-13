@@ -209,13 +209,23 @@ export async function openApp(
       )
     },
     convertAll: async () => {
-      const answered = (): boolean =>
-        ['batch-run', 'batch-summary', 'confirm-ok'].some((id) => screen.queryByTestId(id))
+      const option = (): HTMLElement | null => document.getElementById('palette-option-process-all')
       await waitFor(
         () => {
-          if (answered()) return
-          act(() => menu.current?.('process-all'))
-          if (!answered()) throw new Error('scenario: Convert all never started')
+          act(() => menu.current?.('palette'))
+          const found = option()
+          if (found && found.getAttribute('aria-disabled') !== 'true') return
+          const input = screen.queryByTestId('palette-input')
+          if (input) fireEvent.keyDown(input, { key: 'Escape' })
+          throw new Error('scenario: Convert all never became available')
+        },
+        { timeout: 30_000 },
+      )
+      fireEvent.click(option() as HTMLElement)
+      await waitFor(
+        () => {
+          if (!['batch-run', 'batch-summary', 'confirm-ok'].some((id) => screen.queryByTestId(id)))
+            throw new Error('scenario: Convert all never started')
         },
         { timeout: 30_000 },
       )
