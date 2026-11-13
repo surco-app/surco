@@ -11886,3 +11886,43 @@ describe('App sidebar', () => {
     expect(screen.getByTestId('source-rail')).toBeInTheDocument()
   })
 })
+
+describe('App editor crash', () => {
+  it('keeps the running batch and its cancel under the editor when the editor crashes mid-batch', async () => {
+    const silenced = vi.spyOn(console, 'error').mockImplementation(() => {})
+    vi.resetModules()
+    vi.doMock('./components/Editor', () => ({
+      Editor: () => {
+        throw new Error('boom')
+      },
+    }))
+    try {
+      const pending: ((v: unknown) => void)[] = []
+      const processTrack = vi.fn(() => new Promise((resolve) => pending.push(resolve)))
+      const cancelJob = vi.fn(() => {
+        for (const resolve of pending.splice(0))
+          resolve({ outputPath: '', inPlace: false, skipped: true })
+      })
+      setApi({
+        pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']),
+        readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+        processTrack,
+        cancelJob,
+      })
+      await renderApp()
+      const rows = await addTwoTracks()
+      runMenu('process-all')
+      await waitFor(() => expect(processTrack).toHaveBeenCalled())
+      fireEvent.click(rows[0])
+      expect(await screen.findByTestId('error-boundary')).toBeInTheDocument()
+      expect(screen.getByTestId('batch-run-progress')).toHaveTextContent('Converting… 0/2')
+      fireEvent.click(screen.getByTestId('batch-run-cancel'))
+      expect(cancelJob).toHaveBeenCalled()
+      await waitFor(() => expect(screen.queryByTestId('batch-run')).toBeNull())
+    } finally {
+      vi.doUnmock('./components/Editor')
+      vi.resetModules()
+      silenced.mockRestore()
+    }
+  })
+})

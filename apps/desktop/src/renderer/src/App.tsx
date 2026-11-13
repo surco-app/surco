@@ -4138,6 +4138,7 @@ export default function App(): React.JSX.Element {
                         <ErrorBoundary
                           key={selected.id}
                           className="flex h-full flex-col gap-4 overflow-auto p-8 text-sm"
+                          footer={batching ? batchStrip : null}
                         >
                           {/* fallback={null}: the empty-state pane lives in the sibling branch below,
                       not here, so there's no "today's visual" to hold onto while the chunk loads
