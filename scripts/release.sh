@@ -19,7 +19,8 @@ bump="${1:?usage: release.sh <patch|minor|major|beta>}"
 npm run lint -w apps/desktop
 npm run lint -w apps/web
 
-if [ "$bump" != beta ] && [ "${SURCO_SKIP_SOAK:-}" != 1 ]; then
+if [ "$bump" != beta ] && [ "${SURCO_SKIP_SOAK:-}" != 1 ] &&
+  ! git diff --quiet "$(git describe --tags --abbrev=0)" -- apps/desktop/src package-lock.json; then
   (cd apps/desktop && PATH="$(git rev-parse --show-toplevel)/node_modules/.bin:$PATH" electron-vite build)
   node apps/desktop/.claude/skills/run-desktop/soak.mjs --tree "$(git rev-parse --show-toplevel)"
 fi

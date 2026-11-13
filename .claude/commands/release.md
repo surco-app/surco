@@ -14,7 +14,7 @@ Work directly on `main` for this flow (the one exception to the worktree rule): 
 - The working tree must be clean and the current branch must be `main`. Run `git pull --ff-only origin main`. Abort on any failure.
 - Type-check exactly as CI does, from `apps/desktop`: `npx tsc --build`. Abort if it errors. This is NOT optional and NOT the same as `tsc --noEmit` — CI runs `tsc --build` (project references), which catches errors a `--noEmit` from a subdir misses, and `npm test` does not type-check at all. Releasing over a red `tsc --build` is exactly the failure this step exists to prevent.
 - Run the full test suite from the repo root (`npm test`). Abort if anything is red — never release over failing tests.
-- Run the memory load test on this tree's build (patch, minor and major; skip it for a beta): from `apps/desktop`, `PATH="$(git rev-parse --show-toplevel)/node_modules/.bin:$PATH" electron-vite build`, then `node .claude/skills/run-desktop/soak.mjs`. Abort on FAIL: the renderer's heap grows with every track on a big rekordbox list, which is how 1.34.1 crashed for a user with 13,245 rows open. It needs this Mac's rekordbox collection and, the first time, the NAS.
+- Run the memory load test on this tree's build (patch, minor and major; skip it for a beta, and skip it when `git diff --quiet $(git describe --tags --abbrev=0) -- apps/desktop/src package-lock.json` says the desktop app has not changed since the last tag). Start it in the background and curate the changelog while it runs: from `apps/desktop`, `PATH="$(git rev-parse --show-toplevel)/node_modules/.bin:$PATH" electron-vite build`, then `node .claude/skills/run-desktop/soak.mjs`. Abort on FAIL: the renderer's heap grows with every track on a big rekordbox list, which is how 1.34.1 crashed for a user with 13,245 rows open. It needs this Mac's rekordbox collection and, the first time, the NAS.
 
 ## 2. Compute the new version
 
@@ -53,7 +53,7 @@ En un patch, salta este paso. En un minor o major es obligatorio, y va ANTES del
 
 ## 4. Release
 
-- Run `SURCO_SKIP_SOAK=1 npm run release:patch`, `release:minor`, `release:major` or `release:beta` to match `$ARGUMENTS` (the memory load test already passed in the preflight on this same build; `release.sh` runs it itself when called without that variable). The script bumps `apps/desktop/package.json`, commits `Release vX.Y.Z`, creates the annotated tag and pushes main with tags, which triggers `.github/workflows/release.yml` (binaries publish to `surco-app/surco-releases`; the web deploys from the same push).
+- Run `SURCO_SKIP_SOAK=1 npm run release:patch`, `release:minor`, `release:major` or `release:beta` to match `$ARGUMENTS` (the memory load test already passed or was skipped in the preflight on this same build; `release.sh` runs it itself when called without that variable and the desktop app changed since the last tag). The script bumps `apps/desktop/package.json`, commits `Release vX.Y.Z`, creates the annotated tag and pushes main with tags, which triggers `.github/workflows/release.yml` (binaries publish to `surco-app/surco-releases`; the web deploys from the same push).
 
 ## 5. Report
 
