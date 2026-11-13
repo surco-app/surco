@@ -422,6 +422,9 @@ export interface Settings {
   // Takes prerelease builds on this machine. Machine-bound on purpose: a tester runs
   // betas on the laptop he tries them on and stable on the one he plays gigs from.
   betaUpdates: boolean
+  // Off for users staying on their version: no background check, no install on quit.
+  // Machine-bound like the channel, so the gig machine can stay frozen alone.
+  autoUpdates: boolean
 }
 
 export interface LifetimeStats {

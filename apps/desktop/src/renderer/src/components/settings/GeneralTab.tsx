@@ -142,6 +142,15 @@ export function GeneralTab({
 
       <SettingsSection eyebrow={tr('settings.updates')} searchId="updates">
         <SettingsCheckboxField
+          testid="settings-auto-updates"
+          checked={local.autoUpdates}
+          onChange={(v) => patchLocal('autoUpdates', v)}
+          label={tr('settings.autoUpdates')}
+          searchId="autoUpdates"
+          hint={tr(isStoreBuild() ? 'settings.autoUpdatesStoreHint' : 'settings.autoUpdatesHint')}
+          disabled={isStoreBuild()}
+        />
+        <SettingsCheckboxField
           testid="settings-beta-updates"
           checked={local.betaUpdates}
           onChange={(v) => patchLocal('betaUpdates', v)}

@@ -150,6 +150,12 @@ describe('the update channel default', () => {
   it('is stable on a fresh install', () => {
     expect(getSettings().betaUpdates).toBe(false)
   })
+
+  // Turning updates off is an explicit choice of someone staying on a version; everyone
+  // else keeps receiving fixes without having to find a setting first.
+  it('updates on its own on a fresh install', () => {
+    expect(getSettings().autoUpdates).toBe(true)
+  })
 })
 
 describe('recordConversion', () => {
@@ -611,6 +617,17 @@ describe('configurable settings folder', () => {
     expect(read(syncedFile(dir))).not.toHaveProperty('betaUpdates')
     expect(read(localFile()).betaUpdates).toBe(true)
     expect(getSettings().betaUpdates).toBe(true)
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  // Someone can freeze the machine they play gigs from and keep the laptop updating.
+  it('keeps the automatic updates switch on this machine', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-config-'))
+    setConfigDir(dir)
+    saveSettings({ autoUpdates: false })
+    expect(read(syncedFile(dir))).not.toHaveProperty('autoUpdates')
+    expect(read(localFile()).autoUpdates).toBe(false)
+    expect(getSettings().autoUpdates).toBe(false)
     rmSync(dir, { recursive: true, force: true })
   })
 
