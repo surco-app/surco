@@ -1429,7 +1429,7 @@ export const Editor = memo(function Editor({
             here={hereFacts}
             library={libraryFacts}
             hereLabel={hereFacts.ext}
-            libraryLabel={libraryFacts.ext}
+            libraryLabel={replacedCopyFormat || libraryFacts.ext}
             glimpse={
               limitedRate ? (
                 <LimiterGlimpse
@@ -1474,13 +1474,6 @@ export const Editor = memo(function Editor({
   // sentence spelled out there outgrew a narrow panel and ran under the toolbar. Once the
   // copies are measured, Compare goes to the numbers in Audio quality.
   const canCompareCopies = copyVerdict?.winner === 'b' && !isMulti && (showSpectrum || showLoudness)
-  const canRevealCopies =
-    !!copyVerdict && copyVerdict.winner !== 'tie' && !isMulti && (showSpectrum || showLoudness)
-  function revealCopyComparison(): void {
-    revealCopy.current = true
-    setSectionOpen('quality', true)
-    setCopyOpenFor(`${item.inputPath}\n${replacedCopyPath}`)
-  }
   const libraryCopyBetterNote = !isMulti && inLibrary === 'yes' && libraryCopyBetter && (
     <div
       data-testid="library-copy-better-note"
@@ -1502,7 +1495,11 @@ export const Editor = memo(function Editor({
         <button
           type="button"
           data-testid="library-copy-compare"
-          onClick={revealCopyComparison}
+          onClick={() => {
+            revealCopy.current = true
+            setSectionOpen('quality', true)
+            setCopyOpenFor(`${item.inputPath}\n${replacedCopyPath}`)
+          }}
           className="press shrink-0 rounded font-medium text-[var(--color-warn)] hover:underline"
         >
           {tr('editor.libraryCopyCompare')}
@@ -1528,9 +1525,6 @@ export const Editor = memo(function Editor({
           <span className="sr-only">
             {tr(librarySource === 'engineDj' ? 'editor.inLibraryEngine' : 'editor.inLibrary')}
           </span>
-          {replacedCopyFormat && !libraryCopyBetter && (
-            <span data-testid="apple-music-copy-format">· {replacedCopyFormat}</span>
-          )}
         </SectionPill>
       )}
     </>
@@ -1631,20 +1625,7 @@ export const Editor = memo(function Editor({
                 : undefined
             }
             summaryTestId="form-summary"
-            status={hasLibraryMarks && !canRevealCopies ? libraryMarks : undefined}
-            statusAction={
-              hasLibraryMarks && canRevealCopies ? (
-                <button
-                  type="button"
-                  data-testid="apple-music-status-link"
-                  onClick={revealCopyComparison}
-                  className="press -mx-1.5 -my-0.5 flex shrink-0 items-center gap-1 rounded px-1.5 py-0.5 transition-colors hover:bg-[var(--color-hover)]"
-                >
-                  {libraryMarks}
-                  <ChevronRight className="h-3 w-3 text-fg-faint" aria-hidden="true" />
-                </button>
-              ) : undefined
-            }
+            status={hasLibraryMarks ? libraryMarks : undefined}
             right={
               // Fill and Clear stay in the header with their names; every other glyph that
               // used to ride this line waits in the menu, which closes the row. Clear is set
