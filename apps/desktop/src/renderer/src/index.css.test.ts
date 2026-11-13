@@ -197,11 +197,23 @@ describe('control border contrast (WCAG 1.4.11)', () => {
 })
 
 describe('light theme layers', () => {
-  it('lifts the panel off the ground so the editor and results read as a layer above the lists', () => {
-    expect(contrast(light['color-panel'], light['color-ink'])).toBeGreaterThanOrEqual(1.2)
+  it('keeps the list ground off the darkest grey so the light theme stops reading as all grey', () => {
+    expect(light['color-ink']).not.toBe(TOKYO_NIGHT.light.activity_bar)
+    expect(contrast(light['color-ink'], TOKYO_NIGHT.light.button_foreground)).toBeLessThan(1.2)
   })
 
-  it('keeps cards and placeholders lighter than the panel they sit on', () => {
+  it('keeps empty cover tiles and cards visible on the list ground instead of melting into it', () => {
+    expect(contrast(light['color-panel-2'], light['color-ink'])).toBeGreaterThanOrEqual(1.05)
+  })
+
+  it('puts the editor on white, a step above the list ground, where the work happens like Finder', () => {
+    expect(light['color-panel']).toBe(TOKYO_NIGHT.light.button_foreground)
+    expect(luminance(light['color-panel'])).toBeGreaterThan(luminance(light['color-ink']))
+    expect(contrast(light['color-panel'], light['color-ink'])).toBeGreaterThanOrEqual(1.08)
+  })
+
+  it('sinks cards and placeholders a step below the white editor instead of lifting them', () => {
+    expect(luminance(light['color-panel-2'])).toBeLessThan(luminance(light['color-panel']))
     expect(contrast(light['color-panel-2'], light['color-panel'])).toBeGreaterThanOrEqual(1.08)
   })
 
@@ -458,8 +470,7 @@ const BLENDS: Record<Theme, Record<string, Blend>> = {
     'color-fg-faint': ['dark5', 50, 'fg_dark'],
   },
   light: {
-    'color-panel': ['bg', 50, 'field'],
-    'color-panel-2': ['field', 50, 'button_foreground'],
+    'color-ink': ['bg', 50, 'field'],
     'color-input-border': ['description', 80, 'toolbar'],
     'color-accent-hover': ['blue', 75, 'fg'],
     'color-accent-soft': ['blue', 15, 'field'],
