@@ -33,7 +33,7 @@
         "in": "1.34.0"
       },
       {
-        "text": "Le bouton de conversion dit juste ce qu’il fait, comme « Convertir en FLAC ». Une ligne en dessous indique où va le fichier, et affiche « Aucun changement » quand il n’y a rien à faire.",
+        "text": "Le bouton de conversion dit juste ce qu’il fait, comme « Convertir en FLAC », et affiche « Aucun changement » quand il n’y a rien à faire.",
         "in": "1.34.0"
       },
       {

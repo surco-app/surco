@@ -33,7 +33,7 @@
         "in": "1.34.0"
       },
       {
-        "text": "Der Konvertieren-Button sagt nur noch, was er tut, etwa „In FLAC konvertieren“. Eine Zeile darunter zeigt, wohin die Datei geht, und bei nichts zu tun steht dort „Keine Änderungen“.",
+        "text": "Der Konvertieren-Button sagt nur noch, was er tut, etwa „In FLAC konvertieren“, und bei nichts zu tun steht dort „Keine Änderungen“.",
         "in": "1.34.0"
       },
       {
