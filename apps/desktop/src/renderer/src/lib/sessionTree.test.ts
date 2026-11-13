@@ -161,6 +161,9 @@ describe('suggestRoles reading folder names in other languages and with more wor
     ['ボーカル', 'vocal'],
     ['ヴォーカル', 'vocal'],
     ['Acapela', 'vocal'],
+    ['Cantades', 'vocal'],
+    ['Cantadetes', 'vocal'],
+    ['Cantats', 'vocal'],
   ])('reads %s as %s', (name, role) => {
     expect(roleOfName(name)).toBe(role)
   })
@@ -172,6 +175,7 @@ describe('suggestRoles reading folder names in other languages and with more wor
     ['Sessions', 'any'],
     ['セット', 'any'],
     ['トラックリスト', 'any'],
+    ['Sessió', 'any'],
   ])('reads %s as %s', (name, role) => {
     expect(roleOfName(name)).toBe(role)
   })
@@ -250,6 +254,29 @@ describe('libraryPhases', () => {
       e: 'must',
       f: 'open',
       g: 'close',
+    })
+  })
+
+  it('reads the Catalan words too, now that the app speaks Catalan', () => {
+    const tree = [
+      playlist('a', 'Escalfament'),
+      playlist('b', 'Obertures'),
+      playlist('c', 'Començament'),
+      playlist('d', 'Tancament'),
+      playlist('e', 'Finals'),
+      playlist('f', 'Fixes'),
+      playlist('g', 'Himnes'),
+      playlist('h', 'Essencials'),
+    ]
+    expect(libraryPhases(tree)).toEqual({
+      a: 'open',
+      b: 'open',
+      c: 'open',
+      d: 'close',
+      e: 'close',
+      f: 'must',
+      g: 'must',
+      h: 'must',
     })
   })
 
