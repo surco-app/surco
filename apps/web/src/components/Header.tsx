@@ -1,11 +1,14 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LANGUAGE_NAMES, LANGUAGES, type Language } from '../i18n'
 import { isCondensed, showsHeaderDownload } from '../lib/header'
 import { HOME, PAGES, type Page } from '../lib/nav'
+import { offerPlacement, showOffer } from '../lib/offerCard'
 import { toggleTheme } from '../lib/theme'
 import { btnPrimary } from '../lib/ui'
 import { rememberLanguage, useAutoLanguage } from '../lib/useAutoLanguage'
+
+const FLOATING_SHADOW = 'shadow-[0_16px_40px_color-mix(in_srgb,var(--color-scrim)_60%,transparent)]'
 
 // `page` marks which standalone page renders the header; section links then
 // point back to the landing instead of to anchors that don't exist here.
@@ -22,7 +25,11 @@ export default function Header({
   const [open, setOpen] = useState(false)
   const [languageOpen, setLanguageOpen] = useState(false)
   const languageRef = useRef<HTMLDivElement>(null)
+  const languageButtonRef = useRef<HTMLButtonElement>(null)
   const [offered, dismissOffer] = useAutoLanguage()
+  const [offerBox, setOfferBox] = useState<{ left: number; width: number; arrow: number } | null>(
+    null,
+  )
   const lang = i18n.language as Language
   const home = HOME[lang]
   const languageHref = (code: Language) =>
@@ -81,6 +88,30 @@ export default function Header({
     }
   }, [languageOpen])
 
+  useLayoutEffect(() => {
+    if (!offered) return
+    const place = () => {
+      const anchor = languageRef.current?.getBoundingClientRect()
+      if (!anchor) return
+      const box = offerPlacement(anchor, window.innerWidth)
+      setOfferBox({ ...box, left: box.left - anchor.left })
+    }
+    place()
+    window.addEventListener('resize', place)
+    return () => window.removeEventListener('resize', place)
+  }, [offered])
+
+  useEffect(() => {
+    if (!offered) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      dismissOffer()
+      languageButtonRef.current?.focus()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [offered, dismissOffer])
+
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => {
@@ -110,33 +141,6 @@ export default function Header({
       >
         {t('nav.skipToContent')}
       </a>
-      {offered && (
-        <div
-          data-testid="language-offer"
-          lang={offered}
-          className="border-b border-line/70 bg-bg/95 text-sm text-muted"
-        >
-          <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-4 gap-y-1 px-6 sm:px-10 py-2">
-            <span>{t('nav.languageOffer.text', { lng: offered })}</span>
-            <a
-              data-testid="language-offer-switch"
-              href={languageHref(offered)}
-              onClick={switchLanguage(offered)}
-              className="font-semibold text-blue transition-colors hover:text-cyan"
-            >
-              {t('nav.languageOffer.switch', { lng: offered })}
-            </a>
-            <button
-              type="button"
-              data-testid="language-offer-dismiss"
-              onClick={dismissOffer}
-              className="text-muted underline-offset-4 transition-colors hover:text-fg hover:underline"
-            >
-              {t('nav.languageOffer.dismiss', { lng: offered })}
-            </button>
-          </div>
-        </div>
-      )}
       {/* Fixed height, always. The header used to animate its own padding, which
           shortened the document as it condensed — near the threshold that fed back
           into the scroll position and flickered between both sizes. The row doesn't
@@ -221,6 +225,7 @@ export default function Header({
               HTML: crawlers and readers without scripts still reach every language. */}
           <div ref={languageRef} className="relative">
             <button
+              ref={languageButtonRef}
               type="button"
               data-testid="language-menu-toggle"
               aria-expanded={languageOpen}
@@ -262,9 +267,46 @@ export default function Header({
                 <path d="M6 9l6 6 6-6" />
               </svg>
             </button>
+            {offered && offerBox && showOffer(offered, open) && (
+              <div
+                data-testid="language-offer"
+                lang={offered}
+                style={{
+                  left: offerBox.left,
+                  width: offerBox.width,
+                  transformOrigin: `${offerBox.arrow}px 0`,
+                }}
+                className={`language-offer absolute top-full z-50 mt-3 rounded-xl border border-line bg-surface2 p-4 text-sm text-muted ${FLOATING_SHADOW}`}
+              >
+                <span
+                  aria-hidden="true"
+                  style={{ left: offerBox.arrow - 6 }}
+                  className="absolute -top-1.5 size-3 rotate-45 border-t border-l border-line bg-surface2"
+                />
+                <p className="text-fg">{t('nav.languageOffer.text', { lng: offered })}</p>
+                <div className="mt-3 flex items-center gap-4">
+                  <a
+                    data-testid="language-offer-switch"
+                    href={languageHref(offered)}
+                    onClick={switchLanguage(offered)}
+                    className="font-semibold text-blue transition-colors hover:text-cyan"
+                  >
+                    {t('nav.languageOffer.switch', { lng: offered })}
+                  </a>
+                  <button
+                    type="button"
+                    data-testid="language-offer-dismiss"
+                    onClick={dismissOffer}
+                    className="text-muted underline-offset-4 transition-colors hover:text-fg hover:underline"
+                  >
+                    {t('nav.languageOffer.dismiss', { lng: offered })}
+                  </button>
+                </div>
+              </div>
+            )}
             <ul
               id="language-menu"
-              className={`absolute top-full right-0 z-50 mt-2 w-44 rounded-xl border border-line bg-surface2 p-1.5 shadow-[0_16px_40px_color-mix(in_srgb,var(--color-scrim)_60%,transparent)] origin-top-right transition-[opacity,scale,visibility] duration-150 ease-out ${
+              className={`absolute top-full right-0 z-50 mt-2 w-44 rounded-xl border border-line bg-surface2 p-1.5 ${FLOATING_SHADOW} origin-top-right transition-[opacity,scale,visibility] duration-150 ease-out ${
                 languageOpen ? 'opacity-100' : 'invisible scale-[0.97] opacity-0'
               }`}
             >

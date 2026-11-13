@@ -11,7 +11,7 @@ const sources = (readdirSync(root, { recursive: true }) as string[])
   .map((f) => [f, readFileSync(join(root, f), 'utf8')] as const)
 
 // The site draws the desktop app, and the app is flat: its one shadow is for what floats
-// over the content. Here that is the language menu, the popover in the replace scene and
+// over the content. Here that is the language menu and its offer card, the popover in the replace scene and
 // the file being dragged into the drop scene. A ring or a glow with no offset is not depth.
 const FLOATING: Record<string, number> = {
   'components/Header.tsx': 1,
