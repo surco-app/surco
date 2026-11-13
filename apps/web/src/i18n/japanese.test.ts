@@ -28,7 +28,7 @@ describe('Japanese instructions name the translated app controls', () => {
   it('translates the matching indicator and duplicate removal action', () => {
     const tagging = ja.useCases.cases.find((entry) => entry.id === 'in-place')
     const duplicates = ja.useCases.cases.find((entry) => entry.id === 'duplicates')
-    expect(tagging?.steps[1].text).toContain(app.header.autoMatchingCount.split(' {{done}}')[0])
+    expect(tagging?.steps[1].text).toContain(app.header.sweepMatch)
     expect(duplicates?.steps[2].text).toContain(app.musicReview.removes)
   })
 })
