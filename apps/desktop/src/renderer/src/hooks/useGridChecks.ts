@@ -7,7 +7,7 @@ import {
   type GridFit,
   gridBeats,
 } from '../../../shared/gridEdit'
-import type { QueuedCues, TrackCues } from '../../../shared/types'
+import type { QueuedCues, TrackCueRow } from '../../../shared/types'
 import { appliedGrid } from '../lib/appliedGrid'
 import { cueProgramOf } from '../lib/cuePrograms'
 import { keptOnSurcoGrid, subscribeCueDrafts } from '../lib/cueSession'
@@ -16,17 +16,27 @@ import { gridFitQuery, queuedCuesQuery, trackCuesQuery } from './useTrackCues'
 
 const WORKERS = 2
 
-interface Memo {
+interface GridRead {
+  analysed: boolean
+  clockLeadMs?: number | null
+  durationMs: number
+  fingerprint: string
+  gridFingerprint: string
+  cues: TrackCueRow[]
   programGrid: EditableGrid | null
+  kicks: number[]
+}
+
+interface Memo {
   fit?: GridFit
   grid?: EditableGrid
   check?: GridCheck
 }
 
-const reads = new Map<string, TrackCues | null>()
+const reads = new Map<string, GridRead | null>()
 const fits = new Map<string, GridFit | null>()
 const queues = new Map<string, QueuedCues | null>()
-const memos = new WeakMap<TrackCues, Memo>()
+const memos = new WeakMap<GridRead, Memo>()
 const pending = new Set<string>()
 const stale: string[] = []
 let draining = false
@@ -74,10 +84,10 @@ export function resetGridChecks(): void {
   notify()
 }
 
-function memoOf(read: TrackCues): Memo {
+function memoOf(read: GridRead): Memo {
   const kept = memos.get(read)
   if (kept) return kept
-  const memo: Memo = { programGrid: editableGridOf(read.grid) }
+  const memo: Memo = {}
   memos.set(read, memo)
   return memo
 }
@@ -92,15 +102,14 @@ function checkOfContent(contentId: string): GridCheck | null | undefined {
     contentId,
     read,
     queues.get(contentId) ?? null,
-    memo.programGrid,
+    read.programGrid,
   )
   const gate = gridGate({ contentId, read, grid, onSurcoGrid: keptOnSurcoGrid(contentId) })
   if (gate !== null || grid === null) return null
   if (memo.check && memo.fit === fit && memo.grid === grid) return memo.check
-  const beats = changed ? gridBeats(grid, read.durationMs) : read.grid
   const check = checkGrid({
-    beats: beats.map((b) => b.ms),
-    kicks: read.grid.map((b) => b.ms),
+    beats: changed ? gridBeats(grid, read.durationMs).map((b) => b.ms) : read.kicks,
+    kicks: read.kicks,
     fit,
     atMs: 0,
     durationMs: read.durationMs,
@@ -111,9 +120,20 @@ function checkOfContent(contentId: string): GridCheck | null | undefined {
 
 const gridReadQuery = (contentId: string) => ({
   queryKey: [...trackCuesQuery(contentId).queryKey, 'grid'],
-  queryFn: async (): Promise<TrackCues | null> => {
+  queryFn: async (): Promise<GridRead | null> => {
     const read = await window.api.cues.trackCues(contentId)
-    return read && { ...read, wave: null }
+    return (
+      read && {
+        analysed: read.analysed,
+        clockLeadMs: read.clockLeadMs,
+        durationMs: read.durationMs,
+        fingerprint: read.fingerprint,
+        gridFingerprint: read.gridFingerprint,
+        cues: read.cues,
+        programGrid: editableGridOf(read.grid),
+        kicks: read.grid.map((b) => b.ms),
+      }
+    )
   },
   staleTime: Number.POSITIVE_INFINITY,
 })

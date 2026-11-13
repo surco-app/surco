@@ -13,7 +13,7 @@ export interface AppliedGrid {
 
 export function appliedGrid(
   contentId: string,
-  read: TrackCues,
+  read: Pick<TrackCues, 'fingerprint' | 'gridFingerprint' | 'cues'>,
   queued: QueuedCues | null,
   programGrid: EditableGrid | null,
 ): AppliedGrid {
