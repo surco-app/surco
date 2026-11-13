@@ -298,6 +298,24 @@ describe('LayoutTab sections', () => {
     expect(head).toHaveTextContent(/open/i)
   })
 
+  it('puts the eye last on each row and its heading last, where Settings > Fields keeps the same eye', () => {
+    renderTab()
+    const order = Array.from(
+      screen.getByTestId('settings-section-row-quality').querySelectorAll('button'),
+    ).map((b) => b.dataset.testid)
+    expect(order).toEqual([
+      'settings-section-open-quality',
+      'settings-section-up-quality',
+      'settings-section-down-quality',
+      'settings-section-hide-quality',
+    ])
+    const heads = Array.from(screen.getByTestId('sections-columns').children).map(
+      (c) => (c as HTMLElement).dataset.testid ?? '',
+    )
+    expect(heads.indexOf('sections-column-open')).toBeLessThan(heads.length - 1)
+    expect(heads.indexOf('sections-column-visible')).toBe(heads.length - 1)
+  })
+
   // The word is in the heading now, so repeating "Open" on every row said nothing — and it
   // was ambiguous besides: a greyed-out "Open" looked the same on a hidden section as on a
   // visible-but-closed one. A mark distinguishes them.
