@@ -53,7 +53,11 @@ function catalogApi(catalog: Release[]): Partial<Api> {
   }
 }
 
-function shellApi(errors: string[], openFiles: { current?: (paths: string[]) => void }) {
+function shellApi(
+  errors: string[],
+  openFiles: { current?: (paths: string[]) => void },
+  menu: { current?: (id: string) => void },
+) {
   return {
     version: '0.0.0-scenario',
     getSettings: async () => settingsForRenderer(getSettings()),
@@ -77,7 +81,12 @@ function shellApi(errors: string[], openFiles: { current?: (paths: string[]) => 
     declickPreview: (path, mode) => invokeMain('audio:declickPreview', path, mode),
     cancelDeclickPreview: () => invokeMain('audio:cancelDeclickPreview'),
     readCoverFull: (path) => invokeMain('audio:coverFull', path),
-    onMenuCommand: () => () => {},
+    onMenuCommand: (cb) => {
+      menu.current = cb
+      return () => {
+        menu.current = undefined
+      }
+    },
     onUpdateDownloaded: () => () => {},
     onUpdateError: () => () => {},
     onUpdateCheckFailed: () => () => {},
@@ -90,6 +99,7 @@ function shellApi(errors: string[], openFiles: { current?: (paths: string[]) => 
     setDockPlaying: () => {},
     setDockFrames: () => {},
     cancelJob: () => {},
+    reveal: async () => {},
     reportUnsavedCues: () => {},
   } satisfies Partial<Api>
 }
@@ -149,7 +159,8 @@ export async function openApp(
     settings: { hasSeenOnboarding: true, ...options.settings },
   })
   const openFiles: { current?: (paths: string[]) => void } = {}
-  const shell = { ...shellApi(errors, openFiles), ...catalogApi(catalog) }
+  const menu: { current?: (id: string) => void } = {}
+  const shell = { ...shellApi(errors, openFiles, menu), ...catalogApi(catalog) }
   ;(window as unknown as { api: Api }).api = new Proxy(api, {
     get(target, key) {
       if (key in shell) return shell[key as keyof typeof shell]
@@ -198,14 +209,16 @@ export async function openApp(
       )
     },
     convertAll: async () => {
-      const button = () => screen.getByTestId('convert-all') as HTMLButtonElement
+      const answered = (): boolean =>
+        ['batch-run', 'batch-summary', 'confirm-ok'].some((id) => screen.queryByTestId(id))
       await waitFor(
         () => {
-          if (button().disabled) throw new Error('scenario: Convert all never became available')
+          if (answered()) return
+          act(() => menu.current?.('process-all'))
+          if (!answered()) throw new Error('scenario: Convert all never started')
         },
         { timeout: 30_000 },
       )
-      fireEvent.click(button())
     },
     showRows,
     errors,

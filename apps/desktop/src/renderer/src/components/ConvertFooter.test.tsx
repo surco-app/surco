@@ -1230,3 +1230,72 @@ describe('ConvertFooter batch plan', () => {
     expect(screen.getByTestId('batch-plan')).toHaveTextContent(/^2 tracks → AIFF · [^·]+$/)
   })
 })
+
+describe('ConvertFooter convert of a selection', () => {
+  function multi(over: Record<string, unknown> = {}): React.JSX.Element {
+    return cloneElement(footer(false), {
+      isMulti: true,
+      selectedCount: 3,
+      readyCount: 3,
+      status: { ...status(false), superseded: [] },
+      ...over,
+    })
+  }
+
+  it('converts the selection from the footer, the one convert button left, naming how many', () => {
+    const onConvertSelection = vi.fn()
+    const onProcess = vi.fn()
+    render(multi({ onConvertSelection, onProcess }))
+    const button = screen.getByTestId('batch-convert')
+    expect(button).toHaveTextContent(i18n.t('header.convertSelected', { count: 3 }))
+    fireEvent.click(button)
+    expect(onConvertSelection).toHaveBeenCalledOnce()
+    expect(onProcess).not.toHaveBeenCalled()
+  })
+
+  it('says out of how many it converts when the plan leaves some out', () => {
+    render(multi({ readyCount: 2, onConvertSelection: vi.fn() }))
+    expect(screen.getByTestId('batch-convert')).toHaveTextContent(
+      i18n.t('header.convertSomeSelected', { ready: 2, total: 3 }),
+    )
+  })
+
+  it('stays in place but greyed when nothing in the selection can be converted', () => {
+    render(multi({ readyCount: 0, onConvertSelection: vi.fn() }))
+    expect(screen.getByTestId('batch-convert')).toBeDisabled()
+  })
+})
+
+describe('ConvertFooter running batch', () => {
+  const run = { done: 3, total: 12 }
+
+  it.each([
+    ['one track', footer(false)],
+    ['one finished track', footer(true)],
+    [
+      'a selection',
+      cloneElement(footer(false), {
+        isMulti: true,
+        selectedCount: 3,
+        readyCount: 3,
+        status: { ...status(false), superseded: [] },
+      }),
+    ],
+  ])('shows the batch progress and its cancel in place of convert over %s', (_, base) => {
+    const onCancelBatch = vi.fn()
+    const onProcess = vi.fn()
+    render(cloneElement(base, { batchRun: run, onCancelBatch, onProcess }))
+    expect(screen.getByTestId('batch-run-progress')).toHaveTextContent(
+      i18n.t('header.convertingCount', run),
+    )
+    expect(screen.queryByTestId('process-btn')).toBeNull()
+    expect(screen.queryByTestId('batch-convert')).toBeNull()
+    expect(screen.queryByTestId('done-more')).toBeNull()
+    const cancel = screen.getByTestId('batch-run-cancel')
+    expect(cancel).toHaveTextContent(i18n.t('common.cancel'))
+    expect(cancel).toHaveAccessibleName(i18n.t('header.cancelConvert'))
+    fireEvent.click(cancel)
+    expect(onCancelBatch).toHaveBeenCalledOnce()
+    expect(onProcess).not.toHaveBeenCalled()
+  })
+})

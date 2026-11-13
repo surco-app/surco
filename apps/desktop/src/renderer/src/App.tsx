@@ -67,6 +67,7 @@ import type {
   UsbProgram,
 } from '../../shared/types'
 import { LiveActivityPanel } from './components/ActivityPanel'
+import { BatchRun } from './components/BatchRun'
 import { Confetti } from './components/Confetti'
 import { EmptyDisc } from './components/EmptyDisc'
 import { ErrorBoundary } from './components/ErrorBoundary'
@@ -85,6 +86,7 @@ import { ResizeHandle } from './components/ResizeHandle'
 import { SessionBand } from './components/SessionBand'
 import type { SessionDestination } from './components/SessionWizard'
 import { SourceRail } from './components/SourceRail'
+import { FOOTER_BAR } from './components/SplitButton'
 import { flattenPlaylists, SourceTree } from './components/SourceTree'
 import { ToastStack } from './components/ToastStack'
 import { Toolbar } from './components/Toolbar'
@@ -2218,9 +2220,8 @@ export default function App(): React.JSX.Element {
     [browser.source, bulkTracks, selectedTracks],
   )
   convertTracksRef.current = convertTracks
-  // Gated over the same scope convert-all runs on, so the button's number is the work
-  // the click does: over every loaded track it read "81" behind a filter showing 79. The
-  // editor footer reads this same gate for a multi-selection, so the two buttons agree.
+  // Gated over the same scope convert-all runs on: over every loaded track it read "81"
+  // behind a filter showing 79. The editor footer reads this same gate for a multi-selection.
   const gate = useMemo(
     () => convertGate(convertTracks, requiredFields, settings?.customFields, libraryIndex),
     [convertTracks, requiredFields, settings?.customFields, libraryIndex],
@@ -2494,8 +2495,8 @@ export default function App(): React.JSX.Element {
   )
   const onResultsFit = useStableCallback((deficit: number) => columns.fit('results', deficit))
 
-  // The header's convert-all: the same bulk scope and editor settings the palette command
-  // uses, so pressing the button and running the command cannot diverge.
+  // The footer's convert of a selection: the same bulk scope and editor settings the palette
+  // command uses, so pressing the button and running the command cannot diverge.
   const onConvertAllTracks = useStableCallback(() =>
     askConvertAll(
       convertTracksRef.current,
@@ -3678,13 +3679,6 @@ export default function App(): React.JSX.Element {
                 <Toolbar
                   hintFor={hintFor}
                   trackCount={listedCount}
-                  convertibleCount={eligibleCount}
-                  batchSize={convertTracks.length}
-                  leftOut={gate}
-                  canConvertAll={canProcessAll}
-                  inLibrary={browser.source !== null}
-                  hasSelection={selectedTracks.length > 0}
-                  onConvertAll={onConvertAllTracks}
                   importing={importProgress}
                   batchSummary={batchSummary}
                   onShowFailed={onShowFailed}
@@ -3704,7 +3698,6 @@ export default function App(): React.JSX.Element {
                   onAutoMatch={onAutoMatchAll}
                   onCancelAutoMatch={cancelAutoMatch}
                   onFixToken={onFixToken}
-                  onCancelBatch={cancelBatch}
                   onCancelImport={cancelImport}
                   onReview={onReviewAll}
                   canReview={canReviewList}
@@ -4088,165 +4081,175 @@ export default function App(): React.JSX.Element {
 
                 {!copiesOpen && (
                   <main
-                    className="min-w-0 flex-1 bg-[var(--color-panel)]"
+                    className="flex min-w-0 flex-1 flex-col bg-[var(--color-panel)]"
                     style={
                       {
                         '--results-width': `${columns.widths.results}px`,
                       } as React.CSSProperties
                     }
                   >
-                    {review !== null ? (
-                      <MusicReviewDetailPane
-                        sync={{
-                          rekordbox: settings?.syncRekordbox ?? false,
-                          engine: settings?.syncEngineDj ?? false,
-                          traktor: settings?.syncTraktor ?? false,
-                          serato: settings?.syncSerato ?? false,
-                          virtualdj: settings?.syncVirtualdj ?? false,
-                        }}
-                        onClose={() => setReview(null)}
-                        onOpenTrack={(rowId) => {
-                          setReview(null)
-                          onSelectTrack(rowId, {})
-                        }}
-                      />
-                    ) : selected ? (
-                      // Its own boundary so a render bug in the editor degrades to "this panel
-                      // crashed" — the imported crate and the list stay alive. Keyed by track,
-                      // which both remounts the editor per track (its state-seeding contract)
-                      // and clears a tripped fallback on the next track switch.
-                      <ErrorBoundary
-                        key={selected.id}
-                        className="flex h-full flex-col gap-4 overflow-auto p-8 text-sm"
-                      >
-                        {/* fallback={null}: the empty-state pane lives in the sibling branch below,
-                    not here, so there's no "today's visual" to hold onto while the chunk loads
-                    the first time — a blank beat, not a spinner flash, and only once. */}
-                        <Suspense fallback={null}>
-                          <Editor
-                            item={selected}
-                            rekordboxCue={rekordboxCue}
-                            onCueJumpBars={onCueJumpBars}
-                            onCueQuantize={onCueQuantize}
-                            onCueFlow={onCueFlow}
-                            onCueAutoMarkAll={cuesMarkable ? autoMarkSelected : undefined}
-                            cueTargets={cueTargets}
-                            cueGridCheckOf={cueGridCheckOf}
-                            onShowBadGrid={showBadGrid}
-                            onOpenCueTrack={openCueTrack}
-                            cueActionsRef={cueActionsRef}
-                            libraryIndex={libraryIndex}
-                            searchInputRef={searchInputRef}
-                            selectedTracks={selectedTracks}
-                            onApplyMatches={onApplyMatches}
-                            onProcessAll={onProcessAllSelected}
-                            onAddAllToAppleMusic={onAddAllSelectedToAppleMusic}
-                            onChangeAllMeta={onChangeAllMeta}
-                            onChangeSelection={onChangeSelection}
-                            onApplyCoverAll={onApplyCoverAll}
-                            onDeriveTags={deriveTracksUndoable}
-                            onChangeTracksMeta={deriveTracksUndoable}
-                            onApplyTitleFormat={applyTitleFormat}
-                            onRecordUndo={recordMetaUndo}
-                            onClearAll={clearMeta}
-                            autoMatchDeclined={autoMatchDeclined(selected.id)}
-                            onFieldFocusChange={onFieldFocusChange}
-                            onChange={onEditorChange}
-                            onChangeTracksPlaylists={onChangeTracksPlaylists}
-                            onProcess={onProcessSelected}
-                            onCancel={onCancelSelected}
-                            onFormatChange={onFormatChange}
-                            onDestinationChange={onDestinationChange}
-                            rememberedPick={
-                              selectedTracks.length > 1 ? undefined : rememberedPick(selected.id)
-                            }
-                            onNormalizeChange={onNormalizeChange}
-                            onDeclickChange={onDeclickChange}
-                            onAddToAppleMusic={onAddSelectedToAppleMusic}
-                            onCleanUp={onCleanUp}
-                            resultsFolded={resultsFolded}
-                            onFoldResults={foldResults}
-                            onResultsResizeStart={onResultsResizeStart}
-                            onResultsFit={onResultsFit}
-                            onShowLoudnessHelp={onShowLoudnessHelp}
-                            onHideEditorHints={onHideEditorHints}
-                            onOpenRename={onOpenRename}
-                            onRegenerateName={onRegenerateName}
-                            onTrimDetectedAll={onTrimDetectedAll}
-                            onCopyFilename={onCopyFilename}
-                            onSearchWeb={onSearchWeb}
-                            onCopyMeta={onCopySelectedMeta}
-                            onPasteMeta={onPasteSelectedMeta}
-                            copiedMetaTitle={copiedMeta ? (copiedMeta.meta.title ?? '') : null}
-                            onExportCollection={onOpenExport}
-                            readFullTrack={readFullTrack}
-                            librarySources={browser.sources}
-                            onRevealIn={onRevealIn}
-                            onRetryVerification={retryVerification}
-                            onOpenBackup={onOpenBackup}
-                          />
-                        </Suspense>
-                      </ErrorBoundary>
-                    ) : browser.source && !browser.playlist ? (
-                      <div className="flex h-full items-center justify-center p-8 text-center">
-                        {/* The drag answers here as well as in the sidebar. The column is the
-                        place the rows land once there are any, but on an empty screen this
-                        panel is the only thing on show, and inviting a drag while the wide
-                        panel refused the drop was this screen's oldest lie. */}
-                        <div
-                          data-testid="empty-dropzone"
-                          data-drop-over={dragging || undefined}
-                          className="empty-dropzone w-full max-w-[460px] rounded-2xl px-4 py-8"
+                    <div className="min-h-0 flex-1">
+                      {review !== null ? (
+                        <MusicReviewDetailPane
+                          sync={{
+                            rekordbox: settings?.syncRekordbox ?? false,
+                            engine: settings?.syncEngineDj ?? false,
+                            traktor: settings?.syncTraktor ?? false,
+                            serato: settings?.syncSerato ?? false,
+                            virtualdj: settings?.syncVirtualdj ?? false,
+                          }}
+                          onClose={() => setReview(null)}
+                          onOpenTrack={(rowId) => {
+                            setReview(null)
+                            onSelectTrack(rowId, {})
+                          }}
+                        />
+                      ) : selected ? (
+                        // Its own boundary so a render bug in the editor degrades to "this panel
+                        // crashed" — the imported crate and the list stay alive. Keyed by track,
+                        // which both remounts the editor per track (its state-seeding contract)
+                        // and clears a tripped fallback on the next track switch.
+                        <ErrorBoundary
+                          key={selected.id}
+                          className="flex h-full flex-col gap-4 overflow-auto p-8 text-sm"
                         >
-                          <div className="mb-4 flex justify-center">
-                            <EmptyDisc />
+                          {/* fallback={null}: the empty-state pane lives in the sibling branch below,
+                      not here, so there's no "today's visual" to hold onto while the chunk loads
+                      the first time — a blank beat, not a spinner flash, and only once. */}
+                          <Suspense fallback={null}>
+                            <Editor
+                              item={selected}
+                              rekordboxCue={rekordboxCue}
+                              onCueJumpBars={onCueJumpBars}
+                              onCueQuantize={onCueQuantize}
+                              onCueFlow={onCueFlow}
+                              onCueAutoMarkAll={cuesMarkable ? autoMarkSelected : undefined}
+                              cueTargets={cueTargets}
+                              cueGridCheckOf={cueGridCheckOf}
+                              onShowBadGrid={showBadGrid}
+                              onOpenCueTrack={openCueTrack}
+                              cueActionsRef={cueActionsRef}
+                              libraryIndex={libraryIndex}
+                              searchInputRef={searchInputRef}
+                              selectedTracks={selectedTracks}
+                              onApplyMatches={onApplyMatches}
+                              onProcessAll={onProcessAllSelected}
+                              onAddAllToAppleMusic={onAddAllSelectedToAppleMusic}
+                              onChangeAllMeta={onChangeAllMeta}
+                              onChangeSelection={onChangeSelection}
+                              onApplyCoverAll={onApplyCoverAll}
+                              onDeriveTags={deriveTracksUndoable}
+                              onChangeTracksMeta={deriveTracksUndoable}
+                              onApplyTitleFormat={applyTitleFormat}
+                              onRecordUndo={recordMetaUndo}
+                              onClearAll={clearMeta}
+                              autoMatchDeclined={autoMatchDeclined(selected.id)}
+                              onFieldFocusChange={onFieldFocusChange}
+                              onChange={onEditorChange}
+                              onChangeTracksPlaylists={onChangeTracksPlaylists}
+                              onProcess={onProcessSelected}
+                              onCancel={onCancelSelected}
+                              onConvertSelection={onConvertAllTracks}
+                              batchRun={batching ? batchProgress : null}
+                              onCancelBatch={cancelBatch}
+                              onFormatChange={onFormatChange}
+                              onDestinationChange={onDestinationChange}
+                              rememberedPick={
+                                selectedTracks.length > 1 ? undefined : rememberedPick(selected.id)
+                              }
+                              onNormalizeChange={onNormalizeChange}
+                              onDeclickChange={onDeclickChange}
+                              onAddToAppleMusic={onAddSelectedToAppleMusic}
+                              onCleanUp={onCleanUp}
+                              resultsFolded={resultsFolded}
+                              onFoldResults={foldResults}
+                              onResultsResizeStart={onResultsResizeStart}
+                              onResultsFit={onResultsFit}
+                              onShowLoudnessHelp={onShowLoudnessHelp}
+                              onHideEditorHints={onHideEditorHints}
+                              onOpenRename={onOpenRename}
+                              onRegenerateName={onRegenerateName}
+                              onTrimDetectedAll={onTrimDetectedAll}
+                              onCopyFilename={onCopyFilename}
+                              onSearchWeb={onSearchWeb}
+                              onCopyMeta={onCopySelectedMeta}
+                              onPasteMeta={onPasteSelectedMeta}
+                              copiedMetaTitle={copiedMeta ? (copiedMeta.meta.title ?? '') : null}
+                              onExportCollection={onOpenExport}
+                              readFullTrack={readFullTrack}
+                              librarySources={browser.sources}
+                              onRevealIn={onRevealIn}
+                              onRetryVerification={retryVerification}
+                              onOpenBackup={onOpenBackup}
+                            />
+                          </Suspense>
+                        </ErrorBoundary>
+                      ) : browser.source && !browser.playlist ? (
+                        <div className="flex h-full items-center justify-center p-8 text-center">
+                          {/* The drag answers here as well as in the sidebar. The column is the
+                          place the rows land once there are any, but on an empty screen this
+                          panel is the only thing on show, and inviting a drag while the wide
+                          panel refused the drop was this screen's oldest lie. */}
+                          <div
+                            data-testid="empty-dropzone"
+                            data-drop-over={dragging || undefined}
+                            className="empty-dropzone w-full max-w-[460px] rounded-2xl px-4 py-8"
+                          >
+                            <div className="mb-4 flex justify-center">
+                              <EmptyDisc />
+                            </div>
+                            {/* A source with nothing picked has no rows and no editor; the one
+                            thing to do there is pick a playlist, so that is all it says, and
+                            a click there opens no file dialog. */}
+                            <p
+                              data-testid="source-pick-playlist"
+                              className="empty-copy-in text-sm text-pretty text-fg-dim"
+                              style={{ animationDelay: '0.10s' }}
+                            >
+                              {tr('sources.pickPlaylist')}
+                            </p>
                           </div>
-                          {/* A source with nothing picked has no rows and no editor; the one
-                          thing to do there is pick a playlist, so that is all it says, and
-                          a click there opens no file dialog. */}
-                          <p
-                            data-testid="source-pick-playlist"
-                            className="empty-copy-in text-sm text-pretty text-fg-dim"
-                            style={{ animationDelay: '0.10s' }}
-                          >
-                            {tr('sources.pickPlaylist')}
-                          </p>
                         </div>
-                      </div>
-                    ) : (
-                      // The whole panel is one native button, so a click anywhere on it and
-                      // Enter or Space from the keyboard all open the same dialog as ⌘O. Its
-                      // name is the action because the visible line only says where to drop.
-                      <button
-                        type="button"
-                        data-testid="add-files"
-                        aria-label={tr('empty.addTracks')}
-                        onClick={onAdd}
-                        className="flex h-full w-full items-center justify-center p-8 text-center"
-                      >
-                        <span
-                          data-testid="empty-dropzone"
-                          data-drop-over={dragging || undefined}
-                          className="empty-dropzone block w-full max-w-[460px] rounded-2xl px-4 py-8"
+                      ) : (
+                        // The whole panel is one native button, so a click anywhere on it and
+                        // Enter or Space from the keyboard all open the same dialog as ⌘O. Its
+                        // name is the action because the visible line only says where to drop.
+                        <button
+                          type="button"
+                          data-testid="add-files"
+                          aria-label={tr('empty.addTracks')}
+                          onClick={onAdd}
+                          className="flex h-full w-full items-center justify-center p-8 text-center"
                         >
-                          <span className="mb-4 flex justify-center">
-                            <EmptyDisc />
-                          </span>
                           <span
-                            className="empty-copy-in block text-base font-semibold tracking-[-0.01em] text-balance text-fg"
-                            style={{ animationDelay: '0.10s' }}
+                            data-testid="empty-dropzone"
+                            data-drop-over={dragging || undefined}
+                            className="empty-dropzone block w-full max-w-[460px] rounded-2xl px-4 py-8"
                           >
-                            {tr('empty.title')}
+                            <span className="mb-4 flex justify-center">
+                              <EmptyDisc />
+                            </span>
+                            <span
+                              className="empty-copy-in block text-base font-semibold tracking-[-0.01em] text-balance text-fg"
+                              style={{ animationDelay: '0.10s' }}
+                            >
+                              {tr('empty.title')}
+                            </span>
+                            <span
+                              data-testid="empty-pick-hint"
+                              className="empty-copy-in mt-1 block text-xs text-fg-dim"
+                              style={{ animationDelay: '0.16s' }}
+                            >
+                              {tr('empty.pickHint', { shortcut: hintFor('add') })}
+                            </span>
                           </span>
-                          <span
-                            data-testid="empty-pick-hint"
-                            className="empty-copy-in mt-1 block text-xs text-fg-dim"
-                            style={{ animationDelay: '0.16s' }}
-                          >
-                            {tr('empty.pickHint', { shortcut: hintFor('add') })}
-                          </span>
-                        </span>
-                      </button>
+                        </button>
+                      )}
+                    </div>
+                    {batching && (review !== null || !selected) && (
+                      <div className={FOOTER_BAR}>
+                        <BatchRun progress={batchProgress} onCancel={cancelBatch} />
+                      </div>
                     )}
                   </main>
                 )}

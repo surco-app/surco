@@ -30,6 +30,7 @@ import type { SelectionStatus } from '../lib/selectionStatus'
 import { trackQuality } from '../lib/triage'
 import type { TrackItem } from '../types'
 import { BatchPlan } from './BatchPlan'
+import { BatchRun } from './BatchRun'
 import { DoneMenu } from './DoneMenu'
 import { ExportButton } from './ExportButton'
 import { SOURCE_ICON } from './SourceRail'
@@ -108,8 +109,11 @@ interface ConvertFooterProps {
   // in single, so the footer never forks on it.
   onProcess: (format: FormatSetting) => void
   // Cancels the in-flight single conversion; the primary button turns into a cancel while
-  // it runs. Undefined in multi, where the toolbar batch pill owns the cancel.
+  // it runs.
   onCancel?: () => void
+  onConvertSelection?: () => void
+  batchRun?: { done: number; total: number } | null
+  onCancelBatch?: () => void
   onAddToAppleMusic?: () => void
   // The library copy this track's add superseded (the old rip the fresh copy replaces),
   // resolved by the editor from the library snapshot: its persistent ID plus the raw
@@ -168,6 +172,9 @@ export function ConvertFooter({
   onSelectDestination,
   onProcess,
   onCancel,
+  onConvertSelection,
+  batchRun,
+  onCancelBatch,
   onAddToAppleMusic,
   staleMusicCopy,
   supersededPath,
@@ -453,7 +460,9 @@ export function ConvertFooter({
             <Tooltip label={tr('normalize.title')} />
           </button>
         )}
-        {showDone ? (
+        {batchRun && onCancelBatch ? (
+          <BatchRun progress={batchRun} onCancel={onCancelBatch} />
+        ) : showDone ? (
           // One line, always, ordered by what matters after an export. On the left, the
           // outcome in words, which is also the way to the library copy; the clean-up of what
           // was left behind, named while the row has room for it and an icon when it doesn't.
@@ -706,6 +715,8 @@ export function ConvertFooter({
             ) : isMulti ? (
               <BatchPlan
                 count={readyCount ?? selectedCount}
+                total={selectedCount}
+                onConvert={onConvertSelection}
                 format={format}
                 destination={destination}
                 destinations={destinations}

@@ -1,5 +1,4 @@
 import {
-  ArrowRightLeft,
   ChartColumn,
   CircleQuestionMark,
   FilePlus,
@@ -16,7 +15,7 @@ import {
 import type React from 'react'
 import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { type BatchSummary, type ConvertGate, leftOutNote } from '../lib/batch'
+import type { BatchSummary } from '../lib/batch'
 import { Tooltip } from './Tooltip'
 
 interface Props {
@@ -25,19 +24,6 @@ interface Props {
   // binding table in App the single source of truth.
   hintFor: (id: string) => string
   trackCount: number
-  // How many tracks the button would convert, and whether it can run at all (false once
-  // nothing is eligible, which greys it rather than hiding it, so it stays where the user
-  // last saw it). The count is named in the label on purpose: the editor footer carries a
-  // "Convert to AIFF" for the open track, and without a count the two read as one action.
-  convertibleCount: number
-  // The tracks the batch covers (the selection, or the visible list), so a count below it
-  // reads "1 of 3" and can't be taken for the open track when that one isn't ready.
-  batchSize: number
-  leftOut?: Omit<ConvertGate, 'ready'>
-  canConvertAll: boolean
-  inLibrary?: boolean
-  hasSelection?: boolean
-  onConvertAll: () => void
   // Metadata-read progress of an in-flight import (null when idle), shown as a "212/319"
   // counter beside "Add files" so a big drop isn't an opaque wait.
   importing: { done: number; total: number } | null
@@ -47,8 +33,6 @@ interface Props {
   onShowFailed: () => void
   onShowSkipped: () => void
   batching: boolean
-  // Progress of the running batch (convert-all / add-all), shown as a cancellable pill
-  // while `batching` — the conversion's counterpart of the sweep buttons below.
   batchProgress: { done: number; total: number }
   // Progress of the analyze-quality sweep (null when idle) and whether every track is
   // already analyzed (which, when idle, disables the button).
@@ -70,9 +54,6 @@ interface Props {
   onAutoMatch: () => void
   onCancelAutoMatch: () => void
   onFixToken: () => void
-  // Stops the running batch between tracks: queued conversions bail as skipped, the
-  // ones already in ffmpeg finish.
-  onCancelBatch: () => void
   onCancelImport: () => void
   onReview: () => void
   canReview: boolean
@@ -85,8 +66,6 @@ interface Props {
   onSettings: () => void
   onHelp: () => void
   onFeedback: () => void
-  // Takes the main action's place while another view owns the screen (the Music review),
-  // so Convert never acts on a list that is out of sight.
   primary?: React.ReactNode
   // The USB export's pill (UsbExportPill), which subscribes to the export itself; the
   // toolbar only places it, so a byte tick never re-renders the toolbar.
@@ -94,21 +73,13 @@ interface Props {
   queuePill?: React.ReactNode
 }
 
-// The window's title-bar toolbar: the convert-the-list action, the auto-match and
-// analyze-quality sweeps, the progress of whatever runs, and the always-present
+// The window's title-bar toolbar: the auto-match and analyze-quality sweeps, the progress of whatever runs, and the always-present
 // palette/stats/activity/originals/settings. App owns the state and hands every action down.
 // Memoized for the same contract as the Editor: App hands it stable handlers, so a
 // keystroke in a metadata field no longer re-renders the whole toolbar.
 export const Toolbar = memo(function Toolbar({
   hintFor,
   trackCount,
-  convertibleCount,
-  batchSize,
-  leftOut,
-  canConvertAll,
-  inLibrary = false,
-  hasSelection = false,
-  onConvertAll,
   importing,
   batchSummary,
   onShowFailed,
@@ -128,7 +99,6 @@ export const Toolbar = memo(function Toolbar({
   onAutoMatch,
   onCancelAutoMatch,
   onFixToken,
-  onCancelBatch,
   onCancelImport,
   onReview,
   canReview,
@@ -157,20 +127,6 @@ export const Toolbar = memo(function Toolbar({
         total: analysis.total,
       },
     )
-  const libraryIdle = inLibrary && !hasSelection
-  const selectionLabel = inLibrary && hasSelection
-  const convertLabel =
-    convertibleCount === 0 || libraryIdle
-      ? tr('header.convertNone')
-      : convertibleCount < batchSize
-        ? tr(selectionLabel ? 'header.convertSomeSelected' : 'header.convertSome', {
-            ready: convertibleCount,
-            total: batchSize,
-          })
-        : tr(selectionLabel ? 'header.convertSelected' : 'header.convertAll', {
-            count: convertibleCount,
-          })
-  const note = !leftOut || libraryIdle ? null : leftOutNote(leftOut, tr)
   return (
     <header
       className="flex h-12 shrink-0 items-center justify-between border-b border-[var(--color-line)] pr-3 pl-24"
@@ -380,7 +336,7 @@ export const Toolbar = memo(function Toolbar({
         {importing && (
           // A live pill matching the auto-match/analyze sweeps (accent text, spinning
           // glyph, done/total), so a big drop reads as active work rather than a static
-          // line — and clicking it cancels, like the batch pill beside it. This was the
+          // line — and clicking it cancels. This was the
           // one sweep with no way out: a folder dropped by mistake had to be waited out.
           <button
             type="button"
@@ -484,60 +440,11 @@ export const Toolbar = memo(function Toolbar({
           <MessageSquare className="h-4 w-4" aria-hidden="true" />
           <Tooltip label={tr('header.feedback')} align="end" />
         </button>
-        {/* Converting the list is the app's whole point, so it closes the header whenever
-            there is a list, one track included, so the button never comes and goes: at the
-            trailing edge, where a macOS toolbar keeps its main action, on the same side as
-            the editor footer's action for the open track. Labelled rather than a bare
-            glyph: it rewrites files, and an icon alone would not say what it touches. */}
-        {primary ? (
+        {primary && (
           <>
             <div aria-hidden="true" className="mx-1 h-5 w-px self-center bg-[var(--color-line)]" />
             {primary}
           </>
-        ) : (
-          trackCount > 0 && (
-            <>
-              <div
-                aria-hidden="true"
-                className="mx-1 h-5 w-px self-center bg-[var(--color-line)]"
-              />
-              <PrimaryAction
-                testid="convert-all"
-                Icon={ArrowRightLeft}
-                label={convertLabel}
-                note={note}
-                labelWidest={
-                  convertibleCount > 0 && convertibleCount < batchSize && !libraryIdle
-                    ? tr(selectionLabel ? 'header.convertSomeSelected' : 'header.convertSome', {
-                        ready: batchSize,
-                        total: batchSize,
-                      })
-                    : undefined
-                }
-                running={batching}
-                runningLabel={
-                  <SteadyWidth
-                    testid="convert-all-sizer"
-                    widest={tr('header.convertingCount', {
-                      done: batchProgress.total,
-                      total: batchProgress.total,
-                    })}
-                  >
-                    {tr('header.convertingCount', {
-                      done: batchProgress.done,
-                      total: batchProgress.total,
-                    })}
-                  </SteadyWidth>
-                }
-                cancelLabel={tr('header.cancelConvert')}
-                ready={canConvertAll && !libraryIdle}
-                quiet={(convertibleCount === 1 && batchSize === 1) || libraryIdle}
-                hint={hintFor('process-all')}
-                onRun={onConvertAll}
-                onCancel={onCancelBatch}
-              />
-            </>
-          )
         )}
       </div>
     </header>

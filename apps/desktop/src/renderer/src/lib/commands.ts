@@ -882,7 +882,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
       group: 'convert',
       title: tr('commands.processCurrent'),
       hint: hintFor('process-current'),
-      // Over several picked tracks ⌘⏎ converts the selection, the same batch the header
+      // Over several picked tracks ⌘⏎ converts the selection, the same batch the footer
       // button names, rather than the one open track (the user's call, 06/11).
       enabled: selectedTracksCount > 1 ? canProcessAll : canProcessSelected,
       run: () => {

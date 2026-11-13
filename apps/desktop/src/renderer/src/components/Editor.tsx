@@ -175,9 +175,11 @@ interface Props {
   onChange: (patch: Partial<TrackItem>) => void
   onProcess: (format: OutputFormat) => void
   // Cancels an in-flight single-track conversion — the button becomes a cancel while it
-  // runs, so a long convert has the escape a batch always had. Multi cancels via the
-  // toolbar batch pill, so this is single-only.
+  // runs, so a long convert has the escape a batch always had. Single-only.
   onCancel?: () => void
+  onConvertSelection?: () => void
+  batchRun?: { done: number; total: number } | null
+  onCancelBatch?: () => void
   // Reports the format chosen in the split-button menu so the keyboard convert
   // shortcuts (⌘⏎ / ⌘⇧⏎) and convert all export in it too, instead of the Settings
   // default. Null means nothing was picked by hand: a seeded format is resolved against
@@ -294,6 +296,9 @@ export const Editor = memo(function Editor({
   onChange,
   onProcess,
   onCancel,
+  onConvertSelection,
+  batchRun,
+  onCancelBatch,
   onFormatChange,
   onDestinationChange,
   rememberedPick,
@@ -2068,9 +2073,11 @@ export const Editor = memo(function Editor({
                   onProcess(f as OutputFormat)
                 }
           }
-          // Single-only: a running multi converts through the toolbar's batch pill, which
-          // owns that cancel. Passing it in multi would cancel just the primary track.
+          // Single-only: passing it in multi would cancel just the primary track.
           onCancel={isMulti ? undefined : onCancel}
+          onConvertSelection={onConvertSelection}
+          batchRun={batchRun}
+          onCancelBatch={onCancelBatch}
           onAddToAppleMusic={isMulti ? onAddAllToAppleMusic : onAddToAppleMusic}
           staleMusicCopy={staleMusicCopy}
           // The file this track's replacement retired: gone from Apple Music, and rekordbox
