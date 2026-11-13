@@ -2,7 +2,6 @@ import {
   ArrowRightLeft,
   ChartColumn,
   CircleQuestionMark,
-  FilePlus,
   Gauge,
   Loader2,
   type LucideIcon,
@@ -17,6 +16,8 @@ import type React from 'react'
 import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { type BatchSummary, type ConvertGate, leftOutNote } from '../lib/batch'
+import { type SweepTask, sweepTasks } from '../lib/progress'
+import { SweepsPill, sweepText } from './SweepsPill'
 import { Tooltip } from './Tooltip'
 
 interface Props {
@@ -38,8 +39,6 @@ interface Props {
   inLibrary?: boolean
   hasSelection?: boolean
   onConvertAll: () => void
-  // Metadata-read progress of an in-flight import (null when idle), shown as a "212/319"
-  // counter beside "Add files" so a big drop isn't an opaque wait.
   importing: { done: number; total: number } | null
   batchSummary: BatchSummary | null
   // Filters the list down to the rows whose conversion failed, so the summary's failure
@@ -143,20 +142,15 @@ export const Toolbar = memo(function Toolbar({
   usbPill,
   queuePill,
 }: Props): React.JSX.Element {
-  const { t: tr } = useTranslation()
-  const analysisLabel =
-    analysis &&
-    tr(
-      analysisSlowed
-        ? 'header.analyzingSlowed'
-        : analysis.stage === 'details'
-          ? 'header.analyzingDetails'
-          : 'header.analyzingCount',
-      {
-        done: analysis.done,
-        total: analysis.total,
-      },
-    )
+  const { t: tr, i18n } = useTranslation()
+  const tasks = sweepTasks({ importing, analysis, matching })
+  const spoken = (kind: SweepTask['kind']): string => {
+    const task = tasks.find((t) => t.kind === kind)
+    if (!task) return ''
+    const { label, count } = sweepText(tr, i18n.language, task, analysisSlowed)
+    return `${label} · ${count}`
+  }
+  const analysisLabel = spoken('analyze')
   const libraryIdle = inLibrary && !hasSelection
   const selectionLabel = inLibrary && hasSelection
   const convertLabel =
@@ -185,17 +179,9 @@ export const Toolbar = memo(function Toolbar({
             ? tr('header.convertingCount', { done: batchProgress.done, total: batchProgress.total })
             : ''}
         </span>
-        <span>
-          {importing
-            ? tr('header.importingCount', { done: importing.done, total: importing.total })
-            : ''}
-        </span>
-        <span>
-          {matching
-            ? tr('header.autoMatchingCount', { done: matching.done, total: matching.total })
-            : ''}
-        </span>
-        <span>{analysisLabel || ''}</span>
+        <span>{spoken('import')}</span>
+        <span>{analysisLabel}</span>
+        <span>{spoken('match')}</span>
       </div>
       <div
         data-testid="toolbar-list-actions"
@@ -234,18 +220,7 @@ export const Toolbar = memo(function Toolbar({
                   aria-hidden="true"
                 />
               )}
-              {analysis ? (
-                <SteadyWidth
-                  testid="analyze-progress-sizer"
-                  widest={`${analysis.total}/${analysis.total}`}
-                >
-                  <span data-testid="analyze-progress" className="text-xs tabular-nums">
-                    {analysis.done}/{analysis.total}
-                  </span>
-                </SteadyWidth>
-              ) : (
-                <span>{tr('header.analyzeQualityLabel')}</span>
-              )}
+              <span>{tr('header.analyzeQualityLabel')}</span>
               <Tooltip
                 label={
                   analysisLabel ||
@@ -284,16 +259,6 @@ export const Toolbar = memo(function Toolbar({
                 className={`h-4 w-4 ${matching ? 'animate-pulse' : ''}`}
                 aria-hidden="true"
               />
-              {matching && (
-                <SteadyWidth
-                  testid="auto-match-progress-sizer"
-                  widest={`${matching.total}/${matching.total}`}
-                >
-                  <span data-testid="auto-match-progress" className="text-xs tabular-nums">
-                    {matching.done}/{matching.total}
-                  </span>
-                </SteadyWidth>
-              )}
               {/* Auto-match on, token missing: name the gap inline so it reads without a
                 hover — the tooltip alone was the invisible dead end this fixes. */}
               {!matching && needsToken && (
@@ -302,11 +267,11 @@ export const Toolbar = memo(function Toolbar({
                   <span>{tr('header.addToken')}</span>
                 </>
               )}
-              {!matching && !needsToken && <span>{tr('header.autoMatchLabel')}</span>}
+              {(matching || !needsToken) && <span>{tr('header.autoMatchLabel')}</span>}
               <Tooltip
                 label={
                   matching
-                    ? tr('header.autoMatchingCount', { done: matching.done, total: matching.total })
+                    ? spoken('match')
                     : needsToken || tokenMissing
                       ? tr('header.autoMatchNoToken')
                       : tr('header.autoMatch')
@@ -377,35 +342,11 @@ export const Toolbar = memo(function Toolbar({
         )}
         {usbPill}
         {queuePill}
-        {importing && (
-          // A live pill matching the auto-match/analyze sweeps (accent text, spinning
-          // glyph, done/total), so a big drop reads as active work rather than a static
-          // line — and clicking it cancels, like the batch pill beside it. This was the
-          // one sweep with no way out: a folder dropped by mistake had to be waited out.
-          <button
-            type="button"
-            data-testid="import-progress"
-            onClick={onCancelImport}
-            aria-label={tr('header.cancelImport')}
-            className="press group relative flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium tabular-nums text-[var(--color-accent)] hover:bg-[var(--color-hover)]"
-          >
-            {/* FilePlus, not the shared Loader2: mid-conversion, a dropped folder painted
-                two identical spinning capsules. The other sweeps identify themselves by
-                glyph already; this is the import's, echoing the Add files button it
-                follows from. */}
-            <FilePlus className="h-4 w-4" aria-hidden="true" />
-            <SteadyWidth
-              testid="import-progress-sizer"
-              widest={tr('header.importingCount', {
-                done: importing.total,
-                total: importing.total,
-              })}
-            >
-              {tr('header.importingCount', { done: importing.done, total: importing.total })}
-            </SteadyWidth>
-            <Tooltip label={tr('header.cancelImport')} align="end" />
-          </button>
-        )}
+        <SweepsPill
+          tasks={tasks}
+          slowed={analysisSlowed}
+          onStop={{ import: onCancelImport, analyze: onCancelAnalyze, match: onCancelAutoMatch }}
+        />
         <div aria-hidden="true" className="w-2" />
         <button
           type="button"

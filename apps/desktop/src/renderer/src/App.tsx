@@ -198,7 +198,7 @@ import { isMacOS } from './lib/platform'
 import { reopenedPlaylist } from './lib/playlistEdits'
 import { type PlaylistScope, playlistMembership, playlistView } from './lib/playlistView'
 import { needsDiscogsPrefetch } from './lib/prefetch'
-import { topBarProgress } from './lib/progress'
+import { sweepTasks, topBarProgress } from './lib/progress'
 import { withCachedQualityTag } from './lib/qualityTag'
 import {
   clearWrittenPlaylists,
@@ -3602,7 +3602,7 @@ export default function App(): React.JSX.Element {
       review !== null && !batching ? <MusicReviewToolbarAction busy={reviewBusy} /> : undefined,
     [review, batching, reviewBusy],
   )
-  // Drives the slim top bar: the analyze/auto-match/convert sweeps pool their progress,
+  // Drives the slim top bar: it follows the sweep the toolbar pill leads with,
   // and a fresh drop still reading its tags shows as an indeterminate run.
   const showList =
     !copiesOpen &&
@@ -3610,7 +3610,7 @@ export default function App(): React.JSX.Element {
       review !== null ||
       player.mounted)
   const progress = topBarProgress(
-    [analysis, matching, batchProgress, importProgress],
+    [...sweepTasks({ importing: importProgress, analysis, matching }), batchProgress],
     anyLoadingMeta,
   )
 
