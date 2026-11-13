@@ -4382,6 +4382,7 @@ describe('Editor Apple Music library badge', () => {
       hasClipboardImage: vi.fn().mockResolvedValue(false),
       onWindowFocus: vi.fn(() => () => {}),
       appleMusicEntryMeta: vi.fn().mockResolvedValue(null),
+      cancelAnalysis: vi.fn().mockResolvedValue(undefined),
     }
   }
 
