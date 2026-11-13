@@ -63,7 +63,7 @@ function groups(locale: unknown): Group[] {
 // for are exactly the ones who give up at that point.
 describe('use case settings name what the app shows', () => {
   for (const [name, web, app] of SITE_LANGUAGES) {
-    const tabs = Object.values(app.settings.tabs)
+    const tabs = [...Object.values(app.settings.tabs), ...Object.values(app.settings.entries)]
     const labels = strings(app)
 
     it(`${name} points at settings tabs that exist`, () => {
