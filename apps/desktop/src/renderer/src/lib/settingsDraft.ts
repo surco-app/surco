@@ -92,6 +92,7 @@ export interface LocalDraft {
   rekordboxDbPath: string
   virtualdjLibraryDir: string
   betaUpdates: boolean
+  autoUpdates: boolean
   autoMatch: boolean
   beatportUsername: string
   analysisCacheGb: number
@@ -109,6 +110,7 @@ export function pickLocal(s: Settings): LocalDraft {
     rekordboxDbPath: s.rekordboxDbPath,
     virtualdjLibraryDir: s.virtualdjLibraryDir,
     betaUpdates: s.betaUpdates,
+    autoUpdates: s.autoUpdates,
     autoMatch: s.autoMatch,
     beatportUsername: s.beatportUsername,
     analysisCacheGb: s.analysisCacheGb,

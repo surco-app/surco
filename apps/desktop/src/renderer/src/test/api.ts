@@ -79,6 +79,7 @@ export const testSettings: Settings = {
   syncSerato: false,
   syncVirtualdj: false,
   betaUpdates: false,
+  autoUpdates: true,
   traktorCueOffsetMs: 0,
   filenameFormat: '',
   titleFormat: '',

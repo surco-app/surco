@@ -207,6 +207,7 @@ export const defaults: Settings = {
   donateNudgeLastShown: '',
   lastSeenChangelogVersion: '',
   betaUpdates: false,
+  autoUpdates: true,
 }
 
 // Settings that never leave this machine, even when the user points the settings
@@ -239,6 +240,7 @@ export const LOCAL_KEYS = [
   // Which channel this machine takes, for the same reason: one machine can be trying a
   // beta while another stays on stable.
   'betaUpdates',
+  'autoUpdates',
   // A pixel position or a column proportion only means something on the screen it was saved on.
   'activityPanel',
   'resultsWidth',

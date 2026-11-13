@@ -109,6 +109,7 @@ const local: LocalDraft = {
   rekordboxDbPath: '',
   virtualdjLibraryDir: '/Users/dj/Library/Application Support/VirtualDJ',
   betaUpdates: false,
+  autoUpdates: true,
   autoMatch: false,
   beatportUsername: '',
   analysisCacheGb: 10,

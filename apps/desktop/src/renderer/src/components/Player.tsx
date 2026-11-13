@@ -25,6 +25,8 @@ import { Waveform } from './Waveform'
 const SEEK_STEP_SEC = 5
 const SEEK_COARSE_STEP_SEC = 30
 
+const PLAYER_GAPS_PX = 16
+
 // Owns the playback clock by subscribing straight to the shared <audio> element,
 // so the ~4Hz timeupdate stream re-renders only this card — not App, the editor
 // and the whole track list, as it did when currentTime lived in App state.
@@ -202,6 +204,21 @@ export function Player({
   const { t } = useTranslation()
   const sectionRef = useRef<HTMLDivElement>(null)
   const sectionHeightRef = useRef<number | undefined>(undefined)
+  const cardRef = useRef<HTMLDivElement>(null)
+
+  useLayoutEffect(() => {
+    const card = cardRef.current
+    const column = card?.parentElement
+    if (!card || !column || typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(() => {
+      column.style.setProperty('--player-space', `${card.offsetHeight + PLAYER_GAPS_PX}px`)
+    })
+    observer.observe(card)
+    return () => {
+      observer.disconnect()
+      column.style.removeProperty('--player-space')
+    }
+  }, [])
 
   // The tall waveform strip and the slim transport row are different heights, so flipping
   // the preference would jump the card. Tween the section's height from its last measured
@@ -238,278 +255,287 @@ export function Player({
   }
 
   return (
-    <div
-      data-testid="player"
-      // The sidebar's own ground with a hairline over it, not a lighter card with a drop
-      // shadow: the player is the foot of the library column, and the lifted slab was the
-      // heaviest thing in it. The wave is the one part that needs to stand out, and does.
-      inert={leaving}
-      data-leaving={leaving || undefined}
-      className={`player-card group/player relative shrink-0 overflow-hidden border-t border-[var(--color-line)] bg-[var(--color-ink)]`}
-    >
-      {/* Dismissal belongs to the card, so it sits in the card's own top-right corner the
+    <>
+      <div
+        aria-hidden="true"
+        data-leaving={leaving || undefined}
+        className="player-fade pointer-events-none absolute inset-x-0 bottom-0 h-[calc(var(--player-space,0px)+1.5rem)] bg-[linear-gradient(to_bottom,transparent,var(--color-ink)_1.5rem)]"
+      />
+      <div
+        ref={cardRef}
+        data-testid="player"
+        inert={leaving}
+        data-leaving={leaving || undefined}
+        className="player-card group/player absolute inset-x-2 bottom-2 overflow-hidden rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] shadow-[var(--shadow-float)]"
+      >
+        {/* Dismissal belongs to the card, so it sits in the card's own top-right corner the
           way any closable panel does — not in the transport, where an exit sat one stray
           click from pause. The title row reserves room for it with padding, so a long name
           runs into the ellipsis rather than under the glyph. */}
-      <button
-        type="button"
-        data-testid="player-close"
-        onClick={onClose}
-        aria-label={t('player.close')}
-        className="press absolute top-1.5 right-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-md text-fg-faint transition-colors hover:bg-[var(--color-line-strong)] hover:text-fg"
-      >
-        <X className="h-3.5 w-3.5" aria-hidden="true" />
-      </button>
+        <button
+          type="button"
+          data-testid="player-close"
+          onClick={onClose}
+          aria-label={t('player.close')}
+          className="press absolute top-1.5 right-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-md text-fg-faint transition-colors hover:bg-[var(--color-line-strong)] hover:text-fg"
+        >
+          <X className="h-3.5 w-3.5" aria-hidden="true" />
+        </button>
 
-      {/* The card reads as three stacked bands — identity, wave, transport — and nothing
+        {/* The card reads as three stacked bands — identity, wave, transport — and nothing
           shares a line with anything else. Cover plus title and artist here; the wave below;
           the controls on their own row at the foot. Giving the title the full width is the
           whole reason for the split: sharing its line with a control cluster is what clipped
           long remix names into an ellipsis. items-start aligns the cover's top with the title
           (the visual anchor): the bold title carries the weight up top, so centring the square
           cover read as if it had sagged. */}
-      <div className="flex items-start gap-2.5 py-2.5 pr-9 pl-3">
-        {/* The cover as a 40px vinyl: flat disc with thin groove rings, the art clipped
+        <div className="flex items-start gap-2.5 py-2.5 pr-9 pl-3">
+          {/* The cover as a 40px vinyl: flat disc with thin groove rings, the art clipped
             into the center label (brand-accent label when the file has no art), a spindle
             dot on top. It spins only while sound is actually playing — paused or buffering
             freezes it in place via animation-play-state, so like a real record it never
             snaps back to 0°. */}
-        <span
-          data-testid="player-vinyl"
-          className="player-vinyl relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full outline outline-1 -outline-offset-1 outline-on-scrim/15"
-          style={{ animationPlayState: !paused && !loading ? 'running' : 'paused' }}
-        >
-          {track.embeddedCover ? (
-            <img
-              data-testid="player-cover"
-              src={track.embeddedCover}
-              alt=""
-              // Same as the list covers: keep the base64 JPEG decode off the main thread.
-              decoding="async"
-              className="h-5 w-5 rounded-full object-cover ring-1 ring-scrim/40"
-            />
-          ) : (
-            <span
-              data-testid="player-cover-placeholder"
-              className="h-5 w-5 rounded-full bg-[var(--color-accent)] ring-1 ring-scrim/40"
-            />
-          )}
           <span
-            aria-hidden="true"
-            className="absolute top-1/2 left-1/2 h-[3px] w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-scrim/80"
-          />
-        </span>
-
-        <div className="flex min-w-0 flex-1 flex-col">
-          <span data-testid="player-title" className="min-w-0">
-            <MarqueeText className="font-semibold text-base leading-tight">
-              {track.meta.title || track.fileName}
-            </MarqueeText>
+            data-testid="player-vinyl"
+            className="player-vinyl relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full outline outline-1 -outline-offset-1 outline-on-scrim/15"
+            style={{ animationPlayState: !paused && !loading ? 'running' : 'paused' }}
+          >
+            {track.embeddedCover ? (
+              <img
+                data-testid="player-cover"
+                src={track.embeddedCover}
+                alt=""
+                // Same as the list covers: keep the base64 JPEG decode off the main thread.
+                decoding="async"
+                className="h-5 w-5 rounded-full object-cover ring-1 ring-scrim/40"
+              />
+            ) : (
+              <span
+                data-testid="player-cover-placeholder"
+                className="h-5 w-5 rounded-full bg-[var(--color-accent)] ring-1 ring-scrim/40"
+              />
+            )}
+            <span
+              aria-hidden="true"
+              className="absolute top-1/2 left-1/2 h-[3px] w-[3px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-scrim/80"
+            />
           </span>
 
-          {/* Artist and clock share the second line: artist names are short enough that the
+          <div className="flex min-w-0 flex-1 flex-col">
+            <span data-testid="player-title" className="min-w-0">
+              <MarqueeText className="font-semibold text-base leading-tight">
+                {track.meta.title || track.fileName}
+              </MarqueeText>
+            </span>
+
+            {/* Artist and clock share the second line: artist names are short enough that the
               line had space going spare, and the right end of it is a fixed home for the
               elapsed time in both layouts. That frees the wave of its last overlay — every
               pixel of it now takes the click that seeks there — and the artist truncates
               rather than pushing the clock, which keeps its own width with tabular digits. */}
-          <div
-            data-testid="player-identity"
-            className="flex min-w-0 items-baseline gap-2 text-fg-dim text-xs leading-tight"
-          >
-            <span className="min-w-0 flex-1 truncate">
-              <Tooltip label={track.meta.artist} />
-              {track.meta.artist}
-            </span>
-            <span data-testid="player-time" className="shrink-0 text-label tabular-nums">
-              {formatTime(currentTime)} / {formatTime(duration)}
-            </span>
+            <div
+              data-testid="player-identity"
+              className="flex min-w-0 items-baseline gap-2 text-fg-dim text-xs leading-tight"
+            >
+              <span className="min-w-0 flex-1 truncate">
+                <Tooltip label={track.meta.artist} />
+                {track.meta.artist}
+              </span>
+              <span data-testid="player-time" className="shrink-0 text-label tabular-nums">
+                {formatTime(currentTime)} / {formatTime(duration)}
+              </span>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* The waveform runs full-bleed to the card edges (the rounded card clips its
+        {/* The waveform runs full-bleed to the card edges (the rounded card clips its
           corners) so the whole width is scrubbable. Auditioning means clicking along the
           wave to jump around the track, so nothing may sit on it at all: the clock was the
           last overlay and now rides the artist line, and volume lives on the transport row.
           Hidden by the toggle, the whole strip is unmounted so its full-file decode never
           runs — the point of the preference. The wrapper clips and animates the height as
           the two layouts swap (see useLayoutEffect). */}
-      <div ref={sectionRef} data-testid="player-section" className="player-section overflow-hidden">
-        {showWaveform ? (
-          <Waveform
-            key={track.inputPath}
-            inputPath={track.inputPath}
-            active
-            audioDurationSec={duration}
-            playheadSec={currentTime}
-            playing={!paused}
-            clock={clock}
-            onScrub={onScrub}
-          />
-        ) : (
-          // No waveform: one compact line — the progress bar standing in for the wave in the
-          // same band, taking the row's whole width now that the clock lives up on the artist
-          // line in both layouts. The transport row below is unchanged, so volume and the
-          // buttons stay exactly where they were whether the wave is on or off, and the card
-          // just loses the wave's height.
-          <div className="flex items-center px-3 pt-1.5">
-            {/* The visible track is 4px, but the control is taller with a centered bar inside,
+        <div
+          ref={sectionRef}
+          data-testid="player-section"
+          className="player-section overflow-hidden"
+        >
+          {showWaveform ? (
+            <Waveform
+              key={track.inputPath}
+              inputPath={track.inputPath}
+              active
+              audioDurationSec={duration}
+              playheadSec={currentTime}
+              playing={!paused}
+              clock={clock}
+              onScrub={onScrub}
+            />
+          ) : (
+            // No waveform: one compact line — the progress bar standing in for the wave in the
+            // same band, taking the row's whole width now that the clock lives up on the artist
+            // line in both layouts. The transport row below is unchanged, so volume and the
+            // buttons stay exactly where they were whether the wave is on or off, and the card
+            // just loses the wave's height.
+            <div className="flex items-center px-3 pt-1.5">
+              {/* The visible track is 4px, but the control is taller with a centered bar inside,
                 so the clickable target clears the 40px-ish comfort zone — a thin 6px bar was
                 fiddly to hit mid-set. A slider, not a button: a button's keyboard click
                 arrives at clientX 0 and threw the track back to 0:00, while a slider moves
                 by its keys and reads its position out. */}
-            <div
-              role="slider"
-              tabIndex={0}
-              data-testid="player-seek"
-              aria-label={t('player.seek')}
-              aria-valuemin={0}
-              aria-valuemax={Math.round(duration)}
-              aria-valuenow={Math.round(currentTime)}
-              aria-valuetext={t('player.seekValue', {
-                current: formatTime(currentTime),
-                total: formatTime(duration),
-              })}
-              onPointerDown={(e) => {
-                e.currentTarget.setPointerCapture(e.pointerId)
-                seekFrom(e.clientX, e.currentTarget)
-              }}
-              onPointerMove={(e) => {
-                if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+              <div
+                role="slider"
+                tabIndex={0}
+                data-testid="player-seek"
+                aria-label={t('player.seek')}
+                aria-valuemin={0}
+                aria-valuemax={Math.round(duration)}
+                aria-valuenow={Math.round(currentTime)}
+                aria-valuetext={t('player.seekValue', {
+                  current: formatTime(currentTime),
+                  total: formatTime(duration),
+                })}
+                onPointerDown={(e) => {
+                  e.currentTarget.setPointerCapture(e.pointerId)
                   seekFrom(e.clientX, e.currentTarget)
-                }
-              }}
-              onKeyDown={(e) => {
-                const step = e.shiftKey ? SEEK_COARSE_STEP_SEC : SEEK_STEP_SEC
-                const target =
-                  e.key === 'ArrowRight'
-                    ? currentTime + step
-                    : e.key === 'ArrowLeft'
-                      ? currentTime - step
-                      : e.key === 'Home'
-                        ? 0
-                        : e.key === 'End'
-                          ? duration
-                          : null
-                if (target === null) return
-                e.preventDefault()
-                if (duration > 0) onScrub(Math.min(duration, Math.max(0, target)))
-              }}
-              className="group/seek relative flex h-4 min-w-0 flex-1 cursor-pointer touch-none items-center"
-            >
-              <span className="relative h-1 w-full overflow-hidden rounded-full bg-[var(--color-panel)] transition-transform group-hover/seek:scale-y-150">
-                <span
-                  className="absolute inset-y-0 left-0 rounded-full bg-[var(--color-accent)]"
-                  style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
-                />
-              </span>
+                }}
+                onPointerMove={(e) => {
+                  if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+                    seekFrom(e.clientX, e.currentTarget)
+                  }
+                }}
+                onKeyDown={(e) => {
+                  const step = e.shiftKey ? SEEK_COARSE_STEP_SEC : SEEK_STEP_SEC
+                  const target =
+                    e.key === 'ArrowRight'
+                      ? currentTime + step
+                      : e.key === 'ArrowLeft'
+                        ? currentTime - step
+                        : e.key === 'Home'
+                          ? 0
+                          : e.key === 'End'
+                            ? duration
+                            : null
+                  if (target === null) return
+                  e.preventDefault()
+                  if (duration > 0) onScrub(Math.min(duration, Math.max(0, target)))
+                }}
+                className="group/seek relative flex h-4 min-w-0 flex-1 cursor-pointer touch-none items-center"
+              >
+                <span className="relative h-1 w-full overflow-hidden rounded-full bg-[var(--color-panel)] transition-transform group-hover/seek:scale-y-150">
+                  <span
+                    className="absolute inset-y-0 left-0 rounded-full bg-[var(--color-accent)]"
+                    style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
+                  />
+                </span>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
 
-      {/* The transport on its own row at the foot of the card: volume fixed at the left,
+        {/* The transport on its own row at the foot of the card: volume fixed at the left,
           the buttons ranged right. Neither can cover the title or the wave from here, which
           is the whole point of the split — every earlier attempt put volume on top of
           something the DJ was trying to read or click. */}
-      <div className="flex items-center gap-2 px-3 pt-1.5 pb-2">
-        <VolumeControl
-          volume={volume}
-          onSetVolume={onSetVolume}
-          label={t('player.volume')}
-          muteLabel={t('player.mute')}
-          valueText={t('player.volumeValue', { pct: Math.round(volume * 100) })}
-        />
+        <div className="flex items-center gap-2 px-3 pt-1.5 pb-2">
+          <VolumeControl
+            volume={volume}
+            onSetVolume={onSetVolume}
+            label={t('player.volume')}
+            muteLabel={t('player.mute')}
+            valueText={t('player.volumeValue', { pct: Math.round(volume * 100) })}
+          />
 
-        <div className="ml-auto flex shrink-0 items-center gap-0.5">
-          <button
-            type="button"
-            data-testid="player-toggle"
-            onClick={onToggle}
-            aria-label={paused ? t('player.play') : t('player.pause')}
-            aria-busy={!paused && loading}
-            className="press flex h-7 w-7 items-center justify-center rounded-md text-fg transition-colors hover:bg-[var(--color-line-strong)]"
-          >
-            {paused ? (
-              // The play triangle is optically left-heavy, so nudge it right to sit centered.
-              <Play
-                className="h-3.5 w-3.5 translate-x-px"
-                fill="currentColor"
-                strokeWidth={0}
-                aria-hidden="true"
-              />
-            ) : loading ? (
-              // Streaming from a network drive can take seconds to deliver the first
-              // bytes; the spinner shows the click registered and the file is coming.
-              <LoaderCircle
-                data-testid="player-loading"
-                className="h-3.5 w-3.5 animate-spin"
-                aria-hidden="true"
-              />
-            ) : (
-              <Pause
-                className="h-3.5 w-3.5"
-                fill="currentColor"
-                strokeWidth={0}
-                aria-hidden="true"
-              />
-            )}
-          </button>
+          <div className="ml-auto flex shrink-0 items-center gap-0.5">
+            <button
+              type="button"
+              data-testid="player-toggle"
+              onClick={onToggle}
+              aria-label={paused ? t('player.play') : t('player.pause')}
+              aria-busy={!paused && loading}
+              className="press flex h-7 w-7 items-center justify-center rounded-md text-fg transition-colors hover:bg-[var(--color-line-strong)]"
+            >
+              {paused ? (
+                // The play triangle is optically left-heavy, so nudge it right to sit centered.
+                <Play
+                  className="h-3.5 w-3.5 translate-x-px"
+                  fill="currentColor"
+                  strokeWidth={0}
+                  aria-hidden="true"
+                />
+              ) : loading ? (
+                // Streaming from a network drive can take seconds to deliver the first
+                // bytes; the spinner shows the click registered and the file is coming.
+                <LoaderCircle
+                  data-testid="player-loading"
+                  className="h-3.5 w-3.5 animate-spin"
+                  aria-hidden="true"
+                />
+              ) : (
+                <Pause
+                  className="h-3.5 w-3.5"
+                  fill="currentColor"
+                  strokeWidth={0}
+                  aria-hidden="true"
+                />
+              )}
+            </button>
 
-          {/* Hairline marking off the transport from the two settings toggles. */}
-          <span aria-hidden="true" className="mx-0.5 h-3.5 w-px bg-[var(--color-line)]" />
+            {/* Hairline marking off the transport from the two settings toggles. */}
+            <span aria-hidden="true" className="mx-0.5 h-3.5 w-px bg-[var(--color-line)]" />
 
-          {/* Active toggles wear a soft accent chip, not just an accent icon: with
+            {/* Active toggles wear a soft accent chip, not just an accent icon: with
             the wave and its played half already accent-blue, a lone blue glyph
             disappears among them — the fill is what says "on". The background is
             fully conditional so the two bg utilities never compete. */}
-          <button
-            type="button"
-            data-testid="player-continuous"
-            onClick={onToggleContinuous}
-            aria-label={t('player.continuous')}
-            aria-pressed={continuous}
-            className={`press relative flex h-7 w-7 items-center justify-center rounded-md transition-colors ${
-              continuous
-                ? 'bg-[var(--color-accent)]/10 text-[var(--color-accent)] hover:bg-[var(--color-accent)]/20'
-                : 'text-fg-faint hover:bg-[var(--color-line-strong)] hover:text-fg'
-            }`}
-          >
-            <InfinityIcon className="h-3.5 w-3.5" aria-hidden="true" />
-            <Tooltip label={t('player.continuousHelp')} />
-          </button>
+            <button
+              type="button"
+              data-testid="player-continuous"
+              onClick={onToggleContinuous}
+              aria-label={t('player.continuous')}
+              aria-pressed={continuous}
+              className={`press relative flex h-7 w-7 items-center justify-center rounded-md transition-colors ${
+                continuous
+                  ? 'bg-[var(--color-accent)]/10 text-[var(--color-accent)] hover:bg-[var(--color-accent)]/20'
+                  : 'text-fg-faint hover:bg-[var(--color-line-strong)] hover:text-fg'
+              }`}
+            >
+              <InfinityIcon className="h-3.5 w-3.5" aria-hidden="true" />
+              <Tooltip label={t('player.continuousHelp')} />
+            </button>
 
-          <button
-            type="button"
-            data-testid="player-waveform"
-            onClick={onToggleWaveform}
-            aria-label={t('player.waveform')}
-            aria-pressed={showWaveform}
-            className={`press relative flex h-7 w-7 items-center justify-center rounded-md transition-colors ${
-              showWaveform
-                ? 'bg-[var(--color-accent)]/10 text-[var(--color-accent)] hover:bg-[var(--color-accent)]/20'
-                : 'text-fg-faint hover:bg-[var(--color-line-strong)] hover:text-fg'
-            }`}
-          >
-            <AudioLines className="h-3.5 w-3.5" aria-hidden="true" />
-            <Tooltip label={t('player.waveformHelp')} />
-          </button>
+            <button
+              type="button"
+              data-testid="player-waveform"
+              onClick={onToggleWaveform}
+              aria-label={t('player.waveform')}
+              aria-pressed={showWaveform}
+              className={`press relative flex h-7 w-7 items-center justify-center rounded-md transition-colors ${
+                showWaveform
+                  ? 'bg-[var(--color-accent)]/10 text-[var(--color-accent)] hover:bg-[var(--color-accent)]/20'
+                  : 'text-fg-faint hover:bg-[var(--color-line-strong)] hover:text-fg'
+              }`}
+            >
+              <AudioLines className="h-3.5 w-3.5" aria-hidden="true" />
+              <Tooltip label={t('player.waveformHelp')} />
+            </button>
 
-          {/* Jump the list to the track that's playing — after scrolling or selecting
+            {/* Jump the list to the track that's playing — after scrolling or selecting
             another row, the playing one may be off-screen with no other way back. */}
-          <button
-            type="button"
-            data-testid="player-reveal"
-            onClick={onReveal}
-            aria-label={t('player.reveal')}
-            className="press relative flex h-7 w-7 items-center justify-center rounded-md text-fg-faint transition-colors hover:bg-[var(--color-line-strong)] hover:text-fg"
-          >
-            <Crosshair className="h-3.5 w-3.5" aria-hidden="true" />
-            <Tooltip label={t('player.reveal')} />
-          </button>
+            <button
+              type="button"
+              data-testid="player-reveal"
+              onClick={onReveal}
+              aria-label={t('player.reveal')}
+              className="press relative flex h-7 w-7 items-center justify-center rounded-md text-fg-faint transition-colors hover:bg-[var(--color-line-strong)] hover:text-fg"
+            >
+              <Crosshair className="h-3.5 w-3.5" aria-hidden="true" />
+              <Tooltip label={t('player.reveal')} />
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }
 

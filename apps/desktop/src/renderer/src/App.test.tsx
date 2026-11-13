@@ -223,6 +223,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     syncVirtualdj: false,
     virtualdjLibraryDir: '',
     betaUpdates: false,
+    autoUpdates: true,
     traktorCueOffsetMs: 0,
     filenameFormat: '{artist} - {title}',
     titleFormat: '',
