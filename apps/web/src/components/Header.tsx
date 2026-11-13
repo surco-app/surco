@@ -267,7 +267,7 @@ export default function Header({
                 <path d="M6 9l6 6 6-6" />
               </svg>
             </button>
-            {offered && offerBox && showOffer(offered, open) && (
+            {offered && offerBox && showOffer(offered, open, languageOpen) && (
               <div
                 data-testid="language-offer"
                 lang={offered}

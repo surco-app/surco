@@ -12,6 +12,10 @@ export function offerPlacement(
   return { left, width, arrow }
 }
 
-export function showOffer(offered: string | null, menuOpen: boolean): boolean {
-  return offered !== null && !menuOpen
+export function showOffer(
+  offered: string | null,
+  menuOpen: boolean,
+  languageOpen: boolean,
+): boolean {
+  return offered !== null && !menuOpen && !languageOpen
 }

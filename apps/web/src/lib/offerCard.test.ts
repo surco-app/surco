@@ -34,14 +34,18 @@ describe('offerPlacement', () => {
 
 describe('showOffer', () => {
   it('shows nothing when no language is offered', () => {
-    expect(showOffer(null, false)).toBe(false)
+    expect(showOffer(null, false, false)).toBe(false)
   })
 
   it('shows the card for an offered language', () => {
-    expect(showOffer('en', false)).toBe(true)
+    expect(showOffer('en', false, false)).toBe(true)
   })
 
   it('steps aside while the mobile menu is open so it cannot cover the menu links', () => {
-    expect(showOffer('en', true)).toBe(false)
+    expect(showOffer('en', true, false)).toBe(false)
+  })
+
+  it('steps aside while the language menu is open so its edges do not stick out around the menu', () => {
+    expect(showOffer('en', false, true)).toBe(false)
   })
 })

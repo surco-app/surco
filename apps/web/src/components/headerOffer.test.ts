@@ -1,0 +1,47 @@
+// @vitest-environment jsdom
+import { act, createElement } from 'react'
+import { createRoot, type Root } from 'react-dom/client'
+import { I18nextProvider } from 'react-i18next'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { loadI18n } from '../i18n'
+import Header from './Header'
+
+let root: Root | null = null
+
+afterEach(async () => {
+  if (root) await act(async () => root?.unmount())
+  root = null
+  vi.unstubAllGlobals()
+  localStorage.clear()
+  document.body.replaceChildren()
+})
+
+async function renderOfferedHeader(): Promise<HTMLElement> {
+  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
+  const i18n = await loadI18n('es')
+  const container = document.createElement('div')
+  document.body.append(container)
+  await act(async () => {
+    root = createRoot(container)
+    root.render(createElement(I18nextProvider, { i18n }, createElement(Header)))
+  })
+  if (!container.querySelector('[data-testid="language-offer"]'))
+    throw new Error('the language offer is not on screen')
+  return container
+}
+
+function click(container: HTMLElement, testId: string) {
+  const el = container.querySelector<HTMLElement>(`[data-testid="${testId}"]`)
+  if (!el) throw new Error(`${testId} is not on screen`)
+  return act(async () => el.click())
+}
+
+const offer = (container: HTMLElement) => container.querySelector('[data-testid="language-offer"]')
+
+describe('language offer and the language menu', () => {
+  it('hides the offer while the language menu is open so its edges do not stick out around the menu', async () => {
+    const container = await renderOfferedHeader()
+    await click(container, 'language-menu-toggle')
+    expect(offer(container)).toBeNull()
+  })
+})
