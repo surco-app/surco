@@ -558,9 +558,10 @@ tirar los falsos, así que un rip roto nunca acaba en la papelera como fake
 (`triage.ts:16`, `:498`). Al convertirlo, el pie avisa de que la copia también saldrá
 dañada (`editor.damagedSource`, `ConvertFooter.tsx:388`).
 
-**El veredicto se lee sin color** (v1.17.0): la fila de la lista nombra en una palabra
-junto al formato cualquier veredicto que no sea bueno (Dudosa, Baja calidad, Reprocesada,
-Con pérdida, Dañado; `qualityWord`, `TrackList.tsx:239`). Y antes de convertir una fuente
+**El veredicto se lee sin color**: la píldora del formato lo dice con su forma (triángulo
+ámbar, cuadrado rojo), su tooltip y su etiqueta para lector de pantalla (`QualityPill`,
+`TrackList.tsx`). La palabra que lo repetía junto al formato desde la v1.17.0 se quitó por
+redundante. Y antes de convertir una fuente
 con pérdida a un formato sin pérdida, el pie avisa de que no recupera calidad
 (`editor.lossyToLossless`, `ConvertFooter.tsx:176`).
 

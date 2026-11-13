@@ -1249,11 +1249,11 @@ describe('TrackList quality badge', () => {
     expect(transcoded.querySelector('svg')).not.toBeNull()
   })
 
-  // A colour-blind DJ saw a fake FLAC only as a red-tinted chip with a dot the size of the
-  // conversion light: the verdicts that ask for attention must be readable as words too.
-  it('names a flagged verdict in a word beside the pill, never on a clean track', () => {
+  // The verdict already lives on the pill as a shape, a tooltip and a spoken label; a word
+  // beside it said the same thing again, and an amber "Reprocessed" read as a sentence on a
+  // file the detector only suspects.
+  it('leaves the verdict to the pill and never repeats it as a word in the row', () => {
     renderList([
-      track({ id: 'a', inputPath: '/music/a.flac', spectrum: spectrum(21000) }),
       track({ id: 'b', inputPath: '/music/b.flac', spectrum: spectrum(16000) }),
       track({
         id: 'c',
@@ -1261,25 +1261,12 @@ describe('TrackList quality badge', () => {
         spectrum: { ...spectrum(16000), processed: true },
       }),
     ])
-    const words = screen.getAllByTestId('track-quality-word')
-    expect(words).toHaveLength(2)
-    expect(words[0]).toHaveTextContent(i18n.t('trackList.qualityWord.transcoded'))
-    expect(words[0]).toHaveAttribute('data-tone', 'danger')
-    expect(words[1]).toHaveTextContent(i18n.t('trackList.qualityWord.processed'))
-    expect(words[1]).toHaveAttribute('data-tone', 'warn')
-  })
-
-  it('names a damaged file Damaged in the row even when its highs measure full', () => {
-    renderList([
-      track({
-        id: 'a',
-        inputPath: '/music/a.flac',
-        spectrum: { ...spectrum(21000), damaged: true },
-      }),
-    ])
-    const word = screen.getByTestId('track-quality-word')
-    expect(word).toHaveTextContent(i18n.t('trackList.qualityWord.damaged'))
-    expect(word).toHaveAttribute('data-tone', 'danger')
+    expect(screen.queryByTestId('track-quality-word')).not.toBeInTheDocument()
+    const [transcoded, processed] = screen.getAllByTestId('track-quality')
+    expect(transcoded).toHaveAttribute('data-tone', 'danger')
+    expect(transcoded).toHaveTextContent(i18n.t('editor.qualityTranscode'))
+    expect(processed).toHaveAttribute('data-tone', 'warn')
+    expect(processed).toHaveTextContent(i18n.t('editor.qualityProcessed'))
   })
 
   // With no extension there is no format to tint, but an analysed file still owes its

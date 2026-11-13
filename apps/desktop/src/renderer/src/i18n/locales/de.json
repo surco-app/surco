@@ -595,13 +595,6 @@
     "cuesOpenFull": "Cues im Vollbild bearbeiten"
   },
   "trackList": {
-    "qualityWord": {
-      "warn": "Zweifelhaft",
-      "bad": "Schwach",
-      "processed": "Nachbearbeitet",
-      "transcoded": "Verlustbehaftet",
-      "damaged": "Beschädigt"
-    },
     "cuesUnsaved": "Cues nicht gespeichert",
     "autoMark": {
       "proposed_one": "{{count}} Vorschlag",
@@ -888,15 +881,6 @@
     "upToDate": "Keine Änderungen",
     "updateAnyway": "Trotzdem aktualisieren",
     "convertAction": "In {{format}} konvertieren",
-    "lineAdds": "Fügt zu {{places}} hinzu",
-    "lineUpdates": "Aktualisiert {{places}}",
-    "lineSyncs": "Synchronisiert {{places}}",
-    "lineReplaces": "Ersetzt das {{format}} in Apple Music",
-    "lineReplacesBare": "Ersetzt die Kopie in Apple Music",
-    "lineBetter": "Die Kopie in Apple Music ist besser",
-    "lineFolder": "Speichert in {{folder}}",
-    "lineBeside": "Speichert neben dem Original",
-    "lineOverwrite": "Bearbeitet das Original",
     "replaceAction": "Durch {{format}} ersetzen",
     "processing": "Wird konvertiert…",
     "exportedAs": "✓ In {{format}} konvertiert",

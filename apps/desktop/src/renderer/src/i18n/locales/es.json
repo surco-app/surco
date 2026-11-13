@@ -595,13 +595,6 @@
     "cuesOpenFull": "Editar los cues a pantalla completa"
   },
   "trackList": {
-    "qualityWord": {
-      "warn": "Dudosa",
-      "bad": "Baja calidad",
-      "processed": "Reprocesada",
-      "transcoded": "Con pérdida",
-      "damaged": "Dañada"
-    },
     "cuesUnsaved": "Cues sin guardar",
     "autoMark": {
       "proposed_one": "{{count}} propuesta",
@@ -888,15 +881,6 @@
     "upToDate": "Sin cambios",
     "updateAnyway": "Actualizar igualmente",
     "convertAction": "Convertir a {{format}}",
-    "lineAdds": "Añade a {{places}}",
-    "lineUpdates": "Actualiza {{places}}",
-    "lineSyncs": "Sincroniza {{places}}",
-    "lineReplaces": "Sustituye el {{format}} de Apple Music",
-    "lineReplacesBare": "Sustituye la copia de Apple Music",
-    "lineBetter": "La copia de Apple Music es mejor",
-    "lineFolder": "Guarda en {{folder}}",
-    "lineBeside": "Guarda junto al original",
-    "lineOverwrite": "Edita el original",
     "replaceAction": "Sustituir por {{format}}",
     "processing": "Convirtiendo…",
     "exportedAs": "✓ Convertido a {{format}}",

@@ -43,7 +43,6 @@ function footer(
       spectrum={undefined}
       isMulti={false}
       selectedCount={1}
-      outputFolder=""
       status={status(showDone)}
       stale={false}
       done={showDone}
@@ -52,15 +51,8 @@ function footer(
       incompleteSummary={incompleteSummary}
       willEditInPlace={false}
       tagsOnly={false}
-      addToAppleMusic={false}
       sameFormat={false}
       upToDate={false}
-      inMusic={false}
-      musicHoldsFile={false}
-      djHolds={[]}
-      replacedFormat=""
-      djTargets={[]}
-      openSource={null}
       destination={'beside' as Destination}
       destinations={['beside' as Destination]}
       format="aiff"
@@ -1214,79 +1206,8 @@ describe('ConvertFooter batch verification', () => {
   })
 })
 
-describe('ConvertFooter destination line', () => {
+describe('ConvertFooter up to date', () => {
   const idle = footer(false)
-  const mac = (): void => {
-    ;(window as unknown as { api: Record<string, unknown> }).api = { platform: 'darwin' }
-  }
-
-  it('names where the file goes above the button', () => {
-    mac()
-    render(
-      cloneElement(idle, {
-        destination: 'appleMusic',
-        destinations: ['appleMusic'],
-        addToAppleMusic: true,
-        inMusic: true,
-        willEditInPlace: true,
-        tagsOnly: true,
-        sameFormat: true,
-        openSource: 'rekordbox',
-        djTargets: ['rekordbox'],
-      }),
-    )
-    expect(screen.getByTestId('convert-destination-line')).toHaveTextContent(
-      'Updates Apple Music · rekordbox',
-    )
-    for (const part of screen.getAllByTestId('convert-destination-part')) {
-      expect(part).toHaveAttribute('data-tone', 'dim')
-    }
-    expect(screen.getByTestId('process-btn')).toHaveTextContent('Update tags')
-  })
-
-  it('reads amber on the better-copy statement only, so the places beside it stay quiet', () => {
-    mac()
-    render(
-      cloneElement(idle, {
-        destination: 'appleMusic',
-        destinations: ['appleMusic'],
-        addToAppleMusic: true,
-        replaces: true,
-        libraryBetter: true,
-        djTargets: ['rekordbox'],
-      }),
-    )
-    const [better, synced] = screen.getAllByTestId('convert-destination-part')
-    expect(better).toHaveTextContent('The Apple Music copy is better')
-    expect(better).toHaveAttribute('data-tone', 'warn')
-    expect(synced).toHaveTextContent('Syncs rekordbox')
-    expect(synced).toHaveAttribute('data-tone', 'dim')
-    expect(screen.getByTestId('convert-destination-line')).toHaveTextContent(
-      'The Apple Music copy is better · Syncs rekordbox',
-    )
-  })
-
-  it('says it updates the Music entry, not that it replaces it, when that entry is the open file', () => {
-    mac()
-    render(
-      cloneElement(idle, {
-        destination: 'appleMusic',
-        destinations: ['appleMusic'],
-        addToAppleMusic: true,
-        replaces: true,
-        replacedFormat: 'aiff',
-        musicHoldsFile: true,
-        willEditInPlace: true,
-        tagsOnly: true,
-        sameFormat: true,
-        openSource: 'rekordbox',
-        djTargets: ['rekordbox'],
-      }),
-    )
-    expect(screen.getByTestId('convert-destination-line')).toHaveTextContent(
-      'Updates Apple Music · rekordbox',
-    )
-  })
 
   it('hands focus to Update anyway when a finished track goes back to having nothing to write', () => {
     const quiet = { upToDate: true, willEditInPlace: true, tagsOnly: true, sameFormat: true }
@@ -1295,51 +1216,17 @@ describe('ConvertFooter destination line', () => {
     rerender(cloneElement(idle, quiet))
     expect(screen.getByTestId('convert-update-anyway')).toHaveFocus()
   })
-
-  it('says nothing above the button once there is nothing to write', () => {
-    render(
-      cloneElement(idle, {
-        upToDate: true,
-        willEditInPlace: true,
-        tagsOnly: true,
-        sameFormat: true,
-      }),
-    )
-    expect(screen.getByTestId('convert-up-to-date')).toBeInTheDocument()
-    expect(screen.queryByTestId('convert-destination-line')).toBeNull()
-  })
 })
 
 describe('ConvertFooter batch plan', () => {
-  const batch = (over: Record<string, unknown>): React.JSX.Element =>
-    cloneElement(footer(false), {
-      isMulti: true,
-      selectedCount: 2,
-      status: { ...status(false), superseded: [] },
-      ...over,
-    })
-  const mac = (): void => {
-    ;(window as unknown as { api: Record<string, unknown> }).api = { platform: 'darwin' }
-  }
-
-  it('names Apple Music once when the batch already goes there from Music itself', () => {
-    mac()
+  it('names only the count, format and destination, since Activity tells where each file went', () => {
     render(
-      batch({
-        destination: 'appleMusic',
-        destinations: ['appleMusic'],
-        addToAppleMusic: true,
-        openSource: 'appleMusic',
+      cloneElement(footer(false), {
+        isMulti: true,
+        selectedCount: 2,
+        status: { ...status(false), superseded: [] },
       }),
     )
-    expect(screen.getByTestId('batch-plan').textContent?.split('Apple Music')).toHaveLength(2)
-  })
-
-  it('says it updates the DJ program the batch was opened from and syncs the others', () => {
-    render(batch({ djTargets: ['rekordbox', 'engine'], openSource: 'rekordbox' }))
-    expect(screen.getByTestId('batch-plan')).toHaveTextContent(
-      'Updates rekordbox · Syncs Engine DJ',
-    )
-    expect(screen.getByTestId('batch-plan')).not.toHaveTextContent('Adds')
+    expect(screen.getByTestId('batch-plan')).toHaveTextContent(/^2 tracks → AIFF · [^·]+$/)
   })
 })

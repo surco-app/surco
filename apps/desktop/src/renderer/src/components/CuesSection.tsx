@@ -1759,12 +1759,23 @@ function Editing({
               >
                 {cueClock(playheadMs)}
               </span>
-              {toCall !== null && (
+              {pointMs.length > 0 && (
                 <span
-                  data-testid="cue-detail-to-call"
-                  className="shrink-0 whitespace-nowrap text-xs text-fg-dim"
+                  data-testid="cue-to-call-slot"
+                  className="grid shrink-0 whitespace-nowrap text-xs text-fg-dim"
                 >
-                  {tr('editor.cues.toCall', { count: wholeBars(toCall) })}
+                  <span
+                    data-testid="cue-to-call-sizer"
+                    aria-hidden="true"
+                    className="invisible col-start-1 row-start-1"
+                  >
+                    {tr('editor.cues.toCall', { count: 88 })}
+                  </span>
+                  {toCall !== null && (
+                    <span data-testid="cue-detail-to-call" className="col-start-1 row-start-1">
+                      {tr('editor.cues.toCall', { count: wholeBars(toCall) })}
+                    </span>
+                  )}
                 </span>
               )}
             </>

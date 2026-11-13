@@ -24,11 +24,10 @@ import { tagsOnly } from '../../../shared/audioProcessing'
 import type { CueJumpBars } from '../../../shared/cueJump'
 import type { CueQuantize } from '../../../shared/cueQuantize'
 import { effectiveMeta, fieldValue, isCustomTag } from '../../../shared/customFields'
-import { WRITABLE_PROGRAMS, writableInOrder } from '../../../shared/djProgram'
 import { EDITOR_SECTION_GROUP } from '../../../shared/editorSections'
 import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../../../shared/format'
 import type { GridCheck } from '../../../shared/gridCheck'
-import { isFrom, READ_ONLY_BLOCKED, readOnlyProgramsOf } from '../../../shared/trackOrigin'
+import { READ_ONLY_BLOCKED, readOnlyProgramsOf } from '../../../shared/trackOrigin'
 import type {
   DeclickConfig,
   FormatSetting,
@@ -64,7 +63,6 @@ import type { AppleMusicIndex } from '../lib/appleMusicLibrary'
 import { isAmbiguousCandidate } from '../lib/appleMusicLibrary'
 import { activeCleanups, cleanReasons, undoCleanup } from '../lib/autoClean'
 import { clearedTrackPatch, matchTargetOf, shouldAutoApplyMatch } from '../lib/autoMatch'
-import { baseName } from '../lib/baseName'
 import { convertGate, leftOutNote } from '../lib/batch'
 import { type CopyReason, compareCopies } from '../lib/bestCopy'
 import { BULK_FIELDS, GENRE_TAGS, GROUPING_TAGS } from '../lib/bulkEdit'
@@ -73,8 +71,6 @@ import type { AutoMarkTarget } from '../lib/cueAutoMark'
 import { deriveTagPatches } from '../lib/deriveTags'
 import { DESTINATIONS, type Destination, fromDestination, toDestination } from '../lib/destination'
 import { isDeclickStale, isNormalizeStale, isStale } from '../lib/dirty'
-import type { DjLibraryId } from '../lib/djLibraries'
-import { DJ_COLLECTION_PATH, DJ_REACH_SETTINGS, reachedPrograms } from '../lib/djReach'
 import { editorPlace } from '../lib/editorPlace'
 import { buildFieldSpecs, type PlaylistsSpec } from '../lib/fieldSpecs'
 import { FIELD_DEFS, labeledFields, missingRequired, PLAYLIST_FIELDS } from '../lib/fields'
@@ -132,9 +128,6 @@ import { SectionPill } from './SectionPill'
 import { SpectrumGlimpse } from './SpectrumGlimpse'
 import { Tooltip } from './Tooltip'
 import { TrimSection } from './TrimSection'
-
-const LIBRARY_ORDER = writableInOrder(['rekordbox', 'engine', 'traktor', 'virtualdj'])
-const COLLECTION_PATH_ORDER = writableInOrder(['traktor', 'rekordbox', 'engine', 'virtualdj'])
 
 interface Props {
   item: TrackItem
@@ -251,7 +244,6 @@ interface Props {
   onExportCollection: () => void
   readFullTrack: (id: string) => Promise<TrackItem | undefined>
   librarySources?: readonly PlaylistSource[]
-  openSource?: PlaylistSource | null
   onRevealIn?: (source: PlaylistSource) => void
   // Re-checks a conversion whose re-read did not add up; App owns the job runner.
   onRetryVerification?: (trackId: string) => Promise<void>
@@ -336,7 +328,6 @@ export const Editor = memo(function Editor({
   onExportCollection,
   readFullTrack,
   librarySources = [],
-  openSource = null,
   onRevealIn,
   onRetryVerification,
   onOpenBackup,
@@ -355,7 +346,6 @@ export const Editor = memo(function Editor({
     addToAppleMusic,
     addToEngineDj,
     keepMp3Sources,
-    outputDir,
     overwriteOriginal,
     backupPolicy,
     convertBesideOriginal,
@@ -385,27 +375,7 @@ export const Editor = memo(function Editor({
     declick,
     outputSampleRate,
     editorSections,
-    traktorNmlPath,
   } = appSettings
-  const { data: libraries } = useQuery({
-    queryKey: [
-      'library-status',
-      ...WRITABLE_PROGRAMS.map((program) => appSettings[DJ_REACH_SETTINGS[program].add]),
-      ...COLLECTION_PATH_ORDER.map((program) => appSettings[DJ_COLLECTION_PATH[program]]),
-    ],
-    queryFn: () => window.api.libraryStatus(),
-    enabled: WRITABLE_PROGRAMS.some((program) => appSettings[DJ_REACH_SETTINGS[program].add]),
-  })
-  const reachable = useMemo(
-    () =>
-      libraries &&
-      new Set<DjLibraryId>(
-        LIBRARY_ORDER.filter(
-          (id) => libraries[id].found && (id !== 'traktor' || traktorNmlPath !== ''),
-        ),
-      ),
-    [libraries, traktorNmlPath],
-  )
   const discogsTokenMissing = discogsToken === ''
   const isMulti = (selectedTracks?.length ?? 0) > 1
   const revealIn = useLibraryReveals(item, isMulti ? [] : librarySources)
@@ -1091,7 +1061,6 @@ export const Editor = memo(function Editor({
       formatMatchesInput(format, item.inputPath),
       jobAudio(item, normalizeCfg, declickCfg, { normalize, declick }),
     )
-  const djTargets = reachedPrograms(appSettings, reachable)
   const upToDate =
     !isMulti &&
     !incomplete &&
@@ -2048,17 +2017,8 @@ export const Editor = memo(function Editor({
           tagsOnly={tagsOnlyExport}
           sameFormat={formatMatchesInput(format, item.inputPath)}
           upToDate={upToDate}
-          inMusic={librarySource === 'appleMusic' && inLibrary === 'yes'}
-          musicHoldsFile={musicHoldsFile}
-          musicPending={replaceTargetPending}
-          djHolds={djTargets.filter((id) => openSource === id || isFrom(item, id))}
-          replacedFormat={replacedCopyPath ? fileExtension(replacedCopyPath) : ''}
-          addToAppleMusic={picked.addToAppleMusic}
-          djTargets={djTargets}
-          openSource={openSource}
           destination={destination}
           destinations={destinationChoices}
-          outputFolder={baseName(outputDir.replace(/[\\/]+$/, ''))}
           format={isMulti ? formatPick : format}
           exportedFormat={exportedFormat}
           musicExt={musicExt}

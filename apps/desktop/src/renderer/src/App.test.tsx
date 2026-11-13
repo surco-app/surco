@@ -6900,13 +6900,12 @@ describe('App on Windows', () => {
   describe('with an Apple Music destination synced from a Mac', () => {
     const synced = settings({ addToAppleMusic: true, keepOutputCopy: false, outputDir: '/out' })
 
-    it('names the output folder on the convert button, where the file really goes', async () => {
+    it('offers to convert, since Apple Music does not exist on Windows', async () => {
       setApi({ getSettings: vi.fn().mockResolvedValue(synced) })
       await renderApp()
       fireEvent.click((await addTwoTracks())[0])
 
       expect(await screen.findByTestId('process-btn')).toHaveTextContent('Convert to AIFF')
-      expect(screen.getByTestId('convert-destination-line')).toHaveTextContent('Saves to out')
     })
 
     it('checks the output folder in Settings instead of leaving no destination picked', async () => {
