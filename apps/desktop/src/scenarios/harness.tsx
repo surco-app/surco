@@ -4,6 +4,7 @@ import { basename, join } from 'node:path'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { act, fireEvent, render, renderHook, waitFor } from '@testing-library/react'
 import { app } from 'electron'
+import log from 'electron-log/main'
 import type React from 'react'
 import { useRef } from 'react'
 import { expect } from 'vitest'
@@ -1178,7 +1179,10 @@ export interface MainBoot {
   api: Api
 }
 
+const consoleLevel = log.transports.console.level
+
 export function bootMain(options: ScenarioOptions): MainBoot {
+  log.transports.console.level = consoleLevel
   djAsk = options.djAsk
   asked = []
   const settings = replaceSettings({
@@ -1255,6 +1259,7 @@ export function bootMain(options: ScenarioOptions): MainBoot {
 }
 
 export function closeMain(): void {
+  log.transports.console.level = false
   watcher?.close()
 }
 
