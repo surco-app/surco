@@ -38,7 +38,7 @@ const ctxOf = (draft: GriddedDraft): DraftContext => {
   return { beats, snapTo: beats, strong: [], phrases: [], flows: [MY_FLOW] }
 }
 
-const heardOn = (fit: GridFit) => async (beats: number[]) => {
+const heardOn = (fit: GridFit, kicks: number[]) => async (beats: number[]) => {
   const period = 60000 / fit.bpm
   const windows = beats
     .filter((_, i) => i % 8 === 0)
@@ -51,7 +51,10 @@ const heardOn = (fit: GridFit) => async (beats: number[]) => {
       const hit = first + Math.round((ms - first) / period) * period
       return { ms, offsetMs: hit - ms }
     })
-  return checkOfAudit({ windows, total: windows.length, periodMs: period, heardPerMinute: 30 })
+  return checkOfAudit(
+    { windows, total: windows.length, periodMs: period, heardPerMinute: 30 },
+    kicks,
+  )
 }
 
 const adjust = (
@@ -70,7 +73,7 @@ const adjust = (
     durationMs: DURATION_MS,
     toleranceMs: TOLERANCE_MS,
     zones,
-    checkOf: heardOn(fit),
+    checkOf: heardOn(fit, kicks),
   })
 
 const msByKey = (draft: CueDraft) => new Map(draft.cues.map((c) => [c.key, c.ms]))
@@ -190,7 +193,7 @@ describe('adjustGrid', () => {
       durationMs: shortMs,
       toleranceMs: TOLERANCE_MS,
       zones: true,
-      checkOf: heardOn({ bpm: BPM, firstMs: 0 }),
+      checkOf: heardOn({ bpm: BPM, firstMs: 0 }, beatsOf(BPM, 0)),
     })
     expect(beats.length).toBeLessThan(2)
     expect(result.kind).not.toBe('adjusted')

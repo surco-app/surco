@@ -5,19 +5,20 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import { type CueFlow, MY_FLOW, ONE_AT_32 } from '../../../shared/cueFlows'
+import { checkOfAudit } from '../../../shared/gridAudit'
 import type { GridFit } from '../../../shared/gridEdit'
-import { gridVerdictOf } from '../../../shared/gridVerdict'
 import type { TrackCues } from '../../../shared/types'
 import '../i18n'
 import { resetEditorSections } from '../hooks/useEditorSections'
 import { resetCueSession } from '../lib/cueSession'
 import { SettingsProvider } from '../lib/settingsContext'
 import { installApi } from '../test/api'
+import { auditHeard } from '../test/heardGrid'
 import { CuesSection } from './CuesSection'
 
-vi.mock('../../../shared/gridVerdict', async (importOriginal) => {
-  const real = await importOriginal<typeof import('../../../shared/gridVerdict')>()
-  return { ...real, gridVerdictOf: vi.fn(real.gridVerdictOf) }
+vi.mock('../../../shared/gridAudit', async (importOriginal) => {
+  const real = await importOriginal<typeof import('../../../shared/gridAudit')>()
+  return { ...real, checkOfAudit: vi.fn(real.checkOfAudit) }
 })
 
 const KEPT: CueFlow[] = [MY_FLOW, ONE_AT_32]
@@ -74,12 +75,17 @@ beforeEach(() => {
 
 function setup(fit: GridFit | null | Promise<GridFit | null>, read: TrackCues = READ) {
   const gridFit = vi.fn<Api['cues']['gridFit']>(async () => fit)
+  const gridAudit = vi.fn<Api['cues']['gridAudit']>(async (_id, beats) => {
+    const heard = await fit
+    return heard ? auditHeard(heard, beats) : null
+  })
   installApi({
     cues: {
       trackCues: vi.fn<Api['cues']['trackCues']>(async () => read),
       queued: vi.fn<Api['cues']['queued']>(async () => null),
       waveDetail: vi.fn<Api['cues']['waveDetail']>(async () => null),
       gridFit,
+      gridAudit,
     },
   })
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -119,7 +125,7 @@ describe('Ajustar rejilla in the folded section', () => {
     await waitFor(() => expect(fitButton()).toHaveAttribute('data-needs-fix', 'true'))
     fireEvent.click(fitButton())
     await waitFor(() => expect(screen.getByTestId('cues-unsaved')).toBeInTheDocument())
-    expect(fitButton()).not.toHaveAttribute('data-needs-fix')
+    await waitFor(() => expect(fitButton()).not.toHaveAttribute('data-needs-fix'))
     expect(screen.getByTestId('cues-editor')).toHaveAttribute('data-maximized', 'false')
   })
 
@@ -130,13 +136,13 @@ describe('Ajustar rejilla in the folded section', () => {
     setup(LATE)
     await ready()
     await waitFor(() => expect(fitButton()).toHaveAttribute('data-needs-fix', 'true'))
-    const before = vi.mocked(gridVerdictOf).mock.calls.length
+    const before = vi.mocked(checkOfAudit).mock.calls.length
     fireEvent.mouseDown(screen.getByTestId('cue-wave'), { button: 0, clientX: 10 })
     for (const x of [20, 40, 60, 80, 100]) fireEvent.mouseMove(window, { clientX: x })
     fireEvent.mouseUp(window, { clientX: 100 })
     expect(screen.getByTestId('cues-position')).toHaveTextContent('1:40.0')
     expect(fitButton()).toHaveAttribute('data-needs-fix', 'true')
-    expect(vi.mocked(gridVerdictOf).mock.calls.length - before).toBe(0)
+    expect(vi.mocked(checkOfAudit).mock.calls.length - before).toBe(0)
   })
 
   it('stays calm on a grid already on the kicks, so the accent only asks for real work', async () => {

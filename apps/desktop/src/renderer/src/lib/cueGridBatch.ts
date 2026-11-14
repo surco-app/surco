@@ -75,7 +75,13 @@ async function adjustOne(
     durationMs: read.durationMs,
     toleranceMs: settings.cueGridTolerance,
     zones: programOf(contentId) === 'rekordbox',
-    checkOf: (beats) => auditCheckOf(contentId, beats, 'high'),
+    checkOf: (beats) =>
+      auditCheckOf(
+        contentId,
+        beats,
+        'high',
+        read.grid.map((b) => b.ms),
+      ),
   })
   if (result.kind !== 'adjusted') return result
   keepDraft(

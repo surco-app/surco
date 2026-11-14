@@ -4,10 +4,11 @@ export async function auditCheckOf(
   contentId: string,
   beats: number[],
   priority: 'high' | 'low',
+  kicks: number[],
 ): Promise<GridCheck | null> {
   const audit = await window.api.cues.gridAudit(contentId, beats, priority).catch(() => null)
   if (!audit) return null
-  const check = checkOfAudit(audit)
+  const check = checkOfAudit(audit, kicks)
   return check.kind === 'unmeasured' ? null : check
 }
 

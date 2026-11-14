@@ -89,10 +89,15 @@ function auditedBeats(contentId: string, read: GridRead): { beats: number[]; key
   return { beats, key: `${contentId}|${beatsKey(beats)}` }
 }
 
-async function audit(contentId: string, beats: number[], key: string): Promise<void> {
+async function audit(
+  contentId: string,
+  beats: number[],
+  key: string,
+  kicks: number[],
+): Promise<void> {
   if (checks.has(key) || auditing.has(key)) return
   auditing.add(key)
-  checks.set(key, await auditCheckOf(contentId, beats, 'low'))
+  checks.set(key, await auditCheckOf(contentId, beats, 'low', kicks))
   auditing.delete(key)
 }
 
@@ -103,7 +108,8 @@ function checkOfContent(contentId: string): GridCheck | null | undefined {
   const audited = auditedBeats(contentId, read)
   if (!audited) return null
   const check = checks.get(audited.key)
-  if (check === undefined) void audit(contentId, audited.beats, audited.key).then(noticeMeasured)
+  if (check === undefined)
+    void audit(contentId, audited.beats, audited.key, read.kicks).then(noticeMeasured)
   return check
 }
 
@@ -132,7 +138,7 @@ async function measure(client: QueryClient, contentId: string): Promise<void> {
   const queued = read ? await client.fetchQuery(queuedCuesQuery(contentId)) : null
   queues.set(contentId, queued)
   const audited = read && auditedBeats(contentId, read)
-  if (audited) await audit(contentId, audited.beats, audited.key)
+  if (audited) await audit(contentId, audited.beats, audited.key, read.kicks)
   reads.set(contentId, read)
   noticeMeasured()
 }
