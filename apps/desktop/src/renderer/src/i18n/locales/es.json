@@ -2644,6 +2644,7 @@
     "matching": "Matching",
     "matchingCreate": "Crear playlist",
     "matchingAdded": "Matching guardado en rekordbox",
+    "matchingSaved": "Matching guardado",
     "matchingSuggested": "Las pinchas juntas a menudo",
     "matchingTimes_one": "{{count}} vez seguida",
     "matchingTimes_other": "{{count}} veces seguidas",

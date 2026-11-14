@@ -2644,6 +2644,7 @@
     "matching": "Matching",
     "matchingCreate": "プレイリストを作成",
     "matchingAdded": "rekordboxにMatchingを保存しました",
+    "matchingSaved": "Matchingを保存しました",
     "matchingSuggested": "よく続けてかける組み合わせ",
     "matchingTimes_one": "続けて{{count}}回",
     "matchingTimes_other": "続けて{{count}}回",

@@ -10,7 +10,7 @@ export function useMatchingEdit(
   notify: (text: string, tone: 'neutral' | 'danger') => void,
 ): (
   action: MatchingAction,
-  pair: [string, string],
+  pair: [string, string] | null,
   label: string,
   paths: [string, string] | null,
 ) => Promise<RekordboxEditResult> {
@@ -24,6 +24,10 @@ export function useMatchingEdit(
           ? window.api.addMatchingPair(a, b)
           : window.api.removeMatchingPair(a, b))
         void queryClient.invalidateQueries({ queryKey: ['matching-pairs'] })
+      }
+      if (!pair) {
+        if (action === 'add') notify(tr('sources.matchingSaved'), 'neutral')
+        return { applied: true }
       }
       let result: RekordboxEditResult
       try {

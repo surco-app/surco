@@ -2644,6 +2644,7 @@
     "matching": "Matching",
     "matchingCreate": "Créer une playlist",
     "matchingAdded": "Matching enregistré dans rekordbox",
+    "matchingSaved": "Matching enregistré",
     "matchingSuggested": "Tu les enchaînes souvent",
     "matchingTimes_one": "enchaînés {{count}} fois",
     "matchingTimes_other": "enchaînés {{count}} fois",

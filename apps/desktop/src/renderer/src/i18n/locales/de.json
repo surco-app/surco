@@ -2644,6 +2644,7 @@
     "matching": "Matching",
     "matchingCreate": "Playlist erstellen",
     "matchingAdded": "Matching in rekordbox gespeichert",
+    "matchingSaved": "Matching gespeichert",
     "matchingSuggested": "Spielst du oft zusammen",
     "matchingTimes_one": "{{count}}-mal hintereinander",
     "matchingTimes_other": "{{count}}-mal hintereinander",

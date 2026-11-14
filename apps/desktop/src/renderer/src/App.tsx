@@ -124,6 +124,7 @@ import { useLibraryCopyVerdicts } from './hooks/useLibraryCopyVerdicts'
 import { useListNavigation } from './hooks/useListNavigation'
 import { useListReviewNotice } from './hooks/useListReviewNotice'
 import { useMatchingEdit } from './hooks/useMatchingEdit'
+import { useMatchingPathPairs } from './hooks/useMatchingPathPairs'
 import { useMatchingSuggestions } from './hooks/useMatchingSuggestions'
 import { useMetadataClipboard } from './hooks/useMetadataClipboard'
 import { useMetaUndo } from './hooks/useMetaUndo'
@@ -142,7 +143,7 @@ import { useSessionRows } from './hooks/useSessionRows'
 import { type FillTarget, useSessionRun } from './hooks/useSessionRun'
 import { useSessionWrite } from './hooks/useSessionWrite'
 import { useSettings } from './hooks/useSettings'
-import { useSourceBrowser } from './hooks/useSourceBrowser'
+import { readPlaylist, useSourceBrowser } from './hooks/useSourceBrowser'
 import { spectrogramOptions } from './hooks/useSpectrogram'
 import { useStableCallback } from './hooks/useStableCallback'
 import { useTrackLibrary } from './hooks/useTrackLibrary'
@@ -204,6 +205,7 @@ import { lazyChunk, preloadLazyWhenIdle } from './lib/lazyChunk'
 import { librarySourceOf } from './lib/librarySource'
 import { listReviewSource } from './lib/listReviewSource'
 import { type MatchingPartner, partnersOf } from './lib/matchingPartners'
+import { pathPartners } from './lib/matchingPaths'
 import { OpenSettingsProvider } from './lib/openSettingsContext'
 import { outputNamePatches, renderOutputName, titleFormatSummary } from './lib/outputName'
 import { clampPanelGeometry } from './lib/panelGeometry'
@@ -715,7 +717,9 @@ export default function App(): React.JSX.Element {
   // collection as they arrive, outside Files, so its rows exist to be shown; a refocus
   // re-read lands here again and only loads what is new. Stable so that re-read, not every
   // render, runs it.
+  const matchingPathPairs = useMatchingPathPairs()
   const browser = useSourceBrowser({
+    matchingPathPairs,
     hiddenSources: settings?.hiddenSources ?? NO_HIDDEN_SOURCES,
     onPlaylistGone: (name, source) =>
       pushToast(store, {
@@ -2886,30 +2890,76 @@ export default function App(): React.JSX.Element {
         : [],
     [inRekordbox, selectedContentId, matchingPairs, matchingEntries],
   )
+  const otherOpen =
+    sourceProgram !== null && !inRekordbox && browser.playlist !== null && playlistScope !== null
+  const { data: programAll } = useQuery({
+    queryKey: ['source-playlist', sourceProgram, ALL_TRACKS_ID],
+    queryFn: () => readPlaylist(sourceProgram as PlaylistSource, ALL_TRACKS_ID),
+    enabled: otherOpen,
+    staleTime: Number.POSITIVE_INFINITY,
+  })
+  const matchingSelfPath = selected ? selected.inputPath.normalize('NFC') : null
+  const otherPartners = useMemo(
+    () =>
+      otherOpen && matchingSelfPath && programAll
+        ? pathPartners(matchingPathPairs, matchingSelfPath, programAll)
+        : [],
+    [otherOpen, matchingSelfPath, programAll, matchingPathPairs],
+  )
+  const programCollection = useMemo(
+    () =>
+      (programAll ?? []).flatMap((e) =>
+        e.path && !e.separator
+          ? [
+              {
+                contentId: e.path.normalize('NFC'),
+                path: e.path,
+                title: e.preview?.title || (e.path.split(/[\\/]/).pop() ?? e.path),
+                artist: e.preview?.artist ?? '',
+              },
+            ]
+          : [],
+      ),
+    [programAll],
+  )
   const matchingIds = useMemo(() => {
+    if (!inRekordbox) {
+      const partners = new Set(otherPartners.map((p) => p.path))
+      return new Set(
+        scopeTracks.flatMap((t) => (partners.has(t.inputPath.normalize('NFC')) ? [t.id] : [])),
+      )
+    }
     const partners = new Set(matchingPartners.map((p) => p.contentId))
     return new Set(
       scopeTracks.flatMap((t) =>
         partners.has(playlistScope?.contentOf.get(t.id) ?? '') ? [t.id] : [],
       ),
     )
-  }, [matchingPartners, scopeTracks, playlistScope])
+  }, [inRekordbox, otherPartners, matchingPartners, scopeTracks, playlistScope])
   const editMatching = useMatchingEdit(notifyEdit)
   const removeMatchingPartner = useStableCallback((partner: MatchingPartner) => {
-    if (!selectedContentId || !selected) return
-    void editMatching(
-      'remove',
-      [selectedContentId, partner.contentId],
-      `${selected.listLabel} · ${partner.title}`,
-      [selected.inputPath, partner.path],
-    )
+    if (!selected) return
+    const label = `${selected.listLabel} · ${partner.title}`
+    const paths: [string, string] = [selected.inputPath, partner.path]
+    if (inRekordbox && selectedContentId)
+      void editMatching('remove', [selectedContentId, partner.contentId], label, paths)
+    else void editMatching('remove', rekordboxPairOf(paths), label, paths)
   })
   const matchPairOf = (
     track: TrackItem,
-  ): { pair: [string, string]; label: string; paths: [string, string] } | null => {
-    if (!inRekordbox || !cuesOpen) return null
+  ): { pair: [string, string] | null; label: string; paths: [string, string] } | null => {
+    if (!cuesOpen) return null
     const targets = menuTargets(track.id)
     if (targets.length !== 2) return null
+    if (!inRekordbox) {
+      const paths: [string, string] = [targets[0].inputPath, targets[1].inputPath]
+      if (paths[0] === paths[1]) return null
+      return {
+        pair: rekordboxPairOf(paths),
+        label: targets.map((t) => t.listLabel).join(' · '),
+        paths,
+      }
+    }
     const ids = targets.map((t) => playlistScope?.contentOf.get(t.id))
     const [a, b] = ids
     if (!a || !b || a === b) return null
@@ -2920,19 +2970,37 @@ export default function App(): React.JSX.Element {
     }
   }
   const pickMatchingPartner = useStableCallback((partner: MatchingPartner) => {
-    const track = scopeTracks.find((t) => playlistScope?.contentOf.get(t.id) === partner.contentId)
+    const track = inRekordbox
+      ? scopeTracks.find((t) => playlistScope?.contentOf.get(t.id) === partner.contentId)
+      : scopeTracks.find((t) => t.inputPath.normalize('NFC') === partner.path)
     if (track) setSelection({ ids: [track.id], anchor: track.id })
   })
   const { data: rekordboxCollection } = useQuery({
     queryKey: ['source-collection', 'rekordbox'],
     queryFn: () => SOURCE_READ.rekordbox.collection?.() ?? Promise.resolve([]),
-    enabled: inRekordbox && (Boolean(selectedContentId) || browser.playlist?.id === MATCHING_ID),
+    enabled:
+      otherOpen ||
+      (inRekordbox && (Boolean(selectedContentId) || browser.playlist?.id === MATCHING_ID)),
     staleTime: 60_000,
   })
   const collectionById = useMemo(
     () => new Map((rekordboxCollection ?? []).map((t) => [t.contentId, t])),
     [rekordboxCollection],
   )
+  const rekordboxIdOfPath = useMemo(
+    () =>
+      new Map(
+        (rekordboxCollection ?? []).flatMap((t) =>
+          t.path ? [[t.path.normalize('NFC'), t.contentId] as const] : [],
+        ),
+      ),
+    [rekordboxCollection],
+  )
+  const rekordboxPairOf = (paths: [string, string]): [string, string] | null => {
+    const a = rekordboxIdOfPath.get(paths[0].normalize('NFC'))
+    const b = rekordboxIdOfPath.get(paths[1].normalize('NFC'))
+    return a && b && a !== b ? [a, b] : null
+  }
   const matchingSuggestions = useMatchingSuggestions({
     enabled: inRekordbox,
     tree: browser.tree,
@@ -2961,7 +3029,19 @@ export default function App(): React.JSX.Element {
     saveSettings({ matchingDismissed: [...dismissed, pairKey(...s.pair)] })
   })
   const addMatchingPartner = useStableCallback((track: CollectionTrack) => {
-    if (!selectedContentId || !selected) return
+    if (!selected) return
+    if (!inRekordbox) {
+      if (!track.path) return
+      const paths: [string, string] = [selected.inputPath, track.path]
+      void editMatching(
+        'add',
+        rekordboxPairOf(paths),
+        `${selected.listLabel} · ${track.title}`,
+        paths,
+      )
+      return
+    }
+    if (!selectedContentId) return
     void editMatching(
       'add',
       [selectedContentId, track.contentId],
@@ -2981,7 +3061,17 @@ export default function App(): React.JSX.Element {
             onRemove: removeMatchingPartner,
             onAdd: addMatchingPartner,
           }
-        : undefined,
+        : otherOpen && matchingSelfPath
+          ? {
+              partners: otherPartners,
+              selfId: matchingSelfPath,
+              collection: programCollection,
+              suggested: [],
+              onPick: pickMatchingPartner,
+              onRemove: removeMatchingPartner,
+              onAdd: addMatchingPartner,
+            }
+          : undefined,
     [
       inRekordbox,
       selectedContentId,
@@ -2991,6 +3081,10 @@ export default function App(): React.JSX.Element {
       pickMatchingPartner,
       removeMatchingPartner,
       addMatchingPartner,
+      otherOpen,
+      matchingSelfPath,
+      otherPartners,
+      programCollection,
     ],
   )
   const cueTrack = useMemo(
@@ -4186,25 +4280,24 @@ export default function App(): React.JSX.Element {
                                 }}
                               />
                             )}
-                          {sourceProgram === 'rekordbox' &&
-                            browser.playlist?.id === MATCHING_ID && (
-                              <MatchingBand
-                                tracks={scopeTracks.length}
-                                onCreate={() => {
-                                  const name = tr('sources.matching')
-                                  void editRekordbox(
-                                    {
-                                      kind: 'create',
-                                      parentId: 'root',
-                                      name,
-                                      folder: false,
-                                      tracks: scopeTracks.map(trackRef),
-                                    },
+                          {sourceProgram !== null && browser.playlist?.id === MATCHING_ID && (
+                            <MatchingBand
+                              tracks={scopeTracks.length}
+                              onCreate={() => {
+                                const name = tr('sources.matching')
+                                void editRekordbox(
+                                  {
+                                    kind: 'create',
+                                    parentId: 'root',
                                     name,
-                                  )
-                                }}
-                              />
-                            )}
+                                    folder: false,
+                                    tracks: scopeTracks.map(trackRef),
+                                  },
+                                  name,
+                                )
+                              }}
+                            />
+                          )}
                           {sourceProgram === 'rekordbox' &&
                             browser.playlist?.id === MATCHING_ID && (
                               <MatchingSuggestions
