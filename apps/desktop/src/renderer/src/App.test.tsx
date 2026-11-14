@@ -56,7 +56,7 @@ import { holdPendingEdit } from './lib/pendingEdits'
 import { createQueryClient } from './lib/queryClient'
 import { clearDraggedRows, draggedRows, TREE_NODE_TYPE } from './lib/reorderDrag'
 import { usbExportStore } from './lib/usbExportStore'
-import { type ApiOverrides, djReads, type ProgramReads } from './test/api'
+import { type ApiOverrides, djReads, type ProgramReads, stubApi } from './test/api'
 import { fakeDataTransfer, installDragEvent } from './test/drag'
 import { hoverTooltip } from './test/tooltip'
 
@@ -434,6 +434,7 @@ function setApi(over: Record<string, unknown> = {}): void {
     endConversionBatch: vi.fn(),
     cancelJob: vi.fn(),
     reportUnsavedCues: vi.fn<Api['reportUnsavedCues']>(),
+    cues: stubApi().cues,
     ...over,
     dj: djReads(
       {
