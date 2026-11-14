@@ -5231,6 +5231,43 @@ describe('Editor insert from field', () => {
     expect(onApplyTitleFormat).toHaveBeenCalledOnce()
   })
 
+  // djotas formats nearly every title, and two clicks through the header ⋯ were too slow:
+  // the T sits inside the title box itself, one click away, beside what it rewrites.
+  it('triggers the title-format pass from the T inside the title field', () => {
+    const { onApplyTitleFormat } = renderEditor(
+      { id: 't1', meta: { title: 'Action (Base)', trackNumber: 'B2' } },
+      'wav',
+      { visibleFields: ['title', 'trackNumber'], titleFormat: '({trackNumber}) {title}' },
+    )
+    fireEvent.click(screen.getByTestId('field-format-title'))
+    expect(onApplyTitleFormat).toHaveBeenCalledOnce()
+  })
+
+  it('keeps the title T in place but off once the title already wears the format', () => {
+    // Switching tracks must not make the button blink in and out; off says "nothing to do".
+    renderEditor({ id: 't1', meta: { title: '(B2) Action (Base)', trackNumber: 'B2' } }, 'wav', {
+      visibleFields: ['title', 'trackNumber'],
+      titleFormat: '({trackNumber}) {title}',
+    })
+    expect(screen.getByTestId('field-format-title')).toBeDisabled()
+  })
+
+  it('leaves the title T on when a pattern field is empty, so the click can say which', () => {
+    // A dead button would hide the reason; the pass's notice names the missing field.
+    renderEditor({ id: 't1', meta: { title: 'Action (Base)' } }, 'wav', {
+      visibleFields: ['title', 'trackNumber'],
+      titleFormat: '({trackNumber}) {title}',
+    })
+    expect(screen.getByTestId('field-format-title')).toBeEnabled()
+  })
+
+  it('shows no title T when no format is configured', () => {
+    renderEditor({ id: 't1', meta: { title: 'Action (Base)' } }, 'wav', {
+      visibleFields: ['title'],
+    })
+    expect(screen.queryByTestId('field-format-title')).toBeNull()
+  })
+
   it('hides the title-format header button when no format is configured', () => {
     renderEditor({ id: 't1', meta: { title: 'Action (Base)' } }, 'wav', {
       visibleFields: ['title'],

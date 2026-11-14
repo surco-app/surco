@@ -76,6 +76,7 @@ export interface FieldSpec {
   insertSources?: InsertSource[]
   cleanResult?: string
   formatResult?: string
+  formatAction?: FieldFormatAction
   cleaned?: FieldCleanedNote
   previous?: FieldPreviousNote
   readOnly?: boolean
@@ -91,6 +92,11 @@ export interface FieldSpec {
 export interface FieldCleanedNote {
   reasons: string
   onUndo?: () => void
+}
+
+export interface FieldFormatAction {
+  onApply: () => void
+  disabled: boolean
 }
 
 export interface FieldPreviousNote {
@@ -136,6 +142,7 @@ export interface BuildFieldSpecsParams {
   // The title rebuilt from the settings' title format, when that changes anything —
   // offered as a whole-value rewrite in the title field's menu.
   titleFormatResult: string | undefined
+  titleFormatAction?: FieldFormatAction
   tr: (key: string, options?: Record<string, unknown>) => string
   // Pre-built per-key onChange, one map per mode — not setField/onChangeAllMeta
   // themselves. Closing over `key` inline here (`(v) => setField(key, v)`) would
@@ -218,6 +225,7 @@ export function buildFieldSpecs({
   insertSources,
   albumCleanResult,
   titleFormatResult,
+  titleFormatAction,
   tr,
   singleOnChange,
   bulkOnChange,
@@ -334,6 +342,7 @@ export function buildFieldSpecs({
               !isMulti && INSERT_TARGET_FIELDS.has(def.key) ? insertSources : undefined,
             cleanResult: !isMulti && def.key === 'album' ? albumCleanResult : undefined,
             formatResult: !isMulti && def.key === 'title' ? titleFormatResult : undefined,
+            formatAction: def.key === 'title' ? titleFormatAction : undefined,
             cleaned: cleanedNotes?.[def.key],
             previous: previousNotes?.[def.key],
             width: widthOf(def.key),
