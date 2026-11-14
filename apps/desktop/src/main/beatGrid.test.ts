@@ -37,6 +37,33 @@ describe('fitBeatGrid', () => {
     expect(phaseError(fit.firstMs, 250, 140)).toBeLessThan(5)
   })
 
+  it('puts the beat on the hit, not on a louder bass that comes in just after it, where rekordbox and the eye both place it', () => {
+    const bpm = 143.79
+    const firstMs = 300
+    const pcm = new Float32Array(SR * 90)
+    const period = 60 / bpm
+    let noise = 1
+    for (let i = 0; i < pcm.length; i++) {
+      noise = (noise * 16807) % 2147483647
+      const white = noise / 2147483647 - 0.5
+      const pad = 0.07 * Math.sin((2 * Math.PI * 300 * i) / SR)
+      const t = i / SR - firstMs / 1000
+      if (t < 0) {
+        pcm[i] = pad
+        continue
+      }
+      const inBeat = t % period
+      const hit = 0.34 * white * Math.exp(-inBeat * 2.8)
+      const late = inBeat - 0.05
+      const bass = late < 0 || late > 0.2 ? 0 : 0.22 * Math.sin(2 * Math.PI * 55 * late)
+      pcm[i] = pad + hit + bass
+    }
+    const fit = fitBeatGrid(pcm, SR)
+    if (!fit) throw new Error('a steady hit must fit a grid')
+    expect(fit.bpm).toBeCloseTo(bpm, 1)
+    expect(phaseError(fit.firstMs, firstMs, bpm)).toBeLessThan(5)
+  })
+
   it('pins the tempo to a hundredth, so a cue 48 bars from the drop still lands on its beat', () => {
     const bpm = 147.76
     const fit = fitBeatGrid(danceTrack(bpm, 400, 180), SR)

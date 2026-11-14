@@ -13,6 +13,23 @@ const FINE_BINS = 192
 const FINE_WINDOW_BEATS = 8
 const FINE_STEP_BEATS = 4
 const FINE_SURE_RATIO = 2
+const LEVEL_FLOOR = 1e-6
+const EARLIER_RISE_RATIO = 0.9
+
+function hitStart(rises: number[], steepest: number): number {
+  const bins = rises.length
+  for (let back = Math.round(bins / 4); back >= 1; back--) {
+    const b = (steepest - back + bins) % bins
+    const rise = rises[b]
+    if (
+      rise >= EARLIER_RISE_RATIO * rises[steepest] &&
+      rise >= rises[(b + 1) % bins] &&
+      rise >= rises[(b - 1 + bins) % bins]
+    )
+      return b
+  }
+  return steepest
+}
 
 export interface BeatGridFit {
   bpm: number
@@ -49,7 +66,7 @@ function foldedMeans(
   }
   return (bin) => {
     const at = ((bin % bins) + bins) % bins
-    return sum[at] / (count[at] || 1)
+    return Math.log(sum[at] / (count[at] || 1) + LEVEL_FLOOR)
   }
 }
 
@@ -66,7 +83,7 @@ function surestRise(
     for (let k = 1; k <= reach; k++) rise += mean(b + k) - mean(b - k)
     return rise
   })
-  const best = rises.indexOf(Math.max(...rises))
+  const best = hitStart(rises, rises.indexOf(Math.max(...rises)))
   const apart = (a: number, b: number) => {
     const d = Math.abs(a - b) % FINE_BINS
     return Math.min(d, FINE_BINS - d) > FINE_BINS / 16
@@ -97,18 +114,13 @@ function steepestRise(
   }
   const mean = (bin: number): number => {
     const at = (bin + BINS) % BINS
-    return sum[at] / (count[at] || 1)
+    return Math.log(sum[at] / (count[at] || 1) + LEVEL_FLOOR)
   }
-  let best = -Infinity
-  let bestBin = 0
-  for (let b = 0; b < BINS; b++) {
-    const rise = mean(b + 1) + mean(b + 2) - mean(b - 1) - mean(b - 2)
-    if (rise > best) {
-      best = rise
-      bestBin = b
-    }
-  }
-  return (bestBin + 0.5) / BINS
+  const rises = Array.from(
+    { length: BINS },
+    (_, b) => mean(b + 1) + mean(b + 2) - mean(b - 1) - mean(b - 2),
+  )
+  return (hitStart(rises, rises.indexOf(Math.max(...rises))) + 0.5) / BINS
 }
 
 export function fitBeatGrid(pcm: Float32Array, sampleRate: number): BeatGridFit | null {
