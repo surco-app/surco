@@ -68,7 +68,7 @@ describe('runWorkerJob', () => {
     expect(out).toEqual({ bpm: 128, confidence: 0.9 })
   })
 
-  it('measures a grid and fits the beat from one decode, telling how often the beat is clearly heard', () => {
+  it('measures a grid and fits the beat from one decode when no fit is kept yet', () => {
     const pcm = new Float32Array(11025 * 120)
     const out = runWorkerJob({
       type: 'gridAudit',
@@ -76,12 +76,27 @@ describe('runWorkerJob', () => {
       sampleRate: 11025,
       beats: [0, 500],
       leadMs: 51,
+      withFit: true,
     })
     expect(auditGrid).toHaveBeenCalledWith(pcm, 11025, [0, 500], 51)
     expect(out).toEqual({
-      audit: { windows: [{ ms: 9000, offsetMs: 1 }], total: 4, heardPerMinute: 30 },
+      windows: [{ ms: 9000, offsetMs: 1 }],
+      total: 4,
+      minutes: 2,
       fit: expect.objectContaining({ bpm: 128 }),
     })
+  })
+
+  it('skips the fit when one is kept, so moving the grid in the editor stays quick', () => {
+    const out = runWorkerJob({
+      type: 'gridAudit',
+      pcm: new Float32Array(11025 * 60),
+      sampleRate: 11025,
+      beats: [0, 500],
+      leadMs: 0,
+      withFit: false,
+    })
+    expect(out).toMatchObject({ fit: null, minutes: 1 })
   })
 
   it('routes key jobs to the key detector with the job pcm and rate', () => {

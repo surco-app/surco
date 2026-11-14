@@ -11,8 +11,13 @@ vi.mock('electron', () => {
   return { app: { getPath: () => dir } }
 })
 
+const fit = {
+  bpm: 140,
+  firstMs: 12,
+  fine: Array.from({ length: 60 }, () => ({ ms: 0, firstMs: 12 })),
+}
+const run = { windows: [{ ms: 6000, offsetMs: 2 }], total: 1, minutes: 2, fit }
 const measured = { windows: [{ ms: 6000, offsetMs: 2 }], total: 1, heardPerMinute: 30 }
-const fit = { bpm: 140, firstMs: 12 }
 const measureGridAudit = vi.hoisted(() => vi.fn())
 const measureBeatGrid = vi.hoisted(() => vi.fn())
 vi.mock('./ffmpeg', () => ({ measureGridAudit, measureBeatGrid }))
@@ -26,9 +31,18 @@ function track(): string {
 }
 
 describe('cachedGridAudit', () => {
+  it('reuses the fit already kept instead of fitting the beat again', async () => {
+    const file = track()
+    measureBeatGrid.mockReset().mockResolvedValue(fit)
+    await cachedBeatGrid(file)
+    measureGridAudit.mockReset().mockResolvedValue({ ...run, fit: null })
+    expect(await cachedGridAudit(file, [0, 500, 1000], 0)).toEqual(measured)
+    expect(measureGridAudit).toHaveBeenCalledWith(file, [0, 500, 1000], 0, false)
+  })
+
   it('measures a grid once, so the filter does not decode the library again on the next look', async () => {
     const file = track()
-    measureGridAudit.mockReset().mockResolvedValue({ audit: measured, fit })
+    measureGridAudit.mockReset().mockResolvedValue(run)
     expect(await cachedGridAudit(file, [0, 500, 1000], 0)).toEqual(measured)
     expect(await cachedGridAudit(file, [0, 500, 1000], 0)).toEqual(measured)
     expect(measureGridAudit).toHaveBeenCalledTimes(1)
@@ -36,7 +50,7 @@ describe('cachedGridAudit', () => {
 
   it('measures again when the grid changes, since the hits are read against its own beats', async () => {
     const file = track()
-    measureGridAudit.mockReset().mockResolvedValue({ audit: measured, fit })
+    measureGridAudit.mockReset().mockResolvedValue(run)
     await cachedGridAudit(file, [0, 500, 1000], 0)
     await cachedGridAudit(file, [10, 510, 1010], 0)
     expect(measureGridAudit).toHaveBeenCalledTimes(2)
@@ -44,7 +58,7 @@ describe('cachedGridAudit', () => {
 
   it('keeps the fit heard in the same decode, so Auto finds it ready without reading the file twice', async () => {
     const file = track()
-    measureGridAudit.mockReset().mockResolvedValue({ audit: measured, fit })
+    measureGridAudit.mockReset().mockResolvedValue(run)
     measureBeatGrid.mockReset()
     await cachedGridAudit(file, [0, 500, 1000], 0)
     expect(await cachedBeatGrid(file)).toEqual(fit)

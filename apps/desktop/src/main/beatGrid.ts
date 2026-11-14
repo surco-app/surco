@@ -191,6 +191,11 @@ function phasesOf(
   return out
 }
 
+export type GridAuditRun = Pick<GridAudit, 'windows' | 'total'> & {
+  minutes: number
+  fit: BeatGridFit | null
+}
+
 const AUDIT_WINDOW_BEATS = 16
 const AUDIT_STEP_BEATS = 8
 

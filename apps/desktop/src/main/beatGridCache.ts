@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto'
 import type { GridAudit } from '../shared/gridAudit'
-import { cachedAnalysis, storeAnalysis } from './analysisCache'
+import { cachedAnalysis, peekAnalysis, storeAnalysis } from './analysisCache'
 import { analysisLimiter } from './analysisLimiter'
 import type { BeatGridFit } from './beatGrid'
 import { measureBeatGrid, measureGridAudit } from './ffmpeg'
@@ -30,12 +30,15 @@ export function cachedGridAudit(
     .update(`${leadMs}|${beats.join(',')}`)
     .digest('hex')
   return cachedAnalysis(`${GRID_AUDIT_NAMESPACE}-${grid}`, file, async () => {
+    const known = await peekAnalysis<BeatGridFit>(BEAT_GRID_NAMESPACE, file)
     const measured = await analysisLimiter.run(
-      () => measureGridAudit(file, beats, leadMs),
+      () => measureGridAudit(file, beats, leadMs, known === null),
       priority,
     )
     if (!measured) return null
-    await storeAnalysis(BEAT_GRID_NAMESPACE, file, measured.fit)
-    return measured.audit
+    const { windows, total, minutes, fit } = measured
+    if (known === null) await storeAnalysis(BEAT_GRID_NAMESPACE, file, fit)
+    const heard = (known ?? fit)?.fine?.length ?? 0
+    return { windows, total, heardPerMinute: minutes > 0 ? heard / minutes : 0 }
   })
 }
