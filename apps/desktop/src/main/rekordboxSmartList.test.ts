@@ -44,7 +44,6 @@ beforeAll(async () => {
       { ID: 'g4', Name: 'House' },
       { ID: 'g5', Name: 'Drum & Bass' },
     ],
-    myTags: [{ ID: '590496943', Name: 'Vocal' }],
     songMyTags: [
       { ContentID: 'house-tagged', MyTagID: '590496943' },
       { ContentID: 'house-untagged', MyTagID: '590496943', deleted: true },

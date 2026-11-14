@@ -558,3 +558,70 @@ describe('the recently added list', () => {
     expect(streamed).toMatchObject({ path: null, separator: false })
   })
 })
+
+describe('rekordbox smart playlists', () => {
+  const share = '/Users/dj/Library/Pioneer/rekordbox/share'
+  const now = new Date(2026, 10, 14, 16)
+  const electronic = `<NODE Id="900" LogicalOperator="1" AutomaticUpdate="0"><CONDITION PropertyName="genre" Operator="1" ValueUnit="" ValueLeft="Electronic" ValueRight=""/></NODE>`
+  const unknown = `<NODE Id="901" LogicalOperator="1" AutomaticUpdate="0"><CONDITION PropertyName="lyrics" Operator="1" ValueUnit="" ValueLeft="x" ValueRight=""/></NODE>`
+  let rdb: NonNullable<ReturnType<typeof openRekordboxDb>>
+
+  beforeAll(async () => {
+    const path = join(await mkdtemp(join(tmpdir(), 'surco-rbsmart-')), 'master.db')
+    writeRekordboxPlaylistFixture(path, {
+      content: [
+        { ...NIGHT, GenreID: 'g1', StockDate: '2026-10-20' },
+        { ...PLAY, GenreID: 'g1', StockDate: '2026-11-02' },
+        { ...GONE, GenreID: 'g1' },
+        { ...SEP, GenreID: 'g1' },
+        {
+          ID: 'house',
+          FolderPath: '/Volumes/Public/Music/House.wav',
+          FileType: 11,
+          Title: 'House',
+          Length: 200,
+          GenreID: 'g2',
+        },
+      ],
+      keys: [],
+      genres: [
+        { ID: 'g1', Name: 'Electronic' },
+        { ID: 'g2', Name: 'House' },
+      ],
+      playlists: [
+        {
+          ID: '900',
+          Name: 'Electronic',
+          Attribute: 4,
+          ParentID: 'root',
+          Seq: 1,
+          SmartList: electronic,
+        },
+        { ID: '901', Name: 'Lyrics', Attribute: 4, ParentID: 'root', Seq: 2, SmartList: unknown },
+        { ID: '902', Name: 'House', Attribute: 0, ParentID: 'root', Seq: 3 },
+      ],
+      links: [{ PlaylistID: '902', ContentID: 'house', TrackNo: 1 }],
+    })
+    const opened = openRekordboxDb(path, { readonly: true })
+    if (!opened) throw new Error('fixture did not open')
+    rdb = opened
+  })
+
+  afterAll(() => rdb.close())
+
+  it('lists a smart playlist with the tracks its rules match, since rekordbox keeps only the rules', () => {
+    expect(readRekordboxTree(rdb, now)).toEqual([
+      { id: '900', name: 'Electronic', kind: 'playlist', count: 2, smart: true },
+      { id: '902', name: 'House', kind: 'playlist', count: 1 },
+    ])
+  })
+
+  it('leaves out a smart playlist with a rule Surco cannot read, rather than listing the wrong tracks', () => {
+    expect(readRekordboxTree(rdb, now).map((n) => n.id)).not.toContain('901')
+  })
+
+  it('opens a smart playlist on the tracks its rules match, newest first', () => {
+    const rows = readRekordboxPlaylistWithPreview(rdb, share, '900', () => false, now)
+    expect(rows.map((r) => r.contentId)).toEqual(['c2', 'c1'])
+  })
+})

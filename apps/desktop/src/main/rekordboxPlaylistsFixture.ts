@@ -82,7 +82,6 @@ export interface PlaylistFixture {
   history?: { HistoryID: string; ContentID: string; TrackNo: number; deleted?: boolean }[]
   noMatchingTable?: boolean
   genres?: { ID: string; Name: string }[]
-  myTags?: { ID: string; Name: string }[]
   songMyTags?: { ContentID: string; MyTagID: string; deleted?: boolean }[]
 }
 
@@ -131,8 +130,6 @@ export function writeRekordboxPlaylistFixture(path: string, data: PlaylistFixtur
     CREATE TABLE djmdDevice (ID VARCHAR(255) PRIMARY KEY, MasterDBID VARCHAR(255),
       Name VARCHAR(255), ${LOOKUP_COLUMNS});
     CREATE TABLE djmdKey (ID VARCHAR(255) PRIMARY KEY, ScaleName VARCHAR(255));
-    CREATE TABLE djmdMyTag (ID VARCHAR(255) PRIMARY KEY, Seq INTEGER, Name VARCHAR(255),
-      Attribute INTEGER, ParentID VARCHAR(255), ${LOOKUP_COLUMNS});
     CREATE TABLE djmdSongMyTag (ID VARCHAR(255) PRIMARY KEY, MyTagID VARCHAR(255),
       ContentID VARCHAR(255), TrackNo INTEGER, ${LOOKUP_COLUMNS});
     CREATE TABLE djmdPlaylist (ID VARCHAR(255) PRIMARY KEY, Seq INTEGER, Name VARCHAR(255),
@@ -224,10 +221,6 @@ export function writeRekordboxPlaylistFixture(path: string, data: PlaylistFixtur
     `INSERT INTO djmdGenre (ID, Name, rb_local_deleted, created_at, updated_at) VALUES (?, ?, 0, ?, ?)`,
   )
   for (const g of data.genres ?? []) genre.run(g.ID, g.Name, FIXTURE_STAMP, FIXTURE_STAMP)
-  const myTag = db.prepare(
-    `INSERT INTO djmdMyTag (ID, Name, rb_local_deleted, created_at, updated_at) VALUES (?, ?, 0, ?, ?)`,
-  )
-  for (const t of data.myTags ?? []) myTag.run(t.ID, t.Name, FIXTURE_STAMP, FIXTURE_STAMP)
   const songMyTag = db.prepare(
     `INSERT INTO djmdSongMyTag (ID, MyTagID, ContentID, rb_local_deleted, created_at, updated_at)
      VALUES (?, ?, ?, ?, ?, ?)`,
