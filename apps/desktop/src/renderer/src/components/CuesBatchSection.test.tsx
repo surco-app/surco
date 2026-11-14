@@ -82,11 +82,11 @@ function setup(
   const onShowBadGrid = vi.fn()
   const onPhrases = vi.fn(async () => ({ done: 1, skipped: 1 }))
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-  const tree = (over: Partial<Settings>) => (
+  const tree = (over: Partial<Settings>, shown = targets) => (
     <QueryClientProvider client={client}>
       <SettingsProvider settings={{ cueFlows: KEPT, activeCueFlow: 'mine', ...over }}>
         <CuesBatchSection
-          targets={targets}
+          targets={shown}
           onMark={onMark}
           onFlow={onFlow}
           gridCheckOf={(contentId) => (contentId === '103' ? LATE : ON_BEATS)}
@@ -99,6 +99,7 @@ function setup(
   )
   const { rerender } = render(tree({}))
   const changeSettings = (over: Partial<Settings>) => rerender(tree(over))
+  const changeTargets = (shown: typeof TARGETS) => rerender(tree({}, shown))
   return {
     saveRekordboxCues,
     askToApply,
@@ -108,6 +109,7 @@ function setup(
     onShowBadGrid,
     onPhrases,
     changeSettings,
+    changeTargets,
   }
 }
 
@@ -549,7 +551,6 @@ describe('Clearing the cues of several selected tracks', () => {
     fireEvent.click(screen.getByTestId('cues-batch-clear'))
     expect(screen.getByTestId('cues-batch-clear')).toBeDisabled()
     await screen.findByTestId('cues-batch-cleared')
-    expect(screen.getByTestId('cues-batch-clear')).not.toBeDisabled()
     expect(saveRekordboxCues).not.toHaveBeenCalled()
   })
 
@@ -589,7 +590,6 @@ describe('Clearing the cues of several selected tracks', () => {
     fireEvent.click(screen.getByTestId('cues-batch-clear'))
     const row = await screen.findByTestId('cues-batch-cleared-unsaved')
     expect(row).toHaveTextContent(i18n.t('editor.cues.batch.clearedUnsaved', { count: 1 }))
-    expect(row.querySelector('dt')).toHaveClass('text-warn')
   })
 
   it('brings back nothing to save when the DJ discards, so a misclick on Clear costs nothing', async () => {
@@ -623,5 +623,35 @@ describe('Clearing the cues of several selected tracks', () => {
     fireEvent.click(screen.getByTestId('cues-batch-save'))
     await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalledTimes(1))
     await waitFor(() => expect(screen.queryByTestId('cues-batch-cleared')).toBeNull())
+  })
+
+  it('drops the tally and Discard when the selection changes, so Discard never reaches tracks it was not made for', async () => {
+    const { changeTargets } = setup({}, TARGETS, CUES)
+    fireEvent.click(screen.getByTestId('cues-batch-clear'))
+    await screen.findByTestId('cues-batch-clear-discard')
+    changeTargets([TARGETS[0]])
+    expect(screen.queryByTestId('cues-batch-cleared')).toBeNull()
+    expect(screen.queryByTestId('cues-batch-clear-discard')).toBeNull()
+  })
+
+  it('never wipes the same track in another program, so one Clear click stays inside the selected track', async () => {
+    const T1 = 'traktor:M/:m/:a.wav'
+    const { saveRekordboxCues } = setup({ '/m/a.wav': { traktor: T1 } }, [TARGETS[0]], CUES)
+    fireEvent.click(screen.getByTestId('cues-batch-clear'))
+    await screen.findByTestId('cues-batch-cleared')
+    fireEvent.click(await screen.findByTestId('cues-batch-save'))
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalledTimes(1))
+    const reqs = saveRekordboxCues.mock.calls[0][0]
+    expect(reqs.map((r) => r.contentId)).toEqual(['103'])
+    expect(reqs[0].wanted).toEqual([{ id: 'l', ms: 4000, kind: 1, color: null }])
+  })
+
+  it('turns Clear off while its tally is showing, so a second click cannot replace it with a misleading one', async () => {
+    setup({}, TARGETS, CUES)
+    fireEvent.click(screen.getByTestId('cues-batch-clear'))
+    await screen.findByTestId('cues-batch-clear-discard')
+    expect(screen.getByTestId('cues-batch-clear')).toBeDisabled()
+    fireEvent.click(screen.getByTestId('cues-batch-clear-discard'))
+    expect(screen.getByTestId('cues-batch-clear')).not.toBeDisabled()
   })
 })

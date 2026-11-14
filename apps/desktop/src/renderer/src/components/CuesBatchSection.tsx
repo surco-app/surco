@@ -73,7 +73,7 @@ export function CuesBatchSection({
   const [busy, setBusy] = useState(false)
   const [saveFailed, setSaveFailed] = useState(false)
   const [phrasing, setPhrasing] = useState(false)
-  const [cleared, setCleared] = useState<ClearedCues | null>(null)
+  const [cleared, setCleared] = useState<{ result: ClearedCues; forIds: string } | null>(null)
   const [phrased, setPhrased] = useState<{ done: number; skipped: number } | null>(null)
   const putPhrases = async () => {
     setPhrasing(true)
@@ -84,6 +84,8 @@ export function CuesBatchSection({
     }
   }
   const ids = targets.map((t) => t.contentId)
+  const idsKey = [...ids].sort().join('\n')
+  const shown = cleared?.forIds === idsKey ? cleared.result : null
   const gated = ids.some((id) => cueProgramOf(id).collectionGate !== null)
   const { data: canSave = true } = useQuery({
     queryKey: ['traktor-can-save', settings.traktorNmlPath],
@@ -156,25 +158,25 @@ export function CuesBatchSection({
   const clear = async () => {
     setBusy(true)
     try {
-      setCleared(await clearCueDrafts(queryClient, targets, settings))
+      setCleared({ result: await clearCueDrafts(queryClient, targets, settings), forIds: idsKey })
     } finally {
       setBusy(false)
     }
   }
   const discardCleared = () => {
-    for (const id of cleared?.cleared ?? []) forgetDraft(id)
+    for (const id of shown?.cleared ?? []) forgetDraft(id)
     setCleared(null)
   }
-  const clearedRows = cleared
+  const clearedRows = shown
     ? (
         [
-          ['hot', tr('editor.cues.batch.clearedHot', { count: cleared.hot }), cleared.hot],
-          ['calls', tr('editor.cues.batch.clearedCalls', { count: cleared.calls }), cleared.calls],
-          ['loops', tr('editor.cues.batch.clearedLoops', { count: cleared.loops }), cleared.loops],
+          ['hot', tr('editor.cues.batch.clearedHot', { count: shown.hot }), shown.hot],
+          ['calls', tr('editor.cues.batch.clearedCalls', { count: shown.calls }), shown.calls],
+          ['loops', tr('editor.cues.batch.clearedLoops', { count: shown.loops }), shown.loops],
           [
             'unsaved',
-            tr('editor.cues.batch.clearedUnsaved', { count: cleared.unsaved }),
-            cleared.unsaved,
+            tr('editor.cues.batch.clearedUnsaved', { count: shown.unsaved }),
+            shown.unsaved,
           ],
         ] as const
       ).filter(([, , n]) => n > 0)
@@ -247,7 +249,7 @@ export function CuesBatchSection({
         <button
           type="button"
           data-testid="cues-batch-clear"
-          disabled={busy}
+          disabled={busy || (shown?.cleared.length ?? 0) > 0}
           onClick={() => void clear()}
           className="press px-2 py-1.5 text-xs text-fg-dim hover:text-fg"
         >
@@ -290,7 +292,7 @@ export function CuesBatchSection({
               </div>
             ))}
           </dl>
-          {cleared && cleared.cleared.length > 0 && (
+          {shown && shown.cleared.length > 0 && (
             <button
               type="button"
               data-testid="cues-batch-clear-discard"
