@@ -330,6 +330,9 @@ function setApi(over: Record<string, unknown> = {}): void {
     platform: 'win32',
     version: '0.0.0-test',
     releasePlayingFile: vi.fn<Api['releasePlayingFile']>().mockResolvedValue(undefined),
+    matchingPairs: vi.fn<Api['matchingPairs']>().mockResolvedValue([]),
+    addMatchingPair: vi.fn<Api['addMatchingPair']>().mockResolvedValue(undefined),
+    removeMatchingPair: vi.fn<Api['removeMatchingPair']>().mockResolvedValue(undefined),
     getSettings: vi.fn().mockResolvedValue(settings()),
     loadAppleMusicLibraryPlaylistTracks: vi.fn().mockResolvedValue(null),
     loadAppleMusicPlaylistsCached: vi.fn().mockResolvedValue(null),
@@ -933,6 +936,123 @@ describe('App Traktor cues', () => {
     fireEvent.click(screen.getAllByTestId('track-row')[1])
     await waitFor(() => expect(read).toHaveBeenCalledWith('traktor:HD/:m/:b.wav'))
     expect(await screen.findByTestId('cues-section')).toBeInTheDocument()
+  })
+
+  describe('Matching in Traktor', () => {
+    const openPlaylist = async () => {
+      await renderApp()
+      fireEvent.click(await screen.findByTestId('add-files'))
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+      fireEvent.click(await screen.findByTestId('source-rail-traktor'))
+      fireEvent.click(await screen.findByTestId('source-node-u1'))
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    }
+    const paired = () => vi.fn<Api['matchingPairs']>().mockResolvedValue([['/m/a.wav', '/m/b.wav']])
+
+    it('shows the partners Surco keeps for the chosen track and marks them in the list', async () => {
+      openTraktor({ matchingPairs: paired() })
+      await openPlaylist()
+      fireEvent.click(screen.getAllByTestId('track-row')[0])
+      expect(await screen.findByTestId('matching-partner')).toHaveTextContent('b.wav')
+      expect(
+        within(screen.getAllByTestId('track-row')[1]).getByTestId('track-matching'),
+      ).toBeInTheDocument()
+    })
+
+    it('pairs two tracks from the row menu in Surco alone when rekordbox does not hold them', async () => {
+      const match = vi.fn<ProgramReads['match']>().mockResolvedValue({ applied: true })
+      openTraktor({ dj: djReads({ rekordbox: { match } }) })
+      await openPlaylist()
+      fireEvent.click(screen.getAllByTestId('track-row')[0])
+      fireEvent.click(screen.getAllByTestId('track-row')[1], { metaKey: true })
+      fireEvent.contextMenu(screen.getAllByTestId('track-row')[1])
+      fireEvent.click(await screen.findByTestId('track-menu-matching'))
+      await waitFor(() =>
+        expect(window.api.addMatchingPair).toHaveBeenCalledWith('/m/a.wav', '/m/b.wav'),
+      )
+      expect(match).not.toHaveBeenCalled()
+    })
+
+    it('writes the pair to rekordbox too when both files are in its collection', async () => {
+      const match = vi.fn<ProgramReads['match']>().mockResolvedValue({ applied: true })
+      const collection = vi.fn<ProgramReads['collection']>().mockResolvedValue([
+        { contentId: 'r1', path: '/m/a.wav', title: 'A', artist: '' },
+        { contentId: 'r2', path: '/m/b.wav', title: 'B', artist: '' },
+      ])
+      openTraktor({ dj: djReads({ rekordbox: { match, collection } }) })
+      await openPlaylist()
+      fireEvent.click(screen.getAllByTestId('track-row')[0])
+      fireEvent.click(screen.getAllByTestId('track-row')[1], { metaKey: true })
+      fireEvent.contextMenu(screen.getAllByTestId('track-row')[1])
+      fireEvent.click(await screen.findByTestId('track-menu-matching'))
+      await waitFor(() =>
+        expect(match).toHaveBeenCalledWith('add', ['r1', 'r2'], expect.any(String)),
+      )
+    })
+
+    it('opens the Matching entry of Traktor with its pairs and a playlist to make from them', async () => {
+      openTraktor({ matchingPairs: paired() })
+      await renderApp()
+      fireEvent.click(await screen.findByTestId('add-files'))
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+      fireEvent.click(await screen.findByTestId('source-rail-traktor'))
+      fireEvent.click(await screen.findByTestId(`source-node-${MATCHING_ID}`))
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+      expect(screen.getByTestId('matching-create-playlist')).toBeEnabled()
+    })
+
+    it('pairs the chosen track with one found among the Traktor tracks', async () => {
+      openTraktor()
+      await openPlaylist()
+      fireEvent.click(screen.getAllByTestId('track-row')[0])
+      fireEvent.click(await screen.findByTestId('matching-add'))
+      fireEvent.change(screen.getByTestId('matching-search'), { target: { value: 'b.wav' } })
+      fireEvent.click(await screen.findByTestId('matching-result'))
+      await waitFor(() =>
+        expect(window.api.addMatchingPair).toHaveBeenCalledWith('/m/a.wav', '/m/b.wav'),
+      )
+    })
+
+    it('suggests a pair the Traktor mixed playlists hold back to back three times', async () => {
+      openTraktor({
+        dj: djReads({
+          traktor: {
+            tree: vi.fn<ProgramReads['tree']>().mockResolvedValue([
+              { id: 'u1', name: 'Saturday', kind: 'playlist', count: 2 },
+              {
+                id: 'f1',
+                name: 'COMBOS',
+                kind: 'folder',
+                count: 0,
+                children: ['s1', 's2', 's3'].map((id) => ({
+                  id,
+                  name: id,
+                  kind: 'playlist' as const,
+                  count: 2,
+                })),
+              },
+            ]),
+          },
+        }),
+      })
+      await openPlaylist()
+      fireEvent.click(screen.getAllByTestId('track-row')[0])
+      expect(await screen.findByTestId('matching-suggested')).toHaveTextContent('b.wav')
+      fireEvent.click(screen.getByTestId('matching-suggested-match'))
+      await waitFor(() =>
+        expect(window.api.addMatchingPair).toHaveBeenCalledWith('/m/a.wav', '/m/b.wav'),
+      )
+    })
+
+    it('unpairs a partner from the editor', async () => {
+      openTraktor({ matchingPairs: paired() })
+      await openPlaylist()
+      fireEvent.click(screen.getAllByTestId('track-row')[0])
+      fireEvent.click(await screen.findByTestId('matching-partner-remove'))
+      await waitFor(() =>
+        expect(window.api.removeMatchingPair).toHaveBeenCalledWith('/m/a.wav', '/m/b.wav'),
+      )
+    })
   })
 
   it('lets the DJ organise Traktor playlists once the collection is confirmed, and not before', async () => {
@@ -3677,6 +3797,28 @@ describe('App source playlists', () => {
       )
     })
 
+    it('keeps the pair in Surco by file too, so it holds in every program and after a conversion', async () => {
+      const match = vi.fn<ProgramReads['match']>().mockResolvedValue({ applied: true })
+      await openFactory({ dj: djReads(matchingReads.dj, { rekordbox: { match } }) })
+      fireEvent.click(rowTitled('Alpha'))
+      fireEvent.click(rowTitled('Bravo'), { metaKey: true })
+      fireEvent.contextMenu(rowTitled('Bravo'))
+      fireEvent.click(await screen.findByTestId('track-menu-matching'))
+      await waitFor(() =>
+        expect(window.api.addMatchingPair).toHaveBeenCalledWith('/m/a.wav', '/m/b.wav'),
+      )
+    })
+
+    it('drops the pair from Surco too when the DJ unpairs it', async () => {
+      const match = vi.fn<ProgramReads['match']>().mockResolvedValue({ applied: true })
+      await openFactory({ dj: djReads(matchingReads.dj, { rekordbox: { match } }) })
+      fireEvent.click(rowTitled('Alpha'))
+      fireEvent.click(await screen.findByTestId('matching-partner-remove'))
+      await waitFor(() =>
+        expect(window.api.removeMatchingPair).toHaveBeenCalledWith('/m/a.wav', '/m/c.wav'),
+      )
+    })
+
     it('offers no pairing unless exactly two tracks are selected', async () => {
       await openFactory(matchingReads)
       fireEvent.contextMenu(rowTitled('Bravo'))
@@ -3702,6 +3844,7 @@ describe('App source playlists', () => {
           expect.stringContaining('Brave New World'),
         ),
       )
+      expect(window.api.addMatchingPair).toHaveBeenCalledWith('/m/b.wav', '/m/elsewhere.wav')
     })
 
     it('keeps Matching out of the editor for a track not opened from rekordbox', async () => {
@@ -3746,6 +3889,7 @@ describe('App source playlists', () => {
       await waitFor(() =>
         expect(match).toHaveBeenCalledWith('add', ['c-l1', 'c-l2'], expect.any(String)),
       )
+      expect(window.api.addMatchingPair).toHaveBeenCalledWith('/m/a.wav', '/m/b.wav')
     })
 
     it('remembers a dismissed suggestion so it is not offered again', async () => {

@@ -257,7 +257,7 @@ describe('runSession', () => {
     expect(plan.items[1].why).toEqual({ kind: 'combo', sets: 2 })
   })
 
-  it('plays a rekordbox Matching pair back to back as a combo, even if no set holds it', () => {
+  it('plays a Matching pair back to back as a combo, even if no set holds it', () => {
     const { plan } = runSession({
       answers: { ...ANSWERS, sources: ['pool'] },
       roles: { pool: 'any' },
@@ -265,9 +265,28 @@ describe('runSession', () => {
         ['pool', [row('/m/a.mp3', { contentId: 'a' }), row('/m/q.mp3', { contentId: 'q' })]],
       ]) as Rows,
       seed: 1,
-      matching: [['q', 'a']],
+      matching: [['/m/q.mp3', '/m/a.mp3']],
     })
     expect(plan.items.map((i) => i.track.id).sort()).toEqual(['a', 'q'])
+    expect(plan.items[1].why).toEqual({ kind: 'combo', sets: 2 })
+  })
+
+  it('finds a pair by file whatever program the playlist comes from', () => {
+    const { plan } = runSession({
+      answers: { ...ANSWERS, sources: ['pool'] },
+      roles: { pool: 'any' },
+      rows: new Map([
+        [
+          'pool',
+          [
+            row('/m/Canción.mp3'.normalize('NFD'), { contentId: 'traktor:HD/:m/:cancion' }),
+            row('/m/q.mp3', { contentId: 'traktor:HD/:m/:q' }),
+          ],
+        ],
+      ]) as Rows,
+      seed: 1,
+      matching: [['/m/q.mp3', '/m/Canción.mp3'.normalize('NFC')]],
+    })
     expect(plan.items[1].why).toEqual({ kind: 'combo', sets: 2 })
   })
 

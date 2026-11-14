@@ -2644,6 +2644,7 @@
     "matching": "Matching",
     "matchingCreate": "Criar playlist",
     "matchingAdded": "Matching salvo no rekordbox",
+    "matchingSaved": "Matching salvo",
     "matchingSuggested": "Você toca juntas com frequência",
     "matchingTimes_one": "{{count}} vez seguida",
     "matchingTimes_other": "{{count}} vezes seguidas",

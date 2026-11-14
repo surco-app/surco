@@ -88,6 +88,7 @@ function setup(
   platform = 'darwin',
   onPlaylistGone: (name: string, source: string) => void = () => {},
   hiddenSources: PlaylistSource[] = [],
+  matchingPathPairs: [string, string][] = [],
 ) {
   let focus: (focused: boolean) => void = () => {}
   const state = { hidden: hiddenSources }
@@ -109,9 +110,12 @@ function setup(
   const wrapper = ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={client}>{children}</QueryClientProvider>
   )
-  const hook = renderHook(() => useSourceBrowser({ onPlaylistGone, hiddenSources: state.hidden }), {
-    wrapper,
-  })
+  const hook = renderHook(
+    () => useSourceBrowser({ onPlaylistGone, hiddenSources: state.hidden, matchingPathPairs }),
+    {
+      wrapper,
+    },
+  )
   return {
     ...hook,
     client,
@@ -273,6 +277,60 @@ describe('useSourceBrowser', () => {
     await waitFor(() => expect(result.current.tree?.[2]?.id).toBe(MATCHING_ID))
     expect(result.current.tree?.[1]).toMatchObject({ id: ALL_TRACKS_ID })
     expect(result.current.tree?.[2]).toMatchObject({ name: 'sources.matching', count: 3 })
+  })
+
+  it('gives Traktor its own Matching entry with the pairs Surco keeps, chain by chain', async () => {
+    const all = [
+      {
+        path: '/m/a.wav',
+        separator: false,
+        meta: {},
+        preview: { title: 'Alpha', artist: '', durationSec: 1, cues: [] },
+      },
+      {
+        path: '/m/b.wav',
+        separator: false,
+        meta: {},
+        preview: { title: 'Bravo', artist: '', durationSec: 1, cues: [] },
+      },
+      {
+        path: '/m/z.wav',
+        separator: false,
+        meta: {},
+        preview: { title: 'Zulu', artist: '', durationSec: 1, cues: [] },
+      },
+    ]
+    const playlist = vi.fn(async (id: string) => (id === ALL_TRACKS_ID ? all : []))
+    const { result } = setup(
+      {
+        dj: {
+          traktor: {
+            available: vi.fn().mockResolvedValue(true),
+            trackCount: vi.fn().mockResolvedValue(3),
+            playlist,
+          },
+        },
+      },
+      'darwin',
+      () => {},
+      [],
+      [['/m/b.wav', '/m/a.wav']],
+    )
+    await waitFor(() => expect(result.current.sources).toContain('traktor'))
+    act(() => result.current.selectSource('traktor'))
+    await waitFor(() =>
+      expect(result.current.tree?.find((n) => n.id === MATCHING_ID)).toMatchObject({ count: 2 }),
+    )
+    act(() =>
+      result.current.selectPlaylist(
+        { id: MATCHING_ID, name: 'Matching', kind: 'playlist', count: 2 },
+        [],
+      ),
+    )
+    await waitFor(() =>
+      expect(result.current.entries?.map((e) => e.path)).toEqual(['/m/a.wav', '/m/b.wav']),
+    )
+    expect(playlist).not.toHaveBeenCalledWith(MATCHING_ID)
   })
 
   it('reads the Serato tree, its counts and the picked crate from Serato’s own library, never from rekordbox’s', async () => {

@@ -13,10 +13,14 @@ import {
   musicTree,
   withReadCounts,
 } from '../lib/appleMusicSource'
+import { matchingEntriesFor } from '../lib/matchingPaths'
 import { takeOwnRemoval } from '../lib/ownRemovals'
 import { SOURCE_PROGRAMS, SOURCE_READ } from '../lib/sourcePrograms'
 import { useProgramsAvailable } from './useProgramsAvailable'
 import { useRekordboxMatching } from './useRekordboxMatching'
+
+const NO_PAIRS: readonly (readonly [string, string])[] = []
+
 import { useWindowFocus } from './useWindowFocus'
 
 export interface SourceBrowser {
@@ -108,9 +112,11 @@ export function readPlaylist(source: PlaylistSource, id: string): Promise<Source
 export function useSourceBrowser({
   onPlaylistGone,
   hiddenSources,
+  matchingPathPairs = NO_PAIRS,
 }: {
   onPlaylistGone: (name: string, source: PlaylistSource) => void
   hiddenSources: PlaylistSource[]
+  matchingPathPairs?: readonly (readonly [string, string])[]
 }): SourceBrowser {
   const queryClient = useQueryClient()
   const { t: tr } = useTranslation()
@@ -161,8 +167,29 @@ export function useSourceBrowser({
     staleTime: Number.POSITIVE_INFINITY,
   })
   const matching = useRekordboxMatching(program === 'rekordbox')
+  const otherProgram = program !== null && program !== 'rekordbox'
+  const allForMatching = useQuery({
+    queryKey: ['source-playlist', source, ALL_TRACKS_ID],
+    queryFn: () => readPlaylist(source as PlaylistSource, ALL_TRACKS_ID),
+    enabled: otherProgram && matchingPathPairs.length > 0,
+    staleTime: Number.POSITIVE_INFINITY,
+  })
+  const otherMatchingEntries = useMemo(
+    () =>
+      !otherProgram
+        ? undefined
+        : matchingPathPairs.length === 0
+          ? []
+          : allForMatching.data && matchingEntriesFor(allForMatching.data, matchingPathPairs),
+    [otherProgram, matchingPathPairs, allForMatching.data],
+  )
+  const otherCount = otherMatchingEntries?.filter((e) => !e.separator).length
   const matchingCount =
-    program === 'rekordbox' && matching.data ? new Set(matching.data.flat()).size : undefined
+    program === 'rekordbox'
+      ? matching.data && new Set(matching.data.flat()).size
+      : otherCount && otherCount > 0
+        ? otherCount
+        : undefined
   const startingPlaylist = useMemo(
     () =>
       (recent.data ?? 0) > 0
@@ -212,6 +239,7 @@ export function useSourceBrowser({
         : tree.data,
     [hasRecent, tree.data, all.data, recent.data, matchingCount, tr],
   )
+  const otherMatchingOpen = otherProgram && playlist?.id === MATCHING_ID
   const entriesKey = ['source-playlist', source, playlist?.id]
   const entries = useQuery({
     queryKey: entriesKey,
@@ -223,9 +251,11 @@ export function useSourceBrowser({
           queryClient.setQueryData(entriesKey, last)
       })
     },
-    enabled: source !== null && playlist !== null,
+    enabled: source !== null && playlist !== null && !otherMatchingOpen,
     staleTime: Number.POSITIVE_INFINITY,
   })
+  const shownEntries = otherMatchingOpen ? otherMatchingEntries : entries.data
+  const shownPending = otherMatchingOpen ? otherMatchingEntries === undefined : entries.isPending
 
   const hasSeparator = program && SOURCE_PROGRAMS[program].separator
   const separator = useQuery({
@@ -271,8 +301,8 @@ export function useSourceBrowser({
     treeFailed: tree.isError,
     libraryMissing:
       program !== null && SOURCE_PROGRAMS[program].missingLibraryCheck && found[program] === false,
-    entries: entries.data,
-    entriesLoading: source !== null && playlist !== null && entries.isPending,
+    entries: shownEntries,
+    entriesLoading: source !== null && playlist !== null && shownPending,
     entriesFailed: source !== null && playlist !== null && entries.isError,
     entriesFetching: entries.isFetching,
     canInsertSeparator: separator.data ?? false,

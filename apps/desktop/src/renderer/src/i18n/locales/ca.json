@@ -2644,6 +2644,7 @@
     "matching": "Matching",
     "matchingCreate": "Crear playlist",
     "matchingAdded": "Matching desat a rekordbox",
+    "matchingSaved": "Matching desat",
     "matchingSuggested": "Les punxes juntes sovint",
     "matchingTimes_one": "{{count}} vegada seguida",
     "matchingTimes_other": "{{count}} vegades seguides",
