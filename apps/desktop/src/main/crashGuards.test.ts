@@ -1,6 +1,13 @@
 import { describe, expect, it, vi } from 'vitest'
 import { errorWithKey } from '../shared/errorKeys'
-import { installCrashGuards, logHandlerFailures, wireRendererRecovery } from './crashGuards'
+import {
+  installCrashGuards,
+  logHandlerFailures,
+  wireChildProcessGone,
+  wireQuitTrail,
+  wireRendererRecovery,
+  wireUnresponsive,
+} from './crashGuards'
 
 function fakeEmitter(): {
   on: (event: string, cb: (...args: never[]) => void) => void
@@ -42,7 +49,7 @@ describe('wireRendererRecovery', () => {
   // recovery has to come from main.
   it('logs and reloads when the renderer dies unexpectedly', () => {
     const contents = { ...fakeEmitter(), reload: vi.fn() }
-    const logger = { error: vi.fn() }
+    const logger = { error: vi.fn(), warn: vi.fn() }
     wireRendererRecovery(contents, logger)
     const details = { reason: 'oom', exitCode: 1 }
     contents.fire('render-process-gone', {}, details)
@@ -50,11 +57,23 @@ describe('wireRendererRecovery', () => {
     expect(contents.reload).toHaveBeenCalled()
   })
 
-  it.each(['clean-exit', 'killed'])('leaves a normal %s teardown alone', (reason) => {
+  it('leaves a clean-exit teardown alone', () => {
     const contents = { ...fakeEmitter(), reload: vi.fn() }
-    const logger = { error: vi.fn() }
+    const logger = { error: vi.fn(), warn: vi.fn() }
     wireRendererRecovery(contents, logger)
-    contents.fire('render-process-gone', {}, { reason })
+    contents.fire('render-process-gone', {}, { reason: 'clean-exit', exitCode: 0 })
+    expect(logger.error).not.toHaveBeenCalled()
+    expect(logger.warn).not.toHaveBeenCalled()
+    expect(contents.reload).not.toHaveBeenCalled()
+  })
+
+  it('notes a killed window without reloading it, since the system killing it is a lead when the app vanishes', () => {
+    const contents = { ...fakeEmitter(), reload: vi.fn() }
+    const logger = { error: vi.fn(), warn: vi.fn() }
+    wireRendererRecovery(contents, logger)
+    const details = { reason: 'killed', exitCode: 9 }
+    contents.fire('render-process-gone', {}, details)
+    expect(logger.warn).toHaveBeenCalledWith('render process killed', details)
     expect(logger.error).not.toHaveBeenCalled()
     expect(contents.reload).not.toHaveBeenCalled()
   })
@@ -138,5 +157,107 @@ describe('logHandlerFailures', () => {
     ipc.handle('sum', (_e, a, b) => (a as number) + (b as number))
     expect(await ipc.call('sum', 2, 3)).toBe(5)
     expect(logger.error).not.toHaveBeenCalled()
+  })
+})
+
+describe('wireRendererRecovery onGone', () => {
+  it('hands the crash to onGone before reloading, so the dump and the notice see the dead window state', () => {
+    const calls: string[] = []
+    const contents = { ...fakeEmitter(), reload: vi.fn(() => calls.push('reload')) }
+    const onGone = vi.fn(() => calls.push('onGone'))
+    wireRendererRecovery(contents, { error: vi.fn(), warn: vi.fn() }, onGone)
+    contents.fire('render-process-gone', {}, { reason: 'crashed', exitCode: 5 })
+    expect(calls).toEqual(['onGone', 'reload'])
+    expect(onGone).toHaveBeenCalledWith({
+      reason: 'crashed',
+      exitCode: 5,
+      at: expect.any(Number),
+    })
+  })
+})
+
+describe('wireChildProcessGone', () => {
+  it('logs a GPU or utility process that dies, which used to vanish without a line', () => {
+    const app = fakeEmitter()
+    const logger = { error: vi.fn(), warn: vi.fn() }
+    const onGone = vi.fn()
+    wireChildProcessGone(app, logger, onGone)
+    const details = { type: 'GPU', reason: 'crashed', exitCode: 11, name: 'gpu' }
+    app.fire('child-process-gone', {}, details)
+    expect(logger.error).toHaveBeenCalledWith('child process gone', details)
+    expect(onGone).toHaveBeenCalledWith('GPU')
+  })
+
+  it('ignores a child process that exits cleanly', () => {
+    const app = fakeEmitter()
+    const logger = { error: vi.fn(), warn: vi.fn() }
+    const onGone = vi.fn()
+    wireChildProcessGone(app, logger, onGone)
+    app.fire('child-process-gone', {}, { type: 'Utility', reason: 'clean-exit', exitCode: 0 })
+    expect(logger.error).not.toHaveBeenCalled()
+    expect(logger.warn).not.toHaveBeenCalled()
+    expect(onGone).not.toHaveBeenCalled()
+  })
+
+  it('notes a killed child process with the memory before it, since memory pressure kills that way', () => {
+    const app = fakeEmitter()
+    const logger = { error: vi.fn(), warn: vi.fn() }
+    const onGone = vi.fn()
+    wireChildProcessGone(app, logger, onGone)
+    const details = { type: 'GPU', reason: 'killed', exitCode: 9 }
+    app.fire('child-process-gone', {}, details)
+    expect(logger.warn).toHaveBeenCalledWith('child process killed', details)
+    expect(logger.error).not.toHaveBeenCalled()
+    expect(onGone).toHaveBeenCalledWith('GPU')
+  })
+})
+
+describe('wireUnresponsive', () => {
+  function hung(responsiveAt: number) {
+    const contents = fakeEmitter()
+    const logger = { error: vi.fn(), warn: vi.fn() }
+    let clock = 0
+    wireUnresponsive(contents, logger, () => clock, 10_000)
+    contents.fire('unresponsive')
+    clock = responsiveAt
+    contents.fire('responsive')
+    return logger
+  }
+
+  it('logs how long the window hung, as an error past ten seconds', () => {
+    const logger = hung(12_000)
+    expect(logger.error).toHaveBeenCalledWith('window responsive again after', 12_000, 'ms')
+  })
+
+  it('logs a short hang as a warning, since the window recovered on its own', () => {
+    const logger = hung(3_000)
+    expect(logger.warn).toHaveBeenCalledWith('window responsive again after', 3_000, 'ms')
+    expect(logger.error).not.toHaveBeenCalled()
+  })
+
+  it('logs the moment the window stops answering', () => {
+    const contents = fakeEmitter()
+    const logger = { error: vi.fn(), warn: vi.fn() }
+    wireUnresponsive(contents, logger, () => 0, 10_000)
+    contents.fire('unresponsive')
+    expect(logger.warn).toHaveBeenCalledWith('window unresponsive')
+  })
+})
+
+describe('wireQuitTrail', () => {
+  it('logs the start and every step of a quit, so a log that ends without them means the app died instead', () => {
+    const appEvents = fakeEmitter()
+    const logger = { info: vi.fn() }
+    const started = { version: '1.34.4', platform: 'darwin', arch: 'x64', os: '26.2' }
+    wireQuitTrail(appEvents, logger, started)
+    appEvents.fire('before-quit')
+    appEvents.fire('will-quit')
+    appEvents.fire('quit', {}, 0)
+    expect(logger.info.mock.calls).toEqual([
+      ['app started', started],
+      ['app quit requested'],
+      ['app will quit'],
+      ['app quit', { exitCode: 0 }],
+    ])
   })
 })

@@ -432,6 +432,7 @@ export function stubApi({ cues, ...over }: ApiOverrides = {}): Api {
     copyText: async () => {},
     logError: noop,
     logInfo: noop,
+    reportSnapshot: noop,
     revealLog: async () => {},
     revealBackups: async () => '',
     copiesStatus: async () => [],
