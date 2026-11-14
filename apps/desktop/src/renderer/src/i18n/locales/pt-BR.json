@@ -1625,7 +1625,8 @@
       "de": "Deutsch",
       "fr": "Français",
       "pt-BR": "Português",
-      "ca": "Català"
+      "ca": "Català",
+      "it": "Italiano"
     },
     "configDir": "Pasta de configurações",
     "configDirDefault": "Pasta padrão do app",

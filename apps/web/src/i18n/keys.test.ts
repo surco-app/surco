@@ -6,6 +6,7 @@ import de from './locales/de.json'
 import en from './locales/en.json'
 import es from './locales/es.json'
 import fr from './locales/fr.json'
+import itIT from './locales/it.json'
 import ja from './locales/ja.json'
 import ptBR from './locales/pt-BR.json'
 
@@ -16,6 +17,7 @@ const TRANSLATIONS = [
   ['pt-BR', ptBR],
   ['ja', ja],
   ['ca', ca],
+  ['it', itIT],
 ] as const
 
 // Every visible string is keyed; a missing key silently falls back to the other
@@ -47,6 +49,7 @@ describe('locale parity', () => {
     ['pt-BR', ptBR, 'pt_BR'],
     ['ja', ja, 'ja_JP'],
     ['ca', ca, 'ca_ES'],
+    ['it', itIT, 'it_IT'],
   ] as const)('declares %s as the document and structured-data language', (lang, locale, og) => {
     expect(locale.meta.htmlLang).toBe(lang)
     expect(locale.meta.ogLocale).toBe(og)

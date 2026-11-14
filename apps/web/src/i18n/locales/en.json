@@ -606,7 +606,7 @@
       },
       {
         "q": "Which languages is it in?",
-        "a": "Spanish, English, German, French, Portuguese (Brazil), Japanese and Catalan. It follows your system language by default, and you can pin one in Settings."
+        "a": "Spanish, English, German, French, Portuguese (Brazil), Japanese, Catalan and Italian. It follows your system language by default, and you can pin one in Settings."
       },
       {
         "q": "Which systems does it run on?",
@@ -667,7 +667,7 @@
         "title": "Install and open Surco",
         "s": "Download it, open it, and in a minute the wizard sets it up your way.",
         "body": [
-          "It runs on macOS, Windows and Linux, in seven languages. No account needed, and Surco updates itself."
+          "It runs on macOS, Windows and Linux, in eight languages. No account needed, and Surco updates itself."
         ],
         "steps": [
           {

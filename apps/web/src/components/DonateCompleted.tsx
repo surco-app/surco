@@ -42,6 +42,11 @@ const COPY = {
     body: "El teu donatiu és el que manté Surco viu, amb hores de desenvolupament, funcions noves i zero subscripcions. Que t'estalviï moltes hores de cabina.",
     home: "Tornar a l'inici",
   },
+  it: {
+    title: 'Grazie di cuore!',
+    body: 'La tua donazione è ciò che tiene in vita Surco, con ore di sviluppo, nuove funzioni e zero abbonamenti. Che ti faccia risparmiare tante ore in consolle.',
+    home: 'Torna alla home',
+  },
 }
 
 // Detected after hydration: Node ≥21 defines a global navigator, so a render-time

@@ -79,6 +79,7 @@ it('offers the language as one menu with each language in its own words, so the 
     'Português',
     '日本語',
     'Català',
+    'Italiano',
   ])
 })
 

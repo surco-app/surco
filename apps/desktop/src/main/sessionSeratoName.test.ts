@@ -10,7 +10,7 @@ describe('session names against the Serato crate rules', () => {
   })
 
   it('accepts the dated name in every locale the app ships', () => {
-    for (const locale of ['es', 'en', 'de', 'fr', 'ja', 'pt-BR', 'ca']) {
+    for (const locale of ['es', 'en', 'de', 'fr', 'ja', 'pt-BR', 'ca', 'it']) {
       expect(validCrateName(`Sesión del ${sessionDateLabel(day, locale)}`)).toBe(true)
     }
   })

@@ -6,6 +6,7 @@ import appDe from '../../../desktop/src/renderer/src/i18n/locales/de.json'
 import appEn from '../../../desktop/src/renderer/src/i18n/locales/en.json'
 import appEs from '../../../desktop/src/renderer/src/i18n/locales/es.json'
 import appFr from '../../../desktop/src/renderer/src/i18n/locales/fr.json'
+import appIt from '../../../desktop/src/renderer/src/i18n/locales/it.json'
 import appJa from '../../../desktop/src/renderer/src/i18n/locales/ja.json'
 import appPtBR from '../../../desktop/src/renderer/src/i18n/locales/pt-BR.json'
 import { spellingGroups } from '../../../desktop/src/renderer/src/lib/musicSpelling'
@@ -14,6 +15,7 @@ import de from '../i18n/locales/de.json'
 import en from '../i18n/locales/en.json'
 import es from '../i18n/locales/es.json'
 import fr from '../i18n/locales/fr.json'
+import itIT from '../i18n/locales/it.json'
 import ja from '../i18n/locales/ja.json'
 import ptBR from '../i18n/locales/pt-BR.json'
 import {
@@ -40,6 +42,7 @@ const SITE_LANGUAGES = [
   ['pt-BR', ptBR, appPtBR],
   ['ja', ja, appJa],
   ['ca', ca, appCa],
+  ['it', itIT, appIt],
 ] as const
 
 type Setting = { tab: string; section?: string; setting: string; value?: string }
@@ -254,6 +257,7 @@ describe('use case pages', () => {
       'pt-BR': '/pt/use-cases/music-on-a-nas',
       ja: '/ja/use-cases/music-on-a-nas',
       ca: '/ca/use-cases/music-on-a-nas',
+      it: '/it/use-cases/music-on-a-nas',
     })
   })
 

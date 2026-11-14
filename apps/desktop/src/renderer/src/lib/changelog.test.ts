@@ -4,6 +4,7 @@ import changelogDe from '../../../../../web/src/i18n/changelog/de.json'
 import changelogEn from '../../../../../web/src/i18n/changelog/en.json'
 import changelogEs from '../../../../../web/src/i18n/changelog/es.json'
 import changelogFr from '../../../../../web/src/i18n/changelog/fr.json'
+import changelogIt from '../../../../../web/src/i18n/changelog/it.json'
 import changelogJa from '../../../../../web/src/i18n/changelog/ja.json'
 import changelogPtBR from '../../../../../web/src/i18n/changelog/pt-BR.json'
 
@@ -17,6 +18,7 @@ describe('desktop changelog locale', () => {
     expect(await changelogReleases('pt-BR')).toBe(changelogPtBR)
     expect(await changelogReleases('ja')).toBe(changelogJa)
     expect(await changelogReleases('ca')).toBe(changelogCa)
+    expect(await changelogReleases('it')).toBe(changelogIt)
   })
 
   it('falls back to the English history for a language without a changelog', async () => {
@@ -41,6 +43,7 @@ describe('desktop changelog locale', () => {
     vi.doMock('../../../../../web/src/i18n/changelog/pt-BR.json', track('pt-BR'))
     vi.doMock('../../../../../web/src/i18n/changelog/ja.json', track('ja'))
     vi.doMock('../../../../../web/src/i18n/changelog/ca.json', track('ca'))
+    vi.doMock('../../../../../web/src/i18n/changelog/it.json', track('it'))
 
     const { changelogReleases } = await import('./changelog')
     expect(loaded).toEqual([])
@@ -55,6 +58,7 @@ describe('desktop changelog locale', () => {
     vi.doUnmock('../../../../../web/src/i18n/changelog/pt-BR.json')
     vi.doUnmock('../../../../../web/src/i18n/changelog/ja.json')
     vi.doUnmock('../../../../../web/src/i18n/changelog/ca.json')
+    vi.doUnmock('../../../../../web/src/i18n/changelog/it.json')
     vi.resetModules()
   })
 })

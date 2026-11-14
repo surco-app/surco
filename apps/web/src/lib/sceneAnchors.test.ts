@@ -4,12 +4,13 @@ import de from '../i18n/locales/de.json'
 import en from '../i18n/locales/en.json'
 import es from '../i18n/locales/es.json'
 import fr from '../i18n/locales/fr.json'
+import itIT from '../i18n/locales/it.json'
 import ja from '../i18n/locales/ja.json'
 import ptBR from '../i18n/locales/pt-BR.json'
 import { HERO_ANCHORS, SCENE_ANCHORS, SECTION_VIEWS } from './sceneAnchors'
 
 const OTHER_HOME_IDS = ['top', 'main', 'mobile-nav']
-const LOCALES = { es, en, de, fr, 'pt-BR': ptBR, ja, ca }
+const LOCALES = { es, en, de, fr, 'pt-BR': ptBR, ja, ca, it: itIT }
 
 describe('scene anchors', () => {
   const ids = Object.values(SCENE_ANCHORS)

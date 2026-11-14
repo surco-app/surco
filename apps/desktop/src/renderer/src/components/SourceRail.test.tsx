@@ -142,7 +142,7 @@ describe('SourceRail', () => {
   // a DJ finds the same word under the mark that they know from the program itself.
   it('writes the same brand name under every source mark in every language', async () => {
     try {
-      for (const lng of ['en', 'es', 'de', 'fr', 'pt-BR', 'ja', 'ca']) {
+      for (const lng of ['en', 'es', 'de', 'fr', 'pt-BR', 'ja', 'ca', 'it']) {
         await i18n.changeLanguage(lng)
         render(
           <SourceRail

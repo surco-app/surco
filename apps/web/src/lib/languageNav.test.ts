@@ -37,12 +37,13 @@ describe('language navigation', () => {
     expect(header('ja', 'guide')).toContain('href="/ja#instalar"')
   })
 
-  it('links every page to the same page in German, French, Portuguese and Catalan', () => {
+  it('links every page to the same page in German, French, Portuguese, Catalan and Italian', () => {
     const html = header('es', 'guide')
     expect(html).toContain('href="/de/guide"')
     expect(html).toContain('href="/fr/guide"')
     expect(html).toContain('href="/pt/guide"')
     expect(html).toContain('href="/ca/guide"')
+    expect(html).toContain('href="/it/guide"')
     expect(header('de', 'guide')).toContain('href="/de#instalar"')
     expect(header('pt-BR', 'useCases', 'nas')).toContain('href="/fr/use-cases/music-on-a-nas"')
     expect(header('ca', 'useCases', 'nas')).toContain('href="/casos-de-uso/musica-en-un-nas"')
@@ -58,7 +59,7 @@ describe('language navigation', () => {
   // One menu holds every language, so each must be readable by someone who doesn't
   // read the page's: the names stay in their own script whatever page lists them.
   it('names every language in its own words on every page', () => {
-    for (const lang of ['es', 'en', 'de', 'fr', 'pt-BR', 'ja', 'ca'] as const) {
+    for (const lang of ['es', 'en', 'de', 'fr', 'pt-BR', 'ja', 'ca', 'it'] as const) {
       const html = header(lang)
       for (const name of [
         'Español',
@@ -68,6 +69,7 @@ describe('language navigation', () => {
         'Português',
         '日本語',
         'Català',
+        'Italiano',
       ])
         expect(html).toContain(`>${name}<`)
     }

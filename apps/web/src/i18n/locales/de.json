@@ -606,7 +606,7 @@
       },
       {
         "q": "In welchen Sprachen gibt es Surco?",
-        "a": "Spanisch, Englisch, Deutsch, Französisch, Portugiesisch (Brasilien), Japanisch und Katalanisch. Standardmäßig folgt es der Sprache deines Systems, und in den Einstellungen kannst du eine festlegen."
+        "a": "Spanisch, Englisch, Deutsch, Französisch, Portugiesisch (Brasilien), Japanisch, Katalanisch und Italienisch. Standardmäßig folgt es der Sprache deines Systems, und in den Einstellungen kannst du eine festlegen."
       },
       {
         "q": "Auf welchen Systemen läuft es?",
@@ -667,7 +667,7 @@
         "title": "Surco installieren und öffnen",
         "s": "Herunterladen, öffnen, und in einer Minute richtet der Assistent alles nach deinem Geschmack ein.",
         "body": [
-          "Surco gibt es für macOS, Windows und Linux, in sieben Sprachen. Du brauchst kein Konto, und Surco aktualisiert sich selbst."
+          "Surco gibt es für macOS, Windows und Linux, in acht Sprachen. Du brauchst kein Konto, und Surco aktualisiert sich selbst."
         ],
         "steps": [
           {

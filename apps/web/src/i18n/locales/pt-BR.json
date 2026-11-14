@@ -606,7 +606,7 @@
       },
       {
         "q": "Em quais idiomas ele está?",
-        "a": "Espanhol, inglês, alemão, francês, português (Brasil), japonês e catalão. Por padrão ele segue o idioma do seu sistema, e você pode fixar um em Ajustes."
+        "a": "Espanhol, inglês, alemão, francês, português (Brasil), japonês, catalão e italiano. Por padrão ele segue o idioma do seu sistema, e você pode fixar um em Ajustes."
       },
       {
         "q": "Em quais sistemas ele roda?",
@@ -667,7 +667,7 @@
         "title": "Instale e abra o Surco",
         "s": "Baixe, abra e em um minuto o assistente deixa tudo do seu jeito.",
         "body": [
-          "Tem versão para macOS, Windows e Linux, em sete idiomas. Não precisa de conta, e o Surco se atualiza sozinho."
+          "Tem versão para macOS, Windows e Linux, em oito idiomas. Não precisa de conta, e o Surco se atualiza sozinho."
         ],
         "steps": [
           {

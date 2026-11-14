@@ -21,6 +21,8 @@ describe('pickMenuLang', () => {
     expect(pickMenuLang('ja-JP')).toBe('ja')
     expect(pickMenuLang('ca-ES')).toBe('ca')
     expect(pickMenuLang('ca-ES-valencia')).toBe('ca')
+    expect(pickMenuLang('it-IT')).toBe('it')
+    expect(pickMenuLang('it-CH')).toBe('it')
   })
 
   it('falls back to English for anything not shipped', () => {
@@ -73,6 +75,7 @@ describe('createMenuT', () => {
     expect(createMenuT('fr-FR')('settings')).toBe('Réglages…')
     expect(createMenuT('pt-BR')('file')).toBe('Arquivo')
     expect(createMenuT('ca')('file')).toBe('Fitxer')
+    expect(createMenuT('it-IT')('file')).toBe('Archivio')
     expect(createMenuT('ja-JP')('settings')).toBe(createMenuT('ja')('settings'))
   })
 
@@ -88,7 +91,7 @@ describe('createMenuT', () => {
   })
 
   it('asks to close each program for a restore and to keep it closed until Surco finishes', () => {
-    for (const lang of ['es', 'en', 'de', 'fr', 'pt-BR', 'ja', 'ca']) {
+    for (const lang of ['es', 'en', 'de', 'fr', 'pt-BR', 'ja', 'ca', 'it']) {
       const t = createMenuT(lang)
       expect(t('rekordboxQuitDetailRestore')).toBeTruthy()
       expect(t('traktorQuitDetailRestore')).toBeTruthy()
@@ -126,7 +129,7 @@ describe('the track-list search label', () => {
   // the cursor in the track-list filter. Calling it a Discogs or metadata search sent DJs
   // looking for results that never came.
   it('names the track list in the menu and the palette alike', async () => {
-    for (const lang of ['es', 'en', 'de', 'fr', 'pt-BR', 'ja', 'ca']) {
+    for (const lang of ['es', 'en', 'de', 'fr', 'pt-BR', 'ja', 'ca', 'it']) {
       const palette = (await import(`../renderer/src/i18n/locales/${lang}.json`)).default
       expect(palette.commands.search).not.toMatch(/Discogs/)
       expect(createMenuT(lang)('search')).toBe(palette.commands.search)
