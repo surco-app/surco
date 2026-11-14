@@ -195,7 +195,7 @@ export function ShortcutsTab({ synced, patch, bindings, conflictIds }: Props): R
         return (
           <div key={scope} data-testid={`shortcut-group-${scope}`} className="mt-4">
             <div className="mb-1 flex items-baseline gap-2">
-              <h3 className="text-xs font-medium text-fg">{tr(scopeKey(scope))}</h3>
+              <h3 className="text-section font-semibold text-fg-muted">{tr(scopeKey(scope))}</h3>
               {hint && <span className="text-xs text-fg-dim">{hint}</span>}
             </div>
             {SHORTCUT_DEFAULTS.filter(

@@ -21,6 +21,7 @@ import { registerCuesIpc } from './cuesIpc'
 import { queueWithApplyInFlight } from './editRaceFixture'
 import { rekordboxCueSource } from './rekordboxCueSource'
 import { openRekordboxDb, rekordboxRawKey } from './rekordboxDb'
+import { readMatchingPairs } from './rekordboxMatching'
 import { ORGANISE_FIXTURE, writeRekordboxPlaylistFixture } from './rekordboxPlaylistsFixture'
 import {
   collectionAvailable,
@@ -118,6 +119,36 @@ function register(collection: () => string, host: PlaylistEditHost): void {
 }
 
 const save = (edit: RekordboxPlaylistEdit, label?: string) => section.save(edit, label)
+
+describe('rekordboxEdit Matching', () => {
+  it('pairs two tracks in the collection when rekordbox is closed', async () => {
+    const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')
+    writeRekordboxPlaylistFixture(path, ORGANISE_FIXTURE)
+    register(() => path, { isRunning: async () => false, queue: queueFor(path) })
+    expect(await section.match?.('add', ['101', '102'], 'Night Train · Play This Song')).toEqual({
+      applied: true,
+    })
+    const db = openRekordboxDb(path, { readonly: true })
+    expect(db && readMatchingPairs(db)).toEqual([['101', '102']])
+  })
+
+  it('leaves the pair waiting for rekordbox to close, like any other write', async () => {
+    const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')
+    writeRekordboxPlaylistFixture(path, {
+      ...ORGANISE_FIXTURE,
+      matches: [{ ContentID1: '101', ContentID2: '102' }],
+    })
+    const queue = queueFor(path)
+    const onWaiting = vi.fn()
+    register(() => path, { isRunning: async () => true, queue, onWaiting })
+    const result = await section.match?.('remove', ['101', '102'], 'x')
+    expect(result).toEqual({ applied: false, queued: true, opId: expect.any(String) })
+    expect(onWaiting).toHaveBeenCalled()
+    expect(queue.queuedOps()).toMatchObject([
+      { kind: 'match', action: 'remove', pair: ['101', '102'] },
+    ])
+  })
+})
 
 describe('rekordboxEdit', () => {
   it('grants the files and covers of the playlist it read, so the rows can play and paint before any disk walk', async () => {

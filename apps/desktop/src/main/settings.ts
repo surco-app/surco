@@ -25,12 +25,12 @@ import {
 } from '../shared/defaults'
 import { DEFAULT_EDITOR_SECTIONS } from '../shared/editorSections'
 import { normalizeHiddenSources } from '../shared/hiddenSources'
+import { FORMAT_SETTINGS } from '../shared/outputFormats'
 import {
   DEFAULT_SESSION_WIZARD,
-  normalizeSessionWizard,
   normalizeSessionsMade,
+  normalizeSessionWizard,
 } from '../shared/sessionSettings'
-import { FORMAT_SETTINGS } from '../shared/outputFormats'
 import { TRASH_MAX_BYTES, TRASH_RETENTION_DAYS } from '../shared/trash'
 import type { FormatSetting, LanguagePref, NormalizeConfig, Settings } from '../shared/types'
 import { migratedSyncToggles } from './syncToggleMigration'
@@ -207,6 +207,7 @@ export const defaults: Settings = {
   donateNudgeLastShown: '',
   lastSeenChangelogVersion: '',
   betaUpdates: false,
+  autoUpdates: true,
 }
 
 // Settings that never leave this machine, even when the user points the settings
@@ -239,6 +240,7 @@ export const LOCAL_KEYS = [
   // Which channel this machine takes, for the same reason: one machine can be trying a
   // beta while another stays on stable.
   'betaUpdates',
+  'autoUpdates',
   // A pixel position or a column proportion only means something on the screen it was saved on.
   'activityPanel',
   'resultsWidth',
@@ -269,6 +271,8 @@ const LANGUAGE_PREFS = [
   'fr',
   'pt-BR',
   'ja',
+  'ca',
+  'it',
 ] as const satisfies readonly LanguagePref[]
 
 function normalizeLanguagePref(value: unknown): LanguagePref {

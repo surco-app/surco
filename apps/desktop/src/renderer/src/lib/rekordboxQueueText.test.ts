@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import type { RekordboxQueueNotice } from '../../../shared/types'
 import i18n from '../i18n'
+import ca from '../i18n/locales/ca.json'
 import de from '../i18n/locales/de.json'
 import en from '../i18n/locales/en.json'
 import es from '../i18n/locales/es.json'
 import fr from '../i18n/locales/fr.json'
+import itIT from '../i18n/locales/it.json'
 import ja from '../i18n/locales/ja.json'
 import ptBR from '../i18n/locales/pt-BR.json'
 import {
@@ -56,6 +58,8 @@ describe('rekordbox queue text', () => {
     ['de', de.rekordboxQueue.halted],
     ['fr', fr.rekordboxQueue.halted],
     ['pt-BR', ptBR.rekordboxQueue.halted],
+    ['ca', ca.rekordboxQueue.halted],
+    ['it', itIT.rekordboxQueue.halted],
   ])(
     'warns in %s that Apply now on a held queue replaces the backup copy the user may need',
     (_lng, text) => {
@@ -102,6 +106,10 @@ describe('rekordbox queue text', () => {
     )
     expect(partText(tr, { kind: 'collection' })).toBe('added to the collection')
     expect(partText(tr, { kind: 'tree', edit: 'rename' })).toBe('rename')
+  })
+
+  it('names a waiting Matching pair in the queue pill', () => {
+    expect(partText(tr, { kind: 'matching' })).toBe('Matching')
   })
 
   it('names a node move in the queue pill', () => {
@@ -315,7 +323,7 @@ describe('Serato queue text', () => {
     expect(es.seratoQueue.writeUnknown).toBe(
       'No se pudieron guardar los cambios ni deshacerlos, así que la biblioteca puede haber cambiado. Antes de abrir Serato, recupera los crates de la copia más reciente en la carpeta serato-backups de los datos de Surco',
     )
-    for (const locale of [en, es, de, fr, ja, ptBR]) {
+    for (const locale of [en, es, de, fr, ja, ptBR, ca, itIT]) {
       expect(locale.seratoQueue.writeUnknown).toContain('serato-backups')
       expect(locale.seratoQueue.writeUnknown).not.toMatch(/—|: /)
     }
@@ -360,7 +368,16 @@ describe('Serato queue text', () => {
       { code: 'tags-not-in-library', track: 'Tengo' },
       { code: 'tags-changed', track: 'Tengo' },
     ]
-    for (const [lng, bundle] of Object.entries({ en, es, de, fr, 'pt-BR': ptBR, ja })) {
+    for (const [lng, bundle] of Object.entries({
+      en,
+      es,
+      de,
+      fr,
+      'pt-BR': ptBR,
+      ja,
+      ca,
+      it: itIT,
+    })) {
       if (!i18n.hasResourceBundle(lng, 'translation'))
         i18n.addResourceBundle(lng, 'translation', bundle)
       const t = i18n.getFixedT(lng)
@@ -526,7 +543,7 @@ describe('VirtualDJ queue text', () => {
   })
 
   it('words the VirtualDJ backups warning in every language', () => {
-    for (const locale of [en, es, de, fr, ja, ptBR]) {
+    for (const locale of [en, es, de, fr, ja, ptBR, ca, itIT]) {
       expect(locale.virtualdjQueue.writeUnknown).toContain('virtualdj-backups')
       expect(locale.virtualdjQueue.writeUnknown).toContain('database.xml')
       expect(locale.virtualdjQueue.writeUnknown).not.toMatch(/—|: /)

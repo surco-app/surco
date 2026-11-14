@@ -255,6 +255,7 @@ export interface CommandDeps {
   focusMatches: () => void
   focusEditor: () => void
   focusColumn: (delta: 1 | -1) => void
+  focusRegion: (delta: 1 | -1) => void
   togglePlay: () => void
   // Whether the player card is open — gates the ←/→ seek so the arrows only act on a
   // running player, never while it's closed.
@@ -423,6 +424,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     focusMatches,
     focusEditor,
     focusColumn,
+    focusRegion,
     togglePlay,
     playerVisible,
     seek,
@@ -846,6 +848,22 @@ export function buildCommands(deps: CommandDeps): Command[] {
       enabled: true,
       run: () => focusColumn(1),
     },
+    {
+      id: 'focus-region-prev',
+      group: 'navigate',
+      title: tr('commands.focusRegionPrev'),
+      hint: hintFor('focus-region-prev'),
+      enabled: true,
+      run: () => focusRegion(-1),
+    },
+    {
+      id: 'focus-region-next',
+      group: 'navigate',
+      title: tr('commands.focusRegionNext'),
+      hint: hintFor('focus-region-next'),
+      enabled: true,
+      run: () => focusRegion(1),
+    },
     ...(sources.length > 0
       ? [
           { id: 'tracks', name: tr('sources.workingList'), source: null },
@@ -864,7 +882,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
       group: 'convert',
       title: tr('commands.processCurrent'),
       hint: hintFor('process-current'),
-      // Over several picked tracks ⌘⏎ converts the selection, the same batch the header
+      // Over several picked tracks ⌘⏎ converts the selection, the same batch the footer
       // button names, rather than the one open track (the user's call, 06/11).
       enabled: selectedTracksCount > 1 ? canProcessAll : canProcessSelected,
       run: () => {
@@ -919,9 +937,6 @@ export function buildCommands(deps: CommandDeps): Command[] {
       title: tr('commands.processAll'),
       hint: hintFor('process-all'),
       enabled: batching ? true : canProcessAll,
-      // Convert the bulk scope: the multi-selection when one exists, else the visible
-      // rows — with a format filter on, never the hidden FLAC/WAV rows. In a library
-      // only the picked rows, the same scope the header button counts.
       run: () => {
         if (batching) cancelBatch()
         else

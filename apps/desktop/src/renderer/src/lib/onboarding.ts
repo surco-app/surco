@@ -30,7 +30,14 @@ const INTENT_SECTIONS: Record<AudioIntent, EditorSectionId[]> = {
 
 // The sections that are part of the product's core and never hidden by the wizard,
 // whatever audio intents are (or aren't) picked.
-const ALWAYS_SHOWN: EditorSectionId[] = ['form', 'properties', 'quality', 'cues', 'output']
+const ALWAYS_SHOWN: EditorSectionId[] = [
+  'form',
+  'properties',
+  'quality',
+  'cues',
+  'matching',
+  'output',
+]
 
 // Turns the DJ's audio intents into an editor-section layout: sections an intent asks for
 // stay visible, the always-shown core stays visible, everything else is hidden. Order and

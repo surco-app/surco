@@ -968,6 +968,32 @@ describe('cues in the queue', () => {
     ])
   })
 
+  it('shows a waiting Matching pair as a change of its own, not as a track', () => {
+    const queue = createRekordboxQueue(deps())
+    queue.enqueue([
+      {
+        id: 'm',
+        kind: 'match',
+        action: 'add',
+        pair: ['1', '2'],
+        label: 'Let Yourself Go · Take Me Home',
+      },
+    ])
+    expect(queue.state()).toEqual({
+      tracks: 0,
+      changes: 1,
+      items: [
+        { key: 'match:m', label: 'Let Yourself Go · Take Me Home', parts: [{ kind: 'matching' }] },
+      ],
+    })
+  })
+
+  it('counts an applied Matching pair as a change, so the notice says something landed', async () => {
+    const q = createRekordboxQueue(deps())
+    q.enqueue([{ id: 'm', kind: 'match', action: 'remove', pair: ['1', '2'], label: 'x' }])
+    expect(await q.apply(closed)).toMatchObject({ status: 'applied', tracks: 0, changes: 1 })
+  })
+
   it('moves no stamp for queued tags after a batch wrote, since tags carry none', async () => {
     const store = memoryStore()
     const nodeStamps = vi

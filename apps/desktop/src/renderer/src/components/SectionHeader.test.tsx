@@ -104,6 +104,11 @@ describe('SectionHeader folded row', () => {
     expect(row).toContainElement(screen.getByTestId('section-maximize'))
   })
 
+  it('says whether a section is maximized by its name alone, not also as a pressed state', () => {
+    header({ maximizable: true, sectionId: 'cues' })
+    expect(screen.getByTestId('section-maximize')).not.toHaveAttribute('aria-pressed')
+  })
+
   it('keeps the extras once open', () => {
     header({ open: true })
     expect(screen.getByTestId('pill')).toBeInTheDocument()

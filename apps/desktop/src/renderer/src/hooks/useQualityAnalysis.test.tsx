@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { QueryClientProvider } from '@tanstack/react-query'
+import { QueryClientProvider, useQuery } from '@tanstack/react-query'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -8,6 +8,8 @@ import { removeAnalysisQueries } from '../lib/analysisQueries'
 import { createQueryClient } from '../lib/queryClient'
 import type { TrackItem } from '../types'
 import { useQualityAnalysis } from './useQualityAnalysis'
+import { spectrumVerdictKey } from './useSpectrogram'
+import { scanVerdictKey, waveformOptions, waveVerdictKey } from './useWaveform'
 
 const spectrum = { cutoffKHz: 20 } as unknown as SpectrumResult
 
@@ -75,6 +77,63 @@ describe('useQualityAnalysis', () => {
   // Opening a playlist hands the sweep every track in it. One whose verdict the list already
   // holds still needs its wave and scan for the silence and clipping filters, but redoing its
   // spectrum cost 2.4 s a track and re-measured an 8000-track library the night had covered.
+  it('lets go of each swept wave, scan and spectrum once its verdict is filed, so a big library never holds them all at once', async () => {
+    setApi({
+      waveform: vi.fn().mockResolvedValue({ peaks: [0.5, 0.9], rms: [0.2, 0.4], durationSec: 2 }),
+      waveformScan: vi.fn().mockResolvedValue({ clipped: [false, true] }),
+    })
+    const client = createQueryClient()
+    const targetsRef = { current: [track('a'), track('b')] }
+    const { result } = renderHook(() => useQualityAnalysis({ targetsRef }), {
+      wrapper: ({ children }) => (
+        <QueryClientProvider client={client}>{children}</QueryClientProvider>
+      ),
+    })
+
+    act(() => result.current.analyzeAllQuality())
+    await waitFor(() => expect(result.current.analysis).toBeNull())
+
+    for (const path of ['/music/a.wav', '/music/b.wav']) {
+      await waitFor(() => {
+        expect(client.getQueryData(['waveform', path])).toBeUndefined()
+        expect(client.getQueryData(['waveformScan', path])).toBeUndefined()
+        expect(client.getQueryData(['spectrogram', path])).toBeUndefined()
+      })
+      expect(client.getQueryData(waveVerdictKey(path))).toEqual({ silence: expect.any(Boolean) })
+      expect(client.getQueryData(scanVerdictKey(path))).toEqual({ clipping: true })
+      expect(client.getQueryData(spectrumVerdictKey(path))).toEqual(spectrum)
+    }
+  })
+
+  it('keeps the wave of the track the editor is showing while the sweep passes over it', async () => {
+    setApi({
+      waveform: vi.fn().mockResolvedValue({ peaks: [0.5, 0.9], rms: [0.2, 0.4], durationSec: 2 }),
+    })
+    const client = createQueryClient()
+    const targetsRef = { current: [track('a')] }
+    const { result } = renderHook(
+      () => ({
+        sweep: useQualityAnalysis({ targetsRef }),
+        shown: useQuery(waveformOptions('/music/a.wav')),
+      }),
+      {
+        wrapper: ({ children }) => (
+          <QueryClientProvider client={client}>{children}</QueryClientProvider>
+        ),
+      },
+    )
+
+    act(() => result.current.sweep.analyzeAllQuality())
+    await waitFor(() => expect(result.current.sweep.analysis).toBeNull())
+    await new Promise((r) => setTimeout(r, 20))
+
+    expect(client.getQueryData(['waveform', '/music/a.wav'])).toEqual({
+      peaks: [0.5, 0.9],
+      rms: [0.2, 0.4],
+      durationSec: 2,
+    })
+  })
+
   it('leaves the spectrum of a handed-in track that already has its verdict', async () => {
     const spectrogram = vi.fn().mockResolvedValue(spectrum)
     const waveform = vi.fn().mockResolvedValue(null)

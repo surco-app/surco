@@ -1744,6 +1744,53 @@ describe('useTrackLibrary streamed import batches', () => {
   })
 })
 
+describe('useTrackLibrary streamed batches over a loaded crate', () => {
+  it('adds three walk batches without rebuilding the crate index for each one', async () => {
+    const N = 60
+    const { result, fireBatch } = setup()
+    await act(async () => {
+      await result.current.addPaths(Array.from({ length: N }, (_, i) => `/m/${i}.wav`))
+    })
+    window.api.readMetaCached = vi.fn<Api['readMetaCached']>(() => new Promise(() => {}))
+    const realMap = Array.prototype.map
+    const realFilter = Array.prototype.filter
+    let bigVisits = 0
+    const counting = (real: typeof realMap) =>
+      function (this: unknown[], callback: (...args: unknown[]) => unknown, thisArg?: unknown) {
+        if (this.length < N) return real.call(this, callback, thisArg)
+        return real.call(
+          this,
+          (...args: unknown[]) => {
+            bigVisits++
+            return callback.apply(thisArg, args)
+          },
+          thisArg,
+        )
+      }
+    Array.prototype.map = counting(realMap) as typeof realMap
+    Array.prototype.filter = counting(realFilter as unknown as typeof realMap) as typeof realFilter
+    try {
+      await act(async () => {
+        fireBatch(['/n/0.wav', '/n/1.wav', '/m/3.wav'])
+        fireBatch(['/n/1.wav', '/n/2.wav'])
+        fireBatch(['/n/3.wav', '/m/5.wav'])
+      })
+    } finally {
+      Array.prototype.map = realMap
+      Array.prototype.filter = realFilter
+    }
+
+    expect(result.current.tracks.slice(N).map((t) => t.inputPath)).toEqual([
+      '/n/0.wav',
+      '/n/1.wav',
+      '/n/2.wav',
+      '/n/3.wav',
+    ])
+    expect(result.current.tracks).toHaveLength(N + 4)
+    expect(bigVisits).toBeLessThan(N * 4)
+  })
+})
+
 function setupWith(readMeta: ReturnType<typeof vi.fn>): {
   result: { current: ReturnType<typeof useTrackLibrary> }
 } {

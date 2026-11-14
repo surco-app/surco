@@ -100,6 +100,16 @@ describe('the shipped index', () => {
     ])
   })
 
+  it('still finds the editor options by the name the sidebar shows, now that the sub-tab is called Options', () => {
+    expect(ids('editor')).toContain('tabs.editor')
+  })
+
+  it('sends the title format and the release date to Editor, where they now live', () => {
+    const tabOf = (id: string) => SETTINGS_SEARCH_INDEX.find((e) => e.id === id)?.tab
+    expect(tabOf('titleFormat')).toBe('editor')
+    expect(tabOf('fullReleaseDate')).toBe('editor')
+  })
+
   it('finds a tab with no labelled settings by its name', () => {
     expect(ids('shortcuts')).toContain('tabs.shortcuts')
   })

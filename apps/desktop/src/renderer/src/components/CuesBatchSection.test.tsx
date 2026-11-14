@@ -320,9 +320,7 @@ describe('Cues over several selected tracks', () => {
     })
     fireEvent.click(screen.getByTestId('cues-batch-accept'))
     await screen.findByTestId('cues-batch-twins')
-    await waitFor(() =>
-      expect(screen.getByTestId('cues-batch-twin-engine')).toHaveTextContent('1'),
-    )
+    await waitFor(() => expect(screen.getByTestId('cues-batch-twin-engine')).toHaveTextContent('1'))
     fireEvent.click(screen.getByTestId('cues-batch-save'))
     await waitFor(() => expect(calls).toEqual(['askToApply', 'save']))
     expect(askToApply).toHaveBeenCalledOnce()

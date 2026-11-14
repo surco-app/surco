@@ -42,6 +42,8 @@ import {
   withPlaylistNode,
   xmlNodeIds,
 } from './rekordboxMasterXml'
+import { hasMatchingTable, readMatchingPairs } from './rekordboxMatching'
+import { addMatching, removeMatching } from './rekordboxMatchingWrite'
 import {
   addToPlaylist,
   createNode,
@@ -68,6 +70,7 @@ import {
   type CuesOp,
   type EditOp,
   editResultOfOutcome,
+  type MatchOp,
   type OpOutcome,
   opRank,
   type QueueOp,
@@ -347,7 +350,26 @@ function planOp(
   if (op.kind === 'cues') return planCuesOp(probe, op, shareDir)
   if (op.kind === 'tags')
     return { outcome: { id: op.id, applied: false, reason: 'write-failed', notices: [] } }
+  if (op.kind === 'match') return planMatch(probe, op)
   return planEdit(probe, xml, op, find)
+}
+
+function planMatch(probe: Db, op: MatchOp): Plan {
+  const refused = (reason: RekordboxEditRefusal): Plan => ({
+    outcome: { id: op.id, applied: false, reason, notices: [] },
+  })
+  if (!hasMatchingTable(probe)) return refused('unreadable')
+  const live = probe.prepare(
+    'SELECT 1 FROM djmdContent WHERE ID = ? AND coalesce(rb_local_deleted, 0) = 0',
+  )
+  if (op.pair.some((id) => !live.get(id))) return refused('stale')
+  const [a, b] = op.pair
+  const paired = readMatchingPairs(probe).some(
+    ([x, y]) => (x === a && y === b) || (x === b && y === a),
+  )
+  if (paired === (op.action === 'add'))
+    return { outcome: { id: op.id, applied: true, notices: [] } }
+  return { op }
 }
 
 function freeId(draft: XmlDraft): string {
@@ -469,6 +491,12 @@ function writeTrack(db: Db, draft: XmlDraft, planned: Planned, now: Date): OpOut
 
 function writeOp(db: Db, draft: XmlDraft, planned: Planned, now: Date): OpOutcome {
   if (planned.op.kind === 'track') return writeTrack(db, draft, planned, now)
+  if (planned.op.kind === 'match') {
+    const [a, b] = planned.op.pair
+    if (planned.op.action === 'add') addMatching(db, a, b, { now })
+    else removeMatching(db, a, b)
+    return { id: planned.op.id, applied: true, notices: [] }
+  }
   if (planned.op.kind === 'cues') {
     applyCueChanges(db, planned.op.contentId, planned.cues as CueChangeSet, { now })
     if (planned.grid) applyGridBpm(db, planned.op.contentId, planned.grid.bpm, { now })
@@ -478,7 +506,8 @@ function writeOp(db: Db, draft: XmlDraft, planned: Planned, now: Date): OpOutcom
 }
 
 function needsNode(planned: Planned): boolean {
-  if (planned.op.kind === 'cues' || planned.op.kind === 'tags') return false
+  if (planned.op.kind === 'cues' || planned.op.kind === 'tags' || planned.op.kind === 'match')
+    return false
   if (planned.op.kind === 'track') return (planned.track?.names.length ?? 0) > 0
   return planned.op.edit.kind === 'create'
 }

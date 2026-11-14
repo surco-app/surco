@@ -19,19 +19,45 @@ interface SweepProgress {
   total: number
 }
 
-// Collapses the app's long-running sweeps into one top-bar value. The determinate sweeps
-// (analyze quality, auto-match, batch convert) pool their done/total so the bar reflects the
-// overall work left even when several run at once; an idle sweep (total 0) contributes
-// nothing. Importing tags has no fixed total, so when nothing determinate is running it
-// yields an indeterminate bar (fraction null) that animates instead of filling. Returns null
-// when the app is idle, so the bar can render nothing.
+// Collapses the app's long-running sweeps into one top-bar value: the first running sweep
+// drives it; an idle sweep (total 0) contributes nothing. Importing tags has no fixed total,
+// so when nothing determinate is running it yields an indeterminate bar (fraction null) that
+// animates instead of filling. Returns null when the app is idle, so the bar can render nothing.
 export function topBarProgress(
   sweeps: Array<SweepProgress | null | undefined>,
   importing: boolean,
 ): { fraction: number | null } | null {
-  const active = sweeps.filter((s): s is SweepProgress => !!s && s.total > 0)
-  const total = active.reduce((sum, s) => sum + s.total, 0)
-  if (total > 0) return { fraction: active.reduce((sum, s) => sum + s.done, 0) / total }
+  const lead = sweeps.find((s): s is SweepProgress => !!s && s.total > 0)
+  if (lead) return { fraction: lead.done / lead.total }
   if (importing) return { fraction: null }
   return null
+}
+
+export type SweepTask =
+  | { kind: 'import'; done: number; total: number }
+  | { kind: 'analyze'; done: number; total: number; stage?: 'quality' | 'details' }
+  | { kind: 'match'; done: number; total: number; waiting: number }
+
+export function sweepTasks({
+  importing,
+  analysis,
+  matching,
+}: {
+  importing: SweepProgress | null
+  analysis: (SweepProgress & { stage?: 'quality' | 'details' }) | null
+  matching: SweepProgress | null
+}): SweepTask[] {
+  const tasks: SweepTask[] = []
+  const unread = importing && importing.total > 0 ? importing.total - importing.done : 0
+  if (importing && importing.total > 0) tasks.push({ kind: 'import', ...importing })
+  if (analysis && analysis.total > 0) tasks.push({ kind: 'analyze', ...analysis })
+  if (matching && matching.total > 0) {
+    tasks.push({
+      kind: 'match',
+      done: matching.done,
+      total: matching.total + unread,
+      waiting: matching.total - matching.done,
+    })
+  }
+  return tasks
 }

@@ -257,6 +257,20 @@ describe('runSession', () => {
     expect(plan.items[1].why).toEqual({ kind: 'combo', sets: 2 })
   })
 
+  it('plays a rekordbox Matching pair back to back as a combo, even if no set holds it', () => {
+    const { plan } = runSession({
+      answers: { ...ANSWERS, sources: ['pool'] },
+      roles: { pool: 'any' },
+      rows: new Map([
+        ['pool', [row('/m/a.mp3', { contentId: 'a' }), row('/m/q.mp3', { contentId: 'q' })]],
+      ]) as Rows,
+      seed: 1,
+      matching: [['q', 'a']],
+    })
+    expect(plan.items.map((i) => i.track.id).sort()).toEqual(['a', 'q'])
+    expect(plan.items[1].why).toEqual({ kind: 'combo', sets: 2 })
+  })
+
   it('lists the tracks to write in session order, by content id when a row has one and path otherwise', () => {
     const { plan, refs } = run(
       { sources: ['s'], minutes: 5 },

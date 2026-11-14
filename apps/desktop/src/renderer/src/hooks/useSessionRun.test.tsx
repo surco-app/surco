@@ -89,6 +89,17 @@ describe('useSessionRun remembers the playlists it wrote', () => {
   })
 })
 
+describe('useSessionRun and rekordbox Matching', () => {
+  it('reads the Matching pairs at build time and plays them as combos', async () => {
+    const { result } = setup({ matching: async () => [['/m/a.mp3', '/m/c.mp3']] })
+    await act(async () => {
+      await result.current.build('folder', { ...ANSWERS, preferCombos: true }, ROLES)
+    })
+    const kinds = result.current.recent?.plan.items.map((item) => item.why.kind) ?? []
+    expect(kinds).toContain('combo')
+  })
+})
+
 describe('useSessionRun build', () => {
   it('saves the answers, writes the session as a new playlist and opens it', async () => {
     const { deps, result } = setup()

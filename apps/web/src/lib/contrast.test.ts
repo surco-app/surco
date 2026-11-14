@@ -48,6 +48,12 @@ describe('body text contrast (WCAG 1.4.3 AA)', () => {
     })
   }
 
+  for (const name of ['faint', 'muted']) {
+    it(`${name} clears 4.5:1 on the surface cards sit on`, () => {
+      expect(contrast(token(name), token('surface'))).toBeGreaterThanOrEqual(4.5)
+    })
+  }
+
   // Selected text keeps its own colour on the blue highlight, so the copy a visitor is
   // about to paste (the brew command, a changelog line) stays readable while selected.
   it('keeps selected text at 4.5:1 on the selection highlight', () => {
@@ -84,6 +90,14 @@ describe('light theme contrast (WCAG 1.4.3 AA)', () => {
   for (const name of ['faint', 'muted', 'subtle', 'fg']) {
     it(`${name} clears 4.5:1 on the light page background`, () => {
       expect(contrast(token(name, lightCss), token('bg', lightCss))).toBeGreaterThanOrEqual(4.5)
+    })
+  }
+
+  for (const name of ['faint', 'muted']) {
+    it(`${name} clears 4.5:1 on the light surface`, () => {
+      expect(contrast(token(name, lightCss), token('surface', lightCss))).toBeGreaterThanOrEqual(
+        4.5,
+      )
     })
   }
 

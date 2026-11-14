@@ -90,7 +90,7 @@ export default function Changelog() {
 
         {beta.items.length > 0 && (
           <section className={`${ROW} py-12`}>
-            <Reveal className={SIDE}>
+            <Reveal eager className={SIDE}>
               <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2 lg:flex-col lg:items-start">
                 <span className="text-sm font-medium text-blue">{beta.kicker}</span>
                 <span className="rounded-full border border-line bg-surface2/40 px-3 py-1 font-mono text-sm text-blue tabular-nums">
@@ -98,7 +98,7 @@ export default function Changelog() {
                 </span>
               </div>
             </Reveal>
-            <Reveal>
+            <Reveal eager>
               <div className="max-w-2xl rounded-2xl border border-blue/30 bg-blue/[0.04] p-6 sm:p-8">
                 <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">{beta.title}</h2>
                 <ItemList items={beta.items} />
@@ -111,9 +111,10 @@ export default function Changelog() {
         {recent.map((r) => (
           <section
             key={r.version}
+            data-testid="changelog-latest"
             className={`${ROW} border-t border-line/60 py-12 first-of-type:border-t-0`}
           >
-            <Reveal className={SIDE}>
+            <Reveal eager className={SIDE}>
               <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2 lg:flex-col lg:items-start">
                 <span className="rounded-full border border-line bg-surface2/40 px-3 py-1 font-mono text-sm text-blue tabular-nums">
                   v{r.version}
@@ -123,7 +124,7 @@ export default function Changelog() {
                 </span>
               </div>
             </Reveal>
-            <Reveal>
+            <Reveal eager>
               <div className="max-w-2xl">
                 <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">{r.title}</h2>
                 <ItemList items={r.items} />

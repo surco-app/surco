@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../../i18n'
 
@@ -30,5 +30,28 @@ describe('ArtworkTab', () => {
 
     expect(screen.getByTestId('settings-flac-finder-covers')).toBeEnabled()
     expect(screen.getByText(i18n.t('settings.flacFinderCoversHint'))).toBeInTheDocument()
+  })
+
+  it('keeps Upscale in the same block as the size it upscales to, since its label reads "to this size"', () => {
+    render(<ArtworkTab synced={synced} patch={vi.fn()} />)
+
+    expect(screen.getByTestId('settings-cover-upscale').closest('section')).toBe(
+      screen.getByTestId('settings-cover-max').closest('section'),
+    )
+    expect(screen.getByTestId('settings-cover-square').closest('section')).toBe(
+      screen.getByTestId('settings-cover-max').closest('section'),
+    )
+  })
+
+  it('names each block, so the release and Finder options do not read as more size options', () => {
+    render(<ArtworkTab synced={synced} patch={vi.fn()} />)
+
+    const named = (testid: string) => {
+      const section = screen.getByTestId(testid).closest('section') as HTMLElement
+      return within(section).getByRole('heading').textContent
+    }
+    expect(named('settings-cover-max')).toBe(i18n.t('settings.coverSizeTitle'))
+    expect(named('settings-replace-lowres')).toBe(i18n.t('settings.coverOnApplyTitle'))
+    expect(named('settings-flac-finder-covers')).toBe(i18n.t('settings.coverFinderTitle'))
   })
 })

@@ -10,11 +10,13 @@ import {
   PROGRAM_BETA,
   PROGRAM_CAN,
 } from '../../../desktop/src/shared/djProgram'
-import { createI18n, LANGUAGES } from '../i18n'
+import { LANGUAGES, loadI18n } from '../i18n'
+import ca from '../i18n/locales/ca.json'
 import de from '../i18n/locales/de.json'
 import en from '../i18n/locales/en.json'
 import es from '../i18n/locales/es.json'
 import fr from '../i18n/locales/fr.json'
+import itIT from '../i18n/locales/it.json'
 import ja from '../i18n/locales/ja.json'
 import ptBR from '../i18n/locales/pt-BR.json'
 import { type Cell, PROGRAM_TABLE, PROGRAMS, type ProgramId, type RowId } from '../lib/programTable'
@@ -27,7 +29,13 @@ const LOCALES = [
   ['fr', fr],
   ['pt-BR', ptBR],
   ['ja', ja],
+  ['ca', ca],
+  ['it', itIT],
 ] as const
+
+const I18N = Object.fromEntries(
+  await Promise.all(LANGUAGES.map(async (lng) => [lng, await loadI18n(lng)] as const)),
+)
 
 const rows = PROGRAM_TABLE.flatMap((group) => group.rows)
 const cellOf = (row: RowId, program: ProgramId): Cell => {
@@ -72,7 +80,7 @@ describe('DJ program table on the features page', () => {
   })
 
   it.each(LANGUAGES)('draws in %s exactly what the table says for every cell', (lng) => {
-    const i18n = createI18n(lng)
+    const i18n = I18N[lng]
     const html = renderToStaticMarkup(
       createElement(I18nextProvider, { i18n }, createElement(ProgramTable)),
     )

@@ -31,6 +31,7 @@ const NAMED: Record<string, string> = {
   End: 'end',
   PageUp: 'pageup',
   PageDown: 'pagedown',
+  F6: 'f6',
   F10: 'f10',
 }
 

@@ -28,6 +28,8 @@ const OTHER: Record<string, string> = {
 
 export function formatShortcut(keys: string[], mac: boolean): string {
   const map = mac ? MAC : OTHER
-  const parts = keys.map((k) => map[k] ?? (k.length === 1 ? k.toUpperCase() : k))
+  const parts = keys.map(
+    (k) => map[k] ?? (k.length === 1 || /^f\d+$/.test(k) ? k.toUpperCase() : k),
+  )
   return parts.join(mac ? '' : '+')
 }

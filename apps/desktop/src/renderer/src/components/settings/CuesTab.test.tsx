@@ -245,6 +245,14 @@ describe('CuesTab', () => {
     })
   })
 
+  it('says a destination is missing in the same words as the sidebar list in General, so one program is not missing in two ways', async () => {
+    installApi({ dj: djReads({ serato: { available: async () => false } }) })
+    render(<Harness />)
+    expect(await screen.findByTestId('settings-cue-flow-to-serato-missing')).toHaveTextContent(
+      i18n.t('settings.sourceSeratoUnavailable'),
+    )
+  })
+
   it('lets the DJ send the flows to a found VirtualDJ and says it gets the hot cues only, saved when VirtualDJ closes', async () => {
     installApi({ dj: djReads({ virtualdj: { available: async () => true } }) })
     render(<Harness />)

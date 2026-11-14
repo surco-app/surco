@@ -27,3 +27,24 @@ export function mineCombos(
   }
   return combos
 }
+
+const MATCHING_STRENGTH = 2
+
+export function withMatching(
+  combos: Combos,
+  matching: readonly (readonly [string, string])[],
+  pool: ReadonlySet<string>,
+): Combos {
+  const merged = new Map([...combos].map(([from, targets]) => [from, new Map(targets)]))
+  const link = (from: string, to: string): void => {
+    const targets = merged.get(from) ?? new Map<string, number>()
+    targets.set(to, Math.max(targets.get(to) ?? 0, MATCHING_STRENGTH))
+    merged.set(from, targets)
+  }
+  for (const [a, b] of matching) {
+    if (a === b || !pool.has(a) || !pool.has(b)) continue
+    link(a, b)
+    link(b, a)
+  }
+  return merged
+}

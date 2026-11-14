@@ -66,7 +66,11 @@ export async function syncTagOps(ops: TagsOp[], deps: TagQueueDeps): Promise<Lib
   if (ops.length === 0) return { outcome: 'nothing' }
   deps.queue.enqueue(ops)
   const pathOf = new Map(
-    deps.queue.queuedOps().flatMap((op) => (op.kind === 'edit' ? [] : [[op.id, op.path] as const])),
+    deps.queue
+      .queuedOps()
+      .flatMap((op) =>
+        op.kind === 'edit' || op.kind === 'match' ? [] : [[op.id, op.path] as const],
+      ),
   )
   let result: QueueApply
   try {

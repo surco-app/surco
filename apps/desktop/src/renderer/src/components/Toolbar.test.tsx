@@ -4,24 +4,28 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import type React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../i18n'
+import { formatCount } from '../lib/stats'
 import { Toolbar } from './Toolbar'
 
 afterEach(cleanup)
 
-type Props = React.ComponentProps<typeof Toolbar>
-
-function leftOut(over: Partial<NonNullable<Props['leftOut']>> = {}): NonNullable<Props['leftOut']> {
-  return { missing: { count: 0, fields: [] }, serato: 0, mixed: false, ...over }
+function count(done: number, total: number): string {
+  return i18n.t('header.sweepCount', {
+    done: formatCount(done, i18n.language),
+    total: formatCount(total, i18n.language),
+  })
 }
+
+function said(labelKey: string, done: number, total: number): string {
+  return `${i18n.t(labelKey)} · ${count(done, total)}`
+}
+
+type Props = React.ComponentProps<typeof Toolbar>
 
 function renderBar(over: Partial<Props> = {}): Props {
   const props: Props = {
     hintFor: () => '',
     trackCount: 3,
-    convertibleCount: 3,
-    batchSize: 3,
-    canConvertAll: true,
-    onConvertAll: vi.fn(),
     importing: null,
     batchSummary: null,
     onShowFailed: vi.fn(),
@@ -41,7 +45,6 @@ function renderBar(over: Partial<Props> = {}): Props {
     onCancelAnalyze: vi.fn(),
     onAutoMatch: vi.fn(),
     onCancelAutoMatch: vi.fn(),
-    onCancelBatch: vi.fn(),
     onCancelImport: vi.fn(),
     onReview: vi.fn(),
     canReview: true,
@@ -70,62 +73,26 @@ describe('Toolbar', () => {
     }
   })
 
-  // The number alone left the DJ guessing which track the batch skips; the button names
-  // how many a missing required field keeps out and which fields, where the count is.
-  it('says how many tracks the count leaves out and what they lack', () => {
-    renderBar({
-      convertibleCount: 5,
-      batchSize: 6,
-      leftOut: leftOut({ missing: { count: 1, fields: ['artist'] } }),
-    })
-    expect(screen.getByTestId('convert-all')).toHaveAccessibleName(
-      'Convert 5 of 6 · 1 track left out, it has no Artist',
-    )
-  })
-
-  it('adds no note when every track goes', () => {
-    renderBar({ leftOut: leftOut() })
-    expect(screen.getByTestId('convert-all')).toHaveAccessibleName('Convert 3 tracks')
-  })
-
-  // Serato rows are kept out so Serato keeps the track, but the header said "10 of 12" and
-  // nothing else, while the footer refused the whole selection for them (06/11). The same
-  // gate feeds both now, and the header names them like it names a missing field.
-  it('names the Serato rows the count leaves out', () => {
-    renderBar({ convertibleCount: 10, batchSize: 12, leftOut: leftOut({ serato: 2 }) })
-    expect(screen.getByTestId('convert-all')).toHaveAccessibleName(
-      'Convert 10 of 12 · 2 tracks left out, Serato would lose them and their cues',
-    )
-  })
-
-  it('holds a selection that mixes replacing and adding back, and says so', () => {
-    renderBar({
-      convertibleCount: 0,
-      batchSize: 2,
-      canConvertAll: false,
-      leftOut: leftOut({ mixed: true }),
-    })
-    const button = screen.getByTestId('convert-all')
-    expect(button).toBeDisabled()
-    expect(button).toHaveAccessibleName(`Convert · ${i18n.t('editor.mixedReplaceSelection')}`)
-  })
+  it.each([
+    ['a list', {}],
+    ['one track', { trackCount: 1 }],
+    ['a running batch', { batching: true, batchProgress: { done: 3, total: 12 } }],
+  ] as [string, Partial<Props>][])(
+    'has no convert button over %s, since the editor footer is the one place to convert',
+    (_, over) => {
+      renderBar(over)
+      expect(screen.queryByTestId('convert-all')).toBeNull()
+      expect(
+        screen.getAllByRole('button').filter((b) => /3\/12/.test(b.textContent ?? '')),
+      ).toEqual([])
+    },
+  )
 
   // The pill subscribes to the export itself; the toolbar only places it, so a byte tick
   // never re-renders the toolbar.
   it('places the USB export pill it is given', () => {
     renderBar({ usbPill: <span data-testid="pill-slot">USB 7/12</span> })
     expect(screen.getByTestId('pill-slot')).toHaveTextContent('USB 7/12')
-  })
-
-  it('keeps Convert quiet when the list holds one track, since the editor footer already carries the accented convert for it', () => {
-    renderBar({ trackCount: 1, convertibleCount: 1, batchSize: 1 })
-    expect(screen.getByTestId('convert-all')).toHaveAttribute('data-variant', 'secondary')
-    expect(screen.getByTestId('convert-all')).toBeEnabled()
-  })
-
-  it('accents Convert when it converts more than the one track the footer handles', () => {
-    renderBar({ trackCount: 2, convertibleCount: 2, batchSize: 2 })
-    expect(screen.getByTestId('convert-all')).toHaveAttribute('data-variant', 'primary')
   })
 
   // Another view (the Music review) can own the screen's main action; the convert button
@@ -150,7 +117,6 @@ describe('Toolbar', () => {
     cleanup()
 
     const running = renderBar({ analysis: { done: 2, total: 10 } })
-    expect(screen.getByTestId('analyze-progress')).toHaveTextContent('2/10')
     fireEvent.click(screen.getByTestId('analyze-quality'))
     expect(running.onCancelAnalyze).toHaveBeenCalledOnce()
     expect(running.onAnalyzeAll).not.toHaveBeenCalled()
@@ -231,8 +197,8 @@ describe('Toolbar', () => {
 
   it('says the quality sweep goes slower while a DJ program is open, so a count that ticks slowly is not taken for a hang', () => {
     renderBar({ analysis: { done: 0, total: 4 }, analysisSlowed: true })
-    const slowed = i18n.t('header.analyzingSlowed', { done: 0, total: 4 })
-    expect(screen.getAllByRole('status').filter((r) => r.textContent === slowed)).toHaveLength(1)
+    const slowed = said('header.sweepAnalyzeSlowed', 0, 4)
+    expect(screen.getByRole('status').textContent).toBe(slowed)
     expect(screen.getByTestId('analyze-slowed')).toBeInTheDocument()
     fireEvent.focus(screen.getByTestId('analyze-quality'))
     expect(screen.getByRole('tooltip')).toHaveTextContent(slowed)
@@ -242,17 +208,13 @@ describe('Toolbar', () => {
     renderBar({ analysis: { done: 1, total: 4 }, analysisSlowed: false })
     expect(screen.queryByTestId('analyze-slowed')).toBeNull()
     fireEvent.focus(screen.getByTestId('analyze-quality'))
-    expect(screen.getByRole('tooltip')).toHaveTextContent(
-      i18n.t('header.analyzingCount', { done: 1, total: 4 }),
-    )
+    expect(screen.getByRole('tooltip')).toHaveTextContent(said('header.sweepAnalyze', 1, 4))
   })
 
   it('tells the details pass apart from the quality pass, since its count starts over', () => {
     renderBar({ analysis: { done: 1, total: 4, stage: 'details' }, analysisSlowed: false })
     fireEvent.focus(screen.getByTestId('analyze-quality'))
-    expect(screen.getByRole('tooltip')).toHaveTextContent(
-      i18n.t('header.analyzingDetails', { done: 1, total: 4 }),
-    )
+    expect(screen.getByRole('tooltip')).toHaveTextContent(said('header.sweepAnalyzeDetails', 1, 4))
   })
 
   it('says why Match cannot run without a Discogs token and takes the user to add one', () => {
@@ -266,72 +228,70 @@ describe('Toolbar', () => {
     expect(props.onAutoMatch).not.toHaveBeenCalled()
   })
 
-  // A misfired Convert all used to be unstoppable from anywhere in the UI. The batch
-  // pill is the conversion's counterpart of the sweep buttons: visible only while a
-  // batch runs, naming its done/total, and clicking it cancels — queued tracks bail,
-  // the ones already converting finish.
-  // The run's progress lives on the convert button itself now, not a pill beside it — see
-  // the convert-all cases below, which cover the same counter and cancel.
-  it('shows the count on the convert button while a run is going', () => {
-    renderBar({ batching: true, batchProgress: { done: 3, total: 12 } })
-    expect(screen.getByTestId('convert-all')).toHaveTextContent('3/12')
-  })
-
-  // A big drop used to be an opaque wait; the counter is the import's only progress
-  // surface, so it must reflect the exact done/total the library reports.
-  it('shows the metadata-read progress while importing', () => {
-    renderBar({ importing: { done: 212, total: 319 } })
-    expect(screen.getByTestId('import-progress')).toHaveTextContent('212/319')
-  })
-
-  // The bar is pinned to the trailing edge, so a counter gaining a digit (9 → 10, 999 →
-  // 1000) pushed every icon to its left sideways mid-run. Each counter holds the width of
-  // the widest value it can reach, so the bar stays still while the numbers tick.
-  it('reserves every counter the width of its final value so the bar holds still', () => {
-    renderBar({
-      convertibleCount: 9,
-      batchSize: 2041,
-      importing: { done: 7, total: 1642 },
-      matching: { done: 3, total: 266 },
-      analysis: { done: 31, total: 200 },
-    })
-    expect(screen.getByTestId('import-progress-sizer')).toHaveTextContent(
-      i18n.t('header.importingCount', { done: 1642, total: 1642 }),
+  it('keeps the sweep buttons as words while they run, since a bare 118/1842 said nothing about what it counted', () => {
+    renderBar({ matching: { done: 1, total: 4 }, analysis: { done: 2, total: 10 } })
+    expect(screen.getByTestId('auto-match')).toHaveTextContent(i18n.t('header.autoMatchLabel'))
+    expect(screen.getByTestId('auto-match')).not.toHaveTextContent(/\d/)
+    expect(screen.getByTestId('analyze-quality')).toHaveTextContent(
+      i18n.t('header.analyzeQualityLabel'),
     )
-    expect(screen.getByTestId('auto-match-progress-sizer')).toHaveTextContent('266/266')
-    expect(screen.getByTestId('analyze-progress-sizer')).toHaveTextContent('200/200')
-    expect(screen.getByTestId('convert-all-sizer')).toHaveTextContent(
-      i18n.t('header.convertSome', { ready: 2041, total: 2041 }),
-    )
-    cleanup()
-    renderBar({ batching: true, batchProgress: { done: 3, total: 120 } })
-    expect(screen.getByTestId('convert-all-sizer')).toHaveTextContent(
-      i18n.t('header.convertingCount', { done: 120, total: 120 }),
-    )
+    expect(screen.getByTestId('analyze-quality')).not.toHaveTextContent(/\d/)
   })
 
-  // Importing is the longest operation in the app — thousands of files on a NAS — and
-  // was the only sweep with no way out: the other three pills cancel on click and this
-  // one was an inert span, so a wrong folder meant waiting it out.
-  it('cancels the import when its pill is clicked', () => {
-    const props = renderBar({ importing: { done: 212, total: 319 } })
-    fireEvent.click(screen.getByTestId('import-progress'))
-    expect(props.onCancelImport).toHaveBeenCalledOnce()
-  })
-
-  // The counters were visible-only: without sight, a 500-track run is silence between the
-  // click and the final toast. Each sweep speaks its count through a status region. The
-  // regions sit outside the buttons (a button flattens what it holds into its own name,
-  // which here is the cancel action) and are mounted empty from the start: a live region
-  // born together with its text is often never announced.
-  it('announces every sweep through persistent status regions outside the buttons', () => {
-    const regions = (): HTMLElement[] => screen.getAllByRole('status')
+  it('gathers every running sweep in one pill that shows how far the leading one is', () => {
     renderBar()
-    expect(regions()).toHaveLength(4)
-    for (const region of regions()) {
-      expect(region).toBeEmptyDOMElement()
-      expect(region.closest('button')).toBeNull()
-    }
+    expect(screen.queryByTestId('sweeps-pill')).toBeNull()
+    cleanup()
+    renderBar({ importing: { done: 1842, total: 5303 }, matching: { done: 118, total: 1842 } })
+    const pill = screen.getByTestId('sweeps-pill')
+    expect(within(pill).getByTestId('sweep-icon-import')).toBeInTheDocument()
+    expect(within(pill).getByTestId('sweep-icon-match')).toBeInTheDocument()
+    expect(within(pill).queryByTestId('sweep-icon-analyze')).toBeNull()
+    expect(within(pill).getByTestId('sweeps-percent')).toHaveTextContent(
+      new Intl.NumberFormat(i18n.language, { style: 'percent' }).format(1842 / 5303),
+    )
+  })
+
+  it('opens one row per sweep with its count in words against a total that does not move', () => {
+    renderBar({ importing: { done: 1842, total: 5303 }, matching: { done: 118, total: 1842 } })
+    expect(screen.queryByTestId('sweeps-menu')).toBeNull()
+    fireEvent.click(screen.getByTestId('sweeps-pill'))
+    expect(screen.getByTestId('sweep-import')).toHaveTextContent(i18n.t('header.sweepImport'))
+    expect(screen.getByTestId('sweep-import')).toHaveTextContent(count(1842, 5303))
+    expect(screen.getByTestId('sweep-match')).toHaveTextContent(i18n.t('header.sweepMatch'))
+    expect(screen.getByTestId('sweep-match')).toHaveTextContent(count(118, 5303))
+    expect(screen.getByTestId('sweep-match')).toHaveTextContent(
+      i18n.t('header.sweepWaiting', { count: 1724, formatted: formatCount(1724, i18n.language) }),
+    )
+  })
+
+  it('stops each sweep from its own row', () => {
+    const props = renderBar({
+      importing: { done: 5, total: 9 },
+      analysis: { done: 2, total: 10 },
+      matching: { done: 1, total: 4 },
+    })
+    fireEvent.click(screen.getByTestId('sweeps-pill'))
+    fireEvent.click(screen.getByTestId('sweep-import-stop'))
+    expect(props.onCancelImport).toHaveBeenCalledOnce()
+    fireEvent.click(screen.getByTestId('sweep-analyze-stop'))
+    expect(props.onCancelAnalyze).toHaveBeenCalledOnce()
+    fireEvent.click(screen.getByTestId('sweep-match-stop'))
+    expect(props.onCancelAutoMatch).toHaveBeenCalledOnce()
+  })
+
+  it('closes the sweeps menu with Escape', () => {
+    renderBar({ importing: { done: 5, total: 9 } })
+    fireEvent.click(screen.getByTestId('sweeps-pill'))
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(screen.queryByTestId('sweeps-menu')).toBeNull()
+  })
+
+  it('announces every sweep through one persistent status region outside the buttons', () => {
+    const region = (): HTMLElement => screen.getByRole('status')
+    renderBar()
+    expect(region()).toHaveTextContent('')
+    expect(region().closest('button')).toBeNull()
     cleanup()
     renderBar({
       batching: true,
@@ -340,158 +300,18 @@ describe('Toolbar', () => {
       matching: { done: 1, total: 4 },
       analysis: { done: 2, total: 10 },
     })
-    expect(regions().map((r) => r.textContent)).toEqual([
+    expect([...region().children].map((r) => r.textContent)).toEqual([
       i18n.t('header.convertingCount', { done: 3, total: 12 }),
-      i18n.t('header.importingCount', { done: 5, total: 9 }),
-      i18n.t('header.autoMatchingCount', { done: 1, total: 4 }),
-      i18n.t('header.analyzingCount', { done: 2, total: 10 }),
+      said('header.sweepImport', 5, 9),
+      said('header.sweepAnalyze', 2, 10),
+      said('header.sweepMatch', 1, 8),
     ])
   })
 
-  // Converting the whole list is what Surco is for, and it had no button anywhere: only a
-  // shortcut and a palette entry. The toolbar carried the two sweeps that PREPARE the work
-  // (match, analyze) and nothing that runs it.
-  it('converts the whole list', () => {
-    const props = renderBar()
-    fireEvent.click(screen.getByTestId('convert-all'))
-    expect(props.onConvertAll).toHaveBeenCalled()
-  })
-
-  // On macOS a toolbar's main action sits at the trailing edge. At the leading edge it sat
-  // beside the traffic lights, across the window from the editor footer's own action, so
-  // the eye crossed the whole window to compare the two. Last in the header, it closes the
-  // row of controls the way the footer button closes the editor.
-  it('places the convert-the-list action last in the header', () => {
-    renderBar()
-    const controls = screen.getAllByRole('button')
-    expect(controls[controls.length - 1]).toHaveAttribute('data-testid', 'convert-all')
-  })
-
-  // The editor footer carries its own "Convert to AIFF" for the open track. Seen together
-  // on one screen the two read as the same action, so this one names its scope: the count
-  // is what says "the list", not "this track".
-  it('names how many tracks it would convert', () => {
-    renderBar({ convertibleCount: 12 })
-    expect(screen.getByTestId('convert-all')).toHaveTextContent('12')
-  })
-
-  // With the open track missing a field, its footer says so while this button still
-  // offers to convert "1 track": that one is another row, and unless the label says out
-  // of how many, the two read as a contradiction about the same track.
-  it('says out of how many tracks it converts when some are not ready', () => {
-    renderBar({ convertibleCount: 1, batchSize: 3 })
-    expect(screen.getByTestId('convert-all')).toHaveAccessibleName(
-      i18n.t('header.convertSome', { ready: 1, total: 3 }),
-    )
-  })
-
-  it('keeps the plain count when every track in the batch is ready', () => {
-    renderBar({ convertibleCount: 3, batchSize: 3 })
-    expect(screen.getByTestId('convert-all')).toHaveAccessibleName(
-      i18n.t('header.convertAll', { count: 3 }),
-    )
-  })
-
-  // The main action has to be where the user expects it however many tracks are loaded:
-  // hiding it on a one-track crate made the button come and go as tracks were added.
-  it('offers to convert a single-track crate, named for one track', () => {
-    renderBar({ trackCount: 1, convertibleCount: 1, batchSize: 1 })
-    expect(screen.getByTestId('convert-all')).toHaveTextContent(
-      i18n.t('header.convertAll', { count: 1 }),
-    )
-  })
-
-  // Same shape as the sweeps beside it: the control that shows a run is the one that stops
-  // it, so a misfired convert-all doesn't have to be waited out.
-  it('cancels the run from the same button', () => {
-    const props = renderBar({ batching: true, batchProgress: { done: 12, total: 40 } })
-    fireEvent.click(screen.getByTestId('convert-all'))
-    expect(props.onCancelBatch).toHaveBeenCalled()
-    expect(props.onConvertAll).not.toHaveBeenCalled()
-  })
-
-  // The count has to reach a screen reader as one label; the digits alone are silent. And
-  // exactly once: this button replaced a separate progress pill that announced the same
-  // run, which would have read the count out twice.
   it('announces how far the run has got, once', () => {
     renderBar({ batching: true, batchProgress: { done: 12, total: 40 } })
     const name = i18n.t('header.convertingCount', { done: 12, total: 40 })
-    expect(screen.getAllByRole('status').filter((r) => r.textContent === name)).toHaveLength(1)
-  })
-
-  // Nothing eligible (every track converted, or a run already going) leaves the button
-  // visible but dead, like the sweeps — not hidden, which would make it hard to find again.
-  it('disables itself when there is nothing to convert', () => {
-    renderBar({ canConvertAll: false })
-    expect(screen.getByTestId('convert-all')).toBeDisabled()
-  })
-
-  // A library is the DJ's collection, not a list dropped to be converted: with nothing
-  // picked there is nothing to convert, and a "13 of 62" read as a warning that the
-  // playlist was missing something (06/11). The count follows the selection only.
-  it('has nothing to convert over a library with no track picked, whatever the list holds', () => {
-    renderBar({
-      inLibrary: true,
-      convertibleCount: 801,
-      batchSize: 2040,
-      trackCount: 2040,
-      leftOut: leftOut({ missing: { count: 1239, fields: ['grouping'] } }),
-    })
-    const button = screen.getByTestId('convert-all')
-    expect(button).toBeDisabled()
-    expect(button).toHaveAccessibleName(i18n.t('header.convertNone'))
-  })
-
-  it('converts the one picked track in a library, named as the selection', () => {
-    renderBar({ inLibrary: true, hasSelection: true, convertibleCount: 1, batchSize: 1 })
-    const button = screen.getByTestId('convert-all')
-    expect(button).toBeEnabled()
-    expect(button).toHaveAccessibleName(i18n.t('header.convertSelected', { count: 1 }))
-  })
-
-  it('takes the lead in a library once the user picks several tracks, naming them as the selection', () => {
-    renderBar({ inLibrary: true, hasSelection: true, convertibleCount: 12, batchSize: 12 })
-    const button = screen.getByTestId('convert-all')
-    expect(button).toHaveAttribute('data-variant', 'primary')
-    expect(button).toHaveAccessibleName(i18n.t('header.convertSelected', { count: 12 }))
-  })
-
-  it('says how many of the selection are ready when some are not, so the count matches the work', () => {
-    renderBar({ inLibrary: true, hasSelection: true, convertibleCount: 10, batchSize: 12 })
-    expect(screen.getByTestId('convert-all')).toHaveAccessibleName(
-      i18n.t('header.convertSomeSelected', { ready: 10, total: 12 }),
-    )
-  })
-
-  it('waits out a library read without a count, which would climb under the cursor while the files arrive', () => {
-    renderBar({
-      inLibrary: true,
-      importing: { done: 827, total: 2047 },
-      convertibleCount: 801,
-      batchSize: 2040,
-    })
-    const button = screen.getByTestId('convert-all')
-    expect(button).toBeDisabled()
-    expect(button).toHaveAccessibleName(i18n.t('header.convertNone'))
-  })
-
-  it('still converts a picked selection while the library is being read, since those tracks are already there', () => {
-    renderBar({
-      inLibrary: true,
-      hasSelection: true,
-      importing: { done: 827, total: 2047 },
-      convertibleCount: 12,
-      batchSize: 12,
-    })
-    expect(screen.getByTestId('convert-all')).toBeEnabled()
-  })
-
-  it('keeps counting while dropped files are read in Tracks, where converting the list is the whole job', () => {
-    renderBar({ importing: { done: 5, total: 24 }, convertibleCount: 5, batchSize: 24 })
-    const button = screen.getByTestId('convert-all')
-    expect(button).toBeEnabled()
-    expect(button).toHaveAttribute('data-variant', 'primary')
-    expect(button).toHaveAccessibleName(i18n.t('header.convertSome', { ready: 5, total: 24 }))
+    expect(screen.getByRole('status').textContent).toBe(name)
   })
 
   // The three sweeps read in the order the work happens: judge the files, fill their tags,
@@ -534,12 +354,6 @@ describe('Toolbar', () => {
     expect(screen.getByTestId('open-palette').querySelector('svg')).toBeNull()
   })
 
-  // It acts on the list, which doesn't exist until the crate has tracks.
-  it('hides the convert button when the list is empty', () => {
-    renderBar({ trackCount: 0 })
-    expect(screen.queryByTestId('convert-all')).toBeNull()
-  })
-
   // The menus gained these entries, but the bar is where the user has always found them:
   // the palette, the stats and the activity log stay one click away.
   it('opens the palette, the stats and the activity log from the bar', () => {
@@ -574,14 +388,6 @@ describe('Toolbar', () => {
     renderBar()
     expect(screen.queryByTestId('open-trash')).toBeNull()
     expect(screen.queryByTestId('trash-count')).toBeNull()
-  })
-
-  // With nothing to convert the button still sits where the user expects it, but "Convert
-  // 0 tracks" spelled out a zero the list already shows: disabled, it just names the action.
-  it('drops the count when there is nothing to convert', () => {
-    renderBar({ canConvertAll: false, convertibleCount: 0 })
-    expect(screen.getByTestId('convert-all')).toHaveAccessibleName(i18n.t('header.convertNone'))
-    expect(screen.getByTestId('convert-all')).not.toHaveTextContent('0')
   })
 
   // The dot is the only always-visible signal that background work is running while

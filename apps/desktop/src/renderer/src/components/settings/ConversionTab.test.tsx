@@ -246,6 +246,15 @@ describe('ConversionTab explanations', () => {
     },
   )
 
+  it('says that an MP3 source stays MP3 once, on the switch that decides it, not again under the format and in the quality (i)', async () => {
+    await i18n.changeLanguage('es')
+    renderTab({ outputFormat: 'mp3' })
+    const text = document.body.textContent ?? ''
+    await i18n.changeLanguage('en')
+    expect(text).toContain(i18n.getFixedT('es')('settings.keepMp3SourcesOff'))
+    expect(text).not.toMatch(/nunca se recodifica/)
+  })
+
   // A line that only says the picked option again ("256 kbps CBR." under 256, "Writes
   // 24-bit." under 24-bit) is read for nothing, so those options carry no line at all and
   // only the ones that add something (320 is the DJ-pool standard, Corrected only touches

@@ -45,7 +45,7 @@ export default function Walkthrough() {
       <Reveal>
         <a
           href={guideHref}
-          className="inline-flex items-center text-sm font-medium text-fg transition-colors hover:text-blue"
+          className="inline-flex items-center py-1.5 -my-1.5 text-sm font-medium text-fg transition-colors hover:text-blue"
         >
           {t('how.guideCta')}
         </a>

@@ -8,6 +8,8 @@ const PREFIX: Record<Exclude<Language, 'es'>, string> = {
   fr: '/fr',
   'pt-BR': '/pt',
   ja: '/ja',
+  ca: '/ca',
+  it: '/it',
 }
 
 const localized = (es: string, rest: string): Record<Language, string> =>

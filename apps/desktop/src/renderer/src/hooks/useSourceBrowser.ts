@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ALL_TRACKS_ID } from '../../../shared/allTracks'
 import { DJ_PROGRAMS, type DjProgram, RAIL_PROGRAMS } from '../../../shared/djProgram'
+import { MATCHING_ID } from '../../../shared/matching'
 import { RECENTLY_ADDED_ID } from '../../../shared/recentlyAdded'
 import type { PlaylistSource, SourceNode, SourcePlaylistEntry } from '../../../shared/types'
 import {
@@ -15,6 +16,7 @@ import {
 import { takeOwnRemoval } from '../lib/ownRemovals'
 import { SOURCE_PROGRAMS, SOURCE_READ } from '../lib/sourcePrograms'
 import { useProgramsAvailable } from './useProgramsAvailable'
+import { useRekordboxMatching } from './useRekordboxMatching'
 import { useWindowFocus } from './useWindowFocus'
 
 export interface SourceBrowser {
@@ -158,6 +160,9 @@ export function useSourceBrowser({
     enabled: hasRecent,
     staleTime: Number.POSITIVE_INFINITY,
   })
+  const matching = useRekordboxMatching(program === 'rekordbox')
+  const matchingCount =
+    program === 'rekordbox' && matching.data ? new Set(matching.data.flat()).size : undefined
   const startingPlaylist = useMemo(
     () =>
       (recent.data ?? 0) > 0
@@ -192,10 +197,20 @@ export function useSourceBrowser({
                   },
                 ]
               : []),
+            ...(matchingCount !== undefined
+              ? [
+                  {
+                    id: MATCHING_ID,
+                    name: tr('sources.matching'),
+                    kind: 'playlist' as const,
+                    count: matchingCount,
+                  },
+                ]
+              : []),
             ...tree.data,
           ]
         : tree.data,
-    [hasRecent, tree.data, all.data, recent.data, tr],
+    [hasRecent, tree.data, all.data, recent.data, matchingCount, tr],
   )
   const entriesKey = ['source-playlist', source, playlist?.id]
   const entries = useQuery({

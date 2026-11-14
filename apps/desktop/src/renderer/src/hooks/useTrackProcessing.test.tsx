@@ -3211,7 +3211,8 @@ describe('useTrackProcessing retryVerification', () => {
     const askToApply = vi.fn().mockResolvedValue({})
     setApi({ retryVerification: vi.fn().mockResolvedValue('rechecked'), dj: { askToApply } })
     const hook = renderHook(
-      () => useTrackProcessing({ tracks: [track({ id: 'a' })], settings: null, updateTrack: vi.fn() }),
+      () =>
+        useTrackProcessing({ tracks: [track({ id: 'a' })], settings: null, updateTrack: vi.fn() }),
       { wrapper: withClient() },
     )
     await act(async () => {

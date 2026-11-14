@@ -65,18 +65,29 @@ con los ajustes (`resolveJobFormat`, `shared/format.ts:63-89`): antes el formato
 de la pista abierta en el editor se aplicaba al lote entero, y con un MP3 abierto
 los FLAC y WAV de la cola salían en MP3.
 
-Desde v1.26.0, si un campo obligatorio vacío deja pistas fuera del lote, el botón
-dice cuántas y qué campos les faltan (`header.leftOutMissing`, `Toolbar.tsx:165`).
+Desde v1.26.0, si un campo obligatorio vacío deja pistas fuera del lote, el plan del
+editor dice cuántas y qué campos les faltan (`header.leftOutMissing`, `lib/batch.ts:117`).
 
-Desde v1.28.0, en las pestañas de rekordbox, Traktor, Engine DJ y Serato el botón solo
-convierte las filas seleccionadas («Convertir N seleccionadas», `header.convertSelected`), y
-sin selección no hay nada que convertir (`libraryIdle`, `Toolbar.tsx:159`). Con varias
-seleccionadas, ⌘⏎ convierte la selección en vez de la pista abierta (`commands.ts`). Una sola
-regla (`convertGate`, `lib/batch.ts:87`) decide qué entra y qué se queda fuera, y el botón y
-el plan del editor lo cuentan igual (`leftOutNote`, `:107`): pistas de Serato, que perderían
-sus cues (`header.leftOutSerato`), y una selección que mezcla sustituir una copia de la
-biblioteca con añadir, que se retiene entera (`editor.mixedReplaceSelection`). «Convertir
-de nuevo» desde el menú de hechas vuelve a tomar las ya convertidas (`again`).
+**Un solo botón de convertir, el del pie del editor.** La barra superior ya no lleva botón
+de convertir (`Toolbar.tsx`). Con varias pistas seleccionadas, el pie muestra el plan y debajo
+«Convertir N seleccionadas», o «Convertir N de M seleccionadas» si el plan deja alguna fuera
+(`batch-convert`, `BatchPlan.tsx:95`; `header.convertSelected`, `header.convertSomeSelected`).
+Para convertir toda la lista quedan ⌘A y el botón, ⌘⇧⏎ y «Convertir todas» en la paleta o en el
+menú (`process-all`, `commands.ts:935`), que siguen arrancando y cancelando el lote como antes.
+Mientras corre un lote, el pie dice «Convirtiendo… x/y» y su botón pasa a «Cancelar», que para
+el lote entero sea cual sea la pista seleccionada (`BatchRun.tsx:15`, `ConvertFooter.tsx:463`).
+Sin pista abierta, o con la revisión de metadatos delante, ese mismo pie aparece al fondo del
+panel derecho mientras dure el lote (`App.tsx:4249`).
+
+Desde v1.28.0, en las pestañas de rekordbox, Traktor, Engine DJ y Serato solo se convierten
+las filas seleccionadas, y sin selección no hay nada que convertir (`convertTracks`,
+`App.tsx:2218`). Con varias seleccionadas, ⌘⏎ convierte la selección en vez de la pista abierta
+(`process-current`, `commands.ts:881`). Una sola regla (`convertGate`, `lib/batch.ts:92`) decide
+qué entra y qué se queda fuera, y el botón y el plan del editor lo cuentan igual
+(`leftOutNote`, `:117`): pistas de Serato, que perderían sus cues (`header.leftOutSerato`), y
+una selección que mezcla sustituir una copia de la biblioteca con añadir, que se retiene entera
+(`editor.mixedReplaceSelection`). «Convertir de nuevo» desde el menú de hechas vuelve a tomar
+las ya convertidas (`again`).
 
 ### Dos salidas con el mismo nombre no se pisan
 
@@ -2178,7 +2189,7 @@ esté en dos ficheros (`song`, `lib/sessionCandidates.ts`). Dos nuevas nunca van
 toma una del rol aunque no case, antes que repetir rol (`fit = fitTier(..., 'free')`,
 `shared/sessionBuild.ts:307`), así que la sesión no encadena vocales cuando ninguna base mezcla
 por tono. **Fases**: las
-playlists elegidas que se llaman como una parte del set, en los seis idiomas (Warm
+playlists elegidas que se llaman como una parte del set, en los ocho idiomas (Warm
 Up, Comienzos, Cierre, Fijas, Himnos…), marcan sus pistas como apertura, cierre o fija
 (`libraryPhases`, `lib/sessionTree.ts`). Las que no se eligieron no cuentan, porque pueden ser
 playlists de amigos importadas de su NML (`runSession`, `lib/sessionRun.ts`). Una de apertura pesa ×4 en el primer cuarto y ×0,15
@@ -3036,13 +3047,13 @@ comparación»* (`useDeclickAb.ts:60-67`).
   muestran una frase con lo que pasará en la conversión, más su pastilla (corte
   total, estimación de clics, modo y techo). Tras convertir, un solo enlace ofrece
   limpiar a la vez el original, los ficheros sustituidos y la copia vieja de Apple
-  Music. El botón dice «Convertir N pistas» («Convertir 1 pista»), y el vocabulario
+  Music. El botón de una selección dice «Convertir N seleccionadas», y el vocabulario
   es único en toda la app: Convertir, Actualizar etiquetas (solo cuando se copian
   los bytes), Volumen, Dudosa, Por confirmar (emparejamiento sin corroborar),
   Emparejar y Agrupación. Seleccionar todo, rellenar, vaciar y papelera viven
   también en el menú Pistas.
-- **Seis idiomas** en la app: español, inglés, alemán, francés, portugués de
-  Brasil y japonés (nuevo en v1.14.0, `LanguagePref`, `shared/types.ts:13`). Por
+- **Ocho idiomas** en la app: español, inglés, alemán, francés, portugués de
+  Brasil, japonés (nuevo en v1.14.0), catalán e italiano (`LanguagePref`, `shared/types.ts:22`). Por
   defecto sigue el idioma del sistema.
 - **Plataformas:** macOS (Apple Silicon e Intel, notarizado), Windows (NSIS) y
   Linux (AppImage — el único target que electron-updater puede actualizar en

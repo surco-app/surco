@@ -14,3 +14,15 @@ export async function preloadLazy(): Promise<void> {
     await Promise.all(batch.map((load) => load()))
   }
 }
+
+let idlePreloadScheduled = false
+
+export function preloadLazyWhenIdle(): void {
+  if (idlePreloadScheduled) return
+  idlePreloadScheduled = true
+  const preload = (): void => {
+    void preloadLazy().catch(() => {})
+  }
+  if (typeof requestIdleCallback === 'function') requestIdleCallback(preload)
+  else setTimeout(preload, 0)
+}

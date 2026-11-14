@@ -8,7 +8,7 @@ import {
   TriangleAlert,
 } from 'lucide-react'
 import type React from 'react'
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import type {
   FormatSetting,
@@ -22,7 +22,6 @@ import { PLACE_ORDER, type PlaceCheck } from '../../../shared/verification'
 import { type CleanupOffer, cleanupCount } from '../hooks/useConfirmFlows'
 import type { StaleLibraryCopy } from '../lib/appleMusicLibrary'
 import type { Destination } from '../lib/destination'
-import type { DjLibraryId } from '../lib/djLibraries'
 import { openFeedback } from '../lib/feedback'
 import { formatUpTo } from '../lib/numberFormat'
 import { isMacOS } from '../lib/platform'
@@ -31,6 +30,7 @@ import type { SelectionStatus } from '../lib/selectionStatus'
 import { trackQuality } from '../lib/triage'
 import type { TrackItem } from '../types'
 import { BatchPlan } from './BatchPlan'
+import { BatchRun } from './BatchRun'
 import { DoneMenu } from './DoneMenu'
 import { ExportButton } from './ExportButton'
 import { SOURCE_ICON } from './SourceRail'
@@ -65,9 +65,7 @@ interface ConvertFooterProps {
   item: TrackItem
   spectrum: SpectrumVerdict | undefined
   isMulti: boolean
-  // Size of the multi-selection, for the "Convert all (N)" label and the done counts.
   selectedCount: number
-  // How many of them the batch converts, for the plan's count, so it matches the header's.
   readyCount?: number
   // The footer's aggregate view of the selection (done block, reveal, Apple Music).
   status: SelectionStatus
@@ -84,17 +82,12 @@ interface ConvertFooterProps {
   // The same block said short enough for the main button's face (a count past two missing
   // fields), since the full reason can list every required field.
   incompleteSummary?: string
-  // What the batch leaves out of a multi-selection and why, in the header's own words; the
-  // plan shows it even while the rest converts.
   leftOut?: string
   onBlockedPress?: () => void
   willEditInPlace: boolean
   tagsOnly: boolean
   sameFormat: boolean
   upToDate: boolean
-  addToAppleMusic: boolean
-  djTargets: DjLibraryId[]
-  openSource: PlaylistSource | null
   // The editor's one-shot destination pick and the choices its split-button menu
   // offers, pre-filtered by the editor (platform, configured overwrite).
   destination: Destination
@@ -112,8 +105,12 @@ interface ConvertFooterProps {
   // in single, so the footer never forks on it.
   onProcess: (format: FormatSetting) => void
   // Cancels the in-flight single conversion; the primary button turns into a cancel while
-  // it runs. Undefined in multi, where the toolbar batch pill owns the cancel.
+  // it runs.
   onCancel?: () => void
+  onConvertSelection?: () => void
+  convertHint?: string
+  batchRun?: { done: number; total: number } | null
+  onCancelBatch?: () => void
   onAddToAppleMusic?: () => void
   // The library copy this track's add superseded (the old rip the fresh copy replaces),
   // resolved by the editor from the library snapshot: its persistent ID plus the raw
@@ -161,9 +158,6 @@ export function ConvertFooter({
   tagsOnly,
   sameFormat,
   upToDate,
-  addToAppleMusic,
-  djTargets,
-  openSource,
   destination,
   destinations,
   format,
@@ -175,6 +169,10 @@ export function ConvertFooter({
   onSelectDestination,
   onProcess,
   onCancel,
+  onConvertSelection,
+  convertHint,
+  batchRun,
+  onCancelBatch,
   onAddToAppleMusic,
   staleMusicCopy,
   supersededPath,
@@ -327,17 +325,43 @@ export function ConvertFooter({
   // and stepping through a crate must not replay an entrance on every switch. Refs
   // survive re-renders but not that remount, which is exactly the boundary wanted.
   const prevShowDone = useRef(showDone)
+  const running = !!batchRun && !!onCancelBatch
+  const prevRunning = useRef(running)
   const swapped = useRef(false)
   const footerRef = useRef<HTMLDivElement>(null)
-  // The swap unmounts the button a keyboard user just pressed and focus drops to <body>.
-  // Whether focus was in here is read before the commit replaces the block, while the old
-  // button still holds it, so only focus the footer itself owned is handed back.
   const refocus = useRef(false)
+  const heldFocus = useRef(false)
   if (prevShowDone.current !== showDone) {
     swapped.current = true
     prevShowDone.current = showDone
-    refocus.current = footerRef.current?.contains(document.activeElement) ?? false
+    refocus.current =
+      !!footerRef.current?.contains(document.activeElement) ||
+      (showDone && heldFocus.current && document.activeElement === document.body)
+    heldFocus.current = false
   }
+  if (prevRunning.current !== running) {
+    prevRunning.current = running
+    refocus.current =
+      !!footerRef.current?.contains(document.activeElement) ||
+      (heldFocus.current && document.activeElement === document.body)
+    heldFocus.current = false
+  }
+  useEffect(() => {
+    const footer = footerRef.current
+    if (!footer) return
+    const held = (): void => {
+      heldFocus.current = true
+    }
+    const lost = (e: FocusEvent): void => {
+      if (!(e.target as HTMLElement).matches(':disabled')) heldFocus.current = false
+    }
+    footer.addEventListener('focusin', held)
+    footer.addEventListener('focusout', lost)
+    return () => {
+      footer.removeEventListener('focusin', held)
+      footer.removeEventListener('focusout', lost)
+    }
+  }, [])
   useLayoutEffect(() => {
     if (focusShield.current && !retrying) {
       focusShield.current = false
@@ -347,7 +371,7 @@ export function ConvertFooter({
     refocus.current = false
     footerRef.current
       ?.querySelector<HTMLButtonElement>(
-        '[data-testid="process-btn"], [data-testid="convert-update-anyway"], [data-testid="done-more"]',
+        '[data-testid="process-btn"], [data-testid="convert-update-anyway"], [data-testid="done-more"], [data-testid="batch-convert"], [data-testid="batch-run-cancel"]',
       )
       ?.focus()
   })
@@ -443,7 +467,9 @@ export function ConvertFooter({
             <Tooltip label={tr('normalize.title')} />
           </button>
         )}
-        {showDone ? (
+        {batchRun && onCancelBatch ? (
+          <BatchRun progress={batchRun} onCancel={onCancelBatch} />
+        ) : showDone ? (
           // One line, always, ordered by what matters after an export. On the left, the
           // outcome in words, which is also the way to the library copy; the clean-up of what
           // was left behind, named while the row has room for it and an icon when it doesn't.
@@ -696,12 +722,12 @@ export function ConvertFooter({
             ) : isMulti ? (
               <BatchPlan
                 count={readyCount ?? selectedCount}
+                total={selectedCount}
+                onConvert={onConvertSelection}
+                convertHint={convertHint}
                 format={format}
                 destination={destination}
                 destinations={destinations}
-                withAppleMusic={isMacOS() && format !== 'flac' && addToAppleMusic}
-                djTargets={djTargets}
-                openSource={openSource}
                 leftOut={leftOut}
                 onBlockedPress={onBlockedPress}
                 onSelectFormat={onSelectFormat}

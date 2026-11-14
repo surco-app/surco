@@ -67,6 +67,21 @@ describe('SearchInput', () => {
     expect(screen.getByTestId('track-search-clear')).toBeInTheDocument()
   })
 
+  it('gives the clear button a 24 px press area around its 18 px drawing', () => {
+    render(
+      <SearchInput
+        value="x"
+        onChange={vi.fn()}
+        onClear={vi.fn()}
+        placeholder="p"
+        ariaLabel="a"
+        clearLabel="Clear"
+        testid="track-search"
+      />,
+    )
+    expect(screen.getByTestId('track-search-clear').className).toContain('after:-inset-[3px]')
+  })
+
   it('fires onClear when the clear button is pressed', () => {
     const { onClear } = renderInput({ value: 'x' })
     fireEvent.click(screen.getByTestId('track-search-clear'))

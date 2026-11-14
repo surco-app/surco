@@ -20,7 +20,7 @@ export function StarRating({
   const { t: tr } = useTranslation()
   const stars = Number(value) || 0
   // While the pointer rests on a star, fill up to it as a live preview of what a click
-  // would set; the committed rating drives aria-pressed so assistive tech reads the
+  // would set; the committed rating drives aria-checked so assistive tech reads the
   // real value, not the hover.
   const [hovered, setHovered] = useState(0)
   const shown = hovered || stars
@@ -28,11 +28,28 @@ export function StarRating({
   // click on the same star re-runs it — a CSS animation only restarts when the class is
   // removed and re-added, so leaving it on would make the first rating the only animated one.
   const [punched, setPunched] = useState(0)
+  const stop = stars || 1
+  const step = (e: React.KeyboardEvent<HTMLElement>, n: number): void => {
+    const delta = ['ArrowRight', 'ArrowUp'].includes(e.key)
+      ? 1
+      : ['ArrowLeft', 'ArrowDown'].includes(e.key)
+        ? -1
+        : 0
+    if (!delta) return
+    e.preventDefault()
+    const next = stars === 0 && delta > 0 ? 1 : Math.min(5, Math.max(1, n + delta))
+    if (stars === 0 ? delta < 0 : next === n) return
+    onChange(String(next))
+    e.currentTarget.parentElement
+      ?.querySelector<HTMLElement>(`[data-testid="star-${next}"]`)
+      ?.focus()
+  }
   return (
     // The leave handler only clears the visual hover preview; the stars are the
     // controls. Resetting per-button would misfire as the pointer crosses between them.
-    <fieldset
+    <div
       data-testid="star-rating"
+      role="radiogroup"
       aria-labelledby={labelledBy}
       className="flex items-center gap-0.5"
       onMouseLeave={() => setHovered(0)}
@@ -40,11 +57,15 @@ export function StarRating({
       {[1, 2, 3, 4, 5].map((n) => {
         const filled = n <= shown
         return (
+          // biome-ignore lint/a11y/useSemanticElements: a star is a glyph button; a native radio input cannot draw it and the arrows and roving tab stop are handled here
           <button
             key={n}
             type="button"
             data-testid={`star-${n}`}
-            aria-pressed={n <= stars}
+            role="radio"
+            aria-checked={n === stars}
+            tabIndex={n === stop ? 0 : -1}
+            onKeyDown={(e) => step(e, n)}
             aria-label={tr('editor.ratingStars', { count: n })}
             onClick={() => {
               const cleared = n === stars
@@ -54,7 +75,7 @@ export function StarRating({
             }}
             onMouseEnter={() => setHovered(n)}
             onAnimationEnd={() => setPunched(0)}
-            className={`press ${punched === n ? 'star-punch' : ''} ${
+            className={`press relative after:absolute after:-inset-x-px after:-inset-y-1 after:content-[''] ${punched === n ? 'star-punch' : ''} ${
               filled ? 'text-warn' : 'text-fg-faint'
             }`}
           >
@@ -67,6 +88,6 @@ export function StarRating({
           </button>
         )
       })}
-    </fieldset>
+    </div>
   )
 }

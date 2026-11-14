@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { BUNDLED_FLOWS } from '../../shared/cueFlows'
+import { WINDOW_MIN_SIZE } from '../../shared/windowSize'
 import '@testing-library/jest-dom/vitest'
 import { type QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import {
@@ -18,6 +19,7 @@ import type { Api } from '../../preload/api'
 import { ALL_TRACKS_ID } from '../../shared/allTracks'
 import type { DjApi } from '../../shared/djApi'
 import { DEFAULT_EDITOR_SECTIONS } from '../../shared/editorSections'
+import { MATCHING_ID } from '../../shared/matching'
 import { emptyMetadata } from '../../shared/metadata'
 import { RECENTLY_ADDED_ID } from '../../shared/recentlyAdded'
 import { DEFAULT_SESSION_WIZARD } from '../../shared/sessionSettings'
@@ -50,6 +52,7 @@ import {
 } from './lib/cueSession'
 import { resetEditorPlace } from './lib/editorPlace'
 import { spellingGroups } from './lib/musicSpelling'
+import { holdPendingEdit } from './lib/pendingEdits'
 import { createQueryClient } from './lib/queryClient'
 import { clearDraggedRows, draggedRows, TREE_NODE_TYPE } from './lib/reorderDrag'
 import { usbExportStore } from './lib/usbExportStore'
@@ -75,11 +78,24 @@ vi.mock('./components/Editor', async (importOriginal) => {
   })
   return { ...real, Editor: CountingEditor }
 })
+const { idlePreload } = vi.hoisted(() => ({ idlePreload: { calls: 0 } }))
+vi.mock('./lib/lazyChunk', async (importOriginal) => {
+  const real = await importOriginal<typeof import('./lib/lazyChunk')>()
+  return {
+    ...real,
+    preloadLazyWhenIdle: () => {
+      idlePreload.calls++
+      real.preloadLazyWhenIdle()
+    },
+  }
+})
 // Pass-through TrackList that counts renders — TrackList is already memo'd itself
 // (see TrackList.tsx), so wrapping the real (already-memoized) component in a
 // second counting memo pins the contract from the outside: App must hand it
 // stable props on a render that doesn't touch the visible tracks.
-const { trackListRenders } = vi.hoisted(() => ({ trackListRenders: { count: 0 } }))
+const { trackListRenders } = vi.hoisted(() => ({
+  trackListRenders: { count: 0, shown: [] as { ids: string[]; selectedId: string | null }[] },
+}))
 vi.mock('./components/TrackList', async (importOriginal) => {
   const real = await importOriginal<typeof import('./components/TrackList')>()
   const { memo } = await import('react')
@@ -87,6 +103,10 @@ vi.mock('./components/TrackList', async (importOriginal) => {
     props: React.ComponentProps<typeof real.TrackList>,
   ): React.JSX.Element {
     trackListRenders.count++
+    trackListRenders.shown.push({
+      ids: props.tracks.map((t) => t.id),
+      selectedId: props.selectedId,
+    })
     return <real.TrackList {...props} />
   })
   return { ...real, TrackList: CountingTrackList }
@@ -204,6 +224,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     syncVirtualdj: false,
     virtualdjLibraryDir: '',
     betaUpdates: false,
+    autoUpdates: true,
     traktorCueOffsetMs: 0,
     filenameFormat: '{artist} - {title}',
     titleFormat: '',
@@ -429,6 +450,7 @@ function setApi(over: Record<string, unknown> = {}): void {
 
 beforeEach(() => {
   setApi()
+  trackListRenders.shown = []
   // The editor section store is module-level and survives across tests; reset it so a
   // test that folds a section away doesn't leak that state into the next.
   resetEditorSections()
@@ -616,15 +638,14 @@ describe('App Engine DJ cues', () => {
       processTrack,
     })
     await openFriday()
-    const convert = screen.getByTestId('convert-all')
-    expect(convert).toBeDisabled()
-    expect(convert).toHaveAccessibleName('Convert')
+    runMenu('process-all')
+    await act(async () => {})
+    expect(processTrack).not.toHaveBeenCalled()
     const rows = screen.getAllByTestId('track-row')
     fireEvent.click(rows[0])
-    await waitFor(() => expect(convert).toHaveAccessibleName('Convert 1 selected'))
-    expect(convert).toBeEnabled()
     fireEvent.click(rows[1], { metaKey: true })
-    await waitFor(() => expect(convert).toHaveAccessibleName('Convert 2 selected'))
+    const convert = await screen.findByTestId('batch-convert')
+    expect(convert).toHaveTextContent('Convert 2 selected')
     fireEvent.click(convert)
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
   })
@@ -2058,7 +2079,7 @@ describe('App quality triage', () => {
     await addTwoTracks()
     await waitFor(() => expect(screen.getAllByText('Song A').length).toBeGreaterThan(0))
     await waitFor(() => expect(spectrogram).toHaveBeenCalledWith('/music/a.wav', 'high'))
-    expect(screen.queryByTestId('analyze-progress')).toBeNull()
+    expect(screen.queryByTestId('sweep-icon-analyze')).toBeNull()
     expect(loudness).not.toHaveBeenCalled()
 
     releaseB()
@@ -2101,8 +2122,8 @@ describe('App quality triage', () => {
 
     releaseB()
     await waitFor(() => expect(screen.getAllByText('Song B').length).toBeGreaterThan(0))
-    await waitFor(() => expect(screen.queryByTestId('import-progress')).toBeNull())
-    expect(screen.queryByTestId('analyze-progress')).toBeNull()
+    await waitFor(() => expect(screen.queryByTestId('sweep-icon-import')).toBeNull())
+    expect(screen.queryByTestId('sweep-icon-analyze')).toBeNull()
     expect(loudness).not.toHaveBeenCalled()
   })
 })
@@ -2287,7 +2308,7 @@ describe('App auto-match', () => {
     await renderApp()
     await addTwoTracks()
     await waitFor(() => expect(screen.getAllByTestId('track-automatched')).toHaveLength(2))
-    await waitFor(() => expect(screen.queryByTestId('auto-match-progress')).toBeNull())
+    await waitFor(() => expect(screen.queryByTestId('sweep-icon-match')).toBeNull())
     await waitFor(() => expect(screen.getByTestId('field-album')).toHaveValue('Album'))
 
     fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
@@ -3035,6 +3056,47 @@ describe('App source playlists', () => {
     ])
   })
 
+  function openMusicPlaylist(paths: string[]): void {
+    setApi({
+      platform: 'darwin',
+      readTags: vi.fn().mockResolvedValue({ title: 'Bravo', artist: 'DJ' }),
+      loadAppleMusicPlaylists: vi
+        .fn<Api['loadAppleMusicPlaylists']>()
+        .mockResolvedValue([{ persistentId: 'p1', name: 'Friday', count: paths.length }]),
+      loadAppleMusicPlaylistTracks: vi
+        .fn<Api['loadAppleMusicPlaylistTracks']>()
+        .mockResolvedValue({ paths, persistentIds: {}, meta: {}, missing: 0 }),
+    })
+  }
+
+  // Files chosen or dropped from a library view land in Tracks, not in the playlist on
+  // screen, so the panel beside a library playlist must not offer them; it says what to do
+  // there instead.
+  it('asks for a track, not for files, beside a library playlist with none open', async () => {
+    openMusicPlaylist(['/m/b.wav'])
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-appleMusic'))
+    fireEvent.click(await screen.findByTestId('source-node-p1'))
+    await screen.findByTestId('track-row')
+    expect(within(screen.getByRole('main')).queryByTestId('add-files')).toBeNull()
+    expect(screen.getByTestId('source-pick-track')).toHaveTextContent(i18n.t('sources.pickTrack'))
+    fireEvent.click(screen.getByTestId('source-pick-track'))
+    await act(async () => {})
+    expect(window.api.pickFiles).not.toHaveBeenCalled()
+  })
+
+  it('says the library playlist is empty instead of asking for a track it does not have', async () => {
+    openMusicPlaylist([])
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-appleMusic'))
+    fireEvent.click(await screen.findByTestId('source-node-p1'))
+    expect(await screen.findByTestId('source-empty-playlist')).toHaveTextContent(
+      i18n.t('sources.emptyPlaylist'),
+    )
+    expect(screen.queryByTestId('source-pick-track')).toBeNull()
+    expect(within(screen.getByRole('main')).queryByTestId('add-files')).toBeNull()
+  })
+
   describe('an Apple Music playlist’s covers', () => {
     const cover = { thumbUrl: 'thumb://own', width: 600, height: 600 }
     function musicPlaylist(appleMusicArtwork: Api['appleMusicArtwork']): void {
@@ -3490,7 +3552,7 @@ describe('App source playlists', () => {
         () => expect(analyzed).toEqual(expect.arrayContaining(playlists.a.map((e) => e.path))),
         { timeout: 4000 },
       )
-      await waitFor(() => expect(screen.queryByTestId('analyze-progress')).toBeNull())
+      await waitFor(() => expect(screen.queryByTestId('sweep-icon-analyze')).toBeNull())
     })
   })
 
@@ -3553,6 +3615,126 @@ describe('App source playlists', () => {
     fireEvent.click(await screen.findByTestId('source-node-f'))
     await screen.findByTestId('track-separator-s1')
   }
+
+  describe('Matching in the editor', () => {
+    const withPreview = (path: string, contentId: string) => ({
+      path,
+      separator: false,
+      meta: {},
+      contentId,
+      preview: { title: TITLES[path], artist: 'DJ', durationSec: 200, cues: [] },
+    })
+    const matchingReads = {
+      dj: djReads({
+        rekordbox: {
+          matching: vi.fn<ProgramReads['matching']>().mockResolvedValue([['c-l1', 'c-l3']]),
+          playlist: vi
+            .fn<ProgramReads['playlist']>()
+            .mockImplementation(async (id) =>
+              id === MATCHING_ID
+                ? [withPreview('/m/a.wav', 'c-l1'), withPreview('/m/c.wav', 'c-l3')]
+                : FACTORY_ENTRIES,
+            ),
+        },
+      }),
+    }
+    const rowTitled = (title: string) =>
+      screen.getAllByTestId('track-row').find((r) => r.textContent?.includes(title)) as HTMLElement
+
+    it('shows the partners rekordbox holds for the chosen track', async () => {
+      await openFactory(matchingReads)
+      fireEvent.click(rowTitled('Alpha'))
+      expect(await screen.findByTestId('matching-partner')).toHaveTextContent('Charlie')
+    })
+
+    it('marks the partners of the chosen track in the list with the Matching rings', async () => {
+      await openFactory(matchingReads)
+      fireEvent.click(rowTitled('Alpha'))
+      await waitFor(() =>
+        expect(within(rowTitled('Charlie')).getByTestId('track-matching')).toBeInTheDocument(),
+      )
+      expect(within(rowTitled('Bravo')).queryByTestId('track-matching')).not.toBeInTheDocument()
+      expect(within(rowTitled('Alpha')).queryByTestId('track-matching')).not.toBeInTheDocument()
+    })
+
+    it('pairs two selected tracks from the row menu, asking about an open rekordbox first', async () => {
+      const match = vi.fn<ProgramReads['match']>().mockResolvedValue({ applied: true })
+      await openFactory({ dj: djReads(matchingReads.dj, { rekordbox: { match } }) })
+      fireEvent.click(rowTitled('Alpha'))
+      fireEvent.click(rowTitled('Bravo'), { metaKey: true })
+      fireEvent.contextMenu(rowTitled('Bravo'))
+      fireEvent.click(await screen.findByTestId('track-menu-matching'))
+      await waitFor(() =>
+        expect(match).toHaveBeenCalledWith(
+          'add',
+          ['c-l1', 'c-l2'],
+          expect.stringContaining('Alpha'),
+        ),
+      )
+      expect(vi.mocked(window.api.dj.askToApply).mock.invocationCallOrder[0]).toBeLessThan(
+        vi.mocked(window.api.dj.match).mock.invocationCallOrder[0],
+      )
+    })
+
+    it('offers no pairing unless exactly two tracks are selected', async () => {
+      await openFactory(matchingReads)
+      fireEvent.contextMenu(rowTitled('Bravo'))
+      await screen.findByTestId('track-menu-add-to')
+      expect(screen.queryByTestId('track-menu-matching')).not.toBeInTheDocument()
+    })
+
+    it('pairs the chosen track with one found in the rekordbox collection from the editor', async () => {
+      const match = vi.fn<ProgramReads['match']>().mockResolvedValue({ applied: true })
+      const collection = vi.fn<ProgramReads['collection']>().mockResolvedValue([
+        { contentId: 'c-l2', path: '/m/b.wav', title: 'Bravo', artist: 'DJ' },
+        { contentId: 'x9', path: '/m/elsewhere.wav', title: 'Brave New World', artist: 'Someone' },
+      ])
+      await openFactory({ dj: djReads(matchingReads.dj, { rekordbox: { match, collection } }) })
+      fireEvent.click(rowTitled('Bravo'))
+      fireEvent.click(await screen.findByTestId('matching-add'))
+      fireEvent.change(screen.getByTestId('matching-search'), { target: { value: 'brave new' } })
+      fireEvent.click(await screen.findByTestId('matching-result'))
+      await waitFor(() =>
+        expect(match).toHaveBeenCalledWith(
+          'add',
+          ['c-l2', 'x9'],
+          expect.stringContaining('Brave New World'),
+        ),
+      )
+    })
+
+    it('keeps Matching out of the editor for a track not opened from rekordbox', async () => {
+      setApi({
+        pickFiles: vi.fn().mockResolvedValue(['/m/a.wav', '/m/b.wav', '/m/c.wav']),
+        readTags: vi.fn(async (path: string) => ({ title: TITLES[path], artist: 'DJ' })),
+        dj: matchingReads.dj,
+      })
+      await renderApp()
+      fireEvent.click(await screen.findByTestId('add-files'))
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+      fireEvent.click(rowTitled('Alpha'))
+      await screen.findByTestId('editor-scroll')
+      expect(screen.queryByTestId('matching-section')).not.toBeInTheDocument()
+    })
+
+    it('unpairs a partner from the editor', async () => {
+      const match = vi.fn<ProgramReads['match']>().mockResolvedValue({ applied: true })
+      await openFactory({ dj: djReads(matchingReads.dj, { rekordbox: { match } }) })
+      fireEvent.click(rowTitled('Alpha'))
+      fireEvent.click(await screen.findByTestId('matching-partner-remove'))
+      await waitFor(() =>
+        expect(match).toHaveBeenCalledWith('remove', ['c-l1', 'c-l3'], expect.any(String)),
+      )
+    })
+
+    it('moves to a partner in the open list when the DJ picks it', async () => {
+      await openFactory(matchingReads)
+      fireEvent.click(rowTitled('Alpha'))
+      fireEvent.click(await screen.findByTestId('matching-partner'))
+      await waitFor(() => expect(rowTitled('Charlie')).toHaveAttribute('aria-selected', 'true'))
+      expect(rowTitled('Alpha')).toHaveAttribute('aria-selected', 'false')
+    })
+  })
 
   it('runs Auto marcar over the selected rows of the open playlist by their rekordbox entry', async () => {
     const read = vi.fn<Api['cues']['trackCues']>().mockResolvedValue(null)
@@ -4210,6 +4392,79 @@ describe('App source playlists', () => {
       expect(screen.queryByTestId(`track-menu-playlist-${ALL_TRACKS_ID}`)).not.toBeInTheDocument()
     })
 
+    it('opens Matching with no reorder, removal or separator on its rows', async () => {
+      await openFactory({
+        dj: djReads({
+          rekordbox: {
+            matching: vi.fn<ProgramReads['matching']>().mockResolvedValue([['r3', 'r1']]),
+            playlist: vi
+              .fn<ProgramReads['playlist']>()
+              .mockImplementation(async (id) =>
+                id === MATCHING_ID ? ALL_ENTRIES : FACTORY_ENTRIES,
+              ),
+          },
+        }),
+      })
+      fireEvent.click(await screen.findByTestId(`source-node-${MATCHING_ID}`))
+      await waitFor(() =>
+        expect(titles()).toEqual([
+          expect.stringContaining('Charlie'),
+          expect.stringContaining('Alpha'),
+        ]),
+      )
+      expect(screen.queryByTestId('reorder-hint')).not.toBeInTheDocument()
+      expectNoReorderLine()
+      fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+      await screen.findByTestId('track-menu-add-to')
+      expect(screen.queryByTestId('track-menu-remove-from')).not.toBeInTheDocument()
+      expect(screen.queryByTestId('track-menu-insert-separator')).not.toBeInTheDocument()
+    })
+
+    it('creates a rekordbox playlist with the paired tracks in the order Matching lists them', async () => {
+      const editPlaylist = vi
+        .fn<ProgramReads['editPlaylist']>()
+        .mockResolvedValue({ applied: true, createdId: 'new' })
+      await openFactory({
+        dj: djReads({
+          rekordbox: {
+            matching: vi.fn<ProgramReads['matching']>().mockResolvedValue([['r3', 'r1']]),
+            playlist: vi
+              .fn<ProgramReads['playlist']>()
+              .mockImplementation(async (id) =>
+                id === MATCHING_ID ? ALL_ENTRIES : FACTORY_ENTRIES,
+              ),
+            editPlaylist,
+          },
+        }),
+      })
+      fireEvent.click(await screen.findByTestId(`source-node-${MATCHING_ID}`))
+      await waitFor(() => expect(titles()).toHaveLength(2))
+      fireEvent.click(screen.getByTestId('matching-create-playlist'))
+      await waitFor(() => expect(editPlaylist).toHaveBeenCalled())
+      expect(editPlaylist.mock.calls[0][0]).toMatchObject({
+        kind: 'create',
+        parentId: 'root',
+        name: 'Matching',
+        folder: false,
+        tracks: [{ contentId: 'r3' }, { contentId: 'r1' }],
+      })
+    })
+
+    it('never offers Matching as a playlist to add tracks to, since a track joins it by being paired', async () => {
+      await openFactory({
+        dj: djReads({
+          rekordbox: {
+            matching: vi.fn<ProgramReads['matching']>().mockResolvedValue([['a', 'b']]),
+          },
+        }),
+      })
+      await screen.findByTestId(`source-node-${MATCHING_ID}`)
+      fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+      fireEvent.click(await screen.findByTestId('track-menu-add-to'))
+      expect(screen.getByTestId('track-menu-playlist-h')).toBeInTheDocument()
+      expect(screen.queryByTestId(`track-menu-playlist-${MATCHING_ID}`)).not.toBeInTheDocument()
+    })
+
     describe('background work', () => {
       const PATHS = ['/m/w.wav', '/m/x.wav', '/m/y.wav', '/m/z.wav']
       const ENTRIES = PATHS.map((path, i) => ({
@@ -4242,6 +4497,21 @@ describe('App source playlists', () => {
             if (seen.length === 0) continue
             o.cb(
               seen.map((target) => ({ target, isIntersecting: true }) as IntersectionObserverEntry),
+              o as unknown as IntersectionObserver,
+            )
+          }
+        })
+      }
+
+      function scrollOut(rows: HTMLElement[]): void {
+        act(() => {
+          for (const o of observers) {
+            const gone = [...o.els].filter((el) => rows.some((r) => el === r || el.contains(r)))
+            if (gone.length === 0) continue
+            o.cb(
+              gone.map(
+                (target) => ({ target, isIntersecting: false }) as IntersectionObserverEntry,
+              ),
               o as unknown as IntersectionObserver,
             )
           }
@@ -4398,8 +4668,36 @@ describe('App source playlists', () => {
         scrollPast([rows[1], rows[2]])
 
         await waitFor(() => expect([...analyzed].sort()).toEqual(['/m/x.wav', '/m/y.wav']))
-        await waitFor(() => expect(screen.queryByTestId('analyze-progress')).toBeNull())
+        await waitFor(() => expect(screen.queryByTestId('sweep-icon-analyze')).toBeNull())
         expect([...analyzed].sort()).toEqual(['/m/x.wav', '/m/y.wav'])
+      })
+
+      it('leaves out a row the scroll only flies past and analyzes one the DJ stops on', async () => {
+        const analyzed: string[] = []
+        setApi({
+          ...collection,
+          getSettings: vi.fn().mockResolvedValue(settings({ autoAnalyze: true })),
+          readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'DJ' }),
+          spectrogram: vi.fn(async (path: string) => {
+            analyzed.push(path)
+            return spectrum
+          }),
+        })
+        const rows = await openAll()
+        await new Promise((r) => setTimeout(r, 400))
+        vi.useFakeTimers()
+
+        scrollPast([rows[1]])
+        act(() => vi.advanceTimersByTime(100))
+        scrollOut([rows[1]])
+        scrollPast([rows[2]])
+        act(() => vi.advanceTimersByTime(400))
+        act(() => vi.advanceTimersByTime(300))
+        vi.useRealTimers()
+
+        await waitFor(() => expect(analyzed).toEqual(['/m/y.wav']))
+        await waitFor(() => expect(screen.queryByTestId('sweep-icon-analyze')).toBeNull())
+        expect(analyzed).toEqual(['/m/y.wav'])
       })
     })
   })
@@ -4874,12 +5172,15 @@ describe('App import skeleton', () => {
     fireEvent.click(await screen.findByTestId('add-files'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
     // Reads are still gated → none of the two have resolved yet.
-    expect(screen.getByTestId('import-progress')).toHaveTextContent('0/2')
+    expect(screen.getByTestId('sweep-icon-import')).toBeInTheDocument()
+    expect(screen.getByTestId('sweeps-percent')).toHaveTextContent(
+      new Intl.NumberFormat(i18n.language, { style: 'percent' }).format(0),
+    )
     // Once both land, the counter clears.
     await act(async () => {
       releaseTags()
     })
-    await waitFor(() => expect(screen.queryByTestId('import-progress')).toBeNull())
+    await waitFor(() => expect(screen.queryByTestId('sweep-icon-import')).toBeNull())
   })
 
   // The native file dialog can stay open for a long time; a file that arrives through
@@ -5631,7 +5932,7 @@ describe('App background measuring', () => {
     measureGrid.mockImplementation(() => new Promise(() => {}))
     await openFactory()
     fireEvent.click(screen.getByTestId('analyze-quality'))
-    await waitFor(() => expect(screen.queryByTestId('analyze-progress')).toBeNull())
+    await waitFor(() => expect(screen.queryByTestId('sweep-icon-analyze')).toBeNull())
     expect(measureGrid).toHaveBeenCalled()
     expect(screen.getByTestId('analyze-quality')).not.toBeDisabled()
     expect(screen.getByTestId('analyze-quality')).not.toHaveAccessibleName(
@@ -6032,8 +6333,8 @@ describe('App multi-select convert', () => {
     const rows = screen.getAllByTestId('track-row')
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { metaKey: true })
-    const convert = await screen.findByTestId('convert-all')
-    expect(convert).toHaveAccessibleName(i18n.t('header.convertAll', { count: 2 }))
+    const convert = await screen.findByTestId('batch-convert')
+    expect(convert).toHaveTextContent(i18n.t('header.convertSelected', { count: 2 }))
     fireEvent.click(convert)
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
     const converted = processTrack.mock.calls.map((c) => c[0].inputPath).sort()
@@ -6060,7 +6361,7 @@ describe('App multi-select convert', () => {
     // Selects all three: the anchor (a.wav) plus b.mp3 and c.flac via range-select.
     fireEvent.click(rows[0])
     fireEvent.click(rows[2], { shiftKey: true })
-    const convert = await screen.findByTestId('convert-all')
+    const convert = await screen.findByTestId('batch-convert')
     fireEvent.click(convert)
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(3))
     const byInput = Object.fromEntries(
@@ -6103,7 +6404,7 @@ describe('App multi-select convert', () => {
     const rows = screen.getAllByTestId('track-row')
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { metaKey: true })
-    fireEvent.click(await screen.findByTestId('convert-all'))
+    fireEvent.click(await screen.findByTestId('batch-convert'))
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
     expect(processTrack.mock.calls.map((c) => c[0].format)).toEqual(['wav', 'wav'])
   })
@@ -6121,7 +6422,7 @@ describe('App multi-select convert', () => {
     const rows = await addTwoTracks()
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { metaKey: true })
-    fireEvent.click(await screen.findByTestId('convert-all'))
+    fireEvent.click(await screen.findByTestId('batch-convert'))
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
     fireEvent.click(await screen.findByTestId('done-more'))
     fireEvent.click(await screen.findByTestId('process-btn'))
@@ -6178,10 +6479,178 @@ describe('App multi-select convert', () => {
     const rows = screen.getAllByTestId('track-row')
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { metaKey: true })
-    fireEvent.click(await screen.findByTestId('convert-all'))
+    fireEvent.click(await screen.findByTestId('batch-convert'))
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
     const mp3Job = processTrack.mock.calls.find((c) => c[0].inputPath === '/music/b.mp3')?.[0]
     expect(mp3Job.addToAppleMusic).toBeUndefined()
+  })
+
+  function hangingConvert() {
+    const pending: ((v: unknown) => void)[] = []
+    const processTrack = vi.fn(() => new Promise((resolve) => pending.push(resolve)))
+    const cancelJob = vi.fn(() => {
+      for (const resolve of pending.splice(0))
+        resolve({ outputPath: '', inPlace: false, skipped: true })
+    })
+    return { processTrack, cancelJob }
+  }
+
+  it('shows the running batch in the editor footer and cancels it there, wherever the selection moves', async () => {
+    const { processTrack, cancelJob } = hangingConvert()
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      processTrack,
+      cancelJob,
+    })
+    await renderApp()
+    const rows = await addTwoTracks()
+    fireEvent.click(rows[0])
+    fireEvent.click(rows[1], { metaKey: true })
+    fireEvent.click(await screen.findByTestId('batch-convert'))
+    await waitFor(() => expect(processTrack).toHaveBeenCalled())
+    expect(await screen.findByTestId('batch-run-progress')).toHaveTextContent('Converting… 0/2')
+    fireEvent.click(screen.getAllByTestId('track-row')[1])
+    await waitFor(() =>
+      expect(screen.getAllByTestId('track-row')[0]).toHaveAttribute('aria-selected', 'false'),
+    )
+    expect(screen.getByTestId('batch-run-progress')).toHaveTextContent('Converting… 0/2')
+    expect(screen.queryByTestId('process-btn')).toBeNull()
+    fireEvent.click(screen.getByTestId('batch-run-cancel'))
+    expect(cancelJob).toHaveBeenCalled()
+    await waitFor(() => expect(screen.queryByTestId('batch-run')).toBeNull())
+    expect(await screen.findByTestId('process-btn')).toBeInTheDocument()
+    expect(screen.getByTestId('batch-summary')).toHaveTextContent('Cancelled')
+  })
+
+  it('shows the running batch and its cancel under the empty editor when the list converts with no track open', async () => {
+    const { processTrack, cancelJob } = hangingConvert()
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      processTrack,
+      cancelJob,
+    })
+    await renderApp()
+    await addTwoTracks()
+    expect(screen.queryByTestId('batch-run')).toBeNull()
+    fireEvent.keyDown(document.body, { key: 'Enter', ctrlKey: true, shiftKey: true })
+    await waitFor(() => expect(processTrack).toHaveBeenCalled())
+    expect(await screen.findByTestId('batch-run-progress')).toHaveTextContent('Converting… 0/2')
+    fireEvent.click(screen.getByTestId('batch-run-cancel'))
+    expect(cancelJob).toHaveBeenCalled()
+    await waitFor(() => expect(screen.queryByTestId('batch-run')).toBeNull())
+  })
+
+  it('starts and cancels the list batch from the menu with no track open, the footer following it', async () => {
+    const { processTrack, cancelJob } = hangingConvert()
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      processTrack,
+      cancelJob,
+    })
+    await renderApp()
+    await addTwoTracks()
+    runMenu('process-all')
+    expect(await screen.findByTestId('batch-run-progress')).toHaveTextContent('Converting… 0/2')
+    runMenu('process-all')
+    expect(cancelJob).toHaveBeenCalled()
+    await waitFor(() => expect(screen.queryByTestId('batch-run')).toBeNull())
+  })
+
+  it('keeps the running batch and its cancel on screen while Copias is open', async () => {
+    const { processTrack, cancelJob } = hangingConvert()
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      trashList: vi.fn().mockResolvedValue([]),
+      processTrack,
+      cancelJob,
+    })
+    await renderApp()
+    await addTwoTracks()
+    runMenu('process-all')
+    await waitFor(() => expect(processTrack).toHaveBeenCalled())
+    runMenu('backups')
+    await screen.findByTestId('copies-screen')
+    expect(screen.getByTestId('batch-run-progress')).toHaveTextContent('Converting… 0/2')
+    fireEvent.click(screen.getByTestId('batch-run-cancel'))
+    expect(cancelJob).toHaveBeenCalled()
+    await waitFor(() => expect(screen.queryByTestId('batch-run')).toBeNull())
+  })
+
+  it('keeps keyboard focus on screen when the batch ends under the empty editor while its Cancel had it', async () => {
+    const { processTrack, cancelJob } = hangingConvert()
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      processTrack,
+      cancelJob,
+    })
+    await renderApp()
+    await addTwoTracks()
+    runMenu('select-all')
+    runMenu('select-all')
+    await waitFor(() => expect(screen.queryByTestId('field-title')).toBeNull())
+    runMenu('process-all')
+    const cancel = await screen.findByTestId('batch-run-cancel')
+    expect(screen.queryByTestId('process-btn')).toBeNull()
+    cancel.focus()
+    fireEvent.click(cancel)
+    await waitFor(() => expect(screen.queryByTestId('batch-run')).toBeNull())
+    expect(document.activeElement).not.toBe(document.body)
+    expect(document.activeElement?.isConnected).toBe(true)
+  })
+
+  it('keeps keyboard focus on screen when the batch ends over Copias while its Cancel had it', async () => {
+    const { processTrack, cancelJob } = hangingConvert()
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      trashList: vi.fn().mockResolvedValue([]),
+      processTrack,
+      cancelJob,
+    })
+    await renderApp()
+    await addTwoTracks()
+    runMenu('process-all')
+    await waitFor(() => expect(processTrack).toHaveBeenCalled())
+    runMenu('backups')
+    await screen.findByTestId('copies-screen')
+    const cancel = screen.getByTestId('batch-run-cancel')
+    cancel.focus()
+    fireEvent.click(cancel)
+    await waitFor(() => expect(screen.queryByTestId('batch-run')).toBeNull())
+    expect(document.activeElement).not.toBe(document.body)
+    expect(screen.getByTestId('copies-screen').parentElement).toContainElement(
+      document.activeElement as HTMLElement,
+    )
+  })
+
+  it('hands focus to the playlists when the batch ends under a source with none picked, the panel having no control left', async () => {
+    const { processTrack, cancelJob } = hangingConvert()
+    setApi({
+      platform: 'darwin',
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      loadAppleMusicPlaylists: vi
+        .fn<Api['loadAppleMusicPlaylists']>()
+        .mockResolvedValue([{ persistentId: 'p1', name: 'Warm up', count: 1 }]),
+      processTrack,
+      cancelJob,
+    })
+    await renderApp()
+    await addTwoTracks()
+    runMenu('process-all')
+    await waitFor(() => expect(processTrack).toHaveBeenCalled())
+    fireEvent.click(await screen.findByTestId('source-rail-appleMusic'))
+    await screen.findByTestId('source-pick-playlist')
+    const cancel = screen.getByTestId('batch-run-cancel')
+    cancel.focus()
+    fireEvent.click(cancel)
+    await waitFor(() => expect(screen.queryByTestId('batch-run')).toBeNull())
+    expect(document.activeElement).toBe(screen.getByTestId('source-node-p1'))
   })
 
   it('applies a format and destination picked by hand to the whole selection', async () => {
@@ -6200,12 +6669,12 @@ describe('App multi-select convert', () => {
     const rows = screen.getAllByTestId('track-row')
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { metaKey: true })
-    await screen.findByTestId('convert-all')
+    await screen.findByTestId('batch-convert')
     fireEvent.click(screen.getByTestId('process-format-toggle'))
     fireEvent.click(screen.getByTestId('process-format-wav'))
     fireEvent.click(screen.getByTestId('process-format-toggle'))
     fireEvent.click(screen.getByTestId('process-destination-beside'))
-    fireEvent.click(screen.getByTestId('convert-all'))
+    fireEvent.click(screen.getByTestId('batch-convert'))
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
     for (const [job] of processTrack.mock.calls) {
       expect(job.format).toBe('wav')
@@ -6236,12 +6705,12 @@ describe('App convert all format with a track open', () => {
     fireEvent.click(await screen.findByTestId('add-files'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
     fireEvent.click(screen.getAllByTestId('track-row')[0])
-    await screen.findByTestId('convert-all')
+    await screen.findByTestId('process-format-toggle')
     if (pick) {
       fireEvent.click(screen.getByTestId('process-format-toggle'))
       fireEvent.click(screen.getByTestId(`process-format-${pick}`))
     }
-    fireEvent.click(screen.getByTestId('convert-all'))
+    runMenu('process-all')
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(3))
     return Object.fromEntries(
       processTrack.mock.calls.map((c) => [c[0].inputPath as string, c[0].format as string]),
@@ -6324,7 +6793,7 @@ describe('App conversion failure notice', () => {
     await renderApp()
     fireEvent.click(await screen.findByTestId('add-files'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
-    fireEvent.click(await screen.findByTestId('convert-all'))
+    runMenu('process-all')
     await waitFor(() => expect(screen.getAllByTestId('process-error')).toHaveLength(1))
     const toast = screen.getByTestId('process-error')
     expect(toast).toHaveTextContent('Pray')
@@ -6353,7 +6822,7 @@ describe('App conversion failure notice', () => {
     await renderApp()
     fireEvent.click(await screen.findByTestId('add-files'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
-    fireEvent.click(await screen.findByTestId('convert-all'))
+    runMenu('process-all')
     const failedCount = await screen.findByTestId('batch-failed-count')
     fireEvent.click(failedCount)
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
@@ -6376,7 +6845,7 @@ describe('App conversion failure notice', () => {
     await renderApp()
     fireEvent.click(await screen.findByTestId('add-files'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
-    fireEvent.click(await screen.findByTestId('convert-all'))
+    runMenu('process-all')
     const skippedCount = await screen.findByTestId('batch-skipped-count')
     expect(skippedCount).toHaveTextContent('2 skipped')
     fireEvent.click(skippedCount)
@@ -6392,9 +6861,8 @@ describe('App conversion failure notice', () => {
   })
 
   // Reported from a video: filtered to the 79 auto-matched rows, the button read "Convert
-  // 81 tracks" and then converted 79. The run already honoured the filter; the label
-  // counted every loaded track, so the user was promised work the click would not do.
-  it('counts only the rows the filter leaves visible, the same ones it converts', async () => {
+  // 81 tracks" and then converted 79. The run has to honour the filter.
+  it('converts only the rows the filter leaves visible', async () => {
     const processTrack = vi.fn(async () => ({ outputPath: '/out/x.aiff', inPlace: false }))
     setApi({
       pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.mp3']),
@@ -6409,8 +6877,7 @@ describe('App conversion failure notice', () => {
     fireEvent.click(screen.getByTestId('quality-filter-ext:MP3'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
 
-    expect(screen.getByTestId('convert-all')).toHaveAccessibleName('Convert 1 track')
-    fireEvent.click(screen.getByTestId('convert-all'))
+    runMenu('process-all')
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(1))
     expect(processTrack).toHaveBeenCalledWith(
       expect.objectContaining({ inputPath: '/music/b.mp3' }),
@@ -6478,7 +6945,7 @@ describe('App Default format x input extension matrix', () => {
     const rows = screen.getAllByTestId('track-row')
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { shiftKey: true })
-    const convert = await screen.findByTestId('convert-all')
+    const convert = await screen.findByTestId('batch-convert')
     fireEvent.click(convert)
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
     const byInput = Object.fromEntries(
@@ -6505,7 +6972,7 @@ describe('App Default format x input extension matrix', () => {
     const rows = screen.getAllByTestId('track-row')
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { shiftKey: true })
-    const convert = await screen.findByTestId('convert-all')
+    const convert = await screen.findByTestId('batch-convert')
     fireEvent.click(convert)
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(1))
     expect(processTrack.mock.calls[0][0].inputPath).toBe('/music/a.wav')
@@ -6658,7 +7125,7 @@ describe('App normalize peak preferences', () => {
     fireEvent.click(screen.getAllByTestId('track-row')[1], { shiftKey: true })
     await screen.findByTestId('normalize-scope')
     fireEvent.click(screen.getByTestId('normalize-mode-loudness'))
-    fireEvent.click(await screen.findByTestId('convert-all'))
+    fireEvent.click(await screen.findByTestId('batch-convert'))
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
     expect(processTrack.mock.calls.map((c) => c[0].normalize?.mode)).toEqual([
       'loudness',
@@ -7301,6 +7768,27 @@ describe('App sort direction', () => {
   })
 })
 
+describe('App lazy preload', () => {
+  it('schedules the preload once the first rows of the library are in', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+    })
+    idlePreload.calls = 0
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    await waitFor(() => expect(idlePreload.calls).toBeGreaterThan(0))
+  })
+
+  it('does not schedule the preload while the library is empty', async () => {
+    idlePreload.calls = 0
+    await renderApp()
+    await screen.findByTestId('add-files')
+    expect(idlePreload.calls).toBe(0)
+  })
+})
+
 describe('App per-format filter', () => {
   // Drops the wav + mp3 pair the format cases lean on (both unconverted, distinct formats).
   async function addMixedCrate(): Promise<void> {
@@ -7345,6 +7833,21 @@ describe('App per-format filter', () => {
     // The crate is now WAV-only: had the format filter stayed on MP3 the WAV row would be
     // hidden (0 rows). Seeing it proves the format filter reset.
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+  })
+
+  it('leaves text still in a field alone when the format filter resets on its own', async () => {
+    await addMixedCrate()
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-section-format'))
+    fireEvent.click(screen.getByTestId('quality-filter-ext:MP3'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    fireEvent.contextMenu(screen.getByTestId('track-row'))
+    const flush = vi.fn()
+    const release = holdPendingEdit(flush)
+    fireEvent.click(screen.getByTestId('track-menu-remove'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    release()
+    expect(flush).toHaveBeenCalledTimes(1)
   })
 
   // The bug a DJ hit: filter to one format (MP3), press "Empty" expecting only those gone,
@@ -7404,6 +7907,51 @@ describe('App filter selection', () => {
     // …so the lone remaining row (the mp3) becomes the selected one.
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
     expect(screen.getAllByTestId('track-row')[0]).toHaveAttribute('aria-selected', 'true')
+  })
+
+  it('never renders the list with the editor still on a track the new filter hides', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.mp3']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-section-format'))
+    trackListRenders.shown = []
+    fireEvent.click(screen.getByTestId('quality-filter-ext:MP3'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    expect(screen.getAllByTestId('track-row')[0]).toHaveAttribute('aria-selected', 'true')
+    const stranded = trackListRenders.shown.filter(
+      (r) => r.selectedId !== null && !r.ids.includes(r.selectedId),
+    )
+    expect(stranded).toEqual([])
+  })
+
+  it('keeps text typed into a track on that track when the filter hides it and the selection moves', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.mp3']),
+      readTags: vi.fn(async (path: string) => ({
+        title: path.endsWith('a.wav') ? 'Alpha' : 'Bravo',
+        artist: 'DJ',
+      })),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Alpha'))
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-section-format'))
+    fireEvent.change(screen.getByTestId('field-title'), { target: { value: 'Typed Name' } })
+    fireEvent.click(screen.getByTestId('quality-filter-ext:MP3'))
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Bravo'))
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-section-format'))
+    fireEvent.click(screen.getByTestId('quality-filter-ext:MP3'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    fireEvent.click(screen.getAllByTestId('track-row')[0])
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Typed Name'))
   })
 })
 
@@ -7485,7 +8033,7 @@ describe('App donate nudge', () => {
     const rows = await addTwoTracks()
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { metaKey: true })
-    fireEvent.click(await screen.findByTestId('convert-all'))
+    fireEvent.click(await screen.findByTestId('batch-convert'))
   }
 
   // The nudge moved off app launch onto the moment of value: opening Surco is when the
@@ -9085,6 +9633,15 @@ describe('App duplicates filter', () => {
   })
 })
 
+describe('zoomed window', () => {
+  it('keeps the layout at the window minimum so zooming in scrolls instead of clipping the convert button', async () => {
+    await renderApp()
+    await addTwoTracks()
+
+    expect(screen.getByTestId('app-root')).toHaveStyle({ minWidth: `${WINDOW_MIN_SIZE.width}px` })
+  })
+})
+
 describe('drop target', () => {
   // With tracks in the list they land in the sidebar, so that is where the drag answers.
   // The old full-screen overlay covered both columns — including the one nothing was going
@@ -9092,7 +9649,7 @@ describe('drop target', () => {
   it('marks the column the tracks will land in, covering nothing', async () => {
     await renderApp()
     await addTwoTracks()
-    const root = screen.getByTestId('sidebar').closest('.flex.h-screen') as HTMLElement
+    const root = screen.getByTestId('app-root')
 
     fireEvent.dragEnter(root)
 
@@ -9104,7 +9661,7 @@ describe('drop target', () => {
   it('lights no column for a playlist dragged in the tree, which is not files arriving', async () => {
     await renderApp()
     await addTwoTracks()
-    const root = screen.getByTestId('sidebar').closest('.flex.h-screen') as HTMLElement
+    const root = screen.getByTestId('app-root')
     const dt = fakeDataTransfer()
     dt.setData(TREE_NODE_TYPE, 'house')
 
@@ -9119,7 +9676,7 @@ describe('drop target', () => {
   it('lights the one empty screen while the first files are dragged in, and clears it on leave', async () => {
     await renderApp()
     const zone = await screen.findByTestId('empty-dropzone')
-    const root = zone.closest('.flex.h-screen') as HTMLElement
+    const root = screen.getByTestId('app-root')
 
     fireEvent.dragEnter(root)
 
@@ -9138,7 +9695,7 @@ describe('drop target', () => {
     setApi({ pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']) })
     await renderApp()
     await addOneTrack()
-    const root = screen.getByTestId('sidebar').closest('.flex.h-screen') as HTMLElement
+    const root = screen.getByTestId('app-root')
     const well = await screen.findByTestId('cover-dropzone')
 
     fireEvent.dragEnter(root)
@@ -9152,7 +9709,7 @@ describe('drop target', () => {
     setApi({ pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']) })
     await renderApp()
     await addOneTrack()
-    const root = screen.getByTestId('sidebar').closest('.flex.h-screen') as HTMLElement
+    const root = screen.getByTestId('app-root')
     const well = await screen.findByTestId('cover-dropzone')
 
     fireEvent.dragEnter(root)
@@ -9273,19 +9830,17 @@ describe('App Music review', () => {
   })
 
   // The review's batch is the screen's main action while it is open, so it takes the
-  // toolbar's main button the way converting does for the list.
-  it('puts Apply in the toolbar in place of Convert while the review is open', async () => {
+  // toolbar's main button.
+  it('puts Apply in the toolbar while the review is open', async () => {
     vi.resetModules()
     reviewApi(spellingFixture())
     await renderApp()
     await addOneTrack()
-    expect(screen.getByTestId('convert-all')).toBeInTheDocument()
     runMenu('music-review')
     const apply = await screen.findByTestId('music-review-apply')
     expect(screen.getByTestId('open-settings').closest('header')).toContainElement(apply)
     expect(apply).toHaveTextContent('Apply 0 changes')
     expect(apply).toBeDisabled()
-    expect(screen.queryByTestId('convert-all')).not.toBeInTheDocument()
     await stageGroup()
     expect(apply).toHaveTextContent('Apply 1 change')
     expect(apply).toBeEnabled()
@@ -9293,7 +9848,7 @@ describe('App Music review', () => {
     expect(await screen.findByTestId('music-review-confirm')).toBeInTheDocument()
   })
 
-  it('gives Convert back to the toolbar when the review closes', async () => {
+  it('takes Apply out of the toolbar when the review closes', async () => {
     vi.resetModules()
     reviewApi(spellingFixture())
     await renderApp()
@@ -9301,27 +9856,26 @@ describe('App Music review', () => {
     runMenu('music-review')
     await screen.findByTestId('music-review-apply')
     fireEvent.click(screen.getByTestId('music-review-close'))
-    expect(await screen.findByTestId('convert-all')).toBeInTheDocument()
-    expect(screen.queryByTestId('music-review-apply')).not.toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByTestId('music-review-apply')).not.toBeInTheDocument())
   })
 
-  // A running batch has its progress and its only Cancel in that button; opening the
+  // A running batch has its progress and its only Cancel in the footer; opening the
   // review must not take them away.
-  it('keeps the running batch and its cancel in the toolbar when the review opens', async () => {
+  it('keeps the running batch and its cancel in the footer when the review opens', async () => {
     vi.resetModules()
     const cancelJob = vi.fn()
     const processTrack = vi.fn(() => new Promise(() => {}))
     reviewApi({ processTrack, cancelJob, ...spellingFixture() })
     await renderApp()
     await addOneTrack()
-    fireEvent.click(screen.getByTestId('convert-all'))
+    runMenu('process-all')
     await waitFor(() => expect(processTrack).toHaveBeenCalled())
     runMenu('music-review')
     await screen.findByTestId('music-review')
-    const convert = screen.getByTestId('convert-all')
-    expect(convert).toHaveAccessibleName(/^Cancel the conversion/)
+    const cancel = screen.getByTestId('batch-run-cancel')
+    expect(cancel).toHaveAccessibleName(/^Cancel the conversion/)
     expect(screen.queryByTestId('music-review-apply')).not.toBeInTheDocument()
-    fireEvent.click(convert)
+    fireEvent.click(cancel)
     expect(cancelJob).toHaveBeenCalled()
   })
 
@@ -9844,7 +10398,8 @@ describe('App list review', () => {
     fireEvent.click(button)
     expect(await screen.findByTestId('list-review-scope')).toBeInTheDocument()
     fireEvent.click(screen.getByTestId('music-review-close'))
-    fireEvent.click(await screen.findByTestId('convert-all'))
+    await waitFor(() => expect(screen.queryByTestId('music-review')).not.toBeInTheDocument())
+    runMenu('process-all')
     fireEvent.click(await screen.findByTestId('list-actions-more'))
     await waitFor(() => expect(screen.getByTestId('list-review-open')).toBeDisabled())
   })
@@ -9915,7 +10470,7 @@ describe('App list review', () => {
 
 // A dropped folder is when the user can still fix its names before they spread to the
 // libraries; the notice says what the review would find without opening it uninvited.
-describe('App list review notice', () => {
+describe('App list review notice', { timeout: 15000 }, () => {
   it('says what a finished load leaves to review and opens the review from there', async () => {
     vi.resetModules()
     listApi()
@@ -9942,7 +10497,7 @@ describe('App list review notice', () => {
       getPathForFile: (f: { name: string }) => f.name,
     })
     await renderApp()
-    const root = (await screen.findByTestId('add-files')).closest('.flex.h-screen') as HTMLElement
+    const root = await screen.findByTestId('app-root')
     fireEvent.drop(root, {
       dataTransfer: { files: Object.keys(tags).map((name) => ({ name })), types: ['Files'] },
     })
@@ -9970,12 +10525,14 @@ describe('App list review notice', () => {
     })
     await renderApp()
     await addThree()
-    await waitFor(() => expect(screen.getAllByTestId('track-row')[1]).toHaveTextContent('Bravo'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')[1]).toHaveTextContent('Bravo'), {
+      timeout: 3000,
+    })
     expect(screen.queryByTestId('list-review-notice')).not.toBeInTheDocument()
     await act(async () => release())
-    expect(await screen.findByTestId('list-review-notice')).toHaveTextContent(
-      '3 tracks loaded. 1 spelling to review',
-    )
+    expect(
+      await screen.findByTestId('list-review-notice', {}, { timeout: 3000 }),
+    ).toHaveTextContent('3 tracks loaded. 1 spelling to review')
   })
 
   it('stays quiet when the list has nothing to review', async () => {
@@ -10038,7 +10595,7 @@ describe('App list review notice', () => {
       getPathForFile: (f: { name: string }) => f.name,
     })
     await renderApp()
-    const root = (await screen.findByTestId('add-files')).closest('.flex.h-screen') as HTMLElement
+    const root = await screen.findByTestId('app-root')
     const drop = (paths: string[]) =>
       fireEvent.drop(root, {
         dataTransfer: { files: paths.map((name) => ({ name })), types: ['Files'] },
@@ -10084,7 +10641,7 @@ describe('App list review notice', () => {
     await waitFor(() => expect(screen.queryByTestId('list-review-notice')).not.toBeInTheDocument())
     runMenu('list-review')
     await screen.findByTestId('list-review-scope')
-    const root = screen.getByTestId('sidebar').closest('.flex.h-screen') as HTMLElement
+    const root = screen.getByTestId('app-root')
     fireEvent.drop(root, {
       dataTransfer: {
         files: ['/music/e.wav', '/music/f.wav'].map((name) => ({ name })),
@@ -10896,7 +11453,7 @@ describe('App clean-up of a space the read already trimmed', () => {
         ),
       { timeout: 3000 },
     )
-    fireEvent.click(screen.getByTestId('convert-all'))
+    runMenu('process-all')
     await waitFor(() => expect(processTrack).toHaveBeenCalled())
     const job = processTrack.mock.calls
       .map((c) => (c as unknown as [{ inputPath: string; meta: { title: string } }])[0])
@@ -11562,5 +12119,45 @@ describe('App sidebar', () => {
     fireEvent.click(screen.getByRole('menuitemcheckbox', { name: i18n.t('view.sidebar') }))
     await waitFor(() => expect(screen.queryByTestId('sidebar-peek')).not.toBeInTheDocument())
     expect(screen.getByTestId('source-rail')).toBeInTheDocument()
+  })
+})
+
+describe('App editor crash', () => {
+  it('keeps the running batch and its cancel under the editor when the editor crashes mid-batch', async () => {
+    const silenced = vi.spyOn(console, 'error').mockImplementation(() => {})
+    vi.resetModules()
+    vi.doMock('./components/Editor', () => ({
+      Editor: () => {
+        throw new Error('boom')
+      },
+    }))
+    try {
+      const pending: ((v: unknown) => void)[] = []
+      const processTrack = vi.fn(() => new Promise((resolve) => pending.push(resolve)))
+      const cancelJob = vi.fn(() => {
+        for (const resolve of pending.splice(0))
+          resolve({ outputPath: '', inPlace: false, skipped: true })
+      })
+      setApi({
+        pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']),
+        readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+        processTrack,
+        cancelJob,
+      })
+      await renderApp()
+      const rows = await addTwoTracks()
+      runMenu('process-all')
+      await waitFor(() => expect(processTrack).toHaveBeenCalled())
+      fireEvent.click(rows[0])
+      expect(await screen.findByTestId('error-boundary')).toBeInTheDocument()
+      expect(screen.getByTestId('batch-run-progress')).toHaveTextContent('Converting… 0/2')
+      fireEvent.click(screen.getByTestId('batch-run-cancel'))
+      expect(cancelJob).toHaveBeenCalled()
+      await waitFor(() => expect(screen.queryByTestId('batch-run')).toBeNull())
+    } finally {
+      vi.doUnmock('./components/Editor')
+      vi.resetModules()
+      silenced.mockRestore()
+    }
   })
 })

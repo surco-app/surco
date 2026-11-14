@@ -13,6 +13,7 @@ export function CheckboxRow({
   onChange,
   label,
   disabled = false,
+  note,
   className = '',
 }: {
   testid: string
@@ -22,6 +23,7 @@ export function CheckboxRow({
   // A setting whose dependency is off stays visible but dimmed, so it never vanishes and
   // leaves the user hunting for it. Each tab used to re-derive this by hand.
   disabled?: boolean
+  note?: string
   className?: string
 }): React.JSX.Element {
   return (
@@ -40,7 +42,10 @@ export function CheckboxRow({
         onChange={(e) => onChange(e.target.checked)}
         className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--color-accent)]"
       />
-      <span className="text-sm">{label}</span>
+      <span className="text-sm">
+        {label}
+        {note && <span className="ml-2 text-xs text-fg-dim">{note}</span>}
+      </span>
     </label>
   )
 }

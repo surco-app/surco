@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
+import ca from './locales/ca.json'
 import de from './locales/de.json'
 import en from './locales/en.json'
 import es from './locales/es.json'
 import fr from './locales/fr.json'
+import itIT from './locales/it.json'
 import ja from './locales/ja.json'
 import ptBR from './locales/pt-BR.json'
 
@@ -25,6 +27,8 @@ const LOCALES = [
   ['fr', fr],
   ['pt-BR', ptBR],
   ['ja', ja],
+  ['ca', ca],
+  ['it', itIT],
 ] as const
 
 const sections = (locale: unknown) => (locale as { guide: { sections: Section[] } }).guide.sections

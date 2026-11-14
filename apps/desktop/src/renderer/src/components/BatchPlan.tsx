@@ -1,115 +1,112 @@
 import { ChevronDown } from 'lucide-react'
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
-import type { FormatSetting, PlaylistSource } from '../../../shared/types'
+import type { FormatSetting } from '../../../shared/types'
 import type { Destination } from '../lib/destination'
-import { destinationLine } from '../lib/destinationLine'
-import type { DjLibraryId } from '../lib/djLibraries'
 import { FormatDestinationMenu } from './FormatDestinationMenu'
 import { useSplitMenu } from './SplitButton'
+import { Tooltip } from './Tooltip'
 
 export function BatchPlan({
   count,
+  total,
   format,
   destination,
   destinations,
-  withAppleMusic,
-  djTargets,
-  openSource,
   leftOut,
   onBlockedPress,
   onSelectFormat,
   onSelectDestination,
+  onConvert,
+  convertHint,
 }: {
   count: number
+  total: number
   format: FormatSetting
   destination: Destination
   destinations: readonly Destination[]
-  withAppleMusic: boolean
-  djTargets: DjLibraryId[]
-  openSource?: PlaylistSource | null
   leftOut?: string
   onBlockedPress?: () => void
   onSelectFormat: (format: FormatSetting) => void
   onSelectDestination: (destination: Destination) => void
+  onConvert?: () => void
+  convertHint?: string
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const { open, setOpen, ref, toggleRef, menuRef, onMenuKeyDown } = useSplitMenu()
   const formatLabel = format === 'source' ? tr('settings.formats.source') : format.toUpperCase()
-  const programs = destinationLine({
-    destination,
-    withAppleMusic: withAppleMusic && destination !== 'appleMusic',
-    djTargets,
-    djHolds: [],
-    openSource: openSource ?? null,
-    inPlace: false,
-    inMusic: false,
-    replaces: false,
-    libraryBetter: false,
-    replacedFormat: '',
-    outputFolder: '',
-  })
-    .parts.filter((part) =>
-      ['editor.lineAdds', 'editor.lineUpdates', 'editor.lineSyncs'].includes(part.key),
-    )
-    .map((part) => tr(part.key, part.options))
+  const convertLabel =
+    count < total
+      ? tr('header.convertSomeSelected', { ready: count, total })
+      : tr('header.convertSelected', { count })
   return (
-    <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
-      {leftOut && (
-        <button
-          type="button"
-          data-testid="batch-plan-blocked"
-          onClick={onBlockedPress}
-          className="press mr-auto flex items-center gap-1.5 text-xs text-fg-dim hover:text-fg"
-        >
-          <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-warn" />
-          {leftOut}
-        </button>
-      )}
-      <span data-testid="batch-plan" className="text-xs text-fg-dim">
-        {tr('editor.batchPlan', {
-          count,
-          format: formatLabel,
-          destination: tr(`settings.destinations.${destination}`),
-        })}
-        {programs.map((program) => ` · ${program}`).join('')}
-      </span>
-      <div ref={ref} className="relative">
-        <button
-          type="button"
-          data-testid="process-format-toggle"
-          ref={toggleRef}
-          aria-haspopup="menu"
-          aria-expanded={open}
-          onClick={() => setOpen((v) => !v)}
-          className="press flex h-8 items-center gap-1 rounded-lg px-2 text-xs text-[var(--color-accent)] hover:bg-[var(--color-hover)]"
-        >
-          {tr('editor.formatAndDestination')}
-          <ChevronDown
-            aria-hidden="true"
-            className={`h-3 w-3 transition-transform ${open ? 'rotate-180' : ''}`}
-          />
-        </button>
-        {open && (
-          <FormatDestinationMenu
-            menuRef={menuRef}
-            onMenuKeyDown={onMenuKeyDown}
-            offerSource
-            outputFormat={format}
-            exportedFormat={null}
-            destination={destination}
-            destinations={destinations}
-            onPickFormat={(f) => {
-              setOpen(false)
-              onSelectFormat(f)
-            }}
-            onPickDestination={(d) => {
-              setOpen(false)
-              onSelectDestination(d)
-            }}
-          />
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
+        {leftOut && (
+          <button
+            type="button"
+            data-testid="batch-plan-blocked"
+            onClick={onBlockedPress}
+            className="press mr-auto flex items-center gap-1.5 text-xs text-fg-dim hover:text-fg"
+          >
+            <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-warn" />
+            {leftOut}
+          </button>
         )}
+        <span data-testid="batch-plan" className="text-xs text-fg-dim">
+          {tr('editor.batchPlan', {
+            count,
+            format: formatLabel,
+            destination: tr(`settings.destinations.${destination}`),
+          })}
+        </span>
+        <div ref={ref} className="relative">
+          <button
+            type="button"
+            data-testid="process-format-toggle"
+            ref={toggleRef}
+            aria-haspopup="menu"
+            aria-expanded={open}
+            onClick={() => setOpen((v) => !v)}
+            className="press flex h-8 items-center gap-1 rounded-lg px-2 text-xs text-[var(--color-accent)] hover:bg-[var(--color-hover)]"
+          >
+            {tr('editor.formatAndDestination')}
+            <ChevronDown
+              aria-hidden="true"
+              className={`h-3 w-3 transition-transform ${open ? 'rotate-180' : ''}`}
+            />
+          </button>
+          {open && (
+            <FormatDestinationMenu
+              menuRef={menuRef}
+              onMenuKeyDown={onMenuKeyDown}
+              offerSource
+              outputFormat={format}
+              exportedFormat={null}
+              destination={destination}
+              destinations={destinations}
+              onPickFormat={(f) => {
+                setOpen(false)
+                onSelectFormat(f)
+              }}
+              onPickDestination={(d) => {
+                setOpen(false)
+                onSelectDestination(d)
+              }}
+            />
+          )}
+        </div>
       </div>
+      <button
+        type="button"
+        data-testid="batch-convert"
+        onClick={onConvert}
+        disabled={count === 0}
+        className="press group relative w-full rounded-lg bg-[var(--color-accent)] py-2.5 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:pointer-events-none disabled:opacity-40"
+      >
+        {convertLabel}
+        <Tooltip label={convertLabel} hint={convertHint} />
+      </button>
     </div>
   )
 }

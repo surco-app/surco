@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   answersFromSettings,
   DEFAULT_SESSION_WIZARD,
-  normalizeSessionWizard,
   normalizeSessionsMade,
+  normalizeSessionWizard,
   withSessionMade,
   wizardSettingsFrom,
 } from './sessionSettings'

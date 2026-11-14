@@ -2,6 +2,11 @@ import { describe, expect, it } from 'vitest'
 import { formatShortcut } from './shortcuts'
 
 describe('formatShortcut', () => {
+  it('writes a function key in capitals on both platforms', () => {
+    expect(formatShortcut(['shift', 'f6'], true)).toBe('⇧F6')
+    expect(formatShortcut(['shift', 'f6'], false)).toBe('Shift+F6')
+  })
+
   it('stacks the mac glyphs with no separator, the native macOS style', () => {
     expect(formatShortcut(['mod', 'O'], true)).toBe('⌘O')
     expect(formatShortcut(['mod', 'shift', 'enter'], true)).toBe('⌘⇧↵')

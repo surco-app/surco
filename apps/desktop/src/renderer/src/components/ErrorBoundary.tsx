@@ -7,6 +7,7 @@ interface Props {
   // Container class for the fallback. The root boundary fills the screen; the one
   // around the editor panel stays inside the panel so the track list survives.
   className?: string
+  footer?: ReactNode
 }
 
 interface State {
@@ -33,7 +34,7 @@ export class ErrorBoundary extends Component<Props, State> {
   render(): ReactNode {
     const { error, info, reporting } = this.state
     if (!error) return this.props.children
-    return (
+    const panel = (
       <div
         data-testid="error-boundary"
         className={
@@ -92,6 +93,13 @@ export class ErrorBoundary extends Component<Props, State> {
             onClose={() => this.setState({ reporting: false })}
           />
         )}
+      </div>
+    )
+    if (!this.props.footer) return panel
+    return (
+      <div className="flex h-full flex-col">
+        <div className="min-h-0 flex-1">{panel}</div>
+        {this.props.footer}
       </div>
     )
   }

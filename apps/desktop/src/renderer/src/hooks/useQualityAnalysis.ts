@@ -268,14 +268,15 @@ export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params)
         let evicted = false
         try {
           if (forgottenRef.current.has(t.id)) return
-          if (!latest.spectrum) await queryClient.fetchQuery(spectrogramOptions(path))
+          if (!latest.spectrum)
+            await queryClient.fetchQuery({ ...spectrogramOptions(path), gcTime: 0 })
           // The wave feeds the silence attention filter (silence left to trim); the
           // clip/channel scan — a separate probe since the split — feeds the clipping
           // one. Both decoded here so a single "analyze all" fills those buckets
           // collection-wide instead of only for tracks the user opened or played.
           await Promise.all([
-            queryClient.fetchQuery(waveformOptions(path)),
-            queryClient.fetchQuery(waveformScanOptions(path, 'low')),
+            queryClient.fetchQuery({ ...waveformOptions(path), gcTime: 0 }),
+            queryClient.fetchQuery({ ...waveformScanOptions(path, 'low'), gcTime: 0 }),
           ])
           onMeasuredRef.current?.(t.id)
           details.push({ id: t.id, path })

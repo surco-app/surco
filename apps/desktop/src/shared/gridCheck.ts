@@ -1,5 +1,5 @@
-import { gridOffsets, type GridFit } from './gridEdit'
-import { gridVerdictOf, type GridVerdict } from './gridVerdict'
+import { type GridFit, gridOffsets } from './gridEdit'
+import { type GridVerdict, gridVerdictOf } from './gridVerdict'
 
 export interface GridCheck {
   hereMs: number

@@ -1,17 +1,21 @@
 import { existsSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
+import appCa from '../../../desktop/src/renderer/src/i18n/locales/ca.json'
 import appDe from '../../../desktop/src/renderer/src/i18n/locales/de.json'
 import appEn from '../../../desktop/src/renderer/src/i18n/locales/en.json'
 import appEs from '../../../desktop/src/renderer/src/i18n/locales/es.json'
 import appFr from '../../../desktop/src/renderer/src/i18n/locales/fr.json'
+import appIt from '../../../desktop/src/renderer/src/i18n/locales/it.json'
 import appJa from '../../../desktop/src/renderer/src/i18n/locales/ja.json'
 import appPtBR from '../../../desktop/src/renderer/src/i18n/locales/pt-BR.json'
 import { spellingGroups } from '../../../desktop/src/renderer/src/lib/musicSpelling'
+import ca from '../i18n/locales/ca.json'
 import de from '../i18n/locales/de.json'
 import en from '../i18n/locales/en.json'
 import es from '../i18n/locales/es.json'
 import fr from '../i18n/locales/fr.json'
+import itIT from '../i18n/locales/it.json'
 import ja from '../i18n/locales/ja.json'
 import ptBR from '../i18n/locales/pt-BR.json'
 import {
@@ -37,6 +41,8 @@ const SITE_LANGUAGES = [
   ['fr', fr, appFr],
   ['pt-BR', ptBR, appPtBR],
   ['ja', ja, appJa],
+  ['ca', ca, appCa],
+  ['it', itIT, appIt],
 ] as const
 
 type Setting = { tab: string; section?: string; setting: string; value?: string }
@@ -63,7 +69,7 @@ function groups(locale: unknown): Group[] {
 // for are exactly the ones who give up at that point.
 describe('use case settings name what the app shows', () => {
   for (const [name, web, app] of SITE_LANGUAGES) {
-    const tabs = Object.values(app.settings.tabs)
+    const tabs = [...Object.values(app.settings.tabs), ...Object.values(app.settings.entries)]
     const labels = strings(app)
 
     it(`${name} points at settings tabs that exist`, () => {
@@ -250,6 +256,8 @@ describe('use case pages', () => {
       fr: '/fr/use-cases/music-on-a-nas',
       'pt-BR': '/pt/use-cases/music-on-a-nas',
       ja: '/ja/use-cases/music-on-a-nas',
+      ca: '/ca/use-cases/music-on-a-nas',
+      it: '/it/use-cases/music-on-a-nas',
     })
   })
 

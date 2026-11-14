@@ -15,6 +15,8 @@ const LAZY_LOCALES = {
   fr: () => import('./locales/fr.json'),
   'pt-BR': () => import('./locales/pt-BR.json'),
   ja: () => import('./locales/ja.json'),
+  ca: () => import('./locales/ca.json'),
+  it: () => import('./locales/it.json'),
 } as const
 type LazyLocale = keyof typeof LAZY_LOCALES
 

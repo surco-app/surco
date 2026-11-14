@@ -2354,7 +2354,6 @@ describe('Editor convert line for a rekordbox track whose Music entry is this ve
       expect(window.api.appleMusicEntryLocation).toHaveBeenCalledWith('0123456789ABCDEF'),
     )
     expect(screen.getByTestId('convert-up-to-date')).toBeInTheDocument()
-    expect(screen.queryByTestId('convert-destination-line')).toBeNull()
   })
 
   it('offers to update the tags, never to replace the copy, once a tag is edited', async () => {
@@ -4383,6 +4382,7 @@ describe('Editor Apple Music library badge', () => {
       hasClipboardImage: vi.fn().mockResolvedValue(false),
       onWindowFocus: vi.fn(() => () => {}),
       appleMusicEntryMeta: vi.fn().mockResolvedValue(null),
+      cancelAnalysis: vi.fn().mockResolvedValue(undefined),
     }
   }
 
@@ -4486,10 +4486,9 @@ describe('Editor Apple Music library badge', () => {
     expect(headerRow).toContainElement(screen.getByTestId('apple-music-status'))
   })
 
-  // A track already in the library offers to replace that copy, and whether that is worth it
-  // depends on what the copy is: an MP3 at 128 begs replacing, an AIFF may not. The badge
-  // names the copy's format so the decision doesn't need a trip to Music.
-  it('names the format of the library copy the track would replace', async () => {
+  // The mark beside Metadata only says the track is in the library. The copy's format
+  // belongs with the comparison that weighs it, so it is said once, not on both lines.
+  it('keeps the library copy format off the mark beside Metadata', async () => {
     setApi('darwin')
     const api = window.api as unknown as Record<string, unknown>
     api.appleMusicEntryLocation = vi.fn().mockResolvedValue('/Music/Strobe.mp3')
@@ -4497,9 +4496,9 @@ describe('Editor Apple Music library badge', () => {
     renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } }, 'wav', {
       libraryIndex: ownedWithId,
     })
-    await waitFor(() =>
-      expect(screen.getByTestId('apple-music-copy-format')).toHaveTextContent('MP3 320'),
-    )
+    await waitFor(() => expect(api.properties).toHaveBeenCalledWith('/Music/Strobe.mp3'))
+    expect(screen.getByTestId('apple-music-status')).toHaveTextContent('In Apple Music')
+    expect(screen.getByTestId('apple-music-status')).not.toHaveTextContent('MP3')
   })
 
   // The swap recipe promises a warning when the file in hand is worse than the library copy.
@@ -4530,7 +4529,6 @@ describe('Editor Apple Music library badge', () => {
       ),
     )
     expect(screen.getByTestId('apple-music-status')).toHaveAttribute('data-tone', 'warn')
-    expect(screen.queryByTestId('apple-music-copy-format')).toBeNull()
   })
 
   it('says nothing about quality when the file in hand is a real upgrade', async () => {
@@ -4550,9 +4548,6 @@ describe('Editor Apple Music library badge', () => {
       libraryIndex: ownedWithId,
       showSpectrum: true,
     })
-    await waitFor(() =>
-      expect(screen.getByTestId('apple-music-copy-format')).toHaveTextContent('MP3 320'),
-    )
     await waitFor(() => expect(api.spectrogram).toHaveBeenCalled())
     expect(screen.queryByTestId('library-copy-better-note')).toBeNull()
   })
@@ -4568,7 +4563,6 @@ describe('Editor Apple Music library badge', () => {
     })
     await waitFor(() => expect(api.appleMusicEntryLocation).toHaveBeenCalled())
     expect(screen.getByTestId('apple-music-status')).toHaveTextContent('In Apple Music')
-    expect(screen.queryByTestId('apple-music-copy-format')).toBeNull()
   })
 
   // Netzwerk, measured: the AIFF and the library's WAV are one master, and the WAV went
@@ -4664,6 +4658,25 @@ describe('Editor Apple Music library badge', () => {
 
   // The pill sat inside the header's fold button: a click on it folded Metadata, and a
   // button nested in a button is out of reach for the keyboard and a screen reader.
+  // Whether the swap is worth it depends on what the library copy is down to its depth and
+  // rate: a WAV 16/44.1 and a WAV 24/96 are not the same copy. The table that weighs the two
+  // copies is where that is read, so its heading names the copy in full.
+  it('names the library copy in full at the head of the comparison', async () => {
+    const { api } = renderWithLibraryCopy({ here: aifLoudness, library: wavLoudness })
+    api.properties = vi.fn(async (path: string) =>
+      path === '/Music/Strobe.wav'
+        ? { ...mp3Copy, container: 'wav', codec: 'pcm_s16le', bitDepth: 16, bitrateKbps: 1411 }
+        : null,
+    )
+    await waitFor(() =>
+      expect(screen.getByTestId('copy-verdict')).toHaveAttribute('data-state', 'here'),
+    )
+    fireEvent.click(screen.getByTestId('copy-verdict'))
+    expect(
+      await screen.findByRole('columnheader', { name: 'Apple Music · WAV 16/44.1' }),
+    ).toBeInTheDocument()
+  })
+
   // A track opened straight from the library's own folder is the library's copy: comparing
   // it with itself measures twice to say "same audio" about one file.
   it('shows no verdict when the file in hand is the library copy itself', async () => {
@@ -5260,6 +5273,174 @@ describe('Editor maximized section', () => {
     // The File name section draws no wave, so it never grows the maximize toggle.
     const output = screen.getByTestId('output-name').closest('div[class*="border-t"]')
     expect(output && within(output as HTMLElement).queryByTestId('section-maximize')).toBeFalsy()
+  })
+})
+
+describe('Editor maximized section motion', () => {
+  type FakeAnimation = { currentTime: number; cancel: () => void; onfinish: (() => void) | null }
+  let animations: {
+    el: Element
+    frames: Keyframe[]
+    options: KeyframeAnimationOptions
+    anim: FakeAnimation
+  }[]
+  beforeEach(() => {
+    animations = []
+    Object.assign((window as unknown as { api: object }).api, { cancelAnalysis: vi.fn() })
+    HTMLElement.prototype.animate = function (frames, options) {
+      const anim: FakeAnimation = { currentTime: 100, cancel: vi.fn(), onfinish: null }
+      animations.push({
+        el: this,
+        frames: frames as Keyframe[],
+        options: options as KeyframeAnimationOptions,
+        anim,
+      })
+      return anim as unknown as Animation
+    }
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: Element,
+    ) {
+      return this.parentElement?.dataset.testid === 'editor-scroll' &&
+        this.querySelector('[data-section-header="trim"]')
+        ? new DOMRect(512, 384, 256, 96)
+        : new DOMRect(0, 0, 0, 0)
+    })
+    clientArea(1024, 768)
+  })
+  const clientArea = (width: number, height: number): void => {
+    vi.spyOn(Element.prototype, 'clientWidth', 'get').mockImplementation(function (this: Element) {
+      return this === document.documentElement ? width : 0
+    })
+    vi.spyOn(Element.prototype, 'clientHeight', 'get').mockImplementation(function (this: Element) {
+      return this === document.documentElement ? height : 0
+    })
+  }
+  afterEach(() => {
+    delete (HTMLElement.prototype as { animate?: unknown }).animate
+    vi.restoreAllMocks()
+    vi.unstubAllGlobals()
+  })
+
+  const maximizeTrim = (): HTMLElement => {
+    fireEvent.click(within(screen.getByTestId('editor-trim')).getByTestId('section-maximize'))
+    return screen.getByTestId('section-maximized-overlay')
+  }
+
+  const SECTION_FRAME = {
+    transform: 'translate(512px, 384px) scale(0.25)',
+    clipPath: 'inset(0px 0px 384px 0px)',
+    opacity: 0,
+  }
+  const FULL_FRAME = { transform: 'none', clipPath: 'inset(0px 0px 0px 0px)', opacity: 1 }
+  const inColumn = (): HTMLElement[] =>
+    within(screen.getByTestId('editor-scroll')).queryAllByTestId('editor-trim')
+
+  it('grows the overlay out of the section the DJ maximized, so the full view keeps its place', () => {
+    renderEditor({ id: 'a' })
+    const overlay = maximizeTrim()
+    expect(animations).toHaveLength(1)
+    const [{ el, frames, options }] = animations
+    expect(el).toBe(overlay)
+    expect(frames).toEqual([SECTION_FRAME, FULL_FRAME])
+    expect(options).toMatchObject({ duration: 240, easing: 'cubic-bezier(0.2, 0, 0, 1)' })
+  })
+
+  it('measures the area the overlay covers and not the window, so a classic Windows scrollbar does not throw the crop off', () => {
+    clientArea(1000, 750)
+    renderEditor({ id: 'a' })
+    maximizeTrim()
+    expect(animations[0].frames[0]).toEqual({
+      transform: 'translate(512px, 384px) scale(0.256)',
+      clipPath: 'inset(0px 0px 375px 0px)',
+      opacity: 0,
+    })
+  })
+
+  it('scales the text evenly and crops the rest, so nothing reads squashed on the way', () => {
+    renderEditor({ id: 'a' })
+    maximizeTrim()
+    expect(animations[0].frames[0].transform).toMatch(/scale\([\d.]+\)$/)
+  })
+
+  it('carries the section back into its place and only then returns it to the column', () => {
+    renderEditor({ id: 'a' })
+    const overlay = maximizeTrim()
+    act(() => animations[0].anim.onfinish?.())
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(screen.getByTestId('section-maximized-overlay')).toBe(overlay)
+    expect(within(overlay).getByTestId('editor-trim')).toBeInTheDocument()
+    expect(inColumn()).toHaveLength(0)
+    expect(screen.getAllByTestId('editor-trim')).toHaveLength(1)
+    const exit = animations[1]
+    expect(exit.frames).toEqual([FULL_FRAME, SECTION_FRAME])
+    expect(exit.options).toMatchObject({ duration: 240 })
+    act(() => exit.anim.onfinish?.())
+    expect(screen.queryByTestId('section-maximized-overlay')).toBeNull()
+    expect(inColumn()).toHaveLength(1)
+    expect(screen.getAllByTestId('editor-trim')).toHaveLength(1)
+  })
+
+  it('turns back from wherever it is when the DJ changes their mind mid-way', () => {
+    renderEditor({ id: 'a' })
+    const overlay = maximizeTrim()
+    overlay.style.transform = 'matrix(0.6, 0, 0, 0.6, 200, 150)'
+    overlay.style.opacity = '0.5'
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(animations[0].anim.cancel).toHaveBeenCalled()
+    expect(animations[1].frames[0]).toMatchObject({
+      transform: 'matrix(0.6, 0, 0, 0.6, 200, 150)',
+      opacity: '0.5',
+    })
+    expect(animations[1].options).toMatchObject({ duration: 100 })
+    const section = within(overlay).getByTestId('editor-trim')
+    fireEvent.click(within(section).getByTestId('section-maximize'))
+    expect(animations[1].anim.cancel).toHaveBeenCalled()
+    expect(animations[2].frames[1]).toEqual(FULL_FRAME)
+    expect(screen.getByTestId('section-maximized-overlay')).toBe(overlay)
+    expect(within(overlay).getByTestId('editor-trim')).toBe(section)
+    expect(inColumn()).toHaveLength(0)
+  })
+
+  it("opens another section at its top rather than at the last one's scroll", () => {
+    renderEditor({ id: 'a' })
+    const overlay = maximizeTrim()
+    act(() => animations[0].anim.onfinish?.())
+    fireEvent.click(within(screen.getByTestId('editor-declick')).getByTestId('section-maximize'))
+    const next = screen.getByTestId('section-maximized-overlay')
+    expect(within(next).getByTestId('editor-declick')).toBeInTheDocument()
+    expect(next).not.toBe(overlay)
+  })
+
+  it('stops a running animation when the editor goes away', () => {
+    renderEditor({ id: 'a' })
+    maximizeTrim()
+    cleanup()
+    expect(animations[0].anim.cancel).toHaveBeenCalled()
+  })
+
+  it('cuts straight in and out when the system asks for less motion', () => {
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn((query: string) => ({
+        matches: query === '(prefers-reduced-motion: reduce)',
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      })),
+    )
+    renderEditor({ id: 'a' })
+    maximizeTrim()
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(animations).toHaveLength(0)
+    expect(screen.queryByTestId('section-maximized-overlay')).toBeNull()
+  })
+
+  it('does not replay the entrance when the next track opens already maximized', () => {
+    renderEditor({ id: 'a' })
+    maximizeTrim()
+    cleanup()
+    renderEditor({ id: 'b' })
+    expect(screen.getByTestId('section-maximized-overlay')).toBeInTheDocument()
+    expect(animations).toHaveLength(1)
   })
 })
 

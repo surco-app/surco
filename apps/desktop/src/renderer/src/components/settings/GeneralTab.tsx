@@ -8,6 +8,8 @@ import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchLocal, PatchSynced } from '../../lib/settingsTabs'
 import { SOURCE_READ } from '../../lib/sourcePrograms'
 import { SegmentedControl } from '../SegmentedControl'
+import { Select } from '../Select'
+import { CheckboxRow } from './CheckboxRow'
 import {
   SettingsCheckboxField,
   SettingsField,
@@ -17,7 +19,7 @@ import {
 
 const THEMES: ThemePref[] = ['system', 'light', 'dark']
 const DENSITIES: Density[] = ['normal', 'compact']
-const LANGUAGES: LanguagePref[] = ['system', 'en', 'es', 'de', 'fr', 'pt-BR', 'ja']
+const LANGUAGES: LanguagePref[] = ['system', 'en', 'es', 'de', 'fr', 'pt-BR', 'ja', 'ca', 'it']
 const SOURCES: PlaylistSource[] = ['appleMusic', ...RAIL_PROGRAMS]
 
 interface Props {
@@ -95,15 +97,15 @@ export function GeneralTab({
           </SettingsField>
 
           <SettingsField label={tr('settings.language')} searchId="language">
-            <SegmentedControl
-              options={LANGUAGES}
-              value={synced.language}
-              onChange={(id) => patch('language', id)}
-              testidPrefix="settings-language"
-              compact
-              fill
+            <Select
+              testid="settings-language"
               label={tr('settings.language')}
-              labelFor={(id) => (id === 'ja' ? '日本語' : tr(`settings.languages.${id}`))}
+              value={synced.language}
+              onChange={(id) => patch('language', id as LanguagePref)}
+              options={LANGUAGES.map((id) => ({
+                value: id,
+                label: id === 'ja' ? '日本語' : tr(`settings.languages.${id}`),
+              }))}
             />
           </SettingsField>
         </div>
@@ -117,10 +119,10 @@ export function GeneralTab({
       <SettingsSection eyebrow={tr('settings.sourcesTitle')} searchId="sourcesTitle">
         <div className="flex flex-col gap-3">
           {SOURCES.filter((s) => s === 'appleMusic' || offeredHere(s)).map((source) => (
-            <SettingsCheckboxField
+            <CheckboxRow
               key={source}
               testid={`settings-source-${source}`}
-              checked={!synced.hiddenSources.includes(source)}
+              checked={!synced.hiddenSources.includes(source) && !reason[source]}
               onChange={(shown) =>
                 patch(
                   'hiddenSources',
@@ -130,7 +132,7 @@ export function GeneralTab({
                 )
               }
               label={tr(`settings.source.${source}`)}
-              hint={reason[source]}
+              note={reason[source]}
               disabled={unavailable[source]}
             />
           ))}
@@ -141,15 +143,35 @@ export function GeneralTab({
       </SettingsSection>
 
       <SettingsSection eyebrow={tr('settings.updates')} searchId="updates">
-        <SettingsCheckboxField
-          testid="settings-beta-updates"
-          checked={local.betaUpdates}
-          onChange={(v) => patchLocal('betaUpdates', v)}
-          label={tr('settings.betaUpdates')}
-          searchId="betaUpdates"
-          hint={tr(isStoreBuild() ? 'settings.betaUpdatesStoreHint' : 'settings.betaUpdatesHint')}
-          disabled={isStoreBuild()}
-        />
+        <div className="flex flex-col gap-3">
+          <SettingsCheckboxField
+            testid="settings-auto-updates"
+            checked={local.autoUpdates}
+            onChange={(v) => patchLocal('autoUpdates', v)}
+            label={tr('settings.autoUpdates')}
+            searchId="autoUpdates"
+            hint={tr(isStoreBuild() ? 'settings.autoUpdatesStoreHint' : 'settings.autoUpdatesHint')}
+            disabled={isStoreBuild()}
+          />
+          <button
+            type="button"
+            data-testid="settings-check-updates"
+            onClick={() => void window.api.checkForUpdates()}
+            disabled={isStoreBuild()}
+            className="press ml-7 self-start rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)] disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {tr('settings.checkUpdates')}
+          </button>
+          <SettingsCheckboxField
+            testid="settings-beta-updates"
+            checked={local.betaUpdates}
+            onChange={(v) => patchLocal('betaUpdates', v)}
+            label={tr('settings.betaUpdates')}
+            searchId="betaUpdates"
+            hint={tr(isStoreBuild() ? 'settings.betaUpdatesStoreHint' : 'settings.betaUpdatesHint')}
+            disabled={isStoreBuild()}
+          />
+        </div>
       </SettingsSection>
     </>
   )

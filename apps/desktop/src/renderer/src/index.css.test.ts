@@ -69,11 +69,77 @@ describe('theme text contrast (WCAG 1.4.3 AA)', () => {
       expect(dim).toBeGreaterThan(faint)
     })
   }
+})
 
-  it('light color-fg-faint reaches 4.5:1 on the selected row fill', () => {
-    expect(contrast(light['color-fg-faint'], light['color-row-selected'])).toBeGreaterThanOrEqual(
-      4.5,
+describe('light selected fill reads at a glance, like Finder', () => {
+  const selector = ':root[data-theme="light"] :is(.is-primary, .is-applied, .is-selected) {'
+  const start = css.indexOf(selector)
+  const scoped = start < 0 ? '' : css.slice(start, css.indexOf('}', start))
+  const fill = light['color-row-selected']
+  const on = light['color-on-row-selected']
+
+  function painted(token: string): string {
+    const value = scoped.match(new RegExp(`--${token}:\\s*([^;]+);`))?.[1] ?? ''
+    if (value === 'var(--color-on-row-selected)') return on
+    const pct = value.match(
+      /color-mix\(in srgb, var\(--color-on-row-selected\) (\d+)%, transparent\)/,
     )
+    return pct ? blend(on, fill, Number(pct[1]) / 100) : (light[token] ?? fill)
+  }
+
+  it('fills the selected row with the theme blue and white text instead of a lavender tint', () => {
+    expect(fill).toBe(TOKYO_NIGHT.light.blue)
+    expect(on).toBe(TOKYO_NIGHT.light.button_foreground)
+    expect(contrast(fill, light['color-ink'])).toBeGreaterThanOrEqual(4.5)
+  })
+
+  for (const token of [
+    'color-fg',
+    'color-fg-muted',
+    'color-fg-dim',
+    'color-fg-faint',
+    'color-accent',
+  ]) {
+    it(`turns ${token} light inside the fill, since the dark ink of the theme vanishes on the blue`, () => {
+      expect(contrast(painted(token), fill)).toBeGreaterThanOrEqual(4.5)
+    })
+  }
+
+  it('keeps cover placeholders a tile apart from the fill, with their glyph still visible', () => {
+    const tile = (() => {
+      const value = scoped.match(/--color-panel-2:\s*([^;]+);/)?.[1] ?? ''
+      const pct = value.match(
+        /color-mix\(in srgb, var\(--color-on-row-selected\) (\d+)%, var\(--color-row-selected\)\)/,
+      )
+      return pct ? blend(on, fill, Number(pct[1]) / 100) : light['color-panel-2']
+    })()
+    expect(contrast(tile, fill)).toBeGreaterThan(1.1)
+    expect(contrast(painted('color-fg-faint'), tile)).toBeGreaterThanOrEqual(3)
+  })
+
+  it('marks every selected fill outside the track list so its text flips too', () => {
+    for (const file of [
+      'components/SourceTree.tsx',
+      'components/settings/SettingsSearchResults.tsx',
+    ]) {
+      const code = readFileSync(fileURLToPath(new URL(`./${file}`, import.meta.url)), 'utf8')
+      expect(code).toContain("'is-selected bg-[var(--color-row-selected)]")
+    }
+  })
+
+  it('rings a focused selected row in the selection text colour, since the accent ring vanishes on the accent fill', () => {
+    const listRow = readFileSync(
+      fileURLToPath(new URL('./components/ListRow.tsx', import.meta.url)),
+      'utf8',
+    )
+    expect(listRow).toContain(
+      "'is-primary bg-[var(--color-row-selected)] focus-visible:outline-[var(--color-on-row-selected)]'",
+    )
+    for (const t of [dark, light]) {
+      expect(contrast(t['color-on-row-selected'], t['color-row-selected'])).toBeGreaterThanOrEqual(
+        3,
+      )
+    }
   })
 })
 
@@ -196,6 +262,36 @@ describe('control border contrast (WCAG 1.4.11)', () => {
   })
 })
 
+describe('light theme layers', () => {
+  it('keeps the list ground off the darkest grey so the light theme stops reading as all grey', () => {
+    expect(light['color-ink']).not.toBe(TOKYO_NIGHT.light.activity_bar)
+    expect(contrast(light['color-ink'], TOKYO_NIGHT.light.button_foreground)).toBeLessThan(1.2)
+  })
+
+  it('keeps empty cover tiles and cards visible on the list ground instead of melting into it', () => {
+    expect(contrast(light['color-panel-2'], light['color-ink'])).toBeGreaterThanOrEqual(1.05)
+  })
+
+  it('puts the editor on white, a step above the list ground, where the work happens like Finder', () => {
+    expect(light['color-panel']).toBe(TOKYO_NIGHT.light.button_foreground)
+    expect(luminance(light['color-panel'])).toBeGreaterThan(luminance(light['color-ink']))
+    expect(contrast(light['color-panel'], light['color-ink'])).toBeGreaterThanOrEqual(1.08)
+  })
+
+  it('sinks cards and placeholders a step below the white editor instead of lifting them', () => {
+    expect(luminance(light['color-panel-2'])).toBeLessThan(luminance(light['color-panel']))
+    expect(contrast(light['color-panel-2'], light['color-panel'])).toBeGreaterThanOrEqual(1.08)
+  })
+
+  it('draws a resting field border quieter than the text in it, leaving emphasis to the focus ring', () => {
+    for (const surface of ['color-panel', 'color-panel-2', 'color-field']) {
+      expect(contrast(light['color-input-border'], light[surface])).toBeLessThan(
+        contrast(light['color-fg-faint'], light[surface]) * 0.6,
+      )
+    }
+  })
+})
+
 // The section header pills are a dot and a label on the bare panel, no wash. Warn and
 // danger print the label itself in the tone colour so a problem reads before the dot is
 // found, which makes those two colours body text on the panel: they have to clear AA there,
@@ -235,7 +331,9 @@ describe('quality pill on the selected row', () => {
   })
 
   for (const tone of ['good', 'warn', 'danger']) {
-    const pct = Number(listRow.match(new RegExp(`bg-${tone}/(\\d+) text-${tone}`))?.[1])
+    const pct = Number(
+      listRow.match(new RegExp(`bg-${tone}/(\\d+) text-\\[var\\(--color-${tone}-label\\)\\]`))?.[1],
+    )
 
     // The review's rows share the selected-row fill, so their kind pill needs the same
     // opaque tint.
@@ -438,13 +536,13 @@ const BLENDS: Record<Theme, Record<string, Blend>> = {
     'color-fg-faint': ['dark5', 50, 'fg_dark'],
   },
   light: {
-    'color-panel-2': ['bg', 30, 'field'],
+    'color-ink': ['bg', 50, 'field'],
+    'color-input-border': ['description', 80, 'toolbar'],
     'color-accent-hover': ['blue', 75, 'fg'],
     'color-accent-soft': ['blue', 15, 'field'],
     'color-fg-dim': ['comment', 40, 'fg'],
     'color-fg-faint': ['comment', 55, 'fg'],
     'color-warn': ['yellow', 75, 'fg'],
-    'color-row-selected': ['blue', 25, 'field'],
   },
 }
 
@@ -715,4 +813,109 @@ describe('forced colors (Windows High Contrast)', () => {
     expect(forced).toMatch(/\[role="menu"\] \[role\^="menuitem"\]/)
     expect(forced).toMatch(/\[data-selected\]|\[aria-selected="true"\]/)
   })
+})
+
+describe('secondary text on the selected row (WCAG 1.4.3 AA)', () => {
+  const rules = [
+    '.is-applied .text-fg-dim',
+    '.is-primary [data-fit] .text-fg-dim',
+    '.is-primary [data-testid="track-format"]',
+  ]
+
+  for (const selector of rules) {
+    const pct = Number(
+      css.match(
+        new RegExp(
+          `${selector.replace(/[.[\]()"]/g, '\\$&')} \\{\\s*color: color-mix\\(in srgb, var\\(--color-on-row-selected\\) (\\d+)%`,
+        ),
+      )?.[1],
+    )
+
+    for (const [theme, t] of [
+      ['dark', dark],
+      ['light', light],
+    ] as const) {
+      it(`${theme} ${selector} reaches 4.5:1 on the selected row fill`, () => {
+        const fill = t['color-row-selected']
+        const text = blend(t['color-on-row-selected'], fill, pct / 100)
+        expect(contrast(text, fill)).toBeGreaterThanOrEqual(4.5)
+      })
+    }
+  }
+
+  it('lets macOS Increase contrast show them at full strength', () => {
+    const more = css
+      .split('@media (prefers-contrast: more)')
+      .slice(1)
+      .map((part) => part.slice(0, part.indexOf('\n}\n')))
+      .join('\n')
+    for (const selector of rules) expect(more).toContain(selector)
+  })
+})
+
+describe('tone pill labels (WCAG 1.4.3 AA)', () => {
+  const listRow = readFileSync(
+    fileURLToPath(new URL('./components/ListRow.tsx', import.meta.url)),
+    'utf8',
+  )
+  const blocks = { dark: css.slice(0, split), light: css.slice(split) }
+
+  function label(theme: 'dark' | 'light', tone: string): string {
+    const t = theme === 'dark' ? dark : light
+    const value = blocks[theme].match(new RegExp(`--color-${tone}-label:\\s*([^;]+);`))?.[1] ?? ''
+    const mixed = value.match(
+      /color-mix\(in srgb, var\(--color-(\w+)\) (\d+)%, var\(--color-(\w+)\)\)/,
+    )
+    if (mixed)
+      return blend(t[`color-${mixed[3]}`], t[`color-${mixed[1]}`], 1 - Number(mixed[2]) / 100)
+    return t[`color-${value.match(/var\(--color-(\w+)\)/)?.[1]}`]
+  }
+
+  function surfaces(theme: 'dark' | 'light'): string[] {
+    const t = theme === 'dark' ? dark : light
+    const hover = t['color-hover'] ?? blend(t['color-fg'], t['color-panel'], 0.07)
+    const soft = blend(t['color-accent-soft'], t['color-panel'], 0.85)
+    return theme === 'dark' ? [t['color-panel']] : [t['color-panel'], hover, soft]
+  }
+
+  for (const tone of ['good', 'warn', 'danger']) {
+    const pct = Number(
+      listRow.match(new RegExp(`bg-${tone}/(\\d+) text-\\[var\\(--color-${tone}-label\\)\\]`))?.[1],
+    )
+
+    for (const theme of ['dark', 'light'] as const) {
+      const t = theme === 'dark' ? dark : light
+      it(`${theme} ${tone} pill label reaches 4.5:1 on its tint over the list surfaces`, () => {
+        for (const surface of surfaces(theme)) {
+          const fill = blend(t[`color-${tone}`], surface, pct / 100)
+          expect(contrast(label(theme, tone), fill)).toBeGreaterThanOrEqual(4.5)
+        }
+      })
+
+      it(`${theme} ${tone} pill label reaches 4.5:1 on its opaque tint over the panel`, () => {
+        const fill = blend(t[`color-${tone}`], t['color-panel'], pct / 100)
+        expect(contrast(label(theme, tone), fill)).toBeGreaterThanOrEqual(4.5)
+      })
+    }
+  }
+})
+
+describe('filter count (WCAG 1.4.3 AA)', () => {
+  const select = readFileSync(
+    fileURLToPath(new URL('./components/Select.tsx', import.meta.url)),
+    'utf8',
+  )
+
+  it('is drawn in the dim ink, not a faded copy of it', () => {
+    expect(select).not.toContain('opacity-70')
+  })
+
+  for (const [theme, t] of [
+    ['dark', dark],
+    ['light', light],
+  ] as const) {
+    it(`${theme} dim ink reaches 4.5:1 on the field behind the trigger`, () => {
+      expect(contrast(t['color-fg-dim'], t['color-field'])).toBeGreaterThanOrEqual(4.5)
+    })
+  }
 })

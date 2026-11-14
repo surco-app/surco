@@ -5,6 +5,7 @@ import {
   useCallback,
   useDeferredValue,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -26,10 +27,9 @@ import {
   type LibraryProgram,
   PROGRAM_CAN,
   programOf,
-  WRITABLE_PROGRAMS,
-  type WritableProgram,
 } from '../../shared/djProgram'
 import { SAME_CLOCK_FILE } from '../../shared/gridEdit'
+import { MATCHING_ID } from '../../shared/matching'
 import { emptyMetadata } from '../../shared/metadata'
 import { RECENTLY_ADDED_ID } from '../../shared/recentlyAdded'
 import {
@@ -47,6 +47,7 @@ import {
 import { resolveBindings } from '../../shared/shortcutDefaults'
 import { TRASH_MAX_BYTES, TRASH_RETENTION_DAYS } from '../../shared/trash'
 import type {
+  CollectionTrack,
   DeclickConfig,
   FormatSetting,
   MetaTextKey,
@@ -57,7 +58,6 @@ import type {
   RekordboxPlaylistEdit,
   RekordboxQueueState,
   RekordboxQueueWritten,
-  RekordboxSyncIssue,
   ReviewedFileUpdate,
   SearchHints,
   SearchProviderId,
@@ -67,12 +67,14 @@ import type {
   TrackMetadata,
   TrashEntry,
   UsbProgram,
-  UsbVolume,
 } from '../../shared/types'
+import { WINDOW_MIN_SIZE } from '../../shared/windowSize'
 import { LiveActivityPanel } from './components/ActivityPanel'
+import { BatchRun } from './components/BatchRun'
 import { Confetti } from './components/Confetti'
 import { EmptyDisc } from './components/EmptyDisc'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { MatchingBand } from './components/MatchingBand'
 import { ModalExit } from './components/ModalShell'
 import {
   MusicReviewColumn,
@@ -89,6 +91,7 @@ import { SessionBand } from './components/SessionBand'
 import type { SessionDestination } from './components/SessionWizard'
 import { SourceRail } from './components/SourceRail'
 import { flattenPlaylists, SourceTree } from './components/SourceTree'
+import { FOOTER_BAR } from './components/SplitButton'
 import { ToastStack } from './components/ToastStack'
 import { Toolbar } from './components/Toolbar'
 import { TopProgressBar } from './components/TopProgressBar'
@@ -100,6 +103,7 @@ import { UsbExportPill } from './components/UsbExportPill'
 import { UsbTopProgress } from './components/UsbTopProgress'
 import { useActivityLog } from './hooks/useActivityLog'
 import { useAppleMusicArtwork } from './hooks/useAppleMusicArtwork'
+import { useAppNotifications } from './hooks/useAppNotifications'
 import { useAutoMatch } from './hooks/useAutoMatch'
 import { useColumnLayout } from './hooks/useColumnLayout'
 import { type CleanupOffer, useConfirmFlows } from './hooks/useConfirmFlows'
@@ -112,9 +116,11 @@ import { useExitPresence } from './hooks/useExitPresence'
 import { useGridChecks } from './hooks/useGridChecks'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { useLaunchModals } from './hooks/useLaunchModals'
+import { useLibraryCheckToast } from './hooks/useLibraryCheckToast'
 import { useLibraryCopyVerdicts } from './hooks/useLibraryCopyVerdicts'
 import { useListNavigation } from './hooks/useListNavigation'
 import { useListReviewNotice } from './hooks/useListReviewNotice'
+import { useMatchingEdit } from './hooks/useMatchingEdit'
 import { useMetadataClipboard } from './hooks/useMetadataClipboard'
 import { useMetaUndo } from './hooks/useMetaUndo'
 import { type SettingsTab, useOverlays } from './hooks/useOverlays'
@@ -123,6 +129,7 @@ import { usePlaylistReadPriority } from './hooks/usePlaylistReadPriority'
 import { useProgramsAvailable } from './hooks/useProgramsAvailable'
 import { useQualityAnalysis } from './hooks/useQualityAnalysis'
 import { useRekordboxEdits } from './hooks/useRekordboxEdits'
+import { useRekordboxMatching } from './hooks/useRekordboxMatching'
 import { useOfferPlaylistFields } from './hooks/useRekordboxPlaylists'
 import { PROGRAM_QUEUES, useRekordboxQueue } from './hooks/useRekordboxQueue'
 import { useRetireSuperseded } from './hooks/useRetireSuperseded'
@@ -134,10 +141,11 @@ import { useSettings } from './hooks/useSettings'
 import { useSourceBrowser } from './hooks/useSourceBrowser'
 import { spectrogramOptions } from './hooks/useSpectrogram'
 import { useStableCallback } from './hooks/useStableCallback'
-import { NEW_TRACKS_PROMPT_TIMEOUT_MS, useTrackLibrary } from './hooks/useTrackLibrary'
+import { useTrackLibrary } from './hooks/useTrackLibrary'
 import { useTrackProcessing } from './hooks/useTrackProcessing'
 import { useTracksView, type ViewCacheEntry } from './hooks/useTracksView'
 import { useTriageFilters } from './hooks/useTriageFilters'
+import { useUsbExportToasts } from './hooks/useUsbExportToasts'
 import { useUsbVolumes } from './hooks/useUsbVolumes'
 import { useVerificationUpdates } from './hooks/useVerificationUpdates'
 import { waveformOptions } from './hooks/useWaveform'
@@ -162,9 +170,9 @@ import { railWidth } from './lib/columnLayout'
 import {
   buildCommands,
   type Command,
-  type PaletteTree,
   type CueActions,
   type NewPlaylist,
+  type PaletteTree,
   runCommand,
 } from './lib/commands'
 import { railAlert } from './lib/copiesView'
@@ -187,10 +195,11 @@ import { missingRequiredOf, requiredFieldsOf } from './lib/fields'
 import { gridNote } from './lib/gridNote'
 import { pushImportNotice } from './lib/importNotices'
 import { mainErrorMessage } from './lib/ipcError'
-import { columnOf, isTypingTarget, nextColumn } from './lib/keymap'
-import { lazyChunk } from './lib/lazyChunk'
+import { columnOf, cycleRegion, FOCUSABLE, isTypingTarget, nextColumn } from './lib/keymap'
+import { lazyChunk, preloadLazyWhenIdle } from './lib/lazyChunk'
 import { librarySourceOf } from './lib/librarySource'
 import { listReviewSource } from './lib/listReviewSource'
+import { type MatchingPartner, partnersOf } from './lib/matchingPartners'
 import { OpenSettingsProvider } from './lib/openSettingsContext'
 import { outputNamePatches, renderOutputName, titleFormatSummary } from './lib/outputName'
 import { clampPanelGeometry } from './lib/panelGeometry'
@@ -199,7 +208,7 @@ import { isMacOS } from './lib/platform'
 import { reopenedPlaylist } from './lib/playlistEdits'
 import { type PlaylistScope, playlistMembership, playlistView } from './lib/playlistView'
 import { needsDiscogsPrefetch } from './lib/prefetch'
-import { topBarProgress } from './lib/progress'
+import { sweepTasks, topBarProgress } from './lib/progress'
 import { withCachedQualityTag } from './lib/qualityTag'
 import {
   clearWrittenPlaylists,
@@ -248,6 +257,7 @@ import { latestBackupByPath } from './lib/trashView'
 import {
   EMPTY_FILTER,
   type FilterFacts,
+  type FilterSelection,
   facetCounts,
   filterSessionKey,
   filterWithSticky,
@@ -263,7 +273,7 @@ import {
   type TrackSort,
 } from './lib/triage'
 import { detectTrim } from './lib/trim'
-import { formatSpan, isRunning, newlyMounted } from './lib/usbExport'
+import { isRunning } from './lib/usbExport'
 import { connectUsbExportFeed, usbExportStore, useUsbExportState } from './lib/usbExportStore'
 import type { CopiedTags, TrackItem } from './types'
 
@@ -275,25 +285,10 @@ const NO_HIDDEN_SOURCES: PlaylistSource[] = []
 const PREFETCH_HOVER_MS = 150
 const PLAYER_LEAVE_MS = 200
 const QUEUE_PILL_ORDER = CUE_PROGRAMS
-const SYNC_ISSUES: Record<
-  WritableProgram,
-  {
-    listen: (cb: (issue: RekordboxSyncIssue) => void) => () => void
-    messages: 'rekordboxIssue' | 'engineIssue'
-  } | null
-> = {
-  rekordbox: {
-    listen: (cb) => window.api.dj.onSyncIssue('rekordbox', cb),
-    messages: 'rekordboxIssue',
-  },
-  traktor: null,
-  engine: { listen: (cb) => window.api.dj.onSyncIssue('engine', cb), messages: 'engineIssue' },
-  virtualdj: null,
-}
-
 const inFiles = (t: TrackItem): boolean => !!t.inFiles
 
 const SEEN_SETTLE_MS = 250
+const SEEN_DWELL_MS = 300
 
 // The editor (DiscogsPanel, metadata form, every section) is dead weight on first
 // paint, which shows the empty pane — split it into its own chunk, loaded the first
@@ -494,15 +489,33 @@ export default function App(): React.JSX.Element {
   })
   // Quality triage filter, free-text search and display order — read from the store with a
   // stable setter each (field comments live in appStore).
-  const { filterSelection, filterActive, formatFilter, setFilterSelection, setFormatFilter } =
-    useTriageFilters(store)
+  const {
+    filterSelection,
+    filterActive,
+    formatFilter,
+    setFilterSelection: storeFilterSelection,
+    setFormatFilter,
+  } = useTriageFilters(store)
+  const setFilterSelection = useCallback(
+    (next: FilterSelection): void => {
+      flushPendingEdits()
+      storeFilterSelection(next)
+    },
+    [storeFilterSelection],
+  )
   const search = useAppStore(store, (s) => s.search)
   const playedPaths = useAppStore(store, (s) => s.playedPaths)
   const markListened = useStableCallback((path: string) => {
     const played = store.getState().playedPaths
     if (!played.has(path)) store.setState({ playedPaths: new Set(played).add(path) })
   })
-  const setSearch = useCallback((v: string) => store.setState({ search: v }), [store])
+  const setSearch = useCallback(
+    (v: string) => {
+      flushPendingEdits()
+      store.setState({ search: v })
+    },
+    [store],
+  )
   // The text box stays driven by `search` (instant keystrokes); the expensive filter/sort
   // pass below keys off the deferred value so typing in a large crate never blocks paint.
   const deferredSearch = useDeferredValue(search)
@@ -853,6 +866,10 @@ export default function App(): React.JSX.Element {
     source: browser.source,
     sourceTracks: browser.source === null ? null : (browser.entries?.length ?? null),
   }))
+  const libraryHasRows = tracks.length > 0
+  useEffect(() => {
+    if (libraryHasRows) preloadLazyWhenIdle()
+  }, [libraryHasRows])
   useEffect(
     () =>
       window.api.onNotAudioSkipped((count) =>
@@ -1110,59 +1127,15 @@ export default function App(): React.JSX.Element {
     enabled: usbModal !== null,
     staleTime: Number.POSITIVE_INFINITY,
   })
-  // A stick plugged in while Surco runs, holding an export, is offered in one click. Not
-  // while the chooser is open (it lists it already) or an export runs.
-  const prevVolumes = useRef<UsbVolume[] | null>(null)
-  useEffect(() => {
-    if (!usbVolumes) return
-    const appeared = newlyMounted(prevVolumes.current, usbVolumes.volumes)
-    prevVolumes.current = usbVolumes.volumes
-    if (usbModal || usbRunning) return
-    for (const v of appeared.filter((x) => x.holder.by !== 'empty'))
-      pushToast(store, {
-        key: `usb-connected-${v.uuid}`,
-        tone: 'neutral',
-        message: { key: 'usbExport.connected', values: { name: v.name } },
-        action: {
-          label: { key: 'usbExport.connectedAction' },
-          onAction: () => openUsbExport(v.uuid),
-        },
-        duration: 8000,
-        testid: 'usb-connected',
-      })
-  }, [usbVolumes, usbModal, usbRunning, store, openUsbExport])
-  // An export that ends with its modal closed says so in a notice; with the modal open, the
-  // modal says it.
-  const lastUsbPhase = useRef(usbPhase)
-  useEffect(() => {
-    const was = lastUsbPhase.current
-    lastUsbPhase.current = usbPhase
-    if (usbModal || was === usbPhase) return
-    const s = usbExportStore.getState()
-    if (usbPhase === 'done' && s.result) {
-      pushToast(store, {
-        tone: 'neutral',
-        message: {
-          key: 'usbExport.progress.done',
-          values: { count: s.result.tracks, time: formatSpan(s.result.ms, tr) },
-        },
-        duration: 10000,
-        testid: 'usb-done-notice',
-      })
-      if (!s.result.syncFiles)
-        pushToast(store, {
-          tone: 'danger',
-          message: { key: 'usbExport.errors.sync-files' },
-          testid: 'usb-sync-files-notice',
-        })
-    }
-    if (usbPhase === 'error' && s.reason)
-      pushToast(store, {
-        tone: 'danger',
-        message: { key: `usbExport.errors.${s.reason}` },
-        testid: 'usb-error-notice',
-      })
-  }, [usbPhase, usbModal, store, tr])
+  useUsbExportToasts({
+    store,
+    usbVolumes,
+    usbModal,
+    usbRunning,
+    usbPhase,
+    openUsbExport,
+    tr,
+  })
   // Each source is its own list with its own selection: the row picked in Tracks is not in
   // Music, and leaving it selected there kept its editor open beside a list without it.
   // What is kept was picked before leaving, so rows removed meanwhile are left out.
@@ -1195,6 +1168,8 @@ export default function App(): React.JSX.Element {
     library: () => libraryRoles(browser.tree ?? []),
     made: () => new Set(settings?.sessionsMade ?? []),
     phases: () => libraryPhases(browser.tree ?? []),
+    matching: async () =>
+      sessionProgram === 'rekordbox' ? window.api.dj.matching('rekordbox') : [],
     noteMade: (playlistId) => {
       if (settings)
         saveSettings({ sessionsMade: withSessionMade(settings.sessionsMade, playlistId) })
@@ -1406,108 +1381,7 @@ export default function App(): React.JSX.Element {
     resumePlayback: (path, time) => resumeAtRef.current(path, time),
   })
 
-  // The watcher's "N new tracks" prompt rides the same queue as every other toast: keyed so a
-  // second copy-in updates the count in place, and with a Load action that adds the tracks.
-  // Re-pushed whenever the pending set changes; dismissed when it clears (the user accepted,
-  // the countdown declined it, or the crate was emptied). The countdown is the toast's own,
-  // so it holds while the pointer rests on the card, and expiring declines like the ✕.
-  useEffect(() => {
-    if (!pendingNew) return
-    // Both separators — the watcher root is a raw OS path, backslashed on Windows.
-    const folder = pendingNew.root.split(/[/\\]/).pop() || pendingNew.root
-    const id = pushToast(store, {
-      key: 'new-tracks',
-      tone: 'neutral',
-      testid: 'new-tracks',
-      message: { key: 'newTracks.prompt', values: { count: pendingNew.paths.length, folder } },
-      action: { label: { key: 'newTracks.load' }, onAction: loadPending },
-      onDismiss: dismissPending,
-      onExpire: dismissPending,
-      duration: NEW_TRACKS_PROMPT_TIMEOUT_MS,
-    })
-    return () => dismissToast(store, id)
-  }, [pendingNew, loadPending, dismissPending, store])
-
-  // The auto-updater reports a downloaded version (or a download failure) over IPC; surface
-  // each as a toast instead of a bespoke component. The ready prompt offers Restart (applies
-  // it immediately); a failure is a plain danger toast. Each kind has its own key, so a retry
-  // supersedes its own stale card rather than stacking, and a failed check can never take
-  // the place of a downloaded update still waiting for its restart.
-  useEffect(
-    () =>
-      window.api.onUpdateDownloaded((version) =>
-        pushToast(store, {
-          key: 'update',
-          tone: 'neutral',
-          testid: 'update',
-          message: { key: 'update.ready', values: { version } },
-          action: { label: { key: 'update.restart' }, onAction: () => window.api.installUpdate() },
-        }),
-      ),
-    [store],
-  )
-  // What a run's rekordbox or Engine DJ repoint could not do: the library stays on the old
-  // file, so the DJ has to hear it now rather than when a track fails to load at the gig.
-  useEffect(() => {
-    const stops = WRITABLE_PROGRAMS.flatMap((program) => {
-      const issues = SYNC_ISSUES[program]
-      if (!issues) return []
-      return [
-        issues.listen((issue) =>
-          pushToast(store, {
-            key: `${program}-sync-issue`,
-            tone: 'danger',
-            testid: `${program}-sync-issue`,
-            message: issue.blocked
-              ? { key: `${issues.messages}.${issue.blocked}` }
-              : {
-                  key: `${issues.messages}.ambiguous`,
-                  values: {
-                    count: issue.ambiguous.length,
-                    name: baseName(issue.ambiguous[0] ?? ''),
-                  },
-                },
-          }),
-        ),
-      ]
-    })
-    return () => {
-      for (const stop of stops) stop()
-    }
-  }, [store])
-  useEffect(
-    () =>
-      window.api.onUpdateError((error) =>
-        pushToast(store, {
-          key: 'update-error',
-          tone: 'danger',
-          testid: 'update-error',
-          message: { key: 'update.failed', values: { error } },
-        }),
-      ),
-    [store],
-  )
-  useEffect(
-    () =>
-      window.api.onUpdateCheckFailed((status) => {
-        const id = pushToast(store, {
-          key: 'update-check',
-          tone: 'danger',
-          testid: 'update-check-failed',
-          message: status
-            ? { key: 'update.checkFailedStatus', values: { status } }
-            : { key: 'update.checkFailed' },
-          action: {
-            label: { key: 'update.retry' },
-            onAction: () => {
-              dismissToast(store, id)
-              window.api.checkForUpdates()
-            },
-          },
-        })
-      }),
-    [store],
-  )
+  useAppNotifications({ store, pendingNew, loadPending, dismissPending })
 
   const onSelectTrack = useCallback(
     (id: string, mods: ClickMods): void => {
@@ -2043,9 +1917,23 @@ export default function App(): React.JSX.Element {
   const [seenInAll, setSeenInAll] = useState<ReadonlySet<string>>(() => new Set())
   const rowsOnScreen = useRef(new Set<string>())
   const cameIntoView = useRef<string[]>([])
+  const seenDwell = useRef(new Map<string, ReturnType<typeof setTimeout>>())
+  const markSeenInAll = useStableCallback((id: string): void => {
+    seenDwell.current.delete(id)
+    if (browser.playlist?.id !== ALL_TRACKS_ID || seenInAllRef.current.has(id)) return
+    seenInAllRef.current.add(id)
+    seenSettle.current ??= setTimeout(() => {
+      seenSettle.current = null
+      setSeenInAll(new Set(seenInAllRef.current))
+    }, SEEN_SETTLE_MS)
+  })
   const onListRowVisible = useStableCallback((id: string, visible: boolean): void => {
     if (visible) rowsOnScreen.current.add(id)
-    else rowsOnScreen.current.delete(id)
+    else {
+      rowsOnScreen.current.delete(id)
+      clearTimeout(seenDwell.current.get(id))
+      seenDwell.current.delete(id)
+    }
     onTrackVisible(id, visible)
     onDuplicateRowVisible(id, visible)
     if (visible && cameIntoView.current.push(id) === 1)
@@ -2054,32 +1942,18 @@ export default function App(): React.JSX.Element {
         prioritizeReads(came)
         readCoversOnScreen(came)
       })
-    if (visible && browser.playlist?.id === ALL_TRACKS_ID && !seenInAllRef.current.has(id)) {
-      seenInAllRef.current.add(id)
-      seenSettle.current ??= setTimeout(() => {
-        seenSettle.current = null
-        setSeenInAll(new Set(seenInAllRef.current))
-      }, SEEN_SETTLE_MS)
-    }
+    if (
+      visible &&
+      browser.playlist?.id === ALL_TRACKS_ID &&
+      !seenInAllRef.current.has(id) &&
+      !seenDwell.current.has(id)
+    )
+      seenDwell.current.set(
+        id,
+        setTimeout(() => markSeenInAll(id), SEEN_DWELL_MS),
+      )
   })
-  // A library that could not be read leaves every row without a verdict, the same blank a
-  // check still loading shows; the notice is what tells the two apart. It goes away once
-  // a refocus retries the read and it lands.
-  useEffect(() => {
-    if (!libraryFailed || !librarySource) return
-    const id = pushToast(store, {
-      key: 'library-check',
-      tone: 'danger',
-      testid: 'library-check-failed',
-      message: {
-        key:
-          librarySource === 'engineDj'
-            ? 'editor.libraryCheckFailedEngine'
-            : 'editor.libraryCheckFailed',
-      },
-    })
-    return () => dismissToast(store, id)
-  }, [libraryFailed, librarySource, store])
+  useLibraryCheckToast(store, libraryFailed, librarySource)
   // The list narrowed to the open playlist, in its order. Only what the list shows and
   // counts reads it: the Files rows are what is persisted.
   const prevPlaylistScope = useRef<PlaylistScope | null>(null)
@@ -2364,9 +2238,8 @@ export default function App(): React.JSX.Element {
     [browser.source, bulkTracks, selectedTracks],
   )
   convertTracksRef.current = convertTracks
-  // Gated over the same scope convert-all runs on, so the button's number is the work
-  // the click does: over every loaded track it read "81" behind a filter showing 79. The
-  // editor footer reads this same gate for a multi-selection, so the two buttons agree.
+  // Gated over the same scope convert-all runs on: over every loaded track it read "81"
+  // behind a filter showing 79. The editor footer reads this same gate for a multi-selection.
   const gate = useMemo(
     () => convertGate(convertTracks, requiredFields, settings?.customFields, libraryIndex),
     [convertTracks, requiredFields, settings?.customFields, libraryIndex],
@@ -2421,23 +2294,21 @@ export default function App(): React.JSX.Element {
   // sort only reorders, never hides.
   // Selected rows the new filter hides leave the selection too, so the next trash or remove
   // acts only on rows the user can see.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: react to filter changes only; visibleTracks and selection are read from the latest render.
-  useEffect(() => {
-    const ids = visibleTracks.map((t) => t.id)
-    const next = pruneToVisible(ids, selection) ?? reanchorToVisible(ids, selectedId)
-    if (next) setSelection(next)
-  }, [filterSelection])
   // A search hides rows too, and an action on the selection must not reach them. Only the
   // hidden extras of a selection go: when no selected row is left on screen the selection
   // stays, so typing does not jump the editor from track to track on every keystroke.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: react to search changes only; visibleTracks and selection are read from the latest render.
-  useEffect(() => {
-    const next = pruneToVisible(
-      visibleTracks.map((t) => t.id),
-      selection,
-    )
-    if (next) setSelection(next)
-  }, [deferredSearch])
+  const [prunedFor, setPrunedFor] = useState({ filterSelection, deferredSearch })
+  if (
+    prunedFor.filterSelection !== filterSelection ||
+    prunedFor.deferredSearch !== deferredSearch
+  ) {
+    setPrunedFor({ filterSelection, deferredSearch })
+    const ids = visibleTracks.map((t) => t.id)
+    const next =
+      pruneToVisible(ids, selection) ??
+      (prunedFor.filterSelection !== filterSelection ? reanchorToVisible(ids, selectedId) : null)
+    if (next) setSelectionState(next)
+  }
   // Drives the toolbar auto-match button: how many visible tracks are still worth a probe, so
   // it disables once every shown track is matched, and changing the filter to reveal unmatched
   // rows re-enables it. Scoped to the visible set because the sweep matches only those.
@@ -2454,6 +2325,30 @@ export default function App(): React.JSX.Element {
   const tokenMissing =
     !!settings && !autoMatchAvailable(settings) && usableProviders(settings).includes('discogs')
   const canProcessAll = eligibleCount > 0 && !batching
+  const batchStripRef = useRef<HTMLDivElement>(null)
+  const batchStripRegion = useRef<HTMLElement | null>(null)
+  const prevBatching = useRef(batching)
+  if (prevBatching.current !== batching) {
+    prevBatching.current = batching
+    const strip = batchStripRef.current
+    batchStripRegion.current = strip?.contains(document.activeElement) ? strip.parentElement : null
+  }
+  useLayoutEffect(() => {
+    const region = batchStripRegion.current
+    if (!region) return
+    batchStripRegion.current = null
+    const target =
+      region.querySelector<HTMLElement>(FOCUSABLE.join(', ')) ??
+      document.querySelector<HTMLElement>(
+        '[data-testid="source-tree"] [data-testid^="source-node-"]',
+      )
+    target?.focus()
+  })
+  const batchStrip = (
+    <div ref={batchStripRef} className={FOOTER_BAR}>
+      <BatchRun progress={batchProgress} onCancel={cancelBatch} />
+    </div>
+  )
 
   // Effective key bindings (defaults + the user's overrides): the single source the
   // palette hints below and the keydown listener (via a ref, since it subscribes once)
@@ -2642,8 +2537,8 @@ export default function App(): React.JSX.Element {
   )
   const onResultsFit = useStableCallback((deficit: number) => columns.fit('results', deficit))
 
-  // The header's convert-all: the same bulk scope and editor settings the palette command
-  // uses, so pressing the button and running the command cannot diverge.
+  // The footer's convert of a selection: the same bulk scope and editor settings the palette
+  // command uses, so pressing the button and running the command cannot diverge.
   const onConvertAllTracks = useStableCallback(() =>
     askConvertAll(
       convertTracksRef.current,
@@ -2858,7 +2753,8 @@ export default function App(): React.JSX.Element {
   const crateOpen =
     editableOpen &&
     browser.playlist?.id !== RECENTLY_ADDED_ID &&
-    browser.playlist?.id !== ALL_TRACKS_ID
+    browser.playlist?.id !== ALL_TRACKS_ID &&
+    browser.playlist?.id !== MATCHING_ID
   const pendingCuePaths = useMemo(
     () =>
       new Set(
@@ -2939,6 +2835,87 @@ export default function App(): React.JSX.Element {
   const selectedPath = selected?.inputPath
   const selectedLabel = selected?.listLabel
   const selectedCueId = selected ? playlistScope?.contentOf.get(selected.id) : undefined
+  const inRekordbox = sourceProgram === 'rekordbox'
+  const { data: matchingPairs } = useRekordboxMatching(inRekordbox)
+  const { data: matchingEntries } = useQuery({
+    queryKey: ['source-playlist', 'rekordbox', MATCHING_ID],
+    queryFn: () => SOURCE_READ.rekordbox.playlist(MATCHING_ID),
+    enabled: inRekordbox && (matchingPairs?.length ?? 0) > 0,
+    staleTime: Number.POSITIVE_INFINITY,
+  })
+  const matchingPartners = useMemo(
+    () =>
+      inRekordbox && selectedContentId && matchingPairs && matchingEntries
+        ? partnersOf(matchingPairs, selectedContentId, matchingEntries)
+        : [],
+    [inRekordbox, selectedContentId, matchingPairs, matchingEntries],
+  )
+  const matchingIds = useMemo(() => {
+    const partners = new Set(matchingPartners.map((p) => p.contentId))
+    return new Set(
+      scopeTracks.flatMap((t) =>
+        partners.has(playlistScope?.contentOf.get(t.id) ?? '') ? [t.id] : [],
+      ),
+    )
+  }, [matchingPartners, scopeTracks, playlistScope])
+  const editMatching = useMatchingEdit(notifyEdit)
+  const removeMatchingPartner = useStableCallback((partner: MatchingPartner) => {
+    if (!selectedContentId || !selected) return
+    void editMatching(
+      'remove',
+      [selectedContentId, partner.contentId],
+      `${selected.listLabel} · ${partner.title}`,
+    )
+  })
+  const matchPairOf = (track: TrackItem): { pair: [string, string]; label: string } | null => {
+    if (!inRekordbox || !cuesOpen) return null
+    const targets = menuTargets(track.id)
+    if (targets.length !== 2) return null
+    const ids = targets.map((t) => playlistScope?.contentOf.get(t.id))
+    const [a, b] = ids
+    if (!a || !b || a === b) return null
+    return { pair: [a, b], label: targets.map((t) => t.listLabel).join(' · ') }
+  }
+  const pickMatchingPartner = useStableCallback((partner: MatchingPartner) => {
+    const track = scopeTracks.find((t) => playlistScope?.contentOf.get(t.id) === partner.contentId)
+    if (track) setSelection({ ids: [track.id], anchor: track.id })
+  })
+  const { data: rekordboxCollection } = useQuery({
+    queryKey: ['source-collection', 'rekordbox'],
+    queryFn: () => SOURCE_READ.rekordbox.collection?.() ?? Promise.resolve([]),
+    enabled: inRekordbox && Boolean(selectedContentId),
+    staleTime: 60_000,
+  })
+  const addMatchingPartner = useStableCallback((track: CollectionTrack) => {
+    if (!selectedContentId || !selected) return
+    void editMatching(
+      'add',
+      [selectedContentId, track.contentId],
+      `${selected.listLabel} · ${track.title}`,
+    )
+  })
+  const editorMatching = useMemo(
+    () =>
+      inRekordbox && selectedContentId
+        ? {
+            partners: matchingPartners,
+            selfId: selectedContentId,
+            collection: rekordboxCollection,
+            onPick: pickMatchingPartner,
+            onRemove: removeMatchingPartner,
+            onAdd: addMatchingPartner,
+          }
+        : undefined,
+    [
+      inRekordbox,
+      selectedContentId,
+      matchingPartners,
+      rekordboxCollection,
+      pickMatchingPartner,
+      removeMatchingPartner,
+      addMatchingPartner,
+    ],
+  )
   const cueTrack = useMemo(
     () =>
       selectedCueId && selectedLabel !== undefined
@@ -3185,6 +3162,7 @@ export default function App(): React.JSX.Element {
           h.node.id !== playlist?.id &&
           h.node.id !== RECENTLY_ADDED_ID &&
           h.node.id !== ALL_TRACKS_ID &&
+          h.node.id !== MATCHING_ID &&
           fixed?.(h.node) !== 'locked',
       ),
       openName: crateOpen && playlist && editCan('remove') ? playlist.name : null,
@@ -3226,6 +3204,9 @@ export default function App(): React.JSX.Element {
         onSearchWeb={searchTrackWeb}
         onStartOver={startOverTrack}
         onStartSession={sessionProgram && browser.playlist ? openSessionFromTrack : undefined}
+        onMatch={((m) => (m ? () => void editMatching('add', m.pair, m.label) : undefined))(
+          matchPairOf(menu.track),
+        )}
         onCopyMeta={onCopyMeta}
         onCopyPath={onCopyPath}
         onPasteMeta={onPasteMeta}
@@ -3408,6 +3389,7 @@ export default function App(): React.JSX.Element {
     if (!field?.startsWith('field-')) return
     setTimeout(() => document.querySelector<HTMLElement>(`[data-testid="${field}"]`)?.focus(), 0)
   }
+  const focusRegion = (delta: 1 | -1): void => cycleRegion(document.activeElement, delta)
   // El salto relativo se apoya en los tres saltos absolutos de arriba: resuelve a qué
   // columna toca ir mirando dónde está el foco ahora, y llama al que corresponda.
   const focusColumn = (delta: 1 | -1): void => {
@@ -3463,6 +3445,7 @@ export default function App(): React.JSX.Element {
       focusMatches,
       focusEditor,
       focusColumn,
+      focusRegion,
       togglePlay,
       playerVisible,
       seek,
@@ -3748,7 +3731,7 @@ export default function App(): React.JSX.Element {
       review !== null && !batching ? <MusicReviewToolbarAction busy={reviewBusy} /> : undefined,
     [review, batching, reviewBusy],
   )
-  // Drives the slim top bar: the analyze/auto-match/convert sweeps pool their progress,
+  // Drives the slim top bar: it follows the sweep the toolbar pill leads with,
   // and a fresh drop still reading its tags shows as an indeterminate run.
   const showList =
     !copiesOpen &&
@@ -3756,7 +3739,7 @@ export default function App(): React.JSX.Element {
       review !== null ||
       player.mounted)
   const progress = topBarProgress(
-    [analysis, matching, batchProgress, importProgress],
+    [...sweepTasks({ importing: importProgress, analysis, matching }), batchProgress],
     anyLoadingMeta,
   )
 
@@ -3768,7 +3751,9 @@ export default function App(): React.JSX.Element {
           keyboard-accessible path to the same action. */}
           {/* biome-ignore lint/a11y/noStaticElementInteractions: drop target, not a control */}
           <div
-            className="relative flex h-screen flex-col overflow-clip"
+            data-testid="app-root"
+            className="relative flex h-full flex-col overflow-clip"
+            style={{ minWidth: WINDOW_MIN_SIZE.width }}
             onDragEnterCapture={(e) => {
               // A reorder inside the list is not files arriving, and rows dragged out of the
               // list (toward a playlist in the tree) are already in it: no import overlay.
@@ -3822,13 +3807,6 @@ export default function App(): React.JSX.Element {
                 <Toolbar
                   hintFor={hintFor}
                   trackCount={listedCount}
-                  convertibleCount={eligibleCount}
-                  batchSize={convertTracks.length}
-                  leftOut={gate}
-                  canConvertAll={canProcessAll}
-                  inLibrary={browser.source !== null}
-                  hasSelection={selectedTracks.length > 0}
-                  onConvertAll={onConvertAllTracks}
                   importing={importProgress}
                   batchSummary={batchSummary}
                   onShowFailed={onShowFailed}
@@ -3848,7 +3826,6 @@ export default function App(): React.JSX.Element {
                   onAutoMatch={onAutoMatchAll}
                   onCancelAutoMatch={cancelAutoMatch}
                   onFixToken={onFixToken}
-                  onCancelBatch={cancelBatch}
                   onCancelImport={cancelImport}
                   onReview={onReviewAll}
                   canReview={canReviewList}
@@ -3950,27 +3927,30 @@ export default function App(): React.JSX.Element {
                   )}
                 </div>
                 {copiesOpen && (
-                  <div className="min-w-0 flex-1">
-                    <Suspense fallback={null}>
-                      <CopiesScreen
-                        key={copiesOpen.key}
-                        programs={libraryCopies.programs}
-                        trash={{
-                          entries: trashEntries,
-                          ...(settings
-                            ? trashLimits(settings)
-                            : { retentionDays: TRASH_RETENTION_DAYS, maxBytes: TRASH_MAX_BYTES }),
-                          onRestore: (entry) => void onRestoreFromTrash(entry),
-                          onRemove: (entry) => void onRemoveFromTrash(entry),
-                          onEmpty: () => void onEmptyTrash(),
-                          onReveal: () => void window.api.trashReveal(),
-                          initialQuery: copiesOpen.query,
-                        }}
-                        openMusic={copiesOpen.openMusic}
-                        onRestore={(program, id) => window.api.restoreCopy(program, id)}
-                        onReveal={() => void window.api.revealBackups()}
-                      />
-                    </Suspense>
+                  <div className="flex min-w-0 flex-1 flex-col">
+                    <div className="min-h-0 flex-1">
+                      <Suspense fallback={null}>
+                        <CopiesScreen
+                          key={copiesOpen.key}
+                          programs={libraryCopies.programs}
+                          trash={{
+                            entries: trashEntries,
+                            ...(settings
+                              ? trashLimits(settings)
+                              : { retentionDays: TRASH_RETENTION_DAYS, maxBytes: TRASH_MAX_BYTES }),
+                            onRestore: (entry) => void onRestoreFromTrash(entry),
+                            onRemove: (entry) => void onRemoveFromTrash(entry),
+                            onEmpty: () => void onEmptyTrash(),
+                            onReveal: () => void window.api.trashReveal(),
+                            initialQuery: copiesOpen.query,
+                          }}
+                          openMusic={copiesOpen.openMusic}
+                          onRestore={(program, id) => window.api.restoreCopy(program, id)}
+                          onReveal={() => void window.api.revealBackups()}
+                        />
+                      </Suspense>
+                    </div>
+                    {batching && batchStrip}
                   </div>
                 )}
                 {/* Until there are rows the window is one screen: an empty column beside the
@@ -4000,7 +3980,7 @@ export default function App(): React.JSX.Element {
                         listHovered.current = false
                         if (heldOrder.current.selected !== selectedId) setHeldRelease((n) => n + 1)
                       }}
-                      className={`min-h-0 flex-1 ${review !== null ? 'flex flex-col overflow-hidden' : 'overflow-y-auto'}`}
+                      className={`min-h-0 flex-1 pb-[var(--player-space,0px)] scroll-pb-[var(--player-space,0px)] ${review !== null ? 'flex flex-col overflow-hidden' : 'overflow-y-auto'}`}
                     >
                       {review !== null ? (
                         <MusicReviewColumn
@@ -4128,6 +4108,25 @@ export default function App(): React.JSX.Element {
                                 }}
                               />
                             )}
+                          {sourceProgram === 'rekordbox' &&
+                            browser.playlist?.id === MATCHING_ID && (
+                              <MatchingBand
+                                tracks={scopeTracks.length}
+                                onCreate={() => {
+                                  const name = tr('sources.matching')
+                                  void editRekordbox(
+                                    {
+                                      kind: 'create',
+                                      parentId: 'root',
+                                      name,
+                                      folder: false,
+                                      tracks: scopeTracks.map(trackRef),
+                                    },
+                                    name,
+                                  )
+                                }}
+                              />
+                            )}
                           {visibleTracks.length === 0 ? (
                             <div className="flex flex-col items-center gap-3 p-6 text-center">
                               <p className="text-xs text-fg-faint">{tr('sidebar.search.empty')}</p>
@@ -4188,6 +4187,7 @@ export default function App(): React.JSX.Element {
                               revealRowRef={revealRowRef}
                               backupAtByPath={backupAtByPath}
                               pendingCuePaths={pendingCuePaths}
+                              matchingIds={matchingIds}
                               unsavedCueIds={unsavedCueIds}
                               playedPaths={playedPaths}
                               autoMarkById={autoMarkById}
@@ -4232,167 +4232,187 @@ export default function App(): React.JSX.Element {
 
                 {!copiesOpen && (
                   <main
-                    className="min-w-0 flex-1 bg-[var(--color-panel)]"
+                    className="flex min-w-0 flex-1 flex-col bg-[var(--color-panel)]"
                     style={
                       {
                         '--results-width': `${columns.widths.results}px`,
                       } as React.CSSProperties
                     }
                   >
-                    {review !== null ? (
-                      <MusicReviewDetailPane
-                        sync={{
-                          rekordbox: settings?.syncRekordbox ?? false,
-                          engine: settings?.syncEngineDj ?? false,
-                          traktor: settings?.syncTraktor ?? false,
-                          serato: settings?.syncSerato ?? false,
-                          virtualdj: settings?.syncVirtualdj ?? false,
-                        }}
-                        onClose={() => setReview(null)}
-                        onOpenTrack={(rowId) => {
-                          setReview(null)
-                          onSelectTrack(rowId, {})
-                        }}
-                      />
-                    ) : selected ? (
-                      // Its own boundary so a render bug in the editor degrades to "this panel
-                      // crashed" — the imported crate and the list stay alive. Keyed by track,
-                      // which both remounts the editor per track (its state-seeding contract)
-                      // and clears a tripped fallback on the next track switch.
-                      <ErrorBoundary
-                        key={selected.id}
-                        className="flex h-full flex-col gap-4 overflow-auto p-8 text-sm"
-                      >
-                        {/* fallback={null}: the empty-state pane lives in the sibling branch below,
-                    not here, so there's no "today's visual" to hold onto while the chunk loads
-                    the first time — a blank beat, not a spinner flash, and only once. */}
-                        <Suspense fallback={null}>
-                          <Editor
-                            item={selected}
-                            rekordboxCue={rekordboxCue}
-                            onCueJumpBars={onCueJumpBars}
-                            onCueQuantize={onCueQuantize}
-                            onCueFlow={onCueFlow}
-                            onCueAutoMarkAll={cuesMarkable ? autoMarkSelected : undefined}
-                            cueTargets={cueTargets}
-                            cueGridCheckOf={cueGridCheckOf}
-                            onShowBadGrid={showBadGrid}
-                            onOpenCueTrack={openCueTrack}
-                            cueActionsRef={cueActionsRef}
-                            libraryIndex={libraryIndex}
-                            searchInputRef={searchInputRef}
-                            selectedTracks={selectedTracks}
-                            onApplyMatches={onApplyMatches}
-                            onProcessAll={onProcessAllSelected}
-                            onAddAllToAppleMusic={onAddAllSelectedToAppleMusic}
-                            onChangeAllMeta={onChangeAllMeta}
-                            onChangeSelection={onChangeSelection}
-                            onApplyCoverAll={onApplyCoverAll}
-                            onDeriveTags={deriveTracksUndoable}
-                            onChangeTracksMeta={deriveTracksUndoable}
-                            onApplyTitleFormat={applyTitleFormat}
-                            onRecordUndo={recordMetaUndo}
-                            onClearAll={clearMeta}
-                            autoMatchDeclined={autoMatchDeclined(selected.id)}
-                            onFieldFocusChange={onFieldFocusChange}
-                            onChange={onEditorChange}
-                            onChangeTracksPlaylists={onChangeTracksPlaylists}
-                            onProcess={onProcessSelected}
-                            onCancel={onCancelSelected}
-                            onFormatChange={onFormatChange}
-                            onDestinationChange={onDestinationChange}
-                            rememberedPick={
-                              selectedTracks.length > 1 ? undefined : rememberedPick(selected.id)
-                            }
-                            onNormalizeChange={onNormalizeChange}
-                            onDeclickChange={onDeclickChange}
-                            onAddToAppleMusic={onAddSelectedToAppleMusic}
-                            onCleanUp={onCleanUp}
-                            resultsFolded={resultsFolded}
-                            onFoldResults={foldResults}
-                            onResultsResizeStart={onResultsResizeStart}
-                            onResultsFit={onResultsFit}
-                            onShowLoudnessHelp={onShowLoudnessHelp}
-                            onHideEditorHints={onHideEditorHints}
-                            onOpenRename={onOpenRename}
-                            onRegenerateName={onRegenerateName}
-                            onTrimDetectedAll={onTrimDetectedAll}
-                            onCopyFilename={onCopyFilename}
-                            onSearchWeb={onSearchWeb}
-                            onCopyMeta={onCopySelectedMeta}
-                            onPasteMeta={onPasteSelectedMeta}
-                            copiedMetaTitle={copiedMeta ? (copiedMeta.meta.title ?? '') : null}
-                            onExportCollection={onOpenExport}
-                            readFullTrack={readFullTrack}
-                            librarySources={browser.sources}
-                            openSource={browser.source}
-                            onRevealIn={onRevealIn}
-                            onRetryVerification={retryVerification}
-                            onOpenBackup={onOpenBackup}
-                          />
-                        </Suspense>
-                      </ErrorBoundary>
-                    ) : browser.source && !browser.playlist ? (
-                      <div className="flex h-full items-center justify-center p-8 text-center">
-                        {/* The drag answers here as well as in the sidebar. The column is the
-                        place the rows land once there are any, but on an empty screen this
-                        panel is the only thing on show, and inviting a drag while the wide
-                        panel refused the drop was this screen's oldest lie. */}
-                        <div
-                          data-testid="empty-dropzone"
-                          data-drop-over={dragging || undefined}
-                          className="empty-dropzone w-full max-w-[460px] rounded-2xl px-4 py-8"
+                    <div className="min-h-0 flex-1">
+                      {review !== null ? (
+                        <MusicReviewDetailPane
+                          sync={{
+                            rekordbox: settings?.syncRekordbox ?? false,
+                            engine: settings?.syncEngineDj ?? false,
+                            traktor: settings?.syncTraktor ?? false,
+                            serato: settings?.syncSerato ?? false,
+                            virtualdj: settings?.syncVirtualdj ?? false,
+                          }}
+                          onClose={() => setReview(null)}
+                          onOpenTrack={(rowId) => {
+                            setReview(null)
+                            onSelectTrack(rowId, {})
+                          }}
+                        />
+                      ) : selected ? (
+                        // Its own boundary so a render bug in the editor degrades to "this panel
+                        // crashed" — the imported crate and the list stay alive. Keyed by track,
+                        // which both remounts the editor per track (its state-seeding contract)
+                        // and clears a tripped fallback on the next track switch.
+                        <ErrorBoundary
+                          key={selected.id}
+                          className="flex h-full flex-col gap-4 overflow-auto p-8 text-sm"
+                          footer={batching ? batchStrip : null}
                         >
-                          <div className="mb-4 flex justify-center">
-                            <EmptyDisc />
+                          {/* fallback={null}: the empty-state pane lives in the sibling branch below,
+                      not here, so there's no "today's visual" to hold onto while the chunk loads
+                      the first time — a blank beat, not a spinner flash, and only once. */}
+                          <Suspense fallback={null}>
+                            <Editor
+                              item={selected}
+                              rekordboxCue={rekordboxCue}
+                              matching={editorMatching}
+                              onCueJumpBars={onCueJumpBars}
+                              onCueQuantize={onCueQuantize}
+                              onCueFlow={onCueFlow}
+                              onCueAutoMarkAll={cuesMarkable ? autoMarkSelected : undefined}
+                              cueTargets={cueTargets}
+                              cueGridCheckOf={cueGridCheckOf}
+                              onShowBadGrid={showBadGrid}
+                              onOpenCueTrack={openCueTrack}
+                              cueActionsRef={cueActionsRef}
+                              libraryIndex={libraryIndex}
+                              searchInputRef={searchInputRef}
+                              selectedTracks={selectedTracks}
+                              onApplyMatches={onApplyMatches}
+                              onProcessAll={onProcessAllSelected}
+                              onAddAllToAppleMusic={onAddAllSelectedToAppleMusic}
+                              onChangeAllMeta={onChangeAllMeta}
+                              onChangeSelection={onChangeSelection}
+                              onApplyCoverAll={onApplyCoverAll}
+                              onDeriveTags={deriveTracksUndoable}
+                              onChangeTracksMeta={deriveTracksUndoable}
+                              onApplyTitleFormat={applyTitleFormat}
+                              onRecordUndo={recordMetaUndo}
+                              onClearAll={clearMeta}
+                              autoMatchDeclined={autoMatchDeclined(selected.id)}
+                              onFieldFocusChange={onFieldFocusChange}
+                              onChange={onEditorChange}
+                              onChangeTracksPlaylists={onChangeTracksPlaylists}
+                              onProcess={onProcessSelected}
+                              onCancel={onCancelSelected}
+                              onConvertSelection={onConvertAllTracks}
+                              convertHint={hintFor('process-all')}
+                              batchRun={batching ? batchProgress : null}
+                              onCancelBatch={cancelBatch}
+                              onFormatChange={onFormatChange}
+                              onDestinationChange={onDestinationChange}
+                              rememberedPick={
+                                selectedTracks.length > 1 ? undefined : rememberedPick(selected.id)
+                              }
+                              onNormalizeChange={onNormalizeChange}
+                              onDeclickChange={onDeclickChange}
+                              onAddToAppleMusic={onAddSelectedToAppleMusic}
+                              onCleanUp={onCleanUp}
+                              resultsFolded={resultsFolded}
+                              onFoldResults={foldResults}
+                              onResultsResizeStart={onResultsResizeStart}
+                              onResultsFit={onResultsFit}
+                              onShowLoudnessHelp={onShowLoudnessHelp}
+                              onHideEditorHints={onHideEditorHints}
+                              onOpenRename={onOpenRename}
+                              onRegenerateName={onRegenerateName}
+                              onTrimDetectedAll={onTrimDetectedAll}
+                              onCopyFilename={onCopyFilename}
+                              onSearchWeb={onSearchWeb}
+                              onCopyMeta={onCopySelectedMeta}
+                              onPasteMeta={onPasteSelectedMeta}
+                              copiedMetaTitle={copiedMeta ? (copiedMeta.meta.title ?? '') : null}
+                              onExportCollection={onOpenExport}
+                              readFullTrack={readFullTrack}
+                              librarySources={browser.sources}
+                              onRevealIn={onRevealIn}
+                              onRetryVerification={retryVerification}
+                              onOpenBackup={onOpenBackup}
+                            />
+                          </Suspense>
+                        </ErrorBoundary>
+                      ) : browser.source ? (
+                        <div className="flex h-full items-center justify-center p-8 text-center">
+                          {/* The drag answers here as well as in the sidebar. The column is the
+                          place the rows land once there are any, but on an empty screen this
+                          panel is the only thing on show, and inviting a drag while the wide
+                          panel refused the drop was this screen's oldest lie. */}
+                          <div
+                            data-testid="empty-dropzone"
+                            data-drop-over={dragging || undefined}
+                            className="empty-dropzone w-full max-w-[460px] rounded-2xl px-4 py-8"
+                          >
+                            <div className="mb-4 flex justify-center">
+                              <EmptyDisc />
+                            </div>
+                            {/* A source with nothing picked has no rows and no editor; the one
+                            thing to do there is pick a playlist, so that is all it says, and
+                            a click there opens no file dialog. */}
+                            <p
+                              data-testid={
+                                !browser.playlist
+                                  ? 'source-pick-playlist'
+                                  : browser.entries?.length === 0
+                                    ? 'source-empty-playlist'
+                                    : 'source-pick-track'
+                              }
+                              className="empty-copy-in text-sm text-pretty text-fg-dim"
+                              style={{ animationDelay: '0.10s' }}
+                            >
+                              {tr(
+                                !browser.playlist
+                                  ? 'sources.pickPlaylist'
+                                  : browser.entries?.length === 0
+                                    ? 'sources.emptyPlaylist'
+                                    : 'sources.pickTrack',
+                              )}
+                            </p>
                           </div>
-                          {/* A source with nothing picked has no rows and no editor; the one
-                          thing to do there is pick a playlist, so that is all it says, and
-                          a click there opens no file dialog. */}
-                          <p
-                            data-testid="source-pick-playlist"
-                            className="empty-copy-in text-sm text-pretty text-fg-dim"
-                            style={{ animationDelay: '0.10s' }}
-                          >
-                            {tr('sources.pickPlaylist')}
-                          </p>
                         </div>
-                      </div>
-                    ) : (
-                      // The whole panel is one native button, so a click anywhere on it and
-                      // Enter or Space from the keyboard all open the same dialog as ⌘O. Its
-                      // name is the action because the visible line only says where to drop.
-                      <button
-                        type="button"
-                        data-testid="add-files"
-                        aria-label={tr('empty.addTracks')}
-                        onClick={onAdd}
-                        className="flex h-full w-full items-center justify-center p-8 text-center"
-                      >
-                        <span
-                          data-testid="empty-dropzone"
-                          data-drop-over={dragging || undefined}
-                          className="empty-dropzone block w-full max-w-[460px] rounded-2xl px-4 py-8"
+                      ) : (
+                        // The whole panel is one native button, so a click anywhere on it and
+                        // Enter or Space from the keyboard all open the same dialog as ⌘O. Its
+                        // name is the action because the visible line only says where to drop.
+                        <button
+                          type="button"
+                          data-testid="add-files"
+                          aria-label={tr('empty.addTracks')}
+                          onClick={onAdd}
+                          className="flex h-full w-full items-center justify-center p-8 text-center"
                         >
-                          <span className="mb-4 flex justify-center">
-                            <EmptyDisc />
-                          </span>
                           <span
-                            className="empty-copy-in block text-base font-semibold tracking-[-0.01em] text-balance text-fg"
-                            style={{ animationDelay: '0.10s' }}
+                            data-testid="empty-dropzone"
+                            data-drop-over={dragging || undefined}
+                            className="empty-dropzone block w-full max-w-[460px] rounded-2xl px-4 py-8"
                           >
-                            {tr('empty.title')}
+                            <span className="mb-4 flex justify-center">
+                              <EmptyDisc />
+                            </span>
+                            <span
+                              className="empty-copy-in block text-base font-semibold tracking-[-0.01em] text-balance text-fg"
+                              style={{ animationDelay: '0.10s' }}
+                            >
+                              {tr('empty.title')}
+                            </span>
+                            <span
+                              data-testid="empty-pick-hint"
+                              className="empty-copy-in mt-1 block text-xs text-fg-dim"
+                              style={{ animationDelay: '0.16s' }}
+                            >
+                              {tr('empty.pickHint', { shortcut: hintFor('add') })}
+                            </span>
                           </span>
-                          <span
-                            data-testid="empty-pick-hint"
-                            className="empty-copy-in mt-1 block text-xs text-fg-dim"
-                            style={{ animationDelay: '0.16s' }}
-                          >
-                            {tr('empty.pickHint', { shortcut: hintFor('add') })}
-                          </span>
-                        </span>
-                      </button>
-                    )}
+                        </button>
+                      )}
+                    </div>
+                    {batching && (review !== null || !selected) && batchStrip}
                   </main>
                 )}
               </div>

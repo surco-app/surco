@@ -6,8 +6,8 @@ import { type Chord, chordEquals } from './shortcuts'
 //
 // `suppressWhileTyping` keeps a mod-combo from firing while a text field is focused —
 // only ⌘⌫ (remove) needs it, so ⌫ stays a backspace mid-edit instead of deleting the
-// track. Bare-key chords are always suppressed while typing regardless of this flag, and
-// so are ⌥/⌃ chords unless the command sets `liveWhileTyping`.
+// track. Bare-key chords other than function keys are always suppressed while typing
+// regardless of this flag, and so are ⌥/⌃ chords unless the command sets `liveWhileTyping`.
 export interface ShortcutDef {
   id: string
   chord: Chord
@@ -88,6 +88,8 @@ export const SHORTCUT_DEFAULTS: ShortcutDef[] = [
   // El precio es perder inicio/fin de línea de macOS mientras se escribe dentro de un campo.
   { id: 'focus-column-prev', chord: ['mod', 'left'] },
   { id: 'focus-column-next', chord: ['mod', 'right'] },
+  { id: 'focus-region-next', chord: ['f6'] },
+  { id: 'focus-region-prev', chord: ['shift', 'f6'] },
   // Saltar de sección a sección por sus cabeceras, sin cruzar los campos de dentro: con
   // una sola sección abierta el editor tiene 133 paradas de tabulador. Llevan `mod` para
   // seguir vivas con un campo enfocado — irse al recorte desde el título es el caso — y
@@ -137,7 +139,7 @@ export function resolveBindings(overrides: Record<string, Chord> = {}): Map<stri
 
 // Resolves a pressed chord to a command id. Iterates the defaults table so the result
 // is deterministic (first match wins) even if two commands share a chord. Respects the
-// typing guard: while a field is focused, bare-key chords, `suppressWhileTyping` commands
+// typing guard: while a field is focused, bare-key chords other than function keys, `suppressWhileTyping` commands
 // and ⌥/⌃ chords without `liveWhileTyping` don't fire, but other mod-combos do.
 //
 // The active scope's commands are matched BEFORE the global ones, so a scoped binding
@@ -161,13 +163,14 @@ export function matchChord(
 ): string | null {
   const hasMod = chord.includes('mod')
   const hasAltOrCtrl = chord.includes('alt') || chord.includes('ctrl')
+  const functionKey = /^f\d{1,2}$/.test(chord[chord.length - 1] ?? '')
   const chain = scope === null ? [] : typeof scope === 'string' ? [scope] : scope
   const match = (wantScope: string | null): string | null => {
     for (const def of SHORTCUT_DEFAULTS) {
       const bound = bindings.get(def.id)
       if (!bound || bound.length === 0 || !chordEquals(bound, chord)) continue
       if ((def.scope ?? null) !== wantScope) continue
-      const live = hasMod || (def.liveWhileTyping === true && hasAltOrCtrl)
+      const live = hasMod || functionKey || (def.liveWhileTyping === true && hasAltOrCtrl)
       if (typing && (!live || def.suppressWhileTyping)) return null
       return def.id
     }

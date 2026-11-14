@@ -598,10 +598,18 @@ describe('editProblem for rename and delete', () => {
   })
 
   it('flags a node move whose parent is inside the node or whose target is not there, before rekordbox is closed', () => {
-    expect(editProblem(db, { kind: 'moveNode', playlistId: '1000', parentId: '2000', beforeId: null })).toBe('stale')
-    expect(editProblem(db, { kind: 'moveNode', playlistId: '3000', parentId: '1000', beforeId: '9999' })).toBe('stale')
-    expect(editProblem(db, { kind: 'moveNode', playlistId: '3000', parentId: '1000', beforeId: '2000' })).toBeNull()
-    expect(editProblem(db, { kind: 'moveNode', playlistId: '3000', parentId: 'root', beforeId: null })).toBeNull()
+    expect(
+      editProblem(db, { kind: 'moveNode', playlistId: '1000', parentId: '2000', beforeId: null }),
+    ).toBe('stale')
+    expect(
+      editProblem(db, { kind: 'moveNode', playlistId: '3000', parentId: '1000', beforeId: '9999' }),
+    ).toBe('stale')
+    expect(
+      editProblem(db, { kind: 'moveNode', playlistId: '3000', parentId: '1000', beforeId: '2000' }),
+    ).toBeNull()
+    expect(
+      editProblem(db, { kind: 'moveNode', playlistId: '3000', parentId: 'root', beforeId: null }),
+    ).toBeNull()
   })
 
   it('passes a folder and a playlist', () => {
@@ -619,7 +627,9 @@ describe('moveNode', () => {
   it('moves a playlist into a folder before the sibling it was dropped on, renumbering both parents', () => {
     moveNode(db, '3000', '1000', '2000', ctx)
     expect(live('3000')).toMatchObject({ Seq: 1, usn: 501, updated_at: STAMP })
-    expect(db.prepare('SELECT ParentID FROM djmdPlaylist WHERE ID = ?').get('3000')).toEqual({ ParentID: '1000' })
+    expect(db.prepare('SELECT ParentID FROM djmdPlaylist WHERE ID = ?').get('3000')).toEqual({
+      ParentID: '1000',
+    })
     expect(live('2000')?.Seq).toBe(2)
     expect(live('1100')?.Seq).toBe(3)
     expect(live('4000')?.Seq).toBe(2)

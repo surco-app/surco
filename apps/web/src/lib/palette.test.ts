@@ -45,7 +45,7 @@ type Colour = keyof typeof TOKYO_NIGHT
 
 const BLENDS: Record<string, [Colour, number, Colour]> = {
   'color-line': ['bg_highlight', 70, 'fg_gutter'],
-  'color-faint': ['dark5', 70, 'fg_dark'],
+  'color-faint': ['dark5', 60, 'fg_dark'],
 }
 
 const palette = new Set<string>(Object.values(TOKYO_NIGHT))

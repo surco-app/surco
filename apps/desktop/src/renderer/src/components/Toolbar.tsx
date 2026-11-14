@@ -1,8 +1,6 @@
 import {
-  ArrowRightLeft,
   ChartColumn,
   CircleQuestionMark,
-  FilePlus,
   Gauge,
   Loader2,
   type LucideIcon,
@@ -16,7 +14,9 @@ import {
 import type React from 'react'
 import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { type BatchSummary, type ConvertGate, leftOutNote } from '../lib/batch'
+import type { BatchSummary } from '../lib/batch'
+import { type SweepTask, sweepTasks } from '../lib/progress'
+import { SweepsPill, sweepText } from './SweepsPill'
 import { Tooltip } from './Tooltip'
 
 interface Props {
@@ -25,21 +25,6 @@ interface Props {
   // binding table in App the single source of truth.
   hintFor: (id: string) => string
   trackCount: number
-  // How many tracks the button would convert, and whether it can run at all (false once
-  // nothing is eligible, which greys it rather than hiding it, so it stays where the user
-  // last saw it). The count is named in the label on purpose: the editor footer carries a
-  // "Convert to AIFF" for the open track, and without a count the two read as one action.
-  convertibleCount: number
-  // The tracks the batch covers (the selection, or the visible list), so a count below it
-  // reads "1 of 3" and can't be taken for the open track when that one isn't ready.
-  batchSize: number
-  leftOut?: Omit<ConvertGate, 'ready'>
-  canConvertAll: boolean
-  inLibrary?: boolean
-  hasSelection?: boolean
-  onConvertAll: () => void
-  // Metadata-read progress of an in-flight import (null when idle), shown as a "212/319"
-  // counter beside "Add files" so a big drop isn't an opaque wait.
   importing: { done: number; total: number } | null
   batchSummary: BatchSummary | null
   // Filters the list down to the rows whose conversion failed, so the summary's failure
@@ -47,8 +32,6 @@ interface Props {
   onShowFailed: () => void
   onShowSkipped: () => void
   batching: boolean
-  // Progress of the running batch (convert-all / add-all), shown as a cancellable pill
-  // while `batching` — the conversion's counterpart of the sweep buttons below.
   batchProgress: { done: number; total: number }
   // Progress of the analyze-quality sweep (null when idle) and whether every track is
   // already analyzed (which, when idle, disables the button).
@@ -70,9 +53,6 @@ interface Props {
   onAutoMatch: () => void
   onCancelAutoMatch: () => void
   onFixToken: () => void
-  // Stops the running batch between tracks: queued conversions bail as skipped, the
-  // ones already in ffmpeg finish.
-  onCancelBatch: () => void
   onCancelImport: () => void
   onReview: () => void
   canReview: boolean
@@ -85,8 +65,6 @@ interface Props {
   onSettings: () => void
   onHelp: () => void
   onFeedback: () => void
-  // Takes the main action's place while another view owns the screen (the Music review),
-  // so Convert never acts on a list that is out of sight.
   primary?: React.ReactNode
   // The USB export's pill (UsbExportPill), which subscribes to the export itself; the
   // toolbar only places it, so a byte tick never re-renders the toolbar.
@@ -94,21 +72,13 @@ interface Props {
   queuePill?: React.ReactNode
 }
 
-// The window's title-bar toolbar: the convert-the-list action, the auto-match and
-// analyze-quality sweeps, the progress of whatever runs, and the always-present
+// The window's title-bar toolbar: the auto-match and analyze-quality sweeps, the progress of whatever runs, and the always-present
 // palette/stats/activity/originals/settings. App owns the state and hands every action down.
 // Memoized for the same contract as the Editor: App hands it stable handlers, so a
 // keystroke in a metadata field no longer re-renders the whole toolbar.
 export const Toolbar = memo(function Toolbar({
   hintFor,
   trackCount,
-  convertibleCount,
-  batchSize,
-  leftOut,
-  canConvertAll,
-  inLibrary = false,
-  hasSelection = false,
-  onConvertAll,
   importing,
   batchSummary,
   onShowFailed,
@@ -128,7 +98,6 @@ export const Toolbar = memo(function Toolbar({
   onAutoMatch,
   onCancelAutoMatch,
   onFixToken,
-  onCancelBatch,
   onCancelImport,
   onReview,
   canReview,
@@ -143,59 +112,29 @@ export const Toolbar = memo(function Toolbar({
   usbPill,
   queuePill,
 }: Props): React.JSX.Element {
-  const { t: tr } = useTranslation()
-  const analysisLabel =
-    analysis &&
-    tr(
-      analysisSlowed
-        ? 'header.analyzingSlowed'
-        : analysis.stage === 'details'
-          ? 'header.analyzingDetails'
-          : 'header.analyzingCount',
-      {
-        done: analysis.done,
-        total: analysis.total,
-      },
-    )
-  const libraryIdle = inLibrary && !hasSelection
-  const selectionLabel = inLibrary && hasSelection
-  const convertLabel =
-    convertibleCount === 0 || libraryIdle
-      ? tr('header.convertNone')
-      : convertibleCount < batchSize
-        ? tr(selectionLabel ? 'header.convertSomeSelected' : 'header.convertSome', {
-            ready: convertibleCount,
-            total: batchSize,
-          })
-        : tr(selectionLabel ? 'header.convertSelected' : 'header.convertAll', {
-            count: convertibleCount,
-          })
-  const note = !leftOut || libraryIdle ? null : leftOutNote(leftOut, tr)
+  const { t: tr, i18n } = useTranslation()
+  const tasks = sweepTasks({ importing, analysis, matching })
+  const spoken = (kind: SweepTask['kind']): string => {
+    const task = tasks.find((t) => t.kind === kind)
+    if (!task) return ''
+    const { label, count } = sweepText(tr, i18n.language, task, analysisSlowed)
+    return `${label} · ${count}`
+  }
+  const analysisLabel = spoken('analyze')
   return (
     <header
       className="flex h-12 shrink-0 items-center justify-between border-b border-[var(--color-line)] pr-3 pl-24"
       style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
     >
-      {/* The sweeps' counters, spoken. Outside the buttons because a button flattens what
-          it holds into its own name (the cancel action), and always mounted, empty while
-          idle, because a live region born together with its text is often never read. */}
-      <div className="sr-only">
-        <span role="status">
+      <div role="status" className="sr-only">
+        <span>
           {batching
             ? tr('header.convertingCount', { done: batchProgress.done, total: batchProgress.total })
             : ''}
         </span>
-        <span role="status">
-          {importing
-            ? tr('header.importingCount', { done: importing.done, total: importing.total })
-            : ''}
-        </span>
-        <span role="status">
-          {matching
-            ? tr('header.autoMatchingCount', { done: matching.done, total: matching.total })
-            : ''}
-        </span>
-        <span role="status">{analysisLabel || ''}</span>
+        <span>{spoken('import')}</span>
+        <span>{analysisLabel}</span>
+        <span>{spoken('match')}</span>
       </div>
       <div
         data-testid="toolbar-list-actions"
@@ -234,18 +173,7 @@ export const Toolbar = memo(function Toolbar({
                   aria-hidden="true"
                 />
               )}
-              {analysis ? (
-                <SteadyWidth
-                  testid="analyze-progress-sizer"
-                  widest={`${analysis.total}/${analysis.total}`}
-                >
-                  <span data-testid="analyze-progress" className="text-xs tabular-nums">
-                    {analysis.done}/{analysis.total}
-                  </span>
-                </SteadyWidth>
-              ) : (
-                <span>{tr('header.analyzeQualityLabel')}</span>
-              )}
+              <span>{tr('header.analyzeQualityLabel')}</span>
               <Tooltip
                 label={
                   analysisLabel ||
@@ -284,16 +212,6 @@ export const Toolbar = memo(function Toolbar({
                 className={`h-4 w-4 ${matching ? 'animate-pulse' : ''}`}
                 aria-hidden="true"
               />
-              {matching && (
-                <SteadyWidth
-                  testid="auto-match-progress-sizer"
-                  widest={`${matching.total}/${matching.total}`}
-                >
-                  <span data-testid="auto-match-progress" className="text-xs tabular-nums">
-                    {matching.done}/{matching.total}
-                  </span>
-                </SteadyWidth>
-              )}
               {/* Auto-match on, token missing: name the gap inline so it reads without a
                 hover — the tooltip alone was the invisible dead end this fixes. */}
               {!matching && needsToken && (
@@ -302,11 +220,11 @@ export const Toolbar = memo(function Toolbar({
                   <span>{tr('header.addToken')}</span>
                 </>
               )}
-              {!matching && !needsToken && <span>{tr('header.autoMatchLabel')}</span>}
+              {(matching || !needsToken) && <span>{tr('header.autoMatchLabel')}</span>}
               <Tooltip
                 label={
                   matching
-                    ? tr('header.autoMatchingCount', { done: matching.done, total: matching.total })
+                    ? spoken('match')
                     : needsToken || tokenMissing
                       ? tr('header.autoMatchNoToken')
                       : tr('header.autoMatch')
@@ -377,35 +295,11 @@ export const Toolbar = memo(function Toolbar({
         )}
         {usbPill}
         {queuePill}
-        {importing && (
-          // A live pill matching the auto-match/analyze sweeps (accent text, spinning
-          // glyph, done/total), so a big drop reads as active work rather than a static
-          // line — and clicking it cancels, like the batch pill beside it. This was the
-          // one sweep with no way out: a folder dropped by mistake had to be waited out.
-          <button
-            type="button"
-            data-testid="import-progress"
-            onClick={onCancelImport}
-            aria-label={tr('header.cancelImport')}
-            className="press group relative flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium tabular-nums text-[var(--color-accent)] hover:bg-[var(--color-hover)]"
-          >
-            {/* FilePlus, not the shared Loader2: mid-conversion, a dropped folder painted
-                two identical spinning capsules. The other sweeps identify themselves by
-                glyph already; this is the import's, echoing the Add files button it
-                follows from. */}
-            <FilePlus className="h-4 w-4" aria-hidden="true" />
-            <SteadyWidth
-              testid="import-progress-sizer"
-              widest={tr('header.importingCount', {
-                done: importing.total,
-                total: importing.total,
-              })}
-            >
-              {tr('header.importingCount', { done: importing.done, total: importing.total })}
-            </SteadyWidth>
-            <Tooltip label={tr('header.cancelImport')} align="end" />
-          </button>
-        )}
+        <SweepsPill
+          tasks={tasks}
+          slowed={analysisSlowed}
+          onStop={{ import: onCancelImport, analyze: onCancelAnalyze, match: onCancelAutoMatch }}
+        />
         <div aria-hidden="true" className="w-2" />
         <button
           type="button"
@@ -484,87 +378,16 @@ export const Toolbar = memo(function Toolbar({
           <MessageSquare className="h-4 w-4" aria-hidden="true" />
           <Tooltip label={tr('header.feedback')} align="end" />
         </button>
-        {/* Converting the list is the app's whole point, so it closes the header whenever
-            there is a list, one track included, so the button never comes and goes: at the
-            trailing edge, where a macOS toolbar keeps its main action, on the same side as
-            the editor footer's action for the open track. Labelled rather than a bare
-            glyph: it rewrites files, and an icon alone would not say what it touches. */}
-        {primary ? (
+        {primary && (
           <>
             <div aria-hidden="true" className="mx-1 h-5 w-px self-center bg-[var(--color-line)]" />
             {primary}
           </>
-        ) : (
-          trackCount > 0 && (
-            <>
-              <div
-                aria-hidden="true"
-                className="mx-1 h-5 w-px self-center bg-[var(--color-line)]"
-              />
-              <PrimaryAction
-                testid="convert-all"
-                Icon={ArrowRightLeft}
-                label={convertLabel}
-                note={note}
-                labelWidest={
-                  convertibleCount > 0 && convertibleCount < batchSize && !libraryIdle
-                    ? tr(selectionLabel ? 'header.convertSomeSelected' : 'header.convertSome', {
-                        ready: batchSize,
-                        total: batchSize,
-                      })
-                    : undefined
-                }
-                running={batching}
-                runningLabel={
-                  <SteadyWidth
-                    testid="convert-all-sizer"
-                    widest={tr('header.convertingCount', {
-                      done: batchProgress.total,
-                      total: batchProgress.total,
-                    })}
-                  >
-                    {tr('header.convertingCount', {
-                      done: batchProgress.done,
-                      total: batchProgress.total,
-                    })}
-                  </SteadyWidth>
-                }
-                cancelLabel={tr('header.cancelConvert')}
-                ready={canConvertAll && !libraryIdle}
-                quiet={(convertibleCount === 1 && batchSize === 1) || libraryIdle}
-                hint={hintFor('process-all')}
-                onRun={onConvertAll}
-                onCancel={onCancelBatch}
-              />
-            </>
-          )
         )}
       </div>
     </header>
   )
 })
-
-// Holds a ticking counter at the width of the widest value it can reach: an invisible copy
-// of that value sizes the cell and the live text sits over it, so gaining a digit doesn't
-// shove the rest of the right-pinned bar sideways.
-function SteadyWidth({
-  testid,
-  widest,
-  children,
-}: {
-  testid: string
-  widest: string
-  children: React.ReactNode
-}): React.JSX.Element {
-  return (
-    <span className="inline-grid tabular-nums">
-      <span data-testid={testid} aria-hidden="true" className="invisible col-start-1 row-start-1">
-        {widest}
-      </span>
-      <span className="col-start-1 row-start-1">{children}</span>
-    </span>
-  )
-}
 
 // The toolbar's trailing main action: labelled, tinted while it can run, and while it runs
 // the same button shows the count and cancels.
@@ -572,48 +395,36 @@ export function PrimaryAction({
   testid,
   Icon,
   label,
-  labelWidest,
   running,
   runningLabel,
   cancelLabel,
   ready,
-  quiet = false,
-  hint,
-  note,
   onRun,
   onCancel,
 }: {
   testid: string
   Icon: LucideIcon
   label: string
-  // The label at its widest, for a label carrying a count that moves while it shows.
-  labelWidest?: string
   running: boolean
   runningLabel: React.ReactNode
   cancelLabel: string
   ready: boolean
-  quiet?: boolean
-  hint?: string
-  note?: string | null
   onRun: () => void
   onCancel?: () => void
 }): React.JSX.Element {
-  const described = note ? `${label} · ${note}` : label
   return (
     <button
       type="button"
       data-testid={testid}
       onClick={running ? onCancel : onRun}
       disabled={running ? !onCancel : !ready}
-      data-variant={quiet ? 'secondary' : 'primary'}
-      aria-label={running ? (onCancel ? cancelLabel : undefined) : described}
+      data-variant="primary"
+      aria-label={running ? (onCancel ? cancelLabel : undefined) : label}
       className={`press group relative flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-medium disabled:opacity-40 ${
         running
           ? 'text-[var(--color-accent)] hover:bg-[var(--color-hover)]'
           : ready
-            ? quiet
-              ? 'text-fg-muted hover:bg-[var(--color-hover)] hover:text-fg'
-              : 'bg-[var(--color-accent-soft)] text-fg hover:bg-[var(--color-row-selected)] hover:text-[var(--color-on-row-selected)]'
+            ? 'bg-[var(--color-accent-soft)] text-fg hover:bg-[var(--color-row-selected)] hover:text-[var(--color-on-row-selected)]'
             : 'text-fg-muted'
       }`}
     >
@@ -627,18 +438,10 @@ export function PrimaryAction({
       ) : (
         <>
           <Icon className="h-4 w-4" aria-hidden="true" />
-          {labelWidest ? (
-            <SteadyWidth testid={`${testid}-sizer`} widest={labelWidest}>
-              {label}
-            </SteadyWidth>
-          ) : (
-            label
-          )}
+          {label}
         </>
       )}
-      {(!running || onCancel) && (
-        <Tooltip label={running ? cancelLabel : described} hint={running ? undefined : hint} />
-      )}
+      {(!running || onCancel) && <Tooltip label={running ? cancelLabel : label} />}
     </button>
   )
 }

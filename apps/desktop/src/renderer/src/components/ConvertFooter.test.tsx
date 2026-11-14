@@ -51,11 +51,8 @@ function footer(
       incompleteSummary={incompleteSummary}
       willEditInPlace={false}
       tagsOnly={false}
-      addToAppleMusic={false}
       sameFormat={false}
       upToDate={false}
-      djTargets={[]}
-      openSource={null}
       destination={'beside' as Destination}
       destinations={['beside' as Destination]}
       format="aiff"
@@ -94,6 +91,37 @@ describe('ConvertFooter state swap', () => {
     screen.getByTestId('process-btn').focus()
     rerender(footer(true))
     expect(screen.getByTestId('done-more')).toHaveFocus()
+  })
+
+  it('hands focus to the done state when the disabled convert button dropped it to body', () => {
+    const { rerender } = render(footer(false))
+    const button = screen.getByTestId('process-btn') as HTMLButtonElement
+    button.focus()
+    button.disabled = true
+    Object.defineProperty(document, 'activeElement', {
+      get: () => document.body,
+      configurable: true,
+    })
+    rerender(footer(true))
+    Reflect.deleteProperty(document, 'activeElement')
+    expect(screen.getByTestId('done-more')).toHaveFocus()
+  })
+
+  it('leaves focus on the page when the DJ clicked away from the footer before the swap', () => {
+    const { rerender } = render(footer(false))
+    const button = screen.getByTestId('process-btn')
+    button.focus()
+    button.blur()
+    expect(document.body).toHaveFocus()
+    rerender(footer(true))
+    expect(document.body).toHaveFocus()
+  })
+
+  it('does not take focus from the page on the swap back to convert', () => {
+    const { rerender } = render(footer(true))
+    expect(document.body).toHaveFocus()
+    rerender(footer(false))
+    expect(document.body).toHaveFocus()
   })
 
   // Focus that was elsewhere (the metadata form) must stay there: the footer only restores
@@ -1178,29 +1206,8 @@ describe('ConvertFooter batch verification', () => {
   })
 })
 
-describe('ConvertFooter destination line', () => {
+describe('ConvertFooter up to date', () => {
   const idle = footer(false)
-  const mac = (): void => {
-    ;(window as unknown as { api: Record<string, unknown> }).api = { platform: 'darwin' }
-  }
-
-  it('leaves the button alone, since Activity tells where each file went once it is done', () => {
-    mac()
-    render(
-      cloneElement(idle, {
-        destination: 'appleMusic',
-        destinations: ['appleMusic'],
-        addToAppleMusic: true,
-        willEditInPlace: true,
-        tagsOnly: true,
-        sameFormat: true,
-        openSource: 'rekordbox',
-        djTargets: ['rekordbox'],
-      }),
-    )
-    expect(screen.getByTestId('process-btn')).toHaveTextContent('Update tags')
-    expect(screen.queryByTestId('convert-destination-line')).toBeNull()
-  })
 
   it('hands focus to Update anyway when a finished track goes back to having nothing to write', () => {
     const quiet = { upToDate: true, willEditInPlace: true, tagsOnly: true, sameFormat: true }
@@ -1209,51 +1216,129 @@ describe('ConvertFooter destination line', () => {
     rerender(cloneElement(idle, quiet))
     expect(screen.getByTestId('convert-update-anyway')).toHaveFocus()
   })
-
-  it('says nothing above the button once there is nothing to write', () => {
-    render(
-      cloneElement(idle, {
-        upToDate: true,
-        willEditInPlace: true,
-        tagsOnly: true,
-        sameFormat: true,
-      }),
-    )
-    expect(screen.getByTestId('convert-up-to-date')).toBeInTheDocument()
-    expect(screen.queryByTestId('convert-destination-line')).toBeNull()
-  })
 })
 
 describe('ConvertFooter batch plan', () => {
-  const batch = (over: Record<string, unknown>): React.JSX.Element =>
-    cloneElement(footer(false), {
+  it('names only the count, format and destination, since Activity tells where each file went', () => {
+    render(
+      cloneElement(footer(false), {
+        isMulti: true,
+        selectedCount: 2,
+        status: { ...status(false), superseded: [] },
+      }),
+    )
+    expect(screen.getByTestId('batch-plan')).toHaveTextContent(/^2 tracks → AIFF · [^·]+$/)
+  })
+})
+
+describe('ConvertFooter convert of a selection', () => {
+  function multi(over: Record<string, unknown> = {}): React.JSX.Element {
+    return cloneElement(footer(false), {
       isMulti: true,
-      selectedCount: 2,
+      selectedCount: 3,
+      readyCount: 3,
       status: { ...status(false), superseded: [] },
       ...over,
     })
-  const mac = (): void => {
-    ;(window as unknown as { api: Record<string, unknown> }).api = { platform: 'darwin' }
   }
 
-  it('names Apple Music once when the batch already goes there from Music itself', () => {
-    mac()
-    render(
-      batch({
-        destination: 'appleMusic',
-        destinations: ['appleMusic'],
-        addToAppleMusic: true,
-        openSource: 'appleMusic',
-      }),
-    )
-    expect(screen.getByTestId('batch-plan').textContent?.split('Apple Music')).toHaveLength(2)
+  it('converts the selection from the footer, the one convert button left, naming how many', () => {
+    const onConvertSelection = vi.fn()
+    const onProcess = vi.fn()
+    render(multi({ onConvertSelection, onProcess }))
+    const button = screen.getByTestId('batch-convert')
+    expect(button).toHaveTextContent(i18n.t('header.convertSelected', { count: 3 }))
+    fireEvent.click(button)
+    expect(onConvertSelection).toHaveBeenCalledOnce()
+    expect(onProcess).not.toHaveBeenCalled()
   })
 
-  it('says it updates the DJ program the batch was opened from and syncs the others', () => {
-    render(batch({ djTargets: ['rekordbox', 'engine'], openSource: 'rekordbox' }))
-    expect(screen.getByTestId('batch-plan')).toHaveTextContent(
-      'Updates rekordbox · Syncs Engine DJ',
+  it('says out of how many it converts when the plan leaves some out', () => {
+    render(multi({ readyCount: 2, onConvertSelection: vi.fn() }))
+    expect(screen.getByTestId('batch-convert')).toHaveTextContent(
+      i18n.t('header.convertSomeSelected', { ready: 2, total: 3 }),
     )
-    expect(screen.getByTestId('batch-plan')).not.toHaveTextContent('Adds')
+  })
+
+  it('shows the convert-all shortcut on hover, as the toolbar button did', () => {
+    render(multi({ onConvertSelection: vi.fn(), convertHint: '⌘⇧⏎' }))
+    expect(hoverTooltip(screen.getByTestId('batch-convert'))).toBe(
+      `${i18n.t('header.convertSelected', { count: 3 })}⌘⇧⏎`,
+    )
+  })
+
+  it('stays in place but greyed when nothing in the selection can be converted', () => {
+    render(multi({ readyCount: 0, onConvertSelection: vi.fn() }))
+    expect(screen.getByTestId('batch-convert')).toBeDisabled()
+  })
+})
+
+describe('ConvertFooter running batch', () => {
+  const run = { done: 3, total: 12 }
+
+  it.each([
+    ['one track', footer(false)],
+    ['one finished track', footer(true)],
+    [
+      'a selection',
+      cloneElement(footer(false), {
+        isMulti: true,
+        selectedCount: 3,
+        readyCount: 3,
+        status: { ...status(false), superseded: [] },
+      }),
+    ],
+  ])('shows the batch progress and its cancel in place of convert over %s', (_, base) => {
+    const onCancelBatch = vi.fn()
+    const onProcess = vi.fn()
+    render(cloneElement(base, { batchRun: run, onCancelBatch, onProcess }))
+    expect(screen.getByTestId('batch-run-progress')).toHaveTextContent(
+      i18n.t('header.convertingCount', run),
+    )
+    expect(screen.queryByTestId('process-btn')).toBeNull()
+    expect(screen.queryByTestId('batch-convert')).toBeNull()
+    expect(screen.queryByTestId('done-more')).toBeNull()
+    const cancel = screen.getByTestId('batch-run-cancel')
+    expect(cancel).toHaveTextContent(i18n.t('common.cancel'))
+    expect(cancel).toHaveAccessibleName(i18n.t('header.cancelConvert'))
+    fireEvent.click(cancel)
+    expect(onCancelBatch).toHaveBeenCalledOnce()
+    expect(onProcess).not.toHaveBeenCalled()
+  })
+})
+
+describe('ConvertFooter focus across a batch', () => {
+  const run = { done: 0, total: 3 }
+  const selection = cloneElement(footer(false), {
+    isMulti: true,
+    selectedCount: 3,
+    readyCount: 3,
+    status: { ...status(false), superseded: [] },
+    onConvertSelection: vi.fn(),
+    onCancelBatch: vi.fn(),
+  })
+
+  it('moves focus from Convert to Cancel when the batch starts, and back when it ends', () => {
+    const { rerender } = render(selection)
+    screen.getByTestId('batch-convert').focus()
+    rerender(cloneElement(selection, { batchRun: run }))
+    expect(document.activeElement).toBe(screen.getByTestId('batch-run-cancel'))
+    rerender(cloneElement(selection, { batchRun: null }))
+    expect(document.activeElement).toBe(screen.getByTestId('batch-convert'))
+  })
+
+  it('hands focus back to the track convert button when a batch ends over one track', () => {
+    const single = cloneElement(footer(false), { onCancelBatch: vi.fn() })
+    const { rerender } = render(cloneElement(single, { batchRun: run }))
+    screen.getByTestId('batch-run-cancel').focus()
+    rerender(cloneElement(single, { batchRun: null }))
+    expect(document.activeElement).toBe(screen.getByTestId('process-btn'))
+  })
+
+  it('leaves focus where it is when it was outside the footer as the batch starts', () => {
+    const { rerender } = render(selection)
+    expect(document.activeElement).toBe(document.body)
+    rerender(cloneElement(selection, { batchRun: run }))
+    expect(document.activeElement).toBe(document.body)
   })
 })

@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest'
+import ca from './changelog/ca.json'
 import de from './changelog/de.json'
 import en from './changelog/en.json'
 import es from './changelog/es.json'
 import fr from './changelog/fr.json'
+import itIT from './changelog/it.json'
 import ja from './changelog/ja.json'
 import ptBR from './changelog/pt-BR.json'
-import { resources } from './index'
+import { loadI18n } from './index'
 import enLocale from './locales/en.json'
 import esLocale from './locales/es.json'
 
@@ -20,11 +22,14 @@ const TRANSLATED = [
   ['fr', fr],
   ['pt-BR', ptBR],
   ['ja', ja],
+  ['ca', ca],
+  ['it', itIT],
 ] as const
 
 describe.each(TRANSLATED)('%s release history', (lng, releases) => {
-  it('serves its page its own releases', () => {
-    expect(resources[lng].translation.changelog.releases).toBe(releases)
+  it('serves its page its own releases', async () => {
+    const i18n = await loadI18n(lng, { releases: true })
+    expect(i18n.getResource(lng, 'translation', 'changelog.releases')).toBe(releases)
   })
 
   it('mirrors every English release, item for item', () => {

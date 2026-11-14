@@ -37,8 +37,13 @@ function Mark({ cell }: { cell: Cell }) {
 export default function ProgramTable() {
   const { t } = useTranslation()
   return (
+    // biome-ignore lint/a11y/useSemanticElements: a <section> would trip noNoninteractiveTabindex, and the scrollable table needs its tab stop
     <div
       data-testid="program-table"
+      role="region"
+      aria-label={t('features.programs.region')}
+      // biome-ignore lint/a11y/noNoninteractiveTabindex: a scrollable region is unreachable by keyboard without a tab stop (WCAG 2.1.1)
+      tabIndex={0}
       className="overflow-x-auto rounded-2xl border border-line bg-surface2"
     >
       <table className="w-full min-w-[760px] border-collapse text-[15px]">

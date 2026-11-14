@@ -51,6 +51,18 @@ function setup(over: Partial<React.ComponentProps<typeof CueWave>> = {}) {
 }
 
 describe('CueWave', () => {
+  it('widens the press area of a mark only downward, never past its own drawn width', () => {
+    setup()
+    expect(screen.getByTestId('cue-wave-hot-A').className).toContain('after:w-full')
+    expect(screen.getByTestId('cue-wave-call-16000').className).toContain('after:w-2')
+    for (const id of ['cue-wave-hot-A', 'cue-wave-call-16000']) {
+      const mark = screen.getByTestId(id)
+      expect(mark.className).toContain('after:h-6')
+      expect(mark.className).not.toContain('after:w-6')
+      expect(mark.className).not.toContain('after:-translate-x-1/2')
+    }
+  })
+
   it('draws the overview with the list row’s own mirrored bars, accent and opacity, so the two waves read as one', async () => {
     ;(window as unknown as { api: Partial<Api> }).api = {
       rowWaves: vi.fn<Api['rowWaves']>(async () => ({ '/a.DAT': [1, 0.5, 0] })),

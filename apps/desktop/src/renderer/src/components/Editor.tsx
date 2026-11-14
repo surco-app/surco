@@ -24,7 +24,6 @@ import { tagsOnly } from '../../../shared/audioProcessing'
 import type { CueJumpBars } from '../../../shared/cueJump'
 import type { CueQuantize } from '../../../shared/cueQuantize'
 import { effectiveMeta, fieldValue, isCustomTag } from '../../../shared/customFields'
-import { WRITABLE_PROGRAMS, writableInOrder } from '../../../shared/djProgram'
 import { EDITOR_SECTION_GROUP } from '../../../shared/editorSections'
 import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../../../shared/format'
 import type { GridCheck } from '../../../shared/gridCheck'
@@ -53,6 +52,7 @@ import { useKey } from '../hooks/useKey'
 import { useLatest } from '../hooks/useLatest'
 import { useLibraryReveals } from '../hooks/useLibraryReveals'
 import { useLibraryVerdict } from '../hooks/useLibraryVerdict'
+import { useMaximizeMotion } from '../hooks/useMaximizeMotion'
 import { usePlaylistsSpec } from '../hooks/useRekordboxPlaylists'
 import { useScrollAffordance } from '../hooks/useScrollAffordance'
 import { useSectionNavigation } from '../hooks/useSectionNavigation'
@@ -71,8 +71,6 @@ import type { AutoMarkTarget } from '../lib/cueAutoMark'
 import { deriveTagPatches } from '../lib/deriveTags'
 import { DESTINATIONS, type Destination, fromDestination, toDestination } from '../lib/destination'
 import { isDeclickStale, isNormalizeStale, isStale } from '../lib/dirty'
-import type { DjLibraryId } from '../lib/djLibraries'
-import { DJ_COLLECTION_PATH, DJ_REACH_SETTINGS, reachedPrograms } from '../lib/djReach'
 import { editorPlace } from '../lib/editorPlace'
 import { buildFieldSpecs, type PlaylistsSpec } from '../lib/fieldSpecs'
 import { FIELD_DEFS, labeledFields, missingRequired, PLAYLIST_FIELDS } from '../lib/fields'
@@ -117,6 +115,7 @@ import { FORMATS } from './ExportButton'
 import type { InsertSource } from './FieldInsertMenu'
 import { ForeignTagsInspector } from './ForeignTagsInspector'
 import { LimiterGlimpse } from './LimiterGlimpse'
+import { MatchingSection } from './MatchingSection'
 import { MetadataForm } from './MetadataForm'
 import { type MetaMenuItem, MetaMoreMenu } from './MetaMoreMenu'
 import { NormalizeSection } from './NormalizeSection'
@@ -130,9 +129,6 @@ import { SectionPill } from './SectionPill'
 import { SpectrumGlimpse } from './SpectrumGlimpse'
 import { Tooltip } from './Tooltip'
 import { TrimSection } from './TrimSection'
-
-const LIBRARY_ORDER = writableInOrder(['rekordbox', 'engine', 'traktor', 'virtualdj'])
-const COLLECTION_PATH_ORDER = writableInOrder(['traktor', 'rekordbox', 'engine', 'virtualdj'])
 
 interface Props {
   item: TrackItem
@@ -180,9 +176,12 @@ interface Props {
   onChange: (patch: Partial<TrackItem>) => void
   onProcess: (format: OutputFormat) => void
   // Cancels an in-flight single-track conversion — the button becomes a cancel while it
-  // runs, so a long convert has the escape a batch always had. Multi cancels via the
-  // toolbar batch pill, so this is single-only.
+  // runs, so a long convert has the escape a batch always had. Single-only.
   onCancel?: () => void
+  onConvertSelection?: () => void
+  convertHint?: string
+  batchRun?: { done: number; total: number } | null
+  onCancelBatch?: () => void
   // Reports the format chosen in the split-button menu so the keyboard convert
   // shortcuts (⌘⏎ / ⌘⇧⏎) and convert all export in it too, instead of the Settings
   // default. Null means nothing was picked by hand: a seeded format is resolved against
@@ -215,6 +214,7 @@ interface Props {
   // Editor-local used to remount the editor and silently destroy the open dialog.
   onShowLoudnessHelp: () => void
   rekordboxCue?: { contentId: string; path: string; label: string }
+  matching?: Omit<React.ComponentProps<typeof MatchingSection>, 'open' | 'onToggle'>
   onCueJumpBars?: (bars: CueJumpBars) => void
   onCueQuantize?: (unit: CueQuantize) => void
   onCueFlow?: (id: string) => void
@@ -249,7 +249,6 @@ interface Props {
   onExportCollection: () => void
   readFullTrack: (id: string) => Promise<TrackItem | undefined>
   librarySources?: readonly PlaylistSource[]
-  openSource?: PlaylistSource | null
   onRevealIn?: (source: PlaylistSource) => void
   // Re-checks a conversion whose re-read did not add up; App owns the job runner.
   onRetryVerification?: (trackId: string) => Promise<void>
@@ -300,6 +299,10 @@ export const Editor = memo(function Editor({
   onChange,
   onProcess,
   onCancel,
+  onConvertSelection,
+  convertHint,
+  batchRun,
+  onCancelBatch,
   onFormatChange,
   onDestinationChange,
   rememberedPick,
@@ -313,6 +316,7 @@ export const Editor = memo(function Editor({
   onResultsFit,
   onShowLoudnessHelp,
   rekordboxCue,
+  matching,
   onCueJumpBars,
   onCueQuantize,
   onCueFlow,
@@ -334,7 +338,6 @@ export const Editor = memo(function Editor({
   onExportCollection,
   readFullTrack,
   librarySources = [],
-  openSource = null,
   onRevealIn,
   onRetryVerification,
   onOpenBackup,
@@ -382,27 +385,7 @@ export const Editor = memo(function Editor({
     declick,
     outputSampleRate,
     editorSections,
-    traktorNmlPath,
   } = appSettings
-  const { data: libraries } = useQuery({
-    queryKey: [
-      'library-status',
-      ...WRITABLE_PROGRAMS.map((program) => appSettings[DJ_REACH_SETTINGS[program].add]),
-      ...COLLECTION_PATH_ORDER.map((program) => appSettings[DJ_COLLECTION_PATH[program]]),
-    ],
-    queryFn: () => window.api.libraryStatus(),
-    enabled: WRITABLE_PROGRAMS.some((program) => appSettings[DJ_REACH_SETTINGS[program].add]),
-  })
-  const reachable = useMemo(
-    () =>
-      libraries &&
-      new Set<DjLibraryId>(
-        LIBRARY_ORDER.filter(
-          (id) => libraries[id].found && (id !== 'traktor' || traktorNmlPath !== ''),
-        ),
-      ),
-    [libraries, traktorNmlPath],
-  )
   const discogsTokenMissing = discogsToken === ''
   const isMulti = (selectedTracks?.length ?? 0) > 1
   const revealIn = useLibraryReveals(item, isMulti ? [] : librarySources)
@@ -441,6 +424,7 @@ export const Editor = memo(function Editor({
   // flow over the whole track list. A dialog opened over it (palette, settings) owns
   // Escape, and the overlay sits under the z-50 modals so that dialog is the one on top.
   const { maximized, setMaximized } = useMaximizedSection()
+  const maximizeMotion = useMaximizeMotion(maximized)
   useEffect(() => {
     if (maximized === null) return
     const onKey = (e: KeyboardEvent): void => {
@@ -993,10 +977,6 @@ export const Editor = memo(function Editor({
   // reason any more, so the field's amber dot and the button's own tooltip — which
   // names exactly what's missing — are what tell the user why. The tooltip reuses the
   // same phrasing the blocked-convert error would have shown.
-  // Several tracks read the gate the header's Convert reads (ready rows, missing fields,
-  // Serato rows, a mixed replace/add selection), so the plan down here and the count up
-  // there cannot disagree over one selection. A single track keeps its own check over the
-  // live form, which the gate cannot see.
   const multiGate = useMemo(
     () =>
       isMulti
@@ -1005,9 +985,6 @@ export const Editor = memo(function Editor({
     [isMulti, selectedTracks, requiredFields, customFields, libraryIndex],
   )
   const leftOut = multiGate ? leftOutNote(multiGate, tr) : null
-  // The done menu's "Convert again" re-runs every selected track, done ones included, and
-  // a menu item cannot name what it would drop, so anything the re-run would leave out
-  // holds it back with the reason (the same words as the header's note).
   const againGate = useMemo(
     () =>
       isMulti
@@ -1087,7 +1064,6 @@ export const Editor = memo(function Editor({
       formatMatchesInput(format, item.inputPath),
       jobAudio(item, normalizeCfg, declickCfg, { normalize, declick }),
     )
-  const djTargets = reachedPrograms(appSettings, reachable)
   const upToDate =
     !isMulti &&
     !incomplete &&
@@ -1456,7 +1432,7 @@ export const Editor = memo(function Editor({
             here={hereFacts}
             library={libraryFacts}
             hereLabel={hereFacts.ext}
-            libraryLabel={libraryFacts.ext}
+            libraryLabel={replacedCopyFormat || libraryFacts.ext}
             glimpse={
               limitedRate ? (
                 <LimiterGlimpse
@@ -1552,9 +1528,6 @@ export const Editor = memo(function Editor({
           <span className="sr-only">
             {tr(librarySource === 'engineDj' ? 'editor.inLibraryEngine' : 'editor.inLibrary')}
           </span>
-          {replacedCopyFormat && !libraryCopyBetter && (
-            <span data-testid="apple-music-copy-format">· {replacedCopyFormat}</span>
-          )}
         </SectionPill>
       )}
     </>
@@ -1715,7 +1688,8 @@ export const Editor = memo(function Editor({
             // changes the group (a maximized section renders to a portal and a
             // hidden-by-condition one to null — neither shifts the column's phase).
             let lastGroup = EDITOR_SECTION_GROUP.form
-            return editorSections
+            let lifted: React.ReactElement | null = null
+            const column = editorSections
               .filter((s) => s.id !== 'form' && s.hidden !== true)
               .flatMap(({ id }) => {
                 // Typed as element-or-falsy (not the wider ReactNode) so the arrays
@@ -1745,6 +1719,18 @@ export const Editor = memo(function Editor({
                             }}
                             open={sectionOpen.otherTags}
                             onToggle={() => setSectionOpen('otherTags', !sectionOpen.otherTags)}
+                          />
+                        )
+                      )
+                    case 'matching':
+                      return (
+                        !isMulti &&
+                        matching !== undefined && (
+                          <MatchingSection
+                            key={id}
+                            {...matching}
+                            open={sectionOpen.matching}
+                            onToggle={() => setSectionOpen('matching', !sectionOpen.matching)}
                           />
                         )
                       )
@@ -1953,21 +1939,9 @@ export const Editor = memo(function Editor({
                 // A maximized section leaves the column (it renders to a portal),
                 // so it neither shows a heading nor shifts the column's phase — the
                 // heading belongs to whatever visible section takes over the flow.
-                if (element && id === maximized) {
-                  // Wrapped in an array like every other branch, so flatMap's callback has
-                  // one return shape (a node list) instead of a bare portal.
-                  return [
-                    createPortal(
-                      <div
-                        data-testid="section-maximized-overlay"
-                        className="fixed inset-0 z-[46] overflow-y-auto bg-[var(--color-panel)] px-8 pb-8 pt-2"
-                      >
-                        {element}
-                      </div>,
-                      document.body,
-                      id,
-                    ),
-                  ]
+                if (element && (id === maximized || id === maximizeMotion.leaving)) {
+                  lifted = element
+                  return []
                 }
                 // A section hidden by its own conditions (null) doesn't advance the
                 // phase either — the next visible section still opens its group.
@@ -2001,6 +1975,21 @@ export const Editor = memo(function Editor({
                   </div>,
                 ]
               })
+            if (!lifted) return column
+            return [
+              ...column,
+              createPortal(
+                <div
+                  ref={maximizeMotion.overlayRef}
+                  data-testid="section-maximized-overlay"
+                  className="fixed inset-0 z-[46] origin-top-left overflow-y-auto bg-[var(--color-panel)] px-8 pb-8 pt-2"
+                >
+                  {lifted}
+                </div>,
+                document.body,
+                maximized ?? maximizeMotion.leaving,
+              ),
+            ]
           })()}
         </div>
         <div
@@ -2040,9 +2029,6 @@ export const Editor = memo(function Editor({
           tagsOnly={tagsOnlyExport}
           sameFormat={formatMatchesInput(format, item.inputPath)}
           upToDate={upToDate}
-          addToAppleMusic={picked.addToAppleMusic}
-          djTargets={djTargets}
-          openSource={openSource}
           destination={destination}
           destinations={destinationChoices}
           format={isMulti ? formatPick : format}
@@ -2094,9 +2080,12 @@ export const Editor = memo(function Editor({
                   onProcess(f as OutputFormat)
                 }
           }
-          // Single-only: a running multi converts through the toolbar's batch pill, which
-          // owns that cancel. Passing it in multi would cancel just the primary track.
+          // Single-only: passing it in multi would cancel just the primary track.
           onCancel={isMulti ? undefined : onCancel}
+          onConvertSelection={onConvertSelection}
+          convertHint={convertHint}
+          batchRun={batchRun}
+          onCancelBatch={onCancelBatch}
           onAddToAppleMusic={isMulti ? onAddAllToAppleMusic : onAddToAppleMusic}
           staleMusicCopy={staleMusicCopy}
           // The file this track's replacement retired: gone from Apple Music, and rekordbox

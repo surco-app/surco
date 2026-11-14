@@ -59,7 +59,15 @@ export interface TagsOp {
   from?: Partial<Record<SeratoTagField, string>>
 }
 
-export type QueueOp = EditOp | TrackOp | CuesOp | TagsOp
+export interface MatchOp {
+  id: string
+  kind: 'match'
+  action: 'add' | 'remove'
+  pair: [string, string]
+  label: string
+}
+
+export type QueueOp = EditOp | TrackOp | CuesOp | TagsOp | MatchOp
 
 export interface OpOutcome {
   id: string
@@ -91,6 +99,7 @@ export function opRank(op: QueueOp): number {
   if (op.kind === 'track') return 0
   if (op.kind === 'tags') return 1
   if (op.kind === 'cues') return 4
+  if (op.kind === 'match') return 2
   return EDIT_RANK[op.edit.kind]
 }
 

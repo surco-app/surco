@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { PlaylistSource } from '../../../../shared/types'
 import i18n from '../../i18n'
@@ -16,6 +16,7 @@ import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
 // before it renders.
 ;(window as unknown as { api: unknown }).api = {
   platform: 'darwin',
+  checkForUpdates: () => Promise.resolve(),
   dj: djReads({
     rekordbox: { available: () => Promise.resolve(true) },
     engine: { available: () => Promise.resolve(true) },
@@ -36,7 +37,7 @@ const synced = {
   language: 'system',
   hiddenSources: [],
 } as unknown as SyncedDraft
-const local = { betaUpdates: false } as unknown as LocalDraft
+const local = { betaUpdates: false, autoUpdates: true } as unknown as LocalDraft
 
 function renderTab(
   over: Partial<LocalDraft> = {},
@@ -56,24 +57,38 @@ function renderTab(
   return patchLocal
 }
 
-// The theme and language rows are segmented choices under a visible label; the label has
-// to name the group too, or VoiceOver reads "Dark, toggle button" with no idea of what.
-it('names the theme and language choices after their labels', () => {
+it('names the theme choices after their label, so VoiceOver says what Dark is the dark of', () => {
   renderTab()
   expect(screen.getByRole('group', { name: i18n.t('settings.theme') })).toContainElement(
     screen.getByTestId('settings-theme-dark'),
   )
-  expect(screen.getByRole('group', { name: i18n.t('settings.language') })).toContainElement(
-    screen.getByTestId('settings-language-es'),
-  )
-  expect(screen.getByTestId('settings-language-ja')).toHaveTextContent('日本語')
+})
+
+it('offers the language as one menu with each language in its own words, so the row stays one line however many languages come', () => {
+  renderTab()
+  const trigger = screen.getByTestId('settings-language')
+  expect(trigger.getAttribute('aria-label')).toContain(i18n.t('settings.language'))
+  fireEvent.click(trigger)
+  const options = within(screen.getByTestId('settings-language-listbox')).getAllByRole('option')
+  expect(options.map((o) => o.textContent)).toEqual([
+    i18n.t('settings.languages.system'),
+    'English',
+    'Español',
+    'Deutsch',
+    'Français',
+    'Português',
+    '日本語',
+    'Català',
+    'Italiano',
+  ])
 })
 
 it('persists a selected Japanese UI language through the settings patch', () => {
   const patch = vi.fn()
   renderTab({}, [], patch)
 
-  fireEvent.click(screen.getByTestId('settings-language-ja'))
+  fireEvent.click(screen.getByTestId('settings-language'))
+  fireEvent.click(screen.getByTestId('settings-language-option-ja'))
 
   expect(patch).toHaveBeenCalledWith('language', 'ja')
 })
@@ -162,6 +177,62 @@ describe('GeneralTab beta channel', () => {
     renderTab()
 
     expect(screen.getByTestId('settings-beta-updates')).toBeEnabled()
+  })
+})
+
+// Asked for by users who want to stay on the version they have for now.
+describe('GeneralTab automatic updates', () => {
+  it('shows whether this machine updates on its own', () => {
+    renderTab()
+    expect(screen.getByTestId('settings-auto-updates')).toBeChecked()
+    cleanup()
+
+    renderTab({ autoUpdates: false })
+    expect(screen.getByTestId('settings-auto-updates')).not.toBeChecked()
+  })
+
+  it('stages the switch', () => {
+    const patchLocal = renderTab()
+
+    fireEvent.click(screen.getByTestId('settings-auto-updates'))
+
+    expect(patchLocal).toHaveBeenCalledWith('autoUpdates', false)
+  })
+
+  // Turning it off does not lock the user out of updating; the hint has to name the
+  // check that still does it, or the box reads as a one-way door.
+  it('says how to update by hand once it is off', () => {
+    renderTab()
+
+    const hint = screen.getByText(i18n.t('settings.autoUpdatesHint'))
+    expect(hint.textContent).toContain('Check for Updates')
+  })
+
+  // Someone staying on a version has to find the way to update where the switch lives,
+  // not only in a menu; it must run the same check the menu item does.
+  it('checks for updates from the button', () => {
+    const check = vi.spyOn(window.api, 'checkForUpdates')
+    renderTab({ autoUpdates: false })
+
+    fireEvent.click(screen.getByTestId('settings-check-updates'))
+
+    expect(check).toHaveBeenCalledTimes(1)
+    check.mockRestore()
+  })
+
+  // The Store updates its copies itself; Surco cannot stop it, so the box must not pretend to.
+  it('stays visible but locked in a copy from the Microsoft Store', () => {
+    const api = window.api as unknown as { storeBuild?: boolean }
+    api.storeBuild = true
+    try {
+      renderTab()
+
+      expect(screen.getByTestId('settings-auto-updates')).toBeDisabled()
+      expect(screen.getByTestId('settings-check-updates')).toBeDisabled()
+      expect(screen.getByText(i18n.t('settings.autoUpdatesStoreHint'))).toBeInTheDocument()
+    } finally {
+      api.storeBuild = false
+    }
   })
 })
 
@@ -286,6 +357,20 @@ describe('GeneralTab sources', () => {
       expect(screen.getByText(i18n.t('settings.sourceSeratoUnavailable'))).toBeInTheDocument(),
     )
     expect(screen.getByTestId('settings-source-serato')).toBeDisabled()
+  })
+
+  it('says why a source is off on its own row, so the list keeps one line per program instead of a hint pushing the next switch down', async () => {
+    renderSources({ platform: 'darwin', rekordbox: true, serato: false })
+    await waitFor(() => expect(screen.getByTestId('settings-source-serato')).toBeDisabled())
+    expect(screen.getByTestId('settings-source-serato').closest('label')).toHaveTextContent(
+      i18n.t('settings.sourceSeratoUnavailable'),
+    )
+  })
+
+  it('leaves a library that is not on this machine unticked, since a ticked box says the sidebar shows it and it cannot', async () => {
+    renderSources({ platform: 'darwin', rekordbox: true, serato: false })
+    await waitFor(() => expect(screen.getByTestId('settings-source-serato')).toBeDisabled())
+    expect(screen.getByTestId('settings-source-serato')).not.toBeChecked()
   })
 
   it('lets Serato be hidden on a machine that has a Serato library', async () => {

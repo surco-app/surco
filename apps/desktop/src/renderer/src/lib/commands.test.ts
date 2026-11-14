@@ -72,6 +72,7 @@ function makeDeps(overrides: Partial<CommandDeps> = {}): CommandDeps {
     focusMatches: () => {},
     focusEditor: () => {},
     focusColumn: () => {},
+    focusRegion: () => {},
     togglePlay: () => {},
     playerVisible: false,
     seek: () => {},
@@ -1152,4 +1153,15 @@ describe('cada atajo lo ejecuta alguien', () => {
       expect(registeredIds.has(def.id) || isClaimable(def.id)).toBe(true)
     })
   }
+})
+
+describe('F6 region commands', () => {
+  it('step the focus one region in each direction, with nothing to gate them', () => {
+    const focusRegion = vi.fn()
+    const deps = makeDeps({ focusRegion })
+    expect(commandById(deps, 'focus-region-next').enabled).toBe(true)
+    runCommand(buildCommands(deps), 'focus-region-next')
+    runCommand(buildCommands(deps), 'focus-region-prev')
+    expect(focusRegion.mock.calls).toEqual([[1], [-1]])
+  })
 })

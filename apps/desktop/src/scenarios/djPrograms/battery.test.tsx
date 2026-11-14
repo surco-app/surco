@@ -67,13 +67,7 @@ import type {
   UsbExportEvent,
 } from '../../shared/types'
 import { makeTrack, scenarioDir } from '../fixtures'
-import {
-  type DjAsk,
-  followLibrariesSize,
-  invokeMain,
-  openSurco,
-  type Scenario,
-} from '../harness'
+import { type DjAsk, followLibrariesSize, invokeMain, openSurco, type Scenario } from '../harness'
 import {
   CONVERSION_MOVE_MS,
   type ConvertedFormat,

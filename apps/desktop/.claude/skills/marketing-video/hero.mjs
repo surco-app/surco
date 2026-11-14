@@ -22,7 +22,7 @@ const WIDTH = 1440
 const HEIGHT = 894
 const FPS = 25
 const OUT = resolve(APP_DIR, '../web/public')
-const LANGUAGES = ['es', 'en', 'de', 'fr', 'pt-BR', 'ja']
+const LANGUAGES = ['es', 'en', 'de', 'fr', 'pt-BR', 'ja', 'ca', 'it']
 
 const { _electron: electron } = createRequire(
   join(ROOT, 'apps/desktop/.claude/skills/run-desktop/package.json'),
@@ -164,6 +164,11 @@ async function record(lang) {
   execFileSync('cwebp', [
     '-quiet', '-q', '82', '-resize', '2000', '0', loop[0], '-o', join(OUT, `hero-app-${lang}.webp`),
   ])
+  for (const width of [800, 1200])
+    execFileSync('cwebp', [
+      '-quiet', '-q', '82', '-resize', String(width), '0', loop[0], '-o',
+      join(OUT, `hero-app-${lang}-${width}.webp`),
+    ])
   rmSync(work, { recursive: true, force: true })
   console.log(`hero ${lang}: ${total.toFixed(1)} s`)
 }

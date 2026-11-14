@@ -365,8 +365,8 @@ export function CueWave({
             borderTopColor: offGrid?.includes(c.key) ? 'var(--color-warn)' : MEMORY_CUE_COLOR,
             ...(gone.has(c.key) ? { opacity: GONE_OPACITY } : {}),
           },
-          className: `absolute z-10 h-0 w-0 border-x-4 border-x-transparent ${
-            isSelected ? 'border-t-[9px]' : 'border-t-[6px]'
+          className: `absolute z-10 h-0 w-0 border-x-4 border-x-transparent after:absolute after:-left-1 after:h-6 after:w-2 after:content-[''] ${
+            isSelected ? 'border-t-[9px] after:-top-[9px]' : 'border-t-[6px] after:-top-[6px]'
           }`,
         }
         return readOnly ? (
@@ -397,7 +397,7 @@ export function CueWave({
             color: '#000',
             ...(gone.has(h.key) ? { opacity: GONE_OPACITY } : {}),
           },
-          className: `absolute z-10 h-3 w-3 rounded-[3px] text-center text-label font-semibold leading-3 ${
+          className: `absolute z-10 h-3 w-3 rounded-[3px] text-center text-label font-semibold leading-3 after:absolute after:left-0 after:top-0 after:h-6 after:w-full after:content-[''] ${
             isSelected
               ? 'ring-2 ring-[var(--color-fg)]'
               : offGrid?.includes(h.key)

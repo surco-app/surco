@@ -47,6 +47,26 @@ describe('ErrorBoundary', () => {
     silenced.mockRestore()
   })
 
+  // The editor panel's boundary sits where the running batch shows its progress and its
+  // cancel. A crash there must not take the only way to stop a batch off the screen.
+  it('keeps what it is given to show beneath a crashed panel, and nothing extra while healthy', () => {
+    const silenced = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const { rerender } = render(
+      <ErrorBoundary footer={<p data-testid="under">strip</p>}>
+        <Bomb defused />
+      </ErrorBoundary>,
+    )
+    expect(screen.queryByTestId('under')).toBeNull()
+    rerender(
+      <ErrorBoundary footer={<p data-testid="under">strip</p>}>
+        <Bomb />
+      </ErrorBoundary>,
+    )
+    expect(screen.getByTestId('error-boundary')).toBeInTheDocument()
+    expect(screen.getByTestId('under')).toBeInTheDocument()
+    silenced.mockRestore()
+  })
+
   // console.error dies with the window: the crash has to reach main's log file or a
   // user report ("it went blank") is undebuggable — there is no telemetry by design.
   it('persists the crash to the main log file', () => {

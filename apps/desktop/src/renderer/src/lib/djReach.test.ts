@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DJ_REACH_SETTINGS, fromDjReach, reachedPrograms, toDjReach } from './djReach'
+import { DJ_REACH_SETTINGS, fromDjReach, toDjReach } from './djReach'
 
 describe('toDjReach', () => {
   it('reads the stored pair as the one thing the DJ asked of the program', () => {
@@ -40,49 +40,5 @@ describe('DJ_REACH_SETTINGS', () => {
       serato: { sync: 'syncSerato', add: 'addToSerato' },
       virtualdj: { sync: 'syncVirtualdj', add: 'addToVirtualdj' },
     })
-  })
-})
-
-describe('reachedPrograms', () => {
-  it('lists the programs new tracks go to, in the same order on every machine', () => {
-    expect(
-      reachedPrograms({
-        addToRekordbox: true,
-        addToTraktor: true,
-        addToEngineDj: true,
-        addToSerato: false,
-        addToVirtualdj: false,
-      }),
-    ).toEqual(['rekordbox', 'engine', 'traktor'])
-    expect(
-      reachedPrograms({
-        addToRekordbox: false,
-        addToTraktor: true,
-        addToEngineDj: false,
-        addToSerato: false,
-        addToVirtualdj: false,
-      }),
-    ).toEqual(['traktor'])
-    expect(
-      reachedPrograms({
-        addToRekordbox: false,
-        addToTraktor: false,
-        addToEngineDj: false,
-        addToSerato: false,
-        addToVirtualdj: false,
-      }),
-    ).toEqual([])
-  })
-
-  it('leaves out a program Surco cannot reach, so the button never promises adding to it', () => {
-    const s = {
-      addToRekordbox: false,
-      addToTraktor: true,
-      addToEngineDj: false,
-      addToSerato: false,
-      addToVirtualdj: false,
-    }
-    expect(reachedPrograms(s, new Set(['rekordbox']))).toEqual([])
-    expect(reachedPrograms(s)).toEqual(['traktor'])
   })
 })

@@ -33,7 +33,7 @@
         "in": "1.34.0"
       },
       {
-        "text": "O botão de converter só diz o que faz, como “Converter para FLAC”. Uma linha embaixo diz para onde vai o arquivo, e mostra “Sem alterações” quando não há nada a fazer.",
+        "text": "O botão de converter só diz o que faz, como “Converter para FLAC”, e mostra “Sem alterações” quando não há nada a fazer.",
         "in": "1.34.0"
       },
       {
@@ -53,6 +53,10 @@
         "in": "1.34.0"
       },
       {
+        "text": "“Formato do título” e “Ano com data completa” agora ficam em Ajustes → Editor → Opções, junto das outras opções que mudam as tags. Arquivos → Nomes fica só para o nome do arquivo, e você escolhe o idioma num menu.",
+        "in": "1.34.3"
+      },
+      {
         "text": "Com o seu programa de DJ aberto, o Surco agora pergunta antes de mexer na biblioteca dele. “Fechar o Traktor e aplicar” fecha o programa e grava a mudança na hora. “Aplicar ao fechar” guarda a mudança até você fechar o programa. O Serato e o VirtualDJ pedem que você os feche e aperte “Já fechei, aplicar”.",
         "in": "1.34.1"
       },
@@ -63,6 +67,26 @@
       {
         "text": "Uma lista de um programa de DJ com uma faixa cujo arquivo sumiu não pisca mais. Bibliotecas grandes também ficam mais leves para navegar, analisar e editar.",
         "in": "1.34.1"
+      },
+      {
+        "text": "O Surco não fecha mais quando você trabalha por um bom tempo numa lista muito grande do rekordbox. A análise em segundo plano ocupava cada vez mais memória, e agora ela libera a memória assim que termina cada faixa.",
+        "in": "1.34.2"
+      },
+      {
+        "text": "Desative “Atualizar automaticamente” em Ajustes → Geral → Atualizações para ficar na sua versão. Isso vale só para aquele computador, e dali você também pode buscar atualizações quando quiser.",
+        "in": "1.34.2"
+      },
+      {
+        "text": "Converter agora fica num único botão no pé do editor. Enquanto um lote converte, você vê o progresso ali e pode cancelá-lo. Atividade mostra para onde foi cada arquivo.",
+        "in": "1.34.2"
+      },
+      {
+        "text": "Pressione F6 para pular entre as fontes, a lista e o editor. As estrelas também podem ser dadas com as setas do teclado.",
+        "in": "1.34.2"
+      },
+      {
+        "text": "O tema claro tem mais contraste. A lista e o editor se destacam melhor, e a faixa selecionada fica preenchida de azul.",
+        "in": "1.34.2"
       }
     ]
   },

@@ -383,9 +383,9 @@ describe('createAskToApply', () => {
     const quit = async () => {
       throw new Error('quit failed')
     }
-    expect(
-      await askToApplyWith({ running: true, ask: async () => 1, quit })('traktor', null),
-    ).toBe('later')
+    expect(await askToApplyWith({ running: true, ask: async () => 1, quit })('traktor', null)).toBe(
+      'later',
+    )
   })
   it('asks when the running check fails, as the quiet path counts it as open', async () => {
     const ask = vi.fn().mockResolvedValue(0)

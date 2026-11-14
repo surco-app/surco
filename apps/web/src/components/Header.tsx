@@ -1,11 +1,14 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { LANGUAGE_NAMES, LANGUAGES, type Language } from '../i18n'
 import { isCondensed, showsHeaderDownload } from '../lib/header'
 import { HOME, PAGES, type Page } from '../lib/nav'
+import { offerPlacement, showOffer } from '../lib/offerCard'
 import { toggleTheme } from '../lib/theme'
 import { btnPrimary } from '../lib/ui'
 import { rememberLanguage, useAutoLanguage } from '../lib/useAutoLanguage'
+
+const FLOATING_SHADOW = 'shadow-[0_16px_40px_color-mix(in_srgb,var(--color-scrim)_60%,transparent)]'
 
 // `page` marks which standalone page renders the header; section links then
 // point back to the landing instead of to anchors that don't exist here.
@@ -22,7 +25,11 @@ export default function Header({
   const [open, setOpen] = useState(false)
   const [languageOpen, setLanguageOpen] = useState(false)
   const languageRef = useRef<HTMLDivElement>(null)
+  const languageButtonRef = useRef<HTMLButtonElement>(null)
   const [offered, dismissOffer] = useAutoLanguage()
+  const [offerBox, setOfferBox] = useState<{ left: number; width: number; arrow: number } | null>(
+    null,
+  )
   const lang = i18n.language as Language
   const home = HOME[lang]
   const languageHref = (code: Language) =>
@@ -81,6 +88,32 @@ export default function Header({
     }
   }, [languageOpen])
 
+  useLayoutEffect(() => {
+    if (!offered) return
+    const place = () => {
+      const anchor = languageRef.current?.getBoundingClientRect()
+      if (!anchor) return
+      const box = offerPlacement(anchor, window.innerWidth)
+      setOfferBox({ ...box, left: box.left - anchor.left })
+    }
+    place()
+    window.addEventListener('resize', place)
+    return () => window.removeEventListener('resize', place)
+  }, [offered])
+
+  const offerShown = showOffer(offered, open, languageOpen)
+
+  useEffect(() => {
+    if (!offerShown) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      dismissOffer()
+      languageButtonRef.current?.focus()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [offerShown, dismissOffer])
+
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => {
@@ -110,33 +143,6 @@ export default function Header({
       >
         {t('nav.skipToContent')}
       </a>
-      {offered && (
-        <div
-          data-testid="language-offer"
-          lang={offered}
-          className="border-b border-line/70 bg-bg/95 text-sm text-muted"
-        >
-          <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-4 gap-y-1 px-6 sm:px-10 py-2">
-            <span>{t('nav.languageOffer.text', { lng: offered })}</span>
-            <a
-              data-testid="language-offer-switch"
-              href={languageHref(offered)}
-              onClick={switchLanguage(offered)}
-              className="font-semibold text-blue transition-colors hover:text-cyan"
-            >
-              {t('nav.languageOffer.switch', { lng: offered })}
-            </a>
-            <button
-              type="button"
-              data-testid="language-offer-dismiss"
-              onClick={dismissOffer}
-              className="text-muted underline-offset-4 transition-colors hover:text-fg hover:underline"
-            >
-              {t('nav.languageOffer.dismiss', { lng: offered })}
-            </button>
-          </div>
-        </div>
-      )}
       {/* Fixed height, always. The header used to animate its own padding, which
           shortened the document as it condensed — near the threshold that fed back
           into the scroll position and flickered between both sizes. The row doesn't
@@ -149,7 +155,7 @@ export default function Header({
               melted into the page so only the blue label read. Here the rim is lifted. */}
           <img
             src="/logo.svg"
-            alt="Surco"
+            alt=""
             width={48}
             height={48}
             className="h-10 w-10 sm:h-12 sm:w-12"
@@ -159,6 +165,7 @@ export default function Header({
         <div className="flex items-center gap-4 sm:gap-7">
           <nav
             data-testid="header-nav"
+            aria-label={t('nav.main')}
             className="hidden items-center gap-7 text-sm text-muted lg:flex"
           >
             <a href={featuresHref} className="transition-colors hover:text-fg">
@@ -220,6 +227,7 @@ export default function Header({
               HTML: crawlers and readers without scripts still reach every language. */}
           <div ref={languageRef} className="relative">
             <button
+              ref={languageButtonRef}
               type="button"
               data-testid="language-menu-toggle"
               aria-expanded={languageOpen}
@@ -261,9 +269,46 @@ export default function Header({
                 <path d="M6 9l6 6 6-6" />
               </svg>
             </button>
+            {offered && offerBox && offerShown && (
+              <div
+                data-testid="language-offer"
+                lang={offered}
+                style={{
+                  left: offerBox.left,
+                  width: offerBox.width,
+                  transformOrigin: `${offerBox.arrow}px 0`,
+                }}
+                className={`language-offer absolute top-full z-50 mt-3 rounded-xl border border-line bg-surface2 p-4 text-sm text-muted ${FLOATING_SHADOW}`}
+              >
+                <span
+                  aria-hidden="true"
+                  style={{ left: offerBox.arrow - 6 }}
+                  className="absolute -top-1.5 size-3 rotate-45 border-t border-l border-line bg-surface2"
+                />
+                <p className="text-fg">{t('nav.languageOffer.text', { lng: offered })}</p>
+                <div className="mt-3 flex items-center gap-4">
+                  <a
+                    data-testid="language-offer-switch"
+                    href={languageHref(offered)}
+                    onClick={switchLanguage(offered)}
+                    className="font-semibold text-blue transition-colors hover:text-cyan"
+                  >
+                    {t('nav.languageOffer.switch', { lng: offered })}
+                  </a>
+                  <button
+                    type="button"
+                    data-testid="language-offer-dismiss"
+                    onClick={dismissOffer}
+                    className="text-muted underline-offset-4 transition-colors hover:text-fg hover:underline"
+                  >
+                    {t('nav.languageOffer.dismiss', { lng: offered })}
+                  </button>
+                </div>
+              </div>
+            )}
             <ul
               id="language-menu"
-              className={`absolute top-full right-0 z-50 mt-2 w-44 rounded-xl border border-line bg-surface2 p-1.5 shadow-[0_16px_40px_color-mix(in_srgb,var(--color-scrim)_60%,transparent)] origin-top-right transition-[opacity,scale,visibility] duration-150 ease-out ${
+              className={`absolute top-full right-0 z-50 mt-2 w-44 rounded-xl border border-line bg-surface2 p-1.5 ${FLOATING_SHADOW} origin-top-right transition-[opacity,scale,visibility] duration-150 ease-out ${
                 languageOpen ? 'opacity-100' : 'invisible scale-[0.97] opacity-0'
               }`}
             >
@@ -313,6 +358,7 @@ export default function Header({
           </a>
           <button
             type="button"
+            data-testid="header-menu-toggle"
             aria-label={open ? t('nav.closeMenu') : t('nav.openMenu')}
             aria-expanded={open}
             aria-controls="mobile-nav"
@@ -357,8 +403,9 @@ export default function Header({
       <nav
         id="mobile-nav"
         data-testid="header-mobile-nav"
+        aria-label={t('nav.main')}
         aria-hidden={!open}
-        className={`absolute inset-x-0 top-full max-h-[calc(100dvh-4rem)] overflow-y-auto border-t bg-bg/95 backdrop-blur-md transition-[opacity,translate,visibility] duration-200 ease-out lg:hidden ${
+        className={`absolute inset-x-0 top-full max-h-[calc(100dvh-4rem)] overflow-y-auto border-t bg-bg transition-[opacity,translate,visibility] duration-200 ease-out lg:hidden ${
           open
             ? 'border-line/70 opacity-100'
             : 'invisible -translate-y-2 border-transparent opacity-0'
@@ -393,6 +440,14 @@ export default function Header({
             className="block py-3 text-sm text-muted transition-colors hover:text-fg"
           >
             {t('nav.cambios')}
+          </a>
+          <a
+            href={page ? `${home}#instalar` : '#instalar'}
+            data-testid="header-mobile-download"
+            onClick={() => setOpen(false)}
+            className={`${btnPrimary} mt-2 mb-3 flex px-4 py-2.5 text-sm`}
+          >
+            {t('nav.download')}
           </a>
         </div>
       </nav>

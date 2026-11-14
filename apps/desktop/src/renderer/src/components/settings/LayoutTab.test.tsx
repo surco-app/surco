@@ -127,6 +127,7 @@ describe('LayoutTab sections', () => {
       'settings-section-row-properties',
       'settings-section-row-quality',
       'settings-section-row-cues',
+      'settings-section-row-matching',
       'settings-section-row-trim',
       'settings-section-row-declick',
       'settings-section-row-normalize',
@@ -154,6 +155,7 @@ describe('LayoutTab sections', () => {
         'quality',
         'properties',
         'cues',
+        'matching',
         'trim',
         'declick',
         'normalize',
@@ -173,6 +175,7 @@ describe('LayoutTab sections', () => {
         'quality',
         'properties',
         'cues',
+        'matching',
         'trim',
         'declick',
         'normalize',
@@ -198,6 +201,7 @@ describe('LayoutTab sections', () => {
         'properties',
         'quality',
         'cues',
+        'matching',
         'trim',
         'declick',
         'output',
@@ -296,6 +300,24 @@ describe('LayoutTab sections', () => {
     const head = screen.getByTestId('sections-columns')
     expect(head).toHaveTextContent(/visible/i)
     expect(head).toHaveTextContent(/open/i)
+  })
+
+  it('puts the eye last on each row and its heading last, where Settings > Fields keeps the same eye', () => {
+    renderTab()
+    const order = Array.from(
+      screen.getByTestId('settings-section-row-quality').querySelectorAll('button'),
+    ).map((b) => b.dataset.testid)
+    expect(order).toEqual([
+      'settings-section-open-quality',
+      'settings-section-up-quality',
+      'settings-section-down-quality',
+      'settings-section-hide-quality',
+    ])
+    const heads = Array.from(screen.getByTestId('sections-columns').children).map(
+      (c) => (c as HTMLElement).dataset.testid ?? '',
+    )
+    expect(heads.indexOf('sections-column-open')).toBeLessThan(heads.length - 1)
+    expect(heads.indexOf('sections-column-visible')).toBe(heads.length - 1)
   })
 
   // The word is in the heading now, so repeating "Open" on every row said nothing — and it

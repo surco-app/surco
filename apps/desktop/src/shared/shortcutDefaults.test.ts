@@ -231,3 +231,15 @@ describe('sidebar shortcut', () => {
     expect(matchChord(b, ['ctrl', 'mod', 's'], false)).toBe('toggle-sidebar')
   })
 })
+
+describe('F6 entre regiones', () => {
+  it('liga F6 y Mayus F6 a los comandos de region', () => {
+    const b = resolveBindings()
+    expect(b.get('focus-region-next')).toEqual(['f6'])
+    expect(b.get('focus-region-prev')).toEqual(['shift', 'f6'])
+  })
+
+  it('no entra en conflicto con ningun otro atajo por defecto', () => {
+    expect(findConflicts(resolveBindings())).toEqual([])
+  })
+})

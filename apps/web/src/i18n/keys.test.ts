@@ -1,10 +1,12 @@
 import { existsSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
+import ca from './locales/ca.json'
 import de from './locales/de.json'
 import en from './locales/en.json'
 import es from './locales/es.json'
 import fr from './locales/fr.json'
+import itIT from './locales/it.json'
 import ja from './locales/ja.json'
 import ptBR from './locales/pt-BR.json'
 
@@ -14,6 +16,8 @@ const TRANSLATIONS = [
   ['fr', fr],
   ['pt-BR', ptBR],
   ['ja', ja],
+  ['ca', ca],
+  ['it', itIT],
 ] as const
 
 // Every visible string is keyed; a missing key silently falls back to the other
@@ -30,9 +34,12 @@ function keys(obj: unknown, prefix = ''): string[] {
 }
 
 describe('locale parity', () => {
-  it.each(TRANSLATIONS)('%s exposes the exact same keys as en', (_, locale) => {
-    expect(keys(locale).sort()).toEqual(keys(en).sort())
-  })
+  it.each([['en', en], ...TRANSLATIONS] as const)(
+    '%s exposes the exact same keys as es',
+    (_, locale) => {
+      expect(keys(locale).sort()).toEqual(keys(es).sort())
+    },
+  )
 
   // Search engines and screen readers take the page's language from these, not from
   // the text: a German page declaring itself English is indexed and read as English.
@@ -41,6 +48,8 @@ describe('locale parity', () => {
     ['fr', fr, 'fr_FR'],
     ['pt-BR', ptBR, 'pt_BR'],
     ['ja', ja, 'ja_JP'],
+    ['ca', ca, 'ca_ES'],
+    ['it', itIT, 'it_IT'],
   ] as const)('declares %s as the document and structured-data language', (lang, locale, og) => {
     expect(locale.meta.htmlLang).toBe(lang)
     expect(locale.meta.ogLocale).toBe(og)

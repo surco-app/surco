@@ -128,6 +128,36 @@ node guide-shots.mjs [sectionId ...] [--lang es,en]  # /guia walkthrough
   NAS) and needs the network for the live search. The rekordbox scene runs on an APFS
   clone of this Mac's collection and never saves; conversions go to a throwaway profile.
 
+## Memory load test (rekordbox)
+
+`soak.mjs` checks that the renderer's heap stays flat while a DJ works through a big rekordbox
+list, the shape that crashed 1.34.1 for a user with 13,245 rows open (background analysis kept
+every swept waveform for minutes and the renderer ran out of heap). Build first, then:
+
+```bash
+cd apps/desktop/.claude/skills/run-desktop
+node soak.mjs [--tree <repo dir>] [--tracks 40] [--budget 600]
+```
+
+- It runs the build in `--tree` (default: this tree) on a fresh profile with default settings,
+  so background analysis and list waves are on, as for a new user. The driver profile is never
+  used: settings left there by other sessions made earlier measurements test another app.
+- The fixture is built once in `$TMPDIR/surco-soak` from this Mac's rekordbox collection: an
+  APFS clone of `master.db` and `share/`, 80 analysed tracks with cues copied from the NAS, and a
+  13,280-row playlist `SOAK BIG` of APFS clones of them. Every row is a local copy, so the
+  retagging it does never reaches the real library. Delete the folder to rebuild it.
+- For each of `--tracks` rows it selects, applies the first catalog match, taps a genre chip,
+  updates the tags and every third row plays it, with the window muted. After each one it forces
+  a garbage collection and reads `JSHeapUsedSize`: the heap that is left is what the renderer
+  dies of. `performance.memory` and the process working set do not measure this.
+- Exit 1 when the renderer crashes, when the retained heap passes `--budget` MB, or when it
+  still rises more than 50 MB over the last 10 tracks (a leak that has not hit the budget yet).
+  Measured on 13/11/2026 on this fixture: v1.34.1 rose about 28 MB a track without end (620 MB
+  at track 20); the fixed build climbs while the grid check walks the list and then holds at
+  370-380 MB from track 28 on.
+- The app quitting cleanly mid-run (code 0, no signal) is how a SIGTERM from outside ends it:
+  another session cleaning up Electron processes. Run it again.
+
 ## Run (human path)
 
 `electron-vite dev` opens a live window with HMR. Useful for hand-testing, useless for

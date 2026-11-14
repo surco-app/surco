@@ -13,11 +13,11 @@ export function listRowClass(primary: boolean, selected: boolean): string {
     // like the lists in Music or Mail, so the page of rows reads as one list instead of
     // a stack of cards, and only the hover tints it.
     primary
-      ? 'is-primary bg-[var(--color-row-selected)]'
+      ? 'is-primary bg-[var(--color-row-selected)] focus-visible:outline-[var(--color-on-row-selected)]'
       : selected
-        ? 'bg-[var(--color-accent-soft)]/85'
-        : 'hover:bg-[var(--color-hover)]/85'
-  } focus-visible:outline-1 focus-visible:-outline-offset-1 focus-visible:outline-[var(--color-accent)]`
+        ? 'bg-[var(--color-accent-soft)]/85 focus-visible:outline-[var(--color-accent)]'
+        : 'hover:bg-[var(--color-hover)]/85 focus-visible:outline-[var(--color-accent)]'
+  } focus-visible:outline-1 focus-visible:-outline-offset-1`
 }
 
 export const ROW_TITLE = 'relative block w-fit max-w-full truncate text-sm font-medium text-fg'
@@ -58,9 +58,9 @@ export function CoverPlaceholder({
 export type PillTone = 'good' | 'warn' | 'danger'
 
 export const PILL_TONE: Record<PillTone, string> = {
-  good: 'bg-good/15 text-good',
-  warn: 'bg-warn/20 text-warn',
-  danger: 'bg-danger/20 text-danger',
+  good: 'bg-good/15 text-[var(--color-good-label)]',
+  warn: 'bg-warn/20 text-[var(--color-warn-label)]',
+  danger: 'bg-danger/20 text-[var(--color-danger-label)]',
 }
 
 // The stylesheet keys the selected row's opaque pill off each list's testid and data-tone.

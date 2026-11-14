@@ -68,8 +68,8 @@ interface ExportButtonProps {
   destinations: readonly Destination[]
   onProcess: (format: FormatSetting) => void
   // When given, the button stays live while converting: clicking it cancels the in-flight
-  // job instead of firing another convert. Single-only — multi cancels via the toolbar
-  // batch pill — so it's absent (an inert progress bar) in the multi/quiet uses.
+  // job instead of firing another convert. Single-only, so it's absent (an inert progress
+  // bar) in the multi/quiet uses.
   onCancel?: () => void
   onSelectFormat: (format: FormatSetting) => void
   onSelectDestination: (destination: Destination) => void

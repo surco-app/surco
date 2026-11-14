@@ -464,3 +464,34 @@ export function syncFrame(t: number): SyncFrame {
     libraries: SYNC_LIBRARIES.map((_, i) => (i < updated ? to : from)),
   }
 }
+
+/* ---------------------------------------------------------------- 11 · matching */
+
+export const MATCHING_CHAINS = [
+  ['sash', 'milk', 'sylver'],
+  ['lasgo', 'ivd'],
+] as const
+
+export const MATCHING_SECONDS = 10
+
+export interface MatchingFrame {
+  shown: number
+  pressed: boolean
+  added: number
+}
+
+const MATCHING_ROW_GAP = 0.35
+const MATCHING_PRESS = 3.2
+const MATCHING_ADD_GAP = 0.4
+
+export function matchingFrame(t: number): MatchingFrame {
+  const s = clamp(t) * MATCHING_SECONDS
+  const tracks = MATCHING_CHAINS.flat().length
+  const count = (start: number, gap: number): number =>
+    s < start ? 0 : Math.min(tracks, Math.floor((s - start) / gap) + 1)
+  return {
+    shown: count(0.6, MATCHING_ROW_GAP),
+    pressed: s >= MATCHING_PRESS && s < MATCHING_PRESS + 0.2,
+    added: count(MATCHING_PRESS + 0.6, MATCHING_ADD_GAP),
+  }
+}

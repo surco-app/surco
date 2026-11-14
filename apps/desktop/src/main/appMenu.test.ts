@@ -143,7 +143,7 @@ describe('appMenuTemplate', () => {
   })
 
   it('names the Tracks menu and its items in every shipped language', () => {
-    for (const locale of ['es', 'de', 'fr', 'pt-BR', 'ja']) {
+    for (const locale of ['es', 'de', 'fr', 'pt-BR', 'ja', 'ca', 'it']) {
       const t = createMenuT(locale)
       const { template } = build(locale)
       expect(menu(template, t('tracks')).length).toBeGreaterThan(0)
@@ -177,7 +177,7 @@ describe('View menu rail names', () => {
 })
 
 describe('View menu sidebar', () => {
-  it('ticks the sidebar while it shows, with the keymap\'s shortcut, and toggles it through the command', () => {
+  it("ticks the sidebar while it shows, with the keymap's shortcut, and toggles it through the command", () => {
     const { template, run } = build()
     const item = itemFor(menu(template, 'View'), 'Show Sidebar')
     expect(item.type).toBe('checkbox')

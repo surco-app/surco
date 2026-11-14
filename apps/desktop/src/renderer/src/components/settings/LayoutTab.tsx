@@ -29,11 +29,12 @@ interface Props {
   patch: PatchSynced
 }
 
-// Same table shape as Settings → Fields: the name takes the slack, then the state columns,
-// then the reorder arrows. Declared tracks (not justify-between) are what let the headings
+// Same table shape as Settings → Fields: the name takes the slack, then the open column,
+// the reorder arrows and the eye last. Declared tracks (not justify-between) are what let the headings
 // line up with the controls, and what keeps the pinned first row on the same columns as the
 // rest — it used to place its Open control wherever its "FIXED" label happened to end.
-const SECTION_GRID = 'grid grid-cols-[1fr_4.75rem_4.75rem_1.75rem_1.75rem] items-center gap-1'
+const SECTION_GRID =
+  'grid grid-cols-[1fr_4.75rem_4.75rem_1.75rem_1.75rem_2.5rem] items-center gap-1'
 
 // Which editor sections show, in what order, and which start open — split out of the
 // Editor tab (which keeps the behaviour toggles) so this reorder manager gets its own room
@@ -77,12 +78,7 @@ export function LayoutTab({ synced, patch }: Props): React.JSX.Element {
           row — see FieldsEditor, which this list matches. */}
       <div data-testid="sections-columns" className={`${SECTION_GRID} ${COLUMN_HEAD}`}>
         <span />
-        <span data-testid="sections-column-visible" role="note" className={COLUMN_HEAD_CELL}>
-          {tr('settings.sections.visible')}
-          <Info className="h-3 w-3" aria-hidden="true" />
-          <span className="sr-only">{tr('settings.sections.visibleHint')}</span>
-          <Tooltip label={tr('settings.sections.visibleHint')} />
-        </span>
+        <span />
         <span data-testid="sections-column-open" role="note" className={COLUMN_HEAD_CELL}>
           {tr('settings.sections.open')}
           <Info className="h-3 w-3" aria-hidden="true" />
@@ -91,6 +87,16 @@ export function LayoutTab({ synced, patch }: Props): React.JSX.Element {
         </span>
         <span />
         <span />
+        <span
+          data-testid="sections-column-visible"
+          role="note"
+          className={`${COLUMN_HEAD_CELL} justify-self-end`}
+        >
+          {tr('settings.sections.visible')}
+          <Info className="h-3 w-3" aria-hidden="true" />
+          <span className="sr-only">{tr('settings.sections.visibleHint')}</span>
+          <Tooltip label={tr('settings.sections.visibleHint')} />
+        </span>
       </div>
       <div className="space-y-1.5">
         {sections.map((section, i) => {
@@ -147,34 +153,7 @@ export function LayoutTab({ synced, patch }: Props): React.JSX.Element {
                   {tr(`settings.sections.${section.id}`)}
                 </span>
               </span>
-              {/* Hidden removes the section from the editor entirely; the form has no
-                    toggle — it IS the editor. The open pill goes quiet meanwhile: a fold
-                    default means nothing for a section that never renders. */}
-              {movable ? (
-                <button
-                  type="button"
-                  data-testid={`settings-section-hide-${section.id}`}
-                  aria-pressed={section.hidden === true}
-                  aria-label={tr(
-                    section.hidden ? 'settings.sections.show' : 'settings.sections.hide',
-                  )}
-                  onClick={() => toggleHidden(section.id)}
-                  className={`${TOGGLE_BOX} ${section.hidden ? TOGGLE_OFF : TOGGLE_ON}`}
-                >
-                  {section.hidden ? (
-                    <EyeOff className="h-4 w-4" aria-hidden="true" />
-                  ) : (
-                    <Eye className="h-4 w-4" aria-hidden="true" />
-                  )}
-                  <Tooltip
-                    label={tr(section.hidden ? 'settings.sections.show' : 'settings.sections.hide')}
-                  />
-                </button>
-              ) : (
-                // The metadata form IS the editor — it can't be hidden, so its cell stays
-                // empty rather than holding a control that would do nothing.
-                <span />
-              )}
+              <span />
               <button
                 type="button"
                 data-testid={`settings-section-open-${section.id}`}
@@ -224,6 +203,34 @@ export function LayoutTab({ synced, patch }: Props): React.JSX.Element {
                   <span />
                   <span />
                 </>
+              )}
+              {/* Hidden removes the section from the editor entirely; the form has no
+                    toggle — it IS the editor. The open pill goes quiet meanwhile: a fold
+                    default means nothing for a section that never renders. */}
+              {movable ? (
+                <button
+                  type="button"
+                  data-testid={`settings-section-hide-${section.id}`}
+                  aria-pressed={section.hidden === true}
+                  aria-label={tr(
+                    section.hidden ? 'settings.sections.show' : 'settings.sections.hide',
+                  )}
+                  onClick={() => toggleHidden(section.id)}
+                  className={`${TOGGLE_BOX} ${section.hidden ? TOGGLE_OFF : TOGGLE_ON}`}
+                >
+                  {section.hidden ? (
+                    <EyeOff className="h-4 w-4" aria-hidden="true" />
+                  ) : (
+                    <Eye className="h-4 w-4" aria-hidden="true" />
+                  )}
+                  <Tooltip
+                    label={tr(section.hidden ? 'settings.sections.show' : 'settings.sections.hide')}
+                  />
+                </button>
+              ) : (
+                // The metadata form IS the editor — it can't be hidden, so its cell stays
+                // empty rather than holding a control that would do nothing.
+                <span />
               )}
             </div>
           )

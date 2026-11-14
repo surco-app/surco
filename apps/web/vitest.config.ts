@@ -1,6 +1,8 @@
 import { defineConfig } from 'vitest/config'
+import { jsonDigests } from './vite.config'
 
 export default defineConfig({
+  plugins: [jsonDigests()],
   test: {
     environment: 'node',
     include: ['src/**/*.test.ts'],

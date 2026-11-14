@@ -321,22 +321,26 @@ export function TrackListHeader({
         data-testid="track-list-toolbar"
         className="relative flex flex-wrap items-center gap-0.5 px-1.5 pb-1.5 @[27rem]:flex-nowrap @[27rem]:pb-0"
       >
-        <button
-          type="button"
-          data-testid="add-files"
-          onClick={onAdd}
-          aria-label={tr('header.add')}
-          className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-fg"
-        >
-          <FilePlus className="h-3.5 w-3.5" aria-hidden="true" />
-          <Tooltip label={tr('header.add')} hint={hintFor('add')} />
-        </button>
+        {tab === null && (
+          <button
+            type="button"
+            data-testid="add-files"
+            onClick={onAdd}
+            aria-label={tr('header.add')}
+            className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-fg"
+          >
+            <FilePlus className="h-3.5 w-3.5" aria-hidden="true" />
+            <Tooltip label={tr('header.add')} hint={hintFor('add')} />
+          </button>
+        )}
         {tracks.length > 0 && (
           <>
-            <span
-              aria-hidden="true"
-              className="mx-0.5 h-5 w-px shrink-0 self-center bg-[var(--color-line)]"
-            />
+            {tab === null && (
+              <span
+                aria-hidden="true"
+                className="mx-0.5 h-5 w-px shrink-0 self-center bg-[var(--color-line)]"
+              />
+            )}
             <button
               type="button"
               data-testid="select-all"

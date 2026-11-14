@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { LANGUAGES, resources } from '../i18n'
+import { LANGUAGES, loadI18n } from '../i18n'
 import { CONVERT_PAGES, otherConversions } from './convertPages'
 import { PAGES } from './nav'
 
@@ -33,6 +33,14 @@ const TEXTS = [
 ]
 const LISTS = ['example.keeps', 'carry.rows', 'why.items', 'steps.items', 'faq.items']
 
+const copies = Object.fromEntries(
+  await Promise.all(
+    LANGUAGES.map(
+      async (lng) => [lng, (await loadI18n(lng)).getResourceBundle(lng, 'translation')] as const,
+    ),
+  ),
+)
+
 const at = (tree: unknown, path: string): unknown =>
   path
     .split('.')
@@ -48,7 +56,7 @@ describe('conversion pages', () => {
   // structured data, so an empty list ships an empty FAQPage to search engines.
   it('carries every text each page renders, in every language', () => {
     const missing = LANGUAGES.flatMap((lng) => {
-      const copy = resources[lng].translation
+      const copy = copies[lng]
       return CONVERT_PAGES.flatMap((page) => [
         ...TEXTS.filter((key) => {
           const value = at(copy, `${page}.${key}`)
@@ -65,9 +73,9 @@ describe('conversion pages', () => {
 
   it('names every page in the footer, in every language', () => {
     const missing = LANGUAGES.flatMap((lng) =>
-      CONVERT_PAGES.filter(
-        (page) => typeof at(resources[lng].translation, `footer.${page}`) !== 'string',
-      ).map((page) => `${lng} ${page}`),
+      CONVERT_PAGES.filter((page) => typeof at(copies[lng], `footer.${page}`) !== 'string').map(
+        (page) => `${lng} ${page}`,
+      ),
     )
     expect(missing).toEqual([])
   })

@@ -59,7 +59,7 @@ describe('Give each track of a folder its own loudness target, then convert them
     await waitFor(() => expect(existsSync(opener) && existsSync(banger)).toBe(true), {
       timeout: 90_000,
     })
-    await waitFor(() => expect(screen.getByTestId('convert-all').textContent).not.toMatch(/\//), {
+    await waitFor(() => expect(screen.queryByTestId('batch-run')).toBeNull(), {
       timeout: 60_000,
     })
     expect(surco.errors).toEqual([])

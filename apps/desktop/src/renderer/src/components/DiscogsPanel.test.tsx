@@ -418,7 +418,7 @@ describe('cursor de teclado', () => {
     first.focus()
     expect(first).toHaveFocus()
     expect(first.className).toContain('focus-visible:bg-[var(--color-accent-soft)]')
-    expect(first.className).toContain('focus-visible:shadow-[inset_0_0_0_1px_var(--color-accent)]')
+    expect(first.className).toContain('focus-visible:shadow-[inset_0_0_0_2px_var(--color-accent)]')
     expect(first.className).toContain('focus-visible:outline-none')
     expect(first.className).not.toMatch(/(^|\s)focus:bg-/)
   })
@@ -454,6 +454,12 @@ describe('cursor de teclado', () => {
     ])
   })
 
+  it('rings the focused result with the same 2 px as every other control', () => {
+    renderPanel(browser({ results }))
+    const row = screen.getAllByTestId('discogs-result')[0]
+    expect(row.className).toContain('focus-visible:shadow-[inset_0_0_0_2px_var(--color-accent)]')
+  })
+
   it('marca visiblemente la pista enfocada dentro de un release desplegado', () => {
     const release = {
       provider: 'discogs' as const,
@@ -470,7 +476,7 @@ describe('cursor de teclado', () => {
     track.focus()
     expect(track).toHaveFocus()
     expect(track.className).toContain('focus-visible:bg-[var(--color-accent-soft)]')
-    expect(track.className).toContain('focus-visible:shadow-[inset_0_0_0_1px_var(--color-accent)]')
+    expect(track.className).toContain('focus-visible:shadow-[inset_0_0_0_2px_var(--color-accent)]')
     expect(track.className).toContain('focus-visible:outline-none')
   })
 })

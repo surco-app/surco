@@ -119,7 +119,7 @@ async function settle(page) {
     .waitFor({ state: 'detached', timeout: 60000 })
     .catch(() => {})
   await page
-    .locator('[data-testid="analyze-progress"]')
+    .locator('[data-testid="sweep-icon-analyze"]')
     .waitFor({ state: 'detached', timeout: 180000 })
     .catch(() => {})
   await wait(page, 1500)
@@ -292,7 +292,7 @@ export const REKORDBOX_SCENE = {
 async function loadRekordboxPlaylist(page) {
   await openFromRekordbox(page)
   await page
-    .locator('[data-testid="import-progress"]')
+    .locator('[data-testid="sweep-icon-import"]')
     .waitFor({ state: 'detached', timeout: 900000 })
   await wait(page, 3000)
 }
