@@ -1160,6 +1160,8 @@ export default function App(): React.JSX.Element {
     library: () => libraryRoles(browser.tree ?? []),
     made: () => new Set(settings?.sessionsMade ?? []),
     phases: () => libraryPhases(browser.tree ?? []),
+    matching: async () =>
+      sessionProgram === 'rekordbox' ? window.api.dj.matching('rekordbox') : [],
     noteMade: (playlistId) => {
       if (settings)
         saveSettings({ sessionsMade: withSessionMade(settings.sessionsMade, playlistId) })
