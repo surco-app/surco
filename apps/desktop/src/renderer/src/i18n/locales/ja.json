@@ -3309,7 +3309,8 @@
         "moveNode": "移動"
       },
       "cues": "キュー",
-      "tags": "タグ"
+      "tags": "タグ",
+      "matching": "Matching"
     },
     "applyNow": "今すぐ適用",
     "discard": "破棄",

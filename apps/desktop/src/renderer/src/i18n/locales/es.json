@@ -3309,7 +3309,8 @@
         "moveNode": "mover"
       },
       "cues": "cues",
-      "tags": "etiquetas"
+      "tags": "etiquetas",
+      "matching": "Matching"
     },
     "applyNow": "Aplicar ahora",
     "discard": "Descartar",

@@ -120,6 +120,7 @@ export function keyOf(op: QueueOp): string {
   if (op.kind === 'track') return `track:${op.path}`
   if (op.kind === 'cues') return `cues:${op.contentId}`
   if (op.kind === 'tags') return `tags:${op.id}`
+  if (op.kind === 'match') return `match:${op.id}`
   return `edit:${op.id}`
 }
 
@@ -168,6 +169,10 @@ function stateOf(
   for (const op of q?.ops ?? []) {
     if (op.kind === 'edit') {
       item(keyOf(op), op.label ?? '').parts.push({ kind: 'tree', edit: op.edit.kind })
+      continue
+    }
+    if (op.kind === 'match') {
+      item(keyOf(op), op.label).parts.push({ kind: 'matching' })
       continue
     }
     const it = item(`track:${op.path}`, op.label)
@@ -371,7 +376,7 @@ export function createRekordboxQueue<R extends QueuedRepoint = RekordboxRepoint>
       try {
         const after = await deps.nodeStamps(collectionPath)
         for (const op of q.ops) {
-          if (op.kind === 'cues' || op.kind === 'tags') continue
+          if (op.kind === 'cues' || op.kind === 'tags' || op.kind === 'match') continue
           for (const [id, stamp] of Object.entries(op.stamps))
             if (stamp === before[id] && after[id] !== undefined) op.stamps[id] = after[id]
         }
@@ -392,7 +397,10 @@ export function createRekordboxQueue<R extends QueuedRepoint = RekordboxRepoint>
         return { ...o, notices: [{ code: 'edit-changed', playlist: op.label ?? '' }] }
       return o
     })
-    for (const o of outcomes) if (byId.get(o.id)?.kind === 'edit') editOutcomes.set(o.id, o)
+    for (const o of outcomes) {
+      const kind = byId.get(o.id)?.kind
+      if (kind === 'edit' || kind === 'match') editOutcomes.set(o.id, o)
+    }
     const notices = [...repointNotices, ...outcomes.flatMap((o) => o.notices)]
     const appliedOps = outcomes.filter((o) => o.applied).map((o) => byId.get(o.id))
     const tracks = new Set([
@@ -400,9 +408,9 @@ export function createRekordboxQueue<R extends QueuedRepoint = RekordboxRepoint>
       ...outcomes
         .filter((o) => o.applied && !o.uncounted)
         .map((o) => byId.get(o.id))
-        .flatMap((op) => (op && op.kind !== 'edit' ? [op.path] : [])),
+        .flatMap((op) => (op && op.kind !== 'edit' && op.kind !== 'match' ? [op.path] : [])),
     ]).size
-    const changes = appliedOps.filter((op) => op?.kind === 'edit').length
+    const changes = appliedOps.filter((op) => op?.kind === 'edit' || op?.kind === 'match').length
     const written = appliedOps.flatMap((op) =>
       op?.kind === 'track' ? [{ path: op.path, wanted: op.wanted }] : [],
     )

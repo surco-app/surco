@@ -3309,7 +3309,8 @@
         "moveNode": "moure"
       },
       "cues": "cues",
-      "tags": "etiquetes"
+      "tags": "etiquetes",
+      "matching": "Matching"
     },
     "applyNow": "Aplicar ara",
     "discard": "Descartar",

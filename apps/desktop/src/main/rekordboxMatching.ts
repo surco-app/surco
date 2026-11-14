@@ -7,7 +7,7 @@ const LIVE = `coalesce(m.rb_local_deleted, 0) = 0
   AND EXISTS (SELECT 1 FROM djmdContent c WHERE c.ID = m.ContentID1 AND coalesce(c.rb_local_deleted, 0) = 0)
   AND EXISTS (SELECT 1 FROM djmdContent c WHERE c.ID = m.ContentID2 AND coalesce(c.rb_local_deleted, 0) = 0)`
 
-function hasMatchingTable(db: RekordboxDb): boolean {
+export function hasMatchingTable(db: RekordboxDb): boolean {
   return (
     db
       .prepare(`SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'djmdRecommendLike'`)
