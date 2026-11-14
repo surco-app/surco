@@ -3727,6 +3727,7 @@ describe('App source playlists', () => {
           expect.stringContaining('Brave New World'),
         ),
       )
+      expect(window.api.addMatchingPair).toHaveBeenCalledWith('/m/b.wav', '/m/elsewhere.wav')
     })
 
     it('keeps Matching out of the editor for a track not opened from rekordbox', async () => {
@@ -3771,6 +3772,7 @@ describe('App source playlists', () => {
       await waitFor(() =>
         expect(match).toHaveBeenCalledWith('add', ['c-l1', 'c-l2'], expect.any(String)),
       )
+      expect(window.api.addMatchingPair).toHaveBeenCalledWith('/m/a.wav', '/m/b.wav')
     })
 
     it('remembers a dismissed suggestion so it is not offered again', async () => {
