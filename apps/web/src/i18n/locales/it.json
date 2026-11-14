@@ -262,6 +262,11 @@
             "d": "La apri dalla palette dei comandi, dal menu di una cartella o su una playlist vuota. Scegli quanto dura e da quali playlist escono i brani, e dici cosa c'è in ognuna, Basi, Vocali o Mixate, anche per una cartella intera. Surco mette insieme le coppie che ripeti nei tuoi set e nelle tracklist, i brani con più stelle e più ascolti, il mixaggio armonico Camelot se lo vuoi e uno spazio per le novità, e conta il tempo in cui suona ogni brano, non l'intero file. Si vede come qualsiasi playlist, con la tonalità di ogni brano. Impara dai tuoi set quanto muovi il tempo e quanto ti importa la tonalità, lascia le tue chiusure per la fine, tira fuori più spesso i tuoi pezzi fissi e apre con un vocale. «Rifai» la rimonta da capo, oppure falla partire da un brano con il suo menu. In rekordbox, Traktor, Engine DJ, Serato e VirtualDJ. Se il programma è aperto, aspetta che tu lo chiuda."
           },
           {
+            "t": "Matching di rekordbox",
+            "s": "Le coppie che segni con Matching in rekordbox, insieme in una lista e in una playlist.",
+            "d": "Compaiono raggruppate in catene nella sorgente rekordbox e con un clic diventano una playlist. Nella scheda vedi le coppie di ogni brano, le crei o le togli da Surco, e la sessione automatica le mette una dopo l'altra."
+          },
+          {
             "t": "Cue di rekordbox",
             "s": "Metti hot cue sulla forma d'onda di rekordbox, a mano o con il tuo flusso di marcatura.",
             "d": "Hot cue dalla A alla H e CALL, sulla forma d'onda e sulla griglia di rekordbox. Li trascini, si agganciano alla battuta o al beat e puoi annullare. Ingrandendo la forma d'onda vedi ogni beat nel dettaglio, misurato dall'audio stesso, e Play suona all'istante. Scegli un flusso, come Mix in 64, Mix in 32 o uno tuo fatto a blocchi o imparato dalla tua collezione, e passando il mouse sulla forma d'onda vedi in trasparenza cosa metterebbe. Un clic lo piazza e ti dice cosa non ci sta. «Marcatura automatica» ti propone dove parte ogni brano, anche su più brani alla volta. Impara il tuo modo di marcare dai cue che hai già messo e da quelli che salvi, e separa ciò che vede sicuro da ciò che è dubbio. E se metti i CALL in rekordbox, Surco mette gli hot cue del tuo flusso quando lo chiudi. Su un brano che rekordbox non ha ancora analizzato lavori sulla griglia di Surco, e quando rekordbox lo analizza i tuoi cue si allineano alla sua. Le lettere seguono l'ordine del brano, e se per te ogni lettera è un pad fisso, lo disattivi in Impostazioni. Se lo stesso brano è in Traktor, Engine DJ, Serato o VirtualDJ, quando salvi il flusso arriva anche lì, posato sulla sua griglia e con i suoi cue. Vengono scritti in rekordbox con una copia di sicurezza prima."
@@ -1421,6 +1426,26 @@
       "convertCount": "Converti {{count}} brani",
       "convertTo": "Converti in AIFF",
       "missingArtist": "Manca Artista"
+    },
+    "matching": {
+      "title": "I brani che stanno bene insieme, tutti in un posto.",
+      "lede": "In rekordbox segni con il pulsante Matching i brani che suonano bene insieme. Surco te li mostra tutti in una lista, raggruppati in catene, e con un clic li trasforma in una playlist di rekordbox.",
+      "button": "Crea playlist",
+      "playlist": "Playlist Matching",
+      "points": {
+        "chains": {
+          "title": "In catene",
+          "text": "Se un brano va con un altro e questo con un terzo, compaiono insieme e in quell'ordine."
+        },
+        "track": {
+          "title": "Su ogni brano",
+          "text": "Scegli un brano e vedi le sue coppie. Nella lista, le coppie portano gli anelli di rekordbox."
+        },
+        "session": {
+          "title": "Anche da Surco",
+          "text": "Crei e togli coppie senza aprire rekordbox, e la sessione automatica le mette una dopo l'altra."
+        }
+      }
     },
     "review": {
       "title": "Trova i refusi e i duplicati della tua libreria",

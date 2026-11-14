@@ -16,6 +16,8 @@ import {
   GRID_ENVELOPE,
   GRID_WINDOW,
   gridFrame,
+  MATCHING_CHAINS,
+  matchingFrame,
   qualityFrame,
   REPLACE_PLAYLISTS,
   REVIEW_APPLY_AFTER,
@@ -657,5 +659,33 @@ describe('syncFrame', () => {
         expect(SYNC_ACT2[key].length + SYNC_START[key].length).toBeGreaterThanOrEqual(
           f.fields[key].length,
         )
+  })
+})
+
+describe('matchingFrame', () => {
+  const frames = Array.from({ length: 401 }, (_, i) => matchingFrame(i / 400))
+  const tracks = MATCHING_CHAINS.flat().length
+
+  it('opens on an empty list, so the chains are seen arriving from rekordbox', () => {
+    expect(matchingFrame(0)).toEqual({ shown: 0, pressed: false, added: 0 })
+  })
+
+  it('shows every paired track before the playlist button is pressed', () => {
+    const firstPress = frames.findIndex((f) => f.pressed)
+    expect(firstPress).toBeGreaterThan(0)
+    expect(frames[firstPress].shown).toBe(tracks)
+  })
+
+  it('puts nothing in the rekordbox playlist before the button is pressed', () => {
+    const firstPress = frames.findIndex((f) => f.pressed)
+    for (const f of frames.slice(0, firstPress)) expect(f.added).toBe(0)
+  })
+
+  it('never puts in the playlist a track the list has not shown', () => {
+    for (const f of frames) expect(f.added).toBeLessThanOrEqual(f.shown)
+  })
+
+  it('ends with every paired track in the rekordbox playlist', () => {
+    expect(matchingFrame(1)).toMatchObject({ shown: tracks, added: tracks, pressed: false })
   })
 })

@@ -262,6 +262,11 @@
             "d": "L'obres des de la paleta d'ordres, des del menú d'una carpeta o sobre una playlist buida. Tries quant dura i de quines playlists surten les pistes, i dius què hi ha a cadascuna, Bases, Vocals o Barrejades, també per a una carpeta sencera. Surco ajunta les parelles que repeteixes als teus sets i tracklists, les pistes amb més estrelles i reproduccions, mescla harmònica Camelot si la vols i un forat per a les novetats, i compta el temps que sona cada pista, no el fitxer sencer. Es veu com qualsevol playlist, amb la tonalitat de cada pista. Aprèn dels teus sets quant mous el tempo i quant t'importa el to, deixa els teus tancaments per al final, treu més sovint les teves fixes i obre amb un vocal. «Refer» la torna a muntar sencera, o comença-la des d'una pista amb el seu menú. A rekordbox, Traktor, Engine DJ, Serato i VirtualDJ. Si el programa és obert, espera que el tanquis."
           },
           {
+            "t": "Matching de rekordbox",
+            "s": "Les parelles que marques amb Matching a rekordbox, juntes en una llista i en una playlist.",
+            "d": "Surten agrupades per cadenes a la font de rekordbox i amb un clic les converteixes en una playlist. A la fitxa veus les parelles de cada tema, les marques o les treus des de Surco, i la sessió automàtica les posa seguides."
+          },
+          {
             "t": "Cues de rekordbox",
             "s": "Posa hot cues sobre l'ona de rekordbox, a mà o amb el teu flux de marcatge.",
             "d": "Hot cues de la A a la H i CALL, sobre l'ona i la graella de rekordbox. Els arrossegues, s'ajusten al compàs o al cop i pots desfer. Quan amplies l'ona veus cada cop amb detall, mesurat del mateix àudio, i el Play sona a l'instant. Tries un flux, com Mix in 64, Mix in 32 o un de teu fet per blocs o après de la teva col·lecció, i quan passes el ratolí per l'ona veus en transparent el que hi posaria. Un clic el col·loca i et diu el que no hi cap. «Marcar automàticament» et proposa on trenca cada pista, també en diverses alhora. Aprèn la teva manera de marcar dels cues que ja has posat i dels que deses, i separa el que veu segur del que és dubtós. I si marques els CALL a rekordbox, Surco hi posa els hot cues del teu flux quan el tanques. En una pista que rekordbox encara no ha analitzat treballes sobre la graella de Surco, i quan rekordbox l'analitza, els teus cues s'ajusten a la seva. Les lletres segueixen l'ordre de la pista, i si per a tu cada lletra és un pad fix, ho desactives a Configuració. Si la mateixa pista és a Traktor, Engine DJ, Serato o VirtualDJ, quan deses el flux també hi arriba, posat amb la seva graella i els seus cues. S'escriuen a rekordbox amb una còpia de seguretat abans."
@@ -1421,6 +1426,26 @@
       "convertCount": "Convertir {{count}} pistes",
       "convertTo": "Convertir a AIFF",
       "missingArtist": "Falta l'artista"
+    },
+    "matching": {
+      "title": "Els temes que combinen, tots junts.",
+      "lede": "Marques a rekordbox, amb el botó de Matching, els temes que sonen bé junts. Surco te'ls ensenya tots en una llista, agrupats per cadenes, i amb un clic els converteix en una playlist de rekordbox.",
+      "button": "Crear playlist",
+      "playlist": "Playlist Matching",
+      "points": {
+        "chains": {
+          "title": "Per cadenes",
+          "text": "Si un tema va amb un altre i aquest amb un tercer, surten junts i en aquest ordre."
+        },
+        "track": {
+          "title": "A cada pista",
+          "text": "Tries un tema i en veus les parelles. A la llista, les parelles porten els anells de rekordbox."
+        },
+        "session": {
+          "title": "També des de Surco",
+          "text": "Marques i treus parelles sense obrir rekordbox, i la sessió automàtica les posa seguides."
+        }
+      }
     },
     "review": {
       "title": "Troba les errates i els duplicats de la teva biblioteca",

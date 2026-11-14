@@ -15,7 +15,7 @@ export default function Spotlight({
 }: {
   id: string
   view: SectionLocation
-  copy: 'cues' | 'replace' | 'sync'
+  copy: 'cues' | 'replace' | 'sync' | 'matching'
   points: readonly string[]
   scene: ReactNode
   children?: ReactNode

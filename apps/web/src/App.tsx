@@ -14,6 +14,7 @@ import SectionView from './components/SectionView'
 import Spotlight from './components/Spotlight'
 import CuesScene from './components/scenes/CuesScene'
 import GridScene from './components/scenes/GridScene'
+import MatchingScene from './components/scenes/MatchingScene'
 import ReplaceScene from './components/scenes/ReplaceScene'
 import SyncScene from './components/scenes/SyncScene'
 import Walkthrough from './components/Walkthrough'
@@ -52,8 +53,7 @@ export default function App() {
           </Reveal>
           <Reveal eager>
             <h1 className="mx-auto max-w-4xl text-[min(2.25rem,7.6vw)] leading-[1.1] font-bold tracking-tight text-balance sm:text-5xl lg:text-[4.5rem] lg:leading-[1.02]">
-              {t('hero.h1a')}{' '}
-              <br />
+              {t('hero.h1a')} <br />
               {t('hero.h1b')}
             </h1>
           </Reveal>
@@ -118,6 +118,13 @@ export default function App() {
             copy="sync"
             points={['anyTab', 'sameTrack', 'waits']}
             scene={<SyncScene />}
+          />
+          <Spotlight
+            id={SCENE_ANCHORS.matching}
+            view={SECTION_VIEWS.matching}
+            copy="matching"
+            points={['chains', 'track', 'session']}
+            scene={<MatchingScene />}
           />
           <LibraryReview />
         </div>

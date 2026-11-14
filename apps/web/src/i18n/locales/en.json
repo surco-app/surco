@@ -262,6 +262,11 @@
             "d": "Open it from the command palette, from a folder's menu or on an empty playlist. Choose how long it lasts and which playlists the tracks come from, and say what each one holds, Instrumentals, Vocals or Mixed, for a whole folder too. Surco brings together the pairs you repeat in your sets and tracklists, the tracks with the most stars and plays, Camelot harmonic mixing if you want it and room for what's new, and it counts the time each track plays, not the whole file. It looks like any playlist, with the key of each track. It learns from your sets how far you move the tempo and how much the key matters to you, keeps your closing tracks for the end, plays the ones you always play more often and opens with a vocal. “Redo” rebuilds it whole, or start it from a track with its menu. In rekordbox, Traktor, Engine DJ, Serato and VirtualDJ. If the program is open, it waits for you to close it."
           },
           {
+            "t": "rekordbox Matching",
+            "s": "The pairs you mark with Matching in rekordbox, together in one list and one playlist.",
+            "d": "They show up grouped into chains in the rekordbox source, and one click turns them into a playlist. The editor shows each track's partners, you pair or unpair them from Surco, and the automatic session plays them back to back."
+          },
+          {
             "t": "rekordbox cues",
             "s": "Set hot cues on rekordbox's waveform, by hand or with your marking flow.",
             "d": "Hot cues A to H and CALLs, on rekordbox's waveform and grid. Drag them, they snap to the bar or the beat, and you can undo. Zooming in shows every beat in detail, measured from the audio itself, and Play starts at once. Pick a flow, like Mix in 64, Mix in 32 or one of your own built from blocks or learned from your collection, and hovering over the waveform shows a ghost of what it would place. One click places it and tells you what doesn't fit. Auto mark suggests where each track drops, on several at once too. It learns how you mark from the cues you already placed and the ones you save, and sets what it's sure of apart from what it doubts. And if you mark the CALLs in rekordbox, Surco places your flow's hot cues when you close it. On a track rekordbox hasn't analyzed yet you work on Surco's grid, and once rekordbox analyzes it, your cues move onto its own. Letters follow track order, and if each letter is a fixed pad for you, turn it off in Settings. If the same track is in Traktor, Engine DJ, Serato or VirtualDJ, saving places the flow there too, on its grid and around its cues. Written to rekordbox after a backup."
@@ -1421,6 +1426,26 @@
       "convertCount": "Convert {{count}} tracks",
       "convertTo": "Convert to AIFF",
       "missingArtist": "Missing Artist"
+    },
+    "matching": {
+      "title": "The tracks that mix well, all in one place.",
+      "lede": "In rekordbox you mark the tracks that sound good together with the Matching button. Surco shows them all in one list, grouped into chains, and turns them into a rekordbox playlist in one click.",
+      "button": "Create playlist",
+      "playlist": "Matching playlist",
+      "points": {
+        "chains": {
+          "title": "In chains",
+          "text": "If one track goes with another and that one with a third, they show up together and in that order."
+        },
+        "track": {
+          "title": "On every track",
+          "text": "Pick a track and see its partners. In the list, partners carry the rekordbox rings."
+        },
+        "session": {
+          "title": "From Surco too",
+          "text": "Pair and unpair tracks without opening rekordbox, and the automatic session plays pairs back to back."
+        }
+      }
     },
     "review": {
       "title": "Find the typos and duplicates in your library",
