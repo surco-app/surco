@@ -1,5 +1,5 @@
 import { DEFAULT_CUE_GRID_TOLERANCE } from '../../../shared/cueGrid'
-import { type GridCheck, needsGridFix } from '../../../shared/gridCheck'
+import { type GridCheck, needsGridFix } from '../../../shared/gridAudit'
 import {
   ENHARMONIC,
   MAJOR_CAMELOT,

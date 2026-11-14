@@ -3,7 +3,7 @@ import '@testing-library/jest-dom/vitest'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
-import type { GridCheck } from '../../../shared/gridCheck'
+import type { GridCheck } from '../../../shared/gridAudit'
 import i18n from '../i18n'
 import type { AutoMarkTarget } from '../lib/cueAutoMark'
 import { startDraft } from '../lib/cueDraft'
@@ -21,8 +21,8 @@ import { GridBatchBlock } from './GridBatchBlock'
 const adjustGrids = vi.hoisted(() => vi.fn<typeof AdjustGrids>())
 vi.mock('../lib/cueGridBatch', () => ({ adjustGrids }))
 
-const ON_BEATS: GridCheck = { hereMs: 2, endMs: -3, worstMs: 3, verdict: null }
-const LATE: GridCheck = { hereMs: 102, endMs: 101, worstMs: 102, verdict: null }
+const ON_BEATS: GridCheck = { kind: 'measured', medianMs: 2, sustainedMs: -3 }
+const LATE: GridCheck = { kind: 'measured', medianMs: -102, sustainedMs: -101 }
 
 const TARGETS: AutoMarkTarget[] = [
   { contentId: '201', path: '/m/club.wav', label: 'Club Robbers' },

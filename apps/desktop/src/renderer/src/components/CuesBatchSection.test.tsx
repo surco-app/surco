@@ -5,7 +5,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import { type CueFlow, MY_FLOW, ONE_AT_32 } from '../../../shared/cueFlows'
-import type { GridCheck } from '../../../shared/gridCheck'
+import type { GridCheck } from '../../../shared/gridAudit'
 import type { LibraryTracks, Settings, TrackCues } from '../../../shared/types'
 import i18n from '../i18n'
 import { startDraft } from '../lib/cueDraft'
@@ -39,8 +39,8 @@ const READ: TrackCues = {
   fingerprint: 'f0',
   gridFingerprint: '',
 }
-const ON_BEATS: GridCheck = { hereMs: 2, endMs: -3, worstMs: 3, verdict: null }
-const LATE: GridCheck = { hereMs: 102, endMs: 101, worstMs: 102, verdict: null }
+const ON_BEATS: GridCheck = { kind: 'measured', medianMs: 2, sustainedMs: -3 }
+const LATE: GridCheck = { kind: 'measured', medianMs: -102, sustainedMs: -101 }
 const TARGETS = [
   { contentId: '103', path: '/m/a.wav', label: 'Maniac' },
   { contentId: '104', path: '/m/b.wav', label: 'Summer Sky' },

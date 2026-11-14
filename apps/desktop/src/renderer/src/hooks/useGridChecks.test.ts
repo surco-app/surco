@@ -4,13 +4,8 @@ import { act, configure, renderHook, waitFor } from '@testing-library/react'
 import { createElement, type ReactNode, useMemo } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
-import { needsGridFix } from '../../../shared/gridCheck'
-import {
-  type EditableGrid,
-  editableGridOf,
-  type GridFit,
-  gridBeats,
-} from '../../../shared/gridEdit'
+import { type GridAudit, needsGridFix } from '../../../shared/gridAudit'
+import { type EditableGrid, editableGridOf, gridBeats } from '../../../shared/gridEdit'
 import type { TrackCues } from '../../../shared/types'
 import { startDraft } from '../lib/cueDraft'
 import { cueDraftKey, keepDraft, resetCueSession } from '../lib/cueSession'
@@ -28,7 +23,20 @@ afterEach(() => {
 
 const BPM = 145
 const DURATION_MS = 300000
-const ON_KICKS: GridFit = { bpm: BPM, firstMs: 0 }
+const PERIOD = 60000 / BPM
+
+const auditOnKicks = (beats: number[]): GridAudit => {
+  const windows = beats
+    .filter((_, i) => i % 8 === 0)
+    .map((ms) => {
+      const off = Math.round(ms / PERIOD) * PERIOD - ms
+      return {
+        ms,
+        offsetMs: Math.abs(off) > PERIOD / 4 ? off - Math.sign(off) * (PERIOD / 2) : off,
+      }
+    })
+  return { windows, total: windows.length, periodMs: PERIOD, heardPerMinute: 30 }
+}
 
 const ENTRIES: [string, string][] = [
   ['t1', '101'],
@@ -55,12 +63,12 @@ function setup(
   trackCues = vi.fn<Api['cues']['trackCues']>(async (id) => readOn(id, ANCHORS[id])),
   queued = vi.fn<Api['cues']['queued']>(async () => null),
 ) {
-  const gridFit = vi.fn<Api['cues']['gridFit']>(async () => ON_KICKS)
-  installApi({ cues: { trackCues, gridFit, queued } })
+  const gridAudit = vi.fn<Api['cues']['gridAudit']>(async (_id, beats) => auditOnKicks(beats))
+  installApi({ cues: { trackCues, gridAudit, queued } })
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   const wrapper = ({ children }: { children: ReactNode }) =>
     createElement(QueryClientProvider, { client }, children)
-  return { trackCues, gridFit, client, wrapper }
+  return { trackCues, gridAudit, client, wrapper }
 }
 
 const pending = () => {
@@ -79,19 +87,19 @@ const needsFix = (check: ReturnType<ReturnType<typeof useGridChecks>['checkOf']>
 
 describe('useGridChecks', () => {
   it('measures nothing until the filter asks, since each track means decoding its audio', () => {
-    const { trackCues, gridFit, wrapper } = setup()
+    const { trackCues, gridAudit, wrapper } = setup()
     const { result } = renderHook(() => useGridChecks(ENTRIES, false), { wrapper })
     expect(trackCues).not.toHaveBeenCalled()
-    expect(gridFit).not.toHaveBeenCalled()
+    expect(gridAudit).not.toHaveBeenCalled()
     expect(result.current.done).toBe(0)
     expect(result.current.total).toBe(3)
   })
 
   it('measures every row of the list once asked, counting how far it got', async () => {
-    const { gridFit, wrapper } = setup()
+    const { gridAudit, wrapper } = setup()
     const { result } = renderHook(() => useGridChecks(ENTRIES, true), { wrapper })
     await waitFor(() => expect(result.current.done).toBe(3))
-    expect(gridFit).toHaveBeenCalledTimes(3)
+    expect(gridAudit).toHaveBeenCalledTimes(3)
     expect(needsFix(result.current.checkOf('t2'))).toBe(true)
     expect(needsFix(result.current.checkOf('t1'))).toBe(false)
     expect(result.current.checkOfContent('102')).toEqual(result.current.checkOf('t2'))
@@ -156,14 +164,28 @@ describe('useGridChecks', () => {
     expect(reads).toBeLessThan(size * 20)
   })
 
+  it('counts a track with no beat to hear as unmeasurable, never as a bad grid', async () => {
+    const { wrapper } = setup()
+    installApi({
+      cues: {
+        trackCues: async (id) => readOn(id, ANCHORS[id]),
+        queued: async () => null,
+        gridAudit: async () => ({ windows: [], total: 40, periodMs: PERIOD, heardPerMinute: 0 }),
+      },
+    })
+    const { result } = renderHook(() => useGridChecks(ENTRIES, true), { wrapper })
+    await waitFor(() => expect(result.current.done).toBe(3))
+    expect(result.current.checkOf('t2')).toBeNull()
+  })
+
   it('keeps what it measured for the session, so turning the filter on again is instant', async () => {
-    const { gridFit, wrapper } = setup()
+    const { gridAudit, wrapper } = setup()
     const first = renderHook(() => useGridChecks(ENTRIES, true), { wrapper })
     await waitFor(() => expect(first.result.current.done).toBe(3))
     first.unmount()
     const again = renderHook(() => useGridChecks(ENTRIES, true), { wrapper })
     expect(again.result.current.done).toBe(3)
-    expect(gridFit).toHaveBeenCalledTimes(3)
+    expect(gridAudit).toHaveBeenCalledTimes(3)
   })
 
   it('stops measuring when the filter is turned off', async () => {
@@ -217,7 +239,7 @@ describe('useGridChecks', () => {
         fingerprint: 'f0',
       })
     })
-    expect(needsFix(result.current.checkOf('t2'))).toBe(false)
+    await waitFor(() => expect(needsFix(result.current.checkOf('t2'))).toBe(false))
   })
 
   it('measures the grid a fresh queued save already holds, so a track adjusted while the program was open leaves the filter', async () => {
@@ -273,18 +295,18 @@ describe('useGridChecks', () => {
     act(() => {
       keepDraft('102', draftKey, { ...original, grid: { bpm: BPM, anchorMs: 0 } }, target)
     })
-    expect(result.current.bad).toBe(1)
+    await waitFor(() => expect(result.current.bad).toBe(1))
   })
 
-  it('measures behind whatever the DJ opens, asking for the fit at low priority', async () => {
-    const { gridFit, wrapper } = setup()
+  it('measures behind whatever the DJ opens, asking for the measure at low priority', async () => {
+    const { gridAudit, wrapper } = setup()
     const { result } = renderHook(() => useGridChecks(ENTRIES, true), { wrapper })
     await waitFor(() => expect(result.current.done).toBe(3))
-    expect(gridFit).toHaveBeenCalledWith('102', 'low')
+    expect(gridAudit).toHaveBeenCalledWith('102', expect.any(Array), 'low')
   })
 
-  it('recounts when tolerance changes without asking for the fit again', async () => {
-    const { gridFit, wrapper } = setup()
+  it('recounts when tolerance changes without measuring again', async () => {
+    const { gridAudit, wrapper } = setup()
     const { result } = renderHook(() => useGridChecks(ENTRIES, true), { wrapper })
     await waitFor(() => expect(result.current.done).toBe(3))
     const count = (ms: number) =>
@@ -292,16 +314,16 @@ describe('useGridChecks', () => {
     expect(count(10)).toBe(2)
     expect(count(20)).toBe(1)
     expect(count(5)).toBe(3)
-    expect(gridFit).toHaveBeenCalledTimes(3)
+    expect(gridAudit).toHaveBeenCalledTimes(3)
   })
 
-  it('drops a track from the count once its saved grid is the adjusted one', async () => {
+  it('drops a track from the count once its saved grid is the adjusted one, measuring only that grid again', async () => {
     const reads: Record<string, TrackCues> = {
       '101': readOn('101', 0),
       '102': readOn('102', 102),
       '103': readOn('103', 0),
     }
-    const { client, gridFit, wrapper } = setup(
+    const { client, gridAudit, wrapper } = setup(
       vi.fn<Api['cues']['trackCues']>(async (id) => reads[id]),
     )
     const { result } = renderHook(() => useGridChecks(ENTRIES, true), { wrapper })
@@ -312,7 +334,7 @@ describe('useGridChecks', () => {
       await client.invalidateQueries({ queryKey: trackCuesQuery('102').queryKey.slice(0, 1) })
     })
     await waitFor(() => expect(needsFix(result.current.checkOf('t2'))).toBe(false))
-    expect(gridFit).toHaveBeenCalledTimes(3)
+    expect(gridAudit).toHaveBeenCalledTimes(4)
   })
 })
 

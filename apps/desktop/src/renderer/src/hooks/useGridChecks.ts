@@ -1,18 +1,14 @@
 import { type QueryClient, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useRef, useSyncExternalStore } from 'react'
-import { checkGrid, type GridCheck } from '../../../shared/gridCheck'
-import {
-  type EditableGrid,
-  editableGridOf,
-  type GridFit,
-  gridBeats,
-} from '../../../shared/gridEdit'
+import type { GridCheck } from '../../../shared/gridAudit'
+import { type EditableGrid, editableGridOf, gridBeats } from '../../../shared/gridEdit'
 import type { QueuedCues, TrackCueRow } from '../../../shared/types'
 import { appliedGrid } from '../lib/appliedGrid'
 import { cueProgramOf } from '../lib/cuePrograms'
 import { keptOnSurcoGrid, subscribeCueDrafts } from '../lib/cueSession'
+import { auditCheckOf, beatsKey } from '../lib/gridAuditCheck'
 import { gridGate } from '../lib/gridGate'
-import { gridFitQuery, queuedCuesQuery, trackCuesQuery } from './useTrackCues'
+import { queuedCuesQuery, trackCuesQuery } from './useTrackCues'
 
 const WORKERS = 2
 
@@ -27,16 +23,10 @@ interface GridRead {
   kicks: number[]
 }
 
-interface Memo {
-  fit?: GridFit
-  grid?: EditableGrid
-  check?: GridCheck
-}
-
 const reads = new Map<string, GridRead | null>()
-const fits = new Map<string, GridFit | null>()
 const queues = new Map<string, QueuedCues | null>()
-const memos = new WeakMap<GridRead, Memo>()
+const checks = new Map<string, GridCheck | null>()
+const auditing = new Set<string>()
 const pending = new Set<string>()
 const stale: string[] = []
 let draining = false
@@ -77,27 +67,16 @@ export function resetGridChecks(): void {
   measureNoticeTimer = null
   lastMeasureNotice = Number.NEGATIVE_INFINITY
   reads.clear()
-  fits.clear()
   queues.clear()
+  checks.clear()
+  auditing.clear()
   pending.clear()
   stale.length = 0
   notify()
 }
 
-function memoOf(read: GridRead): Memo {
-  const kept = memos.get(read)
-  if (kept) return kept
-  const memo: Memo = {}
-  memos.set(read, memo)
-  return memo
-}
-
-function checkOfContent(contentId: string): GridCheck | null | undefined {
-  const read = reads.get(contentId)
-  if (read === undefined) return undefined
-  const fit = fits.get(contentId)
-  if (!read || !fit) return null
-  const memo = memoOf(read)
+function auditedBeats(contentId: string, read: GridRead): { beats: number[]; key: string } | null {
+  if (!read.analysed || cueProgramOf(contentId).fixedGrid) return null
   const { grid, changed } = appliedGrid(
     contentId,
     read,
@@ -106,15 +85,25 @@ function checkOfContent(contentId: string): GridCheck | null | undefined {
   )
   const gate = gridGate({ contentId, read, grid, onSurcoGrid: keptOnSurcoGrid(contentId) })
   if (gate !== null || grid === null) return null
-  if (memo.check && memo.fit === fit && memo.grid === grid) return memo.check
-  const check = checkGrid({
-    beats: changed ? gridBeats(grid, read.durationMs).map((b) => b.ms) : read.kicks,
-    kicks: read.kicks,
-    fit,
-    atMs: 0,
-    durationMs: read.durationMs,
-  })
-  Object.assign(memo, { fit, grid, check })
+  const beats = changed ? gridBeats(grid, read.durationMs).map((b) => b.ms) : read.kicks
+  return { beats, key: `${contentId}|${beatsKey(beats)}` }
+}
+
+async function audit(contentId: string, beats: number[], key: string): Promise<void> {
+  if (checks.has(key) || auditing.has(key)) return
+  auditing.add(key)
+  checks.set(key, await auditCheckOf(contentId, beats, 'low'))
+  auditing.delete(key)
+}
+
+function checkOfContent(contentId: string): GridCheck | null | undefined {
+  const read = reads.get(contentId)
+  if (read === undefined) return undefined
+  if (!read) return null
+  const audited = auditedBeats(contentId, read)
+  if (!audited) return null
+  const check = checks.get(audited.key)
+  if (check === undefined) void audit(contentId, audited.beats, audited.key).then(noticeMeasured)
   return check
 }
 
@@ -141,17 +130,9 @@ const gridReadQuery = (contentId: string) => ({
 async function measure(client: QueryClient, contentId: string): Promise<void> {
   const read = await client.fetchQuery(gridReadQuery(contentId)).catch(() => null)
   const queued = read ? await client.fetchQuery(queuedCuesQuery(contentId)) : null
-  if (read?.analysed && !cueProgramOf(contentId).fixedGrid && !fits.has(contentId))
-    fits.set(
-      contentId,
-      await client
-        .fetchQuery({
-          ...gridFitQuery(contentId),
-          queryFn: () => window.api.cues.gridFit(contentId, 'low'),
-        })
-        .catch(() => null),
-    )
   queues.set(contentId, queued)
+  const audited = read && auditedBeats(contentId, read)
+  if (audited) await audit(contentId, audited.beats, audited.key)
   reads.set(contentId, read)
   noticeMeasured()
 }

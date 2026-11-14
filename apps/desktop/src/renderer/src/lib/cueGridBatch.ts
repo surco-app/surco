@@ -15,6 +15,7 @@ import {
 } from './cueSession'
 import { quantizePoints } from './cueWave'
 import { adjustGrid } from './gridAdjust'
+import { auditCheckOf } from './gridAuditCheck'
 import { gridGate } from './gridGate'
 
 export type GridBatchSettings = AutoMarkSettings & { cueGridTolerance: number }
@@ -57,7 +58,7 @@ async function adjustOne(
   if (draft.grid === null) return { kind: 'unmeasured' }
   const gridded = { ...draft, grid: draft.grid }
   const grid = applied.changed ? gridBeats(gridded.grid, read.durationMs) : read.grid
-  const result = adjustGrid({
+  const result = await adjustGrid({
     draft: gridded,
     beats: grid.map((b) => b.ms),
     ctx: {
@@ -74,6 +75,7 @@ async function adjustOne(
     durationMs: read.durationMs,
     toleranceMs: settings.cueGridTolerance,
     zones: programOf(contentId) === 'rekordbox',
+    checkOf: (beats) => auditCheckOf(contentId, beats, 'high'),
   })
   if (result.kind !== 'adjusted') return result
   keepDraft(

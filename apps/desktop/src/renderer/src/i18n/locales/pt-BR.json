@@ -693,8 +693,10 @@
     "playlistsPending": "Mudanças de playlists ainda não gravadas",
     "gridEarly": "Grade {{ms}} ms adiantada",
     "gridLate": "Grade {{ms}} ms atrasada",
-    "gridDriftsEarly": "A grade adianta {{ms}} ms por minuto",
-    "gridDriftsLate": "A grade atrasa {{ms}} ms por minuto",
+    "gridPartlyEarly": "Grade {{ms}} ms adiantada em parte da faixa",
+    "gridPartlyLate": "Grade {{ms}} ms atrasada em parte da faixa",
+    "gridTempo": "O BPM da grade não bate com o áudio",
+    "gridTempoShort": "BPM",
     "played": "Ouvida"
   },
   "editor": {

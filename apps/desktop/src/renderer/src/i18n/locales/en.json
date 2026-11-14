@@ -693,8 +693,10 @@
     "playlistsPending": "Playlist changes not written yet",
     "gridEarly": "Grid {{ms}} ms early",
     "gridLate": "Grid {{ms}} ms late",
-    "gridDriftsEarly": "Grid runs {{ms}} ms a minute early",
-    "gridDriftsLate": "Grid runs {{ms}} ms a minute late",
+    "gridPartlyEarly": "Grid {{ms}} ms early in part of the track",
+    "gridPartlyLate": "Grid {{ms}} ms late in part of the track",
+    "gridTempo": "The grid's BPM doesn't match the audio",
+    "gridTempoShort": "BPM",
     "played": "Played"
   },
   "editor": {

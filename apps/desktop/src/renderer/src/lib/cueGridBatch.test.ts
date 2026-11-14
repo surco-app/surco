@@ -93,6 +93,22 @@ function setup({
         if (fit instanceof Error) throw fit
         return fit
       }),
+      gridAudit: vi.fn<Api['cues']['gridAudit']>(async (id, beats) => {
+        const fit = id in fits ? fits[id] : ON_KICKS
+        if (fit instanceof Error) throw fit
+        if (fit === null) return null
+        const period = 60000 / fit.bpm
+        const windows = beats
+          .filter((_, i) => i % 8 === 0)
+          .map((ms) => {
+            const off = fit.firstMs + Math.round((ms - fit.firstMs) / period) * period - ms
+            return {
+              ms,
+              offsetMs: Math.abs(off) > period / 4 ? off - Math.sign(off) * (period / 2) : off,
+            }
+          })
+        return { windows, total: windows.length, periodMs: period, heardPerMinute: 30 }
+      }),
     },
   })
   return new QueryClient({ defaultOptions: { queries: { retry: false } } })

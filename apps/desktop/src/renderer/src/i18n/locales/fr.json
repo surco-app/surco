@@ -693,8 +693,10 @@
     "playlistsPending": "Changements de playlists pas encore écrits",
     "gridEarly": "Grille en avance de {{ms}} ms",
     "gridLate": "Grille en retard de {{ms}} ms",
-    "gridDriftsEarly": "La grille avance de {{ms}} ms par minute",
-    "gridDriftsLate": "La grille retarde de {{ms}} ms par minute",
+    "gridPartlyEarly": "Grille en avance de {{ms}} ms sur une partie du morceau",
+    "gridPartlyLate": "Grille en retard de {{ms}} ms sur une partie du morceau",
+    "gridTempo": "Le BPM de la grille ne correspond pas à l'audio",
+    "gridTempoShort": "BPM",
     "played": "Écouté"
   },
   "editor": {
