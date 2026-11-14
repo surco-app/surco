@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { MATCHING_ID } from '../shared/matching'
 import { openRekordboxDb } from './rekordboxDb'
-import { readMatchingCount, readMatchingPairs } from './rekordboxMatching'
+import { readMatchingCount, readMatchingPairs, readPlayedSequences } from './rekordboxMatching'
 import { readRekordboxPlaylistWithPreview } from './rekordboxPlaylists'
 import { type PlaylistFixture, writeRekordboxPlaylistFixture } from './rekordboxPlaylistsFixture'
 
@@ -107,5 +107,55 @@ describe('the Matching entry of the rekordbox source', () => {
       () => false,
     )
     expect(rows[0]).toMatchObject({ path: ACID.FolderPath, contentId: ACID.ID, separator: false })
+  })
+})
+
+describe('readPlayedSequences', () => {
+  const SEP = { ID: 'sep', FolderPath: '/Music/_.mp3', FileType: 1, Title: ' ', Length: 1 }
+
+  it('reads each rekordbox history session in the order the tracks were played', async () => {
+    const db = await open({
+      content: [LET, TAKE, ACID],
+      history: [
+        { HistoryID: 'h1', ContentID: TAKE.ID, TrackNo: 2 },
+        { HistoryID: 'h1', ContentID: LET.ID, TrackNo: 1 },
+        { HistoryID: 'h2', ContentID: ACID.ID, TrackNo: 1 },
+        { HistoryID: 'h2', ContentID: LET.ID, TrackNo: 2 },
+      ],
+    })
+    expect(readPlayedSequences(db, [])).toEqual([
+      [LET.ID, TAKE.ID],
+      [ACID.ID, LET.ID],
+    ])
+  })
+
+  it('adds the mixed playlists it is given, cut at their separators', async () => {
+    const db = await open({
+      content: [LET, TAKE, ACID, QUE, SEP],
+      playlists: [{ ID: 'p1', Name: '90s', Attribute: 0, ParentID: 'root', Seq: 1 }],
+      links: [
+        { PlaylistID: 'p1', ContentID: LET.ID, TrackNo: 1 },
+        { PlaylistID: 'p1', ContentID: TAKE.ID, TrackNo: 2 },
+        { PlaylistID: 'p1', ContentID: 'sep', TrackNo: 3 },
+        { PlaylistID: 'p1', ContentID: ACID.ID, TrackNo: 4 },
+        { PlaylistID: 'p1', ContentID: QUE.ID, TrackNo: 5 },
+      ],
+    })
+    expect(readPlayedSequences(db, ['p1'])).toEqual([
+      [LET.ID, TAKE.ID],
+      [ACID.ID, QUE.ID],
+    ])
+  })
+
+  it('skips a track removed from the collection, so it never joins a suggestion', async () => {
+    const db = await open({
+      content: [LET, { ...TAKE, deleted: true }, ACID],
+      history: [
+        { HistoryID: 'h1', ContentID: LET.ID, TrackNo: 1 },
+        { HistoryID: 'h1', ContentID: TAKE.ID, TrackNo: 2 },
+        { HistoryID: 'h1', ContentID: ACID.ID, TrackNo: 3 },
+      ],
+    })
+    expect(readPlayedSequences(db, [])).toEqual([[LET.ID], [ACID.ID]])
   })
 })

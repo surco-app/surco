@@ -76,6 +76,7 @@ export interface PlaylistFixture {
     OutMsec?: number | null
   }[]
   matches?: { ContentID1: string; ContentID2: string; deleted?: boolean }[]
+  history?: { HistoryID: string; ContentID: string; TrackNo: number; deleted?: boolean }[]
   noMatchingTable?: boolean
 }
 
@@ -149,6 +150,13 @@ export function writeRekordboxPlaylistFixture(path: string, data: PlaylistFixtur
     db.exec(`CREATE TABLE djmdRecommendLike (ID VARCHAR(255) PRIMARY KEY, ContentID1 VARCHAR(255),
       ContentID2 VARCHAR(255), LikeRate INTEGER, DataCreatedH INTEGER, DataCreatedL INTEGER,
       ${LOOKUP_COLUMNS});`)
+  db.exec(`CREATE TABLE djmdSongHistory (ID VARCHAR(255) PRIMARY KEY, HistoryID VARCHAR(255),
+    ContentID VARCHAR(255), TrackNo INTEGER, ${LOOKUP_COLUMNS});`)
+  const played = db.prepare(
+    `INSERT INTO djmdSongHistory (ID, HistoryID, ContentID, TrackNo, rb_local_deleted) VALUES (?, ?, ?, ?, ?)`,
+  )
+  for (const [i, h] of (data.history ?? []).entries())
+    played.run(`history-${i}`, h.HistoryID, h.ContentID, h.TrackNo, h.deleted ? 1 : 0)
   const match = data.noMatchingTable
     ? null
     : db.prepare(
