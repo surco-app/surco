@@ -4539,6 +4539,53 @@ describe('App source playlists', () => {
     })
   })
 
+  describe('rekordbox smart playlists', () => {
+    const SMART_ENTRIES = [
+      { path: '/m/c.wav', separator: false, meta: {}, linkId: 'r3', contentId: 'r3' },
+      { path: '/m/a.wav', separator: false, meta: {}, linkId: 'r1', contentId: 'r1' },
+    ]
+    const smartReads = () =>
+      djReads({
+        rekordbox: {
+          tree: vi.fn<ProgramReads['tree']>().mockResolvedValue([
+            { id: 'f', name: 'Factory', kind: 'playlist', count: 3 },
+            { id: 'h', name: 'House', kind: 'playlist', count: 0 },
+            { id: 'sm', name: 'Electronic 2026', kind: 'playlist', count: 2, smart: true },
+          ]),
+          playlist: vi
+            .fn<ProgramReads['playlist']>()
+            .mockImplementation(async (id) => (id === 'sm' ? SMART_ENTRIES : FACTORY_ENTRIES)),
+        },
+      })
+
+    // rekordbox fills it from its rules and refuses any edit on it, so removing or moving a
+    // row would only come back refused.
+    it('offers no reorder, removal or separator on its rows', async () => {
+      await openFactory({ dj: smartReads() })
+      fireEvent.click(screen.getByTestId('source-node-sm'))
+      await waitFor(() =>
+        expect(titles()).toEqual([
+          expect.stringContaining('Charlie'),
+          expect.stringContaining('Alpha'),
+        ]),
+      )
+      expect(screen.queryByTestId('reorder-hint')).not.toBeInTheDocument()
+      expectNoReorderLine()
+      fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+      await screen.findByTestId('track-menu-add-to')
+      expect(screen.queryByTestId('track-menu-remove-from')).not.toBeInTheDocument()
+      expect(screen.queryByTestId('track-menu-insert-separator')).not.toBeInTheDocument()
+    })
+
+    it('is never offered as a playlist to add tracks to', async () => {
+      await openFactory({ dj: smartReads() })
+      fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+      fireEvent.click(await screen.findByTestId('track-menu-add-to'))
+      expect(screen.getByTestId('track-menu-playlist-h')).toBeInTheDocument()
+      expect(screen.queryByTestId('track-menu-playlist-sm')).not.toBeInTheDocument()
+    })
+  })
+
   describe('All tracks', () => {
     const ALL_ENTRIES = [
       { path: '/m/c.wav', separator: false, meta: {}, linkId: 'r3', contentId: 'r3' },

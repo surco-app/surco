@@ -18,6 +18,7 @@ import { insideShare } from './rekordboxArtwork'
 import { type openRekordboxDb, STREAMING_FILE_TYPE } from './rekordboxDb'
 import { readMatchingChains } from './rekordboxMatching'
 import { localDate } from './rekordboxRows'
+import { smartListContent } from './rekordboxSmartList'
 
 // Reads the user's rekordbox playlists as a source of tracks: the folder tree and one
 // playlist's rows. Read-only by construction — every caller opens the collection with
@@ -36,21 +37,48 @@ interface PlaylistRow {
   Name: string
   Attribute: number
   ParentID: string
+  SmartList: string | null
   n: number
 }
 
-export function readRekordboxTree(db: RekordboxDb): SourceNode[] {
+const SMART = 4
+const SMART_ROWS = `coalesce(c.rb_local_deleted, 0) = 0 AND c.FileType <> ${STREAMING_FILE_TYPE}`
+
+function smartCount(db: RekordboxDb, xml: string | null, now: Date): number | null {
+  const content = xml === null ? null : smartListContent(xml, now)
+  if (content === null) return null
+  const row = db
+    .prepare(`SELECT count(*) AS n FROM djmdContent c WHERE ${SMART_ROWS} AND ${content.where}`)
+    .get(...content.params) as { n: number }
+  return row.n
+}
+
+export function smartPlaylistContent(
+  db: RekordboxDb,
+  id: string,
+  now: Date,
+): { where: string; params: (string | number)[] } | null {
+  const row = db
+    .prepare(
+      `SELECT SmartList FROM djmdPlaylist WHERE ID = ? AND Attribute = ${SMART} AND coalesce(rb_local_deleted, 0) = 0`,
+    )
+    .get(id) as { SmartList: string | null } | undefined
+  const content = row?.SmartList ? smartListContent(row.SmartList, now) : null
+  return content && { where: `${SMART_ROWS} AND ${content.where}`, params: content.params }
+}
+
+export function readRekordboxTree(db: RekordboxDb, now: Date = new Date()): SourceNode[] {
   // Distinct tracks, not links: a track linked twice in one playlist is one row in the
   // list, and a count the list never reaches reads as missing tracks. Streaming rows are
   // still counted (the open toast announces them), and two content rows for one file
   // still count twice; neither can be told apart here without the disk.
   const rows = db
     .prepare(
-      `SELECT p.ID, p.Name, p.Attribute, p.ParentID,
+      `SELECT p.ID, p.Name, p.Attribute, p.ParentID, p.SmartList,
               (SELECT count(DISTINCT c.ID) FROM djmdSongPlaylist s JOIN djmdContent c ON c.ID = s.ContentID
                 WHERE s.PlaylistID = p.ID AND ${LIVE_LINK} AND NOT ${IS_SEPARATOR}) AS n
          FROM djmdPlaylist p
-        WHERE coalesce(p.rb_local_deleted, 0) = 0 AND p.Attribute IN (0, 1)
+        WHERE coalesce(p.rb_local_deleted, 0) = 0 AND p.Attribute IN (0, 1, ${SMART})
         ORDER BY p.Seq`,
     )
     .all() as PlaylistRow[]
@@ -61,12 +89,20 @@ export function readRekordboxTree(db: RekordboxDb): SourceNode[] {
     byParent.set(String(r.ParentID), siblings)
   }
   const build = (parent: string): SourceNode[] =>
-    (byParent.get(parent) ?? []).map((r) => {
+    (byParent.get(parent) ?? []).flatMap((r): SourceNode[] => {
       if (r.Attribute === 1) {
         const children = build(String(r.ID))
-        return { id: String(r.ID), name: r.Name, kind: 'folder', count: children.length, children }
+        return [
+          { id: String(r.ID), name: r.Name, kind: 'folder', count: children.length, children },
+        ]
       }
-      return { id: String(r.ID), name: r.Name, kind: 'playlist', count: r.n }
+      if (r.Attribute === SMART) {
+        const count = smartCount(db, r.SmartList, now)
+        return count === null
+          ? []
+          : [{ id: String(r.ID), name: r.Name, kind: 'playlist', count, smart: true }]
+      }
+      return [{ id: String(r.ID), name: r.Name, kind: 'playlist', count: r.n }]
     })
   return build('root')
 }
@@ -144,7 +180,11 @@ function recentSince(now: Date): string {
   return localDate(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30))
 }
 
-function readContent(db: RekordboxDb, where: string, params: string[]): SourcePlaylistEntry[] {
+function readContent(
+  db: RekordboxDb,
+  where: string,
+  params: (string | number)[],
+): SourcePlaylistEntry[] {
   const rows = db
     .prepare(
       `SELECT c.ID AS linkId, c.ID AS contentId, c.FolderPath, c.FileType, c.BPM, c.Rating, c.DJPlayCount, c.StockDate, k.ScaleName, 0 AS sep
@@ -281,7 +321,7 @@ export function readRekordboxPlaylistWithPreview(
         ? { where: ALL, params: [] }
         : id === MATCHING_ID
           ? { where: `${ALL} AND c.ID IN (${matched.map(() => '?').join(',')})`, params: matched }
-          : null
+          : smartPlaylistContent(db, id, now)
   const read = content
     ? readContent(db, content.where, content.params)
     : readRekordboxPlaylist(db, id)

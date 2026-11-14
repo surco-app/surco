@@ -795,6 +795,51 @@ describe('SourceTree Recently added', () => {
   })
 })
 
+describe('SourceTree smart playlists', () => {
+  const SMART: SourceNode = {
+    id: '900',
+    name: 'Electronic 2026',
+    kind: 'playlist',
+    count: 138,
+    smart: true,
+  }
+  const node = () => screen.getByTestId('source-node-900')
+
+  it('marks it apart from a normal playlist, as rekordbox does, since its tracks come from rules', () => {
+    setup(null, true, [SMART, ...NODES])
+    expect(screen.getAllByTestId('source-node-smart-icon')).toHaveLength(1)
+  })
+
+  it('opens like any playlist', () => {
+    const onSelect = setup(null, true, [SMART, ...NODES])
+    fireEvent.click(node())
+    expect(onSelect).toHaveBeenCalledWith(SMART, [])
+  })
+
+  // rekordbox refuses an edit on anything that is not a plain playlist, so a rename or delete
+  // offered here would only fail.
+  it('offers no rename or delete', () => {
+    setup(null, true, [SMART, ...NODES])
+    fireEvent.contextMenu(node(), { clientX: 10, clientY: 10 })
+    expect(screen.queryByTestId('source-tree-menu')).not.toBeInTheDocument()
+  })
+
+  it('takes no drop, since its rules decide what is in it', () => {
+    const { edit, onOuterDrop } = setup(null, true, [SMART, ...NODES])
+    const dt = files('a.wav')
+    fireEvent.dragOver(node(), { dataTransfer: dt })
+    expect(node()).not.toHaveAttribute('data-drop-target')
+    fireEvent.drop(node(), { dataTransfer: dt })
+    expect(edit.onDropTracks).not.toHaveBeenCalled()
+    expect(onOuterDrop).not.toHaveBeenCalled()
+  })
+
+  it('is not dragged to another place in the tree', () => {
+    setup(null, true, [SMART, ...NODES])
+    expect(node()).not.toHaveAttribute('draggable', 'true')
+  })
+})
+
 describe('SourceTree Matching', () => {
   const MATCH: SourceNode = { id: MATCHING_ID, name: 'Matching', kind: 'playlist', count: 9 }
   const node = () => screen.getByTestId(`source-node-${MATCHING_ID}`)

@@ -1,7 +1,12 @@
 import type { SourceNode } from '../shared/types'
 import type { Beat } from './anlz'
 import { type openRekordboxDb, STREAMING_FILE_TYPE } from './rekordboxDb'
-import { IS_SEPARATOR, LIVE_LINK, readRekordboxTree } from './rekordboxPlaylists'
+import {
+  IS_SEPARATOR,
+  LIVE_LINK,
+  readRekordboxTree,
+  smartPlaylistContent,
+} from './rekordboxPlaylists'
 
 // What the USB export takes from master.db: the ticked playlists (a ticked folder means all
 // of it), each track once, with everything baken's XML carries and the paths of rekordbox's
@@ -127,23 +132,44 @@ interface Row {
   sep: number
 }
 
-const TRACKS_OF = `
+const TRACK_COLUMNS = `
   SELECT c.ID, c.FolderPath, c.Title, a.Name AS artist, al.Name AS album, g.Name AS genre,
          l.Name AS label, r.Name AS remixer, cp.Name AS composer, c.Subtitle, k.ScaleName,
          c.FileType, c.Length, c.BPM, c.BitRate, c.SampleRate, c.BitDepth, c.Rating,
          c.ReleaseYear, c.TrackNo, c.DiscNo, c.DateCreated, c.DJPlayCount, c.Commnt,
-         c.AnalysisDataPath, c.ImagePath, ${IS_SEPARATOR} AS sep
-    FROM djmdSongPlaylist s
-    JOIN djmdContent c ON c.ID = s.ContentID
+         c.AnalysisDataPath, c.ImagePath, ${IS_SEPARATOR} AS sep`
+
+const TRACK_NAMES = `
     LEFT JOIN djmdArtist a ON a.ID = c.ArtistID
     LEFT JOIN djmdAlbum al ON al.ID = c.AlbumID
     LEFT JOIN djmdGenre g ON g.ID = c.GenreID
     LEFT JOIN djmdLabel l ON l.ID = c.LabelID
     LEFT JOIN djmdArtist r ON r.ID = c.RemixerID
     LEFT JOIN djmdArtist cp ON cp.ID = c.ComposerID
-    LEFT JOIN djmdKey k ON k.ID = c.KeyID
+    LEFT JOIN djmdKey k ON k.ID = c.KeyID`
+
+const TRACKS_OF = `${TRACK_COLUMNS}
+    FROM djmdSongPlaylist s
+    JOIN djmdContent c ON c.ID = s.ContentID${TRACK_NAMES}
    WHERE s.PlaylistID = ? AND ${LIVE_LINK}
    ORDER BY s.TrackNo`
+
+function rowsOf(
+  db: RekordboxDb,
+  node: SourceNode,
+  linked: { all: (id: string) => unknown[] },
+): Row[] {
+  if (!node.smart) return linked.all(node.id) as Row[]
+  const content = smartPlaylistContent(db, node.id, new Date())
+  if (content === null) return []
+  return db
+    .prepare(
+      `${TRACK_COLUMNS} FROM djmdContent c${TRACK_NAMES}
+        WHERE ${content.where}
+        ORDER BY c.StockDate DESC, c.created_at DESC`,
+    )
+    .all(...content.params) as Row[]
+}
 
 const text = (v: string | null): string => (v ?? '').trim()
 const num = (v: number | string | null): number => Number(v) || 0
@@ -221,7 +247,7 @@ export function readExportSelection(db: RekordboxDb, ids: string[]): ExportSelec
   const statement = db.prepare(TRACKS_OF)
   const stamp = db.prepare('SELECT updated_at FROM djmdPlaylist WHERE ID = ?')
   const playlists = picked.map(({ node, folders, folderIds }) => {
-    const rows = statement.all(node.id) as Row[]
+    const rows = rowsOf(db, node, statement)
     for (const r of rows) if (!tracks.has(String(r.ID))) tracks.set(String(r.ID), trackOf(r))
     const updated = stamp.get(node.id) as { updated_at: string | null } | undefined
     return {

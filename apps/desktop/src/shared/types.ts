@@ -1186,6 +1186,7 @@ export interface SourceNode {
   kind: 'folder' | 'playlist'
   count: number
   children?: SourceNode[]
+  smart?: true
 }
 
 export interface RowCue {

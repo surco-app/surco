@@ -51,6 +51,14 @@ const TREE: SourceNode[] = [
 const OPTIONS = playlistOptions(TREE)
 
 describe('playlistOptions', () => {
+  it('leaves smart playlists out of the targets, since rekordbox fills them from their rules and a track cannot be added', () => {
+    const options = playlistOptions([
+      { id: '900', name: 'Electronic', kind: 'playlist', count: 2, smart: true },
+      { id: '902', name: 'House', kind: 'playlist', count: 1 },
+    ])
+    expect(options.map((o) => o.id)).toEqual(['902'])
+  })
+
   it('lists playlists only, each with the folders above it, because the collection repeats names and only the folder path tells them apart', () => {
     expect(OPTIONS).toEqual([
       { id: '1001', name: 'Bolos de verano', path: 'BOLOS' },

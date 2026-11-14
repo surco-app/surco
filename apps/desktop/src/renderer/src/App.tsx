@@ -2772,8 +2772,16 @@ export default function App(): React.JSX.Element {
     staleTime: 0,
   })
   const cuesMarkable = cuesOpen && sourceProgram !== null
+  const openSmart = useMemo(
+    () =>
+      flattenPlaylists(browser.tree ?? []).some(
+        (h) => h.node.smart && h.node.id === browser.playlist?.id,
+      ),
+    [browser.tree, browser.playlist?.id],
+  )
   const crateOpen =
     editableOpen &&
+    !openSmart &&
     browser.playlist?.id !== RECENTLY_ADDED_ID &&
     browser.playlist?.id !== ALL_TRACKS_ID &&
     browser.playlist?.id !== MATCHING_ID
@@ -3343,6 +3351,7 @@ export default function App(): React.JSX.Element {
           h.node.id !== RECENTLY_ADDED_ID &&
           h.node.id !== ALL_TRACKS_ID &&
           h.node.id !== MATCHING_ID &&
+          !h.node.smart &&
           fixed?.(h.node) !== 'locked',
       ),
       openName: crateOpen && playlist && editCan('remove') ? playlist.name : null,

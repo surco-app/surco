@@ -44,6 +44,14 @@ const FIXTURE: ExportFixture = {
     { ID: '1000', Name: 'BASES', Attribute: 1, ParentID: 'root', Seq: 1 },
     { ID: '2000', Name: 'Makina', Attribute: 0, ParentID: '1000', Seq: 1 },
     { ID: '3000', Name: 'House', Attribute: 0, ParentID: 'root', Seq: 2 },
+    {
+      ID: '4000',
+      Name: 'Makina smart',
+      Attribute: 4,
+      ParentID: 'root',
+      Seq: 3,
+      SmartList: `<NODE Id="4000" LogicalOperator="1" AutomaticUpdate="0"><CONDITION PropertyName="genre" Operator="1" ValueUnit="" ValueLeft="Makina" ValueRight=""/></NODE>`,
+    },
   ],
   links: [
     { PlaylistID: '2000', ContentID: '101', TrackNo: 1 },
@@ -220,6 +228,12 @@ describe('readExportSelection', () => {
     const byId = new Map(read(['1000', '3000']).tracks.map((t) => [t.id, t]))
     expect(byId.get('109')?.separator).toBe(true)
     expect(byId.get('105')?.streaming).toBe(true)
+  })
+
+  it('puts on the stick the tracks a smart playlist matches, since rekordbox stores no tracks for it', () => {
+    const sel = read(['4000'])
+    expect(sel.playlists.map((p) => [p.name, p.trackIds])).toEqual([['Makina smart', ['101']]])
+    expect(sel.tracks.map((t) => [t.id, t.genre])).toEqual([['101', 'Makina']])
   })
 
   it('reads nothing for nothing ticked', () => {
