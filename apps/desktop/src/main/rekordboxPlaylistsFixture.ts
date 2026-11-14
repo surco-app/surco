@@ -156,7 +156,7 @@ export function writeRekordboxPlaylistFixture(path: string, data: PlaylistFixtur
         `INSERT INTO djmdRecommendLike (ID, ContentID1, ContentID2, UUID, rb_local_deleted,
            created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
       )
-  ;(data.matches ?? []).forEach((m, i) =>
+  for (const [i, m] of (data.matches ?? []).entries()) {
     match?.run(
       `match-${i}`,
       m.ContentID1,
@@ -165,8 +165,9 @@ export function writeRekordboxPlaylistFixture(path: string, data: PlaylistFixtur
       m.deleted ? 1 : 0,
       FIXTURE_STAMP,
       FIXTURE_STAMP,
-    ),
-  )
+    )
+  }
+
   db.prepare(
     `INSERT INTO agentRegistry (registry_id, int_1, created_at, updated_at)
      VALUES ('localUpdateCount', ?, ?, ?)`,
