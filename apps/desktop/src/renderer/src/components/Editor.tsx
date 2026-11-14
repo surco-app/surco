@@ -217,6 +217,7 @@ interface Props {
   rekordboxCue?: { contentId: string; path: string; label: string }
   matchingPartners?: MatchingPartner[]
   onMatchingPick?: (partner: MatchingPartner) => void
+  onMatchingRemove?: (partner: MatchingPartner) => void
   onCueJumpBars?: (bars: CueJumpBars) => void
   onCueQuantize?: (unit: CueQuantize) => void
   onCueFlow?: (id: string) => void
@@ -320,6 +321,7 @@ export const Editor = memo(function Editor({
   rekordboxCue,
   matchingPartners,
   onMatchingPick,
+  onMatchingRemove,
   onCueJumpBars,
   onCueQuantize,
   onCueFlow,
@@ -1728,11 +1730,13 @@ export const Editor = memo(function Editor({
                     case 'matching':
                       return (
                         !isMulti &&
-                        onMatchingPick !== undefined && (
+                        onMatchingPick !== undefined &&
+                        onMatchingRemove !== undefined && (
                           <MatchingSection
                             key={id}
                             partners={matchingPartners ?? []}
                             onPick={onMatchingPick}
+                            onRemove={onMatchingRemove}
                             open={sectionOpen.matching}
                             onToggle={() => setSectionOpen('matching', !sectionOpen.matching)}
                           />

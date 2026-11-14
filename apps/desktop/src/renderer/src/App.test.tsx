@@ -3656,6 +3656,42 @@ describe('App source playlists', () => {
       expect(within(rowTitled('Alpha')).queryByTestId('track-matching')).not.toBeInTheDocument()
     })
 
+    it('pairs two selected tracks from the row menu, asking about an open rekordbox first', async () => {
+      const match = vi.fn<ProgramReads['match']>().mockResolvedValue({ applied: true })
+      await openFactory({ dj: djReads(matchingReads.dj, { rekordbox: { match } }) })
+      fireEvent.click(rowTitled('Alpha'))
+      fireEvent.click(rowTitled('Bravo'), { metaKey: true })
+      fireEvent.contextMenu(rowTitled('Bravo'))
+      fireEvent.click(await screen.findByTestId('track-menu-matching'))
+      await waitFor(() =>
+        expect(match).toHaveBeenCalledWith(
+          'add',
+          ['c-l1', 'c-l2'],
+          expect.stringContaining('Alpha'),
+        ),
+      )
+      expect(vi.mocked(window.api.dj.askToApply).mock.invocationCallOrder[0]).toBeLessThan(
+        vi.mocked(window.api.dj.match).mock.invocationCallOrder[0],
+      )
+    })
+
+    it('offers no pairing unless exactly two tracks are selected', async () => {
+      await openFactory(matchingReads)
+      fireEvent.contextMenu(rowTitled('Bravo'))
+      await screen.findByTestId('track-menu-add-to')
+      expect(screen.queryByTestId('track-menu-matching')).not.toBeInTheDocument()
+    })
+
+    it('unpairs a partner from the editor', async () => {
+      const match = vi.fn<ProgramReads['match']>().mockResolvedValue({ applied: true })
+      await openFactory({ dj: djReads(matchingReads.dj, { rekordbox: { match } }) })
+      fireEvent.click(rowTitled('Alpha'))
+      fireEvent.click(await screen.findByTestId('matching-partner-remove'))
+      await waitFor(() =>
+        expect(match).toHaveBeenCalledWith('remove', ['c-l1', 'c-l3'], expect.any(String)),
+      )
+    })
+
     it('moves to a partner in the open list when the DJ picks it', async () => {
       await openFactory(matchingReads)
       fireEvent.click(rowTitled('Alpha'))

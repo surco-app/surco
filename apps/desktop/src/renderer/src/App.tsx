@@ -119,6 +119,7 @@ import { useLibraryCheckToast } from './hooks/useLibraryCheckToast'
 import { useLibraryCopyVerdicts } from './hooks/useLibraryCopyVerdicts'
 import { useListNavigation } from './hooks/useListNavigation'
 import { useListReviewNotice } from './hooks/useListReviewNotice'
+import { useMatchingEdit } from './hooks/useMatchingEdit'
 import { useMetadataClipboard } from './hooks/useMetadataClipboard'
 import { useMetaUndo } from './hooks/useMetaUndo'
 import { type SettingsTab, useOverlays } from './hooks/useOverlays'
@@ -2850,6 +2851,24 @@ export default function App(): React.JSX.Element {
       ),
     )
   }, [matchingPartners, scopeTracks, playlistScope])
+  const editMatching = useMatchingEdit(notifyEdit)
+  const removeMatchingPartner = useStableCallback((partner: MatchingPartner) => {
+    if (!selectedContentId || !selected) return
+    void editMatching(
+      'remove',
+      [selectedContentId, partner.contentId],
+      `${selected.listLabel} · ${partner.title}`,
+    )
+  })
+  const matchPairOf = (track: TrackItem): { pair: [string, string]; label: string } | null => {
+    if (!inRekordbox || !cuesOpen) return null
+    const targets = menuTargets(track.id)
+    if (targets.length !== 2) return null
+    const ids = targets.map((t) => playlistScope?.contentOf.get(t.id))
+    const [a, b] = ids
+    if (!a || !b || a === b) return null
+    return { pair: [a, b], label: targets.map((t) => t.listLabel).join(' · ') }
+  }
   const pickMatchingPartner = useStableCallback((partner: MatchingPartner) => {
     const track = scopeTracks.find((t) => playlistScope?.contentOf.get(t.id) === partner.contentId)
     if (track) setSelection({ ids: [track.id], anchor: track.id })
@@ -3142,6 +3161,9 @@ export default function App(): React.JSX.Element {
         onSearchWeb={searchTrackWeb}
         onStartOver={startOverTrack}
         onStartSession={sessionProgram && browser.playlist ? openSessionFromTrack : undefined}
+        onMatch={((m) => (m ? () => void editMatching('add', m.pair, m.label) : undefined))(
+          matchPairOf(menu.track),
+        )}
         onCopyMeta={onCopyMeta}
         onCopyPath={onCopyPath}
         onPasteMeta={onPasteMeta}
@@ -4209,6 +4231,7 @@ export default function App(): React.JSX.Element {
                               rekordboxCue={rekordboxCue}
                               matchingPartners={matchingPartners}
                               onMatchingPick={pickMatchingPartner}
+                              onMatchingRemove={removeMatchingPartner}
                               onCueJumpBars={onCueJumpBars}
                               onCueQuantize={onCueQuantize}
                               onCueFlow={onCueFlow}

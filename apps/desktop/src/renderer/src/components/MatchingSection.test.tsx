@@ -17,7 +17,7 @@ const TAKE: MatchingPartner = {
 }
 
 function setup(partners: MatchingPartner[], open = true) {
-  const handlers = { onPick: vi.fn(), onToggle: vi.fn() }
+  const handlers = { onPick: vi.fn(), onRemove: vi.fn(), onToggle: vi.fn() }
   render(<MatchingSection partners={partners} open={open} {...handlers} />)
   return handlers
 }
@@ -34,6 +34,13 @@ describe('MatchingSection', () => {
     const { onPick } = setup([TAKE])
     fireEvent.click(screen.getByTestId('matching-partner'))
     expect(onPick).toHaveBeenCalledWith(TAKE)
+  })
+
+  it('unpairs a partner, the same way pressing the button again does in rekordbox', () => {
+    const { onRemove, onPick } = setup([TAKE])
+    fireEvent.click(screen.getByTestId('matching-partner-remove'))
+    expect(onRemove).toHaveBeenCalledWith(TAKE)
+    expect(onPick).not.toHaveBeenCalled()
   })
 
   // Most tracks have no partner; the section stays out of the way until one does.
