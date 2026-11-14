@@ -12,6 +12,7 @@ import {
 } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ALL_TRACKS_ID } from '../../shared/allTracks'
+import { MATCHING_ID } from '../../shared/matching'
 import { autoMatchAvailable, usableProviders } from '../../shared/autoMatch'
 import { trashLimits } from '../../shared/backupPolicy'
 import { DEFAULT_CUE_GRID_TOLERANCE } from '../../shared/cueGrid'
@@ -2739,7 +2740,8 @@ export default function App(): React.JSX.Element {
   const crateOpen =
     editableOpen &&
     browser.playlist?.id !== RECENTLY_ADDED_ID &&
-    browser.playlist?.id !== ALL_TRACKS_ID
+    browser.playlist?.id !== ALL_TRACKS_ID &&
+    browser.playlist?.id !== MATCHING_ID
   const pendingCuePaths = useMemo(
     () =>
       new Set(
@@ -3066,6 +3068,7 @@ export default function App(): React.JSX.Element {
           h.node.id !== playlist?.id &&
           h.node.id !== RECENTLY_ADDED_ID &&
           h.node.id !== ALL_TRACKS_ID &&
+          h.node.id !== MATCHING_ID &&
           fixed?.(h.node) !== 'locked',
       ),
       openName: crateOpen && playlist && editCan('remove') ? playlist.name : null,

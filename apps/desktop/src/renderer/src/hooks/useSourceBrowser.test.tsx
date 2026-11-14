@@ -4,6 +4,7 @@ import { act, cleanup, renderHook, waitFor } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ALL_TRACKS_ID } from '../../../shared/allTracks'
+import { MATCHING_ID } from '../../../shared/matching'
 import type { DjApi } from '../../../shared/djApi'
 import type { DjProgram } from '../../../shared/djProgram'
 import { RECENTLY_ADDED_ID } from '../../../shared/recentlyAdded'
@@ -250,6 +251,26 @@ describe('useSourceBrowser', () => {
     await waitFor(() =>
       expect(result.current.sources).toEqual(['appleMusic', 'rekordbox', 'engine']),
     )
+  })
+
+  it('adds Matching after All tracks in rekordbox, counting each track that has a partner once', async () => {
+    const { result } = setup({
+      dj: {
+        rekordbox: {
+          recentCount: vi.fn().mockResolvedValue(1),
+          trackCount: vi.fn().mockResolvedValue(9),
+          matching: vi.fn().mockResolvedValue([
+            ['1', '2'],
+            ['2', '3'],
+          ]),
+        },
+      },
+    })
+    await waitFor(() => expect(result.current.sources).toContain('rekordbox'))
+    act(() => result.current.selectSource('rekordbox'))
+    await waitFor(() => expect(result.current.tree?.[2]?.id).toBe(MATCHING_ID))
+    expect(result.current.tree?.[1]).toMatchObject({ id: ALL_TRACKS_ID })
+    expect(result.current.tree?.[2]).toMatchObject({ name: 'sources.matching', count: 3 })
   })
 
   it('reads the Serato tree, its counts and the picked crate from Serato’s own library, never from rekordbox’s', async () => {

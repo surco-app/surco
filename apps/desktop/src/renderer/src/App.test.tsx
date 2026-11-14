@@ -17,6 +17,7 @@ import type React from 'react'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, type Mock, vi } from 'vitest'
 import type { Api } from '../../preload/api'
 import { ALL_TRACKS_ID } from '../../shared/allTracks'
+import { MATCHING_ID } from '../../shared/matching'
 import type { DjApi } from '../../shared/djApi'
 import { DEFAULT_EDITOR_SECTIONS } from '../../shared/editorSections'
 import { emptyMetadata } from '../../shared/metadata'
@@ -4268,6 +4269,46 @@ describe('App source playlists', () => {
       fireEvent.click(await screen.findByTestId('track-menu-add-to'))
       expect(screen.getByTestId('track-menu-playlist-h')).toBeInTheDocument()
       expect(screen.queryByTestId(`track-menu-playlist-${ALL_TRACKS_ID}`)).not.toBeInTheDocument()
+    })
+
+    // The rows come from rekordbox's pairs: a reorder, removal or separator would name a
+    // playlist rekordbox does not have.
+    it('opens Matching with no reorder, removal or separator on its rows', async () => {
+      await openFactory({
+        dj: djReads({
+          rekordbox: {
+            matching: vi.fn<ProgramReads['matching']>().mockResolvedValue([['r3', 'r1']]),
+            playlist: vi
+              .fn<ProgramReads['playlist']>()
+              .mockImplementation(async (id) => (id === MATCHING_ID ? ALL_ENTRIES : FACTORY_ENTRIES)),
+          },
+        }),
+      })
+      fireEvent.click(await screen.findByTestId(`source-node-${MATCHING_ID}`))
+      await waitFor(() =>
+        expect(titles()).toEqual([expect.stringContaining('Charlie'), expect.stringContaining('Alpha')]),
+      )
+      expect(screen.queryByTestId('reorder-hint')).not.toBeInTheDocument()
+      expectNoReorderLine()
+      fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+      await screen.findByTestId('track-menu-add-to')
+      expect(screen.queryByTestId('track-menu-remove-from')).not.toBeInTheDocument()
+      expect(screen.queryByTestId('track-menu-insert-separator')).not.toBeInTheDocument()
+    })
+
+    it('never offers Matching as a playlist to add tracks to, since a track joins it by being paired', async () => {
+      await openFactory({
+        dj: djReads({
+          rekordbox: {
+            matching: vi.fn<ProgramReads['matching']>().mockResolvedValue([['a', 'b']]),
+          },
+        }),
+      })
+      await screen.findByTestId(`source-node-${MATCHING_ID}`)
+      fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+      fireEvent.click(await screen.findByTestId('track-menu-add-to'))
+      expect(screen.getByTestId('track-menu-playlist-h')).toBeInTheDocument()
+      expect(screen.queryByTestId(`track-menu-playlist-${MATCHING_ID}`)).not.toBeInTheDocument()
     })
 
     describe('background work', () => {

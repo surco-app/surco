@@ -12,6 +12,7 @@ import type React from 'react'
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ALL_TRACKS_ID } from '../../../shared/allTracks'
+import { MATCHING_ID } from '../../../shared/matching'
 import { RECENTLY_ADDED_ID } from '../../../shared/recentlyAdded'
 import type { PlaylistSource, SourceNode } from '../../../shared/types'
 import type { NewPlaylist } from '../lib/commands'
@@ -19,6 +20,7 @@ import { isPendingNode, subtreeCounts, subtreeIds } from '../lib/playlistEdits'
 import { carriesOnlyFiles, draggedRows, isTreeNodeDrag, TREE_NODE_TYPE } from '../lib/reorderDrag'
 import { ConfirmDialog } from './ConfirmDialog'
 import { ModalExit } from './ModalShell'
+import { MatchingIcon } from './SourceIcons'
 import { Tooltip } from './Tooltip'
 
 const SKELETON_NAME_WIDTHS = ['42%', '28%', '55%', '36%', '47%', '31%', '51%', '24%']
@@ -341,14 +343,16 @@ export const SourceTree = memo(function SourceTree({
     const expandable = isFolder || parentCrate
     const recent = node.id === RECENTLY_ADDED_ID
     const all = node.id === ALL_TRACKS_ID
+    const matching = node.id === MATCHING_ID
     const pendingNode = isPendingNode(node.id)
-    const nodeEdit = recent || all || pendingNode ? undefined : edit
+    const nodeEdit = recent || all || matching || pendingNode ? undefined : edit
     const fixedAs = fixed?.(node) ?? null
     const canDrag =
       Boolean(edit?.onMove) &&
       !hits &&
       !recent &&
       !all &&
+      !matching &&
       fixedAs === null &&
       !pendingNode &&
       renaming !== node.id
@@ -363,6 +367,7 @@ export const SourceTree = memo(function SourceTree({
       if (
         recent ||
         all ||
+        matching ||
         pendingNode ||
         draggedIds.has(node.id) ||
         crateNameTaken(node.children)
@@ -486,6 +491,13 @@ export const SourceTree = memo(function SourceTree({
                 data-testid="source-node-all-icon"
                 className="shrink-0 text-fg-faint"
                 aria-hidden="true"
+              />
+            )}
+            {matching && (
+              <MatchingIcon
+                size={13}
+                data-testid="source-node-matching-icon"
+                className="shrink-0 text-fg-faint"
               />
             )}
             <span className="min-w-0 truncate">{node.name}</span>
