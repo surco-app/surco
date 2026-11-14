@@ -824,6 +824,7 @@ function wiredDj(): DjApi {
     membership: (p) => wiredRead(p, 'membership'),
     collection: (p) => wiredRead(p, 'collection'),
     matching: async () => [],
+    playedTogether: async () => [],
     editPlaylist: (p) => wiredEdit(p, 'editPlaylist', { applied: false, reason: 'unreadable' }),
     hasSeparator: (p) => wiredEdit(p, 'hasSeparator', false),
     match: (p) => notWiredDj('match', p),

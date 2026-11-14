@@ -156,6 +156,7 @@ export interface ProgramReads {
   membership(paths: string[]): Promise<Record<string, string[]>>
   collection(): Promise<CollectionTrack[]>
   matching(): Promise<[string, string][]>
+  playedTogether(playlistIds: string[]): Promise<string[][]>
   editPlaylist(edit: RekordboxPlaylistEdit, label?: string): Promise<RekordboxEditResult>
   hasSeparator(): Promise<boolean>
   match(
@@ -184,6 +185,7 @@ const EMPTY_READS: ProgramReads = {
   membership: async () => ({}),
   collection: async () => [],
   matching: async () => [],
+  playedTogether: async () => [],
   editPlaylist: async () => ({ applied: false, reason: 'unreadable' }),
   hasSeparator: async () => false,
   match: async () => ({ applied: false, reason: 'unreadable' }),
@@ -219,6 +221,7 @@ export function djReads(...layers: (DjReads | DjApi | undefined)[]): DjApi {
     membership: vi.fn((p, paths) => of(p).membership(paths)),
     collection: vi.fn((p) => of(p).collection()),
     matching: vi.fn((p) => of(p).matching()),
+    playedTogether: vi.fn((p, ids) => of(p).playedTogether(ids)),
     editPlaylist: vi.fn((p, ...args: Parameters<ProgramReads['editPlaylist']>) =>
       of(p).editPlaylist(...args),
     ),

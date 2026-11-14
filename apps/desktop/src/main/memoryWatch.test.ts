@@ -86,8 +86,6 @@ describe('processSamples', () => {
     const metrics = [
       { type: 'Tab', pid: 1, memory: { workingSetSize: 2048, peakWorkingSetSize: 4096 } },
     ] as Electron.ProcessMetric[]
-    expect(processSamples(metrics)).toEqual([
-      { type: 'Tab', pid: 1, workingSetMb: 2, peakMb: 4 },
-    ])
+    expect(processSamples(metrics)).toEqual([{ type: 'Tab', pid: 1, workingSetMb: 2, peakMb: 4 }])
   })
 })
