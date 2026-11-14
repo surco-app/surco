@@ -23,7 +23,7 @@ export function playlistOptions(tree: readonly SourceNode[]): PlaylistOption[] {
   const out: PlaylistOption[] = []
   const walk = (nodes: readonly SourceNode[], trail: string[]): void => {
     for (const node of nodes) {
-      if (node.kind === 'playlist')
+      if (node.kind === 'playlist' && !node.smart)
         out.push({ id: node.id, name: node.name, path: trail.join(' › ') })
       walk(node.children ?? [], [...trail, node.name])
     }

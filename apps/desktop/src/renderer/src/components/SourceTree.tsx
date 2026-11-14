@@ -4,6 +4,7 @@ import {
   Clock,
   FolderPlus,
   Library,
+  ListFilter,
   ListPlus,
   Search,
   Usb,
@@ -344,8 +345,9 @@ export const SourceTree = memo(function SourceTree({
     const recent = node.id === RECENTLY_ADDED_ID
     const all = node.id === ALL_TRACKS_ID
     const matching = node.id === MATCHING_ID
+    const smart = node.smart === true
     const pendingNode = isPendingNode(node.id)
-    const nodeEdit = recent || all || matching || pendingNode ? undefined : edit
+    const nodeEdit = recent || all || matching || smart || pendingNode ? undefined : edit
     const fixedAs = fixed?.(node) ?? null
     const canDrag =
       Boolean(edit?.onMove) &&
@@ -353,6 +355,7 @@ export const SourceTree = memo(function SourceTree({
       !recent &&
       !all &&
       !matching &&
+      !smart &&
       fixedAs === null &&
       !pendingNode &&
       renaming !== node.id
@@ -368,6 +371,7 @@ export const SourceTree = memo(function SourceTree({
         recent ||
         all ||
         matching ||
+        smart ||
         pendingNode ||
         draggedIds.has(node.id) ||
         crateNameTaken(node.children)
@@ -489,6 +493,14 @@ export const SourceTree = memo(function SourceTree({
               <Library
                 size={13}
                 data-testid="source-node-all-icon"
+                className="shrink-0 text-fg-faint"
+                aria-hidden="true"
+              />
+            )}
+            {smart && (
+              <ListFilter
+                size={13}
+                data-testid="source-node-smart-icon"
                 className="shrink-0 text-fg-faint"
                 aria-hidden="true"
               />
