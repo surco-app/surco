@@ -220,6 +220,14 @@ describe('buildFieldSpecs (single mode)', () => {
     expect(specs.find((s) => s.key === 'artist')?.formatResult).toBeUndefined()
   })
 
+  it('hands the title-format button to the title spec only', () => {
+    // The one-click T lives in the title box; no other field rebuilds itself from the pattern.
+    const titleFormatAction = { onApply: vi.fn(), disabled: false }
+    const specs = buildFieldSpecs(params({ visibleFields: ['title', 'artist'], titleFormatAction }))
+    expect(specs.find((s) => s.key === 'title')?.formatAction).toBe(titleFormatAction)
+    expect(specs.find((s) => s.key === 'artist')?.formatAction).toBeUndefined()
+  })
+
   // A box as wide as the title told the user nothing about what fits in it and cost a whole
   // row per four-digit year. The width comes from what the tag can hold, never from the
   // value, so an empty field is as wide as a filled one and nothing jumps while typing.

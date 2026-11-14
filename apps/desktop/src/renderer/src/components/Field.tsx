@@ -1,16 +1,17 @@
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, Type } from 'lucide-react'
 import type React from 'react'
 import { memo, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLatest } from '../hooks/useLatest'
 import type { TagList } from '../lib/bulkEdit'
 import { csvHas, toggleCsv } from '../lib/csv'
-import type { FieldCleanedNote, FieldPreviousNote } from '../lib/fieldSpecs'
+import type { FieldCleanedNote, FieldFormatAction, FieldPreviousNote } from '../lib/fieldSpecs'
 import type { FieldWidth } from '../lib/fields'
 import { holdPendingEdit } from '../lib/pendingEdits'
 import { CleanSpark } from './CleanSpark'
 import { FieldInsertMenu, type InsertSource } from './FieldInsertMenu'
 import { SuggestionChips } from './SuggestionChips'
+import { Tooltip } from './Tooltip'
 
 // How long typing pauses before the edit is committed to the global track array. Each
 // keystroke that reaches that array re-runs an O(number of tracks) derived pipeline
@@ -51,6 +52,7 @@ interface FieldProps {
   insertSources?: InsertSource[]
   cleanResult?: string
   formatResult?: string
+  formatAction?: FieldFormatAction
   cleaned?: FieldCleanedNote
   previous?: FieldPreviousNote
   // Filled by Surco from the analysis (Quality with its Auto on): shown, not typed into.
@@ -80,6 +82,7 @@ export const Field = memo(function Field({
   insertSources,
   cleanResult,
   formatResult,
+  formatAction,
   cleaned,
   previous,
   readOnly,
@@ -234,7 +237,7 @@ export const Field = memo(function Field({
           // A column of empty Album/Year/Genre boxes used to read as heavy black slabs
           // that dominated the form; now they wait quietly until you engage one.
           className={`w-full rounded-lg border ${readOnly ? 'border-dashed' : ''} border-[var(--color-line-strong)] bg-[var(--color-panel-2)]/30 px-2.5 py-1.5 text-sm outline-none compact:py-1 transition-colors placeholder:text-fg-faint hover:border-[var(--color-line-strong)] hover:bg-[var(--color-hover)]/50 focus:border-[var(--color-accent)] focus:bg-[var(--color-field)] ${
-            hasMenu || listsValues ? 'pr-8' : ''
+            formatAction && hasMenu ? 'pr-14' : hasMenu || listsValues || formatAction ? 'pr-8' : ''
           }`}
         />
         {listsValues && (
@@ -279,6 +282,21 @@ export const Field = memo(function Field({
               </div>
             )}
           </>
+        )}
+        {formatAction && (
+          <button
+            type="button"
+            data-testid={`field-format-${name}`}
+            aria-label={tr('editor.applyTitleFormatHint')}
+            disabled={formatAction.disabled}
+            onClick={formatAction.onApply}
+            className={`press absolute top-1/2 -translate-y-1/2 rounded p-1 text-fg-faint hover:bg-[var(--color-hover)] hover:text-fg disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-fg-faint ${
+              hasMenu ? 'right-7' : 'right-1.5'
+            }`}
+          >
+            <Type className="h-3.5 w-3.5" aria-hidden="true" />
+            <Tooltip label={tr('editor.applyTitleFormatHint')} />
+          </button>
         )}
         {hasMenu && (
           <FieldInsertMenu

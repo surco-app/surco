@@ -88,6 +88,7 @@ function renderField(
       insertSources={f.insertSources}
       cleanResult={f.cleanResult}
       formatResult={f.formatResult}
+      formatAction={f.formatAction}
       cleaned={f.cleaned}
       previous={f.previous}
       readOnly={f.readOnly}

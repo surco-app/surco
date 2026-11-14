@@ -79,7 +79,12 @@ import { isTypingTarget } from '../lib/keymap'
 import { librarySourceOf } from '../lib/librarySource'
 import { missingSummary } from '../lib/missingSummary'
 import { scrollBehavior } from '../lib/motion'
-import { autoNamesFile, renderOutputName, titleFormatPatches } from '../lib/outputName'
+import {
+  autoNamesFile,
+  emptyTitleFormatFields,
+  renderOutputName,
+  titleFormatPatches,
+} from '../lib/outputName'
 import { isMacOS, revealCommandKey } from '../lib/platform'
 import { splitPosition } from '../lib/position'
 import { fileExtension, libraryCopyFormat } from '../lib/properties'
@@ -905,6 +910,17 @@ export const Editor = memo(function Editor({
       ? undefined
       : titleFormatPatches(titleFormat, [{ ...item, meta: resolvedMeta }])[0]?.meta.title
 
+  const titleFormatOff =
+    titleFormatResult === undefined &&
+    emptyTitleFormatFields(titleFormat, [{ ...item, meta: resolvedMeta }]).length === 0
+  const titleFormatAction = useMemo(
+    () =>
+      onApplyTitleFormat && titleFormat.trim() !== ''
+        ? { onApply: onApplyTitleFormat, disabled: titleFormatOff }
+        : undefined,
+    [onApplyTitleFormat, titleFormat, titleFormatOff],
+  )
+
   // Fills tags from each file's own name (auto-detecting the common rip naming): the primary
   // track in single view, every selected track in multi. Merges, so only matched fields change.
   function singleTrackOnly(
@@ -1220,6 +1236,7 @@ export const Editor = memo(function Editor({
         insertSources,
         albumCleanResult,
         titleFormatResult,
+        titleFormatAction,
         tr,
         singleOnChange,
         bulkOnChange,
@@ -1250,6 +1267,7 @@ export const Editor = memo(function Editor({
       insertSources,
       albumCleanResult,
       titleFormatResult,
+      titleFormatAction,
       tr,
       singleOnChange,
       bulkOnChange,
