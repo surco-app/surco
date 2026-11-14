@@ -36,6 +36,40 @@ export function sessionOptionsOf(
   }
 }
 
+export function sessionPool(input: {
+  sources: readonly SessionSource[]
+  chosen: readonly string[]
+  rows: ReadonlyMap<string, readonly SourcePlaylistEntry[]>
+  library?: Readonly<Record<string, 'base' | 'vocal'>>
+  phases?: Readonly<Record<string, SessionPhase>>
+}): SessionTrack[] {
+  const { sources, rows, library = {}, phases = {} } = input
+  const chosen = new Set(input.chosen)
+  const evidence = new Map<string, Set<'base' | 'vocal'>>()
+  for (const [playlistId, role] of Object.entries(library)) {
+    if (!chosen.has(playlistId)) continue
+    for (const entry of rows.get(playlistId) ?? []) {
+      const id = trackIdOf(entry)
+      if (id === null) continue
+      const held = evidence.get(id) ?? new Set<'base' | 'vocal'>()
+      held.add(role)
+      evidence.set(id, held)
+    }
+  }
+  const marks = new Map<string, Set<SessionPhase>>()
+  for (const [playlistId, phase] of Object.entries(phases)) {
+    if (!chosen.has(playlistId)) continue
+    for (const entry of rows.get(playlistId) ?? []) {
+      const id = trackIdOf(entry)
+      if (id === null) continue
+      const held = marks.get(id) ?? new Set<SessionPhase>()
+      held.add(phase)
+      marks.set(id, held)
+    }
+  }
+  return toCandidates(sources, new Date(), evidence, marks)
+}
+
 export function runSession(input: {
   answers: SessionAnswers
   roles: Readonly<Record<string, PlaylistRole>>
@@ -62,30 +96,7 @@ export function runSession(input: {
     role: roles[id] ?? 'any',
     entries: rows.get(id) ?? [],
   }))
-  const chosen = new Set(answers.sources)
-  const evidence = new Map<string, Set<'base' | 'vocal'>>()
-  for (const [playlistId, role] of Object.entries(library)) {
-    if (!chosen.has(playlistId)) continue
-    for (const entry of rows.get(playlistId) ?? []) {
-      const id = trackIdOf(entry)
-      if (id === null) continue
-      const held = evidence.get(id) ?? new Set<'base' | 'vocal'>()
-      held.add(role)
-      evidence.set(id, held)
-    }
-  }
-  const marks = new Map<string, Set<SessionPhase>>()
-  for (const [playlistId, phase] of Object.entries(phases)) {
-    if (!chosen.has(playlistId)) continue
-    for (const entry of rows.get(playlistId) ?? []) {
-      const id = trackIdOf(entry)
-      if (id === null) continue
-      const held = marks.get(id) ?? new Set<SessionPhase>()
-      held.add(phase)
-      marks.set(id, held)
-    }
-  }
-  const pool = toCandidates(sources, new Date(), evidence, marks)
+  const pool = sessionPool({ sources, chosen: answers.sources, rows, library, phases })
   const sequences = mixedSequences(sources.filter((_, i) => !made.has(answers.sources[i])))
   const ids = new Set(pool.map((track) => track.id))
   const pairs = withMatching(mineCombos(sequences, ids, 1), matching, ids)
