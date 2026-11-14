@@ -190,6 +190,84 @@ function phasesOf(
   return out
 }
 
+const AUDIT_WINDOW_BEATS = 16
+const AUDIT_STEP_BEATS = 8
+
+export interface GridAudit {
+  windows: { ms: number; offsetMs: number }[]
+  total: number
+}
+
+export function auditGrid(
+  pcm: Float32Array,
+  sampleRate: number,
+  beatsMs: number[],
+  leadMs: number,
+): GridAudit {
+  const levels = energy(pcm, FINE_HOP)
+  const msPerFrame = (FINE_HOP / sampleRate) * 1000
+  let total = 0
+  for (const l of levels) total += l
+  const loud = (total / Math.max(1, levels.length)) * SILENT_WINDOW_RATIO
+  const reach = (2 * FINE_BINS) / BINS
+  const windows: GridAudit['windows'] = []
+  let count = 0
+  for (let i = 0; i + AUDIT_WINDOW_BEATS < beatsMs.length; i += AUDIT_STEP_BEATS) {
+    count++
+    const sum = new Float64Array(FINE_BINS)
+    const hits = new Float64Array(FINE_BINS)
+    let level = 0
+    let frames = 0
+    for (let k = i; k < i + AUDIT_WINDOW_BEATS; k++) {
+      const beat = beatsMs[k]
+      const period = beatsMs[k + 1] - beat
+      const from = Math.max(0, Math.floor((beat - period / 2 - leadMs) / msPerFrame))
+      const to = Math.min(levels.length, Math.floor((beat + period / 2 - leadMs) / msPerFrame))
+      for (let f = from; f < to; f++) {
+        const bin = Math.floor(((f * msPerFrame + leadMs - beat) / period + 0.5) * FINE_BINS)
+        if (bin < 0 || bin >= FINE_BINS) continue
+        sum[bin] += levels[f]
+        hits[bin]++
+        level += levels[f]
+        frames++
+      }
+    }
+    if (frames === 0 || level / frames < loud) continue
+    const mean = (bin: number): number => {
+      const at = ((bin % FINE_BINS) + FINE_BINS) % FINE_BINS
+      return Math.log(sum[at] / (hits[at] || 1) + LEVEL_FLOOR)
+    }
+    const rises = Array.from({ length: FINE_BINS }, (_, b) => {
+      let rise = 0
+      for (let k = 1; k <= reach; k++) rise += mean(b + k) - mean(b - k)
+      return rise
+    })
+    const steepest = rises.indexOf(Math.max(...rises))
+    const best = hitStart(rises, steepest)
+    const apart = (a: number, b: number) => {
+      const d = Math.abs(a - b) % FINE_BINS
+      return Math.min(d, FINE_BINS - d) > FINE_BINS / 16
+    }
+    const second = Math.max(
+      0,
+      ...rises.filter((_, b) =>
+        [best, best + FINE_BINS / 2, steepest, steepest + FINE_BINS / 2].every((at) =>
+          apart(b, at),
+        ),
+      ),
+    )
+    if (second > 0 && rises[steepest] / second < FINE_SURE_RATIO) continue
+    const period = (beatsMs[i + AUDIT_WINDOW_BEATS] - beatsMs[i]) / AUDIT_WINDOW_BEATS
+    const phase = (best + 0.5) / FINE_BINS - 0.5
+    const folded = Math.abs(phase) > 0.25 ? phase - Math.sign(phase) * 0.5 : phase
+    windows.push({
+      ms: beatsMs[i + AUDIT_WINDOW_BEATS / 2],
+      offsetMs: folded * period + REKORDBOX_BEAT_AFTER_RISE_MS,
+    })
+  }
+  return { windows, total: count }
+}
+
 export function provisionalGrid(
   fit: BeatGridFit,
   shiftMs: number,

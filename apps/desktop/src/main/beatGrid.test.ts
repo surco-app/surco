@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { fitBeatGrid, provisionalGrid } from './beatGrid'
+import { auditGrid, fitBeatGrid, provisionalGrid, REKORDBOX_BEAT_AFTER_RISE_MS } from './beatGrid'
 import { TEMPO_SAMPLE_RATE } from './tempo'
 
 const SR = TEMPO_SAMPLE_RATE
@@ -187,5 +187,49 @@ describe('fine measurements along the track', () => {
     if (!fit?.fine) throw new Error('a clear kick must give fine measurements')
     expect(fit.fine.filter((p) => p.ms > 52000 && p.ms < 68000)).toEqual([])
     expect(fit.fine.filter((p) => p.ms < 48000).length).toBeGreaterThan(15)
+  })
+})
+
+describe('auditGrid', () => {
+  const programGrid = (bpm: number, firstMs: number, seconds: number, offsetMs: number) => {
+    const period = 60000 / bpm
+    const beats: number[] = []
+    for (let ms = firstMs; ms < seconds * 1000; ms += period)
+      beats.push(ms + REKORDBOX_BEAT_AFTER_RISE_MS + offsetMs)
+    return beats
+  }
+
+  it('finds the hit on a grid that is right, so a good grid is never flagged', () => {
+    const audit = auditGrid(danceTrack(140, 250, 120), SR, programGrid(140, 250, 120, 0), 0)
+    expect(audit.windows.length).toBeGreaterThan(audit.total * 0.8)
+    expect(audit.windows.every((w) => Math.abs(w.offsetMs) <= 2)).toBe(true)
+  })
+
+  it("tells how far the hit sits before a grid laid late, measured on the program's own beats", () => {
+    const audit = auditGrid(danceTrack(140, 250, 120), SR, programGrid(140, 250, 120, 20), 0)
+    expect(audit.windows.length).toBeGreaterThan(audit.total * 0.8)
+    expect(audit.windows.every((w) => Math.abs(w.offsetMs + 20) <= 3)).toBe(true)
+  })
+
+  it("reads the beats on the program's clock, which runs ahead of the decode by its lead", () => {
+    const audit = auditGrid(danceTrack(140, 250, 120), SR, programGrid(140, 301, 120, 0), 51)
+    expect(audit.windows.every((w) => Math.abs(w.offsetMs) <= 2)).toBe(true)
+  })
+
+  it('judges nothing where there is no beat to hear, so an a cappella is never blamed on its grid', () => {
+    const pcm = new Float32Array(SR * 120)
+    let noise = 1
+    for (let i = 0; i < pcm.length; i++) {
+      noise = (noise * 16807) % 2147483647
+      pcm[i] = 0.3 * (noise / 2147483647 - 0.5) * (1 + Math.sin((2 * Math.PI * i) / (SR * 3.7)))
+    }
+    const audit = auditGrid(pcm, SR, programGrid(140, 250, 120, 0), 0)
+    expect(audit.windows.length).toBeLessThan(audit.total * 0.25)
+  })
+
+  it('measures a grid at its own tempo, so a tempo Surco hears wrong cannot make a good grid look bad', () => {
+    const audit = auditGrid(danceTrack(160, 250, 120), SR, programGrid(160, 250, 120, 0), 0)
+    expect(audit.windows.length).toBeGreaterThan(audit.total * 0.8)
+    expect(audit.windows.every((w) => Math.abs(w.offsetMs) <= 2)).toBe(true)
   })
 })
