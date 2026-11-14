@@ -266,6 +266,7 @@ export type ApiOverrides = Omit<Partial<Api>, 'cues'> & { cues?: Partial<CuesApi
 
 const NO_CUES: CuesApi = {
   trackCues: async () => null,
+  liveCues: async () => ({}),
   waveDetail: async () => null,
   waveFine: async () => null,
   dropInput: async () => null,

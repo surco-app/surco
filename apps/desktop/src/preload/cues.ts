@@ -4,6 +4,7 @@ import type { CuesApi } from './api'
 export function createCuesApi(ipc: Pick<IpcRenderer, 'invoke'>): CuesApi {
   return {
     trackCues: (contentId) => ipc.invoke('cues:trackCues', contentId),
+    liveCues: (contentIds) => ipc.invoke('cues:liveCues', contentIds),
     waveDetail: (contentId) => ipc.invoke('cues:waveDetail', contentId),
     waveFine: (contentId) => ipc.invoke('cues:waveFine', contentId),
     dropInput: (contentId) => ipc.invoke('cues:dropInput', contentId),

@@ -9,6 +9,7 @@ import type {
   CopyReason,
   FineWave,
   LibraryTracks,
+  LiveCues,
   QueuedCues,
   SaveCuesRequest,
   SurcoGrid,
@@ -35,6 +36,23 @@ export function registerCuesIpc(host: {
   ipcMain.handle('cues:trackCues', async (_e, contentId: string): Promise<TrackCues | null> => {
     const source = sourceOf(contentId)
     return source ? source.trackCues(contentId) : null
+  })
+  ipcMain.handle('cues:liveCues', async (_e, contentIds: string[]) => {
+    const out: Record<string, LiveCues> = {}
+    for (const program of CUE_PROGRAMS) {
+      const source = host.sources[program]
+      const mine = contentIds.filter((id) => programOf(id) === program)
+      if (!source || mine.length === 0) continue
+      if (source.liveCues) {
+        Object.assign(out, await source.liveCues(mine))
+        continue
+      }
+      for (const id of mine) {
+        const read = await source.trackCues(id)
+        if (read) out[id] = { cues: read.cues, fingerprint: read.fingerprint }
+      }
+    }
+    return out
   })
   ipcMain.handle('cues:waveDetail', async (_e, contentId: string): Promise<Uint16Array | null> => {
     const source = sourceOf(contentId)

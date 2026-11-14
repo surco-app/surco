@@ -1945,6 +1945,11 @@ export interface TrackCueRow {
   name?: string
 }
 
+export interface LiveCues {
+  cues: TrackCueRow[]
+  fingerprint: string
+}
+
 export interface TrackCues {
   contentId: string
   analysed: boolean
