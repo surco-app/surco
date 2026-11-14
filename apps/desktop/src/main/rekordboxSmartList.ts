@@ -40,6 +40,7 @@ const NUMBER: Readonly<Record<string, string>> = {
 const DATE: Readonly<Record<string, string>> = {
   stockDate: 'c.StockDate',
   dateReleased: 'c.ReleaseDate',
+  dateCreated: 'c.DateCreated',
 }
 
 const ENTITIES: Readonly<Record<string, string>> = {

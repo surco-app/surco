@@ -26,7 +26,13 @@ const CONTENT: FixtureContent[] = [
   track('house-tagged', { GenreID: 'g4', ReleaseYear: 2019, StockDate: '2024-06-27' }),
   track('house-untagged', { GenreID: 'g4', ReleaseYear: 2019, StockDate: '2024-06-27' }),
   track('dnb', { GenreID: 'g5', ReleaseYear: 2019, StockDate: '2024-06-27' }),
-  track('fast', { BPM: 14050, Length: 420, Subtitle: 'Extended Remix', ReleaseDate: '2023-02-17' }),
+  track('fast', {
+    BPM: 14050,
+    Length: 420,
+    Subtitle: 'Extended Remix',
+    ReleaseDate: '2023-02-17',
+    DateCreated: '2026-01-25',
+  }),
   track('long', { BPM: 12800, Length: 480, Rating: 5, ColorID: '7', ReleaseDate: '2019-05-01' }),
 ]
 
@@ -133,10 +139,10 @@ describe('smartListContent', () => {
     expect(ids(list(1, condition('grouping', 1, '7')))).toEqual(['long'])
     expect(ids(list(1, condition('mixName', 8, 'remix')))).toEqual(['fast'])
     expect(ids(list(1, condition('dateReleased', 4, '2020-01-01')))).toEqual(['long'])
+    expect(ids(list(1, condition('dateCreated', 3, '2025-11-01')))).toEqual(['fast'])
   })
 
   it('gives up on a list with a rule it does not know rather than showing the wrong tracks', () => {
-    expect(smartListContent(list(1, condition('dateCreated', 3, '2026-01-01')), NOW)).toBeNull()
     expect(smartListContent(list(1, condition('lyrics', 1, 'x')), NOW)).toBeNull()
     expect(smartListContent('not xml', NOW)).toBeNull()
   })

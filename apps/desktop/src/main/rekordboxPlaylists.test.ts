@@ -610,9 +610,11 @@ describe('rekordbox smart playlists', () => {
 
   afterAll(() => rdb.close())
 
-  it('lists a smart playlist with the tracks its rules match, since rekordbox keeps only the rules', () => {
+  // The blank separator file is one more track to rekordbox: Prueba 2 with Date Created
+  // > 2025-11-01 showed 679 on Vicent's collection, and the 679th was that file.
+  it('lists a smart playlist with the tracks its rules match, the blank separator file among them as rekordbox counts it', () => {
     expect(readRekordboxTree(rdb, now)).toEqual([
-      { id: '900', name: 'Electronic', kind: 'playlist', count: 2, smart: true },
+      { id: '900', name: 'Electronic', kind: 'playlist', count: 3, smart: true },
       { id: '902', name: 'House', kind: 'playlist', count: 1 },
     ])
   })
@@ -630,6 +632,6 @@ describe('rekordbox smart playlists', () => {
 
   it('opens a smart playlist on the tracks its rules match, newest first', () => {
     const rows = readRekordboxPlaylistWithPreview(rdb, share, '900', () => false, now)
-    expect(rows.map((r) => r.contentId)).toEqual(['c2', 'c1'])
+    expect(rows.map((r) => r.contentId)).toEqual(['c2', 'c1', 'sep'])
   })
 })
