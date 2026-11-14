@@ -51,12 +51,12 @@ const ENTITIES: Readonly<Record<string, string>> = {
   apos: "'",
 }
 
-const unescape = (value: string): string =>
+const decodeEntities = (value: string): string =>
   value.replace(/&(amp|lt|gt|quot|apos);/g, (_, name: string) => ENTITIES[name])
 
 function attribute(tag: string, name: string): string | null {
   const found = tag.match(new RegExp(`\\b${name}="([^"]*)"`))
-  return found ? unescape(found[1]) : null
+  return found ? decodeEntities(found[1]) : null
 }
 
 function conditionsOf(xml: string): { any: boolean; conditions: Condition[] } | null {
