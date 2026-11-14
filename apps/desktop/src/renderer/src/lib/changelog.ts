@@ -11,6 +11,7 @@ const RELEASES: Record<Locale, () => Promise<{ default: unknown }>> = {
   fr: () => import('../../../../../web/src/i18n/changelog/fr.json'),
   'pt-BR': () => import('../../../../../web/src/i18n/changelog/pt-BR.json'),
   ja: () => import('../../../../../web/src/i18n/changelog/ja.json'),
+  ca: () => import('../../../../../web/src/i18n/changelog/ca.json'),
 }
 
 export async function changelogReleases(locale: string): Promise<ChangelogRelease[]> {

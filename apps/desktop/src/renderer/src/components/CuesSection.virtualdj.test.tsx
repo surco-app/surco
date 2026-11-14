@@ -167,7 +167,7 @@ describe('CuesSection on a VirtualDJ track', () => {
 
 describe('the VirtualDJ cue texts', () => {
   it('talk about the cues the editor shows, not about lists', () => {
-    for (const lng of ['es', 'en', 'de', 'fr', 'pt-BR', 'ja']) {
+    for (const lng of ['es', 'en', 'de', 'fr', 'pt-BR', 'ja', 'ca']) {
       const waiting = i18n.t('editor.cues.virtualdj.waiting', { lng })
       expect(waiting).not.toMatch(/list|lista|liste|リスト/i)
       expect(waiting).not.toMatch(/—/)

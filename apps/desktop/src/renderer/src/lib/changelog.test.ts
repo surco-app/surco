@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import changelogCa from '../../../../../web/src/i18n/changelog/ca.json'
 import changelogDe from '../../../../../web/src/i18n/changelog/de.json'
 import changelogEn from '../../../../../web/src/i18n/changelog/en.json'
 import changelogEs from '../../../../../web/src/i18n/changelog/es.json'
@@ -15,6 +16,7 @@ describe('desktop changelog locale', () => {
     expect(await changelogReleases('fr')).toBe(changelogFr)
     expect(await changelogReleases('pt-BR')).toBe(changelogPtBR)
     expect(await changelogReleases('ja')).toBe(changelogJa)
+    expect(await changelogReleases('ca')).toBe(changelogCa)
   })
 
   it('falls back to the English history for a language without a changelog', async () => {
@@ -38,6 +40,7 @@ describe('desktop changelog locale', () => {
     vi.doMock('../../../../../web/src/i18n/changelog/fr.json', track('fr'))
     vi.doMock('../../../../../web/src/i18n/changelog/pt-BR.json', track('pt-BR'))
     vi.doMock('../../../../../web/src/i18n/changelog/ja.json', track('ja'))
+    vi.doMock('../../../../../web/src/i18n/changelog/ca.json', track('ca'))
 
     const { changelogReleases } = await import('./changelog')
     expect(loaded).toEqual([])
@@ -51,6 +54,7 @@ describe('desktop changelog locale', () => {
     vi.doUnmock('../../../../../web/src/i18n/changelog/fr.json')
     vi.doUnmock('../../../../../web/src/i18n/changelog/pt-BR.json')
     vi.doUnmock('../../../../../web/src/i18n/changelog/ja.json')
+    vi.doUnmock('../../../../../web/src/i18n/changelog/ca.json')
     vi.resetModules()
   })
 })

@@ -1624,7 +1624,8 @@
       "es": "Español",
       "de": "Deutsch",
       "fr": "Français",
-      "pt-BR": "Português"
+      "pt-BR": "Português",
+      "ca": "Català"
     },
     "configDir": "設定フォルダー",
     "configDirDefault": "アプリの標準フォルダー",

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import ca from './locales/ca.json'
 import de from './locales/de.json'
 import en from './locales/en.json'
 import es from './locales/es.json'
@@ -6,7 +7,7 @@ import fr from './locales/fr.json'
 import ja from './locales/ja.json'
 import ptBR from './locales/pt-BR.json'
 
-const locales = { es, en, de, fr, 'pt-BR': ptBR, ja }
+const locales = { es, en, de, fr, 'pt-BR': ptBR, ja, ca }
 
 describe.each(Object.entries(locales))('editor labels in %s', (_, t) => {
   it('names the Properties subheads apart from the editor groups, so «Archivo» and «Audio» each mean one place', () => {

@@ -11,6 +11,7 @@ import {
   PROGRAM_CAN,
 } from '../../../desktop/src/shared/djProgram'
 import { LANGUAGES, loadI18n } from '../i18n'
+import ca from '../i18n/locales/ca.json'
 import de from '../i18n/locales/de.json'
 import en from '../i18n/locales/en.json'
 import es from '../i18n/locales/es.json'
@@ -27,6 +28,7 @@ const LOCALES = [
   ['fr', fr],
   ['pt-BR', ptBR],
   ['ja', ja],
+  ['ca', ca],
 ] as const
 
 const I18N = Object.fromEntries(

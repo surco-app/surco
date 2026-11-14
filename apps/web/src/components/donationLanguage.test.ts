@@ -41,6 +41,11 @@ describe('donation return page hydration', () => {
         Component === DonateCancel ? 'A doação não foi concluída' : 'Muito obrigado, de coração!',
       ],
       [
+        'ca-ES',
+        '/ca',
+        Component === DonateCancel ? "No s'ha completat el donatiu" : 'Gràcies de tot cor!',
+      ],
+      [
         'es-ES',
         '/',
         Component === DonateCancel ? 'No se ha completado la donación' : '¡Gracias de corazón!',

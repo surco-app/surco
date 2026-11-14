@@ -6,6 +6,7 @@ import {
   type VerifyDetailKey,
 } from '../../../shared/verification'
 import { detailText } from '../components/VerifiedPopover'
+import ca from './locales/ca.json'
 import de from './locales/de.json'
 import en from './locales/en.json'
 import es from './locales/es.json'
@@ -20,6 +21,7 @@ const LOCALES: [string, Record<string, unknown>][] = [
   ['fr', fr],
   ['pt-BR', ptBR],
   ['ja', ja],
+  ['ca', ca],
 ]
 
 // Every params shape main sends with each key, both branches where detailText picks a

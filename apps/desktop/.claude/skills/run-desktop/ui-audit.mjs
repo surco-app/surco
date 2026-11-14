@@ -21,7 +21,7 @@ const appDir = resolve(here, '../../..')
 const repoRoot = resolve(appDir, '../..')
 const electronPath = createRequire(resolve(repoRoot, 'index.js'))('electron')
 
-const LANGUAGES = ['es', 'en', 'de', 'fr', 'pt-BR']
+const LANGUAGES = ['es', 'en', 'de', 'fr', 'pt-BR', 'ca']
 const SIZES = [
   [1080, 620],
   [1440, 900],
@@ -149,6 +149,8 @@ const MEASURE = (scopeSelector) => {
     const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT)
     for (let n = walker.nextNode(); n; n = walker.nextNode()) {
       if (!n.textContent.trim() || !visible(n.parentElement)) continue
+      const box = n.parentElement.getBoundingClientRect()
+      if (box.width <= 1 && box.height <= 1) continue
       const range = document.createRange()
       range.selectNodeContents(n)
       for (const r of range.getClientRects()) if (r.width > 0) rects.push(r)

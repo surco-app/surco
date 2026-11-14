@@ -12,7 +12,7 @@ const appDir = resolve(dirname(fileURLToPath(import.meta.url)), '../../..')
 const webDir = resolve(appDir, '../web')
 const json = (p) => JSON.parse(readFileSync(p, 'utf8'))
 
-export const APP_LANGUAGES = ['es', 'en', 'de', 'fr', 'pt-BR', 'ja']
+export const APP_LANGUAGES = ['es', 'en', 'de', 'fr', 'pt-BR', 'ja', 'ca']
 export const FIELDS = ['tab', 'section', 'setting', 'value']
 
 function flat(obj, prefix = '', out = {}) {
@@ -39,7 +39,8 @@ export function recipeTranslator(lang) {
   const target = flat(appLocale(lang))
   return (field, enText, esText) => {
     let keys = Object.keys(en).filter((k) => en[k] === enText && es[k] === esText)
-    if (field === 'tab') keys = keys.filter((k) => k.startsWith('settings.tabs.'))
+    if (field === 'tab')
+      keys = keys.filter((k) => k.startsWith('settings.tabs.') || k.startsWith('settings.entries.'))
     const used = keys.filter((k) => settingsSource.includes(`'${k}'`))
     if (used.length) keys = used
     const out = [...new Set(keys.map((k) => target[k]))]

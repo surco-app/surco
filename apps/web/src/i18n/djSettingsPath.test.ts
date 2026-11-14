@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import ca from './locales/ca.json'
 import de from './locales/de.json'
 import en from './locales/en.json'
 import es from './locales/es.json'
@@ -6,7 +7,7 @@ import fr from './locales/fr.json'
 import ja from './locales/ja.json'
 import ptBR from './locales/pt-BR.json'
 
-const LOCALES = { de, en, es, fr, ja, 'pt-BR': ptBR }
+const LOCALES = { de, en, es, fr, ja, 'pt-BR': ptBR, ca }
 
 const OUTPUT_TAB: Record<string, string> = {
   de: 'Ausgabe',
@@ -15,6 +16,7 @@ const OUTPUT_TAB: Record<string, string> = {
   fr: 'Sortie',
   ja: '出力',
   'pt-BR': 'Saída',
+  ca: 'Destinació',
 }
 
 const strings = (node: unknown): string[] =>
