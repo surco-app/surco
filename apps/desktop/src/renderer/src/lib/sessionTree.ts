@@ -24,6 +24,8 @@ const ROLE_WORDS: Readonly<Record<PlaylistRole, readonly string[]>> = {
     'instrumentaux',
     'ベース',
     'インスト',
+    'strumentale',
+    'strumentali',
   ],
   vocal: [
     'cantadita',
@@ -51,6 +53,10 @@ const ROLE_WORDS: Readonly<Record<PlaylistRole, readonly string[]>> = {
     'cantades',
     'cantat',
     'cantats',
+    'voce',
+    'voci',
+    'cantato',
+    'cantati',
   ],
   any: [
     'combo',
@@ -72,6 +78,10 @@ const ROLE_WORDS: Readonly<Record<PlaylistRole, readonly string[]>> = {
     'セット',
     'トラックリスト',
     'sessio',
+    'sessione',
+    'sessioni',
+    'serata',
+    'serate',
   ],
 }
 
@@ -152,6 +162,9 @@ const PHASE_WORDS: Readonly<Record<SessionPhase, readonly string[]>> = {
     'obertures',
     'inici',
     'comencament',
+    'riscaldamento',
+    'aperture',
+    'inizio',
   ],
   close: [
     'cierre',
@@ -172,6 +185,10 @@ const PHASE_WORDS: Readonly<Record<SessionPhase, readonly string[]>> = {
     'tancament',
     'tancaments',
     'finals',
+    'chiusura',
+    'chiusure',
+    'finale',
+    'finali',
   ],
   must: [
     'fijas',
@@ -192,6 +209,9 @@ const PHASE_WORDS: Readonly<Record<SessionPhase, readonly string[]>> = {
     'fixes',
     'himnes',
     'essencials',
+    'imperdibili',
+    'essenziali',
+    'inni',
   ],
 }
 
