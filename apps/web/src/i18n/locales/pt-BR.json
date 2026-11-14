@@ -264,7 +264,7 @@
           {
             "t": "Matching do rekordbox",
             "s": "Os pares que você marca com Matching no rekordbox, juntos numa lista e numa playlist.",
-            "d": "Eles aparecem agrupados em cadeias na fonte do rekordbox e com um clique viram uma playlist. Na ficha você vê os pares de cada faixa, marca ou tira pelo Surco, e a sessão automática coloca uma depois da outra."
+            "d": "Eles aparecem agrupados em cadeias na fonte do rekordbox e com um clique viram uma playlist. Na ficha você vê os pares de cada faixa, marca ou tira pelo Surco, e a sessão automática coloca uma depois da outra. No Traktor, Engine DJ, Serato e VirtualDJ, que não têm isso, o Surco guarda seus pares. Ele também sugere os que você toca em sequência em três sets ou mais."
           },
           {
             "t": "Cues do rekordbox",

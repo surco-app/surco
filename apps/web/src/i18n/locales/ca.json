@@ -264,7 +264,7 @@
           {
             "t": "Matching de rekordbox",
             "s": "Les parelles que marques amb Matching a rekordbox, juntes en una llista i en una playlist.",
-            "d": "Surten agrupades per cadenes a la font de rekordbox i amb un clic les converteixes en una playlist. A la fitxa veus les parelles de cada tema, les marques o les treus des de Surco, i la sessió automàtica les posa seguides."
+            "d": "Surten agrupades per cadenes a la font de rekordbox i amb un clic les converteixes en una playlist. A la fitxa veus les parelles de cada tema, les marques o les treus des de Surco, i la sessió automàtica les posa seguides. A Traktor, Engine DJ, Serato i VirtualDJ, que no el tenen, Surco guarda les teves parelles. També et suggereix les que punxes seguides en tres sets o més."
           },
           {
             "t": "Cues de rekordbox",

@@ -264,7 +264,7 @@
           {
             "t": "Matching de rekordbox",
             "s": "Les paires que tu marques avec Matching dans rekordbox, réunies dans une liste et une playlist.",
-            "d": "Elles apparaissent regroupées en chaînes dans la source rekordbox et un clic en fait une playlist. La fiche montre les partenaires de chaque morceau, tu les crées ou les retires depuis Surco, et la session automatique les enchaîne."
+            "d": "Elles apparaissent regroupées en chaînes dans la source rekordbox et un clic en fait une playlist. La fiche montre les partenaires de chaque morceau, tu les crées ou les retires depuis Surco, et la session automatique les enchaîne. Dans Traktor, Engine DJ, Serato et VirtualDJ, qui ne l'ont pas, Surco garde tes paires. Il te propose aussi celles que tu passes à la suite dans trois sets ou plus."
           },
           {
             "t": "Cues rekordbox",

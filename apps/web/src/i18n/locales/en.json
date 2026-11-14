@@ -264,7 +264,7 @@
           {
             "t": "rekordbox Matching",
             "s": "The pairs you mark with Matching in rekordbox, together in one list and one playlist.",
-            "d": "They show up grouped into chains in the rekordbox source, and one click turns them into a playlist. The editor shows each track's partners, you pair or unpair them from Surco, and the automatic session plays them back to back."
+            "d": "They show up grouped into chains in the rekordbox source, and one click turns them into a playlist. The editor shows each track's partners, you pair or unpair them from Surco, and the automatic session plays them back to back. In Traktor, Engine DJ, Serato and VirtualDJ, which don't have it, Surco keeps your pairs. It also suggests the ones you play back to back in three sets or more."
           },
           {
             "t": "rekordbox cues",

@@ -264,7 +264,7 @@
           {
             "t": "rekordbox Matching",
             "s": "Die Paare, die du in rekordbox mit Matching markierst, zusammen in einer Liste und einer Playlist.",
-            "d": "Sie erscheinen nach Ketten gruppiert in der rekordbox-Quelle, und ein Klick macht eine Playlist daraus. Im Editor siehst du die Partner jedes Tracks, markierst oder entfernst sie aus Surco, und die automatische Session spielt sie hintereinander."
+            "d": "Sie erscheinen nach Ketten gruppiert in der rekordbox-Quelle, und ein Klick macht eine Playlist daraus. Im Editor siehst du die Partner jedes Tracks, markierst oder entfernst sie aus Surco, und die automatische Session spielt sie hintereinander. In Traktor, Engine DJ, Serato und VirtualDJ, die es nicht haben, speichert Surco deine Paare. Außerdem schlägt es dir die vor, die du in drei Sets oder mehr direkt hintereinander spielst."
           },
           {
             "t": "rekordbox-Cues",
