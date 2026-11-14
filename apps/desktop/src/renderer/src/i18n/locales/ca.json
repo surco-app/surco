@@ -961,6 +961,8 @@
     "otherTagsTitle": "Altres metadades",
     "matchingTitle": "Matching",
     "matchingRemove": "Treu",
+    "matchingAdd": "Afegeix",
+    "matchingSearch": "Cerca a rekordbox",
     "otherTagsSummary": "{{count}} etiquetes",
     "otherTagsRemove": "Esborrar {{name}}",
     "otherTagsRestore": "Restaurar {{name}}",

@@ -47,6 +47,7 @@ import {
 import { resolveBindings } from '../../shared/shortcutDefaults'
 import { TRASH_MAX_BYTES, TRASH_RETENTION_DAYS } from '../../shared/trash'
 import type {
+  CollectionTrack,
   DeclickConfig,
   FormatSetting,
   MetaTextKey,
@@ -2873,6 +2874,42 @@ export default function App(): React.JSX.Element {
     const track = scopeTracks.find((t) => playlistScope?.contentOf.get(t.id) === partner.contentId)
     if (track) setSelection({ ids: [track.id], anchor: track.id })
   })
+  const { data: rekordboxCollection } = useQuery({
+    queryKey: ['source-collection', 'rekordbox'],
+    queryFn: () => SOURCE_READ.rekordbox.collection?.() ?? Promise.resolve([]),
+    enabled: inRekordbox && Boolean(selectedContentId),
+    staleTime: 60_000,
+  })
+  const addMatchingPartner = useStableCallback((track: CollectionTrack) => {
+    if (!selectedContentId || !selected) return
+    void editMatching(
+      'add',
+      [selectedContentId, track.contentId],
+      `${selected.listLabel} · ${track.title}`,
+    )
+  })
+  const editorMatching = useMemo(
+    () =>
+      inRekordbox && selectedContentId
+        ? {
+            partners: matchingPartners,
+            selfId: selectedContentId,
+            collection: rekordboxCollection,
+            onPick: pickMatchingPartner,
+            onRemove: removeMatchingPartner,
+            onAdd: addMatchingPartner,
+          }
+        : undefined,
+    [
+      inRekordbox,
+      selectedContentId,
+      matchingPartners,
+      rekordboxCollection,
+      pickMatchingPartner,
+      removeMatchingPartner,
+      addMatchingPartner,
+    ],
+  )
   const cueTrack = useMemo(
     () =>
       selectedCueId && selectedLabel !== undefined
@@ -4229,9 +4266,7 @@ export default function App(): React.JSX.Element {
                             <Editor
                               item={selected}
                               rekordboxCue={rekordboxCue}
-                              matchingPartners={matchingPartners}
-                              onMatchingPick={pickMatchingPartner}
-                              onMatchingRemove={removeMatchingPartner}
+                              matching={editorMatching}
                               onCueJumpBars={onCueJumpBars}
                               onCueQuantize={onCueQuantize}
                               onCueFlow={onCueFlow}

@@ -77,7 +77,6 @@ import { FIELD_DEFS, labeledFields, missingRequired, PLAYLIST_FIELDS } from '../
 import { genreChips as buildGenreChips } from '../lib/genre'
 import { isTypingTarget } from '../lib/keymap'
 import { librarySourceOf } from '../lib/librarySource'
-import type { MatchingPartner } from '../lib/matchingPartners'
 import { missingSummary } from '../lib/missingSummary'
 import { scrollBehavior } from '../lib/motion'
 import { autoNamesFile, renderOutputName, titleFormatPatches } from '../lib/outputName'
@@ -215,9 +214,7 @@ interface Props {
   // Editor-local used to remount the editor and silently destroy the open dialog.
   onShowLoudnessHelp: () => void
   rekordboxCue?: { contentId: string; path: string; label: string }
-  matchingPartners?: MatchingPartner[]
-  onMatchingPick?: (partner: MatchingPartner) => void
-  onMatchingRemove?: (partner: MatchingPartner) => void
+  matching?: Omit<React.ComponentProps<typeof MatchingSection>, 'open' | 'onToggle'>
   onCueJumpBars?: (bars: CueJumpBars) => void
   onCueQuantize?: (unit: CueQuantize) => void
   onCueFlow?: (id: string) => void
@@ -319,9 +316,7 @@ export const Editor = memo(function Editor({
   onResultsFit,
   onShowLoudnessHelp,
   rekordboxCue,
-  matchingPartners,
-  onMatchingPick,
-  onMatchingRemove,
+  matching,
   onCueJumpBars,
   onCueQuantize,
   onCueFlow,
@@ -1730,13 +1725,10 @@ export const Editor = memo(function Editor({
                     case 'matching':
                       return (
                         !isMulti &&
-                        onMatchingPick !== undefined &&
-                        onMatchingRemove !== undefined && (
+                        matching !== undefined && (
                           <MatchingSection
                             key={id}
-                            partners={matchingPartners ?? []}
-                            onPick={onMatchingPick}
-                            onRemove={onMatchingRemove}
+                            {...matching}
                             open={sectionOpen.matching}
                             onToggle={() => setSectionOpen('matching', !sectionOpen.matching)}
                           />

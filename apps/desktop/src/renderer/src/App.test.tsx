@@ -3682,6 +3682,40 @@ describe('App source playlists', () => {
       expect(screen.queryByTestId('track-menu-matching')).not.toBeInTheDocument()
     })
 
+    it('pairs the chosen track with one found in the rekordbox collection from the editor', async () => {
+      const match = vi.fn<ProgramReads['match']>().mockResolvedValue({ applied: true })
+      const collection = vi.fn<ProgramReads['collection']>().mockResolvedValue([
+        { contentId: 'c-l2', path: '/m/b.wav', title: 'Bravo', artist: 'DJ' },
+        { contentId: 'x9', path: '/m/elsewhere.wav', title: 'Brave New World', artist: 'Someone' },
+      ])
+      await openFactory({ dj: djReads(matchingReads.dj, { rekordbox: { match, collection } }) })
+      fireEvent.click(rowTitled('Bravo'))
+      fireEvent.click(await screen.findByTestId('matching-add'))
+      fireEvent.change(screen.getByTestId('matching-search'), { target: { value: 'brave new' } })
+      fireEvent.click(await screen.findByTestId('matching-result'))
+      await waitFor(() =>
+        expect(match).toHaveBeenCalledWith(
+          'add',
+          ['c-l2', 'x9'],
+          expect.stringContaining('Brave New World'),
+        ),
+      )
+    })
+
+    it('keeps Matching out of the editor for a track not opened from rekordbox', async () => {
+      setApi({
+        pickFiles: vi.fn().mockResolvedValue(['/m/a.wav', '/m/b.wav', '/m/c.wav']),
+        readTags: vi.fn(async (path: string) => ({ title: TITLES[path], artist: 'DJ' })),
+        dj: matchingReads.dj,
+      })
+      await renderApp()
+      fireEvent.click(await screen.findByTestId('add-files'))
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+      fireEvent.click(rowTitled('Alpha'))
+      await screen.findByTestId('editor-scroll')
+      expect(screen.queryByTestId('matching-section')).not.toBeInTheDocument()
+    })
+
     it('unpairs a partner from the editor', async () => {
       const match = vi.fn<ProgramReads['match']>().mockResolvedValue({ applied: true })
       await openFactory({ dj: djReads(matchingReads.dj, { rekordbox: { match } }) })

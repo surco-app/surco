@@ -961,6 +961,8 @@
     "otherTagsTitle": "Other metadata",
     "matchingTitle": "Matching",
     "matchingRemove": "Remove",
+    "matchingAdd": "Add",
+    "matchingSearch": "Search rekordbox",
     "otherTagsSummary": "{{count}} tags",
     "otherTagsRemove": "Remove {{name}}",
     "otherTagsRestore": "Restore {{name}}",
