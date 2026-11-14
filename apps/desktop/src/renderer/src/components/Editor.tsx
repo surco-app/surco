@@ -77,6 +77,7 @@ import { FIELD_DEFS, labeledFields, missingRequired, PLAYLIST_FIELDS } from '../
 import { genreChips as buildGenreChips } from '../lib/genre'
 import { isTypingTarget } from '../lib/keymap'
 import { librarySourceOf } from '../lib/librarySource'
+import type { MatchingPartner } from '../lib/matchingPartners'
 import { missingSummary } from '../lib/missingSummary'
 import { scrollBehavior } from '../lib/motion'
 import { autoNamesFile, renderOutputName, titleFormatPatches } from '../lib/outputName'
@@ -115,6 +116,7 @@ import { FORMATS } from './ExportButton'
 import type { InsertSource } from './FieldInsertMenu'
 import { ForeignTagsInspector } from './ForeignTagsInspector'
 import { LimiterGlimpse } from './LimiterGlimpse'
+import { MatchingSection } from './MatchingSection'
 import { MetadataForm } from './MetadataForm'
 import { type MetaMenuItem, MetaMoreMenu } from './MetaMoreMenu'
 import { NormalizeSection } from './NormalizeSection'
@@ -213,6 +215,8 @@ interface Props {
   // Editor-local used to remount the editor and silently destroy the open dialog.
   onShowLoudnessHelp: () => void
   rekordboxCue?: { contentId: string; path: string; label: string }
+  matchingPartners?: MatchingPartner[]
+  onMatchingPick?: (partner: MatchingPartner) => void
   onCueJumpBars?: (bars: CueJumpBars) => void
   onCueQuantize?: (unit: CueQuantize) => void
   onCueFlow?: (id: string) => void
@@ -314,6 +318,8 @@ export const Editor = memo(function Editor({
   onResultsFit,
   onShowLoudnessHelp,
   rekordboxCue,
+  matchingPartners,
+  onMatchingPick,
   onCueJumpBars,
   onCueQuantize,
   onCueFlow,
@@ -1716,6 +1722,19 @@ export const Editor = memo(function Editor({
                             }}
                             open={sectionOpen.otherTags}
                             onToggle={() => setSectionOpen('otherTags', !sectionOpen.otherTags)}
+                          />
+                        )
+                      )
+                    case 'matching':
+                      return (
+                        !isMulti &&
+                        onMatchingPick !== undefined && (
+                          <MatchingSection
+                            key={id}
+                            partners={matchingPartners ?? []}
+                            onPick={onMatchingPick}
+                            open={sectionOpen.matching}
+                            onToggle={() => setSectionOpen('matching', !sectionOpen.matching)}
                           />
                         )
                       )

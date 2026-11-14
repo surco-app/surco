@@ -127,6 +127,7 @@ import { usePlaylistReadPriority } from './hooks/usePlaylistReadPriority'
 import { useProgramsAvailable } from './hooks/useProgramsAvailable'
 import { useQualityAnalysis } from './hooks/useQualityAnalysis'
 import { useRekordboxEdits } from './hooks/useRekordboxEdits'
+import { useRekordboxMatching } from './hooks/useRekordboxMatching'
 import { useOfferPlaylistFields } from './hooks/useRekordboxPlaylists'
 import { PROGRAM_QUEUES, useRekordboxQueue } from './hooks/useRekordboxQueue'
 import { useRetireSuperseded } from './hooks/useRetireSuperseded'
@@ -195,6 +196,7 @@ import { columnOf, cycleRegion, FOCUSABLE, isTypingTarget, nextColumn } from './
 import { lazyChunk, preloadLazyWhenIdle } from './lib/lazyChunk'
 import { librarySourceOf } from './lib/librarySource'
 import { listReviewSource } from './lib/listReviewSource'
+import { type MatchingPartner, partnersOf } from './lib/matchingPartners'
 import { OpenSettingsProvider } from './lib/openSettingsContext'
 import { outputNamePatches, renderOutputName, titleFormatSummary } from './lib/outputName'
 import { clampPanelGeometry } from './lib/panelGeometry'
@@ -2823,6 +2825,25 @@ export default function App(): React.JSX.Element {
   const selectedPath = selected?.inputPath
   const selectedLabel = selected?.listLabel
   const selectedCueId = selected ? playlistScope?.contentOf.get(selected.id) : undefined
+  const inRekordbox = sourceProgram === 'rekordbox'
+  const { data: matchingPairs } = useRekordboxMatching(inRekordbox)
+  const { data: matchingEntries } = useQuery({
+    queryKey: ['source-playlist', 'rekordbox', MATCHING_ID],
+    queryFn: () => SOURCE_READ.rekordbox.playlist(MATCHING_ID),
+    enabled: inRekordbox && (matchingPairs?.length ?? 0) > 0,
+    staleTime: Number.POSITIVE_INFINITY,
+  })
+  const matchingPartners = useMemo(
+    () =>
+      inRekordbox && selectedContentId && matchingPairs && matchingEntries
+        ? partnersOf(matchingPairs, selectedContentId, matchingEntries)
+        : [],
+    [inRekordbox, selectedContentId, matchingPairs, matchingEntries],
+  )
+  const pickMatchingPartner = useStableCallback((partner: MatchingPartner) => {
+    const track = scopeTracks.find((t) => playlistScope?.contentOf.get(t.id) === partner.contentId)
+    if (track) setSelection({ ids: [track.id], anchor: track.id })
+  })
   const cueTrack = useMemo(
     () =>
       selectedCueId && selectedLabel !== undefined
@@ -4175,6 +4196,8 @@ export default function App(): React.JSX.Element {
                             <Editor
                               item={selected}
                               rekordboxCue={rekordboxCue}
+                              matchingPartners={matchingPartners}
+                              onMatchingPick={pickMatchingPartner}
                               onCueJumpBars={onCueJumpBars}
                               onCueQuantize={onCueQuantize}
                               onCueFlow={onCueFlow}

@@ -3615,6 +3615,46 @@ describe('App source playlists', () => {
     await screen.findByTestId('track-separator-s1')
   }
 
+  describe('Matching in the editor', () => {
+    const withPreview = (path: string, contentId: string) => ({
+      path,
+      separator: false,
+      meta: {},
+      contentId,
+      preview: { title: TITLES[path], artist: 'DJ', durationSec: 200, cues: [] },
+    })
+    const matchingReads = {
+      dj: djReads({
+        rekordbox: {
+          matching: vi.fn<ProgramReads['matching']>().mockResolvedValue([['c-l1', 'c-l3']]),
+          playlist: vi
+            .fn<ProgramReads['playlist']>()
+            .mockImplementation(async (id) =>
+              id === MATCHING_ID
+                ? [withPreview('/m/a.wav', 'c-l1'), withPreview('/m/c.wav', 'c-l3')]
+                : FACTORY_ENTRIES,
+            ),
+        },
+      }),
+    }
+    const rowTitled = (title: string) =>
+      screen.getAllByTestId('track-row').find((r) => r.textContent?.includes(title)) as HTMLElement
+
+    it('shows the partners rekordbox holds for the chosen track', async () => {
+      await openFactory(matchingReads)
+      fireEvent.click(rowTitled('Alpha'))
+      expect(await screen.findByTestId('matching-partner')).toHaveTextContent('Charlie')
+    })
+
+    it('moves to a partner in the open list when the DJ picks it', async () => {
+      await openFactory(matchingReads)
+      fireEvent.click(rowTitled('Alpha'))
+      fireEvent.click(await screen.findByTestId('matching-partner'))
+      await waitFor(() => expect(rowTitled('Charlie')).toHaveAttribute('aria-selected', 'true'))
+      expect(rowTitled('Alpha')).toHaveAttribute('aria-selected', 'false')
+    })
+  })
+
   it('runs Auto marcar over the selected rows of the open playlist by their rekordbox entry', async () => {
     const read = vi.fn<Api['cues']['trackCues']>().mockResolvedValue(null)
     await openFactory({ cues: { trackCues: read } })

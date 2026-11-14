@@ -321,7 +321,7 @@ describe('deriveEditorSections', () => {
   // intent picked, the editor keeps only the always-present sections and hides the rest.
   it('hides every audio section when no audio intent is picked', () => {
     const sections = deriveEditorSections([])
-    expect(shown(sections)).toEqual(['form', 'properties', 'quality', 'cues', 'output'])
+    expect(shown(sections)).toEqual(['form', 'properties', 'quality', 'cues', 'matching', 'output'])
     // trim/declick/normalize are the ones the metadata-only DJ never uses.
     for (const id of ['trim', 'declick', 'normalize'] as const) {
       expect(sections.find((s) => s.id === id)?.hidden).toBe(true)
@@ -447,6 +447,7 @@ describe('buildOnboardingPatch on a re-run', () => {
     { id: 'quality', open: false },
     { id: 'properties', open: true },
     { id: 'cues', open: true },
+    { id: 'matching', open: true },
     { id: 'normalize', open: true },
     { id: 'trim', open: false, hidden: true },
     { id: 'declick', open: false, hidden: true },
@@ -474,6 +475,7 @@ describe('buildOnboardingPatch on a re-run', () => {
       { id: 'quality', open: false },
       { id: 'properties', open: true },
       { id: 'cues', open: true },
+      { id: 'matching', open: true },
       { id: 'normalize', open: true },
       { id: 'trim', open: false },
       { id: 'declick', open: false },
@@ -493,6 +495,7 @@ describe('buildOnboardingPatch on a re-run', () => {
       { id: 'quality', open: false },
       { id: 'properties', open: true },
       { id: 'cues', open: true },
+      { id: 'matching', open: true },
       { id: 'normalize', open: true, hidden: true },
       { id: 'trim', open: false, hidden: true },
       { id: 'declick', open: false, hidden: true },
@@ -539,6 +542,7 @@ describe('the wizard on a second machine with a synced layout', () => {
     { id: 'quality', open: false },
     { id: 'properties', open: true },
     { id: 'cues', open: true },
+    { id: 'matching', open: true },
     { id: 'normalize', open: true },
     { id: 'trim', open: false, hidden: true },
     { id: 'declick', open: false, hidden: true },
