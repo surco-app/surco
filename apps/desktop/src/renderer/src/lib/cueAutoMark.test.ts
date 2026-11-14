@@ -77,6 +77,14 @@ function setup({
       trackCues: vi.fn<Api['cues']['trackCues']>(async (id) =>
         id in reads ? reads[id] : { ...READ, contentId: id },
       ),
+      liveCues: vi.fn<Api['cues']['liveCues']>(async (ids) =>
+        Object.fromEntries(
+          ids.flatMap((id) => {
+            const read = id in reads ? reads[id] : { ...READ, contentId: id }
+            return read ? [[id, { cues: read.cues, fingerprint: read.fingerprint }]] : []
+          }),
+        ),
+      ),
       queued: vi.fn<Api['cues']['queued']>(async (id) => queued[id] ?? null),
       waveDetail: vi.fn<Api['cues']['waveDetail']>(async (id) => (id in words ? words[id] : WORDS)),
       dropInput: vi.fn<Api['cues']['dropInput']>(async (id) => dropInputs[id] ?? null),
@@ -394,6 +402,37 @@ describe('clearing the cues of several tracks', () => {
     expect(draftsToSave()[0].wanted).toEqual([{ id: 'l', ms: 4000, kind: 1, color: null }])
     expect(draftsToSave()[0]).toMatchObject({ path: '/m/103.wav', label: '103', fingerprint: 'f0' })
     expect(api.cues.save).not.toHaveBeenCalled()
+  })
+
+  it('reads every target in one batch and never track by track, so clearing many tracks does not reopen the collection for each', async () => {
+    const { api, client } = setup({
+      reads: {
+        '103': withCues('103', [hot('a', 1000, 1)]),
+        '104': withCues('104', [hot('b', 2000, 1)]),
+        '105': withCues('105', [hot('c', 3000, 1)]),
+      },
+    })
+
+    const cleared = await clearCueDrafts(
+      client,
+      [target('103'), target('104'), target('105')],
+      settings,
+    )
+
+    expect(cleared.cleared).toEqual(['103', '104', '105'])
+    expect(api.cues.liveCues).toHaveBeenCalledTimes(1)
+    expect(api.cues.trackCues).not.toHaveBeenCalled()
+  })
+
+  it('asks for at most 500 tracks at a time, so one message never carries a whole library', async () => {
+    const { api, client } = setup()
+    const many = Array.from({ length: 1001 }, (_, i) => target(String(1000 + i)))
+
+    await clearCueDrafts(client, many, settings)
+
+    expect(vi.mocked(api.cues.liveCues).mock.calls.map(([ids]) => ids.length)).toEqual([
+      500, 500, 1,
+    ])
   })
 
   it('leaves a track with an unsaved draft untouched, so clearing never throws away work in progress', async () => {

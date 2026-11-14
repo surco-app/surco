@@ -5,6 +5,7 @@ import type { CueQuantize } from '../../../shared/cueQuantize'
 import { nearestBeat } from '../../../shared/cueRules'
 import { type DropInput, type DropProposal, dropProposals } from '../../../shared/dropDetect'
 import { modelWithTaste } from '../../../shared/dropTaste'
+import type { LiveCues } from '../../../shared/types'
 import {
   cueDropInputQuery,
   cueProfileQuery,
@@ -181,18 +182,30 @@ export interface ClearedCues {
   cleared: string[]
 }
 
+const LIVE_CUES_CHUNK = 500
+
+async function liveCuesOf(contentIds: string[]): Promise<Record<string, LiveCues>> {
+  const reads: Record<string, LiveCues> = {}
+  for (let i = 0; i < contentIds.length; i += LIVE_CUES_CHUNK) {
+    const chunk = contentIds.slice(i, i + LIVE_CUES_CHUNK)
+    Object.assign(reads, await window.api.cues.liveCues(chunk).catch(() => ({})))
+  }
+  return reads
+}
+
 export async function clearCueDrafts(
   client: QueryClient,
   targets: AutoMarkTarget[],
   settings: AutoMarkSettings,
 ): Promise<ClearedCues> {
   const result: ClearedCues = { hot: 0, calls: 0, loops: 0, unsaved: 0, cleared: [] }
+  const reads = await liveCuesOf(targets.map((t) => t.contentId))
   for (const target of targets) {
     if (unsavedCueTracks().has(target.contentId)) {
       result.unsaved += 1
       continue
     }
-    const read = await client.fetchQuery(trackCuesQuery(target.contentId)).catch(() => null)
+    const read = reads[target.contentId]
     if (!read) continue
     const queued = await client.fetchQuery(queuedCuesQuery(target.contentId))
     const fresh = queued !== null && queued.fingerprint === read.fingerprint
@@ -201,10 +214,10 @@ export async function clearCueDrafts(
       : read.cues.map(({ id, ms, kind, color }) => ({ id, ms, kind, color }))
     const loopIds = read.cues.filter((c) => c.loop).map((c) => c.id)
     const ctx = {
-      beats: read.grid.map((b) => b.ms),
-      snapTo: quantizePoints(read.grid, settings.cueQuantize),
-      strong: read.strong,
-      phrases: read.phrases,
+      beats: [],
+      snapTo: quantizePoints([], settings.cueQuantize),
+      strong: [],
+      phrases: [],
       flows: settings.cueFlows,
       lettersByTime: settings.cueLettersByTime,
       slots: cueProgramOf(target.contentId).slots,
