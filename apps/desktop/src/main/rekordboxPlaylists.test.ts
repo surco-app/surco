@@ -610,13 +610,18 @@ describe('rekordbox smart playlists', () => {
 
   afterAll(() => rdb.close())
 
-  // The blank separator file is one more track to rekordbox: Prueba 2 with Date Created
-  // > 2025-11-01 showed 679 on Vicent's collection, and the 679th was that file.
-  it('lists a smart playlist with the tracks its rules match, the blank separator file among them as rekordbox counts it', () => {
+  it('lists a smart playlist without counting its tracks, since each count scanned the whole collection and froze opening rekordbox for minutes', () => {
     expect(readRekordboxTree(rdb, now)).toEqual([
-      { id: '900', name: 'Electronic', kind: 'playlist', count: 3, smart: true },
+      { id: '900', name: 'Electronic', kind: 'playlist', smart: true },
       { id: '902', name: 'House', kind: 'playlist', count: 1 },
     ])
+  })
+
+  // The blank separator file is one more track to rekordbox: Prueba 2 with Date Created
+  // > 2025-11-01 showed 679 on Vicent's collection, and the 679th was that file.
+  it('opens a smart playlist on every track its rules match, the blank separator file among them as rekordbox counts it', () => {
+    const rows = readRekordboxPlaylistWithPreview(rdb, share, '900', () => false, now)
+    expect(rows).toHaveLength(3)
   })
 
   it('leaves out a smart playlist with a rule Surco cannot read, rather than listing the wrong tracks', () => {

@@ -1184,7 +1184,7 @@ export interface SourceNode {
   id: string
   name: string
   kind: 'folder' | 'playlist'
-  count: number
+  count?: number
   children?: SourceNode[]
   smart?: true
 }

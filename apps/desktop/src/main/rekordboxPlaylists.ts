@@ -44,15 +44,6 @@ interface PlaylistRow {
 const SMART = 4
 const SMART_ROWS = `coalesce(c.rb_local_deleted, 0) = 0 AND c.FileType <> ${STREAMING_FILE_TYPE}`
 
-function smartCount(db: RekordboxDb, xml: string | null, now: Date): number | null {
-  const content = xml === null ? null : smartListContent(xml, now)
-  if (content === null) return null
-  const row = db
-    .prepare(`SELECT count(*) AS n FROM djmdContent c WHERE ${SMART_ROWS} AND ${content.where}`)
-    .get(...content.params) as { n: number }
-  return row.n
-}
-
 export function smartPlaylistContent(
   db: RekordboxDb,
   id: string,
@@ -97,10 +88,9 @@ export function readRekordboxTree(db: RekordboxDb, now: Date = new Date()): Sour
         ]
       }
       if (r.Attribute === SMART) {
-        const count = smartCount(db, r.SmartList, now)
-        return count === null
-          ? []
-          : [{ id: String(r.ID), name: r.Name, kind: 'playlist', count, smart: true }]
+        return r.SmartList !== null && smartListContent(r.SmartList, now) !== null
+          ? [{ id: String(r.ID), name: r.Name, kind: 'playlist', smart: true }]
+          : []
       }
       return [{ id: String(r.ID), name: r.Name, kind: 'playlist', count: r.n }]
     })
