@@ -258,6 +258,11 @@ interface Props {
 // macOS paths compare without case, and Music may hand back the other Unicode form.
 const pathKey = (path: string): string => path.normalize('NFC').toLowerCase()
 
+const holdsInLibraryOf =
+  (path: string, title: string): (() => Promise<boolean>) =>
+  () =>
+    window.api.holdsInLibrary(path, title ? [title] : [])
+
 const SPECTRUM_REASONS: ReadonlySet<CopyReason> = new Set([
   'transcode',
   'cutoff',
@@ -1042,8 +1047,7 @@ export const Editor = memo(function Editor({
     formatMatchesInput(format, item.inputPath)
   const { data: heldByLibrary } = useQuery({
     queryKey: ['holdsInLibrary', item.inputPath],
-    queryFn: () =>
-      window.api.holdsInLibrary(item.inputPath, item.meta.title ? [item.meta.title] : []),
+    queryFn: holdsInLibraryOf(item.inputPath, item.meta.title),
     enabled: newTrackCandidate,
     staleTime: 30_000,
   })
