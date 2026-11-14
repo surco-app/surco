@@ -1050,6 +1050,19 @@ describe('App Traktor cues', () => {
       )
     })
 
+    it('unpairs two selected tracks from the row menu, the same gesture that paired them', async () => {
+      openTraktor({ matchingPairs: paired() })
+      await openPlaylist()
+      fireEvent.click(screen.getAllByTestId('track-row')[0])
+      await within(screen.getAllByTestId('track-row')[1]).findByTestId('track-matching')
+      fireEvent.click(screen.getAllByTestId('track-row')[1], { metaKey: true })
+      fireEvent.contextMenu(screen.getAllByTestId('track-row')[1])
+      fireEvent.click(await screen.findByTestId('track-menu-unmatch'))
+      await waitFor(() =>
+        expect(window.api.removeMatchingPair).toHaveBeenCalledWith('/m/a.wav', '/m/b.wav'),
+      )
+    })
+
     it('unpairs a partner from the editor', async () => {
       openTraktor({ matchingPairs: paired() })
       await openPlaylist()
@@ -3823,6 +3836,30 @@ describe('App source playlists', () => {
       await waitFor(() =>
         expect(window.api.removeMatchingPair).toHaveBeenCalledWith('/m/a.wav', '/m/c.wav'),
       )
+    })
+
+    it('offers to unpair two selected tracks that are already a pair instead of pairing them again', async () => {
+      const match = vi.fn<ProgramReads['match']>().mockResolvedValue({ applied: true })
+      await openFactory({ dj: djReads(matchingReads.dj, { rekordbox: { match } }) })
+      fireEvent.click(rowTitled('Alpha'))
+      await within(rowTitled('Charlie')).findByTestId('track-matching')
+      fireEvent.click(rowTitled('Charlie'), { metaKey: true })
+      fireEvent.contextMenu(rowTitled('Charlie'))
+      const unmatch = await screen.findByTestId('track-menu-unmatch')
+      expect(screen.queryByTestId('track-menu-matching')).not.toBeInTheDocument()
+      fireEvent.click(unmatch)
+      await waitFor(() =>
+        expect(match).toHaveBeenCalledWith('remove', ['c-l1', 'c-l3'], expect.any(String)),
+      )
+    })
+
+    it('offers no unpairing on a track that is not a partner of the chosen one', async () => {
+      await openFactory(matchingReads)
+      fireEvent.click(rowTitled('Alpha'))
+      await within(rowTitled('Charlie')).findByTestId('track-matching')
+      fireEvent.contextMenu(rowTitled('Bravo'))
+      await screen.findByTestId('track-menu-add-to')
+      expect(screen.queryByTestId('track-menu-unmatch')).not.toBeInTheDocument()
     })
 
     it('offers no pairing unless exactly two tracks are selected', async () => {

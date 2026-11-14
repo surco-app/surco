@@ -27,6 +27,23 @@ describe('suggestPairs', () => {
     ).toBe(3)
   })
 
+  it('shows the pair in the order the DJ plays it most, so the card reads like the set', () => {
+    const sets = [
+      ['z', 'a'],
+      ['a', 'z'],
+      ['z', 'a'],
+    ]
+    expect(suggestPairs(sets, [], none)).toEqual([{ pair: ['z', 'a'], times: 3 }])
+  })
+
+  it('keeps the order played first when both orders are played as often', () => {
+    const sets = [
+      ['z', 'a'],
+      ['a', 'z'],
+    ]
+    expect(suggestPairs(sets, [], none, 2)[0].pair).toEqual(['z', 'a'])
+  })
+
   it('leaves out a pair played together only twice, which can be chance', () => {
     expect(
       suggestPairs(
