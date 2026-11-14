@@ -116,6 +116,7 @@ export function registerDoor(current: () => Queues): { settled: () => Promise<vo
       queue: queues.rekordbox,
       applyQuietly: applying(queues.rekordbox),
       beatGrid: none,
+      gridAudit: none,
       words: none,
     }),
     engine: engineCueSource(
@@ -127,6 +128,7 @@ export function registerDoor(current: () => Queues): { settled: () => Promise<vo
       },
       rekordboxCollectionPath,
       none,
+      none,
     ),
     traktor: traktorCueSource(
       {
@@ -137,6 +139,7 @@ export function registerDoor(current: () => Queues): { settled: () => Promise<vo
         words: none,
       },
       rekordboxCollectionPath,
+      none,
       none,
     ),
     serato: seratoCueSource(

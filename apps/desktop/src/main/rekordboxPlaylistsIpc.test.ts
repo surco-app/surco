@@ -222,6 +222,7 @@ describe('rekordboxEdit', () => {
           queue: { enqueue: vi.fn(), cuesOp: vi.fn(), drop: vi.fn() },
           applyQuietly: vi.fn(),
           beatGrid: async () => null,
+          gridAudit: async () => null,
           words: async () => null,
         }),
         engine: null,

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { GridCheck } from '../../../shared/gridCheck'
+import type { GridCheck } from '../../../shared/gridAudit'
 import type { SpectrumResult, TrackMetadata } from '../../../shared/types'
 import type { Verification } from '../../../shared/verification'
 import type { TrackItem, TrackStatus } from '../types'
@@ -340,13 +340,15 @@ describe('cues off the grid filter', () => {
 })
 
 describe('bad grid filter', () => {
-  const tracks = ['shifted', 'drifting', 'fine', 'unmeasured'].map(
+  const tracks = ['shifted', 'partly', 'tempo', 'fine', 'unmeasured'].map(
     (id) => ({ id, status: 'idle' }) as TrackItem,
   )
   const checks: Record<string, GridCheck | null> = {
-    shifted: { hereMs: -92, endMs: -92, worstMs: 92, verdict: { kind: 'shifted', ms: -92 } },
-    drifting: { hereMs: 0, endMs: 4, worstMs: 4, verdict: { kind: 'drifting', msPerMin: -7.5 } },
-    fine: { hereMs: 3, endMs: 2, worstMs: 3, verdict: null },
+    shifted: { kind: 'measured', medianMs: 92, sustainedMs: 92 },
+    partly: { kind: 'measured', medianMs: 2, sustainedMs: -18 },
+    tempo: { kind: 'tempo' },
+    fine: { kind: 'measured', medianMs: 3, sustainedMs: 4 },
+    unmeasured: null,
   }
   const facts: FilterFacts = { ...NO_FACTS, gridCheck: (t) => checks[t.id] }
 
@@ -355,8 +357,8 @@ describe('bad grid filter', () => {
       tracks
         .filter((t) => matchesFilter(t, { ...EMPTY_FILTER, attention: 'badGrid' }, facts))
         .map((t) => t.id),
-    ).toEqual(['shifted', 'drifting'])
-    expect(qualityCounts(tracks, facts).badGrid).toBe(2)
+    ).toEqual(['shifted', 'partly', 'tempo'])
+    expect(qualityCounts(tracks, facts).badGrid).toBe(3)
   })
 
   it('counts none before anything is measured', () => {
@@ -364,13 +366,13 @@ describe('bad grid filter', () => {
   })
 
   it('counts as bad grid exactly the tracks the batch would adjust', () => {
-    const batch = ['large', 'drifts', 'within', 'gated'].map(
+    const batch = ['large', 'partly', 'within', 'gated'].map(
       (id) => ({ id, status: 'idle' }) as TrackItem,
     )
     const measured: Record<string, GridCheck | null> = {
-      large: { hereMs: 102, endMs: 101, worstMs: 102, verdict: null },
-      drifts: { hereMs: 1, endMs: 6, worstMs: 6, verdict: { kind: 'drifting', msPerMin: 4 } },
-      within: { hereMs: 7, endMs: -6, worstMs: 7, verdict: null },
+      large: { kind: 'measured', medianMs: -102, sustainedMs: -101 },
+      partly: { kind: 'measured', medianMs: 1, sustainedMs: 14 },
+      within: { kind: 'measured', medianMs: 7, sustainedMs: -6 },
       gated: null,
     }
     const batchFacts: FilterFacts = { ...NO_FACTS, gridCheck: (t) => measured[t.id] }

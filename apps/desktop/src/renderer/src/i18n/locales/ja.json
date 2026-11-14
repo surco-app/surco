@@ -693,8 +693,10 @@
     "playlistsPending": "プレイリストの変更がまだ書き込まれていません",
     "gridEarly": "グリッドが {{ms}} ms 早い",
     "gridLate": "グリッドが {{ms}} ms 遅い",
-    "gridDriftsEarly": "グリッドが毎分 {{ms}} ms 早まる",
-    "gridDriftsLate": "グリッドが毎分 {{ms}} ms 遅れる",
+    "gridPartlyEarly": "グリッドが曲の一部で {{ms}} ms 早い",
+    "gridPartlyLate": "グリッドが曲の一部で {{ms}} ms 遅い",
+    "gridTempo": "グリッドの BPM が音声と合わない",
+    "gridTempoShort": "BPM",
     "played": "再生済み"
   },
   "editor": {

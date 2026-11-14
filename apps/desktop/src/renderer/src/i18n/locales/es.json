@@ -693,8 +693,10 @@
     "playlistsPending": "Cambios de playlists sin escribir",
     "gridEarly": "Rejilla {{ms}} ms adelantada",
     "gridLate": "Rejilla {{ms}} ms retrasada",
-    "gridDriftsEarly": "La rejilla se adelanta {{ms}} ms por minuto",
-    "gridDriftsLate": "La rejilla se retrasa {{ms}} ms por minuto",
+    "gridPartlyEarly": "Rejilla {{ms}} ms adelantada en parte del tema",
+    "gridPartlyLate": "Rejilla {{ms}} ms retrasada en parte del tema",
+    "gridTempo": "El BPM de la rejilla no encaja con el audio",
+    "gridTempoShort": "BPM",
     "played": "Escuchada"
   },
   "editor": {

@@ -1,7 +1,6 @@
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
-import { nearestBeatMs } from '../../../shared/cueGrid'
-import { detectedBeatNear, type GridFit } from '../../../shared/gridEdit'
+import { auditNear, type GridAudit } from '../../../shared/gridAudit'
 import { formatTime } from '../lib/duration'
 
 const CHECKS = 6
@@ -21,18 +20,16 @@ function PinGlyph(): React.JSX.Element {
 }
 
 export function CueGridStrip({
-  beats,
+  audit,
   kicks,
-  fit,
   durationMs,
   tolerance,
   playheadMs,
   pins,
   onSeek,
 }: {
-  beats: number[]
+  audit: GridAudit
   kicks: number[]
-  fit: GridFit
   durationMs: number
   tolerance: number
   playheadMs: number
@@ -41,10 +38,11 @@ export function CueGridStrip({
 }): React.JSX.Element {
   const { t } = useTranslation()
   const pct = (ms: number): string => `${(ms / durationMs) * 100}%`
-  const checks = Array.from({ length: CHECKS }, (_, i) => {
-    const kickMs = detectedBeatNear(fit, (durationMs * (i + 0.5)) / CHECKS, kicks)
-    return { kickMs, offsetMs: nearestBeatMs(kickMs, beats) - kickMs }
-  })
+  const checks = Array.from({ length: CHECKS }, (_, i) =>
+    auditNear(audit, kicks, (durationMs * (i + 0.5)) / CHECKS),
+  )
+    .flatMap((near) => (near ? [{ kickMs: near.hitMs, offsetMs: near.gridMs }] : []))
+    .filter((check, i, all) => all.findIndex((c) => c.kickMs === check.kickMs) === i)
   const onCheck = (ms: number) => checks.some((c) => Math.abs(c.kickMs - ms) < 1)
   return (
     <div data-testid="cues-grid-windows" className="relative h-5 shrink-0">

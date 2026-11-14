@@ -32,7 +32,7 @@ import type { CueQuantize } from '../../../shared/cueQuantize'
 import { BEATS_PER_BAR, nearestBeat, SAME_POSITION_MS } from '../../../shared/cueRules'
 import { type DjProgram, programOf } from '../../../shared/djProgram'
 import type { DropInput, DropProposal } from '../../../shared/dropDetect'
-import { checkGrid, needsGridFix } from '../../../shared/gridCheck'
+import { auditNear, checkOfAudit, needsGridFix } from '../../../shared/gridAudit'
 import {
   autoFitGrid,
   detectedBeatNear,
@@ -45,18 +45,19 @@ import {
   sameGrid,
   shiftGrid,
 } from '../../../shared/gridEdit'
-import { gridVerdictOf } from '../../../shared/gridVerdict'
 import { hotCueColor } from '../../../shared/rekordboxCueColors'
 import type { QueuedCues, SaveCuesRequest, SurcoGrid, TrackCues } from '../../../shared/types'
 import { type CueAudition, useCueAudition } from '../hooks/useCueAudition'
 import { useMaximizedSection } from '../hooks/useEditorSections'
 import {
   cueDropInputQuery,
+  gridAuditQuery,
   gridFitQuery,
   useAuditionLead,
   useCueProfile,
   useCueWaveDetail,
   useCueWaveFine,
+  useGridAudit,
   useGridFit,
   useQueuedCues,
   useSurcoGrid,
@@ -562,29 +563,29 @@ function Editing({
   })
   const gridOff = gate === null ? null : tr(gate)
   const fitting = useQuery({ ...gridFitQuery(cue.contentId), enabled: false }).isFetching
-  const fine = useCueWaveFine(cue.contentId, maximized && !fitting)
-  const fitPending = gridOff === null && fitting
-  const gridFit = useGridFit(cue.contentId, gridOff === null && (!maximized || fine !== undefined))
-  const verdict = useMemo(
-    () => (gridFit ? gridVerdictOf(ctx.beats, gridFit) : null),
-    [ctx.beats, gridFit],
+  const auditing = useQuery({
+    ...gridAuditQuery(cue.contentId, ctx.beats),
+    enabled: false,
+  }).isFetching
+  const fine = useCueWaveFine(cue.contentId, maximized && !fitting && !auditing)
+  const measuring = gridOff === null && (!maximized || fine !== undefined)
+  const audit = useGridAudit(cue.contentId, ctx.beats, measuring && state.grid !== null)
+  const gridFit = useGridFit(
+    cue.contentId,
+    measuring && (state.grid === null || audit !== undefined),
   )
-  const offsetsAt = (ms: number) =>
-    gridFit && state.grid
-      ? checkGrid({
-          beats: ctx.beats,
-          kicks: programBeats,
-          fit: gridFit,
-          atMs: ms,
-          durationMs: read.durationMs,
-          verdict,
-        })
-      : null
-  const tolerance = settings.cueGridTolerance
-  const needsFixAt = (ms: number) => {
-    const offsets = offsetsAt(ms)
-    return offsets !== null && needsGridFix(offsets, tolerance)
+  const fitPending = gridOff === null && (fitting || (auditing && gridFit === null))
+  const gridCheck = useMemo(
+    () => (audit ? checkOfAudit(audit, programBeats) : null),
+    [audit, programBeats],
+  )
+  const offsetsAt = (ms: number) => {
+    const here = audit && auditNear(audit, programBeats, ms)
+    const end = audit && auditNear(audit, programBeats, read.durationMs)
+    return here && end ? { hereMs: here.gridMs, endMs: end.gridMs } : null
   }
+  const tolerance = settings.cueGridTolerance
+  const needsFix = gridCheck !== null && needsGridFix(gridCheck, tolerance)
   const setGrid = (next: EditableGrid) => dispatch({ type: 'set-grid', grid: next })
   const [pinned, setPinned] = useState<{ grid: EditableGrid; pins: number[] } | null>(null)
   const pins = pinned && sameGrid(pinned.grid, state.grid) ? pinned.pins : []
@@ -1335,38 +1336,34 @@ function Editing({
     </button>
   )
   const fitGridControl = (
-    <AtHead head={head} of={needsFixAt}>
-      {(needsFix) => (
-        <button
-          type="button"
-          data-testid="cues-fit-grid"
-          data-needs-fix={needsFix ? 'true' : undefined}
-          aria-busy={fitPending || undefined}
-          disabled={!state.grid || !gridFit}
-          onClick={() =>
-            state.grid &&
-            gridFit &&
-            fitGridTo(autoFitGrid(state.grid, gridFit, head.get(), programBeats, rekordboxGrid))
-          }
-          className={`press relative flex shrink-0 items-center gap-1.5 whitespace-nowrap border border-[var(--color-line-strong)] text-xs font-medium text-fg-muted hover:bg-[var(--color-hover)] disabled:opacity-40 data-[needs-fix=true]:border-[var(--color-accent)] data-[needs-fix=true]:bg-[var(--color-accent)] data-[needs-fix=true]:font-semibold data-[needs-fix=true]:text-[var(--color-on-accent)] ${autoHeight}`}
-        >
-          <Tooltip label={gridOff ?? tr('editor.cues.grid.autoHint')} />
-          {fitPending && (
-            <Loader2
-              data-testid="cues-fit-grid-spinner"
-              className="absolute inset-0 m-auto h-3 w-3 animate-spin text-fg-faint"
-              aria-hidden="true"
-            />
-          )}
-          <span
-            data-testid="cues-fit-grid-label"
-            style={fitPending ? { visibility: 'hidden' } : undefined}
-          >
-            {tr('editor.cues.grid.fit')}
-          </span>
-        </button>
+    <button
+      type="button"
+      data-testid="cues-fit-grid"
+      data-needs-fix={needsFix ? 'true' : undefined}
+      aria-busy={fitPending || undefined}
+      disabled={!state.grid || !gridFit}
+      onClick={() =>
+        state.grid &&
+        gridFit &&
+        fitGridTo(autoFitGrid(state.grid, gridFit, head.get(), programBeats, rekordboxGrid))
+      }
+      className={`press relative flex shrink-0 items-center gap-1.5 whitespace-nowrap border border-[var(--color-line-strong)] text-xs font-medium text-fg-muted hover:bg-[var(--color-hover)] disabled:opacity-40 data-[needs-fix=true]:border-[var(--color-accent)] data-[needs-fix=true]:bg-[var(--color-accent)] data-[needs-fix=true]:font-semibold data-[needs-fix=true]:text-[var(--color-on-accent)] ${autoHeight}`}
+    >
+      <Tooltip label={gridOff ?? tr('editor.cues.grid.autoHint')} />
+      {fitPending && (
+        <Loader2
+          data-testid="cues-fit-grid-spinner"
+          className="absolute inset-0 m-auto h-3 w-3 animate-spin text-fg-faint"
+          aria-hidden="true"
+        />
       )}
-    </AtHead>
+      <span
+        data-testid="cues-fit-grid-label"
+        style={fitPending ? { visibility: 'hidden' } : undefined}
+      >
+        {tr('editor.cues.grid.fit')}
+      </span>
+    </button>
   )
   const actions = (
     <div data-testid="cues-actions" className="flex shrink-0 items-center gap-1">
@@ -1821,13 +1818,12 @@ function Editing({
           </div>
           <div className="flex shrink-0 flex-col gap-1">
             {strip}
-            {gridFit && state.grid && gridOff === null && (
+            {audit && state.grid && gridOff === null && (
               <AtHead head={head} of={atMs}>
                 {(playheadMs) => (
                   <CueGridStrip
-                    beats={ctx.beats}
+                    audit={audit}
                     kicks={programBeats}
-                    fit={gridFit}
                     durationMs={read.durationMs}
                     tolerance={tolerance}
                     playheadMs={playheadMs}
@@ -2147,7 +2143,7 @@ function Editing({
                           grid={state.grid}
                           disabledReason={gridOff}
                           fit={gridFit}
-                          needsFix={needsFixAt(playheadMs)}
+                          needsFix={needsFix}
                           playheadMs={playheadMs}
                           onChange={setGrid}
                           onFit={fitGridTo}

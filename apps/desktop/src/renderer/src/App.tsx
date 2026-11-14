@@ -2084,9 +2084,23 @@ export default function App(): React.JSX.Element {
     return (t: TrackItem) => {
       const contentId = playlistContentOf?.get(t.id)
       const check = contentId === undefined ? undefined : gridCheckOf(contentId)
-      return check ? gridNote(check, tr, i18n.language) : undefined
+      return check
+        ? gridNote(
+            check,
+            settings?.cueGridTolerance ?? DEFAULT_CUE_GRID_TOLERANCE,
+            tr,
+            i18n.language,
+          )
+        : undefined
     }
-  }, [filterSelection.attention, gridCheckOf, playlistContentOf, tr, i18n.language])
+  }, [
+    filterSelection.attention,
+    gridCheckOf,
+    playlistContentOf,
+    settings?.cueGridTolerance,
+    tr,
+    i18n.language,
+  ])
   // The selection reaches the filter only while it filters by it: every click or arrow
   // moves the selection, and rebuilding the facts recounts every filter over the whole list.
   const filteredSelection = filterSelection.selection ? selectedIdSet : null

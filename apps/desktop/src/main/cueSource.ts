@@ -1,5 +1,6 @@
 import type { WantedCue } from '../shared/cueRules'
 import type { DropInput } from '../shared/dropDetect'
+import type { GridAudit } from '../shared/gridAudit'
 import type { GridFit } from '../shared/gridEdit'
 import type { FineWave, SurcoGrid, TrackCues } from '../shared/types'
 import type { RekordboxQueue } from './rekordboxQueue'
@@ -17,6 +18,7 @@ export interface CueReader {
   auditionLead(contentId: string): Promise<number>
   surcoGrid(contentId: string): Promise<SurcoGrid | null>
   gridFit(contentId: string, priority: 'high' | 'low'): Promise<GridFit | null>
+  gridAudit(contentId: string, beats: number[], priority: 'high' | 'low'): Promise<GridAudit | null>
 }
 
 export interface CueSource extends CueReader {

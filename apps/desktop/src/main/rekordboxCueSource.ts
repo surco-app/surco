@@ -8,13 +8,14 @@ import { readCueWaveDetail, readTrackCues } from './rekordboxCues'
 import { keyOf, withCollection } from './rekordboxPlaylistsIpc'
 import { queuedWanted } from './rekordboxPlaylistWrite'
 import { rekordboxLeadOfFile, rekordboxShiftOfFile } from './rekordboxTimeline'
-import { shiftedFit } from './sameClockGrid'
+import { type GridAuditOf, sameClockAudit, shiftedFit } from './sameClockGrid'
 
 export function rekordboxCueSource(host: {
   collection: () => string
   queue: CueQueue
   applyQuietly: () => void
   beatGrid: (file: string, priority?: 'high' | 'low') => Promise<BeatGridFit | null>
+  gridAudit: GridAuditOf
   words: (file: string) => Promise<Uint16Array | null>
   fine?: (file: string) => Promise<Uint8Array | null>
 }): CueSource {
@@ -111,6 +112,12 @@ export function rekordboxCueSource(host: {
       }
     },
     gridFit: (contentId, priority) => gridFit(contentId, priority),
+    gridAudit: async (contentId, beats, priority) => {
+      const row = await audioRowOf(contentId)
+      if (!row) return null
+      const leadMs = await rekordboxShiftOfFile(row.FolderPath, row.SampleRate || 44100)
+      return sameClockAudit(row.FolderPath, beats, host.gridAudit, priority, leadMs)
+    },
     queuedWanted: async (contentId, op) => {
       const path = host.collection()
       const read = withCollection(

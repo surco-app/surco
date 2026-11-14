@@ -3,6 +3,7 @@ import { ipcMain } from 'electron'
 import type { CueFlow } from '../shared/cueFlows'
 import { CUE_PROGRAMS, type CueProgram, isWritable, programOf } from '../shared/djProgram'
 import type { DropInput } from '../shared/dropDetect'
+import type { GridAudit } from '../shared/gridAudit'
 import type { GridFit } from '../shared/gridEdit'
 import type {
   CopyReason,
@@ -61,6 +62,18 @@ export function registerCuesIpc(host: {
     async (_e, contentId: string, priority: 'high' | 'low' = 'high'): Promise<GridFit | null> => {
       const source = sourceOf(contentId)
       return source ? source.gridFit(contentId, priority) : null
+    },
+  )
+  ipcMain.handle(
+    'cues:gridAudit',
+    async (
+      _e,
+      contentId: string,
+      beats: number[],
+      priority: 'high' | 'low' = 'high',
+    ): Promise<GridAudit | null> => {
+      const source = sourceOf(contentId)
+      return source ? source.gridAudit(contentId, beats, priority) : null
     },
   )
   ipcMain.handle('rekordbox:countCompletable', () => {

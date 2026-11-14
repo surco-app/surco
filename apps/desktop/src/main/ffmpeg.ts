@@ -41,7 +41,7 @@ import type {
 import { cachedAnalysis, LOUDNESS_NAMESPACE, peekAnalysis } from './analysisCache'
 import { isAbortError } from './analysisCancel'
 import { currentAnalysisLane } from './analysisLane'
-import type { BeatGridFit } from './beatGrid'
+import type { BeatGridFit, GridAuditRun } from './beatGrid'
 import { ffmpegPath, ffprobePath } from './binaries'
 import type { FullScan } from './channelScan'
 import { automaticCueOffsetOfFiles } from './cueCalibration'
@@ -3763,6 +3763,40 @@ export async function measureBeatGrid(input: string): Promise<BeatGridFit | null
   )
   if (pcm === null) return null
   return runInWorker<BeatGridFit | null>({ type: 'beatGrid', pcm, sampleRate: TEMPO_SAMPLE_RATE })
+}
+
+let lastAuditPcm: { key: string; pcm: Float32Array } | null = null
+
+async function auditPcm(input: string): Promise<Float32Array | null> {
+  const { mtimeMs, size } = await stat(input)
+  const key = `${input}|${mtimeMs}|${size}`
+  if (lastAuditPcm?.key === key) return lastAuditPcm.pcm
+  const pcm = await decodePcm(input, { sampleRate: TEMPO_SAMPLE_RATE, maxBufferMb: 96 }).catch(
+    (err) => {
+      if (isPcmOverrun(err)) return null
+      throw err
+    },
+  )
+  if (pcm) lastAuditPcm = { key, pcm }
+  return pcm
+}
+
+export async function measureGridAudit(
+  input: string,
+  beats: number[],
+  leadMs: number,
+  withFit: boolean,
+): Promise<GridAuditRun | null> {
+  const pcm = await auditPcm(input)
+  if (pcm === null) return null
+  return runInWorker<GridAuditRun>({
+    type: 'gridAudit',
+    pcm,
+    sampleRate: TEMPO_SAMPLE_RATE,
+    beats,
+    leadMs,
+    withFit,
+  })
 }
 
 export async function measureKey(input: string): Promise<KeyResult | null> {

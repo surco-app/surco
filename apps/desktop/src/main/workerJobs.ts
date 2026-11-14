@@ -1,6 +1,6 @@
 import { type TasteTrack, type TunedTaste, tuneDropTaste } from '../shared/dropTaste'
 import type { BpmResult, KeyResult, TrackMetadata } from '../shared/types'
-import { type BeatGridFit, fitBeatGrid } from './beatGrid'
+import { auditGrid, type BeatGridFit, fitBeatGrid, type GridAuditRun } from './beatGrid'
 import { type FullScan, killScansFor, runChannelScan } from './channelScan'
 import { detectClicks } from './clickDetect'
 import { runCueWaveFine } from './cueWaveFine'
@@ -34,6 +34,14 @@ import { computePeaks } from './waveform'
 export type WorkerJob =
   | { type: 'bpm'; pcm: Float32Array; sampleRate: number }
   | { type: 'beatGrid'; pcm: Float32Array; sampleRate: number }
+  | {
+      type: 'gridAudit'
+      pcm: Float32Array
+      sampleRate: number
+      beats: number[]
+      leadMs: number
+      withFit: boolean
+    }
   | { type: 'key'; pcm: Float32Array; sampleRate: number }
   | { type: 'shelf'; pcm: Float32Array; sampleRate: number }
   // The click detector's second-difference scan over the whole native-rate side (~21M
@@ -130,6 +138,7 @@ export type WorkerJob =
 export type WorkerJobResult =
   | BpmResult
   | BeatGridFit
+  | GridAuditRun
   | KeyResult
   | number[]
   | string[]
@@ -164,6 +173,12 @@ export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJo
       return null
     case 'beatGrid':
       return fitBeatGrid(job.pcm, job.sampleRate)
+    case 'gridAudit':
+      return {
+        ...auditGrid(job.pcm, job.sampleRate, job.beats, job.leadMs),
+        minutes: job.pcm.length / job.sampleRate / 60,
+        fit: job.withFit ? fitBeatGrid(job.pcm, job.sampleRate) : null,
+      }
     case 'bpm':
       return detectBpm(job.pcm, job.sampleRate)
     case 'key':

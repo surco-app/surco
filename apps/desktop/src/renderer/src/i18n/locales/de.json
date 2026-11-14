@@ -693,8 +693,10 @@
     "playlistsPending": "Playlist-Änderungen noch nicht geschrieben",
     "gridEarly": "Raster {{ms}} ms zu früh",
     "gridLate": "Raster {{ms}} ms zu spät",
-    "gridDriftsEarly": "Raster läuft {{ms}} ms pro Minute vor",
-    "gridDriftsLate": "Raster läuft {{ms}} ms pro Minute nach",
+    "gridPartlyEarly": "Raster in einem Teil des Tracks {{ms}} ms zu früh",
+    "gridPartlyLate": "Raster in einem Teil des Tracks {{ms}} ms zu spät",
+    "gridTempo": "Das BPM des Rasters passt nicht zum Audio",
+    "gridTempoShort": "BPM",
     "played": "Gehört"
   },
   "editor": {

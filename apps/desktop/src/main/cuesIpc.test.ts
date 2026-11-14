@@ -42,6 +42,7 @@ function registerWithSources(host: {
   beginMoment?: Parameters<typeof registerCuesIpc>[0]['beginMoment']
   flow: Parameters<typeof registerCuesIpc>[0]['flow']
   beatGrid: Parameters<typeof rekordboxCueSource>[0]['beatGrid']
+  gridAudit?: Parameters<typeof rekordboxCueSource>[0]['gridAudit']
   words: Parameters<typeof rekordboxCueSource>[0]['words']
   fine?: Parameters<typeof rekordboxCueSource>[0]['fine']
   provisional: Parameters<typeof registerCuesIpc>[0]['provisional']
@@ -60,11 +61,23 @@ function registerWithSources(host: {
     provisional: host.provisional,
     twins: host.twins,
     sources: {
-      rekordbox: rekordboxCueSource(host),
+      rekordbox: rekordboxCueSource({ ...host, gridAudit: host.gridAudit ?? (async () => null) }),
       traktor: host.traktor
-        ? traktorCueSource({ ...host.traktor, fine: host.fine }, host.collection, host.beatGrid)
+        ? traktorCueSource(
+            { ...host.traktor, fine: host.fine },
+            host.collection,
+            host.beatGrid,
+            host.gridAudit ?? (async () => null),
+          )
         : null,
-      engine: host.engine ? engineCueSource(host.engine, host.collection, host.beatGrid) : null,
+      engine: host.engine
+        ? engineCueSource(
+            host.engine,
+            host.collection,
+            host.beatGrid,
+            host.gridAudit ?? (async () => null),
+          )
+        : null,
       serato: host.serato
         ? seratoCueSource({ ...host.serato, words: host.words, fine: host.fine }, host.collection)
         : null,
@@ -671,6 +684,55 @@ describe('registerCuesIpc', () => {
     expect(beatGrid).toHaveBeenLastCalledWith(expect.any(String), 'high')
   })
 
+  it("measures a LAME MP3 grid on rekordbox's clock, which runs 51 ms ahead of the decode", async () => {
+    const path = await collectionWithMp3('LAME')
+    const gridAudit = vi.fn(async () => ({
+      windows: [{ ms: 6000, offsetMs: 3 }],
+      total: 1,
+      heardPerMinute: 30,
+    }))
+    registerWithSources({
+      collection: () => path,
+      queue: queue(),
+      applyQuietly: quietly(),
+      flow: () => MY_FLOW,
+      beatGrid: async () => null,
+      gridAudit,
+      words: async () => null,
+      provisional: { add: vi.fn() },
+      twins: async () => ({}),
+    })
+    const out = await handler('cues:gridAudit')({}, '101', [1000, 1500, 2000], 'low')
+    expect(out).toEqual({
+      windows: [{ ms: 6000, offsetMs: 3 }],
+      total: 1,
+      heardPerMinute: 30,
+      periodMs: 500,
+    })
+    const [, beats, lead, priority] = gridAudit.mock.lastCall as unknown as unknown[]
+    expect(beats).toEqual([1000, 1500, 2000])
+    expect(lead).toBeCloseTo(((1152 + 576 + 529) / 44100) * 1000, 3)
+    expect(priority).toBe('low')
+  })
+
+  it('measures no grid for a track that is not in the collection', async () => {
+    const path = await collectionWithMp3('LAME')
+    const gridAudit = vi.fn(async () => null)
+    registerWithSources({
+      collection: () => path,
+      queue: queue(),
+      applyQuietly: quietly(),
+      flow: () => MY_FLOW,
+      beatGrid: async () => null,
+      gridAudit,
+      words: async () => null,
+      provisional: { add: vi.fn() },
+      twins: async () => ({}),
+    })
+    expect(await handler('cues:gridAudit')({}, '999', [0, 500], 'high')).toBeNull()
+    expect(gridAudit).not.toHaveBeenCalled()
+  })
+
   it('fits nothing when Surco hears no beat or the track is not in the collection', async () => {
     const path = await collectionWithMp3('LAME')
     const beatGrid = vi.fn(async () => null)
@@ -1111,12 +1173,14 @@ describe('registerCuesIpc for Traktor tracks', () => {
       const traktorWords = vi.fn(async (_file: string) => new Uint16Array([4, 8]))
       const engineWords = vi.fn(async (_file: string) => new Uint16Array([1, 2]))
       const beatGrid = vi.fn(over.beatGrid ?? (async () => ({ bpm: 120, firstMs: 100 })))
+      const gridAudit = vi.fn(async () => ({ windows: [], total: 0, heardPerMinute: 0 }))
       registerWithSources({
         collection: () => '/no/master.db',
         queue: over.rekordbox ?? queue(),
         applyQuietly: quietly(),
         flow: () => MY_FLOW,
         beatGrid,
+        gridAudit,
         words: async () => null,
         provisional: { add: vi.fn() },
         twins: async () => ({}),
@@ -1134,7 +1198,7 @@ describe('registerCuesIpc for Traktor tracks', () => {
           words: traktorWords,
         },
       })
-      return { nml, traktorWords, engineWords, beatGrid }
+      return { nml, traktorWords, engineWords, beatGrid, gridAudit }
     }
 
     it('reads a Traktor track’s cues from the NML, not from rekordbox', async () => {
@@ -1178,6 +1242,17 @@ describe('registerCuesIpc for Traktor tracks', () => {
       const { beatGrid } = await registerAll()
       await handler('cues:gridFit')({}, ID, 'low')
       expect(beatGrid).toHaveBeenLastCalledWith(expect.stringMatching(/t\.aiff$/), 'low')
+    })
+
+    it('measures an uncompressed Traktor grid on the clock Surco decodes, with no lead', async () => {
+      const { gridAudit } = await registerAll()
+      await handler('cues:gridAudit')({}, ID, [100, 600], 'low')
+      expect(gridAudit).toHaveBeenLastCalledWith(
+        expect.stringMatching(/t\.aiff$/),
+        [100, 600],
+        0,
+        'low',
+      )
     })
 
     it('builds no Surco grid for a Traktor or Engine track', async () => {

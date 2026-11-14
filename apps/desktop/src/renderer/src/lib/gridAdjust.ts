@@ -1,4 +1,4 @@
-import { checkGrid, needsGridFix } from '../../../shared/gridCheck'
+import { type GridCheck, needsGridFix } from '../../../shared/gridAudit'
 import {
   autoFitGrid,
   type EditableGrid,
@@ -15,6 +15,7 @@ export type GridReview =
 
 export type GridAdjustResult =
   | { kind: 'fine' }
+  | { kind: 'unmeasured' }
   | { kind: 'adjusted'; draft: CueDraft }
   | { kind: 'review'; reason: GridReview }
 
@@ -24,7 +25,12 @@ function halfBeatAt(beats: number[], ms: number): number {
   return (beats[i] - beats[i - 1]) / 2
 }
 
-export function adjustGrid(input: {
+const worstMsOf = (check: GridCheck): number =>
+  check.kind === 'measured'
+    ? Math.max(Math.abs(check.medianMs), Math.abs(check.sustainedMs))
+    : Number.POSITIVE_INFINITY
+
+export async function adjustGrid(input: {
   draft: CueDraft & { grid: EditableGrid }
   ctx: DraftContext
   beats: number[]
@@ -33,11 +39,12 @@ export function adjustGrid(input: {
   durationMs: number
   toleranceMs: number
   zones: boolean
-}): GridAdjustResult {
-  const { draft, ctx, beats: was, fit, kicks, durationMs, toleranceMs, zones } = input
+  checkOf: (beats: number[]) => Promise<GridCheck | null>
+}): Promise<GridAdjustResult> {
+  const { draft, ctx, beats: was, fit, kicks, durationMs, toleranceMs, zones, checkOf } = input
   const beatsOf = (grid: EditableGrid) => gridBeats(grid, durationMs).map((b) => b.ms)
-  const check = (beats: number[]) => checkGrid({ beats, kicks, fit, atMs: 0, durationMs })
-  const before = check(was)
+  const before = await checkOf(was)
+  if (before === null) return { kind: 'unmeasured' }
   if (!needsGridFix(before, toleranceMs)) return { kind: 'fine' }
   const grid = autoFitGrid(draft.grid, fit, 0, kicks, zones)
   const beats = beatsOf(grid)
@@ -56,11 +63,15 @@ export function adjustGrid(input: {
     const worst = jumps.reduce((a, b) => (Math.abs(b.ms) > Math.abs(a.ms) ? b : a))
     return { kind: 'review', reason: { kind: 'cueJump', ms: worst.ms } }
   }
-  const after = check(beats)
-  if (needsGridFix(after, toleranceMs) || after.worstMs >= before.worstMs)
+  const after = await checkOf(beats)
+  if (after === null || needsGridFix(after, toleranceMs) || worstMsOf(after) >= worstMsOf(before))
     return {
       kind: 'review',
-      reason: { kind: 'noBetter', beforeMs: before.worstMs, afterMs: after.worstMs },
+      reason: {
+        kind: 'noBetter',
+        beforeMs: worstMsOf(before),
+        afterMs: after === null ? Number.POSITIVE_INFINITY : worstMsOf(after),
+      },
     }
   return { kind: 'adjusted', draft: next }
 }

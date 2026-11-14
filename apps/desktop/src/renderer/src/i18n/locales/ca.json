@@ -693,8 +693,10 @@
     "playlistsPending": "Canvis de playlists sense escriure",
     "gridEarly": "Graella {{ms}} ms avançada",
     "gridLate": "Graella {{ms}} ms endarrerida",
-    "gridDriftsEarly": "La graella s'avança {{ms}} ms per minut",
-    "gridDriftsLate": "La graella s'endarrereix {{ms}} ms per minut",
+    "gridPartlyEarly": "Graella {{ms}} ms avançada en part del tema",
+    "gridPartlyLate": "Graella {{ms}} ms endarrerida en part del tema",
+    "gridTempo": "El BPM de la graella no encaixa amb l'àudio",
+    "gridTempoShort": "BPM",
     "played": "Escoltada"
   },
   "editor": {

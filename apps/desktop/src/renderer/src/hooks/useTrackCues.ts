@@ -1,8 +1,10 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
 import type { CueProfileRead } from '../../../shared/cueProfile'
+import type { GridAudit } from '../../../shared/gridAudit'
 import type { GridFit } from '../../../shared/gridEdit'
 import type { FineWave, QueuedCues, SurcoGrid, TrackCues } from '../../../shared/types'
+import { beatsKey } from '../lib/gridAuditCheck'
 
 export const trackCuesQuery = (contentId: string) => ({
   queryKey: ['rekordbox-track-cues', contentId],
@@ -114,6 +116,25 @@ export function useCueWaveFine(contentId: string, enabled: boolean): FineWave | 
   })
   if (!enabled) return null
   return isPending ? undefined : (data ?? null)
+}
+
+export const gridAuditQuery = (contentId: string, beats: number[]) => ({
+  queryKey: ['grid-audit', contentId, beatsKey(beats)],
+  queryFn: () => window.api.cues.gridAudit(contentId, beats, 'high'),
+  staleTime: Number.POSITIVE_INFINITY,
+})
+
+export function useGridAudit(
+  contentId: string,
+  beats: number[],
+  enabled: boolean,
+): GridAudit | null | undefined {
+  const { data } = useQuery({
+    ...gridAuditQuery(contentId, beats),
+    enabled,
+    placeholderData: keepPreviousData,
+  })
+  return enabled ? data : null
 }
 
 export function useGridFit(contentId: string, enabled: boolean): GridFit | null {

@@ -98,7 +98,7 @@ import {
 import { appMenuTemplate } from './appMenu'
 import { registerAudioIpc } from './audioIpc'
 import { bakenCommand } from './bakenPath'
-import { cachedBeatGrid } from './beatGridCache'
+import { cachedBeatGrid, cachedGridAudit } from './beatGridCache'
 import { setBeatportSession } from './beatport'
 import { beatportSession, connectBeatport, disconnectBeatport } from './beatportCredentials'
 import { createBusyPaths } from './busyPaths'
@@ -1617,6 +1617,7 @@ function registerIpc(): void {
   const cueSourceHost = {
     collection: rekordboxCollectionPath,
     beatGrid: cachedBeatGrid,
+    gridAudit: cachedGridAudit,
     words: cachedCueWaveWords,
     fine: cachedCueWaveFine,
   }
@@ -1651,6 +1652,7 @@ function registerIpc(): void {
         },
         rekordboxCollectionPath,
         cachedBeatGrid,
+        cachedGridAudit,
       ),
       traktor: traktorCueSource(
         {
@@ -1663,6 +1665,7 @@ function registerIpc(): void {
         },
         rekordboxCollectionPath,
         cachedBeatGrid,
+        cachedGridAudit,
       ),
       serato: seratoCueSource(
         {

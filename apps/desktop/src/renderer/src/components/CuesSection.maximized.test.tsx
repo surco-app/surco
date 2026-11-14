@@ -28,6 +28,7 @@ import { autoMarkOf, resetCueSession } from '../lib/cueSession'
 import { SettingsProvider } from '../lib/settingsContext'
 import { claimKeys, runKeyClaim } from '../lib/spaceClaim'
 import { type ApiOverrides, installApi } from '../test/api'
+import { auditHeard } from '../test/heardGrid'
 import { hoverTooltip } from '../test/tooltip'
 import { CuesSection } from './CuesSection'
 
@@ -81,12 +82,17 @@ function setup(
   actionsRef?: { current: CueActions | null },
 ) {
   const rekordboxCueWaveDetail = vi.fn<Api['cues']['waveDetail']>(async () => null)
+  const gridFit = api.cues?.gridFit
   installApi({
     ...api,
     cues: {
       trackCues: vi.fn<Api['cues']['trackCues']>(async () => read),
       queued: vi.fn<Api['cues']['queued']>(async () => null),
       waveDetail: rekordboxCueWaveDetail,
+      gridAudit: vi.fn<Api['cues']['gridAudit']>(async (id, beats) => {
+        const fit = gridFit ? await gridFit(id) : null
+        return fit ? auditHeard(fit, beats) : null
+      }),
       ...api.cues,
     },
   })
@@ -332,7 +338,8 @@ describe('CuesSection maximized', () => {
         }),
     )
     const gridFit = vi.fn<Api['cues']['gridFit']>(async () => null)
-    setup(null, READ, { cues: { waveFine: fine, gridFit: gridFit } })
+    const gridAudit = vi.fn<Api['cues']['gridAudit']>(async () => null)
+    setup(null, READ, { cues: { waveFine: fine, gridFit, gridAudit } })
     await waitFor(() => expect(gridFit).toHaveBeenCalledTimes(1))
     await maximize()
     await waitFor(() => expect(fine).toHaveBeenCalledWith('103'))
@@ -350,12 +357,33 @@ describe('CuesSection maximized', () => {
         }),
     )
     const fine = vi.fn<Api['cues']['waveFine']>(async () => null)
-    setup(null, READ, { cues: { waveFine: fine, gridFit: gridFit } })
+    const gridAudit = vi.fn<Api['cues']['gridAudit']>(async () => null)
+    setup(null, READ, { cues: { waveFine: fine, gridFit, gridAudit } })
     await waitFor(() => expect(gridFit).toHaveBeenCalledWith('103'))
     await maximize()
     expect(fine).not.toHaveBeenCalled()
     act(() => finish(null))
     await waitFor(() => expect(fine).toHaveBeenCalledWith('103'))
+  })
+
+  it('holds the fine wave and the fit while the grid is measured against the audio, so the file is read once', async () => {
+    let finish: (audit: null) => void = () => {}
+    const gridAudit = vi.fn<Api['cues']['gridAudit']>(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve
+        }),
+    )
+    const gridFit = vi.fn<Api['cues']['gridFit']>(async () => null)
+    const fine = vi.fn<Api['cues']['waveFine']>(async () => null)
+    setup(null, READ, { cues: { waveFine: fine, gridFit, gridAudit } })
+    await waitFor(() => expect(gridAudit).toHaveBeenCalled())
+    await maximize()
+    expect(fine).not.toHaveBeenCalled()
+    expect(gridFit).not.toHaveBeenCalled()
+    act(() => finish(null))
+    await waitFor(() => expect(fine).toHaveBeenCalledWith('103'))
+    await waitFor(() => expect(gridFit).toHaveBeenCalledWith('103'))
   })
 
   it('starts below the macOS window controls, so the cover and title never sit under the traffic lights', async () => {
@@ -2165,7 +2193,7 @@ describe('CuesSection maximized grid', () => {
     expect(screen.getByTestId('cues-grid-end')).toHaveTextContent('+46 ms')
     expect(screen.getByTestId('cues-grid-auto')).toHaveAttribute('data-needs-fix', 'true')
     fireEvent.click(screen.getByTestId('cues-grid-auto'))
-    expect(screen.getByTestId('cues-grid-here')).toHaveTextContent('0 ms')
+    await waitFor(() => expect(screen.getByTestId('cues-grid-here')).toHaveTextContent('0 ms'))
     expect(screen.getByTestId('cues-grid-auto')).not.toHaveAttribute('data-needs-fix')
   })
 
