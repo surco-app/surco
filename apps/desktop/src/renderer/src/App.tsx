@@ -2840,6 +2840,14 @@ export default function App(): React.JSX.Element {
         : [],
     [inRekordbox, selectedContentId, matchingPairs, matchingEntries],
   )
+  const matchingIds = useMemo(() => {
+    const partners = new Set(matchingPartners.map((p) => p.contentId))
+    return new Set(
+      scopeTracks.flatMap((t) =>
+        partners.has(playlistScope?.contentOf.get(t.id) ?? '') ? [t.id] : [],
+      ),
+    )
+  }, [matchingPartners, scopeTracks, playlistScope])
   const pickMatchingPartner = useStableCallback((partner: MatchingPartner) => {
     const track = scopeTracks.find((t) => playlistScope?.contentOf.get(t.id) === partner.contentId)
     if (track) setSelection({ ids: [track.id], anchor: track.id })
@@ -4112,6 +4120,7 @@ export default function App(): React.JSX.Element {
                               revealRowRef={revealRowRef}
                               backupAtByPath={backupAtByPath}
                               pendingCuePaths={pendingCuePaths}
+                              matchingIds={matchingIds}
                               unsavedCueIds={unsavedCueIds}
                               playedPaths={playedPaths}
                               autoMarkById={autoMarkById}

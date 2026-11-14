@@ -3646,6 +3646,16 @@ describe('App source playlists', () => {
       expect(await screen.findByTestId('matching-partner')).toHaveTextContent('Charlie')
     })
 
+    it('marks the partners of the chosen track in the list with the Matching rings', async () => {
+      await openFactory(matchingReads)
+      fireEvent.click(rowTitled('Alpha'))
+      await waitFor(() =>
+        expect(within(rowTitled('Charlie')).getByTestId('track-matching')).toBeInTheDocument(),
+      )
+      expect(within(rowTitled('Bravo')).queryByTestId('track-matching')).not.toBeInTheDocument()
+      expect(within(rowTitled('Alpha')).queryByTestId('track-matching')).not.toBeInTheDocument()
+    })
+
     it('moves to a partner in the open list when the DJ picks it', async () => {
       await openFactory(matchingReads)
       fireEvent.click(rowTitled('Alpha'))

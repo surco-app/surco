@@ -596,6 +596,7 @@
     "cuesOpenFull": "Edit the cues full screen"
   },
   "trackList": {
+    "matchingPartner": "Matches the chosen track",
     "cuesUnsaved": "Cues not saved",
     "autoMark": {
       "proposed_one": "{{count}} proposal",

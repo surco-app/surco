@@ -596,6 +596,7 @@
     "cuesOpenFull": "Editar els cues a pantalla completa"
   },
   "trackList": {
+    "matchingPartner": "Fa Matching amb la pista triada",
     "cuesUnsaved": "Cues sense desar",
     "autoMark": {
       "proposed_one": "{{count}} proposta",

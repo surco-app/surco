@@ -596,6 +596,7 @@
     "cuesOpenFull": "Editar os cues em tela cheia"
   },
   "trackList": {
+    "matchingPartner": "Faz Matching com a faixa escolhida",
     "cuesUnsaved": "Cues não salvos",
     "autoMark": {
       "proposed_one": "{{count}} sugestão",

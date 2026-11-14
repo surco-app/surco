@@ -596,6 +596,7 @@
     "cuesOpenFull": "キューを全画面で編集"
   },
   "trackList": {
+    "matchingPartner": "選択したトラックとMatching",
     "cuesUnsaved": "キューが未保存",
     "autoMark": {
       "proposed_one": "{{count}} 件の提案",
