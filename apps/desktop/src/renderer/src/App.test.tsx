@@ -4357,8 +4357,6 @@ describe('App source playlists', () => {
       expect(screen.queryByTestId(`track-menu-playlist-${ALL_TRACKS_ID}`)).not.toBeInTheDocument()
     })
 
-    // The rows come from rekordbox's pairs: a reorder, removal or separator would name a
-    // playlist rekordbox does not have.
     it('opens Matching with no reorder, removal or separator on its rows', async () => {
       await openFactory({
         dj: djReads({

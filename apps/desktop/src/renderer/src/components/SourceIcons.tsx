@@ -119,8 +119,6 @@ export const LIBRARY_ICON: Record<DjProgram, (props: IconProps) => React.JSX.Ele
   virtualdj: VirtualdjIcon,
 }
 
-// The two linked rings of rekordbox's Matching button (matching.svg in its skin), so a DJ
-// sees the same mark Surco and rekordbox put on a pair.
 export function MatchingIcon({
   size,
   className,

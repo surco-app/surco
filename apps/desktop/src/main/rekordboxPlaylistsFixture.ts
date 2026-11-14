@@ -76,7 +76,6 @@ export interface PlaylistFixture {
     OutMsec?: number | null
   }[]
   matches?: { ContentID1: string; ContentID2: string; deleted?: boolean }[]
-  // Leaves djmdRecommendLike out, as a collection from before rekordbox had Matching.
   noMatchingTable?: boolean
 }
 

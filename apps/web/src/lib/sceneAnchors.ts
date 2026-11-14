@@ -6,6 +6,7 @@ export const SCENE_ANCHORS = {
   batch: 'exportar',
   replace: 'sustituir',
   sync: 'sincronizar',
+  matching: 'matching',
   cues: 'cues',
   review: 'biblioteca',
 } as const
@@ -17,6 +18,7 @@ export const SECTION_VIEWS: Record<keyof typeof SCENE_ANCHORS, SectionLocation> 
   cues: 'home-cues',
   replace: 'home-replace',
   sync: 'home-sync',
+  matching: 'home-matching',
   review: 'home-review',
 }
 

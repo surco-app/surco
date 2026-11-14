@@ -62,8 +62,6 @@ export const DEFAULT_EDITOR_SECTIONS: EditorSectionPref[] = [
   { id: 'properties', open: false },
   { id: 'quality', open: true },
   { id: 'cues', open: true },
-  // The rekordbox Matching pairs of the chosen track. Renders nothing for a track without
-  // partners, so it is only seen where it has something to say.
   { id: 'matching', open: true },
   // Folded: the header pill still surfaces the "this rip has silence" finding
   // (the attention filter flags it list-wide too), and folded it skips the wave

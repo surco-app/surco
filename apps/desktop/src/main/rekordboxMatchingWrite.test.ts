@@ -47,7 +47,6 @@ interface Row {
 }
 
 describe('addMatching', () => {
-  // Measured on the row rekordbox 7 wrote for Let Yourself Go and Take Me Home (14/11).
   it('writes the pair the way rekordbox writes it, deck 1 first', async () => {
     const db = await open()
     addMatching(db, 'a', 'b', { now: NOW })
@@ -85,7 +84,6 @@ describe('addMatching', () => {
 })
 
 describe('removeMatching', () => {
-  // rekordbox deletes the row when the button is pressed again; it does not flag it.
   it('deletes the pair whichever deck order it was stored in', async () => {
     const db = await open({
       matches: [

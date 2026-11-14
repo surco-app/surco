@@ -43,7 +43,6 @@ describe('MatchingSection', () => {
     expect(onPick).not.toHaveBeenCalled()
   })
 
-  // Most tracks have no partner; the section stays out of the way until one does.
   it('renders nothing for a track without partners', () => {
     setup([])
     expect(screen.queryByTestId('matching-section')).not.toBeInTheDocument()

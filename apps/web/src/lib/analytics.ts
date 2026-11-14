@@ -29,6 +29,7 @@ export type SectionLocation =
   | 'home-cues'
   | 'home-replace'
   | 'home-sync'
+  | 'home-matching'
   | 'home-review'
 
 // An installer is a file the visitor can run; the releases page is the fallback link

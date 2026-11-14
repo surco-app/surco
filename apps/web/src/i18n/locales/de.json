@@ -262,6 +262,11 @@
             "d": "Du öffnest sie über die Befehlspalette, über das Menü eines Ordners oder auf einer leeren Playlist. Du wählst, wie lange sie dauert und aus welchen Playlists die Tracks kommen, und sagst, was in jeder steckt, Instrumentals, Gesang oder Gemischt, auch für einen ganzen Ordner. Surco bringt die Paare, die du in deinen Sets und Tracklists wiederholst, die Tracks mit den meisten Sternen und Wiedergaben, harmonisches Mixen nach Camelot, wenn du willst, und Platz für Neues zusammen, und zählt die Zeit, die jeder Track läuft, nicht die ganze Datei. Sie sieht aus wie jede Playlist, mit der Tonart jedes Tracks. Sie lernt aus deinen Sets, wie weit du das Tempo veränderst und wie wichtig dir die Tonart ist, hebt deine Abschluss-Tracks fürs Ende auf, spielt deine Pflicht-Tracks öfter und beginnt mit einem Gesangstrack. „Neu würfeln“ baut sie komplett neu auf, oder starte sie über das Menü eines Tracks. In rekordbox, Traktor, Engine DJ, Serato und VirtualDJ. Ist das Programm offen, wartet sie, bis du es schließt."
           },
           {
+            "t": "rekordbox Matching",
+            "s": "Die Paare, die du in rekordbox mit Matching markierst, zusammen in einer Liste und einer Playlist.",
+            "d": "Sie erscheinen nach Ketten gruppiert in der rekordbox-Quelle, und ein Klick macht eine Playlist daraus. Im Editor siehst du die Partner jedes Tracks, markierst oder entfernst sie aus Surco, und die automatische Session spielt sie hintereinander."
+          },
+          {
             "t": "rekordbox-Cues",
             "s": "Setz Hot Cues auf die Wellenform von rekordbox, von Hand oder mit deinem Ablauf.",
             "d": "Hot Cues A bis H und CALLs, auf der Wellenform und dem Raster von rekordbox. Zieh sie, sie rasten am Takt oder Beat ein, und du kannst alles rückgängig machen. Beim Hineinzoomen siehst du jeden Schlag im Detail, gemessen am Audio selbst, und Play startet sofort. Wähle einen Ablauf, etwa Mix in 64, Mix in 32 oder einen eigenen, aus Blöcken gebaut oder aus deiner Sammlung gelernt, und fährst du über die Wellenform, zeigt ein Schatten, was er setzen würde. Ein Klick setzt ihn und sagt dir, was nicht passt. Auto-Markieren schlägt vor, wo jeder Track droppt, auch bei mehreren auf einmal. Es lernt aus den Cues, die du schon gesetzt hast und die du speicherst, wie du markierst, und trennt, was es sicher sieht, von dem, was es bezweifelt. Und markierst du die CALLs in rekordbox, setzt Surco beim Schließen die Hot Cues deines Ablaufs. Bei einem Track, den rekordbox noch nicht analysiert hat, arbeitest du auf dem Raster von Surco, und sobald rekordbox ihn analysiert, wandern deine Cues auf dessen Raster. Die Buchstaben folgen der Reihenfolge im Track, und ist jeder Buchstabe für dich ein festes Pad, schalte das in den Einstellungen aus. Ist derselbe Track in Traktor, Engine DJ, Serato oder VirtualDJ, setzt das Speichern den Ablauf auch dort, auf deren Raster und um deren Cues herum. Geschrieben wird in rekordbox erst nach einer Sicherung."
@@ -1421,6 +1426,26 @@
       "convertCount": "{{count}} Tracks konvertieren",
       "convertTo": "In AIFF konvertieren",
       "missingArtist": "Künstler fehlt"
+    },
+    "matching": {
+      "title": "Die Tracks, die zusammenpassen, alle an einem Ort.",
+      "lede": "In rekordbox markierst du mit dem Matching-Button die Tracks, die gut zusammen klingen. Surco zeigt sie alle in einer Liste, nach Ketten gruppiert, und macht mit einem Klick eine rekordbox-Playlist daraus.",
+      "button": "Playlist erstellen",
+      "playlist": "Playlist Matching",
+      "points": {
+        "chains": {
+          "title": "In Ketten",
+          "text": "Passt ein Track zu einem anderen und dieser zu einem dritten, stehen sie zusammen und in dieser Reihenfolge."
+        },
+        "track": {
+          "title": "Bei jedem Track",
+          "text": "Wähle einen Track und sieh seine Partner. In der Liste tragen die Partner die Ringe von rekordbox."
+        },
+        "session": {
+          "title": "Auch aus Surco",
+          "text": "Paare markieren und entfernen, ohne rekordbox zu öffnen, und die automatische Session spielt sie hintereinander."
+        }
+      }
     },
     "review": {
       "title": "Finde die Tippfehler und Duplikate in deiner Bibliothek",

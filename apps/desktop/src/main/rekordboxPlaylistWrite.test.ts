@@ -777,8 +777,6 @@ describe('applyRekordboxBatch with Matching', () => {
     expect(d.sessionBackup).not.toHaveBeenCalled()
   })
 
-  // The DJ may have removed the track in rekordbox since; a pair with a ghost would show up
-  // nowhere and could never be undone from Surco.
   it('refuses to pair a track the collection no longer has', async () => {
     const path = await collection()
     const result = await applyRekordboxBatch(path, [matchOp('m', 'add', ['101', 'gone'])], deps())

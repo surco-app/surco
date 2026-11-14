@@ -262,6 +262,11 @@
             "d": "La abres desde la paleta de comandos, desde el menú de una carpeta o sobre una playlist vacía. Eliges cuánto dura y de qué playlists salen las pistas, y dices qué hay en cada una, Bases, Vocales o Mezcladas, también para una carpeta entera. Surco junta las parejas que repites en tus sets y tracklists, las pistas con más estrellas y escuchas, mezcla armónica Camelot si la quieres y un hueco para lo nuevo, y cuenta el tiempo que suena cada pista, no el archivo entero. Se ve como cualquier playlist, con la tonalidad de cada pista. Aprende de tus sets cuánto mueves el tempo y cuánto te importa el tono, deja tus cierres para el final, saca más tus fijas y abre con un vocal. «Rehacer» la vuelve a montar entera, o empiézala desde una pista con su menú. En rekordbox, Traktor, Engine DJ, Serato y VirtualDJ. Si el programa está abierto, espera a que lo cierres."
           },
           {
+            "t": "Matching de rekordbox",
+            "s": "Las parejas que marcas con Matching en rekordbox, juntas en una lista y en una playlist.",
+            "d": "Salen agrupadas por cadenas en la fuente de rekordbox y con un clic las conviertes en una playlist. En la ficha ves las parejas de cada tema, las marcas o las quitas desde Surco, y la sesión automática las pone seguidas."
+          },
+          {
             "t": "Cues de rekordbox",
             "s": "Pon hot cues sobre la onda de rekordbox, a mano o con tu flujo de marcado.",
             "d": "Hot cues de la A a la H y CALL, sobre la onda y la rejilla de rekordbox. Los arrastras, se ajustan al compás o al golpe y puedes deshacer. Al ampliar la onda ves cada golpe con detalle, medido del propio audio, y Play suena al instante. Eliges un flujo, como Mix in 64, Mix in 32 o uno tuyo hecho por bloques o aprendido de tu colección, y al pasar el ratón por la onda ves en transparente lo que pondría. Un clic lo coloca y te dice lo que no cabe. Auto marcar te propone dónde rompe cada pista, también en varias a la vez. Aprende tu forma de marcar de los cues que ya pusiste y de los que guardas, y separa lo que ve seguro de lo dudoso. Y si marcas los CALL en rekordbox, Surco pone los hot cues de tu flujo al cerrarlo. En una pista que rekordbox aún no ha analizado trabajas sobre la rejilla de Surco, y cuando rekordbox la analiza, tus cues se ajustan a la suya. Las letras siguen el orden de la pista, y si cada letra es un pad fijo para ti, lo apagas en Ajustes. Si la misma pista está en Traktor, Engine DJ, Serato o VirtualDJ, al guardar el flujo llega también allí, puesto con su rejilla y sus cues. Se escriben en rekordbox con copia de seguridad antes."
@@ -1421,6 +1426,26 @@
       "convertCount": "Convertir {{count}} pistas",
       "convertTo": "Convertir a AIFF",
       "missingArtist": "Falta Artista"
+    },
+    "matching": {
+      "title": "Los temas que combinan, todos juntos.",
+      "lede": "Marcas en rekordbox, con el botón de Matching, los temas que suenan bien juntos. Surco te los enseña todos en una lista, agrupados por cadenas, y con un clic los convierte en una playlist de rekordbox.",
+      "button": "Crear playlist",
+      "playlist": "Playlist Matching",
+      "points": {
+        "chains": {
+          "title": "Por cadenas",
+          "text": "Si un tema va con otro y ese con un tercero, salen juntos y en ese orden."
+        },
+        "track": {
+          "title": "En cada pista",
+          "text": "Eliges un tema y ves sus parejas. En la lista, las parejas llevan los anillos de rekordbox."
+        },
+        "session": {
+          "title": "También desde Surco",
+          "text": "Marcas y quitas parejas sin abrir rekordbox, y la sesión automática las pone seguidas."
+        }
+      }
     },
     "review": {
       "title": "Encuentra las erratas y los duplicados de tu biblioteca",

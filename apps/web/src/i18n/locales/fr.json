@@ -262,6 +262,11 @@
             "d": "Tu l'ouvres depuis la palette de commandes, depuis le menu d'un dossier ou sur une playlist vide. Tu choisis sa durée et les playlists d'où viennent les pistes, et tu dis ce que contient chacune, Instrumentaux, Voix ou Mixte, aussi pour un dossier entier. Surco réunit les paires que tu répètes dans tes sets et tracklists, les pistes avec le plus d'étoiles et d'écoutes, le mix harmonique Camelot si tu le veux et une place pour les nouveautés, et compte le temps que joue chaque piste, pas le fichier entier. Elle ressemble à n'importe quelle playlist, avec la tonalité de chaque piste. Elle apprend de tes sets de combien tu changes le tempo et à quel point la tonalité compte pour toi, garde tes morceaux de clôture pour la fin, passe plus souvent tes incontournables et commence par un morceau chanté. « Refaire » la remonte en entier, ou lance-la depuis un morceau avec son menu. Dans rekordbox, Traktor, Engine DJ, Serato et VirtualDJ. Si le logiciel est ouvert, elle attend que tu le fermes."
           },
           {
+            "t": "Matching de rekordbox",
+            "s": "Les paires que tu marques avec Matching dans rekordbox, réunies dans une liste et une playlist.",
+            "d": "Elles apparaissent regroupées en chaînes dans la source rekordbox et un clic en fait une playlist. La fiche montre les partenaires de chaque morceau, tu les crées ou les retires depuis Surco, et la session automatique les enchaîne."
+          },
+          {
             "t": "Cues rekordbox",
             "s": "Place des hot cues sur la forme d’onde de rekordbox, à la main ou avec ton flux.",
             "d": "Hot cues de A à H et CALL, sur la forme d’onde et la grille de rekordbox. Fais-les glisser, ils s’aimantent à la mesure ou au temps, et tu peux annuler. En zoomant, tu vois chaque temps en détail, mesuré sur l’audio lui-même, et Play démarre tout de suite. Choisis un flux, comme Mix in 64, Mix in 32 ou l’un des tiens, monté à partir de blocs ou appris de ta collection, et en survolant la forme d’onde tu vois un fantôme de ce qu’il placerait. Un clic le place et te dit ce qui ne rentre pas. Le marquage auto suggère où chaque morceau décolle, aussi sur plusieurs à la fois. Il apprend ta façon de marquer à partir des cues que tu as déjà posés et de ceux que tu enregistres, et sépare ce dont il est sûr de ce dont il doute. Et si tu marques les CALL dans rekordbox, Surco place les hot cues de ton flux quand tu le fermes. Sur un morceau que rekordbox n’a pas encore analysé, tu travailles sur la grille de Surco, et une fois que rekordbox l’analyse, tes cues passent sur la sienne. Les lettres suivent l’ordre du morceau, et si chaque lettre est un pad fixe pour toi, désactive-le dans les Réglages. Si le même morceau est dans Traktor, Engine DJ, Serato ou VirtualDJ, l’enregistrement y place aussi le flux, sur sa grille et autour de ses cues. Écrit dans rekordbox après une sauvegarde."
@@ -1421,6 +1426,26 @@
       "convertCount": "Convertir {{count}} morceaux",
       "convertTo": "Convertir en AIFF",
       "missingArtist": "Artiste manquant"
+    },
+    "matching": {
+      "title": "Les morceaux qui se mixent bien, tous réunis.",
+      "lede": "Dans rekordbox, tu marques avec le bouton Matching les morceaux qui sonnent bien ensemble. Surco te les montre tous dans une liste, regroupés en chaînes, et en fait une playlist rekordbox en un clic.",
+      "button": "Créer une playlist",
+      "playlist": "Playlist Matching",
+      "points": {
+        "chains": {
+          "title": "En chaînes",
+          "text": "Si un morceau va avec un autre et celui-ci avec un troisième, ils apparaissent ensemble et dans cet ordre."
+        },
+        "track": {
+          "title": "Sur chaque morceau",
+          "text": "Choisis un morceau et vois ses partenaires. Dans la liste, ils portent les anneaux de rekordbox."
+        },
+        "session": {
+          "title": "Depuis Surco aussi",
+          "text": "Tu crées et retires des paires sans ouvrir rekordbox, et la session automatique les enchaîne."
+        }
+      }
     },
     "review": {
       "title": "Repère les fautes et les doublons de ta bibliothèque",
