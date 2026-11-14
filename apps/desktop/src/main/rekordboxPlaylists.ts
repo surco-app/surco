@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import path, { resolve } from 'node:path'
 import { ALL_TRACKS_ID } from '../shared/allTracks'
 import { cueGridDrift } from '../shared/cueGrid'
+import { MATCHING_ID } from '../shared/matching'
 import { mediaUrl } from '../shared/media'
 import { RECENTLY_ADDED_ID } from '../shared/recentlyAdded'
 import type {
@@ -15,6 +16,7 @@ import type {
 import { beatGrid } from './anlz'
 import { insideShare } from './rekordboxArtwork'
 import { type openRekordboxDb, STREAMING_FILE_TYPE } from './rekordboxDb'
+import { readMatchingChains } from './rekordboxMatching'
 import { localDate } from './rekordboxRows'
 
 // Reads the user's rekordbox playlists as a source of tracks: the folder tree and one
@@ -246,6 +248,23 @@ function gridDriftOf(analysis: string | null, cues: RowCue[]): { gridDriftMs?: n
   return drift === null ? {} : { gridDriftMs: drift }
 }
 
+function inChains(rows: SourcePlaylistEntry[], chains: string[][]): SourcePlaylistEntry[] {
+  const byId = new Map(rows.map((r) => [r.contentId, r]))
+  return chains.flatMap((chain, i) => [
+    ...(i > 0
+      ? [
+          {
+            path: null,
+            separator: true,
+            meta: {},
+            linkId: `matching-sep-${i}`,
+          } satisfies SourcePlaylistEntry,
+        ]
+      : []),
+    ...chain.flatMap((id) => byId.get(id) ?? []),
+  ])
+}
+
 export function readRekordboxPlaylistWithPreview(
   db: RekordboxDb,
   share: string,
@@ -253,15 +272,20 @@ export function readRekordboxPlaylistWithPreview(
   exists: (p: string) => boolean = existsSync,
   now: Date = new Date(),
 ): SourcePlaylistEntry[] {
+  const chains = id === MATCHING_ID ? readMatchingChains(db) : []
+  const matched = chains.flat()
   const content =
     id === RECENTLY_ADDED_ID
       ? { where: RECENT, params: [recentSince(now)] }
       : id === ALL_TRACKS_ID
         ? { where: ALL, params: [] }
-        : null
-  const entries = content
+        : id === MATCHING_ID
+          ? { where: `${ALL} AND c.ID IN (${matched.map(() => '?').join(',')})`, params: matched }
+          : null
+  const read = content
     ? readContent(db, content.where, content.params)
     : readRekordboxPlaylist(db, id)
+  const entries = id === MATCHING_ID ? inChains(read, chains) : read
   const contentIds = content
     ? `SELECT c.ID FROM djmdContent c WHERE ${content.where}`
     : PLAYLIST_CONTENT

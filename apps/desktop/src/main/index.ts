@@ -43,7 +43,6 @@ import log from 'electron-log/main'
 import electronUpdater from 'electron-updater'
 import { cacheBytesOf } from '../shared/analysisCacheSize'
 import { trashLimits } from '../shared/backupPolicy'
-import { WINDOW_MIN_SIZE } from '../shared/windowSize'
 import { activeCueFlow } from '../shared/cueFlows'
 import { DJ_CUE_QUEUE_CHANGED, DJ_SYNC_ISSUE } from '../shared/djApi'
 import { type CueProgram, exportsUsbOn } from '../shared/djProgram'
@@ -67,6 +66,7 @@ import type {
   SessionEdit,
   Settings,
 } from '../shared/types'
+import { WINDOW_MIN_SIZE } from '../shared/windowSize'
 import { createActiveConversions } from './activeConversions'
 import { activity } from './activity'
 import {

@@ -118,3 +118,28 @@ export const LIBRARY_ICON: Record<DjProgram, (props: IconProps) => React.JSX.Ele
   serato: SeratoIcon,
   virtualdj: VirtualdjIcon,
 }
+
+// The two linked rings of rekordbox's Matching button (matching.svg in its skin), so a DJ
+// sees the same mark Surco and rekordbox put on a pair.
+export function MatchingIcon({
+  size,
+  className,
+  ...rest
+}: IconProps & { className?: string }): React.JSX.Element {
+  return (
+    <svg
+      viewBox="0 0 16 14"
+      width={size}
+      height={size}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      aria-hidden="true"
+      className={className}
+      {...rest}
+    >
+      <circle cx="5.5" cy="7" r="4" />
+      <circle cx="10.5" cy="7" r="4" />
+    </svg>
+  )
+}

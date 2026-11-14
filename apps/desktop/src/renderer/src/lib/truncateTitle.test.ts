@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest'
 import { truncateTitleMiddle } from './truncateTitle'
 
 const graphemes = (s: string): string[] =>
-  Array.from(new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(s), (g) => g.segment)
+  Array.from(
+    new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(s),
+    (g) => g.segment,
+  )
 const width = (s: string): number => graphemes(s).length
 
 describe('truncateTitleMiddle', () => {

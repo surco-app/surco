@@ -1,6 +1,8 @@
 import type React from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { PlaylistSource, SourceNode } from '../../../shared/types'
+import { useStableCallback } from '../hooks/useStableCallback'
 import {
   COMMAND_GROUP_ORDER,
   type Command,
@@ -9,8 +11,6 @@ import {
   filterTrackCommands,
   type PaletteTree,
 } from '../lib/commands'
-import type { PlaylistSource, SourceNode } from '../../../shared/types'
-import { useStableCallback } from '../hooks/useStableCallback'
 import type { TrackItem } from '../types'
 import { ModalShell } from './ModalShell'
 

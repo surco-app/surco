@@ -596,6 +596,7 @@
     "cuesOpenFull": "Editar els cues a pantalla completa"
   },
   "trackList": {
+    "matchingPartner": "Fa Matching amb la pista triada",
     "cuesUnsaved": "Cues sense desar",
     "autoMark": {
       "proposed_one": "{{count}} proposta",
@@ -679,6 +680,7 @@
       "searchWeb": "Cercar a Google",
       "startOver": "Tornar a començar",
       "startSession": "Sessió a partir d'aquesta pista…",
+      "matching": "Fer matching",
       "copyMeta": "Copiar totes les metadades",
       "pasteMeta": "Enganxar les metadades",
       "remove": "Treure de Surco",
@@ -957,6 +959,8 @@
     "sectionMaximize": "Maximitzar la secció",
     "sectionRestore": "Restaurar la secció",
     "otherTagsTitle": "Altres metadades",
+    "matchingTitle": "Matching",
+    "matchingRemove": "Treu",
     "otherTagsSummary": "{{count}} etiquetes",
     "otherTagsRemove": "Esborrar {{name}}",
     "otherTagsRestore": "Restaurar {{name}}",
@@ -1868,6 +1872,7 @@
       "properties": "Propietats",
       "quality": "Qualitat de l'àudio",
       "cues": "Cues",
+      "matching": "Matching",
       "output": "Nom de sortida",
       "trim": "Retall de silenci",
       "declick": "Reparació de clics de vinil",
@@ -2619,6 +2624,9 @@
     "serato": "Serato",
     "virtualdj": "VirtualDJ",
     "allTracks": "Totes les pistes",
+    "matching": "Matching",
+    "matchingCreate": "Crear playlist",
+    "matchingAdded": "Matching desat a rekordbox",
     "recentlyAdded": "Afegides recentment",
     "search": "Cercar playlists",
     "loading": "Llegint les playlists…",
@@ -3305,7 +3313,8 @@
         "moveNode": "moure"
       },
       "cues": "cues",
-      "tags": "etiquetes"
+      "tags": "etiquetes",
+      "matching": "Matching"
     },
     "applyNow": "Aplicar ara",
     "discard": "Descartar",

@@ -14,7 +14,6 @@ import { useTranslation } from 'react-i18next'
 import { ALL_TRACKS_ID } from '../../shared/allTracks'
 import { autoMatchAvailable, usableProviders } from '../../shared/autoMatch'
 import { trashLimits } from '../../shared/backupPolicy'
-import { WINDOW_MIN_SIZE } from '../../shared/windowSize'
 import { DEFAULT_CUE_GRID_TOLERANCE } from '../../shared/cueGrid'
 import type { CueJumpBars } from '../../shared/cueJump'
 import type { CueQuantize } from '../../shared/cueQuantize'
@@ -30,6 +29,7 @@ import {
   programOf,
 } from '../../shared/djProgram'
 import { SAME_CLOCK_FILE } from '../../shared/gridEdit'
+import { MATCHING_ID } from '../../shared/matching'
 import { emptyMetadata } from '../../shared/metadata'
 import { RECENTLY_ADDED_ID } from '../../shared/recentlyAdded'
 import {
@@ -67,11 +67,13 @@ import type {
   TrashEntry,
   UsbProgram,
 } from '../../shared/types'
+import { WINDOW_MIN_SIZE } from '../../shared/windowSize'
 import { LiveActivityPanel } from './components/ActivityPanel'
 import { BatchRun } from './components/BatchRun'
 import { Confetti } from './components/Confetti'
 import { EmptyDisc } from './components/EmptyDisc'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { MatchingBand } from './components/MatchingBand'
 import { ModalExit } from './components/ModalShell'
 import {
   MusicReviewColumn,
@@ -100,6 +102,7 @@ import { UsbExportPill } from './components/UsbExportPill'
 import { UsbTopProgress } from './components/UsbTopProgress'
 import { useActivityLog } from './hooks/useActivityLog'
 import { useAppleMusicArtwork } from './hooks/useAppleMusicArtwork'
+import { useAppNotifications } from './hooks/useAppNotifications'
 import { useAutoMatch } from './hooks/useAutoMatch'
 import { useColumnLayout } from './hooks/useColumnLayout'
 import { type CleanupOffer, useConfirmFlows } from './hooks/useConfirmFlows'
@@ -112,9 +115,11 @@ import { useExitPresence } from './hooks/useExitPresence'
 import { useGridChecks } from './hooks/useGridChecks'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { useLaunchModals } from './hooks/useLaunchModals'
+import { useLibraryCheckToast } from './hooks/useLibraryCheckToast'
 import { useLibraryCopyVerdicts } from './hooks/useLibraryCopyVerdicts'
 import { useListNavigation } from './hooks/useListNavigation'
 import { useListReviewNotice } from './hooks/useListReviewNotice'
+import { useMatchingEdit } from './hooks/useMatchingEdit'
 import { useMetadataClipboard } from './hooks/useMetadataClipboard'
 import { useMetaUndo } from './hooks/useMetaUndo'
 import { type SettingsTab, useOverlays } from './hooks/useOverlays'
@@ -123,6 +128,7 @@ import { usePlaylistReadPriority } from './hooks/usePlaylistReadPriority'
 import { useProgramsAvailable } from './hooks/useProgramsAvailable'
 import { useQualityAnalysis } from './hooks/useQualityAnalysis'
 import { useRekordboxEdits } from './hooks/useRekordboxEdits'
+import { useRekordboxMatching } from './hooks/useRekordboxMatching'
 import { useOfferPlaylistFields } from './hooks/useRekordboxPlaylists'
 import { PROGRAM_QUEUES, useRekordboxQueue } from './hooks/useRekordboxQueue'
 import { useRetireSuperseded } from './hooks/useRetireSuperseded'
@@ -138,8 +144,6 @@ import { useTrackLibrary } from './hooks/useTrackLibrary'
 import { useTrackProcessing } from './hooks/useTrackProcessing'
 import { useTracksView, type ViewCacheEntry } from './hooks/useTracksView'
 import { useTriageFilters } from './hooks/useTriageFilters'
-import { useLibraryCheckToast } from './hooks/useLibraryCheckToast'
-import { useAppNotifications } from './hooks/useAppNotifications'
 import { useUsbExportToasts } from './hooks/useUsbExportToasts'
 import { useUsbVolumes } from './hooks/useUsbVolumes'
 import { useVerificationUpdates } from './hooks/useVerificationUpdates'
@@ -164,9 +168,9 @@ import { railWidth } from './lib/columnLayout'
 import {
   buildCommands,
   type Command,
-  type PaletteTree,
   type CueActions,
   type NewPlaylist,
+  type PaletteTree,
   runCommand,
 } from './lib/commands'
 import { railAlert } from './lib/copiesView'
@@ -193,6 +197,7 @@ import { columnOf, cycleRegion, FOCUSABLE, isTypingTarget, nextColumn } from './
 import { lazyChunk, preloadLazyWhenIdle } from './lib/lazyChunk'
 import { librarySourceOf } from './lib/librarySource'
 import { listReviewSource } from './lib/listReviewSource'
+import { type MatchingPartner, partnersOf } from './lib/matchingPartners'
 import { OpenSettingsProvider } from './lib/openSettingsContext'
 import { outputNamePatches, renderOutputName, titleFormatSummary } from './lib/outputName'
 import { clampPanelGeometry } from './lib/panelGeometry'
@@ -1156,6 +1161,8 @@ export default function App(): React.JSX.Element {
     library: () => libraryRoles(browser.tree ?? []),
     made: () => new Set(settings?.sessionsMade ?? []),
     phases: () => libraryPhases(browser.tree ?? []),
+    matching: async () =>
+      sessionProgram === 'rekordbox' ? window.api.dj.matching('rekordbox') : [],
     noteMade: (playlistId) => {
       if (settings)
         saveSettings({ sessionsMade: withSessionMade(settings.sessionsMade, playlistId) })
@@ -1934,7 +1941,10 @@ export default function App(): React.JSX.Element {
       !seenInAllRef.current.has(id) &&
       !seenDwell.current.has(id)
     )
-      seenDwell.current.set(id, setTimeout(() => markSeenInAll(id), SEEN_DWELL_MS))
+      seenDwell.current.set(
+        id,
+        setTimeout(() => markSeenInAll(id), SEEN_DWELL_MS),
+      )
   })
   useLibraryCheckToast(store, libraryFailed, librarySource)
   // The list narrowed to the open playlist, in its order. Only what the list shows and
@@ -2322,7 +2332,9 @@ export default function App(): React.JSX.Element {
     batchStripRegion.current = null
     const target =
       region.querySelector<HTMLElement>(FOCUSABLE.join(', ')) ??
-      document.querySelector<HTMLElement>('[data-testid="source-tree"] [data-testid^="source-node-"]')
+      document.querySelector<HTMLElement>(
+        '[data-testid="source-tree"] [data-testid^="source-node-"]',
+      )
     target?.focus()
   })
   const batchStrip = (
@@ -2734,7 +2746,8 @@ export default function App(): React.JSX.Element {
   const crateOpen =
     editableOpen &&
     browser.playlist?.id !== RECENTLY_ADDED_ID &&
-    browser.playlist?.id !== ALL_TRACKS_ID
+    browser.playlist?.id !== ALL_TRACKS_ID &&
+    browser.playlist?.id !== MATCHING_ID
   const pendingCuePaths = useMemo(
     () =>
       new Set(
@@ -2815,6 +2828,51 @@ export default function App(): React.JSX.Element {
   const selectedPath = selected?.inputPath
   const selectedLabel = selected?.listLabel
   const selectedCueId = selected ? playlistScope?.contentOf.get(selected.id) : undefined
+  const inRekordbox = sourceProgram === 'rekordbox'
+  const { data: matchingPairs } = useRekordboxMatching(inRekordbox)
+  const { data: matchingEntries } = useQuery({
+    queryKey: ['source-playlist', 'rekordbox', MATCHING_ID],
+    queryFn: () => SOURCE_READ.rekordbox.playlist(MATCHING_ID),
+    enabled: inRekordbox && (matchingPairs?.length ?? 0) > 0,
+    staleTime: Number.POSITIVE_INFINITY,
+  })
+  const matchingPartners = useMemo(
+    () =>
+      inRekordbox && selectedContentId && matchingPairs && matchingEntries
+        ? partnersOf(matchingPairs, selectedContentId, matchingEntries)
+        : [],
+    [inRekordbox, selectedContentId, matchingPairs, matchingEntries],
+  )
+  const matchingIds = useMemo(() => {
+    const partners = new Set(matchingPartners.map((p) => p.contentId))
+    return new Set(
+      scopeTracks.flatMap((t) =>
+        partners.has(playlistScope?.contentOf.get(t.id) ?? '') ? [t.id] : [],
+      ),
+    )
+  }, [matchingPartners, scopeTracks, playlistScope])
+  const editMatching = useMatchingEdit(notifyEdit)
+  const removeMatchingPartner = useStableCallback((partner: MatchingPartner) => {
+    if (!selectedContentId || !selected) return
+    void editMatching(
+      'remove',
+      [selectedContentId, partner.contentId],
+      `${selected.listLabel} · ${partner.title}`,
+    )
+  })
+  const matchPairOf = (track: TrackItem): { pair: [string, string]; label: string } | null => {
+    if (!inRekordbox || !cuesOpen) return null
+    const targets = menuTargets(track.id)
+    if (targets.length !== 2) return null
+    const ids = targets.map((t) => playlistScope?.contentOf.get(t.id))
+    const [a, b] = ids
+    if (!a || !b || a === b) return null
+    return { pair: [a, b], label: targets.map((t) => t.listLabel).join(' · ') }
+  }
+  const pickMatchingPartner = useStableCallback((partner: MatchingPartner) => {
+    const track = scopeTracks.find((t) => playlistScope?.contentOf.get(t.id) === partner.contentId)
+    if (track) setSelection({ ids: [track.id], anchor: track.id })
+  })
   const cueTrack = useMemo(
     () =>
       selectedCueId && selectedLabel !== undefined
@@ -3061,6 +3119,7 @@ export default function App(): React.JSX.Element {
           h.node.id !== playlist?.id &&
           h.node.id !== RECENTLY_ADDED_ID &&
           h.node.id !== ALL_TRACKS_ID &&
+          h.node.id !== MATCHING_ID &&
           fixed?.(h.node) !== 'locked',
       ),
       openName: crateOpen && playlist && editCan('remove') ? playlist.name : null,
@@ -3102,6 +3161,9 @@ export default function App(): React.JSX.Element {
         onSearchWeb={searchTrackWeb}
         onStartOver={startOverTrack}
         onStartSession={sessionProgram && browser.playlist ? openSessionFromTrack : undefined}
+        onMatch={((m) => (m ? () => void editMatching('add', m.pair, m.label) : undefined))(
+          matchPairOf(menu.track),
+        )}
         onCopyMeta={onCopyMeta}
         onCopyPath={onCopyPath}
         onPasteMeta={onPasteMeta}
@@ -4003,6 +4065,25 @@ export default function App(): React.JSX.Element {
                                 }}
                               />
                             )}
+                          {sourceProgram === 'rekordbox' &&
+                            browser.playlist?.id === MATCHING_ID && (
+                              <MatchingBand
+                                tracks={scopeTracks.length}
+                                onCreate={() => {
+                                  const name = tr('sources.matching')
+                                  void editRekordbox(
+                                    {
+                                      kind: 'create',
+                                      parentId: 'root',
+                                      name,
+                                      folder: false,
+                                      tracks: scopeTracks.map(trackRef),
+                                    },
+                                    name,
+                                  )
+                                }}
+                              />
+                            )}
                           {visibleTracks.length === 0 ? (
                             <div className="flex flex-col items-center gap-3 p-6 text-center">
                               <p className="text-xs text-fg-faint">{tr('sidebar.search.empty')}</p>
@@ -4063,6 +4144,7 @@ export default function App(): React.JSX.Element {
                               revealRowRef={revealRowRef}
                               backupAtByPath={backupAtByPath}
                               pendingCuePaths={pendingCuePaths}
+                              matchingIds={matchingIds}
                               unsavedCueIds={unsavedCueIds}
                               playedPaths={playedPaths}
                               autoMarkById={autoMarkById}
@@ -4147,6 +4229,9 @@ export default function App(): React.JSX.Element {
                             <Editor
                               item={selected}
                               rekordboxCue={rekordboxCue}
+                              matchingPartners={matchingPartners}
+                              onMatchingPick={pickMatchingPartner}
+                              onMatchingRemove={removeMatchingPartner}
                               onCueJumpBars={onCueJumpBars}
                               onCueQuantize={onCueQuantize}
                               onCueFlow={onCueFlow}

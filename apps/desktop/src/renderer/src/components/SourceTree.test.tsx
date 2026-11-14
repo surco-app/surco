@@ -4,6 +4,7 @@ import { act, cleanup, fireEvent, render, screen, within } from '@testing-librar
 import { useEffect, useState } from 'react'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { ALL_TRACKS_ID } from '../../../shared/allTracks'
+import { MATCHING_ID } from '../../../shared/matching'
 import { RECENTLY_ADDED_ID } from '../../../shared/recentlyAdded'
 import type { SourceNode } from '../../../shared/types'
 import i18n from '../i18n'
@@ -787,6 +788,45 @@ describe('SourceTree Recently added', () => {
     const dt = dragNode('house')
     over(node(), 3, dt)
     expect(screen.queryByTestId('source-tree-drop-line')).toBeNull()
+    expect(node()).not.toHaveAttribute('data-drop-target')
+    fireEvent.drop(node(), { dataTransfer: dt })
+    expect(edit.onMove).not.toHaveBeenCalled()
+    expect(onOuterDrop).not.toHaveBeenCalled()
+  })
+})
+
+describe('SourceTree Matching', () => {
+  const MATCH: SourceNode = { id: MATCHING_ID, name: 'Matching', kind: 'playlist', count: 9 }
+  const node = () => screen.getByTestId(`source-node-${MATCHING_ID}`)
+
+  it('marks it with the two rings of the rekordbox Matching button, so the DJ recognises it', () => {
+    setup(null, true, [MATCH, ...NODES])
+    expect(within(node()).getByTestId('source-node-matching-icon')).toBeInTheDocument()
+  })
+
+  // rekordbox builds it from the pairs; a rename or delete would target a playlist that does
+  // not exist.
+  it('offers no rename or delete', () => {
+    setup(null, true, [MATCH, ...NODES])
+    fireEvent.contextMenu(node(), { clientX: 10, clientY: 10 })
+    expect(screen.queryByTestId('source-tree-menu')).not.toBeInTheDocument()
+  })
+
+  // A track joins it by being paired, not by being dropped.
+  it('takes no drop and keeps it from reaching the window import', () => {
+    const { edit, onOuterDrop } = setup(null, true, [MATCH, ...NODES])
+    const dt = files('a.wav')
+    fireEvent.dragOver(node(), { dataTransfer: dt })
+    expect(node()).not.toHaveAttribute('data-drop-target')
+    fireEvent.drop(node(), { dataTransfer: dt })
+    expect(edit.onDropTracks).not.toHaveBeenCalled()
+    expect(onOuterDrop).not.toHaveBeenCalled()
+  })
+
+  it('takes no node dropped on it', () => {
+    const { edit, onOuterDrop } = setup(null, true, [MATCH, ...NODES])
+    const dt = dragNode('house')
+    over(node(), 24, dt)
     expect(node()).not.toHaveAttribute('data-drop-target')
     fireEvent.drop(node(), { dataTransfer: dt })
     expect(edit.onMove).not.toHaveBeenCalled()

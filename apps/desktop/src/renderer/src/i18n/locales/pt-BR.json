@@ -20,7 +20,7 @@
   "sessions": {
     "role": {
       "title": "Papel para sessões",
-    "of": "Papel de {{name}}",
+      "of": "Papel de {{name}}",
       "base": "Instrumentais",
       "vocal": "Com voz",
       "any": "Misto"
@@ -103,11 +103,11 @@
       "redo": "Refazer",
       "adjust": "Ajustar…",
       "keep": "Ficar assim",
-    "kept": "Mantida como playlist normal",
+      "kept": "Mantida como playlist normal",
       "short": "Só há faixas para {{minutes}} min",
-    "counted": "Contado a {{minutes}} min por faixa. Os arquivos somam {{audio}}.",
-    "countedAtLeast": "Contado a {{minutes}} min por faixa. Os arquivos somam pelo menos {{audio}}.",
-    "noCombos": "Sem combos, porque nenhum par se repete em duas ou mais das playlists Mistas escolhidas.",
+      "counted": "Contado a {{minutes}} min por faixa. Os arquivos somam {{audio}}.",
+      "countedAtLeast": "Contado a {{minutes}} min por faixa. Os arquivos somam pelo menos {{audio}}.",
+      "noCombos": "Sem combos, porque nenhum par se repete em duas ou mais das playlists Mistas escolhidas.",
       "assumed_one": "{{count}} faixa sem duração, conta como {{minutes}} min",
       "assumed_other": "{{count}} faixas sem duração, contam como {{minutes}} min cada"
     },
@@ -596,6 +596,7 @@
     "cuesOpenFull": "Editar os cues em tela cheia"
   },
   "trackList": {
+    "matchingPartner": "Faz Matching com a faixa escolhida",
     "cuesUnsaved": "Cues não salvos",
     "autoMark": {
       "proposed_one": "{{count}} sugestão",
@@ -679,6 +680,7 @@
       "searchWeb": "Buscar no Google",
       "startOver": "Começar de novo",
       "startSession": "Sessão a partir desta faixa…",
+      "matching": "Fazer matching",
       "copyMeta": "Copiar todos os metadados",
       "pasteMeta": "Colar metadados",
       "remove": "Remover do Surco",
@@ -957,6 +959,8 @@
     "sectionMaximize": "Maximizar a seção",
     "sectionRestore": "Restaurar a seção",
     "otherTagsTitle": "Outros metadados",
+    "matchingTitle": "Matching",
+    "matchingRemove": "Remover",
     "otherTagsSummary": "{{count}} tags",
     "otherTagsRemove": "Remover {{name}}",
     "otherTagsRestore": "Restaurar {{name}}",
@@ -1868,6 +1872,7 @@
       "properties": "Propriedades",
       "quality": "Qualidade de áudio",
       "cues": "Cues",
+      "matching": "Matching",
       "output": "Nome de saída",
       "trim": "Corte de silêncio",
       "declick": "Reparo de cliques de vinil",
@@ -2619,6 +2624,9 @@
     "serato": "Serato",
     "virtualdj": "VirtualDJ",
     "allTracks": "Todas as faixas",
+    "matching": "Matching",
+    "matchingCreate": "Criar playlist",
+    "matchingAdded": "Matching salvo no rekordbox",
     "recentlyAdded": "Adicionadas recentemente",
     "search": "Buscar playlist",
     "loading": "Lendo playlists…",
@@ -3305,7 +3313,8 @@
         "moveNode": "mover"
       },
       "cues": "cues",
-      "tags": "tags"
+      "tags": "tags",
+      "matching": "Matching"
     },
     "applyNow": "Aplicar agora",
     "discard": "Descartar",

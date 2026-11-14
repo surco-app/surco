@@ -727,6 +727,77 @@ function playlistRow(path: string, id: string): { Name: string } | undefined {
   }
 }
 
+function matchingRows(path: string): { ContentID1: string; ContentID2: string }[] {
+  const db = openRekordboxDb(path, { readonly: true })
+  if (!db) throw new Error('did not open')
+  try {
+    return db
+      .prepare('SELECT ContentID1, ContentID2 FROM djmdRecommendLike ORDER BY created_at')
+      .all() as { ContentID1: string; ContentID2: string }[]
+  } finally {
+    db.close()
+  }
+}
+
+const matchOp = (id: string, action: 'add' | 'remove', pair: [string, string]): QueueOp => ({
+  id,
+  kind: 'match',
+  action,
+  pair,
+  label: 'Night Train · Play This Song',
+})
+
+describe('applyRekordboxBatch with Matching', () => {
+  it('pairs two tracks behind the same question and copy as any other write', async () => {
+    const path = await collection()
+    const d = deps()
+    const result = await applyRekordboxBatch(path, [matchOp('m', 'add', ['101', '102'])], d)
+    expect(result).toEqual({
+      ok: true,
+      wrote: true,
+      outcomes: [{ id: 'm', applied: true, notices: [] }],
+    })
+    expect(d.ensureClosed).toHaveBeenCalledTimes(1)
+    expect(d.sessionBackup).toHaveBeenCalledWith(path)
+    expect(matchingRows(path)).toEqual([{ ContentID1: '101', ContentID2: '102' }])
+  })
+
+  it('unpairs two tracks', async () => {
+    const path = await collection({ matches: [{ ContentID1: '102', ContentID2: '101' }] })
+    const result = await applyRekordboxBatch(path, [matchOp('m', 'remove', ['101', '102'])], deps())
+    expect(result).toMatchObject({ ok: true, outcomes: [{ id: 'm', applied: true }] })
+    expect(matchingRows(path)).toEqual([])
+  })
+
+  it('leaves the collection alone when the pair is already as asked', async () => {
+    const path = await collection({ matches: [{ ContentID1: '101', ContentID2: '102' }] })
+    const d = deps()
+    const result = await applyRekordboxBatch(path, [matchOp('m', 'add', ['102', '101'])], d)
+    expect(result).toMatchObject({ ok: true, wrote: false, outcomes: [{ id: 'm', applied: true }] })
+    expect(d.sessionBackup).not.toHaveBeenCalled()
+  })
+
+  // The DJ may have removed the track in rekordbox since; a pair with a ghost would show up
+  // nowhere and could never be undone from Surco.
+  it('refuses to pair a track the collection no longer has', async () => {
+    const path = await collection()
+    const result = await applyRekordboxBatch(path, [matchOp('m', 'add', ['101', 'gone'])], deps())
+    expect(result).toMatchObject({
+      ok: true,
+      outcomes: [{ id: 'm', applied: false, reason: 'stale' }],
+    })
+    expect(matchingRows(path)).toEqual([])
+  })
+
+  it('never touches a playlist while pairing', async () => {
+    const path = await collection()
+    const before = linkIds(path, '2000')
+    await applyRekordboxBatch(path, [matchOp('m', 'add', ['101', '102'])], deps())
+    expect(linkIds(path, '2000')).toEqual(before)
+    expect(playlistNamed(path, 'Factory')).toBeDefined()
+  })
+})
+
 describe('applyRekordboxBatch', () => {
   it('opens the collection with the key derived once, so a write does not pay the slow passphrase derivation on every open', async () => {
     const path = await collection()

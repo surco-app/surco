@@ -177,7 +177,7 @@ describe('View menu rail names', () => {
 })
 
 describe('View menu sidebar', () => {
-  it('ticks the sidebar while it shows, with the keymap\'s shortcut, and toggles it through the command', () => {
+  it("ticks the sidebar while it shows, with the keymap's shortcut, and toggles it through the command", () => {
     const { template, run } = build()
     const item = itemFor(menu(template, 'View'), 'Show Sidebar')
     expect(item.type).toBe('checkbox')

@@ -1896,6 +1896,7 @@ export type RekordboxQueuePart =
   | { kind: 'tree'; edit: RekordboxPlaylistEdit['kind'] }
   | { kind: 'cues' }
   | { kind: 'tags' }
+  | { kind: 'matching' }
 
 export interface RekordboxQueueItem {
   key: string

@@ -75,6 +75,9 @@ export interface PlaylistFixture {
     ColorTableIndex: number | null
     OutMsec?: number | null
   }[]
+  matches?: { ContentID1: string; ContentID2: string; deleted?: boolean }[]
+  // Leaves djmdRecommendLike out, as a collection from before rekordbox had Matching.
+  noMatchingTable?: boolean
 }
 
 // Every fixture row is older than any edit a test makes.
@@ -143,6 +146,28 @@ export function writeRekordboxPlaylistFixture(path: string, data: PlaylistFixtur
     CREATE TABLE agentRegistry (registry_id VARCHAR(255) PRIMARY KEY, int_1 BIGINT,
       created_at DATETIME NOT NULL, updated_at DATETIME NOT NULL);
   `)
+  if (!data.noMatchingTable)
+    db.exec(`CREATE TABLE djmdRecommendLike (ID VARCHAR(255) PRIMARY KEY, ContentID1 VARCHAR(255),
+      ContentID2 VARCHAR(255), LikeRate INTEGER, DataCreatedH INTEGER, DataCreatedL INTEGER,
+      ${LOOKUP_COLUMNS});`)
+  const match = data.noMatchingTable
+    ? null
+    : db.prepare(
+        `INSERT INTO djmdRecommendLike (ID, ContentID1, ContentID2, UUID, rb_local_deleted,
+           created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      )
+  for (const [i, m] of (data.matches ?? []).entries()) {
+    match?.run(
+      `match-${i}`,
+      m.ContentID1,
+      m.ContentID2,
+      `uuid-match-${i}`,
+      m.deleted ? 1 : 0,
+      FIXTURE_STAMP,
+      FIXTURE_STAMP,
+    )
+  }
+
   db.prepare(
     `INSERT INTO agentRegistry (registry_id, int_1, created_at, updated_at)
      VALUES ('localUpdateCount', ?, ?, ?)`,

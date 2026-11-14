@@ -1,4 +1,8 @@
-import { type CueProgram, READ_ONLY_PROGRAMS, type ReadOnlyProgram } from '../../../shared/djProgram'
+import {
+  type CueProgram,
+  READ_ONLY_PROGRAMS,
+  type ReadOnlyProgram,
+} from '../../../shared/djProgram'
 import { fromReadOnlyProgram, isFrom } from '../../../shared/trackOrigin'
 import type {
   DuplicateReplaceOutcome,

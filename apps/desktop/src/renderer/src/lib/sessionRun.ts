@@ -1,5 +1,5 @@
 import { buildSession, type SessionOptions, type SessionPlan } from '../../../shared/sessionBuild'
-import { type Combos, mineCombos } from '../../../shared/sessionCombos'
+import { type Combos, mineCombos, withMatching } from '../../../shared/sessionCombos'
 import { type LearnedMixing, learnMixing } from '../../../shared/sessionLearn'
 import type { PlaylistRole, SessionAnswers, SessionTrack } from '../../../shared/sessionTypes'
 import type { PlaylistTrackRef, SourcePlaylistEntry } from '../../../shared/types'
@@ -45,6 +45,7 @@ export function runSession(input: {
   startPath?: string
   made?: ReadonlySet<string>
   phases?: Readonly<Record<string, SessionPhase>>
+  matching?: readonly (readonly [string, string])[]
 }): SessionRun {
   const {
     answers,
@@ -55,6 +56,7 @@ export function runSession(input: {
     startPath,
     made = new Set(),
     phases = {},
+    matching = [],
   } = input
   const sources: SessionSource[] = answers.sources.map((id) => ({
     role: roles[id] ?? 'any',
@@ -86,7 +88,7 @@ export function runSession(input: {
   const pool = toCandidates(sources, new Date(), evidence, marks)
   const sequences = mixedSequences(sources.filter((_, i) => !made.has(answers.sources[i])))
   const ids = new Set(pool.map((track) => track.id))
-  const pairs = mineCombos(sequences, ids, 1)
+  const pairs = withMatching(mineCombos(sequences, ids, 1), matching, ids)
   const combos = mineCombos(sequences, ids, MIN_PLAYLISTS_PER_COMBO)
   const startEntry = startPath
     ? sources

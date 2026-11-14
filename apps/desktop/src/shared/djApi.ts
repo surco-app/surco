@@ -22,11 +22,17 @@ export interface DjReadMain {
   playlist(id: string): Awaitable<SourcePlaylistEntry[]>
   membership(paths: string[]): Awaitable<Record<string, string[]>>
   collection?(): Awaitable<CollectionTrack[]>
+  matching?(): Awaitable<[string, string][]>
 }
 
 export interface DjEditMain {
   save(edit: RekordboxPlaylistEdit, label: string | undefined): Promise<RekordboxEditResult>
   hasSeparator?(): Awaitable<boolean>
+  match?(
+    action: 'add' | 'remove',
+    pair: [string, string],
+    label: string,
+  ): Promise<RekordboxEditResult>
 }
 
 export interface DjCueQueueMain {
@@ -72,12 +78,19 @@ export interface DjApi {
   playlist(p: DjProgram, id: string): Promise<SourcePlaylistEntry[]>
   membership(p: DjProgram, paths: string[]): Promise<Record<string, string[]>>
   collection(p: DjProgram): Promise<CollectionTrack[]>
+  matching(p: DjProgram): Promise<[string, string][]>
   editPlaylist(
     p: DjProgram,
     edit: RekordboxPlaylistEdit,
     label?: string,
   ): Promise<RekordboxEditResult>
   hasSeparator(p: DjProgram): Promise<boolean>
+  match(
+    p: DjProgram,
+    action: 'add' | 'remove',
+    pair: [string, string],
+    label: string,
+  ): Promise<RekordboxEditResult>
   cueQueue(p: DjProgram): Promise<RekordboxQueueState>
   applyCueQueue(p: DjProgram): Promise<RekordboxQueueApplied | null>
   discardCueQueue(p: DjProgram): Promise<void>

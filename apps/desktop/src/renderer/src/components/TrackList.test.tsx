@@ -704,7 +704,10 @@ describe('TrackList', () => {
         autoMarkById: new Map<string, AutoMark>([
           [
             'a',
-            { kind: 'proposed', proposals: [50000].map((ms) => ({ ms, sure: true, quietBars: 8 })) },
+            {
+              kind: 'proposed',
+              proposals: [50000].map((ms) => ({ ms, sure: true, quietBars: 8 })),
+            },
           ],
         ]),
       },
@@ -2562,7 +2565,11 @@ describe('TrackList title of a versioned track', () => {
       'OffscreenCanvas',
       class {
         getContext() {
-          return { font: '', letterSpacing: '', measureText: (s: string) => ({ width: s.length * 7 }) }
+          return {
+            font: '',
+            letterSpacing: '',
+            measureText: (s: string) => ({ width: s.length * 7 }),
+          }
         }
       },
     )

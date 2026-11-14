@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { camelotDistance } from './camelot'
+import { buildSession, type SessionOptions, type SessionPlan } from './sessionBuild'
 import type { Combos } from './sessionCombos'
-import { type SessionOptions, type SessionPlan, buildSession } from './sessionBuild'
 import type { SessionTrack } from './sessionTypes'
 
 function track(id: string, over: Partial<SessionTrack> = {}): SessionTrack {

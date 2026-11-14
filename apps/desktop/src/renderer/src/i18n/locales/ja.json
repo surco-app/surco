@@ -20,7 +20,7 @@
   "sessions": {
     "role": {
       "title": "セッション用の役割",
-    "of": "{{name}} の役割",
+      "of": "{{name}} の役割",
       "base": "インスト",
       "vocal": "ボーカル",
       "any": "ミックス"
@@ -103,11 +103,11 @@
       "redo": "やり直す",
       "adjust": "調整…",
       "keep": "このまま使う",
-    "kept": "通常のプレイリストとして残しました",
+      "kept": "通常のプレイリストとして残しました",
       "short": "{{minutes}} 分ぶんの曲しかありません",
-    "counted": "1曲あたり{{minutes}}分で数えています。ファイルの合計は{{audio}}です。",
-    "countedAtLeast": "1曲あたり{{minutes}}分で数えています。ファイルの合計は少なくとも{{audio}}です。",
-    "noCombos": "コンボは見つかりませんでした。選んだミックスのプレイリスト2つ以上に繰り返し出るペアがないためです。",
+      "counted": "1曲あたり{{minutes}}分で数えています。ファイルの合計は{{audio}}です。",
+      "countedAtLeast": "1曲あたり{{minutes}}分で数えています。ファイルの合計は少なくとも{{audio}}です。",
+      "noCombos": "コンボは見つかりませんでした。選んだミックスのプレイリスト2つ以上に繰り返し出るペアがないためです。",
       "assumed_one": "{{count}} トラックは長さ不明のため {{minutes}} 分として計算",
       "assumed_other": "{{count}} トラックは長さ不明のため {{minutes}} 分として計算"
     },
@@ -596,6 +596,7 @@
     "cuesOpenFull": "キューを全画面で編集"
   },
   "trackList": {
+    "matchingPartner": "選択したトラックとMatching",
     "cuesUnsaved": "キューが未保存",
     "autoMark": {
       "proposed_one": "{{count}} 件の提案",
@@ -679,6 +680,7 @@
       "searchWeb": "Googleで検索",
       "startOver": "やり直し",
       "startSession": "この曲からセッションを作る…",
+      "matching": "Matchingに登録",
       "copyMeta": "すべてのメタデータをコピー",
       "pasteMeta": "メタデータを貼り付け",
       "remove": "Surco から外す",
@@ -957,6 +959,8 @@
     "sectionMaximize": "セクションを最大化",
     "sectionRestore": "セクションを復元",
     "otherTagsTitle": "その他のメタデータ",
+    "matchingTitle": "Matching",
+    "matchingRemove": "解除",
     "otherTagsSummary": "{{count}} 件のタグ",
     "otherTagsRemove": "{{name}} を削除",
     "otherTagsRestore": "{{name}} を復元",
@@ -1868,6 +1872,7 @@
       "properties": "プロパティ",
       "quality": "音質",
       "cues": "キュー",
+      "matching": "Matching",
       "output": "出力名",
       "trim": "無音トリミング",
       "declick": "レコードのクリック修復",
@@ -2619,6 +2624,9 @@
     "serato": "Serato",
     "virtualdj": "VirtualDJ",
     "allTracks": "すべてのトラック",
+    "matching": "Matching",
+    "matchingCreate": "プレイリストを作成",
+    "matchingAdded": "rekordboxにMatchingを保存しました",
     "recentlyAdded": "最近追加した項目",
     "search": "プレイリストを検索",
     "loading": "プレイリストを読み込み中…",
@@ -3305,7 +3313,8 @@
         "moveNode": "移動"
       },
       "cues": "キュー",
-      "tags": "タグ"
+      "tags": "タグ",
+      "matching": "Matching"
     },
     "applyNow": "今すぐ適用",
     "discard": "破棄",

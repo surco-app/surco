@@ -20,7 +20,7 @@
   "sessions": {
     "role": {
       "title": "Rôle pour les sessions",
-    "of": "Rôle de {{name}}",
+      "of": "Rôle de {{name}}",
       "base": "Instrumentaux",
       "vocal": "Voix",
       "any": "Mixte"
@@ -103,11 +103,11 @@
       "redo": "Refaire",
       "adjust": "Ajuster…",
       "keep": "La garder telle quelle",
-    "kept": "Conservée comme une playlist normale",
+      "kept": "Conservée comme une playlist normale",
       "short": "Il n’y a de morceaux que pour {{minutes}} min",
-    "counted": "Compté à {{minutes}} min par morceau. Les fichiers durent {{audio}} en tout.",
-    "countedAtLeast": "Compté à {{minutes}} min par morceau. Les fichiers durent au moins {{audio}} en tout.",
-    "noCombos": "Aucun combo trouvé, car aucune paire ne se répète dans deux playlists mixtes choisies ou plus.",
+      "counted": "Compté à {{minutes}} min par morceau. Les fichiers durent {{audio}} en tout.",
+      "countedAtLeast": "Compté à {{minutes}} min par morceau. Les fichiers durent au moins {{audio}} en tout.",
+      "noCombos": "Aucun combo trouvé, car aucune paire ne se répète dans deux playlists mixtes choisies ou plus.",
       "assumed_one": "{{count}} morceau sans durée, compté pour {{minutes}} min",
       "assumed_other": "{{count}} morceaux sans durée, comptés pour {{minutes}} min chacun"
     },
@@ -596,6 +596,7 @@
     "cuesOpenFull": "Modifier les cues en plein écran"
   },
   "trackList": {
+    "matchingPartner": "Matching avec le morceau choisi",
     "cuesUnsaved": "Cues non enregistrés",
     "autoMark": {
       "proposed_one": "{{count}} proposition",
@@ -679,6 +680,7 @@
       "searchWeb": "Rechercher sur Google",
       "startOver": "Repartir de zéro",
       "startSession": "Session à partir de ce morceau…",
+      "matching": "Créer un Matching",
       "copyMeta": "Copier toutes les métadonnées",
       "pasteMeta": "Coller les métadonnées",
       "remove": "Retirer de Surco",
@@ -957,6 +959,8 @@
     "sectionMaximize": "Agrandir la section",
     "sectionRestore": "Restaurer la section",
     "otherTagsTitle": "Autres métadonnées",
+    "matchingTitle": "Matching",
+    "matchingRemove": "Retirer",
     "otherTagsSummary": "{{count}} tags",
     "otherTagsRemove": "Supprimer {{name}}",
     "otherTagsRestore": "Restaurer {{name}}",
@@ -1868,6 +1872,7 @@
       "properties": "Propriétés",
       "quality": "Qualité audio",
       "cues": "Cues",
+      "matching": "Matching",
       "output": "Nom de sortie",
       "trim": "Rognage du silence",
       "declick": "Réparation des clics de vinyle",
@@ -2619,6 +2624,9 @@
     "serato": "Serato",
     "virtualdj": "VirtualDJ",
     "allTracks": "Tous les morceaux",
+    "matching": "Matching",
+    "matchingCreate": "Créer une playlist",
+    "matchingAdded": "Matching enregistré dans rekordbox",
     "recentlyAdded": "Ajoutés récemment",
     "search": "Rechercher une playlist",
     "loading": "Lecture des playlists…",
@@ -3305,7 +3313,8 @@
         "moveNode": "déplacer"
       },
       "cues": "cues",
-      "tags": "tags"
+      "tags": "tags",
+      "matching": "Matching"
     },
     "applyNow": "Appliquer maintenant",
     "discard": "Abandonner",

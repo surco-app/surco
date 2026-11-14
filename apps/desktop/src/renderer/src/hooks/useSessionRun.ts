@@ -41,6 +41,7 @@ export interface SessionRunDeps {
   library?: () => Readonly<Record<string, 'base' | 'vocal'>>
   made?: () => ReadonlySet<string>
   phases?: () => Readonly<Record<string, SessionPhase>>
+  matching?: () => Promise<readonly (readonly [string, string])[]>
   noteMade?: (playlistId: string) => void
 }
 
@@ -93,6 +94,7 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
     const library = deps.library?.() ?? {}
     const phases = deps.phases?.() ?? {}
     const loaded = await deps.rows.load(answers.sources)
+    const matching = (await deps.matching?.()) ?? []
     return runSession({
       answers,
       roles,
@@ -102,6 +104,7 @@ export function useSessionRun(deps: SessionRunDeps): SessionRunner {
       startPath,
       made: deps.made?.(),
       phases,
+      matching,
     })
   }
 

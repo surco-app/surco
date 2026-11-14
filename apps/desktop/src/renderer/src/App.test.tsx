@@ -19,6 +19,7 @@ import type { Api } from '../../preload/api'
 import { ALL_TRACKS_ID } from '../../shared/allTracks'
 import type { DjApi } from '../../shared/djApi'
 import { DEFAULT_EDITOR_SECTIONS } from '../../shared/editorSections'
+import { MATCHING_ID } from '../../shared/matching'
 import { emptyMetadata } from '../../shared/metadata'
 import { RECENTLY_ADDED_ID } from '../../shared/recentlyAdded'
 import { DEFAULT_SESSION_WIZARD } from '../../shared/sessionSettings'
@@ -3614,6 +3615,92 @@ describe('App source playlists', () => {
     await screen.findByTestId('track-separator-s1')
   }
 
+  describe('Matching in the editor', () => {
+    const withPreview = (path: string, contentId: string) => ({
+      path,
+      separator: false,
+      meta: {},
+      contentId,
+      preview: { title: TITLES[path], artist: 'DJ', durationSec: 200, cues: [] },
+    })
+    const matchingReads = {
+      dj: djReads({
+        rekordbox: {
+          matching: vi.fn<ProgramReads['matching']>().mockResolvedValue([['c-l1', 'c-l3']]),
+          playlist: vi
+            .fn<ProgramReads['playlist']>()
+            .mockImplementation(async (id) =>
+              id === MATCHING_ID
+                ? [withPreview('/m/a.wav', 'c-l1'), withPreview('/m/c.wav', 'c-l3')]
+                : FACTORY_ENTRIES,
+            ),
+        },
+      }),
+    }
+    const rowTitled = (title: string) =>
+      screen.getAllByTestId('track-row').find((r) => r.textContent?.includes(title)) as HTMLElement
+
+    it('shows the partners rekordbox holds for the chosen track', async () => {
+      await openFactory(matchingReads)
+      fireEvent.click(rowTitled('Alpha'))
+      expect(await screen.findByTestId('matching-partner')).toHaveTextContent('Charlie')
+    })
+
+    it('marks the partners of the chosen track in the list with the Matching rings', async () => {
+      await openFactory(matchingReads)
+      fireEvent.click(rowTitled('Alpha'))
+      await waitFor(() =>
+        expect(within(rowTitled('Charlie')).getByTestId('track-matching')).toBeInTheDocument(),
+      )
+      expect(within(rowTitled('Bravo')).queryByTestId('track-matching')).not.toBeInTheDocument()
+      expect(within(rowTitled('Alpha')).queryByTestId('track-matching')).not.toBeInTheDocument()
+    })
+
+    it('pairs two selected tracks from the row menu, asking about an open rekordbox first', async () => {
+      const match = vi.fn<ProgramReads['match']>().mockResolvedValue({ applied: true })
+      await openFactory({ dj: djReads(matchingReads.dj, { rekordbox: { match } }) })
+      fireEvent.click(rowTitled('Alpha'))
+      fireEvent.click(rowTitled('Bravo'), { metaKey: true })
+      fireEvent.contextMenu(rowTitled('Bravo'))
+      fireEvent.click(await screen.findByTestId('track-menu-matching'))
+      await waitFor(() =>
+        expect(match).toHaveBeenCalledWith(
+          'add',
+          ['c-l1', 'c-l2'],
+          expect.stringContaining('Alpha'),
+        ),
+      )
+      expect(vi.mocked(window.api.dj.askToApply).mock.invocationCallOrder[0]).toBeLessThan(
+        vi.mocked(window.api.dj.match).mock.invocationCallOrder[0],
+      )
+    })
+
+    it('offers no pairing unless exactly two tracks are selected', async () => {
+      await openFactory(matchingReads)
+      fireEvent.contextMenu(rowTitled('Bravo'))
+      await screen.findByTestId('track-menu-add-to')
+      expect(screen.queryByTestId('track-menu-matching')).not.toBeInTheDocument()
+    })
+
+    it('unpairs a partner from the editor', async () => {
+      const match = vi.fn<ProgramReads['match']>().mockResolvedValue({ applied: true })
+      await openFactory({ dj: djReads(matchingReads.dj, { rekordbox: { match } }) })
+      fireEvent.click(rowTitled('Alpha'))
+      fireEvent.click(await screen.findByTestId('matching-partner-remove'))
+      await waitFor(() =>
+        expect(match).toHaveBeenCalledWith('remove', ['c-l1', 'c-l3'], expect.any(String)),
+      )
+    })
+
+    it('moves to a partner in the open list when the DJ picks it', async () => {
+      await openFactory(matchingReads)
+      fireEvent.click(rowTitled('Alpha'))
+      fireEvent.click(await screen.findByTestId('matching-partner'))
+      await waitFor(() => expect(rowTitled('Charlie')).toHaveAttribute('aria-selected', 'true'))
+      expect(rowTitled('Alpha')).toHaveAttribute('aria-selected', 'false')
+    })
+  })
+
   it('runs Auto marcar over the selected rows of the open playlist by their rekordbox entry', async () => {
     const read = vi.fn<Api['cues']['trackCues']>().mockResolvedValue(null)
     await openFactory({ cues: { trackCues: read } })
@@ -4268,6 +4355,81 @@ describe('App source playlists', () => {
       fireEvent.click(await screen.findByTestId('track-menu-add-to'))
       expect(screen.getByTestId('track-menu-playlist-h')).toBeInTheDocument()
       expect(screen.queryByTestId(`track-menu-playlist-${ALL_TRACKS_ID}`)).not.toBeInTheDocument()
+    })
+
+    // The rows come from rekordbox's pairs: a reorder, removal or separator would name a
+    // playlist rekordbox does not have.
+    it('opens Matching with no reorder, removal or separator on its rows', async () => {
+      await openFactory({
+        dj: djReads({
+          rekordbox: {
+            matching: vi.fn<ProgramReads['matching']>().mockResolvedValue([['r3', 'r1']]),
+            playlist: vi
+              .fn<ProgramReads['playlist']>()
+              .mockImplementation(async (id) =>
+                id === MATCHING_ID ? ALL_ENTRIES : FACTORY_ENTRIES,
+              ),
+          },
+        }),
+      })
+      fireEvent.click(await screen.findByTestId(`source-node-${MATCHING_ID}`))
+      await waitFor(() =>
+        expect(titles()).toEqual([
+          expect.stringContaining('Charlie'),
+          expect.stringContaining('Alpha'),
+        ]),
+      )
+      expect(screen.queryByTestId('reorder-hint')).not.toBeInTheDocument()
+      expectNoReorderLine()
+      fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+      await screen.findByTestId('track-menu-add-to')
+      expect(screen.queryByTestId('track-menu-remove-from')).not.toBeInTheDocument()
+      expect(screen.queryByTestId('track-menu-insert-separator')).not.toBeInTheDocument()
+    })
+
+    it('creates a rekordbox playlist with the paired tracks in the order Matching lists them', async () => {
+      const editPlaylist = vi
+        .fn<ProgramReads['editPlaylist']>()
+        .mockResolvedValue({ applied: true, createdId: 'new' })
+      await openFactory({
+        dj: djReads({
+          rekordbox: {
+            matching: vi.fn<ProgramReads['matching']>().mockResolvedValue([['r3', 'r1']]),
+            playlist: vi
+              .fn<ProgramReads['playlist']>()
+              .mockImplementation(async (id) =>
+                id === MATCHING_ID ? ALL_ENTRIES : FACTORY_ENTRIES,
+              ),
+            editPlaylist,
+          },
+        }),
+      })
+      fireEvent.click(await screen.findByTestId(`source-node-${MATCHING_ID}`))
+      await waitFor(() => expect(titles()).toHaveLength(2))
+      fireEvent.click(screen.getByTestId('matching-create-playlist'))
+      await waitFor(() => expect(editPlaylist).toHaveBeenCalled())
+      expect(editPlaylist.mock.calls[0][0]).toMatchObject({
+        kind: 'create',
+        parentId: 'root',
+        name: 'Matching',
+        folder: false,
+        tracks: [{ contentId: 'r3' }, { contentId: 'r1' }],
+      })
+    })
+
+    it('never offers Matching as a playlist to add tracks to, since a track joins it by being paired', async () => {
+      await openFactory({
+        dj: djReads({
+          rekordbox: {
+            matching: vi.fn<ProgramReads['matching']>().mockResolvedValue([['a', 'b']]),
+          },
+        }),
+      })
+      await screen.findByTestId(`source-node-${MATCHING_ID}`)
+      fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+      fireEvent.click(await screen.findByTestId('track-menu-add-to'))
+      expect(screen.getByTestId('track-menu-playlist-h')).toBeInTheDocument()
+      expect(screen.queryByTestId(`track-menu-playlist-${MATCHING_ID}`)).not.toBeInTheDocument()
     })
 
     describe('background work', () => {
@@ -10330,10 +10492,9 @@ describe('App list review notice', { timeout: 15000 }, () => {
     })
     await renderApp()
     await addThree()
-    await waitFor(
-      () => expect(screen.getAllByTestId('track-row')[1]).toHaveTextContent('Bravo'),
-      { timeout: 3000 },
-    )
+    await waitFor(() => expect(screen.getAllByTestId('track-row')[1]).toHaveTextContent('Bravo'), {
+      timeout: 3000,
+    })
     expect(screen.queryByTestId('list-review-notice')).not.toBeInTheDocument()
     await act(async () => release())
     expect(

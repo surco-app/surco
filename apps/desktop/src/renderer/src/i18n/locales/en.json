@@ -20,7 +20,7 @@
   "sessions": {
     "role": {
       "title": "Role for sessions",
-    "of": "Role of {{name}}",
+      "of": "Role of {{name}}",
       "base": "Instrumentals",
       "vocal": "Vocals",
       "any": "Mixed"
@@ -103,11 +103,11 @@
       "redo": "Redo",
       "adjust": "Adjust…",
       "keep": "Keep it as is",
-    "kept": "Kept as a normal playlist",
+      "kept": "Kept as a normal playlist",
       "short": "Only enough tracks for {{minutes}} min",
-    "counted": "Counted at {{minutes}} min a track. The files add up to {{audio}}.",
-    "countedAtLeast": "Counted at {{minutes}} min a track. The files add up to at least {{audio}}.",
-    "noCombos": "No combos found, because no pair repeats in two or more of the Mixed playlists you chose.",
+      "counted": "Counted at {{minutes}} min a track. The files add up to {{audio}}.",
+      "countedAtLeast": "Counted at {{minutes}} min a track. The files add up to at least {{audio}}.",
+      "noCombos": "No combos found, because no pair repeats in two or more of the Mixed playlists you chose.",
       "assumed_one": "{{count}} track has no length and counts as {{minutes}} min",
       "assumed_other": "{{count}} tracks have no length and count as {{minutes}} min each"
     },
@@ -596,6 +596,7 @@
     "cuesOpenFull": "Edit the cues full screen"
   },
   "trackList": {
+    "matchingPartner": "Matches the chosen track",
     "cuesUnsaved": "Cues not saved",
     "autoMark": {
       "proposed_one": "{{count}} proposal",
@@ -679,6 +680,7 @@
       "searchWeb": "Search on Google",
       "startOver": "Start over",
       "startSession": "Session from this track…",
+      "matching": "Make a Matching pair",
       "copyMeta": "Copy all metadata",
       "pasteMeta": "Paste metadata",
       "remove": "Remove from Surco",
@@ -957,6 +959,8 @@
     "sectionMaximize": "Maximize the section",
     "sectionRestore": "Restore the section",
     "otherTagsTitle": "Other metadata",
+    "matchingTitle": "Matching",
+    "matchingRemove": "Remove",
     "otherTagsSummary": "{{count}} tags",
     "otherTagsRemove": "Remove {{name}}",
     "otherTagsRestore": "Restore {{name}}",
@@ -1868,6 +1872,7 @@
       "properties": "Properties",
       "quality": "Audio quality",
       "cues": "Cues",
+      "matching": "Matching",
       "output": "Output name",
       "trim": "Silence trim",
       "declick": "Vinyl click repair",
@@ -2619,6 +2624,9 @@
     "serato": "Serato",
     "virtualdj": "VirtualDJ",
     "allTracks": "All tracks",
+    "matching": "Matching",
+    "matchingCreate": "Create playlist",
+    "matchingAdded": "Matching saved in rekordbox",
     "recentlyAdded": "Recently added",
     "search": "Search playlists",
     "loading": "Reading playlists…",
@@ -3305,7 +3313,8 @@
         "moveNode": "move"
       },
       "cues": "cues",
-      "tags": "tags"
+      "tags": "tags",
+      "matching": "Matching"
     },
     "applyNow": "Apply now",
     "discard": "Discard",

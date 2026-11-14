@@ -68,6 +68,7 @@ import {
   TonePill,
 } from './ListRow'
 import { RowWave } from './RowWave'
+import { MatchingIcon } from './SourceIcons'
 import { Tooltip } from './Tooltip'
 
 const isMac = isMacOS()
@@ -111,6 +112,7 @@ interface Props {
   // mark a track Surco keeps a backup of, and what clicking that mark opens.
   backupAtByPath?: ReadonlyMap<string, number>
   pendingCuePaths?: ReadonlySet<string>
+  matchingIds?: ReadonlySet<string>
   unsavedCueIds?: ReadonlySet<string>
   // The tracks played long enough to count as heard, by path.
   playedPaths?: ReadonlySet<string>
@@ -363,6 +365,7 @@ interface RowProps {
   duplicate?: DuplicateRank
   outsideFilter: boolean
   played: boolean
+  matched: boolean
   note?: GridNote
 }
 
@@ -393,6 +396,7 @@ const TrackRow = memo(function TrackRow({
   rowRegistry,
   backupAt,
   cuesPending,
+  matched,
   cuesUnsaved,
   autoMark,
   onOpenBackup,
@@ -923,6 +927,12 @@ const TrackRow = memo(function TrackRow({
                 {/* A fixed slot, right-aligned under the duration, so the two read as one
                     trailing column and the review sparkle's place never moves. The pill fills the
                     slot, so a narrow WAV leaves no gap before the key and every key sits in one column. */}
+                {matched && (
+                  <span data-testid="track-matching" className="flex shrink-0 items-center">
+                    <MatchingIcon size={12} className="text-[var(--color-accent)]" />
+                    <span className="sr-only">{tr('trackList.matchingPartner')}</span>
+                  </span>
+                )}
                 {key && (
                   <span
                     data-testid="track-key"
@@ -1147,6 +1157,7 @@ export const TrackList = memo(function TrackList({
   revealRowRef,
   backupAtByPath,
   pendingCuePaths,
+  matchingIds,
   unsavedCueIds,
   playedPaths,
   autoMarkById,
@@ -1453,6 +1464,7 @@ export const TrackList = memo(function TrackList({
         rowRegistry={rowRegistry}
         backupAt={backupAtByPath?.get(t.inputPath)}
         cuesPending={pendingCuePaths?.has(t.inputPath) ?? false}
+        matched={matchingIds?.has(t.id) ?? false}
         cuesUnsaved={unsavedCueIds?.has(t.id) ?? false}
         autoMark={autoMarkById?.get(t.id)}
         onOpenBackup={onOpenBackup}

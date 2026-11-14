@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { Combos } from './sessionCombos'
 import { buildSession, type SessionOptions } from './sessionBuild'
+import type { Combos } from './sessionCombos'
 import type { SessionTrack } from './sessionTypes'
 
 function track(id: string, over: Partial<SessionTrack> = {}): SessionTrack {

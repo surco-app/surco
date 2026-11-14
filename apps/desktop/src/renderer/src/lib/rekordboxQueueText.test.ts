@@ -108,6 +108,10 @@ describe('rekordbox queue text', () => {
     expect(partText(tr, { kind: 'tree', edit: 'rename' })).toBe('rename')
   })
 
+  it('names a waiting Matching pair in the queue pill', () => {
+    expect(partText(tr, { kind: 'matching' })).toBe('Matching')
+  })
+
   it('names a node move in the queue pill', () => {
     expect(partText(tr, { kind: 'tree', edit: 'moveNode' })).toBe('move')
   })

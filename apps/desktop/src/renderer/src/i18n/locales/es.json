@@ -20,7 +20,7 @@
   "sessions": {
     "role": {
       "title": "Papel para sesiones",
-    "of": "Papel de {{name}}",
+      "of": "Papel de {{name}}",
       "base": "Bases",
       "vocal": "Vocales",
       "any": "Mezcladas"
@@ -103,11 +103,11 @@
       "redo": "Rehacer",
       "adjust": "Ajustar…",
       "keep": "Quedármela así",
-    "kept": "Se queda como playlist normal",
+      "kept": "Se queda como playlist normal",
       "short": "Solo hay pistas para {{minutes}} min",
-    "counted": "Contado a {{minutes}} min por pista. Los ficheros suman {{audio}}.",
-    "countedAtLeast": "Contado a {{minutes}} min por pista. Los ficheros suman al menos {{audio}}.",
-    "noCombos": "Sin combos, porque ninguna pareja se repite en dos o más de las playlists Mezcladas que elegiste.",
+      "counted": "Contado a {{minutes}} min por pista. Los ficheros suman {{audio}}.",
+      "countedAtLeast": "Contado a {{minutes}} min por pista. Los ficheros suman al menos {{audio}}.",
+      "noCombos": "Sin combos, porque ninguna pareja se repite en dos o más de las playlists Mezcladas que elegiste.",
       "assumed_one": "{{count}} pista sin duración, se cuenta como {{minutes}} min",
       "assumed_other": "{{count}} pistas sin duración, se cuentan como {{minutes}} min cada una"
     },
@@ -596,6 +596,7 @@
     "cuesOpenFull": "Editar los cues a pantalla completa"
   },
   "trackList": {
+    "matchingPartner": "Hace Matching con la pista elegida",
     "cuesUnsaved": "Cues sin guardar",
     "autoMark": {
       "proposed_one": "{{count}} propuesta",
@@ -679,6 +680,7 @@
       "searchWeb": "Buscar en Google",
       "startOver": "Empezar de nuevo",
       "startSession": "Sesión desde esta pista…",
+      "matching": "Hacer matching",
       "copyMeta": "Copiar todos los metadatos",
       "pasteMeta": "Pegar metadatos",
       "remove": "Quitar de Surco",
@@ -957,6 +959,8 @@
     "sectionMaximize": "Maximizar la sección",
     "sectionRestore": "Restaurar la sección",
     "otherTagsTitle": "Otros metadatos",
+    "matchingTitle": "Matching",
+    "matchingRemove": "Quitar",
     "otherTagsSummary": "{{count}} etiquetas",
     "otherTagsRemove": "Borrar {{name}}",
     "otherTagsRestore": "Restaurar {{name}}",
@@ -1868,6 +1872,7 @@
       "properties": "Propiedades",
       "quality": "Calidad de audio",
       "cues": "Cues",
+      "matching": "Matching",
       "output": "Nombre de salida",
       "trim": "Recorte de silencio",
       "declick": "Reparación de clics de vinilo",
@@ -2619,6 +2624,9 @@
     "serato": "Serato",
     "virtualdj": "VirtualDJ",
     "allTracks": "Todas las pistas",
+    "matching": "Matching",
+    "matchingCreate": "Crear playlist",
+    "matchingAdded": "Matching guardado en rekordbox",
     "recentlyAdded": "Añadidas recientemente",
     "search": "Buscar playlists",
     "loading": "Leyendo playlists…",
@@ -3305,7 +3313,8 @@
         "moveNode": "mover"
       },
       "cues": "cues",
-      "tags": "etiquetas"
+      "tags": "etiquetas",
+      "matching": "Matching"
     },
     "applyNow": "Aplicar ahora",
     "discard": "Descartar",
