@@ -3718,6 +3718,59 @@ describe('App source playlists', () => {
       expect(screen.queryByTestId('matching-section')).not.toBeInTheDocument()
     })
 
+    const playedReads = (extra: Partial<ProgramReads> = {}) =>
+      djReads(matchingReads.dj, {
+        rekordbox: {
+          playedTogether: vi.fn<ProgramReads['playedTogether']>().mockResolvedValue([
+            ['c-l1', 'c-l2'],
+            ['c-l2', 'c-l1'],
+            ['x', 'c-l1', 'c-l2'],
+          ]),
+          collection: vi.fn<ProgramReads['collection']>().mockResolvedValue([
+            { contentId: 'c-l1', path: '/m/a.wav', title: 'Alpha', artist: 'DJ' },
+            { contentId: 'c-l2', path: '/m/b.wav', title: 'Bravo', artist: 'DJ' },
+            { contentId: 'c-l3', path: '/m/c.wav', title: 'Charlie', artist: 'DJ' },
+          ]),
+          ...extra,
+        },
+      })
+
+    it('suggests in Matching the pairs played back to back three times and pairs one in a click', async () => {
+      const match = vi.fn<ProgramReads['match']>().mockResolvedValue({ applied: true })
+      await openFactory({ dj: playedReads({ match }) })
+      fireEvent.click(await screen.findByTestId(`source-node-${MATCHING_ID}`))
+      const card = await screen.findByTestId('matching-suggestion')
+      expect(card).toHaveTextContent('Alpha')
+      expect(card).toHaveTextContent('Bravo')
+      fireEvent.click(screen.getByTestId('matching-suggestion-match'))
+      await waitFor(() =>
+        expect(match).toHaveBeenCalledWith('add', ['c-l1', 'c-l2'], expect.any(String)),
+      )
+    })
+
+    it('remembers a dismissed suggestion so it is not offered again', async () => {
+      await openFactory({ dj: playedReads() })
+      fireEvent.click(await screen.findByTestId(`source-node-${MATCHING_ID}`))
+      fireEvent.click(await screen.findByTestId('matching-suggestion-dismiss'))
+      await waitFor(() =>
+        expect(window.api.saveSettings).toHaveBeenCalledWith(
+          expect.objectContaining({ matchingDismissed: ['c-l1|c-l2'] }),
+        ),
+      )
+    })
+
+    it('offers in the editor the tracks often played with the chosen one', async () => {
+      const match = vi.fn<ProgramReads['match']>().mockResolvedValue({ applied: true })
+      await openFactory({ dj: playedReads({ match }) })
+      fireEvent.click(rowTitled('Bravo'))
+      const row = await screen.findByTestId('matching-suggested')
+      expect(row).toHaveTextContent('Alpha')
+      fireEvent.click(screen.getByTestId('matching-suggested-match'))
+      await waitFor(() =>
+        expect(match).toHaveBeenCalledWith('add', ['c-l2', 'c-l1'], expect.any(String)),
+      )
+    })
+
     it('unpairs a partner from the editor', async () => {
       const match = vi.fn<ProgramReads['match']>().mockResolvedValue({ applied: true })
       await openFactory({ dj: djReads(matchingReads.dj, { rekordbox: { match } }) })
