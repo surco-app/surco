@@ -25,7 +25,11 @@ const COLLECTION: CollectionTrack[] = [
   { contentId: '5', path: null, title: 'Acid Stream', artist: 'Spotify' },
 ]
 
-function setup(partners: MatchingPartner[], open = true) {
+function setup(
+  partners: MatchingPartner[],
+  open = true,
+  suggested: { track: CollectionTrack; times: number }[] = [],
+) {
   const handlers = { onPick: vi.fn(), onRemove: vi.fn(), onToggle: vi.fn(), onAdd: vi.fn() }
   render(
     <MatchingSection
@@ -33,6 +37,7 @@ function setup(partners: MatchingPartner[], open = true) {
       open={open}
       selfId="1"
       collection={COLLECTION}
+      suggested={suggested}
       {...handlers}
     />,
   )
@@ -103,5 +108,22 @@ describe('MatchingSection', () => {
     fireEvent.keyDown(screen.getByTestId('matching-search'), { key: 'Escape' })
     expect(screen.queryByTestId('matching-search')).not.toBeInTheDocument()
     expect(onAdd).not.toHaveBeenCalled()
+  })
+
+  it('lists the tracks the DJ often plays with this one and pairs one in a click', () => {
+    const { onAdd } = setup([], true, [
+      { track: COLLECTION[2], times: 17 },
+      { track: COLLECTION[3], times: 13 },
+    ])
+    const rows = screen.getAllByTestId('matching-suggested')
+    expect(rows[0]).toHaveTextContent('Acid Groove')
+    expect(rows[0]).toHaveTextContent('17')
+    fireEvent.click(screen.getAllByTestId('matching-suggested-match')[1])
+    expect(onAdd).toHaveBeenCalledWith(COLLECTION[3])
+  })
+
+  it('shows no suggestion heading when there is nothing to suggest', () => {
+    setup([])
+    expect(screen.queryByTestId('matching-suggested')).not.toBeInTheDocument()
   })
 })

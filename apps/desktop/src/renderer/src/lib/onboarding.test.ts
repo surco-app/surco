@@ -42,6 +42,7 @@ const settings: Settings = {
   hiddenSources: [],
   sessionWizard: { ...DEFAULT_SESSION_WIZARD },
   sessionsMade: [],
+  matchingDismissed: [],
   language: 'system',
   discogsToken: '',
   beatportUsername: '',

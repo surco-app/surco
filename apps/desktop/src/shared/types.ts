@@ -259,6 +259,7 @@ export interface Settings {
   hiddenSources: PlaylistSource[]
   sessionWizard: SessionWizardSettings
   sessionsMade: string[]
+  matchingDismissed: string[]
   rekordboxPlaylistsFieldOffered: boolean
   traktorPlaylistsFieldOffered: boolean
   enginePlaylistsFieldOffered: boolean

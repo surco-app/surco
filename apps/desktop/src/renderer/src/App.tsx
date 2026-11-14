@@ -30,6 +30,7 @@ import {
 } from '../../shared/djProgram'
 import { SAME_CLOCK_FILE } from '../../shared/gridEdit'
 import { MATCHING_ID } from '../../shared/matching'
+import { type PairSuggestion, pairKey } from '../../shared/matchingSuggestions'
 import { emptyMetadata } from '../../shared/metadata'
 import { withPhraseCount } from '../../shared/phraseCount'
 import { RECENTLY_ADDED_ID } from '../../shared/recentlyAdded'
@@ -76,6 +77,7 @@ import { Confetti } from './components/Confetti'
 import { EmptyDisc } from './components/EmptyDisc'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { MatchingBand } from './components/MatchingBand'
+import { MatchingSuggestions } from './components/MatchingSuggestions'
 import { ModalExit } from './components/ModalShell'
 import {
   MusicReviewColumn,
@@ -122,6 +124,7 @@ import { useLibraryCopyVerdicts } from './hooks/useLibraryCopyVerdicts'
 import { useListNavigation } from './hooks/useListNavigation'
 import { useListReviewNotice } from './hooks/useListReviewNotice'
 import { useMatchingEdit } from './hooks/useMatchingEdit'
+import { useMatchingSuggestions } from './hooks/useMatchingSuggestions'
 import { useMetadataClipboard } from './hooks/useMetadataClipboard'
 import { useMetaUndo } from './hooks/useMetaUndo'
 import { type SettingsTab, useOverlays } from './hooks/useOverlays'
@@ -2916,8 +2919,38 @@ export default function App(): React.JSX.Element {
   const { data: rekordboxCollection } = useQuery({
     queryKey: ['source-collection', 'rekordbox'],
     queryFn: () => SOURCE_READ.rekordbox.collection?.() ?? Promise.resolve([]),
-    enabled: inRekordbox && Boolean(selectedContentId),
+    enabled: inRekordbox && (Boolean(selectedContentId) || browser.playlist?.id === MATCHING_ID),
     staleTime: 60_000,
+  })
+  const collectionById = useMemo(
+    () => new Map((rekordboxCollection ?? []).map((t) => [t.contentId, t])),
+    [rekordboxCollection],
+  )
+  const matchingSuggestions = useMatchingSuggestions({
+    enabled: inRekordbox,
+    tree: browser.tree,
+    made: settings?.sessionsMade ?? [],
+    matched: matchingPairs,
+    dismissed: settings?.matchingDismissed ?? [],
+  })
+  const suggestedForSelected = useMemo(
+    () =>
+      selectedContentId
+        ? matchingSuggestions.flatMap(({ pair: [a, b], times }) => {
+            const other = a === selectedContentId ? b : b === selectedContentId ? a : null
+            const track = other ? collectionById.get(other) : undefined
+            return track ? [{ track, times }] : []
+          })
+        : [],
+    [matchingSuggestions, selectedContentId, collectionById],
+  )
+  const matchSuggestion = useStableCallback((s: PairSuggestion) => {
+    const label = s.pair.map((id) => collectionById.get(id)?.title ?? id).join(' · ')
+    void editMatching('add', s.pair, label)
+  })
+  const dismissSuggestion = useStableCallback((s: PairSuggestion) => {
+    const dismissed = settings?.matchingDismissed ?? []
+    saveSettings({ matchingDismissed: [...dismissed, pairKey(...s.pair)] })
   })
   const addMatchingPartner = useStableCallback((track: CollectionTrack) => {
     if (!selectedContentId || !selected) return
@@ -2934,6 +2967,7 @@ export default function App(): React.JSX.Element {
             partners: matchingPartners,
             selfId: selectedContentId,
             collection: rekordboxCollection,
+            suggested: suggestedForSelected,
             onPick: pickMatchingPartner,
             onRemove: removeMatchingPartner,
             onAdd: addMatchingPartner,
@@ -2944,6 +2978,7 @@ export default function App(): React.JSX.Element {
       selectedContentId,
       matchingPartners,
       rekordboxCollection,
+      suggestedForSelected,
       pickMatchingPartner,
       removeMatchingPartner,
       addMatchingPartner,
@@ -4158,6 +4193,15 @@ export default function App(): React.JSX.Element {
                                     name,
                                   )
                                 }}
+                              />
+                            )}
+                          {sourceProgram === 'rekordbox' &&
+                            browser.playlist?.id === MATCHING_ID && (
+                              <MatchingSuggestions
+                                suggestions={matchingSuggestions}
+                                tracks={collectionById}
+                                onMatch={matchSuggestion}
+                                onDismiss={dismissSuggestion}
                               />
                             )}
                           {visibleTracks.length === 0 ? (

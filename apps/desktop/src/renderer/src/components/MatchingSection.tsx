@@ -34,6 +34,7 @@ export function MatchingSection({
   partners,
   selfId,
   collection,
+  suggested = [],
   onPick,
   onRemove,
   onAdd,
@@ -43,6 +44,7 @@ export function MatchingSection({
   partners: MatchingPartner[]
   selfId: string
   collection: readonly CollectionTrack[] | undefined
+  suggested?: readonly { track: CollectionTrack; times: number }[]
   onPick: (partner: MatchingPartner) => void
   onRemove: (partner: MatchingPartner) => void
   onAdd: (track: CollectionTrack) => void
@@ -104,6 +106,33 @@ export function MatchingSection({
               </li>
             ))}
           </ul>
+        )}
+        {suggested.length > 0 && (
+          <div className="mt-4 flex flex-col gap-1.5">
+            <p className="text-xs text-fg-dim">{tr('editor.matchingPlayedWith')}</p>
+            {suggested.map(({ track, times }) => (
+              <div
+                key={track.contentId}
+                data-testid="matching-suggested"
+                className="flex items-center gap-3 rounded-lg border border-dashed border-[var(--color-accent)]/45 px-3 py-2"
+              >
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm text-fg">{track.title}</span>
+                  <span className="block truncate text-xs text-fg-dim">
+                    {track.artist} · {tr('editor.matchingTimesShort', { count: times })}
+                  </span>
+                </span>
+                <button
+                  type="button"
+                  data-testid="matching-suggested-match"
+                  onClick={() => onAdd(track)}
+                  className="press shrink-0 rounded-md border border-[var(--color-accent)]/60 px-2 py-1 text-xs text-[var(--color-accent)] hover:bg-[var(--color-hover)]"
+                >
+                  {tr('trackList.context.matching')}
+                </button>
+              </div>
+            ))}
+          </div>
         )}
         {query === null ? (
           <button

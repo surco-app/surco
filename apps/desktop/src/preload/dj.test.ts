@@ -80,6 +80,7 @@ describe('createDjApi', () => {
     ['membership', 'dj:membership', [['/m/a.wav']]],
     ['collection', 'dj:collection', []],
     ['matching', 'dj:matching', []],
+    ['playedTogether', 'dj:playedTogether', [['p1']]],
     ['editPlaylist', 'dj:editPlaylist', [{ kind: 'delete', playlistId: 'p' }, 'Friday']],
     ['hasSeparator', 'dj:hasSeparator', []],
     ['match', 'dj:match', ['add', ['1', '2'], 'x']],

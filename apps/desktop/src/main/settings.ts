@@ -25,6 +25,7 @@ import {
 } from '../shared/defaults'
 import { DEFAULT_EDITOR_SECTIONS } from '../shared/editorSections'
 import { normalizeHiddenSources } from '../shared/hiddenSources'
+import { normalizeMatchingDismissed } from '../shared/matchingSuggestions'
 import { FORMAT_SETTINGS } from '../shared/outputFormats'
 import {
   DEFAULT_SESSION_WIZARD,
@@ -112,6 +113,7 @@ export const defaults: Settings = {
   hiddenSources: [],
   sessionWizard: DEFAULT_SESSION_WIZARD,
   sessionsMade: [],
+  matchingDismissed: [],
   rekordboxPlaylistsFieldOffered: false,
   traktorPlaylistsFieldOffered: false,
   enginePlaylistsFieldOffered: false,
@@ -250,6 +252,7 @@ export const LOCAL_KEYS = [
   'analysisCacheGb',
   // Playlist ids of this Mac's DJ library, the sessions Surco wrote there.
   'sessionsMade',
+  'matchingDismissed',
 ] as const satisfies readonly (keyof Settings)[]
 
 // Repairs any stored value into a valid format: a synced settings.json can carry an
@@ -412,6 +415,9 @@ function mergeSettings(base: Settings, patch: Partial<Settings>): Settings {
     hiddenSources: normalizeHiddenSources(patch.hiddenSources ?? base.hiddenSources),
     sessionWizard: normalizeSessionWizard(patch.sessionWizard ?? base.sessionWizard),
     sessionsMade: normalizeSessionsMade(patch.sessionsMade ?? base.sessionsMade),
+    matchingDismissed: normalizeMatchingDismissed(
+      patch.matchingDismissed ?? base.matchingDismissed,
+    ),
   }
 }
 

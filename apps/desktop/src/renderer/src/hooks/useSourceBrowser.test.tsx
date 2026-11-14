@@ -33,6 +33,7 @@ function stubbedOnly(...layers: DjReads[]): DjApi {
     membership: vi.fn((p, paths) => pick(p, 'membership')(paths)),
     collection: vi.fn((p) => pick(p, 'collection')()),
     matching: vi.fn((p) => pick(p, 'matching')()),
+    playedTogether: vi.fn((p, ids) => pick(p, 'playedTogether')(ids)),
     editPlaylist: vi.fn((p, edit, label) => pick(p, 'editPlaylist')(edit, label)),
     hasSeparator: vi.fn((p) => pick(p, 'hasSeparator')()),
     match: vi.fn((p, action, pair, label) => pick(p, 'match')(action, pair, label)),

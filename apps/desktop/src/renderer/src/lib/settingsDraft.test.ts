@@ -110,6 +110,7 @@ const settings: Settings = {
   hiddenSources: [],
   sessionWizard: { ...DEFAULT_SESSION_WIZARD },
   sessionsMade: [],
+  matchingDismissed: [],
   hasSeenOnboarding: true,
   deezerProviderMigrated: true,
   musicbrainzProviderMigrated: true,
