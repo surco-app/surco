@@ -1,3 +1,4 @@
+import type { GridAudit } from '../shared/gridAudit'
 import { detectBpm } from './tempo'
 
 const HOP = 32
@@ -193,17 +194,12 @@ function phasesOf(
 const AUDIT_WINDOW_BEATS = 16
 const AUDIT_STEP_BEATS = 8
 
-export interface GridAudit {
-  windows: { ms: number; offsetMs: number }[]
-  total: number
-}
-
 export function auditGrid(
   pcm: Float32Array,
   sampleRate: number,
   beatsMs: number[],
   leadMs: number,
-): GridAudit {
+): Pick<GridAudit, 'windows' | 'total'> {
   const levels = energy(pcm, FINE_HOP)
   const msPerFrame = (FINE_HOP / sampleRate) * 1000
   let total = 0
