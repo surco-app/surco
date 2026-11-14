@@ -4,12 +4,14 @@ import type React from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { camelotOf } from '../../../shared/camelot'
+import { alternateGap } from '../../../shared/sessionBuild'
 import type { PlaylistRole, SessionAnswers } from '../../../shared/sessionTypes'
 import type { SourceNode, SourcePlaylistEntry } from '../../../shared/types'
 import type { SessionRows } from '../hooks/useSessionRows'
 import type { BuildResult } from '../hooks/useSessionRun'
 import { toCandidates } from '../lib/sessionCandidates'
-import { withoutSeparators } from '../lib/sessionTree'
+import { sessionPool } from '../lib/sessionRun'
+import { libraryRoles, withoutSeparators } from '../lib/sessionTree'
 import { ModalShell } from './ModalShell'
 import {
   CharacterStep,
@@ -170,6 +172,23 @@ export function SessionWizard({
         sources.map((id) => ({ role: roles[id] ?? 'any', entries: loaded.get(id) ?? [] })),
       ).some((track) => track.fresh),
     [sources, roles, loaded],
+  )
+  const tracks = Math.ceil(minutes / playMinutes)
+  const gap = useMemo(
+    () =>
+      alternateGap(
+        sessionPool({
+          sources: sources.map((id) => ({
+            role: roles[id] ?? 'any',
+            entries: loaded.get(id) ?? [],
+          })),
+          chosen: sources,
+          rows: loaded,
+          library: libraryRoles(tree),
+        }),
+        tracks,
+      ),
+    [sources, roles, loaded, tree, tracks],
   )
   const unreadable = sources
     .filter((id) => rows.failed.includes(id))
@@ -366,6 +385,8 @@ export function SessionWizard({
                     hasKeys={hasKeys}
                     hasNew={hasNew}
                     hasMixed={sources.some((id) => roles[id] === 'any')}
+                    gap={gap}
+                    tracks={tracks}
                     freshShare={freshShare}
                     onFreshShare={setFreshShare}
                     onChange={(patch) => setOptions((prev) => ({ ...prev, ...patch }))}

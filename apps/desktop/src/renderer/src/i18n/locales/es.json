@@ -80,7 +80,12 @@
         "harmonyNeighbours": "Vecinos",
         "harmonySame": "Mismo tono",
         "noKeys": "Ninguna de las pistas elegidas trae tonalidad, así que la mezcla armónica no se aplica",
-        "pickHint": "«Preferir combos probados» vuelve a juntar una base y una vocal que has puesto seguidas en dos o más de tus tracklists. «Lo que más te gusta» tiene en cuenta las estrellas y las veces escuchada. «Sorpréndeme» deja un hueco a parejas que nunca se han puesto juntas."
+        "pickHint": "«Preferir combos probados» vuelve a juntar una base y una vocal que has puesto seguidas en dos o más de tus tracklists. «Lo que más te gusta» tiene en cuenta las estrellas y las veces escuchada. «Sorpréndeme» deja un hueco a parejas que nunca se han puesto juntas.",
+        "alternateNoRoles": "Para alternar, marca en el paso Playlists al menos una playlist de Bases y otra de Vocales.",
+        "alternateShortVocal_one": "Hay {{count}} vocal para unas {{tracks}} pistas. Cuando se acabe, saldrán bases seguidas.",
+        "alternateShortVocal_other": "Hay {{count}} vocales para unas {{tracks}} pistas. Cuando se acaben, saldrán bases seguidas.",
+        "alternateShortBase_one": "Hay {{count}} base para unas {{tracks}} pistas. Cuando se acabe, saldrán vocales seguidas.",
+        "alternateShortBase_other": "Hay {{count}} bases para unas {{tracks}} pistas. Cuando se acaben, saldrán vocales seguidas."
       },
       "loading": "Leyendo…",
       "build": "Montar sesión",

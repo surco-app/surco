@@ -80,7 +80,12 @@
         "harmonyNeighbours": "Nachbarn",
         "harmonySame": "Gleiche Tonart",
         "noKeys": "Keiner der gewählten Tracks hat eine Tonart, daher entfällt das harmonische Mixen",
-        "pickHint": "„Bewährte Combos bevorzugen“ bringt ein Instrumental und einen Gesangstrack wieder zusammen, die du in zwei oder mehr deiner Tracklists direkt nacheinander gespielt hast. „Was dir am besten gefällt“ berücksichtigt Sterne und Wiedergaben. „Überrasch mich“ lässt Platz für Paare, die nie zusammen gespielt wurden."
+        "pickHint": "„Bewährte Combos bevorzugen“ bringt ein Instrumental und einen Gesangstrack wieder zusammen, die du in zwei oder mehr deiner Tracklists direkt nacheinander gespielt hast. „Was dir am besten gefällt“ berücksichtigt Sterne und Wiedergaben. „Überrasch mich“ lässt Platz für Paare, die nie zusammen gespielt wurden.",
+        "alternateNoRoles": "Zum Abwechseln markiere im Schritt Playlists mindestens eine Bases- und eine Vocals-Playlist.",
+        "alternateShortVocal_one": "Es gibt {{count}} Vocal für etwa {{tracks}} Tracks. Danach laufen Bases hintereinander.",
+        "alternateShortVocal_other": "Es gibt {{count}} Vocals für etwa {{tracks}} Tracks. Wenn sie aufgebraucht sind, laufen Bases hintereinander.",
+        "alternateShortBase_one": "Es gibt {{count}} Base für etwa {{tracks}} Tracks. Danach laufen Vocals hintereinander.",
+        "alternateShortBase_other": "Es gibt {{count}} Bases für etwa {{tracks}} Tracks. Wenn sie aufgebraucht sind, laufen Vocals hintereinander."
       },
       "loading": "Liest …",
       "build": "Session erstellen",

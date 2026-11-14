@@ -420,3 +420,17 @@ export function summarizeSession(
     audioSecs: items.reduce((sum, item) => sum + Math.max(0, item.track.secs), 0),
   }
 }
+
+export type AlternateGap =
+  | { kind: 'noRoles' }
+  | { kind: 'short'; role: 'base' | 'vocal'; have: number }
+
+export function alternateGap(pool: readonly SessionTrack[], tracks: number): AlternateGap | null {
+  const bases = pool.filter((track) => track.role === 'base').length
+  const vocals = pool.filter((track) => track.role === 'vocal').length
+  if (bases === 0 || vocals === 0) return { kind: 'noRoles' }
+  const needed = Math.floor(tracks / 2)
+  if (vocals < needed && vocals <= bases) return { kind: 'short', role: 'vocal', have: vocals }
+  if (bases < needed) return { kind: 'short', role: 'base', have: bases }
+  return null
+}

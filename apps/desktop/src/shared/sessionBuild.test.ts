@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { camelotDistance } from './camelot'
-import { buildSession, type SessionOptions, type SessionPlan } from './sessionBuild'
+import { alternateGap, buildSession, type SessionOptions, type SessionPlan } from './sessionBuild'
 import type { Combos } from './sessionCombos'
 import type { SessionTrack } from './sessionTypes'
 
@@ -329,5 +329,37 @@ describe('buildSession alternation, new tracks and surprise', () => {
       ).length
     expect(followed(plain)).toBe(plain.items.length)
     expect(followed(surprising)).toBeLessThan(surprising.items.length)
+  })
+})
+
+describe('alternateGap', () => {
+  const many = (n: number, role: SessionTrack['role']) =>
+    Array.from({ length: n }, (_, i) => track(`${role}${i}`, { role }))
+
+  it('says alternating has nothing to go on when no track is a base or none is a vocal, which is what Mixed playlists alone give', () => {
+    expect(alternateGap(many(60, 'any'), 40)).toEqual({ kind: 'noRoles' })
+    expect(alternateGap([...many(30, 'base'), ...many(30, 'any')], 40)).toEqual({ kind: 'noRoles' })
+  })
+
+  it('says how many vocals there are when they run out before the session ends, since bases then come in a row', () => {
+    expect(alternateGap([...many(45, 'base'), ...many(15, 'vocal')], 40)).toEqual({
+      kind: 'short',
+      role: 'vocal',
+      have: 15,
+    })
+  })
+
+  it('names the bases when they are the ones that run out', () => {
+    expect(alternateGap([...many(5, 'base'), ...many(30, 'vocal')], 40)).toEqual({
+      kind: 'short',
+      role: 'base',
+      have: 5,
+    })
+  })
+
+  it('says nothing when there are enough of both for every pair in the session', () => {
+    expect(
+      alternateGap([...many(20, 'base'), ...many(20, 'vocal'), ...many(40, 'any')], 40),
+    ).toBeNull()
   })
 })

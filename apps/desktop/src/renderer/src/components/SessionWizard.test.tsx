@@ -1252,3 +1252,47 @@ describe('SessionWizard closing', () => {
     expect(onBuild).not.toHaveBeenCalled()
   })
 })
+
+describe('SessionWizard alternate hint', () => {
+  const tracks = (id: string, n: number) =>
+    Array.from({ length: n }, (_, i) => entry(`/m/${id}-${i}.mp3`))
+
+  // Only the Bases and Vocales playlists say what a track is: sets marked Mixed give no part,
+  // and alternating then does nothing without a word.
+  it('says Bases and Vocales playlists are needed when only Mixed ones were chosen', async () => {
+    setup({ combos: 'any' }, INITIAL, fakeRows({ combos: tracks('combos', 40) }))
+    await toCharacter()
+    expect(screen.getByTestId('session-wizard-alternate-hint')).toHaveTextContent(
+      i18n.t('sessions.wizard.character.alternateNoRoles'),
+    )
+  })
+
+  it('says how many vocals there are when they will run out before the session ends', async () => {
+    setup(
+      { b90: 'base', c90: 'vocal' },
+      INITIAL,
+      fakeRows({ b90: tracks('b90', 30), c90: tracks('c90', 5) }),
+    )
+    await toCharacter()
+    expect(screen.getByTestId('session-wizard-alternate-hint')).toHaveTextContent(
+      i18n.t('sessions.wizard.character.alternateShortVocal', { count: 5, tracks: 30 }),
+    )
+  })
+
+  it('says nothing when there are enough of both', async () => {
+    setup(
+      { b90: 'base', c90: 'vocal' },
+      INITIAL,
+      fakeRows({ b90: tracks('b90', 20), c90: tracks('c90', 20) }),
+    )
+    await toCharacter()
+    expect(screen.queryByTestId('session-wizard-alternate-hint')).toBeNull()
+  })
+
+  it('says nothing once alternating is switched off', async () => {
+    setup({ combos: 'any' }, INITIAL, fakeRows({ combos: tracks('combos', 40) }))
+    await toCharacter()
+    fireEvent.click(screen.getByTestId('session-wizard-opt-alternate'))
+    expect(screen.queryByTestId('session-wizard-alternate-hint')).toBeNull()
+  })
+})

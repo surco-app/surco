@@ -80,7 +80,12 @@
         "harmonyNeighbours": "Vizinhos",
         "harmonySame": "Mesmo tom",
         "noKeys": "Nenhuma das faixas escolhidas tem tom, então a mixagem harmônica não se aplica",
-        "pickHint": "“Preferir combos comprovados” junta de novo uma base e uma cantada que você tocou em sequência em duas ou mais das suas tracklists. “O que você mais gosta” leva em conta estrelas e reproduções. “Surpreenda-me” deixa espaço para pares que nunca tocaram juntos."
+        "pickHint": "“Preferir combos comprovados” junta de novo uma base e uma cantada que você tocou em sequência em duas ou mais das suas tracklists. “O que você mais gosta” leva em conta estrelas e reproduções. “Surpreenda-me” deixa espaço para pares que nunca tocaram juntos.",
+        "alternateNoRoles": "Para alternar, marque na etapa Playlists pelo menos uma playlist de Bases e outra de Vocais.",
+        "alternateShortVocal_one": "Há {{count}} vocal para cerca de {{tracks}} faixas. Quando acabar, as bases virão seguidas.",
+        "alternateShortVocal_other": "Há {{count}} vocais para cerca de {{tracks}} faixas. Quando acabarem, as bases virão seguidas.",
+        "alternateShortBase_one": "Há {{count}} base para cerca de {{tracks}} faixas. Quando acabar, os vocais virão seguidos.",
+        "alternateShortBase_other": "Há {{count}} bases para cerca de {{tracks}} faixas. Quando acabarem, os vocais virão seguidos."
       },
       "loading": "Lendo…",
       "build": "Montar sessão",

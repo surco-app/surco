@@ -2,6 +2,7 @@ import { Info } from 'lucide-react'
 import type React from 'react'
 import { Fragment, useId, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { AlternateGap } from '../../../shared/sessionBuild'
 import type { PlaylistRole, SessionHarmony } from '../../../shared/sessionTypes'
 import type { SourceNode } from '../../../shared/types'
 import { playlistOptions } from '../lib/rekordboxPlaylists'
@@ -306,6 +307,8 @@ export function CharacterStep({
   hasKeys,
   hasNew,
   hasMixed,
+  gap,
+  tracks,
   freshShare,
   onFreshShare,
   onChange,
@@ -314,6 +317,8 @@ export function CharacterStep({
   hasKeys: boolean
   hasNew: boolean
   hasMixed: boolean
+  gap: AlternateGap | null
+  tracks: number
   freshShare: number
   onFreshShare: (share: number) => void
   onChange: (patch: Partial<Record<CharacterKey, boolean> & { harmony: SessionHarmony }>) => void
@@ -333,6 +338,18 @@ export function CharacterStep({
         />
         <span className="text-sm">{tr(`sessions.wizard.character.${key}`)}</span>
       </label>
+      {key === 'alternate' && options.alternate && gap && (
+        <p data-testid="session-wizard-alternate-hint" className="-mt-1.5 pl-7 text-xs text-fg-dim">
+          {gap.kind === 'noRoles'
+            ? tr('sessions.wizard.character.alternateNoRoles')
+            : tr(
+                gap.role === 'vocal'
+                  ? 'sessions.wizard.character.alternateShortVocal'
+                  : 'sessions.wizard.character.alternateShortBase',
+                { count: gap.have, tracks },
+              )}
+        </p>
+      )}
       {key === 'preferCombos' && options.preferCombos && !hasMixed && (
         <p data-testid="session-wizard-combos-hint" className="-mt-1.5 pl-7 text-xs text-fg-dim">
           {tr('sessions.wizard.character.noMixed')}
