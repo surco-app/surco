@@ -4,6 +4,7 @@ import {
   installCrashGuards,
   logHandlerFailures,
   wireChildProcessGone,
+  wireQuitTrail,
   wireRendererRecovery,
   wireUnresponsive,
 } from './crashGuards'
@@ -218,5 +219,23 @@ describe('wireUnresponsive', () => {
     wireUnresponsive(contents, logger, () => 0, 10_000)
     contents.fire('unresponsive')
     expect(logger.warn).toHaveBeenCalledWith('window unresponsive')
+  })
+})
+
+describe('wireQuitTrail', () => {
+  it('logs the start and every step of a quit, so a log that ends without them means the app died instead', () => {
+    const appEvents = fakeEmitter()
+    const logger = { info: vi.fn() }
+    const started = { version: '1.34.4', platform: 'darwin', arch: 'x64', os: '26.2' }
+    wireQuitTrail(appEvents, logger, started)
+    appEvents.fire('before-quit')
+    appEvents.fire('will-quit')
+    appEvents.fire('quit', {}, 0)
+    expect(logger.info.mock.calls).toEqual([
+      ['app started', started],
+      ['app quit requested'],
+      ['app will quit'],
+      ['app quit', { exitCode: 0 }],
+    ])
   })
 })

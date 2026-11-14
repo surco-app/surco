@@ -113,6 +113,7 @@ import {
   installCrashGuards,
   logHandlerFailures,
   wireChildProcessGone,
+  wireQuitTrail,
   wireRendererRecovery,
   wireUnresponsive,
 } from './crashGuards'
@@ -331,6 +332,12 @@ const crashState = createCrashState(
   }),
 )
 wireChildProcessGone(app, log, (type) => crashState.watch.dump(`${type} gone`))
+wireQuitTrail(app, log, {
+  version: app.getVersion(),
+  platform: process.platform,
+  arch: process.arch,
+  os: process.getSystemVersion(),
+})
 setLibraryBackupRoot(join(app.getPath('userData'), 'backups'))
 
 if (!app.requestSingleInstanceLock()) app.exit(0)

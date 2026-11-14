@@ -130,3 +130,19 @@ export function wireUnresponsive(
     else logger.warn('window responsive again after', ms, 'ms')
   })
 }
+
+interface QuitEvents {
+  on(event: 'before-quit' | 'will-quit', cb: () => void): unknown
+  on(event: 'quit', cb: (event: unknown, exitCode: number) => void): unknown
+}
+
+export function wireQuitTrail(
+  appEvents: QuitEvents,
+  logger: { info: (...params: unknown[]) => void },
+  started: { version: string; platform: string; arch: string; os: string },
+): void {
+  logger.info('app started', started)
+  appEvents.on('before-quit', () => logger.info('app quit requested'))
+  appEvents.on('will-quit', () => logger.info('app will quit'))
+  appEvents.on('quit', (_event, exitCode) => logger.info('app quit', { exitCode }))
+}
