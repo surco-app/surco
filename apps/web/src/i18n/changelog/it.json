@@ -43,6 +43,10 @@
       {
         "text": "Surco ora parla catalano e italiano, nell’app, nei suoi menu e sul sito. Scegli la lingua nelle Impostazioni.",
         "in": "1.35.0"
+      },
+      {
+        "text": "Surco non si blocca più quando apri rekordbox o Traktor con una libreria grande. Le tue playlist intelligenti di rekordbox ora compaiono senza il numero di brani.",
+        "in": "1.35.1"
       }
     ]
   },

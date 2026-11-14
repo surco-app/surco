@@ -43,6 +43,10 @@
       {
         "text": "Surco ja parla català i italià, a l’app, als seus menús i al web. Tria l’idioma a Configuració.",
         "in": "1.35.0"
+      },
+      {
+        "text": "Surco ja no es queda penjat quan obres rekordbox o Traktor amb una biblioteca gran. Les teves llistes intel·ligents de rekordbox ara surten sense el nombre de pistes.",
+        "in": "1.35.1"
       }
     ]
   },
