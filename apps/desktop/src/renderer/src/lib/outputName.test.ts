@@ -272,7 +272,7 @@ describe('titleFormatPatches', () => {
     expect(patches).toEqual([])
   })
 
-  // Pressing the T button twice used to stack the prefix ("(B2) (B2) Action").
+  // Pressing the format button twice used to stack the prefix ("(B2) (B2) Action").
   // A title that already carries the pattern's rendered prefix and suffix is
   // treated as formatted and skipped — re-applying is idempotent.
   it('skips a title the pattern already shaped, so re-applying never stacks', () => {

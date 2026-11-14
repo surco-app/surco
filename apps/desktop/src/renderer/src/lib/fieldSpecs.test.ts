@@ -221,7 +221,7 @@ describe('buildFieldSpecs (single mode)', () => {
   })
 
   it('hands the title-format button to the title spec only', () => {
-    // The one-click T lives in the title box; no other field rebuilds itself from the pattern.
+    // The one-click format button lives in the title box; no other field rebuilds itself from the pattern.
     const titleFormatAction = { onApply: vi.fn(), disabled: false }
     const specs = buildFieldSpecs(params({ visibleFields: ['title', 'artist'], titleFormatAction }))
     expect(specs.find((s) => s.key === 'title')?.formatAction).toBe(titleFormatAction)
