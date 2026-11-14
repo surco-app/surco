@@ -151,7 +151,8 @@ export function unformatTitle(
 }
 
 // The per-track rename patches an "apply the title format" pass produces: one entry
-// per track whose rendered title is non-empty AND different from the current one.
+// per track whose current title is not blank and whose rendered title is non-empty AND
+// different from the current one.
 // A title that already carries the pattern's rendered prefix and suffix is treated
 // as formatted and skipped, so re-applying is idempotent — pressing the T button
 // twice must never stack "(B2) (B2) …". Pure and shared by the editor's T button,
@@ -163,6 +164,7 @@ export function titleFormatPatches(
 ): { id: string; meta: { title: string } }[] {
   return tracks.flatMap((t) => {
     const current = t.meta.title ?? ''
+    if (!current.trim()) return []
     const title = renderTitle(format, t.meta)
     if (!title || title === current) return []
     const wrapped = renderTitle(format, { ...t.meta, title: TITLE_SENTINEL })
@@ -214,8 +216,8 @@ export function emptyTitleFormatFields(
 }
 
 // Everything one "apply the title format" pass needs to report honestly: the
-// patches to apply, how many tracks were skipped (no-op: empty render, unchanged,
-// or already wearing the pattern), and — when nothing at all changed — which
+// patches to apply, how many tracks were skipped (no-op: blank title, empty render,
+// unchanged, or already wearing the pattern), and — when nothing at all changed — which
 // pattern fields are empty on every track, as the concrete "why".
 export function titleFormatSummary(
   format: string,

@@ -5261,6 +5261,16 @@ describe('Editor insert from field', () => {
     expect(screen.getByTestId('field-format-title')).toBeEnabled()
   })
 
+  it('turns the title T off while the title is empty, whatever else is missing', () => {
+    // An empty title has nothing to format; a lit T there promised an action that can only
+    // fail, and its notice would blame the empty track number instead of the empty title.
+    renderEditor({ id: 't1', meta: { title: '' } }, 'wav', {
+      visibleFields: ['title', 'trackNumber'],
+      titleFormat: '({trackNumber}) {title}',
+    })
+    expect(screen.getByTestId('field-format-title')).toBeDisabled()
+  })
+
   it('shows no title T when no format is configured', () => {
     renderEditor({ id: 't1', meta: { title: 'Action (Base)' } }, 'wav', {
       visibleFields: ['title'],

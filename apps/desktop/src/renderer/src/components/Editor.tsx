@@ -911,8 +911,9 @@ export const Editor = memo(function Editor({
       : titleFormatPatches(titleFormat, [{ ...item, meta: resolvedMeta }])[0]?.meta.title
 
   const titleFormatOff =
-    titleFormatResult === undefined &&
-    emptyTitleFormatFields(titleFormat, [{ ...item, meta: resolvedMeta }]).length === 0
+    !resolvedMeta.title?.trim() ||
+    (titleFormatResult === undefined &&
+      emptyTitleFormatFields(titleFormat, [{ ...item, meta: resolvedMeta }]).length === 0)
   const titleFormatAction = useMemo(
     () =>
       onApplyTitleFormat && titleFormat.trim() !== ''
