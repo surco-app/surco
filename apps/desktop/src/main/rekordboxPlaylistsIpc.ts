@@ -22,7 +22,7 @@ import {
   readRekordboxTree,
 } from './rekordboxPlaylists'
 import { type QueueApply, type RekordboxQueue, withoutOp } from './rekordboxQueue'
-import { type EditOp, editResultOfOutcome } from './rekordboxQueueOps'
+import { type EditOp, editResultOfOutcome, type QueueOp } from './rekordboxQueueOps'
 import { stillWaiting } from './rekordboxQueueWatch'
 
 // Opens the collection read-only for one read and always closes it: rekordbox may be
@@ -138,6 +138,25 @@ export function rekordboxRead(
 // The collection path is resolved on every call, not captured once: the user can change
 // the override in Settings while Surco runs.
 export function rekordboxEdit(collection: () => string, host: PlaylistEditHost): DjEditMain {
+  const run = async (path: string, op: QueueOp): Promise<RekordboxEditResult> => {
+    host.queue.enqueue([op])
+    host.beginLoose?.(path)
+    const result = await host.queue.apply(async () => !(await host.isRunning()))
+    if (result.status === 'applied') {
+      const others = withoutOp(result, op.id)
+      if (others.tracks > 0 || others.changes > 0 || others.notices.length > 0)
+        host.onApplied?.(others)
+    }
+    if (stillWaiting(result)) {
+      host.onWaiting?.()
+      return { applied: false, queued: true, opId: op.id }
+    } else if (result.status === 'refused') host.queue.drop(op.id)
+    if (result.status === 'refused') return { applied: false, reason: result.reason }
+    const written = host.queue.outcomeOf(op.id)
+    const outcome =
+      result.status === 'applied' ? result.outcomes.find((o) => o.id === op.id) : undefined
+    return editResultOfOutcome(outcome ?? written)
+  }
   return {
     hasSeparator: async () => {
       const path = collection()
@@ -157,23 +176,13 @@ export function rekordboxEdit(collection: () => string, host: PlaylistEditHost):
           stamps: editStamps(path, edit),
           ...(label ? { label } : {}),
         }
-        host.queue.enqueue([op])
-        host.beginLoose?.(path)
-        const result = await host.queue.apply(async () => !(await host.isRunning()))
-        if (result.status === 'applied') {
-          const others = withoutOp(result, op.id)
-          if (others.tracks > 0 || others.changes > 0 || others.notices.length > 0)
-            host.onApplied?.(others)
-        }
-        if (stillWaiting(result)) {
-          host.onWaiting?.()
-          return { applied: false, queued: true, opId: op.id }
-        } else if (result.status === 'refused') host.queue.drop(op.id)
-        if (result.status === 'refused') return { applied: false, reason: result.reason }
-        const written = host.queue.outcomeOf(op.id)
-        const outcome =
-          result.status === 'applied' ? result.outcomes.find((o) => o.id === op.id) : undefined
-        return editResultOfOutcome(outcome ?? written)
+        return run(path, op)
+      }),
+    match: (action, pair, label) =>
+      serialLibraryFlush(async (): Promise<RekordboxEditResult> => {
+        const path = collection()
+        if (!path) return { applied: false, reason: 'unreadable' }
+        return run(path, { id: randomUUID(), kind: 'match', action, pair, label })
       }),
   }
 }

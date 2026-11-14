@@ -81,6 +81,15 @@ describe('registerDjIpc', () => {
     await expect(handler('dj:matching')({}, 'traktor')).rejects.toThrow('traktor has no matching')
   })
 
+  it('sends a Matching write to the edit row of rekordbox with its arguments', async () => {
+    const match = vi.fn(async () => ({ applied: true as const }))
+    registerDjIpc(table({}, { rekordbox: { save: vi.fn(), match } }))
+    expect(await handler('dj:match')({}, 'rekordbox', 'add', ['1', '2'], 'x')).toEqual({
+      applied: true,
+    })
+    expect(match).toHaveBeenCalledWith('add', ['1', '2'], 'x')
+  })
+
   it('rejects a program it does not know, so a typo cannot reach another program', async () => {
     registerDjIpc(table())
     await expect(handler('dj:tree')({}, 'djotron')).rejects.toThrow('unknown DJ program djotron')

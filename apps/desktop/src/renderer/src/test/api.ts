@@ -158,6 +158,11 @@ export interface ProgramReads {
   matching(): Promise<[string, string][]>
   editPlaylist(edit: RekordboxPlaylistEdit, label?: string): Promise<RekordboxEditResult>
   hasSeparator(): Promise<boolean>
+  match(
+    action: 'add' | 'remove',
+    pair: [string, string],
+    label: string,
+  ): Promise<RekordboxEditResult>
   cueQueue(): Promise<RekordboxQueueState>
   applyCueQueue(): Promise<RekordboxQueueApplied | null>
   discardCueQueue(): Promise<void>
@@ -181,6 +186,7 @@ const EMPTY_READS: ProgramReads = {
   matching: async () => [],
   editPlaylist: async () => ({ applied: false, reason: 'unreadable' }),
   hasSeparator: async () => false,
+  match: async () => ({ applied: false, reason: 'unreadable' }),
   cueQueue: async () => ({ tracks: 0, changes: 0, items: [] }),
   applyCueQueue: async () => null,
   discardCueQueue: async () => {},
@@ -217,6 +223,7 @@ export function djReads(...layers: (DjReads | DjApi | undefined)[]): DjApi {
       of(p).editPlaylist(...args),
     ),
     hasSeparator: vi.fn((p) => of(p).hasSeparator()),
+    match: vi.fn((p, ...args: Parameters<ProgramReads['match']>) => of(p).match(...args)),
     cueQueue: vi.fn((p) => of(p).cueQueue()),
     applyCueQueue: vi.fn((p) => of(p).applyCueQueue()),
     discardCueQueue: vi.fn((p) => of(p).discardCueQueue()),

@@ -71,6 +71,7 @@ export function registerDjIpc(table: DjMainTable): void {
   registerOperation(table, 'read', 'matching')
   registerSave(table)
   registerOperation(table, 'edit', 'hasSeparator')
+  registerOperation(table, 'edit', 'match')
   registerOperation(table, 'cueQueue', 'read', 'cueQueue')
   registerApplyCueQueue(table)
   registerOperation(table, 'cueQueue', 'discard', 'discardCueQueue')

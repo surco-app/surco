@@ -826,6 +826,7 @@ function wiredDj(): DjApi {
     matching: async () => [],
     editPlaylist: (p) => wiredEdit(p, 'editPlaylist', { applied: false, reason: 'unreadable' }),
     hasSeparator: (p) => wiredEdit(p, 'hasSeparator', false),
+    match: (p) => notWiredDj('match', p),
     cueQueue: async () => ({ tracks: 0, changes: 0, items: [] }),
     applyCueQueue: async () => null,
     discardCueQueue: async () => {},
