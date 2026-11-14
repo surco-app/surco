@@ -80,7 +80,12 @@
         "harmonyNeighbours": "Voisins",
         "harmonySame": "Même tonalité",
         "noKeys": "Aucun morceau choisi n’a de tonalité, le mix harmonique ne s’applique donc pas",
-        "pickHint": "« Privilégier les combos éprouvés » remet ensemble un instrumental et une voix que tu as enchaînés dans deux de tes tracklists ou plus. « Ce que tu préfères » tient compte des étoiles et des écoutes. « Surprends-moi » laisse de la place à des paires jamais jouées ensemble."
+        "pickHint": "« Privilégier les combos éprouvés » remet ensemble un instrumental et une voix que tu as enchaînés dans deux de tes tracklists ou plus. « Ce que tu préfères » tient compte des étoiles et des écoutes. « Surprends-moi » laisse de la place à des paires jamais jouées ensemble.",
+        "alternateNoRoles": "Pour alterner, marque à l’étape Playlists au moins une playlist de Bases et une de Vocals.",
+        "alternateShortVocal_one": "Il y a {{count}} vocal pour environ {{tracks}} morceaux. Ensuite, les bases s’enchaîneront.",
+        "alternateShortVocal_other": "Il y a {{count}} vocals pour environ {{tracks}} morceaux. Quand il n’y en aura plus, les bases s’enchaîneront.",
+        "alternateShortBase_one": "Il y a {{count}} base pour environ {{tracks}} morceaux. Ensuite, les vocals s’enchaîneront.",
+        "alternateShortBase_other": "Il y a {{count}} bases pour environ {{tracks}} morceaux. Quand il n’y en aura plus, les vocals s’enchaîneront."
       },
       "loading": "Lecture…",
       "build": "Composer la session",

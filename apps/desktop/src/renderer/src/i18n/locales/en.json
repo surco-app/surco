@@ -80,7 +80,12 @@
         "harmonyNeighbours": "Neighbours",
         "harmonySame": "Same key",
         "noKeys": "None of the chosen tracks has a key, so harmonic mixing does not apply",
-        "pickHint": "“Prefer proven combos” brings back together an instrumental and a vocal you have played back to back in two or more of your tracklists. “What you like most” weighs stars and play count. “Surprise me” leaves room for pairs that were never played together."
+        "pickHint": "“Prefer proven combos” brings back together an instrumental and a vocal you have played back to back in two or more of your tracklists. “What you like most” weighs stars and play count. “Surprise me” leaves room for pairs that were never played together.",
+        "alternateNoRoles": "To alternate, mark at least one Bases playlist and one Vocals playlist in the Playlists step.",
+        "alternateShortVocal_one": "There is {{count}} vocal for about {{tracks}} tracks. Once it is used, bases will play back to back.",
+        "alternateShortVocal_other": "There are {{count}} vocals for about {{tracks}} tracks. Once they run out, bases will play back to back.",
+        "alternateShortBase_one": "There is {{count}} base for about {{tracks}} tracks. Once it is used, vocals will play back to back.",
+        "alternateShortBase_other": "There are {{count}} bases for about {{tracks}} tracks. Once they run out, vocals will play back to back."
       },
       "loading": "Reading…",
       "build": "Build session",

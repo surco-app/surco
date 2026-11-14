@@ -80,7 +80,12 @@
         "harmonyNeighbours": "Veïns",
         "harmonySame": "Mateix to",
         "noKeys": "Cap de les pistes triades no porta tonalitat, així que la mescla harmònica no s'aplica",
-        "pickHint": "«Preferir combos provats» torna a ajuntar una base i una vocal que has posat seguides en dos o més dels teus tracklists. «El que més t'agrada» té en compte les estrelles i les vegades que l'has escoltada. «Sorprèn-me» deixa lloc a parelles que no s'han posat mai juntes."
+        "pickHint": "«Preferir combos provats» torna a ajuntar una base i una vocal que has posat seguides en dos o més dels teus tracklists. «El que més t'agrada» té en compte les estrelles i les vegades que l'has escoltada. «Sorprèn-me» deixa lloc a parelles que no s'han posat mai juntes.",
+        "alternateNoRoles": "Per alternar, marca al pas Playlists almenys una playlist de Bases i una altra de Vocals.",
+        "alternateShortVocal_one": "Hi ha {{count}} vocal per a unes {{tracks}} pistes. Quan s’acabe, eixiran bases seguides.",
+        "alternateShortVocal_other": "Hi ha {{count}} vocals per a unes {{tracks}} pistes. Quan s’acaben, eixiran bases seguides.",
+        "alternateShortBase_one": "Hi ha {{count}} base per a unes {{tracks}} pistes. Quan s’acabe, eixiran vocals seguides.",
+        "alternateShortBase_other": "Hi ha {{count}} bases per a unes {{tracks}} pistes. Quan s’acaben, eixiran vocals seguides."
       },
       "loading": "Llegint…",
       "build": "Muntar la sessió",

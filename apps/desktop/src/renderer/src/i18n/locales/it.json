@@ -80,7 +80,12 @@
         "harmonyNeighbours": "Vicini",
         "harmonySame": "Stessa tonalità",
         "noKeys": "Nessuno dei brani scelti ha la tonalità, quindi il mix armonico non si applica",
-        "pickHint": "«Preferisci combo collaudate» riunisce una base e una vocale che hai messo una dopo l'altra in due o più tracklist. «Quello che ti piace di più» tiene conto delle stelle e degli ascolti. «Sorprendimi» lascia spazio a coppie che non hai mai messo insieme."
+        "pickHint": "«Preferisci combo collaudate» riunisce una base e una vocale che hai messo una dopo l'altra in due o più tracklist. «Quello che ti piace di più» tiene conto delle stelle e degli ascolti. «Sorprendimi» lascia spazio a coppie che non hai mai messo insieme.",
+        "alternateNoRoles": "Per alternare, segna nel passo Playlist almeno una playlist di Basi e una di Vocali.",
+        "alternateShortVocal_one": "C’è {{count}} vocale per circa {{tracks}} brani. Dopo, le basi andranno una dopo l’altra.",
+        "alternateShortVocal_other": "Ci sono {{count}} vocali per circa {{tracks}} brani. Quando finiscono, le basi andranno una dopo l’altra.",
+        "alternateShortBase_one": "C’è {{count}} base per circa {{tracks}} brani. Dopo, le vocali andranno una dopo l’altra.",
+        "alternateShortBase_other": "Ci sono {{count}} basi per circa {{tracks}} brani. Quando finiscono, le vocali andranno una dopo l’altra."
       },
       "loading": "Lettura…",
       "build": "Crea la sessione",
