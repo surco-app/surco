@@ -20,7 +20,7 @@
   "sessions": {
     "role": {
       "title": "Rolle für Sessions",
-    "of": "Rolle von {{name}}",
+      "of": "Rolle von {{name}}",
       "base": "Instrumentals",
       "vocal": "Gesang",
       "any": "Gemischt"
@@ -103,11 +103,11 @@
       "redo": "Neu würfeln",
       "adjust": "Anpassen…",
       "keep": "So behalten",
-    "kept": "Bleibt als normale Playlist erhalten",
+      "kept": "Bleibt als normale Playlist erhalten",
       "short": "Nur genug Tracks für {{minutes}} Min.",
-    "counted": "Gezählt mit {{minutes}} Min. pro Track. Die Dateien dauern zusammen {{audio}}.",
-    "countedAtLeast": "Gezählt mit {{minutes}} Min. pro Track. Die Dateien dauern zusammen mindestens {{audio}}.",
-    "noCombos": "Keine Combos gefunden, weil sich kein Paar in zwei oder mehr der gewählten gemischten Playlists wiederholt.",
+      "counted": "Gezählt mit {{minutes}} Min. pro Track. Die Dateien dauern zusammen {{audio}}.",
+      "countedAtLeast": "Gezählt mit {{minutes}} Min. pro Track. Die Dateien dauern zusammen mindestens {{audio}}.",
+      "noCombos": "Keine Combos gefunden, weil sich kein Paar in zwei oder mehr der gewählten gemischten Playlists wiederholt.",
       "assumed_one": "{{count}} Track ohne Länge, zählt als {{minutes}} Min.",
       "assumed_other": "{{count}} Tracks ohne Länge, zählen je als {{minutes}} Min."
     },

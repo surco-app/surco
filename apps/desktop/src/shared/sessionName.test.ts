@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { SourceNode } from './types'
 import { childNames, nodeNameOf, parentIdOf, sessionDateLabel, uniqueName } from './sessionName'
+import type { SourceNode } from './types'
 
 const TREE: SourceNode[] = [
   {

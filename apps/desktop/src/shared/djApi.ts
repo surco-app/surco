@@ -22,6 +22,7 @@ export interface DjReadMain {
   playlist(id: string): Awaitable<SourcePlaylistEntry[]>
   membership(paths: string[]): Awaitable<Record<string, string[]>>
   collection?(): Awaitable<CollectionTrack[]>
+  matching?(): Awaitable<[string, string][]>
 }
 
 export interface DjEditMain {
@@ -72,6 +73,7 @@ export interface DjApi {
   playlist(p: DjProgram, id: string): Promise<SourcePlaylistEntry[]>
   membership(p: DjProgram, paths: string[]): Promise<Record<string, string[]>>
   collection(p: DjProgram): Promise<CollectionTrack[]>
+  matching(p: DjProgram): Promise<[string, string][]>
   editPlaylist(
     p: DjProgram,
     edit: RekordboxPlaylistEdit,

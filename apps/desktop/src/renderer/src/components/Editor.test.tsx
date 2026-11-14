@@ -5278,7 +5278,12 @@ describe('Editor maximized section', () => {
 
 describe('Editor maximized section motion', () => {
   type FakeAnimation = { currentTime: number; cancel: () => void; onfinish: (() => void) | null }
-  let animations: { el: Element; frames: Keyframe[]; options: KeyframeAnimationOptions; anim: FakeAnimation }[]
+  let animations: {
+    el: Element
+    frames: Keyframe[]
+    options: KeyframeAnimationOptions
+    anim: FakeAnimation
+  }[]
   beforeEach(() => {
     animations = []
     Object.assign((window as unknown as { api: object }).api, { cancelAnalysis: vi.fn() })
@@ -5306,9 +5311,7 @@ describe('Editor maximized section motion', () => {
     vi.spyOn(Element.prototype, 'clientWidth', 'get').mockImplementation(function (this: Element) {
       return this === document.documentElement ? width : 0
     })
-    vi.spyOn(Element.prototype, 'clientHeight', 'get').mockImplementation(function (
-      this: Element,
-    ) {
+    vi.spyOn(Element.prototype, 'clientHeight', 'get').mockImplementation(function (this: Element) {
       return this === document.documentElement ? height : 0
     })
   }
@@ -5398,7 +5401,7 @@ describe('Editor maximized section motion', () => {
     expect(inColumn()).toHaveLength(0)
   })
 
-  it('opens another section at its top rather than at the last one\'s scroll', () => {
+  it("opens another section at its top rather than at the last one's scroll", () => {
     renderEditor({ id: 'a' })
     const overlay = maximizeTrim()
     act(() => animations[0].anim.onfinish?.())

@@ -29,6 +29,7 @@ export function createDjApi(ipc: DjIpc): DjApi {
     playlist: (p, id) => ipc.invoke('dj:playlist', p, id),
     membership: (p, paths) => ipc.invoke('dj:membership', p, paths),
     collection: (p) => ipc.invoke('dj:collection', p),
+    matching: (p) => ipc.invoke('dj:matching', p),
     editPlaylist: (p, ...args) => ipc.invoke('dj:editPlaylist', p, ...args),
     hasSeparator: (p) => ipc.invoke('dj:hasSeparator', p),
     cueQueue: (p) => ipc.invoke('dj:cueQueue', p),

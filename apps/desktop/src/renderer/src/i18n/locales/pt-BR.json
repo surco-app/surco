@@ -20,7 +20,7 @@
   "sessions": {
     "role": {
       "title": "Papel para sessões",
-    "of": "Papel de {{name}}",
+      "of": "Papel de {{name}}",
       "base": "Instrumentais",
       "vocal": "Com voz",
       "any": "Misto"
@@ -103,11 +103,11 @@
       "redo": "Refazer",
       "adjust": "Ajustar…",
       "keep": "Ficar assim",
-    "kept": "Mantida como playlist normal",
+      "kept": "Mantida como playlist normal",
       "short": "Só há faixas para {{minutes}} min",
-    "counted": "Contado a {{minutes}} min por faixa. Os arquivos somam {{audio}}.",
-    "countedAtLeast": "Contado a {{minutes}} min por faixa. Os arquivos somam pelo menos {{audio}}.",
-    "noCombos": "Sem combos, porque nenhum par se repete em duas ou mais das playlists Mistas escolhidas.",
+      "counted": "Contado a {{minutes}} min por faixa. Os arquivos somam {{audio}}.",
+      "countedAtLeast": "Contado a {{minutes}} min por faixa. Os arquivos somam pelo menos {{audio}}.",
+      "noCombos": "Sem combos, porque nenhum par se repete em duas ou mais das playlists Mistas escolhidas.",
       "assumed_one": "{{count}} faixa sem duração, conta como {{minutes}} min",
       "assumed_other": "{{count}} faixas sem duração, contam como {{minutes}} min cada"
     },

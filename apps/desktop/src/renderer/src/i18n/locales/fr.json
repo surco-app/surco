@@ -20,7 +20,7 @@
   "sessions": {
     "role": {
       "title": "Rôle pour les sessions",
-    "of": "Rôle de {{name}}",
+      "of": "Rôle de {{name}}",
       "base": "Instrumentaux",
       "vocal": "Voix",
       "any": "Mixte"
@@ -103,11 +103,11 @@
       "redo": "Refaire",
       "adjust": "Ajuster…",
       "keep": "La garder telle quelle",
-    "kept": "Conservée comme une playlist normale",
+      "kept": "Conservée comme une playlist normale",
       "short": "Il n’y a de morceaux que pour {{minutes}} min",
-    "counted": "Compté à {{minutes}} min par morceau. Les fichiers durent {{audio}} en tout.",
-    "countedAtLeast": "Compté à {{minutes}} min par morceau. Les fichiers durent au moins {{audio}} en tout.",
-    "noCombos": "Aucun combo trouvé, car aucune paire ne se répète dans deux playlists mixtes choisies ou plus.",
+      "counted": "Compté à {{minutes}} min par morceau. Les fichiers durent {{audio}} en tout.",
+      "countedAtLeast": "Compté à {{minutes}} min par morceau. Les fichiers durent au moins {{audio}} en tout.",
+      "noCombos": "Aucun combo trouvé, car aucune paire ne se répète dans deux playlists mixtes choisies ou plus.",
       "assumed_one": "{{count}} morceau sans durée, compté pour {{minutes}} min",
       "assumed_other": "{{count}} morceaux sans durée, comptés pour {{minutes}} min chacun"
     },

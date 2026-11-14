@@ -56,8 +56,8 @@ import {
 import { DJ_COLLECTION_PATH } from '../shared/djSettings'
 import type { Settings } from '../shared/types'
 import {
-  defaults,
   configDirHasSettings,
+  defaults,
   getConfigDir,
   getSettings,
   LOCAL_KEYS,

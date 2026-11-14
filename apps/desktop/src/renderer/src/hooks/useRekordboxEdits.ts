@@ -9,7 +9,7 @@ import type {
   SourcePlaylistEntry,
 } from '../../../shared/types'
 import { markOwnRemovals, takeOwnRemoval } from '../lib/ownRemovals'
-import { editMessage, editedTree, movedEntries, subtreeIds } from '../lib/playlistEdits'
+import { editedTree, editMessage, movedEntries, subtreeIds } from '../lib/playlistEdits'
 import { SOURCE_PROGRAMS } from '../lib/sourcePrograms'
 
 // Sends one edit to rekordbox and then re-reads what rekordbox holds: the collection is the

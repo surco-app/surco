@@ -10330,10 +10330,9 @@ describe('App list review notice', { timeout: 15000 }, () => {
     })
     await renderApp()
     await addThree()
-    await waitFor(
-      () => expect(screen.getAllByTestId('track-row')[1]).toHaveTextContent('Bravo'),
-      { timeout: 3000 },
-    )
+    await waitFor(() => expect(screen.getAllByTestId('track-row')[1]).toHaveTextContent('Bravo'), {
+      timeout: 3000,
+    })
     expect(screen.queryByTestId('list-review-notice')).not.toBeInTheDocument()
     await act(async () => release())
     expect(

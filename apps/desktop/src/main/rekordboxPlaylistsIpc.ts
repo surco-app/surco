@@ -11,6 +11,7 @@ import { serialLibraryFlush } from './libraryTagSync'
 import { rekordboxShareDir } from './rekordboxArtwork'
 import { openRekordboxDb, rekordboxRawKey } from './rekordboxDb'
 import { readNodeStamps } from './rekordboxMasterXml'
+import { readMatchingPairs } from './rekordboxMatching'
 import { readMembership } from './rekordboxMembership'
 import { separatorContent } from './rekordboxPlaylistEdit'
 import {
@@ -101,6 +102,10 @@ export function rekordboxRead(
     collection: async () => {
       const path = collection()
       return withCollection(path, readRekordboxCollection, [], await keyOf(path))
+    },
+    matching: async () => {
+      const path = collection()
+      return withCollection(path, readMatchingPairs, [], await keyOf(path))
     },
     playlist: async (id: string) => {
       const path = collection()

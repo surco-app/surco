@@ -25,12 +25,12 @@ import {
 } from '../shared/defaults'
 import { DEFAULT_EDITOR_SECTIONS } from '../shared/editorSections'
 import { normalizeHiddenSources } from '../shared/hiddenSources'
+import { FORMAT_SETTINGS } from '../shared/outputFormats'
 import {
   DEFAULT_SESSION_WIZARD,
-  normalizeSessionWizard,
   normalizeSessionsMade,
+  normalizeSessionWizard,
 } from '../shared/sessionSettings'
-import { FORMAT_SETTINGS } from '../shared/outputFormats'
 import { TRASH_MAX_BYTES, TRASH_RETENTION_DAYS } from '../shared/trash'
 import type { FormatSetting, LanguagePref, NormalizeConfig, Settings } from '../shared/types'
 import { migratedSyncToggles } from './syncToggleMigration'

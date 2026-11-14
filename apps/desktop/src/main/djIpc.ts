@@ -68,6 +68,7 @@ export function registerDjIpc(table: DjMainTable): void {
   registerOperation(table, 'read', 'playlist')
   registerOperation(table, 'read', 'membership')
   registerOperation(table, 'read', 'collection')
+  registerOperation(table, 'read', 'matching')
   registerSave(table)
   registerOperation(table, 'edit', 'hasSeparator')
   registerOperation(table, 'cueQueue', 'read', 'cueQueue')

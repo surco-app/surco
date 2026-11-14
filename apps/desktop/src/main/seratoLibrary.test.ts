@@ -19,11 +19,11 @@ import { parseSeratoLinkId, seratoLinkId } from './seratoCrateFile'
 import { concat, frame, track, utf16be } from './seratoDatabaseFixture'
 import {
   readSeratoLibrary,
+  seratoCollection,
   seratoLibraryRoots,
   seratoMembership,
   seratoPlaylist,
   seratoRecentCount,
-  seratoCollection,
   seratoTrackCount,
   seratoTree,
 } from './seratoLibrary'

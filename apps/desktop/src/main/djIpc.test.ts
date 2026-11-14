@@ -75,6 +75,12 @@ describe('registerDjIpc', () => {
     await expect(handler('dj:collection')({}, 'engine')).rejects.toThrow('engine has no collection')
   })
 
+  it('rejects Matching for a program without it, because only rekordbox has the table', async () => {
+    registerDjIpc(table({ rekordbox: { matching: () => [['1', '2']] } }))
+    expect(await handler('dj:matching')({}, 'rekordbox')).toEqual([['1', '2']])
+    await expect(handler('dj:matching')({}, 'traktor')).rejects.toThrow('traktor has no matching')
+  })
+
   it('rejects a program it does not know, so a typo cannot reach another program', async () => {
     registerDjIpc(table())
     await expect(handler('dj:tree')({}, 'djotron')).rejects.toThrow('unknown DJ program djotron')

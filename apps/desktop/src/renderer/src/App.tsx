@@ -14,7 +14,6 @@ import { useTranslation } from 'react-i18next'
 import { ALL_TRACKS_ID } from '../../shared/allTracks'
 import { autoMatchAvailable, usableProviders } from '../../shared/autoMatch'
 import { trashLimits } from '../../shared/backupPolicy'
-import { WINDOW_MIN_SIZE } from '../../shared/windowSize'
 import { DEFAULT_CUE_GRID_TOLERANCE } from '../../shared/cueGrid'
 import type { CueJumpBars } from '../../shared/cueJump'
 import type { CueQuantize } from '../../shared/cueQuantize'
@@ -67,6 +66,7 @@ import type {
   TrashEntry,
   UsbProgram,
 } from '../../shared/types'
+import { WINDOW_MIN_SIZE } from '../../shared/windowSize'
 import { LiveActivityPanel } from './components/ActivityPanel'
 import { BatchRun } from './components/BatchRun'
 import { Confetti } from './components/Confetti'
@@ -100,6 +100,7 @@ import { UsbExportPill } from './components/UsbExportPill'
 import { UsbTopProgress } from './components/UsbTopProgress'
 import { useActivityLog } from './hooks/useActivityLog'
 import { useAppleMusicArtwork } from './hooks/useAppleMusicArtwork'
+import { useAppNotifications } from './hooks/useAppNotifications'
 import { useAutoMatch } from './hooks/useAutoMatch'
 import { useColumnLayout } from './hooks/useColumnLayout'
 import { type CleanupOffer, useConfirmFlows } from './hooks/useConfirmFlows'
@@ -112,6 +113,7 @@ import { useExitPresence } from './hooks/useExitPresence'
 import { useGridChecks } from './hooks/useGridChecks'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { useLaunchModals } from './hooks/useLaunchModals'
+import { useLibraryCheckToast } from './hooks/useLibraryCheckToast'
 import { useLibraryCopyVerdicts } from './hooks/useLibraryCopyVerdicts'
 import { useListNavigation } from './hooks/useListNavigation'
 import { useListReviewNotice } from './hooks/useListReviewNotice'
@@ -138,8 +140,6 @@ import { useTrackLibrary } from './hooks/useTrackLibrary'
 import { useTrackProcessing } from './hooks/useTrackProcessing'
 import { useTracksView, type ViewCacheEntry } from './hooks/useTracksView'
 import { useTriageFilters } from './hooks/useTriageFilters'
-import { useLibraryCheckToast } from './hooks/useLibraryCheckToast'
-import { useAppNotifications } from './hooks/useAppNotifications'
 import { useUsbExportToasts } from './hooks/useUsbExportToasts'
 import { useUsbVolumes } from './hooks/useUsbVolumes'
 import { useVerificationUpdates } from './hooks/useVerificationUpdates'
@@ -164,9 +164,9 @@ import { railWidth } from './lib/columnLayout'
 import {
   buildCommands,
   type Command,
-  type PaletteTree,
   type CueActions,
   type NewPlaylist,
+  type PaletteTree,
   runCommand,
 } from './lib/commands'
 import { railAlert } from './lib/copiesView'
@@ -1934,7 +1934,10 @@ export default function App(): React.JSX.Element {
       !seenInAllRef.current.has(id) &&
       !seenDwell.current.has(id)
     )
-      seenDwell.current.set(id, setTimeout(() => markSeenInAll(id), SEEN_DWELL_MS))
+      seenDwell.current.set(
+        id,
+        setTimeout(() => markSeenInAll(id), SEEN_DWELL_MS),
+      )
   })
   useLibraryCheckToast(store, libraryFailed, librarySource)
   // The list narrowed to the open playlist, in its order. Only what the list shows and
@@ -2322,7 +2325,9 @@ export default function App(): React.JSX.Element {
     batchStripRegion.current = null
     const target =
       region.querySelector<HTMLElement>(FOCUSABLE.join(', ')) ??
-      document.querySelector<HTMLElement>('[data-testid="source-tree"] [data-testid^="source-node-"]')
+      document.querySelector<HTMLElement>(
+        '[data-testid="source-tree"] [data-testid^="source-node-"]',
+      )
     target?.focus()
   })
   const batchStrip = (
