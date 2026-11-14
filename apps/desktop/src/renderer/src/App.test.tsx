@@ -1013,6 +1013,37 @@ describe('App Traktor cues', () => {
       )
     })
 
+    it('suggests a pair the Traktor mixed playlists hold back to back three times', async () => {
+      openTraktor({
+        dj: djReads({
+          traktor: {
+            tree: vi.fn<ProgramReads['tree']>().mockResolvedValue([
+              { id: 'u1', name: 'Saturday', kind: 'playlist', count: 2 },
+              {
+                id: 'f1',
+                name: 'COMBOS',
+                kind: 'folder',
+                count: 0,
+                children: ['s1', 's2', 's3'].map((id) => ({
+                  id,
+                  name: id,
+                  kind: 'playlist' as const,
+                  count: 2,
+                })),
+              },
+            ]),
+          },
+        }),
+      })
+      await openPlaylist()
+      fireEvent.click(screen.getAllByTestId('track-row')[0])
+      expect(await screen.findByTestId('matching-suggested')).toHaveTextContent('b.wav')
+      fireEvent.click(screen.getByTestId('matching-suggested-match'))
+      await waitFor(() =>
+        expect(window.api.addMatchingPair).toHaveBeenCalledWith('/m/a.wav', '/m/b.wav'),
+      )
+    })
+
     it('unpairs a partner from the editor', async () => {
       openTraktor({ matchingPairs: paired() })
       await openPlaylist()

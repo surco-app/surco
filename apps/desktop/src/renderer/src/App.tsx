@@ -3000,26 +3000,36 @@ export default function App(): React.JSX.Element {
     const b = rekordboxIdOfPath.get(paths[1].normalize('NFC'))
     return a && b && a !== b ? [a, b] : null
   }
+  const programById = useMemo(
+    () => new Map(programCollection.map((t) => [t.contentId, t])),
+    [programCollection],
+  )
+  const suggestionTracks = inRekordbox ? collectionById : programById
+  const suggestionSelf = inRekordbox ? selectedContentId : matchingSelfPath
   const matchingSuggestions = useMatchingSuggestions({
-    enabled: inRekordbox,
+    program: sourceProgram,
     tree: browser.tree,
     made: settings?.sessionsMade ?? [],
-    matched: matchingPairs,
+    matched: inRekordbox ? matchingPairs : matchingPathPairs,
     dismissed: settings?.matchingDismissed ?? [],
   })
   const suggestedForSelected = useMemo(
     () =>
-      selectedContentId
+      suggestionSelf
         ? matchingSuggestions.flatMap(({ pair: [a, b], times }) => {
-            const other = a === selectedContentId ? b : b === selectedContentId ? a : null
-            const track = other ? collectionById.get(other) : undefined
+            const other = a === suggestionSelf ? b : b === suggestionSelf ? a : null
+            const track = other ? suggestionTracks.get(other) : undefined
             return track ? [{ track, times }] : []
           })
         : [],
-    [matchingSuggestions, selectedContentId, collectionById],
+    [matchingSuggestions, suggestionSelf, suggestionTracks],
   )
   const matchSuggestion = useStableCallback((s: PairSuggestion) => {
-    const label = s.pair.map((id) => collectionById.get(id)?.title ?? id).join(' · ')
+    const label = s.pair.map((id) => suggestionTracks.get(id)?.title ?? id).join(' · ')
+    if (!inRekordbox) {
+      void editMatching('add', rekordboxPairOf(s.pair), label, s.pair)
+      return
+    }
     const [a, b] = s.pair.map((id) => collectionById.get(id)?.path)
     void editMatching('add', s.pair, label, a && b ? [a, b] : null)
   })
@@ -3065,7 +3075,7 @@ export default function App(): React.JSX.Element {
               partners: otherPartners,
               selfId: matchingSelfPath,
               collection: programCollection,
-              suggested: [],
+              suggested: suggestedForSelected,
               onPick: pickMatchingPartner,
               onRemove: removeMatchingPartner,
               onAdd: addMatchingPartner,
@@ -4297,15 +4307,14 @@ export default function App(): React.JSX.Element {
                               }}
                             />
                           )}
-                          {sourceProgram === 'rekordbox' &&
-                            browser.playlist?.id === MATCHING_ID && (
-                              <MatchingSuggestions
-                                suggestions={matchingSuggestions}
-                                tracks={collectionById}
-                                onMatch={matchSuggestion}
-                                onDismiss={dismissSuggestion}
-                              />
-                            )}
+                          {sourceProgram !== null && browser.playlist?.id === MATCHING_ID && (
+                            <MatchingSuggestions
+                              suggestions={matchingSuggestions}
+                              tracks={suggestionTracks}
+                              onMatch={matchSuggestion}
+                              onDismiss={dismissSuggestion}
+                            />
+                          )}
                           {visibleTracks.length === 0 ? (
                             <div className="flex flex-col items-center gap-3 p-6 text-center">
                               <p className="text-xs text-fg-faint">{tr('sidebar.search.empty')}</p>
