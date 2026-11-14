@@ -1,5 +1,52 @@
 [
   {
+    "version": "1.35",
+    "date": "14 de noviembre de 2026",
+    "title": "Matching en todos tus programas",
+    "items": [
+      {
+        "text": "Matching de rekordbox llega a Surco. Su entrada junta tus parejas en cadenas que puedes pinchar seguidas, y «Crear playlist» las convierte en una lista con un clic.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "Elige una pista y su sección Matching te dice con qué temas hace pareja. La lista los marca con los dos anillos. Pulsa «Añadir» o «Hacer matching» con dos pistas seleccionadas, y la pareja llega también a rekordbox.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "Traktor, Engine DJ, Serato y VirtualDJ también tienen Matching. Esos programas no lo traen, así que Surco guarda tus parejas, y siguen ahí cuando conviertes una pista.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "Surco te sugiere las parejas que has pinchado seguidas en tres sets o más, sacadas de tu historial de rekordbox y de tus playlists de mezclas. Si una no te sirve, pulsa «Descartar» y no vuelve a salir.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "La sesión automática pincha tus parejas de Matching una detrás de otra. Si las playlists que eliges no dan para alternar bases y vocales hasta el final, te avisa bajo «Alternar bases y vocales».",
+        "in": "1.35.0"
+      },
+      {
+        "text": "Tus listas inteligentes de rekordbox aparecen en su pestaña con las mismas pistas que en rekordbox. Son de solo lectura, y también puedes llevarlas a un USB de Pioneer.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "Surco cuenta las frases de 32 golpes entre tus CALLs. Las ves al pie de los cues, y «Poner en el comentario» las escribe delante del comentario, también en toda una selección.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "El botón de formato está ahora dentro del campo Título y aparece al pasar el ratón. Un campo vacío ya no deja un punto suelto en el título ni en el nombre del archivo.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "El filtro «Rejilla mal» escucha cada pista sobre su propia rejilla. Ya no marca una pista sin golpe ni una cuyo tempo Surco oye mal. Auto pone el golpe donde arranca, como rekordbox.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "Surco ya habla catalán e italiano, en la app, en sus menús y en la web. Elige el idioma en Ajustes.",
+        "in": "1.35.0"
+      }
+    ]
+  },
+  {
     "version": "1.34",
     "date": "12 de noviembre de 2026",
     "title": "VirtualDJ llega a Surco",

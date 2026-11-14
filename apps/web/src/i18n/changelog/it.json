@@ -1,5 +1,52 @@
 [
   {
+    "version": "1.35",
+    "date": "November 14, 2026",
+    "title": "Matching in tutti i tuoi programmi",
+    "items": [
+      {
+        "text": "Il Matching di rekordbox arriva in Surco. La sua voce raccoglie le tue coppie in catene che puoi suonare di fila, e «Crea playlist» le trasforma in una lista con un clic.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "Scegli un brano e la sua sezione Matching ti dice con quali brani fa coppia. La lista li segna con i due anelli. Premi «Aggiungi», o «Crea un Matching» con due brani selezionati, e la coppia arriva anche in rekordbox.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "Anche Traktor, Engine DJ, Serato e VirtualDJ hanno il Matching. Questi programmi non ce l’hanno, quindi Surco conserva le tue coppie, e restano anche quando converti un brano.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "Surco ti suggerisce le coppie che hai suonato una dopo l’altra in tre set o più, prese dalla tua cronologia di rekordbox e dalle tue playlist di mix. Se una non ti serve, premi «Ignora» e non tornerà più.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "La sessione automatica suona le tue coppie di Matching una dopo l’altra. Se le playlist che scegli non bastano per alternare basi e vocali fino alla fine, te lo dice sotto «Alterna basi e vocali».",
+        "in": "1.35.0"
+      },
+      {
+        "text": "Le tue playlist intelligenti di rekordbox compaiono nella sua scheda con gli stessi brani di rekordbox. Sono in sola lettura, e puoi anche metterle su una chiavetta USB Pioneer.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "Surco conta le frasi da 32 battute tra i tuoi CALL. Le vedi sotto i cue, e «Metti nel commento» le scrive davanti al commento, anche per un’intera selezione.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "Il pulsante del formato ora sta dentro il campo Titolo e compare al passaggio del mouse. Un campo vuoto non lascia più un punto isolato nel titolo né nel nome del file.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "Il filtro «Griglia sbagliata» ascolta ogni brano sulla sua griglia. Non segnala più un brano senza battuta né uno di cui Surco sente male il tempo. Auto mette la battuta dove parte il colpo, come rekordbox.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "Surco ora parla catalano e italiano, nell’app, nei suoi menu e sul sito. Scegli la lingua nelle Impostazioni.",
+        "in": "1.35.0"
+      }
+    ]
+  },
+  {
     "version": "1.34",
     "date": "November 12, 2026",
     "title": "VirtualDJ arriva su Surco",

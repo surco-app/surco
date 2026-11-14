@@ -1,5 +1,52 @@
 [
   {
+    "version": "1.35",
+    "date": "November 14, 2026",
+    "title": "Matching a tots els teus programes",
+    "items": [
+      {
+        "text": "El Matching de rekordbox arriba a Surco. La seva entrada ajunta les teves parelles en cadenes que pots punxar seguides, i «Crear playlist» les converteix en una llista amb un clic.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "Tria una pista i la seva secció Matching et diu amb quins temes fa parella. La llista els marca amb els dos anells. Prem «Afegeix», o «Fer matching» amb dues pistes seleccionades, i la parella arriba també a rekordbox.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "Traktor, Engine DJ, Serato i VirtualDJ també tenen Matching. Aquests programes no el porten, així que Surco guarda les teves parelles, i hi continuen quan converteixes una pista.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "Surco et suggereix les parelles que has punxat seguides en tres sets o més, tretes del teu historial de rekordbox i de les teves playlists de mescles. Si una no et serveix, prem «Descarta» i no tornarà a sortir.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "La sessió automàtica punxa les teves parelles de Matching una darrere l’altra. Si les playlists que tries no donen per alternar bases i vocals fins al final, t’avisa sota «Alternar bases i vocals».",
+        "in": "1.35.0"
+      },
+      {
+        "text": "Les teves llistes intel·ligents de rekordbox apareixen a la seva pestanya amb les mateixes pistes que a rekordbox. Són de només lectura, i també les pots portar a un USB de Pioneer.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "Surco compta les frases de 32 temps entre els teus CALLs. Les veus al peu dels cues, i «Posar al comentari» les escriu davant del comentari, també en tota una selecció.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "El botó de format ara és dins del camp Títol i apareix en passar-hi el ratolí. Un camp buit ja no deixa un punt solt al títol ni al nom del fitxer.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "El filtre «Graella malament» escolta cada pista sobre la seva pròpia graella. Ja no marca una pista sense cop ni una de la qual Surco sent malament el tempo. Auto posa el cop on arrenca, com rekordbox.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "Surco ja parla català i italià, a l’app, als seus menús i al web. Tria l’idioma a Configuració.",
+        "in": "1.35.0"
+      }
+    ]
+  },
+  {
     "version": "1.34",
     "date": "November 12, 2026",
     "title": "VirtualDJ arriba a Surco",

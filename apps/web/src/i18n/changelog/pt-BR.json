@@ -1,5 +1,52 @@
 [
   {
+    "version": "1.35",
+    "date": "November 14, 2026",
+    "title": "Matching em todos os seus programas",
+    "items": [
+      {
+        "text": "O Matching do rekordbox chega ao Surco. A entrada junta seus pares em sequências que você pode tocar direto, e “Criar playlist” transforma tudo em uma lista com um clique.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "Escolha uma faixa e a seção Matching mostra com quais faixas ela forma par. A lista marca essas faixas com os dois anéis. Clique em “Adicionar”, ou em “Fazer matching” com duas faixas selecionadas, e o par chega também ao rekordbox.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "Traktor, Engine DJ, Serato e VirtualDJ também ganham Matching. Esses programas não têm isso, então o Surco guarda seus pares, e eles continuam lá quando você converte uma faixa.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "O Surco sugere os pares que você tocou em sequência em três sets ou mais, tirados do seu histórico do rekordbox e das suas playlists de mixagens. Se um não servir, clique em “Descartar” e ele não volta.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "A sessão automática toca seus pares de Matching um atrás do outro. Se as playlists que você escolheu não dão para alternar instrumental e com voz até o fim, ela avisa embaixo de “Alternar instrumental e com voz”.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "Suas playlists inteligentes do rekordbox aparecem na aba dele com as mesmas faixas do rekordbox. Elas são só de leitura, e você também pode levá-las para um pendrive Pioneer.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "O Surco conta as frases de 32 batidas entre seus CALLs. Você as vê embaixo dos cues, e “Colocar no comentário” escreve as frases antes do comentário, também numa seleção inteira.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "O botão de formato agora fica dentro do campo Título e aparece quando você passa o mouse. Um campo vazio não deixa mais um ponto solto no título nem no nome do arquivo.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "O filtro “Grade errada” escuta cada faixa sobre a própria grade. Ele não marca mais uma faixa sem batida nem uma cujo andamento o Surco ouve errado. O Auto põe a batida onde o golpe começa, como o rekordbox.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "O Surco agora fala catalão e italiano, no app, nos menus e no site. Escolha o idioma em Ajustes.",
+        "in": "1.35.0"
+      }
+    ]
+  },
+  {
     "version": "1.34",
     "date": "November 12, 2026",
     "title": "O VirtualDJ chega ao Surco",

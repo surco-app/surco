@@ -1,5 +1,52 @@
 [
   {
+    "version": "1.35",
+    "date": "November 14, 2026",
+    "title": "Matching dans tous tes logiciels",
+    "items": [
+      {
+        "text": "Le Matching de rekordbox arrive dans Surco. Son entrée regroupe tes paires en chaînes que tu peux enchaîner d’un trait, et « Créer une playlist » en fait une liste en un clic.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "Choisis un morceau et sa section Matching te dit avec quels morceaux il fait la paire. La liste les marque avec les deux anneaux. Appuie sur « Ajouter », ou sur « Créer un Matching » avec deux morceaux sélectionnés, et la paire arrive aussi dans rekordbox.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "Traktor, Engine DJ, Serato et VirtualDJ ont aussi le Matching. Ces logiciels ne l’ont pas, alors Surco garde tes paires, et elles restent quand tu convertis un morceau.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "Surco te propose les paires que tu as passées à la suite dans trois sets ou plus, tirées de ton historique rekordbox et de tes playlists de mixes. Si l’une ne te va pas, appuie sur « Ignorer » et elle ne revient plus.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "La session automatique passe tes paires de Matching l’une après l’autre. Si les playlists que tu choisis ne suffisent pas pour alterner instrumental et voix jusqu’au bout, elle te prévient sous « Alterner instrumental et voix ».",
+        "in": "1.35.0"
+      },
+      {
+        "text": "Tes playlists intelligentes de rekordbox apparaissent dans son onglet avec les mêmes morceaux que dans rekordbox. Elles sont en lecture seule, et tu peux aussi les mettre sur une clé USB Pioneer.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "Surco compte les phrases de 32 temps entre tes CALLs. Tu les vois sous les cues, et « Mettre dans le commentaire » les écrit devant le commentaire, aussi pour toute une sélection.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "Le bouton de format est maintenant dans le champ Titre et apparaît au survol. Un champ vide ne laisse plus de point isolé dans le titre ni dans le nom du fichier.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "Le filtre « Grille fausse » écoute chaque morceau sur sa propre grille. Il ne signale plus un morceau sans beat ni un morceau dont Surco entend mal le tempo. Auto place le temps là où le coup démarre, comme rekordbox.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "Surco parle maintenant catalan et italien, dans l’app, ses menus et sur le site. Choisis la langue dans les Réglages.",
+        "in": "1.35.0"
+      }
+    ]
+  },
+  {
     "version": "1.34",
     "date": "November 12, 2026",
     "title": "VirtualDJ arrive dans Surco",

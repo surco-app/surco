@@ -1,5 +1,52 @@
 [
   {
+    "version": "1.35",
+    "date": "November 14, 2026",
+    "title": "Matching in all your programs",
+    "items": [
+      {
+        "text": "rekordbox Matching comes to Surco. Its entry groups your pairs into chains you can play straight through, and “Create playlist” turns them into a list in one click.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "Pick a track and its Matching section tells you which tracks it pairs with. The list marks them with the two rings. Press “Add”, or “Make a Matching pair” with two tracks selected, and the pair reaches rekordbox too.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "Traktor, Engine DJ, Serato and VirtualDJ get Matching too. Those programs don’t have it, so Surco keeps your pairs, and they stay when you convert a track.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "Surco suggests the pairs you played back to back in three sets or more, taken from your rekordbox history and your mix playlists. If one doesn’t fit, press “Dismiss” and it won’t come back.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "The automatic session plays your Matching pairs one after the other. If the playlists you pick can’t keep up instrumental and vocal to the end, it tells you under “Alternate instrumental and vocal”.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "Your rekordbox intelligent playlists show up in its tab with the same tracks as in rekordbox. They are read-only, and you can put them on a Pioneer USB too.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "Surco counts the 32-beat phrases between your CALLs. You see them under the cues, and “Put in the comment” writes them in front of the comment, for a whole selection too.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "The format button now sits inside the Title field and shows up on hover. A blank field no longer leaves a stray dot in the title or the file name.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "The “Bad grid” filter listens to each track over its own grid. It no longer flags a track without a beat or one whose tempo Surco mishears. Auto puts the beat where the hit starts, like rekordbox.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "Surco now speaks Catalan and Italian, in the app, its menus and the website. Pick the language in Settings.",
+        "in": "1.35.0"
+      }
+    ]
+  },
+  {
     "version": "1.34",
     "date": "November 12, 2026",
     "title": "VirtualDJ joins Surco",

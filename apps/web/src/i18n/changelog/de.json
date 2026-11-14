@@ -1,5 +1,52 @@
 [
   {
+    "version": "1.35",
+    "date": "November 14, 2026",
+    "title": "Matching in all deinen Programmen",
+    "items": [
+      {
+        "text": "rekordbox Matching kommt zu Surco. Sein Eintrag fasst deine Paare zu Ketten zusammen, die du am Stück spielen kannst, und „Playlist erstellen“ macht mit einem Klick eine Liste daraus.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "Wähl einen Track, und sein Bereich Matching zeigt dir, mit welchen Tracks er ein Paar bildet. Die Liste markiert sie mit den zwei Ringen. Drück „Hinzufügen“ oder „Als Matching markieren“ mit zwei ausgewählten Tracks, und das Paar landet auch in rekordbox.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "Traktor, Engine DJ, Serato und VirtualDJ bekommen auch Matching. Diese Programme haben es nicht, also speichert Surco deine Paare, und sie bleiben, wenn du einen Track konvertierst.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "Surco schlägt dir die Paare vor, die du in drei Sets oder mehr direkt hintereinander gespielt hast, aus deinem rekordbox-Verlauf und deinen Mix-Playlists. Passt eins nicht, drück „Verwerfen“, und es kommt nicht wieder.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "Die automatische Session spielt deine Matching-Paare direkt hintereinander. Reichen die gewählten Playlists nicht, um Instrumental und Gesang bis zum Ende abzuwechseln, sagt sie es dir unter „Instrumental und Gesang abwechseln“.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "Deine intelligenten Playlists aus rekordbox erscheinen in seinem Tab mit denselben Tracks wie in rekordbox. Sie sind schreibgeschützt, und du kannst sie auch auf einen Pioneer-USB-Stick bringen.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "Surco zählt die Phrasen aus 32 Beats zwischen deinen CALLs. Du siehst sie unter den Cues, und „In den Kommentar setzen“ schreibt sie vor den Kommentar, auch für eine ganze Auswahl.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "Der Format-Button sitzt jetzt im Feld Titel und erscheint, wenn du mit der Maus darüberfährst. Ein leeres Feld hinterlässt keinen einzelnen Punkt mehr im Titel oder im Dateinamen.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "Der Filter „Raster falsch“ hört jeden Track über seinem eigenen Raster. Er markiert keinen Track ohne Beat mehr und keinen, dessen Tempo Surco falsch hört. Auto setzt den Beat dorthin, wo der Schlag beginnt, wie rekordbox.",
+        "in": "1.35.0"
+      },
+      {
+        "text": "Surco spricht jetzt Katalanisch und Italienisch, in der App, ihren Menüs und auf der Website. Wähl die Sprache in den Einstellungen.",
+        "in": "1.35.0"
+      }
+    ]
+  },
+  {
     "version": "1.34",
     "date": "November 12, 2026",
     "title": "VirtualDJ kommt zu Surco",
