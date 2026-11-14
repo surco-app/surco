@@ -11,6 +11,7 @@ import {
   nmlPath,
   readTraktorCollection,
   readTraktorMembership,
+  readTraktorPlayedTogether,
   readTraktorPlaylist,
   readTraktorRecentCount,
   readTraktorTrackCount,
@@ -384,5 +385,30 @@ describe('readTraktorMembership', () => {
 
   it('leaves out a file Traktor does not have, so the field can say it is not in Traktor', () => {
     expect(readTraktorMembership(doc, ['/Users/dj/Music/z.mp3'], 'Macintosh HD')).toEqual({})
+  })
+})
+
+describe('readTraktorPlayedTogether', () => {
+  const SEP: Track = { file: 'blank.mp3', title: '', playtime: '1' }
+  const GONE: Track = { file: 'gone.mp3' }
+  const doc = nml(
+    [A, B, C, SEP],
+    [
+      folder('Sesiones', [
+        playlist('Friday', 'fri', [A, SEP, B, SEP]),
+        playlist('Sat', 'sat', [SEP, A]),
+        playlist('Run', 'run', [A, B, GONE, C]),
+      ]),
+    ],
+  )
+
+  it('reads every session in one pass, split where a separator or a missing track breaks the run, so opening Traktor no longer parses the collection once per session', () => {
+    expect(readTraktorPlayedTogether(doc, ['fri', 'sat', 'run', 'nope'], 'Macintosh HD')).toEqual([
+      ['/Users/dj/Music/a.mp3'],
+      ['/Users/dj/Music/b.flac'],
+      ['/Users/dj/Music/a.mp3'],
+      ['/Users/dj/Music/a.mp3', '/Users/dj/Music/b.flac'],
+      ['/Volumes/Stick/Sets/c.aiff'],
+    ])
   })
 })

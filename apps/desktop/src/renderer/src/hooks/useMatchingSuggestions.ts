@@ -32,8 +32,9 @@ export function pathSequences(
   return sequences
 }
 
-async function playedTogether(program: DjProgram, mixed: string[]): Promise<string[][]> {
-  if (program === 'rekordbox') return window.api.dj.playedTogether('rekordbox', mixed)
+export async function playedTogether(program: DjProgram, mixed: string[]): Promise<string[][]> {
+  if (program === 'rekordbox' || program === 'traktor')
+    return window.api.dj.playedTogether(program, mixed)
   const rows = await Promise.all(mixed.map((id) => SOURCE_READ[program].playlist(id)))
   return pathSequences(rows)
 }

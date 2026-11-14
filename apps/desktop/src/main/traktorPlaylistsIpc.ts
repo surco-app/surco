@@ -4,6 +4,7 @@ import { traktorCoverFile, traktorCoverUrl } from './traktorCoverCache'
 import {
   readTraktorCollection,
   readTraktorMembership,
+  readTraktorPlayedTogether,
   readTraktorPlaylist,
   readTraktorRecentCount,
   readTraktorTrackCount,
@@ -39,5 +40,7 @@ export function traktorRead(collection: () => string, host: TraktorPlaylistsHost
     },
     membership: (paths: string[]) =>
       read((nml) => readTraktorMembership(nml, paths, host.bootVolume()), {}),
+    playedTogether: (ids: string[]) =>
+      read((nml) => readTraktorPlayedTogether(nml, ids, host.bootVolume()), []),
   }
 }

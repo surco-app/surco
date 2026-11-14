@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import type { SourceNode } from '../../../shared/types'
-import { mixedPlaylistIds, pathSequences } from './useMatchingSuggestions'
+import { mixedPlaylistIds, pathSequences, playedTogether } from './useMatchingSuggestions'
 
 const playlist = (id: string, name = id): SourceNode => ({ id, name, kind: 'playlist', count: 1 })
 const folder = (name: string, children: SourceNode[]): SourceNode => ({
@@ -50,5 +50,18 @@ describe('pathSequences', () => {
       ['/m/d.wav'],
       ['/m/Canción.wav'.normalize('NFC'), '/m/e.wav'],
     ])
+  })
+})
+
+describe('playedTogether', () => {
+  it('asks Traktor for every session in one call instead of reading each playlist, which froze opening a Traktor library with a sessions folder', async () => {
+    const dj = {
+      playedTogether: vi.fn(async () => [['/m/a.mp3']]),
+      playlist: vi.fn(async () => []),
+    }
+    ;(globalThis as unknown as { window: unknown }).window = { api: { dj } }
+    expect(await playedTogether('traktor', ['s1', 's2'])).toEqual([['/m/a.mp3']])
+    expect(dj.playedTogether).toHaveBeenCalledWith('traktor', ['s1', 's2'])
+    expect(dj.playlist).not.toHaveBeenCalled()
   })
 })

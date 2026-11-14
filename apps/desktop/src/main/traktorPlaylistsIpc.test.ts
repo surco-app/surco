@@ -97,3 +97,11 @@ describe('traktorRead', () => {
     expect(rows.map((r) => r.path).sort()).toEqual(['/Music/a.mp3', '/Music/b.mp3'])
   })
 })
+
+describe('traktorRead playedTogether', () => {
+  it('hands back the sessions played back to back from one read of the collection', async () => {
+    const file = await collection()
+    const read = traktorRead(() => file, { bootVolume: () => 'HD' })
+    expect(await read.playedTogether?.(['u1'])).toEqual([['/Music/a.mp3', '/Music/b.mp3']])
+  })
+})

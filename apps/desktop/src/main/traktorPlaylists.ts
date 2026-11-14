@@ -284,6 +284,35 @@ export function readTraktorPlaylist(
   }))
 }
 
+export function readTraktorPlayedTogether(
+  nml: string,
+  ids: readonly string[],
+  bootVolume: string,
+): string[][] {
+  const model = parsePlaylists(nml)
+  if (!model) return []
+  const tracks = collection(nml)
+  const byKey = new Map(tracks.map((t) => [t.key, t]))
+  const separators = new Set(tracks.filter(isSeparator).map((t) => t.key))
+  const sequences: string[][] = []
+  for (const id of ids) {
+    const list = nodeById(model, id)
+    if (list?.kind !== 'playlist') continue
+    let current: string[] = []
+    for (const row of list.rows) {
+      const track = byKey.get(row.key)
+      if (track && !separators.has(row.key)) {
+        current.push(traktorFileOf(track.block, bootVolume).normalize('NFC'))
+        continue
+      }
+      if (current.length > 0) sequences.push(current)
+      current = []
+    }
+    if (current.length > 0) sequences.push(current)
+  }
+  return sequences
+}
+
 export function readTraktorMembership(
   nml: string,
   paths: string[],

@@ -1033,6 +1033,11 @@ describe('App Traktor cues', () => {
                 })),
               },
             ]),
+            playedTogether: vi.fn<ProgramReads['playedTogether']>().mockResolvedValue([
+              ['/m/a.wav', '/m/b.wav'],
+              ['/m/a.wav', '/m/b.wav'],
+              ['/m/a.wav', '/m/b.wav'],
+            ]),
           },
         }),
       })
