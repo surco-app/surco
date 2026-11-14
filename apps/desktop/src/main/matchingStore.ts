@@ -58,3 +58,15 @@ export function createMatchingStore(file: string): MatchingStore {
     },
   }
 }
+
+export function followConversion(
+  store: MatchingStore,
+  job: { inputPath: string; replacesPath?: string },
+  result: { outputPath: string; skipped?: boolean },
+  exists: (path: string) => boolean,
+): void {
+  if (result.skipped) return
+  for (const from of [job.inputPath, job.replacesPath]) {
+    if (from && from !== result.outputPath && !exists(from)) store.movePath(from, result.outputPath)
+  }
+}

@@ -186,6 +186,8 @@ import { followingAll, librarySizeFollower } from './librarySizeFollow'
 import { serialLibraryFlush } from './libraryTagSync'
 import { registerListReviewIpc } from './listReviewIpc'
 import { listReviewDeps } from './listReviewWiring'
+import { registerMatchingIpc } from './matchingIpc'
+import { createMatchingStore, followConversion } from './matchingStore'
 import { createMediaAccess } from './mediaAccess'
 import { releaseMediaFile, trackMediaStream } from './mediaStreams'
 import { createMemoryWatch, processSamples } from './memoryWatch'
@@ -456,6 +458,7 @@ const broadcast = (channel: string, payload: unknown): void => {
 // the disk in the background once the opening reads have had their head start.
 const FILE_CHECK_DELAY_MS = 3000
 const fileDatesStore = fileStore(join(app.getPath('userData'), 'file-dates.json'))
+const matchingStore = createMatchingStore(join(app.getPath('userData'), 'matching-pairs.json'))
 const fileSignatures = createFileSignatures({
   load: () => {
     try {
@@ -1547,6 +1550,7 @@ function registerIpc(): void {
   ipcMain.handle('dj:ask-to-apply', (e, programs: CueProgram[]) =>
     askInOrder(askToApply, programs, BrowserWindow.fromWebContents(e.sender)),
   )
+  registerMatchingIpc(matchingStore)
   registerDjIpc({
     rekordbox: {
       read: rekordboxRead(rekordboxCollectionNow, rekordboxCollectionPath, { allowMedia }),
@@ -2283,6 +2287,9 @@ function registerIpc(): void {
               state: 'unreadable',
               detail: { key: 'musicUnreadable' },
             }),
+    }).then((result) => {
+      followConversion(matchingStore, job, result, existsSync)
+      return result
     }),
   )
 

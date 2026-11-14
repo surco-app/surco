@@ -2,7 +2,7 @@ import { mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { createMatchingStore } from './matchingStore'
+import { createMatchingStore, followConversion } from './matchingStore'
 
 async function fileIn(): Promise<string> {
   return join(await mkdtemp(join(tmpdir(), 'surco-matchstore-')), 'matching-pairs.json')
@@ -75,5 +75,56 @@ describe('createMatchingStore', () => {
       version: 1,
       pairs: [['/m/a.wav', '/m/b.wav']],
     })
+  })
+})
+
+describe('followConversion', () => {
+  async function storeWith(...pairs: [string, string][]) {
+    const store = createMatchingStore(await fileIn())
+    for (const [a, b] of pairs) store.add(a, b)
+    return store
+  }
+  const gone =
+    (...paths: string[]) =>
+    (p: string) =>
+      !paths.includes(p)
+
+  it('moves the pairs to the converted file when the original is gone', async () => {
+    const store = await storeWith(['/m/a.mp3', '/m/b.wav'])
+    followConversion(
+      store,
+      { inputPath: '/m/a.mp3' },
+      { outputPath: '/m/a.aiff' },
+      gone('/m/a.mp3'),
+    )
+    expect(store.list()).toEqual([['/m/a.aiff', '/m/b.wav']])
+  })
+
+  it('leaves the pairs on the original when the conversion kept it, since that file still plays', async () => {
+    const store = await storeWith(['/m/a.mp3', '/m/b.wav'])
+    followConversion(store, { inputPath: '/m/a.mp3' }, { outputPath: '/out/a.aiff' }, gone())
+    expect(store.list()).toEqual([['/m/a.mp3', '/m/b.wav']])
+  })
+
+  it('moves the pairs of the copy a substitution replaced, so the better copy keeps them', async () => {
+    const store = await storeWith(['/lib/old.mp3', '/m/b.wav'])
+    followConversion(
+      store,
+      { inputPath: '/new/a.flac', replacesPath: '/lib/old.mp3' },
+      { outputPath: '/lib/a.aiff' },
+      gone('/lib/old.mp3'),
+    )
+    expect(store.list()).toEqual([['/lib/a.aiff', '/m/b.wav']])
+  })
+
+  it('does nothing for a conversion the DJ skipped', async () => {
+    const store = await storeWith(['/m/a.mp3', '/m/b.wav'])
+    followConversion(
+      store,
+      { inputPath: '/m/a.mp3' },
+      { outputPath: '/m/a.aiff', skipped: true },
+      gone('/m/a.mp3'),
+    )
+    expect(store.list()).toEqual([['/m/a.mp3', '/m/b.wav']])
   })
 })
