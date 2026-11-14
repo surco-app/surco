@@ -70,6 +70,7 @@ export const testSettings: Settings = {
   hiddenSources: [],
   sessionWizard: { ...DEFAULT_SESSION_WIZARD },
   sessionsMade: [],
+  matchingDismissed: [],
   rekordboxPlaylistsFieldOffered: false,
   traktorPlaylistsFieldOffered: false,
   enginePlaylistsFieldOffered: false,

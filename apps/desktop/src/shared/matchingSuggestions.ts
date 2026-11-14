@@ -35,3 +35,10 @@ export function suggestPairs(
     .filter((s) => s.times >= minTimes)
     .sort((x, y) => y.times - x.times || pairKey(...x.pair).localeCompare(pairKey(...y.pair)))
 }
+
+export function normalizeMatchingDismissed(value: unknown): string[] {
+  if (!Array.isArray(value)) return []
+  return [
+    ...new Set(value.filter((v): v is string => typeof v === 'string' && /^[^|]+\|[^|]+$/.test(v))),
+  ]
+}

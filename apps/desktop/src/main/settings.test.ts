@@ -1346,6 +1346,15 @@ describe('cue flows', () => {
     expect(getSettings().sessionsMade).toEqual(['7'])
   })
 
+  it('keeps the dismissed Matching suggestions on this Mac, since they name its own rekordbox tracks', () => {
+    expect(LOCAL_KEYS).toContain('matchingDismissed')
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({ matchingDismissed: ['1|2', 3, '1|2', 'nope'] }),
+    )
+    expect(getSettings().matchingDismissed).toEqual(['1|2'])
+  })
+
   it('carries the wizard answers to the other Macs', () => {
     writeFileSync(join(app.getPath('userData'), 'settings.json'), JSON.stringify({}))
     const dir = mkdtempSync(join(tmpdir(), 'surco-sync-'))

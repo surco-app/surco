@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { pairKey, suggestPairs } from './matchingSuggestions'
+import { normalizeMatchingDismissed, pairKey, suggestPairs } from './matchingSuggestions'
 
 const none = new Set<string>()
 
@@ -88,5 +88,15 @@ describe('suggestPairs', () => {
         none,
       ),
     ).toEqual([])
+  })
+})
+
+describe('normalizeMatchingDismissed', () => {
+  it('keeps each dismissed pair once and drops what a hand-edited file broke', () => {
+    expect(normalizeMatchingDismissed(['1|2', 3, null, '1|2', 'nope', '4|5'])).toEqual([
+      '1|2',
+      '4|5',
+    ])
+    expect(normalizeMatchingDismissed('nope')).toEqual([])
   })
 })
