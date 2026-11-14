@@ -88,7 +88,18 @@ export function runSession(input: {
   const pool = toCandidates(sources, new Date(), evidence, marks)
   const sequences = mixedSequences(sources.filter((_, i) => !made.has(answers.sources[i])))
   const ids = new Set(pool.map((track) => track.id))
-  const pairs = withMatching(mineCombos(sequences, ids, 1), matching, ids)
+  const idOfPath = new Map<string, string>()
+  for (const source of sources)
+    for (const entry of source.entries) {
+      const id = trackIdOf(entry)
+      if (id !== null && entry.path && !entry.separator)
+        idOfPath.set(entry.path.normalize('NFC'), id)
+    }
+  const matchedIds = matching.flatMap(([a, b]) => {
+    const [x, y] = [idOfPath.get(a.normalize('NFC')), idOfPath.get(b.normalize('NFC'))]
+    return x && y ? [[x, y] as const] : []
+  })
+  const pairs = withMatching(mineCombos(sequences, ids, 1), matchedIds, ids)
   const combos = mineCombos(sequences, ids, MIN_PLAYLISTS_PER_COMBO)
   const startEntry = startPath
     ? sources
