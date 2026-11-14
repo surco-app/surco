@@ -30,6 +30,8 @@ export interface FixtureContent {
   StockDate?: string
   CreatedAt?: string
   DJPlayCount?: number
+  GenreID?: string
+  ReleaseYear?: number
 }
 
 export interface FixturePlaylist {
@@ -39,6 +41,7 @@ export interface FixturePlaylist {
   ParentID: string
   Seq: number
   deleted?: boolean
+  SmartList?: string
 }
 
 export interface FixtureLink {
@@ -78,6 +81,9 @@ export interface PlaylistFixture {
   matches?: { ContentID1: string; ContentID2: string; deleted?: boolean }[]
   history?: { HistoryID: string; ContentID: string; TrackNo: number; deleted?: boolean }[]
   noMatchingTable?: boolean
+  genres?: { ID: string; Name: string }[]
+  myTags?: { ID: string; Name: string }[]
+  songMyTags?: { ContentID: string; MyTagID: string; deleted?: boolean }[]
 }
 
 // Every fixture row is older than any edit a test makes.
@@ -125,6 +131,10 @@ export function writeRekordboxPlaylistFixture(path: string, data: PlaylistFixtur
     CREATE TABLE djmdDevice (ID VARCHAR(255) PRIMARY KEY, MasterDBID VARCHAR(255),
       Name VARCHAR(255), ${LOOKUP_COLUMNS});
     CREATE TABLE djmdKey (ID VARCHAR(255) PRIMARY KEY, ScaleName VARCHAR(255));
+    CREATE TABLE djmdMyTag (ID VARCHAR(255) PRIMARY KEY, Seq INTEGER, Name VARCHAR(255),
+      Attribute INTEGER, ParentID VARCHAR(255), ${LOOKUP_COLUMNS});
+    CREATE TABLE djmdSongMyTag (ID VARCHAR(255) PRIMARY KEY, MyTagID VARCHAR(255),
+      ContentID VARCHAR(255), TrackNo INTEGER, ${LOOKUP_COLUMNS});
     CREATE TABLE djmdPlaylist (ID VARCHAR(255) PRIMARY KEY, Seq INTEGER, Name VARCHAR(255),
       ImagePath VARCHAR(255), Attribute INTEGER, ParentID VARCHAR(255), SmartList TEXT,
       UUID VARCHAR(255), rb_data_status INTEGER DEFAULT 0, rb_local_data_status INTEGER DEFAULT 0,
@@ -182,8 +192,8 @@ export function writeRekordboxPlaylistFixture(path: string, data: PlaylistFixtur
   const content = db.prepare(
     `INSERT INTO djmdContent (ID, FolderPath, FileNameL, FileType, FileSize, Title, Length, BPM,
        Rating, KeyID, UUID, AnalysisDataPath, Analysed, ArtistID, ImagePath, rb_local_deleted,
-       StockDate, created_at, DJPlayCount)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       StockDate, created_at, DJPlayCount, GenreID, ReleaseYear)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   )
   for (const c of data.content) {
     content.run(
@@ -206,8 +216,31 @@ export function writeRekordboxPlaylistFixture(path: string, data: PlaylistFixtur
       c.StockDate ?? null,
       c.CreatedAt ?? null,
       c.DJPlayCount ?? null,
+      c.GenreID ?? null,
+      c.ReleaseYear ?? null,
     )
   }
+  const genre = db.prepare(
+    `INSERT INTO djmdGenre (ID, Name, rb_local_deleted, created_at, updated_at) VALUES (?, ?, 0, ?, ?)`,
+  )
+  for (const g of data.genres ?? []) genre.run(g.ID, g.Name, FIXTURE_STAMP, FIXTURE_STAMP)
+  const myTag = db.prepare(
+    `INSERT INTO djmdMyTag (ID, Name, rb_local_deleted, created_at, updated_at) VALUES (?, ?, 0, ?, ?)`,
+  )
+  for (const t of data.myTags ?? []) myTag.run(t.ID, t.Name, FIXTURE_STAMP, FIXTURE_STAMP)
+  const songMyTag = db.prepare(
+    `INSERT INTO djmdSongMyTag (ID, MyTagID, ContentID, rb_local_deleted, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+  )
+  for (const [i, t] of (data.songMyTags ?? []).entries())
+    songMyTag.run(
+      `smt-${i}`,
+      t.MyTagID,
+      t.ContentID,
+      t.deleted ? 1 : 0,
+      FIXTURE_STAMP,
+      FIXTURE_STAMP,
+    )
   const device = data.device ?? { ID: '7', MasterDBID: '3216549870' }
   db.prepare(
     `INSERT INTO djmdDevice (ID, MasterDBID, Name, created_at, updated_at) VALUES (?, ?, 'Mac', ?, ?)`,
@@ -237,7 +270,7 @@ export function writeRekordboxPlaylistFixture(path: string, data: PlaylistFixtur
   for (const k of data.keys) key.run(k.ID, k.ScaleName)
   const playlist = db.prepare(
     `INSERT INTO djmdPlaylist (ID, Seq, Name, Attribute, ParentID, UUID, rb_local_deleted,
-       rb_local_usn, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`,
+       SmartList, rb_local_usn, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`,
   )
   for (const p of data.playlists) {
     playlist.run(
@@ -248,6 +281,7 @@ export function writeRekordboxPlaylistFixture(path: string, data: PlaylistFixtur
       p.ParentID,
       `uuid-${p.ID}`,
       p.deleted ? 1 : 0,
+      p.SmartList ?? null,
       FIXTURE_STAMP,
       FIXTURE_STAMP,
     )
