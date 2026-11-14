@@ -17,9 +17,9 @@ import type React from 'react'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, type Mock, vi } from 'vitest'
 import type { Api } from '../../preload/api'
 import { ALL_TRACKS_ID } from '../../shared/allTracks'
-import { MATCHING_ID } from '../../shared/matching'
 import type { DjApi } from '../../shared/djApi'
 import { DEFAULT_EDITOR_SECTIONS } from '../../shared/editorSections'
+import { MATCHING_ID } from '../../shared/matching'
 import { emptyMetadata } from '../../shared/metadata'
 import { RECENTLY_ADDED_ID } from '../../shared/recentlyAdded'
 import { DEFAULT_SESSION_WIZARD } from '../../shared/sessionSettings'
@@ -4280,13 +4280,18 @@ describe('App source playlists', () => {
             matching: vi.fn<ProgramReads['matching']>().mockResolvedValue([['r3', 'r1']]),
             playlist: vi
               .fn<ProgramReads['playlist']>()
-              .mockImplementation(async (id) => (id === MATCHING_ID ? ALL_ENTRIES : FACTORY_ENTRIES)),
+              .mockImplementation(async (id) =>
+                id === MATCHING_ID ? ALL_ENTRIES : FACTORY_ENTRIES,
+              ),
           },
         }),
       })
       fireEvent.click(await screen.findByTestId(`source-node-${MATCHING_ID}`))
       await waitFor(() =>
-        expect(titles()).toEqual([expect.stringContaining('Charlie'), expect.stringContaining('Alpha')]),
+        expect(titles()).toEqual([
+          expect.stringContaining('Charlie'),
+          expect.stringContaining('Alpha'),
+        ]),
       )
       expect(screen.queryByTestId('reorder-hint')).not.toBeInTheDocument()
       expectNoReorderLine()
@@ -4294,6 +4299,36 @@ describe('App source playlists', () => {
       await screen.findByTestId('track-menu-add-to')
       expect(screen.queryByTestId('track-menu-remove-from')).not.toBeInTheDocument()
       expect(screen.queryByTestId('track-menu-insert-separator')).not.toBeInTheDocument()
+    })
+
+    it('creates a rekordbox playlist with the paired tracks in the order Matching lists them', async () => {
+      const editPlaylist = vi
+        .fn<ProgramReads['editPlaylist']>()
+        .mockResolvedValue({ applied: true, createdId: 'new' })
+      await openFactory({
+        dj: djReads({
+          rekordbox: {
+            matching: vi.fn<ProgramReads['matching']>().mockResolvedValue([['r3', 'r1']]),
+            playlist: vi
+              .fn<ProgramReads['playlist']>()
+              .mockImplementation(async (id) =>
+                id === MATCHING_ID ? ALL_ENTRIES : FACTORY_ENTRIES,
+              ),
+            editPlaylist,
+          },
+        }),
+      })
+      fireEvent.click(await screen.findByTestId(`source-node-${MATCHING_ID}`))
+      await waitFor(() => expect(titles()).toHaveLength(2))
+      fireEvent.click(screen.getByTestId('matching-create-playlist'))
+      await waitFor(() => expect(editPlaylist).toHaveBeenCalled())
+      expect(editPlaylist.mock.calls[0][0]).toMatchObject({
+        kind: 'create',
+        parentId: 'root',
+        name: 'Matching',
+        folder: false,
+        tracks: [{ contentId: 'r3' }, { contentId: 'r1' }],
+      })
     })
 
     it('never offers Matching as a playlist to add tracks to, since a track joins it by being paired', async () => {

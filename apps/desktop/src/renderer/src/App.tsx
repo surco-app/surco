@@ -12,7 +12,6 @@ import {
 } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ALL_TRACKS_ID } from '../../shared/allTracks'
-import { MATCHING_ID } from '../../shared/matching'
 import { autoMatchAvailable, usableProviders } from '../../shared/autoMatch'
 import { trashLimits } from '../../shared/backupPolicy'
 import { DEFAULT_CUE_GRID_TOLERANCE } from '../../shared/cueGrid'
@@ -30,6 +29,7 @@ import {
   programOf,
 } from '../../shared/djProgram'
 import { SAME_CLOCK_FILE } from '../../shared/gridEdit'
+import { MATCHING_ID } from '../../shared/matching'
 import { emptyMetadata } from '../../shared/metadata'
 import { RECENTLY_ADDED_ID } from '../../shared/recentlyAdded'
 import {
@@ -73,6 +73,7 @@ import { BatchRun } from './components/BatchRun'
 import { Confetti } from './components/Confetti'
 import { EmptyDisc } from './components/EmptyDisc'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { MatchingBand } from './components/MatchingBand'
 import { ModalExit } from './components/ModalShell'
 import {
   MusicReviewColumn,
@@ -4008,6 +4009,25 @@ export default function App(): React.JSX.Element {
                                 onKeep={() => {
                                   sessionRun.keep()
                                   notifyEdit(tr('sessions.band.kept'), 'neutral')
+                                }}
+                              />
+                            )}
+                          {sourceProgram === 'rekordbox' &&
+                            browser.playlist?.id === MATCHING_ID && (
+                              <MatchingBand
+                                tracks={scopeTracks.length}
+                                onCreate={() => {
+                                  const name = tr('sources.matching')
+                                  void editRekordbox(
+                                    {
+                                      kind: 'create',
+                                      parentId: 'root',
+                                      name,
+                                      folder: false,
+                                      tracks: scopeTracks.map(trackRef),
+                                    },
+                                    name,
+                                  )
                                 }}
                               />
                             )}
