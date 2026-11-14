@@ -1,4 +1,6 @@
 // @vitest-environment jsdom
+import { setFlagsFromString } from 'node:v8'
+import { runInNewContext } from 'node:vm'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react'
 import type React from 'react'
@@ -1294,5 +1296,71 @@ describe('stable search', () => {
       await waitFor(() => expect(result.current.results).toHaveLength(1))
       expect(result.current.failedSources).toEqual([])
     })
+  })
+})
+
+describe('useDiscogsBrowser releases left in the cache', () => {
+  const gc = (): void => {
+    setFlagsFromString('--expose-gc')
+    ;(runInNewContext('gc') as () => void)()
+  }
+
+  it('lets go of the render a finished search was last shown in once another track is open', async () => {
+    setApi({
+      getRelease: () => Promise.resolve(release),
+      search: () => Promise.resolve([searchResult]),
+    })
+    const Wrapper = wrapper()
+    const { result, rerender } = renderHook(
+      ({ holder, track }) => {
+        const crate = holder.crate ?? []
+        return useDiscogsBrowser(track, tr, () => crate.length)
+      },
+      {
+        initialProps: {
+          holder: { crate: [] as number[] | null },
+          track: item({ query: 'some album' }),
+        },
+        wrapper: Wrapper,
+      },
+    )
+    const box: { crate: number[] | null } = { crate: new Array(200_000).fill(1) }
+    const searchedWith = new WeakRef(box.crate as number[])
+    const searched = item({ query: 'some album' })
+    rerender({ holder: box, track: searched })
+    await waitFor(() => expect(result.current.results.length).toBeGreaterThan(0))
+    box.crate = null
+    const next = { ...item({ query: 'another record' }), id: 'b', inputPath: '/m/b.wav' }
+    for (let i = 0; i < 4; i++) rerender({ holder: { crate: new Array(10).fill(i) }, track: next })
+    await new Promise((r) => setTimeout(r, 0))
+    gc()
+
+    expect(searchedWith.deref()).toBeUndefined()
+  })
+
+  it('lets go of the render a closed release was last shown in', async () => {
+    setApi({ getRelease: () => Promise.resolve(release), search: () => Promise.resolve([]) })
+    const track = item({ query: 'some album' })
+    const Wrapper = wrapper()
+    const { result, rerender } = renderHook(
+      ({ holder }) => {
+        const crate = holder.crate ?? []
+        return useDiscogsBrowser(track, tr, () => crate.length)
+      },
+      { initialProps: { holder: { crate: [] as number[] | null } }, wrapper: Wrapper },
+    )
+    const box: { crate: number[] | null } = { crate: new Array(200_000).fill(1) }
+    const shownWith = new WeakRef(box.crate as number[])
+    rerender({ holder: box })
+    act(() => result.current.previewRelease(searchResult))
+    await waitFor(() => expect(result.current.release).not.toBeNull())
+    act(() => result.current.previewRelease(searchResult))
+    box.crate = null
+    for (let i = 0; i < 4; i++) rerender({ holder: { crate: new Array(10).fill(i) } })
+    await new Promise((r) => setTimeout(r, 0))
+    gc()
+
+    expect(result.current.release).toBeNull()
+    expect(shownWith.deref()).toBeUndefined()
   })
 })
