@@ -4,6 +4,7 @@ import de from './changelog/de.json'
 import en from './changelog/en.json'
 import es from './changelog/es.json'
 import fr from './changelog/fr.json'
+import itIT from './changelog/it.json'
 import ja from './changelog/ja.json'
 import ptBR from './changelog/pt-BR.json'
 import { loadI18n } from './index'
@@ -22,6 +23,7 @@ const TRANSLATED = [
   ['pt-BR', ptBR],
   ['ja', ja],
   ['ca', ca],
+  ['it', itIT],
 ] as const
 
 describe.each(TRANSLATED)('%s release history', (lng, releases) => {

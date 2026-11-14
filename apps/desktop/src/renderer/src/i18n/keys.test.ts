@@ -7,6 +7,7 @@ import de from './locales/de.json'
 import en from './locales/en.json'
 import es from './locales/es.json'
 import fr from './locales/fr.json'
+import itIT from './locales/it.json'
 import ja from './locales/ja.json'
 import ptBR from './locales/pt-BR.json'
 
@@ -44,6 +45,7 @@ const LOCALES: [string, unknown][] = [
   ['pt-BR', ptBR],
   ['ja', ja],
   ['ca', ca],
+  ['it', itIT],
 ]
 
 describe('locale parity', () => {

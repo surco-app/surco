@@ -4,10 +4,11 @@ import de from './locales/de.json'
 import en from './locales/en.json'
 import es from './locales/es.json'
 import fr from './locales/fr.json'
+import itIT from './locales/it.json'
 import ja from './locales/ja.json'
 import ptBR from './locales/pt-BR.json'
 
 it('heads the rename field groups as a title, not a sentence that trails off into a colon', () => {
-  const headings = [es, en, de, fr, ja, ptBR, ca].map((l) => l.settings.insertToken)
+  const headings = [es, en, de, fr, ja, ptBR, ca, itIT].map((l) => l.settings.insertToken)
   expect(headings.filter((h) => /[:：]\s*$/.test(h))).toEqual([])
 })

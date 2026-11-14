@@ -4,9 +4,10 @@
 // rest of the UI. Items backed by an Electron `role` stay in the OS language,
 // even when the app preference is pinned; only custom labels can follow this locale.
 import ca from './locales/ca.json'
+import itIT from './locales/it.json'
 import ja from './locales/ja.json'
 
-export type MenuLang = 'es' | 'en' | 'de' | 'fr' | 'pt-BR' | 'ja' | 'ca'
+export type MenuLang = 'es' | 'en' | 'de' | 'fr' | 'pt-BR' | 'ja' | 'ca' | 'it'
 
 interface MenuStrings {
   settings: string
@@ -130,6 +131,7 @@ interface MenuStrings {
 const strings: Record<MenuLang, MenuStrings> = {
   ja,
   ca,
+  it: itIT,
   es: {
     settings: 'Ajustes…',
     feedback: 'Enviar comentarios…',
@@ -832,6 +834,7 @@ const MENU_PREFIXES: [string, MenuLang][] = [
   ['pt', 'pt-BR'],
   ['ja', 'ja'],
   ['ca', 'ca'],
+  ['it', 'it'],
 ]
 export function pickMenuLang(locale: string): MenuLang {
   const tag = locale.toLowerCase()

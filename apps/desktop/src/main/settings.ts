@@ -272,6 +272,7 @@ const LANGUAGE_PREFS = [
   'pt-BR',
   'ja',
   'ca',
+  'it',
 ] as const satisfies readonly LanguagePref[]
 
 function normalizeLanguagePref(value: unknown): LanguagePref {

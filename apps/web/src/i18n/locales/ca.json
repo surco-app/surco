@@ -606,7 +606,7 @@
       },
       {
         "q": "En quins idiomes està?",
-        "a": "Castellà, anglès, alemany, francès, portuguès (Brasil), japonès i català. Per defecte segueix l'idioma del sistema, i el pots fixar a Configuració."
+        "a": "Castellà, anglès, alemany, francès, portuguès (Brasil), japonès, català i italià. Per defecte segueix l'idioma del sistema, i el pots fixar a Configuració."
       },
       {
         "q": "En quins sistemes funciona?",
@@ -667,7 +667,7 @@
         "title": "Instal·la i obre Surco",
         "s": "Baixa'l, obre'l i en un minut l'assistent el deixa al teu gust.",
         "body": [
-          "Hi ha versió per a macOS, Windows i Linux, en set idiomes. No cal cap compte i Surco s'actualitza sol."
+          "Hi ha versió per a macOS, Windows i Linux, en vuit idiomes. No cal cap compte i Surco s'actualitza sol."
         ],
         "steps": [
           {

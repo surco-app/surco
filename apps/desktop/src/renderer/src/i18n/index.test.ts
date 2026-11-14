@@ -27,6 +27,7 @@ describe('i18n lazy locale loading', () => {
     expect(i18n.hasResourceBundle('pt-BR', 'translation')).toBe(false)
     expect(i18n.hasResourceBundle('ja', 'translation')).toBe(false)
     expect(i18n.hasResourceBundle('ca', 'translation')).toBe(false)
+    expect(i18n.hasResourceBundle('it', 'translation')).toBe(false)
   })
 
   it('loads and registers the Japanese bundle before changeLanguage resolves', async () => {
@@ -43,6 +44,15 @@ describe('i18n lazy locale loading', () => {
     await i18n.changeLanguage('ca')
     expect(i18n.hasResourceBundle('ca', 'translation')).toBe(true)
     expect(i18n.language).toBe('ca')
+    expect(i18n.t('common.cancel')).not.toBe('common.cancel')
+    expect(i18n.t('common.cancel')).not.toBe(i18n.getFixedT('en')('common.cancel'))
+  })
+
+  it('loads and registers the Italian bundle before changeLanguage resolves', async () => {
+    const i18n = (await import('./index')).default
+    await i18n.changeLanguage('it')
+    expect(i18n.hasResourceBundle('it', 'translation')).toBe(true)
+    expect(i18n.language).toBe('it')
     expect(i18n.t('common.cancel')).not.toBe('common.cancel')
     expect(i18n.t('common.cancel')).not.toBe(i18n.getFixedT('en')('common.cancel'))
   })

@@ -4,10 +4,11 @@ import de from './locales/de.json'
 import en from './locales/en.json'
 import es from './locales/es.json'
 import fr from './locales/fr.json'
+import itIT from './locales/it.json'
 import ja from './locales/ja.json'
 import ptBR from './locales/pt-BR.json'
 
-const LOCALES = { de, en, es, fr, ja, 'pt-BR': ptBR, ca }
+const LOCALES = { de, en, es, fr, ja, 'pt-BR': ptBR, ca, it: itIT }
 
 describe('the messages that send you to the Traktor or Engine DJ settings name the tab they live in', () => {
   for (const [lang, strings] of Object.entries(LOCALES)) {

@@ -19,7 +19,7 @@ import {
 
 const THEMES: ThemePref[] = ['system', 'light', 'dark']
 const DENSITIES: Density[] = ['normal', 'compact']
-const LANGUAGES: LanguagePref[] = ['system', 'en', 'es', 'de', 'fr', 'pt-BR', 'ja', 'ca']
+const LANGUAGES: LanguagePref[] = ['system', 'en', 'es', 'de', 'fr', 'pt-BR', 'ja', 'ca', 'it']
 const SOURCES: PlaylistSource[] = ['appleMusic', ...RAIL_PROGRAMS]
 
 interface Props {

@@ -27,6 +27,7 @@ describe('language preference validation', () => {
   it('validates renderer saves and imported settings', () => {
     expect(saveSettings({ language: 'ja' }).language).toBe('ja')
     expect(saveSettings({ language: 'ca' }).language).toBe('ca')
+    expect(saveSettings({ language: 'it' }).language).toBe('it')
     expect(saveSettings({ language: 'not-a-locale' as Settings['language'] }).language).toBe(
       'system',
     )

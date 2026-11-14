@@ -143,7 +143,7 @@ describe('appMenuTemplate', () => {
   })
 
   it('names the Tracks menu and its items in every shipped language', () => {
-    for (const locale of ['es', 'de', 'fr', 'pt-BR', 'ja', 'ca']) {
+    for (const locale of ['es', 'de', 'fr', 'pt-BR', 'ja', 'ca', 'it']) {
       const t = createMenuT(locale)
       const { template } = build(locale)
       expect(menu(template, t('tracks')).length).toBeGreaterThan(0)
