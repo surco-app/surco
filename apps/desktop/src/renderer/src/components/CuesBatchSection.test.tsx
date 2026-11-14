@@ -75,6 +75,7 @@ function setup(twins: Record<string, LibraryTracks> = {}, targets = TARGETS) {
   const onMark = vi.fn()
   const onFlow = vi.fn()
   const onShowBadGrid = vi.fn()
+  const onPhrases = vi.fn(async () => ({ done: 1, skipped: 1 }))
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   const tree = (over: Partial<Settings>) => (
     <QueryClientProvider client={client}>
@@ -86,14 +87,46 @@ function setup(twins: Record<string, LibraryTracks> = {}, targets = TARGETS) {
           gridCheckOf={(contentId) => (contentId === '103' ? LATE : ON_BEATS)}
           onShowBadGrid={onShowBadGrid}
           onOpen={vi.fn()}
+          onPhrases={onPhrases}
         />
       </SettingsProvider>
     </QueryClientProvider>
   )
   const { rerender } = render(tree({}))
   const changeSettings = (over: Partial<Settings>) => rerender(tree(over))
-  return { saveRekordboxCues, askToApply, calls, onMark, onFlow, onShowBadGrid, changeSettings }
+  return {
+    saveRekordboxCues,
+    askToApply,
+    calls,
+    onMark,
+    onFlow,
+    onShowBadGrid,
+    onPhrases,
+    changeSettings,
+  }
 }
+
+describe('Phrases over several selected tracks', () => {
+  it('puts the phrases in every comment at once and says how many had too few CALLs, so the DJ knows which tracks still need marking', async () => {
+    const { onPhrases } = setup()
+    fireEvent.click(screen.getByTestId('cues-batch-phrases'))
+    expect(onPhrases).toHaveBeenCalledTimes(1)
+    expect(await screen.findByTestId('cues-batch-phrases-done')).toHaveTextContent(
+      i18n.t('editor.cues.batch.phrasesDone', { count: 1 }),
+    )
+    expect(screen.getByTestId('cues-batch-phrases-skipped')).toHaveTextContent(
+      i18n.t('editor.cues.batch.phrasesSkipped', { count: 1 }),
+    )
+  })
+
+  it('turns the button off while counting, so a second click does not read the playlist twice', async () => {
+    const { onPhrases } = setup()
+    fireEvent.click(screen.getByTestId('cues-batch-phrases'))
+    expect(screen.getByTestId('cues-batch-phrases')).toBeDisabled()
+    await screen.findByTestId('cues-batch-phrases-done')
+    expect(onPhrases).toHaveBeenCalledTimes(1)
+  })
+})
 
 describe('Cues over several selected tracks', () => {
   // With thirteen tracks selected the DJ wants them marked the way one track is: with the
@@ -443,6 +476,7 @@ describe('Cues over several selected tracks', () => {
             gridCheckOf={() => ON_BEATS}
             onShowBadGrid={vi.fn()}
             onOpen={vi.fn()}
+            onPhrases={vi.fn()}
           />
         </SettingsProvider>
       </QueryClientProvider>,

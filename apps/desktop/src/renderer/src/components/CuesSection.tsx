@@ -2211,6 +2211,7 @@ export function CuesSection({
   onQuantize,
   onFlow,
   actionsRef,
+  footer,
 }: {
   cue: CueTarget
   open: boolean
@@ -2220,6 +2221,7 @@ export function CuesSection({
   onQuantize?: (unit: CueQuantize) => void
   onFlow?: (id: string) => void
   actionsRef?: { current: CueActions | null }
+  footer?: React.ReactNode
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const queryClient = useQueryClient()
@@ -2386,7 +2388,10 @@ export function CuesSection({
         <div className="flex min-h-0 flex-1 flex-col">{body}</div>
       ) : (
         <SectionBody open={open}>
-          <div className="mt-3">{body}</div>
+          <div className="mt-3">
+            {body}
+            {footer}
+          </div>
         </SectionBody>
       )}
     </div>

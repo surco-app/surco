@@ -1168,7 +1168,12 @@
         "sure_one": "{{count}} sicher",
         "sure_other": "{{count}} sicher",
         "doubtful_one": "{{count}} unsicher",
-        "doubtful_other": "{{count}} unsicher"
+        "doubtful_other": "{{count}} unsicher",
+        "phrases": "Phrasen in die Kommentare setzen",
+        "phrasesDone_one": "Phrasen in {{count}} Kommentar gesetzt",
+        "phrasesDone_other": "Phrasen in {{count}} Kommentare gesetzt",
+        "phrasesSkipped_one": "{{count}} ohne zwei CALLs, unverändert",
+        "phrasesSkipped_other": "{{count}} ohne zwei CALLs, unverändert"
       },
       "gridBatch": {
         "title": "Raster",
@@ -1304,6 +1309,11 @@
         "prev": "Vorheriger Cue neben dem Beat",
         "next": "Nächster Cue neben dem Beat",
         "shiftGrid": "Raster um {{ms}} ms verschieben"
+      },
+      "phrases": {
+        "label": "Phrasen zwischen CALLs",
+        "needsCalls": "Braucht zwei CALLs",
+        "apply": "In den Kommentar setzen"
       }
     }
   },

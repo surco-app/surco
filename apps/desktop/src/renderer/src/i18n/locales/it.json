@@ -1168,7 +1168,12 @@
         "sure_one": "{{count}} sicura",
         "sure_other": "{{count}} sicure",
         "doubtful_one": "{{count}} dubbia",
-        "doubtful_other": "{{count}} dubbie"
+        "doubtful_other": "{{count}} dubbie",
+        "phrases": "Metti le frasi nei commenti",
+        "phrasesDone_one": "Frasi messe in {{count}} commento",
+        "phrasesDone_other": "Frasi messe in {{count}} commenti",
+        "phrasesSkipped_one": "{{count}} senza due CALL, non toccato",
+        "phrasesSkipped_other": "{{count}} senza due CALL, non toccati"
       },
       "gridBatch": {
         "title": "Griglia",
@@ -1304,6 +1309,11 @@
         "prev": "Cue precedente fuori beat",
         "next": "Cue successivo fuori beat",
         "shiftGrid": "Sposta la griglia di {{ms}} ms"
+      },
+      "phrases": {
+        "label": "Frasi tra i CALL",
+        "needsCalls": "Servono due CALL",
+        "apply": "Metti nel commento"
       }
     }
   },

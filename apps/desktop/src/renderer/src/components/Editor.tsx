@@ -120,6 +120,7 @@ import { MetadataForm } from './MetadataForm'
 import { type MetaMenuItem, MetaMoreMenu } from './MetaMoreMenu'
 import { NormalizeSection } from './NormalizeSection'
 import { OutputNameSection } from './OutputNameSection'
+import { PhraseCountRow } from './PhraseCountRow'
 import { PropertiesSection } from './PropertiesSection'
 import { QualitySection } from './QualitySection'
 import { SectionBody } from './SectionBody'
@@ -219,6 +220,7 @@ interface Props {
   onCueQuantize?: (unit: CueQuantize) => void
   onCueFlow?: (id: string) => void
   onCueAutoMarkAll?: () => void
+  onCuePhrasesAll?: () => Promise<{ done: number; skipped: number }>
   cueTargets?: AutoMarkTarget[]
   cueGridCheckOf?: (contentId: string) => GridCheck | null | undefined
   onShowBadGrid?: () => void
@@ -326,6 +328,7 @@ export const Editor = memo(function Editor({
   onCueQuantize,
   onCueFlow,
   onCueAutoMarkAll,
+  onCuePhrasesAll,
   cueTargets,
   cueGridCheckOf,
   onShowBadGrid,
@@ -1740,7 +1743,7 @@ export const Editor = memo(function Editor({
                       )
                     case 'cues':
                       if (!rekordboxCue) return false
-                      if (isMulti && onCueAutoMarkAll)
+                      if (isMulti && onCueAutoMarkAll && onCuePhrasesAll)
                         return (
                           <CuesBatchSection
                             key={id}
@@ -1750,6 +1753,7 @@ export const Editor = memo(function Editor({
                             gridCheckOf={(contentId) => cueGridCheckOf?.(contentId)}
                             onShowBadGrid={() => onShowBadGrid?.()}
                             onOpen={(contentId) => onOpenCueTrack?.(contentId)}
+                            onPhrases={onCuePhrasesAll}
                           />
                         )
                       if (isMulti) return singleTrackOnly(id, tr('editor.cues.title'))
@@ -1771,6 +1775,16 @@ export const Editor = memo(function Editor({
                           onQuantize={onCueQuantize}
                           onFlow={onCueFlow}
                           actionsRef={cueActionsRef}
+                          footer={
+                            <PhraseCountRow
+                              contentId={rekordboxCue.contentId}
+                              comment={item.meta.comment}
+                              onApply={(comment) => {
+                                onRecordUndo?.([item.id])
+                                setField('comment', comment)
+                              }}
+                            />
+                          }
                         />
                       )
                     case 'properties':

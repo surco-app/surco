@@ -31,6 +31,7 @@ import {
 import { SAME_CLOCK_FILE } from '../../shared/gridEdit'
 import { MATCHING_ID } from '../../shared/matching'
 import { emptyMetadata } from '../../shared/metadata'
+import { withPhraseCount } from '../../shared/phraseCount'
 import { RECENTLY_ADDED_ID } from '../../shared/recentlyAdded'
 import {
   childNames,
@@ -204,6 +205,7 @@ import { OpenSettingsProvider } from './lib/openSettingsContext'
 import { outputNamePatches, renderOutputName, titleFormatSummary } from './lib/outputName'
 import { clampPanelGeometry } from './lib/panelGeometry'
 import { flushPendingEdits } from './lib/pendingEdits'
+import { phraseCountsOf } from './lib/phraseCountBatch'
 import { isMacOS } from './lib/platform'
 import { reopenedPlaylist } from './lib/playlistEdits'
 import { type PlaylistScope, playlistMembership, playlistView } from './lib/playlistView'
@@ -2844,6 +2846,23 @@ export default function App(): React.JSX.Element {
     })
     void autoMarkTracks(queryClient, ids)
   })
+  const putPhrasesInSelected = useStableCallback(async () => {
+    const targets = selectedTracks.flatMap((t) => {
+      const contentId = playlistScope?.contentOf.get(t.id)
+      return contentId ? [{ id: t.id, contentId }] : []
+    })
+    const counts = await phraseCountsOf(queryClient, targets)
+    if (counts.size > 0) {
+      recordMetaUndo([...counts.keys()])
+      mapTracks((t) => {
+        const count = counts.get(t.id)
+        return count
+          ? { ...t, meta: { ...t.meta, comment: withPhraseCount(t.meta.comment, count) } }
+          : t
+      })
+    }
+    return { done: counts.size, skipped: targets.length - counts.size }
+  })
   const selectedContentId =
     cuesOpen && selected ? playlistScope?.contentOf.get(selected.id) : undefined
   const selectedPath = selected?.inputPath
@@ -4291,6 +4310,7 @@ export default function App(): React.JSX.Element {
                               onCueQuantize={onCueQuantize}
                               onCueFlow={onCueFlow}
                               onCueAutoMarkAll={cuesMarkable ? autoMarkSelected : undefined}
+                              onCuePhrasesAll={cuesMarkable ? putPhrasesInSelected : undefined}
                               cueTargets={cueTargets}
                               cueGridCheckOf={cueGridCheckOf}
                               onShowBadGrid={showBadGrid}

@@ -1168,7 +1168,12 @@
         "sure_one": "{{count}} segura",
         "sure_other": "{{count}} segures",
         "doubtful_one": "{{count}} dubtosa",
-        "doubtful_other": "{{count}} dubtoses"
+        "doubtful_other": "{{count}} dubtoses",
+        "phrases": "Posar frases als comentaris",
+        "phrasesDone_one": "Frases posades a {{count}} comentari",
+        "phrasesDone_other": "Frases posades a {{count}} comentaris",
+        "phrasesSkipped_one": "{{count}} sense dos CALLs, no es toca",
+        "phrasesSkipped_other": "{{count}} sense dos CALLs, no es toquen"
       },
       "gridBatch": {
         "title": "Graella",
@@ -1304,6 +1309,11 @@
         "prev": "Cue anterior fora del cop",
         "next": "Cue següent fora del cop",
         "shiftGrid": "Moure la graella {{ms}} ms"
+      },
+      "phrases": {
+        "label": "Frases entre CALLs",
+        "needsCalls": "Calen dos CALLs",
+        "apply": "Posar al comentari"
       }
     }
   },

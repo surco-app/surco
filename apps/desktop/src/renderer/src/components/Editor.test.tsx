@@ -365,6 +365,34 @@ describe('Editor cues section', () => {
     })
   })
 
+  it('writes the phrases between the CALLs into the comment as one undoable edit', async () => {
+    const grid = Array.from({ length: 800 }, (_, i) => ({ ms: i * 500, beat: (i % 4) + 1 }))
+    Object.assign((window as unknown as { api: { cues: object } }).api.cues, {
+      trackCues: vi.fn<Api['cues']['trackCues']>().mockResolvedValue({
+        contentId: '103',
+        analysed: true,
+        grid,
+        strong: [],
+        phrases: [],
+        cues: [0, 64, 320].map((b) => ({ id: `c${b}`, ms: b * 500, kind: 0, color: null })),
+        wave: null,
+        durationMs: 400000,
+        fingerprint: 'f0',
+        gridFingerprint: '',
+      }),
+    })
+    const { onChange, onRecordUndo } = renderEditor(
+      { id: 'a', meta: { title: 'Pray', comment: 'Vocal fuerte' } },
+      'wav',
+      { rekordboxCue: { contentId: '103', path: '/music/a.wav', label: 'a' } },
+    )
+    fireEvent.click(await screen.findByTestId('phrase-count-apply'))
+    expect(onRecordUndo).toHaveBeenCalledWith(['a'])
+    expect(onChange).toHaveBeenLastCalledWith({
+      meta: expect.objectContaining({ comment: '2 - 8 · Vocal fuerte' }),
+    })
+  })
+
   it('maximizes into the full cue editor with the track title, artist, BPM and key', async () => {
     const grid = Array.from({ length: 800 }, (_, i) => ({ ms: i * 500, beat: (i % 4) + 1 }))
     Object.assign((window as unknown as { api: { cues: object } }).api.cues, {
@@ -1791,6 +1819,7 @@ describe('Editor multi-select', () => {
       customFields?: Settings['customFields']
       rekordboxCue?: React.ComponentProps<typeof Editor>['rekordboxCue']
       onCueAutoMarkAll?: () => void
+      onCuePhrasesAll?: () => Promise<{ done: number; skipped: number }>
       cueTargets?: React.ComponentProps<typeof Editor>['cueTargets']
       fromSeratoA?: boolean
       libraryIndex?: AppleMusicIndex | null
@@ -1828,6 +1857,7 @@ describe('Editor multi-select', () => {
         libraryIndex={opts.libraryIndex ?? null}
         rekordboxCue={opts.rekordboxCue}
         onCueAutoMarkAll={opts.onCueAutoMarkAll}
+        onCuePhrasesAll={opts.onCuePhrasesAll}
         cueTargets={opts.cueTargets}
         searchInputRef={createRef<HTMLInputElement>()}
         onExportCollection={vi.fn()}
@@ -2019,6 +2049,7 @@ describe('Editor multi-select', () => {
     renderMulti({
       rekordboxCue: { contentId: '103', path: '/music/a.wav', label: 'a' },
       onCueAutoMarkAll,
+      onCuePhrasesAll: vi.fn(async () => ({ done: 0, skipped: 0 })),
       cueTargets: [
         { contentId: '103', path: '/music/a.wav', label: 'a' },
         { contentId: '104', path: '/music/b.wav', label: 'b' },
@@ -2029,6 +2060,21 @@ describe('Editor multi-select', () => {
     expect(button).toHaveTextContent(i18n.t('editor.cues.batch.mark', { count: 2 }))
     fireEvent.click(button)
     expect(onCueAutoMarkAll).toHaveBeenCalledTimes(1)
+  })
+
+  it('puts the phrases in the comments of the whole selection from the cues slot', () => {
+    const onCuePhrasesAll = vi.fn(async () => ({ done: 2, skipped: 0 }))
+    renderMulti({
+      rekordboxCue: { contentId: '103', path: '/music/a.wav', label: 'a' },
+      onCueAutoMarkAll: vi.fn(),
+      onCuePhrasesAll,
+      cueTargets: [
+        { contentId: '103', path: '/music/a.wav', label: 'a' },
+        { contentId: '104', path: '/music/b.wav', label: 'b' },
+      ],
+    })
+    fireEvent.click(within(screen.getByTestId('cues-multi')).getByTestId('cues-batch-phrases'))
+    expect(onCuePhrasesAll).toHaveBeenCalledTimes(1)
   })
 
   it('shows no cues section over several tracks outside a rekordbox playlist', () => {
