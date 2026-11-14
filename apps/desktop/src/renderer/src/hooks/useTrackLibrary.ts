@@ -282,6 +282,18 @@ export function useTrackLibrary({
   // started them, and App's callback gates on the settings of the render it came from.
   const onMetaLoadedRef = useRef(onMetaLoaded)
   onMetaLoadedRef.current = onMetaLoaded
+  const onForgetRef = useRef(onForget)
+  onForgetRef.current = onForget
+  const onClearRef = useRef(onClear)
+  onClearRef.current = onClear
+  const onDuplicatesSkippedRef = useRef(onDuplicatesSkipped)
+  onDuplicatesSkippedRef.current = onDuplicatesSkipped
+  const onNoAudioFoundRef = useRef(onNoAudioFound)
+  onNoAudioFoundRef.current = onNoAudioFound
+  const onMetaReadFailedRef = useRef(onMetaReadFailed)
+  onMetaReadFailedRef.current = onMetaReadFailed
+  const onPathsAddedRef = useRef(onPathsAdded)
+  onPathsAddedRef.current = onPathsAdded
 
   // Staged edits from the reopened session, waiting for their track's metadata read
   // to land so the restore can be overlaid on top of the fresh file read. Keyed by
@@ -404,7 +416,7 @@ export function useTrackLibrary({
     // directory, and an artwork-only subfolder inside a crate is normal. The all-duplicates
     // case is excluded on purpose: those paths ARE audio, and the skip notice below covers
     // them; firing both would report one drop twice.
-    if (!streamed && paths.length > 0 && audio.length === 0) onNoAudioFound()
+    if (!streamed && paths.length > 0 && audio.length === 0) onNoAudioFoundRef.current()
     // Only new rows and rows joining Files untouched restore: a path already in the list
     // with edits of its own is a live track whose current state must not be clobbered by a
     // stale saved edit. A reopen seeds its edits through seedRestoredEdits BEFORE
@@ -442,10 +454,10 @@ export function useTrackLibrary({
           return patch ? { ...t, ...patch } : t
         })
       const skipped = audio.filter((p) => alreadyInFiles.has(p)).length - selfStreamed.length
-      if (skipped > 0) onDuplicatesSkipped(skipped)
+      if (skipped > 0) onDuplicatesSkippedRef.current(skipped)
     }
     if (fresh.length === 0) return
-    onPathsAdded?.(fresh)
+    onPathsAddedRef.current?.(fresh)
     // Importing a new crate is a context change, not a track step: if a section was blown
     // up to the whole window, leave that view now so the freshly selected track's spectrum
     // doesn't render full-screen behind the editor while it analyzes.
@@ -530,7 +542,7 @@ export function useTrackLibrary({
             flushMetaPatches()
             const failed = tracksRef.current.filter((t) => importFailed.current.has(t.id)).length
             importFailed.current = new Set()
-            if (failed > 0) onMetaReadFailed(failed)
+            if (failed > 0) onMetaReadFailedRef.current(failed)
           } else {
             progressPending.current = true
             scheduleMetaFlush()
@@ -752,7 +764,7 @@ export function useTrackLibrary({
       sourcePreview: track.sourcePreview,
       inFiles: track.inFiles,
     }
-    onForget(track.id)
+    onForgetRef.current(track.id)
     setTracks((prev) => prev.map((t) => (t.id === track.id ? base : t)))
     setSelection((s) => ({
       ids: s.ids.map((id) => (id === track.id ? base.id : id)),
@@ -1300,7 +1312,7 @@ export function useTrackLibrary({
     setTracks([])
     setSelection({ ids: [], anchor: null })
     ignoredPaths.current.clear()
-    onClear(cleared)
+    onClearRef.current(cleared)
   }
 
   const prioritizeReads = useCallback((ids: string[]): void => readSlot.current.prioritize(ids), [])

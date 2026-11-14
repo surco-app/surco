@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
+import { setFlagsFromString } from 'node:v8'
+import { runInNewContext } from 'node:vm'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type React from 'react'
@@ -5540,5 +5542,80 @@ describe('Editor convert notes from the measured spectrum', () => {
     expect(await screen.findByTestId('convert-damaged-note')).toHaveTextContent(
       i18n.t('editor.damagedSource'),
     )
+  })
+})
+
+describe('Editor library check left in the cache', () => {
+  const gc = (): void => {
+    setFlagsFromString('--expose-gc')
+    ;(runInNewContext('gc') as () => void)()
+  }
+  const noop = (): void => {}
+  const asyncNoop = async (): Promise<undefined> => undefined
+  const searchInputRef = createRef<HTMLInputElement>()
+
+  it('lets go of the render a track was last edited in once another track is open', async () => {
+    const client = createQueryClient()
+    const ui = (crate: number[], track: TrackItem): React.ReactElement => (
+      <QueryClientProvider client={client}>
+        <SettingsProvider
+          settings={{
+            discogsToken: 'tok',
+            showSpectrum: false,
+            outputFormat: 'wav',
+            addToAppleMusic: false,
+          }}
+        >
+          <OpenSettingsProvider open={noop}>
+            <Editor
+              item={track}
+              libraryIndex={null}
+              searchInputRef={searchInputRef}
+              cueGridCheckOf={() => (crate.length ? null : undefined)}
+              onChange={noop}
+              onProcess={noop}
+              onFormatChange={noop}
+              onDestinationChange={noop}
+              onDeriveTags={noop}
+              onApplyTitleFormat={noop}
+              onAddToAppleMusic={noop}
+              onCleanUp={noop}
+              resultsFolded={false}
+              onFoldResults={noop}
+              onResultsResizeStart={noop}
+              onResultsFit={noop}
+              onShowLoudnessHelp={noop}
+              onHideEditorHints={noop}
+              onOpenRename={noop}
+              onRegenerateName={noop}
+              onTrimDetectedAll={noop}
+              onCopyFilename={noop}
+              onSearchWeb={noop}
+              onCopyMeta={noop}
+              onPasteMeta={noop}
+              copiedMetaTitle={null}
+              onExportCollection={noop}
+              onRecordUndo={noop}
+              readFullTrack={asyncNoop}
+            />
+          </OpenSettingsProvider>
+        </SettingsProvider>
+      </QueryClientProvider>
+    )
+    const first = item({ id: 'a', meta: { title: 'A' } })
+    const { rerender } = render(ui([], first))
+    const box: { crate: number[] | null } = { crate: new Array(200_000).fill(1) }
+    const editedWith = new WeakRef(box.crate as number[])
+    rerender(ui(box.crate as number[], first))
+    await waitFor(() =>
+      expect(window.api.holdsInLibrary).toHaveBeenCalledWith('/music/a.wav', ['A']),
+    )
+    box.crate = null
+    const next = item({ id: 'b', meta: { title: 'B' } })
+    for (let i = 0; i < 4; i++) rerender(ui(new Array(10).fill(i), next))
+    await new Promise((r) => setTimeout(r, 0))
+    gc()
+
+    expect(editedWith.deref()).toBeUndefined()
   })
 })

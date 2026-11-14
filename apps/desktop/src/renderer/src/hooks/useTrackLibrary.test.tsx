@@ -1,4 +1,6 @@
 // @vitest-environment jsdom
+import { setFlagsFromString } from 'node:v8'
+import { runInNewContext } from 'node:vm'
 import { act, cleanup, renderHook } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
@@ -2373,4 +2375,58 @@ describe('a playlist pick built from an earlier render', () => {
       })
     },
   )
+})
+
+describe('useTrackLibrary queued reads and earlier renders', () => {
+  const gc = (): void => {
+    setFlagsFromString('--expose-gc')
+    ;(runInNewContext('gc') as () => void)()
+  }
+
+  const setSelection = (): void => {}
+
+  function callbacksHolding(crate: number[]): Parameters<typeof useTrackLibrary>[0] {
+    return {
+      setSelection,
+      onForget: () => crate.length,
+      onRemove: () => crate.length,
+      onClear: () => crate.length,
+      onMetaLoaded: () => crate.length,
+      onDuplicatesSkipped: () => crate.length,
+      onNoAudioFound: () => crate.length,
+      onMetaReadFailed: () => crate.length,
+      onSourceFilesGone: () => crate.length,
+      onPathsAdded: () => crate.length,
+    }
+  }
+
+  it('lets go of the render a still-queued read was started in', async () => {
+    const unsubscribe = (): void => {}
+    const subscribe = (): (() => void) => unsubscribe
+    setApi({
+      readMeta: () => new Promise(() => {}),
+      onOpenFiles: subscribe,
+      onExpandedBatch: subscribe,
+      onFoldersChanged: subscribe,
+      onFilesChanged: subscribe,
+    })
+    const { result, rerender } = renderHook(
+      ({ holder }) => useTrackLibrary(callbacksHolding(holder.crate ?? [])),
+      { initialProps: { holder: { crate: [] as number[] | null } } },
+    )
+    const box: { crate: number[] | null } = { crate: new Array(200_000).fill(1) }
+    const queuedRendersCrate = new WeakRef(box.crate as number[])
+    rerender({ holder: box })
+    await act(async () => {
+      void result.current.addPaths(Array.from({ length: 40 }, (_, i) => `/m/${i}.wav`))
+      await new Promise((r) => setTimeout(r, 0))
+    })
+    box.crate = null
+    for (let i = 0; i < 4; i++) rerender({ holder: { crate: new Array(10).fill(i) } })
+    await new Promise((r) => setTimeout(r, 0))
+    gc()
+
+    expect(result.current.importProgress).not.toBeNull()
+    expect(queuedRendersCrate.deref()).toBeUndefined()
+  })
 })

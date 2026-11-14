@@ -136,6 +136,8 @@ export function useDiscogsBrowser(
   active = true,
 ): DiscogsBrowser {
   const queryClient = useQueryClient()
+  const onQueryCommittedRef = useRef(onQueryCommitted)
+  onQueryCommittedRef.current = onQueryCommitted
   const [query, setQuery] = useState(item.query)
   // The committed search term — set by the debounce while typing, or at once on
   // Enter/the button. Drives the search query key. Seeded from the file's own stored
@@ -223,7 +225,7 @@ export function useDiscogsBrowser(
     if (!query.trim()) return
     const id = setTimeout(() => {
       setSearchTerm(query)
-      if (query !== item.query) onQueryCommitted?.(query)
+      if (query !== item.query) onQueryCommittedRef.current?.(query)
     }, DEBOUNCE_MS)
     return () => clearTimeout(id)
   }, [query, item.loadingMeta])
@@ -426,8 +428,8 @@ export function useDiscogsBrowser(
       refetchAll()
       setRerun((n) => n + 1)
     } else setSearchTerm(query)
-    if (query !== item.query) onQueryCommitted?.(query)
-  }, [query, searchTerm, refetchAll, item.query, onQueryCommitted])
+    if (query !== item.query) onQueryCommittedRef.current?.(query)
+  }, [query, searchTerm, refetchAll, item.query])
 
   // A new search closes whatever was open before its results land, so the panel never
   // shows a release left over from the previous query.
