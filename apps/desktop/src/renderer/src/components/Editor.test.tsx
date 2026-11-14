@@ -1817,6 +1817,7 @@ describe('Editor multi-select', () => {
       customFields?: Settings['customFields']
       rekordboxCue?: React.ComponentProps<typeof Editor>['rekordboxCue']
       onCueAutoMarkAll?: () => void
+      onCuePhrasesAll?: () => Promise<{ done: number; skipped: number }>
       cueTargets?: React.ComponentProps<typeof Editor>['cueTargets']
       fromSeratoA?: boolean
       libraryIndex?: AppleMusicIndex | null
@@ -1854,6 +1855,7 @@ describe('Editor multi-select', () => {
         libraryIndex={opts.libraryIndex ?? null}
         rekordboxCue={opts.rekordboxCue}
         onCueAutoMarkAll={opts.onCueAutoMarkAll}
+        onCuePhrasesAll={opts.onCuePhrasesAll}
         cueTargets={opts.cueTargets}
         searchInputRef={createRef<HTMLInputElement>()}
         onExportCollection={vi.fn()}
@@ -2045,6 +2047,7 @@ describe('Editor multi-select', () => {
     renderMulti({
       rekordboxCue: { contentId: '103', path: '/music/a.wav', label: 'a' },
       onCueAutoMarkAll,
+      onCuePhrasesAll: vi.fn(async () => ({ done: 0, skipped: 0 })),
       cueTargets: [
         { contentId: '103', path: '/music/a.wav', label: 'a' },
         { contentId: '104', path: '/music/b.wav', label: 'b' },
@@ -2055,6 +2058,21 @@ describe('Editor multi-select', () => {
     expect(button).toHaveTextContent(i18n.t('editor.cues.batch.mark', { count: 2 }))
     fireEvent.click(button)
     expect(onCueAutoMarkAll).toHaveBeenCalledTimes(1)
+  })
+
+  it('puts the phrases in the comments of the whole selection from the cues slot', () => {
+    const onCuePhrasesAll = vi.fn(async () => ({ done: 2, skipped: 0 }))
+    renderMulti({
+      rekordboxCue: { contentId: '103', path: '/music/a.wav', label: 'a' },
+      onCueAutoMarkAll: vi.fn(),
+      onCuePhrasesAll,
+      cueTargets: [
+        { contentId: '103', path: '/music/a.wav', label: 'a' },
+        { contentId: '104', path: '/music/b.wav', label: 'b' },
+      ],
+    })
+    fireEvent.click(within(screen.getByTestId('cues-multi')).getByTestId('cues-batch-phrases'))
+    expect(onCuePhrasesAll).toHaveBeenCalledTimes(1)
   })
 
   it('shows no cues section over several tracks outside a rekordbox playlist', () => {

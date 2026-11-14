@@ -220,6 +220,7 @@ interface Props {
   onCueQuantize?: (unit: CueQuantize) => void
   onCueFlow?: (id: string) => void
   onCueAutoMarkAll?: () => void
+  onCuePhrasesAll?: () => Promise<{ done: number; skipped: number }>
   cueTargets?: AutoMarkTarget[]
   cueGridCheckOf?: (contentId: string) => GridCheck | null | undefined
   onShowBadGrid?: () => void
@@ -322,6 +323,7 @@ export const Editor = memo(function Editor({
   onCueQuantize,
   onCueFlow,
   onCueAutoMarkAll,
+  onCuePhrasesAll,
   cueTargets,
   cueGridCheckOf,
   onShowBadGrid,
@@ -1737,7 +1739,7 @@ export const Editor = memo(function Editor({
                       )
                     case 'cues':
                       if (!rekordboxCue) return false
-                      if (isMulti && onCueAutoMarkAll)
+                      if (isMulti && onCueAutoMarkAll && onCuePhrasesAll)
                         return (
                           <CuesBatchSection
                             key={id}
@@ -1747,6 +1749,7 @@ export const Editor = memo(function Editor({
                             gridCheckOf={(contentId) => cueGridCheckOf?.(contentId)}
                             onShowBadGrid={() => onShowBadGrid?.()}
                             onOpen={(contentId) => onOpenCueTrack?.(contentId)}
+                            onPhrases={onCuePhrasesAll}
                           />
                         )
                       if (isMulti) return singleTrackOnly(id, tr('editor.cues.title'))

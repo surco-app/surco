@@ -50,6 +50,7 @@ export function CuesBatchSection({
   gridCheckOf,
   onShowBadGrid,
   onOpen,
+  onPhrases,
 }: {
   targets: AutoMarkTarget[]
   onMark: () => void
@@ -57,6 +58,7 @@ export function CuesBatchSection({
   gridCheckOf: (contentId: string) => GridCheck | null | undefined
   onShowBadGrid: () => void
   onOpen: (contentId: string) => void
+  onPhrases: () => Promise<{ done: number; skipped: number }>
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const queryClient = useQueryClient()
@@ -65,6 +67,16 @@ export function CuesBatchSection({
   const unsavedAll = useUnsavedCueTracks()
   const [busy, setBusy] = useState(false)
   const [saveFailed, setSaveFailed] = useState(false)
+  const [phrasing, setPhrasing] = useState(false)
+  const [phrased, setPhrased] = useState<{ done: number; skipped: number } | null>(null)
+  const putPhrases = async () => {
+    setPhrasing(true)
+    try {
+      setPhrased(await onPhrases())
+    } finally {
+      setPhrasing(false)
+    }
+  }
   const ids = targets.map((t) => t.contentId)
   const gated = ids.some((id) => cueProgramOf(id).collectionGate !== null)
   const { data: canSave = true } = useQuery({
@@ -190,7 +202,31 @@ export function CuesBatchSection({
           <Sparkle className="h-3.5 w-3.5" aria-hidden="true" />
           {tr('editor.cues.batch.mark', { count: targets.length })}
         </button>
+        <button
+          type="button"
+          data-testid="cues-batch-phrases"
+          disabled={phrasing}
+          onClick={() => void putPhrases()}
+          className={BUTTON}
+        >
+          {tr('editor.cues.batch.phrases')}
+        </button>
       </div>
+      {phrased && (
+        <p className="mt-2 text-xs text-fg-dim">
+          <span data-testid="cues-batch-phrases-done">
+            {tr('editor.cues.batch.phrasesDone', { count: phrased.done })}
+          </span>
+          {phrased.skipped > 0 && (
+            <>
+              {' · '}
+              <span data-testid="cues-batch-phrases-skipped">
+                {tr('editor.cues.batch.phrasesSkipped', { count: phrased.skipped })}
+              </span>
+            </>
+          )}
+        </p>
+      )}
       {marked && (
         <dl data-testid="cues-batch-tally" className="mt-3 grid gap-1 text-xs">
           {tally
