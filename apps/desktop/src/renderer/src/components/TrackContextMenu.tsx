@@ -30,6 +30,7 @@ interface Props {
   onStartOver: (track: TrackItem) => void
   onStartSession?: (track: TrackItem) => void
   onMatch?: () => void
+  onUnmatch?: () => void
   onCopyMeta: (track: TrackItem) => void
   onCopyPath: (track: TrackItem) => void
   onPasteMeta: (track: TrackItem) => void
@@ -108,6 +109,7 @@ export function TrackContextMenu({
   onStartOver,
   onStartSession,
   onMatch,
+  onUnmatch,
   onCopyMeta,
   onCopyPath,
   onPasteMeta,
@@ -290,6 +292,14 @@ export function TrackContextMenu({
             testid="track-menu-matching"
             label={tr('trackList.context.matching')}
             onClick={() => run(onMatch)}
+          />
+        )}
+        {onUnmatch && (
+          <MenuItem
+            onHover={leaveSub}
+            testid="track-menu-unmatch"
+            label={tr('trackList.context.unmatch')}
+            onClick={() => run(onUnmatch)}
           />
         )}
         {playlist && (

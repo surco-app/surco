@@ -2952,6 +2952,17 @@ export default function App(): React.JSX.Element {
       void editMatching('remove', [selectedContentId, partner.contentId], label, paths)
     else void editMatching('remove', rekordboxPairOf(paths), label, paths)
   })
+  const menuPartnerOf = (track: TrackItem): MatchingPartner | null => {
+    if (!selected) return null
+    const others = menuTargets(track.id).filter((t) => t.id !== selected.id)
+    if (others.length !== 1) return null
+    if (inRekordbox) {
+      const contentId = playlistScope?.contentOf.get(others[0].id)
+      return matchingPartners.find((p) => p.contentId === contentId) ?? null
+    }
+    const path = others[0].inputPath.normalize('NFC')
+    return otherPartners.find((p) => p.path === path) ?? null
+  }
   const matchPairOf = (
     track: TrackItem,
   ): { pair: [string, string] | null; label: string; paths: [string, string] } | null => {
@@ -3383,46 +3394,50 @@ export default function App(): React.JSX.Element {
   // confirm dialog, the toasts and the clipboard state up here); when and where it opens
   // stays TrackList's. Stable so the memoized list never re-renders for a handler change.
   const renderTrackMenu = useStableCallback(
-    (menu: TrackMenuState, close: () => void): React.ReactNode => (
-      <TrackContextMenu
-        track={menu.track}
-        x={menu.x}
-        y={menu.y}
-        onClose={close}
-        onSearch={onSearchTrack}
-        onSearchWeb={searchTrackWeb}
-        onStartOver={startOverTrack}
-        onStartSession={sessionProgram && browser.playlist ? openSessionFromTrack : undefined}
-        onMatch={((m) =>
-          m ? () => void editMatching('add', m.pair, m.label, m.paths) : undefined)(
-          matchPairOf(menu.track),
-        )}
-        onCopyMeta={onCopyMeta}
-        onCopyPath={onCopyPath}
-        onPasteMeta={onPasteMeta}
-        canPasteMeta={copiedMeta !== null}
-        onRemove={removeFromList}
-        onTrash={onTrashRow}
-        onInfo={overlays.openInfo}
-        hasBackup={backupAtByPath.has(menu.track.inputPath)}
-        onOpenBackup={onOpenBackup}
-        playlist={trackMenuPlaylist(menu.track)}
-        view={[
-          {
-            id: 'sidebar',
-            label: tr('view.sidebar'),
-            checked: showSidebar,
-            onToggle: toggleSidebar,
-          },
-          {
-            id: 'list-waves',
-            label: tr('view.listWaves'),
-            checked: showListWaves,
-            onToggle: toggleListWaves,
-          },
-        ]}
-      />
-    ),
+    (menu: TrackMenuState, close: () => void): React.ReactNode => {
+      const partner = menuPartnerOf(menu.track)
+      return (
+        <TrackContextMenu
+          track={menu.track}
+          x={menu.x}
+          y={menu.y}
+          onClose={close}
+          onSearch={onSearchTrack}
+          onSearchWeb={searchTrackWeb}
+          onStartOver={startOverTrack}
+          onStartSession={sessionProgram && browser.playlist ? openSessionFromTrack : undefined}
+          onMatch={((m) =>
+            m && !partner ? () => void editMatching('add', m.pair, m.label, m.paths) : undefined)(
+            matchPairOf(menu.track),
+          )}
+          onUnmatch={partner ? () => removeMatchingPartner(partner) : undefined}
+          onCopyMeta={onCopyMeta}
+          onCopyPath={onCopyPath}
+          onPasteMeta={onPasteMeta}
+          canPasteMeta={copiedMeta !== null}
+          onRemove={removeFromList}
+          onTrash={onTrashRow}
+          onInfo={overlays.openInfo}
+          hasBackup={backupAtByPath.has(menu.track.inputPath)}
+          onOpenBackup={onOpenBackup}
+          playlist={trackMenuPlaylist(menu.track)}
+          view={[
+            {
+              id: 'sidebar',
+              label: tr('view.sidebar'),
+              checked: showSidebar,
+              onToggle: toggleSidebar,
+            },
+            {
+              id: 'list-waves',
+              label: tr('view.listWaves'),
+              checked: showListWaves,
+              onToggle: toggleListWaves,
+            },
+          ]}
+        />
+      )
+    },
   )
   // ⌘K twins of the Editor's Eraser / Tag buttons, acting on the current selection so they
   // work without the editor focused. clearMeta mirrors clearAllMeta (single-track clear also

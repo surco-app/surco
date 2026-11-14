@@ -686,6 +686,7 @@
       "startOver": "Empezar de nuevo",
       "startSession": "Sesión desde esta pista…",
       "matching": "Hacer matching",
+      "unmatch": "Quitar matching",
       "copyMeta": "Copiar todos los metadatos",
       "pasteMeta": "Pegar metadatos",
       "remove": "Quitar de Surco",

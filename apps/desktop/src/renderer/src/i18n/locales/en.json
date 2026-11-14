@@ -686,6 +686,7 @@
       "startOver": "Start over",
       "startSession": "Session from this track…",
       "matching": "Make a Matching pair",
+      "unmatch": "Remove Matching pair",
       "copyMeta": "Copy all metadata",
       "pasteMeta": "Paste metadata",
       "remove": "Remove from Surco",

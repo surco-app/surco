@@ -686,6 +686,7 @@
       "startOver": "やり直し",
       "startSession": "この曲からセッションを作る…",
       "matching": "Matchingに登録",
+      "unmatch": "Matchingを解除",
       "copyMeta": "すべてのメタデータをコピー",
       "pasteMeta": "メタデータを貼り付け",
       "remove": "Surco から外す",
