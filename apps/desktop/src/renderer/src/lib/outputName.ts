@@ -26,13 +26,25 @@ export function autoNamesFile(
   return autoApplyFilename && !DJ_PROGRAMS.some((program) => isFrom(track, program))
 }
 
+const BARE_SEPARATOR = /^[\s.,:;\-–—·_|]+$/
+
+function fillTokens(format: string, meta: TrackMetadata, clean: (value: string) => string): string {
+  const parts = format.split(/\{(\w+)\}/)
+  const isToken = (i: number) => i % 2 === 1
+  const filled = parts.map((part, i) => (isToken(i) ? clean(tokenValue(meta, part).trim()) : part))
+  for (let i = 1; i < parts.length; i += 2) {
+    if (filled[i]) continue
+    const fieldAfter = filled.some((value, j) => j > i && isToken(j) && value !== '')
+    const joint = fieldAfter ? i + 1 : i - 1
+    if (BARE_SEPARATOR.test(filled[joint])) filled[joint] = ''
+  }
+  return filled.join('')
+}
+
 export function renderOutputName(format: string, meta: TrackMetadata): string {
-  const filled = format.replace(/\{(\w+)\}/g, (_, key) => {
-    const value = tokenValue(meta, key)
-    // Strip path separators from a field's value so e.g. "AC/DC" never spills into a
-    // folder; only a literal "/" the user writes in the template splits directories.
-    return value ? value.trim().replace(/[/\\]/g, '-') : ''
-  })
+  // Strip path separators from a field's value so e.g. "AC/DC" never spills into a
+  // folder; only a literal "/" the user writes in the template splits directories.
+  const filled = fillTokens(format, meta, (value) => value.replace(/[/\\]/g, '-'))
   // "/" in the template means a subfolder, so clean each segment on its own (collapsing
   // separators, trimming edges) without touching the slashes, and drop a segment a blank
   // field left empty so no stray "" directory is produced.
@@ -52,23 +64,6 @@ export function renderOutputName(format: string, meta: TrackMetadata): string {
     .join('/')
 }
 
-const BARE_SEPARATOR = /^[\s.,:;\-–—·_|]+$/
-
-function fillTitleTokens(format: string, meta: TrackMetadata): string {
-  const parts = format.split(/\{(\w+)\}/)
-  const isToken = (i: number) => i % 2 === 1
-  const filled = parts.map((part, i) =>
-    isToken(i) ? (tokenValue(meta, part)?.trim() ?? '') : part,
-  )
-  for (let i = 1; i < parts.length; i += 2) {
-    if (filled[i]) continue
-    const fieldAfter = filled.some((value, j) => j > i && isToken(j) && value !== '')
-    const joint = fieldAfter ? i + 1 : i - 1
-    if (BARE_SEPARATOR.test(filled[joint])) filled[joint] = ''
-  }
-  return filled.join('')
-}
-
 // The title-format sibling of renderOutputName: fills the same {tokens} but treats
 // the result as a tag value, not a path — slashes in values and pattern stay plain
 // text. Shares the blank-field hygiene: empty "()"/"[]" pairs and doubled
@@ -76,7 +71,7 @@ function fillTitleTokens(format: string, meta: TrackMetadata): string {
 // A blank field also takes the bare punctuation joining it to its neighbour, so
 // "{trackNumber}. {title}" never leaves ". Song" on an unnumbered track.
 export function renderTitle(format: string, meta: TrackMetadata): string {
-  return fillTitleTokens(format, meta)
+  return fillTokens(format, meta, (value) => value)
     .replace(/\(\s*\)|\[\s*\]/g, '')
     .replace(/\s*-\s*-\s*/g, ' - ')
     .replace(/\s+/g, ' ')

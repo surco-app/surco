@@ -68,6 +68,36 @@ describe('renderOutputName', () => {
     expect(r).toBe('Keep Calm')
   })
 
+  // A leading dot is worse in a file name than in a title: macOS hides the file, so an
+  // unnumbered track converted with "{trackNumber}. …" vanished from Finder. A blank
+  // field takes the bare punctuation joining it to its neighbour, as in the title.
+  it('never leaves the punctuation of a blank field behind, so the file is not hidden', () => {
+    expect(
+      renderOutputName(
+        '{trackNumber}. {artist} - {title}',
+        meta({ artist: 'Acer', title: 'Keep Calm' }),
+      ),
+    ).toBe('Acer - Keep Calm')
+    expect(renderOutputName('{artist}, {year}: {title}', meta({ title: 'Keep Calm' }))).toBe(
+      'Keep Calm',
+    )
+    expect(
+      renderOutputName('{artist} - {title}. {year}', meta({ artist: 'Acer', title: 'Keep Calm' })),
+    ).toBe('Acer - Keep Calm')
+  })
+
+  it('keeps a folder in the pattern while cleaning each side of it', () => {
+    expect(
+      renderOutputName('{publisher}/{trackNumber}. {title}', meta({ title: 'Keep Calm' })),
+    ).toBe('Keep Calm')
+    expect(
+      renderOutputName(
+        '{publisher}/{trackNumber}. {title}',
+        meta({ publisher: 'Tidy', title: 'Keep Calm' }),
+      ),
+    ).toBe('Tidy/Keep Calm')
+  })
+
   it('renders unknown tokens as empty', () => {
     const r = renderOutputName('{artist} {bogus}', meta({ artist: 'Acer' }))
     expect(r).toBe('Acer')
