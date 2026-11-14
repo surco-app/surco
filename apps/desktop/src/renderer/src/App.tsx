@@ -2901,16 +2901,23 @@ export default function App(): React.JSX.Element {
       'remove',
       [selectedContentId, partner.contentId],
       `${selected.listLabel} · ${partner.title}`,
+      [selected.inputPath, partner.path],
     )
   })
-  const matchPairOf = (track: TrackItem): { pair: [string, string]; label: string } | null => {
+  const matchPairOf = (
+    track: TrackItem,
+  ): { pair: [string, string]; label: string; paths: [string, string] } | null => {
     if (!inRekordbox || !cuesOpen) return null
     const targets = menuTargets(track.id)
     if (targets.length !== 2) return null
     const ids = targets.map((t) => playlistScope?.contentOf.get(t.id))
     const [a, b] = ids
     if (!a || !b || a === b) return null
-    return { pair: [a, b], label: targets.map((t) => t.listLabel).join(' · ') }
+    return {
+      pair: [a, b],
+      label: targets.map((t) => t.listLabel).join(' · '),
+      paths: [targets[0].inputPath, targets[1].inputPath],
+    }
   }
   const pickMatchingPartner = useStableCallback((partner: MatchingPartner) => {
     const track = scopeTracks.find((t) => playlistScope?.contentOf.get(t.id) === partner.contentId)
@@ -2946,7 +2953,8 @@ export default function App(): React.JSX.Element {
   )
   const matchSuggestion = useStableCallback((s: PairSuggestion) => {
     const label = s.pair.map((id) => collectionById.get(id)?.title ?? id).join(' · ')
-    void editMatching('add', s.pair, label)
+    const [a, b] = s.pair.map((id) => collectionById.get(id)?.path)
+    void editMatching('add', s.pair, label, a && b ? [a, b] : null)
   })
   const dismissSuggestion = useStableCallback((s: PairSuggestion) => {
     const dismissed = settings?.matchingDismissed ?? []
@@ -2958,6 +2966,7 @@ export default function App(): React.JSX.Element {
       'add',
       [selectedContentId, track.contentId],
       `${selected.listLabel} · ${track.title}`,
+      track.path ? [selected.inputPath, track.path] : null,
     )
   })
   const editorMatching = useMemo(
@@ -3272,7 +3281,8 @@ export default function App(): React.JSX.Element {
         onSearchWeb={searchTrackWeb}
         onStartOver={startOverTrack}
         onStartSession={sessionProgram && browser.playlist ? openSessionFromTrack : undefined}
-        onMatch={((m) => (m ? () => void editMatching('add', m.pair, m.label) : undefined))(
+        onMatch={((m) =>
+          m ? () => void editMatching('add', m.pair, m.label, m.paths) : undefined)(
           matchPairOf(menu.track),
         )}
         onCopyMeta={onCopyMeta}

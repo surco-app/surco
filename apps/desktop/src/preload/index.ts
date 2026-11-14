@@ -213,6 +213,11 @@ const api: Api = {
   dj: createDjApi(ipcRenderer),
   cues: createCuesApi(ipcRenderer),
   djAppRunning: (): Promise<boolean> => ipcRenderer.invoke('djApps:running'),
+  matchingPairs: (): Promise<[string, string][]> => ipcRenderer.invoke('matching:list'),
+  addMatchingPair: (a: string, b: string): Promise<void> =>
+    ipcRenderer.invoke('matching:add', a, b),
+  removeMatchingPair: (a: string, b: string): Promise<void> =>
+    ipcRenderer.invoke('matching:remove', a, b),
   holdsInLibrary: (path: string, titles: string[]): Promise<boolean> =>
     ipcRenderer.invoke('library:holdsFile', path, titles),
   rowWaves: (requests: RowWaveRequest[]): Promise<Record<string, number[]>> =>

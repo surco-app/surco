@@ -8,11 +8,23 @@ export type MatchingAction = 'add' | 'remove'
 
 export function useMatchingEdit(
   notify: (text: string, tone: 'neutral' | 'danger') => void,
-): (action: MatchingAction, pair: [string, string], label: string) => Promise<RekordboxEditResult> {
+): (
+  action: MatchingAction,
+  pair: [string, string],
+  label: string,
+  paths: [string, string] | null,
+) => Promise<RekordboxEditResult> {
   const queryClient = useQueryClient()
   const { t: tr } = useTranslation()
   return useCallback(
-    async (action, pair, label) => {
+    async (action, pair, label, paths) => {
+      if (paths) {
+        const [a, b] = paths
+        await (action === 'add'
+          ? window.api.addMatchingPair(a, b)
+          : window.api.removeMatchingPair(a, b))
+        void queryClient.invalidateQueries({ queryKey: ['matching-pairs'] })
+      }
       let result: RekordboxEditResult
       try {
         await window.api.dj.askToApply(['rekordbox'])

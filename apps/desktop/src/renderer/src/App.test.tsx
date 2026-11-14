@@ -330,6 +330,9 @@ function setApi(over: Record<string, unknown> = {}): void {
     platform: 'win32',
     version: '0.0.0-test',
     releasePlayingFile: vi.fn<Api['releasePlayingFile']>().mockResolvedValue(undefined),
+    matchingPairs: vi.fn<Api['matchingPairs']>().mockResolvedValue([]),
+    addMatchingPair: vi.fn<Api['addMatchingPair']>().mockResolvedValue(undefined),
+    removeMatchingPair: vi.fn<Api['removeMatchingPair']>().mockResolvedValue(undefined),
     getSettings: vi.fn().mockResolvedValue(settings()),
     loadAppleMusicLibraryPlaylistTracks: vi.fn().mockResolvedValue(null),
     loadAppleMusicPlaylistsCached: vi.fn().mockResolvedValue(null),
@@ -3674,6 +3677,28 @@ describe('App source playlists', () => {
       )
       expect(vi.mocked(window.api.dj.askToApply).mock.invocationCallOrder[0]).toBeLessThan(
         vi.mocked(window.api.dj.match).mock.invocationCallOrder[0],
+      )
+    })
+
+    it('keeps the pair in Surco by file too, so it holds in every program and after a conversion', async () => {
+      const match = vi.fn<ProgramReads['match']>().mockResolvedValue({ applied: true })
+      await openFactory({ dj: djReads(matchingReads.dj, { rekordbox: { match } }) })
+      fireEvent.click(rowTitled('Alpha'))
+      fireEvent.click(rowTitled('Bravo'), { metaKey: true })
+      fireEvent.contextMenu(rowTitled('Bravo'))
+      fireEvent.click(await screen.findByTestId('track-menu-matching'))
+      await waitFor(() =>
+        expect(window.api.addMatchingPair).toHaveBeenCalledWith('/m/a.wav', '/m/b.wav'),
+      )
+    })
+
+    it('drops the pair from Surco too when the DJ unpairs it', async () => {
+      const match = vi.fn<ProgramReads['match']>().mockResolvedValue({ applied: true })
+      await openFactory({ dj: djReads(matchingReads.dj, { rekordbox: { match } }) })
+      fireEvent.click(rowTitled('Alpha'))
+      fireEvent.click(await screen.findByTestId('matching-partner-remove'))
+      await waitFor(() =>
+        expect(window.api.removeMatchingPair).toHaveBeenCalledWith('/m/a.wav', '/m/c.wav'),
       )
     })
 

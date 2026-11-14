@@ -263,6 +263,9 @@ export interface Api {
   dj: DjApi
   cues: CuesApi
   djAppRunning: () => Promise<boolean>
+  matchingPairs: () => Promise<[string, string][]>
+  addMatchingPair: (a: string, b: string) => Promise<void>
+  removeMatchingPair: (a: string, b: string) => Promise<void>
   holdsInLibrary: (path: string, titles: string[]) => Promise<boolean>
   rowWaves: (requests: RowWaveRequest[]) => Promise<Record<string, number[]>>
   rekordboxCountCompletable: () => Promise<number>
