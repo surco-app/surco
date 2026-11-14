@@ -120,6 +120,7 @@ import { MetadataForm } from './MetadataForm'
 import { type MetaMenuItem, MetaMoreMenu } from './MetaMoreMenu'
 import { NormalizeSection } from './NormalizeSection'
 import { OutputNameSection } from './OutputNameSection'
+import { PhraseCountRow } from './PhraseCountRow'
 import { PropertiesSection } from './PropertiesSection'
 import { QualitySection } from './QualitySection'
 import { SectionBody } from './SectionBody'
@@ -1767,6 +1768,16 @@ export const Editor = memo(function Editor({
                           onQuantize={onCueQuantize}
                           onFlow={onCueFlow}
                           actionsRef={cueActionsRef}
+                          footer={
+                            <PhraseCountRow
+                              contentId={rekordboxCue.contentId}
+                              comment={item.meta.comment}
+                              onApply={(comment) => {
+                                onRecordUndo?.([item.id])
+                                setField('comment', comment)
+                              }}
+                            />
+                          }
                         />
                       )
                     case 'properties':

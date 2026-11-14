@@ -1168,7 +1168,12 @@
         "sure_one": "{{count}} segura",
         "sure_other": "{{count}} seguras",
         "doubtful_one": "{{count}} dudosa",
-        "doubtful_other": "{{count}} dudosas"
+        "doubtful_other": "{{count}} dudosas",
+        "phrases": "Poner frases en los comentarios",
+        "phrasesDone_one": "Frases puestas en {{count}} comentario",
+        "phrasesDone_other": "Frases puestas en {{count}} comentarios",
+        "phrasesSkipped_one": "{{count}} sin dos CALLs, no se toca",
+        "phrasesSkipped_other": "{{count}} sin dos CALLs, no se tocan"
       },
       "gridBatch": {
         "title": "Rejilla",
@@ -1304,6 +1309,11 @@
         "prev": "Cue anterior fuera del golpe",
         "next": "Siguiente cue fuera del golpe",
         "shiftGrid": "Mover la rejilla {{ms}} ms"
+      },
+      "phrases": {
+        "label": "Frases entre CALLs",
+        "needsCalls": "Hacen falta dos CALLs",
+        "apply": "Poner en el comentario"
       }
     }
   },

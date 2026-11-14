@@ -1168,7 +1168,12 @@
         "sure_one": "{{count}} sure",
         "sure_other": "{{count}} sure",
         "doubtful_one": "{{count}} doubtful",
-        "doubtful_other": "{{count}} doubtful"
+        "doubtful_other": "{{count}} doubtful",
+        "phrases": "Put phrases in the comments",
+        "phrasesDone_one": "Phrases put in {{count}} comment",
+        "phrasesDone_other": "Phrases put in {{count}} comments",
+        "phrasesSkipped_one": "{{count}} without two CALLs, left alone",
+        "phrasesSkipped_other": "{{count}} without two CALLs, left alone"
       },
       "gridBatch": {
         "title": "Grid",
@@ -1304,6 +1309,11 @@
         "prev": "Previous cue off the beat",
         "next": "Next cue off the beat",
         "shiftGrid": "Move the grid {{ms}} ms"
+      },
+      "phrases": {
+        "label": "Phrases between CALLs",
+        "needsCalls": "Needs two CALLs",
+        "apply": "Put in the comment"
       }
     }
   },

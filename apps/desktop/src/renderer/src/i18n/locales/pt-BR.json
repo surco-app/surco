@@ -1168,7 +1168,12 @@
         "sure_one": "{{count}} certa",
         "sure_other": "{{count}} certas",
         "doubtful_one": "{{count}} duvidosa",
-        "doubtful_other": "{{count}} duvidosas"
+        "doubtful_other": "{{count}} duvidosas",
+        "phrases": "Colocar frases nos comentários",
+        "phrasesDone_one": "Frases colocadas em {{count}} comentário",
+        "phrasesDone_other": "Frases colocadas em {{count}} comentários",
+        "phrasesSkipped_one": "{{count}} sem dois CALLs, não alterado",
+        "phrasesSkipped_other": "{{count}} sem dois CALLs, não alterados"
       },
       "gridBatch": {
         "title": "Grade",
@@ -1304,6 +1309,11 @@
         "prev": "Cue anterior fora da batida",
         "next": "Próximo cue fora da batida",
         "shiftGrid": "Mover a grade {{ms}} ms"
+      },
+      "phrases": {
+        "label": "Frases entre CALLs",
+        "needsCalls": "São necessários dois CALLs",
+        "apply": "Colocar no comentário"
       }
     }
   },

@@ -1168,7 +1168,12 @@
         "sure_one": "確実 {{count}} 件",
         "sure_other": "確実 {{count}} 件",
         "doubtful_one": "不確か {{count}} 件",
-        "doubtful_other": "不確か {{count}} 件"
+        "doubtful_other": "不確か {{count}} 件",
+        "phrases": "フレーズをコメントに入れる",
+        "phrasesDone_one": "{{count}} 件のコメントにフレーズを入れました",
+        "phrasesDone_other": "{{count}} 件のコメントにフレーズを入れました",
+        "phrasesSkipped_one": "CALLが2つない {{count}} 件はそのまま",
+        "phrasesSkipped_other": "CALLが2つない {{count}} 件はそのまま"
       },
       "gridBatch": {
         "title": "グリッド",
@@ -1304,6 +1309,11 @@
         "prev": "前のずれたキュー",
         "next": "次のずれたキュー",
         "shiftGrid": "グリッドを {{ms}} ms 動かす"
+      },
+      "phrases": {
+        "label": "CALL間のフレーズ",
+        "needsCalls": "CALLが2つ必要です",
+        "apply": "コメントに入れる"
       }
     }
   },

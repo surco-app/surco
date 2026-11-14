@@ -1168,7 +1168,12 @@
         "sure_one": "{{count}} sûre",
         "sure_other": "{{count}} sûres",
         "doubtful_one": "{{count}} douteuse",
-        "doubtful_other": "{{count}} douteuses"
+        "doubtful_other": "{{count}} douteuses",
+        "phrases": "Mettre les phrases dans les commentaires",
+        "phrasesDone_one": "Phrases mises dans {{count}} commentaire",
+        "phrasesDone_other": "Phrases mises dans {{count}} commentaires",
+        "phrasesSkipped_one": "{{count}} sans deux CALLs, inchangé",
+        "phrasesSkipped_other": "{{count}} sans deux CALLs, inchangés"
       },
       "gridBatch": {
         "title": "Grille",
@@ -1304,6 +1309,11 @@
         "prev": "Cue précédent hors du temps",
         "next": "Cue suivant hors du temps",
         "shiftGrid": "Déplacer la grille de {{ms}} ms"
+      },
+      "phrases": {
+        "label": "Phrases entre CALLs",
+        "needsCalls": "Il faut deux CALLs",
+        "apply": "Mettre dans le commentaire"
       }
     }
   },

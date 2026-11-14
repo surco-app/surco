@@ -363,6 +363,34 @@ describe('Editor cues section', () => {
     })
   })
 
+  it('writes the phrases between the CALLs into the comment as one undoable edit', async () => {
+    const grid = Array.from({ length: 800 }, (_, i) => ({ ms: i * 500, beat: (i % 4) + 1 }))
+    Object.assign((window as unknown as { api: { cues: object } }).api.cues, {
+      trackCues: vi.fn<Api['cues']['trackCues']>().mockResolvedValue({
+        contentId: '103',
+        analysed: true,
+        grid,
+        strong: [],
+        phrases: [],
+        cues: [0, 64, 320].map((b) => ({ id: `c${b}`, ms: b * 500, kind: 0, color: null })),
+        wave: null,
+        durationMs: 400000,
+        fingerprint: 'f0',
+        gridFingerprint: '',
+      }),
+    })
+    const { onChange, onRecordUndo } = renderEditor(
+      { id: 'a', meta: { title: 'Pray', comment: 'Vocal fuerte' } },
+      'wav',
+      { rekordboxCue: { contentId: '103', path: '/music/a.wav', label: 'a' } },
+    )
+    fireEvent.click(await screen.findByTestId('phrase-count-apply'))
+    expect(onRecordUndo).toHaveBeenCalledWith(['a'])
+    expect(onChange).toHaveBeenLastCalledWith({
+      meta: expect.objectContaining({ comment: '2 - 8 · Vocal fuerte' }),
+    })
+  })
+
   it('maximizes into the full cue editor with the track title, artist, BPM and key', async () => {
     const grid = Array.from({ length: 800 }, (_, i) => ({ ms: i * 500, beat: (i % 4) + 1 }))
     Object.assign((window as unknown as { api: { cues: object } }).api.cues, {
