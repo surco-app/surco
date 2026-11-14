@@ -15,6 +15,7 @@ const nameOf = (table: string, column: string): string =>
 
 const TEXT: Readonly<Record<string, string>> = {
   name: 'c.Title',
+  mixName: 'c.Subtitle',
   comments: 'c.Commnt',
   fileName: 'c.FileNameL',
   artist: nameOf('djmdArtist', 'ArtistID'),
@@ -31,10 +32,14 @@ const TEXT: Readonly<Record<string, string>> = {
 const NUMBER: Readonly<Record<string, string>> = {
   year: 'c.ReleaseYear',
   counter: 'c.DJPlayCount',
+  bpm: 'c.BPM',
+  rating: 'c.Rating',
+  duration: 'c.Length',
 }
 
 const DATE: Readonly<Record<string, string>> = {
   stockDate: 'c.StockDate',
+  dateReleased: 'c.ReleaseDate',
 }
 
 const ENTITIES: Readonly<Record<string, string>> = {
@@ -121,7 +126,7 @@ function since(now: Date, amount: number, unit: string): string | null {
 }
 
 function dateClause(column: string, condition: Condition, now: Date): Clause {
-  const value = `substr(coalesce(${column}, ''), 1, 10)`
+  const value = `nullif(substr(coalesce(${column}, ''), 1, 10), '')`
   if (condition.operator === 6 || condition.operator === 7) {
     const from = since(now, Number(condition.left), condition.unit)
     if (from === null) return null
@@ -137,6 +142,13 @@ function myTagClause({ operator, left }: Condition): Clause {
   return { sql: operator === 8 ? tagged : `NOT ${tagged}`, params: [id] }
 }
 
+function colourClause({ operator, left }: Condition): Clause {
+  const colour = 'CAST(coalesce(c.ColorID, 0) AS INTEGER)'
+  if (operator === 1) return { sql: `${colour} = ?`, params: [Number(left)] }
+  if (operator === 2) return { sql: `${colour} <> ?`, params: [Number(left)] }
+  return null
+}
+
 function clauseOf(condition: Condition, now: Date): Clause {
   const { property } = condition
   if (property in TEXT) return textClause(TEXT[property], condition)
@@ -144,6 +156,7 @@ function clauseOf(condition: Condition, now: Date): Clause {
     return rangeClause(`coalesce(${NUMBER[property]}, 0)`, condition, (v) => Number(v))
   if (property in DATE) return dateClause(DATE[property], condition, now)
   if (property === 'myTag') return myTagClause(condition)
+  if (property === 'grouping') return colourClause(condition)
   return null
 }
 

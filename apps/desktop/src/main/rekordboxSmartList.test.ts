@@ -26,6 +26,8 @@ const CONTENT: FixtureContent[] = [
   track('house-tagged', { GenreID: 'g4', ReleaseYear: 2019, StockDate: '2024-06-27' }),
   track('house-untagged', { GenreID: 'g4', ReleaseYear: 2019, StockDate: '2024-06-27' }),
   track('dnb', { GenreID: 'g5', ReleaseYear: 2019, StockDate: '2024-06-27' }),
+  track('fast', { BPM: 14050, Length: 420, Subtitle: 'Extended Remix', ReleaseDate: '2023-02-17' }),
+  track('long', { BPM: 12800, Length: 480, Rating: 5, ColorID: '7', ReleaseDate: '2019-05-01' }),
 ]
 
 let db: NonNullable<ReturnType<typeof openRekordboxDb>>
@@ -118,7 +120,23 @@ describe('smartListContent', () => {
     expect(ids(list(1, condition('genre', 1, 'Drum &amp; Bass')))).toEqual(['dnb'])
   })
 
+  it('compares BPM in hundredths, the way rekordbox writes both the rule and the track', () => {
+    expect(ids(list(1, condition('bpm', 3, '14000')))).toEqual(['fast'])
+  })
+
+  it('reads Time in seconds, since rekordbox took 7 as seven seconds and matched 2113 tracks', () => {
+    expect(ids(list(1, condition('duration', 3, '400')))).toEqual(['fast', 'long'])
+  })
+
+  it('matches stars, colour, mix name and release date against their own columns', () => {
+    expect(ids(list(1, condition('rating', 1, '5')))).toEqual(['long'])
+    expect(ids(list(1, condition('grouping', 1, '7')))).toEqual(['long'])
+    expect(ids(list(1, condition('mixName', 8, 'remix')))).toEqual(['fast'])
+    expect(ids(list(1, condition('dateReleased', 4, '2020-01-01')))).toEqual(['long'])
+  })
+
   it('gives up on a list with a rule it does not know rather than showing the wrong tracks', () => {
+    expect(smartListContent(list(1, condition('dateCreated', 3, '2026-01-01')), NOW)).toBeNull()
     expect(smartListContent(list(1, condition('lyrics', 1, 'x')), NOW)).toBeNull()
     expect(smartListContent('not xml', NOW)).toBeNull()
   })

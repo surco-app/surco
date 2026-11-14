@@ -32,6 +32,9 @@ export interface FixtureContent {
   DJPlayCount?: number
   GenreID?: string
   ReleaseYear?: number
+  ColorID?: string
+  Subtitle?: string
+  ReleaseDate?: string
 }
 
 export interface FixturePlaylist {
@@ -189,8 +192,8 @@ export function writeRekordboxPlaylistFixture(path: string, data: PlaylistFixtur
   const content = db.prepare(
     `INSERT INTO djmdContent (ID, FolderPath, FileNameL, FileType, FileSize, Title, Length, BPM,
        Rating, KeyID, UUID, AnalysisDataPath, Analysed, ArtistID, ImagePath, rb_local_deleted,
-       StockDate, created_at, DJPlayCount, GenreID, ReleaseYear)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       StockDate, created_at, DJPlayCount, GenreID, ReleaseYear, ColorID, Subtitle, ReleaseDate)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   )
   for (const c of data.content) {
     content.run(
@@ -215,6 +218,9 @@ export function writeRekordboxPlaylistFixture(path: string, data: PlaylistFixtur
       c.DJPlayCount ?? null,
       c.GenreID ?? null,
       c.ReleaseYear ?? null,
+      c.ColorID ?? null,
+      c.Subtitle ?? null,
+      c.ReleaseDate ?? null,
     )
   }
   const genre = db.prepare(

@@ -574,6 +574,7 @@ describe('rekordbox smart playlists', () => {
         { ...PLAY, GenreID: 'g1', StockDate: '2026-11-02' },
         { ...GONE, GenreID: 'g1' },
         { ...SEP, GenreID: 'g1' },
+        { ...SPOTIFY, GenreID: 'g1' },
         {
           ID: 'house',
           FolderPath: '/Volumes/Public/Music/House.wav',
@@ -618,6 +619,13 @@ describe('rekordbox smart playlists', () => {
 
   it('leaves out a smart playlist with a rule Surco cannot read, rather than listing the wrong tracks', () => {
     expect(readRekordboxTree(rdb, now).map((n) => n.id)).not.toContain('901')
+  })
+
+  // Measured on Vicent's collection: Prueba 2 matched 2114 rows, rekordbox showed 2113, and the
+  // one left out was the Spotify track.
+  it('leaves streamed tracks out, as rekordbox does in its smart playlists', () => {
+    const rows = readRekordboxPlaylistWithPreview(rdb, share, '900', () => false, now)
+    expect(rows.map((r) => r.contentId)).not.toContain('c3')
   })
 
   it('opens a smart playlist on the tracks its rules match, newest first', () => {
