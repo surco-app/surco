@@ -804,15 +804,12 @@ describe('SourceTree Matching', () => {
     expect(within(node()).getByTestId('source-node-matching-icon')).toBeInTheDocument()
   })
 
-  // rekordbox builds it from the pairs; a rename or delete would target a playlist that does
-  // not exist.
   it('offers no rename or delete', () => {
     setup(null, true, [MATCH, ...NODES])
     fireEvent.contextMenu(node(), { clientX: 10, clientY: 10 })
     expect(screen.queryByTestId('source-tree-menu')).not.toBeInTheDocument()
   })
 
-  // A track joins it by being paired, not by being dropped.
   it('takes no drop and keeps it from reaching the window import', () => {
     const { edit, onOuterDrop } = setup(null, true, [MATCH, ...NODES])
     const dt = files('a.wav')

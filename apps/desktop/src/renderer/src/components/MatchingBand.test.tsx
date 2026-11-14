@@ -15,7 +15,6 @@ describe('MatchingBand', () => {
     expect(onCreate).toHaveBeenCalledOnce()
   })
 
-  // Stays in place so the list does not jump the first time the DJ pairs two tracks.
   it('keeps the button but disables it while there is nothing paired', () => {
     render(<MatchingBand tracks={0} onCreate={vi.fn()} />)
     expect(screen.getByTestId('matching-create-playlist')).toBeDisabled()
