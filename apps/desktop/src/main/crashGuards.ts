@@ -73,10 +73,11 @@ interface RendererContents {
 // the user back to a working app, and the session file restores their crate.
 export function wireRendererRecovery(
   contents: RendererContents,
-  logger: CrashLogger,
+  logger: CrashLogger & { warn: (...params: unknown[]) => void },
   onGone?: (crash: LastCrash) => void,
 ): void {
   contents.on('render-process-gone', (_event, details) => {
+    if (details.reason === 'killed') logger.warn('render process killed', details)
     if (EXPECTED_EXITS.has(details.reason)) return
     logger.error('render process gone', details)
     onGone?.({ reason: details.reason, exitCode: details.exitCode, at: Date.now() })
@@ -97,10 +98,14 @@ interface ChildGoneEvents {
 
 export function wireChildProcessGone(
   appEvents: ChildGoneEvents,
-  logger: CrashLogger,
+  logger: CrashLogger & { warn: (...params: unknown[]) => void },
   onGone: (why: string) => void,
 ): void {
   appEvents.on('child-process-gone', (_event, details) => {
+    if (details.reason === 'killed') {
+      logger.warn('child process killed', details)
+      onGone(details.type)
+    }
     if (EXPECTED_EXITS.has(details.reason)) return
     logger.error('child process gone', details)
     onGone(details.type)
