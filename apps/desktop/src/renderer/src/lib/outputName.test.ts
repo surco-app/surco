@@ -255,6 +255,16 @@ describe('titleFormatPatches', () => {
   // The user-facing "why did nothing happen": with the pattern's fields empty the
   // render equals the current title, so the caller can tell "no-op" apart and say so
   // in a toast instead of silently doing nothing.
+  // A blank title has nothing to format: rendering the pattern around it wrote the bare
+  // separators back as the title ("A2." or even "."), turning an empty field into junk.
+  it('leaves a track with an empty title alone', () => {
+    const patches = titleFormatPatches('{trackNumber}. {title}', [
+      track('a', { title: '', trackNumber: 'A2' }),
+      track('b', { title: '   ', trackNumber: '' }),
+    ])
+    expect(patches).toEqual([])
+  })
+
   it('returns no patches when the pattern changes nothing', () => {
     const patches = titleFormatPatches('({trackNumber}) {title}', [
       track('a', { title: 'Stay With Me', trackNumber: '' }),
