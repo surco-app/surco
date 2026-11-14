@@ -596,6 +596,7 @@
     "cuesOpenFull": "Modifica i cue a schermo intero"
   },
   "trackList": {
+    "matchingPartner": "Fa Matching con la traccia scelta",
     "cuesUnsaved": "Cue non salvati",
     "autoMark": {
       "proposed_one": "{{count}} proposto",
@@ -679,6 +680,7 @@
       "searchWeb": "Cerca su Google",
       "startOver": "Ricomincia da capo",
       "startSession": "Sessione da questo brano…",
+      "matching": "Crea un Matching",
       "copyMeta": "Copia tutti i metadati",
       "pasteMeta": "Incolla i metadati",
       "remove": "Rimuovi da Surco",
@@ -957,6 +959,8 @@
     "sectionMaximize": "Ingrandisci la sezione",
     "sectionRestore": "Ripristina la sezione",
     "otherTagsTitle": "Altri metadati",
+    "matchingTitle": "Matching",
+    "matchingRemove": "Rimuovi",
     "otherTagsSummary": "{{count}} tag",
     "otherTagsRemove": "Elimina {{name}}",
     "otherTagsRestore": "Ripristina {{name}}",
@@ -1868,6 +1872,7 @@
       "properties": "Proprietà",
       "quality": "Qualità audio",
       "cues": "Cue",
+      "matching": "Matching",
       "output": "Nome in uscita",
       "trim": "Taglio del silenzio",
       "declick": "Riparazione dei clic del vinile",
@@ -2619,6 +2624,9 @@
     "serato": "Serato",
     "virtualdj": "VirtualDJ",
     "allTracks": "Tutti i brani",
+    "matching": "Matching",
+    "matchingCreate": "Crea playlist",
+    "matchingAdded": "Matching salvato in rekordbox",
     "recentlyAdded": "Aggiunti di recente",
     "search": "Cerca playlist",
     "loading": "Lettura delle playlist…",
@@ -3305,7 +3313,8 @@
         "moveNode": "sposta"
       },
       "cues": "cue",
-      "tags": "tag"
+      "tags": "tag",
+      "matching": "Matching"
     },
     "applyNow": "Applica ora",
     "discard": "Scarta",
