@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import {
+  Braces,
   ChevronRight,
   ClipboardCopy,
   ClipboardPaste,
@@ -14,7 +15,6 @@ import {
   Search,
   Tag,
   TriangleAlert,
-  Type,
 } from 'lucide-react'
 import type React from 'react'
 import { Fragment, memo, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
@@ -168,7 +168,7 @@ interface Props {
   onChangeTracksPlaylists?: (patches: ({ id: string } & PlaylistsEdit)[]) => void
   // Rewrites the selection's titles from the settings' title format — App owns it so
   // the pass shares the ⌘K command's undo channel and its "changed n / changed
-  // nothing" notices; the editor's T button is just a second trigger for it.
+  // nothing" notices; the editor's format button is just a second trigger for it.
   onApplyTitleFormat?: () => void
   // Snapshots the given tracks' tags into App's ⌘Z stack before the clear button, a
   // release pick or a cover change overwrites them (derive is already recorded inside
@@ -1356,7 +1356,7 @@ export const Editor = memo(function Editor({
             id: 'title-format',
             testid: 'apply-title-format-btn',
             label: tr('editor.applyTitleFormat'),
-            Icon: Type,
+            Icon: Braces,
             onSelect: onApplyTitleFormat,
             separatorBefore: !isMulti,
           },

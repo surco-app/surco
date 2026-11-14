@@ -154,8 +154,8 @@ export function unformatTitle(
 // per track whose current title is not blank and whose rendered title is non-empty AND
 // different from the current one.
 // A title that already carries the pattern's rendered prefix and suffix is treated
-// as formatted and skipped, so re-applying is idempotent — pressing the T button
-// twice must never stack "(B2) (B2) …". Pure and shared by the editor's T button,
+// as formatted and skipped, so re-applying is idempotent — pressing the format button
+// twice must never stack "(B2) (B2) …". Pure and shared by the editor's format button,
 // the title menu's row and the ⌘K command, so every trigger agrees on what counts
 // as a no-op and the caller can say so instead of silently doing nothing.
 export function titleFormatPatches(

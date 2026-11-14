@@ -1,4 +1,4 @@
-import { ChevronDown, Type } from 'lucide-react'
+import { Braces, ChevronDown } from 'lucide-react'
 import type React from 'react'
 import { memo, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -294,7 +294,7 @@ export const Field = memo(function Field({
               hasMenu ? 'right-7' : 'right-1.5'
             }`}
           >
-            <Type className="h-3.5 w-3.5" aria-hidden="true" />
+            <Braces className="h-3.5 w-3.5" aria-hidden="true" />
             <Tooltip label={tr('editor.applyTitleFormatHint')} />
           </button>
         )}

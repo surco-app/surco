@@ -5208,7 +5208,7 @@ describe('Editor insert from field', () => {
 
   it('offers no title-format row when the title already wears the pattern', () => {
     // Re-applying must never stack "(B2) (B2) …": an already-formatted title is a
-    // no-op for the row, the T button and the ⌘K command alike.
+    // no-op for the row, the format button and the ⌘K command alike.
     renderEditor({ id: 't1', meta: { title: '(B2) Action (Base)', trackNumber: 'B2' } }, 'wav', {
       visibleFields: ['title', 'trackNumber'],
       titleFormat: '({trackNumber}) {title}',
@@ -5232,8 +5232,8 @@ describe('Editor insert from field', () => {
   })
 
   // djotas formats nearly every title, and two clicks through the header ⋯ were too slow:
-  // the T sits inside the title box itself, one click away, beside what it rewrites.
-  it('triggers the title-format pass from the T inside the title field', () => {
+  // the format button sits inside the title box itself, one click away, beside what it rewrites.
+  it('triggers the title-format pass from the format button inside the title field', () => {
     const { onApplyTitleFormat } = renderEditor(
       { id: 't1', meta: { title: 'Action (Base)', trackNumber: 'B2' } },
       'wav',
@@ -5243,7 +5243,7 @@ describe('Editor insert from field', () => {
     expect(onApplyTitleFormat).toHaveBeenCalledOnce()
   })
 
-  it('keeps the title T in place but off once the title already wears the format', () => {
+  it('keeps the title format button in place but off once the title already wears the format', () => {
     // Switching tracks must not make the button blink in and out; off says "nothing to do".
     renderEditor({ id: 't1', meta: { title: '(B2) Action (Base)', trackNumber: 'B2' } }, 'wav', {
       visibleFields: ['title', 'trackNumber'],
@@ -5252,7 +5252,7 @@ describe('Editor insert from field', () => {
     expect(screen.getByTestId('field-format-title')).toBeDisabled()
   })
 
-  it('leaves the title T on when a pattern field is empty, so the click can say which', () => {
+  it('leaves the title format button on when a pattern field is empty, so the click can say which', () => {
     // A dead button would hide the reason; the pass's notice names the missing field.
     renderEditor({ id: 't1', meta: { title: 'Action (Base)' } }, 'wav', {
       visibleFields: ['title', 'trackNumber'],
@@ -5261,8 +5261,8 @@ describe('Editor insert from field', () => {
     expect(screen.getByTestId('field-format-title')).toBeEnabled()
   })
 
-  it('turns the title T off while the title is empty, whatever else is missing', () => {
-    // An empty title has nothing to format; a lit T there promised an action that can only
+  it('turns the title format button off while the title is empty, whatever else is missing', () => {
+    // An empty title has nothing to format; a lit button there promised an action that can only
     // fail, and its notice would blame the empty track number instead of the empty title.
     renderEditor({ id: 't1', meta: { title: '' } }, 'wav', {
       visibleFields: ['title', 'trackNumber'],
@@ -5271,7 +5271,7 @@ describe('Editor insert from field', () => {
     expect(screen.getByTestId('field-format-title')).toBeDisabled()
   })
 
-  it('shows no title T when no format is configured', () => {
+  it('shows no title format button when no format is configured', () => {
     renderEditor({ id: 't1', meta: { title: 'Action (Base)' } }, 'wav', {
       visibleFields: ['title'],
     })
