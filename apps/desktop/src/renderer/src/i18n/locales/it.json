@@ -1181,7 +1181,16 @@
         "phrasesDone_one": "Frasi messe in {{count}} commento",
         "phrasesDone_other": "Frasi messe in {{count}} commenti",
         "phrasesSkipped_one": "{{count}} senza due CALL, non toccato",
-        "phrasesSkipped_other": "{{count}} senza due CALL, non toccati"
+        "phrasesSkipped_other": "{{count}} senza due CALL, non toccati",
+        "clearedHot_one": "{{count}} hot cue da eliminare",
+        "clearedHot_other": "{{count}} hot cue da eliminare",
+        "clearedCalls_one": "{{count}} CALL da eliminare",
+        "clearedCalls_other": "{{count}} CALL da eliminare",
+        "clearedLoops_one": "{{count}} loop, resta",
+        "clearedLoops_other": "{{count}} loop, restano",
+        "clearedUnsaved_one": "{{count}} con modifiche non salvate, non viene toccato",
+        "clearedUnsaved_other": "{{count}} con modifiche non salvate, non vengono toccati",
+        "clearDiscard": "Scarta"
       },
       "gridBatch": {
         "title": "Griglia",

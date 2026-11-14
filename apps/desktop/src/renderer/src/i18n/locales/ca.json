@@ -1181,7 +1181,16 @@
         "phrasesDone_one": "Frases posades a {{count}} comentari",
         "phrasesDone_other": "Frases posades a {{count}} comentaris",
         "phrasesSkipped_one": "{{count}} sense dos CALLs, no es toca",
-        "phrasesSkipped_other": "{{count}} sense dos CALLs, no es toquen"
+        "phrasesSkipped_other": "{{count}} sense dos CALLs, no es toquen",
+        "clearedHot_one": "{{count}} hot cue que s'esborra",
+        "clearedHot_other": "{{count}} hot cues que s'esborren",
+        "clearedCalls_one": "{{count}} CALL que s'esborra",
+        "clearedCalls_other": "{{count}} CALLs que s'esborren",
+        "clearedLoops_one": "{{count}} loop, es queda",
+        "clearedLoops_other": "{{count}} loops, es queden",
+        "clearedUnsaved_one": "{{count}} amb canvis sense desar, no es toca",
+        "clearedUnsaved_other": "{{count}} amb canvis sense desar, no es toquen",
+        "clearDiscard": "Descartar"
       },
       "gridBatch": {
         "title": "Graella",

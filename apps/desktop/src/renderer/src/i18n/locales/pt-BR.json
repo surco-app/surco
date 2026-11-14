@@ -1181,7 +1181,16 @@
         "phrasesDone_one": "Frases colocadas em {{count}} comentário",
         "phrasesDone_other": "Frases colocadas em {{count}} comentários",
         "phrasesSkipped_one": "{{count}} sem dois CALLs, não alterado",
-        "phrasesSkipped_other": "{{count}} sem dois CALLs, não alterados"
+        "phrasesSkipped_other": "{{count}} sem dois CALLs, não alterados",
+        "clearedHot_one": "{{count}} hot cue a apagar",
+        "clearedHot_other": "{{count}} hot cues a apagar",
+        "clearedCalls_one": "{{count}} CALL a apagar",
+        "clearedCalls_other": "{{count}} CALLs a apagar",
+        "clearedLoops_one": "{{count}} loop, fica",
+        "clearedLoops_other": "{{count}} loops, ficam",
+        "clearedUnsaved_one": "{{count}} com alterações não salvas, fica como está",
+        "clearedUnsaved_other": "{{count}} com alterações não salvas, ficam como estão",
+        "clearDiscard": "Descartar"
       },
       "gridBatch": {
         "title": "Grade",

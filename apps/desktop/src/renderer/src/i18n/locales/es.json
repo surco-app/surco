@@ -1181,7 +1181,16 @@
         "phrasesDone_one": "Frases puestas en {{count}} comentario",
         "phrasesDone_other": "Frases puestas en {{count}} comentarios",
         "phrasesSkipped_one": "{{count}} sin dos CALLs, no se toca",
-        "phrasesSkipped_other": "{{count}} sin dos CALLs, no se tocan"
+        "phrasesSkipped_other": "{{count}} sin dos CALLs, no se tocan",
+        "clearedHot_one": "{{count}} hot cue que se borra",
+        "clearedHot_other": "{{count}} hot cues que se borran",
+        "clearedCalls_one": "{{count}} CALL que se borra",
+        "clearedCalls_other": "{{count}} CALLs que se borran",
+        "clearedLoops_one": "{{count}} loop, se queda",
+        "clearedLoops_other": "{{count}} loops, se quedan",
+        "clearedUnsaved_one": "{{count}} con cambios sin guardar, no se toca",
+        "clearedUnsaved_other": "{{count}} con cambios sin guardar, no se tocan",
+        "clearDiscard": "Descartar"
       },
       "gridBatch": {
         "title": "Rejilla",
