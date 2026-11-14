@@ -1181,7 +1181,16 @@
         "phrasesDone_one": "Phrases put in {{count}} comment",
         "phrasesDone_other": "Phrases put in {{count}} comments",
         "phrasesSkipped_one": "{{count}} without two CALLs, left alone",
-        "phrasesSkipped_other": "{{count}} without two CALLs, left alone"
+        "phrasesSkipped_other": "{{count}} without two CALLs, left alone",
+        "clearedHot_one": "{{count}} hot cue to clear",
+        "clearedHot_other": "{{count}} hot cues to clear",
+        "clearedCalls_one": "{{count}} CALL to clear",
+        "clearedCalls_other": "{{count}} CALLs to clear",
+        "clearedLoops_one": "{{count}} loop, kept",
+        "clearedLoops_other": "{{count}} loops, kept",
+        "clearedUnsaved_one": "{{count}} with unsaved changes, left as it is",
+        "clearedUnsaved_other": "{{count}} with unsaved changes, left as they are",
+        "clearDiscard": "Discard"
       },
       "gridBatch": {
         "title": "Grid",

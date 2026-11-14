@@ -7,7 +7,12 @@ import { activeCueFlow, MANUAL_CUE_FLOW } from '../../../shared/cueFlows'
 import { programOf, programsInOrder } from '../../../shared/djProgram'
 import type { GridCheck } from '../../../shared/gridAudit'
 import type { CueLibrary } from '../../../shared/types'
-import { type AutoMarkTarget, acceptAutoMarks } from '../lib/cueAutoMark'
+import {
+  type AutoMarkTarget,
+  acceptAutoMarks,
+  type ClearedCues,
+  clearCueDrafts,
+} from '../lib/cueAutoMark'
 import { forgetStaleDrafts } from '../lib/cueDrafts'
 import { flowName } from '../lib/cueFlowName'
 import { cueProgramOf, programsOfSave } from '../lib/cuePrograms'
@@ -68,6 +73,7 @@ export function CuesBatchSection({
   const [busy, setBusy] = useState(false)
   const [saveFailed, setSaveFailed] = useState(false)
   const [phrasing, setPhrasing] = useState(false)
+  const [cleared, setCleared] = useState<{ result: ClearedCues; forIds: string } | null>(null)
   const [phrased, setPhrased] = useState<{ done: number; skipped: number } | null>(null)
   const putPhrases = async () => {
     setPhrasing(true)
@@ -78,6 +84,8 @@ export function CuesBatchSection({
     }
   }
   const ids = targets.map((t) => t.contentId)
+  const idsKey = [...ids].sort().join('\n')
+  const shown = cleared?.forIds === idsKey ? cleared.result : null
   const gated = ids.some((id) => cueProgramOf(id).collectionGate !== null)
   const { data: canSave = true } = useQuery({
     queryKey: ['traktor-can-save', settings.traktorNmlPath],
@@ -147,6 +155,32 @@ export function CuesBatchSection({
   const discard = () => {
     for (const id of ids) forgetAutoMark(id)
   }
+  const clear = async () => {
+    setBusy(true)
+    try {
+      setCleared({ result: await clearCueDrafts(queryClient, targets, settings), forIds: idsKey })
+    } finally {
+      setBusy(false)
+    }
+  }
+  const discardCleared = () => {
+    for (const id of shown?.cleared ?? []) forgetDraft(id)
+    setCleared(null)
+  }
+  const clearedRows = shown
+    ? (
+        [
+          ['hot', tr('editor.cues.batch.clearedHot', { count: shown.hot }), shown.hot],
+          ['calls', tr('editor.cues.batch.clearedCalls', { count: shown.calls }), shown.calls],
+          ['loops', tr('editor.cues.batch.clearedLoops', { count: shown.loops }), shown.loops],
+          [
+            'unsaved',
+            tr('editor.cues.batch.clearedUnsaved', { count: shown.unsaved }),
+            shown.unsaved,
+          ],
+        ] as const
+      ).filter(([, , n]) => n > 0)
+    : []
   const save = async () => {
     setBusy(true)
     try {
@@ -180,6 +214,7 @@ export function CuesBatchSection({
           .map(({ contentId, draft }) => ({ contentId, draft })),
       )
       for (const req of reqs) forgetDraft(req.contentId)
+      setCleared(null)
       await queryClient.invalidateQueries({ queryKey: ['rekordbox-queued-cues'] })
     } finally {
       setBusy(false)
@@ -211,6 +246,15 @@ export function CuesBatchSection({
         >
           {tr('editor.cues.batch.phrases')}
         </button>
+        <button
+          type="button"
+          data-testid="cues-batch-clear"
+          disabled={busy || (shown?.cleared.length ?? 0) > 0}
+          onClick={() => void clear()}
+          className="press px-2 py-1.5 text-xs text-fg-dim hover:text-fg"
+        >
+          {tr('editor.cues.clearAll')}
+        </button>
       </div>
       {phrased && (
         <p className="mt-2 text-xs text-fg-dim">
@@ -238,6 +282,27 @@ export function CuesBatchSection({
               </div>
             ))}
         </dl>
+      )}
+      {clearedRows.length > 0 && (
+        <div className="mt-3 flex flex-wrap items-start justify-between gap-2">
+          <dl data-testid="cues-batch-cleared" className="grid gap-1 text-xs">
+            {clearedRows.map(([kind, label]) => (
+              <div key={kind} data-testid={`cues-batch-cleared-${kind}`}>
+                <dt className={kind === 'unsaved' ? 'text-warn' : 'text-fg-dim'}>{label}</dt>
+              </div>
+            ))}
+          </dl>
+          {shown && shown.cleared.length > 0 && (
+            <button
+              type="button"
+              data-testid="cues-batch-clear-discard"
+              onClick={discardCleared}
+              className="press px-2 py-1.5 text-xs text-fg-dim hover:text-fg"
+            >
+              {tr('editor.cues.batch.clearDiscard')}
+            </button>
+          )}
+        </div>
       )}
       {confidence.sure > 0 && confidence.doubtful > 0 && (
         <p data-testid="cues-batch-confidence" className="mt-2 text-xs text-fg-dim">

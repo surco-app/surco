@@ -1181,7 +1181,16 @@
         "phrasesDone_one": "Phrases mises dans {{count}} commentaire",
         "phrasesDone_other": "Phrases mises dans {{count}} commentaires",
         "phrasesSkipped_one": "{{count}} sans deux CALLs, inchangé",
-        "phrasesSkipped_other": "{{count}} sans deux CALLs, inchangés"
+        "phrasesSkipped_other": "{{count}} sans deux CALLs, inchangés",
+        "clearedHot_one": "{{count}} hot cue à effacer",
+        "clearedHot_other": "{{count}} hot cues à effacer",
+        "clearedCalls_one": "{{count}} CALL à effacer",
+        "clearedCalls_other": "{{count}} CALLs à effacer",
+        "clearedLoops_one": "{{count}} loop, conservé",
+        "clearedLoops_other": "{{count}} loops, conservés",
+        "clearedUnsaved_one": "{{count}} avec des modifications non enregistrées, laissé tel quel",
+        "clearedUnsaved_other": "{{count}} avec des modifications non enregistrées, laissés tels quels",
+        "clearDiscard": "Abandonner"
       },
       "gridBatch": {
         "title": "Grille",

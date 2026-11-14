@@ -12,7 +12,7 @@ import {
 } from '../../../shared/dropDetect'
 import type { QueuedCues, TrackCues } from '../../../shared/types'
 import { installApi } from '../test/api'
-import { acceptAutoMarks, autoMarkTracks } from './cueAutoMark'
+import { acceptAutoMarks, autoMarkTracks, clearCueDrafts } from './cueAutoMark'
 import { reduceDraft, startDraft, wantedOfDraft } from './cueDraft'
 import {
   autoMarkOf,
@@ -347,5 +347,110 @@ describe('Auto marcar over a Traktor track', () => {
     await autoMarkTracks(client, ['traktor:HD/:m/:t.wav'])
     expect(dropProposals).toHaveBeenCalledWith(input, DROP_MODEL)
     expect(api.cues.waveDetail).not.toHaveBeenCalled()
+  })
+})
+
+describe('clearing the cues of several tracks', () => {
+  const flows = normalizeCueFlows(undefined)
+  const settings = {
+    cueFlows: flows,
+    activeCueFlow: MIX_IN.id,
+    cueQuantize: 'beat' as const,
+    cueLettersByTime: false,
+  }
+  const target = (contentId: string) => ({
+    contentId,
+    path: `/m/${contentId}.wav`,
+    label: contentId,
+  })
+  const hot = (id: string, ms: number, kind: number) => ({ id, ms, kind, color: null })
+  const loop = (id: string, ms: number) => ({ ...hot(id, ms, 1), loop: true })
+  const withCues = (
+    contentId: string,
+    cues: TrackCues['cues'],
+    extra: Partial<TrackCues> = {},
+  ) => ({
+    ...READ,
+    contentId,
+    cues,
+    ...extra,
+  })
+
+  it('removes hot cues and CALLs and keeps loops, so the DJ starts over without losing loops they set by hand', async () => {
+    const { api, client } = setup({
+      reads: {
+        '103': withCues('103', [
+          hot('a', 1000, 1),
+          hot('b', 2000, 2),
+          hot('c', 3000, 0),
+          loop('l', 4000),
+        ]),
+      },
+    })
+
+    const cleared = await clearCueDrafts(client, [target('103')], settings)
+
+    expect(cleared).toEqual({ hot: 2, calls: 1, loops: 1, unsaved: 0, cleared: ['103'] })
+    expect(draftsToSave()[0].wanted).toEqual([{ id: 'l', ms: 4000, kind: 1, color: null }])
+    expect(draftsToSave()[0]).toMatchObject({ path: '/m/103.wav', label: '103', fingerprint: 'f0' })
+    expect(api.cues.save).not.toHaveBeenCalled()
+  })
+
+  it('leaves a track with an unsaved draft untouched, so clearing never throws away work in progress', async () => {
+    const { client } = setup({ reads: { '103': withCues('103', [hot('a', 1000, 1)]) } })
+    const draft = startDraft([{ id: 'a', ms: 1000, kind: 1, color: null }], MIX_IN.id)
+    keepDraft(
+      '103',
+      cueDraftKey('103', 'f0', null),
+      draft,
+      { path: '/m/103.wav', label: '103', fingerprint: 'f0' },
+      null,
+    )
+
+    const cleared = await clearCueDrafts(client, [target('103')], settings)
+
+    expect(cleared).toEqual({ hot: 0, calls: 0, loops: 0, unsaved: 1, cleared: [] })
+    expect(draftsToSave()[0].wanted).toEqual([{ id: 'a', ms: 1000, kind: 1, color: null }])
+  })
+
+  it('leaves no draft for a track with only loops or no cues, so Save does not count tracks it would not change', async () => {
+    const { client } = setup({
+      reads: { '103': withCues('103', [loop('l', 4000)]), '104': withCues('104', []) },
+    })
+
+    const cleared = await clearCueDrafts(client, [target('103'), target('104')], settings)
+
+    expect(cleared).toMatchObject({ hot: 0, calls: 0, cleared: [] })
+    expect([...unsavedCueTracks()]).toEqual([])
+  })
+
+  it('clears on top of a queued save that is still pending, so what is waiting to be written is not brought back', async () => {
+    const queued = {
+      fingerprint: 'f0',
+      wanted: [
+        { id: 'q1', ms: 1000, kind: 1, color: null },
+        { id: 'q2', ms: 2000, kind: 0, color: null },
+      ],
+    }
+    const { client } = setup({
+      reads: { '103': withCues('103', [hot('a', 9000, 1)]) },
+      queued: { '103': queued },
+    })
+
+    const cleared = await clearCueDrafts(client, [target('103')], settings)
+
+    expect(cleared).toMatchObject({ hot: 1, calls: 1, cleared: ['103'] })
+    expect(draftsToSave()[0].wanted).toEqual([])
+  })
+
+  it('works on a track that is not analysed, because clearing needs no grid', async () => {
+    const { client } = setup({
+      reads: { '103': withCues('103', [hot('a', 1000, 1)], { analysed: false, grid: [] }) },
+    })
+
+    const cleared = await clearCueDrafts(client, [target('103')], settings)
+
+    expect(cleared.cleared).toEqual(['103'])
+    expect(draftsToSave()[0].wanted).toEqual([])
   })
 })

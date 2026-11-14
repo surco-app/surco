@@ -1181,7 +1181,16 @@
         "phrasesDone_one": "{{count}} 件のコメントにフレーズを入れました",
         "phrasesDone_other": "{{count}} 件のコメントにフレーズを入れました",
         "phrasesSkipped_one": "CALLが2つない {{count}} 件はそのまま",
-        "phrasesSkipped_other": "CALLが2つない {{count}} 件はそのまま"
+        "phrasesSkipped_other": "CALLが2つない {{count}} 件はそのまま",
+        "clearedHot_one": "削除するホットキュー {{count}} 件",
+        "clearedHot_other": "削除するホットキュー {{count}} 件",
+        "clearedCalls_one": "削除するCALL {{count}} 件",
+        "clearedCalls_other": "削除するCALL {{count}} 件",
+        "clearedLoops_one": "ループ {{count}} 件はそのまま",
+        "clearedLoops_other": "ループ {{count}} 件はそのまま",
+        "clearedUnsaved_one": "{{count}} 件は未保存の変更があるため、そのままにします",
+        "clearedUnsaved_other": "{{count}} 件は未保存の変更があるため、そのままにします",
+        "clearDiscard": "破棄"
       },
       "gridBatch": {
         "title": "グリッド",
