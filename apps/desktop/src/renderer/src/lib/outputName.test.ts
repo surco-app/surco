@@ -164,6 +164,30 @@ describe('renderTitle', () => {
     expect(renderTitle('{trackNumber} - {title}', meta({ title: 'Action' }))).toBe('Action')
   })
 
+  // djotas' own pattern: a track without a number came out as ". Song", a stray dot
+  // on the deck. A blank field takes the bare punctuation joining it with it, wherever
+  // it sits, while the title's own punctuation is left alone.
+  it('drops the bare punctuation a blank field leaves at the start, middle or end', () => {
+    expect(renderTitle('{trackNumber}. {title}', meta({ title: 'Action' }))).toBe('Action')
+    expect(renderTitle('{artist}, {year}: {title}', meta({ title: 'Action' }))).toBe('Action')
+    expect(
+      renderTitle('{artist} - {album} - {title}', meta({ artist: 'Kumara', title: 'Action' })),
+    ).toBe('Kumara - Action')
+    expect(renderTitle('{title}. {year}', meta({ title: 'Action' }))).toBe('Action')
+    expect(renderTitle('{trackNumber}. {title}', meta({ title: '...And Justice' }))).toBe(
+      '...And Justice',
+    )
+  })
+
+  it('keeps the parts of the pattern whose fields are filled', () => {
+    expect(
+      renderTitle(
+        '{title} [{catalogNumber}] ({year})',
+        meta({ title: 'Action', catalogNumber: 'HUB 005' }),
+      ),
+    ).toBe('Action [HUB 005]')
+  })
+
   it('renders an empty pattern or all-blank fields to an empty string', () => {
     expect(renderTitle('', meta({ title: 'Action' }))).toBe('')
     expect(renderTitle('({trackNumber})', meta({}))).toBe('')
@@ -263,6 +287,16 @@ describe('titleFormatPatches', () => {
       track('b', { title: '   ', trackNumber: '' }),
     ])
     expect(patches).toEqual([])
+  })
+
+  it('leaves the title alone when the only thing the pattern adds is blank', () => {
+    // Pressing the button on an unnumbered track must not prepend ". "; with nothing to
+    // change the pass reports the empty field instead.
+    expect(
+      titleFormatSummary('{trackNumber}. {title}', [
+        track('a', { title: 'tone', trackNumber: '' }),
+      ]),
+    ).toEqual({ patches: [], skipped: 1, missingFields: ['trackNumber'] })
   })
 
   it('returns no patches when the pattern changes nothing', () => {

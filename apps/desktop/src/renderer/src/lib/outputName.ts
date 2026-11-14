@@ -52,16 +52,31 @@ export function renderOutputName(format: string, meta: TrackMetadata): string {
     .join('/')
 }
 
+const BARE_SEPARATOR = /^[\s.,:;\-–—·_|]+$/
+
+function fillTitleTokens(format: string, meta: TrackMetadata): string {
+  const parts = format.split(/\{(\w+)\}/)
+  const isToken = (i: number) => i % 2 === 1
+  const filled = parts.map((part, i) =>
+    isToken(i) ? (tokenValue(meta, part)?.trim() ?? '') : part,
+  )
+  for (let i = 1; i < parts.length; i += 2) {
+    if (filled[i]) continue
+    const fieldAfter = filled.some((value, j) => j > i && isToken(j) && value !== '')
+    const joint = fieldAfter ? i + 1 : i - 1
+    if (BARE_SEPARATOR.test(filled[joint])) filled[joint] = ''
+  }
+  return filled.join('')
+}
+
 // The title-format sibling of renderOutputName: fills the same {tokens} but treats
 // the result as a tag value, not a path — slashes in values and pattern stay plain
 // text. Shares the blank-field hygiene: empty "()"/"[]" pairs and doubled
 // separators left by a field the track doesn't have are dropped, edges trimmed.
+// A blank field also takes the bare punctuation joining it to its neighbour, so
+// "{trackNumber}. {title}" never leaves ". Song" on an unnumbered track.
 export function renderTitle(format: string, meta: TrackMetadata): string {
-  return format
-    .replace(/\{(\w+)\}/g, (_, key) => {
-      const value = tokenValue(meta, key)
-      return value ? value.trim() : ''
-    })
+  return fillTitleTokens(format, meta)
     .replace(/\(\s*\)|\[\s*\]/g, '')
     .replace(/\s*-\s*-\s*/g, ' - ')
     .replace(/\s+/g, ' ')
