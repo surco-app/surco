@@ -233,9 +233,9 @@ export async function openApp(
     showRows,
     errors,
     close: () => {
+      closeMain()
       act(() => root.unmount())
       container.remove()
-      closeMain()
     },
   }
 }
