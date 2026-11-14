@@ -290,7 +290,7 @@ export const Field = memo(function Field({
             aria-label={tr('editor.applyTitleFormatHint')}
             disabled={formatAction.disabled}
             onClick={formatAction.onApply}
-            className={`press absolute top-1/2 -translate-y-1/2 rounded p-1 text-fg-faint hover:bg-[var(--color-hover)] hover:text-fg disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-fg-faint ${
+            className={`press absolute top-1/2 -translate-y-1/2 rounded p-1 text-fg-faint opacity-0 transition-opacity hover:bg-[var(--color-hover)] hover:text-fg focus-visible:opacity-100 enabled:group-focus-within:opacity-100 enabled:group-hover:opacity-100 disabled:group-focus-within:opacity-40 disabled:group-hover:opacity-40 disabled:hover:bg-transparent disabled:hover:text-fg-faint ${
               hasMenu ? 'right-7' : 'right-1.5'
             }`}
           >
