@@ -22,6 +22,7 @@ import {
   keepAutoMark,
   keepDraft,
   keptDraftOn,
+  unsavedCueTracks,
 } from './cueSession'
 import { quantizePoints } from './cueWave'
 
@@ -170,4 +171,62 @@ export async function acceptAutoMarks(
   for (const target of targets)
     if (await acceptOne(client, target, settings, onlySure)) accepted += 1
   return accepted
+}
+
+export interface ClearedCues {
+  hot: number
+  calls: number
+  loops: number
+  unsaved: number
+  cleared: string[]
+}
+
+export async function clearCueDrafts(
+  client: QueryClient,
+  targets: AutoMarkTarget[],
+  settings: AutoMarkSettings,
+): Promise<ClearedCues> {
+  const result: ClearedCues = { hot: 0, calls: 0, loops: 0, unsaved: 0, cleared: [] }
+  for (const target of targets) {
+    if (unsavedCueTracks().has(target.contentId)) {
+      result.unsaved += 1
+      continue
+    }
+    const read = await client.fetchQuery(trackCuesQuery(target.contentId)).catch(() => null)
+    if (!read) continue
+    const queued = await client.fetchQuery(queuedCuesQuery(target.contentId))
+    const fresh = queued !== null && queued.fingerprint === read.fingerprint
+    const baseline = fresh
+      ? queued.wanted
+      : read.cues.map(({ id, ms, kind, color }) => ({ id, ms, kind, color }))
+    const loopIds = read.cues.filter((c) => c.loop).map((c) => c.id)
+    const ctx = {
+      beats: read.grid.map((b) => b.ms),
+      snapTo: quantizePoints(read.grid, settings.cueQuantize),
+      strong: read.strong,
+      phrases: read.phrases,
+      flows: settings.cueFlows,
+      lettersByTime: settings.cueLettersByTime,
+      slots: cueProgramOf(target.contentId).slots,
+    }
+    const cleared = reduceDraft(
+      startDraft(baseline, settings.activeCueFlow, loopIds),
+      { type: 'clear' },
+      ctx,
+    )
+    const loose = baseline.filter((c) => !(c.id && loopIds.includes(c.id)))
+    if (loose.length === 0) continue
+    result.hot += loose.filter((c) => c.kind !== 0).length
+    result.calls += loose.filter((c) => c.kind === 0).length
+    result.loops += loopIds.length
+    keepDraft(
+      target.contentId,
+      cueDraftKey(target.contentId, read.fingerprint, queued),
+      cleared,
+      { path: target.path, label: target.label, fingerprint: read.fingerprint },
+      fresh ? queued : null,
+    )
+    result.cleared.push(target.contentId)
+  }
+  return result
 }
