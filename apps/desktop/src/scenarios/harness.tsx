@@ -860,6 +860,7 @@ function wiredCues(): CuesApi {
     auditionLead: async () => 0,
     surcoGrid: async () => null,
     gridFit: () => notWiredCues('gridFit'),
+    gridAudit: () => notWiredCues('gridAudit'),
     queued: async () => null,
     undo: async () => {},
     save: async () => {},

@@ -133,6 +133,7 @@ export function virtualdjCueSource(
       }
     },
     gridFit: async () => null,
+    gridAudit: async () => null,
     queuedWanted: async () => [],
     queue: host.queue,
     applyQuietly: host.applyQuietly,

@@ -147,6 +147,7 @@ async function engineList(stick: string, name: string): Promise<StickList | null
     },
     () => '',
     none,
+    none,
   )
   const entries: SourcePlaylistEntry[] = await read.playlist(node.id)
   return {

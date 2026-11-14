@@ -107,6 +107,7 @@ export function seratoCueSource(
     auditionLead: async () => 0,
     surcoGrid: async () => null,
     gridFit: async () => null,
+    gridAudit: async () => null,
     queuedWanted: async () => [],
     queue: host.queue,
     applyQuietly: host.applyQuietly,

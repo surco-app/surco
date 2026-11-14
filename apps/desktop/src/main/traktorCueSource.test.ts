@@ -72,6 +72,7 @@ const source = () =>
     },
     () => '',
     async () => null,
+    async () => null,
   )
 
 beforeEach(async () => {
@@ -177,6 +178,7 @@ describe('traktorCueSource on a LAME MP3', () => {
       },
       () => '',
       async () => ({ bpm: 120, firstMs: 100 }),
+      async () => null,
     )
     return { file, cues, id: traktorContentId(key) }
   }

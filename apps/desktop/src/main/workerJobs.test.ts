@@ -14,6 +14,14 @@ vi.mock('./tempo', () => ({
   detectBpm: vi.fn(() => ({ bpm: 128, confidence: 0.9 })),
 }))
 vi.mock('./musicalKey', () => ({ detectKey: vi.fn(() => ({ key: 'Am', confidence: 0.8 })) }))
+vi.mock('./beatGrid', () => ({
+  fitBeatGrid: vi.fn(() => ({
+    bpm: 128,
+    firstMs: 3,
+    fine: Array.from({ length: 60 }, () => ({ ms: 0, firstMs: 3 })),
+  })),
+  auditGrid: vi.fn(() => ({ windows: [{ ms: 9000, offsetMs: 1 }], total: 4 })),
+}))
 vi.mock('./clickDetect', () => ({ detectClicks: vi.fn(() => [1.5, 3.2]) }))
 vi.mock('./waveform', () => ({ computePeaks: vi.fn(() => [0.1, 0.9]) }))
 vi.mock('./tags', async (importActual) => ({
@@ -35,6 +43,7 @@ vi.mock('./cueWaveWords', () => ({
 }))
 
 import { tuneDropTaste } from '../shared/dropTaste'
+import { auditGrid } from './beatGrid'
 import { runChannelScan } from './channelScan'
 import { detectClicks } from './clickDetect'
 import { runCueWaveWords } from './cueWaveWords'
@@ -57,6 +66,22 @@ describe('runWorkerJob', () => {
     const out = runWorkerJob({ type: 'bpm', pcm, sampleRate: 11025 })
     expect(detectBpm).toHaveBeenCalledWith(pcm, 11025)
     expect(out).toEqual({ bpm: 128, confidence: 0.9 })
+  })
+
+  it('measures a grid and fits the beat from one decode, telling how often the beat is clearly heard', () => {
+    const pcm = new Float32Array(11025 * 120)
+    const out = runWorkerJob({
+      type: 'gridAudit',
+      pcm,
+      sampleRate: 11025,
+      beats: [0, 500],
+      leadMs: 51,
+    })
+    expect(auditGrid).toHaveBeenCalledWith(pcm, 11025, [0, 500], 51)
+    expect(out).toEqual({
+      audit: { windows: [{ ms: 9000, offsetMs: 1 }], total: 4, heardPerMinute: 30 },
+      fit: expect.objectContaining({ bpm: 128 }),
+    })
   })
 
   it('routes key jobs to the key detector with the job pcm and rate', () => {

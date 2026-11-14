@@ -10,6 +10,7 @@ import { composeMeta } from '../shared/composeAccents'
 import { customTagName } from '../shared/customFields'
 import { DEFAULT_DECLICK, declickCacheSuffix, declickFilter } from '../shared/declick'
 import { errorWithKey } from '../shared/errorKeys'
+import type { GridAudit } from '../shared/gridAudit'
 import { forcedInputArgs } from '../shared/inputFormat'
 import { formatRatingTag, starsToRating, starsToWmpRating } from '../shared/rating'
 import { MANAGED_ALIASES, TAG_FIELDS } from '../shared/tagFields'
@@ -3763,6 +3764,27 @@ export async function measureBeatGrid(input: string): Promise<BeatGridFit | null
   )
   if (pcm === null) return null
   return runInWorker<BeatGridFit | null>({ type: 'beatGrid', pcm, sampleRate: TEMPO_SAMPLE_RATE })
+}
+
+export async function measureGridAudit(
+  input: string,
+  beats: number[],
+  leadMs: number,
+): Promise<{ audit: Omit<GridAudit, 'periodMs'>; fit: BeatGridFit | null } | null> {
+  const pcm = await decodePcm(input, { sampleRate: TEMPO_SAMPLE_RATE, maxBufferMb: 96 }).catch(
+    (err) => {
+      if (isPcmOverrun(err)) return null
+      throw err
+    },
+  )
+  if (pcm === null) return null
+  return runInWorker<{ audit: Omit<GridAudit, 'periodMs'>; fit: BeatGridFit | null }>({
+    type: 'gridAudit',
+    pcm,
+    sampleRate: TEMPO_SAMPLE_RATE,
+    beats,
+    leadMs,
+  })
 }
 
 export async function measureKey(input: string): Promise<KeyResult | null> {

@@ -8,6 +8,7 @@ import type { DjApi } from '../shared/djApi'
 import type { CueProgram } from '../shared/djProgram'
 import type { DropInput } from '../shared/dropDetect'
 import type { FeedbackForm, FeedbackOutcome } from '../shared/feedback'
+import type { GridAudit } from '../shared/gridAudit'
 import type { GridFit } from '../shared/gridEdit'
 import type {
   ActivityEvent,
@@ -96,6 +97,11 @@ export interface CuesApi {
   auditionLead: (contentId: string) => Promise<number>
   surcoGrid: (contentId: string) => Promise<SurcoGrid | null>
   gridFit: (contentId: string, priority?: 'high' | 'low') => Promise<GridFit | null>
+  gridAudit: (
+    contentId: string,
+    beats: number[],
+    priority?: 'high' | 'low',
+  ) => Promise<GridAudit | null>
   queued: (contentId: string) => Promise<QueuedCues | null>
   undo: (contentId: string) => Promise<void>
   save: (reqs: SaveCuesRequest[]) => Promise<void>
