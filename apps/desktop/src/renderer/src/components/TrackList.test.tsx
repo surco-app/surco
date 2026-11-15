@@ -270,12 +270,20 @@ describe('TrackList', () => {
       expect(shown.map((r) => r.tabIndex)).toEqual([-1, 0, -1, -1])
     })
 
-    it('extends the range past the repeat with Shift+Down, instead of sticking on the same track', () => {
+    it('extends the range past the repeat with Shift+Down from either of its rows, instead of sticking on the same track', () => {
       const { onSelect } = renderList(rows(), 'c', ['c'], { separatorBefore: breaks })
       const shown = screen.getAllByTestId('track-row')
-      expect(() => fireEvent.keyDown(shown[1], { key: 'ArrowDown', shiftKey: true })).not.toThrow()
+      fireEvent.keyDown(shown[1], { key: 'ArrowDown', shiftKey: true })
       expect(onSelect).toHaveBeenLastCalledWith('d', { shift: true })
-      expect(() => fireEvent.keyDown(shown[1], { key: 'ArrowDown' })).not.toThrow()
+      fireEvent.keyDown(shown[2], { key: 'ArrowDown', shiftKey: true })
+      expect(onSelect).toHaveBeenLastCalledWith('d', { shift: true })
+      expect(onSelect).toHaveBeenCalledTimes(2)
+    })
+
+    it('leaves a plain Down on the repeat to the list navigation, which steps over distinct tracks', () => {
+      const { onSelect } = renderList(rows(), 'c', ['c'], { separatorBefore: breaks })
+      fireEvent.keyDown(screen.getAllByTestId('track-row')[1], { key: 'ArrowDown' })
+      expect(onSelect).not.toHaveBeenCalled()
     })
 
     it('hands the menu the row it was opened on, so an action can tell the two blocks apart', () => {
