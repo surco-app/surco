@@ -137,3 +137,28 @@ Reglas (solo con la playlist Matching abierta; el bloque se saca de la fila por 
 - [ ] **Step 3:** Implementar; textos en los 8 idiomas (`ca` «Inverteix l'ordre» / «Treu del matching», `de` «Reihenfolge umkehren» / «Aus dem Matching entfernen», `en` «Reverse order» / «Remove from matching», `fr` «Inverser l'ordre» / «Retirer du matching», `it` «Inverti l'ordine» / «Togli dal matching», `ja` «順序を入れ替える» / «マッチングから外す», `pt-BR` «Inverter a ordem» / «Tirar do matching»).
 - [ ] **Step 4:** Suite completa + 3 tsc + biome en verde.
 - [ ] **Step 5: Commit** `Reverse a Matching pair or take one track out of its block from the row menu`
+
+### Task 4: Fusionar bloques seleccionados
+
+Spec 6 (15/11): con A+B+C y C+D seleccionados (al menos una pista de cada bloque), el usuario los fusiona en uno, A+B+C+D.
+
+**Files:**
+- Modify: `apps/desktop/src/renderer/src/App.tsx` (`renderTrackMenu`), `apps/desktop/src/renderer/src/components/TrackContextMenu.tsx`, los 8 `i18n/locales/*.json` bajo `trackList.context`
+- Test: `App.test.tsx`, `components/TrackContextMenu.test.tsx`
+
+**Interfaces:**
+- Consumes: bloques por `rowKeys` + `separatorBefore` (Task 2), `editMatching`, `pairOfTracks`; el mismo patrón secuencial de Task 3.
+- Produces: prop `onMergeMatch?: () => void` (testid `track-menu-merge-match`), clave `trackList.context.mergeMatch`.
+
+Reglas (solo con la playlist Matching abierta):
+- Bloques tocados = los bloques que contienen alguna fila seleccionada, en orden de la lista. La opción sale solo si son 2 o más.
+- El primer bloque manda: su cabeza `H` pasa a ser la cabeza de todo.
+- Para cada otro bloque `K` (cabeza `Hk`, seguidoras `Sk…`): quitar cada `[Hk, s]`; después añadir `[H, x]` por cada pista `x` de `K` (cabeza y seguidoras) que no sea `H` ni sea ya seguidora de `H`, en el orden del bloque.
+- Llamadas `editMatching` en secuencia con `await`: primero todas las de quitar, luego todas las de añadir.
+- Textos: `es` «Fusionar bloques», `ca` «Fusiona els blocs», `de` «Blöcke zusammenführen», `en` «Merge blocks», `fr` «Fusionner les blocs», `it` «Unisci i blocchi», `ja` «ブロックを結合», `pt-BR` «Juntar blocos».
+
+- [ ] **Step 1: Tests en rojo** (`matching` `[['r1','r2'],['r1','r3'],['r3','r4']]`): seleccionar una fila de cada bloque y elegir «Fusionar bloques» → `remove ['r3','r4']` y luego `add ['r1','r4']`, nada más (r3 ya es seguidora de r1). Con `[['r1','r2'],['r5','r6']]` → `remove ['r5','r6']`, `add ['r1','r5']`, `add ['r1','r6']`. Con una sola fila o filas del mismo bloque, no hay `track-menu-merge-match`.
+- [ ] **Step 2:** Ejecutar; fallan.
+- [ ] **Step 3:** Implementar + textos.
+- [ ] **Step 4:** Suite completa + 3 tsc + biome en verde.
+- [ ] **Step 5: Commit** `Merge the selected Matching blocks into one from the row menu`
