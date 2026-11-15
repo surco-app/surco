@@ -253,8 +253,7 @@ export function ConvertFooter({
   const batchReread = !!batch && batch.ok + batch.mismatch + batch.pending + batch.checking > 0
   const checking = isMulti
     ? showDone && batchAllChecking
-    : (showDone && verification?.status === 'checking') ||
-      (item.status === 'processing' && item.stage === 'verify')
+    : showDone && verification?.status === 'checking'
   const pendingPlaces = batch
     ? batch.pendingPlaces.map((p) => tr(`verify.places.${p}`))
     : verification?.status === 'pending'
@@ -717,9 +716,7 @@ export function ConvertFooter({
                 {tr('editor.lossyToLossless', { format: format.toUpperCase() })}
               </p>
             )}
-            {checking ? (
-              <div className="flex h-10 items-center justify-center">{checkingLine}</div>
-            ) : isMulti ? (
+            {isMulti ? (
               <BatchPlan
                 count={readyCount ?? selectedCount}
                 total={selectedCount}

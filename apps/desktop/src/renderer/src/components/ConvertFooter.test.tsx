@@ -695,12 +695,14 @@ describe('ConvertFooter verification', () => {
     expect(screen.queryByTestId('verify-shield')).toBeNull()
   })
 
-  // The re-read runs inside the job as its last stage: the button must not name a stage
-  // it has no words for, and the wording must not change when the result comes back.
-  it('stage verify on the processing track shows verify-checking too', () => {
+  // The re-read runs inside the job as its last stage. Swapping the bar for a centred line
+  // at that point cut the progress off at 85% in one frame; the bar carries on to the end
+  // and names the check itself, with the same word the done row keeps if it is still going.
+  it('keeps the bar through the verify stage, naming the check inside it', () => {
     render(verified([], { processing: true }))
-    expect(screen.getByTestId('verify-checking')).toHaveTextContent('Comprobando…')
-    expect(screen.queryByTestId('process-btn')).toBeNull()
+    expect(screen.getByTestId('process-btn')).toHaveTextContent('Comprobando…')
+    expect(screen.getByTestId('process-progress')).toHaveStyle({ transform: 'scaleX(0.95)' })
+    expect(screen.queryByTestId('verify-checking')).toBeNull()
   })
 
   it('once ok the success line shows with the verify-shield button', () => {
