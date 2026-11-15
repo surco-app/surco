@@ -5269,6 +5269,31 @@ describe('App source playlists', () => {
         )
       })
 
+      it('merges under a head that follows in the other block by dropping that pair before pairing them the other way, so rekordbox never holds both', async () => {
+        const match = await openBlock(
+          [
+            ['r1', 'r2'],
+            ['r3', 'r1'],
+          ],
+          [
+            entryOf('r1', '/m/a.wav'),
+            entryOf('r2', '/m/b.wav'),
+            separator,
+            entryOf('r3', '/m/c.wav'),
+            entryOf('r1', '/m/a.wav'),
+          ],
+        )
+        selectRows(1, 2)
+        fireEvent.contextMenu(screen.getAllByTestId('track-row')[2])
+        fireEvent.click(await screen.findByTestId('track-menu-merge-match'))
+        await waitFor(() =>
+          expect(calls(match)).toEqual([
+            ['remove', ['r3', 'r1']],
+            ['add', ['r1', 'r3']],
+          ]),
+        )
+      })
+
       it('offers no merging for a single row, since one block has nothing to merge with', async () => {
         await openApartBlocks()
         selectRows(3)
